@@ -12,7 +12,7 @@ typedef struct rz_binheap_t {
 } RzBinHeap;
 
 RZ_API void rz_binheap_clear(RzBinHeap *h);
-#define rz_binheap_empty(h) (rz_pvector_empty (&(h)->a))
+#define rz_binheap_empty(h) (rz_pvector_empty(&(h)->a))
 RZ_API void rz_binheap_init(RzBinHeap *h, RzPVectorComparator cmp);
 RZ_API RzBinHeap *rz_binheap_new(RzPVectorComparator cmp);
 RZ_API void rz_binheap_free(RzBinHeap *h);

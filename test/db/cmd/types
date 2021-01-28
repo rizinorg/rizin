@@ -25,7 +25,7 @@ wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249
 e asm.comments=false
 s 2
 tl short
-s +6
+sd +6
 tl int
 s 0
 pd 8
@@ -71,6 +71,21 @@ EXPECT=<<EOF
   szSecLangDll : 0x00000014 = "Hello"
             0x00000022      90             nop
             0x00000023      90             nop
+EOF
+RUN
+
+NAME=typelinks- test for tlj json
+FILE=-
+CMDS=<<EOF
+wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf0600000
+s 2
+tl short
+sd +6
+tl int
+tlj
+EOF
+EXPECT=<<EOF
+[{"0x00000002":"short"},{"0x00000008":"int"}]
 EOF
 RUN
 
@@ -1223,6 +1238,19 @@ var char * s @ rbp-0x20
 var char * var_18h @ rbp-0x18
 var char * var_10h @ rbp-0x10
 var int64_t canary @ rbp-0x8
+EOF
+RUN
+
+NAME=aaft io.va side effect
+FILE=-
+ARGS=-eio.va=0 -a x86 -b 64
+CMDS=<<EOF
+af
+aaft
+e io.va
+EOF
+EXPECT=<<EOF
+false
 EOF
 RUN
 

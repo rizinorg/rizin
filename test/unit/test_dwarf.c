@@ -7,34 +7,34 @@
 #define MODE 2
 
 #define check_abbrev_code(expected_code) \
-	mu_assert_eq (da->decls[i].code, expected_code, "Wrong abbrev code");
+	mu_assert_eq(da->decls[i].code, expected_code, "Wrong abbrev code");
 
 #define check_abbrev_tag(expected_tag) \
-	mu_assert_eq (da->decls[i].tag, expected_tag, "Incorrect abbreviation tag")
+	mu_assert_eq(da->decls[i].tag, expected_tag, "Incorrect abbreviation tag")
 
 #define check_abbrev_count(expected_count) \
-	mu_assert_eq (da->decls[i].count, expected_count, "Incorrect abbreviation count")
+	mu_assert_eq(da->decls[i].count, expected_count, "Incorrect abbreviation count")
 
 #define check_abbrev_children(expected_children) \
-	mu_assert_eq (da->decls[i].has_children, expected_children, "Incorrect children flag")
+	mu_assert_eq(da->decls[i].has_children, expected_children, "Incorrect children flag")
 
 #define check_abbrev_attr_name(expected_name) \
-	mu_assert_eq (da->decls[i].defs[j].attr_name, expected_name, "Incorrect children flag");
+	mu_assert_eq(da->decls[i].defs[j].attr_name, expected_name, "Incorrect children flag");
 
 #define check_abbrev_attr_form(expected_form) \
-	mu_assert_eq (da->decls[i].defs[j].attr_form, expected_form, "Incorrect children flag");
+	mu_assert_eq(da->decls[i].defs[j].attr_form, expected_form, "Incorrect children flag");
 
 /**
  * @brief Comparator to sort list of line statements by address(collection of DwarfRows)
  */
-int row_comparator(const void *a, const void *b){
+int row_comparator(const void *a, const void *b) {
 	const RzBinDwarfRow *left = a;
 	const RzBinDwarfRow *right = b;
 
 	return (left->address >= right->address) ? 1 : -1;
 }
 
-int int_compare(const void *a, const void *b){
+int int_compare(const void *a, const void *b) {
 	const int *left = a;
 	const int *right = b;
 	return (*left >= *right) ? 1 : -1;
@@ -44,99 +44,99 @@ int int_compare(const void *a, const void *b){
  * @brief Tests correct parsing of abbreviations and line information of DWARF3 C binary
  */
 bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
-	RzBin *bin = rz_bin_new ();
-	RzIO *io = rz_io_new ();
-	rz_io_bind (io, &bin->iob);
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open (bin, "bins/elf/dwarf3_c.elf", &opt);
-	mu_assert ("couldn't open file", res);
+	bool res = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
+	mu_assert("couldn't open file", res);
 
 	RzBinDwarfDebugAbbrev *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->count, 7, "Incorrect number of abbreviation");
+	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	mu_assert_eq(da->count, 7, "Incorrect number of abbreviation");
 
 	// order matters
 	// I nest scopes to make it more readable, (hopefully)
 	int i = 0;
-	check_abbrev_tag (DW_TAG_compile_unit);
+	check_abbrev_tag(DW_TAG_compile_unit);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (8);
+		check_abbrev_children(true);
+		check_abbrev_count(8);
 		{
 			int j = 0;
-			check_abbrev_attr_name (DW_AT_producer);
-			check_abbrev_attr_form (DW_FORM_strp);
+			check_abbrev_attr_name(DW_AT_producer);
+			check_abbrev_attr_form(DW_FORM_strp);
 			j++;
-			check_abbrev_attr_name (DW_AT_language);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_language);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
-			check_abbrev_attr_name (DW_AT_name);
-			check_abbrev_attr_form (DW_FORM_strp);
+			check_abbrev_attr_name(DW_AT_name);
+			check_abbrev_attr_form(DW_FORM_strp);
 			j++;
-			check_abbrev_attr_name (DW_AT_comp_dir);
-			check_abbrev_attr_form (DW_FORM_strp);
+			check_abbrev_attr_name(DW_AT_comp_dir);
+			check_abbrev_attr_form(DW_FORM_strp);
 			j++;
-			check_abbrev_attr_name (DW_AT_low_pc);
-			check_abbrev_attr_form (DW_FORM_addr);
+			check_abbrev_attr_name(DW_AT_low_pc);
+			check_abbrev_attr_form(DW_FORM_addr);
 			j++;
-			check_abbrev_attr_name (DW_AT_high_pc);
-			check_abbrev_attr_form (DW_FORM_addr);
+			check_abbrev_attr_name(DW_AT_high_pc);
+			check_abbrev_attr_form(DW_FORM_addr);
 			j++;
-			check_abbrev_attr_name (DW_AT_stmt_list);
-			check_abbrev_attr_form (DW_FORM_data4);
+			check_abbrev_attr_name(DW_AT_stmt_list);
+			check_abbrev_attr_form(DW_FORM_data4);
 		}
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_variable);
+	check_abbrev_tag(DW_TAG_variable);
 	{
-		check_abbrev_count (8);
-		check_abbrev_children (false);
+		check_abbrev_count(8);
+		check_abbrev_children(false);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_base_type);
+	check_abbrev_tag(DW_TAG_base_type);
 	{
-		check_abbrev_count (4);
-		check_abbrev_children (false);
+		check_abbrev_count(4);
+		check_abbrev_children(false);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_count (12);
-		check_abbrev_children (true);
+		check_abbrev_count(12);
+		check_abbrev_children(true);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_variable);
+	check_abbrev_tag(DW_TAG_variable);
 	{
-		check_abbrev_count (7);
-		check_abbrev_children (false);
+		check_abbrev_count(7);
+		check_abbrev_children(false);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_count (10);
-		check_abbrev_children (true);
+		check_abbrev_count(10);
+		check_abbrev_children(true);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_variable);
+	check_abbrev_tag(DW_TAG_variable);
 	{
-		check_abbrev_count (6);
-		check_abbrev_children (false);
+		check_abbrev_count(6);
+		check_abbrev_children(false);
 	}
 	i++;
 
-	RzList *line_list = rz_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (rz_list_length (line_list), 8, "Amount of line information parse doesn't match");
+	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	mu_assert_eq(rz_list_length(line_list), 8, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
 	RzListIter *iter;
 
 	// sort it so it can be more consistently tested?
 	// we could also sort it in the `id` output like readelf does
-	rz_list_sort (line_list, row_comparator);
+	rz_list_sort(line_list, row_comparator);
 
 	const int test_addresses[] = {
 		0x1129,
@@ -150,13 +150,13 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	};
 	i = 0;
 	rz_list_foreach (line_list, iter, row) {
-		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
+		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
-	rz_list_free (line_list);
-	rz_bin_dwarf_free_debug_abbrev (da);
-	rz_bin_free (bin);
-	rz_io_free (io);
+	rz_list_free(line_list);
+	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_free(bin);
+	rz_io_free(io);
 	mu_end;
 }
 
@@ -168,13 +168,13 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
  * 
  */
 bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
-	RzBin *bin = rz_bin_new ();
-	RzIO *io = rz_io_new ();
-	rz_io_bind (io, &bin->iob);
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open (bin, "bins/elf/dwarf3_cpp.elf", &opt);
-	mu_assert ("couldn't open file", res);
+	bool res = rz_bin_open(bin, "bins/elf/dwarf3_cpp.elf", &opt);
+	mu_assert("couldn't open file", res);
 
 	// this is probably ugly, but I didn't know how to
 	// tell core  what bin to open so I did it myself
@@ -183,315 +183,315 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert ("Incorrect number of abbreviation", da->count == 32);
+	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	mu_assert("Incorrect number of abbreviation", da->count == 32);
 
 	// order matters
 	// I nest scopes to make it more readable, (hopefully)
 	int i = 0;
-	check_abbrev_tag (DW_TAG_compile_unit);
+	check_abbrev_tag(DW_TAG_compile_unit);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (9);
+		check_abbrev_children(true);
+		check_abbrev_count(9);
 		{
 			/**
 			 *  Everything commented out is something that is missing from being printed by `id` Radare
 			 */
 			int j = 0;
-			check_abbrev_attr_name (DW_AT_producer);
-			check_abbrev_attr_form (DW_FORM_strp);
+			check_abbrev_attr_name(DW_AT_producer);
+			check_abbrev_attr_form(DW_FORM_strp);
 			j++;
-			check_abbrev_attr_name (DW_AT_language);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_language);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
-			check_abbrev_attr_name (DW_AT_name);
-			check_abbrev_attr_form (DW_FORM_strp);
+			check_abbrev_attr_name(DW_AT_name);
+			check_abbrev_attr_form(DW_FORM_strp);
 			j++;
-			check_abbrev_attr_name (DW_AT_comp_dir);
-			check_abbrev_attr_form (DW_FORM_strp);
+			check_abbrev_attr_name(DW_AT_comp_dir);
+			check_abbrev_attr_form(DW_FORM_strp);
 			j++;
-			check_abbrev_attr_name (DW_AT_ranges);
-			check_abbrev_attr_form (DW_FORM_data4);
+			check_abbrev_attr_name(DW_AT_ranges);
+			check_abbrev_attr_form(DW_FORM_data4);
 			j++;
-			check_abbrev_attr_name (DW_AT_low_pc);
-			check_abbrev_attr_form (DW_FORM_addr);
+			check_abbrev_attr_name(DW_AT_low_pc);
+			check_abbrev_attr_form(DW_FORM_addr);
 			j++;
-			check_abbrev_attr_name (DW_AT_entry_pc);
-			check_abbrev_attr_form (DW_FORM_addr);
+			check_abbrev_attr_name(DW_AT_entry_pc);
+			check_abbrev_attr_form(DW_FORM_addr);
 			j++;
-			check_abbrev_attr_name (DW_AT_stmt_list);
-			check_abbrev_attr_form (DW_FORM_data4);
+			check_abbrev_attr_name(DW_AT_stmt_list);
+			check_abbrev_attr_form(DW_FORM_data4);
 
 			// check_abbrev_attr_name (DW_AT value: 0);
 			// check_abbrev_attr_form (DW_AT value: 0);
 		}
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_structure_type);
+	check_abbrev_tag(DW_TAG_structure_type);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (8);
+		check_abbrev_children(true);
+		check_abbrev_count(8);
 		{
 			/**
 			 *  Everything commented out is something that is missing from being printed by `id` Radare
 			 */
 			int j = 0;
-			check_abbrev_attr_name (DW_AT_name);
-			check_abbrev_attr_form (DW_FORM_strp);
+			check_abbrev_attr_name(DW_AT_name);
+			check_abbrev_attr_form(DW_FORM_strp);
 			j++;
-			check_abbrev_attr_name (DW_AT_byte_size);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_byte_size);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
-			check_abbrev_attr_name (DW_AT_decl_file);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_decl_file);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
-			check_abbrev_attr_name (DW_AT_decl_line);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_decl_line);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
-			check_abbrev_attr_name (DW_AT_decl_column);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_decl_column);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
-			check_abbrev_attr_name (DW_AT_containing_type);
-			check_abbrev_attr_form (DW_FORM_ref4);
+			check_abbrev_attr_name(DW_AT_containing_type);
+			check_abbrev_attr_form(DW_FORM_ref4);
 			j++;
-			check_abbrev_attr_name (DW_AT_sibling);
-			check_abbrev_attr_form (DW_FORM_ref4);
+			check_abbrev_attr_name(DW_AT_sibling);
+			check_abbrev_attr_form(DW_FORM_ref4);
 
 			// check_abbrev_attr_name (DW_AT value: 0);
 			// check_abbrev_attr_form (DW_AT value: 0);
 		}
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (8);
+		check_abbrev_children(true);
+		check_abbrev_count(8);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_formal_parameter);
+	check_abbrev_tag(DW_TAG_formal_parameter);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (3);
+		check_abbrev_children(false);
+		check_abbrev_count(3);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_formal_parameter);
+	check_abbrev_tag(DW_TAG_formal_parameter);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (2);
+		check_abbrev_children(false);
+		check_abbrev_count(2);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_member);
+	check_abbrev_tag(DW_TAG_member);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (5);
+		check_abbrev_children(false);
+		check_abbrev_count(5);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (10);
+		check_abbrev_children(true);
+		check_abbrev_count(10);
 	}
 	i++;
 
 	// 8
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (12);
+		check_abbrev_children(true);
+		check_abbrev_count(12);
 		{
 			int j = 0;
-			check_abbrev_attr_name (DW_AT_external);
-			check_abbrev_attr_form (DW_FORM_flag);
+			check_abbrev_attr_name(DW_AT_external);
+			check_abbrev_attr_form(DW_FORM_flag);
 			j++;
-			check_abbrev_attr_name (DW_AT_name);
-			check_abbrev_attr_form (DW_FORM_strp);
+			check_abbrev_attr_name(DW_AT_name);
+			check_abbrev_attr_form(DW_FORM_strp);
 			j++;
-			check_abbrev_attr_name (DW_AT_decl_file);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_decl_file);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
-			check_abbrev_attr_name (DW_AT_decl_line);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_decl_line);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
-			check_abbrev_attr_name (DW_AT_decl_column);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_decl_column);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
 			// check_abbrev_attr_name (DW_AT_MIPS_linkage_name);
-			check_abbrev_attr_form (DW_FORM_strp);
+			check_abbrev_attr_form(DW_FORM_strp);
 			j++;
-			check_abbrev_attr_name (DW_AT_virtuality);
-			check_abbrev_attr_form (DW_FORM_data1);
+			check_abbrev_attr_name(DW_AT_virtuality);
+			check_abbrev_attr_form(DW_FORM_data1);
 			j++;
-			check_abbrev_attr_name (DW_AT_containing_type);
-			check_abbrev_attr_form (DW_FORM_ref4);
+			check_abbrev_attr_name(DW_AT_containing_type);
+			check_abbrev_attr_form(DW_FORM_ref4);
 			j++;
-			check_abbrev_attr_name (DW_AT_declaration);
-			check_abbrev_attr_form (DW_FORM_flag);
+			check_abbrev_attr_name(DW_AT_declaration);
+			check_abbrev_attr_form(DW_FORM_flag);
 			j++;
-			check_abbrev_attr_name (DW_AT_object_pointer);
-			check_abbrev_attr_form (DW_FORM_ref4);
+			check_abbrev_attr_name(DW_AT_object_pointer);
+			check_abbrev_attr_form(DW_FORM_ref4);
 			j++;
-			check_abbrev_attr_name (DW_AT_sibling);
-			check_abbrev_attr_form (DW_FORM_ref4);
+			check_abbrev_attr_name(DW_AT_sibling);
+			check_abbrev_attr_form(DW_FORM_ref4);
 		}
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (13);
+		check_abbrev_children(true);
+		check_abbrev_count(13);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_const_type);
+	check_abbrev_tag(DW_TAG_const_type);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (2);
+		check_abbrev_children(false);
+		check_abbrev_count(2);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_pointer_type);
+	check_abbrev_tag(DW_TAG_pointer_type);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (3);
+		check_abbrev_children(false);
+		check_abbrev_count(3);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_reference_type);
+	check_abbrev_tag(DW_TAG_reference_type);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (3);
+		check_abbrev_children(false);
+		check_abbrev_count(3);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subroutine_type);
+	check_abbrev_tag(DW_TAG_subroutine_type);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (3);
+		check_abbrev_children(true);
+		check_abbrev_count(3);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_unspecified_parameters);
+	check_abbrev_tag(DW_TAG_unspecified_parameters);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (1);
+		check_abbrev_children(false);
+		check_abbrev_count(1);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_base_type);
+	check_abbrev_tag(DW_TAG_base_type);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (4);
+		check_abbrev_children(false);
+		check_abbrev_count(4);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_pointer_type);
+	check_abbrev_tag(DW_TAG_pointer_type);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (4);
+		check_abbrev_children(false);
+		check_abbrev_count(4);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_structure_type);
+	check_abbrev_tag(DW_TAG_structure_type);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (8);
+		check_abbrev_children(true);
+		check_abbrev_count(8);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_inheritance);
+	check_abbrev_tag(DW_TAG_inheritance);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (3);
+		check_abbrev_children(false);
+		check_abbrev_count(3);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (8);
+		check_abbrev_children(true);
+		check_abbrev_count(8);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (10);
+		check_abbrev_children(true);
+		check_abbrev_count(10);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (13);
+		check_abbrev_children(true);
+		check_abbrev_count(13);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (12);
+		check_abbrev_children(true);
+		check_abbrev_count(12);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_variable);
+	check_abbrev_tag(DW_TAG_variable);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (7);
+		check_abbrev_children(false);
+		check_abbrev_count(7);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_variable);
+	check_abbrev_tag(DW_TAG_variable);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (7);
+		check_abbrev_children(false);
+		check_abbrev_count(7);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (8);
+		check_abbrev_children(true);
+		check_abbrev_count(8);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_formal_parameter);
+	check_abbrev_tag(DW_TAG_formal_parameter);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (5);
+		check_abbrev_children(false);
+		check_abbrev_count(5);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (5);
+		check_abbrev_children(true);
+		check_abbrev_count(5);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_formal_parameter);
+	check_abbrev_tag(DW_TAG_formal_parameter);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (4);
+		check_abbrev_children(false);
+		check_abbrev_count(4);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (9);
+		check_abbrev_children(true);
+		check_abbrev_count(9);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_formal_parameter);
+	check_abbrev_tag(DW_TAG_formal_parameter);
 	{
-		check_abbrev_children (false);
-		check_abbrev_count (3);
+		check_abbrev_children(false);
+		check_abbrev_count(3);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (9);
+		check_abbrev_children(true);
+		check_abbrev_count(9);
 	}
 	i++;
-	check_abbrev_tag (DW_TAG_subprogram);
+	check_abbrev_tag(DW_TAG_subprogram);
 	{
-		check_abbrev_children (true);
-		check_abbrev_count (8);
+		check_abbrev_children(true);
+		check_abbrev_count(8);
 	}
 
 	// rz_bin_dwarf_parse_info (da, core->bin, mode); Information not stored anywhere, not testable now?
 
 	// rz_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
 
-	RzList *line_list = rz_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (rz_list_length (line_list), 60, "Amount of line information parse doesn't match");
+	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	mu_assert_eq(rz_list_length(line_list), 60, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
 	RzListIter *iter;
 
 	// sort it so it can be more consistently tested?
 	// we could also sort it in the `id` output like readelf does
-	rz_list_sort (line_list, row_comparator);
+	rz_list_sort(line_list, row_comparator);
 
 	int test_addresses[] = {
 		0x000011ee,
@@ -555,55 +555,55 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 		0x000011e6,
 		0x000011ed,
 	};
-	qsort (test_addresses, 60, sizeof (int), int_compare);
+	qsort(test_addresses, 60, sizeof(int), int_compare);
 	i = 0;
 
 	rz_list_foreach (line_list, iter, row) {
-		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
+		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
-	rz_list_free (line_list);
-	rz_bin_dwarf_free_debug_abbrev (da);
-	rz_bin_free (bin);
-	rz_io_free (io);
+	rz_list_free(line_list);
+	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_free(bin);
+	rz_io_free(io);
 	mu_end;
 }
 bool test_dwarf3_cpp_many_comp_units(void) {
-	RzBin *bin = rz_bin_new ();
-	RzIO *io = rz_io_new ();
-	rz_io_bind (io, &bin->iob);
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open (bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
-	mu_assert ("couldn't open file", res);
+	bool res = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
+	mu_assert("couldn't open file", res);
 
 	RzBinDwarfDebugAbbrev *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->count, 58, "Incorrect number of abbreviation");
+	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	mu_assert_eq(da->count, 58, "Incorrect number of abbreviation");
 	int i = 18;
 
-	check_abbrev_tag (DW_TAG_formal_parameter);
-	check_abbrev_count (5);
-	check_abbrev_children (false);
-	check_abbrev_code (19);
+	check_abbrev_tag(DW_TAG_formal_parameter);
+	check_abbrev_count(5);
+	check_abbrev_children(false);
+	check_abbrev_code(19);
 	i = 41;
-	check_abbrev_tag (DW_TAG_inheritance);
-	check_abbrev_count (3);
-	check_abbrev_children (false);
-	check_abbrev_code (18);
+	check_abbrev_tag(DW_TAG_inheritance);
+	check_abbrev_count(3);
+	check_abbrev_children(false);
+	check_abbrev_code(18);
 
-	RzList *line_list = rz_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (rz_list_length (line_list), 64, "Amount of line information parse doesn't match");
+	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	mu_assert_eq(rz_list_length(line_list), 64, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
 	RzListIter *iter;
 
 	// sort it so it can be more consistently tested?
 	// we could also sort it in the `id` output like readelf does
-	rz_list_sort (line_list, row_comparator);
+	rz_list_sort(line_list, row_comparator);
 
 	int test_addresses[] = {
 		0x0000118a,
@@ -675,41 +675,41 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	i = 0;
 
 	rz_list_foreach (line_list, iter, row) {
-		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
+		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
-	rz_list_free (line_list);
-	rz_bin_dwarf_free_debug_abbrev (da);
-	rz_bin_free (bin);
-	rz_io_free (io);
+	rz_list_free(line_list);
+	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_free(bin);
+	rz_io_free(io);
 	mu_end;
 }
 
 bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswell
-	RzBin *bin = rz_bin_new ();
-	RzIO *io = rz_io_new ();
-	rz_io_bind (io, &bin->iob);
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open (bin, "bins/pe/hello_world_not_stripped.exe", &opt);
-	mu_assert ("couldn't open file", res);
+	bool res = rz_bin_open(bin, "bins/pe/hello_world_not_stripped.exe", &opt);
+	mu_assert("couldn't open file", res);
 
 	RzBinDwarfDebugAbbrev *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev (bin, MODE);
+	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
 	// not ignoring null entries -> 755 abbrevs
-	mu_assert_eq (da->count, 731, "Incorrect number of abbreviation");
+	mu_assert_eq(da->count, 731, "Incorrect number of abbreviation");
 
-	RzList *line_list = rz_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (rz_list_length (line_list), 771, "Amount of line information parse doesn't match");
+	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	mu_assert_eq(rz_list_length(line_list), 771, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
 	RzListIter *iter;
 
 	// sort it so it can be more consistently tested?
-	rz_list_sort (line_list, row_comparator);
+	rz_list_sort(line_list, row_comparator);
 
 	const int test_addresses[] = {
 		0x00401000,
@@ -740,53 +740,53 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	int i = 0;
 
 	rz_list_foreach (line_list, iter, row) {
-		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
+		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
 		if (i == 23)
 			break;
 	}
 
-	rz_list_free (line_list);
-	rz_bin_dwarf_free_debug_abbrev (da);
-	rz_io_free (io);
-	rz_bin_free (bin);
+	rz_list_free(line_list);
+	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_io_free(io);
+	rz_bin_free(bin);
 	mu_end;
 }
 
 bool test_dwarf2_cpp_many_comp_units(void) {
-	RzBin *bin = rz_bin_new ();
-	RzIO *io = rz_io_new ();
-	rz_io_bind (io, &bin->iob);
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open (bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
-	mu_assert ("couldn't open file", res);
+	bool res = rz_bin_open(bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
+	mu_assert("couldn't open file", res);
 
 	RzBinDwarfDebugAbbrev *da = NULL;
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev (bin, MODE);
-	mu_assert_eq (da->count, 58, "Incorrect number of abbreviation");
+	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	mu_assert_eq(da->count, 58, "Incorrect number of abbreviation");
 
 	int i = 18;
 
-	check_abbrev_tag (DW_TAG_formal_parameter);
-	check_abbrev_count (5);
-	check_abbrev_children (false);
-	check_abbrev_code (19);
+	check_abbrev_tag(DW_TAG_formal_parameter);
+	check_abbrev_count(5);
+	check_abbrev_children(false);
+	check_abbrev_code(19);
 	i = 41;
-	check_abbrev_tag (DW_TAG_inheritance);
-	check_abbrev_count (4);
-	check_abbrev_children (false);
-	check_abbrev_code (18);
+	check_abbrev_tag(DW_TAG_inheritance);
+	check_abbrev_count(4);
+	check_abbrev_children(false);
+	check_abbrev_code(18);
 
-	RzList *line_list = rz_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (rz_list_length (line_list), 64, "Amount of line information parse doesn't match");
+	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	mu_assert_eq(rz_list_length(line_list), 64, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
 	RzListIter *iter;
 
-	rz_list_sort (line_list, row_comparator);
+	rz_list_sort(line_list, row_comparator);
 
 	const int test_addresses[] = {
 		0x0000118a,
@@ -857,35 +857,35 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 
 	i = 0;
 	rz_list_foreach (line_list, iter, row) {
-		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
+		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
 	// add line information check
-	rz_list_free (line_list);
-	rz_bin_dwarf_free_debug_abbrev (da);
-	rz_bin_free (bin);
-	rz_io_free (io);
+	rz_list_free(line_list);
+	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_free(bin);
+	rz_io_free(io);
 	mu_end;
 }
 
 bool test_dwarf4_cpp_many_comp_units(void) {
-	RzBin *bin = rz_bin_new ();
-	RzIO *io = rz_io_new ();
-	rz_io_bind (io, &bin->iob);
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
-	mu_assert ("couldn't open file", res);
+	bool res = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
+	mu_assert("couldn't open file", res);
 
 	// TODO add abbrev checks
 
-	RzList *line_list = rz_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (rz_list_length (line_list), 75, "Amount of line information parse doesn't match");
+	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	mu_assert_eq(rz_list_length(line_list), 75, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
 	RzListIter *iter;
 
-	rz_list_sort (line_list, row_comparator);
+	rz_list_sort(line_list, row_comparator);
 
 	const int test_addresses[] = {
 		0x00401160,
@@ -967,31 +967,31 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 
 	int i = 0;
 	rz_list_foreach (line_list, iter, row) {
-		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
+		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
-	rz_list_free (line_list);
-	rz_bin_free (bin);
-	rz_io_free (io);
+	rz_list_free(line_list);
+	rz_bin_free(bin);
+	rz_io_free(io);
 	mu_end;
 }
 
 bool test_big_endian_dwarf2(void) {
-	RzBin *bin = rz_bin_new ();
-	RzIO *io = rz_io_new ();
-	rz_io_bind (io, &bin->iob);
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open (bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
-	mu_assert ("couldn't open file", res);
+	bool res = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
+	mu_assert("couldn't open file", res);
 
-	RzList *line_list = rz_bin_dwarf_parse_line (bin, MODE);
-	mu_assert_eq (rz_list_length (line_list), 273, "Amount of line information parse doesn't match");
+	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	mu_assert_eq(rz_list_length(line_list), 273, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
 	RzListIter *iter;
 
-	rz_list_sort (line_list, row_comparator);
+	rz_list_sort(line_list, row_comparator);
 
 	const int test_addresses[] = {
 		0x10000ec4,
@@ -1271,25 +1271,24 @@ bool test_big_endian_dwarf2(void) {
 
 	int i = 0;
 	rz_list_foreach (line_list, iter, row) {
-		mu_assert_eq (row->address, test_addresses[i++], "Line number statement address doesn't match");
+		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
 	}
 
-	rz_list_free (line_list);
-	rz_bin_free (bin);
-	rz_io_free (io);
+	rz_list_free(line_list);
+	rz_bin_free(bin);
+	rz_io_free(io);
 	mu_end;
 }
 
-
 bool all_tests() {
-	mu_run_test (test_dwarf_cpp_empty_line_info);
-	mu_run_test (test_dwarf2_cpp_many_comp_units);
-	mu_run_test (test_dwarf3_c_basic);
-	mu_run_test (test_dwarf3_cpp_basic);
-	mu_run_test (test_dwarf3_cpp_many_comp_units);
-	mu_run_test (test_dwarf4_cpp_many_comp_units);
-	mu_run_test (test_big_endian_dwarf2);
+	mu_run_test(test_dwarf_cpp_empty_line_info);
+	mu_run_test(test_dwarf2_cpp_many_comp_units);
+	mu_run_test(test_dwarf3_c_basic);
+	mu_run_test(test_dwarf3_cpp_basic);
+	mu_run_test(test_dwarf3_cpp_many_comp_units);
+	mu_run_test(test_dwarf4_cpp_many_comp_units);
+	mu_run_test(test_big_endian_dwarf2);
 	return tests_passed != tests_run;
 }
 
-mu_main (all_tests)
+mu_main(all_tests)

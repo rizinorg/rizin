@@ -16,9 +16,9 @@ static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	s->s_out = NULL;
 	d = next_inst(s);
 	if (d != NULL) {
-		xap_decode (s, d);
-		strcpy (str, d->d_asm);
-		free (d);
+		xap_decode(s, d);
+		strcpy(str, d->d_asm);
+		free(d);
 	} else {
 		*str = '\0';
 	}
@@ -31,8 +31,8 @@ static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	return 0;
 }
 static int disassemble(RzAsm *a, struct rz_asm_op_t *op, const ut8 *buf, int len) {
-	char *buf_asm = rz_strbuf_get (&op->buf_asm);
-	arch_xap_disasm (buf_asm, buf, a->pc);
+	char *buf_asm = rz_strbuf_get(&op->buf_asm);
+	arch_xap_disasm(buf_asm, buf, a->pc);
 	return (op->size = 2);
 }
 

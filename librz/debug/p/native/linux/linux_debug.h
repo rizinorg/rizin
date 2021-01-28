@@ -13,16 +13,53 @@
 #include <sys/ptrace.h>
 
 struct user_regs_struct_x86_64 {
-  ut64 r15; ut64 r14; ut64 r13; ut64 r12; ut64 rbp; ut64 rbx; ut64 r11;
-  ut64 r10; ut64 r9; ut64 r8; ut64 rax; ut64 rcx; ut64 rdx; ut64 rsi;
-  ut64 rdi; ut64 orig_rax; ut64 rip; ut64 cs; ut64 eflags; ut64 rsp;
-  ut64 ss; ut64 fs_base; ut64 gs_base; ut64 ds; ut64 es; ut64 fs; ut64 gs;
+	ut64 r15;
+	ut64 r14;
+	ut64 r13;
+	ut64 r12;
+	ut64 rbp;
+	ut64 rbx;
+	ut64 r11;
+	ut64 r10;
+	ut64 r9;
+	ut64 r8;
+	ut64 rax;
+	ut64 rcx;
+	ut64 rdx;
+	ut64 rsi;
+	ut64 rdi;
+	ut64 orig_rax;
+	ut64 rip;
+	ut64 cs;
+	ut64 eflags;
+	ut64 rsp;
+	ut64 ss;
+	ut64 fs_base;
+	ut64 gs_base;
+	ut64 ds;
+	ut64 es;
+	ut64 fs;
+	ut64 gs;
 };
 
 struct user_regs_struct_x86_32 {
-  ut32 ebx; ut32 ecx; ut32 edx; ut32 esi; ut32 edi; ut32 ebp; ut32 eax;
-  ut32 xds; ut32 xes; ut32 xfs; ut32 xgs; ut32 orig_eax; ut32 eip;
-  ut32 xcs; ut32 eflags; ut32 esp; ut32 xss;
+	ut32 ebx;
+	ut32 ecx;
+	ut32 edx;
+	ut32 esi;
+	ut32 edi;
+	ut32 ebp;
+	ut32 eax;
+	ut32 xds;
+	ut32 xes;
+	ut32 xfs;
+	ut32 xgs;
+	ut32 orig_eax;
+	ut32 eip;
+	ut32 xcs;
+	ut32 eflags;
+	ut32 esp;
+	ut32 xss;
 };
 
 #if __ANDROID__
@@ -71,23 +108,23 @@ struct powerpc_regs_t {
 	unsigned long gpr[32];
 	unsigned long nip;
 	unsigned long msr;
-	unsigned long orig_gpr3;	/* Used for restarting system calls */
+	unsigned long orig_gpr3; /* Used for restarting system calls */
 	unsigned long ctr;
 	unsigned long link;
 	unsigned long xer;
 	unsigned long ccr;
 #ifdef __powerpc64__
-	unsigned long softe;		/* Soft enabled/disabled */
+	unsigned long softe; /* Soft enabled/disabled */
 #else
-	unsigned long mq;		/* 601 only (not used at present) */
-					/* Used on APUS to hold IPL value. */
+	unsigned long mq; /* 601 only (not used at present) */
+	/* Used on APUS to hold IPL value. */
 #endif
-	unsigned long trap;		/* Reason for being here */
+	unsigned long trap; /* Reason for being here */
 	/* N.B. for critical exceptions on 4xx, the dar and dsisr
 	   fields are overloaded to hold srr0 and srr1. */
-	unsigned long dar;		/* Fault registers */
-	unsigned long dsisr;		/* on 4xx/Book-E used for ESR */
-	unsigned long result;		/* Result of a system call */
+	unsigned long dar; /* Fault registers */
+	unsigned long dsisr; /* on 4xx/Book-E used for ESR */
+	unsigned long result; /* Result of a system call */
 };
 #define RZ_DEBUG_REG_T struct powerpc_regs_t
 #elif __riscv || __riscv__ || __riscv64__
@@ -103,18 +140,18 @@ struct powerpc_regs_t {
 #elif __mips__
 
 #include <sys/ucontext.h>
-typedef ut64 mips64_regs_t [274];
+typedef ut64 mips64_regs_t[274];
 #define RZ_DEBUG_REG_T mips64_regs_t
 #endif
 #endif
 
 // SIGTRAP si_codes from <asm/siginfo.h>
 #if !defined(TRAP_BRKPT) && !defined(TRAP_TRACE)
-#define TRAP_BRKPT		1
-#define TRAP_TRACE		2
-#define TRAP_BRANCH		3
-#define TRAP_HWBKPT		4
-#define TRAP_UNK		5
+#define TRAP_BRKPT  1
+#define TRAP_TRACE  2
+#define TRAP_BRANCH 3
+#define TRAP_HWBKPT 4
+#define TRAP_UNK    5
 #endif
 
 //API

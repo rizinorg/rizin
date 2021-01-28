@@ -15,27 +15,27 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	RzBin *bin = a->binb.bin;
 	ut64 pc = a->pc;
 
-	RzBinPlugin *plugin = bin && bin->cur && bin->cur->o? bin->cur->o->plugin: NULL;
+	RzBinPlugin *plugin = bin && bin->cur && bin->cur->o ? bin->cur->o->plugin : NULL;
 
 	if (plugin) {
-		if (!strcmp (plugin->name, "pyc")) {
+		if (!strcmp(plugin->name, "pyc")) {
 			shared = bin->cur->o->bin_obj;
 		}
 	}
-	RzList *cobjs = rz_list_get_n (shared, 0);
-	RzList *interned_table = rz_list_get_n (shared, 1);
-	if (!opcodes_cache || !pyc_opcodes_equal (opcodes_cache, a->cpu)) {
-		opcodes_cache = get_opcode_by_version (a->cpu);
+	RzList *cobjs = rz_list_get_n(shared, 0);
+	RzList *interned_table = rz_list_get_n(shared, 1);
+	if (!opcodes_cache || !pyc_opcodes_equal(opcodes_cache, a->cpu)) {
+		opcodes_cache = get_opcode_by_version(a->cpu);
 		opcodes_cache->bits = a->bits;
 	}
-	int r = rz_pyc_disasm (opstruct, buf, cobjs, interned_table, pc, opcodes_cache);
+	int r = rz_pyc_disasm(opstruct, buf, cobjs, interned_table, pc, opcodes_cache);
 	opstruct->size = r;
 	return r;
 }
 
 static bool finish(void *user) {
 	if (opcodes_cache) {
-		free_opcode (opcodes_cache);
+		free_opcode(opcodes_cache);
 		opcodes_cache = NULL;
 	}
 	return true;

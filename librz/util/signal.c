@@ -48,18 +48,18 @@ static struct {
 	{ NULL }
 };
 
-RZ_API int rz_signal_from_string (const char *e) {
+RZ_API int rz_signal_from_string(const char *e) {
 	int i;
 	for (i = 1; signals[i].name; i++) {
 		const char *str = signals[i].name;
-		if (!strcmp (e, str)) {
+		if (!strcmp(e, str)) {
 			return signals[i].code;
 		}
 	}
-	return atoi (e);
+	return atoi(e);
 }
 
-RZ_API const char* rz_signal_to_string (int code) {
+RZ_API const char *rz_signal_to_string(int code) {
 	int i;
 	for (i = 1; signals[i].name; i++) {
 		if (signals[i].code == code) {
@@ -71,6 +71,6 @@ RZ_API const char* rz_signal_to_string (int code) {
 
 #if HAVE_PTHREAD
 RZ_API void rz_signal_sigmask(int how, const sigset_t *newmask, sigset_t *oldmask) {
-	pthread_sigmask (how, newmask, oldmask);
+	pthread_sigmask(how, newmask, oldmask);
 }
 #endif

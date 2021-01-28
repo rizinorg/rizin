@@ -13,7 +13,7 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_parse);
 
-typedef RzList* (*RzAnalysisVarList)(RzAnalysisFunction *fcn, int kind);
+typedef RzList *(*RzAnalysisVarList)(RzAnalysisFunction *fcn, int kind);
 
 typedef struct rz_parse_t {
 	void *user;
@@ -34,7 +34,7 @@ typedef struct rz_parse_t {
 	RzAnalysisVarList varlist;
 	st64 (*get_ptr_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
 	const char *(*get_reg_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
-	char* (*get_op_ireg)(void *user, ut64 addr);
+	char *(*get_op_ireg)(void *user, ut64 addr);
 	RzAnalysisBind analb;
 	RzFlagGetAtAddr flag_get; // XXX
 	RzAnalysisLabelAt label_get;

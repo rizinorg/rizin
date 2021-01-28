@@ -11,29 +11,29 @@
 #include <mybfd.h>
 
 /* extern */
-int decodeInstr (bfd_vma address, disassemble_info * info);
-int ARCTangent_decodeInstr (bfd_vma address, disassemble_info * info);
-int ARCompact_decodeInstr (bfd_vma address, disassemble_info * info);
+int decodeInstr(bfd_vma address, disassemble_info *info);
+int ARCTangent_decodeInstr(bfd_vma address, disassemble_info *info);
+int ARCompact_decodeInstr(bfd_vma address, disassemble_info *info);
 
 /* ugly globals */
 static ut32 Offset = 0;
 static RzStrBuf *buf_global = NULL;
 static int buf_len = 0;
-static ut8 bytes[32] = {0};
+static ut8 bytes[32] = { 0 };
 
-static int arc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+static int arc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta < 0) {
 		return -1; // disable backward reads
 	}
-	if ((delta + length) > sizeof (bytes)) {
+	if ((delta + length) > sizeof(bytes)) {
 		return -1;
 	}
-	memcpy (myaddr, bytes + delta, RZ_MIN (buf_len - delta, length));
+	memcpy(myaddr, bytes + delta, RZ_MIN(buf_len - delta, length));
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
@@ -51,13 +51,13 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
-	if (len > sizeof (bytes)) {
-		len = sizeof (bytes);
+	if (len > sizeof(bytes)) {
+		len = sizeof(bytes);
 	}
-	memcpy (bytes, buf, len); // TODO handle compact
+	memcpy(bytes, buf, len); // TODO handle compact
 	buf_len = len;
 	/* prepare disassembler */
-	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
+	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
 	disasm_obj.buffer = bytes;
 	disasm_obj.buffer_length = len;
 	disasm_obj.read_memory_func = &arc_buffer_read_memory;
@@ -68,14 +68,14 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
 	disasm_obj.mach = 0;
-	rz_strbuf_set (&op->buf_asm, "");
+	rz_strbuf_set(&op->buf_asm, "");
 	if (a->bits == 16) {
-		op->size = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		op->size = ARCompact_decodeInstr((bfd_vma)Offset, &disasm_obj);
 	} else {
-		op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		op->size = ARCTangent_decodeInstr((bfd_vma)Offset, &disasm_obj);
 	}
 	if (op->size == -1) {
-		rz_strbuf_set (&op->buf_asm, "(data)");
+		rz_strbuf_set(&op->buf_asm, "(data)");
 	}
 	return op->size;
 }

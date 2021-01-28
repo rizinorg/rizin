@@ -745,7 +745,7 @@ ar > /dev/null
 ar v0=0x00000004
 s 4
 wx aabbccdd112233440000438c
-s +8
+sd +8
 aei
 aeim
 aeip
@@ -766,7 +766,7 @@ ar > /dev/null
 ar v0=0x00000008
 s 0x4
 wx aabbccdd11223344fcff438c
-s +8
+sd +8
 aei
 aeim
 aeip

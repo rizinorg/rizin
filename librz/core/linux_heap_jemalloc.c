@@ -12,15 +12,15 @@
 
 // FIXME: It should be detected at runtime, not during the compilation stage
 #if HEAP32
-#define GH(x) x##_32
-#define GHT ut32
+#define GH(x)   x##_32
+#define GHT     ut32
 #define GHT_MAX UT32_MAX
-#define PFMTx PFMT32x
+#define PFMTx   PFMT32x
 #else
-#define GH(x) x##_64
-#define GHT ut64
+#define GH(x)   x##_64
+#define GHT     ut64
 #define GHT_MAX UT64_MAX
-#define PFMTx PFMT64x
+#define PFMTx   PFMT64x
 #endif
 
 #if __linux__
@@ -29,7 +29,7 @@
 static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	RzListIter *iter;
 	RzBinSymbol *s;
-	RzCore *core = rz_core_new ();
+	RzCore *core = rz_core_new();
 	GHT vaddr = 0LL;
 
 	if (!core) {
@@ -37,11 +37,11 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	}
 
 	RzBinOptions opt;
-	rz_bin_options_init (&opt, -1, 0, 0, false);
-	if (rz_bin_open (core->bin, path, &opt)) {
-		RzList *syms = rz_bin_get_symbols (core->bin);
+	rz_bin_options_init(&opt, -1, 0, 0, false);
+	if (rz_bin_open(core->bin, path, &opt)) {
+		RzList *syms = rz_bin_get_symbols(core->bin);
 		if (!syms) {
-			rz_core_free (core);
+			rz_core_free(core);
 			return GHT_MAX;
 		}
 		rz_list_foreach (syms, iter, s) {
@@ -51,12 +51,12 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 			}
 		}
 	}
-	rz_core_free (core);
+	rz_core_free(core);
 	return vaddr;
 }
 
 static int GH(je_matched)(const char *ptr, const char *str) {
-        int ret = strncmp (ptr, str, strlen (str) - 1);
+	int ret = strncmp(ptr, str, strlen(str) - 1);
 	return !ret;
 }
 #endif
@@ -67,160 +67,155 @@ static bool GH(rz_resolve_jemalloc)(RzCore *core, char *symname, ut64 *symbol) {
 	const char *jemalloc_ver_end = NULL;
 	ut64 jemalloc_addr = UT64_MAX;
 
-	if (!core || !core->dbg || !core->dbg->maps){
+	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
 	}
-	rz_debug_map_sync (core->dbg);
+	rz_debug_map_sync(core->dbg);
 	rz_list_foreach (core->dbg->maps, iter, map) {
-		if (strstr (map->name, "libjemalloc.")) {
+		if (strstr(map->name, "libjemalloc.")) {
 			jemalloc_addr = map->addr;
 			jemalloc_ver_end = map->name;
 			break;
 		}
 	}
 	if (!jemalloc_ver_end) {
-		eprintf ("Warning: Is jemalloc mapped in memory? (see dm command)\n");
+		eprintf("Warning: Is jemalloc mapped in memory? (see dm command)\n");
 		return false;
 	}
 #if __linux__
 	bool is_debug_file = GH(je_matched)(jemalloc_ver_end, "/usr/local/lib");
 
 	if (!is_debug_file) {
-		eprintf ("Warning: Is libjemalloc.so.2 in /usr/local/lib path?\n");
+		eprintf("Warning: Is libjemalloc.so.2 in /usr/local/lib path?\n");
 		return false;
 	}
-	char *path = rz_str_newf ("%s", jemalloc_ver_end);
-	if (rz_file_exists (path)) {
+	char *path = rz_str_newf("%s", jemalloc_ver_end);
+	if (rz_file_exists(path)) {
 		ut64 vaddr = GH(je_get_va_symbol)(path, symname);
 		if (jemalloc_addr != GHT_MAX && vaddr != 0) {
 			*symbol = jemalloc_addr + vaddr;
-			free (path);
+			free(path);
 			return true;
 		}
 	}
-	free (path);
+	free(path);
 	return false;
 #else
-	eprintf ("[*] Resolving %s from libjemalloc.2... ", symname);
+	eprintf("[*] Resolving %s from libjemalloc.2... ", symname);
 	// this is quite sloooow, we must optimize dmi
-	char *va = rz_core_cmd_strf (core, "dmi libjemalloc.2 %s$~[1]", symname);
-	ut64 n = rz_num_get (NULL, va);
+	char *va = rz_core_cmd_strf(core, "dmi libjemalloc.2 %s$~[1]", symname);
+	ut64 n = rz_num_get(NULL, va);
 	if (n && n != UT64_MAX) {
 		*symbol = n;
-		eprintf ("0x%08"PFMT64x"\n", n);
+		eprintf("0x%08" PFMT64x "\n", n);
 	} else {
-		eprintf ("NOT FOUND\n");
+		eprintf("NOT FOUND\n");
 	}
-	free (va);
+	free(va);
 	return true;
 #endif
 }
 
 static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 	ut64 cnksz;
-	RzConsPrintablePalette *pal = &rz_cons_singleton ()->context->pal;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	if (!GH(rz_resolve_jemalloc)(core, "je_chunksize", &cnksz)) {
-		eprintf ("Fail at read symbol je_chunksize\n");
+		eprintf("Fail at read symbol je_chunksize\n");
 		return;
 	}
-	rz_io_read_at (core->io, cnksz, (ut8 *)&cnksz, sizeof (GHT));
+	rz_io_read_at(core->io, cnksz, (ut8 *)&cnksz, sizeof(GHT));
 
 	switch (input[0]) {
 	case '\0':
-		eprintf ("need an arena_t to associate chunks");
+		eprintf("need an arena_t to associate chunks");
 		break;
-        case ' ':
-        	{
-			GHT arena = GHT_MAX;
-			arena_t *ar = RZ_NEW0 (arena_t);
-			extent_node_t *node = RZ_NEW0 (extent_node_t), *head = RZ_NEW0 (extent_node_t);
-			input += 1;
-			arena = rz_num_math (core->num, input);
+	case ' ': {
+		GHT arena = GHT_MAX;
+		arena_t *ar = RZ_NEW0(arena_t);
+		extent_node_t *node = RZ_NEW0(extent_node_t), *head = RZ_NEW0(extent_node_t);
+		input += 1;
+		arena = rz_num_math(core->num, input);
 
-			if (arena) {
-				rz_io_read_at (core->io, arena, (ut8 *)ar, sizeof (arena_t));
-				rz_io_read_at (core->io, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
-				if (head->en_addr) {
-					PRINT_YA ("   Chunk - start: ");
-					PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
-					PRINT_YA (", end: ");
-					PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
-					PRINT_YA (", size: ");
-					PRINTF_BA ("0x%08"PFMT64x"\n", (ut64)cnksz);
-					rz_io_read_at (core->io, (ut64)(size_t)head->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
-					while (node && node->en_addr != head->en_addr) {
-						PRINT_YA ("   Chunk - start: ");
-						PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
-						PRINT_YA (", end: ");
-						PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
-						PRINT_YA (", size: ");
-						PRINTF_BA ("0x%08"PFMT64x"\n", cnksz);
-						rz_io_read_at (core->io, (ut64)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
-					}
+		if (arena) {
+			rz_io_read_at(core->io, arena, (ut8 *)ar, sizeof(arena_t));
+			rz_io_read_at(core->io, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof(extent_node_t));
+			if (head->en_addr) {
+				PRINT_YA("   Chunk - start: ");
+				PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)head->en_addr);
+				PRINT_YA(", end: ");
+				PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
+				PRINT_YA(", size: ");
+				PRINTF_BA("0x%08" PFMT64x "\n", (ut64)cnksz);
+				rz_io_read_at(core->io, (ut64)(size_t)head->ql_link.qre_next, (ut8 *)node, sizeof(extent_node_t));
+				while (node && node->en_addr != head->en_addr) {
+					PRINT_YA("   Chunk - start: ");
+					PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)node->en_addr);
+					PRINT_YA(", end: ");
+					PRINTF_BA("0x%" PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
+					PRINT_YA(", size: ");
+					PRINTF_BA("0x%08" PFMT64x "\n", cnksz);
+					rz_io_read_at(core->io, (ut64)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof(extent_node_t));
 				}
 			}
-			free (ar);
-			free (head);
-			free (node);
-		break;
-        	}
-        case '*':
-		{
-			int i = 0;
-			ut64 sym;
-			GHT arenas = GHT_MAX, arena = GHT_MAX;
-			arena_t *ar = RZ_NEW0 (arena_t);
-			extent_node_t *node = RZ_NEW0 (extent_node_t);
-			extent_node_t *head = RZ_NEW0 (extent_node_t);
-
-			if (!node || !head) {
-				eprintf ("Error calling calloc\n");
-				free (ar);
-				free (node);
-				free (head);
-				return;
-			}
-
-			input += 1;
-
-			if (GH(rz_resolve_jemalloc) (core, "je_arenas", &sym)) {
-				rz_io_read_at (core->io, sym, (ut8 *)&arenas, sizeof (GHT));
-				for (;;) {
-					rz_io_read_at (core->io, arenas + i * sizeof (GHT), (ut8 *)&arena, sizeof (GHT));
-					if (!arena) {
-						break;
-					}
-					PRINTF_GA ("arenas[%d]: @ 0x%"PFMTx" { \n", i++, (GHT)arena);
-					rz_io_read_at (core->io, arena, (ut8 *)ar, sizeof (arena_t));
-					rz_io_read_at (core->io, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof (extent_node_t));
-					if (head->en_addr != 0) {
-						PRINT_YA ("   Chunk - start: ");
-						PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
-						PRINT_YA (", end: ");
-						PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
-						PRINT_YA (", size: ");
-						PRINTF_BA ("0x%08"PFMT64x"\n", (ut64)cnksz);
-						ut64 addr = (ut64) (size_t)head->ql_link.qre_next;
-						rz_io_read_at (core->io, addr, (ut8 *)node, sizeof (extent_node_t));
-						while (node && head && node->en_addr != head->en_addr) {
-							PRINT_YA ("   Chunk - start: ");
-							PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
-							PRINT_YA (", end: ");
-							PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
-							PRINT_YA (", size: ");
-							PRINTF_BA ("0x%"PFMT64x"\n", cnksz);
-							rz_io_read_at (core->io, (GHT)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
-						}
-					}
-					PRINT_GA ("}\n");
-				}
-			}
-			free (ar);
-			free (head);
-			free (node);
 		}
+		free(ar);
+		free(head);
+		free(node);
 		break;
+	}
+	case '*': {
+		int i = 0;
+		ut64 sym;
+		GHT arenas = GHT_MAX, arena = GHT_MAX;
+		arena_t *ar = RZ_NEW0(arena_t);
+		extent_node_t *node = RZ_NEW0(extent_node_t);
+		extent_node_t *head = RZ_NEW0(extent_node_t);
+
+		if (!node || !head) {
+			eprintf("Error calling calloc\n");
+			free(ar);
+			free(node);
+			free(head);
+			return;
+		}
+
+		if (GH(rz_resolve_jemalloc)(core, "je_arenas", &sym)) {
+			rz_io_read_at(core->io, sym, (ut8 *)&arenas, sizeof(GHT));
+			for (;;) {
+				rz_io_read_at(core->io, arenas + i * sizeof(GHT), (ut8 *)&arena, sizeof(GHT));
+				if (!arena) {
+					break;
+				}
+				PRINTF_GA("arenas[%d]: @ 0x%" PFMTx " { \n", i++, (GHT)arena);
+				rz_io_read_at(core->io, arena, (ut8 *)ar, sizeof(arena_t));
+				rz_io_read_at(core->io, (GHT)(size_t)ar->achunks.qlh_first, (ut8 *)head, sizeof(extent_node_t));
+				if (head->en_addr != 0) {
+					PRINT_YA("   Chunk - start: ");
+					PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)head->en_addr);
+					PRINT_YA(", end: ");
+					PRINTF_BA("0x%" PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
+					PRINT_YA(", size: ");
+					PRINTF_BA("0x%08" PFMT64x "\n", (ut64)cnksz);
+					ut64 addr = (ut64)(size_t)head->ql_link.qre_next;
+					rz_io_read_at(core->io, addr, (ut8 *)node, sizeof(extent_node_t));
+					while (node && head && node->en_addr != head->en_addr) {
+						PRINT_YA("   Chunk - start: ");
+						PRINTF_BA("0x%08" PFMT64x, (ut64)(size_t)node->en_addr);
+						PRINT_YA(", end: ");
+						PRINTF_BA("0x%" PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
+						PRINT_YA(", size: ");
+						PRINTF_BA("0x%" PFMT64x "\n", cnksz);
+						rz_io_read_at(core->io, (GHT)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof(extent_node_t));
+					}
+				}
+				PRINT_GA("}\n");
+			}
+		}
+		free(ar);
+		free(head);
+		free(node);
+	} break;
 	}
 }
 
@@ -228,98 +223,98 @@ static void GH(jemalloc_print_narenas)(RzCore *core, const char *input) {
 	ut64 symaddr;
 	ut64 arenas;
 	GHT arena = GHT_MAX;
-	arena_t *ar = RZ_NEW0 (arena_t);
+	arena_t *ar = RZ_NEW0(arena_t);
 	if (!ar) {
 		return;
 	}
-	arena_stats_t *stats = RZ_NEW0 (arena_stats_t);
+	arena_stats_t *stats = RZ_NEW0(arena_stats_t);
 	if (!stats) {
-		free (ar);
+		free(ar);
 		return;
 	}
 	int i = 0;
 	GHT narenas = 0;
-	RzConsPrintablePalette *pal = &rz_cons_singleton ()->context->pal;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	switch (input[0]) {
 	case '\0':
 		if (GH(rz_resolve_jemalloc)(core, "narenas_total", &symaddr)) {
-			rz_io_read_at (core->io, symaddr, (ut8 *)&narenas, sizeof (GHT));
-			PRINTF_GA ("narenas : %"PFMT64d"\n", (ut64)narenas);
+			rz_io_read_at(core->io, symaddr, (ut8 *)&narenas, sizeof(GHT));
+			PRINTF_GA("narenas : %" PFMT64d "\n", (ut64)narenas);
 		}
 		if (narenas == 0) {
-			eprintf ("No arenas allocated.\n");
-			free (stats);
-			free (ar);
+			eprintf("No arenas allocated.\n");
+			free(stats);
+			free(ar);
 			return;
 		}
 		if (narenas == GHT_MAX) {
-			eprintf ("Cannot find narenas_total\n");
-			free (stats);
-			free (ar);
+			eprintf("Cannot find narenas_total\n");
+			free(stats);
+			free(ar);
 			return;
 		}
 
 		if (GH(rz_resolve_jemalloc)(core, "je_arenas", &arenas)) {
-			rz_io_read_at (core->io, arenas, (ut8 *)&arenas, sizeof (GHT));
-			PRINTF_GA ("arenas[%"PFMT64d"] @ 0x%"PFMT64x" {\n", (ut64)narenas, (ut64)arenas);
+			rz_io_read_at(core->io, arenas, (ut8 *)&arenas, sizeof(GHT));
+			PRINTF_GA("arenas[%" PFMT64d "] @ 0x%" PFMT64x " {\n", (ut64)narenas, (ut64)arenas);
 			for (i = 0; i < narenas; i++) {
-				ut64 at = arenas + (i * sizeof (GHT));
-				rz_io_read_at (core->io, at, (ut8 *)&arena, sizeof (GHT));
+				ut64 at = arenas + (i * sizeof(GHT));
+				rz_io_read_at(core->io, at, (ut8 *)&arena, sizeof(GHT));
 				if (!arena) {
-					PRINTF_YA ("  arenas[%d]: (empty)\n", i);
+					PRINTF_YA("  arenas[%d]: (empty)\n", i);
 					continue;
 				}
-				PRINTF_YA ("  arenas[%d]: ", i);
-				PRINTF_BA ("@ 0x%"PFMT64x"\n", at);
+				PRINTF_YA("  arenas[%d]: ", i);
+				PRINTF_BA("@ 0x%" PFMT64x "\n", at);
 			}
 		}
-		PRINT_GA ("}\n");
+		PRINT_GA("}\n");
 		break;
 	case ' ':
-		arena = rz_num_math (core->num, input + 1);
-		rz_io_read_at (core->io, (GHT)arena, (ut8 *)ar, sizeof (arena_t));
+		arena = rz_num_math(core->num, input + 1);
+		rz_io_read_at(core->io, (GHT)arena, (ut8 *)ar, sizeof(arena_t));
 
-		PRINT_GA ("struct arena_s {\n");
-#define OO(x) (ut64)(arena + rz_offsetof (arena_t, x))
-		PRINTF_BA ("  ind = 0x%x\n", ar->ind);
-		PRINTF_BA ("  nthreads: application allocation = 0x%"PFMT64x"\n", (ut64)ar->nthreads[0]);
-		PRINTF_BA ("  nthreads: internal metadata allocation = 0x%"PFMT64x"\n", (ut64)ar->nthreads[1]);
-		PRINTF_BA ("  lock = 0x%"PFMT64x"\n", OO(lock));
-		PRINTF_BA ("  stats = 0x%"PFMT64x"\n", OO(stats));
-		PRINTF_BA ("  tcache_ql = 0x%"PFMT64x"\n", OO(tcache_ql));
-		PRINTF_BA ("  prof_accumbytes = 0x%"PFMT64x"x\n", (ut64)ar->prof_accumbytes);
-		PRINTF_BA ("  offset_state = 0x%"PFMT64x"\n", (ut64)ar->offset_state);
-		PRINTF_BA ("  dss_prec_t = 0x%"PFMT64x"\n",OO(dss_prec));
-		PRINTF_BA ("  achunks = 0x%"PFMT64x"\n", OO(achunks));
-		PRINTF_BA ("  extent_sn_next = 0x%"PFMT64x"\n", (ut64)(size_t)ar->extent_sn_next);
-		PRINTF_BA ("  spare = 0x%"PFMT64x"\n", (ut64)(size_t)ar->spare);
-		PRINTF_BA ("  lg_dirty_mult = 0x%"PFMT64x"\n", (ut64)(ssize_t)ar->lg_dirty_mult);
-		PRINTF_BA ("  purging = %s\n", rz_str_bool (ar->purging));
-		PRINTF_BA ("  nactive = 0x%"PFMT64x"\n", (ut64)(size_t)ar->nactive);
-		PRINTF_BA ("  ndirty = 0x%"PFMT64x"\n", (ut64)(size_t)ar->ndirty);
+		PRINT_GA("struct arena_s {\n");
+#define OO(x) (ut64)(arena + rz_offsetof(arena_t, x))
+		PRINTF_BA("  ind = 0x%x\n", ar->ind);
+		PRINTF_BA("  nthreads: application allocation = 0x%" PFMT64x "\n", (ut64)ar->nthreads[0]);
+		PRINTF_BA("  nthreads: internal metadata allocation = 0x%" PFMT64x "\n", (ut64)ar->nthreads[1]);
+		PRINTF_BA("  lock = 0x%" PFMT64x "\n", OO(lock));
+		PRINTF_BA("  stats = 0x%" PFMT64x "\n", OO(stats));
+		PRINTF_BA("  tcache_ql = 0x%" PFMT64x "\n", OO(tcache_ql));
+		PRINTF_BA("  prof_accumbytes = 0x%" PFMT64x "x\n", (ut64)ar->prof_accumbytes);
+		PRINTF_BA("  offset_state = 0x%" PFMT64x "\n", (ut64)ar->offset_state);
+		PRINTF_BA("  dss_prec_t = 0x%" PFMT64x "\n", OO(dss_prec));
+		PRINTF_BA("  achunks = 0x%" PFMT64x "\n", OO(achunks));
+		PRINTF_BA("  extent_sn_next = 0x%" PFMT64x "\n", (ut64)(size_t)ar->extent_sn_next);
+		PRINTF_BA("  spare = 0x%" PFMT64x "\n", (ut64)(size_t)ar->spare);
+		PRINTF_BA("  lg_dirty_mult = 0x%" PFMT64x "\n", (ut64)(ssize_t)ar->lg_dirty_mult);
+		PRINTF_BA("  purging = %s\n", rz_str_bool(ar->purging));
+		PRINTF_BA("  nactive = 0x%" PFMT64x "\n", (ut64)(size_t)ar->nactive);
+		PRINTF_BA("  ndirty = 0x%" PFMT64x "\n", (ut64)(size_t)ar->ndirty);
 
-		PRINTF_BA ("  runs_dirty = 0x%"PFMT64x"\n", OO(runs_dirty));
-		PRINTF_BA ("  chunks_cache = 0x%"PFMT64x"\n", OO(chunks_cache));
-		PRINTF_BA ("  huge = 0x%"PFMT64x"\n", OO(huge));
-		PRINTF_BA ("  huge_mtx = 0x%"PFMT64x"\n", OO(huge_mtx));
+		PRINTF_BA("  runs_dirty = 0x%" PFMT64x "\n", OO(runs_dirty));
+		PRINTF_BA("  chunks_cache = 0x%" PFMT64x "\n", OO(chunks_cache));
+		PRINTF_BA("  huge = 0x%" PFMT64x "\n", OO(huge));
+		PRINTF_BA("  huge_mtx = 0x%" PFMT64x "\n", OO(huge_mtx));
 
-		PRINTF_BA ("  chunks_szsnad_cached = 0x%"PFMT64x"\n", OO(chunks_szsnad_cached));
-		PRINTF_BA ("  chunks_ad_cached = 0x%"PFMT64x"\n", OO(chunks_ad_cached));
-		PRINTF_BA ("  chunks_szsnad_retained = 0x%"PFMT64x"\n", OO(chunks_szsnad_retained));
-		PRINTF_BA ("  chunks_ad_cached = 0x%"PFMT64x"\n", OO(chunks_ad_retained));
+		PRINTF_BA("  chunks_szsnad_cached = 0x%" PFMT64x "\n", OO(chunks_szsnad_cached));
+		PRINTF_BA("  chunks_ad_cached = 0x%" PFMT64x "\n", OO(chunks_ad_cached));
+		PRINTF_BA("  chunks_szsnad_retained = 0x%" PFMT64x "\n", OO(chunks_szsnad_retained));
+		PRINTF_BA("  chunks_ad_cached = 0x%" PFMT64x "\n", OO(chunks_ad_retained));
 
-		PRINTF_BA ("  chunks_mtx = 0x%"PFMT64x"\n", OO(chunks_mtx));
-		PRINTF_BA ("  node_cache = 0x%"PFMT64x"\n", OO(node_cache));
-		PRINTF_BA ("  node_cache_mtx = 0x%"PFMT64x"\n", OO(node_cache_mtx));
-		PRINTF_BA ("  chunks_hooks = 0x%"PFMT64x"\n", OO(chunk_hooks));
-		PRINTF_BA ("  bins = %d 0x%"PFMT64x"\n", JM_NBINS, OO(bins));
-		PRINTF_BA ("  runs_avail = %d 0x%"PFMT64x"\n", NPSIZES, OO(runs_avail));
-		PRINT_GA ("}\n");
+		PRINTF_BA("  chunks_mtx = 0x%" PFMT64x "\n", OO(chunks_mtx));
+		PRINTF_BA("  node_cache = 0x%" PFMT64x "\n", OO(node_cache));
+		PRINTF_BA("  node_cache_mtx = 0x%" PFMT64x "\n", OO(node_cache_mtx));
+		PRINTF_BA("  chunks_hooks = 0x%" PFMT64x "\n", OO(chunk_hooks));
+		PRINTF_BA("  bins = %d 0x%" PFMT64x "\n", JM_NBINS, OO(bins));
+		PRINTF_BA("  runs_avail = %d 0x%" PFMT64x "\n", NPSIZES, OO(runs_avail));
+		PRINT_GA("}\n");
 		break;
 	}
-	free (ar);
-	free (stats);
+	free(ar);
+	free(stats);
 }
 
 static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
@@ -329,55 +324,55 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 	GHT arena = GHT_MAX; //, bin = GHT_MAX;
 	arena_t *ar = NULL;
 	arena_bin_info_t *b = NULL;
-	RzConsPrintablePalette *pal = &rz_cons_singleton ()->context->pal;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	switch (input[0]) {
 	case ' ':
-		ar = RZ_NEW0 (arena_t);
+		ar = RZ_NEW0(arena_t);
 		if (!ar) {
 			break;
 		}
-		b = RZ_NEW0 (arena_bin_info_t);
+		b = RZ_NEW0(arena_bin_info_t);
 		if (!b) {
 			break;
 		}
 		if (!GH(rz_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
-			eprintf ("Error resolving je_arena_bin_info\n");
-			RZ_FREE (b);
+			eprintf("Error resolving je_arena_bin_info\n");
+			RZ_FREE(b);
 			break;
 		}
 		if (GH(rz_resolve_jemalloc)(core, "je_arenas", &arenas)) {
-			rz_io_read_at (core->io, arenas, (ut8 *)&arenas, sizeof (GHT));
-			PRINTF_GA ("arenas @ 0x%"PFMTx" {\n", (GHT)arenas);
+			rz_io_read_at(core->io, arenas, (ut8 *)&arenas, sizeof(GHT));
+			PRINTF_GA("arenas @ 0x%" PFMTx " {\n", (GHT)arenas);
 			for (;;) {
-				rz_io_read_at (core->io, arenas + i * sizeof (GHT), (ut8 *)&arena, sizeof (GHT));
+				rz_io_read_at(core->io, arenas + i * sizeof(GHT), (ut8 *)&arena, sizeof(GHT));
 				if (!arena) {
-					RZ_FREE (b);
+					RZ_FREE(b);
 					break;
 				}
-				PRINTF_YA ("   arenas[%d]: ", i++);
-				PRINTF_BA ("@ 0x%"PFMTx, (GHT)arena);
-				PRINT_YA (" {\n");
-				rz_io_read_at (core->io, arena, (ut8 *)ar, sizeof (arena_t));
+				PRINTF_YA("   arenas[%d]: ", i++);
+				PRINTF_BA("@ 0x%" PFMTx, (GHT)arena);
+				PRINT_YA(" {\n");
+				rz_io_read_at(core->io, arena, (ut8 *)ar, sizeof(arena_t));
 				for (j = 0; j < JM_NBINS; j++) {
-					rz_io_read_at (core->io, (GHT)(bin_info + j * sizeof (arena_bin_info_t)),
-						(ut8*)b, sizeof (arena_bin_info_t));
-					PRINT_YA ("    {\n");
-					PRINT_YA ("       regsize : ");
-					PRINTF_BA ("0x%zx\n", b->reg_size);
-					PRINT_YA ("       redzone size ");
-					PRINTF_BA ("0x%zx\n", b->redzone_size);
-					PRINT_YA ("       reg_interval : ");
-					PRINTF_BA ("0x%zx\n", b->reg_interval);
-					PRINT_YA ("       run_size : ");
-					PRINTF_BA ("0x%zx\n", b->run_size);
-					PRINT_YA ("       nregs : ");
-					PRINTF_BA ("0x%x\n", b->nregs);
+					rz_io_read_at(core->io, (GHT)(bin_info + j * sizeof(arena_bin_info_t)),
+						(ut8 *)b, sizeof(arena_bin_info_t));
+					PRINT_YA("    {\n");
+					PRINT_YA("       regsize : ");
+					PRINTF_BA("0x%zx\n", b->reg_size);
+					PRINT_YA("       redzone size ");
+					PRINTF_BA("0x%zx\n", b->redzone_size);
+					PRINT_YA("       reg_interval : ");
+					PRINTF_BA("0x%zx\n", b->reg_interval);
+					PRINT_YA("       run_size : ");
+					PRINTF_BA("0x%zx\n", b->run_size);
+					PRINT_YA("       nregs : ");
+					PRINTF_BA("0x%x\n", b->nregs);
 					// FIXME: It's a structure of bitmap_info_t
 					//PRINT_YA ("       bitmap_info : ");
 					//PRINTF_BA ("0x%"PFMT64x"\n", b->bitmap_info);
-					PRINT_YA ("       reg0_offset : ");
-					PRINTF_BA ("0x%"PFMT64x"\n\n", (ut64)b->reg0_offset);
+					PRINT_YA("       reg0_offset : ");
+					PRINTF_BA("0x%" PFMT64x "\n\n", (ut64)b->reg0_offset);
 					// FIXME: It's a structure of malloc_mutex_t
 					//PRINTF_YA ("       bins[%d]->lock ", j);
 					//PRINTF_BA ("= 0x%"PFMT64x"\n", ar->bins[j].lock);
@@ -390,16 +385,16 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 					// FIXME: It's a structure of malloc_bin_stats_t
 					//PRINTF_YA ("       bins[%d]->stats ", j);
 					//PRINTF_BA ("= 0x%"PFMTx"\n", ar->bins[j].stats);
-					PRINT_YA ("    }\n");
+					PRINT_YA("    }\n");
 				}
-				PRINT_YA ("  }\n");
+				PRINT_YA("  }\n");
 			}
 		}
-		PRINT_GA ("}\n");
+		PRINT_GA("}\n");
 		break;
 	}
-	free (ar);
-	free (b);
+	free(ar);
+	free(b);
 }
 
 #if 0
@@ -504,18 +499,21 @@ static int GH(cmd_dbg_map_jemalloc)(RzCore *core, const char *input) {
 
 	switch (input[0]) {
 	case '?':
-		rz_core_cmd_help (core, help_msg);
+		rz_core_cmd_help(core, help_msg);
 		break;
 	case 'a': //dmha
-		GH(jemalloc_print_narenas) (core, input + 1);
+		GH(jemalloc_print_narenas)
+		(core, input + 1);
 		break;
 	case 'b': //dmhb
-		GH(jemalloc_get_bins) (core, input + 1);
+		GH(jemalloc_get_bins)
+		(core, input + 1);
 		break;
 	case 'c': //dmhc
-		GH(jemalloc_get_chunks) (core, input + 1);
+		GH(jemalloc_get_chunks)
+		(core, input + 1);
 		break;
-	/*
+		/*
 	case 'r': //dmhr
 		GH(jemalloc_get_runs) (core, input + 1);
 		break;
@@ -523,4 +521,3 @@ static int GH(cmd_dbg_map_jemalloc)(RzCore *core, const char *input) {
 	}
 	return 0;
 }
-

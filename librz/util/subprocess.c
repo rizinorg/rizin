@@ -19,20 +19,22 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 		sz = 4096;
 	}
 	char name[MAX_PATH];
-	snprintf (name, sizeof (name), "\\\\.\\pipe\\rz_test-subproc.%d.%ld", (int)GetCurrentProcessId (), (long)InterlockedIncrement (&pipe_id));
-	*pipe_read = CreateNamedPipeA (name, PIPE_ACCESS_INBOUND | read_mode, PIPE_TYPE_BYTE | PIPE_WAIT, 1, sz, sz, 120 * 1000, attrs);
+	snprintf(name, sizeof(name), "\\\\.\\pipe\\rz_test-subproc.%d.%ld", (int)GetCurrentProcessId(), (long)InterlockedIncrement(&pipe_id));
+	*pipe_read = CreateNamedPipeA(name, PIPE_ACCESS_INBOUND | read_mode, PIPE_TYPE_BYTE | PIPE_WAIT, 1, sz, sz, 120 * 1000, attrs);
 	if (!*pipe_read) {
 		return FALSE;
 	}
-	*pipe_write = CreateFileA (name, GENERIC_WRITE, 0, attrs, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | write_mode, NULL);
+	*pipe_write = CreateFileA(name, GENERIC_WRITE, 0, attrs, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | write_mode, NULL);
 	if (*pipe_write == INVALID_HANDLE_VALUE) {
-		CloseHandle (*pipe_read);
+		CloseHandle(*pipe_read);
 		return FALSE;
 	}
 	return true;
 }
 
-RZ_API bool rz_subprocess_init(void) { return true; }
+RZ_API bool rz_subprocess_init(void) {
+	return true;
+}
 RZ_API void rz_subprocess_fini(void) {}
 
 // Create an env block that inherits the current vars but overrides the given ones
@@ -40,23 +42,23 @@ static LPWCH override_env(const char *envvars[], const char *envvals[], size_t e
 	LPWCH ret = NULL;
 	LPWCH parent_env = NULL;
 	size_t i;
-	LPWSTR *wenvvars = calloc (env_size, sizeof (LPWSTR));
-	LPWSTR *wenvvals = calloc (env_size, sizeof (LPWSTR));
-	parent_env = GetEnvironmentStringsW ();
+	LPWSTR *wenvvars = calloc(env_size, sizeof(LPWSTR));
+	LPWSTR *wenvvals = calloc(env_size, sizeof(LPWSTR));
+	parent_env = GetEnvironmentStringsW();
 	if (!wenvvars || !wenvvals || !parent_env) {
 		goto error;
 	}
 
 	for (i = 0; i < env_size; i++) {
-		wenvvars[i] = rz_utf8_to_utf16 (envvars[i]);
-		wenvvals[i] = rz_utf8_to_utf16 (envvals[i]);
+		wenvvars[i] = rz_utf8_to_utf16(envvars[i]);
+		wenvvals[i] = rz_utf8_to_utf16(envvals[i]);
 		if (!wenvvars[i] || !wenvvals[i]) {
 			goto error;
 		}
 	}
 
 	RzVector buf;
-	rz_vector_init (&buf, sizeof (wchar_t), NULL, NULL);
+	rz_vector_init(&buf, sizeof(wchar_t), NULL, NULL);
 	LPWCH cur = parent_env;
 	while (true) {
 		LPWCH var_begin = cur;
@@ -73,9 +75,9 @@ static LPWCH override_env(const char *envvars[], const char *envvals[], size_t e
 		}
 		bool overridden = false;
 		for (i = 0; i < env_size; i++) {
-			size_t overlen = lstrlenW (wenvvars[i]);
+			size_t overlen = lstrlenW(wenvvars[i]);
 			size_t curlen = cur - var_begin;
-			if (overlen == curlen && !memcmp (var_begin, wenvvars[i], overlen)) {
+			if (overlen == curlen && !memcmp(var_begin, wenvvars[i], overlen)) {
 				overridden = true;
 				break;
 			}
@@ -84,7 +86,7 @@ static LPWCH override_env(const char *envvars[], const char *envvals[], size_t e
 			cur++;
 		}
 		if (!overridden) {
-			rz_vector_insert_range (&buf, buf.len, var_begin, cur - var_begin + 1);
+			rz_vector_insert_range(&buf, buf.len, var_begin, cur - var_begin + 1);
 		}
 		cur++;
 		if (!*cur) {
@@ -95,134 +97,134 @@ static LPWCH override_env(const char *envvars[], const char *envvals[], size_t e
 
 	wchar_t c;
 	for (i = 0; i < env_size; i++) {
-		rz_vector_insert_range (&buf, buf.len, wenvvars[i], lstrlenW (wenvvars[i]));
+		rz_vector_insert_range(&buf, buf.len, wenvvars[i], lstrlenW(wenvvars[i]));
 		c = L'=';
-		rz_vector_push (&buf, &c);
-		rz_vector_insert_range (&buf, buf.len, wenvvals[i], lstrlenW (wenvvals[i]));
+		rz_vector_push(&buf, &c);
+		rz_vector_insert_range(&buf, buf.len, wenvvals[i], lstrlenW(wenvvals[i]));
 		c = L'\0';
-		rz_vector_push (&buf, &c);
+		rz_vector_push(&buf, &c);
 	}
 	c = '\0';
-	rz_vector_push (&buf, &c);
+	rz_vector_push(&buf, &c);
 	ret = buf.a;
 
 error:
 	if (parent_env) {
-		FreeEnvironmentStringsW (parent_env);
+		FreeEnvironmentStringsW(parent_env);
 	}
 	for (i = 0; i < env_size; i++) {
 		if (wenvvars) {
-			free (wenvvars[i]);
+			free(wenvvars[i]);
 		}
 		if (wenvvals) {
-			free (wenvvals[i]);
+			free(wenvvals[i]);
 		}
 	}
-	free (wenvvars);
-	free (wenvvals);
+	free(wenvvars);
+	free(wenvvals);
 	return ret;
 }
 
 RZ_API RzSubprocess *rz_subprocess_start(
-		const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size) {
+	const char *file, const char *args[], size_t args_size,
+	const char *envvars[], const char *envvals[], size_t env_size) {
 	RzSubprocess *proc = NULL;
 	HANDLE stdin_read = NULL;
 	HANDLE stdout_write = NULL;
 	HANDLE stderr_write = NULL;
 
-	char **argv = calloc (args_size + 1, sizeof (char *));
+	char **argv = calloc(args_size + 1, sizeof(char *));
 	if (!argv) {
 		return NULL;
 	}
 	argv[0] = (char *)file;
 	if (args_size) {
-		memcpy (argv + 1, args, sizeof (char *) * args_size);
+		memcpy(argv + 1, args, sizeof(char *) * args_size);
 	}
-	char *cmdline = rz_str_format_msvc_argv (args_size + 1, argv);
-	free (argv);
+	char *cmdline = rz_str_format_msvc_argv(args_size + 1, argv);
+	free(argv);
 	if (!cmdline) {
 		return NULL;
 	}
 
-	proc = RZ_NEW0 (RzSubprocess);
+	proc = RZ_NEW0(RzSubprocess);
 	if (!proc) {
 		goto error;
 	}
 	proc->ret = -1;
 
 	SECURITY_ATTRIBUTES sattrs;
-	sattrs.nLength = sizeof (sattrs);
+	sattrs.nLength = sizeof(sattrs);
 	sattrs.bInheritHandle = TRUE;
 	sattrs.lpSecurityDescriptor = NULL;
 
-	if (!create_pipe_overlap (&proc->stdout_read, &stdout_write, &sattrs, 0, FILE_FLAG_OVERLAPPED, 0)) {
+	if (!create_pipe_overlap(&proc->stdout_read, &stdout_write, &sattrs, 0, FILE_FLAG_OVERLAPPED, 0)) {
 		proc->stdout_read = stdout_write = NULL;
 		goto error;
 	}
-	if (!SetHandleInformation (proc->stdout_read, HANDLE_FLAG_INHERIT, 0)) {
+	if (!SetHandleInformation(proc->stdout_read, HANDLE_FLAG_INHERIT, 0)) {
 		goto error;
 	}
-	if (!create_pipe_overlap (&proc->stderr_read, &stderr_write, &sattrs, 0, FILE_FLAG_OVERLAPPED, 0)) {
+	if (!create_pipe_overlap(&proc->stderr_read, &stderr_write, &sattrs, 0, FILE_FLAG_OVERLAPPED, 0)) {
 		proc->stdout_read = stderr_write = NULL;
 		goto error;
 	}
-	if (!SetHandleInformation (proc->stderr_read, HANDLE_FLAG_INHERIT, 0)) {
+	if (!SetHandleInformation(proc->stderr_read, HANDLE_FLAG_INHERIT, 0)) {
 		goto error;
 	}
-	if (!CreatePipe (&stdin_read, &proc->stdin_write, &sattrs, 0)) {
+	if (!CreatePipe(&stdin_read, &proc->stdin_write, &sattrs, 0)) {
 		stdin_read = proc->stdin_write = NULL;
 		goto error;
 	}
-	if (!SetHandleInformation (proc->stdin_write, HANDLE_FLAG_INHERIT, 0)) {
+	if (!SetHandleInformation(proc->stdin_write, HANDLE_FLAG_INHERIT, 0)) {
 		goto error;
 	}
 
 	PROCESS_INFORMATION proc_info = { 0 };
 	STARTUPINFOA start_info = { 0 };
-	start_info.cb = sizeof (start_info);
+	start_info.cb = sizeof(start_info);
 	start_info.hStdError = stderr_write;
 	start_info.hStdOutput = stdout_write;
 	start_info.hStdInput = stdin_read;
 	start_info.dwFlags |= STARTF_USESTDHANDLES;
 
-	LPWSTR env = override_env (envvars, envvals, env_size);
-	if (!CreateProcessA (NULL, cmdline,
-			NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
-			NULL, &start_info, &proc_info)) {
-		free (env);
-		eprintf ("CreateProcess failed: %#x\n", (int)GetLastError ());
+	LPWSTR env = override_env(envvars, envvals, env_size);
+	if (!CreateProcessA(NULL, cmdline,
+		    NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
+		    NULL, &start_info, &proc_info)) {
+		free(env);
+		eprintf("CreateProcess failed: %#x\n", (int)GetLastError());
 		goto error;
 	}
-	free (env);
+	free(env);
 
-	CloseHandle (proc_info.hThread);
+	CloseHandle(proc_info.hThread);
 	proc->proc = proc_info.hProcess;
 
 beach:
 	if (stdin_read) {
-		CloseHandle (stdin_read);
+		CloseHandle(stdin_read);
 	}
 	if (stdout_write) {
-		CloseHandle (stdout_write);
+		CloseHandle(stdout_write);
 	}
 	if (stderr_write) {
-		CloseHandle (stderr_write);
+		CloseHandle(stderr_write);
 	}
-	free (cmdline);
+	free(cmdline);
 	return proc;
 error:
 	if (proc) {
 		if (proc->stdin_write) {
-			CloseHandle (proc->stdin_write);
+			CloseHandle(proc->stdin_write);
 		}
 		if (proc->stdout_read) {
-			CloseHandle (proc->stdout_read);
+			CloseHandle(proc->stdout_read);
 		}
 		if (proc->stderr_read) {
-			CloseHandle (proc->stderr_read);
+			CloseHandle(proc->stderr_read);
 		}
-		free (proc);
+		free(proc);
 		proc = NULL;
 	}
 	goto beach;
@@ -230,20 +232,20 @@ error:
 
 RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 	OVERLAPPED stdout_overlapped = { 0 };
-	stdout_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+	stdout_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (!stdout_overlapped.hEvent) {
 		return false;
 	}
 	OVERLAPPED stderr_overlapped = { 0 };
-	stderr_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
+	stderr_overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (!stderr_overlapped.hEvent) {
-		CloseHandle (stdout_overlapped.hEvent);
+		CloseHandle(stdout_overlapped.hEvent);
 		return false;
 	}
 
 	ut64 timeout_us_abs = UT64_MAX;
 	if (timeout_ms != UT64_MAX) {
-		timeout_us_abs = rz_time_now_mono () + timeout_ms * RZ_USEC_PER_MSEC;
+		timeout_us_abs = rz_time_now_mono() + timeout_ms * RZ_USEC_PER_MSEC;
 	}
 
 	ut8 stdout_buf[0x500];
@@ -253,106 +255,105 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 	bool child_dead = false;
 
 #define DO_READ(which) \
-	if (!ReadFile (proc->which##_read, which##_buf, sizeof (which##_buf) - 1, NULL, &(which##_overlapped))) { \
-		if (GetLastError () != ERROR_IO_PENDING) { \
+	if (!ReadFile(proc->which##_read, which##_buf, sizeof(which##_buf) - 1, NULL, &(which##_overlapped))) { \
+		if (GetLastError() != ERROR_IO_PENDING) { \
 			/* EOF or some other error */ \
 			which##_eof = true; \
 		} \
 	}
 
-	DO_READ (stdout)
-	DO_READ (stderr)
+	DO_READ(stdout)
+	DO_READ(stderr)
 
 	RzVector handles;
-	rz_vector_init (&handles, sizeof (HANDLE), NULL, NULL);
+	rz_vector_init(&handles, sizeof(HANDLE), NULL, NULL);
 	while (true) {
-		rz_vector_clear (&handles);
+		rz_vector_clear(&handles);
 		size_t stdout_index = 0;
 		size_t stderr_index = 0;
 		size_t proc_index = 0;
 		if (!stdout_eof) {
 			stdout_index = handles.len;
-			rz_vector_push (&handles, &stdout_overlapped.hEvent);
+			rz_vector_push(&handles, &stdout_overlapped.hEvent);
 		}
 		if (!stderr_eof) {
 			stderr_index = handles.len;
-			rz_vector_push (&handles, &stderr_overlapped.hEvent);
+			rz_vector_push(&handles, &stderr_overlapped.hEvent);
 		}
 		if (!child_dead) {
 			proc_index = handles.len;
-			rz_vector_push (&handles, &proc->proc);
+			rz_vector_push(&handles, &proc->proc);
 		}
 
 		DWORD timeout = INFINITE;
 		if (timeout_us_abs != UT64_MAX) {
-			ut64 now = rz_time_now_mono ();
+			ut64 now = rz_time_now_mono();
 			if (now >= timeout_us_abs) {
 				return false;
 			}
 			timeout = (DWORD)((timeout_us_abs - now) / RZ_USEC_PER_MSEC);
 		}
-		DWORD signaled = WaitForMultipleObjects (handles.len, handles.a, FALSE, timeout);
+		DWORD signaled = WaitForMultipleObjects(handles.len, handles.a, FALSE, timeout);
 		if (!stdout_eof && signaled == stdout_index) {
 			DWORD r;
-			BOOL res = GetOverlappedResult (proc->stdout_read, &stdout_overlapped, &r, TRUE);
+			BOOL res = GetOverlappedResult(proc->stdout_read, &stdout_overlapped, &r, TRUE);
 			if (!res) {
 				stdout_eof = true;
 				continue;
 			}
 			stdout_buf[r] = '\0';
-			rz_str_remove_char (stdout_buf, '\r');
-			rz_strbuf_append (&proc->out, (const char *)stdout_buf);
-			ResetEvent (stdout_overlapped.hEvent);
-			DO_READ (stdout)
+			rz_str_remove_char(stdout_buf, '\r');
+			rz_strbuf_append(&proc->out, (const char *)stdout_buf);
+			ResetEvent(stdout_overlapped.hEvent);
+			DO_READ(stdout)
 			continue;
 		}
 		if (!stderr_eof && signaled == stderr_index) {
 			DWORD read;
-			BOOL res = GetOverlappedResult (proc->stderr_read, &stderr_overlapped, &read, TRUE);
+			BOOL res = GetOverlappedResult(proc->stderr_read, &stderr_overlapped, &read, TRUE);
 			if (!res) {
 				stderr_eof = true;
 				continue;
 			}
 			stderr_buf[read] = '\0';
-			rz_str_remove_char (stderr_buf, '\r');
-			rz_strbuf_append (&proc->err, (const char *)stderr_buf);
-			ResetEvent (stderr_overlapped.hEvent);
-			DO_READ (stderr);
+			rz_str_remove_char(stderr_buf, '\r');
+			rz_strbuf_append(&proc->err, (const char *)stderr_buf);
+			ResetEvent(stderr_overlapped.hEvent);
+			DO_READ(stderr);
 			continue;
 		}
 		if (!child_dead && signaled == proc_index) {
 			child_dead = true;
 			DWORD exit_code;
-			if (GetExitCodeProcess (proc->proc, &exit_code)) {
+			if (GetExitCodeProcess(proc->proc, &exit_code)) {
 				proc->ret = exit_code;
 			}
 			continue;
 		}
 		break;
 	}
-	rz_vector_clear (&handles);
-	CloseHandle (stdout_overlapped.hEvent);
-	CloseHandle (stderr_overlapped.hEvent);
+	rz_vector_clear(&handles);
+	CloseHandle(stdout_overlapped.hEvent);
+	CloseHandle(stderr_overlapped.hEvent);
 	return stdout_eof && stderr_eof && child_dead;
 }
 
 RZ_API void rz_subprocess_kill(RzSubprocess *proc) {
-	TerminateProcess (proc->proc, 255);
+	TerminateProcess(proc->proc, 255);
 }
 
 RZ_API void rz_subprocess_stdin_write(RzSubprocess *proc, const ut8 *buf, size_t buf_size) {
 	DWORD read;
-	WriteFile (proc->stdin_write, buf, buf_size, &read, NULL);
+	WriteFile(proc->stdin_write, buf, buf_size, &read, NULL);
 }
 
-
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
-	RzSubprocessOutput *out = RZ_NEW (RzSubprocessOutput);
+	RzSubprocessOutput *out = RZ_NEW(RzSubprocessOutput);
 	if (!out) {
 		return NULL;
 	}
-	out->out = rz_strbuf_drain_nofree (&proc->out);
-	out->err = rz_strbuf_drain_nofree (&proc->err);
+	out->out = rz_strbuf_drain_nofree(&proc->out);
+	out->err = rz_strbuf_drain_nofree(&proc->err);
 	out->ret = proc->ret;
 	return out;
 }
@@ -361,11 +362,11 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
-	CloseHandle (proc->stdin_write);
-	CloseHandle (proc->stdout_read);
-	CloseHandle (proc->stderr_read);
-	CloseHandle (proc->proc);
-	free (proc);
+	CloseHandle(proc->stdin_write);
+	CloseHandle(proc->stdout_read);
+	CloseHandle(proc->stderr_read);
+	CloseHandle(proc->proc);
+	free(proc);
 }
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
@@ -373,11 +374,11 @@ RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
 }
 
 RZ_API char *rz_subprocess_out(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree (&proc->out);
+	return rz_strbuf_drain_nofree(&proc->out);
 }
 
 RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree (&proc->err);
+	return rz_strbuf_drain_nofree(&proc->err);
 }
 #else // __WINDOWS__
 
@@ -401,28 +402,28 @@ static int sigchld_pipe[2];
 static RzThread *sigchld_thread;
 
 static void subprocess_lock(void) {
-	rz_th_lock_enter (subprocs_mutex);
+	rz_th_lock_enter(subprocs_mutex);
 }
 
 static void subprocess_unlock(void) {
-	rz_th_lock_leave (subprocs_mutex);
+	rz_th_lock_leave(subprocs_mutex);
 }
 
 static void handle_sigchld(int sig) {
 	ut8 b = 1;
-	write (sigchld_pipe[1], &b, 1);
+	rz_xwrite(sigchld_pipe[1], &b, 1);
 }
 
 static RzThreadFunctionRet sigchld_th(RzThread *th) {
 	while (true) {
 		ut8 b;
-		ssize_t rd = read (sigchld_pipe[0], &b, 1);
+		ssize_t rd = read(sigchld_pipe[0], &b, 1);
 		if (rd <= 0) {
 			if (rd < 0) {
 				if (errno == EINTR) {
 					continue;
 				}
-				perror ("read");
+				perror("read");
 			}
 			break;
 		}
@@ -431,11 +432,11 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 		}
 		while (true) {
 			int wstat;
-			pid_t pid = waitpid (-1, &wstat, WNOHANG);
+			pid_t pid = waitpid(-1, &wstat, WNOHANG);
 			if (pid <= 0)
 				break;
 
-			subprocess_lock ();
+			subprocess_lock();
 			void **it;
 			RzSubprocess *proc = NULL;
 			rz_pvector_foreach (&subprocs, it) {
@@ -446,18 +447,18 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 				}
 			}
 			if (!proc) {
-				subprocess_unlock ();
+				subprocess_unlock();
 				continue;
 			}
 
-			if (WIFEXITED (wstat)) {
-				proc->ret = WEXITSTATUS (wstat);
+			if (WIFEXITED(wstat)) {
+				proc->ret = WEXITSTATUS(wstat);
 			} else {
 				proc->ret = -1;
 			}
 			ut8 r = 0;
-			write (proc->killpipe[1], &r, 1);
-			subprocess_unlock ();
+			rz_xwrite(proc->killpipe[1], &r, 1);
+			subprocess_unlock();
 		}
 	}
 	return RZ_TH_STOP;
@@ -465,48 +466,48 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 
 RZ_API bool rz_subprocess_init(void) {
 	rz_pvector_init(&subprocs, NULL);
-	subprocs_mutex = rz_th_lock_new (true);
+	subprocs_mutex = rz_th_lock_new(true);
 	if (!subprocs_mutex) {
 		return false;
 	}
-	if (rz_sys_pipe (sigchld_pipe, true) == -1) {
-		perror ("pipe");
-		rz_th_lock_free (subprocs_mutex);
+	if (rz_sys_pipe(sigchld_pipe, true) == -1) {
+		perror("pipe");
+		rz_th_lock_free(subprocs_mutex);
 		return false;
 	}
-	sigchld_thread = rz_th_new (sigchld_th, NULL, 0);
+	sigchld_thread = rz_th_new(sigchld_th, NULL, 0);
 	if (!sigchld_thread) {
-		rz_sys_pipe_close (sigchld_pipe [0]);
-		rz_sys_pipe_close (sigchld_pipe [1]);
-		rz_th_lock_free (subprocs_mutex);
+		rz_sys_pipe_close(sigchld_pipe[0]);
+		rz_sys_pipe_close(sigchld_pipe[1]);
+		rz_th_lock_free(subprocs_mutex);
 		return false;
 	}
-	if (rz_sys_signal (SIGCHLD, handle_sigchld) < 0) {
-		rz_sys_pipe_close (sigchld_pipe [0]);
-		rz_sys_pipe_close (sigchld_pipe [1]);
-		rz_th_lock_free (subprocs_mutex);
+	if (rz_sys_signal(SIGCHLD, handle_sigchld) < 0) {
+		rz_sys_pipe_close(sigchld_pipe[0]);
+		rz_sys_pipe_close(sigchld_pipe[1]);
+		rz_th_lock_free(subprocs_mutex);
 		return false;
 	}
 	return true;
 }
 
 RZ_API void rz_subprocess_fini(void) {
-	rz_sys_signal (SIGCHLD, SIG_IGN);
+	rz_sys_signal(SIGCHLD, SIG_IGN);
 	ut8 b = 0;
-	write (sigchld_pipe[1], &b, 1);
-	rz_sys_pipe_close (sigchld_pipe [1]);
-	rz_th_wait (sigchld_thread);
-	rz_sys_pipe_close (sigchld_pipe [0]);
-	rz_th_free (sigchld_thread);
-	rz_pvector_clear (&subprocs);
-	rz_th_lock_free (subprocs_mutex);
+	rz_xwrite(sigchld_pipe[1], &b, 1);
+	rz_sys_pipe_close(sigchld_pipe[1]);
+	rz_th_wait(sigchld_thread);
+	rz_sys_pipe_close(sigchld_pipe[0]);
+	rz_th_free(sigchld_thread);
+	rz_pvector_clear(&subprocs);
+	rz_th_lock_free(subprocs_mutex);
 }
 
 extern char **environ;
 static char **create_child_env(const char *envvars[], const char *envvals[], size_t env_size) {
 	char **ep;
 	size_t i, new_env_size = env_size, size = 0;
-	size_t *positions = RZ_NEWS (size_t, env_size);
+	size_t *positions = RZ_NEWS(size_t, env_size);
 	for (i = 0; i < env_size; i++) {
 		positions[i] = SIZE_MAX;
 	}
@@ -518,8 +519,8 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 			if (positions[j] != SIZE_MAX) {
 				continue;
 			}
-			size_t namelen = strlen (envvars[j]);
-			if (!strncmp (*ep, envvars[j], namelen) && (*ep)[namelen] == '=') {
+			size_t namelen = strlen(envvars[j]);
+			if (!strncmp(*ep, envvars[j], namelen) && (*ep)[namelen] == '=') {
 				positions[j] = size;
 				new_env_size--;
 				break;
@@ -527,173 +528,176 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 		}
 	}
 
-	char **new_env = RZ_NEWS (char *, size + new_env_size + 1);
+	char **new_env = RZ_NEWS(char *, size + new_env_size + 1);
 	for (i = 0; i < size; i++) {
-		new_env[i] = strdup (environ[i]);
+		new_env[i] = strdup(environ[i]);
 	}
 	for (i = 0; i <= env_size; i++) {
 		new_env[size + i] = NULL;
 	}
 
 	for (i = 0; i < env_size; i++) {
-		char *new_var = rz_str_newf ("%s=%s", envvars[i], envvals[i]);
+		char *new_var = rz_str_newf("%s=%s", envvars[i], envvals[i]);
 		if (positions[i] == SIZE_MAX) {
 			// No env var exists with the same name, add it at the end
-			free (new_env[size]);
+			free(new_env[size]);
 			new_env[size++] = new_var;
 		} else {
 			// Replace the existing env var
-			free (new_env[positions[i]]);
+			free(new_env[positions[i]]);
 			new_env[positions[i]] = new_var;
 		}
 	}
-	free (positions);
+	free(positions);
 	return new_env;
 }
 
 static void destroy_child_env(char **child_env) {
 	char **ep;
 	for (ep = child_env; *ep; ep++) {
-		free (*ep);
+		free(*ep);
 	}
-	free (child_env);
+	free(child_env);
 }
 
 RZ_API RzSubprocess *rz_subprocess_start(
-		const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size) {
-	char **argv = calloc (args_size + 2, sizeof (char *));
+	const char *file, const char *args[], size_t args_size,
+	const char *envvars[], const char *envvals[], size_t env_size) {
+	char **argv = calloc(args_size + 2, sizeof(char *));
 	if (!argv) {
 		return NULL;
 	}
 	argv[0] = (char *)file;
 	if (args_size) {
-		memcpy (argv + 1, args, sizeof (char *) * args_size);
+		memcpy(argv + 1, args, sizeof(char *) * args_size);
 	}
 	// done by calloc: argv[args_size + 1] = NULL;
-	subprocess_lock ();
-	RzSubprocess *proc = RZ_NEW0 (RzSubprocess);
+	subprocess_lock();
+	RzSubprocess *proc = RZ_NEW0(RzSubprocess);
 	if (!proc) {
 		goto error;
 	}
 	proc->killpipe[0] = proc->killpipe[1] = -1;
 	proc->ret = -1;
-	rz_strbuf_init (&proc->out);
-	rz_strbuf_init (&proc->err);
+	rz_strbuf_init(&proc->out);
+	rz_strbuf_init(&proc->err);
 
-	if (rz_sys_pipe (proc->killpipe, true) == -1) {
-		perror ("pipe");
+	if (rz_sys_pipe(proc->killpipe, true) == -1) {
+		perror("pipe");
 		goto error;
 	}
-	if (fcntl (proc->killpipe[1], F_SETFL, O_NONBLOCK) < 0) {
-		perror ("fcntl");
+	if (fcntl(proc->killpipe[1], F_SETFL, O_NONBLOCK) < 0) {
+		perror("fcntl");
 		goto error;
 	}
 
 	int stdin_pipe[2] = { -1, -1 };
-	if (rz_sys_pipe (stdin_pipe, true) == -1) {
-		perror ("pipe");
+	if (rz_sys_pipe(stdin_pipe, true) == -1) {
+		perror("pipe");
 		goto error;
 	}
 	proc->stdin_fd = stdin_pipe[1];
 
 	int stdout_pipe[2] = { -1, -1 };
-	if (rz_sys_pipe (stdout_pipe, true) == -1) {
-		perror ("pipe");
+	if (rz_sys_pipe(stdout_pipe, true) == -1) {
+		perror("pipe");
 		goto error;
 	}
 	if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-		perror ("fcntl");
+		perror("fcntl");
 		goto error;
 	}
 	proc->stdout_fd = stdout_pipe[0];
 
 	int stderr_pipe[2] = { -1, -1 };
-	if (rz_sys_pipe (stderr_pipe, true) == -1) {
-		perror ("pipe");
+	if (rz_sys_pipe(stderr_pipe, true) == -1) {
+		perror("pipe");
 		goto error;
 	}
 	if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-		perror ("fcntl");
+		perror("fcntl");
 		goto error;
 	}
 	proc->stderr_fd = stderr_pipe[0];
 
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
-	char **child_env = create_child_env (envvars, envvals, env_size);
+	char **child_env = create_child_env(envvars, envvals, env_size);
 
-	proc->pid = rz_sys_fork ();
+	proc->pid = rz_sys_fork();
 	if (proc->pid == -1) {
 		// fail
-		perror ("fork");
+		perror("fork");
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
-		while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {}
-		rz_sys_pipe_close (stdin_pipe[0]);
-		rz_sys_pipe_close (stdin_pipe[1]);
-		while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
-		rz_sys_pipe_close (stdout_pipe[1]);
-		rz_sys_pipe_close (stdout_pipe[0]);
-		while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
-		rz_sys_pipe_close (stderr_pipe[1]);
-		rz_sys_pipe_close (stderr_pipe[0]);
+		while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
+		}
+		rz_sys_pipe_close(stdin_pipe[0]);
+		rz_sys_pipe_close(stdin_pipe[1]);
+		while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
+		}
+		rz_sys_pipe_close(stdout_pipe[1]);
+		rz_sys_pipe_close(stdout_pipe[0]);
+		while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
+		}
+		rz_sys_pipe_close(stderr_pipe[1]);
+		rz_sys_pipe_close(stderr_pipe[0]);
 
 		// Use the previously created environment
 		environ = child_env;
 
-		rz_sys_execvp (file, argv);
-		perror ("exec");
-		rz_sys_exit (-1, true);
+		rz_sys_execvp(file, argv);
+		perror("exec");
+		rz_sys_exit(-1, true);
 	}
-	destroy_child_env (child_env);
-	free (argv);
+	destroy_child_env(child_env);
+	free(argv);
 
-	rz_sys_pipe_close (stdin_pipe[0]);
-	rz_sys_pipe_close (stdout_pipe[1]);
-	rz_sys_pipe_close (stderr_pipe[1]);
+	rz_sys_pipe_close(stdin_pipe[0]);
+	rz_sys_pipe_close(stdout_pipe[1]);
+	rz_sys_pipe_close(stderr_pipe[1]);
 
-	rz_pvector_push (&subprocs, proc);
+	rz_pvector_push(&subprocs, proc);
 
-	subprocess_unlock ();
+	subprocess_unlock();
 
 	return proc;
 error:
-	free (argv);
+	free(argv);
 	if (proc && proc->killpipe[0] == -1) {
-		rz_sys_pipe_close (proc->killpipe[0]);
+		rz_sys_pipe_close(proc->killpipe[0]);
 	}
 	if (proc && proc->killpipe[1] == -1) {
-		rz_sys_pipe_close (proc->killpipe[1]);
+		rz_sys_pipe_close(proc->killpipe[1]);
 	}
-	free (proc);
+	free(proc);
 	if (stderr_pipe[0] != -1) {
-		rz_sys_pipe_close (stderr_pipe[0]);
+		rz_sys_pipe_close(stderr_pipe[0]);
 	}
 	if (stderr_pipe[1] != -1) {
-		rz_sys_pipe_close (stderr_pipe[1]);
+		rz_sys_pipe_close(stderr_pipe[1]);
 	}
 	if (stdout_pipe[0] != -1) {
-		rz_sys_pipe_close (stdout_pipe[0]);
+		rz_sys_pipe_close(stdout_pipe[0]);
 	}
 	if (stdout_pipe[1] != -1) {
-		rz_sys_pipe_close (stdout_pipe[1]);
+		rz_sys_pipe_close(stdout_pipe[1]);
 	}
 	if (stdin_pipe[0] != -1) {
-		rz_sys_pipe_close (stdin_pipe[0]);
+		rz_sys_pipe_close(stdin_pipe[0]);
 	}
 	if (stdin_pipe[1] != -1) {
-		rz_sys_pipe_close (stdin_pipe[1]);
+		rz_sys_pipe_close(stdin_pipe[1]);
 	}
-	subprocess_unlock ();
+	subprocess_unlock();
 	return NULL;
 }
 
 RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 	ut64 timeout_abs;
 	if (timeout_ms != UT64_MAX) {
-		timeout_abs = rz_time_now_mono () + timeout_ms * RZ_USEC_PER_MSEC;
+		timeout_abs = rz_time_now_mono() + timeout_ms * RZ_USEC_PER_MSEC;
 	}
 
 	int r = 0;
@@ -702,22 +706,22 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 	bool child_dead = false;
 	while (!stdout_eof || !stderr_eof || !child_dead) {
 		fd_set rfds;
-		FD_ZERO (&rfds);
+		FD_ZERO(&rfds);
 		int nfds = 0;
 		if (!stdout_eof) {
-			FD_SET (proc->stdout_fd, &rfds);
+			FD_SET(proc->stdout_fd, &rfds);
 			if (proc->stdout_fd > nfds) {
 				nfds = proc->stdout_fd;
 			}
 		}
 		if (!stderr_eof) {
-			FD_SET (proc->stderr_fd, &rfds);
+			FD_SET(proc->stderr_fd, &rfds);
 			if (proc->stderr_fd > nfds) {
 				nfds = proc->stderr_fd;
 			}
 		}
 		if (!child_dead) {
-			FD_SET (proc->killpipe[0], &rfds);
+			FD_SET(proc->killpipe[0], &rfds);
 			if (proc->killpipe[0] > nfds) {
 				nfds = proc->killpipe[0];
 			}
@@ -727,16 +731,16 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 		struct timeval timeout_s;
 		struct timeval *timeout = NULL;
 		if (timeout_ms != UT64_MAX) {
-			ut64 now = rz_time_now_mono ();
+			ut64 now = rz_time_now_mono();
 			if (now >= timeout_abs) {
 				break;
 			}
-			ut64 usec_diff = timeout_abs - rz_time_now_mono ();
+			ut64 usec_diff = timeout_abs - rz_time_now_mono();
 			timeout_s.tv_sec = usec_diff / RZ_USEC_PER_SEC;
 			timeout_s.tv_usec = usec_diff % RZ_USEC_PER_SEC;
 			timeout = &timeout_s;
 		}
-		r = select (nfds, &rfds, NULL, NULL, timeout);
+		r = select(nfds, &rfds, NULL, NULL, timeout);
 		if (r < 0) {
 			if (errno == EINTR) {
 				continue;
@@ -745,32 +749,32 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 		}
 
 		bool timedout = true;
-		if (FD_ISSET (proc->stdout_fd, &rfds)) {
+		if (FD_ISSET(proc->stdout_fd, &rfds)) {
 			timedout = false;
 			char buf[0x500];
-			ssize_t sz = read (proc->stdout_fd, buf, sizeof (buf));
+			ssize_t sz = read(proc->stdout_fd, buf, sizeof(buf));
 			if (sz < 0) {
-				perror ("read");
+				perror("read");
 			} else if (sz == 0) {
 				stdout_eof = true;
 			} else {
-				rz_strbuf_append_n (&proc->out, buf, (int)sz);
+				rz_strbuf_append_n(&proc->out, buf, (int)sz);
 			}
 		}
-		if (FD_ISSET (proc->stderr_fd, &rfds)) {
+		if (FD_ISSET(proc->stderr_fd, &rfds)) {
 			timedout = false;
 			char buf[0x500];
-			ssize_t sz = read (proc->stderr_fd, buf, sizeof (buf));
+			ssize_t sz = read(proc->stderr_fd, buf, sizeof(buf));
 			if (sz < 0) {
-				perror ("read");
+				perror("read");
 				continue;
 			} else if (sz == 0) {
 				stderr_eof = true;
 			} else {
-				rz_strbuf_append_n (&proc->err, buf, (int)sz);
+				rz_strbuf_append_n(&proc->err, buf, (int)sz);
 			}
 		}
-		if (FD_ISSET (proc->killpipe[0], &rfds)) {
+		if (FD_ISSET(proc->killpipe[0], &rfds)) {
 			timedout = false;
 			child_dead = true;
 		}
@@ -779,33 +783,33 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 		}
 	}
 	if (r < 0) {
-		perror ("select");
+		perror("select");
 	}
-	subprocess_lock ();
-	subprocess_unlock ();
+	subprocess_lock();
+	subprocess_unlock();
 	return child_dead;
 }
 
 RZ_API void rz_subprocess_kill(RzSubprocess *proc) {
-	kill (proc->pid, SIGKILL);
+	kill(proc->pid, SIGKILL);
 }
 
 RZ_API void rz_subprocess_stdin_write(RzSubprocess *proc, const ut8 *buf, size_t buf_size) {
-	write (proc->stdin_fd, buf, buf_size);
-	rz_sys_pipe_close (proc->stdin_fd);
+	rz_xwrite(proc->stdin_fd, buf, buf_size);
+	rz_sys_pipe_close(proc->stdin_fd);
 	proc->stdin_fd = -1;
 }
 
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
-	subprocess_lock ();
-	RzSubprocessOutput *out = RZ_NEW (RzSubprocessOutput);
+	subprocess_lock();
+	RzSubprocessOutput *out = RZ_NEW(RzSubprocessOutput);
 	if (out) {
-		out->out = rz_strbuf_drain_nofree (&proc->out);
-		out->err = rz_strbuf_drain_nofree (&proc->err);
+		out->out = rz_strbuf_drain_nofree(&proc->out);
+		out->err = rz_strbuf_drain_nofree(&proc->err);
 		out->ret = proc->ret;
 		out->timeout = false;
 	}
-	subprocess_unlock ();
+	subprocess_unlock();
 	return out;
 }
 
@@ -813,19 +817,19 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
-	subprocess_lock ();
-	rz_pvector_remove_data (&subprocs, proc);
-	subprocess_unlock ();
-	rz_strbuf_fini (&proc->out);
-	rz_strbuf_fini (&proc->err);
-	rz_sys_pipe_close (proc->killpipe[0]);
-	rz_sys_pipe_close (proc->killpipe[1]);
+	subprocess_lock();
+	rz_pvector_remove_data(&subprocs, proc);
+	subprocess_unlock();
+	rz_strbuf_fini(&proc->out);
+	rz_strbuf_fini(&proc->err);
+	rz_sys_pipe_close(proc->killpipe[0]);
+	rz_sys_pipe_close(proc->killpipe[1]);
 	if (proc->stdin_fd != -1) {
-		rz_sys_pipe_close (proc->stdin_fd);
+		rz_sys_pipe_close(proc->stdin_fd);
 	}
-	rz_sys_pipe_close (proc->stdout_fd);
-	rz_sys_pipe_close (proc->stderr_fd);
-	free (proc);
+	rz_sys_pipe_close(proc->stdout_fd);
+	rz_sys_pipe_close(proc->stderr_fd);
+	free(proc);
 }
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
@@ -833,11 +837,11 @@ RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
 }
 
 RZ_API char *rz_subprocess_out(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree (&proc->out);
+	return rz_strbuf_drain_nofree(&proc->out);
 }
 
 RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree (&proc->err);
+	return rz_strbuf_drain_nofree(&proc->err);
 }
 #endif
 
@@ -845,7 +849,7 @@ RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out) {
 	if (!out) {
 		return;
 	}
-	free (out->out);
-	free (out->err);
-	free (out);
+	free(out->out);
+	free(out->err);
+	free(out);
 }

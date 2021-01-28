@@ -59,7 +59,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				continue;
 			}
 		}
-		if (!strcmp (ops[i].op, argv[0])) {
+		if (!strcmp(ops[i].op, argv[0])) {
 			if (newstr) {
 				d = 0;
 				j = 0;
@@ -79,8 +79,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						}
 						const char *w = argv[idx];
 						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
+							strcpy(newstr + k, w);
+							k += strlen(w) - 1;
 						}
 					} else {
 						newstr[k] = ch;
@@ -88,8 +88,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				}
 				newstr[k] = '\0';
 			}
-			rz_str_replace_char (newstr, '{', '(');
-			rz_str_replace_char (newstr, '}', ')');
+			rz_str_replace_char(newstr, '{', '(');
+			rz_str_replace_char(newstr, '}', ')');
 			return true;
 		}
 	}
@@ -97,97 +97,97 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	newstr[0] = '\0';
 	for (i = 0; i < argc; i++) {
-		strcat (newstr, argv[i]);
-		strcat (newstr, (!i || i == argc - 1)? " " : ",");
+		strcat(newstr, argv[i]);
+		strcat(newstr, (!i || i == argc - 1) ? " " : ",");
 	}
 
-	rz_str_replace_char (newstr, '{', '(');
-	rz_str_replace_char (newstr, '}', ')');
+	rz_str_replace_char(newstr, '{', '(');
+	rz_str_replace_char(newstr, '}', ')');
 	return false;
 }
 
 static int parse(RzParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
-	int i, len = strlen (data), n;
+	int i, len = strlen(data), n;
 	char *buf, *ptr, *optr, *num;
 
-	if (len >= sizeof (w0)) {
+	if (len >= sizeof(w0)) {
 		return false;
 	}
 	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1))) {
+	if (!(buf = malloc(len + 1))) {
 		return false;
 	}
-	memcpy (buf, data, len + 1);
+	memcpy(buf, data, len + 1);
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
-		ptr = strchr (buf, ' ');
+		ptr = strchr(buf, ' ');
 		if (!ptr) {
-			ptr = strchr (buf, '\t');
+			ptr = strchr(buf, '\t');
 		}
 		if (ptr) {
 			*ptr = '\0';
 			for (++ptr; *ptr == ' '; ptr++) {
 				;
 			}
-			strncpy (w0, buf, sizeof (w0) - 1);
-			strncpy (w1, ptr, sizeof (w1) - 1);
+			strncpy(w0, buf, sizeof(w0) - 1);
+			strncpy(w1, ptr, sizeof(w1) - 1);
 
 			optr = ptr;
 			if (*ptr == '(') {
-				ptr = strchr (ptr+1, ')');
+				ptr = strchr(ptr + 1, ')');
 			}
 			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr+1, ']');
+				ptr = strchr(ptr + 1, ']');
 			}
 			if (ptr && *ptr == '{') {
-				ptr = strchr (ptr+1, '}');
+				ptr = strchr(ptr + 1, '}');
 			}
 			if (!ptr) {
-				eprintf ("Unbalanced bracket\n");
+				eprintf("Unbalanced bracket\n");
 				free(buf);
 				return false;
 			}
-			ptr = strchr (ptr, ',');
+			ptr = strchr(ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
 				for (++ptr; *ptr == ' '; ptr++) {
 					;
 				}
-				strncpy (w1, optr, sizeof (w1) - 1);
-				strncpy (w2, ptr, sizeof (w2) - 1);
+				strncpy(w1, optr, sizeof(w1) - 1);
+				strncpy(w2, ptr, sizeof(w2) - 1);
 				optr = ptr;
-				ptr = strchr (ptr, ',');
+				ptr = strchr(ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
 					for (++ptr; *ptr == ' '; ptr++) {
 						;
 					}
-					strncpy (w2, optr, sizeof (w2) - 1);
-					strncpy (w3, ptr, sizeof (w3) - 1);
+					strncpy(w2, optr, sizeof(w2) - 1);
+					strncpy(w3, ptr, sizeof(w3) - 1);
 				}
 			}
-			ptr = strchr (buf, '(');
+			ptr = strchr(buf, '(');
 			if (ptr) {
 				*ptr = 0;
-				num = (char*)rz_str_lchr (buf, ' ');
+				num = (char *)rz_str_lchr(buf, ' ');
 				if (!num) {
-					num = (char *)rz_str_lchr (buf, ',');
+					num = (char *)rz_str_lchr(buf, ',');
 				}
 				if (num) {
-					n = atoi (num + 1);
+					n = atoi(num + 1);
 					*ptr = '[';
-					rz_str_cpy (num + 1, ptr);
-					ptr = (char*)rz_str_lchr (buf, ']');
+					rz_str_cpy(num + 1, ptr);
+					ptr = (char *)rz_str_lchr(buf, ']');
 					if (n && ptr) {
-						char *rest = strdup (ptr + 1);
+						char *rest = strdup(ptr + 1);
 						size_t dist = len + 1 - (ptr - buf);
 						if (n > 0) {
-							snprintf (ptr, dist, "+%d]%s", n, rest);
+							snprintf(ptr, dist, "+%d]%s", n, rest);
 						} else {
-							snprintf (ptr, dist, "%d]%s", n, rest);
+							snprintf(ptr, dist, "%d]%s", n, rest);
 						}
-						free (rest);
+						free(rest);
 					}
 				} else {
 					*ptr = '[';
@@ -202,17 +202,17 @@ static int parse(RzParse *p, const char *data, char *str) {
 					nw++;
 				}
 			}
-			replace (nw, wa, str);
+			replace(nw, wa, str);
 		}
 	}
 	{
-		char *s = strdup (str);
-		s = rz_str_replace (s, "+ -", "- ", 1);
-		s = rz_str_replace (s, "- -", "+ ", 1);
-		strcpy (str, s);
-		free (s);
+		char *s = strdup(str);
+		s = rz_str_replace(s, "+ -", "- ", 1);
+		s = rz_str_replace(s, "- -", "+ ", 1);
+		strcpy(str, s);
+		free(s);
 	}
-	free (buf);
+	free(buf);
 	return true;
 }
 
@@ -226,5 +226,6 @@ RzParsePlugin rz_parse_plugin_riscv_pseudo = {
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_PARSE,
 	.data = &rz_parse_plugin_riscv_pseudo,
-	.version = RZ_VERSION};
+	.version = RZ_VERSION
+};
 #endif

@@ -11,15 +11,28 @@ void add_to_list(RTreeNode *n, RTreeVisitor *vis) {
 	rz_list_append(res, n->data);
 }
 
-#define check_list(act, exp, descr) do { \
+#define check_list(act, exp, descr) \
+	do { \
 		RzListIter *ita = rz_list_iterator(act); \
 		RzListIter *ite = rz_list_iterator(exp); \
 		while (rz_list_iter_next(ita) && rz_list_iter_next(ite)) { \
 			int a = (int)(intptr_t)rz_list_iter_get(ita); \
 			int e = (int)(intptr_t)rz_list_iter_get(ite); \
-			mu_assert_eq (a, e, descr); \
+			mu_assert_eq(a, e, descr); \
 		} \
-		mu_assert ("lists must have same elements", (!ita && !ite)); \
+		mu_assert("lists must have same elements", (!ita && !ite)); \
+	} while (0)
+
+#define check_str_list(act, exp, descr) \
+	do { \
+		RzListIter *ita = rz_list_iterator(act); \
+		RzListIter *ite = rz_list_iterator(exp); \
+		while (rz_list_iter_next(ita) && rz_list_iter_next(ite)) { \
+			char *a = rz_list_iter_get(ita); \
+			char *e = rz_list_iter_get(ite); \
+			mu_assert_streq(a, e, descr); \
+		} \
+		mu_assert("lists must have same elements", (!ita && !ite)); \
 	} while (0)
 
 bool test_rz_tree() {
@@ -30,7 +43,7 @@ bool test_rz_tree() {
 	calc.pre_visit = (RTreeNodeVisitCb)sum_node;
 	calc.data = (void *)0;
 
-	rz_tree_add_node (t, NULL, (void *)1);
+	rz_tree_add_node(t, NULL, (void *)1);
 	rz_tree_bfs(t, &calc);
 	mu_assert_eq(1, (int)(intptr_t)calc.data, "calc.data.root");
 
@@ -74,7 +87,6 @@ bool test_rz_tree() {
 	rz_list_free(exp2);
 	rz_list_free((RzList *)lister.data);
 
-
 	rz_tree_reset(t);
 	RTreeNode *root = rz_tree_add_node(t, NULL, "root");
 	RTreeNode *first = rz_tree_add_node(t, root, "first");
@@ -92,7 +104,7 @@ bool test_rz_tree() {
 	rz_list_append(exp3, "third");
 	lister.data = rz_list_new();
 	rz_tree_dfs(t, &lister);
-	check_list((RzList *)lister.data, exp3, "lister.reset.preorder");
+	check_str_list((RzList *)lister.data, exp3, "lister.reset.preorder");
 	rz_list_free(exp3);
 	rz_list_free((RzList *)lister.data);
 
@@ -105,4 +117,4 @@ int all_tests() {
 	return tests_passed != tests_run;
 }
 
-mu_main (all_tests)
+mu_main(all_tests)

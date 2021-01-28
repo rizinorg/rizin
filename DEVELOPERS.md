@@ -32,56 +32,22 @@ static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
 
 ### C
 
-In order to contribute with patches or plugins, we encourage you to
-use the same coding style as the rest of the code base.
+In order to contribute with patches or plugins, we encourage you to use the same
+coding style as the rest of the code base.
 
-* Tabs are used for indentation. In a switch statement, the
-  cases are indented at the switch level.
+* Use git-clang-format 11 to format your code. You should invoke it as below
+(after making sure that your local copy of `dev` is up-to-date and your branch
+is up-to-date with `dev`):
 
-```c
-switch(n) {
-case 1:
-	break;
-case 2:
-	break;
-default:
-}
+```bash
+git-clang-format-11 --extensions c,cpp,h,hpp,inc --style file dev
 ```
 
 * Lines should be at most 100 chars. A tab is considered as 8 chars. If it makes
   things more readable, you can use more than 100 characters, but this should be
   the exception, not the rule.
 
-* Braces open on the same line as the for/while/if/else/function/etc. Closing
-  braces are put on a line of their own, except in the else of an if statement
-  or in a while of a do-while statement. Always use braces for if and while.
-
-```c
-if (a == b) {
-	...
-}
-
-if (a == b) {
-	...
-} else if (a > b) {
-	...
-}
-
-if (a == b) {
-	...
-} else {
-	do_something_else ();
-}
-
-do {
-	do_something ();
-} while (cond);
-
-if (a == b) {
-	b = 3;
-}
-
-```
+* Always use braces for if and while.
 
 * In general, don't use goto. The goto statement only comes in handy when a
   function exits from multiple locations and some common work such as cleanup
@@ -98,9 +64,9 @@ if (a == b) {
   from user, etc.), and should be handled in the usual way through if-else.
 
 ```c
-int check(RCore *c, int a, int b) {
-	rz_return_val_if_fail (c, false);
-	rz_return_val_if_fail (a >= 0, b >= 1, false);
+int check(RzCore *c, int a, int b) {
+	rz_return_val_if_fail(c, false);
+	rz_return_val_if_fail(a >= 0 && b >= 1, false);
 
 	if (a == 0) {
 		/* do something */
@@ -108,24 +74,6 @@ int check(RCore *c, int a, int b) {
 	}
 	... /* do something else */
 }
-```
-
-* Use a space after most of the keyword and around operators.
-
-```c
-a = b + 3;
-a = (b << 3) * 5;
-```
-
-* Multiline ternary operator conditionals must be indented a-la JS way:
-
-```diff
-- ret = over ?
--         rz_debug_step_over (dbg, 1) :
--         rz_debug_step (dbg, 1);
-+ ret = over
-+         ? rz_debug_step_over (dbg, 1)
-+         : rz_debug_step (dbg, 1);
 ```
 
 * Split long conditional expressions into small `static inline` functions to make them more readable:
@@ -145,7 +93,7 @@ a = (b << 3) * 5;
         rz_list_foreach (bp->bps, iter, b) {
 -               if (addr >= b->addr && addr < (b->addr+b->size) && \
 -                       (!rwx || rwx&b->rwx))
-+               if (inRange (b, addr) && matchProt (b, rwx)) {
++               if (inRange(b, addr) && matchProt(b, rwx)) {
                         return b;
 +               }
         }
@@ -181,15 +129,9 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 3 warnings and 2 errors generated.
 ````
 
-* Do not leave trailing whitespaces at the end of line
-
 * Do not use `assert.h`, use `rz_util/rz_assert.h` instead.
 
 * You can use `export RZ_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
-
-* Do not use C99 variable declaration
-    - This way we reduce the number of local variables per function
-    and it's easier to find which variables are used, where and so on.
 
 * Function names should be explicit enough to not require a comment
   explaining what it does when seen elsewhere in code.
@@ -203,8 +145,6 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 * Do not write ultra-large functions: split them into multiple or simplify
   the algorithm, only external-copy-pasted-not-going-to-be-maintained code
   can be accepted in this way (gnu code, external disassemblers, etc..)
-
-* See `.clang-format` for automated indentation
 
 * Use the Rizin types instead of the ones in `<stdint.h>`, which are known to cause some
   portability issues. So, instead of `uint8_t`, use `ut8`, etc.. As a bonus point they
@@ -231,7 +171,7 @@ a single byte.
 
 It can seem very easy to write the following code:
 ```c
-ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
+ut8 opcode[4] = { 0x10, 0x20, 0x30, 0x40 };
 ut32 value = *(ut32*)opcode;
 ```
 ... and then continue to use "value" in the code to represent the opcode.
@@ -250,7 +190,7 @@ value stored in "value" might be 0x40302010 instead of 0x10203040.
 Use bitshifts and OR instructions to interpret bytes in a known endian.
 Instead of casting streams of bytes to larger width integers, do the following:
 ```c
-ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
+ut8 opcode[4] = { 0x10, 0x20, 0x30, 0x40 };
 ut32 value = opcode[0] | opcode[1] << 8 | opcode[2] << 16 | opcode[3] << 24;
 ```
 or if you prefer the other endian:
@@ -284,14 +224,14 @@ has a special helper macro - `RZ_PACKED()`. Instead of non-portable
 `#pragma pack` or `__attribute__((packed))` it is advised to use this macro
 instead. To wrap the code inside of it you just need to write:
 ```c
-RZ_PACKED (union mystruct {
+RZ_PACKED(union mystruct {
 	int a;
 	char b;
 })
 ```
 or in case of typedef:
 ```c
-RZ_PACKED (typedef structmystruct {
+RZ_PACKED(typedef structmystruct {
 	int a;
 	char b;
 })

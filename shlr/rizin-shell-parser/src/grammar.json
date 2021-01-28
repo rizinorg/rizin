@@ -376,10 +376,6 @@
         {
           "type": "SYMBOL",
           "name": "pipe_command"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "scr_tts_command"
         }
       ]
     },
@@ -530,27 +526,6 @@
           {
             "type": "STRING",
             "value": "|H"
-          }
-        ]
-      }
-    },
-    "scr_tts_command": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "FIELD",
-            "name": "command",
-            "content": {
-              "type": "SYMBOL",
-              "name": "_simple_command"
-            }
-          },
-          {
-            "type": "STRING",
-            "value": "|T"
           }
         ]
       }
@@ -3094,6 +3069,60 @@
       "type": "STRING",
       "value": "H>>"
     },
+    "_arg_with_paren": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "STRING",
+            "value": "("
+          },
+          "named": true,
+          "value": "arg_identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "args"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "STRING",
+            "value": ")"
+          },
+          "named": true,
+          "value": "arg_identifier"
+        }
+      ]
+    },
+    "_arg_brace_with_paren": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "STRING",
+            "value": "("
+          },
+          "named": true,
+          "value": "arg_identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_arg_brace"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "STRING",
+            "value": ")"
+          },
+          "named": true,
+          "value": "arg_identifier"
+        }
+      ]
+    },
     "_arg": {
       "type": "CHOICE",
       "members": [
@@ -3114,31 +3143,13 @@
           "name": "cmd_substitution_arg"
         },
         {
-          "type": "SEQ",
-          "members": [
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "STRING",
-                "value": "("
-              },
-              "named": true,
-              "value": "arg_identifier"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "args"
-            },
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "STRING",
-                "value": ")"
-              },
-              "named": true,
-              "value": "arg_identifier"
-            }
-          ]
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_arg_with_paren"
+          },
+          "named": true,
+          "value": "args"
         },
         {
           "type": "ALIAS",
@@ -3176,31 +3187,13 @@
           "name": "cmd_substitution_arg"
         },
         {
-          "type": "SEQ",
-          "members": [
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "STRING",
-                "value": "("
-              },
-              "named": true,
-              "value": "arg_identifier"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "_arg_brace"
-            },
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "STRING",
-                "value": ")"
-              },
-              "named": true,
-              "value": "arg_identifier"
-            }
-          ]
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_arg_brace_with_paren"
+          },
+          "named": true,
+          "value": "args"
         },
         {
           "type": "ALIAS",

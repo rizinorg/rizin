@@ -10,10 +10,10 @@ extern "C" {
 #endif
 
 /* Returns atoi(str) if signal with `str` name not found. */
-RZ_API int rz_signal_from_string (const char *str);
+RZ_API int rz_signal_from_string(const char *str);
 
 /* Return NULL if signal with `code` not found. */
-RZ_API const char* rz_signal_to_string (int code);
+RZ_API const char *rz_signal_to_string(int code);
 
 // XXX this function should be portable, not-unix specific
 #if __UNIX__

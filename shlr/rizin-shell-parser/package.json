@@ -1,5 +1,5 @@
 {
-  "name": "tree-sitter-r2cmd",
+  "name": "tree-sitter-rzcmd",
   "version": "1.0.0",
   "description": "Tree-Sitter grammar for parsing rizin commands",
   "main": "index.js",

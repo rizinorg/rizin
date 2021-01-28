@@ -3,7 +3,6 @@
 #include <rz_lib.h>
 #include <rz_crypto.h>
 
-
 struct rc4_state {
 	ut8 perm[256];
 	ut8 index1;
@@ -42,7 +41,7 @@ static bool rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) 
 	/* Randomize the permutation using key data */
 	for (j = i = 0; i < 256; i++) {
 		j += state->perm[i] + key[i % keylen];
-		swap_bytes (&state->perm[i], &state->perm[j]);
+		swap_bytes(&state->perm[i], &state->perm[j]);
 	}
 	return true;
 }
@@ -62,8 +61,8 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 		state->index1++;
 		state->index2 += state->perm[state->index1];
 		/* Modify permutation */
-		swap_bytes (&state->perm[state->index1],
-		    &state->perm[state->index2]);
+		swap_bytes(&state->perm[state->index1],
+			&state->perm[state->index2]);
 		/* Encrypt/decrypt next byte */
 		j = state->perm[state->index1] + state->perm[state->index2];
 		outbuf[i] = inbuf[i] ^ state->perm[j];
@@ -75,7 +74,7 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 static struct rc4_state st;
 
 static bool rc4_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	return rc4_init (&st, key, keylen);
+	return rc4_init(&st, key, keylen);
 }
 
 static int rc4_get_key_size(RzCrypto *cry) {
@@ -83,22 +82,22 @@ static int rc4_get_key_size(RzCrypto *cry) {
 }
 
 static bool rc4_use(const char *algo) {
-	return !strcmp (algo, "rc4");
+	return !strcmp(algo, "rc4");
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
-	ut8 *obuf = calloc (1, len);
+	ut8 *obuf = calloc(1, len);
 	if (!obuf) {
 		return false;
 	}
-	rc4_crypt (&st, buf, obuf, len);
-	rz_crypto_append (cry, obuf, len);
-	free (obuf);
+	rc4_crypt(&st, buf, obuf, len);
+	rz_crypto_append(cry, obuf, len);
+	free(obuf);
 	return false;
 }
 
 static bool final(RzCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+	return update(cry, buf, len);
 }
 
 RzCryptoPlugin rz_crypto_plugin_rc4 = {

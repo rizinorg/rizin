@@ -6,15 +6,15 @@
 #include <rz_bin.h>
 #include "pe/pemixed.h"
 
-static RzList * oneshotall(RzBin *bin, const ut8 *buf, ut64 size);
-static RzBinXtrData * oneshot(RzBin *bin, const ut8 *buf, ut64 size, int subbin_type);
+static RzList *oneshotall(RzBin *bin, const ut8 *buf, ut64 size);
+static RzBinXtrData *oneshot(RzBin *bin, const ut8 *buf, ut64 size, int subbin_type);
 
-static void free_xtr (void *xtr_obj) {
-	rz_bin_pemixed_free ((struct rz_bin_pemixed_obj_t*) xtr_obj);
+static void free_xtr(void *xtr_obj) {
+	rz_bin_pemixed_free((struct rz_bin_pemixed_obj_t *)xtr_obj);
 }
 
 static void destroy(RzBin *bin) {
-	free_xtr (bin->cur->xtr_obj);
+	free_xtr(bin->cur->xtr_obj);
 }
 
 static bool check_buffer(RzBuffer *b) {
@@ -47,30 +47,30 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 // TODO RzBufferify
-static RzList * oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
+static RzList *oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
 	//extract dos componenent first
-	RzBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS);
+	RzBinXtrData *data = oneshot(bin, buf, size, SUB_BIN_DOS);
 
 	if (!data) {
 		return NULL;
 	}
 	// XXX - how do we validate a valid narch?
-	RzList * res = rz_list_newf (rz_bin_xtrdata_free);
-	rz_list_append (res, data);
+	RzList *res = rz_list_newf(rz_bin_xtrdata_free);
+	rz_list_append(res, data);
 
-	if ((data = oneshot (bin, buf, size, SUB_BIN_NATIVE))){
-		rz_list_append (res, data);
+	if ((data = oneshot(bin, buf, size, SUB_BIN_NATIVE))) {
+		rz_list_append(res, data);
 	}
 
-	if ((data = oneshot (bin, buf, size, SUB_BIN_NET))){
-		rz_list_append (res, data);
+	if ((data = oneshot(bin, buf, size, SUB_BIN_NET))) {
+		rz_list_append(res, data);
 	}
 
 	return res;
 }
 
 //implement this later
-static void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, void *foo) {// struct Pe_32_rz_bin_pemixed_obj_t* pe_bin){
+static void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, void *foo) { // struct Pe_32_rz_bin_pemixed_obj_t* pe_bin){
 	meta->arch = NULL;
 	meta->bits = 0;
 	meta->machine = NULL;
@@ -81,32 +81,32 @@ static void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, void *foo) {// s
 }
 
 // XXX: ut8* should be RzBuffer *
-static RzBinXtrData * oneshot(RzBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
-	rz_return_val_if_fail (bin && bin->cur && buf, false);
+static RzBinXtrData *oneshot(RzBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
+	rz_return_val_if_fail(bin && bin->cur && buf, false);
 
 	if (!bin->cur->xtr_obj) {
-		bin->cur->xtr_obj = rz_bin_pemixed_from_bytes_new (buf, size);
+		bin->cur->xtr_obj = rz_bin_pemixed_from_bytes_new(buf, size);
 	}
 
-	struct rz_bin_pemixed_obj_t* fb = bin->cur->xtr_obj;
+	struct rz_bin_pemixed_obj_t *fb = bin->cur->xtr_obj;
 	// this function is prolly not nessescary
-	struct PE_(rz_bin_pe_obj_t)* pe = rz_bin_pemixed_extract (fb, sub_bin_type);
+	struct PE_(rz_bin_pe_obj_t) *pe = rz_bin_pemixed_extract(fb, sub_bin_type);
 	if (!pe) {
 		return NULL;
 	}
-	RzBinXtrMetadata *metadata = RZ_NEW0 (RzBinXtrMetadata);
+	RzBinXtrMetadata *metadata = RZ_NEW0(RzBinXtrMetadata);
 	if (!metadata) {
 		return NULL;
 	}
-	fill_metadata_info_from_hdr (metadata, pe);
-	return rz_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
+	fill_metadata_info_from_hdr(metadata, pe);
+	return rz_bin_xtrdata_new(pe->b, 0, pe->size, 3, metadata);
 }
 
 RzBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed = {
 	.name = "xtr.pemixed",
 	.desc = "Extract sub-binaries in PE files",
-	.load = NULL, 		//not yet implemented
-	.extract = NULL, 	//not yet implemented
+	.load = NULL, //not yet implemented
+	.extract = NULL, //not yet implemented
 	.extractall = NULL, //not yet implemented
 	.destroy = &destroy,
 	.extract_from_bytes = &oneshot,

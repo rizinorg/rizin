@@ -13,39 +13,36 @@ static const char *help_msg_lparen[] = {
 	"", "Argument support:", "",
 	"(foo x y; $0 @ $1)", "", "define fun with args (x - $0; y - $1)",
 	".(foo 128 0x804800)", "", "call it with args",
-	"", "Iterations:", "",
-	".(foo;() $@)", "", "define iterator returning iter index",
-	"x @@ .(foo)", "", "iterate over them",
 	NULL
 };
 
 RZ_IPI int rz_cmd_macro(void *data, const char *input) {
 	char *buf = NULL;
-	RzCore *core = (RzCore*)data;
+	RzCore *core = (RzCore *)data;
 
 	switch (*input) {
 	case ')':
-		rz_cmd_macro_break (&core->rcmd->macro, input + 1);
+		rz_cmd_macro_break(&core->rcmd->macro, input + 1);
 		break;
 	case '-':
-		rz_cmd_macro_rm (&core->rcmd->macro, input + 1);
+		rz_cmd_macro_rm(&core->rcmd->macro, input + 1);
 		break;
 	case '*':
-		rz_cmd_macro_meta (&core->rcmd->macro);
+		rz_cmd_macro_meta(&core->rcmd->macro);
 		break;
 	case '\0':
-		rz_cmd_macro_list (&core->rcmd->macro);
+		rz_cmd_macro_list(&core->rcmd->macro);
 		break;
 	case '(':
 	case '?':
-		rz_core_cmd_help (core, help_msg_lparen);
+		rz_core_cmd_help(core, help_msg_lparen);
 		break;
 	default: {
 		// XXX: stop at first ')'. if next is '(' and last
 		//int lastiscp = input[strlen (input)-1] == ')';
 		int mustcall = 0;
 		int i, j = 0;
-		buf = strdup (input);
+		buf = strdup(input);
 
 		for (i = 0; buf[i]; i++) {
 			switch (buf[i]) {
@@ -54,30 +51,30 @@ RZ_IPI int rz_cmd_macro(void *data, const char *input) {
 				break;
 			case ')':
 				j--;
-				if (buf[i+1] =='(') {
+				if (buf[i + 1] == '(') {
 					buf[i + 1] = 0;
 					mustcall = i + 2;
 				}
 				break;
 			}
 		}
-		buf[strlen (buf) - 1]=0;
-		rz_cmd_macro_add (&core->rcmd->macro, buf);
+		buf[strlen(buf) - 1] = 0;
+		rz_cmd_macro_add(&core->rcmd->macro, buf);
 		if (mustcall) {
-			char *comma = strchr (buf, ' ');
+			char *comma = strchr(buf, ' ');
 			if (!comma) {
-				comma = strchr (buf, ';');
+				comma = strchr(buf, ';');
 			}
 			if (comma) {
 				*comma = ' ';
-				memmove (comma + 1, buf + mustcall, strlen (buf + mustcall) + 1);
-				rz_cmd_macro_call (&core->rcmd->macro, buf);
+				memmove(comma + 1, buf + mustcall, strlen(buf + mustcall) + 1);
+				rz_cmd_macro_call(&core->rcmd->macro, buf);
 			} else {
-				eprintf ("Invalid syntax for macro\n");
+				eprintf("Invalid syntax for macro\n");
 			}
 		}
-		free (buf);
-		} break;
+		free(buf);
+	} break;
 	}
 	return 0;
 }

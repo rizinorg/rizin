@@ -19,7 +19,7 @@ typedef struct rz_interval_t {
 typedef RzInterval rz_itv_t;
 
 static inline RzInterval *rz_itv_new(ut64 addr, ut64 size) {
-	RzInterval *itv = RZ_NEW (RzInterval);
+	RzInterval *itv = RZ_NEW(RzInterval);
 	if (itv) {
 		itv->addr = addr;
 		itv->size = size;
@@ -28,7 +28,7 @@ static inline RzInterval *rz_itv_new(ut64 addr, ut64 size) {
 }
 
 static inline void rz_itv_free(RzInterval *itv) {
-	free (itv);
+	free(itv);
 }
 
 static inline ut64 rz_itv_begin(RzInterval itv) {
@@ -67,16 +67,16 @@ static inline bool rz_itv_overlap(RzInterval itv, RzInterval x) {
 }
 
 static inline bool rz_itv_overlap2(RzInterval itv, ut64 addr, ut64 size) {
-	RzInterval rai = {addr, size};
-	return rz_itv_overlap (itv, rai);
+	RzInterval rai = { addr, size };
+	return rz_itv_overlap(itv, rai);
 }
 
 // Precondition: itv and x overlap
 // Returns the intersection of itv and x
 static inline RzInterval rz_itv_intersect(RzInterval itv, RzInterval x) {
-	const ut64 addr = RZ_MAX (itv.addr, x.addr);
-	const ut64 end = RZ_MIN (itv.addr + itv.size - 1, x.addr + x.size - 1) + 1;
-	RzInterval rai = {addr, end - addr};
+	const ut64 addr = RZ_MAX(itv.addr, x.addr);
+	const ut64 end = RZ_MIN(itv.addr + itv.size - 1, x.addr + x.size - 1) + 1;
+	RzInterval rai = { addr, end - addr };
 	return rai;
 }
 
@@ -84,4 +84,4 @@ static inline RzInterval rz_itv_intersect(RzInterval itv, RzInterval x) {
 }
 #endif
 
-#endif  // RZ_INTERVAL_H
+#endif // RZ_INTERVAL_H

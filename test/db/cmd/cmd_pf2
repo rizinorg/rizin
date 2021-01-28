@@ -502,7 +502,7 @@ NAME=pfc N# and n#
 FILE=-
 ARGS=-a x86 -b 64
 CMDS=<<EOF
-(wneg num size; wv$1 -$0; s+ $1)
+(wneg num size; wv$1 -$0; sd +$1)
 .(wneg 1 1)
 .(wneg 2 2)
 .(wneg 3 4)

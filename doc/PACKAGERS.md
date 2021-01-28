@@ -24,7 +24,13 @@ Building
 Rizin uses the `meson` build system. Command line flags passed to meson can
 change how Rizin is built.
 
-To define the base install location for Rizin use the `--prefix` flag when
+First, we suggest you use the options `-Dpackager_version=<package-version>`
+and `-Dpackager=<packager>` to help us track the version of Rizin users are
+using, because these options are used when you run `rizin -v`. In this way
+when a user reports a issue and he provides his `rizin -v` output, we know
+how Rizin was built.
+
+Then, to define the base install location for Rizin use the `--prefix` flag when
 invoking `meson`. For system installs it is common to use `/usr`. If in doubt
 check your distributions packaging guidelines.
 
@@ -108,6 +114,12 @@ Compatibility
 Try to create packages that do not conflict with existing `radare2` packages.
 This may require removing some shared files from the Rizin package (like the
 esil man page).
+
+Existing packages
+-----------------
+
+OSX: execute `dist/osx/build_osx_package.sh` on a MacOS system to create a .pkg installer in the base directory, named `rizin-${VERSION}.pkg`.
+
 
 [BUILDING.md]: https://github.com/rizinorg/rizin/blob/dev/BUILDING.md
 [meson_options.txt]: https://github.com/rizinorg/rizin/blob/dev/meson_options.txt

@@ -87,7 +87,6 @@ typedef struct rz_x509_certificate_t {
 	RASN1Binary *signature; // BIT STRING
 } RX509Certificate;
 
-
 // RFC 1422
 
 typedef struct rz_x509_crlentry {
@@ -104,23 +103,21 @@ typedef struct rz_x509_certificaterevocationlist {
 	RX509CRLEntry **revokedCertificates;
 } RX509CertificateRevocationList;
 
-RZ_API RX509CertificateRevocationList* rz_x509_parse_crl(RASN1Object *object);
+RZ_API RX509CertificateRevocationList *rz_x509_parse_crl(RASN1Object *object);
 // RZ_API void rz_x509_free_crl(RX509CertificateRevocationList *crl);
 // RZ_API void rz_x509_crl_dump(RX509CertificateRevocationList *crl, const char* pad);
-RZ_API char *rz_x509_crl_to_string(RX509CertificateRevocationList *crl, const char* pad);
-RZ_API void rz_x509_crl_json(PJ* pj, RX509CertificateRevocationList *crl);
+RZ_API char *rz_x509_crl_to_string(RX509CertificateRevocationList *crl, const char *pad);
+RZ_API void rz_x509_crl_json(PJ *pj, RX509CertificateRevocationList *crl);
 
 RZ_API RX509Certificate *rz_x509_parse_certificate(RASN1Object *object);
 RZ_API RX509Certificate *rz_x509_parse_certificate2(const ut8 *buffer, ut32 length);
-RZ_API void rz_x509_free_certificate(RX509Certificate* certificate);
-RZ_API char *rz_x509_certificate_to_string(RX509Certificate* certificate, const char* pad);
-RZ_API void rz_x509_certificate_json(PJ* pj, RX509Certificate *certificate);
-RZ_API void rz_x509_certificate_dump(RX509Certificate* cert, const char* pad, RzStrBuf *sb);
-
+RZ_API void rz_x509_free_certificate(RX509Certificate *certificate);
+RZ_API char *rz_x509_certificate_to_string(RX509Certificate *certificate, const char *pad);
+RZ_API void rz_x509_certificate_json(PJ *pj, RX509Certificate *certificate);
+RZ_API void rz_x509_certificate_dump(RX509Certificate *cert, const char *pad, RzStrBuf *sb);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* RZ_X509_H */
-

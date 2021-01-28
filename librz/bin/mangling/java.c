@@ -13,16 +13,16 @@ RZ_API char *rz_bin_demangle_java(const char *str) {
 	int n = 0;
 	char *ret;
 
-	ptr = strchr (str, '(');
+	ptr = strchr(str, '(');
 	if (!ptr) {
 		return NULL;
 	}
-	buf = rz_buf_new ();
+	buf = rz_buf_new();
 	if (!buf) {
 		return NULL;
 	}
-	rz_buf_append_bytes (buf, (const ut8*)str, (int)(size_t)(ptr-str));
-	rz_buf_append_bytes (buf, (const ut8*)" (", 2);
+	rz_buf_append_bytes(buf, (const ut8 *)str, (int)(size_t)(ptr - str));
+	rz_buf_append_bytes(buf, (const ut8 *)" (", 2);
 	while (*str) {
 		switch (*str) {
 		case ')':
@@ -33,37 +33,64 @@ RZ_API char *rz_bin_demangle_java(const char *str) {
 			break;
 		case 'L':
 			str++;
-			ptr = strchr (str, ';');
+			ptr = strchr(str, ';');
 			if (ptr) {
 				w = str;
-				wlen = (int)(size_t)(ptr-str);
+				wlen = (int)(size_t)(ptr - str);
 			}
 			str = ptr;
 			break;
-		case 'I': w = "int"; wlen = 3; break;
-		case 'C': w = "char"; wlen = 4; break;
-		case 'B': w = "byte"; wlen = 4; break;
-		case 'V': w = "void"; wlen = 4; break;
-		case 'J': w = "long"; wlen = 4; break;
-		case 'F': w = "float"; wlen = 5; break;
-		case 'S': w = "short"; wlen = 5; break;
-		case 'D': w = "double"; wlen = 6; break;
-		case 'Z': w = "boolean"; wlen = 7; break;
+		case 'I':
+			w = "int";
+			wlen = 3;
+			break;
+		case 'C':
+			w = "char";
+			wlen = 4;
+			break;
+		case 'B':
+			w = "byte";
+			wlen = 4;
+			break;
+		case 'V':
+			w = "void";
+			wlen = 4;
+			break;
+		case 'J':
+			w = "long";
+			wlen = 4;
+			break;
+		case 'F':
+			w = "float";
+			wlen = 5;
+			break;
+		case 'S':
+			w = "short";
+			wlen = 5;
+			break;
+		case 'D':
+			w = "double";
+			wlen = 6;
+			break;
+		case 'Z':
+			w = "boolean";
+			wlen = 7;
+			break;
 		}
 		if (w) {
 			if (is_ret) {
-				rz_buf_prepend_bytes (buf, (const ut8*)" ", 1);
-				rz_buf_prepend_bytes (buf, (const ut8*)w, wlen);
-				rz_buf_append_bytes (buf, (const ut8*)")", 1);
+				rz_buf_prepend_bytes(buf, (const ut8 *)" ", 1);
+				rz_buf_prepend_bytes(buf, (const ut8 *)w, wlen);
+				rz_buf_append_bytes(buf, (const ut8 *)")", 1);
 				break;
 			} else {
 				if (n++ > 0) {
-					rz_buf_append_bytes (buf, (const ut8 *)", ", 2);
+					rz_buf_append_bytes(buf, (const ut8 *)", ", 2);
 				}
-				rz_buf_append_bytes (buf, (const ut8*)w, wlen);
+				rz_buf_append_bytes(buf, (const ut8 *)w, wlen);
 			}
 			if (is_array) {
-				rz_buf_append_bytes (buf, (const ut8*)"[]", 2);
+				rz_buf_append_bytes(buf, (const ut8 *)"[]", 2);
 				is_array = 0;
 			}
 		}
@@ -73,9 +100,7 @@ RZ_API char *rz_bin_demangle_java(const char *str) {
 		}
 		str++;
 	}
-	ret = rz_buf_to_string (buf);
-	rz_buf_free (buf);
+	ret = rz_buf_to_string(buf);
+	rz_buf_free(buf);
 	return ret;
 }
-
-

@@ -1,6 +1,11 @@
-project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.55.0', default_options: [
-  'b_vscrt=from_buildtype',
-])
+project('rizin', 'c',
+  version: 'v0.2.0-git',
+  license: 'LGPL3',
+  meson_version: '>=0.55.0',
+  default_options: [
+    'b_vscrt=from_buildtype',
+  ]
+)
 
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
@@ -10,27 +15,20 @@ pkgconfig_mod = import('pkgconfig')
 create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
+git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
-# Get rizin version
-rizin_version = 'unknown-error'
-rizin_version_major = 0
-rizin_version_minor = 0
-rizin_version_patch = 0
-rizin_version_number = 0
-r = run_command(py3_exe, 'sys/version.py', '--full-version')
-if r.returncode() == 0
-  vers = r.stdout().strip().split('\n')
-  rizin_version = vers[0]
-  rizin_version_major = vers[1]
-  rizin_version_minor = vers[2]
-  rizin_version_patch = vers[3]
-  rizin_version_number = vers[4]
-  if host_machine.system() == 'darwin'
-    rizin_version = rizin_version.split('-')[0]
-  endif
-else
-  message('Cannot find project version with sys/version.py')
+# Get rizin version and compute various version parts
+rizin_version = meson.project_version().split('v')[1]
+if host_machine.system() == 'darwin'
+  rizin_version = rizin_version.split('-')[0]
 endif
+
+rizin_version_split = rizin_version.split('.')
+rizin_version_major = rizin_version_split[0].to_int()
+rizin_version_minor = rizin_version_split[1].to_int()
+rizin_version_patch = rizin_version_split[2].split('-')[0].to_int()
+rizin_version_number = 1000000 * rizin_version_major + 1000 * rizin_version_minor + rizin_version_patch
+
 
 repo = '.'
 if meson.is_subproject()
@@ -48,8 +46,7 @@ endif
 # by default, not version commit is used
 version_commit = '0'
 
-gittap = ''
-gittip = 'unknown'
+gittip = ''
 
 git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
 if git_exe.found() and git_dir_exists.returncode() == 0
@@ -58,20 +55,8 @@ if git_exe.found() and git_dir_exists.returncode() == 0
     error('Source code for SDB not found. Did you forget to run `git submodule update --init`?')
   endif
 
-  # Get version_commit
-  git_rev_list = run_command(git_exe, '-C', repo, 'rev-list', '--all', '--count')
-  if git_rev_list.returncode() == 0
-    version_commit = git_rev_list.stdout().strip()
-  endif
-
-  # Get gittap
-  git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
-  if git_describe.returncode() == 0
-    gittap = git_describe.stdout().strip()
-  endif
-
   # Get gittip
-  git_rev_parse = run_command(git_exe, '-C', repo, 'rev-parse', 'HEAD')
+  git_rev_parse = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD')
   if git_rev_parse.returncode() == 0
     gittip = git_rev_parse.stdout().strip()
   endif
@@ -79,14 +64,6 @@ endif
 
 if get_option('rizin_version_commit') != ''
   version_commit = get_option('rizin_version_commit')
-endif
-if get_option('rizin_gittap') != ''
-  gittap = get_option('rizin_gittap')
-endif
-# gittap is used for the version of each rz_ library
-# in case it has not been set (e.g. a release tarball) set it
-if gittap == ''
-  gittap = rizin_version
 endif
 
 if get_option('rizin_gittip') != ''
@@ -137,6 +114,12 @@ if get_option('static_runtime')
   endif
 endif
 
+if cc.has_argument('--std=gnu99')
+  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
+elif cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c', 'cpp'])
+endif
+
 if cc.get_id() == 'clang-cl'
   add_project_arguments('-fcommon', language: 'c')
   add_project_arguments('-D__STDC__=1', language: 'c')
@@ -154,12 +137,14 @@ endif
 library_cflags = ['-DRZ_PLUGIN_INCORE=1']
 
 rizin_prefix = get_option('prefix')
+rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
 rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'
+  rizin_prefix = rizin_prefix / ''
   rizin_wwwroot = rizin_datdir / 'www'
-  rizin_sdb = rizin_datdir
+  rizin_sdb = rizin_datdir / ''
   rizin_zigns = rizin_datdir / 'zigns'
   rizin_themes = rizin_datdir / 'cons'
   rizin_fortunes = rizin_datdir / 'fortunes'
@@ -356,17 +341,29 @@ rz_userconf_h = configure_file(
   install_dir: rizin_incdir
 )
 
+packager = get_option('packager')
+packager_version = get_option('packager_version')
+
+message('Version Major: @0@0'.format(rizin_version_major))
+message('Version Minor: @0@0'.format(rizin_version_minor))
+message('Version Patch: @0@0'.format(rizin_version_patch))
+message('Version GitTip: @0@0'.format(gittip))
+
 versionconf = configuration_data()
-versionconf.set('MESON_VERSION', meson.version())
-versionconf.set('VERSIONCOMMIT', version_commit)
+versionconf.set_quoted('MESON_VERSION', meson.version())
 versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
 versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
 versionconf.set('RZ_VERSION_NUMBER', rizin_version_number)
 versionconf.set('RZ_VERSION', rizin_version)
-versionconf.set('RZ_GITTAP', gittap)
 versionconf.set('RZ_GITTIP', gittip)
 versionconf.set('RZ_BIRTH', rizinbirth)
+if packager_version != ''
+  versionconf.set_quoted('RZ_PACKAGER_VERSION', packager_version)
+  if packager != ''
+    versionconf.set_quoted('RZ_PACKAGER', packager)
+  endif
+endif
 rz_version_h = configure_file(
   input: 'librz/include/rz_version.h.in',
   output: 'rz_version.h',
@@ -616,7 +613,6 @@ install_data(
 if cli_enabled
   install_man(
     'man/rz-agent.1',
-    'man/rz-docker.1',
     'man/rz-pm.1',
     'man/rz-bin.1',
     'man/rizin.1',
@@ -638,6 +634,7 @@ endif
 
 summary({
   'prefix': rizin_prefix,
+  'bindir': rizin_bindir,
   'libdir': rizin_libdir,
   'includedir': rizin_incdir,
   'datadir': rizin_datdir,
@@ -658,7 +655,7 @@ summary({
   'System magic library': use_syslib_magic,
   'System xxhash library': use_sys_xxhash,
   'System openssl library': use_sys_openssl,
-  'System libuv library': libuv_dep.type_name() != 'internal' and libuv_dep.found(),
+  'System libuv library': use_libuv,
   'System capstone library': capstone_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.type_name() != 'internal',

@@ -37,20 +37,20 @@ RZ_LIB_VERSION_HEADER(rz_debug);
 #undef PTRACE_SYSCALL
 #endif
 
-#define PTRACE_PEEKTEXT PT_READ_I
-#define PTRACE_POKETEXT PT_WRITE_I
-#define PTRACE_PEEKDATA PT_READ_D
-#define PTRACE_POKEDATA PT_WRITE_D
-#define PTRACE_ATTACH PT_ATTACH
-#define PTRACE_DETACH PT_DETACH
+#define PTRACE_PEEKTEXT   PT_READ_I
+#define PTRACE_POKETEXT   PT_WRITE_I
+#define PTRACE_PEEKDATA   PT_READ_D
+#define PTRACE_POKEDATA   PT_WRITE_D
+#define PTRACE_ATTACH     PT_ATTACH
+#define PTRACE_DETACH     PT_DETACH
 #define PTRACE_SINGLESTEP PT_STEP
-#define PTRACE_CONT PT_CONTINUE
-#define PTRACE_GETREGS PT_GETREGS
-#define PTRACE_SETREGS PT_SETREGS
-#define PTRACE_SYSCALL PT_STEP
+#define PTRACE_CONT       PT_CONTINUE
+#define PTRACE_GETREGS    PT_GETREGS
+#define PTRACE_SETREGS    PT_SETREGS
+#define PTRACE_SYSCALL    PT_STEP
 #endif
 
-#define SNAP_PAGE_SIZE 4096
+#define SNAP_PAGE_SIZE    4096
 #define CHECK_POINT_LIMIT 0x100000 //TODO: take the benchmark
 /*
  * states that a process can be in
@@ -64,7 +64,6 @@ typedef enum {
 	RZ_DBG_PROC_RAISED = 'R' // has produced a signal, breakpoint, etc..
 } RzDebugPidState;
 
-
 // signal handling must support application and debugger level options
 typedef enum {
 	RZ_DBG_SIGNAL_IGNORE = 0, // ignore signal handler
@@ -72,7 +71,6 @@ typedef enum {
 	RZ_DBG_SIGNAL_SKIP = 2, //
 	//..
 } RzDebugSignalMode;
-
 
 /*
  * when a user wants to resume from a breakpoint, we need to know how they want
@@ -115,7 +113,6 @@ typedef enum {
 	RZ_DEBUG_REASON_FPU,
 	RZ_DEBUG_REASON_USERSUSP,
 } RzDebugReasonType;
-
 
 /* TODO: move to rz_analysis */
 typedef struct rz_debug_frame_t {
@@ -252,7 +249,7 @@ typedef struct rz_debug_t {
 	int n_threads;
 	RzList *threads; /* NOTE: list contents are platform-specific */
 
-	char *malloc;     /*choose malloc parser: 0 = glibc, 1 = jemalloc*/
+	char *malloc; /*choose malloc parser: 0 = glibc, 1 = jemalloc*/
 
 	/* dbg.* config options (see e?dbg)
 	 * NOTE: some settings are checked inline instead of tracked here.
@@ -278,7 +275,7 @@ typedef struct rz_debug_t {
 	int steps; /* counter of steps done */
 	RzDebugReason reason; /* stop reason */
 	RzDebugRecoilMode recoil_mode; /* what did the user want to do? */
-	ut64 stopaddr;  /* stop address  */
+	ut64 stopaddr; /* stop address  */
 
 	/* tracing vars */
 	RzDebugTrace *trace;
@@ -331,7 +328,7 @@ typedef struct rz_debug_desc_plugin_t {
 	int (*write)(int fd, ut64 addr, int len);
 	int (*seek)(int fd, ut64 addr);
 	int (*dup)(int fd, int newfd);
-	RzList* (*list)(int pid);
+	RzList *(*list)(int pid);
 } RzDebugDescPlugin;
 
 typedef struct rz_debug_info_t {
@@ -346,8 +343,8 @@ typedef struct rz_debug_info_t {
 	char *cwd;
 	int status; // zombie, running, sleeping, ...
 	int signum;
-	void * lib;
-	void * thread;
+	void *lib;
+	void *thread;
 	char *kernel_stack;
 	// retrieve mem/fd/core limits?
 	// list of threads ? hasthreads? counter?
@@ -367,7 +364,7 @@ typedef struct rz_debug_plugin_t {
 	int canstep;
 	int keepio;
 	/* life */
-	RzDebugInfo* (*info)(RzDebug *dbg, const char *arg);
+	RzDebugInfo *(*info)(RzDebug *dbg, const char *arg);
 	int (*startv)(int argc, char **argv);
 	int (*attach)(RzDebug *dbg, int pid);
 	int (*detach)(RzDebug *dbg, int pid);
@@ -384,19 +381,19 @@ typedef struct rz_debug_plugin_t {
 	int (*wait)(RzDebug *dbg, int pid);
 	bool (*gcore)(RzDebug *dbg, RzBuffer *dest);
 	bool (*kill)(RzDebug *dbg, int pid, int tid, int sig);
-	RzList* (*kill_list)(RzDebug *dbg);
+	RzList *(*kill_list)(RzDebug *dbg);
 	int (*contsc)(RzDebug *dbg, int pid, int sc);
-	RzList* (*frames)(RzDebug *dbg, ut64 at);
+	RzList *(*frames)(RzDebug *dbg, ut64 at);
 	RzBreakpointCallback breakpoint;
-// XXX: specify, pid, tid, or RzDebug ?
+	// XXX: specify, pid, tid, or RzDebug ?
 	int (*reg_read)(RzDebug *dbg, int type, ut8 *buf, int size);
 	int (*reg_write)(RzDebug *dbg, int type, const ut8 *buf, int size); //XXX struct rz_regset_t regs);
-	char* (*reg_profile)(RzDebug *dbg);
+	char *(*reg_profile)(RzDebug *dbg);
 	int (*set_reg_profile)(const char *str);
 	/* memory */
 	RzList *(*map_get)(RzDebug *dbg);
 	RzList *(*modules_get)(RzDebug *dbg);
-	RzDebugMap* (*map_alloc)(RzDebug *dbg, ut64 addr, int size, bool thp);
+	RzDebugMap *(*map_alloc)(RzDebug *dbg, ut64 addr, int size, bool thp);
 	int (*map_dealloc)(RzDebug *dbg, ut64 addr, int size);
 	int (*map_protect)(RzDebug *dbg, ut64 addr, int size, int perms);
 	int (*init)(RzDebug *dbg);
@@ -464,7 +461,7 @@ RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits);
 RZ_API bool rz_debug_use(RzDebug *dbg, const char *str);
 
 RZ_API RzDebugInfo *rz_debug_info(RzDebug *dbg, const char *arg);
-RZ_API void rz_debug_info_free (RzDebugInfo *rdi);
+RZ_API void rz_debug_info_free(RzDebugInfo *rdi);
 
 RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file);
 
@@ -490,7 +487,7 @@ RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo);
 RZ_API bool rz_debug_plugin_set_reg_profile(RzDebug *dbg, const char *str);
 
 /* memory */
-RZ_API RzList *rz_debug_modules_list(RzDebug*);
+RZ_API RzList *rz_debug_modules_list(RzDebug *);
 RZ_API RzDebugMap *rz_debug_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp);
 RZ_API int rz_debug_map_dealloc(RzDebug *dbg, RzDebugMap *map);
 RZ_API RzList *rz_debug_map_list_new(void);
@@ -501,8 +498,8 @@ RZ_API void rz_debug_map_list(RzDebug *dbg, ut64 addr, const char *input);
 RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input, int colors);
 
 /* descriptors */
-RZ_API RzDebugDesc *rz_debug_desc_new (int fd, char* path, int perm, int type, int off);
-RZ_API void rz_debug_desc_free (RzDebugDesc *p);
+RZ_API RzDebugDesc *rz_debug_desc_new(int fd, char *path, int perm, int type, int off);
+RZ_API void rz_debug_desc_free(RzDebugDesc *p);
 RZ_API int rz_debug_desc_open(RzDebug *dbg, const char *path);
 RZ_API int rz_debug_desc_close(RzDebug *dbg, int fd);
 RZ_API int rz_debug_desc_dup(RzDebug *dbg, int fd, int newfd);
@@ -513,7 +510,7 @@ RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad);
 
 /* registers */
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write);
-RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, int rad, const char *use_color);
+RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color);
 RZ_API int rz_debug_reg_set(RzDebug *dbg, const char *name, ut64 num);
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name);
 RZ_API ut64 rz_debug_reg_get_err(RzDebug *dbg, const char *name, int *err, utX *value);
@@ -567,7 +564,7 @@ RZ_API void rz_debug_esil_watch(RzDebug *dbg, int rwx, int dev, const char *expr
 RZ_API void rz_debug_esil_watch_reset(RzDebug *dbg);
 RZ_API void rz_debug_esil_watch_list(RzDebug *dbg);
 RZ_API int rz_debug_esil_watch_empty(RzDebug *dbg);
-RZ_API void rz_debug_esil_prestep (RzDebug *d, int p);
+RZ_API void rz_debug_esil_prestep(RzDebug *d, int p);
 
 /* record & replay */
 // RZ_API ut8 rz_debug_get_byte(RzDebug *dbg, ut32 cnum, ut64 addr);
@@ -600,11 +597,11 @@ RZ_API bool rz_debug_continue_back(RzDebug *dbg);
 /* ptrace */
 #if HAVE_PTRACE
 static inline long rz_debug_ptrace(RzDebug *dbg, rz_ptrace_request_t request, pid_t pid, void *addr, rz_ptrace_data_t data) {
-	return dbg->iob.ptrace (dbg->iob.io, request, pid, addr, data);
+	return dbg->iob.ptrace(dbg->iob.io, request, pid, addr, data);
 }
 
 static inline void *rz_debug_ptrace_func(RzDebug *dbg, void *(*func)(void *), void *user) {
-	return dbg->iob.ptrace_func (dbg->iob.io, func, user);
+	return dbg->iob.ptrace_func(dbg->iob.io, func, user);
 }
 #endif
 

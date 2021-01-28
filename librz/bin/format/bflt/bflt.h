@@ -9,12 +9,12 @@
 #include <rz_bin.h>
 
 /* Version 4 */
-#define	FLAT_VERSION		0x00000004L
-#define FLAT_FLAG_RAM		0x1	/* load program entirely into RAM */
-#define FLAT_FLAG_GOTPIC	0x2 	/* program is PIC with GOT */
-#define FLAT_FLAG_GZIP		0x4	/* all but the header is compressed */
-#define FLAT_FLAG_GZDATA	0x8	/* only data/relocs are compressed (for XIP) */
-#define FLAT_FLAG_KTRACE	0x10	/* output useful kernel trace for debugging */
+#define FLAT_VERSION     0x00000004L
+#define FLAT_FLAG_RAM    0x1 /* load program entirely into RAM */
+#define FLAT_FLAG_GOTPIC 0x2 /* program is PIC with GOT */
+#define FLAT_FLAG_GZIP   0x4 /* all but the header is compressed */
+#define FLAT_FLAG_GZDATA 0x8 /* only data/relocs are compressed (for XIP) */
+#define FLAT_FLAG_KTRACE 0x10 /* output useful kernel trace for debugging */
 
 struct bflt_hdr {
 	char magic[4];
@@ -48,11 +48,11 @@ struct rz_bin_bflt_obj {
 	uint32_t n_got;
 };
 
-#define BFLT_HDR_SIZE		sizeof (struct bflt_hdr)
-#define VALID_GOT_ENTRY(x)	(x != 0xFFFFFFFF)
+#define BFLT_HDR_SIZE      sizeof(struct bflt_hdr)
+#define VALID_GOT_ENTRY(x) (x != 0xFFFFFFFF)
 
 RzBinAddr *rz_bflt_get_entry(struct rz_bin_bflt_obj *bin);
 struct rz_bin_bflt_obj *rz_bin_bflt_new_buf(RzBuffer *buf);
-void rz_bin_bflt_free (struct rz_bin_bflt_obj *obj);
+void rz_bin_bflt_free(struct rz_bin_bflt_obj *obj);
 
 #endif

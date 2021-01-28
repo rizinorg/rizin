@@ -89,8 +89,8 @@ enum lh5801_insn_class {
 
 /* Instruction description. */
 struct lh5801_insn_class_desc {
-	char mnem[4];		/* Assembler mnemonic */
-	const char *desc;	/* Textual description (for ?d) */
+	char mnem[4]; /* Assembler mnemonic */
+	const char *desc; /* Textual description (for ?d) */
 
 	/* TODO: rizin insn type? */
 };
@@ -100,8 +100,8 @@ const struct lh5801_insn_class_desc
 
 /* A decoded instruction */
 struct lh5801_insn {
-	ut8 iclass;	/* an index into lh5801_insn_class_descs */
-	ut8 type;	/* an index into lh5801_insn_descs */
+	ut8 iclass; /* an index into lh5801_insn_class_descs */
+	ut8 type; /* an index into lh5801_insn_descs */
 	ut8 fd;
 	ut8 opcode;
 	ut8 imm[3];

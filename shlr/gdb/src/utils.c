@@ -27,7 +27,7 @@ uint64_t unpack_uint64(char *buff, int len) {
 	int nibble;
 	uint64_t retval = 0;
 	while (len) {
-		nibble = hex2int (*buff++);
+		nibble = hex2int(*buff++);
 		retval |= nibble;
 		len--;
 		if (len) {
@@ -45,7 +45,7 @@ uint64_t unpack_uint64_co(char *buff, int len) {
 	uint64_t result = 0;
 	int i;
 	for (i = len - 2; i >= 0; i -= 2) {
-		result |= unpack_uint64 (&buff[i], 2);
+		result |= unpack_uint64(&buff[i], 2);
 		if (i) {
 			result <<= 8;
 		}
@@ -85,18 +85,18 @@ int int2hex(int i) {
 }
 
 char hex2char(char *hex) {
-	uint8_t result = hex2int ((int) hex[0]);
+	uint8_t result = hex2int((int)hex[0]);
 	result <<= 4;
-	result |= hex2int (hex[1]);
-	return (char) result;
+	result |= hex2int(hex[1]);
+	return (char)result;
 }
 
 int unpack_hex(const char *src, ut64 len, char *dst) {
 	int i = 0;
 	while (i < (len / 2)) {
-		int val = hex2int (src[(i * 2)]);
+		int val = hex2int(src[(i * 2)]);
 		val <<= 4;
-		val |= hex2int (src[(i * 2) + 1]);
+		val |= hex2int(src[(i * 2) + 1]);
 		dst[i++] = val;
 	}
 	dst[i] = '\0';
@@ -108,15 +108,15 @@ int pack_hex(const char *src, ut64 len, char *dst) {
 	int x = 0;
 	while (i < (len * 2)) {
 		int val = (src[x] & 0xf0) >> 4;
-		dst[i++] = int2hex (val);
-		dst[i++] = int2hex (src[x++] & 0x0f);
+		dst[i++] = int2hex(val);
+		dst[i++] = int2hex(src[x++] & 0x0f);
 	}
 	dst[i] = '\0';
 	return (len / 2);
 }
 
 void hexdump(void *ptr, ut64 len, ut64 offset) {
-	unsigned char *data = (unsigned char *) ptr;
+	unsigned char *data = (unsigned char *)ptr;
 	int x = 0;
 	char hex[49], *p;
 	char txt[17], *c;
@@ -127,69 +127,69 @@ void hexdump(void *ptr, ut64 len, ut64 offset) {
 		curr_offset = x + offset;
 
 		do {
-			p += sprintf (p, "%02x ", data[x]);
-			*c++ = (data[x] >= 32 && data[x] <= 127)? data[x]: '.';
+			p += sprintf(p, "%02x ", data[x]);
+			*c++ = (data[x] >= 32 && data[x] <= 127) ? data[x] : '.';
 		} while (++x % 16 && x < len);
 
 		*c = '\0';
-		eprintf ("0x%016"PFMT64x ": %-48s- %s\n", (curr_offset), hex, txt);
+		eprintf("0x%016" PFMT64x ": %-48s- %s\n", (curr_offset), hex, txt);
 	}
 }
 
 int write_thread_id(char *dest, int len, int pid, int tid, bool multiprocess) {
 	if (!multiprocess) {
 		if (tid < 0) {
-			strncpy (dest, "-1", len);
+			strncpy(dest, "-1", len);
 			return 0;
 		}
-		return snprintf (dest, len, "%x", tid);
+		return snprintf(dest, len, "%x", tid);
 	}
 	if (pid <= 0) {
 		return -1;
 	}
 	if (tid < 0) {
-		return snprintf (dest, len, "p%x.-1", pid);
+		return snprintf(dest, len, "p%x.-1", pid);
 	}
-	return snprintf (dest, len, "p%x.%x", pid, tid);
+	return snprintf(dest, len, "p%x.%x", pid, tid);
 }
 
 int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 	char *ptr1;
 	if (multiprocess && *src == 'p') {
 		src++;
-		if (!(ptr1 = strchr (src, '.'))) {
+		if (!(ptr1 = strchr(src, '.'))) {
 			return -1;
 		}
 		ptr1++;
-		if (rz_str_startswith (src, "-1")) {
-			if (rz_str_startswith (ptr1, "-1")) {
+		if (rz_str_startswith(src, "-1")) {
+			if (rz_str_startswith(ptr1, "-1")) {
 				*pid = *tid = -1;
 				return 0;
 			}
 			return -1;
 		}
-		if (!isxdigit (*src)) {
+		if (!isxdigit(*src)) {
 			return -1;
 		}
-		if (rz_str_startswith (ptr1, "-1")) {
-			*pid = (int) strtol (src, NULL, 16);
+		if (rz_str_startswith(ptr1, "-1")) {
+			*pid = (int)strtol(src, NULL, 16);
 			*tid = -1;
 			return 0;
 		}
-		if (!isxdigit (*ptr1)) {
+		if (!isxdigit(*ptr1)) {
 			return -1;
 		}
-		*pid = (int) strtol (src, NULL, 16);
-		*tid = (int) strtol (ptr1, NULL, 16);
+		*pid = (int)strtol(src, NULL, 16);
+		*tid = (int)strtol(ptr1, NULL, 16);
 		return 0;
 	}
-	if (rz_str_startswith (src, "-1")) {
+	if (rz_str_startswith(src, "-1")) {
 		*tid = -1;
 		return 0;
 	}
-	if (!isxdigit (*src)) {
+	if (!isxdigit(*src)) {
 		return -1;
 	}
-	*pid = *tid = (int) strtol (src, NULL, 16);
+	*pid = *tid = (int)strtol(src, NULL, 16);
 	return 0;
 }

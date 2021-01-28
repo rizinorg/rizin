@@ -1,4 +1,4 @@
-name: Radare2 CI tree-sitter test
+name: Rizin CI tree-sitter test
 
 on:
   pull_request:

@@ -23,8 +23,8 @@ static void ebc_analysis_jmp8(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 
 static void ebc_analysis_jmp(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->fail = addr + 6;
-	op->jump = (ut64)*(int32_t*)(buf + 2);
-	if (TEST_BIT (buf[1], 4)) {
+	op->jump = (ut64) * (int32_t *)(buf + 2);
+	if (TEST_BIT(buf[1], 4)) {
 		op->jump += addr + 6;
 	}
 	if (buf[1] & 0x7) {
@@ -42,9 +42,8 @@ static void ebc_analysis_call(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	int32_t addr_call;
 
 	op->fail = addr + 6;
-	if ((buf[1] & 0x7) == 0 && TEST_BIT(buf[0], 6) == 0
-			&& TEST_BIT(buf[0], 7)) {
-		addr_call = *(int32_t*)(buf + 2);
+	if ((buf[1] & 0x7) == 0 && TEST_BIT(buf[0], 6) == 0 && TEST_BIT(buf[0], 7)) {
+		addr_call = *(int32_t *)(buf + 2);
 
 		if (TEST_BIT(buf[1], 4)) {
 			op->jump = (addr + 6 + addr_call);

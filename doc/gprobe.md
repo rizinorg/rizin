@@ -29,7 +29,6 @@ TODOs
 
 What is tested?
 ---------------
-- building with sys/user.sh and sys/mingw32.sh on linux
 - running rizin on Linux and Windows
 - communication via FTDI USB serial adaptor
 - communication via DDC2Bi3

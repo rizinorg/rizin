@@ -23,37 +23,37 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 #if USE_ITERZ_API
 	static
 #endif
-	cs_insn *insn = NULL;
+		cs_insn *insn = NULL;
 	int mode = 0;
 	int n, ret;
 
 	if (handle && mode != omode) {
-		cs_close (&handle);
+		cs_close(&handle);
 		handle = 0;
 	}
 	omode = mode;
 	if (handle == 0) {
-		ret = cs_open (CS_ARCH_MOS65XX, mode, &handle);
+		ret = cs_open(CS_ARCH_MOS65XX, mode, &handle);
 		if (ret != CS_ERR_OK) {
 			handle = 0;
 			return 0;
 		}
 	}
 	op->cycles = 1; // aprox
-	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+	cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 	// capstone-next
 #if USE_ITERZ_API
 	{
 		ut64 naddr = addr;
 		size_t size = len;
 		if (!insn) {
-			insn = cs_malloc (handle);
+			insn = cs_malloc(handle);
 		}
-		n = cs_disasm_iter (handle, (const uint8_t**)&buf,
-			&size, (uint64_t*)&naddr, insn);
+		n = cs_disasm_iter(handle, (const uint8_t **)&buf,
+			&size, (uint64_t *)&naddr, insn);
 	}
 #else
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
 #endif
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -162,7 +162,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		}
 	}
 #if !USE_ITERZ_API
-	cs_free (insn, n);
+	cs_free(insn, n);
 #endif
 	//cs_close (&handle);
 	return op->size;
@@ -190,7 +190,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	N	.1	.31	0\n"
 		"gpr	sp	.8	4	0\n"
 		"gpr	pc	.16	5	0\n";
-	return rz_reg_set_profile_string (analysis->reg, p);
+	return rz_reg_set_profile_string(analysis->reg, p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_6502_cs = {

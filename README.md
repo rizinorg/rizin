@@ -23,7 +23,7 @@ yourself.
 
 Use `meson` to compile and install Rizin. Please make sure to get an updated
 `meson` (e.g. get it with `pip install meson` if your system does not provide
-one that is at least version 0.50.1).
+one that is at least version 0.55.0).
 
 Clone this repository and make sure to clone the submodules as well:
 ```
@@ -88,15 +88,16 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
 
 ## Scripting
 
-We provide a way to interact with Rizin from Python/Haskell/OCaml languages
-through [rzpipe](https://github.com/rizinorg/rz-pipe). Other languages
-although not currently supported could be easily added.
+We provide a way to interact with Rizin from Python, Haskell, OCaml,
+Ruby, Rust, and Go languages through [rzpipe](https://github.com/rizinorg/rz-pipe).
+Other languages although not currently supported could be easily added.
 
 # Community
 
 Our website and blog: [https://www.rizin.re/](https://www.rizin.re/)
 
-Join our [Mattermost](https://im.rizin.re) community to discuss Rizin, its development, and general topics related to the project.
+Join our [Mattermost](https://im.rizin.re) community to discuss Rizin, its
+development, and general topics related to the project.
 
 We also provide the following partial bridges to other messaging platforms:
 - [Telegram](https://t.me/rizinorg)

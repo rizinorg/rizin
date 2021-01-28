@@ -2,11 +2,11 @@ rz_io_sources = [
   'io.c',
   'io_fd.c',
   'io_map.c',
+  'io_memory.c',
   'io_cache.c',
   'io_desc.c',
   'io_plugin.c',
   'ioutils.c',
-  'undo.c',
   'p_cache.c',
   'serialize_io.c',
   'p/io_ar.c',
@@ -51,18 +51,18 @@ endif
 
 
 rz_io_deps = [
-  rz_util_dep,
-  rz_socket_dep,
-  rz_hash_dep,
-  rz_crypto_dep,
-  rz_cons_dep, # transitive from gdb_dep, but must be explicitly listed here or meson will break the rpath
   bochs_dep,
   gdb_dep,
   winkd_dep,
   qnx_dep,
   zip_dep,
   ar_dep,
-  pth
+  pth,
+  rz_util_dep,
+  rz_socket_dep,
+  rz_hash_dep,
+  rz_crypto_dep,
+  rz_cons_dep,
 ]
 
 if host_machine.system() == 'windows'

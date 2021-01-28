@@ -879,7 +879,7 @@ ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
 wx 05220aa17cdf
 e emu.str=1
-s+4
+sd +4
 as
 pd 1
 EOF
@@ -896,7 +896,7 @@ ARGS=-aarm -b16 -easm.os=s110
 CMDS=<<EOF
 wx 05220aa17cdf
 e emu.str=1
-s+4
+sd +4
 as 123
 pd 1
 EOF

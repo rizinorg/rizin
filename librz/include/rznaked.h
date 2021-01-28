@@ -7,8 +7,8 @@ extern "C" {
 
 void *rz_core_new(void);
 char *rz_core_cmd_str(void *p, const char *cmd);
-void rz_core_free(void* core);
-void free(void*);
+void rz_core_free(void *core);
+void free(void *);
 
 #ifdef __cplusplus
 }

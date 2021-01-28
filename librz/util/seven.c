@@ -14,7 +14,7 @@ RZ_API int rz_print_pack7bit(const char *src, char *dest) {
 	char tmp[2];
 
 	*dest = '\0';
-	int len = strlen (src);
+	int len = strlen(src);
 
 	for (i = 0; i < len; i++) {
 		ch1 = src[i] & 0x7F;
@@ -24,9 +24,9 @@ RZ_API int rz_print_pack7bit(const char *src, char *dest) {
 		ch1 = ch1 | ch2;
 
 		j = strlen(dest);
-		sprintf (tmp, "%x", (ch1 >> 4));
+		sprintf(tmp, "%x", (ch1 >> 4));
 		dest[j++] = tmp[0];
-		sprintf (tmp, "%x", (ch1 & 0x0F));
+		sprintf(tmp, "%x", (ch1 & 0x0F));
 		dest[j++] = tmp[0];
 		dest[j++] = '\0';
 		if (7 == ++shift) {
@@ -38,15 +38,15 @@ RZ_API int rz_print_pack7bit(const char *src, char *dest) {
 }
 
 RZ_API int rz_print_unpack7bit(const char *src, char *dest) {
-	int i, j, shift = 0, len = strlen (src);
+	int i, j, shift = 0, len = strlen(src);
 	ut8 ch1, ch2 = '\0';
 	char buf[8];
 
 	*dest = '\0';
 
 	for (i = 0; i < len; i += 2) {
-		sprintf (buf, "%c%c", src[i], src[i + 1]);
-		ch1 = strtol (buf, NULL, 16);
+		sprintf(buf, "%c%c", src[i], src[i + 1]);
+		ch1 = strtol(buf, NULL, 16);
 		j = strlen(dest);
 		dest[j++] = ((ch1 & (0x7F >> shift)) << shift) | ch2;
 		dest[j++] = '\0';

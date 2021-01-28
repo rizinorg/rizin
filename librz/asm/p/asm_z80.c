@@ -9,11 +9,11 @@
 #include "../arch/z80/z80asm.c"
 
 static int do_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	return op->size = z80Disass (op, buf, len);
+	return op->size = z80Disass(op, buf, len);
 }
 
 static int do_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
-	return op->size = z80asm ((ut8*)rz_strbuf_get (&op->buf), buf);
+	return op->size = z80asm((ut8 *)rz_strbuf_get(&op->buf), buf);
 }
 
 RzAsmPlugin rz_asm_plugin_z80 = {

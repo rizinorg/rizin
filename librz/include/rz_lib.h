@@ -12,12 +12,12 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER (rz_lib);
+RZ_LIB_VERSION_HEADER(rz_lib);
 
 // rename to '.' ??
 #define RZ_LIB_SEPARATOR "."
-#define RZ_LIB_SYMNAME "rizin_plugin"
-#define RZ_LIB_SYMFUNC "rizin_plugin_function"
+#define RZ_LIB_SYMNAME   "rizin_plugin"
+#define RZ_LIB_SYMFUNC   "rizin_plugin_function"
 
 #define RZ_LIB_ENV "RZ_LIBR_PLUGINS"
 
@@ -62,25 +62,25 @@ typedef struct rz_lib_struct_t {
 	const char *pkgname; /* pkgname associated to this plugin */
 } RzLibStruct;
 
-typedef RzLibStruct* (*RzLibStructFunc) (void);
+typedef RzLibStruct *(*RzLibStructFunc)(void);
 
 // order matters because of librz/util/lib.c
 enum {
-	RZ_LIB_TYPE_IO,      /* io layer */
-	RZ_LIB_TYPE_DBG,     /* debugger */
-	RZ_LIB_TYPE_LANG,    /* language */
-	RZ_LIB_TYPE_ASM,     /* assembler */
-	RZ_LIB_TYPE_ANALYSIS,    /* analysis */
-	RZ_LIB_TYPE_PARSE,   /* parsers */
-	RZ_LIB_TYPE_BIN,     /* bin headers */
+	RZ_LIB_TYPE_IO, /* io layer */
+	RZ_LIB_TYPE_DBG, /* debugger */
+	RZ_LIB_TYPE_LANG, /* language */
+	RZ_LIB_TYPE_ASM, /* assembler */
+	RZ_LIB_TYPE_ANALYSIS, /* analysis */
+	RZ_LIB_TYPE_PARSE, /* parsers */
+	RZ_LIB_TYPE_BIN, /* bin headers */
 	RZ_LIB_TYPE_BIN_XTR, /* bin extractors */
 	RZ_LIB_TYPE_BIN_LDR, /* bin loaders */
-	RZ_LIB_TYPE_BP,      /* breakpoint */
+	RZ_LIB_TYPE_BP, /* breakpoint */
 	RZ_LIB_TYPE_SYSCALL, /* syscall */
-	RZ_LIB_TYPE_FASTCALL,/* fastcall */
-	RZ_LIB_TYPE_CRYPTO,  /* cryptography */
-	RZ_LIB_TYPE_CORE,    /* RzCore commands */
-	RZ_LIB_TYPE_EGG,     /* rz_egg plugin */
+	RZ_LIB_TYPE_FASTCALL, /* fastcall */
+	RZ_LIB_TYPE_CRYPTO, /* cryptography */
+	RZ_LIB_TYPE_CORE, /* RzCore commands */
+	RZ_LIB_TYPE_EGG, /* rz_egg plugin */
 	RZ_LIB_TYPE_LAST
 };
 
@@ -109,7 +109,7 @@ RZ_API int rz_lib_run_handler(RzLib *lib, RzLibPlugin *plugin, RzLibStruct *symb
 RZ_API RzLibHandler *rz_lib_get_handler(RzLib *lib, int type);
 RZ_API int rz_lib_open(RzLib *lib, const char *file);
 RZ_API bool rz_lib_opendir(RzLib *lib, const char *path);
-RZ_API int rz_lib_open_ptr (RzLib *lib, const char *file, void *handler, RzLibStruct *stru);
+RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStruct *stru);
 RZ_API char *rz_lib_path(const char *libname);
 RZ_API void rz_lib_list(RzLib *lib);
 RZ_API bool rz_lib_add_handler(RzLib *lib, int type, const char *desc, RzLibCallback ct, RzLibCallback dt, void *user);

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "rz_util.h"
 
-
 void check(const char *exp, const char *act, const char *desc) {
 	if (strcmp(exp, act) == 0)
 		printf("\x1b[34m[+][%s]\x1b[39;49m test passed\n", desc);
@@ -42,9 +41,9 @@ int main(int argc, char *argv[]) {
 	char tail[] = "a ";
 	char head_tail[] = " a ";
 
-	check ("a", rz_str_trim_head (head), "trim head \" a\"");
-	check ("a", rz_str_trim_tail (tail), "trim tail \"a \"");
-	check ("a", rz_str_trim (head_tail), "trim head tail \" a \"");
+	check("a", rz_str_trim_head(head), "trim head \" a\"");
+	check("a", rz_str_trim_tail(tail), "trim tail \"a \"");
+	check("a", rz_str_trim(head_tail), "trim head tail \" a \"");
 
 	char *crop =
 		"This is the first line\n"
@@ -55,16 +54,16 @@ int main(int argc, char *argv[]) {
 		"is is the se\n"
 		"\n"
 		"d this is th\n";
-	check (crop_exp, rz_str_crop(crop, 2, 1, 14, 10), "crop text");
-	check ("", rz_str_crop(NULL, 2, 1, 14, 10), "crop NULL");
+	check(crop_exp, rz_str_crop(crop, 2, 1, 14, 10), "crop text");
+	check("", rz_str_crop(NULL, 2, 1, 14, 10), "crop NULL");
 
 	char dst[256];
 	char src[] = "This is my text";
 	rz_str_ncpy(dst, src, 4);
-	check ("This", dst, "rz_str_ncpy");
+	check("This", dst, "rz_str_ncpy");
 	dst[0] = '\0';
 	rz_str_ncpy(dst, src, 100);
-	check ("This is my text", dst, "rz_str_ncpy (n > src length)");
+	check("This is my text", dst, "rz_str_ncpy (n > src length)");
 
 	strcpy(dst, "This is a $mess < fin.txt");
 	rz_str_sanitize(dst);
@@ -116,20 +115,20 @@ int main(int argc, char *argv[]) {
 	strcpy(dst, "\x1b[30mHel\x1b[29mlo\x1b[28m");
 	int res = rz_str_ansi_filter(dst, NULL, &cpos, -1);
 	check_int(5, res, "rz_str_ansi_filter res");
-	int exp_cpos[] = {5, 6, 7, 13, 14};
+	int exp_cpos[] = { 5, 6, 7, 13, 14 };
 	check_array(exp_cpos, cpos, res, "rz_str_ansi_filter cpos");
 
 	char clean[256];
 	char *str = malloc(256);
 	strcpy(str, "\x1b[30mHell\x1b[32mo\nIt'\x1b[33ms a test\n");
 	strcpy(clean, "Hello\nIt's a test\n");
-	int thunk[] = {5, 6, 7, 8, 14, 15, 16, 17, 18, 24, 25, 26, 27, 28, 29, 30, 31, 32};
-	char *res_s = rz_str_replace_thunked (str, clean, thunk, 18, "est", "\x1b[31mest\x1b[39;49m", 1);
+	int thunk[] = { 5, 6, 7, 8, 14, 15, 16, 17, 18, 24, 25, 26, 27, 28, 29, 30, 31, 32 };
+	char *res_s = rz_str_replace_thunked(str, clean, thunk, 18, "est", "\x1b[31mest\x1b[39;49m", 1);
 	check("\x1b[30mHell\x1b[32mo\nIt'\x1b[33ms a t\x1b[31mest\x1b[39;49m\n", res_s, "rz_str_replace_thunked");
 
 	int l;
 	strcpy(str, "\x1b[30mMess\x1b[32mo\nIt'\x1b[33ms a mess\n");
-	l = rz_str_ansi_filter (str, &orig, &cpos, 0);
+	l = rz_str_ansi_filter(str, &orig, &cpos, 0);
 	res_s = rz_str_replace_thunked(orig, str, cpos, l, "ell", "\x1b[31mell\x1b[39;49m", 1);
 	check("\x1b[30mH\x1b[31mell\x1b[39;49mo\nIt'\x1b[33ms an h\x1b[31mell\x1b[39;49m\n", res_s, "rz_str_ansi_filter + replace_thunked");
 

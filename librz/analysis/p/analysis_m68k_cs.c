@@ -9,7 +9,7 @@
 #else
 #define CAPSTONE_HAS_M68K 0
 #ifdef _MSC_VER
-#pragma message ("Cannot find capstone-m68k support")
+#pragma message("Cannot find capstone-m68k support")
 #else
 #warning Cannot find capstone-m68k support
 #endif
@@ -19,12 +19,12 @@
 #include <m68k.h>
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
 
-#define OPERAND(x) insn->detail->m68k.operands[x]
-#define REG(x) cs_reg_name (*handle, insn->detail->m68k.operands[x].reg)
-#define IMM(x) insn->detail->m68k.operands[x].imm
-#define MEMBASE(x) cs_reg_name(*handle, insn->detail->m68k.operands[x].mem.base)
+#define OPERAND(x)  insn->detail->m68k.operands[x]
+#define REG(x)      cs_reg_name(*handle, insn->detail->m68k.operands[x].reg)
+#define IMM(x)      insn->detail->m68k.operands[x].imm
+#define MEMBASE(x)  cs_reg_name(*handle, insn->detail->m68k.operands[x].mem.base)
 #define MEMINDEX(x) insn->detail->m68k.operands[x].mem.index
-#define MEMDISP(x) insn->detail->m68k.operands[x].mem.disp
+#define MEMDISP(x)  insn->detail->m68k.operands[x].mem.disp
 
 static inline ut64 make_64bits_address(ut64 address) {
 	return UT32_MAX & address;
@@ -32,17 +32,17 @@ static inline ut64 make_64bits_address(ut64 address) {
 
 static inline void handle_branch_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
 #if CS_API_MAJOR >= 4
-		if (m68k->operands[index].type == M68K_OP_BR_DISP) {
-			op->type = type;
-			// TODO: disp_size is ignored
-			op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
-			op->fail = make_64bits_address (addr + op->size);
-		}
-#else
+	if (m68k->operands[index].type == M68K_OP_BR_DISP) {
 		op->type = type;
 		// TODO: disp_size is ignored
-		op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
-		op->fail = make_64bits_address (addr + op->size);
+		op->jump = make_64bits_address(addr + m68k->operands[index].br_disp.disp + 2);
+		op->fail = make_64bits_address(addr + op->size);
+	}
+#else
+	op->type = type;
+	// TODO: disp_size is ignored
+	op->jump = make_64bits_address(addr + m68k->operands[index].br_disp.disp + 2);
+	op->fail = make_64bits_address(addr + op->size);
 #endif
 }
 
@@ -51,80 +51,80 @@ static inline void handle_jump_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k 
 
 	// Handle PC relative mode jump
 	if (m68k->operands[0].address_mode == M68K_AM_PCI_DISP) {
-		op->jump = make_64bits_address (addr + m68k->operands[0].mem.disp + 2);
+		op->jump = make_64bits_address(addr + m68k->operands[0].mem.disp + 2);
 	} else {
-		op->jump = make_64bits_address (m68k->operands[0].imm);
+		op->jump = make_64bits_address(m68k->operands[0].imm);
 	}
 
-	op->fail = make_64bits_address (addr + op->size);
+	op->fail = make_64bits_address(addr + op->size);
 }
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	PJ *pj = pj_new ();
+	PJ *pj = pj_new();
 	if (!pj) {
 		return;
 	}
-	pj_o (pj);
+	pj_o(pj);
 	cs_m68k *x = &insn->detail->m68k;
-	pj_ka (pj, "operands");
+	pj_ka(pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
 		cs_m68k_op *op = &x->operands[i];
-		pj_o (pj);
+		pj_o(pj);
 		switch (op->type) {
-			case M68K_OP_REG:
-			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+		case M68K_OP_REG:
+			pj_ks(pj, "type", "reg");
+			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
 			break;
 		case M68K_OP_IMM:
-			pj_ks (pj, "type", "imm");
-			pj_kN (pj, "value", (st64)op->imm);
+			pj_ks(pj, "type", "imm");
+			pj_kN(pj, "value", (st64)op->imm);
 			break;
 		case M68K_OP_MEM:
-			pj_ks (pj, "type", "mem");
+			pj_ks(pj, "type", "mem");
 			if (op->mem.base_reg != M68K_REG_INVALID) {
-				pj_ks (pj, "base_reg", cs_reg_name (handle, op->mem.base_reg));
+				pj_ks(pj, "base_reg", cs_reg_name(handle, op->mem.base_reg));
 			}
 			if (op->mem.index_reg != M68K_REG_INVALID) {
-				pj_ks (pj, "index_reg", cs_reg_name (handle, op->mem.index_reg));
+				pj_ks(pj, "index_reg", cs_reg_name(handle, op->mem.index_reg));
 			}
 			if (op->mem.in_base_reg != M68K_REG_INVALID) {
-				pj_ks (pj, "in_base_reg", cs_reg_name (handle, op->mem.in_base_reg));
+				pj_ks(pj, "in_base_reg", cs_reg_name(handle, op->mem.in_base_reg));
 			}
-			pj_kN (pj, "in_disp", op->mem.in_disp);
-			pj_kN (pj, "out_disp", op->mem.out_disp);
-			pj_ki (pj, "disp", op->mem.disp);
-			pj_ki (pj, "scale", op->mem.scale);
-			pj_ki (pj, "bitfield", op->mem.bitfield);
-			pj_ki (pj, "width", op->mem.width);
-			pj_ki (pj, "offset", op->mem.offset);
-			pj_ki (pj, "index_size", op->mem.index_size);
+			pj_kN(pj, "in_disp", op->mem.in_disp);
+			pj_kN(pj, "out_disp", op->mem.out_disp);
+			pj_ki(pj, "disp", op->mem.disp);
+			pj_ki(pj, "scale", op->mem.scale);
+			pj_ki(pj, "bitfield", op->mem.bitfield);
+			pj_ki(pj, "width", op->mem.width);
+			pj_ki(pj, "offset", op->mem.offset);
+			pj_ki(pj, "index_size", op->mem.index_size);
 			break;
 		default:
-			pj_ks (pj, "type", "invalid");
+			pj_ks(pj, "type", "invalid");
 			break;
 		}
-		pj_end (pj); /* o operand */
+		pj_end(pj); /* o operand */
 	}
-	pj_end (pj); /* a operands */
-	pj_end (pj);
+	pj_end(pj); /* a operands */
+	pj_end(pj);
 
-	rz_strbuf_init (buf);
-	rz_strbuf_append (buf, pj_string (pj));
-	pj_free (pj);
+	rz_strbuf_init(buf);
+	rz_strbuf_append(buf, pj_string(pj));
+	pj_free(pj);
 }
 
 static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {
 		return -1;
 	}
-	switch (OPERAND (reg_num).type) {
+	switch (OPERAND(reg_num).type) {
 	case M68K_OP_REG:
-		reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).reg);
+		reg->name = (char *)cs_reg_name(handle, OPERAND(reg_num).reg);
 		break;
 	case M68K_OP_MEM:
-		if (OPERAND (reg_num).mem.base_reg != M68K_REG_INVALID) {
-			reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).mem.base_reg);
+		if (OPERAND(reg_num).mem.base_reg != M68K_REG_INVALID) {
+			reg->name = (char *)cs_reg_name(handle, OPERAND(reg_num).mem.base_reg);
 		}
 		break;
 	default:
@@ -137,25 +137,25 @@ static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 	static RzRegItem reg;
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
-		ZERO_FILL (reg);
+		ZERO_FILL(reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			op->src[0] = rz_analysis_value_new ();
+			op->src[0] = rz_analysis_value_new();
 			op->src[0]->reg = &reg;
-			parse_reg_name (op->src[0]->reg, handle, insn, 1);
+			parse_reg_name(op->src[0]->reg, handle, insn, 1);
 			op->src[0]->delta = OPERAND(0).mem.disp;
 		} else if (OPERAND(0).type == M68K_OP_MEM) {
-			op->dst = rz_analysis_value_new ();
+			op->dst = rz_analysis_value_new();
 			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, handle, insn, 0);
+			parse_reg_name(op->dst->reg, handle, insn, 0);
 			op->dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_LEA:
-		ZERO_FILL (reg);
+		ZERO_FILL(reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			op->dst = rz_analysis_value_new ();
+			op->dst = rz_analysis_value_new();
 			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, handle, insn, 1);
+			parse_reg_name(op->dst->reg, handle, insn, 1);
 			op->dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
@@ -167,55 +167,55 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	static csh handle = 0;
 	static int omode = -1;
 	static int obits = 32;
-	cs_insn* insn;
+	cs_insn *insn;
 	cs_m68k *m68k;
 	cs_detail *detail;
 
-	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
 	//mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 	if (mode != omode || a->bits != obits) {
-		cs_close (&handle);
+		cs_close(&handle);
 		handle = 0;
 		omode = mode;
 		obits = a->bits;
 	}
-// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
+	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	// replace this with the asm.features?
-	if (a->cpu && strstr (a->cpu, "68000")) {
+	if (a->cpu && strstr(a->cpu, "68000")) {
 		mode |= CS_MODE_M68K_000;
 	}
-	if (a->cpu && strstr (a->cpu, "68010")) {
+	if (a->cpu && strstr(a->cpu, "68010")) {
 		mode |= CS_MODE_M68K_010;
 	}
-	if (a->cpu && strstr (a->cpu, "68020")) {
+	if (a->cpu && strstr(a->cpu, "68020")) {
 		mode |= CS_MODE_M68K_020;
 	}
-	if (a->cpu && strstr (a->cpu, "68030")) {
+	if (a->cpu && strstr(a->cpu, "68030")) {
 		mode |= CS_MODE_M68K_030;
 	}
-	if (a->cpu && strstr (a->cpu, "68040")) {
+	if (a->cpu && strstr(a->cpu, "68040")) {
 		mode |= CS_MODE_M68K_040;
 	}
-	if (a->cpu && strstr (a->cpu, "68060")) {
+	if (a->cpu && strstr(a->cpu, "68060")) {
 		mode |= CS_MODE_M68K_060;
 	}
 	op->size = 4;
 	if (handle == 0) {
-		ret = cs_open (CS_ARCH_M68K, mode, &handle);
+		ret = cs_open(CS_ARCH_M68K, mode, &handle);
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
-		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm(handle, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
 		goto beach;
 	}
-	if (!memcmp (buf, "\xff\xff", RZ_MIN (len, 2))) {
+	if (!memcmp(buf, "\xff\xff", RZ_MIN(len, 2))) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
@@ -226,28 +226,28 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-		opex (&op->opex, handle, insn);
+		opex(&op->opex, handle, insn);
 	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
-		op->type  = RZ_ANALYSIS_OP_TYPE_ILL;
+		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		break;
 	case M68K_INS_ADD:
 	case M68K_INS_ADDA:
 	case M68K_INS_ADDI:
 	case M68K_INS_ADDQ:
 	case M68K_INS_ADDX:
-		op->type  = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 	case M68K_INS_AND:
 	case M68K_INS_ANDI:
-		op->type  = RZ_ANALYSIS_OP_TYPE_AND;
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
 	case M68K_INS_ASL:
-		op->type  = RZ_ANALYSIS_OP_TYPE_SHL;
+		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
 	case M68K_INS_ASR:
-		op->type  = RZ_ANALYSIS_OP_TYPE_SHR;
+		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		break;
 	case M68K_INS_ABCD:
 		break;
@@ -267,13 +267,13 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	case M68K_INS_BLT:
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
-		handle_branch_instruction (op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 0);
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 0);
 		break;
 	case M68K_INS_BRA:
-		handle_branch_instruction (op, addr, m68k, RZ_ANALYSIS_OP_TYPE_JMP, 0);
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_JMP, 0);
 		break;
 	case M68K_INS_BSR:
-		handle_branch_instruction (op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CALL, 0);
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CALL, 0);
 		break;
 	case M68K_INS_BCHG:
 	case M68K_INS_BCLR:
@@ -329,7 +329,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	case M68K_INS_DBGT:
 	case M68K_INS_DBLE:
 	case M68K_INS_DBRA:
-		handle_branch_instruction (op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 1);
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 1);
 		break;
 	case M68K_INS_DIVS:
 	case M68K_INS_DIVSL:
@@ -544,10 +544,10 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		break;
 	case M68K_INS_JMP:
-		handle_jump_instruction (op, addr, m68k, RZ_ANALYSIS_OP_TYPE_JMP);
+		handle_jump_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_JMP);
 		break;
 	case M68K_INS_JSR:
-		handle_jump_instruction (op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CALL);
+		handle_jump_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CALL);
 		break;
 	case M68K_INS_LPSTOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
@@ -698,17 +698,17 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	}
 	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-		op_fillval (op, handle, insn);
+		op_fillval(op, handle, insn);
 	}
 beach:
-	cs_free (insn, n);
+	cs_free(insn, n);
 	//cs_close (&handle);
 fin:
 	return opsize;
 }
 
 static bool set_reg_profile(RzAnalysis *analysis) {
-	const char *p = \
+	const char *p =
 		"=PC    pc\n"
 		"=SP    a7\n"
 		"=BP    a6\n"
@@ -762,7 +762,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	fpcr	.32	176	0\n"
 		"gpr	fpsr	.32	180	0\n"
 		"gpr	fpiar	.32	184	0\n";
-	return rz_reg_set_profile_string (analysis->reg, p);
+	return rz_reg_set_profile_string(analysis->reg, p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_m68k_cs = {

@@ -1,3 +1,4 @@
+&j
 /ad/j push rbp
 /adj push rbp
 /j l
@@ -18,11 +19,15 @@ afbij
 afbj
 afcrj
 afij
+afisaj
 aflj
 aflqj
 aflmj
 afnsj @ sym.main
+afvbj @ sym.main
 afvj @ sym.main
+afvrj @ sym.main
+afvsj @ sym.main
 agcj @ sym.main
 aggj
 agJ

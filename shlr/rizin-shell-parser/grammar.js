@@ -168,7 +168,6 @@ module.exports = grammar({
             $.html_disable_command,
             $.html_enable_command,
             $.pipe_command,
-            $.scr_tts_command,
         ),
 
         grep_command: $ => seq(
@@ -205,10 +204,6 @@ module.exports = grammar({
         html_enable_command: $ => prec.right(1, seq(
             field('command', $._simple_command),
             '|H'
-        )),
-        scr_tts_command: $ => prec.right(1, seq(
-            field('command', $._simple_command),
-            '|T'
         )),
         pipe_command: $ => seq($._simple_command, '|', $.pipe_second_command),
         pipe_second_command: $ => /[^|\r\n;]+/,
@@ -520,16 +515,22 @@ module.exports = grammar({
         html_redirect_operator: $ => 'H>',
         html_append_operator: $ => 'H>>',
 
+        _arg_with_paren: $ => seq(
+            alias('(', $.arg_identifier),
+            $.args,
+            alias(')', $.arg_identifier),
+        ),
+        _arg_brace_with_paren: $ => seq(
+            alias('(', $.arg_identifier),
+            $._arg_brace,
+            alias(')', $.arg_identifier),
+        ),
         _arg: $ => choice(
             $.arg_identifier,
             $.double_quoted_arg,
             $.single_quoted_arg,
             $.cmd_substitution_arg,
-            seq(
-                alias('(', $.arg_identifier),
-                $.args,
-                alias(')', $.arg_identifier),
-            ),
+            alias($._arg_with_paren, $.args),
             alias(',', $.arg_identifier),
         ),
         _arg_brace: $ => choice(
@@ -537,11 +538,7 @@ module.exports = grammar({
             $.double_quoted_arg,
             $.single_quoted_arg,
             $.cmd_substitution_arg,
-            seq(
-                alias('(', $.arg_identifier),
-                $._arg_brace,
-                alias(')', $.arg_identifier),
-            ),
+            alias($._arg_brace_with_paren, $.args),
             alias(',', $.arg_identifier),
         ),
         arg: $ => choice(

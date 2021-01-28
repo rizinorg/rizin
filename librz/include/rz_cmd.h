@@ -13,8 +13,8 @@ typedef struct rz_core_t RzCore;
 
 //RZ_LIB_VERSION_HEADER (rz_cmd);
 
-#define MACRO_LIMIT 1024
-#define MACRO_LABELS 20
+#define MACRO_LIMIT   1024
+#define MACRO_LABELS  20
 #define RZ_CMD_MAXLEN 4096
 
 /**
@@ -24,7 +24,8 @@ typedef enum rz_cmd_status_t {
 	RZ_CMD_STATUS_OK = 0, ///< command handler exited in the right way
 	RZ_CMD_STATUS_WRONG_ARGS, ///< command handler could not handle the arguments passed to it
 	RZ_CMD_STATUS_ERROR, ///< command handler had issues while running (e.g. allocation error, etc.)
-	RZ_CMD_STATUS_INVALID, ///< command could not be executed (e.g. shell level error, not existing command, bad expression, etc.)
+	RZ_CMD_STATUS_INVALID, ///< command could not be executed (e.g. shell level error, bad expression, etc.)
+	RZ_CMD_STATUS_NONEXISTINGCMD, ///< command does not exist
 	RZ_CMD_STATUS_EXIT, ///< command handler asks to exit the prompt loop
 } RzCmdStatus;
 
@@ -34,7 +35,8 @@ typedef enum rz_cmd_status_t {
  */
 typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_FAKE, ///< This is not considered a real argument, just used to show something in the help. Name of arg is shown as-is and it is not counted.
-	RZ_CMD_ARG_TYPE_NUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
+	RZ_CMD_ARG_TYPE_NUM, ///< Argument is a number
+	RZ_CMD_ARG_TYPE_RZNUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
 	RZ_CMD_ARG_TYPE_ZIGN, ///< Argument can be the name of an existing zignature
@@ -72,10 +74,10 @@ typedef enum rz_cmd_escape_t {
 	RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG, ///< The string should be escaped so that it can be wrapped in '....'
 } RzCmdEscape;
 
-typedef int (*RzCmdCb) (void *user, const char *input);
-typedef RzCmdStatus (*RzCmdArgvCb) (RzCore *core, int argc, const char **argv);
-typedef RzCmdStatus (*RzCmdArgvModesCb) (RzCore *core, int argc, const char **argv, RzOutputMode mode);
-typedef int (*RzCmdNullCb) (void *user);
+typedef int (*RzCmdCb)(void *user, const char *input);
+typedef RzCmdStatus (*RzCmdArgvCb)(RzCore *core, int argc, const char **argv);
+typedef RzCmdStatus (*RzCmdArgvModesCb)(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+typedef int (*RzCmdNullCb)(void *user);
 
 /**
  * argc/argv data created from parsing the input command string.
@@ -104,7 +106,7 @@ typedef struct rz_cmd_macro_t {
 	ut64 *brk_value;
 	ut64 _brk_value;
 	int brk;
-// 	int (*cmd)(void *user, const char *cmd);
+	// 	int (*cmd)(void *user, const char *cmd);
 	RzCoreCmd cmd;
 	PrintfCallback cb_printf;
 	void *user;
@@ -324,14 +326,49 @@ typedef enum rz_cmd_desc_type_t {
 	RZ_CMD_DESC_TYPE_ARGV_MODES,
 } RzCmdDescType;
 
+/**
+ * Command Descriptor structure. It represents a command that can be executed
+ * by the user on the shell or a part of the command help (e.g. groups of
+ * commands). Anything that appears under `?` has an associated command
+ * descriptor.
+ */
 typedef struct rz_cmd_desc_t {
+	/**
+	 * Type of the command descriptor. There are several types of commands:
+	 * those that are still using the old-style and parses the input string
+	 * themselves, those that accept argc/argv, etc.
+	 */
 	RzCmdDescType type;
+	/**
+	 * Base name of the command. This is used to retrieve the \p RzCmdDesc when
+	 * a user executes a command. It can match multiple user-called commands.
+	 * For example a command that accepts STANDARD and JSON \p modes is called
+	 * for both `<name>` and `<name>j`.
+	 */
 	char *name;
+	/**
+	 * Parent of this command descriptor.
+	 *
+	 * Commands are organized in a tree, with the root being shown when doing
+	 * `?`. This relationship is used when showing commands helps.
+	 */
 	struct rz_cmd_desc_t *parent;
+	/**
+	 * Number of children command descriptors of this node.
+	 */
 	int n_children;
+	/**
+	 * Vector of childrens command descriptors.
+	 */
 	RzPVector children;
+	/**
+	 * Reference to the help structure of this command descriptor.
+	 */
 	const RzCmdDescHelp *help;
 
+	/**
+	 * Type-specific fields.
+	 */
 	union {
 		struct {
 			RzCmdCb cb;
@@ -346,7 +383,7 @@ typedef struct rz_cmd_desc_t {
 		} group_data;
 		struct {
 			RzCmdArgvModesCb cb;
-			int modes;
+			int modes; ///< A combination of RzOutputMode values
 			int min_argc;
 			int max_argc;
 		} argv_modes_data;
@@ -394,7 +431,7 @@ typedef struct rz_core_plugin_t {
 	RzCmdCb fini;
 } RzCorePlugin;
 
-typedef bool (*RzCmdForeachNameCb) (RzCmd *cmd, const char *name, void *user);
+typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const char *name, void *user);
 
 #ifdef RZ_API
 RZ_API int rz_core_plugin_init(RzCmd *cmd);
@@ -430,6 +467,7 @@ static inline int rz_cmd_status2int(RzCmdStatus s) {
 	case RZ_CMD_STATUS_ERROR:
 	case RZ_CMD_STATUS_WRONG_ARGS:
 	case RZ_CMD_STATUS_INVALID:
+	case RZ_CMD_STATUS_NONEXISTINGCMD:
 		return -1;
 	case RZ_CMD_STATUS_EXIT:
 	default:
@@ -450,6 +488,7 @@ RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_has_handler(RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdForeachNameCb cb, void *user);
+RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(RzCmd *cmd, const RzCmdDesc *cd, size_t i);
 
 #define rz_cmd_desc_children_foreach(root, it_cd) rz_pvector_foreach (&root->children, it_cd)
 

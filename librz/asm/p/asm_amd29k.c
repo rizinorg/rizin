@@ -13,14 +13,14 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	char buf_asm[64];
 	ut64 offset = a->pc;
-	amd29k_instr_t instruction = {0};
+	amd29k_instr_t instruction = { 0 };
 	op->size = 4;
-	if (amd29k_instr_decode (buf, len, &instruction, a->cpu)) {
-		amd29k_instr_print (buf_asm, sizeof (buf_asm), offset, &instruction);
-		rz_asm_op_set_asm (op, buf_asm);
+	if (amd29k_instr_decode(buf, len, &instruction, a->cpu)) {
+		amd29k_instr_print(buf_asm, sizeof(buf_asm), offset, &instruction);
+		rz_asm_op_set_asm(op, buf_asm);
 		return 4;
 	}
-	rz_asm_op_set_asm (op, "invalid");
+	rz_asm_op_set_asm(op, "invalid");
 	return -1;
 }
 
@@ -29,7 +29,7 @@ RzAsmPlugin rz_asm_plugin_amd29k = {
 	.license = "LGPL3",
 	.desc = "AMD 29k RISC CPU",
 	.author = "deroad",
-	.arch = CPU_29000","CPU_29050,
+	.arch = CPU_29000 "," CPU_29050,
 	.cpus = "amd29k",
 	.bits = 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE,

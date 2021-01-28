@@ -4,10 +4,10 @@
 #include <rz_lib.h>
 
 static struct rz_bp_arch_t rz_bp_plugin_mips_bps[] = {
-	{ 32, 4, 0, (const ut8*)"\x0d\x00\x00\x00" },
-	{ 32, 4, 1, (const ut8*)"\x00\x00\x00\x0d" },
-	{ 64, 4, 0, (const ut8*)"\x0d\x00\x00\x00" },
-	{ 64, 4, 1, (const ut8*)"\x00\x00\x00\x0d" },
+	{ 32, 4, 0, (const ut8 *)"\x0d\x00\x00\x00" },
+	{ 32, 4, 1, (const ut8 *)"\x00\x00\x00\x0d" },
+	{ 64, 4, 0, (const ut8 *)"\x0d\x00\x00\x00" },
+	{ 64, 4, 1, (const ut8 *)"\x00\x00\x00\x0d" },
 	{ 0, 0, 0, NULL }
 };
 

@@ -51,8 +51,9 @@ typedef struct rz_vector_t {
 } RzVector;
 
 // RzPVector directly wraps RzVector for type safety
-typedef struct rz_pvector_t { RzVector v; } RzPVector;
-
+typedef struct rz_pvector_t {
+	RzVector v;
+} RzPVector;
 
 // RzVector
 
@@ -70,7 +71,7 @@ RZ_API void rz_vector_free(RzVector *vec);
 RZ_API RzVector *rz_vector_clone(RzVector *vec);
 
 static inline bool rz_vector_empty(const RzVector *vec) {
-	rz_return_val_if_fail (vec, false);
+	rz_return_val_if_fail(vec, false);
 	return vec->len == 0;
 }
 
@@ -78,13 +79,13 @@ RZ_API void rz_vector_clear(RzVector *vec);
 
 // returns the length of the vector
 static inline size_t rz_vector_len(const RzVector *vec) {
-	rz_return_val_if_fail (vec, 0);
+	rz_return_val_if_fail(vec, 0);
 	return vec->len;
 }
 
 // returns a pointer to the offset inside the array where the element of the index lies.
 static inline void *rz_vector_index_ptr(RzVector *vec, size_t index) {
-	rz_return_val_if_fail (vec && index < vec->capacity, NULL);
+	rz_return_val_if_fail(vec && index < vec->capacity, NULL);
 	return (char *)vec->a + vec->elem_size * index;
 }
 
@@ -135,15 +136,15 @@ RZ_API void *rz_vector_shrink(RzVector *vec);
  * }
  */
 #define rz_vector_foreach(vec, it) \
-	if (!rz_vector_empty (vec)) \
+	if (!rz_vector_empty(vec)) \
 		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
 
 #define rz_vector_foreach_prev(vec, it) \
-	if (!rz_vector_empty (vec)) \
-		for (it = (void *)((char *)(vec)->a + (((vec)->len - 1)* (vec)->elem_size)); (char *)it != (char *)(vec)->a; it = (void *)((char *)it - (vec)->elem_size))
+	if (!rz_vector_empty(vec)) \
+		for (it = (void *)((char *)(vec)->a + (((vec)->len - 1) * (vec)->elem_size)); (char *)it != (char *)(vec)->a - (vec)->elem_size; it = (void *)((char *)it - (vec)->elem_size))
 
 #define rz_vector_enumerate(vec, it, i) \
-	if (!rz_vector_empty (vec)) \
+	if (!rz_vector_empty(vec)) \
 		for (it = (void *)(vec)->a, i = 0; i < (vec)->len; it = (void *)((char *)it + (vec)->elem_size), i++)
 
 /*
@@ -158,28 +159,28 @@ RZ_API void *rz_vector_shrink(RzVector *vec);
 #define rz_vector_lower_bound(vec, x, i, cmp) \
 	do { \
 		size_t h = (vec)->len, m; \
-		for (i = 0; i < h; ) { \
+		for (i = 0; i < h;) { \
 			m = i + ((h - i) >> 1); \
-			if ((cmp (x, ((char *)(vec)->a + (vec)->elem_size * m))) > 0) { \
+			if ((cmp(x, ((char *)(vec)->a + (vec)->elem_size * m))) > 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \
 			} \
 		} \
-	} while (0) \
+	} while (0)
 
 #define rz_vector_upper_bound(vec, x, i, cmp) \
 	do { \
 		size_t h = (vec)->len, m; \
-		for (i = 0; i < h; ) { \
+		for (i = 0; i < h;) { \
 			m = i + ((h - i) >> 1); \
-			if ((cmp (x, ((char *)(vec)->a + (vec)->elem_size * m))) < 0) { \
+			if ((cmp(x, ((char *)(vec)->a + (vec)->elem_size * m))) < 0) { \
 				h = m; \
 			} else { \
 				i = m + 1; \
 			} \
 		} \
-	} while (0) \
+	} while (0)
 
 // RzPVector
 
@@ -197,33 +198,33 @@ RZ_API void rz_pvector_clear(RzPVector *vec);
 RZ_API void rz_pvector_free(RzPVector *vec);
 
 static inline size_t rz_pvector_len(const RzPVector *vec) {
-	rz_return_val_if_fail (vec, 0);
+	rz_return_val_if_fail(vec, 0);
 	return vec->v.len;
 }
 
 static inline void *rz_pvector_at(const RzPVector *vec, size_t index) {
-	rz_return_val_if_fail (vec && index < vec->v.len, NULL);
+	rz_return_val_if_fail(vec && index < vec->v.len, NULL);
 	return ((void **)vec->v.a)[index];
 }
 
 static inline void rz_pvector_set(RzPVector *vec, size_t index, void *e) {
-	rz_return_if_fail (vec && index < vec->v.len);
+	rz_return_if_fail(vec && index < vec->v.len);
 	((void **)vec->v.a)[index] = e;
 }
 
 static inline bool rz_pvector_empty(RzPVector *vec) {
-	return rz_pvector_len (vec) == 0;
+	return rz_pvector_len(vec) == 0;
 }
 
 // returns a pointer to the offset inside the array where the element of the index lies.
 static inline void **rz_pvector_index_ptr(RzPVector *vec, size_t index) {
-	rz_return_val_if_fail (vec && index < vec->v.capacity, NULL);
+	rz_return_val_if_fail(vec && index < vec->v.capacity, NULL);
 	return ((void **)vec->v.a) + index;
 }
 
 // same as rz_pvector_index_ptr(<vec>, 0)
 static inline void **rz_pvector_data(RzPVector *vec) {
-	rz_return_val_if_fail (vec, NULL);
+	rz_return_val_if_fail(vec, NULL);
 	return (void **)vec->v.a;
 }
 
@@ -238,12 +239,12 @@ RZ_API void rz_pvector_remove_data(RzPVector *vec, void *x);
 
 // like rz_vector_insert, but the pointer x is the actual data to be inserted.
 static inline void **rz_pvector_insert(RzPVector *vec, size_t index, void *x) {
-	return (void **)rz_vector_insert (&vec->v, index, &x);
+	return (void **)rz_vector_insert(&vec->v, index, &x);
 }
 
 // like rz_vector_insert_range.
 static inline void **rz_pvector_insert_range(RzPVector *vec, size_t index, void **first, size_t count) {
-	return (void **)rz_vector_insert_range (&vec->v, index, first, count);
+	return (void **)rz_vector_insert_range(&vec->v, index, first, count);
 }
 
 // like rz_vector_pop, but returns the pointer directly.
@@ -254,23 +255,23 @@ RZ_API void *rz_pvector_pop_front(RzPVector *vec);
 
 // like rz_vector_push, but the pointer x is the actual data to be inserted.
 static inline void **rz_pvector_push(RzPVector *vec, void *x) {
-	return (void **)rz_vector_push (&vec->v, &x);
+	return (void **)rz_vector_push(&vec->v, &x);
 }
 
 // like rz_vector_push_front, but the pointer x is the actual data to be inserted.
 static inline void **rz_pvector_push_front(RzPVector *vec, void *x) {
-	return (void **)rz_vector_push_front (&vec->v, &x);
+	return (void **)rz_vector_push_front(&vec->v, &x);
 }
 
 // sort vec using quick sort.
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp);
 
 static inline void **rz_pvector_reserve(RzPVector *vec, size_t capacity) {
-	return (void **)rz_vector_reserve (&vec->v, capacity);
+	return (void **)rz_vector_reserve(&vec->v, capacity);
 }
 
 static inline void **rz_pvector_shrink(RzPVector *vec) {
-	return (void **)rz_vector_shrink (&vec->v);
+	return (void **)rz_vector_shrink(&vec->v);
 }
 
 /*
@@ -302,15 +303,15 @@ static inline void **rz_pvector_shrink(RzPVector *vec) {
 #define rz_pvector_lower_bound(vec, x, i, cmp) \
 	do { \
 		size_t h = (vec)->v.len, m; \
-		for (i = 0; i < h; ) { \
+		for (i = 0; i < h;) { \
 			m = i + ((h - i) >> 1); \
-			if ((cmp ((x), ((void **)(vec)->v.a)[m])) > 0) { \
+			if ((cmp((x), ((void **)(vec)->v.a)[m])) > 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \
 			} \
 		} \
-	} while (0) \
+	} while (0)
 
 #ifdef __cplusplus
 }

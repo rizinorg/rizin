@@ -16,32 +16,30 @@ extern "C" {
 RZ_LIB_VERSION_HEADER(rz_asm);
 
 /* backward compatibility */
-#define RZ_ASM_ARCH_NONE RZ_SYS_ARCH_NONE
-#define RZ_ASM_ARCH_X86 RZ_SYS_ARCH_X86
-#define RZ_ASM_ARCH_ARM RZ_SYS_ARCH_ARM
-#define RZ_ASM_ARCH_PPC RZ_SYS_ARCH_PPC
-#define RZ_ASM_ARCH_M68K RZ_SYS_ARCH_M68K
-#define RZ_ASM_ARCH_JAVA RZ_SYS_ARCH_JAVA
-#define RZ_ASM_ARCH_LM32 RZ_SYS_ARCH_LM32
-#define RZ_ASM_ARCH_MIPS RZ_SYS_ARCH_MIPS
+#define RZ_ASM_ARCH_NONE  RZ_SYS_ARCH_NONE
+#define RZ_ASM_ARCH_X86   RZ_SYS_ARCH_X86
+#define RZ_ASM_ARCH_ARM   RZ_SYS_ARCH_ARM
+#define RZ_ASM_ARCH_PPC   RZ_SYS_ARCH_PPC
+#define RZ_ASM_ARCH_M68K  RZ_SYS_ARCH_M68K
+#define RZ_ASM_ARCH_JAVA  RZ_SYS_ARCH_JAVA
+#define RZ_ASM_ARCH_LM32  RZ_SYS_ARCH_LM32
+#define RZ_ASM_ARCH_MIPS  RZ_SYS_ARCH_MIPS
 #define RZ_ASM_ARCH_SPARC RZ_SYS_ARCH_SPARC
-#define RZ_ASM_ARCH_XAP RZ_SYS_ARCH_XAP
-#define RZ_ASM_ARCH_MSIL RZ_SYS_ARCH_MSIL
-#define RZ_ASM_ARCH_OBJD RZ_SYS_ARCH_OBJD
-#define RZ_ASM_ARCH_BF RZ_SYS_ARCH_BF
-#define RZ_ASM_ARCH_SH RZ_SYS_ARCH_SH
-#define RZ_ASM_ARCH_Z80 RZ_SYS_ARCH_Z80
+#define RZ_ASM_ARCH_XAP   RZ_SYS_ARCH_XAP
+#define RZ_ASM_ARCH_MSIL  RZ_SYS_ARCH_MSIL
+#define RZ_ASM_ARCH_OBJD  RZ_SYS_ARCH_OBJD
+#define RZ_ASM_ARCH_BF    RZ_SYS_ARCH_BF
+#define RZ_ASM_ARCH_SH    RZ_SYS_ARCH_SH
+#define RZ_ASM_ARCH_Z80   RZ_SYS_ARCH_Z80
 #define RZ_ASM_ARCH_I8080 RZ_SYS_ARCH_I8080
-#define RZ_ASM_ARCH_ARC RZ_SYS_ARCH_ARC
-#define RZ_ASM_ARCH_HPPA RZ_SYS_ARCH_HPPA
+#define RZ_ASM_ARCH_ARC   RZ_SYS_ARCH_ARC
+#define RZ_ASM_ARCH_HPPA  RZ_SYS_ARCH_HPPA
 
-#define RZ_ASM_GET_OFFSET(x,y,z) \
-	(x && x->binb.bin && x->binb.get_offset)? \
-		x->binb.get_offset (x->binb.bin, y, z): -1
+#define RZ_ASM_GET_OFFSET(x, y, z) \
+	(x && x->binb.bin && x->binb.get_offset) ? x->binb.get_offset(x->binb.bin, y, z) : -1
 
-#define RZ_ASM_GET_NAME(x,y,z) \
-	(x && x->binb.bin && x->binb.get_name)? \
-		x->binb.get_name (x->binb.bin, y, z, x->pseudo): NULL
+#define RZ_ASM_GET_NAME(x, y, z) \
+	(x && x->binb.bin && x->binb.get_name) ? x->binb.get_name(x->binb.bin, y, z, x->pseudo) : NULL
 
 enum {
 	RZ_ASM_SYNTAX_NONE = 0,
@@ -163,26 +161,26 @@ RZ_API int rz_asm_syntax_from_string(const char *name);
 RZ_API int rz_asm_set_pc(RzAsm *a, ut64 pc);
 RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
 RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf);
-RZ_API RzAsmCode* rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len);
-RZ_API RzAsmCode* rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *hexstr);
-RZ_API RzAsmCode* rz_asm_massemble(RzAsm *a, const char *buf);
-RZ_API RzAsmCode* rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp);
+RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len);
+RZ_API RzAsmCode *rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *hexstr);
+RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *buf);
+RZ_API RzAsmCode *rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp);
 RZ_API char *rz_asm_to_string(RzAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 RZ_API ut8 *rz_asm_from_string(RzAsm *a, ut64 addr, const char *b, int *l);
 RZ_API int rz_asm_sub_names_input(RzAsm *a, const char *f);
 RZ_API int rz_asm_sub_names_output(RzAsm *a, const char *f);
-RZ_API char *rz_asm_describe(RzAsm *a, const char* str);
-RZ_API RzList* rz_asm_get_plugins(RzAsm *a);
+RZ_API char *rz_asm_describe(RzAsm *a, const char *str);
+RZ_API RzList *rz_asm_get_plugins(RzAsm *a);
 RZ_API void rz_asm_list_directives(void);
 
 /* code.c */
 RZ_API RzAsmCode *rz_asm_code_new(void);
-RZ_API void* rz_asm_code_free(RzAsmCode *acode);
+RZ_API void *rz_asm_code_free(RzAsmCode *acode);
 RZ_API void rz_asm_equ_item_free(RzAsmEqu *equ);
 RZ_API bool rz_asm_code_set_equ(RzAsmCode *code, const char *key, const char *value);
 RZ_API char *rz_asm_code_equ_replace(RzAsmCode *code, char *str);
-RZ_API char* rz_asm_code_get_hex(RzAsmCode *acode);
+RZ_API char *rz_asm_code_get_hex(RzAsmCode *acode);
 
 /* op.c */
 RZ_API RzAsmOp *rz_asm_op_new(void);

@@ -10,12 +10,12 @@
 #include "../arch/gb/gbasm.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {
-	int dlen = gbDisass(rz_op,buf,len);
-	return rz_op->size = RZ_MAX (0, dlen);
+	int dlen = gbDisass(rz_op, buf, len);
+	return rz_op->size = RZ_MAX(0, dlen);
 }
 
 static int assemble(RzAsm *a, RzAsmOp *rz_op, const char *buf) {
-	return gbAsm (a, rz_op, buf);
+	return gbAsm(a, rz_op, buf);
 }
 
 RzAsmPlugin rz_asm_plugin_gb = {

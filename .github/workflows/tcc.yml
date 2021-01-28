@@ -1,20 +1,34 @@
-name: Radare2 CI - build with TinyCC compiler
+name: TinyCC build
 
 on:
+  push:
+    branches:
+    - 'dev'
+    - 'stable'
+    - 'container-*'
   schedule:
-    # “At 00:00 on every Tuesday, Thursday, and Saturday”
-    - cron:  '0 13 * * 2,4,6'
+    - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
+  pull_request:
+    branches:
+    - 'dev'
+    - 'stable'
+    - 'release-*'
 
 jobs:
   build:
     name: ubuntu-tcc-test
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
+      with:
+          submodules: recursive
+
     - name: Checkout TinyCC repository
       run: |
           git clone https://repo.or.cz/tinycc.git
           cd tinycc
           git checkout mob
+          chmod +x ./configure
 
     - name: Compiling and installing TinyCC
       working-directory: tinycc
@@ -23,24 +37,36 @@ jobs:
           make
           sudo make install
 
-    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+          sudo apt-get --assume-yes install python3-wheel python3-setuptools
+          sudo python3 -m pip install ninja
+
+    - name: Checkout meson from ret2libc git
+      run: |
+          git clone https://github.com/ret2libc/meson.git
+          cd meson
+          git checkout tiny-cc
+          python3 setup.py build
+          sudo python3 setup.py install
+
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins
 
-    - name: Configure, build and install
+    - name: Meson setup
       env:
           CC: tcc
-      run: |
-          ./configure --prefix=/usr --with-compiler=tcc
-          make
-          sudo make install
+      run: meson --prefix=/usr build
+    - name: Meson compile and install
+      run: ninja -C build && sudo ninja -C build install
+    - name: Run unit tests
+      run: ninja -C build test
 
     - name: Install test dependencies
       run: |
-          sudo apt-get --assume-yes install python3-wheel python3-setuptools
           python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
 
     - name: Run tests
@@ -50,4 +76,4 @@ jobs:
         rizin -v
         rz-test -v
         cd test
-        make
+        rz-test -L -o results.json || true

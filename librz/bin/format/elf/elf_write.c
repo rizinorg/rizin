@@ -24,7 +24,7 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 	int i, j, done = 0;
 
 	if (size == 0) {
-		eprintf ("0 size section?\n");
+		eprintf("0 size section?\n");
 		return 0;
 	}
 
@@ -35,20 +35,20 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 			continue;
 		}
 		const char *sh_name = &strtab[shdrp->sh_name];
-		if (sh_name && !strncmp (name, sh_name, ELF_STRING_LENGTH)) {
-			delta =  rsz_size - shdrp->sh_size;
+		if (sh_name && !strncmp(name, sh_name, ELF_STRING_LENGTH)) {
+			delta = rsz_size - shdrp->sh_size;
 			rsz_offset = (ut64)shdrp->sh_offset;
 			rsz_osize = (ut64)shdrp->sh_size;
 		}
 	}
 
 	if (delta == 0) {
-		eprintf ("Cannot find section\n");
+		eprintf("Cannot find section\n");
 		return 0;
 	}
- 
-	eprintf ("delta: %"PFMT64d"\n", delta);
-	
+
+	eprintf("delta: %" PFMT64d "\n", delta);
+
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		if (!strcmp(&strtab[shdrp->sh_name], ".got")) {
@@ -61,44 +61,44 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 	}
 
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp (&strtab[shdrp->sh_name], ".rel.plt")) {
-			Elf_(Rel) *rel, *relp;
-			rel = (Elf_(Rel) *)malloc (1+shdrp->sh_size);
+		if (!strcmp(&strtab[shdrp->sh_name], ".rel.plt")) {
+			Elf_(Rel) * rel, *relp;
+			rel = (Elf_(Rel) *)malloc(1 + shdrp->sh_size);
 			if (!rel) {
-				perror ("malloc");
+				perror("malloc");
 				return 0;
 			}
-			if (rz_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
+			if (rz_buf_read_at(bin->b, shdrp->sh_offset, (ut8 *)rel, shdrp->sh_size) == -1) {
 				perror("read (rel)");
 			}
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rel)), relp++) {
 				/* rewrite relp->rz_offset */
 				if (relp->rz_offset - got_addr + got_offset >= rsz_offset + rsz_osize) {
-					relp->rz_offset+=delta;
+					relp->rz_offset += delta;
 					off = shdrp->sh_offset + j;
-					if (rz_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rel))) == -1) {
+					if (rz_buf_write_at(bin->b, off, (ut8 *)relp, sizeof(Elf_(Rel))) == -1) {
 						perror("write (imports)");
 					}
 				}
 			}
 			free(rel);
 			break;
-		} else if (!strcmp (&strtab[shdrp->sh_name], ".rela.plt")) {
-			Elf_(Rela) *rel, *relp;
-			rel = (Elf_(Rela) *)malloc (shdrp->sh_size + 1);
+		} else if (!strcmp(&strtab[shdrp->sh_name], ".rela.plt")) {
+			Elf_(Rela) * rel, *relp;
+			rel = (Elf_(Rela) *)malloc(shdrp->sh_size + 1);
 			if (!rel) {
 				perror("malloc");
 				return 0;
 			}
-			if (rz_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
+			if (rz_buf_read_at(bin->b, shdrp->sh_offset, (ut8 *)rel, shdrp->sh_size) == -1) {
 				perror("read (rel)");
 			}
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rela)), relp++) {
 				/* rewrite relp->rz_offset */
 				if (relp->rz_offset - got_addr + got_offset >= rsz_offset + rsz_osize) {
-					relp->rz_offset+=delta;
+					relp->rz_offset += delta;
 					off = shdrp->sh_offset + j;
-					if (rz_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rela))) == -1) {
+					if (rz_buf_write_at(bin->b, off, (ut8 *)relp, sizeof(Elf_(Rela))) == -1) {
 						perror("write (imports)");
 					}
 				}
@@ -110,7 +110,7 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 
 	/* rewrite section headers */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!done && !strncmp (name, &strtab[shdrp->sh_name], ELF_STRING_LENGTH)) {
+		if (!done && !strncmp(name, &strtab[shdrp->sh_name], ELF_STRING_LENGTH)) {
 			shdrp->sh_size = rsz_size;
 			done = 1;
 		} else if (shdrp->sh_offset >= rsz_offset + rsz_osize) {
@@ -119,11 +119,11 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 				shdrp->sh_addr += delta;
 			}
 		}
-		off = ehdr->e_shoff + i * sizeof (Elf_(Shdr));
-		if (rz_buf_write_at (bin->b, off, (ut8*)shdrp, sizeof (Elf_(Shdr))) == -1) {
-			perror ("write (shdr)");
+		off = ehdr->e_shoff + i * sizeof(Elf_(Shdr));
+		if (rz_buf_write_at(bin->b, off, (ut8 *)shdrp, sizeof(Elf_(Shdr))) == -1) {
+			perror("write (shdr)");
 		}
-		printf ("-> elf section (%s)\n", &strtab[shdrp->sh_name]);
+		printf("-> elf section (%s)\n", &strtab[shdrp->sh_name]);
 	}
 
 	/* rewrite program headers */
@@ -133,7 +133,7 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 			phdrp->p_filesz += delta;
 			phdrp->p_memsz += delta;
 		}
-#endif 
+#endif
 		if (phdrp->p_offset >= rsz_offset + rsz_osize) {
 			phdrp->p_offset += delta;
 			if (phdrp->p_vaddr) {
@@ -145,12 +145,12 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 		} else if (phdrp->p_offset + phdrp->p_filesz >= rsz_offset + rsz_osize) {
 			phdrp->p_filesz += delta;
 			phdrp->p_memsz += delta;
-		} 
-		off = ehdr->e_phoff + i * sizeof (Elf_(Phdr));
-		if (rz_buf_write_at (bin->b, off, (ut8 *)phdrp, sizeof (Elf_ (Phdr))) == -1) {
-			perror ("write (phdr)");
 		}
-		printf ("-> program header (0x%08"PFMT64x")\n", (ut64) phdrp->p_offset);
+		off = ehdr->e_phoff + i * sizeof(Elf_(Phdr));
+		if (rz_buf_write_at(bin->b, off, (ut8 *)phdrp, sizeof(Elf_(Phdr))) == -1) {
+			perror("write (phdr)");
+		}
+		printf("-> program header (0x%08" PFMT64x ")\n", (ut64)phdrp->p_offset);
 	}
 
 	/* rewrite other elf pointers (entrypoint, phoff, shoff) */
@@ -163,25 +163,25 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 	if (ehdr->e_shoff >= rsz_offset + rsz_osize) {
 		ehdr->e_shoff += delta;
 	}
-	if (rz_buf_write_at (bin->b, 0, (ut8*)ehdr, sizeof (Elf_(Ehdr))) == -1) {
-		perror ("write (ehdr)");
+	if (rz_buf_write_at(bin->b, 0, (ut8 *)ehdr, sizeof(Elf_(Ehdr))) == -1) {
+		perror("write (ehdr)");
 	}
 
 	/* inverse order to write bodies .. avoid overlapping here */
 	/* XXX Check when delta is negative */
 	rest_size = bin->size - (rsz_offset + rsz_osize);
 
-	buf = (ut8 *)malloc (1+bin->size);
-	rz_buf_read_at (bin->b, 0, (ut8*)buf, bin->size);
-	rz_buf_set_bytes (bin->b, (ut8*)buf, (int)(rsz_offset+rsz_size+rest_size));
+	buf = (ut8 *)malloc(1 + bin->size);
+	rz_buf_read_at(bin->b, 0, (ut8 *)buf, bin->size);
+	rz_buf_set_bytes(bin->b, (ut8 *)buf, (int)(rsz_offset + rsz_size + rest_size));
 
-	printf ("COPY FROM 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_osize));
-	rz_buf_read_at (bin->b, rsz_offset + rsz_osize, (ut8*)buf, rest_size);
-	printf ("COPY TO 0x%08"PFMT64x"\n", (ut64)(rsz_offset+rsz_size));
-	rz_buf_write_at (bin->b, rsz_offset + rsz_size, (ut8*)buf, rest_size);
-	printf ("Shifted %d byte(s)\n", (int)delta);
-	free (buf);
-	bin->size = rz_buf_size (bin->b);
+	printf("COPY FROM 0x%08" PFMT64x "\n", (ut64)(rsz_offset + rsz_osize));
+	rz_buf_read_at(bin->b, rsz_offset + rsz_osize, (ut8 *)buf, rest_size);
+	printf("COPY TO 0x%08" PFMT64x "\n", (ut64)(rsz_offset + rsz_size));
+	rz_buf_write_at(bin->b, rsz_offset + rsz_size, (ut8 *)buf, rest_size);
+	printf("Shifted %d byte(s)\n", (int)delta);
+	free(buf);
+	bin->size = rz_buf_size(bin->b);
 
 	return delta;
 }
@@ -200,16 +200,16 @@ bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf) {
 		if (bin->phdr[i].p_type != PT_DYNAMIC) {
 			continue;
 		}
-		if (!(dyn = malloc (bin->phdr[i].p_filesz + 1))) {
-			perror ("malloc (dyn)");
+		if (!(dyn = malloc(bin->phdr[i].p_filesz + 1))) {
+			perror("malloc (dyn)");
 			return false;
 		}
-		if (rz_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
-			eprintf ("Error: read (dyn)\n");
-			free (dyn);
+		if (rz_buf_read_at(bin->b, bin->phdr[i].p_offset, (ut8 *)dyn, bin->phdr[i].p_filesz) == -1) {
+			eprintf("Error: read (dyn)\n");
+			free(dyn);
 			return false;
 		}
-		if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof (Elf_(Dyn)))) > 0) {
+		if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)))) > 0) {
 			for (j = 0; j < ndyn; j++) {
 				if (dyn[j].d_tag == DT_STRTAB) {
 					stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);
@@ -218,16 +218,16 @@ bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf) {
 			}
 			for (j = 0; j < ndyn; j++) {
 				if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
-					if (rz_buf_write_at (bin->b, stroff + dyn[j].d_un.d_val,
-								(ut8*)"", 1) == -1) {
-						eprintf ("Error: write (rpath)\n");
-						free (dyn);
+					if (rz_buf_write_at(bin->b, stroff + dyn[j].d_un.d_val,
+						    (ut8 *)"", 1) == -1) {
+						eprintf("Error: write (rpath)\n");
+						free(dyn);
 						return false;
 					}
 				}
 			}
 		}
-		free (dyn);
+		free(dyn);
 		break;
 	}
 	return true;
@@ -244,25 +244,25 @@ bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms) 
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		const char *shname = &strtab[shdrp->sh_name];
 		int operms = shdrp->sh_flags;
-		if (!strncmp (name, shname, ELF_STRING_LENGTH)) {
+		if (!strncmp(name, shname, ELF_STRING_LENGTH)) {
 			ut8 newperms = (ut8)operms;
 			// SHF_EXECINSTR
 			if (perms & 1) {
-				RZ_BIT_SET (&newperms, 2);
+				RZ_BIT_SET(&newperms, 2);
 			} else {
-				RZ_BIT_UNSET (&newperms, 2);
+				RZ_BIT_UNSET(&newperms, 2);
 			}
 			// SHF_WRITE
 			if (perms & 2) {
-				RZ_BIT_SET (&newperms, 0);
+				RZ_BIT_SET(&newperms, 0);
 			} else {
-				RZ_BIT_UNSET (&newperms, 0);
+				RZ_BIT_UNSET(&newperms, 0);
 			}
 			patchoff = bin->ehdr.e_shoff;
-			patchoff += ((const ut8*)shdrp - (const ut8*)bin->shdr);
-			patchoff += rz_offsetof (Elf_(Shdr), sh_flags);
-			printf ("wx %02x @ 0x%x\n", newperms, patchoff);
-			rz_buf_write_at (bf->buf, patchoff, (ut8*)&newperms, 1);
+			patchoff += ((const ut8 *)shdrp - (const ut8 *)bin->shdr);
+			patchoff += rz_offsetof(Elf_(Shdr), sh_flags);
+			printf("wx %02x @ 0x%x\n", newperms, patchoff);
+			rz_buf_write_at(bf->buf, patchoff, (ut8 *)&newperms, 1);
 			return true;
 		}
 	}
@@ -272,12 +272,12 @@ bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms) 
 bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr) {
 	const int patchoff = 0x18;
 #if RZ_BIN_ELF64
-	printf ("wv8 0x%"PFMT64x" @ 0x%x\n", addr, patchoff);
-	rz_buf_write_at (bf->buf, patchoff, (ut8*)&addr, sizeof (addr));
+	printf("wv8 0x%" PFMT64x " @ 0x%x\n", addr, patchoff);
+	rz_buf_write_at(bf->buf, patchoff, (ut8 *)&addr, sizeof(addr));
 #else
 	ut32 addr32 = (ut32)addr;
-	printf ("wv4 0x%x @ 0x%x\n", addr32, patchoff);
-	rz_buf_write_at (bf->buf, patchoff, (ut8*)&addr32, sizeof (addr32));
+	printf("wv4 0x%x @ 0x%x\n", addr32, patchoff);
+	rz_buf_write_at(bf->buf, patchoff, (ut8 *)&addr32, sizeof(addr32));
 #endif
 	return true;
 }

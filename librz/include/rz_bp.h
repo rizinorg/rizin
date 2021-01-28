@@ -12,7 +12,7 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_bp);
 
-#define RZ_BP_MAXPIDS 10
+#define RZ_BP_MAXPIDS     10
 #define RZ_BP_CONT_NORMAL 0
 #define RZ_BP_CONT_NORMAL 0
 
@@ -46,7 +46,7 @@ typedef struct rz_bp_item_t {
 	ut64 addr;
 	ut64 delta;
 	int size; /* size of breakpoint area */
-	bool swstep; 	/* is this breakpoint from a swstep? */
+	bool swstep; /* is this breakpoint from a swstep? */
 	int perm;
 	int hw;
 	int trace;
@@ -133,11 +133,11 @@ RZ_API int rz_bp_enable_all(RzBreakpoint *bp, int set);
 /* index api */
 RZ_API int rz_bp_del_index(RzBreakpoint *bp, int idx);
 RZ_API RzBreakpointItem *rz_bp_get_index(RzBreakpoint *bp, int idx);
-RZ_API int rz_bp_get_index_at (RzBreakpoint *bp, ut64 addr);
-RZ_API RzBreakpointItem *rz_bp_item_new (RzBreakpoint *bp);
+RZ_API int rz_bp_get_index_at(RzBreakpoint *bp, ut64 addr);
+RZ_API RzBreakpointItem *rz_bp_item_new(RzBreakpoint *bp);
 
-RZ_API RzBreakpointItem *rz_bp_get_at (RzBreakpoint *bp, ut64 addr);
-RZ_API RzBreakpointItem *rz_bp_get_in (RzBreakpoint *bp, ut64 addr, int perm);
+RZ_API RzBreakpointItem *rz_bp_get_at(RzBreakpoint *bp, ut64 addr);
+RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int perm);
 
 RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b);
 

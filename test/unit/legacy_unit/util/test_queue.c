@@ -1,6 +1,6 @@
 #include <rz_util.h>
 
-void check (int n, int exp) {
+void check(int n, int exp) {
 	if (n == exp) {
 		printf("[+] test passed (actual: %d; expected: %d)\n", n, exp);
 	} else {

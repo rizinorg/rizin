@@ -21,57 +21,57 @@
 #include <winkd.h>
 
 static bool __plugin_open(RzIO *io, const char *file, bool many) {
-	return (!strncmp (file, "winkd://", 8));
+	return (!strncmp(file, "winkd://", 8));
 }
 
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
-	if (!__plugin_open (io, file, 0)) {
+	if (!__plugin_open(io, file, 0)) {
 		return NULL;
 	}
 
 	// net  - host:ip:key
 	// pipe - \\.\pipe\com_1 /tmp/windbg.pipe
 	io_backend_t *iob = NULL;
-	if (strchr (file + 8, ':')) {
+	if (strchr(file + 8, ':')) {
 		iob = &iob_net;
 	} else {
 		iob = &iob_pipe;
 	}
 
 	if (!iob) {
-		eprintf ("Error: Invalid WinDBG path\n");
+		eprintf("Error: Invalid WinDBG path\n");
 		return NULL;
 	}
 
-	void *io_ctx = iob->open (file + 8);
+	void *io_ctx = iob->open(file + 8);
 	if (!io_ctx) {
-		eprintf ("Error: Could not open the %s\n", iob->name);
+		eprintf("Error: Could not open the %s\n", iob->name);
 		return NULL;
 	}
-	eprintf ("Opened %s %s with fd %p\n", iob->name, file + 8, io_ctx);
+	eprintf("Opened %s %s with fd %p\n", iob->name, file + 8, io_ctx);
 
-	io_desc_t *desc = io_desc_new (iob, io_ctx);
+	io_desc_t *desc = io_desc_new(iob, io_ctx);
 	if (!desc) {
-		eprintf ("Error: Could not create io_desc_t\n");
+		eprintf("Error: Could not create io_desc_t\n");
 		return NULL;
 	}
 
-	WindCtx *ctx = winkd_ctx_new (desc);
+	WindCtx *ctx = winkd_ctx_new(desc);
 	if (!ctx) {
-		eprintf ("Failed to initialize winkd context\n");
+		eprintf("Failed to initialize winkd context\n");
 		return NULL;
 	}
-	return rz_io_desc_new (io, &rz_io_plugin_winkd, file, rw, mode, ctx);
+	return rz_io_desc_new(io, &rz_io_plugin_winkd, file, rw, mode, ctx);
 }
 
 static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	if (!fd) {
 		return -1;
 	}
-	if (winkd_get_target (fd->data)) {
-		return winkd_write_at_uva (fd->data, buf, io->off, count);
+	if (winkd_get_target(fd->data)) {
+		return winkd_write_at_uva(fd->data, buf, io->off, count);
 	}
-	return winkd_write_at (fd->data, buf, io->off, count);
+	return winkd_write_at(fd->data, buf, io->off, count);
 }
 
 static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
@@ -92,15 +92,15 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 
-	if (winkd_get_target (fd->data)) {
-		return winkd_read_at_uva (fd->data, buf, io->off, count);
+	if (winkd_get_target(fd->data)) {
+		return winkd_read_at_uva(fd->data, buf, io->off, count);
 	}
 
-	return winkd_read_at (fd->data, buf, io->off, count);
+	return winkd_read_at(fd->data, buf, io->off, count);
 }
 
 static int __close(RzIODesc *fd) {
-	winkd_ctx_free ((WindCtx**)&fd->data);
+	winkd_ctx_free((WindCtx **)&fd->data);
 	return true;
 }
 

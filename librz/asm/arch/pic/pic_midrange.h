@@ -20,18 +20,18 @@ typedef enum {
 	PIC_MIDRANGE_OP_ARGS_1N_2M
 } PicMidrangeOpArgs;
 
-#define PIC_MIDRANGE_OP_ARGS_2F_MASK_F 0x3
-#define PIC_MIDRANGE_OP_ARGS_7F_MASK_F 0x7f
+#define PIC_MIDRANGE_OP_ARGS_2F_MASK_F    0x3
+#define PIC_MIDRANGE_OP_ARGS_7F_MASK_F    0x7f
 #define PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D (1 << 7)
 #define PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_F 0x7f
 #define PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N (1 << 6)
 #define PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K 0x3f
 #define PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_B (0x7 << 7)
 #define PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_F 0x7f
-#define PIC_MIDRANGE_OP_ARGS_4K_MASK_K 0xf
-#define PIC_MIDRANGE_OP_ARGS_8K_MASK_K 0xff
-#define PIC_MIDRANGE_OP_ARGS_9K_MASK_K 0x1ff
-#define PIC_MIDRANGE_OP_ARGS_11K_MASK_K 0x7ff
+#define PIC_MIDRANGE_OP_ARGS_4K_MASK_K    0xf
+#define PIC_MIDRANGE_OP_ARGS_8K_MASK_K    0xff
+#define PIC_MIDRANGE_OP_ARGS_9K_MASK_K    0x1ff
+#define PIC_MIDRANGE_OP_ARGS_11K_MASK_K   0x7ff
 #define PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N (1 << 2)
 #define PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M 0x3
 
@@ -96,8 +96,8 @@ typedef enum {
 	PIC_MIDRANGE_OPCODE_INVALID
 } PicMidrangeOpcode;
 
-PicMidrangeOpcode pic_midrange_get_opcode (ut16 instr);
-const PicMidrangeOpInfo *pic_midrange_get_op_info (PicMidrangeOpcode opcode);
-int pic_midrange_disassemble (RzAsmOp *op, char *opbuf, const ut8 *b, int l);
+PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr);
+const PicMidrangeOpInfo *pic_midrange_get_op_info(PicMidrangeOpcode opcode);
+int pic_midrange_disassemble(RzAsmOp *op, char *opbuf, const ut8 *b, int l);
 
 #endif // PIC_MIDRANGE_H

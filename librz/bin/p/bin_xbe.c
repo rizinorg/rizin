@@ -13,20 +13,20 @@ static const char *kt_name[] = {
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 magic[4];
-	if (rz_buf_read_at (b, 0, magic, sizeof (magic)) == 4) {
-		return !memcmp (magic, "XBEH", 4);
+	if (rz_buf_read_at(b, 0, magic, sizeof(magic)) == 4) {
+		return !memcmp(magic, "XBEH", 4);
 	}
 	return false;
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_bin_xbe_obj_t *obj = RZ_NEW (rz_bin_xbe_obj_t);
+	rz_bin_xbe_obj_t *obj = RZ_NEW(rz_bin_xbe_obj_t);
 	if (!obj) {
 		return false;
 	}
-	st64 r = rz_buf_read_at (buf, 0, (ut8 *)&obj->header, sizeof (obj->header));
-	if (r != sizeof (obj->header)) {
-		RZ_FREE (obj);
+	st64 r = rz_buf_read_at(buf, 0, (ut8 *)&obj->header, sizeof(obj->header));
+	if (r != sizeof(obj->header)) {
+		RZ_FREE(obj);
 		return false;
 	}
 
@@ -48,7 +48,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 }
 
 static void destroy(RzBinFile *bf) {
-	RZ_FREE (bf->o->bin_obj);
+	RZ_FREE(bf->o->bin_obj);
 }
 
 static RzBinAddr *binsym(RzBinFile *bf, int type) {
@@ -56,7 +56,7 @@ static RzBinAddr *binsym(RzBinFile *bf, int type) {
 		return NULL;
 	}
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
-	RzBinAddr *ret = RZ_NEW0 (RzBinAddr);
+	RzBinAddr *ret = RZ_NEW0(RzBinAddr);
 	if (!ret) {
 		return NULL;
 	}
@@ -68,21 +68,21 @@ static RzBinAddr *binsym(RzBinFile *bf, int type) {
 static RzList *entries(RzBinFile *bf) {
 	const rz_bin_xbe_obj_t *obj;
 	RzList *ret;
-	RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
+	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 	if (!bf || !bf->buf || !bf->o->bin_obj || !ptr) {
-		free (ptr);
+		free(ptr);
 		return NULL;
 	}
-	ret = rz_list_new ();
+	ret = rz_list_new();
 	if (!ret) {
-		free (ptr);
+		free(ptr);
 		return NULL;
 	}
 	ret->free = free;
 	obj = bf->o->bin_obj;
 	ptr->vaddr = obj->header.ep ^ obj->ep_key;
 	ptr->paddr = ptr->vaddr - obj->header.base;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 	return ret;
 }
 
@@ -103,7 +103,7 @@ static RzList *sections(RzBinFile *bf) {
 	if (h->sections < 1) {
 		return NULL;
 	}
-	ret = rz_list_new ();
+	ret = rz_list_new();
 	if (!ret) {
 		return NULL;
 	}
@@ -111,7 +111,7 @@ static RzList *sections(RzBinFile *bf) {
 	if (h->sections < 1 || h->sections > 255) {
 		goto out_error;
 	}
-	sect = calloc (h->sections, sizeof (xbe_section));
+	sect = calloc(h->sections, sizeof(xbe_section));
 	if (!sect) {
 		goto out_error;
 	}
@@ -119,25 +119,25 @@ static RzList *sections(RzBinFile *bf) {
 	if (addr > bf->size || addr + (sizeof(xbe_section) * h->sections) > bf->size) {
 		goto out_error;
 	}
-	r = rz_buf_read_at (bf->buf, addr, (ut8 *) sect, sizeof(xbe_section) * h->sections);
+	r = rz_buf_read_at(bf->buf, addr, (ut8 *)sect, sizeof(xbe_section) * h->sections);
 	if (r < 1) {
 		goto out_error;
 	}
 	for (i = 0; i < h->sections; i++) {
-		RzBinSection *item = RZ_NEW0 (RzBinSection);
+		RzBinSection *item = RZ_NEW0(RzBinSection);
 		addr = sect[i].name_addr - h->base;
 		tmp[0] = 0;
-		if (addr > bf->size || addr + sizeof (tmp) > bf->size) {
-			free (item);
+		if (addr > bf->size || addr + sizeof(tmp) > bf->size) {
+			free(item);
 			goto out_error;
 		}
-		r = rz_buf_read_at (bf->buf, addr, (ut8 *) tmp, sizeof (tmp));
+		r = rz_buf_read_at(bf->buf, addr, (ut8 *)tmp, sizeof(tmp));
 		if (r < 1) {
-			free (item);
+			free(item);
 			goto out_error;
 		}
-		tmp[sizeof (tmp) - 1] = 0;
-		item->name = rz_str_newf ("%s.%i", tmp, i);
+		tmp[sizeof(tmp) - 1] = 0;
+		item->name = rz_str_newf("%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
 		item->size = sect[i].size;
@@ -151,13 +151,13 @@ static RzList *sections(RzBinFile *bf) {
 		if (sect[i].flags & SECT_FLAG_W) {
 			item->perm |= RZ_PERM_W;
 		}
-		rz_list_append (ret, item);
+		rz_list_append(ret, item);
 	}
-	free (sect);
+	free(sect);
 	return ret;
 out_error:
-	rz_list_free (ret);
-	free (sect);
+	rz_list_free(ret);
+	free(sect);
 	return NULL;
 }
 
@@ -175,7 +175,7 @@ static RzList *libs(RzBinFile *bf) {
 	}
 	obj = bf->o->bin_obj;
 	h = &obj->header;
-	ret = rz_list_new ();
+	ret = rz_list_new();
 	if (!ret) {
 		return NULL;
 	}
@@ -188,14 +188,14 @@ static RzList *libs(RzBinFile *bf) {
 	if (off > bf->size || off + sizeof(xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = rz_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
+	r = rz_buf_read_at(bf->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
 	if (r < 1) {
 		goto out_error;
 	}
 	lib.name[7] = 0;
-	s = rz_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
+	s = rz_str_newf("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s) {
-		rz_list_append (ret, s);
+		rz_list_append(ret, s);
 	}
 	if (h->xapi_lib_addr < h->base) {
 		off = 0;
@@ -205,40 +205,40 @@ static RzList *libs(RzBinFile *bf) {
 	if (off > bf->size || off + sizeof(xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = rz_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
+	r = rz_buf_read_at(bf->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
 	if (r < 1) {
 		goto out_error;
 	}
 
 	lib.name[7] = 0;
-	s = rz_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
+	s = rz_str_newf("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s) {
-		rz_list_append (ret, s);
+		rz_list_append(ret, s);
 	}
 	libs = h->lib_versions;
 	if (libs < 1) {
 		goto out_error;
 	}
 	for (i = 0; i < libs; i++) {
-		addr = h->lib_versions_addr - h->base + (i * sizeof (xbe_lib));
-		if (addr > bf->size || addr + sizeof (xbe_lib) > bf->size) {
+		addr = h->lib_versions_addr - h->base + (i * sizeof(xbe_lib));
+		if (addr > bf->size || addr + sizeof(xbe_lib) > bf->size) {
 			goto out_error;
 		}
-		r = rz_buf_read_at (bf->buf, addr, (ut8 *) &lib, sizeof (xbe_lib));
+		r = rz_buf_read_at(bf->buf, addr, (ut8 *)&lib, sizeof(xbe_lib));
 		if (r < 1) {
 			goto out_error;
 		}
 		// make sure it ends with 0
 		lib.name[7] = '\0';
-		s = rz_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
+		s = rz_str_newf("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 		if (s) {
-			rz_list_append (ret, s);
+			rz_list_append(ret, s);
 		}
 	}
 
 	return ret;
 out_error:
-	rz_list_free (ret);
+	rz_list_free(ret);
 	return NULL;
 }
 
@@ -259,22 +259,22 @@ static RzList *symbols(RzBinFile *bf) {
 	obj = bf->o->bin_obj;
 	h = &obj->header;
 	kt_addr = h->kernel_thunk_addr ^ obj->kt_key;
-	ret = rz_list_new ();
+	ret = rz_list_new();
 	if (!ret) {
 		return NULL;
 	}
 	ret->free = free;
-	eprintf ("sections %d\n", h->sections);
+	eprintf("sections %d\n", h->sections);
 	int limit = h->sections;
 	if (limit * (sizeof(xbe_section)) >= bf->size - h->sechdr_addr) {
 		goto out_error;
 	}
 	for (i = 0; found == false && i < limit; i++) {
-		addr = h->sechdr_addr - h->base + (sizeof (xbe_section) * i);
+		addr = h->sechdr_addr - h->base + (sizeof(xbe_section) * i);
 		if (addr > bf->size || addr + sizeof(sect) > bf->size) {
 			goto out_error;
 		}
-		rz_buf_read_at (bf->buf, addr, (ut8 *) &sect, sizeof(sect));
+		rz_buf_read_at(bf->buf, addr, (ut8 *)&sect, sizeof(sect));
 		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize) {
 			found = true;
 		}
@@ -286,32 +286,32 @@ static RzList *symbols(RzBinFile *bf) {
 	if (addr > bf->size || addr + sizeof(thunk_addr) > bf->size) {
 		goto out_error;
 	}
-	i = rz_buf_read_at (bf->buf, addr, (ut8 *) &thunk_addr, sizeof (thunk_addr));
-	if (i != sizeof (thunk_addr)) {
+	i = rz_buf_read_at(bf->buf, addr, (ut8 *)&thunk_addr, sizeof(thunk_addr));
+	if (i != sizeof(thunk_addr)) {
 		goto out_error;
 	}
 	for (i = 0; i < XBE_MAX_THUNK && thunk_addr[i]; i++) {
-		RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
+		RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 		if (!sym) {
 			goto out_error;
 		}
 		const ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
 		// Basic sanity checks
 		if (thunk_addr[i] & 0x80000000 && thunk_index > 0 && thunk_index <= XBE_MAX_THUNK) {
-			eprintf ("thunk_index %d\n", thunk_index);
-			sym->name = rz_str_newf ("kt.%s", kt_name[thunk_index - 1]);
+			eprintf("thunk_index %d\n", thunk_index);
+			sym->name = rz_str_newf("kt.%s", kt_name[thunk_index - 1]);
 			sym->vaddr = (h->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
 			sym->paddr = sym->vaddr - h->base;
 			sym->size = 4;
 			sym->ordinal = i;
-			rz_list_append (ret, sym);
+			rz_list_append(ret, sym);
 		} else {
-			free (sym);
+			free(sym);
 		}
 	}
 	return ret;
 out_error:
-	rz_list_free (ret);
+	rz_list_free(ret);
 	return NULL;
 }
 
@@ -324,23 +324,22 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 
-	ret = RZ_NEW0 (RzBinInfo);
+	ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 
 	obj = bf->o->bin_obj;
 
-	memset (dbg_name, 0, sizeof (dbg_name));
-	rz_buf_read_at (bf->buf, obj->header.debug_name_addr -\
-		obj->header.base, dbg_name, sizeof (dbg_name));
+	memset(dbg_name, 0, sizeof(dbg_name));
+	rz_buf_read_at(bf->buf, obj->header.debug_name_addr - obj->header.base, dbg_name, sizeof(dbg_name));
 	dbg_name[sizeof(dbg_name) - 1] = 0;
-	ret->file = strdup ((char *) dbg_name);
-	ret->bclass = strdup ("program");
-	ret->machine = strdup ("Microsoft Xbox");
-	ret->os = strdup ("xbox");
-	ret->type = strdup ("Microsoft Xbox executable");
-	ret->arch = strdup ("x86");
+	ret->file = strdup((char *)dbg_name);
+	ret->bclass = strdup("program");
+	ret->machine = strdup("Microsoft Xbox");
+	ret->os = strdup("xbox");
+	ret->type = strdup("Microsoft Xbox executable");
+	ret->arch = strdup("x86");
 	ret->has_va = 1;
 	ret->bits = 32;
 	ret->big_endian = 0;

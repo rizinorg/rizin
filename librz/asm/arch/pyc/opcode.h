@@ -100,7 +100,7 @@ pyc_opcodes *new_pyc_opcodes();
 void free_opcode(pyc_opcodes *opcodes);
 bool pyc_opcodes_equal(pyc_opcodes *op, const char *version);
 
-void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter) (ut32 oparg));
+void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter)(ut32 oparg));
 
 const char *format_MAKE_FUNCTION_arg_3x(ut32 oparg);
 const char *format_extended_arg(ut32 oparg);
@@ -122,55 +122,55 @@ struct op_parameter {
 	bool fallthrough;
 };
 
-#define def_op(...) def_opN((struct op_parameter){ .fallthrough = true, __VA_ARGS__ })
-#define def_op0(...) def_opN((struct op_parameter){ .pop = -2, .push = -2, .fallthrough = true, __VA_ARGS__ })
+#define def_op(...)   def_opN((struct op_parameter){ .fallthrough = true, __VA_ARGS__ })
+#define def_op0(...)  def_opN((struct op_parameter){ .pop = -2, .push = -2, .fallthrough = true, __VA_ARGS__ })
 #define def_op00(...) def_opN((struct op_parameter){ __VA_ARGS__ })
-void (def_opN)(struct op_parameter par);
+void(def_opN)(struct op_parameter par);
 
 #define name_op0(...) name_opN((struct op_parameter){ .pop = -2, .push = -2, __VA_ARGS__ })
-#define name_op(...) name_opN((struct op_parameter){ __VA_ARGS__ })
-void (name_opN)(struct op_parameter par);
+#define name_op(...)  name_opN((struct op_parameter){ __VA_ARGS__ })
+void(name_opN)(struct op_parameter par);
 
 #define local_op0(...) local_opN((struct op_parameter){ .pop = 0, .push = 1, __VA_ARGS__ })
-#define local_op(...) local_opN((struct op_parameter){  __VA_ARGS__ })
-void (local_opN)(struct op_parameter par);
+#define local_op(...)  local_opN((struct op_parameter){ __VA_ARGS__ })
+void(local_opN)(struct op_parameter par);
 
 #define free_op0(...) free_opN((struct op_parameter){ .pop = 0, .push = 1, __VA_ARGS__ })
-#define free_op(...) free_opN((struct op_parameter){ __VA_ARGS__ })
-void (free_opN)(struct op_parameter par);
+#define free_op(...)  free_opN((struct op_parameter){ __VA_ARGS__ })
+void(free_opN)(struct op_parameter par);
 
 #define store_op00(...) store_opN((struct op_parameter){ __VA_ARGS__ })
-#define store_op(...) store_opN((struct op_parameter){ .func = DEF_OP, __VA_ARGS__ })
-#define store_op0(...) store_opN((struct op_parameter){ .pop = 0, .push = 1, .func = DEF_OP, __VA_ARGS__ })
-void (store_opN)(struct op_parameter par);
+#define store_op(...)   store_opN((struct op_parameter){ .func = DEF_OP, __VA_ARGS__ })
+#define store_op0(...)  store_opN((struct op_parameter){ .pop = 0, .push = 1, .func = DEF_OP, __VA_ARGS__ })
+void(store_opN)(struct op_parameter par);
 
-#define varargs_op(...) varargs_op((struct op_parameter){ __VA_ARGS__ })
+#define varargs_op(...)  varargs_op((struct op_parameter){ __VA_ARGS__ })
 #define varargs_op0(...) varargs_op((struct op_parameter){ .pop = -1, .push = 1, __VA_ARGS__ })
-void (varargs_op)(struct op_parameter par);
+void(varargs_op)(struct op_parameter par);
 
-#define const_op(...) const_opN((struct op_parameter){ .pop = 0, .push = 1, __VA_ARGS__ })
+#define const_op(...)   const_opN((struct op_parameter){ .pop = 0, .push = 1, __VA_ARGS__ })
 #define const_op00(...) const_opN((struct op_parameter){ __VA_ARGS__ })
-void (const_opN)(struct op_parameter par);
+void(const_opN)(struct op_parameter par);
 
 #define compare_op0(...) compare_op((struct op_parameter){ .pop = 2, .push = 1, __VA_ARGS__ })
-#define compare_op(...) compare_op((struct op_parameter){ __VA_ARGS__ })
-void (compare_op)(struct op_parameter par);
+#define compare_op(...)  compare_op((struct op_parameter){ __VA_ARGS__ })
+void(compare_op)(struct op_parameter par);
 
 #define jabs_op00(...) jabs_opN((struct op_parameter){ __VA_ARGS__ })
-#define jabs_op0(...) jabs_opN((struct op_parameter){ .pop = 0, .push = 0, .conditional = false, .fallthrough = true, __VA_ARGS__ })
-#define jabs_op(...) jabs_opN((struct op_parameter){ .fallthrough = true, __VA_ARGS__ })
-void (jabs_opN)(struct op_parameter par);
+#define jabs_op0(...)  jabs_opN((struct op_parameter){ .pop = 0, .push = 0, .conditional = false, .fallthrough = true, __VA_ARGS__ })
+#define jabs_op(...)   jabs_opN((struct op_parameter){ .fallthrough = true, __VA_ARGS__ })
+void(jabs_opN)(struct op_parameter par);
 
 #define jrel_op00(...) jrel_opN((struct op_parameter){ __VA_ARGS__ })
-#define jrel_op0(...) jrel_opN((struct op_parameter){ .pop = 0, .push = 0, .conditional = false, .fallthrough = true, __VA_ARGS__ })
-#define jrel_op(...) jrel_opN((struct op_parameter){ .fallthrough = true, __VA_ARGS__ })
-void (jrel_opN)(struct op_parameter par);
+#define jrel_op0(...)  jrel_opN((struct op_parameter){ .pop = 0, .push = 0, .conditional = false, .fallthrough = true, __VA_ARGS__ })
+#define jrel_op(...)   jrel_opN((struct op_parameter){ .fallthrough = true, __VA_ARGS__ })
+void(jrel_opN)(struct op_parameter par);
 
-#define nargs_op(...) nargs_op((struct op_parameter){ __VA_ARGS__ })
+#define nargs_op(...)  nargs_op((struct op_parameter){ __VA_ARGS__ })
 #define nargs_op0(...) nargs_op((struct op_parameter){ .pop = -2, .push = -2, __VA_ARGS__ })
-void (nargs_op)(struct op_parameter par);
+void(nargs_op)(struct op_parameter par);
 
 #define rm_op(...) rm_op((struct op_parameter){ __VA_ARGS__ })
-void (rm_op)(struct op_parameter par);
+void(rm_op)(struct op_parameter par);
 
 #endif

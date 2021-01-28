@@ -11,17 +11,17 @@
 
 static ut64 ws_find_label(int l, const RzIOBind *iob) {
 	RzIO *io = iob->io;
-	ut64 cur = 0, size = iob->desc_size (io->desc);
+	ut64 cur = 0, size = iob->desc_size(io->desc);
 	ut8 buf[128];
 	RzAsmOp aop;
-	iob->read_at (iob->io, cur, buf, 128);
-	while (cur <= size && wsdis (&aop, buf, 128)) {
-		const char *buf_asm = rz_strbuf_get (&aop.buf_asm); // rz_asm_op_get_asm (&aop);
-		if (buf_asm && (strlen (buf_asm) > 4) && buf_asm[0] == 'm' && buf_asm[1] == 'a' && l == atoi (buf_asm + 5)) {
+	iob->read_at(iob->io, cur, buf, 128);
+	while (cur <= size && wsdis(&aop, buf, 128)) {
+		const char *buf_asm = rz_strbuf_get(&aop.buf_asm); // rz_asm_op_get_asm (&aop);
+		if (buf_asm && (strlen(buf_asm) > 4) && buf_asm[0] == 'm' && buf_asm[1] == 'a' && l == atoi(buf_asm + 5)) {
 			return cur;
 		}
 		cur = cur + aop.size;
-		iob->read_at (iob->io, cur, buf, 128);
+		iob->read_at(iob->io, cur, buf, 128);
 	}
 	return 0;
 }
@@ -29,10 +29,10 @@ static ut64 ws_find_label(int l, const RzIOBind *iob) {
 static int ws_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	op->addr = addr;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
-	RzAsmOp *aop = RZ_NEW0 (RzAsmOp);
-	op->size = wsdis (aop, data, len);
+	RzAsmOp *aop = RZ_NEW0(RzAsmOp);
+	op->size = wsdis(aop, data, len);
 	if (op->size) {
-		const char *buf_asm = rz_strbuf_get (&aop->buf_asm); // rz_asm_op_get_asm (aop);
+		const char *buf_asm = rz_strbuf_get(&aop->buf_asm); // rz_asm_op_get_asm (aop);
 		switch (*buf_asm) {
 		case 'n':
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
@@ -41,7 +41,7 @@ static int ws_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 			op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 			break;
 		case 'd':
-			op->type = (buf_asm[1] == 'u')? RZ_ANALYSIS_OP_TYPE_UPUSH: RZ_ANALYSIS_OP_TYPE_DIV;
+			op->type = (buf_asm[1] == 'u') ? RZ_ANALYSIS_OP_TYPE_UPUSH : RZ_ANALYSIS_OP_TYPE_DIV;
 			break;
 		case 'i':
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -62,7 +62,7 @@ static int ws_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 			if (buf_asm[1] == 'a') {
 				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 				op->fail = addr + aop->size;
-				op->jump = ws_find_label (atoi (buf_asm + 5), &analysis->iob);
+				op->jump = ws_find_label(atoi(buf_asm + 5), &analysis->iob);
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_UPUSH;
 			}
@@ -70,7 +70,7 @@ static int ws_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		case 'j':
 			if (buf_asm[1] == 'm') {
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-				op->jump = ws_find_label(atoi (buf_asm + 4), &analysis->iob);
+				op->jump = ws_find_label(atoi(buf_asm + 4), &analysis->iob);
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = ws_find_label(atoi(buf_asm + 3), &analysis->iob);
@@ -86,12 +86,12 @@ static int ws_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 			} else {
 				if (buf_asm[2] == 's') {
 					op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
-					if (127 > atoi (buf_asm + 5) && atoi (buf_asm + 5) >= 33) {
+					if (127 > atoi(buf_asm + 5) && atoi(buf_asm + 5) >= 33) {
 						char c[4];
 						c[3] = '\0';
 						c[0] = c[2] = '\'';
-						c[1] = (char) atoi (buf_asm + 5);
-						rz_meta_set_string (analysis, RZ_META_TYPE_COMMENT, addr, c);
+						c[1] = (char)atoi(buf_asm + 5);
+						rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, addr, c);
 					}
 				} else {
 					op->type = RZ_ANALYSIS_OP_TYPE_IO;
@@ -107,7 +107,7 @@ static int ws_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 				op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 				break;
 			case 'l':
-				op->type = RZ_ANALYSIS_OP_TYPE_LOAD;	// XXX
+				op->type = RZ_ANALYSIS_OP_TYPE_LOAD; // XXX
 				break;
 			case 'w':
 				op->type = RZ_ANALYSIS_OP_TYPE_ROR;
@@ -115,7 +115,7 @@ static int ws_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 			break;
 		}
 	}
-	free (aop);
+	free(aop);
 	return op->size;
 }
 

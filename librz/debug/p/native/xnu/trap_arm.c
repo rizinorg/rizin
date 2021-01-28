@@ -6,11 +6,11 @@ static int isThumb32(ut16 op) {
 
 static bool ios_hwstep_enable64(RzDebug *dbg, bool enable) {
 	ARMDebugState64 ds;
-	thread_t th = getcurthread (dbg, NULL);
+	thread_t th = getcurthread(dbg, NULL);
 
 	mach_msg_type_number_t count = ARM_DEBUG_STATE64_COUNT;
-	if (thread_get_state (th, ARM_DEBUG_STATE64, (thread_state_t)&ds, &count)) {
-		perror ("thread-get-state");
+	if (thread_get_state(th, ARM_DEBUG_STATE64, (thread_state_t)&ds, &count)) {
+		perror("thread-get-state");
 		return false;
 	}
 	// The use of __arm64__ here is not ideal.  If debugserver is running on
@@ -24,30 +24,30 @@ static bool ios_hwstep_enable64(RzDebug *dbg, bool enable) {
 	} else {
 		ds.mdscr_el1 &= ~(1ULL);
 	}
-	if (thread_set_state (th, ARM_DEBUG_STATE64, (thread_state_t)&ds, count)) {
-		perror ("thread-set-state");
+	if (thread_set_state(th, ARM_DEBUG_STATE64, (thread_state_t)&ds, count)) {
+		perror("thread-set-state");
 	}
 	return true;
 }
 
 static bool ios_hwstep_enable32(RzDebug *dbg, bool enable) {
 	mach_msg_type_number_t count;
-	arm_unified_thread_state_t state = {{0}};
+	arm_unified_thread_state_t state = { { 0 } };
 	_STRUCT_ARM_DEBUG_STATE ds;
 	task_t task = 0;
-	thread_t th = getcurthread (dbg, &task);
+	thread_t th = getcurthread(dbg, &task);
 	int ret;
 
 	count = ARM_DEBUG_STATE32_COUNT;
-	ret = thread_get_state (th, ARM_DEBUG_STATE32, (thread_state_t)&ds, &count);
+	ret = thread_get_state(th, ARM_DEBUG_STATE32, (thread_state_t)&ds, &count);
 	if (ret != KERN_SUCCESS) {
-		perror ("thread_get_state(debug)");
+		perror("thread_get_state(debug)");
 	}
 
 	count = ARM_UNIFIED_THREAD_STATE_COUNT;
-	ret = thread_get_state (th, ARM_UNIFIED_THREAD_STATE, (thread_state_t)&state, &count);
+	ret = thread_get_state(th, ARM_UNIFIED_THREAD_STATE, (thread_state_t)&state, &count);
 	if (ret != KERN_SUCCESS) {
-		perror ("thread_get_state(unified)");
+		perror("thread_get_state(unified)");
 	}
 	//eprintf ("PC = 0x%08x\n", state.ts_32.__pc);
 	if (enable) {
@@ -55,7 +55,7 @@ static bool ios_hwstep_enable32(RzDebug *dbg, bool enable) {
 		RzIOBind *bio = &dbg->iob;
 		ut32 pc = state.ts_32.__pc;
 		ut32 cpsr = state.ts_32.__cpsr;
-		for (i = 0; i < 16 ; i++) {
+		for (i = 0; i < 16; i++) {
 			ds.__bcr[i] = ds.__bvr[i] = 0;
 		}
 		i = 0;
@@ -69,9 +69,9 @@ static bool ios_hwstep_enable32(RzDebug *dbg, bool enable) {
 				ds.__bcr[i] |= BAS_IMVA_0_1;
 			}
 			/* check for thumb */
-			bio->read_at (bio->io, pc, (void *)&op, 2);
-			if (isThumb32 (op)) {
-				eprintf ("Thumb32 chain stepping not supported yet\n");
+			bio->read_at(bio->io, pc, (void *)&op, 2);
+			if (isThumb32(op)) {
+				eprintf("Thumb32 chain stepping not supported yet\n");
 			} else {
 				ds.__bcr[i] |= BAS_IMVA_ALL;
 			}
@@ -79,8 +79,8 @@ static bool ios_hwstep_enable32(RzDebug *dbg, bool enable) {
 			ds.__bcr[i] |= BAS_IMVA_ALL;
 		}
 	}
-	if (thread_set_state (th, ARM_DEBUG_STATE32, (thread_state_t)&ds, ARM_DEBUG_STATE32_COUNT)) {
-		perror ("ios_hwstep_enable32");
+	if (thread_set_state(th, ARM_DEBUG_STATE32, (thread_state_t)&ds, ARM_DEBUG_STATE32_COUNT)) {
+		perror("ios_hwstep_enable32");
 		return false;
 	}
 	return true;
@@ -88,8 +88,8 @@ static bool ios_hwstep_enable32(RzDebug *dbg, bool enable) {
 
 bool xnu_native_hwstep_enable(RzDebug *dbg, bool enable) {
 	if (dbg->bits == RZ_SYS_BITS_64 || dbg->bits == 64) {
-		return ios_hwstep_enable64 (dbg, enable);
+		return ios_hwstep_enable64(dbg, enable);
 	}
-	return ios_hwstep_enable32 (dbg, enable);
+	return ios_hwstep_enable32(dbg, enable);
 }
 #endif

@@ -18,7 +18,6 @@ typedef struct rz_mmap_t {
 #endif
 } RzMmap;
 
-
 /* is */
 RZ_API bool rz_file_is_abspath(const char *file);
 RZ_API bool rz_file_is_c(const char *file);
@@ -64,8 +63,8 @@ RZ_API char *rz_file_slurp_lines_from_bottom(const char *file, int line);
 RZ_API int rz_file_mkstemp(const char *prefix, char **oname);
 RZ_API char *rz_file_tmpdir(void);
 RZ_API char *rz_file_readlink(const char *path);
-RZ_API bool rz_file_copy (const char *src, const char *dst);
-RZ_API RzList* rz_file_globsearch (const char *globbed_path, int maxdepth);
+RZ_API bool rz_file_copy(const char *src, const char *dst);
+RZ_API RzList *rz_file_globsearch(const char *globbed_path, int maxdepth);
 
 #ifdef __cplusplus
 }

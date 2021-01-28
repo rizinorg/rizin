@@ -19,8 +19,8 @@ rz_egg = library('rz_egg', rz_egg_sources,
   c_args: library_cflags,
   dependencies: [
     rz_util_dep,
-    rz_asm_dep,
     rz_syscall_dep,
+    rz_asm_dep,
     mpc_dep
   ],
   install: true,

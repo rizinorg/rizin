@@ -1,4 +1,4 @@
-executable('rizin', 'rizin.c',
+rizin_exe = executable('rizin', 'rizin.c',
   include_directories: [platform_inc],
   dependencies: [
     rz_util_dep,
@@ -25,5 +25,31 @@ executable('rizin', 'rizin.c',
   ],
   install: true,
   install_rpath: rpath_exe,
-  implicit_include_directories: false
+  implicit_include_directories: false,
 )
+
+if host_machine.system() == 'darwin'
+  # CodeSign the rizin binary to make debugger work by applying the
+  # entitlements
+  entitlements = files('rizin_macos.xml')
+  macos_sign_sh = meson.current_source_dir() / 'macos_sign.sh'
+  custom_target('rizin-signing',
+    build_by_default: true,
+    build_always_stale: true,
+    command: [
+      macos_sign_sh,
+      'false',
+      entitlements,
+      rizin_exe.full_path(),
+    ],
+    depends: rizin_exe,
+    output: 'rizin-signing',
+    install: false,
+  )
+
+  meson.add_install_script(meson.current_source_dir() / 'macos_sign.sh',
+    'true',
+    entitlements,
+    rizin_bindir / 'rizin',
+  )
+endif

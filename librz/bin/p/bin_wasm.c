@@ -10,56 +10,56 @@
 #include "wasm/wasm.h"
 #include "../format/wasm/wasm.h"
 
-static bool check_buffer (RzBuffer *rbuf) {
+static bool check_buffer(RzBuffer *rbuf) {
 	ut8 buf[4] = { 0 };
-	return rbuf && rz_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, RZ_BIN_WASM_MAGIC_BYTES, 4);
+	return rbuf && rz_buf_read_at(rbuf, 0, buf, 4) == 4 && !memcmp(buf, RZ_BIN_WASM_MAGIC_BYTES, 4);
 }
 
-static bool find_export (const ut32 *p, const RzBinWasmExportEntry *q) {
+static bool find_export(const ut32 *p, const RzBinWasmExportEntry *q) {
 	if (q->kind != RZ_BIN_WASM_EXTERNALKIND_Function) {
 		return true;
 	}
 	return q->index != (*p);
 }
 
-static bool load_buffer (RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail (bf && buf && rz_buf_size (buf) != UT64_MAX, NULL);
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	rz_return_val_if_fail(bf && buf && rz_buf_size(buf) != UT64_MAX, NULL);
 
-	if (check_buffer (buf)) {
-		*bin_obj = rz_bin_wasm_init (bf, buf);
+	if (check_buffer(buf)) {
+		*bin_obj = rz_bin_wasm_init(bf, buf);
 		return true;
 	}
 	return false;
 }
 
-static void destroy (RzBinFile *bf) {
-	rz_bin_wasm_destroy (bf);
+static void destroy(RzBinFile *bf) {
+	rz_bin_wasm_destroy(bf);
 }
 
-static ut64 baddr (RzBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzBinAddr *binsym (RzBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RzList *sections (RzBinFile *bf);
+static RzList *sections(RzBinFile *bf);
 
-static RzList *entries (RzBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	// TODO
 	RzList *ret = NULL;
 	RzBinAddr *ptr = NULL;
 	ut64 addr = 0x0;
 
-	if (!(ret = rz_list_newf ((RzListFree)free))) {
+	if (!(ret = rz_list_newf((RzListFree)free))) {
 		return NULL;
 	}
 
-	addr = (ut64)rz_bin_wasm_get_entrypoint (bin);
+	addr = (ut64)rz_bin_wasm_get_entrypoint(bin);
 	if (!addr) {
-		RzList *codes = rz_bin_wasm_get_codes (bin);
+		RzList *codes = rz_bin_wasm_get_codes(bin);
 		if (codes) {
 			RzListIter *iter;
 			RzBinWasmCodeEntry *func;
@@ -69,40 +69,40 @@ static RzList *entries (RzBinFile *bf) {
 			}
 		}
 		if (!addr) {
-			rz_list_free (ret);
+			rz_list_free(ret);
 			return NULL;
 		}
 	}
-	if ((ptr = RZ_NEW0 (RzBinAddr))) {
+	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ptr->paddr = addr;
 		ptr->vaddr = addr;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
 
-static RzList *sections (RzBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	RzList *ret = NULL;
 	RzList *secs = NULL;
 	RzBinSection *ptr = NULL;
 	RzBinWasmSection *sec;
 
-	if (!(ret = rz_list_newf ((RzListFree)free))) {
+	if (!(ret = rz_list_newf((RzListFree)free))) {
 		return NULL;
 	}
-	if (!(secs = rz_bin_wasm_get_sections (bin))) {
-		rz_list_free (ret);
+	if (!(secs = rz_bin_wasm_get_sections(bin))) {
+		rz_list_free(ret);
 		return NULL;
 	}
 	RzListIter *iter;
 	rz_list_foreach (secs, iter, sec) {
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
-			rz_list_free (secs);
-			rz_list_free (ret);
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
+			rz_list_free(secs);
+			rz_list_free(ret);
 			return NULL;
 		}
-		ptr->name = strdup ((char *)sec->name);
+		ptr->name = strdup((char *)sec->name);
 		if (sec->id == RZ_BIN_WASM_SECTION_DATA || sec->id == RZ_BIN_WASM_SECTION_MEMORY) {
 			ptr->is_data = true;
 		}
@@ -113,12 +113,12 @@ static RzList *sections (RzBinFile *bf) {
 		ptr->add = true;
 		// TODO permissions
 		ptr->perm = 0;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
 
-static RzList *symbols (RzBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
 	RzList *ret = NULL, *codes = NULL, *imports = NULL, *exports = NULL;
 	RzBinSymbol *ptr = NULL;
@@ -127,16 +127,16 @@ static RzList *symbols (RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf ((RzListFree)free))) {
+	if (!(ret = rz_list_newf((RzListFree)free))) {
 		return NULL;
 	}
-	if (!(codes = rz_bin_wasm_get_codes (bin))) {
+	if (!(codes = rz_bin_wasm_get_codes(bin))) {
 		goto bad_alloc;
 	}
-	if (!(imports = rz_bin_wasm_get_imports (bin))) {
+	if (!(imports = rz_bin_wasm_get_imports(bin))) {
 		goto bad_alloc;
 	}
-	if (!(exports = rz_bin_wasm_get_exports (bin))) {
+	if (!(exports = rz_bin_wasm_get_exports(bin))) {
 		goto bad_alloc;
 	}
 
@@ -149,11 +149,11 @@ static RzList *symbols (RzBinFile *bf) {
 	RzBinWasmImportEntry *imp;
 	RzListIter *iter;
 	rz_list_foreach (imports, iter, imp) {
-		if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
+		if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 			goto bad_alloc;
 		}
-		ptr->name = strdup (imp->field_str);
-		ptr->libname = strdup (imp->module_str);
+		ptr->name = strdup(imp->field_str);
+		ptr->libname = strdup(imp->module_str);
 		ptr->is_imported = true;
 		ptr->forwarder = "NONE";
 		ptr->bind = "NONE";
@@ -180,28 +180,28 @@ static RzList *symbols (RzBinFile *bf) {
 		ptr->paddr = -1;
 		ptr->ordinal = i;
 		i += 1;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 
 	RzListIter *is_exp = NULL;
 	RzBinWasmCodeEntry *func;
 	// RzBinWasmExportEntry *export = NULL;
 	rz_list_foreach (codes, iter, func) {
-		if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
+		if (!(ptr = RZ_NEW0(RzBinSymbol))) {
 			goto bad_alloc;
 		}
 
-		const char *fcn_name = rz_bin_wasm_get_function_name (bin, fcn_idx);
+		const char *fcn_name = rz_bin_wasm_get_function_name(bin, fcn_idx);
 		if (fcn_name) {
-			ptr->name = strdup (fcn_name);
+			ptr->name = strdup(fcn_name);
 
-			is_exp = rz_list_find (exports, &fcn_idx, (RzListComparator)find_export);
+			is_exp = rz_list_find(exports, &fcn_idx, (RzListComparator)find_export);
 			if (is_exp) {
 				ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			}
 		} else {
 			// fallback if symbol is not found.
-			ptr->name = rz_str_newf ("fcn.%d", fcn_idx);
+			ptr->name = rz_str_newf("fcn.%d", fcn_idx);
 		}
 
 		ptr->forwarder = "NONE";
@@ -215,20 +215,20 @@ static RzList *symbols (RzBinFile *bf) {
 		ptr->ordinal = i;
 		i++;
 		fcn_idx++;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 
 	// TODO: globals, tables and memories
 	return ret;
 bad_alloc:
 	// not so sure if imports should be freed.
-	rz_list_free (exports);
-	rz_list_free (codes);
-	rz_list_free (ret);
+	rz_list_free(exports);
+	rz_list_free(codes);
+	rz_list_free(ret);
 	return NULL;
 }
 
-static RzList *imports (RzBinFile *bf) {
+static RzList *imports(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
 	RzList *imports = NULL;
 	RzBinImport *ptr = NULL;
@@ -238,10 +238,10 @@ static RzList *imports (RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf (rz_bin_import_free))) {
+	if (!(ret = rz_list_newf(rz_bin_import_free))) {
 		return NULL;
 	}
-	if (!(imports = rz_bin_wasm_get_imports (bin))) {
+	if (!(imports = rz_bin_wasm_get_imports(bin))) {
 		goto bad_alloc;
 	}
 
@@ -249,11 +249,11 @@ static RzList *imports (RzBinFile *bf) {
 	ut32 i = 0;
 	RzListIter *iter;
 	rz_list_foreach (imports, iter, import) {
-		if (!(ptr = RZ_NEW0 (RzBinImport))) {
+		if (!(ptr = RZ_NEW0(RzBinImport))) {
 			goto bad_alloc;
 		}
-		ptr->name = strdup (import->field_str);
-		ptr->classname = strdup (import->module_str);
+		ptr->name = strdup(import->field_str);
+		ptr->classname = strdup(import->module_str);
 		ptr->ordinal = i;
 		ptr->bind = "NONE";
 		switch (import->kind) {
@@ -270,33 +270,33 @@ static RzList *imports (RzBinFile *bf) {
 			ptr->type = "GLOBAL";
 			break;
 		}
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 bad_alloc:
-	rz_list_free (imports);
-	rz_list_free (ret);
+	rz_list_free(imports);
+	rz_list_free(ret);
 	return NULL;
 }
 
-static RzList *libs (RzBinFile *bf) {
+static RzList *libs(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzBinInfo *info (RzBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *ret = NULL;
 
-	if (!(ret = RZ_NEW0 (RzBinInfo))) {
+	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup (bf->file);
-	ret->bclass = strdup ("module");
-	ret->rclass = strdup ("wasm");
-	ret->os = strdup ("WebAssembly");
-	ret->arch = strdup ("wasm");
-	ret->machine = strdup (ret->arch);
-	ret->subsystem = strdup ("wasm");
-	ret->type = strdup ("EXEC");
+	ret->file = strdup(bf->file);
+	ret->bclass = strdup("module");
+	ret->rclass = strdup("wasm");
+	ret->os = strdup("WebAssembly");
+	ret->arch = strdup("wasm");
+	ret->machine = strdup(ret->arch);
+	ret->subsystem = strdup("wasm");
+	ret->type = strdup("EXEC");
 	ret->bits = 32;
 	ret->has_va = 0;
 	ret->big_endian = false;
@@ -304,22 +304,22 @@ static RzBinInfo *info (RzBinFile *bf) {
 	return ret;
 }
 
-static ut64 size (RzBinFile *bf) {
+static ut64 size(RzBinFile *bf) {
 	if (!bf || !bf->buf) {
 		return 0;
 	}
-	return rz_buf_size (bf->buf);
+	return rz_buf_size(bf->buf);
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RzBuffer *create (RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
-	RzBuffer *buf = rz_buf_new ();
-#define B(x, y) rz_buf_append_bytes (buf, (const ut8 *)(x), y)
-#define D(x) rz_buf_append_ut32 (buf, x)
-	B ("\x00"
-	   "asm",
+static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+	RzBuffer *buf = rz_buf_new();
+#define B(x, y) rz_buf_append_bytes(buf, (const ut8 *)(x), y)
+#define D(x)    rz_buf_append_ut32(buf, x)
+	B("\x00"
+	  "asm",
 		4);
-	B ("\x01\x00\x00\x00", 4);
+	B("\x01\x00\x00\x00", 4);
 	return buf;
 }
 

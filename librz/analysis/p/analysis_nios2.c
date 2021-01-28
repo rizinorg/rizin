@@ -12,25 +12,20 @@ static int nios2_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	}
 	op->size = 4;
 
-	if ((b[0]&0xff) == 0x3a) {
+	if ((b[0] & 0xff) == 0x3a) {
 		// XXX
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
-	} else
-	if ((b[0]&0xf) == 0xa) {
+	} else if ((b[0] & 0xf) == 0xa) {
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-	} else
-	if ((b[0]&0xf) == 4) {
+	} else if ((b[0] & 0xf) == 4) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-	} else
-	if ((b[0]&0xf) == 5) {
+	} else if ((b[0] & 0xf) == 5) {
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-	} else
-	if ((b[0]&0xf) == 6) {
+	} else if ((b[0] & 0xf) == 6) {
 		// blt, r19, r5, 0x8023480
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		// TODO: address
-	} else
-	if ((b[0]&0xf) == 7) {
+	} else if ((b[0] & 0xf) == 7) {
 		// blt, r19, r5, 0x8023480
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		// TODO: address

@@ -11,7 +11,6 @@
 
 #include "disas-asm.h"
 
-
 static unsigned long Offset = 0;
 static RzStrBuf *buf_global = NULL;
 static ut8 bytes[128];
@@ -20,29 +19,29 @@ enum {
 	TRICORE_RIDER_A = 0x00000001,
 	TRICORE_RIDER_B = 0x00000002,
 	TRICORE_RIDER_D = TRICORE_RIDER_B,
-	TRICORE_V2      = 0x00000004,
-	TRICORE_PCP     = 0x00000010,
-	TRICORE_PCP2    = 0x00000020
+	TRICORE_V2 = 0x00000004,
+	TRICORE_PCP = 0x00000010,
+	TRICORE_PCP2 = 0x00000020
 };
 
 static int cpu_to_mach(char *cpu_type) {
 	if (cpu_type && *cpu_type) {
-		if (!strcmp (cpu_type, "generic")) {
+		if (!strcmp(cpu_type, "generic")) {
 			return TRICORE_GENERIC;
 		}
-		if (!strcmp (cpu_type, "rider-a")) {
+		if (!strcmp(cpu_type, "rider-a")) {
 			return TRICORE_RIDER_A;
 		}
-		if ((!strcmp (cpu_type, "rider-b")) || (!strcmp (cpu_type, "rider-d"))) {
+		if ((!strcmp(cpu_type, "rider-b")) || (!strcmp(cpu_type, "rider-d"))) {
 			return TRICORE_RIDER_B;
 		}
-		if (!strcmp (cpu_type, "v2")) {
+		if (!strcmp(cpu_type, "v2")) {
 			return TRICORE_V2;
 		}
-		if (!strcmp (cpu_type, "pcp")) {
+		if (!strcmp(cpu_type, "pcp")) {
 			return TRICORE_PCP;
 		}
-		if (!strcmp (cpu_type, "pcp2")) {
+		if (!strcmp(cpu_type, "pcp2")) {
 			return TRICORE_PCP2;
 		}
 	}
@@ -52,12 +51,12 @@ static int cpu_to_mach(char *cpu_type) {
 static int tricore_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = memaddr - Offset;
 	if (delta >= 0 && length + delta < sizeof(bytes)) {
-		memcpy (myaddr, bytes + delta, length);
+		memcpy(myaddr, bytes + delta, length);
 	}
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
@@ -72,11 +71,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, RZ_MIN (len, 8)); // TODO handle thumb
+	memcpy(bytes, buf, RZ_MIN(len, 8)); // TODO handle thumb
 
 	/* prepare disassembler */
-	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options = (a->bits==64)?"64":"";
+	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
+	disasm_obj.disassembler_options = (a->bits == 64) ? "64" : "";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &tricore_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -87,11 +86,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 
 	// cpu type
-	disasm_obj.mach = cpu_to_mach (a->cpu);
+	disasm_obj.mach = cpu_to_mach(a->cpu);
 
-	op->size = print_insn_tricore ((bfd_vma)Offset, &disasm_obj);
+	op->size = print_insn_tricore((bfd_vma)Offset, &disasm_obj);
 	if (op->size == -1) {
-		rz_asm_op_set_asm (op, " (data)");
+		rz_asm_op_set_asm(op, " (data)");
 	}
 	return op->size;
 }

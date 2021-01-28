@@ -1,41 +1,41 @@
 #include "opcode.h"
 
 const char *format_extended_arg(ut32 oparg) {
-	return rz_str_newf ("%u", oparg * (1 << 16));
+	return rz_str_newf("%u", oparg * (1 << 16));
 }
 
 const char *format_CALL_FUNCTION_pos_name_encoded(ut32 oparg) {
 	ut32 pos_args = oparg & 0xFF;
 	ut32 name = (oparg >> 8) & 0xFF;
-	return rz_str_newf ("%u positional, %u named", pos_args, name);
+	return rz_str_newf("%u positional, %u named", pos_args, name);
 }
 
 const char *format_MAKE_FUNCTION_arg_3x(ut32 oparg) {
 	ut32 pos_args = oparg & 0xFF;
 	ut32 name_default = (oparg >> 8) & 0xFF;
 	ut32 annotate_args = (oparg >> 16) & 0x7FFF;
-	return rz_str_newf ("%u positional, %u name and default, %u annotations", pos_args, name_default, annotate_args);
+	return rz_str_newf("%u positional, %u name and default, %u annotations", pos_args, name_default, annotate_args);
 }
 
 const char *format_CALL_FUNCTION_KW_36(ut32 oparg) {
-	return rz_str_newf ("%u total positional and keyword args", oparg);
+	return rz_str_newf("%u total positional and keyword args", oparg);
 }
 
 const char *format_CALL_FUNCTION_EX_36(ut32 oparg) {
-	return rz_str_new ((oparg & 0x01)? "keyword args": "");
+	return rz_str_new((oparg & 0x01) ? "keyword args" : "");
 }
 
 static const char *MAKE_FUNCTION_FLAGS[] = { "default", "keyword-only", "annotation", "closure" };
 
 const char *format_MAKE_FUNCTION_arg_36(ut32 oparg) {
 	size_t i;
-	char *ret = rz_str_new (" ");
-	for (i = 0; i < sizeof (MAKE_FUNCTION_FLAGS) / sizeof (char *); ++i) {
+	char *ret = rz_str_new(" ");
+	for (i = 0; i < sizeof(MAKE_FUNCTION_FLAGS) / sizeof(char *); ++i) {
 		if (oparg & 0x1) {
-			rz_str_appendf (ret, ", %s", MAKE_FUNCTION_FLAGS[i]);
+			rz_str_appendf(ret, ", %s", MAKE_FUNCTION_FLAGS[i]);
 		} else {
-			free (ret);
-			ret = rz_str_new (MAKE_FUNCTION_FLAGS[i]);
+			free(ret);
+			ret = rz_str_new(MAKE_FUNCTION_FLAGS[i]);
 		}
 		oparg >>= 1;
 	}
@@ -60,9 +60,9 @@ const char *format_value_flags_36(ut32 oparg) {
 		// empty fmt_spec.
 		ret = "";
 	}
-	return rz_str_new (ret);
+	return rz_str_new(ret);
 }
 
 const char *format_extended_arg_36(ut32 oparg) {
-	return rz_str_newf ("%u", oparg * (1 << 8));
+	return rz_str_newf("%u", oparg * (1 << 8));
 }

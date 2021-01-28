@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER (rz_reg);
+RZ_LIB_VERSION_HEADER(rz_reg);
 
 /*
  * various CPUs have registers within various types/classes
@@ -66,31 +66,31 @@ typedef enum {
 } RzRegisterId;
 
 // TODO: use enum here?
-#define RZ_REG_COND_EQ 0
-#define RZ_REG_COND_NE 1
-#define RZ_REG_COND_CF 2
-#define RZ_REG_COND_CARRY 2
-#define RZ_REG_COND_NEG 3
+#define RZ_REG_COND_EQ       0
+#define RZ_REG_COND_NE       1
+#define RZ_REG_COND_CF       2
+#define RZ_REG_COND_CARRY    2
+#define RZ_REG_COND_NEG      3
 #define RZ_REG_COND_NEGATIVE 3
-#define RZ_REG_COND_OF 4
+#define RZ_REG_COND_OF       4
 #define RZ_REG_COND_OVERFLOW 4
 // unsigned
-#define RZ_REG_COND_HI 5
-#define RZ_REG_COND_HE 6
-#define RZ_REG_COND_LO 7
+#define RZ_REG_COND_HI  5
+#define RZ_REG_COND_HE  6
+#define RZ_REG_COND_LO  7
 #define RZ_REG_COND_LOE 8
 // signed
-#define RZ_REG_COND_GE 9
-#define RZ_REG_COND_GT 10
-#define RZ_REG_COND_LT 11
-#define RZ_REG_COND_LE 12
+#define RZ_REG_COND_GE   9
+#define RZ_REG_COND_GT   10
+#define RZ_REG_COND_LT   11
+#define RZ_REG_COND_LE   12
 #define RZ_REG_COND_LAST 13
 
 typedef struct rz_reg_item_t {
 	char *name;
 	int /*RzRegisterType*/ type;
-	int size;	/* 8,16,32,64 ... 128/256 ??? */
-	int offset;      /* offset in data structure */
+	int size; /* 8,16,32,64 ... 128/256 ??? */
+	int offset; /* offset in data structure */
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	bool is_float;
 	char *flags;
@@ -106,9 +106,9 @@ typedef struct rz_reg_arena_t {
 
 typedef struct rz_reg_set_t {
 	RzRegArena *arena;
-	RzList *pool;      /* RzRegArena */
-	RzList *regs;      /* RzRegItem */
-	HtPP *ht_regs;    /* name:RzRegItem */
+	RzList *pool; /* RzRegArena */
+	RzList *regs; /* RzRegItem */
+	HtPP *ht_regs; /* name:RzRegItem */
 	RzListIter *cur;
 	int maskregstype; /* which type of regs have this reg set (logic mask with RzRegisterType  RZ_REG_TYPE_XXX) */
 } RzRegSet;
@@ -144,7 +144,7 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init);
 RZ_API RzReg *rz_reg_new(void);
 RZ_API bool rz_reg_set_name(RzReg *reg, int role, const char *name);
 RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *profile);
-RZ_API char* rz_reg_profile_to_cc(RzReg *reg);
+RZ_API char *rz_reg_profile_to_cc(RzReg *reg);
 RZ_API bool rz_reg_set_profile(RzReg *reg, const char *profile);
 RZ_API char *rz_reg_parse_gdb_profile(const char *profile);
 RZ_API bool rz_reg_is_readonly(RzReg *reg, RzRegItem *item);

@@ -36,7 +36,7 @@ static int flag = 0;
 
 static bool ror_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	flag = direction;
-	return ror_init (&st, key, keylen);
+	return ror_init(&st, key, keylen);
 }
 
 static int ror_get_key_size(RzCrypto *cry) {
@@ -44,21 +44,21 @@ static int ror_get_key_size(RzCrypto *cry) {
 }
 
 static bool ror_use(const char *algo) {
-	return !strcmp (algo, NAME);
+	return !strcmp(algo, NAME);
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	if (flag) {
-		eprintf ("USE ROL\n");
+		eprintf("USE ROL\n");
 		return false;
 	}
-	ut8 *obuf = calloc (1, len);
+	ut8 *obuf = calloc(1, len);
 	if (!obuf) {
 		return false;
 	}
-	ror_crypt (&st, buf, obuf, len);
-	rz_crypto_append (cry, obuf, len);
-	free (obuf);
+	ror_crypt(&st, buf, obuf, len);
+	rz_crypto_append(cry, obuf, len);
+	free(obuf);
 	return true;
 }
 

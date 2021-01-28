@@ -2,7 +2,7 @@
 #include <rz_util.h>
 #include <rz_print.h>
 
-const char *reg_profile = 
+const char *reg_profile =
 	"gpr eax .32 0 0\n"
 	"gpr ecx .32 4 0\n"
 	"gpr edx .32 8 0\n"
@@ -49,36 +49,36 @@ const char *reg_profile =
 	"gpr xmm6 .128 272 0\n"
 	"gpr xmm7 .128 288 0\n"
 #endif
-	"gpr mxcsr .32 304 0\n"
-;
+	"gpr mxcsr .32 304 0\n";
 
 static void dumpregs(RzReg *reg) {
 	int sz;
-	ut8 *buf = rz_reg_get_bytes (reg, RZ_REG_TYPE_GPR, &sz);
-	rz_print_hexdump (NULL, 0, buf, sz, 16, 16);
-	free (buf);
+	ut8 *buf = rz_reg_get_bytes(reg, RZ_REG_TYPE_GPR, &sz);
+	rz_print_hexdump(NULL, 0, buf, sz, 16, 16);
+	free(buf);
 }
 int main() {
 	int sz, type = RZ_REG_TYPE_GPR;
 	RzReg *reg = rz_reg_new();
 	RzReg *reg2 = rz_reg_new();
-	rz_reg_set_profile_string (reg, reg_profile);
-	rz_reg_set_profile_string (reg2, reg_profile);
-	rz_reg_setv (reg2, "ecx", 0xdeadbeef);
-	RzRegItem* current = NULL;
+	rz_reg_set_profile_string(reg, reg_profile);
+	rz_reg_set_profile_string(reg2, reg_profile);
+	rz_reg_setv(reg2, "ecx", 0xdeadbeef);
+	RzRegItem *current = NULL;
 
-	free (rz_reg_get_bytes (reg, RZ_REG_TYPE_GPR, &sz));
-	eprintf ("arena: %d\n", sz);
+	free(rz_reg_get_bytes(reg, RZ_REG_TYPE_GPR, &sz));
+	eprintf("arena: %d\n", sz);
 	if (sz != 308) {
-		eprintf ("ARENA SIZE IS WRONG\n");
+		eprintf("ARENA SIZE IS WRONG\n");
 	}
-		dumpregs (reg);
-		dumpregs (reg2);
+	dumpregs(reg);
+	dumpregs(reg2);
 	for (;;) {
-		current = rz_reg_next_diff (reg, type,
+		current = rz_reg_next_diff(reg, type,
 			reg2->regset[type].arena->bytes,
 			sz, current, 32);
-		if (!current) break;
+		if (!current)
+			break;
 		eprintf("Reg: <%s>\n", current->name);
 	}
 	return 0;

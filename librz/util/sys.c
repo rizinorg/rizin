@@ -4,41 +4,41 @@
 #include <stdlib.h>
 #include <string.h>
 #if defined(__NetBSD__)
-# include <sys/param.h>
-# include <sys/sysctl.h>
-# if __NetBSD_Prereq__(7,0,0)
-#  define NETBSD_WITH_BACKTRACE
-# endif
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#if __NetBSD_Prereq__(7, 0, 0)
+#define NETBSD_WITH_BACKTRACE
+#endif
 #endif
 #if defined(__FreeBSD__)
-# include <sys/param.h>
-# include <sys/sysctl.h>
-# if __FreeBSD_version >= 1000000
-#  define FREEBSD_WITH_BACKTRACE
-# endif
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#if __FreeBSD_version >= 1000000
+#define FREEBSD_WITH_BACKTRACE
+#endif
 #endif
 #if defined(__DragonFly__)
-# include <sys/param.h>
-# include <sys/sysctl.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
 #endif
 #if defined(__OpenBSD__)
-# include <sys/sysctl.h>
-# include <sys/stat.h>
+#include <sys/sysctl.h>
+#include <sys/stat.h>
 #endif
 #if defined(__HAIKU__)
-# include <kernel/image.h>
-# include <sys/param.h>
+#include <kernel/image.h>
+#include <sys/param.h>
 #endif
 #include <sys/types.h>
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_lib.h>
 
-static char** env = NULL;
+static char **env = NULL;
 
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
-  defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun || __HAIKU__
-# include <execinfo.h>
+	defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun || __HAIKU__
+#include <execinfo.h>
 #endif
 #if __APPLE__
 #include <errno.h>
@@ -54,95 +54,97 @@ static char** env = NULL;
 // iOS don't have this we can't hardcode
 // #include <crt_externs.h>
 extern char ***_NSGetEnviron(void);
-# ifndef PROC_PIDPATHINFO_MAXSIZE
-#  define PROC_PIDPATHINFO_MAXSIZE 1024
-int proc_pidpath(int pid, void * buffer, ut32 buffersize);
+#ifndef PROC_PIDPATHINFO_MAXSIZE
+#define PROC_PIDPATHINFO_MAXSIZE 1024
+int proc_pidpath(int pid, void *buffer, ut32 buffersize);
 //#  include <libproc.h>
-# endif
+#endif
 #endif
 #if __UNIX__
-# include <sys/utsname.h>
-# include <sys/wait.h>
-# include <sys/stat.h>
-# include <errno.h>
-# include <signal.h>
+#include <sys/utsname.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <signal.h>
 extern char **environ;
 
 #ifdef __HAIKU__
-# define Sleep sleep
+#define Sleep sleep
 #endif
 #endif
 #if __WINDOWS__
-# include <io.h>
-# include <winbase.h>
-# include <signal.h>
-#define TMP_BUFSIZE	4096
+#include <io.h>
+#include <winbase.h>
+#include <signal.h>
+#define TMP_BUFSIZE 4096
 #ifdef _MSC_VER
 #include <psapi.h>
-#include <process.h>  // to allow getpid under windows msvc compilation
-#include <direct.h>  // to allow getcwd under windows msvc compilation
+#include <process.h> // to allow getpid under windows msvc compilation
+#include <direct.h> // to allow getcwd under windows msvc compilation
 #endif
 #endif
 
 RZ_LIB_VERSION(rz_util);
 
 #ifdef __x86_64__
-# ifdef _MSC_VER
-#  define RZ_SYS_ASM_START_ROP() \
-	 eprintf ("rz_sys_run_rop: Unsupported arch\n");
-# else
-#  define RZ_SYS_ASM_START_ROP() \
-	 __asm__ __volatile__ ("leaq %0, %%rsp; ret" \
-				: \
-				: "m" (*bufptr));
-# endif
-#elif __i386__
-# ifdef _MSC_VER
-#  define RZ_SYS_ASM_START_ROP() \
-	__asm \
-	{ \
-		__asm lea esp, bufptr\
-		__asm ret\
-	}
-# else
-#  define RZ_SYS_ASM_START_ROP() \
-	__asm__ __volatile__ ("leal %0, %%esp; ret" \
-				: \
-				: "m" (*bufptr));
-# endif
+#ifdef _MSC_VER
+#define RZ_SYS_ASM_START_ROP() \
+	eprintf("rz_sys_run_rop: Unsupported arch\n");
 #else
-# define RZ_SYS_ASM_START_ROP() \
-	eprintf ("rz_sys_run_rop: Unsupported arch\n");
+#define RZ_SYS_ASM_START_ROP() \
+	__asm__ __volatile__("leaq %0, %%rsp; ret" \
+			     : \
+			     : "m"(*bufptr));
+#endif
+#elif __i386__
+#ifdef _MSC_VER
+#define RZ_SYS_ASM_START_ROP() \
+	__asm { \
+		__asm lea esp, bufptr\
+		__asm ret \
+	}
+#else
+#define RZ_SYS_ASM_START_ROP() \
+	__asm__ __volatile__("leal %0, %%esp; ret" \
+			     : \
+			     : "m"(*bufptr));
+#endif
+#else
+#define RZ_SYS_ASM_START_ROP() \
+	eprintf("rz_sys_run_rop: Unsupported arch\n");
 #endif
 
-static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
-    {"x86", RZ_SYS_ARCH_X86},
-    {"arm", RZ_SYS_ARCH_ARM},
-    {"ppc", RZ_SYS_ARCH_PPC},
-    {"m68k", RZ_SYS_ARCH_M68K},
-    {"java", RZ_SYS_ARCH_JAVA},
-    {"mips", RZ_SYS_ARCH_MIPS},
-    {"sparc", RZ_SYS_ARCH_SPARC},
-    {"xap", RZ_SYS_ARCH_XAP},
-    {"tms320", RZ_SYS_ARCH_TMS320},
-    {"msil", RZ_SYS_ARCH_MSIL},
-    {"objd", RZ_SYS_ARCH_OBJD},
-    {"bf", RZ_SYS_ARCH_BF},
-    {"sh", RZ_SYS_ARCH_SH},
-    {"avr", RZ_SYS_ARCH_AVR},
-    {"dalvik", RZ_SYS_ARCH_DALVIK},
-    {"z80", RZ_SYS_ARCH_Z80},
-    {"arc", RZ_SYS_ARCH_ARC},
-    {"i8080", RZ_SYS_ARCH_I8080},
-    {"rar", RZ_SYS_ARCH_RAR},
-    {"lm32", RZ_SYS_ARCH_LM32},
-    {"v850", RZ_SYS_ARCH_V850},
-    {NULL, 0}
+static const struct {
+	const char *name;
+	ut64 bit;
+} arch_bit_array[] = {
+	{ "x86", RZ_SYS_ARCH_X86 },
+	{ "arm", RZ_SYS_ARCH_ARM },
+	{ "ppc", RZ_SYS_ARCH_PPC },
+	{ "m68k", RZ_SYS_ARCH_M68K },
+	{ "java", RZ_SYS_ARCH_JAVA },
+	{ "mips", RZ_SYS_ARCH_MIPS },
+	{ "sparc", RZ_SYS_ARCH_SPARC },
+	{ "xap", RZ_SYS_ARCH_XAP },
+	{ "tms320", RZ_SYS_ARCH_TMS320 },
+	{ "msil", RZ_SYS_ARCH_MSIL },
+	{ "objd", RZ_SYS_ARCH_OBJD },
+	{ "bf", RZ_SYS_ARCH_BF },
+	{ "sh", RZ_SYS_ARCH_SH },
+	{ "avr", RZ_SYS_ARCH_AVR },
+	{ "dalvik", RZ_SYS_ARCH_DALVIK },
+	{ "z80", RZ_SYS_ARCH_Z80 },
+	{ "arc", RZ_SYS_ARCH_ARC },
+	{ "i8080", RZ_SYS_ARCH_I8080 },
+	{ "rar", RZ_SYS_ARCH_RAR },
+	{ "lm32", RZ_SYS_ARCH_LM32 },
+	{ "v850", RZ_SYS_ARCH_V850 },
+	{ NULL, 0 }
 };
 
 #if HAVE_SIGACTION
-RZ_API int rz_sys_sigaction(int *sig, void (*handler) (int)) {
-	struct sigaction sigact = { };
+RZ_API int rz_sys_sigaction(int *sig, void (*handler)(int)) {
+	struct sigaction sigact = {};
 	int ret, i;
 
 	if (!sig) {
@@ -150,16 +152,16 @@ RZ_API int rz_sys_sigaction(int *sig, void (*handler) (int)) {
 	}
 
 	sigact.sa_handler = handler;
-	sigemptyset (&sigact.sa_mask);
+	sigemptyset(&sigact.sa_mask);
 
 	for (i = 0; sig[i] != 0; i++) {
-		sigaddset (&sigact.sa_mask, sig[i]);
+		sigaddset(&sigact.sa_mask, sig[i]);
 	}
 
 	for (i = 0; sig[i] != 0; i++) {
-		ret = sigaction (sig[i], &sigact, NULL);
+		ret = sigaction(sig[i], &sigact, NULL);
 		if (ret) {
-			eprintf ("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
+			eprintf("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
 			return ret;
 		}
 	}
@@ -173,9 +175,9 @@ RZ_API int rz_sys_sigaction(int *sig, void (*handler)(int)) {
 	}
 	size_t i;
 	for (i = 0; sig[i] != 0; i++) {
-		void (*ret)(int) = signal (sig[i], handler);
+		void (*ret)(int) = signal(sig[i], handler);
 		if (ret == SIG_ERR) {
-			eprintf ("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
+			eprintf("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
 			return -1;
 		}
 	}
@@ -183,16 +185,16 @@ RZ_API int rz_sys_sigaction(int *sig, void (*handler)(int)) {
 }
 #endif
 
-RZ_API int rz_sys_signal(int sig, void (*handler) (int)) {
+RZ_API int rz_sys_signal(int sig, void (*handler)(int)) {
 	int s[2] = { sig, 0 };
-	return rz_sys_sigaction (s, handler);
+	return rz_sys_sigaction(s, handler);
 }
 
 RZ_API void rz_sys_exit(int status, bool nocleanup) {
 	if (nocleanup) {
-		_exit (status);
+		_exit(status);
 	} else {
-		exit (status);
+		exit(status);
 	}
 }
 
@@ -201,33 +203,33 @@ RZ_API RzList *rz_sys_dir(const char *path) {
 #if __WINDOWS__
 	WIN32_FIND_DATAW entry;
 	char *cfname;
-	HANDLE fh = rz_sys_opendir (path, &entry);
+	HANDLE fh = rz_sys_opendir(path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
 		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
 		return list;
 	}
-	list = rz_list_newf (free);
+	list = rz_list_newf(free);
 	if (list) {
 		do {
-			if ((cfname = rz_utf16_to_utf8 (entry.cFileName))) {
-				rz_list_append (list, strdup (cfname));
-				free (cfname);
+			if ((cfname = rz_utf16_to_utf8(entry.cFileName))) {
+				rz_list_append(list, strdup(cfname));
+				free(cfname);
 			}
-		} while (FindNextFileW (fh, &entry));
+		} while (FindNextFileW(fh, &entry));
 	}
-	FindClose (fh);
+	FindClose(fh);
 #else
 	struct dirent *entry;
-	DIR *dir = rz_sys_opendir (path);
+	DIR *dir = rz_sys_opendir(path);
 	if (dir) {
-		list = rz_list_new ();
+		list = rz_list_new();
 		if (list) {
 			list->free = free;
-			while ((entry = readdir (dir))) {
-				rz_list_append (list, strdup (entry->d_name));
+			while ((entry = readdir(dir))) {
+				rz_list_append(list, strdup(entry->d_name));
 			}
 		}
-		closedir (dir);
+		closedir(dir);
 	}
 #endif
 	return list;
@@ -236,10 +238,10 @@ RZ_API RzList *rz_sys_dir(const char *path) {
 RZ_API char *rz_sys_cmd_strf(const char *fmt, ...) {
 	char *ret, cmd[4096];
 	va_list ap;
-	va_start (ap, fmt);
-	vsnprintf (cmd, sizeof (cmd), fmt, ap);
-	ret = rz_sys_cmd_str (cmd, NULL, NULL);
-	va_end (ap);
+	va_start(ap, fmt);
+	vsnprintf(cmd, sizeof(cmd), fmt, ap);
+	ret = rz_sys_cmd_str(cmd, NULL, NULL);
+	va_end(ap);
 	return ret;
 }
 
@@ -251,24 +253,24 @@ RZ_API char *rz_sys_cmd_strf(const char *fmt, ...) {
 #endif
 
 #if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || \
-  defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE) || \
-  __DragonFly__ || __sun || __HAIKU__
+	defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE) || \
+	__DragonFly__ || __sun || __HAIKU__
 #define HAVE_BACKTRACE 1
 #endif
 
 RZ_API void rz_sys_backtrace(void) {
 #ifdef HAVE_BACKTRACE
 	void *array[10];
-	size_t size = backtrace (array, 10);
-	eprintf ("Backtrace %zd stack frames.\n", size);
-	backtrace_symbols_fd (array, size, 2);
+	size_t size = backtrace(array, 10);
+	eprintf("Backtrace %zd stack frames.\n", size);
+	backtrace_symbols_fd(array, size, 2);
 #elif __APPLE__
-	void **fp = (void **) __builtin_frame_address (0);
-	void *saved_pc = __builtin_return_address (0);
-	void *saved_fp = __builtin_frame_address (1);
+	void **fp = (void **)__builtin_frame_address(0);
+	void *saved_pc = __builtin_return_address(0);
+	void *saved_fp = __builtin_frame_address(1);
 	int depth = 0;
 
-	printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
+	printf("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	fp = saved_fp;
 	while (fp) {
 		saved_fp = *fp;
@@ -277,11 +279,11 @@ RZ_API void rz_sys_backtrace(void) {
 			break;
 		}
 		saved_pc = *(fp + 2);
-		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
+		printf("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	}
 #else
 #ifdef _MSC_VER
-#pragma message ("TODO: rz_sys_bt : unimplemented")
+#pragma message("TODO: rz_sys_bt : unimplemented")
 #else
 #warning TODO: rz_sys_bt : unimplemented
 #endif
@@ -293,11 +295,11 @@ RZ_API int rz_sys_sleep(int secs) {
 	struct timespec rqtp;
 	rqtp.tv_sec = secs;
 	rqtp.tv_nsec = 0;
-	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
+	return clock_nanosleep(CLOCK_MONOTONIC, 0, &rqtp, NULL);
 #elif __UNIX__
-	return sleep (secs);
+	return sleep(secs);
 #else
-	Sleep (secs * 1000); // W32
+	Sleep(secs * 1000); // W32
 	return 0;
 #endif
 }
@@ -307,19 +309,19 @@ RZ_API int rz_sys_usleep(int usecs) {
 	struct timespec rqtp;
 	rqtp.tv_sec = usecs / 1000000;
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
-	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
+	return clock_nanosleep(CLOCK_MONOTONIC, 0, &rqtp, NULL);
 #elif __UNIX__
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
 	// Old versions of GNU libc return void for usleep
-	usleep (usecs);
+	usleep(usecs);
 	return 0;
 #else
-	return usleep (usecs);
+	return usleep(usecs);
 #endif
 #else
 	// w32 api uses milliseconds
 	usecs /= 1000;
-	Sleep (usecs); // W32
+	Sleep(usecs); // W32
 	return 0;
 #endif
 }
@@ -329,7 +331,7 @@ RZ_API int rz_sys_clearenv(void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
 	if (!env) {
-		rz_sys_env_init ();
+		rz_sys_env_init();
 		return 0;
 	}
 	char **e = env;
@@ -347,7 +349,7 @@ RZ_API int rz_sys_clearenv(void) {
 	return 0;
 #else
 #ifdef _MSC_VER
-#pragma message ("rz_sys_clearenv : unimplemented for this platform")
+#pragma message("rz_sys_clearenv : unimplemented for this platform")
 #else
 #warning rz_sys_clearenv : unimplemented for this platform
 #endif
@@ -361,19 +363,19 @@ RZ_API int rz_sys_setenv(const char *key, const char *value) {
 	}
 #if __UNIX__
 	if (!value) {
-		unsetenv (key);
+		unsetenv(key);
 		return 0;
 	}
-	return setenv (key, value, 1);
+	return setenv(key, value, 1);
 #elif __WINDOWS__
-	LPTSTR key_ = rz_sys_conv_utf8_to_win (key);
-	LPTSTR value_ = rz_sys_conv_utf8_to_win (value);
-	int ret = SetEnvironmentVariable (key_, value_);
+	LPTSTR key_ = rz_sys_conv_utf8_to_win(key);
+	LPTSTR value_ = rz_sys_conv_utf8_to_win(value);
+	int ret = SetEnvironmentVariable(key_, value_);
 	if (!ret) {
-		rz_sys_perror ("rz_sys_setenv/SetEnvironmentVariable");
+		rz_sys_perror("rz_sys_setenv/SetEnvironmentVariable");
 	}
-	free (key_);
-	free (value_);
+	free(key_);
+	free(value_);
 	return ret ? 0 : -1;
 #else
 #warning rz_sys_setenv : unimplemented for this platform
@@ -389,14 +391,14 @@ static void signal_handler(int signum) {
 	if (!crash_handler_cmd) {
 		return;
 	}
-	snprintf (cmd, sizeof(cmd) - 1, crash_handler_cmd, getpid ());
-	rz_sys_backtrace ();
-	exit (rz_sys_system (cmd));
+	snprintf(cmd, sizeof(cmd) - 1, crash_handler_cmd, getpid());
+	rz_sys_backtrace();
+	exit(rz_sys_system(cmd));
 }
 
 static int checkcmd(const char *c) {
 	char oc = 0;
-	for (;*c;c++) {
+	for (; *c; c++) {
 		if (oc == '%') {
 			if (*c != 'd' && *c != '%') {
 				return 0;
@@ -412,21 +414,21 @@ RZ_API int rz_sys_crash_handler(const char *cmd) {
 #ifndef __WINDOWS__
 	int sig[] = { SIGINT, SIGSEGV, SIGBUS, SIGQUIT, SIGHUP, 0 };
 
-	if (!checkcmd (cmd)) {
+	if (!checkcmd(cmd)) {
 		return false;
 	}
 #ifdef HAVE_BACKTRACE
 	void *array[1];
 	/* call this outside of the signal handler to init it safely */
-	backtrace (array, 1);
+	backtrace(array, 1);
 #endif
 
-	free (crash_handler_cmd);
-	crash_handler_cmd = strdup (cmd);
+	free(crash_handler_cmd);
+	crash_handler_cmd = strdup(cmd);
 
-	rz_sys_sigaction (sig, signal_handler);
+	rz_sys_sigaction(sig, signal_handler);
 #else
-#pragma message ("rz_sys_crash_handler : unimplemented for this platform")
+#pragma message("rz_sys_crash_handler : unimplemented for this platform")
 #endif
 	return true;
 }
@@ -440,99 +442,99 @@ RZ_API char *rz_sys_getenv(const char *key) {
 	if (!key) {
 		return NULL;
 	}
-	envbuf = (LPTSTR)malloc (sizeof (TCHAR) * TMP_BUFSIZE);
+	envbuf = (LPTSTR)malloc(sizeof(TCHAR) * TMP_BUFSIZE);
 	if (!envbuf) {
 		goto err_r_sys_get_env;
 	}
-	key_ = rz_sys_conv_utf8_to_win (key);
-	dwRet = GetEnvironmentVariable (key_, envbuf, TMP_BUFSIZE);
+	key_ = rz_sys_conv_utf8_to_win(key);
+	dwRet = GetEnvironmentVariable(key_, envbuf, TMP_BUFSIZE);
 	if (dwRet == 0) {
-		if (GetLastError () == ERROR_ENVVAR_NOT_FOUND) {
+		if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
 			goto err_r_sys_get_env;
 		}
 	} else if (TMP_BUFSIZE < dwRet) {
-		tmp_ptr = (LPTSTR)realloc (envbuf, dwRet * sizeof (TCHAR));
+		tmp_ptr = (LPTSTR)realloc(envbuf, dwRet * sizeof(TCHAR));
 		if (!tmp_ptr) {
 			goto err_r_sys_get_env;
 		}
 		envbuf = tmp_ptr;
-		dwRet = GetEnvironmentVariable (key_, envbuf, dwRet);
+		dwRet = GetEnvironmentVariable(key_, envbuf, dwRet);
 		if (!dwRet) {
 			goto err_r_sys_get_env;
 		}
 	}
-	val = rz_sys_conv_win_to_utf8_l (envbuf, (int)dwRet);
+	val = rz_sys_conv_win_to_utf8_l(envbuf, (int)dwRet);
 err_r_sys_get_env:
-	free (key_);
-	free (envbuf);
+	free(key_);
+	free(envbuf);
 	return val;
 #else
 	char *b;
 	if (!key) {
 		return NULL;
 	}
-	b = getenv (key);
-	return b? strdup (b): NULL;
+	b = getenv(key);
+	return b ? strdup(b) : NULL;
 #endif
 }
 
 RZ_API bool rz_sys_getenv_asbool(const char *key) {
-	char *env = rz_sys_getenv (key);
+	char *env = rz_sys_getenv(key);
 	const bool res = (env && *env == '1');
-	free (env);
+	free(env);
 	return res;
 }
 
 RZ_API char *rz_sys_getdir(void) {
 #if __WINDOWS__
-	return _getcwd (NULL, 0);
+	return _getcwd(NULL, 0);
 #else
-	return getcwd (NULL, 0);
+	return getcwd(NULL, 0);
 #endif
 }
 
 RZ_API int rz_sys_chdir(const char *s) {
-	rz_return_val_if_fail (s, 0);
-	return chdir (s)==0;
+	rz_return_val_if_fail(s, 0);
+	return chdir(s) == 0;
 }
 
 RZ_API bool rz_sys_aslr(int val) {
 	bool ret = true;
 #if __linux__
 	const char *rva = "/proc/sys/kernel/randomize_va_space";
-	char buf[3] = {0};
-	snprintf(buf, sizeof (buf), "%d\n", val != 0 ? 2 : 0);
-	int fd = rz_sys_open (rva, O_WRONLY, 0644);
+	char buf[3] = { 0 };
+	snprintf(buf, sizeof(buf), "%d\n", val != 0 ? 2 : 0);
+	int fd = rz_sys_open(rva, O_WRONLY, 0644);
 	if (fd != -1) {
-		if (write (fd, (ut8 *)buf, sizeof (buf)) != sizeof (buf)) {
-			eprintf ("Failed to set RVA\n");
+		if (write(fd, (ut8 *)buf, sizeof(buf)) != sizeof(buf)) {
+			eprintf("Failed to set RVA\n");
 			ret = false;
 		}
-		close (fd);
+		close(fd);
 	}
 #elif __FreeBSD__ && __FreeBSD_version >= 1300000
-	size_t vlen = sizeof (val);
-	if (sysctlbyname ("kern.elf32.aslr.enable", NULL, 0, &val, vlen) == -1) {
-		eprintf ("Failed to set RVA 32 bits\n");
+	size_t vlen = sizeof(val);
+	if (sysctlbyname("kern.elf32.aslr.enable", NULL, 0, &val, vlen) == -1) {
+		eprintf("Failed to set RVA 32 bits\n");
 		return false;
 	}
 
 #if __LP64__
-	if (sysctlbyname ("kern.elf64.aslr.enable", NULL, 0, &val, vlen) == -1) {
-		eprintf ("Failed to set RVA 64 bits\n");
+	if (sysctlbyname("kern.elf64.aslr.enable", NULL, 0, &val, vlen) == -1) {
+		eprintf("Failed to set RVA 64 bits\n");
 		ret = false;
 	}
 #endif
 #elif __NetBSD__
-	size_t vlen = sizeof (val);
-	if (sysctlbyname ("security.pax.aslr.enabled", NULL, 0, &val, vlen) == -1) {
-		eprintf ("Failed to set RVA\n");
+	size_t vlen = sizeof(val);
+	if (sysctlbyname("security.pax.aslr.enabled", NULL, 0, &val, vlen) == -1) {
+		eprintf("Failed to set RVA\n");
 		ret = false;
 	}
 #elif __DragonFly__
-	size_t vlen = sizeof (val);
-	if (sysctlbyname ("vm.randomize_mmap", NULL, 0, &val, vlen) == -1) {
-		eprintf ("Failed to set RVA\n");
+	size_t vlen = sizeof(val);
+	if (sysctlbyname("vm.randomize_mmap", NULL, 0, &val, vlen) == -1) {
+		eprintf("Failed to set RVA\n");
 		ret = false;
 	}
 #elif __DragonFly__
@@ -544,19 +546,19 @@ RZ_API int rz_sys_thp_mode(void) {
 #if __linux__
 	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
 	int ret = 0;
-	char *val = rz_file_slurp (thp, NULL);
+	char *val = rz_file_slurp(thp, NULL);
 	if (val) {
-		if (strstr (val, "[madvise]")) {
+		if (strstr(val, "[madvise]")) {
 			ret = 1;
-		} else if (strstr (val, "[always]")) {
+		} else if (strstr(val, "[always]")) {
 			ret = 2;
 		}
-		free (val);
+		free(val);
 	}
 
 	return ret;
 #else
-  return 0;
+	return 0;
 #endif
 }
 
@@ -574,120 +576,123 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 	if (len) {
 		*len = 0;
 	}
-	if (rz_sys_pipe (sh_in, true)) {
+	if (rz_sys_pipe(sh_in, true)) {
 		return false;
 	}
 	if (output) {
-		if (rz_sys_pipe (sh_out, true)) {
-			rz_sys_pipe_close (sh_in[0]);
-			rz_sys_pipe_close (sh_in[1]);
-			rz_sys_pipe_close (sh_out[0]);
-			rz_sys_pipe_close (sh_out[1]);
+		if (rz_sys_pipe(sh_out, true)) {
+			rz_sys_pipe_close(sh_in[0]);
+			rz_sys_pipe_close(sh_in[1]);
+			rz_sys_pipe_close(sh_out[0]);
+			rz_sys_pipe_close(sh_out[1]);
 			return false;
 		}
 	}
-	if (rz_sys_pipe (sh_err, true)) {
-		rz_sys_pipe_close (sh_in[0]);
-		rz_sys_pipe_close (sh_in[1]);
+	if (rz_sys_pipe(sh_err, true)) {
+		rz_sys_pipe_close(sh_in[0]);
+		rz_sys_pipe_close(sh_in[1]);
 		return false;
 	}
 
-	switch ((pid = rz_sys_fork ())) {
+	switch ((pid = rz_sys_fork())) {
 	case -1:
 		return false;
 	case 0:
-		while ((dup2(sh_in[0], STDIN_FILENO) == -1) && (errno == EINTR)) {}
-		rz_sys_pipe_close (sh_in[0]);
-		rz_sys_pipe_close (sh_in[1]);
+		while ((dup2(sh_in[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
+		}
+		rz_sys_pipe_close(sh_in[0]);
+		rz_sys_pipe_close(sh_in[1]);
 		if (output) {
-			while ((dup2 (sh_out[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
-			rz_sys_pipe_close (sh_out[0]);
-			rz_sys_pipe_close (sh_out[1]);
+			while ((dup2(sh_out[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
+			}
+			rz_sys_pipe_close(sh_out[0]);
+			rz_sys_pipe_close(sh_out[1]);
 		}
 		if (sterr) {
-			while ((dup2(sh_err[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
-			rz_sys_pipe_close (sh_err[0]);
-			rz_sys_pipe_close (sh_err[1]);
+			while ((dup2(sh_err[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
+			}
+			rz_sys_pipe_close(sh_err[0]);
+			rz_sys_pipe_close(sh_err[1]);
 		} else {
-			close (2);
+			close(2);
 		}
-		exit (rz_sys_execl ("/bin/sh", "sh", "-c", cmd, (const char*)NULL));
+		exit(rz_sys_execl("/bin/sh", "sh", "-c", cmd, (const char *)NULL));
 	default:
-		outputptr = strdup ("");
+		outputptr = strdup("");
 		if (!outputptr) {
 			return false;
 		}
 		if (sterr) {
-			*sterr = strdup ("");
+			*sterr = strdup("");
 			if (!*sterr) {
-				free (outputptr);
+				free(outputptr);
 				return false;
 			}
 		}
 		if (output) {
-			rz_sys_pipe_close (sh_out[1]);
+			rz_sys_pipe_close(sh_out[1]);
 		}
-		rz_sys_pipe_close (sh_err[1]);
-		rz_sys_pipe_close (sh_in[0]);
+		rz_sys_pipe_close(sh_err[1]);
+		rz_sys_pipe_close(sh_in[0]);
 		if (!inputptr || !*inputptr) {
-			rz_sys_pipe_close (sh_in[1]);
+			rz_sys_pipe_close(sh_in[1]);
 			sh_in[1] = -1;
 		}
 		// we should handle broken pipes somehow better
-		rz_sys_signal (SIGPIPE, SIG_IGN);
+		rz_sys_signal(SIGPIPE, SIG_IGN);
 		size_t err_len = 0, out_len = 0;
 		for (;;) {
 			fd_set rfds, wfds;
 			int nfd;
-			FD_ZERO (&rfds);
-			FD_ZERO (&wfds);
+			FD_ZERO(&rfds);
+			FD_ZERO(&wfds);
 			if (output) {
-				FD_SET (sh_out[0], &rfds);
+				FD_SET(sh_out[0], &rfds);
 			}
 			if (sterr) {
-				FD_SET (sh_err[0], &rfds);
+				FD_SET(sh_err[0], &rfds);
 			}
 			if (inputptr && *inputptr) {
-				FD_SET (sh_in[1], &wfds);
+				FD_SET(sh_in[1], &wfds);
 			}
-			memset (buffer, 0, sizeof (buffer));
-			nfd = select (sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
+			memset(buffer, 0, sizeof(buffer));
+			nfd = select(sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
 			if (nfd < 0) {
 				break;
 			}
-			if (output && FD_ISSET (sh_out[0], &rfds)) {
-				if ((bytes = read (sh_out[0], buffer, sizeof (buffer))) < 1) {
+			if (output && FD_ISSET(sh_out[0], &rfds)) {
+				if ((bytes = read(sh_out[0], buffer, sizeof(buffer))) < 1) {
 					break;
 				}
-				char *tmp = realloc (outputptr, out_len + bytes + 1);
+				char *tmp = realloc(outputptr, out_len + bytes + 1);
 				if (!tmp) {
-					RZ_FREE (outputptr);
+					RZ_FREE(outputptr);
 					break;
 				}
 				outputptr = tmp;
-				memcpy (outputptr + out_len, buffer, bytes);
+				memcpy(outputptr + out_len, buffer, bytes);
 				out_len += bytes;
-			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
-				if ((bytes = read (sh_err[0], buffer, sizeof (buffer))) < 1) {
+			} else if (FD_ISSET(sh_err[0], &rfds) && sterr) {
+				if ((bytes = read(sh_err[0], buffer, sizeof(buffer))) < 1) {
 					break;
 				}
-				char *tmp = realloc (*sterr, err_len + bytes + 1);
+				char *tmp = realloc(*sterr, err_len + bytes + 1);
 				if (!tmp) {
-					RZ_FREE (*sterr);
+					RZ_FREE(*sterr);
 					break;
 				}
 				*sterr = tmp;
-				memcpy (*sterr + err_len, buffer, bytes);
+				memcpy(*sterr + err_len, buffer, bytes);
 				err_len += bytes;
-			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
-				int inputptr_len = strlen (inputptr);
-				bytes = write (sh_in[1], inputptr, inputptr_len);
+			} else if (FD_ISSET(sh_in[1], &wfds) && inputptr && *inputptr) {
+				int inputptr_len = strlen(inputptr);
+				bytes = write(sh_in[1], inputptr, inputptr_len);
 				if (bytes != inputptr_len) {
 					break;
 				}
 				inputptr += bytes;
 				if (!*inputptr) {
-					rz_sys_pipe_close (sh_in[1]);
+					rz_sys_pipe_close(sh_in[1]);
 					/* If neither stdout nor stderr should be captured,
 					 * abort now - nothing more to do for select(). */
 					if (!output && !sterr) {
@@ -697,13 +702,13 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 			}
 		}
 		if (output) {
-			rz_sys_pipe_close (sh_out[0]);
+			rz_sys_pipe_close(sh_out[0]);
 		}
-		rz_sys_pipe_close (sh_err[0]);
+		rz_sys_pipe_close(sh_err[0]);
 		if (sh_in[1] != -1) {
-			rz_sys_pipe_close (sh_in[1]);
+			rz_sys_pipe_close(sh_in[1]);
 		}
-		waitpid (pid, &status, 0);
+		waitpid(pid, &status, 0);
 		bool ret = true;
 		if (status) {
 			// char *escmd = rz_str_escape (cmd);
@@ -726,20 +731,20 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 		if (output) {
 			*output = outputptr;
 		} else {
-			free (outputptr);
+			free(outputptr);
 		}
-		free (mysterr);
+		free(mysterr);
 		return ret;
 	}
 	return false;
 }
 #elif __WINDOWS__
 RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	return rz_sys_cmd_str_full_w32 (cmd, input, output, len, sterr);
+	return rz_sys_cmd_str_full_w32(cmd, input, output, len, sterr);
 }
 #else
 RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	eprintf ("rz_sys_cmd_str: not yet implemented for this platform\n");
+	eprintf("rz_sys_cmd_str: not yet implemented for this platform\n");
 	return false;
 }
 #endif
@@ -749,28 +754,28 @@ RZ_API int rz_sys_cmdf(const char *fmt, ...) {
 	char cmd[4096];
 	va_list ap;
 	va_start(ap, fmt);
-	vsnprintf (cmd, sizeof (cmd), fmt, ap);
-	ret = rz_sys_system (cmd);
-	va_end (ap);
+	vsnprintf(cmd, sizeof(cmd), fmt, ap);
+	ret = rz_sys_system(cmd);
+	va_end(ap);
 	return ret;
 }
 
-RZ_API int rz_sys_cmdbg (const char *str) {
+RZ_API int rz_sys_cmdbg(const char *str) {
 #if __UNIX__
-	int ret, pid = rz_sys_fork ();
+	int ret, pid = rz_sys_fork();
 	if (pid == -1) {
 		return -1;
 	}
 	if (pid) {
 		return pid;
 	}
-	ret = rz_sys_execl ("/bin/sh", "sh", "-c", str, (const char*)NULL);
-	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
-	exit (0);
+	ret = rz_sys_execl("/bin/sh", "sh", "-c", str, (const char *)NULL);
+	eprintf("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
+	exit(0);
 	return -1;
 #else
 #ifdef _MSC_VER
-#pragma message ("rz_sys_cmdbg is not implemented for this platform")
+#pragma message("rz_sys_cmdbg is not implemented for this platform")
 #else
 #warning rz_sys_cmdbg is not implemented for this platform
 #endif
@@ -780,10 +785,10 @@ RZ_API int rz_sys_cmdbg (const char *str) {
 
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	char *output = NULL;
-	if (rz_sys_cmd_str_full (cmd, input, &output, len, NULL)) {
+	if (rz_sys_cmd_str_full(cmd, input, &output, len, NULL)) {
 		return output;
 	}
-	free (output);
+	free(output);
 	return NULL;
 }
 
@@ -791,12 +796,12 @@ RZ_API bool rz_sys_mkdir(const char *dir) {
 	bool ret;
 
 #if __WINDOWS__
-	LPTSTR dir_ = rz_sys_conv_utf8_to_win (dir);
+	LPTSTR dir_ = rz_sys_conv_utf8_to_win(dir);
 
-	ret = CreateDirectory (dir_, NULL) != 0;
-	free (dir_);
+	ret = CreateDirectory(dir_, NULL) != 0;
+	free(dir_);
 #else
-	ret = mkdir (dir, 0755) != -1;
+	ret = mkdir(dir, 0755) != -1;
 #endif
 	return ret;
 }
@@ -804,9 +809,9 @@ RZ_API bool rz_sys_mkdir(const char *dir) {
 RZ_API bool rz_sys_mkdirp(const char *dir) {
 	bool ret = true;
 	char slash = RZ_SYS_DIR[0];
-	char *path = strdup (dir), *ptr = path;
+	char *path = strdup(dir), *ptr = path;
 	if (!path) {
-		eprintf ("rz_sys_mkdirp: Unable to allocate memory\n");
+		eprintf("rz_sys_mkdirp: Unable to allocate memory\n");
 		return false;
 	}
 	if (*ptr == slash) {
@@ -814,7 +819,7 @@ RZ_API bool rz_sys_mkdirp(const char *dir) {
 	}
 #if __WINDOWS__
 	{
-		char *p = strstr (ptr, ":\\");
+		char *p = strstr(ptr, ":\\");
 		if (p) {
 			ptr = p + 3;
 		}
@@ -832,18 +837,18 @@ RZ_API bool rz_sys_mkdirp(const char *dir) {
 			break;
 		}
 		*ptr = 0;
-		if (!rz_sys_mkdir (path) && rz_sys_mkdir_failed ()) {
-			eprintf ("rz_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
-			free (path);
+		if (!rz_sys_mkdir(path) && rz_sys_mkdir_failed()) {
+			eprintf("rz_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
+			free(path);
 			return false;
 		}
 		*ptr = slash;
 		ptr++;
 	}
-	if (!rz_sys_mkdir (path) && rz_sys_mkdir_failed ()) {
+	if (!rz_sys_mkdir(path) && rz_sys_mkdir_failed()) {
 		ret = false;
 	}
-	free (path);
+	free(path);
 	return ret;
 }
 
@@ -851,29 +856,29 @@ RZ_API void rz_sys_perror_str(const char *fun) {
 #if __UNIX__
 #pragma push_macro("perror")
 #undef perror
-	perror (fun);
+	perror(fun);
 #pragma pop_macro("perror")
 #elif __WINDOWS__
 	LPTSTR lpMsgBuf;
 	DWORD dw = GetLastError();
 
-	if (FormatMessage ( FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_FROM_SYSTEM |
-			FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL,
-			dw,
-			MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPTSTR)&lpMsgBuf,
-			0, NULL )) {
-		char *err = rz_sys_conv_win_to_utf8 (lpMsgBuf);
+	if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			    FORMAT_MESSAGE_FROM_SYSTEM |
+			    FORMAT_MESSAGE_IGNORE_INSERTS,
+		    NULL,
+		    dw,
+		    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		    (LPTSTR)&lpMsgBuf,
+		    0, NULL)) {
+		char *err = rz_sys_conv_win_to_utf8(lpMsgBuf);
 		if (err) {
-			eprintf ("%s: (%#lx) %s%s", fun, dw, err,
-			         rz_str_endswith (err, "\n") ? "" : "\n");
-			free (err);
+			eprintf("%s: (%#lx) %s%s", fun, dw, err,
+				rz_str_endswith(err, "\n") ? "" : "\n");
+			free(err);
 		}
-		LocalFree (lpMsgBuf);
+		LocalFree(lpMsgBuf);
 	} else {
-		eprintf ("%s\n", fun);
+		eprintf("%s\n", fun);
 	}
 #endif
 }
@@ -883,15 +888,15 @@ RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch) {
 	if (!archstr || !arch || !*archstr || !*arch) {
 		return true;
 	}
-	if (!strcmp (archstr, "*") || !strcmp (archstr, "any")) {
+	if (!strcmp(archstr, "*") || !strcmp(archstr, "any")) {
 		return true;
 	}
-	if (!strcmp (archstr, arch)) {
+	if (!strcmp(archstr, arch)) {
 		return true;
 	}
-	if ((ptr = strstr (archstr, arch))) {
-		char p = ptr[strlen (arch)];
-		if (!p || p==',') {
+	if ((ptr = strstr(archstr, arch))) {
+		char p = ptr[strlen(arch)];
+		if (!p || p == ',') {
 			return true;
 		}
 	}
@@ -901,7 +906,7 @@ RZ_API bool rz_sys_arch_match(const char *archstr, const char *arch) {
 RZ_API int rz_sys_arch_id(const char *arch) {
 	int i;
 	for (i = 0; arch_bit_array[i].name; i++) {
-		if (!strcmp (arch, arch_bit_array[i].name)) {
+		if (!strcmp(arch, arch_bit_array[i].name)) {
 			return arch_bit_array[i].bit;
 		}
 	}
@@ -925,49 +930,49 @@ RZ_API int rz_sys_run(const ut8 *buf, int len) {
 #if USE_FORK
 	int st, pid;
 #endif
-// TODO: define RZ_SYS_ALIGN_FORWARD in rz_util.h
-	ut8 *ptr, *p = malloc ((sz + len) << 1);
+	// TODO: define RZ_SYS_ALIGN_FORWARD in rz_util.h
+	ut8 *ptr, *p = malloc((sz + len) << 1);
 	ptr = p;
 	pdelta = ((size_t)(p)) & (4096 - 1);
 	if (pdelta) {
 		ptr += (4096 - pdelta);
 	}
 	if (!ptr || !buf) {
-		eprintf ("rz_sys_run: Cannot run empty buffer\n");
-		free (p);
+		eprintf("rz_sys_run: Cannot run empty buffer\n");
+		free(p);
 		return false;
 	}
-	memcpy (ptr, buf, len);
-	rz_mem_protect (ptr, sz, "rx");
+	memcpy(ptr, buf, len);
+	rz_mem_protect(ptr, sz, "rx");
 	//rz_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (int (*)())ptr;
 #if USE_FORK
 #if __UNIX__
-	pid = rz_sys_fork ();
+	pid = rz_sys_fork();
 #else
 	pid = -1;
 #endif
 	if (pid < 0) {
-		return cb ();
+		return cb();
 	}
 	if (!pid) {
-		ret = cb ();
-		exit (ret);
+		ret = cb();
+		exit(ret);
 		return ret;
 	}
 	st = 0;
-	waitpid (pid, &st, 0);
-	if (WIFSIGNALED (st)) {
+	waitpid(pid, &st, 0);
+	if (WIFSIGNALED(st)) {
 		int num = WTERMSIG(st);
-		eprintf ("Got signal %d\n", num);
+		eprintf("Got signal %d\n", num);
 		ret = num;
 	} else {
-		ret = WEXITSTATUS (st);
+		ret = WEXITSTATUS(st);
 	}
 #else
-	ret = (*cb) ();
+	ret = (*cb)();
 #endif
-	free (p);
+	free(p);
 	return ret;
 }
 
@@ -976,60 +981,57 @@ RZ_API int rz_sys_run_rop(const ut8 *buf, int len) {
 	int st;
 #endif
 	// TODO: define RZ_SYS_ALIGN_FORWARD in rz_util.h
-	ut8 *bufptr = malloc (len);
+	ut8 *bufptr = malloc(len);
 	if (!bufptr) {
-		eprintf ("rz_sys_run_rop: Cannot allocate buffer\n");
+		eprintf("rz_sys_run_rop: Cannot allocate buffer\n");
 		return false;
 	}
 
 	if (!buf) {
-		eprintf ("rz_sys_run_rop: Cannot execute empty rop chain\n");
-		free (bufptr);
+		eprintf("rz_sys_run_rop: Cannot execute empty rop chain\n");
+		free(bufptr);
 		return false;
 	}
-	memcpy (bufptr, buf, len);
+	memcpy(bufptr, buf, len);
 #if USE_FORK
 #if __UNIX__
-	pid_t pid = rz_sys_fork ();
+	pid_t pid = rz_sys_fork();
 #else
 	pid = -1;
 #endif
 	if (pid < 0) {
-		RZ_SYS_ASM_START_ROP ();
+		RZ_SYS_ASM_START_ROP();
 	} else {
-		RZ_SYS_ASM_START_ROP ();
-		exit (0);
-                return 0;
+		RZ_SYS_ASM_START_ROP();
+		exit(0);
+		return 0;
 	}
 	st = 0;
-	if (waitpid (pid, &st, 0) == -1) {
-            eprintf ("rz_sys_run_rop: waitpid failed\n");
-            free (bufptr);
-            return -1;
-        }
-	if (WIFSIGNALED (st)) {
-		int num = WTERMSIG (st);
-		eprintf ("Got signal %d\n", num);
+	if (waitpid(pid, &st, 0) == -1) {
+		eprintf("rz_sys_run_rop: waitpid failed\n");
+		free(bufptr);
+		return -1;
+	}
+	if (WIFSIGNALED(st)) {
+		int num = WTERMSIG(st);
+		eprintf("Got signal %d\n", num);
 		ret = num;
 	} else {
-		ret = WEXITSTATUS (st);
+		ret = WEXITSTATUS(st);
 	}
 #else
-	RZ_SYS_ASM_START_ROP ();
+	RZ_SYS_ASM_START_ROP();
 #endif
-	free (bufptr);
+	free(bufptr);
 	return 0;
 }
 
-RZ_API bool rz_is_heap (void *p) {
-	void *q = malloc (8);
+RZ_API bool rz_is_heap(void *p) {
+	void *q = malloc(8);
 	ut64 mask = UT64_MAX;
-	ut64 addr = (ut64)(size_t)q;
-	addr >>= 16;
-	addr <<= 16;
 	mask >>= 16;
 	mask <<= 16;
-	free (q);
+	free(q);
 	return (((ut64)(size_t)p) == mask);
 }
 
@@ -1041,84 +1043,84 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	TCHAR filename[MAX_PATH];
 	char *result = NULL;
 
-	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+	processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!processHandle) {
-		eprintf ("rz_sys_pid_to_path: Cannot open process.\n");
+		eprintf("rz_sys_pid_to_path: Cannot open process.\n");
 		return NULL;
 	}
-	DWORD length = GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
+	DWORD length = GetModuleFileNameEx(processHandle, NULL, filename, maxlength);
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
-		length = GetProcessImageFileName (processHandle, filename, maxlength);
-		CloseHandle (processHandle);
+		length = GetProcessImageFileName(processHandle, filename, maxlength);
+		CloseHandle(processHandle);
 		if (length == 0) {
-			eprintf ("rz_sys_pid_to_path: Error calling GetProcessImageFileName\n");
+			eprintf("rz_sys_pid_to_path: Error calling GetProcessImageFileName\n");
 			return NULL;
 		}
 		// Convert NT path to win32 path
-		char *name = rz_sys_conv_win_to_utf8 (filename);
+		char *name = rz_sys_conv_win_to_utf8(filename);
 		if (!name) {
-			eprintf ("rz_sys_pid_to_path: Error converting to utf8\n");
+			eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
 			return NULL;
 		}
-		char *tmp = strchr (name + 1, '\\');
+		char *tmp = strchr(name + 1, '\\');
 		if (!tmp) {
-			free (name);
-			eprintf ("rz_sys_pid_to_path: Malformed NT path\n");
+			free(name);
+			eprintf("rz_sys_pid_to_path: Malformed NT path\n");
 			return NULL;
 		}
-		tmp = strchr (tmp + 1, '\\');
+		tmp = strchr(tmp + 1, '\\');
 		if (!tmp) {
-			free (name);
-			eprintf ("rz_sys_pid_to_path: Malformed NT path\n");
+			free(name);
+			eprintf("rz_sys_pid_to_path: Malformed NT path\n");
 			return NULL;
 		}
 		length = tmp - name;
-		tmp = malloc (length + 1);
+		tmp = malloc(length + 1);
 		if (!tmp) {
-			free (name);
-			eprintf ("rz_sys_pid_to_path: Error allocating memory\n");
+			free(name);
+			eprintf("rz_sys_pid_to_path: Error allocating memory\n");
 			return NULL;
 		}
-		strncpy (tmp, name, length);
+		strncpy(tmp, name, length);
 		tmp[length] = '\0';
 		TCHAR device[MAX_PATH];
 		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
-			if (QueryDosDevice (drv, device, maxlength) > 0) {
-				char *dvc = rz_sys_conv_win_to_utf8 (device);
+			if (QueryDosDevice(drv, device, maxlength) > 0) {
+				char *dvc = rz_sys_conv_win_to_utf8(device);
 				if (!dvc) {
-					free (name);
-					free (tmp);
-					eprintf ("rz_sys_pid_to_path: Error converting to utf8\n");
+					free(name);
+					free(tmp);
+					eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
 					return NULL;
 				}
-				if (!strcmp (tmp, dvc)) {
-					free (tmp);
-					free (dvc);
-					char *d = rz_sys_conv_win_to_utf8 (drv);
+				if (!strcmp(tmp, dvc)) {
+					free(tmp);
+					free(dvc);
+					char *d = rz_sys_conv_win_to_utf8(drv);
 					if (!d) {
-						free (name);
-						eprintf ("rz_sys_pid_to_path: Error converting to utf8\n");
+						free(name);
+						eprintf("rz_sys_pid_to_path: Error converting to utf8\n");
 						return NULL;
 					}
-					tmp = rz_str_newf ("%s%s", d, &name[length]);
-					free (d);
+					tmp = rz_str_newf("%s%s", d, &name[length]);
+					free(d);
 					if (!tmp) {
-						free (name);
-						eprintf ("rz_sys_pid_to_path: Error calling rz_str_newf\n");
+						free(name);
+						eprintf("rz_sys_pid_to_path: Error calling rz_str_newf\n");
 						return NULL;
 					}
-					result = strdup (tmp);
+					result = strdup(tmp);
 					break;
 				}
-				free (dvc);
+				free(dvc);
 			}
 		}
-		free (name);
-		free (tmp);
+		free(name);
+		free(tmp);
 	} else {
-		CloseHandle (processHandle);
-		result = rz_sys_conv_win_to_utf8 (filename);
+		CloseHandle(processHandle);
+		result = rz_sys_conv_win_to_utf8(filename);
 	}
 	return result;
 #elif __APPLE__
@@ -1128,108 +1130,108 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 #else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pathbuf[0] = 0;
-	int ret = proc_pidpath (pid, pathbuf, sizeof (pathbuf));
+	int ret = proc_pidpath(pid, pathbuf, sizeof(pathbuf));
 	if (ret <= 0) {
 		return NULL;
 	}
-	return strdup (pathbuf);
+	return strdup(pathbuf);
 #endif
 #else
 	int ret;
 #if __FreeBSD__ || __DragonFly__
 	char pathbuf[PATH_MAX];
-	size_t pathbufl = sizeof (pathbuf);
-	int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid};
-	ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
+	size_t pathbufl = sizeof(pathbuf);
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid };
+	ret = sysctl(mib, 4, pathbuf, &pathbufl, NULL, 0);
 	if (ret != 0) {
 		return NULL;
 	}
 #elif __OpenBSD__
 	// Taken from https://stackoverflow.com/questions/31494901/how-to-get-the-executable-path-on-openbsd
 	char pathbuf[PATH_MAX];
-	int mib[4] = {CTL_KERN, KERN_PROC_ARGS, pid, KERN_PROC_ARGV};
+	int mib[4] = { CTL_KERN, KERN_PROC_ARGS, pid, KERN_PROC_ARGV };
 	size_t len;
 
 	pathbuf[0] = '\0';
-	ret = sysctl (mib, 4, NULL, &len, NULL, 0);
+	ret = sysctl(mib, 4, NULL, &len, NULL, 0);
 	if (ret < 0) {
 		return NULL;
 	}
-	char **argv = malloc (len);
-	ret = sysctl (mib, 4, argv, &len, NULL, 0);
+	char **argv = malloc(len);
+	ret = sysctl(mib, 4, argv, &len, NULL, 0);
 	if (ret < 0) {
-		free (argv);
+		free(argv);
 		return NULL;
 	}
 	const char *comm = argv[0];
 	int ok = 0;
 	if (*comm == '/' || *comm == '.') {
-		if (!realpath (comm, pathbuf)) {
-			free (argv);
+		if (!realpath(comm, pathbuf)) {
+			free(argv);
 			return NULL;
 		}
 	} else {
 		char *sp;
-		char *xpath = strdup (getenv ("PATH"));
-		char *path = strtok_r (xpath, ":", &sp);
+		char *xpath = strdup(getenv("PATH"));
+		char *path = strtok_r(xpath, ":", &sp);
 		struct stat st;
 
 		if (!xpath) {
-			free (argv);
+			free(argv);
 			return NULL;
 		}
 
 		while (path) {
-			snprintf (pathbuf, PATH_MAX, "%s/%s", path, comm);
-			if (!stat (pathbuf, &st) && (st.st_mode & S_IXUSR)) {
+			snprintf(pathbuf, PATH_MAX, "%s/%s", path, comm);
+			if (!stat(pathbuf, &st) && (st.st_mode & S_IXUSR)) {
 				ok = 1;
 				break;
 			}
-			path = strtok_r (NULL, ":", &sp);
+			path = strtok_r(NULL, ":", &sp);
 		}
-		free (xpath);
+		free(xpath);
 	}
 
 	if (ok) {
-		char *p = strrchr (pathbuf, '/');
+		char *p = strrchr(pathbuf, '/');
 		if (p) {
 			*p = '\0';
 		}
 	}
-	free (argv);
+	free(argv);
 #elif __HAIKU__
 	char pathbuf[MAXPATHLEN];
 	int32_t group = 0;
 	image_info ii;
 
-	while (get_next_image_info ((team_id)pid, &group, &ii) == B_OK) {
+	while (get_next_image_info((team_id)pid, &group, &ii) == B_OK) {
 		if (ii.type == B_APP_IMAGE) {
 			break;
 		}
 	}
 
 	if (ii.type == B_APP_IMAGE) {
-		rz_str_ncpy (pathbuf, ii.name, MAXPATHLEN);
+		rz_str_ncpy(pathbuf, ii.name, MAXPATHLEN);
 	} else {
 		pathbuf[0] = '\0';
 	}
 #else
 	char buf[128], pathbuf[1024];
-	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-	ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
+	snprintf(buf, sizeof(buf), "/proc/%d/exe", pid);
+	ret = readlink(buf, pathbuf, sizeof(pathbuf) - 1);
 	if (ret < 1) {
 		return NULL;
 	}
 	pathbuf[ret] = 0;
 #endif
-	return strdup (pathbuf);
+	return strdup(pathbuf);
 #endif
 }
 
 RZ_API void rz_sys_env_init(void) {
-	char **envp = rz_sys_get_environ ();
+	char **envp = rz_sys_get_environ();
 	if (envp) {
-		rz_sys_set_environ (envp);
+		rz_sys_set_environ(envp);
 	}
 }
 
@@ -1241,7 +1243,7 @@ RZ_API char **rz_sys_get_environ(void) {
 #endif
 	// return environ if available??
 	if (!env) {
-		env = rz_lib_dl_sym (NULL, "environ");
+		env = rz_lib_dl_sym(NULL, "environ");
 	}
 	return env;
 }
@@ -1250,20 +1252,20 @@ RZ_API void rz_sys_set_environ(char **e) {
 	env = e;
 }
 
-RZ_API char *rz_sys_whoami (char *buf) {
+RZ_API char *rz_sys_whoami(char *buf) {
 	char _buf[32];
-	int pid = getpid ();
-	int hasbuf = (buf)? 1: 0;
+	int pid = getpid();
+	int hasbuf = (buf) ? 1 : 0;
 	if (!hasbuf) {
 		buf = _buf;
 	}
-	sprintf (buf, "pid%d", pid);
-	return hasbuf? buf: strdup (buf);
+	sprintf(buf, "pid%d", pid);
+	return hasbuf ? buf : strdup(buf);
 }
 
 RZ_API int rz_sys_getpid(void) {
 #if __UNIX__
-	return getpid ();
+	return getpid();
 #elif __WINDOWS__
 	return GetCurrentProcessId();
 #else
@@ -1272,55 +1274,36 @@ RZ_API int rz_sys_getpid(void) {
 #endif
 }
 
-RZ_API bool rz_sys_tts(const char *txt, bool bg) {
-	int i;
-	rz_return_val_if_fail (txt, false);
-	const char *says[] = {
-		"say", "termux-tts-speak", NULL
-	};
-	for (i = 0; says[i]; i++) {
-		char *sayPath = rz_file_path (says[i]);
-		if (sayPath) {
-			char *line = rz_str_replace (strdup (txt), "'", "\"", 1);
-			rz_sys_cmdf ("\"%s\" '%s'%s", sayPath, line, bg? " &": "");
-			free (line);
-			free (sayPath);
-			return true;
-		}
-	}
-	return false;
-}
-
 RZ_API const char *rz_sys_prefix(const char *pfx) {
 	static char *prefix = NULL;
 	if (!prefix) {
 #if __WINDOWS__
-		prefix = rz_sys_get_src_dir_w32 ();
+		prefix = rz_sys_get_src_dir_w32();
 		if (!prefix) {
-			prefix = strdup (RZ_PREFIX);
+			prefix = strdup(RZ_PREFIX);
 		}
 #else
-		prefix = strdup (RZ_PREFIX);
+		prefix = strdup(RZ_PREFIX);
 #endif
 	}
 	if (pfx) {
-		free (prefix);
-		prefix = strdup (pfx);
+		free(prefix);
+		prefix = strdup(pfx);
 	}
 	return prefix;
 }
 
 RZ_API RSysInfo *rz_sys_info(void) {
 #if __UNIX__
-	struct utsname un = {{0}};
-	if (uname (&un) != -1) {
-		RSysInfo *si = RZ_NEW0 (RSysInfo);
+	struct utsname un = { { 0 } };
+	if (uname(&un) != -1) {
+		RSysInfo *si = RZ_NEW0(RSysInfo);
 		if (si) {
-			si->sysname  = strdup (un.sysname);
-			si->nodename = strdup (un.nodename);
-			si->release  = strdup (un.release);
-			si->version  = strdup (un.version);
-			si->machine  = strdup (un.machine);
+			si->sysname = strdup(un.sysname);
+			si->nodename = strdup(un.nodename);
+			si->release = strdup(un.release);
+			si->version = strdup(un.version);
+			si->machine = strdup(un.machine);
 			return si;
 		}
 	}
@@ -1330,69 +1313,69 @@ RZ_API RSysInfo *rz_sys_info(void) {
 	DWORD size;
 	DWORD major;
 	DWORD minor;
-	char tmp[256] = {0};
-	RSysInfo *si = RZ_NEW0 (RSysInfo);
+	char tmp[256] = { 0 };
+	RSysInfo *si = RZ_NEW0(RSysInfo);
 	if (!si) {
 		return NULL;
 	}
 
-	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
-		KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
-		rz_sys_perror ("rz_sys_info/RegOpenKeyExA");
-		rz_sys_info_free (si);
+	if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
+		    KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
+		rz_sys_perror("rz_sys_info/RegOpenKeyExA");
+		rz_sys_info_free(si);
 		return NULL;
 	}
 
-	size = sizeof (tmp);
-	if (RegQueryValueExA (key, "ProductName", NULL, &type,
-		(LPBYTE)&tmp, &size) != ERROR_SUCCESS
-		|| type != REG_SZ) {
+	size = sizeof(tmp);
+	if (RegQueryValueExA(key, "ProductName", NULL, &type,
+		    (LPBYTE)&tmp, &size) != ERROR_SUCCESS ||
+		type != REG_SZ) {
 		goto beach;
 	}
-	si->sysname = strdup (tmp);
+	si->sysname = strdup(tmp);
 
-	size = sizeof (major);
-	if (RegQueryValueExA (key, "CurrentMajorVersionNumber", NULL, &type,
-		(LPBYTE)&major, &size) != ERROR_SUCCESS
-		|| type != REG_DWORD) {
+	size = sizeof(major);
+	if (RegQueryValueExA(key, "CurrentMajorVersionNumber", NULL, &type,
+		    (LPBYTE)&major, &size) != ERROR_SUCCESS ||
+		type != REG_DWORD) {
 		goto beach;
 	}
-	size = sizeof (minor);
-	if (RegQueryValueExA (key, "CurrentMinorVersionNumber", NULL, &type,
-		(LPBYTE)&minor, &size) != ERROR_SUCCESS
-		|| type != REG_DWORD) {
+	size = sizeof(minor);
+	if (RegQueryValueExA(key, "CurrentMinorVersionNumber", NULL, &type,
+		    (LPBYTE)&minor, &size) != ERROR_SUCCESS ||
+		type != REG_DWORD) {
 		goto beach;
 	}
 
-	size = sizeof (tmp);
-	if (RegQueryValueExA (key, "CurrentBuild", NULL, &type,
-		(LPBYTE)&tmp, &size) != ERROR_SUCCESS
-		|| type != REG_SZ) {
+	size = sizeof(tmp);
+	if (RegQueryValueExA(key, "CurrentBuild", NULL, &type,
+		    (LPBYTE)&tmp, &size) != ERROR_SUCCESS ||
+		type != REG_SZ) {
 		goto beach;
 	}
-	si->version = rz_str_newf ("%lu.%lu.%s", major, minor, tmp);
+	si->version = rz_str_newf("%lu.%lu.%s", major, minor, tmp);
 
-	size = sizeof (tmp);
-	if (RegQueryValueExA (key, "ReleaseId", NULL, &type,
-		(LPBYTE)tmp, &size) != ERROR_SUCCESS
-		|| type != REG_SZ) {
+	size = sizeof(tmp);
+	if (RegQueryValueExA(key, "ReleaseId", NULL, &type,
+		    (LPBYTE)tmp, &size) != ERROR_SUCCESS ||
+		type != REG_SZ) {
 		goto beach;
 	}
-	si->release = strdup (tmp);
+	si->release = strdup(tmp);
 beach:
-	RegCloseKey (key);
+	RegCloseKey(key);
 	return si;
 #endif
 	return NULL;
 }
 
 RZ_API void rz_sys_info_free(RSysInfo *si) {
-	free (si->sysname);
-	free (si->nodename);
-	free (si->release);
-	free (si->version);
-	free (si->machine);
-	free (si);
+	free(si->sysname);
+	free(si->nodename);
+	free(si->release);
+	free(si->version);
+	free(si->machine);
+	free(si);
 }
 
 #if __UNIX__ && HAVE_PIPE2
@@ -1400,11 +1383,11 @@ RZ_API void rz_sys_info_free(RSysInfo *si) {
 #include <unistd.h>
 
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
-	return pipe2 (pipefd, close_on_exec? O_CLOEXEC: 0);
+	return pipe2(pipefd, close_on_exec ? O_CLOEXEC : 0);
 }
 
 RZ_API int rz_sys_pipe_close(int fd) {
-	return close (fd);
+	return close(fd);
 }
 #elif __UNIX__ && HAVE_PIPE && defined(O_CLOEXEC)
 // Use this lock to wraps pipe, close, exec*, system to ensure all pipe file
@@ -1412,32 +1395,32 @@ RZ_API int rz_sys_pipe_close(int fd) {
 static RzThreadLock *sys_pipe_mutex;
 static bool is_child = false;
 
-__attribute__ ((constructor)) static void sys_pipe_constructor(void) {
-	sys_pipe_mutex = rz_th_lock_new (true);
+__attribute__((constructor)) static void sys_pipe_constructor(void) {
+	sys_pipe_mutex = rz_th_lock_new(true);
 }
 
-__attribute__ ((destructor)) static void sys_pipe_destructor(void) {
-	rz_th_lock_free (sys_pipe_mutex);
+__attribute__((destructor)) static void sys_pipe_destructor(void) {
+	rz_th_lock_free(sys_pipe_mutex);
 }
 
 static bool set_close_on_exec(int fd) {
-	int flags = fcntl (fd, F_GETFD);
+	int flags = fcntl(fd, F_GETFD);
 	if (flags == -1) {
 		return false;
 	}
 	flags |= FD_CLOEXEC;
-	return fcntl (fd, F_SETFD, flags) != -1;
+	return fcntl(fd, F_SETFD, flags) != -1;
 }
 
 static void parent_lock_enter(void) {
 	if (!is_child) {
-		rz_th_lock_enter (sys_pipe_mutex);
+		rz_th_lock_enter(sys_pipe_mutex);
 	}
 }
 
 static void parent_lock_leave(void) {
 	if (!is_child) {
-		rz_th_lock_leave (sys_pipe_mutex);
+		rz_th_lock_leave(sys_pipe_mutex);
 	}
 }
 
@@ -1450,19 +1433,19 @@ static void parent_lock_leave(void) {
  */
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 	int res = -1;
-	parent_lock_enter ();
-	if ((res = pipe (pipefd)) == -1) {
-		perror ("pipe");
+	parent_lock_enter();
+	if ((res = pipe(pipefd)) == -1) {
+		perror("pipe");
 		goto err;
 	}
-	if (close_on_exec && (!set_close_on_exec (pipefd[0]) || !set_close_on_exec (pipefd[1]))) {
-		perror ("close-on-exec");
-		close (pipefd[0]);
-		close (pipefd[1]);
+	if (close_on_exec && (!set_close_on_exec(pipefd[0]) || !set_close_on_exec(pipefd[1]))) {
+		perror("close-on-exec");
+		close(pipefd[0]);
+		close(pipefd[1]);
 		goto err;
 	}
 err:
-	parent_lock_leave ();
+	parent_lock_leave();
 	return res;
 }
 
@@ -1470,7 +1453,7 @@ err:
  * \brief Close a file descriptor previously created pipe \p rz_sys_pipe
  */
 RZ_API int rz_sys_pipe_close(int fd) {
-	return close (fd);
+	return close(fd);
 }
 
 #elif __UNIX__ && HAVE_PIPE
@@ -1481,44 +1464,44 @@ static HtUU *fd2close;
 static RzThreadLock *sys_pipe_mutex;
 static bool is_child = false;
 
-__attribute__ ((constructor)) static void sys_pipe_constructor(void) {
-	sys_pipe_mutex = rz_th_lock_new (false);
-	fd2close = ht_uu_new0 ();
+__attribute__((constructor)) static void sys_pipe_constructor(void) {
+	sys_pipe_mutex = rz_th_lock_new(false);
+	fd2close = ht_uu_new0();
 }
 
-__attribute__ ((destructor)) static void sys_pipe_destructor(void) {
-	ht_uu_free (fd2close);
-	rz_th_lock_free (sys_pipe_mutex);
+__attribute__((destructor)) static void sys_pipe_destructor(void) {
+	ht_uu_free(fd2close);
+	rz_th_lock_free(sys_pipe_mutex);
 }
 
 static void parent_lock_enter(void) {
 	if (!is_child) {
-		rz_th_lock_enter (sys_pipe_mutex);
+		rz_th_lock_enter(sys_pipe_mutex);
 	}
 }
 
 static void parent_lock_leave(void) {
 	if (!is_child) {
-		rz_th_lock_leave (sys_pipe_mutex);
+		rz_th_lock_leave(sys_pipe_mutex);
 	}
 }
 
 static bool set_close_on_exec(int fd, bool close_on_exec) {
-	bool res = ht_uu_insert (fd2close, fd, close_on_exec);
-	rz_warn_if_fail (res);
+	bool res = ht_uu_insert(fd2close, fd, close_on_exec);
+	rz_warn_if_fail(res);
 	return res;
 }
 
 static bool close_on_exec_fd_cb(void *user, const ut64 key, const ut64 val) {
 	bool close_on_exec = (bool)val;
 	if (close_on_exec) {
-		close ((int)key);
+		close((int)key);
 	}
 	return true;
 }
 
 static void close_fds(void) {
-	ht_uu_foreach (fd2close, close_on_exec_fd_cb, NULL);
+	ht_uu_foreach(fd2close, close_on_exec_fd_cb, NULL);
 }
 
 /**
@@ -1530,19 +1513,19 @@ static void close_fds(void) {
  */
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 	int res = -1;
-	parent_lock_enter ();
-	if ((res = pipe (pipefd)) == -1) {
-		perror ("pipe");
+	parent_lock_enter();
+	if ((res = pipe(pipefd)) == -1) {
+		perror("pipe");
 		goto err;
 	}
-	if (!set_close_on_exec (pipefd[0], close_on_exec) || !set_close_on_exec (pipefd[1], close_on_exec)) {
-		perror ("close-on-exec");
-		close (pipefd[0]);
-		close (pipefd[1]);
+	if (!set_close_on_exec(pipefd[0], close_on_exec) || !set_close_on_exec(pipefd[1], close_on_exec)) {
+		perror("close-on-exec");
+		close(pipefd[0]);
+		close(pipefd[1]);
 		goto err;
 	}
 err:
-	parent_lock_leave ();
+	parent_lock_leave();
 	return res;
 }
 
@@ -1553,20 +1536,20 @@ err:
  * when an \p rz_sys exec/system is executed later.
  */
 RZ_API int rz_sys_pipe_close(int fd) {
-	parent_lock_enter ();
-	bool deleted = ht_uu_delete (fd2close, fd);
-	rz_warn_if_fail (deleted);
-	int res = close (fd);
-	parent_lock_leave ();
+	parent_lock_enter();
+	bool deleted = ht_uu_delete(fd2close, fd);
+	rz_warn_if_fail(deleted);
+	int res = close(fd);
+	parent_lock_leave();
 	return res;
 }
 #elif HAVE_PIPE
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
-	return pipe (pipefd);
+	return pipe(pipefd);
 }
 
 RZ_API int rz_sys_pipe_close(int fd) {
-	return close (fd);
+	return close(fd);
 }
 #else
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
@@ -1580,17 +1563,17 @@ RZ_API int rz_sys_pipe_close(int fd) {
 
 #if __UNIX__ && HAVE_EXECV && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
-	parent_lock_enter ();
-	int res = execv (pathname, argv);
-	parent_lock_leave ();
+	parent_lock_enter();
+	int res = execv(pathname, argv);
+	parent_lock_leave();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2
 RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
-	parent_lock_enter ();
-	close_fds ();
-	int res = execv (pathname, argv);
-	parent_lock_leave ();
+	parent_lock_enter();
+	close_fds();
+	int res = execv(pathname, argv);
+	parent_lock_leave();
 	return res;
 }
 #elif !HAVE_EXECV
@@ -1601,17 +1584,17 @@ RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
 
 #if __UNIX__ && HAVE_EXECVE && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]) {
-	parent_lock_enter ();
-	int res = execve (pathname, argv, envp);
-	parent_lock_leave ();
+	parent_lock_enter();
+	int res = execve(pathname, argv, envp);
+	parent_lock_leave();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECVE && HAVE_PIPE && !HAVE_PIPE2
 RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]) {
-	parent_lock_enter ();
-	close_fds ();
-	int res = execve (pathname, argv, envp);
-	parent_lock_leave ();
+	parent_lock_enter();
+	close_fds();
+	int res = execve(pathname, argv, envp);
+	parent_lock_leave();
 	return res;
 }
 #elif !HAVE_EXECVE
@@ -1622,17 +1605,17 @@ RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const e
 
 #if __UNIX__ && HAVE_EXECVP && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
-	parent_lock_enter ();
-	int res = execvp (file, argv);
-	parent_lock_leave ();
+	parent_lock_enter();
+	int res = execvp(file, argv);
+	parent_lock_leave();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECVP && HAVE_PIPE && !HAVE_PIPE2
 RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
-	parent_lock_enter ();
-	close_fds ();
-	int res = execvp (file, argv);
-	parent_lock_leave ();
+	parent_lock_enter();
+	close_fds();
+	int res = execvp(file, argv);
+	parent_lock_leave();
 	return res;
 }
 #elif !HAVE_EXECVP
@@ -1644,45 +1627,45 @@ RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
 #if __UNIX__ && HAVE_EXECL && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 	va_list count_args, args;
-	va_start (args, arg);
-	va_copy (count_args, args);
+	va_start(args, arg);
+	va_copy(count_args, args);
 	size_t i, argc = 0;
-	while (va_arg (count_args, char *) != NULL) {
+	while (va_arg(count_args, char *) != NULL) {
 		argc++;
 	}
-	va_end (count_args);
-	char **argv = RZ_NEWS0 (char *, argc + 2);
-	argv[0] = strdup (pathname);
+	va_end(count_args);
+	char **argv = RZ_NEWS0(char *, argc + 2);
+	argv[0] = strdup(pathname);
 	for (i = 1; i <= argc; i++) {
-		argv[i] = va_arg (args, char *);
+		argv[i] = va_arg(args, char *);
 	}
-	va_end (args);
-	parent_lock_enter ();
-	int res = execv (pathname, argv);
-	parent_lock_leave ();
+	va_end(args);
+	parent_lock_enter();
+	int res = execv(pathname, argv);
+	parent_lock_leave();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECL && HAVE_PIPE && !HAVE_PIPE2
 RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 	va_list count_args, args;
-	va_start (args, arg);
-	va_copy (count_args, args);
+	va_start(args, arg);
+	va_copy(count_args, args);
 	size_t i, argc = 0;
-	while (va_arg (count_args, char *) != NULL) {
+	while (va_arg(count_args, char *) != NULL) {
 		argc++;
 	}
-	va_end (count_args);
-	char **argv = RZ_NEWS0 (char *, argc + 2);
-	argv[0] = strdup (pathname);
+	va_end(count_args);
+	char **argv = RZ_NEWS0(char *, argc + 2);
+	argv[0] = strdup(pathname);
 	for (i = 1; i <= argc; i++) {
-		argv[i] = va_arg (args, char *);
+		argv[i] = va_arg(args, char *);
 	}
-	va_end (args);
+	va_end(args);
 
-	parent_lock_enter ();
-	close_fds ();
-	int res = execv (pathname, argv);
-	parent_lock_leave ();
+	parent_lock_enter();
+	close_fds();
+	int res = execv(pathname, argv);
+	parent_lock_leave();
 	return res;
 }
 #elif !HAVE_EXECL
@@ -1693,78 +1676,78 @@ RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 
 #if __UNIX__ && HAVE_SYSTEM && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_system(const char *command) {
-	parent_lock_enter ();
-	int res = system (command);
-	parent_lock_leave ();
+	parent_lock_enter();
+	int res = system(command);
+	parent_lock_leave();
 	return res;
 }
 #elif __UNIX__ && HAVE_SYSTEM && HAVE_PIPE && !HAVE_PIPE2
 RZ_API int rz_sys_system(const char *command) {
-	parent_lock_enter ();
-	close_fds ();
-	int res = system (command);
-	parent_lock_leave ();
+	parent_lock_enter();
+	close_fds();
+	int res = system(command);
+	parent_lock_leave();
 	return res;
 }
 #elif !HAVE_SYSTEM && APPLE_SDK_IPHONEOS
 #include <spawn.h>
 RZ_API int rz_sys_system(const char *command) {
 	int argc;
-	char *cmd = strdup (command);
-	char **argv = rz_str_argv (cmd, &argc);
+	char *cmd = strdup(command);
+	char **argv = rz_str_argv(cmd, &argc);
 	if (argv) {
-		char *argv0 = rz_file_path (argv[0]);
+		char *argv0 = rz_file_path(argv[0]);
 		pid_t pid = 0;
-		int r = posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
+		int r = posix_spawn(&pid, argv0, NULL, NULL, argv, NULL);
 		int status;
-		int s = waitpid (pid, &status, 0);
-		return WEXITSTATUS (s);
+		int s = waitpid(pid, &status, 0);
+		return WEXITSTATUS(s);
 	}
 }
 #elif !HAVE_SYSTEM && HAVE_FORK
 #include <spawn.h>
 RZ_API int rz_sys_system(const char *command) {
-	if (!strchr (command, '|')) {
-		char **argv, *cmd = strdup (command);
+	if (!strchr(command, '|')) {
+		char **argv, *cmd = strdup(command);
 		int rc, pid, argc;
-		char *isbg = strchr (cmd, '&');
+		char *isbg = strchr(cmd, '&');
 		// XXX this is hacky
 		if (isbg) {
 			*isbg = 0;
 		}
-		argv = rz_str_argv (cmd, &argc);
+		argv = rz_str_argv(cmd, &argc);
 		if (argv) {
-			char *argv0 = rz_file_path (argv[0]);
+			char *argv0 = rz_file_path(argv[0]);
 			if (!argv0) {
-				eprintf ("Cannot find '%s'\n", argv[0]);
+				eprintf("Cannot find '%s'\n", argv[0]);
 				return -1;
 			}
 			pid = 0;
-			posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
+			posix_spawn(&pid, argv0, NULL, NULL, argv, NULL);
 			if (isbg) {
 				// XXX. wait for children
 				rc = 0;
 			} else {
-				rc = waitpid (pid, NULL, 0);
+				rc = waitpid(pid, NULL, 0);
 			}
-			rz_str_argv_free (argv);
-			free (argv0);
+			rz_str_argv_free(argv);
+			free(argv0);
 			return rc;
 		}
-		eprintf ("Error parsing command arguments\n");
+		eprintf("Error parsing command arguments\n");
 		return -1;
 	}
-	int child = rz_sys_fork ();
+	int child = rz_sys_fork();
 	if (child == -1) {
 		return -1;
 	}
 	if (child) {
-		return waitpid (child, NULL, 0);
+		return waitpid(child, NULL, 0);
 	}
-	if (rz_sys_execl ("/bin/sh", "sh", "-c", command, (const char*)NULL) == -1) {
-		perror ("execl");
+	if (rz_sys_execl("/bin/sh", "sh", "-c", command, (const char *)NULL) == -1) {
+		perror("execl");
 	}
-	exit (1);
+	exit(1);
 }
 #elif !HAVE_SYSTEM
 RZ_API int rz_sys_system(const char *command) {
@@ -1775,14 +1758,14 @@ RZ_API int rz_sys_system(const char *command) {
 #if HAVE_FORK
 RZ_API int rz_sys_fork(void) {
 #if __UNIX__ && HAVE_PIPE && !HAVE_PIPE2
-	parent_lock_enter ();
+	parent_lock_enter();
 #endif
-	pid_t child = fork ();
+	pid_t child = fork();
 #if __UNIX__ && HAVE_PIPE && !HAVE_PIPE2
 	if (child == 0) {
 		is_child = true;
 	} else if (child > 0) {
-		parent_lock_leave ();
+		parent_lock_leave();
 	}
 #endif
 	return child;
@@ -1794,44 +1777,71 @@ RZ_API int rz_sys_fork(void) {
 #endif
 
 static inline char *expand_home(const char *p) {
-	return (*p == '~')? rz_str_home (p): strdup (p);
+	return (*p == '~') ? rz_str_home(p) : strdup(p);
 }
 
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length) {
 #ifdef _MSC_VER
-	return _chsize_s (fd, length);
+	return _chsize_s(fd, length);
 #else
-	return ftruncate (fd, (off_t)length);
+	return ftruncate(fd, (off_t)length);
 #endif
 }
 
 RZ_API int rz_sys_truncate(const char *file, int sz) {
 #if __WINDOWS__
-	int fd = rz_sys_open (file, O_RDWR, 0644);
+	int fd = rz_sys_open(file, O_RDWR, 0644);
 	if (fd == -1) {
 		return false;
 	}
-	int r = rz_sys_truncate_fd (fd, sz);
+	int r = rz_sys_truncate_fd(fd, sz);
 	if (r != 0) {
-		eprintf ("Could not resize '%s' file\n", file);
-		close (fd);
+		eprintf("Could not resize '%s' file\n", file);
+		close(fd);
 		return false;
 	}
-	close (fd);
+	close(fd);
 	return true;
 #else
-	return truncate (file, sz) == 0;
+	return truncate(file, sz) == 0;
 #endif
 }
 
+/**
+ * \brief Convert rizin permissions (RZ_PERM_*) to posix permissions that can be passed to \b rz_sys_open .
+ *
+ * \b rz_sys_open accepts posix permissions for now, not the arch-independent
+ * ones provided by RZ_PERM_*. This function is an helper to convert from rizin
+ * permissions to posix ones.
+ */
+RZ_API int rz_sys_open_perms(int rizin_perms) {
+	int res = 0;
+	if ((rizin_perms & RZ_PERM_R) && (rizin_perms & RZ_PERM_W)) {
+		res |= O_RDWR;
+		// NOTE: O_CREAT is added here because Rizin for now assumes Write means
+		// ability to create a file as well.
+		res |= O_CREAT;
+	} else if (rizin_perms & RZ_PERM_R) {
+		res |= O_RDONLY;
+	} else if (rizin_perms & RZ_PERM_W) {
+		res |= O_WRONLY;
+		// NOTE: O_CREAT is added here because Rizin for now assumes Write means
+		// ability to create a file as well.
+		res |= O_CREAT;
+	}
+	if (rizin_perms & RZ_PERM_CREAT) {
+		res |= O_CREAT;
+	}
+	return res;
+}
 
 /* perm <-> mode */
 RZ_API int rz_sys_open(const char *path, int perm, int mode) {
-	rz_return_val_if_fail (path, -1);
-	char *epath = expand_home (path);
+	rz_return_val_if_fail(path, -1);
+	char *epath = expand_home(path);
 	int ret = -1;
 #if __WINDOWS__
-	if (!strcmp (path, "/dev/null")) {
+	if (!strcmp(path, "/dev/null")) {
 		path = "NUL";
 	}
 	{
@@ -1863,7 +1873,7 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 		} else if (perm & O_TRUNC) {
 			creation = TRUNCATE_EXISTING;
 		}
-		if (!creation || !strcasecmp ("NUL", path)) {
+		if (!creation || !strcasecmp("NUL", path)) {
 			creation = OPEN_EXISTING;
 		}
 		DWORD permission = 0;
@@ -1878,83 +1888,83 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 			permission |= FILE_APPEND_DATA;
 		}
 
-		wchar_t *wepath = rz_utf8_to_utf16 (epath);
+		wchar_t *wepath = rz_utf8_to_utf16(epath);
 		if (!wepath) {
-			free (epath);
+			free(epath);
 			return -1;
 		}
-		HANDLE h = CreateFileW (wepath, permission, FILE_SHARE_READ | (read_only ? 0 : FILE_SHARE_WRITE), NULL, creation, flags, NULL);
+		HANDLE h = CreateFileW(wepath, permission, FILE_SHARE_READ | (read_only ? 0 : FILE_SHARE_WRITE), NULL, creation, flags, NULL);
 		if (h != INVALID_HANDLE_VALUE) {
-			ret = _open_osfhandle ((intptr_t)h, perm);
+			ret = _open_osfhandle((intptr_t)h, perm);
 		}
-		free (wepath);
+		free(wepath);
 	}
 #else // __WINDOWS__
-	ret = open (epath, perm, mode);
+	ret = open(epath, perm, mode);
 #endif // __WINDOWS__
-	free (epath);
+	free(epath);
 	return ret;
 }
 
 RZ_API FILE *rz_sys_fopen(const char *path, const char *mode) {
-	rz_return_val_if_fail (path && mode, NULL);
+	rz_return_val_if_fail(path && mode, NULL);
 	FILE *ret = NULL;
 	char *epath = NULL;
 	if (!epath) {
-		epath = expand_home (path);
+		epath = expand_home(path);
 	}
-	if ((strchr (mode, 'w') || strchr (mode, 'a') || rz_file_is_regular (epath))) {
+	if ((strchr(mode, 'w') || strchr(mode, 'a') || rz_file_is_regular(epath))) {
 #if __WINDOWS__
-		wchar_t *wepath = rz_utf8_to_utf16 (epath);
+		wchar_t *wepath = rz_utf8_to_utf16(epath);
 		if (!wepath) {
-			free (epath);
+			free(epath);
 			return ret;
 		}
-		wchar_t *wmode = rz_utf8_to_utf16 (mode);
+		wchar_t *wmode = rz_utf8_to_utf16(mode);
 		if (!wmode) {
-			free (wepath);
-			free (epath);
+			free(wepath);
+			free(epath);
 			return ret;
 		}
-		ret = _wfopen (wepath, wmode);
-		free (wmode);
-		free (wepath);
+		ret = _wfopen(wepath, wmode);
+		free(wmode);
+		free(wepath);
 #else // __WINDOWS__
-		ret = fopen (epath, mode);
+		ret = fopen(epath, mode);
 #endif // __WINDOWS__
 	}
-	free (epath);
+	free(epath);
 	return ret;
 }
 
 RZ_API int rz_sys_kill(int pid, int sig) {
-	rz_return_val_if_fail (pid != -1, -1);
+	rz_return_val_if_fail(pid != -1, -1);
 #if __UNIX__
-	return kill (pid, sig);
+	return kill(pid, sig);
 #endif
 	return -1;
 }
 #if __WINDOWS__
-RZ_API HANDLE rz_sys_opendir (const char *path, WIN32_FIND_DATAW *entry) {
-	rz_return_val_if_fail (path, NULL);
+RZ_API HANDLE rz_sys_opendir(const char *path, WIN32_FIND_DATAW *entry) {
+	rz_return_val_if_fail(path, NULL);
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath = 0;
-	if (!(wcpath = rz_utf8_to_utf16 (path))) {
+	if (!(wcpath = rz_utf8_to_utf16(path))) {
 		return NULL;
 	}
-	swprintf (dir, MAX_PATH, L"%ls\\*.*", wcpath);
-	free (wcpath);
-	return FindFirstFileW (dir, entry);
+	swprintf(dir, MAX_PATH, L"%ls\\*.*", wcpath);
+	free(wcpath);
+	return FindFirstFileW(dir, entry);
 }
 #else
-RZ_API DIR* rz_sys_opendir (const char *path) {
-	rz_return_val_if_fail (path, NULL);
-	return opendir (path);
+RZ_API DIR *rz_sys_opendir(const char *path) {
+	rz_return_val_if_fail(path, NULL);
+	return opendir(path);
 }
 #endif
-RZ_API bool rz_sys_stop (void) {
+RZ_API bool rz_sys_stop(void) {
 #if __UNIX__
-	return !rz_sys_kill (0, SIGTSTP);
+	return !rz_sys_kill(0, SIGTSTP);
 #else
 	return false;
 #endif

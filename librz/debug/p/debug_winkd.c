@@ -13,7 +13,6 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library.
 
-#include <rz_asm.h>
 #include <rz_debug.h>
 #include <winkd.h>
 #include <kd.h>
@@ -29,7 +28,7 @@ static int rz_debug_winkd_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	if (!ret || size != ret) {
 		return -1;
 	}
-	rz_reg_read_regs (dbg->reg, buf, ret);
+	rz_reg_read_regs(dbg->reg, buf, ret);
 	// Report as if no register has been written as we've already updated the arena here
 	return 0;
 }
@@ -39,13 +38,13 @@ static int rz_debug_winkd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int 
 		return false;
 	}
 	int arena_size;
-	ut8 *arena = rz_reg_get_bytes (dbg->reg, RZ_REG_TYPE_ALL, &arena_size);
+	ut8 *arena = rz_reg_get_bytes(dbg->reg, RZ_REG_TYPE_ALL, &arena_size);
 	if (!arena) {
-		eprintf ("Could not retrieve the register arena!\n");
+		eprintf("Could not retrieve the register arena!\n");
 		return false;
 	}
-	int ret = winkd_write_reg (wctx, arena, arena_size);
-	free (arena);
+	int ret = winkd_write_reg(wctx, arena, arena_size);
+	free(arena);
 	return ret;
 }
 
@@ -57,20 +56,20 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
-	winkd_lock_enter (wctx);
+	winkd_lock_enter(wctx);
 	for (;;) {
-		void *bed = rz_cons_sleep_begin ();
-		int ret = winkd_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
-		rz_cons_sleep_end (bed);
+		void *bed = rz_cons_sleep_begin();
+		int ret = winkd_wait_packet(wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
+		rz_cons_sleep_end(bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = RZ_DEBUG_REASON_ERROR;
 			break;
 		}
-		stc = (kd_stc_64 *) pkt->data;
+		stc = (kd_stc_64 *)pkt->data;
 		dbg->reason.addr = stc->pc;
 		dbg->reason.tid = stc->kthread;
 		dbg->reason.signum = stc->state;
-		winkd_set_cpu (wctx, stc->cpu);
+		winkd_set_cpu(wctx, stc->cpu);
 		if (stc->state == DbgKdExceptionStateChange) {
 			dbg->reason.type = RZ_DEBUG_REASON_INT;
 			reason = RZ_DEBUG_REASON_INT;
@@ -80,10 +79,10 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 			reason = RZ_DEBUG_REASON_NEW_LIB;
 			break;
 		}
-		RZ_FREE (pkt);
+		RZ_FREE(pkt);
 	}
-	winkd_lock_leave (wctx);
-	free (pkt);
+	winkd_lock_leave(wctx);
+	free(pkt);
 	return reason;
 }
 
@@ -93,32 +92,32 @@ static int rz_debug_winkd_attach(RzDebug *dbg, int pid) {
 	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data) {
 		return false;
 	}
-	if (strncmp (desc->plugin->name, "winkd", 6)) {
+	if (strncmp(desc->plugin->name, "winkd", 6)) {
 		return false;
 	}
-	if (dbg->arch && strcmp (dbg->arch, "x86")) {
+	if (dbg->arch && strcmp(dbg->arch, "x86")) {
 		return false;
 	}
 	wctx = (WindCtx *)desc->data;
 
 	// Handshake
-	if (!winkd_sync (wctx)) {
-		eprintf ("Could not connect to winkd\n");
-		winkd_ctx_free ((WindCtx **)&desc->data);
+	if (!winkd_sync(wctx)) {
+		eprintf("Could not connect to winkd\n");
+		winkd_ctx_free((WindCtx **)&desc->data);
 		return false;
 	}
-	if (!winkd_read_ver (wctx)) {
-		winkd_ctx_free ((WindCtx **)&desc->data);
+	if (!winkd_read_ver(wctx)) {
+		winkd_ctx_free((WindCtx **)&desc->data);
 		return false;
 	}
-	dbg->bits = winkd_get_bits (wctx);
+	dbg->bits = winkd_get_bits(wctx);
 	// Make rz_debug_is_dead happy
 	dbg->pid = 0;
 	return true;
 }
 
 static int rz_debug_winkd_detach(RzDebug *dbg, int pid) {
-	eprintf ("Detaching...\n");
+	eprintf("Detaching...\n");
 	return true;
 }
 
@@ -126,10 +125,10 @@ static char *rz_debug_winkd_reg_profile(RzDebug *dbg) {
 	if (!dbg) {
 		return NULL;
 	}
-	if (dbg->arch && strcmp (dbg->arch, "x86")) {
+	if (dbg->arch && strcmp(dbg->arch, "x86")) {
 		return NULL;
 	}
-	rz_debug_winkd_attach (dbg, 0);
+	rz_debug_winkd_attach(dbg, 0);
 	if (dbg->bits == RZ_SYS_BITS_32) {
 #include "native/reg/windows-x86.h"
 	} else if (dbg->bits == RZ_SYS_BITS_64) {
@@ -145,13 +144,13 @@ static int rz_debug_winkd_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool
 	}
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
 	if (!b->data) {
-		b->data = (char *)RZ_NEW0 (int);
+		b->data = (char *)RZ_NEW0(int);
 		if (!b->data) {
 			return 0;
 		}
 	}
 	tag = (int *)b->data;
-	return winkd_bkpt (wctx, b->addr, set, b->hw, tag);
+	return winkd_bkpt(wctx, b->addr, set, b->hw, tag);
 }
 
 static int rz_debug_winkd_init(RzDebug *dbg) {
@@ -162,7 +161,7 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 	RzListIter *it;
 	WindProc *p;
 
-	RzList *ret = rz_list_newf (free);
+	RzList *ret = rz_list_newf(free);
 	if (!ret) {
 		return NULL;
 	}
@@ -172,33 +171,33 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 		return ret;
 	}
 	rz_list_foreach (pids, it, p) {
-		RzDebugPid *newpid = RZ_NEW0 (RzDebugPid);
+		RzDebugPid *newpid = RZ_NEW0(RzDebugPid);
 		if (!newpid) {
-			rz_list_free (ret);
+			rz_list_free(ret);
 			return NULL;
 		}
-		newpid->path = strdup (p->name);
+		newpid->path = strdup(p->name);
 		newpid->pid = p->uniqueid;
 		newpid->status = 's';
 		newpid->runnable = true;
-		rz_list_append (ret, newpid);
+		rz_list_append(ret, newpid);
 	}
 	// rz_list_free (pids);
 	return ret;
 }
 
 static int rz_debug_winkd_select(RzDebug *dbg, int pid, int tid) {
-	ut32 old = winkd_get_target (wctx);
-	int ret = winkd_set_target (wctx, pid);
+	ut32 old = winkd_get_target(wctx);
+	int ret = winkd_set_target(wctx, pid);
 	if (!ret) {
 		return false;
 	}
-	ut64 base = winkd_get_target_base (wctx);
+	ut64 base = winkd_get_target_base(wctx);
 	if (!base) {
-		winkd_set_target (wctx, old);
+		winkd_set_target(wctx, old);
 		return false;
 	}
-	eprintf ("Process base is 0x%"PFMT64x"\n", base);
+	eprintf("Process base is 0x%" PFMT64x "\n", base);
 	return true;
 }
 
@@ -206,27 +205,27 @@ static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
 	RzListIter *it;
 	WindThread *t;
 
-	RzList *ret = rz_list_newf (free);
+	RzList *ret = rz_list_newf(free);
 	if (!ret) {
 		return NULL;
 	}
 
-	RzList *threads = winkd_list_threads (wctx);
+	RzList *threads = winkd_list_threads(wctx);
 	if (!threads) {
-		rz_list_free (ret);
+		rz_list_free(ret);
 		return NULL;
 	}
 
 	rz_list_foreach (threads, it, t) {
-		RzDebugPid *newpid = RZ_NEW0 (RzDebugPid);
+		RzDebugPid *newpid = RZ_NEW0(RzDebugPid);
 		if (!newpid) {
-			rz_list_free (ret);
+			rz_list_free(ret);
 			return NULL;
 		}
 		newpid->pid = t->uniqueid;
 		newpid->status = t->status;
 		newpid->runnable = t->runnable;
-		rz_list_append (ret, newpid);
+		rz_list_append(ret, newpid);
 	}
 
 	return ret;
@@ -236,32 +235,32 @@ static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
 	RzListIter *it;
 	WindModule *m;
 
-	RzList *ret = rz_list_newf (free);
+	RzList *ret = rz_list_newf(free);
 	if (!ret) {
 		return NULL;
 	}
 
-	RzList *modules = winkd_list_modules (wctx);
+	RzList *modules = winkd_list_modules(wctx);
 	if (!modules) {
-		rz_list_free (ret);
+		rz_list_free(ret);
 		return NULL;
 	}
 
 	rz_list_foreach (modules, it, m) {
-		RzDebugMap *mod = RZ_NEW0 (RzDebugMap);
+		RzDebugMap *mod = RZ_NEW0(RzDebugMap);
 		if (!mod) {
-			rz_list_free (modules);
-			rz_list_free (ret);
+			rz_list_free(modules);
+			rz_list_free(ret);
 			return NULL;
 		}
 		mod->file = m->name;
 		mod->size = m->size;
 		mod->addr = m->addr;
 		mod->addr_end = m->addr + m->size;
-		rz_list_append (ret, mod);
+		rz_list_append(ret, mod);
 	}
 
-	rz_list_free (modules);
+	rz_list_free(modules);
 	return ret;
 }
 

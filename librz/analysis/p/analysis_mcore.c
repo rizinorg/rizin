@@ -6,16 +6,16 @@
 #include "../../asm/arch/mcore/mcore.h"
 
 static int mcore_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	mcore_handle handle = {0};
-	mcore_t* instr = NULL;
+	mcore_handle handle = { 0 };
+	mcore_t *instr = NULL;
 
-	if (mcore_init (&handle, buf, len)) {
-		eprintf ("[!] mcore: bad or invalid data.\n");
+	if (mcore_init(&handle, buf, len)) {
+		eprintf("[!] mcore: bad or invalid data.\n");
 		return -1;
 	}
 
 	op->size = 2;
-	if ((instr = mcore_next (&handle))) {
+	if ((instr = mcore_next(&handle))) {
 		op->type = instr->type;
 		switch (instr->type) {
 		case RZ_ANALYSIS_OP_TYPE_CALL:
@@ -38,13 +38,13 @@ static int mcore_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 		default:
 			break;
 		}
-		mcore_free (instr);
+		mcore_free(instr);
 	}
 	return op->size;
 }
 
 static bool set_reg_profile(RzAnalysis *analysis) {
-	const char *p = \
+	const char *p =
 		"=PC	pc\n"
 		"=SP	r1\n"
 		"=SR	sr\n"
@@ -106,7 +106,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	cr30  .32 184 0\n"
 		"gpr	cr31  .32 188 0\n"
 		"gpr	pc	.32 192 0\n";
-	return rz_reg_set_profile_string (analysis->reg, p);
+	return rz_reg_set_profile_string(analysis->reg, p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {

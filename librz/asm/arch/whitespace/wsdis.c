@@ -45,14 +45,14 @@ static int get_ws_suf_optype(const ut8 *buf, int len) {
 
 WS_API int get_ws_optype(const ut8 *buf, int len) {
 	const ut8 *ptr;
-	if (get_ws_pref_optype (buf, len) == WS_OP_PREF) {
+	if (get_ws_pref_optype(buf, len) == WS_OP_PREF) {
 		ptr = buf + 1;
-		while (get_ws_suf_optype (ptr, len - (ptr - buf)) == WS_OP_NOP) {
+		while (get_ws_suf_optype(ptr, len - (ptr - buf)) == WS_OP_NOP) {
 			ptr++;
 		}
-		return get_ws_suf_optype (ptr, len - (ptr - buf));
+		return get_ws_suf_optype(ptr, len - (ptr - buf));
 	}
-	return get_ws_pref_optype (buf, len);
+	return get_ws_pref_optype(buf, len);
 }
 
 WS_API const ut8 *get_ws_next_token(const ut8 *buf, int len) {
@@ -73,12 +73,12 @@ WS_API const ut8 *get_ws_next_token(const ut8 *buf, int len) {
 static st32 get_ws_val(const ut8 *buf, int len) {
 	ut8 sig;
 	int i, ret = 0;
-	const ut8 *tok = get_ws_next_token (buf, len);
+	const ut8 *tok = get_ws_next_token(buf, len);
 	sig = (*tok == '\t');
 	len -= (tok - buf) + 1;
 	for (i = 0; i < 30; i++) { // XXX : conceptually wrong
 		tok++;
-		tok = get_ws_next_token (tok, len);
+		tok = get_ws_next_token(tok, len);
 		if (!tok || *tok == 10) {
 			if (sig) {
 				return ret * (-1);
@@ -89,15 +89,15 @@ static st32 get_ws_val(const ut8 *buf, int len) {
 		ret = ret + (*tok == '\t');
 		len = len - (tok - buf) - 1;
 	}
-	return sig? ret * (-1): ret;
+	return sig ? ret * (-1) : ret;
 }
 
 WS_API int test_ws_token_exist(const ut8 *buf, ut8 token, int len) {
-	const ut8 *ptr = get_ws_next_token (buf, len);
+	const ut8 *ptr = get_ws_next_token(buf, len);
 	int size = 1;
 	while (ptr && *ptr != token && (len > 0)) {
 		len = len - (ptr - buf);
-		ptr = get_ws_next_token (ptr + 1, len - 1);
+		ptr = get_ws_next_token(ptr + 1, len - 1);
 		size++;
 	}
 	return size;
@@ -106,138 +106,138 @@ WS_API int test_ws_token_exist(const ut8 *buf, ut8 token, int len) {
 WS_API int wsdis(RzAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm = NULL;
 	const ut8 *ptr = buf;
-	switch (get_ws_optype (buf, len)) {
+	switch (get_ws_optype(buf, len)) {
 	case WS_OP_UNK:
 		return op->size = 0;
 	case WS_OP_NOP:
-		rz_strbuf_set (&op->buf_asm, "nop");
+		rz_strbuf_set(&op->buf_asm, "nop");
 		return op->size = 1;
 	case WS_OP_STACK:
 		ptr++;
-		if (!get_ws_next_token (ptr, len - 1)) {
+		if (!get_ws_next_token(ptr, len - 1)) {
 			return op->size = 0;
 		}
-		switch (*get_ws_next_token (ptr, len - 1)) {
+		switch (*get_ws_next_token(ptr, len - 1)) {
 		case ' ':
-			if (test_ws_token_exist (get_ws_next_token (ptr, len - 1), 10, len - 1) == -1) {
+			if (test_ws_token_exist(get_ws_next_token(ptr, len - 1), 10, len - 1) == -1) {
 				return op->size = 0;
 			}
-			int n = test_ws_token_exist (ptr - 1, 10, len);
-			rz_strbuf_set (&op->buf_asm, sdb_fmt ("push %d", n));
+			int n = test_ws_token_exist(ptr - 1, 10, len);
+			rz_strbuf_set(&op->buf_asm, sdb_fmt("push %d", n));
 			return op->size = n;
 		case 10:
-			ptr = get_ws_next_token (ptr, len - 1) + 1;
-			ptr = get_ws_next_token (ptr, len - (ptr - buf));
+			ptr = get_ws_next_token(ptr, len - 1) + 1;
+			ptr = get_ws_next_token(ptr, len - (ptr - buf));
 			if (!ptr) {
 				return op->size = 0;
 			}
 			switch (*ptr) {
 			case ' ':
-				rz_strbuf_set (&op->buf_asm, "dup");
+				rz_strbuf_set(&op->buf_asm, "dup");
 				break;
 			case '\t':
-				rz_strbuf_set (&op->buf_asm, "swap");
+				rz_strbuf_set(&op->buf_asm, "swap");
 				break;
 			case 10:
-				rz_strbuf_set (&op->buf_asm, "pop");
+				rz_strbuf_set(&op->buf_asm, "pop");
 				break;
 			}
 			return op->size = ptr - buf + 1;
 		case '\t':
-			ptr = get_ws_next_token (ptr, len - 1) + 1;
-			ptr = get_ws_next_token (ptr, len - (ptr - buf));
+			ptr = get_ws_next_token(ptr, len - 1) + 1;
+			ptr = get_ws_next_token(ptr, len - (ptr - buf));
 			if (!ptr) {
 				return op->size = 0;
 			}
 			switch (*ptr) {
 			case ' ':
-				rz_strbuf_set (&op->buf_asm, "copy");
+				rz_strbuf_set(&op->buf_asm, "copy");
 				break;
 			case 10:
-				rz_strbuf_set (&op->buf_asm, "slide");
+				rz_strbuf_set(&op->buf_asm, "slide");
 				break;
 			case '\t':
-				rz_strbuf_set (&op->buf_asm, "illegal_stack_t");
+				rz_strbuf_set(&op->buf_asm, "illegal_stack_t");
 				return op->size = ptr - buf + 1;
 			}
 			ptr++;
-			if (-1 == test_ws_token_exist (ptr, 10, len - (ptr - buf) - 1)) {
-				rz_strbuf_set (&op->buf_asm, "");
+			if (-1 == test_ws_token_exist(ptr, 10, len - (ptr - buf) - 1)) {
+				rz_strbuf_set(&op->buf_asm, "");
 				return op->size = 0;
 			}
-			if (rz_strbuf_length (&op->buf_asm) < 6) {
-				rz_strbuf_append (&op->buf_asm, sdb_fmt (" %d", get_ws_val (ptr, len - (ptr - buf) - 1)));
+			if (rz_strbuf_length(&op->buf_asm) < 6) {
+				rz_strbuf_append(&op->buf_asm, sdb_fmt(" %d", get_ws_val(ptr, len - (ptr - buf) - 1)));
 			}
-			return op->size = test_ws_token_exist (ptr, 10, len - (ptr - buf) - 1) + ptr - buf + 1; // +1?
+			return op->size = test_ws_token_exist(ptr, 10, len - (ptr - buf) - 1) + ptr - buf + 1; // +1?
 		}
 	case WS_OP_HEAP:
-		ptr = get_ws_next_token (ptr + 1, len - 1) + 1;
-		ptr = get_ws_next_token (ptr, len - (ptr - buf));
+		ptr = get_ws_next_token(ptr + 1, len - 1) + 1;
+		ptr = get_ws_next_token(ptr, len - (ptr - buf));
 		if (!ptr) {
 			return op->size = 0;
 		}
 		switch (*ptr) {
 		case ' ':
-			rz_strbuf_set (&op->buf_asm, "store");
+			rz_strbuf_set(&op->buf_asm, "store");
 			break;
 		case '\t':
-			rz_strbuf_set (&op->buf_asm, "load");
+			rz_strbuf_set(&op->buf_asm, "load");
 			break;
 		case 10:
-			rz_strbuf_set (&op->buf_asm, "illegal_heap");
+			rz_strbuf_set(&op->buf_asm, "illegal_heap");
 			break;
 		}
 		return op->size = ptr - buf + 1;
 	case WS_OP_IO:
-		ptr = get_ws_next_token (ptr + 1, len - 1) + 1;
-		ptr = get_ws_next_token (ptr, len - (ptr - buf));
+		ptr = get_ws_next_token(ptr + 1, len - 1) + 1;
+		ptr = get_ws_next_token(ptr, len - (ptr - buf));
 		if (!ptr) {
 			return op->size = 0;
 		}
 		switch (*ptr) {
 		case ' ':
 			ptr++;
-			ptr = get_ws_next_token (ptr, len - (ptr - buf));
+			ptr = get_ws_next_token(ptr, len - (ptr - buf));
 			if (!ptr) {
 				return op->size = 0;
 			}
 			switch (*ptr) {
 			case ' ':
-				rz_strbuf_set (&op->buf_asm, "putc");
+				rz_strbuf_set(&op->buf_asm, "putc");
 				return op->size = ptr - buf + 1;
 			case '\t':
-				rz_strbuf_set (&op->buf_asm, "puti");
+				rz_strbuf_set(&op->buf_asm, "puti");
 				return op->size = ptr - buf + 1;
 			}
 			break;
 		case '\t':
 			ptr++;
-			ptr = get_ws_next_token (ptr, len - (ptr - buf));
+			ptr = get_ws_next_token(ptr, len - (ptr - buf));
 			if (!ptr) {
 				return op->size = 0;
 			}
 			switch (*ptr) {
 			case ' ':
-				rz_strbuf_set (&op->buf_asm, "getc");
+				rz_strbuf_set(&op->buf_asm, "getc");
 				return op->size = ptr - buf + 1;
 			case '\t':
-				rz_strbuf_set (&op->buf_asm, "geti");
+				rz_strbuf_set(&op->buf_asm, "geti");
 				return op->size = ptr - buf + 1;
 			}
 		}
-		rz_strbuf_set (&op->buf_asm, "illegal_io");
+		rz_strbuf_set(&op->buf_asm, "illegal_io");
 		return op->size = ptr - buf + 1;
 		break;
 	case WS_OP_ARITH:
-		ptr = get_ws_next_token (ptr + 1, len - 1) + 1;
-		ptr = get_ws_next_token (ptr, len - (ptr - buf));
+		ptr = get_ws_next_token(ptr + 1, len - 1) + 1;
+		ptr = get_ws_next_token(ptr, len - (ptr - buf));
 		if (!ptr) {
 			return op->size = 0;
 		}
 		switch (*ptr) {
 		case ' ':
 			ptr++;
-			ptr = get_ws_next_token (ptr, len - (ptr - buf));
+			ptr = get_ws_next_token(ptr, len - (ptr - buf));
 			if (!ptr) {
 				return op->size = 0;
 			}
@@ -249,7 +249,7 @@ WS_API int wsdis(RzAsmOp *op, const ut8 *buf, int len) {
 			break;
 		case '\t':
 			ptr++;
-			ptr = get_ws_next_token (ptr, len - (ptr - buf));
+			ptr = get_ws_next_token(ptr, len - (ptr - buf));
 			if (!ptr) {
 				return op->size = 0;
 			}
@@ -264,56 +264,56 @@ WS_API int wsdis(RzAsmOp *op, const ut8 *buf, int len) {
 			break;
 		}
 		if (buf_asm) {
-			rz_strbuf_set (&op->buf_asm, buf_asm);
+			rz_strbuf_set(&op->buf_asm, buf_asm);
 		}
 		return op->size = ptr - buf + 1;
 	case WS_OP_FLOW:
-		ptr = get_ws_next_token (ptr + 1, len - 1);
-		if (!ptr) {											// evil
+		ptr = get_ws_next_token(ptr + 1, len - 1);
+		if (!ptr) { // evil
 			return op->size = 0;
 		}
 		switch (*ptr) {
 		case 10:
 			ptr++;
-			ptr = get_ws_next_token (ptr, len - (ptr - buf));
+			ptr = get_ws_next_token(ptr, len - (ptr - buf));
 			if (!ptr) {
 				return op->size = 0;
 			}
 			if (*ptr == 10) {
-				rz_strbuf_set (&op->buf_asm, "exit");
+				rz_strbuf_set(&op->buf_asm, "exit");
 			} else {
-				rz_strbuf_set (&op->buf_asm, "illegal_fl_lf");
+				rz_strbuf_set(&op->buf_asm, "illegal_fl_lf");
 			}
 			return op->size = ptr - buf + 1;
 		case '\t':
 			ptr++;
-			ptr = get_ws_next_token (ptr, len - (ptr - buf));
+			ptr = get_ws_next_token(ptr, len - (ptr - buf));
 			if (!ptr) {
 				return op->size = 0;
 			}
 			switch (*ptr) {
 			case 10:
-				rz_strbuf_set (&op->buf_asm, "ret");
+				rz_strbuf_set(&op->buf_asm, "ret");
 				return op->size = ptr - buf + 1;
 			case '\t':
-				rz_strbuf_set (&op->buf_asm, "jn");
+				rz_strbuf_set(&op->buf_asm, "jn");
 				break;
 			case ' ':
-				rz_strbuf_set (&op->buf_asm, "jz");
+				rz_strbuf_set(&op->buf_asm, "jz");
 				break;
 			}
 			ptr++;
-			if (-1 == test_ws_token_exist (ptr, 10, len - (ptr - buf))) {
-				rz_strbuf_set (&op->buf_asm, "");
+			if (-1 == test_ws_token_exist(ptr, 10, len - (ptr - buf))) {
+				rz_strbuf_set(&op->buf_asm, "");
 				return op->size = 0;
 			}
-			if (rz_strbuf_length (&op->buf_asm) == 2) {
-				rz_strbuf_append (&op->buf_asm, sdb_fmt (" %d", get_ws_val (ptr, len - (ptr - buf) - 1)));
+			if (rz_strbuf_length(&op->buf_asm) == 2) {
+				rz_strbuf_append(&op->buf_asm, sdb_fmt(" %d", get_ws_val(ptr, len - (ptr - buf) - 1)));
 			}
-			return op->size = ptr - buf + test_ws_token_exist (ptr, 10, len - (ptr - buf)) + 1;
+			return op->size = ptr - buf + test_ws_token_exist(ptr, 10, len - (ptr - buf)) + 1;
 		case ' ':
 			ptr++;
-			ptr = get_ws_next_token (ptr, len - (ptr - buf));
+			ptr = get_ws_next_token(ptr, len - (ptr - buf));
 			if (!ptr) {
 				return op->size = 0;
 			}
@@ -323,17 +323,17 @@ WS_API int wsdis(RzAsmOp *op, const ut8 *buf, int len) {
 			case ' ': buf_asm = "mark"; break;
 			}
 			ptr++;
-			if (-1 == test_ws_token_exist (ptr, 10, len - (ptr - buf))) {
-				rz_strbuf_set (&op->buf_asm, "invalid");
+			if (-1 == test_ws_token_exist(ptr, 10, len - (ptr - buf))) {
+				rz_strbuf_set(&op->buf_asm, "invalid");
 				return op->size = 0;
 			}
 			if (buf_asm) {
-				rz_strbuf_set (&op->buf_asm, buf_asm);
+				rz_strbuf_set(&op->buf_asm, buf_asm);
 			}
-			rz_strbuf_append (&op->buf_asm, sdb_fmt (" %d", get_ws_val (ptr, len - (ptr - buf) - 1)));
-			return op->size = ptr - buf + test_ws_token_exist (ptr, 10, len - (ptr - buf)) + 1;
+			rz_strbuf_append(&op->buf_asm, sdb_fmt(" %d", get_ws_val(ptr, len - (ptr - buf) - 1)));
+			return op->size = ptr - buf + test_ws_token_exist(ptr, 10, len - (ptr - buf)) + 1;
 		}
 	}
-	rz_strbuf_set (&op->buf_asm, "wtf");
+	rz_strbuf_set(&op->buf_asm, "wtf");
 	return op->size = 0;
 }

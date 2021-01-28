@@ -7,12 +7,12 @@
 #include <rz_bin.h>
 #include "nxo/nxo.h"
 
-#define NRO_OFF(x) (sizeof (NXOStart) + rz_offsetof (NROHeader, x))
-#define NRO_OFFSET_MODMEMOFF rz_offsetof (NXOStart, mod_memoffset)
+#define NRO_OFF(x)           (sizeof(NXOStart) + rz_offsetof(NROHeader, x))
+#define NRO_OFFSET_MODMEMOFF rz_offsetof(NXOStart, mod_memoffset)
 
 // starting at 0x10 (16th byte)
 typedef struct {
-	ut32 magic;  // NRO0
+	ut32 magic; // NRO0
 	ut32 unknown; // 4
 	ut32 size; // 8
 	ut32 unknown2; // 12
@@ -27,27 +27,27 @@ typedef struct {
 } NROHeader;
 
 static ut64 baddr(RzBinFile *bf) {
-	return bf? rz_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
+	return bf ? rz_buf_read_le32_at(bf->buf, NRO_OFFSET_MODMEMOFF) : 0;
 }
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 magic[4];
-	if (rz_buf_read_at (b, NRO_OFF (magic), magic, sizeof (magic)) == 4) {
-		return fileType (magic) != NULL;
+	if (rz_buf_read_at(b, NRO_OFF(magic), magic, sizeof(magic)) == 4) {
+		return fileType(magic) != NULL;
 	}
 	return false;
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	// XX bf->buf vs b :D this load_b
-	RzBinNXOObj *bin = RZ_NEW0 (RzBinNXOObj);
+	RzBinNXOObj *bin = RZ_NEW0(RzBinNXOObj);
 	if (bin) {
-		ut64 ba = baddr (bf);
-		bin->methods_list = rz_list_newf ((RzListFree)free);
-		bin->imports_list = rz_list_newf ((RzListFree)free);
-		bin->classes_list = rz_list_newf ((RzListFree)free);
-		ut32 mod0 = rz_buf_read_le32_at (b, NRO_OFFSET_MODMEMOFF);
-		parseMod (b, bin, mod0, ba);
+		ut64 ba = baddr(bf);
+		bin->methods_list = rz_list_newf((RzListFree)free);
+		bin->imports_list = rz_list_newf((RzListFree)free);
+		bin->classes_list = rz_list_newf((RzListFree)free);
+		ut32 mod0 = rz_buf_read_le32_at(b, NRO_OFFSET_MODMEMOFF);
+		parseMod(b, bin, mod0, ba);
 		*bin_obj = bin;
 	}
 	return true;
@@ -60,27 +60,27 @@ static RzBinAddr *binsym(RzBinFile *bf, int type) {
 static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = RZ_NEW0 (RzBinAddr))) {
+	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ptr->paddr = 0x80;
-		ptr->vaddr = ptr->paddr + baddr (bf);
-		rz_list_append (ret, ptr);
+		ptr->vaddr = ptr->paddr + baddr(bf);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
 
 static Sdb *get_sdb(RzBinFile *bf) {
-	Sdb *kv = sdb_new0 ();
-	sdb_num_set (kv, "nro_start.offset", 0, 0);
-	sdb_num_set (kv, "nro_start.size", 16, 0);
-	sdb_set (kv, "nro_start.format", "xxq unused mod_memoffset padding", 0);
-	sdb_num_set (kv, "nro_header.offset", 16, 0);
-	sdb_num_set (kv, "nro_header.size", 0x70, 0);
-	sdb_set (kv, "nro_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3", 0);
-	sdb_ns_set (bf->sdb, "info", kv);
+	Sdb *kv = sdb_new0();
+	sdb_num_set(kv, "nro_start.offset", 0, 0);
+	sdb_num_set(kv, "nro_start.size", 16, 0);
+	sdb_set(kv, "nro_start.format", "xxq unused mod_memoffset padding", 0);
+	sdb_num_set(kv, "nro_header.offset", 16, 0);
+	sdb_num_set(kv, "nro_header.size", 0x70, 0);
+	sdb_set(kv, "nro_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3", 0);
+	sdb_ns_set(bf->sdb, "info", kv);
 	return kv;
 }
 
@@ -91,104 +91,103 @@ static RzList *sections(RzBinFile *bf) {
 	if (!bf->o->info) {
 		return NULL;
 	}
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	ret->free = free;
 
-	ut64 ba = baddr (bf);
+	ut64 ba = baddr(bf);
 
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("header");
+	ptr->name = strdup("header");
 	ptr->size = 0x80;
 	ptr->vsize = 0x80;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;
 	ptr->add = false;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
-	int bufsz = rz_buf_size (bf->buf);
+	int bufsz = rz_buf_size(bf->buf);
 
-	ut32 mod0 = rz_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF);
+	ut32 mod0 = rz_buf_read_le32_at(bf->buf, NRO_OFFSET_MODMEMOFF);
 	if (mod0 && mod0 + 8 < bufsz) {
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ut32 mod0sz = rz_buf_read_le32_at (bf->buf, mod0 + 4);
-		ptr->name = strdup ("mod0");
+		ut32 mod0sz = rz_buf_read_le32_at(bf->buf, mod0 + 4);
+		ptr->name = strdup("mod0");
 		ptr->size = mod0sz;
 		ptr->vsize = mod0sz;
 		ptr->paddr = mod0;
 		ptr->vaddr = mod0 + ba;
 		ptr->perm = RZ_PERM_R; // rw-
 		ptr->add = false;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	} else {
-		eprintf ("Invalid MOD0 address\n");
+		eprintf("Invalid MOD0 address\n");
 	}
 
-	ut32 sig0 = rz_buf_read_le32_at (bf->buf, 0x18);
+	ut32 sig0 = rz_buf_read_le32_at(bf->buf, 0x18);
 	if (sig0 && sig0 + 8 < bufsz) {
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ut32 sig0sz = rz_buf_read_le32_at (bf->buf, sig0 + 4);
-		ptr->name = strdup ("sig0");
+		ut32 sig0sz = rz_buf_read_le32_at(bf->buf, sig0 + 4);
+		ptr->name = strdup("sig0");
 		ptr->size = sig0sz;
 		ptr->vsize = sig0sz;
 		ptr->paddr = sig0;
 		ptr->vaddr = sig0 + ba;
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	} else {
-		eprintf ("Invalid SIG0 address\n");
+		eprintf("Invalid SIG0 address\n");
 	}
 
 	// add text segment
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("text");
-	ptr->vsize = rz_buf_read_le32_at (b, NRO_OFF (text_size));
+	ptr->name = strdup("text");
+	ptr->vsize = rz_buf_read_le32_at(b, NRO_OFF(text_size));
 	ptr->size = ptr->vsize;
-	ptr->paddr = rz_buf_read_le32_at (b, NRO_OFF (text_memoffset));
+	ptr->paddr = rz_buf_read_le32_at(b, NRO_OFF(text_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
 	// add ro segment
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("ro");
-	ptr->vsize = rz_buf_read_le32_at (b, NRO_OFF (ro_size));
+	ptr->name = strdup("ro");
+	ptr->vsize = rz_buf_read_le32_at(b, NRO_OFF(ro_size));
 	ptr->size = ptr->vsize;
-	ptr->paddr = rz_buf_read_le32_at (b, NRO_OFF (ro_memoffset));
+	ptr->paddr = rz_buf_read_le32_at(b, NRO_OFF(ro_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = RZ_PERM_R; // r-x
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
 	// add data segment
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("data");
-	ptr->vsize = rz_buf_read_le32_at (b, NRO_OFF (data_size));
+	ptr->name = strdup("data");
+	ptr->vsize = rz_buf_read_le32_at(b, NRO_OFF(data_size));
 	ptr->size = ptr->vsize;
-	ptr->paddr = rz_buf_read_le32_at (b, NRO_OFF (data_memoffset));
+	ptr->paddr = rz_buf_read_le32_at(b, NRO_OFF(data_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = RZ_PERM_RW;
 	ptr->add = true;
-	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
-	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
-			rz_buf_read_le32_at (bf->buf, NRO_OFF (bss_size)));
-	rz_list_append (ret, ptr);
+	eprintf("Base Address 0x%08" PFMT64x "\n", ba);
+	eprintf("BSS Size 0x%08" PFMT64x "\n", (ut64)rz_buf_read_le32_at(bf->buf, NRO_OFF(bss_size)));
+	rz_list_append(ret, ptr);
 	return ret;
 }
 
@@ -197,7 +196,7 @@ static RzList *symbols(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RzBinNXOObj*) bf->o->bin_obj;
+	bin = (RzBinNXOObj *)bf->o->bin_obj;
 	return bin->methods_list;
 }
 
@@ -206,7 +205,7 @@ static RzList *imports(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RzBinNXOObj*) bf->o->bin_obj;
+	bin = (RzBinNXOObj *)bf->o->bin_obj;
 	return bin->imports_list;
 }
 
@@ -215,31 +214,31 @@ static RzList *libs(RzBinFile *bf) {
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 	ut8 magic[4];
-	rz_buf_read_at (bf->buf, NRO_OFF (magic), magic, sizeof (magic));
-	const char *ft = fileType (magic);
+	rz_buf_read_at(bf->buf, NRO_OFF(magic), magic, sizeof(magic));
+	const char *ft = fileType(magic);
 	if (!ft) {
 		ft = "nro";
 	}
-	ret->file = strdup (bf->file);
-	ret->rclass = strdup (ft);
-	ret->os = strdup ("switch");
-	ret->arch = strdup ("arm");
-	ret->machine = strdup ("Nintendo Switch");
-	ret->subsystem = strdup (ft);
-	if (!strncmp (ft, "nrr", 3)) {
-		ret->bclass = strdup ("program");
-		ret->type = strdup ("EXEC (executable file)");
-	} else if (!strncmp (ft, "nro", 3)) {
-		ret->bclass = strdup ("object");
-		ret->type = strdup ("OBJECT (executable code)");
+	ret->file = strdup(bf->file);
+	ret->rclass = strdup(ft);
+	ret->os = strdup("switch");
+	ret->arch = strdup("arm");
+	ret->machine = strdup("Nintendo Switch");
+	ret->subsystem = strdup(ft);
+	if (!strncmp(ft, "nrr", 3)) {
+		ret->bclass = strdup("program");
+		ret->type = strdup("EXEC (executable file)");
+	} else if (!strncmp(ft, "nro", 3)) {
+		ret->bclass = strdup("object");
+		ret->type = strdup("OBJECT (executable code)");
 	} else { // mod
-		ret->bclass = strdup ("library");
-		ret->type = strdup ("MOD (executable library)");
+		ret->bclass = strdup("library");
+		ret->type = strdup("MOD (executable library)");
 	}
 	ret->bits = 64;
 	ret->has_va = true;

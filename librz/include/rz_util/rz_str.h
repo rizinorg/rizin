@@ -19,16 +19,16 @@ typedef enum {
 	RZ_STRING_ENC_GUESS = 'g',
 } RzStrEnc;
 
-typedef int (*RzStrRangeCallback) (void *, int);
+typedef int (*RzStrRangeCallback)(void *, int);
 
-#define RZ_STR_ISEMPTY(x) (!(x) || !*(x))
+#define RZ_STR_ISEMPTY(x)    (!(x) || !*(x))
 #define RZ_STR_ISNOTEMPTY(x) ((x) && *(x))
-#define RZ_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
-#define rz_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
+#define RZ_STR_DUP(x)        ((x) ? strdup((x)) : NULL)
+#define rz_str_array(x, y)   ((y >= 0 && y < (sizeof(x) / sizeof(*x))) ? x[y] : "")
 RZ_API char *rz_str_repeat(const char *ch, int sz);
 RZ_API const char *rz_str_pad(const char ch, int len);
 RZ_API const char *rz_str_rstr(const char *base, const char *p);
-RZ_API const char *rz_strstr_ansi (const char *a, const char *b);
+RZ_API const char *rz_strstr_ansi(const char *a, const char *b);
 RZ_API const char *rz_str_rchr(const char *base, const char *p, int ch);
 RZ_API const char *rz_str_closer_chr(const char *b, const char *s);
 RZ_API int rz_str_bounds(const char *str, int *h);
@@ -56,11 +56,11 @@ RZ_API RzList *rz_str_split_list(char *str, const char *c, int n);
 RZ_API RzList *rz_str_split_duplist(const char *str, const char *c, bool trim);
 RZ_API RzList *rz_str_split_duplist_n(const char *str, const char *c, int n, bool trim);
 RZ_API size_t *rz_str_split_lines(char *str, size_t *count);
-RZ_API char* rz_str_replace(char *str, const char *key, const char *val, int g);
+RZ_API char *rz_str_replace(char *str, const char *key, const char *val, int g);
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);
 RZ_API char *rz_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
-#define rz_str_cpy(x,y) memmove ((x), (y), strlen (y) + 1);
-#define rz_str_cat(x,y) memmove ((x) + strlen (x), (y), strlen (y) + 1);
+#define rz_str_cpy(x, y) memmove((x), (y), strlen(y) + 1);
+#define rz_str_cat(x, y) memmove((x) + strlen(x), (y), strlen(y) + 1);
 RZ_API int rz_str_bits(char *strout, const ut8 *buf, int len, const char *bitz);
 RZ_API int rz_str_bits64(char *strout, ut64 in);
 RZ_API ut64 rz_str_bits_from_string(const char *buf, const char *bitz);
@@ -76,7 +76,7 @@ RZ_API int rz_str_arg_unescape(char *arg);
 RZ_API char **rz_str_argv(const char *str, int *_argc);
 RZ_API void rz_str_argv_free(char **argv);
 RZ_API char *rz_str_new(const char *str);
-RZ_API int rz_snprintf (char *string, int len, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
+RZ_API int rz_snprintf(char *string, int len, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
 RZ_API bool rz_str_is_ascii(const char *str);
 RZ_API char *rz_str_nextword(char *s, char ch);
 RZ_API bool rz_str_is_printable(const char *str);
@@ -132,14 +132,14 @@ RZ_API char *rz_str_dup(char *ptr, const char *string);
 RZ_API int rz_str_inject(char *begin, char *end, char *str, int maxlen);
 RZ_API int rz_str_delta(char *p, char a, char b);
 RZ_API void rz_str_filter(char *str, int len);
-RZ_API const char * rz_str_tok(const char *str1, const char b, size_t len);
+RZ_API const char *rz_str_tok(const char *str1, const char b, size_t len);
 RZ_API wchar_t *rz_str_mb_to_wc(const char *buf);
 RZ_API char *rz_str_wc_to_mb(const wchar_t *buf);
 RZ_API wchar_t *rz_str_mb_to_wc_l(const char *buf, int len);
 RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len);
 RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y);
 
-typedef void(*str_operation)(char *c);
+typedef void (*str_operation)(char *c);
 
 RZ_API int rz_str_do_until_token(str_operation op, char *str, const char tok);
 
@@ -184,16 +184,16 @@ RZ_API void rz_str_case(char *str, bool up);
 RZ_API void rz_str_trim_path(char *s);
 RZ_API ut8 rz_str_contains_macro(const char *input_value);
 RZ_API void rz_str_truncate_cmd(char *string);
-RZ_API char* rz_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
-				  const char *key, const char *val, int g);
+RZ_API char *rz_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
+	const char *key, const char *val, int g);
 RZ_API bool rz_str_glob(const char *str, const char *glob);
 RZ_API int rz_str_binstr2bin(const char *str, ut8 *out, int outlen);
 RZ_API char *rz_str_between(const char *str, const char *prefix, const char *suffix);
 RZ_API bool rz_str_startswith(const char *str, const char *needle);
 RZ_API bool rz_str_endswith(const char *str, const char *needle);
-RZ_API bool rz_str_isnumber (const char *str);
-RZ_API const char *rz_str_last (const char *in, const char *ch);
-RZ_API char* rz_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
+RZ_API bool rz_str_isnumber(const char *str);
+RZ_API const char *rz_str_last(const char *in, const char *ch);
+RZ_API char *rz_str_highlight(char *str, const char *word, const char *color, const char *color_reset);
 RZ_API char *rz_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted);
 RZ_API char *rz_str_from_ut64(ut64 val);
 RZ_API void rz_str_stripLine(char *str, const char *key);

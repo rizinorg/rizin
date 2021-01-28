@@ -3,15 +3,15 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
-#define BASE 36
-#define TMIN 1
-#define TMAX 26
-#define SKEW 38
-#define DAMP 700
-#define INITIAL_N 128
+#define BASE         36
+#define TMIN         1
+#define TMAX         26
+#define SKEW         38
+#define DAMP         700
+#define INITIAL_N    128
 #define INITIAL_BIAS 72
 
-int utf32len (ut32 *input) {
+int utf32len(ut32 *input) {
 	int i = 0;
 	while (*(input + i)) {
 		i++;
@@ -19,18 +19,18 @@ int utf32len (ut32 *input) {
 	return i;
 }
 
-ut8 *utf32toutf8 (ut32 *input) {
+ut8 *utf32toutf8(ut32 *input) {
 	if (!input) {
-		eprintf ("ERROR input is null\n");
+		eprintf("ERROR input is null\n");
 		return NULL;
 	}
 
 	int i = 0;
 	int j = 0;
-	int len = utf32len (input);
-	ut8 *result = calloc (4, len + 1);
+	int len = utf32len(input);
+	ut8 *result = calloc(4, len + 1);
 	if (!result) {
-		eprintf ("ERROR: out of memory\n");
+		eprintf("ERROR: out of memory\n");
 		return NULL;
 	}
 
@@ -54,8 +54,8 @@ ut8 *utf32toutf8 (ut32 *input) {
 			result[j] = 0xf0 | ((input[i] >> 18) & 0x7);
 			j += 4;
 		} else {
-			eprintf ("ERROR in toutf8. Seems like input is invalid\n");
-			free (result);
+			eprintf("ERROR in toutf8. Seems like input is invalid\n");
+			free(result);
 			return NULL;
 		}
 	}
@@ -64,20 +64,20 @@ ut8 *utf32toutf8 (ut32 *input) {
 	return result;
 }
 
-ut32 *utf8toutf32 (const ut8 *input) {
+ut32 *utf8toutf32(const ut8 *input) {
 	if (!input) {
-		eprintf ("ERROR input is null\n");
+		eprintf("ERROR input is null\n");
 		return NULL;
 	}
 
 	int i = 0;
 	int j = 0;
 	int val = 0;
-	int len = strlen ((const char *) input);
-	ut32 *result = calloc (strlen ((const char *) input) + 1, 4);
+	int len = strlen((const char *)input);
+	ut32 *result = calloc(strlen((const char *)input) + 1, 4);
 
 	if (!result) {
-		eprintf ("ERROR: out of memory\n");
+		eprintf("ERROR: out of memory\n");
 		return NULL;
 	}
 
@@ -87,22 +87,22 @@ ut32 *utf8toutf32 (const ut8 *input) {
 			i += 1;
 		} else if (input[i] >> 5 == 0x6) {
 			val = (((input[i] & 0x1f) << 6) & 0xfc0) |
-			(input[i + 1] & 0x3f);
+				(input[i + 1] & 0x3f);
 			i += 2;
 		} else if (input[i] >> 4 == 0xe) {
 			val = (((input[i] & 0xf) << 12) & 0xf000) |
-			(((input[i + 1] & 0x3f) << 6) & 0xffc0) |
-			(input[i + 2] & 0x3f);
+				(((input[i + 1] & 0x3f) << 6) & 0xffc0) |
+				(input[i + 2] & 0x3f);
 			i += 3;
 		} else if (input[i] >> 3 == 0x1e) {
 			val = (((input[i] & 0xf) << 18) & 0x1c0000) |
-			(((input[i + 1] & 0x3f) << 12) & 0x1ff000) |
-			(((input[i + 2] & 0x3f) << 6) & 0x1fffc0) |
-			(input[i + 3] & 0x3f);
+				(((input[i + 1] & 0x3f) << 12) & 0x1ff000) |
+				(((input[i + 2] & 0x3f) << 6) & 0x1fffc0) |
+				(input[i + 3] & 0x3f);
 			i += 4;
 		} else {
-			eprintf ("ERROR in toutf32. Seems like input is invalid.\n");
-			free (result);
+			eprintf("ERROR in toutf32. Seems like input is invalid.\n");
+			free(result);
 			return NULL;
 		}
 		result[j] = val;
@@ -112,10 +112,9 @@ ut32 *utf8toutf32 (const ut8 *input) {
 	return result;
 }
 
-
 ut32 adapt_bias(ut32 delta, unsigned n_points, int is_first) {
 	ut32 k = 0;
-	delta /= is_first? DAMP: 2;
+	delta /= is_first ? DAMP : 2;
 	delta += delta / n_points;
 
 	while (delta > ((BASE - TMIN) * TMAX) / 2) {
@@ -127,7 +126,7 @@ ut32 adapt_bias(ut32 delta, unsigned n_points, int is_first) {
 }
 
 char encode_digit(int c) {
-//	assert (c >= 0 && c <= BASE - TMIN);
+	//	assert (c >= 0 && c <= BASE - TMIN);
 	if (c > 25) {
 		return c + 22;
 	}
@@ -153,19 +152,19 @@ static ut32 encode_var_int(const ut32 bias, const ut32 delta, char *dst) {
 			break;
 		}
 
-		dst[i++] = encode_digit (t + (q - t) % (BASE - t));
+		dst[i++] = encode_digit(t + (q - t) % (BASE - t));
 
 		q = (q - t) / (BASE - t);
 		k += BASE;
 	}
 
-	dst[i++] = encode_digit (q);
+	dst[i++] = encode_digit(q);
 
 	return i;
 }
 
 static ut32 decode_digit(ut32 v) {
-	if (IS_DIGIT (v)) {
+	if (IS_DIGIT(v)) {
 		return v - 22;
 	}
 	if (v >= 'a' && v <= 'z') {
@@ -192,16 +191,16 @@ RZ_API char *rz_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 		return NULL;
 	}
 
-	actualsrc = utf8toutf32 (src);
+	actualsrc = utf8toutf32(src);
 	if (!actualsrc) {
 		return NULL;
 	}
 
-	len = utf32len (actualsrc);
+	len = utf32len(actualsrc);
 
-	dst = calloc (2 * len + 10, 1);
+	dst = calloc(2 * len + 10, 1);
 	if (!dst) {
-		free (actualsrc);
+		free(actualsrc);
 		return NULL;
 	}
 
@@ -228,8 +227,8 @@ RZ_API char *rz_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 		}
 
 		if ((m - n) > (UT32_MAX - delta) / (h + 1)) {
-			free (actualsrc);
-			free (dst);
+			free(actualsrc);
+			free(dst);
 			return NULL;
 		}
 
@@ -239,20 +238,20 @@ RZ_API char *rz_punycode_encode(const ut8 *src, int srclen, int *dstlen) {
 		for (si = 0; si < len; si++) {
 			if (actualsrc[si] < n) {
 				if (++delta == 0) {
-					free (actualsrc);
-					free (dst);
+					free(actualsrc);
+					free(dst);
 					return NULL;
 				}
 			} else if (actualsrc[si] == n) {
-				di += encode_var_int (bias, delta, &dst[di]);
-				bias = adapt_bias (delta, h + 1, h == b);
+				di += encode_var_int(bias, delta, &dst[di]);
+				bias = adapt_bias(delta, h + 1, h == b);
 				delta = 0;
 				h++;
 			}
 		}
 	}
 	*dstlen = di;
-	free (actualsrc);
+	free(actualsrc);
 	return dst;
 }
 
@@ -269,15 +268,15 @@ RZ_API char *rz_punycode_decode(const char *src, int srclen, int *dstlen) {
 		return NULL;
 	}
 
-	dst = calloc (2 * srclen + 10, 4);
+	dst = calloc(2 * srclen + 10, 4);
 	if (!dst) {
 		return NULL;
 	}
 
 	for (si = 0; si < srclen; si++) {
 		if (src[si] & 0x80) {
-			free (dst);
-			return NULL;       /*just return it*/
+			free(dst);
+			return NULL; /*just return it*/
 		}
 	}
 
@@ -299,15 +298,15 @@ RZ_API char *rz_punycode_decode(const char *src, int srclen, int *dstlen) {
 		org_i = i;
 
 		for (w = 1, k = BASE;; k += BASE) {
-			digit = decode_digit (src[si++]);
+			digit = decode_digit(src[si++]);
 
 			if (digit == UT32_MAX) {
-				free (dst);
+				free(dst);
 				return NULL;
 			}
 
 			if (digit > (UT32_MAX - i) / w) {
-				free (dst);
+				free(dst);
 				return NULL;
 			}
 
@@ -326,34 +325,34 @@ RZ_API char *rz_punycode_decode(const char *src, int srclen, int *dstlen) {
 			}
 
 			if (w > UT32_MAX / (BASE - t)) {
-				free (dst);
+				free(dst);
 				return NULL;
 			}
 
 			w *= BASE - t;
 		}
 
-		bias = adapt_bias (i - org_i, di + 1, org_i == 0);
+		bias = adapt_bias(i - org_i, di + 1, org_i == 0);
 
 		if (i / (di + 1) > UT32_MAX - n) {
-			free (dst);
+			free(dst);
 			return NULL;
 		}
 
 		n += i / (di + 1);
 		i %= (di + 1);
 
-		memmove (dst + i + 1, dst + i, (di - i) * sizeof(ut32));
+		memmove(dst + i + 1, dst + i, (di - i) * sizeof(ut32));
 		dst[i++] = n;
 	}
 
-	finaldst = utf32toutf8 (dst);
-	free (dst);
+	finaldst = utf32toutf8(dst);
+	free(dst);
 	if (finaldst) {
-		*dstlen = strlen ((const char *) finaldst);
+		*dstlen = strlen((const char *)finaldst);
 	} else {
-		eprintf ("ERROR: finaldst is null\n");
+		eprintf("ERROR: finaldst is null\n");
 		return NULL;
 	}
-	return (char *) finaldst;
+	return (char *)finaldst;
 }

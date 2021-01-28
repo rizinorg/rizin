@@ -9,7 +9,7 @@ static int null_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	return op->size = 1;
 }
 
-static bool null_set_reg_profile(RzAnalysis* analysis){
+static bool null_set_reg_profile(RzAnalysis *analysis) {
 	return rz_reg_set_profile_string(analysis->reg, "");
 }
 
@@ -18,7 +18,7 @@ RzAnalysisPlugin rz_analysis_plugin_null = {
 	.desc = "Fallback/Null analysis plugin",
 	.arch = "none",
 	.license = "LGPL3",
-	.bits = 8|16|32|64,	/* is this used? */
+	.bits = 8 | 16 | 32 | 64, /* is this used? */
 	.op = &null_analysis,
 	.set_reg_profile = &null_set_reg_profile,
 };

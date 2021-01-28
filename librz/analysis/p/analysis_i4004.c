@@ -7,7 +7,7 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
-#define	AVR_SOFTCAST(x,y)	((x)+((y)*0x100))
+#define AVR_SOFTCAST(x, y) ((x) + ((y)*0x100))
 
 static bool set_reg_profile(RzAnalysis *analysis) {
 	const char *p =
@@ -39,10 +39,9 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		/* stack */
 		"gpr	PC1	.64	34	0\n"
 		"gpr	PC2	.64	34	0\n"
-		"gpr	PC3	.64	34	0\n"
-		;
+		"gpr	PC3	.64	34	0\n";
 
-	return rz_reg_set_profile_string (analysis->reg, p);
+	return rz_reg_set_profile_string(analysis->reg, p);
 }
 
 /* That 3 is a hack */
@@ -88,8 +87,8 @@ static const char *i4004_f[16] = {
 	"invalid"
 };
 
-static int i4004_get_ins_len (ut8 hex) {
-	ut8 high = (hex & 0xf0)>>4;
+static int i4004_get_ins_len(ut8 hex) {
+	ut8 high = (hex & 0xf0) >> 4;
 	int ret = i4004_ins_len[high];
 	if (ret == 3) {
 		ret = (hex & 1) ? 1 : 2;
@@ -99,12 +98,12 @@ static int i4004_get_ins_len (ut8 hex) {
 
 static int i4004_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	char basm[128];
-	const size_t basz = sizeof (basm)-1;
-	int rlen = i4004_get_ins_len (*buf);
+	const size_t basz = sizeof(basm) - 1;
+	int rlen = i4004_get_ins_len(*buf);
 	if (!op) {
 		return 2;
 	}
-	ut8 high = (*buf & 0xf0)>>4;
+	ut8 high = (*buf & 0xf0) >> 4;
 	ut8 low = (*buf & 0xf);
 	basm[0] = 0;
 
@@ -126,11 +125,11 @@ static int i4004_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		break;
 	case 2:
 		if (rlen == 1) {
-			snprintf (basm, basz, "scr r%d", (low & 0xe));
+			snprintf(basm, basz, "scr r%d", (low & 0xe));
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			op->val = buf[1];
-			snprintf (basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
+			snprintf(basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
 		}
 		break;
 	case 3:
@@ -138,16 +137,16 @@ static int i4004_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-			snprintf (basm, basz, "fin r%d", (low & 0xe));
+			snprintf(basm, basz, "fin r%d", (low & 0xe));
 		}
 		break;
 	case 4:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = (ut16) (low<<8) | buf[1];
+		op->jump = (ut16)(low << 8) | buf[1];
 		break;
 	case 5: //snprintf (basm, basz, "jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = (ut16) (low<<8) | buf[1];
+		op->jump = (ut16)(low << 8) | buf[1];
 		op->fail = addr + rlen;
 		break;
 	case 6: //snprintf (basm, basz, "inc r%d", low); break;
@@ -180,22 +179,22 @@ static int i4004_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		//snprintf (basm, basz, "ldm %d", low); break;
 		break;
 	case 14:
-		strncpy (basm, i4004_e[low], basz);
+		strncpy(basm, i4004_e[low], basz);
 		basm[basz] = '\0';
 		break;
 	case 15:
-		strncpy (basm, i4004_f[low], basz);
+		strncpy(basm, i4004_f[low], basz);
 		basm[basz] = '\0';
-		if (!strcmp (basm, "dac")) {
+		if (!strcmp(basm, "dac")) {
 			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		}
 		break;
 	}
-	if (!strcmp (basm, "invalid")) {
+	if (!strcmp(basm, "invalid")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
-	} else if (!strcmp (basm, "ral")) {
+	} else if (!strcmp(basm, "ral")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
-	} else if (!strcmp (basm, "rar")) {
+	} else if (!strcmp(basm, "rar")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 	}
 	return op->size = rlen;

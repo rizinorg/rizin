@@ -3,8 +3,8 @@
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 #include <math.h>
-#define PI 3.1415
-#define O out[x + (y * size)]
+#define PI         3.1415
+#define O          out[x + (y * size)]
 #define USE_SINCOS 0
 
 // TODO: add support for colors
@@ -17,16 +17,16 @@ static void drawSectorLine(char *out, int size, int percent) {
 	double foo = 0.1;
 	for (i = (size - 1) / 2; i < (size - 3); i++) {
 		x = y = (size - 1) / 2;
-		x += cos (A) * foo + 1;
-		y += sin (A) * foo + 1;
+		x += cos(A) * foo + 1;
+		y += sin(A) * foo + 1;
 		foo += 1.1;
 		O = '.';
 	}
 }
 
 RZ_API int rz_print_pie(RzPrint *p, ut64 *values, int nvalues, int size) {
-	ut8 *nv = calloc (nvalues, sizeof (ut8));
-	char *out = calloc (size, size);
+	ut8 *nv = calloc(nvalues, sizeof(ut8));
+	char *out = calloc(size, size);
 	int i, x, y;
 	if (nv && out) {
 		ut64 total = 0;
@@ -49,8 +49,8 @@ RZ_API int rz_print_pie(RzPrint *p, ut64 *values, int nvalues, int size) {
 		float a = 0.0;
 		int s = size / 2;
 		while (a < 2 * PI) {
-			x = s * cos (a) + (size / 2);
-			y = s * sin (a) + (size / 2);
+			x = s * cos(a) + (size / 2);
+			y = s * sin(a) + (size / 2);
 			O = '.';
 			a += 0.1;
 		}
@@ -60,14 +60,14 @@ RZ_API int rz_print_pie(RzPrint *p, ut64 *values, int nvalues, int size) {
 		// draw portions
 		for (x = 0; x <= 2 * radius; x++) {
 			for (y = 0; y <= 2 * radius; y++) {
-				double distance = sqrt ((double)(x - radius) * (x - radius) + (y - radius) * (y - radius));
+				double distance = sqrt((double)(x - radius) * (x - radius) + (y - radius) * (y - radius));
 				O = (distance > radius - 0.5 && distance < radius + 0.5) ? 'x' : ' ';
 			}
 		}
 #endif
 		int amount = 0;
 		for (i = 0; i < nvalues; i++) {
-			drawSectorLine (out, size, nv[i] + amount);
+			drawSectorLine(out, size, nv[i] + amount);
 			amount += nv[i];
 		}
 
@@ -75,14 +75,14 @@ RZ_API int rz_print_pie(RzPrint *p, ut64 *values, int nvalues, int size) {
 		if (p && p->cb_printf) {
 			for (x = 0; x < size; x++) {
 				for (y = 0; y < size; y++) {
-					p->cb_printf ("%c%c", O, O);
+					p->cb_printf("%c%c", O, O);
 				}
-				p->cb_printf ("\n");
+				p->cb_printf("\n");
 			}
 		}
 	}
-	free (out);
-	free (nv);
+	free(out);
+	free(nv);
 	return 0;
 }
 #if 0

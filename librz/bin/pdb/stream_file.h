@@ -8,7 +8,7 @@
 /// pages_size = 0x1000 (default value)
 ////////////////////////////////////////////////////////////////////////////////
 int init_r_stream_file(RZ_STREAM_FILE *stream_file, RzBuffer *buf, int *pages,
-							  int pages_amount, int size, int page_size);
+	int pages_amount, int size, int page_size);
 
 // size by default = -1
 ///////////////////////////////////////////////////////////////////////////////

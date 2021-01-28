@@ -15,9 +15,9 @@ typedef struct _pic_midrange_op_args_val {
 	ut8 b;
 } PicMidrangeOpArgsVal;
 
-typedef void (*pic_midrange_inst_handler_t) (RzAnalysis *analysis, RzAnalysisOp *op,
-					     ut64 addr,
-					     PicMidrangeOpArgsVal *args);
+typedef void (*pic_midrange_inst_handler_t)(RzAnalysis *analysis, RzAnalysisOp *op,
+	ut64 addr,
+	PicMidrangeOpArgsVal *args);
 
 typedef struct _pic_midrange_op_analysis_info {
 	PicMidrangeOpcode opcode;
@@ -25,18 +25,18 @@ typedef struct _pic_midrange_op_analysis_info {
 	pic_midrange_inst_handler_t handler;
 } PicMidrangeOpAnalInfo;
 
-#define INST_HANDLER(OPCODE_NAME)                                            \
-	static void _inst__##OPCODE_NAME (RzAnalysis *analysis, RzAnalysisOp *op,          \
-					  ut64 addr,                         \
-					  PicMidrangeOpArgsVal *args)
-#define INST_DECL(NAME, ARGS)                                                \
-	{                                                                    \
-		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS,     \
-			_inst__##NAME                                        \
+#define INST_HANDLER(OPCODE_NAME) \
+	static void _inst__##OPCODE_NAME(RzAnalysis *analysis, RzAnalysisOp *op, \
+		ut64 addr, \
+		PicMidrangeOpArgsVal *args)
+#define INST_DECL(NAME, ARGS) \
+	{ \
+		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS, \
+			_inst__##NAME \
 	}
 
-#define e(frag) rz_strbuf_append (&op->esil, frag)
-#define ef(frag, ...) rz_strbuf_appendf (&op->esil, frag, __VA_ARGS__)
+#define e(frag)       rz_strbuf_append(&op->esil, frag)
+#define ef(frag, ...) rz_strbuf_appendf(&op->esil, frag, __VA_ARGS__)
 
 #define PIC_MIDRANGE_ESIL_SRAM_START (1 << 16)
 #define PIC_MIDRANGE_ESIL_CSTACK_TOP ((1 << 16) + (1 << 12))
@@ -45,547 +45,547 @@ typedef struct _pic_midrange_op_analysis_info {
 
 #define PIC_MIDRANGE_ESIL_OPTION_ADDR "0x95,_sram,+"
 
-#define PIC_MIDRANGE_ESIL_UPDATE_FLAGS                                       \
-	"$z,z,:=,"                                                            \
-	"7,$c,c,:=,"                                                           \
+#define PIC_MIDRANGE_ESIL_UPDATE_FLAGS \
+	"$z,z,:=," \
+	"7,$c,c,:=," \
 	"4,$c,dc,:=,"
 
-#define PIC_MIDRANGE_ESIL_LW_OP(O)                                           \
+#define PIC_MIDRANGE_ESIL_LW_OP(O) \
 	"0x%x,wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_FWF_OP(O)                                          \
-	"wreg," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O                            \
+#define PIC_MIDRANGE_ESIL_FWF_OP(O) \
+	"wreg," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O \
 	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_WWF_OP(O)                                          \
-	PIC_MIDRANGE_ESIL_BSR_ADDR                                           \
-	",[1],"                                                              \
+#define PIC_MIDRANGE_ESIL_WWF_OP(O) \
+	PIC_MIDRANGE_ESIL_BSR_ADDR \
+	",[1]," \
 	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_FWF_OP_C(O)                                        \
-	"c,wreg,"                                                            \
-	"+," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O                               \
+#define PIC_MIDRANGE_ESIL_FWF_OP_C(O) \
+	"c,wreg," \
+	"+," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O \
 	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_WWF_OP_C(O)                                        \
-	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O ","                       \
+#define PIC_MIDRANGE_ESIL_WWF_OP_C(O) \
+	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O "," \
 	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-INST_HANDLER (NOP) {}
+INST_HANDLER(NOP) {}
 
-INST_HANDLER (RETFIE) {
+INST_HANDLER(RETFIE) {
 	op->type = RZ_ANALYSIS_OP_TYPE_RET;
 }
 
-INST_HANDLER (OPTION) {
+INST_HANDLER(OPTION) {
 	op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 }
 
-INST_HANDLER (TRIS) {
+INST_HANDLER(TRIS) {
 	op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 }
 
-INST_HANDLER (RETURN) {
+INST_HANDLER(RETURN) {
 	op->type = RZ_ANALYSIS_OP_TYPE_RET;
-	e ("0x1f,stkptr,==,$z,?{,BREAK,},");
-	e ("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
-	e ("0x01,stkptr,-=,");
-	e ("0xff,stkptr,==,$z,?{,0x1f,stkptr,=,},");
+	e("0x1f,stkptr,==,$z,?{,BREAK,},");
+	e("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
+	e("0x01,stkptr,-=,");
+	e("0xff,stkptr,==,$z,?{,0x1f,stkptr,=,},");
 }
 
-INST_HANDLER (CALL) {
+INST_HANDLER(CALL) {
 	ut64 pclath;
 	op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-	rz_analysis_esil_reg_read (analysis->esil, "pclath", &pclath, NULL);
+	rz_analysis_esil_reg_read(analysis->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
-	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
-	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
-	e ("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
-	e ("0x01,stkptr,+=,");
-	ef ("0x%" PFMT64x ",_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
+	ef("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
+	e("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
+	e("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
+	e("0x01,stkptr,+=,");
+	ef("0x%" PFMT64x ",_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
 }
 
-INST_HANDLER (GOTO) {
+INST_HANDLER(GOTO) {
 	ut64 pclath;
 	op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-	rz_analysis_esil_reg_read (analysis->esil, "pclath", &pclath, NULL);
+	rz_analysis_esil_reg_read(analysis->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
-	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
+	ef("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
 }
 
-INST_HANDLER (BCF) {
+INST_HANDLER(BCF) {
 	ut8 mask = ~(1 << args->b);
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR
-	    ",[1],0x%x,&," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
-	    args->f, mask, args->f);
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR
+		",[1],0x%x,&," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
+		args->f, mask, args->f);
 }
 
-INST_HANDLER (BSF) {
+INST_HANDLER(BSF) {
 	ut8 mask = (1 << args->b);
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR
-	    ",[1],0x%x,|," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
-	    args->f, mask, args->f);
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR
+		",[1],0x%x,|," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
+		args->f, mask, args->f);
 }
 
-INST_HANDLER (BTFSC) {
-	ut8 mask = (1 << args->b);
-	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-	op->jump = addr + 4;
-	op->fail = addr + 2;
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,!,?{,0x%" PFMT64x ",pc,=,},",
-	    args->f, mask, op->jump);
-}
-
-INST_HANDLER (BTFSS) {
+INST_HANDLER(BTFSC) {
 	ut8 mask = (1 << args->b);
 	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,?{,0x%" PFMT64x ",pc,=,},", args->f,
-	    mask, op->jump);
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,!,?{,0x%" PFMT64x ",pc,=,},",
+		args->f, mask, op->jump);
 }
 
-INST_HANDLER (BRA) {
+INST_HANDLER(BTFSS) {
+	ut8 mask = (1 << args->b);
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+	op->jump = addr + 4;
+	op->fail = addr + 2;
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,?{,0x%" PFMT64x ",pc,=,},", args->f,
+		mask, op->jump);
+}
+
+INST_HANDLER(BRA) {
 	st16 branch = args->k;
 	op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 	branch |= ((branch & 0x100) ? 0xfe00 : 0);
 	op->jump = addr + 2 * (branch + 1);
-	ef ("%s0x%x,1,+,2,*,pc,+=,", branch < 0 ? "-" : "",
-	    branch < 0 ? -branch : branch);
+	ef("%s0x%x,1,+,2,*,pc,+=,", branch < 0 ? "-" : "",
+		branch < 0 ? -branch : branch);
 }
 
-INST_HANDLER (BRW) {
+INST_HANDLER(BRW) {
 	ut64 wreg;
 	op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-	rz_analysis_esil_reg_read (analysis->esil, "wreg", &wreg, NULL);
+	rz_analysis_esil_reg_read(analysis->esil, "wreg", &wreg, NULL);
 	op->jump = addr + 2 * (wreg + 1);
-	e ("wreg,1,+,2,*,pc,+=,");
+	e("wreg,1,+,2,*,pc,+=,");
 }
 
-INST_HANDLER (CLR) {
+INST_HANDLER(CLR) {
 	if (args->d) {
-		ef ("0x00," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
+		ef("0x00," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
 	} else {
-		e ("0x00,wreg,=,");
+		e("0x00,wreg,=,");
 	}
-	e ("1,z,=,");
+	e("1,z,=,");
 }
 
-INST_HANDLER (SUBWF) {
+INST_HANDLER(SUBWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 	if (args->d) {
-		ef (PIC_MIDRANGE_ESIL_FWF_OP (-), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(-), args->f);
 	} else {
-		ef (PIC_MIDRANGE_ESIL_WWF_OP (-), args->f);
-		e ("wreg,0x00,-,wreg,=,c,!=,dc,!=,");
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(-), args->f);
+		e("wreg,0x00,-,wreg,=,c,!=,dc,!=,");
 	}
 }
 
-INST_HANDLER (DECFSZ) {
+INST_HANDLER(DECFSZ) {
 	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	if (args->d) {
-		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",-=[1],", args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",-=[1],", args->f);
 	} else {
-		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],-,wreg,=,",
-		    args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],-,wreg,=,",
+			args->f);
 	}
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
-	    op->jump);
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
+		op->jump);
 }
 
-INST_HANDLER (INCFSZ) {
+INST_HANDLER(INCFSZ) {
 	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	if (args->d) {
-		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",+=[1],", args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",+=[1],", args->f);
 	} else {
-		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],+,wreg,=,",
-		    args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],+,wreg,=,",
+			args->f);
 	}
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
-	    op->jump);
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
+		op->jump);
 }
 
-INST_HANDLER (INCF) {
+INST_HANDLER(INCF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 	if (args->d) {
-		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",+=[1],", args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",+=[1],", args->f);
 	} else {
-		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],+,wreg,=,",
-		    args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],+,wreg,=,",
+			args->f);
 	}
-	e ("$z,z,:=,");
+	e("$z,z,:=,");
 }
 
-INST_HANDLER (DECF) {
+INST_HANDLER(DECF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 	if (args->d) {
-		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",-=[1],", args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",-=[1],", args->f);
 	} else {
-		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],-,wreg,=,",
-		    args->f);
+		ef("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],-,wreg,=,",
+			args->f);
 	}
-	e ("$z,z,:=,");
+	e("$z,z,:=,");
 }
 
-INST_HANDLER (IORWF) {
+INST_HANDLER(IORWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_OR;
 	if (args->d) {
-		ef (PIC_MIDRANGE_ESIL_FWF_OP (|), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(|), args->f);
 	} else {
-		ef (PIC_MIDRANGE_ESIL_WWF_OP (|), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(|), args->f);
 	}
 }
 
-INST_HANDLER (ANDWF) {
+INST_HANDLER(ANDWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_AND;
 	if (args->d) {
-		ef (PIC_MIDRANGE_ESIL_FWF_OP (&), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(&), args->f);
 	} else {
-		ef (PIC_MIDRANGE_ESIL_WWF_OP (&), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(&), args->f);
 	}
 }
 
-INST_HANDLER (XORWF) {
+INST_HANDLER(XORWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 	if (args->d) {
-		ef (PIC_MIDRANGE_ESIL_FWF_OP (^), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(^), args->f);
 	} else {
-		ef (PIC_MIDRANGE_ESIL_WWF_OP (^), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(^), args->f);
 	}
 }
 
-INST_HANDLER (ADDWF) {
+INST_HANDLER(ADDWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 	if (args->d) {
-		ef (PIC_MIDRANGE_ESIL_FWF_OP (+), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP(+), args->f);
 	} else {
-		ef (PIC_MIDRANGE_ESIL_WWF_OP (+), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP(+), args->f);
 	}
 }
 
-INST_HANDLER (SUBLW) {
+INST_HANDLER(SUBLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-	ef (PIC_MIDRANGE_ESIL_LW_OP (-), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(-), args->k);
 }
 
-INST_HANDLER (ADDLW) {
+INST_HANDLER(ADDLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-	ef (PIC_MIDRANGE_ESIL_LW_OP (+), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(+), args->k);
 }
 
-INST_HANDLER (IORLW) {
+INST_HANDLER(IORLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_OR;
-	ef (PIC_MIDRANGE_ESIL_LW_OP (|), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(|), args->k);
 }
 
-INST_HANDLER (ANDLW) {
+INST_HANDLER(ANDLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_AND;
-	ef (PIC_MIDRANGE_ESIL_LW_OP (&), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(&), args->k);
 }
 
-INST_HANDLER (XORLW) {
+INST_HANDLER(XORLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-	ef (PIC_MIDRANGE_ESIL_LW_OP (^), args->k);
+	ef(PIC_MIDRANGE_ESIL_LW_OP(^), args->k);
 }
 
-INST_HANDLER (MOVLW) {
+INST_HANDLER(MOVLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-	ef ("0x%x,wreg,=,", args->k);
+	ef("0x%x,wreg,=,", args->k);
 }
 
-INST_HANDLER (RETLW) {
+INST_HANDLER(RETLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_RET;
-	ef ("0x%x,wreg,=,", args->k);
-	e ("0x1f,stkptr,==,$z,?{,BREAK,},");
-	e ("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
-	e ("0x01,stkptr,-=,");
-	e ("0xff,stkptr,==,$z,?{,0x1f,stkptr,=,},");
+	ef("0x%x,wreg,=,", args->k);
+	e("0x1f,stkptr,==,$z,?{,BREAK,},");
+	e("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
+	e("0x01,stkptr,-=,");
+	e("0xff,stkptr,==,$z,?{,0x1f,stkptr,=,},");
 }
 
-INST_HANDLER (MOVLP) {
+INST_HANDLER(MOVLP) {
 	op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-	ef ("0x%x,pclath,=,", args->f);
+	ef("0x%x,pclath,=,", args->f);
 }
 
-INST_HANDLER (MOVLB) {
+INST_HANDLER(MOVLB) {
 	op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-	ef ("0x%x,bsr,=,", args->k);
+	ef("0x%x,bsr,=,", args->k);
 }
 
-INST_HANDLER (CALLW) {
+INST_HANDLER(CALLW) {
 	op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-	e ("8,pclath,<<,0x%x,+,wreg,2,*,pc,=,");
-	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
-	e ("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
-	e ("0x01,stkptr,+=,");
-	ef ("0x%" PFMT64x ",_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
+	e("8,pclath,<<,0x%x,+,wreg,2,*,pc,=,");
+	e("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
+	e("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
+	e("0x01,stkptr,+=,");
+	ef("0x%" PFMT64x ",_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
 }
 
-INST_HANDLER (MOVWF) {
+INST_HANDLER(MOVWF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-	ef ("wreg," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
+	ef("wreg," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
 }
 
-INST_HANDLER (MOVF) {
+INST_HANDLER(MOVF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 	if (args->d) {
-		ef (PIC_MIDRANGE_ESIL_BSR_ADDR
-		    ",[1]," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
-		    args->f, args->f);
+		ef(PIC_MIDRANGE_ESIL_BSR_ADDR
+			",[1]," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
+			args->f, args->f);
 	} else {
-		ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],wreg,=,", args->f);
+		ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],wreg,=,", args->f);
 	}
-	e ("$z,z,:=,");
+	e("$z,z,:=,");
 }
 
-INST_HANDLER (SWAPF) {
-	ef ("4," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,0x0f,&,", args->f);
-	ef ("4," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,0xf0,&,", args->f);
-	e ("|,");
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
+INST_HANDLER(SWAPF) {
+	ef("4," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,0x0f,&,", args->f);
+	ef("4," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,0xf0,&,", args->f);
+	e("|,");
+	ef(PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
 }
 
-INST_HANDLER (LSLF) {
+INST_HANDLER(LSLF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SHL;
-	ef ("7," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,c,=,", args->f);
+	ef("7," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,c,=,", args->f);
 	if (args->d) {
-		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],", args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],", args->f);
 	} else {
-		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,wreg,=,",
-		    args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,wreg,=,",
+			args->f);
 	}
-	e ("$z,z,:=,");
+	e("$z,z,:=,");
 }
 
-INST_HANDLER (LSRF) {
+INST_HANDLER(LSRF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SHR;
-	ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
+	ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
 	if (args->d) {
-		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],", args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],", args->f);
 	} else {
-		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,wreg,=,",
-		    args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,wreg,=,",
+			args->f);
 	}
-	e ("$z,z,:=,");
+	e("$z,z,:=,");
 }
 
-INST_HANDLER (ASRF) {
+INST_HANDLER(ASRF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SHR;
-	ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
-	ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,", args->f);
-	ef ("0x80," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,", args->f);
+	ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
+	ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,", args->f);
+	ef("0x80," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,", args->f);
 	if (args->d) {
-		ef ("|," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
+		ef("|," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
 	} else {
-		e ("|,wreg,=,");
+		e("|,wreg,=,");
 	}
-	e ("$z,z,:=,");
+	e("$z,z,:=,");
 }
 
-INST_HANDLER (RRF) {
+INST_HANDLER(RRF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ROR;
-	ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,", args->f);
+	ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,", args->f);
 	if (args->d) {
-		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],"
-		    "c," PIC_MIDRANGE_ESIL_BSR_ADDR ",|=[1],",
-		    args->f, args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],"
+		   "c," PIC_MIDRANGE_ESIL_BSR_ADDR ",|=[1],",
+			args->f, args->f);
 	} else {
-		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,wreg,=,"
-		    "c,wreg,|=[1],",
-		    args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,wreg,=,"
+		   "c,wreg,|=[1],",
+			args->f);
 	}
-	e ("c,=,");
+	e("c,=,");
 }
 
-INST_HANDLER (RLF) {
+INST_HANDLER(RLF) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ROL;
-	ef ("7," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,", args->f);
+	ef("7," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,", args->f);
 	if (args->d) {
-		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],"
-		    "c," PIC_MIDRANGE_ESIL_BSR_ADDR ",|=[1],",
-		    args->f, args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],"
+		   "c," PIC_MIDRANGE_ESIL_BSR_ADDR ",|=[1],",
+			args->f, args->f);
 	} else {
-		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,wreg,=,"
-		    "c,wreg,|=[1],",
-		    args->f);
+		ef("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],<<,wreg,=,"
+		   "c,wreg,|=[1],",
+			args->f);
 	}
-	e ("c,=,");
+	e("c,=,");
 }
 
-INST_HANDLER (COMF) {
+INST_HANDLER(COMF) {
 	if (args->d) {
-		ef ("0xff," PIC_MIDRANGE_ESIL_BSR_ADDR ",^=[1],", args->f);
+		ef("0xff," PIC_MIDRANGE_ESIL_BSR_ADDR ",^=[1],", args->f);
 	} else {
-		ef ("0xff," PIC_MIDRANGE_ESIL_BSR_ADDR ",^,wreg,=,", args->f);
+		ef("0xff," PIC_MIDRANGE_ESIL_BSR_ADDR ",^,wreg,=,", args->f);
 	}
-	e ("$z,z,:=,");
+	e("$z,z,:=,");
 }
 
-INST_HANDLER (RESET) {
+INST_HANDLER(RESET) {
 	op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 	op->jump = 0;
-	e ("0x0,pc,=,");
-	e ("0x1f,stkptr,=,");
+	e("0x0,pc,=,");
+	e("0x1f,stkptr,=,");
 }
 
-INST_HANDLER (ADDFSR) {
+INST_HANDLER(ADDFSR) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 	if (args->n == 0) {
-		ef ("0x%x,fsr0l,+=,", args->k);
-		e ("7,$c,?{,0x01,fsr0h,+=,},");
+		ef("0x%x,fsr0l,+=,", args->k);
+		e("7,$c,?{,0x01,fsr0h,+=,},");
 	} else {
-		ef ("0x%x,fsr1l,+=,", args->k);
-		e ("7,$c,?{,0x01,fsr1h,+=,},");
+		ef("0x%x,fsr1l,+=,", args->k);
+		e("7,$c,?{,0x01,fsr1h,+=,},");
 	}
 }
 
-INST_HANDLER (CLRWDT) {
-	e ("1,to,=,");
-	e ("1,pd,=,");
+INST_HANDLER(CLRWDT) {
+	e("1,to,=,");
+	e("1,pd,=,");
 }
 
-INST_HANDLER (SLEEP) {
-	e ("1,to,=,");
-	e ("0,pd,=,");
+INST_HANDLER(SLEEP) {
+	e("1,to,=,");
+	e("0,pd,=,");
 }
 
-INST_HANDLER (SUBWFB) {
+INST_HANDLER(SUBWFB) {
 	op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-	e ("c,!=,");
+	e("c,!=,");
 	if (args->d) {
-		ef (PIC_MIDRANGE_ESIL_FWF_OP_C (-), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP_C(-), args->f);
 	} else {
-		ef (PIC_MIDRANGE_ESIL_WWF_OP_C (-), args->f);
-		e ("wreg,0x00,-,wreg,=,c,!=,dc,!=,");
+		ef(PIC_MIDRANGE_ESIL_WWF_OP_C(-), args->f);
+		e("wreg,0x00,-,wreg,=,c,!=,dc,!=,");
 	}
 }
 
-INST_HANDLER (ADDWFC) {
+INST_HANDLER(ADDWFC) {
 	op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 	if (args->d) {
-		ef (PIC_MIDRANGE_ESIL_FWF_OP_C (+), args->f);
+		ef(PIC_MIDRANGE_ESIL_FWF_OP_C(+), args->f);
 	} else {
-		ef (PIC_MIDRANGE_ESIL_WWF_OP_C (+), args->f);
+		ef(PIC_MIDRANGE_ESIL_WWF_OP_C(+), args->f);
 	}
 }
 
-INST_HANDLER (MOVIW_1) {
+INST_HANDLER(MOVIW_1) {
 	if (args->n == 0) {
 		if (!(args->m & 2)) {
-			ef ("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
-			ef ("7,$c%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+			ef("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
+			ef("7,$c%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
+				(args->m & 1) ? "-" : "+");
 		}
-		e ("indf0,wreg,=,");
-		e ("$z,z,:=,");
+		e("indf0,wreg,=,");
+		e("$z,z,:=,");
 		if (args->m & 2) {
-			ef ("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
-			ef ("7,$c%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+			ef("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
+			ef("7,$c%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
+				(args->m & 1) ? "-" : "+");
 		}
 	} else {
 		if (!(args->m & 2)) {
-			ef ("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
-			ef ("7,$c%s,fsr1h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+			ef("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
+			ef("7,$c%s,fsr1h,%s,", (args->m & 1) ? ",!" : "",
+				(args->m & 1) ? "-" : "+");
 		}
-		e ("indf1,wreg,=,");
-		e ("$z,z,:=,");
+		e("indf1,wreg,=,");
+		e("$z,z,:=,");
 		if (args->m & 2) {
-			ef ("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
-			ef ("7,$c%s,fsr1h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
-		}
-	}
-}
-
-INST_HANDLER (MOVWI_1) {
-	if (args->n == 0) {
-		if (!(args->m & 2)) {
-			ef ("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
-			ef ("$c7%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
-		}
-		e ("wreg,indf0=,");
-		e ("$z,z,:=,");
-		if (args->m & 2) {
-			ef ("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
-			ef ("$c7%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
-		}
-	} else {
-		if (!(args->m & 2)) {
-			ef ("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
-			ef ("$c7,fsr1h,%s,", (args->m & 1) ? ",!" : "");
-		}
-		e ("wreg,indf1=,");
-		e ("$z,z,:=,");
-		if (args->m & 2) {
-			ef ("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
-			ef ("$c7%s,fsr1h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+			ef("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
+			ef("7,$c%s,fsr1h,%s,", (args->m & 1) ? ",!" : "",
+				(args->m & 1) ? "-" : "+");
 		}
 	}
 }
 
-INST_HANDLER (MOVIW_2) {
+INST_HANDLER(MOVWI_1) {
 	if (args->n == 0) {
-		e ("fsr0l,8,fsr0h,<<,+,");
+		if (!(args->m & 2)) {
+			ef("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
+			ef("$c7%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
+				(args->m & 1) ? "-" : "+");
+		}
+		e("wreg,indf0=,");
+		e("$z,z,:=,");
+		if (args->m & 2) {
+			ef("1,fsr0l,%s=,", (args->m & 1) ? "-" : "+");
+			ef("$c7%s,fsr0h,%s,", (args->m & 1) ? ",!" : "",
+				(args->m & 1) ? "-" : "+");
+		}
 	} else {
-		e ("fsr1l,8,fsr1h,<<,+,");
+		if (!(args->m & 2)) {
+			ef("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
+			ef("$c7,fsr1h,%s,", (args->m & 1) ? ",!" : "");
+		}
+		e("wreg,indf1=,");
+		e("$z,z,:=,");
+		if (args->m & 2) {
+			ef("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
+			ef("$c7%s,fsr1h,%s,", (args->m & 1) ? ",!" : "",
+				(args->m & 1) ? "-" : "+");
+		}
 	}
-	ef ("0x%x,+,[1],wreg,=,", args->k);
 }
 
-INST_HANDLER (MOVWI_2) {
-	e ("wreg,");
+INST_HANDLER(MOVIW_2) {
 	if (args->n == 0) {
-		e ("fsr0l,8,fsr0h,<<,+,");
+		e("fsr0l,8,fsr0h,<<,+,");
 	} else {
-		e ("fsr1l,8,fsr1h,<<,+,");
+		e("fsr1l,8,fsr1h,<<,+,");
 	}
-	e ("=[1],");
+	ef("0x%x,+,[1],wreg,=,", args->k);
+}
+
+INST_HANDLER(MOVWI_2) {
+	e("wreg,");
+	if (args->n == 0) {
+		e("fsr0l,8,fsr0h,<<,+,");
+	} else {
+		e("fsr1l,8,fsr1h,<<,+,");
+	}
+	e("=[1],");
 }
 
 #define PIC_MIDRANGE_OPINFO_LEN 52
 static const PicMidrangeOpAnalInfo pic_midrange_op_analysis_info[PIC_MIDRANGE_OPINFO_LEN] = {
-	INST_DECL (NOP, NONE),      INST_DECL (RETURN, NONE),
-	INST_DECL (RETFIE, NONE),   INST_DECL (OPTION, NONE),
-	INST_DECL (SLEEP, NONE),    INST_DECL (CLRWDT, NONE),
-	INST_DECL (TRIS, 2F),       INST_DECL (MOVWF, 7F),
-	INST_DECL (CLR, 1D_7F),     INST_DECL (SUBWF, 1D_7F),
-	INST_DECL (DECF, 1D_7F),    INST_DECL (IORWF, 1D_7F),
-	INST_DECL (ANDWF, 1D_7F),   INST_DECL (XORWF, 1D_7F),
-	INST_DECL (ADDWF, 1D_7F),   INST_DECL (MOVF, 1D_7F),
-	INST_DECL (COMF, 1D_7F),    INST_DECL (INCF, 1D_7F),
-	INST_DECL (DECFSZ, 1D_7F),  INST_DECL (RRF, 1D_7F),
-	INST_DECL (RLF, 1D_7F),     INST_DECL (SWAPF, 1D_7F),
-	INST_DECL (INCFSZ, 1D_7F),  INST_DECL (BCF, 3B_7F),
-	INST_DECL (BSF, 3B_7F),     INST_DECL (BTFSC, 3B_7F),
-	INST_DECL (BTFSS, 3B_7F),   INST_DECL (CALL, 11K),
-	INST_DECL (GOTO, 11K),      INST_DECL (MOVLW, 8K),
-	INST_DECL (RETLW, 8K),      INST_DECL (IORLW, 8K),
-	INST_DECL (ANDLW, 8K),      INST_DECL (XORLW, 8K),
-	INST_DECL (SUBLW, 8K),      INST_DECL (ADDLW, 8K),
-	INST_DECL (RESET, NONE),    INST_DECL (CALLW, NONE),
-	INST_DECL (BRW, NONE),      INST_DECL (MOVIW_1, 1N_2M),
-	INST_DECL (MOVWI_1, 1N_2M), INST_DECL (MOVLB, 4K),
-	INST_DECL (LSLF, 1D_7F),    INST_DECL (LSRF, 1D_7F),
-	INST_DECL (ASRF, 1D_7F),    INST_DECL (SUBWFB, 1D_7F),
-	INST_DECL (ADDWFC, 1D_7F),  INST_DECL (ADDFSR, 1N_6K),
-	INST_DECL (MOVLP, 7F),      INST_DECL (BRA, 9K),
-	INST_DECL (MOVIW_2, 1N_6K), INST_DECL (MOVWI_2, 1N_6K)
+	INST_DECL(NOP, NONE), INST_DECL(RETURN, NONE),
+	INST_DECL(RETFIE, NONE), INST_DECL(OPTION, NONE),
+	INST_DECL(SLEEP, NONE), INST_DECL(CLRWDT, NONE),
+	INST_DECL(TRIS, 2F), INST_DECL(MOVWF, 7F),
+	INST_DECL(CLR, 1D_7F), INST_DECL(SUBWF, 1D_7F),
+	INST_DECL(DECF, 1D_7F), INST_DECL(IORWF, 1D_7F),
+	INST_DECL(ANDWF, 1D_7F), INST_DECL(XORWF, 1D_7F),
+	INST_DECL(ADDWF, 1D_7F), INST_DECL(MOVF, 1D_7F),
+	INST_DECL(COMF, 1D_7F), INST_DECL(INCF, 1D_7F),
+	INST_DECL(DECFSZ, 1D_7F), INST_DECL(RRF, 1D_7F),
+	INST_DECL(RLF, 1D_7F), INST_DECL(SWAPF, 1D_7F),
+	INST_DECL(INCFSZ, 1D_7F), INST_DECL(BCF, 3B_7F),
+	INST_DECL(BSF, 3B_7F), INST_DECL(BTFSC, 3B_7F),
+	INST_DECL(BTFSS, 3B_7F), INST_DECL(CALL, 11K),
+	INST_DECL(GOTO, 11K), INST_DECL(MOVLW, 8K),
+	INST_DECL(RETLW, 8K), INST_DECL(IORLW, 8K),
+	INST_DECL(ANDLW, 8K), INST_DECL(XORLW, 8K),
+	INST_DECL(SUBLW, 8K), INST_DECL(ADDLW, 8K),
+	INST_DECL(RESET, NONE), INST_DECL(CALLW, NONE),
+	INST_DECL(BRW, NONE), INST_DECL(MOVIW_1, 1N_2M),
+	INST_DECL(MOVWI_1, 1N_2M), INST_DECL(MOVLB, 4K),
+	INST_DECL(LSLF, 1D_7F), INST_DECL(LSRF, 1D_7F),
+	INST_DECL(ASRF, 1D_7F), INST_DECL(SUBWFB, 1D_7F),
+	INST_DECL(ADDWFC, 1D_7F), INST_DECL(ADDFSR, 1N_6K),
+	INST_DECL(MOVLP, 7F), INST_DECL(BRA, 9K),
+	INST_DECL(MOVIW_2, 1N_6K), INST_DECL(MOVWI_2, 1N_6K)
 };
 
-static void analysis_pic_midrange_extract_args (ut16 instr,
-					    PicMidrangeOpArgs args,
-					    PicMidrangeOpArgsVal *args_val) {
+static void analysis_pic_midrange_extract_args(ut16 instr,
+	PicMidrangeOpArgs args,
+	PicMidrangeOpArgsVal *args_val) {
 
-	memset (args_val, 0, sizeof (PicMidrangeOpArgsVal));
+	memset(args_val, 0, sizeof(PicMidrangeOpArgsVal));
 
 	switch (args) {
 	case PIC_MIDRANGE_OP_ARGS_NONE: return;
@@ -633,30 +633,30 @@ static void analysis_pic_midrange_extract_args (ut16 instr,
 static RzIODesc *mem_sram = 0;
 static RzIODesc *mem_stack = 0;
 
-static RzIODesc *cpu_memory_map (RzIOBind *iob, RzIODesc *desc, ut32 addr,
-				ut32 size) {
-	char *mstr = rz_str_newf ("malloc://%d", size);
-	if (desc && iob->fd_get_name (iob->io, desc->fd)) {
-		iob->fd_remap (iob->io, desc->fd, addr);
+static RzIODesc *cpu_memory_map(RzIOBind *iob, RzIODesc *desc, ut32 addr,
+	ut32 size) {
+	char *mstr = rz_str_newf("malloc://%d", size);
+	if (desc && iob->fd_get_name(iob->io, desc->fd)) {
+		iob->fd_remap(iob->io, desc->fd, addr);
 	} else {
-		desc = iob->open_at (iob->io, mstr, RZ_PERM_RW, 0, addr);
+		desc = iob->open_at(iob->io, mstr, RZ_PERM_RW, 0, addr);
 	}
-	free (mstr);
+	free(mstr);
 	return desc;
 }
 
-static bool pic_midrange_reg_write (RzReg *reg, const char *regname, ut32 num) {
+static bool pic_midrange_reg_write(RzReg *reg, const char *regname, ut32 num) {
 	if (reg) {
-		RzRegItem *item = rz_reg_get (reg, regname, RZ_REG_TYPE_GPR);
+		RzRegItem *item = rz_reg_get(reg, regname, RZ_REG_TYPE_GPR);
 		if (item) {
-			rz_reg_set_value (reg, item, num);
+			rz_reg_set_value(reg, item, num);
 			return true;
 		}
 	}
 	return false;
 }
 
-static void analysis_pic_midrange_malloc (RzAnalysis *analysis, bool force) {
+static void analysis_pic_midrange_malloc(RzAnalysis *analysis, bool force) {
 	static bool init_done = false;
 
 	if (!init_done || force) {
@@ -664,52 +664,52 @@ static void analysis_pic_midrange_malloc (RzAnalysis *analysis, bool force) {
 		// We assume that code is already allocated with firmware
 		// image
 		mem_sram =
-			cpu_memory_map (&analysis->iob, mem_sram,
-					PIC_MIDRANGE_ESIL_SRAM_START, 0x1000);
+			cpu_memory_map(&analysis->iob, mem_sram,
+				PIC_MIDRANGE_ESIL_SRAM_START, 0x1000);
 		mem_stack =
-			cpu_memory_map (&analysis->iob, mem_stack,
-					PIC_MIDRANGE_ESIL_CSTACK_TOP, 0x20);
+			cpu_memory_map(&analysis->iob, mem_stack,
+				PIC_MIDRANGE_ESIL_CSTACK_TOP, 0x20);
 
-		pic_midrange_reg_write (analysis->reg, "_sram",
-					PIC_MIDRANGE_ESIL_SRAM_START);
-		pic_midrange_reg_write (analysis->reg, "_stack",
-					PIC_MIDRANGE_ESIL_CSTACK_TOP);
-		pic_midrange_reg_write (analysis->reg, "stkptr", 0x1f);
+		pic_midrange_reg_write(analysis->reg, "_sram",
+			PIC_MIDRANGE_ESIL_SRAM_START);
+		pic_midrange_reg_write(analysis->reg, "_stack",
+			PIC_MIDRANGE_ESIL_CSTACK_TOP);
+		pic_midrange_reg_write(analysis->reg, "stkptr", 0x1f);
 
 		init_done = true;
 	}
 }
 
-static int analysis_pic_midrange_op (RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
-				 const ut8 *buf, int len) {
+static int analysis_pic_midrange_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
+	const ut8 *buf, int len) {
 
 	ut16 instr;
 	int i;
 
-	analysis_pic_midrange_malloc (analysis, false);
+	analysis_pic_midrange_malloc(analysis, false);
 
 	if (!buf || len < 2) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		return op->size;
 	}
 
-	instr = rz_read_le16 (buf);
+	instr = rz_read_le16(buf);
 
 	// Default op params
 	op->size = 2;
 	op->cycles = 1;
 	op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 
-	PicMidrangeOpcode opcode = pic_midrange_get_opcode (instr);
+	PicMidrangeOpcode opcode = pic_midrange_get_opcode(instr);
 	PicMidrangeOpArgsVal args_val;
 
 	for (i = 0; i < PIC_MIDRANGE_OPINFO_LEN; i++) {
 		if (pic_midrange_op_analysis_info[i].opcode == opcode) {
-			analysis_pic_midrange_extract_args (
+			analysis_pic_midrange_extract_args(
 				instr, pic_midrange_op_analysis_info[i].args,
 				&args_val);
-			pic_midrange_op_analysis_info[i].handler (analysis, op, addr,
-							      &args_val);
+			pic_midrange_op_analysis_info[i].handler(analysis, op, addr,
+				&args_val);
 			break;
 		}
 	}
@@ -717,12 +717,12 @@ static int analysis_pic_midrange_op (RzAnalysis *analysis, RzAnalysisOp *op, ut6
 	return op->size;
 }
 
-static void pic18_cond_branch (RzAnalysisOp *op, ut64 addr, const ut8 *buf, char *flag) {
+static void pic18_cond_branch(RzAnalysisOp *op, ut64 addr, const ut8 *buf, char *flag) {
 	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0xff);
 	op->fail = addr + op->size;
 	op->cycles = 2;
-	rz_strbuf_setf (&op->esil, "%s,?,{,0x%" PFMT64x ",pc,=,}", flag, op->jump);
+	rz_strbuf_setf(&op->esil, "%s,?,{,0x%" PFMT64x ",pc,=,}", flag, op->jump);
 }
 
 static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -735,7 +735,7 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 	op->size = 2;
 	ut16 b = *(ut16 *)buf;
 	ut32 dword_instr = 0;
-	memcpy (&dword_instr, buf, RZ_MIN (sizeof (dword_instr), len));
+	memcpy(&dword_instr, buf, RZ_MIN(sizeof(dword_instr), len));
 	switch (b >> 9) {
 	case 0x76: //call
 		if (len < 4) {
@@ -749,21 +749,21 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 		return op->size;
 	};
 	switch (b >> 11) { //NEX_T
-	case 0x1b:	//rcall
+	case 0x1b: //rcall
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		return op->size;
 	case 0x1a: //bra
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->cycles = 2;
 		op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0x7ff);
-		rz_strbuf_setf (&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
+		rz_strbuf_setf(&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
 		return op->size;
 	}
 	switch (b >> 12) { //NOP,movff,BAF_T
-	case 0xf:	//nop
+	case 0xf: //nop
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->cycles = 1;
-		rz_strbuf_setf (&op->esil, ",");
+		rz_strbuf_setf(&op->esil, ",");
 		return op->size;
 	case 0xc: //movff
 		if (len < 4) {
@@ -787,29 +787,29 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 	};
 
 	switch (b >> 8) { //GOTO_T,N_T,K_T
-	case 0xe0:	//bz
-		pic18_cond_branch (op, addr, buf, "z");
+	case 0xe0: //bz
+		pic18_cond_branch(op, addr, buf, "z");
 		return op->size;
 	case 0xe1: //bnz
-		pic18_cond_branch (op, addr, buf, "z,!");
+		pic18_cond_branch(op, addr, buf, "z,!");
 		return op->size;
 	case 0xe3: //bnc
-		pic18_cond_branch (op, addr, buf, "c,!");
+		pic18_cond_branch(op, addr, buf, "c,!");
 		return op->size;
 	case 0xe4: //bov
-		pic18_cond_branch (op, addr, buf, "ov");
+		pic18_cond_branch(op, addr, buf, "ov");
 		return op->size;
 	case 0xe5: //bnov
-		pic18_cond_branch (op, addr, buf, "ov,!");
+		pic18_cond_branch(op, addr, buf, "ov,!");
 		return op->size;
 	case 0xe6: //bn
-		pic18_cond_branch (op, addr, buf, "n");
+		pic18_cond_branch(op, addr, buf, "n");
 		return op->size;
 	case 0xe7: //bnn
-		pic18_cond_branch (op, addr, buf, "n,!");
+		pic18_cond_branch(op, addr, buf, "n,!");
 		return op->size;
 	case 0xe2: //bc
-		pic18_cond_branch (op, addr, buf, "c");
+		pic18_cond_branch(op, addr, buf, "c");
 		return op->size;
 	case 0xef: //goto
 		if (len < 4) {
@@ -821,55 +821,55 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 		op->size = 4;
 		op->cycles = 2;
 		op->jump = ((dword_instr & 0xff) | ((dword_instr & 0xfff0000) >> 8)) * 2;
-		rz_strbuf_setf (&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
+		rz_strbuf_setf(&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		return op->size;
 	case 0xf: //addlw
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->cycles = 1;
 		//TODO add support for dc flag
-		rz_strbuf_setf (&op->esil, "0x%x,wreg,+=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&op->esil, "0x%x,wreg,+=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xe: //movlw
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->cycles = 1;
-		rz_strbuf_setf (&op->esil, "0x%x,wreg,=,", *(ut16* )buf & 0xff);
+		rz_strbuf_setf(&op->esil, "0x%x,wreg,=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xd: //mullw
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		op->cycles = 1;
-		rz_strbuf_setf (&op->esil, "0x%x,wreg,*,prod,=", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&op->esil, "0x%x,wreg,*,prod,=", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xc: //retlw
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->cycles = 2;
-		rz_strbuf_setf (&op->esil, "0x%x,wreg,=,tos,pc,=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&op->esil, "0x%x,wreg,=,tos,pc,=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xb: //andlw
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		op->cycles = 1;
-		rz_strbuf_setf (&op->esil, "0x%x,wreg,&=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&op->esil, "0x%x,wreg,&=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xa: //xorlw
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		op->cycles = 1;
-		rz_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0x9: //iorlw
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		op->cycles = 1;
-		rz_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0x8: //sublw
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->cycles = 1;
 		//TODO add support for dc flag
-		rz_strbuf_setf (&op->esil, "wreg,0x%x,-,wreg,=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
+		rz_strbuf_setf(&op->esil, "wreg,0x%x,-,wreg,=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	};
 
 	switch (b >> 6) { //LFSR
-	case 0x3b8:       //lfsr
+	case 0x3b8: //lfsr
 		if (len < 4) {
 			goto beach;
 		}
@@ -881,21 +881,21 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 		return op->size;
 	};
 	switch (b >> 10) { //DAF_T
-	case 0x17:	//subwf
-	case 0x16:	//subwfb
-	case 0x15:	//subfwb
-	case 0x13:	//dcfsnz
-	case 0xb:	//decfsz
-	case 0x1:	//decf
+	case 0x17: //subwf
+	case 0x16: //subwfb
+	case 0x15: //subfwb
+	case 0x13: //dcfsnz
+	case 0xb: //decfsz
+	case 0x1: //decf
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		return op->size;
 	case 0x14: //movf
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		return op->size;
 	case 0x12: //infsnz
-	case 0xf:  //incfsz
-	case 0xa:  //incf
-	case 0x8:  //addwfc
+	case 0xf: //incfsz
+	case 0xa: //incf
+	case 0x8: //addwfc
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		return op->size;
 	case 0x9: //addwf
@@ -903,11 +903,11 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		return op->size;
 	case 0x11: //rlncf
-	case 0xd:  //rlcf
+	case 0xd: //rlcf
 		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
 		return op->size;
 	case 0x10: //rrncf
-	case 0xc:  //rrcf
+	case 0xc: //rrcf
 		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
 		return op->size;
 	case 0xe: //swapf
@@ -927,7 +927,7 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 		return op->size;
 	};
 	switch (b >> 9) { //AF_T
-	case 0x37:	//movwf
+	case 0x37: //movwf
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		return op->size;
 	case 0x36: //negf
@@ -951,25 +951,25 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 	case 0x10: //movlb
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->cycles = 1;
-		rz_strbuf_setf (&op->esil, "0x%x,bsr,=,", *(ut16 *)buf & 0xf);
+		rz_strbuf_setf(&op->esil, "0x%x,bsr,=,", *(ut16 *)buf & 0xf);
 		return op->size;
 	};
 	switch (b) {
 	case 0xff: //reset
-	case 0x7:  //daw
-	case 0x4:  //clwdt
-	case 0x3:  //sleep
+	case 0x7: //daw
+	case 0x4: //clwdt
+	case 0x3: //sleep
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 		return op->size;
 	case 0x13: //return
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->cycles = 2;
-		rz_strbuf_setf (&op->esil, "tos,pc,=,");
+		rz_strbuf_setf(&op->esil, "tos,pc,=,");
 		return op->size;
 	case 0x12: //return
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->cycles = 2;
-		rz_strbuf_setf (&op->esil, "tos,pc,=");
+		rz_strbuf_setf(&op->esil, "tos,pc,=");
 		return op->size;
 	case 0x11: //retfie
 	case 0x10: //retfie
@@ -996,7 +996,7 @@ static int analysis_pic_pic18_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 ad
 	case 0x0: //nop
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		op->cycles = 1;
-		rz_strbuf_setf (&op->esil, ",");
+		rz_strbuf_setf(&op->esil, ",");
 		return op->size;
 	};
 beach:
@@ -1004,8 +1004,8 @@ beach:
 	return op->size;
 }
 
-static bool analysis_pic_midrange_set_reg_profile (RzAnalysis *esil) {
-	const char *p = \
+static bool analysis_pic_midrange_set_reg_profile(RzAnalysis *esil) {
+	const char *p =
 		"=PC	pc\n"
 		"=SP	stkptr\n"
 		"=A0	porta\n"
@@ -1031,7 +1031,7 @@ static bool analysis_pic_midrange_set_reg_profile (RzAnalysis *esil) {
 		"gpr	stkptr	.8	14	0\n"
 		"gpr	_sram	.32 15	0\n"
 		"gpr	_stack	.32 19	0\n";
-	return rz_reg_set_profile_string (esil->reg, p);
+	return rz_reg_set_profile_string(esil->reg, p);
 }
 
 static bool analysis_pic_pic18_set_reg_profile(RzAnalysis *esil) {
@@ -1150,34 +1150,33 @@ static bool analysis_pic_pic18_set_reg_profile(RzAnalysis *esil) {
 		"gpr	stkptr	.8	96	0\n"
 		"gpr	tablat	.8	14	0\n";
 
-	return rz_reg_set_profile_string (esil->reg, p);
+	return rz_reg_set_profile_string(esil->reg, p);
 }
 
-
 static int analysis_pic_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	if (analysis->cpu && strcasecmp (analysis->cpu, "baseline") == 0) {
+	if (analysis->cpu && strcasecmp(analysis->cpu, "baseline") == 0) {
 		// TODO: implement
 		return -1;
 	}
-	if (analysis->cpu && strcasecmp (analysis->cpu, "midrange") == 0) {
-		return analysis_pic_midrange_op (analysis, op, addr, buf, len);
+	if (analysis->cpu && strcasecmp(analysis->cpu, "midrange") == 0) {
+		return analysis_pic_midrange_op(analysis, op, addr, buf, len);
 	}
-	if (analysis->cpu && strcasecmp (analysis->cpu, "pic18") == 0) {
-		return analysis_pic_pic18_op (analysis, op, addr, buf, len);
+	if (analysis->cpu && strcasecmp(analysis->cpu, "pic18") == 0) {
+		return analysis_pic_pic18_op(analysis, op, addr, buf, len);
 	}
 	return -1;
 }
 
 static bool analysis_pic_set_reg_profile(RzAnalysis *analysis) {
-	if (analysis->cpu && strcasecmp (analysis->cpu, "baseline") == 0) {
+	if (analysis->cpu && strcasecmp(analysis->cpu, "baseline") == 0) {
 		// TODO: We are using the midrange profile as the baseline
-		return analysis_pic_midrange_set_reg_profile (analysis);
+		return analysis_pic_midrange_set_reg_profile(analysis);
 	}
-	if (analysis->cpu && strcasecmp (analysis->cpu, "midrange") == 0) {
-		return analysis_pic_midrange_set_reg_profile (analysis);
+	if (analysis->cpu && strcasecmp(analysis->cpu, "midrange") == 0) {
+		return analysis_pic_midrange_set_reg_profile(analysis);
 	}
-	if (analysis->cpu && strcasecmp (analysis->cpu, "pic18") == 0) {
-		return analysis_pic_pic18_set_reg_profile (analysis);
+	if (analysis->cpu && strcasecmp(analysis->cpu, "pic18") == 0) {
+		return analysis_pic_pic18_set_reg_profile(analysis);
 	}
 	return false;
 }

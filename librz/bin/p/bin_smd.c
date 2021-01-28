@@ -96,31 +96,31 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 static bool check_buffer(RzBuffer *b) {
-	if (rz_buf_size (b) > 0x190) {
+	if (rz_buf_size(b) > 0x190) {
 		ut8 buf[4];
-		rz_buf_read_at (b, 0x100, buf, sizeof (buf));
-		return !memcmp (buf, "SEGA", 4);
+		rz_buf_read_at(b, 0x100, buf, sizeof(buf));
+		return !memcmp(buf, "SEGA", 4);
 	}
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb){
-	return check_buffer (b);
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer(b);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *ret = NULL;
-	if (!(ret = RZ_NEW0 (RzBinInfo))) {
+	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup (bf->file);
-	ret->type = strdup ("ROM");
-	ret->machine = strdup ("Sega Megadrive");
+	ret->file = strdup(bf->file);
+	ret->type = strdup("ROM");
+	ret->machine = strdup("Sega Megadrive");
 	ut8 tmp[32];
-	rz_buf_read_at (bf->buf, 0x100, tmp, sizeof (tmp));
-	ret->bclass = rz_str_ndup ((char *)tmp, 32);
-	ret->os = strdup ("smd");
-	ret->arch = strdup ("m68k");
+	rz_buf_read_at(bf->buf, 0x100, tmp, sizeof(tmp));
+	ret->bclass = rz_str_ndup((char *)tmp, 32);
+	ret->os = strdup("smd");
+	ret->arch = strdup("m68k");
 	ret->bits = 16;
 	ret->has_va = 1;
 	ret->big_endian = 1;
@@ -128,21 +128,21 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static void addsym(RzList *ret, const char *name, ut64 addr) {
-	RzBinSymbol *ptr = RZ_NEW0 (RzBinSymbol);
+	RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
 	if (!ptr) {
 		return;
 	}
-	ptr->name = strdup (name? name: "");
+	ptr->name = strdup(name ? name : "");
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
 	ptr->ordinal = 0;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 }
 
 static void showstr(const char *str, const ut8 *s, int len) {
-	char *msg = rz_str_ndup ((const char *) s, len);
-	eprintf ("%s: %s\n", str, msg);
-	free (msg);
+	char *msg = rz_str_ndup((const char *)s, len);
+	eprintf("%s: %s\n", str, msg);
+	free(msg);
 }
 
 static RzList *symbols(RzBinFile *bf) {
@@ -150,30 +150,30 @@ static RzList *symbols(RzBinFile *bf) {
 	const char *name = NULL;
 	int i;
 
-	if (!(ret = rz_list_newf (free))) {
+	if (!(ret = rz_list_newf(free))) {
 		return NULL;
 	}
 	SMD_Header hdr;
-	int left = rz_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
-	if (left < sizeof (SMD_Header)) {
+	int left = rz_buf_read_at(bf->buf, 0x100, (ut8 *)&hdr, sizeof(hdr));
+	if (left < sizeof(SMD_Header)) {
 		return NULL;
 	}
 	// TODO: store all this stuff in SDB
-	addsym (ret, "rom_start", rz_read_be32 (&hdr.RomStart));
-	addsym (ret, "rom_end", rz_read_be32 (&hdr.RomEnd));
-	addsym (ret, "ram_start", rz_read_be32 (&hdr.RamStart));
-	addsym (ret, "ram_end", rz_read_be32 (&hdr.RamEnd));
-	showstr ("Copyright", hdr.CopyRights, 32);
-	showstr ("DomesticName", hdr.DomesticName, 48);
-	showstr ("OverseasName", hdr.OverseasName, 48);
-	showstr ("ProductCode", hdr.ProductCode, 14);
-	eprintf ("Checksum: 0x%04x\n", (ut32) hdr.CheckSum);
-	showstr ("Peripherials", hdr.Peripherials, 16);
-	showstr ("SramCode", hdr.SramCode, 12);
-	showstr ("ModemCode", hdr.ModemCode, 12);
-	showstr ("CountryCode", hdr.CountryCode, 16);
+	addsym(ret, "rom_start", rz_read_be32(&hdr.RomStart));
+	addsym(ret, "rom_end", rz_read_be32(&hdr.RomEnd));
+	addsym(ret, "ram_start", rz_read_be32(&hdr.RamStart));
+	addsym(ret, "ram_end", rz_read_be32(&hdr.RamEnd));
+	showstr("Copyright", hdr.CopyRights, 32);
+	showstr("DomesticName", hdr.DomesticName, 48);
+	showstr("OverseasName", hdr.OverseasName, 48);
+	showstr("ProductCode", hdr.ProductCode, 14);
+	eprintf("Checksum: 0x%04x\n", (ut32)hdr.CheckSum);
+	showstr("Peripherials", hdr.Peripherials, 16);
+	showstr("SramCode", hdr.SramCode, 12);
+	showstr("ModemCode", hdr.ModemCode, 12);
+	showstr("CountryCode", hdr.CountryCode, 16);
 	ut32 vtable[64];
-	rz_buf_read_at (bf->buf, 0, (ut8*)&vtable, sizeof (ut32) * 64);
+	rz_buf_read_at(bf->buf, 0, (ut8 *)&vtable, sizeof(ut32) * 64);
 	/* parse vtable */
 	for (i = 0; i < 64; i++) {
 		switch (i) {
@@ -244,8 +244,8 @@ static RzList *symbols(RzBinFile *bf) {
 		default: name = NULL;
 		}
 		if (name && vtable[i]) {
-			ut32 addr = rz_read_be32 (&vtable[i]);
-			addsym (ret, name, addr);
+			ut32 addr = rz_read_be32(&vtable[i]);
+			addsym(ret, name, addr);
 		}
 	}
 	return ret;
@@ -253,66 +253,66 @@ static RzList *symbols(RzBinFile *bf) {
 
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	RzBinSection *ptr;
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("vtable");
+	ptr->name = strdup("vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
 	ptr->perm = RZ_PERM_R;
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("header");
+	ptr->name = strdup("header");
 	ptr->paddr = ptr->vaddr = 0x100;
-	ptr->size = ptr->vsize = sizeof (SMD_Header);
+	ptr->size = ptr->vsize = sizeof(SMD_Header);
 	ptr->perm = RZ_PERM_R;
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("text");
-	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
+	ptr->name = strdup("text");
+	ptr->paddr = ptr->vaddr = 0x100 + sizeof(SMD_Header);
 	{
-		SMD_Header hdr = {{0}};
-		rz_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
-		ut64 baddr = rz_read_be32 (&hdr.RomStart);
+		SMD_Header hdr = { { 0 } };
+		rz_buf_read_at(bf->buf, 0x100, (ut8 *)&hdr, sizeof(hdr));
+		ut64 baddr = rz_read_be32(&hdr.RomStart);
 		ptr->vaddr += baddr;
 	}
-	ptr->size = ptr->vsize = rz_buf_size (bf->buf) - ptr->paddr;
+	ptr->size = ptr->vsize = rz_buf_size(bf->buf) - ptr->paddr;
 	ptr->perm = RZ_PERM_RX;
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 	return ret;
 }
 
 static RzList *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
-	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
+	if (!(ptr = RZ_NEW0(RzBinAddr))) {
 		return ret;
 	}
-	if (bf->size < sizeof (SMD_Vectors)) {
-		eprintf ("ERR: binfile too small!\n");
-		ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
-		rz_list_append (ret, ptr);
+	if (bf->size < sizeof(SMD_Vectors)) {
+		eprintf("ERR: binfile too small!\n");
+		ptr->paddr = ptr->vaddr = 0x100 + sizeof(SMD_Header);
+		rz_list_append(ret, ptr);
 	} else {
 		SMD_Vectors vectors;
-		rz_buf_read_at (bf->buf, 0, (ut8*)&vectors, sizeof (vectors));
-		ptr->paddr = ptr->vaddr = rz_read_be32 (&vectors.Reset);
-		rz_list_append (ret, ptr);
+		rz_buf_read_at(bf->buf, 0, (ut8 *)&vectors, sizeof(vectors));
+		ptr->paddr = ptr->vaddr = rz_read_be32(&vectors.Reset);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }

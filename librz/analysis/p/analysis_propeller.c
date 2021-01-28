@@ -13,9 +13,9 @@ static int propeller_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 	int ret;
 	struct propeller_cmd cmd;
 
-	memset (&cmd, 0, sizeof (cmd));
+	memset(&cmd, 0, sizeof(cmd));
 
-	ret = op->size = propeller_decode_command (buf, &cmd);
+	ret = op->size = propeller_decode_command(buf, &cmd);
 
 	if (ret < 0) {
 		return ret;

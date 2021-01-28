@@ -8,7 +8,7 @@ extern "C" {
 typedef struct rz_type_enum {
 	const char *name;
 	const char *val;
-}RTypeEnum;
+} RTypeEnum;
 
 enum RTypeKind {
 	RZ_TYPE_BASIC = 0,
@@ -23,14 +23,14 @@ RZ_API void rz_type_del(Sdb *TDB, const char *name);
 RZ_API int rz_type_kind(Sdb *TDB, const char *name);
 RZ_API char *rz_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val);
 RZ_API char *rz_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val);
-RZ_API RzList* rz_type_get_enum (Sdb *TDB, const char *name);
-RZ_API ut64 rz_type_get_bitsize (Sdb *TDB, const char *type);
-RZ_API RzList* rz_type_get_by_offset(Sdb *TDB, ut64 offset);
+RZ_API RzList *rz_type_get_enum(Sdb *TDB, const char *name);
+RZ_API ut64 rz_type_get_bitsize(Sdb *TDB, const char *type);
+RZ_API RzList *rz_type_get_by_offset(Sdb *TDB, ut64 offset);
 RZ_API char *rz_type_get_struct_memb(Sdb *TDB, const char *type, int offset);
-RZ_API char *rz_type_link_at (Sdb *TDB, ut64 addr);
-RZ_API int rz_type_set_link (Sdb *TDB, const char *val, ut64 addr);
+RZ_API char *rz_type_link_at(Sdb *TDB, ut64 addr);
+RZ_API int rz_type_set_link(Sdb *TDB, const char *val, ut64 addr);
 RZ_API int rz_type_unlink(Sdb *TDB, ut64 addr);
-RZ_API int rz_type_link_offset (Sdb *TDB, const char *val, ut64 addr);
+RZ_API int rz_type_link_offset(Sdb *TDB, const char *val, ut64 addr);
 RZ_API char *rz_type_format(Sdb *TDB, const char *t);
 
 // Function prototypes api
@@ -47,4 +47,3 @@ RZ_API RZ_OWN char *rz_type_func_guess(Sdb *TDB, RZ_NONNULL char *func_name);
 #endif
 
 #endif //  RZ_CTYPES_H
-

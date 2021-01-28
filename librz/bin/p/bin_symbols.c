@@ -9,7 +9,7 @@
 #include "mach0/coresymbolication.h"
 
 // enable debugging messages
-#define D if (0)
+#define D              if (0)
 #define RZ_UUID_LENGTH 33
 
 typedef struct symbols_header_t {
@@ -43,17 +43,17 @@ typedef struct symbols_metadata_t { // 0x40
 static SymbolsHeader parseHeader(RzBuffer *buf) {
 	ut8 b[64];
 	SymbolsHeader sh = { 0 };
-	(void)rz_buf_read_at (buf, 0, b, sizeof (b));
-	sh.magic = rz_read_le32 (b);
-	sh.version = rz_read_le32 (b + 4);
+	(void)rz_buf_read_at(buf, 0, b, sizeof(b));
+	sh.magic = rz_read_le32(b);
+	sh.version = rz_read_le32(b + 4);
 	sh.valid = sh.magic == 0xff01ff02;
 	int i;
 	for (i = 0; i < 16; i++) {
 		sh.uuid[i] = b[24 + i];
 	}
-	sh.unk0 = rz_read_le16 (b + 0x28);
-	sh.unk1 = rz_read_le16 (b + 0x2c); // is slotsize + 1 :?
-	sh.slotsize = rz_read_le16 (b + 0x2e);
+	sh.unk0 = rz_read_le16(b + 0x28);
+	sh.unk1 = rz_read_le16(b + 0x2c); // is slotsize + 1 :?
+	sh.slotsize = rz_read_le16(b + 0x2e);
 	sh.size = 0x40;
 	return sh;
 }
@@ -86,18 +86,18 @@ static const char *subtypeString(int n) {
 static SymbolsMetadata parseMetadata(RzBuffer *buf, int off) {
 	SymbolsMetadata sm = { 0 };
 	ut8 b[0x100] = { 0 };
-	(void)rz_buf_read_at (buf, off, b, sizeof (b));
+	(void)rz_buf_read_at(buf, off, b, sizeof(b));
 	sm.addr = off;
-	sm.cputype = rz_read_le32 (b);
-	sm.arch = typeString (sm.cputype, &sm.bits);
+	sm.cputype = rz_read_le32(b);
+	sm.arch = typeString(sm.cputype, &sm.bits);
 	//  eprintf ("0x%08x  cputype  0x%x -> %s\n", 0x40, sm.cputype, typeString (sm.cputype));
 	// bits = (strstr (typeString (sm.cputype, &sm.bits), "64"))? 64: 32;
-	sm.subtype = rz_read_le32 (b + 4);
-	sm.cpu = subtypeString (sm.subtype);
+	sm.subtype = rz_read_le32(b + 4);
+	sm.cpu = subtypeString(sm.subtype);
 	//  eprintf ("0x%08x  subtype  0x%x -> %s\n", 0x44, sm.subtype, subtypeString (sm.subtype));
-	sm.n_segments = rz_read_le32 (b + 8);
+	sm.n_segments = rz_read_le32(b + 8);
 	// int count = rz_read_le32 (b + 0x48);
-	sm.namelen = rz_read_le32 (b + 0xc);
+	sm.namelen = rz_read_le32(b + 0xc);
 	// eprintf ("0x%08x  count    %d\n", 0x48, count);
 	// eprintf ("0x%08x  strlen   %d\n", 0x4c, sm.namelen);
 	// eprintf ("0x%08x  filename %s\n", 0x50, b + 16);
@@ -107,11 +107,11 @@ static SymbolsMetadata parseMetadata(RzBuffer *buf, int off) {
 
 	// hack to detect format
 	ut32 nm, nm2, nm3;
-	rz_buf_read_at (buf, off + sm.size, (ut8 *)&nm, sizeof (nm));
-	rz_buf_read_at (buf, off + sm.size + 4, (ut8 *)&nm2, sizeof (nm2));
-	rz_buf_read_at (buf, off + sm.size + 8, (ut8 *)&nm3, sizeof (nm3));
+	rz_buf_read_at(buf, off + sm.size, (ut8 *)&nm, sizeof(nm));
+	rz_buf_read_at(buf, off + sm.size + 4, (ut8 *)&nm2, sizeof(nm2));
+	rz_buf_read_at(buf, off + sm.size + 8, (ut8 *)&nm3, sizeof(nm3));
 	// eprintf ("0x%x next %x %x %x\n", off + sm.size, nm, nm2, nm3);
-	if (rz_read_le32 (&nm3) != 0xa1b22b1a) {
+	if (rz_read_le32(&nm3) != 0xa1b22b1a) {
 		sm.size -= 8;
 		//		is64 = true;
 	}
@@ -120,12 +120,12 @@ static SymbolsMetadata parseMetadata(RzBuffer *buf, int off) {
 
 static void printSymbolsHeader(SymbolsHeader sh) {
 	// eprintf ("0x%08x  version  0x%x\n", 4, sh.version);
-	eprintf ("0x%08x  uuid     ", 24);
+	eprintf("0x%08x  uuid     ", 24);
 	int i;
 	for (i = 0; i < 16; i++) {
-		eprintf ("%02x", sh.uuid[i]);
+		eprintf("%02x", sh.uuid[i]);
 	}
-	eprintf ("\n");
+	eprintf("\n");
 	// parse header
 	// eprintf ("0x%08x  unknown  0x%x\n", 0x28, sh.unk0); //rz_read_le32 (b+ 0x28));
 	// eprintf ("0x%08x  unknown  0x%x\n", 0x2c, sh.unk1); //rz_read_le16 (b+ 0x2c));
@@ -136,17 +136,17 @@ static RzBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect
 	if (!sect->name) {
 		return NULL;
 	}
-	RzBinSection *s = RZ_NEW0 (RzBinSection);
+	RzBinSection *s = RZ_NEW0(RzBinSection);
 	if (!s) {
 		return NULL;
 	}
-	s->name = rz_str_ndup (sect->name, 256);
+	s->name = rz_str_ndup(sect->name, 256);
 	s->size = sect->size;
 	s->vsize = s->size;
 	s->paddr = sect->paddr;
 	s->vaddr = sect->vaddr;
 	s->add = true;
-	s->perm = strstr (s->name, "TEXT") ? 5 : 4;
+	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = false;
 	return s;
 }
@@ -155,17 +155,17 @@ static RzBinSection *bin_section_from_segment(RzCoreSymCacheElementSegment *seg)
 	if (!seg->name) {
 		return NULL;
 	}
-	RzBinSection *s = RZ_NEW0 (RzBinSection);
+	RzBinSection *s = RZ_NEW0(RzBinSection);
 	if (!s) {
 		return NULL;
 	}
-	s->name = rz_str_ndup (seg->name, 16);
+	s->name = rz_str_ndup(seg->name, 16);
 	s->size = seg->size;
 	s->vsize = seg->vsize;
 	s->paddr = seg->paddr;
 	s->vaddr = seg->vaddr;
 	s->add = true;
-	s->perm = strstr (s->name, "TEXT") ? 5 : 4;
+	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = true;
 	return s;
 }
@@ -174,18 +174,18 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	if (!s->name && !s->mangled_name) {
 		return NULL;
 	}
-	RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
+	RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 	if (sym) {
 		if (s->name && s->mangled_name) {
-			sym->dname = strdup (s->name);
-			sym->name = strdup (s->mangled_name);
+			sym->dname = strdup(s->name);
+			sym->name = strdup(s->mangled_name);
 		} else if (s->name) {
-			sym->name = strdup (s->name);
+			sym->name = strdup(s->name);
 		} else if (s->mangled_name) {
 			sym->name = s->mangled_name;
 		}
 		sym->paddr = s->paddr;
-		sym->vaddr = rz_coresym_cache_element_pa2va (element, s->paddr);
+		sym->vaddr = rz_coresym_cache_element_pa2va(element, s->paddr);
 		sym->size = s->size;
 		sym->type = RZ_BIN_TYPE_FUNC_STR;
 		sym->bind = "NONE";
@@ -194,8 +194,8 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 }
 
 static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits) {
-	D eprintf ("Dragons at 0x%x\n", off);
-	ut64 size = rz_buf_size (buf);
+	D eprintf("Dragons at 0x%x\n", off);
+	ut64 size = rz_buf_size(buf);
 	if (off >= size) {
 		return NULL;
 	}
@@ -203,13 +203,13 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 	if (!size) {
 		return NULL;
 	}
-	ut8 *b = malloc (size);
+	ut8 *b = malloc(size);
 	if (!b) {
 		return NULL;
 	}
-	int available = rz_buf_read_at (buf, off, b, size);
+	int available = rz_buf_read_at(buf, off, b, size);
 	if (available != size) {
-		eprintf ("Warning: rz_buf_read_at failed\n");
+		eprintf("Warning: rz_buf_read_at failed\n");
 		return NULL;
 	}
 #if 0
@@ -236,32 +236,32 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 #endif
 	// eprintf ("Dragon's magic:\n");
 	int magicCombo = 0;
-	if (!memcmp ("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
+	if (!memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
 		magicCombo++;
 	}
-	if (!memcmp ("\x1a\x2b\xb2\xa1", b + 8, 4)) {
+	if (!memcmp("\x1a\x2b\xb2\xa1", b + 8, 4)) {
 		magicCombo++;
 	}
 	if (magicCombo != 2) {
 		// hack for C22F7494
-		available = rz_buf_read_at (buf, off - 8, b, size);
+		available = rz_buf_read_at(buf, off - 8, b, size);
 		if (available != size) {
-			eprintf ("Warning: rz_buf_read_at failed\n");
+			eprintf("Warning: rz_buf_read_at failed\n");
 			return NULL;
 		}
-		if (!memcmp ("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
+		if (!memcmp("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
 			off -= 8;
 		} else {
-			eprintf ("0x%08x  parsing error: invalid magic retry\n", off);
+			eprintf("0x%08x  parsing error: invalid magic retry\n", off);
 		}
 	}
-	D eprintf ("0x%08x  magic  OK\n", off);
+	D eprintf("0x%08x  magic  OK\n", off);
 	D {
-		const int e0ss = rz_read_le32 (b + 12);
-		eprintf ("0x%08x  eoss   0x%x\n", off + 12, e0ss);
+		const int e0ss = rz_read_le32(b + 12);
+		eprintf("0x%08x  eoss   0x%x\n", off + 12, e0ss);
 	}
-	free (b);
-	return rz_coresym_cache_element_new (bf, buf, off + 16, bits);
+	free(b);
+	return rz_coresym_cache_element_new(bf, buf, off + 16, bits);
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
@@ -284,14 +284,14 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 
 #endif
 	// 0 - magic check, version ...
-	SymbolsHeader sh = parseHeader (buf);
+	SymbolsHeader sh = parseHeader(buf);
 	if (!sh.valid) {
-		eprintf ("Invalid headers\n");
+		eprintf("Invalid headers\n");
 		return false;
 	}
-	printSymbolsHeader (sh);
-	SymbolsMetadata sm = parseMetadata (buf, 0x40);
-	RzCoreSymCacheElement *element = parseDragons (bf, buf, sm.addr + sm.size, sm.bits);
+	printSymbolsHeader(sh);
+	SymbolsMetadata sm = parseMetadata(buf, 0x40);
+	RzCoreSymCacheElement *element = parseDragons(bf, buf, sm.addr + sm.size, sm.bits);
 	if (element) {
 		*bin_obj = element;
 		return true;
@@ -300,22 +300,22 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 }
 
 static RzList *sections(RzBinFile *bf) {
-	RzList *res = rz_list_newf ((RzListFree)rz_bin_section_free);
-	rz_return_val_if_fail (res && bf->o && bf->o->bin_obj, res);
+	RzList *res = rz_list_newf((RzListFree)rz_bin_section_free);
+	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
 	for (i = 0; i < element->hdr->n_segments; i++) {
 		RzCoreSymCacheElementSegment *seg = &element->segments[i];
-		RzBinSection *s = bin_section_from_segment (seg);
+		RzBinSection *s = bin_section_from_segment(seg);
 		if (s) {
-			rz_list_append (res, s);
+			rz_list_append(res, s);
 		}
 	}
 	for (i = 0; i < element->hdr->n_sections; i++) {
 		RzCoreSymCacheElementSection *sect = &element->sections[i];
-		RzBinSection *s = bin_section_from_section (sect);
+		RzBinSection *s = bin_section_from_section(sect);
 		if (s) {
-			rz_list_append (res, s);
+			rz_list_append(res, s);
 		}
 	}
 	return res;
@@ -326,18 +326,18 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	SymbolsMetadata sm = parseMetadata (bf->buf, 0x40);
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+	SymbolsMetadata sm = parseMetadata(bf->buf, 0x40);
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup (bf->file);
-	ret->bclass = strdup ("symbols");
-	ret->os = strdup ("unknown");
-	ret->arch = sm.arch ? strdup (sm.arch) : NULL;
+	ret->file = strdup(bf->file);
+	ret->bclass = strdup("symbols");
+	ret->os = strdup("unknown");
+	ret->arch = sm.arch ? strdup(sm.arch) : NULL;
 	ret->bits = sm.bits;
-	ret->type = strdup ("Symbols file");
-	ret->subsystem = strdup ("llvm");
+	ret->type = strdup("Symbols file");
+	ret->subsystem = strdup("llvm");
 	ret->has_va = true;
 
 	return ret;
@@ -345,44 +345,44 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 buf[4];
-	rz_buf_read_at (b, 0, buf, sizeof (buf));
-	return !memcmp (buf, "\x02\xff\x01\xff", 4);
+	rz_buf_read_at(b, 0, buf, sizeof(buf));
+	return !memcmp(buf, "\x02\xff\x01\xff", 4);
 }
 
 static RzList *symbols(RzBinFile *bf) {
-	RzList *res = rz_list_newf ((RzListFree)rz_bin_symbol_free);
-	rz_return_val_if_fail (res && bf->o && bf->o->bin_obj, res);
+	RzList *res = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	rz_return_val_if_fail(res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
-	HtUU *hash = ht_uu_new0 ();
+	HtUU *hash = ht_uu_new0();
 	if (!hash) {
 		return res;
 	}
 	bool found = false;
 	for (i = 0; i < element->hdr->n_lined_symbols; i++) {
 		RzCoreSymCacheElementSymbol *sym = (RzCoreSymCacheElementSymbol *)&element->lined_symbols[i];
-		ht_uu_find (hash, sym->paddr, &found);
+		ht_uu_find(hash, sym->paddr, &found);
 		if (found) {
 			continue;
 		}
-		RzBinSymbol *s = bin_symbol_from_symbol (element, sym);
+		RzBinSymbol *s = bin_symbol_from_symbol(element, sym);
 		if (s) {
-			rz_list_append (res, s);
-			ht_uu_insert (hash, sym->paddr, 1);
+			rz_list_append(res, s);
+			ht_uu_insert(hash, sym->paddr, 1);
 		}
 	}
 	for (i = 0; i < element->hdr->n_symbols; i++) {
 		RzCoreSymCacheElementSymbol *sym = &element->symbols[i];
-		ht_uu_find (hash, sym->paddr, &found);
+		ht_uu_find(hash, sym->paddr, &found);
 		if (found) {
 			continue;
 		}
-		RzBinSymbol *s = bin_symbol_from_symbol (element, sym);
+		RzBinSymbol *s = bin_symbol_from_symbol(element, sym);
 		if (s) {
-			rz_list_append (res, s);
+			rz_list_append(res, s);
 		}
 	}
-	ht_uu_free (hash);
+	ht_uu_free(hash);
 	return res;
 }
 
@@ -391,11 +391,11 @@ static ut64 size(RzBinFile *bf) {
 }
 
 static void destroy(RzBinFile *bf) {
-	rz_coresym_cache_element_free (bf->o->bin_obj);
+	rz_coresym_cache_element_free(bf->o->bin_obj);
 }
 
 static void header(RzBinFile *bf) {
-	rz_return_if_fail (bf && bf->o);
+	rz_return_if_fail(bf && bf->o);
 
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	if (!element) {
@@ -404,32 +404,32 @@ static void header(RzBinFile *bf) {
 
 	RzBin *bin = bf->rbin;
 	PrintfCallback p = bin->cb_printf;
-	PJ *pj = pj_new ();
+	PJ *pj = pj_new();
 	if (!pj) {
 		return;
 	}
 
-	pj_o (pj);
-	pj_kn (pj, "cs_version", element->hdr->version);
-	pj_kn (pj, "size", element->hdr->size);
+	pj_o(pj);
+	pj_kn(pj, "cs_version", element->hdr->version);
+	pj_kn(pj, "size", element->hdr->size);
 	if (element->file_name) {
-		pj_ks (pj, "name", element->file_name);
+		pj_ks(pj, "name", element->file_name);
 	}
 	if (element->binary_version) {
-		pj_ks (pj, "version", element->binary_version);
+		pj_ks(pj, "version", element->binary_version);
 	}
 	char uuidstr[RZ_UUID_LENGTH];
-	rz_hex_bin2str (element->hdr->uuid, 16, uuidstr);
-	pj_ks (pj, "uuid", uuidstr);
-	pj_kn (pj, "segments", element->hdr->n_segments);
-	pj_kn (pj, "sections", element->hdr->n_sections);
-	pj_kn (pj, "symbols", element->hdr->n_symbols);
-	pj_kn (pj, "lined_symbols", element->hdr->n_lined_symbols);
-	pj_kn (pj, "line_info", element->hdr->n_line_info);
-	pj_end (pj);
+	rz_hex_bin2str(element->hdr->uuid, 16, uuidstr);
+	pj_ks(pj, "uuid", uuidstr);
+	pj_kn(pj, "segments", element->hdr->n_segments);
+	pj_kn(pj, "sections", element->hdr->n_sections);
+	pj_kn(pj, "symbols", element->hdr->n_symbols);
+	pj_kn(pj, "lined_symbols", element->hdr->n_lined_symbols);
+	pj_kn(pj, "line_info", element->hdr->n_line_info);
+	pj_end(pj);
 
-	p ("%s\n", pj_string (pj));
-	pj_free (pj);
+	p("%s\n", pj_string(pj));
+	pj_free(pj);
 }
 
 RzBinPlugin rz_bin_plugin_symbols = {

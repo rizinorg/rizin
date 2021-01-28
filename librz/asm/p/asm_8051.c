@@ -13,13 +13,13 @@
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int dlen = 0;
-	char *s = rz_8051_disas (a->pc, buf, len, &dlen);
+	char *s = rz_8051_disas(a->pc, buf, len, &dlen);
 	if (dlen < 0) {
 		dlen = 0;
 	}
 	if (s) {
-		rz_strbuf_set (&op->buf_asm, s);
-		free (s);
+		rz_strbuf_set(&op->buf_asm, s);
+		free(s);
 	}
 	op->size = dlen;
 	return dlen;

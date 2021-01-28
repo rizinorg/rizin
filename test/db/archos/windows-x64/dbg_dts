@@ -1,0 +1,26 @@
+NAME=continue backwards
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+e dbg.create_new_console=false
+ood
+db main
+3dc
+dr rflags=0x200 > /dev/null
+dr rflags,rax
+dts+
+7ds
+dr rflags,rax
+dcb
+dr rflags,rax
+doc
+EOF
+REGEXP_FILTER_OUT=(0x[0-9A-Za-z]+\n)
+EXPECT=<<EOF
+0x00000200
+0x00000001
+0x00000216
+0x0000001e
+0x00000200
+0x00000001
+EOF
+RUN

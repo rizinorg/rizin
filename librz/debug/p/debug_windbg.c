@@ -22,10 +22,12 @@
 #define DEBUG_DUMP_ACTIVE 1030
 #endif
 
-#define TIMEOUT 500
-#define THISCALL(dbginterface, function, ...) dbginterface->lpVtbl->function (dbginterface, __VA_ARGS__)
-#define ITHISCALL(dbginterface, function, ...) THISCALL (idbg->dbginterface, function, __VA_ARGS__)
-#define RELEASE(I) if (I) THISCALL (I, Release);
+#define TIMEOUT                                500
+#define THISCALL(dbginterface, function, ...)  dbginterface->lpVtbl->function(dbginterface, __VA_ARGS__)
+#define ITHISCALL(dbginterface, function, ...) THISCALL(idbg->dbginterface, function, __VA_ARGS__)
+#define RELEASE(I) \
+	if (I) \
+		THISCALL(I, Release);
 
 typedef struct { // Keep in sync with io_windbg.c
 	bool initialized;
@@ -43,7 +45,7 @@ typedef struct { // Keep in sync with io_windbg.c
 
 static bool __is_target_kernel(DbgEngContext *idbg) {
 	ULONG Class, Qualifier;
-	if (SUCCEEDED (ITHISCALL (dbgCtrl, GetDebuggeeType, &Class, &Qualifier))) {
+	if (SUCCEEDED(ITHISCALL(dbgCtrl, GetDebuggeeType, &Class, &Qualifier))) {
 		if (Class == DEBUG_CLASS_KERNEL) {
 			return true;
 		}
@@ -61,19 +63,19 @@ static int windbg_init(RzDebug *dbg) {
 
 static int windbg_step(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	idbg->lastExecutionStatus = DEBUG_STATUS_STEP_INTO;
-	return SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_INTO));
+	return SUCCEEDED(ITHISCALL(dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_INTO));
 }
 
 static int windbg_select(RzDebug *dbg, int pid, int tid) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG Id = tid;
-	if (!__is_target_kernel (idbg)) {
-		ITHISCALL (dbgSysObj, GetThreadIdBySystemId, tid, &Id);
+	if (!__is_target_kernel(idbg)) {
+		ITHISCALL(dbgSysObj, GetThreadIdBySystemId, tid, &Id);
 	}
-	if (SUCCEEDED (ITHISCALL (dbgSysObj, SetCurrentThreadId, Id))) {
+	if (SUCCEEDED(ITHISCALL(dbgSysObj, SetCurrentThreadId, Id))) {
 		return 1;
 	}
 	return 0;
@@ -81,9 +83,9 @@ static int windbg_select(RzDebug *dbg, int pid, int tid) {
 
 static int windbg_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	idbg->lastExecutionStatus = DEBUG_STATUS_GO;
-	ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_GO);
+	ITHISCALL(dbgCtrl, SetExecutionStatus, DEBUG_STATUS_GO);
 	return tid;
 }
 
@@ -116,8 +118,8 @@ static RzDebugReasonType exception_to_reason(DWORD ExceptionCode) {
 
 static int windbg_stop(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
-	return SUCCEEDED (ITHISCALL (dbgCtrl, SetInterrupt, DEBUG_INTERRUPT_ACTIVE));
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
+	return SUCCEEDED(ITHISCALL(dbgCtrl, SetInterrupt, DEBUG_INTERRUPT_ACTIVE));
 }
 
 static bool do_break = false;
@@ -125,35 +127,35 @@ static bool do_break = false;
 static void __break(void *user) {
 	RzDebug *dbg = (RzDebug *)user;
 	DbgEngContext *idbg = dbg->user;
-	if (__is_target_kernel (idbg)) {
-		windbg_stop (dbg);
+	if (__is_target_kernel(idbg)) {
+		windbg_stop(dbg);
 	}
 	do_break = true;
 }
 
 static int windbg_wait(RzDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG Type, ProcessId, ThreadId;
-	rz_cons_break_push (__break, dbg);
-	const ULONG timeout = __is_target_kernel (idbg) ? INFINITE : TIMEOUT;
+	rz_cons_break_push(__break, dbg);
+	const ULONG timeout = __is_target_kernel(idbg) ? INFINITE : TIMEOUT;
 	HRESULT hr;
-	while ((hr = ITHISCALL (dbgCtrl, WaitForEvent, DEBUG_WAIT_DEFAULT, timeout)) == S_FALSE) {
+	while ((hr = ITHISCALL(dbgCtrl, WaitForEvent, DEBUG_WAIT_DEFAULT, timeout)) == S_FALSE) {
 		if (do_break) {
-			ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_BREAK);
+			ITHISCALL(dbgCtrl, SetExecutionStatus, DEBUG_STATUS_BREAK);
 			do_break = false;
-			rz_cons_break_pop ();
+			rz_cons_break_pop();
 			return RZ_DEBUG_REASON_USERSUSP;
 		}
 	}
-	rz_cons_break_pop ();
-	if (FAILED (hr)) {
+	rz_cons_break_pop();
+	if (FAILED(hr)) {
 		return RZ_DEBUG_REASON_DEAD;
 	}
-	ITHISCALL (dbgCtrl, GetLastEventInformation, &Type, &ProcessId, &ThreadId, NULL, 0, NULL, NULL, 0, NULL);
-	if (!__is_target_kernel (idbg)) {
-		ITHISCALL (dbgSysObj, GetCurrentProcessSystemId, (PULONG)&dbg->pid);
-		ITHISCALL (dbgSysObj, GetCurrentThreadSystemId, (PULONG)&dbg->tid);
+	ITHISCALL(dbgCtrl, GetLastEventInformation, &Type, &ProcessId, &ThreadId, NULL, 0, NULL, NULL, 0, NULL);
+	if (!__is_target_kernel(idbg)) {
+		ITHISCALL(dbgSysObj, GetCurrentProcessSystemId, (PULONG)&dbg->pid);
+		ITHISCALL(dbgSysObj, GetCurrentThreadSystemId, (PULONG)&dbg->tid);
 	} else {
 		dbg->pid = ProcessId;
 		dbg->tid = ThreadId;
@@ -162,8 +164,7 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 	switch (Type) {
 	case 0:
 		// I dont really get why Type is zero here
-		if (idbg->lastExecutionStatus == DEBUG_STATUS_STEP_INTO
-			|| idbg->lastExecutionStatus == DEBUG_STATUS_STEP_OVER) {
+		if (idbg->lastExecutionStatus == DEBUG_STATUS_STEP_INTO || idbg->lastExecutionStatus == DEBUG_STATUS_STEP_OVER) {
 			ret = RZ_DEBUG_REASON_STEP;
 		} else {
 			ret = RZ_DEBUG_REASON_ERROR;
@@ -174,11 +175,11 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 		break;
 	case DEBUG_EVENT_EXCEPTION: {
 		EXCEPTION_RECORD64 exr;
-		ITHISCALL (dbgCtrl, GetLastEventInformation, &Type, &ProcessId, &ThreadId, &exr, sizeof (exr), NULL, NULL, 0, NULL);
-		dbg->reason.type = exception_to_reason (exr.ExceptionCode);
+		ITHISCALL(dbgCtrl, GetLastEventInformation, &Type, &ProcessId, &ThreadId, &exr, sizeof(exr), NULL, NULL, 0, NULL);
+		dbg->reason.type = exception_to_reason(exr.ExceptionCode);
 		dbg->reason.tid = dbg->tid;
 		dbg->reason.addr = exr.ExceptionAddress;
-		dbg->reason.timestamp = rz_time_now ();
+		dbg->reason.timestamp = rz_time_now();
 		ret = dbg->reason.type;
 		break;
 	}
@@ -198,10 +199,10 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 
 static int windbg_step_over(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	idbg->lastExecutionStatus = DEBUG_STATUS_STEP_OVER;
-	if (SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_OVER))) {
-		return windbg_wait (dbg, dbg->pid) != RZ_DEBUG_REASON_ERROR;
+	if (SUCCEEDED(ITHISCALL(dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_OVER))) {
+		return windbg_wait(dbg, dbg->pid) != RZ_DEBUG_REASON_ERROR;
 	}
 	return 0;
 }
@@ -209,23 +210,23 @@ static int windbg_step_over(RzDebug *dbg) {
 static int windbg_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	static volatile LONG bp_idx = 0;
 	RzDebug *dbg = bp->user;
-	rz_return_val_if_fail (dbg, 0);
+	rz_return_val_if_fail(dbg, 0);
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG type = b->hw ? DEBUG_BREAKPOINT_DATA : DEBUG_BREAKPOINT_CODE;
 	PDEBUG_BREAKPOINT bkpt;
-	if (FAILED (ITHISCALL (dbgCtrl, GetBreakpointById, b->internal, &bkpt))) {
+	if (FAILED(ITHISCALL(dbgCtrl, GetBreakpointById, b->internal, &bkpt))) {
 		HRESULT hr;
 		do {
-			b->internal = InterlockedIncrement (&bp_idx);
-			hr = ITHISCALL (dbgCtrl, AddBreakpoint, type, b->internal, &bkpt);
+			b->internal = InterlockedIncrement(&bp_idx);
+			hr = ITHISCALL(dbgCtrl, AddBreakpoint, type, b->internal, &bkpt);
 		} while (hr == E_INVALIDARG);
-		if (FAILED (hr)) {
+		if (FAILED(hr)) {
 			return 0;
 		}
 	}
 	ULONG flags;
-	THISCALL (bkpt, GetFlags, &flags);
+	THISCALL(bkpt, GetFlags, &flags);
 	flags = set ? flags | DEBUG_BREAKPOINT_ENABLED : flags & ~DEBUG_BREAKPOINT_ENABLED;
 	if (b->hw) {
 		ULONG access_type = 0;
@@ -242,18 +243,18 @@ static int windbg_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 			access_type |= DEBUG_BREAK_READ;
 			access_type |= DEBUG_BREAK_WRITE;
 		}
-		THISCALL (bkpt, SetDataParameters, b->size, access_type);
+		THISCALL(bkpt, SetDataParameters, b->size, access_type);
 	}
-	THISCALL (bkpt, SetFlags, flags);
-	THISCALL (bkpt, GetCurrentPassCount, (PULONG)&b->togglehits);
-	THISCALL (bkpt, SetOffset, b->addr);
+	THISCALL(bkpt, SetFlags, flags);
+	THISCALL(bkpt, GetCurrentPassCount, (PULONG)&b->togglehits);
+	THISCALL(bkpt, SetOffset, b->addr);
 	return 1;
 }
 
 static char *windbg_reg_profile(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
 	ULONG type;
-	if (!idbg || !idbg->initialized || FAILED (ITHISCALL (dbgCtrl, GetActualProcessorType, &type))) {
+	if (!idbg || !idbg->initialized || FAILED(ITHISCALL(dbgCtrl, GetActualProcessorType, &type))) {
 		if (dbg->bits & RZ_SYS_BITS_64) {
 #include "native/reg/windows-x64.h"
 		} else {
@@ -275,9 +276,9 @@ static char *windbg_reg_profile(RzDebug *dbg) {
 
 static int windbg_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG ptype;
-	if (!idbg || !idbg->initialized || FAILED (ITHISCALL (dbgCtrl, GetActualProcessorType, &ptype))) {
+	if (!idbg || !idbg->initialized || FAILED(ITHISCALL(dbgCtrl, GetActualProcessorType, &ptype))) {
 		return 0;
 	}
 	if (ptype == IMAGE_FILE_MACHINE_IA64 || ptype == IMAGE_FILE_MACHINE_AMD64) {
@@ -293,15 +294,15 @@ static int windbg_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		DWORD *b = (DWORD *)buf;
 		*b |= 0xff | CONTEXT_ARM;
 	}
-	if (SUCCEEDED (ITHISCALL (dbgAdvanced, GetThreadContext, (PVOID)buf, size))) {
+	if (SUCCEEDED(ITHISCALL(dbgAdvanced, GetThreadContext, (PVOID)buf, size))) {
 		return size;
 	}
 	return 0;
 }
 static int windbg_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
-	if (SUCCEEDED (ITHISCALL (dbgAdvanced, SetThreadContext, (PVOID)buf, size))) {
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
+	if (SUCCEEDED(ITHISCALL(dbgAdvanced, SetThreadContext, (PVOID)buf, size))) {
 		return size;
 	}
 	return 0;
@@ -309,21 +310,21 @@ static int windbg_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 
 static RzList *windbg_frames(RzDebug *dbg, ut64 at) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	const size_t frame_cnt = 128;
-	PDEBUG_STACK_FRAME dbgframes = RZ_NEWS (DEBUG_STACK_FRAME, frame_cnt);
+	PDEBUG_STACK_FRAME dbgframes = RZ_NEWS(DEBUG_STACK_FRAME, frame_cnt);
 	if (!dbgframes) {
 		return NULL;
 	}
 	ULONG frames_filled;
-	if (FAILED (ITHISCALL (dbgCtrl, GetStackTrace, 0, 0, 0, dbgframes, frame_cnt, &frames_filled))) {
-		free (dbgframes);
+	if (FAILED(ITHISCALL(dbgCtrl, GetStackTrace, 0, 0, 0, dbgframes, frame_cnt, &frames_filled))) {
+		free(dbgframes);
 		return NULL;
 	}
-	RzList *frames = rz_list_newf (free);
+	RzList *frames = rz_list_newf(free);
 	size_t i;
 	for (i = 0; i < frames_filled; i++) {
-		RzDebugFrame *f = RZ_NEW0 (RzDebugFrame);
+		RzDebugFrame *f = RZ_NEW0(RzDebugFrame);
 		if (!f) {
 			break;
 		}
@@ -331,96 +332,96 @@ static RzList *windbg_frames(RzDebug *dbg, ut64 at) {
 		f->bp = dbgframes[i].FrameOffset;
 		f->addr = dbgframes[i].ReturnOffset;
 		f->size = f->bp - f->sp;
-		rz_list_append (frames, f);
+		rz_list_append(frames, f);
 	}
 	return frames;
 }
 
 static RzList *windbg_modules_get(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG mod_cnt, mod_un_cnt;
-	if (FAILED (ITHISCALL (dbgSymbols, GetNumberModules, &mod_cnt, &mod_un_cnt))) {
+	if (FAILED(ITHISCALL(dbgSymbols, GetNumberModules, &mod_cnt, &mod_un_cnt))) {
 		return NULL;
 	}
 	if (!mod_cnt) {
 		return NULL;
 	}
-	PDEBUG_MODULE_PARAMETERS params = RZ_NEWS (DEBUG_MODULE_PARAMETERS, mod_cnt);
+	PDEBUG_MODULE_PARAMETERS params = RZ_NEWS(DEBUG_MODULE_PARAMETERS, mod_cnt);
 	if (!params) {
 		return NULL;
 	}
-	if (FAILED (ITHISCALL (dbgSymbols, GetModuleParameters, mod_cnt, 0, 0, params))) {
+	if (FAILED(ITHISCALL(dbgSymbols, GetModuleParameters, mod_cnt, 0, 0, params))) {
 		return NULL;
 	}
-	RzList *modules_list = rz_list_newf ((RzListFree)rz_debug_map_free);
+	RzList *modules_list = rz_list_newf((RzListFree)rz_debug_map_free);
 	if (!modules_list) {
 		return NULL;
 	}
 	size_t i;
 	for (i = 0; i < mod_cnt; i++) {
-		char *mod_name = malloc (params[i].ModuleNameSize);
-		char *image_name = malloc (params[i].ImageNameSize);
+		char *mod_name = malloc(params[i].ModuleNameSize);
+		char *image_name = malloc(params[i].ImageNameSize);
 		if (!mod_name || !image_name) {
-			free (mod_name);
-			free (image_name);
+			free(mod_name);
+			free(image_name);
 			break;
 		}
-		if (FAILED (
-			    ITHISCALL (dbgSymbols, GetModuleNames,
+		if (FAILED(
+			    ITHISCALL(dbgSymbols, GetModuleNames,
 				    DEBUG_ANY_ID, params[i].Base,
 				    image_name, params[i].ImageNameSize, NULL,
 				    mod_name, params[i].ModuleNameSize, NULL,
 				    NULL, 0, NULL))) {
-			free (mod_name);
-			free (image_name);
+			free(mod_name);
+			free(image_name);
 			break;
 		}
-		RzDebugMap *mod = rz_debug_map_new (mod_name, params[i].Base, params[i].Base + params[i].Size, 0, params[i].Size);
+		RzDebugMap *mod = rz_debug_map_new(mod_name, params[i].Base, params[i].Base + params[i].Size, 0, params[i].Size);
 		if (mod) {
-			mod->file = strdup (image_name);
-			rz_list_append (modules_list, mod);
+			mod->file = strdup(image_name);
+			rz_list_append(modules_list, mod);
 		}
-		free (mod_name);
-		free (image_name);
+		free(mod_name);
+		free(image_name);
 	}
 	return modules_list;
 }
 
 static RzList *windbg_map_get(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, NULL);
+	rz_return_val_if_fail(idbg && idbg->initialized, NULL);
 	int perm;
 	ULONG64 to = 0ULL;
 	MEMORY_BASIC_INFORMATION64 mbi;
-	RzList *mod_list = windbg_modules_get (dbg);
-	RzList *map_list = rz_list_newf ((RzListFree)rz_debug_map_free);
-	const int mod_cnt = mod_list ? rz_list_length (mod_list) : 0;
-	PIMAGE_NT_HEADERS64 h = RZ_NEWS (IMAGE_NT_HEADERS64, mod_cnt);
-	PIMAGE_SECTION_HEADER *s = RZ_NEWS0 (PIMAGE_SECTION_HEADER, mod_cnt);
+	RzList *mod_list = windbg_modules_get(dbg);
+	RzList *map_list = rz_list_newf((RzListFree)rz_debug_map_free);
+	const int mod_cnt = mod_list ? rz_list_length(mod_list) : 0;
+	PIMAGE_NT_HEADERS64 h = RZ_NEWS(IMAGE_NT_HEADERS64, mod_cnt);
+	PIMAGE_SECTION_HEADER *s = RZ_NEWS0(PIMAGE_SECTION_HEADER, mod_cnt);
 	RzListIter *it;
 	RzDebugMap *mod = NULL;
 	size_t i = 0;
 	rz_list_foreach (mod_list, it, mod) {
-		if (FAILED (ITHISCALL (dbgData, ReadImageNtHeaders, mod->addr, h + i))) {
-			memset (h + i, 0, sizeof (IMAGE_NT_HEADERS64));
+		if (FAILED(ITHISCALL(dbgData, ReadImageNtHeaders, mod->addr, h + i))) {
+			memset(h + i, 0, sizeof(IMAGE_NT_HEADERS64));
 		} else {
 			IMAGE_DOS_HEADER dos;
-			ITHISCALL (dbgData, ReadVirtual, mod->addr, (PVOID)&dos, sizeof (IMAGE_DOS_HEADER), NULL);
+			ITHISCALL(dbgData, ReadVirtual, mod->addr, (PVOID)&dos, sizeof(IMAGE_DOS_HEADER), NULL);
 			const size_t header_size = h[i].OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC
-				? sizeof (IMAGE_NT_HEADERS32)
-				: sizeof (IMAGE_NT_HEADERS64);
+				? sizeof(IMAGE_NT_HEADERS32)
+				: sizeof(IMAGE_NT_HEADERS64);
 			ULONG64 offset = mod->addr + dos.e_lfanew + header_size;
-			const ULONG size = sizeof (IMAGE_SECTION_HEADER) * h[i].FileHeader.NumberOfSections;
-			s[i] = malloc (size);
-			ITHISCALL (dbgData, ReadVirtual, offset, (PVOID)s[i], size, NULL);
+			const ULONG size = sizeof(IMAGE_SECTION_HEADER) * h[i].FileHeader.NumberOfSections;
+			s[i] = malloc(size);
+			ITHISCALL(dbgData, ReadVirtual, offset, (PVOID)s[i], size, NULL);
 		}
 		i++;
 	}
 	ULONG page_size = 1;
-	ITHISCALL (dbgCtrl, GetPageSize, &page_size);
+	ITHISCALL(dbgCtrl, GetPageSize, &page_size);
 	ULONG p_mask = page_size - 1;
-	while (SUCCEEDED (ITHISCALL (dbgData, QueryVirtual, to, &mbi))) {
+	while (SUCCEEDED(ITHISCALL(dbgData, QueryVirtual, to, &mbi))) {
 		to = mbi.BaseAddress + mbi.RegionSize;
 		perm = 0;
 		perm |= mbi.Protect & PAGE_READONLY ? RZ_PERM_R : 0;
@@ -447,7 +448,7 @@ static RzList *windbg_map_get(RzDebug *dbg) {
 					ut64 sect_vaddr = mod->addr + s[i][j].VirtualAddress;
 					ut64 sect_vsize = (((ut64)s[i][j].Misc.VirtualSize) + p_mask) & ~p_mask;
 					if (mbi.BaseAddress >= sect_vaddr && mbi.BaseAddress < sect_vaddr + sect_vsize) {
-						name = sdb_fmt ("%s | %.8s", mod->name, s[i][j].Name);
+						name = sdb_fmt("%s | %.8s", mod->name, s[i][j].Name);
 						break;
 					}
 				}
@@ -456,45 +457,45 @@ static RzList *windbg_map_get(RzDebug *dbg) {
 				}
 			}
 		}
-		RzDebugMap *map = rz_debug_map_new (name, mbi.BaseAddress, to, perm, 0);
-		rz_list_append (map_list, map);
+		RzDebugMap *map = rz_debug_map_new(name, mbi.BaseAddress, to, perm, 0);
+		rz_list_append(map_list, map);
 	}
 	for (i = 0; i < mod_cnt; i++) {
-		free (s[i]);
+		free(s[i]);
 	}
-	free (s);
-	free (h);
-	rz_list_free (mod_list);
+	free(s);
+	free(h);
+	rz_list_free(mod_list);
 	return map_list;
 }
 
 static int windbg_attach(RzDebug *dbg, int pid) {
 	ULONG Id = 0;
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, -1);
-	if (SUCCEEDED (ITHISCALL (dbgSysObj, GetCurrentProcessSystemId, &Id))) {
-		if (Id == pid && SUCCEEDED (ITHISCALL (dbgSysObj, GetCurrentThreadSystemId, &Id))) {
+	rz_return_val_if_fail(idbg && idbg->initialized, -1);
+	if (SUCCEEDED(ITHISCALL(dbgSysObj, GetCurrentProcessSystemId, &Id))) {
+		if (Id == pid && SUCCEEDED(ITHISCALL(dbgSysObj, GetCurrentThreadSystemId, &Id))) {
 			return Id;
 		}
 	}
-	if (SUCCEEDED (ITHISCALL (dbgClient, AttachProcess, idbg->server, pid, DEBUG_ATTACH_DEFAULT))) {
-		return windbg_wait (dbg, pid);
+	if (SUCCEEDED(ITHISCALL(dbgClient, AttachProcess, idbg->server, pid, DEBUG_ATTACH_DEFAULT))) {
+		return windbg_wait(dbg, pid);
 	}
 	return -1;
 }
 
 static int windbg_detach(RzDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
-	return SUCCEEDED (ITHISCALL (dbgClient, DetachProcesses));
+	rz_return_val_if_fail(idbg && idbg->initialized, 0);
+	return SUCCEEDED(ITHISCALL(dbgClient, DetachProcesses));
 }
 
 static bool windbg_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, false);
+	rz_return_val_if_fail(idbg && idbg->initialized, false);
 	if (!sig) {
 		ULONG exit_code, class, qualifier;
-		if (SUCCEEDED (ITHISCALL (dbgCtrl, GetDebuggeeType, &class, &qualifier))) {
+		if (SUCCEEDED(ITHISCALL(dbgCtrl, GetDebuggeeType, &class, &qualifier))) {
 			if (class == DEBUG_CLASS_UNINITIALIZED) {
 				return false;
 			}
@@ -502,98 +503,98 @@ static bool windbg_kill(RzDebug *dbg, int pid, int tid, int sig) {
 				return true;
 			}
 		}
-		if (FAILED (ITHISCALL (dbgClient, GetExitCode, &exit_code))) {
+		if (FAILED(ITHISCALL(dbgClient, GetExitCode, &exit_code))) {
 			return false;
 		}
 		return exit_code == STILL_ACTIVE;
 	}
-	HRESULT hr = ITHISCALL (dbgClient, TerminateProcesses);
-	return SUCCEEDED (hr);
+	HRESULT hr = ITHISCALL(dbgClient, TerminateProcesses);
+	return SUCCEEDED(hr);
 }
 
 static RzList *windbg_threads(RzDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, NULL);
+	rz_return_val_if_fail(idbg && idbg->initialized, NULL);
 	ULONG thread_cnt = 0;
-	ITHISCALL (dbgSysObj, GetNumberThreads, &thread_cnt);
+	ITHISCALL(dbgSysObj, GetNumberThreads, &thread_cnt);
 	if (!thread_cnt) {
 		return NULL;
 	}
-	PULONG threads_ids = RZ_NEWS (ULONG, thread_cnt);
-	PULONG threads_sysids = RZ_NEWS (ULONG, thread_cnt);
-	RzList *list = rz_list_newf ((RzListFree)rz_debug_pid_free);
+	PULONG threads_ids = RZ_NEWS(ULONG, thread_cnt);
+	PULONG threads_sysids = RZ_NEWS(ULONG, thread_cnt);
+	RzList *list = rz_list_newf((RzListFree)rz_debug_pid_free);
 	if (!list || !threads_ids || !threads_sysids) {
-		free (list);
-		free (threads_ids);
-		free (threads_sysids);
+		free(list);
+		free(threads_ids);
+		free(threads_sysids);
 		return NULL;
 	}
-	ITHISCALL (dbgSysObj, GetThreadIdsByIndex, 0, thread_cnt, threads_ids, threads_sysids);
+	ITHISCALL(dbgSysObj, GetThreadIdsByIndex, 0, thread_cnt, threads_ids, threads_sysids);
 	size_t i;
 	for (i = 0; i < thread_cnt; i++) {
 		ULONG64 pc;
-		ITHISCALL (dbgSysObj, SetCurrentThreadId, threads_ids[i]);
-		ITHISCALL (dbgReg, GetInstructionOffset, &pc);
-		rz_list_append (list, rz_debug_pid_new (NULL, threads_sysids[i], 0, 's', pc));
+		ITHISCALL(dbgSysObj, SetCurrentThreadId, threads_ids[i]);
+		ITHISCALL(dbgReg, GetInstructionOffset, &pc);
+		rz_list_append(list, rz_debug_pid_new(NULL, threads_sysids[i], 0, 's', pc));
 	}
-	windbg_select (dbg, dbg->pid, dbg->tid);
-	free (threads_ids);
-	free (threads_sysids);
+	windbg_select(dbg, dbg->pid, dbg->tid);
+	free(threads_ids);
+	free(threads_sysids);
 	return list;
 }
 
 static RzDebugInfo *windbg_info(RzDebug *dbg, const char *arg) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, NULL);
+	rz_return_val_if_fail(idbg && idbg->initialized, NULL);
 	char exeinfo[MAX_PATH];
 	char cmdline[MAX_PATH];
-	if (SUCCEEDED (ITHISCALL (dbgClient, GetRunningProcessDescription, idbg->server, dbg->pid, DEBUG_PROC_DESC_NO_SERVICES | DEBUG_PROC_DESC_NO_MTS_PACKAGES, exeinfo, MAX_PATH, NULL, cmdline, MAX_PATH, NULL))) {
-		RzDebugInfo *info = RZ_NEW0 (RzDebugInfo);
+	if (SUCCEEDED(ITHISCALL(dbgClient, GetRunningProcessDescription, idbg->server, dbg->pid, DEBUG_PROC_DESC_NO_SERVICES | DEBUG_PROC_DESC_NO_MTS_PACKAGES, exeinfo, MAX_PATH, NULL, cmdline, MAX_PATH, NULL))) {
+		RzDebugInfo *info = RZ_NEW0(RzDebugInfo);
 		if (!info) {
 			return NULL;
 		}
 		info->pid = dbg->pid;
 		info->tid = dbg->tid;
-		info->exe = strdup (exeinfo);
-		info->cmdline = strdup (cmdline);
+		info->exe = strdup(exeinfo);
+		info->cmdline = strdup(cmdline);
 	}
 	return NULL;
 }
 
 static bool windbg_gcore(RzDebug *dbg, RzBuffer *dest) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, false);
-	char *path = rz_sys_getenv (RZ_SYS_TMP);
-	if (RZ_STR_ISEMPTY (path)) {
-		free (path);
-		path = rz_sys_getdir ();
-		if (RZ_STR_ISEMPTY (path)) {
-			free (path);
+	rz_return_val_if_fail(idbg && idbg->initialized, false);
+	char *path = rz_sys_getenv(RZ_SYS_TMP);
+	if (RZ_STR_ISEMPTY(path)) {
+		free(path);
+		path = rz_sys_getdir();
+		if (RZ_STR_ISEMPTY(path)) {
+			free(path);
 			return false;
 		}
 	}
-	path = rz_str_appendf (path, "\\core.%d", dbg->pid);
-	ITHISCALL (dbgClient, WriteDumpFile, path, DEBUG_DUMP_DEFAULT);
-	free (path);
+	path = rz_str_appendf(path, "\\core.%d", dbg->pid);
+	ITHISCALL(dbgClient, WriteDumpFile, path, DEBUG_DUMP_DEFAULT);
+	free(path);
 	return true;
 }
 
 RzList *windbg_pids(RzDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, NULL);
-	RzList *list = rz_list_newf ((RzListFree)rz_debug_pid_free);
+	rz_return_val_if_fail(idbg && idbg->initialized, NULL);
+	RzList *list = rz_list_newf((RzListFree)rz_debug_pid_free);
 	ULONG ids[1000];
 	ULONG ids_cnt;
-	if (SUCCEEDED (ITHISCALL (dbgClient, GetRunningProcessSystemIds,
-		idbg->server, ids, _countof (ids), &ids_cnt))) {
+	if (SUCCEEDED(ITHISCALL(dbgClient, GetRunningProcessSystemIds,
+		    idbg->server, ids, _countof(ids), &ids_cnt))) {
 		size_t i;
 		for (i = 0; i < ids_cnt; i++) {
 			char path[MAX_PATH];
-			if (SUCCEEDED (ITHISCALL (dbgClient, GetRunningProcessDescription,
+			if (SUCCEEDED(ITHISCALL(dbgClient, GetRunningProcessDescription,
 				    idbg->server, ids[i], DEBUG_PROC_DESC_DEFAULT,
-					path, sizeof (path), NULL, NULL, 0, NULL))) {
-				RzDebugPid *pid = rz_debug_pid_new (path, ids[i], 0, 'r', 0);
-				rz_list_append (list, pid);
+				    path, sizeof(path), NULL, NULL, 0, NULL))) {
+				RzDebugPid *pid = rz_debug_pid_new(path, ids[i], 0, 'r', 0);
+				rz_list_append(list, pid);
 			}
 		}
 	}

@@ -1,26 +1,3 @@
-NAME=no preincrement/predecrement in 3rd part of for statement
-# Bad: for (;; ++i, --j)
-# Good: for (;; i++, j--)
-FILE=-
-# TODO: multiline
-CMDS="!git grep \"for[[:space:]]*([^;)]*;[^;)]*;\([^,)(]*,\)*[[:space:]]*\(++\|--\)[[:space:]]*[[:alpha:]_][[:alnum:]_]*[[:space:]]*[,)]\" -- .. :!db/tools/rz :!../shlr/** :!../librz/asm/arch/** :!../**/mangling/cxx/cp-demangle.c"
-EXPECT=<<EOF
-EOF
-EXPECT_ERR=<<EOF
-EOF
-RUN
-
-NAME=use void on functions without parameters
-# Bad: static void foo() {
-# Good: static void foo(void) {
-FILE=-
-CMDS="!git grep -e ^RZ_API -e ^static ../librz | grep -e '[a-z]() {' -e '[a-z]();'"
-EXPECT=<<EOF
-EOF
-EXPECT_ERR=<<EOF
-EOF
-RUN
-
 NAME=rz -
 FILE=-
 CMDS=e file.path
@@ -59,8 +36,8 @@ FILE=-
 CMDS=<<EOF
 wx 01
 s 1
-s-
-s+
+sHu
+sHr
 pb 8
 EOF
 EXPECT=<<EOF
@@ -70,7 +47,7 @@ RUN
 
 NAME=seek undo/redo
 FILE=-
-CMDS=wx 01; s 1; s-; s+; pb 8
+CMDS=wx 01; s 1; sHu; sHr; pb 8
 EXPECT=<<EOF
 00000000
 EOF
