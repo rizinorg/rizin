@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // r2 -Desil ls
 
-#include <rz_asm.h>
 #include <rz_debug.h>
 
 #if 0

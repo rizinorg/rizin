@@ -3798,10 +3798,6 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 #include <rz_userconf.h>
 #include <rz_util.h>
 
-#ifndef RZ_GITTAP
-#define RZ_GITTAP ""
-#endif
-
 #ifndef RZ_GITTIP
 #define RZ_GITTIP ""
 #endif

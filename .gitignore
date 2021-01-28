@@ -53,6 +53,7 @@ binrz/rz-sign/rz-sign
 binrz/rz-sign/rz-sign.exe
 binrz/*/_CodeSignature/*
 build
+builddir
 build_sdb
 config-user.mk
 librz/bin/d/dll/dll

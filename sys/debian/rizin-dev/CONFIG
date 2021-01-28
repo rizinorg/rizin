@@ -1,5 +1,0 @@
-PACKAGE=rizin-dev
-SECTION=user/editors
-PRIORITY=optional
-
-include ../CONFIG
