@@ -636,7 +636,8 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 		}
 		rz_list_free(list);
 	}
-	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg,[R*4+B]"
+	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg, [reg * scale + disp]"
+	ut64 movscale = 0;
 	char *movbasereg = NULL;
 	ut8 buf[32]; // 32 bytes is enough to hold any instruction.
 	int maxlen = len * addrbytes;
@@ -876,15 +877,14 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 				}
 			}
 			// skip mov reg, reg
-			if (analysis->opt.jmptbl) {
-				if (op.scale && op.ireg) {
-					movdisp = op.disp;
-					if (op.src[0] && op.src[0]->reg) {
-						free(movbasereg);
-						movbasereg = strdup(op.src[0]->reg->name);
-					} else {
-						RZ_FREE(movbasereg);
-					}
+			if (analysis->opt.jmptbl && op.scale && op.ireg) {
+				movdisp = op.disp;
+				movscale = op.scale;
+				if (op.src[0] && op.src[0]->reg) {
+					free(movbasereg);
+					movbasereg = strdup(op.src[0]->reg->name);
+				} else {
+					RZ_FREE(movbasereg);
 				}
 			}
 			if (analysis->opt.hpskip && regs_exist(op.src[0], op.dst) && !strcmp(op.src[0]->reg->name, op.dst->reg->name)) {
@@ -1228,7 +1228,7 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 						table_size = cmpval + 1;
 						default_case = -1;
 					}
-					ret = try_walkthrough_jmptbl(analysis, fcn, bb, depth, op.addr, case_shift, jmptbl_base + movdisp, jmptbl_base, 4, table_size, default_case, ret);
+					ret = try_walkthrough_jmptbl(analysis, fcn, bb, depth, op.addr, case_shift, jmptbl_base + movdisp, jmptbl_base, movscale, table_size, default_case, ret);
 					cmpval = UT64_MAX;
 				} else if (is_arm) {
 					if (op.ptrsize == 1) { // TBB
