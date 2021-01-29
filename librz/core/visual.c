@@ -101,6 +101,24 @@ RZ_API void rz_core_visual_applyHexMode(RzCore *core, int hexMode) {
 	}
 }
 
+RZ_API void rz_core_visual_toggle_hints(RzCore *core) {
+	if (rz_config_get_b(core->config, "asm.hint.call")) {
+		rz_config_toggle(core->config, "asm.hint.call");
+		rz_config_set_b(core->config, "asm.hint.jmp", true);
+	} else if (rz_config_get_b(core->config, "asm.hint.jmp")) {
+		rz_config_toggle(core->config, "asm.hint.jmp");
+		rz_config_set_b(core->config, "asm.hint.emu", true);
+	} else if (rz_config_get_b(core->config, "asm.hint.emu")) {
+		rz_config_toggle(core->config, "asm.hint.emu");
+		rz_config_set_b(core->config, "asm.hint.lea", true);
+	} else if (rz_config_get_b(core->config, "asm.hint.lea")) {
+		rz_config_toggle(core->config, "asm.hint.lea");
+		rz_config_set_b(core->config, "asm.hint.call", true);
+	} else {
+		rz_config_set_b(core->config, "asm.hint.call", true);
+	}
+}
+
 RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset) {
 	static RzConfigHold *hold = NULL; // should be a tab-specific var
 	if (hold) {
@@ -2748,21 +2766,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case 'r':
 			// TODO: toggle shortcut hotkeys
-			if (rz_config_get_b(core->config, "asm.hint.call")) {
-				rz_config_toggle(core->config, "asm.hint.call");
-				rz_config_set_b(core->config, "asm.hint.jmp", true);
-			} else if (rz_config_get_b(core->config, "asm.hint.jmp")) {
-				rz_config_toggle(core->config, "asm.hint.jmp");
-				rz_config_set_b(core->config, "asm.hint.emu", true);
-			} else if (rz_config_get_b(core->config, "asm.hint.emu")) {
-				rz_config_toggle(core->config, "asm.hint.emu");
-				rz_config_set_b(core->config, "asm.hint.lea", true);
-			} else if (rz_config_get_b(core->config, "asm.hint.lea")) {
-				rz_config_toggle(core->config, "asm.hint.lea");
-				rz_config_set_b(core->config, "asm.hint.call", true);
-			} else {
-				rz_config_set_b(core->config, "asm.hint.call", true);
-			}
+			rz_core_visual_toggle_hints(core);
 			visual_refresh(core);
 			break;
 		case ' ':

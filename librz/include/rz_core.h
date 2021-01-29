@@ -454,6 +454,7 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzL
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
 RZ_API void rz_core_visual_prompt_input(RzCore *core);
+RZ_API void rz_core_visual_toggle_hints(RzCore *core);
 RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset);
 RZ_API void rz_core_visual_applyDisMode(RzCore *core, int disMode);
 RZ_API void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
