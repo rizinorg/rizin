@@ -512,6 +512,8 @@ RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);
 RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int binload);
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args);
 RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr);
+RZ_API bool rz_core_file_resize(RzCore *core, ut64 newsize);
+RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta);
 RZ_API RzCoreFile *rz_core_file_find_by_fd(RzCore *core, ut64 fd);
 RZ_API RzCoreFile *rz_core_file_find_by_name(RzCore *core, const char *name);
 RZ_API RzCoreFile *rz_core_file_cur(RzCore *r);
@@ -540,6 +542,7 @@ RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 
 /* cdebug.c */
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
+RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
 
 RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode);
 RZ_API void rz_core_debug_set_register_flags(RzCore *core);

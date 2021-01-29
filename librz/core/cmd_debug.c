@@ -4119,45 +4119,6 @@ static void rz_core_debug_kill(RzCore *core, const char *input) {
 	}
 }
 
-static bool is_x86_call(RzDebug *dbg, ut64 addr) {
-	ut8 buf[3];
-	ut8 *op = buf;
-	(void)dbg->iob.read_at(dbg->iob.io, addr, buf, RZ_ARRAY_SIZE(buf));
-	switch (buf[0]) { /* Segment override prefixes */
-	case 0x65:
-	case 0x64:
-	case 0x26:
-	case 0x3e:
-	case 0x36:
-	case 0x2e:
-		op++;
-	}
-	if (op[0] == 0xe8) {
-		return true;
-	}
-	if (op[0] == 0xff /* bits 4-5 (from right) of next byte must be 01 */
-		&& (op[1] & 0x30) == 0x10) {
-		return true;
-	}
-	/* ... */
-	return false;
-}
-
-static bool is_x86_ret(RzDebug *dbg, ut64 addr) {
-	ut8 buf[1];
-	(void)dbg->iob.read_at(dbg->iob.io, addr, buf, RZ_ARRAY_SIZE(buf));
-	switch (buf[0]) {
-	case 0xc3:
-	case 0xcb:
-	case 0xc2:
-	case 0xca:
-		return true;
-	default:
-		return false;
-	}
-	/* Possibly incomplete with regard to instruction prefixes */
-}
-
 static bool cmd_dcu(RzCore *core, const char *input) {
 	const char *ptr = NULL;
 	ut64 from, to, pc;
@@ -4216,86 +4177,7 @@ static bool cmd_dcu(RzCore *core, const char *input) {
 		} while (pc < from || pc > to);
 		rz_cons_break_pop();
 	} else {
-		ut64 addr = from;
-		if (!strcmp(core->dbg->btalgo, "trace") && core->dbg->arch && !strcmp(core->dbg->arch, "x86") && core->dbg->bits == 4) {
-			unsigned long steps = 0;
-			long level = 0;
-			const char *pc_name = core->dbg->reg->name[RZ_REG_NAME_PC];
-			ut64 prev_pc = UT64_MAX;
-			bool prev_call = false;
-			bool prev_ret = false;
-			const char *sp_name = core->dbg->reg->name[RZ_REG_NAME_SP];
-			ut64 old_sp, cur_sp;
-			rz_cons_break_push(NULL, NULL);
-			rz_list_free(core->dbg->call_frames);
-			core->dbg->call_frames = rz_list_new();
-			core->dbg->call_frames->free = free;
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-			old_sp = rz_debug_reg_get(core->dbg, sp_name);
-			while (true) {
-				rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-				pc = rz_debug_reg_get(core->dbg, pc_name);
-				if (prev_call) {
-					ut32 ret_addr;
-					RzDebugFrame *frame = RZ_NEW0(RzDebugFrame);
-					cur_sp = rz_debug_reg_get(core->dbg, sp_name);
-					(void)core->dbg->iob.read_at(core->dbg->iob.io, cur_sp, (ut8 *)&ret_addr,
-						sizeof(ret_addr));
-					frame->addr = ret_addr;
-					frame->size = old_sp - cur_sp;
-					frame->sp = cur_sp;
-					frame->bp = old_sp;
-					rz_list_prepend(core->dbg->call_frames, frame);
-					eprintf("%ld Call from 0x%08" PFMT64x " to 0x%08" PFMT64x " ret 0x%08" PFMT32x "\n",
-						level, prev_pc, pc, ret_addr);
-					level++;
-					old_sp = cur_sp;
-					prev_call = false;
-				} else if (prev_ret) {
-					RzDebugFrame *head = rz_list_get_bottom(core->dbg->call_frames);
-					if (head && head->addr != pc) {
-						eprintf("*");
-					} else {
-						rz_list_pop_head(core->dbg->call_frames);
-						eprintf("%ld", level);
-						level--;
-					}
-					eprintf(" Ret from 0x%08" PFMT64x " to 0x%08" PFMT64x "\n",
-						prev_pc, pc);
-					prev_ret = false;
-				}
-				if (steps % 500 == 0 || pc == addr) {
-					eprintf("At 0x%08" PFMT64x " after %lu steps\n", pc, steps);
-				}
-				if (rz_cons_is_breaked() || rz_debug_is_dead(core->dbg) || pc == addr) {
-					break;
-				}
-				if (is_x86_call(core->dbg, pc)) {
-					prev_pc = pc;
-					prev_call = true;
-				} else if (is_x86_ret(core->dbg, pc)) {
-					prev_pc = pc;
-					prev_ret = true;
-				}
-				rz_debug_step(core->dbg, 1);
-				steps++;
-			}
-			rz_cons_break_pop();
-			return true;
-		}
-		eprintf("Continue until 0x%08" PFMT64x " using %d bpsize\n", addr, core->dbg->bpsize);
-		rz_reg_arena_swap(core->dbg->reg, true);
-		if (rz_bp_add_sw(core->dbg->bp, addr, core->dbg->bpsize, RZ_BP_PROT_EXEC)) {
-			if (rz_debug_is_dead(core->dbg)) {
-				eprintf("Cannot continue, run ood?\n");
-			} else {
-				rz_debug_continue(core->dbg);
-			}
-			rz_bp_del(core->dbg->bp, addr);
-		} else {
-			eprintf("Cannot set breakpoint of size %d at 0x%08" PFMT64x "\n",
-				core->dbg->bpsize, addr);
-		}
+		return rz_core_debug_continue_until(core, from, to);
 	}
 	return true;
 }

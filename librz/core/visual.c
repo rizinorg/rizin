@@ -760,8 +760,7 @@ RZ_API int rz_core_visual_prompt(RzCore *core) {
 static void visual_single_step_in(RzCore *core) {
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
-			// dcu 0xaddr
-			rz_core_cmdf(core, "dcu 0x%08" PFMT64x, core->offset + core->print->cur);
+			rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_debug_step_one(core, 1);
@@ -841,8 +840,7 @@ static int visual_nkey(RzCore *core, int ch) {
 			ch = rz_core_cmd0(core, cmd);
 		} else {
 			if (core->print->cur_enabled) {
-				// dcu 0xaddr
-				rz_core_cmdf(core, "dcu 0x%08" PFMT64x, core->offset + core->print->cur);
+				rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
 				core->print->cur_enabled = 0;
 			}
 		}
@@ -1998,8 +1996,10 @@ static bool insert_mode_enabled(RzCore *core) {
 	if (core->print->col == 2) {
 		/* ascii column */
 		if (IS_PRINTABLE(ch)) {
-			rz_core_cmdf(core, "\"w %c\" @ $$+%d", ch, core->print->cur);
-			core->print->cur++;
+			ut8 chs[2] = {ch, 0};
+			if (rz_core_write_at(core, core->offset + core->print->cur, chs, 1)) {
+				core->print->cur++;
+			}
 		}
 		return true;
 	}
@@ -2031,11 +2031,11 @@ static bool insert_mode_enabled(RzCore *core) {
 			__nib = ch;
 		}
 		break;
-	case 'r':
-		rz_core_cmdf(core, "r-1 @ 0x%08" PFMT64x, core->offset + core->print->cur);
+	case 'r': // "r -1"
+		rz_core_file_resize_delta(core, -1);
 		break;
-	case 'R':
-		rz_core_cmdf(core, "r+1 @ 0x%08" PFMT64x, core->offset + core->print->cur);
+	case 'R': // "r +1"
+		rz_core_file_resize_delta(core, +1);
 		break;
 	case 'h':
 		core->print->cur = RZ_MAX(0, core->print->cur - 1);
@@ -2089,7 +2089,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		" g  graph\n"
 		" h  history\n"
 		" i  imports\n"
-		" l  chat logs (previously VT)\n"
 		" m  maps\n"
 		" M  mountpoints\n"
 		" p  pids/threads\n"
@@ -2137,7 +2136,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			break;
 		case 'F': // "vbF"
 			rz_core_visual_analysis(core, NULL);
-			// rz_core_cmd0 (core, "s $(afl~...)");
 			break;
 		case 'd': // "vbd"
 			rz_core_visual_debugtraces(core, NULL);
@@ -2159,18 +2157,12 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			break;
 		case 'C': // "vbC"
 			rz_core_visual_comments(core);
-			//rz_core_cmd0 (core, "s $(CC~...)");
 			break;
 		case 't': // "vbt"
 			rz_core_visual_types(core);
 			break;
 		case 'T': // "vbT"
 			rz_core_cmd0(core, "eco $(eco~...)");
-			break;
-		case 'l': // previously VT
-			if (rz_cons_is_interactive()) {
-				rz_core_cmd0(core, "TT");
-			}
 			break;
 		case 'p':
 			rz_core_cmd0(core, "dpt=$(dpt~[1-])");
@@ -2925,7 +2917,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						distance = 1;
 					}
 					for (i = 0; i < distance; i++) {
-						rz_core_cmd0(core, "sp");
+						rz_core_seek_prev(core, rz_config_get(core->config, "scr.nkey"), true);
 					}
 				} else {
 					int times = wheelspeed;
@@ -3058,7 +3050,6 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case 'W':
 			findPrevWord(core);
-			//rz_core_cmd0 (core, "=H");
 			break;
 		case 'm': {
 			rz_cons_gotoxy(0, 0);
@@ -3323,8 +3314,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				addr = orig = core->offset;
 				if (core->print->cur_enabled) {
 					addr += core->print->cur;
-					rz_core_seek(core, addr, false);
-					rz_core_cmdf(core, "s 0x%" PFMT64x, addr);
+					rz_core_seek(core, addr, true);
 				}
 				if (!strcmp(buf + i, "-")) {
 					strcpy(buf, "CC-");
