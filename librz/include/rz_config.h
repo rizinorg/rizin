@@ -85,6 +85,7 @@ RZ_API RzConfigNode *rz_config_set_i_cb(RzConfig *cfg, const char *name, int iva
 RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, const char *name, const char *value);
 RZ_API bool rz_config_rm(RzConfig *cfg, const char *name);
 RZ_API ut64 rz_config_get_i(RzConfig *cfg, const char *name);
+RZ_API bool rz_config_get_b(RzConfig *cfg, const char *name);
 RZ_API const char *rz_config_get(RzConfig *cfg, const char *name);
 RZ_API const char *rz_config_desc(RzConfig *cfg, const char *name, const char *desc);
 RZ_API const char *rz_config_node_desc(RzConfigNode *node, const char *desc);

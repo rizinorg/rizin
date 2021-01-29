@@ -348,6 +348,7 @@ RZ_API ut64 rz_config_get_i(RzConfig *cfg, const char *name) {
 		if (node->i_value || !strcmp(node->value, "false")) {
 			return node->i_value;
 		}
+		// TODO: Remove it once the switch to `rz_config_get_b()` is complete
 		if (!strcmp(node->value, "true")) {
 			return 1;
 		}

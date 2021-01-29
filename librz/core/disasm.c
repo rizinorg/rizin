@@ -637,89 +637,89 @@ static RDisasmState *ds_init(RzCore *core) {
 	ds->color_func_var_addr = P(func_var_addr)
 	    : Color_CYAN;
 
-	ds->immstr = rz_config_get_i(core->config, "asm.imm.str");
-	ds->immtrim = rz_config_get_i(core->config, "asm.imm.trim");
-	ds->use_esil = rz_config_get_i(core->config, "asm.esil");
-	ds->pre_emu = rz_config_get_i(core->config, "emu.pre");
-	ds->show_flgoff = rz_config_get_i(core->config, "asm.flags.offset");
-	ds->show_nodup = rz_config_get_i(core->config, "asm.nodup");
+	ds->immstr = rz_config_get_b(core->config, "asm.imm.str");
+	ds->immtrim = rz_config_get_b(core->config, "asm.imm.trim");
+	ds->use_esil = rz_config_get_b(core->config, "asm.esil");
+	ds->pre_emu = rz_config_get_b(core->config, "emu.pre");
+	ds->show_flgoff = rz_config_get_b(core->config, "asm.flags.offset");
+	ds->show_nodup = rz_config_get_b(core->config, "asm.nodup");
 	{
 		const char *ah = rz_config_get(core->config, "asm.highlight");
 		ds->asm_highlight = (ah && *ah) ? rz_num_math(core->num, ah) : UT64_MAX;
 	}
-	ds->asm_analysis = rz_config_get_i(core->config, "asm.analysis");
+	ds->asm_analysis = rz_config_get_b(core->config, "asm.analysis");
 	ds->show_color = rz_config_get_i(core->config, "scr.color");
-	ds->show_color_bytes = rz_config_get_i(core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
-	ds->show_color_args = rz_config_get_i(core->config, "scr.color.args");
-	ds->colorop = rz_config_get_i(core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
-	ds->show_utf8 = rz_config_get_i(core->config, "scr.utf8");
-	ds->acase = rz_config_get_i(core->config, "asm.ucase");
-	ds->capitalize = rz_config_get_i(core->config, "asm.capitalize");
+	ds->show_color_bytes = rz_config_get_b(core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
+	ds->show_color_args = rz_config_get_b(core->config, "scr.color.args");
+	ds->colorop = rz_config_get_b(core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
+	ds->show_utf8 = rz_config_get_b(core->config, "scr.utf8");
+	ds->acase = rz_config_get_b(core->config, "asm.ucase");
+	ds->capitalize = rz_config_get_b(core->config, "asm.capitalize");
 	ds->atabs = rz_config_get_i(core->config, "asm.tabs");
-	ds->atabsonce = rz_config_get_i(core->config, "asm.tabs.once");
+	ds->atabsonce = rz_config_get_b(core->config, "asm.tabs.once");
 	ds->atabsoff = rz_config_get_i(core->config, "asm.tabs.off");
 	ds->midflags = rz_config_get_i(core->config, "asm.flags.middle");
-	ds->midbb = rz_config_get_i(core->config, "asm.bb.middle");
-	ds->midcursor = rz_config_get_i(core->config, "asm.midcursor");
-	ds->decode = rz_config_get_i(core->config, "asm.decode");
-	core->parser->pseudo = ds->pseudo = rz_config_get_i(core->config, "asm.pseudo");
+	ds->midbb = rz_config_get_b(core->config, "asm.bb.middle");
+	ds->midcursor = rz_config_get_b(core->config, "asm.midcursor");
+	ds->decode = rz_config_get_b(core->config, "asm.decode");
+	core->parser->pseudo = ds->pseudo = rz_config_get_b(core->config, "asm.pseudo");
 	if (ds->pseudo) {
 		ds->atabs = 0;
 	}
-	ds->subnames = rz_config_get_i(core->config, "asm.sub.names");
+	ds->subnames = rz_config_get_b(core->config, "asm.sub.names");
 	ds->interactive = rz_cons_is_interactive();
-	ds->subjmp = rz_config_get_i(core->config, "asm.sub.jmp");
-	ds->subvar = rz_config_get_i(core->config, "asm.sub.var");
-	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
-	core->parser->subreg = rz_config_get_i(core->config, "asm.sub.reg");
-	core->parser->localvar_only = rz_config_get_i(core->config, "asm.sub.varonly");
+	ds->subjmp = rz_config_get_b(core->config, "asm.sub.jmp");
+	ds->subvar = rz_config_get_b(core->config, "asm.sub.var");
+	core->parser->subrel = rz_config_get_b(core->config, "asm.sub.rel");
+	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
+	core->parser->localvar_only = rz_config_get_b(core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
-	ds->show_fcnsig = rz_config_get_i(core->config, "asm.fcnsig");
-	ds->show_vars = rz_config_get_i(core->config, "asm.var");
+	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcnsig");
+	ds->show_vars = rz_config_get_b(core->config, "asm.var");
 	ds->show_varsum = rz_config_get_i(core->config, "asm.var.summary");
-	ds->show_varaccess = rz_config_get_i(core->config, "asm.var.access");
+	ds->show_varaccess = rz_config_get_b(core->config, "asm.var.access");
 	ds->maxrefs = rz_config_get_i(core->config, "asm.xrefs.max");
 	ds->maxflags = rz_config_get_i(core->config, "asm.flags.limit");
 	ds->flags_inline = rz_config_get_i(core->config, "asm.flags.inline");
 	ds->asm_types = rz_config_get_i(core->config, "asm.types");
 	ds->foldxrefs = rz_config_get_i(core->config, "asm.xrefs.fold");
-	ds->show_lines = rz_config_get_i(core->config, "asm.lines");
-	ds->show_lines_bb = ds->show_lines ? rz_config_get_i(core->config, "asm.lines.bb") : false;
-	ds->linesright = rz_config_get_i(core->config, "asm.lines.right");
-	ds->show_indent = rz_config_get_i(core->config, "asm.indent");
+	ds->show_lines = rz_config_get_b(core->config, "asm.lines");
+	ds->show_lines_bb = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.bb") : false;
+	ds->linesright = rz_config_get_b(core->config, "asm.lines.right");
+	ds->show_indent = rz_config_get_b(core->config, "asm.indent");
 	ds->indent_space = rz_config_get_i(core->config, "asm.indentspace");
 	ds->tracespace = rz_config_get_i(core->config, "asm.tracespace");
 	ds->cyclespace = rz_config_get_i(core->config, "asm.cyclespace");
-	ds->show_dwarf = rz_config_get_i(core->config, "asm.dwarf");
-	ds->dwarfFile = rz_config_get_i(ds->core->config, "asm.dwarf.file");
-	ds->dwarfAbspath = rz_config_get_i(ds->core->config, "asm.dwarf.abspath");
-	ds->show_lines_call = ds->show_lines ? rz_config_get_i(core->config, "asm.lines.call") : false;
-	ds->show_lines_ret = ds->show_lines ? rz_config_get_i(core->config, "asm.lines.ret") : false;
-	ds->show_size = rz_config_get_i(core->config, "asm.size");
-	ds->show_trace = rz_config_get_i(core->config, "asm.trace");
+	ds->show_dwarf = rz_config_get_b(core->config, "asm.dwarf");
+	ds->dwarfFile = rz_config_get_b(ds->core->config, "asm.dwarf.file");
+	ds->dwarfAbspath = rz_config_get_b(ds->core->config, "asm.dwarf.abspath");
+	ds->show_lines_call = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.call") : false;
+	ds->show_lines_ret = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.ret") : false;
+	ds->show_size = rz_config_get_b(core->config, "asm.size");
+	ds->show_trace = rz_config_get_b(core->config, "asm.trace");
 	ds->linesout = rz_config_get_i(core->config, "asm.lines.out");
 	ds->adistrick = rz_config_get_i(core->config, "asm.middle"); // TODO: find better name
-	ds->asm_demangle = rz_config_get_i(core->config, "asm.demangle");
-	ds->asm_describe = rz_config_get_i(core->config, "asm.describe");
-	ds->show_offset = rz_config_get_i(core->config, "asm.offset");
-	ds->show_offdec = rz_config_get_i(core->config, "asm.decoff");
-	ds->show_bbline = rz_config_get_i(core->config, "asm.bb.line");
-	ds->show_section = rz_config_get_i(core->config, "asm.section");
+	ds->asm_demangle = rz_config_get_b(core->config, "asm.demangle");
+	ds->asm_describe = rz_config_get_b(core->config, "asm.describe");
+	ds->show_offset = rz_config_get_b(core->config, "asm.offset");
+	ds->show_offdec = rz_config_get_b(core->config, "asm.decoff");
+	ds->show_bbline = rz_config_get_b(core->config, "asm.bb.line");
+	ds->show_section = rz_config_get_b(core->config, "asm.section");
 	ds->show_section_col = rz_config_get_i(core->config, "asm.section.col");
-	ds->show_section_perm = rz_config_get_i(core->config, "asm.section.perm");
-	ds->show_section_name = rz_config_get_i(core->config, "asm.section.name");
-	ds->show_symbols = rz_config_get_i(core->config, "asm.symbol");
+	ds->show_section_perm = rz_config_get_b(core->config, "asm.section.perm");
+	ds->show_section_name = rz_config_get_b(core->config, "asm.section.name");
+	ds->show_symbols = rz_config_get_b(core->config, "asm.symbol");
 	ds->show_symbols_col = rz_config_get_i(core->config, "asm.symbol.col");
-	ds->asm_instr = rz_config_get_i(core->config, "asm.instr");
-	ds->show_emu = rz_config_get_i(core->config, "asm.emu");
-	ds->show_emu_str = rz_config_get_i(core->config, "emu.str");
-	ds->show_emu_stroff = rz_config_get_i(core->config, "emu.str.off");
-	ds->show_emu_strinv = rz_config_get_i(core->config, "emu.str.inv");
-	ds->show_emu_strflag = rz_config_get_i(core->config, "emu.str.flag");
-	ds->show_emu_strlea = rz_config_get_i(core->config, "emu.str.lea");
-	ds->show_emu_write = rz_config_get_i(core->config, "emu.write");
-	ds->show_emu_ssa = rz_config_get_i(core->config, "emu.ssa");
-	ds->show_emu_stack = rz_config_get_i(core->config, "emu.stack");
+	ds->asm_instr = rz_config_get_b(core->config, "asm.instr");
+	ds->show_emu = rz_config_get_b(core->config, "asm.emu");
+	ds->show_emu_str = rz_config_get_b(core->config, "emu.str");
+	ds->show_emu_stroff = rz_config_get_b(core->config, "emu.str.off");
+	ds->show_emu_strinv = rz_config_get_b(core->config, "emu.str.inv");
+	ds->show_emu_strflag = rz_config_get_b(core->config, "emu.str.flag");
+	ds->show_emu_strlea = rz_config_get_b(core->config, "emu.str.lea");
+	ds->show_emu_write = rz_config_get_b(core->config, "emu.write");
+	ds->show_emu_ssa = rz_config_get_b(core->config, "emu.ssa");
+	ds->show_emu_stack = rz_config_get_b(core->config, "emu.stack");
 	ds->stackFd = -1;
 	if (ds->show_emu_stack) {
 		// TODO: initialize fake stack in here
@@ -739,42 +739,42 @@ static RDisasmState *ds_init(RzCore *core) {
 		}
 	}
 	ds->stackptr = core->analysis->stackptr;
-	ds->show_offseg = rz_config_get_i(core->config, "asm.segoff");
-	ds->show_flags = rz_config_get_i(core->config, "asm.flags");
-	ds->show_bytes = rz_config_get_i(core->config, "asm.bytes");
-	ds->show_bytes_right = rz_config_get_i(core->config, "asm.bytes.right");
-	ds->show_optype = rz_config_get_i(core->config, "asm.optype");
+	ds->show_offseg = rz_config_get_b(core->config, "asm.segoff");
+	ds->show_flags = rz_config_get_b(core->config, "asm.flags");
+	ds->show_bytes = rz_config_get_b(core->config, "asm.bytes");
+	ds->show_bytes_right = rz_config_get_b(core->config, "asm.bytes.right");
+	ds->show_optype = rz_config_get_b(core->config, "asm.optype");
 	ds->asm_meta = rz_config_get_i(core->config, "asm.meta");
 	ds->asm_xrefs_code = rz_config_get_i(core->config, "asm.xrefs.code");
-	ds->show_reloff = rz_config_get_i(core->config, "asm.reloff");
-	ds->show_reloff_flags = rz_config_get_i(core->config, "asm.reloff.flags");
-	ds->show_lines_fcn = ds->show_lines ? rz_config_get_i(core->config, "asm.lines.fcn") : false;
-	ds->show_comments = rz_config_get_i(core->config, "asm.comments");
-	ds->show_usercomments = rz_config_get_i(core->config, "asm.usercomments");
-	ds->asm_hint_jmp = rz_config_get_i(core->config, "asm.hint.jmp");
-	ds->asm_hint_call = rz_config_get_i(core->config, "asm.hint.call");
-	ds->asm_hint_call_indirect = rz_config_get_i(core->config, "asm.hint.call.indirect");
-	ds->asm_hint_lea = rz_config_get_i(core->config, "asm.hint.lea");
-	ds->asm_hint_emu = rz_config_get_i(core->config, "asm.hint.emu");
-	ds->asm_hint_cdiv = rz_config_get_i(core->config, "asm.hint.cdiv");
+	ds->show_reloff = rz_config_get_b(core->config, "asm.reloff");
+	ds->show_reloff_flags = rz_config_get_b(core->config, "asm.reloff.flags");
+	ds->show_lines_fcn = ds->show_lines ? rz_config_get_b(core->config, "asm.lines.fcn") : false;
+	ds->show_comments = rz_config_get_b(core->config, "asm.comments");
+	ds->show_usercomments = rz_config_get_b(core->config, "asm.usercomments");
+	ds->asm_hint_jmp = rz_config_get_b(core->config, "asm.hint.jmp");
+	ds->asm_hint_call = rz_config_get_b(core->config, "asm.hint.call");
+	ds->asm_hint_call_indirect = rz_config_get_b(core->config, "asm.hint.call.indirect");
+	ds->asm_hint_lea = rz_config_get_b(core->config, "asm.hint.lea");
+	ds->asm_hint_emu = rz_config_get_b(core->config, "asm.hint.emu");
+	ds->asm_hint_cdiv = rz_config_get_b(core->config, "asm.hint.cdiv");
 	ds->asm_hint_pos = rz_config_get_i(core->config, "asm.hint.pos");
-	ds->asm_hints = rz_config_get_i(core->config, "asm.hints");
-	ds->show_slow = rz_config_get_i(core->config, "asm.slow");
-	ds->show_refptr = rz_config_get_i(core->config, "asm.refptr");
-	ds->show_calls = rz_config_get_i(core->config, "asm.calls");
-	ds->show_family = rz_config_get_i(core->config, "asm.family");
+	ds->asm_hints = rz_config_get_b(core->config, "asm.hints");
+	ds->show_slow = rz_config_get_b(core->config, "asm.slow");
+	ds->show_refptr = rz_config_get_b(core->config, "asm.refptr");
+	ds->show_calls = rz_config_get_b(core->config, "asm.calls");
+	ds->show_family = rz_config_get_b(core->config, "asm.family");
 	ds->cmtcol = rz_config_get_i(core->config, "asm.cmt.col");
-	ds->show_cmtesil = rz_config_get_i(core->config, "asm.cmt.esil");
-	ds->show_cmtflgrefs = rz_config_get_i(core->config, "asm.cmt.flgrefs");
-	ds->show_cycles = rz_config_get_i(core->config, "asm.cycles");
-	ds->show_stackptr = rz_config_get_i(core->config, "asm.stackptr");
-	ds->show_xrefs = rz_config_get_i(core->config, "asm.xrefs");
-	ds->show_cmtrefs = rz_config_get_i(core->config, "asm.cmt.refs");
+	ds->show_cmtesil = rz_config_get_b(core->config, "asm.cmt.esil");
+	ds->show_cmtflgrefs = rz_config_get_b(core->config, "asm.cmt.flgrefs");
+	ds->show_cycles = rz_config_get_b(core->config, "asm.cycles");
+	ds->show_stackptr = rz_config_get_b(core->config, "asm.stackptr");
+	ds->show_xrefs = rz_config_get_b(core->config, "asm.xrefs");
+	ds->show_cmtrefs = rz_config_get_b(core->config, "asm.cmt.refs");
 	ds->show_cmtoff = rz_config_get(core->config, "asm.cmt.off");
 	if (!ds->show_cmtoff) {
 		ds->show_cmtoff = "nodup";
 	}
-	ds->show_functions = rz_config_get_i(core->config, "asm.functions");
+	ds->show_functions = rz_config_get_b(core->config, "asm.functions");
 	ds->nbytes = rz_config_get_i(core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp(core->print->strconv_mode, "asciidot");
 	const char *strenc_str = rz_config_get(core->config, "bin.str.enc");
@@ -800,11 +800,11 @@ static RDisasmState *ds_init(RzCore *core) {
 	ds->nb = 0;
 	ds->flagspace_ports = rz_flag_space_get(core->flags, "ports");
 	ds->lbytes = rz_config_get_i(core->config, "asm.lbytes");
-	ds->show_comment_right_default = rz_config_get_i(core->config, "asm.cmt.right");
+	ds->show_comment_right_default = rz_config_get_b(core->config, "asm.cmt.right");
 	ds->show_comment_right = ds->show_comment_right_default;
-	ds->show_flag_in_bytes = rz_config_get_i(core->config, "asm.flags.inbytes");
-	ds->show_marks = rz_config_get_i(core->config, "asm.marks");
-	ds->show_noisy_comments = rz_config_get_i(core->config, "asm.noisy");
+	ds->show_flag_in_bytes = rz_config_get_b(core->config, "asm.flags.inbytes");
+	ds->show_marks = rz_config_get_b(core->config, "asm.marks");
+	ds->show_noisy_comments = rz_config_get_b(core->config, "asm.noisy");
 	ds->pre = DS_PRE_NONE;
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
@@ -818,8 +818,8 @@ static RDisasmState *ds_init(RzCore *core) {
 	ds->esil_regstate = NULL;
 	ds->esil_likely = false;
 
-	ds->showpayloads = rz_config_get_i(ds->core->config, "asm.payloads");
-	ds->showrelocs = rz_config_get_i(core->config, "bin.relocs");
+	ds->showpayloads = rz_config_get_b(ds->core->config, "asm.payloads");
+	ds->showrelocs = rz_config_get_b(core->config, "bin.relocs");
 	ds->min_ref_addr = rz_config_get_i(core->config, "asm.sub.varmin");
 
 	if (ds->show_flag_in_bytes) {
@@ -860,7 +860,7 @@ static RDisasmState *ds_init(RzCore *core) {
 	} else {
 		ds->cursor = -1;
 	}
-	if (rz_config_get_i(core->config, "asm.lines.wide")) {
+	if (rz_config_get_b(core->config, "asm.lines.wide")) {
 		ds->linesopts |= RZ_ANALYSIS_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {
@@ -1040,8 +1040,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ds->opstr = strdup(rz_asm_op_get_asm(&ds->asmop));
 	}
 	/* initialize */
-	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
-	core->parser->subreg = rz_config_get_i(core->config, "asm.sub.reg");
+	core->parser->subrel = rz_config_get_b(core->config, "asm.sub.rel");
+	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
 	core->parser->subrel_addr = 0;
 	if (core->parser->subrel && (ds->analop.type == RZ_ANALYSIS_OP_TYPE_LEA || ds->analop.type == RZ_ANALYSIS_OP_TYPE_MOV || ds->analop.type == RZ_ANALYSIS_OP_TYPE_CMP) && ds->analop.ptr != UT64_MAX) {
 		core->parser->subrel_addr = ds->analop.ptr;
@@ -1236,7 +1236,7 @@ static void ds_begin_line(RDisasmState *ds) {
 
 static void ds_newline(RDisasmState *ds) {
 	if (ds->pj) {
-		const bool is_html = rz_config_get_i(ds->core->config, "scr.html");
+		const bool is_html = rz_config_get_b(ds->core->config, "scr.html");
 		if (is_html) {
 			char *s = rz_cons_html_filter(rz_cons_get_buffer(), NULL);
 			pj_s(ds->pj, s);
@@ -1800,10 +1800,10 @@ static void ds_show_functions(RDisasmState *ds) {
 	if (!ds->show_functions) {
 		return;
 	}
-	bool demangle = rz_config_get_i(core->config, "bin.demangle");
-	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
+	bool demangle = rz_config_get_b(core->config, "bin.demangle");
+	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	bool showSig = ds->show_fcnsig && ds->show_calls;
-	bool call = rz_config_get_i(core->config, "asm.calls");
+	bool call = rz_config_get_b(core->config, "asm.calls");
 	const char *lang = demangle ? rz_config_get(core->config, "bin.lang") : NULL;
 	f = rz_analysis_get_function_at(core->analysis, ds->at);
 	if (!f) {
@@ -2238,7 +2238,7 @@ static void ds_show_flags(RDisasmState *ds) {
 	int count = 0;
 	bool outline = !ds->flags_inline;
 	const char *comma = "";
-	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
+	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	bool docolon = true;
 	int nth = 0;
 	rz_list_foreach (uniqlist, iter, flag) {
@@ -2872,7 +2872,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	}
 	// adjust alignment
 	ut64 n = rz_read_ble(buf, core->print->big_endian, size * 8);
-	if (rz_config_get_i(core->config, "asm.marks")) {
+	if (rz_config_get_b(core->config, "asm.marks")) {
 		rz_cons_printf("  ");
 		int q = core->print->cur_enabled &&
 			ds->cursor >= ds->index &&
@@ -4154,8 +4154,8 @@ static void ds_print_relocs(RDisasmState *ds) {
 	}
 	RzCore *core = ds->core;
 	const char *lang = rz_config_get(core->config, "bin.lang");
-	bool demangle = rz_config_get_i(core->config, "asm.demangle");
-	bool keep_lib = rz_config_get_i(core->config, "bin.demangle.libs");
+	bool demangle = rz_config_get_b(core->config, "asm.demangle");
+	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	RzBinReloc *rel = rz_core_getreloc(core, ds->at, ds->analop.size);
 	if (rel) {
 		int cstrlen = 0;
@@ -4559,7 +4559,7 @@ static void mipsTweak(RDisasmState *ds) {
 	RzCore *core = ds->core;
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
 	if (asm_arch && *asm_arch && strstr(asm_arch, "mips")) {
-		if (rz_config_get_i(core->config, "analysis.gpfixed")) {
+		if (rz_config_get_b(core->config, "analysis.gpfixed")) {
 			ut64 gp = rz_config_get_i(core->config, "analysis.gp");
 			rz_reg_setv(core->analysis->reg, "gp", gp);
 		}
@@ -4773,8 +4773,8 @@ beach:
 }
 
 static void ds_print_calls_hints(RDisasmState *ds) {
-	int emu = rz_config_get_i(ds->core->config, "asm.emu");
-	int emuwrite = rz_config_get_i(ds->core->config, "emu.write");
+	bool emu = rz_config_get_b(ds->core->config, "asm.emu");
+	bool emuwrite = rz_config_get_b(ds->core->config, "emu.write");
 	if (emu && emuwrite) {
 		// this is done by ESIL
 		return;
@@ -5150,7 +5150,7 @@ RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, i
 toro:
 	// uhm... is this necessary? imho can be removed
 	rz_asm_set_pc(core->rasm, rz_core_pava(core, ds->addr + idx));
-	core->cons->vline = rz_config_get_i(core->config, "scr.utf8") ? (rz_config_get_i(core->config, "scr.utf8.curvy") ? rz_vline_uc : rz_vline_u) : rz_vline_a;
+	core->cons->vline = rz_config_get_b(core->config, "scr.utf8") ? (rz_config_get_b(core->config, "scr.utf8.curvy") ? rz_vline_uc : rz_vline_u) : rz_vline_a;
 
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
@@ -6241,16 +6241,16 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 }
 
 RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt) {
-	bool show_offset = rz_config_get_i(core->config, "asm.offset");
-	bool show_bytes = rz_config_get_i(core->config, "asm.bytes");
-	int decode = rz_config_get_i(core->config, "asm.decode");
-	int subnames = rz_config_get_i(core->config, "asm.sub.names");
+	bool show_offset = rz_config_get_b(core->config, "asm.offset");
+	bool show_bytes = rz_config_get_b(core->config, "asm.bytes");
+	bool decode = rz_config_get_b(core->config, "asm.decode");
+	bool subnames = rz_config_get_b(core->config, "asm.sub.names");
 	int show_color = rz_config_get_i(core->config, "scr.color");
-	bool asm_ucase = rz_config_get_i(core->config, "asm.ucase");
-	bool asm_instr = rz_config_get_i(core->config, "asm.instr");
-	int esil = rz_config_get_i(core->config, "asm.esil");
-	int flags = rz_config_get_i(core->config, "asm.flags");
-	bool asm_immtrim = rz_config_get_i(core->config, "asm.imm.trim");
+	bool asm_ucase = rz_config_get_b(core->config, "asm.ucase");
+	bool asm_instr = rz_config_get_b(core->config, "asm.instr");
+	bool esil = rz_config_get_b(core->config, "asm.esil");
+	bool flags = rz_config_get_b(core->config, "asm.flags");
+	bool asm_immtrim = rz_config_get_b(core->config, "asm.imm.trim");
 	int i = 0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
 	RzAsmOp asmop;
@@ -6275,8 +6275,8 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 	rz_cons_break_push(NULL, NULL);
 	rz_core_seek(core, address, false);
 	int midflags = rz_config_get_i(core->config, "asm.flags.middle");
-	int midbb = rz_config_get_i(core->config, "asm.bb.middle");
-	bool asmmarks = rz_config_get_i(core->config, "asm.marks");
+	bool midbb = rz_config_get_b(core->config, "asm.bb.middle");
+	bool asmmarks = rz_config_get_b(core->config, "asm.marks");
 	rz_config_set_i(core->config, "asm.marks", false);
 	i = 0;
 	j = 0;
@@ -6524,7 +6524,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 	}
 	if (!core->analysis->esil) {
 		rz_core_cmd0(core, "aei");
-		if (!rz_config_get_i(core->config, "cfg.debug")) {
+		if (!rz_config_get_b(core->config, "cfg.debug")) {
 			rz_core_cmd0(core, "aeim");
 		}
 	}
