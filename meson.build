@@ -19,7 +19,7 @@ git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
 is_static_build = get_option('static_runtime')
 if is_static_build and get_option('default_library') != 'static'
-  error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=true` if you want to build statically.')
+  error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=static` if you want to build statically.')
 endif
 
 # Get rizin version and compute various version parts
