@@ -875,7 +875,6 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					//}
 					ptr_start = ptr + 1;
 				}
-				ptr = ptr_start;
 			}
 			if (!*ptr_start) {
 				ret = 0;
@@ -961,7 +960,6 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					}
 				} else if (!strncmp(ptr, ".org ", 5)) {
 					ret = rz_asm_pseudo_org(a, ptr + 5);
-					off = a->pc;
 				} else if (rz_str_startswith(ptr, ".offset ")) {
 					eprintf("Invalid use of the .offset directory. This directive is only supported in rizin -c 'waf'.\n");
 				} else if (!strncmp(ptr, ".text", 5)) {

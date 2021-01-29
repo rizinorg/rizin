@@ -344,17 +344,6 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 			info->memory_error_func (status, memaddr, info);
 			return -1;
 	  }
-	    	uint32_t val;
-
-			if (size == 2) {
-				val=(info->flags & LITTLE_BIT)? bfd_getl16 (bytes):bfd_getb16 (bytes);
-				//(disp,PC) reads are always sign extended
-				val= (val&0x8000)? (val | 0xFFFF0000):(val & 0x0000FFFF);
-			} else {
-				val=(info->flags & LITTLE_BIT)? bfd_getl32 (bytes):bfd_getb32 (bytes);
-			}
-			// XXX this will not work until read_memory_func() is fixed.
-			//fprintf_fn (stream, " ;[0x%X]=0x%X", (unsigned int) disp_pc_addr, val);
 	}
 
       return 2;

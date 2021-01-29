@@ -192,7 +192,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			free(offset);
 			offset = strdup(v);
 		}
-		if ((flagname = strstr(dup, ".cparse"))) {
+		if (strstr(dup, ".cparse")) {
 			if (IS_MODE_RZCMD(mode)) {
 				rz_cons_printf("\"td %s\"\n", v);
 			} else if (IS_MODE_SET(mode)) {
@@ -3704,7 +3704,7 @@ static void bin_pe_versioninfo(RzCore *r, PJ *pj, int mode) {
 	}
 	do {
 		char *path_version = sdb_fmt(format_version, num_version);
-		if (!(sdb = sdb_ns_path(r->sdb, path_version, 0))) {
+		if (!sdb_ns_path(r->sdb, path_version, 0)) {
 			break;
 		}
 		if (IS_MODE_JSON(mode)) {

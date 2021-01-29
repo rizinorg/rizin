@@ -1737,7 +1737,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 		}
 		pj_a(pj);
 	}
-	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
+	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		rz_asm_set_pc(core->rasm, addr);
 		hint = rz_analysis_hint_get(core->analysis, addr);
@@ -6574,7 +6574,7 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 				//len = l;
 			}
 		} else {
-			len = l = core->blocksize;
+			len = core->blocksize;
 			count = 1;
 		}
 		core_analysis_bytes(core, core->block, len, count, 0);
@@ -7538,7 +7538,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 			pj_free(pj);
 		} else { // "axf"
 			RzAsmOp asmop;
-			RzList *list, *list_ = NULL;
+			RzList *list = NULL;
 			RzAnalysisRef *ref;
 			RzListIter *iter;
 			char *space = strchr(input, ' ');
@@ -7549,7 +7549,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 			}
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
 			if (input[1] == '.') { // "axf."
-				list = list_ = rz_analysis_xrefs_get_from(core->analysis, addr);
+				list = rz_analysis_xrefs_get_from(core->analysis, addr);
 				if (!list) {
 					list = rz_analysis_function_get_refs(fcn);
 				}
