@@ -11,8 +11,7 @@ static const char *help_msg_a[] = {
 	"a*", "", "same as afl*;ah*;ax*",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
-	"ab", "[b] [addr]", "analyze block at given address",
-	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
+	"ab", "[?] [addr]", "analyze block",
 	"ac", "[?]", "manage classes",
 	"aC", "[?]", "analyze function call",
 	"aCe", "[?]", "same as aC, but uses esil with abte to emulate the function",
@@ -89,7 +88,7 @@ static const char *help_msg_aar[] = {
 };
 
 static const char *help_msg_ab[] = {
-	"Usage:", "ab", "",
+	"Usage:", "ab", "analyze block",
 	"ab", " [addr]", "show basic block information at given address",
 	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
@@ -97,7 +96,7 @@ static const char *help_msg_ab[] = {
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[,qj]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
-	"abt[?]", " [addr] [num]", "find num paths from current offset to addr",
+	"abt", "[?] [addr] [num]", "find num paths from current offset to addr",
 	NULL
 };
 
