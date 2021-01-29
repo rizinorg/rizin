@@ -3808,13 +3808,13 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 #endif
 
 #ifdef RZ_PACKAGER_VERSION
-# ifdef RZ_PACKAGER
-#  define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION " (" RZ_PACKAGER ")"
-# else
-#  define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION
-# endif
+#ifdef RZ_PACKAGER
+#define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION " (" RZ_PACKAGER ")"
 #else
-# define RZ_STR_PKG_VERSION_STRING ""
+#define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION
+#endif
+#else
+#define RZ_STR_PKG_VERSION_STRING ""
 #endif
 
 RZ_API char *rz_str_version(const char *program) {
