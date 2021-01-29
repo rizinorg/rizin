@@ -13,6 +13,11 @@ create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
+is_static_build = get_option('static_runtime')
+if is_static_build and get_option('default_library') != 'static'
+  error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=true` if you want to build statically.')
+endif
+
 # Get rizin version and compute various version parts
 rizin_version = meson.project_version().split('v')[1]
 if host_machine.system() == 'darwin'
@@ -84,27 +89,29 @@ message('rizin lib version: ' + rizin_libversion)
 # system dependencies
 cc = meson.get_compiler('c')
 # required for linux
-ldl = cc.find_library('dl', required: false)
-pth = dependency('threads', required: false)
-utl = cc.find_library('util', required: false)
+ldl = cc.find_library('dl', required: false, static: is_static_build)
+pth = dependency('threads', required: false, static: is_static_build)
+utl = cc.find_library('util', required: false, static: is_static_build)
 if host_machine.system() == 'sunos'
   # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
   mth = declare_dependency(link_args: '-lm')
 else
-  mth = cc.find_library('m', required: false)
+  mth = cc.find_library('m', required: false, static: is_static_build)
 endif
 
 platform_deps = []
 platform_inc = ['.', 'librz/include']
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
+  platform_deps = [
+    cc.find_library('ws2_32'),
+    cc.find_library('wininet'),
+    cc.find_library('psapi'),
+  ]
 endif
 platform_inc = include_directories(platform_inc)
 
-if get_option('static_runtime')
-  if cc.get_id() == 'msvc'
-    add_project_arguments('/MT', language: 'c')
-  endif
+if is_static_build and cc.get_id() == 'msvc'
+  add_project_arguments('/MT', language: 'c')
 endif
 
 if cc.has_argument('--std=gnu99')
@@ -203,7 +210,7 @@ config_h = configure_file(
 )
 
 # handle magic library
-sys_magic = cc.find_library('magic', required: false)
+sys_magic = cc.find_library('magic', required: false, static: is_static_build)
 use_syslib_magic = false
 
 if sys_magic.found() and get_option('use_sys_magic')
@@ -211,20 +218,20 @@ if sys_magic.found() and get_option('use_sys_magic')
 endif
 
 # handle xxhash library
-sys_xxhash = dependency('xxhash', required: false)
+sys_xxhash = dependency('xxhash', required: false, static: is_static_build)
 use_sys_xxhash = false
 if not sys_xxhash.found()
-  sys_xxhash = cc.find_library('xxhash', required: false)
+  sys_xxhash = cc.find_library('xxhash', required: false, static: is_static_build)
 endif
 use_sys_xxhash = sys_xxhash.found() and get_option('use_sys_xxhash')
 
 # handle openssl library
-sys_openssl = dependency('openssl', required: false)
+sys_openssl = dependency('openssl', required: false, static: is_static_build)
 use_sys_openssl = sys_openssl.found() and get_option('use_sys_openssl')
 
 # handle libuv library
 if get_option('use_libuv')
-  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false, static: get_option('default_library') == 'static')
+  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false, static: is_static_build)
   use_libuv = libuv_dep.found()
   if not libuv_dep.found()
     warning('use_libuv option was set to true, but libuv was not found.')
@@ -299,7 +306,7 @@ endif
 
 lrt = []
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
-  lrt = cc.find_library('rt', required: true)
+  lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
 foreach item : [
@@ -378,7 +385,7 @@ libr_pc = configure_file(
 )
 
 # handle zlib dependency
-zlib_dep = dependency('zlib', required: false)
+zlib_dep = dependency('zlib', required: false, static: is_static_build)
 if not zlib_dep.found() or not get_option('use_sys_zlib')
   zlib_files = [
     'shlr/zip/zlib/adler32.c',

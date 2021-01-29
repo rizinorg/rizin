@@ -1,5 +1,5 @@
 # handle capstone dependency
-capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
+capstone_dep = dependency('capstone', version: '>=3.0.4', required: false, static: is_static_build)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
@@ -183,7 +183,7 @@ elif cc.has_argument('-std=c99')
   tree_sitter_cflags = '-std=c99'
 endif
 
-tree_sitter_dep = dependency('tree-sitter', required: false)
+tree_sitter_dep = dependency('tree-sitter', required: false, static: is_static_build)
 if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
   message('Use bundled tree-sitter')
   tree_sitter_path = 'tree-sitter'
@@ -317,7 +317,7 @@ tcc_dep = declare_dependency(
 
 
 # handle lz4 dependency
-lz4_dep = dependency('liblz4', required: false)
+lz4_dep = dependency('liblz4', required: false, static: is_static_build)
 if not lz4_dep.found() or not get_option('use_sys_lz4')
   message('Use bundled lz4')
   lz4_files = [
@@ -341,7 +341,7 @@ endif
 
 
 # handle zip dependency
-zip_dep = dependency('libzip', required: false)
+zip_dep = dependency('libzip', required: false, static: is_static_build)
 if not zip_dep.found() or not get_option('use_sys_zip')
   message('Use bundled zip')
 
