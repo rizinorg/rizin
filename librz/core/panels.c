@@ -3398,7 +3398,7 @@ int __step_over_cb(void *user) {
 
 int __io_cache_on_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_config_set_i(core->config, "io.cache", 1);
+	rz_config_set_b(core->config, "io.cache", true);
 	(void)__show_status(core, "io.cache is on");
 	__set_mode(core, PANEL_MODE_DEFAULT);
 	return 0;
@@ -3406,7 +3406,7 @@ int __io_cache_on_cb(void *user) {
 
 int __io_cache_off_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_config_set_i(core->config, "io.cache", 0);
+	rz_config_set_b(core->config, "io.cache", false);
 	(void)__show_status(core, "io.cache is off");
 	__set_mode(core, PANEL_MODE_DEFAULT);
 	return 0;
@@ -4669,7 +4669,7 @@ void __panels_refresh(RzCore *core) {
 	RzStrBuf *title = rz_strbuf_new(" ");
 	bool utf8 = rz_config_get_i(core->config, "scr.utf8");
 	if (firstRun) {
-		rz_config_set_i(core->config, "scr.utf8", 0);
+		rz_config_set_b(core->config, "scr.utf8", false);
 	}
 
 	__refresh_core_offset(core);
@@ -4753,7 +4753,7 @@ void __panels_refresh(RzCore *core) {
 
 	if (firstRun) {
 		firstRun = false;
-		rz_config_set_i(core->config, "scr.utf8", utf8);
+		rz_config_set_b(core->config, "scr.utf8", utf8);
 		RzPanel *cur = __get_cur_panel(core->panels);
 		cur->view->refresh = true;
 		__panels_refresh(core);
@@ -4809,7 +4809,7 @@ void __panel_single_step_in(RzCore *core) {
 
 void __panel_single_step_over(RzCore *core) {
 	bool io_cache = rz_config_get_i(core->config, "io.cache");
-	rz_config_set_i(core->config, "io.cache", false);
+	rz_config_set_b(core->config, "io.cache", false);
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		rz_core_cmd(core, "dso", 0);
 		rz_core_debug_regs2flags(core, 0);
@@ -4817,7 +4817,7 @@ void __panel_single_step_over(RzCore *core) {
 		rz_core_cmd(core, "aeso", 0);
 		rz_core_regs2flags(core);
 	}
-	rz_config_set_i(core->config, "io.cache", io_cache);
+	rz_config_set_b(core->config, "io.cache", io_cache);
 }
 
 void __panel_breakpoint(RzCore *core) {
@@ -5501,7 +5501,7 @@ void __set_breakpoints_on_cursor(RzCore *core, RzPanel *panel) {
 void __insert_value(RzCore *core) {
 	if (!rz_config_get_i(core->config, "io.cache")) {
 		if (__show_status_yesno(core, 1, "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
-			rz_config_set_i(core->config, "io.cache", 1);
+			rz_config_set_b(core->config, "io.cache", true);
 			(void)__show_status(core, "io.cache is on and insert is available now.");
 		} else {
 			(void)__show_status(core, "You can always turn on io.cache in Menu->Edit->io.cache");
@@ -6462,26 +6462,26 @@ repeat:
 	case 'r':
 		// TODO: toggle shortcut hotkeys
 		if (rz_config_get_i(core->config, "asm.hint.call")) {
-			rz_core_cmd0(core, "e!asm.hint.call");
-			rz_core_cmd0(core, "e asm.hint.jmp=true");
+			rz_config_toggle(core->config, "asm.hint.call");
+			rz_config_set_b(core->config, "asm.hint.jmp", true);
 		} else if (rz_config_get_i(core->config, "asm.hint.jmp")) {
-			rz_core_cmd0(core, "e!asm.hint.jmp");
-			rz_core_cmd0(core, "e asm.hint.emu=true");
+			rz_config_toggle(core->config, "asm.hint.jmp");
+			rz_config_set_b(core->config, "asm.hint.emu", true);
 		} else if (rz_config_get_i(core->config, "asm.hint.emu")) {
-			rz_core_cmd0(core, "e!asm.hint.emu");
-			rz_core_cmd0(core, "e asm.hint.lea=true");
+			rz_config_toggle(core->config, "asm.hint.emu");
+			rz_config_set_b(core->config, "asm.hint.lea", true);
 		} else if (rz_config_get_i(core->config, "asm.hint.lea")) {
-			rz_core_cmd0(core, "e!asm.hint.lea");
-			rz_core_cmd0(core, "e asm.hint.call=true");
+			rz_config_toggle(core->config, "asm.hint.lea");
+			rz_config_set_b(core->config, "asm.hint.call", true);
 		} else {
-			rz_core_cmd0(core, "e asm.hint.call=true");
+			rz_config_set_b(core->config, "asm.hint.call", true);
 		}
 		break;
 	case 'R':
 		if (rz_config_get_i(core->config, "scr.randpal")) {
 			rz_cons_pal_random();
 		} else {
-			rz_core_cmd0(core, "ecn");
+			rz_core_theme_nextpal(core, 'n');
 		}
 		__do_panels_refresh(core);
 		break;
