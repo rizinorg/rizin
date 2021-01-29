@@ -12,7 +12,6 @@ static const char *help_msg_a[] = {
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[?] [addr]", "analyze block",
-	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
 	"ac", "[?]", "manage classes",
 	"aC", "[?]", "analyze function call",
 	"aCe", "[?]", "same as aC, but uses esil with abte to emulate the function",
