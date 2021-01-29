@@ -37,7 +37,12 @@ First, we suggest you use the options `-Dpackager_version=<package-version>`
 and `-Dpackager=<packager>` to help us track the version of Rizin users are
 using, because these options are used when you run `rizin -v`. In this way
 when a user reports a issue and he provides his `rizin -v` output, we know
-how Rizin was built.
+how Rizin was built. Below you can see an example of how rizin uses the
+additional information:
+```
+rizin 0.2.0-git @ linux-x86-64, package: 0.2.0-git (rizinorg)
+commit: 84d2892e7210dc3ced88ae006ba5a9502f4847c8, build: 2021-01-29__09:35:03
+```
 
 Then, to define the base install location for Rizin use the `--prefix` flag when
 invoking `meson`. For system installs it is common to use `/usr`. If in doubt
