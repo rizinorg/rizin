@@ -3535,7 +3535,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 					if (!rz_cons_yesno('y', "\rNo function at 0x%08" PFMT64x ". Define it here (Y/n)? ", core->offset)) {
 						return 0;
 					}
-					rz_core_cmd0(core, "af");
+					rz_core_analysis_function_add(core, NULL, core->offset, false);
 				}
 				f = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 				g->need_reload_nodes = true;
@@ -3978,8 +3978,7 @@ static void seek_to_node(RzANode *n, RzCore *core) {
 static void graph_single_step_in(RzCore *core, RzAGraph *g) {
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
-			// dcu 0xaddr
-			rz_core_cmdf(core, "dcu 0x%08" PFMT64x, core->offset + core->print->cur);
+			rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "ds", 0);
@@ -4506,15 +4505,20 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				g->need_reload_nodes = true;
 			}
 			// TODO: toggle shortcut hotkeys
-			if (rz_config_get_i(core->config, "asm.hint.call")) {
-				rz_core_cmd0(core, "e!asm.hint.call");
-				rz_core_cmd0(core, "e!asm.hint.jmp");
-			} else if (rz_config_get_i(core->config, "asm.hint.jmp")) {
-				rz_core_cmd0(core, "e!asm.hint.jmp");
-				rz_core_cmd0(core, "e!asm.hint.lea");
-			} else if (rz_config_get_i(core->config, "asm.hint.lea")) {
-				rz_core_cmd0(core, "e!asm.hint.lea");
-				rz_core_cmd0(core, "e!asm.hint.call");
+			if (rz_config_get_b(core->config, "asm.hint.call")) {
+				rz_config_toggle(core->config, "asm.hint.call");
+				rz_config_set_b(core->config, "asm.hint.jmp", true);
+			} else if (rz_config_get_b(core->config, "asm.hint.jmp")) {
+				rz_config_toggle(core->config, "asm.hint.jmp");
+				rz_config_set_b(core->config, "asm.hint.emu", true);
+			} else if (rz_config_get_b(core->config, "asm.hint.emu")) {
+				rz_config_toggle(core->config, "asm.hint.emu");
+				rz_config_set_b(core->config, "asm.hint.lea", true);
+			} else if (rz_config_get_b(core->config, "asm.hint.lea")) {
+				rz_config_toggle(core->config, "asm.hint.lea");
+				rz_config_set_b(core->config, "asm.hint.call", true);
+			} else {
+				rz_config_set_b(core->config, "asm.hint.call", true);
 			}
 			break;
 		case '$':
@@ -4526,7 +4530,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			if (rz_config_get_i(core->config, "scr.randpal")) {
 				rz_cons_pal_random();
 			} else {
-				rz_core_cmd0(core, "ecn");
+				rz_core_theme_nextpal(core, 'n');
 			}
 			if (!fcn) {
 				break;
