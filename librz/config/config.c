@@ -146,7 +146,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 	bool json = false;
 	bool isFirst = false;
 
-	if (!IS_NULLSTR(str)) {
+	if (RZ_STR_ISNOTEMPTY(str)) {
 		str = rz_str_trim_head_ro(str);
 		len = strlen(str);
 		if (len > 0 && str[0] == 'j') {
@@ -424,7 +424,7 @@ RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, const char *name, bool value
 	ut64 oi = 0;
 
 	rz_return_val_if_fail(cfg && cfg->ht, NULL);
-	rz_return_val_if_fail(!IS_NULLSTR(name), NULL);
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 
 	node = rz_config_node_get(cfg, name);
 	if (node) {
@@ -492,7 +492,7 @@ RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, const char *name, const char *
 	ut64 oi;
 
 	rz_return_val_if_fail(cfg && cfg->ht, NULL);
-	rz_return_val_if_fail(!IS_NULLSTR(name), NULL);
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 
 	node = rz_config_node_get(cfg, name);
 	if (node) {
