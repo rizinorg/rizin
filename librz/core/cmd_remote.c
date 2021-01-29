@@ -168,15 +168,14 @@ RZ_IPI RzCmdStatus rz_remote_send_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_io_system_run_handler(RzCore *core, int argc, const char **argv) {
-	char *args = rz_str_array_join(argv + 1, argc - 1, " ");
-	char *res = rz_io_system(core->io, args);
+RZ_IPI int rz_io_system_run_oldhandler(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	char *res = rz_io_system(core->io, input);
 	if (res) {
 		rz_cons_printf("%s\n", res);
 		free(res);
 	}
-	free(args);
-	return RZ_CMD_STATUS_OK;
+	return 0;
 }
 
 RZ_IPI RzCmdStatus rz_remote_add_handler(RzCore *core, int argc, const char **argv) {

@@ -1,5 +1,5 @@
 # handle capstone dependency
-capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
+capstone_dep = dependency('capstone', version: '>=3.0.4', required: false, static: is_static_build)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
   capstone_version = get_option('use_capstone_version')
   if capstone_version == 'bundled'
@@ -26,7 +26,7 @@ endif
 
 
 # handle tree-sitter
-tree_sitter_dep = dependency('tree-sitter', required: false)
+tree_sitter_dep = dependency('tree-sitter', required: false, static: is_static_build)
 if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
   tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
   tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
@@ -141,7 +141,7 @@ tcc_dep = declare_dependency(
 
 
 # handle lz4 dependency
-lz4_dep = dependency('liblz4', required: false)
+lz4_dep = dependency('liblz4', required: false, static: is_static_build)
 if not lz4_dep.found() or not get_option('use_sys_lz4')
   lz4_files = [
     'lz4/lz4.c',
@@ -162,7 +162,7 @@ endif
 
 
 # handle zip dependency
-zip_dep = dependency('libzip', required: false)
+zip_dep = dependency('libzip', required: false, static: is_static_build)
 if not zip_dep.found() or not get_option('use_sys_zip')
   zip_files = [
     'zip/zip/zip_add.c',

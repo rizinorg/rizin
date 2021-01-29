@@ -1,7 +1,7 @@
 
 # project('ptrace-wrap', 'c')
 
-thread_dep = dependency('threads')
+thread_dep = dependency('threads', static: is_static_build)
 
 ptrace_wrap_inc = include_directories('include')
 

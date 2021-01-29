@@ -277,13 +277,11 @@
           type: RZ_CMD_ARG_TYPE_CMD
           flags: RZ_CMD_ARG_FLAG_LAST
     - name: =!
-      cname: io_system_run
+      cname: io_system_run_oldhandler
       summary: Run <cmd> via rz_io_system
-      args:
-        - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD
-          flags: RZ_CMD_ARG_FLAG_LAST
-          optional: true
+      type: RZ_CMD_DESC_TYPE_OLDINPUT
+      args_str: "[<cmd>]"
+      options: ""
     - name: =+
       cname: remote_add
       summary: Connect to remote host:port
