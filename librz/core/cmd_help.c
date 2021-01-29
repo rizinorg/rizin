@@ -863,7 +863,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		case 0: { // "?V"
 			char *v = rz_str_version(NULL);
 			rz_cons_printf("%s\n", v);
-			free (v);
+			free(v);
 			break;
 		}
 		case 'c': // "?Vc"
