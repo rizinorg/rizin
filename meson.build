@@ -659,7 +659,6 @@ if meson.is_subproject()
       rz_search_dep,
       rz_socket_dep,
       rz_syscall_dep,
-
       rz_util_dep
     ],
     include_directories: include_directories('.', 'librz/include'),
