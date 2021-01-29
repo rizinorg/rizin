@@ -50,11 +50,6 @@ gittip = ''
 
 git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
 if git_exe.found() and git_dir_exists.returncode() == 0
-  sdb_src_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").listdir("shlr/sdb/") else 1)')
-  if sdb_src_exists.returncode() == 1
-    error('Source code for SDB not found. Did you forget to run `git submodule update --init`?')
-  endif
-
   # Get gittip
   git_rev_parse = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD')
   if git_rev_parse.returncode() == 0
