@@ -2584,7 +2584,7 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 		if (ds->asm_analysis) {
 			switch (ds->analop.type) {
 			case RZ_ANALYSIS_OP_TYPE_CALL:
-				rz_core_cmdf(ds->core, "af @ 0x%" PFMT64x, ds->analop.jump);
+				rz_core_analysis_function_add(ds->core, NULL, ds->analop.jump, false);
 				break;
 			}
 		}

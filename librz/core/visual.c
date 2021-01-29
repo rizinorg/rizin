@@ -298,7 +298,7 @@ static const char *help_msg_visual[] = {
 	"=", "set cmd.vprompt (top row)",
 	"|", "set cmd.cprompt (right column)",
 	".", "seek to program counter",
-	"#", "toggle decompiler comments in disasm (see pdd* from r2dec)",
+	"#", "toggle decompiler comments in disasm (see pdd* from jsdec)",
 	"\\", "toggle visual split mode",
 	"\"", "toggle the column mode (uses pC..)",
 	"/", "in cursor mode search in current block",

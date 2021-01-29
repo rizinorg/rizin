@@ -619,6 +619,9 @@ RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut6
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 RZ_API int rz_core_esil_step_back(RzCore *core);
 RZ_API ut64 rz_core_analysis_get_bbaddr(RzCore *core, ut64 addr);
+RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
+RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name);
+RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 addr, bool analyze_recursively);
 RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int depth);
 RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
