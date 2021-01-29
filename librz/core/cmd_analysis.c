@@ -11,7 +11,7 @@ static const char *help_msg_a[] = {
 	"a*", "", "same as afl*;ah*;ax*",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
-	"ab", "[?] [b] [addr]", "analyze block at given address",
+	"ab", "[?] [addr]", "analyze block",
 	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
 	"ac", "[?]", "manage classes",
 	"aC", "[?]", "analyze function call",
@@ -89,7 +89,7 @@ static const char *help_msg_aar[] = {
 };
 
 static const char *help_msg_ab[] = {
-	"Usage:", "ab", "",
+	"Usage:", "ab", "analyze block",
 	"ab", " [addr]", "show basic block information at given address",
 	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
