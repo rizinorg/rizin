@@ -6315,9 +6315,9 @@ RZ_API int rz_core_cmd_file(RzCore *core, const char *file) {
 
 RZ_API int rz_core_cmd_command(RzCore *core, const char *command) {
 	int ret, len;
-	char *buf, *rcmd, *ptr;
+	char *buf, *rcmd;
 	char *cmd = rz_core_sysenv_begin(core, command);
-	rcmd = ptr = buf = rz_sys_cmd_str(cmd, 0, &len);
+	rcmd = buf = rz_sys_cmd_str(cmd, 0, &len);
 	if (!buf) {
 		free(cmd);
 		return -1;
