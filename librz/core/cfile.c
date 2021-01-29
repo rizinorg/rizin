@@ -201,6 +201,44 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	return ret;
 }
 
+static bool file_resize(RzCore *core, ut64 newsize, st64 delta) {
+	int ret;
+	ut64 oldsize = (core->file) ? rz_io_fd_size(core->io, core->file->fd) : 0;
+	if (delta) {
+		newsize = oldsize + delta;
+	}
+	bool grow = (newsize > oldsize);
+	if (grow) {
+		ret = rz_io_resize(core->io, newsize);
+		if (ret < 1) {
+			eprintf("rz_io_resize: cannot resize\n");
+			return false;
+		}
+	}
+	if (delta && core->offset < newsize) {
+		rz_io_shift(core->io, core->offset, grow ? newsize : oldsize, delta);
+	}
+	if (!grow) {
+		ret = rz_io_resize(core->io, newsize);
+		if (ret < 1) {
+			eprintf("rz_io_resize: cannot resize\n");
+			return false;
+		}
+	}
+	if (newsize < core->offset + core->blocksize || oldsize < core->offset + core->blocksize) {
+		rz_core_block_read(core);
+	}
+	return true;
+}
+
+RZ_API bool rz_core_file_resize(RzCore *core, ut64 newsize) {
+	return file_resize(core, newsize, 0);
+}
+
+RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta) {
+	return file_resize(core, 0, delta);
+}
+
 RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd) {
 	// TODO: remove tmpfilez
 	if (strstr(cmd, "RZ_BLOCK")) {

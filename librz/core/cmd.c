@@ -1467,7 +1467,6 @@ RZ_IPI int rz_cmd_resize(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut64 newsize = 0;
 	st64 delta = 0;
-	int grow, ret;
 
 	if (cmd_rzcmd(core, input)) {
 		return true;
@@ -1475,11 +1474,6 @@ RZ_IPI int rz_cmd_resize(void *data, const char *input) {
 
 	ut64 oldsize = (core->file) ? rz_io_fd_size(core->io, core->file->fd) : 0;
 	switch (*input) {
-	case 'a': // "r..."
-		if (rz_str_startswith(input, "adare2")) {
-			__runMain(core->rz_main_rizin, input - 1);
-		}
-		return true;
 	case 'b': // "rb" rebase
 		return cmd_rebase(core, input + 1);
 	case 'z': // "rz" // XXX should be handled already in cmd_rzcmd()
@@ -1549,25 +1543,10 @@ RZ_IPI int rz_cmd_resize(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_r);
 		return true;
 	}
-
-	grow = (newsize > oldsize);
-	if (grow) {
-		ret = rz_io_resize(core->io, newsize);
-		if (ret < 1) {
-			eprintf("rz_io_resize: cannot resize\n");
-		}
-	}
-	if (delta && core->offset < newsize) {
-		rz_io_shift(core->io, core->offset, grow ? newsize : oldsize, delta);
-	}
-	if (!grow) {
-		ret = rz_io_resize(core->io, newsize);
-		if (ret < 1) {
-			eprintf("rz_io_resize: cannot resize\n");
-		}
-	}
-	if (newsize < core->offset + core->blocksize || oldsize < core->offset + core->blocksize) {
-		rz_core_block_read(core);
+	if (delta) {
+		rz_core_file_resize_delta(core, delta);
+	} else {
+		rz_core_file_resize(core, newsize);
 	}
 	return true;
 }
