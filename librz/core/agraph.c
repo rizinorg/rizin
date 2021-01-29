@@ -4505,21 +4505,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				g->need_reload_nodes = true;
 			}
 			// TODO: toggle shortcut hotkeys
-			if (rz_config_get_b(core->config, "asm.hint.call")) {
-				rz_config_toggle(core->config, "asm.hint.call");
-				rz_config_set_b(core->config, "asm.hint.jmp", true);
-			} else if (rz_config_get_b(core->config, "asm.hint.jmp")) {
-				rz_config_toggle(core->config, "asm.hint.jmp");
-				rz_config_set_b(core->config, "asm.hint.emu", true);
-			} else if (rz_config_get_b(core->config, "asm.hint.emu")) {
-				rz_config_toggle(core->config, "asm.hint.emu");
-				rz_config_set_b(core->config, "asm.hint.lea", true);
-			} else if (rz_config_get_b(core->config, "asm.hint.lea")) {
-				rz_config_toggle(core->config, "asm.hint.lea");
-				rz_config_set_b(core->config, "asm.hint.call", true);
-			} else {
-				rz_config_set_b(core->config, "asm.hint.call", true);
-			}
+			rz_core_visual_toggle_hints(core);
 			break;
 		case '$':
 			rz_core_cmd(core, "dr PC=$$", 0);
