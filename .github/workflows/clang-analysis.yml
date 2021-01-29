@@ -51,9 +51,7 @@ jobs:
 
     - name: Exclude external lib
       run: |
-        grep -Rl 'rizin/shlr/capstone' reports | xargs rm -fv
-        grep -Rl 'rizin/shlr/sdb' reports | xargs rm -fv
-        grep -Rl 'rizin/shlr/tree-sitter' reports | xargs rm -fv
+        grep -Rl 'rizin/subprojects' reports | xargs rm -fv
 
     - name: Merge all files
       run: npx @microsoft/sarif-multitool merge reports/**/*.sarif

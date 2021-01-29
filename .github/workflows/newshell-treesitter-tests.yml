@@ -3,9 +3,7 @@ name: Rizin CI tree-sitter test
 on:
   pull_request:
     paths:
-      - 'shlr/tree-sitter/*'
-      - 'shlr/tree-sitter/lib/*'
-      - 'shlr/tree-sitter/lib/**/*'
+      - 'subprojects/tree-sitter.wrap'
       - 'shlr/rizin-shell-parser/*'
       - 'shlr/rizin-shell-parser/**/*'
     branches:
