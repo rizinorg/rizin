@@ -110,6 +110,13 @@ static char *getFunctionName(RzCore *core, ut64 addr) {
 	return (flag && flag->name) ? strdup(flag->name) : NULL;
 }
 
+static char *getFunctionNamePrefix(RzCore *core, ut64 off, const char *name) {
+	if (rz_reg_get(core->analysis->reg, name, -1)) {
+		return rz_str_newf("%s.%08" PFMT64x, "fcn", off);
+	}
+	return strdup(name);
+}
+
 static RzCore *mycore = NULL;
 
 // XXX: copypaste from analysis/data.c
@@ -5783,6 +5790,136 @@ static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {
 		}
 		rz_analysis_op_free(op);
 	}
+	return true;
+}
+
+/* set flags for every function */
+RZ_API void rz_core_analysis_flag_every_function(RzCore *core) {
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		rz_flag_set(core->flags, fcn->name,
+			fcn->addr, rz_analysis_function_size_from_entry(fcn));
+	}
+	rz_flag_space_pop(core->flags);
+}
+
+/* TODO: move into rz_analysis_function_rename (); */
+RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name) {
+	rz_return_val_if_fail(core && _name, false);
+	_name = rz_str_trim_head_ro(_name);
+	char *name = getFunctionNamePrefix(core, addr, _name);
+	// RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_ANY);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	if (fcn) {
+		RzFlagItem *flag = rz_flag_get(core->flags, fcn->name);
+		if (flag && flag->space && strcmp(flag->space->name, RZ_FLAGS_FS_FUNCTIONS) == 0) {
+			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
+			rz_flag_rename(core->flags, flag, name);
+		} else {
+			// No flag or not specific to the function, create a new one.
+			rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
+			rz_flag_set(core->flags, name, fcn->addr, rz_analysis_function_size_from_entry(fcn));
+			rz_flag_space_pop(core->flags);
+		}
+		rz_analysis_function_rename(fcn, name);
+		if (core->analysis->cb.on_fcn_rename) {
+			core->analysis->cb.on_fcn_rename(core->analysis, core->analysis->user, fcn, name);
+		}
+		free(name);
+		return true;
+	}
+	free(name);
+	return false;
+}
+
+RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 addr, bool analyze_recursively) {
+	int depth = rz_config_get_i(core->config, "analysis.depth");
+	RzAnalysisFunction *fcn = NULL;
+
+	//rz_core_analysis_undefine (core, core->offset);
+	rz_core_analysis_fcn(core, addr, UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
+	fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
+	if (fcn) {
+		/* ensure we use a proper name */
+		rz_core_analysis_function_rename(core, addr, fcn->name);
+		if (core->analysis->opt.vars) {
+			rz_core_recover_vars(core, fcn, true);
+		}
+		rz_analysis_fcn_vars_add_types(core->analysis, fcn);
+	} else {
+		if (core->analysis->verbose) {
+			eprintf("Warning: Unable to analyze function at 0x%08" PFMT64x "\n", addr);
+			return false;
+		}
+	}
+	if (analyze_recursively) {
+		fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0); /// XXX wrong in case of nopskip
+		if (fcn) {
+			RzAnalysisRef *ref;
+			RzListIter *iter;
+			RzList *refs = rz_analysis_function_get_refs(fcn);
+			rz_list_foreach (refs, iter, ref) {
+				if (ref->addr == UT64_MAX) {
+					//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
+					continue;
+				}
+				if (ref->type != RZ_ANALYSIS_REF_TYPE_CODE && ref->type != RZ_ANALYSIS_REF_TYPE_CALL) {
+					/* only follow code/call references */
+					continue;
+				}
+				if (!rz_io_is_valid_offset(core->io, ref->addr, !core->analysis->opt.noncode)) {
+					continue;
+				}
+				rz_core_analysis_fcn(core, ref->addr, fcn->addr, RZ_ANALYSIS_REF_TYPE_CALL, depth);
+				/* use recursivity here */
+				RzAnalysisFunction *f = rz_analysis_get_function_at(core->analysis, ref->addr);
+				if (f) {
+					RzListIter *iter;
+					RzAnalysisRef *ref;
+					RzList *refs1 = rz_analysis_function_get_refs(f);
+					rz_list_foreach (refs1, iter, ref) {
+						if (!rz_io_is_valid_offset(core->io, ref->addr, !core->analysis->opt.noncode)) {
+							continue;
+						}
+						if (ref->type != 'c' && ref->type != 'C') {
+							continue;
+						}
+						rz_core_analysis_fcn(core, ref->addr, f->addr, RZ_ANALYSIS_REF_TYPE_CALL, depth);
+						// recursively follow fcn->refs again and again
+					}
+					rz_list_free(refs1);
+				} else {
+					f = rz_analysis_get_fcn_in(core->analysis, fcn->addr, 0);
+					if (f) {
+						/* cut function */
+						rz_analysis_function_resize(f, addr - fcn->addr);
+						rz_core_analysis_fcn(core, ref->addr, fcn->addr,
+							RZ_ANALYSIS_REF_TYPE_CALL, depth);
+						f = rz_analysis_get_function_at(core->analysis, fcn->addr);
+					}
+					if (!f) {
+						eprintf("af: Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
+						rz_list_free(refs);
+						return false;
+					}
+				}
+			}
+			rz_list_free(refs);
+			if (core->analysis->opt.vars) {
+				rz_core_recover_vars(core, fcn, true);
+			}
+		}
+	}
+	if (name) {
+		if (*name && !rz_core_analysis_function_rename(core, addr, name)) {
+			eprintf("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
+			return false;
+		}
+	}
+	rz_core_analysis_propagate_noreturn(core, addr);
+	rz_core_analysis_flag_every_function(core);
 	return true;
 }
 

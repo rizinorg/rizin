@@ -814,44 +814,6 @@ static bool analysis_is_bad_call(RzCore *core, ut64 from, ut64 to, ut64 addr, ut
 }
 #endif
 
-// function argument types and names into analysis/types
-static void __add_vars_sdb(RzCore *core, RzAnalysisFunction *fcn) {
-	RzAnalysisFcnVarsCache cache;
-	rz_analysis_fcn_vars_cache_init(core->analysis, &cache, fcn);
-	RzListIter *iter;
-	RzAnalysisVar *var;
-	int arg_count = 0;
-
-	RzList *all_vars = cache.rvars;
-	rz_list_join(all_vars, cache.bvars);
-	rz_list_join(all_vars, cache.svars);
-
-	RzStrBuf key, value;
-	rz_strbuf_init(&key);
-	rz_strbuf_init(&value);
-
-	rz_list_foreach (all_vars, iter, var) {
-		if (var->isarg) {
-			if (!rz_strbuf_setf(&key, "func.%s.arg.%d", fcn->name, arg_count) ||
-				!rz_strbuf_setf(&value, "%s,%s", var->type, var->name)) {
-				goto exit;
-			}
-			sdb_set(core->analysis->sdb_types, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
-			arg_count++;
-		}
-	}
-	if (arg_count > 0) {
-		if (!rz_strbuf_setf(&key, "func.%s.args", fcn->name) ||
-			!rz_strbuf_setf(&value, "%d", arg_count)) {
-			goto exit;
-		}
-		sdb_set(core->analysis->sdb_types, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
-	}
-exit:
-	rz_strbuf_fini(&key);
-	rz_strbuf_fini(&value);
-	rz_analysis_fcn_vars_cache_fini(&cache);
-}
 
 static bool cmd_analysis_aaft(RzCore *core) {
 	RzListIter *it;
@@ -888,7 +850,7 @@ static bool cmd_analysis_aaft(RzCore *core) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		__add_vars_sdb(core, fcn);
+		rz_analysis_fcn_vars_add_types(core->analysis, fcn);
 	}
 	if (delete_regs) {
 		rz_core_debug_clear_register_flags(core);
@@ -927,18 +889,6 @@ static bool cc_print(void *p, const char *k, const char *v) {
 		rz_cons_println(k);
 	}
 	return true;
-}
-
-/* set flags for every function */
-static void flag_every_function(RzCore *core) {
-	RzListIter *iter;
-	RzAnalysisFunction *fcn;
-	rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		rz_flag_set(core->flags, fcn->name,
-			fcn->addr, rz_analysis_function_size_from_entry(fcn));
-	}
-	rz_flag_space_pop(core->flags);
 }
 
 static void var_help(RzCore *core, char ch) {
@@ -2831,42 +2781,6 @@ static void rz_core_analysis_fmap(RzCore *core, const char *input) {
 	free(bitmap);
 }
 
-static char *getFunctionName(RzCore *core, ut64 off, const char *name, bool prefix) {
-	if (rz_reg_get(core->analysis->reg, name, -1)) {
-		return rz_str_newf("%s.%08" PFMT64x, "fcn", off);
-	}
-	return strdup(name);
-}
-
-/* TODO: move into rz_analysis_function_rename (); */
-static bool __setFunctionName(RzCore *core, ut64 addr, const char *_name, bool prefix) {
-	rz_return_val_if_fail(core && _name, false);
-	_name = rz_str_trim_head_ro(_name);
-	char *name = getFunctionName(core, addr, _name, prefix);
-	// RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_ANY);
-	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
-	if (fcn) {
-		RzFlagItem *flag = rz_flag_get(core->flags, fcn->name);
-		if (flag && flag->space && strcmp(flag->space->name, RZ_FLAGS_FS_FUNCTIONS) == 0) {
-			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
-			rz_flag_rename(core->flags, flag, name);
-		} else {
-			// No flag or not specific to the function, create a new one.
-			rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
-			rz_flag_set(core->flags, name, fcn->addr, rz_analysis_function_size_from_entry(fcn));
-			rz_flag_space_pop(core->flags);
-		}
-		rz_analysis_function_rename(fcn, name);
-		if (core->analysis->cb.on_fcn_rename) {
-			core->analysis->cb.on_fcn_rename(core->analysis, core->analysis->user, fcn, name);
-		}
-		free(name);
-		return true;
-	}
-	free(name);
-	return false;
-}
-
 static void afCc(RzCore *core, const char *input) {
 	ut64 addr;
 	RzAnalysisFunction *fcn;
@@ -3616,7 +3530,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 					if (fcnname) {
 						// TODO: move this into rz_analysis_str_to_fcn()
 						if (strcmp(f->name, fcnname)) {
-							(void)__setFunctionName(core, addr, fcnname, false);
+							(void)rz_core_analysis_function_rename(core, addr, fcnname);
 							f = rz_analysis_get_fcn_in(core->analysis, addr, -1);
 						}
 						rz_analysis_str_to_fcn(core->analysis, f, fcnstr);
@@ -3923,7 +3837,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 						name = res;
 					}
 				}
-				if (!*name || !__setFunctionName(core, off, name, false)) {
+				if (!*name || !rz_core_analysis_function_rename(core, off, name)) {
 					eprintf("Cannot find function at 0x%08" PFMT64x "\n", off);
 				}
 			}
@@ -4022,9 +3936,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 	case '\0': // "af"
 	{
 		char *uaddr = NULL, *name = NULL;
-		int depth = rz_config_get_i(core->config, "analysis.depth");
 		bool analyze_recursively = rz_config_get_i(core->config, "analysis.calls");
-		RzAnalysisFunction *fcn = NULL;
 		ut64 addr = core->offset;
 		if (input[1] == 'r') {
 			input++;
@@ -4039,90 +3951,9 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 				*uaddr++ = 0;
 				addr = rz_num_math(core->num, uaddr);
 			}
-			// depth = 1; // or 1?
 			// disable hasnext
 		}
-		//rz_core_analysis_undefine (core, core->offset);
-		rz_core_analysis_fcn(core, addr, UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
-		fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-		if (fcn) {
-			/* ensure we use a proper name */
-			__setFunctionName(core, addr, fcn->name, false);
-			if (core->analysis->opt.vars) {
-				rz_core_recover_vars(core, fcn, true);
-			}
-			__add_vars_sdb(core, fcn);
-		} else {
-			if (core->analysis->verbose) {
-				eprintf("Warning: Unable to analyze function at 0x%08" PFMT64x "\n", addr);
-			}
-		}
-		if (analyze_recursively) {
-			fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0); /// XXX wrong in case of nopskip
-			if (fcn) {
-				RzAnalysisRef *ref;
-				RzListIter *iter;
-				RzList *refs = rz_analysis_function_get_refs(fcn);
-				rz_list_foreach (refs, iter, ref) {
-					if (ref->addr == UT64_MAX) {
-						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
-						continue;
-					}
-					if (ref->type != RZ_ANALYSIS_REF_TYPE_CODE && ref->type != RZ_ANALYSIS_REF_TYPE_CALL) {
-						/* only follow code/call references */
-						continue;
-					}
-					if (!rz_io_is_valid_offset(core->io, ref->addr, !core->analysis->opt.noncode)) {
-						continue;
-					}
-					rz_core_analysis_fcn(core, ref->addr, fcn->addr, RZ_ANALYSIS_REF_TYPE_CALL, depth);
-					/* use recursivity here */
-#if 1
-					RzAnalysisFunction *f = rz_analysis_get_function_at(core->analysis, ref->addr);
-					if (f) {
-						RzListIter *iter;
-						RzAnalysisRef *ref;
-						RzList *refs1 = rz_analysis_function_get_refs(f);
-						rz_list_foreach (refs1, iter, ref) {
-							if (!rz_io_is_valid_offset(core->io, ref->addr, !core->analysis->opt.noncode)) {
-								continue;
-							}
-							if (ref->type != 'c' && ref->type != 'C') {
-								continue;
-							}
-							rz_core_analysis_fcn(core, ref->addr, f->addr, RZ_ANALYSIS_REF_TYPE_CALL, depth);
-							// recursively follow fcn->refs again and again
-						}
-						rz_list_free(refs1);
-					} else {
-						f = rz_analysis_get_fcn_in(core->analysis, fcn->addr, 0);
-						if (f) {
-							/* cut function */
-							rz_analysis_function_resize(f, addr - fcn->addr);
-							rz_core_analysis_fcn(core, ref->addr, fcn->addr,
-								RZ_ANALYSIS_REF_TYPE_CALL, depth);
-							f = rz_analysis_get_function_at(core->analysis, fcn->addr);
-						}
-						if (!f) {
-							eprintf("af: Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
-						}
-					}
-#endif
-				}
-				rz_list_free(refs);
-				if (core->analysis->opt.vars) {
-					rz_core_recover_vars(core, fcn, true);
-				}
-			}
-		}
-		if (name) {
-			if (*name && !__setFunctionName(core, addr, name, true)) {
-				eprintf("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
-			}
-			free(name);
-		}
-		rz_core_analysis_propagate_noreturn(core, addr);
-		flag_every_function(core);
+		return rz_core_analysis_function_add(core, name, addr, analyze_recursively);
 	} break;
 	default:
 		return false;
@@ -9566,7 +9397,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_core_seek(core, curseek, true);
 		jacuzzi:
 			// XXX this shouldnt be called. flags muts be created wheen the function is registered
-			flag_every_function(core);
+			rz_core_analysis_flag_every_function(core);
 			rz_cons_break_pop();
 			RZ_FREE(dh_orig);
 		}
