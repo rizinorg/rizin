@@ -75,7 +75,7 @@ RUN apt-get update && \
 	cd /mnt && \
 	git clone -b "$RZ_PIPE_PY_VERSION" https://github.com/rizinorg/rz-pipe && \
 	pip3 install ./rz-pipe/python && \
-	git clone -b "$RZ_VERSION" --recurse-submodules https://github.com/rizinorg/rizin.git && \
+	git clone -b "$RZ_VERSION" https://github.com/rizinorg/rizin.git && \
 	cd rizin && \
 	meson build && \
 	meson compile -C build && \

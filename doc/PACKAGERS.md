@@ -6,15 +6,24 @@ Thank you for taking the time to package Rizin!
 There are some things to consider when packaging Rizin for your distribution.
 We will look at each step below.
 
-Cloning Source
+Releases vs Git content
 --------------
 
-Rizin uses git submodules to track versions of dependencies. You can check out
-the Rizin source and all dependencies using
-`git clone --recursive https://github.com/rizinorg/rizin`.
+If you package a Rizin Release, you will find the tarball with all
+dependencies used by Rizin in the
+[Release page](https://github.com/rizinorg/rizin/releases) and you can go to
+the next step in this document.
 
-If you change branches run `git submodule update --init --recursive` to ensure
-you are tracking the correct versions of the submodules.
+If you want to package a particular git version, keep in mind that Rizin uses
+meson subprojects to track versions of dependencies. Subprojects are usually
+downloaded during the meson setup step, however if you can't download
+additional code while building the package for your distribution you can
+predownload everything with the following command:
+```
+$ git clone https://github.com/rizinorg/rizin
+$ cd rizin
+$ meson subprojects download
+```
 
 See [BUILDING.md][] for more details.
 

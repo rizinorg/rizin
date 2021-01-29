@@ -60,8 +60,6 @@ init:
 
 # Required software for building
 install:
-  # Download submodules
-  - cmd: git submodule update --init --recursive
   # Update environment variables
   - ps: $env:RZ_VERSION = ( python sys\\version.py )
   - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:RZ_VERSION"
