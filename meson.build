@@ -419,8 +419,8 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
 endif
 
 r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
-if r.returncode() == 1 and not get_option('no_subprojects_check')
-  error('Subproject sdb is not updated. Please make sure to run `meson subprojects update` or set option `no_subprojects_check=true` if you want to compile against currently downloaded subproject.')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subproject sdb is not updated. Please make sure to run `meson subprojects update` or set option `subprojects_check=false` if you want to compile against currently downloaded subproject.')
 endif
 
 sdb_proj = subproject('sdb', default_options: ['default_library=static'])

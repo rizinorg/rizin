@@ -4,7 +4,7 @@ option('cli', type: 'feature', value: 'auto', description: 'Build CLI programs (
 option('static_runtime', type: 'boolean', value: false, description: 'Set to true when you want static libraries/dependencies and runtime in Rizin')
 option('local', type: 'feature', value: 'auto', description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
 option('blob', type: 'boolean', value: false, description: 'Compile just one binary which dispatch to the right handlers based on the name used to call it')
-option('no_subprojects_check', type: 'boolean', value: false, description: 'Do not check if git subprojects are up-to-date. Useful when developing on a different subproject version')
+option('subprojects_check', type: 'boolean', value: true, description: 'Check if git subprojects are up-to-date. Might be useful to disable this when developing on a different subproject version')
 
 option('rizin_wwwroot', type: 'string', value: '', description: 'Install path for www files')
 option('rizin_sdb', type: 'string', value: '', description: '')
