@@ -3971,7 +3971,7 @@ void __print_disassembly_cb(void *user, void *p) {
 	ut64 o_offset = core->offset;
 	core->offset = panel->model->addr;
 	rz_core_seek(core, panel->model->addr, true);
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		rz_core_debug_regs2flags(core, 0);
 	}
 	cmdstr = __handle_cmd_str_cache(core, panel, false);
@@ -4667,7 +4667,7 @@ void __panels_refresh(RzCore *core) {
 		return;
 	}
 	RzStrBuf *title = rz_strbuf_new(" ");
-	bool utf8 = rz_config_get_i(core->config, "scr.utf8");
+	bool utf8 = rz_config_get_b(core->config, "scr.utf8");
 	if (firstRun) {
 		rz_config_set_b(core->config, "scr.utf8", false);
 	}
@@ -4798,7 +4798,7 @@ void __do_panels_refreshOneShot(RzCore *core) {
 }
 
 void __panel_single_step_in(RzCore *core) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		rz_core_cmd(core, "ds", 0);
 		rz_core_debug_regs2flags(core, 0);
 	} else {
@@ -4808,9 +4808,9 @@ void __panel_single_step_in(RzCore *core) {
 }
 
 void __panel_single_step_over(RzCore *core) {
-	bool io_cache = rz_config_get_i(core->config, "io.cache");
+	bool io_cache = rz_config_get_b(core->config, "io.cache");
 	rz_config_set_b(core->config, "io.cache", false);
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		rz_core_cmd(core, "dso", 0);
 		rz_core_debug_regs2flags(core, 0);
 	} else {
@@ -4920,7 +4920,7 @@ void __init_almighty_db(RzCore *core) {
 	sdb_ptr_set(db, "Search strings in the whole bin", &__search_strings_bin_create, 0);
 	sdb_ptr_set(db, "Create New", &__create_panel_input, 0);
 	sdb_ptr_set(db, "Change Command of Current Panel", &__replace_current_panel_input, 0);
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		sdb_ptr_set(db, "Put Breakpoints", &__put_breakpoints_cb, 0);
 		sdb_ptr_set(db, "Continue", &__continue_almighty_cb, 0);
 		sdb_ptr_set(db, "Step", &__step_almighty_cb, 0);
@@ -5023,7 +5023,7 @@ bool __init(RzCore *core, RzPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
 	panels->columnWidth = 80;
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		panels->layout = PANEL_LAYOUT_DEFAULT_DYNAMIC;
 	} else {
 		panels->layout = PANEL_LAYOUT_DEFAULT_STATIC;
@@ -5489,7 +5489,7 @@ void __toggle_help(RzCore *core) {
 }
 
 void __set_breakpoints_on_cursor(RzCore *core, RzPanel *panel) {
-	if (!rz_config_get_i(core->config, "cfg.debug")) {
+	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		return;
 	}
 	if (__check_panel_type(panel, PANEL_CMD_DISASSEMBLY)) {
@@ -5499,7 +5499,7 @@ void __set_breakpoints_on_cursor(RzCore *core, RzPanel *panel) {
 }
 
 void __insert_value(RzCore *core) {
-	if (!rz_config_get_i(core->config, "io.cache")) {
+	if (!rz_config_get_b(core->config, "io.cache")) {
 		if (__show_status_yesno(core, 1, "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
 			rz_config_set_b(core->config, "io.cache", true);
 			(void)__show_status(core, "io.cache is on and insert is available now.");
@@ -5948,8 +5948,8 @@ void __redo_seek(RzCore *core) {
 }
 
 void __rotate_asmemu(RzCore *core, RzPanel *p) {
-	const bool isEmuStr = rz_config_get_i(core->config, "emu.str");
-	const bool isEmu = rz_config_get_i(core->config, "asm.emu");
+	const bool isEmuStr = rz_config_get_b(core->config, "emu.str");
+	const bool isEmu = rz_config_get_b(core->config, "asm.emu");
 	if (isEmu) {
 		if (isEmuStr) {
 			rz_config_set(core->config, "emu.str", "false");
@@ -6120,10 +6120,10 @@ void __handle_tab_next(RzCore *core) {
 }
 
 void __handle_print_rotate(RzCore *core) {
-	if (rz_config_get_i(core->config, "asm.pseudo")) {
+	if (rz_config_get_b(core->config, "asm.pseudo")) {
 		rz_config_toggle(core->config, "asm.pseudo");
 		rz_config_toggle(core->config, "asm.esil");
-	} else if (rz_config_get_i(core->config, "asm.esil")) {
+	} else if (rz_config_get_b(core->config, "asm.esil")) {
 		rz_config_toggle(core->config, "asm.esil");
 	} else {
 		rz_config_toggle(core->config, "asm.pseudo");
@@ -6324,7 +6324,7 @@ void __panels_process(RzCore *core, RzPanels *panels) {
 
 	rz_cons_enable_mouse(false);
 repeat:
-	rz_cons_enable_mouse(rz_config_get_i(core->config, "scr.wheel"));
+	rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));
 	core->panels = panels;
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
@@ -6437,7 +6437,7 @@ repeat:
 		}
 		break;
 	case ' ':
-		if (rz_config_get_i(core->config, "graph.web")) {
+		if (rz_config_get_b(core->config, "graph.web")) {
 			rz_core_cmd0(core, "agv $$");
 		} else {
 			__call_visual_graph(core);
@@ -6461,16 +6461,16 @@ repeat:
 	} break;
 	case 'r':
 		// TODO: toggle shortcut hotkeys
-		if (rz_config_get_i(core->config, "asm.hint.call")) {
+		if (rz_config_get_b(core->config, "asm.hint.call")) {
 			rz_config_toggle(core->config, "asm.hint.call");
 			rz_config_set_b(core->config, "asm.hint.jmp", true);
-		} else if (rz_config_get_i(core->config, "asm.hint.jmp")) {
+		} else if (rz_config_get_b(core->config, "asm.hint.jmp")) {
 			rz_config_toggle(core->config, "asm.hint.jmp");
 			rz_config_set_b(core->config, "asm.hint.emu", true);
-		} else if (rz_config_get_i(core->config, "asm.hint.emu")) {
+		} else if (rz_config_get_b(core->config, "asm.hint.emu")) {
 			rz_config_toggle(core->config, "asm.hint.emu");
 			rz_config_set_b(core->config, "asm.hint.lea", true);
-		} else if (rz_config_get_i(core->config, "asm.hint.lea")) {
+		} else if (rz_config_get_b(core->config, "asm.hint.lea")) {
 			rz_config_toggle(core->config, "asm.hint.lea");
 			rz_config_set_b(core->config, "asm.hint.call", true);
 		} else {
@@ -6478,7 +6478,7 @@ repeat:
 		}
 		break;
 	case 'R':
-		if (rz_config_get_i(core->config, "scr.randpal")) {
+		if (rz_config_get_b(core->config, "scr.randpal")) {
 			rz_cons_pal_random();
 		} else {
 			rz_core_theme_nextpal(core, 'n');
@@ -6675,7 +6675,7 @@ repeat:
 		}
 		break;
 	case 'V':
-		if (rz_config_get_i(core->config, "graph.web")) {
+		if (rz_config_get_b(core->config, "graph.web")) {
 			rz_core_cmd0(core, "agv $$");
 		} else {
 			__call_visual_graph(core);
