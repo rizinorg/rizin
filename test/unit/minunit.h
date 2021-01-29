@@ -193,8 +193,8 @@ void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 #define mu_assert_streq(actual, expected, message) \
 	do { \
 		char _meqstr[MU_BUF_SIZE]; \
-		const char *act__ = (actual); \
-		const char *exp__ = (expected); \
+		const char *act__ = (actual) != NULL ? (actual) : "(null)"; \
+		const char *exp__ = (expected) != NULL ? (expected) : "(null)"; \
 		snprintf(_meqstr, MU_BUF_SIZE, "%s: expected %s, got %s.", (message), (exp__), (act__)); \
 		mu_assert(_meqstr, strcmp((exp__), (act__)) == 0); \
 	} while (0)
