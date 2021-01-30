@@ -19,7 +19,6 @@
 #define HAVE_SYSTEM @HAVE_SYSTEM@
 #define HAVE_PIPE2 @HAVE_PIPE2@
 
-#ifdef RZ_MESON_VERSION
 #define RZ_PREFIX "@PREFIX@"
 #define RZ_LIBDIR "@LIBDIR@"
 #define RZ_INCDIR "@INCLUDEDIR@"
@@ -35,34 +34,6 @@
 #define RZ_FORTUNES "@FORTUNES@"
 #define RZ_FLAGS "@FLAGS@"
 #define RZ_HUD "@HUD@"
-#else
-#if __WINDOWS__ || _MSC_VER
-#define RZ_PREFIX "."
-#define RZ_LIBDIR "lib"
-#define RZ_INCDIR "include\\librz"
-#define RZ_DATDIR "share"
-#define RZ_WWWROOT "www"
-#define RZ_PLUGINS "lib\\plugins"
-#define RZ_EXTRAS "lib\\extras"
-#define RZ_BINDINGS "lib\\bindings"
-#else
-#define RZ_PREFIX "@PREFIX@"
-#define RZ_LIBDIR "@LIBDIR@"
-#define RZ_INCDIR "@INCLUDEDIR@/librz"
-#define RZ_DATDIR "@DATADIR@"
-#define RZ_WWWROOT RZ_DATDIR "/rizin/" RZ_VERSION "/www"
-#define RZ_PLUGINS "lib/rizin/" RZ_VERSION
-#define RZ_EXTRAS "lib/rizin-extras/" RZ_VERSION
-#define RZ_BINDINGS "lib/rizin-bindings/" RZ_VERSION
-#endif
-#define RZ_DATDIR_RZ        RZ_JOIN_2_PATHS ("share", "rizin")
-#define RZ_SDB              RZ_JOIN_3_PATHS ("share", "rizin", RZ_VERSION)
-#define RZ_ZIGNS            RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "zigns")
-#define RZ_THEMES           RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "cons")
-#define RZ_FLAGS            RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "flag")
-#define RZ_FORTUNES         RZ_JOIN_3_PATHS ("share", "doc", "rizin")
-#define RZ_HUD              RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "hud")
-#endif
 
 #define RZ_SDB_FCNSIGN      RZ_JOIN_2_PATHS (RZ_SDB, "fcnsign")
 #define RZ_SDB_OPCODES      RZ_JOIN_2_PATHS (RZ_SDB, "opcodes")
