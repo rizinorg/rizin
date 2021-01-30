@@ -1065,7 +1065,6 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 							mode |= RZ_MODE_RIZINCMD;
 						}
 						RZBININFO("classes", RZ_CORE_BIN_ACC_CLASSES, NULL);
-						input = " ";
 					} else { // "icq"
 						if (input[2] == 'j') {
 							mode |= RZ_MODE_JSON; // default mode is RZ_MODE_SIMPLE
