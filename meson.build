@@ -335,7 +335,7 @@ if userconf.get('HAVE_PIPE2') == 1
 endif
 
 rz_userconf_h = configure_file(
-  input: 'librz/include/rz_userconf.h.acr',
+  input: 'librz/include/rz_userconf.h.in',
   output: 'rz_userconf.h',
   configuration: userconf,
   install_dir: rizin_incdir
