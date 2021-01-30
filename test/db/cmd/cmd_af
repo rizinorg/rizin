@@ -21,7 +21,7 @@ CMDS=<<EOF
 s main
 af
 afl.
-s. 1
+sd 1
 afl.
 EOF
 EXPECT=<<EOF
