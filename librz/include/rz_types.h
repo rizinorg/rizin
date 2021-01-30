@@ -320,7 +320,7 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #define RZ_LIB_VERSION_HEADER(x) \
 	RZ_API const char *x##_version(void)
 #define RZ_LIB_VERSION(x) \
-	RZ_API const char *x##_version(void) { return "" RZ_GITTAP; }
+	RZ_API const char *x##_version(void) { return "" RZ_VERSION; }
 
 #define BITS2BYTES(x)    (((x) / 8) + (((x) % 8) ? 1 : 0))
 #define ZERO_FILL(x)     memset(&x, 0, sizeof(x))

@@ -3236,6 +3236,31 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=gcc_9.2.0_64 switch/case flags
+FILE=bins/elf/dectest64
+CMDS=<<EOF
+aaa
+f~switch
+f~case.
+EOF
+EXPECT=<<EOF
+0x004011fd 1 switch.0x004011fd
+0x0040138d 1 switch.0x0040138d
+0x0040120a 1 case.0x4011fd.0
+0x0040121b 1 case.0x4011fd.1
+0x0040122c 1 case.0x4011fd.2
+0x0040123d 1 case.0x4011fd.3
+0x0040124e 1 case.0x4011fd.4
+0x00401270 1 case.default.0x4011fd
+0x00401398 1 case.0x40138d.0
+0x004013a9 1 case.0x40138d.1
+0x004013ba 1 case.0x40138d.2
+0x004013cb 1 case.0x40138d.3
+0x004013dc 1 case.0x40138d.4
+0x004013fe 1 case.default.0x40138d
+EOF
+RUN
+
 NAME=clang_3.8_64 switch/case flags
 FILE=bins/jmptbl/test_clang_3.8_64.out
 CMDS=<<EOF

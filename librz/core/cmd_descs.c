@@ -39,7 +39,6 @@ static const RzCmdDescArg interpret_system_args[3];
 static const RzCmdDescArg interpret_macro_args[4];
 static const RzCmdDescArg remote_args[3];
 static const RzCmdDescArg remote_send_args[3];
-static const RzCmdDescArg io_system_run_args[2];
 static const RzCmdDescArg remote_add_args[2];
 static const RzCmdDescArg remote_del_args[2];
 static const RzCmdDescArg remote_open_args[2];
@@ -472,19 +471,10 @@ static const RzCmdDescHelp remote_send_help = {
 	.args = remote_send_args,
 };
 
-static const RzCmdDescArg io_system_run_args[] = {
-	{
-		.name = "cmd",
-		.type = RZ_CMD_ARG_TYPE_CMD,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp io_system_run_help = {
+static const RzCmdDescHelp io_system_run_oldhandler_help = {
 	.summary = "Run <cmd> via rz_io_system",
-	.args = io_system_run_args,
+	.args_str = "[<cmd>]",
+	.options = "",
 };
 
 static const RzCmdDescArg remote_add_args[] = {
@@ -2336,8 +2326,8 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *remote_send_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=<", rz_remote_send_handler, &remote_send_help);
 	rz_warn_if_fail(remote_send_cd);
 
-	RzCmdDesc *io_system_run_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=!", rz_io_system_run_handler, &io_system_run_help);
-	rz_warn_if_fail(io_system_run_cd);
+	RzCmdDesc *io_system_run_oldhandler_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=!", rz_io_system_run_oldhandler, &io_system_run_oldhandler_help);
+	rz_warn_if_fail(io_system_run_oldhandler_cd);
 
 	RzCmdDesc *remote_add_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=+", rz_remote_add_handler, &remote_add_help);
 	rz_warn_if_fail(remote_add_cd);

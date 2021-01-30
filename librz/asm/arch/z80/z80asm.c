@@ -217,7 +217,7 @@ static int readcommand(const char **p) {
 static void readlabel(const char **p, int store) {
 	const char *c, *d, *pos, *dummy;
 	int i, j;
-	struct label *buf, *previous;
+	struct label *previous;
 	for (d = *p; *d && *d != ';'; d++) {
 		;
 	}
@@ -244,40 +244,8 @@ static void readlabel(const char **p, int store) {
 		*p = c;
 		return;
 	}
-	if (!(buf = malloc (sizeof (struct label) + c - *p))) {
-		eprintf ("not enough memory to store label %s\n", *p);
-#if 0
-		*p = c;
-		return;
-	}
-	// not used and dead code.
-	// originally it was saved into lastlabel value.
-	// now only leaks bytes.
-	strncpy (buf->name, *p, c - *p - 1);
-	buf->name[c - *p - 1] = 0;
+
 	*p = c;
-	buf->value = addr;
-	// lastlabel = buf;
-	if (previous) {
-		buf->next = previous->next;
-	} else {
-		buf->next = NULL;
-	}
-	buf->prev = previous;
-	buf->valid = 1;
-	buf->busy = 0;
-	buf->ref = NULL;
-	if (buf->prev) {
-		buf->prev->next = buf;
-	}
-	if (buf->next) {
-		buf->next->prev = buf;
-	}
-	// leaks here since buf is not used.
-#else
-	}
-	*p = c;
-#endif
 }
 
 static int compute_ref(struct reference *ref, int allow_invalid) {
@@ -1455,7 +1423,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			break;
 		case Z80_DEFW:
 		case Z80_DW:
-			if (!(r = rd_word (&ptr, ','))) {
+			if (!rd_word (&ptr, ',')) {
 				eprintf ("No data for word definition\n");
 				break;
 			}
@@ -1465,7 +1433,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					break;
 				}
 				++ptr;
-				if (!(r = rd_word (&ptr, ','))) {
+				if (!rd_word (&ptr, ',')) {
 					eprintf ("Missing expression in defw\n");
 				}
 			}

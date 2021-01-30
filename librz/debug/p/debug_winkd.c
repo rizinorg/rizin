@@ -13,7 +13,6 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library.
 
-#include <rz_asm.h>
 #include <rz_debug.h>
 #include <winkd.h>
 #include <kd.h>

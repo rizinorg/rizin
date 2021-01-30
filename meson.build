@@ -1,4 +1,8 @@
-project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.55.0')
+project('rizin', 'c',
+  version: 'v0.2.0-git',
+  license: 'LGPL3',
+  meson_version: '>=0.55.0',
+)
 
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
@@ -9,26 +13,23 @@ create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
-# Get rizin version
-rizin_version = 'unknown-error'
-rizin_version_major = 0
-rizin_version_minor = 0
-rizin_version_patch = 0
-rizin_version_number = 0
-r = run_command(py3_exe, 'sys/version.py', '--full-version')
-if r.returncode() == 0
-  vers = r.stdout().strip().split('\n')
-  rizin_version = vers[0]
-  rizin_version_major = vers[1]
-  rizin_version_minor = vers[2]
-  rizin_version_patch = vers[3]
-  rizin_version_number = vers[4]
-  if host_machine.system() == 'darwin'
-    rizin_version = rizin_version.split('-')[0]
-  endif
-else
-  message('Cannot find project version with sys/version.py')
+is_static_build = get_option('static_runtime')
+if is_static_build and get_option('default_library') != 'static'
+  error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=true` if you want to build statically.')
 endif
+
+# Get rizin version and compute various version parts
+rizin_version = meson.project_version().split('v')[1]
+if host_machine.system() == 'darwin'
+  rizin_version = rizin_version.split('-')[0]
+endif
+
+rizin_version_split = rizin_version.split('.')
+rizin_version_major = rizin_version_split[0].to_int()
+rizin_version_minor = rizin_version_split[1].to_int()
+rizin_version_patch = rizin_version_split[2].split('-')[0].to_int()
+rizin_version_number = 1000000 * rizin_version_major + 1000 * rizin_version_minor + rizin_version_patch
+
 
 repo = '.'
 if meson.is_subproject()
@@ -46,7 +47,6 @@ endif
 # by default, not version commit is used
 version_commit = '0'
 
-gittap = ''
 gittip = ''
 
 git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
@@ -54,18 +54,6 @@ if git_exe.found() and git_dir_exists.returncode() == 0
   sdb_src_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").listdir("shlr/sdb/") else 1)')
   if sdb_src_exists.returncode() == 1
     error('Source code for SDB not found. Did you forget to run `git submodule update --init`?')
-  endif
-
-  # Get version_commit
-  git_rev_list = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-list', '--all', '--count')
-  if git_rev_list.returncode() == 0
-    version_commit = git_rev_list.stdout().strip()
-  endif
-
-  # Get gittap
-  git_describe = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'describe', '--tags', '--match', '[0-9]*')
-  if git_describe.returncode() == 0
-    gittap = git_describe.stdout().strip()
   endif
 
   # Get gittip
@@ -77,15 +65,6 @@ endif
 
 if get_option('rizin_version_commit') != ''
   version_commit = get_option('rizin_version_commit')
-endif
-
-if get_option('rizin_gittap') != ''
-  gittap = get_option('rizin_gittap')
-endif
-# gittap is used for the version of each rz_ library
-# in case it has not been set (e.g. a release tarball) set it
-if gittap == ''
-  gittap = rizin_version
 endif
 
 if get_option('rizin_gittip') != ''
@@ -110,27 +89,29 @@ message('rizin lib version: ' + rizin_libversion)
 # system dependencies
 cc = meson.get_compiler('c')
 # required for linux
-ldl = cc.find_library('dl', required: false)
-pth = dependency('threads', required: false)
-utl = cc.find_library('util', required: false)
+ldl = cc.find_library('dl', required: false, static: is_static_build)
+pth = dependency('threads', required: false, static: is_static_build)
+utl = cc.find_library('util', required: false, static: is_static_build)
 if host_machine.system() == 'sunos'
   # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
   mth = declare_dependency(link_args: '-lm')
 else
-  mth = cc.find_library('m', required: false)
+  mth = cc.find_library('m', required: false, static: is_static_build)
 endif
 
 platform_deps = []
 platform_inc = ['.', 'librz/include']
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
+  platform_deps = [
+    cc.find_library('ws2_32'),
+    cc.find_library('wininet'),
+    cc.find_library('psapi'),
+  ]
 endif
 platform_inc = include_directories(platform_inc)
 
-if get_option('static_runtime')
-  if cc.get_id() == 'msvc'
-    add_project_arguments('/MT', language: 'c')
-  endif
+if is_static_build and cc.get_id() == 'msvc'
+  add_project_arguments('/MT', language: 'c')
 endif
 
 if cc.has_argument('--std=gnu99')
@@ -229,7 +210,7 @@ config_h = configure_file(
 )
 
 # handle magic library
-sys_magic = cc.find_library('magic', required: false)
+sys_magic = cc.find_library('magic', required: false, static: is_static_build)
 use_syslib_magic = false
 
 if sys_magic.found() and get_option('use_sys_magic')
@@ -237,20 +218,20 @@ if sys_magic.found() and get_option('use_sys_magic')
 endif
 
 # handle xxhash library
-sys_xxhash = dependency('xxhash', required: false)
+sys_xxhash = dependency('xxhash', required: false, static: is_static_build)
 use_sys_xxhash = false
 if not sys_xxhash.found()
-  sys_xxhash = cc.find_library('xxhash', required: false)
+  sys_xxhash = cc.find_library('xxhash', required: false, static: is_static_build)
 endif
 use_sys_xxhash = sys_xxhash.found() and get_option('use_sys_xxhash')
 
 # handle openssl library
-sys_openssl = dependency('openssl', required: false)
+sys_openssl = dependency('openssl', required: false, static: is_static_build)
 use_sys_openssl = sys_openssl.found() and get_option('use_sys_openssl')
 
 # handle libuv library
 if get_option('use_libuv')
-  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false, static: get_option('default_library') == 'static')
+  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false, static: is_static_build)
   use_libuv = libuv_dep.found()
   if not libuv_dep.found()
     warning('use_libuv option was set to true, but libuv was not found.')
@@ -325,7 +306,7 @@ endif
 
 lrt = []
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
-  lrt = cc.find_library('rt', required: true)
+  lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
 foreach item : [
@@ -363,20 +344,18 @@ rz_userconf_h = configure_file(
 packager = get_option('packager')
 packager_version = get_option('packager_version')
 
-message('Version Major: ' + rizin_version_major)
-message('Version Minor: ' + rizin_version_minor)
-message('Version Patch: ' + rizin_version_patch)
-message('Version GitTap: ' + gittap)
-message('Version GitTip: ' + gittip)
+message('Version Major: @0@0'.format(rizin_version_major))
+message('Version Minor: @0@0'.format(rizin_version_minor))
+message('Version Patch: @0@0'.format(rizin_version_patch))
+message('Version GitTip: @0@0'.format(gittip))
 
 versionconf = configuration_data()
-versionconf.set('MESON_VERSION', meson.version())
+versionconf.set_quoted('MESON_VERSION', meson.version())
 versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
 versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
 versionconf.set('RZ_VERSION_NUMBER', rizin_version_number)
 versionconf.set('RZ_VERSION', rizin_version)
-versionconf.set('RZ_GITTAP', gittap)
 versionconf.set('RZ_GITTIP', gittip)
 versionconf.set('RZ_BIRTH', rizinbirth)
 if packager_version != ''
@@ -406,7 +385,7 @@ libr_pc = configure_file(
 )
 
 # handle zlib dependency
-zlib_dep = dependency('zlib', required: false)
+zlib_dep = dependency('zlib', required: false, static: is_static_build)
 if not zlib_dep.found() or not get_option('use_sys_zlib')
   zlib_files = [
     'shlr/zip/zlib/adler32.c',
@@ -705,7 +684,6 @@ install_data(
 if cli_enabled
   install_man(
     'man/rz-agent.1',
-    'man/rz-docker.1',
     'man/rz-pm.1',
     'man/rz-bin.1',
     'man/rizin.1',

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
-#include <rz_asm.h>
 #include <rz_debug.h>
 
 static int __io_step(RzDebug *dbg) {
