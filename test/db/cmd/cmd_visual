@@ -78,34 +78,3 @@ Visual mode requires scr.interactive=true.
 Panel mode requires scr.interactive=true.
 EOF
 RUN
-
-NAME=initial Visual view
-FILE=bins/elf/ls
-CMDS=<<EOF
-e scr.interactive=true
-e scr.columns=80
-e scr.rows=12
-< q; V
-?e
-?e
-dr~^rip
-# TODO why is rip not at entry0?
-# TODO why can't I do "dr~^rip  # a comment here"?
-EOF
-EXPECT=<<EOF
-[?25l[?25l[0;0H[0;0H[0m[0x00005ae0 [Xadvc]0 11% 192 bins/elf/ls]> xc @ entry0                          [0;0H[0m[0x00005ae0 [Xadvc]0 11% 192 bins/elf/ls]> xc @ entry0
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF  comment  
-0x00005ae0  f30f 1efa 31ed 4989 d15e 4889 e248 83e4  ....1.I..^H..H..  ; entry0 
-0x00005af0  f050 544c 8d05 660c 0100 488d 0def 0b01  .PTL..f...H.....           
-0x00005b00  0048 8d3d 68e5 ffff ff15 0ac3 0100 f490  .H.=h...........           
-0x00005b10  488d 3d51 c701 0048 8d05 4ac7 0100 4839  H.=Q...H..J...H9           
-0x00005b20  f874 1548 8b05 96c1 0100 4885 c074 09ff  .t.H......H..t..           
-0x00005b30  e00f 1f80 0000 0000 c30f 1f80 0000 0000  ................           
-0x00005b40  488d 3d21 c701 0048 8d35 1ac7 0100 4829  H.=!...H.5....H)           
-0x00005b50  fe48 c1fe 0348 89f0 48c1 e83f 4801 c648  .H...H..H..?H..H           
-0x00005b60  d1fe 7414 488b 053d c401 0048 85c0 7408  ..t.H..=...H..t.           
-0x00005b70  ffe0 660f 1f44 0000 c30f 1f80 0000 0000  ..f..D..........           [?25h[0m[2J[0;0H
-
-rip = 0x00000000
-EOF
-RUN
