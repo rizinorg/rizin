@@ -4,7 +4,6 @@ CMDS=<<EOF
 !scripts/gdbserver.py --port 12346 --binary bins/elf/analysis/calls_x64
 oodf gdb://127.0.0.1:12346
 db main
-ds
 dc
 doc
 !killall gdbserver
