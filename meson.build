@@ -273,13 +273,13 @@ if host_machine.system() == 'windows'
   userconf.set('LIBDIR', rizin_libdir)
   userconf.set('INCLUDEDIR', rizin_incdir)
   userconf.set('DATADIR_RZ', rizin_datdir)
-  userconf.set10('HAVE_JEMALLOC', false)
 else
   userconf.set('LIBDIR', rizin_prefix / rizin_libdir)
   userconf.set('INCLUDEDIR', rizin_prefix / rizin_incdir)
   userconf.set('DATADIR_RZ', rizin_datdir_rz)
-  userconf.set10('HAVE_JEMALLOC', true)
 endif
+is_ppc = host_machine.cpu_family() == 'ppc' or host_machine.cpu_family() == 'ppc64'
+userconf.set10('HAVE_JEMALLOC', host_machine.system() != 'windows' and (host_machine.system() != 'darwin' or not is_ppc))
 userconf.set('DATADIR', rizin_prefix / rizin_datdir)
 userconf.set('WWWROOT', rizin_prefix / rizin_wwwroot)
 userconf.set('SDB', rizin_sdb)
@@ -335,7 +335,7 @@ if userconf.get('HAVE_PIPE2') == 1
 endif
 
 rz_userconf_h = configure_file(
-  input: 'librz/include/rz_userconf.h.acr',
+  input: 'librz/include/rz_userconf.h.in',
   output: 'rz_userconf.h',
   configuration: userconf,
   install_dir: rizin_incdir
@@ -350,7 +350,6 @@ message('Version Patch: @0@0'.format(rizin_version_patch))
 message('Version GitTip: @0@0'.format(gittip))
 
 versionconf = configuration_data()
-versionconf.set_quoted('MESON_VERSION', meson.version())
 versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
 versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
@@ -378,7 +377,7 @@ pcconf = configuration_data()
 pcconf.set('PREFIX', rizin_prefix)
 pcconf.set('VERSION', rizin_version)
 libr_pc = configure_file(
-  input: 'librz/librz.pc.acr',
+  input: 'librz/librz.pc.in',
   output: 'librz.pc',
   configuration: pcconf,
   install_dir: get_option('libdir') / 'pkgconfig'
