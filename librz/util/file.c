@@ -368,7 +368,7 @@ RZ_API char *rz_stdin_slurp(int *sz) {
 		close(newfd);
 		return NULL;
 	}
-	for (i = ret = 0; i >= 0; i += ret) {
+	for (i = 0; i >= 0; i += ret) {
 		char *new = realloc(buf, i + BS);
 		if (!new) {
 			eprintf("Cannot realloc to %d\n", i + BS);
