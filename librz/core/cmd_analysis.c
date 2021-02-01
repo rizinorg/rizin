@@ -726,7 +726,6 @@ static const char *help_msg_ax[] = {
 	"axd", " addr [at]", "add data ref",
 	"axq", "", "list refs in quiet/human-readable format",
 	"axj", "", "list refs in json format",
-	"axF", " [flg-glob]", "find data/code references of flags",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axt", "[?] [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
@@ -921,26 +920,6 @@ static bool cc_print(void *p, const char *k, const char *v) {
 		rz_cons_println(k);
 	}
 	return true;
-}
-
-static void find_refs(RzCore *core, const char *glob) {
-	char cmd[128];
-	ut64 curseek = core->offset;
-	while (*glob == ' ')
-		glob++;
-	if (!*glob) {
-		glob = "str.";
-	}
-	if (*glob == '?') {
-		eprintf("Usage: axF [flag-str-filter]\n");
-		return;
-	}
-	eprintf("Finding references of flags matching '%s'...\n", glob);
-	snprintf(cmd, sizeof(cmd) - 1, ".(findstref) @@=`f~%s[0]`", glob);
-	rz_core_cmd0(core, "(findstref;f here=$$;s entry0;/r here;f-here)");
-	rz_core_cmd0(core, cmd);
-	rz_core_cmd0(core, "(-findstref)");
-	rz_core_seek(core, curseek, true);
 }
 
 /* set flags for every function */
@@ -7635,9 +7614,6 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 			}
 			rz_list_free(list);
 		}
-		break;
-	case 'F': // "axF"
-		find_refs(core, input + 1);
 		break;
 	case 'C': // "axC"
 	case 'c': // "axc"
