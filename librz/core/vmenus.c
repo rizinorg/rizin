@@ -2434,7 +2434,7 @@ RZ_API void rz_core_visual_config(RzCore *core) {
 			option = _option;
 			break;
 		case '$':
-			rz_core_cmd0(core, "?$");
+			rz_core_eval_variables_print(core);
 			rz_cons_any_key(NULL);
 			break;
 		case '*':
@@ -3109,7 +3109,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 			delta = 0;
 			break;
 		case 'R':
-			rz_core_cmd0(core, "ecn");
+			rz_core_theme_nextpal(core, 'n');
 			break;
 		case 'p':
 			printMode++;
@@ -3884,11 +3884,11 @@ RZ_API void rz_core_visual_colors(RzCore *core) {
 			opt++;
 			break;
 		case 'l':
-			rz_core_cmd0(core, "ecn");
+			rz_core_theme_nextpal(core, 'n');
 			oopt = -1;
 			break;
 		case 'h':
-			rz_core_cmd0(core, "ecp");
+			rz_core_theme_nextpal(core, 'p');
 			oopt = -1;
 			break;
 		case 'K':
