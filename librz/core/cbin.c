@@ -1244,7 +1244,6 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 
 	switch (mode) {
 	case RZ_MODE_SET:
-		mode = 's';
 		rz_core_cmd0(core, ".iP*");
 		return true;
 	case RZ_MODE_JSON:
