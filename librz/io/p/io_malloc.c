@@ -58,6 +58,8 @@ RzIOPlugin rz_io_plugin_malloc = {
 	.lseek = io_memory_lseek,
 	.write = io_memory_write,
 	.resize = io_memory_resize,
+	.serialize_save = io_memory_serialize_save,
+	.serialize_load = io_memory_serialize_load
 };
 
 #ifndef RZ_PLUGIN_INCORE

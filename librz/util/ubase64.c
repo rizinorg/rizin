@@ -48,6 +48,9 @@ RZ_API int rz_base64_decode(ut8 *bout, const char *bin, int len) {
 		len = strlen(bin);
 	}
 	for (in = out = 0; in + 3 < len; in += 4) {
+		if (out < 0 || in < 0) {
+			return -1;
+		}
 		int ret = local_b64_decode(bin + in, bout + out);
 		if (ret < 1) {
 			return -1;
@@ -55,8 +58,7 @@ RZ_API int rz_base64_decode(ut8 *bout, const char *bin, int len) {
 		out += ret;
 	}
 	bout[out] = 0;
-	/* XXX this makes no sense, just return out? */
-	return (in != out) ? out : -1;
+	return out;
 }
 
 RZ_API ut8 *rz_base64_decode_dyn(const char *in, int len) {

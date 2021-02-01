@@ -14,5 +14,7 @@ int io_memory_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count);
 ut64 io_memory_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence);
 int io_memory_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count);
 bool io_memory_resize(RzIO *io, RzIODesc *fd, ut64 count);
+bool io_memory_serialize_save(RzIO *io, RzIODesc *fd, PJ *j);
+bool io_memory_serialize_load(RzIO *io, RzIODesc *fd, const RzJson *j, RZ_NULLABLE RzSerializeResultInfo *res);
 
 #endif

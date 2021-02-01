@@ -141,6 +141,23 @@ typedef struct rz_io_plugin_t {
 	bool (*accept)(RzIO *io, RzIODesc *desc, int fd);
 	int (*create)(RzIO *io, const char *file, int mode, int type);
 	bool (*check)(RzIO *io, const char *, bool many);
+
+	/**
+	 * \brief Serialize an RzIODesc to JSON
+	 * \param fd The RzIODesc to serialize from. `fd->fd` is meant to be stable between saving and
+	 *     loading and can be used as the unique identifier of the desc in the serialized data if needed.
+	 */
+	bool (*serialize_save)(RzIO *io, RzIODesc *fd, PJ *j);
+
+	/**
+	 * \brief Deserialize an RzIODesc from JSON
+	 * \param fd The RzIODesc to deserialize to. The function should initialize and assign the `data`
+	 *     field inside of it with plugin-specific data. All other fields in this struct are already
+	 *     initialized and must not be changed by this function. `fd->fd` is meant to be stable
+	 *     between saving and loading and can be used as the unique identifier of the desc in the
+	 *     serialized data if needed.
+	 */
+	bool (*serialize_load)(RzIO *io, RzIODesc *fd, const RzJson *j, RZ_NULLABLE RzSerializeResultInfo *res);
 } RzIOPlugin;
 
 typedef struct rz_io_map_t {

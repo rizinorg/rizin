@@ -141,3 +141,55 @@ ut64 io_memory_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	_io_malloc_set_off(fd, rz_offset);
 	return rz_offset;
 }
+
+bool io_memory_serialize_save(RzIO *io, RzIODesc *fd, PJ *j) {
+	RzIOMalloc *riom = fd->data;
+	char *bv = rz_base64_encode_dyn(riom->buf, riom->size);
+	if (!bv) {
+		return false;
+	}
+	pj_o(j);
+	pj_kn(j, "offset", riom->offset);
+	pj_ks(j, "buf", bv);
+	pj_end(j);
+	free(bv);
+	return true;
+}
+
+bool io_memory_serialize_load(RzIO *io, RzIODesc *fd, const RzJson *j, RZ_NULLABLE RzSerializeResultInfo *res) {
+	const RzJson *off_j = rz_json_get(j, "offset");
+	if(!off_j || off_j->type != RZ_JSON_INTEGER) {
+		RZ_SERIALIZE_ERR(res, "invalid/missing offset for fd %d", fd->fd);
+		return false;
+	}
+	const RzJson *buf_j = rz_json_get(j, "buf");
+	if(!off_j || off_j->type != RZ_JSON_STRING) {
+		RZ_SERIALIZE_ERR(res, "invalid/missing buf for fd %d", fd->fd);
+		return false;
+	}
+	size_t len = strlen(buf_j->str_value);
+	ut8 *buf = malloc(len);
+	if (!buf) {
+		RZ_SERIALIZE_ERR(res, "failed to allocate buffer for fd %d", fd->fd);
+		return false;
+	}
+	int r = rz_base64_decode(buf, buf_j->str_value, len);
+	if (r < 0) {
+		free(buf);
+		RZ_SERIALIZE_ERR(res, "failed to decode buffer for fd %d", fd->fd);
+		return false;
+	}
+	ut8 *nbuf = realloc(buf, r);
+	if (nbuf) {
+		buf = nbuf;
+	}
+	RzIOMalloc *mal = RZ_NEW0(RzIOMalloc);
+	if (!mal) {
+		return false;
+	}
+	mal->size = r;
+	mal->buf = buf;
+	mal->offset = buf_j->num.u_value;
+	fd->data = mal;
+	return true;
+}

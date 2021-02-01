@@ -61,7 +61,6 @@ static bool file_save_cb(void *user, void *data, ut32 id) {
 	pj_o(j);
 
 	pj_ki(j, "perm", desc->perm);
-	// obsz is irrelevant (never written, always 0)
 	pj_ks(j, "uri", desc->uri);
 	pj_ks(j, "name", desc->name);
 	if (desc->referer) {
