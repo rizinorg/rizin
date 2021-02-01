@@ -612,6 +612,22 @@ bool test_rz_str_encoded_json(void) {
 	mu_end;
 }
 
+bool test_rz_strf(void) {
+#if 1
+	char *illegle = NULL;
+	rz_strf(illegle, "this should trigger gcc's -Werror=sizeof-pointer-memaccess");
+#endif
+	char bufa[0x100];
+	char bufb[0x100];
+	char *resa = rz_strf(bufa, "Hello");
+	char *resb = rz_strf(bufb, "World %d", 42);
+	mu_assert_ptreq(resa, bufa, "rz_strf ptr");
+	mu_assert_streq(resa, "Hello", "rz_strf string");
+	mu_assert_ptreq(resb, bufb, "rz_strf ptr");
+	mu_assert_streq(resb, "World 42", "rz_strf string");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
 	mu_run_test(test_rz_str_replace_char_once);
@@ -646,6 +662,7 @@ bool all_tests() {
 	mu_run_test(test_rz_str_str_xy);
 	mu_run_test(test_rz_str_wrap);
 	mu_run_test(test_rz_str_encoded_json);
+	mu_run_test(test_rz_strf);
 	return tests_passed != tests_run;
 }
 

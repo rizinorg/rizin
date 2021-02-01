@@ -19,6 +19,25 @@ typedef enum {
 	RZ_STRING_ENC_GUESS = 'g',
 } RzStrEnc;
 
+/**
+ * \brief Convenience macro for local temporary strings
+ * \param buf Target buffer, **must** be an array type, not a pointer.
+ *
+ * This eases the common pattern where a stack-allocated string of a fixed
+ * size is created and filled with `snprintf()` to be used as a temporary string.
+ *
+ * Example:
+ *
+ *     char k[32];
+ *     char v[32];
+ *     sdb_set(db, rz_strf(k, "key.%d", 42), rz_strf(v, "val.%d", 123));
+ */
+#define rz_strf(buf, ...) ( \
+	snprintf(buf, sizeof(buf), __VA_ARGS__) < 0 \
+		? rz_assert_log(RZ_LOGLVL_FATAL, "rz_strf error while using snprintf"), NULL \
+		: buf \
+)
+
 typedef int (*RzStrRangeCallback)(void *, int);
 
 #define RZ_STR_ISEMPTY(x)    (!(x) || !*(x))
