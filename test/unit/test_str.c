@@ -613,7 +613,7 @@ bool test_rz_str_encoded_json(void) {
 }
 
 bool test_rz_strf(void) {
-#if 1
+#if 0
 	char *illegle = NULL;
 	rz_strf(illegle, "this should trigger gcc's -Werror=sizeof-pointer-memaccess");
 #endif
