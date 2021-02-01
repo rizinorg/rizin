@@ -521,7 +521,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	if (!egg->bin) {
 		egg->bin = rz_buf_new();
 	}
-	if (!(b = rz_egg_get_bin(egg))) {
+	if (!rz_egg_get_bin(egg)) {
 		eprintf("rz_egg_get_bin: invalid egg :(\n");
 		goto fail;
 	}
