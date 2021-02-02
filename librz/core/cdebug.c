@@ -27,14 +27,38 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 	return true;
 }
 
-RZ_IPI void rz_core_regs_to_flags(RzCore *core) {
+static void regs_to_flags(RzCore *core, int size) {
 	const RzList *l = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
 	RzListIter *iter;
 	RzRegItem *reg;
 	rz_list_foreach (l, iter, reg) {
+		if (reg->type != RZ_REG_TYPE_GPR && reg->type != RZ_REG_TYPE_FLG) {
+			continue;
+		}
+		if (size != 0 && size != reg->size) {
+			continue;
+		}
 		ut64 regval = rz_reg_get_value(core->dbg->reg, reg);
 		rz_flag_set(core->flags, reg->name, regval, reg->size / 8);
 	}
+}
+
+static int get_regs_bits(RzCore *core) {
+	// Copied from cmd_analysis.c:__analysis_reg_list
+	int bits = core->analysis->bits;
+	if (!strcmp(core->analysis->cur->arch, "arm") && bits == 16) {
+		/* workaround for thumb */
+		bits = 32;
+	} else if ((!strcmp(core->analysis->cur->arch, "6502") && bits == 8) || (!strcmp(core->analysis->cur->arch, "avr") && bits == 8)) {
+		/* workaround for 6502 and avr*/
+		regs_to_flags(core, 16);
+	}
+	return bits;
+}
+
+RZ_IPI void rz_core_regs_to_flags(RzCore *core) {
+	int size = get_regs_bits(core);
+	regs_to_flags(core, size);
 }
 
 RZ_IPI bool rz_core_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
