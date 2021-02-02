@@ -422,7 +422,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
   error('Subproject sdb is not updated. Please make sure to run `meson subprojects update` or set option `subprojects_check=false` if you want to compile against currently downloaded subproject.')
 endif
 
-sdb_proj = subproject('sdb', default_options: ['default_library=static'])
+sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])
 sdb_dep = sdb_proj.get_variable('sdb_dep')
 sdb_exe  = sdb_proj.get_variable('sdb_native_exe')
 
