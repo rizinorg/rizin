@@ -125,6 +125,16 @@ error:
 	return ret;
 }
 
+static void remove_cr_from_crlf(char *str) {
+	while (*str) {
+		if (str[0] == '\r' && str[1] == '\n') {
+			memmove(str, str + 1, strlen(str + 1) + 1);
+			continue;
+		}
+		str++;
+	}
+}
+
 RZ_API RzSubprocess *rz_subprocess_start(
 	const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size) {
@@ -302,7 +312,7 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 				continue;
 			}
 			stdout_buf[r] = '\0';
-			rz_str_remove_char(stdout_buf, '\r');
+			remove_cr_from_crlf(stdout_buf);
 			rz_strbuf_append(&proc->out, (const char *)stdout_buf);
 			ResetEvent(stdout_overlapped.hEvent);
 			DO_READ(stdout)
@@ -316,7 +326,7 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 				continue;
 			}
 			stderr_buf[read] = '\0';
-			rz_str_remove_char(stderr_buf, '\r');
+			remove_cr_from_crlf(stderr_buf);
 			rz_strbuf_append(&proc->err, (const char *)stderr_buf);
 			ResetEvent(stderr_overlapped.hEvent);
 			DO_READ(stderr);
