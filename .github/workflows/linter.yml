@@ -3,7 +3,7 @@ name: "Mixed linter and checks"
 on:
   push:
   pull_request:
-  
+
 jobs:
   cmd_descs_yaml_check:
     runs-on: ubuntu-latest
@@ -18,3 +18,26 @@ jobs:
         run: |
           ./librz/core/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs.yaml
           diff /tmp/cmd_descs.c ./librz/core/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs.h
+
+  clang_format:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+          submodules: recursive
+
+    - name: Install wget
+      run: sudo apt --assume-yes install wget
+
+    - name: Install automatic llvm (stable branch)
+      run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+
+    - name: Install clang-format-11
+      run: sudo apt --assume-yes install clang-format-11
+
+    - name: Run clang-format
+      run: |
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 110
+        clang-format --version
+        python sys/clang-format.py --check --verbose
