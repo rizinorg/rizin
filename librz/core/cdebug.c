@@ -28,14 +28,13 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 }
 
 RZ_IPI void rz_core_regs_to_flags(RzCore *core) {
-	RzList *l = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
+	const RzList *l = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
 	RzListIter *iter;
 	RzRegItem *reg;
 	rz_list_foreach (l, iter, reg) {
 		ut64 regval = rz_reg_get_value(core->dbg->reg, reg);
 		rz_flag_set(core->flags, reg->name, regval, reg->size);
 	}
-	rz_list_free(l);
 }
 
 RZ_IPI bool rz_core_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
@@ -45,7 +44,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int
 	int colwidth = 20;
 	RzListIter *iter;
 	RzRegItem *item;
-	RzList *head;
+	const RzList *head;
 	ut64 diff;
 	char strvalue[256];
 	bool isJson = (rad == 'j' || rad == 'J');

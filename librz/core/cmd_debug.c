@@ -1832,7 +1832,7 @@ static bool regcb(void *u, const ut64 k, const void *v) {
 }
 
 RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode) {
-	RzList *list = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
+	const RzList *list = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
 	RzListIter *iter;
 	RzRegItem *r;
 	HtUP *db = ht_up_new0();
@@ -1891,7 +1891,7 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 	ut64 diff, value;
 	int bits = core->rasm->bits;
 	//XXX: support other RzRegisterType
-	RzList *list = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
+	const RzList *list = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
 	RzListIter *iter;
 	RzRegItem *r;
 	RzTable *t = rz_core_table(core);
@@ -2220,7 +2220,7 @@ static void __tableRegList(RzCore *core, RzReg *reg, const char *str) {
 	rz_table_add_column(t, typeString, "flags", 0);
 	rz_table_add_column(t, typeString, "comment", 0);
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		RzList *list = rz_reg_get_list(reg, i);
+		const RzList *list = rz_reg_get_list(reg, i);
 		RzListIter *iter;
 		rz_list_foreach (list, iter, e) {
 			// sdb_fmt is not thread safe
@@ -2671,9 +2671,8 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 				// explicit size no name
 				RzListIter *iter;
 				RzRegItem *item;
-				RzList *head;
 				rz_debug_reg_sync(core->dbg, reg_type, false);
-				head = rz_reg_get_list(core->dbg->reg, reg_type);
+				const RzList *head = rz_reg_get_list(core->dbg->reg, reg_type);
 				if (head) {
 					rz_list_foreach (head, iter, item) {
 						if (item->type != reg_type) {

@@ -169,7 +169,7 @@ bool test_rz_reg_get(void) {
 
 bool test_rz_reg_get_list(void) {
 	RzReg *reg;
-	RzList *l;
+	const RzList *l;
 	int mask;
 
 	reg = rz_reg_new();

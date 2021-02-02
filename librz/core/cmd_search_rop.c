@@ -166,11 +166,10 @@ static bool simulate_op(const char *op, ut64 src1, ut64 src2, ut64 old_src1, ut6
 // fill REGs with known values
 static void fillRegisterValues(RzCore *core) {
 	RzListIter *iter_reg;
-	RzList *regs;
 	RzRegItem *reg_item;
 	int nr = 10;
 
-	regs = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
+	const RzList *regs = rz_reg_get_list(core->dbg->reg, RZ_REG_TYPE_GPR);
 	if (!regs) {
 		return;
 	}
@@ -228,7 +227,8 @@ static char *rop_classify_constant(RzCore *core, RzList *ropList) {
 	char *ct = NULL, *esil_main = NULL, *esil_flg = NULL, *out = NULL;
 	RzListIter *iter_r, *iter_dst, *iter_const;
 	RzRegItem *item_dst;
-	RzList *head, *constants;
+	const RzList *head;
+	RzList *constants;
 	RzList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL,
 	       *reg_read = NULL, *reg_write = NULL, *mem_read = NULL,
 	       *mem_write = NULL;
@@ -313,7 +313,7 @@ static char *rop_classify_mov(RzCore *core, RzList *ropList) {
 	char *mov = NULL, *esil_main = NULL, *esil_flg = NULL, *out = NULL;
 	RzListIter *iter_src, *iter_r, *iter_dst;
 	RzRegItem *item_src, *item_dst;
-	RzList *head;
+	const RzList *head;
 	RzList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL,
 	       *reg_read = NULL, *reg_write = NULL, *mem_read = NULL,
 	       *mem_write = NULL;
@@ -408,7 +408,7 @@ static char *rop_classify_arithmetic(RzCore *core, RzList *ropList) {
 	     *out = NULL;
 	RzListIter *iter_src1, *iter_src2, *iter_r, *iter_dst, *iter_ops;
 	RzRegItem *item_src1, *item_src2, *item_dst;
-	RzList *head;
+	const RzList *head;
 	RzList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL,
 	       *reg_read = NULL, *reg_write = NULL, *mem_read = NULL,
 	       *mem_write = NULL;
@@ -536,7 +536,8 @@ static char *rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
 	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
 	RzListIter *iter_src1, *iter_r, *iter_dst, *iter_ops, *iter_const;
 	RzRegItem *item_src1, *item_dst;
-	RzList *head, *constants;
+	const RzList *head;
+	RzList *constants;
 	RzList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL, *reg_read = NULL,
 	       *reg_write = NULL, *mem_read = NULL, *mem_write = NULL;
 	const bool romem = rz_config_get_i(core->config, "esil.romem");

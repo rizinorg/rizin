@@ -337,7 +337,7 @@ RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 	return NULL;
 }
 
-RZ_API RzList *rz_reg_get_list(RzReg *reg, int type) {
+RZ_API const RzList *rz_reg_get_list(RzReg *reg, int type) {
 	if (type == RZ_REG_TYPE_ALL) {
 		return reg->allregs;
 	}
@@ -364,7 +364,7 @@ RZ_API RzList *rz_reg_get_list(RzReg *reg, int type) {
 // TODO regsize is in bits, delta in bytes, maybe we should standarize this..
 RZ_API RzRegItem *rz_reg_get_at(RzReg *reg, int type, int regsize, int delta) {
 	rz_return_val_if_fail(reg, NULL);
-	RzList *list = rz_reg_get_list(reg, type);
+	const RzList *list = rz_reg_get_list(reg, type);
 	RzRegItem *ri;
 	RzListIter *iter;
 	rz_list_foreach (list, iter, ri) {
