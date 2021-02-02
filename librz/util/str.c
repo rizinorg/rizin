@@ -328,9 +328,9 @@ RZ_API int rz_str_delta(char *p, char a, char b) {
  * Replaces all instances of \p ch in \p str with a NULL byte and it returns
  * the number of split strings.
  */
-RZ_API int rz_str_split(char *str, char ch) {
+RZ_API size_t rz_str_split(char *str, char ch) {
 	rz_return_val_if_fail(str, 0);
-	int i;
+	size_t i;
 	char *p;
 	for (i = 1, p = str; *p; p++) {
 		if (*p == ch) {
@@ -524,10 +524,10 @@ RZ_API const char *rz_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
 	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
-		return (char *)nullstr;
+		return nullstr;
 	}
 	for (i = 0; i != idx; i++) {
-		ptr += strlen(ptr) + 1;
+		ptr = rz_str_word_get_next0(ptr);
 	}
 	return ptr;
 }

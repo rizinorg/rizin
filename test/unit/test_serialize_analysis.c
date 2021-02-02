@@ -1434,7 +1434,7 @@ Sdb *sign_ref_db() {
 	sdb_set(spaces, "name", "zs", 0);
 	Sdb *spaces_spaces = sdb_ns(spaces, "spaces", true);
 	sdb_set(spaces_spaces, "koridai", "s", 0);
-	sdb_set(db, "zign|*|sym.mahboi", "|s:4|b:deadbeef|m:c0ffee42|o:4919|g:7b0000000b0000000c0000000d0000002a000000|r:gwonam,link|x:king,ganon|v:r16,s42,b13|t:func.sym.mahboi.ret=char *,func.sym.mahboi.args=2,func.sym.mahboi.arg.0=\"int,arg0\",func.sym.mahboi.arg.1=\"uint32_t,die\"|c:This peace is what all true warriors strive for|n:sym.Mah.Boi|h:7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", 0);
+	sdb_set(db, "zign|*|sym.mahboi", "|s:4|b:deadbeef|m:c0ffee42|o:4919|g:123,11,12,13,42|r:gwonam,link|x:king,ganon|v:r16,s42,b13|t:func.sym.mahboi.ret=char *,func.sym.mahboi.args=2,func.sym.mahboi.arg.0=\"int,arg0\",func.sym.mahboi.arg.1=\"uint32_t,die\"|c:This peace is what all true warriors strive for|n:sym.Mah.Boi|h:7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", 0);
 	sdb_set(db, "zign|koridai|sym.boring", "|c:gee it sure is boring around here", 0);
 	return db;
 }

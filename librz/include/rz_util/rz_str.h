@@ -51,7 +51,7 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s);
 RZ_API const char *rz_str_casestr(const char *a, const char *b);
 RZ_API const char *rz_str_firstbut(const char *s, char ch, const char *but);
 RZ_API const char *rz_str_lastbut(const char *s, char ch, const char *but);
-RZ_API int rz_str_split(char *str, char ch);
+RZ_API size_t rz_str_split(char *str, char ch);
 RZ_API RzList *rz_str_split_list(char *str, const char *c, int n);
 RZ_API RzList *rz_str_split_duplist(const char *str, const char *c, bool trim);
 RZ_API RzList *rz_str_split_duplist_n(const char *str, const char *c, int n, bool trim);
@@ -102,6 +102,9 @@ RZ_API int rz_str_char_count(const char *string, char ch);
 RZ_API char *rz_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
 RZ_API int rz_str_word_set0(char *str);
 RZ_API int rz_str_word_set0_stack(char *str);
+static inline const char *rz_str_word_get_next0(const char *str) {
+	return str + strlen(str) + 1;
+}
 RZ_API const char *rz_str_word_get0(const char *str, int idx);
 RZ_API char *rz_str_word_get_first(const char *string);
 RZ_API void rz_str_trim(char *str);

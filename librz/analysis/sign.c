@@ -220,7 +220,7 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 	}
 
 	// Deserialize key: zign|space|name
-	int n = rz_str_split(k2, '|');
+	size_t n = rz_str_split(k2, '|');
 	if (n != 3) {
 		eprintf("Warning: Skipping signature with invalid key (%s)\n", k);
 		success = false;
@@ -271,15 +271,29 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 			DBL_VAL_FAIL(it->comment, RZ_SIGN_COMMENT);
 			it->comment = strdup(token);
 			break;
-		case RZ_SIGN_GRAPH:
+		case RZ_SIGN_GRAPH: {
 			DBL_VAL_FAIL(it->graph, RZ_SIGN_GRAPH);
-			if (strlen(token) == 2 * sizeof(RzSignGraph)) {
-				it->graph = RZ_NEW0(RzSignGraph);
-				if (it->graph) {
-					rz_hex_str2bin(token, (ut8 *)it->graph);
-				}
+			char *s = strdup(token);
+			if (!s) {
+				break;
 			}
+			size_t gn = rz_str_split(s, ',');
+			if (gn == 5) {
+				it->graph = RZ_NEW0(RzSignGraph);
+				const char *t = s;
+				it->graph->cc = atoi(t);
+				t = rz_str_word_get_next0(t);
+				it->graph->nbbs = atoi(t);
+				t = rz_str_word_get_next0(t);
+				it->graph->edges = atoi(t);
+				t = rz_str_word_get_next0(t);
+				it->graph->ebbs = atoi(t);
+				t = rz_str_word_get_next0(t);
+				it->graph->bbsum = atoi(t);
+			}
+			free(s);
 			break;
+		}
 		case RZ_SIGN_OFFSET:
 			DBL_VAL_FAIL((it->addr != UT64_MAX), RZ_SIGN_OFFSET);
 			it->addr = atoll(token);
@@ -389,125 +403,120 @@ static void serializeKeySpaceStr(RzAnalysis *a, const char *space, const char *n
 
 static void serialize(RzAnalysis *a, RzSignItem *it, char *k, char *v) {
 	RzListIter *iter = NULL;
-	char *hexbytes = NULL, *hexmask = NULL, *hexgraph = NULL;
+	char *hexbytes = NULL, *hexmask = NULL;
 	char *refs = NULL, *xrefs = NULL, *ref = NULL, *var, *vars = NULL;
 	char *type, *types = NULL;
 	int i = 0, len = 0;
 	RzSignBytes *bytes = it->bytes;
-	RzSignGraph *graph = it->graph;
 	RzSignHash *hash = it->hash;
 
 	if (k) {
 		serializeKey(a, it->space, it->name, k);
 	}
-	if (v) {
-		if (bytes) {
-			len = bytes->size * 2 + 1;
-			hexbytes = calloc(1, len);
-			hexmask = calloc(1, len);
-			if (!hexbytes || !hexmask) {
-				free(hexbytes);
-				free(hexmask);
-				return;
-			}
-			if (!bytes->bytes) {
-				bytes->bytes = malloc((bytes->size + 1) * 3);
-			}
-			rz_hex_bin2str(bytes->bytes, bytes->size, hexbytes);
-			if (!bytes->mask) {
-				bytes->mask = malloc((bytes->size + 1) * 3);
-			}
-			rz_hex_bin2str(bytes->mask, bytes->size, hexmask);
-		}
-		if (graph) {
-			hexgraph = calloc(1, sizeof(RzSignGraph) * 2 + 1);
-			if (hexgraph) {
-				rz_hex_bin2str((ut8 *)graph, sizeof(RzSignGraph), hexgraph);
-			}
-		}
-		i = 0;
-		rz_list_foreach (it->refs, iter, ref) {
-			if (i > 0) {
-				refs = rz_str_appendch(refs, ',');
-			}
-			refs = rz_str_append(refs, ref);
-			i++;
-		}
-		i = 0;
-		rz_list_foreach (it->xrefs, iter, ref) {
-			if (i > 0) {
-				xrefs = rz_str_appendch(xrefs, ',');
-			}
-			xrefs = rz_str_append(xrefs, ref);
-			i++;
-		}
-		i = 0;
-		rz_list_foreach (it->vars, iter, var) {
-			if (i > 0) {
-				vars = rz_str_appendch(vars, ',');
-			}
-			vars = rz_str_append(vars, var);
-			i++;
-		}
-		i = 0;
-		rz_list_foreach (it->types, iter, type) {
-			if (i > 0) {
-				types = rz_str_appendch(types, ',');
-			}
-			types = rz_str_append(types, type);
-			i++;
-		}
-		RzStrBuf *sb = rz_strbuf_new("");
-		if (bytes) {
-			// TODO: do not hardcoded s,b,m here, use RzSignType enum
-			rz_strbuf_appendf(sb, "|s:%d|b:%s|m:%s", bytes->size, hexbytes, hexmask);
-		}
-		if (it->addr != UT64_MAX) {
-			rz_strbuf_appendf(sb, "|%c:%" PFMT64d, RZ_SIGN_OFFSET, it->addr);
-		}
-		if (graph) {
-			rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_GRAPH, hexgraph);
-		}
-		if (refs) {
-			rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_REFS, refs);
-		}
-		if (xrefs) {
-			rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_XREFS, xrefs);
-		}
-		if (vars) {
-			rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_VARS, vars);
-		}
-		if (types) {
-			rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_TYPES, types);
-		}
-		if (it->comment) {
-			// b64 encoded
-			rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_COMMENT, it->comment);
-		}
-		if (it->realname) {
-			// b64 encoded
-			rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_NAME, it->realname);
-		}
-		if (hash && hash->bbhash) {
-			rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_BBHASH, hash->bbhash);
-		}
-		if (rz_strbuf_length(sb) >= RZ_SIGN_VAL_MAXSZ) {
-			eprintf("Signature limit reached for 0x%08" PFMT64x " (%s)\n", it->addr, it->name);
-		}
-		char *res = rz_strbuf_drain(sb);
-		if (res) {
-			strncpy(v, res, RZ_SIGN_VAL_MAXSZ);
-			free(res);
-		}
-
-		free(hexbytes);
-		free(hexmask);
-		free(hexgraph);
-		free(refs);
-		free(vars);
-		free(xrefs);
-		free(types);
+	if (!v) {
+		return;
 	}
+	if (bytes) {
+		len = bytes->size * 2 + 1;
+		hexbytes = calloc(1, len);
+		hexmask = calloc(1, len);
+		if (!hexbytes || !hexmask) {
+			free(hexbytes);
+			free(hexmask);
+			return;
+		}
+		if (!bytes->bytes) {
+			bytes->bytes = malloc((bytes->size + 1) * 3);
+		}
+		rz_hex_bin2str(bytes->bytes, bytes->size, hexbytes);
+		if (!bytes->mask) {
+			bytes->mask = malloc((bytes->size + 1) * 3);
+		}
+		rz_hex_bin2str(bytes->mask, bytes->size, hexmask);
+	}
+	i = 0;
+	rz_list_foreach (it->refs, iter, ref) {
+		if (i > 0) {
+			refs = rz_str_appendch(refs, ',');
+		}
+		refs = rz_str_append(refs, ref);
+		i++;
+	}
+	i = 0;
+	rz_list_foreach (it->xrefs, iter, ref) {
+		if (i > 0) {
+			xrefs = rz_str_appendch(xrefs, ',');
+		}
+		xrefs = rz_str_append(xrefs, ref);
+		i++;
+	}
+	i = 0;
+	rz_list_foreach (it->vars, iter, var) {
+		if (i > 0) {
+			vars = rz_str_appendch(vars, ',');
+		}
+		vars = rz_str_append(vars, var);
+		i++;
+	}
+	i = 0;
+	rz_list_foreach (it->types, iter, type) {
+		if (i > 0) {
+			types = rz_str_appendch(types, ',');
+		}
+		types = rz_str_append(types, type);
+		i++;
+	}
+	RzStrBuf *sb = rz_strbuf_new("");
+	if (bytes) {
+		// TODO: do not hardcoded s,b,m here, use RzSignType enum
+		rz_strbuf_appendf(sb, "|s:%d|b:%s|m:%s", bytes->size, hexbytes, hexmask);
+	}
+	if (it->addr != UT64_MAX) {
+		rz_strbuf_appendf(sb, "|%c:%" PFMT64d, RZ_SIGN_OFFSET, it->addr);
+	}
+	if (it->graph) {
+		rz_strbuf_appendf(sb, "|%c:%d,%d,%d,%d,%d", RZ_SIGN_GRAPH,
+			it->graph->cc, it->graph->nbbs, it->graph->edges,
+			it->graph->ebbs, it->graph->bbsum);
+	}
+	if (refs) {
+		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_REFS, refs);
+	}
+	if (xrefs) {
+		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_XREFS, xrefs);
+	}
+	if (vars) {
+		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_VARS, vars);
+	}
+	if (types) {
+		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_TYPES, types);
+	}
+	if (it->comment) {
+		// b64 encoded
+		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_COMMENT, it->comment);
+	}
+	if (it->realname) {
+		// b64 encoded
+		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_NAME, it->realname);
+	}
+	if (hash && hash->bbhash) {
+		rz_strbuf_appendf(sb, "|%c:%s", RZ_SIGN_BBHASH, hash->bbhash);
+	}
+	if (rz_strbuf_length(sb) >= RZ_SIGN_VAL_MAXSZ) {
+		eprintf("Signature limit reached for 0x%08" PFMT64x " (%s)\n", it->addr, it->name);
+	}
+	char *res = rz_strbuf_drain(sb);
+	if (res) {
+		strncpy(v, res, RZ_SIGN_VAL_MAXSZ);
+		free(res);
+	}
+
+	free(hexbytes);
+	free(hexmask);
+	free(refs);
+	free(vars);
+	free(xrefs);
+	free(types);
 }
 
 static RzList *deserialize_sign_space(RzAnalysis *a, RzSpace *space) {

@@ -149,7 +149,7 @@ bool test_rz_str_case(void) {
 
 bool test_rz_str_split(void) {
 	char *hi = strdup("hello world");
-	int r = rz_str_split(hi, ' ');
+	size_t r = rz_str_split(hi, ' ');
 	mu_assert_eq(r, 2, "split on space");
 	char *hello = hi;
 	char *world = hi + 6;
