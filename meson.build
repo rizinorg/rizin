@@ -120,6 +120,11 @@ elif cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c', 'cpp'])
 endif
 
+# Sanitize correct usage of rz_strf()
+if cc.has_argument('-Werror=sizeof-pointer-memaccess')
+  add_global_arguments('-Werror=sizeof-pointer-memaccess', language: ['c', 'cpp'])
+endif
+
 if cc.get_id() == 'clang-cl'
   add_project_arguments('-fcommon', language: 'c')
   add_project_arguments('-D__STDC__=1', language: 'c')
