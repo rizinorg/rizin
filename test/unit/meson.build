@@ -23,6 +23,7 @@ if get_option('enable_tests')
     'bitmap',
     'buf',
     'cmd',
+    'config',
     'cons',
     'contrbtree',
     'core_cmd',
