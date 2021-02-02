@@ -373,8 +373,10 @@ jobs:
     steps:
     - name: Install python and other dependencies
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
+    - name: Download meson from git (temporary)
+      run: pip3 install --user git+https://github.com/mesonbuild/meson
     - name: Install meson and ninja
-      run: pip3 install --user meson ninja PyYAML
+      run: pip3 install --user ninja PyYAML
     - uses: actions/checkout@v2
     - name: Extract rizin version
       shell: bash
