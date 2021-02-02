@@ -33,7 +33,7 @@ RZ_IPI void rz_core_regs_to_flags(RzCore *core) {
 	RzRegItem *reg;
 	rz_list_foreach (l, iter, reg) {
 		ut64 regval = rz_reg_get_value(core->dbg->reg, reg);
-		rz_flag_set(core->flags, reg->name, regval, reg->size);
+		rz_flag_set(core->flags, reg->name, regval, reg->size / 8);
 	}
 }
 
