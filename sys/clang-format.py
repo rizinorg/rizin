@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import argparse
 import glob
+import itertools
 import os
 import sys
 
@@ -32,29 +34,55 @@ skiplist = [
     "librz/hash/xxhash/",
     "librz/bin/mangling/cxx/",
     "librz/util/bdiff.c",
+    "librz/asm/arch/tms320/c55x/table.h"
 ]
 
-pattern = ["*.c", "*.cpp", "*.h", "*.hpp", "*.inc"]
+patterns = ["*.c", "*.cpp", "*.h", "*.hpp", "*.inc"]
 
 
 def skip(filename):
-    for s in skiplist:
-        if s in filename:
-            return True
-    return False
+    return any(skipfile in filename for skipfile in skiplist)
 
 
-try:
-    for d in dirlist:
-        print("Processing directory: {0}".format(d))
-        for pat in pattern:
-            print("Processing pattern: {0}".format(pat))
-            for filename in glob.iglob(d + "/**/" + pat, recursive=True):
-                if not skip(filename):
-                    CMD = "clang-format -style=file -i {0}".format(filename)
-                    print(CMD)
-                    os.system(CMD)
+def build_command(check, filename):
+    if check:
+        return "clang-format --style=file --Werror --dry-run {0}".format(filename)
 
-except KeyboardInterrupt:
-    print("clang-format.py interrupted by the user.")
-    sys.exit(1)
+    return "clang-format --style=file -i {0}".format(filename)
+
+
+def get_matching_files():
+    for directory, pattern in itertools.product(dirlist, patterns):
+        for filename in glob.iglob(directory + "/**/" + pattern, recursive=True):
+            if not skip(filename):
+                yield filename
+
+
+def format_rizin(args):
+    return_code = 0
+
+    for filename in get_matching_files():
+        cmd = build_command(args.check, filename)
+
+        if args.verbose:
+            print(cmd)
+
+        if os.system(cmd) == 256:
+            return_code = 1
+
+    sys.exit(return_code)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Clang format the rizin project")
+    parser.add_argument(
+        "--check", action="store_true", help="Flag that enable the check mode"
+    )
+    parser.add_argument("--verbose", action="store_true", help="Use verbose output")
+    args = parser.parse_args()
+
+    format_rizin(args)
+
+
+if __name__ == "__main__":
+    main()
