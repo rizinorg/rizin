@@ -385,7 +385,7 @@ jobs:
         export PATH=${HOME}/.local/bin:${PATH}
         meson build
         cd build
-        meson dist --include-subprojects --no-tests
+        meson dist --include-subprojects
         ls -l meson-dist
         mv meson-dist/rizin-${{ steps.extract_version.outputs.version }}.tar.xz meson-dist/rizin-src.tar.xz
     - uses: actions/upload-artifact@v2
