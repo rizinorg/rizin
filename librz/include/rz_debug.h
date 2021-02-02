@@ -510,7 +510,6 @@ RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad);
 
 /* registers */
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write);
-RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color);
 RZ_API int rz_debug_reg_set(RzDebug *dbg, const char *name, ut64 num);
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name);
 RZ_API ut64 rz_debug_reg_get_err(RzDebug *dbg, const char *name, int *err, utX *value);

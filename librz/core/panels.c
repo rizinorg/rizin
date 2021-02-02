@@ -2,6 +2,7 @@
 
 #include <rz_core.h>
 #include "cmd_descs.h"
+#include "private.h"
 
 #define PANEL_NUM_LIMIT 9
 
@@ -4802,7 +4803,7 @@ void __panel_single_step_in(RzCore *core) {
 		rz_core_cmd(core, ".dr*", 0);
 	} else {
 		rz_core_cmd(core, "aes", 0);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_regs_to_flags(core);
 	}
 }
 
@@ -4814,7 +4815,7 @@ void __panel_single_step_over(RzCore *core) {
 		rz_core_cmd(core, ".dr*", 0);
 	} else {
 		rz_core_cmd(core, "aeso", 0);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_regs_to_flags(core);
 	}
 	rz_config_set_i(core->config, "io.cache", io_cache);
 }

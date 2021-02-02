@@ -2,6 +2,7 @@
 
 #include <rz_core.h>
 #include <rz_cons.h>
+#include "private.h"
 
 #define NPF  5
 #define PIDX (RZ_ABS(core->printidx % NPF))
@@ -768,7 +769,7 @@ static void visual_single_step_in(RzCore *core) {
 		}
 	} else {
 		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_regs_to_flags(core);
 	}
 }
 
@@ -785,7 +786,7 @@ static void __core_visual_step_over(RzCore *core) {
 		}
 	} else {
 		rz_core_cmd(core, "aeso", 0);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_regs_to_flags(core);
 	}
 	rz_config_set_i(core->config, "io.cache", io_cache);
 }
@@ -798,7 +799,8 @@ static void visual_continue(RzCore *core) {
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		rz_core_cmd(core, "dc", 0);
 	} else {
-		rz_core_cmd(core, "aec;.ar*", 0);
+		rz_core_cmd(core, "aec", 0);
+		rz_core_regs_to_flags(core);
 	}
 }
 

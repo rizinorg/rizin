@@ -974,7 +974,7 @@ beach:
 	rz_core_seek(core, oldoff, true);
 	rz_analysis_esil_free(esil);
 	rz_reg_arena_pop(core->analysis->reg);
-	rz_core_cmd0(core, ".ar*");
+	rz_core_regs_to_flags(core);
 	rz_cons_break_pop();
 	free(buf);
 }
