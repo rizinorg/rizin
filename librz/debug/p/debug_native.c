@@ -3,7 +3,6 @@
 #include <rz_userconf.h>
 #include <rz_debug.h>
 #include <rz_drx.h>
-#include <rz_asm.h>
 #include <rz_core.h>
 #include <rz_reg.h>
 #include <rz_lib.h>

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_asm.h>
 #include <rz_debug.h>
 #include <libqnxr.h>
 

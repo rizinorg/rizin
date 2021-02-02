@@ -1,5 +1,7 @@
+option('packager', type: 'string', value: '', description: 'Extra packager name')
+option('packager_version', type: 'string', value: '', description: 'Extra packager version')
 option('cli', type: 'feature', value: 'auto', description: 'Build CLI programs (“auto” means they will be built when not a subproject)')
-option('static_runtime', type: 'boolean', value: false)
+option('static_runtime', type: 'boolean', value: false, description: 'Set to true when building a static version of Rizin')
 option('local', type: 'feature', value: 'auto', description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
 option('blob', type: 'boolean', value: false, description: 'Compile just one binary which dispatch to the right handlers based on the name used to call it')
 
@@ -15,7 +17,6 @@ option('rizin_extras', type: 'string', value: '', description: 'Path where extra
 option('rizin_bindings', type: 'string', value: '', description: 'Path where rizin bindings are expected to be found')
 
 option('rizin_version_commit', type: 'string', value: '')
-option('rizin_gittap', type: 'string', value: '')
 option('rizin_gittip', type: 'string', value: '')
 option('checks_level', type: 'integer', value: 9999, description: 'Value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL). By default its value depends on buildtype (2 on debug, 1 on release).')
 option('capstone_in_builddir', type: 'boolean', value: false, description: 'When true, capstone is downloaded in the build directory and not in the source one')

@@ -1,6 +1,5 @@
 /* debugbochs  - LGPL - Copyright 2016 - SkUaTeR */
 
-#include <rz_asm.h>
 #include <rz_debug.h>
 #include <libbochs.h>
 

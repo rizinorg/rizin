@@ -321,7 +321,7 @@ struct rz_bin_pe_addr_t *PE_(check_mingw)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		//E8 A3 01 00 00                             call    sub_4013EE
 		for (n = 0; n < sizeof(b) - 12; n++) {
 			if (b[n] == 0xa1 && b[n + 5] == 0x89 && b[n + 8] == 0xe8) {
-				sw = follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 8);
+				follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 8);
 				return entry;
 			}
 		}
@@ -1450,8 +1450,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t) * bin) {
 		import_dir_size = data_dir_import->Size = 0xffff;
 	}
 	if (!delay_import_dir_size) {
-		// asume 1 entry for each
-		delay_import_dir_size = data_dir_delay_import->Size = 0xffff;
+		data_dir_delay_import->Size = 0xffff;
 	}
 	int maxidsz = RZ_MIN((PE_DWord)bin->size, import_dir_offset + import_dir_size);
 	maxidsz -= import_dir_offset;

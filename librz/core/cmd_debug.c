@@ -4336,11 +4336,13 @@ static bool cmd_dcu(RzCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_debug_continue(RzCore *core, const char *input) {
+RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
 	int pid, old_pid, signum;
 	char *ptr;
+	rz_cons_break_push(static_debug_stop, core->dbg);
 	// TODO: we must use this for step 'ds' too maybe...
-	switch (input[1]) {
+	switch (input[0]) {
 	case 0: // "dc"
 		rz_reg_arena_swap(core->dbg->reg, true);
 #if __linux__
@@ -4381,7 +4383,7 @@ static int cmd_debug_continue(RzCore *core, const char *input) {
 		break;
 	case 'c': // "dcc"
 		rz_reg_arena_swap(core->dbg->reg, true);
-		if (input[2] == 'u') {
+		if (input[1] == 'u') {
 			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_UCALL, 0);
 		} else {
 			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_CALL, 0);
@@ -4394,8 +4396,8 @@ static int cmd_debug_continue(RzCore *core, const char *input) {
 	case 'k':
 		// select pid and rz_debug_continue_kill (core->dbg,
 		rz_reg_arena_swap(core->dbg->reg, true);
-		signum = rz_num_math(core->num, input + 2);
-		ptr = strchr(input + 3, ' ');
+		signum = rz_num_math(core->num, input + 1);
+		ptr = strchr(input + 2, ' ');
 		if (ptr) {
 			int old_pid = core->dbg->pid;
 			int old_tid = core->dbg->tid;
@@ -4410,12 +4412,12 @@ static int cmd_debug_continue(RzCore *core, const char *input) {
 		}
 		break;
 	case 's': // "dcs"
-		switch (input[2]) {
+		switch (input[1]) {
 		case '*':
 			cmd_debug_cont_syscall(core, "-1");
 			break;
 		case ' ':
-			cmd_debug_cont_syscall(core, input + 3);
+			cmd_debug_cont_syscall(core, input + 2);
 			break;
 		case '\0':
 			cmd_debug_cont_syscall(core, NULL);
@@ -4450,29 +4452,39 @@ static int cmd_debug_continue(RzCore *core, const char *input) {
 		return 1;
 	}
 	case 'u': // "dcu"
-		if (input[2] == '?') {
+		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_dcu);
-		} else if (input[2] == '.') {
+		} else if (input[1] == '.') {
 			cmd_dcu(core, "cu $$");
 		} else {
-			cmd_dcu(core, input);
+			char *tmpinp = rz_str_newf("cu %s", input + 2);
+			cmd_dcu(core, tmpinp);
+			free(tmpinp);
 		}
 		break;
 	case ' ':
 		old_pid = core->dbg->pid;
-		pid = atoi(input + 2);
+		pid = atoi(input + 1);
 		rz_reg_arena_swap(core->dbg->reg, true);
 		rz_debug_select(core->dbg, pid, core->dbg->tid);
 		rz_debug_continue(core->dbg);
 		rz_debug_select(core->dbg, old_pid, core->dbg->tid);
 		break;
 	case 't':
-		cmd_debug_backtrace(core, input + 2);
+		cmd_debug_backtrace(core, input + 1);
 		break;
 	case '?': // "dc?"
 	default:
 		rz_core_cmd_help(core, help_msg_dc);
 		return 0;
+	}
+	int follow = rz_config_get_i(core->config, "dbg.follow");
+	rz_cons_break_pop();
+	if (follow > 0) {
+		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+		if ((pc < core->offset) || (pc > (core->offset + follow))) {
+			rz_core_cmd0(core, "sr PC");
+		}
 	}
 	return 1;
 }
@@ -4497,20 +4509,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 	switch (input[1]) {
 	case 0: // "ds"
 	case ' ':
-		if (rz_config_get_i(core->config, "cfg.debug")) {
-			rz_reg_arena_swap(core->dbg->reg, true);
-			// sync registers for BSD PT_STEP/PT_CONT
-			// XXX(jjd): is this necessary?
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-			ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-			rz_debug_trace_pc(core->dbg, pc);
-			if (!rz_debug_step(core->dbg, times)) {
-				eprintf("Step failed\n");
-				core->break_loop = true;
-			}
-		} else {
-			rz_core_cmdf(core, "%daes", RZ_MAX(1, times));
-		}
+		rz_core_debug_step_one(core, times);
 		break;
 	case 'i': // "dsi"
 		if (input[2] == ' ') {
@@ -5049,10 +5048,8 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		eprintf("TODO: transplant process\n");
 		break;
 	case 'c': // "dc"
-		rz_cons_break_push(static_debug_stop, core->dbg);
-		(void)cmd_debug_continue(core, input);
-		follow = rz_config_get_i(core->config, "dbg.follow");
-		rz_cons_break_pop();
+		(void)rz_debug_continue_oldhandler(core, input + 1);
+		follow = 0;
 		break;
 	case 'm': // "dm"
 		cmd_debug_map(core, input + 1);

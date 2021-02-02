@@ -11,8 +11,7 @@ static const char *help_msg_a[] = {
 	"a*", "", "same as afl*;ah*;ax*",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
-	"ab", "[b] [addr]", "analyze block at given address",
-	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
+	"ab", "[?] [addr]", "analyze block",
 	"ac", "[?]", "manage classes",
 	"aC", "[?]", "analyze function call",
 	"aCe", "[?]", "same as aC, but uses esil with abte to emulate the function",
@@ -89,7 +88,7 @@ static const char *help_msg_aar[] = {
 };
 
 static const char *help_msg_ab[] = {
-	"Usage:", "ab", "",
+	"Usage:", "ab", "analyze block",
 	"ab", " [addr]", "show basic block information at given address",
 	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
@@ -97,7 +96,7 @@ static const char *help_msg_ab[] = {
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[,qj]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
-	"abt[?]", " [addr] [num]", "find num paths from current offset to addr",
+	"abt", "[?] [addr] [num]", "find num paths from current offset to addr",
 	NULL
 };
 
@@ -727,7 +726,6 @@ static const char *help_msg_ax[] = {
 	"axd", " addr [at]", "add data ref",
 	"axq", "", "list refs in quiet/human-readable format",
 	"axj", "", "list refs in json format",
-	"axF", " [flg-glob]", "find data/code references of flags",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axt", "[?] [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
@@ -857,12 +855,14 @@ static bool cmd_analysis_aaft(RzCore *core) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	ut64 seek;
-	const char *io_cache_key = "io.pcache.write";
-	bool io_cache = rz_config_get_i(core->config, io_cache_key);
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		eprintf("TOFIX: aaft can't run in debugger mode.\n");
 		return false;
 	}
+	const char *io_cache_key = "io.pcache.write";
+	RzConfigHold *hold = rz_config_hold_new(core->config);
+	rz_config_hold_i(hold, "io.va", io_cache_key, NULL);
+	bool io_cache = rz_config_get_i(core->config, io_cache_key);
 	if (!io_cache) {
 		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
 		rz_config_set_i(core->config, io_cache_key, true);
@@ -892,7 +892,7 @@ static bool cmd_analysis_aaft(RzCore *core) {
 	}
 	rz_core_seek(core, seek, true);
 	rz_reg_arena_pop(core->analysis->reg);
-	rz_config_set_i(core->config, io_cache_key, io_cache);
+	rz_config_hold_restore(hold);
 	free(saved_arena);
 	return true;
 }
@@ -924,26 +924,6 @@ static bool cc_print(void *p, const char *k, const char *v) {
 		rz_cons_println(k);
 	}
 	return true;
-}
-
-static void find_refs(RzCore *core, const char *glob) {
-	char cmd[128];
-	ut64 curseek = core->offset;
-	while (*glob == ' ')
-		glob++;
-	if (!*glob) {
-		glob = "str.";
-	}
-	if (*glob == '?') {
-		eprintf("Usage: axF [flag-str-filter]\n");
-		return;
-	}
-	eprintf("Finding references of flags matching '%s'...\n", glob);
-	snprintf(cmd, sizeof(cmd) - 1, ".(findstref) @@=`f~%s[0]`", glob);
-	rz_core_cmd0(core, "(findstref;f here=$$;s entry0;/r here;f-here)");
-	rz_core_cmd0(core, cmd);
-	rz_core_cmd0(core, "(-findstref)");
-	rz_core_seek(core, curseek, true);
 }
 
 /* set flags for every function */
@@ -1739,7 +1719,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 		}
 		pj_a(pj);
 	}
-	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
+	for (i = idx = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		rz_asm_set_pc(core->rasm, addr);
 		hint = rz_analysis_hint_get(core->analysis, addr);
@@ -6576,7 +6556,7 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 				//len = l;
 			}
 		} else {
-			len = l = core->blocksize;
+			len = core->blocksize;
 			count = 1;
 		}
 		core_analysis_bytes(core, core->block, len, count, 0);
@@ -6707,7 +6687,7 @@ static void cmd_analysis_aftertraps(RzCore *core, const char *input) {
 	free(buf);
 }
 
-static void cmd_analysis_blocks(RzCore *core, const char *input) {
+RZ_API void rz_cmd_analysis_blocks(RzCore *core, const char *input) {
 	ut64 from, to;
 	char *arg = strchr(input, ' ');
 	rz_cons_break_push(NULL, NULL);
@@ -6851,7 +6831,7 @@ static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool printCo
 	free(block1);
 }
 
-static void cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly) {
+RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly) {
 	RzList *ranges = NULL;
 	RzIOMap *r;
 	ut64 addr;
@@ -7540,7 +7520,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 			pj_free(pj);
 		} else { // "axf"
 			RzAsmOp asmop;
-			RzList *list, *list_ = NULL;
+			RzList *list = NULL;
 			RzAnalysisRef *ref;
 			RzListIter *iter;
 			char *space = strchr(input, ' ');
@@ -7551,7 +7531,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 			}
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
 			if (input[1] == '.') { // "axf."
-				list = list_ = rz_analysis_xrefs_get_from(core->analysis, addr);
+				list = rz_analysis_xrefs_get_from(core->analysis, addr);
 				if (!list) {
 					list = rz_analysis_function_get_refs(fcn);
 				}
@@ -7638,9 +7618,6 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 			}
 			rz_list_free(list);
 		}
-		break;
-	case 'F': // "axF"
-		find_refs(core, input + 1);
 		break;
 	case 'C': // "axC"
 	case 'c': // "axc"
@@ -9304,7 +9281,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		rz_core_cmd_help(core, help_msg_aa);
 		break;
 	case 'b': // "aab"
-		cmd_analysis_blocks(core, input + 1);
+		rz_cmd_analysis_blocks(core, input + 1);
 		break;
 	case 'f': // "aaf"
 		if (input[1] == 'e') { // "aafe"
@@ -9344,16 +9321,16 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case 'c': // "aac"
 		switch (input[1]) {
 		case '*': // "aac*"
-			cmd_analysis_calls(core, input + 1, true, false);
+			rz_cmd_analysis_calls(core, input + 1, true, false);
 			break;
 		case 'i': // "aaci"
-			cmd_analysis_calls(core, input + 1, input[2] == '*', true);
+			rz_cmd_analysis_calls(core, input + 1, input[2] == '*', true);
 			break;
 		case '?': // "aac?"
 			eprintf("Usage: aac, aac* or aaci (imports xrefs only)\n");
 			break;
 		default: // "aac"
-			cmd_analysis_calls(core, input + 1, false, false);
+			rz_cmd_analysis_calls(core, input + 1, false, false);
 			break;
 		}
 	case 'j': // "aaj"
@@ -9465,7 +9442,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 				}
 
 				oldstr = rz_print_rowlog(core->print, "Analyze function calls (aac)");
-				(void)cmd_analysis_calls(core, "", false, false); // "aac"
+				(void)rz_cmd_analysis_calls(core, "", false, false); // "aac"
 				rz_core_seek(core, curseek, true);
 				// oldstr = rz_print_rowlog (core->print, "Analyze data refs as code (LEA)");
 				// (void) cmd_analysis_aad (core, NULL); // "aad"

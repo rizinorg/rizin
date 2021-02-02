@@ -15,6 +15,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=af display current offset function
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afl.
+sd 1
+afl.
+EOF
+EXPECT=<<EOF
+0x00004070  300 6757 -> 6739 main
+0x00004070  300 6757 -> 6739 main
+EOF
+RUN
+
 NAME=af localflag
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF

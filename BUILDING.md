@@ -149,18 +149,6 @@ $ ninja -C build install
 At this point you can find everything under `/tmp/android-dir` and you can copy
 files to your Android device.
 
-# Build with acr/Makefile (deprecated)
-
-Rizin also support compilation with configure+make, however this is not
-suggested and it is going to be removed in future releases.
-
-To compile use:
-```
-$ ./configure --prefix=/usr
-$ make
-$ sudo make install
-```
-
 # Uninstall
 
 If Rizin was installed using `meson`, you can run the following command from the
@@ -168,12 +156,6 @@ same build directory where you had previously installed Rizin:
 
 ```
 $ sudo ninja -C uninstall # `sudo` may not be required based on how you configured the `build` directory with meson the first time```
-```
-
-If you had compiled Rizin using `configure` and `make` (**deprecated**), use:
-
-```
-$ sudo make uninstall
 ```
 
 Furthermore, if you had installed Rizin using a distribution package, use the

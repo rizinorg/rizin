@@ -4525,7 +4525,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case 'R':
 			if (rz_config_get_i(core->config, "scr.randpal")) {
-				rz_core_cmd0(core, "ecr");
+				rz_cons_pal_random();
 			} else {
 				rz_core_cmd0(core, "ecn");
 			}

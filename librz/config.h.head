@@ -1,8 +1,0 @@
-#ifndef _INCLUDE_CONFIG_H_
-#define _INCLUDE_CONFIG_H_
-
-#define RZ_DEBUG 0
-#define RZ_RTDEBUG 1
-
-/* inlined APIs */
-#define RZ_INLINE 0

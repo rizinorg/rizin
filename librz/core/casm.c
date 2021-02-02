@@ -121,7 +121,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 	tokens[tokcount] = NULL;
 	rz_cons_break_push(NULL, NULL);
 	char *opst = NULL;
-	for (at = from, matchcount = 0; at < to; at += core->blocksize) {
+	for (at = from; at < to; at += core->blocksize) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}

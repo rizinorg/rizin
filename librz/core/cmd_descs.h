@@ -35,7 +35,7 @@ RZ_IPI RzCmdStatus rz_interpret_macro_handler(RzCore *core, int argc, const char
 RZ_IPI int rz_cmd_search(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_remote_send_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_io_system_run_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI int rz_io_system_run_oldhandler(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_remote_add_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_remote_del_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_remote_open_handler(RzCore *core, int argc, const char **argv);
@@ -54,6 +54,7 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input);
 RZ_IPI int rz_cmd_bsize(void *data, const char *input);
 RZ_IPI int rz_cmd_cmp(void *data, const char *input);
 RZ_IPI int rz_cmd_meta(void *data, const char *input);
+RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input);
 RZ_IPI int rz_cmd_debug(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);

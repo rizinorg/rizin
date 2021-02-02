@@ -194,7 +194,9 @@ void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 	do { \
 		char _meqstr[MU_BUF_SIZE]; \
 		const char *act__ = (actual); \
+		act__ = act__ ? act__ : "(null)"; \
 		const char *exp__ = (expected); \
+		exp__ = exp__ ? exp__ : "(null)"; \
 		snprintf(_meqstr, MU_BUF_SIZE, "%s: expected %s, got %s.", (message), (exp__), (act__)); \
 		mu_assert(_meqstr, strcmp((exp__), (act__)) == 0); \
 	} while (0)

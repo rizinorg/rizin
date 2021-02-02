@@ -385,6 +385,7 @@ typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 //#define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RzList *rz_core_list_themes(RzCore *core);
 RZ_API char *rz_core_get_theme(void);
+RZ_API void rz_core_theme_nextpal(RzCore *core, int mode);
 RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr);
 RZ_API RzCons *rz_core_get_cons(RzCore *core);
 RZ_API RzBin *rz_core_get_bin(RzCore *core);
@@ -537,6 +538,9 @@ RZ_API int rz_core_set_file_by_fd(RzCore *core, ut64 bin_fd);
 RZ_API int rz_core_set_file_by_name(RzBin *bin, const char *name);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 
+/* cdebug.c */
+RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
+
 RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode);
 RZ_API void rz_core_debug_set_register_flags(RzCore *core);
 RZ_API void rz_core_debug_clear_register_flags(RzCore *core);
@@ -630,6 +634,8 @@ RZ_API int rz_core_analysis_ref_list(RzCore *core, int rad);
 RZ_API int rz_core_analysis_all(RzCore *core);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
+RZ_API void rz_cmd_analysis_blocks(RzCore *core, const char *input);
+RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn);
