@@ -138,7 +138,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int
 				}
 			}
 		} else {
-			value = rz_reg_get_value_big(dbg->reg, item, &valueBig);
+			rz_reg_get_value_big(dbg->reg, item, &valueBig);
 			switch (regSize) {
 			case 80:
 				snprintf(strvalue, sizeof(strvalue), "0x%04x%016" PFMT64x "", valueBig.v80.High, valueBig.v80.Low);
