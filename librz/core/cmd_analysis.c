@@ -3,7 +3,7 @@
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 
-#include "private.h"
+#include "core_private.h"
 
 #define MAX_SCAN_SIZE 0x7ffffff
 

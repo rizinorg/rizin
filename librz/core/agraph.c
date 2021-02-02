@@ -5,7 +5,7 @@
 #include <rz_util/rz_graph_drawable.h>
 #include <ctype.h>
 #include <limits.h>
-#include "private.h"
+#include "core_private.h"
 
 static int mousemode = 0;
 static int disMode = 0;

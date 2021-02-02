@@ -18,7 +18,7 @@
 #include "linux_heap_jemalloc.c"
 #endif
 
-#include "private.h"
+#include "core_private.h"
 
 void cmd_analysis_reg(RzCore *core, const char *str);
 

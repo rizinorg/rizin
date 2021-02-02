@@ -2,7 +2,7 @@
 
 #include <rz_core.h>
 #include <rz_cons.h>
-#include "private.h"
+#include "core_private.h"
 
 #define NPF  5
 #define PIDX (RZ_ABS(core->printidx % NPF))

@@ -2,7 +2,7 @@
 
 #include <rz_core.h>
 #include <rz_debug.h>
-#include "private.h"
+#include "core_private.h"
 
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 	if (rz_config_get_i(core->config, "cfg.debug")) {

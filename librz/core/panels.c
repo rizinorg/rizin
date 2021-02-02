@@ -2,7 +2,7 @@
 
 #include <rz_core.h>
 #include "cmd_descs.h"
-#include "private.h"
+#include "core_private.h"
 
 #define PANEL_NUM_LIMIT 9
 
