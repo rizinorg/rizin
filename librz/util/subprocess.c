@@ -128,7 +128,9 @@ error:
 static void remove_cr_on_cond(char *str) {
 	char *start = str;
 	while (*str) {
-		if (*str == '\r' && !(str - start >= 4 && *(str - 4) == '\x1b') /* HACK */) {
+		if (str[0] == '\r' &&
+		    (str[1] == '\n' ||
+		     !(str - start >= 4 && *(str - 4) == '\x1b') /* HACK */)) {
 			memmove(str, str + 1, strlen(str + 1) + 1);
 			continue;
 		}
