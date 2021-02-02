@@ -774,7 +774,7 @@ static void visual_single_step_in(RzCore *core) {
 
 static void __core_visual_step_over(RzCore *core) {
 	bool io_cache = rz_config_get_i(core->config, "io.cache");
-	rz_config_set_i(core->config, "io.cache", false);
+	rz_config_set_b(core->config, "io.cache", false);
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
 			rz_core_cmd(core, "dcr", 0);
@@ -787,7 +787,7 @@ static void __core_visual_step_over(RzCore *core) {
 		rz_core_cmd(core, "aeso", 0);
 		rz_core_regs2flags(core);
 	}
-	rz_config_set_i(core->config, "io.cache", io_cache);
+	rz_config_set_b(core->config, "io.cache", io_cache);
 }
 
 static void visual_breakpoint(RzCore *core) {
@@ -1381,7 +1381,7 @@ repeat:
 	} else {
 		int h, w = rz_cons_get_size(&h);
 		bool asm_bytes = rz_config_get_i(core->config, "asm.bytes");
-		rz_config_set_i(core->config, "asm.bytes", false);
+		rz_config_set_b(core->config, "asm.bytes", false);
 		rz_core_cmd0(core, "fd");
 
 		int maxcount = 9;
@@ -1498,7 +1498,7 @@ repeat:
 			free(dis);
 			dis = NULL;
 		}
-		rz_config_set_i(core->config, "asm.bytes", asm_bytes);
+		rz_config_set_b(core->config, "asm.bytes", asm_bytes);
 	}
 	rz_cons_flush();
 	rz_cons_enable_mouse(rz_config_get_i(core->config, "scr.wheel"));
@@ -2749,19 +2749,19 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		case 'r':
 			// TODO: toggle shortcut hotkeys
 			if (rz_config_get_i(core->config, "asm.hint.call")) {
-				rz_core_cmd0(core, "e!asm.hint.call");
-				rz_core_cmd0(core, "e asm.hint.jmp=true");
+				rz_config_toggle(core->config, "asm.hint.call");
+				rz_config_set_b(core->config, "asm.hint.jmp", true);
 			} else if (rz_config_get_i(core->config, "asm.hint.jmp")) {
-				rz_core_cmd0(core, "e!asm.hint.jmp");
-				rz_core_cmd0(core, "e asm.hint.emu=true");
+				rz_config_toggle(core->config, "asm.hint.jmp");
+				rz_config_set_b(core->config, "asm.hint.emu", true);
 			} else if (rz_config_get_i(core->config, "asm.hint.emu")) {
-				rz_core_cmd0(core, "e!asm.hint.emu");
-				rz_core_cmd0(core, "e asm.hint.lea=true");
+				rz_config_toggle(core->config, "asm.hint.emu");
+				rz_config_set_b(core->config, "asm.hint.lea", true);
 			} else if (rz_config_get_i(core->config, "asm.hint.lea")) {
-				rz_core_cmd0(core, "e!asm.hint.lea");
-				rz_core_cmd0(core, "e asm.hint.call=true");
+				rz_config_toggle(core->config, "asm.hint.lea");
+				rz_config_set_b(core->config, "asm.hint.call", true);
 			} else {
-				rz_core_cmd0(core, "e asm.hint.call=true");
+				rz_config_set_b(core->config, "asm.hint.call", true);
 			}
 			visual_refresh(core);
 			break;
@@ -3606,9 +3606,9 @@ static int visual_responsive(RzCore *core) {
 	int h, w = rz_cons_get_size(&h);
 	if (rz_config_get_i(core->config, "scr.responsive")) {
 		if (w < 110) {
-			rz_config_set_i(core->config, "asm.cmt.right", 0);
+			rz_config_set_b(core->config, "asm.cmt.right", false);
 		} else {
-			rz_config_set_i(core->config, "asm.cmt.right", 1);
+			rz_config_set_b(core->config, "asm.cmt.right", true);
 		}
 		if (w < 68) {
 			rz_config_set_i(core->config, "hex.cols", (int)(w / 5.2));
@@ -3616,9 +3616,9 @@ static int visual_responsive(RzCore *core) {
 			rz_config_set_i(core->config, "hex.cols", 16);
 		}
 		if (w < 25) {
-			rz_config_set_i(core->config, "asm.offset", 0);
+			rz_config_set_b(core->config, "asm.offset", false);
 		} else {
-			rz_config_set_i(core->config, "asm.offset", 1);
+			rz_config_set_b(core->config, "asm.offset", true);
 		}
 		if (w > 80) {
 			rz_config_set_i(core->config, "asm.lines.width", 14);
@@ -3629,9 +3629,9 @@ static int visual_responsive(RzCore *core) {
 		}
 		if (w < 70) {
 			rz_config_set_i(core->config, "asm.lines.width", 1);
-			rz_config_set_i(core->config, "asm.bytes", 0);
+			rz_config_set_b(core->config, "asm.bytes", false);
 		} else {
-			rz_config_set_i(core->config, "asm.bytes", 1);
+			rz_config_set_b(core->config, "asm.bytes", true);
 		}
 	}
 	return w;
