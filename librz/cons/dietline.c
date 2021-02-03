@@ -368,7 +368,7 @@ RZ_API int rz_line_hist_cmd_up(RzLine *line) {
 		setup_hist_match(line);
 		if (line->history.match) {
 			int i;
-			for (i= line->history.index - 1; i >= 0; i--) {
+			for (i = line->history.index - 1; i >= 0; i--) {
 				if (match_hist_line(line->history.data[i], line->history.match)) {
 					line->history.index = i;
 					break;
@@ -398,7 +398,7 @@ RZ_API int rz_line_hist_cmd_down(RzLine *line) {
 	if (line->history.match) {
 		int i;
 		for (i = line->history.index + 1; i < line->history.top; i++) {
-			if (match_hist_line(line->history.data[i], line->history.match)) {	
+			if (match_hist_line(line->history.data[i], line->history.match)) {
 				break;
 			}
 		}
@@ -1209,6 +1209,7 @@ static void __vi_mode(void) {
 			break;
 		case 'c':
 			I.vi_mode = INSERT_MODE; // goto insert mode
+			/* fall through */
 		case 'd': {
 			char c = rz_cons_readchar();
 			while (rep--) {
@@ -1293,6 +1294,7 @@ static void __vi_mode(void) {
 			break;
 		case 'a':
 			__move_cursor_right();
+			/* fall through */
 		case 'i':
 			I.vi_mode = INSERT_MODE;
 			if (I.hud) {
@@ -1888,6 +1890,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						break;
 					case 0x37: // HOME xrvt-unicode
 						rz_cons_readchar();
+						/* fall through */
 					case 0x48: // HOME
 						if (I.sel_widget) {
 							selection_widget_up(I.sel_widget->options_len - 1);

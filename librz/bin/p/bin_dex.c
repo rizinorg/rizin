@@ -2161,8 +2161,9 @@ static RzList *libs(RzBinFile *bf) {
 			char *n = rz_str_newf("%s%s%s", path, RZ_SYS_DIR, file);
 			if (strcmp(n, bf->file)) {
 				rz_list_append(ret, n);
+			} else {
+				free(n);
 			}
-			free(n);
 		}
 	}
 	rz_list_free(files);

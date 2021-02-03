@@ -1742,9 +1742,9 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 							diffstr = rz_str_replace(diffstr, "\n", "\\l", 1);
 							diffstr = rz_str_replace(diffstr, "\"", "'", 1);
 							rz_cons_printf(" \"0x%08" PFMT64x "\" [fillcolor=\"%s\","
-								       "color=\"black\", fontname=\"Courier\","
+								       "color=\"black\", fontname=\"%s\","
 								       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
-								bbi->addr, difftype, diffstr, fcn->name,
+								bbi->addr, difftype, diffstr, font, fcn->name,
 								bbi->addr);
 						}
 						free(diffstr);
@@ -1766,9 +1766,9 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 							free(title);
 						} else {
 							rz_cons_printf(" \"0x%08" PFMT64x "\" [fillcolor=\"%s\","
-								       "color=\"black\", fontname=\"Courier\","
+								       "color=\"black\", fontname=\"%s\","
 								       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
-								bbi->addr, difftype, str, fcn->name, bbi->addr);
+								bbi->addr, difftype, str, font, fcn->name, bbi->addr);
 						}
 					}
 					rz_diff_free(d);
@@ -2385,14 +2385,15 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	case RZ_GRAPH_FORMAT_DOT:
 		if (!is_html) {
 			const char *gv_edge = rz_config_get(core->config, "graph.gv.edge");
-			const char *gv_node = rz_config_get(core->config, "graph.gv.node");
+			char *gv_node = strdup(rz_config_get(core->config, "graph.gv.node"));
 			const char *gv_grph = rz_config_get(core->config, "graph.gv.graph");
 			const char *gv_spline = rz_config_get(core->config, "graph.gv.spline");
 			if (!gv_edge || !*gv_edge) {
 				gv_edge = "arrowhead=\"normal\" style=bold weight=2";
 			}
 			if (!gv_node || !*gv_node) {
-				gv_node = "penwidth=4 fillcolor=white style=filled fontname=\"Courier New Bold\" fontsize=14 shape=box";
+				free(gv_node);
+				gv_node = rz_str_newf("penwidth=4 fillcolor=white style=filled fontname=\"%s Bold\" fontsize=14 shape=box", font);
 			}
 			if (!gv_grph || !*gv_grph) {
 				gv_grph = "bgcolor=azure";
@@ -2409,6 +2410,7 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 				       "edge [%s];\n",
 				gv_grph, font, gv_spline,
 				gv_node, gv_edge);
+			free(gv_node);
 		}
 		break;
 	}
@@ -3262,9 +3264,9 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 	}
 	if (*rad == '.') {
 		RzList *fcns = rz_analysis_get_functions_in(core->analysis, core->offset);
-		if (!fcns || rz_list_empty (fcns)) {
+		if (!fcns || rz_list_empty(fcns)) {
 			eprintf("No functions at current address.\n");
-			rz_list_free (fcns);
+			rz_list_free(fcns);
 			return -1;
 		}
 		fcn_list_default(core, fcns, false);

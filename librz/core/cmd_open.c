@@ -1862,8 +1862,8 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 					fd = rz_num_math(core->num, ptr + 1);
 				}
 			}
+			free(inp);
 			if ((fdx == -1) || (fd == -1) || (fdx == fd)) {
-				free(inp);
 				break;
 			}
 			rz_io_desc_exchange(core->io, fd, fdx);

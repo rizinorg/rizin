@@ -841,8 +841,9 @@ RZ_API char *rz_str_ndup(const char *ptr, int len) {
 
 // TODO: deprecate?
 RZ_API char *rz_str_dup(char *ptr, const char *string) {
-	free(ptr);
-	return rz_str_new(string);
+	char *str = rz_str_new(string);
+	free(ptr); // in case ptr == string
+	return str;
 }
 
 RZ_API char *rz_str_prepend(char *ptr, const char *string) {
@@ -3807,13 +3808,13 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 #endif
 
 #ifdef RZ_PACKAGER_VERSION
-# ifdef RZ_PACKAGER
-#  define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION " (" RZ_PACKAGER ")"
-# else
-#  define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION
-# endif
+#ifdef RZ_PACKAGER
+#define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION " (" RZ_PACKAGER ")"
 #else
-# define RZ_STR_PKG_VERSION_STRING ""
+#define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION
+#endif
+#else
+#define RZ_STR_PKG_VERSION_STRING ""
 #endif
 
 RZ_API char *rz_str_version(const char *program) {
