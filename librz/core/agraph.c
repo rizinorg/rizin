@@ -5,6 +5,7 @@
 #include <rz_util/rz_graph_drawable.h>
 #include <ctype.h>
 #include <limits.h>
+#include "core_private.h"
 
 static int mousemode = 0;
 static int disMode = 0;
@@ -3982,11 +3983,11 @@ static void graph_single_step_in(RzCore *core, RzAGraph *g) {
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "ds", 0);
-			rz_core_cmd(core, ".dr*", 0);
+			rz_core_debug_regs2flags(core, 0);
 		}
 	} else {
 		rz_core_cmd(core, "aes", 0);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_regs2flags(core);
 	}
 	g->is_instep = true;
 	g->need_reload_nodes = true;
@@ -3999,11 +4000,11 @@ static void graph_single_step_over(RzCore *core, RzAGraph *g) {
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "dso", 0);
-			rz_core_cmd(core, ".dr*", 0);
+			rz_core_debug_regs2flags(core, 0);
 		}
 	} else {
 		rz_core_cmd(core, "aeso", 0);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_regs2flags(core);
 	}
 	g->is_instep = true;
 	g->need_reload_nodes = true;
