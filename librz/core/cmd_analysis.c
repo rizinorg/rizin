@@ -4174,7 +4174,7 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 					mode2 = 'J';
 					pj_o(pj);
 				}
-				rz_core_debug_reg_list(core->dbg, RZ_REG_TYPE_GPR, 16, pj, mode2, use_color); // XXX detect which one is current usage
+				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, 16, pj, mode2, use_color); // XXX detect which one is current usage
 			}
 		}
 	}
@@ -4188,11 +4188,11 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 				pcbits = reg->size;
 			}
 			if (pcbits) {
-				rz_core_debug_reg_list(core->dbg, RZ_REG_TYPE_GPR, pcbits, NULL, mode, use_color); // XXX detect which one is current usage
+				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, NULL, mode, use_color); // XXX detect which one is current usage
 			}
 		}
 	}
-	rz_core_debug_reg_list(core->dbg, type, bits, pj, mode2, use_color);
+	rz_core_debug_reg_list(core, type, bits, pj, mode2, use_color);
 	if (mode == 'j') {
 		if (mode2 == 'J') {
 			pj_end(pj);
@@ -4492,11 +4492,11 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 		}
 		break;
 	case 'd': // "ard"
-		rz_core_debug_reg_list(core->dbg, RZ_REG_TYPE_GPR, bits, NULL, 3, use_color); // XXX detect which one is current usage
+		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, NULL, 3, use_color); // XXX detect which one is current usage
 		break;
 	case 'o': // "aro"
 		rz_reg_arena_swap(core->dbg->reg, false);
-		rz_core_debug_reg_list(core->dbg, RZ_REG_TYPE_GPR, bits, NULL, 0, use_color); // XXX detect which one is current usage
+		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, NULL, 0, use_color); // XXX detect which one is current usage
 		rz_reg_arena_swap(core->dbg->reg, false);
 		break;
 	case '=': // "ar="

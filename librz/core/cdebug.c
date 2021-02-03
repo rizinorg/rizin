@@ -76,7 +76,8 @@ RZ_IPI void rz_core_debug_regs2flags(RzCore *core, int bits) {
 	}
 }
 
-RZ_IPI bool rz_core_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
+RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int rad, const char *use_color) {
+	RzDebug *dbg = core->dbg;
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RzPrint *pr = NULL;
