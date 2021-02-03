@@ -885,7 +885,6 @@ FILE=bins/pe/ConsoleApplication1.exe
 ARGS=-A
 CMDS=pdf
 EXPECT=<<EOF
-        :   ;-- eip:
 / 329: entry0 ();
 |       :   ; var int32_t var_24h @ ebp-0x24
 |       :   ; var int32_t var_19h @ ebp-0x19
