@@ -5,6 +5,7 @@
 #include <rz_util/rz_graph_drawable.h>
 #include <ctype.h>
 #include <limits.h>
+#include "core_private.h"
 
 static int mousemode = 0;
 static int disMode = 0;
@@ -3534,7 +3535,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 					if (!rz_cons_yesno('y', "\rNo function at 0x%08" PFMT64x ". Define it here (Y/n)? ", core->offset)) {
 						return 0;
 					}
-					rz_core_cmd0(core, "af");
+					rz_core_analysis_function_add(core, NULL, core->offset, false);
 				}
 				f = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 				g->need_reload_nodes = true;
@@ -3977,16 +3978,15 @@ static void seek_to_node(RzANode *n, RzCore *core) {
 static void graph_single_step_in(RzCore *core, RzAGraph *g) {
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
-			// dcu 0xaddr
-			rz_core_cmdf(core, "dcu 0x%08" PFMT64x, core->offset + core->print->cur);
+			rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "ds", 0);
-			rz_core_cmd(core, ".dr*", 0);
+			rz_core_debug_regs2flags(core, 0);
 		}
 	} else {
 		rz_core_cmd(core, "aes", 0);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_regs2flags(core);
 	}
 	g->is_instep = true;
 	g->need_reload_nodes = true;
@@ -3999,11 +3999,11 @@ static void graph_single_step_over(RzCore *core, RzAGraph *g) {
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "dso", 0);
-			rz_core_cmd(core, ".dr*", 0);
+			rz_core_debug_regs2flags(core, 0);
 		}
 	} else {
 		rz_core_cmd(core, "aeso", 0);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_regs2flags(core);
 	}
 	g->is_instep = true;
 	g->need_reload_nodes = true;
@@ -4505,16 +4505,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				g->need_reload_nodes = true;
 			}
 			// TODO: toggle shortcut hotkeys
-			if (rz_config_get_i(core->config, "asm.hint.call")) {
-				rz_core_cmd0(core, "e!asm.hint.call");
-				rz_core_cmd0(core, "e!asm.hint.jmp");
-			} else if (rz_config_get_i(core->config, "asm.hint.jmp")) {
-				rz_core_cmd0(core, "e!asm.hint.jmp");
-				rz_core_cmd0(core, "e!asm.hint.lea");
-			} else if (rz_config_get_i(core->config, "asm.hint.lea")) {
-				rz_core_cmd0(core, "e!asm.hint.lea");
-				rz_core_cmd0(core, "e!asm.hint.call");
-			}
+			rz_core_visual_toggle_hints(core);
 			break;
 		case '$':
 			rz_core_cmd(core, "dr PC=$$", 0);
@@ -4525,7 +4516,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			if (rz_config_get_i(core->config, "scr.randpal")) {
 				rz_cons_pal_random();
 			} else {
-				rz_core_cmd0(core, "ecn");
+				rz_core_theme_nextpal(core, 'n');
 			}
 			if (!fcn) {
 				break;

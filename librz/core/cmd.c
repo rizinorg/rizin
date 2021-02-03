@@ -1467,7 +1467,6 @@ RZ_IPI int rz_cmd_resize(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut64 newsize = 0;
 	st64 delta = 0;
-	int grow, ret;
 
 	if (cmd_rzcmd(core, input)) {
 		return true;
@@ -1475,11 +1474,6 @@ RZ_IPI int rz_cmd_resize(void *data, const char *input) {
 
 	ut64 oldsize = (core->file) ? rz_io_fd_size(core->io, core->file->fd) : 0;
 	switch (*input) {
-	case 'a': // "r..."
-		if (rz_str_startswith(input, "adare2")) {
-			__runMain(core->rz_main_rizin, input - 1);
-		}
-		return true;
 	case 'b': // "rb" rebase
 		return cmd_rebase(core, input + 1);
 	case 'z': // "rz" // XXX should be handled already in cmd_rzcmd()
@@ -1549,25 +1543,10 @@ RZ_IPI int rz_cmd_resize(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_r);
 		return true;
 	}
-
-	grow = (newsize > oldsize);
-	if (grow) {
-		ret = rz_io_resize(core->io, newsize);
-		if (ret < 1) {
-			eprintf("rz_io_resize: cannot resize\n");
-		}
-	}
-	if (delta && core->offset < newsize) {
-		rz_io_shift(core->io, core->offset, grow ? newsize : oldsize, delta);
-	}
-	if (!grow) {
-		ret = rz_io_resize(core->io, newsize);
-		if (ret < 1) {
-			eprintf("rz_io_resize: cannot resize\n");
-		}
-	}
-	if (newsize < core->offset + core->blocksize || oldsize < core->offset + core->blocksize) {
-		rz_core_block_read(core);
+	if (delta) {
+		rz_core_file_resize_delta(core, delta);
+	} else {
+		rz_core_file_resize(core, newsize);
 	}
 	return true;
 }
@@ -2383,7 +2362,7 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 			// XXX: do not flush here, we need rz_cons_push () and rz_cons_pop()
 			rz_cons_flush();
 			// XXX: we must import register flags in C
-			(void)rz_core_cmd0(core, ".dr*");
+			rz_core_debug_regs2flags(core, 0);
 			(void)rz_core_cmd0(core, cr);
 		}
 		free(cr);
@@ -3515,7 +3494,8 @@ static void foreach_pairs(RzCore *core, const char *cmd, const char *each) {
 
 RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // "@@@"
 	RzDebug *dbg = core->dbg;
-	RzList *list, *head;
+	RzList *list;
+	const RzList *head;
 	RzListIter *iter;
 	int i;
 	const char *filter = NULL;
@@ -5660,7 +5640,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_command) {
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegItem *item;
 		ut64 value;
-		RzList *head = rz_reg_get_list(core->dbg->reg, i);
+		const RzList *head = rz_reg_get_list(core->dbg->reg, i);
 		if (!head) {
 			continue;
 		}

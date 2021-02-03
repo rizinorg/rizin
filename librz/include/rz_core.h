@@ -453,7 +453,9 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
+RZ_API void rz_core_help_vars_print(RzCore *core);
 RZ_API void rz_core_visual_prompt_input(RzCore *core);
+RZ_API void rz_core_visual_toggle_hints(RzCore *core);
 RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset);
 RZ_API void rz_core_visual_applyDisMode(RzCore *core, int disMode);
 RZ_API void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
@@ -512,6 +514,8 @@ RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);
 RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int binload);
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args);
 RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr);
+RZ_API bool rz_core_file_resize(RzCore *core, ut64 newsize);
+RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta);
 RZ_API RzCoreFile *rz_core_file_find_by_fd(RzCore *core, ut64 fd);
 RZ_API RzCoreFile *rz_core_file_find_by_name(RzCore *core, const char *name);
 RZ_API RzCoreFile *rz_core_file_cur(RzCore *r);
@@ -540,6 +544,7 @@ RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 
 /* cdebug.c */
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
+RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
 
 RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode);
 RZ_API void rz_core_debug_set_register_flags(RzCore *core);
@@ -616,6 +621,9 @@ RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut6
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 RZ_API int rz_core_esil_step_back(RzCore *core);
 RZ_API ut64 rz_core_analysis_get_bbaddr(RzCore *core, ut64 addr);
+RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
+RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name);
+RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 addr, bool analyze_recursively);
 RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int depth);
 RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
@@ -811,7 +819,7 @@ RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, Pri
 RZ_API PJ *rz_core_pj_new(RzCore *core);
 /* help */
 RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]);
-RZ_API const char **rz_core_get_help_vars(RzCore *core);
+RZ_API const char **rz_core_help_vars_get(RzCore *core);
 
 /* analysis stats */
 

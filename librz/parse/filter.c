@@ -481,7 +481,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				snprintf(num, sizeof(num), "0%o", (int)off);
 				break;
 			case 10: {
-				RzList *regs = rz_reg_get_list(p->analb.analysis->reg, RZ_REG_TYPE_GPR);
+				const RzList *regs = rz_reg_get_list(p->analb.analysis->reg, RZ_REG_TYPE_GPR);
 				RzRegItem *reg;
 				RzListIter *iter;
 				bool imm32 = false;

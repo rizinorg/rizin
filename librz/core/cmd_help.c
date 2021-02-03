@@ -416,7 +416,7 @@ enum {
 /**
  * \brief Returns all the $ variable names in a NULL-terminated array.
  */
-RZ_API const char **rz_core_get_help_vars(RzCore *core) {
+RZ_API const char **rz_core_help_vars_get(RzCore *core) {
 	static const char *vars[] = {
 		"$$", "$$$", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
 		"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
@@ -424,6 +424,21 @@ RZ_API const char **rz_core_get_help_vars(RzCore *core) {
 		"$o", "$p", "$P", "$r", "$s", "$S", "$SS", "$v", "$w", "$Xn", NULL
 	};
 	return vars;
+}
+
+RZ_API void rz_core_help_vars_print(RzCore *core) {
+	int i = 0;
+	const char **vars = rz_core_help_vars_get(core);
+	const bool wideOffsets = rz_config_get_i(core->config, "scr.wideoff");
+	while (vars[i]) {
+		const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));
+		if (wideOffsets) {
+			eprintf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+		} else {
+			eprintf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+		}
+		i++;
+	}
 }
 
 RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
@@ -842,18 +857,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_question_v);
 		} else {
-			int i = 0;
-			const char **vars = rz_core_get_help_vars(core);
-			const bool wideOffsets = rz_config_get_i(core->config, "scr.wideoff");
-			while (vars[i]) {
-				const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));
-				if (wideOffsets) {
-					eprintf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
-				} else {
-					eprintf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
-				}
-				i++;
-			}
+			rz_core_help_vars_print(core);
 		}
 		return true;
 	case 'V': // "?V"

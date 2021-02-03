@@ -1517,3 +1517,42 @@ beach:
 	}
 	return rz_strbuf_drain(buf);
 }
+
+// function argument types and names into analysis/types
+RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
+	RzAnalysisFcnVarsCache cache;
+	rz_analysis_fcn_vars_cache_init(analysis, &cache, fcn);
+	RzListIter *iter;
+	RzAnalysisVar *var;
+	int arg_count = 0;
+
+	RzList *all_vars = cache.rvars;
+	rz_list_join(all_vars, cache.bvars);
+	rz_list_join(all_vars, cache.svars);
+
+	RzStrBuf key, value;
+	rz_strbuf_init(&key);
+	rz_strbuf_init(&value);
+
+	rz_list_foreach (all_vars, iter, var) {
+		if (var->isarg) {
+			if (!rz_strbuf_setf(&key, "func.%s.arg.%d", fcn->name, arg_count) ||
+				!rz_strbuf_setf(&value, "%s,%s", var->type, var->name)) {
+				goto exit;
+			}
+			sdb_set(analysis->sdb_types, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
+			arg_count++;
+		}
+	}
+	if (arg_count > 0) {
+		if (!rz_strbuf_setf(&key, "func.%s.args", fcn->name) ||
+			!rz_strbuf_setf(&value, "%d", arg_count)) {
+			goto exit;
+		}
+		sdb_set(analysis->sdb_types, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
+	}
+exit:
+	rz_strbuf_fini(&key);
+	rz_strbuf_fini(&value);
+	rz_analysis_fcn_vars_cache_fini(&cache);
+}

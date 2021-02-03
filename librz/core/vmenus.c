@@ -471,10 +471,10 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			}
 		} break;
 		case 'R':
-			if (rz_config_get_i(core->config, "scr.randpal")) {
-				rz_core_cmd0(core, "ecr");
+			if (rz_config_get_b(core->config, "scr.randpal")) {
+				rz_cons_pal_random();
 			} else {
-				rz_core_cmd0(core, "ecn");
+				rz_core_theme_nextpal(core, 'n');
 			}
 			break;
 		case '+':
@@ -2434,7 +2434,7 @@ RZ_API void rz_core_visual_config(RzCore *core) {
 			option = _option;
 			break;
 		case '$':
-			rz_core_cmd0(core, "?$");
+			rz_core_help_vars_print(core);
 			rz_cons_any_key(NULL);
 			break;
 		case '*':
@@ -3109,7 +3109,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 			delta = 0;
 			break;
 		case 'R':
-			rz_core_cmd0(core, "ecn");
+			rz_core_theme_nextpal(core, 'n');
 			break;
 		case 'p':
 			printMode++;
@@ -3127,7 +3127,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 		case '-':
 			switch (level) {
 			case 0:
-				rz_core_cmdf(core, "af-0x%" PFMT64x, addr);
+				rz_core_cmdf(core, "af- 0x%" PFMT64x, addr);
 				break;
 			}
 			break;
@@ -3138,7 +3138,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 			rz_core_visual_refs(core, true, true);
 			break;
 		case 's':
-			rz_core_cmdf(core, "afs!@0x%08" PFMT64x, addr);
+			rz_core_cmdf(core, "afs! @ 0x%08" PFMT64x, addr);
 			break;
 		case 'c':
 			level = 2;
@@ -3884,11 +3884,11 @@ RZ_API void rz_core_visual_colors(RzCore *core) {
 			opt++;
 			break;
 		case 'l':
-			rz_core_cmd0(core, "ecn");
+			rz_core_theme_nextpal(core, 'n');
 			oopt = -1;
 			break;
 		case 'h':
-			rz_core_cmd0(core, "ecp");
+			rz_core_theme_nextpal(core, 'p');
 			oopt = -1;
 			break;
 		case 'K':

@@ -1,6 +1,7 @@
 /* rizin - LGPL - Copyright 2009-2019 - pancake */
 
 #include "rz_core.h"
+#include "core_private.h"
 
 RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
@@ -26,7 +27,7 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	}
 	//this makes to attach twice showing warnings in the output
 	//we get "resource busy" so it seems isn't an issue
-	rz_core_cmd(r, ".dr*", 0);
+	rz_core_debug_regs2flags(r, 0);
 	/* honor dbg.bep */
 	{
 		const char *bep = rz_config_get(r->config, "dbg.bep");
