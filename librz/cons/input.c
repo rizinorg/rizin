@@ -318,7 +318,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 				}
 				break;
 			case ':': // arrow+shift
-				ch = rz_cons_readchar();
+				rz_cons_readchar();
 				ch = rz_cons_readchar();
 				switch (ch) {
 				case 'A': ch = 'K'; break;
