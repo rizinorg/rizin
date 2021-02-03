@@ -25,9 +25,9 @@ Use `meson` to compile and install Rizin. Please make sure to get an updated
 `meson` (e.g. get it with `pip install meson` if your system does not provide
 one that is at least version 0.55.0).
 
-Clone this repository and make sure to clone the submodules as well:
+Clone this repository:
 ```
-$ git clone --recurse-submodules https://github.com/rizinorg/rizin
+$ git clone https://github.com/rizinorg/rizin
 ```
 
 Then compile and install with:

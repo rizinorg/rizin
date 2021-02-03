@@ -34,7 +34,7 @@ jobs:
           macos-meson-clang-tests,
           linux-gcc-tests-asan,
           capstone-v3,
-          capstone-v5
+          capstone-next
         ]
         include:
           - name: linux-meson-clang-tests
@@ -89,11 +89,11 @@ jobs:
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45
             cflags: '-Werror -Wno-cpp'
-          - name: capstone-v5
+          - name: capstone-next
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Duse_capstone_version=v5
+            meson_options: -Duse_capstone_version=next
             run_tests: false
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45
@@ -102,8 +102,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       if: matrix.enabled
-      with:
-          submodules: recursive
     - name: Install pkg-config and cabextract with Homebrew
       if: matrix.os == 'macos-latest' && matrix.enabled
       run: brew install pkg-config cabextract
@@ -228,11 +226,6 @@ jobs:
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
-        git submodule init
-        git submodule update
-    - name: Fetch capstone manually
-      run: git clone -b v4 https://github.com/rizinorg/capstone shlr/capstone
-      working-directory: rizin
     - name: Checkout our Testsuite Binaries
       run: git clone https://github.com/rizinorg/rizin-testbins test/bins
       working-directory: rizin
@@ -297,12 +290,6 @@ jobs:
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
-        git submodule init
-        git submodule update
-    - name: Fetch capstone manually
-      if: matrix.container == 'debian:wheezy'
-      run: git clone -b v4 https://github.com/rizinorg/capstone shlr/capstone
-      working-directory: rizin
     - name: Checkout our Testsuite Binaries
       run: git clone https://github.com/rizinorg/rizin-testbins test/bins
       working-directory: rizin
@@ -343,8 +330,6 @@ jobs:
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
-        git submodule init
-        git submodule update
     - name: Checkout our Testsuite Binaries
       run: git clone https://github.com/rizinorg/rizin-testbins test/bins
       working-directory: rizin
@@ -388,11 +373,11 @@ jobs:
     steps:
     - name: Install python and other dependencies
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
+    - name: Download meson from git (temporary)
+      run: pip3 install --user git+https://github.com/mesonbuild/meson
     - name: Install meson and ninja
-      run: pip3 install --user meson ninja PyYAML
+      run: pip3 install --user ninja PyYAML
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=version;]$(python sys/version.py)"
@@ -417,8 +402,6 @@ jobs:
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - name: Install pkg-config with Homebrew
       run: brew install pkg-config
     - name: Install meson and ninja
@@ -445,14 +428,12 @@ jobs:
         include:
           - name: vs2019_static
             compiler: cl
-            meson_options: --default-library=static -Dstatic_runtime=true
+            meson_options: --default-library=static -Db_vscrt=static_from_buildtype
           - name: clang_cl
             compiler: clang-cl
             meson_options: --default-library=shared
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - uses: actions/setup-python@v2
     - name: Install dependencies
       run: |
@@ -499,8 +480,6 @@ jobs:
         name: [x86_64, arm, aarch64]
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - name: Install dependencies
       run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with meson
@@ -619,8 +598,6 @@ jobs:
     needs: [build-windows]
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - uses: actions/setup-python@v2
     - name: Install pkg-config
       shell: pwsh
@@ -667,8 +644,6 @@ jobs:
     ]
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -766,8 +741,6 @@ jobs:
     if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - name: Login to DockerHub
       uses: docker/login-action@v1
       with:
