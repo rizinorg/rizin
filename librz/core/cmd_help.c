@@ -416,7 +416,7 @@ enum {
 /**
  * \brief Returns all the $ variable names in a NULL-terminated array.
  */
-RZ_API const char **rz_core_get_help_vars(RzCore *core) {
+RZ_API const char **rz_core_help_vars_get(RzCore *core) {
 	static const char *vars[] = {
 		"$$", "$$$", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
 		"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
@@ -428,7 +428,7 @@ RZ_API const char **rz_core_get_help_vars(RzCore *core) {
 
 RZ_API void rz_core_help_vars_print(RzCore *core) {
 	int i = 0;
-	const char **vars = rz_core_get_help_vars(core);
+	const char **vars = rz_core_help_vars_get(core);
 	const bool wideOffsets = rz_config_get_i(core->config, "scr.wideoff");
 	while (vars[i]) {
 		const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));

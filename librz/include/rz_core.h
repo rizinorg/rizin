@@ -819,7 +819,7 @@ RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, Pri
 RZ_API PJ *rz_core_pj_new(RzCore *core);
 /* help */
 RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]);
-RZ_API const char **rz_core_get_help_vars(RzCore *core);
+RZ_API const char **rz_core_help_vars_get(RzCore *core);
 
 /* analysis stats */
 
