@@ -18,7 +18,6 @@ jobs:
         # We must fetch at least the immediate parents so that if this is
         # a pull request then we can checkout the head.
         fetch-depth: 2
-        submodules: recursive
 
     - name: Install python and other dependencies
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools

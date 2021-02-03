@@ -2,6 +2,9 @@ project('rizin', 'c',
   version: 'v0.2.0-git',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
+  default_options: [
+    'b_vscrt=from_buildtype',
+  ]
 )
 
 py3_exe = import('python').find_installation()
@@ -11,11 +14,12 @@ pkgconfig_mod = import('pkgconfig')
 # Python scripts used during the build process
 create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
+check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
 is_static_build = get_option('static_runtime')
 if is_static_build and get_option('default_library') != 'static'
-  error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=true` if you want to build statically.')
+  error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=static` if you want to build statically.')
 endif
 
 # Get rizin version and compute various version parts
@@ -51,11 +55,6 @@ gittip = ''
 
 git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
 if git_exe.found() and git_dir_exists.returncode() == 0
-  sdb_src_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").listdir("shlr/sdb/") else 1)')
-  if sdb_src_exists.returncode() == 1
-    error('Source code for SDB not found. Did you forget to run `git submodule update --init`?')
-  endif
-
   # Get gittip
   git_rev_parse = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD')
   if git_rev_parse.returncode() == 0
@@ -111,6 +110,7 @@ endif
 platform_inc = include_directories(platform_inc)
 
 if is_static_build and cc.get_id() == 'msvc'
+  # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
   add_project_arguments('/MT', language: 'c')
 endif
 
@@ -134,7 +134,7 @@ if cc.get_id() == 'clang-cl'
 endif
 
 if get_option('default_library') == 'shared'
-  if host_machine.system() != 'windows' or cc.get_id()!='msvc' and cc.get_id()!='clang-cl'
+  if cc.has_argument('-fvisibility=hidden')
     add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
@@ -422,83 +422,14 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
   )
 endif
 
-
-# handle sdb dependency
-# NOTE: copying most of the stuff from sdb to here for the moment, since we
-# should use subpackages to handle this well
-sdb_files = [
-  'shlr/sdb/src/array.c',
-  'shlr/sdb/src/base64.c',
-  'shlr/sdb/src/buffer.c',
-  'shlr/sdb/src/set.c',
-  'shlr/sdb/src/cdb.c',
-  'shlr/sdb/src/cdb_make.c',
-  'shlr/sdb/src/diff.c',
-  'shlr/sdb/src/disk.c',
-  'shlr/sdb/src/fmt.c',
-  'shlr/sdb/src/ht_uu.c',
-  'shlr/sdb/src/ht_up.c',
-  'shlr/sdb/src/ht_pp.c',
-  'shlr/sdb/src/journal.c',
-  'shlr/sdb/src/json.c',
-  'shlr/sdb/src/lock.c',
-  'shlr/sdb/src/ls.c',
-  'shlr/sdb/src/match.c',
-  'shlr/sdb/src/ns.c',
-  'shlr/sdb/src/num.c',
-  'shlr/sdb/src/query.c',
-  'shlr/sdb/src/sdb.c',
-  'shlr/sdb/src/sdbht.c',
-  'shlr/sdb/src/text.c',
-  'shlr/sdb/src/util.c'
-]
-
-sdb_inc = [platform_inc, include_directories('shlr/sdb/src')]
-
-# Create sdb_version.h
-r = run_command(py3_exe, 'sys/sdb_version.py', 'shlr/sdb/config.mk')
-if r.returncode() == 0
-  sdb_version = r.stdout().strip().split('\n')[0]
-else
-  sdb_version = 'unknown'
+r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subproject sdb is not updated. Please make sure to run `meson subprojects update` or set option `subprojects_check=false` if you want to compile against currently downloaded subproject.')
 endif
-run_command(py3_exe, '-c', 'with open("shlr/sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
-sdb_inc_files = [
-  'shlr/sdb/src/buffer.h',
-  'shlr/sdb/src/cdb.h',
-  'shlr/sdb/src/set.h',
-  'shlr/sdb/src/cdb_make.h',
-  'shlr/sdb/src/config.h',
-  'shlr/sdb/src/ht_inc.h',
-  'shlr/sdb/src/ht_pp.h',
-  'shlr/sdb/src/ht_up.h',
-  'shlr/sdb/src/ht_uu.h',
-  'shlr/sdb/src/ls.h',
-  'shlr/sdb/src/sdb.h',
-  'shlr/sdb/src/sdbht.h',
-  'shlr/sdb/src/sdb_version.h',
-  'shlr/sdb/src/types.h'
-]
-install_headers(sdb_inc_files, install_dir: rizin_incdir / 'sdb')
-
-librzsdb = static_library('rzsdb', sdb_files,
-  include_directories: sdb_inc,
-  implicit_include_directories: false,
-)
-
-sdb_dep = declare_dependency(
-  link_whole: librzsdb,
-  include_directories: sdb_inc
-)
-
-sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
-  include_directories: [
-    include_directories(['shlr/sdb/src'])
-  ],
-  implicit_include_directories: false,
-  native: true,
-)
+sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])
+sdb_dep = sdb_proj.get_variable('sdb_dep')
+sdb_exe  = sdb_proj.get_variable('sdb_native_exe')
 
 sdb_gen_cmd = [
   sdb_exe,
@@ -507,7 +438,6 @@ sdb_gen_cmd = [
   '@INPUT@'
 ]
 
-# handle spp dependency
 spp_files = [
   'shlr/spp/spp.c'
 ]
@@ -544,7 +474,6 @@ endif
 rpath_exe = ''
 rpath_lib = ''
 if use_rpath
-  message('RPATH will be used to link libraries and executables')
   rpath_exe = '$ORIGIN/../' + get_option('libdir')
   rpath_lib = '$ORIGIN'
 endif
