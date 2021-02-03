@@ -7989,7 +7989,7 @@ static void agraph_print_node(RzANode *n, void *user) {
 	if (len > 0 && n->body[len - 1] == '\n') {
 		len--;
 	}
-	encbody = rz_base64_encode_dyn(n->body, len);
+	encbody = rz_base64_encode_dyn((const ut8 *)n->body, len);
 	cmd = rz_str_newf("agn \"%s\" base64:%s\n", n->title, encbody);
 	rz_cons_print(cmd);
 	free(cmd);
@@ -8319,7 +8319,7 @@ static void print_graph_agg(RzGraph /*RzGraphNodeInfo*/ *graph) {
 			if (len > 0 && print_node->body[len - 1] == '\n') {
 				len--;
 			}
-			encbody = rz_base64_encode_dyn(print_node->body, len);
+			encbody = rz_base64_encode_dyn((const ut8 *)print_node->body, len);
 			rz_cons_printf("agn \"%s\" base64:%s\n", print_node->title, encbody);
 			free(encbody);
 		} else {
@@ -10258,7 +10258,7 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 	}
 	char *s = rz_strbuf_drain(sb);
 	if (is_aCer) {
-		char *u = rz_base64_encode_dyn(s, -1);
+		char *u = rz_base64_encode_dyn((const ut8 *)s, strlen(s));
 		if (u) {
 			rz_cons_printf("CCu base64:%s\n", u);
 			free(u);

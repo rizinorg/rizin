@@ -1727,7 +1727,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 
 						if (is_star) {
 							char *title = get_title(bbi->addr);
-							char *body_b64 = rz_base64_encode_dyn(diffstr, -1);
+							char *body_b64 = rz_base64_encode_dyn((const ut8 *)diffstr, strlen(diffstr));
 							if (!title || !body_b64) {
 								free(body_b64);
 								free(title);
@@ -1752,7 +1752,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 					} else {
 						if (is_star) {
 							char *title = get_title(bbi->addr);
-							char *body_b64 = rz_base64_encode_dyn(str, -1);
+							char *body_b64 = rz_base64_encode_dyn((const ut8 *)str, strlen(title));
 							int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
 							if (!title || !body_b64) {
 								free(body_b64);
@@ -1797,7 +1797,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 					nodes++;
 					if (is_star) {
 						char *title = get_title(bbi->addr);
-						char *body_b64 = rz_base64_encode_dyn(str, -1);
+						char *body_b64 = rz_base64_encode_dyn((const ut8 *)str, strlen(str));
 						int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
 						if (!title || !body_b64) {
 							free(body_b64);
@@ -2071,7 +2071,7 @@ RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalysisFunction *fcn) {
 		}
 		char *title = get_title(bb->addr);
 		char *body = rz_core_cmd_strf(core, "pdb @ 0x%08" PFMT64x, bb->addr);
-		char *body_b64 = rz_base64_encode_dyn(body, -1);
+		char *body_b64 = rz_base64_encode_dyn((const ut8 *)body, strlen(body));
 		if (!title || !body || !body_b64) {
 			free(body_b64);
 			free(body);
@@ -5910,7 +5910,7 @@ RZ_API void rz_core_analysis_esil_graph(RzCore *core, const char *expr) {
 		if (enode->type == RZ_ANALYSIS_ESIL_DFG_BLOCK_GENERATIVE) {
 			rz_strbuf_prepend(buf, "generative:");
 		}
-		char *b64_buf = rz_base64_encode_dyn(rz_strbuf_get(buf), buf->len);
+		char *b64_buf = rz_base64_encode_dyn((const ut8 *)rz_strbuf_get(buf), buf->len);
 		rz_cons_printf("agn %d base64:%s\n", enode->idx, b64_buf);
 		free(b64_buf);
 		free(esc_str);
