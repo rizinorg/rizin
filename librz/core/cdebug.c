@@ -20,7 +20,7 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 		int i = 0;
 		do {
 			rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-			rz_core_regs_to_flags(core);
+			rz_core_regs2flags(core);
 			i++;
 		} while (i < times);
 	}
@@ -56,9 +56,24 @@ static int get_regs_bits(RzCore *core) {
 	return bits;
 }
 
-RZ_IPI void rz_core_regs_to_flags(RzCore *core) {
+RZ_IPI void rz_core_regs2flags(RzCore *core) {
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
 	int size = get_regs_bits(core);
 	regs_to_flags(core, size);
+	rz_flag_space_pop(core->flags);
+}
+
+RZ_IPI void rz_core_debug_regs2flags(RzCore *core, int bits) {
+	if (core->bin->is_debugger) {
+		if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
+			rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
+			int size = bits <= 0 ? get_regs_bits(core): bits;
+			regs_to_flags(core, size);
+			rz_flag_space_pop(core->flags);
+		}
+	} else {
+		rz_core_regs2flags(core);
+	}
 }
 
 RZ_IPI bool rz_core_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {

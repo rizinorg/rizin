@@ -746,7 +746,7 @@ RZ_API int rz_core_visual_prompt(RzCore *core) {
 		rz_cons_flush();
 		ret = true;
 		if (rz_config_get_i(core->config, "cfg.debug")) {
-			rz_core_cmd(core, ".dr*", 0);
+			rz_core_debug_regs2flags(core, 0);
 		}
 	} else {
 		ret = false;
@@ -765,11 +765,11 @@ static void visual_single_step_in(RzCore *core) {
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_debug_step_one(core, 1);
-			rz_core_cmd(core, ".dr*", 0);
+			rz_core_debug_regs2flags(core, 0);
 		}
 	} else {
 		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-		rz_core_regs_to_flags(core);
+		rz_core_regs2flags(core);
 	}
 }
 
@@ -782,11 +782,11 @@ static void __core_visual_step_over(RzCore *core) {
 			core->print->cur_enabled = 0;
 		} else {
 			rz_core_cmd(core, "dso", 0);
-			rz_core_cmd(core, ".dr*", 0);
+			rz_core_debug_regs2flags(core, 0);
 		}
 	} else {
 		rz_core_cmd(core, "aeso", 0);
-		rz_core_regs_to_flags(core);
+		rz_core_regs2flags(core);
 	}
 	rz_config_set_i(core->config, "io.cache", io_cache);
 }
@@ -800,7 +800,7 @@ static void visual_continue(RzCore *core) {
 		rz_core_cmd(core, "dc", 0);
 	} else {
 		rz_core_cmd(core, "aec", 0);
-		rz_core_regs_to_flags(core);
+		rz_core_regs2flags(core);
 	}
 }
 
@@ -3005,12 +3005,6 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				rz_config_set_i(core->config, "hex.cols", scrcols + 1);
 			}
 			break;
-#if 0
-		case 'I':
-			rz_core_cmd (core, "dsp", 0);
-			rz_core_cmd (core, ".dr*", 0);
-			break;
-#endif
 		case 's':
 			key_s = rz_config_get(core->config, "key.s");
 			if (key_s && *key_s) {
@@ -4079,14 +4073,8 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			rz_core_seek(core, scrseek, true);
 		}
 		if (debug) {
-			rz_core_cmd(core, ".dr*", 0);
+			rz_core_debug_regs2flags(core, 0);
 		}
-#if 0
-		cmdprompt = rz_config_get (core->config, "cmd.vprompt");
-		if (cmdprompt && *cmdprompt) {
-			rz_core_cmd (core, cmdprompt, 0);
-		}
-#endif
 		core->print->vflush = !skip;
 		visual_refresh(core);
 		if (insert_mode_enabled(core)) {

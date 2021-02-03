@@ -3972,7 +3972,7 @@ void __print_disassembly_cb(void *user, void *p) {
 	core->offset = panel->model->addr;
 	rz_core_seek(core, panel->model->addr, true);
 	if (rz_config_get_i(core->config, "cfg.debug")) {
-		rz_core_cmd(core, ".dr*", 0);
+		rz_core_debug_regs2flags(core, 0);
 	}
 	cmdstr = __handle_cmd_str_cache(core, panel, false);
 	core->offset = o_offset;
@@ -4800,10 +4800,10 @@ void __do_panels_refreshOneShot(RzCore *core) {
 void __panel_single_step_in(RzCore *core) {
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		rz_core_cmd(core, "ds", 0);
-		rz_core_cmd(core, ".dr*", 0);
+		rz_core_debug_regs2flags(core, 0);
 	} else {
 		rz_core_cmd(core, "aes", 0);
-		rz_core_regs_to_flags(core);
+		rz_core_regs2flags(core);
 	}
 }
 
@@ -4812,10 +4812,10 @@ void __panel_single_step_over(RzCore *core) {
 	rz_config_set_i(core->config, "io.cache", false);
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		rz_core_cmd(core, "dso", 0);
-		rz_core_cmd(core, ".dr*", 0);
+		rz_core_debug_regs2flags(core, 0);
 	} else {
 		rz_core_cmd(core, "aeso", 0);
-		rz_core_regs_to_flags(core);
+		rz_core_regs2flags(core);
 	}
 	rz_config_set_i(core->config, "io.cache", io_cache);
 }

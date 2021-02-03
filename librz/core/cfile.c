@@ -3,6 +3,7 @@
 #include <rz_core.h>
 #include <stdlib.h>
 #include <string.h>
+#include "core_private.h"
 
 #define UPDATE_TIME(a) (r->times->file_open_time = rz_time_now_mono() - (a))
 
@@ -181,7 +182,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	rz_core_seek(core, origoff, true);
 	if (isdebug) {
 		rz_core_cmd0(core, ".dm*");
-		rz_core_cmd0(core, ".dr*");
+		rz_core_debug_regs2flags(core, 0);
 		rz_core_cmd0(core, "sr PC");
 	} else {
 		loadGP(core);

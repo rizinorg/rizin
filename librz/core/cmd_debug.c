@@ -2965,7 +2965,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			}
 			free(string);
 			// update flags here
-			rz_core_cmdf(core, ".dr*%d", bits);
+			rz_core_debug_regs2flags(core, bits);
 			return;
 		}
 
@@ -4525,7 +4525,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 					core->break_loop = true;
 					break;
 				}
-				rz_core_cmd0(core, ".dr*");
+				rz_core_debug_regs2flags(core, 0);
 				n++;
 			} while (!rz_num_conditional(core->num, input + 3));
 			rz_cons_break_pop();
@@ -4607,7 +4607,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 		}
 		rz_debug_reg_set(core->dbg, "PC", addr);
 		rz_reg_setv(core->analysis->reg, "PC", addr);
-		rz_core_cmd0(core, ".dr*");
+		rz_core_debug_regs2flags(core, 0);
 		if (bpi) {
 			rz_core_cmd0(core, delb);
 		}
@@ -4641,7 +4641,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 			}
 		} else {
 			if (rz_core_esil_step_back(core)) {
-				rz_core_cmd0(core, ".dr*");
+				rz_core_debug_regs2flags(core, 0);
 			} else {
 				eprintf("cannot step back\n");
 			}
