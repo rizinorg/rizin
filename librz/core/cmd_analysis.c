@@ -814,7 +814,6 @@ static bool analysis_is_bad_call(RzCore *core, ut64 from, ut64 to, ut64 addr, ut
 }
 #endif
 
-
 static bool cmd_analysis_aaft(RzCore *core) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;

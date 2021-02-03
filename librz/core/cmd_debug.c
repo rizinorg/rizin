@@ -1889,7 +1889,7 @@ static void foreach_reg_set_or_clear(RzCore *core, bool set) {
 	const RzList *regs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
 	RzListIter *it;
 	RzRegItem *reg_item;
-	rz_list_foreach(regs, it, reg_item) {
+	rz_list_foreach (regs, it, reg_item) {
 		if (set) {
 			const ut64 value = rz_reg_get_value(core->dbg->reg, reg_item);
 			rz_flag_set(core->flags, reg_item->name, value, reg_item->size / 8);
