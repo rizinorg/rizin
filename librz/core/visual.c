@@ -2014,7 +2014,7 @@ static bool insert_mode_enabled(RzCore *core) {
 	if (core->print->col == 2) {
 		/* ascii column */
 		if (IS_PRINTABLE(ch)) {
-			ut8 chs[2] = {ch, 0};
+			ut8 chs[2] = { ch, 0 };
 			if (rz_core_write_at(core, core->offset + core->print->cur, chs, 1)) {
 				core->print->cur++;
 			}

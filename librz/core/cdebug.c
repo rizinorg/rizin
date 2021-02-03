@@ -190,7 +190,7 @@ RZ_IPI void rz_core_debug_regs2flags(RzCore *core, int bits) {
 	if (core->bin->is_debugger) {
 		if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
 			rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
-			int size = bits <= 0 ? get_regs_bits(core): bits;
+			int size = bits <= 0 ? get_regs_bits(core) : bits;
 			regs_to_flags(core, size);
 			rz_flag_space_pop(core->flags);
 		}

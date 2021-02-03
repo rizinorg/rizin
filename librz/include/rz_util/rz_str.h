@@ -34,9 +34,9 @@ typedef enum {
  */
 #define rz_strf(buf, ...) ( \
 	snprintf(buf, sizeof(buf), __VA_ARGS__) < 0 \
-		? rz_assert_log(RZ_LOGLVL_FATAL, "rz_strf error while using snprintf"), NULL \
-		: buf \
-)
+	? rz_assert_log(RZ_LOGLVL_FATAL, "rz_strf error while using snprintf"), \
+	NULL \
+	: buf)
 
 typedef int (*RzStrRangeCallback)(void *, int);
 
