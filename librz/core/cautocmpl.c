@@ -201,7 +201,7 @@ static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, c
 }
 
 static void autocmplt_cmd_arg_help_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	const char **vars = rz_core_get_help_vars(core);
+	const char **vars = rz_core_help_vars_get(core);
 	while (*vars) {
 		if (!strncmp(*vars, s, len)) {
 			rz_line_ns_completion_result_add(res, *vars);

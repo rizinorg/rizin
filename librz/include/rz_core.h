@@ -453,6 +453,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
+RZ_API void rz_core_help_vars_print(RzCore *core);
 RZ_API void rz_core_visual_prompt_input(RzCore *core);
 RZ_API void rz_core_visual_toggle_hints(RzCore *core);
 RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset);
@@ -818,7 +819,7 @@ RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, Pri
 RZ_API PJ *rz_core_pj_new(RzCore *core);
 /* help */
 RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]);
-RZ_API const char **rz_core_get_help_vars(RzCore *core);
+RZ_API const char **rz_core_help_vars_get(RzCore *core);
 
 /* analysis stats */
 
