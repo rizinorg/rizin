@@ -125,7 +125,7 @@ error:
 	return ret;
 }
 
-static void remove_cr_on_cond(char *str) {
+static void remove_cr(char *str) {
 	char *start = str;
 	while (*str) {
 		if (str[0] == '\r' &&
@@ -315,7 +315,7 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 				continue;
 			}
 			stdout_buf[r] = '\0';
-			remove_cr_on_cond(stdout_buf);
+			remove_cr(stdout_buf);
 			rz_strbuf_append(&proc->out, (const char *)stdout_buf);
 			ResetEvent(stdout_overlapped.hEvent);
 			DO_READ(stdout)
@@ -329,7 +329,7 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 				continue;
 			}
 			stderr_buf[read] = '\0';
-			remove_cr_on_cond(stderr_buf);
+			remove_cr(stderr_buf);
 			rz_strbuf_append(&proc->err, (const char *)stderr_buf);
 			ResetEvent(stderr_overlapped.hEvent);
 			DO_READ(stderr);
