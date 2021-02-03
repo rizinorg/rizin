@@ -24,6 +24,8 @@ $ git clone https://github.com/rizinorg/rizin
 $ cd rizin
 $ meson subprojects download
 ```
+If you want to prepare a special tarball to use within your distribution,
+have a look at [`meson dist`](https://mesonbuild.com/Creating-releases.html).
 
 See [BUILDING.md][] for more details.
 
