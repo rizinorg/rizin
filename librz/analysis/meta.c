@@ -288,14 +288,14 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 			pj_kn(pj, "offset", start);
 			pj_ks(pj, "type", rz_meta_type_to_string(d->type));
 
-			if (d->type == 'H') {
+			if (d->type == RZ_META_TYPE_HIGHLIGHT) {
 				pj_k(pj, "color");
 				ut8 r = 0, g = 0, b = 0, A = 0;
 				const char *esc = strchr(d->str, '\x1b');
 				if (esc) {
 					rz_cons_rgb_parse(esc, &r, &g, &b, &A);
 					char *rgb_str = rz_cons_rgb_tostring(r, g, b);
-					base64_str = rz_base64_encode_dyn(rgb_str, -1);
+					base64_str = rz_base64_encode_dyn((const ut8 *)rgb_str, strlen(rgb_str));
 					if (d->type == 's' && base64_str) {
 						pj_s(pj, base64_str);
 						free(base64_str);
@@ -308,7 +308,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				}
 			} else {
 				pj_k(pj, "name");
-				if (d->type == 's' && (base64_str = rz_base64_encode_dyn(d->str, -1))) {
+				if (d->type == 's' && (base64_str = rz_base64_encode_dyn((const ut8 *)d->str, strlen(d->str)))) {
 					pj_s(pj, base64_str);
 				} else {
 					pj_s(pj, str);

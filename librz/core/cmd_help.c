@@ -532,7 +532,8 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			if (input[3] == '-') {
 				rz_base64_decode((ut8 *)buf, input + 4, -1);
 			} else if (input[3] == ' ') {
-				rz_base64_encode(buf, (const ut8 *)input + 4, -1);
+				const char *s = input + 4;
+				rz_base64_encode(buf, (const ut8 *)s, strlen(s));
 			}
 			rz_cons_println(buf);
 			free(buf);

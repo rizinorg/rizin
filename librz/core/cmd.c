@@ -537,7 +537,7 @@ RZ_IPI int rz_cmd_alias(void *data, const char *input) {
 		char **keys = rz_cmd_alias_keys(core->rcmd, &count);
 		for (i = 0; i < count; i++) {
 			char *v = rz_cmd_alias_get(core->rcmd, keys[i], 0);
-			char *q = rz_base64_encode_dyn(v, -1);
+			char *q = rz_base64_encode_dyn((const ut8 *)v, strlen(v));
 			if (buf[2] == '*') {
 				rz_cons_printf("%s=%s\n", keys[i], v);
 			} else {

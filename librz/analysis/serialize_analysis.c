@@ -258,7 +258,7 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 		pj_kn(j, "colorize", (ut64)block->colorize);
 	}
 	if (block->fingerprint) {
-		char *b64 = rz_base64_encode_dyn((const char *)block->fingerprint, block->size);
+		char *b64 = rz_base64_encode_dyn(block->fingerprint, block->size);
 		if (b64) {
 			pj_ks(j, "fingerprint", b64);
 			free(b64);
@@ -885,7 +885,7 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 		pj_kb(j, "noreturn", true);
 	}
 	if (function->fingerprint) {
-		char *b64 = rz_base64_encode_dyn((const char *)function->fingerprint, function->fingerprint_size);
+		char *b64 = rz_base64_encode_dyn(function->fingerprint, function->fingerprint_size);
 		if (b64) {
 			pj_ks(j, "fingerprint", b64);
 			free(b64);

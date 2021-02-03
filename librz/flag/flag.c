@@ -338,7 +338,7 @@ static bool print_flag_rad(RzFlagItem *flag, void *user) {
 		u->f->cb_printf("fs %s\n", u->fs ? u->fs->name : "*");
 	}
 	if (flag->comment && *flag->comment) {
-		comment_b64 = rz_base64_encode_dyn(flag->comment, -1);
+		comment_b64 = rz_base64_encode_dyn((const ut8 *)flag->comment, strlen(flag->comment));
 		// prefix the armored string with "base64:"
 		if (comment_b64) {
 			tmp = rz_str_newf("base64:%s", comment_b64);

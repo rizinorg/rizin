@@ -75,40 +75,27 @@ RZ_API ut8 *rz_base64_decode_dyn(const char *in, int len) {
 	return bout;
 }
 
-RZ_API int rz_base64_encode(char *bout, const ut8 *bin, int len) {
-	int in, out;
-	if (len < 0) {
-		len = strlen((const char *)bin);
-	}
-	for (in = out = 0; in < len; in += 3, out += 4) {
+RZ_API size_t rz_base64_encode(char *bout, const ut8 *bin, size_t sz) {
+	rz_return_val_if_fail(bin, 0);
+	size_t in, out;
+	for (in = out = 0; in < sz; in += 3, out += 4) {
 		local_b64_encode(bin + in, (char *)bout + out,
-			(len - in) > 3 ? 3 : len - in);
+			(sz - in) > 3 ? 3 : sz - in);
 	}
 	bout[out] = 0;
 	return out;
 }
 
-RZ_API char *rz_base64_encode_dyn(const char *str, int len) {
-	char *bout;
-	int in, out;
-	if (!str) {
+RZ_API char *rz_base64_encode_dyn(const ut8 *bin, size_t sz) {
+	rz_return_val_if_fail(bin, NULL);
+	if (sz > (SIZE_MAX - 2) / 4) {
 		return NULL;
 	}
-	if (len < 0) {
-		len = strlen(str);
-	}
-	const int olen = (len * 4) + 2;
-	if (olen < len) {
-		return NULL;
-	}
-	bout = (char *)malloc(olen);
+	const size_t osz = (sz * 4) + 2;
+	char *bout = malloc(osz);
 	if (!bout) {
 		return NULL;
 	}
-	for (in = out = 0; in < len; in += 3, out += 4) {
-		local_b64_encode((const ut8 *)str + in, (char *)bout + out,
-			(len - in) > 3 ? 3 : len - in);
-	}
-	bout[out] = 0;
+	rz_base64_encode(bout, bin, sz);
 	return bout;
 }
