@@ -453,7 +453,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
-RZ_API void rz_core_eval_variables_print(RzCore *core);
+RZ_API void rz_core_help_vars_print(RzCore *core);
 RZ_API void rz_core_visual_prompt_input(RzCore *core);
 RZ_API void rz_core_visual_toggle_hints(RzCore *core);
 RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset);

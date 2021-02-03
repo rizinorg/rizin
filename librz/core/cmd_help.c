@@ -426,7 +426,7 @@ RZ_API const char **rz_core_get_help_vars(RzCore *core) {
 	return vars;
 }
 
-RZ_API void rz_core_eval_variables_print(RzCore *core) {
+RZ_API void rz_core_help_vars_print(RzCore *core) {
 	int i = 0;
 	const char **vars = rz_core_get_help_vars(core);
 	const bool wideOffsets = rz_config_get_i(core->config, "scr.wideoff");
@@ -856,7 +856,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_question_v);
 		} else {
-			rz_core_eval_variables_print(core);
+			rz_core_help_vars_print(core);
 		}
 		return true;
 	case 'V': // "?V"

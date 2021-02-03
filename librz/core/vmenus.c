@@ -2434,7 +2434,7 @@ RZ_API void rz_core_visual_config(RzCore *core) {
 			option = _option;
 			break;
 		case '$':
-			rz_core_eval_variables_print(core);
+			rz_core_help_vars_print(core);
 			rz_cons_any_key(NULL);
 			break;
 		case '*':
