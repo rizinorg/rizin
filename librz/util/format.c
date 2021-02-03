@@ -54,7 +54,7 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 }
 
 static int rz_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
-	int size = 0, len = strlen(s);
+	int len = strlen(s);
 	if (s[0] == '*' && len >= 4) { // value pointed by the address
 		ut64 addr;
 		int offset = (int)rz_num_math(num, s + 1);
@@ -62,7 +62,7 @@ static int rz_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
 		return addr;
 	}
 	// flag handling doesnt seems to work here
-	return size = rz_num_math(num, s);
+	return rz_num_math(num, s);
 }
 
 static void rz_print_format_u128(const RzPrint *p, int endian, int mode,
@@ -1317,7 +1317,7 @@ static void rz_print_format_nulltermwidestring(const RzPrint *p, const int len, 
 			newstring++;
 			vallen -= 2;
 		}
-		if ((size = vallen) > rz_wstr_clen((char *)(buf + seeki))) {
+		if (vallen > rz_wstr_clen((char *)(buf + seeki))) {
 			eprintf("Warning: new string is longer than previous one\n");
 		}
 		p->cb_printf("ww %s @ 0x%08" PFMT64x "\n", newstring, seeki);
@@ -1906,7 +1906,7 @@ static char *get_format_type(const char fmt, const char arg) {
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg + 1) == '?'))
 RZ_API int rz_print_format(RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield) {
-	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
+	int nargs, i, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const int old_bits = p->bits;
 	char *args = NULL, *bracket, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
@@ -1935,7 +1935,7 @@ RZ_API int rz_print_format(RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	argend = fmt + strlen(fmt);
 	arg = fmt;
 
-	nexti = nargs = i = j = 0;
+	nexti = nargs = i = 0;
 
 	if (len < 1) {
 		free(internal_format);

@@ -4806,11 +4806,11 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	int i, len, ret;
 	ut8 *block;
 	ut32 tbs = core->blocksize;
-	ut64 n, off, from, to, at, ate, piece;
+	ut64 n, off, from, to;
 	ut64 tmpseek = UT64_MAX;
 	const size_t addrbytes = core->io->addrbytes;
-	i = l = len = ret = 0;
-	n = off = from = to = at = ate = piece = 0;
+	ret = 0;
+	to = 0;
 	PJ *pj = NULL;
 
 	rz_print_init_rowoffsets(core->print);

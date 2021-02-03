@@ -762,7 +762,6 @@ get_namespace_and_name_err:
 	if (amount_of_names) {
 		*amount_of_names = tmp_len;
 	}
-	it = rz_list_iterator(names_l);
 	rz_list_foreach_prev(names_l, it, str_info) {
 		copy_string(type_code_str, str_info->str_ptr, str_info->len);
 

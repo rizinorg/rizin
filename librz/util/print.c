@@ -1194,13 +1194,11 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					if (comment) {
 						if (p && p->colorfor) {
 							a = p->colorfor(p->user, addr + j, true);
-							if (a && *a) {
-								b = Color_RESET;
-							} else {
-								a = b = "";
+							if (!a || !*a) {
+								a = "";
 							}
 						} else {
-							a = b = "";
+							a = "";
 						}
 						printfmt("%s  ; %s", a, comment);
 						free(comment);

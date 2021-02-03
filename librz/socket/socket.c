@@ -345,7 +345,7 @@ RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, i
 				FD_ZERO(&wfds);
 				FD_SET(s->fd, &wfds);
 
-				if ((ret = select(s->fd + 1, NULL, &wfds, NULL, &tv)) != -1) {
+				if (select(s->fd + 1, NULL, &wfds, NULL, &tv) != -1) {
 					if (rz_socket_is_connected(s)) {
 						freeaddrinfo(res);
 						goto success;
