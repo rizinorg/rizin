@@ -867,6 +867,7 @@ static bool cmd_analysis_aaft(RzCore *core) {
 		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
 		rz_config_set_i(core->config, io_cache_key, true);
 	}
+	const bool delete_regs = !rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
 	seek = core->offset;
 	rz_reg_arena_push(core->analysis->reg);
 	rz_reg_arena_zero(core->analysis->reg);
@@ -885,6 +886,9 @@ static bool cmd_analysis_aaft(RzCore *core) {
 			break;
 		}
 		__add_vars_sdb(core, fcn);
+	}
+	if (delete_regs) {
+		rz_core_debug_clear_register_flags(core);
 	}
 	rz_core_seek(core, seek, true);
 	rz_reg_arena_pop(core->analysis->reg);
@@ -2824,29 +2828,11 @@ static void rz_core_analysis_fmap(RzCore *core, const char *input) {
 	free(bitmap);
 }
 
-static bool fcnNeedsPrefix(const char *name) {
-	if (!strncmp(name, "entry", 5)) {
-		return false;
-	}
-	if (!strncmp(name, "main", 4)) {
-		return false;
-	}
-	return (!strchr(name, '.'));
-}
-
 static char *getFunctionName(RzCore *core, ut64 off, const char *name, bool prefix) {
-	const char *fcnpfx = "";
-	if (prefix) {
-		if (fcnNeedsPrefix(name) && (!fcnpfx || !*fcnpfx)) {
-			fcnpfx = "fcn";
-		} else {
-			fcnpfx = rz_config_get(core->config, "analysis.fcnprefix");
-		}
-	}
 	if (rz_reg_get(core->analysis->reg, name, -1)) {
 		return rz_str_newf("%s.%08" PFMT64x, "fcn", off);
 	}
-	return strdup(name); // rz_str_newf ("%s%s%s", fcnpfx, *fcnpfx? ".": "", name);
+	return strdup(name);
 }
 
 /* TODO: move into rz_analysis_function_rename (); */
@@ -8459,7 +8445,6 @@ static void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo>*/ *gra
 				graphNode->idx, print_node->title);
 		}
 		rz_list_foreach (graph->nodes, it, graphNode) {
-			print_node = graphNode->data;
 			rz_list_foreach (graphNode->out_nodes, edge_it, target) {
 				rz_cons_printf("  edge [\n"
 					       "    source  %d\n"

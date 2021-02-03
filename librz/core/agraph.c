@@ -1695,7 +1695,6 @@ static void fix_back_edge_dummy_nodes(RzAGraph *g, RzANode *from, RzANode *to) {
 	}
 	if (tmp) {
 		tmp = v;
-		v = to;
 		while (tmp->gnode->idx != from->gnode->idx) {
 			v = tmp;
 			tmp = (RzANode *)(((RzGraphNode *)rz_list_first(v->gnode->out_nodes))->data);
@@ -3058,7 +3057,6 @@ static void agraph_print_edges(RzAGraph *g) {
 		int leftlen, rightlen;
 		int minx = 0, maxx = 0;
 		struct tmplayer *tt = NULL;
-		tl = rz_list_get_n(lyr, temp->fromlayer);
 		if (rz_cons_is_breaked()) {
 			break;
 		}
@@ -4213,7 +4211,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	rz_cons_break_push(NULL, NULL);
 
 	while (!exit_graph && !is_error && !rz_cons_is_breaked()) {
-		w = rz_cons_get_size(&h);
+		rz_cons_get_size(&h);
 		invscroll = rz_config_get_i(core->config, "graph.invscroll");
 		ret = agraph_refresh(grd);
 

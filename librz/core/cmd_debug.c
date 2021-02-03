@@ -1880,6 +1880,33 @@ RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode) {
 	ht_up_free(db);
 }
 
+static void foreach_reg_set_or_clear(RzCore *core, bool set) {
+	RzReg *reg = rz_config_get_i(core->config, "cfg.debug")
+		? core->dbg->reg
+		: core->analysis->reg;
+	const RzList *regs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
+	RzListIter *it;
+	RzRegItem *reg_item;
+	rz_list_foreach(regs, it, reg_item) {
+		if (set) {
+			const ut64 value = rz_reg_get_value(core->dbg->reg, reg_item);
+			rz_flag_set(core->flags, reg_item->name, value, reg_item->size / 8);
+		} else {
+			rz_flag_unset_name(core->flags, reg_item->name);
+		}
+	}
+}
+
+RZ_API void rz_core_debug_set_register_flags(RzCore *core) {
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
+	foreach_reg_set_or_clear(core, true);
+	rz_flag_space_pop(core->flags);
+}
+
+RZ_API void rz_core_debug_clear_register_flags(RzCore *core) {
+	foreach_reg_set_or_clear(core, false);
+}
+
 RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 	char *color = "";
 	char *colorend = "";
@@ -2861,13 +2888,11 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 	case '*': // "dr*"
 		if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
 			int pcbits2, pcbits = grab_bits(core, str + 1, &pcbits2);
-			rz_cons_printf("fs+regs\n");
 			rz_debug_reg_list(core->dbg, RZ_REG_TYPE_GPR, pcbits, NULL, '*', use_color);
 			if (pcbits2) {
 				rz_debug_reg_list(core->dbg, RZ_REG_TYPE_GPR, pcbits2, NULL, '*', use_color);
 			}
 			rz_flag_space_pop(core->flags);
-			rz_cons_printf("fs-\n");
 		}
 		break;
 	case 'i': // "dri"

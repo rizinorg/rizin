@@ -101,12 +101,14 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		// XXX - select the right backend
 		if (core->file) {
 			newpid = rz_io_fd_get_pid(core->io, core->file->fd);
-			newtid = rz_io_fd_get_tid(core->io, core->file->fd);
 #if __linux__
 			core->dbg->main_pid = newpid;
 			newtid = newpid;
+#else
+			newtid = rz_io_fd_get_tid(core->io, core->file->fd);
 #endif
 		}
+
 		// Reset previous pid and tid
 		core->dbg->pid = -1;
 		core->dbg->tid = -1;

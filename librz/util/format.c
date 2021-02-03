@@ -54,7 +54,7 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 }
 
 static int rz_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
-	int size = 0, len = strlen(s);
+	int len = strlen(s);
 	if (s[0] == '*' && len >= 4) { // value pointed by the address
 		ut64 addr;
 		int offset = (int)rz_num_math(num, s + 1);
@@ -62,7 +62,7 @@ static int rz_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
 		return addr;
 	}
 	// flag handling doesnt seems to work here
-	return size = rz_num_math(num, s);
+	return rz_num_math(num, s);
 }
 
 static void rz_print_format_u128(const RzPrint *p, int endian, int mode,
@@ -1317,7 +1317,7 @@ static void rz_print_format_nulltermwidestring(const RzPrint *p, const int len, 
 			newstring++;
 			vallen -= 2;
 		}
-		if ((size = vallen) > rz_wstr_clen((char *)(buf + seeki))) {
+		if (vallen > rz_wstr_clen((char *)(buf + seeki))) {
 			eprintf("Warning: new string is longer than previous one\n");
 		}
 		p->cb_printf("ww %s @ 0x%08" PFMT64x "\n", newstring, seeki);
@@ -1560,9 +1560,8 @@ RZ_API int rz_print_format_struct_size(RzPrint *p, const char *f, int mode, int 
 		args = strdup("");
 	}
 
-	i = 0;
-	if (fmt[i] == '{') {
-		char *end = strchr(fmt + i + 1, '}');
+	if (fmt[0] == '{') {
+		char *end = strchr(fmt + 1, '}');
 		if (!end) {
 			eprintf("No end curly bracket.\n");
 			free(o);
@@ -1570,9 +1569,8 @@ RZ_API int rz_print_format_struct_size(RzPrint *p, const char *f, int mode, int 
 			return -1;
 		}
 		*end = '\0';
-		times = rz_num_math(NULL, fmt + i + 1);
+		times = rz_num_math(NULL, fmt + 1);
 		fmt = end + 1;
-		i = 0;
 	}
 	if (fmt[0] == '0') {
 		mode |= RZ_PRINT_UNIONMODE;
@@ -1583,7 +1581,7 @@ RZ_API int rz_print_format_struct_size(RzPrint *p, const char *f, int mode, int 
 
 	int words = rz_str_word_set0_stack(args);
 	fmt_len = strlen(fmt);
-	for (; i < fmt_len; i++) {
+	for (i = 0; i < fmt_len; i++) {
 		if (fmt[i] == '[') {
 			char *end = strchr(fmt + i, ']');
 			if (!end) {
@@ -1906,7 +1904,7 @@ static char *get_format_type(const char fmt, const char arg) {
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg + 1) == '?'))
 RZ_API int rz_print_format(RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield) {
-	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
+	int nargs, i, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const int old_bits = p->bits;
 	char *args = NULL, *bracket, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
@@ -1935,7 +1933,7 @@ RZ_API int rz_print_format(RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	argend = fmt + strlen(fmt);
 	arg = fmt;
 
-	nexti = nargs = i = j = 0;
+	nexti = nargs = i = 0;
 
 	if (len < 1) {
 		free(internal_format);

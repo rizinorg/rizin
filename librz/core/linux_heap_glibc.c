@@ -782,6 +782,7 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 
 	GHT bin = main_arena->GH(fastbinsY)[bin_num];
 	if (!bin) {
+		free(cnk);
 		return -1;
 	}
 
