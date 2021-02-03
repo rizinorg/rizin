@@ -5961,7 +5961,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 			ds->oplen = ret = skip_bytes_flag;
 		}
 		if (skip_bytes_bb && skip_bytes_bb < ret) {
-			ds->oplen = ret = skip_bytes_bb;
+			ds->oplen = skip_bytes_bb;
 		}
 		{
 			ut64 killme = UT64_MAX;
