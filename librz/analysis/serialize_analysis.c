@@ -3,8 +3,6 @@
 #include <rz_util/rz_serialize.h>
 #include <rz_analysis.h>
 
-#include "../util/serialize_helper.h"
-
 #include <errno.h>
 
 /*
@@ -96,20 +94,20 @@ enum {
 };
 
 RZ_API RzSerializeAnalDiffParser rz_serialize_analysis_diff_parser_new(void) {
-	RzSerializeAnalDiffParser parser = key_parser_new();
+	RzSerializeAnalDiffParser parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
 	}
-	key_parser_add(parser, "type", DIFF_FIELD_TYPE);
-	key_parser_add(parser, "addr", DIFF_FIELD_ADDR);
-	key_parser_add(parser, "dist", DIFF_FIELD_DIST);
-	key_parser_add(parser, "name", DIFF_FIELD_NAME);
-	key_parser_add(parser, "size", DIFF_FIELD_SIZE);
+	rz_key_parser_add(parser, "type", DIFF_FIELD_TYPE);
+	rz_key_parser_add(parser, "addr", DIFF_FIELD_ADDR);
+	rz_key_parser_add(parser, "dist", DIFF_FIELD_DIST);
+	rz_key_parser_add(parser, "name", DIFF_FIELD_NAME);
+	rz_key_parser_add(parser, "size", DIFF_FIELD_SIZE);
 	return parser;
 }
 
 RZ_API void rz_serialize_analysis_diff_parser_free(RzSerializeAnalDiffParser parser) {
-	key_parser_free(parser);
+	rz_key_parser_free(parser);
 }
 
 RZ_API RZ_NULLABLE RzAnalysisDiff *rz_serialize_analysis_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RJson *json) {
@@ -120,7 +118,7 @@ RZ_API RZ_NULLABLE RzAnalysisDiff *rz_serialize_analysis_diff_load(RZ_NONNULL Rz
 	if (!diff) {
 		return NULL;
 	}
-	KEY_PARSER_JSON(parser, json, child, {
+	RZ_KEY_PARSER_JSON(parser, json, child, {
 		case DIFF_FIELD_TYPE:
 			if (child->type != RZ_JSON_STRING) {
 				break;
@@ -340,7 +338,7 @@ enum {
 
 typedef struct {
 	RzAnalysis *analysis;
-	KeyParser *parser;
+	RzKeyParser *parser;
 	RzSerializeAnalDiffParser diff_parser;
 } BlockLoadCtx;
 
@@ -364,7 +362,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	proto.parent_stackptr = INT_MAX;
 	proto.cmpval = UT64_MAX;
 	size_t fingerprint_size = SIZE_MAX;
-	KEY_PARSER_JSON(ctx->parser, json, child, {
+	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case BLOCK_FIELD_SIZE:
 			if (child->type != RZ_JSON_INTEGER) {
 				break;
@@ -529,29 +527,29 @@ error:
 }
 
 RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
-	BlockLoadCtx ctx = { analysis, key_parser_new(), diff_parser };
+	BlockLoadCtx ctx = { analysis, rz_key_parser_new(), diff_parser };
 	if (!ctx.parser) {
-		SERIALIZE_ERR("parser init failed");
+		RZ_SERIALIZE_ERR("parser init failed");
 		return false;
 	}
-	key_parser_add(ctx.parser, "size", BLOCK_FIELD_SIZE);
-	key_parser_add(ctx.parser, "jump", BLOCK_FIELD_JUMP);
-	key_parser_add(ctx.parser, "fail", BLOCK_FIELD_FAIL);
-	key_parser_add(ctx.parser, "traced", BLOCK_FIELD_TRACED);
-	key_parser_add(ctx.parser, "colorize", BLOCK_FIELD_COLORIZE);
-	key_parser_add(ctx.parser, "fingerprint", BLOCK_FIELD_FINGERPRINT);
-	key_parser_add(ctx.parser, "diff", BLOCK_FIELD_DIFF);
-	key_parser_add(ctx.parser, "switch_op", BLOCK_FIELD_SWITCH_OP);
-	key_parser_add(ctx.parser, "ninstr", BLOCK_FIELD_NINSTR);
-	key_parser_add(ctx.parser, "op_pos", BLOCK_FIELD_OP_POS);
-	key_parser_add(ctx.parser, "stackptr", BLOCK_FIELD_STACKPTR);
-	key_parser_add(ctx.parser, "parent_stackptr", BLOCK_FIELD_PARENT_STACKPTR);
-	key_parser_add(ctx.parser, "cmpval", BLOCK_FIELD_CMPVAL);
-	key_parser_add(ctx.parser, "cmpreg", BLOCK_FIELD_CMPREG);
+	rz_key_parser_add(ctx.parser, "size", BLOCK_FIELD_SIZE);
+	rz_key_parser_add(ctx.parser, "jump", BLOCK_FIELD_JUMP);
+	rz_key_parser_add(ctx.parser, "fail", BLOCK_FIELD_FAIL);
+	rz_key_parser_add(ctx.parser, "traced", BLOCK_FIELD_TRACED);
+	rz_key_parser_add(ctx.parser, "colorize", BLOCK_FIELD_COLORIZE);
+	rz_key_parser_add(ctx.parser, "fingerprint", BLOCK_FIELD_FINGERPRINT);
+	rz_key_parser_add(ctx.parser, "diff", BLOCK_FIELD_DIFF);
+	rz_key_parser_add(ctx.parser, "switch_op", BLOCK_FIELD_SWITCH_OP);
+	rz_key_parser_add(ctx.parser, "ninstr", BLOCK_FIELD_NINSTR);
+	rz_key_parser_add(ctx.parser, "op_pos", BLOCK_FIELD_OP_POS);
+	rz_key_parser_add(ctx.parser, "stackptr", BLOCK_FIELD_STACKPTR);
+	rz_key_parser_add(ctx.parser, "parent_stackptr", BLOCK_FIELD_PARENT_STACKPTR);
+	rz_key_parser_add(ctx.parser, "cmpval", BLOCK_FIELD_CMPVAL);
+	rz_key_parser_add(ctx.parser, "cmpreg", BLOCK_FIELD_CMPREG);
 	bool ret = sdb_foreach(db, block_load_cb, &ctx);
-	key_parser_free(ctx.parser);
+	rz_key_parser_free(ctx.parser);
 	if (!ret) {
-		SERIALIZE_ERR("basic blocks parsing failed");
+		RZ_SERIALIZE_ERR("basic blocks parsing failed");
 	}
 	return ret;
 }
@@ -637,24 +635,24 @@ enum {
 };
 
 RZ_API RzSerializeAnalVarParser rz_serialize_analysis_var_parser_new(void) {
-	RzSerializeAnalDiffParser parser = key_parser_new();
+	RzSerializeAnalDiffParser parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;
 	}
-	key_parser_add(parser, "name", VAR_FIELD_NAME);
-	key_parser_add(parser, "type", VAR_FIELD_TYPE);
-	key_parser_add(parser, "kind", VAR_FIELD_KIND);
-	key_parser_add(parser, "arg", VAR_FIELD_ARG);
-	key_parser_add(parser, "delta", VAR_FIELD_DELTA);
-	key_parser_add(parser, "reg", VAR_FIELD_REG);
-	key_parser_add(parser, "cmt", VAR_FIELD_COMMENT);
-	key_parser_add(parser, "accs", VAR_FIELD_ACCS);
-	key_parser_add(parser, "constrs", VAR_FIELD_CONSTRS);
+	rz_key_parser_add(parser, "name", VAR_FIELD_NAME);
+	rz_key_parser_add(parser, "type", VAR_FIELD_TYPE);
+	rz_key_parser_add(parser, "kind", VAR_FIELD_KIND);
+	rz_key_parser_add(parser, "arg", VAR_FIELD_ARG);
+	rz_key_parser_add(parser, "delta", VAR_FIELD_DELTA);
+	rz_key_parser_add(parser, "reg", VAR_FIELD_REG);
+	rz_key_parser_add(parser, "cmt", VAR_FIELD_COMMENT);
+	rz_key_parser_add(parser, "accs", VAR_FIELD_ACCS);
+	rz_key_parser_add(parser, "constrs", VAR_FIELD_CONSTRS);
 	return parser;
 }
 
 RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalVarParser parser) {
-	key_parser_free(parser);
+	rz_key_parser_free(parser);
 }
 
 RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RJson *json) {
@@ -675,7 +673,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 
 	RzAnalysisVar *ret = NULL;
 
-	KEY_PARSER_JSON(parser, json, child, {
+	RZ_KEY_PARSER_JSON(parser, json, child, {
 		case VAR_FIELD_NAME:
 			if (child->type != RZ_JSON_STRING) {
 				break;
@@ -968,7 +966,7 @@ enum {
 
 typedef struct {
 	RzAnalysis *analysis;
-	KeyParser *parser;
+	RzKeyParser *parser;
 	RzSerializeAnalDiffParser diff_parser;
 	RzSerializeAnalVarParser var_parser;
 } FunctionLoadCtx;
@@ -992,7 +990,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 	function->bp_off = 0; // 0 if not specified
 	bool noreturn = false;
 	RJson *vars_json = NULL;
-	KEY_PARSER_JSON(ctx->parser, json, child, {
+	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case FUNCTION_FIELD_NAME:
 			if (child->type != RZ_JSON_STRING) {
 				break;
@@ -1190,39 +1188,39 @@ beach:
 RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
 	FunctionLoadCtx ctx = {
 		.analysis = analysis,
-		.parser = key_parser_new(),
+		.parser = rz_key_parser_new(),
 		.diff_parser = diff_parser,
 		.var_parser = rz_serialize_analysis_var_parser_new()
 	};
 	bool ret;
 	if (!ctx.parser || !ctx.var_parser) {
-		SERIALIZE_ERR("parser init failed");
+		RZ_SERIALIZE_ERR("parser init failed");
 		ret = false;
 		goto beach;
 	}
-	key_parser_add(ctx.parser, "name", FUNCTION_FIELD_NAME);
-	key_parser_add(ctx.parser, "bits", FUNCTION_FIELD_BITS);
-	key_parser_add(ctx.parser, "type", FUNCTION_FIELD_TYPE);
-	key_parser_add(ctx.parser, "cc", FUNCTION_FIELD_CC);
-	key_parser_add(ctx.parser, "stack", FUNCTION_FIELD_STACK);
-	key_parser_add(ctx.parser, "maxstack", FUNCTION_FIELD_MAXSTACK);
-	key_parser_add(ctx.parser, "ninstr", FUNCTION_FIELD_NINSTR);
-	key_parser_add(ctx.parser, "pure", FUNCTION_FIELD_PURE);
-	key_parser_add(ctx.parser, "bp_frame", FUNCTION_FIELD_BP_FRAME);
-	key_parser_add(ctx.parser, "bp_off", FUNCTION_FIELD_BP_OFF);
-	key_parser_add(ctx.parser, "noreturn", FUNCTION_FIELD_NORETURN);
-	key_parser_add(ctx.parser, "fingerprint", FUNCTION_FIELD_FINGERPRINT);
-	key_parser_add(ctx.parser, "diff", FUNCTION_FIELD_DIFF);
-	key_parser_add(ctx.parser, "bbs", FUNCTION_FIELD_BBS);
-	key_parser_add(ctx.parser, "imports", FUNCTION_FIELD_IMPORTS);
-	key_parser_add(ctx.parser, "vars", FUNCTION_FIELD_VARS);
-	key_parser_add(ctx.parser, "labels", FUNCTION_FIELD_LABELS);
+	rz_key_parser_add(ctx.parser, "name", FUNCTION_FIELD_NAME);
+	rz_key_parser_add(ctx.parser, "bits", FUNCTION_FIELD_BITS);
+	rz_key_parser_add(ctx.parser, "type", FUNCTION_FIELD_TYPE);
+	rz_key_parser_add(ctx.parser, "cc", FUNCTION_FIELD_CC);
+	rz_key_parser_add(ctx.parser, "stack", FUNCTION_FIELD_STACK);
+	rz_key_parser_add(ctx.parser, "maxstack", FUNCTION_FIELD_MAXSTACK);
+	rz_key_parser_add(ctx.parser, "ninstr", FUNCTION_FIELD_NINSTR);
+	rz_key_parser_add(ctx.parser, "pure", FUNCTION_FIELD_PURE);
+	rz_key_parser_add(ctx.parser, "bp_frame", FUNCTION_FIELD_BP_FRAME);
+	rz_key_parser_add(ctx.parser, "bp_off", FUNCTION_FIELD_BP_OFF);
+	rz_key_parser_add(ctx.parser, "noreturn", FUNCTION_FIELD_NORETURN);
+	rz_key_parser_add(ctx.parser, "fingerprint", FUNCTION_FIELD_FINGERPRINT);
+	rz_key_parser_add(ctx.parser, "diff", FUNCTION_FIELD_DIFF);
+	rz_key_parser_add(ctx.parser, "bbs", FUNCTION_FIELD_BBS);
+	rz_key_parser_add(ctx.parser, "imports", FUNCTION_FIELD_IMPORTS);
+	rz_key_parser_add(ctx.parser, "vars", FUNCTION_FIELD_VARS);
+	rz_key_parser_add(ctx.parser, "labels", FUNCTION_FIELD_LABELS);
 	ret = sdb_foreach(db, function_load_cb, &ctx);
 	if (!ret) {
-		SERIALIZE_ERR("functions parsing failed");
+		RZ_SERIALIZE_ERR("functions parsing failed");
 	}
 beach:
-	key_parser_free(ctx.parser);
+	rz_key_parser_free(ctx.parser);
 	rz_serialize_analysis_var_parser_free(ctx.var_parser);
 	return ret;
 }
@@ -1326,7 +1324,7 @@ error:
 RZ_API bool rz_serialize_analysis_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	bool ret = sdb_foreach(db, xrefs_load_cb, analysis);
 	if (!ret) {
-		SERIALIZE_ERR("xrefs parsing failed");
+		RZ_SERIALIZE_ERR("xrefs parsing failed");
 	}
 	return ret;
 }
@@ -1556,7 +1554,7 @@ error:
 RZ_API bool rz_serialize_analysis_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	Sdb *spaces_db = sdb_ns(db, "spaces", false);
 	if (!spaces_db) {
-		SERIALIZE_ERR("missing meta spaces namespace");
+		RZ_SERIALIZE_ERR("missing meta spaces namespace");
 		return false;
 	}
 	if (!rz_serialize_spaces_load(spaces_db, &analysis->meta_spaces, false, res)) {
@@ -1564,7 +1562,7 @@ RZ_API bool rz_serialize_analysis_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 	}
 	bool ret = sdb_foreach(db, meta_load_cb, analysis);
 	if (!ret) {
-		SERIALIZE_ERR("meta parsing failed");
+		RZ_SERIALIZE_ERR("meta parsing failed");
 	}
 	return ret;
 }
@@ -1739,7 +1737,7 @@ enum {
 
 typedef struct {
 	RzAnalysis *analysis;
-	KeyParser *parser;
+	RzKeyParser *parser;
 } HintsLoadCtx;
 
 static bool hints_load_cb(void *user, const char *k, const char *v) {
@@ -1762,7 +1760,7 @@ static bool hints_load_cb(void *user, const char *k, const char *v) {
 		return false;
 	}
 
-	KEY_PARSER_JSON(ctx->parser, json, child, {
+	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case HINTS_FIELD_ARCH:
 			rz_analysis_hint_set_arch(analysis, addr, child->type == RZ_JSON_STRING ? child->str_value : NULL);
 			break;
@@ -1878,38 +1876,38 @@ static bool hints_load_cb(void *user, const char *k, const char *v) {
 RZ_API bool rz_serialize_analysis_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	HintsLoadCtx ctx = {
 		.analysis = analysis,
-		.parser = key_parser_new(),
+		.parser = rz_key_parser_new(),
 	};
 	bool ret;
 	if (!ctx.parser) {
-		SERIALIZE_ERR("parser init failed");
+		RZ_SERIALIZE_ERR("parser init failed");
 		ret = false;
 		goto beach;
 	}
-	key_parser_add(ctx.parser, "arch", HINTS_FIELD_ARCH);
-	key_parser_add(ctx.parser, "bits", HINTS_FIELD_BITS);
-	key_parser_add(ctx.parser, "immbase", HINTS_FIELD_IMMBASE);
-	key_parser_add(ctx.parser, "jump", HINTS_FIELD_JUMP);
-	key_parser_add(ctx.parser, "fail", HINTS_FIELD_FAIL);
-	key_parser_add(ctx.parser, "frame", HINTS_FIELD_STACKFRAME);
-	key_parser_add(ctx.parser, "ptr", HINTS_FIELD_PTR);
-	key_parser_add(ctx.parser, "nword", HINTS_FIELD_NWORD);
-	key_parser_add(ctx.parser, "ret", HINTS_FIELD_RET);
-	key_parser_add(ctx.parser, "newbits", HINTS_FIELD_NEW_BITS);
-	key_parser_add(ctx.parser, "size", HINTS_FIELD_SIZE);
-	key_parser_add(ctx.parser, "syntax", HINTS_FIELD_SYNTAX);
-	key_parser_add(ctx.parser, "optype", HINTS_FIELD_OPTYPE);
-	key_parser_add(ctx.parser, "opcode", HINTS_FIELD_OPCODE);
-	key_parser_add(ctx.parser, "toff", HINTS_FIELD_TYPE_OFFSET);
-	key_parser_add(ctx.parser, "esil", HINTS_FIELD_ESIL);
-	key_parser_add(ctx.parser, "high", HINTS_FIELD_HIGH);
-	key_parser_add(ctx.parser, "val", HINTS_FIELD_VAL);
+	rz_key_parser_add(ctx.parser, "arch", HINTS_FIELD_ARCH);
+	rz_key_parser_add(ctx.parser, "bits", HINTS_FIELD_BITS);
+	rz_key_parser_add(ctx.parser, "immbase", HINTS_FIELD_IMMBASE);
+	rz_key_parser_add(ctx.parser, "jump", HINTS_FIELD_JUMP);
+	rz_key_parser_add(ctx.parser, "fail", HINTS_FIELD_FAIL);
+	rz_key_parser_add(ctx.parser, "frame", HINTS_FIELD_STACKFRAME);
+	rz_key_parser_add(ctx.parser, "ptr", HINTS_FIELD_PTR);
+	rz_key_parser_add(ctx.parser, "nword", HINTS_FIELD_NWORD);
+	rz_key_parser_add(ctx.parser, "ret", HINTS_FIELD_RET);
+	rz_key_parser_add(ctx.parser, "newbits", HINTS_FIELD_NEW_BITS);
+	rz_key_parser_add(ctx.parser, "size", HINTS_FIELD_SIZE);
+	rz_key_parser_add(ctx.parser, "syntax", HINTS_FIELD_SYNTAX);
+	rz_key_parser_add(ctx.parser, "optype", HINTS_FIELD_OPTYPE);
+	rz_key_parser_add(ctx.parser, "opcode", HINTS_FIELD_OPCODE);
+	rz_key_parser_add(ctx.parser, "toff", HINTS_FIELD_TYPE_OFFSET);
+	rz_key_parser_add(ctx.parser, "esil", HINTS_FIELD_ESIL);
+	rz_key_parser_add(ctx.parser, "high", HINTS_FIELD_HIGH);
+	rz_key_parser_add(ctx.parser, "val", HINTS_FIELD_VAL);
 	ret = sdb_foreach(db, hints_load_cb, &ctx);
 	if (!ret) {
-		SERIALIZE_ERR("hints parsing failed");
+		RZ_SERIALIZE_ERR("hints parsing failed");
 	}
 beach:
-	key_parser_free(ctx.parser);
+	rz_key_parser_free(ctx.parser);
 	return ret;
 }
 
@@ -1919,7 +1917,7 @@ RZ_API void rz_serialize_analysis_classes_save(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 
 RZ_API bool rz_serialize_analysis_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (!sdb_ns(db, "attrs", false)) {
-		SERIALIZE_ERR("missing attrs namespace");
+		RZ_SERIALIZE_ERR("missing attrs namespace");
 		return false;
 	}
 	sdb_reset(analysis->sdb_classes);
@@ -1948,7 +1946,7 @@ RZ_API bool rz_serialize_analysis_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 	sdb_copy(db, analysis->sdb_zigns);
 	Sdb *spaces_db = sdb_ns(db, "spaces", false);
 	if (!spaces_db) {
-		SERIALIZE_ERR("missing spaces namespace");
+		RZ_SERIALIZE_ERR("missing spaces namespace");
 		return false;
 	}
 	if (!rz_serialize_spaces_load(spaces_db, &analysis->zign_spaces, false, res)) {
@@ -2016,7 +2014,7 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	rz_analysis_purge(analysis);
 
 	Sdb *subdb;
-#define SUB(ns, call) SUB_DO(ns, call, goto beach;)
+#define SUB(ns, call) RZ_SERIALIZE_SUB_DO(ns, call, goto beach;)
 	SUB("xrefs", rz_serialize_analysis_xrefs_load(subdb, analysis, res));
 
 	SUB("blocks", rz_serialize_analysis_blocks_load(subdb, analysis, diff_parser, res));

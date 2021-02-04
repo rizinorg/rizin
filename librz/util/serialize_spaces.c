@@ -2,8 +2,6 @@
 #include <rz_util/rz_serialize.h>
 #include <rz_util/rz_spaces.h>
 
-#include "../util/serialize_helper.h"
-
 /*
  * SDB Format:
  *
@@ -57,7 +55,7 @@ RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *sp
 		spaces->name = sdb_get(db, KEY_NAME, NULL);
 		if (!spaces->name) {
 			spaces->name = old_name;
-			SERIALIZE_ERR("failed to get spaces name from db");
+			RZ_SERIALIZE_ERR("failed to get spaces name from db");
 			return false;
 		}
 		free(old_name);
@@ -67,33 +65,33 @@ RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *sp
 
 	Sdb *db_spaces = sdb_ns(db, KEY_SPACES, false);
 	if (!db_spaces) {
-		SERIALIZE_ERR("failed to get spaces sub-namespace");
+		RZ_SERIALIZE_ERR("failed to get spaces sub-namespace");
 		return false;
 	}
 	sdb_foreach(db_spaces, foreach_space_cb, spaces);
 
 	char *stack_json_str = sdb_get(db, KEY_SPACESTACK, NULL);
 	if (!stack_json_str) {
-		SERIALIZE_ERR("spacestack is missing");
+		RZ_SERIALIZE_ERR("spacestack is missing");
 		return false;
 	}
 
 	bool ret = true;
 	RJson *stack_json = rz_json_parse(stack_json_str);
 	if (!stack_json) {
-		SERIALIZE_ERR("failed to parse stackspace json");
+		RZ_SERIALIZE_ERR("failed to parse stackspace json");
 		ret = false;
 		goto beach;
 	}
 	if (stack_json->type != RZ_JSON_ARRAY) {
-		SERIALIZE_ERR("stackspace json is not an array");
+		RZ_SERIALIZE_ERR("stackspace json is not an array");
 		ret = false;
 		goto beach;
 	}
 	RJson *stack_element;
 	for (stack_element = stack_json->children.first; stack_element; stack_element = stack_element->next) {
 		if (stack_element->type != RZ_JSON_STRING) {
-			SERIALIZE_ERR("stackspace element is not a string");
+			RZ_SERIALIZE_ERR("stackspace element is not a string");
 			ret = false;
 			goto beach;
 		}
