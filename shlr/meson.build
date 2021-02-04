@@ -152,23 +152,15 @@ tcc_dep = declare_dependency(
 
 
 # handle lz4 dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'lz4')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
 lz4_dep = dependency('liblz4', required: get_option('use_sys_lz4'), static: is_static_build)
 if not lz4_dep.found()
-  lz4_files = [
-    'lz4/lz4.c',
-  ]
-
-  lz4_inc = [platform_inc, include_directories('lz4')]
-
-  librzlz4 = static_library('rzlz4', lz4_files,
-    include_directories: lz4_inc,
-    implicit_include_directories: false
-  )
-
-  lz4_dep = declare_dependency(
-    link_with: librzlz4,
-    include_directories: lz4_inc
-  )
+  lz4_proj = subproject('lz4', default_options: ['default_library=static'])
+  lz4_dep = lz4_proj.get_variable('lz4_dep')
 endif
 
 
