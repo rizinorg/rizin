@@ -92,7 +92,7 @@ if host_machine.system().startswith('freebsd') or host_machine.system().startswi
   rz_util_deps += [cc.find_library('execinfo', static: is_static_build)]
 endif
 
-if use_sys_openssl
+if sys_openssl.found()
   rz_util_deps += [sys_openssl]
   rz_util_sources += ['big-ssl.c']
 else
