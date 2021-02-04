@@ -130,7 +130,7 @@ static void remove_cr(char *str) {
 	char *start = str;
 	while (*str) {
 		if (str[0] == '\r' &&
-		    !(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
+			!(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
 			memmove(str, str + 1, strlen(str + 1) + 1);
 			continue;
 		}
