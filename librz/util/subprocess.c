@@ -1,3 +1,4 @@
+#include <rz_cons.h>
 #include <rz_util.h>
 
 #if __WINDOWS__
@@ -123,6 +124,18 @@ error:
 	free(wenvvars);
 	free(wenvvals);
 	return ret;
+}
+
+static void remove_cr(char *str) {
+	char *start = str;
+	while (*str) {
+		if (str[0] == '\r' &&
+		    !(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
+			memmove(str, str + 1, strlen(str + 1) + 1);
+			continue;
+		}
+		str++;
+	}
 }
 
 RZ_API RzSubprocess *rz_subprocess_start(
@@ -302,7 +315,7 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 				continue;
 			}
 			stdout_buf[r] = '\0';
-			rz_str_remove_char(stdout_buf, '\r');
+			remove_cr(stdout_buf);
 			rz_strbuf_append(&proc->out, (const char *)stdout_buf);
 			ResetEvent(stdout_overlapped.hEvent);
 			DO_READ(stdout)
@@ -316,7 +329,7 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 				continue;
 			}
 			stderr_buf[read] = '\0';
-			rz_str_remove_char(stderr_buf, '\r');
+			remove_cr(stderr_buf);
 			rz_strbuf_append(&proc->err, (const char *)stderr_buf);
 			ResetEvent(stderr_overlapped.hEvent);
 			DO_READ(stderr);
