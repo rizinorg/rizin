@@ -19,7 +19,7 @@ jobs:
           ./librz/core/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs.yaml
           diff /tmp/cmd_descs.c ./librz/core/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs.h
 
-  clang_format:
+  clang-format:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout repository
