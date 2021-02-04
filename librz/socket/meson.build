@@ -12,7 +12,7 @@ rz_socket_sources = [
 
 dependencies = [utl, rz_util_dep, platform_deps]
 
-if use_sys_openssl
+if sys_openssl.found()
   dependencies += [sys_openssl]
 endif
 
