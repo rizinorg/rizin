@@ -18,7 +18,7 @@ else
   rz_hash_sources += ['xxhash.c']
 endif
 
-if use_sys_openssl
+if sys_openssl.found()
   dependencies += [sys_openssl]
 else
   rz_hash_sources += ['md4.c', 'md5.c', 'sha1.c', 'sha2.c']

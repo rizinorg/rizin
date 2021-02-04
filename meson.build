@@ -215,35 +215,22 @@ config_h = configure_file(
 )
 
 # handle magic library
-sys_magic = cc.find_library('magic', required: false, static: is_static_build)
-use_syslib_magic = false
-
-if sys_magic.found() and get_option('use_sys_magic')
-  use_syslib_magic = true
-endif
+sys_magic = cc.find_library('magic', required: get_option('use_sys_magic'), static: is_static_build)
 
 # handle xxhash library
 sys_xxhash = dependency('xxhash', required: false, static: is_static_build)
 use_sys_xxhash = false
+sys_xxhash_opt = get_option('use_sys_xxhash')
 if not sys_xxhash.found()
-  sys_xxhash = cc.find_library('xxhash', required: false, static: is_static_build)
+  sys_xxhash = cc.find_library('xxhash', required: sys_xxhash_opt, static: is_static_build)
 endif
-use_sys_xxhash = sys_xxhash.found() and get_option('use_sys_xxhash')
+use_sys_xxhash = sys_xxhash.found() and (sys_xxhash_opt.enabled() or sys_xxhash_opt.auto())
 
 # handle openssl library
-sys_openssl = dependency('openssl', required: false, static: is_static_build)
-use_sys_openssl = sys_openssl.found() and get_option('use_sys_openssl')
+sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
 # handle libuv library
-if get_option('use_libuv')
-  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false, static: is_static_build)
-  use_libuv = libuv_dep.found()
-  if not libuv_dep.found()
-    warning('use_libuv option was set to true, but libuv was not found.')
-  endif
-else
-  use_libuv = false
-endif
+libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
 
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos'].contains(host_machine.system())
@@ -269,7 +256,7 @@ message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
 userconf = configuration_data()
 userconf.set('RZ_CHECKS_LEVEL', checks_level)
 userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
-userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
+userconf.set10('USE_LIB_MAGIC', sys_magic.found())
 userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
 userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
 userconf.set10('DEBUGGER', has_debugger)
@@ -296,8 +283,8 @@ userconf.set('HUD', rizin_hud)
 userconf.set('PLUGINS', rizin_plugins)
 userconf.set('EXTRAS', rizin_extras)
 userconf.set('BINDINGS', rizin_bindings)
-userconf.set10('HAVE_OPENSSL', use_sys_openssl)
-userconf.set10('HAVE_LIBUV', use_libuv)
+userconf.set10('HAVE_OPENSSL', sys_openssl.found())
+userconf.set10('HAVE_LIBUV', libuv_dep.found())
 userconf.set10('WANT_DYLINK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
@@ -389,8 +376,8 @@ libr_pc = configure_file(
 )
 
 # handle zlib dependency
-zlib_dep = dependency('zlib', required: false, static: is_static_build)
-if not zlib_dep.found() or not get_option('use_sys_zlib')
+zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
+if not zlib_dep.found()
   zlib_files = [
     'shlr/zip/zlib/adler32.c',
     'shlr/zip/zlib/compress.c',
@@ -656,15 +643,15 @@ summary({
 
 summary({
   'Debugger enabled': has_debugger,
-  'System magic library': use_syslib_magic,
+  'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
   'System xxhash library': use_sys_xxhash,
-  'System openssl library': use_sys_openssl,
-  'System libuv library': use_libuv,
-  'System capstone library': capstone_dep.type_name() != 'internal',
-  'System tree-sitter library': tree_sitter_dep.type_name() != 'internal',
-  'System lz4 library': lz4_dep.type_name() != 'internal',
-  'System zlib library': zlib_dep.type_name() != 'internal',
-  'System zip library': zip_dep.type_name() != 'internal',
+  'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
+  'System libuv library': libuv_dep.found() and libuv_dep.type_name() != 'internal',
+  'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
+  'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
+  'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
+  'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
+  'System zip library': zip_dep.found() and zip_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
   'Use RPATH': use_rpath,
 }, section: 'Configuration', bool_yn: true)

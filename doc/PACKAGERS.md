@@ -63,10 +63,10 @@ Rizin uses the Capstone disassembly engine and supports versions 3, 4, and 5.
 By default we use a custom version of Capstone based on v4 and statically link
 it into the Rizin executables.  Some distributions might prefer that a system
 version of Capstone be dynamically linked at runtime. To do this, use the
-`-Duse_sys_capstone=true` command line option when running `meson`.
+`-Duse_sys_capstone=enabled` command line option when running `meson`.
 
 You can override the version of Capstone Rizin will use by setting
-`use_capstone_version` to one of `v3`, `v4` or `v5`.
+`use_capstone_version` to one of `v3`, `v4` or `next`.
 
 There are more bundled dependencies that can be swapped out for system versions.
 At time of writing these are:

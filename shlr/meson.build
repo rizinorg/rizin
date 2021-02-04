@@ -1,6 +1,6 @@
 # handle capstone dependency
-capstone_dep = dependency('capstone', version: '>=3.0.4', required: false, static: is_static_build)
-if not capstone_dep.found() or not get_option('use_sys_capstone')
+capstone_dep = dependency('capstone', version: '>=3.0.4', required: get_option('use_sys_capstone'), static: is_static_build)
+if not capstone_dep.found()
   capstone_version = get_option('use_capstone_version')
   if capstone_version == 'bundled'
     r = run_command(py3_exe, check_meson_subproject_py, 'capstone-bundled')
@@ -26,8 +26,8 @@ endif
 
 
 # handle tree-sitter
-tree_sitter_dep = dependency('tree-sitter', required: false, static: is_static_build)
-if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
+tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
+if not tree_sitter_dep.found()
   tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
   tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
 endif
@@ -141,8 +141,8 @@ tcc_dep = declare_dependency(
 
 
 # handle lz4 dependency
-lz4_dep = dependency('liblz4', required: false, static: is_static_build)
-if not lz4_dep.found() or not get_option('use_sys_lz4')
+lz4_dep = dependency('liblz4', required: get_option('use_sys_lz4'), static: is_static_build)
+if not lz4_dep.found()
   lz4_files = [
     'lz4/lz4.c',
   ]
@@ -162,8 +162,8 @@ endif
 
 
 # handle zip dependency
-zip_dep = dependency('libzip', required: false, static: is_static_build)
-if not zip_dep.found() or not get_option('use_sys_zip')
+zip_dep = dependency('libzip', required: get_option('use_sys_zip'), static: is_static_build)
+if not zip_dep.found()
   zip_files = [
     'zip/zip/zip_add.c',
     'zip/zip/zip_add_dir.c',

@@ -120,7 +120,7 @@ rz_core_deps = [
   shell_parser_dep
 ]
 
-if use_libuv
+if libuv_dep.found()
   rz_core_deps += libuv_dep
 endif
 
