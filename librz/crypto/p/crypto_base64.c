@@ -46,6 +46,9 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 }
 
 static bool final(RzCrypto *cry, const ut8 *buf, int len) {
+	if (!buf) {
+		return true;
+	}
 	return update(cry, buf, len);
 }
 
