@@ -911,8 +911,8 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 				pair->reg = op.reg
 					? strdup(op.reg)
 					: op.dst && op.dst->reg
-						? strdup(op.dst->reg->name)
-						: NULL;
+					? strdup(op.dst->reg->name)
+					: NULL;
 				lea_cnt++;
 				rz_list_append(analysis->leaddrs, pair);
 			}
