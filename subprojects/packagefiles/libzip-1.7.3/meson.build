@@ -28,9 +28,12 @@ if lzma_dep.found()
   conf_data.set10('HAVE_LIBLZMA', true)
   libzip_deps += [lzma_dep]
 endif
+have_crypto = false
 openssl_dep = dependency('openssl', required: false, static: is_static_build)
 if openssl_dep.found()
   conf_data.set10('HAVE_OPENSSL', true)
+  conf_data.set10('HAVE_CRYPTO', true)
+  have_crypto = true
   libzip_deps += [openssl_dep]
 endif
 
@@ -226,6 +229,12 @@ if bzip2_dep.found()
 endif
 if lzma_dep.found()
   zip_files += ['lib/zip_algorithm_xz.c']
+endif
+if openssl_dep.found()
+  zip_files += ['lib/zip_crypto_openssl.c']
+endif
+if have_crypto
+  zip_files += ['lib/zip_winzip_aes.c', 'lib/zip_source_winzip_aes_decode.c', 'lib/zip_source_winzip_aes_encode.c']
 endif
 
 zip_files += [zip_err_str_c]
