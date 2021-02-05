@@ -149,105 +149,13 @@ endif
 
 
 # handle zip dependency
-zip_dep = dependency('libzip', required: get_option('use_sys_zip'), static: is_static_build)
-if not zip_dep.found()
-  zip_files = [
-    'zip/zip/zip_add.c',
-    'zip/zip/zip_add_dir.c',
-    'zip/zip/zip_add_entry.c',
-    'zip/zip/zip_close.c',
-    'zip/zip/zip_delete.c',
-    'zip/zip/zip_dir_add.c',
-    'zip/zip/zip_dirent.c',
-    'zip/zip/zip_discard.c',
-    'zip/zip/zip_entry.c',
-    'zip/zip/zip_err_str.c',
-    'zip/zip/zip_error.c',
-    #'zip/zip/zip_error_clear.c',
-    'zip/zip/zip_error_get.c',
-    'zip/zip/zip_error_get_sys_type.c',
-    'zip/zip/zip_error_strerror.c',
-    'zip/zip/zip_error_to_str.c',
-    'zip/zip/zip_extra_field.c',
-    'zip/zip/zip_extra_field_api.c',
-    'zip/zip/zip_fclose.c',
-    'zip/zip/zip_fdopen.c',
-    'zip/zip/zip_file_add.c',
-    #'zip/zip/zip_file_error_clear.c',
-    'zip/zip/zip_file_error_get.c',
-    'zip/zip/zip_file_get_comment.c',
-    'zip/zip/zip_file_get_offset.c',
-    'zip/zip/zip_file_rename.c',
-    'zip/zip/zip_file_replace.c',
-    'zip/zip/zip_file_set_comment.c',
-    'zip/zip/zip_file_strerror.c',
-    'zip/zip/zip_filerange_crc.c',
-    'zip/zip/zip_fopen.c',
-    'zip/zip/zip_fopen_encrypted.c',
-    'zip/zip/zip_fopen_index.c',
-    'zip/zip/zip_fopen_index_encrypted.c',
-    'zip/zip/zip_fread.c',
-    'zip/zip/zip_get_archive_comment.c',
-    'zip/zip/zip_get_archive_flag.c',
-    'zip/zip/zip_get_compression_implementation.c',
-    'zip/zip/zip_get_encryption_implementation.c',
-    'zip/zip/zip_get_file_comment.c',
-    'zip/zip/zip_get_name.c',
-    'zip/zip/zip_get_num_entries.c',
-    'zip/zip/zip_get_num_files.c',
-    'zip/zip/zip_name_locate.c',
-    'zip/zip/zip_new.c',
-    'zip/zip/zip_open.c',
-    'zip/zip/zip_rename.c',
-    'zip/zip/zip_replace.c',
-    'zip/zip/zip_set_archive_comment.c',
-    'zip/zip/zip_set_archive_flag.c',
-    'zip/zip/zip_set_default_password.c',
-    'zip/zip/zip_set_file_comment.c',
-    'zip/zip/zip_set_file_compression.c',
-    'zip/zip/zip_set_name.c',
-    'zip/zip/zip_source_buffer.c',
-    'zip/zip/zip_source_close.c',
-    'zip/zip/zip_source_crc.c',
-    'zip/zip/zip_source_deflate.c',
-    'zip/zip/zip_source_error.c',
-    'zip/zip/zip_source_file.c',
-    'zip/zip/zip_source_filep.c',
-    'zip/zip/zip_source_free.c',
-    'zip/zip/zip_source_function.c',
-    'zip/zip/zip_source_layered.c',
-    'zip/zip/zip_source_open.c',
-    'zip/zip/zip_source_pkware.c',
-    'zip/zip/zip_source_pop.c',
-    'zip/zip/zip_source_read.c',
-    'zip/zip/zip_source_stat.c',
-    'zip/zip/zip_source_window.c',
-    'zip/zip/zip_source_zip.c',
-    'zip/zip/zip_source_zip_new.c',
-    'zip/zip/zip_stat.c',
-    'zip/zip/zip_stat_index.c',
-    'zip/zip/zip_stat_init.c',
-    'zip/zip/zip_strerror.c',
-    'zip/zip/zip_string.c',
-    'zip/zip/zip_unchange.c',
-    'zip/zip/zip_unchange_all.c',
-    'zip/zip/zip_unchange_archive.c',
-    'zip/zip/zip_unchange_data.c',
-    'zip/zip/zip_utf-8.c'
-  ]
-
-  zip_inc = [platform_inc, include_directories('zip/include')]
-
-  librzzip = static_library('rzzip', zip_files,
-    include_directories: zip_inc,
-    implicit_include_directories: false,
-    dependencies: zlib_dep
+libzip_dep = dependency('libzip', required: get_option('use_sys_libzip'), static: is_static_build)
+if not libzip_dep.found()
+  libzip_proj = subproject('libzip', default_options: [
+    'default_library=static',
+    'static_runtime=@0@'.format(is_static_build)]
   )
-
-  zip_dep = declare_dependency(
-    link_with: librzzip,
-    include_directories: zip_inc
-  )
+  libzip_dep = libzip_proj.get_variable('libzip_dep')
 endif
 
 # handle winkd dependency

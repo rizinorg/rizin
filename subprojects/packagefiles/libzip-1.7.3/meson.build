@@ -1,0 +1,226 @@
+project('libzip', ['c'],
+  default_options : ['c_std=c99', 'buildtype=release'],
+  version: '1.7.3')
+
+py3_exe = import('python').find_installation()
+cc = meson.get_compiler('c')
+is_static_build = get_option('static_runtime')
+
+# Create config.h file
+conf_data = configuration_data()
+# TODO: zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
+zlib_dep = dependency('zlib', required: true, static: is_static_build)
+libzip_deps = [zlib_dep]
+bzip2_dep = dependency('bzip2', required: false, static: is_static_build)
+if bzip2_dep.found()
+  conf_data.set10('HAVE_LIBBZ2', true)
+  libzip_deps += [bzip2_dep]
+endif
+
+underscore_functions = ['close', 'dup', 'fdopen', 'fileno', 'setmode', 'snprintf', 'strdup', 'stricmp', 'strtoi64', 'strtoui64', 'umask', 'unlink']
+functions = ['arc4random', 'clonefile', 'explicit_bzero', 'explicit_memset', 'fileno', 'fseeko', 'ftello', 'getprogname', 'localtime_r', 'mkstemp', 'setmode', 'snprintf', 'strcasecmp', 'strdup', 'stricmp', 'strtoll', 'strtoull']
+headers = ['stdbool.h', 'strings.h', 'unistd.h', 'dirent.h', 'fts.h', 'ndir.h', 'sys/dir.h', 'sys/ndir.h', 'sys/attr.h']
+types = ['off_t', 'size_t']
+foreach fcn : underscore_functions
+  if cc.has_function(fcn)
+    conf_data.set10('HAVE__@0@'.format(fcn.to_upper()), true)
+  endif
+endforeach
+foreach fcn : functions
+  if cc.has_function(fcn)
+    conf_data.set10('HAVE_@0@'.format(fcn.to_upper()), true)
+  endif
+endforeach
+foreach hdr : headers
+  if cc.has_header(hdr)
+    conf_data.set10('HAVE_@0@'.format(hdr.underscorify().to_upper()), true)
+  endif
+endforeach
+foreach type : types
+  conf_data.set('SIZEOF_@0@'.format(type.underscorify().to_upper()), cc.sizeof(type))
+endforeach
+
+ok = cc.compiles('''#include <sys/ioctl.h>
+#include <linux/fs.h>
+int main(int argc, char *argv[]) { unsigned long x = FICLONERANGE; }''')
+if ok
+  conf_data.set10('HAVE_FICLONERANGE', ok)
+endif
+
+ok = cc.compiles('''
+int foo(char * _Nullable bar);
+int main(int argc, char *argv[]) { }''')
+if ok
+  conf_data.set10('HAVE_NULLABLE', ok)
+endif
+
+is_big_endian = host_machine.endian() == 'big'
+if is_big_endian
+  conf_data.set10('WORDS_BIGENDIAN', is_big_endian)
+endif
+conf_data.set('CMAKE_PROJECT_NAME', 'libzip')
+conf_data.set('CMAKE_PROJECT_VERSION', meson.project_version())
+
+config_h = configure_file(
+  input: 'cmake-config.h.in',
+  output: 'config.h',
+  configuration: conf_data,
+  format: 'cmake@',
+)
+
+# Create zip_err_str.c file
+
+zip_h = files('lib/zip.h')
+create_zip_err_str_py = files('./create_zip_err_str.py')
+zip_err_str_c = custom_target('zip_err_str',
+  build_by_default: true,
+  output: 'zip_err_str.c',
+  input: zip_h,
+  command: [
+    py3_exe,
+    create_zip_err_str_py,
+    '@OUTPUT@',
+    '@INPUT@',
+  ],
+  install: false,
+)
+
+# Build libzip library
+
+zip_files = [
+  'lib/zip_add.c',
+  'lib/zip_add_dir.c',
+  'lib/zip_add_entry.c',
+  'lib/zip_algorithm_deflate.c',
+  'lib/zip_buffer.c',
+  'lib/zip_close.c',
+  'lib/zip_delete.c',
+  'lib/zip_dir_add.c',
+  'lib/zip_dirent.c',
+  'lib/zip_discard.c',
+  'lib/zip_entry.c',
+  'lib/zip_error.c',
+  'lib/zip_error_clear.c',
+  'lib/zip_error_get.c',
+  'lib/zip_error_get_sys_type.c',
+  'lib/zip_error_strerror.c',
+  'lib/zip_error_to_str.c',
+  'lib/zip_extra_field.c',
+  'lib/zip_extra_field_api.c',
+  'lib/zip_fclose.c',
+  'lib/zip_fdopen.c',
+  'lib/zip_file_add.c',
+  'lib/zip_file_error_clear.c',
+  'lib/zip_file_error_get.c',
+  'lib/zip_file_get_comment.c',
+  'lib/zip_file_get_external_attributes.c',
+  'lib/zip_file_get_offset.c',
+  'lib/zip_file_rename.c',
+  'lib/zip_file_replace.c',
+  'lib/zip_file_set_comment.c',
+  'lib/zip_file_set_encryption.c',
+  'lib/zip_file_set_external_attributes.c',
+  'lib/zip_file_set_mtime.c',
+  'lib/zip_file_strerror.c',
+  'lib/zip_fopen.c',
+  'lib/zip_fopen_encrypted.c',
+  'lib/zip_fopen_index.c',
+  'lib/zip_fopen_index_encrypted.c',
+  'lib/zip_fread.c',
+  'lib/zip_fseek.c',
+  'lib/zip_ftell.c',
+  'lib/zip_get_archive_comment.c',
+  'lib/zip_get_archive_flag.c',
+  'lib/zip_get_encryption_implementation.c',
+  'lib/zip_get_file_comment.c',
+  'lib/zip_get_name.c',
+  'lib/zip_get_num_entries.c',
+  'lib/zip_get_num_files.c',
+  'lib/zip_hash.c',
+  'lib/zip_io_util.c',
+  'lib/zip_libzip_version.c',
+  'lib/zip_memdup.c',
+  'lib/zip_name_locate.c',
+  'lib/zip_new.c',
+  'lib/zip_open.c',
+  'lib/zip_pkware.c',
+  'lib/zip_progress.c',
+  'lib/zip_rename.c',
+  'lib/zip_replace.c',
+  'lib/zip_set_archive_comment.c',
+  'lib/zip_set_archive_flag.c',
+  'lib/zip_set_default_password.c',
+  'lib/zip_set_file_comment.c',
+  'lib/zip_set_file_compression.c',
+  'lib/zip_set_name.c',
+  'lib/zip_source_accept_empty.c',
+  'lib/zip_source_begin_write.c',
+  'lib/zip_source_begin_write_cloning.c',
+  'lib/zip_source_buffer.c',
+  'lib/zip_source_call.c',
+  'lib/zip_source_close.c',
+  'lib/zip_source_commit_write.c',
+  'lib/zip_source_compress.c',
+  'lib/zip_source_crc.c',
+  'lib/zip_source_error.c',
+  'lib/zip_source_file_common.c',
+  'lib/zip_source_file_stdio.c',
+  'lib/zip_source_free.c',
+  'lib/zip_source_function.c',
+  'lib/zip_source_get_file_attributes.c',
+  'lib/zip_source_is_deleted.c',
+  'lib/zip_source_layered.c',
+  'lib/zip_source_open.c',
+  'lib/zip_source_pkware_decode.c',
+  'lib/zip_source_pkware_encode.c',
+  'lib/zip_source_read.c',
+  'lib/zip_source_remove.c',
+  'lib/zip_source_rollback_write.c',
+  'lib/zip_source_seek.c',
+  'lib/zip_source_seek_write.c',
+  'lib/zip_source_stat.c',
+  'lib/zip_source_supports.c',
+  'lib/zip_source_tell.c',
+  'lib/zip_source_tell_write.c',
+  'lib/zip_source_window.c',
+  'lib/zip_source_write.c',
+  'lib/zip_source_zip.c',
+  'lib/zip_source_zip_new.c',
+  'lib/zip_stat.c',
+  'lib/zip_stat_index.c',
+  'lib/zip_stat_init.c',
+  'lib/zip_strerror.c',
+  'lib/zip_string.c',
+  'lib/zip_unchange.c',
+  'lib/zip_unchange_all.c',
+  'lib/zip_unchange_archive.c',
+  'lib/zip_unchange_data.c',
+  'lib/zip_utf-8.c',
+]
+
+if host_machine.system() == 'windows'
+  zip_files += ['lib/zip_source_file_win32_utf8.c']
+else
+  zip_files += ['lib/zip_mkstempm.c', 'lib/zip_source_file_stdio_named.c', 'lib/zip_random_unix.c']
+endif
+
+if bzip2_dep.found()
+  zip_files += ['lib/zip_algorithm_bzip2.c']
+endif
+
+zip_files += [zip_err_str_c]
+
+zip_inc = [include_directories('lib')]
+
+libzip = library('libzip', zip_files,
+  dependencies: libzip_deps,
+  include_directories: zip_inc,
+  implicit_include_directories: true,
+  install: false,
+)
+
+libzip_dep = declare_dependency(
+  link_with: libzip,
+  include_directories: zip_inc,
+  dependencies: libzip_deps,
+)

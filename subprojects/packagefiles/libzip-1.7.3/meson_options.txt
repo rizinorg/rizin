@@ -1,0 +1,2 @@
+option('use_sys_zlib', type: 'boolean', value: 'false', description: 'When true it looks for system zlib dependency, otherwise it embeds one')
+option('static_runtime', type: 'boolean', value: false, description: 'Set to true when you want static libraries/dependencies and runtime')

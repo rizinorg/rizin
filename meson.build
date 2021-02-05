@@ -651,7 +651,7 @@ summary({
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
   'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
-  'System zip library': zip_dep.found() and zip_dep.type_name() != 'internal',
+  'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
   'Use RPATH': use_rpath,
 }, section: 'Configuration', bool_yn: true)
