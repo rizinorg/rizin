@@ -2,11 +2,7 @@
 
 #include <rz_hash.h>
 #include "rz_util.h"
-#if USE_LIB_XXHASH
 #include <xxhash.h>
-#else
-#include "xxhash.h"
-#endif
 
 RZ_LIB_VERSION(rz_hash);
 
