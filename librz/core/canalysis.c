@@ -1869,7 +1869,7 @@ static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int 
 		// TODO: show vars, refs and xrefs
 		char *fcn_name_escaped = rz_str_escape_utf8_for_json(fcn->name, -1);
 		pj_o(pj);
-		pj_ks(pj, "name", rz_str_get(fcn_name_escaped));
+		pj_ks(pj, "name", rz_str_get_null(fcn_name_escaped));
 		free(fcn_name_escaped);
 		pj_kn(pj, "offset", fcn->addr);
 		pj_ki(pj, "ninstr", fcn->ninstr);

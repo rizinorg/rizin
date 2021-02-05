@@ -150,7 +150,7 @@ RZ_API int rz_str_cmp(const char *dst, const char *orig, int len);
 RZ_API int rz_str_casecmp(const char *dst, const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
 RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
-static inline const char *rz_str_get(const char *str) {
+static inline const char *rz_str_get_null(const char *str) {
 	return str ? str : rz_str_null_c;
 }
 static inline const char *rz_str_get2(const char *str) {

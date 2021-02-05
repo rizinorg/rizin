@@ -3431,7 +3431,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 				char *flagdesc, *flagdesc2, *desc;
 				get_backtrace_info(core, frame, addr, &flagdesc, &flagdesc2, NULL, NULL);
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
-				desc = rz_str_newf("%s%s", rz_str_get(flagdesc), rz_str_get(flagdesc2));
+				desc = rz_str_newf("%s%s", rz_str_get_null(flagdesc), rz_str_get_null(flagdesc2));
 				pj_o(pj);
 				pj_ki(pj, "idx", i);
 				pj_kn(pj, "pc", frame->addr);

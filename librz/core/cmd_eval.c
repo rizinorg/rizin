@@ -238,7 +238,7 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 						rz_list_free(files);
 						return;
 					}
-					eprintf("%s %s %s\n", rz_str_get(nfn), curtheme, fn);
+					eprintf("%s %s %s\n", rz_str_get_null(nfn), curtheme, fn);
 					if (nfn && !strcmp(nfn, curtheme)) {
 						rz_list_free(files);
 						files = NULL;
@@ -273,7 +273,7 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 						rz_list_free(files);
 						return;
 					}
-					eprintf("%s %s %s\n", rz_str_get(nfn), curtheme, fn);
+					eprintf("%s %s %s\n", rz_str_get_null(nfn), curtheme, fn);
 					if (nfn && !strcmp(nfn, curtheme)) {
 						free(curtheme);
 						curtheme = strdup(fn);
