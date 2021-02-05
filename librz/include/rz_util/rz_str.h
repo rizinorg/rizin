@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 static const char *rz_str_empty = "";
-static const char *rz_str_null_c = "(null)";
+static const char *rz_str_null = "(null)";
 
 typedef enum {
 	RZ_STRING_ENC_LATIN1 = 'a',
@@ -154,7 +154,7 @@ static inline const char *rz_str_get(const char *str) {
 	return str ? str : rz_str_empty;
 }
 static inline const char *rz_str_get_null(const char *str) {
-	return str ? str : rz_str_null_c;
+	return str ? str : rz_str_null;
 }
 RZ_API char *rz_str_ndup(const char *ptr, int len);
 RZ_API char *rz_str_dup(char *ptr, const char *string);
