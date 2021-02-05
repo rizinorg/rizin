@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://g.blicky.net/yxml.git
+revision = 66507906673bc6159d5d620414479954c9c21c24
+directory = yxml
+patch_directory = yxml

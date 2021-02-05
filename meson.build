@@ -220,7 +220,7 @@ sys_magic = cc.find_library('magic', required: get_option('use_sys_magic'), stat
 # handle xxhash library
 r = run_command(py3_exe, check_meson_subproject_py, 'xxhash')
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
 sys_xxhash_opt = get_option('use_sys_xxhash')
@@ -241,7 +241,7 @@ sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), sta
 # handle libuv library
 r = run_command(py3_exe, check_meson_subproject_py, 'libuv')
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
 libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
@@ -396,7 +396,7 @@ libr_pc = configure_file(
 # handle zlib dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'zlib')
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
 zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
@@ -407,7 +407,7 @@ endif
 
 r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
 sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])

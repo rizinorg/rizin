@@ -43,21 +43,21 @@ try:
             head = open(os.path.join(subproject_git_dir, 'HEAD'), 'r').read().strip()
             if head != revision:
                 sys.exit(1)
-    elif is_wrap_file:
-        if not patch_directory:
-            sys.exit(0)
 
-        subproject_dir = os.path.join(meson_root, 'subprojects', directory)
-        patch_subproject_dir = os.path.join(meson_root, 'subprojects', 'packagefiles', patch_directory)
-        if os.path.isdir(patch_subproject_dir) and os.path.isdir(subproject_dir):
-            for f in os.listdir(patch_subproject_dir):
-                subproject_f = os.path.join(subproject_dir, f)
-                subproject_p_f = os.path.join(patch_subproject_dir, f)
-                if not os.path.isfile(subproject_f):
-                    sys.exit(1)
+    if not patch_directory:
+        sys.exit(0)
 
-                if not filecmp.cmp(subproject_p_f, subproject_f):
-                    sys.exit(1)
+    subproject_dir = os.path.join(meson_root, 'subprojects', directory)
+    patch_subproject_dir = os.path.join(meson_root, 'subprojects', 'packagefiles', patch_directory)
+    if os.path.isdir(patch_subproject_dir) and os.path.isdir(subproject_dir):
+        for f in os.listdir(patch_subproject_dir):
+            subproject_f = os.path.join(subproject_dir, f)
+            subproject_p_f = os.path.join(patch_subproject_dir, f)
+            if not os.path.isfile(subproject_f):
+                sys.exit(1)
+
+            if not filecmp.cmp(subproject_p_f, subproject_f):
+                sys.exit(1)
 
     sys.exit(0)
 except FileNotFoundError:
