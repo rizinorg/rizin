@@ -79,7 +79,7 @@ static char *colorize_asm_string(RzCore *core, const char *buf_asm, int optype, 
 		char *s2 = strdup(spacer + 2);
 		char *scol1 = rz_print_colorize_opcode(core->print, s1, color_reg, color_num, false, fcn ? fcn->addr : 0);
 		char *scol2 = rz_print_colorize_opcode(core->print, s2, color_reg, color_num, false, fcn ? fcn->addr : 0);
-		char *source = rz_str_newf("%s||%s", rz_str_get2(scol1), rz_str_get2(scol2));
+		char *source = rz_str_newf("%s||%s", rz_str_get(scol1), rz_str_get(scol2));
 		free(scol1);
 		free(scol2);
 		free(s1);

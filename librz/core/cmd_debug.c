@@ -3371,7 +3371,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 		} else {
 			RzBreakpointItem *bp;
 			rz_list_foreach (core->dbg->bp->bps, iter, bp) {
-				rz_cons_printf("0x%08" PFMT64x " %s\n", bp->addr, rz_str_get2(bp->expr));
+				rz_cons_printf("0x%08" PFMT64x " %s\n", bp->addr, rz_str_get(bp->expr));
 			}
 		}
 		break;

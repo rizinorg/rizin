@@ -2994,7 +2994,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			}
 			if (section->arch || section->bits) {
 				snprintf(str, sizeof(str), "arch=%s bits=%d ",
-					rz_str_get2(arch), bits);
+					rz_str_get(arch), bits);
 			} else {
 				str[0] = 0;
 			}

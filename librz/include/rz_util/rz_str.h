@@ -153,7 +153,7 @@ RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
 static inline const char *rz_str_get_null(const char *str) {
 	return str ? str : rz_str_null_c;
 }
-static inline const char *rz_str_get2(const char *str) {
+static inline const char *rz_str_get(const char *str) {
 	return str ? str : rz_str_null;
 }
 RZ_API char *rz_str_ndup(const char *ptr, int len);
