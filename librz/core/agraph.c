@@ -3981,7 +3981,7 @@ static void graph_single_step_in(RzCore *core, RzAGraph *g) {
 			rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
 			core->print->cur_enabled = 0;
 		} else {
-			rz_core_cmd(core, "ds", 0);
+			rz_core_debug_step_one(core, 1);
 			rz_core_debug_regs2flags(core, 0);
 		}
 	} else {
@@ -4014,7 +4014,7 @@ static void graph_breakpoint(RzCore *core) {
 }
 
 static void graph_continue(RzCore *core) {
-	rz_core_cmd(core, "dc", 0);
+	rz_debug_continue_oldhandler(core, "");
 }
 static void applyDisMode(RzCore *core) {
 	switch (disMode) {
