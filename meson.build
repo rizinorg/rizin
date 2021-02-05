@@ -226,7 +226,7 @@ endif
 sys_xxhash_opt = get_option('use_sys_xxhash')
 if sys_xxhash_opt.enabled() or sys_xxhash_opt.auto()
   xxhash_dep = dependency('xxhash', required: false, static: is_static_build)
-  if not sys_xxhash.found()
+  if not xxhash_dep.found()
     xxhash_dep = cc.find_library('xxhash', required: sys_xxhash_opt, static: is_static_build)
   endif
 endif
