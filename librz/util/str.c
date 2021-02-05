@@ -522,7 +522,7 @@ RZ_API const char *rz_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
 	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
-		return rz_str_null;
+		return rz_str_empty;
 	}
 	for (i = 0; i != idx; i++) {
 		ptr = rz_str_word_get_next0(ptr);
