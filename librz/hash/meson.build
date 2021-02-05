@@ -10,13 +10,7 @@ rz_hash_sources = [
   'state.c'
 ]
 
-dependencies = [mth, rz_util_dep]
-
-if use_sys_xxhash
-  dependencies += [sys_xxhash]
-else
-  rz_hash_sources += ['xxhash.c']
-endif
+dependencies = [mth, rz_util_dep, xxhash_dep]
 
 if sys_openssl.found()
   dependencies += [sys_openssl]
