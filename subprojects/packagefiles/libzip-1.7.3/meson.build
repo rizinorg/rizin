@@ -13,12 +13,25 @@ if not zlib_dep.found()
   zlib_proj = subproject('zlib', default_options: ['default_library=static'])
   zlib_dep = zlib_proj.get_variable('zlib_dep')
 endif
-
 libzip_deps = [zlib_dep]
+
 bzip2_dep = dependency('bzip2', required: false, static: is_static_build)
 if bzip2_dep.found()
   conf_data.set10('HAVE_LIBBZ2', true)
   libzip_deps += [bzip2_dep]
+endif
+lzma_dep = dependency('lzma', required: false, static: is_static_build)
+if not lzma_dep.found()
+  lzma_dep = cc.find_library('lzma', static: is_static_build)
+endif
+if lzma_dep.found()
+  conf_data.set10('HAVE_LIBLZMA', true)
+  libzip_deps += [lzma_dep]
+endif
+openssl_dep = dependency('openssl', required: false, static: is_static_build)
+if openssl_dep.found()
+  conf_data.set10('HAVE_OPENSSL', true)
+  libzip_deps += [openssl_dep]
 endif
 
 underscore_functions = ['close', 'dup', 'fdopen', 'fileno', 'setmode', 'snprintf', 'strdup', 'stricmp', 'strtoi64', 'strtoui64', 'umask', 'unlink']
@@ -210,6 +223,9 @@ endif
 
 if bzip2_dep.found()
   zip_files += ['lib/zip_algorithm_bzip2.c']
+endif
+if lzma_dep.found()
+  zip_files += ['lib/zip_algorithm_xz.c']
 endif
 
 zip_files += [zip_err_str_c]
