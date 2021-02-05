@@ -22,19 +22,22 @@ if bzip2_dep.found()
 endif
 lzma_dep = dependency('lzma', required: false, static: is_static_build)
 if not lzma_dep.found()
-  lzma_dep = cc.find_library('lzma', static: is_static_build)
+  lzma_dep = cc.find_library('lzma', required: false, static: is_static_build)
 endif
 if lzma_dep.found()
   conf_data.set10('HAVE_LIBLZMA', true)
   libzip_deps += [lzma_dep]
 endif
 have_crypto = false
-openssl_dep = dependency('openssl', required: false, static: is_static_build)
-if openssl_dep.found()
-  conf_data.set10('HAVE_OPENSSL', true)
-  conf_data.set10('HAVE_CRYPTO', true)
-  have_crypto = true
-  libzip_deps += [openssl_dep]
+openssl_dep = disabler()
+if get_option('use_sys_openssl')
+  openssl_dep = dependency('openssl', required: false, static: is_static_build)
+  if openssl_dep.found()
+    conf_data.set10('HAVE_OPENSSL', true)
+    conf_data.set10('HAVE_CRYPTO', true)
+    have_crypto = true
+    libzip_deps += [openssl_dep]
+  endif
 endif
 
 underscore_functions = ['close', 'dup', 'fdopen', 'fileno', 'setmode', 'snprintf', 'strdup', 'stricmp', 'strtoi64', 'strtoui64', 'umask', 'unlink']
