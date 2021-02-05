@@ -58,6 +58,7 @@ static const RzCmdDescArg ls_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
+static const RzCmdDescArg cmd_quit_choose_hist_proj_args[3];
 static const RzCmdDescArg seek_args[2];
 static const RzCmdDescArg seek_padded_args[2];
 static const RzCmdDescArg seek_base_args[2];
@@ -913,8 +914,52 @@ static const RzCmdDescHelp project_open_no_bin_io_help = {
 	.args = project_open_no_bin_io_args,
 };
 
+static const RzCmdDescHelp q_help = {
+	.summary = "Quit rizin",
+};
+static const RzCmdDescArg cmd_quit_args[] = {
+	{ 0 },
+};
 static const RzCmdDescHelp cmd_quit_help = {
-	.summary = "Quit program with a return value",
+	.summary = "quit rizin",
+	.args = cmd_quit_args,
+};
+
+static const RzCmdDescArg cmd_force_quit_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_force_quit_help = {
+	.summary = "Force quit rizin",
+	.args = cmd_force_quit_args,
+};
+
+static const RzCmdDescArg cmd_force_quit_without_history_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_force_quit_without_history_help = {
+	.summary = "force quit rizin without saving history",
+	.args = cmd_force_quit_without_history_args,
+};
+
+static const RzCmdDescArg cmd_quit_choose_hist_proj_args[] = {
+	{
+		.name = "choose_process",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{
+		.name = "choose_projects",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_quit_choose_hist_proj_help = {
+	.summary = "Quit rizin and choose to save projects and kill the process",
+	.args_str = " [y/n][y/n]",
+	.args = cmd_quit_choose_hist_proj_args,
 };
 
 static const RzCmdDescHelp cmd_resize_help = {
@@ -2455,8 +2500,16 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *project_open_no_bin_io_cd = rz_cmd_desc_argv_new(core->rcmd, P_cd, "Poo", rz_project_open_no_bin_io_handler, &project_open_no_bin_io_help);
 	rz_warn_if_fail(project_open_no_bin_io_cd);
 
-	RzCmdDesc *cmd_quit_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "q", rz_cmd_quit, &cmd_quit_help);
-	rz_warn_if_fail(cmd_quit_cd);
+	RzCmdDesc *q_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "q", rz_cmd_quit_handler, &cmd_quit_help, &q_help);
+	rz_warn_if_fail(q_cd);
+	RzCmdDesc *cmd_force_quit_cd = rz_cmd_desc_argv_new(core->rcmd, q_cd, "q!", rz_cmd_force_quit_handler, &cmd_force_quit_help);
+	rz_warn_if_fail(cmd_force_quit_cd);
+
+	RzCmdDesc *cmd_force_quit_without_history_cd = rz_cmd_desc_argv_new(core->rcmd, q_cd, "q!!", rz_cmd_force_quit_without_history_handler, &cmd_force_quit_without_history_help);
+	rz_warn_if_fail(cmd_force_quit_without_history_cd);
+
+	RzCmdDesc *cmd_quit_choose_hist_proj_cd = rz_cmd_desc_inner_new(core->rcmd, q_cd, "q", &cmd_quit_choose_hist_proj_help);
+	rz_warn_if_fail(cmd_quit_choose_hist_proj_cd);
 
 	RzCmdDesc *cmd_resize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "r", rz_cmd_resize, &cmd_resize_help);
 	rz_warn_if_fail(cmd_resize_cd);

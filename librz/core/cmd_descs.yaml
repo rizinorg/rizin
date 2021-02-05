@@ -590,9 +590,32 @@
         - name: project.rzdb
           type: RZ_CMD_ARG_TYPE_FILE
 - name: q
-  cname: cmd_quit
-  summary: Quit program with a return value
-  type: RZ_CMD_DESC_TYPE_OLDINPUT
+  summary: Quit rizin
+  subcommands:
+    - name: "q"
+      cname : cmd_quit
+      summary: quit rizin
+      args: []
+    - name: "q!"
+      cname: cmd_force_quit
+      summary: Force quit rizin
+      args: []
+    - name: "q!!"
+      cname: cmd_force_quit_without_history
+      summary: force quit rizin without saving history
+      args: []
+    - name: q
+      cname: cmd_quit_choose_hist_proj
+      summary: Quit rizin and choose to save projects and kill the process
+      args_str: " [y/n][y/n]"
+      type: RZ_CMD_DESC_TYPE_INNER
+      args:
+        - name: choose_process
+          type: RZ_CMD_ARG_TYPE_STRING
+          optional: true
+        - name: choose_projects
+          type: RZ_CMD_ARG_TYPE_STRING
+          optional: true
 - name: r
   cname: cmd_resize
   summary: Resize file
