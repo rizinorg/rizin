@@ -218,13 +218,22 @@ config_h = configure_file(
 sys_magic = cc.find_library('magic', required: get_option('use_sys_magic'), static: is_static_build)
 
 # handle xxhash library
-sys_xxhash = dependency('xxhash', required: false, static: is_static_build)
-use_sys_xxhash = false
-sys_xxhash_opt = get_option('use_sys_xxhash')
-if not sys_xxhash.found()
-  sys_xxhash = cc.find_library('xxhash', required: sys_xxhash_opt, static: is_static_build)
+r = run_command(py3_exe, check_meson_subproject_py, 'xxhash')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
-use_sys_xxhash = sys_xxhash.found() and (sys_xxhash_opt.enabled() or sys_xxhash_opt.auto())
+
+sys_xxhash_opt = get_option('use_sys_xxhash')
+if sys_xxhash_opt.enabled() or sys_xxhash_opt.auto()
+  xxhash_dep = dependency('xxhash', required: false, static: is_static_build)
+  if not sys_xxhash.found()
+    xxhash_dep = cc.find_library('xxhash', required: sys_xxhash_opt, static: is_static_build)
+  endif
+endif
+if sys_xxhash_opt.auto() or sys_xxhash_opt.disabled()
+  xxhash_proj = subproject('xxhash', default_options: ['default_library=static'])
+  xxhash_dep = xxhash_proj.get_variable('xxhash_dep')
+endif
 
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
@@ -266,8 +275,8 @@ userconf = configuration_data()
 userconf.set('RZ_CHECKS_LEVEL', checks_level)
 userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
 userconf.set10('USE_LIB_MAGIC', sys_magic.found())
-userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
-userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
+userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
+userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', rizin_prefix)
 if host_machine.system() == 'windows'
@@ -631,7 +640,7 @@ summary({
 summary({
   'Debugger enabled': has_debugger,
   'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
-  'System xxhash library': use_sys_xxhash,
+  'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
   'System libuv library': libuv_dep.found() and libuv_dep.type_name() != 'internal',
   'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
