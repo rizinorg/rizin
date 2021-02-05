@@ -1,15 +1,14 @@
-NAME=gdbserver connect
-FILE=bins/elf/analysis/calls_x64
+NAME=gdbserver continue
+FILE=bins/elf/analysis/pie
 CMDS=<<EOF
-!scripts/gdbserver.py --port 12346 --binary bins/elf/analysis/calls_x64
+!scripts/gdbserver.py --port 12346 --binary bins/elf/analysis/pie
 oodf gdb://127.0.0.1:12346
 db main
 dc
+?v main-`s`+1
 doc
-!killall gdbserver
 EOF
-REGEXP_FILTER_ERR=([A-Za-z=:\n]+\s)
-EXPECT_ERR=<<EOF
-= attach = attach hit breakpoint at: gdbserver: no process found
+EXPECT=<<EOF
+0x0
 EOF
 RUN
