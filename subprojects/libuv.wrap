@@ -1,0 +1,8 @@
+[wrap-file]
+directory = libuv-v1.18.0
+
+source_url = https://dist.libuv.org/dist/v1.18.0/libuv-v1.18.0.tar.gz
+source_filename = libuv-v1.18.0.tar.gz
+source_hash = 54e4734da09172f19d5061dcfd7a536fe4c3a8dc12ed981a14a58ac17efdab88
+
+patch_directory = libuv-v1.18.0

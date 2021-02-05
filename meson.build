@@ -230,7 +230,16 @@ use_sys_xxhash = sys_xxhash.found() and (sys_xxhash_opt.enabled() or sys_xxhash_
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
 # handle libuv library
+r = run_command(py3_exe, check_meson_subproject_py, 'libuv')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
 libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
+if not libuv_dep.found()
+  libuv_proj = subproject('libuv', default_options: ['default_library=static'])
+  libuv_dep = libuv_proj.get_variable('libuv_dep')
+endif
 
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos'].contains(host_machine.system())
@@ -389,7 +398,7 @@ endif
 
 r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
 if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subproject sdb is not updated. Please make sure to run `meson subprojects update` or set option `subprojects_check=false` if you want to compile against currently downloaded subproject.')
+  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
 sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])
