@@ -8,8 +8,12 @@ is_static_build = get_option('static_runtime')
 
 # Create config.h file
 conf_data = configuration_data()
-# TODO: zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
-zlib_dep = dependency('zlib', required: true, static: is_static_build)
+zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
+if not zlib_dep.found()
+  zlib_proj = subproject('zlib', default_options: ['default_library=static'])
+  zlib_dep = zlib_proj.get_variable('zlib_dep')
+endif
+
 libzip_deps = [zlib_dep]
 bzip2_dep = dependency('bzip2', required: false, static: is_static_build)
 if bzip2_dep.found()

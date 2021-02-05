@@ -5,13 +5,13 @@ if not capstone_dep.found()
   if capstone_version == 'bundled'
     r = run_command(py3_exe, check_meson_subproject_py, 'capstone-bundled')
     if r.returncode() == 1 and get_option('subprojects_check')
-      error('Subproject capstone-bundled is not updated. Please make sure to run `meson subprojects update` or set option `subprojects_check=false` if you want to compile against currently downloaded subproject.')
+      error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
     endif
     capstone_proj = subproject('capstone-bundled', default_options: ['default_library=static'])
   elif capstone_version == 'next'
     r = run_command(py3_exe, check_meson_subproject_py, 'capstone-next')
     if r.returncode() == 1 and get_option('subprojects_check')
-      error('Subproject capstone-next is not updated. Please make sure to run `meson subprojects update` or set option `subprojects_check=false` if you want to compile against currently downloaded subproject.')
+      error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
     endif
     capstone_proj = subproject('capstone-next', default_options: ['default_library=static'])
   elif capstone_version == 'v3'
@@ -26,6 +26,11 @@ endif
 
 
 # handle tree-sitter
+r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
 tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
 if not tree_sitter_dep.found()
   tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
@@ -141,6 +146,11 @@ tcc_dep = declare_dependency(
 
 
 # handle lz4 dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'lz4')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
 lz4_dep = dependency('liblz4', required: get_option('use_sys_lz4'), static: is_static_build)
 if not lz4_dep.found()
   lz4_proj = subproject('lz4', default_options: ['default_library=static'])
@@ -149,6 +159,11 @@ endif
 
 
 # handle zip dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'libzip')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `meson subprojects update --reset` and delete subprojects directories as reported by the previous command. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
 libzip_dep = dependency('libzip', required: get_option('use_sys_libzip'), static: is_static_build)
 if not libzip_dep.found()
   libzip_proj = subproject('libzip', default_options: [
