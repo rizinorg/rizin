@@ -26,12 +26,10 @@ static inline void rz_serialize_result_info_free(RzSerializeResultInfo *info) {
 
 /**
  * \brief Push an error to the local RzSerializeResultInfo
- * \param ... printf-style arguments to be pushed as the error
- *
- * To be used in deserialization functions with a parameter that is
- * exactly `RzSerializeResultInfo *res`.
+ * \res RzSerializeInfoResult *
+ * \param ... printf-style arguments to be pushed as the error to res
  */
-#define RZ_SERIALIZE_ERR(...) \
+#define RZ_SERIALIZE_ERR(res, ...) \
 	do { \
 		if (res) { \
 			rz_list_push(res, rz_str_newf(__VA_ARGS__)); \
@@ -89,14 +87,24 @@ static inline void rz_key_parser_add(RzKeyParser *parser, const char *key, int v
 
 /**
  * \brief Get an sdb sub-namespace and evaluate `call` or fail
+ * \param db Sdb * the Sdb from which to take the sub-namespace
+ * \param subdb Sdb * where to put the sub-namespace
+ * \param res RzSerializeResult * where to push an error on failure
  * \param ns const char *
  * \param call function call
  * \param rip code to execute if the function failed
+ *
+ * Example:
+ *
+ *     Sdb *subdb;
+ *     RZ_SERIALIZE_SUB_DO(db, subdb, res, "files",
+ *         rz_serialize_io_files_load(subdb, io, res), return false;)
+ *
  */
-#define RZ_SERIALIZE_SUB_DO(ns, call, rip) \
+#define RZ_SERIALIZE_SUB_DO(db, subdb, res, ns, call, rip) \
 	subdb = sdb_ns(db, ns, false); \
 	if (!subdb) { \
-		RZ_SERIALIZE_ERR("missing " ns " namespace"); \
+		RZ_SERIALIZE_ERR(res, "missing " ns " namespace"); \
 		rip \
 	} \
 	if (!(call)) { \

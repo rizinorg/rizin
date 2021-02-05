@@ -529,7 +529,7 @@ error:
 RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
 	BlockLoadCtx ctx = { analysis, rz_key_parser_new(), diff_parser };
 	if (!ctx.parser) {
-		RZ_SERIALIZE_ERR("parser init failed");
+		RZ_SERIALIZE_ERR(res, "parser init failed");
 		return false;
 	}
 	rz_key_parser_add(ctx.parser, "size", BLOCK_FIELD_SIZE);
@@ -549,7 +549,7 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 	bool ret = sdb_foreach(db, block_load_cb, &ctx);
 	rz_key_parser_free(ctx.parser);
 	if (!ret) {
-		RZ_SERIALIZE_ERR("basic blocks parsing failed");
+		RZ_SERIALIZE_ERR(res, "basic blocks parsing failed");
 	}
 	return ret;
 }
@@ -1194,7 +1194,7 @@ RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 	};
 	bool ret;
 	if (!ctx.parser || !ctx.var_parser) {
-		RZ_SERIALIZE_ERR("parser init failed");
+		RZ_SERIALIZE_ERR(res, "parser init failed");
 		ret = false;
 		goto beach;
 	}
@@ -1217,7 +1217,7 @@ RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 	rz_key_parser_add(ctx.parser, "labels", FUNCTION_FIELD_LABELS);
 	ret = sdb_foreach(db, function_load_cb, &ctx);
 	if (!ret) {
-		RZ_SERIALIZE_ERR("functions parsing failed");
+		RZ_SERIALIZE_ERR(res, "functions parsing failed");
 	}
 beach:
 	rz_key_parser_free(ctx.parser);
@@ -1324,7 +1324,7 @@ error:
 RZ_API bool rz_serialize_analysis_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	bool ret = sdb_foreach(db, xrefs_load_cb, analysis);
 	if (!ret) {
-		RZ_SERIALIZE_ERR("xrefs parsing failed");
+		RZ_SERIALIZE_ERR(res, "xrefs parsing failed");
 	}
 	return ret;
 }
@@ -1554,7 +1554,7 @@ error:
 RZ_API bool rz_serialize_analysis_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	Sdb *spaces_db = sdb_ns(db, "spaces", false);
 	if (!spaces_db) {
-		RZ_SERIALIZE_ERR("missing meta spaces namespace");
+		RZ_SERIALIZE_ERR(res, "missing meta spaces namespace");
 		return false;
 	}
 	if (!rz_serialize_spaces_load(spaces_db, &analysis->meta_spaces, false, res)) {
@@ -1562,7 +1562,7 @@ RZ_API bool rz_serialize_analysis_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 	}
 	bool ret = sdb_foreach(db, meta_load_cb, analysis);
 	if (!ret) {
-		RZ_SERIALIZE_ERR("meta parsing failed");
+		RZ_SERIALIZE_ERR(res, "meta parsing failed");
 	}
 	return ret;
 }
@@ -1880,7 +1880,7 @@ RZ_API bool rz_serialize_analysis_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	};
 	bool ret;
 	if (!ctx.parser) {
-		RZ_SERIALIZE_ERR("parser init failed");
+		RZ_SERIALIZE_ERR(res, "parser init failed");
 		ret = false;
 		goto beach;
 	}
@@ -1904,7 +1904,7 @@ RZ_API bool rz_serialize_analysis_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	rz_key_parser_add(ctx.parser, "val", HINTS_FIELD_VAL);
 	ret = sdb_foreach(db, hints_load_cb, &ctx);
 	if (!ret) {
-		RZ_SERIALIZE_ERR("hints parsing failed");
+		RZ_SERIALIZE_ERR(res, "hints parsing failed");
 	}
 beach:
 	rz_key_parser_free(ctx.parser);
@@ -1917,7 +1917,7 @@ RZ_API void rz_serialize_analysis_classes_save(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 
 RZ_API bool rz_serialize_analysis_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (!sdb_ns(db, "attrs", false)) {
-		RZ_SERIALIZE_ERR("missing attrs namespace");
+		RZ_SERIALIZE_ERR(res, "missing attrs namespace");
 		return false;
 	}
 	sdb_reset(analysis->sdb_classes);
@@ -1946,7 +1946,7 @@ RZ_API bool rz_serialize_analysis_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAna
 	sdb_copy(db, analysis->sdb_zigns);
 	Sdb *spaces_db = sdb_ns(db, "spaces", false);
 	if (!spaces_db) {
-		RZ_SERIALIZE_ERR("missing spaces namespace");
+		RZ_SERIALIZE_ERR(res, "missing spaces namespace");
 		return false;
 	}
 	if (!rz_serialize_spaces_load(spaces_db, &analysis->zign_spaces, false, res)) {
@@ -2014,7 +2014,7 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	rz_analysis_purge(analysis);
 
 	Sdb *subdb;
-#define SUB(ns, call) RZ_SERIALIZE_SUB_DO(ns, call, goto beach;)
+#define SUB(ns, call) RZ_SERIALIZE_SUB_DO(db, subdb, res, ns, call, goto beach;)
 	SUB("xrefs", rz_serialize_analysis_xrefs_load(subdb, analysis, res));
 
 	SUB("blocks", rz_serialize_analysis_blocks_load(subdb, analysis, diff_parser, res));
