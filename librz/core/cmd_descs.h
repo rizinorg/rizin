@@ -47,6 +47,7 @@ RZ_IPI int rz_equal_h_handler_old(void *data, const char *input);
 RZ_IPI int rz_equal_H_handler_old(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI int rz_cmd_help(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_ox(void *data, const char *input);

@@ -4618,7 +4618,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 			if (!help_pra) {
 				goto err;
 			}
-			char *help_msg = rz_cmd_get_help(state->core->rcmd, help_pra, true);
+			bool use_color = state->core->print->flags & RZ_PRINT_FLAGS_COLOR;
+			char *help_msg = rz_cmd_get_help(state->core->rcmd, help_pra, use_color);
 			if (!help_msg) {
 				goto help_pra_err;
 			}
@@ -4760,55 +4761,116 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 	return res;
 }
 
+typedef struct _search_help {
+	bool color;
+	RzStrBuf *sb;
+	PJ *pj;
+} RzHelpSearch;
+
+static bool help_search_cmd_desc_entry(RzCmd *cmd, const RzCmdDesc *cd, void *user) {
+	rz_return_val_if_fail(cd, false);
+	RzHelpSearch *hs = (RzHelpSearch *)user;
+	if (hs->pj) {
+		rz_cmd_get_help_json(cmd, cd, hs->pj);
+	} else {
+		rz_cmd_get_help_strbuf(cmd, cd, hs->color, hs->sb);
+	}
+	return true;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzCmdStatus status = RZ_CMD_STATUS_OK;
+	RzCmdDesc *begin = NULL;
+
+	if (argc == 2) {
+		begin = rz_cmd_get_desc(core->rcmd, argv[1]);
+		if (!begin) {
+			status = RZ_CMD_STATUS_NONEXISTINGCMD;
+			goto exit_status;
+		}
+	}
+
+	RzHelpSearch hs = {
+		.color = core->print->flags & RZ_PRINT_FLAGS_COLOR,
+		.pj = NULL,
+		.sb = NULL,
+	};
+
+	if (mode & RZ_OUTPUT_MODE_JSON) {
+		hs.pj = pj_new();
+		if (!hs.pj) {
+			status = RZ_CMD_STATUS_ERROR;
+			goto exit_status;
+		}
+		pj_o(hs.pj);
+	} else {
+		hs.sb = rz_strbuf_new(NULL);
+		if (!hs.sb) {
+			status = RZ_CMD_STATUS_ERROR;
+			goto exit_status;
+		}
+	}
+
+	rz_cmd_foreach_cmdname(core->rcmd, begin, help_search_cmd_desc_entry, &hs);
+
+	if (mode & RZ_OUTPUT_MODE_JSON) {
+		pj_end(hs.pj);
+		rz_cons_printf("%s\n", pj_string(hs.pj));
+		pj_free(hs.pj);
+	} else {
+		char *help = rz_strbuf_drain(hs.sb);
+		rz_cons_printf("%s", help);
+		free(help);
+	}
+exit_status:
+	return status;
+}
+
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 	size_t node_str_len = strlen(node_string);
 	if (node_str_len >= 2 && !strcmp(node_string + node_str_len - 2, "?*")) {
-		// TODO: get recursive help from RzCmdDesc
-		int detail = 0;
-		if (node_str_len > 3 && node_string[node_str_len - 3] == '?') {
-			detail++;
-			if (node_str_len > 4 && node_string[node_str_len - 4] == '?') {
-				detail++;
-			}
-		}
-		node_string[node_str_len - 2 - detail] = '\0';
-		recursive_help(state->core, detail, node_string);
-		return RZ_CMD_STATUS_OK;
-	} else {
-		TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
-		char *command_str = ts_node_sub_string(command, state->input);
-		TSNode args = ts_node_child_by_field_name(node, "args", strlen("args"));
-		RzCmdParsedArgs *pr_args = NULL;
-		RzCmdStatus res = RZ_CMD_STATUS_INVALID;
-		if (!ts_node_is_null(args)) {
-			RzCmdDesc *cd = rz_cmd_get_desc(state->core->rcmd, command_str);
-			bool do_unwrap = cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT;
-			pr_args = ts_node_handle_arg_prargs(state, node, args, 1, do_unwrap);
-			if (!pr_args) {
-				goto err_else;
-			}
-			rz_cmd_parsed_args_setcmd(pr_args, command_str);
-		} else {
-			pr_args = rz_cmd_parsed_args_newcmd(command_str);
-			if (!pr_args) {
-				goto err_else;
-			}
-		}
-
-		// let's try first with the new auto-generated help, if
-		// something fails fallback to old behaviour
-		char *help_msg = rz_cmd_get_help(state->core->rcmd, pr_args, state->core->print->flags & RZ_PRINT_FLAGS_COLOR);
-		if (help_msg) {
-			rz_cons_printf("%s", help_msg);
-			free(help_msg);
-			res = RZ_CMD_STATUS_OK;
-		}
-	err_else:
-		rz_cmd_parsed_args_free(pr_args);
-		free(command_str);
-		return res;
+		node_string[node_str_len - 2] = 0;
+		const char *argv[2] = { NULL, node_string };
+		return rz_cmd_help_search_handler(state->core, 2, argv, RZ_OUTPUT_MODE_STANDARD);
+	} else if (node_str_len >= 3 && !strcmp(node_string + node_str_len - 3, "?*j")) {
+		node_string[node_str_len - 3] = 0;
+		const char *argv[2] = { NULL, node_string };
+		return rz_cmd_help_search_handler(state->core, 2, argv, RZ_OUTPUT_MODE_JSON);
 	}
-	return RZ_CMD_STATUS_OK;
+
+	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
+	char *command_str = ts_node_sub_string(command, state->input);
+	TSNode args = ts_node_child_by_field_name(node, "args", strlen("args"));
+	RzCmdParsedArgs *pr_args = NULL;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
+	if (!ts_node_is_null(args)) {
+		RzCmdDesc *cd = rz_cmd_get_desc(state->core->rcmd, command_str);
+		bool do_unwrap = cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT;
+		pr_args = ts_node_handle_arg_prargs(state, node, args, 1, do_unwrap);
+		if (!pr_args) {
+			goto err_else;
+		}
+		rz_cmd_parsed_args_setcmd(pr_args, command_str);
+	} else {
+		pr_args = rz_cmd_parsed_args_newcmd(command_str);
+		if (!pr_args) {
+			goto err_else;
+		}
+	}
+
+	// let's try first with the new auto-generated help, if
+	// something fails fallback to old behaviour
+	bool use_color = state->core->print->flags & RZ_PRINT_FLAGS_COLOR;
+	char *help_msg = rz_cmd_get_help(state->core->rcmd, pr_args, use_color);
+	if (help_msg) {
+		rz_cons_printf("%s", help_msg);
+		free(help_msg);
+		res = RZ_CMD_STATUS_OK;
+	}
+err_else:
+	rz_cmd_parsed_args_free(pr_args);
+	free(command_str);
+	return res;
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_command) {
