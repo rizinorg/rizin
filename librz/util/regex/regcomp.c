@@ -279,7 +279,7 @@ RZ_API int rz_regex_comp(RzRegex *preg, const char *pattern, int cflags) {
 		len = strlen((char *)pattern);
 	}
 	/* do the mallocs early so failure handling is easy */
-	g = (struct re_guts *)calloc(sizeof(struct re_guts) + (NC - 1), sizeof(cat_t));
+	g = calloc(1, sizeof(struct re_guts) + (NC - 1));
 	if (!g) {
 		return RZ_REGEX_ESPACE;
 	}
