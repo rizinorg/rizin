@@ -454,7 +454,7 @@ static bool cb_scrrainbow(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_RAINBOW;
-		rz_core_cmd0(core, "ecr");
+		rz_cons_pal_random();
 	} else {
 		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
 		rz_core_cmd0(core, "ecoo");

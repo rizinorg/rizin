@@ -3,6 +3,7 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include "core_private.h"
+#include "cmd_descs.h"
 
 #define NPF  5
 #define PIDX (RZ_ABS(core->printidx % NPF))
@@ -814,7 +815,7 @@ static void visual_breakpoint(RzCore *core) {
 
 static void visual_continue(RzCore *core) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		rz_core_cmd(core, "dc", 0);
+		rz_debug_continue_oldhandler(core, "");
 	} else {
 		rz_core_cmd(core, "aec", 0);
 		rz_core_regs2flags(core);

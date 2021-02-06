@@ -3342,7 +3342,7 @@ int __hexpairs_cb(void *user) {
 
 int __continue_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd(core, "dc", 0);
+	rz_debug_continue_oldhandler(core, "");
 	rz_cons_flush();
 	return 0;
 }
