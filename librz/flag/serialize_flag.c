@@ -3,8 +3,6 @@
 #include <rz_util/rz_serialize.h>
 #include <rz_flag.h>
 
-#include "../util/serialize_helper.h"
-
 #if RZ_FLAG_ZONE_USE_SDB
 #error "RZ_FLAG_ZONE_USE_SDB not supported by rz_serialize"
 #endif
@@ -89,7 +87,7 @@ RZ_API bool rz_serialize_flag_zones_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzList /
 	rz_list_purge(zones);
 	bool r = sdb_foreach(db, zone_load_cb, zones);
 	if (!r) {
-		SERIALIZE_ERR("failed to parse a flag zone json");
+		RZ_SERIALIZE_ERR(res, "failed to parse a flag zone json");
 	}
 	return r;
 }
@@ -151,7 +149,7 @@ typedef enum {
 
 typedef struct {
 	RzFlag *flag;
-	KeyParser *parser;
+	RzKeyParser *parser;
 } FlagLoadCtx;
 
 static bool flag_load_cb(void *user, const char *k, const char *v) {
@@ -171,7 +169,7 @@ static bool flag_load_cb(void *user, const char *k, const char *v) {
 	bool offset_set = false;
 	bool size_set = false;
 
-	KEY_PARSER_JSON(ctx->parser, json, child, {
+	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case FLAG_FIELD_REALNAME:
 			if (child->type != RZ_JSON_STRING) {
 				break;
@@ -255,20 +253,20 @@ beach:
 }
 
 static bool load_flags(RZ_NONNULL Sdb *flags_db, RZ_NONNULL RzFlag *flag) {
-	FlagLoadCtx ctx = { flag, key_parser_new() };
+	FlagLoadCtx ctx = { flag, rz_key_parser_new() };
 	if (!ctx.parser) {
 		return false;
 	}
-	key_parser_add(ctx.parser, "realname", FLAG_FIELD_REALNAME);
-	key_parser_add(ctx.parser, "demangled", FLAG_FIELD_DEMANGLED);
-	key_parser_add(ctx.parser, "offset", FLAG_FIELD_OFFSET);
-	key_parser_add(ctx.parser, "size", FLAG_FIELD_SIZE);
-	key_parser_add(ctx.parser, "space", FLAG_FIELD_SPACE);
-	key_parser_add(ctx.parser, "color", FLAG_FIELD_COLOR);
-	key_parser_add(ctx.parser, "comment", FLAG_FIELD_COMMENT);
-	key_parser_add(ctx.parser, "alias", FLAG_FIELD_ALIAS);
+	rz_key_parser_add(ctx.parser, "realname", FLAG_FIELD_REALNAME);
+	rz_key_parser_add(ctx.parser, "demangled", FLAG_FIELD_DEMANGLED);
+	rz_key_parser_add(ctx.parser, "offset", FLAG_FIELD_OFFSET);
+	rz_key_parser_add(ctx.parser, "size", FLAG_FIELD_SIZE);
+	rz_key_parser_add(ctx.parser, "space", FLAG_FIELD_SPACE);
+	rz_key_parser_add(ctx.parser, "color", FLAG_FIELD_COLOR);
+	rz_key_parser_add(ctx.parser, "comment", FLAG_FIELD_COMMENT);
+	rz_key_parser_add(ctx.parser, "alias", FLAG_FIELD_ALIAS);
 	bool r = sdb_foreach(flags_db, flag_load_cb, &ctx);
-	key_parser_free(ctx.parser);
+	rz_key_parser_free(ctx.parser);
 	return r;
 }
 
@@ -277,21 +275,21 @@ RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, 
 
 	const char *str = sdb_const_get(db, "base", NULL);
 	if (!str) {
-		SERIALIZE_ERR("flag base key is missing");
+		RZ_SERIALIZE_ERR(res, "flag base key is missing");
 		return false;
 	}
 	flag->base = strtoll(str, NULL, 0);
 
 	str = sdb_const_get(db, "realnames", 0);
 	if (!str) {
-		SERIALIZE_ERR("flag realnames key is missing");
+		RZ_SERIALIZE_ERR(res, "flag realnames key is missing");
 		return false;
 	}
 	flag->realnames = strtoul(str, NULL, 0) ? true : false;
 
 	Sdb *spaces_db = sdb_ns(db, "spaces", false);
 	if (!spaces_db) {
-		SERIALIZE_ERR("missing spaces namespace");
+		RZ_SERIALIZE_ERR(res, "missing spaces namespace");
 		return false;
 	}
 	if (!rz_serialize_spaces_load(spaces_db, &flag->spaces, false, res)) {
@@ -300,14 +298,14 @@ RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, 
 
 	Sdb *tags_db = sdb_ns(db, "tags", false);
 	if (!tags_db) {
-		SERIALIZE_ERR("missing tags namespace");
+		RZ_SERIALIZE_ERR(res, "missing tags namespace");
 		return false;
 	}
 	sdb_copy(tags_db, flag->tags);
 
 	Sdb *zones_db = sdb_ns(db, "zones", false);
 	if (!zones_db) {
-		SERIALIZE_ERR("missing zones namespace");
+		RZ_SERIALIZE_ERR(res, "missing zones namespace");
 		return false;
 	}
 	rz_flag_zone_reset(flag);
@@ -317,11 +315,11 @@ RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, 
 
 	Sdb *flags_db = sdb_ns(db, "flags", false);
 	if (!flags_db) {
-		SERIALIZE_ERR("missing flags sub-namespace");
+		RZ_SERIALIZE_ERR(res, "missing flags sub-namespace");
 		return false;
 	}
 	if (!load_flags(flags_db, flag)) {
-		SERIALIZE_ERR("failed to parse a flag json");
+		RZ_SERIALIZE_ERR(res, "failed to parse a flag json");
 		return false;
 	}
 
