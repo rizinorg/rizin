@@ -12,8 +12,6 @@
 #include <rz_util/rz_base64.h>
 
 /* stable code */
-static const char *nullstr = "";
-static const char *nullstr_c = "(null)";
 static const char *rwxstr[] = {
 	[0] = "---",
 	[1] = "--x",
@@ -524,7 +522,7 @@ RZ_API const char *rz_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
 	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
-		return nullstr;
+		return "";
 	}
 	for (i = 0; i != idx; i++) {
 		ptr = rz_str_word_get_next0(ptr);
@@ -816,14 +814,6 @@ RZ_API char *rz_str_word_get_first(const char *text) {
 		;
 	}
 	return strdup(text);
-}
-
-RZ_API const char *rz_str_get(const char *str) {
-	return str ? str : nullstr_c;
-}
-
-RZ_API const char *rz_str_get2(const char *str) {
-	return str ? str : nullstr;
 }
 
 RZ_API char *rz_str_ndup(const char *ptr, int len) {

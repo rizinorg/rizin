@@ -1524,7 +1524,7 @@ void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBinClass *klass, RzSkip
 		if (target_class_name) {
 			demangled = demangle_classname(target_class_name);
 		}
-		klass->name = rz_str_newf("%s(%s)", demangled ? demangled : "(null)", category_name);
+		klass->name = rz_str_newf("%s(%s)", rz_str_get_null(demangled), category_name);
 		RZ_FREE(target_class_name);
 		RZ_FREE(demangled);
 	}

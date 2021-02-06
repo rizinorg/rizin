@@ -2447,8 +2447,8 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		} else {
 			const char *bind = symbol->bind ? symbol->bind : "NONE";
 			const char *type = symbol->type ? symbol->type : "NONE";
-			const char *name = rz_str_get(sn.demname ? sn.demname : sn.name);
-			// const char *fwd = rz_str_get (symbol->forwarder);
+			const char *name = rz_str_get_null(sn.demname ? sn.demname : sn.name);
+			// const char *fwd = rz_str_get_null(symbol->forwarder);
 			rz_table_add_rowf(table, "dXXssdss",
 				symbol->ordinal,
 				symbol->paddr,
@@ -2994,7 +2994,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			}
 			if (section->arch || section->bits) {
 				snprintf(str, sizeof(str), "arch=%s bits=%d ",
-					rz_str_get2(arch), bits);
+					rz_str_get(arch), bits);
 			} else {
 				str[0] = 0;
 			}

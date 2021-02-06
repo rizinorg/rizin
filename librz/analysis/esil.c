@@ -3159,7 +3159,7 @@ RZ_API bool rz_analysis_esil_runword(RzAnalysisEsil *esil, const char *word) {
 		}
 		int ew = evalWord(esil, word, &str);
 		eprintf("ew %d\n", ew);
-		eprintf("--> %s\n", rz_str_get(str));
+		eprintf("--> %s\n", rz_str_get_null(str));
 	}
 	return true;
 }

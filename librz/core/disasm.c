@@ -4686,9 +4686,9 @@ static void ds_print_esil_analysis(RDisasmState *ds) {
 			// ds_comment_start (ds, "");
 			ds_comment_esil(ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 			if (fcn_type) {
-				ds_comment_middle(ds, "; %s%s%s(", rz_str_get(fcn_type),
+				ds_comment_middle(ds, "; %s%s%s(", rz_str_get_null(fcn_type),
 					(*fcn_type && fcn_type[strlen(fcn_type) - 1] == '*') ? "" : " ",
-					rz_str_get(key));
+					rz_str_get_null(key));
 				if (!nargs) {
 					ds_comment_end(ds, "void)");
 					break;
