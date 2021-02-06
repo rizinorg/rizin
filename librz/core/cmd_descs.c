@@ -45,6 +45,7 @@ static const RzCmdDescArg remote_open_args[2];
 static const RzCmdDescArg remote_rap_args[3];
 static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
+static const RzCmdDescArg cmd_help_search_args[2];
 static const RzCmdDescArg push_escaped_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
@@ -596,6 +597,20 @@ static const RzCmdDescArg remote_rap_bg_args[] = {
 static const RzCmdDescHelp remote_rap_bg_help = {
 	.summary = "Start rap server in background (same as '&_=h')",
 	.args = remote_rap_bg_args,
+};
+
+static const RzCmdDescArg cmd_help_search_args[] = {
+	{
+		.name = "search_cmd",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_help_search_help = {
+	.summary = "Search help",
+	.args = cmd_help_search_args,
 };
 
 static const RzCmdDescHelp cmd_help_help = {
@@ -2361,6 +2376,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=&:", rz_remote_rap_bg_handler, &remote_rap_bg_help);
 	rz_warn_if_fail(remote_rap_bg_cd);
+
+	RzCmdDesc *cmd_help_search_cd = rz_cmd_desc_argv_modes_new(core->rcmd, root_cd, "?*", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_help_search_handler, &cmd_help_search_help);
+	rz_warn_if_fail(cmd_help_search_cd);
 
 	RzCmdDesc *cmd_help_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "?", rz_cmd_help, &cmd_help_help);
 	rz_warn_if_fail(cmd_help_cd);
