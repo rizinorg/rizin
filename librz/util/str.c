@@ -547,7 +547,7 @@ RZ_API int rz_str_word_count(const char *string) {
 	const char *text, *tmp;
 	int word;
 
-	for (text = tmp = string; *text && IS_SEPARATOR(*text); text++) {
+	for (text = string; *text && IS_SEPARATOR(*text); text++) {
 		;
 	}
 	for (word = 0; *text; word++) {
