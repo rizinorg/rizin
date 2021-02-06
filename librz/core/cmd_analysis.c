@@ -7,6 +7,8 @@
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
+HEAPTYPE(ut64);
+
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
@@ -1213,43 +1215,19 @@ static int var_cmd(RzCore *core, const char *str) {
 		}
 	case 'n': // "afvn"
 		if (str[1]) {
-			RzAnalysisOp *op = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_BASIC);
 			const char *new_name = rz_str_trim_head_ro(strchr(ostr, ' '));
 			if (!new_name) {
-				rz_analysis_op_free(op);
 				free(ostr);
 				return false;
 			}
 			char *old_name = strchr(new_name, ' ');
-			if (!old_name) {
-				RzAnalysisVar *var = op ? rz_analysis_get_used_function_var(core->analysis, op->addr) : NULL;
-				if (var) {
-					old_name = var->name;
-				} else {
-					eprintf("Cannot find var @ 0x%08" PFMT64x "\n", core->offset);
-					rz_analysis_op_free(op);
-					free(ostr);
-					return false;
-				}
-			} else {
+			if (old_name) {
 				*old_name++ = 0;
 				rz_str_trim(old_name);
 			}
-			if (fcn) {
-				v1 = rz_analysis_function_get_var_byname(fcn, old_name);
-				if (v1) {
-					rz_analysis_var_rename(v1, new_name, true);
-				} else {
-					eprintf("Cant find var by name\n");
-				}
-			} else {
-				eprintf("afv: Cannot find function in 0x%08" PFMT64x "\n", core->offset);
-				rz_analysis_op_free(op);
-				free(ostr);
-				return false;
-			}
-			rz_analysis_op_free(op);
+			bool result = rz_core_analysis_var_rename(core, old_name, new_name);
 			free(ostr);
+			return result;
 		} else {
 			RzListIter *iter;
 			RzAnalysisVar *v;
@@ -3999,28 +3977,6 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 	core->dbg->reg = hack;
 }
 
-RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val) {
-	int bits = (core->analysis->bits & RZ_SYS_BITS_64) ? 64 : 32;
-	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
-	if (!r) {
-		int role = rz_reg_get_name_idx(regname);
-		if (role != -1) {
-			const char *alias = rz_reg_get_name(core->dbg->reg, role);
-			if (alias) {
-				r = rz_reg_get(core->dbg->reg, alias, -1);
-			}
-		}
-	}
-	if (!r) {
-		eprintf("ar: Unknown register '%s'\n", regname);
-		return -1;
-	}
-	rz_reg_set_value(core->dbg->reg, r, val);
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
-	rz_core_debug_regs2flags(core, bits);
-	return 0;
-}
-
 // XXX dup from drp :OOO
 void cmd_analysis_reg(RzCore *core, const char *str) {
 	if (0) {
@@ -5594,36 +5550,6 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 		eprintf("Cannot find function at 0x%08" PFMT64x "\n", addr);
 	}
 	rz_analysis_esil_free(core->analysis->esil);
-}
-
-RZ_IPI void rz_core_analysis_esil_init(RzCore *core) {
-	RzAnalysisEsil *esil = core->analysis->esil;
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	int romem = rz_config_get_i(core->config, "esil.romem");
-	int stats = rz_config_get_i(core->config, "esil.stats");
-	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-
-	rz_analysis_esil_free(esil);
-	// reinitialize
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	if (pc && rz_reg_getv(core->analysis->reg, pc) == 0LL) {
-		rz_core_analysis_set_reg(core, "PC", core->offset);
-	}
-	if (!(esil = core->analysis->esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
-		return;
-	}
-	rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL); // setup io
-	esil->verbose = (int)rz_config_get_i(core->config, "esil.verbose");
-	const char *s = rz_config_get(core->config, "cmd.esil.intr");
-	if (s) {
-		char *my = strdup(s);
-		if (my) {
-			rz_config_set(core->config, "cmd.esil.intr", my);
-			free(my);
-		}
-	}
 }
 
 static void cmd_analysis_esil(RzCore *core, const char *input) {

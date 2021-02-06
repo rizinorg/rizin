@@ -1325,7 +1325,7 @@ static void addComment(RzCore *core, ut64 addr) {
 	if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 0) {
 		buf[0] = '\0';
 	}
-	rz_core_cmdf(core, "\"CC %s\"@0x%08" PFMT64x, buf, addr);
+	rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, buf);
 	rz_core_visual_showcursor(core, false);
 	rz_cons_set_raw(true);
 }
@@ -2524,9 +2524,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '$':
 			if (core->print->cur_enabled) {
-				rz_core_cmdf(core, "dr PC=$$+%d", core->print->cur);
+				rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
 			} else {
-				rz_core_cmd0(core, "dr PC=$$");
+				rz_core_debug_reg_set(core, "PC", core->offset, NULL);
 			}
 			break;
 		case '@':
@@ -2572,11 +2572,16 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				if (!strcmp(n, "-")) {
 					rz_flag_unset_off(core->flags, core->offset + core->print->cur);
 				} else if (*n == '.') {
-					if (n[1] == '-') {
-						//unset
-						rz_core_cmdf(core, "f.-%s@0x%" PFMT64x, n + 1, core->offset + min);
+					RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset + min, 0);
+					if (fcn) {
+						if (n[1] == '-') {
+							// Unset the local label (flag)
+							rz_analysis_function_delete_label(fcn, n + 1);
+						} else {
+							rz_analysis_function_set_label(fcn, n + 1, core->offset + min);
+						}
 					} else {
-						rz_core_cmdf(core, "f.%s@0x%" PFMT64x, n + 1, core->offset + min);
+						eprintf("Cannot find function at 0x%08" PFMT64x "\n", core->offset + min);
 					}
 				} else if (*n == '-') {
 					if (*n) {
@@ -2587,15 +2592,13 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						range = 1;
 					}
 					if (*n) {
-						rz_flag_set(core->flags, n,
-							core->offset + min, range);
+						rz_flag_set(core->flags, n, core->offset + min, range);
 					}
 				}
 			}
 			rz_cons_enable_mouse(mouse_state && rz_config_get_b(core->config, "scr.wheel"));
-		}
 			rz_core_visual_showcursor(core, false);
-			break;
+		} break;
 		case ',':
 			visual_comma(core);
 			break;
@@ -2771,25 +2774,21 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			visual_refresh(core);
 			break;
 		case ' ':
-		case 'V':
-			if (rz_config_get_b(core->config, "graph.web")) {
-				rz_core_cmd0(core, "agv $$");
-			} else {
-				RzAnalysisFunction *fun = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-				int ocolor = rz_config_get_i(core->config, "scr.color");
-				if (!fun) {
-					rz_cons_message("Not in a function. Type 'df' to define it here");
-					break;
-				} else if (rz_list_empty(fun->bbs)) {
-					rz_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
-					break;
-				}
-				reset_print_cur(core->print);
-				eprintf("\rRendering graph...");
-				rz_core_visual_graph(core, NULL, NULL, true);
-				rz_config_set_i(core->config, "scr.color", ocolor);
+		case 'V': {
+			RzAnalysisFunction *fun = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
+			int ocolor = rz_config_get_i(core->config, "scr.color");
+			if (!fun) {
+				rz_cons_message("Not in a function. Type 'df' to define it here");
+				break;
+			} else if (rz_list_empty(fun->bbs)) {
+				rz_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
+				break;
 			}
-			break;
+			reset_print_cur(core->print);
+			eprintf("\rRendering graph...");
+			rz_core_visual_graph(core, NULL, NULL, true);
+			rz_config_set_i(core->config, "scr.color", ocolor);
+		} break;
 		case 'v':
 			rz_core_visual_analysis(core, NULL);
 			break;
@@ -3109,7 +3108,8 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							rz_core_cmdf(core, "dr %s = %s-1\n", creg, creg);
+							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
+							rz_core_debug_reg_set(core, creg, cregval - 1, NULL);
 						}
 					} else {
 						int w = rz_config_get_i(core->config, "hex.cols");
@@ -3137,7 +3137,8 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							rz_core_cmdf(core, "dr %s = %s+1\n", creg, creg);
+							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
+							rz_core_debug_reg_set(core, creg, cregval + 1, NULL);
 						}
 					} else {
 						int w = rz_config_get_i(core->config, "hex.cols");
@@ -3167,7 +3168,8 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
 							int delta = core->rasm->bits / 8;
-							rz_core_cmdf(core, "dr %s = %s-%d\n", creg, creg, delta);
+							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
+							rz_core_debug_reg_set(core, creg, cregval - delta, NULL);
 						}
 					} else {
 						int w = rz_config_get_i(core->config, "hex.cols");
@@ -3203,7 +3205,8 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
 							int delta = core->rasm->bits / 8;
-							rz_core_cmdf(core, "dr %s = %s+%d\n", creg, creg, delta);
+							ut64 cregval = rz_debug_reg_get(core->dbg, creg);
+							rz_core_debug_reg_set(core, creg, cregval + delta, NULL);
 						}
 					} else {
 						int w = rz_config_get_i(core->config, "hex.cols");
@@ -3211,7 +3214,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 							rz_config_get_i(core->config, "stack.size") + w);
 					}
 				} else {
-					rz_core_cmdf(core, "dr PC=0x%08" PFMT64x, core->offset + core->print->cur);
+					rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
 				}
 			} else if (!autoblocksize) {
 				rz_core_block_size(core, core->blocksize + cols);
