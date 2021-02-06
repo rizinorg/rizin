@@ -621,23 +621,27 @@ RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64
  * the variable is integer.
  */
 RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64 i) {
-	char buf[128], *ov = NULL;
+	char buf[128];
+	RzStrBuf ov;
+	ut64 oi = 0;
 	rz_return_val_if_fail(cfg && name, NULL);
+	rz_strbuf_init(&ov);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
 		if (rz_config_node_is_ro(node)) {
 			node = NULL;
 			goto beach;
 		}
-		if (node->value) {
-			ov = strdup(node->value);
-		}
 		rz_config_node_value_format_i(buf, sizeof(buf), i, NULL);
-		node->value = strdup(buf);
-		if (!node->value) {
+		char *nv = strdup(buf);
+		if (!nv) {
 			node = NULL;
 			goto beach;
 		}
+		oi = node->i_value;
+		rz_strbuf_set(&ov, node->value);
+		free(node->value);
+		node->value = nv;
 		node->i_value = i;
 	} else {
 		if (!cfg->lock) {
@@ -659,16 +663,15 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64
 	}
 
 	if (node && node->setter) {
-		ut64 oi = node->i_value;
 		int ret = node->setter(cfg->user, node);
 		if (!ret) {
 			node->i_value = oi;
 			free(node->value);
-			node->value = strdup(ov ? ov : "");
+			node->value = rz_strbuf_drain_nofree(&ov);
 		}
 	}
 beach:
-	free(ov);
+	rz_strbuf_fini(&ov);
 	return node;
 }
 
