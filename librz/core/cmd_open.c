@@ -422,7 +422,7 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 			pj_kn(pj, "from", rz_io_map_get_from(map));
 			pj_kn(pj, "to", rz_itv_end(map->itv));
 			pj_ks(pj, "perm", rz_str_rwx_i(map->perm));
-			pj_ks(pj, "name", rz_str_get2(map->name));
+			pj_ks(pj, "name", rz_str_get(map->name));
 			pj_end(pj);
 			break;
 		case 1:
@@ -431,7 +431,7 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 			// Need FIFO order here
 			char *om_cmd = rz_str_newf("om %d 0x%08" PFMT64x " 0x%08" PFMT64x " 0x%08" PFMT64x " %s%s%s\n",
 				map->fd, rz_io_map_get_from(map), map->itv.size, map->delta, rz_str_rwx_i(map->perm),
-				map->name ? " " : "", rz_str_get2(map->name));
+				map->name ? " " : "", rz_str_get(map->name));
 			if (om_cmd) {
 				om_cmds = rz_str_prepend(om_cmds, om_cmd);
 				free(om_cmd);
@@ -443,7 +443,7 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 					 " - 0x%08" PFMT64x " %s %s\n",
 				map->id, map->fd,
 				map->delta, rz_io_map_get_from(map), rz_io_map_get_to(map),
-				rz_str_rwx_i(map->perm), rz_str_get2(map->name));
+				rz_str_rwx_i(map->perm), rz_str_get(map->name));
 			break;
 		}
 	}
@@ -574,7 +574,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 				pj_kn(pj, "from", rz_io_map_get_from(map));
 				pj_kn(pj, "to", rz_itv_end(map->itv));
 				pj_ks(pj, "perm", rz_str_rwx_i(map->perm));
-				pj_ks(pj, "name", rz_str_get2(map->name));
+				pj_ks(pj, "name", rz_str_get(map->name));
 				pj_end(pj);
 
 				core->print->cb_printf("%s\n", pj_string(pj));
@@ -585,7 +585,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 						       " - 0x%08" PFMT64x " %s %s\n",
 					map->id, map->fd,
 					map->delta, rz_io_map_get_from(map), rz_io_map_get_to(map),
-					rz_str_rwx_i(map->perm), rz_str_get2(map->name));
+					rz_str_rwx_i(map->perm), rz_str_get(map->name));
 			}
 		}
 		break;
@@ -1181,10 +1181,10 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	if (desc->io && desc->io->va && desc->io->maps) {
 		ls_foreach_prev (desc->io->maps, iter, map) {
 			if (map->fd == desc->fd) {
-				p->cb_printf ("  +0x%"PFMT64x" 0x%"PFMT64x
+				p->cb_printf("  +0x%"PFMT64x" 0x%"PFMT64x
 					" - 0x%"PFMT64x" : %s : %s : %s\n", map->delta,
-					map->from, map->to, rz_str_rwx_i (map->flags), "",
-					rz_str_get2 (map));
+					map->from, map->to, rz_str_rwx_i(map->flags), "",
+					rz_str_get(map));
 			}
 		}
 	}

@@ -1099,11 +1099,11 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	case MODE_DIFF_IMPORTS:
 		c = opencore(&ro, ro.file);
 		if (!c) {
-			eprintf("Cannot open '%s'\n", rz_str_get(ro.file));
+			eprintf("Cannot open '%s'\n", rz_str_get_null(ro.file));
 		}
 		c2 = opencore(&ro, ro.file2);
 		if (!c2) {
-			eprintf("Cannot open '%s'\n", rz_str_get(ro.file2));
+			eprintf("Cannot open '%s'\n", rz_str_get_null(ro.file2));
 		}
 		if (!c || !c2) {
 			return 1;
@@ -1207,13 +1207,13 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		bufa = slurp(&ro, &c, ro.file, &fsz);
 		sza = fsz;
 		if (!bufa) {
-			eprintf("rz_diff: Cannot open %s\n", rz_str_get(ro.file));
+			eprintf("rz_diff: Cannot open %s\n", rz_str_get_null(ro.file));
 			return 1;
 		}
 		bufb = slurp(&ro, &c, ro.file2, &fsz);
 		szb = fsz;
 		if (!bufb) {
-			eprintf("rz_diff: Cannot open: %s\n", rz_str_get(ro.file2));
+			eprintf("rz_diff: Cannot open: %s\n", rz_str_get_null(ro.file2));
 			free(bufa);
 			return 1;
 		}

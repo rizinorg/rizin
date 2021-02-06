@@ -147,8 +147,12 @@ RZ_API int rz_str_cmp(const char *dst, const char *orig, int len);
 RZ_API int rz_str_casecmp(const char *dst, const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
 RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
-RZ_API const char *rz_str_get(const char *str);
-RZ_API const char *rz_str_get2(const char *str);
+static inline const char *rz_str_get(const char *str) {
+	return str ? str : "";
+}
+static inline const char *rz_str_get_null(const char *str) {
+	return str ? str : "(null)";
+}
 RZ_API char *rz_str_ndup(const char *ptr, int len);
 RZ_API char *rz_str_dup(char *ptr, const char *string);
 RZ_API int rz_str_inject(char *begin, char *end, char *str, int maxlen);

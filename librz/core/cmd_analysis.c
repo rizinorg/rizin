@@ -2840,8 +2840,8 @@ static void cmd_analysis_fcn_sig(RzCore *core, const char *input) {
 			int nargs = rz_type_func_args_count(core->analysis->sdb_types, key);
 			if (fcn_type) {
 				pj_o(j);
-				pj_ks(j, "name", rz_str_get(key));
-				pj_ks(j, "return", rz_str_get(fcn_type));
+				pj_ks(j, "name", rz_str_get_null(key));
+				pj_ks(j, "return", rz_str_get_null(fcn_type));
 				pj_k(j, "args");
 				pj_a(j);
 				if (nargs) {
@@ -2862,7 +2862,7 @@ static void cmd_analysis_fcn_sig(RzCore *core, const char *input) {
 			free(key);
 		} else {
 			pj_o(j);
-			pj_ks(j, "name", rz_str_get(fcn_name));
+			pj_ks(j, "name", rz_str_get_null(fcn_name));
 			pj_k(j, "args");
 			pj_a(j);
 
@@ -10032,9 +10032,9 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 			int nargs = rz_type_func_args_count(core->analysis->sdb_types, key);
 			// remove other comments
 			if (fcn_type) {
-				rz_strbuf_appendf(sb, "%s%s%s(", rz_str_get(fcn_type),
+				rz_strbuf_appendf(sb, "%s%s%s(", rz_str_get_null(fcn_type),
 					(*fcn_type && fcn_type[strlen(fcn_type) - 1] == '*') ? "" : " ",
-					rz_str_get(key));
+					rz_str_get_null(key));
 				if (!nargs) {
 					rz_strbuf_appendf(sb, "void)\n");
 				}
