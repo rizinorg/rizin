@@ -1369,6 +1369,7 @@ beach:
 	}
 	rz_analysis_block_update_hash(bb);
 	rz_analysis_block_unref(bb);
+	free(movbasereg);
 	return ret;
 }
 
