@@ -503,7 +503,6 @@ static char *rop_classify_arithmetic(RzCore *core, RzList *ropList) {
 								arithmetic = rz_str_append(arithmetic, tmp);
 							}
 							free(tmp);
-							redundant = true;
 						} else if (!redundant /*&& value_src1 != 0 && value_src2 != 0*/ && simulate_r && value_dst == *op_result_r) {
 							// rz_cons_println ("Debug: FOUND ONE reversed!");
 							char *tmp = rz_str_newf("%s <-- %s %s %s;", item_dst->name, item_src2->name, op, item_src1->name);
