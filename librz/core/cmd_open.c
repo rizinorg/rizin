@@ -299,9 +299,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 		id = *v && rz_is_valid_input_num_value(core->num, tmp)
 			? rz_get_input_num_value(core->num, tmp)
 			: UT32_MAX;
-		if (n == 2) {
-			tmp = rz_str_word_get0(v, 1);
-		} else {
+		if (n != 2) {
 			binfile_num = id;
 		}
 		rz_core_bin_raise(core, binfile_num);
@@ -317,7 +315,6 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			rz_core_cmdf(core, "oba 0 %s", input + 3);
 		} else {
 			rz_core_bin_load(core, NULL, UT64_MAX);
-			value = input[2] ? input + 2 : NULL;
 		}
 		break;
 	case 'o': // "obo"
