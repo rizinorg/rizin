@@ -525,6 +525,7 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 	const int continue_after_jump = analysis->opt.afterjmp;
 	const int addrbytes = analysis->iob.io ? analysis->iob.io->addrbytes : 1;
 	char *last_reg_mov_lea_name = NULL;
+	char *movbasereg = NULL;
 	RzAnalysisBlock *bb = NULL;
 	RzAnalysisBlock *bbg = NULL;
 	int ret = RZ_ANALYSIS_RET_END, skip_ret = 0;
@@ -638,7 +639,6 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 	}
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov reg, [reg * scale + disp]"
 	ut64 movscale = 0;
-	char *movbasereg = NULL;
 	ut8 buf[32]; // 32 bytes is enough to hold any instruction.
 	int maxlen = len * addrbytes;
 	if (is_dalvik) {
