@@ -857,6 +857,7 @@ static bool cmd_analysis_aaft(RzCore *core) {
 	rz_core_seek(core, seek, true);
 	rz_reg_arena_pop(core->analysis->reg);
 	rz_config_hold_restore(hold);
+	rz_config_hold_free(hold);
 	free(saved_arena);
 	return true;
 }
