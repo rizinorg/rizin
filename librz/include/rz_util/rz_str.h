@@ -9,9 +9,6 @@
 extern "C" {
 #endif
 
-static const char *rz_str_empty = "";
-static const char *rz_str_null = "(null)";
-
 typedef enum {
 	RZ_STRING_ENC_LATIN1 = 'a',
 	RZ_STRING_ENC_UTF8 = '8',
@@ -151,10 +148,10 @@ RZ_API int rz_str_casecmp(const char *dst, const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
 RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
 static inline const char *rz_str_get(const char *str) {
-	return str ? str : rz_str_empty;
+	return str ? str : "";
 }
 static inline const char *rz_str_get_null(const char *str) {
-	return str ? str : rz_str_null;
+	return str ? str : "(null)";
 }
 RZ_API char *rz_str_ndup(const char *ptr, int len);
 RZ_API char *rz_str_dup(char *ptr, const char *string);
