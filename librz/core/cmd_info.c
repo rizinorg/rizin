@@ -141,7 +141,6 @@ static bool demangle(RzCore *core, const char *s) {
 #define STR(x) (x) ? (x) : ""
 static void rz_core_file_info(RzCore *core, PJ *pj, int mode) {
 	const char *fn = NULL;
-	int dbg = rz_config_get_i(core->config, "cfg.debug");
 	bool io_cache = rz_config_get_i(core->config, "io.cache");
 	RzBinInfo *info = rz_bin_get_info(core->bin);
 	RzBinFile *binfile = rz_bin_cur(core->bin);
@@ -175,9 +174,6 @@ static void rz_core_file_info(RzCore *core, PJ *pj, int mode) {
 			}
 		}
 		pj_ks(pj, "file", uri);
-		if (dbg) {
-			dbg = RZ_PERM_WX;
-		}
 		if (desc) {
 			ut64 fsz = rz_io_desc_size(desc);
 			pj_ki(pj, "fd", desc->fd);
@@ -204,10 +200,6 @@ static void rz_core_file_info(RzCore *core, PJ *pj, int mode) {
 		}
 		pj_end(pj);
 	} else if (desc && mode != RZ_MODE_SIMPLE) {
-		//rz_cons_printf ("# Core file info\n");
-		if (dbg) {
-			dbg = RZ_PERM_WX;
-		}
 		if (desc) {
 			pair("fd", sdb_fmt("%d", desc->fd));
 		}
