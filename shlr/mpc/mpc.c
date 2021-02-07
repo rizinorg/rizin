@@ -535,10 +535,8 @@ void mpc_err_print_to(mpc_err_t *x, FILE *f) {
 
 static void mpc_err_string_cat(char *buffer, int *pos, int *max, char const *fmt, ...) {
   /* TODO: Error Checking on Length */
-  int left = ((*max) - (*pos));
   va_list va;
   va_start(va, fmt);
-  if (left < 0) { left = 0;}
   (*pos) += vsprintf(buffer + (*pos), fmt, va);
   va_end(va);
 }
