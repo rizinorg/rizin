@@ -391,7 +391,7 @@ static int rz_debug_gdb_detach(RzDebug *dbg, int pid) {
 	int ret = 0;
 
 	if (pid <= 0 || !desc->stub_features.multiprocess) {
-		ret = gdbr_detach(desc);
+		gdbr_detach(desc);
 	}
 	ret = gdbr_detach_pid(desc, pid);
 
