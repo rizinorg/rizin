@@ -49,7 +49,6 @@ static void replaceWords(char *s, const char *k, const char *v) {
 		char *d = p + strlen(v);
 		memmove(d, s, strlen(s) + 1);
 		memmove(p, v, strlen(v));
-		s = p + strlen(v);
 	}
 }
 
