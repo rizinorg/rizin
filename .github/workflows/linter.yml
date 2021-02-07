@@ -36,6 +36,9 @@ jobs:
     - name: Install clang-format-11
       run: sudo apt --assume-yes install clang-format-11
 
+    - name: Install gitpython
+      run: sudo pip install gitpython
+
     - name: Run clang-format
       run: |
         sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 110
