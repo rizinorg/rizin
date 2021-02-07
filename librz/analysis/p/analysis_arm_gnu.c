@@ -164,12 +164,19 @@ static int op_cond(const ut8 *data) {
 	return iconds[b];
 }
 
+static void switch_to_big_endian(ut8 *dst, const ut8 *src) {
+	dst[0] = src[3];
+	dst[1] = src[2];
+	dst[2] = src[1];
+	dst[3] = src[0];
+}
+
 static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {
 	const ut8 *b = (ut8 *)data;
-	ut8 ndata[4];
 	ut32 branch_dst_addr, i = 0;
 	ut32 *code = (ut32 *)data;
 	struct winedbg_arm_insn *arminsn;
+	ut8 ndata[4];
 
 	if (!data) {
 		return 0;
@@ -182,11 +189,8 @@ static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 
 	if (analysis->big_endian) {
+		switch_to_big_endian(ndata, data);
 		b = data = ndata;
-		ndata[0] = data[3];
-		ndata[1] = data[2];
-		ndata[2] = data[1];
-		ndata[3] = data[0];
 	}
 	if (analysis->bits == 16) {
 		arm_free(arminsn);
