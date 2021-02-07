@@ -773,7 +773,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (rz_config_get_i(r->config, "cfg.plugins")) {
 		rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL, NULL);
 	}
-	ret = run_commands(r, NULL, prefiles, false, do_analysis);
+	run_commands(r, NULL, prefiles, false, do_analysis);
 	rz_list_free(prefiles);
 	prefiles = NULL;
 
