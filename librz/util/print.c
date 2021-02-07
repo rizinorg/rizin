@@ -1453,11 +1453,7 @@ RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut
 		len = 1;
 	}
 
-	if (mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size == p->zoom->size) {
-		// get from cache
-		bufz = p->zoom->buf;
-		size = p->zoom->size;
-	} else {
+	if (mode != p->zoom->mode || from != p->zoom->from || to != p->zoom->to || size != p->zoom->size) {
 		mode = p->zoom->mode;
 		bufz = (ut8 *)calloc(1, len);
 		if (!bufz) {
