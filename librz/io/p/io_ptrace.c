@@ -206,7 +206,6 @@ static inline bool is_pid_already_attached(RzIO *io, int pid) {
 
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	RzIODesc *desc = NULL;
-	int ret = -1;
 
 	if (!__plugin_open(io, file, 0)) {
 		return NULL;
@@ -217,14 +216,13 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	// Safely check if the PID has already been attached to avoid printing errors
 	// and attempt attaching on failure
 	if (!is_pid_already_attached(io, pid)) {
-		ret = rz_io_ptrace(io, PTRACE_ATTACH, pid, 0, 0);
+		int ret = rz_io_ptrace(io, PTRACE_ATTACH, pid, 0, 0);
 		if (ret == -1) {
 #ifdef __ANDROID__
 			eprintf("ptrace_attach: Operation not permitted\n");
 #else
 			switch (errno) {
 			case EPERM:
-				ret = pid;
 				eprintf("ptrace_attach: Operation not permitted\n");
 				break;
 			case EINVAL:
@@ -236,9 +234,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			}
 			return NULL;
 #endif
-		} else if (__waitpid(pid)) {
-			ret = pid;
-		} else {
+		} else if (!__waitpid(pid)) {
 			eprintf("Error in waitpid\n");
 			return NULL;
 		}
