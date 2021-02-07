@@ -16,7 +16,6 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	char fmt[4096];
 	char *bufn, bufnum[4096];
 	int i, rv, rescount = -1;
-	char *res, *r;
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -39,13 +38,9 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 		eprintf("rzpipe_write: error\n");
 		return -1;
 	}
-	res = rzpipe_read(RZP(fd));
+	rzpipe_read(RZP(fd));
+
 	/* TODO: parse json back */
-	r = strstr(res, "result");
-	if (r) {
-		count = atoi(r + 6 + 1);
-	}
-	free(res);
 	return rescount;
 }
 
