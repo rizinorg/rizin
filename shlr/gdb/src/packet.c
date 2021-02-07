@@ -168,9 +168,11 @@ int read_packet(libgdbr_t *g, bool vcont) {
 			return -1;
 		}
 		int sz = rz_socket_read(g->sock, (void *)g->read_buff, g->read_max - 1);
-		if (sz <= 0) {
-			eprintf("%s: read failed %d\n", __func__, sz);
-                        continue;
+		if (sz == 0) {
+			continue;
+		} else if (sz < 0) {
+			eprintf("%s: read failed (%d)\n", __func__, errno);
+			return -1;
 		}
 		ret = unpack(g, &ctx, sz);
 		if (ret < 0) {
