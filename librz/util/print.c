@@ -1513,11 +1513,13 @@ static inline void printHistBlock(RzPrint *p, int k, int cols) {
 	const bool show_colors = (p && (p->flags & RZ_PRINT_FLAGS_COLOR));
 	if (show_colors) {
 		int idx = (int)((k * 4) / cols);
-		const char *str = kol[idx];
-		if (p->histblock) {
-			p->cb_printf("%s%s%s", str, block, Color_RESET);
-		} else {
-			p->cb_printf("%s%s%s", str, h_line, Color_RESET);
+		if (idx < 5) {
+			const char *str = kol[idx];
+			if (p->histblock) {
+				p->cb_printf("%s%s%s", str, block, Color_RESET);
+			} else {
+				p->cb_printf("%s%s%s", str, h_line, Color_RESET);
+			}
 		}
 	} else {
 		if (p->histblock) {
