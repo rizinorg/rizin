@@ -884,8 +884,6 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 	if (fd != -1) {
 		if (fd >= 0 && fd < RTR_MAX_HOSTS) {
 			rtr_n = fd;
-		} else {
-			fd = -1;
 		}
 	} else {
 		// XXX
