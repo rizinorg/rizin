@@ -63,7 +63,7 @@ bool test_parsed_args_newcmd(void) {
 	mu_assert_streq_free(rz_cmd_parsed_args_execstr(a), "pd 10", "cmd + args");
 
 	char *args2[] = { "2", "3" };
-	res = rz_cmd_parsed_args_setargs(a, 2, args2);
+	rz_cmd_parsed_args_setargs(a, 2, args2);
 	mu_assert_eq(a->argc, 3, "argc == 3");
 	mu_assert_streq_free(rz_cmd_parsed_args_argstr(a), "2 3", "arg");
 	mu_assert_streq_free(rz_cmd_parsed_args_execstr(a), "pd 2 3", "cmd + args");
