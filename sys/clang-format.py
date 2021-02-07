@@ -6,6 +6,8 @@ import itertools
 import os
 import sys
 
+from git import Repo
+
 dirlist = [
     "binrz",
     "librz",
@@ -34,14 +36,36 @@ skiplist = [
     "librz/hash/xxhash/",
     "librz/bin/mangling/cxx/",
     "librz/util/bdiff.c",
-    "librz/asm/arch/tms320/c55x/table.h"
+    "librz/asm/arch/tms320/c55x/table.h",
 ]
 
 patterns = ["*.c", "*.cpp", "*.h", "*.hpp", "*.inc"]
 
 
+def should_scan(filename):
+    return any(directory in filename for directory in dirlist) and any(
+        pattern[1:] in filename for pattern in patterns
+    )
+
+
 def skip(filename):
     return any(skipfile in filename for skipfile in skiplist)
+
+
+def get_matching_files():
+    for directory, pattern in itertools.product(dirlist, patterns):
+        for filename in glob.iglob(directory + "/**/" + pattern, recursive=True):
+            if not skip(filename):
+                yield filename
+
+
+def get_edited_files(args):
+    repo = Repo()
+
+    for diff in repo.index.diff(args.diff):
+        filename = diff.a_path
+        if should_scan(filename) and not skip(filename):
+            yield filename
 
 
 def build_command(check, filename):
@@ -51,42 +75,63 @@ def build_command(check, filename):
     return "clang-format --style=file -i {0}".format(filename)
 
 
-def get_matching_files():
-    for directory, pattern in itertools.product(dirlist, patterns):
-        for filename in glob.iglob(directory + "/**/" + pattern, recursive=True):
-            if not skip(filename):
-                yield filename
-
-def format_file(args, filename):
-    cmd = build_command(args.check, filename)
-
-    if args.verbose:
-        print(cmd)
-
-    return os.system(cmd)
-
-def format_rizin(args):
+def format_files(args, files):
     return_code = 0
 
-    if args.file:
-        if format_file(args, args.file) == 256:
+    for filename in files:
+        cmd = build_command(args.check, filename)
+
+        if args.verbose:
+            print(cmd)
+
+        if os.system(cmd) == 256:
             return_code = 1
-    else:
-        for filename in get_matching_files():
-            if format_file(args, filename) == 256:
-                return_code = 1
 
     sys.exit(return_code)
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Clang format the rizin project")
-    parser.add_argument("-c", "--check", action="store_true", help="Flag that enable the check mode")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Use verbose output")
-    parser.add_argument("-f", "--file", help="formats (or checks) only the given file")
-    args = parser.parse_args()
+def get_file(args):
+    filename = args.file
+    if should_scan(filename) and not skip(filename):
+        return [filename]
 
-    format_rizin(args)
+    return []
+
+
+def get_files(args):
+    if args.diff:
+        return get_edited_files(args)
+
+    if args.file:
+        return get_file(args)
+
+    return get_matching_files()
+
+
+def process(args):
+    files = get_files(args)
+    format_files(args, files)
+
+
+def parse():
+    parser = argparse.ArgumentParser(description="Clang format the rizin project")
+    parser.add_argument(
+        "--check", action="store_true", help="Flag that enable the check mode"
+    )
+    parser.add_argument("--verbose", action="store_true", help="Use verbose output")
+    parser.add_argument("-f", "--file", help="formats (or checks) only the given file")
+    parser.add_argument(
+        "--diff",
+        type=str,
+        default=None,
+        help="Format all modified file related to branch",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse()
+    process(args)
 
 
 if __name__ == "__main__":
