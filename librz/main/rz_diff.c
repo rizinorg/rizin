@@ -1203,7 +1203,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		}
 		break;
 	default: {
-		size_t fsz;
+		size_t fsz = 0;
 		bufa = slurp(&ro, &c, ro.file, &fsz);
 		sza = fsz;
 		if (!bufa) {
