@@ -186,7 +186,7 @@ static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 	if (*str == '-') {
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
-			case 'l': nl = "\n"; break;
+			case 'l': break;
 			case 'a': print_ascii_table(); return 0;
 			case 's': flags ^= 1 << 0; break;
 			case 'e': flags ^= 1 << 1; break;
