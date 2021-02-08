@@ -70,16 +70,19 @@ if ok
   conf_data.set10('HAVE_FICLONERANGE', ok)
 endif
 
-ok = cc.compiles('''
+have_nullable = cc.compiles('''
 int foo(char * _Nullable bar);
 int main(int argc, char *argv[]) { }''')
-if ok
-  conf_data.set10('HAVE_NULLABLE', ok)
+if have_nullable
+  conf_data.set10('HAVE_NULLABLE', have_nullable)
 endif
 
 is_big_endian = host_machine.endian() == 'big'
 if is_big_endian
   conf_data.set10('WORDS_BIGENDIAN', is_big_endian)
+endif
+if get_option('default_library') == 'shared'
+  zipconf_data.set('HAVE_SHARED', true)
 endif
 conf_data.set('CMAKE_PROJECT_NAME', 'libzip')
 conf_data.set('CMAKE_PROJECT_VERSION', meson.project_version())
@@ -90,6 +93,111 @@ config_h = configure_file(
   configuration: conf_data,
   format: 'cmake@',
 )
+
+# Create zipconf.h file
+version_split = meson.project_version().split('.')
+version_major = version_split[0].to_int()
+version_minor = version_split[1].to_int()
+version_patch = version_split[2].split('-')[0].to_int()
+
+zipconf_data = configuration_data()
+zipconf_data.set('libzip_VERSION', meson.project_version())
+zipconf_data.set('libzip_VERSION_MAJOR', version_major)
+zipconf_data.set('libzip_VERSION_MINOR', version_minor)
+zipconf_data.set('libzip_VERSION_PATCH', version_patch)
+if get_option('default_library') == 'static'
+  zipconf_data.set('ZIP_STATIC', true)
+endif
+if have_nullable
+  zipconf_data.set('', '''#define _Nullable
+#define _Nonnull''')
+else
+  zipconf_data.set('ZIP_NULLABLE_DEFINES', '')
+endif
+if cc.has_header('inttypes.h')
+  types_header_prefix = '''#if !defined(__STDC_FORMAT_MACROS)
+#define __STDC_FORMAT_MACROS 1
+#endif
+#include <inttypes.h>'''
+  zipconf_data.set('LIBZIP_TYPES_INCLUDE', types_header_prefix)
+elif cc.has_header('stdint.h')
+  types_header_prefix = '#include <stdin.h>'
+  zipconf_data.set('LIBZIP_TYPES_INCLUDE', types_header_prefix)
+elif cc.has_header('sys/types.h')
+  types_header_prefix = '#include <sys/types.h>'
+  zipconf_data.set('LIBZIP_TYPES_INCLUDE', types_header_prefix)
+endif
+
+types = ['int8_t', 'uint8_t', 'int16_t', 'uint16_t', 'int32_t', 'uint32_t', 'int64_t', 'uint64_t']
+underscore_types = ['__int8', '__int16', '__int32', '__int64']
+foreach t : types + underscore_types
+  set_variable('have_@0@'.format(t), cc.has_type(t, prefix: types_header_prefix))
+endforeach
+
+if have_int8_t
+  zipconf_data.set('ZIP_INT8_T', 'int8_t')
+elif have___int8
+  zipconf_data.set('ZIP_INT8_T', '__int8')
+else
+  zipconf_data.set('ZIP_INT8_T', 'signed char')
+endif
+if have_uint8_t
+  zipconf_data.set('ZIP_UINT8_T', 'uint8_t')
+elif have___int8
+  zipconf_data.set('ZIP_UINT8_T', 'unsigned __int8')
+else
+  zipconf_data.set('ZIP_UINT8_T', 'unsigned char')
+endif
+if have_int16_t
+  zipconf_data.set('ZIP_INT16_T', 'int16_t')
+elif have___int16
+  zipconf_data.set('ZIP_INT16_T', '__int16')
+else
+  zipconf_data.set('ZIP_INT16_T', 'short')
+endif
+if have_uint16_t
+  zipconf_data.set('ZIP_UINT16_T', 'uint16_t')
+elif have___int16
+  zipconf_data.set('ZIP_UINT16_T', 'unsigned __int16')
+else
+  zipconf_data.set('ZIP_UINT16_T', 'unsigned short')
+endif
+if have_int32_t
+  zipconf_data.set('ZIP_INT32_T', 'int32_t')
+elif have___int32
+  zipconf_data.set('ZIP_INT32_T', '__int32')
+else
+  zipconf_data.set('ZIP_INT32_T', 'long')
+endif
+if have_uint32_t
+  zipconf_data.set('ZIP_UINT32_T', 'uint32_t')
+elif have___int32
+  zipconf_data.set('ZIP_UINT32_T', 'unsigned __int32')
+else
+  zipconf_data.set('ZIP_UINT32_T', 'unsigned long')
+endif
+if have_int64_t
+  zipconf_data.set('ZIP_INT64_T', 'int64_t')
+elif have___int64
+  zipconf_data.set('ZIP_INT64_T', '__int64')
+else
+  zipconf_data.set('ZIP_INT64_T', 'long long')
+endif
+if have_uint64_t
+  zipconf_data.set('ZIP_UINT64_T', 'uint64_t')
+elif have___int64
+  zipconf_data.set('ZIP_UINT64_T', 'unsigned __int64')
+else
+  zipconf_data.set('ZIP_UINT64_T', 'unsigned long long')
+endif
+
+zipconf_h = configure_file(
+  input: 'cmake-zipconf.h.in',
+  output: 'zipconf.h',
+  configuration: zipconf_data,
+  format: 'cmake',
+)
+
 
 # Create zip_err_str.c file
 
