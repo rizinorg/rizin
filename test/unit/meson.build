@@ -61,6 +61,7 @@ if get_option('enable_tests')
     'serialize_analysis',
     'serialize_config',
     'serialize_flag',
+    'serialize_io',
     'serialize_spaces',
     'rbtree',
     'sign',

@@ -439,6 +439,12 @@ RZ_API pid_t rz_io_ptrace_fork(RzIO *io, void (*child_callback)(void *), void *c
 RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user);
 #endif
 
+/* serialize */
+RZ_API void rz_serialize_io_files_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io);
+RZ_API bool rz_serialize_io_files_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_io_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io);
+RZ_API bool rz_serialize_io_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io, RZ_NULLABLE RzSerializeResultInfo *res);
+
 extern RzIOPlugin rz_io_plugin_procpid;
 extern RzIOPlugin rz_io_plugin_malloc;
 extern RzIOPlugin rz_io_plugin_sparse;

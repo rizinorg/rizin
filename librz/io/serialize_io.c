@@ -1,4 +1,4 @@
-/* rizin - LGPL - Copyright 2020 - thestr4ng3r */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
 #include <rz_io.h>
@@ -11,7 +11,7 @@
  *
  * /
  *   /files
- *     <fd>={perm:<int>, uri:<str>, name:<str>, referer?:<str>}
+ *     <fd>={perm:<int>, uri:<str>, name:<str>, referer?:<str>, plugin_name:<str>, plugin_data:<plugin-defined>}
  *     /pcache
  *       <fd>.<ut64>={cached:<ut64>, data:<base64>}
  */
@@ -37,11 +37,9 @@ static bool pcache_save_cb(void *user, const ut64 k, const void *v) {
 	PCacheSaveCtx *ctx = user;
 	const RzIODescCache *cache = v;
 	char key[0x30];
-	if (snprintf(key, sizeof(key), "%d.0x%" PFMT64x, ctx->fd, k) < 0) {
-		return false;
-	}
 	char val[RZ_IO_DESC_CACHE_SIZE * 4 + 1];
 	rz_base64_encode(val, cache->cdata, RZ_IO_DESC_CACHE_SIZE);
+	sdb_set(ctx->db, rz_strf(key, "%d.0x%" PFMT64x, ctx->fd, k), val, 0);
 	return true;
 }
 
@@ -66,7 +64,13 @@ static bool file_save_cb(void *user, void *data, ut32 id) {
 	if (desc->referer) {
 		pj_ks(j, "referer", desc->referer);
 	}
-	// TODO: plugin
+
+	pj_ks(j, "plugin_name", desc->plugin->name);
+	pj_k(j, "plugin_data");
+	if (!desc->plugin->serialize_save || !desc->plugin->serialize_save(desc->io, desc, j)) {
+		pj_free(j);
+		return false;
+	}
 
 	pj_end(j);
 	sdb_set(db, key, pj_string(j), 0);
