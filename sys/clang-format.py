@@ -116,15 +116,18 @@ def process(args):
 def parse():
     parser = argparse.ArgumentParser(description="Clang format the rizin project")
     parser.add_argument(
-        "--check", action="store_true", help="Flag that enable the check mode"
+        "-c", "--check", action="store_true", help="enable the check mode"
     )
-    parser.add_argument("--verbose", action="store_true", help="Use verbose output")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="use verbose output"
+    )
     parser.add_argument("-f", "--file", help="formats (or checks) only the given file")
     parser.add_argument(
+        "-d",
         "--diff",
         type=str,
         default=None,
-        help="Format all modified file related to branch",
+        help="format all modified file related to branch",
     )
     return parser.parse_args()
 
