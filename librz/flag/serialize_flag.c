@@ -47,7 +47,7 @@ static bool zone_load_cb(void *user, const char *k, const char *v) {
 	if (!json_str) {
 		return true;
 	}
-	RJson *json = rz_json_parse(json_str);
+	RzJson *json = rz_json_parse(json_str);
 	if (!json) {
 		free(json_str);
 		return true;
@@ -55,7 +55,7 @@ static bool zone_load_cb(void *user, const char *k, const char *v) {
 	if (json->type != RZ_JSON_OBJECT) {
 		goto beach;
 	}
-	const RJson *child;
+	const RzJson *child;
 	RzFlagZoneItem *item = RZ_NEW0(RzFlagZoneItem);
 	if (!item) {
 		goto beach;
@@ -159,7 +159,7 @@ static bool flag_load_cb(void *user, const char *k, const char *v) {
 	if (!json_str) {
 		return true;
 	}
-	RJson *json = rz_json_parse(json_str);
+	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_OBJECT) {
 		free(json_str);
 		return false;
