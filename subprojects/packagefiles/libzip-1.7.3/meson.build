@@ -109,10 +109,10 @@ if get_option('default_library') == 'static'
   zipconf_data.set('ZIP_STATIC', true)
 endif
 if have_nullable
-  zipconf_data.set('', '''#define _Nullable
-#define _Nonnull''')
-else
   zipconf_data.set('ZIP_NULLABLE_DEFINES', '')
+else
+  zipconf_data.set('ZIP_NULLABLE_DEFINES', '''#define _Nullable
+#define _Nonnull''')
 endif
 if cc.has_header('inttypes.h')
   types_header_prefix = '''#if !defined(__STDC_FORMAT_MACROS)
@@ -350,7 +350,7 @@ endif
 
 zip_files += [zip_err_str_c]
 
-zip_inc = [include_directories('lib')]
+zip_inc = [include_directories('lib', '.')]
 
 libzip = library('libzip', zip_files,
   dependencies: libzip_deps,
@@ -362,5 +362,6 @@ libzip = library('libzip', zip_files,
 libzip_dep = declare_dependency(
   link_with: libzip,
   include_directories: zip_inc,
+  implicit_include_directories: true,
   dependencies: libzip_deps,
 )
