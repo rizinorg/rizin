@@ -14,9 +14,6 @@
 #define BB_ALIGN             0x10
 #define MAX_SCAN_SIZE        0x7ffffff
 
-/* speedup analysis by removing some function overlapping checks */
-#define JAYRO_04 1
-
 // 16 KB is the maximum size for a basic block
 #define MAX_FLG_NAME_SIZE 64
 
@@ -1509,10 +1506,8 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 				break;
 			}
 		}
-#if JAYRO_04
 		// fcn is not yet in analysis => pass NULL
 		rz_analysis_function_resize(fcn, endaddr - fcn->addr);
-#endif
 		rz_analysis_trim_jmprefs(analysis, fcn);
 	}
 	return ret;

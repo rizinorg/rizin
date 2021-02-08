@@ -57,28 +57,33 @@ def get_matching_files():
             if not skip(filename):
                 yield filename
 
+def format_file(args, filename):
+    cmd = build_command(args.check, filename)
+
+    if args.verbose:
+        print(cmd)
+
+    return os.system(cmd)
 
 def format_rizin(args):
     return_code = 0
 
-    for filename in get_matching_files():
-        cmd = build_command(args.check, filename)
-
-        if args.verbose:
-            print(cmd)
-
-        if os.system(cmd) == 256:
+    if args.file:
+        if format_file(args, args.file) == 256:
             return_code = 1
+    else:
+        for filename in get_matching_files():
+            if format_file(args, filename) == 256:
+                return_code = 1
 
     sys.exit(return_code)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Clang format the rizin project")
-    parser.add_argument(
-        "--check", action="store_true", help="Flag that enable the check mode"
-    )
-    parser.add_argument("--verbose", action="store_true", help="Use verbose output")
+    parser.add_argument("-c", "--check", action="store_true", help="Flag that enable the check mode")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Use verbose output")
+    parser.add_argument("-f", "--file", help="formats (or checks) only the given file")
     args = parser.parse_args()
 
     format_rizin(args)
