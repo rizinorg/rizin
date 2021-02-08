@@ -19,7 +19,7 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 	}
 	snprintf(buf, 127, "PacketSize=%x;QStartNoAckMode+;qXfer:exec-file:read+",
 		(ut32)(g->read_max - 1));
-	if ((ret = handle_qSupported(g)) < 0) {
+	if (handle_qSupported(g) < 0) {
 		free(buf);
 		return -1;
 	}
@@ -29,10 +29,9 @@ static int _server_handle_qSupported(libgdbr_t *g) {
 }
 
 static int _server_handle_qTStatus(libgdbr_t *g) {
-	int ret;
 	// TODO Handle proper reporting of trace status
 	const char *message = "";
-	if ((ret = send_ack(g)) < 0) {
+	if (send_ack(g) < 0) {
 		return -1;
 	}
 	return send_msg(g, message);
@@ -171,13 +170,13 @@ static int _server_handle_qC(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	char *buf;
 	int ret;
 	size_t buf_len = 80;
-	if ((ret = send_ack(g)) < 0) {
+	if (send_ack(g) < 0) {
 		return -1;
 	}
 	if (!(buf = malloc(buf_len))) {
 		return -1;
 	}
-	if ((ret = cmd_cb(g, core_ptr, "dp", buf, buf_len)) < 0) {
+	if (cmd_cb(g, core_ptr, "dp", buf, buf_len) < 0) {
 		free(buf);
 		return -1;
 	}
@@ -242,7 +241,7 @@ static int _server_handle_vCont(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *c
 		// Query about everything we support
 		return send_msg(g, "vCont;c;s");
 	}
-	if (!(action = strtok(g->data, ";"))) {
+	if (!strtok(g->data, ";")) {
 		return send_msg(g, "E01");
 	}
 	while ((action = strtok(NULL, ";"))) {
@@ -336,13 +335,13 @@ static int _server_handle_qfThreadInfo(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, 
 	char *buf;
 	int ret;
 	size_t buf_len = g->stub_features.pkt_sz;
-	if ((ret = send_ack(g)) < 0) {
+	if (send_ack(g) < 0) {
 		return -1;
 	}
 	if (!(buf = malloc(buf_len))) {
 		return -1;
 	}
-	if ((ret = cmd_cb(g, core_ptr, "dpt", buf, buf_len)) < 0) {
+	if (cmd_cb(g, core_ptr, "dpt", buf, buf_len) < 0) {
 		free(buf);
 		return -1;
 	}
@@ -372,7 +371,7 @@ static int _server_handle_g(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 		return -1;
 	}
 	memset(buf, 0, buf_len);
-	if ((buf_len = cmd_cb(g, core_ptr, "dr", buf, buf_len)) < 0) {
+	if (cmd_cb(g, core_ptr, "dr", buf, buf_len) < 0) {
 		free(buf);
 		send_msg(g, "E01");
 		return -1;

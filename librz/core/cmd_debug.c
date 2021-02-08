@@ -572,10 +572,9 @@ static int showreg(RzCore *core, const char *str) {
 	}
 	r = rz_reg_get(core->dbg->reg, rname, -1);
 	if (r) {
-		ut64 off;
 		utX value;
 		if (r->size > 64) {
-			off = rz_reg_get_value_big(core->dbg->reg, r, &value);
+			rz_reg_get_value_big(core->dbg->reg, r, &value);
 			switch (r->size) {
 			case 80:
 				rz_cons_printf("0x%04x%016" PFMT64x "\n", value.v80.High, value.v80.Low);
@@ -594,7 +593,7 @@ static int showreg(RzCore *core, const char *str) {
 				rz_cons_printf("Error while retrieving reg '%s' of %i bits\n", str + 1, r->size);
 			}
 		} else {
-			off = rz_reg_get_value(core->dbg->reg, r);
+			ut64 off = rz_reg_get_value(core->dbg->reg, r);
 			rz_cons_printf("0x%08" PFMT64x "\n", off);
 		}
 		return r->size;

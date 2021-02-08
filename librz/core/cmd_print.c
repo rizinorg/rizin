@@ -1283,7 +1283,7 @@ static char get_string_type(const ut8 *buf, ut64 len) {
 		} else {
 			str_type = 'a';
 		}
-		for (rc = i = 0; needle < len; i += rc) {
+		for (i = 0; needle < len; i += rc) {
 			RzRune r;
 			if (str_type == 'w') {
 				if (needle + 1 < len) {
@@ -4268,7 +4268,6 @@ static void __printPattern(RzCore *core, const char *_input) {
 	case 'a':
 		// TODO
 		{
-			i = core->offset;
 			size_t bs = 4; // XXX hardcoded
 			ut8 *buf = calloc(bs, 1);
 			// for (;i>0;i--) { incDigitBuffer (buf, bs); }
@@ -4285,7 +4284,6 @@ static void __printPattern(RzCore *core, const char *_input) {
 		break;
 	case 'n': // "ppn"
 	{
-		i = core->offset;
 		size_t bs = 4; // XXX hardcoded
 		ut8 *buf = calloc(bs, 1);
 		// for (;i>0;i--) { incDigitBuffer (buf, bs); }

@@ -4393,7 +4393,6 @@ bool __init_panels_menu(RzCore *core) {
 
 	{
 		parent = "View";
-		i = 0;
 		RzList *list = __sorted_list(core, menus_View, COUNT(menus_View));
 		char *pos;
 		RzListIter *iter;
@@ -4447,7 +4446,6 @@ bool __init_panels_menu(RzCore *core) {
 
 	{
 		parent = "Debug";
-		i = 0;
 		RzList *list = __sorted_list(core, menus_Debug, COUNT(menus_Debug));
 		char *pos;
 		RzListIter *iter;
