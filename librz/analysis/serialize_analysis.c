@@ -110,7 +110,7 @@ RZ_API void rz_serialize_analysis_diff_parser_free(RzSerializeAnalDiffParser par
 	rz_key_parser_free(parser);
 }
 
-RZ_API RZ_NULLABLE RzAnalysisDiff *rz_serialize_analysis_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RJson *json) {
+RZ_API RZ_NULLABLE RzAnalysisDiff *rz_serialize_analysis_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RzJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
@@ -186,7 +186,7 @@ RZ_API void rz_serialize_analysis_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL Rz
 	pj_end(j);
 }
 
-RZ_API RzAnalysisSwitchOp *rz_serialize_analysis_switch_op_load(RZ_NONNULL const RJson *json) {
+RZ_API RzAnalysisSwitchOp *rz_serialize_analysis_switch_op_load(RZ_NONNULL const RzJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
@@ -194,7 +194,7 @@ RZ_API RzAnalysisSwitchOp *rz_serialize_analysis_switch_op_load(RZ_NONNULL const
 	if (!sop) {
 		return NULL;
 	}
-	RJson *child;
+	RzJson *child;
 	for (child = json->children.first; child; child = child->next) {
 		if (child->type == RZ_JSON_INTEGER) {
 			if (strcmp(child->key, "addr") == 0) {
@@ -207,7 +207,7 @@ RZ_API RzAnalysisSwitchOp *rz_serialize_analysis_switch_op_load(RZ_NONNULL const
 				sop->def_val = child->num.u_value;
 			}
 		} else if (child->type == RZ_JSON_ARRAY && strcmp(child->key, "cases") == 0) {
-			RJson *obj;
+			RzJson *obj;
 			for (obj = child->children.first; obj; obj = obj->next) {
 				if (obj->type != RZ_JSON_OBJECT) {
 					continue;
@@ -215,7 +215,7 @@ RZ_API RzAnalysisSwitchOp *rz_serialize_analysis_switch_op_load(RZ_NONNULL const
 				ut64 addr = UT64_MAX;
 				ut64 jump = UT64_MAX;
 				ut64 value = UT64_MAX;
-				RJson *cases;
+				RzJson *cases;
 				for (cases = obj->children.first; cases; cases = cases->next) {
 					if (cases->type != RZ_JSON_INTEGER) {
 						continue;
@@ -349,7 +349,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	if (!json_str) {
 		return true;
 	}
-	RJson *json = rz_json_parse(json_str);
+	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_OBJECT) {
 		free(json_str);
 		return false;
@@ -447,7 +447,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 			}
 			proto.op_pos = calloc(child->children.count, sizeof(ut16));
 			proto.op_pos_size = 0;
-			RJson *baby;
+			RzJson *baby;
 			for (baby = child->children.first; baby; baby = baby->next) {
 				if (baby->type != RZ_JSON_INTEGER) {
 					free(proto.op_pos);
@@ -655,7 +655,7 @@ RZ_API void rz_serialize_analysis_var_parser_free(RzSerializeAnalVarParser parse
 	rz_key_parser_free(parser);
 }
 
-RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RJson *json) {
+RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RzJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
@@ -734,26 +734,26 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			if (child->type != RZ_JSON_ARRAY) {
 				break;
 			}
-			RJson *baby;
+			RzJson *baby;
 			for (baby = child->children.first; baby; baby = baby->next) {
 				if (baby->type != RZ_JSON_OBJECT) {
 					continue;
 				}
 				// {off:<st64>, type:"r|w|rw", sp?:<st64>}
-				const RJson *offv = rz_json_get(baby, "off");
+				const RzJson *offv = rz_json_get(baby, "off");
 				if (!offv || offv->type != RZ_JSON_INTEGER) {
 					continue;
 				}
-				const RJson *typev = rz_json_get(baby, "type");
+				const RzJson *typev = rz_json_get(baby, "type");
 				if (!typev || typev->type != RZ_JSON_STRING) {
 					continue;
 				}
 				const char *acctype_str = typev->str_value;
-				const RJson *spv = rz_json_get(baby, "sp");
+				const RzJson *spv = rz_json_get(baby, "sp");
 				if (spv && spv->type != RZ_JSON_INTEGER) {
 					continue;
 				}
-				const RJson *regv = rz_json_get(baby, "reg");
+				const RzJson *regv = rz_json_get(baby, "reg");
 				if (!regv || regv->type != RZ_JSON_STRING) {
 					continue;
 				}
@@ -786,12 +786,12 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 			if (child->type != RZ_JSON_ARRAY) {
 				break;
 			}
-			RJson *baby;
+			RzJson *baby;
 			for (baby = child->children.first; baby; baby = baby->next) {
 				if (baby->type != RZ_JSON_INTEGER) {
 					break;
 				}
-				RJson *sibling = baby->next;
+				RzJson *sibling = baby->next;
 				if (!sibling || sibling->type != RZ_JSON_INTEGER) {
 					break;
 				}
@@ -978,7 +978,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 	if (!json_str) {
 		return true;
 	}
-	RJson *json = rz_json_parse(json_str);
+	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_OBJECT) {
 		free(json_str);
 		return false;
@@ -989,7 +989,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 	function->bp_frame = false; // should be false if not specified
 	function->bp_off = 0; // 0 if not specified
 	bool noreturn = false;
-	RJson *vars_json = NULL;
+	RzJson *vars_json = NULL;
 	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case FUNCTION_FIELD_NAME:
 			if (child->type != RZ_JSON_STRING) {
@@ -1101,7 +1101,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 			if (child->type != RZ_JSON_ARRAY) {
 				break;
 			}
-			RJson *baby;
+			RzJson *baby;
 			for (baby = child->children.first; baby; baby = baby->next) {
 				if (baby->type != RZ_JSON_INTEGER) {
 					continue;
@@ -1118,7 +1118,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 			if (child->type != RZ_JSON_ARRAY) {
 				break;
 			}
-			RJson *baby;
+			RzJson *baby;
 			for (baby = child->children.first; baby; baby = baby->next) {
 				if (baby->type != RZ_JSON_STRING) {
 					continue;
@@ -1149,7 +1149,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 			if (child->type != RZ_JSON_OBJECT) {
 				break;
 			}
-			RJson *baby;
+			RzJson *baby;
 			for (baby = child->children.first; baby; baby = baby->next) {
 				if (baby->type != RZ_JSON_INTEGER) {
 					continue;
@@ -1173,7 +1173,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 	function->is_noreturn = noreturn; // Can't set directly, rz_analysis_add_function() overwrites it
 
 	if (vars_json) {
-		RJson *baby;
+		RzJson *baby;
 		for (baby = vars_json->children.first; baby; baby = baby->next) {
 			rz_serialize_analysis_var_load(function, ctx->var_parser, baby);
 		}
@@ -1272,18 +1272,18 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 	if (!json_str) {
 		return true;
 	}
-	RJson *json = rz_json_parse(json_str);
+	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_ARRAY) {
 		free(json_str);
 		return false;
 	}
 
-	const RJson *child;
+	const RzJson *child;
 	for (child = json->children.first; child; child = child->next) {
 		if (child->type != RZ_JSON_OBJECT) {
 			goto error;
 		}
-		const RJson *baby = rz_json_get(child, "to");
+		const RzJson *baby = rz_json_get(child, "to");
 		if (!baby || baby->type != RZ_JSON_INTEGER) {
 			goto error;
 		}
@@ -1432,13 +1432,13 @@ static bool meta_load_cb(void *user, const char *k, const char *v) {
 	if (!json_str) {
 		return true;
 	}
-	RJson *json = rz_json_parse(json_str);
+	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_ARRAY) {
 		free(json_str);
 		return false;
 	}
 
-	const RJson *child;
+	const RzJson *child;
 	for (child = json->children.first; child; child = child->next) {
 		if (child->type != RZ_JSON_OBJECT) {
 			goto error;
@@ -1450,7 +1450,7 @@ static bool meta_load_cb(void *user, const char *k, const char *v) {
 		int subtype = 0;
 		const char *space_name = NULL;
 
-		const RJson *baby;
+		const RzJson *baby;
 		for (baby = child->children.first; baby; baby = baby->next) {
 			if (!strcmp(baby->key, "size")) {
 				if (baby->type == RZ_JSON_INTEGER) {
@@ -1754,7 +1754,7 @@ static bool hints_load_cb(void *user, const char *k, const char *v) {
 	if (!json_str) {
 		return true;
 	}
-	RJson *json = rz_json_parse(json_str);
+	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_OBJECT) {
 		free(json_str);
 		return false;
