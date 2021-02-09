@@ -91,7 +91,7 @@ config_h = configure_file(
   input: 'cmake-config.h.in',
   output: 'config.h',
   configuration: conf_data,
-  format: 'cmake@',
+  format: 'cmake',
 )
 
 # Create zipconf.h file
@@ -333,7 +333,7 @@ zip_files = [
 ]
 
 if host_machine.system() == 'windows'
-  zip_files += ['lib/zip_source_file_win32_utf8.c']
+  zip_files += ['lib/zip_source_file_win32_utf8.c', 'lib/zip_source_file_win32_named.c', 'lib/zip_source_file_win32_utf16.c', 'lib/zip_source_file_win32_utf8.c']
 else
   zip_files += ['lib/zip_mkstempm.c', 'lib/zip_source_file_stdio_named.c', 'lib/zip_random_unix.c']
 endif
