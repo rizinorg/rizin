@@ -4338,6 +4338,11 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				agraph_toggle_callgraph(g);
 			}
 			break;
+		case 'Z':
+			if (okey == 27) { // shift-tab
+				agraph_prev_node(g);
+			}
+			break;
 		case 's':
 			if (!fcn) {
 				break;
