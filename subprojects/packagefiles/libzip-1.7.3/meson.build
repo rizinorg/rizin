@@ -105,8 +105,11 @@ zipconf_data.set('libzip_VERSION', meson.project_version())
 zipconf_data.set('libzip_VERSION_MAJOR', version_major)
 zipconf_data.set('libzip_VERSION_MINOR', version_minor)
 zipconf_data.set('libzip_VERSION_PATCH', version_patch)
+if cc.has_header('limits.h')
+  zipconf_data.set10('HAVE_LIMITS_H', true)
+endif
 if get_option('default_library') == 'static'
-  zipconf_data.set('ZIP_STATIC', true)
+  zipconf_data.set10('ZIP_STATIC', true)
 endif
 if have_nullable
   zipconf_data.set('ZIP_NULLABLE_DEFINES', '')
@@ -362,6 +365,5 @@ libzip = library('libzip', zip_files,
 libzip_dep = declare_dependency(
   link_with: libzip,
   include_directories: zip_inc,
-  implicit_include_directories: true,
   dependencies: libzip_deps,
 )
