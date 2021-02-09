@@ -342,8 +342,11 @@ if host_machine.system() == 'windows'
     'lib/zip_source_file_win32.c',
     'lib/zip_source_file_win32_named.c',
     'lib/zip_source_file_win32_utf16.c',
-    'lib/zip_source_file_win32_utf8.c'
+    'lib/zip_source_file_win32_utf8.c',
+    'lib/zip_source_file_win32_ansi.c',
+    'lib/zip_random_win32.c',
   ]
+  libzip_deps += [cc.find_library('advapi32')]
 else
   zip_files += [
     'lib/zip_mkstempm.c',
