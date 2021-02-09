@@ -91,7 +91,7 @@ config_h = configure_file(
   input: 'cmake-config.h.in',
   output: 'config.h',
   configuration: conf_data,
-  format: 'cmake',
+  format: 'cmake@',
 )
 
 # Create zipconf.h file
