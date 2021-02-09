@@ -303,8 +303,12 @@
           type: RZ_CMD_ARG_TYPE_NUM
     - name: =!=
       cname: remote_mode_enable
-      summary: Enable remote cmd mode
-      args: []
+      summary: Enable remote cmd mode, sending commands to remote <fd> server
+      args:
+        - name: fd
+          type: RZ_CMD_ARG_TYPE_NUM
+          optional: true
+          default_value: "0"
     - name: "!=!"
       cname: remote_mode_disable
       summary: Disable remote cmd mode

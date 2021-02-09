@@ -201,7 +201,7 @@ RZ_IPI RzCmdStatus rz_remote_open_handler(RzCore *core, int argc, const char **a
 
 RZ_IPI RzCmdStatus rz_remote_mode_enable_handler(RzCore *core, int argc, const char **argv) {
 	RZ_FREE(core->cmdremote);
-	core->cmdremote = rz_str_trim_dup("0");
+	core->cmdremote = rz_str_trim_dup(argc > 1 ? argv[1] : "0");
 	return RZ_CMD_STATUS_OK;
 }
 
