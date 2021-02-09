@@ -60,7 +60,12 @@ foreach hdr : headers
   endif
 endforeach
 foreach type : types
-  conf_data.set('SIZEOF_@0@'.format(type.underscorify().to_upper()), cc.sizeof(type))
+  sz = cc.sizeof(type)
+  if sz == -1
+    # Windows requires the header to find off_t
+    sz = cc.sizeof(type, prefix: '#include <sys/types.h>')
+  endif
+  conf_data.set('SIZEOF_@0@'.format(type.underscorify().to_upper()), sz)
 endforeach
 
 ok = cc.compiles('''#include <sys/ioctl.h>
