@@ -1,5 +1,6 @@
 NAME=gdbserver continue
 FILE=bins/elf/analysis/pie
+BROKEN=1
 CMDS=<<EOF
 !scripts/gdbserver.py --port 12346 --binary bins/elf/analysis/pie
 oodf gdb://127.0.0.1:12346
