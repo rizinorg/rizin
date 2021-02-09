@@ -22,31 +22,24 @@ RZ_IPI RzCmdStatus rz_cmd_quit_handler(RzCore *core, int argc, const char **argv
 	return RZ_CMD_STATUS_EXIT;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_quit_choose_hist_proj (RzCore *core, int argc, const char **argv) {
-	const char *choose_project = argv[1];
-	const char *choose_process = argv[2];
-	/*while (*input == ' ') {
-		input++;
-	}
-	if (*input) {
-		rz_num_math(core->num, input);
-	} else {
-		core->num->value = 0LL;
-	} */
-
-	if (*choose_project == 'y') {
-		core->num->value = 5;
-	} else if (*choose_project == 'n') {
-		core->num->value = 1;
-	}
-
-	if (*choose_process == 'y') {
-		core->num->value += 10;
-	} else if (*choose_process == 'n') {
-		core->num->value += 2;
-	}
-	//exit (*input?rz_num_math (core->num, input+1):0);
-	//if (core->http_up) return false; // cancel quit when http is running
+RZ_IPI RzCmdStatus rz_quit_kill_save_handler(RzCore *core, int argc, const char **argv) {
+	core->num->value = 5;
+	core->num->value += 10;
+	return RZ_CMD_STATUS_EXIT;
+}
+RZ_IPI RzCmdStatus rz_quit_kill_nosave_handler(RzCore *core, int argc, const char **argv) {
+	core->num->value = 5;
+	core->num->value += 2;
+	return RZ_CMD_STATUS_EXIT;
+}
+RZ_IPI RzCmdStatus rz_quit_nokill_nosave_handler(RzCore *core, int argc, const char **argv) {
+	core->num->value = 1;
+	core->num->value += 2;
+	return RZ_CMD_STATUS_EXIT;
+}
+RZ_IPI RzCmdStatus rz_quit_nokill_save_handler(RzCore *core, int argc, const char **argv) {
+	core->num->value = 1;
+	core->num->value += 10;
 	return RZ_CMD_STATUS_EXIT;
 }
 
@@ -73,7 +66,7 @@ RZ_IPI RzCmdStatus rz_cmd_force_quit_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_force_quit_without_history_handler(RzCore *core, int argc, const char **argv) {
-	cmd_Quit(core, *argv);
+	cmd_Quit(core, argv[0] + 1);
 	return RZ_CMD_STATUS_EXIT;
 }
 

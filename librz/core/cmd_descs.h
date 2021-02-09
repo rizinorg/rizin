@@ -81,6 +81,10 @@ RZ_IPI RzCmdStatus rz_project_open_no_bin_io_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_cmd_quit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_force_quit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_force_quit_without_history_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_quit_kill_save_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_quit_kill_nosave_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_quit_nokill_nosave_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_quit_nokill_save_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_resize(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_seek_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_seek_padded_handler(RzCore *core, int argc, const char **argv);

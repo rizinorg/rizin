@@ -604,18 +604,28 @@
       cname: cmd_force_quit_without_history
       summary: force quit rizin without saving history
       args: []
-    - name: q
-      cname: cmd_quit_choose_hist_proj
+    - name: "q"
+      cname: quit_with_preference
       summary: Quit rizin and choose to save projects and kill the process
       args_str: "<y|n><y|n>"
       type: RZ_CMD_DESC_TYPE_INNER
-      args:
-        - name: choose_process
-          type: RZ_CMD_ARG_TYPE_STRING
-          optional: true
-        - name: choose_projects
-          type: RZ_CMD_ARG_TYPE_STRING
-          optional: true
+      subcommands:
+        - name: qyy
+          cname: quit_kill_save
+          summary: Quit rizin by killing the process and saving the project
+          args: []
+        - name: qyn
+          cname: quit_kill_nosave
+          summary: Quit rizin by killing the process and not saving the project
+          args: []
+        - name: qnn
+          cname: quit_nokill_nosave
+          summary: Quit rizin by not killing the process and not saving the project
+          args: []
+        - name: qny
+          cname: quit_nokill_save
+          summary: Quit rizin by not killing the process and saving the project
+          args: []
 - name: r
   cname: cmd_resize
   summary: Resize file
