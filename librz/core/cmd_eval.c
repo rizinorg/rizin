@@ -137,35 +137,34 @@ static bool nextpal_item(RzCore *core, int mode, const char *file, int ctr) {
 	return true;
 }
 
-static bool cmd_load_theme(RzCore *core, const char *_arg) {
+RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name) {
 	bool failed = false;
 	char *path;
-	if (!_arg || !*_arg) {
+	if (!name || !*name) {
 		return false;
 	}
-	if (!rz_str_cmp(_arg, "default", strlen(_arg))) {
-		curtheme = strdup(_arg);
+	if (!rz_str_cmp(name, "default", strlen(name))) {
+		curtheme = strdup(name);
 		rz_cons_pal_init(core->cons->context);
 		return true;
 	}
-	char *arg = strdup(_arg);
 
-	char *tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_THEMES, "%s"), arg);
+	char *tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_THEMES, "%s"), name);
 	char *home = tmp ? rz_str_home(tmp) : NULL;
 	free(tmp);
 
-	tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_THEMES, "%s"), arg);
+	tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_THEMES, "%s"), name);
 	path = tmp ? rz_str_rz_prefix(tmp) : NULL;
 	free(tmp);
 
 	if (!load_theme(core, home)) {
 		if (load_theme(core, path)) {
-			curtheme = rz_str_dup(curtheme, arg);
+			curtheme = rz_str_dup(curtheme, name);
 		} else {
-			if (load_theme(core, arg)) {
-				curtheme = rz_str_dup(curtheme, arg);
+			if (load_theme(core, name)) {
+				curtheme = rz_str_dup(curtheme, name);
 			} else {
-				char *absfile = rz_file_abspath(arg);
+				char *absfile = rz_file_abspath(name);
 				eprintf("eco: cannot open colorscheme profile (%s)\n", absfile);
 				free(absfile);
 				failed = true;
@@ -174,7 +173,6 @@ static bool cmd_load_theme(RzCore *core, const char *_arg) {
 	}
 	free(home);
 	free(path);
-	free(arg);
 	return !failed;
 }
 
@@ -299,7 +297,7 @@ done:
 		//rz_core_theme_nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
 		if (curtheme) {
-			cmd_load_theme(core, curtheme);
+			rz_core_load_theme(core, curtheme);
 		}
 	}
 	rz_list_free(files);
@@ -339,9 +337,9 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 		if (input[1] == 'j') {
 			rz_core_theme_nextpal(core, 'j');
 		} else if (input[1] == ' ') {
-			cmd_load_theme(core, input + 2);
+			rz_core_load_theme(core, input + 2);
 		} else if (input[1] == 'o') {
-			cmd_load_theme(core, rz_core_get_theme());
+			rz_core_load_theme(core, rz_core_get_theme());
 		} else if (input[1] == 'c' || input[1] == '.') {
 			rz_cons_printf("%s\n", rz_core_get_theme());
 		} else if (input[1] == '?') {
