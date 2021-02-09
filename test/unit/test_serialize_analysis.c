@@ -38,7 +38,7 @@ bool test_analysis_diff_load() {
 	RzSerializeAnalDiffParser parser = rz_serialize_analysis_diff_parser_new();
 
 	char *str = strdup("{}");
-	RJson *json = rz_json_parse(str);
+	RzJson *json = rz_json_parse(str);
 	RzAnalysisDiff *diff = rz_serialize_analysis_diff_load(parser, json);
 	rz_json_free(json);
 	free(str);
@@ -101,7 +101,7 @@ bool test_analysis_switch_op_save() {
 
 bool test_analysis_switch_op_load() {
 	char *str = strdup("{\"addr\":1337,\"min\":42,\"max\":45,\"def\":46,\"cases\":[]}");
-	RJson *json = rz_json_parse(str);
+	RzJson *json = rz_json_parse(str);
 	RzAnalysisSwitchOp *sop = rz_serialize_analysis_switch_op_load(json);
 	rz_json_free(json);
 	free(str);

@@ -17,12 +17,12 @@
 	} while (0)
 #endif
 
-static RJson *json_new(void) {
-	return RZ_NEW0(RJson);
+static RzJson *json_new(void) {
+	return RZ_NEW0(RzJson);
 }
 
-static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
-	RJson *js = json_new();
+static RzJson *create_json(RzJsonType type, const char *key, RzJson *parent) {
+	RzJson *js = json_new();
 	if (!js) {
 		return NULL;
 	}
@@ -38,13 +38,13 @@ static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
 	return js;
 }
 
-RZ_API void rz_json_free(RJson *js) {
+RZ_API void rz_json_free(RzJson *js) {
 	if (!js) {
 		return;
 	}
 	if (js->type == RZ_JSON_OBJECT || js->type == RZ_JSON_ARRAY) {
-		RJson *p = js->children.first;
-		RJson *p1;
+		RzJson *p = js->children.first;
+		RzJson *p1;
 		while (p) {
 			p1 = p->next;
 			rz_json_free(p);
@@ -218,8 +218,8 @@ static char *parse_key(const char **key, char *p) {
 	return NULL; // error
 }
 
-static char *parse_value(RJson *parent, const char *key, char *p) {
-	RJson *js;
+static char *parse_value(RzJson *parent, const char *key, char *p) {
+	RzJson *js;
 	p = skip_whitespace(p);
 	if (!p) {
 		return NULL;
@@ -375,8 +375,8 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 	return NULL;
 }
 
-RZ_API RJson *rz_json_parse(char *text) {
-	RJson js = { 0 };
+RZ_API RzJson *rz_json_parse(char *text) {
+	RzJson js = { 0 };
 	if (!parse_value(&js, 0, text)) {
 		if (js.children.first) {
 			rz_json_free(js.children.first);
@@ -386,8 +386,8 @@ RZ_API RJson *rz_json_parse(char *text) {
 	return js.children.first;
 }
 
-RZ_API const RJson *rz_json_get(const RJson *json, const char *key) {
-	RJson *js;
+RZ_API const RzJson *rz_json_get(const RzJson *json, const char *key) {
+	RzJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (js->key && !strcmp(js->key, key)) {
 			return js;
@@ -396,8 +396,8 @@ RZ_API const RJson *rz_json_get(const RJson *json, const char *key) {
 	return NULL;
 }
 
-RZ_API const RJson *rz_json_item(const RJson *json, size_t idx) {
-	RJson *js;
+RZ_API const RzJson *rz_json_item(const RzJson *json, size_t idx) {
+	RzJson *js;
 	for (js = json->children.first; js; js = js->next) {
 		if (!idx--) {
 			return js;

@@ -77,7 +77,7 @@ RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *sp
 	}
 
 	bool ret = true;
-	RJson *stack_json = rz_json_parse(stack_json_str);
+	RzJson *stack_json = rz_json_parse(stack_json_str);
 	if (!stack_json) {
 		RZ_SERIALIZE_ERR(res, "failed to parse stackspace json");
 		ret = false;
@@ -88,7 +88,7 @@ RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *sp
 		ret = false;
 		goto beach;
 	}
-	RJson *stack_element;
+	RzJson *stack_element;
 	for (stack_element = stack_json->children.first; stack_element; stack_element = stack_element->next) {
 		if (stack_element->type != RZ_JSON_STRING) {
 			RZ_SERIALIZE_ERR(res, "stackspace element is not a string");

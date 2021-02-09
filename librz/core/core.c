@@ -3049,7 +3049,6 @@ reaccept:
 						eprintf("(flags: %d) len: %d filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
 					} else {
-						pipefd = -1;
 						eprintf("Cannot open file (%s)\n", ptr);
 						rz_socket_close(c);
 						if (rz_config_get_i(core->config, "rap.loop")) {

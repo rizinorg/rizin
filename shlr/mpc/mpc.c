@@ -251,12 +251,11 @@ static void *mpc_realloc(mpc_input_t *i, void *p, size_t n) {
 }
 
 static void *mpc_export(mpc_input_t *i, void *p) {
-  char *q = NULL;
   if (!mpc_mem_ptr(i, p)) { return p; }
-  q = malloc(sizeof(mpc_mem_t));
+  mpc_mem_t *q = malloc(sizeof(mpc_mem_t));
   memcpy(q, p, sizeof(mpc_mem_t));
   mpc_free(i, p);
-  return q; 
+  return q;
 }
 
 static void mpc_input_backtrack_disable(mpc_input_t *i) { i->backtrack--; }

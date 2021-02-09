@@ -519,13 +519,13 @@ RZ_API void rz_subprocess_fini(void) {
 extern char **environ;
 static char **create_child_env(const char *envvars[], const char *envvals[], size_t env_size) {
 	char **ep;
-	size_t i, new_env_size = env_size, size = 0;
+	size_t new_env_size = env_size, size = 0;
 	size_t *positions = RZ_NEWS(size_t, env_size);
-	for (i = 0; i < env_size; i++) {
+	for (size_t i = 0; i < env_size; i++) {
 		positions[i] = SIZE_MAX;
 	}
 
-	for (ep = environ, i = 0; *ep; ep++, size++) {
+	for (ep = environ; *ep; ep++, size++) {
 		size_t j;
 
 		for (j = 0; j < env_size; j++) {
@@ -542,14 +542,14 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 	}
 
 	char **new_env = RZ_NEWS(char *, size + new_env_size + 1);
-	for (i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; i++) {
 		new_env[i] = strdup(environ[i]);
 	}
-	for (i = 0; i <= env_size; i++) {
+	for (size_t i = 0; i <= env_size; i++) {
 		new_env[size + i] = NULL;
 	}
 
-	for (i = 0; i < env_size; i++) {
+	for (size_t i = 0; i < env_size; i++) {
 		char *new_var = rz_str_newf("%s=%s", envvars[i], envvals[i]);
 		if (positions[i] == SIZE_MAX) {
 			// No env var exists with the same name, add it at the end

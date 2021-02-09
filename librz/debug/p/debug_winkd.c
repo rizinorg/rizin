@@ -144,7 +144,7 @@ static int rz_debug_winkd_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool
 	}
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
 	if (!b->data) {
-		b->data = (char *)RZ_NEW0(int);
+		b->data = RZ_NEWS0(char, 4);
 		if (!b->data) {
 			return 0;
 		}
