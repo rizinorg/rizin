@@ -239,15 +239,18 @@ endif
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
 # handle libuv library
-r = run_command(py3_exe, check_meson_subproject_py, 'libuv')
-if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-endif
+libuv_dep = disabler()
+if get_option('use_libuv')
+  r = run_command(py3_exe, check_meson_subproject_py, 'libuv')
+  if r.returncode() == 1 and get_option('subprojects_check')
+    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+  endif
 
-libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
-if not libuv_dep.found()
-  libuv_proj = subproject('libuv', default_options: ['default_library=static'])
-  libuv_dep = libuv_proj.get_variable('libuv_dep')
+  libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
+  if not libuv_dep.found()
+    libuv_proj = subproject('libuv', default_options: ['default_library=static'])
+    libuv_dep = libuv_proj.get_variable('libuv_dep')
+  endif
 endif
 
 has_debugger = get_option('debugger')
