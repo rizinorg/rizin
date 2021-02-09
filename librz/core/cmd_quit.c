@@ -68,7 +68,7 @@ static int cmd_Quit(void *data, const char *input) {
 }
 
 RZ_IPI RzCmdStatus rz_cmd_force_quit_handler(RzCore *core, int argc, const char **argv) {
-	cmd_Quit(core, *argv);
+	cmd_Quit(core, argv[0] + 1);
 	return RZ_CMD_STATUS_EXIT;
 }
 

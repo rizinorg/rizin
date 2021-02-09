@@ -607,7 +607,7 @@
     - name: q
       cname: cmd_quit_choose_hist_proj
       summary: Quit rizin and choose to save projects and kill the process
-      args_str: " [y/n][y/n]"
+      args_str: "<y|n><y|n>"
       type: RZ_CMD_DESC_TYPE_INNER
       args:
         - name: choose_process
