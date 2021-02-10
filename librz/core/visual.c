@@ -776,39 +776,6 @@ RZ_API int rz_core_visual_prompt(RzCore *core) {
 	return ret;
 }
 
-static void visual_single_step_in(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		if (core->print->cur_enabled) {
-			rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
-			core->print->cur_enabled = 0;
-		} else {
-			rz_core_debug_step_one(core, 1);
-			rz_core_debug_regs2flags(core, 0);
-		}
-	} else {
-		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
-		rz_core_regs2flags(core);
-	}
-}
-
-static void __core_visual_step_over(RzCore *core) {
-	bool io_cache = rz_config_get_b(core->config, "io.cache");
-	rz_config_set_b(core->config, "io.cache", false);
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		if (core->print->cur_enabled) {
-			rz_core_cmd(core, "dcr", 0);
-			core->print->cur_enabled = 0;
-		} else {
-			rz_core_cmd(core, "dso", 0);
-			rz_core_debug_regs2flags(core, 0);
-		}
-	} else {
-		rz_core_cmd(core, "aeso", 0);
-		rz_core_regs2flags(core);
-	}
-	rz_config_set_b(core->config, "io.cache", io_cache);
-}
-
 static void visual_breakpoint(RzCore *core) {
 	rz_core_debug_breakpoint_toggle(core, core->offset);
 }
@@ -872,7 +839,7 @@ static int visual_nkey(RzCore *core, int ch) {
 		if (cmd && *cmd) {
 			ch = rz_core_cmd0(core, cmd);
 		} else {
-			visual_single_step_in(core);
+			rz_core_debug_single_step_in(core);
 		}
 		break;
 	case RZ_CONS_KEY_F8:
@@ -880,7 +847,7 @@ static int visual_nkey(RzCore *core, int ch) {
 		if (cmd && *cmd) {
 			ch = rz_core_cmd0(core, cmd);
 		} else {
-			__core_visual_step_over(core);
+			rz_core_debug_single_step_over(core);
 		}
 		break;
 	case RZ_CONS_KEY_F9:
@@ -1437,13 +1404,16 @@ repeat:
 				} else {
 					name[0] = 0;
 				}
-				char *cmt = rz_core_cmd_strf(core, "CC.@0x%08" PFMT64x, refi->addr);
-				rz_str_trim(cmt);
-				rz_cons_printf(" %d [%s] 0x%08" PFMT64x " 0x%08" PFMT64x " %s %sref (%s) ; %s\n",
-					idx, cstr, refi->at, refi->addr,
-					rz_analysis_xrefs_type_tostring(refi->type),
-					xref ? "x" : "", name, cmt);
-				free(cmt);
+
+				char *cmt = (char *)rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, refi->addr);
+				if (cmt) {
+					rz_str_trim(cmt);
+					rz_cons_printf(" %d [%s] 0x%08" PFMT64x " 0x%08" PFMT64x " %s %sref (%s) ; %s\n",
+						idx, cstr, refi->at, refi->addr,
+						rz_analysis_xrefs_type_tostring(refi->type),
+						xref ? "x" : "", name, cmt);
+					free(cmt);
+				}
 				free(name);
 				if (idx == skip) {
 					free(dis);
@@ -2998,7 +2968,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (key_s && *key_s) {
 				rz_core_cmd0(core, key_s);
 			} else {
-				visual_single_step_in(core);
+				rz_core_debug_single_step_in(core);
 			}
 			break;
 		case 'S':
@@ -3006,7 +2976,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (key_s && *key_s) {
 				rz_core_cmd0(core, key_s);
 			} else {
-				__core_visual_step_over(core);
+				rz_core_debug_single_step_over(core);
 			}
 			break;
 		case '"':

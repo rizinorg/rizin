@@ -5485,7 +5485,7 @@ void __set_breakpoints_on_cursor(RzCore *core, RzPanel *panel) {
 		return;
 	}
 	if (__check_panel_type(panel, PANEL_CMD_DISASSEMBLY)) {
-		rz_core_cmdf(core, "dbs 0x%08" PFMT64x, core->offset + core->print->cur);
+		rz_core_debug_breakpoint_toggle(core, core->offset + core->print->cur);
 		panel->view->refresh = true;
 	}
 }
