@@ -51,14 +51,15 @@ underscore_functions = ['close', 'dup', 'fdopen', 'fileno', 'setmode', 'snprintf
 functions = ['arc4random', 'clonefile', 'explicit_bzero', 'explicit_memset', 'fileno', 'fseeko', 'ftello', 'getprogname', 'localtime_r', 'mkstemp', 'setmode', 'snprintf', 'strcasecmp', 'strdup', 'stricmp', 'strtoll', 'strtoull']
 headers = ['stdbool.h', 'strings.h', 'unistd.h', 'dirent.h', 'fts.h', 'ndir.h', 'sys/dir.h', 'sys/ndir.h', 'sys/attr.h']
 types = ['off_t', 'size_t']
-foreach fcn : underscore_functions
-  if cc.has_function(fcn)
-    conf_data.set10('HAVE__@0@'.format(fcn.to_upper()), true)
+foreach fcn : functions
+  if cc.has_function(fcn) or cc.has_function(fcn, prefix: '#include <stdio.h>')
+    conf_data.set10('HAVE_@0@'.format(fcn.to_upper()), true)
+    set_variable('have_@0@'.format(fcn.to_lower()), true)
   endif
 endforeach
-foreach fcn : functions
-  if cc.has_function(fcn)
-    conf_data.set10('HAVE_@0@'.format(fcn.to_upper()), true)
+foreach fcn : underscore_functions
+  if (cc.has_function('_' + fcn) or cc.has_function('_' + fcn, prefix: '#include <stdio.h>')) and not get_variable('have_@0@'.format(fcn.to_lower()), false)
+    conf_data.set10('HAVE__@0@'.format(fcn.to_upper()), true)
   endif
 endforeach
 foreach hdr : headers
