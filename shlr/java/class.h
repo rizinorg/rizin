@@ -9,7 +9,7 @@
 #include <rz_list.h>
 #include <rz_bin.h>
 #include <sdb.h>
-#include "dsojson.h"
+#include <rz_util.h>
 
 #if defined(_MSC_VER) && !defined(RZ_API_BIN_ONLY)
 #undef RZ_API
@@ -1028,17 +1028,16 @@ RZ_API ut8 *U(rz_bin_java_cp_append_field_ref)(RzBinJavaObj *bin, ut32 *out_sz, 
 RZ_API char *U(rz_bin_java_unmangle_without_flags)(const char *name, const char *descriptor);
 RZ_API char *rz_bin_java_unmangle(const char *flags, const char *name, const char *descriptor);
 
-RZ_API DsoJsonObj *rz_bin_java_get_field_json_definitions(RzBinJavaObj *bin);
-RZ_API DsoJsonObj *rz_bin_java_get_method_json_definitions(RzBinJavaObj *bin);
-RZ_API DsoJsonObj *rz_bin_java_get_import_json_definitions(RzBinJavaObj *bin);
-RZ_API DsoJsonObj *rz_bin_java_get_interface_json_definitions(RzBinJavaObj *bin);
+RZ_API bool rz_bin_java_get_field_json_definitions(RzBinJavaObj *bin, PJ *j);
+RZ_API bool rz_bin_java_get_method_json_definitions(RzBinJavaObj *bin, PJ *j);
+RZ_API bool rz_bin_java_get_import_json_definitions(RzBinJavaObj *bin, PJ *j);
+RZ_API bool rz_bin_java_get_interface_json_definitions(RzBinJavaObj *bin, PJ *j);
 
-RZ_API DsoJsonObj *rz_bin_java_get_fm_type_definition_json(RzBinJavaObj *bin, RzBinJavaField *fm_type, int is_method);
-RZ_API DsoJsonObj *rz_bin_java_get_field_json_definition(RzBinJavaObj *bin, RzBinJavaField *fm_type);
-RZ_API DsoJsonObj *rz_bin_java_get_method_json_definition(RzBinJavaObj *bin, RzBinJavaField *fm_type);
-RZ_API DsoJsonObj *rz_bin_java_get_class_info_json(RzBinJavaObj *bin);
+RZ_API bool rz_bin_java_get_fm_type_definition_json(RzBinJavaObj *bin, RzBinJavaField *fm_type, int is_method, PJ *j);
+RZ_API bool rz_bin_java_get_field_json_definition(RzBinJavaObj *bin, RzBinJavaField *fm_type, PJ *j);
+RZ_API bool rz_bin_java_get_method_json_definition(RzBinJavaObj *bin, RzBinJavaField *fm_type, PJ *j);
 
-RZ_API DsoJsonObj *rz_bin_java_get_bin_obj_json(RzBinJavaObj *bin);
+RZ_API bool rz_bin_java_get_bin_obj_json(RzBinJavaObj *bin, PJ *j);
 RZ_API ut64 rz_bin_java_calc_class_size(ut8 *bytes, ut64 size);
 RZ_API int rz_bin_java_valid_class(const ut8 *buf, ut64 buf_sz);
 #endif
