@@ -42,6 +42,7 @@ static const RzCmdDescArg remote_send_args[3];
 static const RzCmdDescArg remote_add_args[2];
 static const RzCmdDescArg remote_del_args[2];
 static const RzCmdDescArg remote_open_args[2];
+static const RzCmdDescArg remote_mode_enable_args[2];
 static const RzCmdDescArg remote_rap_args[3];
 static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
@@ -519,10 +520,17 @@ static const RzCmdDescHelp remote_open_help = {
 };
 
 static const RzCmdDescArg remote_mode_enable_args[] = {
+	{
+		.name = "fd",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+		.default_value = "0",
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp remote_mode_enable_help = {
-	.summary = "Enable remote cmd mode",
+	.summary = "Enable remote cmd mode, sending commands to remote <fd> server",
 	.args = remote_mode_enable_args,
 };
 

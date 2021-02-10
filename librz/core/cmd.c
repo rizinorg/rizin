@@ -5996,7 +5996,30 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(number_command) {
 
 static RzCmdStatus handle_ts_command(struct tsr2cmd_state *state, TSNode node) {
 	RzCmdStatus ret = RZ_CMD_STATUS_INVALID;
-	RzCmd *cmd = state->core->rcmd;
+	RzCore *core = state->core;
+	RzCmd *cmd = core->rcmd;
+
+	// NOTE: code copied from rz_core_cmd, needs rewrite when all the "remote"
+	// concept is re-considered.
+	if (core->cmdremote) {
+		if (*state->input == 'q') {
+			RZ_FREE(core->cmdremote);
+			return RZ_CMD_STATUS_OK;
+		} else if (*state->input != '=' && strncmp(state->input, "!=", 2)) {
+			if (core->cmdremote[0]) {
+				char *s = rz_str_newf("%s %s", core->cmdremote, state->input);
+				rz_core_rtr_cmd(core, s);
+				free(s);
+			} else {
+				char *res = rz_io_system(core->io, state->input);
+				if (res) {
+					rz_cons_printf("%s\n", res);
+					free(res);
+				}
+			}
+			return RZ_CMD_STATUS_OK;
+		}
+	}
 
 	TSSymbol node_symbol = ts_node_symbol(node);
 	ts_handler handler = ht_up_find(cmd->ts_symbols_ht, node_symbol, NULL);
