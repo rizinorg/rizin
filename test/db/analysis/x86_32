@@ -3406,3 +3406,22 @@ EXPECT=<<EOF
 0x004010f8 1 case.default.0x401020
 EOF
 RUN
+
+NAME=tiny1 aaef
+FILE=bins/elf/analysis/tiny1
+CMDS=<<EOF
+aF
+aaef  # TODO Fix if aae here
+pdf
+# TODO eip flag?
+EOF
+EXPECT=<<EOF
+            ;-- eip:
+/ 7: entry0 ();
+|           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
+|           0x08048056      xor   eax, eax
+|           0x08048058      inc   eax
+|           ;-- syscall.exit:
+\           0x08048059      int   0x80
+EOF
+RUN
