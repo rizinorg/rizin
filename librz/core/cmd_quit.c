@@ -2,6 +2,11 @@
 
 #include "rz_core.h"
 
+#define RZ_QUIT_VALUE_KILL 5
+#define RZ_QUIT_VALUE_NOKILL 1
+#define RZ_QUIT_VALUE_SAVE 10
+#define RZ_QUIT_VALUE_NOSAVE 2
+
 static const char *help_msg_q[] = {
 	"Usage:", "q[!][!] [retval]", "",
 	"q", "", "quit program",
@@ -17,29 +22,27 @@ static const char *help_msg_q[] = {
 
 RZ_IPI RzCmdStatus rz_cmd_quit_handler(RzCore *core, int argc, const char **argv) {
 	core->num->value = 0LL;
-	//exit (*input?rz_num_math (core->num, input+1):0);
-	//if (core->http_up) return false; // cancel quit when http is running
 	return RZ_CMD_STATUS_EXIT;
 }
 
 RZ_IPI RzCmdStatus rz_quit_kill_save_handler(RzCore *core, int argc, const char **argv) {
-	core->num->value = 5;
-	core->num->value += 10;
+	core->num->value = RZ_QUIT_VALUE_KILL;
+	core->num->value += RZ_QUIT_VALUE_SAVE;
 	return RZ_CMD_STATUS_EXIT;
 }
 RZ_IPI RzCmdStatus rz_quit_kill_nosave_handler(RzCore *core, int argc, const char **argv) {
-	core->num->value = 5;
-	core->num->value += 2;
+	core->num->value = RZ_QUIT_VALUE_KILL;
+	core->num->value += RZ_QUIT_VALUE_NOSAVE;
 	return RZ_CMD_STATUS_EXIT;
 }
 RZ_IPI RzCmdStatus rz_quit_nokill_nosave_handler(RzCore *core, int argc, const char **argv) {
-	core->num->value = 1;
-	core->num->value += 2;
+	core->num->value = RZ_QUIT_VALUE_NOKILL;
+	core->num->value += RZ_QUIT_VALUE_NOSAVE;
 	return RZ_CMD_STATUS_EXIT;
 }
 RZ_IPI RzCmdStatus rz_quit_nokill_save_handler(RzCore *core, int argc, const char **argv) {
-	core->num->value = 1;
-	core->num->value += 10;
+	core->num->value = RZ_QUIT_VALUE_NOKILL;
+	core->num->value += RZ_QUIT_VALUE_SAVE;
 	return RZ_CMD_STATUS_EXIT;
 }
 
@@ -103,8 +106,6 @@ RZ_IPI int rz_cmd_quit(void *data, const char *input) {
 			} else if (input[1] == 'n') {
 				core->num->value += 2;
 			}
-			//exit (*input?rz_num_math (core->num, input+1):0);
-			//if (core->http_up) return false; // cancel quit when http is running
 			return -2;
 		}
 	return false;
