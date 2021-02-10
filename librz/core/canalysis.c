@@ -5393,7 +5393,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			eprintf("ESIL not initialized\n");
 			return;
 		}
-		rz_core_cmd0(core, "aeim");
+		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
 	EsilBreakCtx ctx = {
 		&op,

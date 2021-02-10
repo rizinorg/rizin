@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_core.h"
+#include "core_private.h"
 
 #define HASRETRY      1
 #define HAVE_LOCALS   1
@@ -6516,7 +6517,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 	if (!core->analysis->esil) {
 		rz_core_cmd0(core, "aei");
 		if (!rz_config_get_b(core->config, "cfg.debug")) {
-			rz_core_cmd0(core, "aeim");
+			rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 		}
 	}
 	RzAnalysisEsil *esil = core->analysis->esil;

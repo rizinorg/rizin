@@ -802,7 +802,7 @@ static bool cmd_analysis_aaft(RzCore *core) {
 	rz_reg_arena_push(core->analysis->reg);
 	rz_reg_arena_zero(core->analysis->reg);
 	rz_core_analysis_esil_init(core);
-	rz_core_cmd0(core, "aeim");
+	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	ut8 *saved_arena = rz_reg_arena_peek(core->analysis->reg);
 	// Iterating Reverse so that we get function in top-bottom call order
 	rz_list_foreach_prev(core->analysis->fcns, it, fcn) {
@@ -5186,8 +5186,7 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 	eprintf("Resolve call args for 0x%08" PFMT64x "\n", to);
 
 	// emulate
-	// XXX do not use commands, here, just use the api
-	rz_core_cmd0(core, "aeim"); // XXX
+	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	ut64 off = core->offset;
 	for (at = from; at < to; at++) {
 		rz_core_cmdf(core, "aepc 0x%08" PFMT64x, at);
@@ -5234,8 +5233,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	if (!core->analysis->esil) {
-		rz_core_cmd0(core, "aeim");
-		// core->analysis->esil = rz_analysis_esil_new (stacksize, 0, addrsize);
+		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis,
 		addr, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
