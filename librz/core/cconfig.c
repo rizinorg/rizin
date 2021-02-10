@@ -3469,7 +3469,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("graph.font", "Courier", "Font for dot graphs");
 	SETBPREF("graph.offset", "false", "Show offsets in graphs");
 	SETBPREF("graph.bytes", "false", "Show opcode bytes in graphs");
-	SETBPREF("graph.web", "false", "Display graph in web browser (VV)");
 	SETI("graph.from", UT64_MAX, "Lower bound address when drawing global graphs");
 	SETI("graph.to", UT64_MAX, "Upper bound address when drawing global graphs");
 	SETI("graph.scroll", 5, "Scroll speed in ascii-art graph");
