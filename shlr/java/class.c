@@ -860,6 +860,7 @@ RZ_API bool rz_bin_java_get_fm_type_definition_json(RzBinJavaObj *bin, RzBinJava
 	prototype = rz_bin_java_unmangle(fm_type->flags_str, name, signature);
 	pj_ks(j, "prototype", prototype);
 	free(prototype);
+	pj_end(j);
 	return true;
 }
 
