@@ -30,13 +30,20 @@ if lzma_dep.found()
 endif
 have_crypto = false
 openssl_dep = disabler()
-if get_option('use_sys_openssl')
-  openssl_dep = dependency('openssl', required: false, static: is_static_build)
-  if openssl_dep.found()
-    conf_data.set10('HAVE_OPENSSL', true)
-    conf_data.set10('HAVE_CRYPTO', true)
-    have_crypto = true
-    libzip_deps += [openssl_dep]
+if host_machine.system() == 'windows'
+  conf_data.set10('HAVE_CRYPTO', true)
+  conf_data.set10('HAVE_WINDOWS_CRYPTO', true)
+  have_crypto = true
+  libzip_deps += []
+else
+  if get_option('use_sys_openssl')
+    openssl_dep = dependency('openssl', required: false, static: is_static_build)
+    if openssl_dep.found()
+      conf_data.set10('HAVE_OPENSSL', true)
+      conf_data.set10('HAVE_CRYPTO', true)
+      have_crypto = true
+      libzip_deps += [openssl_dep]
+    endif
   endif
 endif
 
@@ -363,6 +370,10 @@ if lzma_dep.found()
 endif
 if openssl_dep.found()
   zip_files += ['lib/zip_crypto_openssl.c']
+endif
+if host_machine.system() == 'windows' and have_crypto
+  zip_files += ['lib/zip_crypto_win.c']
+  libzip_deps += [cc.find_library('bcrypt')]
 endif
 if have_crypto
   zip_files += ['lib/zip_winzip_aes.c', 'lib/zip_source_winzip_aes_decode.c', 'lib/zip_source_winzip_aes_encode.c']
