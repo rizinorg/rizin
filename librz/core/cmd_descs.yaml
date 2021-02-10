@@ -607,7 +607,7 @@
     - name: "q"
       cname: quit_with_preference
       summary: Quit rizin and choose to save projects and kill the process
-      args_str: "<y|n><y|n>"
+      options: "<y|n><y|n>"
       type: RZ_CMD_DESC_TYPE_INNER
       subcommands:
         - name: qyy
