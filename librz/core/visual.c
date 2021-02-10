@@ -810,16 +810,7 @@ static void __core_visual_step_over(RzCore *core) {
 }
 
 static void visual_breakpoint(RzCore *core) {
-	rz_core_cmd(core, "dbs $$", 0);
-}
-
-static void visual_continue(RzCore *core) {
-	if (rz_config_get_b(core->config, "cfg.debug")) {
-		rz_debug_continue_oldhandler(core, "");
-	} else {
-		rz_core_cmd(core, "aec", 0);
-		rz_core_regs2flags(core);
-	}
+	rz_core_debug_breakpoint_toggle(core, core->offset);
 }
 
 static int visual_nkey(RzCore *core, int ch) {
@@ -897,7 +888,7 @@ static int visual_nkey(RzCore *core, int ch) {
 		if (cmd && *cmd) {
 			ch = rz_core_cmd0(core, cmd);
 		} else {
-			visual_continue(core);
+			rz_core_debug_continue(core);
 		}
 		break;
 	case RZ_CONS_KEY_F10:
@@ -2679,7 +2670,8 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					if (*buf) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							rz_core_cmdf(core, "dr %s = %s\n", creg, buf);
+							ut64 regval = rz_num_math(core->num, buf);
+							rz_core_debug_reg_set(core, creg, regval, buf);
 						}
 					}
 					return true;
@@ -3369,7 +3361,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case 'B': {
 			ut64 addr = core->print->cur_enabled ? core->offset + core->print->cur : core->offset;
-			rz_core_cmdf(core, "dbs 0x%08" PFMT64x, addr);
+			rz_core_debug_breakpoint_toggle(core, addr);
 		} break;
 		case 'u':
 			rz_core_visual_seek_animation_undo(core);

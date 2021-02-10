@@ -3528,19 +3528,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 		break;
 	case 's': // "dbs"
 		addr = rz_num_math(core->num, input + 2);
-		bpi = rz_bp_get_at(core->dbg->bp, addr);
-		if (bpi) {
-			//bp->enabled = !bp->enabled;
-			// XXX(jjd): this ^^ is what I would think toggling means...
-			rz_bp_del(core->dbg->bp, addr);
-		} else {
-			// XXX(jjd): does t his need an address validity check??
-			bpi = rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
-			if (!bpi) {
-				eprintf("Cannot set breakpoint (%s)\n", input + 2);
-			}
-		}
-		rz_bp_enable(core->dbg->bp, rz_num_math(core->num, input + 2), true, 0);
+		rz_core_debug_breakpoint_toggle(core, addr);
 		break;
 	case 'n': // "dbn"
 		bpi = rz_bp_get_at(core->dbg->bp, core->offset);
