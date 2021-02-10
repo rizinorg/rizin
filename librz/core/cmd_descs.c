@@ -928,8 +928,73 @@ static const RzCmdDescHelp project_open_no_bin_io_help = {
 	.args = project_open_no_bin_io_args,
 };
 
+static const RzCmdDescHelp q_help = {
+	.summary = "Quit rizin",
+};
+static const RzCmdDescArg cmd_quit_args[] = {
+	{ 0 },
+};
 static const RzCmdDescHelp cmd_quit_help = {
-	.summary = "Quit program with a return value",
+	.summary = "quit rizin",
+	.args = cmd_quit_args,
+};
+
+static const RzCmdDescArg cmd_force_quit_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_force_quit_help = {
+	.summary = "Force quit rizin",
+	.args = cmd_force_quit_args,
+};
+
+static const RzCmdDescArg cmd_force_quit_without_history_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_force_quit_without_history_help = {
+	.summary = "force quit rizin without saving history",
+	.args = cmd_force_quit_without_history_args,
+};
+
+static const RzCmdDescHelp quit_with_preference_help = {
+	.summary = "Quit rizin and choose to kill the process and save projects",
+	.options = "<yn><yn>",
+};
+static const RzCmdDescHelp qy_help = {
+	.summary = "Quit rizin by killing the process and and choose to save the projects or not",
+};
+static const RzCmdDescArg quit_kill_save_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp quit_kill_save_help = {
+	.summary = "Quit rizin by killing the process and saving the project",
+	.args = quit_kill_save_args,
+};
+
+static const RzCmdDescArg quit_kill_nosave_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp quit_kill_nosave_help = {
+	.summary = "Quit rizin by killing the process and not saving the project",
+	.args = quit_kill_nosave_args,
+};
+
+static const RzCmdDescHelp qn_help = {
+	.summary = "Quit rizin by not killing the process and choose to save the projects or not",
+};
+static const RzCmdDescArg quit_nokill_nosave_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp quit_nokill_nosave_help = {
+	.summary = "Quit rizin by not killing the process and not saving the project",
+	.args = quit_nokill_nosave_args,
+};
+
+static const RzCmdDescArg quit_nokill_save_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp quit_nokill_save_help = {
+	.summary = "Quit rizin by not killing the process and saving the project",
+	.args = quit_nokill_save_args,
 };
 
 static const RzCmdDescHelp cmd_resize_help = {
@@ -2473,8 +2538,31 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *project_open_no_bin_io_cd = rz_cmd_desc_argv_new(core->rcmd, P_cd, "Poo", rz_project_open_no_bin_io_handler, &project_open_no_bin_io_help);
 	rz_warn_if_fail(project_open_no_bin_io_cd);
 
-	RzCmdDesc *cmd_quit_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "q", rz_cmd_quit, &cmd_quit_help);
-	rz_warn_if_fail(cmd_quit_cd);
+	RzCmdDesc *q_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "q", rz_cmd_quit_handler, &cmd_quit_help, &q_help);
+	rz_warn_if_fail(q_cd);
+	RzCmdDesc *cmd_force_quit_cd = rz_cmd_desc_argv_new(core->rcmd, q_cd, "q!", rz_cmd_force_quit_handler, &cmd_force_quit_help);
+	rz_warn_if_fail(cmd_force_quit_cd);
+
+	RzCmdDesc *cmd_force_quit_without_history_cd = rz_cmd_desc_argv_new(core->rcmd, q_cd, "q!!", rz_cmd_force_quit_without_history_handler, &cmd_force_quit_without_history_help);
+	rz_warn_if_fail(cmd_force_quit_without_history_cd);
+
+	RzCmdDesc *quit_with_preference_cd = rz_cmd_desc_inner_new(core->rcmd, q_cd, "q", &quit_with_preference_help);
+	rz_warn_if_fail(quit_with_preference_cd);
+	RzCmdDesc *qy_cd = rz_cmd_desc_group_new(core->rcmd, quit_with_preference_cd, "qy", NULL, NULL, &qy_help);
+	rz_warn_if_fail(qy_cd);
+	RzCmdDesc *quit_kill_save_cd = rz_cmd_desc_argv_new(core->rcmd, qy_cd, "qyy", rz_quit_kill_save_handler, &quit_kill_save_help);
+	rz_warn_if_fail(quit_kill_save_cd);
+
+	RzCmdDesc *quit_kill_nosave_cd = rz_cmd_desc_argv_new(core->rcmd, qy_cd, "qyn", rz_quit_kill_nosave_handler, &quit_kill_nosave_help);
+	rz_warn_if_fail(quit_kill_nosave_cd);
+
+	RzCmdDesc *qn_cd = rz_cmd_desc_group_new(core->rcmd, quit_with_preference_cd, "qn", NULL, NULL, &qn_help);
+	rz_warn_if_fail(qn_cd);
+	RzCmdDesc *quit_nokill_nosave_cd = rz_cmd_desc_argv_new(core->rcmd, qn_cd, "qnn", rz_quit_nokill_nosave_handler, &quit_nokill_nosave_help);
+	rz_warn_if_fail(quit_nokill_nosave_cd);
+
+	RzCmdDesc *quit_nokill_save_cd = rz_cmd_desc_argv_new(core->rcmd, qn_cd, "qny", rz_quit_nokill_save_handler, &quit_nokill_save_help);
+	rz_warn_if_fail(quit_nokill_save_cd);
 
 	RzCmdDesc *cmd_resize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "r", rz_cmd_resize, &cmd_resize_help);
 	rz_warn_if_fail(cmd_resize_cd);
