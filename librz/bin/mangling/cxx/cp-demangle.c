@@ -4687,6 +4687,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	struct d_print_mod adpm[4];
 	unsigned int i;
 	struct d_print_template dpt;
+	dpt.next = NULL;
 
 	/* Pass the name down to the type so that it can be printed in
 	   the right place for the type.  We also have to pass down

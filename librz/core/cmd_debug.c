@@ -572,10 +572,9 @@ static int showreg(RzCore *core, const char *str) {
 	}
 	r = rz_reg_get(core->dbg->reg, rname, -1);
 	if (r) {
-		ut64 off;
 		utX value;
 		if (r->size > 64) {
-			off = rz_reg_get_value_big(core->dbg->reg, r, &value);
+			rz_reg_get_value_big(core->dbg->reg, r, &value);
 			switch (r->size) {
 			case 80:
 				rz_cons_printf("0x%04x%016" PFMT64x "\n", value.v80.High, value.v80.Low);
@@ -594,7 +593,7 @@ static int showreg(RzCore *core, const char *str) {
 				rz_cons_printf("Error while retrieving reg '%s' of %i bits\n", str + 1, r->size);
 			}
 		} else {
-			off = rz_reg_get_value(core->dbg->reg, r);
+			ut64 off = rz_reg_get_value(core->dbg->reg, r);
 			rz_cons_printf("0x%08" PFMT64x "\n", off);
 		}
 		return r->size;
@@ -1810,78 +1809,6 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 #include "windows_heap.c"
 #endif
 
-HEAPTYPE(ut64);
-
-static int regcmp(const void *a, const void *b) {
-	const ut64 *A = (const ut64 *)a;
-	const ut64 *B = (const ut64 *)b;
-	if (*A > *B) {
-		return 1;
-	}
-	if (*A == *B) {
-		return 0;
-	}
-	return -1;
-}
-
-static bool regcb(void *u, const ut64 k, const void *v) {
-	RzList *sorted = (RzList *)u;
-	ut64 *n = ut64_new(k);
-	rz_list_add_sorted(sorted, n, regcmp);
-	return true;
-}
-
-RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode) {
-	const RzList *list = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
-	RzListIter *iter;
-	RzRegItem *r;
-	HtUP *db = ht_up_new0();
-
-	rz_list_foreach (list, iter, r) {
-		if (r->size != core->rasm->bits) {
-			continue;
-		}
-		ut64 value = rz_reg_get_value(reg, r);
-		RzList *list = ht_up_find(db, value, NULL);
-		if (!list) {
-			list = rz_list_newf(NULL);
-			ht_up_update(db, value, list);
-		}
-		rz_list_append(list, r->name);
-	}
-
-	RzList *sorted = rz_list_newf(free);
-	ht_up_foreach(db, regcb, sorted);
-	ut64 *addr;
-	rz_list_foreach (sorted, iter, addr) {
-		int rwx = 0;
-		RzDebugMap *map = rz_debug_map_get(core->dbg, *addr);
-		if (map) {
-			rwx = map->perm;
-		}
-		rz_cons_printf(" %s  ", rz_str_rwx_i(rwx));
-
-		rz_cons_printf("0x%08" PFMT64x " ", *addr);
-		RzList *list = ht_up_find(db, *addr, NULL);
-		if (list) {
-			RzListIter *iter;
-			const char *r;
-			rz_cons_strcat(Color_YELLOW);
-			rz_list_foreach (list, iter, r) {
-				rz_cons_printf(" %s", r);
-			}
-			rz_cons_strcat(Color_RESET);
-			char *rrstr = rz_core_analysis_hasrefs(core, *addr, true);
-			if (rrstr && *rrstr && strchr(rrstr, 'R')) {
-				rz_cons_printf("    ;%s" Color_RESET, rrstr);
-			}
-			rz_cons_newline();
-		}
-	}
-	rz_list_free(sorted);
-	ht_up_free(db);
-}
-
 static void foreach_reg_set_or_clear(RzCore *core, bool set) {
 	RzReg *reg = rz_config_get_i(core->config, "cfg.debug")
 		? core->dbg->reg
@@ -2900,35 +2827,11 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 		arg = strchr(str + 1, '=');
 		if (arg) {
 			*arg = 0;
-			char *string = rz_str_trim_dup(str + 1);
-			const char *regname = rz_reg_get_name(core->dbg->reg, rz_reg_get_name_idx(string));
-			if (!regname) {
-				regname = string;
-			}
-			r = rz_reg_get(core->dbg->reg, regname, -1); //RZ_REG_TYPE_GPR);
-			if (r) {
-				if (r->flags) {
-					rz_cons_printf("0x%08" PFMT64x " ->",
-						rz_reg_get_value(core->dbg->reg, r));
-					rz_reg_set_bvalue(core->dbg->reg, r, arg + 1);
-					rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
-					rz_cons_printf("0x%08" PFMT64x "\n",
-						rz_reg_get_value(core->dbg->reg, r));
-				} else {
-					rz_cons_printf("0x%08" PFMT64x " ->",
-						rz_reg_get_value(core->dbg->reg, r));
-					rz_reg_set_value(core->dbg->reg, r,
-						rz_num_math(core->num, arg + 1));
-					rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
-					rz_cons_printf("0x%08" PFMT64x "\n",
-						rz_reg_get_value(core->dbg->reg, r));
-				}
-			} else {
-				eprintf("unknown register '%s'\n", string);
-			}
-			free(string);
-			// update flags here
-			rz_core_debug_regs2flags(core, bits);
+			char *ostr = rz_str_trim_dup(str + 1);
+			char *regname = rz_str_trim_nc(ostr);
+			ut64 regval = rz_num_math(core->num, arg + 1);
+			rz_core_debug_reg_set(core, regname, regval, ostr);
+			free(ostr);
 			return;
 		}
 
@@ -3371,7 +3274,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 		} else {
 			RzBreakpointItem *bp;
 			rz_list_foreach (core->dbg->bp->bps, iter, bp) {
-				rz_cons_printf("0x%08" PFMT64x " %s\n", bp->addr, rz_str_get2(bp->expr));
+				rz_cons_printf("0x%08" PFMT64x " %s\n", bp->addr, rz_str_get(bp->expr));
 			}
 		}
 		break;
@@ -3431,7 +3334,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 				char *flagdesc, *flagdesc2, *desc;
 				get_backtrace_info(core, frame, addr, &flagdesc, &flagdesc2, NULL, NULL);
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, frame->addr, 0);
-				desc = rz_str_newf("%s%s", rz_str_get(flagdesc), rz_str_get(flagdesc2));
+				desc = rz_str_newf("%s%s", rz_str_get_null(flagdesc), rz_str_get_null(flagdesc2));
 				pj_o(pj);
 				pj_ki(pj, "idx", i);
 				pj_kn(pj, "pc", frame->addr);
@@ -3625,19 +3528,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 		break;
 	case 's': // "dbs"
 		addr = rz_num_math(core->num, input + 2);
-		bpi = rz_bp_get_at(core->dbg->bp, addr);
-		if (bpi) {
-			//bp->enabled = !bp->enabled;
-			// XXX(jjd): this ^^ is what I would think toggling means...
-			rz_bp_del(core->dbg->bp, addr);
-		} else {
-			// XXX(jjd): does t his need an address validity check??
-			bpi = rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
-			if (!bpi) {
-				eprintf("Cannot set breakpoint (%s)\n", input + 2);
-			}
-		}
-		rz_bp_enable(core->dbg->bp, rz_num_math(core->num, input + 2), true, 0);
+		rz_core_debug_breakpoint_toggle(core, addr);
 		break;
 	case 'n': // "dbn"
 		bpi = rz_bp_get_at(core->dbg->bp, core->offset);

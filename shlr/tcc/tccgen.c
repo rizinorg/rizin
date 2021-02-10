@@ -1522,6 +1522,7 @@ static void post_type(CType *type, AttributeDef *ad) {
 	Sym **plast, *s, *first;
 	AttributeDef ad1;
 	CType pt;
+	pt.ref = NULL;
 	char *symname = NULL;
 	int narg = 0;
 

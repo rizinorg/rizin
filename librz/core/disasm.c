@@ -3994,7 +3994,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (!strcmp(ds->show_cmtoff, "true")) {
 			ds_begin_comment(ds);
 			ds_comment(ds, true, "; 0x%" PFMT64x, refaddr);
-			refaddr_printed = true;
 		} else if (!refaddr_printed && strcmp(ds->show_cmtoff, "false")) {
 			char addrstr[32] = { 0 };
 			snprintf(addrstr, sizeof(addrstr), "0x%" PFMT64x, refaddr);
@@ -4013,7 +4012,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							ds_begin_nl_comment(ds);
 						}
 						ds_comment(ds, true, "; 0x%" PFMT64x, refaddr);
-						refaddr_printed = true;
 					}
 				}
 			}
@@ -4041,13 +4039,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (print_msg) {
 				if (!string_printed) {
 					ds_print_str(ds, msg, len, refaddr);
-					string_printed = true;
 				}
 			} else if (!flag_printed && (!ds->opstr || (!strstr(ds->opstr, f->name) && !strstr(ds->opstr, f->realname)))) {
 				ds_begin_nl_comment(ds);
 				ds_comment(ds, true, "; %s", f->name);
 				ds->printed_flag_addr = refaddr;
-				flag_printed = true;
 			}
 		} else {
 			if (refaddr == UT64_MAX || refaddr == UT32_MAX) {
@@ -4085,7 +4081,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				if (!strcmp(kind, "text")) {
 					if (!string_printed && print_msg) {
 						ds_print_str(ds, msg, len, refaddr);
-						string_printed = true;
 					}
 				} else if (!strcmp(kind, "invalid")) {
 					int *n = (int *)&refaddr;
@@ -4686,9 +4681,9 @@ static void ds_print_esil_analysis(RDisasmState *ds) {
 			// ds_comment_start (ds, "");
 			ds_comment_esil(ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 			if (fcn_type) {
-				ds_comment_middle(ds, "; %s%s%s(", rz_str_get(fcn_type),
+				ds_comment_middle(ds, "; %s%s%s(", rz_str_get_null(fcn_type),
 					(*fcn_type && fcn_type[strlen(fcn_type) - 1] == '*') ? "" : " ",
-					rz_str_get(key));
+					rz_str_get_null(key));
 				if (!nargs) {
 					ds_comment_end(ds, "void)");
 					break;
@@ -5367,7 +5362,7 @@ toro:
 			if (!bb) {
 				fcn = rz_analysis_get_function_at(core->analysis, ds->at);
 				if (fcn) {
-					bb = rz_analysis_fcn_bbget_in(core->analysis, fcn, ds->at);
+					rz_analysis_fcn_bbget_in(core->analysis, fcn, ds->at);
 				}
 			}
 		}
@@ -5652,7 +5647,6 @@ toro:
 				RZ_FREE(ds->opstr);
 				if (!hasanalysis) {
 					rz_analysis_op(core->analysis, &ds->analop, ds->at, buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_ALL);
-					hasanalysis = true;
 				}
 				tmpopstr = rz_analysis_op_to_string(core->analysis, &ds->analop);
 				ds->opstr = (tmpopstr) ? tmpopstr : strdup(rz_asm_op_get_asm(&ds->asmop));
@@ -5665,7 +5659,6 @@ toro:
 					rz_analysis_op(core->analysis, &ds->analop,
 						ds->at, buf + i,
 						nb_bytes - i, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
-					hasanalysis = true;
 				}
 				if (*RZ_STRBUF_SAFEGET(&ds->analop.esil)) {
 					free(ds->opstr);
@@ -5721,7 +5714,6 @@ toro:
 	}
 	if (buf == core->block && nb_opcodes > 0 && j < nb_opcodes) {
 		rz_core_seek(core, core->offset + i, true);
-		i = 0;
 		goto toro;
 	}
 	rz_cons_break_pop();
@@ -6337,7 +6329,6 @@ toro:
 					} else {
 						rz_cons_newline();
 					}
-					ret = true;
 				}
 				continue;
 			case RZ_META_TYPE_STRING:

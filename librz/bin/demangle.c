@@ -137,17 +137,3 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 	}
 	return demangled;
 }
-
-#ifdef TEST
-main() {
-	char *out, str[128];
-	strncpy(str, "_Z1hic", sizeof(str) - 1);
-	strncpy(str, "main(Ljava/lang/String;I)V", sizeof(str) - 1);
-	strncpy(str, "main([Ljava/lang/String;)V", sizeof(str) - 1);
-	strncpy(str, "foo([III)Ljava/lang/Integer;", sizeof(str) - 1);
-	//out = cplus_demangle_v3 (str, flags);
-	out = rz_bin_demangle_java(str); //, flags);
-	printf("INPUT (%s)\n", str);
-	printf("OUTPUT (%s)\n", out);
-}
-#endif

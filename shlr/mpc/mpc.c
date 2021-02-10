@@ -251,12 +251,11 @@ static void *mpc_realloc(mpc_input_t *i, void *p, size_t n) {
 }
 
 static void *mpc_export(mpc_input_t *i, void *p) {
-  char *q = NULL;
   if (!mpc_mem_ptr(i, p)) { return p; }
-  q = malloc(sizeof(mpc_mem_t));
+  mpc_mem_t *q = malloc(sizeof(mpc_mem_t));
   memcpy(q, p, sizeof(mpc_mem_t));
   mpc_free(i, p);
-  return q; 
+  return q;
 }
 
 static void mpc_input_backtrack_disable(mpc_input_t *i) { i->backtrack--; }
@@ -536,10 +535,8 @@ void mpc_err_print_to(mpc_err_t *x, FILE *f) {
 
 static void mpc_err_string_cat(char *buffer, int *pos, int *max, char const *fmt, ...) {
   /* TODO: Error Checking on Length */
-  int left = ((*max) - (*pos));
   va_list va;
   va_start(va, fmt);
-  if (left < 0) { left = 0;}
   (*pos) += vsprintf(buffer + (*pos), fmt, va);
   va_end(va);
 }

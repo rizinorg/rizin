@@ -347,6 +347,16 @@
       args:
         - name: port
           type: RZ_CMD_ARG_TYPE_NUM
+- name: "?*"
+  cname: cmd_help_search
+  summary: Search help
+  args:
+    - name: search_cmd
+      type: RZ_CMD_ARG_TYPE_STRING
+      optional: true
+  modes:
+    - RZ_OUTPUT_MODE_STANDARD
+    - RZ_OUTPUT_MODE_JSON
 - name: "?"
   cname: cmd_help
   options: "[??]"

@@ -580,7 +580,6 @@ static void __esil_step_to(RzCore *core, ut64 end);
 static void __panel_breakpoint(RzCore *core);
 static void __panel_single_step_in(RzCore *core);
 static void __panel_single_step_over(RzCore *core);
-static void __panel_continue(RzCore *core);
 
 /* zoom mode */
 static void __save_panel_pos(RzPanel *panel);
@@ -1646,8 +1645,7 @@ void __handleComment(RzCore *core) {
 		addr = orig = core->offset;
 		if (core->print->cur_enabled) {
 			addr += core->print->cur;
-			rz_core_seek(core, addr, false);
-			rz_core_cmdf(core, "s 0x%" PFMT64x, addr);
+			rz_core_seek_and_save(core, addr, false);
 		}
 		if (!strcmp(buf + i, "-")) {
 			strcpy(buf, "CC-");
@@ -1828,7 +1826,7 @@ bool __handle_cursor_mode(RzCore *core, const int key) {
 		break;
 	case '*':
 		if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
-			rz_core_cmdf(core, "dr PC=0x%08" PFMT64x, core->offset + print->cur);
+			rz_core_debug_reg_set(core, "PC", core->offset + print->cur, NULL);
 			__set_panel_addr(core, cur, core->offset + print->cur);
 		}
 		break;
@@ -3216,7 +3214,7 @@ int __settings_colors_cb(void *user) {
 	RzPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RzPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	rz_str_ansi_filter(child->name, NULL, NULL, -1);
-	rz_core_cmdf(core, "eco %s", child->name);
+	rz_core_load_theme(core, child->name);
 	int i;
 	for (i = 1; i < menu->depth; i++) {
 		RzPanel *p = menu->history[i]->p;
@@ -3342,7 +3340,7 @@ int __hexpairs_cb(void *user) {
 
 int __continue_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd(core, "dc", 0);
+	rz_debug_continue_oldhandler(core, "");
 	rz_cons_flush();
 	return 0;
 }
@@ -3514,7 +3512,7 @@ int __reload_cb(void *user) {
 
 int __function_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmdf(core, "af");
+	rz_core_analysis_function_add(core, NULL, core->offset, false);
 	return 0;
 }
 
@@ -3556,7 +3554,7 @@ int __break_points_cb(void *user) {
 	core->cons->line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
 
 	ut64 addr = rz_num_math(core->num, buf);
-	rz_core_cmdf(core, "dbs 0x%08" PFMT64x, addr);
+	rz_core_debug_breakpoint_toggle(core, addr);
 	return 0;
 }
 
@@ -4071,7 +4069,7 @@ void __esil_init(RzCore *core) {
 }
 
 void __esil_step_to(RzCore *core, ut64 end) {
-	rz_core_cmdf(core, "aesu 0x%08" PFMT64x, end);
+	rz_core_esil_step(core, end, NULL, NULL, false);
 }
 
 int __open_menu_cb(void *user) {
@@ -4393,7 +4391,6 @@ bool __init_panels_menu(RzCore *core) {
 
 	{
 		parent = "View";
-		i = 0;
 		RzList *list = __sorted_list(core, menus_View, COUNT(menus_View));
 		char *pos;
 		RzListIter *iter;
@@ -4447,7 +4444,6 @@ bool __init_panels_menu(RzCore *core) {
 
 	{
 		parent = "Debug";
-		i = 0;
 		RzList *list = __sorted_list(core, menus_Debug, COUNT(menus_Debug));
 		char *pos;
 		RzListIter *iter;
@@ -4799,10 +4795,10 @@ void __do_panels_refreshOneShot(RzCore *core) {
 
 void __panel_single_step_in(RzCore *core) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		rz_core_cmd(core, "ds", 0);
+		rz_core_debug_step_one(core, 1);
 		rz_core_debug_regs2flags(core, 0);
 	} else {
-		rz_core_cmd(core, "aes", 0);
+		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 		rz_core_regs2flags(core);
 	}
 }
@@ -4823,13 +4819,9 @@ void __panel_single_step_over(RzCore *core) {
 void __panel_breakpoint(RzCore *core) {
 	RzPanel *cur = __get_cur_panel(core->panels);
 	if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
-		rz_core_cmd(core, "dbs $$", 0);
+		rz_core_debug_breakpoint_toggle(core, core->offset);
 		cur->view->refresh = true;
 	}
-}
-
-void __panel_continue(RzCore *core) {
-	rz_debug_continue_oldhandler(core, "");
 }
 
 void __panels_check_stackbase(RzCore *core) {
@@ -5158,7 +5150,7 @@ void __handle_menu(RzCore *core, const int key) {
 		}
 		break;
 	case '$':
-		rz_core_cmd0(core, "dr PC=$$");
+		rz_core_debug_reg_set(core, "PC", core->offset, NULL);
 		break;
 	case ' ':
 	case '\r':
@@ -5521,7 +5513,8 @@ void __insert_value(RzCore *core) {
 		if (creg) {
 			const char *prompt = "new-reg-value> ";
 			__panel_prompt(prompt, buf, sizeof(buf));
-			rz_core_cmdf(core, "dr %s = %s", creg, buf);
+			ut64 regval = rz_num_math(core->num, buf);
+			rz_core_debug_reg_set(core, creg, regval, buf);
 			cur->view->refresh = true;
 		}
 	} else if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
@@ -6419,9 +6412,9 @@ repeat:
 		break;
 	case '$':
 		if (core->print->cur_enabled) {
-			rz_core_cmdf(core, "dr PC=$$+%d", core->print->cur);
+			rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
 		} else {
-			rz_core_cmd0(core, "dr PC=$$");
+			rz_core_debug_reg_set(core, "PC", core->offset, NULL);
 		}
 		break;
 	case 's':
@@ -6437,11 +6430,7 @@ repeat:
 		}
 		break;
 	case ' ':
-		if (rz_config_get_b(core->config, "graph.web")) {
-			rz_core_cmd0(core, "agv $$");
-		} else {
-			__call_visual_graph(core);
-		}
+		__call_visual_graph(core);
 		break;
 	case ':':
 		rz_core_visual_prompt_input(core);
@@ -6661,11 +6650,7 @@ repeat:
 		}
 		break;
 	case 'V':
-		if (rz_config_get_b(core->config, "graph.web")) {
-			rz_core_cmd0(core, "agv $$");
-		} else {
-			__call_visual_graph(core);
-		}
+		__call_visual_graph(core);
 		break;
 	case ']':
 		if (__check_panel_type(cur, PANEL_CMD_HEXDUMP)) {
@@ -6819,7 +6804,7 @@ repeat:
 			(void)rz_core_cmd0(core, cmd);
 		} else {
 			if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
-				__panel_continue(core);
+				rz_core_debug_continue(core);
 				__set_panel_addr(core, cur, core->offset);
 			}
 		}

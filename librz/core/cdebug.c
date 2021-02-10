@@ -3,6 +3,7 @@
 #include <rz_core.h>
 #include <rz_debug.h>
 #include "core_private.h"
+#include "cmd_descs.h"
 
 static bool is_x86_call(RzDebug *dbg, ut64 addr) {
 	ut8 buf[3];
@@ -64,6 +65,15 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 		} while (i < times);
 	}
 	return true;
+}
+
+RZ_IPI void rz_core_debug_continue(RzCore *core) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
+		rz_debug_continue_oldhandler(core, "");
+	} else {
+		rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
+		rz_core_regs2flags(core);
+	}
 }
 
 RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
@@ -197,6 +207,38 @@ RZ_IPI void rz_core_debug_regs2flags(RzCore *core, int bits) {
 	} else {
 		rz_core_regs2flags(core);
 	}
+}
+
+RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval) {
+	int bits = (core->dbg->bits & RZ_SYS_BITS_64) ? 64 : 32;
+	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
+	if (!r) {
+		int role = rz_reg_get_name_idx(regname);
+		if (role != -1) {
+			const char *alias = rz_reg_get_name(core->dbg->reg, role);
+			if (alias) {
+				r = rz_reg_get(core->dbg->reg, alias, -1);
+			}
+		}
+	}
+	if (!r) {
+		eprintf("Unknown register '%s'\n", regname);
+		return false;
+	}
+
+	if (r->flags) {
+		if (strval) {
+			rz_reg_set_bvalue(core->dbg->reg, r, strval);
+		} else {
+			eprintf("String value cannot be NULL\n");
+			return false;
+		}
+	} else {
+		rz_reg_set_value(core->dbg->reg, r, val);
+	}
+	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+	rz_core_debug_regs2flags(core, bits);
+	return true;
 }
 
 RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int rad, const char *use_color) {
@@ -406,4 +448,90 @@ beach:
 		rz_cons_printf("\n");
 	}
 	return n != 0;
+}
+
+HEAPTYPE(ut64);
+
+static int regcmp(const void *a, const void *b) {
+	const ut64 *A = (const ut64 *)a;
+	const ut64 *B = (const ut64 *)b;
+	if (*A > *B) {
+		return 1;
+	}
+	if (*A == *B) {
+		return 0;
+	}
+	return -1;
+}
+
+static bool regcb(void *u, const ut64 k, const void *v) {
+	RzList *sorted = (RzList *)u;
+	ut64 *n = ut64_new(k);
+	rz_list_add_sorted(sorted, n, regcmp);
+	return true;
+}
+
+RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode) {
+	const RzList *list = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
+	RzListIter *iter;
+	RzRegItem *r;
+	HtUP *db = ht_up_new0();
+
+	rz_list_foreach (list, iter, r) {
+		if (r->size != core->rasm->bits) {
+			continue;
+		}
+		ut64 value = rz_reg_get_value(reg, r);
+		RzList *list = ht_up_find(db, value, NULL);
+		if (!list) {
+			list = rz_list_newf(NULL);
+			ht_up_update(db, value, list);
+		}
+		rz_list_append(list, r->name);
+	}
+
+	RzList *sorted = rz_list_newf(free);
+	ht_up_foreach(db, regcb, sorted);
+	ut64 *addr;
+	rz_list_foreach (sorted, iter, addr) {
+		int rwx = 0;
+		RzDebugMap *map = rz_debug_map_get(core->dbg, *addr);
+		if (map) {
+			rwx = map->perm;
+		}
+		rz_cons_printf(" %s  ", rz_str_rwx_i(rwx));
+
+		rz_cons_printf("0x%08" PFMT64x " ", *addr);
+		RzList *list = ht_up_find(db, *addr, NULL);
+		if (list) {
+			RzListIter *iter;
+			const char *r;
+			rz_cons_strcat(Color_YELLOW);
+			rz_list_foreach (list, iter, r) {
+				rz_cons_printf(" %s", r);
+			}
+			rz_cons_strcat(Color_RESET);
+			char *rrstr = rz_core_analysis_hasrefs(core, *addr, true);
+			if (rrstr && *rrstr && strchr(rrstr, 'R')) {
+				rz_cons_printf("    ;%s" Color_RESET, rrstr);
+			}
+			rz_cons_newline();
+		}
+	}
+	rz_list_free(sorted);
+	ht_up_free(db);
+}
+
+RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
+	RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
+	if (bpi) {
+		rz_bp_del(core->dbg->bp, addr);
+	} else {
+		int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
+		bpi = rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+		if (!bpi) {
+			eprintf("Cannot set breakpoint at 0x%" PFMT64x "\n", addr);
+		}
+	}
+	rz_bp_enable(core->dbg->bp, addr, true, 0);
 }

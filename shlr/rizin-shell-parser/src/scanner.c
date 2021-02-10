@@ -104,8 +104,12 @@ static bool is_concat_eq_sep(const int32_t ch) {
 	return is_concat(ch) && ch != '=';
 }
 
-static bool is_recursive_help(int id_len, const int32_t before_last_ch, const int32_t last_ch) {
-	return id_len >= 2 && before_last_ch == '?' && last_ch == '*';
+static bool is_recursive_help(const int32_t before_last_ch, const int32_t last_ch) {
+	return before_last_ch == '?' && last_ch == '*';
+}
+
+static bool is_recursive_help_json(const int32_t trd_last_ch, const int32_t snd_last_ch, const int32_t last_ch) {
+	return trd_last_ch == '?' && snd_last_ch == '*' && last_ch == 'j';
 }
 
 static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
@@ -178,7 +182,9 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 			return false;
 		}
 		// ?? is not considered an help command, just a regular one
-		if ((res[i_res - 1] == '?' && strcmp (res, "??")) || (i_res >= 2 && is_recursive_help (i_res, res[i_res - 2], res[i_res - 1]))) {
+		if ((res[i_res - 1] == '?' && strcmp (res, "??") != 0) ||
+			(i_res > 2 && is_recursive_help (res[i_res - 2], res[i_res - 1])) ||
+			(i_res > 3 && is_recursive_help_json (res[i_res - 3], res[i_res - 2], res[i_res - 1]))) {
 			if (i_res == 1) {
 				return false;
 			}

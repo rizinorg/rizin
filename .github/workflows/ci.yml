@@ -120,6 +120,9 @@ jobs:
     - name: Install test dependencies
       if: matrix.run_tests && matrix.enabled
       run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
+    - name: Install gdbserver dependency
+      if: matrix.run_tests && matrix.enabled && (matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-20.04')
+      run: sudo apt-get --assume-yes install gdbserver
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
       run: sudo apt-get --assume-yes install clang
@@ -424,14 +427,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [vs2019_static, clang_cl]
+        name: [vs2019_static, clang_cl, clang_cl_x86]
         include:
           - name: vs2019_static
             compiler: cl
             meson_options: --default-library=static -Db_vscrt=static_from_buildtype
+            bits: 64
           - name: clang_cl
             compiler: clang-cl
             meson_options: --default-library=shared
+            bits: 64
+          - name: clang_cl_x86
+            compiler: clang-cl
+            meson_options: --default-library=shared
+            bits: 32
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -446,7 +455,7 @@ jobs:
     - name: Build with meson + ninja
       shell: pwsh
       run: |
-        .github\vsdevenv.ps1
+        .github\vsdevenv.ps1 ${{ matrix.bits }}
         meson --buildtype=release --prefix=$PWD\rizin-install build ${{ matrix.meson_options }}
         ninja -C build
         ninja -C build install
@@ -593,9 +602,17 @@ jobs:
         ./test
 
   test-windows-clang_cl:
-    name: Test Windows installer built with clang_cl
+    name: Test Windows installer built with ${{ matrix.name }}
     runs-on: windows-latest
     needs: [build-windows]
+    strategy:
+      matrix:
+        name: [clang_cl, clang_cl_x86]
+        include:
+          - name: clang_cl
+            bits: 64
+          - name: clang_cl_x86
+            bits: 32
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -608,7 +625,7 @@ jobs:
       id: extract_version
     - uses: actions/download-artifact@v2
       with:
-        name: rizin_installer-clang_cl-${{ steps.extract_version.outputs.branch }}
+        name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
         path: ./
     - name: Install rizin.exe
       shell: pwsh
@@ -619,7 +636,7 @@ jobs:
     - name: Check that libraries can be used
       shell: pwsh
       run: |
-        .github\vsdevenv.ps1
+        .github\vsdevenv.ps1 ${{ matrix.bits }}
         $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\rizin\bin"
         $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib\pkgconfig"
         $env:PKG_CONFIG_PATH
@@ -724,14 +741,23 @@ jobs:
           asset_path: ./rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip/rizin-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip
           asset_name: rizin-windows-static-${{ steps.extract_version.outputs.branch }}.zip
           asset_content_type: application/zip
-    - name: Upload rizin windows installer
+    - name: Upload rizin windows installer (x64)
       uses: actions/upload-release-asset@v1
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin_installer-clang_cl-${{ steps.extract_version.outputs.branch }}/rizin.exe
-          asset_name: rizin_installer-${{ steps.extract_version.outputs.branch }}.exe
+          asset_name: rizin_installer-${{ steps.extract_version.outputs.branch }}-x86_64.exe
+          asset_content_type: application/zip
+    - name: Upload rizin windows installer (x86)
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./rizin_installer-clang_cl_x86-${{ steps.extract_version.outputs.branch }}/rizin.exe
+          asset_name: rizin_installer-${{ steps.extract_version.outputs.branch }}-x86.exe
           asset_content_type: application/zip
 
   publish-docker-image:

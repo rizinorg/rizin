@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <string.h>
+
 #include <rz_types.h>
 #include <rz_list.h>
 #include <rz_flag.h>
@@ -8,7 +10,7 @@
 #include <ht_uu.h>
 #include <rz_util/rz_graph_drawable.h>
 
-#include <string.h>
+#include "core_private.h"
 
 HEAPTYPE(ut64);
 
@@ -359,6 +361,58 @@ RZ_API ut64 rz_core_analysis_address(RzCore *core, ut64 addr) {
 		}
 	}
 	return types;
+}
+
+RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val) {
+	int bits = (core->analysis->bits & RZ_SYS_BITS_64) ? 64 : 32;
+	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
+	if (!r) {
+		int role = rz_reg_get_name_idx(regname);
+		if (role != -1) {
+			const char *alias = rz_reg_get_name(core->dbg->reg, role);
+			if (alias) {
+				r = rz_reg_get(core->dbg->reg, alias, -1);
+			}
+		}
+	}
+	if (!r) {
+		eprintf("ar: Unknown register '%s'\n", regname);
+		return -1;
+	}
+	rz_reg_set_value(core->dbg->reg, r, val);
+	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+	rz_core_debug_regs2flags(core, bits);
+	return 0;
+}
+
+RZ_IPI void rz_core_analysis_esil_init(RzCore *core) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
+	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
+	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
+	int romem = rz_config_get_i(core->config, "esil.romem");
+	int stats = rz_config_get_i(core->config, "esil.stats");
+	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
+
+	rz_analysis_esil_free(esil);
+	// reinitialize
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+	if (pc && rz_reg_getv(core->analysis->reg, pc) == 0LL) {
+		rz_core_analysis_set_reg(core, "PC", core->offset);
+	}
+	if (!(esil = core->analysis->esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+		return;
+	}
+	rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL); // setup io
+	esil->verbose = (int)rz_config_get_i(core->config, "esil.verbose");
+	const char *s = rz_config_get(core->config, "cmd.esil.intr");
+	if (s) {
+		char *my = strdup(s);
+		if (my) {
+			rz_config_set(core->config, "cmd.esil.intr", my);
+			free(my);
+		}
+	}
 }
 
 static bool blacklisted_word(char *name) {
@@ -1869,7 +1923,7 @@ static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int 
 		// TODO: show vars, refs and xrefs
 		char *fcn_name_escaped = rz_str_escape_utf8_for_json(fcn->name, -1);
 		pj_o(pj);
-		pj_ks(pj, "name", rz_str_get(fcn_name_escaped));
+		pj_ks(pj, "name", rz_str_get_null(fcn_name_escaped));
 		free(fcn_name_escaped);
 		pj_kn(pj, "offset", fcn->addr);
 		pj_ki(pj, "ninstr", fcn->ninstr);
@@ -6063,4 +6117,34 @@ RZ_API void rz_core_analysis_esil_graph(RzCore *core, const char *expr) {
 	}
 
 	rz_analysis_esil_dfg_free(edf);
+}
+
+RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname) {
+	RzAnalysisOp *op = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_BASIC);
+	if (!name) {
+		RzAnalysisVar *var = op ? rz_analysis_get_used_function_var(core->analysis, op->addr) : NULL;
+		if (var) {
+			name = var->name;
+		} else {
+			eprintf("Cannot find var @ 0x%08" PFMT64x "\n", core->offset);
+			rz_analysis_op_free(op);
+			return false;
+		}
+	}
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (fcn) {
+		RzAnalysisVar *v1 = rz_analysis_function_get_var_byname(fcn, name);
+		if (v1) {
+			rz_analysis_var_rename(v1, newname, true);
+		} else {
+			eprintf("Cant find var by name\n");
+			return false;
+		}
+	} else {
+		eprintf("afv: Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		rz_analysis_op_free(op);
+		return false;
+	}
+	rz_analysis_op_free(op);
+	return true;
 }

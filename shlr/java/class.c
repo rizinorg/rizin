@@ -1382,7 +1382,7 @@ RZ_API RzBinJavaField *rz_bin_java_read_next_method(RzBinJavaObj *bin, const ut6
 	method->metas->ord = bin->method_idx;
 	adv += 8;
 	idx = method->name_idx;
-	item = rz_bin_java_get_item_from_bin_cp_list(bin, idx);
+	rz_bin_java_get_item_from_bin_cp_list(bin, idx);
 	method->name = rz_bin_java_get_utf8_from_bin_cp_list(bin, (ut32)(method->name_idx));
 	IFDBG eprintf("Method name_idx: %d, which is: ord: %d, name: %s, value: %s\n", idx, item->metas->ord, ((RzBinJavaCPTypeMetas *)item->metas->type_info)->name, method->name);
 	if (!method->name) {
@@ -1391,7 +1391,7 @@ RZ_API RzBinJavaField *rz_bin_java_read_next_method(RzBinJavaObj *bin, const ut6
 		IFDBG eprintf("rz_bin_java_read_next_method: Unable to find the name for 0x%02x index.\n", method->name_idx);
 	}
 	idx = method->descriptor_idx;
-	item = rz_bin_java_get_item_from_bin_cp_list(bin, idx);
+	rz_bin_java_get_item_from_bin_cp_list(bin, idx);
 	method->descriptor = rz_bin_java_get_utf8_from_bin_cp_list(bin, (ut32)method->descriptor_idx);
 	IFDBG eprintf("Method descriptor_idx: %d, which is: ord: %d, name: %s, value: %s\n", idx, item->metas->ord, ((RzBinJavaCPTypeMetas *)item->metas->type_info)->name, method->descriptor);
 	if (!method->descriptor) {
@@ -1482,7 +1482,7 @@ RZ_API RzBinJavaField *rz_bin_java_read_next_field(RzBinJavaObj *bin, const ut64
 	field->metas->ord = bin->field_idx;
 
 	idx = field->name_idx;
-	item = rz_bin_java_get_item_from_bin_cp_list(bin, idx);
+	rz_bin_java_get_item_from_bin_cp_list(bin, idx);
 	field->name = rz_bin_java_get_utf8_from_bin_cp_list(bin, (ut32)(field->name_idx));
 	IFDBG eprintf("Field name_idx: %d, which is: ord: %d, name: %s, value: %s\n", idx, item->metas->ord, ((RzBinJavaCPTypeMetas *)item->metas->type_info)->name, field->name);
 	if (!field->name) {
@@ -1491,7 +1491,7 @@ RZ_API RzBinJavaField *rz_bin_java_read_next_field(RzBinJavaObj *bin, const ut64
 		IFDBG eprintf("rz_bin_java_read_next_field: Unable to find the name for 0x%02x index.\n", field->name_idx);
 	}
 	idx = field->descriptor_idx;
-	item = rz_bin_java_get_item_from_bin_cp_list(bin, idx);
+	rz_bin_java_get_item_from_bin_cp_list(bin, idx);
 	field->descriptor = rz_bin_java_get_utf8_from_bin_cp_list(bin, (ut32)field->descriptor_idx);
 	IFDBG eprintf("Field descriptor_idx: %d, which is: ord: %d, name: %s, value: %s\n", idx, item->metas->ord, ((RzBinJavaCPTypeMetas *)item->metas->type_info)->name, field->descriptor);
 	if (!field->descriptor) {

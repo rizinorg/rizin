@@ -63,7 +63,7 @@ bool test_parsed_args_newcmd(void) {
 	mu_assert_streq_free(rz_cmd_parsed_args_execstr(a), "pd 10", "cmd + args");
 
 	char *args2[] = { "2", "3" };
-	res = rz_cmd_parsed_args_setargs(a, 2, args2);
+	rz_cmd_parsed_args_setargs(a, 2, args2);
 	mu_assert_eq(a->argc, 3, "argc == 3");
 	mu_assert_streq_free(rz_cmd_parsed_args_argstr(a), "2 3", "arg");
 	mu_assert_streq_free(rz_cmd_parsed_args_execstr(a), "pd 2 3", "cmd + args");
@@ -543,10 +543,10 @@ bool test_cmd_argv_modes(void) {
 	pa = rz_cmd_parsed_args_newcmd("z?");
 	h = rz_cmd_get_help(cmd, pa, false);
 	exp_h = "Usage: z[jqJ]   # z summary\n"
-		"| z  # z summary\n"
-		"| zj # z summary (JSON mode)\n"
-		"| zq # z summary (quiet mode)\n"
-		"| zJ # z summary (verbose JSON mode)\n";
+		"| z       # z summary\n"
+		"| zj      # z summary (JSON mode)\n"
+		"| zq      # z summary (quiet mode)\n"
+		"| zJ      # z summary (verbose JSON mode)\n";
 	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the sub help");
 	free(h);
 	rz_cmd_parsed_args_free(pa);
@@ -599,8 +599,8 @@ bool test_cmd_group_argv_modes(void) {
 	mu_end;
 }
 
-static bool foreach_cmdname_cb(RzCmd *cmd, const char *name, void *user) {
-	rz_list_append((RzList *)user, strdup(name));
+static bool foreach_cmdname_cb(RzCmd *cmd, const RzCmdDesc *desc, void *user) {
+	rz_list_append((RzList *)user, strdup(desc->name));
 	return true;
 }
 
@@ -619,9 +619,50 @@ bool test_foreach_cmdname(void) {
 	rz_cmd_desc_argv_new(cmd, v_inner_cd, "v2", zd_handler, &fake_help);
 
 	RzList *res = rz_list_newf(free);
-	rz_cmd_foreach_cmdname(cmd, foreach_cmdname_cb, res);
+	rz_cmd_foreach_cmdname(cmd, NULL, foreach_cmdname_cb, res);
 
 	const char *exp_regular[] = { "z", "zj", "zq", "zd", "zsq", "pi", "v", "v1", "v2" };
+	mu_assert_eq(rz_list_length(res), RZ_ARRAY_SIZE(exp_regular), "count regular commands that can be executed");
+
+	RzList *exp_regular_l = rz_list_new_from_array((const void **)exp_regular, RZ_ARRAY_SIZE(exp_regular));
+	rz_list_sort(exp_regular_l, (RzListComparator)strcmp);
+	rz_list_sort(res, (RzListComparator)strcmp);
+
+	RzListIter *it;
+	char *s;
+	size_t i = 0;
+	rz_list_foreach (exp_regular_l, it, s) {
+		RzStrBuf sb;
+		rz_strbuf_initf(&sb, "check command `%s`", s);
+		mu_assert_streq(rz_list_get_n(res, i++), s, rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
+	}
+
+	rz_list_free(res);
+	rz_list_free(exp_regular_l);
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
+bool test_foreach_cmdname_begin(void) {
+	RzCmd *cmd = rz_cmd_new(false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	RzCmdDesc *z_cd = rz_cmd_desc_group_modes_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, z_modes_handler, &fake_help, &fake_help);
+	rz_cmd_desc_argv_new(cmd, z_cd, "zd", zd_handler, &fake_help);
+	rz_cmd_desc_argv_modes_new(cmd, z_cd, "zs", RZ_OUTPUT_MODE_QUIET, z_modes_handler, &fake_help);
+	rz_cmd_desc_fake_new(cmd, root, "x", &fake_help);
+	RzCmdDesc *p_cd = rz_cmd_desc_group_new(cmd, root, "p", NULL, NULL, &fake_help);
+	rz_cmd_desc_argv_new(cmd, p_cd, "pi", zd_handler, &fake_help);
+	RzCmdDesc *v_cd = rz_cmd_desc_oldinput_new(cmd, root, "v", a_oldinput_cb, &fake_help);
+	RzCmdDesc *v_inner_cd = rz_cmd_desc_inner_new(cmd, v_cd, "v", &fake_help);
+	rz_cmd_desc_argv_new(cmd, v_inner_cd, "v1", zd_handler, &fake_help);
+	rz_cmd_desc_argv_new(cmd, v_inner_cd, "v2", zd_handler, &fake_help);
+
+	RzList *res = rz_list_newf(free);
+	rz_cmd_foreach_cmdname(cmd, v_cd, foreach_cmdname_cb, res);
+
+	const char *exp_regular[] = { "v", "v1", "v2" };
 	mu_assert_eq(rz_list_length(res), RZ_ARRAY_SIZE(exp_regular), "count regular commands that can be executed");
 
 	RzList *exp_regular_l = rz_list_new_from_array((const void **)exp_regular, RZ_ARRAY_SIZE(exp_regular));
@@ -829,6 +870,7 @@ int all_tests() {
 	mu_run_test(test_cmd_argv_modes);
 	mu_run_test(test_cmd_group_argv_modes);
 	mu_run_test(test_foreach_cmdname);
+	mu_run_test(test_foreach_cmdname_begin);
 	mu_run_test(test_arg_escaping);
 	mu_run_test(test_double_quoted_arg_escaping);
 	mu_run_test(test_single_quoted_arg_escaping);

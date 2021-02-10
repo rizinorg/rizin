@@ -55,15 +55,14 @@ static bool __plugin_open(RzIO *io, const char *file, bool many) {
 
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	char procpidpath[64];
-	int fd, ret = -1;
+	int fd;
 	if (__plugin_open(io, file, 0)) {
 		int pid = atoi(file + 10);
 		if (file[0] == 'a') {
-			ret = ptrace(PTRACE_ATTACH, pid, 0, 0);
+			int ret = ptrace(PTRACE_ATTACH, pid, 0, 0);
 			if (ret == -1) {
 				switch (errno) {
 				case EPERM:
-					ret = pid;
 					eprintf("Operation not permitted\n");
 					break;
 				case EINVAL:
@@ -71,15 +70,10 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 					eprintf("ERRNO: %d (EINVAL)\n", errno);
 					break;
 				}
-			} else if (__waitpid(pid)) {
-				ret = pid;
-			} else {
+			} else if (!__waitpid(pid)) {
 				eprintf("Error in waitpid\n");
 			}
-		} else {
-			ret = pid;
 		}
-		fd = ret; // TODO: use rz_io_fd api
 		snprintf(procpidpath, sizeof(procpidpath), "/proc/%d/mem", pid);
 		fd = rz_sys_open(procpidpath, O_RDWR, 0);
 		if (fd != -1) {

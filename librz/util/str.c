@@ -12,8 +12,6 @@
 #include <rz_util/rz_base64.h>
 
 /* stable code */
-static const char *nullstr = "";
-static const char *nullstr_c = "(null)";
 static const char *rwxstr[] = {
 	[0] = "---",
 	[1] = "--x",
@@ -524,7 +522,7 @@ RZ_API const char *rz_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
 	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
-		return nullstr;
+		return "";
 	}
 	for (i = 0; i != idx; i++) {
 		ptr = rz_str_word_get_next0(ptr);
@@ -543,23 +541,37 @@ RZ_API int rz_str_char_count(const char *string, char ch) {
 	return count;
 }
 
+static const char *separator_get_first(const char *text) {
+	for (; *text && !IS_SEPARATOR(*text); text++)
+		;
+	;
+
+	return text;
+}
+
+static const char *word_get_first(const char *text) {
+	for (; *text && IS_SEPARATOR(*text); text++)
+		;
+	;
+
+	return text;
+}
+
+RZ_API char *rz_str_word_get_first(const char *text) {
+	return strdup(word_get_first(text));
+}
+
 // Counts the number of words (separated by separator characters: newlines, tabs,
 // return, space). See rz_util.h for more details of the IS_SEPARATOR macro.
 RZ_API int rz_str_word_count(const char *string) {
-	const char *text, *tmp;
 	int word;
+	const char *text = word_get_first(string);
 
-	for (text = tmp = string; *text && IS_SEPARATOR(*text); text++) {
-		;
-	}
 	for (word = 0; *text; word++) {
-		for (; *text && !IS_SEPARATOR(*text); text++) {
-			;
-		}
-		for (tmp = text; *text && IS_SEPARATOR(*text); text++) {
-			;
-		}
+		text = separator_get_first(text);
+		text = word_get_first(text);
 	}
+
 	return word;
 }
 
@@ -809,21 +821,6 @@ RZ_API int rz_str_ccpy(char *dst, char *src, int ch) {
 	}
 	dst[i] = '\0';
 	return i;
-}
-
-RZ_API char *rz_str_word_get_first(const char *text) {
-	for (; *text && IS_SEPARATOR(*text); text++) {
-		;
-	}
-	return strdup(text);
-}
-
-RZ_API const char *rz_str_get(const char *str) {
-	return str ? str : nullstr_c;
-}
-
-RZ_API const char *rz_str_get2(const char *str) {
-	return str ? str : nullstr;
 }
 
 RZ_API char *rz_str_ndup(const char *ptr, int len) {

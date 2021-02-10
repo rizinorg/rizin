@@ -70,11 +70,8 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 		ut8 *buf = NULL;
 		if (actual_len > 0 && res == addr) {
 			buf = malloc(actual_len);
-			if (!rz_io_read_at(core->io, addr, buf, actual_len)) {
-				actual_len = 0;
-			}
+			rz_io_read_at(core->io, addr, buf, actual_len);
 			rz_core_yank_set(core, RZ_CORE_FOREIGN_ADDR, buf, len);
-			res = true;
 		} else if (res != addr) {
 			eprintf(
 				"ERROR: Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%" PFMT64x ")\n", res, addr,
