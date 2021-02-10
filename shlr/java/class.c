@@ -264,33 +264,17 @@ RZ_API ut8 *rz_bin_java_cp_get_fm_ref(RzBinJavaObj *bin, ut32 *out_sz, ut8 tag, 
 RZ_API ut8 *rz_bin_java_cp_get_2_ut16(RzBinJavaObj *bin, ut32 *out_sz, ut8 tag, ut16 ut16_one, ut16 ut16_two);
 RZ_API ut8 *rz_bin_java_cp_get_name_type(RzBinJavaObj *bin, ut32 *out_sz, ut16 name_idx, ut16 type_idx);
 
-static inline bool require_utf8_encoding(ut8 b) {
-	if (b < 0x20) {
-		return true;
-	}
-	switch (b) {
-	case 0x7f:
-	case 0x81:
-	case 0x8F:
-	case 0x90:
-	case 0x9D:
-	case 0xA0:
-	case 0xAD:
-		return true;
-	}
-	return false;
-}
-
 static char *convert_string(const char *bytes, ut32 len) {
 	char *buffer;
-	rz_return_val_if_fail(bytes && len > 0 && (buffer = calloc(len, sizeof(char))), NULL);
+	rz_return_val_if_fail(bytes && len > 0 && (buffer = malloc(len + 1)), NULL);
 	for (ut32 idx = 0; idx < len; idx++) {
-		if (require_utf8_encoding(bytes[idx])) {
-			buffer[idx] = '?';
-		} else {
+		if (IS_PRINTABLE(bytes[idx])) {
 			buffer[idx] = bytes[idx];
+		} else {
+			buffer[idx] = '?';
 		}
 	}
+	buffer[len] = 0;
 	return buffer;
 }
 
