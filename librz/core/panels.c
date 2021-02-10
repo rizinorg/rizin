@@ -6435,11 +6435,7 @@ repeat:
 		}
 		break;
 	case ' ':
-		if (rz_config_get_b(core->config, "graph.web")) {
-			rz_core_cmd0(core, "agv $$");
-		} else {
-			__call_visual_graph(core);
-		}
+		__call_visual_graph(core);
 		break;
 	case ':':
 		rz_core_visual_prompt_input(core);
@@ -6659,11 +6655,7 @@ repeat:
 		}
 		break;
 	case 'V':
-		if (rz_config_get_b(core->config, "graph.web")) {
-			rz_core_cmd0(core, "agv $$");
-		} else {
-			__call_visual_graph(core);
-		}
+		__call_visual_graph(core);
 		break;
 	case ']':
 		if (__check_panel_type(cur, PANEL_CMD_HEXDUMP)) {

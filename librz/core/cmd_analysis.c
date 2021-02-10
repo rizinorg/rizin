@@ -548,7 +548,7 @@ static const char *help_msg_ag[] = {
 	"k", "", "SDB key-value",
 	"t", "", "Tiny ascii art",
 	"v", "", "Interactive ascii art",
-	"w", " [path]", "Write to path or display graph image (see graph.gv.format and graph.web)",
+	"w", " [path]", "Write to path or display graph image (see graph.gv.format)",
 	NULL
 };
 
@@ -8017,12 +8017,8 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 		rz_cons_print("]\n");
 		break;
 	case 'w': { // "aggw"
-		if (rz_config_get_i(core->config, "graph.web")) {
-			rz_core_cmd0(core, "=H /graph/");
-		} else {
-			const char *filename = rz_str_trim_head_ro(input + 1);
-			convert_dotcmd_to_image(core, "aggd", filename);
-		}
+		const char *filename = rz_str_trim_head_ro(input + 1);
+		convert_dotcmd_to_image(core, "aggd", filename);
 		break;
 	}
 	default:
@@ -8263,13 +8259,9 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			break;
 		}
 		case 'w': // "agfw"
-			if (rz_config_get_i(core->config, "graph.web")) {
-				rz_core_cmd0(core, "=H /graph/");
-			} else {
-				char *cmdargs = rz_str_newf("agfd @ 0x%" PFMT64x, core->offset);
-				convert_dotcmd_to_image(core, cmdargs, input + 2);
-				free(cmdargs);
-			}
+			char *cmdargs = rz_str_newf("agfd @ 0x%" PFMT64x, core->offset);
+			convert_dotcmd_to_image(core, cmdargs, input + 2);
+			free(cmdargs);
 			break;
 		default:
 			eprintf("Usage: see ag?\n");
@@ -8513,13 +8505,9 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		rz_core_cmdf(core, "agfv%s", input + 1);
 		break;
 	case 'w': // "agw"
-		if (rz_config_get_i(core->config, "graph.web")) {
-			rz_core_cmd0(core, "=H /graph/");
-		} else {
-			char *cmdargs = rz_str_newf("agfd @ 0x%" PFMT64x, core->offset);
-			convert_dotcmd_to_image(core, cmdargs, input + 1);
-			free(cmdargs);
-		}
+		char *cmdargs = rz_str_newf("agfd @ 0x%" PFMT64x, core->offset);
+		convert_dotcmd_to_image(core, cmdargs, input + 1);
+		free(cmdargs);
 		break;
 	default:
 		rz_core_cmd_help(core, help_msg_ag);
