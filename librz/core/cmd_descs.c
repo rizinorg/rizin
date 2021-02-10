@@ -941,7 +941,7 @@ static const RzCmdDescHelp cmd_force_quit_without_history_help = {
 };
 
 static const RzCmdDescHelp quit_with_preference_help = {
-	.summary = "Quit rizin and choose to save projects and kill the process",
+	.summary = "Quit rizin and choose to kill the process and save projects",
 	.options = "<yn><yn>",
 };
 static const RzCmdDescHelp qy_help = {
