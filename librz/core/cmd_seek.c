@@ -62,15 +62,15 @@ static void printPadded(RzCore *core, int pad) {
 	free(fmt);
 }
 
-static bool seek_to_register(RzCore *core, const char *input, bool is_silent) {
+RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *regname, bool is_silent) {
 	ut64 off;
 	if (core->bin->is_debugger) {
-		off = rz_debug_reg_get(core->dbg, input);
+		off = rz_debug_reg_get(core->dbg, regname);
 		return rz_core_seek_opt(core, off, true, !is_silent);
 	} else {
 		RzReg *orig = core->dbg->reg;
 		core->dbg->reg = core->analysis->reg;
-		off = rz_debug_reg_get(core->dbg, input);
+		off = rz_debug_reg_get(core->dbg, regname);
 		core->dbg->reg = orig;
 		return rz_core_seek_opt(core, off, true, !is_silent);
 	}
@@ -271,7 +271,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 	switch (*input) {
 	case 'r': // "sr"
 		if (input[1] && input[2]) {
-			seek_to_register(core, input + 2, silent);
+			rz_core_seek_to_register(core, input + 2, silent);
 		} else {
 			eprintf("|Usage| 'sr PC' seek to program counter register\n");
 		}
@@ -772,5 +772,5 @@ RZ_IPI RzCmdStatus rz_seek_opcode_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_seek_register_handler(RzCore *core, int argc, const char **argv) {
-	return bool2cmdstatus(seek_to_register(core, argv[1], false));
+	return bool2cmdstatus(rz_core_seek_to_register(core, argv[1], false));
 }
