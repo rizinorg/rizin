@@ -557,7 +557,7 @@ jobs:
       run: |
         cd /tmp
         rm -rf android-dir/include android-dir/lib
-        tar --transform 's/android-dir/data\/data\/org.rizinorg.rizininstaller/g' -cvf rizin-android-${{ matrix.name }}.tar.gz android-dir/
+        tar --transform 's/android-dir/data\/data\/org.rizinorg.rizininstaller/g' -cvzf rizin-android-${{ matrix.name }}.tar.gz android-dir/
     - uses: actions/upload-artifact@v2
       with:
         name: rizin-android-${{ matrix.name }}
