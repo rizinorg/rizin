@@ -2,9 +2,9 @@
 
 #include "rz_core.h"
 
-#define RZ_QUIT_VALUE_KILL 5
+#define RZ_QUIT_VALUE_KILL   5
 #define RZ_QUIT_VALUE_NOKILL 1
-#define RZ_QUIT_VALUE_SAVE 10
+#define RZ_QUIT_VALUE_SAVE   10
 #define RZ_QUIT_VALUE_NOSAVE 2
 
 static const char *help_msg_q[] = {
