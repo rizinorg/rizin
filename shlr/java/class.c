@@ -7988,14 +7988,13 @@ RZ_API int U(rz_bin_java_is_method_protected)(RzBinJavaObj *bin_obj, ut64 addr) 
 		rz_bin_java_get_method_code_attribute_with_addr(bin_obj, addr));
 }
 
-RZ_API int rz_bin_java_print_method_idx_summary(RzBinJavaObj *bin_obj, ut32 idx) {
-	int res = false;
+RZ_API bool rz_bin_java_print_method_idx_summary(RzBinJavaObj *bin_obj, ut32 idx) {
 	if (idx < rz_list_length(bin_obj->methods_list)) {
 		RzBinJavaField *fm_type = rz_list_get_n(bin_obj->methods_list, idx);
 		rz_bin_java_print_method_summary(fm_type);
-		res = true;
+		return true;
 	}
-	return res;
+	return false;
 }
 
 RZ_API ut32 rz_bin_java_get_method_count(RzBinJavaObj *bin_obj) {

@@ -988,7 +988,7 @@ RZ_API int U(rz_bin_java_is_method_private)(RzBinJavaObj *bin_obj, ut64 addr);
 RZ_API RzBinJavaAttrInfo *rz_bin_java_get_method_code_attribute(const RzBinJavaField *method);
 
 RZ_API char *U(rz_bin_java_get_method_name)(RzBinJavaObj *bin_obj, ut32 idx);
-RZ_API int U(rz_bin_java_print_method_idx_summary)(RzBinJavaObj *bin_obj, ut32 idx);
+RZ_API bool U(rz_bin_java_print_method_idx_summary)(RzBinJavaObj *bin_obj, ut32 idx);
 RZ_API ut32 U(rz_bin_java_get_method_count)(RzBinJavaObj *bin_obj);
 RZ_API RzList *U(rz_bin_java_get_method_num_name)(RzBinJavaObj *bin_obj);
 
