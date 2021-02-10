@@ -633,6 +633,7 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64
 			ov = strdup(node->value);
 		}
 		rz_config_node_value_format_i(buf, sizeof(buf), i, NULL);
+		free(node->value);
 		node->value = strdup(buf);
 		if (!node->value) {
 			node = NULL;
