@@ -8258,11 +8258,12 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			rz_core_print_bb_custom(core, fcn);
 			break;
 		}
-		case 'w': // "agfw"
+		case 'w': { // "agfw"
 			char *cmdargs = rz_str_newf("agfd @ 0x%" PFMT64x, core->offset);
 			convert_dotcmd_to_image(core, cmdargs, input + 2);
 			free(cmdargs);
 			break;
+		}
 		default:
 			eprintf("Usage: see ag?\n");
 			break;
@@ -8504,11 +8505,12 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 	case 'v': // "agv" alias for "agfv"
 		rz_core_cmdf(core, "agfv%s", input + 1);
 		break;
-	case 'w': // "agw"
+	case 'w': { // "agw"
 		char *cmdargs = rz_str_newf("agfd @ 0x%" PFMT64x, core->offset);
 		convert_dotcmd_to_image(core, cmdargs, input + 1);
 		free(cmdargs);
 		break;
+	}
 	default:
 		rz_core_cmd_help(core, help_msg_ag);
 		break;
