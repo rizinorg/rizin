@@ -3,6 +3,7 @@
 #include <rz_core.h>
 #include <rz_debug.h>
 #include "core_private.h"
+#include "cmd_descs.h"
 
 static bool is_x86_call(RzDebug *dbg, ut64 addr) {
 	ut8 buf[3];
@@ -64,6 +65,15 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 		} while (i < times);
 	}
 	return true;
+}
+
+RZ_IPI void rz_core_debug_continue(RzCore *core) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
+		rz_debug_continue_oldhandler(core, "");
+	} else {
+		rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
+		rz_core_regs2flags(core);
+	}
 }
 
 RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to) {
@@ -510,4 +520,18 @@ RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode) {
 	}
 	rz_list_free(sorted);
 	ht_up_free(db);
+}
+
+RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
+	RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
+	if (bpi) {
+		rz_bp_del(core->dbg->bp, addr);
+	} else {
+		int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
+		bpi = rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+		if (!bpi) {
+			eprintf("Cannot set breakpoint at 0x%" PFMT64x "\n", addr);
+		}
+	}
+	rz_bp_enable(core->dbg->bp, addr, true, 0);
 }
