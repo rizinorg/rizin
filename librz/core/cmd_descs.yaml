@@ -610,22 +610,28 @@
       options: "<y|n><y|n>"
       type: RZ_CMD_DESC_TYPE_INNER
       subcommands:
-        - name: qyy
-          cname: quit_kill_save
-          summary: Quit rizin by killing the process and saving the project
-          args: []
-        - name: qyn
-          cname: quit_kill_nosave
-          summary: Quit rizin by killing the process and not saving the project
-          args: []
-        - name: qnn
-          cname: quit_nokill_nosave
-          summary: Quit rizin by not killing the process and not saving the project
-          args: []
-        - name: qny
-          cname: quit_nokill_save
-          summary: Quit rizin by not killing the process and saving the project
-          args: []
+        - name: qy
+          summary: Quit rizin by killing the process and and choose to save the projects or not
+          subcommands:
+            - name: qyy
+              cname: quit_kill_save
+              summary: Quit rizin by killing the process and saving the project
+              args: []
+            - name: qyn
+              cname: quit_kill_nosave
+              summary: Quit rizin by killing the process and not saving the project
+              args: []
+        - name: qn
+          summary: Quit rizin by not killing the process and choose to save the projects or not
+          subcommands:
+            - name: qnn
+              cname: quit_nokill_nosave
+              summary: Quit rizin by not killing the process and not saving the project
+              args: []
+            - name: qny
+              cname: quit_nokill_save
+              summary: Quit rizin by not killing the process and saving the project
+              args: []
 - name: r
   cname: cmd_resize
   summary: Resize file
