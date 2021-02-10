@@ -8,7 +8,7 @@ on:
 
 jobs:
   CodeQL-Build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -27,7 +27,6 @@ jobs:
       uses: github/codeql-action/init@v1
       with:
         setup-python-dependencies: false
-        config-file: ./.github/workflows/codeql-config.yml
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v1
@@ -41,7 +40,13 @@ jobs:
     - name: Merge all files
       run: npx @microsoft/sarif-multitool merge reports/*.sarif
 
+    - name: Exclude external lib
+      run: |
+        jq 'del(.runs[].results[].locations[] | select(.physicalLocation.artifactLocation.uri | contains("subprojects/")))' merged.sarif > tmp0.sarif
+        jq 'del(.runs[].results[] | select(.locations | length == 0))' tmp0.sarif > tmp1.sarif
+        jq 'del(.runs[] | select(.results | length == 0))' tmp1.sarif > final.sarif
+
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v1
       with:
-        sarif_file: merged.sarif
+        sarif_file: final.sarif
