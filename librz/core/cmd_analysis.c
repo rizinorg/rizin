@@ -49,6 +49,7 @@ static const char *help_msg_aa[] = {
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
+	"aaef", "", "aae in all functions",
 	"aaf", "[e|r|t] ", "analyze all functions (e analysis.hasnext=1;afr @@c:isq) (aafe=aef@@F)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "[gr?]", "autoname functions (aang = golang, aanr = noreturn propagation)",
