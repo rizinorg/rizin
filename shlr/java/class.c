@@ -665,7 +665,7 @@ RZ_API bool rz_bin_java_get_bin_obj_json(RzBinJavaObj *bin, PJ *j) {
 		bool is_annotation = ((class_->visibility & RZ_BIN_JAVA_CLASS_ACC_ANNOTATION) != 0);
 		bool is_enum = ((class_->visibility & RZ_BIN_JAVA_CLASS_ACC_ENUM) != 0);
 
-		pj_kb(j, "access_flags", class_->visibility);
+		pj_kN(j, "access_flags", class_->visibility);
 		pj_kb(j, "is_public", is_public);
 		pj_kb(j, "is_final", is_final);
 		pj_kb(j, "is_super", is_super);
@@ -838,7 +838,7 @@ RZ_API bool rz_bin_java_get_fm_type_definition_json(RzBinJavaObj *bin, RzBinJava
 	bool is_super = ((fm_type->flags & RZ_BIN_JAVA_CLASS_ACC_SUPER) != 0);
 
 	pj_o(j);
-	pj_kb(j, "access_flags", fm_type->flags);
+	pj_kN(j, "access_flags", fm_type->flags);
 	pj_kb(j, "is_method", is_method);
 	pj_kb(j, "is_native", is_native);
 	pj_kb(j, "is_synthetic", is_synthetic);
