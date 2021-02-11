@@ -165,4 +165,8 @@ If you are a developer, it might not be necessary to run the `install` step
 (the second step from above) every time you build Rizin. You can directly use
 `rizin` from `./build/binrz/rizin/rizin.`
 
+If you encounter issues while re-building Rizin, try to remove the existing
+build directory (e.g. `rm -r ./build`) and clean the subproject files
+downloaded by meson (e.g. `git clean -dxff subprojects/`).
+
 [doc/PACKAGERS.md]: https://github.com/rizinorg/rizin/blob/dev/doc/PACKAGERS.md
