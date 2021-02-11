@@ -2003,11 +2003,11 @@ static bool insert_mode_enabled(RzCore *core) {
 	case 'e':
 	case 'f':
 		if (__nib != -1) {
-			rz_core_cmdf(core, "wx %c%c @ $$+%d", __nib, ch, core->print->cur);
+			char hexpair[3] = { __nib, ch, 0 };
+			rz_core_write_hexpair(core, core->offset + core->print->cur, hexpair);
 			core->print->cur++;
 			__nib = -1;
 		} else {
-			rz_core_cmdf(core, "wx %c. @ $$+%d", ch, core->print->cur);
 			__nib = ch;
 		}
 		break;

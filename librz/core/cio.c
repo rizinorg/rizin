@@ -471,3 +471,34 @@ RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset) {
 	}
 	return rz_io_is_valid_offset(core->io, offset, 0);
 }
+
+RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs) {
+	rz_return_val_if_fail(core && pairs, 0);
+	ut8 *buf = malloc(strlen(pairs) + 1);
+	if (!buf) {
+		return 0;
+	}
+	int len = rz_hex_str2bin(pairs, buf);
+	if (len != 0) {
+		if (len < 0) {
+			len = -len;
+			if (len < core->blocksize) {
+				buf[len - 1] |= core->block[len - 1] & 0xf;
+			}
+		}
+		core->num->value = 0;
+		if (!rz_core_write_at(core, addr, buf, len)) {
+			eprintf("Failed to write\n");
+			core->num->value = 1;
+		}
+		if (rz_config_get_i(core->config, "cfg.wseek")) {
+			rz_core_seek_delta(core, len, true);
+		}
+		rz_core_block_read(core);
+	} else {
+		eprintf("Error: invalid hexpair string\n");
+		core->num->value = 1;
+	}
+	free(buf);
+	return len;
+}

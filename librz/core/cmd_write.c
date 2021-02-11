@@ -161,37 +161,6 @@ static void cmd_write_fail(RzCore *core) {
 	core->num->value = 1;
 }
 
-RZ_API int cmd_write_hexpair(RzCore *core, const char *pairs) {
-	rz_return_val_if_fail(core && pairs, 0);
-	ut8 *buf = malloc(strlen(pairs) + 1);
-	if (!buf) {
-		return 0;
-	}
-	int len = rz_hex_str2bin(pairs, buf);
-	if (len != 0) {
-		if (len < 0) {
-			len = -len;
-			if (len < core->blocksize) {
-				buf[len - 1] |= core->block[len - 1] & 0xf;
-			}
-		}
-		core->num->value = 0;
-		if (!rz_core_write_at(core, core->offset, buf, len)) {
-			cmd_write_fail(core);
-			core->num->value = 1;
-		}
-		if (rz_config_get_i(core->config, "cfg.wseek")) {
-			rz_core_seek_delta(core, len, true);
-		}
-		rz_core_block_read(core);
-	} else {
-		eprintf("Error: invalid hexpair string\n");
-		core->num->value = 1;
-	}
-	free(buf);
-	return len;
-}
-
 static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char *key, int direction, const char *iv) {
 	//TODO: generalise no_key_mode for all non key encoding/decoding.
 	int keylen = 0;
@@ -1696,7 +1665,7 @@ RZ_IPI int rz_wx_handler_old(void *data, const char *input) {
 	int size;
 	switch (input[0]) {
 	case ' ': // "wx "
-		cmd_write_hexpair(core, input + 0);
+		rz_core_write_hexpair(core, core->offset, input + 0);
 		break;
 	case 'f': // "wxf"
 		arg = (const char *)(input + ((input[1] == ' ') ? 2 : 1));
@@ -1740,7 +1709,7 @@ RZ_IPI int rz_wx_handler_old(void *data, const char *input) {
 		break;
 	case 's': // "wxs"
 	{
-		int len = cmd_write_hexpair(core, input + 1);
+		int len = rz_core_write_hexpair(core, core->offset, input + 1);
 		if (len > 0) {
 			rz_core_seek_delta(core, len, true);
 			core->num->value = len;

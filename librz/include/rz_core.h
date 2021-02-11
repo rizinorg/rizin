@@ -448,6 +448,7 @@ RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr);
 RZ_API int rz_core_block_read(RzCore *core);
 RZ_API int rz_core_block_size(RzCore *core, int bsize);
 RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset);
+RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
@@ -950,31 +951,31 @@ extern RzCorePlugin rz_core_plugin_java;
 /* DECOMPILER PRINTING FUNCTIONS */
 /**
  * @brief Prints the data contained in the specified RzAnnotatedCode in JSON format.
- * 
+ *
  * The function will print the output in console using the function rz_cons_printf();
- * 
+ *
  * @param code Pointer to a RzAnnotatedCode.
  */
 RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code);
 /**
  * @brief Prints the decompiled code from the specified RzAnnotatedCode.
- * 
+ *
  * This function is used for printing the output of commands pdg and pdgo.
  * It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
  * the output will be printed without offsets (pdg), otherwise, the output will be
  * printed with offsets.
  * This function will print the output in console using the function rz_cons_printf();
- * 
+ *
  * @param code Pointer to a RzAnnotatedCode.
  * @param line_offsets Pointer to a @ref RzVector that contains offsets for the decompiled code.
  */
 RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_offsets);
 /**
  * @brief  Prints the decompiled code as comments
- * 
+ *
  * This function is used for the output of command pdg*
  * Output will be printed in console using the function rz_cons_printf();
- * 
+ *
  * @param code Pointer to a RzAnnotatedCode.
  */
 RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code);

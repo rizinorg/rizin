@@ -5506,7 +5506,7 @@ void __insert_value(RzCore *core) {
 	if (__check_panel_type(cur, PANEL_CMD_STACK)) {
 		const char *prompt = "insert hex: ";
 		__panel_prompt(prompt, buf, sizeof(buf));
-		rz_core_cmdf(core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr);
+		rz_core_write_hexpair(core, cur->model->addr, buf);
 		cur->view->refresh = true;
 	} else if (__check_panel_type(cur, PANEL_CMD_REGISTERS)) {
 		const char *creg = core->dbg->creg;
@@ -5520,12 +5520,12 @@ void __insert_value(RzCore *core) {
 	} else if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
 		const char *prompt = "insert hex: ";
 		__panel_prompt(prompt, buf, sizeof(buf));
-		rz_core_cmdf(core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
+		rz_core_write_hexpair(core, core->offset + core->print->cur, buf);
 		cur->view->refresh = true;
 	} else if (__check_panel_type(cur, PANEL_CMD_HEXDUMP)) {
 		const char *prompt = "insert hex: ";
 		__panel_prompt(prompt, buf, sizeof(buf));
-		rz_core_cmdf(core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
+		rz_core_write_hexpair(core, cur->model->addr + core->print->cur, buf);
 		cur->view->refresh = true;
 	}
 }

@@ -7,6 +7,7 @@
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val);
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core);
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
+RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
 
 /* cdebug.c */
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval);
@@ -24,4 +25,7 @@ RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name);
 /* cmd_seek.c */
 
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);
+RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
+RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
+RZ_IPI int rz_core_seek_opcode(RzCore *core, int numinstr, bool silent);
 #endif
