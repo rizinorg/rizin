@@ -767,8 +767,12 @@ jobs:
     if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson
     - name: Download subprojects
-      run: meson subprojects download capstone-bundled sdb tree-sitter
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        meson subprojects download capstone-bundled sdb tree-sitter
     - name: Login to DockerHub
       uses: docker/login-action@v1
       with:
