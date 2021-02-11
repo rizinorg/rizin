@@ -44,7 +44,11 @@ jobs:
       run: |
         jq 'del(.runs[].results[].locations[] | select(.physicalLocation.artifactLocation.uri | contains("subprojects/")))' merged.sarif > tmp0.sarif
         jq 'del(.runs[].results[] | select(.locations | length == 0))' tmp0.sarif > tmp1.sarif
-        jq 'del(.runs[] | select(.results | length == 0))' tmp1.sarif > final.sarif
+        jq 'del(.runs[] | select(.results | length == 0))' tmp1.sarif > filtered.sarif
+
+    - name: Treat warnings as errors
+      run: |
+        jq '.runs[].tool.driver.rules[] |= . + {"defaultConfiguration": {"level": "error"}}' filtered.sarif > final.sarif
 
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v1
@@ -85,7 +89,11 @@ jobs:
       run: |
         jq 'del(.runs[].results[].locations[] | select(.physicalLocation.artifactLocation.uri | contains("subprojects/")))' merged.sarif > tmp0.sarif
         jq 'del(.runs[].results[] | select(.locations | length == 0))' tmp0.sarif > tmp1.sarif
-        jq 'del(.runs[] | select(.results | length == 0))' tmp1.sarif > final.sarif
+        jq 'del(.runs[] | select(.results | length == 0))' tmp1.sarif > filtered.sarif
+
+    - name: Treat warnings as errors
+      run: |
+        jq '.runs[].tool.driver.rules[] |= . + {"defaultConfiguration": {"level": "error"}}' filtered.sarif > final.sarif
 
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v1
