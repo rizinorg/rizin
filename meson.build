@@ -376,37 +376,15 @@ libr_pc = configure_file(
 )
 
 # handle zlib dependency
+r = run_command(py3_exe, check_meson_subproject_py, 'zlib')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
 zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
 if not zlib_dep.found()
-  zlib_files = [
-    'shlr/zip/zlib/adler32.c',
-    'shlr/zip/zlib/compress.c',
-    'shlr/zip/zlib/crc32.c',
-    'shlr/zip/zlib/deflate.c',
-    'shlr/zip/zlib/gzclose.c',
-    'shlr/zip/zlib/gzlib.c',
-    'shlr/zip/zlib/gzread.c',
-    'shlr/zip/zlib/gzwrite.c',
-    'shlr/zip/zlib/infback.c',
-    'shlr/zip/zlib/inffast.c',
-    'shlr/zip/zlib/inflate.c',
-    'shlr/zip/zlib/inftrees.c',
-    'shlr/zip/zlib/trees.c',
-    'shlr/zip/zlib/uncompr.c',
-    'shlr/zip/zlib/zutil.c'
-  ]
-
-  zlib_inc = [platform_inc, include_directories('shlr/zip/zlib')]
-
-  librzzlib = static_library('rzzlib', zlib_files,
-    include_directories: zlib_inc,
-    implicit_include_directories: false
-  )
-
-  zlib_dep = declare_dependency(
-    link_with: librzzlib,
-    include_directories: zlib_inc
-  )
+  zlib_proj = subproject('zlib', default_options: ['default_library=static'])
+  zlib_dep = zlib_proj.get_variable('zlib_dep')
 endif
 
 r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
