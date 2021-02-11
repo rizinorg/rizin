@@ -15,19 +15,8 @@ if not zlib_dep.found()
 endif
 libzip_deps = [zlib_dep]
 
-bzip2_dep = dependency('bzip2', required: false, static: is_static_build)
-if bzip2_dep.found()
-  conf_data.set10('HAVE_LIBBZ2', true)
-  libzip_deps += [bzip2_dep]
-endif
-lzma_dep = dependency('lzma', required: false, static: is_static_build)
-if not lzma_dep.found()
-  lzma_dep = cc.find_library('lzma', required: false, static: is_static_build)
-endif
-if lzma_dep.found()
-  conf_data.set10('HAVE_LIBLZMA', true)
-  libzip_deps += [lzma_dep]
-endif
+bzip2_dep = disabler()
+lzma_dep = disabler()
 have_crypto = false
 openssl_dep = disabler()
 if host_machine.system() == 'windows'
@@ -36,6 +25,19 @@ if host_machine.system() == 'windows'
   have_crypto = true
   libzip_deps += []
 else
+  bzip2_dep = dependency('bzip2', required: false, static: is_static_build)
+  if bzip2_dep.found()
+    conf_data.set10('HAVE_LIBBZ2', true)
+    libzip_deps += [bzip2_dep]
+  endif
+  lzma_dep = dependency('lzma', required: false, static: is_static_build)
+  if not lzma_dep.found()
+    lzma_dep = cc.find_library('lzma', required: false, static: is_static_build)
+  endif
+  if lzma_dep.found()
+    conf_data.set10('HAVE_LIBLZMA', true)
+    libzip_deps += [lzma_dep]
+  endif
   if get_option('use_sys_openssl')
     openssl_dep = dependency('openssl', required: false, static: is_static_build)
     if openssl_dep.found()
