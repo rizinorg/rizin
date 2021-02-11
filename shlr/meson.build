@@ -249,18 +249,10 @@ mpc_dep = declare_dependency(
 )
 
 # handle yxml dependency
-yxml_files = [
-  'yxml/yxml.c'
-]
+r = run_command(py3_exe, check_meson_subproject_py, 'yxml')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
 
-yxml_inc = [platform_inc, include_directories(['yxml'])]
-
-libyxml = static_library('rzyxml', yxml_files,
-  include_directories: yxml_inc,
-  implicit_include_directories: false
-)
-
-yxml_dep = declare_dependency(
-  link_with: libyxml,
-  include_directories: yxml_inc
-)
+yxml_proj = subproject('yxml', default_options: ['default_library=static'])
+yxml_dep = yxml_proj.get_variable('yxml_dep')

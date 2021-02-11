@@ -135,7 +135,7 @@ rz_bin_sources = [
   'pdb/tpi.c'
 ]
 
-rz_bin_inc = [platform_inc, yxml_inc, include_directories('mangling', 'format')]
+rz_bin_inc = [platform_inc, include_directories('mangling', 'format')]
 
 rz_bin = library('rz_bin', rz_bin_sources,
   include_directories: rz_bin_inc,
