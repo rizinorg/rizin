@@ -99,7 +99,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	return 0;
 }
 
-static int cmd_seek_opcode_backward(RzCore *core, int numinstr, bool silent) {
+RZ_IPI int rz_core_seek_opcode_backward(RzCore *core, int numinstr, bool silent) {
 	int i, val = 0;
 	// N previous instructions
 	ut64 addr = core->offset;
@@ -137,7 +137,7 @@ static int cmd_seek_opcode_backward(RzCore *core, int numinstr, bool silent) {
 	return val;
 }
 
-static int cmd_seek_opcode_forward(RzCore *core, int n, bool silent) {
+RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent) {
 	// N forward instructions
 	int i, ret, val = 0;
 	if (!silent) {
@@ -158,6 +158,14 @@ static int cmd_seek_opcode_forward(RzCore *core, int n, bool silent) {
 	return val;
 }
 
+RZ_IPI int rz_core_seek_opcode(RzCore *core, int n, bool silent) {
+	int val = (n < 0)
+		? rz_core_seek_opcode_backward(core, -n, silent)
+		: rz_core_seek_opcode_forward(core, n, silent);
+	core->num->value = val;
+	return val;
+}
+
 static void cmd_seek_opcode(RzCore *core, const char *input, bool silent) {
 	if (input[0] == '?') {
 		eprintf("Usage: so [-][n]\n");
@@ -170,10 +178,7 @@ static void cmd_seek_opcode(RzCore *core, const char *input, bool silent) {
 	if (n == 0) {
 		n = 1;
 	}
-	int val = (n < 0)
-		? cmd_seek_opcode_backward(core, -n, silent)
-		: cmd_seek_opcode_forward(core, n, silent);
-	core->num->value = val;
+	rz_core_seek_opcode(core, n, silent);
 }
 
 RZ_IPI int rz_seek_search(void *data, const char *input) {

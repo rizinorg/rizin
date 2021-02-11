@@ -428,7 +428,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 		case 'q': {
 			char *op_hex = rz_asm_op_get_hex(&asmop);
 			char *res = rz_print_hexpair(core->print, op_hex, -1);
-			rz_core_cmdf(core, "wx %02x%02x%02x%02x", buf[0], buf[1], buf[2], buf[3]);
+			rz_core_write_at(core, core->offset, buf, 4);
 			free(res);
 			free(op_hex);
 		}

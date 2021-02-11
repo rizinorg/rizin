@@ -3327,7 +3327,7 @@ static void agraph_prev_node(RzAGraph *g) {
 
 static void agraph_update_title(RzCore *core, RzAGraph *g, RzAnalysisFunction *fcn) {
 	RzANode *a = get_anode(g->curnode);
-	char *sig = rz_core_cmd_str(core, "afcf");
+	char *sig = rz_core_analysis_function_signature(core, RZ_OUTPUT_MODE_STANDARD, NULL);
 	char *new_title = rz_str_newf(
 		"%s[0x%08" PFMT64x "]> %s # %s ",
 		graphCursor ? "(cursor)" : "",
@@ -3619,7 +3619,7 @@ static void graphNodeMove(RzAGraph *g, int dir, int speed) {
 	if (is_mini(g)) {
 		discroll += (delta * speed);
 	} else if (g->is_dis) {
-		rz_core_cmdf(core, "so %d", (delta * 4) * speed);
+		rz_core_seek_opcode(core, (delta * 4) * speed, false);
 	} else {
 		move_current_node(g, 0, delta * speed);
 	}
@@ -4632,7 +4632,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case 'j':
 			if (g->is_dis) {
-				rz_core_cmd0(core, "so 1");
+				rz_core_seek_opcode(core, 1, false);
 			} else {
 				if (graphCursor) {
 					int speed = (okey == 27) ? PAGEKEY_SPEED : movspeed;
@@ -4645,7 +4645,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case 'k':
 			if (g->is_dis) {
-				rz_core_cmd0(core, "so -1");
+				rz_core_seek_opcode(core, -1, false);
 			} else {
 				if (graphCursor) {
 					int speed = (okey == 27) ? PAGEKEY_SPEED : movspeed;

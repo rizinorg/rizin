@@ -5977,6 +5977,113 @@ RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 a
 	return true;
 }
 
+RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name) {
+	RzListIter *iter;
+	RzAnalysisFuncArg *arg;
+	RzAnalysisFunction *fcn;
+	if (fcn_name) {
+		fcn = rz_analysis_get_function_byname(core->analysis, fcn_name);
+	} else {
+		fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+		if (fcn) {
+			fcn_name = fcn->name;
+		}
+	}
+	if (!fcn) {
+		return NULL;
+	}
+
+	char *signature = NULL;
+
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *j = pj_new();
+		if (!j) {
+			return NULL;
+		}
+		pj_a(j);
+
+		char *key = NULL;
+		if (fcn_name) {
+			key = resolve_fcn_name(core->analysis, fcn_name);
+		}
+
+		if (key) {
+			const char *fcn_type = rz_type_func_ret(core->analysis->sdb_types, key);
+			int nargs = rz_type_func_args_count(core->analysis->sdb_types, key);
+			if (fcn_type) {
+				pj_o(j);
+				pj_ks(j, "name", rz_str_get_null(key));
+				pj_ks(j, "return", rz_str_get_null(fcn_type));
+				pj_k(j, "args");
+				pj_a(j);
+				if (nargs) {
+					RzList *list = rz_core_get_func_args(core, fcn_name);
+					rz_list_foreach (list, iter, arg) {
+						char *type = arg->orig_c_type;
+						pj_o(j);
+						pj_ks(j, "name", arg->name);
+						pj_ks(j, "type", type);
+						pj_end(j);
+					}
+					rz_list_free(list);
+				}
+				pj_end(j);
+				pj_ki(j, "count", nargs);
+				pj_end(j);
+			}
+			free(key);
+		} else {
+			pj_o(j);
+			pj_ks(j, "name", rz_str_get_null(fcn_name));
+			pj_k(j, "args");
+			pj_a(j);
+
+			RzAnalysisFcnVarsCache cache;
+			rz_analysis_fcn_vars_cache_init(core->analysis, &cache, fcn);
+			int nargs = 0;
+			RzAnalysisVar *var;
+			rz_list_foreach (cache.rvars, iter, var) {
+				nargs++;
+				pj_o(j);
+				pj_ks(j, "name", var->name);
+				pj_ks(j, "type", var->type);
+				pj_end(j);
+			}
+			rz_list_foreach (cache.bvars, iter, var) {
+				if (var->delta <= 0) {
+					continue;
+				}
+				nargs++;
+				pj_o(j);
+				pj_ks(j, "name", var->name);
+				pj_ks(j, "type", var->type);
+				pj_end(j);
+			}
+			rz_list_foreach (cache.svars, iter, var) {
+				if (!var->isarg) {
+					continue;
+				}
+				nargs++;
+				pj_o(j);
+				pj_ks(j, "name", var->name);
+				pj_ks(j, "type", var->type);
+				pj_end(j);
+			}
+			rz_analysis_fcn_vars_cache_fini(&cache);
+
+			pj_end(j);
+			pj_ki(j, "count", nargs);
+			pj_end(j);
+		}
+		pj_end(j);
+		signature = strdup(pj_string(j));
+		pj_free(j);
+	} else {
+		signature = rz_analysis_fcn_format_sig(core->analysis, fcn, fcn_name, NULL, NULL, NULL);
+	}
+	return signature;
+}
+
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 	RzList *todo = rz_list_newf(free);
 	if (!todo) {
