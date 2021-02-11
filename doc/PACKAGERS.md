@@ -71,7 +71,7 @@ You can override the version of Capstone Rizin will use by setting
 There are more bundled dependencies that can be swapped out for system versions.
 At time of writing these are:
 * `use_sys_magic`
-* `use_sys_zip`
+* `use_sys_libzip`
 * `use_sys_zlib`
 * `use_sys_lz4`
 * `use_sys_xxhash`
