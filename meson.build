@@ -126,7 +126,9 @@ if cc.has_argument('-Werror=sizeof-pointer-memaccess')
 endif
 
 if cc.get_id() == 'clang-cl'
-  add_project_arguments('-fcommon', language: 'c')
+  if cc.has_argument('-fcommon')
+    add_project_arguments('-fcommon', language: 'c')
+  endif
   add_project_arguments('-D__STDC__=1', language: 'c')
   add_project_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
   add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
