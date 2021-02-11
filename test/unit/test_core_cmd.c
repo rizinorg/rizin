@@ -68,7 +68,7 @@ static RzCmdStatus cmd_last_opt_handler(RzCore *core, int argc, const char **arg
 static RzCore *fake_core_new(void) {
 	RzCore *core = rz_core_new();
 	rz_cmd_free(core->rcmd);
-	core->rcmd = rz_cmd_new(true);
+	core->rcmd = rz_cmd_new(true, false);
 	core->rcmd->data = core;
 	RzCmdDesc *root = rz_cmd_get_root(core->rcmd);
 	rz_cmd_desc_argv_new(core->rcmd, root, "string", string_handler, &string_help);

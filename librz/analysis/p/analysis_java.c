@@ -6,9 +6,9 @@
 #include <rz_lib.h>
 #include <rz_analysis.h>
 
-#include "../../../shlr/java/ops.h"
-#include "../../../shlr/java/code.h"
-#include "../../../shlr/java/class.h"
+#include "../../asm/arch/java/ops.h"
+#include "../../asm/arch/java/code.h"
+#include "../../bin/format/java/class.h"
 
 #ifdef IFDBG
 #define dprintf eprintf
@@ -49,21 +49,21 @@ static int java_switch_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 		if (pos + 8 + 8 > len) {
 			return op->size;
 		}
-		const int min_val = (ut32)(UINT(data, pos + 4));
-		const int max_val = (ut32)(UINT(data, pos + 8));
+		const int min_val = (ut32)(rz_read_at_be32(data, pos + 4));
+		const int max_val = (ut32)(rz_read_at_be32(data, pos + 8));
 
-		ut32 default_loc = (ut32)(UINT(data, pos)), cur_case = 0;
+		ut32 default_loc = (ut32)(rz_read_at_be32(data, pos)), cur_case = 0;
 		op->switch_op = rz_analysis_switch_op_new(addr, min_val, max_val, default_loc);
 		pos += 12;
 		if (max_val > min_val && ((max_val - min_val) < (UT16_MAX / 4))) {
 			//caseop = rz_analysis_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
 			for (cur_case = 0; cur_case <= max_val - min_val; pos += 4, cur_case++) {
-				//ut32 value = (ut32)(UINT (data, pos));
+				//ut32 value = (ut32)(rz_read_at_be32 (data, pos));
 				if (pos + 4 >= len) {
 					// switch is too big can't read further
 					break;
 				}
-				int offset = (int)(ut32)(RZ_BIN_JAVA_UINT(data, pos));
+				st32 offset = (st32)(rz_read_at_be32(data, pos));
 				rz_analysis_switch_op_add_case(op->switch_op, addr + pos, cur_case + min_val, addr + offset);
 			}
 		} else {
@@ -261,15 +261,15 @@ static int java_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		op->stackptr = -8;
 	}
 	if (op->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
-		op->jump = addr + (short)(USHORT(data, 1));
+		op->jump = addr + (short)(rz_read_at_be16(data, 1));
 		op->fail = addr + sz;
 		IFDBG eprintf("%s jmpto 0x%04" PFMT64x "  failto 0x%04" PFMT64x ".\n",
 			JAVA_OPS[op_byte].name, op->jump, op->fail);
 	} else if (op->type == RZ_ANALYSIS_OP_TYPE_JMP) {
-		op->jump = addr + (short)(USHORT(data, 1));
+		op->jump = addr + (short)(rz_read_at_be16(data, 1));
 		IFDBG eprintf("%s jmpto 0x%04" PFMT64x ".\n", JAVA_OPS[op_byte].name, op->jump);
 	} else if ((op->type & RZ_ANALYSIS_OP_TYPE_CALL) == RZ_ANALYSIS_OP_TYPE_CALL) {
-		op->jump = (int)(short)(USHORT(data, 1));
+		op->jump = (int)(short)(rz_read_at_be16(data, 1));
 		op->fail = addr + sz;
 		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	}

@@ -100,7 +100,6 @@ rz_core_deps = [
   rz_bin_dep,
   platform_deps,
   gdb_dep,
-  java_dep,
   lrt,
   shell_parser_dep
 ]

@@ -161,7 +161,7 @@ RZ_API void rz_cmd_alias_init(RzCmd *cmd) {
 	cmd->aliases.values = NULL;
 }
 
-RZ_API RzCmd *rz_cmd_new(bool has_cons) {
+RZ_API RzCmd *rz_cmd_new(bool has_cons, bool add_core_plugins) {
 	int i;
 	RzCmd *cmd = RZ_NEW0(RzCmd);
 	if (!cmd) {
@@ -175,7 +175,9 @@ RZ_API RzCmd *rz_cmd_new(bool has_cons) {
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0();
 	cmd->root_cmd_desc = create_cmd_desc(cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
-	rz_core_plugin_init(cmd);
+	if (add_core_plugins) {
+		rz_core_plugin_init(cmd);
+	}
 	rz_cmd_macro_init(&cmd->macro);
 	rz_cmd_alias_init(cmd);
 	return cmd;

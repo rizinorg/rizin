@@ -440,7 +440,7 @@ RZ_API int rz_core_plugin_add(RzCmd *cmd, RzCorePlugin *plugin);
 RZ_API int rz_core_plugin_check(RzCmd *cmd, const char *a0);
 RZ_API int rz_core_plugin_fini(RzCmd *cmd);
 
-RZ_API RzCmd *rz_cmd_new(bool has_cons);
+RZ_API RzCmd *rz_cmd_new(bool has_cons, bool add_core_plugins);
 RZ_API RzCmd *rz_cmd_free(RzCmd *cmd);
 RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
 RZ_API int rz_cmd_add(RzCmd *cmd, const char *command, RzCmdCb callback);
