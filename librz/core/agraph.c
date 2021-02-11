@@ -3522,7 +3522,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
 		char *title = get_title(block ? block->addr : addr);
 		if (!acur || strcmp(acur->title, title)) {
-			rz_core_cmd0(core, "sr PC");
+			rz_core_seek_to_register(core, "PC", false);
 		}
 		free(title);
 		g->is_instep = false;
@@ -3977,41 +3977,20 @@ static void seek_to_node(RzANode *n, RzCore *core) {
 }
 
 static void graph_single_step_in(RzCore *core, RzAGraph *g) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
-		if (core->print->cur_enabled) {
-			rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
-			core->print->cur_enabled = 0;
-		} else {
-			rz_core_debug_step_one(core, 1);
-			rz_core_debug_regs2flags(core, 0);
-		}
-	} else {
-		rz_core_cmd(core, "aes", 0);
-		rz_core_regs2flags(core);
-	}
+	rz_core_debug_single_step_in(core);
 	g->is_instep = true;
 	g->need_reload_nodes = true;
 }
 
 static void graph_single_step_over(RzCore *core, RzAGraph *g) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
-		if (core->print->cur_enabled) {
-			rz_core_cmd(core, "dcr", 0);
-			core->print->cur_enabled = 0;
-		} else {
-			rz_core_cmd(core, "dso", 0);
-			rz_core_debug_regs2flags(core, 0);
-		}
-	} else {
-		rz_core_cmd(core, "aeso", 0);
-		rz_core_regs2flags(core);
-	}
+	rz_core_debug_single_step_over(core);
 	g->is_instep = true;
 	g->need_reload_nodes = true;
 }
 
 static void graph_breakpoint(RzCore *core) {
-	rz_core_cmd(core, "dbs $$", 0);
+	ut64 addr = core->print->cur_enabled ? core->offset + core->print->cur : core->offset;
+	rz_core_debug_breakpoint_toggle(core, addr);
 }
 
 static void graph_continue(RzCore *core) {
@@ -4514,8 +4493,12 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			rz_core_visual_toggle_hints(core);
 			break;
 		case '$':
-			rz_core_cmd(core, "dr PC=$$", 0);
-			rz_core_cmd(core, "sr PC", 0);
+			if (core->print->cur_enabled) {
+				rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
+			} else {
+				rz_core_debug_reg_set(core, "PC", core->offset, NULL);
+			}
+			rz_core_seek_to_register(core, "PC", false);
 			g->need_reload_nodes = true;
 			break;
 		case 'R':
@@ -4545,7 +4528,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				char buf[256];
 				rz_line_set_prompt("[comment]> ");
 				if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) > 0) {
-					rz_core_cmdf(core, "\"CC %s\"", buf);
+					rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, core->offset, buf);
 				}
 				g->need_reload_nodes = true;
 				showcursor(core, false);

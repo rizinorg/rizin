@@ -522,6 +522,39 @@ RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode) {
 	ht_up_free(db);
 }
 
+RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
+		if (core->print->cur_enabled) {
+			rz_core_debug_continue_until(core, core->offset, core->offset + core->print->cur);
+			core->print->cur_enabled = 0;
+		} else {
+			rz_core_debug_step_one(core, 1);
+			rz_core_debug_regs2flags(core, 0);
+		}
+	} else {
+		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
+		rz_core_regs2flags(core);
+	}
+}
+
+RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
+	bool io_cache = rz_config_get_b(core->config, "io.cache");
+	rz_config_set_b(core->config, "io.cache", false);
+	if (rz_config_get_b(core->config, "cfg.debug")) {
+		if (core->print->cur_enabled) {
+			rz_core_cmd(core, "dcr", 0);
+			core->print->cur_enabled = 0;
+		} else {
+			rz_core_cmd(core, "dso", 0);
+			rz_core_debug_regs2flags(core, 0);
+		}
+	} else {
+		rz_core_cmd(core, "aeso", 0);
+		rz_core_regs2flags(core);
+	}
+	rz_config_set_b(core->config, "io.cache", io_cache);
+}
+
 RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
 	RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
 	if (bpi) {

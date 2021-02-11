@@ -8,33 +8,40 @@ on:
 
 jobs:
   CodeQL-Build:
-
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-      with:
-        # We must fetch at least the immediate parents so that if this is
-        # a pull request then we can checkout the head.
-        fetch-depth: 2
 
-    - name: Install python and other dependencies
-      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
-      run: sudo pip3 install meson ninja PyYAML
+      run: |
+        sudo apt --assume-yes install python3-wheel python3-setuptools
+        sudo pip3 install meson ninja PyYAML
 
-    # If this run was triggered by a pull request event, then checkout
-    # the head of the pull request instead of the merge commit.
-    - run: git checkout HEAD^2
-      if: ${{ github.event_name == 'pull_request' }}
-      
-    # Initializes the CodeQL tools for scanning.
+    - name: Install microsoft/sarif-multitool
+      run: |
+        sudo apt --assume-yes install npm
+        npm install @microsoft/sarif-multitool
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
+      with:
+        setup-python-dependencies: false
+        config-file: ./.github/workflows/codeql-config.yml
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v1
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
+      with:
+        output: "reports"
+        upload: false
+
+    - name: Merge all files
+      run: npx @microsoft/sarif-multitool merge reports/*.sarif
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v1
+      with:
+        sarif_file: merged.sarif
