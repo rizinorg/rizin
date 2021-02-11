@@ -11,7 +11,6 @@
 #include <math.h>
 #include <sdb.h>
 #include "class.h"
-#include "dsojson.h"
 
 static PrintfCallback Eprintf = (PrintfCallback)printf;
 #ifdef IFDBG
@@ -266,29 +265,17 @@ RZ_API ut8 *rz_bin_java_cp_get_2_ut16(RzBinJavaObj *bin, ut32 *out_sz, ut8 tag, 
 RZ_API ut8 *rz_bin_java_cp_get_name_type(RzBinJavaObj *bin, ut32 *out_sz, ut16 name_idx, ut16 type_idx);
 
 static char *convert_string(const char *bytes, ut32 len) {
-	ut32 idx = 0, pos = 0;
-	ut32 str_sz = 32 * len + 1;
-	char *cpy_buffer = len > 0 ? malloc(str_sz) : NULL;
-	if (!cpy_buffer) {
-		return cpy_buffer;
-	}
-	// 4x is the increase from byte to \xHH where HH represents hexed byte
-	memset(cpy_buffer, 0, str_sz);
-	while (idx < len && pos < len) {
-		if (dso_json_char_needs_hexing(bytes[idx])) {
-			if (pos + 2 < len) {
-				free(cpy_buffer);
-				return NULL;
-			}
-			sprintf(cpy_buffer + pos, "\\x%02x", bytes[idx]);
-			pos += 4;
+	char *buffer;
+	rz_return_val_if_fail(bytes && len > 0 && (buffer = malloc(len + 1)), NULL);
+	for (ut32 idx = 0; idx < len; idx++) {
+		if (IS_PRINTABLE(bytes[idx])) {
+			buffer[idx] = bytes[idx];
 		} else {
-			cpy_buffer[pos] = bytes[idx];
-			pos++;
+			buffer[idx] = '?';
 		}
-		idx++;
 	}
-	return cpy_buffer;
+	buffer[len] = 0;
+	return buffer;
 }
 
 // taken from LLVM Code Byte Swap
@@ -641,81 +628,17 @@ RZ_API char *rz_bin_java_unmangle(const char *flags, const char *name, const cha
 	return result;
 }
 
-RZ_API DsoJsonObj *rz_bin_java_get_bin_obj_json(RzBinJavaObj *bin) {
-	DsoJsonObj *imports_list = rz_bin_java_get_import_json_definitions(bin);
-	DsoJsonObj *fields_list = rz_bin_java_get_field_json_definitions(bin);
-	DsoJsonObj *methods_list = rz_bin_java_get_method_json_definitions(bin);
-	// interfaces_list = rz_bin_java_get_interface_json_definitions (bin);
-	DsoJsonObj *class_dict = rz_bin_java_get_class_info_json(bin);
-	char *res = dso_json_obj_to_str(methods_list);
-	// eprintf ("Resulting methods json: \n%s\n", res);
-	free(res);
-	dso_json_dict_insert_str_key_obj(class_dict, "methods", methods_list);
-	// dso_json_list_free (methods_list);
-	dso_json_obj_del(methods_list);
+RZ_API bool rz_bin_java_get_bin_obj_json(RzBinJavaObj *bin, PJ *j) {
+	rz_return_val_if_fail(bin && j, false);
 
-	res = dso_json_obj_to_str(fields_list);
-	// eprintf ("Resulting fields json: \n%s\n", res);
-	free(res);
-	dso_json_dict_insert_str_key_obj(class_dict, "fields", fields_list);
-	// dso_json_list_free (fields_list);
-	dso_json_obj_del(fields_list);
-
-	res = dso_json_obj_to_str(imports_list);
-	// eprintf ("Resulting imports json: \n%s\n", res);
-	free(res);
-	dso_json_dict_insert_str_key_obj(class_dict, "imports", imports_list);
-	// dso_json_list_free (imports_list);
-	dso_json_obj_del(imports_list);
-
-	// res = dso_json_obj_to_str (interfaces_list);
-	// eprintf ("Resulting interfaces json: \n%s\n", res);
-	// free (res);
-	// dso_json_dict_insert_str_key_obj (class_dict, "interfaces", interfaces_list);
-
-	res = dso_json_obj_to_str(class_dict);
-	// eprintf ("Resulting class info json: \n%s\n", res);
-	free(res);
-	// dso_json_obj_del (class_dict);
-	return class_dict;
-}
-
-RZ_API DsoJsonObj *rz_bin_java_get_import_json_definitions(RzBinJavaObj *bin) {
-	RzList *the_list;
-	DsoJsonObj *json_list = dso_json_list_new();
-	RzListIter *iter = NULL;
-	char *new_str;
-
-	if (!bin || !(the_list = rz_bin_java_get_lib_names(bin))) {
-		return json_list;
-	}
-
-	rz_list_foreach (the_list, iter, new_str) {
-		char *tmp = new_str;
-		// eprintf ("Processing string: %s\n", new_str);
-		while (*tmp) {
-			if (*tmp == '/') {
-				*tmp = '.';
-			}
-			tmp++;
-		}
-		// eprintf ("adding string: %s\n", new_str);
-		dso_json_list_append_str(json_list, new_str);
-	}
-	rz_list_free(the_list);
-	return json_list;
-}
-
-RZ_API DsoJsonObj *rz_bin_java_get_class_info_json(RzBinJavaObj *bin) {
 	RzList *classes = rz_bin_java_get_classes(bin);
-	DsoJsonObj *interfaces_list = dso_json_list_new();
-	DsoJsonObj *class_info_dict = dso_json_dict_new();
-	RzBinClass *class_ = rz_list_get_n(classes, 0);
+	const RzBinClass *class_ = rz_list_get_n(classes, 0);
+	pj_o(j);
 
 	if (class_) {
 		int dummy = 0;
 		RzListIter *iter;
-		RzBinClass *class_v = NULL;
+		const RzBinClass *class_v = NULL;
 		// add access flags like in methods
 		bool is_public = ((class_->visibility & RZ_BIN_JAVA_CLASS_ACC_PUBLIC) != 0);
 		bool is_final = ((class_->visibility & RZ_BIN_JAVA_CLASS_ACC_FINAL) != 0);
@@ -726,97 +649,135 @@ RZ_API DsoJsonObj *rz_bin_java_get_class_info_json(RzBinJavaObj *bin) {
 		bool is_annotation = ((class_->visibility & RZ_BIN_JAVA_CLASS_ACC_ANNOTATION) != 0);
 		bool is_enum = ((class_->visibility & RZ_BIN_JAVA_CLASS_ACC_ENUM) != 0);
 
-		dso_json_dict_insert_str_key_num(class_info_dict, "access_flags", class_->visibility);
-		dso_json_dict_insert_str_key_num(class_info_dict, "is_public", is_public);
-		dso_json_dict_insert_str_key_num(class_info_dict, "is_final", is_final);
-		dso_json_dict_insert_str_key_num(class_info_dict, "is_super", is_super);
-		dso_json_dict_insert_str_key_num(class_info_dict, "is_interface", is_interface);
-		dso_json_dict_insert_str_key_num(class_info_dict, "is_abstract", is_abstract);
-		dso_json_dict_insert_str_key_num(class_info_dict, "is_synthetic", is_synthetic);
-		dso_json_dict_insert_str_key_num(class_info_dict, "is_annotation", is_annotation);
-		dso_json_dict_insert_str_key_num(class_info_dict, "is_enum", is_enum);
-		dso_json_dict_insert_str_key_str(class_info_dict, "name", class_->name);
+		pj_kN(j, "access_flags", class_->visibility);
+		pj_kb(j, "is_public", is_public);
+		pj_kb(j, "is_final", is_final);
+		pj_kb(j, "is_super", is_super);
+		pj_kb(j, "is_interface", is_interface);
+		pj_kb(j, "is_abstract", is_abstract);
+		pj_kb(j, "is_synthetic", is_synthetic);
+		pj_kb(j, "is_annotation", is_annotation);
+		pj_kb(j, "is_enum", is_enum);
+		pj_ks(j, "name", class_->name ? class_->name : "");
 
-		if (!class_->super) {
-			DsoJsonObj *str = dso_json_str_new();
-			dso_json_dict_insert_str_key_obj(class_info_dict, "super", str);
-			dso_json_str_free(str);
-		} else {
-			dso_json_dict_insert_str_key_str(class_info_dict, "super", class_->super);
-		}
+		pj_ks(j, "super", class_->super ? class_->super : "");
 
+		pj_ka(j, "interfaces");
 		rz_list_foreach (classes, iter, class_v) {
 			if (!dummy) {
 				dummy++;
 				continue;
 			}
 			// enumerate all interface classes and append them to the interfaces
-			if ((class_v->visibility & RZ_BIN_JAVA_CLASS_ACC_INTERFACE) != 0) {
-				dso_json_list_append_str(interfaces_list, class_v->name);
+			if ((class_v->visibility & RZ_BIN_JAVA_CLASS_ACC_INTERFACE) != 0 && class_v->name) {
+				pj_s(j, class_v->name);
 			}
 		}
+		pj_end(j);
 	}
-	dso_json_dict_insert_str_key_obj(class_info_dict, "interfaces", interfaces_list);
+
 	rz_list_free(classes);
-	// dso_json_list_free (interfaces_list);
-	dso_json_obj_del(interfaces_list);
-	return class_info_dict;
+
+	pj_k(j, "methods");
+	if (!rz_bin_java_get_method_json_definitions(bin, j)) {
+		eprintf("[java] failed to insert method defintions in object\n");
+	}
+
+	pj_k(j, "fields");
+	if (!rz_bin_java_get_field_json_definitions(bin, j)) {
+		eprintf("[java] failed to insert field defintions in object\n");
+	}
+
+	pj_k(j, "imports");
+	if (!rz_bin_java_get_import_json_definitions(bin, j)) {
+		eprintf("[java] failed to import field defintions in object\n");
+	}
+
+	pj_end(j);
+	return true;
 }
 
-RZ_API DsoJsonObj *rz_bin_java_get_interface_json_definitions(RzBinJavaObj *bin) {
+RZ_API bool rz_bin_java_get_import_json_definitions(RzBinJavaObj *bin, PJ *j) {
+	rz_return_val_if_fail(bin && j, false);
 	RzList *the_list;
-	DsoJsonObj *json_list = dso_json_list_new();
 	RzListIter *iter = NULL;
 	char *new_str;
 
-	if (!bin || !(the_list = rz_bin_java_get_interface_names(bin))) {
-		return json_list;
+	if (!(the_list = rz_bin_java_get_lib_names(bin))) {
+		return false;
 	}
+
+	pj_a(j);
 
 	rz_list_foreach (the_list, iter, new_str) {
 		char *tmp = new_str;
-		// eprintf ("Processing string: %s\n", new_str);
 		while (*tmp) {
 			if (*tmp == '/') {
 				*tmp = '.';
 			}
 			tmp++;
 		}
-		// eprintf ("adding string: %s\n", new_str);
-		dso_json_list_append_str(json_list, new_str);
+		pj_s(j, new_str);
 	}
+
 	rz_list_free(the_list);
-	return json_list;
+	pj_end(j);
+	return true;
 }
 
-RZ_API DsoJsonObj *rz_bin_java_get_method_json_definitions(RzBinJavaObj *bin) {
+RZ_API bool rz_bin_java_get_interface_json_definitions(RzBinJavaObj *bin, PJ *j) {
+	rz_return_val_if_fail(bin && j, false);
+	RzList *the_list;
+	RzListIter *iter = NULL;
+	char *new_str;
+
+	if (!(the_list = rz_bin_java_get_interface_names(bin))) {
+		return false;
+	}
+	pj_a(j);
+
+	rz_list_foreach (the_list, iter, new_str) {
+		char *tmp = new_str;
+		while (*tmp) {
+			if (*tmp == '/') {
+				*tmp = '.';
+			}
+			tmp++;
+		}
+		pj_s(j, new_str);
+	}
+
+	rz_list_free(the_list);
+	pj_end(j);
+	return true;
+}
+
+RZ_API bool rz_bin_java_get_method_json_definitions(RzBinJavaObj *bin, PJ *j) {
+	rz_return_val_if_fail(bin && j, false);
 	RzBinJavaField *fm_type = NULL;
 	RzListIter *iter = NULL;
-	DsoJsonObj *json_list = dso_json_list_new();
-	if (!bin) {
-		return json_list;
-	}
+	pj_a(j);
 	rz_list_foreach (bin->methods_list, iter, fm_type) {
-		DsoJsonObj *method_proto = rz_bin_java_get_method_json_definition(bin, fm_type);
-		// eprintf ("Method json: %s\n", method_proto);
-		dso_json_list_append(json_list, method_proto);
+		if (!rz_bin_java_get_method_json_definition(bin, fm_type, j)) {
+			eprintf("[java] failed to insert method defintion in array.\n");
+		}
 	}
-	return json_list;
+	pj_end(j);
+	return true;
 }
 
-RZ_API DsoJsonObj *rz_bin_java_get_field_json_definitions(RzBinJavaObj *bin) {
+RZ_API bool rz_bin_java_get_field_json_definitions(RzBinJavaObj *bin, PJ *j) {
+	rz_return_val_if_fail(bin && j, false);
 	RzBinJavaField *fm_type = NULL;
 	RzListIter *iter = NULL;
-	DsoJsonObj *json_list = dso_json_list_new();
-	if (!bin) {
-		return json_list;
-	}
+	pj_a(j);
 	rz_list_foreach (bin->fields_list, iter, fm_type) {
-		DsoJsonObj *field_proto = rz_bin_java_get_field_json_definition(bin, fm_type);
-		// eprintf ("Field json: %s\n", field_proto);
-		dso_json_list_append(json_list, field_proto);
+		if (!rz_bin_java_get_field_json_definition(bin, fm_type, j)) {
+			eprintf("[java] failed to insert field defintion in array.\n");
+		}
 	}
-	return json_list;
+	pj_end(j);
+	return true;
 }
 
 RZ_API char *rz_bin_java_create_method_fq_str(const char *klass, const char *name, const char *signature) {
@@ -845,9 +806,13 @@ RZ_API char *rz_bin_java_create_field_fq_str(const char *klass, const char *name
 	return rz_str_newf("%s %s.%s", signature, klass, name);
 }
 
-RZ_API DsoJsonObj *rz_bin_java_get_fm_type_definition_json(RzBinJavaObj *bin, RzBinJavaField *fm_type, int is_method) {
+RZ_API bool rz_bin_java_get_fm_type_definition_json(RzBinJavaObj *bin, RzBinJavaField *fm_type, int is_method, PJ *j) {
+	rz_return_val_if_fail(bin && fm_type && j, false);
+
 	ut64 addr = UT64_MAX;
+	ut64 load = UT64_MAX;
 	char *prototype = NULL, *fq_name = NULL;
+	const char *class_name, *signature, *name;
 	bool is_native = ((fm_type->flags & RZ_BIN_JAVA_METHOD_ACC_NATIVE) != 0);
 	bool is_static = ((fm_type->flags & RZ_BIN_JAVA_METHOD_ACC_STATIC) != 0);
 	bool is_synthetic = ((fm_type->flags & RZ_BIN_JAVA_METHOD_ACC_SYNTHETIC) != 0);
@@ -856,41 +821,47 @@ RZ_API DsoJsonObj *rz_bin_java_get_fm_type_definition_json(RzBinJavaObj *bin, Rz
 	bool is_protected = ((fm_type->flags & RZ_BIN_JAVA_METHOD_ACC_PROTECTED) != 0);
 	bool is_super = ((fm_type->flags & RZ_BIN_JAVA_CLASS_ACC_SUPER) != 0);
 
-	DsoJsonObj *fm_type_dict = dso_json_dict_new();
-	dso_json_dict_insert_str_key_num(fm_type_dict, "access_flags", fm_type->flags);
-	dso_json_dict_insert_str_key_num(fm_type_dict, "is_method", is_method);
-	dso_json_dict_insert_str_key_num(fm_type_dict, "is_native", is_native);
-	dso_json_dict_insert_str_key_num(fm_type_dict, "is_synthetic", is_synthetic);
-	dso_json_dict_insert_str_key_num(fm_type_dict, "is_private", is_private);
-	dso_json_dict_insert_str_key_num(fm_type_dict, "is_public", is_public);
-	dso_json_dict_insert_str_key_num(fm_type_dict, "is_static", is_static);
-	dso_json_dict_insert_str_key_num(fm_type_dict, "is_protected", is_protected);
-	dso_json_dict_insert_str_key_num(fm_type_dict, "is_super", is_super);
+	pj_o(j);
+	pj_kN(j, "access_flags", fm_type->flags);
+	pj_kb(j, "is_method", is_method);
+	pj_kb(j, "is_native", is_native);
+	pj_kb(j, "is_synthetic", is_synthetic);
+	pj_kb(j, "is_private", is_private);
+	pj_kb(j, "is_public", is_public);
+	pj_kb(j, "is_static", is_static);
+	pj_kb(j, "is_protected", is_protected);
+	pj_kb(j, "is_super", is_super);
 
 	addr = rz_bin_java_get_method_code_offset(fm_type);
 	if (addr == 0) {
 		addr = fm_type->file_offset;
 	}
 	addr += bin->loadaddr;
+	load = fm_type->file_offset + bin->loadaddr;
 
-	dso_json_dict_insert_str_key_num(fm_type_dict, "addr", addr);
-	dso_json_dict_insert_str_key_num(fm_type_dict, "offset", fm_type->file_offset + bin->loadaddr);
-	dso_json_dict_insert_str_key_str(fm_type_dict, "class_name", fm_type->class_name);
-	dso_json_dict_insert_str_key_str(fm_type_dict, "signature", fm_type->descriptor);
-	dso_json_dict_insert_str_key_str(fm_type_dict, "name", fm_type->name);
+	class_name = fm_type->class_name ? fm_type->class_name : "";
+	signature = fm_type->descriptor ? fm_type->descriptor : "";
+	name = fm_type->name ? fm_type->name : "";
+
+	pj_kn(j, "addr", addr);
+	pj_kn(j, "offset", load);
+	pj_ks(j, "class_name", class_name);
+	pj_ks(j, "signature", signature);
+	pj_ks(j, "name", name);
 
 	if (is_method) {
-		fq_name = rz_bin_java_create_method_fq_str(fm_type->class_name, fm_type->name, fm_type->descriptor);
+		fq_name = rz_bin_java_create_method_fq_str(class_name, name, signature);
 	} else {
-		fq_name = rz_bin_java_create_field_fq_str(fm_type->class_name, fm_type->name, fm_type->descriptor);
+		fq_name = rz_bin_java_create_field_fq_str(class_name, name, signature);
 	}
-	dso_json_dict_insert_str_key_str(fm_type_dict, "fq_name", fq_name);
-
-	prototype = rz_bin_java_unmangle(fm_type->flags_str, fm_type->name, fm_type->descriptor);
-	dso_json_dict_insert_str_key_str(fm_type_dict, "prototype", prototype);
-	free(prototype);
+	pj_ks(j, "fq_name", fq_name);
 	free(fq_name);
-	return fm_type_dict;
+
+	prototype = rz_bin_java_unmangle(fm_type->flags_str, name, signature);
+	pj_ks(j, "prototype", prototype);
+	free(prototype);
+	pj_end(j);
+	return true;
 }
 
 RZ_API char *rz_bin_java_get_method_definition(RzBinJavaField *fm_type) {
@@ -901,12 +872,12 @@ RZ_API char *rz_bin_java_get_field_definition(RzBinJavaField *fm_type) {
 	return rz_bin_java_unmangle(fm_type->flags_str, fm_type->name, fm_type->descriptor);
 }
 
-RZ_API DsoJsonObj *rz_bin_java_get_method_json_definition(RzBinJavaObj *bin, RzBinJavaField *fm_type) {
-	return rz_bin_java_get_fm_type_definition_json(bin, fm_type, 1);
+RZ_API bool rz_bin_java_get_method_json_definition(RzBinJavaObj *bin, RzBinJavaField *fm_type, PJ *j) {
+	return rz_bin_java_get_fm_type_definition_json(bin, fm_type, 1, j);
 }
 
-RZ_API DsoJsonObj *rz_bin_java_get_field_json_definition(RzBinJavaObj *bin, RzBinJavaField *fm_type) {
-	return rz_bin_java_get_fm_type_definition_json(bin, fm_type, 0);
+RZ_API bool rz_bin_java_get_field_json_definition(RzBinJavaObj *bin, RzBinJavaField *fm_type, PJ *j) {
+	return rz_bin_java_get_fm_type_definition_json(bin, fm_type, 0, j);
 }
 
 RZ_API int rz_bin_java_extract_reference_name(const char *input_str, char **ref_str, ut8 array_cnt) {
@@ -8018,14 +7989,13 @@ RZ_API int U(rz_bin_java_is_method_protected)(RzBinJavaObj *bin_obj, ut64 addr) 
 		rz_bin_java_get_method_code_attribute_with_addr(bin_obj, addr));
 }
 
-RZ_API int rz_bin_java_print_method_idx_summary(RzBinJavaObj *bin_obj, ut32 idx) {
-	int res = false;
+RZ_API bool rz_bin_java_print_method_idx_summary(RzBinJavaObj *bin_obj, ut32 idx) {
 	if (idx < rz_list_length(bin_obj->methods_list)) {
 		RzBinJavaField *fm_type = rz_list_get_n(bin_obj->methods_list, idx);
 		rz_bin_java_print_method_summary(fm_type);
-		res = true;
+		return true;
 	}
-	return res;
+	return false;
 }
 
 RZ_API ut32 rz_bin_java_get_method_count(RzBinJavaObj *bin_obj) {
