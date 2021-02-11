@@ -198,7 +198,7 @@ bp_plugins = [
 ]
 
 core_plugins = [
-  'java'
+  'java',
 ]
 
 crypto_plugins = [

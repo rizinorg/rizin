@@ -6638,7 +6638,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "z", "zignatures", rz_cmd_zign },
 	};
 
-	core->rcmd = rz_cmd_new(!!core->cons);
+	core->rcmd = rz_cmd_new(!!core->cons, true);
 	core->rcmd->macro.user = core;
 	core->rcmd->macro.num = core->num;
 	core->rcmd->macro.cmd = core_cmd0_wrapper;
