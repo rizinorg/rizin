@@ -773,7 +773,7 @@ jobs:
     - name: Download subprojects
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        meson subprojects download capstone-bundled sdb tree-sitter
+        meson subprojects download
     - name: Login to DockerHub
       uses: docker/login-action@v1
       with:
