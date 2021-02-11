@@ -71,53 +71,6 @@ static const char *help_msg_exclamation[] = {
 	NULL
 };
 
-static const char *help_msg_root[] = {
-	"%var", "=value", "alias for 'env' command",
-	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
-	"(macro arg0 arg1)", "", "manage scripting macros",
-	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load rizin, cparse or rlang file",
-	"_", "[?]", "Print last output",
-	"=", "[?] [cmd]", "send/listen for remote commands (rap://, raps://, udp://, http://, <fd>)",
-	"<", "[...]", "push escaped string into the RzCons.readChar buffer",
-	"/", "[?]", "search for bytes, regexps, patterns, ..",
-	"!", "[?] [cmd]", "run given command as in system(3)",
-	"#", "[?] !lang [..]", "Hashbang to run an rlang script",
-	"a", "[?]", "analysis commands",
-	"b", "[?]", "display or change the block size",
-	"c", "[?] [arg]", "compare block with given data",
-	"C", "[?]", "code metadata (comments, format, hints, ..)",
-	"d", "[?]", "debugger commands",
-	"e", "[?] [a[=b]]", "list/get/set config evaluable vars",
-	"f", "[?] [name][sz][at]", "add flag at current address",
-	"g", "[?] [arg]", "generate shellcodes with rz_egg",
-	"i", "[?] [file]", "get info about opened file from rz_bin",
-	"k", "[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
-	"l", " [filepattern]", "list files and directories",
-	"L", "[?] [-] [plugin]", "list, unload load rizin plugins",
-	"m", "[?]", "mountpoints commands",
-	"o", "[?] [file] ([offset])", "open file at optional address",
-	"p", "[?] [len]", "print current block with format and length",
-	"P", "[?]", "project management utilities",
-	"q", "[?] [ret]", "quit program with a return value",
-	"r", "[?] [len]", "resize file",
-	"s", "[?] [addr]", "seek to address (also for '0x', '0x1' == 's 0x1')",
-	"t", "[?]", "types, noreturn, signatures, C parser and more",
-	"T", "[?] [-] [num|msg]", "Text log utility (used to chat, sync, log, ...)",
-	"u", "[?]", "uname/undo seek/write",
-	"v", "", "visual mode (v! = panels, vv = fcnview, vV = fcngraph, vVV = callgraph)",
-	"w", "[?] [str]", "multiple write operations",
-	"x", "[?] [len]", "alias for 'px' (print hexadecimal)",
-	"y", "[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
-	"z", "[?]", "zignatures management",
-	"?[??]", "[expr]", "Help or evaluate math expression",
-	"?$?", "", "show available '$' variables and aliases",
-	"?@?", "", "misc help for '@' (seek), '~' (grep) (see ~?"
-		   "?)",
-	"?>?", "", "output redirection",
-	"?|?", "", "help for '|' (pipe)",
-	NULL
-};
-
 static const char *help_msg_question_e[] = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
@@ -257,13 +210,6 @@ static const char *help_msg_greater_sign[] = {
 	"[cmd] H> [file]", "", "redirect html output of 'cmd' to 'file'",
 	"[cmd] 2> [file]", "", "redirect STDERR of 'cmd' to 'file'",
 	"[cmd] 2> /dev/null", "", "omit the STDERR output of 'cmd'",
-	NULL
-};
-
-static const char *help_msg_intro[] = {
-	"Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...", "", "",
-	"Append '?' to any char command to get detailed help", "", "",
-	"Prefix with number to repeat command N times (f.ex: 3x)", "", "",
 	NULL
 };
 
@@ -1179,9 +1125,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	case '\0': // "?"
 	default:
-		// TODO #7967 help refactor
-		rz_core_cmd_help(core, help_msg_intro);
-		rz_core_cmd_help(core, help_msg_root);
 		break;
 	}
 	return 0;
