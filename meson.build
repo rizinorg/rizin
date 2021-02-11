@@ -126,7 +126,9 @@ if cc.has_argument('-Werror=sizeof-pointer-memaccess')
 endif
 
 if cc.get_id() == 'clang-cl'
-  add_project_arguments('-fcommon', language: 'c')
+  if cc.has_argument('-fcommon')
+    add_project_arguments('-fcommon', language: 'c')
+  endif
   add_project_arguments('-D__STDC__=1', language: 'c')
   add_project_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
   add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
@@ -629,7 +631,7 @@ summary({
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
   'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
-  'System zip library': zip_dep.found() and zip_dep.type_name() != 'internal',
+  'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
   'Use RPATH': use_rpath,
 }, section: 'Configuration', bool_yn: true)

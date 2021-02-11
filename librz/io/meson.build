@@ -55,7 +55,7 @@ rz_io_deps = [
   gdb_dep,
   winkd_dep,
   qnx_dep,
-  zip_dep,
+  libzip_dep,
   ar_dep,
   pth,
   rz_util_dep,
