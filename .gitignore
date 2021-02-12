@@ -52,9 +52,7 @@ binrz/rz-ax/rz-ax.exe
 binrz/rz-sign/rz-sign
 binrz/rz-sign/rz-sign.exe
 binrz/*/_CodeSignature/*
-build
-builddir
-build_sdb
+build*/
 config-user.mk
 librz/bin/d/dll/dll
 librz/config.h
@@ -130,3 +128,11 @@ librz/include/sdb
 peda-session-*
 /.vs
 .cache/
+subprojects/capstone-bundled/
+subprojects/libuv-*/
+subprojects/libzip-*/
+subprojects/lz4-*/
+subprojects/packagecache/
+subprojects/sdb/
+subprojects/tree-sitter-*/
+subprojects/zlib-*/
