@@ -12,6 +12,7 @@ RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char 
 	if (rz_str_startswith(b, "base64:")) {
 		char *newbody = strdup(b);
 		if (!newbody) {
+			free(b);
 			return;
 		}
 		b = rz_str_replace(newbody, "\\n", "", true);
