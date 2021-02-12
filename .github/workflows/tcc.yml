@@ -2,6 +2,15 @@ name: TinyCC build
 
 on:
   push:
+    paths:
+    - '**.c'
+    - '**.h'
+    - '**.in'
+    - '**.inc'
+    - '**/meson.build'
+    - 'shlr/rizin-shell-parser/**'
+    - 'subprojects/**'
+    - '.github/workflows/tcc.yml'
     branches:
     - 'dev'
     - 'stable'
@@ -9,6 +18,15 @@ on:
   schedule:
     - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
   pull_request:
+    paths:
+    - '**.c'
+    - '**.h'
+    - '**.in'
+    - '**.inc'
+    - '**/meson.build'
+    - 'shlr/rizin-shell-parser/**'
+    - 'subprojects/**'
+    - '.github/workflows/tcc.yml'
     branches:
     - 'dev'
     - 'stable'
