@@ -14,8 +14,8 @@ run in parallel and may attempt to open the same port at the same time.
 """
 
 import argparse
-import os
 import subprocess
+import sys
 
 
 def execute(cmd):
@@ -48,11 +48,11 @@ def main():
                 print(output)
             # Exit once gdbserver is ready for connections
             if "Listening on port" in output:
-                exit(0)
+                sys.exit(0)
             # gdbserver might fail to start if the port is taken
             if "Can't bind address" in output:
                 print(output)
-                exit(1)
+                sys.exit(1)
 
 
 if __name__ == "__main__":
