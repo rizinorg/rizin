@@ -765,7 +765,7 @@ jobs:
     name: Publish Docker image on Docker Hub
     needs: [build-and-test]
     runs-on: ubuntu-20.04
-    if: github.event_name == 'push'
+#    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
