@@ -37,7 +37,7 @@ FROM debian:10
 LABEL rizin latest
 
 # Radare version
-ARG RZ_VERSION=dev
+ARG RZ_VERSION=travis-github-libuv
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=master
 
