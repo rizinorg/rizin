@@ -29,10 +29,9 @@ import os
 import re
 from binascii import hexlify
 from concurrent.futures import ProcessPoolExecutor
-from multiprocessing import Lock
 
 import sh
-from sh import dd, rz_asm
+from sh import rz_asm
 
 MAX_OPLEN = 20
 MAX_METACASE_EXAMPLES = 1
@@ -58,12 +57,12 @@ re_seg = re.compile("(cs|ds|es|fs|gs):")
 
 
 def cannonical(s):
-    return re.sub("0x[0-9a-fA-F]+|\d+", MARKER_NUMBER, s)
+    return re.sub(r"0x[0-9a-fA-F]+|\d+", MARKER_NUMBER, s)
 
 
 def meta_cannonical(s):
     s = cannonical(s)
-    for r in re.findall("\[(.+?)]", s):
+    for r in re.findall(r"\[(.+?)]", s):
         r2 = re.sub("[a-z]+", MARKER_REGISTER, r)
         s = s.replace(r, r2)
     return s
@@ -97,28 +96,28 @@ def gen_testcase(cause, ins, inpairs, oins=""):
 def check_hexpairs(orig_input_hexpairs):
     output = rz_asm("-D", "-a", DISASM_ENGINE, orig_input_hexpairs)
     output = output.stdout.split(b"\n")[0].decode()
-    output = re.split("\s+", output, 2)[-1]
-    input_hexpairs, input_ins = re.split("\s+", output, 1)
+    output = re.split(r"\s+", output, 2)[-1]
+    input_hexpairs, input_ins = re.split(r"\s+", output, 1)
 
     if input_ins == "invalid":
         if REFERENCE_DISASM_ENGINE:
             coutput = rz_asm("-D", "-a", REFERENCE_DISASM_ENGINE, orig_input_hexpairs)
             coutput = coutput.stdout.split(b"\n")[0].decode()
-            coutput = re.split("\s+", coutput, 2)[-1]
-            cinput_hexpairs, cinput_ins = re.split("\s+", coutput, 1)
+            coutput = re.split(r"\s+", coutput, 2)[-1]
+            cinput_hexpairs, cinput_ins = re.split(r"\s+", coutput, 1)
             if cinput_ins != "invalid":
                 print(cinput_hexpairs, cinput_ins)
                 return gen_testcase(
                     "Disassemble False Fail", cinput_ins, cinput_hexpairs, input_ins
                 )
-        return
+        return None
 
     try:
         output_hexpairs = rz_asm("-a", ASM_ENGINE, input_ins).stdout.split(b"\n")[0]
     except sh.ErrorReturnCode_1 as e:
         if "Cannot assemble" in str(e):
             return gen_testcase("Assemble False Fail", input_ins, input_hexpairs)
-        return
+        return None
 
     output_ins = rz_asm("-d", "-a", DISASM_ENGINE, output_hexpairs)
     output_ins = output_ins.stdout.split(b"\n")[0].decode()
@@ -127,6 +126,7 @@ def check_hexpairs(orig_input_hexpairs):
         return gen_testcase(
             "Assemble != Dis+Assemble", input_ins, input_hexpairs, output_ins
         )
+    return None
 
 
 def main():
@@ -174,6 +174,7 @@ def main():
             elif inskey not in cases:
                 cases[inskey] = cases.get(inskey, 0) + 1
                 print("%s\n" % json.dumps(res, indent=4))
+    return 0
 
 
 if __name__ == "__main__":
