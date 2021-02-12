@@ -30,8 +30,8 @@
 # $ rizin -d /bin/true
 #
 
-# Using debian 10.8 as base image.
-FROM debian:10.8
+# Using ubuntu 20.04 as base image.
+FROM ubuntu:20.04
 
 # Label base
 LABEL rizin latest
