@@ -22,7 +22,9 @@ RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char 
 		}
 		b = newbody;
 	}
-	b = rz_str_append(b, "\n");
+	if (!RZ_STR_ISEMPTY(b)) {
+		b = rz_str_append(b, "\n");
+	}
 	rz_agraph_add_node_with_color(core->graph, title, b, color);
 	free(b);
 }
