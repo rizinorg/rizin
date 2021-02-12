@@ -5,8 +5,34 @@ on:
   pull_request:
 
 jobs:
-  cmd_descs_yaml_check:
+  changes:
     runs-on: ubuntu-latest
+    outputs:
+      yaml: ${{ steps.filter.outputs.yaml }}
+      clang-format: ${{ steps.filter.outputs.clang-format }}
+      prettier: ${{ steps.filter.outputs.prettier }}
+    steps:
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          yaml:
+            - '**.yml'
+            - '.github/workflows/linter.yml'
+          clang-format:
+            - '**.c'
+            - '**.h'
+            - '**.in'
+            - '**.inc'
+            - '.github/workflows/linter.yml'
+          prettier:
+            - '**.js'
+            - '.github/workflows/linter.yml'
+
+  cmd_descs_yaml_check:
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
       - uses: actions/checkout@v2
       - name: Install tools
@@ -20,7 +46,9 @@ jobs:
           diff /tmp/cmd_descs.c ./librz/core/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs.h
 
   clang-format:
+    needs: changes
     runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.clang-format == 'true' }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -46,7 +74,9 @@ jobs:
         python sys/clang-format.py --check --verbose
 
   prettier:
+    needs: changes
     runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.prettier == 'true' }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
