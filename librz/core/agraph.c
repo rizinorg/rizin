@@ -4932,3 +4932,53 @@ failure:
 	rz_agraph_free(result_agraph);
 	return NULL;
 }
+
+RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color) {
+	char *b = strdup(body);
+	if (rz_str_startswith(b, "base64:")) {
+		char *newbody = strdup(b);
+		if (!newbody) {
+			return;
+		}
+		b = rz_str_replace(newbody, "\\n", "", true);
+		newbody = (char *)rz_base64_decode_dyn(b + strlen("base64:"), -1);
+		free(b);
+		if (!newbody) {
+			return;
+		}
+		b = newbody;
+	}
+	b = rz_str_append(b, "\n");
+	rz_agraph_add_node_with_color(core->graph, title, b, color);
+	free(b);
+}
+
+RZ_IPI void rz_core_agraph_del_node(RzCore *core, const char *title) {
+	rz_agraph_del_node(core->graph, title);
+}
+
+RZ_IPI void rz_core_agraph_add_edge(RzCore *core, const char *un, const char *vn) {
+	RzANode *u = rz_agraph_get_node(core->graph, un);
+	RzANode *v = rz_agraph_get_node(core->graph, vn);
+	if (!u) {
+		rz_cons_printf("Node %s not found!\n", un);
+		return;
+	} else if (!v) {
+		rz_cons_printf("Node %s not found!\n", vn);
+		return;
+	}
+	rz_agraph_add_edge(core->graph, u, v);
+}
+
+RZ_IPI void rz_core_agraph_del_edge(RzCore *core, const char *un, const char *vn) {
+	RzANode *u = rz_agraph_get_node(core->graph, un);
+	RzANode *v = rz_agraph_get_node(core->graph, vn);
+	if (!u) {
+		rz_cons_printf("Node %s not found!\n", un);
+		return;
+	} else if (!v) {
+		rz_cons_printf("Node %s not found!\n", vn);
+		return;
+	}
+	rz_agraph_del_edge(core->graph, u, v);
+}

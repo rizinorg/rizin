@@ -5650,17 +5650,23 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		}
 		break;
 	case 'g': // "aeg"
-		if (input[1] == 'i' || input[1] == 'v') {
+		switch (input[1]) {
+		case 'i':
+		case 'v': {
 			char *oprompt = strdup(rz_config_get(core->config, "cmd.gprompt"));
 			rz_config_set(core->config, "cmd.gprompt", "pi 1");
 			rz_core_cmd0(core, ".aeg*;aggv");
 			rz_config_set(core->config, "cmd.gprompt", oprompt);
 			free(oprompt);
-		} else if (!input[1]) {
+			break;
+		}
+		case '\0':
 			rz_core_cmd0(core, ".aeg*;agg");
-		} else if (input[1] == ' ') {
+			break;
+		case ' ':
 			rz_core_analysis_esil_graph(core, input + 2);
-		} else if (input[1] == '*') {
+			break;
+		case '*': {
 			RzAnalysisOp *aop = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_ESIL);
 			if (aop) {
 				const char *esilstr = rz_strbuf_get(&aop->esil);
@@ -5668,11 +5674,14 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 					rz_core_analysis_esil_graph(core, esilstr);
 				}
 			}
-		} else {
+			break;
+		}
+		default:
 			rz_cons_printf("Usage: aeg[iv*]\n");
 			rz_cons_printf(" aeg  analyze current instruction as an esil graph\n");
 			rz_cons_printf(" aeg* analyze current instruction as an esil graph\n");
 			rz_cons_printf(" aegv and launch the visual interactive mode (.aeg*;aggv == aegv)\n");
+			break;
 		}
 		break;
 	case 'b': // "aeb"
@@ -7557,42 +7566,18 @@ static void agraph_print_edge(RzANode *from, RzANode *to, void *user) {
 static void cmd_agraph_node(RzCore *core, const char *input) {
 	switch (*input) {
 	case ' ': { // "agn"
-		char *newbody = NULL;
-		char **args, *body;
-		int n_args, B_LEN = strlen("base64:");
-		int color = -1;
-		input++;
-		args = rz_str_argv(input, &n_args);
+		int n_args = 0;
+		char **args = rz_str_argv(input, &n_args);
 		if (n_args < 1 || n_args > 3) {
 			rz_cons_printf("Wrong arguments\n");
 			rz_str_argv_free(args);
 			break;
 		}
-		// strdup cause there is double free in rz_str_argv_free due to a realloc call
-		if (n_args > 1) {
-			body = strdup(args[1]);
-			if (strncmp(body, "base64:", B_LEN) == 0) {
-				body = rz_str_replace(body, "\\n", "", true);
-				newbody = (char *)rz_base64_decode_dyn(body + B_LEN, -1);
-				free(body);
-				if (!newbody) {
-					eprintf("Cannot allocate buffer\n");
-					rz_str_argv_free(args);
-					break;
-				}
-				body = newbody;
-			}
-			body = rz_str_append(body, "\n");
-			if (n_args > 2) {
-				color = atoi(args[2]);
-			}
-		} else {
-			body = strdup("");
-		}
-		rz_agraph_add_node_with_color(core->graph, args[0], body, color);
+		const char *title = args[0];
+		const char *body = n_args > 1 ? args[1] : "";
+		int color = n_args > 2 ? atoi(args[2]) : -1;
+		rz_core_agraph_add_node(core, title, body, color);
 		rz_str_argv_free(args);
-		free(body);
-		//free newbody it's not necessary since rz_str_append reallocate the space
 		break;
 	}
 	case '-': { // "agn-"
@@ -7606,7 +7591,7 @@ static void cmd_agraph_node(RzCore *core, const char *input) {
 			rz_str_argv_free(args);
 			break;
 		}
-		rz_agraph_del_node(core->graph, args[0]);
+		rz_core_agraph_del_node(core, args[0]);
 		rz_str_argv_free(args);
 		break;
 	}
@@ -7618,13 +7603,11 @@ static void cmd_agraph_node(RzCore *core, const char *input) {
 }
 
 static void cmd_agraph_edge(RzCore *core, const char *input) {
+	char **args;
+	int n_args;
+
 	switch (*input) {
 	case ' ': // "age"
-	case '-': { // "age-"
-		RzANode *u, *v;
-		char **args;
-		int n_args;
-
 		args = rz_str_argv(input + 1, &n_args);
 		if (n_args != 2) {
 			rz_cons_printf("Wrong arguments\n");
@@ -7632,25 +7615,20 @@ static void cmd_agraph_edge(RzCore *core, const char *input) {
 			break;
 		}
 
-		u = rz_agraph_get_node(core->graph, args[0]);
-		v = rz_agraph_get_node(core->graph, args[1]);
-		if (!u || !v) {
-			if (!u) {
-				rz_cons_printf("Node %s not found!\n", args[0]);
-			} else {
-				rz_cons_printf("Node %s not found!\n", args[1]);
-			}
+		rz_core_agraph_add_edge(core, args[0], args[1]);
+		rz_str_argv_free(args);
+		break;
+	case '-': // "age-"
+		args = rz_str_argv(input + 1, &n_args);
+		if (n_args != 2) {
+			rz_cons_printf("Wrong arguments\n");
 			rz_str_argv_free(args);
 			break;
 		}
-		if (*input == ' ') {
-			rz_agraph_add_edge(core->graph, u, v);
-		} else {
-			rz_agraph_del_edge(core->graph, u, v);
-		}
+
+		rz_core_agraph_del_edge(core, args[0], args[1]);
 		rz_str_argv_free(args);
 		break;
-	}
 	case '?': // "age?"
 	default:
 		rz_core_cmd_help(core, help_msg_age);
