@@ -30,8 +30,8 @@
 # $ rizin -d /bin/true
 #
 
-# Using debian 10 as base image.
-FROM debian:10
+# Using debian 10.8 as base image.
+FROM debian:10.8
 
 # Label base
 LABEL rizin latest
@@ -72,7 +72,6 @@ RUN apt-get update && \
 	${with_arm32_as:+binutils-arm-linux-gnueabi} \
 	${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
 	pip3 install meson ninja && \
-	pip3 install --upgrade certifi && \
 	cd /mnt && \
 	git clone -b "$RZ_PIPE_PY_VERSION" https://github.com/rizinorg/rz-pipe && \
 	pip3 install ./rz-pipe/python && \
