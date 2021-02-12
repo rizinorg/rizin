@@ -44,3 +44,19 @@ jobs:
         sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 110
         clang-format --version
         python sys/clang-format.py --check --verbose
+
+  prettier:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+          submodules: recursive
+
+    - name: Install prettier
+      run: |
+        sudo apt --assume-yes install npm
+        npm install prettier
+
+    - name: Run prettier
+      run: find . -name "*.js" | grep -v "subprojects" | xargs npx prettier  --print-width 120 --check
