@@ -442,29 +442,29 @@ static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
 }
 
 static char *get_esil_stack_name(RzCore *core, const char *name, ut64 *addr, ut32 *size) {
-	ut64 s_addr = rz_config_get_i(core->config, "esil.stack.addr");
-	ut32 s_size = rz_config_get_i(core->config, "esil.stack.size");
-	RzIOMap *map = rz_io_map_get(core->io, s_addr);
+	ut64 sx_addr = rz_config_get_i(core->config, "esil.stack.addr");
+	ut32 sx_size = rz_config_get_i(core->config, "esil.stack.size");
+	RzIOMap *map = rz_io_map_get(core->io, sx_addr);
 	if (map) {
-		s_addr = UT64_MAX;
+		sx_addr = UT64_MAX;
 	}
-	if (s_addr == UT64_MAX) {
+	if (sx_addr == UT64_MAX) {
 		const ut64 align = 0x10000000;
-		s_addr = rz_io_map_next_available(core->io, core->offset, s_size, align);
+		sx_addr = rz_io_map_next_available(core->io, core->offset, sx_size, align);
 	}
 	if (*addr != UT64_MAX) {
-		s_addr = *addr;
+		sx_addr = *addr;
 	}
 	if (*size != UT32_MAX) {
-		s_size = *size;
+		sx_size = *size;
 	}
-	if (s_size < 1) {
-		s_size = 0xf0000;
+	if (sx_size < 1) {
+		sx_size = 0xf0000;
 	}
-	*addr = s_addr;
-	*size = s_size;
+	*addr = sx_addr;
+	*size = sx_size;
 	if (RZ_STR_ISEMPTY(name)) {
-		return rz_str_newf("mem.0x%" PFMT64x "_0x%x", s_addr, s_size);
+		return rz_str_newf("mem.0x%" PFMT64x "_0x%x", sx_addr, sx_size);
 	} else {
 		return rz_str_newf("mem.%s", name);
 	}

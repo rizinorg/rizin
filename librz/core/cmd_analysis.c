@@ -7422,49 +7422,6 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 	}
 }
 
-static void agraph_print_node_gml(RzANode *n, void *user) {
-	rz_cons_printf("  node [\n"
-		       "    id  %d\n"
-		       "    label  \"%s\"\n"
-		       "  ]\n",
-		n->gnode->idx, n->title);
-}
-
-static void agraph_print_edge_gml(RzANode *from, RzANode *to, void *user) {
-	rz_cons_printf("  edge [\n"
-		       "    source  %d\n"
-		       "    target  %d\n"
-		       "  ]\n",
-		from->gnode->idx, to->gnode->idx);
-}
-
-static void agraph_print_node_dot(RzANode *n, void *user) {
-	char *label = strdup(n->body);
-	//label = rz_str_replace (label, "\n", "\\l", 1);
-	if (!label || !*label) {
-		rz_cons_printf("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
-			n->title, n->title, n->title);
-	} else {
-		rz_cons_printf("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
-			n->title, n->title, n->title, label);
-	}
-	free(label);
-}
-
-static void agraph_print_node(RzANode *n, void *user) {
-	char *encbody, *cmd;
-	int len = strlen(n->body);
-
-	if (len > 0 && n->body[len - 1] == '\n') {
-		len--;
-	}
-	encbody = rz_base64_encode_dyn((const ut8 *)n->body, len);
-	cmd = rz_str_newf("agn \"%s\" base64:%s\n", n->title, encbody);
-	rz_cons_print(cmd);
-	free(cmd);
-	free(encbody);
-}
-
 static char *getViewerPath(void) {
 	int i;
 	const char *viewers[] = {
@@ -7555,12 +7512,8 @@ static bool convert_dot_str_to_image(RzCore *core, char *str, const char *save_p
 	return convert_dot_to_image(core, "a.dot", save_path);
 }
 
-static void agraph_print_edge_dot(RzANode *from, RzANode *to, void *user) {
-	rz_cons_printf("\"%s\" -> \"%s\"\n", from->title, to->title);
-}
-
-static void agraph_print_edge(RzANode *from, RzANode *to, void *user) {
-	rz_cons_printf("age \"%s\" \"%s\"\n", from->title, to->title);
+RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename) {
+	convert_dotcmd_to_image(core, "aggd", filename);
 }
 
 static void cmd_agraph_node(RzCore *core, const char *input) {
