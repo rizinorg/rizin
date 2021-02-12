@@ -7901,7 +7901,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			break;
 		}
 		case 'k': { // "agfk"
-			rz_core_cmdf(core, "ag-; .agf* @ %" PFMT64u "; aggk", core->offset);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agf* @ %" PFMT64u "; aggk", core->offset);
 			break;
 		}
 		case '*': { // "agf*"
@@ -7921,7 +7922,7 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		}
 		break;
 	case '-': // "ag-"
-		rz_agraph_reset(core->graph);
+		rz_core_agraph_reset(core);
 		break;
 	case 'n': // "agn"
 		cmd_agraph_node(core, input + 1);
@@ -7944,7 +7945,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case ' ': // "agC "
 		case 0: {
 			core->graph->is_callgraph = true;
-			rz_core_cmdf(core, "ag-; .agC*;");
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agC*;");
 			rz_core_agraph_print(core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
@@ -7974,7 +7976,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		} break;
 		default: {
 			core->graph->is_callgraph = true;
-			rz_core_cmdf(core, "ag-; .agr* @ %" PFMT64u ";", core->offset);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agr* @ %" PFMT64u ";", core->offset);
 			rz_core_agraph_print(core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
@@ -7997,7 +8000,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		}
 		default: {
 			core->graph->is_callgraph = true;
-			rz_core_cmdf(core, "ag-; .agR*;");
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agR*;");
 			rz_core_agraph_print(core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
@@ -8032,13 +8036,15 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case 'w': // "agcw"
 		case ' ': { // "agc "
 			core->graph->is_callgraph = true;
-			rz_core_cmdf(core, "ag-; .agc* @ %" PFMT64u "; agg%s;", core->offset, input + 1);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agc* @ %" PFMT64u "; agg%s;", core->offset, input + 1);
 			core->graph->is_callgraph = false;
 			break;
 		}
 		case 0: // "agc "
 			core->graph->is_callgraph = true;
-			rz_core_cmd0(core, "ag-; .agc* $$; agg;");
+			rz_core_agraph_reset(core);
+			rz_core_cmd0(core, ".agc* $$; agg;");
 			core->graph->is_callgraph = false;
 			break;
 		case 'g': { // "agg"
@@ -8082,7 +8088,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			break;
 		}
 		default:
-			rz_core_cmdf(core, "ag-; .aga* @ %" PFMT64u ";", core->offset);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".aga* @ %" PFMT64u ";", core->offset);
 			rz_core_agraph_print(core, -1, input + 1);
 			break;
 		}
@@ -8102,7 +8109,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			break;
 		}
 		default:
-			rz_core_cmdf(core, "ag-; .agA*;");
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agA*;");
 			rz_core_agraph_print(core, -1, input + 1);
 			break;
 		}
@@ -8135,7 +8143,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case 'v': // "agdv"
 		case 'g': { // "agdg"
 			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_cmdf(core, "ag-; .agd* @ %" PFMT64u "; agg%s;", addr, input + 1);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agd* @ %" PFMT64u "; agg%s;", addr, input + 1);
 			break;
 		}
 		case 'd': { // "agdd"
