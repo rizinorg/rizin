@@ -1094,7 +1094,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr)
 		__rebase_everything(core, old_sections, old_base);
 	}
 	rz_list_free(old_sections);
-	rz_core_cmd0(core, "sr PC");
+	rz_core_seek_to_register(core, "PC", false);
 }
 
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
@@ -1144,7 +1144,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 		__rebase_everything(core, old_sections, old_base);
 	}
 	rz_list_free(old_sections);
-	rz_core_cmd0(core, "sr PC");
+	rz_core_seek_to_register(core, "PC", false);
 	free(bin_abspath);
 	free(escaped_path);
 	free(binpath);

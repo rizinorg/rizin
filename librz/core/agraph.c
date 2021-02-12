@@ -4238,10 +4238,12 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 			// Those hardcoded keys are useful only for aegi, should add subcommand of ag to set key actions
 		case '1':
-			rz_core_cmd0(core, "so;.aeg*");
+			rz_core_seek_opcode(core, 4, false);
+			rz_core_cmd0(core, ".aeg*");
 			break;
 		case '2':
-			rz_core_cmd0(core, "so -1;.aeg*");
+			rz_core_seek_opcode(core, -1, false);
+			rz_core_cmd0(core, ".aeg*");
 			break;
 		case '=': { // TODO: edit
 			showcursor(core, true);
