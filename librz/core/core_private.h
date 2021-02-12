@@ -12,6 +12,11 @@ RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core);
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
 
+RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
+RZ_IPI void rz_core_agraph_del_node(RzCore *core, const char *title);
+RZ_IPI void rz_core_agraph_add_edge(RzCore *core, const char *un, const char *vn);
+RZ_IPI void rz_core_agraph_del_edge(RzCore *core, const char *un, const char *vn);
+
 /* cdebug.c */
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval);
 RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int rad, const char *use_color);
