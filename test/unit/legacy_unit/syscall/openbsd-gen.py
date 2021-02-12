@@ -32,7 +32,7 @@ for line in f:
 
         # check required info is there
         for i in rec:
-            if i == None:
+            if i is None:
                 print("missing info for %s" % str(rec))
                 sys.exit(1)
 
