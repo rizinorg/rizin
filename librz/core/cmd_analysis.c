@@ -7642,97 +7642,34 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 	}
 	switch (*input) {
 	case 0:
-		core->graph->can->linemode = rz_config_get_i(core->config, "graph.linemode");
-		core->graph->can->color = rz_config_get_i(core->config, "scr.color");
-		rz_agraph_set_title(core->graph,
-			rz_config_get(core->config, "graph.title"));
-		rz_agraph_print(core->graph);
+		rz_core_agraph_print_custom(core);
 		break;
-	case 't': { // "aggt" - tiny graph
-		core->graph->is_tiny = true;
-		int e = rz_config_get_i(core->config, "graph.edges");
-		rz_config_set_i(core->config, "graph.edges", 0);
-		rz_core_visual_graph(core, core->graph, NULL, false);
-		rz_config_set_i(core->config, "graph.edges", e);
-		core->graph->is_tiny = false;
+	case 't': // "aggt" - tiny graph
+		rz_core_agraph_print_tiny(core);
 		break;
-	}
 	case 'k': // "aggk"
-	{
-		Sdb *db = rz_agraph_get_sdb(core->graph);
-		char *o = sdb_querys(db, "null", 0, "*");
-		rz_cons_print(o);
-		free(o);
+		rz_core_agraph_print_sdb(core);
 		break;
-	}
 	case 'v': // "aggv"
 	case 'i': // "aggi" - open current core->graph in interactive mode
-	{
-		RzANode *ran = rz_agraph_get_first_node(core->graph);
-		if (ran) {
-			ut64 oseek = core->offset;
-			rz_agraph_set_title(core->graph, rz_config_get(core->config, "graph.title"));
-			rz_agraph_set_curnode(core->graph, ran);
-			core->graph->force_update_seek = true;
-			core->graph->need_set_layout = true;
-			core->graph->layout = rz_config_get_i(core->config, "graph.layout");
-			bool ov = rz_cons_is_interactive();
-			core->graph->need_update_dim = true;
-			int update_seek = rz_core_visual_graph(core, core->graph, NULL, true);
-			rz_config_set_i(core->config, "scr.interactive", ov);
-			rz_cons_show_cursor(true);
-			rz_cons_enable_mouse(false);
-			if (update_seek != -1) {
-				rz_core_seek(core, oseek, false);
-			}
-		} else {
-			eprintf("This graph contains no nodes\n");
-		}
+		rz_core_agraph_print_interactive(core);
 		break;
-	}
-	case 'd': { // "aggd" - dot format
-		const char *font = rz_config_get(core->config, "graph.font");
-		rz_cons_printf("digraph code {\nrankdir=LR;\noutputorder=edgesfirst\ngraph [bgcolor=azure];\n"
-			       "edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2];\n"
-			       "node [fillcolor=white, style=filled shape=box "
-			       "fontname=\"%s\" fontsize=\"8\"];\n",
-			font);
-		rz_agraph_foreach(core->graph, agraph_print_node_dot, NULL);
-		rz_agraph_foreach_edge(core->graph, agraph_print_edge_dot, NULL);
-		rz_cons_printf("}\n");
+	case 'd': // "aggd" - dot format
+		rz_core_agraph_print_dot(core);
 		break;
-	}
 	case '*': // "agg*" -
-		rz_agraph_foreach(core->graph, agraph_print_node, NULL);
-		rz_agraph_foreach_edge(core->graph, agraph_print_edge, NULL);
+		rz_core_agraph_print_rizin(core);
 		break;
 	case 'J': // "aggJ"
-	case 'j': { // "aggj"
-		PJ *pj = pj_new();
-		if (!pj) {
-			return;
-		}
-		pj_o(pj);
-		pj_k(pj, "nodes");
-		pj_a(pj);
-		rz_agraph_print_json(core->graph, pj);
-		pj_end(pj);
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	} break;
+	case 'j': // "aggj"
+		rz_core_agraph_print_json(core);
+		break;
 	case 'g': // "aggg"
-		rz_cons_printf("graph\n[\n"
-			       "hierarchic 1\n"
-			       "label \"\"\n"
-			       "directed 1\n");
-		rz_agraph_foreach(core->graph, agraph_print_node_gml, NULL);
-		rz_agraph_foreach_edge(core->graph, agraph_print_edge_gml, NULL);
-		rz_cons_print("]\n");
+		rz_core_agraph_print_gml(core);
 		break;
 	case 'w': { // "aggw"
 		const char *filename = rz_str_trim_head_ro(input + 1);
-		convert_dotcmd_to_image(core, "aggd", filename);
+		rz_core_agraph_print_write(core, filename);
 		break;
 	}
 	default:

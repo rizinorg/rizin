@@ -16,6 +16,15 @@ RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char 
 RZ_IPI void rz_core_agraph_del_node(RzCore *core, const char *title);
 RZ_IPI void rz_core_agraph_add_edge(RzCore *core, const char *un, const char *vn);
 RZ_IPI void rz_core_agraph_del_edge(RzCore *core, const char *un, const char *vn);
+RZ_IPI void rz_core_agraph_print_custom(RzCore *core);
+RZ_IPI void rz_core_agraph_print_tiny(RzCore *core);
+RZ_IPI void rz_core_agraph_print_sdb(RzCore *core);
+RZ_IPI void rz_core_agraph_print_interactive(RzCore *core);
+RZ_IPI void rz_core_agraph_print_dot(RzCore *core);
+RZ_IPI void rz_core_agraph_print_rizin(RzCore *core);
+RZ_IPI void rz_core_agraph_print_json(RzCore *core);
+RZ_IPI void rz_core_agraph_print_gml(RzCore *core);
+RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename);
 
 /* cdebug.c */
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval);
