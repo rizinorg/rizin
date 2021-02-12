@@ -168,7 +168,7 @@ def compute_cname(name):
 def flat(l):
     if l is None:
         return []
-    if type(l) != list:
+    if not isinstance(l, list):
         return [l]
 
     out = []
@@ -177,7 +177,7 @@ def flat(l):
     return out
 
 
-class Arg(object):
+class Arg:
     def __init__(self, cd, c):
         if "name" not in c or "type" not in c:
             print("Argument of %s should have `name`/`type` fields" % (cd.name,))
@@ -252,30 +252,26 @@ class Arg(object):
                     ]
                 ),
             )
-        else:
-            return ""
+        return ""
 
 
-class DetailEntry(object):
-    def __init__(self, c):
-        if "text" not in c or "comment" not in c:
-            print("No `text`/`comment` fields for DetailEntry %s" % (c,))
-            sys.exit(1)
+def format_detail_entry(c):
+    if "text" not in c or "comment" not in c:
+        print("No `text`/`comment` fields for DetailEntry %s" % (c,))
+        sys.exit(1)
 
-        # RzCmdDescDetailEntry fields
-        self.text = strip(c["text"])
-        self.comment = strip(c["comment"])
-        self.arg_str = strip(c.get("arg_str"))
+    text = strip(c["text"])
+    comment = strip(c["comment"])
+    arg_str = strip(c.get("arg_str"))
 
-    def __str__(self):
-        return DESC_HELP_DETAIL_ENTRY_TEMPLATE.format(
-            text=strornull(self.text),
-            arg_str=strornull(self.arg_str),
-            comment=strornull(self.comment),
-        )
+    return DESC_HELP_DETAIL_ENTRY_TEMPLATE.format(
+        text=strornull(text),
+        arg_str=strornull(arg_str),
+        comment=strornull(comment),
+    )
 
 
-class Detail(object):
+class Detail:
     def __init__(self, cd, c):
         if "name" not in c or "entries" not in c:
             print("No `name`/`entries` fields for Detail %s" % (c,))
@@ -284,7 +280,7 @@ class Detail(object):
         self.cd = cd
         # RzCmdDescDetail fields
         self.name = strip(c["name"])
-        self.entries = [DetailEntry(x) for x in c["entries"]]
+        self.entries = [format_detail_entry(x) for x in c["entries"]]
 
     def get_detail_entries_cname(self):
         return self.cd.cname + "_" + compute_cname(self.name) + "_detail_entries"
@@ -302,11 +298,23 @@ class Detail(object):
         )
 
 
-class CmdDesc(object):
+class CmdDesc:
     c_cds = {}
     c_handlers = {}
     c_args = {}
     c_details = {}
+
+    def _process_details(self, c):
+        if "details" in c and isinstance(c["details"], list):
+            self.details = [Detail(self, x) for x in c.get("details", [])]
+        elif "details" in c and isinstance(c["details"], str):
+            self.details_alias = c["details"]
+
+    def _process_args(self, c):
+        if "args" in c and isinstance(c["args"], list):
+            self.args = [Arg(self, x) for x in c.get("args", [])]
+        elif "args" in c and isinstance(c["args"], str):
+            self.args_alias = c["args"]
 
     def __init__(self, c, parent=None, pos=0):
         self.pos = pos
@@ -338,20 +346,14 @@ class CmdDesc(object):
         self.args_str = strip(c.get("args_str"))
         self.usage = strip(c.get("usage"))
         self.options = strip(c.get("options"))
+
         self.details = None
         self.details_alias = None
+        self._process_details(c)
+
         self.args = None
         self.args_alias = None
-
-        if "details" in c and type(c["details"]) == list:
-            self.details = [Detail(self, x) for x in c.get("details", [])]
-        elif "details" in c and type(c["details"]) == str:
-            self.details_alias = c["details"]
-
-        if "args" in c and type(c["args"]) == list:
-            self.args = [Arg(self, x) for x in c.get("args", [])]
-        elif "args" in c and type(c["args"]) == str:
-            self.args_alias = c["args"]
+        self._process_args(c)
 
         # determine type before parsing subcommands, so children can check type of parent
         if "type" in c:
@@ -431,10 +433,11 @@ class CmdDesc(object):
     def get_handler_cname(self):
         if self.type == CD_TYPE_ARGV or self.type == CD_TYPE_ARGV_MODES:
             return "rz_" + (self.handler or self.cname) + "_handler"
-        elif self.type == CD_TYPE_OLDINPUT:
+
+        if self.type == CD_TYPE_OLDINPUT:
             return "rz_" + (self.handler or self.cname)
-        else:
-            return None
+
+        return None
 
     @classmethod
     def get_arg_cname(cls, cd):
@@ -501,7 +504,7 @@ class CmdDesc(object):
             if details_cname is not None
             else ""
         )
-        args = (
+        arguments = (
             DESC_HELP_TEMPLATE_ARGS.format(args=args_cname)
             if args_cname is not None
             else ""
@@ -514,14 +517,14 @@ class CmdDesc(object):
             usage=usage,
             options=options,
             details=details,
-            args=args,
+            args=arguments,
         )
 
         if self.subcommands:
             out += "\n".join([str(child) for child in self.subcommands])
         return out
 
-    def _str_tab(self, tab=0):
+    def str_tab(self, tab=0):
         spaces = " " * tab
         out = ""
         out += spaces + "Name: %s\n" % (self.name,)
@@ -532,18 +535,20 @@ class CmdDesc(object):
         if self.subcommands:
             out += spaces + "Subcommands:\n"
             for c in self.subcommands:
-                out += c._str_tab(tab + 4)
+                out += c.str_tab(tab + 4)
                 out += "\n"
 
         return out
 
     def __repr__(self):
-        return self._str_tab()
+        return self.str_tab()
 
 
 def createcd(cd):
+    formatted_string = None
+
     if cd.type == CD_TYPE_ARGV:
-        return DEFINE_ARGV_TEMPLATE.format(
+        formatted_string = DEFINE_ARGV_TEMPLATE.format(
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
@@ -551,7 +556,7 @@ def createcd(cd):
             help_cname=cd.get_help_cname(),
         )
     elif cd.type == CD_TYPE_ARGV_MODES:
-        return DEFINE_ARGV_MODES_TEMPLATE.format(
+        formatted_string = DEFINE_ARGV_MODES_TEMPLATE.format(
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
@@ -560,37 +565,39 @@ def createcd(cd):
             help_cname=cd.get_help_cname(),
         )
     elif cd.type == CD_TYPE_FAKE:
-        return DEFINE_FAKE_TEMPLATE.format(
+        formatted_string = DEFINE_FAKE_TEMPLATE.format(
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
             help_cname=cd.get_help_cname(),
         )
     elif cd.type == CD_TYPE_INNER:
-        out = DEFINE_INNER_TEMPLATE.format(
+        formatted_string = DEFINE_INNER_TEMPLATE.format(
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
             help_cname=cd.get_help_cname(),
         )
-        out += "\n".join([createcd(child) for child in cd.subcommands or []])
-        return out
+        formatted_string += "\n".join(
+            [createcd(child) for child in cd.subcommands or []]
+        )
     elif cd.type == CD_TYPE_OLDINPUT:
-        out = DEFINE_OLDINPUT_TEMPLATE.format(
+        formatted_string = DEFINE_OLDINPUT_TEMPLATE.format(
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
             handler_cname=cd.get_handler_cname(),
             help_cname=cd.get_help_cname(),
         )
-        out += "\n".join([createcd(child) for child in cd.subcommands or []])
-        return out
+        formatted_string += "\n".join(
+            [createcd(child) for child in cd.subcommands or []]
+        )
     elif (
         cd.type == CD_TYPE_GROUP
         and cd.exec_cd
         and cd.exec_cd.type == CD_TYPE_ARGV_MODES
     ):
-        out = DEFINE_GROUP_MODES_TEMPLATE.format(
+        formatted_string = DEFINE_GROUP_MODES_TEMPLATE.format(
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
@@ -599,10 +606,11 @@ def createcd(cd):
             help_cname_ref="&" + cd.exec_cd.get_help_cname(),
             group_help_cname=cd.get_help_cname(),
         )
-        out += "\n".join([createcd(child) for child in cd.subcommands[1:] or []])
-        return out
+        formatted_string += "\n".join(
+            [createcd(child) for child in cd.subcommands[1:] or []]
+        )
     elif cd.type == CD_TYPE_GROUP:
-        out = DEFINE_GROUP_TEMPLATE.format(
+        formatted_string = DEFINE_GROUP_TEMPLATE.format(
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
@@ -613,10 +621,11 @@ def createcd(cd):
         subcommands = (
             cd.exec_cd and cd.subcommands and cd.subcommands[1:]
         ) or cd.subcommands
-        out += "\n".join([createcd(child) for child in subcommands or []])
-        return out
+        formatted_string += "\n".join([createcd(child) for child in subcommands or []])
     else:
         raise Exception("Not handled cd type")
+
+    return formatted_string
 
 
 def arg2decl(cd):
@@ -631,20 +640,20 @@ def detail2decl(cd):
     )
 
 
-def handler2decl(type, handler_name):
-    if type == CD_TYPE_ARGV:
+def handler2decl(cd_type, handler_name):
+    if cd_type == CD_TYPE_ARGV:
         return "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv);" % (
             handler_name,
         )
-    elif type == CD_TYPE_ARGV_MODES:
+    if cd_type == CD_TYPE_ARGV_MODES:
         return (
             "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzOutputMode mode);"
             % (handler_name,)
         )
-    elif type == CD_TYPE_OLDINPUT:
+    if cd_type == CD_TYPE_OLDINPUT:
         return "RZ_IPI int %s(void *data, const char *input);" % (handler_name,)
-    else:
-        return None
+
+    return None
 
 
 parser = argparse.ArgumentParser(
