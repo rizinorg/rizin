@@ -3880,7 +3880,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 		if (rz_debug_esil_watch_empty(core->dbg)) {
 			eprintf("Error: no esil watchpoints defined\n");
 		} else {
-			rz_core_cmd0(core, "aei");
+			rz_core_analysis_esil_init(core);
 			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
 			rz_debug_esil_continue(core->dbg);
 		}
@@ -3888,7 +3888,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 	case 's': // "des"
 		if (input[1] == 'u' && input[2] == ' ') { // "desu"
 			ut64 addr, naddr, fin = rz_num_math(core->num, input + 2);
-			rz_core_cmd0(core, "aei");
+			rz_core_analysis_esil_init(core);
 			addr = rz_debug_reg_get(core->dbg, "PC");
 			while (addr != fin) {
 				rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
@@ -3903,7 +3903,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 		} else if (input[1] == '?' || !input[1]) {
 			rz_core_cmd_help(core, help_msg_des);
 		} else {
-			rz_core_cmd0(core, "aei");
+			rz_core_analysis_esil_init(core);
 			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
 			// continue
 			rz_debug_esil_step(core->dbg, rz_num_math(core->num, input + 1));
@@ -4113,10 +4113,8 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 #endif
 	case 'f': // "dcf"
 		eprintf("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
-		// we should stop in fork and vfork syscalls
-		//TODO: multiple syscalls not handled yet
-		// rz_core_cmd0 (core, "dcs vfork fork");
-		rz_core_cmd0(core, "dcs vfork fork clone");
+		// we should stop in fork, vfork, and clone syscalls
+		cmd_debug_cont_syscall(core, "vfork fork clone");
 		break;
 	case 'c': // "dcc"
 		rz_reg_arena_swap(core->dbg->reg, true);
@@ -4220,7 +4218,7 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 	if (follow > 0) {
 		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_cmd0(core, "sr PC");
+			rz_core_seek_to_register(core, "PC", false);
 		}
 	}
 	return 1;
@@ -4323,10 +4321,9 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 		break;
 	case 's': // "dss"
 	{
-		char delb[128] = RZ_EMPTY;
+		int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
 		addr = rz_debug_reg_get(core->dbg, "PC");
 		RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
-		sprintf(delb, "db 0x%" PFMT64x "", addr);
 		rz_reg_arena_swap(core->dbg->reg, true);
 		for (i = 0; i < times; i++) {
 			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
@@ -4345,7 +4342,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 		rz_reg_setv(core->analysis->reg, "PC", addr);
 		rz_core_debug_regs2flags(core, 0);
 		if (bpi) {
-			rz_core_cmd0(core, delb);
+			(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
 		}
 		break;
 	}
@@ -4354,15 +4351,15 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 			rz_core_cmdf(core, "dss%s", input + 2);
 		} else {
 			if (rz_config_get_i(core->config, "cfg.debug")) {
-				char delb[128] = RZ_EMPTY;
+				int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
 				addr = rz_debug_reg_get(core->dbg, "PC");
 				RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
-				sprintf(delb, "db 0x%" PFMT64x "", addr);
 				rz_bp_del(core->dbg->bp, addr);
 				rz_reg_arena_swap(core->dbg->reg, true);
 				rz_debug_step_over(core->dbg, times);
-				if (bpi)
-					rz_core_cmd0(core, delb);
+				if (bpi) {
+					(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
+				}
 			} else {
 				rz_core_cmdf(core, "aeso%s", input + 2);
 			}
@@ -4513,8 +4510,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 					rz_analysis_op_free(op);
 				}
 			} else {
-				// TODO: reimplement using the api
-				//rz_core_cmd0 (core, "pd 1 @@= `dtq`");
 				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
 					op = rz_core_analysis_op(core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 					rz_cons_printf("0x%08" PFMT64x " %s\n", trace->addr, op->mnemonic);
@@ -4695,9 +4690,11 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				consumeBuffer(buf, "dx ", "Cannot seek");
 			}
 		} break;
-		case 't': // "ddt" <ttypath>
-			rz_core_cmdf(core, "dd-0");
+		case 't': { // "ddt" <ttypath>
+			RzBuffer *buf = rz_core_syscall(core, "close", 0);
+			consumeBuffer(buf, "dx ", "Cannot close");
 			break;
+		}
 		case 'd': // "ddd"
 		{
 			ut64 newfd = UT64_MAX;
@@ -4751,7 +4748,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		} break;
 		case '-': // "dd-"
 			// close file
-			//rz_core_syscallf (core, "close", "%d", atoi (input + 2));
 			{
 				int fd = atoi(input + 2);
 				//rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, input + 2));
@@ -5180,7 +5176,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	if (follow > 0) {
 		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_cmd0(core, "sr PC");
+			rz_core_seek_to_register(core, "PC", false);
 		}
 	}
 	return 0;
