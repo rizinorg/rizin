@@ -416,9 +416,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 		const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, addr);
 		out = rz_core_editor(core, NULL, comment);
 		if (out) {
-			//rz_meta_set (core->analysis->meta, RZ_META_TYPE_COMMENT, addr, 0, out);
-			rz_core_cmdf(core, "CC-@0x%08" PFMT64x, addr);
-			//rz_meta_del (core->analysis->meta, input[0], addr, addr+1);
+			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, addr, 1);
 			rz_meta_set_string(core->analysis,
 				RZ_META_TYPE_COMMENT, addr, out);
 			free(out);
@@ -655,9 +653,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 		const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, addr);
 		out = rz_core_editor(core, NULL, comment);
 		if (out) {
-			//rz_meta_set (core->analysis->meta, RZ_META_TYPE_COMMENT, addr, 0, out);
-			rz_core_cmdf(core, "CC-@0x%08" PFMT64x, addr);
-			//rz_meta_del (core->analysis->meta, input[0], addr, addr+1);
+			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, addr, 1);
 			rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, out);
 			free(out);
 		}
