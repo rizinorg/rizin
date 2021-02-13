@@ -242,3 +242,10 @@ RZ_PACKED(typedef structmystruct {
 The Rizin code base is modularized into different libraries that are
 found in `librz/` directory. The `binrz/` directory contains the programs
 which use the libraries.
+
+Hint: To find both the declaration and definition of a function named
+*func_name*, you can use the following `git grep` command:
+
+```bash
+git grep -nWG "^[^[:blank:]].*func_name("
+```
