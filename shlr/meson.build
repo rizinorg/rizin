@@ -232,21 +232,13 @@ if host_machine.system() == 'windows'
 endif
 
 # handle mpc dependency
-mpc_files = [
-  'mpc/mpc.c'
-]
+r = run_command(py3_exe, check_meson_subproject_py, 'mpc')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
 
-mpc_inc = [platform_inc, include_directories(['mpc'])]
-
-libmpc = static_library('rzmpc', mpc_files,
-  include_directories: mpc_inc,
-  implicit_include_directories: false
-)
-
-mpc_dep = declare_dependency(
-  link_with: libmpc,
-  include_directories: mpc_inc
-)
+mpc_proj = subproject('mpc', default_options: ['default_library=static'])
+mpc_dep = mpc_proj.get_variable('mpc_dep')
 
 # handle yxml dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'yxml')
