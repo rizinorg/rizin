@@ -41,17 +41,16 @@ environment:
       BUILD_DIR: build
       RUN_TESTS: true
 
-# Skip changes affecting only other CI services
-skip_commits:
+only_commits:
   files:
-    - .builds/*
-    - .github/*
-    - .travis.yml
-    - .lgtm.yml
-    - snapcraft.yaml
-    - '*.md'
-    - travis-*
-    - Vagrant*
+    - '**.c'
+    - '**.h'
+    - '**.in'
+    - '**.inc'
+    - '**/meson.build'
+    - 'shlr/rizin-shell-parser/**'
+    - 'subprojects/**'
+    - '.appveyor.yml'
 
 # Init
 init:
