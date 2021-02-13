@@ -4471,7 +4471,7 @@ repeat:
 	if (follow > 0) {
 		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_cmd0(core, "sr PC");
+			rz_core_seek_to_register(core, "PC", false);
 		}
 	}
 	// check breakpoints

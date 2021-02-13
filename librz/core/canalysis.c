@@ -4430,7 +4430,7 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 		rz_core_analysis_fcn(core, item->offset, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth - 1);
 		rz_core_cmdf(core, "afn entry0 0x%08" PFMT64x, item->offset);
 	} else {
-		rz_core_cmd0(core, "af");
+		rz_core_analysis_function_add(core, NULL, core->offset, false);
 	}
 
 	rz_core_task_yield(&core->tasks);
@@ -5387,7 +5387,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	esilbreak_last_read = UT64_MAX;
 	rz_io_read_at(core->io, start, buf, iend + 1);
 	if (!ESIL) {
-		rz_core_cmd0(core, "aei");
+		rz_core_analysis_esil_init(core);
 		ESIL = core->analysis->esil;
 		if (!ESIL) {
 			eprintf("ESIL not initialized\n");
