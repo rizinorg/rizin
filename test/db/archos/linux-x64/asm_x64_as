@@ -1,6 +1,5 @@
 NAME=rz-asm #1167 3
 FILE=-
-# BROKEN=1
 CMDS=!rz-asm -s att -a x86.as -b 64 "test %rbx, %rax"
 EXPECT=<<EOF
 4885d8
@@ -9,7 +8,6 @@ RUN
 
 NAME=rz-asm #1167 4
 FILE=-
-# BROKEN=1
 CMDS=!rz-asm -s intel -a x86.as -b 64 "test rax, rbx"
 EXPECT=<<EOF
 4885d8
@@ -17,7 +15,6 @@ EOF
 RUN
 
 NAME=rz-asm #1167 5
-# BROKEN=1
 FILE=-
 CMDS=!rz-asm -s att -a x86.as -b 64 'add $33, %rbx'
 EXPECT=<<EOF
