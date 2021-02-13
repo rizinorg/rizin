@@ -399,6 +399,36 @@ jobs:
         name: rizin-src.tar.xz
         path: build/meson-dist/rizin-src.tar.xz
 
+  test-tarball:
+    name: Test source tarball
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
+    runs-on: ubuntu-latest
+    needs: [create-tarball]
+    steps:
+    - name: Install python and other dependencies
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
+    - name: Install meson and ninja
+      run: sudo pip3 install meson ninja PyYAML
+    - uses: actions/download-artifact@v2
+      with:
+        name: rizin-src.tar.xz
+    - name: Extract source tarball
+      run: |
+          mkdir rizin && pwd && ls -l
+          tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
+    - name: Install rizin
+      run: |
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+      working-directory: rizin
+    - name: Check that installed rizin runs
+      run: rizin -qcq /bin/ls
+    - name: Check that libraries can be used
+      run: |
+        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        clang -o test test.c $(pkg-config --libs --cflags rz_util)
+        ./test
+
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
@@ -510,7 +540,7 @@ jobs:
 #  build-extras:
 #    name: Build rizin extras and rzpipe
 #    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
-#    needs: [create-tarball]
+#    needs: [test-tarball]
 #    runs-on: ubuntu-latest
 #    env:
 #      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
@@ -551,7 +581,7 @@ jobs:
   build-rzpipe:
     name: Build rizin rzpipe
     if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
-    needs: [create-tarball]
+    needs: [test-tarball]
     runs-on: ubuntu-latest
     env:
       RZPIPE_TESTS: 'rz-pipe-py rz-pipe-go'
