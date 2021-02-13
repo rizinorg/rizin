@@ -183,7 +183,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	if (isdebug) {
 		rz_core_cmd0(core, ".dm*");
 		rz_core_debug_regs2flags(core, 0);
-		rz_core_cmd0(core, "sr PC");
+		rz_core_seek_to_register(core, "PC", false);
 	} else {
 		loadGP(core);
 	}

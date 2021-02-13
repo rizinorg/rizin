@@ -7,6 +7,7 @@
 #include "rz_list.h"
 #include "rz_types_base.h"
 #include "cmd_search_rop.c"
+#include "core_private.h"
 
 #define USE_EMULATION 0
 
@@ -1598,7 +1599,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 	}
 	if (!core->analysis->esil) {
 		// initialize esil vm
-		rz_core_cmd0(core, "aei");
+		rz_core_analysis_esil_init(core);
 		if (!core->analysis->esil) {
 			eprintf("Cannot initialize the ESIL vm\n");
 			return;

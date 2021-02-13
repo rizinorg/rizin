@@ -371,7 +371,8 @@ static bool lastcmd_repeat(RzCore *core, int next) {
 		switch (core->lastcmd[1]) {
 		case 's':
 		case 'c':
-			rz_core_cmd0(core, "sr PC;pd 1");
+			rz_core_seek_to_register(core, "PC", false);
+			rz_core_cmd0(core, "pd 1");
 		}
 		break;
 	case 'p': // print
@@ -3098,7 +3099,7 @@ escape_backtick:
 			{
 				ut64 addr = rz_num_math(core->num, ptr + 2);
 				if (addr) {
-					rz_core_cmdf(core, "so %s", ptr + 2);
+					rz_core_seek_opcode(core, addr, false);
 					cmd_tmpseek = core->tmpseek = true;
 				}
 			} break;
@@ -5092,7 +5093,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_reli_command) {
 	ut64 orig_offset = state->core->offset;
 	ut64 addr = rz_num_math(core->num, arg_str);
 	if (addr) {
-		rz_core_cmdf(core, "so %" PFMT64d, addr);
+		rz_core_seek_opcode(core, addr, false);
 	}
 	RzCmdStatus res = handle_ts_command_tmpseek(state, command);
 	rz_core_seek(state->core, orig_offset, true);
