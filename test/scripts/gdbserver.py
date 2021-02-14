@@ -16,6 +16,7 @@ run in parallel and may attempt to open the same port at the same time.
 import argparse
 import subprocess
 import os
+import time
 
 def execute(cmd):
     popen = subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True)
@@ -39,6 +40,8 @@ def main():
                 print(output)
             # Exit once gdbserver is ready for connections
             if "Listening on port" in output:
+                # Create a short delay before attempting to connect with rizin
+                time.sleep(0.5)
                 exit(0)
             # gdbserver might fail to start if the port is taken
             if "Can't bind address" in output:
