@@ -5271,6 +5271,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		/* realign address if needed */
 		rz_core_seek_arch_bits(core, cur);
 		int opalign = core->analysis->pcalign;
+		ut64 cur_old = cur;
 		if (opalign > 0) {
 			cur -= (cur % opalign);
 		}
@@ -5498,7 +5499,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		rz_analysis_esil_stack_free(ESIL);
 	repeat:
 		if (!rz_analysis_get_block_at(core->analysis, cur)) {
-			for (size_t fcn_i = i_old + (opalign > 0 ? cur % opalign : 0) + 1; fcn_i <= i; fcn_i++) {
+			for (size_t fcn_i = i_old + (opalign > 0 ? cur_old % opalign : 0) + 1; fcn_i <= i; fcn_i++) {
 				if (rz_analysis_get_function_at(core->analysis, start + fcn_i)) {
 					i = fcn_i - 1;
 					break;
