@@ -12,6 +12,7 @@ jobs:
       clang-format: ${{ steps.filter.outputs.clang-format }}
       prettier: ${{ steps.filter.outputs.prettier }}
     steps:
+    - uses: actions/checkout@v2
     - uses: dorny/paths-filter@v2
       id: filter
       with:
