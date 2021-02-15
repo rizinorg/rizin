@@ -2323,7 +2323,7 @@ static void __init_autocomplete_default(RzCore *core) {
 		"idp", "idpi", "L", "obf", "o+", "oc", "rz", "rz_bin", "rz_asm", "rz_hash", "rz_ax",
 		"rz_find", "cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
-		"less", "head", "tail", "Ps", "Pl", NULL
+		"less", "head", "Ps", "Pl", NULL
 	};
 	__foreach(core, flags, RZ_CORE_AUTOCMPLT_FLAG);
 	__foreach(core, seeks, RZ_CORE_AUTOCMPLT_SEEK);

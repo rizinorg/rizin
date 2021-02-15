@@ -385,6 +385,211 @@ RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val)
 	return 0;
 }
 
+static void esil_init(RzCore *core) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (esil) {
+		return;
+	}
+
+	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
+	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
+	int romem = rz_config_get_i(core->config, "esil.romem");
+	int stats = rz_config_get_i(core->config, "esil.stats");
+	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
+	int verbose = rz_config_get_i(core->config, "esil.verbose");
+	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
+	if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+		return;
+	}
+	rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL); // setup io
+	core->analysis->esil = esil;
+	esil->verbose = verbose;
+	const char *s = rz_config_get(core->config, "cmd.esil.intr");
+	if (s) {
+		char *my = strdup(s);
+		if (my) {
+			rz_config_set(core->config, "cmd.esil.intr", my);
+			free(my);
+		}
+	}
+}
+
+static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
+	const char *mode = rz_config_get(core->config, "esil.fillstack");
+	if (mode && *mode && *mode != '0') {
+		const ut64 bs = 4096 * 32;
+		ut64 i;
+		for (i = 0; i < size; i += bs) {
+			ut64 left = RZ_MIN(bs, size - i);
+			//	rz_core_cmdf (core, "wx 10203040 @ 0x%llx", addr);
+			switch (*mode) {
+			case 'd': // "debrujn"
+				rz_core_cmdf(core, "wopD %" PFMT64u " @ 0x%" PFMT64x, left, addr + i);
+				break;
+			case 's': // "seq"
+				rz_core_cmdf(core, "woe 1 0xff 1 4 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
+				break;
+			case 'r': // "random"
+				rz_core_cmdf(core, "woR %" PFMT64u " @ 0x%" PFMT64x "!0x%" PFMT64x, left, addr + i, left);
+				break;
+			case 'z': // "zero"
+			case '0':
+				rz_core_cmdf(core, "wow 00 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
+				break;
+			}
+		}
+	}
+}
+
+static char *get_esil_stack_name(RzCore *core, const char *name, ut64 *addr, ut32 *size) {
+	ut64 sx_addr = rz_config_get_i(core->config, "esil.stack.addr");
+	ut32 sx_size = rz_config_get_i(core->config, "esil.stack.size");
+	RzIOMap *map = rz_io_map_get(core->io, sx_addr);
+	if (map) {
+		sx_addr = UT64_MAX;
+	}
+	if (sx_addr == UT64_MAX) {
+		const ut64 align = 0x10000000;
+		sx_addr = rz_io_map_next_available(core->io, core->offset, sx_size, align);
+	}
+	if (*addr != UT64_MAX) {
+		sx_addr = *addr;
+	}
+	if (*size != UT32_MAX) {
+		sx_size = *size;
+	}
+	if (sx_size < 1) {
+		sx_size = 0xf0000;
+	}
+	*addr = sx_addr;
+	*size = sx_size;
+	if (RZ_STR_ISEMPTY(name)) {
+		return rz_str_newf("mem.0x%" PFMT64x "_0x%x", sx_addr, sx_size);
+	} else {
+		return rz_str_newf("mem.%s", name);
+	}
+}
+
+/**
+ * Initialize ESIL memory stack region.
+ *
+ * \param core RzCore reference
+ * \param name Optional name of the memory stack region. If NULL, a name is
+ *             computed automatically based on \p addr and \p size
+ * \param addr Base address of the stack region, if UT64_MAX it is automatically computed
+ * \param size Size of the stack region, if UT32_MAX it is automatically computed
+ */
+RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 addr, ut32 size) {
+	ut64 current_offset = core->offset;
+	esil_init(core);
+	RzAnalysisEsil *esil = core->analysis->esil;
+	RzIOMap *stack_map;
+	if (!name && addr == UT64_MAX && size == UT32_MAX) {
+		char *fi = sdb_get(core->sdb, "aeim.fd", 0);
+		if (fi) {
+			// Close the fd associated with the aeim stack
+			ut64 fd = sdb_atoi(fi);
+			(void)rz_io_fd_close(core->io, fd);
+		}
+	}
+	const char *pattern = rz_config_get(core->config, "esil.stack.pattern");
+	char *stack_name = get_esil_stack_name(core, name, &addr, &size);
+
+	char uri[32];
+	rz_strf(uri, "malloc://%u", size);
+	esil->stack_fd = rz_io_fd_open(core->io, uri, RZ_PERM_RW, 0);
+	if (!(stack_map = rz_io_map_add(core->io, esil->stack_fd, RZ_PERM_RW, 0LL, addr, size))) {
+		rz_io_fd_close(core->io, esil->stack_fd);
+		eprintf("Cannot create map for tha stack, fd %d got closed again\n", esil->stack_fd);
+		free(stack_name);
+		esil->stack_fd = 0;
+		return;
+	}
+	rz_io_map_set_name(stack_map, stack_name);
+	free(stack_name);
+	char val[128], *v;
+	v = sdb_itoa(esil->stack_fd, val, 10);
+	sdb_set(core->sdb, "aeim.fd", v, 0);
+
+	rz_config_set_i(core->config, "io.va", true);
+	if (pattern && *pattern) {
+		switch (*pattern) {
+		case '0':
+			// do nothing
+			break;
+		case 'd':
+			rz_core_cmdf(core, "wopD %d @ 0x%" PFMT64x, size, addr);
+			break;
+		case 'i':
+			rz_core_cmdf(core, "woe 0 255 1 @ 0x%" PFMT64x "!%d", addr, size);
+			break;
+		case 'w':
+			rz_core_cmdf(core, "woe 0 0xffff 1 4 @ 0x%" PFMT64x "!%d", addr, size);
+			break;
+		}
+	}
+	// SP
+	const char *sp = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_SP);
+	if (sp) {
+		rz_debug_reg_set(core->dbg, sp, addr + (size / 2));
+	}
+	// BP
+	const char *bp = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_BP);
+	if (bp) {
+		rz_debug_reg_set(core->dbg, bp, addr + (size / 2));
+	}
+	// PC
+	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
+	if (pc) {
+		rz_debug_reg_set(core->dbg, pc, current_offset);
+	}
+	rz_core_regs2flags(core);
+	if (esil) {
+		esil->stack_addr = addr;
+		esil->stack_size = size;
+	}
+	initialize_stack(core, addr, size);
+	rz_core_seek(core, current_offset, false);
+}
+
+RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core) {
+	esil_init(core);
+	RzAnalysisEsil *esil = core->analysis->esil;
+	ut64 addr = 0x100000;
+	ut32 size = 0xf0000;
+	RzFlagItem *fi = rz_flag_get(core->flags, "aeim.stack");
+	if (fi) {
+		addr = fi->offset;
+		size = fi->size;
+	} else {
+		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
+	}
+	if (esil) {
+		esil->stack_addr = addr;
+		esil->stack_size = size;
+	}
+	initialize_stack(core, addr, size);
+	return;
+}
+
+RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, ut64 addr, ut32 size) {
+	esil_init(core);
+	RzAnalysisEsil *esil = core->analysis->esil;
+	char *stack_name = get_esil_stack_name(core, name, &addr, &size);
+	if (esil->stack_fd > 2) { //0, 1, 2 are reserved for stdio/stderr
+		rz_io_fd_close(core->io, esil->stack_fd);
+		// no need to kill the maps, rz_io_map_cleanup does that for us in the close
+		esil->stack_fd = 0;
+	} else {
+		eprintf("Cannot deinitialize %s\n", stack_name);
+	}
+	rz_flag_unset_name(core->flags, stack_name);
+	rz_flag_unset_name(core->flags, "aeim.stack");
+	sdb_unset(core->sdb, "aeim.fd", 0);
+	free(stack_name);
+	return;
+}
+
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core) {
 	RzAnalysisEsil *esil = core->analysis->esil;
 	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
@@ -5188,7 +5393,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			eprintf("ESIL not initialized\n");
 			return;
 		}
-		rz_core_cmd0(core, "aeim");
+		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
 	EsilBreakCtx ctx = {
 		&op,

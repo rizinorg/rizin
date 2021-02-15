@@ -24,15 +24,14 @@
 # SchumBlubBlub - 2017
 # Public Domain.
 
-import os
-import sh
-import re
 import json
-from multiprocessing import Lock
-from concurrent.futures import ProcessPoolExecutor
+import os
+import re
 from binascii import hexlify
+from concurrent.futures import ProcessPoolExecutor
 
-from sh import rz_asm, dd
+import sh
+from sh import rz_asm
 
 MAX_OPLEN = 20
 MAX_METACASE_EXAMPLES = 1
@@ -52,17 +51,18 @@ re_regs = re.compile(
     "al|ah|ax|eah|eax|rah|rax|bl|bh|bx|ebx|rbh|rbx|cl|ch|cx|ecx|rcx|dl|dh"
     "|dx|edl|edh|edx|rdx|si|esi|rsi|di|edi|rdi|sp|esp|rsp|bp|ebp|rbp|ip|eip"
     "|rip|r8|r9|r10|r11|r12|r13|r14|r15|r8d|r9d|r10d|r11d|r12d|r13d|r14d|"
-    "r15d|r8w|r9w|r10w|r11w|r12w|r13w|r14w|r15w")
+    "r15d|r8w|r9w|r10w|r11w|r12w|r13w|r14w|r15w"
+)
 re_seg = re.compile("(cs|ds|es|fs|gs):")
 
 
 def cannonical(s):
-    return re.sub("0x[0-9a-fA-F]+|\d+", MARKER_NUMBER, s)
+    return re.sub(r"0x[0-9a-fA-F]+|\d+", MARKER_NUMBER, s)
 
 
 def meta_cannonical(s):
     s = cannonical(s)
-    for r in re.findall("\[(.+?)]", s):
+    for r in re.findall(r"\[(.+?)]", s):
         r2 = re.sub("[a-z]+", MARKER_REGISTER, r)
         s = s.replace(r, r2)
     return s
@@ -70,7 +70,7 @@ def meta_cannonical(s):
 
 def meta_meta_cannonical(s):
     s = meta_cannonical(s)
-    s = re.sub('byte|word|dword|qword', MARKER_WIDTH_MARKER, s)
+    s = re.sub("byte|word|dword|qword", MARKER_WIDTH_MARKER, s)
     for r in re_regs.findall(s):
         s = re.sub(r, MARKER_REGISTER, s)
     for r in re_seg.findall(s):
@@ -89,42 +89,44 @@ def gen_testcase(cause, ins, inpairs, oins=""):
         oins=oins,
         case=inskey,
         metacase=insmkey,
-        metametacase=insmmkey)
+        metametacase=insmmkey,
+    )
 
 
 def check_hexpairs(orig_input_hexpairs):
     output = rz_asm("-D", "-a", DISASM_ENGINE, orig_input_hexpairs)
     output = output.stdout.split(b"\n")[0].decode()
-    output = re.split("\s+", output, 2)[-1]
-    input_hexpairs, input_ins = re.split("\s+", output, 1)
+    output = re.split(r"\s+", output, 2)[-1]
+    input_hexpairs, input_ins = re.split(r"\s+", output, 1)
 
-    if input_ins == 'invalid':
+    if input_ins == "invalid":
         if REFERENCE_DISASM_ENGINE:
-            coutput = rz_asm(
-                "-D", "-a", REFERENCE_DISASM_ENGINE, orig_input_hexpairs)
+            coutput = rz_asm("-D", "-a", REFERENCE_DISASM_ENGINE, orig_input_hexpairs)
             coutput = coutput.stdout.split(b"\n")[0].decode()
-            coutput = re.split("\s+", coutput, 2)[-1]
-            cinput_hexpairs, cinput_ins = re.split("\s+", coutput, 1)
-            if (cinput_ins != 'invalid'):
+            coutput = re.split(r"\s+", coutput, 2)[-1]
+            cinput_hexpairs, cinput_ins = re.split(r"\s+", coutput, 1)
+            if cinput_ins != "invalid":
                 print(cinput_hexpairs, cinput_ins)
-                return gen_testcase("Disassemble False Fail", cinput_ins,
-                                    cinput_hexpairs, input_ins)
-        return
+                return gen_testcase(
+                    "Disassemble False Fail", cinput_ins, cinput_hexpairs, input_ins
+                )
+        return None
 
     try:
-        output_hexpairs = rz_asm(
-            "-a", ASM_ENGINE, input_ins).stdout.split(b"\n")[0]
+        output_hexpairs = rz_asm("-a", ASM_ENGINE, input_ins).stdout.split(b"\n")[0]
     except sh.ErrorReturnCode_1 as e:
         if "Cannot assemble" in str(e):
             return gen_testcase("Assemble False Fail", input_ins, input_hexpairs)
-        return
+        return None
 
     output_ins = rz_asm("-d", "-a", DISASM_ENGINE, output_hexpairs)
     output_ins = output_ins.stdout.split(b"\n")[0].decode()
 
-    if (input_ins != output_ins):
-        return gen_testcase("Assemble != Dis+Assemble", input_ins,
-                            input_hexpairs, output_ins)
+    if input_ins != output_ins:
+        return gen_testcase(
+            "Assemble != Dis+Assemble", input_ins, input_hexpairs, output_ins
+        )
+    return None
 
 
 def main():
@@ -150,25 +152,32 @@ def main():
         input_data = f.read()
 
     pool = ProcessPoolExecutor(CONCURRENCY)
-    for offset in range(0, fsize-20, CONCURRENCY):
-        inputs = [hexlify(input_data[o:o+MAX_OPLEN])
-                  for o in range(offset, offset+CONCURRENCY)]
+    for offset in range(0, fsize - 20, CONCURRENCY):
+        inputs = [
+            hexlify(input_data[o : o + MAX_OPLEN])
+            for o in range(offset, offset + CONCURRENCY)
+        ]
         tasks = pool.map(check_hexpairs, inputs)
         for res in tasks:
             if not res:
                 continue
-            inskey = res['case']
-            insmkey = res['metacase']
-            insmmkey = res['metametacase']
+            inskey = res["case"]
+            insmkey = res["metacase"]
+            insmmkey = res["metametacase"]
             meta_meta_cases[insmmkey] = meta_meta_cases.get(insmmkey, 0) + 1
             meta_cases[insmkey] = meta_cases.get(insmkey, 0) + 1
-            if (meta_cases[insmkey] > MAX_METACASE_EXAMPLES or
-                    meta_meta_cases[insmmkey] > MAX_META_META_CASE_EXAMPLES):
+            if (
+                meta_cases[insmkey] > MAX_METACASE_EXAMPLES
+                or meta_meta_cases[insmmkey] > MAX_META_META_CASE_EXAMPLES
+            ):
                 pass
             elif inskey not in cases:
                 cases[inskey] = cases.get(inskey, 0) + 1
                 print("%s\n" % json.dumps(res, indent=4))
+    return 0
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
+
     sys.exit(main())

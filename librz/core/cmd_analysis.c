@@ -802,7 +802,7 @@ static bool cmd_analysis_aaft(RzCore *core) {
 	rz_reg_arena_push(core->analysis->reg);
 	rz_reg_arena_zero(core->analysis->reg);
 	rz_core_analysis_esil_init(core);
-	rz_core_cmd0(core, "aeim");
+	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	ut8 *saved_arena = rz_reg_arena_peek(core->analysis->reg);
 	// Iterating Reverse so that we get function in top-bottom call order
 	rz_list_foreach_prev(core->analysis->fcns, it, fcn) {
@@ -4667,213 +4667,57 @@ static void cmd_analysis_info(RzCore *core, const char *input) {
 	}
 }
 
-static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
-	const char *mode = rz_config_get(core->config, "esil.fillstack");
-	if (mode && *mode && *mode != '0') {
-		const ut64 bs = 4096 * 32;
-		ut64 i;
-		for (i = 0; i < size; i += bs) {
-			ut64 left = RZ_MIN(bs, size - i);
-			//	rz_core_cmdf (core, "wx 10203040 @ 0x%llx", addr);
-			switch (*mode) {
-			case 'd': // "debrujn"
-				rz_core_cmdf(core, "wopD %" PFMT64u " @ 0x%" PFMT64x, left, addr + i);
-				break;
-			case 's': // "seq"
-				rz_core_cmdf(core, "woe 1 0xff 1 4 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
-				break;
-			case 'r': // "random"
-				rz_core_cmdf(core, "woR %" PFMT64u " @ 0x%" PFMT64x "!0x%" PFMT64x, left, addr + i, left);
-				break;
-			case 'z': // "zero"
-			case '0':
-				rz_core_cmdf(core, "wow 00 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
-				break;
-			}
-		}
-		// eprintf ("[*] Initializing ESIL stack with pattern\n");
-		// rz_core_cmdf (core, "woe 0 10 4 @ 0x%"PFMT64x, size, addr);
+static void cmd_esil_mem_args(RzCore *core, const char *input, ut64 *addr, ut32 *size, char **name) {
+	int argc;
+	*addr = UT64_MAX;
+	*size = UT32_MAX;
+	*name = NULL;
+	if (!input) {
+		return;
 	}
+	char **argv = rz_str_argv(input, &argc);
+	if (argc > 0) {
+		*addr = rz_num_math(core->num, argv[0]);
+	}
+	if (argc > 1) {
+		*size = (ut32)rz_num_math(core->num, argv[1]);
+	}
+	if (argc > 2) {
+		*name = strdup(argv[2]);
+	}
+	rz_str_argv_free(argv);
 }
 
 static void cmd_esil_mem(RzCore *core, const char *input) {
-	RzAnalysisEsil *esil = core->analysis->esil;
-	RzIOMap *stack_map;
-	ut64 curoff = core->offset;
-	const char *patt = "";
-	ut64 addr = 0x100000;
-	ut32 size = 0xf0000;
-	char name[128];
-	RzFlagItem *fi;
-	const char *sp, *bp, *pc;
-	char uri[32];
-	char nomalloc[256];
-	char *p;
-	if (!esil) {
-		int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-		int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-		int romem = rz_config_get_i(core->config, "esil.romem");
-		int stats = rz_config_get_i(core->config, "esil.stats");
-		int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-		int verbose = rz_config_get_i(core->config, "esil.verbose");
-		unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-		if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
-			return;
-		}
-		rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL); // setup io
-		core->analysis->esil = esil;
-		esil->verbose = verbose;
-		{
-			const char *s = rz_config_get(core->config, "cmd.esil.intr");
-			if (s) {
-				char *my = strdup(s);
-				if (my) {
-					rz_config_set(core->config, "cmd.esil.intr", my);
-					free(my);
-				}
-			}
-		}
-	}
-	if (*input == '?') {
+	ut64 addr;
+	ut32 size;
+	char *name;
+
+	switch (*input) {
+	case 'p':
+		rz_core_analysis_esil_init_mem_p(core);
+		break;
+	case '-':
+		cmd_esil_mem_args(core, input + 1, &addr, &size, &name);
+		rz_core_analysis_esil_init_mem_del(core, name, addr, size);
+		free(name);
+		break;
+	case ' ':
+		cmd_esil_mem_args(core, input + 1, &addr, &size, &name);
+		rz_core_analysis_esil_init_mem(core, name, addr, size);
+		free(name);
+		break;
+	case '\0':
+		cmd_esil_mem_args(core, NULL, &addr, &size, &name);
+		rz_core_analysis_esil_init_mem(core, name, addr, size);
+		free(name);
+		break;
+	default:
 		eprintf("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
 		eprintf("Default: 0x100000 0xf0000\n");
 		eprintf("See ae? for more help\n");
 		return;
 	}
-
-	if (input[0] == 'p') {
-		fi = rz_flag_get(core->flags, "aeim.stack");
-		if (fi) {
-			addr = fi->offset;
-			size = fi->size;
-		} else {
-			cmd_esil_mem(core, "");
-		}
-		if (esil) {
-			esil->stack_addr = addr;
-			esil->stack_size = size;
-		}
-		initialize_stack(core, addr, size);
-		return;
-	}
-
-	if (!*input) {
-		char *fi = sdb_get(core->sdb, "aeim.fd", 0);
-		if (fi) {
-			// Close the fd associated with the aeim stack
-			ut64 fd = sdb_atoi(fi);
-			(void)rz_io_fd_close(core->io, fd);
-		}
-	}
-	size = rz_config_get_i(core->config, "esil.stack.size");
-	addr = rz_config_get_i(core->config, "esil.stack.addr");
-
-	{
-		RzIOMap *map = rz_io_map_get(core->io, addr);
-		if (map) {
-			addr = UT64_MAX;
-		}
-	}
-
-	if (addr == UT64_MAX) {
-		const ut64 align = 0x10000000;
-		addr = rz_io_map_next_available(core->io, core->offset, size, align);
-	}
-	patt = rz_config_get(core->config, "esil.stack.pattern");
-	p = strncpy(nomalloc, input, 255);
-	if ((p = strchr(p, ' '))) {
-		while (*p == ' ')
-			p++;
-		addr = rz_num_math(core->num, p);
-		if ((p = strchr(p, ' '))) {
-			while (*p == ' ')
-				p++;
-			size = (ut32)rz_num_math(core->num, p);
-			if (size < 1) {
-				size = 0xf0000;
-			}
-			if ((p = strchr(p, ' '))) {
-				while (*p == ' ') {
-					p++;
-				}
-				snprintf(name, sizeof(name), "mem.%s", p);
-			} else {
-				snprintf(name, sizeof(name), "mem.0x%" PFMT64x "_0x%x", addr, size);
-			}
-		} else {
-			snprintf(name, sizeof(name), "mem.0x%" PFMT64x "_0x%x", addr, size);
-		}
-	} else {
-		snprintf(name, sizeof(name), "mem.0x%" PFMT64x "_0x%x", addr, size);
-	}
-	if (*input == '-') {
-		if (esil->stack_fd > 2) { //0, 1, 2 are reserved for stdio/stderr
-			rz_io_fd_close(core->io, esil->stack_fd);
-			// no need to kill the maps, rz_io_map_cleanup does that for us in the close
-			esil->stack_fd = 0;
-		} else {
-			eprintf("Cannot deinitialize %s\n", name);
-		}
-		rz_flag_unset_name(core->flags, name);
-		rz_flag_unset_name(core->flags, "aeim.stack");
-		sdb_unset(core->sdb, "aeim.fd", 0);
-		// eprintf ("Deinitialized %s\n", name);
-		return;
-	}
-
-	snprintf(uri, sizeof(uri), "malloc://%d", (int)size);
-	esil->stack_fd = rz_io_fd_open(core->io, uri, RZ_PERM_RW, 0);
-	if (!(stack_map = rz_io_map_add(core->io, esil->stack_fd, RZ_PERM_RW, 0LL, addr, size))) {
-		rz_io_fd_close(core->io, esil->stack_fd);
-		eprintf("Cannot create map for tha stack, fd %d got closed again\n", esil->stack_fd);
-		esil->stack_fd = 0;
-		return;
-	}
-	rz_io_map_set_name(stack_map, name);
-	// rz_flag_set (core->flags, name, addr, size);	//why is this here?
-	char val[128], *v;
-	v = sdb_itoa(esil->stack_fd, val, 10);
-	sdb_set(core->sdb, "aeim.fd", v, 0);
-
-	rz_config_set_i(core->config, "io.va", true);
-	if (patt && *patt) {
-		switch (*patt) {
-		case '0':
-			// do nothing
-			break;
-		case 'd':
-			rz_core_cmdf(core, "wopD %d @ 0x%" PFMT64x, size, addr);
-			break;
-		case 'i':
-			rz_core_cmdf(core, "woe 0 255 1 @ 0x%" PFMT64x "!%d", addr, size);
-			break;
-		case 'w':
-			rz_core_cmdf(core, "woe 0 0xffff 1 4 @ 0x%" PFMT64x "!%d", addr, size);
-			break;
-		}
-	}
-	// SP
-	sp = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_SP);
-	if (sp) {
-		rz_debug_reg_set(core->dbg, sp, addr + (size / 2));
-	}
-	// BP
-	bp = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_BP);
-	if (bp) {
-		rz_debug_reg_set(core->dbg, bp, addr + (size / 2));
-	}
-	// PC
-	pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
-	if (pc) {
-		rz_debug_reg_set(core->dbg, pc, curoff);
-	}
-	rz_core_regs2flags(core);
-	if (esil) {
-		esil->stack_addr = addr;
-		esil->stack_size = size;
-	}
-	initialize_stack(core, addr, size);
-	rz_core_seek(core, curoff, false);
 }
 
 typedef struct {
@@ -5342,8 +5186,7 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 	eprintf("Resolve call args for 0x%08" PFMT64x "\n", to);
 
 	// emulate
-	// XXX do not use commands, here, just use the api
-	rz_core_cmd0(core, "aeim"); // XXX
+	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	ut64 off = core->offset;
 	for (at = from; at < to; at++) {
 		rz_core_cmdf(core, "aepc 0x%08" PFMT64x, at);
@@ -5390,8 +5233,7 @@ static void __analysis_esil_function(RzCore *core, ut64 addr) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	if (!core->analysis->esil) {
-		rz_core_cmd0(core, "aeim");
-		// core->analysis->esil = rz_analysis_esil_new (stacksize, 0, addrsize);
+		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis,
 		addr, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
@@ -5808,17 +5650,23 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		}
 		break;
 	case 'g': // "aeg"
-		if (input[1] == 'i' || input[1] == 'v') {
+		switch (input[1]) {
+		case 'i':
+		case 'v': {
 			char *oprompt = strdup(rz_config_get(core->config, "cmd.gprompt"));
 			rz_config_set(core->config, "cmd.gprompt", "pi 1");
 			rz_core_cmd0(core, ".aeg*;aggv");
 			rz_config_set(core->config, "cmd.gprompt", oprompt);
 			free(oprompt);
-		} else if (!input[1]) {
+			break;
+		}
+		case '\0':
 			rz_core_cmd0(core, ".aeg*;agg");
-		} else if (input[1] == ' ') {
+			break;
+		case ' ':
 			rz_core_analysis_esil_graph(core, input + 2);
-		} else if (input[1] == '*') {
+			break;
+		case '*': {
 			RzAnalysisOp *aop = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_ESIL);
 			if (aop) {
 				const char *esilstr = rz_strbuf_get(&aop->esil);
@@ -5826,11 +5674,14 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 					rz_core_analysis_esil_graph(core, esilstr);
 				}
 			}
-		} else {
+			break;
+		}
+		default:
 			rz_cons_printf("Usage: aeg[iv*]\n");
 			rz_cons_printf(" aeg  analyze current instruction as an esil graph\n");
 			rz_cons_printf(" aeg* analyze current instruction as an esil graph\n");
 			rz_cons_printf(" aegv and launch the visual interactive mode (.aeg*;aggv == aegv)\n");
+			break;
 		}
 		break;
 	case 'b': // "aeb"
@@ -7571,49 +7422,6 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 	}
 }
 
-static void agraph_print_node_gml(RzANode *n, void *user) {
-	rz_cons_printf("  node [\n"
-		       "    id  %d\n"
-		       "    label  \"%s\"\n"
-		       "  ]\n",
-		n->gnode->idx, n->title);
-}
-
-static void agraph_print_edge_gml(RzANode *from, RzANode *to, void *user) {
-	rz_cons_printf("  edge [\n"
-		       "    source  %d\n"
-		       "    target  %d\n"
-		       "  ]\n",
-		from->gnode->idx, to->gnode->idx);
-}
-
-static void agraph_print_node_dot(RzANode *n, void *user) {
-	char *label = strdup(n->body);
-	//label = rz_str_replace (label, "\n", "\\l", 1);
-	if (!label || !*label) {
-		rz_cons_printf("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
-			n->title, n->title, n->title);
-	} else {
-		rz_cons_printf("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
-			n->title, n->title, n->title, label);
-	}
-	free(label);
-}
-
-static void agraph_print_node(RzANode *n, void *user) {
-	char *encbody, *cmd;
-	int len = strlen(n->body);
-
-	if (len > 0 && n->body[len - 1] == '\n') {
-		len--;
-	}
-	encbody = rz_base64_encode_dyn((const ut8 *)n->body, len);
-	cmd = rz_str_newf("agn \"%s\" base64:%s\n", n->title, encbody);
-	rz_cons_print(cmd);
-	free(cmd);
-	free(encbody);
-}
-
 static char *getViewerPath(void) {
 	int i;
 	const char *viewers[] = {
@@ -7704,53 +7512,25 @@ static bool convert_dot_str_to_image(RzCore *core, char *str, const char *save_p
 	return convert_dot_to_image(core, "a.dot", save_path);
 }
 
-static void agraph_print_edge_dot(RzANode *from, RzANode *to, void *user) {
-	rz_cons_printf("\"%s\" -> \"%s\"\n", from->title, to->title);
-}
-
-static void agraph_print_edge(RzANode *from, RzANode *to, void *user) {
-	rz_cons_printf("age \"%s\" \"%s\"\n", from->title, to->title);
+RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename) {
+	convert_dotcmd_to_image(core, "aggd", filename);
 }
 
 static void cmd_agraph_node(RzCore *core, const char *input) {
 	switch (*input) {
 	case ' ': { // "agn"
-		char *newbody = NULL;
-		char **args, *body;
-		int n_args, B_LEN = strlen("base64:");
-		int color = -1;
-		input++;
-		args = rz_str_argv(input, &n_args);
+		int n_args = 0;
+		char **args = rz_str_argv(input, &n_args);
 		if (n_args < 1 || n_args > 3) {
 			rz_cons_printf("Wrong arguments\n");
 			rz_str_argv_free(args);
 			break;
 		}
-		// strdup cause there is double free in rz_str_argv_free due to a realloc call
-		if (n_args > 1) {
-			body = strdup(args[1]);
-			if (strncmp(body, "base64:", B_LEN) == 0) {
-				body = rz_str_replace(body, "\\n", "", true);
-				newbody = (char *)rz_base64_decode_dyn(body + B_LEN, -1);
-				free(body);
-				if (!newbody) {
-					eprintf("Cannot allocate buffer\n");
-					rz_str_argv_free(args);
-					break;
-				}
-				body = newbody;
-			}
-			body = rz_str_append(body, "\n");
-			if (n_args > 2) {
-				color = atoi(args[2]);
-			}
-		} else {
-			body = strdup("");
-		}
-		rz_agraph_add_node_with_color(core->graph, args[0], body, color);
+		const char *title = args[0];
+		const char *body = n_args > 1 ? args[1] : "";
+		int color = n_args > 2 ? atoi(args[2]) : -1;
+		rz_core_agraph_add_node(core, title, body, color);
 		rz_str_argv_free(args);
-		free(body);
-		//free newbody it's not necessary since rz_str_append reallocate the space
 		break;
 	}
 	case '-': { // "agn-"
@@ -7764,7 +7544,7 @@ static void cmd_agraph_node(RzCore *core, const char *input) {
 			rz_str_argv_free(args);
 			break;
 		}
-		rz_agraph_del_node(core->graph, args[0]);
+		rz_core_agraph_del_node(core, args[0]);
 		rz_str_argv_free(args);
 		break;
 	}
@@ -7776,13 +7556,11 @@ static void cmd_agraph_node(RzCore *core, const char *input) {
 }
 
 static void cmd_agraph_edge(RzCore *core, const char *input) {
+	char **args;
+	int n_args;
+
 	switch (*input) {
 	case ' ': // "age"
-	case '-': { // "age-"
-		RzANode *u, *v;
-		char **args;
-		int n_args;
-
 		args = rz_str_argv(input + 1, &n_args);
 		if (n_args != 2) {
 			rz_cons_printf("Wrong arguments\n");
@@ -7790,25 +7568,20 @@ static void cmd_agraph_edge(RzCore *core, const char *input) {
 			break;
 		}
 
-		u = rz_agraph_get_node(core->graph, args[0]);
-		v = rz_agraph_get_node(core->graph, args[1]);
-		if (!u || !v) {
-			if (!u) {
-				rz_cons_printf("Node %s not found!\n", args[0]);
-			} else {
-				rz_cons_printf("Node %s not found!\n", args[1]);
-			}
+		rz_core_agraph_add_edge(core, args[0], args[1]);
+		rz_str_argv_free(args);
+		break;
+	case '-': // "age-"
+		args = rz_str_argv(input + 1, &n_args);
+		if (n_args != 2) {
+			rz_cons_printf("Wrong arguments\n");
 			rz_str_argv_free(args);
 			break;
 		}
-		if (*input == ' ') {
-			rz_agraph_add_edge(core->graph, u, v);
-		} else {
-			rz_agraph_del_edge(core->graph, u, v);
-		}
+
+		rz_core_agraph_del_edge(core, args[0], args[1]);
 		rz_str_argv_free(args);
 		break;
-	}
 	case '?': // "age?"
 	default:
 		rz_core_cmd_help(core, help_msg_age);
@@ -7822,97 +7595,34 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 	}
 	switch (*input) {
 	case 0:
-		core->graph->can->linemode = rz_config_get_i(core->config, "graph.linemode");
-		core->graph->can->color = rz_config_get_i(core->config, "scr.color");
-		rz_agraph_set_title(core->graph,
-			rz_config_get(core->config, "graph.title"));
-		rz_agraph_print(core->graph);
+		rz_core_agraph_print_custom(core);
 		break;
-	case 't': { // "aggt" - tiny graph
-		core->graph->is_tiny = true;
-		int e = rz_config_get_i(core->config, "graph.edges");
-		rz_config_set_i(core->config, "graph.edges", 0);
-		rz_core_visual_graph(core, core->graph, NULL, false);
-		rz_config_set_i(core->config, "graph.edges", e);
-		core->graph->is_tiny = false;
+	case 't': // "aggt" - tiny graph
+		rz_core_agraph_print_tiny(core);
 		break;
-	}
 	case 'k': // "aggk"
-	{
-		Sdb *db = rz_agraph_get_sdb(core->graph);
-		char *o = sdb_querys(db, "null", 0, "*");
-		rz_cons_print(o);
-		free(o);
+		rz_core_agraph_print_sdb(core);
 		break;
-	}
 	case 'v': // "aggv"
 	case 'i': // "aggi" - open current core->graph in interactive mode
-	{
-		RzANode *ran = rz_agraph_get_first_node(core->graph);
-		if (ran) {
-			ut64 oseek = core->offset;
-			rz_agraph_set_title(core->graph, rz_config_get(core->config, "graph.title"));
-			rz_agraph_set_curnode(core->graph, ran);
-			core->graph->force_update_seek = true;
-			core->graph->need_set_layout = true;
-			core->graph->layout = rz_config_get_i(core->config, "graph.layout");
-			bool ov = rz_cons_is_interactive();
-			core->graph->need_update_dim = true;
-			int update_seek = rz_core_visual_graph(core, core->graph, NULL, true);
-			rz_config_set_i(core->config, "scr.interactive", ov);
-			rz_cons_show_cursor(true);
-			rz_cons_enable_mouse(false);
-			if (update_seek != -1) {
-				rz_core_seek(core, oseek, false);
-			}
-		} else {
-			eprintf("This graph contains no nodes\n");
-		}
+		rz_core_agraph_print_interactive(core);
 		break;
-	}
-	case 'd': { // "aggd" - dot format
-		const char *font = rz_config_get(core->config, "graph.font");
-		rz_cons_printf("digraph code {\nrankdir=LR;\noutputorder=edgesfirst\ngraph [bgcolor=azure];\n"
-			       "edge [arrowhead=normal, color=\"#3030c0\" style=bold weight=2];\n"
-			       "node [fillcolor=white, style=filled shape=box "
-			       "fontname=\"%s\" fontsize=\"8\"];\n",
-			font);
-		rz_agraph_foreach(core->graph, agraph_print_node_dot, NULL);
-		rz_agraph_foreach_edge(core->graph, agraph_print_edge_dot, NULL);
-		rz_cons_printf("}\n");
+	case 'd': // "aggd" - dot format
+		rz_core_agraph_print_dot(core);
 		break;
-	}
 	case '*': // "agg*" -
-		rz_agraph_foreach(core->graph, agraph_print_node, NULL);
-		rz_agraph_foreach_edge(core->graph, agraph_print_edge, NULL);
+		rz_core_agraph_print_rizin(core);
 		break;
 	case 'J': // "aggJ"
-	case 'j': { // "aggj"
-		PJ *pj = pj_new();
-		if (!pj) {
-			return;
-		}
-		pj_o(pj);
-		pj_k(pj, "nodes");
-		pj_a(pj);
-		rz_agraph_print_json(core->graph, pj);
-		pj_end(pj);
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	} break;
+	case 'j': // "aggj"
+		rz_core_agraph_print_json(core);
+		break;
 	case 'g': // "aggg"
-		rz_cons_printf("graph\n[\n"
-			       "hierarchic 1\n"
-			       "label \"\"\n"
-			       "directed 1\n");
-		rz_agraph_foreach(core->graph, agraph_print_node_gml, NULL);
-		rz_agraph_foreach_edge(core->graph, agraph_print_edge_gml, NULL);
-		rz_cons_print("]\n");
+		rz_core_agraph_print_gml(core);
 		break;
 	case 'w': { // "aggw"
 		const char *filename = rz_str_trim_head_ro(input + 1);
-		convert_dotcmd_to_image(core, "aggd", filename);
+		rz_core_agraph_print_write(core, filename);
 		break;
 	}
 	default:
@@ -8144,7 +7854,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			break;
 		}
 		case 'k': { // "agfk"
-			rz_core_cmdf(core, "ag-; .agf* @ %" PFMT64u "; aggk", core->offset);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agf* @ %" PFMT64u "; aggk", core->offset);
 			break;
 		}
 		case '*': { // "agf*"
@@ -8164,7 +7875,7 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		}
 		break;
 	case '-': // "ag-"
-		rz_agraph_reset(core->graph);
+		rz_core_agraph_reset(core);
 		break;
 	case 'n': // "agn"
 		cmd_agraph_node(core, input + 1);
@@ -8187,7 +7898,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case ' ': // "agC "
 		case 0: {
 			core->graph->is_callgraph = true;
-			rz_core_cmdf(core, "ag-; .agC*;");
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agC*;");
 			rz_core_agraph_print(core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
@@ -8217,7 +7929,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		} break;
 		default: {
 			core->graph->is_callgraph = true;
-			rz_core_cmdf(core, "ag-; .agr* @ %" PFMT64u ";", core->offset);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agr* @ %" PFMT64u ";", core->offset);
 			rz_core_agraph_print(core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
@@ -8240,7 +7953,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		}
 		default: {
 			core->graph->is_callgraph = true;
-			rz_core_cmdf(core, "ag-; .agR*;");
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agR*;");
 			rz_core_agraph_print(core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
@@ -8275,13 +7989,15 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case 'w': // "agcw"
 		case ' ': { // "agc "
 			core->graph->is_callgraph = true;
-			rz_core_cmdf(core, "ag-; .agc* @ %" PFMT64u "; agg%s;", core->offset, input + 1);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agc* @ %" PFMT64u "; agg%s;", core->offset, input + 1);
 			core->graph->is_callgraph = false;
 			break;
 		}
 		case 0: // "agc "
 			core->graph->is_callgraph = true;
-			rz_core_cmd0(core, "ag-; .agc* $$; agg;");
+			rz_core_agraph_reset(core);
+			rz_core_cmd0(core, ".agc* $$; agg;");
 			core->graph->is_callgraph = false;
 			break;
 		case 'g': { // "agg"
@@ -8325,7 +8041,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			break;
 		}
 		default:
-			rz_core_cmdf(core, "ag-; .aga* @ %" PFMT64u ";", core->offset);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".aga* @ %" PFMT64u ";", core->offset);
 			rz_core_agraph_print(core, -1, input + 1);
 			break;
 		}
@@ -8345,7 +8062,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			break;
 		}
 		default:
-			rz_core_cmdf(core, "ag-; .agA*;");
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agA*;");
 			rz_core_agraph_print(core, -1, input + 1);
 			break;
 		}
@@ -8378,7 +8096,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case 'v': // "agdv"
 		case 'g': { // "agdg"
 			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_cmdf(core, "ag-; .agd* @ %" PFMT64u "; agg%s;", addr, input + 1);
+			rz_core_agraph_reset(core);
+			rz_core_cmdf(core, ".agd* @ %" PFMT64u "; agg%s;", addr, input + 1);
 			break;
 		}
 		case 'd': { // "agdd"
