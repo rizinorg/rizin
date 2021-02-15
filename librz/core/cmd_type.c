@@ -15,7 +15,6 @@ static const char *help_msg_t[] = {
 	"t*", "", "List types info in rizin commands",
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
-	"tail", " [filename]", "Output the last part of files",
 	"tc", " [type.name]", "List all/given types in C output format",
 	"te", "[?]", "List all loaded enums",
 	"td", "[?] <string>", "Load types from string",
@@ -295,40 +294,6 @@ static void showFormat(RzCore *core, const char *name, int mode) {
 			eprintf("Cannot find '%s' type\n", name);
 		}
 	}
-}
-
-static int cmd_tail(void *data, const char *_input) { // "tail"
-	char *input = strdup(_input);
-	int lines = 5;
-	char *arg = strchr(input, ' ');
-	char *tmp, *count;
-	if (arg) {
-		arg = (char *)rz_str_trim_head_ro(arg + 1); // contains "count filename"
-		count = strchr(arg, ' ');
-		if (count) {
-			*count = 0; // split the count and file name
-			tmp = (char *)rz_str_trim_head_ro(count + 1);
-			lines = atoi(arg);
-			arg = tmp;
-		}
-	}
-	switch (*input) {
-	case '?': // "tail?"
-		eprintf("Usage: tail [file] # to list last n lines in file\n");
-		break;
-	default: // "tail"
-		if (!arg) {
-			arg = "";
-		}
-		char *res = rz_syscmd_tail(arg, lines);
-		if (res) {
-			rz_cons_print(res);
-			free(res);
-		}
-		break;
-	}
-	free(input);
-	return 0;
 }
 
 static void cmd_type_noreturn(RzCore *core, const char *input) {
@@ -1470,19 +1435,6 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		}
 	} break;
 	// ta: moved to analysis hints (aht)- just for tail, at the moment
-	case 'a': // "ta"
-		switch (input[1]) {
-		case 'i': { // "tai"
-			if (input[2] == 'l') {
-				cmd_tail(core, input);
-			} else {
-				eprintf("Usage: tail [number] [file]\n");
-			}
-		} break;
-		default:
-			eprintf("[WARNING] \"ta\" is deprecated. Use \"aht\" instead.\n");
-		}
-		break;
 	// tl - link a type to an address
 	case 'l': // "tl"
 		switch (input[1]) {
