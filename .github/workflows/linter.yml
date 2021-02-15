@@ -11,6 +11,7 @@ jobs:
       yaml: ${{ steps.filter.outputs.yaml }}
       clang-format: ${{ steps.filter.outputs.clang-format }}
       prettier: ${{ steps.filter.outputs.prettier }}
+      python: ${{ steps.filter.outputs.python }}
     steps:
     - uses: actions/checkout@v2
     - uses: dorny/paths-filter@v2
@@ -29,10 +30,13 @@ jobs:
           prettier:
             - '**.js'
             - '.github/workflows/linter.yml'
+          python:
+            - '**.py'
+            - '.github/workflows/linter.yml'
 
   cmd_descs_yaml_check:
     needs: changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
       - uses: actions/checkout@v2
@@ -53,8 +57,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-      with:
-          submodules: recursive
 
     - name: Install wget
       run: sudo apt --assume-yes install wget
@@ -81,8 +83,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-      with:
-          submodules: recursive
 
     - name: Install prettier
       run: |
@@ -91,3 +91,29 @@ jobs:
 
     - name: Run prettier
       run: find . -name "*.js" | grep -v "subprojects" | xargs npx prettier  --print-width 120 --check
+
+  python:
+    needs: changes
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.python == 'true' }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install pylint, black, isort
+      run: pip install pylint black isort
+
+    - name: Run black
+      run: |
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        find . -name "*.py" | grep -v "subprojects" | xargs black --check
+
+    - name: Run isort
+      run: |
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        find . -name "*.py" | grep -v "subprojects" | xargs isort --check
+
+    - name: Run pylint
+      run: |
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        find . -name "*.py" | grep -v "subprojects" | grep -v "librz/bin/format/xnu/scripts/" | xargs pylint

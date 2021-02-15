@@ -5,6 +5,7 @@
 #include "rz_cons.h"
 #include "rz_core.h"
 #include <sdb.h>
+#include "core_private.h"
 
 static const char *help_msg_t[] = {
 	"Usage: t", "", "# cparse types commands",
@@ -837,7 +838,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 		}
 	} else {
 		// initialize stack
-		rz_core_cmd0(core, "aeim");
+		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 		stack_set = true;
 	}
 	rz_config_set_i(core->config, "io.cache", 1);
@@ -934,7 +935,7 @@ beach:
 	rz_config_set_i(core->config, "io.cache", ioCache);
 	rz_config_set_i(core->config, "dbg.follow", dbg_follow);
 	if (stack_set) {
-		rz_core_cmd0(core, "aeim-");
+		rz_core_analysis_esil_init_mem_del(core, NULL, UT64_MAX, UT32_MAX);
 	}
 	rz_core_seek(core, oldoff, true);
 	rz_analysis_esil_free(esil);
