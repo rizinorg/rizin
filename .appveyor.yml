@@ -41,6 +41,17 @@ environment:
       BUILD_DIR: build
       RUN_TESTS: true
 
+only_commits:
+  files:
+    - '**/*.c'
+    - '**/*.h'
+    - '**/*.in'
+    - '**/*.inc'
+    - '**/meson.build'
+    - 'shlr/rizin-shell-parser/'
+    - 'subprojects/'
+    - '.appveyor.yml'
+
 # Init
 init:
   # Build dependent custom commands
