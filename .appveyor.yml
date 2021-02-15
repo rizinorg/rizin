@@ -43,13 +43,13 @@ environment:
 
 only_commits:
   files:
-    - '**.c'
-    - '**.h'
-    - '**.in'
-    - '**.inc'
+    - '**/*.c'
+    - '**/*.h'
+    - '**/*.in'
+    - '**/*.inc'
     - '**/meson.build'
-    - 'shlr/rizin-shell-parser/**'
-    - 'subprojects/**'
+    - 'shlr/rizin-shell-parser/'
+    - 'subprojects/'
     - '.appveyor.yml'
 
 # Init
