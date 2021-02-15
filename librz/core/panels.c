@@ -4065,7 +4065,7 @@ void __hudstuff(RzCore *core) {
 
 void __esil_init(RzCore *core) {
 	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
-	rz_core_cmd(core, "aeip", 0);
+	rz_core_analysis_esil_init_regs(core);
 }
 
 void __esil_step_to(RzCore *core, ut64 end) {
