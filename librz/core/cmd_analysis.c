@@ -529,7 +529,6 @@ static const char *help_msg_ag[] = {
 	"agA", "[format]", "Global data references graph",
 	"agc", "[format]", "Function callgraph",
 	"agC", "[format]", "Global callgraph",
-	"agd", "[format] [fcn addr]", "Diff graph",
 	"agf", "[format]", "Basic blocks function graph",
 	"agi", "[format]", "Imports graph",
 	"agr", "[format]", "References graph",
@@ -5655,13 +5654,15 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		case 'v': {
 			char *oprompt = strdup(rz_config_get(core->config, "cmd.gprompt"));
 			rz_config_set(core->config, "cmd.gprompt", "pi 1");
-			rz_core_cmd0(core, ".aeg*;aggv");
+			rz_core_cmd0(core, ".aeg*");
+			rz_core_agraph_print_interactive(core);
 			rz_config_set(core->config, "cmd.gprompt", oprompt);
 			free(oprompt);
 			break;
 		}
 		case '\0':
-			rz_core_cmd0(core, ".aeg*;agg");
+			rz_core_cmd0(core, ".aeg*");
+			rz_core_agraph_print_interactive(core);
 			break;
 		case ' ':
 			rz_core_analysis_esil_graph(core, input + 2);
@@ -8214,53 +8215,6 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'd': { // "agd"
-		int diff_opt = RZ_CORE_ANALYSIS_GRAPHBODY | RZ_CORE_ANALYSIS_GRAPHDIFF;
-		switch (input[1]) {
-		case 'j': { // "agdj"
-			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_gdiff_fcn(core, addr, core->offset);
-			rz_core_analysis_graph(core, addr, diff_opt | RZ_CORE_ANALYSIS_JSON);
-			break;
-		}
-		case 'J': { // "agdJ"
-			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_gdiff_fcn(core, addr, core->offset);
-			rz_core_analysis_graph(core, addr, diff_opt | RZ_CORE_ANALYSIS_JSON | RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM);
-			break;
-		}
-		case '*': { // "agd*"
-			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_gdiff_fcn(core, addr, core->offset);
-			rz_core_analysis_graph(core, addr, diff_opt | RZ_CORE_ANALYSIS_STAR);
-			break;
-		}
-		case ' ': // "agd "
-		case 0:
-		case 't': // "agdt"
-		case 'k': // "agdk"
-		case 'v': // "agdv"
-		case 'g': { // "agdg"
-			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_agraph_reset(core);
-			rz_core_cmdf(core, ".agd* @ %" PFMT64u "; agg%s;", addr, input + 1);
-			break;
-		}
-		case 'd': { // "agdd"
-			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_gdiff_fcn(core, addr, core->offset);
-			rz_core_analysis_graph(core, addr, diff_opt);
-			break;
-		}
-		case 'w': { // "agdw"
-			char *cmdargs = rz_str_newf("agdd 0x%" PFMT64x, core->offset);
-			convert_dotcmd_to_image(core, cmdargs, input + 2);
-			free(cmdargs);
-			break;
-		}
-		}
-		break;
-	}
 	case 'v': // "agv" alias for "agfv"
 		rz_core_cmdf(core, "agfv%s", input + 1);
 		break;
