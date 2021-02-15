@@ -2633,7 +2633,6 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	bool refgraph = rz_config_get_i(core->config, "graph.refs");
 	RzListIter *iter, *iter2;
 	int usenames = rz_config_get_i(core->config, "graph.json.usenames");
-	;
 	RzAnalysisFunction *fcni;
 	RzAnalysisRef *fcnr;
 	PJ *pj = NULL;

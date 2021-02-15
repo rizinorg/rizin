@@ -8,7 +8,7 @@ RZ_IPI void rz_core_agraph_reset(RzCore *core) {
 }
 
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color) {
-	char *b = strdup(body);
+	char *b = strdup(body ? body : "");
 	if (rz_str_startswith(b, "base64:")) {
 		char *newbody = strdup(b);
 		if (!newbody) {
@@ -60,7 +60,7 @@ RZ_IPI void rz_core_agraph_del_edge(RzCore *core, const char *un, const char *vn
 	rz_agraph_del_edge(core->graph, u, v);
 }
 
-RZ_IPI void rz_core_agraph_print_custom(RzCore *core) {
+RZ_IPI void rz_core_agraph_print_ascii(RzCore *core) {
 	core->graph->can->linemode = rz_config_get_i(core->config, "graph.linemode");
 	core->graph->can->color = rz_config_get_i(core->config, "scr.color");
 	rz_agraph_set_title(core->graph, rz_config_get(core->config, "graph.title"));
@@ -198,4 +198,272 @@ RZ_IPI void rz_core_agraph_print_gml(RzCore *core) {
 	rz_agraph_foreach(core->graph, agraph_print_node_gml, NULL);
 	rz_agraph_foreach_edge(core->graph, agraph_print_edge_gml, NULL);
 	rz_cons_print("]\n");
+}
+
+RZ_IPI void rz_core_agraph_data_create(RzCore *core, ut64 addr) {
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+	if (!fcn) {
+		eprintf("Not in a function.\n");
+		return;
+	}
+	bool found = false;
+	const char *me = fcn->name;
+	RzListIter *iter;
+	RzAnalysisRef *ref;
+	RzList *refs = rz_analysis_function_get_refs(fcn);
+	rz_list_foreach (refs, iter, ref) {
+		RzBinObject *obj = rz_bin_cur_object(core->bin);
+		RzBinSection *binsec = rz_bin_get_section_at(obj, ref->addr, true);
+		if (binsec && binsec->is_data) {
+			if (!found) {
+				rz_core_agraph_add_node(core, me, NULL, -1);
+				found = true;
+			}
+			RzFlagItem *item = rz_flag_get_i(core->flags, ref->addr);
+			const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, ref->addr);
+			rz_core_agraph_add_node(core, dst, NULL, -1);
+			rz_core_agraph_add_edge(core, me, dst);
+		}
+	}
+	rz_list_free(refs);
+}
+
+RZ_IPI void rz_core_agraph_globdata_create(RzCore *core) {
+	ut64 from = rz_config_get_i(core->config, "graph.from");
+	ut64 to = rz_config_get_i(core->config, "graph.to");
+	RzListIter *it;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (core->analysis->fcns, it, fcn) {
+		if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
+			rz_core_agraph_data_create(core, fcn->addr);
+		}
+	}
+}
+
+static int funccall_analysis_ref_cmp(const RzAnalysisRef *ref1, const RzAnalysisRef *ref2) {
+	return ref1->addr != ref2->addr;
+}
+
+static void funccall_create_graph(RzCore *core, RzAnalysisFunction *fcn) {
+	bool refgraph = rz_config_get_i(core->config, "graph.refs");
+	RzList *refs = rz_analysis_function_get_refs(fcn);
+	RzList *calls = rz_list_new();
+	RzListIter *iter2;
+	RzAnalysisRef *fcnr;
+
+	rz_list_foreach (refs, iter2, fcnr) {
+		if (fcnr->type == 'C' && rz_list_find(calls, fcnr, (RzListComparator)funccall_analysis_ref_cmp) == NULL) {
+			rz_list_append(calls, fcnr);
+		}
+	}
+	if (rz_list_empty(calls)) {
+		rz_list_free(refs);
+		rz_list_free(calls);
+		return;
+	}
+
+	rz_list_foreach (calls, iter2, fcnr) {
+		RzFlagItem *flag = rz_flag_get_i(core->flags, fcnr->addr);
+		char *fcnr_name = (flag && flag->name) ? flag->name : rz_str_newf("unk.0x%" PFMT64x, fcnr->addr);
+		if (refgraph || fcnr->type == RZ_ANALYSIS_REF_TYPE_CALL) {
+			rz_core_agraph_add_node(core, fcn->name, NULL, -1);
+			rz_core_agraph_add_node(core, fcnr_name, NULL, -1);
+			rz_core_agraph_add_edge(core, fcn->name, fcnr_name);
+		}
+		if (!(flag && flag->name)) {
+			free(fcnr_name);
+		}
+	}
+	rz_list_free(refs);
+	rz_list_free(calls);
+}
+
+RZ_IPI void rz_core_agraph_funccall_create(RzCore *core, ut64 addr) {
+	RzList *fcns = rz_analysis_get_functions_in(core->analysis, addr);
+	if (rz_list_empty(fcns)) {
+		return;
+	}
+
+	RzAnalysisFunction *fcn = rz_list_get_n(fcns, 0);
+	funccall_create_graph(core, fcn);
+}
+
+RZ_IPI void rz_core_agraph_globcall_create(RzCore *core) {
+	ut64 from = rz_config_get_i(core->config, "graph.from");
+	ut64 to = rz_config_get_i(core->config, "graph.to");
+	RzAnalysisFunction *fcni;
+	RzListIter *iter;
+
+	rz_list_foreach (core->analysis->fcns, iter, fcni) {
+		if (from != UT64_MAX && fcni->addr < from) {
+			continue;
+		}
+		if (to != UT64_MAX && fcni->addr > to) {
+			continue;
+		}
+		funccall_create_graph(core, fcni);
+	}
+}
+
+RZ_IPI void rz_core_agraph_imports_create(RzCore *core) {
+	RzBinInfo *info = rz_bin_get_info(core->bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj) {
+		return;
+	}
+
+	bool lit = info ? info->has_lit : false;
+	bool va = core->io->va || core->bin->is_debugger;
+
+	RzListIter *iter;
+	RzBinImport *imp;
+	rz_list_foreach (obj->imports, iter, imp) {
+		ut64 addr = lit ? rz_core_bin_impaddr(core->bin, va, imp->name) : 0;
+		RzFlagItem *f = rz_flag_get_at(core->flags, addr, false);
+		if (addr) {
+			char *me = (f && f->offset == addr)
+				? rz_str_new(f->name)
+				: rz_str_newf("0x%" PFMT64x, addr);
+			rz_core_agraph_add_node(core, me, NULL, -1);
+
+			RzList *list = rz_analysis_xrefs_get(core->analysis, addr);
+			RzListIter *iter;
+			RzAnalysisRef *ref;
+			rz_list_foreach (list, iter, ref) {
+				RzFlagItem *item = rz_flag_get_i(core->flags, ref->addr);
+				char *src = item ? rz_str_new(item->name) : rz_str_newf("0x%08" PFMT64x, ref->addr);
+				rz_core_agraph_add_node(core, src, NULL, -1);
+				rz_core_agraph_add_edge(core, src, me);
+				free(src);
+			}
+			rz_list_free(list);
+		} else {
+			rz_core_agraph_add_node(core, imp->name, NULL, -1);
+		}
+	}
+}
+
+RZ_IPI void rz_core_agraph_refs_create(RzCore *core, ut64 addr) {
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+	if (!fcn) {
+		eprintf("Not in a function.\n");
+	}
+
+	const char *me = fcn->name;
+	RzListIter *iter;
+	RzAnalysisRef *ref;
+	RzList *refs = rz_analysis_function_get_refs(fcn);
+	rz_core_agraph_add_node(core, me, NULL, -1);
+	rz_list_foreach (refs, iter, ref) {
+		RzFlagItem *item = rz_flag_get_i(core->flags, ref->addr);
+		const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, ref->addr);
+		rz_core_agraph_add_node(core, dst, NULL, -1);
+		rz_core_agraph_add_edge(core, me, dst);
+	}
+	rz_list_free(refs);
+}
+
+RZ_IPI void rz_core_agraph_globrefs_create(RzCore *core) {
+	ut64 from = rz_config_get_i(core->config, "graph.from");
+	ut64 to = rz_config_get_i(core->config, "graph.to");
+	RzListIter *it;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (core->analysis->fcns, it, fcn) {
+		if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
+			rz_core_agraph_refs_create(core, fcn->addr);
+		}
+	}
+}
+
+RZ_IPI void rz_core_agraph_xrefs_create(RzCore *core, ut64 addr) {
+	RzFlagItem *f = rz_flag_get_at(core->flags, addr, false);
+	char *me = (f && f->offset == addr)
+		? rz_str_new(f->name)
+		: rz_str_newf("0x%" PFMT64x, addr);
+
+	rz_core_agraph_add_node(core, me, NULL, -1);
+	RzList *list = rz_analysis_xrefs_get(core->analysis, addr);
+	RzListIter *iter;
+	RzAnalysisRef *ref;
+	rz_list_foreach (list, iter, ref) {
+		RzFlagItem *item = rz_flag_get_i(core->flags, ref->addr);
+		char *src = item ? rz_str_new(item->name) : rz_str_newf("0x%08" PFMT64x, ref->addr);
+		rz_core_agraph_add_node(core, src, NULL, -1);
+		rz_core_agraph_add_edge(core, src, me);
+		free(src);
+	}
+	rz_list_free(list);
+}
+
+RZ_IPI void rz_core_agraph_print_type(RzCore *core, RzAGraphType type, RzAGraphOutputMode mode, const char *extra) {
+	switch (type) {
+	case RZ_AGRAPH_TYPE_DATA:
+		rz_core_agraph_reset(core);
+		rz_core_agraph_data_create(core, core->offset);
+		break;
+	case RZ_AGRAPH_TYPE_GLOBDATA:
+		rz_core_agraph_reset(core);
+		rz_core_agraph_globdata_create(core);
+		break;
+	case RZ_AGRAPH_TYPE_FUNCCALL:
+		core->graph->is_callgraph = true;
+		rz_core_agraph_reset(core);
+		rz_core_agraph_funccall_create(core, core->offset);
+		break;
+	case RZ_AGRAPH_TYPE_GLOBCALL:
+		core->graph->is_callgraph = true;
+		rz_core_agraph_reset(core);
+		rz_core_agraph_globcall_create(core);
+		break;
+	case RZ_AGRAPH_TYPE_BB:
+		break;
+	case RZ_AGRAPH_TYPE_IMPORTS:
+		rz_core_agraph_reset(core);
+		rz_core_agraph_imports_create(core);
+		break;
+	case RZ_AGRAPH_TYPE_REFS:
+		rz_core_agraph_reset(core);
+		rz_core_agraph_refs_create(core, core->offset);
+		break;
+	case RZ_AGRAPH_TYPE_GLOBREFS:
+		rz_core_agraph_reset(core);
+		rz_core_agraph_globrefs_create(core);
+		break;
+	case RZ_AGRAPH_TYPE_XREFS:
+		rz_core_agraph_reset(core);
+		rz_core_agraph_xrefs_create(core, core->offset);
+		break;
+	case RZ_AGRAPH_TYPE_CUSTOM:
+		break;
+	}
+
+	switch(mode) {
+	case RZ_AGRAPH_OUTPUT_MODE_ASCII:
+		rz_core_agraph_print_ascii(core);
+		break;
+	case RZ_AGRAPH_OUTPUT_MODE_RIZIN:
+		rz_core_agraph_print_rizin(core);
+		break;
+	case RZ_AGRAPH_OUTPUT_MODE_DOT:
+		rz_core_agraph_print_dot(core);
+		break;
+	case RZ_AGRAPH_OUTPUT_MODE_GML:
+		rz_core_agraph_print_gml(core);
+		break;
+	case RZ_AGRAPH_OUTPUT_MODE_JSON:
+		rz_core_agraph_print_json(core);
+		break;
+	case RZ_AGRAPH_OUTPUT_MODE_SDB:
+		rz_core_agraph_print_sdb(core);
+		break;
+	case RZ_AGRAPH_OUTPUT_MODE_TINY:
+		rz_core_agraph_print_tiny(core);
+		break;
+	case RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE:
+		rz_core_agraph_print_interactive(core);
+		break;
+	case RZ_AGRAPH_OUTPUT_MODE_WRITE:
+		rz_core_agraph_print_write(core, extra);
+		break;
+	}
 }

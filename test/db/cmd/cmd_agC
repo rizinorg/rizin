@@ -2,10 +2,10 @@ NAME=agCj entry0 imports libc_start_main
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null
-agCj~{0}
+agCj~{nodes[0]}
 EOF
 EXPECT=<<EOF
-{"name":"entry0","size":46,"imports":["reloc.__libc_start_main"]}
+{"id":0,"title":"entry0","body":"","out_nodes":[1]}
 EOF
 RUN
 
@@ -13,11 +13,11 @@ NAME=agCd entry0 imports libc_start_main
 FILE=bins/elf/true
 CMDS=<<EOF
 aaa 2> /dev/null
-agCd~2110
+agCd~entry0
 EOF
 EXPECT=<<EOF
-  "0x00002110" [label="entry0" URL="entry0/0x00002110"];
-  "0x00002110" -> "0x00008f30" [color="#61afef" URL="reloc.__libc_start_main/0x00008f30"];
+"entry0" [URL="entry0", color="lightgray", label="entry0"]
+"entry0" -> "reloc.__libc_start_main"
 EOF
 RUN
 
@@ -28,7 +28,7 @@ aaa 2> /dev/null
 agCd~label="main"
 EOF
 EXPECT=<<EOF
-  "0x00002050" [label="main" URL="main/0x00002050"];
+"main" [URL="main", color="lightgray", label="main"]
 EOF
 RUN
 

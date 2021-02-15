@@ -7595,7 +7595,7 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 	}
 	switch (*input) {
 	case 0:
-		rz_core_agraph_print_custom(core);
+		rz_core_agraph_print_ascii(core);
 		break;
 	case 't': // "aggt" - tiny graph
 		rz_core_agraph_print_tiny(core);
@@ -7884,141 +7884,251 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		cmd_agraph_edge(core, input + 1);
 		break;
 	case 'g': // "agg"
-		rz_core_agraph_print(core, -1, input + 1);
+		switch (input[1]) {
+		case 0:
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_CUSTOM, RZ_AGRAPH_OUTPUT_MODE_ASCII, NULL);
+			break;
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_CUSTOM, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
+			break;
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_CUSTOM, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
+			break;
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_CUSTOM, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
+			break;
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_CUSTOM, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
+			break;
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_CUSTOM, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
+			break;
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_CUSTOM, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_CUSTOM, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_CUSTOM, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
+			break;
+		default:
+			eprintf("See ag?\n:w");
+			break;
+		}
 		break;
 	case 's': // "ags"
 		rz_core_analysis_graph(core, rz_num_math(core->num, input + 1), 0);
 		break;
 	case 'C': // "agC"
 		switch (input[1]) {
-		case 'v': // "agCv"
-		case 't': // "agCt"
-		case 'k': // "agCk"
-		case 'w': // "agCw"
-		case ' ': // "agC "
-		case 0: {
-			core->graph->is_callgraph = true;
-			rz_core_agraph_reset(core);
-			rz_core_cmdf(core, ".agC*;");
-			rz_core_agraph_print(core, -1, input + 1);
-			core->graph->is_callgraph = false;
+		case 0:
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBCALL, RZ_AGRAPH_OUTPUT_MODE_ASCII, NULL);
 			break;
-		}
-		case 'J': // "agCJ"
-		case 'j': // "agCj"
-			rz_core_analysis_callgraph(core, UT64_MAX, RZ_GRAPH_FORMAT_JSON);
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBCALL, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
 			break;
-		case 'g': // "agCg"
-			rz_core_analysis_callgraph(core, UT64_MAX, RZ_GRAPH_FORMAT_GML);
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBCALL, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
 			break;
-		case 'd': // "agCd"
-			rz_core_analysis_callgraph(core, UT64_MAX, RZ_GRAPH_FORMAT_DOT);
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBCALL, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
 			break;
-		case '*': // "agC*"
-			rz_core_analysis_callgraph(core, UT64_MAX, RZ_GRAPH_FORMAT_CMD);
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBCALL, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
+			break;
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBCALL, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
+			break;
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBCALL, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBCALL, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBCALL, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
 			break;
 		default:
-			eprintf("Usage: see ag?\n");
+			eprintf("See ag?\n:w");
 			break;
 		}
 		break;
 	case 'r': // "agr" references graph
 		switch (input[1]) {
-		case '*': { // "agr*"
-			rz_core_analysis_coderefs(core, core->offset);
-		} break;
-		default: {
-			core->graph->is_callgraph = true;
-			rz_core_agraph_reset(core);
-			rz_core_cmdf(core, ".agr* @ %" PFMT64u ";", core->offset);
-			rz_core_agraph_print(core, -1, input + 1);
-			core->graph->is_callgraph = false;
+		case 0:
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_REFS, RZ_AGRAPH_OUTPUT_MODE_ASCII, NULL);
 			break;
-		}
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_REFS, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
+			break;
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_REFS, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
+			break;
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_REFS, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
+			break;
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_REFS, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
+			break;
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_REFS, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
+			break;
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_REFS, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_REFS, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_REFS, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
+			break;
+		default:
+			eprintf("See ag?\n:w");
+			break;
 		}
 		break;
 	case 'R': // "agR" global refs
 		switch (input[1]) {
-		case '*': { // "agR*"
-			ut64 from = rz_config_get_i(core->config, "graph.from");
-			ut64 to = rz_config_get_i(core->config, "graph.to");
-			RzListIter *it;
-			RzAnalysisFunction *fcn;
-			rz_list_foreach (core->analysis->fcns, it, fcn) {
-				if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
-					rz_core_analysis_coderefs(core, fcn->addr);
-				}
-			}
+		case 0:
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBREFS, RZ_AGRAPH_OUTPUT_MODE_ASCII, NULL);
 			break;
-		}
-		default: {
-			core->graph->is_callgraph = true;
-			rz_core_agraph_reset(core);
-			rz_core_cmdf(core, ".agR*;");
-			rz_core_agraph_print(core, -1, input + 1);
-			core->graph->is_callgraph = false;
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBREFS, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
 			break;
-		}
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBREFS, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
+			break;
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBREFS, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
+			break;
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBREFS, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
+			break;
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBREFS, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
+			break;
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBREFS, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBREFS, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBREFS, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
+			break;
+		default:
+			eprintf("See ag?\n:w");
+			break;
 		}
 		break;
 	case 'x': { // "agx" cross refs
-		RzGraph *graph = rz_core_analysis_codexrefs(core, core->offset);
-		if (!graph) {
-			eprintf("Couldn't create graph");
+		switch (input[1]) {
+		case 0:
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_XREFS, RZ_AGRAPH_OUTPUT_MODE_ASCII, NULL);
+			break;
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_XREFS, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
+			break;
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_XREFS, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
+			break;
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_XREFS, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
+			break;
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_XREFS, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
+			break;
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_XREFS, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
+			break;
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_XREFS, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_XREFS, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_XREFS, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
+			break;
+		default:
+			eprintf("See ag?\n:w");
 			break;
 		}
-		rz_core_graph_print(core, graph, -1, true, input + 1);
-		rz_graph_free(graph);
 		break;
 	}
-	case 'i': { // "agi" import graph
-		RzGraph *graph = rz_core_analysis_importxrefs(core);
-		if (!graph) {
-			eprintf("Couldn't create graph");
+	case 'i': // "agi" import graph
+		switch (input[1]) {
+		case 0:
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_IMPORTS, RZ_AGRAPH_OUTPUT_MODE_ASCII, NULL);
+			break;
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_IMPORTS, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
+			break;
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_IMPORTS, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
+			break;
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_IMPORTS, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
+			break;
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_IMPORTS, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
+			break;
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_IMPORTS, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
+			break;
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_IMPORTS, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_IMPORTS, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_IMPORTS, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
+			break;
+		default:
+			eprintf("See ag?\n:w");
 			break;
 		}
-		rz_core_graph_print(core, graph, -1, true, input + 1);
-		rz_graph_free(graph);
 		break;
-	}
 	case 'c': // "agc"
 		switch (input[1]) {
-		case 'v': // "agcv"
-		case 't': // "agct"
-		case 'k': // "agck"
-		case 'w': // "agcw"
-		case ' ': { // "agc "
-			core->graph->is_callgraph = true;
-			rz_core_agraph_reset(core);
-			rz_core_cmdf(core, ".agc* @ %" PFMT64u "; agg%s;", core->offset, input + 1);
-			core->graph->is_callgraph = false;
+		case 0:
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_FUNCCALL, RZ_AGRAPH_OUTPUT_MODE_ASCII, NULL);
 			break;
-		}
-		case 0: // "agc "
-			core->graph->is_callgraph = true;
-			rz_core_agraph_reset(core);
-			rz_core_cmd0(core, ".agc* $$; agg;");
-			core->graph->is_callgraph = false;
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_FUNCCALL, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
 			break;
-		case 'g': { // "agg"
-			rz_core_analysis_callgraph(core, core->offset, RZ_GRAPH_FORMAT_GMLFCN);
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_FUNCCALL, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
 			break;
-		}
-		case 'd': { // "aggd"
-			rz_core_analysis_callgraph(core, core->offset, RZ_GRAPH_FORMAT_DOT);
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_FUNCCALL, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
 			break;
-		}
-		case 'J': // "aggJ"
-		case 'j': { // "aggj"
-			rz_core_analysis_callgraph(core, core->offset, RZ_GRAPH_FORMAT_JSON);
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_FUNCCALL, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
 			break;
-		}
-		case '*': { // "agg*"
-			rz_core_analysis_callgraph(core, core->offset, RZ_GRAPH_FORMAT_CMD);
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_FUNCCALL, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
 			break;
-		}
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_FUNCCALL, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_FUNCCALL, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_FUNCCALL, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
+			break;
 		default:
-			eprintf("Usage: see ag?\n");
+			eprintf("See ag?\n:w");
 			break;
 		}
 		break;
@@ -8036,35 +8146,71 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		break;
 	case 'a': // "aga"
 		switch (input[1]) {
-		case '*': {
-			rz_core_analysis_datarefs(core, core->offset);
+		case 0:
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_DATA, RZ_AGRAPH_OUTPUT_MODE_ASCII, NULL);
 			break;
-		}
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_DATA, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
+			break;
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_DATA, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
+			break;
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_DATA, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
+			break;
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_DATA, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
+			break;
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_DATA, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
+			break;
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_DATA, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_DATA, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_DATA, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
+			break;
 		default:
-			rz_core_agraph_reset(core);
-			rz_core_cmdf(core, ".aga* @ %" PFMT64u ";", core->offset);
-			rz_core_agraph_print(core, -1, input + 1);
+			eprintf("See ag?\n:w");
 			break;
 		}
 		break;
 	case 'A': // "agA" global data refs
 		switch (input[1]) {
-		case '*': {
-			ut64 from = rz_config_get_i(core->config, "graph.from");
-			ut64 to = rz_config_get_i(core->config, "graph.to");
-			RzListIter *it;
-			RzAnalysisFunction *fcn;
-			rz_list_foreach (core->analysis->fcns, it, fcn) {
-				if ((from == UT64_MAX && to == UT64_MAX) || RZ_BETWEEN(from, fcn->addr, to)) {
-					rz_core_analysis_datarefs(core, fcn->addr);
-				}
-			}
+		case 0:
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBDATA, RZ_AGRAPH_OUTPUT_MODE_ASCII, NULL);
 			break;
-		}
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBDATA, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
+			break;
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBDATA, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
+			break;
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBDATA, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
+			break;
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBDATA, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
+			break;
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBDATA, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
+			break;
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBDATA, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBDATA, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_GLOBDATA, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
+			break;
 		default:
-			rz_core_agraph_reset(core);
-			rz_core_cmdf(core, ".agA*;");
-			rz_core_agraph_print(core, -1, input + 1);
+			eprintf("See ag?\n:w");
 			break;
 		}
 		break;
