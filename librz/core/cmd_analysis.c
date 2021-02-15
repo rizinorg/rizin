@@ -8566,23 +8566,6 @@ static void cmd_analysis_abt(RzCore *core, const char *input) {
 	}
 }
 
-static bool is_unknown_file(RzCore *core) {
-	if (core->bin->cur && core->bin->cur->o) {
-		return (rz_list_empty(core->bin->cur->o->sections));
-	}
-	return true;
-}
-
-static bool is_apple_target(RzCore *core) {
-	const char *arch = rz_config_get(core->config, "asm.arch");
-	if (!strstr(arch, "ppc") && !strstr(arch, "arm") && !strstr(arch, "x86")) {
-		return false;
-	}
-	RzBinObject *bo = rz_bin_cur_object(core->bin);
-	rz_return_val_if_fail(!bo || (bo->plugin && bo->plugin->name), false);
-	return bo ? strstr(bo->plugin->name, "mach") : false;
-}
-
 static int cmd_analysis_all(RzCore *core, const char *input) {
 	switch (*input) {
 	case '?': // "aa?"
@@ -8695,7 +8678,6 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
 			rz_cons_println("Usage: See aa? for more help");
 		} else {
-			bool didAap = false;
 			char *dh_orig = NULL;
 			if (!strncmp(input, "aaaaa", 5)) {
 				eprintf("A rizin developer is coming to your place to manually analyze this program. Please wait for it\n");
@@ -8724,158 +8706,10 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			rz_cons_clear_line(1);
-			bool cfg_debug = rz_config_get_i(core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa"
-				if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
-					oldstr = rz_print_rowlog(core->print, "Find function and symbol names from golang binaries (aang)");
-					rz_print_rowlog_done(core->print, oldstr);
-					rz_core_analysis_autoname_all_golang_fcns(core);
-					oldstr = rz_print_rowlog(core->print, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
-					rz_core_cmd0(core, "aF @@f:sym.go.*");
-					rz_print_rowlog_done(core->print, oldstr);
-				}
-				rz_core_task_yield(&core->tasks);
-				if (!cfg_debug) {
-					if (dh_orig && strcmp(dh_orig, "esil")) {
-						rz_core_cmd0(core, "dL esil");
-						rz_core_task_yield(&core->tasks);
-					}
-				}
-				int c = rz_config_get_i(core->config, "analysis.calls");
-				rz_config_set_i(core->config, "analysis.calls", 1);
-				ut64 t = rz_num_math(core->num, "$S");
-				rz_core_seek(core, t, true);
-				if (rz_cons_is_breaked()) {
+				bool experimental = input[1] == 'a';
+				if (!rz_core_analysis_everything(core, experimental, dh_orig)) {
 					goto jacuzzi;
-				}
-
-				oldstr = rz_print_rowlog(core->print, "Analyze function calls (aac)");
-				(void)rz_cmd_analysis_calls(core, "", false, false); // "aac"
-				rz_core_seek(core, curseek, true);
-				// oldstr = rz_print_rowlog (core->print, "Analyze data refs as code (LEA)");
-				// (void) cmd_analysis_aad (core, NULL); // "aad"
-				rz_print_rowlog_done(core->print, oldstr);
-				rz_core_task_yield(&core->tasks);
-				if (rz_cons_is_breaked()) {
-					goto jacuzzi;
-				}
-
-				if (is_unknown_file(core)) {
-					oldstr = rz_print_rowlog(core->print, "find and analyze function preludes (aap)");
-					(void)rz_core_search_preludes(core, false); // "aap"
-					didAap = true;
-					rz_print_rowlog_done(core->print, oldstr);
-					rz_core_task_yield(&core->tasks);
-					if (rz_cons_is_breaked()) {
-						goto jacuzzi;
-					}
-				}
-
-				oldstr = rz_print_rowlog(core->print, "Analyze len bytes of instructions for references (aar)");
-				(void)rz_core_analysis_refs(core, ""); // "aar"
-				rz_print_rowlog_done(core->print, oldstr);
-				rz_core_task_yield(&core->tasks);
-				if (rz_cons_is_breaked()) {
-					goto jacuzzi;
-				}
-				if (is_apple_target(core)) {
-					oldstr = rz_print_rowlog(core->print, "Check for objc references");
-					rz_print_rowlog_done(core->print, oldstr);
-					cmd_analysis_objc(core, input + 1, true);
-				}
-				rz_core_task_yield(&core->tasks);
-				oldstr = rz_print_rowlog(core->print, "Check for vtables");
-				rz_core_cmd0(core, "avrr");
-				rz_print_rowlog_done(core->print, oldstr);
-				rz_core_task_yield(&core->tasks);
-				rz_config_set_i(core->config, "analysis.calls", c);
-				rz_core_task_yield(&core->tasks);
-				if (rz_cons_is_breaked()) {
-					goto jacuzzi;
-				}
-				if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
-					rz_core_cmd0(core, "aav");
-					rz_core_task_yield(&core->tasks);
-					bool ioCache = rz_config_get_i(core->config, "io.pcache");
-					rz_config_set_i(core->config, "io.pcache", 1);
-					oldstr = rz_print_rowlog(core->print, "Emulate functions to find computed references (aaef)");
-					rz_core_cmd0(core, "aaef");
-					rz_print_rowlog_done(core->print, oldstr);
-					rz_core_task_yield(&core->tasks);
-					rz_config_set_i(core->config, "io.pcache", ioCache);
-					if (rz_cons_is_breaked()) {
-						goto jacuzzi;
-					}
-				}
-				if (rz_config_get_i(core->config, "analysis.autoname")) {
-					oldstr = rz_print_rowlog(core->print, "Speculatively constructing a function name "
-									      "for fcn.* and sym.func.* functions (aan)");
-					rz_core_analysis_autoname_all_fcns(core);
-					rz_print_rowlog_done(core->print, oldstr);
-					rz_core_task_yield(&core->tasks);
-				}
-				if (core->analysis->opt.vars) {
-					RzAnalysisFunction *fcni;
-					RzListIter *iter;
-					rz_list_foreach (core->analysis->fcns, iter, fcni) {
-						if (rz_cons_is_breaked()) {
-							break;
-						}
-						RzList *list = rz_analysis_var_list(core->analysis, fcni, 'r');
-						if (!rz_list_empty(list)) {
-							rz_list_free(list);
-							continue;
-						}
-						//extract only reg based var here
-						rz_core_recover_vars(core, fcni, true);
-						rz_list_free(list);
-					}
-					rz_core_task_yield(&core->tasks);
-				}
-				if (!sdb_isempty(core->analysis->sdb_zigns)) {
-					oldstr = rz_print_rowlog(core->print, "Check for zignature from zigns folder (z/)");
-					rz_core_cmd0(core, "z/");
-					rz_print_rowlog_done(core->print, oldstr);
-					rz_core_task_yield(&core->tasks);
-				}
-
-				oldstr = rz_print_rowlog(core->print, "Type matching analysis for all functions (aaft)");
-				rz_core_cmd0(core, "aaft");
-				rz_print_rowlog_done(core->print, oldstr);
-				rz_core_task_yield(&core->tasks);
-
-				oldstr = rz_print_rowlog(core->print, "Propagate noreturn information");
-				rz_core_analysis_propagate_noreturn(core, UT64_MAX);
-				rz_print_rowlog_done(core->print, oldstr);
-				rz_core_task_yield(&core->tasks);
-
-				// apply dwarf function information
-				Sdb *dwarf_sdb = sdb_ns(core->analysis->sdb, "dwarf", 0);
-				if (dwarf_sdb) {
-					oldstr = rz_print_rowlog(core->print, "Integrate dwarf function information.");
-					rz_analysis_dwarf_integrate_functions(core->analysis, core->flags, dwarf_sdb);
-					rz_print_rowlog_done(core->print, oldstr);
-				}
-
-				oldstr = rz_print_rowlog(core->print, "Use -AA or aaaa to perform additional experimental analysis.");
-				rz_print_rowlog_done(core->print, oldstr);
-
-				if (input[1] == 'a') { // "aaaa"
-					if (!didAap) {
-						oldstr = rz_print_rowlog(core->print, "Finding function preludes");
-						(void)rz_core_search_preludes(core, false); // "aap"
-						rz_print_rowlog_done(core->print, oldstr);
-						rz_core_task_yield(&core->tasks);
-					}
-
-					oldstr = rz_print_rowlog(core->print, "Enable constraint types analysis for variables");
-					rz_config_set(core->config, "analysis.types.constraint", "true");
-					rz_print_rowlog_done(core->print, oldstr);
-				}
-				rz_core_cmd0(core, "sHu");
-				if (dh_orig) {
-					rz_core_cmdf(core, "dL %s", dh_orig);
-					rz_core_task_yield(&core->tasks);
 				}
 			}
 			rz_core_seek(core, curseek, true);
@@ -8917,7 +8751,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		cmd_analysis_aftertraps(core, input + 1);
 		break;
 	case 'o': // "aao"
-		cmd_analysis_objc(core, input + 1, false);
+		cmd_analysis_objc(core, false);
 		break;
 	case 'e': // "aae"
 		if (input[1] == 'f') { // "aaef"
