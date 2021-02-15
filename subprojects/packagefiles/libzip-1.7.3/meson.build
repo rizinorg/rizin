@@ -102,7 +102,7 @@ if is_big_endian
   conf_data.set10('WORDS_BIGENDIAN', is_big_endian)
 endif
 if get_option('default_library') == 'shared'
-  zipconf_data.set('HAVE_SHARED', true)
+  conf_data.set10('HAVE_SHARED', true)
 endif
 conf_data.set('CMAKE_PROJECT_NAME', 'libzip')
 conf_data.set('CMAKE_PROJECT_VERSION', meson.project_version())
