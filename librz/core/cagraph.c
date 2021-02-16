@@ -510,7 +510,7 @@ static bool core_agraph_bb_handle(RzCore *core, RzAGraphOutputMode mode, const c
 		return false;
 	default:
 		rz_core_agraph_bb_create(core, core->offset);
-		return true;;
+		return true;
 	}
 }
 
@@ -561,7 +561,7 @@ RZ_IPI void rz_core_agraph_print_type(RzCore *core, RzAGraphType type, RzAGraphO
 		break;
 	}
 
-	switch(mode) {
+	switch (mode) {
 	case RZ_AGRAPH_OUTPUT_MODE_ASCII:
 		rz_core_agraph_print_ascii(core);
 		break;
