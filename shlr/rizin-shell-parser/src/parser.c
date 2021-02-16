@@ -3935,7 +3935,10 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       END_STATE();
     case 248:
       ACCEPT_TOKEN(sym_system_identifier);
-      if (('!' <= lookahead && lookahead <= '=')) ADVANCE(248);
+      if (lookahead == '!' ||
+          lookahead == '*' ||
+          lookahead == '-' ||
+          lookahead == '=') ADVANCE(248);
       END_STATE();
     case 249:
       ACCEPT_TOKEN(sym_question_mark_identifier);

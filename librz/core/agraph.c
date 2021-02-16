@@ -3669,6 +3669,7 @@ RZ_API void rz_agraph_print(RzAGraph *g) {
 }
 
 RZ_API void rz_agraph_print_json(RzAGraph *g, PJ *pj) {
+	// TODO: add extra_json_info(RzAGraph *g, RzANode *an, PJ *pj) argument
 	RzList *nodes = g->graph->nodes, *neighbours = NULL;
 	RzListIter *it, *itt;
 	RzGraphNode *node = NULL, *neighbour = NULL;

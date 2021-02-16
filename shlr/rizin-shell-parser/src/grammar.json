@@ -2739,7 +2739,7 @@
     },
     "system_identifier": {
       "type": "PATTERN",
-      "value": "![\\*!-=]*"
+      "value": "![\\-=!\\*]*"
     },
     "question_mark_identifier": {
       "type": "STRING",

@@ -395,7 +395,127 @@ RZ_IPI void rz_core_agraph_xrefs_create(RzCore *core, ut64 addr) {
 	rz_list_free(list);
 }
 
+RZ_IPI void rz_core_agraph_bb_create(RzCore *core, ut64 addr) {
+	RzAnalysisBlock *bb;
+	RzListIter *iter;
+	RzList *fcns = rz_analysis_get_functions_in(core->analysis, addr);
+	if (rz_list_empty(fcns)) {
+		return;
+	}
+	RzAnalysisFunction *fcn = rz_list_get_n(fcns, 0);
+
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	rz_config_hold_i(hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
+		"asm.cmt.right", "asm.cmt.col", "asm.lines.fcn", "asm.bytes", NULL);
+	/*rz_config_set_i (core->config, "scr.color", 0);*/
+	rz_config_set_i(core->config, "scr.utf8", 0);
+	rz_config_set_i(core->config, "asm.marks", 0);
+	rz_config_set_i(core->config, "asm.offset", 0);
+	rz_config_set_i(core->config, "asm.lines", 0);
+	rz_config_set_i(core->config, "asm.cmt.right", 0);
+	rz_config_set_i(core->config, "asm.cmt.col", 0);
+	rz_config_set_i(core->config, "asm.lines.fcn", 0);
+	rz_config_set_i(core->config, "asm.bytes", 0);
+
+	rz_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == UT64_MAX) {
+			continue;
+		}
+		char title[32];
+		char *body = rz_core_cmd_strf(core, "pdb @ 0x%08" PFMT64x, bb->addr);
+		if (!body) {
+			free(body);
+			goto err;
+		}
+		rz_agraph_add_node_with_color(core->graph, rz_strf(title, "0x%" PFMT64x, bb->addr), body, -1);
+		free(body);
+	}
+
+	rz_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == UT64_MAX) {
+			continue;
+		}
+		char u[32], v[32];
+		rz_strf(u, "0x%" PFMT64x, bb->addr);
+		if (bb->jump != UT64_MAX) {
+			rz_core_agraph_add_edge(core, u, rz_strf(v, "0x%" PFMT64x, bb->jump));
+		}
+		if (bb->fail != UT64_MAX) {
+			rz_core_agraph_add_edge(core, u, rz_strf(v, "0x%" PFMT64x, bb->fail));
+		}
+		if (bb->switch_op) {
+			RzListIter *it;
+			RzAnalysisCaseOp *cop;
+			rz_list_foreach (bb->switch_op->cases, it, cop) {
+				rz_core_agraph_add_edge(core, u, rz_strf(v, "0x%" PFMT64x, cop->addr));
+			}
+		}
+	}
+
+err:
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
+	rz_list_free(fcns);
+}
+
+static bool core_agraph_bb_handle(RzCore *core, RzAGraphOutputMode mode, const char *extra) {
+	RzAnalysisFunction *fcn = NULL;
+	RzConfigHold *hc = NULL;
+	char *cmdargs = NULL;
+	int e;
+
+	// NOTE: special handling for agf for now, because agf contains a lot of information
+	switch (mode) {
+	case RZ_AGRAPH_OUTPUT_MODE_ASCII:
+		if (!RZ_STR_ISEMPTY(extra)) {
+			fcn = rz_analysis_get_fcn_in(core->analysis, rz_num_math(core->num, extra), 0);
+		}
+		rz_core_visual_graph(core, NULL, fcn, false);
+		return false;
+	case RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE:
+		fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
+		if (fcn) {
+			rz_core_visual_graph(core, NULL, fcn, 1);
+		}
+		rz_cons_enable_mouse(false);
+		rz_cons_show_cursor(true);
+		return false;
+	case RZ_AGRAPH_OUTPUT_MODE_TINY:
+		e = rz_config_get_i(core->config, "graph.edges");
+		rz_config_set_i(core->config, "graph.edges", 0);
+		fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+		rz_core_visual_graph(core, NULL, fcn, 2);
+		rz_config_set_i(core->config, "graph.edges", e);
+		return false;
+	case RZ_AGRAPH_OUTPUT_MODE_DOT:
+		rz_core_analysis_graph(core, rz_num_math(core->num, extra), RZ_CORE_ANALYSIS_GRAPHBODY);
+		return false;
+	case RZ_AGRAPH_OUTPUT_MODE_WRITE:
+		cmdargs = rz_str_newf("agfd @ 0x%" PFMT64x, core->offset);
+		rz_convert_dotcmd_to_image(core, cmdargs, extra);
+		free(cmdargs);
+		return false;
+	case RZ_AGRAPH_OUTPUT_MODE_JSON:
+		rz_core_analysis_graph(core, rz_num_math(core->num, extra), RZ_CORE_ANALYSIS_JSON);
+		return false;
+	case RZ_AGRAPH_OUTPUT_MODE_JSON_FORMAT:
+		hc = rz_config_hold_new(core->config);
+		rz_config_hold_i(hc, "asm.offset", NULL);
+		const bool o_graph_offset = rz_config_get_i(core->config, "graph.offset");
+		rz_config_set_i(core->config, "asm.offset", o_graph_offset);
+		rz_core_analysis_graph(core, rz_num_math(core->num, extra),
+			RZ_CORE_ANALYSIS_JSON | RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM);
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
+		return false;
+	default:
+		rz_core_agraph_bb_create(core, core->offset);
+		return true;;
+	}
+}
+
 RZ_IPI void rz_core_agraph_print_type(RzCore *core, RzAGraphType type, RzAGraphOutputMode mode, const char *extra) {
+	core->graph->is_callgraph = false;
 	switch (type) {
 	case RZ_AGRAPH_TYPE_DATA:
 		rz_core_agraph_reset(core);
@@ -416,6 +536,10 @@ RZ_IPI void rz_core_agraph_print_type(RzCore *core, RzAGraphType type, RzAGraphO
 		rz_core_agraph_globcall_create(core);
 		break;
 	case RZ_AGRAPH_TYPE_BB:
+		rz_core_agraph_reset(core);
+		if (!core_agraph_bb_handle(core, mode, extra)) {
+			return;
+		}
 		break;
 	case RZ_AGRAPH_TYPE_IMPORTS:
 		rz_core_agraph_reset(core);
@@ -451,6 +575,7 @@ RZ_IPI void rz_core_agraph_print_type(RzCore *core, RzAGraphType type, RzAGraphO
 		rz_core_agraph_print_gml(core);
 		break;
 	case RZ_AGRAPH_OUTPUT_MODE_JSON:
+	case RZ_AGRAPH_OUTPUT_MODE_JSON_FORMAT:
 		rz_core_agraph_print_json(core);
 		break;
 	case RZ_AGRAPH_OUTPUT_MODE_SDB:

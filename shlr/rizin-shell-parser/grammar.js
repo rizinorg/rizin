@@ -351,7 +351,7 @@ module.exports = grammar({
 
     last_command_identifier: ($) => choice(".", "..."),
     interpret_arg: ($) => $._any_command,
-    system_identifier: ($) => /![\*!-=]*/,
+    system_identifier: ($) => /![\-=!\*]*/,
     question_mark_identifier: ($) => "?",
 
     repeat_command: ($) =>

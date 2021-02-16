@@ -23,6 +23,7 @@ typedef enum {
 	RZ_AGRAPH_OUTPUT_MODE_DOT,
 	RZ_AGRAPH_OUTPUT_MODE_GML,
 	RZ_AGRAPH_OUTPUT_MODE_JSON,
+	RZ_AGRAPH_OUTPUT_MODE_JSON_FORMAT,
 	RZ_AGRAPH_OUTPUT_MODE_SDB,
 	RZ_AGRAPH_OUTPUT_MODE_TINY,
 	RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE,
@@ -77,4 +78,6 @@ RZ_IPI int rz_core_seek_opcode(RzCore *core, int numinstr, bool silent);
 
 /* cmd_meta.c */
 RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 addr);
+
+RZ_IPI bool rz_convert_dotcmd_to_image(RzCore *core, char *rz_cmd, const char *save_path);
 #endif
