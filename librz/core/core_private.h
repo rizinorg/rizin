@@ -48,4 +48,7 @@ RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_si
 RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
 RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent);
 RZ_IPI int rz_core_seek_opcode(RzCore *core, int numinstr, bool silent);
+
+/* cmd_meta.c */
+RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 addr);
 #endif
