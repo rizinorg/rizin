@@ -1108,9 +1108,6 @@ static bool rz_cmd_java_handle_calc_class_sz(RzCore *core, const char *cmd) {
 		} else {
 			rz_cons_printf("-1\n");
 		}
-
-		//snprintf (cmd_buf, 50, fmt, num_acc_flag, addr);
-		//res = rz_core_cmd0(core, y);
 	} else {
 		rz_cmd_java_print_cmd_help(JAVA_CMDS + CALC_SZ_IDX);
 	}
