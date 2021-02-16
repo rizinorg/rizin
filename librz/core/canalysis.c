@@ -5490,6 +5490,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 
 		rz_analysis_op_fini(&op);
 		rz_asm_set_pc(core->rasm, cur);
+		size_t i_old = i;
 		if (!rz_analysis_op(core->analysis, &op, cur, buf + i, iend - i, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT)) {
 			i += minopsize - 1; //   XXX dupe in op.size below
 		}
@@ -5497,21 +5498,21 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		if (op.type == RZ_ANALYSIS_OP_TYPE_ILL || op.type == RZ_ANALYSIS_OP_TYPE_UNK) {
 			// i += 2
 			rz_analysis_op_fini(&op);
-			continue;
+			goto repeat;
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i+= minopsize - 1
 		if (i > iend) {
-			break;
+			goto repeat;
 		}
 		if (op.size < 1) {
 			i += minopsize - 1;
-			continue;
+			goto repeat;
 		}
 		if (emu_lazy) {
 			if (op.type & RZ_ANALYSIS_OP_TYPE_REP) {
 				i += op.size - 1;
-				continue;
+				goto repeat;
 			}
 			switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
@@ -5533,12 +5534,12 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			case RZ_ANALYSIS_OP_TYPE_CSWI:
 			case RZ_ANALYSIS_OP_TYPE_TRAP:
 				i += op.size - 1;
-				continue;
+				goto repeat;
 			//  those require write support
 			case RZ_ANALYSIS_OP_TYPE_PUSH:
 			case RZ_ANALYSIS_OP_TYPE_POP:
 				i += op.size - 1;
-				continue;
+				goto repeat;
 			}
 		}
 		if (sn && op.type == RZ_ANALYSIS_OP_TYPE_SWI) {
@@ -5559,7 +5560,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op.esil);
 		i += op.size - 1;
 		if (!esilstr || !*esilstr) {
-			continue;
+			goto repeat;
 		}
 		rz_analysis_esil_set_pc(ESIL, cur);
 		rz_reg_setv(core->analysis->reg, pcname, cur + op.size);
@@ -5708,7 +5709,18 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			break;
 		}
 		rz_analysis_esil_stack_free(ESIL);
-	repeat:;
+	repeat:
+		if (!rz_analysis_get_block_at(core->analysis, cur)) {
+			for (size_t fcn_i = i_old + 1; fcn_i <= i; fcn_i++) {
+				if (rz_analysis_get_function_at(core->analysis, start + fcn_i)) {
+					i = fcn_i - 1;
+					break;
+				}
+			}
+		}
+		if (i > iend) {
+			break;
+		}
 	} while (get_next_i(&ictx, &i));
 	free(buf);
 	ESIL->cb.hook_mem_read = NULL;
