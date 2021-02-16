@@ -15,6 +15,7 @@ typedef enum {
 	RZ_AGRAPH_TYPE_GLOBREFS,
 	RZ_AGRAPH_TYPE_XREFS,
 	RZ_AGRAPH_TYPE_CUSTOM,
+	RZ_AGRAPH_TYPE_ESIL,
 } RzAGraphType;
 
 typedef enum {

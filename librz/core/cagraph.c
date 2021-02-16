@@ -399,6 +399,37 @@ RZ_IPI void rz_core_agraph_xrefs_create(RzCore *core, ut64 addr) {
 	rz_list_free(list);
 }
 
+RZ_IPI void rz_core_agraph_esil_create(RzCore *core, const char *expr) {
+	RzAnalysisEsilDFG *edf = rz_analysis_esil_dfg_expr(core->analysis, NULL, expr);
+	RzListIter *iter, *ator;
+	RzGraphNode *node, *edon;
+	RzStrBuf *buf = rz_strbuf_new("");
+	rz_list_foreach (rz_graph_get_nodes(edf->flow), iter, node) {
+		const RzAnalysisEsilDFGNode *enode = (RzAnalysisEsilDFGNode *)node->data;
+		char *esc_str = rz_str_escape(rz_strbuf_get(enode->content));
+		rz_strbuf_set(buf, esc_str);
+		if (enode->type == RZ_ANALYSIS_ESIL_DFG_BLOCK_GENERATIVE) {
+			rz_strbuf_prepend(buf, "generative:");
+		}
+		rz_strbuf_append(buf, "\n");
+		char title[32];
+		rz_agraph_add_node_with_color(core->graph, rz_strf(title, "%d", enode->idx), rz_strbuf_get(buf), -1);
+		free(esc_str);
+	}
+	rz_strbuf_free(buf);
+
+	rz_list_foreach (rz_graph_get_nodes(edf->flow), iter, node) {
+		const RzAnalysisEsilDFGNode *enode = (RzAnalysisEsilDFGNode *)node->data;
+		rz_list_foreach (rz_graph_get_neighbours(edf->flow, node), ator, edon) {
+			const RzAnalysisEsilDFGNode *edone = (RzAnalysisEsilDFGNode *)edon->data;
+			char u[32], v[32];
+			rz_core_agraph_add_edge(core, rz_strf(u, "%d", enode->idx), rz_strf(v, "%d", edone->idx));
+		}
+	}
+
+	rz_analysis_esil_dfg_free(edf);
+}
+
 RZ_IPI void rz_core_agraph_bb_create(RzCore *core, ut64 addr) {
 	RzAnalysisBlock *bb;
 	RzListIter *iter;
@@ -562,6 +593,19 @@ RZ_IPI void rz_core_agraph_print_type(RzCore *core, RzAGraphType type, RzAGraphO
 		rz_core_agraph_xrefs_create(core, core->offset);
 		break;
 	case RZ_AGRAPH_TYPE_CUSTOM:
+		break;
+	case RZ_AGRAPH_TYPE_ESIL:
+		rz_core_agraph_reset(core);
+		if (RZ_STR_ISEMPTY(extra)) {
+			RzAnalysisOp *aop = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_ESIL);
+			if (!aop) {
+				return;
+			}
+			const char *esilstr = rz_strbuf_get(&aop->esil);
+			rz_core_agraph_esil_create(core, esilstr);
+		} else {
+			rz_core_agraph_esil_create(core, extra);
+		}
 		break;
 	}
 

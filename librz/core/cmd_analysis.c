@@ -5650,38 +5650,40 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		break;
 	case 'g': // "aeg"
 		switch (input[1]) {
-		case 'i':
-		case 'v': {
-			char *oprompt = strdup(rz_config_get(core->config, "cmd.gprompt"));
-			rz_config_set(core->config, "cmd.gprompt", "pi 1");
-			rz_core_cmd0(core, ".aeg*");
-			rz_core_agraph_print_interactive(core);
-			rz_config_set(core->config, "cmd.gprompt", oprompt);
-			free(oprompt);
-			break;
-		}
-		case '\0':
-			rz_core_cmd0(core, ".aeg*");
-			rz_core_agraph_print_interactive(core);
-			break;
+		case 0:
 		case ' ':
-			rz_core_analysis_esil_graph(core, input + 2);
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_ASCII, rz_str_trim_head_ro(input + 2));
 			break;
-		case '*': {
-			RzAnalysisOp *aop = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_ESIL);
-			if (aop) {
-				const char *esilstr = rz_strbuf_get(&aop->esil);
-				if (RZ_STR_ISNOTEMPTY(esilstr)) {
-					rz_core_analysis_esil_graph(core, esilstr);
-				}
-			}
+		case '*':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_RIZIN, NULL);
 			break;
-		}
+		case 'd':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_DOT, NULL);
+			break;
+		case 'g':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_GML, NULL);
+			break;
+		case 'j':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
+			break;
+		case 'J':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_JSON_FORMAT, NULL);
+			break;
+		case 'k':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
+			break;
+		case 't':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_TINY, NULL);
+			break;
+		case 'v':
+		case 'i':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
+			break;
+		case 'w':
+			rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_ESIL, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
+			break;
 		default:
-			rz_cons_printf("Usage: aeg[iv*]\n");
-			rz_cons_printf(" aeg  analyze current instruction as an esil graph\n");
-			rz_cons_printf(" aeg* analyze current instruction as an esil graph\n");
-			rz_cons_printf(" aegv and launch the visual interactive mode (.aeg*;aggv == aegv)\n");
+			eprintf("See ag?\n:w");
 			break;
 		}
 		break;
