@@ -8096,13 +8096,13 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "agj" alias for agfj
-		rz_core_cmdf(core, "agfj%s", input + 1);
+		rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_BB, RZ_AGRAPH_OUTPUT_MODE_JSON, NULL);
 		break;
 	case 'J': // "agJ" alias for agfJ
-		rz_core_cmdf(core, "agfJ%s", input + 1);
+		rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_BB, RZ_AGRAPH_OUTPUT_MODE_JSON_FORMAT, NULL);
 		break;
 	case 'k': // "agk" alias for agfk
-		rz_core_cmdf(core, "agfk%s", input + 1);
+		rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_BB, RZ_AGRAPH_OUTPUT_MODE_SDB, NULL);
 		break;
 	case 'l': // "agl"
 		rz_core_analysis_graph(core, rz_num_math(core->num, input + 1), RZ_CORE_ANALYSIS_GRAPHLINES);
@@ -8178,14 +8178,11 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		}
 		break;
 	case 'v': // "agv" alias for "agfv"
-		rz_core_cmdf(core, "agfv%s", input + 1);
+		rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_BB, RZ_AGRAPH_OUTPUT_MODE_INTERACTIVE, NULL);
 		break;
-	case 'w': { // "agw"
-		char *cmdargs = rz_str_newf("agfd @ 0x%" PFMT64x, core->offset);
-		rz_convert_dotcmd_to_image(core, cmdargs, input + 1);
-		free(cmdargs);
+	case 'w':
+		rz_core_agraph_print_type(core, RZ_AGRAPH_TYPE_BB, RZ_AGRAPH_OUTPUT_MODE_WRITE, rz_str_trim_head_ro(input + 2));
 		break;
-	}
 	default:
 		rz_core_cmd_help(core, help_msg_ag);
 		break;
