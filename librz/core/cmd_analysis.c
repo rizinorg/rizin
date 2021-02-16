@@ -7513,10 +7513,6 @@ static bool convert_dot_str_to_image(RzCore *core, char *str, const char *save_p
 	return convert_dot_to_image(core, "a.dot", save_path);
 }
 
-RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename) {
-	rz_convert_dotcmd_to_image(core, "aggd", filename);
-}
-
 static void cmd_agraph_node(RzCore *core, const char *input) {
 	switch (*input) {
 	case ' ': { // "agn"

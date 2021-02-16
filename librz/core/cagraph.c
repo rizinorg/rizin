@@ -107,6 +107,10 @@ RZ_IPI void rz_core_agraph_print_interactive(RzCore *core) {
 	}
 }
 
+RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename) {
+	rz_convert_dotcmd_to_image(core, "aggd", filename);
+}
+
 static void agraph_print_node_dot(RzANode *n, void *user) {
 	char *label = strdup(n->body);
 	//label = rz_str_replace (label, "\n", "\\l", 1);
