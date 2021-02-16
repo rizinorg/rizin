@@ -5711,9 +5711,9 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		rz_analysis_esil_stack_free(ESIL);
 	repeat:
 		if (!rz_analysis_get_block_at(core->analysis, cur)) {
-			for (size_t fcn_i = i_old + 1; fcn_i <= i; fcn_i++) {
-				if (rz_analysis_get_function_at(core->analysis, start + fcn_i)) {
-					i = fcn_i - 1;
+			for (size_t bb_i = i_old + 1; bb_i <= i; bb_i++) {
+				if (rz_analysis_get_block_at(core->analysis, start + bb_i)) {
+					i = bb_i - 1;
 					break;
 				}
 			}
