@@ -19,7 +19,7 @@ RZ_IPI void rz_core_agraph_del_node(RzCore *core, const char *title);
 RZ_IPI void rz_core_agraph_add_edge(RzCore *core, const char *un, const char *vn);
 RZ_IPI void rz_core_agraph_del_edge(RzCore *core, const char *un, const char *vn);
 RZ_IPI void rz_core_agraph_reset(RzCore *core);
-RZ_IPI void rz_core_agraph_print_custom(RzCore *core);
+RZ_IPI void rz_core_agraph_print_ascii(RzCore *core);
 RZ_IPI void rz_core_agraph_print_tiny(RzCore *core);
 RZ_IPI void rz_core_agraph_print_sdb(RzCore *core);
 RZ_IPI void rz_core_agraph_print_interactive(RzCore *core);

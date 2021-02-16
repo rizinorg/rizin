@@ -60,7 +60,7 @@ RZ_IPI void rz_core_agraph_del_edge(RzCore *core, const char *un, const char *vn
 	rz_agraph_del_edge(core->graph, u, v);
 }
 
-RZ_IPI void rz_core_agraph_print_custom(RzCore *core) {
+RZ_IPI void rz_core_agraph_print_ascii(RzCore *core) {
 	core->graph->can->linemode = rz_config_get_i(core->config, "graph.linemode");
 	core->graph->can->color = rz_config_get_i(core->config, "scr.color");
 	rz_agraph_set_title(core->graph, rz_config_get(core->config, "graph.title"));

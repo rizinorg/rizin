@@ -5655,13 +5655,15 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		case 'v': {
 			char *oprompt = strdup(rz_config_get(core->config, "cmd.gprompt"));
 			rz_config_set(core->config, "cmd.gprompt", "pi 1");
-			rz_core_cmd0(core, ".aeg*;aggv");
+			rz_core_cmd0(core, ".aeg*");
+			rz_core_agraph_print_interactive(core);
 			rz_config_set(core->config, "cmd.gprompt", oprompt);
 			free(oprompt);
 			break;
 		}
 		case '\0':
-			rz_core_cmd0(core, ".aeg*;agg");
+			rz_core_cmd0(core, ".aeg*");
+			rz_core_agraph_print_ascii(core);
 			break;
 		case ' ':
 			rz_core_analysis_esil_graph(core, input + 2);
@@ -7595,7 +7597,7 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 	}
 	switch (*input) {
 	case 0:
-		rz_core_agraph_print_custom(core);
+		rz_core_agraph_print_ascii(core);
 		break;
 	case 't': // "aggt" - tiny graph
 		rz_core_agraph_print_tiny(core);
@@ -7853,11 +7855,11 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			rz_core_print_bb_gml(core, fcn);
 			break;
 		}
-		case 'k': { // "agfk"
+		case 'k': // "agfk"
 			rz_core_agraph_reset(core);
-			rz_core_cmdf(core, ".agf* @ %" PFMT64u "; aggk", core->offset);
+			rz_core_cmdf(core, ".agf* @ %" PFMT64u "", core->offset);
+			rz_core_agraph_print_sdb(core);
 			break;
-		}
 		case '*': { // "agf*"
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 			rz_core_print_bb_custom(core, fcn);
@@ -7997,7 +7999,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case 0: // "agc "
 			core->graph->is_callgraph = true;
 			rz_core_agraph_reset(core);
-			rz_core_cmd0(core, ".agc* $$; agg;");
+			rz_core_cmd0(core, ".agc* $$");
+			rz_core_agraph_print_ascii(core);
 			core->graph->is_callgraph = false;
 			break;
 		case 'g': { // "agg"

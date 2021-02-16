@@ -654,7 +654,8 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 
 	if (fmt == 'i') {
 		rz_core_agraph_reset(core);
-		rz_core_cmd0(core, ".dtg*;aggi");
+		rz_core_cmd0(core, ".dtg*");
+		rz_core_agraph_print_interactive(core);
 		return;
 	}
 	aux_data.graph = rz_graph_new();
