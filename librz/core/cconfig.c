@@ -2,6 +2,8 @@
 
 #include <rz_core.h>
 
+#include "core_private.h"
+
 #define NODECB(w, x, y)    rz_config_set_cb(cfg, w, x, y)
 #define NODEICB(w, x, y)   rz_config_set_i_cb(cfg, w, x, y)
 #define SETDESC(x, y)      rz_config_node_desc(x, y)
@@ -2577,7 +2579,7 @@ static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_cmd0(core, "afcl");
+			rz_core_analysis_calling_conventions_print(core);
 			return false;
 		}
 		rz_analysis_set_syscc_default(core->analysis, node->value);
@@ -2588,7 +2590,7 @@ static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_cmd0(core, "afcl");
+			rz_core_analysis_calling_conventions_print(core);
 			return false;
 		}
 		rz_analysis_set_cc_default(core->analysis, node->value);

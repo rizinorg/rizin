@@ -851,13 +851,6 @@ static void type_cmd(RzCore *core, const char *input) {
 	rz_cons_break_pop();
 }
 
-static bool cc_print(void *p, const char *k, const char *v) {
-	if (!strcmp(v, "cc")) {
-		rz_cons_println(k);
-	}
-	return true;
-}
-
 static void var_help(RzCore *core, char ch) {
 	switch (ch) {
 	case 'b': // "afvb"
@@ -3460,7 +3453,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			rz_core_cmd0(core, "k analysis/cc/*");
 			break;
 		case 'l': // "afcl" list all function Calling conventions.
-			sdb_foreach(core->analysis->sdb_cc, cc_print, NULL);
+			rz_core_analysis_calling_conventions_print(core);
 			break;
 		case 'o': { // "afco"
 			char *dbpath = rz_str_trim_dup(input + 3);

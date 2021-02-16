@@ -3180,7 +3180,7 @@ int __copy_cb(void *user) {
 
 int __paste_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd0(core, "yy");
+	rz_core_yank_paste(core, core->offset, 0);
 	return 0;
 }
 
