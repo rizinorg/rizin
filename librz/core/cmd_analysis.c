@@ -3287,16 +3287,9 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		break;
 	case 's': // "afs"
 		switch (input[2]) {
-		case '!': { // "afs!"
-			char *sig = rz_core_cmd_str(core, "afs");
-			char *data = rz_core_editor(core, NULL, sig);
-			if (sig && data) {
-				rz_core_cmdf(core, "\"afs %s\"", data);
-			}
-			free(sig);
-			free(data);
+		case '!': // "afs!"
+			rz_core_analysis_function_signature_editor(core, core->offset);
 			break;
-		}
 		case 'r': { // "afsr"
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 			if (fcn) {
@@ -3315,40 +3308,20 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		case 'j': // "afsj"
 			cmd_afsj(core, input + 2);
 			break;
-		case 0:
-		case ' ': { // "afs"
-			ut64 addr = core->offset;
-			RzAnalysisFunction *f;
-			const char *arg = rz_str_trim_head_ro(input + 2);
-			if ((f = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL))) {
-				if (arg && *arg) {
-					// parse function signature here
-					char *fcnstr = rz_str_newf("%s;", arg), *fcnstr_copy = strdup(fcnstr);
-					char *fcnname_aux = strtok(fcnstr_copy, "(");
-					rz_str_trim_tail(fcnname_aux);
-					char *fcnname = NULL;
-					const char *ls = rz_str_lchr(fcnname_aux, ' ');
-					fcnname = strdup(ls ? ls : fcnname_aux);
-					if (fcnname) {
-						// TODO: move this into rz_analysis_str_to_fcn()
-						if (strcmp(f->name, fcnname)) {
-							(void)rz_core_analysis_function_rename(core, addr, fcnname);
-							f = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-						}
-						rz_analysis_str_to_fcn(core->analysis, f, fcnstr);
-					}
-					free(fcnname);
-					free(fcnstr_copy);
-					free(fcnstr);
-				} else {
-					char *str = rz_analysis_function_get_signature(f);
-					if (str) {
-						rz_cons_println(str);
-						free(str);
-					}
-				}
+		case 0: { // "afs"
+			char *str = rz_core_analysis_function_get_signature(core, core->offset);
+			if (str) {
+				rz_cons_println(str);
+				free(str);
 			} else {
-				eprintf("No function defined at 0x%08" PFMT64x "\n", addr);
+				eprintf("No signature at 0x%08" PFMT64x "\n", core->offset);
+			}
+			break;
+		}
+		case ' ': { // "afs "
+			const char *arg = rz_str_trim_head_ro(input + 2);
+			if (!rz_core_analysis_function_set_signature(core, core->offset, arg)) {
+				eprintf("Cannot set signature at 0x%08" PFMT64x "\n", core->offset);
 			}
 			break;
 		}
