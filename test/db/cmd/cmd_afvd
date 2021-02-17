@@ -13,7 +13,7 @@ dr rsi=0x2222222222222222
 dr rdx=0x3333333333333333
 dr rcx=0x4444444444444444
 7ds
-.afvd
+afvd
 EOF
 EXPECT=<<EOF
 arg arg1 =   : rdi : 0x1111111111111111

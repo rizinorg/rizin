@@ -514,7 +514,7 @@ aei
 aeim
 dr rsi=0x1111111111111111
 11ds
-.afvd
+afvd
 EOF
 EXPECT=<<EOF
 / 114: fcn.00487350 ();
@@ -1942,8 +1942,8 @@ afvd arg_ch
 afvd var_10h
 EOF
 EXPECT=<<EOF
-pf d @ebp+0xc
-pf d @ebp-0x10
+arg arg_ch = 0x0000000c = -1
+var var_10h = 0xfffffffffffffff0 = -1
 EOF
 RUN
 
