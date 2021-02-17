@@ -2906,9 +2906,8 @@ static void backtrace_vars(RzCore *core, RzList *frames) {
 			       "[%s]  %s %s\n",
 			n, f->addr, f->sp, (int)f->size,
 			fcn ? fcn->name : "??", flagdesc, flagdesc2);
-		eprintf("afvd @ 0x%" PFMT64x "\n", f->addr);
 		rz_cons_push();
-		char *res = rz_core_cmd_strf(core, "afvd@0x%" PFMT64x, f->addr);
+		char *res = rz_core_analysis_all_vars_display(core, fcn, true);
 		rz_cons_pop();
 		rz_cons_printf("%s", res);
 		free(res);

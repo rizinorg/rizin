@@ -514,7 +514,7 @@ aei
 aeim
 dr rsi=0x1111111111111111
 11ds
-afvd
+.afvd
 EOF
 EXPECT=<<EOF
 / 114: fcn.00487350 ();
