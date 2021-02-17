@@ -5168,10 +5168,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_core_disasm_pdi(core, 0, l, 0);
 			}
 			break;
-		case '?': // "pi?"
-			rz_cons_printf("|Usage: p[iI][df] [len]   print N instructions/bytes"
-				       "(f=func) (see pi? and pdi)\n");
-			break;
 		default:
 			if (l) {
 				rz_core_print_disasm_instructions(core, l, 0);
@@ -5181,7 +5177,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	case 'i': // "pi"
 		switch (input[1]) {
 		case '?':
-			// rz_cons_printf ("|Usage: pi[defj] [num]\n");
 			rz_core_cmd_help(core, help_msg_pi);
 			break;
 		case 'u': // "piu" disasm until ret/jmp . todo: accept arg to specify type
