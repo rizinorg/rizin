@@ -37,6 +37,7 @@ jobs:
             - 'shlr/rizin-shell-parser/**'
             - 'subprojects/**'
             - '.github/workflows/ci.yml'
+            - 'test/**'
 
   # TODO: build rz-bindings
   build-and-test:
