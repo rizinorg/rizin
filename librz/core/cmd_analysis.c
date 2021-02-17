@@ -2696,7 +2696,6 @@ static void __updateStats(RzCore *core, Sdb *db, ut64 addr, int statsMode) {
 	//sdb_set (db, family, "1", 0);
 	//rz_cons_printf ("0x%08"PFMT64x" %s\n", addr, family);
 	rz_analysis_op_free(op);
-	// rz_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x"\n", addr);
 }
 
 static Sdb *__core_cmd_analysis_fcn_stats(RzCore *core, const char *input) {
@@ -4986,83 +4985,6 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	return true;
 }
 
-static void cmd_aespc(RzCore *core, ut64 addr, ut64 until_addr, int off) {
-	RzAnalysisEsil *esil = core->analysis->esil;
-	int i, j = 0;
-	ut8 *buf;
-	RzAnalysisOp aop = { 0 };
-	int ret, bsize = RZ_MAX(4096, core->blocksize);
-	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
-	const int minopcode = RZ_MAX(1, mininstrsz);
-	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
-
-	// eprintf ("   aesB %llx %llx %d\n", addr, until_addr, off); // 0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
-	if (!esil) {
-		eprintf("Warning: cmd_espc: creating new esil instance\n");
-		if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
-			return;
-		}
-		core->analysis->esil = esil;
-	}
-	buf = malloc(bsize);
-	if (!buf) {
-		eprintf("Cannot allocate %d byte(s)\n", bsize);
-		free(buf);
-		return;
-	}
-	if (addr == -1) {
-		addr = rz_reg_getv(core->dbg->reg, pc);
-	}
-	(void)rz_analysis_esil_setup(core->analysis->esil, core->analysis, 0, 0, 0); // int romem, int stats, int nonull) {
-	ut64 cursp = rz_reg_getv(core->dbg->reg, "SP");
-	ut64 oldoff = core->offset;
-	const ut64 flags = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_DISASM;
-	for (i = 0, j = 0; j < off; i++, j++) {
-		if (rz_cons_is_breaked()) {
-			break;
-		}
-		if (i >= (bsize - 32)) {
-			i = 0;
-			eprintf("Warning: Chomp\n");
-		}
-		if (!i) {
-			rz_io_read_at(core->io, addr, buf, bsize);
-		}
-		if (addr == until_addr) {
-			break;
-		}
-		ret = rz_analysis_op(core->analysis, &aop, addr, buf + i, bsize - i, flags);
-		if (ret < 1) {
-			eprintf("Failed analysis at 0x%08" PFMT64x "\n", addr);
-			break;
-		}
-		// skip calls and such
-		if (aop.type == RZ_ANALYSIS_OP_TYPE_CALL) {
-			// nothing
-		} else {
-			rz_reg_setv(core->analysis->reg, "PC", aop.addr + aop.size);
-			rz_reg_setv(core->dbg->reg, "PC", aop.addr + aop.size);
-			const char *e = RZ_STRBUF_SAFEGET(&aop.esil);
-			if (e && *e) {
-				// eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
-				(void)rz_analysis_esil_parse(esil, e);
-			}
-		}
-		int inc = (core->search->align > 0) ? core->search->align - 1 : ret - 1;
-		if (inc < 0) {
-			inc = minopcode;
-		}
-		i += inc;
-		addr += ret; // aop.size;
-		rz_analysis_op_fini(&aop);
-	}
-	rz_core_seek(core, oldoff, true);
-	rz_reg_setv(core->dbg->reg, "SP", cursp);
-}
-
 static const char _handler_no_name[] = "<no name>";
 static bool _aeli_iter(void *user, const ut64 key, const void *value) {
 	const RzAnalysisEsilInterrupt *interrupt = value;
@@ -5089,7 +5011,7 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	ut64 off = core->offset;
 	for (at = from; at < to; at++) {
-		rz_core_cmdf(core, "aepc 0x%08" PFMT64x, at);
+		rz_core_analysis_set_reg(core, "PC", at);
 		rz_core_analysis_esil_step_over(core);
 		rz_core_seek(core, at, true);
 		int delta = rz_num_get(core->num, "$l");
@@ -5213,7 +5135,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				// seek to this address
 				ut64 pc_val = rz_num_math(core->num, rz_str_trim_head_ro(input + 3));
 				rz_core_analysis_set_reg(core, "PC", pc_val);
-				rz_core_regs2flags(core);
 			} else {
 				eprintf("Missing argument\n");
 			}
@@ -5304,7 +5225,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				}
 				ut64 off = rz_num_math(core->num, n);
 				ut64 nth = n2 ? rz_num_math(core->num, n2) : 1;
-				cmd_aespc(core, core->offset, off, (int)nth);
+				rz_core_analysis_esil_emulate(core, core->offset, off, (int)nth);
 			} else {
 				eprintf("Usage: aesB [until-addr] [nth-opcodes] @ [from-addr]\n");
 			}
@@ -5369,7 +5290,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			}
 			adr = rz_num_math(core->num, n + 1);
 			off = rz_num_math(core->num, n1 + 1);
-			cmd_aespc(core, adr, -1, off);
+			rz_core_analysis_esil_emulate(core, adr, -1, off);
 			break;
 		case ' ': //"aes?"
 			n = strchr(input, ' ');
@@ -5378,7 +5299,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				break;
 			}
 			off = rz_num_math(core->num, n + 1);
-			cmd_aespc(core, -1, -1, off);
+			rz_core_analysis_esil_emulate(core, -1, -1, off);
 			break;
 		default:
 			rz_core_esil_step(core, until_addr, until_expr, NULL, false);
@@ -5578,8 +5499,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "aeb"
-		// ab~ninstr[1]
-		rz_core_cmdf(core, "aesp `ab~addr[1]` `ab~ninstr[1]`");
+		rz_core_analysis_esil_emulate_bb(core);
 		break;
 	case 'f': // "aef"
 		if (input[1] == 'a') { // "aefa"

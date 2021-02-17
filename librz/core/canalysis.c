@@ -660,6 +660,92 @@ RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
 	rz_core_seek(core, cur_seek, true);
 }
 
+/**
+ * Emulate \p n_instr instructions from \p addr. If \p until_addr is
+ * specified and that address is met before all the instructions are emulated,
+ * stop there.
+ */
+RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_addr, int off) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	int i, j = 0;
+	ut8 *buf;
+	RzAnalysisOp aop = { 0 };
+	int ret, bsize = RZ_MAX(4096, core->blocksize);
+	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = RZ_MAX(1, mininstrsz);
+	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
+	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
+	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
+	ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
+
+	if (!esil) {
+		eprintf("Warning: cmd_espc: creating new esil instance\n");
+		if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+			return;
+		}
+		core->analysis->esil = esil;
+	}
+	buf = malloc(bsize);
+	if (!buf) {
+		eprintf("Cannot allocate %d byte(s)\n", bsize);
+		free(buf);
+		return;
+	}
+	if (addr == -1) {
+		addr = rz_reg_getv(core->dbg->reg, pc);
+	}
+	(void)rz_analysis_esil_setup(core->analysis->esil, core->analysis, 0, 0, 0); // int romem, int stats, int nonull) {
+	ut64 cursp = rz_reg_getv(core->dbg->reg, "SP");
+	ut64 oldoff = core->offset;
+	const ut64 flags = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_DISASM;
+	for (i = 0, j = 0; j < off; i++, j++) {
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		if (i >= (bsize - 32)) {
+			i = 0;
+			eprintf("Warning: Chomp\n");
+		}
+		if (!i) {
+			rz_io_read_at(core->io, addr, buf, bsize);
+		}
+		if (addr == until_addr) {
+			break;
+		}
+		ret = rz_analysis_op(core->analysis, &aop, addr, buf + i, bsize - i, flags);
+		if (ret < 1) {
+			eprintf("Failed analysis at 0x%08" PFMT64x "\n", addr);
+			break;
+		}
+		// skip calls and such
+		if (aop.type == RZ_ANALYSIS_OP_TYPE_CALL) {
+			// nothing
+		} else {
+			rz_reg_setv(core->analysis->reg, "PC", aop.addr + aop.size);
+			rz_reg_setv(core->dbg->reg, "PC", aop.addr + aop.size);
+			const char *e = RZ_STRBUF_SAFEGET(&aop.esil);
+			if (e && *e) {
+				// eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
+				(void)rz_analysis_esil_parse(esil, e);
+			}
+		}
+		int inc = (core->search->align > 0) ? core->search->align - 1 : ret - 1;
+		if (inc < 0) {
+			inc = minopcode;
+		}
+		i += inc;
+		addr += ret; // aop.size;
+		rz_analysis_op_fini(&aop);
+	}
+	rz_core_seek(core, oldoff, true);
+	rz_reg_setv(core->dbg->reg, "SP", cursp);
+}
+
+RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
+	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
+	rz_core_analysis_esil_emulate(core, bb->addr, UT64_MAX, bb->ninstr);
+}
+
 static bool blacklisted_word(char *name) {
 	const char *list[] = {
 		"__stack_chk_guard",

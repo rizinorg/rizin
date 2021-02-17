@@ -16,6 +16,9 @@ RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr);
 RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core);
+RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_addr, int off);
+RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
+
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI RzList *rz_core_analysis_calling_conventions(RzCore *core);
 RZ_IPI void rz_core_analysis_calling_conventions_print(RzCore *core);
