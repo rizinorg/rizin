@@ -4,6 +4,8 @@
 #include <rz_types.h>
 #include <rz_core.h>
 
+RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
+
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val);
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, ut64 addr, ut32 size);

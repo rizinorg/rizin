@@ -3404,7 +3404,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			break;
 		}
 		case 'k': // "afck"
-			rz_core_cmd0(core, "k analysis/cc/*");
+			rz_core_kuery_print(core, "k analysis/cc/*");
 			break;
 		case 'l': // "afcl" list all function Calling conventions.
 			rz_core_analysis_calling_conventions_print(core);
@@ -3490,10 +3490,12 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		case 'R': { // "afcR"
 			/* very slow, but im tired of waiting for having this, so this is the quickest implementation */
 			int i;
-			char *cc = rz_core_cmd_str(core, "k analysis/cc/default.cc");
+			char *cc = sdb_querys(core->sdb, NULL, 0, "analysis/cc/default.cc");
 			rz_str_trim(cc);
 			for (i = 0; i < 6; i++) {
-				char *res = rz_core_cmd_strf(core, "k analysis/cc/cc.%s.arg%d", cc, i);
+				char *k = rz_str_newf("analysis/cc/cc.%s.arg%d", cc, i);
+				char *res = sdb_querys(core->sdb, NULL, 0, k);
+				free(k);
 				rz_str_trim_nc(res);
 				if (*res) {
 					char *row = rz_core_cmd_strf(core, "drr~%s 0x", res);
