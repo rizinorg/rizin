@@ -15,6 +15,7 @@ RZ_IPI void rz_core_analysis_esil_init_regs(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr);
+RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core);
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI void rz_core_analysis_calling_conventions_print(RzCore *core);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
@@ -22,6 +23,7 @@ RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id);
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name);
 RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name);
+RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core);
 RZ_IPI char *rz_core_analysis_function_get_signature(RzCore *core, ut64 addr);
 RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, ut64 addr, const char *newsig);
 RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr);
