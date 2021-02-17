@@ -8530,7 +8530,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_list_foreach (list, iter, map) {
 				rz_core_seek(core, map->itv.addr, true);
 				rz_config_set_i(core->config, "analysis.hasnext", 1);
-				rz_core_cmd0(core, "afr");
+				rz_core_analysis_function_add(core, NULL, core->offset, true);
 				rz_config_set_i(core->config, "analysis.hasnext", hasnext);
 			}
 			rz_list_free(list);
@@ -9525,9 +9525,9 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		}
 		break;
 	case '*': // "a*"
-		rz_core_cmd0(core, "afl*");
-		rz_core_cmd0(core, "ah*");
-		rz_core_cmd0(core, "ax*");
+		rz_core_analysis_fcn_list(core, NULL, "*");
+		rz_core_analysis_hint_list(core->analysis, '*');
+		rz_analysis_xrefs_list(core->analysis, '*');
 		break;
 	case 'a': // "aa"
 		if (!cmd_analysis_all(core, input + 1)) {
@@ -9591,10 +9591,10 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		}
 		break;
 	case 'j': // "aj"
-		rz_core_cmd0(core, "aflj");
+		rz_core_analysis_fcn_list(core, NULL, "j");
 		break;
 	case 0: // "a"
-		rz_core_cmd0(core, "aai");
+		rz_core_analysis_info(core, "");
 		break;
 	default:
 		rz_core_cmd_help(core, help_msg_a);
