@@ -3149,7 +3149,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 			rz_core_visual_refs(core, true, true);
 			break;
 		case 's':
-			rz_core_cmdf(core, "afs! @ 0x%08" PFMT64x, addr);
+			rz_core_analysis_function_signature_editor(core, addr);
 			break;
 		case 'c':
 			level = 2;
@@ -3382,7 +3382,7 @@ onemoretime:
 	wordsize = 4;
 	switch (ch) {
 	case 'N':
-		rz_core_cmdf(core, "afs! @ 0x%08" PFMT64x, off);
+		rz_core_analysis_function_signature_editor(core, off);
 		break;
 	case 'F': {
 		char cmd[128];

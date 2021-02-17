@@ -4810,8 +4810,7 @@ void __panel_single_step_over(RzCore *core) {
 		rz_core_cmd(core, "dso", 0);
 		rz_core_debug_regs2flags(core, 0);
 	} else {
-		rz_core_cmd(core, "aeso", 0);
-		rz_core_regs2flags(core);
+		rz_core_analysis_esil_step_over(core);
 	}
 	rz_config_set_b(core->config, "io.cache", io_cache);
 }

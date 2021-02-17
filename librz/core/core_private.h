@@ -4,12 +4,17 @@
 #include <rz_types.h>
 #include <rz_core.h>
 
+RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
+
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val);
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, ut64 addr, ut32 size);
 RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 addr, ut32 size);
 RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_regs(RzCore *core);
+RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core);
+RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr);
+RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr);
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI void rz_core_analysis_calling_conventions_print(RzCore *core);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
@@ -17,6 +22,9 @@ RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id);
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name);
 RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name);
+RZ_IPI char *rz_core_analysis_function_get_signature(RzCore *core, ut64 addr);
+RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, ut64 addr, const char *newsig);
+RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr);
 
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
 RZ_IPI void rz_core_agraph_del_node(RzCore *core, const char *title);
