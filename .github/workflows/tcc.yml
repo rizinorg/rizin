@@ -10,6 +10,7 @@ on:
     - '**/meson.build'
     - 'shlr/rizin-shell-parser/**'
     - 'subprojects/**'
+    - 'test/**'
     - '.github/workflows/tcc.yml'
     branches:
     - 'dev'

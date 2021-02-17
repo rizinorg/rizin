@@ -2899,6 +2899,89 @@ diff: type: new
 EOF
 RUN
 
+NAME=basic block overlaps function start
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bytes=true
+e asm.bits=64
+e io.cache=true
+# TODO: Disassembly is incorrect for bb at 0x0
+wx b821c10010ebf9
+s 3
+af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; pdf
+EOF
+EXPECT=<<EOF
+#
+offset: 0x00000003
+name: fcn.00000003
+size: 7
+is-pure: true
+realsz: 9
+stackframe: 0
+call-convention: amd64
+cyclomatic-cost: 4
+cyclomatic-complexity: 0
+bits: 64
+type: fcn [NEW]
+num-bbs: 3
+edges: 3
+end-bbs: 0
+call-refs: 0x00000000 J
+data-refs:
+code-xrefs: 0x00000005 J
+noreturn: false
+in-degree: 1
+out-degree: 0
+data-xrefs:
+locals: 0
+args: 0
+diff: type: new
+
+0x00000000 0x00000005 00:0000 5 j 0x00000005
+0x00000003 0x00000005 00:0000 2 j 0x00000005
+0x00000005 0x00000007 00:0000 2 j 0x00000000
+
+| ; CODE XREF from fcn.00000003 @ 0x5
+| 0x00000000  ~   b821c10010     mov   eax, 0x1000c121
+/ 9: fcn.00000003 ();
+| 0x00000003      0010           add   byte [rax], dl
+| ----------- true: 0x00000005
+/ 9: fcn.00000003 ();
+| 0x00000003      0010           add   byte [rax], dl
+| ----------- true: 0x00000005
+| 0x00000005      ebf9           jmp   0
+| ----------- true: 0x00000000
+
+[0x00000003]>  # fcn.00000003 ();
+.----.
+|    |
+|.-------------------------------------.   .-----------------------.
+||  0x0                                |   |  0x3                  |
+|| ; CODE XREF from fcn.00000003 @ 0x5 |   | 9: fcn.00000003 ();   |
+|| mov eax, 0x1000c121                 |   | add byte [rax], dl    |
+|| 9: fcn.00000003 ();                 |   `-----------------------'
+|| add byte [rax], dl                  |       v
+|`-------------------------------------'       |
+|    v                                         |
+|    |                                         |
+|    '----------------------------.            |
+|                               .--------------'
+|                               | |
+|                         .--------------------.
+|                         |  0x5               |
+|                         | jmp 0              |
+|                         `--------------------'
+|                             v
+|                             |
+`-----------------------------'
+
+/ 9: fcn.00000003 ();
+|           0x00000003      0010           add   byte [rax], dl
+|           0x00000005      ebf9           jmp   0
+EOF
+RUN
+
 NAME=so -N and overlapping basic blocks
 FILE=-
 CMDS=<<EOF

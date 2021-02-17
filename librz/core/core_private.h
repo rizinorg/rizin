@@ -44,6 +44,10 @@ RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_debug_continue(RzCore *core);
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid);
 
+/* cfile.c */
+RZ_IPI void rz_core_io_file_open(RzCore *core, int fd);
+RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms);
+
 /* cmd_eval.c */
 RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name);
 

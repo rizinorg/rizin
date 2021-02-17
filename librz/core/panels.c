@@ -3096,13 +3096,13 @@ int __open_file_cb(void *user) {
 
 int __rw_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd(core, "oo+", 0);
+	rz_core_io_file_reopen(core, core->io->desc->fd, core->io->desc->perm | RZ_PERM_RW);
 	return 0;
 }
 
 int __debugger_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd(core, "oo", 0);
+	rz_core_io_file_open(core, core->io->desc->fd);
 	return 0;
 }
 
