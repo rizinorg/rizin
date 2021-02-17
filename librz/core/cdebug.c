@@ -568,3 +568,16 @@ RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr) {
 	}
 	rz_bp_enable(core->dbg->bp, addr, true, 0);
 }
+
+RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
+	if (pid > 0) {
+		rz_debug_attach(core->dbg, pid);
+	} else {
+		if (core->file && core->io) {
+			rz_debug_attach(core->dbg, rz_io_fd_get_pid(core->io, core->file->fd));
+		}
+	}
+	rz_debug_select(core->dbg, core->dbg->pid, core->dbg->tid);
+	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->h && !core->dbg->h->canstep));
+	rz_core_cmdf(core, "=! \"pid %d\"", core->dbg->pid);
+}

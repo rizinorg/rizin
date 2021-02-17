@@ -1082,17 +1082,11 @@ static void cmd_debug_pid(RzCore *core, const char *input) {
 		break;
 	case 'a': // "dpa"
 		if (input[2]) {
-			rz_debug_attach(core->dbg, (int)rz_num_math(core->num, input + 2));
+			int pid = rz_num_math(core->num, input + 2);
+			rz_core_debug_attach(core, pid);
 		} else {
-			if (core->file && core->io) {
-				rz_debug_attach(core->dbg,
-					rz_io_fd_get_pid(core->io, core->file->fd));
-			}
+			rz_core_debug_attach(core, 0);
 		}
-		rz_debug_select(core->dbg, core->dbg->pid, core->dbg->tid);
-		rz_config_set_i(core->config, "dbg.swstep",
-			(core->dbg->h && !core->dbg->h->canstep));
-		rz_core_cmdf(core, "=! \"pid %d\"", core->dbg->pid);
 		break;
 	case 'f': // "dpf"
 		if (core->file && core->io) {

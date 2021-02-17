@@ -11,6 +11,7 @@ RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 
 RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_regs(RzCore *core);
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
+RZ_IPI void rz_core_analysis_calling_conventions_print(RzCore *core);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
 RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id);
@@ -41,6 +42,7 @@ RZ_IPI void rz_core_debug_single_step_in(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_over(RzCore *core);
 RZ_IPI void rz_core_debug_breakpoint_toggle(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_debug_continue(RzCore *core);
+RZ_IPI void rz_core_debug_attach(RzCore *core, int pid);
 
 /* cmd_eval.c */
 RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name);

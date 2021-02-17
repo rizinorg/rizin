@@ -6481,6 +6481,17 @@ RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const ch
 	return true;
 }
 
+static bool cc_print(void *p, const char *k, const char *v) {
+	if (!strcmp(v, "cc")) {
+		rz_cons_println(k);
+	}
+	return true;
+}
+
+RZ_IPI void rz_core_analysis_calling_conventions_print(RzCore *core) {
+	sdb_foreach(core->analysis->sdb_cc, cc_print, NULL);
+}
+
 static bool is_unknown_file(RzCore *core) {
 	if (core->bin->cur && core->bin->cur->o) {
 		return (rz_list_empty(core->bin->cur->o->sections));
