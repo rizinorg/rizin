@@ -781,54 +781,6 @@ static bool listOpDescriptions(void *_core, const char *k, const char *v) {
 	return true;
 }
 
-static bool cmd_analysis_aaft(RzCore *core) {
-	RzListIter *it;
-	RzAnalysisFunction *fcn;
-	ut64 seek;
-	if (rz_config_get_i(core->config, "cfg.debug")) {
-		eprintf("TOFIX: aaft can't run in debugger mode.\n");
-		return false;
-	}
-	const char *io_cache_key = "io.pcache.write";
-	RzConfigHold *hold = rz_config_hold_new(core->config);
-	rz_config_hold_i(hold, "io.va", io_cache_key, NULL);
-	bool io_cache = rz_config_get_i(core->config, io_cache_key);
-	if (!io_cache) {
-		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
-		rz_config_set_i(core->config, io_cache_key, true);
-	}
-	const bool delete_regs = !rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
-	seek = core->offset;
-	rz_reg_arena_push(core->analysis->reg);
-	rz_reg_arena_zero(core->analysis->reg);
-	rz_core_analysis_esil_init(core);
-	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
-	ut8 *saved_arena = rz_reg_arena_peek(core->analysis->reg);
-	// Iterating Reverse so that we get function in top-bottom call order
-	rz_list_foreach_prev(core->analysis->fcns, it, fcn) {
-		int ret = rz_core_seek(core, fcn->addr, true);
-		if (!ret) {
-			continue;
-		}
-		rz_reg_arena_poke(core->analysis->reg, saved_arena);
-		rz_analysis_esil_set_pc(core->analysis->esil, fcn->addr);
-		rz_core_analysis_type_match(core, fcn);
-		if (rz_cons_is_breaked()) {
-			break;
-		}
-		rz_analysis_fcn_vars_add_types(core->analysis, fcn);
-	}
-	if (delete_regs) {
-		rz_core_debug_clear_register_flags(core);
-	}
-	rz_core_seek(core, seek, true);
-	rz_reg_arena_pop(core->analysis->reg);
-	rz_config_hold_restore(hold);
-	rz_config_hold_free(hold);
-	free(saved_arena);
-	return true;
-}
-
 static void type_cmd(RzCore *core, const char *input) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 	if (!fcn && *input != '?') {
@@ -8537,7 +8489,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_list_free(list);
 			rz_core_seek(core, cur, true);
 		} else if (input[1] == 't') { // "aaft"
-			cmd_analysis_aaft(core);
+			rz_core_analysis_types_propagation(core);
 		} else if (input[1] == 0) { // "aaf"
 			const bool analHasnext = rz_config_get_i(core->config, "analysis.hasnext");
 			rz_config_set_i(core->config, "analysis.hasnext", true);
@@ -8697,14 +8649,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		break;
 	case 'e': // "aae"
 		if (input[1] == 'f') { // "aaef"
-			RzListIter *it;
-			RzAnalysisFunction *fcn;
-			ut64 cur_seek = core->offset;
-			rz_list_foreach (core->analysis->fcns, it, fcn) {
-				rz_core_seek(core, fcn->addr, true);
-				rz_core_analysis_esil(core, "f", NULL);
-			}
-			rz_core_seek(core, cur_seek, true);
+			rz_core_analysis_esil_references_all_functions(core);
 		} else if (input[1] == ' ') {
 			const char *len = (char *)input + 1;
 			char *addr = strchr(input + 2, ' ');

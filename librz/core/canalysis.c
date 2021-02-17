@@ -649,6 +649,17 @@ RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *
 	rz_core_regs2flags(core);
 }
 
+RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
+	RzListIter *it;
+	RzAnalysisFunction *fcn;
+	ut64 cur_seek = core->offset;
+	rz_list_foreach (core->analysis->fcns, it, fcn) {
+		rz_core_seek(core, fcn->addr, true);
+		rz_core_analysis_esil(core, "f", NULL);
+	}
+	rz_core_seek(core, cur_seek, true);
+}
+
 static bool blacklisted_word(char *name) {
 	const char *list[] = {
 		"__stack_chk_guard",
@@ -3191,7 +3202,7 @@ static int fcn_print_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
 	pj_ki(pj, "edges", rz_analysis_function_count_edges(fcn, &ebbs));
 	pj_ki(pj, "ebbs", ebbs);
 	{
-		char *sig = rz_core_cmd_strf(core, "afcf @ 0x%" PFMT64x, fcn->addr);
+		char *sig = rz_core_analysis_function_signature(core, RZ_OUTPUT_MODE_STANDARD, fcn->name);
 		if (sig) {
 			rz_str_trim(sig);
 			pj_ks(pj, "signature", sig);
@@ -4457,7 +4468,7 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	item = rz_flag_get(core->flags, "entry0");
 	if (item) {
 		rz_core_analysis_fcn(core, item->offset, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth - 1);
-		rz_core_cmdf(core, "afn entry0 0x%08" PFMT64x, item->offset);
+		rz_core_analysis_function_rename(core, item->offset, "entry0");
 	} else {
 		rz_core_analysis_function_add(core, NULL, core->offset, false);
 	}
@@ -6601,7 +6612,7 @@ RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 	rz_core_task_yield(&core->tasks);
 	oldstr = rz_print_rowlog(core->print, "Check for vtables");
-	rz_core_cmd0(core, "avrr");
+	rz_analysis_rtti_recover_all(core->analysis);
 	rz_print_rowlog_done(core->print, oldstr);
 	rz_core_task_yield(&core->tasks);
 	rz_config_set_i(core->config, "analysis.calls", c);
@@ -6615,7 +6626,7 @@ RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		bool ioCache = rz_config_get_i(core->config, "io.pcache");
 		rz_config_set_i(core->config, "io.pcache", 1);
 		oldstr = rz_print_rowlog(core->print, "Emulate functions to find computed references (aaef)");
-		rz_core_cmd0(core, "aaef");
+		rz_core_analysis_esil_references_all_functions(core);
 		rz_print_rowlog_done(core->print, oldstr);
 		rz_core_task_yield(&core->tasks);
 		rz_config_set_i(core->config, "io.pcache", ioCache);
@@ -6656,7 +6667,7 @@ RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	}
 
 	oldstr = rz_print_rowlog(core->print, "Type matching analysis for all functions (aaft)");
-	rz_core_cmd0(core, "aaft");
+	rz_core_analysis_types_propagation(core);
 	rz_print_rowlog_done(core->print, oldstr);
 	rz_core_task_yield(&core->tasks);
 
@@ -6782,6 +6793,54 @@ RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction 
 	}
 	rz_list_free(list);
 	return rz_strbuf_drain(sb);
+}
+
+RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
+	RzListIter *it;
+	RzAnalysisFunction *fcn;
+	ut64 seek;
+	if (rz_config_get_i(core->config, "cfg.debug")) {
+		eprintf("TOFIX: aaft can't run in debugger mode.\n");
+		return false;
+	}
+	const char *io_cache_key = "io.pcache.write";
+	RzConfigHold *hold = rz_config_hold_new(core->config);
+	rz_config_hold_i(hold, "io.va", io_cache_key, NULL);
+	bool io_cache = rz_config_get_i(core->config, io_cache_key);
+	if (!io_cache) {
+		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
+		rz_config_set_i(core->config, io_cache_key, true);
+	}
+	const bool delete_regs = !rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
+	seek = core->offset;
+	rz_reg_arena_push(core->analysis->reg);
+	rz_reg_arena_zero(core->analysis->reg);
+	rz_core_analysis_esil_init(core);
+	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
+	ut8 *saved_arena = rz_reg_arena_peek(core->analysis->reg);
+	// Iterating Reverse so that we get function in top-bottom call order
+	rz_list_foreach_prev(core->analysis->fcns, it, fcn) {
+		int ret = rz_core_seek(core, fcn->addr, true);
+		if (!ret) {
+			continue;
+		}
+		rz_reg_arena_poke(core->analysis->reg, saved_arena);
+		rz_analysis_esil_set_pc(core->analysis->esil, fcn->addr);
+		rz_core_analysis_type_match(core, fcn);
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		rz_analysis_fcn_vars_add_types(core->analysis, fcn);
+	}
+	if (delete_regs) {
+		rz_core_debug_clear_register_flags(core);
+	}
+	rz_core_seek(core, seek, true);
+	rz_reg_arena_pop(core->analysis->reg);
+	rz_config_hold_restore(hold);
+	rz_config_hold_free(hold);
+	free(saved_arena);
+	return true;
 }
 
 RZ_IPI char *rz_core_analysis_function_get_signature(RzCore *core, ut64 addr) {
