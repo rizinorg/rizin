@@ -8,51 +8,6 @@
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
 
-RZ_API bool rz_analysis_var_display(RzAnalysis *analysis, RzAnalysisVar *var) {
-	char *fmt = rz_type_format(analysis->sdb_types, var->type);
-	RzRegItem *i;
-	if (!fmt) {
-		eprintf("type:%s doesn't exist\n", var->type);
-		return false;
-	}
-	bool usePxr = !strcmp(var->type, "int"); // hacky but useful
-	switch (var->kind) {
-	case RZ_ANALYSIS_VAR_KIND_REG:
-		i = rz_reg_index_get(analysis->reg, var->delta);
-		if (i) {
-			if (usePxr) {
-				analysis->cb_printf("pxr $w @r:%s\n", i->name);
-			} else {
-				analysis->cb_printf("pf r (%s)\n", i->name);
-			}
-		} else {
-			eprintf("register not found\n");
-		}
-		break;
-	case RZ_ANALYSIS_VAR_KIND_BPV: {
-		const st32 real_delta = var->delta + var->fcn->bp_off;
-		const ut32 udelta = RZ_ABS(real_delta);
-		const char sign = real_delta >= 0 ? '+' : '-';
-		if (usePxr) {
-			analysis->cb_printf("pxr $w @%s%c0x%x\n", analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
-		} else {
-			analysis->cb_printf("pf %s @%s%c0x%x\n", fmt, analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
-		}
-	} break;
-	case RZ_ANALYSIS_VAR_KIND_SPV: {
-		ut32 udelta = RZ_ABS(var->delta + var->fcn->maxstack);
-		if (usePxr) {
-			analysis->cb_printf("pxr $w @%s+0x%x\n", analysis->reg->name[RZ_REG_NAME_SP], udelta);
-		} else {
-			analysis->cb_printf("pf %s @ %s+0x%x\n", fmt, analysis->reg->name[RZ_REG_NAME_SP], udelta);
-		}
-		break;
-	}
-	}
-	free(fmt);
-	return true;
-}
-
 static const char *__int_type_from_size(int size) {
 	switch (size) {
 	case 1: return "int8_t";

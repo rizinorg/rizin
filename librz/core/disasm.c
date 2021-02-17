@@ -1677,7 +1677,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RzAnalysisFunction *fcn, 
 		constr ? "} " : "",
 		base, sign, delta);
 	if (ds->show_varsum == -1) {
-		char *val = rz_core_cmd_strf(ds->core, ".afvd %s", var->name);
+		char *val = rz_core_analysis_var_display(ds->core, var, false);
 		if (val) {
 			rz_str_replace_char(val, '\n', '\0');
 			rz_cons_printf(" = %s", val);
@@ -1964,10 +1964,10 @@ static void ds_show_functions(RDisasmState *ds) {
 						var->type, rz_str_endswith(var->type, "*") ? "" : " ",
 						var->name, COLOR_ARG(ds, color_func_var_addr), i->name);
 					if (ds->show_varsum == -1) {
-						char *val = rz_core_cmd_strf(ds->core, ".afvd %s", var->name);
+						char *val = rz_core_analysis_var_display(ds->core, var, false);
 						if (val) {
 							rz_str_replace_char(val, '\n', '\0');
-							rz_cons_printf("%s", val);
+							rz_cons_printf(" %s", val);
 							free(val);
 						}
 					}

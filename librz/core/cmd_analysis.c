@@ -474,7 +474,7 @@ static const char *help_msg_afv[] = {
 	"afv=", "", "list function variables and arguments with disasm refs",
 	"afva", "", "analyze function arguments/locals",
 	"afvb", "[?]", "manipulate bp based arguments/locals",
-	"afvd", " name", "output rizin command for displaying the value of args/locals in the debugger",
+	"afvd", " name", "display the value of args/locals",
 	"afvf", "", "show BP relative stackframe variables",
 	"afvn", " [new_name] ([old_name])", "rename argument/local",
 	"afvr", "[?]", "manipulate register based arguments",
@@ -1122,21 +1122,29 @@ static void __cmd_afvf(RzCore *core, const char *input) {
 	rz_list_free(list);
 }
 
+static void function_delete_var_cmd(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id) {
+	if (*id == '*') {
+		rz_analysis_function_delete_vars_by_kind(fcn, kind);
+	} else {
+		rz_core_analysis_function_delete_var(core, fcn, kind, id);
+	}
+}
+
 static int var_cmd(RzCore *core, const char *str) {
 	int delta, type = *str, res = true;
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 	RzAnalysisVar *v1;
 	if (!str[0]) {
 		// "afv"
-		rz_core_cmd0(core, "afvs");
-		rz_core_cmd0(core, "afvb");
-		rz_core_cmd0(core, "afvr");
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, '\0', NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, '\0', NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, '\0', NULL);
 		return true;
 	}
 	if (!str[0] || str[1] == '?' || str[0] == '?') {
 		var_help(core, *str);
 		return res;
 	}
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 	PJ *pj = NULL;
 	if (str[0] == 'j') { // "afvj"
 		pj = rz_core_pj_new(core);
@@ -1145,11 +1153,11 @@ static int var_cmd(RzCore *core, const char *str) {
 		}
 		pj_o(pj);
 		pj_k(pj, "sp");
-		rz_analysis_var_list_show(core->analysis, fcn, 's', 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, 'j', pj);
 		pj_k(pj, "bp");
-		rz_analysis_var_list_show(core->analysis, fcn, 'b', 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, 'j', pj);
 		pj_k(pj, "reg");
-		rz_analysis_var_list_show(core->analysis, fcn, 'r', 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, 'j', pj);
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
@@ -1160,9 +1168,9 @@ static int var_cmd(RzCore *core, const char *str) {
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
 	case '-': // "afv-"
-		rz_core_cmdf(core, "afvs-%s", str + 1);
-		rz_core_cmdf(core, "afvb-%s", str + 1);
-		rz_core_cmdf(core, "afvr-%s", str + 1);
+		function_delete_var_cmd(core, fcn, RZ_ANALYSIS_VAR_KIND_SPV, str + 1);
+		function_delete_var_cmd(core, fcn, RZ_ANALYSIS_VAR_KIND_BPV, str + 1);
+		function_delete_var_cmd(core, fcn, RZ_ANALYSIS_VAR_KIND_REG, str + 1);
 		return true;
 	case 'x': // "afvx"
 		if (fcn) {
@@ -1247,22 +1255,14 @@ static int var_cmd(RzCore *core, const char *str) {
 				free(ostr);
 				return false;
 			}
-			rz_analysis_var_display(core->analysis, v1);
+			char *r = rz_core_analysis_var_display(core, v1, true);
+			rz_cons_print(r);
+			free(r);
 			free(ostr);
 		} else {
-			RzListIter *iter;
-			RzAnalysisVar *p;
-			RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
-			rz_list_foreach (list, iter, p) {
-				char *a = rz_core_cmd_strf(core, ".afvd %s", p->name);
-				if ((a && !*a) || !a) {
-					free(a);
-					a = strdup("\n");
-				}
-				rz_cons_printf("%s %s = %s", p->isarg ? "arg" : "var", p->name, a);
-				free(a);
-			}
-			rz_list_free(list);
+			char *r = rz_core_analysis_all_vars_display(core, fcn, true);
+			rz_cons_print(r);
+			free(r);
 		}
 		return true;
 	case 'f': // "afvf"
@@ -1318,26 +1318,7 @@ static int var_cmd(RzCore *core, const char *str) {
 			eprintf("Cannot find function\n");
 			return false;
 		}
-		if (str[2] == '*') {
-			rz_analysis_function_delete_vars_by_kind(fcn, type);
-		} else {
-			RzAnalysisVar *var = NULL;
-			if (IS_DIGIT(str[2])) {
-				var = rz_analysis_function_get_var(fcn, type, (int)rz_num_math(core->num, str + 1));
-			} else {
-				char *name = rz_str_trim_dup(str + 2);
-				if (name) {
-					var = rz_analysis_function_get_var_byname(fcn, name);
-					rz_free(name);
-				}
-			}
-			if (var) {
-				rz_analysis_var_delete(var);
-			}
-		}
-		break;
-	case 'd': // "afv[bsr]d"
-		eprintf("This command is deprecated, use afvd instead\n");
+		function_delete_var_cmd(core, fcn, type, str + 2);
 		break;
 	case 't': // "afv[bsr]t"
 		eprintf("This command is deprecated use afvt instead\n");
@@ -5648,13 +5629,15 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		case 'v': {
 			char *oprompt = strdup(rz_config_get(core->config, "cmd.gprompt"));
 			rz_config_set(core->config, "cmd.gprompt", "pi 1");
-			rz_core_cmd0(core, ".aeg*;aggv");
+			rz_core_cmd0(core, ".aeg*");
+			rz_core_agraph_print_interactive(core);
 			rz_config_set(core->config, "cmd.gprompt", oprompt);
 			free(oprompt);
 			break;
 		}
 		case '\0':
-			rz_core_cmd0(core, ".aeg*;agg");
+			rz_core_cmd0(core, ".aeg*");
+			rz_core_agraph_print_ascii(core);
 			break;
 		case ' ':
 			rz_core_analysis_esil_graph(core, input + 2);
@@ -7588,7 +7571,7 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 	}
 	switch (*input) {
 	case 0:
-		rz_core_agraph_print_custom(core);
+		rz_core_agraph_print_ascii(core);
 		break;
 	case 't': // "aggt" - tiny graph
 		rz_core_agraph_print_tiny(core);
@@ -7846,11 +7829,11 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			rz_core_print_bb_gml(core, fcn);
 			break;
 		}
-		case 'k': { // "agfk"
+		case 'k': // "agfk"
 			rz_core_agraph_reset(core);
-			rz_core_cmdf(core, ".agf* @ %" PFMT64u "; aggk", core->offset);
+			rz_core_cmdf(core, ".agf* @ %" PFMT64u "", core->offset);
+			rz_core_agraph_print_sdb(core);
 			break;
-		}
 		case '*': { // "agf*"
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 			rz_core_print_bb_custom(core, fcn);
@@ -7990,7 +7973,8 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case 0: // "agc "
 			core->graph->is_callgraph = true;
 			rz_core_agraph_reset(core);
-			rz_core_cmd0(core, ".agc* $$; agg;");
+			rz_core_cmd0(core, ".agc* $$");
+			rz_core_agraph_print_ascii(core);
 			core->graph->is_callgraph = false;
 			break;
 		case 'g': { // "agg"

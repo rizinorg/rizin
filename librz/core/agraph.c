@@ -4303,19 +4303,22 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 		case '>':
 			if (fcn && rz_cons_yesno('y', "Compute function callgraph? (Y/n)")) {
 				rz_core_agraph_reset(core);
-				rz_core_cmd0(core, ".agc* @$FB;.axfg @$FB;aggi");
+				rz_core_cmd0(core, ".agc* @$FB;.axfg @$FB");
+				rz_core_agraph_print_interactive(core);
 			}
 			break;
 		case '<':
 			// rz_core_visual_refs (core, true, false);
 			if (fcn) {
 				rz_core_agraph_reset(core);
-				rz_core_cmd0(core, ".axtg $FB;aggi");
+				rz_core_cmd0(core, ".axtg $FB");
+				rz_core_agraph_print_interactive(core);
 			}
 			break;
 		case 'G':
 			rz_core_agraph_reset(core);
-			rz_core_cmd0(core, ".dtg*;aggi");
+			rz_core_cmd0(core, ".dtg*");
+			rz_core_agraph_print_interactive(core);
 			break;
 		case 'V':
 			if (fcn) {

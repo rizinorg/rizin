@@ -14,13 +14,16 @@ RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const ch
 RZ_IPI void rz_core_analysis_calling_conventions_print(RzCore *core);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
 RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
+RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id);
+RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name);
+RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name);
 
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
 RZ_IPI void rz_core_agraph_del_node(RzCore *core, const char *title);
 RZ_IPI void rz_core_agraph_add_edge(RzCore *core, const char *un, const char *vn);
 RZ_IPI void rz_core_agraph_del_edge(RzCore *core, const char *un, const char *vn);
 RZ_IPI void rz_core_agraph_reset(RzCore *core);
-RZ_IPI void rz_core_agraph_print_custom(RzCore *core);
+RZ_IPI void rz_core_agraph_print_ascii(RzCore *core);
 RZ_IPI void rz_core_agraph_print_tiny(RzCore *core);
 RZ_IPI void rz_core_agraph_print_sdb(RzCore *core);
 RZ_IPI void rz_core_agraph_print_interactive(RzCore *core);

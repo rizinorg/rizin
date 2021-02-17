@@ -654,7 +654,8 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 
 	if (fmt == 'i') {
 		rz_core_agraph_reset(core);
-		rz_core_cmd0(core, ".dtg*;aggi");
+		rz_core_cmd0(core, ".dtg*");
+		rz_core_agraph_print_interactive(core);
 		return;
 	}
 	aux_data.graph = rz_graph_new();
@@ -2899,9 +2900,8 @@ static void backtrace_vars(RzCore *core, RzList *frames) {
 			       "[%s]  %s %s\n",
 			n, f->addr, f->sp, (int)f->size,
 			fcn ? fcn->name : "??", flagdesc, flagdesc2);
-		eprintf("afvd @ 0x%" PFMT64x "\n", f->addr);
 		rz_cons_push();
-		char *res = rz_core_cmd_strf(core, "afvd@0x%" PFMT64x, f->addr);
+		char *res = rz_core_analysis_all_vars_display(core, fcn, true);
 		rz_cons_pop();
 		rz_cons_printf("%s", res);
 		free(res);
