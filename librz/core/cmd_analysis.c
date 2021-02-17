@@ -3894,7 +3894,6 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 				}
 				free(s);
 			}
-			//				rz_core_cmd0 (core, "ar A0,A1,A2,A3");
 		}
 	} break;
 	case 'C': // "arC"
@@ -5137,7 +5136,7 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 	ut64 off = core->offset;
 	for (at = from; at < to; at++) {
 		rz_core_cmdf(core, "aepc 0x%08" PFMT64x, at);
-		rz_core_cmd0(core, "aeso");
+		rz_core_analysis_esil_step_over(core);
 		rz_core_seek(core, at, true);
 		int delta = rz_num_get(core->num, "$l");
 		if (delta < 1) {
@@ -5397,21 +5396,13 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		case 'o': // "aeso"
 			if (input[2] == 'u') { // "aesou"
 				if (input[3] == 'e') {
-					until_expr = input + 3;
+					rz_core_analysis_esil_step_over_untilexpr(core, input + 3);
 				} else {
 					until_addr = rz_num_math(core->num, input + 2);
+					rz_core_analysis_esil_step_over_until(core, until_addr);
 				}
-				rz_core_esil_step(core, until_addr, until_expr, NULL, true);
-				rz_core_regs2flags(core);
 			} else if (!input[2] || input[2] == ' ') { // "aeso [addr]"
-				// step over
-				op = rz_core_analysis_op(core, rz_reg_getv(core->analysis->reg, rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC)), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-				if (op && op->type == RZ_ANALYSIS_OP_TYPE_CALL) {
-					until_addr = op->addr + op->size;
-				}
-				rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-				rz_analysis_op_free(op);
-				rz_core_regs2flags(core);
+				rz_core_analysis_esil_step_over(core);
 			} else {
 				eprintf("Usage: aesou [addr] # step over until given address\n");
 			}

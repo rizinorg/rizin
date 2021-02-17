@@ -10,6 +10,9 @@ RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, u
 RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 addr, ut32 size);
 RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_regs(RzCore *core);
+RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core);
+RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr);
+RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr);
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI void rz_core_analysis_calling_conventions_print(RzCore *core);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);

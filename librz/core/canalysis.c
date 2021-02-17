@@ -628,6 +628,27 @@ RZ_IPI void rz_core_analysis_esil_init(RzCore *core) {
 	}
 }
 
+RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core) {
+	RzAnalysisOp *op = rz_core_analysis_op(core, rz_reg_getv(core->analysis->reg, rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC)), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+	ut64 until_addr = UT64_MAX;
+	if (op && op->type == RZ_ANALYSIS_OP_TYPE_CALL) {
+		until_addr = op->addr + op->size;
+	}
+	rz_core_esil_step(core, until_addr, NULL, NULL, false);
+	rz_analysis_op_free(op);
+	rz_core_regs2flags(core);
+}
+
+RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr) {
+	rz_core_esil_step(core, addr, NULL, NULL, true);
+	rz_core_regs2flags(core);
+}
+
+RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr) {
+	rz_core_esil_step(core, UT64_MAX, expr, NULL, true);
+	rz_core_regs2flags(core);
+}
+
 static bool blacklisted_word(char *name) {
 	const char *list[] = {
 		"__stack_chk_guard",
