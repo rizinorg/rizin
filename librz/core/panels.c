@@ -131,7 +131,7 @@ static char *menus_Debug[] = {
 };
 
 static const char *menus_Analyze[] = {
-	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "References",
+	"Function", "Symbols", "Program", "Calls", "References",
 	NULL
 };
 
@@ -498,7 +498,6 @@ static int __reload_cb(void *user);
 static int __function_cb(void *user);
 static int __symbols_cb(void *user);
 static int __program_cb(void *user);
-static int __basic_blocks_cb(void *user);
 static int __calls_cb(void *user);
 static int __break_points_cb(void *user);
 static int __watch_points_cb(void *user);
@@ -3528,12 +3527,6 @@ int __program_cb(void *user) {
 	return 0;
 }
 
-int __basic_blocks_cb(void *user) {
-	RzCore *core = (RzCore *)user;
-	rz_cmd_analysis_blocks(core, "");
-	return 0;
-}
-
 int __calls_cb(void *user) {
 	RzCore *core = (RzCore *)user;
 	rz_cmd_analysis_calls(core, "", false, false);
@@ -4475,8 +4468,6 @@ bool __init_panels_menu(RzCore *core) {
 			__add_menu(core, parent, menus_Analyze[i], __symbols_cb);
 		} else if (!strcmp(menus_Analyze[i], "Program")) {
 			__add_menu(core, parent, menus_Analyze[i], __program_cb);
-		} else if (!strcmp(menus_Analyze[i], "BasicBlocks")) {
-			__add_menu(core, parent, menus_Analyze[i], __basic_blocks_cb);
 		} else if (!strcmp(menus_Analyze[i], "Calls")) {
 			__add_menu(core, parent, menus_Analyze[i], __calls_cb);
 		} else if (!strcmp(menus_Analyze[i], "References")) {

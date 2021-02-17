@@ -19,7 +19,6 @@ rz_core_sources = [
   'analysis_tp.c',
   'analysis_objc.c',
   'casm.c',
-  'blaze.c',
   'cagraph.c',
   'canalysis.c',
   'carg.c',

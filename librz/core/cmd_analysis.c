@@ -44,7 +44,6 @@ static const char *help_msg_aa[] = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 	"aa", " ", "alias for 'af @@f:sym.*;af@entry0;afva'",
 	"aaa", "[?]", "autoname functions after aa (see afna)",
-	"aab", "", "abb across bin.sections.rx",
 	"aac", " [len]", "analyze function calls (af @@=`pi len~call[1]`)",
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aad", " [len]", "analyze data references to code",
@@ -97,7 +96,6 @@ static const char *help_msg_ab[] = {
 	"ab", " [addr]", "show basic block information at given address",
 	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
-	"abb", " [length]", "analyze N bytes and extract basic blocks",
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[,qj]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
@@ -5960,43 +5958,6 @@ static void cmd_analysis_aftertraps(RzCore *core, const char *input) {
 	free(buf);
 }
 
-RZ_API void rz_cmd_analysis_blocks(RzCore *core, const char *input) {
-	ut64 from, to;
-	char *arg = strchr(input, ' ');
-	rz_cons_break_push(NULL, NULL);
-	if (!arg) {
-		RzList *list = rz_core_get_boundaries_prot(core, RZ_PERM_X, NULL, "analysis");
-		RzListIter *iter;
-		RzIOMap *map;
-		if (!list) {
-			goto ctrl_c;
-		}
-		rz_list_foreach (list, iter, map) {
-			from = map->itv.addr;
-			to = rz_itv_end(map->itv);
-			if (rz_cons_is_breaked()) {
-				goto ctrl_c;
-			}
-			if (!from && !to) {
-				eprintf("Cannot determine search boundaries\n");
-			} else if (to - from > UT32_MAX) {
-				eprintf("Skipping huge range\n");
-			} else {
-				rz_core_cmdf(core, "abb 0x%08" PFMT64x " @ 0x%08" PFMT64x, (to - from), from);
-			}
-		}
-	} else {
-		st64 sz = rz_num_math(core->num, arg + 1);
-		if (sz < 1) {
-			eprintf("Invalid range\n");
-			return;
-		}
-		rz_core_cmdf(core, "abb 0x%08" PFMT64x " @ 0x%08" PFMT64x, sz, core->offset);
-	}
-ctrl_c:
-	rz_cons_break_pop();
-}
-
 static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
 	RzAnalysisOp op;
 	int depth = rz_config_get_i(core->config, "analysis.depth");
@@ -8385,9 +8346,6 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case '?': // "aa?"
 		rz_core_cmd_help(core, help_msg_aa);
 		break;
-	case 'b': // "aab"
-		rz_cmd_analysis_blocks(core, input + 1);
-		break;
 	case 'f': // "aaf"
 		if (input[1] == 'e') { // "aafe"
 			rz_core_cmd0(core, "aef@@F");
@@ -9287,12 +9245,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 			break;
 		case 'a': // "aba"
 			rz_core_cmdf(core, "aeab%s", input + 1);
-			break;
-		case 'b': // "abb"
-			core_analysis_bbs(core, input + 2);
-			break;
-		case 'r': // "abr"
-			core_analysis_bbs_range(core, input + 2);
 			break;
 		case ',': // "ab,"
 		case 't': // "abt"
