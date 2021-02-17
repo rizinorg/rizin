@@ -28,8 +28,243 @@ static void loadGP(RzCore *core) {
 	}
 }
 
+static RzList *__save_old_sections(RzCore *core) {
+	RzList *sections = rz_bin_get_sections(core->bin);
+	RzListIter *it;
+	RzBinSection *sec;
+	RzList *old_sections = rz_list_new();
+
+	// Return an empty list
+	if (!sections) {
+		eprintf("WARNING: No sections found, functions and flags won't be rebased");
+		return old_sections;
+	}
+
+	old_sections->free = sections->free;
+	rz_list_foreach (sections, it, sec) {
+		RzBinSection *old_sec = RZ_NEW0(RzBinSection);
+		if (!old_sec) {
+			break;
+		}
+		*old_sec = *sec;
+		old_sec->name = strdup(sec->name);
+		old_sec->format = NULL;
+		rz_list_append(old_sections, old_sec);
+	}
+	return old_sections;
+}
+
+struct __rebase_struct {
+	RzCore *core;
+	RzList *old_sections;
+	ut64 old_base;
+	ut64 diff;
+	int type;
+};
+
+#define __is_inside_section(item_addr, section) \
+	(item_addr >= old_base + section->vaddr && item_addr <= old_base + section->vaddr + section->vsize)
+
+static bool __rebase_flags(RzFlagItem *flag, void *user) {
+	struct __rebase_struct *reb = user;
+	ut64 old_base = reb->old_base;
+	RzListIter *it;
+	RzBinSection *sec;
+	// Only rebase flags that were in the rebased sections, otherwise it will take too long
+	rz_list_foreach (reb->old_sections, it, sec) {
+		if (__is_inside_section(flag->offset, sec)) {
+			rz_flag_set(reb->core->flags, flag->name, flag->offset + reb->diff, flag->size);
+			break;
+		}
+	}
+	return true;
+}
+
+static bool __rebase_refs_i(void *user, const ut64 k, const void *v) {
+	struct __rebase_struct *reb = (void *)user;
+	RzAnalysisRef *ref = (RzAnalysisRef *)v;
+	ref->addr += reb->diff;
+	ref->at += reb->diff;
+	if (reb->type) {
+		rz_analysis_xrefs_set(reb->core->analysis, ref->addr, ref->at, ref->type);
+	} else {
+		rz_analysis_xrefs_set(reb->core->analysis, ref->at, ref->addr, ref->type);
+	}
+	return true;
+}
+
+static bool __rebase_refs(void *user, const ut64 k, const void *v) {
+	HtUP *ht = (HtUP *)v;
+	ht_up_foreach(ht, __rebase_refs_i, user);
+	return true;
+}
+
+static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_base) {
+	RzListIter *it, *itit, *ititit;
+	RzAnalysisFunction *fcn;
+	ut64 new_base = core->bin->cur->o->baddr_shift;
+	RzBinSection *old_section;
+	ut64 diff = new_base - old_base;
+	if (!diff) {
+		return;
+	}
+	// FUNCTIONS
+	rz_list_foreach (core->analysis->fcns, it, fcn) {
+		rz_list_foreach (old_sections, itit, old_section) {
+			if (!__is_inside_section(fcn->addr, old_section)) {
+				continue;
+			}
+			rz_analysis_function_rebase_vars(core->analysis, fcn);
+			rz_analysis_function_relocate(fcn, fcn->addr + diff);
+			RzAnalysisBlock *bb;
+			ut64 new_sec_addr = new_base + old_section->vaddr;
+			rz_list_foreach (fcn->bbs, ititit, bb) {
+				if (bb->addr >= new_sec_addr && bb->addr <= new_sec_addr + old_section->vsize) {
+					// Todo: Find better way to check if bb was already rebased
+					continue;
+				}
+				rz_analysis_block_relocate(bb, bb->addr + diff, bb->size);
+				if (bb->jump != UT64_MAX) {
+					bb->jump += diff;
+				}
+				if (bb->fail != UT64_MAX) {
+					bb->fail += diff;
+				}
+			}
+			break;
+		}
+	}
+
+	// FLAGS
+	struct __rebase_struct reb = {
+		core,
+		old_sections,
+		old_base,
+		diff
+	};
+	rz_flag_foreach(core->flags, __rebase_flags, &reb);
+
+	// META
+	rz_meta_rebase(core->analysis, diff);
+
+	// REFS
+	HtUP *old_refs = core->analysis->dict_refs;
+	HtUP *old_xrefs = core->analysis->dict_xrefs;
+	core->analysis->dict_refs = NULL;
+	core->analysis->dict_xrefs = NULL;
+	rz_analysis_xrefs_init(core->analysis);
+	reb.type = 0;
+	ht_up_foreach(old_refs, __rebase_refs, &reb);
+	reb.type = 1;
+	ht_up_foreach(old_xrefs, __rebase_refs, &reb);
+	ht_up_free(old_refs);
+	ht_up_free(old_xrefs);
+
+	// BREAKPOINTS
+	rz_debug_bp_rebase(core->dbg, old_base, new_base);
+}
+
+RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr) {
+	RzCoreFile *ofile = core->file;
+	RzIODesc *desc;
+	RzCoreFile *file;
+	int fd;
+
+	if (!ofile || !(desc = rz_io_desc_get(core->io, ofile->fd)) || !desc->uri) {
+		eprintf("No file open?\n");
+		return;
+	}
+
+	RzList *old_sections = __save_old_sections(core);
+	ut64 old_base = core->bin->cur->o->baddr_shift;
+	int bits = core->rasm->bits;
+	rz_config_set_i(core->config, "asm.bits", bits);
+	rz_config_set_b(core->config, "cfg.debug", true);
+	// Set referer as the original uri so we could return to it with `oo`
+	desc->referer = desc->uri;
+	desc->uri = strdup(uri);
+
+	if ((file = rz_core_file_open(core, uri, RZ_PERM_R | RZ_PERM_W, addr))) {
+		fd = file->fd;
+		core->num->value = fd;
+		// if no baddr is defined, use the one provided by the file
+		if (addr == 0) {
+			desc = rz_io_desc_get(core->io, file->fd);
+			if (desc->plugin->isdbg) {
+				addr = rz_debug_get_baddr(core->dbg, desc->name);
+			} else {
+				addr = rz_bin_get_baddr(file->binb.bin);
+			}
+		}
+		rz_core_bin_load(core, uri, addr);
+	} else {
+		eprintf("cannot open file %s\n", uri);
+		rz_list_free(old_sections);
+		return;
+	}
+	rz_core_block_read(core);
+	if (rz_config_get_i(core->config, "dbg.rebase")) {
+		__rebase_everything(core, old_sections, old_base);
+	}
+	rz_list_free(old_sections);
+	rz_core_seek_to_register(core, "PC", false);
+}
+
+RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
+	RzCoreFile *ofile = core->file;
+	RzIODesc *desc;
+
+	if (!ofile || !(desc = rz_io_desc_get(core->io, ofile->fd)) || !desc->uri) {
+		eprintf("No file open?\n");
+		return;
+	}
+
+	// Reopen the original file as read only since we can't open native debug while the
+	// file is open with write permissions
+	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & RZ_PERM_W)) {
+		eprintf("Cannot debug file (%s) with permissions set to 0x%x.\n"
+			"Reopening the original file in read-only mode.\n",
+			desc->name, desc->perm);
+		rz_io_reopen(core->io, ofile->fd, RZ_PERM_R, 644);
+		desc = rz_io_desc_get(core->io, ofile->fd);
+	}
+
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, ofile->fd);
+	char *binpath = (bf && bf->file) ? strdup(bf->file) : NULL;
+	if (!binpath) {
+		if (rz_file_exists(desc->name)) {
+			binpath = strdup(desc->name);
+		}
+	}
+	if (!binpath) {
+		/* fallback to oo */
+		rz_core_io_file_open(core, core->io->desc->fd);
+		return;
+	}
+
+	RzList *old_sections = __save_old_sections(core);
+	ut64 old_base = core->bin->cur->o->baddr_shift;
+	int bits = core->rasm->bits;
+	char *bin_abspath = rz_file_abspath(binpath);
+	char *escaped_path = rz_str_arg_escape(bin_abspath);
+	char *newfile = rz_str_newf("dbg://%s %s", escaped_path, args);
+	desc->uri = newfile;
+	desc->referer = NULL;
+	rz_config_set_i(core->config, "asm.bits", bits);
+	rz_config_set_b(core->config, "cfg.debug", true);
+	rz_core_file_reopen(core, newfile, 0, 2);
+	if (rz_config_get_i(core->config, "dbg.rebase")) {
+		__rebase_everything(core, old_sections, old_base);
+	}
+	rz_list_free(old_sections);
+	rz_core_seek_to_register(core, "PC", false);
+	free(bin_abspath);
+	free(escaped_path);
+	free(binpath);
+}
+
 RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loadbin) {
-	int isdebug = rz_config_get_i(core->config, "cfg.debug");
+	int isdebug = rz_config_get_b(core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = rz_config_get_i(core->config, "bin.laddr");
 	RzCoreFile *file = NULL;
@@ -190,7 +425,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	// update analysis io bind
 	rz_io_bind(core->io, &(core->analysis->iob));
 	if (core->file && core->file->fd >= 0) {
-		rz_core_cmd0(core, "o-!");
+		rz_core_file_close_all_but(core);
 	}
 	rz_core_file_close_all_but(core);
 	// This is done to ensure that the file is correctly
@@ -314,7 +549,7 @@ CURSOR cursor position(offset from curseek)
 	rz_sys_setenv("RZ_ARCH", rz_config_get(core->config, "asm.arch"));
 	rz_sys_setenv("RZ_BITS", sdb_fmt("%" PFMT64u, rz_config_get_i(core->config, "asm.bits")));
 	rz_sys_setenv("RZ_COLOR", rz_config_get_i(core->config, "scr.color") ? "1" : "0");
-	rz_sys_setenv("RZ_DEBUG", rz_config_get_i(core->config, "cfg.debug") ? "1" : "0");
+	rz_sys_setenv("RZ_DEBUG", rz_config_get_b(core->config, "cfg.debug") ? "1" : "0");
 	rz_sys_setenv("RZ_IOVA", rz_config_get_i(core->config, "io.va") ? "1" : "0");
 	free(config_sdb_path);
 	return ret;
@@ -687,7 +922,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 	if (is_io_load) {
 		// TODO? necessary to restore the desc back?
 		// Fix to select pid before trying to load the binary
-		if ((desc->plugin && desc->plugin->isdbg) || rz_config_get_i(r->config, "cfg.debug")) {
+		if ((desc->plugin && desc->plugin->isdbg) || rz_config_get_b(r->config, "cfg.debug")) {
 			rz_core_file_do_load_for_debug(r, baddr, filenameuri);
 		} else {
 			rz_core_file_do_load_for_io_plugin(r, baddr, 0LL);
@@ -769,7 +1004,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 		rz_core_cmd0(r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ;"
 				" wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
-	if (!rz_config_get_i(r->config, "cfg.debug")) {
+	if (!rz_config_get_b(r->config, "cfg.debug")) {
 		loadGP(r);
 	}
 	if (rz_config_get_i(r->config, "bin.libs")) {
@@ -806,7 +1041,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 				eprintf("0x%08" PFMT64x "\n", linkdata.addr);
 				ut64 a = linkdata.addr;
 				ut64 b = imp_addr;
-				rz_core_cmdf(r, "ax 0x%08" PFMT64x " 0x%08" PFMT64x, a, b);
+				rz_analysis_xrefs_set(r->analysis, b, a, RZ_ANALYSIS_REF_TYPE_NULL);
 			} else {
 				eprintf("NO\n");
 			}
@@ -981,7 +1216,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	rz_io_use_fd(r->io, fd->fd);
 
 	rz_list_append(r->files, fh);
-	if (rz_config_get_i(r->config, "cfg.debug")) {
+	if (rz_config_get_b(r->config, "cfg.debug")) {
 		bool swstep = true;
 		if (r->dbg->h && r->dbg->h->canstep) {
 			swstep = false;
@@ -1245,8 +1480,9 @@ static bool close_but_cb(void *user, void *data, ut32 id) {
 	RzIODesc *desc = (RzIODesc *)data;
 	if (core && desc && core->file) {
 		if (desc->fd != core->file->fd) {
-			// TODO: use the API
-			rz_core_cmdf(core, "o-%d", desc->fd);
+			if (!rz_core_file_close_fd(core, desc->fd)) {
+				return false;
+			}
 		}
 	}
 	return true;
@@ -1345,4 +1581,46 @@ RZ_API ut32 rz_core_file_cur_fd(RzCore *core) {
 RZ_API RzCoreFile *rz_core_file_cur(RzCore *r) {
 	// Add any locks here
 	return r->file;
+}
+
+/* --------------------------------------------------------------------------------- */
+
+RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
+		RzBinFile *bf = rz_bin_cur(core->bin);
+		if (bf && rz_file_exists(bf->file)) {
+			// Escape spaces so that o's argv parse will detect the path properly
+			char *file = rz_str_path_escape(bf->file);
+			// Backup the baddr and sections that were already rebased to
+			// revert the rebase after the debug session is closed
+			ut64 orig_baddr = core->bin->cur->o->baddr_shift;
+			RzList *orig_sections = __save_old_sections(core);
+
+			rz_core_cmd0(core, "ob-*");
+			rz_io_close_all(core->io);
+			rz_config_set_b(core->config, "cfg.debug", false);
+			rz_core_cmdf(core, "o %s", file);
+
+			rz_core_block_read(core);
+			__rebase_everything(core, orig_sections, orig_baddr);
+			rz_list_free(orig_sections);
+			free(file);
+		} else {
+			eprintf("Nothing to do.\n");
+		}
+	} else {
+		rz_io_reopen(core->io, fd, RZ_PERM_R, 644);
+	}
+}
+
+RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
+	if (rz_io_reopen(core->io, fd, perms, 644)) {
+		void **it;
+		rz_pvector_foreach_prev(&core->io->maps, it) {
+			RzIOMap *map = *it;
+			if (map->fd == fd) {
+				map->perm |= RZ_PERM_WX;
+			}
+		}
+	}
 }
