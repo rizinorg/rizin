@@ -628,6 +628,27 @@ RZ_IPI void rz_core_analysis_esil_init(RzCore *core) {
 	}
 }
 
+RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core) {
+	RzAnalysisOp *op = rz_core_analysis_op(core, rz_reg_getv(core->analysis->reg, rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC)), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+	ut64 until_addr = UT64_MAX;
+	if (op && op->type == RZ_ANALYSIS_OP_TYPE_CALL) {
+		until_addr = op->addr + op->size;
+	}
+	rz_core_esil_step(core, until_addr, NULL, NULL, false);
+	rz_analysis_op_free(op);
+	rz_core_regs2flags(core);
+}
+
+RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr) {
+	rz_core_esil_step(core, addr, NULL, NULL, true);
+	rz_core_regs2flags(core);
+}
+
+RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr) {
+	rz_core_esil_step(core, UT64_MAX, expr, NULL, true);
+	rz_core_regs2flags(core);
+}
+
 static bool blacklisted_word(char *name) {
 	const char *list[] = {
 		"__stack_chk_guard",
@@ -6761,4 +6782,53 @@ RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction 
 	}
 	rz_list_free(list);
 	return rz_strbuf_drain(sb);
+}
+
+RZ_IPI char *rz_core_analysis_function_get_signature(RzCore *core, ut64 addr) {
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
+	if (!f) {
+		return NULL;
+	}
+	return rz_analysis_function_get_signature(f);
+}
+
+RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, ut64 addr, const char *newsig) {
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
+	if (!f) {
+		return false;
+	}
+
+	bool res = false;
+	char *fcnstr = rz_str_newf("%s;", newsig);
+	char *fcnstr_copy = strdup(fcnstr);
+	char *fcnname_aux = strtok(fcnstr_copy, "(");
+	rz_str_trim_tail(fcnname_aux);
+	char *fcnname = NULL;
+	const char *ls = rz_str_lchr(fcnname_aux, ' ');
+	fcnname = strdup(ls ? ls : fcnname_aux);
+	if (!fcnname) {
+		goto err;
+	}
+	// TODO: move this into rz_analysis_str_to_fcn()
+	if (strcmp(f->name, fcnname)) {
+		(void)rz_core_analysis_function_rename(core, addr, fcnname);
+		f = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+	}
+	rz_analysis_str_to_fcn(core->analysis, f, fcnstr);
+	res = true;
+err:
+	free(fcnname);
+	free(fcnstr_copy);
+	free(fcnstr);
+	return res;
+}
+
+RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr) {
+	char *sig = rz_core_analysis_function_get_signature(core, addr);
+	char *data = rz_core_editor(core, NULL, sig);
+	if (sig && data) {
+		rz_core_analysis_function_set_signature(core, core->offset, data);
+	}
+	free(sig);
+	free(data);
 }

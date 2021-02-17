@@ -1116,6 +1116,14 @@ RZ_API int rz_line_hist_sdb_down(RzLine *line) {
 	return true;
 }
 
+RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k) {
+	char *out = sdb_querys(core->sdb, NULL, 0, k);
+	if (out) {
+		rz_cons_print(out);
+	}
+	free(out);
+}
+
 RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 	char buf[1024], *out;
 	RzCore *core = (RzCore *)data;
@@ -1183,11 +1191,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		break;
 
 	case ' ':
-		out = sdb_querys(s, NULL, 0, input + 1);
-		if (out) {
-			rz_cons_print(out);
-		}
-		free(out);
+		rz_core_kuery_print(core, input + 1);
 		break;
 	//case 's': rz_pair_save (s, input + 3); break;
 	//case 'l': rz_pair_load (sdb, input + 3); break;

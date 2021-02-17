@@ -7,6 +7,8 @@
 #include <rz_cons.h>
 #include <rz_util.h>
 
+#include "core_private.h"
+
 #define ZB_DEFAULT_N 5
 
 static const char *help_msg_z[] = {
@@ -1249,7 +1251,7 @@ RZ_IPI int rz_cmd_zign(void *data, const char *input) {
 		rz_sign_list(core->analysis, *input);
 		break;
 	case 'k': // "zk"
-		rz_core_cmd0(core, "k analysis/zigns/*");
+		rz_core_kuery_print(core, "analysis/zigns/*");
 		break;
 	case '-': // "z-"
 		rz_sign_delete(core->analysis, arg);

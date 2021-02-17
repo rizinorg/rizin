@@ -4225,7 +4225,6 @@ static char *get_corefile_name(const char *raw_name, int pid) {
 
 static int cmd_debug_step(RzCore *core, const char *input) {
 	ut64 addr = core->offset;
-	;
 	ut8 buf[64];
 	RzAnalysisOp aop;
 	int i, times = 1;
@@ -4356,7 +4355,9 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 					(void)rz_debug_bp_add(core->dbg, addr, hwbp, false, 0, NULL, 0);
 				}
 			} else {
-				rz_core_cmdf(core, "aeso%s", input + 2);
+				for (i = 0; i < times; i++) {
+					rz_core_analysis_esil_step_over(core);
+				}
 			}
 		}
 		break;

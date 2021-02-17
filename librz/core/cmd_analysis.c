@@ -3287,16 +3287,9 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		break;
 	case 's': // "afs"
 		switch (input[2]) {
-		case '!': { // "afs!"
-			char *sig = rz_core_cmd_str(core, "afs");
-			char *data = rz_core_editor(core, NULL, sig);
-			if (sig && data) {
-				rz_core_cmdf(core, "\"afs %s\"", data);
-			}
-			free(sig);
-			free(data);
+		case '!': // "afs!"
+			rz_core_analysis_function_signature_editor(core, core->offset);
 			break;
-		}
 		case 'r': { // "afsr"
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 			if (fcn) {
@@ -3315,40 +3308,20 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		case 'j': // "afsj"
 			cmd_afsj(core, input + 2);
 			break;
-		case 0:
-		case ' ': { // "afs"
-			ut64 addr = core->offset;
-			RzAnalysisFunction *f;
-			const char *arg = rz_str_trim_head_ro(input + 2);
-			if ((f = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL))) {
-				if (arg && *arg) {
-					// parse function signature here
-					char *fcnstr = rz_str_newf("%s;", arg), *fcnstr_copy = strdup(fcnstr);
-					char *fcnname_aux = strtok(fcnstr_copy, "(");
-					rz_str_trim_tail(fcnname_aux);
-					char *fcnname = NULL;
-					const char *ls = rz_str_lchr(fcnname_aux, ' ');
-					fcnname = strdup(ls ? ls : fcnname_aux);
-					if (fcnname) {
-						// TODO: move this into rz_analysis_str_to_fcn()
-						if (strcmp(f->name, fcnname)) {
-							(void)rz_core_analysis_function_rename(core, addr, fcnname);
-							f = rz_analysis_get_fcn_in(core->analysis, addr, -1);
-						}
-						rz_analysis_str_to_fcn(core->analysis, f, fcnstr);
-					}
-					free(fcnname);
-					free(fcnstr_copy);
-					free(fcnstr);
-				} else {
-					char *str = rz_analysis_function_get_signature(f);
-					if (str) {
-						rz_cons_println(str);
-						free(str);
-					}
-				}
+		case 0: { // "afs"
+			char *str = rz_core_analysis_function_get_signature(core, core->offset);
+			if (str) {
+				rz_cons_println(str);
+				free(str);
 			} else {
-				eprintf("No function defined at 0x%08" PFMT64x "\n", addr);
+				eprintf("No signature at 0x%08" PFMT64x "\n", core->offset);
+			}
+			break;
+		}
+		case ' ': { // "afs "
+			const char *arg = rz_str_trim_head_ro(input + 2);
+			if (!rz_core_analysis_function_set_signature(core, core->offset, arg)) {
+				eprintf("Cannot set signature at 0x%08" PFMT64x "\n", core->offset);
 			}
 			break;
 		}
@@ -3431,7 +3404,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			break;
 		}
 		case 'k': // "afck"
-			rz_core_cmd0(core, "k analysis/cc/*");
+			rz_core_kuery_print(core, "k analysis/cc/*");
 			break;
 		case 'l': // "afcl" list all function Calling conventions.
 			rz_core_analysis_calling_conventions_print(core);
@@ -3517,10 +3490,12 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		case 'R': { // "afcR"
 			/* very slow, but im tired of waiting for having this, so this is the quickest implementation */
 			int i;
-			char *cc = rz_core_cmd_str(core, "k analysis/cc/default.cc");
+			char *cc = sdb_querys(core->sdb, NULL, 0, "analysis/cc/default.cc");
 			rz_str_trim(cc);
 			for (i = 0; i < 6; i++) {
-				char *res = rz_core_cmd_strf(core, "k analysis/cc/cc.%s.arg%d", cc, i);
+				char *k = rz_str_newf("analysis/cc/cc.%s.arg%d", cc, i);
+				char *res = sdb_querys(core->sdb, NULL, 0, k);
+				free(k);
 				rz_str_trim_nc(res);
 				if (*res) {
 					char *row = rz_core_cmd_strf(core, "drr~%s 0x", res);
@@ -3921,7 +3896,6 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 				}
 				free(s);
 			}
-			//				rz_core_cmd0 (core, "ar A0,A1,A2,A3");
 		}
 	} break;
 	case 'C': // "arC"
@@ -5164,7 +5138,7 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 	ut64 off = core->offset;
 	for (at = from; at < to; at++) {
 		rz_core_cmdf(core, "aepc 0x%08" PFMT64x, at);
-		rz_core_cmd0(core, "aeso");
+		rz_core_analysis_esil_step_over(core);
 		rz_core_seek(core, at, true);
 		int delta = rz_num_get(core->num, "$l");
 		if (delta < 1) {
@@ -5411,34 +5385,25 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		case 's': // "aess"
 			if (input[2] == 'u') { // "aessu"
 				if (input[3] == 'e') {
-					until_expr = input + 3;
+					rz_core_analysis_esil_step_over_untilexpr(core, input + 3);
 				} else {
 					until_addr = rz_num_math(core->num, input + 2);
+					rz_core_analysis_esil_step_over_until(core, until_addr);
 				}
-				rz_core_esil_step(core, until_addr, until_expr, NULL, true);
 			} else {
-				rz_core_esil_step(core, UT64_MAX, NULL, NULL, true);
+				rz_core_analysis_esil_step_over_until(core, UT64_MAX);
 			}
-			rz_core_regs2flags(core);
 			break;
 		case 'o': // "aeso"
 			if (input[2] == 'u') { // "aesou"
 				if (input[3] == 'e') {
-					until_expr = input + 3;
+					rz_core_analysis_esil_step_over_untilexpr(core, input + 3);
 				} else {
 					until_addr = rz_num_math(core->num, input + 2);
+					rz_core_analysis_esil_step_over_until(core, until_addr);
 				}
-				rz_core_esil_step(core, until_addr, until_expr, NULL, true);
-				rz_core_regs2flags(core);
 			} else if (!input[2] || input[2] == ' ') { // "aeso [addr]"
-				// step over
-				op = rz_core_analysis_op(core, rz_reg_getv(core->analysis->reg, rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC)), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-				if (op && op->type == RZ_ANALYSIS_OP_TYPE_CALL) {
-					until_addr = op->addr + op->size;
-				}
-				rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-				rz_analysis_op_free(op);
-				rz_core_regs2flags(core);
+				rz_core_analysis_esil_step_over(core);
 			} else {
 				eprintf("Usage: aesou [addr] # step over until given address\n");
 			}
@@ -8566,7 +8531,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_list_foreach (list, iter, map) {
 				rz_core_seek(core, map->itv.addr, true);
 				rz_config_set_i(core->config, "analysis.hasnext", 1);
-				rz_core_cmd0(core, "afr");
+				rz_core_analysis_function_add(core, NULL, core->offset, true);
 				rz_config_set_i(core->config, "analysis.hasnext", hasnext);
 			}
 			rz_list_free(list);
@@ -9561,9 +9526,9 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		}
 		break;
 	case '*': // "a*"
-		rz_core_cmd0(core, "afl*");
-		rz_core_cmd0(core, "ah*");
-		rz_core_cmd0(core, "ax*");
+		rz_core_analysis_fcn_list(core, NULL, "*");
+		rz_core_analysis_hint_list(core->analysis, '*');
+		rz_analysis_xrefs_list(core->analysis, '*');
 		break;
 	case 'a': // "aa"
 		if (!cmd_analysis_all(core, input + 1)) {
@@ -9627,10 +9592,10 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		}
 		break;
 	case 'j': // "aj"
-		rz_core_cmd0(core, "aflj");
+		rz_core_analysis_fcn_list(core, NULL, "j");
 		break;
 	case 0: // "a"
-		rz_core_cmd0(core, "aai");
+		rz_core_analysis_info(core, "");
 		break;
 	default:
 		rz_core_cmd_help(core, help_msg_a);
