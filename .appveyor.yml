@@ -50,6 +50,7 @@ only_commits:
     - '**/meson.build'
     - 'shlr/rizin-shell-parser/'
     - 'subprojects/'
+    - 'test/'
     - '.appveyor.yml'
 
 # Init
