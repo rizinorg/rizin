@@ -5385,15 +5385,14 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		case 's': // "aess"
 			if (input[2] == 'u') { // "aessu"
 				if (input[3] == 'e') {
-					until_expr = input + 3;
+					rz_core_analysis_esil_step_over_untilexpr(core, input + 3);
 				} else {
 					until_addr = rz_num_math(core->num, input + 2);
+					rz_core_analysis_esil_step_over_until(core, until_addr);
 				}
-				rz_core_esil_step(core, until_addr, until_expr, NULL, true);
 			} else {
-				rz_core_esil_step(core, UT64_MAX, NULL, NULL, true);
+				rz_core_analysis_esil_step_over_until(core, UT64_MAX);
 			}
-			rz_core_regs2flags(core);
 			break;
 		case 'o': // "aeso"
 			if (input[2] == 'u') { // "aesou"
