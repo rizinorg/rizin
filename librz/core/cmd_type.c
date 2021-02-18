@@ -193,12 +193,10 @@ static void __core_cmd_tcc(RzCore *core, const char *input) {
 		}
 		break;
 	case 0:
-		rz_core_cmd0(core, "afcl");
+		rz_core_analysis_calling_conventions_print(core);
 		break;
 	case 'j': {
-		char *ccs = rz_core_cmd_strf(core, "afcl");
-		rz_str_trim(ccs);
-		RzList *list = rz_str_split_list(ccs, "\n", 0);
+		RzList *list = rz_core_analysis_calling_conventions(core);
 		RzListIter *iter;
 		const char *cc;
 		PJ *pj = pj_new();
@@ -213,12 +211,9 @@ static void __core_cmd_tcc(RzCore *core, const char *input) {
 		rz_cons_printf("%s\n", pj_string(pj));
 		pj_free(pj);
 		rz_list_free(list);
-		free(ccs);
 	} break;
 	case 'l': {
-		char *ccs = rz_core_cmd_strf(core, "afcl");
-		rz_str_trim(ccs);
-		RzList *list = rz_str_split_list(ccs, "\n", 0);
+		RzList *list = rz_core_analysis_calling_conventions(core);
 		RzListIter *iter;
 		const char *cc;
 		rz_list_foreach (list, iter, cc) {
@@ -227,12 +222,9 @@ static void __core_cmd_tcc(RzCore *core, const char *input) {
 			free(ccexpr);
 		}
 		rz_list_free(list);
-		free(ccs);
 	} break;
 	case '*': {
-		char *ccs = rz_core_cmd_strf(core, "afcl");
-		rz_str_trim(ccs);
-		RzList *list = rz_str_split_list(ccs, "\n", 0);
+		RzList *list = rz_core_analysis_calling_conventions(core);
 		RzListIter *iter;
 		const char *cc;
 		rz_list_foreach (list, iter, cc) {
@@ -241,7 +233,6 @@ static void __core_cmd_tcc(RzCore *core, const char *input) {
 			free(ccexpr);
 		}
 		rz_list_free(list);
-		free(ccs);
 	} break;
 	case 'k':
 		rz_core_cmd0(core, "afck");
