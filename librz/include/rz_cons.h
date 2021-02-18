@@ -977,10 +977,9 @@ RZ_API int rz_cons_grep_line(char *buf, int len); // must be static
 RZ_API void rz_cons_grepbuf(void);
 
 RZ_API void rz_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
-RZ_API void rz_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
 RZ_API void rz_cons_rgb_init(void);
-RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, RzColor *rcolor);
-RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, RzColor *rcolor);
+RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, const RzColor *rcolor);
+RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, const RzColor *rcolor);
 RZ_API char *rz_cons_rgb_str_off(char *outstr, size_t sz, ut64 off);
 RZ_API void rz_cons_color(int fg, int r, int g, int b);
 
