@@ -516,6 +516,13 @@
               args:
                 - name: type
                   type: RZ_CMD_ARG_TYPE_STRING
+        - name: afx
+          cname: analysis_function_xrefs
+          summary: List function references
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+            - RZ_OUTPUT_MODE_JSON
+          args: []
 - name: b
   cname: cmd_bsize
   summary: Display or change the block size
