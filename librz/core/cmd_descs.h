@@ -51,6 +51,15 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char
 RZ_IPI int rz_cmd_help(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_ox(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_add_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_edge_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_function_returns_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_asciiart_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_color_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_analysis(void *data, const char *input);
 RZ_IPI int rz_cmd_bsize(void *data, const char *input);
 RZ_IPI int rz_cmd_cmp(void *data, const char *input);
