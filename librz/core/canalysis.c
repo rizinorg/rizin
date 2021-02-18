@@ -19,8 +19,7 @@ enum {
 	RZ_ARCH_THUMB,
 	RZ_ARCH_ARM32,
 	RZ_ARCH_ARM64,
-	RZ_ARCH_MIPS,
-	RZ_ARCH_JAVA
+	RZ_ARCH_MIPS
 };
 // 128M
 #define MAX_SCAN_SIZE 0x7ffffff
@@ -5478,10 +5477,6 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		arch = RZ_ARCH_MIPS;
 	}
 
-	if (!strcmp(core->analysis->cur->arch, "java")) {
-		arch = RZ_ARCH_JAVA;
-	}
-
 	const char *sn = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SN);
 	if (!sn) {
 		eprintf("Warning: No SN reg alias for current architecture.\n");
@@ -5747,7 +5742,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		}
 		rz_analysis_esil_stack_free(ESIL);
 	repeat:
-		if (arch != RZ_ARCH_JAVA && !rz_analysis_get_block_at(core->analysis, cur)) {
+		if (!rz_analysis_get_block_at(core->analysis, cur)) {
 			for (size_t bb_i = i_old + 1; bb_i <= i; bb_i++) {
 				if (rz_analysis_get_block_at(core->analysis, start + bb_i)) {
 					i = bb_i - 1;
