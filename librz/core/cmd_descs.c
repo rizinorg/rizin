@@ -48,6 +48,15 @@ static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg cmd_help_search_args[2];
 static const RzCmdDescArg push_escaped_args[2];
+static const RzCmdDescArg analysis_function_blocks_list_args[2];
+static const RzCmdDescArg analysis_function_blocks_add_args[7];
+static const RzCmdDescArg analysis_function_blocks_del_args[2];
+static const RzCmdDescArg analysis_function_blocks_del_all_args[2];
+static const RzCmdDescArg analysis_function_blocks_edge_args[3];
+static const RzCmdDescArg analysis_function_returns_args[2];
+static const RzCmdDescArg analysis_function_blocks_asciiart_args[2];
+static const RzCmdDescArg analysis_function_blocks_info_args[2];
+static const RzCmdDescArg analysis_function_blocks_color_args[3];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -645,6 +654,178 @@ static const RzCmdDescHelp cmd_ox_help = {
 
 static const RzCmdDescHelp cmd_analysis_help = {
 	.summary = "Analysis commands",
+};
+static const RzCmdDescHelp afb_help = {
+	.summary = "Basic blocks commands",
+};
+static const RzCmdDescArg analysis_function_blocks_list_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_blocks_list_help = {
+	.summary = "List basic blocks of function",
+	.args = analysis_function_blocks_list_args,
+};
+
+static const char *analysis_function_blocks_add_diff_choices[] = { "m", "u", NULL };
+static const RzCmdDescArg analysis_function_blocks_add_args[] = {
+	{
+		.name = "fcn_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "jump",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "fail",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "diff",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices = analysis_function_blocks_add_diff_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_blocks_add_help = {
+	.summary = "Add basic block by hand",
+	.args = analysis_function_blocks_add_args,
+};
+
+static const RzCmdDescArg analysis_function_blocks_del_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_blocks_del_help = {
+	.summary = "Remove basic block from function",
+	.args = analysis_function_blocks_del_args,
+};
+
+static const RzCmdDescArg analysis_function_blocks_del_all_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_blocks_del_all_help = {
+	.summary = "Remove all basic blocks from function",
+	.args = analysis_function_blocks_del_all_args,
+};
+
+static const RzCmdDescArg analysis_function_blocks_edge_args[] = {
+	{
+		.name = "switch_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "case_addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_blocks_edge_help = {
+	.summary = "Add basic-block edge for switch-cases",
+	.args = analysis_function_blocks_edge_args,
+};
+
+static const RzCmdDescArg analysis_function_returns_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_returns_help = {
+	.summary = "Show addresses of instructions which leave the function",
+	.args = analysis_function_returns_args,
+};
+
+static const RzCmdDescArg analysis_function_blocks_asciiart_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_blocks_asciiart_help = {
+	.summary = "Display ascii-art bars for basic block regions",
+	.args = analysis_function_blocks_asciiart_args,
+};
+
+static const RzCmdDescArg analysis_function_blocks_info_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_blocks_info_help = {
+	.summary = "Print single basic block information",
+	.args = analysis_function_blocks_info_args,
+};
+
+static const RzCmdDescArg analysis_function_blocks_color_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "color",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_blocks_color_help = {
+	.summary = "Set a color for the basic block at a given address",
+	.args = analysis_function_blocks_color_args,
 };
 
 static const RzCmdDescHelp cmd_bsize_help = {
@@ -2464,6 +2645,31 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "a", rz_cmd_analysis, &cmd_analysis_help);
 	rz_warn_if_fail(cmd_analysis_cd);
+	RzCmdDesc *afb_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_cd, "afb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_list_handler, &analysis_function_blocks_list_help, &afb_help);
+	rz_warn_if_fail(afb_cd);
+	RzCmdDesc *analysis_function_blocks_add_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb+", rz_analysis_function_blocks_add_handler, &analysis_function_blocks_add_help);
+	rz_warn_if_fail(analysis_function_blocks_add_cd);
+
+	RzCmdDesc *analysis_function_blocks_del_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb-", rz_analysis_function_blocks_del_handler, &analysis_function_blocks_del_help);
+	rz_warn_if_fail(analysis_function_blocks_del_cd);
+
+	RzCmdDesc *analysis_function_blocks_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb-*", rz_analysis_function_blocks_del_all_handler, &analysis_function_blocks_del_all_help);
+	rz_warn_if_fail(analysis_function_blocks_del_all_cd);
+
+	RzCmdDesc *analysis_function_blocks_edge_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbe", rz_analysis_function_blocks_edge_handler, &analysis_function_blocks_edge_help);
+	rz_warn_if_fail(analysis_function_blocks_edge_cd);
+
+	RzCmdDesc *analysis_function_returns_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbr", rz_analysis_function_returns_handler, &analysis_function_returns_help);
+	rz_warn_if_fail(analysis_function_returns_cd);
+
+	RzCmdDesc *analysis_function_blocks_asciiart_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb=", rz_analysis_function_blocks_asciiart_handler, &analysis_function_blocks_asciiart_help);
+	rz_warn_if_fail(analysis_function_blocks_asciiart_cd);
+
+	RzCmdDesc *analysis_function_blocks_info_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afb_cd, "afbi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_info_handler, &analysis_function_blocks_info_help);
+	rz_warn_if_fail(analysis_function_blocks_info_cd);
+
+	RzCmdDesc *analysis_function_blocks_color_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbc", rz_analysis_function_blocks_color_handler, &analysis_function_blocks_color_help);
+	rz_warn_if_fail(analysis_function_blocks_color_cd);
 
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail(cmd_bsize_cd);

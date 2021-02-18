@@ -4,7 +4,7 @@ CMDS=<<EOF
 aaa
 afi~?
 afi.
-afb.
+afbi
 EOF
 EXPECT=<<EOF
 33
@@ -62,8 +62,8 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 aaa
 s main
-afb.
 afbi
+afbil
 afbij~{}
 afbj~{}
 afb*

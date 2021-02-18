@@ -9251,3 +9251,127 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	}
 	return 0;
 }
+
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
+	RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
+	if (rz_list_empty(l)) {
+		eprintf("No functions at 0x%" PFMT64x, addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisFunction *fcn = rz_list_first(l);
+	rz_core_analysis_bbs_info_print(core, fcn, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
+	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
+	if (!b) {
+		eprintf("Cannot find basic block\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisFunction *fcn = rz_list_first(b->fcns);
+	rz_analysis_function_remove_block(fcn, b);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_del_all_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+	if (!fcn) {
+		eprintf("Cannot find function\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	while (!rz_list_empty(fcn->bbs)) {
+		rz_analysis_function_remove_block(fcn, rz_list_first(fcn->bbs));
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_edge_handler(RzCore *core, int argc, const char **argv) {
+	ut64 switch_addr = rz_num_math(core->num, argv[1]);
+	ut64 case_addr = rz_num_math(core->num, argv[2]);
+	RzList *blocks = rz_analysis_get_blocks_in(core->analysis, switch_addr);
+	if (!rz_list_empty(blocks)) {
+		rz_list_free(blocks);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_block_add_switch_case(rz_list_first(blocks), switch_addr, 0, case_addr);
+	rz_list_free(blocks);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_returns_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
+	RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
+	if (rz_list_empty(l)) {
+		eprintf("No functions at 0x%" PFMT64x, addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisFunction *fcn = rz_list_first(l);
+	rz_core_analysis_fcn_returns(core, fcn);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_asciiart_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
+	RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
+	if (rz_list_empty(l)) {
+		eprintf("No functions at 0x%" PFMT64x, addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisFunction *fcn = rz_list_first(l);
+	rz_core_analysis_bbs_asciiart(core, fcn);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
+	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
+	if (!bb) {
+		eprintf("No basic block at 0x%" PFMT64x, core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_analysis_bb_info_print(core, bb, addr, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_add_handler(RzCore *core, int argc, const char **argv) {
+	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
+	ut64 fcn_addr = rz_num_math(core->num, argv[1]);
+	ut64 addr = rz_num_math(core->num, argv[2]);
+	ut64 size = rz_num_math(core->num, argv[3]);
+	ut64 jump = argc > 4 ? rz_num_math(core->num, argv[4]) : UT64_MAX;
+	ut64 fail = argc > 5 ? rz_num_math(core->num, argv[5]) : UT64_MAX;
+	RzAnalysisDiff *diff = NULL;
+	if (argc > 6) {
+		diff = rz_analysis_diff_new();
+		diff->type = argv[6][0] == 'm' ? RZ_ANALYSIS_DIFF_TYPE_MATCH : RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
+	}
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fcn_addr);
+	if (!fcn) {
+		eprintf("Cannot find function at 0x%" PFMT64x "\n", fcn_addr);
+		goto err;
+	}
+	if (!rz_analysis_fcn_add_bb(core->analysis, fcn, addr, size, jump, fail, diff)) {
+		eprintf("Cannot add basic block at 0x%" PFMT64x " to fcn at 0x%" PFMT64x "\n", addr, fcn_addr);
+		goto err;
+	}
+	res = RZ_CMD_STATUS_OK;
+err:
+	rz_analysis_diff_free(diff);
+	return res;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_color_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	ut32 color = (ut32)rz_num_math(core->num, argv[2]);
+	RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
+	if (!block) {
+		eprintf("No basic block at 0x%08" PFMT64x "\n", addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	block->colorize = color;
+	return RZ_CMD_STATUS_OK;
+}
