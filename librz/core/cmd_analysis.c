@@ -94,7 +94,6 @@ static const char *help_msg_aar[] = {
 static const char *help_msg_ab[] = {
 	"Usage:", "ab", "analyze block",
 	"ab", " [addr]", "show basic block information at given address",
-	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[,qj]", "list all basic blocks",
@@ -9059,9 +9058,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	} break;
 	case 'b': // "ab"
 		switch (input[1]) {
-		case '.': // "ab."
-			rz_core_cmd0(core, "ab $$");
-			break;
 		case 'a': // "aba"
 			rz_core_cmdf(core, "aeab%s", input + 1);
 			break;
