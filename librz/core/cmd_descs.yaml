@@ -523,6 +523,13 @@
             - RZ_OUTPUT_MODE_STANDARD
             - RZ_OUTPUT_MODE_JSON
           args: []
+        - name: afS
+          cname: analysis_function_stacksz
+          summary: Set stack frame size for function at current address
+          args:
+            - name: size
+              type: RZ_CMD_ARG_TYPE_NUM
+              flags: RZ_CMD_ARG_FLAG_LAST
 - name: b
   cname: cmd_bsize
   summary: Display or change the block size
