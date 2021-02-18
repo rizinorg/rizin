@@ -1416,6 +1416,77 @@ ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name
 	return section ? section->rva + section->size : UT64_MAX;
 }
 
+char *Elf_(rz_bin_elf_get_section_type)(struct rz_bin_elf_section_t * section) {
+	switch (section->type) {
+		case SHT_NULL:
+			return rz_str_new("NULL");
+		case SHT_PROGBITS:
+			return rz_str_new("PROGBITS");
+		case SHT_SYMTAB:
+			return rz_str_new("SYMTAB");
+		case SHT_STRTAB:
+			return rz_str_new("STRTAB");
+		case SHT_RELA:
+			return rz_str_new("RELA");
+		case SHT_HASH:
+			return rz_str_new("HASH");
+		case SHT_DYNAMIC:
+			return rz_str_new("DYNAMIC");
+		case SHT_NOTE:
+			return rz_str_new("NOTE");
+		case SHT_NOBITS:
+			return rz_str_new("NOBITS");
+		case SHT_REL:
+			return rz_str_new("REL");
+		case SHT_SHLIB:
+			return rz_str_new("SHLIB");
+		case SHT_DYNSYM:
+			return rz_str_new("DYNSYM");
+		case SHT_INIT_ARRAY:
+			return rz_str_new("INIT_ARRAY");
+		case SHT_FINI_ARRAY:
+			return rz_str_new("FINI_ARRAY");
+		case SHT_PREINIT_ARRAY:
+			return rz_str_new("PREINIT_ARRAY");
+		case SHT_GROUP:
+			return rz_str_new("GROUP");
+		case SHT_SYMTAB_SHNDX:
+			return rz_str_new("SYMTAB_SHNDX");
+		case SHT_NUM:
+			return rz_str_new("NUM");
+		case SHT_LOOS:
+			return rz_str_new("LOOS");
+		case SHT_GNU_ATTRIBUTES:
+			return rz_str_new("GNU_ATTRIBUTES");
+		case SHT_GNU_HASH:
+			return rz_str_new("GNU_HASH");
+		case SHT_GNU_LIBLIST:
+			return rz_str_new("GNU_LIBLIST");
+		case SHT_CHECKSUM:
+			return rz_str_new("CHECKSUM");
+		case SHT_SUNW_move:
+			return rz_str_new("MOVE");
+		case SHT_SUNW_COMDAT:
+			return rz_str_new("COMDAT");
+		case SHT_SUNW_syminfo:
+			return rz_str_new("SYMINFO");
+		case SHT_GNU_verdef:
+			return rz_str_new("VERDEF");
+		case SHT_GNU_verneed:
+			return rz_str_new("VERNEED");
+		case SHT_GNU_versym:
+			return rz_str_new("VERSYM");
+		default:
+			if(section->type >= SHT_LOPROC && section->type <= SHT_HIPROC) {
+				return rz_str_newf("LOPROC+0x%x", section->type-SHT_LOPROC);
+			}
+			if(section->type >= SHT_LOUSER && section->type <= SHT_HIUSER) {
+				return rz_str_newf("LOUSER+0x%x", section->type-SHT_LOUSER);
+			}
+			return NULL;
+	}
+}
+
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (!rel->rva) {
 		return UT64_MAX;

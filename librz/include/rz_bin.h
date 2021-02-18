@@ -480,6 +480,7 @@ typedef struct rz_bin_section_t {
 	ut32 perm;
 	// per section platform info
 	const char *arch;
+	char* type;
 	char *format;
 	int bits;
 	bool has_strings;

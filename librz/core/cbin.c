@@ -2792,11 +2792,11 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	}
 	if (IS_MODE_NORMAL(mode)) {
 		if (hashtypes) {
-			rz_table_set_columnsf(table, "dXxXxsss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
+			rz_table_set_columnsf(table, "dXxXxssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "type", hashtypes, "name");
 		} else {
-			rz_table_set_columnsf(table, "dXxXxss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+			rz_table_set_columnsf(table, "dXxXxsss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "type", "name");
 		}
 		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
@@ -2974,6 +2974,9 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				build_hash_string(pj, mode, hashtypes, data, datalen);
 				free(data);
 			}
+			if(section->type) {
+				pj_ks(pj, "type", section->type);
+			}
 			pj_kN(pj, "paddr", section->paddr);
 			pj_kN(pj, "vaddr", addr);
 			pj_end(pj);
@@ -3004,15 +3007,15 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
 			if (hashtypes) {
+				rz_table_add_rowf(table, "dXxXxssss", i,
+					(ut64)section->paddr, (ut64)section->size,
+					(ut64)addr, (ut64)section->vsize,
+					perms, section->type, hashstr, section_name);
+			} else {
 				rz_table_add_rowf(table, "dXxXxsss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, hashstr, section_name);
-			} else {
-				rz_table_add_rowf(table, "dXxXxss", i,
-					(ut64)section->paddr, (ut64)section->size,
-					(ut64)addr, (ut64)section->vsize,
-					perms, section_name);
+					perms, section->type, section_name);
 			}
 			free(hashstr);
 		}

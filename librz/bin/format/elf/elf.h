@@ -168,6 +168,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 int Elf_(rz_bin_elf_has_va)(struct Elf_(rz_bin_elf_obj_t) * bin);
 ut64 Elf_(rz_bin_elf_get_section_addr)(struct Elf_(rz_bin_elf_obj_t) * bin, const char *section_name);
 ut64 Elf_(rz_bin_elf_get_section_offset)(struct Elf_(rz_bin_elf_obj_t) * bin, const char *section_name);
+char *Elf_(rz_bin_elf_get_section_type)(struct rz_bin_elf_section_t * section);
 ut64 Elf_(rz_bin_elf_get_baddr)(struct Elf_(rz_bin_elf_obj_t) * bin);
 ut64 Elf_(rz_bin_elf_p2v)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);

@@ -1423,6 +1423,7 @@ RZ_IPI RzBinSection *rz_bin_section_new(const char *name) {
 RZ_IPI void rz_bin_section_free(RzBinSection *bs) {
 	if (bs) {
 		free(bs->name);
+		free(bs->type);
 		free(bs->format);
 		free(bs);
 	}

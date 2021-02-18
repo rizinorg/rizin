@@ -204,6 +204,7 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vsize = section[i].size;
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;
+			ptr->type = Elf_(rz_bin_elf_get_section_type)(&section[i]);
 			ptr->add = !obj->phdr; // Load sections if there is no PHDR
 			ptr->perm = 0;
 			if (RZ_BIN_ELF_SCN_IS_EXECUTABLE(section[i].flags)) {
