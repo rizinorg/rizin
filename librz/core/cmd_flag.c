@@ -298,6 +298,59 @@ static void spaces_list(RzSpaces *sp, int mode) {
 	}
 }
 
+RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzOutputMode mode) {
+	RzFlagItem *f = rz_flag_get_at(core->flags, addr, !strict_offset);
+	if (f) {
+		if (f->offset != addr) {
+			// if input contains 'j' print json
+			if (mode == RZ_OUTPUT_MODE_JSON) {
+				PJ *pj = pj_new();
+				pj_o(pj);
+				pj_kn(pj, "offset", f->offset);
+				pj_ks(pj, "name", f->name);
+				// Print flag's real name if defined
+				if (f->realname) {
+					pj_ks(pj, "realname", f->realname);
+				}
+				pj_end(pj);
+				rz_cons_println(pj_string(pj));
+				if (pj) {
+					pj_free(pj);
+				}
+			} else {
+				// Print realname if exists and asm.flags.real is enabled
+				if (core->flags->realnames && f->realname) {
+					rz_cons_printf("%s + %d\n", f->realname,
+						(int)(addr - f->offset));
+				} else {
+					rz_cons_printf("%s + %d\n", f->name,
+						(int)(addr - f->offset));
+				}
+			}
+		} else {
+			if (mode == RZ_OUTPUT_MODE_JSON) {
+				PJ *pj = pj_new();
+				pj_o(pj);
+				pj_ks(pj, "name", f->name);
+				// Print flag's real name if defined
+				if (f->realname) {
+					pj_ks(pj, "realname", f->realname);
+				}
+				pj_end(pj);
+				rz_cons_println(pj_string(pj));
+				pj_free(pj);
+			} else {
+				// Print realname if exists and asm.flags.real is enabled
+				if (core->flags->realnames && f->realname) {
+					rz_cons_println(f->realname);
+				} else {
+					rz_cons_println(f->name);
+				}
+			}
+		}
+	}
+}
+
 static void cmd_fz(RzCore *core, const char *input) {
 	switch (*input) {
 	case '?': // "fz?"
@@ -1432,7 +1485,6 @@ rep:
 	{
 		ut64 addr = core->offset;
 		char *arg = NULL;
-		RzFlagItem *f = NULL;
 		bool strict_offset = false;
 		switch (input[1]) {
 		case '?':
@@ -1547,56 +1599,10 @@ rep:
 			}
 			break;
 		}
-		f = rz_flag_get_at(core->flags, addr, !strict_offset);
-		if (f) {
-			if (f->offset != addr) {
-				// if input contains 'j' print json
-				if (strchr(input, 'j')) {
-					PJ *pj = pj_new();
-					pj_o(pj);
-					pj_kn(pj, "offset", f->offset);
-					pj_ks(pj, "name", f->name);
-					// Print flag's real name if defined
-					if (f->realname) {
-						pj_ks(pj, "realname", f->realname);
-					}
-					pj_end(pj);
-					rz_cons_println(pj_string(pj));
-					if (pj) {
-						pj_free(pj);
-					}
-				} else {
-					// Print realname if exists and asm.flags.real is enabled
-					if (core->flags->realnames && f->realname) {
-						rz_cons_printf("%s + %d\n", f->realname,
-							(int)(addr - f->offset));
-					} else {
-						rz_cons_printf("%s + %d\n", f->name,
-							(int)(addr - f->offset));
-					}
-				}
-			} else {
-				if (strchr(input, 'j')) {
-					PJ *pj = pj_new();
-					pj_o(pj);
-					pj_ks(pj, "name", f->name);
-					// Print flag's real name if defined
-					if (f->realname) {
-						pj_ks(pj, "realname", f->realname);
-					}
-					pj_end(pj);
-					rz_cons_println(pj_string(pj));
-					pj_free(pj);
-				} else {
-					// Print realname if exists and asm.flags.real is enabled
-					if (core->flags->realnames && f->realname) {
-						rz_cons_println(f->realname);
-					} else {
-						rz_cons_println(f->name);
-					}
-				}
-			}
-		}
+		RzOutputMode mode = strchr(input, 'j')
+			? RZ_OUTPUT_MODE_JSON
+			: RZ_OUTPUT_MODE_STANDARD;
+		rz_core_flag_describe(core, addr, strict_offset, mode);
 	} break;
 	case '?':
 	default:
