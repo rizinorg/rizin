@@ -58,6 +58,8 @@ static const RzCmdDescArg analysis_function_blocks_asciiart_args[2];
 static const RzCmdDescArg analysis_function_blocks_info_args[2];
 static const RzCmdDescArg analysis_function_blocks_color_args[3];
 static const RzCmdDescArg analysis_function_setbits_args[2];
+static const RzCmdDescArg analysis_function_signature_args[2];
+static const RzCmdDescArg analysis_function_signature_type_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -656,6 +658,9 @@ static const RzCmdDescHelp cmd_ox_help = {
 static const RzCmdDescHelp cmd_analysis_help = {
 	.summary = "Analysis commands",
 };
+static const RzCmdDescHelp cmd_analysis_fcn_help = {
+	.summary = "Analyze Functions commands",
+};
 static const RzCmdDescHelp afb_help = {
 	.summary = "Basic blocks commands",
 };
@@ -840,6 +845,44 @@ static const RzCmdDescArg analysis_function_setbits_args[] = {
 static const RzCmdDescHelp analysis_function_setbits_help = {
 	.summary = "Set asm.bits for the current function",
 	.args = analysis_function_setbits_args,
+};
+
+static const RzCmdDescHelp afs_help = {
+	.summary = "Function signatures commands",
+};
+static const RzCmdDescArg analysis_function_signature_args[] = {
+	{
+		.name = "signature",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_signature_help = {
+	.summary = "Get/Set function signature at current address",
+	.args = analysis_function_signature_args,
+};
+
+static const RzCmdDescArg analysis_function_signature_editor_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_signature_editor_help = {
+	.summary = "Set function signature at current address by using the editor",
+	.args = analysis_function_signature_editor_args,
+};
+
+static const RzCmdDescArg analysis_function_signature_type_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_signature_type_help = {
+	.summary = "Change type for current function",
+	.args = analysis_function_signature_type_args,
 };
 
 static const RzCmdDescHelp cmd_bsize_help = {
@@ -2659,7 +2702,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "a", rz_cmd_analysis, &cmd_analysis_help);
 	rz_warn_if_fail(cmd_analysis_cd);
-	RzCmdDesc *afb_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_cd, "afb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_list_handler, &analysis_function_blocks_list_help, &afb_help);
+	RzCmdDesc *cmd_analysis_fcn_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_analysis_cd, "af", rz_cmd_analysis_fcn, &cmd_analysis_fcn_help);
+	rz_warn_if_fail(cmd_analysis_fcn_cd);
+	RzCmdDesc *afb_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_list_handler, &analysis_function_blocks_list_help, &afb_help);
 	rz_warn_if_fail(afb_cd);
 	RzCmdDesc *analysis_function_blocks_add_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb+", rz_analysis_function_blocks_add_handler, &analysis_function_blocks_add_help);
 	rz_warn_if_fail(analysis_function_blocks_add_cd);
@@ -2685,8 +2730,16 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_blocks_color_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbc", rz_analysis_function_blocks_color_handler, &analysis_function_blocks_color_help);
 	rz_warn_if_fail(analysis_function_blocks_color_cd);
 
-	RzCmdDesc *analysis_function_setbits_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "afB", rz_analysis_function_setbits_handler, &analysis_function_setbits_help);
+	RzCmdDesc *analysis_function_setbits_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afB", rz_analysis_function_setbits_handler, &analysis_function_setbits_help);
 	rz_warn_if_fail(analysis_function_setbits_cd);
+
+	RzCmdDesc *afs_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_signature_handler, &analysis_function_signature_help, &afs_help);
+	rz_warn_if_fail(afs_cd);
+	RzCmdDesc *analysis_function_signature_editor_cd = rz_cmd_desc_argv_new(core->rcmd, afs_cd, "afs!", rz_analysis_function_signature_editor_handler, &analysis_function_signature_editor_help);
+	rz_warn_if_fail(analysis_function_signature_editor_cd);
+
+	RzCmdDesc *analysis_function_signature_type_cd = rz_cmd_desc_argv_new(core->rcmd, afs_cd, "afsr", rz_analysis_function_signature_type_handler, &analysis_function_signature_type_help);
+	rz_warn_if_fail(analysis_function_signature_type_cd);
 
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail(cmd_bsize_cd);
