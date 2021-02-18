@@ -9081,7 +9081,12 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 			if (input[2] && input[2] != '.') {
 				addr = rz_num_math(core->num, input + 2);
 			}
-			rz_core_cmdf(core, "afbij @ 0x%" PFMT64x, addr);
+			RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
+			if (!bb) {
+				eprintf("No basic block at 0x%" PFMT64x "\n", addr);
+				break;
+			}
+			rz_core_analysis_bb_info_print(core, bb, addr, RZ_OUTPUT_MODE_JSON);
 			break;
 		}
 		case 0:
@@ -9091,7 +9096,12 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 			if (input[1] && input[1] != '.') {
 				addr = rz_num_math(core->num, input + 1);
 			}
-			rz_core_cmdf(core, "afbi @ 0x%" PFMT64x, addr);
+			RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
+			if (!bb) {
+				eprintf("No basic block at 0x%" PFMT64x "\n", addr);
+				break;
+			}
+			rz_core_analysis_bb_info_print(core, bb, addr, RZ_OUTPUT_MODE_LONG);
 			break;
 		}
 		default:
