@@ -1,0 +1,47 @@
+NAME=rz-asm #1167 3
+FILE=-
+CMDS=!rz-asm -s att -a x86.as -b 64 "test %rbx, %rax"
+EXPECT=<<EOF
+4885d8
+EOF
+RUN
+
+NAME=rz-asm #1167 4
+FILE=-
+CMDS=!rz-asm -s intel -a x86.as -b 64 "test rax, rbx"
+EXPECT=<<EOF
+4885d8
+EOF
+RUN
+
+NAME=rz-asm #1167 5
+FILE=-
+CMDS=!rz-asm -s att -a x86.as -b 64 'add $33, %rbx'
+EXPECT=<<EOF
+4883c321
+EOF
+RUN
+
+NAME=rz-asm #1167 6
+FILE=-
+CMDS=!rz-asm -s intel -a x86.as -b 64 "add rbx, 33"
+EXPECT=<<EOF
+4883c321
+EOF
+RUN
+
+NAME=rz-asm -s att -a x86.as -b 64 movq %rdx, %rax
+FILE=-
+CMDS=!rz-asm -s att -a x86.as -b 64 "movq %rdx, %rax"
+EXPECT=<<EOF
+4889d0
+EOF
+RUN
+
+NAME=att pa
+FILE=--
+CMDS=pa add $33, %rbx @a:x86.as:64 @e:asm.syntax=att
+EXPECT=<<EOF
+4883c321
+EOF
+RUN
