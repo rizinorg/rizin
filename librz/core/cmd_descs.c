@@ -885,6 +885,14 @@ static const RzCmdDescHelp analysis_function_signature_type_help = {
 	.args = analysis_function_signature_type_args,
 };
 
+static const RzCmdDescArg analysis_function_xrefs_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_xrefs_help = {
+	.summary = "List function references",
+	.args = analysis_function_xrefs_args,
+};
+
 static const RzCmdDescHelp cmd_bsize_help = {
 	.summary = "Display or change the block size",
 };
@@ -2740,6 +2748,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_signature_type_cd = rz_cmd_desc_argv_new(core->rcmd, afs_cd, "afsr", rz_analysis_function_signature_type_handler, &analysis_function_signature_type_help);
 	rz_warn_if_fail(analysis_function_signature_type_cd);
+
+	RzCmdDesc *analysis_function_xrefs_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_xrefs_handler, &analysis_function_xrefs_help);
+	rz_warn_if_fail(analysis_function_xrefs_cd);
 
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail(cmd_bsize_cd);

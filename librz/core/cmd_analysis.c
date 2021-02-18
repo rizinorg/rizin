@@ -9456,3 +9456,68 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int
 	free(type);
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (!fcn) {
+		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	PJ *pj = NULL;
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj = rz_core_pj_new(core);
+		pj_a(pj);
+	}
+
+	ut64 oaddr = core->offset;
+	RzAnalysisRef *ref;
+	RzListIter *iter;
+	RzList *refs = rz_analysis_function_get_refs(fcn);
+	rz_list_foreach (refs, iter, ref) {
+		switch (mode) {
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(pj);
+			pj_ks(pj, "type", rz_analysis_ref_type_tostring(ref->type));
+			pj_kn(pj, "from", ref->at);
+			pj_kn(pj, "to", ref->addr);
+			pj_end(pj);
+			break;
+		case RZ_OUTPUT_MODE_STANDARD:
+			rz_cons_printf("%c 0x%08" PFMT64x " -> ", ref->type, ref->at);
+			switch (ref->type) {
+			case RZ_ANALYSIS_REF_TYPE_NULL:
+				rz_cons_printf("0x%08" PFMT64x " ", ref->addr);
+				break;
+			case RZ_ANALYSIS_REF_TYPE_CODE:
+			case RZ_ANALYSIS_REF_TYPE_CALL:
+			case RZ_ANALYSIS_REF_TYPE_DATA:
+				rz_cons_printf("0x%08" PFMT64x " ", ref->addr);
+				rz_core_seek(core, ref->at, 1);
+				rz_core_print_disasm_instructions(core, 0, 1);
+				break;
+			case RZ_ANALYSIS_REF_TYPE_STRING: {
+				char *s = rz_core_cmd_strf(core, "pxr 8 @ 0x%08" PFMT64x, ref->addr);
+				char *nl = strchr(s, '\n');
+				if (nl) {
+					*nl = 0;
+				}
+				rz_cons_printf("%s\n", s);
+				free(s);
+				break;
+			}
+			}
+			break;
+		default:
+			rz_return_val_if_reached(RZ_CMD_STATUS_ERROR);
+		}
+	}
+	rz_list_free(refs);
+	rz_core_seek(core, oaddr, 1);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
+	return RZ_CMD_STATUS_OK;
+}
