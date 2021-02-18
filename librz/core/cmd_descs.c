@@ -886,6 +886,14 @@ static const RzCmdDescHelp analysis_function_signature_type_help = {
 	.args = analysis_function_signature_type_args,
 };
 
+static const RzCmdDescArg analysis_function_address_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_address_help = {
+	.summary = "Show address of current function",
+	.args = analysis_function_address_args,
+};
+
 static const RzCmdDescArg analysis_function_xrefs_args[] = {
 	{ 0 },
 };
@@ -2763,6 +2771,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_signature_type_cd = rz_cmd_desc_argv_new(core->rcmd, afs_cd, "afsr", rz_analysis_function_signature_type_handler, &analysis_function_signature_type_help);
 	rz_warn_if_fail(analysis_function_signature_type_cd);
+
+	RzCmdDesc *analysis_function_address_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afo", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_address_handler, &analysis_function_address_help);
+	rz_warn_if_fail(analysis_function_address_cd);
 
 	RzCmdDesc *analysis_function_xrefs_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_xrefs_handler, &analysis_function_xrefs_help);
 	rz_warn_if_fail(analysis_function_xrefs_cd);

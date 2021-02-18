@@ -9532,3 +9532,34 @@ RZ_IPI RzCmdStatus rz_analysis_function_stacksz_handler(RzCore *core, int argc, 
 	fcn->maxstack = rz_num_math(core->num, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_analysis_function_address_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (!fcn) {
+		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	PJ *pj = NULL;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("0x%08" PFMT64x "\n", fcn->addr);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		pj = rz_core_pj_new(core);
+		if (!pj) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		pj_o(pj);
+		if (fcn) {
+			pj_ki(pj, "address", fcn->addr);
+		}
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		break;
+	default:
+		rz_return_val_if_reached(RZ_CMD_STATUS_ERROR);
+	}
+	return RZ_CMD_STATUS_OK;
+}
