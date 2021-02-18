@@ -57,6 +57,7 @@ static const RzCmdDescArg analysis_function_returns_args[2];
 static const RzCmdDescArg analysis_function_blocks_asciiart_args[2];
 static const RzCmdDescArg analysis_function_blocks_info_args[2];
 static const RzCmdDescArg analysis_function_blocks_color_args[3];
+static const RzCmdDescArg analysis_function_setbits_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -826,6 +827,19 @@ static const RzCmdDescArg analysis_function_blocks_color_args[] = {
 static const RzCmdDescHelp analysis_function_blocks_color_help = {
 	.summary = "Set a color for the basic block at a given address",
 	.args = analysis_function_blocks_color_args,
+};
+
+static const RzCmdDescArg analysis_function_setbits_args[] = {
+	{
+		.name = "bits",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_setbits_help = {
+	.summary = "Set asm.bits for the current function",
+	.args = analysis_function_setbits_args,
 };
 
 static const RzCmdDescHelp cmd_bsize_help = {
@@ -2670,6 +2684,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_blocks_color_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbc", rz_analysis_function_blocks_color_handler, &analysis_function_blocks_color_help);
 	rz_warn_if_fail(analysis_function_blocks_color_cd);
+
+	RzCmdDesc *analysis_function_setbits_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "afB", rz_analysis_function_setbits_handler, &analysis_function_setbits_help);
+	rz_warn_if_fail(analysis_function_setbits_cd);
 
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail(cmd_bsize_cd);

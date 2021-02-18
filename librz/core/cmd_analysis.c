@@ -9375,3 +9375,19 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_color_handler(RzCore *core, int a
 	block->colorize = color;
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_analysis_function_setbits_handler(RzCore *core, int argc, const char **argv) {
+	int bits = atoi(argv[1]);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	if (!fcn) {
+		eprintf("No function at 0x%" PFMT64x "\n", core->offset);
+	}
+	RzListIter *iter;
+	RzAnalysisBlock *bb;
+	rz_list_foreach (fcn->bbs, iter, bb) {
+		rz_analysis_hint_set_bits(core->analysis, bb->addr, bits);
+		rz_analysis_hint_set_bits(core->analysis, bb->addr + bb->size, core->analysis->bits);
+	}
+	fcn->bits = bits;
+	return RZ_CMD_STATUS_OK;
+}

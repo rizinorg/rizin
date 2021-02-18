@@ -60,6 +60,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_returns_handler(RzCore *core, int argc, 
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_asciiart_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_analysis_function_blocks_color_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_function_setbits_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_analysis(void *data, const char *input);
 RZ_IPI int rz_cmd_bsize(void *data, const char *input);
 RZ_IPI int rz_cmd_cmp(void *data, const char *input);

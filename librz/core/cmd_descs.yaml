@@ -482,6 +482,12 @@
               type: RZ_CMD_ARG_TYPE_RZNUM
             - name: color
               type: RZ_CMD_ARG_TYPE_RZNUM
+    - name: afB
+      cname: analysis_function_setbits
+      summary: Set asm.bits for the current function
+      args:
+        - name: bits
+          type: RZ_CMD_ARG_TYPE_NUM
 - name: b
   cname: cmd_bsize
   summary: Display or change the block size
