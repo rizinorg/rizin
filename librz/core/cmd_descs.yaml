@@ -493,6 +493,7 @@
           args:
             - name: bits
               type: RZ_CMD_ARG_TYPE_NUM
+
         - name: afs
           summary: Function signatures commands
           subcommands:
@@ -516,6 +517,13 @@
               args:
                 - name: type
                   type: RZ_CMD_ARG_TYPE_STRING
+        - name: afo
+          cname: analysis_function_address
+          summary: Show address of current function
+          modes:
+            - RZ_OUTPUT_MODE_STANDARD
+            - RZ_OUTPUT_MODE_JSON
+          args: []
         - name: afx
           cname: analysis_function_xrefs
           summary: List function references
