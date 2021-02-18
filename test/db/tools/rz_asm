@@ -112,41 +112,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-asm #1167 3
-FILE=-
-BROKEN=1
-CMDS=!rz-asm -s att -a x86.as -b 64 "test %rbx, %rax"
-EXPECT=<<EOF
-4885d8
-EOF
-RUN
-
-NAME=rz-asm #1167 4
-FILE=-
-BROKEN=1
-CMDS=!rz-asm -s intel -a x86.as -b 64 "test rax, rbx"
-EXPECT=<<EOF
-4885d8
-EOF
-RUN
-
-NAME=rz-asm #1167 5
-BROKEN=1
-FILE=-
-CMDS=!rz-asm -s att -a x86.as -b 64 'add $33, %rbx'
-EXPECT=<<EOF
-4883c321
-EOF
-RUN
-
-NAME=rz-asm #1167 6
-FILE=-
-CMDS=!rz-asm -s intel -a x86.as -b 64 "add rbx, 33"
-EXPECT=<<EOF
-4883c321
-EOF
-RUN
-
 NAME=rz-asm #1900
 FILE=-
 CMDS=<<EOF
@@ -304,14 +269,6 @@ FILE=-
 CMDS=!rz-asm -a x86 -b16 -B "xor al, 0x34";ps
 EXPECT=<<EOF
 44
-EOF
-RUN
-
-NAME=rz-asm -s att -a x86.as -b 64 movq %rdx, %rax
-FILE=-
-CMDS=!rz-asm -s att -a x86.as -b 64 "movq %rdx, %rax"
-EXPECT=<<EOF
-4889d0
 EOF
 RUN
 
