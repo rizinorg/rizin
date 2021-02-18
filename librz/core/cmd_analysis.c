@@ -3255,9 +3255,12 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			break;
 		}
 		case 'r': { // "afbr"
-			RzList *l = rz_analysis_get_functions_in(core->analysis, core->offset);
+			char *sp = strchr(input + 2, ' ');
+			const char *arg = sp ? rz_str_trim_head_ro(sp) : NULL;
+			ut64 addr = arg ? rz_num_math(core->num, arg) : core->offset;
+			RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
 			if (rz_list_empty(l)) {
-				eprintf("No functions at 0x%" PFMT64x, core->offset);
+				eprintf("No functions at 0x%" PFMT64x, addr);
 				break;
 			}
 			RzAnalysisFunction *fcn = rz_list_first(l);
@@ -3265,9 +3268,12 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			break;
 		}
 		case '=': { // "afb="
-			RzList *l = rz_analysis_get_functions_in(core->analysis, core->offset);
+			char *sp = strchr(input + 2, ' ');
+			const char *arg = sp ? rz_str_trim_head_ro(sp) : NULL;
+			ut64 addr = arg ? rz_num_math(core->num, arg) : core->offset;
+			RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
 			if (rz_list_empty(l)) {
-				eprintf("No functions at 0x%" PFMT64x, core->offset);
+				eprintf("No functions at 0x%" PFMT64x, addr);
 				break;
 			}
 			RzAnalysisFunction *fcn = rz_list_first(l);
