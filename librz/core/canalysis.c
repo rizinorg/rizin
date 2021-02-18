@@ -6520,6 +6520,20 @@ static bool cc_print(void *p, const char *k, const char *v) {
 	return true;
 }
 
+RZ_IPI RzList *rz_core_analysis_calling_conventions(RzCore *core) {
+	RzList *ccl = rz_list_new();
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(core->analysis->sdb_cc, true);
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "cc")) {
+			rz_list_append(ccl, strdup(sdbkv_key(kv)));
+		}
+	}
+	ls_free(l);
+	return ccl;
+}
+
 RZ_IPI void rz_core_analysis_calling_conventions_print(RzCore *core) {
 	sdb_foreach(core->analysis->sdb_cc, cc_print, NULL);
 }

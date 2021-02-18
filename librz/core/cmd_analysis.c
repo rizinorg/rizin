@@ -3356,7 +3356,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			break;
 		}
 		case 'k': // "afck"
-			rz_core_kuery_print(core, "k analysis/cc/*");
+			rz_core_kuery_print(core, "analysis/cc/*");
 			break;
 		case 'l': // "afcl" list all function Calling conventions.
 			rz_core_analysis_calling_conventions_print(core);
