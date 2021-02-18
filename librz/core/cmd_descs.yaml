@@ -493,7 +493,6 @@
           args:
             - name: bits
               type: RZ_CMD_ARG_TYPE_NUM
-
         - name: afs
           summary: Function signatures commands
           subcommands:
@@ -524,6 +523,13 @@
             - RZ_OUTPUT_MODE_STANDARD
             - RZ_OUTPUT_MODE_JSON
           args: []
+        - name: afu
+          cname: analysis_function_until
+          summary: Resize and analyze function from current address until addr
+          args:
+            - name: addr
+              type: RZ_CMD_ARG_TYPE_NUM
+              flags: RZ_CMD_ARG_FLAG_LAST
         - name: afx
           cname: analysis_function_xrefs
           summary: List function references
