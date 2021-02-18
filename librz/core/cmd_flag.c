@@ -262,18 +262,18 @@ static void __flag_graph(RzCore *core, const char *input, int mode) {
 	rz_list_free(flags);
 }
 
-static void spaces_list(RzSpaces *sp, int mode) {
+static void spaces_list(RzSpaces *sp, RzOutputMode mode) {
 	RzSpaceIter it;
 	RzSpace *s;
 	const RzSpace *cur = rz_spaces_current(sp);
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		pj_a(pj);
 	}
 	rz_spaces_foreach(sp, it, s) {
 		int count = rz_spaces_count(sp, s->name);
-		if (mode == 'j') {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(pj);
 			pj_ks(pj, "name", s->name);
 			pj_ki(pj, "count", count);
@@ -288,10 +288,10 @@ static void spaces_list(RzSpaces *sp, int mode) {
 				s->name);
 		}
 	}
-	if (mode == '*' && rz_spaces_current(sp)) {
+	if (mode == RZ_OUTPUT_MODE_RIZIN && rz_spaces_current(sp)) {
 		rz_cons_printf("%s %s # current\n", sp->name, rz_spaces_current_name(sp));
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_printf("%s\n", pj_string(pj));
 		pj_free(pj);
@@ -302,7 +302,6 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 	RzFlagItem *f = rz_flag_get_at(core->flags, addr, !strict_offset);
 	if (f) {
 		if (f->offset != addr) {
-			// if input contains 'j' print json
 			if (mode == RZ_OUTPUT_MODE_JSON) {
 				PJ *pj = pj_new();
 				pj_o(pj);
@@ -1254,13 +1253,17 @@ rep:
 			}
 		} break;
 		case 'j':
-		case '\0':
-		case '*':
-		case 'q':
-			spaces_list(&core->flags->spaces, input[1]);
+			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_JSON);
 			break;
+		case '*':
+			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_RIZIN);
+			break;
+		case 'q':
+			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_QUIET);
+			break;
+		case '\0':
 		default:
-			spaces_list(&core->flags->spaces, 0);
+			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		}
 		break;
