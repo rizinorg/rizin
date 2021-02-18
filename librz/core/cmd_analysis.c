@@ -3412,7 +3412,7 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'S': // afS"
+	case 'S': // "afS"
 	{
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 		if (fcn) {
@@ -9519,5 +9519,16 @@ RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, co
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_stacksz_handler(RzCore *core, int argc, const char **argv) {
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (!fcn) {
+		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	fcn->maxstack = rz_num_math(core->num, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }

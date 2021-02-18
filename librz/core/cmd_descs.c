@@ -60,6 +60,7 @@ static const RzCmdDescArg analysis_function_blocks_color_args[3];
 static const RzCmdDescArg analysis_function_setbits_args[2];
 static const RzCmdDescArg analysis_function_signature_args[2];
 static const RzCmdDescArg analysis_function_signature_type_args[2];
+static const RzCmdDescArg analysis_function_stacksz_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -891,6 +892,20 @@ static const RzCmdDescArg analysis_function_xrefs_args[] = {
 static const RzCmdDescHelp analysis_function_xrefs_help = {
 	.summary = "List function references",
 	.args = analysis_function_xrefs_args,
+};
+
+static const RzCmdDescArg analysis_function_stacksz_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_stacksz_help = {
+	.summary = "Set stack frame size for function at current address",
+	.args = analysis_function_stacksz_args,
 };
 
 static const RzCmdDescHelp cmd_bsize_help = {
@@ -2751,6 +2766,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_xrefs_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_xrefs_handler, &analysis_function_xrefs_help);
 	rz_warn_if_fail(analysis_function_xrefs_cd);
+
+	RzCmdDesc *analysis_function_stacksz_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afS", rz_analysis_function_stacksz_handler, &analysis_function_stacksz_help);
+	rz_warn_if_fail(analysis_function_stacksz_cd);
 
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail(cmd_bsize_cd);
