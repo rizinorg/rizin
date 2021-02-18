@@ -3839,6 +3839,12 @@ static void foreachOffset(RzCore *core, const char *_cmd, const char *each) {
 	free(cmd);
 }
 
+static int bb_cmp(const void *a, const void *b) {
+	const RzAnalysisBlock *ba = a;
+	const RzAnalysisBlock *bb = b;
+	return ba->addr - bb->addr;
+}
+
 RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 	int i, j;
 	char ch;
@@ -5555,6 +5561,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_bbs_command) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	RzCmdStatus ret = RZ_CMD_STATUS_OK;
+	rz_list_sort(fcn->bbs, bb_cmp);
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		rz_core_seek(core, bb->addr, true);
 		rz_core_block_size(core, bb->size);

@@ -3627,7 +3627,7 @@ NAME=Jump table attached to wrong basic block bug
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aF @ 0x00459990
-ab. @ 0x00459aa7~outputs
+ab @ 0x00459aa7~outputs
 EOF
 EXPECT=<<EOF
 outputs: 11

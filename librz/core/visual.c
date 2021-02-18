@@ -1405,14 +1405,13 @@ repeat:
 					name[0] = 0;
 				}
 
-				char *cmt = (char *)rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, refi->addr);
+				const char *cmt = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, refi->addr);
 				if (cmt) {
-					rz_str_trim(cmt);
+					cmt = rz_str_trim_head_ro(cmt);
 					rz_cons_printf(" %d [%s] 0x%08" PFMT64x " 0x%08" PFMT64x " %s %sref (%s) ; %s\n",
 						idx, cstr, refi->at, refi->addr,
 						rz_analysis_xrefs_type_tostring(refi->type),
 						xref ? "x" : "", name, cmt);
-					free(cmt);
 				}
 				free(name);
 				if (idx == skip) {
