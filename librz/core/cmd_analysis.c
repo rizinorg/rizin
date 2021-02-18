@@ -1926,12 +1926,6 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 	rz_analysis_esil_free(esil);
 }
 
-static int bb_cmp(const void *a, const void *b) {
-	const RzAnalysisBlock *ba = a;
-	const RzAnalysisBlock *bb = b;
-	return ba->addr - bb->addr;
-}
-
 static RzList *get_xrefs(RzAnalysisBlock *block) {
 	RzListIter *iter;
 	RzAnalysisRef *ref;

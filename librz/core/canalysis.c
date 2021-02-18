@@ -531,6 +531,12 @@ static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock
 	}
 }
 
+static int bb_cmp(const void *a, const void *b) {
+	const RzAnalysisBlock *ba = a;
+	const RzAnalysisBlock *bb = b;
+	return ba->addr - bb->addr;
+}
+
 RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzOutputMode mode) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
@@ -546,6 +552,7 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 		rz_cons_printf("fs blocks\n");
 	}
 
+	rz_list_sort(fcn->bbs, bb_cmp);
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		bb_info_print(core, fcn, bb, bb->addr, mode, pj, t);
 	}
