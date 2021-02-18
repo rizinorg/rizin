@@ -34,6 +34,7 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn);
 RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzOutputMode mode);
 RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzOutputMode mode);
+RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
 RZ_IPI void rz_core_agraph_del_node(RzCore *core, const char *title);

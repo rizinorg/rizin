@@ -2703,43 +2703,15 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			}
 		}
 	} break;
-	case 'u': // "afu"
-	{
+	case 'u': { // "afu"
 		if (input[1] != ' ') {
 			eprintf("Missing argument\n");
 			return false;
 		}
-
-		ut64 addr = core->offset;
 		ut64 addr_end = rz_num_math(core->num, input + 1);
-		if (addr_end < addr) {
-			eprintf("Invalid address ranges\n");
-		} else {
-			int depth = 1;
-			ut64 a, b;
-			const char *c;
-			a = rz_config_get_i(core->config, "analysis.from");
-			b = rz_config_get_i(core->config, "analysis.to");
-			c = rz_config_get(core->config, "analysis.limits");
-			rz_config_set_i(core->config, "analysis.from", addr);
-			rz_config_set_i(core->config, "analysis.to", addr_end);
-			rz_config_set(core->config, "analysis.limits", "true");
-
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-			if (fcn) {
-				rz_analysis_function_resize(fcn, addr_end - addr);
-			}
-			rz_core_analysis_fcn(core, addr, UT64_MAX,
-				RZ_ANALYSIS_REF_TYPE_NULL, depth);
-			fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
-			if (fcn) {
-				rz_analysis_function_resize(fcn, addr_end - addr);
-			}
-			rz_config_set_i(core->config, "analysis.from", a);
-			rz_config_set_i(core->config, "analysis.to", b);
-			rz_config_set(core->config, "analysis.limits", c ? c : "");
-		}
-	} break;
+		rz_core_analysis_function_until(core, addr_end);
+		break;
+	}
 	case '+': { // "af+"
 		if (input[1] != ' ') {
 			eprintf("Missing arguments\n");
@@ -9561,5 +9533,15 @@ RZ_IPI RzCmdStatus rz_analysis_function_address_handler(RzCore *core, int argc, 
 	default:
 		rz_return_val_if_reached(RZ_CMD_STATUS_ERROR);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_until_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr_end = rz_num_math(core->num, argv[1]);
+	if (addr_end < core->offset) {
+		eprintf("Invalid address ranges\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_analysis_function_until(core, addr_end);
 	return RZ_CMD_STATUS_OK;
 }

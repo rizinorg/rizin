@@ -60,6 +60,7 @@ static const RzCmdDescArg analysis_function_blocks_color_args[3];
 static const RzCmdDescArg analysis_function_setbits_args[2];
 static const RzCmdDescArg analysis_function_signature_args[2];
 static const RzCmdDescArg analysis_function_signature_type_args[2];
+static const RzCmdDescArg analysis_function_until_args[2];
 static const RzCmdDescArg analysis_function_stacksz_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
@@ -892,6 +893,20 @@ static const RzCmdDescArg analysis_function_address_args[] = {
 static const RzCmdDescHelp analysis_function_address_help = {
 	.summary = "Show address of current function",
 	.args = analysis_function_address_args,
+};
+
+static const RzCmdDescArg analysis_function_until_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_until_help = {
+	.summary = "Resize and analyze function from current address until addr",
+	.args = analysis_function_until_args,
 };
 
 static const RzCmdDescArg analysis_function_xrefs_args[] = {
@@ -2774,6 +2789,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_address_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afo", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_address_handler, &analysis_function_address_help);
 	rz_warn_if_fail(analysis_function_address_cd);
+
+	RzCmdDesc *analysis_function_until_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_fcn_cd, "afu", rz_analysis_function_until_handler, &analysis_function_until_help);
+	rz_warn_if_fail(analysis_function_until_cd);
 
 	RzCmdDesc *analysis_function_xrefs_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_xrefs_handler, &analysis_function_xrefs_help);
 	rz_warn_if_fail(analysis_function_xrefs_cd);
