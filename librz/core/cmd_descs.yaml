@@ -381,113 +381,141 @@
   summary: Analysis commands
   type: RZ_CMD_DESC_TYPE_OLDINPUT
   subcommands:
-    - name: afb
-      summary: Basic blocks commands
+    - name: af
+      summary: Analyze Functions commands
+      cname: cmd_analysis_fcn
+      type: RZ_CMD_DESC_TYPE_OLDINPUT
       subcommands:
         - name: afb
-          summary: List basic blocks of function
-          cname: analysis_function_blocks_list
-          modes:
-            - RZ_OUTPUT_MODE_STANDARD
-            - RZ_OUTPUT_MODE_RIZIN
-            - RZ_OUTPUT_MODE_JSON
-            - RZ_OUTPUT_MODE_QUIET
-            - RZ_OUTPUT_MODE_TABLE
+          summary: Basic blocks commands
+          subcommands:
+            - name: afb
+              summary: List basic blocks of function
+              cname: analysis_function_blocks_list
+              modes:
+                - RZ_OUTPUT_MODE_STANDARD
+                - RZ_OUTPUT_MODE_RIZIN
+                - RZ_OUTPUT_MODE_JSON
+                - RZ_OUTPUT_MODE_QUIET
+                - RZ_OUTPUT_MODE_TABLE
+              args:
+                - name: addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  flags: RZ_CMD_ARG_FLAG_LAST
+                  optional: true
+            - name: afb+
+              summary: Add basic block by hand
+              cname: analysis_function_blocks_add
+              args:
+                - name: fcn_addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                - name: addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                - name: size
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                - name: jump
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  optional: true
+                - name: fail
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  optional: true
+                - name: diff
+                  type: RZ_CMD_ARG_TYPE_CHOICES
+                  optional: true
+                  choices: ["m", "u"]
+            - name: afb-
+              summary: Remove basic block from function
+              cname: analysis_function_blocks_del
+              args:
+                - name: addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  flags: RZ_CMD_ARG_FLAG_LAST
+                  optional: true
+            - name: afb-*
+              summary: Remove all basic blocks from function
+              cname: analysis_function_blocks_del_all
+              args:
+                - name: addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  flags: RZ_CMD_ARG_FLAG_LAST
+                  optional: true
+            - name: afbe
+              summary: Add basic-block edge for switch-cases
+              cname: analysis_function_blocks_edge
+              args:
+                - name: switch_addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                - name: case_addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  flags: RZ_CMD_ARG_FLAG_LAST
+            - name: afbr
+              summary: Show addresses of instructions which leave the function
+              cname: analysis_function_returns
+              args:
+                - name: addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  flags: RZ_CMD_ARG_FLAG_LAST
+                  optional: true
+            - name: afb=
+              summary: Display ascii-art bars for basic block regions
+              cname: analysis_function_blocks_asciiart
+              args:
+                - name: addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  flags: RZ_CMD_ARG_FLAG_LAST
+                  optional: true
+            - name: afbi
+              summary: Print single basic block information
+              cname: analysis_function_blocks_info
+              modes:
+                - RZ_OUTPUT_MODE_STANDARD
+                - RZ_OUTPUT_MODE_LONG
+                - RZ_OUTPUT_MODE_RIZIN
+                - RZ_OUTPUT_MODE_JSON
+                - RZ_OUTPUT_MODE_QUIET
+                - RZ_OUTPUT_MODE_TABLE
+              args:
+                - name: addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                  flags: RZ_CMD_ARG_FLAG_LAST
+                  optional: true
+            - name: afbc
+              summary: Set a color for the basic block at a given address
+              cname: analysis_function_blocks_color
+              args:
+                - name: addr
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+                - name: color
+                  type: RZ_CMD_ARG_TYPE_RZNUM
+        - name: afB
+          cname: analysis_function_setbits
+          summary: Set asm.bits for the current function
           args:
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-              flags: RZ_CMD_ARG_FLAG_LAST
-              optional: true
-        - name: afb+
-          summary: Add basic block by hand
-          cname: analysis_function_blocks_add
-          args:
-            - name: fcn_addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-            - name: size
-              type: RZ_CMD_ARG_TYPE_RZNUM
-            - name: jump
-              type: RZ_CMD_ARG_TYPE_RZNUM
-              optional: true
-            - name: fail
-              type: RZ_CMD_ARG_TYPE_RZNUM
-              optional: true
-            - name: diff
-              type: RZ_CMD_ARG_TYPE_CHOICES
-              optional: true
-              choices: ["m", "u"]
-        - name: afb-
-          summary: Remove basic block from function
-          cname: analysis_function_blocks_del
-          args:
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-              flags: RZ_CMD_ARG_FLAG_LAST
-              optional: true
-        - name: afb-*
-          summary: Remove all basic blocks from function
-          cname: analysis_function_blocks_del_all
-          args:
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-              flags: RZ_CMD_ARG_FLAG_LAST
-              optional: true
-        - name: afbe
-          summary: Add basic-block edge for switch-cases
-          cname: analysis_function_blocks_edge
-          args:
-            - name: switch_addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-            - name: case_addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-              flags: RZ_CMD_ARG_FLAG_LAST
-        - name: afbr
-          summary: Show addresses of instructions which leave the function
-          cname: analysis_function_returns
-          args:
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-              flags: RZ_CMD_ARG_FLAG_LAST
-              optional: true
-        - name: afb=
-          summary: Display ascii-art bars for basic block regions
-          cname: analysis_function_blocks_asciiart
-          args:
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-              flags: RZ_CMD_ARG_FLAG_LAST
-              optional: true
-        - name: afbi
-          summary: Print single basic block information
-          cname: analysis_function_blocks_info
-          modes:
-            - RZ_OUTPUT_MODE_STANDARD
-            - RZ_OUTPUT_MODE_LONG
-            - RZ_OUTPUT_MODE_RIZIN
-            - RZ_OUTPUT_MODE_JSON
-            - RZ_OUTPUT_MODE_QUIET
-            - RZ_OUTPUT_MODE_TABLE
-          args:
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-              flags: RZ_CMD_ARG_FLAG_LAST
-              optional: true
-        - name: afbc
-          summary: Set a color for the basic block at a given address
-          cname: analysis_function_blocks_color
-          args:
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
-            - name: color
-              type: RZ_CMD_ARG_TYPE_RZNUM
-    - name: afB
-      cname: analysis_function_setbits
-      summary: Set asm.bits for the current function
-      args:
-        - name: bits
-          type: RZ_CMD_ARG_TYPE_NUM
+            - name: bits
+              type: RZ_CMD_ARG_TYPE_NUM
+        - name: afs
+          summary: Function signatures commands
+          subcommands:
+            - name: afs
+              cname: analysis_function_signature
+              summary: Get/Set function signature at current address
+              modes:
+                - RZ_OUTPUT_MODE_STANDARD
+                - RZ_OUTPUT_MODE_JSON
+              args:
+                - name: signature
+                  type: RZ_CMD_ARG_TYPE_STRING
+                  optional: true
+            - name: afs!
+              cname: analysis_function_signature_editor
+              summary: Set function signature at current address by using the editor
+              args: []
+            - name: afsr
+              cname: analysis_function_signature_type
+              summary: Change type for current function
+              args:
+                - name: type
+                  type: RZ_CMD_ARG_TYPE_STRING
 - name: b
   cname: cmd_bsize
   summary: Display or change the block size
