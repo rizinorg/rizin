@@ -56,3 +56,77 @@ opaddr: 0x1000011e9
 opaddr: 0x1000011ec
 EOF
 RUN
+
+NAME=afb misc
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aaa
+s main
+afb.
+afbi
+afbij~{}
+afbj~{}
+afb*
+afbr
+EOF
+EXPECT=<<EOF
+0x000007aa 0x00000806 00:0000 92 j 0x00000844 f 0x00000806
+jump: 0x00000844
+fail: 0x00000806
+opaddr: 0x000007aa
+addr: 0x000007aa
+size: 92
+inputs: 0
+outputs: 2
+ninstr: 25
+traced: true
+{
+  "jump": 2116,
+  "fail": 2054,
+  "opaddr": 1962,
+  "addr": 1962,
+  "size": 92,
+  "inputs": 0,
+  "outputs": 2,
+  "ninstr": 25,
+  "traced": true
+}
+[
+  {
+    "jump": 2116,
+    "fail": 2054,
+    "opaddr": 1962,
+    "addr": 1962,
+    "size": 92,
+    "inputs": 0,
+    "outputs": 2,
+    "ninstr": 25,
+    "traced": true
+  },
+  {
+    "jump": 2116,
+    "opaddr": 2054,
+    "addr": 2054,
+    "size": 62,
+    "inputs": 1,
+    "outputs": 1,
+    "ninstr": 16,
+    "traced": true
+  },
+  {
+    "opaddr": 2116,
+    "addr": 2116,
+    "size": 3,
+    "inputs": 2,
+    "outputs": 0,
+    "ninstr": 3,
+    "traced": true
+  }
+]
+fs blocks
+f bb.007aa = 0x000007aa
+f bb.00806 = 0x00000806
+f bb.00844 = 0x00000844
+0x00000846
+EOF
+RUN
