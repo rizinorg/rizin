@@ -49,6 +49,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_MACRO, ///< Argument is the name of a pre-defined macro
 	RZ_CMD_ARG_TYPE_EVAL_KEY, ///< Argument is the name of a evaluable variable (e.g. `et` command)
 	RZ_CMD_ARG_TYPE_EVAL_FULL, ///< Argument is the name+(optional)value of a evaluable variable (e.g. `e` command)
+	RZ_CMD_ARG_TYPE_FCN_VAR, ///< Argument is the name of a function variable/argument
 } RzCmdArgType;
 
 /**

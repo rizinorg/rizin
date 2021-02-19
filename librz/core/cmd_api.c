@@ -66,6 +66,16 @@ static const struct argv_modes_t {
 	{ "t", " (table mode)", RZ_OUTPUT_MODE_TABLE },
 };
 
+RZ_IPI int rz_output_mode_to_char(RzOutputMode mode) {
+	size_t i;
+	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+		if (argv_modes[i].mode == mode) {
+			return argv_modes[i].suffix[0];
+		}
+	}
+	return -1;
+}
+
 static int value = 0;
 
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))

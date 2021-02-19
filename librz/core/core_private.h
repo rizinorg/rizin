@@ -5,6 +5,7 @@
 #include <rz_core.h>
 
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
+RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
 
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val);
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core);
