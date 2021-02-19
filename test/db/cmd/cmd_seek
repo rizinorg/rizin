@@ -92,7 +92,7 @@ s $$
 s $$
 s $$
 s $$
-sH*~?
+sh*~?
 EOF
 EXPECT=<<EOF
 1
@@ -124,15 +124,15 @@ FILE=-
 CMDS=<<EOF
 s 0x100
 s
-sH*
+sh*
 ?e
 s 0x200
 s
-sH*
+sh*
 ?e
 s 0x300 @e:cfg.seek.silent=true
 s
-sH*
+sh*
 EOF
 EXPECT=<<EOF
 0x100
@@ -160,15 +160,15 @@ dr eax=0x200
 dr ebx=0x300
 s 0x100
 s
-sH*
+sh*
 ?e
 sr eax
 s
-sH*
+sh*
 ?e
 sr ebx @e:cfg.seek.silent=true
 s
-sH*
+sh*
 EOF
 EXPECT=<<EOF
 0x100

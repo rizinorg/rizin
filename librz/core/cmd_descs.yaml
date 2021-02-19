@@ -1058,10 +1058,10 @@
         - name: n
           type: RZ_CMD_ARG_TYPE_NUM
           optional: true
-    - name: sH
+    - name: sh
       summary: Seek history commands
       subcommands:
-        - name: sH
+        - name: sh
           cname: seek_history_list
           summary: List undo seek history
           args: []
@@ -1069,15 +1069,15 @@
             - RZ_OUTPUT_MODE_STANDARD
             - RZ_OUTPUT_MODE_JSON
             - RZ_OUTPUT_MODE_RIZIN
-        - name: sHr
+        - name: shr
           cname: seek_redo
           summary: Go to position before the last undo (forward in history)
           args: []
-        - name: sHu
+        - name: shu
           cname: seek_undo
           summary: Go to last seek in seek history (back in history)
           args: []
-        - name: sH-
+        - name: sh-
           cname: seek_undo_reset
           summary: Clear seek history
           args: []
