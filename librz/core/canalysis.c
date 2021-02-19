@@ -5803,6 +5803,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		if (esil_analysis_stop || rz_cons_is_breaked()) {
 			break;
 		}
+		size_t i_old = i;
 		cur = start + i;
 		if (!rz_io_is_valid_offset(core->io, cur, 0)) {
 			break;
@@ -5836,7 +5837,6 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 
 		rz_analysis_op_fini(&op);
 		rz_asm_set_pc(core->rasm, cur);
-		size_t i_old = i;
 		if (!rz_analysis_op(core->analysis, &op, cur, buf + i, iend - i, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT)) {
 			i += minopsize - 1; //   XXX dupe in op.size below
 		}
@@ -6057,9 +6057,9 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		rz_analysis_esil_stack_free(ESIL);
 	repeat:
 		if (!rz_analysis_get_block_at(core->analysis, cur)) {
-			for (size_t fcn_i = i_old + 1; fcn_i <= i; fcn_i++) {
-				if (rz_analysis_get_function_at(core->analysis, start + fcn_i)) {
-					i = fcn_i - 1;
+			for (size_t bb_i = i_old + 1; bb_i <= i; bb_i++) {
+				if (rz_analysis_get_block_at(core->analysis, start + bb_i)) {
+					i = bb_i - 1;
 					break;
 				}
 			}
