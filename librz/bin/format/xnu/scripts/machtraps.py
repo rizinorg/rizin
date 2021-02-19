@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -16,7 +16,15 @@ import re
 
 import rzpipe
 
-r = rzpipe.open("#!pipe")
+import types
+
+r = rzpipe.open()
+
+cmd_orig = r.cmd
+def cmd(self, cmd):
+    print(f"===> {cmd}")
+    return cmd_orig(cmd)
+r.cmd = types.MethodType(cmd, r)
 
 
 def walk_back_until(addr, pattern, min_addr):
@@ -43,11 +51,11 @@ def carve_trap_num(addr, flag):
     min_addr = int(r.cmd("?v " + flag), 0)
     emu_start = walk_back_until(addr - 4, r"^b|^ret|^invalid", min_addr)
     r.cmd("s " + str(emu_start))
-    obj = r.cmd("aefa 0x%08x~[0]:0" % addr)
+    obj = int(r.cmd("aefa 0x%08x~[0]:0" % addr), 0)
     r.cmd("s " + saved_seek)
-    val = r.cmdj("pv4j@%s+0x14" % obj)["value"]
+    val = r.cmdj(f"pv4j@{obj + 0x14}")[0]["value"]
     if val == 0:
-        val = r.cmdj("pv4j@%s+0x18" % obj)["value"]
+        val = r.cmdj(f"pv4j@{obj + 0x18}")[0]["value"]
     return val
 
 
@@ -63,7 +71,7 @@ def carve_traps():
         r.cmd("sHu")
         msgs = r.cmdj("axtj sym._mach_msg")
         if len(msgs) == 0:
-            print "Cannot find refs to mach_msg!"
+            print("Cannot find refs to mach_msg!")
             return
 
     traps = {}
@@ -92,4 +100,4 @@ def carve_traps():
 
 if __name__ == "__main__":
     traps = carve_traps()
-    print json.dumps(traps, indent=4)
+    print(json.dumps(traps, indent=4))
