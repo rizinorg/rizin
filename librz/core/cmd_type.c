@@ -1076,11 +1076,11 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			if (name && type) {
 				name++; // skip the '.'
 				if (rz_str_startswith(type, "struct")) {
-					print_struct_union_in_c_format(TDB, stdifstruct, rz_str_trim_head_ro(input + 2), true);
+					print_struct_union_in_c_format(TDB, stdifstruct, name, true);
 				} else if (rz_str_startswith(type, "union")) {
-					print_struct_union_in_c_format(TDB, stdifunion, rz_str_trim_head_ro(input + 2), true);
+					print_struct_union_in_c_format(TDB, stdifunion, name, true);
 				} else if (rz_str_startswith(type, "enum")) {
-					print_enum_in_c_format(TDB, rz_str_trim_head_ro(input + 2), true);
+					print_enum_in_c_format(TDB, name, true);
 				} else if (rz_str_startswith(type, "typedef")) {
 					rz_core_list_typename_alias_c(core, input, TDB);
 				} else if (rz_str_startswith(type, "func")) {
