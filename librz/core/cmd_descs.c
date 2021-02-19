@@ -1095,7 +1095,7 @@ static const RzCmdDescHelp seek_blocksize_forward_help = {
 	.args = seek_blocksize_forward_args,
 };
 
-static const RzCmdDescHelp sH_help = {
+static const RzCmdDescHelp sh_help = {
 	.summary = "Seek history commands",
 };
 static const RzCmdDescArg seek_history_list_args[] = {
@@ -2592,15 +2592,15 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *seek_blocksize_forward_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "s++", rz_seek_blocksize_forward_handler, &seek_blocksize_forward_help);
 	rz_warn_if_fail(seek_blocksize_forward_cd);
 
-	RzCmdDesc *sH_cd = rz_cmd_desc_group_modes_new(core->rcmd, s_cd, "sH", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_seek_history_list_handler, &seek_history_list_help, &sH_help);
-	rz_warn_if_fail(sH_cd);
-	RzCmdDesc *seek_redo_cd = rz_cmd_desc_argv_new(core->rcmd, sH_cd, "sHr", rz_seek_redo_handler, &seek_redo_help);
+	RzCmdDesc *sh_cd = rz_cmd_desc_group_modes_new(core->rcmd, s_cd, "sh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_seek_history_list_handler, &seek_history_list_help, &sh_help);
+	rz_warn_if_fail(sh_cd);
+	RzCmdDesc *seek_redo_cd = rz_cmd_desc_argv_new(core->rcmd, sh_cd, "shr", rz_seek_redo_handler, &seek_redo_help);
 	rz_warn_if_fail(seek_redo_cd);
 
-	RzCmdDesc *seek_undo_cd = rz_cmd_desc_argv_new(core->rcmd, sH_cd, "sHu", rz_seek_undo_handler, &seek_undo_help);
+	RzCmdDesc *seek_undo_cd = rz_cmd_desc_argv_new(core->rcmd, sh_cd, "shu", rz_seek_undo_handler, &seek_undo_help);
 	rz_warn_if_fail(seek_undo_cd);
 
-	RzCmdDesc *seek_undo_reset_cd = rz_cmd_desc_argv_new(core->rcmd, sH_cd, "sH-", rz_seek_undo_reset_handler, &seek_undo_reset_help);
+	RzCmdDesc *seek_undo_reset_cd = rz_cmd_desc_argv_new(core->rcmd, sh_cd, "sh-", rz_seek_undo_reset_handler, &seek_undo_reset_help);
 	rz_warn_if_fail(seek_undo_reset_cd);
 
 	RzCmdDesc *seek_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, s_cd, "s/", rz_seek_search, &seek_search_help);
