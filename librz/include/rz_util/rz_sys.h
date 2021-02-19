@@ -132,11 +132,6 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode);
 RZ_API FILE *rz_sys_fopen(const char *path, const char *mode);
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length);
 RZ_API int rz_sys_truncate(const char *file, int sz);
-#if __WINDOWS__
-RZ_API HANDLE rz_sys_opendir(const char *path, WIN32_FIND_DATAW *entry);
-#else
-RZ_API DIR *rz_sys_opendir(const char *path);
-#endif
 RZ_API int rz_sys_cmdbg(const char *cmd);
 RZ_API int rz_sys_cmdf(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len);
