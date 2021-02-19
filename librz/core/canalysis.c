@@ -5749,11 +5749,12 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		}
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
+	const char *spname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
 	EsilBreakCtx ctx = {
 		&op,
 		fcn,
-		rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP),
-		rz_reg_getv(core->analysis->reg, ctx.spname)
+		spname,
+		rz_reg_getv(core->analysis->reg, spname)
 	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop
