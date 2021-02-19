@@ -840,6 +840,9 @@ typedef struct {
 	RzCoreAnalStatsItem *block;
 } RzCoreAnalStats;
 
+RZ_API void rz_core_list_typename_alias_c(RzCore *core, const char *input, Sdb *TDB);
+RZ_API void rz_core_list_loaded_typedefs(RzCore *core, const char *input, Sdb *TDB);
+
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);
 RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *a, ut64 from, ut64 to, ut64 step);

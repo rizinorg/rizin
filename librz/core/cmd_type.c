@@ -176,10 +176,6 @@ static const char *help_msg_tu[] = {
 	NULL
 };
 
-static void show_help(RzCore *core) {
-	rz_core_cmd_help(core, help_msg_t);
-}
-
 static void __core_cmd_tcc(RzCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -235,7 +231,7 @@ static void __core_cmd_tcc(RzCore *core, const char *input) {
 		rz_list_free(list);
 	} break;
 	case 'k':
-		rz_core_cmd0(core, "afck");
+		rz_core_kuery_print(core, "analysis/cc/*");
 		break;
 	case ' ':
 		if (strchr(input, '(')) {
@@ -729,6 +725,76 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut
 	}
 }
 
+RZ_API void rz_core_list_loaded_typedefs(RzCore *core, const char *input, Sdb *TDB) {
+	PJ *pj = NULL;
+	if (input[1] == 'j') {
+		pj = pj_new();
+		pj_o(pj);
+	}
+	char *name = NULL;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(TDB, true);
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "typedef")) {
+			if (!name || strcmp(sdbkv_value(kv), name)) {
+				free(name);
+				name = strdup(sdbkv_key(kv));
+				if (!input[1]) {
+					rz_cons_println(name);
+				} else {
+					const char *q = sdb_fmt("typedef.%s", name);
+					const char *res = sdb_const_get(TDB, q, 0);
+					pj_ks(pj, name, res);
+				}
+			}
+		}
+	}
+	if (input[1] == 'j') {
+		pj_end(pj);
+	}
+	if (pj) {
+		rz_cons_printf("%s\n", pj_string(pj));
+		pj_free(pj);
+	}
+	free(name);
+	ls_free(l);
+}
+
+RZ_API void rz_core_list_typename_alias_c(RzCore *core, const char *input, Sdb *TDB) {
+	char *name = NULL;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(TDB, true);
+	const char *arg = rz_str_trim_head_ro(input + 2);
+	bool match = false;
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "typedef")) {
+			if (!name || strcmp(sdbkv_value(kv), name)) {
+				free(name);
+				name = strdup(sdbkv_key(kv));
+				if (name && (arg && *arg)) {
+					if (!strcmp(arg, name)) {
+						match = true;
+					} else {
+						continue;
+					}
+				}
+				const char *q = sdb_fmt("typedef.%s", name);
+				const char *res = sdb_const_get(TDB, q, 0);
+				if (res) {
+					rz_cons_printf("%s %s %s;\n", sdbkv_value(kv), res, name);
+				}
+				if (match) {
+					break;
+				}
+			}
+		}
+	}
+	free(name);
+	ls_free(l);
+}
+
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
 	int stack = 0, maxstack = 0;
 	ut64 at = from;
@@ -973,13 +1039,13 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				print_struct_union_list_json(TDB, stdifunion);
 			}
 			break;
-		case 'c':
+		case 'c': // "tuc"
 			print_struct_union_in_c_format(TDB, stdifunion, rz_str_trim_head_ro(input + 2), true);
 			break;
-		case 'd':
+		case 'd': // "tud"
 			print_struct_union_in_c_format(TDB, stdifunion, rz_str_trim_head_ro(input + 2), false);
 			break;
-		case ' ':
+		case ' ': // "tu "
 			showFormat(core, rz_str_trim_head_ro(input + 1), 0);
 			break;
 		case 0:
@@ -1010,15 +1076,15 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			if (name && type) {
 				name++; // skip the '.'
 				if (rz_str_startswith(type, "struct")) {
-					rz_core_cmdf(core, "tsc %s", name);
+					print_struct_union_in_c_format(TDB, stdifstruct, rz_str_trim_head_ro(input + 2), true);
 				} else if (rz_str_startswith(type, "union")) {
-					rz_core_cmdf(core, "tuc %s", name);
+					print_struct_union_in_c_format(TDB, stdifunion, rz_str_trim_head_ro(input + 2), true);
 				} else if (rz_str_startswith(type, "enum")) {
-					rz_core_cmdf(core, "tec %s", name);
+					print_enum_in_c_format(TDB, rz_str_trim_head_ro(input + 2), true);
 				} else if (rz_str_startswith(type, "typedef")) {
-					rz_core_cmdf(core, "ttc %s", name);
+					rz_core_list_typename_alias_c(core, input, TDB);
 				} else if (rz_str_startswith(type, "func")) {
-					rz_core_cmdf(core, "tfc %s", name);
+					printFunctionTypeC(core, input + 3);
 				}
 			}
 			break;
@@ -1627,78 +1693,16 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 't': {
+	case 't': { // "tt"
 		if (!input[1] || input[1] == 'j') {
-			PJ *pj = NULL;
-			if (input[1] == 'j') {
-				pj = pj_new();
-				pj_o(pj);
-			}
-			char *name = NULL;
-			SdbKv *kv;
-			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list(TDB, true);
-			ls_foreach (l, iter, kv) {
-				if (!strcmp(sdbkv_value(kv), "typedef")) {
-					if (!name || strcmp(sdbkv_value(kv), name)) {
-						free(name);
-						name = strdup(sdbkv_key(kv));
-						if (!input[1]) {
-							rz_cons_println(name);
-						} else {
-							const char *q = sdb_fmt("typedef.%s", name);
-							const char *res = sdb_const_get(TDB, q, 0);
-							pj_ks(pj, name, res);
-						}
-					}
-				}
-			}
-			if (input[1] == 'j') {
-				pj_end(pj);
-			}
-			if (pj) {
-				rz_cons_printf("%s\n", pj_string(pj));
-				pj_free(pj);
-			}
-			free(name);
-			ls_free(l);
+			rz_core_list_loaded_typedefs(core, input, TDB);
 			break;
 		}
-		if (input[1] == 'c') {
-			char *name = NULL;
-			SdbKv *kv;
-			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list(TDB, true);
-			const char *arg = rz_str_trim_head_ro(input + 2);
-			bool match = false;
-			ls_foreach (l, iter, kv) {
-				if (!strcmp(sdbkv_value(kv), "typedef")) {
-					if (!name || strcmp(sdbkv_value(kv), name)) {
-						free(name);
-						name = strdup(sdbkv_key(kv));
-						if (name && (arg && *arg)) {
-							if (!strcmp(arg, name)) {
-								match = true;
-							} else {
-								continue;
-							}
-						}
-						const char *q = sdb_fmt("typedef.%s", name);
-						const char *res = sdb_const_get(TDB, q, 0);
-						if (res) {
-							rz_cons_printf("%s %s %s;\n", sdbkv_value(kv), res, name);
-						}
-						if (match) {
-							break;
-						}
-					}
-				}
-			}
-			free(name);
-			ls_free(l);
+		if (input[1] == 'c') { // "ttc"
+			rz_core_list_typename_alias_c(core, input, TDB);
 			break;
 		}
-		if (input[1] == '?') {
+		if (input[1] == '?') { // "tt?"
 			rz_core_cmd_help(core, help_msg_tt);
 			break;
 		}
@@ -1717,7 +1721,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		free(s);
 	} break;
 	case '?':
-		show_help(core);
+		rz_core_cmd_help(core, help_msg_t);
 		break;
 	}
 	return true;
