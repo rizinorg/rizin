@@ -1359,7 +1359,7 @@ repeat:
 		int h, w = rz_cons_get_size(&h);
 		bool asm_bytes = rz_config_get_b(core->config, "asm.bytes");
 		rz_config_set_b(core->config, "asm.bytes", false);
-		rz_core_cmd0(core, "fd");
+		rz_core_flag_describe(core, core->offset, false, RZ_OUTPUT_MODE_STANDARD);
 
 		int maxcount = 9;
 		int rows, cols = rz_cons_get_size(&rows);
@@ -1405,14 +1405,13 @@ repeat:
 					name[0] = 0;
 				}
 
-				char *cmt = (char *)rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, refi->addr);
+				const char *cmt = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, refi->addr);
 				if (cmt) {
-					rz_str_trim(cmt);
+					cmt = rz_str_trim_head_ro(cmt);
 					rz_cons_printf(" %d [%s] 0x%08" PFMT64x " 0x%08" PFMT64x " %s %sref (%s) ; %s\n",
 						idx, cstr, refi->at, refi->addr,
 						rz_analysis_xrefs_type_tostring(refi->type),
 						xref ? "x" : "", name, cmt);
-					free(cmt);
 				}
 				free(name);
 				if (idx == skip) {
@@ -3235,7 +3234,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				ut64 addr = rz_debug_reg_get(core->dbg, "PC");
 				if (addr && addr != UT64_MAX) {
 					rz_core_seek_and_save(core, addr, true);
-					rz_core_cmdf(core, "ar `arn PC`=0x%" PFMT64x, addr);
+					rz_core_analysis_set_reg(core, "PC", addr);
 				} else {
 					ut64 entry = rz_num_get(core->num, "entry0");
 					if (!entry || entry == UT64_MAX) {
@@ -3614,7 +3613,7 @@ RZ_API void rz_core_print_scrollbar(RzCore *core) {
 
 	int scrollbar = rz_config_get_i(core->config, "scr.scrollbar");
 	if (scrollbar == 2) {
-		// already handled by rz_core_cmd("zf:") in visual.c
+		// already handled by rz_core_cmd("fz:") in visual.c
 		return;
 	}
 	if (scrollbar > 2) {
@@ -3798,11 +3797,6 @@ static void visual_refresh(RzCore *core) {
 	vi = rz_config_get(core->config, "cmd.vprompt");
 	if (vi && *vi) {
 		rz_core_cmd0(core, vi);
-#if 0
-		char *output = rz_core_cmd_str (core, vi);
-		rz_cons_strcat_at (output, 10, 5, 20, 20);
-		free (output);
-#endif
 	}
 	rz_core_visual_title(core, color);
 	vcmd = rz_config_get(core->config, "cmd.visual");
