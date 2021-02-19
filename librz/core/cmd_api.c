@@ -1731,12 +1731,13 @@ RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_new(const char *cmd, int n_args, char
 	RzCmdParsedArgs *res = RZ_NEW0(RzCmdParsedArgs);
 	res->has_space_after_cmd = true;
 	res->argc = n_args + 1;
-	res->argv = RZ_NEWS0(char *, res->argc);
+	res->argv = RZ_NEWS0(char *, res->argc + 1);
 	res->argv[0] = strdup(cmd);
 	int i;
 	for (i = 1; i < res->argc; i++) {
 		res->argv[i] = strdup(args[i - 1]);
 	}
+	res->argv[res->argc] = NULL;
 	return res;
 }
 
@@ -1771,7 +1772,7 @@ static void free_array(char **arr, int n) {
 
 RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *a, int n_args, char **args) {
 	rz_return_val_if_fail(a && a->argv && a->argv[0], false);
-	char **tmp = RZ_NEWS0(char *, n_args + 1);
+	char **tmp = RZ_NEWS0(char *, n_args + 2);
 	if (!tmp) {
 		return false;
 	}
@@ -1783,6 +1784,7 @@ RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *a, int n_args, char **ar
 			goto err;
 		}
 	}
+	tmp[n_args + 1] = NULL;
 	free_array(a->argv, a->argc);
 	a->argv = tmp;
 	a->argc = n_args + 1;
