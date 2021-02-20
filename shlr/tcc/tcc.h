@@ -107,7 +107,7 @@ typedef long long int int64_t;
 #define MAX_ALIGN     8
 #define PTR_SIZE      4
 
-#if !defined(__HAIKU__)
+#if !defined(__HAIKU__) && !defined(__MSYS__)
 typedef uint64_t addr_t;
 #endif
 
