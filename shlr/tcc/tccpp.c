@@ -121,8 +121,11 @@ ST_FUNC void cstr_ccat(CString *cstr, int ch) {
 	if (size > cstr->size_allocated) {
 		cstr_realloc(cstr, size);
 	}
-	((unsigned char *)cstr->data)[size - 1] = ch;
-	cstr->size = size;
+	unsigned char *uchar = ((unsigned char *)cstr->data);
+	if (uchar) {
+		uchar[size - 1] = ch;
+		cstr->size = size;
+	}
 }
 
 ST_FUNC void cstr_cat(CString *cstr, const char *str) {
