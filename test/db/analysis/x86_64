@@ -758,8 +758,8 @@ FILE=bins/mach0/mach0-i386
 CMDS=<<EOF
 e analysis.hasnext=0
 aa
-afo sym._foo
-afo sym._bar
+afo @ sym._foo
+afo @ sym._bar
 EOF
 EXPECT=<<EOF
 0x00001f50

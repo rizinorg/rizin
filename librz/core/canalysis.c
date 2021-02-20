@@ -7171,20 +7171,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	return true;
 }
 
-RZ_IPI char *rz_core_analysis_function_get_signature(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	if (!f) {
-		return NULL;
-	}
-	return rz_analysis_function_get_signature(f);
-}
-
-RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, ut64 addr, const char *newsig) {
-	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	if (!f) {
-		return false;
-	}
-
+RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunction *fcn, const char *newsig) {
 	bool res = false;
 	char *fcnstr = rz_str_newf("%s;", newsig);
 	char *fcnstr_copy = strdup(fcnstr);
@@ -7197,11 +7184,11 @@ RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, ut64 addr, con
 		goto err;
 	}
 	// TODO: move this into rz_analysis_str_to_fcn()
-	if (strcmp(f->name, fcnname)) {
-		(void)rz_core_analysis_function_rename(core, addr, fcnname);
-		f = rz_analysis_get_fcn_in(core->analysis, addr, -1);
+	if (strcmp(fcn->name, fcnname)) {
+		(void)rz_core_analysis_function_rename(core, fcn->addr, fcnname);
+		fcn = rz_analysis_get_fcn_in(core->analysis, fcn->addr, -1);
 	}
-	rz_analysis_str_to_fcn(core->analysis, f, fcnstr);
+	rz_analysis_str_to_fcn(core->analysis, fcn, fcnstr);
 	res = true;
 err:
 	free(fcnname);
@@ -7211,11 +7198,45 @@ err:
 }
 
 RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr) {
-	char *sig = rz_core_analysis_function_get_signature(core, addr);
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (!f) {
+		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		return;
+	}
+
+	char *sig = rz_analysis_function_get_signature(f);
 	char *data = rz_core_editor(core, NULL, sig);
 	if (sig && data) {
-		rz_core_analysis_function_set_signature(core, core->offset, data);
+		rz_core_analysis_function_set_signature(core, f, data);
 	}
 	free(sig);
 	free(data);
+}
+
+RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end) {
+	rz_return_if_fail(core->offset <= addr_end);
+	ut64 addr = core->offset;
+	int depth = 1;
+	ut64 a, b;
+	const char *c;
+	a = rz_config_get_i(core->config, "analysis.from");
+	b = rz_config_get_i(core->config, "analysis.to");
+	c = rz_config_get(core->config, "analysis.limits");
+	rz_config_set_i(core->config, "analysis.from", addr);
+	rz_config_set_i(core->config, "analysis.to", addr_end);
+	rz_config_set(core->config, "analysis.limits", "true");
+
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
+	if (fcn) {
+		rz_analysis_function_resize(fcn, addr_end - addr);
+	}
+	rz_core_analysis_fcn(core, addr, UT64_MAX,
+		RZ_ANALYSIS_REF_TYPE_NULL, depth);
+	fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
+	if (fcn) {
+		rz_analysis_function_resize(fcn, addr_end - addr);
+	}
+	rz_config_set_i(core->config, "analysis.from", a);
+	rz_config_set_i(core->config, "analysis.to", b);
+	rz_config_set(core->config, "analysis.limits", c ? c : "");
 }
