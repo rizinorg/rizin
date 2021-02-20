@@ -44,7 +44,7 @@ CMDS=<<EOF
 ?v $$
 s 42
 ?v $$
-sHu
+shu
 ?v $$
 EOF
 EXPECT=<<EOF
@@ -127,7 +127,7 @@ CMDS=<<EOF
 ?v $o
 s 42
 ?v $o
-sHu
+shu
 ?v $o
 EOF
 EXPECT=<<EOF
@@ -302,7 +302,7 @@ CMDS=<<EOF
 ?v $$
 s 42
 ?v $$
-sHu
+shu
 ?v $$
 EOF
 EXPECT=<<EOF
@@ -318,7 +318,7 @@ CMDS=<<EOF
 ?v $o
 s 42
 ?v $o
-sHu
+shu
 ?v $o
 EOF
 EXPECT=<<EOF

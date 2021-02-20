@@ -1532,8 +1532,6 @@ static void ds_atabs_option(RDisasmState *ds) {
 }
 
 static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
-	int i;
-
 	ds->hasMidflag = false;
 	if (ds->midcursor && core->print->cur != -1) {
 		ut64 cur = core->offset + core->print->cur;
@@ -1543,10 +1541,14 @@ static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
 			return cur - from;
 		}
 	}
-	for (i = 1; i < ds->oplen; i++) {
+	if (rz_analysis_get_block_at(core->analysis, ds->at)) {
+		ds->midflags = ds->midflags ? RZ_MIDFLAGS_SHOW : RZ_MIDFLAGS_HIDE;
+	}
+	for (int i = 1; i < ds->oplen; i++) {
 		RzFlagItem *fi = rz_flag_get_i(core->flags, ds->at + i);
 		if (fi && fi->name) {
-			if (ds->midflags == 2 && ((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
+			if (ds->midflags == RZ_MIDFLAGS_REALIGN &&
+				((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
 				i = 0;
 			} else if (!strncmp(fi->name, "hit.", 4)) { // use search.prefix ?
 				i = 0;

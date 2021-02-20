@@ -56,7 +56,7 @@ CMDS=<<EOF
 s main
 af
 afi~complex[1]
-afb.@main
+afbi@main
 EOF
 EXPECT=<<EOF
 165
