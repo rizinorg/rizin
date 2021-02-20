@@ -287,12 +287,16 @@ ST_FUNC char *get_tok_str(int v, CValue *cv) {
 		cstr_ccat(&cstr_buf, '\0');
 		break;
 	case TOK_PPNUM:
-		cstr = cv->cstr;
-		len = cstr->size - 1;
-		for (i = 0; i < len; i++) {
-			add_char(&cstr_buf, ((unsigned char *)cstr->data)[i]);
+		if (cv) {
+			cstr = cv->cstr;
+			len = cstr->size - 1;
+			for (i = 0; i < len; i++) {
+				add_char(&cstr_buf, ((unsigned char *)cstr->data)[i]);
+			}
+			cstr_ccat(&cstr_buf, '\0');
+		} else {
+			eprintf("cv = nil\n");
 		}
-		cstr_ccat(&cstr_buf, '\0');
 		break;
 	case TOK_LSTR:
 		cstr_ccat(&cstr_buf, 'L');
@@ -2656,6 +2660,10 @@ keep_tok_flags:
 /* return next token without macro substitution. Can read input from
    macro_ptr buffer */
 static void next_nomacro_spc(void) {
+	if (!file) {
+		eprintf("file = null\n");
+		return;
+	}
 	if (macro_ptr) {
 	redo:
 		tok = *macro_ptr;
@@ -3252,6 +3260,11 @@ ST_FUNC void preprocess_new(void) {
 
 /* Preprocess the current file */
 ST_FUNC int tcc_preprocess(TCCState *s1) {
+	if (!file) {
+		eprintf("file = null\n");
+		return -1;
+	}
+
 	Sym *define_start;
 
 	BufferedFile *file_ref, **iptr, **iptr_new;
