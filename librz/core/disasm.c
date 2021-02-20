@@ -188,6 +188,7 @@ typedef struct {
 	bool show_varaccess;
 	bool show_vars;
 	bool show_fcnsig;
+	bool show_fcnsize;
 	bool hinted_line;
 	int show_varsum;
 	int midflags;
@@ -675,7 +676,8 @@ static RDisasmState *ds_init(RzCore *core) {
 	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
 	core->parser->localvar_only = rz_config_get_b(core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
-	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcnsig");
+	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcn.signature");
+	ds->show_fcnsize = rz_config_get_b(core->config, "asm.fcn.size");
 	ds->show_vars = rz_config_get_b(core->config, "asm.var");
 	ds->show_varsum = rz_config_get_i(core->config, "asm.var.summary");
 	ds->show_varaccess = rz_config_get_b(core->config, "asm.var.access");
@@ -1899,7 +1901,10 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_pre(ds, true);
 			rz_cons_printf("%s  ", COLOR_RESET(ds));
 		}
-		rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
+
+		if (ds->show_fcnsize) {
+			rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
+		}
 
 		// show function's realname in the signature if realnames are enabled
 		if (core->flags->realnames) {
