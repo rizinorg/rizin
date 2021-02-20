@@ -95,6 +95,9 @@ static void print_c_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, int ws,
 }
 
 RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
+	if (!p || !buf) {
+		return;
+	}
 	int i, w = (int)(p->cols * 0.7);
 	if (w < 1) {
 		w = 1;
