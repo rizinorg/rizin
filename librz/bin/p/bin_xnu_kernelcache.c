@@ -2086,7 +2086,7 @@ static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RzIODesc *fd, ut8 *buf
 }
 
 static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RzIODesc *fd, ut8 *buf, int count) {
-	if (kobj->rebasing_buffer) {
+	if (kobj->rebasing_buffer || !buf) {
 		return;
 	}
 	kobj->rebasing_buffer = true;
