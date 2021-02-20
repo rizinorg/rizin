@@ -151,6 +151,10 @@ typedef enum {
 #define __KFBSD__ 0
 #endif
 
+#ifdef __MSYS__
+#define __UNIX__ 1
+#endif
+
 #ifdef _MSC_VER
 #define restrict
 #define strcasecmp  stricmp
