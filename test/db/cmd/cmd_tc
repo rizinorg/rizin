@@ -252,3 +252,37 @@ EXPECT=<<EOF
 typedef char * string;
 EOF
 RUN
+
+NAME=test cmd tsc 
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+.ic*
+tsc Employee
+EOF
+EXPECT=<<EOF
+struct Employee {
+	struct objc_class *isa;
+	int16_t _shortWord;
+	struct NSString *_username;
+	struct NSString *_firstName;
+	uint64_t _wideWord;
+	void *username;
+	void *firstName;
+	void *shortWord;
+	void *wideWord;
+};
+EOF
+RUN
+
+NAME=test cmd tfc
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+.ic*
+tfc main
+tfc entry0
+EOF
+EXPECT=<<EOF
+int main (int argc, char ** argv, char ** envp);
+void entry0 ();
+EOF
+RUN
