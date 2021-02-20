@@ -412,8 +412,8 @@ EOF
 EXPECT=<<EOF
 |           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
 |           0x00000005      ebf9           jmp   0
-            ;-- sym.dummy:
             0x00000007  ~   b8210011c1     mov   eax, 0xc1110021       ; '!'
-            0x0000000c      0000           add   byte [rax], al
+            ;-- sym.dummy:
+            0x00000009      0011           add   byte [rcx], dl
 EOF
 RUN
