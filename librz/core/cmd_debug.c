@@ -3938,7 +3938,7 @@ static void rz_core_debug_kill(RzCore *core, const char *input) {
 	} else if (*input == 'o') {
 		switch (input[1]) {
 		case 0: // "dko" - list signal skip/conts
-			rz_debug_signal_list(core->dbg, 1);
+			rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		case ' ': // dko SIGNAL
 			if (input[2]) {
@@ -3980,9 +3980,9 @@ static void rz_core_debug_kill(RzCore *core, const char *input) {
 		}
 		}
 	} else if (*input == 'j') {
-		rz_debug_signal_list(core->dbg, 2);
+		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_JSON);
 	} else if (!*input) {
-		rz_debug_signal_list(core->dbg, 0);
+		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
 #if 0
 		RzListIter *iter;
 		RzDebugSignal *ds;
