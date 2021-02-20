@@ -651,6 +651,7 @@ RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCom
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn);
 
 /* asm.c */
+#define RZ_MIDFLAGS_HIDE     0
 #define RZ_MIDFLAGS_SHOW     1
 #define RZ_MIDFLAGS_REALIGN  2
 #define RZ_MIDFLAGS_SYMALIGN 3
