@@ -249,3 +249,38 @@ Hint: To find both the declaration and definition of a function named
 ```bash
 git grep -nWG "^[^[:blank:]].*func_name("
 ```
+
+## JSON
+
+Since many places in Rizin output JSON the special API was created, **PJ** which means "Print Json".
+It allows to create nested JSON structs with a simple and short API. Full API reference is
+available in `librz/include/rz_util/pj.h`.
+
+Here is the short example of how we usually use **PJ**:
+```c
+PJ *pj = NULL;
+if (mode == RZ_OUTPUT_MODE_JSON) {
+	pj = pj_new(); // creates a new instance of the API
+	if (!pj) {
+		return false;
+	}
+}
+// ... some other logic
+// Creating the JSON structure
+if (mode == RZ_OUTPUT_MODE_JSON) {
+	pj_o(pj); // creates a JSON list
+	pj_ki(pj, "id", some->id); // creates an element like "id": 6
+	pj_ks(pj, "name", some->name); // creates an element like "name": "bla"
+	pj_end(pj); // closes a JSON list
+}
+// ... some other logic
+// Printing the JSON on the screen
+if (mode == RZ_OUTPUT_MODE_JSON) {
+	rz_cons_println(pj_string(pj));
+	pj_free(pj); // free the instance of the API
+}
+```
+It will produce the following output:
+```json
+{"id":6,"name":"bla"}
+```
