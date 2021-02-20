@@ -75,7 +75,7 @@ pirj~{}
 EOF
 EXPECT=<<EOF
 
-/ 24: fcn.00000000 ();
+/ fcn.00000000 ();
 | 0x00000000      0f1f440000     nop   dword [rax + rax]
 | ----------- true: 0x00000005
 | ; CODE XREF from fcn.00000000 @ 0x11
@@ -439,7 +439,7 @@ EXPECT=<<EOF
 
 | 0x00005b78      c3             ret
 
-/ 60: entry.init0 ();
+/ entry.init0 ();
 | 0x00005bd0      f30f1efa       endbr64
 | 0x00005bd4      e967ffffff     jmp   0x5b40
 | ----------- true: 0x00005b40
