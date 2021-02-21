@@ -435,7 +435,7 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 			}
 		}
 		rz_list_foreach (cmd->plist, iter, cp) {
-			if (cp->call(cmd->data, input)) {
+			if (cp->call && cp->call(cmd->data, input)) {
 				free(nstr);
 				return true;
 			}
