@@ -286,16 +286,30 @@ void entry0 ();
 EOF
 RUN
 
-NAME=test cmd tc with enum
+NAME=test cmd tec
 FILE=-
 CMDS=<<EOF
 "td enum foo {bar = 1, cow = 3};"
-tc
+tec
 EOF
 EXPECT=<<EOF
 enum foo {
 	bar = 1,
 	cow = 3
+};
+EOF
+RUN
+
+NAME=test cmd tuc
+FILE=-
+CMDS=<<EOF
+"td union Data {int i,j;};"
+tuc
+EOF
+EXPECT=<<EOF
+union Data {
+	int32_t i;
+	int32_t j;
 };
 EOF
 RUN
