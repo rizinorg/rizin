@@ -2166,7 +2166,7 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_visual_refs(core, false, true);
 			break;
 		case 'h': // seek history
-			rz_core_cmdf(core, "sH~...");
+			rz_core_cmdf(core, "sh~...");
 			break;
 		case '_':
 			rz_core_visual_hudstuff(core);

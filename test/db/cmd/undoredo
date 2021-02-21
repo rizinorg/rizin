@@ -2,63 +2,63 @@ NAME=t/undoredo
 FILE=malloc://1024
 CMDS=<<EOF
 ?e No seeks.
-sH* ; ?v $$
+sh* ; ?v $$
 ?e
 
 ?e But try undo/redo.
-sHu
-sHr
-sH*
-sHr
-sHr
-sHu
-sHu
-sHu
-sHr
-sH*
+shu
+shr
+sh*
+shr
+shr
+shu
+shu
+shu
+shr
+sh*
 ?e
 
 ?e First seeks.
-s 0x10 ; sH* ; ?v $$
-s 0x20 ; sH* ; ?v $$
-s 0x30 ; sH* ; ?v $$
-s 0x40 ; sH* ; ?v $$
+s 0x10 ; sh* ; ?v $$
+s 0x20 ; sh* ; ?v $$
+s 0x30 ; sh* ; ?v $$
+s 0x40 ; sh* ; ?v $$
 ?e
 
 ?e Undo all seeks (and some more).
-sHu ; sH* ; ?v $$ ; ?e
-sHu ; sH* ; ?v $$ ; ?e
-sHu ; sH* ; ?v $$ ; ?e
-sHu ; sH* ; ?v $$ ; ?e
+shu ; sh* ; ?v $$ ; ?e
+shu ; sh* ; ?v $$ ; ?e
+shu ; sh* ; ?v $$ ; ?e
+shu ; sh* ; ?v $$ ; ?e
 # Test if more undos break something.
-sHu ; sH* ; ?v $$ ; ?e
-sHu ; sH* ; ?v $$ ; ?e
+shu ; sh* ; ?v $$ ; ?e
+shu ; sh* ; ?v $$ ; ?e
 
 ?e Then redo them (and some more).
-sHr ; sH* ; ?v $$ ; ?e
-sHr ; sH* ; ?v $$ ; ?e
-sHr ; sH* ; ?v $$ ; ?e
-sHr ; sH* ; ?v $$ ; ?e
+shr ; sh* ; ?v $$ ; ?e
+shr ; sh* ; ?v $$ ; ?e
+shr ; sh* ; ?v $$ ; ?e
+shr ; sh* ; ?v $$ ; ?e
 # Test if more undos break something.
-sHr ; sH* ; ?v $$ ; ?e
-sHr ; sH* ; ?v $$ ; ?e
+shr ; sh* ; ?v $$ ; ?e
+shr ; sh* ; ?v $$ ; ?e
 
 ?e Undo some seeks and then seek somewhere else.
-sHu ; sHu
-sH* ; ?v $$ ; ?e
+shu ; shu
+sh* ; ?v $$ ; ?e
 s 0x50
-sH* ; ?v $$ ; ?e
+sh* ; ?v $$ ; ?e
 # Redo now does nothing.
-sHr ; sHr ; sHr
-sH* ; ?v $$ ; ?e
+shr ; shr ; shr
+sh* ; ?v $$ ; ?e
 
 ?e Undo all seeks again and perform a single seek with undo/redo.
-sHu ; sHu ; sHu
-sH* ; ?v $$ ; ?e
+shu ; shu ; shu
+sh* ; ?v $$ ; ?e
 s 0x100
-sH* ; ?v $$ ; ?e
-sHu ; sHr
-sH* ; ?v $$ ; ?e
+sh* ; ?v $$ ; ?e
+shu ; shr
+sh* ; ?v $$ ; ?e
 EOF
 EXPECT=<<EOF
 No seeks.
@@ -216,23 +216,23 @@ RUN
 NAME=basic json
 FILE=malloc://1024
 CMDS=<<EOF
-sHj
+shj
 sd +10
-sHj
+shj
 sd +10
-sHu
-sHj
-sHu
-sHj
+shu
+shj
+shu
+shj
 ?e undo at the start of list
-sHu
-sHj
+shu
+shj
 ?e redo to the end
-sHr; sHr
-sHj
+shr; shr
+shj
 ?e one more past the end
-sHr
-sHj
+shr
+shj
 EOF
 EXPECT=<<EOF
 [{"offset":0,"cursor":0,"current":true}]
@@ -254,17 +254,17 @@ CMDS=<<EOF
 sd +10
 ?e should produce two identical results
 sd +1
-sHj
-sHu
+shj
+shu
 sd +1
-sHj
+shj
 ?e 0 0, or 22 23 but not 0 22
 sd +10
 sd +1
-sHj
-sHu
+shj
+shu
 sd +2
-sHj
+shj
 EOF
 EXPECT=<<EOF
 should produce two identical results
@@ -284,14 +284,14 @@ s 0x0
 s 0x1
 s 0x2
 # shouldn't contain multiple 0 at the start
-sHj
+shj
 # regression test for deduplication not working on buffer edge
 60sd +1
 s 0x0
 s 0x0
 s 0x01
 s 0x02
-sH*~:-6..
+sh*~:-6..
 EOF
 EXPECT=<<EOF
 [{"offset":0,"cursor":0,"current":false},{"offset":1,"cursor":0,"current":false},{"offset":2,"cursor":0,"current":true}]

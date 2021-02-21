@@ -724,7 +724,7 @@ static int redirect_socket_to_pty(RzSocket *sock) {
 	// in case of interactive applications
 	int fdm, fds;
 
-	if (dyn_openpty && dyn_openpty(&fdm, &fds, NULL, NULL, NULL) == -1) {
+	if (!dyn_openpty || (dyn_openpty && dyn_openpty(&fdm, &fds, NULL, NULL, NULL) == -1)) {
 		perror("opening pty");
 		return -1;
 	}
