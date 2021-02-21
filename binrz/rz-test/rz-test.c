@@ -205,7 +205,8 @@ int main(int argc, char **argv) {
 				printf("%s\n", s);
 				free(s);
 			}
-			return 0;
+			ret = 0;
+			goto beach;
 		case 'V':
 			verbose = true;
 			break;
@@ -265,7 +266,8 @@ int main(int argc, char **argv) {
 	if (rz_test_dir) {
 		if (chdir(rz_test_dir) == -1) {
 			eprintf("Cannot find %s directory.\n", rz_test_dir);
-			return -1;
+			ret = -1;
+			goto beach;
 		}
 	} else {
 		bool dir_found = (opt.ind < argc && argv[opt.ind][0] != '.')
@@ -273,7 +275,8 @@ int main(int argc, char **argv) {
 			: rz_test_chdir(argv[0]);
 		if (!dir_found) {
 			eprintf("Cannot find db/ directory related to the given test.\n");
-			return -1;
+			ret = -1;
+			goto beach;
 		}
 	}
 
@@ -285,7 +288,8 @@ int main(int argc, char **argv) {
 
 	if (!rz_subprocess_init()) {
 		eprintf("Subprocess init failed\n");
-		return -1;
+		ret = -1;
+		goto beach;
 	}
 	atexit(rz_subprocess_fini);
 
@@ -298,7 +302,8 @@ int main(int argc, char **argv) {
 	state.verbose = verbose;
 	state.db = rz_test_test_database_new();
 	if (!state.db) {
-		return -1;
+		ret = -1;
+		goto beach;
 	}
 	rz_pvector_init(&state.queue, NULL);
 	rz_pvector_init(&state.results, (RzPVectorFree)rz_test_test_result_info_free);
@@ -309,11 +314,13 @@ int main(int argc, char **argv) {
 	}
 	state.lock = rz_th_lock_new(false);
 	if (!state.lock) {
-		return -1;
+		ret = -1;
+		goto beach;
 	}
 	state.cond = rz_th_cond_new();
 	if (!state.cond) {
-		return -1;
+		ret = -1;
+		goto beach;
 	}
 
 	if (opt.ind < argc) {
@@ -326,13 +333,15 @@ int main(int argc, char **argv) {
 				eprintf("Category: %s\n", arg);
 				if (!strcmp(arg, "unit")) {
 					if (!rz_test_test_run_unit()) {
-						return -1;
+						ret = -1;
+						goto beach;
 					}
 					continue;
 				} else if (!strcmp(arg, "fuzz")) {
 					if (!fuzz_dir) {
 						eprintf("No fuzz dir given. Use -F [dir]\n");
-						return -1;
+						ret = -1;
+						goto beach;
 					}
 					if (!rz_test_test_database_load_fuzz(state.db, fuzz_dir)) {
 						eprintf("Failed to load fuzz tests from \"%s\"\n", fuzz_dir);
@@ -353,7 +362,8 @@ int main(int argc, char **argv) {
 				eprintf("Failed to load tests from \"%s\"\n", tf);
 				rz_test_test_database_free(state.db);
 				free(tf);
-				return -1;
+				ret = -1;
+				goto beach;
 			}
 			free(tf);
 		}
@@ -362,7 +372,8 @@ int main(int argc, char **argv) {
 		if (!rz_test_test_database_load(state.db, "db")) {
 			eprintf("Failed to load tests from ./db\n");
 			rz_test_test_database_free(state.db);
-			return -1;
+			ret = -1;
+			goto beach;
 		}
 		if (fuzz_dir && !rz_test_test_database_load_fuzz(state.db, fuzz_dir)) {
 			eprintf("Failed to load fuzz tests from \"%s\"\n", fuzz_dir);
@@ -487,6 +498,7 @@ coast:
 	rz_th_lock_free(state.lock);
 	rz_th_cond_free(state.cond);
 beach:
+	free(output_file);
 	free(rizin_cmd);
 	free(rz_asm_cmd);
 	free(json_test_file);
