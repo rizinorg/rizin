@@ -1,12 +1,15 @@
-/* rizin - LGPL - Copyright 2019-2020 - pancake */
+// SPDX-FileCopyrightText: 2019-2020 pancake
+// SPDX-License-Identifier: LGPL-3.0-only
 
-/* This code has been written by pancake which has been based on Alvaro's
+/* This code has been based on Alvaro's
  * rzpipe-python script which was based on FireEye script for IDA Pro.
  *
  * https://www.fireeye.com/blog/threat-research/2017/03/introduction_to_reve.html
  */
 
 #include <rz_core.h>
+
+#include "core_private.h"
 
 typedef struct {
 	RzCore *core;
@@ -76,11 +79,11 @@ static ut64 readQword(RzCoreObjc *objc, ut64 addr, bool *success) {
 
 static void objc_analyze(RzCore *core) {
 	const char *oldstr = rz_print_rowlog(core->print, "Analyzing code to find selref references");
-	rz_core_cmd0(core, "aar");
+	(void)rz_core_analysis_refs(core, "");
 	if (!strcmp("arm", rz_config_get(core->config, "asm.arch"))) {
 		const bool emu_lazy = rz_config_get_i(core->config, "emu.lazy");
 		rz_config_set_i(core->config, "emu.lazy", true);
-		rz_core_cmd0(core, "aae");
+		rz_core_analysis_esil_default(core);
 		rz_config_set_i(core->config, "emu.lazy", emu_lazy);
 	}
 	rz_print_rowlog_done(core->print, oldstr);

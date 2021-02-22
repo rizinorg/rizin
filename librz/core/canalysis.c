@@ -651,9 +651,17 @@ static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
 			ut64 left = RZ_MIN(bs, size - i);
 			//	rz_core_cmdf (core, "wx 10203040 @ 0x%llx", addr);
 			switch (*mode) {
-			case 'd': // "debrujn"
-				rz_core_cmdf(core, "wopD %" PFMT64u " @ 0x%" PFMT64x, left, addr + i);
-				break;
+			case 'd': { // "debrujn"
+				ut8 *buf = (ut8 *)rz_debruijn_pattern(left, 0, NULL);
+				if (buf) {
+					if (!rz_core_write_at(core, addr + i, buf, left)) {
+						eprintf("Couldn't write at %" PFMT64x "\n", addr + i);
+					}
+					free(buf);
+				} else {
+					eprintf("Couldn't generate pattern of length %" PFMT64d "\n", left);
+				}
+			} break;
 			case 's': // "seq"
 				rz_core_cmdf(core, "woe 1 0xff 1 4 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
 				break;
@@ -6078,6 +6086,39 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	rz_cons_break_pop();
 	// restore register
 	rz_reg_arena_pop(core->analysis->reg);
+}
+
+RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
+	ut64 at = core->offset;
+	RzIOMap *map;
+	RzListIter *iter;
+	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "analysis");
+	if (!list) {
+		return;
+	}
+	if (!strcmp("range", rz_config_get(core->config, "analysis.in"))) {
+		ut64 from = rz_config_get_i(core->config, "analysis.from");
+		ut64 to = rz_config_get_i(core->config, "analysis.to");
+		if (to > from) {
+			char *len = rz_str_newf(" 0x%" PFMT64x, to - from);
+			rz_core_seek(core, from, true);
+			rz_core_analysis_esil(core, len, NULL);
+			free(len);
+		} else {
+			eprintf("Assert: analysis.from > analysis.to\n");
+		}
+	} else {
+		rz_list_foreach (list, iter, map) {
+			if (map->perm & RZ_PERM_X) {
+				char *ss = rz_str_newf(" 0x%" PFMT64x, map->itv.size);
+				rz_core_seek(core, map->itv.addr, true);
+				rz_core_analysis_esil(core, ss, NULL);
+				free(ss);
+			}
+		}
+		rz_list_free(list);
+	}
+	rz_core_seek(core, at, true);
 }
 
 static bool isValidAddress(RzCore *core, ut64 addr) {
