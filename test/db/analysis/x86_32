@@ -103,7 +103,7 @@ NAME=cyclomatic
 FILE=bins/pe/rz-bin.exe
 CMDS=<<EOF
 s 0x140002510;af;afi~complex[1]
-afb.@0x14000253e
+afbi@0x14000253e
 EOF
 EXPECT=<<EOF
 67
@@ -558,7 +558,7 @@ FILE=bins/elf/echo
 CMDS=<<EOF
 aaa
 s 0xf34
-afb.
+afbi
 EOF
 EXPECT=<<EOF
 0x00000f34 0x00000f4b 00:0000 23 j 0x00001144

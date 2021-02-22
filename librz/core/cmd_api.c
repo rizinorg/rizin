@@ -66,6 +66,16 @@ static const struct argv_modes_t {
 	{ "t", " (table mode)", RZ_OUTPUT_MODE_TABLE },
 };
 
+RZ_IPI int rz_output_mode_to_char(RzOutputMode mode) {
+	size_t i;
+	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+		if (argv_modes[i].mode == mode) {
+			return argv_modes[i].suffix[0];
+		}
+	}
+	return -1;
+}
+
 static int value = 0;
 
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
@@ -425,7 +435,7 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 			}
 		}
 		rz_list_foreach (cmd->plist, iter, cp) {
-			if (cp->call(cmd->data, input)) {
+			if (cp->call && cp->call(cmd->data, input)) {
 				free(nstr);
 				return true;
 			}
@@ -1721,12 +1731,13 @@ RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_new(const char *cmd, int n_args, char
 	RzCmdParsedArgs *res = RZ_NEW0(RzCmdParsedArgs);
 	res->has_space_after_cmd = true;
 	res->argc = n_args + 1;
-	res->argv = RZ_NEWS0(char *, res->argc);
+	res->argv = RZ_NEWS0(char *, res->argc + 1);
 	res->argv[0] = strdup(cmd);
 	int i;
 	for (i = 1; i < res->argc; i++) {
 		res->argv[i] = strdup(args[i - 1]);
 	}
+	res->argv[res->argc] = NULL;
 	return res;
 }
 
@@ -1761,7 +1772,7 @@ static void free_array(char **arr, int n) {
 
 RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *a, int n_args, char **args) {
 	rz_return_val_if_fail(a && a->argv && a->argv[0], false);
-	char **tmp = RZ_NEWS0(char *, n_args + 1);
+	char **tmp = RZ_NEWS0(char *, n_args + 2);
 	if (!tmp) {
 		return false;
 	}
@@ -1773,6 +1784,7 @@ RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *a, int n_args, char **ar
 			goto err;
 		}
 	}
+	tmp[n_args + 1] = NULL;
 	free_array(a->argv, a->argc);
 	a->argv = tmp;
 	a->argc = n_args + 1;

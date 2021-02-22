@@ -491,7 +491,7 @@ static bool pdb7_parse(RzPdb *pdb) {
 		if (UT64_MUL_OVFCHK(root_index_pages[i], page_size)) {
 			break;
 		}
-		rz_buf_seek(pdb->buf, root_index_pages[i] * page_size,
+		rz_buf_seek(pdb->buf, (st64)root_index_pages[i] * (st64)page_size,
 			RZ_BUF_SET);
 		rz_buf_read(pdb->buf, p_tmp, page_size);
 		p_tmp = (char *)p_tmp + page_size;
