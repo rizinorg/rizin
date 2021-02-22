@@ -725,10 +725,14 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut
 	}
 }
 
-RZ_API void rz_core_list_loaded_typedefs(RzCore *core, const char *input, Sdb *TDB, RzOutputMode mode) {
+RZ_API void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode) {
 	PJ *pj = NULL;
+	Sdb *TDB = core->analysis->sdb_types;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
+		if (!pj) {
+			return;
+		}
 		pj_o(pj);
 	}
 	char *name = NULL;
@@ -740,7 +744,7 @@ RZ_API void rz_core_list_loaded_typedefs(RzCore *core, const char *input, Sdb *T
 			if (!name || strcmp(sdbkv_value(kv), name)) {
 				free(name);
 				name = strdup(sdbkv_key(kv));
-				if (!input[1]) {
+				if (mode == RZ_OUTPUT_MODE_STANDARD) {
 					rz_cons_println(name);
 				} else {
 					const char *q = sdb_fmt("typedef.%s", name);
@@ -752,21 +756,20 @@ RZ_API void rz_core_list_loaded_typedefs(RzCore *core, const char *input, Sdb *T
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-	}
-	if (pj) {
-		rz_cons_printf("%s\n", pj_string(pj));
+		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
 	free(name);
 	ls_free(l);
 }
 
-RZ_API void rz_core_list_typename_alias_c(RzCore *core, const char *input, Sdb *TDB) {
+RZ_API void rz_core_list_typename_alias_c(RzCore *core, const char *typedef_name) {
 	char *name = NULL;
 	SdbKv *kv;
 	SdbListIter *iter;
+	Sdb *TDB = core->analysis->sdb_types;
 	SdbList *l = sdb_foreach_list(TDB, true);
-	const char *arg = rz_str_trim_head_ro(input + 2);
+	const char *arg = rz_str_trim_head_ro(typedef_name + 2);
 	bool match = false;
 	ls_foreach (l, iter, kv) {
 		if (!strcmp(sdbkv_value(kv), "typedef")) {
@@ -1082,7 +1085,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				} else if (rz_str_startswith(type, "enum")) {
 					print_enum_in_c_format(TDB, name, true);
 				} else if (rz_str_startswith(type, "typedef")) {
-					rz_core_list_typename_alias_c(core, name, TDB);
+					rz_core_list_typename_alias_c(core, name);
 				} else if (rz_str_startswith(type, "func")) {
 					printFunctionTypeC(core, name);
 				}
@@ -1697,11 +1700,11 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		RzOutputMode mode;
 		if (input[1] == 'j') { // "ttj"
 			mode = RZ_OUTPUT_MODE_JSON;
-			rz_core_list_loaded_typedefs(core, input, TDB, mode);
+			rz_core_list_loaded_typedefs(core, mode);
 			break;
 		}
 		if (input[1] == 'c') { // "ttc"
-			rz_core_list_typename_alias_c(core, input, TDB);
+			rz_core_list_typename_alias_c(core, input);
 			break;
 		}
 		if (input[1] == '?') { // "tt?"
@@ -1710,7 +1713,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		}
 		if (input[1] == ' ') { // "tt"
 			mode = RZ_OUTPUT_MODE_STANDARD;
-			rz_core_list_loaded_typedefs(core, input, TDB, mode);
+			rz_core_list_loaded_typedefs(core, mode);
 			break;
 		}
 		char *s = strdup(input + 2);
