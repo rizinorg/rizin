@@ -342,7 +342,47 @@ class CmdDesc:
         elif "args" in c and isinstance(c["args"], str):
             self.args_alias = c.pop("args")
 
-    def __init__(self, c, parent=None, pos=0):
+    def _set_type(self, c):
+        if "type" in c:
+            self.type = c.pop("type")
+        elif c.get("subcommands"):
+            self.type = CD_TYPE_GROUP
+        elif self.modes:
+            self.type = CD_TYPE_ARGV_MODES
+        else:
+            self.type = CD_TYPE_ARGV
+
+    def _set_subcommands(self, c, yamls):
+        if "subcommands" in c and isinstance(c["subcommands"], list):
+            # The list of subcommands is embedded in the current file
+            self.subcommands = [
+                CmdDesc(yamls, x, self, i)
+                for i, x in enumerate(c.pop("subcommands", []))
+            ]
+        elif "subcommands" in c and isinstance(c["subcommands"], str):
+            # The list of subcommands is in another file
+            subcommands_name = c.pop("subcommands")
+            if subcommands_name not in yamls:
+                print(
+                    "Command %s referenced another YAML file (%s) that is not passed as arg to cmd_descs_generate.py."
+                    % (self.name, subcommands_name)
+                )
+                sys.exit(1)
+
+            external_c = yamls[subcommands_name]
+            self.subcommands = [
+                CmdDesc(yamls, x, self, i) for i, x in enumerate(external_c)
+            ]
+
+        # handle the exec_cd, which is a cd that has the same name as its parent
+        if (
+            self.subcommands
+            and self.subcommands[0].name == self.name
+            and self.subcommands[0].type not in [CD_TYPE_INNER, CD_TYPE_FAKE]
+        ):
+            self.exec_cd = self.subcommands[0]
+
+    def __init__(self, yamls, c, parent=None, pos=0):
         self.pos = pos
 
         if not c:
@@ -382,26 +422,9 @@ class CmdDesc:
         self._process_args(c)
 
         # determine type before parsing subcommands, so children can check type of parent
-        if "type" in c:
-            self.type = c.pop("type")
-        elif c.get("subcommands"):
-            self.type = CD_TYPE_GROUP
-        elif self.modes:
-            self.type = CD_TYPE_ARGV_MODES
-        else:
-            self.type = CD_TYPE_ARGV
+        self._set_type(c)
 
-        if "subcommands" in c:
-            self.subcommands = [
-                CmdDesc(x, self, i) for i, x in enumerate(c.pop("subcommands", []))
-            ]
-        # handle the exec_cd, which is a cd that has the same name as its parent
-        if (
-            self.subcommands
-            and self.subcommands[0].name == self.name
-            and self.subcommands[0].type not in [CD_TYPE_INNER, CD_TYPE_FAKE]
-        ):
-            self.exec_cd = self.subcommands[0]
+        self._set_subcommands(c, yamls)
 
         self._validate(c)
         CmdDesc.c_cds[self.cname] = self
@@ -694,16 +717,19 @@ parser.add_argument(
 )
 parser.add_argument("--output-dir", type=str, required=True, help="Output directory")
 parser.add_argument(
-    "yaml_file",
+    "yaml_files",
     type=argparse.FileType("r"),
-    help="Input YAML file containing all commands descriptions",
+    nargs="+",
+    help="Input YAML files containing commands descriptions. One should be named 'root'.",
 )
 
 args = parser.parse_args()
 
-commands_yml = yaml.safe_load(args.yaml_file)
-root_cd = CmdDesc(None)
-root_cds = [CmdDesc(c, root_cd) for c in commands_yml]
+commands_yml_arr = [yaml.safe_load(f) for f in args.yaml_files]
+commands_yml = {c["name"]: c["commands"] for c in commands_yml_arr}
+
+root_cd = CmdDesc(commands_yml, None)
+root_cds = [CmdDesc(commands_yml, c, root_cd) for c in commands_yml["root"]]
 
 arg_decls = [arg2decl(cd) for cd in CmdDesc.c_args.values()]
 detail_decls = [detail2decl(cd) for cd in CmdDesc.c_details.values()]

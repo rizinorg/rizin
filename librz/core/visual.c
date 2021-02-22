@@ -3,7 +3,7 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include "core_private.h"
-#include "cmd_descs.h"
+#include "cmd_descs/cmd_descs.h"
 
 #define NPF  5
 #define PIDX (RZ_ABS(core->printidx % NPF))
