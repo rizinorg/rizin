@@ -185,13 +185,21 @@ class Arg:
 
         self.cd = cd
         # RzCmdDescArg fields
-        self.name = c["name"]
-        self.flags = c.get("flags")
-        self.optional = c.get("optional")
-        self.no_space = c.get("no_space")
-        self.type = c["type"]
-        self.default_value = c.get("default_value")
-        self.choices = c.get("choices")
+        self.name = c.pop("name")
+        self.flags = c.pop("flags", None)
+        self.optional = c.pop("optional", None)
+        self.no_space = c.pop("no_space", None)
+        self.type = c.pop("type")
+        self.default_value = (
+            str(c.pop("default_value")) if "default_value" in c else None
+        )
+        self.choices = c.pop("choices", None)
+        if c.keys():
+            print(
+                "Argument %s for command %s has unrecognized properties: %s."
+                % (self.name, self.cd.name, c.keys())
+            )
+            sys.exit(1)
 
     def _get_choices_cname(self):
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
@@ -279,8 +287,14 @@ class Detail:
 
         self.cd = cd
         # RzCmdDescDetail fields
-        self.name = strip(c["name"])
-        self.entries = [format_detail_entry(x) for x in c["entries"]]
+        self.name = strip(c.pop("name"))
+        self.entries = [format_detail_entry(x) for x in c.pop("entries")]
+        if c.keys():
+            print(
+                "Detail %s for command %s has unrecognized properties: %s."
+                % (self.name, self.cd.name, c.keys())
+            )
+            sys.exit(1)
 
     def get_detail_entries_cname(self):
         return self.cd.cname + "_" + compute_cname(self.name) + "_detail_entries"
@@ -306,15 +320,15 @@ class CmdDesc:
 
     def _process_details(self, c):
         if "details" in c and isinstance(c["details"], list):
-            self.details = [Detail(self, x) for x in c.get("details", [])]
+            self.details = [Detail(self, x) for x in c.pop("details", [])]
         elif "details" in c and isinstance(c["details"], str):
-            self.details_alias = c["details"]
+            self.details_alias = c.pop("details")
 
     def _process_args(self, c):
         if "args" in c and isinstance(c["args"], list):
-            self.args = [Arg(self, x) for x in c.get("args", [])]
+            self.args = [Arg(self, x) for x in c.pop("args", [])]
         elif "args" in c and isinstance(c["args"], str):
-            self.args_alias = c["args"]
+            self.args_alias = c.pop("args")
 
     def __init__(self, c, parent=None, pos=0):
         self.pos = pos
@@ -332,20 +346,20 @@ class CmdDesc:
             sys.exit(1)
 
         # RzCmdDesc fields
-        self.name = c["name"]
-        self.cname = c.get("cname") or compute_cname(self.name)
+        self.name = c.pop("name")
+        self.cname = c.pop("cname", None) or compute_cname(self.name)
         self.type = None
         self.parent = parent
         self.subcommands = None
         self.exec_cd = None
-        self.modes = c.get("modes")
-        self.handler = c.get("handler")
+        self.modes = c.pop("modes", None)
+        self.handler = c.pop("handler", None)
         # RzCmdDescHelp fields
-        self.summary = strip(c["summary"])
-        self.description = strip(c.get("description"))
-        self.args_str = strip(c.get("args_str"))
-        self.usage = strip(c.get("usage"))
-        self.options = strip(c.get("options"))
+        self.summary = strip(c.pop("summary"))
+        self.description = strip(c.pop("description", None))
+        self.args_str = strip(c.pop("args_str", None))
+        self.usage = strip(c.pop("usage", None))
+        self.options = strip(c.pop("options", None))
 
         self.details = None
         self.details_alias = None
@@ -357,7 +371,7 @@ class CmdDesc:
 
         # determine type before parsing subcommands, so children can check type of parent
         if "type" in c:
-            self.type = c["type"]
+            self.type = c.pop("type")
         elif c.get("subcommands"):
             self.type = CD_TYPE_GROUP
         elif self.modes:
@@ -367,7 +381,7 @@ class CmdDesc:
 
         if "subcommands" in c:
             self.subcommands = [
-                CmdDesc(x, self, i) for i, x in enumerate(c.get("subcommands", []))
+                CmdDesc(x, self, i) for i, x in enumerate(c.pop("subcommands", []))
             ]
         # handle the exec_cd, which is a cd that has the same name as its parent
         if (
@@ -377,7 +391,7 @@ class CmdDesc:
         ):
             self.exec_cd = self.subcommands[0]
 
-        self._validate()
+        self._validate(c)
         CmdDesc.c_cds[self.cname] = self
         if self.get_handler_cname():
             CmdDesc.c_handlers[self.get_handler_cname()] = self
@@ -386,7 +400,11 @@ class CmdDesc:
         if self.details:
             CmdDesc.c_details[CmdDesc.get_detail_cname(self)] = self
 
-    def _validate(self):
+    def _validate(self, c):
+        if c.keys():
+            print("Command %s has unrecognized properties: %s." % (self.name, c.keys()))
+            sys.exit(1)
+
         if self.type not in CD_VALID_TYPES:
             print("Command %s does not have a valid type." % (self.name,))
             sys.exit(1)

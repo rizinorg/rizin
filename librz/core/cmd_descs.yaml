@@ -1548,7 +1548,7 @@
             - name: n
               type: RZ_CMD_ARG_TYPE_NUM
               optional: true
-              default: 5
+              default_value: 5
         - name: zbr
           cname: zign_best_name
           summary: Search for <n> most similar functions to zigname
@@ -1558,7 +1558,7 @@
             - name: n
               type: RZ_CMD_ARG_TYPE_NUM
               optional: true
-              default: 5
+              default_value: 5
     - name: z-
       cname: zign_delete
       summary: Delete zignature
