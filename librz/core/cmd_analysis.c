@@ -8337,36 +8337,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			}
 			rz_core_analysis_esil(core, len, addr);
 		} else {
-			ut64 at = core->offset;
-			RzIOMap *map;
-			RzListIter *iter;
-			RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "analysis");
-			if (!list) {
-				break;
-			}
-			if (!strcmp("range", rz_config_get(core->config, "analysis.in"))) {
-				ut64 from = rz_config_get_i(core->config, "analysis.from");
-				ut64 to = rz_config_get_i(core->config, "analysis.to");
-				if (to > from) {
-					char *len = rz_str_newf(" 0x%" PFMT64x, to - from);
-					rz_core_seek(core, from, true);
-					rz_core_analysis_esil(core, len, NULL);
-					free(len);
-				} else {
-					eprintf("Assert: analysis.from > analysis.to\n");
-				}
-			} else {
-				rz_list_foreach (list, iter, map) {
-					if (map->perm & RZ_PERM_X) {
-						char *ss = rz_str_newf(" 0x%" PFMT64x, map->itv.size);
-						rz_core_seek(core, map->itv.addr, true);
-						rz_core_analysis_esil(core, ss, NULL);
-						free(ss);
-					}
-				}
-				rz_list_free(list);
-			}
-			rz_core_seek(core, at, true);
+			rz_core_analysis_esil_default(core);
 		}
 		break;
 	case 'r': // "aar"
