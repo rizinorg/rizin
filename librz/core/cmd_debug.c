@@ -3875,7 +3875,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 		if (rz_debug_esil_watch_empty(core->dbg)) {
 			eprintf("Error: no esil watchpoints defined\n");
 		} else {
-			rz_core_analysis_esil_init(core);
+			rz_core_analysis_esil_reinit(core);
 			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
 			rz_debug_esil_continue(core->dbg);
 		}
@@ -3883,7 +3883,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 	case 's': // "des"
 		if (input[1] == 'u' && input[2] == ' ') { // "desu"
 			ut64 addr, naddr, fin = rz_num_math(core->num, input + 2);
-			rz_core_analysis_esil_init(core);
+			rz_core_analysis_esil_reinit(core);
 			addr = rz_debug_reg_get(core->dbg, "PC");
 			while (addr != fin) {
 				rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
@@ -3898,7 +3898,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 		} else if (input[1] == '?' || !input[1]) {
 			rz_core_cmd_help(core, help_msg_des);
 		} else {
-			rz_core_analysis_esil_init(core);
+			rz_core_analysis_esil_reinit(core);
 			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
 			// continue
 			rz_debug_esil_step(core->dbg, rz_num_math(core->num, input + 1));
@@ -4557,18 +4557,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'e': // "dte"
-			if (!core->analysis->esil) {
-				int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-				int romem = rz_config_get_i(core->config, "esil.romem");
-				int stats = rz_config_get_i(core->config, "esil.stats");
-				int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-				int nonull = rz_config_get_i(core->config, "esil.nonull");
-				unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-				if (!(core->analysis->esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
-					return 0;
-				}
-				rz_analysis_esil_setup(core->analysis->esil, core->analysis, romem, stats, nonull);
-			}
+			rz_core_analysis_esil_init(core);
 			switch (input[2]) {
 			case 0: // "dte"
 				rz_analysis_esil_trace_list(core->analysis->esil);

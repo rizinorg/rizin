@@ -6517,7 +6517,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 		pj_a(pj);
 	}
 	if (!core->analysis->esil) {
-		rz_core_analysis_esil_init(core);
+		rz_core_analysis_esil_reinit(core);
 		if (!rz_config_get_b(core->config, "cfg.debug")) {
 			rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 		}

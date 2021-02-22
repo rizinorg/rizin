@@ -5212,7 +5212,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			core->analysis->esil = NULL;
 			break;
 		case 0: // "aei"
-			rz_core_analysis_esil_init(core);
+			rz_core_analysis_esil_reinit(core);
 			break;
 		}
 		break;
