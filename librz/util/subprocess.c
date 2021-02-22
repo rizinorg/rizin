@@ -1,6 +1,8 @@
 #include <rz_cons.h>
 #include <rz_util.h>
 
+#define BUFFER_SIZE 0x500
+
 #if __WINDOWS__
 struct rz_subprocess_t {
 	HANDLE stdin_write;
@@ -274,8 +276,8 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 		timeout_us_abs = rz_time_now_mono() + timeout_ms * RZ_USEC_PER_MSEC;
 	}
 
-	char stdout_buf[0x500 + 1];
-	char stderr_buf[0x500 + 1];
+	char stdout_buf[BUFFER_SIZE + 1];
+	char stderr_buf[BUFFER_SIZE + 1];
 	bool stdout_enabled = (pipe_fd & RZ_SUBPROCESS_STDOUT) && proc->stdout_read;
 	bool stderr_enabled = (pipe_fd & RZ_SUBPROCESS_STDERR) && proc->stderr_read && proc->stderr_read != proc->stdout_read;
 	bool stdout_eof = false;
@@ -814,7 +816,7 @@ error:
 }
 
 static size_t read_to_strbuf(RzStrBuf *sb, int fd, bool *fd_eof, size_t n_bytes) {
-	char buf[0x500];
+	char buf[BUFFER_SIZE];
 	size_t to_read = sizeof(buf);
 	if (n_bytes && to_read > n_bytes) {
 		to_read = n_bytes;
