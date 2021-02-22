@@ -33,12 +33,15 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	{
 		const char *bep = rz_config_get(r->config, "dbg.bep");
 		if (bep) {
+			ut64 address = 0;
 			if (!strcmp(bep, "loader")) {
 				/* do nothing here */
 			} else if (!strcmp(bep, "entry")) {
-				rz_core_cmd(r, "dcu entry0", 0);
+				address = rz_num_math(r->num, "entry0");
+				rz_core_debug_continue_until(r, address, address);
 			} else {
-				rz_core_cmdf(r, "dcu %s", bep);
+				address = rz_num_math(r->num, bep);
+				rz_core_debug_continue_until(r, address, address);
 			}
 		}
 	}

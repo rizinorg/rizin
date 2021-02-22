@@ -1599,7 +1599,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 	}
 	if (!core->analysis->esil) {
 		// initialize esil vm
-		rz_core_analysis_esil_init(core);
+		rz_core_analysis_esil_reinit(core);
 		if (!core->analysis->esil) {
 			eprintf("Cannot initialize the ESIL vm\n");
 			return;
