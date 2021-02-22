@@ -2,7 +2,7 @@
 
 #include <rz_cmd.h>
 #include <rz_core.h>
-#include "cmd_descs.h"
+#include "cmd_descs/cmd_descs.h"
 
 static int task_enqueue(RzCore *core, const char *cmd, bool transient) {
 	RzCoreTask *task = rz_core_cmd_task_new(core, cmd, NULL, NULL);

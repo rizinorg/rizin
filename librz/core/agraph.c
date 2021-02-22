@@ -6,7 +6,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include "core_private.h"
-#include "cmd_descs.h"
+#include "cmd_descs/cmd_descs.h"
 
 static int mousemode = 0;
 static int disMode = 0;
