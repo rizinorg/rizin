@@ -1082,7 +1082,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				} else if (rz_str_startswith(type, "enum")) {
 					print_enum_in_c_format(TDB, name, true);
 				} else if (rz_str_startswith(type, "typedef")) {
-					rz_core_list_typename_alias_c(core, input, TDB);
+					rz_core_list_typename_alias_c(core, name, TDB);
 				} else if (rz_str_startswith(type, "func")) {
 					printFunctionTypeC(core, name);
 				}
