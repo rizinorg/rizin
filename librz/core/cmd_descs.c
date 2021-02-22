@@ -516,6 +516,7 @@ static const RzCmdDescArg remote_add_args[] = {
 	{
 		.name = "[proto://]host:port",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -663,6 +664,7 @@ static const RzCmdDescArg push_escaped_args[] = {
 	{
 		.name = "characters",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -846,6 +848,7 @@ static const RzCmdDescArg analysis_function_blocks_color_args[] = {
 	{
 		.name = "color",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -875,6 +878,7 @@ static const RzCmdDescArg analysis_function_signature_args[] = {
 	{
 		.name = "signature",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -897,6 +901,7 @@ static const RzCmdDescArg analysis_function_signature_type_args[] = {
 	{
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -917,7 +922,7 @@ static const RzCmdDescHelp analysis_function_address_help = {
 static const RzCmdDescArg analysis_function_until_args[] = {
 	{
 		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -939,7 +944,7 @@ static const RzCmdDescHelp analysis_function_xrefs_help = {
 static const RzCmdDescArg analysis_function_stacksz_args[] = {
 	{
 		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
@@ -1068,6 +1073,7 @@ static const RzCmdDescArg analysis_function_vars_type_args[] = {
 	{
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1109,6 +1115,7 @@ static const RzCmdDescArg analysis_function_vars_bp_args[] = {
 	{
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -1141,6 +1148,7 @@ static const RzCmdDescArg analysis_function_vars_bp_getref_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1159,6 +1167,7 @@ static const RzCmdDescArg analysis_function_vars_bp_setref_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1186,6 +1195,7 @@ static const RzCmdDescArg analysis_function_vars_regs_args[] = {
 	{
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -1218,6 +1228,7 @@ static const RzCmdDescArg analysis_function_vars_regs_getref_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1236,6 +1247,7 @@ static const RzCmdDescArg analysis_function_vars_regs_setref_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1263,6 +1275,7 @@ static const RzCmdDescArg analysis_function_vars_sp_args[] = {
 	{
 		.name = "type",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -1295,6 +1308,7 @@ static const RzCmdDescArg analysis_function_vars_sp_getref_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1313,6 +1327,7 @@ static const RzCmdDescArg analysis_function_vars_sp_setref_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -1509,6 +1524,7 @@ static const RzCmdDescArg env_args[] = {
 	{
 		.name = "varvalue",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -1927,6 +1943,7 @@ static const RzCmdDescArg seek_register_args[] = {
 	{
 		.name = "reg",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -2342,6 +2359,7 @@ static const RzCmdDescArg write_base64_decode_args[] = {
 	{
 		.name = "base64",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -2356,6 +2374,7 @@ static const RzCmdDescArg write_base64_encode_args[] = {
 	{
 		.name = "hexstring",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -2598,6 +2617,7 @@ static const RzCmdDescArg zign_add_fcn_args[] = {
 	{
 		.name = "zigname",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
@@ -2807,6 +2827,7 @@ static const RzCmdDescArg zign_space_rename_args[] = {
 	{
 		.name = "newname",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
@@ -2823,6 +2844,7 @@ static const RzCmdDescArg zign_info_args[] = {
 	{
 		.name = "commens",
 		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
