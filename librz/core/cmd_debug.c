@@ -5040,7 +5040,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			// Remove the target's registers from the flag list
 			rz_core_cmd0(core, ".dr-");
 			// Reopen and rebase the original file
-			rz_core_cmd0(core, "oo");
+			rz_core_io_file_open(core, core->io->desc->fd);
 			break;
 		case '?': // "do?"
 		default:
