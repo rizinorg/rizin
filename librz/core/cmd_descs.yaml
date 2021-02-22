@@ -105,7 +105,6 @@
       args:
         - name: cmd
           type: RZ_CMD_ARG_TYPE_CMD
-          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
       modes:
         - RZ_OUTPUT_MODE_STANDARD
@@ -116,7 +115,6 @@
       args:
         - name: cmd
           type: RZ_CMD_ARG_TYPE_CMD
-          flags: RZ_CMD_ARG_FLAG_LAST
     - name: "&="
       cname: tasks_output
       summary: Show output of task <n>
@@ -193,7 +191,6 @@
       args:
         - name: cmd
           type: RZ_CMD_ARG_TYPE_CMD
-          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
           no_space: true
     - name: ". "
@@ -265,7 +262,6 @@
           optional: true
         - name: cmd
           type: RZ_CMD_ARG_TYPE_CMD
-          flags: RZ_CMD_ARG_FLAG_LAST
     - name: =<
       cname: remote_send
       summary: Send output of local <cmd> to remote <fd>
@@ -275,7 +271,6 @@
           optional: true
         - name: cmd
           type: RZ_CMD_ARG_TYPE_CMD
-          flags: RZ_CMD_ARG_FLAG_LAST
     - name: =!
       cname: io_system_run_oldhandler
       summary: Run <cmd> via rz_io_system
@@ -321,7 +316,6 @@
           type: RZ_CMD_ARG_TYPE_STRING
         - name: cmd
           type: RZ_CMD_ARG_TYPE_CMD
-          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: =g
       cname: equal_g_handler_old
@@ -343,7 +337,6 @@
           type: RZ_CMD_ARG_TYPE_STRING
         - name: cmd
           type: RZ_CMD_ARG_TYPE_CMD
-          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: "=&:"
       cname: remote_rap_bg
@@ -357,6 +350,7 @@
   args:
     - name: search_cmd
       type: RZ_CMD_ARG_TYPE_STRING
+      flags: ''
       optional: true
   modes:
     - RZ_OUTPUT_MODE_STANDARD
@@ -401,7 +395,6 @@
               args:
                 - name: addr
                   type: RZ_CMD_ARG_TYPE_RZNUM
-                  flags: RZ_CMD_ARG_FLAG_LAST
                   optional: true
             - name: afb+
               summary: Add basic block by hand
@@ -429,7 +422,6 @@
               args:
                 - name: addr
                   type: RZ_CMD_ARG_TYPE_RZNUM
-                  flags: RZ_CMD_ARG_FLAG_LAST
                   optional: true
             - name: afb-*
               summary: Remove all basic blocks from function
@@ -437,7 +429,6 @@
               args:
                 - name: addr
                   type: RZ_CMD_ARG_TYPE_RZNUM
-                  flags: RZ_CMD_ARG_FLAG_LAST
                   optional: true
             - name: afbe
               summary: Add basic-block edge for switch-cases
@@ -447,14 +438,12 @@
                   type: RZ_CMD_ARG_TYPE_RZNUM
                 - name: case_addr
                   type: RZ_CMD_ARG_TYPE_RZNUM
-                  flags: RZ_CMD_ARG_FLAG_LAST
             - name: afbr
               summary: Show addresses of instructions which leave the function
               cname: analysis_function_returns
               args:
                 - name: addr
                   type: RZ_CMD_ARG_TYPE_RZNUM
-                  flags: RZ_CMD_ARG_FLAG_LAST
                   optional: true
             - name: afb=
               summary: Display ascii-art bars for basic block regions
@@ -462,7 +451,6 @@
               args:
                 - name: addr
                   type: RZ_CMD_ARG_TYPE_RZNUM
-                  flags: RZ_CMD_ARG_FLAG_LAST
                   optional: true
             - name: afbi
               summary: Print single basic block information
@@ -477,7 +465,6 @@
               args:
                 - name: addr
                   type: RZ_CMD_ARG_TYPE_RZNUM
-                  flags: RZ_CMD_ARG_FLAG_LAST
                   optional: true
             - name: afbc
               summary: Set a color for the basic block at a given address
@@ -528,8 +515,7 @@
           summary: Resize and analyze function from current address until addr
           args:
             - name: addr
-              type: RZ_CMD_ARG_TYPE_NUM
-              flags: RZ_CMD_ARG_FLAG_LAST
+              type: RZ_CMD_ARG_TYPE_RZNUM
         - name: afx
           cname: analysis_function_xrefs
           summary: List function references
@@ -542,8 +528,7 @@
           summary: Set stack frame size for function at current address
           args:
             - name: size
-              type: RZ_CMD_ARG_TYPE_NUM
-              flags: RZ_CMD_ARG_FLAG_LAST
+              type: RZ_CMD_ARG_TYPE_RZNUM
         - name: afv
           summary: Manipulate arguments/variables in a function
           subcommands:
@@ -1023,7 +1008,6 @@
       args:
         - name: addr
           type: RZ_CMD_ARG_TYPE_RZNUM
-          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: "s:"
       cname: seek_padded
@@ -1093,7 +1077,6 @@
           type: RZ_CMD_ARG_TYPE_NUM
         - name: addr
           type: RZ_CMD_ARG_TYPE_RZNUM
-          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: sb
       cname: seek_basicblock
@@ -1190,7 +1173,6 @@
       args:
         - name: string
           type: RZ_CMD_ARG_TYPE_STRING
-          flags: RZ_CMD_ARG_FLAG_LAST
     - name: wB
       summary: Set or unset bits with given value
       subcommands:

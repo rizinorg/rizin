@@ -121,6 +121,12 @@ CD_VALID_TYPES = [
     CD_TYPE_INNER,
 ]
 
+CD_ARG_LAST_TYPES = [
+    "RZ_CMD_ARG_TYPE_RZNUM",
+    "RZ_CMD_ARG_TYPE_STRING",
+    "RZ_CMD_ARG_TYPE_CMD",
+]
+
 
 def escape(s):
     return s.replace("\\", "\\\\").replace('"', '\\"')
@@ -215,7 +221,7 @@ class Arg:
     def __str__(self):
         flags = (
             DESC_HELP_ARG_TEMPLATE_FLAGS.format(flags=self.flags)
-            if self.flags is not None
+            if self.flags is not None and self.flags != ""
             else ""
         )
         optional = (
@@ -327,6 +333,12 @@ class CmdDesc:
     def _process_args(self, c):
         if "args" in c and isinstance(c["args"], list):
             self.args = [Arg(self, x) for x in c.pop("args", [])]
+            if (
+                self.args
+                and self.args[-1].type in CD_ARG_LAST_TYPES
+                and self.args[-1].flags is None
+            ):
+                self.args[-1].flags = "RZ_CMD_ARG_FLAG_LAST"
         elif "args" in c and isinstance(c["args"], str):
             self.args_alias = c.pop("args")
 
