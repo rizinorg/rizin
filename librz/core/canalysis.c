@@ -7069,7 +7069,7 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 	} else {
 		var = rz_analysis_function_get_var_byname(fcn, id);
 	}
-	if (!var) {
+	if (!var || var->kind != kind) {
 		return false;
 	}
 	rz_analysis_var_delete(var);
