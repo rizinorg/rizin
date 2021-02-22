@@ -725,9 +725,9 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut
 	}
 }
 
-RZ_API void rz_core_list_loaded_typedefs(RzCore *core, const char *input, Sdb *TDB) {
+RZ_API void rz_core_list_loaded_typedefs(RzCore *core, const char *input, Sdb *TDB, RzOutputMode mode) {
 	PJ *pj = NULL;
-	if (input[1] == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		pj_o(pj);
 	}
@@ -750,7 +750,7 @@ RZ_API void rz_core_list_loaded_typedefs(RzCore *core, const char *input, Sdb *T
 			}
 		}
 	}
-	if (input[1] == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
 	if (pj) {
@@ -1694,8 +1694,10 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		}
 		break;
 	case 't': { // "tt"
-		if (!input[1] || input[1] == 'j') {
-			rz_core_list_loaded_typedefs(core, input, TDB);
+		RzOutputMode mode;
+		if (input[1] == 'j') { // "ttj"
+			mode = RZ_OUTPUT_MODE_JSON;
+			rz_core_list_loaded_typedefs(core, input, TDB, mode);
 			break;
 		}
 		if (input[1] == 'c') { // "ttc"
@@ -1704,6 +1706,11 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		}
 		if (input[1] == '?') { // "tt?"
 			rz_core_cmd_help(core, help_msg_tt);
+			break;
+		}
+		if (input[1] == ' ') { // "tt"
+			mode = RZ_OUTPUT_MODE_STANDARD;
+			rz_core_list_loaded_typedefs(core, input, TDB, mode);
 			break;
 		}
 		char *s = strdup(input + 2);
