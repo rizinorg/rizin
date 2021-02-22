@@ -1712,8 +1712,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		}
 		if (input[1] == ' ') { // "tt"
-			mode = RZ_OUTPUT_MODE_STANDARD;
-			rz_core_list_loaded_typedefs(core, mode);
+			rz_core_list_loaded_typedefs(core, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		}
 		char *s = strdup(input + 2);
