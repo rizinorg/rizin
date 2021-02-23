@@ -256,6 +256,7 @@ RUN
 NAME=ttj typedef
 FILE=-
 CMDS=<<EOF
+t-*
 "td typedef char *string;"
 ttj
 EOF
