@@ -915,6 +915,7 @@ RZ_API int rz_cons_memcat(const char *str, int len);
 RZ_API void rz_cons_newline(void);
 RZ_API void rz_cons_filter(void);
 RZ_API void rz_cons_flush(void);
+RZ_API void rz_cons_set_flush(bool flush);
 RZ_API void rz_cons_print_fps(int col);
 RZ_API void rz_cons_last(void);
 RZ_API int rz_cons_less_str(const char *str, const char *exitkeys);

@@ -1960,3 +1960,13 @@ RZ_API void rz_cons_clear_buffer(void) {
 			6);
 	}
 }
+
+/**
+ * \brief Set whether RzCons should flush content to screen or not
+ *
+ * \param flush If true, calls to \p rz_cons_flush and \p rz_cons_visual_flush
+ *              would flush cons content to the screen, otherwise they will not.
+ */
+RZ_API void rz_cons_set_flush(bool flush) {
+	CTX(noflush) = !flush;
+}
