@@ -4361,6 +4361,9 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	core->cmd_in_backticks = false;
 	rz_config_set_i(core->config, "scr.color", ocolor);
 	free(inn_str);
+	if (!o_out) {
+		return NULL;
+	}
 
 	// replace the output of the sub command with the current argument
 	char *out = strdup(o_out);
@@ -4377,6 +4380,10 @@ static void handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg,
 	TSNode inn_cmd = ts_node_child(arg, 1);
 	rz_return_if_fail(!ts_node_is_null(inn_cmd));
 	char *out = do_handle_substitution_cmd(state, inn_cmd);
+	if (!out) {
+		return;
+	}
+
 	char *res = NULL;
 	// escape special chars to prevent creation of new tokens when parsing again
 	if (is_ts_double_quoted_arg(ts_node_parent(arg))) {
@@ -5578,16 +5585,20 @@ err:
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 	// convert @@c: command into a @@= one, by using the output of the
 	// in_cmd as addr of @@=
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	TSNode in_cmd = ts_node_named_child(node, 1);
 	substitute_args_init(state, node);
 
 	RzList *edits = rz_list_newf((RzListFree)free_tsr2cmd_edit);
 	if (!edits) {
-		substitute_args_fini(state);
-		return RZ_CMD_STATUS_INVALID;
+		goto edits_err;
 	}
 
 	char *in_cmd_out = do_handle_substitution_cmd(state, in_cmd);
+	if (!in_cmd_out) {
+		goto err;
+	}
+
 	char *in_cmd_out_es = rz_cmd_escape_arg(in_cmd_out, RZ_CMD_ESCAPE_MULTI_ARG);
 	free(in_cmd_out);
 	struct tsr2cmd_edit *e = create_cmd_edit(state, in_cmd, in_cmd_out_es);
@@ -5599,12 +5610,12 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 
 	TSNode new_command;
 	if (!substitute_args_do(state, edits, &new_command)) {
-		rz_list_free(edits);
-		substitute_args_fini(state);
-		return RZ_CMD_STATUS_INVALID;
+		goto err;
 	}
-	RzCmdStatus res = handle_ts_command(state, new_command);
+	res = handle_ts_command(state, new_command);
+err:
 	rz_list_free(edits);
+edits_err:
 	substitute_args_fini(state);
 	return res;
 }
@@ -5612,16 +5623,20 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_offsetssizes_command) {
 	// convert @@@c: command into a @@@= one, by using the output of the
 	// in_cmd as addr/blksz of @@@=
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	TSNode in_cmd = ts_node_named_child(node, 1);
 	substitute_args_init(state, node);
 
 	RzList *edits = rz_list_newf((RzListFree)free_tsr2cmd_edit);
 	if (!edits) {
-		substitute_args_fini(state);
-		return RZ_CMD_STATUS_INVALID;
+		goto edits_err;
 	}
 
 	char *in_cmd_out = do_handle_substitution_cmd(state, in_cmd);
+	if (!in_cmd_out) {
+		goto err;
+	}
+
 	char *in_cmd_out_es = rz_cmd_escape_arg(in_cmd_out, RZ_CMD_ESCAPE_MULTI_ARG);
 	free(in_cmd_out);
 	struct tsr2cmd_edit *e = create_cmd_edit(state, in_cmd, in_cmd_out_es);
@@ -5633,12 +5648,12 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_offsetssizes_command) {
 
 	TSNode new_command;
 	if (!substitute_args_do(state, edits, &new_command)) {
-		rz_list_free(edits);
-		substitute_args_fini(state);
-		return RZ_CMD_STATUS_INVALID;
+		goto err;
 	}
-	RzCmdStatus res = handle_ts_command(state, new_command);
+	res = handle_ts_command(state, new_command);
+err:
 	rz_list_free(edits);
+edits_err:
 	substitute_args_fini(state);
 	return res;
 }
