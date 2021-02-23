@@ -85,6 +85,7 @@ static char *__io_reg_profile(RzDebug *dbg) {
 		rz_cons_pop();
 		return ret;
 	}
+	rz_cons_pop();
 	return rz_analysis_get_reg_profile(dbg->analysis);
 }
 

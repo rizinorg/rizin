@@ -1100,7 +1100,6 @@ static void cmd_pCd(RzCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	rz_cons_push();
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
 	c->color = rz_config_get_i(core->config, "scr.color");
@@ -1116,7 +1115,6 @@ static void cmd_pCd(RzCore *core, const char *input) {
 	rz_core_block_size(core, obsz);
 	rz_core_seek(core, osek, true);
 
-	rz_cons_pop();
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
 	if (asm_minicols) {
@@ -1183,7 +1181,6 @@ static void cmd_pCD(RzCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	rz_cons_push();
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
 	c->color = rz_config_get_i(core->config, "scr.color");
@@ -1210,7 +1207,6 @@ static void cmd_pCD(RzCore *core, const char *input) {
 	rz_core_block_size(core, obsz);
 	rz_core_seek(core, osek, true);
 
-	rz_cons_pop();
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
 	if (asm_minicols) {
@@ -2796,7 +2792,6 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 	rz_config_set_i(core->config, "scr.html", 0);
 	rz_config_set_i(core->config, "asm.cmt.right", true);
 
-	rz_cons_push();
 	line = NULL;
 	s = NULL;
 	if (!strncmp(input, "dsb", 3)) {
@@ -2819,7 +2814,6 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 	} else {
 		line = s = rz_core_cmd_str(core, "pd");
 	}
-	rz_cons_pop();
 
 	rz_config_set_i(core->config, "scr.html", scr_html);
 	rz_config_set_i(core->config, "scr.color", use_color);
