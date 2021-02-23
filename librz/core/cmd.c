@@ -380,7 +380,8 @@ static bool lastcmd_repeat(RzCore *core, int next) {
 	case '$':
 		if (!strncmp(core->lastcmd, "pd", 2)) {
 			if (core->lastcmd[2] == ' ') {
-				rz_core_cmdf(core, "so %s", core->lastcmd + 3);
+				ut64 addr = rz_num_math(core->num, core->lastcmd + 3);
+				rz_core_seek_opcode(core, addr, false);
 			} else {
 				rz_core_cmd0(core, "so `pi~?`");
 			}
