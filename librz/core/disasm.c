@@ -1543,12 +1543,12 @@ static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
 	if (!ds->midflags) {
 		return 0;
 	}
-	if (rz_analysis_get_block_at(core->analysis, ds->at)) {
-		ds->midflags = ds->midflags ? RZ_MIDFLAGS_SHOW : RZ_MIDFLAGS_HIDE;
-	}
 	for (int i = 1; i < ds->oplen; i++) {
 		RzFlagItem *fi = rz_flag_get_i(core->flags, ds->at + i);
 		if (fi && fi->name) {
+			if (rz_analysis_find_most_relevant_block_in(core->analysis, ds->at + i)) {
+				ds->midflags = RZ_MIDFLAGS_HIDE; // TODO support RZ_MIDFLAGS_SHOW properly
+			}
 			if (ds->midflags == RZ_MIDFLAGS_REALIGN &&
 				((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
 				i = 0;
