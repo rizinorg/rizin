@@ -1681,10 +1681,9 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td) {
 	Sym *s;
 	int qualifiers, storage;
 	CType *type1 = RZ_NEW0(CType);
-	CType *type2 = RZ_NEW0(CType);
-	if (!type1 || !type2) {
+	CType *type2 = NULL;
+	if (!type1) {
 		free(type1);
-		free(type2);
 		return;
 	}
 
@@ -1765,7 +1764,6 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td) {
 
 	if (!type1->t) {
 		free(type1);
-		free(type2);
 		return;
 	}
 	/* append type at the end of type1 */

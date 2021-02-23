@@ -9,6 +9,7 @@ RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
 
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val);
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core);
+RZ_IPI void rz_core_analysis_esil_reinit(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, ut64 addr, ut32 size);
 RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 addr, ut32 size);
 RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core);
@@ -19,6 +20,7 @@ RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *
 RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_addr, int off);
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core);
+RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI RzList *rz_core_analysis_calling_conventions(RzCore *core);

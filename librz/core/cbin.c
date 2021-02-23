@@ -843,7 +843,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 		rz_core_analysis_type_init(r);
 		rz_core_analysis_cc_init(r);
 		if (info->default_cc && rz_analysis_cc_exist(r->analysis, info->default_cc)) {
-			rz_core_cmdf(r, "e analysis.cc=%s", info->default_cc);
+			rz_config_set(r->config, "analysis.cc", info->default_cc);
 		}
 	} else if (IS_MODE_SIMPLE(mode)) {
 		rz_cons_printf("arch %s\n", info->arch);
@@ -2888,8 +2888,16 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 					}
 				}
 				if (!loaded && !inDebugger) {
-					rz_core_cmdf(r, "on malloc://%d 0x%" PFMT64x " # bss\n",
-						section->vsize, addr);
+					char *ptr = rz_str_newf("malloc://%d", section->vsize);
+					if ((desc = rz_io_open_at(core->io, ptr, RZ_PERM_R, 0644, addr))) {
+						fd = desc->fd;
+					}
+					if (fd == -1) {
+						eprintf("Cannot open file '%'\n", ptr);
+					}
+					free(ptr);
+					core->num->value = fd;
+					rz_core_block_read(core);
 				}
 			}
 #endif

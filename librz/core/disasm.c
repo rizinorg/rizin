@@ -1530,6 +1530,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 }
 
 static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
+	ds->midflags = rz_config_get_i(core->config, "asm.flags.middle");
 	ds->hasMidflag = false;
 	if (ds->midcursor && core->print->cur != -1) {
 		ut64 cur = core->offset + core->print->cur;
@@ -1538,6 +1539,9 @@ static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
 		if (cur > from && cur < to) {
 			return cur - from;
 		}
+	}
+	if (!ds->midflags) {
+		return 0;
 	}
 	if (rz_analysis_get_block_at(core->analysis, ds->at)) {
 		ds->midflags = ds->midflags ? RZ_MIDFLAGS_SHOW : RZ_MIDFLAGS_HIDE;
@@ -1616,9 +1620,7 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index + ds->asmop.size);
 	RzBreakpointItem *p = rz_bp_get_at(core->dbg->bp, ds->at);
-	if (ds->midflags) {
-		(void)handleMidFlags(core, ds, false);
-	}
+	(void)handleMidFlags(core, ds, false);
 	if (ds->midbb) {
 		(void)handleMidBB(core, ds);
 	}
@@ -5292,11 +5294,9 @@ toro:
 		if (ds->at >= addr) {
 			rz_print_set_rowoff(core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
-		if (ds->midflags) {
-			skip_bytes_flag = handleMidFlags(core, ds, true);
-			if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW) {
-				ds->at += skip_bytes_flag;
-			}
+		skip_bytes_flag = handleMidFlags(core, ds, true);
+		if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW) {
+			ds->at += skip_bytes_flag;
 		}
 		ds_show_xrefs(ds);
 		ds_show_flags(ds);
@@ -5609,9 +5609,7 @@ toro:
 		ret = rz_asm_disassemble(core->rasm, &ds->asmop,
 			buf + addrbytes * i, nb_bytes - addrbytes * i);
 		ds->oplen = ret;
-		if (ds->midflags) {
-			skip_bytes_flag = handleMidFlags(core, ds, true);
-		}
+		skip_bytes_flag = handleMidFlags(core, ds, true);
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB(core, ds);
 		}
@@ -5945,9 +5943,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		}
 		ds->oplen = rz_asm_op_get_size(&asmop);
 		ds->at = at;
-		if (ds->midflags) {
-			skip_bytes_flag = handleMidFlags(core, ds, false);
-		}
+		skip_bytes_flag = handleMidFlags(core, ds, false);
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB(core, ds);
 		}
@@ -6363,9 +6359,7 @@ toro:
 				.midflags = midflags
 			};
 			int skip_bytes_flag = 0, skip_bytes_bb = 0;
-			if (midflags) {
-				skip_bytes_flag = handleMidFlags(core, &ds, true);
-			}
+			skip_bytes_flag = handleMidFlags(core, &ds, true);
 			if (midbb) {
 				skip_bytes_bb = handleMidBB(core, &ds);
 			}
@@ -6517,7 +6511,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 		pj_a(pj);
 	}
 	if (!core->analysis->esil) {
-		rz_core_analysis_esil_init(core);
+		rz_core_analysis_esil_reinit(core);
 		if (!rz_config_get_b(core->config, "cfg.debug")) {
 			rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 		}
