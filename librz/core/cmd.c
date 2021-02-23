@@ -5304,17 +5304,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_flags_command) {
 			break;
 		}
 
-		char *buf = NULL;
-		const char *tmp = NULL;
 		RZ_LOG_DEBUG("iter_flags_command: seek to %" PFMT64x "\n", flag->offset);
 		rz_core_seek(core, flag->offset, true);
-		rz_cons_push();
 		RzCmdStatus cmd_res = handle_ts_command_tmpseek(state, command);
-		tmp = rz_cons_get_buffer();
-		buf = tmp ? strdup(tmp) : NULL;
-		rz_cons_pop();
-		rz_cons_strcat(buf);
-		free(buf);
 		rz_core_task_yield(&core->tasks);
 		UPDATE_CMD_STATUS_RES(ret, cmd_res, err);
 	}
