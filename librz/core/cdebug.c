@@ -3,7 +3,7 @@
 #include <rz_core.h>
 #include <rz_debug.h>
 #include "core_private.h"
-#include "cmd_descs.h"
+#include "cmd_descs/cmd_descs.h"
 
 static bool is_x86_call(RzDebug *dbg, ut64 addr) {
 	ut8 buf[3];

@@ -1,7 +1,7 @@
 /* Copyright rizin 2014-2020 - Author: pancake, vane11ope */
 
 #include <rz_core.h>
-#include "cmd_descs.h"
+#include "cmd_descs/cmd_descs.h"
 #include "core_private.h"
 
 #define PANEL_NUM_LIMIT 9
