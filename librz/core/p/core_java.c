@@ -1658,7 +1658,7 @@ static const RzCmdDescHelp cmd_java_help = {
 	.args = cmd_java_args,
 };
 
-static int rz_cmd_java_init_handler(void *user, const char *input) {
+static int rz_cmd_java_init_handler(void *user, const char *unused) {
 	RzCmd *cmd = (RzCmd *)user;
 	if (!cmd) {
 		return false;
@@ -1674,7 +1674,7 @@ static int rz_cmd_java_init_handler(void *user, const char *input) {
 	return cmd_java_cd != NULL;
 }
 
-static int rz_cmd_java_call_handler(void *user, const char *input) {
+static int rz_cmd_java_call_handler(void *user, const char *unused) {
 	return false;
 }
 
