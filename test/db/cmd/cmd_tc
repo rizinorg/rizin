@@ -252,3 +252,75 @@ EXPECT=<<EOF
 typedef char * string;
 EOF
 RUN
+
+NAME=ttj typedef
+FILE=-
+CMDS=<<EOF
+"td typedef char *string;"
+ttj
+EOF
+EXPECT=<<EOF
+{"string":"char *"}
+EOF
+RUN
+
+NAME=test cmd tsc 
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+.ic*
+tsc Employee
+EOF
+EXPECT=<<EOF
+struct Employee {
+	struct objc_class *isa;
+	int16_t _shortWord;
+	struct NSString *_username;
+	struct NSString *_firstName;
+	uint64_t _wideWord;
+	void *username;
+	void *firstName;
+	void *shortWord;
+	void *wideWord;
+};
+EOF
+RUN
+
+NAME=test cmd tfc
+FILE=bins/mach0/objc-employee
+CMDS=<<EOF
+tfc main
+tfc entry0
+EOF
+EXPECT=<<EOF
+int main (int argc, char ** argv, char ** envp);
+void entry0 ();
+EOF
+RUN
+
+NAME=test cmd tec
+FILE=-
+CMDS=<<EOF
+"td enum foo {bar = 1, cow = 3};"
+tec
+EOF
+EXPECT=<<EOF
+enum foo {
+	bar = 1,
+	cow = 3
+};
+EOF
+RUN
+
+NAME=test cmd tuc
+FILE=-
+CMDS=<<EOF
+"td union Data {int i,j;};"
+tuc
+EOF
+EXPECT=<<EOF
+union Data {
+	int32_t i;
+	int32_t j;
+};
+EOF
+RUN
