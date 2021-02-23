@@ -27,7 +27,7 @@
 #include <sys/utsname.h>
 #endif
 
-#include "cmd_descs.h"
+#include "cmd_descs/cmd_descs.h"
 
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_rzcmd();
