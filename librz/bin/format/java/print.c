@@ -51,7 +51,7 @@ double raw_to_double(const ut8 *raw, ut64 offset) {
 	return res;
 }
 
-RZ_API void rz_bin_java_print_utf8_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_utf8(RzBinJavaCPTypeObj *obj) {
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  Utf8.\n");
 		return;
@@ -64,7 +64,7 @@ RZ_API void rz_bin_java_print_utf8_cp_summary(RzBinJavaCPTypeObj *obj) {
 	free(str);
 }
 
-RZ_API void rz_bin_java_print_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_attr(RzBinJavaAttrInfo *attr) {
 	if (attr == NULL) {
 		printf("Attempting to print an invalid RzBinJavaAttrInfo *.\n");
 		return;
@@ -72,7 +72,7 @@ RZ_API void rz_bin_java_print_attr_summary(RzBinJavaAttrInfo *attr) {
 	((RzBinJavaAttrMetas *)attr->metas->type_info)->allocs->print_summary(attr);
 }
 
-RZ_API void rz_bin_java_print_source_debug_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_source_debug_attr(RzBinJavaAttrInfo *attr) {
 	ut32 i = 0;
 	if (attr == NULL) {
 		printf("Attempting to print an invalid RzBinJavaSourceDebugExtensionAttr *.\n");
@@ -89,7 +89,7 @@ RZ_API void rz_bin_java_print_source_debug_attr_summary(RzBinJavaAttrInfo *attr)
 	printf("\n  Source Debug Extension End\n");
 }
 
-RZ_API void rz_bin_java_print_unknown_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_unknown_attr(RzBinJavaAttrInfo *attr) {
 	if (attr == NULL) {
 		printf("Attempting to print an invalid RzBinJavaAttrInfo *Unknown.\n");
 		return;
@@ -100,7 +100,7 @@ RZ_API void rz_bin_java_print_unknown_attr_summary(RzBinJavaAttrInfo *attr) {
 	printf("  Attribute Length: %d\n", attr->length);
 }
 
-RZ_API void rz_bin_java_print_code_exceptions_attr_summary(RzBinJavaExceptionEntry *exc_entry) {
+RZ_API void rz_bin_java_summary_print_code_exceptions_attr(RzBinJavaExceptionEntry *exc_entry) {
 	if (exc_entry == NULL) {
 		printf("Attempting to print an invalid RzBinJavaExceptionEntry *.\n");
 		return;
@@ -113,7 +113,7 @@ RZ_API void rz_bin_java_print_code_exceptions_attr_summary(RzBinJavaExceptionEnt
 	printf("    handler_pc: 0x%04x\n", exc_entry->handler_pc);
 }
 // End free Constant Pool types
-RZ_API void rz_bin_java_print_code_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_code_attr(RzBinJavaAttrInfo *attr) {
 	RzListIter *iter = NULL, *iter_tmp = NULL;
 	RzBinJavaExceptionEntry *exc_entry = NULL;
 	RzBinJavaAttrInfo *_attr = NULL;
@@ -134,21 +134,21 @@ RZ_API void rz_bin_java_print_code_attr_summary(RzBinJavaAttrInfo *attr) {
 	if (attr->info.code_attr.exception_table) {
 		// Delete the attr entries
 		rz_list_foreach_safe (attr->info.code_attr.exception_table, iter, iter_tmp, exc_entry) {
-			rz_bin_java_print_code_exceptions_attr_summary(exc_entry);
+			rz_bin_java_summary_print_code_exceptions_attr(exc_entry);
 		}
 	}
 	printf("  Implicit Method Stack Frame:\n");
-	rz_bin_java_print_stack_map_frame_summary(attr->info.code_attr.implicit_frame);
+	rz_bin_java_summary_print_stack_map_frame(attr->info.code_attr.implicit_frame);
 	printf("Code Attribute Attributes Information:\n");
 	if (attr->info.code_attr.attributes && attr->info.code_attr.attributes_count > 0) {
 		printf("  Code Attribute Attributes Count: %d\n", attr->info.code_attr.attributes_count);
 		rz_list_foreach_safe (attr->info.code_attr.attributes, iter, iter_tmp, _attr) {
-			rz_bin_java_print_attr_summary(_attr);
+			rz_bin_java_summary_print_attr(_attr);
 		}
 	}
 }
 
-RZ_API void rz_bin_java_print_constant_value_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_constant_value_attr(RzBinJavaAttrInfo *attr) {
 	if (!attr) {
 		printf("Attempting to print an invalid RzBinJavaAttrInfo *ConstantValue.\n");
 		return;
@@ -160,7 +160,7 @@ RZ_API void rz_bin_java_print_constant_value_attr_summary(RzBinJavaAttrInfo *att
 	printf("  ConstantValue Index: %d\n", attr->info.constant_value_attr.constantvalue_idx);
 }
 
-RZ_API void rz_bin_java_print_deprecated_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_deprecated_attr(RzBinJavaAttrInfo *attr) {
 	if (!attr) {
 		printf("Attempting to print an invalid RzBinJavaAttrInfo *Deperecated.\n");
 		return;
@@ -171,7 +171,7 @@ RZ_API void rz_bin_java_print_deprecated_attr_summary(RzBinJavaAttrInfo *attr) {
 	printf("  Attribute Length: %d\n", attr->length);
 }
 
-RZ_API void rz_bin_java_print_enclosing_methods_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_enclosing_methods_attr(RzBinJavaAttrInfo *attr) {
 	if (!attr) {
 		printf("Attempting to print an invalid RzBinJavaAttrInfo *Deperecated.\n");
 		return;
@@ -186,7 +186,7 @@ RZ_API void rz_bin_java_print_enclosing_methods_attr_summary(RzBinJavaAttrInfo *
 	printf("  Method Name and Desc : %s %s\n", attr->info.enclosing_method_attr.method_name, attr->info.enclosing_method_attr.method_descriptor);
 }
 
-RZ_API void rz_bin_java_print_exceptions_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_exceptions_attr(RzBinJavaAttrInfo *attr) {
 	ut32 i = 0;
 	if (!attr) {
 		printf("Attempting to print an invalid RzBinJavaAttrInfo *Exceptions.\n");
@@ -201,7 +201,7 @@ RZ_API void rz_bin_java_print_exceptions_attr_summary(RzBinJavaAttrInfo *attr) {
 	}
 }
 
-RZ_API void rz_bin_java_print_classes_attr_summary(RzBinJavaClassesAttribute *icattr) {
+RZ_API void rz_bin_java_summary_print_classes_attr(RzBinJavaClassesAttribute *icattr) {
 	if (!icattr) {
 		printf("Attempting to print an invalid RzBinJavaClassesAttribute* (InnerClasses element).\n");
 		return;
@@ -212,14 +212,14 @@ RZ_API void rz_bin_java_print_classes_attr_summary(RzBinJavaClassesAttribute *ic
 	printf("   Inner Classes Class Attribute Class inner_class_access_flags: 0x%02x %s\n", icattr->inner_class_access_flags, icattr->flags_str);
 	printf("   Inner Classes Class Attribute Class outer_class_info_idx: %d\n", icattr->outer_class_info_idx);
 	printf("   Inner Classes Class Field Information:\n");
-	rz_bin_java_print_field_summary(icattr->clint_field);
+	rz_bin_java_summary_print_field(icattr->clint_field);
 	printf("   Inner Classes Class Field Information:\n");
-	rz_bin_java_print_field_summary(icattr->clint_field);
+	rz_bin_java_summary_print_field(icattr->clint_field);
 	printf("   Inner Classes Class Attr Info Information:\n");
-	rz_bin_java_print_attr_summary(icattr->clint_attr);
+	rz_bin_java_summary_print_attr(icattr->clint_attr);
 }
 
-RZ_API void rz_bin_java_print_inner_classes_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_inner_classes_attr(RzBinJavaAttrInfo *attr) {
 	RzBinJavaClassesAttribute *icattr;
 	RzListIter *iter, *iter_tmp;
 	if (!attr) {
@@ -231,11 +231,11 @@ RZ_API void rz_bin_java_print_inner_classes_attr_summary(RzBinJavaAttrInfo *attr
 	printf("  Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf("  Attribute Length: %d\n", attr->length);
 	rz_list_foreach_safe (attr->info.inner_classes_attr.classes, iter, iter_tmp, icattr) {
-		rz_bin_java_print_classes_attr_summary(icattr);
+		rz_bin_java_summary_print_classes_attr(icattr);
 	}
 }
 
-RZ_API void rz_bin_java_print_line_number_attr_summary(RzBinJavaLineNumberAttribute *lnattr) {
+RZ_API void rz_bin_java_summary_print_line_number_attr(RzBinJavaLineNumberAttribute *lnattr) {
 	if (!lnattr) {
 		printf("Attempting to print an invalid RzBinJavaLineNumberAttribute *.\n");
 		return;
@@ -245,7 +245,7 @@ RZ_API void rz_bin_java_print_line_number_attr_summary(RzBinJavaLineNumberAttrib
 	printf("  Line Number Attribute LineNumber: %d\n", lnattr->line_number);
 }
 
-RZ_API void rz_bin_java_print_line_number_table_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_line_number_table_attr(RzBinJavaAttrInfo *attr) {
 	RzBinJavaLineNumberAttribute *lnattr;
 	RzListIter *iter, *iter_tmp;
 	if (!attr) {
@@ -257,11 +257,11 @@ RZ_API void rz_bin_java_print_line_number_table_attr_summary(RzBinJavaAttrInfo *
 	printf("  Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf("  Attribute Length: %d\n", attr->length);
 	rz_list_foreach_safe (attr->info.line_number_table_attr.line_number_table, iter, iter_tmp, lnattr) {
-		rz_bin_java_print_line_number_attr_summary(lnattr);
+		rz_bin_java_summary_print_line_number_attr(lnattr);
 	}
 }
 
-RZ_API void rz_bin_java_print_local_variable_attr_summary(RzBinJavaLocalVariableAttribute *lvattr) {
+RZ_API void rz_bin_java_summary_print_local_variable_attr(RzBinJavaLocalVariableAttribute *lvattr) {
 	if (!lvattr) {
 		printf("Attempting to print an invalid RzBinJavaLocalVariableAttribute *.\n");
 		return;
@@ -276,7 +276,7 @@ RZ_API void rz_bin_java_print_local_variable_attr_summary(RzBinJavaLocalVariable
 	printf("  Local Variable Attribute index: %d\n", lvattr->index);
 }
 
-RZ_API void rz_bin_java_print_local_variable_table_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_local_variable_table_attr(RzBinJavaAttrInfo *attr) {
 	RzBinJavaLocalVariableAttribute *lvattr;
 	RzListIter *iter, *iter_tmp;
 	if (attr == NULL) {
@@ -288,11 +288,11 @@ RZ_API void rz_bin_java_print_local_variable_table_attr_summary(RzBinJavaAttrInf
 	printf("  Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf("  Attribute Length: %d\n", attr->length);
 	rz_list_foreach_safe (attr->info.local_variable_table_attr.local_variable_table, iter, iter_tmp, lvattr) {
-		rz_bin_java_print_local_variable_attr_summary(lvattr);
+		rz_bin_java_summary_print_local_variable_attr(lvattr);
 	}
 }
 
-RZ_API void rz_bin_java_print_local_variable_type_attr_summary(RzBinJavaLocalVariableTypeAttribute *lvattr) {
+RZ_API void rz_bin_java_summary_print_local_variable_type_attr(RzBinJavaLocalVariableTypeAttribute *lvattr) {
 	if (!lvattr) {
 		printf("Attempting to print an invalid RzBinJavaLocalVariableTypeAttribute *.\n");
 		return;
@@ -307,7 +307,7 @@ RZ_API void rz_bin_java_print_local_variable_type_attr_summary(RzBinJavaLocalVar
 	printf("   Local Variable Type Attribute index: %d\n", lvattr->index);
 }
 
-RZ_API void rz_bin_java_print_local_variable_type_table_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_local_variable_type_table_attr(RzBinJavaAttrInfo *attr) {
 	RzBinJavaLocalVariableTypeAttribute *lvtattr;
 	RzListIter *iter, *iter_tmp;
 	if (!attr) {
@@ -319,11 +319,11 @@ RZ_API void rz_bin_java_print_local_variable_type_table_attr_summary(RzBinJavaAt
 	printf("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf("   Attribute Length: %d\n", attr->length);
 	rz_list_foreach_safe (attr->info.local_variable_type_table_attr.local_variable_table, iter, iter_tmp, lvtattr) {
-		rz_bin_java_print_local_variable_type_attr_summary(lvtattr);
+		rz_bin_java_summary_print_local_variable_type_attr(lvtattr);
 	}
 }
 
-RZ_API void rz_bin_java_print_signature_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_signature_attr(RzBinJavaAttrInfo *attr) {
 	if (!attr) {
 		printf("Attempting to print an invalid RzBinJavaAttrInfo *SignatureAttr.\n");
 		return;
@@ -336,7 +336,7 @@ RZ_API void rz_bin_java_print_signature_attr_summary(RzBinJavaAttrInfo *attr) {
 	printf("  Signature string: %s\n", attr->info.signature_attr.signature);
 }
 
-RZ_API void rz_bin_java_print_source_code_file_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_source_code_file_attr(RzBinJavaAttrInfo *attr) {
 	if (!attr) {
 		printf("Attempting to print an invalid RzBinJavaAttrInfo *SourceFile.\n");
 		return;
@@ -348,7 +348,7 @@ RZ_API void rz_bin_java_print_source_code_file_attr_summary(RzBinJavaAttrInfo *a
 	printf("  Source File Index: %d\n", attr->info.source_file_attr.sourcefile_idx);
 }
 
-RZ_API void rz_bin_java_print_synthetic_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_synthetic_attr(RzBinJavaAttrInfo *attr) {
 	if (attr == NULL) {
 		printf("Attempting to print an invalid RzBinJavaAttrInfo *Synthetic.\n");
 		return;
@@ -360,7 +360,7 @@ RZ_API void rz_bin_java_print_synthetic_attr_summary(RzBinJavaAttrInfo *attr) {
 	printf("  Attribute Index: %d\n", attr->info.source_file_attr.sourcefile_idx);
 }
 
-RZ_API void rz_bin_java_print_stack_map_table_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_stack_map_table_attr(RzBinJavaAttrInfo *attr) {
 	RzListIter *iter, *iter_tmp;
 	RzList *ptrList;
 	RzBinJavaStackMapFrame *frame;
@@ -378,12 +378,12 @@ RZ_API void rz_bin_java_print_stack_map_table_attr_summary(RzBinJavaAttrInfo *at
 	ptrList = attr->info.stack_map_table_attr.stack_map_frame_entries;
 	if (ptrList) {
 		rz_list_foreach_safe (ptrList, iter, iter_tmp, frame) {
-			rz_bin_java_print_stack_map_frame_summary(frame);
+			rz_bin_java_summary_print_stack_map_frame(frame);
 		}
 	}
 }
 
-RZ_API void rz_bin_java_print_stack_map_frame_summary(RzBinJavaStackMapFrame *obj) {
+RZ_API void rz_bin_java_summary_print_stack_map_frame(RzBinJavaStackMapFrame *obj) {
 	RzListIter *iter, *iter_tmp;
 	RzList *ptrList;
 	RzBinJavaVerificationObj *ver_obj;
@@ -399,16 +399,16 @@ RZ_API void rz_bin_java_print_stack_map_frame_summary(RzBinJavaStackMapFrame *ob
 	printf("  Local Variables:\n");
 	ptrList = obj->local_items;
 	rz_list_foreach_safe (ptrList, iter, iter_tmp, ver_obj) {
-		rz_bin_java_print_verification_info_summary(ver_obj);
+		rz_bin_java_summary_print_verification_info(ver_obj);
 	}
 	printf("  Stack Items:\n");
 	ptrList = obj->stack_items;
 	rz_list_foreach_safe (ptrList, iter, iter_tmp, ver_obj) {
-		rz_bin_java_print_verification_info_summary(ver_obj);
+		rz_bin_java_summary_print_verification_info(ver_obj);
 	}
 }
 
-RZ_API void rz_bin_java_print_verification_info_summary(RzBinJavaVerificationObj *obj) {
+RZ_API void rz_bin_java_summary_print_verification_info(RzBinJavaVerificationObj *obj) {
 	ut8 tag_value = RZ_BIN_JAVA_STACKMAP_UNKNOWN;
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaVerificationObj*  .\n");
@@ -428,15 +428,15 @@ RZ_API void rz_bin_java_print_verification_info_summary(RzBinJavaVerificationObj
 	}
 }
 
-RZ_API void rz_bin_java_print_field_summary(RzBinJavaField *field) {
+RZ_API void rz_bin_java_summary_print_field(RzBinJavaField *field) {
 	RzBinJavaAttrInfo *attr;
 	RzListIter *iter, *iter_tmp;
 	if (field) {
 		if (field->type == RZ_BIN_JAVA_FIELD_TYPE_METHOD) {
-			rz_bin_java_print_method_summary(field);
+			rz_bin_java_summary_print_method(field);
 		} else {
 #if 0
-			rz_bin_java_print_interface_summary (field);
+			rz_bin_java_summary_print_interface (field);
 			return;
 		} * /
 #endif
@@ -448,7 +448,7 @@ RZ_API void rz_bin_java_print_field_summary(RzBinJavaField *field) {
 			printf("  Field Attributes Count: %d\n", field->attr_count);
 			printf("  Field Attributes:\n");
 			rz_list_foreach_safe (field->attributes, iter, iter_tmp, attr) {
-				rz_bin_java_print_attr_summary(attr);
+				rz_bin_java_summary_print_attr(attr);
 			}
 		}
 	} else {
@@ -456,7 +456,7 @@ RZ_API void rz_bin_java_print_field_summary(RzBinJavaField *field) {
 	}
 }
 
-RZ_API void rz_bin_java_print_method_summary(RzBinJavaField *field) {
+RZ_API void rz_bin_java_summary_print_method(RzBinJavaField *field) {
 	RzBinJavaAttrInfo *attr;
 	RzListIter *iter, *iter_tmp;
 	if (field == NULL) {
@@ -471,11 +471,11 @@ RZ_API void rz_bin_java_print_method_summary(RzBinJavaField *field) {
 	printf("  Method Attributes Count: %d\n", field->attr_count);
 	printf("  Method Attributes:\n");
 	rz_list_foreach_safe (field->attributes, iter, iter_tmp, attr) {
-		rz_bin_java_print_attr_summary(attr);
+		rz_bin_java_summary_print_attr(attr);
 	}
 }
 
-RZ_API void rz_bin_java_print_interfacemethodref_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_interfacemethodref(RzBinJavaCPTypeObj *obj) {
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  InterfaceMethodRef.\n");
 		return;
@@ -486,7 +486,7 @@ RZ_API void rz_bin_java_print_interfacemethodref_cp_summary(RzBinJavaCPTypeObj *
 	printf("	Name and type Index = %d\n", obj->info.cp_interface.name_and_type_idx);
 }
 
-RZ_API void rz_bin_java_print_methodhandle_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_methodhandle(RzBinJavaCPTypeObj *obj) {
 	ut8 ref_kind;
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  RzBinJavaCPTypeMethodHandle.\n");
@@ -499,7 +499,7 @@ RZ_API void rz_bin_java_print_methodhandle_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("	Reference Index = %d\n", obj->info.cp_method_handle.reference_index);
 }
 
-RZ_API void rz_bin_java_print_methodtype_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_methodtype(RzBinJavaCPTypeObj *obj) {
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  RzBinJavaCPTypeMethodType.\n");
 		return;
@@ -509,7 +509,7 @@ RZ_API void rz_bin_java_print_methodtype_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("  Descriptor Index = 0x%02x\n", obj->info.cp_method_type.descriptor_index);
 }
 
-RZ_API void rz_bin_java_print_invokedynamic_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_invokedynamic(RzBinJavaCPTypeObj *obj) {
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  RzBinJavaCPTypeInvokeDynamic.\n");
 		return;
@@ -520,7 +520,7 @@ RZ_API void rz_bin_java_print_invokedynamic_cp_summary(RzBinJavaCPTypeObj *obj) 
 	printf("	Bootstrap Name and Type Index = (0x%02x)\n", obj->info.cp_invoke_dynamic.name_and_type_index);
 }
 
-RZ_API void rz_bin_java_print_methodref_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_methodref(RzBinJavaCPTypeObj *obj) {
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  MethodRef.\n");
 		return;
@@ -531,7 +531,7 @@ RZ_API void rz_bin_java_print_methodref_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("	Name and type Index = %d\n", obj->info.cp_method.name_and_type_idx);
 }
 
-RZ_API void rz_bin_java_print_fieldref_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_fieldref(RzBinJavaCPTypeObj *obj) {
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  FieldRef.\n");
 		return;
@@ -542,7 +542,7 @@ RZ_API void rz_bin_java_print_fieldref_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("	Name and type Index = %d\n", obj->info.cp_field.name_and_type_idx);
 }
 
-RZ_API void rz_bin_java_print_classref_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_classref(RzBinJavaCPTypeObj *obj) {
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  ClassRef.\n");
 		return;
@@ -552,7 +552,7 @@ RZ_API void rz_bin_java_print_classref_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("	Name Index = %d\n", obj->info.cp_class.name_idx);
 }
 
-RZ_API void rz_bin_java_print_string_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_string(RzBinJavaCPTypeObj *obj) {
 	if (!obj) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  String.\n");
 		return;
@@ -562,7 +562,7 @@ RZ_API void rz_bin_java_print_string_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("  String Index = %d\n", obj->info.cp_string.string_idx);
 }
 
-RZ_API void rz_bin_java_print_integer_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_integer(RzBinJavaCPTypeObj *obj) {
 	ut8 *b = NULL;
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  Integer.\n");
@@ -575,7 +575,7 @@ RZ_API void rz_bin_java_print_integer_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("	integer = %d\n", rz_read_at_be32(obj->info.cp_integer.bytes.raw, 0));
 }
 
-RZ_API void rz_bin_java_print_float_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_float(RzBinJavaCPTypeObj *obj) {
 	ut8 *b = NULL;
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  Double.\n");
@@ -588,7 +588,7 @@ RZ_API void rz_bin_java_print_float_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("  Float = %f\n", raw_to_float(obj->info.cp_float.bytes.raw, 0));
 }
 
-RZ_API void rz_bin_java_print_long_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_long(RzBinJavaCPTypeObj *obj) {
 	ut8 *b = NULL;
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  Long.\n");
@@ -602,7 +602,7 @@ RZ_API void rz_bin_java_print_long_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("  Long = %08" PFMT64x "\n", rz_read_at_be64(obj->info.cp_long.bytes.raw, 0));
 }
 
-RZ_API void rz_bin_java_print_double_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_double(RzBinJavaCPTypeObj *obj) {
 	ut8 *b = NULL;
 	if (!obj) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  Double.\n");
@@ -616,7 +616,7 @@ RZ_API void rz_bin_java_print_double_cp_summary(RzBinJavaCPTypeObj *obj) {
 	printf("  Double = %f\n", raw_to_double(obj->info.cp_double.bytes.raw, 0));
 }
 
-RZ_API void rz_bin_java_print_name_and_type_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_name_and_type(RzBinJavaCPTypeObj *obj) {
 	if (obj == NULL) {
 		printf("Attempting to print an invalid RzBinJavaCPTypeObj*  Name_And_Type.\n");
 		return;
@@ -627,15 +627,15 @@ RZ_API void rz_bin_java_print_name_and_type_cp_summary(RzBinJavaCPTypeObj *obj) 
 	printf("  descriptor_idx = (%d)\n", obj->info.cp_name_and_type.descriptor_idx);
 }
 
-RZ_API void rz_bin_java_print_null_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_null(RzBinJavaCPTypeObj *obj) {
 	printf("Unknown ConstantPool Type Tag: 0x%04x .\n", obj->tag);
 }
 
-RZ_API void rz_bin_java_print_unknown_cp_summary(RzBinJavaCPTypeObj *obj) {
+RZ_API void rz_bin_java_summary_cp_print_unknown(RzBinJavaCPTypeObj *obj) {
 	printf("NULL ConstantPool Type.\n");
 }
 
-RZ_API void rz_bin_java_print_element_pair_summary(RzBinJavaElementValuePair *evp) {
+RZ_API void rz_bin_java_summary_print_element_pair(RzBinJavaElementValuePair *evp) {
 	if (!evp) {
 		printf("Attempting to print an invalid RzBinJavaElementValuePair *pair.\n");
 		return;
@@ -645,10 +645,10 @@ RZ_API void rz_bin_java_print_element_pair_summary(RzBinJavaElementValuePair *ev
 	printf("  EV Pair Element Name index: 0x%02x\n", evp->element_name_idx);
 	printf("  EV Pair Element Name: %s\n", evp->name);
 	printf("  EV Pair Element Value:\n");
-	rz_bin_java_print_element_value_summary(evp->value);
+	rz_bin_java_summary_print_element_value(evp->value);
 }
 
-RZ_API void rz_bin_java_print_element_value_summary(RzBinJavaElementValue *element_value) {
+RZ_API void rz_bin_java_summary_print_element_value(RzBinJavaElementValue *element_value) {
 	RzBinJavaCPTypeObj *obj;
 	RzBinJavaElementValue *ev_element = NULL;
 	RzListIter *iter = NULL, *iter_tmp = NULL;
@@ -704,12 +704,12 @@ RZ_API void rz_bin_java_print_element_value_summary(RzBinJavaElementValue *eleme
 		printf("   EV Value Array Value Number of Values: 0x%04x\n", element_value->value.array_value.num_values);
 		printf("   EV Value Array Values\n");
 		rz_list_foreach_safe (element_value->value.array_value.values, iter, iter_tmp, ev_element) {
-			rz_bin_java_print_element_value_summary(ev_element);
+			rz_bin_java_summary_print_element_value(ev_element);
 		}
 		break;
 	case RZ_BIN_JAVA_EV_TAG_ANNOTATION:
 		printf("   EV Annotation Information:\n");
-		rz_bin_java_print_annotation_summary(&element_value->value.annotation_value);
+		rz_bin_java_summary_print_annotation(&element_value->value.annotation_value);
 		break;
 	default:
 		// printf unable to handle tag
@@ -717,7 +717,7 @@ RZ_API void rz_bin_java_print_element_value_summary(RzBinJavaElementValue *eleme
 	}
 }
 
-RZ_API void rz_bin_java_print_annotation_summary(RzBinJavaAnnotation *annotation) {
+RZ_API void rz_bin_java_summary_print_annotation(RzBinJavaAnnotation *annotation) {
 	RzListIter *iter = NULL, *iter_tmp = NULL;
 	RzBinJavaElementValuePair *evp = NULL;
 	if (!annotation) {
@@ -729,12 +729,12 @@ RZ_API void rz_bin_java_print_annotation_summary(RzBinJavaAnnotation *annotation
 	printf("  Annotation EV Pair Values:\n");
 	if (annotation->element_value_pairs) {
 		rz_list_foreach_safe (annotation->element_value_pairs, iter, iter_tmp, evp) {
-			rz_bin_java_print_element_pair_summary(evp);
+			rz_bin_java_summary_print_element_pair(evp);
 		}
 	}
 }
 
-RZ_API void rz_bin_java_print_bootstrap_method_argument_summary(RzBinJavaBootStrapArgument *bsm_arg) {
+RZ_API void rz_bin_java_summary_print_bootstrap_method_argument(RzBinJavaBootStrapArgument *bsm_arg) {
 	if (!bsm_arg) {
 		printf("Attempting to print an invalid RzBinJavaBootStrapArgument *.\n");
 		return;
@@ -750,7 +750,7 @@ RZ_API void rz_bin_java_print_bootstrap_method_argument_summary(RzBinJavaBootStr
 	}
 }
 
-RZ_API void rz_bin_java_print_bootstrap_method_summary(RzBinJavaBootStrapMethod *bsm) {
+RZ_API void rz_bin_java_summary_print_bootstrap_method(RzBinJavaBootStrapMethod *bsm) {
 	RzBinJavaBootStrapArgument *bsm_arg = NULL;
 	RzListIter *iter = NULL, *iter_tmp = NULL;
 	if (!bsm) {
@@ -764,7 +764,7 @@ RZ_API void rz_bin_java_print_bootstrap_method_summary(RzBinJavaBootStrapMethod 
 	if (bsm->bootstrap_arguments) {
 		rz_list_foreach_safe (bsm->bootstrap_arguments, iter, iter_tmp, bsm_arg) {
 			if (bsm_arg) {
-				rz_bin_java_print_bootstrap_method_argument_summary(bsm_arg);
+				rz_bin_java_summary_print_bootstrap_method_argument(bsm_arg);
 			}
 		}
 	} else {
@@ -772,7 +772,7 @@ RZ_API void rz_bin_java_print_bootstrap_method_summary(RzBinJavaBootStrapMethod 
 	}
 }
 
-RZ_API void rz_bin_java_print_bootstrap_methods_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_bootstrap_methods_attr(RzBinJavaAttrInfo *attr) {
 	RzListIter *iter, *iter_tmp;
 	RzBinJavaBootStrapMethod *obj = NULL;
 	if (!attr || attr->type == RZ_BIN_JAVA_ATTRIBUTE_BOOTSTRAP_METHODS_ATTR) {
@@ -786,7 +786,7 @@ RZ_API void rz_bin_java_print_bootstrap_methods_attr_summary(RzBinJavaAttrInfo *
 	if (attr->info.bootstrap_methods_attr.bootstrap_methods) {
 		rz_list_foreach_safe (attr->info.bootstrap_methods_attr.bootstrap_methods, iter, iter_tmp, obj) {
 			if (obj) {
-				rz_bin_java_print_bootstrap_method_summary(obj);
+				rz_bin_java_summary_print_bootstrap_method(obj);
 			}
 		}
 	} else {
@@ -794,19 +794,19 @@ RZ_API void rz_bin_java_print_bootstrap_methods_attr_summary(RzBinJavaAttrInfo *
 	}
 }
 
-RZ_API void rz_bin_java_print_annotation_default_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_annotation_default_attr(RzBinJavaAttrInfo *attr) {
 	if (attr && attr->type == RZ_BIN_JAVA_ATTRIBUTE_ANNOTATION_DEFAULT_ATTR) {
 		printf("Annotation Default Attribute Information:\n");
 		printf("   Attribute Offset: 0x%08" PFMT64x "\n", attr->file_offset);
 		printf("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 		printf("   Attribute Length: %d\n", attr->length);
-		rz_bin_java_print_element_value_summary((attr->info.annotation_default_attr.default_value));
+		rz_bin_java_summary_print_element_value((attr->info.annotation_default_attr.default_value));
 	} else {
 		// TODO: printf attr is invalid
 	}
 }
 
-RZ_API void rz_bin_java_print_annotation_array_summary(RzBinJavaAnnotationsArray *annotation_array) {
+RZ_API void rz_bin_java_summary_print_annotation_array(RzBinJavaAnnotationsArray *annotation_array) {
 	RzListIter *iter = NULL, *iter_tmp = NULL;
 	RzBinJavaAnnotation *annotation;
 	if (!annotation_array->annotations) {
@@ -816,31 +816,31 @@ RZ_API void rz_bin_java_print_annotation_array_summary(RzBinJavaAnnotationsArray
 	printf("   Annotation Array Information:\n");
 	printf("   Number of Annotation Array Elements: %d\n", annotation_array->num_annotations);
 	rz_list_foreach_safe (annotation_array->annotations, iter, iter_tmp, annotation) {
-		rz_bin_java_print_annotation_summary(annotation);
+		rz_bin_java_summary_print_annotation(annotation);
 	}
 }
 
-RZ_API void rz_bin_java_print_rtv_annotations_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_rtv_annotations_attr(RzBinJavaAttrInfo *attr) {
 	if (attr && attr->type == RZ_BIN_JAVA_ATTRIBUTE_RUNTIME_VISIBLE_ANNOTATION_ATTR) {
 		printf("Runtime Visible Annotations Attribute Information:\n");
 		printf("   Attribute Offset: 0x%08" PFMT64x "\n", attr->file_offset);
 		printf("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 		printf("   Attribute Length: %d\n", attr->length);
-		rz_bin_java_print_annotation_array_summary(&attr->info.annotation_array);
+		rz_bin_java_summary_print_annotation_array(&attr->info.annotation_array);
 	}
 }
 
-RZ_API void rz_bin_java_print_rti_annotations_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_rti_annotations_attr(RzBinJavaAttrInfo *attr) {
 	if (attr && attr->type == RZ_BIN_JAVA_ATTRIBUTE_RUNTIME_INVISIBLE_ANNOTATION_ATTR) {
 		printf("Runtime Invisible Annotations Attribute Information:\n");
 		printf("   Attribute Offset: 0x%08" PFMT64x "\n", attr->file_offset);
 		printf("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 		printf("   Attribute Length: %d\n", attr->length);
-		rz_bin_java_print_annotation_array_summary(&attr->info.annotation_array);
+		rz_bin_java_summary_print_annotation_array(&attr->info.annotation_array);
 	}
 }
 
-RZ_API void rz_bin_java_print_rtvp_annotations_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_rtvp_annotations_attr(RzBinJavaAttrInfo *attr) {
 	RzBinJavaAnnotationsArray *annotation_array = NULL;
 	RzListIter *iter = NULL, *iter_tmp = NULL;
 	if (attr && attr->type == RZ_BIN_JAVA_ATTRIBUTE_RUNTIME_VISIBLE_PARAMETER_ANNOTATION_ATTR) {
@@ -850,12 +850,12 @@ RZ_API void rz_bin_java_print_rtvp_annotations_attr_summary(RzBinJavaAttrInfo *a
 		printf("  Attribute Length: %d\n", attr->length);
 		printf("  Number of Runtime Invisible Parameters: %d\n", attr->info.rtvp_annotations_attr.num_parameters);
 		rz_list_foreach_safe (attr->info.rtvp_annotations_attr.parameter_annotations, iter, iter_tmp, annotation_array) {
-			rz_bin_java_print_annotation_array_summary(annotation_array);
+			rz_bin_java_summary_print_annotation_array(annotation_array);
 		}
 	}
 }
 
-RZ_API void rz_bin_java_print_rtip_annotations_attr_summary(RzBinJavaAttrInfo *attr) {
+RZ_API void rz_bin_java_summary_print_rtip_annotations_attr(RzBinJavaAttrInfo *attr) {
 	RzBinJavaAnnotationsArray *annotation_array = NULL;
 	RzListIter *iter = NULL, *iter_tmp = NULL;
 	if (attr && attr->type == RZ_BIN_JAVA_ATTRIBUTE_RUNTIME_INVISIBLE_PARAMETER_ANNOTATION_ATTR) {
@@ -865,12 +865,12 @@ RZ_API void rz_bin_java_print_rtip_annotations_attr_summary(RzBinJavaAttrInfo *a
 		printf("  Attribute Length: %d\n", attr->length);
 		printf("  Number of Runtime Invisible Parameters: %d\n", attr->info.rtip_annotations_attr.num_parameters);
 		rz_list_foreach_safe (attr->info.rtip_annotations_attr.parameter_annotations, iter, iter_tmp, annotation_array) {
-			rz_bin_java_print_annotation_array_summary(annotation_array);
+			rz_bin_java_summary_print_annotation_array(annotation_array);
 		}
 	}
 }
 
-RZ_API void rz_bin_java_print_stack_map_append_frame_summary(RzBinJavaStackMapFrame *obj) {
+RZ_API void rz_bin_java_summary_print_stack_map_append_frame(RzBinJavaStackMapFrame *obj) {
 	RzListIter *iter, *iter_tmp;
 	RzList *ptrList;
 	RzBinJavaVerificationObj *ver_obj;
@@ -881,12 +881,12 @@ RZ_API void rz_bin_java_print_stack_map_append_frame_summary(RzBinJavaStackMapFr
 	printf("  Local Variables:\n");
 	ptrList = obj->local_items;
 	rz_list_foreach_safe (ptrList, iter, iter_tmp, ver_obj) {
-		rz_bin_java_print_verification_info_summary(ver_obj);
+		rz_bin_java_summary_print_verification_info(ver_obj);
 	}
 	printf("  Stack Items Count = 0x%04x\n", obj->number_of_stack_items);
 	printf("  Stack Items:\n");
 	ptrList = obj->stack_items;
 	rz_list_foreach_safe (ptrList, iter, iter_tmp, ver_obj) {
-		rz_bin_java_print_verification_info_summary(ver_obj);
+		rz_bin_java_summary_print_verification_info(ver_obj);
 	}
 }

@@ -1443,7 +1443,7 @@ static RzCmdStatus rz_cmd_java_resolve_cp_to_key(RzBinJavaObj *obj, ut16 idx) {
 
 static RzCmdStatus rz_cmd_java_resolve_cp_summary(RzBinJavaObj *obj, ut16 idx) {
 	rz_return_val_if_fail(obj && idx, RZ_CMD_STATUS_ERROR);
-	bool res = rz_bin_java_resolve_cp_idx_print_summary(obj, idx);
+	bool res = rz_bin_java_summary_resolve_cp_idx_print(obj, idx);
 	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
@@ -1535,7 +1535,7 @@ static RzCmdStatus rz_cmd_java_print_method_num_name(RzBinJavaObj *obj) {
 }
 
 static RzCmdStatus rz_cmd_java_print_field_summary(RzBinJavaObj *obj, ut16 idx) {
-	if (!rz_bin_java_print_field_idx_summary(obj, idx)) {
+	if (!rz_bin_java_summary_print_field_idx(obj, idx)) {
 		eprintf("Error: Field @ index (%d) not found in the RzBinJavaObj.\n", idx);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -1555,7 +1555,7 @@ static RzCmdStatus rz_cmd_java_print_field_name(RzBinJavaObj *obj, ut16 idx) {
 }
 
 static RzCmdStatus rz_cmd_java_print_method_summary(RzBinJavaObj *obj, ut16 idx) {
-	if (!rz_bin_java_print_method_idx_summary(obj, idx)) {
+	if (!rz_bin_java_summary_print_method_idx(obj, idx)) {
 		eprintf("Error: Method @ index (%d) not found in the RzBinJavaObj.\n", idx);
 		return RZ_CMD_STATUS_ERROR;
 	}
