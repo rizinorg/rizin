@@ -449,6 +449,7 @@ RZ_API int rz_core_block_read(RzCore *core);
 RZ_API int rz_core_block_size(RzCore *core, int bsize);
 RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset);
 RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
