@@ -1373,7 +1373,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	static int gcomp_idx = 0;
 	static bool yank_flag = 0;
 	static int gcomp = 0;
-	signed char buf[10];
+	char buf[10];
 #if USE_UTF8
 	int utflen;
 #endif
