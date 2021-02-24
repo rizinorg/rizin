@@ -20,6 +20,7 @@ jobs:
         filters: |
           yaml:
             - '**.yml'
+            - '**.yaml'
             - '.github/workflows/linter.yml'
           clang-format:
             - '**.c'
