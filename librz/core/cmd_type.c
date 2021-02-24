@@ -783,6 +783,25 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut
 	}
 }
 
+static bool typedef_info(RzCore *core, const char *name) {
+	const char *istypedef;
+	Sdb *TDB = core->analysis->sdb_types;
+	istypedef = sdb_const_get(TDB, name, 0);
+	if (istypedef && !strncmp(istypedef, "typedef", 7)) {
+		const char *q = sdb_fmt("typedef.%s", name);
+		const char *res = sdb_const_get(TDB, q, 0);
+		if (res) {
+			rz_cons_println(res);
+		} else {
+			return false;
+		}
+	} else {
+		eprintf("This is not an typedef\n");
+		return false;
+	}
+	return true;
+}
+
 RZ_API void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode) {
 	PJ *pj = NULL;
 	Sdb *TDB = core->analysis->sdb_types;
@@ -827,15 +846,14 @@ RZ_API void rz_core_list_typename_alias_c(RzCore *core, const char *typedef_name
 	SdbListIter *iter;
 	Sdb *TDB = core->analysis->sdb_types;
 	SdbList *l = sdb_foreach_list(TDB, true);
-	const char *arg = rz_str_trim_head_ro(typedef_name + 2);
 	bool match = false;
 	ls_foreach (l, iter, kv) {
 		if (!strcmp(sdbkv_value(kv), "typedef")) {
 			if (!name || strcmp(sdbkv_value(kv), name)) {
 				free(name);
 				name = strdup(sdbkv_key(kv));
-				if (name && (arg && *arg)) {
-					if (!strcmp(arg, name)) {
+				if (name && (typedef_name && *typedef_name)) {
+					if (!strcmp(typedef_name, name)) {
 						match = true;
 					} else {
 						continue;
@@ -1747,7 +1765,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		}
 		if (input[1] == 'c') { // "ttc"
-			rz_core_list_typename_alias_c(core, input);
+			rz_core_list_typename_alias_c(core, input + 2);
 			break;
 		}
 		if (input[1] == '?') { // "tt?"
@@ -1759,17 +1777,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		}
 		char *s = strdup(input + 2);
-		const char *istypedef;
-		istypedef = sdb_const_get(TDB, s, 0);
-		if (istypedef && !strncmp(istypedef, "typedef", 7)) {
-			const char *q = sdb_fmt("typedef.%s", s);
-			const char *res = sdb_const_get(TDB, q, 0);
-			if (res) {
-				rz_cons_println(res);
-			}
-		} else {
-			eprintf("This is not an typedef\n");
-		}
+		typedef_info(core, s);
 		free(s);
 	} break;
 	case '?':
@@ -1821,3 +1829,25 @@ RZ_IPI RzCmdStatus rz_type_list_c_nl_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char *typename = argc > 1 ? argv[1] : NULL;
+	if (typename) {
+		if (!typedef_info(core, typename)) {
+			eprintf("Can't find typedef");
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		rz_core_list_loaded_typedefs(core, mode);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_typedef_c_handler(RzCore *core, int argc, const char **argv) {
+	const char *typename = argc > 1 ? argv[1] : NULL;
+	if (!typename) {
+		rz_core_list_typename_alias_c(core, NULL);
+		return RZ_CMD_STATUS_OK;
+	}
+	rz_core_list_typename_alias_c(core, typename);
+	return RZ_CMD_STATUS_OK;
+}

@@ -44,3 +44,23 @@ commands:
             cname: type_cc_del_all
             summary: Remove all calling conventions
             args: []
+  - name: tt
+    summary: List loaded typedefs
+    subcommands:
+      - name: tt
+        cname: type_list_typedef
+        summary: List loaded typedefs / Show name for given type alias
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: ttc
+        cname: type_typedef_c
+        summary: Show typedef in the C output format
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
