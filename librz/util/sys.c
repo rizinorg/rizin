@@ -1291,8 +1291,14 @@ RZ_API int rz_sys_getpid(void) {
 RZ_API const char *rz_sys_prefix(const char *pfx) {
 	static char *prefix = NULL;
 	if (!prefix) {
-#if __WINDOWS__
-		prefix = rz_sys_get_src_dir_w32();
+#if RZ_IS_PORTABLE
+		char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
+		if (pid_to_path) {
+			char *t = rz_file_dirname(pid_to_path);
+			free(pid_to_path);
+			prefix = rz_file_dirname(t);
+			free(t);
+		}
 		if (!prefix) {
 			prefix = strdup(RZ_PREFIX);
 		}
@@ -1300,7 +1306,7 @@ RZ_API const char *rz_sys_prefix(const char *pfx) {
 		prefix = strdup(RZ_PREFIX);
 #endif
 	}
-	if (pfx) {
+	if (RZ_STR_ISNOTEMPTY(pfx)) {
 		free(prefix);
 		prefix = strdup(pfx);
 	}

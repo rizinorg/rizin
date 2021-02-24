@@ -758,11 +758,7 @@ static bool try_loadlib(RzCore *core, const char *lib, ut64 addr) {
 RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 	const char *dirlibs = rz_config_get(core->config, "dir.libs");
 	bool free_libdir = true;
-#ifdef __WINDOWS__
 	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
-#else
-	char *libdir = strdup(RZ_LIBDIR);
-#endif
 	if (!libdir) {
 		libdir = RZ_LIBDIR;
 		free_libdir = false;
