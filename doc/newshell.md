@@ -81,13 +81,14 @@ hashtable, using their names as keys.
 
 Let's make an example and suppose we want to add the `sky` command, which
 would find all occurrences of the word "sky" in a binary. The first thing to
-do is to insert the `sky` command in
-[`librz/core/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/9ce5003ca647cdfc181ac3c0f6206762ebb9e3e9/librz/core/cmd_descs.yaml). That
-file respects the same tree structure used when executing rizin and seeing
-its help, so it should be simple to see where to place it. If we want to
-place it under the `s` sub-tree, we just need to define a new descriptor
-under `subcommands`, with at least `name`, `cname`, `summary` and a list of
-`args` accepted by the command.
+do is to see where `sky` command could be added by reading
+[`librz/core/cmd_descs/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/6d901ca8a2ba674e268957fa8c24b3484bfc3626/librz/core/cmd_descs/cmd_descs.yaml).
+`sky` is `s` command's subcommand and they are splitted and placed inside the .YAML 
+file specified by the descriptor `subcommands` of the respective command. That file
+respects the same tree structure used when executing rizin and  seeing its help, 
+so it should be simple to see where to place it.If we want to place it under the
+`s` sub-tree, we just need to define a new descriptor under `subcommands`, with
+at least `name`, `cname`, `summary` and a list of `args` accepted by the command.
 
 Now we need to choose what kind of command (`type` field in YAML) we want to
 have. We can see the various types in the
