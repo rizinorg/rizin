@@ -106,97 +106,101 @@ typedef struct rz_cmd_java_cms_t {
 	RCMDJavaCmdHandler handler;
 } RzCmdJavaCmd;
 
+#define SIZESTR(x) (sizeof(x) - 1)
+
 #define CALC_SZ      "calc_sz"
 #define CALC_SZ_ARGS " <addr>"
 #define CALC_SZ_DESC "calculate class file size at location"
-#define CALC_SZ_LEN  7
+#define CALC_SZ_LEN  SIZESTR(CALC_SZ)
 
 #define ISVALID      "is_valid"
 #define ISVALID_ARGS " <addr> <sz>"
 #define ISVALID_DESC "check buffer to see if it is a valid class file"
-#define ISVALID_LEN  8
+#define ISVALID_LEN  SIZESTR(ISVALID)
 
 #define SET_ACC_FLAGS      "set_flags"
 #define SET_ACC_FLAGS_ARGS " <addr> <cfm> <flag string>"
 #define SET_ACC_FLAGS_DESC "set the access flags attributes for a field or method"
-#define SET_ACC_FLAGS_LEN  9
+#define SET_ACC_FLAGS_LEN  SIZESTR(SET_ACC_FLAGS)
 
 #define PROTOTYPES      "prototypes"
 #define PROTOTYPES_ARGS " <jaicmf>"
 #define PROTOTYPES_DESC "show in JSON, or All,Imports,Class,Methods,Fields"
-#define PROTOTYPES_LEN  10
+#define PROTOTYPES_LEN  SIZESTR(PROTOTYPES)
 
 #define RESOLVE_CP      "resolve_cp"
 #define RESOLVE_CP_ARGS " <stecadg> <idx>"
 #define RESOLVE_CP_DESC "cp type or value @ idx. Summary,Type,b64Encode,Const,Addr,Dump,Gsumarize"
-#define RESOLVE_CP_LEN  10
+#define RESOLVE_CP_LEN  SIZESTR(RESOLVE_CP)
 
 #define CALC_FLAGS      "calc_flags"
 #define CALC_FLAGS_ARGS " <lcfm> <visibility>"
 #define CALC_FLAGS_DESC "value from access flags: ListAll, flags, Class, Field, Method"
-#define CALC_FLAGS_LEN  10
+#define CALC_FLAGS_LEN  SIZESTR(CALC_FLAGS)
 
 #define FLAGS_STR_AT      "flags_str_at"
 #define FLAGS_STR_AT_ARGS " <cfm> <addr>"
 #define FLAGS_STR_AT_DESC "string value from access flags @ addr: Class, Field, Method"
-#define FLAGS_STR_AT_LEN  12
+#define FLAGS_STR_AT_LEN  SIZESTR(FLAGS_STR_AT)
 
 #define FLAGS_STR      "flags_str"
 #define FLAGS_STR_ARGS " <cfm> <access>"
 #define FLAGS_STR_DESC "string value for the flags number: Class, Field, Method"
-#define FLAGS_STR_LEN  9
+#define FLAGS_STR_LEN  SIZESTR(FLAGS_STR)
 
 #define METHOD_INFO      "m_info"
 #define METHOD_INFO_ARGS " [c | s <#idx> | n <#idx>]"
 #define METHOD_INFO_DESC "method information at index (c:method+ord, s:metadata, n:method)"
-#define METHOD_INFO_LEN  6
+#define METHOD_INFO_LEN  SIZESTR(METHOD_INFO)
 
 #define FIELD_INFO      "f_info"
 #define FIELD_INFO_ARGS " [c | s <#idx> | n <#idx>]"
 #define FIELD_INFO_DESC "field information at index (c:field+ord, s:metadata, n:method)"
-#define FIELD_INFO_LEN  6
+#define FIELD_INFO_LEN  SIZESTR(FIELD_INFO)
 
 #define HELP      "help"
 #define HELP_DESC "displays this message"
 #define HELP_ARGS ""
-#define HELP_LEN  4
+#define HELP_LEN  SIZESTR(HELP)
 
 #define FIND_CP_CONST      "find_cp_const"
 #define FIND_CP_CONST_ARGS " [a | #idx]"
 #define FIND_CP_CONST_DESC "find references to constant CP Object in code: AllReferences"
-#define FIND_CP_CONST_LEN  13
+#define FIND_CP_CONST_LEN  SIZESTR(FIND_CP_CONST)
 
 #define FIND_CP_VALUE      "find_cp_value"
 #define FIND_CP_VALUE_ARGS " <silfd> <V>"
 #define FIND_CP_VALUE_DESC "find references to CP constants by value"
-#define FIND_CP_VALUE_LEN  13
+#define FIND_CP_VALUE_LEN  SIZESTR(FIND_CP_VALUE)
 
 #define REPLACE_CP_VALUE      "replace_cp_value"
 #define REPLACE_CP_VALUE_ARGS " <idx> <V>"
 #define REPLACE_CP_VALUE_DESC "replace CP constants with value if the no resizing is required"
-#define REPLACE_CP_VALUE_LEN  16
+#define REPLACE_CP_VALUE_LEN  SIZESTR(REPLACE_CP_VALUE)
 
 #define REPLACE_CLASS_NAME      "replace_classname_value"
 #define REPLACE_CLASS_NAME_ARGS " <c> <nc>"
 #define REPLACE_CLASS_NAME_DESC "rename class name" //"replace CP constants with value if no resize needed"
-#define REPLACE_CLASS_NAME_LEN  23
+#define REPLACE_CLASS_NAME_LEN  SIZESTR(REPLACE_CLASS_NAME)
 
 #define RELOAD_BIN      "reload_bin"
 #define RELOAD_BIN_ARGS " addr"
 #define RELOAD_BIN_DESC "reload and reanalyze the Java class file starting at address"
-#define RELOAD_BIN_LEN  10
+#define RELOAD_BIN_LEN  SIZESTR(RELOAD_BIN)
 
 #define SUMMARY_INFO      "summary"
 #define SUMMARY_INFO_ARGS ""
 #define SUMMARY_INFO_DESC "print summary information for the current java class file"
-#define SUMMARY_INFO_LEN  7
+#define SUMMARY_INFO_LEN  SIZESTR(SUMMARY_INFO)
 
 #define PRINT_EXC      "exc"
 #define PRINT_EXC_ARGS " <addr>"
 #define PRINT_EXC_DESC "list all exceptions to fields and methods in code sections"
-#define PRINT_EXC_LEN  3
+#define PRINT_EXC_LEN  SIZESTR(PRINT_EXC)
 
-static RzCmdJavaCmd JAVA_CMDS[] = {
+#define END_CMDS (18)
+
+static RzCmdJavaCmd JAVA_CMDS[END_CMDS] = {
 	{ HELP, HELP_ARGS, HELP_DESC, HELP_LEN, rz_cmd_java_handle_help },
 	{ SET_ACC_FLAGS, SET_ACC_FLAGS_ARGS, SET_ACC_FLAGS_DESC, SET_ACC_FLAGS_LEN, rz_cmd_java_handle_set_flags },
 	{ PROTOTYPES, PROTOTYPES_ARGS, PROTOTYPES_DESC, PROTOTYPES_LEN, rz_cmd_java_handle_prototypes },
@@ -214,30 +218,7 @@ static RzCmdJavaCmd JAVA_CMDS[] = {
 	{ SUMMARY_INFO, SUMMARY_INFO_ARGS, SUMMARY_INFO_DESC, SUMMARY_INFO_LEN, rz_cmd_java_handle_summary_info },
 	{ PRINT_EXC, PRINT_EXC_ARGS, PRINT_EXC_DESC, PRINT_EXC_LEN, rz_cmd_java_handle_print_exceptions },
 	{ CALC_SZ, CALC_SZ_ARGS, CALC_SZ_DESC, CALC_SZ_LEN, rz_cmd_java_handle_calc_class_sz },
-	{ ISVALID, ISVALID_ARGS, ISVALID_DESC, ISVALID_LEN, rz_cmd_java_handle_isvalid },
-	{ NULL, NULL, NULL, 0, NULL }
-};
-
-enum {
-	HELP_IDX = 0,
-	SET_ACC_FLAGS_IDX = 1,
-	PROTOTYPES_IDX = 2,
-	RESOLVE_CP_IDX = 3,
-	CALC_FLAGS_IDX = 4,
-	FLAGS_STR_AT_IDX = 5,
-	FLAGS_STR_IDX = 6,
-	METHOD_INFO_IDX = 7,
-	FIELD_INFO_IDX = 8,
-	FIND_CP_CONST_IDX = 9,
-	FIND_CP_VALUE_IDX = 10,
-	REPLACE_CP_VALUE_IDX = 11,
-	REPLACE_CLASS_NAME_IDX = 12,
-	RELOAD_BIN_IDX = 13,
-	SUMMARY_INFO_IDX = 14,
-	PRINT_EXC_IDX = 15,
-	CALC_SZ_IDX = 16,
-	ISVALID_IDX = 17,
-	END_CMDS = 18,
+	{ ISVALID, ISVALID_ARGS, ISVALID_DESC, ISVALID_LEN, rz_cmd_java_handle_isvalid }
 };
 
 static const char *rz_cmd_get_next_classname_str(const char *str, const char *match_me) {
@@ -280,7 +261,7 @@ static RzAnalysis *get_analysis(RzCore *core) {
 }
 
 const char *help_msg[] = {
-	"Usage:", "java [cmd] [arg..] ", "Suite of java commands",
+	"Usage:", "java [<subcmd>=help [<arg0> [<arg1> ...]]]", "# Suite of java commands",
 	HELP, HELP_ARGS, HELP_DESC,
 	SET_ACC_FLAGS, SET_ACC_FLAGS_ARGS, SET_ACC_FLAGS_DESC,
 	PROTOTYPES, PROTOTYPES_ARGS, PROTOTYPES_DESC,
@@ -1628,12 +1609,15 @@ static RzCmdStatus rz_cmd_java_handle_print_exceptions(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus rz_cmd_java_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
 	for (int i = 0; i < END_CMDS; i++) {
 		if (!strncmp(argv[1], JAVA_CMDS[i].name, JAVA_CMDS[i].name_len)) {
 			return JAVA_CMDS[i].handler(core, argc - 2, argc > 2 ? &argv[2] : NULL);
 		}
 	}
-	return RZ_CMD_STATUS_NONEXISTINGCMD;
+	return RZ_CMD_STATUS_WRONG_ARGS;
 }
 
 static const char *cmd_java_subcmd_choices[] = { "help", "set_flags", "prototypes", "resolve_cp", "calc_flags", "flags_str_at", "flags_str", "m_info", "f_info", "find_cp_const", "find_cp_value", "replace_cp_value", "replace_classname_value", "reload_bin", "summary", "exc", "calc_sz", "is_valid", NULL };
@@ -1641,7 +1625,8 @@ static const RzCmdDescArg cmd_java_args[3] = {
 	{
 		.name = "subcmd",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.optional = false,
+		.optional = true,
+		.default_value = "help",
 		.choices = cmd_java_subcmd_choices,
 	},
 	{
@@ -1655,6 +1640,7 @@ static const RzCmdDescArg cmd_java_args[3] = {
 
 static const RzCmdDescHelp cmd_java_help = {
 	.summary = "Suite of java commands",
+	.description = "Type `java help` for more commands.",
 	.args = cmd_java_args,
 };
 
