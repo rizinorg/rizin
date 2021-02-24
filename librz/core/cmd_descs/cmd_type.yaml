@@ -1,0 +1,46 @@
+---
+name: cmd_type
+commands:
+  - name: tc
+    summary: List loaded types in C format
+    subcommands:
+      - name: tc
+        cname: type_list_c
+        summary: List loaded types in C format with newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tcd
+        cname: type_list_c_nl
+        summary: List loaded types in C format without newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tcc
+        summary: Manage calling convention types
+        subcommands:
+          - name: tcc
+            cname: type_cc_list
+            summary: List all calling conventions
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_SDB
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: tcc-
+            cname: type_cc_del
+            summary: Remove the calling convention
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: tcc-*
+            cname: type_cc_del_all
+            summary: Remove all calling conventions
+            args: []
