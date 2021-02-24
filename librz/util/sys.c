@@ -589,7 +589,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 	}
 	char buffer[1024], *outputptr = NULL;
 	char *inputptr = (char *)input;
-	int pid, bytes = 0, status;
+	int pid, bytes = 0, status = 0;
 	int sh_in[2], sh_out[2], sh_err[2];
 
 	if (len) {
@@ -730,11 +730,6 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 		waitpid(pid, &status, 0);
 		bool ret = true;
 		if (status) {
-			// char *escmd = rz_str_escape (cmd);
-			// eprintf ("error code %d (%s): %s\n", WEXITSTATUS (status), escmd, *sterr);
-			// eprintf ("(%s)\n", output);
-			// eprintf ("%s: failed command '%s'\n", __func__, escmd);
-			// free (escmd);
 			ret = false;
 		}
 
