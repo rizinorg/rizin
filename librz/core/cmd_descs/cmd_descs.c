@@ -106,6 +106,10 @@ static const RzCmdDescArg seek_prev_args[2];
 static const RzCmdDescArg seek_opcode_args[2];
 static const RzCmdDescArg seek_register_args[2];
 static const RzCmdDescArg sleep_args[2];
+static const RzCmdDescArg type_list_c_args[2];
+static const RzCmdDescArg type_list_c_nl_args[2];
+static const RzCmdDescArg type_cc_list_args[2];
+static const RzCmdDescArg type_cc_del_args[2];
 static const RzCmdDescArg uniq_args[2];
 static const RzCmdDescArg uname_args[2];
 static const RzCmdDescArg write_args[2];
@@ -1969,6 +1973,78 @@ static const RzCmdDescHelp sleep_help = {
 static const RzCmdDescHelp cmd_type_help = {
 	.summary = "Types, noreturn, signatures, C parser and more",
 };
+static const RzCmdDescHelp tc_help = {
+	.summary = "List loaded types in C format",
+};
+static const RzCmdDescArg type_list_c_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_list_c_help = {
+	.summary = "List loaded types in C format with newlines",
+	.args = type_list_c_args,
+};
+
+static const RzCmdDescArg type_list_c_nl_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_list_c_nl_help = {
+	.summary = "List loaded types in C format without newlines",
+	.args = type_list_c_nl_args,
+};
+
+static const RzCmdDescHelp tcc_help = {
+	.summary = "Manage calling convention types",
+};
+static const RzCmdDescArg type_cc_list_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_cc_list_help = {
+	.summary = "List all calling conventions",
+	.args = type_cc_list_args,
+};
+
+static const RzCmdDescArg type_cc_del_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_cc_del_help = {
+	.summary = "Remove the calling convention",
+	.args = type_cc_del_args,
+};
+
+static const RzCmdDescArg type_cc_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp type_cc_del_all_help = {
+	.summary = "Remove all calling conventions",
+	.args = type_cc_del_all_args,
+};
 
 static const RzCmdDescArg uniq_args[] = {
 	{
@@ -3455,6 +3531,18 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_type_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "t", rz_cmd_type, &cmd_type_help);
 	rz_warn_if_fail(cmd_type_cd);
+	RzCmdDesc *tc_cd = rz_cmd_desc_group_new(core->rcmd, cmd_type_cd, "tc", rz_type_list_c_handler, &type_list_c_help, &tc_help);
+	rz_warn_if_fail(tc_cd);
+	RzCmdDesc *type_list_c_nl_cd = rz_cmd_desc_argv_new(core->rcmd, tc_cd, "tcd", rz_type_list_c_nl_handler, &type_list_c_nl_help);
+	rz_warn_if_fail(type_list_c_nl_cd);
+
+	RzCmdDesc *tcc_cd = rz_cmd_desc_group_modes_new(core->rcmd, tc_cd, "tcc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_SDB | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_type_cc_list_handler, &type_cc_list_help, &tcc_help);
+	rz_warn_if_fail(tcc_cd);
+	RzCmdDesc *type_cc_del_cd = rz_cmd_desc_argv_new(core->rcmd, tcc_cd, "tcc-", rz_type_cc_del_handler, &type_cc_del_help);
+	rz_warn_if_fail(type_cc_del_cd);
+
+	RzCmdDesc *type_cc_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tcc_cd, "tcc-*", rz_type_cc_del_all_handler, &type_cc_del_all_help);
+	rz_warn_if_fail(type_cc_del_all_cd);
 
 	RzCmdDesc *uniq_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "uniq", rz_uniq_handler, &uniq_help);
 	rz_warn_if_fail(uniq_cd);
