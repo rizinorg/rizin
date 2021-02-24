@@ -87,9 +87,9 @@ do is to see where `sky` command could be added by reading
 file specified by the descriptor `subcommands` of the respective command. Since `sky`
 starts with an `s`, its subcommands would be in [`librz/core/cmd_descs/cmd_seek.yaml`](https://github.com/rizinorg/rizin/blob/6d901ca8a2ba674e268957fa8c24b3484bfc3626/librz/core/cmd_descs/cmd_seek.yaml).
 That file respects the same tree structure used when executing rizin and seeing its help,
-so it should be simple to see where to place it.If we want to place it under the
-`s` sub-tree, we just need to define a new descriptor under `subcommands`, with
-at least `name`, `cname`, `summary` and a list of `args` accepted by the command.
+so it should be simple to see where to place it. If we want to place it under the
+`s` sub-tree, we just need to define the descriptors for the command with at least
+`name`, `cname`, `summary` and a list of `args` accepted by the command.
 
 Now we need to choose what kind of command (`type` field in YAML) we want to
 have. We can see the various types in the
