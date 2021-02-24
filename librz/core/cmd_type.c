@@ -991,7 +991,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 		}
 	}
 beach:
-	rz_core_cmd0(core, "wc-*"); // drop cache writes
+	rz_io_cache_reset(core->io, core->io->cached); // drop cache writes
 	rz_config_set_i(core->config, "io.cache", ioCache);
 	rz_config_set_i(core->config, "dbg.follow", dbg_follow);
 	if (stack_set) {
