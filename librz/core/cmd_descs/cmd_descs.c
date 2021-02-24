@@ -81,6 +81,12 @@ static const RzCmdDescArg analysis_function_vars_sp_args[4];
 static const RzCmdDescArg analysis_function_vars_sp_del_args[2];
 static const RzCmdDescArg analysis_function_vars_sp_getref_args[3];
 static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
+static const RzCmdDescArg cmd_debug_step_until_args[2];
+static const RzCmdDescArg cmd_debug_step_until_instr_args[2];
+static const RzCmdDescArg cmd_debug_step_until_instr_regex_args[2];
+static const RzCmdDescArg cmd_debug_step_until_optype_args[2];
+static const RzCmdDescArg cmd_debug_step_until_esil_args[2];
+static const RzCmdDescArg cmd_debug_step_until_flag_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -1375,6 +1381,96 @@ static const RzCmdDescHelp cmd_debug_help = {
 };
 static const RzCmdDescHelp debug_continue_oldhandler_help = {
 	.summary = "Continue execution",
+};
+
+static const RzCmdDescHelp ds_help = {
+	.summary = "Debug step commands",
+};
+static const RzCmdDescHelp dsu_help = {
+	.summary = "Debug step until commands",
+};
+static const RzCmdDescArg cmd_debug_step_until_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_until_help = {
+	.summary = "Step until <address>",
+	.args = cmd_debug_step_until_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_until_instr_args[] = {
+	{
+		.name = "instr",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_until_instr_help = {
+	.summary = "Step until an instruction that matches <instr>",
+	.args = cmd_debug_step_until_instr_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_until_instr_regex_args[] = {
+	{
+		.name = "regex",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_until_instr_regex_help = {
+	.summary = "Step until an instruction that matches <regex>",
+	.args = cmd_debug_step_until_instr_regex_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_until_optype_args[] = {
+	{
+		.name = "optype",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_until_optype_help = {
+	.summary = "Step until an instr matches one of the <optype>s",
+	.args = cmd_debug_step_until_optype_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_until_esil_args[] = {
+	{
+		.name = "esil",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_until_esil_help = {
+	.summary = "Step until <esil> expression matches",
+	.args = cmd_debug_step_until_esil_args,
+};
+
+static const RzCmdDescArg cmd_debug_step_until_flag_args[] = {
+	{
+		.name = "flag",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_step_until_flag_help = {
+	.summary = "Step until pc == <flag> matching name",
+	.args = cmd_debug_step_until_flag_args,
 };
 
 static const RzCmdDescHelp e_help = {
@@ -3683,6 +3779,25 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_debug_cd);
 	RzCmdDesc *debug_continue_oldhandler_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_cd, "dc", rz_debug_continue_oldhandler, &debug_continue_oldhandler_help);
 	rz_warn_if_fail(debug_continue_oldhandler_cd);
+
+	RzCmdDesc *ds_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "ds", NULL, NULL, &ds_help);
+	rz_warn_if_fail(ds_cd);
+	RzCmdDesc *dsu_cd = rz_cmd_desc_group_new(core->rcmd, ds_cd, "dsu", rz_cmd_debug_step_until_handler, &cmd_debug_step_until_help, &dsu_help);
+	rz_warn_if_fail(dsu_cd);
+	RzCmdDesc *cmd_debug_step_until_instr_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsui", rz_cmd_debug_step_until_instr_handler, &cmd_debug_step_until_instr_help);
+	rz_warn_if_fail(cmd_debug_step_until_instr_cd);
+
+	RzCmdDesc *cmd_debug_step_until_instr_regex_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsuir", rz_cmd_debug_step_until_instr_regex_handler, &cmd_debug_step_until_instr_regex_help);
+	rz_warn_if_fail(cmd_debug_step_until_instr_regex_cd);
+
+	RzCmdDesc *cmd_debug_step_until_optype_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsuo", rz_cmd_debug_step_until_optype_handler, &cmd_debug_step_until_optype_help);
+	rz_warn_if_fail(cmd_debug_step_until_optype_cd);
+
+	RzCmdDesc *cmd_debug_step_until_esil_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsue", rz_cmd_debug_step_until_esil_handler, &cmd_debug_step_until_esil_help);
+	rz_warn_if_fail(cmd_debug_step_until_esil_cd);
+
+	RzCmdDesc *cmd_debug_step_until_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsuf", rz_cmd_debug_step_until_flag_handler, &cmd_debug_step_until_flag_help);
+	rz_warn_if_fail(cmd_debug_step_until_flag_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);

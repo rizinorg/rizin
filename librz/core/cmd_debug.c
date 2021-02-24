@@ -4217,6 +4217,37 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 	return 1;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv) {
+	rz_reg_arena_swap(core->dbg->reg, true);
+	step_until(core, rz_num_math(core->num, argv[1]));
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc, const char **argv) {
+	step_until_inst(core, argv[1], false);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int argc, const char **argv)  {
+	step_until_inst(core, argv[1], true);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc, const char **argv) {
+	step_until_optype(core, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_esil_handler(RzCore *core, int argc, const char **argv) {
+	step_until_esil(core, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, const char **argv) {
+	step_until_flag(core, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
 static char *get_corefile_name(const char *raw_name, int pid) {
 	return (!*raw_name) ? rz_str_newf("core.%u", pid) : rz_str_trim_dup(raw_name);
 }
