@@ -361,7 +361,7 @@ jobs:
     - name: Compile with meson
       run: |
         mkdir -p ${HOME}/rizin-static
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/rizin-static --buildtype release --default-library static build
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dstatic_runtime=true -Dportable=true build
         ninja -C build && ninja -C build install
         tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
       working-directory: rizin
@@ -483,7 +483,7 @@ jobs:
         include:
           - name: vs2019_static
             compiler: cl
-            meson_options: --default-library=static -Db_vscrt=static_from_buildtype
+            meson_options: --default-library=static -Db_vscrt=static_from_buildtype -Dportable=true
             bits: 64
           - name: clang_cl
             compiler: clang-cl
@@ -546,7 +546,7 @@ jobs:
     - name: Compile with meson
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
         ninja -C build && ninja -C build install
     - name: Create rizin-android-${{ matrix.name }}.tar.gz
       run: |
