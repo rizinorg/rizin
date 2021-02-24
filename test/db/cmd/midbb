@@ -613,7 +613,6 @@ e asm.bb.middle=false
 pd 3 @ 0x560e95
 EOF
 EXPECT=<<EOF
-|           ;-- sym.dummy:
             0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
 |           ;-- sym.dummy:
 |           0x00560e7d      5e             pop   esi
@@ -623,12 +622,10 @@ EXPECT=<<EOF
             0x00560e7c      96             xchg  eax, esi
 |           0x00560e7d      5e             pop   esi
 
-|           ;-- sym.dummy:
             0x00560e95  ~   ba0f31e914     mov   edx, 0x14e9310f
 |           ;-- sym.dummy:
 |           0x00560e96      0f31           rdtsc
 
-|           ;-- sym.dummy:
             0x00560e95  ~   ba0f31e914     mov   edx, 0x14e9310f
 |           ;-- sym.dummy:
 |           0x00560e96  ~   0f31           rdtsc

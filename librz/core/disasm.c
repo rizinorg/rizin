@@ -5295,16 +5295,17 @@ toro:
 			rz_print_set_rowoff(core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
 		skip_bytes_flag = handleMidFlags(core, ds, true);
+		if (ds->midbb) {
+			skip_bytes_bb = handleMidBB(core, ds);
+		}
 		ds_show_xrefs(ds);
 		ds_show_flags(ds);
-		if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW) {
+		if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW &&
+			(!ds->midbb || !skip_bytes_bb || skip_bytes_bb > skip_bytes_flag)) {
 			ds->at += skip_bytes_flag;
 			ds_show_xrefs(ds);
 			ds_show_flags(ds);
 			ds->at -= skip_bytes_flag;
-		}
-		if (ds->midbb) {
-			skip_bytes_bb = handleMidBB(core, ds);
 		}
 		if (ds->pdf) {
 			static bool sparse = false;
