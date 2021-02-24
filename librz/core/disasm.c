@@ -312,7 +312,7 @@ static void ds_control_flow_comments(RDisasmState *ds);
 static void ds_adistrick_comments(RDisasmState *ds);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_show_comments_right(RDisasmState *ds);
-static void ds_show_flags(RDisasmState *ds);
+static void ds_show_flags(RDisasmState *ds, bool overlapped);
 static void ds_update_ref_lines(RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
 static void ds_print_lines_right(RDisasmState *ds);
@@ -2225,7 +2225,7 @@ static void __preline_flag(RDisasmState *ds, RzFlagItem *flag) {
 }
 
 #define printPre (outline || !*comma)
-static void ds_show_flags(RDisasmState *ds) {
+static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 	//const char *beginch;
 	RzFlagItem *flag;
 	RzListIter *iter;
@@ -2350,6 +2350,9 @@ static void ds_show_flags(RDisasmState *ds) {
 					rz_str_ansi_filter(name, NULL, NULL, -1);
 					if (!ds->flags_inline || nth == 0) {
 						rz_cons_printf(FLAG_PREFIX);
+						if (overlapped) {
+							rz_cons_printf("(0x%08" PFMT64x ") ", ds->at);
+						}
 					}
 					if (outline) {
 						rz_cons_printf("%s:", name);
@@ -5299,12 +5302,12 @@ toro:
 			skip_bytes_bb = handleMidBB(core, ds);
 		}
 		ds_show_xrefs(ds);
-		ds_show_flags(ds);
+		ds_show_flags(ds, false);
 		if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW &&
 			(!ds->midbb || !skip_bytes_bb || skip_bytes_bb > skip_bytes_flag)) {
 			ds->at += skip_bytes_flag;
 			ds_show_xrefs(ds);
-			ds_show_flags(ds);
+			ds_show_flags(ds, true);
 			ds->at -= skip_bytes_flag;
 		}
 		if (ds->pdf) {
