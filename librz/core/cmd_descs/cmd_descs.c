@@ -110,6 +110,8 @@ static const RzCmdDescArg type_list_c_args[2];
 static const RzCmdDescArg type_list_c_nl_args[2];
 static const RzCmdDescArg type_cc_list_args[2];
 static const RzCmdDescArg type_cc_del_args[2];
+static const RzCmdDescArg type_list_typedef_args[2];
+static const RzCmdDescArg type_typedef_c_args[2];
 static const RzCmdDescArg uniq_args[2];
 static const RzCmdDescArg uname_args[2];
 static const RzCmdDescArg write_args[2];
@@ -2046,6 +2048,39 @@ static const RzCmdDescHelp type_cc_del_all_help = {
 	.args = type_cc_del_all_args,
 };
 
+static const RzCmdDescHelp tt_help = {
+	.summary = "List loaded typedefs",
+};
+static const RzCmdDescArg type_list_typedef_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_list_typedef_help = {
+	.summary = "List loaded typedefs / Show name for given type alias",
+	.args = type_list_typedef_args,
+};
+
+static const RzCmdDescArg type_typedef_c_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_typedef_c_help = {
+	.summary = "Show typedef in the C output format",
+	.args = type_typedef_c_args,
+};
+
 static const RzCmdDescArg uniq_args[] = {
 	{
 		.name = "filename",
@@ -3543,6 +3578,11 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_cc_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tcc_cd, "tcc-*", rz_type_cc_del_all_handler, &type_cc_del_all_help);
 	rz_warn_if_fail(type_cc_del_all_cd);
+
+	RzCmdDesc *tt_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_typedef_handler, &type_list_typedef_help, &tt_help);
+	rz_warn_if_fail(tt_cd);
+	RzCmdDesc *type_typedef_c_cd = rz_cmd_desc_argv_new(core->rcmd, tt_cd, "ttc", rz_type_typedef_c_handler, &type_typedef_c_help);
+	rz_warn_if_fail(type_typedef_c_cd);
 
 	RzCmdDesc *uniq_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "uniq", rz_uniq_handler, &uniq_help);
 	rz_warn_if_fail(uniq_cd);

@@ -155,6 +155,8 @@ RZ_IPI RzCmdStatus rz_type_list_c_nl_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_type_cc_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_type_cc_del_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_type_cc_del_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_type_typedef_c_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_type(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_uniq_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_uname_handler(RzCore *core, int argc, const char **argv);
