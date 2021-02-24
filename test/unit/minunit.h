@@ -201,6 +201,17 @@ void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 		mu_assert(_meqstr, strcmp((exp__), (act__)) == 0); \
 	} while (0)
 
+#define mu_assert_strcontains(actual, expected, message) \
+	do { \
+		char _meqstr[MU_BUF_SIZE]; \
+		const char *act__ = (actual); \
+		act__ = act__ ? act__ : "(null)"; \
+		const char *exp__ = (expected); \
+		exp__ = exp__ ? exp__ : "(null)"; \
+		snprintf(_meqstr, MU_BUF_SIZE, "%s: expected to find %s in %s.", (message), (exp__), (act__)); \
+		mu_assert(_meqstr, strstr((act__), (exp__)) != NULL); \
+	} while (0)
+
 #define mu_assert_streq_free(actual, expected, message) \
 	do { \
 		char *act2__ = (actual); \
