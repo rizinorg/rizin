@@ -551,32 +551,6 @@ beach:
 
 	return buf;
 }
-// TODO DWARF 5 line header parsing, very different from ver. 4
-// Because this function needs ability to parse a lot of FORMS just like debug info
-// I'll complete this function after completing debug_info parsing and merging
-// for the meanwhile I am skipping the space.
-static const ut8 *parse_line_header_source_dwarf5(RzBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RzBinDwarfLineHeader *hdr, Sdb *sdb, int mode) {
-	// 	int i = 0;
-	// 	size_t count;
-	// 	const ut8 *tmp_buf = NULL;
-
-	// 	ut8 dir_entry_count = READ8 (buf);
-	// 	// uleb128 pairs
-	// 	ut8 dir_count = READ8 (buf);
-
-	// 	// dirs
-
-	// 	ut8 file_entry_count = READ8 (buf);
-	// 	// uleb128 pairs
-	// 	ut8 file_count = READ8 (buf);
-	// 	// file names
-
-	// beach:
-	// 	sdb_free (sdb);
-
-	return NULL;
-}
 
 static const ut8 *parse_line_header(
 	RzBinFile *bf, const ut8 *buf, const ut8 *buf_end,
@@ -666,8 +640,8 @@ static const ut8 *parse_line_header(
 
 	if (hdr->version <= 4) {
 		buf = parse_line_header_source(bf, buf, buf_end, hdr, sdb, mode, print);
-	} else { // because Version 5 source files are very different
-		buf = parse_line_header_source_dwarf5(bf, buf, buf_end, hdr, sdb, mode);
+	} else {
+		buf = NULL;
 	}
 
 	return buf;
@@ -1041,12 +1015,12 @@ static int parse_line_raw(const RzBin *a, const ut8 *obuf,
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
 	const ut8 *tmpbuf = NULL;
-
-	RzBinDwarfLineHeader hdr = { 0 };
 	ut64 buf_size;
 
 	// each iteration we read one header AKA comp. unit
 	while (buf <= buf_end) {
+		RzBinDwarfLineHeader hdr = { 0 };
+
 		// How much did we read from the compilation unit
 		size_t bytes_read = 0;
 		// calculate how much we've read by parsing header
@@ -1056,6 +1030,7 @@ static int parse_line_raw(const RzBin *a, const ut8 *obuf,
 		tmpbuf = buf;
 		buf = parse_line_header(a->cur, buf, buf_end, &hdr, mode, print);
 		if (!buf) {
+			line_header_fini(&hdr);
 			return false;
 		}
 
@@ -2485,6 +2460,9 @@ static HtUP *parse_loc_raw(HtUP /*<offset, List *<LocListEntry>*/ *loc_table, co
 			block->length = READ16(buf);
 			buf = fill_block_data(buf, buf_end, block);
 			range = create_loc_range(start_addr + address_base, end_addr + address_base, block);
+			if (!range) {
+				free(block);
+			}
 			rz_list_append(loc_list->list, range);
 			range = NULL;
 		}
