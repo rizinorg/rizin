@@ -124,6 +124,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       if: matrix.enabled
+      with:
+          fetch-depth: 2
     - name: Install pkg-config and cabextract with Homebrew
       if: matrix.os == 'macos-latest' && matrix.enabled
       run: brew install pkg-config cabextract
