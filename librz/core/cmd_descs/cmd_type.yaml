@@ -71,3 +71,24 @@ commands:
           - name: type
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+  - name: tu
+    summary: List loaded unions
+    subcommands:
+      - name: tu
+        cname: type_list_union
+        summary: List loaded unions / Show pf format string for given union
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tuc
+        cname: type_union_c
+        summary: Show union in the C output format
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true

@@ -286,7 +286,7 @@ static void __core_cmd_tcc(RzCore *core, const char *input) {
 	}
 }
 
-static void showFormat(RzCore *core, const char *name, int mode) {
+static void type_show_format(RzCore *core, const char *name, RzOutputMode mode) {
 	const char *isenum = sdb_const_get(core->analysis->sdb_types, name, 0);
 	if (isenum && !strcmp(isenum, "enum")) {
 		eprintf("IS ENUM\n");
@@ -294,7 +294,8 @@ static void showFormat(RzCore *core, const char *name, int mode) {
 		char *fmt = rz_type_format(core->analysis->sdb_types, name);
 		if (fmt) {
 			rz_str_trim(fmt);
-			if (mode == 'j') {
+			switch (mode) {
+			case RZ_OUTPUT_MODE_JSON: {
 				PJ *pj = pj_new();
 				if (!pj) {
 					return;
@@ -305,12 +306,17 @@ static void showFormat(RzCore *core, const char *name, int mode) {
 				pj_end(pj);
 				rz_cons_printf("%s", pj_string(pj));
 				pj_free(pj);
-			} else {
-				if (mode) {
-					rz_cons_printf("pf.%s %s\n", name, fmt);
-				} else {
-					rz_cons_printf("pf %s\n", fmt);
-				}
+			} break;
+			case RZ_OUTPUT_MODE_RIZIN: {
+				rz_cons_printf("pf.%s %s\n", name, fmt);
+			} break;
+			case RZ_OUTPUT_MODE_STANDARD: {
+				// FIXME: Not really a standard format
+				// We should think about better representation by default here
+				rz_cons_printf("pf %s\n", fmt);
+			} break;
+			default:
+				break;
 			}
 			free(fmt);
 		} else {
@@ -1081,6 +1087,16 @@ beach:
 	free(buf);
 }
 
+static void print_all_union_format(RzCore *core, Sdb *TDB) {
+	SdbList *l = sdb_foreach_list_filter(TDB, stdifunion, true);
+	SdbListIter *it;
+	SdbKv *kv;
+	ls_foreach (l, it, kv) {
+		type_show_format(core, sdbkv_key(kv), RZ_OUTPUT_MODE_RIZIN);
+	}
+	ls_free(l);
+}
+
 RZ_IPI int rz_cmd_type(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	Sdb *TDB = core->analysis->sdb_types;
@@ -1099,20 +1115,14 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		case '*':
 			if (input[2] == ' ') {
-				showFormat(core, rz_str_trim_head_ro(input + 2), 1);
+				type_show_format(core, rz_str_trim_head_ro(input + 2), RZ_OUTPUT_MODE_RIZIN);
 			} else {
-				SdbList *l = sdb_foreach_list_filter(TDB, stdifunion, true);
-				SdbListIter *it;
-				SdbKv *kv;
-				ls_foreach (l, it, kv) {
-					showFormat(core, sdbkv_key(kv), 1);
-				}
-				ls_free(l);
+				print_all_union_format(core, TDB);
 			}
 			break;
 		case 'j': // "tuj"
 			if (input[2]) {
-				showFormat(core, rz_str_trim_head_ro(input + 2), 'j');
+				type_show_format(core, rz_str_trim_head_ro(input + 2), RZ_OUTPUT_MODE_JSON);
 				rz_cons_newline();
 			} else {
 				print_struct_union_list_json(TDB, stdifunion);
@@ -1125,7 +1135,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			print_struct_union_in_c_format(TDB, stdifunion, rz_str_trim_head_ro(input + 2), false);
 			break;
 		case ' ': // "tu "
-			showFormat(core, rz_str_trim_head_ro(input + 1), 0);
+			type_show_format(core, rz_str_trim_head_ro(input + 1), RZ_OUTPUT_MODE_STANDARD);
 			break;
 		case 0:
 			print_keys(TDB, core, stdifunion, printkey_cb, false);
@@ -1174,20 +1184,20 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		case '*':
 			if (input[2] == ' ') {
-				showFormat(core, rz_str_trim_head_ro(input + 2), 1);
+				type_show_format(core, rz_str_trim_head_ro(input + 2), RZ_OUTPUT_MODE_RIZIN);
 			} else {
 				SdbList *l = sdb_foreach_list_filter(TDB, stdifstruct, true);
 				SdbListIter *it;
 				SdbKv *kv;
 
 				ls_foreach (l, it, kv) {
-					showFormat(core, sdbkv_key(kv), 1);
+					type_show_format(core, sdbkv_key(kv), RZ_OUTPUT_MODE_RIZIN);
 				}
 				ls_free(l);
 			}
 			break;
 		case ' ':
-			showFormat(core, rz_str_trim_head_ro(input + 1), 0);
+			type_show_format(core, rz_str_trim_head_ro(input + 1), RZ_OUTPUT_MODE_STANDARD);
 			break;
 		case 's':
 			if (input[2] == ' ') {
@@ -1208,7 +1218,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		case 'j': // "tsj"
 			// TODO: current output is a bit poor, will be good to improve
 			if (input[2]) {
-				showFormat(core, rz_str_trim_head_ro(input + 2), 'j');
+				type_show_format(core, rz_str_trim_head_ro(input + 2), RZ_OUTPUT_MODE_JSON);
 				rz_cons_newline();
 			} else {
 				print_struct_union_list_json(TDB, stdifstruct);
@@ -1343,7 +1353,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		}
 	} break;
 	case ' ':
-		showFormat(core, input + 1, 0);
+		type_show_format(core, input + 1, RZ_OUTPUT_MODE_STANDARD);
 		break;
 	// t* - list all types in 'pf' syntax
 	case 'j': // "tj"
@@ -1867,5 +1877,29 @@ RZ_IPI RzCmdStatus rz_type_typedef_c_handler(RzCore *core, int argc, const char 
 		return RZ_CMD_STATUS_OK;
 	}
 	rz_core_list_typename_alias_c(core, typename);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_list_union_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char *typename = argc > 1 ? argv[1] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	if (typename) {
+		type_show_format(core, typename, mode);
+	} else {
+		if (mode == RZ_OUTPUT_MODE_RIZIN) {
+			print_all_union_format(core, TDB);
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
+			print_struct_union_list_json(TDB, stdifunion);
+		} else {
+			print_keys(TDB, core, stdifunion, printkey_cb, false);
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_union_c_handler(RzCore *core, int argc, const char **argv) {
+	const char *typename = argc > 1 ? argv[1] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	print_struct_union_in_c_format(TDB, stdifunion, typename, true);
 	return RZ_CMD_STATUS_OK;
 }
