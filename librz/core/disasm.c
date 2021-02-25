@@ -205,6 +205,7 @@ typedef struct {
 	const char *color_flow2;
 	const char *color_flag;
 	const char *color_label;
+	const char *color_offset;
 	const char *color_other;
 	const char *color_nop;
 	const char *color_bin;
@@ -583,6 +584,8 @@ static RDisasmState *ds_init(RzCore *core) {
 	    : Color_CYAN;
 	ds->color_label = P(label)
 	    : Color_CYAN;
+	ds->color_offset = P(offset)
+	    : Color_GREEN;
 	ds->color_other = P(other)
 	    : Color_WHITE;
 	ds->color_nop = P(nop)
@@ -2295,13 +2298,13 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 			}
 		}
 
+		bool hasColor = false;
+		char *color = NULL;
 		if (ds->show_color) {
-			bool hasColor = false;
 			if (flag->color) {
-				char *color = rz_cons_pal_parse(flag->color, NULL);
+				color = rz_cons_pal_parse(flag->color, NULL);
 				if (color) {
 					rz_cons_strcat(color);
-					free(color);
 					ds->lastflag = flag;
 					hasColor = true;
 				}
@@ -2351,7 +2354,9 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 					if (!ds->flags_inline || nth == 0) {
 						rz_cons_printf(FLAG_PREFIX);
 						if (overlapped) {
-							rz_cons_printf("(0x%08" PFMT64x ") ", ds->at);
+							rz_cons_printf("%s(0x%08" PFMT64x ")%s ",
+								ds->show_color ? ds->color_offset : "", ds->at,
+								ds->show_color ? (hasColor ? color : ds->color_flag) : "");
 						}
 					}
 					if (outline) {
@@ -2377,6 +2382,7 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 		} else {
 			comma = ", ";
 		}
+		free(color);
 		nth++;
 	}
 	if (!outline && *comma) {
