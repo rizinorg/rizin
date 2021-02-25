@@ -204,6 +204,7 @@ RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) {
 		return;
 	}
 	egg->remit->syscall(egg, item->num);
+	rz_syscall_item_free(item);
 }
 
 RZ_API void rz_egg_alloc(RzEgg *egg, int n) {

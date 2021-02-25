@@ -5888,6 +5888,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			if (si) {
 				//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
 				rz_flag_set_next(core->flags, sdb_fmt("syscall.%s", si->name), cur, 1);
+				rz_syscall_item_free(si);
 			} else {
 				//todo were doing less filtering up top because we can't match against 80 on all platforms
 				// might get too many of this path now..
