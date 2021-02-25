@@ -4879,6 +4879,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	if (graph_allocated) {
 		rz_agraph_free(g);
 	} else {
+		rz_cons_canvas_free(g->can);
 		g->can = o_can;
 	}
 	rz_config_hold_restore(hc);
