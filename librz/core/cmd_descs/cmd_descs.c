@@ -110,6 +110,7 @@ static const RzCmdDescArg type_list_c_args[2];
 static const RzCmdDescArg type_list_c_nl_args[2];
 static const RzCmdDescArg type_cc_list_args[2];
 static const RzCmdDescArg type_cc_del_args[2];
+static const RzCmdDescArg type_kuery_args[2];
 static const RzCmdDescArg type_list_typedef_args[2];
 static const RzCmdDescArg type_typedef_c_args[2];
 static const RzCmdDescArg uniq_args[2];
@@ -2048,6 +2049,21 @@ static const RzCmdDescHelp type_cc_del_all_help = {
 	.args = type_cc_del_all_args,
 };
 
+static const RzCmdDescArg type_kuery_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_kuery_help = {
+	.summary = "Perform SDB query on types database",
+	.args = type_kuery_args,
+};
+
 static const RzCmdDescHelp tt_help = {
 	.summary = "List loaded typedefs",
 };
@@ -3578,6 +3594,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_cc_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tcc_cd, "tcc-*", rz_type_cc_del_all_handler, &type_cc_del_all_help);
 	rz_warn_if_fail(type_cc_del_all_cd);
+
+	RzCmdDesc *type_kuery_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_type_cd, "tk", rz_type_kuery_handler, &type_kuery_help);
+	rz_warn_if_fail(type_kuery_cd);
 
 	RzCmdDesc *tt_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_typedef_handler, &type_list_typedef_help, &tt_help);
 	rz_warn_if_fail(tt_cd);

@@ -44,6 +44,13 @@ commands:
             cname: type_cc_del_all
             summary: Remove all calling conventions
             args: []
+  - name: tk
+    cname: type_kuery
+    summary: Perform SDB query on types database
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
   - name: tt
     summary: List loaded typedefs
     subcommands:
