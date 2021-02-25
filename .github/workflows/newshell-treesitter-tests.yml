@@ -7,7 +7,7 @@ on:
       - 'shlr/rizin-shell-parser/*'
       - 'shlr/rizin-shell-parser/**/*'
     branches:
-      - master
+      - dev
 
 jobs:
   build:

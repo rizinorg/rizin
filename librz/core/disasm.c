@@ -205,6 +205,7 @@ typedef struct {
 	const char *color_flow2;
 	const char *color_flag;
 	const char *color_label;
+	const char *color_offset;
 	const char *color_other;
 	const char *color_nop;
 	const char *color_bin;
@@ -312,7 +313,7 @@ static void ds_control_flow_comments(RDisasmState *ds);
 static void ds_adistrick_comments(RDisasmState *ds);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_show_comments_right(RDisasmState *ds);
-static void ds_show_flags(RDisasmState *ds);
+static void ds_show_flags(RDisasmState *ds, bool overlapped);
 static void ds_update_ref_lines(RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
 static void ds_print_lines_right(RDisasmState *ds);
@@ -583,6 +584,8 @@ static RDisasmState *ds_init(RzCore *core) {
 	    : Color_CYAN;
 	ds->color_label = P(label)
 	    : Color_CYAN;
+	ds->color_offset = P(offset)
+	    : Color_GREEN;
 	ds->color_other = P(other)
 	    : Color_WHITE;
 	ds->color_nop = P(nop)
@@ -1547,7 +1550,7 @@ static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
 		RzFlagItem *fi = rz_flag_get_i(core->flags, ds->at + i);
 		if (fi && fi->name) {
 			if (rz_analysis_find_most_relevant_block_in(core->analysis, ds->at + i)) {
-				ds->midflags = RZ_MIDFLAGS_HIDE; // TODO support RZ_MIDFLAGS_SHOW properly
+				ds->midflags = ds->midflags ? RZ_MIDFLAGS_SHOW : RZ_MIDFLAGS_HIDE;
 			}
 			if (ds->midflags == RZ_MIDFLAGS_REALIGN &&
 				((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
@@ -2225,7 +2228,7 @@ static void __preline_flag(RDisasmState *ds, RzFlagItem *flag) {
 }
 
 #define printPre (outline || !*comma)
-static void ds_show_flags(RDisasmState *ds) {
+static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 	//const char *beginch;
 	RzFlagItem *flag;
 	RzListIter *iter;
@@ -2295,13 +2298,13 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 		}
 
+		bool hasColor = false;
+		char *color = NULL;
 		if (ds->show_color) {
-			bool hasColor = false;
 			if (flag->color) {
-				char *color = rz_cons_pal_parse(flag->color, NULL);
+				color = rz_cons_pal_parse(flag->color, NULL);
 				if (color) {
 					rz_cons_strcat(color);
-					free(color);
 					ds->lastflag = flag;
 					hasColor = true;
 				}
@@ -2350,6 +2353,11 @@ static void ds_show_flags(RDisasmState *ds) {
 					rz_str_ansi_filter(name, NULL, NULL, -1);
 					if (!ds->flags_inline || nth == 0) {
 						rz_cons_printf(FLAG_PREFIX);
+						if (overlapped) {
+							rz_cons_printf("%s(0x%08" PFMT64x ")%s ",
+								ds->show_color ? ds->color_offset : "", ds->at,
+								ds->show_color ? (hasColor ? color : ds->color_flag) : "");
+						}
 					}
 					if (outline) {
 						rz_cons_printf("%s:", name);
@@ -2374,6 +2382,7 @@ static void ds_show_flags(RDisasmState *ds) {
 		} else {
 			comma = ", ";
 		}
+		free(color);
 		nth++;
 	}
 	if (!outline && *comma) {
@@ -5295,16 +5304,17 @@ toro:
 			rz_print_set_rowoff(core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
 		skip_bytes_flag = handleMidFlags(core, ds, true);
-		if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW) {
-			ds->at += skip_bytes_flag;
-		}
-		ds_show_xrefs(ds);
-		ds_show_flags(ds);
-		if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW) {
-			ds->at -= skip_bytes_flag;
-		}
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB(core, ds);
+		}
+		ds_show_xrefs(ds);
+		ds_show_flags(ds, false);
+		if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW &&
+			(!ds->midbb || !skip_bytes_bb || skip_bytes_bb > skip_bytes_flag)) {
+			ds->at += skip_bytes_flag;
+			ds_show_xrefs(ds);
+			ds_show_flags(ds, true);
+			ds->at -= skip_bytes_flag;
 		}
 		if (ds->pdf) {
 			static bool sparse = false;

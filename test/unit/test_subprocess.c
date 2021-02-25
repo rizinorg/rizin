@@ -204,7 +204,8 @@ bool test_stdoutstderr(void) {
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "This is on err\nHello World\n", "hello world and stderr string should be on stdout");
+	mu_assert_strcontains(spo->out, "Hello World\n", "stdout should be captured in out");
+	mu_assert_strcontains(spo->out, "This is on err\n", "stderr should be captured in out");
 	mu_assert_streq(spo->err, "", "stderr should not be intercepted");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);

@@ -2188,10 +2188,12 @@ char *Elf_(rz_bin_elf_get_head_flag)(ELFOBJ *bin) {
 	char *str = Elf_(rz_bin_elf_get_cpu)(bin);
 	if (str) {
 		head_flag = rz_str_append(head_flag, str);
+		free(str);
 	}
 	str = Elf_(rz_bin_elf_get_abi)(bin);
 	if (str) {
 		head_flag = rz_str_appendf(head_flag, " %s", str);
+		free(str);
 	}
 	if (RZ_STR_ISEMPTY(head_flag)) {
 		head_flag = rz_str_append(head_flag, "unknown_flag");
@@ -3390,12 +3392,13 @@ static bool is_section_local_sym(ELFOBJ *bin, Elf_(Sym) * sym) {
 	return bin->shstrtab && sh_name < bin->shstrtab_size;
 }
 
-static void setsymord(ELFOBJ *eobj, ut32 ord, RzBinSymbol *ptr) {
+static bool setsymord(ELFOBJ *eobj, ut32 ord, RzBinSymbol *ptr) {
 	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
-		return;
+		return false;
 	}
 	rz_bin_symbol_free(eobj->symbols_by_ord[ord]);
 	eobj->symbols_by_ord[ord] = ptr;
+	return true;
 }
 
 static void _set_arm_thumb_bits(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinSymbol **sym) {
@@ -3749,7 +3752,11 @@ static RzBinElfSymbol *Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int typ
 			if (!(import_sym_ptr = Elf_(_r_bin_elf_convert_symbol)(bin, &ret[i], "%s"))) {
 				continue;
 			}
-			setsymord(bin, import_sym_ptr->ordinal, import_sym_ptr);
+
+			if (!setsymord(bin, import_sym_ptr->ordinal, import_sym_ptr)) {
+				free(import_sym_ptr);
+			}
+
 			if (ret[i].is_imported) {
 				memcpy(&import_ret[import_ret_ctr], &ret[i], sizeof(RzBinElfSymbol));
 				++import_ret_ctr;

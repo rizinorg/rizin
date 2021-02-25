@@ -470,6 +470,7 @@ typedef struct rz_cons_context_t {
 	bool lastEnabled;
 	bool is_interactive;
 	bool pageable;
+	bool noflush;
 
 	int color_mode;
 	RzConsPalette cpal;
@@ -493,7 +494,6 @@ typedef struct rz_cons_t {
 	int fix_rows;
 	int fix_columns;
 	bool break_lines;
-	int noflush;
 	bool show_autocomplete_widget;
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
@@ -864,6 +864,7 @@ RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list 
 #endif
 
 RZ_API void rz_cons_push(void);
+RZ_API void rz_cons_push_capture(void);
 RZ_API void rz_cons_pop(void);
 RZ_API RzConsContext *rz_cons_context_new(RZ_NULLABLE RzConsContext *parent);
 RZ_API void rz_cons_context_free(RzConsContext *context);
@@ -914,6 +915,7 @@ RZ_API int rz_cons_memcat(const char *str, int len);
 RZ_API void rz_cons_newline(void);
 RZ_API void rz_cons_filter(void);
 RZ_API void rz_cons_flush(void);
+RZ_API void rz_cons_set_flush(bool flush);
 RZ_API void rz_cons_print_fps(int col);
 RZ_API void rz_cons_last(void);
 RZ_API int rz_cons_less_str(const char *str, const char *exitkeys);

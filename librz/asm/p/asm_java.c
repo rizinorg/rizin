@@ -6,8 +6,8 @@
 #include <rz_asm.h>
 #include <rz_core.h>
 
-#include "../../shlr/java/code.h"
-#include "../../shlr/java/class.h"
+//#include "../../bin/format/java/class.h"
+#include "../arch/java/code.h"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	RzBinJavaObj *obj = NULL;

@@ -164,9 +164,7 @@ RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name) {
 			if (load_theme(core, name)) {
 				curtheme = rz_str_dup(curtheme, name);
 			} else {
-				char *absfile = rz_file_abspath(name);
-				eprintf("eco: cannot open colorscheme profile (%s)\n", absfile);
-				free(absfile);
+				eprintf("eco: cannot open colorscheme profile (%s)\n", name);
 				failed = true;
 			}
 		}
