@@ -13,7 +13,7 @@ commands:
         subcommands:
           - name: dsu
             cname: cmd_debug_step_until
-            summary: Step until <address>
+            summary: Step until <addr>
             args:
             - name: addr
               type: RZ_CMD_ARG_TYPE_RZNUM
