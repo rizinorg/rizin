@@ -968,10 +968,22 @@ static char *argv_modes_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	return rz_strbuf_drain(sb);
 }
 
+const RzCmdDescDetail *get_cd_details(RzCmdDesc *cd) {
+	do {
+		if (cd->help->details) {
+			return cd->help->details;
+		}
+		cd = cd->parent;
+	} while (cd);
+	return NULL;
+}
+
 static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
-	if (!cd->help->details) {
+	const RzCmdDescDetail *detail_it = get_cd_details(cd);
+	if (!detail_it) {
 		return;
 	}
+
 	const char *pal_help_color = "",
 		   *pal_input_color = "",
 		   *pal_label_color = "",
@@ -986,7 +998,6 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 		pal_reset = cons->context->pal.reset;
 	}
 
-	const RzCmdDescDetail *detail_it = cd->help->details;
 	while (detail_it->name) {
 		if (!RZ_STR_ISEMPTY(detail_it->name)) {
 			rz_strbuf_appendf(sb, "\n%s%s:%s\n", pal_label_color, detail_it->name, pal_reset);
