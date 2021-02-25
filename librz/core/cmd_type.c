@@ -1829,6 +1829,24 @@ RZ_IPI RzCmdStatus rz_type_list_c_nl_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_type_kuery_handler(RzCore *core, int argc, const char **argv) {
+	const char *query = argc > 1 ? argv[1] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	char *output = NULL;
+	if (query) {
+		output = sdb_querys(TDB, NULL, -1, query);
+	} else {
+		output = sdb_querys(TDB, NULL, -1, "*");
+	}
+	if (!output) {
+		eprintf("Cannot find anything matching your query");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(output);
+	free(output);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *typename = argc > 1 ? argv[1] : NULL;
 	if (typename) {
