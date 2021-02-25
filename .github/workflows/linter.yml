@@ -20,6 +20,7 @@ jobs:
         filters: |
           yaml:
             - '**.yml'
+            - '**.yaml'
             - '.github/workflows/linter.yml'
           clang-format:
             - '**.c'
@@ -44,11 +45,11 @@ jobs:
         run: sudo apt-get install yamllint python3-yaml
       - name: Check YamlLint
         run: |
-          yamllint -d "{rules: {line-length: {max: 120}}}" ./librz/core/cmd_descs.yaml
+          yamllint -d "{rules: {line-length: {max: 120}}}" ./librz/core/cmd_descs/*.yaml
       - name: Check sync between yaml and C/H files
         run: |
-          ./librz/core/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs.yaml
-          diff /tmp/cmd_descs.c ./librz/core/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs.h
+          ./librz/core/cmd_descs/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs/*.yaml
+          diff /tmp/cmd_descs.c ./librz/core/cmd_descs/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs/cmd_descs.h
 
   clang-format:
     needs: changes

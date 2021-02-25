@@ -19,6 +19,7 @@
  */
 
 #include "tcc.h"
+#include "rz_util.h"
 #include <math.h>
 /********************************************************/
 /* global variables */
@@ -2812,16 +2813,16 @@ static int macro_subst_tok(TokenString *tok_str,
 		goto add_cstr;
 	} else if (tok == TOK___DATE__ || tok == TOK___TIME__) {
 		time_t ti;
-		struct tm *tm;
+		struct tm tminfo;
 
 		time(&ti);
-		tm = localtime(&ti);
+		rz_localtime_r(&ti, &tminfo);
 		if (tok == TOK___DATE__) {
 			snprintf(buf, sizeof(buf), "%s %2d %d",
-				ab_month_name[tm->tm_mon], tm->tm_mday, tm->tm_year + 1900);
+				ab_month_name[tminfo.tm_mon], tminfo.tm_mday, tminfo.tm_year + 1900);
 		} else {
 			snprintf(buf, sizeof(buf), "%02d:%02d:%02d",
-				tm->tm_hour, tm->tm_min, tm->tm_sec);
+				tminfo.tm_hour, tminfo.tm_min, tminfo.tm_sec);
 		}
 		cstrval = buf;
 	add_cstr:
