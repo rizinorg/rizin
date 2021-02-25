@@ -501,6 +501,7 @@ RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_newcmd(const char *cmd);
 RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_newargs(int n_args, char **args);
 RZ_API void rz_cmd_parsed_args_free(RzCmdParsedArgs *args);
 RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *arg, int n_args, char **args);
+RZ_API bool rz_cmd_parsed_args_addarg(RzCmdParsedArgs *a, const char *arg);
 RZ_API bool rz_cmd_parsed_args_setcmd(RzCmdParsedArgs *arg, const char *cmd);
 RZ_API char *rz_cmd_parsed_args_argstr(RzCmdParsedArgs *arg);
 RZ_API char *rz_cmd_parsed_args_execstr(RzCmdParsedArgs *arg);

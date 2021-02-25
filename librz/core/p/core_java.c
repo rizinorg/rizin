@@ -1625,7 +1625,6 @@ static const RzCmdDescArg cmd_java_args[3] = {
 	{
 		.name = "subcmd",
 		.type = RZ_CMD_ARG_TYPE_CHOICES,
-		.optional = true,
 		.default_value = "help",
 		.choices = cmd_java_subcmd_choices,
 	},
