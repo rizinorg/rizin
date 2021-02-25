@@ -44,6 +44,12 @@ commands:
             cname: type_cc_del_all
             summary: Remove all calling conventions
             args: []
+  - name: td
+    cname: type_define
+    summary: Define type from C definition
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_STRING
   - name: tk
     cname: type_kuery
     summary: Perform SDB query on types database
@@ -51,6 +57,30 @@ commands:
       - name: type
         type: RZ_CMD_ARG_TYPE_STRING
         optional: true
+  - name: tn
+    summary: Manage noreturn function attributes and marks
+    subcommands:
+      - name: tn
+        cname: type_list_noreturn
+        summary: List all noreturn references / Add a noreturn function
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tn-
+        cname: type_noreturn_del
+        summary: Remove the noreturn reference
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+      - name: tn-*
+        cname: type_noreturn_del_all
+        summary: Remove all noreturn references
+        args: []
   - name: tt
     summary: List loaded typedefs
     subcommands:
@@ -87,7 +117,14 @@ commands:
             optional: true
       - name: tuc
         cname: type_union_c
-        summary: Show union in the C output format
+        summary: Show union in the C output format with newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tud
+        cname: type_union_c_nl
+        summary: Show union in the C output format without newlines
         args:
           - name: type
             type: RZ_CMD_ARG_TYPE_STRING

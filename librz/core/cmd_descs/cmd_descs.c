@@ -110,11 +110,15 @@ static const RzCmdDescArg type_list_c_args[2];
 static const RzCmdDescArg type_list_c_nl_args[2];
 static const RzCmdDescArg type_cc_list_args[2];
 static const RzCmdDescArg type_cc_del_args[2];
+static const RzCmdDescArg type_define_args[2];
 static const RzCmdDescArg type_kuery_args[2];
+static const RzCmdDescArg type_list_noreturn_args[2];
+static const RzCmdDescArg type_noreturn_del_args[2];
 static const RzCmdDescArg type_list_typedef_args[2];
 static const RzCmdDescArg type_typedef_c_args[2];
 static const RzCmdDescArg type_list_union_args[2];
 static const RzCmdDescArg type_union_c_args[2];
+static const RzCmdDescArg type_union_c_nl_args[2];
 static const RzCmdDescArg uniq_args[2];
 static const RzCmdDescArg uname_args[2];
 static const RzCmdDescArg write_args[2];
@@ -2051,6 +2055,20 @@ static const RzCmdDescHelp type_cc_del_all_help = {
 	.args = type_cc_del_all_args,
 };
 
+static const RzCmdDescArg type_define_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_define_help = {
+	.summary = "Define type from C definition",
+	.args = type_define_args,
+};
+
 static const RzCmdDescArg type_kuery_args[] = {
 	{
 		.name = "type",
@@ -2064,6 +2082,46 @@ static const RzCmdDescArg type_kuery_args[] = {
 static const RzCmdDescHelp type_kuery_help = {
 	.summary = "Perform SDB query on types database",
 	.args = type_kuery_args,
+};
+
+static const RzCmdDescHelp tn_help = {
+	.summary = "Manage noreturn function attributes and marks",
+};
+static const RzCmdDescArg type_list_noreturn_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_list_noreturn_help = {
+	.summary = "List all noreturn references / Add a noreturn function",
+	.args = type_list_noreturn_args,
+};
+
+static const RzCmdDescArg type_noreturn_del_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_noreturn_del_help = {
+	.summary = "Remove the noreturn reference",
+	.args = type_noreturn_del_args,
+};
+
+static const RzCmdDescArg type_noreturn_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp type_noreturn_del_all_help = {
+	.summary = "Remove all noreturn references",
+	.args = type_noreturn_del_all_args,
 };
 
 static const RzCmdDescHelp tt_help = {
@@ -2128,8 +2186,23 @@ static const RzCmdDescArg type_union_c_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp type_union_c_help = {
-	.summary = "Show union in the C output format",
+	.summary = "Show union in the C output format with newlines",
 	.args = type_union_c_args,
+};
+
+static const RzCmdDescArg type_union_c_nl_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_union_c_nl_help = {
+	.summary = "Show union in the C output format without newlines",
+	.args = type_union_c_nl_args,
 };
 
 static const RzCmdDescArg uniq_args[] = {
@@ -3630,8 +3703,19 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_cc_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tcc_cd, "tcc-*", rz_type_cc_del_all_handler, &type_cc_del_all_help);
 	rz_warn_if_fail(type_cc_del_all_cd);
 
+	RzCmdDesc *type_define_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_type_cd, "td", rz_type_define_handler, &type_define_help);
+	rz_warn_if_fail(type_define_cd);
+
 	RzCmdDesc *type_kuery_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_type_cd, "tk", rz_type_kuery_handler, &type_kuery_help);
 	rz_warn_if_fail(type_kuery_cd);
+
+	RzCmdDesc *tn_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tn", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_type_list_noreturn_handler, &type_list_noreturn_help, &tn_help);
+	rz_warn_if_fail(tn_cd);
+	RzCmdDesc *type_noreturn_del_cd = rz_cmd_desc_argv_new(core->rcmd, tn_cd, "tn-", rz_type_noreturn_del_handler, &type_noreturn_del_help);
+	rz_warn_if_fail(type_noreturn_del_cd);
+
+	RzCmdDesc *type_noreturn_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tn_cd, "tn-*", rz_type_noreturn_del_all_handler, &type_noreturn_del_all_help);
+	rz_warn_if_fail(type_noreturn_del_all_cd);
 
 	RzCmdDesc *tt_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_typedef_handler, &type_list_typedef_help, &tt_help);
 	rz_warn_if_fail(tt_cd);
@@ -3642,6 +3726,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(tu_cd);
 	RzCmdDesc *type_union_c_cd = rz_cmd_desc_argv_new(core->rcmd, tu_cd, "tuc", rz_type_union_c_handler, &type_union_c_help);
 	rz_warn_if_fail(type_union_c_cd);
+
+	RzCmdDesc *type_union_c_nl_cd = rz_cmd_desc_argv_new(core->rcmd, tu_cd, "tud", rz_type_union_c_nl_handler, &type_union_c_nl_help);
+	rz_warn_if_fail(type_union_c_nl_cd);
 
 	RzCmdDesc *uniq_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "uniq", rz_uniq_handler, &uniq_help);
 	rz_warn_if_fail(uniq_cd);

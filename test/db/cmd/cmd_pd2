@@ -356,7 +356,7 @@ e asm.arch=x86
 e asm.bits=64
 e io.cache=true
 wx 488b4608
-"td struct ms { char b[8]; int member1; int member2; };"
+td "struct ms { char b[8]; int member1; int member2; };"
 aht ms.member1
 e asm.cmt.right=true
 pd 1
