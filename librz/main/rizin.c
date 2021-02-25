@@ -202,6 +202,7 @@ static int main_print_var(const char *var_name) {
 		{ "RZ_LIBR_PLUGINS", plugins },
 		{ "RZ_USER_PLUGINS", homeplugins },
 		{ "RZ_USER_ZIGNS", homezigns },
+		{ "RZ_IS_PORTABLE", RZ_IS_PORTABLE },
 		{ NULL, NULL }
 	};
 	int delta = 0;
