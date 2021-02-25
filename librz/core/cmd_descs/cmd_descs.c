@@ -1399,7 +1399,7 @@ static const RzCmdDescArg cmd_debug_step_until_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_step_until_help = {
-	.summary = "Step until <address>",
+	.summary = "Step until <addr>",
 	.args = cmd_debug_step_until_args,
 };
 
@@ -1435,13 +1435,13 @@ static const RzCmdDescArg cmd_debug_step_until_optype_args[] = {
 	{
 		.name = "optype",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_step_until_optype_help = {
-	.summary = "Step until an instr matches one of the <optype>s",
+	.summary = "Step until an instruction matches one of the <optype>s",
 	.args = cmd_debug_step_until_optype_args,
 };
 
@@ -1462,8 +1462,7 @@ static const RzCmdDescHelp cmd_debug_step_until_esil_help = {
 static const RzCmdDescArg cmd_debug_step_until_flag_args[] = {
 	{
 		.name = "flag",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_FLAG,
 
 	},
 	{ 0 },

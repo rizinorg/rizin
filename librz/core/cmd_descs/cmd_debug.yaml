@@ -17,7 +17,6 @@ commands:
             args:
             - name: addr
               type: RZ_CMD_ARG_TYPE_RZNUM
-              flags: RZ_CMD_ARG_FLAG_LAST
           - name: dsui
             cname: cmd_debug_step_until_instr
             summary: Step until an instruction that matches <instr>
@@ -36,6 +35,7 @@ commands:
             args:
             - name: optype
               type: RZ_CMD_ARG_TYPE_STRING
+              flags: RZ_CMD_ARG_FLAG_ARRAY
           - name: dsue
             cname: cmd_debug_step_until_esil
             summary: Step until <esil> expression matches
@@ -47,4 +47,4 @@ commands:
             summary: Step until pc == <flag> matching name
             args:
             - name: flag
-              type: RZ_CMD_ARG_TYPE_STRING
+              type: RZ_CMD_ARG_TYPE_FLAG
