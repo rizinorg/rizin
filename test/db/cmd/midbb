@@ -610,7 +610,10 @@ fm 0x560e97 @ sym.dummy
 pd 3 @ 0x560e95
 ?e
 e asm.bb.middle=false
+f sym.real @ 0x00560e95
 pd 3 @ 0x560e95
+?e
+pd 3 @ 0x560e95 @e:scr.color=1
 EOF
 EXPECT=<<EOF
             0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
@@ -627,11 +630,20 @@ EXPECT=<<EOF
 |           0x00560e96      0f31           rdtsc
 
             0x00560e95  ~   ba0f31e914     mov   edx, 0x14e9310f
+|           ;-- (0x00560e97) sym.dummy:
 |           0x00560e96  ~   0f31           rdtsc
 |           0x00560e98      e914000000     jmp   0x560eb1
 
+            ;-- sym.real:
+|           ;-- (0x00560e97) sym.dummy:
             0x00560e95  ~   ba0f31e914     mov   edx, 0x14e9310f
 |           0x00560e9a      0000           add   byte [eax], al
 |           0x00560e9c      00a836dc5264   add   byte [eax + 0x6452dc36], ch
+
+            [36m;-- sym.real:[0m
+[36m|[0m           [36m;-- [32m(0x00560e97)[36m sym.dummy:[0m
+            [32m0x00560e95[0m  ~   [37mba[37m0f[33m31[37me9[37m14[0m     [37mmov  [36m edx[0m,[36m[36m [33m0x14e9310f[0m[0m[0m
+[36m|[0m           [32m0x00560e9a[0m      [32m00[32m00[0m           [33madd   byte[36m [0m[[36meax[0m][36m[0m,[36m[36m al[0m[0m[0m
+[36m|[0m           [32m0x00560e9c[0m      [32m00[37ma8[33m36[37mdc[33m52[33m64[0m   [33madd   byte [0m[[36meax [0m+[36m[36m [33m0x6452dc36[0m][36m[0m,[36m[36m ch[0m[0m[0m
 EOF
 RUN
