@@ -557,7 +557,6 @@ static const RzCmdDescArg remote_mode_enable_args[] = {
 	{
 		.name = "fd",
 		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
 		.default_value = "0",
 
 	},
@@ -2487,7 +2486,6 @@ static const RzCmdDescArg zign_best_args[] = {
 	{
 		.name = "n",
 		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
 		.default_value = "5",
 
 	},
@@ -2507,7 +2505,6 @@ static const RzCmdDescArg zign_best_name_args[] = {
 	{
 		.name = "n",
 		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
 		.default_value = "5",
 
 	},
