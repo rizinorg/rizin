@@ -32,7 +32,7 @@ if [ "${COVERAGE}" == "1" ] ; then
 	OPTS="${OPTS} -Db_coverage=true"
 fi
 
-meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
+travis_wait meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
 ninja -C build || exit 1
 ninja -C build install || exit 1
 export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
