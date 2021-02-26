@@ -10,6 +10,7 @@ cmd_descs_yaml = files(
   'cmd_remote.yaml',
   'cmd_seek.yaml',
   'cmd_tasks.yaml',
+  'cmd_type.yaml',
   'cmd_write.yaml',
   'cmd_zign.yaml',
 )

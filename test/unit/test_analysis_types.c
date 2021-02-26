@@ -5,7 +5,7 @@
 #include "test_sdb.h"
 
 static void setup_sdb_for_struct(Sdb *res) {
-	// "td struct kappa {int bar;int cow;};"
+	// td "struct kappa {int bar;int cow;};"
 	sdb_set(res, "kappa", "struct", 0);
 	sdb_set(res, "struct.kappa", "bar,cow", 0);
 	sdb_set(res, "struct.kappa.bar", "int32_t,0,0", 0);
@@ -13,7 +13,7 @@ static void setup_sdb_for_struct(Sdb *res) {
 }
 
 static void setup_sdb_for_union(Sdb *res) {
-	// "td union kappa {int bar;int cow;};"
+	// td "union kappa {int bar;int cow;};"
 	sdb_set(res, "kappa", "union", 0);
 	sdb_set(res, "union.kappa", "bar,cow", 0);
 	sdb_set(res, "union.kappa.bar", "int32_t,0,0", 0);
@@ -21,7 +21,7 @@ static void setup_sdb_for_union(Sdb *res) {
 }
 
 static void setup_sdb_for_enum(Sdb *res) {
-	// "td enum foo { firstCase=1, secondCase=2,};"
+	// td "enum foo { firstCase=1, secondCase=2,};"
 	sdb_set(res, "foo", "enum", 0);
 	sdb_set(res, "enum.foo", "firstCase,secondCase", 0);
 	sdb_set(res, "enum.foo.firstCase", "0x1", 0);

@@ -204,6 +204,12 @@ static char *get_title(ut64 addr) {
 	return rz_str_newf("0x%" PFMT64x, addr);
 }
 
+static void agraph_node_free(RzANode *n) {
+	free(n->title);
+	free(n->body);
+	free(n);
+}
+
 static int agraph_refresh(struct agraph_refresh_data *grd);
 
 static void update_node_dimension(const RzGraph *g, int is_mini, int zoom, int edgemode, bool callgraph, int layout) {
@@ -632,7 +638,7 @@ static void remove_cycles(RzAGraph *g) {
 	const RzGraphEdge *e;
 	const RzListIter *it;
 
-	g->back_edges = rz_list_new();
+	g->back_edges = rz_list_newf(free);
 	cyclic_vis.back_edge = (RzGraphEdgeCallback)view_cyclic_edge;
 	cyclic_vis.data = g;
 	rz_graph_dfs(g->graph, &cyclic_vis);
@@ -731,6 +737,7 @@ static void create_dummy_nodes(RzAGraph *g) {
 			dummy->is_reversed = is_reversed(g, e);
 			dummy->w = 1;
 			rz_agraph_add_edge_at(g, prev, dummy, nth);
+			rz_list_append(g->dummy_nodes, dummy);
 
 			prev = dummy;
 			nth = -1;
@@ -1608,7 +1615,6 @@ static void place_original(RzAGraph *g) {
 }
 
 #if 0
-static void free_anode(RzANode *n);
 static void remove_dummy_nodes(const RzAGraph *g) {
 	const RzList *nodes = rz_graph_get_nodes (g->graph);
 	RzGraphNode *gn;
@@ -1926,6 +1932,12 @@ err:
 	return;
 }
 
+static void agraph_edge_free(AEdge *e) {
+	rz_list_free(e->x);
+	rz_list_free(e->y);
+	free(e);
+}
+
 /* 1) trasform the graph into a DAG
  * 2) partition the nodes in layers
  * 3) split long edges that traverse multiple layers
@@ -1936,7 +1948,7 @@ static void set_layout(RzAGraph *g) {
 	int i, j, k;
 
 	rz_list_free(g->edges);
-	g->edges = rz_list_new();
+	g->edges = rz_list_newf((RzListFree)agraph_edge_free);
 
 	remove_cycles(g);
 	assign_layers(g);
@@ -3585,18 +3597,13 @@ static void agraph_init(RzAGraph *g) {
 	g->force_update_seek = true;
 	g->graph = rz_graph_new();
 	g->nodes = sdb_new0();
+	g->dummy_nodes = rz_list_newf((RzListFree)agraph_node_free);
 	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
 	g->hints = 1;
 	g->movspeed = DEFAULT_SPEED;
 	g->db = sdb_new0();
 	rz_vector_init(&g->ghits.word_list, sizeof(struct rz_agraph_location), NULL, NULL);
-}
-
-static void free_anode(RzANode *n) {
-	free(n->title);
-	free(n->body);
-	free(n);
 }
 
 static void graphNodeMove(RzAGraph *g, int dir, int speed) {
@@ -3631,10 +3638,13 @@ static void agraph_free_nodes(const RzAGraph *g) {
 	RzANode *a;
 
 	graph_foreach_anode (rz_graph_get_nodes(g->graph), it, n, a) {
-		free_anode(a);
+		if (!a->is_dummy) {
+			agraph_node_free(a);
+		}
 	}
 
 	sdb_free(g->nodes);
+	rz_list_free(g->dummy_nodes);
 }
 
 static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
@@ -3719,8 +3729,8 @@ RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *tit
 	res->klass = -1;
 	res->difftype = color;
 	res->gnode = rz_graph_add_node(g->graph, res);
-	sdb_num_set(g->nodes, res->title, (ut64)(size_t)res, 0);
-	if (res->title) {
+	if (RZ_STR_ISNOTEMPTY(res->title)) {
+		sdb_num_set(g->nodes, res->title, (ut64)(size_t)res, 0);
 		char *s, *estr, *b;
 		size_t len;
 		sdb_array_add(g->db, "agraph.nodes", res->title, 0);
@@ -3772,7 +3782,7 @@ RZ_API bool rz_agraph_del_node(const RzAGraph *g, const char *title) {
 	rz_graph_del_node(g->graph, res->gnode);
 	res->gnode = NULL;
 
-	free_anode(res);
+	agraph_node_free(res);
 	return true;
 }
 
@@ -3870,6 +3880,7 @@ RZ_API void rz_agraph_reset(RzAGraph *g) {
 		rz_list_purge(g->edges);
 	}
 	g->nodes = sdb_new0();
+	g->dummy_nodes = rz_list_newf((RzListFree)agraph_node_free);
 	g->update_seek_on = NULL;
 	g->need_reload_nodes = false;
 	g->need_set_layout = true;
@@ -4868,6 +4879,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	if (graph_allocated) {
 		rz_agraph_free(g);
 	} else {
+		rz_cons_canvas_free(g->can);
 		g->can = o_can;
 	}
 	rz_config_hold_restore(hc);

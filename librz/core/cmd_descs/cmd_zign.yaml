@@ -28,7 +28,6 @@ commands:
         args:
           - name: n
             type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
             default_value: 5
       - name: zbr
         cname: zign_best_name
@@ -38,7 +37,6 @@ commands:
             type: RZ_CMD_ARG_TYPE_ZIGN
           - name: n
             type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
             default_value: 5
   - name: z-
     cname: zign_delete

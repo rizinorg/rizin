@@ -51,7 +51,6 @@ commands:
     args:
       - name: fd
         type: RZ_CMD_ARG_TYPE_NUM
-        optional: true
         default_value: "0"
   - name: "!=!"
     cname: remote_mode_disable

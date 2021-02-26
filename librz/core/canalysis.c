@@ -7403,3 +7403,89 @@ beach:
 	free(tmp);
 	rz_config_set_i(core->config, "search.align", o_align);
 }
+
+static bool nonreturn_print_rizin(void *p, const char *k, const char *v) {
+	RzCore *core = (RzCore *)p;
+	if (!strncmp(v, "func", strlen("func") + 1)) {
+		char *query = sdb_fmt("func.%s.noreturn", k);
+		if (sdb_bool_get(core->analysis->sdb_types, query, NULL)) {
+			rz_cons_printf("tnn %s\n", k);
+		}
+	}
+	if (!strncmp(k, "addr.", 5)) {
+		rz_cons_printf("tna 0x%s %s\n", k + 5, v);
+	}
+	return true;
+}
+
+static bool nonreturn_print(RzCore *core, RzList *noretl) {
+	RzListIter *it;
+	char *s;
+	rz_list_foreach (noretl, it, s) {
+		rz_cons_println(s);
+	}
+	return true;
+}
+
+static bool nonreturn_print_json(RzCore *core, RzList *noretl) {
+	RzListIter *it;
+	char *s;
+	PJ *pj = rz_core_pj_new(core);
+	pj_a(pj);
+	rz_list_foreach (noretl, it, s) {
+		pj_k(pj, s);
+	}
+	pj_end(pj);
+	rz_cons_println(pj_string(pj));
+	pj_free(pj);
+	return true;
+}
+
+RZ_IPI RzList *rz_core_analysis_noreturn(RzCore *core) {
+	RzList *noretl = rz_list_new();
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(core->analysis->sdb_types, true);
+	ls_foreach (l, iter, kv) {
+		const char *k = sdbkv_key(kv);
+		if (!strncmp(k, "func.", 5) && strstr(k, ".noreturn")) {
+			char *s = strdup(k + 5);
+			char *d = strchr(s, '.');
+			if (d) {
+				*d = 0;
+			}
+			rz_list_append(noretl, strdup(s));
+			free(s);
+		}
+		if (!strncmp(k, "addr.", 5)) {
+			char *off;
+			if (!(off = strdup(k + 5))) {
+				break;
+			}
+			char *ptr = strstr(off, ".noreturn");
+			if (ptr) {
+				*ptr = 0;
+				char *addr = rz_str_newf("0x%s", off);
+				rz_list_append(noretl, addr);
+			}
+			free(off);
+		}
+	}
+	ls_free(l);
+	return noretl;
+}
+
+RZ_IPI void rz_core_analysis_noreturn_print(RzCore *core, RzOutputMode mode) {
+	RzList *noretl = rz_core_analysis_noreturn(core);
+	switch (mode) {
+	case RZ_OUTPUT_MODE_RIZIN:
+		sdb_foreach(core->analysis->sdb_types, nonreturn_print_rizin, core);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		nonreturn_print_json(core, noretl);
+		break;
+	default:
+		nonreturn_print(core, noretl);
+		break;
+	}
+}

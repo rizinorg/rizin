@@ -51,7 +51,7 @@
 #       no_space: same as RzCmdDescArg.no_space
 #       type: same as RzCmdDescArg.type (mandatory)
 #       flags: same as RzCmdDescArg.flags
-#       default_value: same as RzCmdDescArg.type
+#       default_value: same as RzCmdDescArg.default_value
 #       choices: same as RzCmdDescArg.choices (only valid if type is RZ_CMD_ARG_TYPE_CHOICES)
 #
 ---
@@ -256,6 +256,7 @@ commands:
   - name: t
     cname: cmd_type
     summary: Types, noreturn, signatures, C parser and more
+    subcommands: cmd_type
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: uniq
     cname: uniq

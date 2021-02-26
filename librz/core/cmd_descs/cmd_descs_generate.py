@@ -207,6 +207,13 @@ class Arg:
             )
             sys.exit(1)
 
+        if self.default_value is not None and self.optional is not None:
+            print(
+                "Argument %s for command %s has both optional and default_value."
+                % (self.name, self.cd.name)
+            )
+            sys.exit(1)
+
     def _get_choices_cname(self):
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
             return self.cd.cname + "_" + compute_cname(self.name) + "_choices"
