@@ -108,6 +108,7 @@ static const char *help_msg_te[] = {
 	"teb", " <enum> <name>", "Show matching enum bitfield for given name",
 	"tec", "<name>", "List all/given loaded enums in C output format with newlines",
 	"ted", "", "List all loaded enums in C output format without newlines",
+	"tef", " <value>", "Find enum and member by the member value",
 	"te?", "", "show this help",
 	NULL
 };
@@ -254,6 +255,103 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 	}
 }
 
+static void types_enum_print(RzCore *core, const char *enum_name, RzOutputMode mode) {
+	rz_return_if_fail(enum_name);
+	Sdb *TDB = core->analysis->sdb_types;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		RTypeEnum *member;
+		RzListIter *iter;
+		PJ *pj = pj_new();
+		RzList *list = rz_type_get_enum(TDB, enum_name);
+		pj_o(pj);
+		if (list && !rz_list_empty(list)) {
+			pj_ks(pj, "name", enum_name);
+			pj_k(pj, "values");
+			pj_o(pj);
+			rz_list_foreach (list, iter, member) {
+				pj_kn(pj, member->name, rz_num_math(NULL, member->val));
+			}
+			pj_end(pj);
+		}
+		pj_end(pj);
+		rz_cons_printf("%s\n", pj_string(pj));
+		pj_free(pj);
+		rz_list_free(list);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		RzList *list = rz_type_get_enum(TDB, enum_name);
+		RzListIter *iter;
+		RTypeEnum *member;
+		rz_list_foreach (list, iter, member) {
+			rz_cons_printf("%s = %s\n", member->name, member->val);
+		}
+		rz_list_free(list);
+		break;
+	}
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_println(enum_name);
+		break;
+	case RZ_OUTPUT_MODE_SDB: {
+		char *keys = sdb_querys(TDB, NULL, -1, sdb_fmt("~~enum.%s", enum_name));
+		if (keys) {
+			rz_cons_print(keys);
+			free(keys);
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+static void types_enum_print_all(RzCore *core, RzOutputMode mode) {
+	Sdb *TDB = core->analysis->sdb_types;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(TDB, true);
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "enum")) {
+			const char *name = sdbkv_key(kv);
+			types_enum_print(core, name, mode);
+		}
+	}
+	ls_free(l);
+}
+
+static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, const char *enum_value) {
+	rz_return_val_if_fail(enum_name || enum_value, RZ_CMD_STATUS_ERROR);
+	Sdb *TDB = core->analysis->sdb_types;
+	ut64 value = rz_num_math(core->num, enum_value);
+	char *enum_member = rz_type_enum_member(TDB, enum_name, NULL, value);
+	if (!enum_member) {
+		eprintf("Cannot find matching enum member");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(enum_member);
+	free(enum_member);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_value) {
+	rz_return_val_if_fail(enum_value, RZ_CMD_STATUS_ERROR);
+	Sdb *TDB = core->analysis->sdb_types;
+	ut64 value = rz_num_math(core->num, enum_value);
+	RzList *matches = rz_type_enum_find_member(TDB, value);
+	if (!matches || rz_list_empty(matches)) {
+		eprintf("Cannot find matching enum member");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzListIter *iter;
+	char *match;
+	rz_list_foreach (matches, iter, match) {
+		rz_cons_println(match);
+	}
+	rz_list_free(matches);
+	return RZ_CMD_STATUS_OK;
+}
+
 static void types_function_print(RzCore *core, const char *function, RzOutputMode mode) {
 	rz_return_if_fail(function);
 	Sdb *TDB = core->analysis->sdb_types;
@@ -264,58 +362,58 @@ static void types_function_print(RzCore *core, const char *function, RzOutputMod
 		ret = "void";
 	}
 	switch (mode) {
-		case RZ_OUTPUT_MODE_JSON: {
-			PJ *pj = pj_new();
-			if (!pj) {
-				return;
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = pj_new();
+		if (!pj) {
+			return;
+		}
+		pj_o(pj);
+		pj_ks(pj, "name", function);
+		pj_ks(pj, "ret", ret);
+		pj_k(pj, "args");
+		pj_a(pj);
+		for (i = 0; i < args; i++) {
+			char *type = sdb_get(TDB, sdb_fmt("func.%s.arg.%d", function, i), 0);
+			if (!type) {
+				continue;
+			}
+			char *name = strchr(type, ',');
+			if (name) {
+				*name++ = 0;
 			}
 			pj_o(pj);
-			pj_ks(pj, "name", function);
-			pj_ks(pj, "ret", ret);
-			pj_k(pj, "args");
-			pj_a(pj);
-			for (i = 0; i < args; i++) {
-				char *type = sdb_get(TDB, sdb_fmt("func.%s.arg.%d", function, i), 0);
-				if (!type) {
-					continue;
-				}
-				char *name = strchr(type, ',');
-				if (name) {
-					*name++ = 0;
-				}
-				pj_o(pj);
-				pj_ks(pj, "type", type);
-				if (name) {
-					pj_ks(pj, "name", name);
-				} else {
-					pj_ks(pj, "name", "(null)");
-				}
-				pj_end(pj);
+			pj_ks(pj, "type", type);
+			if (name) {
+				pj_ks(pj, "name", name);
+			} else {
+				pj_ks(pj, "name", "(null)");
 			}
 			pj_end(pj);
-			pj_end(pj);
-			rz_cons_println(pj_string(pj));
-			pj_free(pj);
-		} break;
-		case RZ_OUTPUT_MODE_SDB: {
-			char *keys = sdb_querys(TDB, NULL, -1, sdb_fmt("~~func.%s", function));
-			if (keys) {
-				rz_cons_printf("%s", keys);
-				free(keys);
+		}
+		pj_end(pj);
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	} break;
+	case RZ_OUTPUT_MODE_SDB: {
+		char *keys = sdb_querys(TDB, NULL, -1, sdb_fmt("~~func.%s", function));
+		if (keys) {
+			rz_cons_printf("%s", keys);
+			free(keys);
+		}
+	} break;
+	default: {
+		rz_cons_printf("%s %s (", ret, function);
+		for (i = 0; i < args; i++) {
+			char *type = sdb_get(TDB, sdb_fmt("func.%s.arg.%d", function, i), 0);
+			char *name = strchr(type, ',');
+			if (name) {
+				*name++ = 0;
 			}
-		} break;
-		default: {
-			rz_cons_printf("%s %s (", ret, function);
-			for (i = 0; i < args; i++) {
-				char *type = sdb_get(TDB, sdb_fmt("func.%s.arg.%d", function, i), 0);
-				char *name = strchr(type, ',');
-				if (name) {
-					*name++ = 0;
-				}
-				rz_cons_printf("%s%s %s", i == 0 ? "" : ", ", type, name);
-			}
-			rz_cons_printf(");\n");
-		} break;
+			rz_cons_printf("%s%s %s", i == 0 ? "" : ", ", type, name);
+		}
+		rz_cons_printf(");\n");
+	} break;
 	}
 	free(res);
 }
@@ -1121,13 +1219,15 @@ static void type_list_c_all(RzCore *core) {
 	// List all typedefs in the C format with newlines
 	rz_core_list_typename_alias_c(core, NULL);
 	// List all enums in the C format with newlines
-	rz_core_cmd0(core, "tec");
+	print_enum_in_c_format(TDB, NULL, true);
 }
 
 static void type_list_c_all_nl(RzCore *core) {
 	Sdb *TDB = core->analysis->sdb_types;
 	print_struct_union_in_c_format(TDB, stdifunion, NULL, false);
-	rz_core_cmd0(core, "tsd;ttc;ted");
+	rz_core_cmd0(core, "tsd");
+	rz_core_list_typename_alias_c(core, NULL);
+	print_enum_in_c_format(TDB, NULL, false);
 }
 
 static void type_define(RzCore *core, const char *type) {
@@ -1283,10 +1383,10 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		char *res = NULL, *temp = strchr(input, ' ');
 		Sdb *TDB = core->analysis->sdb_types;
 		char *name = temp ? strdup(temp + 1) : NULL;
-		char *member_name = name ? strchr(name, ' ') : NULL;
+		char *member_value = name ? strchr(name, ' ') : NULL;
 
-		if (member_name) {
-			*member_name++ = 0;
+		if (member_value) {
+			*member_value++ = 0;
 		}
 		if (name && (rz_type_kind(TDB, name) != RZ_TYPE_ENUM)) {
 			eprintf("%s is not an enum\n", name);
@@ -1299,110 +1399,52 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		case 'j': // "tej"
 			if (input[2] == 0) { // "tej"
-				char *name = NULL;
-				SdbKv *kv;
-				SdbListIter *iter;
-				SdbList *l = sdb_foreach_list(TDB, true);
-				PJ *pj = pj_new();
-				pj_o(pj);
-				ls_foreach (l, iter, kv) {
-					if (!strcmp(sdbkv_value(kv), "enum")) {
-						if (!name || strcmp(sdbkv_value(kv), name)) {
-							free(name);
-							name = strdup(sdbkv_key(kv));
-							pj_k(pj, name);
-							{
-								RzList *list = rz_type_get_enum(TDB, name);
-								if (list && !rz_list_empty(list)) {
-									pj_o(pj);
-									RzListIter *iter;
-									RTypeEnum *member;
-									rz_list_foreach (list, iter, member) {
-										pj_kn(pj, member->name, rz_num_math(NULL, member->val));
-									}
-									pj_end(pj);
-								}
-								rz_list_free(list);
-							}
-						}
-					}
-				}
-				pj_end(pj);
-				rz_cons_printf("%s\n", pj_string(pj));
-				pj_free(pj);
-				free(name);
-				ls_free(l);
+				types_enum_print_all(core, RZ_OUTPUT_MODE_JSON);
 			} else { // "tej ENUM"
-				RzListIter *iter;
-				PJ *pj = pj_new();
-				RTypeEnum *member;
-				pj_o(pj);
-				if (member_name) {
-					res = rz_type_enum_member(TDB, name, NULL, rz_num_math(core->num, member_name));
-					// NEVER REACHED
+				if (member_value) {
+					types_enum_member_find(core, name, member_value);
 				} else {
-					RzList *list = rz_type_get_enum(TDB, name);
-					if (list && !rz_list_empty(list)) {
-						pj_ks(pj, "name", name);
-						pj_k(pj, "values");
-						pj_o(pj);
-						rz_list_foreach (list, iter, member) {
-							pj_kn(pj, member->name, rz_num_math(NULL, member->val));
-						}
-						pj_end(pj);
-						pj_end(pj);
-					}
-					rz_cons_printf("%s\n", pj_string(pj));
-					pj_free(pj);
-					rz_list_free(list);
+					types_enum_print(core, name, RZ_OUTPUT_MODE_JSON);
 				}
 			}
 			break;
+		case 'k': // "tek"
+			if (input[2] == 0) { // "tek"
+				types_enum_print_all(core, RZ_OUTPUT_MODE_SDB);
+			} else { // "tek ENUM"
+				types_enum_print(core, name, RZ_OUTPUT_MODE_SDB);
+			}
+			break;
 		case 'b': // "teb"
-			res = rz_type_enum_member(TDB, name, member_name, 0);
+			res = rz_type_enum_member(TDB, name, member_value, 0);
 			break;
 		case 'c': // "tec"
 			print_enum_in_c_format(TDB, rz_str_trim_head_ro(input + 2), true);
 			break;
-		case 'd':
+		case 'd': // "ted"
 			print_enum_in_c_format(TDB, rz_str_trim_head_ro(input + 2), false);
 			break;
+		case 'f': // "tef"
+			if (member_value) {
+				types_enum_member_find_all(core, member_value);
+			}
+			break;
 		case ' ':
-			if (member_name) {
-				res = rz_type_enum_member(TDB, name, NULL, rz_num_math(core->num, member_name));
+			if (member_value) {
+				types_enum_member_find(core, name, member_value);
 			} else {
-				RzList *list = rz_type_get_enum(TDB, name);
-				RzListIter *iter;
-				RTypeEnum *member;
-				rz_list_foreach (list, iter, member) {
-					rz_cons_printf("%s = %s\n", member->name, member->val);
-				}
-				rz_list_free(list);
+				types_enum_print(core, name, RZ_OUTPUT_MODE_STANDARD);
 			}
 			break;
 		case '\0': {
-			char *name = NULL;
-			SdbKv *kv;
-			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list(TDB, true);
-			ls_foreach (l, iter, kv) {
-				if (!strcmp(sdbkv_value(kv), "enum")) {
-					if (!name || strcmp(sdbkv_value(kv), name)) {
-						free(name);
-						name = strdup(sdbkv_key(kv));
-						rz_cons_println(name);
-					}
-				}
-			}
-			free(name);
-			ls_free(l);
+			types_enum_print_all(core, RZ_OUTPUT_MODE_QUIET);
 		} break;
 		}
 		free(name);
 		if (res) {
 			rz_cons_println(res);
-		} else if (member_name) {
-			eprintf("Invalid enum member\n");
+		} else if (member_value) {
+			eprintf("Invalid enum member value\n");
 		}
 	} break;
 	case ' ':
@@ -1877,6 +1919,59 @@ RZ_IPI RzCmdStatus rz_type_define_handler(RzCore *core, int argc, const char **a
 	const char *type = argc > 1 ? argv[1] : NULL;
 	type_define(core, type);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char *enum_name = argc > 1 ? argv[1] : NULL;
+	// TODO: Reconsider the `te <enum_name> <member_value>` syntax change
+	const char *member_value = argc > 2 ? argv[2] : NULL;
+	if (enum_name) {
+		if (member_value) {
+			return types_enum_member_find(core, enum_name, member_value);
+		} else {
+			types_enum_print(core, enum_name, mode);
+		}
+	} else {
+		// A special case, since by default `te` returns only the list of all enums
+		if (mode == RZ_OUTPUT_MODE_STANDARD) {
+			mode = RZ_OUTPUT_MODE_QUIET;
+		}
+		types_enum_print_all(core, mode);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_enum_bitfield_handler(RzCore *core, int argc, const char **argv) {
+	const char *enum_name = argc > 1 ? argv[1] : NULL;
+	const char *enum_member = argc > 2 ? argv[2] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	char *output = rz_type_enum_member(TDB, enum_name, enum_member, 0);
+	if (!output) {
+		eprintf("Cannot find anything matching the specified bitfield");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(output);
+	free(output);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_enum_c_handler(RzCore *core, int argc, const char **argv) {
+	const char *enum_name = argc > 1 ? argv[1] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	print_enum_in_c_format(TDB, enum_name, true);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char **argv) {
+	const char *enum_name = argc > 1 ? argv[1] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	print_enum_in_c_format(TDB, enum_name, false);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char **argv) {
+	const char *enum_value = argc > 1 ? argv[1] : NULL;
+	return types_enum_member_find_all(core, enum_value);
 }
 
 RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {

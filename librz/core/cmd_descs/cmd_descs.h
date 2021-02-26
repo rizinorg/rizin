@@ -156,6 +156,11 @@ RZ_IPI RzCmdStatus rz_type_cc_list_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_type_cc_del_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_type_cc_del_all_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_type_define_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_type_enum_bitfield_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_enum_c_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_type_function_c_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_type_kuery_handler(RzCore *core, int argc, const char **argv);
