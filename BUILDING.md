@@ -17,6 +17,10 @@ from `pip` with `pip install meson`. If necessary, also install `ninja` with
 If you are trying to build Rizin to create a package for a distribution,
 take a look at [doc/PACKAGERS.md][].
 
+## Note about debugging
+
+Unless you are interested in debugging Rizin, it is a good idea to pass the `--buildtype=release` flag to `meson` for increased performance and to prevent the buggy `mspdbsrv.exe` process from [blocking/breaking the building process](https://social.msdn.microsoft.com/Forums/en-US/9e58b7d1-a47d-4a76-943a-4f35090616e8/link-fatal-error-lnk1318?forum=vclanguage) when generating `PDB` files in Windows. See the first table in the [Running Meson Documentation](https://mesonbuild.com/Running-Meson.html#configuring-the-build-directory) for other build types.
+
 ## *NIX systems
 
 ### Build system-wide, in `/usr/local`
