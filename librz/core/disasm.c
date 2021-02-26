@@ -2250,11 +2250,11 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 	bool docolon = true;
 	int nth = 0;
 	rz_list_foreach (uniqlist, iter, flag) {
-		if (f && f->addr == flag->offset && !strcmp(flag->name, f->name)) {
-			// do not show flags that have the same name as the function
+		if (!overlapped && f && f->addr == flag->offset && !strcmp(flag->name, f->name)) {
+			// do not show non-overlapped flags that have the same name as the function
 			continue;
 		}
-		bool no_fcn_lines = (f && f->addr == flag->offset);
+		bool no_fcn_lines = (!overlapped && f && f->addr == flag->offset);
 		if (ds->maxflags && count >= ds->maxflags) {
 			if (printPre) {
 				ds_pre_xrefs(ds, no_fcn_lines);
