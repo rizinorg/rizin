@@ -913,6 +913,43 @@ bool test_default_value(void) {
 	mu_end;
 }
 
+bool test_sort_subcommands(void) {
+	RzCmdDescHelp z_group_help = { 0 };
+	z_group_help.summary = "z summary";
+	z_group_help.sort_subcommands = true;
+	RzCmd *cmd = rz_cmd_new(false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	RzCmdDesc *z_cd = rz_cmd_desc_group_new(cmd, root, "z", NULL, NULL, &z_group_help);
+	rz_cmd_desc_argv_new(cmd, z_cd, "zx", x_array_handler, &fake_help);
+	rz_cmd_desc_argv_new(cmd, z_cd, "zc", x_array_handler, &fake_help);
+	rz_cmd_desc_argv_new(cmd, z_cd, "za", x_array_handler, &fake_help);
+
+	const char *exp1[] = { "za", "zc", "zx" };
+	void **it_cd;
+	size_t i = 0;
+
+	rz_cmd_desc_children_foreach(z_cd, it_cd) {
+		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
+		mu_assert_streq(child->name, exp1[i++], "children of z should be sorted");
+	}
+
+	rz_cmd_batch_start(cmd);
+	rz_cmd_desc_argv_new(cmd, z_cd, "zz", x_array_handler, &fake_help);
+	rz_cmd_desc_argv_new(cmd, z_cd, "zb", x_array_handler, &fake_help);
+	rz_cmd_desc_argv_new(cmd, z_cd, "zi", x_array_handler, &fake_help);
+	rz_cmd_batch_end(cmd);
+
+	const char *exp2[] = { "za", "zb", "zc", "zi", "zx", "zz" };
+	i = 0;
+	rz_cmd_desc_children_foreach(z_cd, it_cd) {
+		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
+		mu_assert_streq(child->name, exp2[i++], "children of z should be sorted even with batch");
+	}
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_parsed_args_noargs);
 	mu_run_test(test_parsed_args_onearg);
@@ -943,6 +980,7 @@ int all_tests() {
 	mu_run_test(test_get_arg);
 	mu_run_test(test_parent_details);
 	mu_run_test(test_default_value);
+	mu_run_test(test_sort_subcommands);
 	return tests_passed != tests_run;
 }
 

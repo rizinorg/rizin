@@ -3269,6 +3269,7 @@ static const RzCmdDescHelp grep_help = {
 
 RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
+	rz_cmd_batch_start(core->rcmd);
 
 	RzCmdDesc *cmd_system_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "!", rz_cmd_system, &cmd_system_help);
 	rz_warn_if_fail(cmd_system_cd);
@@ -3944,4 +3945,5 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *grep_cd = rz_cmd_desc_fake_new(core->rcmd, root_cd, "~", &grep_help);
 	rz_warn_if_fail(grep_cd);
+	rz_cmd_batch_end(core->rcmd);
 }

@@ -49,6 +49,7 @@ static const RzCmdDescHelp not_defined_help = {
 static const RzCmdDescHelp root_help = {
 	.usage = "[.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...",
 	.description = "",
+	.sort_subcommands = true,
 };
 
 static const struct argv_modes_t {
@@ -81,7 +82,13 @@ static int value = 0;
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
-static bool cmd_desc_set_parent(RzCmdDesc *cd, RzCmdDesc *parent) {
+static int cd_sort(const void *a, const void *b) {
+	RzCmdDesc *ca = (RzCmdDesc *)a;
+	RzCmdDesc *cb = (RzCmdDesc *)b;
+	return rz_str_casecmp(ca->name, cb->name);
+}
+
+static bool cmd_desc_set_parent(RzCmd *cmd, RzCmdDesc *cd, RzCmdDesc *parent) {
 	rz_return_val_if_fail(cd && !cd->parent, false);
 	if (parent) {
 		switch (parent->type) {
@@ -99,6 +106,9 @@ static bool cmd_desc_set_parent(RzCmdDesc *cd, RzCmdDesc *parent) {
 	if (parent) {
 		cd->parent = parent;
 		rz_pvector_push(&parent->children, cd);
+		if (!cmd->batch && parent->help->sort_subcommands) {
+			rz_pvector_sort(&parent->children, cd_sort);
+		}
 		parent->n_children++;
 	}
 	return true;
@@ -148,7 +158,7 @@ static RzCmdDesc *create_cmd_desc(RzCmd *cmd, RzCmdDesc *parent, RzCmdDescType t
 	if (ht_insert && !ht_pp_insert(cmd->ht_cmds, name, res)) {
 		goto err;
 	}
-	cmd_desc_set_parent(res, parent);
+	cmd_desc_set_parent(cmd, res, parent);
 	return res;
 err:
 	cmd_desc_free(res);
@@ -200,8 +210,46 @@ RZ_API RzCmd *rz_cmd_free(RzCmd *cmd) {
 	return NULL;
 }
 
+/**
+ * \brief Get the root command descriptor
+ */
 RZ_API RzCmdDesc *rz_cmd_get_root(RzCmd *cmd) {
 	return cmd->root_cmd_desc;
+}
+
+/**
+ * \brief Mark the start of the batched changes to RzCmd
+ *
+ * Commands added after this call won't be sorted until \p rz_cmd_batch_end is
+ * called.
+ */
+RZ_API void rz_cmd_batch_start(RzCmd *cmd) {
+	cmd->batch = true;
+}
+
+static void sort_groups(RzCmdDesc *group) {
+	void **it_cd;
+
+	if (group->help->sort_subcommands) {
+		rz_pvector_sort(&group->children, cd_sort);
+	}
+	rz_cmd_desc_children_foreach(group, it_cd) {
+		RzCmdDesc *cd = *(RzCmdDesc **)it_cd;
+		if (cd->n_children) {
+			sort_groups(cd);
+		}
+	}
+}
+
+/**
+ * \brief Mark the end of the batched changes to RzCmd
+ *
+ * All groups are sorted, if necessary. Call \p rz_cmd_batch_start before using
+ * this function.
+ */
+RZ_API void rz_cmd_batch_end(RzCmd *cmd) {
+	cmd->batch = false;
+	sort_groups(rz_cmd_get_root(cmd));
 }
 
 static RzOutputMode suffix2mode(const char *suffix) {

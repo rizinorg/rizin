@@ -137,10 +137,10 @@ static bool test_autocmplt_newcommand(void) {
 	mu_assert_eq(r->start, 0, "should autocomplete starting from 0");
 	mu_assert_eq(r->end, 0, "should autocomplete ending at 0");
 	mu_assert_eq(rz_pvector_len(&r->options), 4, "there are 4 commands available");
-	mu_assert_streq(rz_pvector_at(&r->options, 0), "xd", "one is xd");
-	mu_assert_streq(rz_pvector_at(&r->options, 1), "xe", "one is xe");
-	mu_assert_streq(rz_pvector_at(&r->options, 2), "p", "one is p");
-	mu_assert_streq(rz_pvector_at(&r->options, 3), "s", "one is s");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "p", "one is p");
+	mu_assert_streq(rz_pvector_at(&r->options, 1), "s", "one is s");
+	mu_assert_streq(rz_pvector_at(&r->options, 2), "xd", "one is xd");
+	mu_assert_streq(rz_pvector_at(&r->options, 3), "xe", "one is xe");
 	rz_line_ns_completion_result_free(r);
 
 	strcpy(buf->data, "p @@c:");
@@ -152,10 +152,10 @@ static bool test_autocmplt_newcommand(void) {
 	mu_assert_eq(r->start, buf->length, "start should be ok");
 	mu_assert_eq(r->end, buf->length, "end should be ok");
 	mu_assert_eq(rz_pvector_len(&r->options), 4, "there are 4 commands available");
-	mu_assert_streq(rz_pvector_at(&r->options, 0), "xd", "one is xd");
-	mu_assert_streq(rz_pvector_at(&r->options, 1), "xe", "one is xe");
-	mu_assert_streq(rz_pvector_at(&r->options, 2), "p", "one is p");
-	mu_assert_streq(rz_pvector_at(&r->options, 3), "s", "one is s");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "p", "one is p");
+	mu_assert_streq(rz_pvector_at(&r->options, 1), "s", "one is s");
+	mu_assert_streq(rz_pvector_at(&r->options, 2), "xd", "one is xd");
+	mu_assert_streq(rz_pvector_at(&r->options, 3), "xe", "one is xe");
 	rz_line_ns_completion_result_free(r);
 
 	rz_core_free(core);
