@@ -92,7 +92,7 @@ static RzCmdStatus afl_argv_handler(RzCore *core, int argc, const char **argv) {
 }
 
 bool test_cmd_descriptor_argv(void) {
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *cd = rz_cmd_desc_argv_new(cmd, root, "afl", afl_argv_handler, &fake_help);
 	mu_assert_notnull(cd, "cmddesc created");
@@ -106,7 +106,7 @@ bool test_cmd_descriptor_argv(void) {
 }
 
 bool test_cmd_descriptor_argv_nested(void) {
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *af_cd = rz_cmd_desc_group_new(cmd, root, "af", NULL, NULL, &fake_help);
 	rz_cmd_desc_argv_new(cmd, root, "af2", NULL, &fake_help);
@@ -122,7 +122,7 @@ static int a_oldinput_cb(void *user, const char *input) {
 }
 
 bool test_cmd_descriptor_oldinput(void) {
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *cd = rz_cmd_desc_oldinput_new(cmd, root, "a", a_oldinput_cb, NULL);
 	mu_assert_notnull(cd, "cmddesc created");
@@ -147,7 +147,7 @@ bool test_cmd_descriptor_group(void) {
 	const RzCmdDescHelp a_exec_help = { .summary = "a exec help", .args = fake_args };
 	const RzCmdDescHelp a_group_help = { .summary = "a group help" };
 
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *cd = rz_cmd_desc_group_new(cmd, root, "a", a_exec_cb, &a_exec_help, &a_group_help);
 	rz_cmd_desc_argv_new(cmd, cd, "ab", ab_cb, &ab_help);
@@ -197,7 +197,7 @@ static int w_handler(void *user, const char *input) {
 }
 
 bool test_cmd_descriptor_tree(void) {
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	rz_cmd_desc_argv_new(cmd, a_cd, "ap", ap_handler, &fake_help);
@@ -214,7 +214,7 @@ bool test_cmd_descriptor_tree(void) {
 }
 
 bool test_cmd_get_desc(void) {
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	RzCmdDesc *ap_cd = rz_cmd_desc_group_new(cmd, a_cd, "ap", ap_handler, NULL, &fake_help);
@@ -279,7 +279,7 @@ bool test_cmd_call_desc(void) {
 		.args = pd_help_args,
 	};
 
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *p_cd = rz_cmd_desc_group_new(cmd, root, "p", NULL, NULL, &fake_help);
 	rz_cmd_desc_argv_new(cmd, p_cd, "pd", pd_handler, &pd_help);
@@ -348,7 +348,7 @@ bool test_cmd_help(void) {
 		.args = fake_args,
 	};
 
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *p_cd = rz_cmd_desc_group_new(cmd, root, "p", NULL, NULL, &p_group_help);
 	rz_cmd_desc_argv_new(cmd, p_cd, "pd", pd_handler, &pd_help);
@@ -415,7 +415,7 @@ bool test_cmd_group_help(void) {
 		.args = fake_args,
 	};
 
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *p_cd = rz_cmd_desc_group_new(cmd, root, "p", p_handler_argv, &p_help, &p_group_help);
 	rz_cmd_desc_argv_new(cmd, p_cd, "pd", pd_handler, &pd_help);
@@ -437,7 +437,7 @@ bool test_cmd_group_help(void) {
 bool test_cmd_oldinput_help(void) {
 	rz_cons_new();
 
-	RzCmd *cmd = rz_cmd_new(true, false);
+	RzCmd *cmd = rz_cmd_new(true);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *p_cd = rz_cmd_desc_group_new(cmd, root, "p", NULL, NULL, &fake_help);
 	rz_cmd_desc_argv_new(cmd, p_cd, "pd", pd_handler, &fake_help);
@@ -457,7 +457,7 @@ bool test_cmd_oldinput_help(void) {
 }
 
 bool test_remove_cmd(void) {
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *x_cd = rz_cmd_desc_argv_new(cmd, root, "x", NULL, &fake_help);
 	RzCmdDesc *p_cd = rz_cmd_desc_group_new(cmd, root, "p", NULL, NULL, &fake_help);
@@ -496,7 +496,7 @@ bool test_cmd_args(void) {
 	x_help.summary = "x summary";
 	x_help.args = x_args;
 
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *x_cd = rz_cmd_desc_argv_new(cmd, root, "x", NULL, &x_help);
 
@@ -522,7 +522,7 @@ bool test_cmd_argv_modes(void) {
 	z_help.summary = "z summary";
 	z_help.args = z_args;
 
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *z_cd = rz_cmd_desc_argv_modes_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG_JSON, z_modes_handler, &z_help);
 
@@ -567,7 +567,7 @@ bool test_cmd_group_argv_modes(void) {
 	RzCmdDescHelp z_group_help = { 0 };
 	z_group_help.summary = "z group summary";
 
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *z_cd = rz_cmd_desc_group_modes_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, z_modes_handler, &z_help, &z_group_help);
 	RzCmdDesc *zd_cd = rz_cmd_desc_argv_new(cmd, z_cd, "zd", zd_handler, &fake_help);
@@ -605,7 +605,7 @@ static bool foreach_cmdname_cb(RzCmd *cmd, const RzCmdDesc *desc, void *user) {
 }
 
 bool test_foreach_cmdname(void) {
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *z_cd = rz_cmd_desc_group_modes_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, z_modes_handler, &fake_help, &fake_help);
 	rz_cmd_desc_argv_new(cmd, z_cd, "zd", zd_handler, &fake_help);
@@ -646,7 +646,7 @@ bool test_foreach_cmdname(void) {
 }
 
 bool test_foreach_cmdname_begin(void) {
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *z_cd = rz_cmd_desc_group_modes_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, z_modes_handler, &fake_help, &fake_help);
 	rz_cmd_desc_argv_new(cmd, z_cd, "zd", zd_handler, &fake_help);
@@ -786,7 +786,7 @@ bool test_arg_flags(void) {
 	RzCmdDescHelp x_help = { 0 };
 	x_help.summary = "x summary";
 	x_help.args = x_args;
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	rz_cmd_desc_argv_new(cmd, root, "z", z_last_handler, &z_help);
 	rz_cmd_desc_argv_new(cmd, root, "x", x_array_handler, &x_help);
@@ -825,7 +825,7 @@ bool test_get_arg(void) {
 	RzCmdDescHelp x_help = { 0 };
 	x_help.summary = "x summary";
 	x_help.args = x_args;
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *z_cd = rz_cmd_desc_argv_new(cmd, root, "z", z_last_handler, &z_help);
 	RzCmdDesc *x_cd = rz_cmd_desc_argv_new(cmd, root, "x", x_array_handler, &x_help);
@@ -867,7 +867,7 @@ bool test_parent_details(void) {
 	RzCmdDescHelp zx_help = { 0 };
 	zx_help.summary = "x summary";
 	zx_help.args = zx_args;
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	RzCmdDesc *z_cd = rz_cmd_desc_group_new(cmd, root, "z", NULL, NULL, &z_group_help);
 	rz_cmd_desc_argv_new(cmd, z_cd, "zx", x_array_handler, &zx_help);
@@ -896,7 +896,7 @@ bool test_default_value(void) {
 	RzCmdDescHelp z_help = { 0 };
 	z_help.summary = "z summary";
 	z_help.args = z_args;
-	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmd *cmd = rz_cmd_new(false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
 	rz_cmd_desc_argv_new(cmd, root, "z", default_value_handler, &z_help);
 
