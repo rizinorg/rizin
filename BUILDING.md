@@ -135,7 +135,7 @@ feature, which will produce just one executable and link all the other tools to
 that only tool, similar to how busybox works.
 
 ```
-$ CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file ./cross-compile-conf.ini
+$ CFLAGS="-static" LDFLAGS="-static" meson --buildtype=release --default-library=static --prefix=/tmp/android-dir -Dblob=true build --cross-file ./cross-compile-conf.ini
 $ ninja -C build
 $ ninja -C build install
 ```
