@@ -254,6 +254,72 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 	}
 }
 
+static void types_function_print(RzCore *core, const char *function, RzOutputMode mode) {
+	rz_return_if_fail(function);
+	Sdb *TDB = core->analysis->sdb_types;
+	char *res = sdb_querys(TDB, NULL, -1, sdb_fmt("func.%s.args", function));
+	int i, args = sdb_num_get(TDB, sdb_fmt("func.%s.args", function), 0);
+	const char *ret = sdb_const_get(TDB, sdb_fmt("func.%s.ret", function), 0);
+	if (!ret) {
+		ret = "void";
+	}
+	switch (mode) {
+		case RZ_OUTPUT_MODE_JSON: {
+			PJ *pj = pj_new();
+			if (!pj) {
+				return;
+			}
+			pj_o(pj);
+			pj_ks(pj, "name", function);
+			pj_ks(pj, "ret", ret);
+			pj_k(pj, "args");
+			pj_a(pj);
+			for (i = 0; i < args; i++) {
+				char *type = sdb_get(TDB, sdb_fmt("func.%s.arg.%d", function, i), 0);
+				if (!type) {
+					continue;
+				}
+				char *name = strchr(type, ',');
+				if (name) {
+					*name++ = 0;
+				}
+				pj_o(pj);
+				pj_ks(pj, "type", type);
+				if (name) {
+					pj_ks(pj, "name", name);
+				} else {
+					pj_ks(pj, "name", "(null)");
+				}
+				pj_end(pj);
+			}
+			pj_end(pj);
+			pj_end(pj);
+			rz_cons_println(pj_string(pj));
+			pj_free(pj);
+		} break;
+		case RZ_OUTPUT_MODE_SDB: {
+			char *keys = sdb_querys(TDB, NULL, -1, sdb_fmt("~~func.%s", function));
+			if (keys) {
+				rz_cons_printf("%s", keys);
+				free(keys);
+			}
+		} break;
+		default: {
+			rz_cons_printf("%s %s (", ret, function);
+			for (i = 0; i < args; i++) {
+				char *type = sdb_get(TDB, sdb_fmt("func.%s.arg.%d", function, i), 0);
+				char *name = strchr(type, ',');
+				if (name) {
+					*name++ = 0;
+				}
+				rz_cons_printf("%s%s %s", i == 0 ? "" : ", ", type, name);
+			}
+			rz_cons_printf(");\n");
+		} break;
+	}
+	free(res);
+}
+
 static void __core_cmd_tcc(RzCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -560,76 +626,8 @@ static bool printkey_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-// maybe dupe?. should return char *instead of print for reusability
-static void printFunctionTypeC(RzCore *core, const char *input) {
-	Sdb *TDB = core->analysis->sdb_types;
-	char *res = sdb_querys(TDB, NULL, -1, sdb_fmt("func.%s.args", input));
-	const char *name = rz_str_trim_head_ro(input);
-	int i, args = sdb_num_get(TDB, sdb_fmt("func.%s.args", name), 0);
-	const char *ret = sdb_const_get(TDB, sdb_fmt("func.%s.ret", name), 0);
-	if (!ret) {
-		ret = "void";
-	}
-	if (!ret || !name) {
-		// missing function name specified
-		return;
-	}
-
-	rz_cons_printf("%s %s (", ret, name);
-	for (i = 0; i < args; i++) {
-		char *type = sdb_get(TDB, sdb_fmt("func.%s.arg.%d", name, i), 0);
-		char *name = strchr(type, ',');
-		if (name) {
-			*name++ = 0;
-		}
-		rz_cons_printf("%s%s %s", i == 0 ? "" : ", ", type, name);
-	}
-	rz_cons_printf(");\n");
-	free(res);
-}
-
-static void printFunctionType(RzCore *core, const char *input) {
-	Sdb *TDB = core->analysis->sdb_types;
-	PJ *pj = pj_new();
-	if (!pj) {
-		return;
-	}
-	pj_o(pj);
-	char *res = sdb_querys(TDB, NULL, -1, sdb_fmt("func.%s.args", input));
-	const char *name = rz_str_trim_head_ro(input);
-	int i, args = sdb_num_get(TDB, sdb_fmt("func.%s.args", name), 0);
-	pj_ks(pj, "name", name);
-	const char *ret_type = sdb_const_get(TDB, sdb_fmt("func.%s.ret", name), 0);
-	pj_ks(pj, "ret", ret_type ? ret_type : "void");
-	pj_k(pj, "args");
-	pj_a(pj);
-	for (i = 0; i < args; i++) {
-		char *type = sdb_get(TDB, sdb_fmt("func.%s.arg.%d", name, i), 0);
-		if (!type) {
-			continue;
-		}
-		char *name = strchr(type, ',');
-		if (name) {
-			*name++ = 0;
-		}
-		pj_o(pj);
-		pj_ks(pj, "type", type);
-		if (name) {
-			pj_ks(pj, "name", name);
-		} else {
-			pj_ks(pj, "name", "(null)");
-		}
-		pj_end(pj);
-	}
-	pj_end(pj);
-	pj_end(pj);
-	rz_cons_printf("%s", pj_string(pj));
-	pj_free(pj);
-	free(res);
-}
-
 static bool printfunc_json_cb(void *user, const char *k, const char *v) {
-	printFunctionType((RzCore *)user, k);
+	types_function_print((RzCore *)user, k, RZ_OUTPUT_MODE_JSON);
 	return true;
 }
 
@@ -717,7 +715,7 @@ static bool print_type_c(RzCore *core, const char *ctype) {
 		} else if (rz_str_startswith(type, "typedef")) {
 			rz_core_list_typename_alias_c(core, name);
 		} else if (rz_str_startswith(type, "func")) {
-			printFunctionTypeC(core, name);
+			types_function_print(core, name, RZ_OUTPUT_MODE_STANDARD);
 		}
 		return true;
 	}
@@ -1115,7 +1113,7 @@ static void type_list_c_all(RzCore *core) {
 	// TODO: Change the logic maybe?
 	//eprintf("Specify the type");
 	//return RZ_CMD_STATUS_ERROR;
-	rz_core_cmd0(core, "tfc");
+	rz_core_cmd0(core, "tfc"); // seems return nothing
 	// List all unions in the C format with newlines
 	print_struct_union_in_c_format(TDB, stdifunion, NULL, true);
 	// List all structures in the C format with newlines
@@ -1784,23 +1782,21 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		case 'c': // "tfc"
 			if (input[2] == ' ') {
-				printFunctionTypeC(core, input + 3);
+				const char *name = rz_str_trim_head_ro(input + 3);
+				types_function_print(core, name, RZ_OUTPUT_MODE_STANDARD);
 			}
 			break;
 		case 'j': // "tfj"
 			if (input[2] == ' ') {
-				printFunctionType(core, input + 2);
-				rz_cons_newline();
+				const char *name = rz_str_trim_head_ro(input + 2);
+				types_function_print(core, name, RZ_OUTPUT_MODE_JSON);
 			} else {
 				print_keys(TDB, core, stdiffunc, printfunc_json_cb, true);
 			}
 			break;
 		case ' ': {
-			char *res = sdb_querys(TDB, NULL, -1, sdb_fmt("~~func.%s", input + 2));
-			if (res) {
-				rz_cons_printf("%s", res);
-				free(res);
-			}
+			const char *name = rz_str_trim_head_ro(input + 2);
+			types_function_print(core, name, RZ_OUTPUT_MODE_SDB);
 			break;
 		}
 		default:
@@ -1880,6 +1876,31 @@ RZ_IPI RzCmdStatus rz_type_list_c_nl_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_type_define_handler(RzCore *core, int argc, const char **argv) {
 	const char *type = argc > 1 ? argv[1] : NULL;
 	type_define(core, type);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char *function = argc > 1 ? argv[1] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	if (function) {
+		// A special case, since by default `tf name` returns the output in SDB format
+		if (mode == RZ_OUTPUT_MODE_STANDARD) {
+			mode = RZ_OUTPUT_MODE_SDB;
+		}
+		types_function_print(core, function, mode);
+	} else {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
+			print_keys(TDB, core, stdiffunc, printfunc_json_cb, false);
+		} else {
+			print_keys(TDB, core, stdiffunc, printkey_cb, false);
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_function_c_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char *function = argc > 1 ? argv[1] : NULL;
+	types_function_print(core, function, mode);
 	return RZ_CMD_STATUS_OK;
 }
 

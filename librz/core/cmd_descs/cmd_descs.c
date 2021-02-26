@@ -111,6 +111,8 @@ static const RzCmdDescArg type_list_c_nl_args[2];
 static const RzCmdDescArg type_cc_list_args[2];
 static const RzCmdDescArg type_cc_del_args[2];
 static const RzCmdDescArg type_define_args[2];
+static const RzCmdDescArg type_list_function_args[2];
+static const RzCmdDescArg type_function_c_args[2];
 static const RzCmdDescArg type_kuery_args[2];
 static const RzCmdDescArg type_list_noreturn_args[2];
 static const RzCmdDescArg type_noreturn_del_args[2];
@@ -2068,6 +2070,39 @@ static const RzCmdDescHelp type_define_help = {
 	.args = type_define_args,
 };
 
+static const RzCmdDescHelp tf_help = {
+	.summary = "List loaded functions definitions",
+};
+static const RzCmdDescArg type_list_function_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_list_function_help = {
+	.summary = "List loaded function definitions / Show function signature",
+	.args = type_list_function_args,
+};
+
+static const RzCmdDescArg type_function_c_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_function_c_help = {
+	.summary = "Show function definition in the C output format",
+	.args = type_function_c_args,
+};
+
 static const RzCmdDescArg type_kuery_args[] = {
 	{
 		.name = "type",
@@ -3702,6 +3737,11 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_define_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_type_cd, "td", rz_type_define_handler, &type_define_help);
 	rz_warn_if_fail(type_define_cd);
+
+	RzCmdDesc *tf_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_type_list_function_handler, &type_list_function_help, &tf_help);
+	rz_warn_if_fail(tf_cd);
+	RzCmdDesc *type_function_c_cd = rz_cmd_desc_argv_modes_new(core->rcmd, tf_cd, "tfc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_function_c_handler, &type_function_c_help);
+	rz_warn_if_fail(type_function_c_cd);
 
 	RzCmdDesc *type_kuery_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_type_cd, "tk", rz_type_kuery_handler, &type_kuery_help);
 	rz_warn_if_fail(type_kuery_cd);
