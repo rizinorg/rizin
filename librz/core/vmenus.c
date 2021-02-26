@@ -755,7 +755,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 		case 'a': {
 			txt = prompt("add C type: ", NULL);
 			if (txt) {
-				rz_core_cmdf(core, "\"td %s\"", txt);
+				rz_core_cmdf(core, "td \"%s\"", txt);
 				free(txt);
 			}
 		} break;

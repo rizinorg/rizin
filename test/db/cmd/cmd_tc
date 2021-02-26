@@ -51,7 +51,7 @@ fs classes
 "f field.Employee.Employee::(property)firstName = 0x00000000"
 "f field.Employee.Employee::(property)shortWord = 0x00000000"
 "f field.Employee.Employee::(property)wideWord = 0x00000000"
-"td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
+td "struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
 EOF
 RUN
 
@@ -133,7 +133,7 @@ fs classes
 "f field.Employee.Employee::(property)firstName = 0x00000000"
 "f field.Employee.Employee::(property)shortWord = 0x00000000"
 "f field.Employee.Employee::(property)wideWord = 0x00000000"
-"td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
+td "struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
 EOF
 RUN
 
@@ -214,7 +214,7 @@ fs classes
 "f field.Employee.Employee::(property)firstName = 0x00000000"
 "f field.Employee.Employee::(property)shortWord = 0x00000000"
 "f field.Employee.Employee::(property)wideWord = 0x00000000"
-"td struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
+td "struct Employee { struct objc_class * isa; short _shortWord; struct NSString* _username; struct NSString* _firstName; uint64_t _wideWord; void* username; void* firstName; void* shortWord; void* wideWord;};"
 EOF
 RUN
 
@@ -245,7 +245,7 @@ RUN
 NAME=tc typedef
 FILE=-
 CMDS=<<EOF
-"td typedef char *string;"
+td "typedef char *string;"
 ttc string
 EOF
 EXPECT=<<EOF
@@ -257,7 +257,7 @@ NAME=ttj typedef
 FILE=-
 CMDS=<<EOF
 t-*
-"td typedef char *string;"
+td "typedef char *string;"
 ttj
 EOF
 EXPECT=<<EOF
@@ -301,7 +301,7 @@ RUN
 NAME=test cmd tec
 FILE=-
 CMDS=<<EOF
-"td enum foo {bar = 1, cow = 3};"
+td "enum foo {bar = 1, cow = 3};"
 tec
 EOF
 EXPECT=<<EOF
@@ -315,7 +315,7 @@ RUN
 NAME=test cmd tuc
 FILE=-
 CMDS=<<EOF
-"td union Data {int i,j;};"
+td "union Data {int i,j;};"
 tuc
 EOF
 EXPECT=<<EOF
