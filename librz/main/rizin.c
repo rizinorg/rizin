@@ -186,6 +186,7 @@ static int main_print_var(const char *var_name) {
 	char *homezigns = rz_str_home(RZ_HOME_ZIGNS);
 	char *plugins = rz_str_rz_prefix(RZ_PLUGINS);
 	char *magicpath = rz_str_rz_prefix(RZ_SDB_MAGIC);
+	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
 	struct rizin_var_t {
 		const char *name;
 		const char *value;
@@ -202,7 +203,7 @@ static int main_print_var(const char *var_name) {
 		{ "RZ_LIBR_PLUGINS", plugins },
 		{ "RZ_USER_PLUGINS", homeplugins },
 		{ "RZ_USER_ZIGNS", homezigns },
-		{ "RZ_IS_PORTABLE", RZ_IS_PORTABLE },
+		{ "RZ_IS_PORTABLE", is_portable },
 		{ NULL, NULL }
 	};
 	int delta = 0;
