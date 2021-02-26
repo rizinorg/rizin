@@ -30,7 +30,7 @@ version while keeping, if provided, the Rizin version shipped by your
 distribution in `/usr`.
 
 ```
-$ meson build
+$ meson --buildtype=release build
 $ ninja -C build                # or `meson compile -C build`
 $ sudo ninja -C build install   # or `sudo meson install -C build`
 ```
@@ -50,7 +50,7 @@ with all other binaries on your system, you can also install it system-wide in
 `/usr`.
 
 ```
-$ meson --prefix=/usr build
+$ meson --buildtype=release --prefix=/usr build
 $ ninja -C build
 $ sudo ninja -C build install
 ```
@@ -67,7 +67,7 @@ available for your current user, without requiring you to have `sudo` access to
 the machine (or if you don't trust our build scripts enough).
 
 ```
-$ meson --prefix=~/.local build
+$ meson --buildtype=release --prefix=~/.local build
 $ ninja -C build
 $ ninja -C build install
 ```
@@ -90,7 +90,7 @@ To install Meson on Windows, follow instructions
 [here](https://mesonbuild.com/Getting-meson.html).
 
 ```
-$ meson --prefix=%CD%\rizin-install build
+$ meson --buildtype=release --prefix=%CD%\rizin-install build
 $ ninja -C build
 $ ninja -C build install
 ```
@@ -103,7 +103,7 @@ You can run rizin from `%CD%\rizin-install\bin`. If you don't specify any
 Use `-Db_sanitize=address,undefined` during the setup phase.
 
 ```
-$ meson -Db_sanitize=address,undefined build
+$ meson --buildtype=release -Db_sanitize=address,undefined build
 ```
 
 ## Build fully-static binaries
@@ -112,7 +112,7 @@ It may be useful to run Rizin just by using a single file, which can be copied
 on other systems if necessary.
 
 ```
-$ CFLAGS="-static" meson --default-library=static build
+$ CFLAGS="-static" meson --buildtype=release --default-library=static build
 ```
 
 ## Cross-compilation for Android
