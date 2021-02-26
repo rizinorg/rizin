@@ -397,7 +397,6 @@ typedef struct rz_cmd_t {
 	RzCmdItem *cmds[UT8_MAX];
 	RzCmdMacro macro;
 	RzList *lcmds;
-	RzList *plist;
 	RzCmdAlias aliases;
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
@@ -420,27 +419,10 @@ typedef struct rz_cmd_descriptor_t {
 	struct rz_cmd_descriptor_t *sub[127];
 } RzCmdDescriptor;
 
-// TODO: move into rz_core.h
-typedef struct rz_core_plugin_t {
-	const char *name;
-	const char *desc;
-	const char *license;
-	const char *author;
-	const char *version;
-	RzCmdCb call; // returns true if command was handled, false otherwise.
-	RzCmdCb init;
-	RzCmdCb fini;
-} RzCorePlugin;
-
 typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const RzCmdDesc *desc, void *user);
 
 #ifdef RZ_API
-RZ_API int rz_core_plugin_init(RzCmd *cmd);
-RZ_API int rz_core_plugin_add(RzCmd *cmd, RzCorePlugin *plugin);
-RZ_API int rz_core_plugin_check(RzCmd *cmd, const char *a0);
-RZ_API int rz_core_plugin_fini(RzCmd *cmd);
-
-RZ_API RzCmd *rz_cmd_new(bool has_cons, bool add_core_plugins);
+RZ_API RzCmd *rz_cmd_new(bool has_cons);
 RZ_API RzCmd *rz_cmd_free(RzCmd *cmd);
 RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
 RZ_API int rz_cmd_add(RzCmd *cmd, const char *command, RzCmdCb callback);

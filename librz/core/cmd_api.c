@@ -161,7 +161,7 @@ RZ_API void rz_cmd_alias_init(RzCmd *cmd) {
 	cmd->aliases.values = NULL;
 }
 
-RZ_API RzCmd *rz_cmd_new(bool has_cons, bool add_core_plugins) {
+RZ_API RzCmd *rz_cmd_new(bool has_cons) {
 	int i;
 	RzCmd *cmd = RZ_NEW0(RzCmd);
 	if (!cmd) {
@@ -175,9 +175,6 @@ RZ_API RzCmd *rz_cmd_new(bool has_cons, bool add_core_plugins) {
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0();
 	cmd->root_cmd_desc = create_cmd_desc(cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
-	if (add_core_plugins) {
-		rz_core_plugin_init(cmd);
-	}
 	rz_cmd_macro_init(&cmd->macro);
 	rz_cmd_alias_init(cmd);
 	return cmd;
@@ -192,9 +189,6 @@ RZ_API RzCmd *rz_cmd_free(RzCmd *cmd) {
 	rz_cmd_alias_free(cmd);
 	rz_cmd_macro_fini(&cmd->macro);
 	ht_pp_free(cmd->ht_cmds);
-	// dinitialize plugin commands
-	rz_core_plugin_fini(cmd);
-	rz_list_free(cmd->plist);
 	rz_list_free(cmd->lcmds);
 	for (i = 0; i < NCMDS; i++) {
 		if (cmd->cmds[i]) {
@@ -417,8 +411,6 @@ RZ_API int rz_cmd_del(RzCmd *cmd, const char *command) {
 RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 	struct rz_cmd_item_t *c;
 	int ret = -1;
-	RzListIter *iter;
-	RzCorePlugin *cp;
 	rz_return_val_if_fail(cmd && input, -1);
 	if (!*input) {
 		if (cmd->nullcallback) {
@@ -434,12 +426,6 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 			} else {
 				nstr = rz_str_newf("=! %s", input);
 				input = nstr;
-			}
-		}
-		rz_list_foreach (cmd->plist, iter, cp) {
-			if (cp->call && cp->call(cmd->data, input)) {
-				free(nstr);
-				return true;
 			}
 		}
 		if (!*input) {
@@ -626,26 +612,6 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 }
 
 RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
-	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
-
-	// As old RzCorePlugin do not register new commands in RzCmd, we have no
-	// way of knowing if one of those is able to handle the input, so we
-	// have to pass the input to all of them before looking into the
-	// RzCmdDesc tree
-	RzListIter *iter;
-	RzCorePlugin *cp;
-	char *exec_string = rz_cmd_parsed_args_execstr(args);
-	rz_list_foreach (cmd->plist, iter, cp) {
-		if (cp->call && cp->call(cmd->data, exec_string)) {
-			res = RZ_CMD_STATUS_OK;
-			break;
-		}
-	}
-	RZ_FREE(exec_string);
-	if (res == RZ_CMD_STATUS_OK) {
-		return res;
-	}
-
 	RzCmdDesc *cd = rz_cmd_get_desc(cmd, rz_cmd_parsed_args_cmd(args));
 	if (!cd) {
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
