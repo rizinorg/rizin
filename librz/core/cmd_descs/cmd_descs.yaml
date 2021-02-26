@@ -256,6 +256,7 @@ commands:
   - name: t
     cname: cmd_type
     summary: Types, noreturn, signatures, C parser and more
+    subcommands: cmd_type
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: uniq
     cname: uniq

@@ -194,7 +194,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		}
 		if (strstr(dup, ".cparse")) {
 			if (IS_MODE_RZCMD(mode)) {
-				rz_cons_printf("\"td %s\"\n", v);
+				rz_cons_printf("td \"%s\"\n", v);
 			} else if (IS_MODE_SET(mode)) {
 				char *code = rz_str_newf("%s;", v);
 				char *error_msg = NULL;
@@ -3506,7 +3506,7 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 			}
 
 			// C struct
-			rz_cons_printf("\"td struct %s {", c->name);
+			rz_cons_printf("td \"struct %s {", c->name);
 			if (rz_list_empty(c->fields)) {
 				// XXX workaround because we cant register empty structs yet
 				// XXX https://github.com/rizinorg/rizin/issues/16342

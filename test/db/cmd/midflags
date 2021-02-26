@@ -411,6 +411,7 @@ pd 4 @ 0
 EOF
 EXPECT=<<EOF
 |           ; CODE XREF from fcn.00000003 @ 0x5
+|           ;-- (0x00000003) fcn.00000003:
 |           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
 |           0x00000005      ebf9           jmp   0
             0x00000007  ~   b8210011c1     mov   eax, 0xc1110021       ; '!'
