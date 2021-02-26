@@ -88,6 +88,29 @@ RZ_API char *rz_type_enum_member(Sdb *TDB, const char *name, const char *member,
 	return sdb_get(TDB, q, 0);
 }
 
+RZ_API RzList *rz_type_enum_find_member(Sdb *TDB, ut64 val) {
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(TDB, true);
+	RzList *res = rz_list_new();
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "enum")) {
+			const char *name = sdbkv_key(kv);
+			if (name) {
+				const char *q = sdb_fmt("enum.%s.0x%" PFMT64x, name, val);
+				char *member = sdb_get(TDB, q, 0);
+				if (member) {
+					char *pair = rz_str_newf("%s.%s", name, member);
+					rz_list_append(res, pair);
+					free(member);
+				}
+			}
+		}
+	}
+	ls_free(l);
+	return res;
+}
+
 RZ_API char *rz_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 	char *q, *ret = NULL;
 	const char *res;

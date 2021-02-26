@@ -50,6 +50,51 @@ commands:
     args:
       - name: type
         type: RZ_CMD_ARG_TYPE_STRING
+  - name: te
+    summary: List loaded enums
+    subcommands:
+      - name: te
+        cname: type_list_enum
+        summary: List loaded enums / Show enum member
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_SDB
+        args:
+          - name: enum
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: value
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: teb
+        cname: type_enum_bitfield
+        summary: Show enum bitfield
+        args:
+          - name: enum
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: field
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: tec
+        cname: type_enum_c
+        summary: Show enum in the C output format
+        args:
+          - name: enum
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: ted
+        cname: type_enum_c_nl
+        summary: Show enum in the C output format without newlines
+        args:
+          - name: enum
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tef
+        cname: type_enum_find
+        summary: Find enum and member by the member value
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_STRING
   - name: tf
     summary: List loaded functions definitions
     subcommands:
