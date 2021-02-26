@@ -8,6 +8,8 @@ on:
     - 'dev'
     - 'stable'
     - 'container-*'
+    tags:
+    - v.*
   schedule:
     - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
   pull_request:
@@ -818,7 +820,7 @@ jobs:
     name: Publish Docker image on Docker Hub
     needs: [build-and-test]
     runs-on: ubuntu-20.04
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'docker'))
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
