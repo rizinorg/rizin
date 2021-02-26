@@ -877,6 +877,37 @@ bool test_parent_details(void) {
 	mu_assert_strcontains(h, "Examples", "zx help should include examples from parent z");
 	mu_assert_strcontains(h, "comment", "zx help should include examples from parent z");
 	free(h);
+	rz_cmd_parsed_args_free(args);
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
+static RzCmdStatus default_value_handler(RzCore *core, int argc, const char **argv) {
+	mu_assert_eq(argc, 2, "An argument should always be passed to this handler");
+	return !strcmp(argv[1], "default") ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+bool test_default_value(void) {
+	RzCmdDescArg z_args[] = {
+		{ .name = "a1", .type = RZ_CMD_ARG_TYPE_STRING, .default_value = "default" },
+		{ 0 }
+	};
+	RzCmdDescHelp z_help = { 0 };
+	z_help.summary = "z summary";
+	z_help.args = z_args;
+	RzCmd *cmd = rz_cmd_new(false, false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	rz_cmd_desc_argv_new(cmd, root, "z", default_value_handler, &z_help);
+
+	RzCmdParsedArgs *a = rz_cmd_parsed_args_new("z", 0, NULL);
+	mu_assert_eq(rz_cmd_call_parsed_args(cmd, a), RZ_CMD_STATUS_OK, "z was called correctly with default arg");
+	rz_cmd_parsed_args_free(a);
+
+	char *args[] = { "10" };
+	a = rz_cmd_parsed_args_new("z", 1, args);
+	mu_assert_eq(rz_cmd_call_parsed_args(cmd, a), RZ_CMD_STATUS_ERROR, "z was called correctly with given arg");
+	rz_cmd_parsed_args_free(a);
 
 	rz_cmd_free(cmd);
 	mu_end;
@@ -911,6 +942,7 @@ int all_tests() {
 	mu_run_test(test_arg_flags);
 	mu_run_test(test_get_arg);
 	mu_run_test(test_parent_details);
+	mu_run_test(test_default_value);
 	return tests_passed != tests_run;
 }
 

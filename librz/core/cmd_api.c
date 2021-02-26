@@ -509,10 +509,14 @@ static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
 }
 
 /**
- * Performs a preprocessing step on the user arguments. This is used to group
- * together some arguments that are returned by the parser as multiple
- * arguments but we want to let the command handler see them as a single one to
- * make life easier for users.
+ * Performs a preprocessing step on the user arguments.
+ *
+ * This is used to group together some arguments that are returned by the
+ * parser as multiple arguments but we want to let the command handler see them
+ * as a single one to make life easier for users.
+ *
+ * It can also provide default arguments as specified by the command
+ * descriptor.
  *
  * For example:
  * `cmdid pd 10` would be considered as having 2 arguments, "pd" and "10".
@@ -548,6 +552,11 @@ static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
 			args->argv[i] = tmp;
 			args->argc = i + 1;
 			return;
+		}
+	}
+	for (; arg && arg->name; arg++, i++) {
+		if (arg->default_value && i >= args->argc) {
+			rz_cmd_parsed_args_addarg(args, arg->default_value);
 		}
 	}
 }
@@ -1805,6 +1814,19 @@ RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *a, int n_args, char **ar
 err:
 	free_array(tmp, n_args + 1);
 	return false;
+}
+
+RZ_API bool rz_cmd_parsed_args_addarg(RzCmdParsedArgs *a, const char *arg) {
+	char **tmp = realloc(a->argv, sizeof(a->argv[0]) * (a->argc + 2));
+	if (!tmp) {
+		return false;
+	}
+
+	a->argv = tmp;
+	a->argv[a->argc] = strdup(arg);
+	a->argv[a->argc + 1] = NULL;
+	a->argc++;
+	return true;
 }
 
 RZ_API bool rz_cmd_parsed_args_setcmd(RzCmdParsedArgs *a, const char *cmd) {
