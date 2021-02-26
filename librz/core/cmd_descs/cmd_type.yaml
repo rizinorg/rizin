@@ -150,6 +150,28 @@ commands:
         cname: type_noreturn_del_all
         summary: Remove all noreturn references
         args: []
+  - name: to
+    summary: Open C header file and load types from it
+    subcommands:
+      - name: to
+        cname: type_open_file
+        summary: Open C header file and load types from it
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: toe
+        cname: type_open_editor
+        summary: Open cfg.editor to edit types
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tos
+        cname: type_open_sdb
+        summary: Open SDB file and load types from it
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
   - name: tt
     summary: List loaded typedefs
     subcommands:

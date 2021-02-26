@@ -121,6 +121,9 @@ static const RzCmdDescArg type_function_c_args[2];
 static const RzCmdDescArg type_kuery_args[2];
 static const RzCmdDescArg type_list_noreturn_args[2];
 static const RzCmdDescArg type_noreturn_del_args[2];
+static const RzCmdDescArg type_open_file_args[2];
+static const RzCmdDescArg type_open_editor_args[2];
+static const RzCmdDescArg type_open_sdb_args[2];
 static const RzCmdDescArg type_list_typedef_args[2];
 static const RzCmdDescArg type_typedef_c_args[2];
 static const RzCmdDescArg type_list_union_args[2];
@@ -2250,6 +2253,50 @@ static const RzCmdDescHelp type_noreturn_del_all_help = {
 	.args = type_noreturn_del_all_args,
 };
 
+static const RzCmdDescHelp to_help = {
+	.summary = "Open C header file and load types from it",
+};
+static const RzCmdDescArg type_open_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_open_file_help = {
+	.summary = "Open C header file and load types from it",
+	.args = type_open_file_args,
+};
+
+static const RzCmdDescArg type_open_editor_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_open_editor_help = {
+	.summary = "Open cfg.editor to edit types",
+	.args = type_open_editor_args,
+};
+
+static const RzCmdDescArg type_open_sdb_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_open_sdb_help = {
+	.summary = "Open SDB file and load types from it",
+	.args = type_open_sdb_args,
+};
+
 static const RzCmdDescHelp tt_help = {
 	.summary = "List loaded typedefs",
 };
@@ -3859,6 +3906,14 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_noreturn_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tn_cd, "tn-*", rz_type_noreturn_del_all_handler, &type_noreturn_del_all_help);
 	rz_warn_if_fail(type_noreturn_del_all_cd);
+
+	RzCmdDesc *to_cd = rz_cmd_desc_group_new(core->rcmd, cmd_type_cd, "to", rz_type_open_file_handler, &type_open_file_help, &to_help);
+	rz_warn_if_fail(to_cd);
+	RzCmdDesc *type_open_editor_cd = rz_cmd_desc_argv_new(core->rcmd, to_cd, "toe", rz_type_open_editor_handler, &type_open_editor_help);
+	rz_warn_if_fail(type_open_editor_cd);
+
+	RzCmdDesc *type_open_sdb_cd = rz_cmd_desc_argv_new(core->rcmd, to_cd, "tos", rz_type_open_sdb_handler, &type_open_sdb_help);
+	rz_warn_if_fail(type_open_sdb_cd);
 
 	RzCmdDesc *tt_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_typedef_handler, &type_list_typedef_help, &tt_help);
 	rz_warn_if_fail(tt_cd);

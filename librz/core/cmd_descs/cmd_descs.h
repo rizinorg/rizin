@@ -167,6 +167,9 @@ RZ_IPI RzCmdStatus rz_type_kuery_handler(RzCore *core, int argc, const char **ar
 RZ_IPI RzCmdStatus rz_type_list_noreturn_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_type_noreturn_del_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_type_noreturn_del_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_open_file_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_open_editor_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_open_sdb_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_type_typedef_c_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_type_list_union_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
