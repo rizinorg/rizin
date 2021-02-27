@@ -90,7 +90,7 @@ jobs:
             build_system: meson
             compiler: gcc
             cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
-            meson_options: -Ddebug=true -Doptimization=3 -Db_sanitize=address,undefined -Duse_webui=true
+            meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined -Duse_webui=true
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
             run_tests: true
