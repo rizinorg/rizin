@@ -52,10 +52,10 @@ jobs:
       matrix:
         name: [
           linux-meson-clang-tests,
-          linux-meson-gcc-build,
           linux-meson-gcc-tests,
           macos-meson-clang-tests,
           linux-gcc-tests-asan,
+          linux-gcc-tests-codecov,
           capstone-v3,
           capstone-next
         ]
@@ -67,22 +67,13 @@ jobs:
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-          - name: linux-meson-gcc-build
-            os: ubuntu-20.04
-            build_system: meson
-            compiler: gcc
-            enabled: ${{ github.event_name == 'pull_request' && needs.changes.outputs.edited == 'true' }}
-            timeout: 45
-            cflags: '-Wno-cpp'
           - name: linux-meson-gcc-tests
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Dbuildtype=debug -Db_coverage=true -Duse_webui=true
-            coverage: true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
-            timeout: 60
+            timeout: 45
             cflags: '-Wno-cpp'
           - name: macos-meson-clang-tests
             os: macos-latest
@@ -103,6 +94,16 @@ jobs:
             run_tests: true
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
             timeout: 100
+          - name: linux-gcc-tests-codecov
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: gcc
+            run_tests: true
+            meson_options: -Dbuildtype=debug -Db_coverage=true -Duse_webui=true
+            coverage: true
+            enabled: ${{ needs.changes.outputs.edited == 'true' }}
+            timeout: 60
+            cflags: '-Wno-cpp'
           - name: capstone-v3
             os: ubuntu-20.04
             build_system: meson
