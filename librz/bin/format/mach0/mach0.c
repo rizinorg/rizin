@@ -2584,6 +2584,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 		}
 		ut64 tr = read_uleb128(&p, end);
 		if (tr == UT64_MAX) {
+			RZ_FREE(next);
 			goto beach;
 		}
 		next->node = tr + trie;
@@ -2740,6 +2741,8 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin) {
 			}
 			if (!inSymtab(hash, sym->name, sym->vaddr)) {
 				rz_list_append(list, sym);
+			} else {
+				rz_bin_symbol_free(sym);
 			}
 		}
 	}
@@ -2806,7 +2809,7 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin) {
 		}
 	}
 	ht_pp_free(hash);
-	// bin->symbols = symbols;
+	free(symbols);
 	return list;
 }
 

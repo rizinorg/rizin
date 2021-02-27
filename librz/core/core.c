@@ -76,6 +76,7 @@ static void rz_core_debug_breakpoint_hit(RzCore *core, RzBreakpointItem *bpi) {
 		rz_core_cmd0(core, bpi->data);
 	}
 	if (may_output) {
+		rz_cons_set_flush(true);
 		rz_cons_flush();
 		rz_cons_pop();
 	}

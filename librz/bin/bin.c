@@ -872,7 +872,9 @@ RZ_API RzBin *rz_bin_new(void) {
 			goto trashbin_binxtrs;
 		}
 		*static_xtr_plugin = *bin_xtr_static_plugins[i];
-		rz_bin_xtr_add(bin, static_xtr_plugin);
+		if (!rz_bin_xtr_add(bin, static_xtr_plugin)) {
+			free(static_xtr_plugin);
+		}
 	}
 	/* loaders */
 	bin->binldrs = rz_list_new();
@@ -883,7 +885,9 @@ RZ_API RzBin *rz_bin_new(void) {
 			goto trashbin_binldrs;
 		}
 		*static_ldr_plugin = *bin_ldr_static_plugins[i];
-		rz_bin_ldr_add(bin, static_ldr_plugin);
+		if (!rz_bin_ldr_add(bin, static_ldr_plugin)) {
+			free(static_ldr_plugin);
+		}
 	}
 	return bin;
 trashbin_binldrs:

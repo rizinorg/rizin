@@ -121,6 +121,12 @@ CD_VALID_TYPES = [
     CD_TYPE_INNER,
 ]
 
+CD_ARG_LAST_TYPES = [
+    "RZ_CMD_ARG_TYPE_RZNUM",
+    "RZ_CMD_ARG_TYPE_STRING",
+    "RZ_CMD_ARG_TYPE_CMD",
+]
+
 
 def escape(s):
     return s.replace("\\", "\\\\").replace('"', '\\"')
@@ -185,13 +191,28 @@ class Arg:
 
         self.cd = cd
         # RzCmdDescArg fields
-        self.name = c["name"]
-        self.flags = c.get("flags")
-        self.optional = c.get("optional")
-        self.no_space = c.get("no_space")
-        self.type = c["type"]
-        self.default_value = c.get("default_value")
-        self.choices = c.get("choices")
+        self.name = c.pop("name")
+        self.flags = c.pop("flags", None)
+        self.optional = c.pop("optional", None)
+        self.no_space = c.pop("no_space", None)
+        self.type = c.pop("type")
+        self.default_value = (
+            str(c.pop("default_value")) if "default_value" in c else None
+        )
+        self.choices = c.pop("choices", None)
+        if c.keys():
+            print(
+                "Argument %s for command %s has unrecognized properties: %s."
+                % (self.name, self.cd.name, c.keys())
+            )
+            sys.exit(1)
+
+        if self.default_value is not None and self.optional is not None:
+            print(
+                "Argument %s for command %s has both optional and default_value."
+                % (self.name, self.cd.name)
+            )
+            sys.exit(1)
 
     def _get_choices_cname(self):
         if self.type == "RZ_CMD_ARG_TYPE_CHOICES":
@@ -207,7 +228,7 @@ class Arg:
     def __str__(self):
         flags = (
             DESC_HELP_ARG_TEMPLATE_FLAGS.format(flags=self.flags)
-            if self.flags is not None
+            if self.flags is not None and self.flags != ""
             else ""
         )
         optional = (
@@ -279,8 +300,14 @@ class Detail:
 
         self.cd = cd
         # RzCmdDescDetail fields
-        self.name = strip(c["name"])
-        self.entries = [format_detail_entry(x) for x in c["entries"]]
+        self.name = strip(c.pop("name"))
+        self.entries = [format_detail_entry(x) for x in c.pop("entries")]
+        if c.keys():
+            print(
+                "Detail %s for command %s has unrecognized properties: %s."
+                % (self.name, self.cd.name, c.keys())
+            )
+            sys.exit(1)
 
     def get_detail_entries_cname(self):
         return self.cd.cname + "_" + compute_cname(self.name) + "_detail_entries"
@@ -306,17 +333,63 @@ class CmdDesc:
 
     def _process_details(self, c):
         if "details" in c and isinstance(c["details"], list):
-            self.details = [Detail(self, x) for x in c.get("details", [])]
+            self.details = [Detail(self, x) for x in c.pop("details", [])]
         elif "details" in c and isinstance(c["details"], str):
-            self.details_alias = c["details"]
+            self.details_alias = c.pop("details")
 
     def _process_args(self, c):
         if "args" in c and isinstance(c["args"], list):
-            self.args = [Arg(self, x) for x in c.get("args", [])]
+            self.args = [Arg(self, x) for x in c.pop("args", [])]
+            if (
+                self.args
+                and self.args[-1].type in CD_ARG_LAST_TYPES
+                and self.args[-1].flags is None
+            ):
+                self.args[-1].flags = "RZ_CMD_ARG_FLAG_LAST"
         elif "args" in c and isinstance(c["args"], str):
-            self.args_alias = c["args"]
+            self.args_alias = c.pop("args")
 
-    def __init__(self, c, parent=None, pos=0):
+    def _set_type(self, c):
+        if "type" in c:
+            self.type = c.pop("type")
+        elif c.get("subcommands"):
+            self.type = CD_TYPE_GROUP
+        elif self.modes:
+            self.type = CD_TYPE_ARGV_MODES
+        else:
+            self.type = CD_TYPE_ARGV
+
+    def _set_subcommands(self, c, yamls):
+        if "subcommands" in c and isinstance(c["subcommands"], list):
+            # The list of subcommands is embedded in the current file
+            self.subcommands = [
+                CmdDesc(yamls, x, self, i)
+                for i, x in enumerate(c.pop("subcommands", []))
+            ]
+        elif "subcommands" in c and isinstance(c["subcommands"], str):
+            # The list of subcommands is in another file
+            subcommands_name = c.pop("subcommands")
+            if subcommands_name not in yamls:
+                print(
+                    "Command %s referenced another YAML file (%s) that is not passed as arg to cmd_descs_generate.py."
+                    % (self.name, subcommands_name)
+                )
+                sys.exit(1)
+
+            external_c = yamls[subcommands_name]
+            self.subcommands = [
+                CmdDesc(yamls, x, self, i) for i, x in enumerate(external_c)
+            ]
+
+        # handle the exec_cd, which is a cd that has the same name as its parent
+        if (
+            self.subcommands
+            and self.subcommands[0].name == self.name
+            and self.subcommands[0].type not in [CD_TYPE_INNER, CD_TYPE_FAKE]
+        ):
+            self.exec_cd = self.subcommands[0]
+
+    def __init__(self, yamls, c, parent=None, pos=0):
         self.pos = pos
 
         if not c:
@@ -332,20 +405,20 @@ class CmdDesc:
             sys.exit(1)
 
         # RzCmdDesc fields
-        self.name = c["name"]
-        self.cname = c.get("cname") or compute_cname(self.name)
+        self.name = c.pop("name")
+        self.cname = c.pop("cname", None) or compute_cname(self.name)
         self.type = None
         self.parent = parent
         self.subcommands = None
         self.exec_cd = None
-        self.modes = c.get("modes")
-        self.handler = c.get("handler")
+        self.modes = c.pop("modes", None)
+        self.handler = c.pop("handler", None)
         # RzCmdDescHelp fields
-        self.summary = strip(c["summary"])
-        self.description = strip(c.get("description"))
-        self.args_str = strip(c.get("args_str"))
-        self.usage = strip(c.get("usage"))
-        self.options = strip(c.get("options"))
+        self.summary = strip(c.pop("summary"))
+        self.description = strip(c.pop("description", None))
+        self.args_str = strip(c.pop("args_str", None))
+        self.usage = strip(c.pop("usage", None))
+        self.options = strip(c.pop("options", None))
 
         self.details = None
         self.details_alias = None
@@ -356,28 +429,11 @@ class CmdDesc:
         self._process_args(c)
 
         # determine type before parsing subcommands, so children can check type of parent
-        if "type" in c:
-            self.type = c["type"]
-        elif c.get("subcommands"):
-            self.type = CD_TYPE_GROUP
-        elif self.modes:
-            self.type = CD_TYPE_ARGV_MODES
-        else:
-            self.type = CD_TYPE_ARGV
+        self._set_type(c)
 
-        if "subcommands" in c:
-            self.subcommands = [
-                CmdDesc(x, self, i) for i, x in enumerate(c.get("subcommands", []))
-            ]
-        # handle the exec_cd, which is a cd that has the same name as its parent
-        if (
-            self.subcommands
-            and self.subcommands[0].name == self.name
-            and self.subcommands[0].type not in [CD_TYPE_INNER, CD_TYPE_FAKE]
-        ):
-            self.exec_cd = self.subcommands[0]
+        self._set_subcommands(c, yamls)
 
-        self._validate()
+        self._validate(c)
         CmdDesc.c_cds[self.cname] = self
         if self.get_handler_cname():
             CmdDesc.c_handlers[self.get_handler_cname()] = self
@@ -386,7 +442,11 @@ class CmdDesc:
         if self.details:
             CmdDesc.c_details[CmdDesc.get_detail_cname(self)] = self
 
-    def _validate(self):
+    def _validate(self, c):
+        if c.keys():
+            print("Command %s has unrecognized properties: %s." % (self.name, c.keys()))
+            sys.exit(1)
+
         if self.type not in CD_VALID_TYPES:
             print("Command %s does not have a valid type." % (self.name,))
             sys.exit(1)
@@ -664,16 +724,19 @@ parser.add_argument(
 )
 parser.add_argument("--output-dir", type=str, required=True, help="Output directory")
 parser.add_argument(
-    "yaml_file",
+    "yaml_files",
     type=argparse.FileType("r"),
-    help="Input YAML file containing all commands descriptions",
+    nargs="+",
+    help="Input YAML files containing commands descriptions. One should be named 'root'.",
 )
 
 args = parser.parse_args()
 
-commands_yml = yaml.safe_load(args.yaml_file)
-root_cd = CmdDesc(None)
-root_cds = [CmdDesc(c, root_cd) for c in commands_yml]
+commands_yml_arr = [yaml.safe_load(f) for f in args.yaml_files]
+commands_yml = {c["name"]: c["commands"] for c in commands_yml_arr}
+
+root_cd = CmdDesc(commands_yml, None)
+root_cds = [CmdDesc(commands_yml, c, root_cd) for c in commands_yml["root"]]
 
 arg_decls = [arg2decl(cd) for cd in CmdDesc.c_args.values()]
 detail_decls = [detail2decl(cd) for cd in CmdDesc.c_details.values()]

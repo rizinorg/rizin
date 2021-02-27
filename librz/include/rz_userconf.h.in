@@ -31,6 +31,8 @@
 #define WITH_GPL                    @WITH_GPL@
 #define HAVE_JEMALLOC               @HAVE_JEMALLOC@
 
+#define RZ_IS_PORTABLE @IS_PORTABLE@
+
 #define RZ_PREFIX  "@PREFIX@"
 #define RZ_LIBDIR  "@LIBDIR@"
 #define RZ_INCDIR  "@INCLUDEDIR@"

@@ -133,7 +133,11 @@ RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path) {
 	char *file;
 	rz_list_foreach (files, iter, file) {
 		if (__isScriptFilename(file)) {
-			rz_core_cmdf(core, ". %s/%s", homeplugindir, file);
+			char *script_file = rz_str_newf("%s/%s", homeplugindir, file);
+			if (!rz_core_run_script(core, script_file)) {
+				eprintf("Cannot find script '%s'\n", script_file);
+			}
+			free(script_file);
 		}
 	}
 

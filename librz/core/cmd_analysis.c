@@ -5212,7 +5212,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			core->analysis->esil = NULL;
 			break;
 		case 0: // "aei"
-			rz_core_analysis_esil_init(core);
+			rz_core_analysis_esil_reinit(core);
 			break;
 		}
 		break;
@@ -7915,147 +7915,6 @@ static void cmd_analysis_aad(RzCore *core, const char *input) {
 	rz_list_free(list);
 }
 
-static bool archIsThumbable(RzCore *core) {
-	RzAsm *as = core ? core->rasm : NULL;
-	if (as && as->cur && as->bits <= 32 && as->cur->name) {
-		return strstr(as->cur->name, "arm");
-	}
-	return false;
-}
-
-static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
-	bool asterisk = user != NULL;
-	int arch_align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
-	bool vinfun = rz_config_get_i(core->config, "analysis.vinfun");
-	int searchAlign = rz_config_get_i(core->config, "search.align");
-	int align = (searchAlign > 0) ? searchAlign : arch_align;
-	if (align > 1) {
-		if ((from % align) || (to % align)) {
-			bool itsFine = false;
-			if (archIsThumbable(core)) {
-				if ((from & 1) || (to & 1)) {
-					itsFine = true;
-				}
-			}
-			if (!itsFine) {
-				return;
-			}
-			if (core->analysis->verbose) {
-				eprintf("Warning: aav: false positive in 0x%08" PFMT64x "\n", from);
-			}
-		}
-	}
-	if (!vinfun) {
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, from, -1);
-		if (fcn) {
-			return;
-		}
-	}
-	if (asterisk) {
-		rz_cons_printf("ax 0x%" PFMT64x " 0x%" PFMT64x "\n", to, from);
-		rz_cons_printf("Cd %d @ 0x%" PFMT64x "\n", vsize, from);
-		rz_cons_printf("f+ aav.0x%08" PFMT64x "= 0x%08" PFMT64x, to, to);
-	} else {
-		rz_analysis_xrefs_set(core->analysis, from, to, RZ_ANALYSIS_REF_TYPE_NULL);
-		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, from, vsize, NULL);
-		if (!rz_flag_get_at(core->flags, to, false)) {
-			char *name = rz_str_newf("aav.0x%08" PFMT64x, to);
-			rz_flag_set(core->flags, name, to, vsize);
-			free(name);
-		}
-	}
-}
-
-static void cmd_analysis_aav(RzCore *core, const char *input) {
-#define seti(x, y) rz_config_set_i(core->config, x, y);
-#define geti(x)    rz_config_get_i(core->config, x);
-	rz_return_if_fail(*input == 'v');
-	ut64 o_align = geti("search.align");
-	const char *analin = rz_config_get(core->config, "analysis.in");
-	char *tmp = strdup(analin);
-	bool asterisk = strchr(input, '*');
-	bool is_debug = rz_config_get_i(core->config, "cfg.debug");
-	int archAlign = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
-	seti("search.align", archAlign);
-	rz_config_set(core->config, "analysis.in", "io.maps.x");
-	oldstr = rz_print_rowlog(core->print, "Finding xrefs in noncode section with analysis.in=io.maps");
-	rz_print_rowlog_done(core->print, oldstr);
-
-	int vsize = 4; // 32bit dword
-	if (core->rasm->bits == 64) {
-		vsize = 8;
-	}
-
-	// body
-	oldstr = rz_print_rowlog(core->print, "Analyze value pointers (aav)");
-	rz_print_rowlog_done(core->print, oldstr);
-	rz_cons_break_push(NULL, NULL);
-	if (is_debug) {
-		RzList *list = rz_core_get_boundaries_prot(core, 0, "dbg.map", "analysis");
-		RzListIter *iter;
-		RzIOMap *map;
-		if (!list) {
-			goto beach;
-		}
-		rz_list_foreach (list, iter, map) {
-			if (rz_cons_is_breaked()) {
-				break;
-			}
-			oldstr = rz_print_rowlog(core->print, sdb_fmt("from 0x%" PFMT64x " to 0x%" PFMT64x " (aav)", map->itv.addr, rz_itv_end(map->itv)));
-			rz_print_rowlog_done(core->print, oldstr);
-			(void)rz_core_search_value_in_range(core, map->itv,
-				map->itv.addr, rz_itv_end(map->itv), vsize, _CbInRangeAav, (void *)asterisk);
-		}
-		rz_list_free(list);
-	} else {
-		RzList *list = rz_core_get_boundaries_prot(core, 0, NULL, "analysis");
-		if (!list) {
-			goto beach;
-		}
-		RzListIter *iter, *iter2;
-		RzIOMap *map, *map2;
-		ut64 from = UT64_MAX;
-		ut64 to = UT64_MAX;
-		// find values pointing to non-executable regions
-		rz_list_foreach (list, iter2, map2) {
-			if (rz_cons_is_breaked()) {
-				break;
-			}
-			//TODO: Reduce multiple hits for same addr
-			from = rz_itv_begin(map2->itv);
-			to = rz_itv_end(map2->itv);
-			oldstr = rz_print_rowlog(core->print, sdb_fmt("Value from 0x%08" PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
-			if ((to - from) > MAX_SCAN_SIZE) {
-				eprintf("Warning: Skipping large region\n");
-				continue;
-			}
-			rz_print_rowlog_done(core->print, oldstr);
-			rz_list_foreach (list, iter, map) {
-				ut64 begin = map->itv.addr;
-				ut64 end = rz_itv_end(map->itv);
-				if (rz_cons_is_breaked()) {
-					break;
-				}
-				if (end - begin > UT32_MAX) {
-					oldstr = rz_print_rowlog(core->print, "Skipping huge range");
-					rz_print_rowlog_done(core->print, oldstr);
-					continue;
-				}
-				oldstr = rz_print_rowlog(core->print, sdb_fmt("0x%08" PFMT64x "-0x%08" PFMT64x " in 0x%" PFMT64x "-0x%" PFMT64x " (aav)", from, to, begin, end));
-				rz_print_rowlog_done(core->print, oldstr);
-				(void)rz_core_search_value_in_range(core, map->itv, from, to, vsize, _CbInRangeAav, (void *)asterisk);
-			}
-		}
-		rz_list_free(list);
-	}
-beach:
-	rz_cons_break_pop();
-	// end
-	rz_config_set(core->config, "analysis.in", tmp);
-	free(tmp);
-	seti("search.align", o_align);
-}
-
 static void cmd_analysis_abt(RzCore *core, const char *input) {
 	switch (*input) {
 	case 'e': // "abte"
@@ -8203,9 +8062,11 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case 'd': // "aad"
 		cmd_analysis_aad(core, input);
 		break;
-	case 'v': // "aav"
-		cmd_analysis_aav(core, input);
+	case 'v': { // "aav"
+		RzOutputMode mode = strchr(input, '*') ? RZ_OUTPUT_MODE_RIZIN : RZ_OUTPUT_MODE_STANDARD;
+		rz_core_analysis_value_pointers(core, mode);
 		break;
+	}
 	case 'u': // "aau" - print areas not covered by functions
 		rz_core_analysis_nofunclist(core, input + 1);
 		break;
@@ -8337,36 +8198,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			}
 			rz_core_analysis_esil(core, len, addr);
 		} else {
-			ut64 at = core->offset;
-			RzIOMap *map;
-			RzListIter *iter;
-			RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "analysis");
-			if (!list) {
-				break;
-			}
-			if (!strcmp("range", rz_config_get(core->config, "analysis.in"))) {
-				ut64 from = rz_config_get_i(core->config, "analysis.from");
-				ut64 to = rz_config_get_i(core->config, "analysis.to");
-				if (to > from) {
-					char *len = rz_str_newf(" 0x%" PFMT64x, to - from);
-					rz_core_seek(core, from, true);
-					rz_core_analysis_esil(core, len, NULL);
-					free(len);
-				} else {
-					eprintf("Assert: analysis.from > analysis.to\n");
-				}
-			} else {
-				rz_list_foreach (list, iter, map) {
-					if (map->perm & RZ_PERM_X) {
-						char *ss = rz_str_newf(" 0x%" PFMT64x, map->itv.size);
-						rz_core_seek(core, map->itv.addr, true);
-						rz_core_analysis_esil(core, ss, NULL);
-						free(ss);
-					}
-				}
-				rz_list_free(list);
-			}
-			rz_core_seek(core, at, true);
+			rz_core_analysis_esil_default(core);
 		}
 		break;
 	case 'r': // "aar"

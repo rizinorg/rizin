@@ -33,12 +33,15 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	{
 		const char *bep = rz_config_get(r->config, "dbg.bep");
 		if (bep) {
+			ut64 address = 0;
 			if (!strcmp(bep, "loader")) {
 				/* do nothing here */
 			} else if (!strcmp(bep, "entry")) {
-				rz_core_cmd(r, "dcu entry0", 0);
+				address = rz_num_math(r->num, "entry0");
+				rz_core_debug_continue_until(r, address, address);
 			} else {
-				rz_core_cmdf(r, "dcu %s", bep);
+				address = rz_num_math(r->num, bep);
+				rz_core_debug_continue_until(r, address, address);
 			}
 		}
 	}
@@ -473,6 +476,15 @@ RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset) {
 	return rz_io_is_valid_offset(core->io, offset, 0);
 }
 
+/**
+ * Writes the hexadecimal string at the given offset
+ *
+ * Returns the length of the written data.
+ *
+ * \param core RzCore reference
+ * \param addr Address to where to write
+ * \param pairs Data as the hexadecimal string
+ */
 RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs) {
 	rz_return_val_if_fail(core && pairs, 0);
 	ut8 *buf = malloc(strlen(pairs) + 1);
@@ -502,4 +514,67 @@ RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs) {
 	}
 	free(buf);
 	return len;
+}
+
+/**
+ * Assembles instructions and writes the resulting data at the given offset.
+ *
+ * Returns the length of the written data or -1 in case of error
+ *
+ * \param core RzCore reference
+ * \param addr Address to where to write
+ * \param instructions List of instructions to assemble as a string
+ * \param pretend Don't write but emit the sequence of `wx` commands
+ * \param pad Fit the instruction inside the current instruction, fill with nops to pad
+ */
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad) {
+	int wseek = rz_config_get_i(core->config, "cfg.wseek");
+	rz_asm_set_pc(core->rasm, core->offset);
+	RzAsmCode *acode = rz_asm_massemble(core->rasm, instructions);
+	if (!acode) {
+		return -1;
+	}
+	if (pad) { // "wai"
+		RzAnalysisOp analop;
+		if (!rz_analysis_op(core->analysis, &analop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
+			eprintf("Invalid instruction?\n");
+			return -1;
+		}
+		if (analop.size < acode->len) {
+			eprintf("Doesnt fit\n");
+			rz_analysis_op_fini(&analop);
+			rz_asm_code_free(acode);
+			return -1;
+		}
+		rz_analysis_op_fini(&analop);
+		rz_core_hack(core, "nop");
+	}
+	if (acode->len > 0) {
+		char *hex = rz_asm_code_get_hex(acode);
+		if (pretend) {
+			rz_cons_printf("wx %s\n", hex);
+		} else {
+			if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
+				eprintf("Failed to write %d bytes at 0x%" PFMT64x "address\n", acode->len, core->offset);
+				core->num->value = 1;
+				free(hex);
+				return -1;
+			} else {
+				if (rz_config_get_i(core->config, "scr.prompt")) {
+					eprintf("Written %d byte(s) (%s) = wx %s\n", acode->len, instructions, hex);
+				}
+				if (wseek) {
+					rz_core_seek_delta(core, acode->len, true);
+				}
+			}
+			rz_core_block_read(core);
+		}
+		free(hex);
+		return acode->len;
+	} else {
+		eprintf("Nothing to do.\n");
+		return 0;
+	}
+	rz_asm_code_free(acode);
+	return -1;
 }

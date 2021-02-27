@@ -8,6 +8,8 @@ on:
     - 'dev'
     - 'stable'
     - 'container-*'
+    tags:
+    - v*
   schedule:
     - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
   pull_request:
@@ -124,6 +126,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       if: matrix.enabled
+      with:
+          fetch-depth: 2
     - name: Install pkg-config and cabextract with Homebrew
       if: matrix.os == 'macos-latest' && matrix.enabled
       run: brew install pkg-config cabextract
@@ -361,7 +365,7 @@ jobs:
     - name: Compile with meson
       run: |
         mkdir -p ${HOME}/rizin-static
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/rizin-static --buildtype release --default-library static build
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dstatic_runtime=true -Dportable=true build
         ninja -C build && ninja -C build install
         tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
       working-directory: rizin
@@ -483,7 +487,7 @@ jobs:
         include:
           - name: vs2019_static
             compiler: cl
-            meson_options: --default-library=static -Db_vscrt=static_from_buildtype
+            meson_options: --default-library=static -Db_vscrt=static_from_buildtype -Dportable=true
             bits: 64
           - name: clang_cl
             compiler: clang-cl
@@ -546,7 +550,7 @@ jobs:
     - name: Compile with meson
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
         ninja -C build && ninja -C build install
     - name: Create rizin-android-${{ matrix.name }}.tar.gz
       run: |
@@ -816,7 +820,7 @@ jobs:
     name: Publish Docker image on Docker Hub
     needs: [build-and-test]
     runs-on: ubuntu-20.04
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'docker'))
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
@@ -835,9 +839,6 @@ jobs:
       uses: crazy-max/ghaction-docker-meta@v1
       with:
         images: ${{ secrets.DOCKERHUB_USERNAME }}/rizin
-        tag-semver: |
-          {{version}}
-          {{major}}.{{minor}}
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx

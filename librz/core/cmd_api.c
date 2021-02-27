@@ -161,7 +161,7 @@ RZ_API void rz_cmd_alias_init(RzCmd *cmd) {
 	cmd->aliases.values = NULL;
 }
 
-RZ_API RzCmd *rz_cmd_new(bool has_cons) {
+RZ_API RzCmd *rz_cmd_new(bool has_cons, bool add_core_plugins) {
 	int i;
 	RzCmd *cmd = RZ_NEW0(RzCmd);
 	if (!cmd) {
@@ -175,7 +175,9 @@ RZ_API RzCmd *rz_cmd_new(bool has_cons) {
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0();
 	cmd->root_cmd_desc = create_cmd_desc(cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
-	rz_core_plugin_init(cmd);
+	if (add_core_plugins) {
+		rz_core_plugin_init(cmd);
+	}
 	rz_cmd_macro_init(&cmd->macro);
 	rz_cmd_alias_init(cmd);
 	return cmd;
@@ -435,7 +437,7 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 			}
 		}
 		rz_list_foreach (cmd->plist, iter, cp) {
-			if (cp->call(cmd->data, input)) {
+			if (cp->call && cp->call(cmd->data, input)) {
 				free(nstr);
 				return true;
 			}
@@ -507,10 +509,14 @@ static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
 }
 
 /**
- * Performs a preprocessing step on the user arguments. This is used to group
- * together some arguments that are returned by the parser as multiple
- * arguments but we want to let the command handler see them as a single one to
- * make life easier for users.
+ * Performs a preprocessing step on the user arguments.
+ *
+ * This is used to group together some arguments that are returned by the
+ * parser as multiple arguments but we want to let the command handler see them
+ * as a single one to make life easier for users.
+ *
+ * It can also provide default arguments as specified by the command
+ * descriptor.
  *
  * For example:
  * `cmdid pd 10` would be considered as having 2 arguments, "pd" and "10".
@@ -546,6 +552,11 @@ static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
 			args->argv[i] = tmp;
 			args->argc = i + 1;
 			return;
+		}
+	}
+	for (; arg && arg->name; arg++, i++) {
+		if (arg->default_value && i >= args->argc) {
+			rz_cmd_parsed_args_addarg(args, arg->default_value);
 		}
 	}
 }
@@ -966,10 +977,22 @@ static char *argv_modes_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	return rz_strbuf_drain(sb);
 }
 
+const RzCmdDescDetail *get_cd_details(RzCmdDesc *cd) {
+	do {
+		if (cd->help->details) {
+			return cd->help->details;
+		}
+		cd = cd->parent;
+	} while (cd);
+	return NULL;
+}
+
 static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
-	if (!cd->help->details) {
+	const RzCmdDescDetail *detail_it = get_cd_details(cd);
+	if (!detail_it) {
 		return;
 	}
+
 	const char *pal_help_color = "",
 		   *pal_input_color = "",
 		   *pal_label_color = "",
@@ -984,7 +1007,6 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 		pal_reset = cons->context->pal.reset;
 	}
 
-	const RzCmdDescDetail *detail_it = cd->help->details;
 	while (detail_it->name) {
 		if (!RZ_STR_ISEMPTY(detail_it->name)) {
 			rz_strbuf_appendf(sb, "\n%s%s:%s\n", pal_label_color, detail_it->name, pal_reset);
@@ -1792,6 +1814,19 @@ RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *a, int n_args, char **ar
 err:
 	free_array(tmp, n_args + 1);
 	return false;
+}
+
+RZ_API bool rz_cmd_parsed_args_addarg(RzCmdParsedArgs *a, const char *arg) {
+	char **tmp = realloc(a->argv, sizeof(a->argv[0]) * (a->argc + 2));
+	if (!tmp) {
+		return false;
+	}
+
+	a->argv = tmp;
+	a->argv[a->argc] = strdup(arg);
+	a->argv[a->argc + 1] = NULL;
+	a->argc++;
+	return true;
 }
 
 RZ_API bool rz_cmd_parsed_args_setcmd(RzCmdParsedArgs *a, const char *cmd) {

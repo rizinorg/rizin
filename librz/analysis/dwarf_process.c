@@ -384,6 +384,7 @@ static RzAnalysisStructMember *parse_struct_member(Context *ctx, ut64 idx, RzAna
 		RzBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
+			free(name);
 			name = get_die_name(die);
 			if (!name) {
 				goto cleanup;
@@ -391,6 +392,7 @@ static RzAnalysisStructMember *parse_struct_member(Context *ctx, ut64 idx, RzAna
 			break;
 		case DW_AT_type:
 			parse_type(ctx, value->reference, &strbuf, &size);
+			free(type);
 			type = rz_strbuf_drain_nofree(&strbuf);
 			if (!type || !*type) {
 				goto cleanup;
@@ -460,6 +462,7 @@ static RzAnalysisEnumCase *parse_enumerator(Context *ctx, ut64 idx, RzAnalysisEn
 		RzBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
+			free(name);
 			name = get_die_name(die);
 			if (!name) {
 				goto cleanup;
@@ -692,6 +695,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 		RzBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
+			free(name);
 			if (!value->string.content) {
 				name = create_type_name_from_offset(die->offset);
 			} else {
@@ -717,6 +721,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	}
 	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
+		free(name);
 		return;
 	}
 	base_type->name = name;

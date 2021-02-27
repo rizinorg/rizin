@@ -449,6 +449,7 @@ RZ_API int rz_core_block_read(RzCore *core);
 RZ_API int rz_core_block_size(RzCore *core, int bsize);
 RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset);
 RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
@@ -840,6 +841,9 @@ typedef struct {
 typedef struct {
 	RzCoreAnalStatsItem *block;
 } RzCoreAnalStats;
+
+RZ_API void rz_core_list_typename_alias_c(RzCore *core, const char *typedef_name);
+RZ_API void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode);
 
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);

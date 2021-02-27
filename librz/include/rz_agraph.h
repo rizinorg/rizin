@@ -50,6 +50,7 @@ typedef struct rz_ascii_graph_t {
 	char *title;
 	Sdb *db;
 	Sdb *nodes; // Sdb with title(key)=RzANode*(value)
+	RzList *dummy_nodes;
 
 	int layout;
 	int is_instep;
