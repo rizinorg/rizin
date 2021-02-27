@@ -65,6 +65,7 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
+            meson_options: -Dbuildtype=release
             enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 45
           - name: linux-meson-gcc-tests
@@ -72,6 +73,7 @@ jobs:
             build_system: meson
             compiler: gcc
             run_tests: true
+            meson_options: -Dbuildtype=release
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 45
             cflags: '-Wno-cpp'
@@ -80,7 +82,7 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Duse_webui=true
+            meson_options: -Dbuildtype=release -Duse_webui=true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
           - name: linux-gcc-tests-asan
@@ -88,7 +90,7 @@ jobs:
             build_system: meson
             compiler: gcc
             cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
-            meson_options: -Db_sanitize=address,undefined -Duse_webui=true
+            meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined -Duse_webui=true
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
             run_tests: true
@@ -108,7 +110,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Duse_capstone_version=v3
+            meson_options: -Dbuildtype=release -Duse_capstone_version=v3
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
@@ -117,7 +119,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Duse_capstone_version=next
+            meson_options: -Dbuildtype=release -Duse_capstone_version=next
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
