@@ -33,11 +33,6 @@
 # Using debian 10 as base image.
 FROM debian:10
 
-# Label base
-LABEL rizin latest
-
-# Radare version
-ARG RZ_VERSION=dev
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=master
 
@@ -45,15 +40,13 @@ ARG with_arm32_as
 ARG with_arm64_as
 ARG with_ppc_as
 
-ENV RZ_VERSION ${RZ_VERSION}
 ENV RZ_PIPE_PY_VERSION ${RZ_PIPE_PY_VERSION}
 
 RUN echo -e "Building versions:\n\
-	RZ_VERSION=$RZ_VERSION\n\
 	RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}"
 
 # Build rizin in a volume to minimize space used by build
-VOLUME ["/mnt"]
+COPY . /tmp/rizin/
 
 # Install all build dependencies
 # Install bindings
@@ -62,27 +55,39 @@ VOLUME ["/mnt"]
 # Cleanup
 # gcc git python3-pip ccache patch
 # pip3 install meson ninja
+
 RUN apt-get update && \
-	apt-get install -y \
+	apt-get install -y --no-install-recommends \
 	cmake \
 	gcc \
+	cpp \
+	g++ \
 	git \
+	make \
+	libc-dev-bin libc6-dev linux-libc-dev \
 	python3-pip \
+	python3-setuptools \
+	python3-wheel \
 	${with_arm64_as:+binutils-aarch64-linux-gnu} \
 	${with_arm32_as:+binutils-arm-linux-gnueabi} \
 	${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
 	pip3 install meson ninja && \
-	cd /mnt && \
+	cd /tmp && \
 	git clone -b "$RZ_PIPE_PY_VERSION" https://github.com/rizinorg/rz-pipe && \
 	pip3 install ./rz-pipe/python && \
-	git clone -b "$RZ_VERSION" --recurse-submodules https://github.com/rizinorg/rizin.git && \
 	cd rizin && \
-	meson build && \
-	meson compile -C build && \
-	meson install -C build && \
+	meson --prefix=/usr /tmp/build && \
+	meson compile -C /tmp/build && \
+	meson install -C /tmp/build && \
+	rm -rf /tmp/build && \
 	pip3 uninstall -y meson ninja && \
 	apt-get remove --purge -y \
-	python3-pip gcc cmake &&\
+	cmake \
+	cpp \
+	g++ \
+	python3-pip \
+	python3-setuptools \
+	python3-wheel && \
 	apt-get autoremove --purge -y && \
 	apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

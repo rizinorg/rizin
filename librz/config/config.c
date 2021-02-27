@@ -146,7 +146,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 	bool json = false;
 	bool isFirst = false;
 
-	if (!IS_NULLSTR(str)) {
+	if (RZ_STR_ISNOTEMPTY(str)) {
 		str = rz_str_trim_head_ro(str);
 		len = strlen(str);
 		if (len > 0 && str[0] == 'j') {
@@ -293,6 +293,9 @@ RZ_API bool rz_config_set_setter(RzConfig *cfg, const char *key, RzConfigCallbac
 	return false;
 }
 
+/**
+ * Returns the value of the config variable of \p name as a string
+ */
 RZ_API const char *rz_config_get(RzConfig *cfg, const char *name) {
 	rz_return_val_if_fail(cfg && name, NULL);
 	RzConfigNode *node = rz_config_node_get(cfg, name);
@@ -310,6 +313,11 @@ RZ_API const char *rz_config_get(RzConfig *cfg, const char *name) {
 	return NULL;
 }
 
+/**
+ * Reads the value of the config variable of \p name only and only if
+ * the variable is boolean, then tries to write back the inverted value.
+ * Returns true in case of success.
+ */
 RZ_API bool rz_config_toggle(RzConfig *cfg, const char *name) {
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (!node) {
@@ -327,6 +335,10 @@ RZ_API bool rz_config_toggle(RzConfig *cfg, const char *name) {
 	return true;
 }
 
+/**
+ * Reads the value of the config variable of \p name only and only if
+ * the variable is integer.
+ */
 RZ_API ut64 rz_config_get_i(RzConfig *cfg, const char *name) {
 	RzConfigNode *node = rz_config_node_get(cfg, name);
 	if (node) {
@@ -336,12 +348,29 @@ RZ_API ut64 rz_config_get_i(RzConfig *cfg, const char *name) {
 		if (node->i_value || !strcmp(node->value, "false")) {
 			return node->i_value;
 		}
+		// TODO: Remove it once the switch to `rz_config_get_b()` is complete
 		if (!strcmp(node->value, "true")) {
 			return 1;
 		}
 		return (ut64)rz_num_math(cfg->num, node->value);
 	}
 	return (ut64)0LL;
+}
+
+/**
+ * Reads the value of the config variable of \p name only and only if
+ * the variable is boolean. Returns false in case of the failure.
+ */
+RZ_API bool rz_config_get_b(RzConfig *cfg, const char *name) {
+	RzConfigNode *node = rz_config_node_get(cfg, name);
+	if (!node) {
+		return false;
+	}
+	if (!rz_config_node_is_bool(node)) {
+		RZ_LOG_DEBUG("(error: '%s' is not a boolean variable)\n", name);
+		return false;
+	}
+	return rz_str_is_true(node->value);
 }
 
 RZ_API const char *rz_config_node_type(RzConfigNode *node) {
@@ -386,14 +415,85 @@ static bool __is_true_or_false(const char *s) {
 	return s && (!rz_str_casecmp(s, "true") || !rz_str_casecmp(s, "false"));
 }
 
+/**
+ * Writes the boolean \p value in the config variable of \p name only and only if
+ * the variable is boolean.
+ */
+RZ_API RzConfigNode *rz_config_set_b(RzConfig *cfg, const char *name, bool value) {
+	RzConfigNode *node = NULL;
+	char *ov = NULL;
+	ut64 oi = 0;
+
+	rz_return_val_if_fail(cfg && cfg->ht, NULL);
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
+
+	node = rz_config_node_get(cfg, name);
+	if (node) {
+		if (rz_config_node_is_ro(node)) {
+			RZ_LOG_DEBUG("(error: '%s' config key is read only)\n", name);
+			return node;
+		}
+
+		oi = node->i_value;
+		if (node->value) {
+			ov = strdup(node->value);
+		}
+		if (rz_config_node_is_bool(node)) {
+			node->i_value = value ? 1 : 0;
+			char *svalue = strdup(rz_str_bool(value));
+			if (svalue) {
+				free(node->value);
+				node->value = svalue;
+			}
+		} else {
+			RZ_LOG_ERROR("(error: '%s' is not a boolean variable)\n", name);
+			free(ov);
+			return NULL;
+		}
+	} else {
+		if (!cfg->lock) {
+			node = rz_config_node_new(name, rz_str_bool(value));
+			if (!node) {
+				node = NULL;
+				goto beach;
+			}
+			node->flags = CN_RW | CN_BOOL;
+			node->i_value = value ? 1 : 0;
+			ht_pp_insert(cfg->ht, node->name, node);
+			if (cfg->nodes) {
+				rz_list_append(cfg->nodes, node);
+			}
+		} else {
+			RZ_LOG_ERROR("(locked: no new keys can be created (%s))\n", name);
+		}
+	}
+
+	if (node && node->setter) {
+		if (!node->setter(cfg->user, node)) {
+			if (oi != UT64_MAX) {
+				node->i_value = oi;
+			}
+			free(node->value);
+			node->value = strdup(ov ? ov : "");
+		}
+	}
+
+beach:
+	free(ov);
+	return node;
+}
+
 /* TODO: reduce number of strdups here */
+/**
+ * Writes the string \p value in the config variable of \p name.
+ */
 RZ_API RzConfigNode *rz_config_set(RzConfig *cfg, const char *name, const char *value) {
 	RzConfigNode *node = NULL;
 	char *ov = NULL;
 	ut64 oi;
 
 	rz_return_val_if_fail(cfg && cfg->ht, NULL);
-	rz_return_val_if_fail(!IS_NULLSTR(name), NULL);
+	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(name), NULL);
 
 	node = rz_config_node_get(cfg, name);
 	if (node) {
@@ -516,6 +616,10 @@ RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64
 	}
 }
 
+/**
+ * Writes the integer \p value in the config variable of \p name only and only if
+ * the variable is integer.
+ */
 RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64 i) {
 	char buf[128], *ov = NULL;
 	rz_return_val_if_fail(cfg && name, NULL);
@@ -525,8 +629,11 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64
 			node = NULL;
 			goto beach;
 		}
-		ov = node->value;
+		if (node->value) {
+			ov = strdup(node->value);
+		}
 		rz_config_node_value_format_i(buf, sizeof(buf), i, NULL);
+		free(node->value);
 		node->value = strdup(buf);
 		if (!node->value) {
 			node = NULL;
@@ -548,7 +655,7 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64
 				rz_list_append(cfg->nodes, node);
 			}
 		} else {
-			eprintf("(locked: no new keys can be created (%s))\n", name);
+			RZ_LOG_ERROR("(locked: no new keys can be created (%s))\n", name);
 		}
 	}
 
@@ -558,8 +665,7 @@ RZ_API RzConfigNode *rz_config_set_i(RzConfig *cfg, const char *name, const ut64
 		if (!ret) {
 			node->i_value = oi;
 			free(node->value);
-			node->value = ov ? ov : strdup("");
-			ov = NULL;
+			node->value = strdup(ov ? ov : "");
 		}
 	}
 beach:

@@ -2,6 +2,8 @@
 
 #include <rz_core.h>
 
+#include "core_private.h"
+
 #define NODECB(w, x, y)    rz_config_set_cb(cfg, w, x, y)
 #define NODEICB(w, x, y)   rz_config_set_i_cb(cfg, w, x, y)
 #define SETDESC(x, y)      rz_config_node_desc(x, y)
@@ -454,7 +456,7 @@ static bool cb_scrrainbow(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_RAINBOW;
-		rz_core_cmd0(core, "ecr");
+		rz_cons_pal_random();
 	} else {
 		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
 		rz_core_cmd0(core, "ecoo");
@@ -2577,7 +2579,7 @@ static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_cmd0(core, "afcl");
+			rz_core_analysis_calling_conventions_print(core);
 			return false;
 		}
 		rz_analysis_set_syscc_default(core->analysis, node->value);
@@ -2588,7 +2590,7 @@ static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_cmd0(core, "afcl");
+			rz_core_analysis_calling_conventions_print(core);
 			return false;
 		}
 		rz_analysis_set_cc_default(core->analysis, node->value);
@@ -2823,14 +2825,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* dir.prefix is used in other modules, set it first */
 	{
 		char *pfx = rz_sys_getenv("RZ_PREFIX");
-#if __WINDOWS__
-		const char *invoke_dir = rz_sys_prefix(NULL);
-		if (!pfx && invoke_dir) {
-			pfx = strdup(invoke_dir);
-		}
-#endif
 		if (!pfx) {
-			pfx = strdup(RZ_PREFIX);
+			pfx = strdup(rz_sys_prefix(NULL));
 		}
 		SETCB("dir.prefix", pfx, (RzConfigCallback)&cb_dirpfx, "Default prefix rizin was compiled for");
 		free(pfx);
@@ -3309,7 +3305,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("dbg.trace_continue", "true", &cb_dbg_trace_continue, "Trace every instruction between the initial PC position and the PC position at the end of continue's execution");
 	SETCB("dbg.create_new_console", "true", &cb_dbg_create_new_console, "Create a new console window for the debugee on debug start");
 	/* debug */
-	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;sHu'");
+	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;shu'");
 #if DEBUGGER
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
 #else
@@ -3423,16 +3419,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("http.index", "index.html", "Main html file to check in directory");
 	SETPREF("http.bind", "localhost", "Server address");
 	SETPREF("http.homeroot", RZ_JOIN_2_PATHS("~", RZ_HOME_WWWROOT), "http home root directory");
-#if __WINDOWS__
-	{
-		char *wwwroot = rz_str_newf("%s\\share\\www", rz_sys_prefix(NULL));
-		SETPREF("http.root", wwwroot, "http root directory");
-		free(wwwroot);
-	}
-#elif __ANDROID__
+#if __ANDROID__
 	SETPREF("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
 #else
-	SETPREF("http.root", RZ_WWWROOT, "http root directory");
+	char *wwwroot = rz_str_rz_prefix(RZ_WWWROOT);
+	SETPREF("http.root", wwwroot, "http root directory");
+	free(wwwroot);
 #endif
 	SETPREF("http.port", "9090", "HTTP server port");
 	SETPREF("http.maxport", "9999", "Last HTTP server port");
@@ -3469,7 +3461,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("graph.font", "Courier", "Font for dot graphs");
 	SETBPREF("graph.offset", "false", "Show offsets in graphs");
 	SETBPREF("graph.bytes", "false", "Show opcode bytes in graphs");
-	SETBPREF("graph.web", "false", "Display graph in web browser (VV)");
 	SETI("graph.from", UT64_MAX, "Lower bound address when drawing global graphs");
 	SETI("graph.to", UT64_MAX, "Upper bound address when drawing global graphs");
 	SETI("graph.scroll", 5, "Scroll speed in ascii-art graph");

@@ -473,7 +473,7 @@ RZ_API int rz_debug_signal_resolve(RzDebug *dbg, const char *signame);
 RZ_API const char *rz_debug_signal_resolve_i(RzDebug *dbg, int signum);
 RZ_API void rz_debug_signal_setup(RzDebug *dbg, int num, int opt);
 RZ_API int rz_debug_signal_set(RzDebug *dbg, int num, ut64 addr);
-RZ_API void rz_debug_signal_list(RzDebug *dbg, int mode);
+RZ_API void rz_debug_signal_list(RzDebug *dbg, RzOutputMode mode);
 RZ_API int rz_debug_kill(RzDebug *dbg, int pid, int tid, int sig);
 RZ_API RzList *rz_debug_kill_list(RzDebug *dbg);
 // XXX: must be uint64 action
@@ -510,7 +510,6 @@ RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad);
 
 /* registers */
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write);
-RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color);
 RZ_API int rz_debug_reg_set(RzDebug *dbg, const char *name, ut64 num);
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name);
 RZ_API ut64 rz_debug_reg_get_err(RzDebug *dbg, const char *name, int *err, utX *value);

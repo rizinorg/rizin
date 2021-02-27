@@ -2,36 +2,36 @@ rizin:
   - binrz/rizin/*
   - librz/main/rizin.c
 
-rz_bin:
-  - binrz/rz_bin/*
+rz-bin:
+  - binrz/rz-bin/*
   - librz/main/rz_bin.c
 
-rz_diff:
-  - binrz/rz_diff/*
+rz-diff:
+  - binrz/rz-diff/*
   - librz/main/rz_diff.c
 
-rz_find:
-  - binrz/rz_find/*
+rz-find:
+  - binrz/rz-find/*
   - librz/main/rz_find.c
 
-rz_gg:
-  - binrz/rz_gg/*
+rz-gg:
+  - binrz/rz-gg/*
   - librz/main/rz_gg.c
 
-rz_hash:
-  - binrz/rz_hash/*
+rz-hash:
+  - binrz/rz-hash/*
   - librz/main/rz_hash.c
 
-rz_run:
-  - binrz/rz_run/*
+rz-run:
+  - binrz/rz-run/*
   - librz/main/rz_run.c
 
-rz_asm:
-  - binrz/rz_asm/*
+rz-asm:
+  - binrz/rz-asm/*
   - librz/main/rz_asm.c
 
-rz_ax:
-  - binrz/rz_ax/*
+rz-ax:
+  - binrz/rz-ax/*
   - librz/main/rz_ax.c
 
 RzAnalysis:
@@ -127,8 +127,8 @@ infrastructure:
   - .builds/**/*
   - .github/workflows/*
 
-rz_test:
-  - binrz/rz_test/*
+rz-test:
+  - binrz/rz-test/*
   - test/**/*
 
 java:

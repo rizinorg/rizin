@@ -151,6 +151,10 @@ typedef enum {
 #define __KFBSD__ 0
 #endif
 
+#ifdef __MSYS__
+#define __UNIX__ 1
+#endif
+
 #ifdef _MSC_VER
 #define restrict
 #define strcasecmp  stricmp
@@ -603,7 +607,7 @@ typedef enum {
 	RZ_SYS_ARCH_RISCV
 } RzSysArch;
 
-#if HAVE_CLOCK_NANOSLEEP && CLOCK_MONOTONIC && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
+#if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC) && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
 #define HAS_CLOCK_NANOSLEEP 1
 #else
 #define HAS_CLOCK_NANOSLEEP 0

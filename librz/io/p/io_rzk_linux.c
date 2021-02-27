@@ -574,7 +574,7 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 				memcpy(databuf, buf, strlen(buf) + 1);
 				len = rz_str_unescape((char *)databuf);
 			}
-			ret = WriteMemory(io, iodesc, ioctl_n, pid, addr, (const ut8 *)databuf, len);
+			WriteMemory(io, iodesc, ioctl_n, pid, addr, (const ut8 *)databuf, len);
 		} else {
 			eprintf("Failed to allocate buffer.\n");
 		}

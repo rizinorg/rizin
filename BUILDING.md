@@ -1,21 +1,11 @@
 # Clone the Rizin project and keep it updated
 
-Rizin uses submodules, so make sure to clone them as well. The first time you
-download Rizin you can use:
-```
-$ git clone --recurse-submodules https://github.com/rizinorg/rizin
-```
-or:
+The first time you download Rizin you can use:
 ```
 $ git clone https://github.com/rizinorg/rizin
-$ cd rizin
-$ git submodule init
-$ git submodule update
 ```
 
-After that, use `git pull --recurse-submodules` to update both the Rizin
-codebase and submodules, or `git submodule update` to just update the
-submodules.
+After that, use `git pull` to update the Rizin codebase.
 
 # Build
 
@@ -163,8 +153,7 @@ corresponding package manager's method for removing a package to uninstall Rizin
 
 # Update
 
-Firstly, use `git pull --recurse-submodules` to update both the Rizin
-codebase and its submodules to the latest version.
+Firstly, use `git pull` to update the Rizin codebase to the latest version.
 
 To re-build Rizin after you have updated your source code, you can use:
 ```
@@ -175,5 +164,9 @@ $ sudo ninja -C build install # or `sudo meson install -C build`. `sudo` may not
 If you are a developer, it might not be necessary to run the `install` step
 (the second step from above) every time you build Rizin. You can directly use
 `rizin` from `./build/binrz/rizin/rizin.`
+
+If you encounter issues while re-building Rizin, try to remove the existing
+build directory (e.g. `rm -r ./build`) and clean the subproject files
+downloaded by meson (e.g. `git clean -dxff subprojects/`).
 
 [doc/PACKAGERS.md]: https://github.com/rizinorg/rizin/blob/dev/doc/PACKAGERS.md

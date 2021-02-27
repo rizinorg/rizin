@@ -83,18 +83,21 @@ NAME=rz-hash -D base64 -s "YWRtaW4="
 FILE=-
 CMDS=!rz-hash -D base64 -s "YWRtaW4="
 EXPECT=admin
+EXPECT_ERR=
 RUN
 
 NAME=rz-hash -E base64 -s "admin"
 FILE=-
 CMDS=!rz-hash -E base64 -s "admin"
 EXPECT=YWRtaW4=
+EXPECT_ERR=
 RUN
 
 NAME=rz-hash -E base64 -x "61646d696e"
 FILE=-
 CMDS=!rz-hash -E base64 -x "61646d696e"
 EXPECT=YWRtaW4=
+EXPECT_ERR=
 RUN
 
 NAME=rz-hash -a md5 -x "61646d696e"

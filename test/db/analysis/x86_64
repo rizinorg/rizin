@@ -758,8 +758,8 @@ FILE=bins/mach0/mach0-i386
 CMDS=<<EOF
 e analysis.hasnext=0
 aa
-afo sym._foo
-afo sym._bar
+afo @ sym._foo
+afo @ sym._bar
 EOF
 EXPECT=<<EOF
 0x00001f50
@@ -1942,8 +1942,8 @@ afvd arg_ch
 afvd var_10h
 EOF
 EXPECT=<<EOF
-pf d @ebp+0xc
-pf d @ebp-0x10
+arg arg_ch = 0x0000000c = -1
+var var_10h = 0xfffffffffffffff0 = -1
 EOF
 RUN
 
@@ -2899,6 +2899,103 @@ diff: type: new
 EOF
 RUN
 
+NAME=basic block overlaps function start
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bytes=true
+e asm.bits=64
+e io.cache=true
+wx b821c10010ebf9
+s 3
+af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; pdf
+?e
+e asm.bb.middle=false
+pd 2 @ 0
+?e
+e asm.bb.middle=true
+pd 3 @ 0
+EOF
+EXPECT=<<EOF
+#
+offset: 0x00000003
+name: fcn.00000003
+size: 7
+is-pure: true
+realsz: 9
+stackframe: 0
+call-convention: amd64
+cyclomatic-cost: 4
+cyclomatic-complexity: 0
+bits: 64
+type: fcn [NEW]
+num-bbs: 3
+edges: 3
+end-bbs: 0
+call-refs: 0x00000000 J
+data-refs:
+code-xrefs: 0x00000005 J
+noreturn: false
+in-degree: 1
+out-degree: 0
+data-xrefs:
+locals: 0
+args: 0
+diff: type: new
+
+0x00000000 0x00000005 00:0000 5 j 0x00000005
+0x00000003 0x00000005 00:0000 2 j 0x00000005
+0x00000005 0x00000007 00:0000 2 j 0x00000000
+
+| ; CODE XREF from fcn.00000003 @ 0x5
+| ;-- (0x00000003) fcn.00000003:
+| 0x00000000  ~   b821c10010     mov   eax, 0x1000c121
+| ----------- true: 0x00000005
+/ 9: fcn.00000003 ();
+| 0x00000003      0010           add   byte [rax], dl
+| ----------- true: 0x00000005
+| 0x00000005      ebf9           jmp   0
+| ----------- true: 0x00000000
+
+[0x00000003]>  # fcn.00000003 ();
+.----.
+|    |
+|.-------------------------------------.   .-----------------------.
+||  0x0                                |   |  0x3                  |
+|| ; CODE XREF from fcn.00000003 @ 0x5 |   | 9: fcn.00000003 ();   |
+|| ;-- (0x00000003) fcn.00000003:      |   | add byte [rax], dl    |
+|| mov eax, 0x1000c121                 |   `-----------------------'
+|`-------------------------------------'       v
+|    v                                         |
+|    |                                         |
+|    '----------------------------.            |
+|                               .--------------'
+|                               | |
+|                         .--------------------.
+|                         |  0x5               |
+|                         | jmp 0              |
+|                         `--------------------'
+|                             v
+|                             |
+`-----------------------------'
+
+/ 9: fcn.00000003 ();
+|           0x00000003      0010           add   byte [rax], dl
+|           0x00000005      ebf9           jmp   0
+
+|           ; CODE XREF from fcn.00000003 @ 0x5
+|           ;-- (0x00000003) fcn.00000003:
+|           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
+|           0x00000005      ebf9           jmp   0
+
+|           ; CODE XREF from fcn.00000003 @ 0x5
+|           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
+/ 9: fcn.00000003 ();
+|           0x00000003      0010           add   byte [rax], dl
+|           0x00000005      ebf9           jmp   0
+EOF
+RUN
+
 NAME=so -N and overlapping basic blocks
 FILE=-
 CMDS=<<EOF
@@ -3544,7 +3641,7 @@ NAME=Jump table attached to wrong basic block bug
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aF @ 0x00459990
-ab. @ 0x00459aa7~outputs
+ab @ 0x00459aa7~outputs
 EOF
 EXPECT=<<EOF
 outputs: 11

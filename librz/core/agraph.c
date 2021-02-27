@@ -5,6 +5,8 @@
 #include <rz_util/rz_graph_drawable.h>
 #include <ctype.h>
 #include <limits.h>
+#include "core_private.h"
+#include "cmd_descs/cmd_descs.h"
 
 static int mousemode = 0;
 static int disMode = 0;
@@ -200,6 +202,12 @@ static void showcursor(RzCore *core, int x) {
 
 static char *get_title(ut64 addr) {
 	return rz_str_newf("0x%" PFMT64x, addr);
+}
+
+static void agraph_node_free(RzANode *n) {
+	free(n->title);
+	free(n->body);
+	free(n);
 }
 
 static int agraph_refresh(struct agraph_refresh_data *grd);
@@ -630,7 +638,7 @@ static void remove_cycles(RzAGraph *g) {
 	const RzGraphEdge *e;
 	const RzListIter *it;
 
-	g->back_edges = rz_list_new();
+	g->back_edges = rz_list_newf(free);
 	cyclic_vis.back_edge = (RzGraphEdgeCallback)view_cyclic_edge;
 	cyclic_vis.data = g;
 	rz_graph_dfs(g->graph, &cyclic_vis);
@@ -729,6 +737,7 @@ static void create_dummy_nodes(RzAGraph *g) {
 			dummy->is_reversed = is_reversed(g, e);
 			dummy->w = 1;
 			rz_agraph_add_edge_at(g, prev, dummy, nth);
+			rz_list_append(g->dummy_nodes, dummy);
 
 			prev = dummy;
 			nth = -1;
@@ -1606,7 +1615,6 @@ static void place_original(RzAGraph *g) {
 }
 
 #if 0
-static void free_anode(RzANode *n);
 static void remove_dummy_nodes(const RzAGraph *g) {
 	const RzList *nodes = rz_graph_get_nodes (g->graph);
 	RzGraphNode *gn;
@@ -1695,7 +1703,6 @@ static void fix_back_edge_dummy_nodes(RzAGraph *g, RzANode *from, RzANode *to) {
 	}
 	if (tmp) {
 		tmp = v;
-		v = to;
 		while (tmp->gnode->idx != from->gnode->idx) {
 			v = tmp;
 			tmp = (RzANode *)(((RzGraphNode *)rz_list_first(v->gnode->out_nodes))->data);
@@ -1925,6 +1932,12 @@ err:
 	return;
 }
 
+static void agraph_edge_free(AEdge *e) {
+	rz_list_free(e->x);
+	rz_list_free(e->y);
+	free(e);
+}
+
 /* 1) trasform the graph into a DAG
  * 2) partition the nodes in layers
  * 3) split long edges that traverse multiple layers
@@ -1935,7 +1948,7 @@ static void set_layout(RzAGraph *g) {
 	int i, j, k;
 
 	rz_list_free(g->edges);
-	g->edges = rz_list_new();
+	g->edges = rz_list_newf((RzListFree)agraph_edge_free);
 
 	remove_cycles(g);
 	assign_layers(g);
@@ -3058,7 +3071,6 @@ static void agraph_print_edges(RzAGraph *g) {
 		int leftlen, rightlen;
 		int minx = 0, maxx = 0;
 		struct tmplayer *tt = NULL;
-		tl = rz_list_get_n(lyr, temp->fromlayer);
 		if (rz_cons_is_breaked()) {
 			break;
 		}
@@ -3327,7 +3339,7 @@ static void agraph_prev_node(RzAGraph *g) {
 
 static void agraph_update_title(RzCore *core, RzAGraph *g, RzAnalysisFunction *fcn) {
 	RzANode *a = get_anode(g->curnode);
-	char *sig = rz_core_cmd_str(core, "afcf");
+	char *sig = rz_core_analysis_function_signature(core, RZ_OUTPUT_MODE_STANDARD, NULL);
 	char *new_title = rz_str_newf(
 		"%s[0x%08" PFMT64x "]> %s # %s ",
 		graphCursor ? "(cursor)" : "",
@@ -3522,7 +3534,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
 		char *title = get_title(block ? block->addr : addr);
 		if (!acur || strcmp(acur->title, title)) {
-			rz_core_cmd0(core, "sr PC");
+			rz_core_seek_to_register(core, "PC", false);
 		}
 		free(title);
 		g->is_instep = false;
@@ -3536,7 +3548,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 					if (!rz_cons_yesno('y', "\rNo function at 0x%08" PFMT64x ". Define it here (Y/n)? ", core->offset)) {
 						return 0;
 					}
-					rz_core_cmd0(core, "af");
+					rz_core_analysis_function_add(core, NULL, core->offset, false);
 				}
 				f = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 				g->need_reload_nodes = true;
@@ -3585,18 +3597,13 @@ static void agraph_init(RzAGraph *g) {
 	g->force_update_seek = true;
 	g->graph = rz_graph_new();
 	g->nodes = sdb_new0();
+	g->dummy_nodes = rz_list_newf((RzListFree)agraph_node_free);
 	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
 	g->hints = 1;
 	g->movspeed = DEFAULT_SPEED;
 	g->db = sdb_new0();
 	rz_vector_init(&g->ghits.word_list, sizeof(struct rz_agraph_location), NULL, NULL);
-}
-
-static void free_anode(RzANode *n) {
-	free(n->title);
-	free(n->body);
-	free(n);
 }
 
 static void graphNodeMove(RzAGraph *g, int dir, int speed) {
@@ -3619,7 +3626,7 @@ static void graphNodeMove(RzAGraph *g, int dir, int speed) {
 	if (is_mini(g)) {
 		discroll += (delta * speed);
 	} else if (g->is_dis) {
-		rz_core_cmdf(core, "so %d", (delta * 4) * speed);
+		rz_core_seek_opcode(core, (delta * 4) * speed, false);
 	} else {
 		move_current_node(g, 0, delta * speed);
 	}
@@ -3631,10 +3638,13 @@ static void agraph_free_nodes(const RzAGraph *g) {
 	RzANode *a;
 
 	graph_foreach_anode (rz_graph_get_nodes(g->graph), it, n, a) {
-		free_anode(a);
+		if (!a->is_dummy) {
+			agraph_node_free(a);
+		}
 	}
 
 	sdb_free(g->nodes);
+	rz_list_free(g->dummy_nodes);
 }
 
 static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
@@ -3719,8 +3729,8 @@ RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *tit
 	res->klass = -1;
 	res->difftype = color;
 	res->gnode = rz_graph_add_node(g->graph, res);
-	sdb_num_set(g->nodes, res->title, (ut64)(size_t)res, 0);
-	if (res->title) {
+	if (RZ_STR_ISNOTEMPTY(res->title)) {
+		sdb_num_set(g->nodes, res->title, (ut64)(size_t)res, 0);
 		char *s, *estr, *b;
 		size_t len;
 		sdb_array_add(g->db, "agraph.nodes", res->title, 0);
@@ -3772,7 +3782,7 @@ RZ_API bool rz_agraph_del_node(const RzAGraph *g, const char *title) {
 	rz_graph_del_node(g->graph, res->gnode);
 	res->gnode = NULL;
 
-	free_anode(res);
+	agraph_node_free(res);
 	return true;
 }
 
@@ -3870,6 +3880,7 @@ RZ_API void rz_agraph_reset(RzAGraph *g) {
 		rz_list_purge(g->edges);
 	}
 	g->nodes = sdb_new0();
+	g->dummy_nodes = rz_list_newf((RzListFree)agraph_node_free);
 	g->update_seek_on = NULL;
 	g->need_reload_nodes = false;
 	g->need_set_layout = true;
@@ -3977,46 +3988,24 @@ static void seek_to_node(RzANode *n, RzCore *core) {
 }
 
 static void graph_single_step_in(RzCore *core, RzAGraph *g) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
-		if (core->print->cur_enabled) {
-			// dcu 0xaddr
-			rz_core_cmdf(core, "dcu 0x%08" PFMT64x, core->offset + core->print->cur);
-			core->print->cur_enabled = 0;
-		} else {
-			rz_core_cmd(core, "ds", 0);
-			rz_core_cmd(core, ".dr*", 0);
-		}
-	} else {
-		rz_core_cmd(core, "aes", 0);
-		rz_core_cmd(core, ".ar*", 0);
-	}
+	rz_core_debug_single_step_in(core);
 	g->is_instep = true;
 	g->need_reload_nodes = true;
 }
 
 static void graph_single_step_over(RzCore *core, RzAGraph *g) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
-		if (core->print->cur_enabled) {
-			rz_core_cmd(core, "dcr", 0);
-			core->print->cur_enabled = 0;
-		} else {
-			rz_core_cmd(core, "dso", 0);
-			rz_core_cmd(core, ".dr*", 0);
-		}
-	} else {
-		rz_core_cmd(core, "aeso", 0);
-		rz_core_cmd(core, ".ar*", 0);
-	}
+	rz_core_debug_single_step_over(core);
 	g->is_instep = true;
 	g->need_reload_nodes = true;
 }
 
 static void graph_breakpoint(RzCore *core) {
-	rz_core_cmd(core, "dbs $$", 0);
+	ut64 addr = core->print->cur_enabled ? core->offset + core->print->cur : core->offset;
+	rz_core_debug_breakpoint_toggle(core, addr);
 }
 
 static void graph_continue(RzCore *core) {
-	rz_core_cmd(core, "dc", 0);
+	rz_debug_continue_oldhandler(core, "");
 }
 static void applyDisMode(RzCore *core) {
 	switch (disMode) {
@@ -4213,7 +4202,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	rz_cons_break_push(NULL, NULL);
 
 	while (!exit_graph && !is_error && !rz_cons_is_breaked()) {
-		w = rz_cons_get_size(&h);
+		rz_cons_get_size(&h);
 		invscroll = rz_config_get_i(core->config, "graph.invscroll");
 		ret = agraph_refresh(grd);
 
@@ -4260,10 +4249,12 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 			// Those hardcoded keys are useful only for aegi, should add subcommand of ag to set key actions
 		case '1':
-			rz_core_cmd0(core, "so;.aeg*");
+			rz_core_seek_opcode(core, 1, false);
+			rz_core_cmd0(core, ".aeg*");
 			break;
 		case '2':
-			rz_core_cmd0(core, "so -1;.aeg*");
+			rz_core_seek_opcode(core, -1, false);
+			rz_core_cmd0(core, ".aeg*");
 			break;
 		case '=': { // TODO: edit
 			showcursor(core, true);
@@ -4322,21 +4313,32 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case '>':
 			if (fcn && rz_cons_yesno('y', "Compute function callgraph? (Y/n)")) {
-				rz_core_cmd0(core, "ag-;.agc* @$FB;.axfg @$FB;aggi");
+				rz_core_agraph_reset(core);
+				rz_core_cmd0(core, ".agc* @$FB;.axfg @$FB");
+				rz_core_agraph_print_interactive(core);
 			}
 			break;
 		case '<':
 			// rz_core_visual_refs (core, true, false);
 			if (fcn) {
-				rz_core_cmd0(core, "ag-;.axtg $FB;aggi");
+				rz_core_agraph_reset(core);
+				rz_core_cmd0(core, ".axtg $FB");
+				rz_core_agraph_print_interactive(core);
 			}
 			break;
 		case 'G':
-			rz_core_cmd0(core, "ag-;.dtg*;aggi");
+			rz_core_agraph_reset(core);
+			rz_core_cmd0(core, ".dtg*");
+			rz_core_agraph_print_interactive(core);
 			break;
 		case 'V':
 			if (fcn) {
 				agraph_toggle_callgraph(g);
+			}
+			break;
+		case 'Z':
+			if (okey == 27) { // shift-tab
+				agraph_prev_node(g);
 			}
 			break;
 		case 's':
@@ -4507,27 +4509,22 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				g->need_reload_nodes = true;
 			}
 			// TODO: toggle shortcut hotkeys
-			if (rz_config_get_i(core->config, "asm.hint.call")) {
-				rz_core_cmd0(core, "e!asm.hint.call");
-				rz_core_cmd0(core, "e!asm.hint.jmp");
-			} else if (rz_config_get_i(core->config, "asm.hint.jmp")) {
-				rz_core_cmd0(core, "e!asm.hint.jmp");
-				rz_core_cmd0(core, "e!asm.hint.lea");
-			} else if (rz_config_get_i(core->config, "asm.hint.lea")) {
-				rz_core_cmd0(core, "e!asm.hint.lea");
-				rz_core_cmd0(core, "e!asm.hint.call");
-			}
+			rz_core_visual_toggle_hints(core);
 			break;
 		case '$':
-			rz_core_cmd(core, "dr PC=$$", 0);
-			rz_core_cmd(core, "sr PC", 0);
+			if (core->print->cur_enabled) {
+				rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
+			} else {
+				rz_core_debug_reg_set(core, "PC", core->offset, NULL);
+			}
+			rz_core_seek_to_register(core, "PC", false);
 			g->need_reload_nodes = true;
 			break;
 		case 'R':
 			if (rz_config_get_i(core->config, "scr.randpal")) {
 				rz_cons_pal_random();
 			} else {
-				rz_core_cmd0(core, "ecn");
+				rz_core_theme_nextpal(core, 'n');
 			}
 			if (!fcn) {
 				break;
@@ -4550,7 +4547,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				char buf[256];
 				rz_line_set_prompt("[comment]> ");
 				if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) > 0) {
-					rz_core_cmdf(core, "\"CC %s\"", buf);
+					rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, core->offset, buf);
 				}
 				g->need_reload_nodes = true;
 				showcursor(core, false);
@@ -4654,7 +4651,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case 'j':
 			if (g->is_dis) {
-				rz_core_cmd0(core, "so 1");
+				rz_core_seek_opcode(core, 1, false);
 			} else {
 				if (graphCursor) {
 					int speed = (okey == 27) ? PAGEKEY_SPEED : movspeed;
@@ -4667,7 +4664,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case 'k':
 			if (g->is_dis) {
-				rz_core_cmd0(core, "so -1");
+				rz_core_seek_opcode(core, -1, false);
 			} else {
 				if (graphCursor) {
 					int speed = (okey == 27) ? PAGEKEY_SPEED : movspeed;
@@ -4882,6 +4879,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 	if (graph_allocated) {
 		rz_agraph_free(g);
 	} else {
+		rz_cons_canvas_free(g->can);
 		g->can = o_can;
 	}
 	rz_config_hold_restore(hc);

@@ -2,6 +2,7 @@ files = [
   'subprocess-helloworld',
   'subprocess-stdin',
   'subprocess-multiargs',
+  'subprocess-interactive',
 ]
 
 foreach file : files

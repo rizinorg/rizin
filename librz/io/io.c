@@ -676,6 +676,7 @@ RZ_API int rz_io_fini(RzIO *io) {
 		RZ_FREE(io->runprofile);
 	}
 	rz_event_free(io->event);
+	free(io->envprofile);
 #if RZ_IO_USE_PTRACE_WRAP
 	if (io->ptrace_wrap) {
 		ptrace_wrap_instance_stop(io->ptrace_wrap);

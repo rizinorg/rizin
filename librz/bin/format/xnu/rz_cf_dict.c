@@ -3,7 +3,7 @@
 #include <rz_util.h>
 #include <rz_list.h>
 
-#include "yxml.h"
+#include <yxml.h>
 #include "rz_cf_dict.h"
 
 #define XMLBUFSIZE 4096

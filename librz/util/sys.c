@@ -198,12 +198,31 @@ RZ_API void rz_sys_exit(int status, bool nocleanup) {
 	}
 }
 
+#if __WINDOWS__
+static HANDLE sys_opendir(const char *path, WIN32_FIND_DATAW *entry) {
+	rz_return_val_if_fail(path, NULL);
+	wchar_t dir[MAX_PATH];
+	wchar_t *wcpath = 0;
+	if (!(wcpath = rz_utf8_to_utf16(path))) {
+		return NULL;
+	}
+	swprintf(dir, MAX_PATH, L"%ls\\*.*", wcpath);
+	free(wcpath);
+	return FindFirstFileW(dir, entry);
+}
+#else
+static DIR *sys_opendir(const char *path) {
+	rz_return_val_if_fail(path, NULL);
+	return opendir(path);
+}
+#endif
+
 RZ_API RzList *rz_sys_dir(const char *path) {
 	RzList *list = NULL;
 #if __WINDOWS__
 	WIN32_FIND_DATAW entry;
 	char *cfname;
-	HANDLE fh = rz_sys_opendir(path, &entry);
+	HANDLE fh = sys_opendir(path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
 		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
 		return list;
@@ -220,7 +239,7 @@ RZ_API RzList *rz_sys_dir(const char *path) {
 	FindClose(fh);
 #else
 	struct dirent *entry;
-	DIR *dir = rz_sys_opendir(path);
+	DIR *dir = sys_opendir(path);
 	if (dir) {
 		list = rz_list_new();
 		if (list) {
@@ -570,7 +589,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 	}
 	char buffer[1024], *outputptr = NULL;
 	char *inputptr = (char *)input;
-	int pid, bytes = 0, status;
+	int pid, bytes = 0, status = 0;
 	int sh_in[2], sh_out[2], sh_err[2];
 
 	if (len) {
@@ -711,11 +730,6 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 		waitpid(pid, &status, 0);
 		bool ret = true;
 		if (status) {
-			// char *escmd = rz_str_escape (cmd);
-			// eprintf ("error code %d (%s): %s\n", WEXITSTATUS (status), escmd, *sterr);
-			// eprintf ("(%s)\n", output);
-			// eprintf ("%s: failed command '%s'\n", __func__, escmd);
-			// free (escmd);
 			ret = false;
 		}
 
@@ -1277,8 +1291,14 @@ RZ_API int rz_sys_getpid(void) {
 RZ_API const char *rz_sys_prefix(const char *pfx) {
 	static char *prefix = NULL;
 	if (!prefix) {
-#if __WINDOWS__
-		prefix = rz_sys_get_src_dir_w32();
+#if RZ_IS_PORTABLE
+		char *pid_to_path = rz_sys_pid_to_path(rz_sys_getpid());
+		if (pid_to_path) {
+			char *t = rz_file_dirname(pid_to_path);
+			free(pid_to_path);
+			prefix = rz_file_dirname(t);
+			free(t);
+		}
 		if (!prefix) {
 			prefix = strdup(RZ_PREFIX);
 		}
@@ -1286,7 +1306,7 @@ RZ_API const char *rz_sys_prefix(const char *pfx) {
 		prefix = strdup(RZ_PREFIX);
 #endif
 	}
-	if (pfx) {
+	if (RZ_STR_ISNOTEMPTY(pfx)) {
 		free(prefix);
 		prefix = strdup(pfx);
 	}
@@ -1944,24 +1964,7 @@ RZ_API int rz_sys_kill(int pid, int sig) {
 #endif
 	return -1;
 }
-#if __WINDOWS__
-RZ_API HANDLE rz_sys_opendir(const char *path, WIN32_FIND_DATAW *entry) {
-	rz_return_val_if_fail(path, NULL);
-	wchar_t dir[MAX_PATH];
-	wchar_t *wcpath = 0;
-	if (!(wcpath = rz_utf8_to_utf16(path))) {
-		return NULL;
-	}
-	swprintf(dir, MAX_PATH, L"%ls\\*.*", wcpath);
-	free(wcpath);
-	return FindFirstFileW(dir, entry);
-}
-#else
-RZ_API DIR *rz_sys_opendir(const char *path) {
-	rz_return_val_if_fail(path, NULL);
-	return opendir(path);
-}
-#endif
+
 RZ_API bool rz_sys_stop(void) {
 #if __UNIX__
 	return !rz_sys_kill(0, SIGTSTP);

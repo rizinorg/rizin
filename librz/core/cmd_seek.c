@@ -62,15 +62,15 @@ static void printPadded(RzCore *core, int pad) {
 	free(fmt);
 }
 
-static bool seek_to_register(RzCore *core, const char *input, bool is_silent) {
+RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *regname, bool is_silent) {
 	ut64 off;
 	if (core->bin->is_debugger) {
-		off = rz_debug_reg_get(core->dbg, input);
+		off = rz_debug_reg_get(core->dbg, regname);
 		return rz_core_seek_opt(core, off, true, !is_silent);
 	} else {
 		RzReg *orig = core->dbg->reg;
 		core->dbg->reg = core->analysis->reg;
-		off = rz_debug_reg_get(core->dbg, input);
+		off = rz_debug_reg_get(core->dbg, regname);
 		core->dbg->reg = orig;
 		return rz_core_seek_opt(core, off, true, !is_silent);
 	}
@@ -99,7 +99,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	return 0;
 }
 
-static int cmd_seek_opcode_backward(RzCore *core, int numinstr, bool silent) {
+RZ_IPI int rz_core_seek_opcode_backward(RzCore *core, int numinstr, bool silent) {
 	int i, val = 0;
 	// N previous instructions
 	ut64 addr = core->offset;
@@ -137,7 +137,7 @@ static int cmd_seek_opcode_backward(RzCore *core, int numinstr, bool silent) {
 	return val;
 }
 
-static int cmd_seek_opcode_forward(RzCore *core, int n, bool silent) {
+RZ_IPI int rz_core_seek_opcode_forward(RzCore *core, int n, bool silent) {
 	// N forward instructions
 	int i, ret, val = 0;
 	if (!silent) {
@@ -158,6 +158,14 @@ static int cmd_seek_opcode_forward(RzCore *core, int n, bool silent) {
 	return val;
 }
 
+RZ_IPI int rz_core_seek_opcode(RzCore *core, int n, bool silent) {
+	int val = (n < 0)
+		? rz_core_seek_opcode_backward(core, -n, silent)
+		: rz_core_seek_opcode_forward(core, n, silent);
+	core->num->value = val;
+	return val;
+}
+
 static void cmd_seek_opcode(RzCore *core, const char *input, bool silent) {
 	if (input[0] == '?') {
 		eprintf("Usage: so [-][n]\n");
@@ -170,10 +178,7 @@ static void cmd_seek_opcode(RzCore *core, const char *input, bool silent) {
 	if (n == 0) {
 		n = 1;
 	}
-	int val = (n < 0)
-		? cmd_seek_opcode_backward(core, -n, silent)
-		: cmd_seek_opcode_forward(core, n, silent);
-	core->num->value = val;
+	rz_core_seek_opcode(core, n, silent);
 }
 
 RZ_IPI int rz_seek_search(void *data, const char *input) {
@@ -271,7 +276,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 	switch (*input) {
 	case 'r': // "sr"
 		if (input[1] && input[2]) {
-			seek_to_register(core, input + 2, silent);
+			rz_core_seek_to_register(core, input + 2, silent);
 		} else {
 			eprintf("|Usage| 'sr PC' seek to program counter register\n");
 		}
@@ -772,5 +777,5 @@ RZ_IPI RzCmdStatus rz_seek_opcode_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_seek_register_handler(RzCore *core, int argc, const char **argv) {
-	return bool2cmdstatus(seek_to_register(core, argv[1], false));
+	return bool2cmdstatus(rz_core_seek_to_register(core, argv[1], false));
 }

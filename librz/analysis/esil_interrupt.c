@@ -76,7 +76,9 @@ RZ_API bool rz_analysis_esil_load_interrupts(RzAnalysisEsil *esil, RzAnalysisEsi
 		if (!intr) {
 			return false;
 		}
-		rz_analysis_esil_set_interrupt(esil, intr);
+		if (!rz_analysis_esil_set_interrupt(esil, intr)) {
+			free(intr);
+		}
 		i++;
 	}
 

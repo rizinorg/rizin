@@ -42,22 +42,25 @@ RZ_API void rz_syscall_free(RzSyscall *s) {
 	}
 }
 
-static Sdb *openDatabase(Sdb *db, const char *name) {
-	char *file = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB, "%s.sdb"),
-		rz_sys_prefix(NULL), name);
+static bool load_sdb(Sdb **db, const char *name) {
+	rz_return_val_if_fail(db, false);
+	char *sdb_path = rz_str_rz_prefix(RZ_SDB);
+	char *file_name = rz_str_newf("%s.sdb", name);
+	char *file = rz_file_path_join(sdb_path, file_name);
+	free(file_name);
+	free(sdb_path);
 	if (rz_file_exists(file)) {
-		if (db) {
-			sdb_reset(db);
-			sdb_open(db, file);
+		if (*db) {
+			sdb_reset(*db);
+			sdb_open(*db, file);
 		} else {
-			db = sdb_new(0, file, 0);
+			*db = sdb_new(0, file, 0);
 		}
-	} else {
-		sdb_free(db);
-		db = sdb_new0();
+		free(file);
+		return true;
 	}
 	free(file);
-	return db;
+	return false;
 }
 
 static inline bool syscall_reload_needed(RzSyscall *s, const char *os, const char *arch, int bits) {
@@ -122,7 +125,14 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 		char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("syscall", "%s-%s-%d"),
 			os, arch, bits);
 		if (dbName) {
-			s->db = openDatabase(s->db, dbName);
+			if (!load_sdb(&s->db, dbName)) {
+				sdb_free(s->db);
+#if __FreeBSD__
+				s->db = sdb_new0();
+#else
+				s->db = NULL;
+#endif
+			}
 			free(dbName);
 		}
 	}
@@ -131,8 +141,14 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 		char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("sysregs", "%s-%d-%s"),
 			arch, bits, cpu);
 		if (dbName) {
-			sdb_free(s->srdb);
-			s->srdb = openDatabase(NULL, dbName);
+			if (!load_sdb(&s->srdb, dbName)) {
+				sdb_free(s->srdb);
+#if __FreeBSD__
+				s->srdb = sdb_new0();
+#else
+				s->srdb = NULL;
+#endif
+			}
 			free(dbName);
 		}
 	}
@@ -199,7 +215,10 @@ RZ_API int rz_syscall_get_swi(RzSyscall *s) {
 }
 
 RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *s, int num, int swi) {
-	rz_return_val_if_fail(s && s->db, NULL);
+	rz_return_val_if_fail(s, NULL);
+	if (!s->db) {
+		return NULL;
+	}
 	const char *ret, *ret2, *key;
 	swi = getswi(s, swi);
 	if (swi < 16) {
@@ -227,7 +246,10 @@ RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *s, int num, int swi) {
 }
 
 RZ_API int rz_syscall_get_num(RzSyscall *s, const char *str) {
-	rz_return_val_if_fail(s && str && s->db, -1);
+	rz_return_val_if_fail(s && str, -1);
+	if (!s->db) {
+		return -1;
+	}
 	int sn = (int)sdb_array_get_num(s->db, str, 1, NULL);
 	if (sn == 0) {
 		return (int)sdb_array_get_num(s->db, str, 0, NULL);
@@ -236,7 +258,10 @@ RZ_API int rz_syscall_get_num(RzSyscall *s, const char *str) {
 }
 
 RZ_API const char *rz_syscall_get_i(RzSyscall *s, int num, int swi) {
-	rz_return_val_if_fail(s && s->db, NULL);
+	rz_return_val_if_fail(s, NULL);
+	if (!s->db) {
+		return NULL;
+	}
 	char foo[32];
 	swi = getswi(s, swi);
 	snprintf(foo, sizeof(foo), "0x%x.%d", swi, num);
@@ -260,7 +285,10 @@ static bool callback_list(void *u, const char *k, const char *v) {
 }
 
 RZ_API RzList *rz_syscall_list(RzSyscall *s) {
-	rz_return_val_if_fail(s && s->db, NULL);
+	rz_return_val_if_fail(s, NULL);
+	if (!s->db) {
+		return NULL;
+	}
 	RzList *list = rz_list_newf((RzListFree)rz_syscall_item_free);
 	sdb_foreach(s->db, callback_list, list);
 	return list;
@@ -283,7 +311,10 @@ RZ_API const char *rz_syscall_get_io(RzSyscall *s, int ioport) {
 }
 
 RZ_API const char *rz_syscall_sysreg(RzSyscall *s, const char *type, ut64 num) {
-	rz_return_val_if_fail(s && s->db, NULL);
+	rz_return_val_if_fail(s, NULL);
+	if (!s->db) {
+		return NULL;
+	}
 	const char *key = sdb_fmt("%s,%" PFMT64d, type, num);
 	return sdb_const_get(s->db, key, 0);
 }

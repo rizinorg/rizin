@@ -49,6 +49,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_MACRO, ///< Argument is the name of a pre-defined macro
 	RZ_CMD_ARG_TYPE_EVAL_KEY, ///< Argument is the name of a evaluable variable (e.g. `et` command)
 	RZ_CMD_ARG_TYPE_EVAL_FULL, ///< Argument is the name+(optional)value of a evaluable variable (e.g. `e` command)
+	RZ_CMD_ARG_TYPE_FCN_VAR, ///< Argument is the name of a function variable/argument
 } RzCmdArgType;
 
 /**
@@ -431,7 +432,7 @@ typedef struct rz_core_plugin_t {
 	RzCmdCb fini;
 } RzCorePlugin;
 
-typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const char *name, void *user);
+typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const RzCmdDesc *desc, void *user);
 
 #ifdef RZ_API
 RZ_API int rz_core_plugin_init(RzCmd *cmd);
@@ -439,7 +440,7 @@ RZ_API int rz_core_plugin_add(RzCmd *cmd, RzCorePlugin *plugin);
 RZ_API int rz_core_plugin_check(RzCmd *cmd, const char *a0);
 RZ_API int rz_core_plugin_fini(RzCmd *cmd);
 
-RZ_API RzCmd *rz_cmd_new(bool has_cons);
+RZ_API RzCmd *rz_cmd_new(bool has_cons, bool add_core_plugins);
 RZ_API RzCmd *rz_cmd_free(RzCmd *cmd);
 RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
 RZ_API int rz_cmd_add(RzCmd *cmd, const char *command, RzCmdCb callback);
@@ -449,6 +450,8 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args);
 RZ_API RzCmdDesc *rz_cmd_get_root(RzCmd *cmd);
 RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier);
 RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color);
+RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j);
+RZ_API bool rz_cmd_get_help_strbuf(RzCmd *cmd, const RzCmdDesc *cd, bool use_color, RzStrBuf *sb);
 
 static inline RzCmdStatus rz_cmd_int2status(int v) {
 	if (v == -2) {
@@ -485,9 +488,9 @@ RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const 
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd);
 RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd);
-RZ_API bool rz_cmd_desc_has_handler(RzCmdDesc *cd);
+RZ_API bool rz_cmd_desc_has_handler(const RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
-RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdForeachNameCb cb, void *user);
+RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *begin, RzCmdForeachNameCb cb, void *user);
 RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(RzCmd *cmd, const RzCmdDesc *cd, size_t i);
 
 #define rz_cmd_desc_children_foreach(root, it_cd) rz_pvector_foreach (&root->children, it_cd)
@@ -498,6 +501,7 @@ RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_newcmd(const char *cmd);
 RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_newargs(int n_args, char **args);
 RZ_API void rz_cmd_parsed_args_free(RzCmdParsedArgs *args);
 RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *arg, int n_args, char **args);
+RZ_API bool rz_cmd_parsed_args_addarg(RzCmdParsedArgs *a, const char *arg);
 RZ_API bool rz_cmd_parsed_args_setcmd(RzCmdParsedArgs *arg, const char *cmd);
 RZ_API char *rz_cmd_parsed_args_argstr(RzCmdParsedArgs *arg);
 RZ_API char *rz_cmd_parsed_args_execstr(RzCmdParsedArgs *arg);

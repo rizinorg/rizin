@@ -152,7 +152,6 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	if (!a) {
 		return NULL;
 	}
-	/* TODO: Free anals here */
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
 	ht_pp_free(a->ht_name_fun);
@@ -432,59 +431,6 @@ RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, int query) {
 		break;
 	}
 	return -1;
-}
-
-static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {
-	RzAnalysis *analysis = (RzAnalysis *)p;
-	if (!strncmp(v, "func", strlen("func") + 1)) {
-		char *query = sdb_fmt("func.%s.noreturn", k);
-		if (sdb_bool_get(analysis->sdb_types, query, NULL)) {
-			analysis->cb_printf("tnn %s\n", k);
-		}
-	}
-	if (!strncmp(k, "addr.", 5)) {
-		analysis->cb_printf("tna 0x%s %s\n", k + 5, v);
-	}
-	return true;
-}
-
-static bool __nonreturn_print(void *p, const char *k, const char *v) {
-	RzAnalysis *analysis = (RzAnalysis *)p;
-	if (!strncmp(k, "func.", 5) && strstr(k, ".noreturn")) {
-		char *s = strdup(k + 5);
-		char *d = strchr(s, '.');
-		if (d) {
-			*d = 0;
-		}
-		analysis->cb_printf("%s\n", s);
-		free(s);
-	}
-	if (!strncmp(k, "addr.", 5)) {
-		char *off;
-		if (!(off = strdup(k + 5))) {
-			return 1;
-		}
-		char *ptr = strstr(off, ".noreturn");
-		if (ptr) {
-			*ptr = 0;
-			analysis->cb_printf("0x%s\n", off);
-		}
-		free(off);
-	}
-	return true;
-}
-
-RZ_API void rz_analysis_noreturn_list(RzAnalysis *analysis, int mode) {
-	switch (mode) {
-	case 1:
-	case '*':
-	case 'r':
-		sdb_foreach(analysis->sdb_types, __nonreturn_print_commands, analysis);
-		break;
-	default:
-		sdb_foreach(analysis->sdb_types, __nonreturn_print, analysis);
-		break;
-	}
 }
 
 #define K_NORET_ADDR(x) sdb_fmt("addr.%" PFMT64x ".noreturn", x)

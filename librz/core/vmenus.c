@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <string.h>
+
 #include <rz_core.h>
 #include <rz_util.h>
-#include <string.h>
+
+#include "core_private.h"
 
 #define MAX_FORMAT 3
 
@@ -79,7 +82,7 @@ static char *colorize_asm_string(RzCore *core, const char *buf_asm, int optype, 
 		char *s2 = strdup(spacer + 2);
 		char *scol1 = rz_print_colorize_opcode(core->print, s1, color_reg, color_num, false, fcn ? fcn->addr : 0);
 		char *scol2 = rz_print_colorize_opcode(core->print, s2, color_reg, color_num, false, fcn ? fcn->addr : 0);
-		char *source = rz_str_newf("%s||%s", rz_str_get2(scol1), rz_str_get2(scol2));
+		char *source = rz_str_newf("%s||%s", rz_str_get(scol1), rz_str_get(scol2));
 		free(scol1);
 		free(scol2);
 		free(s1);
@@ -425,7 +428,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 		case 'q': {
 			char *op_hex = rz_asm_op_get_hex(&asmop);
 			char *res = rz_print_hexpair(core->print, op_hex, -1);
-			rz_core_cmdf(core, "wx %02x%02x%02x%02x", buf[0], buf[1], buf[2], buf[3]);
+			rz_core_write_at(core, core->offset, buf, 4);
 			free(res);
 			free(op_hex);
 		}
@@ -471,10 +474,10 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			}
 		} break;
 		case 'R':
-			if (rz_config_get_i(core->config, "scr.randpal")) {
-				rz_core_cmd0(core, "ecr");
+			if (rz_config_get_b(core->config, "scr.randpal")) {
+				rz_cons_pal_random();
 			} else {
-				rz_core_cmd0(core, "ecn");
+				rz_core_theme_nextpal(core, 'n');
 			}
 			break;
 		case '+':
@@ -752,7 +755,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 		case 'a': {
 			txt = prompt("add C type: ", NULL);
 			if (txt) {
-				rz_core_cmdf(core, "\"td %s\"", txt);
+				rz_core_cmdf(core, "td \"%s\"", txt);
 				free(txt);
 			}
 		} break;
@@ -1229,7 +1232,8 @@ RZ_API int rz_core_visual_classes(RzCore *core) {
 		case 'p':
 			if (mode == 'm' && mur) {
 				rz_core_seek(core, mur->vaddr, true);
-				rz_core_cmd0(core, "af;pdf~..");
+				rz_core_analysis_function_add(core, NULL, core->offset, false);
+				rz_core_cmd0(core, "pdf~..");
 			}
 			break;
 		case 'm': // methods
@@ -1745,8 +1749,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 			rz_line_set_prompt("comment: ");
 			const char *line = rz_line_readline();
 			if (line && *line) {
-				// XXX code injection bug here
-				rz_core_cmdf(core, "CC %s @ 0x%08" PFMT64x, line, addr + delta);
+				rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr + delta, line);
 			}
 		} break;
 		case '.':
@@ -2229,7 +2232,7 @@ RZ_API int rz_core_visual_comments(RzCore *core) {
 		case ' ':
 		case '\r':
 		case '\n':
-			rz_core_cmdf(core, "s 0x%" PFMT64x, from);
+			rz_core_seek_and_save(core, from, true);
 			RZ_FREE(p);
 			return true;
 		case 'Q':
@@ -2434,7 +2437,7 @@ RZ_API void rz_core_visual_config(RzCore *core) {
 			option = _option;
 			break;
 		case '$':
-			rz_core_cmd0(core, "?$");
+			rz_core_help_vars_print(core);
 			rz_cons_any_key(NULL);
 			break;
 		case '*':
@@ -2517,7 +2520,7 @@ static void variable_rename(RzCore *core, ut64 addr, int vindex, const char *nam
 	rz_list_foreach (list, iter, var) {
 		if (i == vindex) {
 			rz_core_seek(core, addr, false);
-			rz_core_cmd_strf(core, "afvn %s %s", name, var->name);
+			rz_core_analysis_var_rename(core, name, var->name);
 			rz_core_seek(core, a_tmp, false);
 			break;
 		}
@@ -2881,7 +2884,7 @@ RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 			rz_core_cmdf(core, ".dte %d", i);
 		}
 		rz_core_cmd0(core, "x 64@r:SP");
-		rz_core_cmd0(core, "dri");
+		rz_core_debug_ri(core, core->dbg->reg, 0);
 		// limit by rows here
 		//int rows = rz_cons_get_size (NULL);
 		rz_core_cmdf(core, "dtd %d", delta);
@@ -3045,7 +3048,12 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 		case 'a':
 			switch (level) {
 			case 0:
-				rz_core_cmd0(core, "af-$$;af"); // reanalize
+				// Remove the old function information
+				rz_core_analysis_undefine(core, core->offset);
+				rz_analysis_fcn_del_locs(core->analysis, core->offset);
+				rz_analysis_fcn_del(core->analysis, core->offset);
+				// Reanalyze and create function from scratch
+				rz_core_analysis_function_add(core, NULL, core->offset, false);
 				break;
 			case 1: {
 				eprintf("Select variable source ('r'egister, 's'tackptr or 'b'aseptr): ");
@@ -3109,7 +3117,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 			delta = 0;
 			break;
 		case 'R':
-			rz_core_cmd0(core, "ecn");
+			rz_core_theme_nextpal(core, 'n');
 			break;
 		case 'p':
 			printMode++;
@@ -3127,7 +3135,10 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 		case '-':
 			switch (level) {
 			case 0:
-				rz_core_cmdf(core, "af-0x%" PFMT64x, addr);
+				// Remove the old function information
+				rz_core_analysis_undefine(core, addr);
+				rz_analysis_fcn_del_locs(core->analysis, addr);
+				rz_analysis_fcn_del(core->analysis, addr);
 				break;
 			}
 			break;
@@ -3138,7 +3149,7 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 			rz_core_visual_refs(core, true, true);
 			break;
 		case 's':
-			rz_core_cmdf(core, "afs!@0x%08" PFMT64x, addr);
+			rz_core_analysis_function_signature_editor(core, addr);
 			break;
 		case 'c':
 			level = 2;
@@ -3371,7 +3382,7 @@ onemoretime:
 	wordsize = 4;
 	switch (ch) {
 	case 'N':
-		rz_core_cmdf(core, "afs! @ 0x%08" PFMT64x, off);
+		rz_core_analysis_function_signature_editor(core, off);
 		break;
 	case 'F': {
 		char cmd[128];
@@ -3701,7 +3712,8 @@ onemoretime:
 			rz_analysis_function_resize(fcn, core->offset - fcn->addr);
 		}
 		rz_cons_break_push(NULL, NULL);
-		rz_core_cmdf(core, "af @ 0x%08" PFMT64x, off); // required for thumb autodetection
+		// required for thumb autodetection
+		rz_core_analysis_function_add(core, NULL, off, false);
 		rz_cons_break_pop();
 	} break;
 	case 'v': {
@@ -3884,11 +3896,11 @@ RZ_API void rz_core_visual_colors(RzCore *core) {
 			opt++;
 			break;
 		case 'l':
-			rz_core_cmd0(core, "ecn");
+			rz_core_theme_nextpal(core, 'n');
 			oopt = -1;
 			break;
 		case 'h':
-			rz_core_cmd0(core, "ecp");
+			rz_core_theme_nextpal(core, 'p');
 			oopt = -1;
 			break;
 		case 'K':

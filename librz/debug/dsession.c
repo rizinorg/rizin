@@ -460,12 +460,12 @@ RZ_API bool rz_debug_session_save(RzDebugSession *session, const char *path) {
 	continue
 
 static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
-	RJson *child;
+	RzJson *child;
 	char *json_str = strdup(v);
 	if (!json_str) {
 		return true;
 	}
-	RJson *reg_json = rz_json_parse(json_str);
+	RzJson *reg_json = rz_json_parse(json_str);
 	if (!reg_json || reg_json->type != RZ_JSON_ARRAY) {
 		free(json_str);
 		return true;
@@ -487,7 +487,7 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 		if (child->type != RZ_JSON_OBJECT) {
 			continue;
 		}
-		const RJson *baby = rz_json_get(child, "cnum");
+		const RzJson *baby = rz_json_get(child, "cnum");
 		CHECK_TYPE(baby, RZ_JSON_INTEGER);
 		int cnum = baby->num.s_value;
 
@@ -509,12 +509,12 @@ static void deserialize_memory(Sdb *db, HtUP *memory) {
 }
 
 static bool deserialize_registers_cb(void *user, const char *addr, const char *v) {
-	RJson *child;
+	RzJson *child;
 	char *json_str = strdup(v);
 	if (!json_str) {
 		return true;
 	}
-	RJson *reg_json = rz_json_parse(json_str);
+	RzJson *reg_json = rz_json_parse(json_str);
 	if (!reg_json || reg_json->type != RZ_JSON_ARRAY) {
 		free(json_str);
 		return true;
@@ -536,7 +536,7 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 		if (child->type != RZ_JSON_OBJECT) {
 			continue;
 		}
-		const RJson *baby = rz_json_get(child, "cnum");
+		const RzJson *baby = rz_json_get(child, "cnum");
 		CHECK_TYPE(baby, RZ_JSON_INTEGER);
 		int cnum = baby->num.s_value;
 
@@ -561,12 +561,12 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 #define REGATTR(ATTR)  sdb_fmt("registers.%d." ATTR, i)
 
 static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char *v) {
-	const RJson *child;
+	const RzJson *child;
 	char *json_str = strdup(v);
 	if (!json_str) {
 		return true;
 	}
-	RJson *chkpt_json = rz_json_parse(json_str);
+	RzJson *chkpt_json = rz_json_parse(json_str);
 	if (!chkpt_json || chkpt_json->type != RZ_JSON_OBJECT) {
 		free(json_str);
 		return true;
@@ -577,14 +577,14 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 	checkpoint.cnum = (int)sdb_atoi(cnum);
 
 	// Extract RzRegArena's from "registers"
-	const RJson *regs_json = rz_json_get(chkpt_json, "registers");
+	const RzJson *regs_json = rz_json_get(chkpt_json, "registers");
 	if (!regs_json || regs_json->type != RZ_JSON_ARRAY) {
 		free(json_str);
 		rz_json_free(chkpt_json);
 		return true;
 	}
 	for (child = regs_json->children.first; child; child = child->next) {
-		const RJson *baby;
+		const RzJson *baby;
 		baby = rz_json_get(child, "arena");
 		CHECK_TYPE(baby, RZ_JSON_INTEGER);
 		int arena = baby->num.s_value;
@@ -613,26 +613,26 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 
 	// Extract RzDebugSnap's from "snaps"
 	checkpoint.snaps = rz_list_newf((RzListFree)rz_debug_snap_free);
-	const RJson *snaps_json = rz_json_get(chkpt_json, "snaps");
+	const RzJson *snaps_json = rz_json_get(chkpt_json, "snaps");
 	if (!snaps_json || snaps_json->type != RZ_JSON_ARRAY) {
 		goto end;
 	}
 	for (child = snaps_json->children.first; child; child = child->next) {
-		const RJson *namej = rz_json_get(child, "name");
+		const RzJson *namej = rz_json_get(child, "name");
 		CHECK_TYPE(namej, RZ_JSON_STRING);
-		const RJson *dataj = rz_json_get(child, "data");
+		const RzJson *dataj = rz_json_get(child, "data");
 		CHECK_TYPE(dataj, RZ_JSON_STRING);
-		const RJson *sizej = rz_json_get(child, "size");
+		const RzJson *sizej = rz_json_get(child, "size");
 		CHECK_TYPE(sizej, RZ_JSON_INTEGER);
-		const RJson *addrj = rz_json_get(child, "addr");
+		const RzJson *addrj = rz_json_get(child, "addr");
 		CHECK_TYPE(addrj, RZ_JSON_INTEGER);
-		const RJson *addr_endj = rz_json_get(child, "addr_end");
+		const RzJson *addr_endj = rz_json_get(child, "addr_end");
 		CHECK_TYPE(addr_endj, RZ_JSON_INTEGER);
-		const RJson *permj = rz_json_get(child, "perm");
+		const RzJson *permj = rz_json_get(child, "perm");
 		CHECK_TYPE(permj, RZ_JSON_INTEGER);
-		const RJson *userj = rz_json_get(child, "user");
+		const RzJson *userj = rz_json_get(child, "user");
 		CHECK_TYPE(userj, RZ_JSON_INTEGER);
-		const RJson *sharedj = rz_json_get(child, "shared");
+		const RzJson *sharedj = rz_json_get(child, "shared");
 		CHECK_TYPE(sharedj, RZ_JSON_BOOLEAN);
 
 		RzDebugSnap *snap = RZ_NEW0(RzDebugSnap);

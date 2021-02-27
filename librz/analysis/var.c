@@ -8,51 +8,6 @@
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
 
-RZ_API bool rz_analysis_var_display(RzAnalysis *analysis, RzAnalysisVar *var) {
-	char *fmt = rz_type_format(analysis->sdb_types, var->type);
-	RzRegItem *i;
-	if (!fmt) {
-		eprintf("type:%s doesn't exist\n", var->type);
-		return false;
-	}
-	bool usePxr = !strcmp(var->type, "int"); // hacky but useful
-	switch (var->kind) {
-	case RZ_ANALYSIS_VAR_KIND_REG:
-		i = rz_reg_index_get(analysis->reg, var->delta);
-		if (i) {
-			if (usePxr) {
-				analysis->cb_printf("pxr $w @r:%s\n", i->name);
-			} else {
-				analysis->cb_printf("pf r (%s)\n", i->name);
-			}
-		} else {
-			eprintf("register not found\n");
-		}
-		break;
-	case RZ_ANALYSIS_VAR_KIND_BPV: {
-		const st32 real_delta = var->delta + var->fcn->bp_off;
-		const ut32 udelta = RZ_ABS(real_delta);
-		const char sign = real_delta >= 0 ? '+' : '-';
-		if (usePxr) {
-			analysis->cb_printf("pxr $w @%s%c0x%x\n", analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
-		} else {
-			analysis->cb_printf("pf %s @%s%c0x%x\n", fmt, analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
-		}
-	} break;
-	case RZ_ANALYSIS_VAR_KIND_SPV: {
-		ut32 udelta = RZ_ABS(var->delta + var->fcn->maxstack);
-		if (usePxr) {
-			analysis->cb_printf("pxr $w @%s+0x%x\n", analysis->reg->name[RZ_REG_NAME_SP], udelta);
-		} else {
-			analysis->cb_printf("pf %s @ %s+0x%x\n", fmt, analysis->reg->name[RZ_REG_NAME_SP], udelta);
-		}
-		break;
-	}
-	}
-	free(fmt);
-	return true;
-}
-
 static const char *__int_type_from_size(int size) {
 	switch (size) {
 	case 1: return "int8_t";
@@ -1516,4 +1471,43 @@ beach:
 		free(cache);
 	}
 	return rz_strbuf_drain(buf);
+}
+
+// function argument types and names into analysis/types
+RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
+	RzAnalysisFcnVarsCache cache;
+	rz_analysis_fcn_vars_cache_init(analysis, &cache, fcn);
+	RzListIter *iter;
+	RzAnalysisVar *var;
+	int arg_count = 0;
+
+	RzList *all_vars = cache.rvars;
+	rz_list_join(all_vars, cache.bvars);
+	rz_list_join(all_vars, cache.svars);
+
+	RzStrBuf key, value;
+	rz_strbuf_init(&key);
+	rz_strbuf_init(&value);
+
+	rz_list_foreach (all_vars, iter, var) {
+		if (var->isarg) {
+			if (!rz_strbuf_setf(&key, "func.%s.arg.%d", fcn->name, arg_count) ||
+				!rz_strbuf_setf(&value, "%s,%s", var->type, var->name)) {
+				goto exit;
+			}
+			sdb_set(analysis->sdb_types, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
+			arg_count++;
+		}
+	}
+	if (arg_count > 0) {
+		if (!rz_strbuf_setf(&key, "func.%s.args", fcn->name) ||
+			!rz_strbuf_setf(&value, "%d", arg_count)) {
+			goto exit;
+		}
+		sdb_set(analysis->sdb_types, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
+	}
+exit:
+	rz_strbuf_fini(&key);
+	rz_strbuf_fini(&value);
+	rz_analysis_fcn_vars_cache_fini(&cache);
 }

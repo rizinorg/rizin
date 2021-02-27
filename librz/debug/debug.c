@@ -1503,7 +1503,7 @@ RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 		eprintf("--> cannot read registers\n");
 		return -1;
 	}
-	reg = (int)rz_debug_reg_get_err(dbg, "SN", &err, NULL);
+	rz_debug_reg_get_err(dbg, "SN", &err, NULL);
 	if (err) {
 		eprintf("Cannot find 'sn' register for current arch-os.\n");
 		return -1;

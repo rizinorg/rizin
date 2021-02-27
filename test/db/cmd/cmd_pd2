@@ -312,7 +312,7 @@ EXPECT=<<EOF
 \           0x00008178      a40200eb       bl sym.abort
 
 [0x00008174]>  # fcn.00008174 (func main, int argc);
- ----------------------------------------------------.
+.----------------------------------------------------.
 |  0x8174                                            |
 | 8: fcn.00008174 (func main, int argc);             |
 | ; arg func main @ r0                               |
@@ -356,7 +356,7 @@ e asm.arch=x86
 e asm.bits=64
 e io.cache=true
 wx 488b4608
-"td struct ms { char b[8]; int member1; int member2; };"
+td "struct ms { char b[8]; int member1; int member2; };"
 aht ms.member1
 e asm.cmt.right=true
 pd 1
@@ -885,7 +885,6 @@ FILE=bins/pe/ConsoleApplication1.exe
 ARGS=-A
 CMDS=pdf
 EXPECT=<<EOF
-        :   ;-- eip:
 / 329: entry0 ();
 |       :   ; var int32_t var_24h @ ebp-0x24
 |       :   ; var int32_t var_19h @ ebp-0x19

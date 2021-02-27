@@ -7,9 +7,8 @@ enum {
 	MODE_DIFF,
 	MODE_DIFF_STRS,
 	MODE_DIFF_IMPORTS,
-	MODE_DIST,
 	MODE_DIST_MYERS,
-	MODE_DIST_LEVENSTEIN,
+	MODE_DIST_LEVENSHTEIN,
 	MODE_CODE,
 	MODE_GRAPH,
 	MODE_COLS,
@@ -1038,12 +1037,10 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		case 'h':
 			return show_help(1);
 		case 's':
-			if (ro.mode == MODE_DIST) {
-				ro.mode = MODE_DIST_LEVENSTEIN;
-			} else if (ro.mode == MODE_DIST_LEVENSTEIN) {
-				ro.mode = MODE_DIST_MYERS;
+			if (ro.mode == MODE_DIST_MYERS) {
+				ro.mode = MODE_DIST_LEVENSHTEIN;
 			} else {
-				ro.mode = MODE_DIST;
+				ro.mode = MODE_DIST_MYERS;
 			}
 			break;
 		case 'S':
@@ -1102,11 +1099,11 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	case MODE_DIFF_IMPORTS:
 		c = opencore(&ro, ro.file);
 		if (!c) {
-			eprintf("Cannot open '%s'\n", rz_str_get(ro.file));
+			eprintf("Cannot open '%s'\n", rz_str_get_null(ro.file));
 		}
 		c2 = opencore(&ro, ro.file2);
 		if (!c2) {
-			eprintf("Cannot open '%s'\n", rz_str_get(ro.file2));
+			eprintf("Cannot open '%s'\n", rz_str_get_null(ro.file2));
 		}
 		if (!c || !c2) {
 			return 1;
@@ -1206,17 +1203,17 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		}
 		break;
 	default: {
-		size_t fsz;
+		size_t fsz = 0;
 		bufa = slurp(&ro, &c, ro.file, &fsz);
 		sza = fsz;
 		if (!bufa) {
-			eprintf("rz_diff: Cannot open %s\n", rz_str_get(ro.file));
+			eprintf("rz_diff: Cannot open %s\n", rz_str_get_null(ro.file));
 			return 1;
 		}
 		bufb = slurp(&ro, &c, ro.file2, &fsz);
 		szb = fsz;
 		if (!bufb) {
-			eprintf("rz_diff: Cannot open: %s\n", rz_str_get(ro.file2));
+			eprintf("rz_diff: Cannot open: %s\n", rz_str_get_null(ro.file2));
 			free(bufa);
 			return 1;
 		}
@@ -1278,18 +1275,15 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		}
 		rz_diff_free(d);
 		break;
-	case MODE_DIST:
 	case MODE_DIST_MYERS:
-	case MODE_DIST_LEVENSTEIN: {
+	case MODE_DIST_LEVENSHTEIN: {
 		RzDiff *d = rz_diff_new();
 		if (d) {
 			d->verbose = ro.verbose;
-			if (ro.mode == MODE_DIST_LEVENSTEIN) {
-				d->type = 'l';
-			} else if (ro.mode == MODE_DIST_MYERS) {
+			if (ro.mode == MODE_DIST_MYERS) {
 				d->type = 'm';
 			} else {
-				d->type = 0;
+				d->type = 'l';
 			}
 			rz_diff_buffers_distance(d, bufa, (ut32)sza, bufb, (ut32)szb, &ro.count, &sim);
 			rz_diff_free(d);

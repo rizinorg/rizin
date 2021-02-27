@@ -7,6 +7,7 @@
 #include "rz_list.h"
 #include "rz_types_base.h"
 #include "cmd_search_rop.c"
+#include "core_private.h"
 
 #define USE_EMULATION 0
 
@@ -605,9 +606,6 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 	if (!mode) {
 		mode = rz_config_get(core->config, bound_in);
 	}
-	if (perm == -1) {
-		perm = RZ_PERM_RWX;
-	}
 	if (!rz_config_get_i(core->config, "cfg.debug") && !core->io->va) {
 		append_bound(list, core->io, search_itv, 0, rz_io_size(core->io), 7);
 	} else if (!strcmp(mode, "file")) {
@@ -628,7 +626,6 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 		size_t i;
 		for (i = 0; i < rz_pvector_len(skyline); i++) {
 			const RzIOMapSkyline *part = rz_pvector_at(skyline, i);
-			//  	int perm = part->map->perm;
 			ut64 from = rz_itv_begin(part->itv);
 			ut64 to = rz_itv_end(part->itv);
 			// XXX skyline's fake map perms are wrong
@@ -1602,7 +1599,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 	}
 	if (!core->analysis->esil) {
 		// initialize esil vm
-		rz_core_cmd0(core, "aei");
+		rz_core_analysis_esil_reinit(core);
 		if (!core->analysis->esil) {
 			eprintf("Cannot initialize the ESIL vm\n");
 			return;

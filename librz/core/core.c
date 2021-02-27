@@ -76,6 +76,7 @@ static void rz_core_debug_breakpoint_hit(RzCore *core, RzBreakpointItem *bpi) {
 		rz_core_cmd0(core, bpi->data);
 	}
 	if (may_output) {
+		rz_cons_set_flush(true);
 		rz_cons_flush();
 		rz_cons_pop();
 	}
@@ -848,9 +849,9 @@ static const char *rizin_argv[] = {
 	"/w", "/wi", "/x", "/z",
 	"!?", "!", "!!", "!!!", "!!!-", "!-", "!-*", "!=!",
 	"a?", "a", "aa", "aa*",
-	"aaa", "aab", "aac", "aac*", "aad", "aae", "aaf", "aai", "aaij", "aan", "aang", "aao", "aap",
+	"aaa", "aac", "aac*", "aad", "aae", "aaf", "aai", "aaij", "aan", "aang", "aao", "aap",
 	"aar?", "aar", "aar*", "aarj", "aas", "aat", "aaT", "aau", "aav",
-	"a8", "ab", "abb",
+	"a8", "ab",
 	"acl", "acll", "aclj", "acl*", "ac?", "ac", "ac-", "acn", "acv", "acvf", "acv-", "acb", "acb-", "acm", "acm-", "acmn",
 	"aC?", "aC", "aCe", "ad", "ad4", "ad8", "adf", "adfg", "adt", "adk",
 	"ae?", "ae??", "ae", "aea", "aeA", "aeaf", "aeAf", "aeC", "aec?", "aec", "aecb", "aecs", "aecc", "aecu", "aecue",
@@ -859,7 +860,7 @@ static const char *rizin_argv[] = {
 	"aer", "aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
 	"af?", "af", "afr", "af+", "af-",
 	"afa", "afan",
-	"afb?", "afb", "afb.", "afb+", "afbb", "afbr", "afbi", "afbj", "afbe", "afB", "afbc", "afb=",
+	"afb?", "afb", "afb+", "afbb", "afbr", "afbi", "afbil", "afbj", "afbe", "afB", "afbc", "afb=",
 	"afB", "afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj",
 	"afck", "afcl", "afco", "afcR",
 	"afd", "aff", "afi",
@@ -885,7 +886,7 @@ static const char *rizin_argv[] = {
 	"as?", "as", "asc", "asca", "asf", "asj", "asl", "ask",
 	"av?", "av", "avj", "av*", "avr", "avra", "avraj", "avrr", "avrD",
 	"at",
-	"ax?", "ax", "ax*", "ax-", "ax-*", "axc", "axC", "axg", "axg*", "axgj", "axd", "axw", "axj", "axF",
+	"ax?", "ax", "ax*", "ax-", "ax-*", "axc", "axC", "axg", "axg*", "axgj", "axd", "axw", "axj",
 	"axt", "axf", "ax.", "axff", "axffj", "axs",
 	"b?", "b", "b+", "b-", "bf", "bm",
 	"c?", "c", "c1", "c2", "c4", "c8", "cc", "ccd", "cf", "cg?", "cg", "cgf", "cgff", "cgfc", "cgfn", "cgo",
@@ -2323,7 +2324,7 @@ static void __init_autocomplete_default(RzCore *core) {
 		"idp", "idpi", "L", "obf", "o+", "oc", "rz", "rz_bin", "rz_asm", "rz_hash", "rz_ax",
 		"rz_find", "cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
-		"less", "head", "tail", "Ps", "Pl", NULL
+		"less", "head", "Ps", "Pl", NULL
 	};
 	__foreach(core, flags, RZ_CORE_AUTOCMPLT_FLAG);
 	__foreach(core, seeks, RZ_CORE_AUTOCMPLT_SEEK);
@@ -3049,7 +3050,6 @@ reaccept:
 						eprintf("(flags: %d) len: %d filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
 					} else {
-						pipefd = -1;
 						eprintf("Cannot open file (%s)\n", ptr);
 						rz_socket_close(c);
 						if (rz_config_get_i(core->config, "rap.loop")) {

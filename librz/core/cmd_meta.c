@@ -218,6 +218,13 @@ static bool print_addrinfo(void *user, const char *k, const char *v) {
 	return true;
 }
 
+RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 addr) {
+	const char *oldcomment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, addr);
+	if (!oldcomment || (oldcomment && !strstr(oldcomment, comment))) {
+		rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, comment);
+	}
+}
+
 static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
 	char aoffset[64];
 	char *aoffsetptr = sdb_itoa(offset, aoffset, 16);
@@ -416,9 +423,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 		const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, addr);
 		out = rz_core_editor(core, NULL, comment);
 		if (out) {
-			//rz_meta_set (core->analysis->meta, RZ_META_TYPE_COMMENT, addr, 0, out);
-			rz_core_cmdf(core, "CC-@0x%08" PFMT64x, addr);
-			//rz_meta_del (core->analysis->meta, input[0], addr, addr+1);
+			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, addr, 1);
 			rz_meta_set_string(core->analysis,
 				RZ_META_TYPE_COMMENT, addr, out);
 			free(out);
@@ -463,26 +468,23 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 	case 'u': // "CCu"
 		//
 		{
-			char *newcomment;
+			char *comment;
 			const char *arg = input + 2;
 			while (*arg && *arg == ' ')
 				arg++;
 			if (!strncmp(arg, "base64:", 7)) {
 				char *s = (char *)sdb_decode(arg + 7, NULL);
 				if (s) {
-					newcomment = s;
+					comment = s;
 				} else {
-					newcomment = NULL;
+					comment = NULL;
 				}
 			} else {
-				newcomment = strdup(arg);
+				comment = strdup(arg);
 			}
-			if (newcomment) {
-				const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, addr);
-				if (!comment || (comment && !strstr(comment, newcomment))) {
-					rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, newcomment);
-				}
-				free(newcomment);
+			if (comment) {
+				rz_core_meta_comment_add(core, comment, addr);
+				free(comment);
 			}
 		}
 		break;
@@ -655,9 +657,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 		const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, addr);
 		out = rz_core_editor(core, NULL, comment);
 		if (out) {
-			//rz_meta_set (core->analysis->meta, RZ_META_TYPE_COMMENT, addr, 0, out);
-			rz_core_cmdf(core, "CC-@0x%08" PFMT64x, addr);
-			//rz_meta_del (core->analysis->meta, input[0], addr, addr+1);
+			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, addr, 1);
 			rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, out);
 			free(out);
 		}

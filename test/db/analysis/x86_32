@@ -103,7 +103,7 @@ NAME=cyclomatic
 FILE=bins/pe/rz-bin.exe
 CMDS=<<EOF
 s 0x140002510;af;afi~complex[1]
-afb.@0x14000253e
+afbi@0x14000253e
 EOF
 EXPECT=<<EOF
 67
@@ -558,7 +558,7 @@ FILE=bins/elf/echo
 CMDS=<<EOF
 aaa
 s 0xf34
-afb.
+afbi
 EOF
 EXPECT=<<EOF
 0x00000f34 0x00000f4b 00:0000 23 j 0x00001144
@@ -3404,5 +3404,88 @@ EXPECT=<<EOF
 0x004010f8 1 case.0x401020.35
 0x004010f8 1 case.0x401020.37
 0x004010f8 1 case.default.0x401020
+EOF
+RUN
+
+NAME=tiny1 aaef
+FILE=bins/elf/analysis/tiny1
+CMDS=<<EOF
+aF
+aaef
+pdf
+# TODO eip flag?
+EOF
+EXPECT=<<EOF
+            ;-- eip:
+/ 7: entry0 ();
+|           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
+|           0x08048056      xor   eax, eax
+|           0x08048058      inc   eax
+|           ;-- syscall.exit:
+\           0x08048059      int   0x80
+EOF
+RUN
+
+NAME=tiny1 aae
+FILE=bins/elf/analysis/tiny1
+CMDS=<<EOF
+aF
+aae
+pdf
+EOF
+EXPECT=<<EOF
+/ 7: entry0 ();
+|           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
+|           0x08048056      xor   eax, eax
+|           0x08048058      inc   eax
+|           ;-- syscall.exit:
+\           0x08048059      int   0x80
+EOF
+RUN
+
+NAME=tiny1 aae non-start-bb first
+FILE=bins/elf/analysis/tiny1
+CMDS=<<EOF
+e io.cache=true
+$orig_end=?e `omt va_end/cols~[0]:3`
+omr 1 `omt size/cols~[0]:3`+2
+s `$orig_end`
+wa jmp entry0
+aF
+aae
+agf
+?e
+afl
+EOF
+EXPECT=<<EOF
+[0x0804805b]>  # fcn.0804805b ();
+.----.
+|    |
+|.-------------------------------------------.
+||  0x8048054                                |
+|| ; CODE XREF from fcn.0804805b @ 0x804805b |
+|| ;-- entry0:                               |
+|| ; '*'                                     |
+|| ; 42                                      |
+|| mov bl, 0x2a                              |
+|| xor eax, eax                              |
+|| inc eax                                   |
+|| ;-- syscall.exit:                         |
+|| int 0x80                                  |
+|`-------------------------------------------'
+|    v
+|    |
+|    '----------.
+|               |
+|           .---------------------.
+|           |  0x804805b          |
+|           | 9: fcn.0804805b (); |
+|           | jmp entry0          |
+|           `---------------------'
+|               v
+|               |
+`---------------'
+
+0x0804805b    2 9            fcn.0804805b
 EOF
 RUN

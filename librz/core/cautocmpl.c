@@ -89,10 +89,10 @@ err:
 	return NULL;
 }
 
-static bool do_autocmplt_cmdidentifier(RzCmd *cmd, const char *name, void *user) {
+static bool do_autocmplt_cmdidentifier(RzCmd *cmd, const RzCmdDesc *desc, void *user) {
 	struct autocmplt_cmdidentifier_t *u = (struct autocmplt_cmdidentifier_t *)user;
-	if (!strncmp(name, u->s, u->len)) {
-		rz_line_ns_completion_result_add(u->res, name);
+	if (!strncmp(desc->name, u->s, u->len)) {
+		rz_line_ns_completion_result_add(u->res, desc->name);
 	}
 	return true;
 }
@@ -103,7 +103,7 @@ static void autocmplt_cmdidentifier(RzCore *core, RzLineNSCompletionResult *res,
 		.s = s,
 		.len = len,
 	};
-	rz_cmd_foreach_cmdname(core->rcmd, do_autocmplt_cmdidentifier, &u);
+	rz_cmd_foreach_cmdname(core->rcmd, NULL, do_autocmplt_cmdidentifier, &u);
 }
 
 static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -201,7 +201,7 @@ static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, c
 }
 
 static void autocmplt_cmd_arg_help_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	const char **vars = rz_core_get_help_vars(core);
+	const char **vars = rz_core_help_vars_get(core);
 	while (*vars) {
 		if (!strncmp(*vars, s, len)) {
 			rz_line_ns_completion_result_add(res, *vars);
@@ -311,6 +311,22 @@ err:
 	free(k);
 }
 
+static void autocmplt_cmd_arg_fcn_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	if (!fcn) {
+		return;
+	}
+	RzList *vars = rz_analysis_var_all_list(core->analysis, fcn);
+	RzListIter *iter;
+	RzAnalysisVar *var;
+	rz_list_foreach (vars, iter, var) {
+		if (!strncmp(var->name, s, len)) {
+			rz_line_ns_completion_result_add(res, var->name);
+		}
+	}
+	rz_list_free(vars);
+}
+
 static bool is_arg_type(const char *type) {
 	return !strcmp(type, "concatenation") || !strcmp(type, "arg") ||
 		!strcmp(type, "args") || !strcmp(type, "arg_identifier") ||
@@ -407,6 +423,9 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_EVAL_FULL:
 		autocmplt_cmd_arg_eval_full(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_FCN_VAR:
+		autocmplt_cmd_arg_fcn_var(core, res, s, len);
 		break;
 	default:
 		break;

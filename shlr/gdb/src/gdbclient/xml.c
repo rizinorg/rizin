@@ -331,7 +331,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	}
 	rz_list_free(flags);
 	rz_list_free(regs);
-	free(g->target.regprofile);
+	RZ_FREE(g->target.regprofile);
 	if (profile) {
 		g->target.regprofile = strdup(profile);
 		free(profile);
@@ -360,7 +360,7 @@ exit_err:
 */
 static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int pid, RzList *list) {
 	char pidstr[MAX_PID_CHARS + 1], status[1024], cmdline[1024];
-	char *itemstr, *itemstr_end, *column, *column_end, *proc_filename;
+	char *itemstr, *column, *column_end, *proc_filename;
 	int ret = -1, ipid, column_data_len;
 	RzDebugPid *pid_info = NULL;
 
@@ -372,7 +372,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 
 	column = xml_data;
 	while ((itemstr = strstr(column, "<item>"))) {
-		if (!(itemstr_end = strstr(itemstr, "</item>"))) {
+		if (!strstr(itemstr, "</item>")) {
 			ret = -1;
 			goto end;
 		}

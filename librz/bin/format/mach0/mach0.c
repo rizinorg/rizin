@@ -1025,7 +1025,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 				return false;
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.x86_32, "16i", 1) == -1) {
+				    (ut8 *)&bin->thread_state.x86_32, "16i", 1) == -1) {
 				bprintf("Error: read (thread state x86_32)\n");
 				return false;
 			}
@@ -1039,7 +1039,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 				return false;
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.x86_64, "32l", 1) == -1) {
+				    (ut8 *)&bin->thread_state.x86_64, "32l", 1) == -1) {
 				bprintf("Error: read (thread state x86_64)\n");
 				return false;
 			}
@@ -1058,7 +1058,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 				return false;
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.ppc_32, bin->big_endian ? "40I" : "40i", 1) == -1) {
+				    (ut8 *)&bin->thread_state.ppc_32, bin->big_endian ? "40I" : "40i", 1) == -1) {
 				bprintf("Error: read (thread state ppc_32)\n");
 				return false;
 			}
@@ -1071,7 +1071,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 				return false;
 			}
 			if (rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.ppc_64, bin->big_endian ? "34LI3LI" : "34li3li", 1) == -1) {
+				    (ut8 *)&bin->thread_state.ppc_64, bin->big_endian ? "34LI3LI" : "34li3li", 1) == -1) {
 				bprintf("Error: read (thread state ppc_64)\n");
 				return false;
 			}
@@ -1086,7 +1086,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			return false;
 		}
 		if (rz_buf_fread_at(bin->b, ptr_thread,
-			     (ut8 *)&bin->thread_state.arm_32, bin->big_endian ? "17I" : "17i", 1) == -1) {
+			    (ut8 *)&bin->thread_state.arm_32, bin->big_endian ? "17I" : "17i", 1) == -1) {
 			bprintf("Error: read (thread state arm)\n");
 			return false;
 		}
@@ -1100,7 +1100,7 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			return false;
 		}
 		if (rz_buf_fread_at(bin->b, ptr_thread,
-			     (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "34LI1I" : "34Li1i", 1) == -1) {
+			    (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "34LI1I" : "34Li1i", 1) == -1) {
 			bprintf("Error: read (thread state arm)\n");
 			return false;
 		}
@@ -2584,6 +2584,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 		}
 		ut64 tr = read_uleb128(&p, end);
 		if (tr == UT64_MAX) {
+			RZ_FREE(next);
 			goto beach;
 		}
 		next->node = tr + trie;
@@ -2740,6 +2741,8 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin) {
 			}
 			if (!inSymtab(hash, sym->name, sym->vaddr)) {
 				rz_list_append(list, sym);
+			} else {
+				rz_bin_symbol_free(sym);
 			}
 		}
 	}
@@ -2806,7 +2809,7 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin) {
 		}
 	}
 	ht_pp_free(hash);
-	// bin->symbols = symbols;
+	free(symbols);
 	return list;
 }
 

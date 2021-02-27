@@ -1,5 +1,6 @@
-import rzpipe
 import json
+
+import rzpipe
 
 
 def chk(x):

@@ -16,20 +16,20 @@
 #define INSOP64(x) insn->detail->arm64.operands[x]
 
 /* arm32 */
-#define REG(x)       rz_str_get(cs_reg_name(*handle, insn->detail->arm.operands[x].reg))
-#define REG64(x)     rz_str_get(cs_reg_name(*handle, insn->detail->arm64.operands[x].reg))
+#define REG(x)       rz_str_get_null(cs_reg_name(*handle, insn->detail->arm.operands[x].reg))
+#define REG64(x)     rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].reg))
 #define REGID64(x)   insn->detail->arm64.operands[x].reg
 #define REGID(x)     insn->detail->arm.operands[x].reg
 #define IMM(x)       (ut32)(insn->detail->arm.operands[x].imm)
 #define INSOP(x)     insn->detail->arm.operands[x]
-#define MEMBASE(x)   rz_str_get(cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base))
-#define MEMBASE64(x) rz_str_get(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
+#define MEMBASE(x)   rz_str_get_null(cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base))
+#define MEMBASE64(x) rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
 #define REGBASE(x)   insn->detail->arm.operands[x].mem.base
 #define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
 // s/index/base|reg/
-#define MEMINDEX(x)      rz_str_get(cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index))
+#define MEMINDEX(x)      rz_str_get_null(cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index))
 #define HASMEMINDEX(x)   (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
-#define MEMINDEX64(x)    rz_str_get(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
+#define MEMINDEX64(x)    rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) (insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define MEMDISP(x)       insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x)     (ut64) insn->detail->arm64.operands[x].mem.disp
@@ -844,12 +844,12 @@ static const char *arg(RzAnalysis *a, csh *handle, cs_insn *insn, char *buf, int
 		if (ISSHIFTED(n)) {
 			sprintf(buf, "%u,%s,%s",
 				LSHIFT2(n),
-				rz_str_get(cs_reg_name(*handle,
+				rz_str_get_null(cs_reg_name(*handle,
 					insn->detail->arm.operands[n].reg)),
 				DECODE_SHIFT(n));
 		} else {
 			sprintf(buf, "%s",
-				rz_str_get(cs_reg_name(*handle,
+				rz_str_get_null(cs_reg_name(*handle,
 					insn->detail->arm.operands[n].reg)));
 		}
 		break;
@@ -3152,13 +3152,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 2;
-		op->ireg = rz_str_get(cs_reg_name(handle, INSOP(0).mem.index));
+		op->ireg = rz_str_get_null(cs_reg_name(handle, INSOP(0).mem.index));
 		break;
 	case ARM_INS_TBB: // byte jump table
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 1;
-		op->ireg = rz_str_get(cs_reg_name(handle, INSOP(0).mem.index));
+		op->ireg = rz_str_get_null(cs_reg_name(handle, INSOP(0).mem.index));
 		break;
 	case ARM_INS_PLD:
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA; // not really a lea, just a prefetch
@@ -3250,7 +3250,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->jump = ((addr & ~3LL) + (thumb ? 4 : 8) + MEMDISP(1)) & UT64_MAX;
 				op->ptr = (addr & ~3LL) + (thumb ? 4 : 8) + MEMDISP(1);
 				op->refptr = 4;
-				op->reg = rz_str_get(cs_reg_name(handle, INSOP(2).reg));
+				op->reg = rz_str_get_null(cs_reg_name(handle, INSOP(2).reg));
 				break;
 			}
 		}
@@ -3341,7 +3341,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (ISIMM(1)) {
 			op->ptr = IMM(1);
 		}
-		op->reg = rz_str_get(cs_reg_name(handle, INSOP(0).reg));
+		op->reg = rz_str_get_null(cs_reg_name(handle, INSOP(0).reg));
 		/* fall-thru */
 	case ARM_INS_VCMP:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
@@ -3449,7 +3449,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->type = RZ_ANALYSIS_OP_TYPE_UCJMP;
 				op->fail = addr + op->size;
 				op->jump = ((addr & ~3LL) + (thumb ? 4 : 8) + MEMDISP(1)) & UT64_MAX;
-				op->ireg = rz_str_get(cs_reg_name(handle, INSOP(1).mem.index));
+				op->ireg = rz_str_get_null(cs_reg_name(handle, INSOP(1).mem.index));
 				break;
 			}
 		}
@@ -3781,9 +3781,9 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 		break;
 	}
 	if ((bits == 64) && HASMEMINDEX64(1)) {
-		op->ireg = rz_str_get(cs_reg_name(handle, INSOP64(1).mem.index));
+		op->ireg = rz_str_get_null(cs_reg_name(handle, INSOP64(1).mem.index));
 	} else if (HASMEMINDEX(1)) {
-		op->ireg = rz_str_get(cs_reg_name(handle, INSOP(1).mem.index));
+		op->ireg = rz_str_get_null(cs_reg_name(handle, INSOP(1).mem.index));
 		op->scale = INSOP(1).mem.scale;
 	}
 }

@@ -88,7 +88,7 @@ RZ_API int rz_search_pattern(RzSearch *s, ut64 from, ut64 to) {
 		//XXX bytepattern should be used with a read callback
 		nr = ((bytes - bproc) < BSIZE) ? (bytes - bproc) : BSIZE;
 		//XXX	rizin_read_at(bact, sblk, patlen);
-		rb = s->iob.read_at(s->iob.io, addr, sblk, nr);
+		s->iob.read_at(s->iob.io, addr, sblk, nr);
 		sblk[patlen] = 0; // XXX
 
 		intaddr = bact;

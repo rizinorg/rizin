@@ -1194,13 +1194,11 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					if (comment) {
 						if (p && p->colorfor) {
 							a = p->colorfor(p->user, addr + j, true);
-							if (a && *a) {
-								b = Color_RESET;
-							} else {
-								a = b = "";
+							if (!a || !*a) {
+								a = "";
 							}
 						} else {
-							a = b = "";
+							a = "";
 						}
 						printfmt("%s  ; %s", a, comment);
 						free(comment);
@@ -1455,11 +1453,7 @@ RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut
 		len = 1;
 	}
 
-	if (mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size == p->zoom->size) {
-		// get from cache
-		bufz = p->zoom->buf;
-		size = p->zoom->size;
-	} else {
+	if (mode != p->zoom->mode || from != p->zoom->from || to != p->zoom->to || size != p->zoom->size) {
 		mode = p->zoom->mode;
 		bufz = (ut8 *)calloc(1, len);
 		if (!bufz) {
@@ -1515,11 +1509,13 @@ static inline void printHistBlock(RzPrint *p, int k, int cols) {
 	const bool show_colors = (p && (p->flags & RZ_PRINT_FLAGS_COLOR));
 	if (show_colors) {
 		int idx = (int)((k * 4) / cols);
-		const char *str = kol[idx];
-		if (p->histblock) {
-			p->cb_printf("%s%s%s", str, block, Color_RESET);
-		} else {
-			p->cb_printf("%s%s%s", str, h_line, Color_RESET);
+		if (idx < 5) {
+			const char *str = kol[idx];
+			if (p->histblock) {
+				p->cb_printf("%s%s%s", str, block, Color_RESET);
+			} else {
+				p->cb_printf("%s%s%s", str, h_line, Color_RESET);
+			}
 		}
 	} else {
 		if (p->histblock) {

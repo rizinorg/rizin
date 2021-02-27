@@ -27,16 +27,25 @@ bool test_rz_base64_decode_invalid(void) {
 }
 
 int test_rz_base64_encode_dyn(void) {
-	char *hello = rz_base64_encode_dyn("hello", -1);
-	mu_assert_streq(hello, "aGVsbG8=", "base64_encode_dyn");
+	char *hello = rz_base64_encode_dyn((const ut8 *)"hello", 6);
+	mu_assert_streq(hello, "aGVsbG8A", "base64_encode_dyn");
+	free(hello);
+	hello = rz_base64_encode_dyn((const ut8 *)"hello1", 7);
+	mu_assert_streq(hello, "aGVsbG8xAA==", "base64_encode_dyn");
+	free(hello);
+	hello = rz_base64_encode_dyn((const ut8 *)"hello12", 8);
+	mu_assert_streq(hello, "aGVsbG8xMgA=", "base64_encode_dyn");
+	free(hello);
+	hello = rz_base64_encode_dyn((const ut8 *)"hello123", 9);
+	mu_assert_streq(hello, "aGVsbG8xMjMA", "base64_encode_dyn");
 	free(hello);
 	mu_end;
 }
 
 int test_rz_base64_encode(void) {
 	char *hello = malloc(50);
-	rz_base64_encode(hello, (ut8 *)"hello", -1);
-	mu_assert_streq(hello, "aGVsbG8=", "base64_encode_dyn");
+	rz_base64_encode(hello, (const ut8 *)"hello", 5);
+	mu_assert_streq(hello, "aGVsbG8=", "base64_encode");
 	free(hello);
 	mu_end;
 }

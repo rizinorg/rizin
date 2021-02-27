@@ -2,7 +2,10 @@ project('rizin', 'c',
   version: 'v0.2.0-git',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
-  default_options: ['buildtype=debugoptimized']
+  default_options: [
+    'buildtype=debugoptimized',
+    'b_vscrt=from_buildtype'
+  ]
 )
 
 py3_exe = import('python').find_installation()
@@ -12,11 +15,12 @@ pkgconfig_mod = import('pkgconfig')
 # Python scripts used during the build process
 create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
+check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
 is_static_build = get_option('static_runtime')
 if is_static_build and get_option('default_library') != 'static'
-  error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=true` if you want to build statically.')
+  error('Cannot use `static_runtime` when libraries are dynamically built. Set `--default-library=static` if you want to build statically.')
 endif
 
 # Get rizin version and compute various version parts
@@ -52,11 +56,6 @@ gittip = ''
 
 git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
 if git_exe.found() and git_dir_exists.returncode() == 0
-  sdb_src_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").listdir("shlr/sdb/") else 1)')
-  if sdb_src_exists.returncode() == 1
-    error('Source code for SDB not found. Did you forget to run `git submodule update --init`?')
-  endif
-
   # Get gittip
   git_rev_parse = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD')
   if git_rev_parse.returncode() == 0
@@ -112,6 +111,7 @@ endif
 platform_inc = include_directories(platform_inc)
 
 if is_static_build and cc.get_id() == 'msvc'
+  # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
   add_project_arguments('/MT', language: 'c')
 endif
 
@@ -121,8 +121,15 @@ elif cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c', 'cpp'])
 endif
 
+# Sanitize correct usage of rz_strf()
+if cc.has_argument('-Werror=sizeof-pointer-memaccess')
+  add_global_arguments('-Werror=sizeof-pointer-memaccess', language: ['c', 'cpp'])
+endif
+
 if cc.get_id() == 'clang-cl'
-  add_project_arguments('-fcommon', language: 'c')
+  if cc.has_argument('-fcommon')
+    add_project_arguments('-fcommon', language: 'c')
+  endif
   add_project_arguments('-D__STDC__=1', language: 'c')
   add_project_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
   add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
@@ -130,7 +137,7 @@ if cc.get_id() == 'clang-cl'
 endif
 
 if get_option('default_library') == 'shared'
-  if host_machine.system() != 'windows' or cc.get_id()!='msvc' and cc.get_id()!='clang-cl'
+  if cc.has_argument('-fvisibility=hidden')
     add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
@@ -144,6 +151,7 @@ rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'
   rizin_prefix = rizin_prefix / ''
+  rizin_datdir_rz = rizin_datdir / ''
   rizin_wwwroot = rizin_datdir / 'www'
   rizin_sdb = rizin_datdir / ''
   rizin_zigns = rizin_datdir / 'zigns'
@@ -211,34 +219,42 @@ config_h = configure_file(
 )
 
 # handle magic library
-sys_magic = cc.find_library('magic', required: false, static: is_static_build)
-use_syslib_magic = false
-
-if sys_magic.found() and get_option('use_sys_magic')
-  use_syslib_magic = true
-endif
+sys_magic = cc.find_library('magic', required: get_option('use_sys_magic'), static: is_static_build)
 
 # handle xxhash library
-sys_xxhash = dependency('xxhash', required: false, static: is_static_build)
-use_sys_xxhash = false
-if not sys_xxhash.found()
-  sys_xxhash = cc.find_library('xxhash', required: false, static: is_static_build)
+r = run_command(py3_exe, check_meson_subproject_py, 'xxhash')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
-use_sys_xxhash = sys_xxhash.found() and get_option('use_sys_xxhash')
+
+sys_xxhash_opt = get_option('use_sys_xxhash')
+if sys_xxhash_opt.enabled() or sys_xxhash_opt.auto()
+  xxhash_dep = dependency('xxhash', required: false, static: is_static_build)
+  if not xxhash_dep.found()
+    xxhash_dep = cc.find_library('xxhash', required: sys_xxhash_opt, static: is_static_build)
+  endif
+endif
+if sys_xxhash_opt.auto() or sys_xxhash_opt.disabled()
+  xxhash_proj = subproject('xxhash', default_options: ['default_library=static'])
+  xxhash_dep = xxhash_proj.get_variable('xxhash_dep')
+endif
 
 # handle openssl library
-sys_openssl = dependency('openssl', required: false, static: is_static_build)
-use_sys_openssl = sys_openssl.found() and get_option('use_sys_openssl')
+sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
 # handle libuv library
+libuv_dep = disabler()
 if get_option('use_libuv')
-  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false, static: is_static_build)
-  use_libuv = libuv_dep.found()
-  if not libuv_dep.found()
-    warning('use_libuv option was set to true, but libuv was not found.')
+  r = run_command(py3_exe, check_meson_subproject_py, 'libuv')
+  if r.returncode() == 1 and get_option('subprojects_check')
+    error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
   endif
-else
-  use_libuv = false
+
+  libuv_dep = dependency('libuv', version: '>=1.0.0', required: get_option('use_sys_libuv'), static: is_static_build)
+  if not libuv_dep.found()
+    libuv_proj = subproject('libuv', default_options: ['default_library=static'])
+    libuv_dep = libuv_proj.get_variable('libuv_dep')
+  endif
 endif
 
 has_debugger = get_option('debugger')
@@ -264,25 +280,20 @@ message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
 
 userconf = configuration_data()
 userconf.set('RZ_CHECKS_LEVEL', checks_level)
+userconf.set10('IS_PORTABLE', get_option('portable'))
 userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
-userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
-userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
-userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
+userconf.set10('USE_LIB_MAGIC', sys_magic.found())
+userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
+userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', rizin_prefix)
-if host_machine.system() == 'windows'
-  userconf.set('LIBDIR', rizin_libdir)
-  userconf.set('INCLUDEDIR', rizin_incdir)
-  userconf.set('DATADIR_RZ', rizin_datdir)
-  userconf.set10('HAVE_JEMALLOC', false)
-else
-  userconf.set('LIBDIR', rizin_prefix / rizin_libdir)
-  userconf.set('INCLUDEDIR', rizin_prefix / rizin_incdir)
-  userconf.set('DATADIR_RZ', rizin_datdir_rz)
-  userconf.set10('HAVE_JEMALLOC', true)
-endif
-userconf.set('DATADIR', rizin_prefix / rizin_datdir)
-userconf.set('WWWROOT', rizin_prefix / rizin_wwwroot)
+userconf.set('LIBDIR', rizin_libdir)
+userconf.set('INCLUDEDIR', rizin_incdir)
+userconf.set('DATADIR_RZ', rizin_datdir_rz)
+is_ppc = host_machine.cpu_family() == 'ppc' or host_machine.cpu_family() == 'ppc64'
+userconf.set10('HAVE_JEMALLOC', host_machine.system() != 'windows' and (host_machine.system() != 'darwin' or not is_ppc))
+userconf.set('DATADIR', rizin_datdir)
+userconf.set('WWWROOT', rizin_wwwroot)
 userconf.set('SDB', rizin_sdb)
 userconf.set('ZIGNS', rizin_zigns)
 userconf.set('THEMES', rizin_themes)
@@ -292,8 +303,8 @@ userconf.set('HUD', rizin_hud)
 userconf.set('PLUGINS', rizin_plugins)
 userconf.set('EXTRAS', rizin_extras)
 userconf.set('BINDINGS', rizin_bindings)
-userconf.set10('HAVE_OPENSSL', use_sys_openssl)
-userconf.set10('HAVE_LIBUV', use_libuv)
+userconf.set10('HAVE_OPENSSL', sys_openssl.found())
+userconf.set10('HAVE_LIBUV', libuv_dep.found())
 userconf.set10('WANT_DYLINK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
@@ -336,7 +347,7 @@ if userconf.get('HAVE_PIPE2') == 1
 endif
 
 rz_userconf_h = configure_file(
-  input: 'librz/include/rz_userconf.h.acr',
+  input: 'librz/include/rz_userconf.h.in',
   output: 'rz_userconf.h',
   configuration: userconf,
   install_dir: rizin_incdir
@@ -351,7 +362,6 @@ message('Version Patch: @0@0'.format(rizin_version_patch))
 message('Version GitTip: @0@0'.format(gittip))
 
 versionconf = configuration_data()
-versionconf.set_quoted('MESON_VERSION', meson.version())
 versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
 versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
@@ -379,123 +389,32 @@ pcconf = configuration_data()
 pcconf.set('PREFIX', rizin_prefix)
 pcconf.set('VERSION', rizin_version)
 libr_pc = configure_file(
-  input: 'librz/librz.pc.acr',
+  input: 'librz/librz.pc.in',
   output: 'librz.pc',
   configuration: pcconf,
   install_dir: get_option('libdir') / 'pkgconfig'
 )
 
 # handle zlib dependency
-zlib_dep = dependency('zlib', required: false, static: is_static_build)
-if not zlib_dep.found() or not get_option('use_sys_zlib')
-  zlib_files = [
-    'shlr/zip/zlib/adler32.c',
-    'shlr/zip/zlib/compress.c',
-    'shlr/zip/zlib/crc32.c',
-    'shlr/zip/zlib/deflate.c',
-    'shlr/zip/zlib/gzclose.c',
-    'shlr/zip/zlib/gzlib.c',
-    'shlr/zip/zlib/gzread.c',
-    'shlr/zip/zlib/gzwrite.c',
-    'shlr/zip/zlib/infback.c',
-    'shlr/zip/zlib/inffast.c',
-    'shlr/zip/zlib/inflate.c',
-    'shlr/zip/zlib/inftrees.c',
-    'shlr/zip/zlib/trees.c',
-    'shlr/zip/zlib/uncompr.c',
-    'shlr/zip/zlib/zutil.c'
-  ]
-
-  zlib_inc = [platform_inc, include_directories('shlr/zip/zlib')]
-
-  librzzlib = static_library('rzzlib', zlib_files,
-    include_directories: zlib_inc,
-    implicit_include_directories: false
-  )
-
-  zlib_dep = declare_dependency(
-    link_with: librzzlib,
-    include_directories: zlib_inc
-  )
+r = run_command(py3_exe, check_meson_subproject_py, 'zlib')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
-
-# handle sdb dependency
-# NOTE: copying most of the stuff from sdb to here for the moment, since we
-# should use subpackages to handle this well
-sdb_files = [
-  'shlr/sdb/src/array.c',
-  'shlr/sdb/src/base64.c',
-  'shlr/sdb/src/buffer.c',
-  'shlr/sdb/src/set.c',
-  'shlr/sdb/src/cdb.c',
-  'shlr/sdb/src/cdb_make.c',
-  'shlr/sdb/src/diff.c',
-  'shlr/sdb/src/disk.c',
-  'shlr/sdb/src/fmt.c',
-  'shlr/sdb/src/ht_uu.c',
-  'shlr/sdb/src/ht_up.c',
-  'shlr/sdb/src/ht_pp.c',
-  'shlr/sdb/src/journal.c',
-  'shlr/sdb/src/json.c',
-  'shlr/sdb/src/lock.c',
-  'shlr/sdb/src/ls.c',
-  'shlr/sdb/src/match.c',
-  'shlr/sdb/src/ns.c',
-  'shlr/sdb/src/num.c',
-  'shlr/sdb/src/query.c',
-  'shlr/sdb/src/sdb.c',
-  'shlr/sdb/src/sdbht.c',
-  'shlr/sdb/src/text.c',
-  'shlr/sdb/src/util.c'
-]
-
-sdb_inc = [platform_inc, include_directories('shlr/sdb/src')]
-
-# Create sdb_version.h
-r = run_command(py3_exe, 'sys/sdb_version.py', 'shlr/sdb/config.mk')
-if r.returncode() == 0
-  sdb_version = r.stdout().strip().split('\n')[0]
-else
-  sdb_version = 'unknown'
+zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
+if not zlib_dep.found()
+  zlib_proj = subproject('zlib', default_options: ['default_library=static'])
+  zlib_dep = zlib_proj.get_variable('zlib_dep')
 endif
-run_command(py3_exe, '-c', 'with open("shlr/sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
-sdb_inc_files = [
-  'shlr/sdb/src/buffer.h',
-  'shlr/sdb/src/cdb.h',
-  'shlr/sdb/src/set.h',
-  'shlr/sdb/src/cdb_make.h',
-  'shlr/sdb/src/config.h',
-  'shlr/sdb/src/ht_inc.h',
-  'shlr/sdb/src/ht_pp.h',
-  'shlr/sdb/src/ht_up.h',
-  'shlr/sdb/src/ht_uu.h',
-  'shlr/sdb/src/ls.h',
-  'shlr/sdb/src/sdb.h',
-  'shlr/sdb/src/sdbht.h',
-  'shlr/sdb/src/sdb_version.h',
-  'shlr/sdb/src/types.h'
-]
-install_headers(sdb_inc_files, install_dir: rizin_incdir / 'sdb')
+r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
 
-librzsdb = static_library('rzsdb', sdb_files,
-  include_directories: sdb_inc,
-  implicit_include_directories: false,
-)
-
-sdb_dep = declare_dependency(
-  link_whole: librzsdb,
-  include_directories: sdb_inc
-)
-
-sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
-  include_directories: [
-    include_directories(['shlr/sdb/src'])
-  ],
-  implicit_include_directories: false,
-  native: true,
-)
+sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])
+sdb_dep = sdb_proj.get_variable('sdb_dep')
+sdb_exe  = sdb_proj.get_variable('sdb_native_exe')
 
 sdb_gen_cmd = [
   sdb_exe,
@@ -504,7 +423,6 @@ sdb_gen_cmd = [
   '@INPUT@'
 ]
 
-# handle spp dependency
 spp_files = [
   'shlr/spp/spp.c'
 ]
@@ -541,7 +459,6 @@ endif
 rpath_exe = ''
 rpath_lib = ''
 if use_rpath
-  message('RPATH will be used to link libraries and executables')
   rpath_exe = '$ORIGIN/../' + get_option('libdir')
   rpath_lib = '$ORIGIN'
 endif
@@ -724,15 +641,15 @@ summary({
 
 summary({
   'Debugger enabled': has_debugger,
-  'System magic library': use_syslib_magic,
-  'System xxhash library': use_sys_xxhash,
-  'System openssl library': use_sys_openssl,
-  'System libuv library': use_libuv,
-  'System capstone library': capstone_dep.type_name() != 'internal',
-  'System tree-sitter library': tree_sitter_dep.type_name() != 'internal',
-  'System lz4 library': lz4_dep.type_name() != 'internal',
-  'System zlib library': zlib_dep.type_name() != 'internal',
-  'System zip library': zip_dep.type_name() != 'internal',
+  'System magic library': sys_magic.found() and sys_magic.type_name() != 'internal',
+  'System xxhash library': xxhash_dep.found() and xxhash_dep.type_name() != 'internal',
+  'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
+  'System libuv library': libuv_dep.found() and libuv_dep.type_name() != 'internal',
+  'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
+  'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
+  'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
+  'System zlib library': zlib_dep.found() and zlib_dep.type_name() != 'internal',
+  'System zip library': libzip_dep.found() and libzip_dep.type_name() != 'internal',
   'Use ptrace-wrap': use_ptrace_wrap,
   'Use RPATH': use_rpath,
 }, section: 'Configuration', bool_yn: true)

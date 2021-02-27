@@ -1,0 +1,7 @@
+---
+name: cmd_debug
+commands:
+  - name: dc
+    cname: debug_continue_oldhandler
+    summary: Continue execution
+    type: RZ_CMD_DESC_TYPE_OLDINPUT

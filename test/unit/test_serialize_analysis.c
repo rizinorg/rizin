@@ -38,7 +38,7 @@ bool test_analysis_diff_load() {
 	RzSerializeAnalDiffParser parser = rz_serialize_analysis_diff_parser_new();
 
 	char *str = strdup("{}");
-	RJson *json = rz_json_parse(str);
+	RzJson *json = rz_json_parse(str);
 	RzAnalysisDiff *diff = rz_serialize_analysis_diff_load(parser, json);
 	rz_json_free(json);
 	free(str);
@@ -101,7 +101,7 @@ bool test_analysis_switch_op_save() {
 
 bool test_analysis_switch_op_load() {
 	char *str = strdup("{\"addr\":1337,\"min\":42,\"max\":45,\"def\":46,\"cases\":[]}");
-	RJson *json = rz_json_parse(str);
+	RzJson *json = rz_json_parse(str);
 	RzAnalysisSwitchOp *sop = rz_serialize_analysis_switch_op_load(json);
 	rz_json_free(json);
 	free(str);
@@ -155,8 +155,7 @@ bool test_analysis_block_save() {
 	block->traced = true;
 	block->colorize = 0xff0000;
 	block->fingerprint = malloc(block->size);
-	ut8 v;
-	for (v = 0; v < block->size; v++) {
+	for (size_t v = 0; v < block->size; v++) {
 		block->fingerprint[v] = v;
 	}
 	block->diff = rz_analysis_diff_new();
@@ -300,8 +299,7 @@ bool test_analysis_function_save() {
 	f->ninstr = 13;
 	f->fingerprint_size = 0x10;
 	f->fingerprint = malloc(f->fingerprint_size);
-	ut8 v;
-	for (v = 0; v < f->fingerprint_size; v++) {
+	for (size_t v = 0; v < f->fingerprint_size; v++) {
 		f->fingerprint[v] = v;
 	}
 	f->diff->addr = 4321;
@@ -1434,7 +1432,7 @@ Sdb *sign_ref_db() {
 	sdb_set(spaces, "name", "zs", 0);
 	Sdb *spaces_spaces = sdb_ns(spaces, "spaces", true);
 	sdb_set(spaces_spaces, "koridai", "s", 0);
-	sdb_set(db, "zign|*|sym.mahboi", "|s:4|b:deadbeef|m:c0ffee42|o:4919|g:7b0000000b0000000c0000000d0000002a000000|r:gwonam,link|x:king,ganon|v:r16,s42,b13|t:func.sym.mahboi.ret=char *,func.sym.mahboi.args=2,func.sym.mahboi.arg.0=\"int,arg0\",func.sym.mahboi.arg.1=\"uint32_t,die\"|c:This peace is what all true warriors strive for|n:sym.Mah.Boi|h:7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", 0);
+	sdb_set(db, "zign|*|sym.mahboi", "|s:4|b:deadbeef|m:c0ffee42|o:4919|g:123,11,12,13,42|r:gwonam,link|x:king,ganon|v:r16,s42,b13|t:func.sym.mahboi.ret=char *,func.sym.mahboi.args=2,func.sym.mahboi.arg.0=\"int,arg0\",func.sym.mahboi.arg.1=\"uint32_t,die\"|c:This peace is what all true warriors strive for|n:sym.Mah.Boi|h:7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", 0);
 	sdb_set(db, "zign|koridai|sym.boring", "|c:gee it sure is boring around here", 0);
 	return db;
 }

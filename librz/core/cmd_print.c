@@ -7,6 +7,8 @@
 #include "rz_types.h"
 #include <limits.h>
 
+#include "core_private.h"
+
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR       "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
@@ -1098,7 +1100,6 @@ static void cmd_pCd(RzCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	rz_cons_push();
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
 	c->color = rz_config_get_i(core->config, "scr.color");
@@ -1114,7 +1115,6 @@ static void cmd_pCd(RzCore *core, const char *input) {
 	rz_core_block_size(core, obsz);
 	rz_core_seek(core, osek, true);
 
-	rz_cons_pop();
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
 	if (asm_minicols) {
@@ -1181,7 +1181,6 @@ static void cmd_pCD(RzCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	rz_cons_push();
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
 	c->color = rz_config_get_i(core->config, "scr.color");
@@ -1208,7 +1207,6 @@ static void cmd_pCD(RzCore *core, const char *input) {
 	rz_core_block_size(core, obsz);
 	rz_core_seek(core, osek, true);
 
-	rz_cons_pop();
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
 	if (asm_minicols) {
@@ -1283,7 +1281,7 @@ static char get_string_type(const ut8 *buf, ut64 len) {
 		} else {
 			str_type = 'a';
 		}
-		for (rc = i = 0; needle < len; i += rc) {
+		for (i = 0; needle < len; i += rc) {
 			RzRune r;
 			if (str_type == 'w') {
 				if (needle + 1 < len) {
@@ -2794,7 +2792,6 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 	rz_config_set_i(core->config, "scr.html", 0);
 	rz_config_set_i(core->config, "asm.cmt.right", true);
 
-	rz_cons_push();
 	line = NULL;
 	s = NULL;
 	if (!strncmp(input, "dsb", 3)) {
@@ -2817,7 +2814,6 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 	} else {
 		line = s = rz_core_cmd_str(core, "pd");
 	}
-	rz_cons_pop();
 
 	rz_config_set_i(core->config, "scr.html", scr_html);
 	rz_config_set_i(core->config, "scr.color", use_color);
@@ -4135,16 +4131,16 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 			rz_cons_printf("axd 0x%" PFMT64x " 0x%08" PFMT64x "\n", origin, offset);
 			break;
 		case '.':
-			rz_core_cmdf(core, "CC-@ 0x%08" PFMT64x "\n", origin);
-			rz_core_cmdf(core, "CC switch table @ 0x%08" PFMT64x "\n", origin);
+			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
+			rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, origin, "switch table");
 			rz_core_cmdf(core, "f switch.0x%08" PFMT64x "=0x%08" PFMT64x "\n", origin, origin);
 			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); //origin, origin);
-			rz_core_cmdf(core, "axd 0x%" PFMT64x " 0x%08" PFMT64x "\n", origin, offset);
+			rz_analysis_xrefs_set(core->analysis, offset, origin, RZ_ANALYSIS_REF_TYPE_DATA);
 			break;
 		}
 	} else if (mode == '.') {
-		rz_core_cmdf(core, "CC-@ 0x%08" PFMT64x "\n", origin);
-		rz_core_cmdf(core, "CC switch basic block @ 0x%08" PFMT64x "\n", offset);
+		rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
+		rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, offset, "switch basic block");
 		rz_core_cmdf(core, "f switch.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); // basic block @ 0x%08"PFMT64x "\n", offset);
 	}
 	int n = 0;
@@ -4163,16 +4159,18 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 			rz_cons_printf("af case.%d.0x%" PFMT64x " 0x%08" PFMT64x "\n", n, offset, addr);
 			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", offset, addr);
 			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
+			// FIXME: "aho" doesn't accept anything here after the "case" word
 			rz_cons_printf("aho case 0x%" PFMT64x " 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", (ut64)i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
 			rz_cons_printf("ahs %d @ 0x%08" PFMT64x "\n", step, offset + i);
 		} else if (mode == '.') {
-			rz_core_cmdf(core, "af case.%d.0x%" PFMT64x " @ 0x%08" PFMT64x "\n", n, offset, addr);
-			rz_core_cmdf(core, "ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", offset, addr);
-			rz_core_cmdf(core, "ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
-			// rz_core_cmdf (core, "CC+ case %d: 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", i / step, addr, origin);
-			rz_core_cmdf(core, "CCu case %d: @ 0x%08" PFMT64x "\n", n, addr); //, origin);
-			rz_core_cmdf(core, "aho case %d 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", n, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
-			rz_core_cmdf(core, "ahs %d @ 0x%08" PFMT64x "\n", step, offset + i);
+			const char *case_name = rz_str_newf("case.%d.0x%" PFMT64x, n, offset);
+			rz_core_analysis_function_add(core, case_name, addr, false);
+			rz_analysis_xrefs_set(core->analysis, addr, offset, RZ_ANALYSIS_REF_TYPE_NULL);
+			rz_analysis_xrefs_set(core->analysis, offset, addr, RZ_ANALYSIS_REF_TYPE_NULL); // wrong, but useful because forward xrefs dont work :?
+			const char *case_comment = rz_str_newf("case %d:", n);
+			rz_core_meta_comment_add(core, case_comment, addr);
+			rz_analysis_hint_set_type(core->analysis, offset + i, RZ_ANALYSIS_OP_TYPE_CASE); // wrong, but useful because forward xrefs dont work :?
+			rz_analysis_hint_set_size(core->analysis, offset + i, step);
 		} else {
 			rz_cons_printf("0x%08" PFMT64x " -> 0x%08" PFMT64x "\n", offset + i, addr);
 		}
@@ -4268,7 +4266,6 @@ static void __printPattern(RzCore *core, const char *_input) {
 	case 'a':
 		// TODO
 		{
-			i = core->offset;
 			size_t bs = 4; // XXX hardcoded
 			ut8 *buf = calloc(bs, 1);
 			// for (;i>0;i--) { incDigitBuffer (buf, bs); }
@@ -4285,7 +4282,6 @@ static void __printPattern(RzCore *core, const char *_input) {
 		break;
 	case 'n': // "ppn"
 	{
-		i = core->offset;
 		size_t bs = 4; // XXX hardcoded
 		ut8 *buf = calloc(bs, 1);
 		// for (;i>0;i--) { incDigitBuffer (buf, bs); }
@@ -4806,11 +4802,11 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	int i, len, ret;
 	ut8 *block;
 	ut32 tbs = core->blocksize;
-	ut64 n, off, from, to, at, ate, piece;
+	ut64 n, off, from, to;
 	ut64 tmpseek = UT64_MAX;
 	const size_t addrbytes = core->io->addrbytes;
-	i = l = len = ret = 0;
-	n = off = from = to = at = ate = piece = 0;
+	ret = 0;
+	to = 0;
 	PJ *pj = NULL;
 
 	rz_print_init_rowoffsets(core->print);

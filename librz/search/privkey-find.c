@@ -52,7 +52,7 @@ static int check_fields(const ut8 *start) {
 		return false;
 	}
 	ptr = ptr + field_len;
-	ptr = parse_next_field(ptr, &field_len);
+	parse_next_field(ptr, &field_len);
 
 	if (!field_len || field_len > KEY_MAX_LEN) {
 		return false;

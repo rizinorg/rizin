@@ -1,7 +1,8 @@
 /* Copyright rizin 2014-2020 - Author: pancake, vane11ope */
 
 #include <rz_core.h>
-#include "cmd_descs.h"
+#include "cmd_descs/cmd_descs.h"
+#include "core_private.h"
 
 #define PANEL_NUM_LIMIT 9
 
@@ -130,7 +131,7 @@ static char *menus_Debug[] = {
 };
 
 static const char *menus_Analyze[] = {
-	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "References",
+	"Function", "Symbols", "Program", "Calls", "References",
 	NULL
 };
 
@@ -497,7 +498,6 @@ static int __reload_cb(void *user);
 static int __function_cb(void *user);
 static int __symbols_cb(void *user);
 static int __program_cb(void *user);
-static int __basic_blocks_cb(void *user);
 static int __calls_cb(void *user);
 static int __break_points_cb(void *user);
 static int __watch_points_cb(void *user);
@@ -579,7 +579,6 @@ static void __esil_step_to(RzCore *core, ut64 end);
 static void __panel_breakpoint(RzCore *core);
 static void __panel_single_step_in(RzCore *core);
 static void __panel_single_step_over(RzCore *core);
-static void __panel_continue(RzCore *core);
 
 /* zoom mode */
 static void __save_panel_pos(RzPanel *panel);
@@ -1645,8 +1644,7 @@ void __handleComment(RzCore *core) {
 		addr = orig = core->offset;
 		if (core->print->cur_enabled) {
 			addr += core->print->cur;
-			rz_core_seek(core, addr, false);
-			rz_core_cmdf(core, "s 0x%" PFMT64x, addr);
+			rz_core_seek_and_save(core, addr, false);
 		}
 		if (!strcmp(buf + i, "-")) {
 			strcpy(buf, "CC-");
@@ -1827,7 +1825,7 @@ bool __handle_cursor_mode(RzCore *core, const int key) {
 		break;
 	case '*':
 		if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
-			rz_core_cmdf(core, "dr PC=0x%08" PFMT64x, core->offset + print->cur);
+			rz_core_debug_reg_set(core, "PC", core->offset + print->cur, NULL);
 			__set_panel_addr(core, cur, core->offset + print->cur);
 		}
 		break;
@@ -3097,13 +3095,13 @@ int __open_file_cb(void *user) {
 
 int __rw_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd(core, "oo+", 0);
+	rz_core_io_file_reopen(core, core->io->desc->fd, core->io->desc->perm | RZ_PERM_RW);
 	return 0;
 }
 
 int __debugger_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd(core, "oo", 0);
+	rz_core_io_file_open(core, core->io->desc->fd);
 	return 0;
 }
 
@@ -3181,7 +3179,7 @@ int __copy_cb(void *user) {
 
 int __paste_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd0(core, "yy");
+	rz_core_yank_paste(core, core->offset, 0);
 	return 0;
 }
 
@@ -3215,7 +3213,7 @@ int __settings_colors_cb(void *user) {
 	RzPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RzPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	rz_str_ansi_filter(child->name, NULL, NULL, -1);
-	rz_core_cmdf(core, "eco %s", child->name);
+	rz_core_load_theme(core, child->name);
 	int i;
 	for (i = 1; i < menu->depth; i++) {
 		RzPanel *p = menu->history[i]->p;
@@ -3341,7 +3339,7 @@ int __hexpairs_cb(void *user) {
 
 int __continue_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd(core, "dc", 0);
+	rz_debug_continue_oldhandler(core, "");
 	rz_cons_flush();
 	return 0;
 }
@@ -3397,7 +3395,7 @@ int __step_over_cb(void *user) {
 
 int __io_cache_on_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_config_set_i(core->config, "io.cache", 1);
+	rz_config_set_b(core->config, "io.cache", true);
 	(void)__show_status(core, "io.cache is on");
 	__set_mode(core, PANEL_MODE_DEFAULT);
 	return 0;
@@ -3405,7 +3403,7 @@ int __io_cache_on_cb(void *user) {
 
 int __io_cache_off_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_config_set_i(core->config, "io.cache", 0);
+	rz_config_set_b(core->config, "io.cache", false);
 	(void)__show_status(core, "io.cache is off");
 	__set_mode(core, PANEL_MODE_DEFAULT);
 	return 0;
@@ -3513,7 +3511,7 @@ int __reload_cb(void *user) {
 
 int __function_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmdf(core, "af");
+	rz_core_analysis_function_add(core, NULL, core->offset, false);
 	return 0;
 }
 
@@ -3526,12 +3524,6 @@ int __symbols_cb(void *user) {
 int __program_cb(void *user) {
 	RzCore *core = (RzCore *)user;
 	rz_core_cmdf(core, "aaa");
-	return 0;
-}
-
-int __basic_blocks_cb(void *user) {
-	RzCore *core = (RzCore *)user;
-	rz_cmd_analysis_blocks(core, "");
 	return 0;
 }
 
@@ -3555,7 +3547,7 @@ int __break_points_cb(void *user) {
 	core->cons->line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
 
 	ut64 addr = rz_num_math(core->num, buf);
-	rz_core_cmdf(core, "dbs 0x%08" PFMT64x, addr);
+	rz_core_debug_breakpoint_toggle(core, addr);
 	return 0;
 }
 
@@ -3970,8 +3962,8 @@ void __print_disassembly_cb(void *user, void *p) {
 	ut64 o_offset = core->offset;
 	core->offset = panel->model->addr;
 	rz_core_seek(core, panel->model->addr, true);
-	if (rz_config_get_i(core->config, "cfg.debug")) {
-		rz_core_cmd(core, ".dr*", 0);
+	if (rz_config_get_b(core->config, "cfg.debug")) {
+		rz_core_debug_regs2flags(core, 0);
 	}
 	cmdstr = __handle_cmd_str_cache(core, panel, false);
 	core->offset = o_offset;
@@ -4065,12 +4057,12 @@ void __hudstuff(RzCore *core) {
 }
 
 void __esil_init(RzCore *core) {
-	rz_core_cmd(core, "aeim", 0);
-	rz_core_cmd(core, "aeip", 0);
+	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
+	rz_core_analysis_esil_init_regs(core);
 }
 
 void __esil_step_to(RzCore *core, ut64 end) {
-	rz_core_cmdf(core, "aesu 0x%08" PFMT64x, end);
+	rz_core_esil_step(core, end, NULL, NULL, false);
 }
 
 int __open_menu_cb(void *user) {
@@ -4392,7 +4384,6 @@ bool __init_panels_menu(RzCore *core) {
 
 	{
 		parent = "View";
-		i = 0;
 		RzList *list = __sorted_list(core, menus_View, COUNT(menus_View));
 		char *pos;
 		RzListIter *iter;
@@ -4446,7 +4437,6 @@ bool __init_panels_menu(RzCore *core) {
 
 	{
 		parent = "Debug";
-		i = 0;
 		RzList *list = __sorted_list(core, menus_Debug, COUNT(menus_Debug));
 		char *pos;
 		RzListIter *iter;
@@ -4478,8 +4468,6 @@ bool __init_panels_menu(RzCore *core) {
 			__add_menu(core, parent, menus_Analyze[i], __symbols_cb);
 		} else if (!strcmp(menus_Analyze[i], "Program")) {
 			__add_menu(core, parent, menus_Analyze[i], __program_cb);
-		} else if (!strcmp(menus_Analyze[i], "BasicBlocks")) {
-			__add_menu(core, parent, menus_Analyze[i], __basic_blocks_cb);
 		} else if (!strcmp(menus_Analyze[i], "Calls")) {
 			__add_menu(core, parent, menus_Analyze[i], __calls_cb);
 		} else if (!strcmp(menus_Analyze[i], "References")) {
@@ -4666,9 +4654,9 @@ void __panels_refresh(RzCore *core) {
 		return;
 	}
 	RzStrBuf *title = rz_strbuf_new(" ");
-	bool utf8 = rz_config_get_i(core->config, "scr.utf8");
+	bool utf8 = rz_config_get_b(core->config, "scr.utf8");
 	if (firstRun) {
-		rz_config_set_i(core->config, "scr.utf8", 0);
+		rz_config_set_b(core->config, "scr.utf8", false);
 	}
 
 	__refresh_core_offset(core);
@@ -4752,7 +4740,7 @@ void __panels_refresh(RzCore *core) {
 
 	if (firstRun) {
 		firstRun = false;
-		rz_config_set_i(core->config, "scr.utf8", utf8);
+		rz_config_set_b(core->config, "scr.utf8", utf8);
 		RzPanel *cur = __get_cur_panel(core->panels);
 		cur->view->refresh = true;
 		__panels_refresh(core);
@@ -4797,38 +4785,33 @@ void __do_panels_refreshOneShot(RzCore *core) {
 }
 
 void __panel_single_step_in(RzCore *core) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
-		rz_core_cmd(core, "ds", 0);
-		rz_core_cmd(core, ".dr*", 0);
+	if (rz_config_get_b(core->config, "cfg.debug")) {
+		rz_core_debug_step_one(core, 1);
+		rz_core_debug_regs2flags(core, 0);
 	} else {
-		rz_core_cmd(core, "aes", 0);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
+		rz_core_regs2flags(core);
 	}
 }
 
 void __panel_single_step_over(RzCore *core) {
-	bool io_cache = rz_config_get_i(core->config, "io.cache");
-	rz_config_set_i(core->config, "io.cache", false);
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	bool io_cache = rz_config_get_b(core->config, "io.cache");
+	rz_config_set_b(core->config, "io.cache", false);
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		rz_core_cmd(core, "dso", 0);
-		rz_core_cmd(core, ".dr*", 0);
+		rz_core_debug_regs2flags(core, 0);
 	} else {
-		rz_core_cmd(core, "aeso", 0);
-		rz_core_cmd(core, ".ar*", 0);
+		rz_core_analysis_esil_step_over(core);
 	}
-	rz_config_set_i(core->config, "io.cache", io_cache);
+	rz_config_set_b(core->config, "io.cache", io_cache);
 }
 
 void __panel_breakpoint(RzCore *core) {
 	RzPanel *cur = __get_cur_panel(core->panels);
 	if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
-		rz_core_cmd(core, "dbs $$", 0);
+		rz_core_debug_breakpoint_toggle(core, core->offset);
 		cur->view->refresh = true;
 	}
-}
-
-void __panel_continue(RzCore *core) {
-	rz_debug_continue_oldhandler(core, "");
 }
 
 void __panels_check_stackbase(RzCore *core) {
@@ -4919,7 +4902,7 @@ void __init_almighty_db(RzCore *core) {
 	sdb_ptr_set(db, "Search strings in the whole bin", &__search_strings_bin_create, 0);
 	sdb_ptr_set(db, "Create New", &__create_panel_input, 0);
 	sdb_ptr_set(db, "Change Command of Current Panel", &__replace_current_panel_input, 0);
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		sdb_ptr_set(db, "Put Breakpoints", &__put_breakpoints_cb, 0);
 		sdb_ptr_set(db, "Continue", &__continue_almighty_cb, 0);
 		sdb_ptr_set(db, "Step", &__step_almighty_cb, 0);
@@ -5022,7 +5005,7 @@ bool __init(RzCore *core, RzPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
 	panels->columnWidth = 80;
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		panels->layout = PANEL_LAYOUT_DEFAULT_DYNAMIC;
 	} else {
 		panels->layout = PANEL_LAYOUT_DEFAULT_STATIC;
@@ -5157,7 +5140,7 @@ void __handle_menu(RzCore *core, const int key) {
 		}
 		break;
 	case '$':
-		rz_core_cmd0(core, "dr PC=$$");
+		rz_core_debug_reg_set(core, "PC", core->offset, NULL);
 		break;
 	case ' ':
 	case '\r':
@@ -5488,19 +5471,19 @@ void __toggle_help(RzCore *core) {
 }
 
 void __set_breakpoints_on_cursor(RzCore *core, RzPanel *panel) {
-	if (!rz_config_get_i(core->config, "cfg.debug")) {
+	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		return;
 	}
 	if (__check_panel_type(panel, PANEL_CMD_DISASSEMBLY)) {
-		rz_core_cmdf(core, "dbs 0x%08" PFMT64x, core->offset + core->print->cur);
+		rz_core_debug_breakpoint_toggle(core, core->offset + core->print->cur);
 		panel->view->refresh = true;
 	}
 }
 
 void __insert_value(RzCore *core) {
-	if (!rz_config_get_i(core->config, "io.cache")) {
+	if (!rz_config_get_b(core->config, "io.cache")) {
 		if (__show_status_yesno(core, 1, "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
-			rz_config_set_i(core->config, "io.cache", 1);
+			rz_config_set_b(core->config, "io.cache", true);
 			(void)__show_status(core, "io.cache is on and insert is available now.");
 		} else {
 			(void)__show_status(core, "You can always turn on io.cache in Menu->Edit->io.cache");
@@ -5513,25 +5496,26 @@ void __insert_value(RzCore *core) {
 	if (__check_panel_type(cur, PANEL_CMD_STACK)) {
 		const char *prompt = "insert hex: ";
 		__panel_prompt(prompt, buf, sizeof(buf));
-		rz_core_cmdf(core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr);
+		rz_core_write_hexpair(core, cur->model->addr, buf);
 		cur->view->refresh = true;
 	} else if (__check_panel_type(cur, PANEL_CMD_REGISTERS)) {
 		const char *creg = core->dbg->creg;
 		if (creg) {
 			const char *prompt = "new-reg-value> ";
 			__panel_prompt(prompt, buf, sizeof(buf));
-			rz_core_cmdf(core, "dr %s = %s", creg, buf);
+			ut64 regval = rz_num_math(core->num, buf);
+			rz_core_debug_reg_set(core, creg, regval, buf);
 			cur->view->refresh = true;
 		}
 	} else if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
 		const char *prompt = "insert hex: ";
 		__panel_prompt(prompt, buf, sizeof(buf));
-		rz_core_cmdf(core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
+		rz_core_write_hexpair(core, core->offset + core->print->cur, buf);
 		cur->view->refresh = true;
 	} else if (__check_panel_type(cur, PANEL_CMD_HEXDUMP)) {
 		const char *prompt = "insert hex: ";
 		__panel_prompt(prompt, buf, sizeof(buf));
-		rz_core_cmdf(core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
+		rz_core_write_hexpair(core, cur->model->addr + core->print->cur, buf);
 		cur->view->refresh = true;
 	}
 }
@@ -5947,8 +5931,8 @@ void __redo_seek(RzCore *core) {
 }
 
 void __rotate_asmemu(RzCore *core, RzPanel *p) {
-	const bool isEmuStr = rz_config_get_i(core->config, "emu.str");
-	const bool isEmu = rz_config_get_i(core->config, "asm.emu");
+	const bool isEmuStr = rz_config_get_b(core->config, "emu.str");
+	const bool isEmu = rz_config_get_b(core->config, "asm.emu");
 	if (isEmu) {
 		if (isEmuStr) {
 			rz_config_set(core->config, "emu.str", "false");
@@ -6119,10 +6103,10 @@ void __handle_tab_next(RzCore *core) {
 }
 
 void __handle_print_rotate(RzCore *core) {
-	if (rz_config_get_i(core->config, "asm.pseudo")) {
+	if (rz_config_get_b(core->config, "asm.pseudo")) {
 		rz_config_toggle(core->config, "asm.pseudo");
 		rz_config_toggle(core->config, "asm.esil");
-	} else if (rz_config_get_i(core->config, "asm.esil")) {
+	} else if (rz_config_get_b(core->config, "asm.esil")) {
 		rz_config_toggle(core->config, "asm.esil");
 	} else {
 		rz_config_toggle(core->config, "asm.pseudo");
@@ -6323,7 +6307,7 @@ void __panels_process(RzCore *core, RzPanels *panels) {
 
 	rz_cons_enable_mouse(false);
 repeat:
-	rz_cons_enable_mouse(rz_config_get_i(core->config, "scr.wheel"));
+	rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));
 	core->panels = panels;
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
@@ -6418,9 +6402,9 @@ repeat:
 		break;
 	case '$':
 		if (core->print->cur_enabled) {
-			rz_core_cmdf(core, "dr PC=$$+%d", core->print->cur);
+			rz_core_debug_reg_set(core, "PC", core->offset + core->print->cur, NULL);
 		} else {
-			rz_core_cmd0(core, "dr PC=$$");
+			rz_core_debug_reg_set(core, "PC", core->offset, NULL);
 		}
 		break;
 	case 's':
@@ -6436,11 +6420,7 @@ repeat:
 		}
 		break;
 	case ' ':
-		if (rz_config_get_i(core->config, "graph.web")) {
-			rz_core_cmd0(core, "agv $$");
-		} else {
-			__call_visual_graph(core);
-		}
+		__call_visual_graph(core);
 		break;
 	case ':':
 		rz_core_visual_prompt_input(core);
@@ -6460,27 +6440,13 @@ repeat:
 	} break;
 	case 'r':
 		// TODO: toggle shortcut hotkeys
-		if (rz_config_get_i(core->config, "asm.hint.call")) {
-			rz_core_cmd0(core, "e!asm.hint.call");
-			rz_core_cmd0(core, "e asm.hint.jmp=true");
-		} else if (rz_config_get_i(core->config, "asm.hint.jmp")) {
-			rz_core_cmd0(core, "e!asm.hint.jmp");
-			rz_core_cmd0(core, "e asm.hint.emu=true");
-		} else if (rz_config_get_i(core->config, "asm.hint.emu")) {
-			rz_core_cmd0(core, "e!asm.hint.emu");
-			rz_core_cmd0(core, "e asm.hint.lea=true");
-		} else if (rz_config_get_i(core->config, "asm.hint.lea")) {
-			rz_core_cmd0(core, "e!asm.hint.lea");
-			rz_core_cmd0(core, "e asm.hint.call=true");
-		} else {
-			rz_core_cmd0(core, "e asm.hint.call=true");
-		}
+		rz_core_visual_toggle_hints(core);
 		break;
 	case 'R':
-		if (rz_config_get_i(core->config, "scr.randpal")) {
+		if (rz_config_get_b(core->config, "scr.randpal")) {
 			rz_cons_pal_random();
 		} else {
-			rz_core_cmd0(core, "ecn");
+			rz_core_theme_nextpal(core, 'n');
 		}
 		__do_panels_refresh(core);
 		break;
@@ -6674,11 +6640,7 @@ repeat:
 		}
 		break;
 	case 'V':
-		if (rz_config_get_i(core->config, "graph.web")) {
-			rz_core_cmd0(core, "agv $$");
-		} else {
-			__call_visual_graph(core);
-		}
+		__call_visual_graph(core);
 		break;
 	case ']':
 		if (__check_panel_type(cur, PANEL_CMD_HEXDUMP)) {
@@ -6832,7 +6794,7 @@ repeat:
 			(void)rz_core_cmd0(core, cmd);
 		} else {
 			if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
-				__panel_continue(core);
+				rz_core_debug_continue(core);
 				__set_panel_addr(core, cur, core->offset);
 			}
 		}

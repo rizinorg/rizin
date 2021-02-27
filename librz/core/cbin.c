@@ -194,7 +194,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		}
 		if (strstr(dup, ".cparse")) {
 			if (IS_MODE_RZCMD(mode)) {
-				rz_cons_printf("\"td %s\"\n", v);
+				rz_cons_printf("td \"%s\"\n", v);
 			} else if (IS_MODE_SET(mode)) {
 				char *code = rz_str_newf("%s;", v);
 				char *error_msg = NULL;
@@ -843,7 +843,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 		rz_core_analysis_type_init(r);
 		rz_core_analysis_cc_init(r);
 		if (info->default_cc && rz_analysis_cc_exist(r->analysis, info->default_cc)) {
-			rz_core_cmdf(r, "e analysis.cc=%s", info->default_cc);
+			rz_config_set(r->config, "analysis.cc", info->default_cc);
 		}
 	} else if (IS_MODE_SIMPLE(mode)) {
 		rz_cons_printf("arch %s\n", info->arch);
@@ -1244,7 +1244,6 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 
 	switch (mode) {
 	case RZ_MODE_SET:
-		mode = 's';
 		rz_core_cmd0(core, ".iP*");
 		return true;
 	case RZ_MODE_JSON:
@@ -2448,8 +2447,8 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		} else {
 			const char *bind = symbol->bind ? symbol->bind : "NONE";
 			const char *type = symbol->type ? symbol->type : "NONE";
-			const char *name = rz_str_get(sn.demname ? sn.demname : sn.name);
-			// const char *fwd = rz_str_get (symbol->forwarder);
+			const char *name = rz_str_get_null(sn.demname ? sn.demname : sn.name);
+			// const char *fwd = rz_str_get_null(symbol->forwarder);
 			rz_table_add_rowf(table, "dXXssdss",
 				symbol->ordinal,
 				symbol->paddr,
@@ -2889,8 +2888,16 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 					}
 				}
 				if (!loaded && !inDebugger) {
-					rz_core_cmdf(r, "on malloc://%d 0x%" PFMT64x " # bss\n",
-						section->vsize, addr);
+					char *ptr = rz_str_newf("malloc://%d", section->vsize);
+					if ((desc = rz_io_open_at(core->io, ptr, RZ_PERM_R, 0644, addr))) {
+						fd = desc->fd;
+					}
+					if (fd == -1) {
+						eprintf("Cannot open file '%'\n", ptr);
+					}
+					free(ptr);
+					core->num->value = fd;
+					rz_core_block_read(core);
 				}
 			}
 #endif
@@ -2995,7 +3002,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			}
 			if (section->arch || section->bits) {
 				snprintf(str, sizeof(str), "arch=%s bits=%d ",
-					rz_str_get2(arch), bits);
+					rz_str_get(arch), bits);
 			} else {
 				str[0] = 0;
 			}
@@ -3499,7 +3506,7 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 			}
 
 			// C struct
-			rz_cons_printf("\"td struct %s {", c->name);
+			rz_cons_printf("td \"struct %s {", c->name);
 			if (rz_list_empty(c->fields)) {
 				// XXX workaround because we cant register empty structs yet
 				// XXX https://github.com/rizinorg/rizin/issues/16342
