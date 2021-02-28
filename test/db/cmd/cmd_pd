@@ -642,6 +642,7 @@ e asm.flags=false
 s sym.func.100004401
 af
 afn newname
+s entry0
 pds
 EOF
 EXPECT=<<EOF
