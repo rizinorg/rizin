@@ -11,20 +11,29 @@
 #include "../../asm/arch/whitespace/wsdis.c"
 
 static ut64 ws_find_label(int l, const RzIOBind *iob) {
+	ut64 cur = 0;
 	RzIO *io = iob->io;
-	ut64 cur = 0, size = iob->desc_size(io->desc);
+	RzIOMap *map = iob->map_get(io, cur);
+	if (!map) {
+		return 0;
+	}
+	ut64 size = map->itv.size;
 	ut8 buf[128];
 	RzAsmOp aop;
+	rz_asm_op_init(&aop);
 	iob->read_at(iob->io, cur, buf, 128);
 	while (cur <= size && wsdis(&aop, buf, 128)) {
 		const char *buf_asm = rz_strbuf_get(&aop.buf_asm); // rz_asm_op_get_asm (&aop);
 		if (buf_asm && (strlen(buf_asm) > 4) && buf_asm[0] == 'm' && buf_asm[1] == 'a' && l == atoi(buf_asm + 5)) {
-			return cur;
+			goto beach;
 		}
 		cur = cur + aop.size;
 		iob->read_at(iob->io, cur, buf, 128);
 	}
-	return 0;
+	cur = 0;
+beach:
+	rz_asm_op_fini(&aop);
+	return cur;
 }
 
 static int ws_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
