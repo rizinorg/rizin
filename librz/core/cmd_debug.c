@@ -832,29 +832,27 @@ static int step_until_inst(RzCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-static int step_until_optype(RzCore *core, const char *_optypes) {
+static int step_until_optype(RzCore *core, RzList *optypes_list) {
 	RzAnalysisOp op;
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
 
-	RzList *optypes_list = NULL;
 	RzListIter *iter;
-	char *optype, *optypes = strdup(rz_str_trim_head_ro((char *)_optypes));
+	char *optype;
 
 	if (!core || !core->dbg) {
 		eprintf("Wrong state\n");
 		res = false;
 		goto end;
 	}
-	if (!optypes || !*optypes) {
+	if (!optypes_list) {
 		eprintf("Missing optypes. Usage example: 'dsuo ucall ujmp'\n");
 		res = false;
 		goto end;
 	}
 
 	bool debugMode = rz_config_get_i(core->config, "cfg.debug");
-	optypes_list = rz_str_split_list(optypes, " ", 0);
 
 	rz_cons_break_push(NULL, NULL);
 	for (;;) {
@@ -906,7 +904,6 @@ static int step_until_optype(RzCore *core, const char *_optypes) {
 cleanup_after_push:
 	rz_cons_break_pop();
 end:
-	free(optypes);
 	rz_list_free(optypes_list);
 	return res;
 }
@@ -4234,7 +4231,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc, const char **argv) {
-	step_until_optype(core, argv[1]);
+	char *optypes = strdup(rz_str_trim_head_ro((char *)argv[0]));
+	RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
+	step_until_optype(core, optypes_list);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4309,9 +4308,12 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 		case 'e': // dsue
 			step_until_esil(core, input + 3);
 			break;
-		case 'o': // dsuo
-			step_until_optype(core, input + 3);
+		case 'o': { // dsuo
+			char *optypes = strdup(rz_str_trim_head_ro((char *)input + 3));
+			RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
+			step_until_optype(core, optypes_list);
 			break;
+		}
 		case ' ': // dsu <address>
 			rz_reg_arena_swap(core->dbg->reg, true);
 			step_until(core, rz_num_math(core->num, input + 2)); // XXX dupped by times
