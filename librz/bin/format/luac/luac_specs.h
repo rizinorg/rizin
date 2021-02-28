@@ -5,9 +5,24 @@
 #ifndef BUILD_LUAC_SPECS_H
 #define BUILD_LUAC_SPECS_H
 
-#define LUAC_MAGIC "\x1b\x4c\x75\x61"
+/* Macros/Typedefs used in luac */
+typedef	double LUA_NUMBER;
 
-/* Valid for luac5.4 and previous versions */
+
+/* Macro Functions */
+/* type casts (a macro highlights casts in the code) */
+#define cast(t, exp)	((t)(exp))
+#define cast_num(i)	cast(LUA_NUMBER, (i))
+
+
+/* Macros About Luac Format */
+#define LUAC_MAGIC "\x1b\x4c\x75\x61"
+#define LUAC_FORMAT 0           /* this is the official format */
+#define LUAC_DATA "\x19\x93\r\n\x1a\n"
+#define LUAC_INT_VALIDATION 0x5678
+#define LUAC_NUMBER_VALIDATION cast_num(370.5)
+
+
 typedef struct {
     ut8 signature[4]; /* == '.Lua' */
     ut8 version;      /* version of luac */
