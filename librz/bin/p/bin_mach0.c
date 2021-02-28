@@ -574,26 +574,23 @@ static bool _patch_reloc(struct MACH0_(obj_t) * bin, RzIOBind *iob, struct reloc
 	return true;
 }
 
-static RzList *patch_relocs(RzBin *b) {
+static RzList *patch_relocs(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+	RzBin *b = bf->rbin;
 	RzList *ret = NULL;
-	RzIO *io = NULL;
-	RzBinObject *obj = NULL;
-	struct MACH0_(obj_t) *bin = NULL;
 	RzIOMap *g = NULL;
 	HtUU *relocs_by_sym = NULL;
 	RzIODesc *gotrzdesc = NULL;
 
-	rz_return_val_if_fail(b, NULL);
-
-	io = b->iob.io;
-	if (!io || !io->desc) {
+	RzIO *io = b->iob.io;
+	if (!io) {
 		return NULL;
 	}
-	obj = rz_bin_cur_object(b);
+	RzBinObject *obj = bf->o;
 	if (!obj) {
 		return NULL;
 	}
-	bin = obj->bin_obj;
+	struct MACH0_(obj_t) *bin = obj->bin_obj;
 
 	RzSkipList *all_relocs = MACH0_(get_relocs)(bin);
 	if (!all_relocs) {

@@ -709,8 +709,11 @@ static RzList *relocs_rbtree2list(RBNode *root) {
 
 RZ_API RBNode *rz_bin_patch_relocs(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? rz_bin_object_patch_relocs(bin, o) : NULL;
+	RzBinFile *bf = rz_bin_cur(bin);
+	if (!bf || !bf->o) {
+		return NULL;
+	}
+	return rz_bin_object_patch_relocs(bf, bf->o);
 }
 
 // return a list of <const RzBinReloc> that needs to be freed by the caller

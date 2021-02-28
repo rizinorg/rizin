@@ -902,8 +902,9 @@ static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RzBinElfReloc *rel, ut64
 	}
 }
 
-static RzList *patch_relocs(RzBin *b) {
-	rz_return_val_if_fail(b, NULL);
+static RzList *patch_relocs(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+	RzBin *b = bf->rbin;
 	RzList *ret = NULL;
 	RzBinReloc *ptr = NULL;
 	RzIOMap *g = NULL;
@@ -913,10 +914,10 @@ static RzList *patch_relocs(RzBin *b) {
 	ut64 size, offset = 0;
 
 	RzIO *io = b->iob.io;
-	if (!io || !io->desc) {
+	if (!io) {
 		return NULL;
 	}
-	RzBinObject *obj = rz_bin_cur_object(b);
+	RzBinObject *obj = bf->o;
 	if (!obj) {
 		return NULL;
 	}

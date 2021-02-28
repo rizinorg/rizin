@@ -48,33 +48,22 @@ static int search_old_relocation(struct reloc_struct_t *reloc_table,
 	return -1;
 }
 
-static RzList *patch_relocs(RzBin *b) {
-	struct rz_bin_bflt_obj *bin = NULL;
-	RzList *list = NULL;
-	RzBinObject *obj;
-	int i = 0;
-	if (!b || !b->iob.io || !b->iob.io->desc) {
-		return NULL;
-	}
+static RzList *patch_relocs(RzBinFile *bf) {
+	RzBin *b = bf->rbin;
+	struct rz_bin_bflt_obj *bin = (struct rz_bin_bflt_obj *)bf->o->bin_obj;
 	if (!(b->iob.io->cached & RZ_PERM_W)) {
 		eprintf(
 			"Warning: please run rizin with -e io.cache=true to patch "
 			"relocations\n");
 		return NULL;
 	}
-
-	obj = rz_bin_cur_object(b);
-	if (!obj) {
-		return NULL;
-	}
-	bin = obj->bin_obj;
-	list = rz_list_newf((RzListFree)free);
+	RzList *list = rz_list_newf((RzListFree)free);
 	if (!list) {
 		return NULL;
 	}
 	if (bin->got_table) {
 		struct reloc_struct_t *got_table = bin->got_table;
-		for (i = 0; i < bin->n_got; i++) {
+		for (int i = 0; i < bin->n_got; i++) {
 			__patch_reloc(bin->b, got_table[i].addr_to_patch,
 				got_table[i].data_offset);
 			RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
@@ -90,7 +79,7 @@ static RzList *patch_relocs(RzBin *b) {
 
 	if (bin->reloc_table) {
 		struct reloc_struct_t *reloc_table = bin->reloc_table;
-		for (i = 0; i < bin->hdr->reloc_count; i++) {
+		for (int i = 0; i < bin->hdr->reloc_count; i++) {
 			int found = search_old_relocation(reloc_table,
 				reloc_table[i].addr_to_patch,
 				bin->hdr->reloc_count);
