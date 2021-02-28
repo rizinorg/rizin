@@ -23,24 +23,24 @@ typedef	double LUA_NUMBER;
 #define LUAC_NUMBER_VALIDATION cast_num(370.5)
 
 
-typedef struct {
-    ut8 signature[4]; /* == '.Lua' */
-    ut8 version;      /* version of luac */
-    ut8 format;       /* 1 if it's modified luac */
-} LUAC_common_header;
-
 /* luac 5.4 spec */
-typedef struct {
-    LUAC_common_header common_hdr;
-    ut8 luac_data[6];               /* luac data for error detection */
-    ut8 instruction_size;
-    ut8 integer_size;
-    ut8 number_size;
+RZ_PACKED(
+        typedef struct {
+            ut8 signature[4]; /* == '.Lua' */
+            ut8 version;      /* version of luac */
+            ut8 format;       /* 1 if it's modified luac */
 
-    ut64 integer_valid_data;        /* test integer data loading */
-    ut64 number_valid_data;         /* test number data loading */
+            ut8 luac_data[6];               /* luac data for error detection */
+            ut8 instruction_size;
+            ut8 integer_size;
+            ut8 number_size;
 
-    ut8 upvalues_number;            /* number of upvalue arrays */
-};
+            ut64 integer_valid_data;        /* test integer data loading */
+            ut64 number_valid_data;         /* test number data loading */
+
+            ut8 upvalues_number;            /* number of upvalue arrays */
+        }) luac_hdr;
+
+
 
 #endif //BUILD_LUAC_SPECS_H
