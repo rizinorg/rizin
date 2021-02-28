@@ -144,6 +144,7 @@ bin_plugins = [
   'elf64',
   'java',
   'le',
+  'luac',
   'mach0',
   'mach064',
   'mbn',

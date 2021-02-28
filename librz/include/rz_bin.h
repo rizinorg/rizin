@@ -861,6 +861,7 @@ extern RzBinPlugin rz_bin_plugin_elf64;
 extern RzBinPlugin rz_bin_plugin_p9;
 extern RzBinPlugin rz_bin_plugin_ne;
 extern RzBinPlugin rz_bin_plugin_le;
+extern RzBinPlugin rz_bin_plugin_luac;
 extern RzBinPlugin rz_bin_plugin_pe;
 extern RzBinPlugin rz_bin_plugin_mz;
 extern RzBinPlugin rz_bin_plugin_pe64;

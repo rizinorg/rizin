@@ -20,7 +20,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 }
 
 
-RzBinPulugin rz_bin_plugin_luac = {
+RzBinPlugin rz_bin_plugin_luac = {
         .name = "luac",
         .desc = "LUAC_FORMAT",
         .license = "MIT",
