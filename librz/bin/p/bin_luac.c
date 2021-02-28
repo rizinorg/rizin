@@ -19,6 +19,31 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
     return check_buffer(buf);
 }
 
+static RzBinInfo *info(RzBinFile *bf) {
+    RzBinInfo  *ret = NULL;
+    luac_hdr lhdr;
+    memset(&lhdr, 0, LUAC_HDR_SIZE);
+
+    int reat = rz_buf_read_at(bf->buf, 0, (ut8 *)&lhdr, LUAC_HDR_SIZE);
+    if (reat != LUAC_HDR_SIZE){
+        eprintf("Truncated Header\n");
+        return NULL;
+    }
+
+    if (!(ret = RZ_NEW0(RzBinInfo))){
+        return NULL;
+    }
+
+    ret->file = strdup(bf->file);
+    ret->type = strdup("Object File");
+    ret->machine = strdup("Lua Virtual Machine");
+    ret->os = strdup("Lua VM");
+    ret->arch = strdup("Lua VM");
+    ret->bits = 8;
+    ret->has_va = 0;
+    return ret;
+
+}
 
 RzBinPlugin rz_bin_plugin_luac = {
         .name = "luac",

@@ -23,6 +23,9 @@ typedef	double LUA_NUMBER;
 #define LUAC_NUMBER_VALIDATION cast_num(370.5)
 
 
+/* Macros for bin_luac.c */
+#define LUAC_HDR_SIZE sizeof(luac_hdr)
+
 /* luac 5.4 spec */
 RZ_PACKED(
         typedef struct {
