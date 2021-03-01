@@ -448,7 +448,7 @@ typedef struct rz_bin_plugin_t {
 	RzList /*<RzBinTrycatch>*/ *(*trycatch)(RzBinFile *bf);
 	RzList /*<RzBinClass>*/ *(*classes)(RzBinFile *bf);
 	RzList /*<RzBinMem>*/ *(*mem)(RzBinFile *bf);
-	RzList /*<RzBinReloc>*/ *(*patch_relocs)(RzBin *bin);
+	RzList /*<RzBinReloc>*/ *(*patch_relocs)(RzBinFile *bf);
 	RzList /*<RzBinMap>*/ *(*maps)(RzBinFile *bf);
 	RzList /*<RzBinFileHash>*/ *(*hashes)(RzBinFile *bf);
 	void (*header)(RzBinFile *bf);

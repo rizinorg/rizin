@@ -458,9 +458,10 @@ static RzList *relocs(RzBinFile *bf) {
 	return _relocs_list(bf->rbin, bin, false, UT64_MAX);
 }
 
-static RzList *patch_relocs(RzBin *b) {
-	rz_return_val_if_fail(b && b->iob.io && b->iob.io->desc, NULL);
-	RzBinObject *bo = rz_bin_cur_object(b);
+static RzList *patch_relocs(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+	RzBin *b = bf->rbin;
+	RzBinObject *bo = bf->o;
 	RzIO *io = b->iob.io;
 	if (!bo || !bo->bin_obj) {
 		return NULL;
