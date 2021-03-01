@@ -4182,7 +4182,7 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 	case 'u': // "dcu"
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_dcu);
-		} else if (input[1] == '.') {
+		} else if (input[1] == '.' || input[1] == '\0') {
 			cmd_dcu(core, "cu $$");
 		} else {
 			char *tmpinp = rz_str_newf("cu %s", input + 2);
