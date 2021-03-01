@@ -1384,6 +1384,7 @@ static RzList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		if (item && item->name) {
 			RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 			if (!sym) {
+				rz_syscall_item_free(item);
 				goto beach;
 			}
 
@@ -1395,10 +1396,9 @@ static RzList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 			sym->bind = "GLOBAL";
 			sym->type = "FUNC";
 			rz_list_append(syscalls, sym);
-
-			rz_syscall_item_free(item);
 		}
 
+		rz_syscall_item_free(item);
 		cursor += 24;
 		i++;
 	}

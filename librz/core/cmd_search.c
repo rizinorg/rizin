@@ -1878,6 +1878,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 					rz_flag_set(core->flags, flag, at, ret);
 					free(flag);
 				}
+				rz_syscall_item_free(item);
 				if (*param->cmd_hit) {
 					ut64 here = core->offset;
 					rz_core_seek(core, at, true);

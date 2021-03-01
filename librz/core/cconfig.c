@@ -3053,7 +3053,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.lines.out", "true", "Show out of block lines");
 	SETBPREF("asm.lines.right", "false", "Show lines before opcode instead of offset");
 	SETBPREF("asm.lines.wide", "false", "Put a space between lines");
-	SETBPREF("asm.fcnsig", "true", "Show function signature in disasm");
+	SETBPREF("asm.fcn.signature", "true", "Show function signature in disasm");
+	SETBPREF("asm.fcn.size", "false", "Show function size in disasm");
 	SETICB("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETICB("asm.sub.varmin", 0x100, &cb_asmsubvarmin, "Minimum value to substitute in instructions (asm.sub.var)");
 	SETCB("asm.sub.tail", "false", &cb_asmsubtail, "Replace addresses with prefix .. syntax");
