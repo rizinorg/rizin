@@ -126,6 +126,9 @@ static const RzCmdDescArg type_noreturn_del_args[2];
 static const RzCmdDescArg type_open_file_args[2];
 static const RzCmdDescArg type_open_editor_args[2];
 static const RzCmdDescArg type_open_sdb_args[2];
+static const RzCmdDescArg type_print_args[3];
+static const RzCmdDescArg type_print_value_args[3];
+static const RzCmdDescArg type_print_hexstring_args[3];
 static const RzCmdDescArg type_list_typedef_args[2];
 static const RzCmdDescArg type_typedef_c_args[2];
 static const RzCmdDescArg type_list_union_args[2];
@@ -2344,6 +2347,68 @@ static const RzCmdDescHelp type_open_sdb_help = {
 	.args = type_open_sdb_args,
 };
 
+static const RzCmdDescHelp tp_help = {
+	.summary = "Print formatted type casted to the address",
+};
+static const RzCmdDescArg type_print_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_print_help = {
+	.summary = "Print formatted type casted to the address or variable",
+	.args = type_print_args,
+};
+
+static const RzCmdDescArg type_print_value_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_print_value_help = {
+	.summary = "Print formatted type casted to the value",
+	.args = type_print_value_args,
+};
+
+static const RzCmdDescArg type_print_hexstring_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "hexpairs",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_print_hexstring_help = {
+	.summary = "Print formatted type casted to the hexadecimal sequence",
+	.args = type_print_hexstring_args,
+};
+
 static const RzCmdDescHelp tt_help = {
 	.summary = "List loaded typedefs",
 };
@@ -3971,6 +4036,14 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_open_sdb_cd = rz_cmd_desc_argv_new(core->rcmd, to_cd, "tos", rz_type_open_sdb_handler, &type_open_sdb_help);
 	rz_warn_if_fail(type_open_sdb_cd);
+
+	RzCmdDesc *tp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_type_cd, "tp", rz_type_print_handler, &type_print_help, &tp_help);
+	rz_warn_if_fail(tp_cd);
+	RzCmdDesc *type_print_value_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpv", rz_type_print_value_handler, &type_print_value_help);
+	rz_warn_if_fail(type_print_value_cd);
+
+	RzCmdDesc *type_print_hexstring_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpx", rz_type_print_hexstring_handler, &type_print_hexstring_help);
+	rz_warn_if_fail(type_print_hexstring_cd);
 
 	RzCmdDesc *tt_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_typedef_handler, &type_list_typedef_help, &tt_help);
 	rz_warn_if_fail(tt_cd);

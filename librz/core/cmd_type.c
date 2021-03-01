@@ -1285,6 +1285,61 @@ static void type_list_c_all_nl(RzCore *core) {
 	print_enum_in_c_format(TDB, NULL, false);
 }
 
+static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 address) {
+	Sdb *TDB = core->analysis->sdb_types;
+	char *fmt = rz_type_format(TDB, type);
+	if (!fmt || !*fmt) {
+		eprintf("Cannot find type %s\n", type);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, address);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, const char *varname) {
+	Sdb *TDB = core->analysis->sdb_types;
+	char *fmt = rz_type_format(TDB, type);
+	if (!fmt || !*fmt) {
+		eprintf("Cannot find type \"%s\"\n", type);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (!fcn) {
+		eprintf("Cannot find function at the current offset\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, varname);
+	if (!var) {
+		eprintf("Cannot find variable \"%s\" in the current function\n", varname);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 addr = rz_analysis_var_addr(var);
+	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 val) {
+	Sdb *TDB = core->analysis->sdb_types;
+	char *fmt = rz_type_format(TDB, type);
+	if (!fmt || !*fmt) {
+		eprintf("Cannot find type %s\n", type);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_cmdf(core, "pf %s @v:0x%08" PFMT64x "\n", fmt, val);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, const char *hexpairs) {
+	Sdb *TDB = core->analysis->sdb_types;
+	char *fmt = rz_type_format(TDB, type);
+	if (!fmt && !*fmt) {
+		eprintf("Cannot find type %s\n", type);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_cmdf(core, "pf %s @x:%s", fmt, hexpairs);
+	return RZ_CMD_STATUS_OK;
+}
+
 static void type_define(RzCore *core, const char *type) {
 	// Add trailing semicolon to force the valid C syntax
 	// It allows us to skip the trailing semicolon in the input
@@ -1774,13 +1829,8 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_tp);
 		} else if (input[1] == 'v') { // "tpv"
 			const char *type_name = rz_str_trim_head_ro(input + 2);
-			char *fmt = rz_type_format(TDB, type_name);
-			if (fmt && *fmt) {
-				ut64 val = core->offset;
-				rz_core_cmdf(core, "pf %s @v:0x%08" PFMT64x "\n", fmt, val);
-			} else {
-				eprintf("Usage: tpv [type] @ [value]\n");
-			}
+			ut64 val = core->offset;
+			type_format_print_value(core, type_name, val);
 		} else if (input[1] == ' ' || input[1] == 'x' || !input[1]) {
 			char *tmp = strdup(input);
 			char *type_begin = strchr(tmp, ' ');
@@ -1797,35 +1847,16 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				}
 				snprintf(type, type_len + 1, "%s", type_begin);
 				const char *arg = (type_end) ? type_end + 1 : NULL;
-				char *fmt = rz_type_format(TDB, type);
-				if (!fmt) {
-					eprintf("Cannot find '%s' type\n", type);
-					free(tmp);
-					free(type);
-					break;
-				}
-				if (input[1] == 'x' && arg) { // "tpx"
-					rz_core_cmdf(core, "pf %s @x:%s", fmt, arg);
-					// eprintf ("pf %s @x:%s", fmt, arg);
+				if (input[1] == 'x') {
+					type_format_print_hexstring(core, type, arg);
 				} else {
 					ut64 addr = arg ? rz_num_math(core->num, arg) : core->offset;
-					ut64 original_addr = addr;
 					if (!addr && arg) {
-						RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
-						if (fcn) {
-							RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, arg);
-							if (var) {
-								addr = rz_analysis_var_addr(var);
-							}
-						}
-					}
-					if (addr != UT64_MAX) {
-						rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x, fmt, addr);
-					} else if (original_addr == 0) {
-						rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x, fmt, original_addr);
+						type_format_print_variable(core, type, arg);
+					} else {
+						type_format_print(core, type, addr);
 					}
 				}
-				free(fmt);
 				free(type);
 			} else {
 				eprintf("Usage: tp?\n");
@@ -2128,6 +2159,30 @@ RZ_IPI RzCmdStatus rz_type_open_editor_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_type_open_sdb_handler(RzCore *core, int argc, const char **argv) {
 	types_open_sdb(core, argv[1]);
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_print_handler(RzCore *core, int argc, const char **argv) {
+	const char *addr_or_var = argc > 2 ? argv[2] : NULL;
+	if (!addr_or_var) {
+		return type_format_print(core, argv[1], core->offset);
+	}
+	ut64 addr = rz_num_math(core->num, addr_or_var);
+	if (!addr) {
+		return type_format_print_variable(core, argv[1], addr_or_var);
+	}
+	return type_format_print(core, argv[1], addr);
+}
+
+RZ_IPI RzCmdStatus rz_type_print_value_handler(RzCore *core, int argc, const char **argv) {
+	const char *value = argc > 2 ? argv[2] : NULL;
+	if (!value) {
+		return type_format_print_value(core, argv[1], core->offset);
+	}
+	return type_format_print_value(core, argv[1], rz_num_math(core->num, value));
+}
+
+RZ_IPI RzCmdStatus rz_type_print_hexstring_handler(RzCore *core, int argc, const char **argv) {
+	return type_format_print_hexstring(core, argv[1], argv[2]);
 }
 
 RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
