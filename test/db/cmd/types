@@ -333,46 +333,62 @@ tek BAR
 tek
 EOF
 EXPECT=<<EOF
-enum.FOO.0xff=C
+enum.FOO.0x100=B
 enum.FOO.0x1=A
 enum.FOO.0x4=D
 enum.FOO.0x5=E
-enum.FOO=A,B,C,D,E
-enum.FOO.0x100=B
+enum.FOO.0xff=C
 enum.FOO.A=0x1
 enum.FOO.B=0x100
 enum.FOO.C=0xff
 enum.FOO.D=0x4
 enum.FOO.E=0x5
-enum.BAR.0x5=E
+enum.FOO=A,B,C,D,E
 enum.BAR.0x4=P
+enum.BAR.0x5=E
 enum.BAR.0x800=G
 enum.BAR.0xee=Z
-enum.BAR=G,Z,P,E
-enum.BAR.G=0x800
 enum.BAR.E=0x5
+enum.BAR.G=0x800
 enum.BAR.P=0x4
 enum.BAR.Z=0xee
-enum.BAR.0x5=E
+enum.BAR=G,Z,P,E
 enum.BAR.0x4=P
+enum.BAR.0x5=E
 enum.BAR.0x800=G
 enum.BAR.0xee=Z
-enum.BAR=G,Z,P,E
-enum.BAR.G=0x800
 enum.BAR.E=0x5
+enum.BAR.G=0x800
 enum.BAR.P=0x4
 enum.BAR.Z=0xee
-enum.FOO.0xff=C
+enum.BAR=G,Z,P,E
+enum.FOO.0x100=B
 enum.FOO.0x1=A
 enum.FOO.0x4=D
 enum.FOO.0x5=E
-enum.FOO=A,B,C,D,E
-enum.FOO.0x100=B
+enum.FOO.0xff=C
 enum.FOO.A=0x1
 enum.FOO.B=0x100
 enum.FOO.C=0xff
 enum.FOO.D=0x4
 enum.FOO.E=0x5
+enum.FOO=A,B,C,D,E
+EOF
+RUN
+
+NAME=tf and tfk
+FILE=-
+CMDS=<<EOF
+tf write
+tfk write
+EOF
+EXPECT=<<EOF
+ssize_t write (int fd, const char * ptr, size_t nbytes);
+func.write.arg.0=int,fd
+func.write.arg.1=const char *,ptr
+func.write.arg.2=size_t,nbytes
+func.write.args=3
+func.write.ret=ssize_t
 EOF
 RUN
 

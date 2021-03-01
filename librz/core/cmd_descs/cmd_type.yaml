@@ -109,16 +109,6 @@ commands:
           - name: type
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
-      - name: tfc
-        cname: type_function_c
-        summary: Show function definition in the C output format
-        modes:
-          - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_JSON
-        args:
-          - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
   - name: tk
     cname: type_kuery
     summary: Perform SDB query on types database

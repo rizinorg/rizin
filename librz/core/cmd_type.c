@@ -37,7 +37,7 @@ static const char *help_msg_t[] = {
 };
 
 static const char *help_msg_tcc[] = {
-	"Usage: tfc", "[-name]", "# type function calling conventions",
+	"Usage: tcc", "[-name]", "# type function calling conventions",
 	"tcc", "", "List all calling convcentions",
 	"tcc", " r0 pascal(r0,r1,r2)", "Show signature for the 'pascal' calling convention",
 	"tcc", "-pascal", "Remove the pascal cc",
@@ -57,11 +57,11 @@ static const char *help_msg_t_minus[] = {
 static const char *help_msg_tf[] = {
 	"Usage: tf[...]", "", "",
 	"tf", "", "List all function definitions loaded",
-	"tf", " <name>", "Show function signature",
-	"tfc", " <name>", "Show function signature in C syntax",
-	"tfcj", " <name>", "Same as above but in JSON",
+	"tf", " <name>", "Show function signature in C syntax",
 	"tfj", "", "List all function definitions in JSON",
 	"tfj", " <name>", "Show function signature in JSON",
+	"tfk", "", "List all function definitions in SDB format",
+	"tfk", " <name>", "Show function signature in SDB format",
 	NULL
 };
 
@@ -174,6 +174,19 @@ static const char *help_msg_tu[] = {
 	"tu?", "", "show this help",
 	NULL
 };
+
+static void kv_lines_print_sorted(char *kv_lines) {
+	RzListIter *iter;
+	char *k;
+	RzList *list = rz_str_split_duplist(kv_lines, "\n", true);
+	rz_list_sort(list, (RzListComparator)strcmp);
+	rz_list_foreach (list, iter, k) {
+		if (RZ_STR_ISNOTEMPTY(k)) {
+			rz_cons_println(k);
+		}
+	}
+	rz_list_free(list);
+}
 
 static void types_cc_print_all(RzCore *core, RzOutputMode mode) {
 	switch (mode) {
@@ -294,7 +307,7 @@ static void types_enum_print(RzCore *core, const char *enum_name, RzOutputMode m
 	case RZ_OUTPUT_MODE_SDB: {
 		char *keys = sdb_querys(TDB, NULL, -1, sdb_fmt("~~enum.%s", enum_name));
 		if (keys) {
-			rz_cons_print(keys);
+			kv_lines_print_sorted(keys);
 			free(keys);
 		}
 		break;
@@ -396,7 +409,7 @@ static void types_function_print(RzCore *core, const char *function, RzOutputMod
 	case RZ_OUTPUT_MODE_SDB: {
 		char *keys = sdb_querys(TDB, NULL, -1, sdb_fmt("~~func.%s", function));
 		if (keys) {
-			rz_cons_printf("%s", keys);
+			kv_lines_print_sorted(keys);
 			free(keys);
 		}
 	} break;
@@ -414,6 +427,20 @@ static void types_function_print(RzCore *core, const char *function, RzOutputMod
 	} break;
 	}
 	free(res);
+}
+
+static void types_function_print_all(RzCore *core, RzOutputMode mode) {
+	Sdb *TDB = core->analysis->sdb_types;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(TDB, true);
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "func")) {
+			const char *name = sdbkv_key(kv);
+			types_function_print(core, name, mode);
+		}
+	}
+	ls_free(l);
 }
 
 static void __core_cmd_tcc(RzCore *core, const char *input) {
@@ -491,7 +518,7 @@ static void type_show_format(RzCore *core, const char *name, RzOutputMode mode) 
 static void noreturn_del(RzCore *core, const char *s) {
 	RzListIter *iter;
 	char *k;
-	RzList *list = rz_str_split_duplist(s, " ", 0);
+	RzList *list = rz_str_split_duplist(s, " ", false);
 	rz_list_foreach (list, iter, k) {
 		rz_analysis_noreturn_drop(core->analysis, k);
 	}
@@ -720,15 +747,6 @@ static void print_enum_in_c_format(Sdb *TDB, const char *arg, bool multiline) {
 static bool printkey_cb(void *user, const char *k, const char *v) {
 	rz_cons_println(k);
 	return true;
-}
-
-static bool printfunc_json_cb(void *user, const char *k, const char *v) {
-	types_function_print((RzCore *)user, k, RZ_OUTPUT_MODE_JSON);
-	return true;
-}
-
-static bool stdiffunc(void *p, const char *k, const char *v) {
-	return !strncmp(v, "func", strlen("func") + 1);
 }
 
 static bool stdifunion(void *p, const char *k, const char *v) {
@@ -1206,10 +1224,7 @@ static void print_all_union_format(RzCore *core, Sdb *TDB) {
 
 static void type_list_c_all(RzCore *core) {
 	Sdb *TDB = core->analysis->sdb_types;
-	// TODO: Change the logic maybe?
-	//eprintf("Specify the type");
-	//return RZ_CMD_STATUS_ERROR;
-	rz_core_cmd0(core, "tfc"); // seems return nothing
+	//types_function_print_all(core, RZ_OUTPUT_MODE_STANDARD);
 	// List all unions in the C format with newlines
 	print_struct_union_in_c_format(TDB, stdifunion, NULL, true);
 	// List all structures in the C format with newlines
@@ -1820,12 +1835,14 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 	case 'f': // "tf"
 		switch (input[1]) {
 		case 0: // "tf"
-			print_keys(TDB, core, stdiffunc, printkey_cb, false);
+			types_function_print_all(core, RZ_OUTPUT_MODE_STANDARD);
 			break;
-		case 'c': // "tfc"
+		case 'k': // "tfk"
 			if (input[2] == ' ') {
 				const char *name = rz_str_trim_head_ro(input + 3);
-				types_function_print(core, name, RZ_OUTPUT_MODE_STANDARD);
+				types_function_print(core, name, RZ_OUTPUT_MODE_SDB);
+			} else {
+				types_function_print_all(core, RZ_OUTPUT_MODE_SDB);
 			}
 			break;
 		case 'j': // "tfj"
@@ -1833,7 +1850,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				const char *name = rz_str_trim_head_ro(input + 2);
 				types_function_print(core, name, RZ_OUTPUT_MODE_JSON);
 			} else {
-				print_keys(TDB, core, stdiffunc, printfunc_json_cb, true);
+				types_function_print_all(core, RZ_OUTPUT_MODE_JSON);
 			}
 			break;
 		case ' ': {
@@ -1976,26 +1993,11 @@ RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char 
 
 RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *function = argc > 1 ? argv[1] : NULL;
-	Sdb *TDB = core->analysis->sdb_types;
 	if (function) {
-		// A special case, since by default `tf name` returns the output in SDB format
-		if (mode == RZ_OUTPUT_MODE_STANDARD) {
-			mode = RZ_OUTPUT_MODE_SDB;
-		}
 		types_function_print(core, function, mode);
 	} else {
-		if (mode == RZ_OUTPUT_MODE_JSON) {
-			print_keys(TDB, core, stdiffunc, printfunc_json_cb, false);
-		} else {
-			print_keys(TDB, core, stdiffunc, printkey_cb, false);
-		}
+		types_function_print_all(core, mode);
 	}
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_type_function_c_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	const char *function = argc > 1 ? argv[1] : NULL;
-	types_function_print(core, function, mode);
 	return RZ_CMD_STATUS_OK;
 }
 
