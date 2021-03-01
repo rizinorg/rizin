@@ -286,11 +286,11 @@ struct Employee {
 EOF
 RUN
 
-NAME=test cmd tfc
+NAME=test cmd tf
 FILE=bins/mach0/objc-employee
 CMDS=<<EOF
-tfc main
-tfc entry0
+tf main
+tf entry0
 EOF
 EXPECT=<<EOF
 int main (int argc, char ** argv, char ** envp);
