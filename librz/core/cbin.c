@@ -2791,12 +2791,14 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL(mode)) {
+		rz_cons_printf("Key to Flags:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
+  L (link order), O (extra OS processing required), G (group), T (TLS),\n  C (compressed), E (exclude)");
 		if (hashtypes) {
-			rz_table_set_columnsf(table, "dXxXxssss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "type", hashtypes, "name");
+						rz_table_set_columnsf(table, "dXxXxssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "Flags", "type", hashtypes, "name");
 		} else {
-			rz_table_set_columnsf(table, "dXxXxsss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "type", "name");
+			rz_table_set_columnsf(table, "dXxXxssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "Flags", "type", "name");
 		}
 		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
@@ -2977,6 +2979,9 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			if(section->type) {
 				pj_ks(pj, "type", section->type);
 			}
+			if(section->flag){
+				pj_ks(pj, "Flags", section->flag);
+			}
 			pj_kN(pj, "paddr", section->paddr);
 			pj_kN(pj, "vaddr", addr);
 			pj_end(pj);
@@ -3007,22 +3012,23 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
 			if (hashtypes) {
-				rz_table_add_rowf(table, "dXxXxssss", i,
+				
+				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, section->type, hashstr, section_name);
+					perms,section->flag, section->type, hashstr, section_name);
 			} else {
-				rz_table_add_rowf(table, "dXxXxsss", i,
+				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, section->type, section_name);
+					perms, section->flag, section->type,section_name);
 			}
 			free(hashstr);
 		}
 		i++;
 		if (printHere) {
 			break;
-		}
+		}	
 	}
 	if (IS_MODE_SET(mode) && !rz_io_desc_is_dbg(r->io->desc)) {
 		RzListIter *it;
