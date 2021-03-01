@@ -405,7 +405,29 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 		return false;
 	}
 	int va = (binfile->o && binfile->o->info && binfile->o->info->has_va) ? VA_TRUE : VA_FALSE;
-	_print_strings(r, l, NULL, RZ_MODE_SET, va);
+	rz_flag_space_set(r->flags, RZ_FLAGS_FS_STRINGS);
+	rz_cons_break_push(NULL, NULL);
+	RzListIter *iter;
+	RzBinString *string;
+	rz_list_foreach (l, iter, string) {
+		ut64 vaddr = rva(r->bin, string->paddr, string->vaddr, va);
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		rz_meta_set(r->analysis, RZ_META_TYPE_STRING, vaddr, string->size, string->string);
+		char *f_name = strdup(string->string);
+		rz_name_filter(f_name, -1);
+		char *str;
+		if (r->bin->prefix) {
+			str = rz_str_newf("%s.str.%s", r->bin->prefix, f_name);
+		} else {
+			str = rz_str_newf("str.%s", f_name);
+		}
+		(void)rz_flag_set(r->flags, str, vaddr, string->size);
+		free(str);
+		free(f_name);
+	}
+	rz_cons_break_pop();
 	return true;
 }
 
@@ -445,9 +467,6 @@ static void _print_strings(RzCore *r, RZ_NULLABLE const RzList *list, PJ *pj, in
 		pj_a(pj);
 	} else if (IS_MODE_RZCMD(mode)) {
 		rz_cons_println("fs strings");
-	} else if (IS_MODE_SET(mode) && rz_config_get_i(r->config, "bin.strings")) {
-		rz_flag_space_set(r->flags, RZ_FLAGS_FS_STRINGS);
-		rz_cons_break_push(NULL, NULL);
 	} else if (IS_MODE_NORMAL(mode)) {
 		rz_cons_println("[Strings]");
 		rz_table_set_columnsf(table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
@@ -482,23 +501,7 @@ static void _print_strings(RzCore *r, RZ_NULLABLE const RzList *list, PJ *pj, in
 				string = &b64;
 			}
 		}
-		if (IS_MODE_SET(mode)) {
-			char *f_name, *str;
-			if (rz_cons_is_breaked()) {
-				break;
-			}
-			rz_meta_set(r->analysis, RZ_META_TYPE_STRING, vaddr, string->size, string->string);
-			f_name = strdup(string->string);
-			rz_name_filter(f_name, -1);
-			if (r->bin->prefix) {
-				str = rz_str_newf("%s.str.%s", r->bin->prefix, f_name);
-			} else {
-				str = rz_str_newf("str.%s", f_name);
-			}
-			(void)rz_flag_set(r->flags, str, vaddr, string->size);
-			free(str);
-			free(f_name);
-		} else if (IS_MODE_SIMPLE(mode)) {
+		if (IS_MODE_SIMPLE(mode)) {
 			rz_cons_printf("0x%" PFMT64x " %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST(mode)) {
@@ -614,8 +617,6 @@ static void _print_strings(RzCore *r, RZ_NULLABLE const RzList *list, PJ *pj, in
 	RZ_FREE(b64.string);
 	if (IS_MODE_JSON(mode)) {
 		pj_end(pj);
-	} else if (IS_MODE_SET(mode)) {
-		rz_cons_break_pop();
 	} else if (IS_MODE_NORMAL(mode)) {
 		if (r->table_query) {
 			rz_table_query(table, r->table_query);
