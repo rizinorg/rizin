@@ -29,6 +29,30 @@
 	if (binfile && binfile->rbin && binfile->rbin->verbose) \
 	eprintf
 
+static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
+static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
+static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
+static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr);
+static int bin_main(RzCore *r, PJ *pj, int mode, int va);
+static int bin_dwarf(RzCore *core, PJ *pj, int mode);
+static int bin_source(RzCore *r, PJ *pj, int mode);
+static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
+static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
+static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode);
+static int bin_relocs(RzCore *r, PJ *pj, int mode, int va);
+static int bin_libs(RzCore *r, PJ *pj, int mode);
+static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name);
+static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args);
+static int bin_classes(RzCore *r, PJ *pj, int mode);
+static int bin_trycatch(RzCore *core, PJ *pj, int mode);
+static int bin_size(RzCore *r, PJ *pj, int mode);
+static int bin_mem(RzCore *r, PJ *pj, int mode);
+static int bin_versioninfo(RzCore *r, PJ *pj, int mode);
+static int bin_resources(RzCore *r, PJ *pj, int mode);
+static int bin_signature(RzCore *r, PJ *pj, int mode);
+static int bin_fields(RzCore *r, PJ *pj, int mode, int va);
+static int bin_header(RzCore *r, int mode);
+
 static void pair(const char *key, const char *val) {
 	if (!val || !*val) {
 		return;
@@ -321,33 +345,9 @@ RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name) {
 	return false;
 }
 
-static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
-static bool bin_strings(RzCore *r, PJ *pj, int mode, int va);
-static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr);
-static int bin_main(RzCore *r, PJ *pj, int mode, int va);
-static int bin_dwarf(RzCore *core, PJ *pj, int mode);
-static int bin_source(RzCore *r, PJ *pj, int mode);
-static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
-static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
-static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode);
-static int bin_relocs(RzCore *r, PJ *pj, int mode, int va);
-static int bin_libs(RzCore *r, PJ *pj, int mode);
-static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name);
-static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args);
-static int bin_classes(RzCore *r, PJ *pj, int mode);
-static int bin_trycatch(RzCore *core, PJ *pj, int mode);
-static int bin_size(RzCore *r, PJ *pj, int mode);
-static int bin_mem(RzCore *r, PJ *pj, int mode);
-static int bin_versioninfo(RzCore *r, PJ *pj, int mode);
-static int bin_resources(RzCore *r, PJ *pj, int mode);
-static int bin_signature(RzCore *r, PJ *pj, int mode);
-static int bin_fields(RzCore *r, PJ *pj, int mode, int va);
-static int bin_header(RzCore *r, int mode);
-
 RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
-	rz_return_val_if_fail(r, false);
-
-	RzBinObject *binobj = binfile ? binfile->o : NULL;
+	rz_return_val_if_fail(r && binfile, false);
+	RzBinObject *binobj = binfile->o;
 	RzBinInfo *info = binobj ? binobj->info : NULL;
 	if (!info) {
 		return false;
@@ -375,7 +375,8 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
-	bin_strings(r, NULL, RZ_MODE_SET, va);
+
+	rz_core_bin_apply_strings(r, binfile);
 	bin_info(r, NULL, RZ_MODE_SET, loadaddr);
 	bin_main(r, NULL, RZ_MODE_SET, va);
 	bin_dwarf(r, NULL, RZ_MODE_SET);
@@ -398,6 +399,16 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	return true;
 }
 
+RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
+	const RzList *l = core_bin_strings(r, binfile);
+	if (!l) {
+		return false;
+	}
+	int va = (binfile->o && binfile->o->info && binfile->o->info->has_va) ? VA_TRUE : VA_FALSE;
+	_print_strings(r, l, NULL, RZ_MODE_SET, va);
+	return true;
+}
+
 RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
 	if (!core->bin) {
 		return false;
@@ -416,7 +427,7 @@ RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
 	return true;
 }
 
-static void _print_strings(RzCore *r, RzList *list, PJ *pj, int mode, int va) {
+static void _print_strings(RzCore *r, RZ_NULLABLE const RzList *list, PJ *pj, int mode, int va) {
 	bool b64str = rz_config_get_i(r->config, "bin.b64str");
 	int minstr = rz_config_get_i(r->config, "bin.minstr");
 	int maxstr = rz_config_get_i(r->config, "bin.maxstr");
@@ -673,32 +684,19 @@ static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va) {
 	return true;
 }
 
-static bool bin_strings(RzCore *r, PJ *pj, int mode, int va) {
-	RzList *list;
-	RzBinFile *binfile = rz_bin_cur(r->bin);
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(binfile);
-	int rawstr = rz_config_get_i(r->config, "bin.rawstr");
-	if (!binfile || !plugin) {
-		return false;
+/**
+ * Strings for the given file, respecting settings like bin.strings
+ */
+static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file) {
+	rz_return_val_if_fail(r && file, false);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(file);
+	if (!plugin || !rz_config_get_i(r->config, "bin.strings")) {
+		return NULL;
 	}
-	if (!rz_config_get_i(r->config, "bin.strings")) {
-		return false;
+	if (plugin->name && !strcmp(plugin->name, "any") && !rz_config_get_i(r->config, "bin.rawstr")) {
+		return NULL;
 	}
-	if (plugin->info && plugin->name) {
-		if (strcmp(plugin->name, "any") == 0 && !rawstr) {
-			if (IS_MODE_JSON(mode)) {
-				pj_a(pj);
-				pj_end(pj);
-				return true;
-			}
-			return false;
-		}
-	}
-	if (!(list = rz_bin_get_strings(r->bin))) {
-		return false;
-	}
-	_print_strings(r, list, pj, mode, va);
-	return true;
+	return rz_bin_get_strings(r->bin);
 }
 
 static const char *get_compile_time(Sdb *binFileSdb) {
@@ -4171,6 +4169,7 @@ static int bin_header(RzCore *r, int mode) {
 }
 
 RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, RzCoreBinFilter *filter, const char *chksum) {
+	RzBinFile *binfile = rz_bin_cur(core->bin);
 	int ret = true;
 	const char *name = NULL;
 	ut64 at = UT64_MAX, loadaddr = rz_bin_get_laddr(core->bin);
@@ -4191,7 +4190,11 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 	if ((action & RZ_CORE_BIN_ACC_RAW_STRINGS)) {
 		ret &= bin_raw_strings(core, pj, mode, va);
 	} else if ((action & RZ_CORE_BIN_ACC_STRINGS)) {
-		ret &= bin_strings(core, pj, mode, va);
+		const RzList *l = binfile ? core_bin_strings(core, binfile) : NULL;
+		_print_strings(core, l, pj, mode, va);
+		if (!l) {
+			ret = false;
+		}
 	}
 	if ((action & RZ_CORE_BIN_ACC_INFO)) {
 		ret &= bin_info(core, pj, mode, loadaddr);
