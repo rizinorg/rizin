@@ -91,9 +91,9 @@ RUN
 
 NAME=List type links
 CMDS=<<EOF
-tl int = 0x4
+tl int 0x4
 w test @ 0x10
-tl char * = 0x10
+tl "char *" 0x10
 tl
 EOF
 EXPECT=<<EOF
@@ -106,9 +106,9 @@ NAME=List readable type links
 CMDS=<<EOF
 tl int
 wB -1
-tl int = 0x8
+tl int 0x8
 w test @ 0x10
-tl char * = 0x10
+tl "char *" 0x10
 tll
 EOF
 EXPECT=<<EOF
@@ -130,7 +130,7 @@ e asm.lines.bb=false
 aa
 s sym.Java_com_app_ndh_NDHActivity_print
 to bins/headers/jni.h
-tl JNINativeInterface = 0x464c457f
+tl JNINativeInterface 0x464c457f
 pdf~JNINativeInterface
 pdr~JNI?
 EOF
@@ -799,7 +799,7 @@ e asm.comments=false
 td "struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
 af
-tl bar = 0x1958
+tl bar 0x1958
 ?e
 pdf~bar.
 EOF
@@ -821,7 +821,7 @@ e asm.bits=64
 e asm.comments=false
 td "struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
-tl bar = 0x1958
+tl bar 0x1958
 af
 aat @ fcn.00000000
 ?e
@@ -847,8 +847,8 @@ e asm.flags=false
 td "struct bar {int x; int y; int z;};"
 td "struct foo {int a; int b; int c;};"
 wx 48C7C000010000488B5008488B480448C7C000020000488B5008488B48049090C3
-tl bar = 0x200
-tl foo = 0x100
+tl bar 0x200
+tl foo 0x100
 af
 aat
 pdf
@@ -874,7 +874,7 @@ e asm.bytes=true
 aa
 s main
 td "struct Books {char  title[50];char  author[50]; char  subject[100];};"
-tl Books = 0x00177f18
+tl Books 0x00177f18
 ?e
 pdf~Books
 EOF
@@ -899,7 +899,7 @@ aa
 td "struct Test { int a; int  b; char *c;};"
 s main
 ahr 0x00000597 @ 0x00000592
-tl Test = 0x00002020
+tl Test 0x00002020
 s 0x000005a8
 ?e
 pd 3
@@ -921,7 +921,7 @@ td "union Books {char  title[50];char  author[50]; char  subject[100];};"
 tu
 tu Books
 s main
-tl Books = 0x00177f88
+tl Books 0x00177f88
 afv~Books
 s 0x000006d2
 pd 1

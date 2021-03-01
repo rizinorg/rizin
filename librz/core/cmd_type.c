@@ -127,7 +127,7 @@ static const char *help_msg_tl[] = {
 	"tll", "", "list all links in readable format.",
 	"tllj", "", "list all links in readable JSON format.",
 	"tl", " [typename]", "link a type to current address.",
-	"tl", " [typename] = [address]", "link type to given address.",
+	"tl", " [typename] [address]", "link type to given address.",
 	"tls", " [address]", "show link at given address.",
 	"tl-*", "", "delete all links.",
 	"tl-", " [address]", "delete link at given address.",
@@ -454,6 +454,89 @@ static void types_function_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
+static void types_link_print(RzCore *core, const char *type, ut64 addr, RzOutputMode mode) {
+	rz_return_if_fail(type);
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = pj_new();
+		if (!pj) {
+			return;
+		}
+		pj_o(pj);
+		char *saddr = rz_str_newf("0x%" PFMT64x, addr);
+		pj_ks(pj, saddr, type);
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		free(saddr);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_printf("0x%" PFMT64x " = %s\n", addr, type);
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_cons_printf("tl %s 0x%" PFMT64x "\n", type, addr);
+		break;
+	case RZ_OUTPUT_MODE_LONG: {
+		char *fmt = rz_type_format(core->analysis->sdb_types, type);
+		if (!fmt) {
+			eprintf("Can't fint type %s", type);
+		}
+		rz_cons_printf("(%s)\n", type);
+		rz_core_cmdf(core, "pf %s @ 0x%" PFMT64x "\n", fmt, addr);
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+static void types_link_print_all(RzCore *core, RzOutputMode mode) {
+	Sdb *TDB = core->analysis->sdb_types;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(TDB, true);
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "link")) {
+			const char *name = sdbkv_key(kv);
+			ut64 addr = rz_num_math(core->num, sdbkv_value(kv) + strlen("link."));
+			types_link_print(core, name, addr, mode);
+		}
+	}
+	ls_free(l);
+}
+
+static void types_link(RzCore *core, const char *type, ut64 addr) {
+	Sdb *TDB = core->analysis->sdb_types;
+	char *tmp = sdb_get(TDB, type, 0);
+	if (tmp && *tmp) {
+		rz_type_set_link(TDB, type, addr);
+		RzList *fcns = rz_analysis_get_functions_in(core->analysis, core->offset);
+		if (rz_list_length(fcns) > 1) {
+			eprintf("Multiple functions found in here.\n");
+		} else if (rz_list_length(fcns) == 1) {
+			RzAnalysisFunction *fcn = rz_list_first(fcns);
+			rz_core_link_stroff(core, fcn);
+		} else {
+			eprintf("Cannot find any function here\n");
+		}
+		rz_list_free(fcns);
+		free(tmp);
+	} else {
+		eprintf("unknown type %s\n", type);
+	}
+}
+
+static void types_link_show(RzCore *core, ut64 addr) {
+	Sdb *TDB = core->analysis->sdb_types;
+	const char *query = sdb_fmt("link.%08" PFMT64x, addr);
+	const char *link = sdb_const_get(TDB, query, 0);
+	if (link) {
+		types_link_print(core, link, addr, RZ_OUTPUT_MODE_LONG);
+	}
+}
+
 static void __core_cmd_tcc(RzCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -762,58 +845,6 @@ static bool printkey_cb(void *user, const char *k, const char *v) {
 
 static bool stdifunion(void *p, const char *k, const char *v) {
 	return !strncmp(v, "union", strlen("union") + 1);
-}
-
-static bool sdbdeletelink(void *p, const char *k, const char *v) {
-	RzCore *core = (RzCore *)p;
-	if (!strncmp(k, "link.", strlen("link."))) {
-		rz_type_del(core->analysis->sdb_types, k);
-	}
-	return true;
-}
-
-static bool stdiflink(void *p, const char *k, const char *v) {
-	return !strncmp(k, "link.", strlen("link."));
-}
-
-static bool print_link_cb(void *p, const char *k, const char *v) {
-	rz_cons_printf("0x%s = %s\n", k + strlen("link."), v);
-	return true;
-}
-
-static bool print_link_json_cb(void *p, const char *k, const char *v) {
-	rz_cons_printf("{\"0x%s\":\"%s\"}", k + strlen("link."), v);
-	return true;
-}
-
-static bool print_link_r_cb(void *p, const char *k, const char *v) {
-	rz_cons_printf("tl %s = 0x%s\n", v, k + strlen("link."));
-	return true;
-}
-
-static bool print_link_readable_cb(void *p, const char *k, const char *v) {
-	RzCore *core = (RzCore *)p;
-	char *fmt = rz_type_format(core->analysis->sdb_types, v);
-	if (!fmt) {
-		eprintf("Can't fint type %s", v);
-		return 1;
-	}
-	rz_cons_printf("(%s)\n", v);
-	rz_core_cmdf(core, "pf %s @ 0x%s\n", fmt, k + strlen("link."));
-	return true;
-}
-
-static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
-	RzCore *core = (RzCore *)p;
-	char *fmt = rz_type_format(core->analysis->sdb_types, v);
-	if (!fmt) {
-		eprintf("Can't fint type %s", v);
-		return true;
-	}
-	rz_cons_printf("{\"%s\":", v);
-	rz_core_cmdf(core, "pfj %s @ 0x%s\n", fmt, k + strlen("link."));
-	rz_cons_printf("}");
-	return true;
 }
 
 static bool stdiftype(void *p, const char *k, const char *v) {
@@ -1685,7 +1716,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		case ' ': {
 			char *type = strdup(input + 2);
-			char *ptr = strchr(type, '=');
+			char *ptr = strchr(type, ' ');
 			ut64 addr = core->offset;
 
 			if (ptr) {
@@ -1700,41 +1731,21 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				}
 			}
 			rz_str_trim(type);
-			char *tmp = sdb_get(TDB, type, 0);
-			if (tmp && *tmp) {
-				rz_type_set_link(TDB, type, addr);
-				RzList *fcns = rz_analysis_get_functions_in(core->analysis, core->offset);
-				if (rz_list_length(fcns) > 1) {
-					eprintf("Multiple functions found in here.\n");
-				} else if (rz_list_length(fcns) == 1) {
-					RzAnalysisFunction *fcn = rz_list_first(fcns);
-					rz_core_link_stroff(core, fcn);
-				} else {
-					eprintf("Cannot find any function here\n");
-				}
-				rz_list_free(fcns);
-				free(tmp);
-			} else {
-				eprintf("unknown type %s\n", type);
-			}
+			types_link(core, type, addr);
 			free(type);
 			break;
 		}
 		case 's': {
 			char *ptr = rz_str_trim_dup(input + 2);
-			ut64 addr = rz_num_math(NULL, ptr);
-			const char *query = sdb_fmt("link.%08" PFMT64x, addr);
-			const char *link = sdb_const_get(TDB, query, 0);
-			if (link) {
-				print_link_readable_cb(core, query, link);
-			}
+			ut64 addr = rz_num_math(core->num, ptr);
+			types_link_show(core, addr);
 			free(ptr);
 			break;
 		}
 		case '-':
 			switch (input[2]) {
 			case '*':
-				sdb_foreach(TDB, sdbdeletelink, core);
+				rz_type_unlink_all(TDB);
 				break;
 			case ' ': {
 				const char *ptr = input + 3;
@@ -1745,23 +1756,16 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			}
 			break;
 		case '*':
-			print_keys(TDB, core, stdiflink, print_link_r_cb, false);
+			types_link_print_all(core, RZ_OUTPUT_MODE_RIZIN);
 			break;
 		case 'l':
-			switch (input[2]) {
-			case 'j':
-				print_keys(TDB, core, stdiflink, print_link_readable_json_cb, true);
-				break;
-			default:
-				print_keys(TDB, core, stdiflink, print_link_readable_cb, false);
-				break;
-			}
+			types_link_print_all(core, RZ_OUTPUT_MODE_LONG);
 			break;
 		case 'j':
-			print_keys(TDB, core, stdiflink, print_link_json_cb, true);
+			types_link_print_all(core, RZ_OUTPUT_MODE_JSON);
 			break;
 		case '\0':
-			print_keys(TDB, core, stdiflink, print_link_cb, false);
+			types_link_print_all(core, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		}
 		break;
@@ -2045,6 +2049,36 @@ RZ_IPI RzCmdStatus rz_type_kuery_handler(RzCore *core, int argc, const char **ar
 	}
 	rz_cons_print(output);
 	free(output);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_link_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char *name = argc > 1 ? argv[1] : NULL;
+	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
+	if (name) {
+		types_link(core, name, addr);
+	} else {
+		types_link_print_all(core, mode);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_link_show_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	types_link_show(core, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_link_del_handler(RzCore *core, int argc, const char **argv) {
+	Sdb *TDB = core->analysis->sdb_types;
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	rz_type_unlink(TDB, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_link_del_all_handler(RzCore *core, int argc, const char **argv) {
+	Sdb *TDB = core->analysis->sdb_types;
+	rz_type_unlink_all(TDB);
 	return RZ_CMD_STATUS_OK;
 }
 

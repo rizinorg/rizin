@@ -397,6 +397,19 @@ RZ_API int rz_type_unlink(Sdb *TDB, ut64 addr) {
 	return true;
 }
 
+static bool sdbdeletelink(void *p, const char *k, const char *v) {
+	Sdb *TDB = (Sdb *)p;
+	if (!strncmp(k, "link.", strlen("link."))) {
+		rz_type_del(TDB, k);
+	}
+	return true;
+}
+
+RZ_API int rz_type_unlink_all(Sdb *TDB) {
+	sdb_foreach(TDB, sdbdeletelink, TDB);
+	return true;
+}
+
 static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	// assumes var list is sorted by offset.. should do more checks here
 	char *p = NULL, *vars = NULL, var2[132], *fmt = NULL;
