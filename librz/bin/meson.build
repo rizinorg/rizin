@@ -102,6 +102,7 @@ rz_bin_sources = [
   'format/mdmp/mdmp_pe64.c',
   'format/le/le.c',
   'format/luac/luac.c',
+  'format/luac/luac_54.c',
   'format/ne/ne.c',
   'format/mz/mz.c',
   'format/nxo/nxo.c',
