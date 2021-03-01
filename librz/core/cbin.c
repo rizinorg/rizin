@@ -372,112 +372,31 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	// ----
 	// inlined: rz_core_bin_info(r, RZ_CORE_BIN_ACC_ALL, NULL, RZ_MODE_SET, va, NULL, NULL);
 	RzCore *core = r;
-	int action = RZ_CORE_BIN_ACC_ALL;
 	PJ *pj = NULL;
 	int mode = RZ_MODE_SET;
-	RzCoreBinFilter *filter = NULL;
 	const char *chksum = NULL;
-	bool ret = true;
 	const char *name = NULL;
 	ut64 at = UT64_MAX, loadaddr = rz_bin_get_laddr(core->bin);
-	if (filter && filter->offset) {
-		at = filter->offset;
-	}
-	if (filter && filter->name) {
-		name = filter->name;
-	}
 
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
-	if ((action & RZ_CORE_BIN_ACC_RAW_STRINGS)) {
-		ret &= bin_raw_strings(core, pj, mode, va);
-	} else if ((action & RZ_CORE_BIN_ACC_STRINGS)) {
-		ret &= bin_strings(core, pj, mode, va);
-	}
-	if ((action & RZ_CORE_BIN_ACC_INFO)) {
-		ret &= bin_info(core, pj, mode, loadaddr);
-	}
-	if ((action & RZ_CORE_BIN_ACC_MAIN)) {
-		ret &= bin_main(core, pj, mode, va);
-	}
-	if ((action & RZ_CORE_BIN_ACC_DWARF)) {
-		ret &= bin_dwarf(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_PDB)) {
-		ret &= rz_core_pdb_info(core, core->bin->file, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_SOURCE)) {
-		ret &= bin_source(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_ENTRIES)) {
-		ret &= bin_entry(core, pj, mode, loadaddr, va, false);
-	}
-	if ((action & RZ_CORE_BIN_ACC_INITFINI)) {
-		ret &= bin_entry(core, pj, mode, loadaddr, va, true);
-	}
-	if ((action & RZ_CORE_BIN_ACC_SECTIONS)) {
-		ret &= bin_sections(core, pj, mode, loadaddr, va, at, name, chksum, false);
-	}
-	if ((action & RZ_CORE_BIN_ACC_SEGMENTS)) {
-		ret &= bin_sections(core, pj, mode, loadaddr, va, at, name, chksum, true);
-	}
-	if ((action & RZ_CORE_BIN_ACC_SECTIONS_MAPPING)) {
-		ret &= bin_map_sections_to_segments(core->bin, pj, mode);
-	}
+	bin_strings(core, pj, mode, va);
+	bin_info(core, pj, mode, loadaddr);
+	bin_main(core, pj, mode, va);
+	bin_dwarf(core, pj, mode);
+	bin_entry(core, pj, mode, loadaddr, va, false);
+	bin_sections(core, pj, mode, loadaddr, va, at, name, chksum, false);
+	bin_sections(core, pj, mode, loadaddr, va, at, name, chksum, true);
 	if (rz_config_get_i(core->config, "bin.relocs")) {
-		if ((action & RZ_CORE_BIN_ACC_RELOCS)) {
-			ret &= bin_relocs(core, pj, mode, va);
-		}
+		bin_relocs(core, pj, mode, va);
 	}
-	if ((action & RZ_CORE_BIN_ACC_LIBS)) {
-		ret &= bin_libs(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_IMPORTS)) { // 5s
-		ret &= bin_imports(core, pj, mode, va, name);
-	}
-	if ((action & RZ_CORE_BIN_ACC_EXPORTS)) {
-		ret &= bin_symbols(core, pj, mode, loadaddr, va, at, name, true, chksum);
-	}
-	if ((action & RZ_CORE_BIN_ACC_SYMBOLS)) { // 6s
-		ret &= bin_symbols(core, pj, mode, loadaddr, va, at, name, false, chksum);
-	}
-	if ((action & RZ_CORE_BIN_ACC_CLASSES)) { // 6s
-		ret &= bin_classes(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_TRYCATCH)) {
-		ret &= bin_trycatch(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_SIZE)) {
-		ret &= bin_size(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_MEM)) {
-		ret &= bin_mem(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_VERSIONINFO)) {
-		ret &= bin_versioninfo(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_RESOURCES)) {
-		ret &= bin_resources(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_SIGNATURE)) {
-		ret &= bin_signature(core, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_FIELDS)) {
-		if (IS_MODE_SIMPLE(mode)) {
-			if ((action & RZ_CORE_BIN_ACC_HEADER) || action & RZ_CORE_BIN_ACC_FIELDS) {
-				/* ignore mode, just for quiet/simple here */
-				ret &= bin_fields(core, NULL, 0, va);
-			}
-		} else {
-			if (IS_MODE_NORMAL(mode)) {
-				ret &= bin_header(core, mode);
-			} else {
-				if ((action & RZ_CORE_BIN_ACC_HEADER) || action & RZ_CORE_BIN_ACC_FIELDS) {
-					ret &= bin_fields(core, pj, mode, va);
-				}
-			}
-		}
-	}
+	bin_libs(core, pj, mode);
+	bin_imports(core, pj, mode, va, name);
+	bin_symbols(core, pj, mode, loadaddr, va, at, name, false, chksum);
+	bin_classes(core, pj, mode);
+	bin_mem(core, pj, mode);
+	bin_resources(core, pj, mode);
+	bin_fields(core, pj, mode, va);
 	// ----
 
 	rz_core_bin_set_cur(r, binfile);
