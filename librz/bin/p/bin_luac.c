@@ -4,7 +4,10 @@
 
 #include <rz_bin.h>
 #include <rz_lib.h>
-#include "luac/luac_specs.h"
+#include "luac/luac_54.h"
+
+static ut8 MAJOR_VERSION;
+static ut8 MINOR_VERSION;
 
 static bool check_buffer(RzBuffer *buff) {
     if (rz_buf_size(buff) > 4 ){
@@ -16,33 +19,25 @@ static bool check_buffer(RzBuffer *buff) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+    rz_buf_read_at(buf, 4, &MAJOR_VERSION, sizeof(MAJOR_VERSION));        /* 1-byte in fact */
+    rz_buf_read_at(buf, 5, &MINOR_VERSION, sizeof(MINOR_VERSION));
     return check_buffer(buf);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-    RzBinInfo  *ret = NULL;
-    luac_hdr lhdr;
-    memset(&lhdr, 0, LUAC_HDR_SIZE);
-
-    int reat = rz_buf_read_at(bf->buf, 0, (ut8 *)&lhdr, LUAC_HDR_SIZE);
-    if (reat != LUAC_HDR_SIZE){
-        eprintf("Truncated Header\n");
+    if (MAJOR_VERSION != 5){
+        eprintf("currently not support lua version < 5\n");
         return NULL;
     }
 
-    if (!(ret = RZ_NEW0(RzBinInfo))){
-        return NULL;
+    switch (MINOR_VERSION) {
+        case 4:
+            return info_54(bf, MAJOR_VERSION, MINOR_VERSION);
+            break;
+        default:
+            eprintf("lua 5.%c not support now\n", MINOR_VERSION + '0');
+            return NULL;
     }
-
-    ret->file = strdup(bf->file);
-    ret->type = strdup("Object File");
-    ret->machine = strdup("Lua Virtual Machine");
-    ret->os = strdup("Lua VM");
-    ret->arch = strdup("Lua VM");
-    ret->bits = 8;
-    ret->has_va = 0;
-    return ret;
-
 }
 
 RzBinPlugin rz_bin_plugin_luac = {

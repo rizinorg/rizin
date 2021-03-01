@@ -1,13 +1,15 @@
 //
 // Created by heersin on 2/28/21.
+// put common definition of luac
 //
 
 #ifndef BUILD_LUAC_SPECS_H
 #define BUILD_LUAC_SPECS_H
 
+/* Include version specs header */
+
 /* Macros/Typedefs used in luac */
 typedef	double LUA_NUMBER;
-
 
 /* Macro Functions */
 /* type casts (a macro highlights casts in the code) */
@@ -23,26 +25,7 @@ typedef	double LUA_NUMBER;
 #define LUAC_NUMBER_VALIDATION cast_num(370.5)
 
 
-/* Macros for bin_luac.c */
-#define LUAC_HDR_SIZE sizeof(luac_hdr)
 
-/* luac 5.4 spec */
-RZ_PACKED(
-        typedef struct {
-            ut8 signature[4]; /* == '.Lua' */
-            ut8 version;      /* version of luac */
-            ut8 format;       /* 1 if it's modified luac */
-
-            ut8 luac_data[6];               /* luac data for error detection */
-            ut8 instruction_size;
-            ut8 integer_size;
-            ut8 number_size;
-
-            ut64 integer_valid_data;        /* test integer data loading */
-            ut64 number_valid_data;         /* test number data loading */
-
-            ut8 upvalues_number;            /* number of upvalue arrays */
-        }) luac_hdr;
 
 
 
