@@ -3620,17 +3620,15 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 	free(str);
 }
 
-static RTreeNode *add_trace_tree_child(Sdb *db, RTree *t, RTreeNode *cur, ut64 addr) {
-	struct trace_node *t_node;
-	char dbkey[TN_KEY_LEN];
-
-	snprintf(dbkey, TN_KEY_LEN, TN_KEY_FMT, addr);
-	t_node = (struct trace_node *)(size_t)sdb_num_get(db, dbkey, NULL);
+static RTreeNode *add_trace_tree_child(HtUP *ht, RTree *t, RTreeNode *cur, ut64 addr) {
+	struct trace_node *t_node = ht_up_find(ht, addr, NULL);
 	if (!t_node) {
 		t_node = RZ_NEW0(struct trace_node);
-		t_node->addr = addr;
-		t_node->refs = 1;
-		sdb_num_set(db, dbkey, (ut64)(size_t)t_node, 0);
+		if (t_node) {
+			t_node->addr = addr;
+			t_node->refs = 1;
+			ht_up_insert(ht, addr, t_node);
+		}
 	} else {
 		t_node->refs++;
 	}
@@ -3670,7 +3668,7 @@ static void trace_traverse(RTree *t) {
 static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr) {
 	bool trace_libs = rz_config_get_i(core->config, "dbg.trace.libs");
 	bool shallow_trace = rz_config_get_i(core->config, "dbg.trace.inrange");
-	Sdb *tracenodes = core->dbg->tracenodes;
+	HtUP *tracenodes = core->dbg->tracenodes;
 	RTree *tr = core->dbg->tree;
 	RzDebug *dbg = core->dbg;
 	ut64 debug_to = UT64_MAX;

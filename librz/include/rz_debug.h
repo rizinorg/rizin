@@ -279,7 +279,7 @@ typedef struct rz_debug_t {
 
 	/* tracing vars */
 	RzDebugTrace *trace;
-	Sdb *tracenodes;
+	HtUP *tracenodes;
 	RTree *tree;
 	RzList *call_frames;
 

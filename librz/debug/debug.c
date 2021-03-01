@@ -344,6 +344,10 @@ static const char *rz_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
 	return NULL;
 }
 
+void free_tracenodes_kv(HtUPKv *kv) {
+	free(kv->value);
+}
+
 RZ_API RzDebug *rz_debug_new(int hard) {
 	RzDebug *dbg = RZ_NEW0(RzDebug);
 	if (!dbg) {
@@ -368,7 +372,7 @@ RZ_API RzDebug *rz_debug_new(int hard) {
 	dbg->bpsize = 1;
 	dbg->tid = -1;
 	dbg->tree = rz_tree_new();
-	dbg->tracenodes = sdb_new0();
+	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
 	dbg->swstep = 0;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
@@ -395,15 +399,9 @@ RZ_API RzDebug *rz_debug_new(int hard) {
 	return dbg;
 }
 
-static int free_tracenodes_entry(RzDebug *dbg, const char *k, const char *v) {
-	ut64 v_num = rz_num_get(NULL, v);
-	free((void *)(size_t)v_num);
-	return true;
-}
-
 RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg) {
-	sdb_foreach(dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
-	sdb_reset(dbg->tracenodes);
+	ht_up_free(dbg->tracenodes);
+	dbg->tracenodes = ht_up_new(NULL, free_tracenodes_kv, NULL);
 }
 
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
@@ -418,8 +416,7 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 		rz_num_free(dbg->num);
 		sdb_free(dbg->sgnls);
 		rz_tree_free(dbg->tree);
-		sdb_foreach(dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
-		sdb_free(dbg->tracenodes);
+		ht_up_free(dbg->tracenodes);
 		rz_list_free(dbg->plugins);
 		rz_list_free(dbg->call_frames);
 		free(dbg->btalgo);
