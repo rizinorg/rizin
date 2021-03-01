@@ -939,7 +939,7 @@ static HtPP *compute_vertical_nodes(const RzAGraph *g) {
 
 			if (!Ln) {
 				RzList *vert = rz_list_new();
-				ht_pp_update(res, gn, vert);
+				ht_pp_insert(res, gn, vert);
 				if (an->is_dummy) {
 					RzGraphNode *next = gn;
 					const RzANode *anext = get_anode(next);
