@@ -318,7 +318,7 @@ static int __r_core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
 			result = rz_bin_reload(r->bin, bf->id, baseaddr);
 		}
 	}
-	rz_core_bin_set_env(r, rz_bin_cur(r->bin));
+	rz_core_bin_apply_all_info(r, rz_bin_cur(r->bin));
 	return result;
 }
 
