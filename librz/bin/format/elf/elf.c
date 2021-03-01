@@ -1415,7 +1415,71 @@ ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name
 	RzBinElfSection *section = get_section_by_name(bin, section_name);
 	return section ? section->rva + section->size : UT64_MAX;
 }
+char* Elf_(rz_bin_elf_get_section_flag)(struct rz_bin_elf_section_t * section) {
+	char *buff;
+	//RzList *buff = rz_list_new();//rz__str_new("")
+	//rz_str_append(buff, rz_string_new("Write"));
+	int8_t i=0;
+	buff = (char*)malloc(2*sizeof(char));
 
+	while(section && i <= 2){
+		
+			if(section->flags & SHF_WRITE) {
+				buff[i++] = 'W'; 
+				//rz_str_append(buff, rz_string_new("write"));
+
+			}
+			if(section->flags & SHF_ALLOC) {
+				buff[i++] = 'A'; 
+				//rz_str_append(buff, rz_string_new("alloc"));
+			}
+			if(section->flags & SHF_EXECINSTR) {
+				buff[i++] = 'X'; 
+				//rz_str_append(buff, rz_string_new("execute"));
+			}
+			if(section->flags & SHF_MERGE) {
+				buff[i++] = 'M'; 
+				//rz_str_append(buff, rz_string_new("merge"));
+			}
+			if(section->flags & SHF_STRINGS) {
+				buff[i++] = 'S'; 
+				//rz_str_append(buff, rz_string_new("strings"));
+			}
+			if(section->flags & SHF_INFO_LINK) {
+				buff[i++] = 'I'; 
+				//rz_str_append(buff, rz_string_new("info"));
+			}
+			if(section->flags & SHF_LINK_ORDER) {
+				buff[i++] = 'L'; 
+				//rz_str_append(buff, rz_string_new("linkorder"));
+			}
+			if(section->flags & SHF_OS_NONCONFORMING) {
+				buff[i++] = 'O'; 
+				//rz_str_append(buff, rz_string_new("os-nonconf"));
+			}
+			if(section->flags & SHF_GROUP) {
+				buff[i++] = 'G'; 
+				//rz_str_append(buff, rz_string_new("group"));
+			}
+			if(section->flags & SHF_TLS) {
+				buff[i++] = 'T'; 
+				//rz_str_append(buff, rz_string_new("tls"));
+			}
+			if(section->flags & SHF_EXCLUDE) {
+				buff[i++] = 'E'; 
+				//rz_str_append(buff, rz_string_new("exclude"));
+			}
+			if(section->flags & SHF_COMPRESSED) {
+				buff[i++] = 'C'; 
+				//rz_str_append(buff, rz_string_new("compressed"));
+			}
+			if(buff == NULL ){
+				buff[i++] = '-';
+			}
+			break;
+		}
+	return buff;	
+}
 char *Elf_(rz_bin_elf_get_section_type)(struct rz_bin_elf_section_t * section) {
 	switch (section->type) {
 		case SHT_NULL:
@@ -1486,6 +1550,7 @@ char *Elf_(rz_bin_elf_get_section_type)(struct rz_bin_elf_section_t * section) {
 			return NULL;
 	}
 }
+
 
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (!rel->rva) {
