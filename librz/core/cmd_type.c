@@ -370,7 +370,7 @@ static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_val
 	return RZ_CMD_STATUS_OK;
 }
 
-static void types_function_print(RzCore *core, const char *function, RzOutputMode mode) {
+static void types_function_print(RzCore *core, const char *function, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(function);
 	Sdb *TDB = core->analysis->sdb_types;
 	char *res = sdb_querys(TDB, NULL, -1, sdb_fmt("func.%s.args", function));
@@ -381,10 +381,7 @@ static void types_function_print(RzCore *core, const char *function, RzOutputMod
 	}
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
-		PJ *pj = rz_core_pj_new(core);
-		if (!pj) {
-			return;
-		}
+		rz_return_if_fail(pj);
 		pj_o(pj);
 		pj_ks(pj, "name", function);
 		pj_ks(pj, "ret", ret);
@@ -410,8 +407,6 @@ static void types_function_print(RzCore *core, const char *function, RzOutputMod
 		}
 		pj_end(pj);
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
 	} break;
 	case RZ_OUTPUT_MODE_SDB: {
 		char *keys = sdb_querys(TDB, NULL, -1, sdb_fmt("~~func.%s", function));
@@ -440,14 +435,23 @@ static void types_function_print_all(RzCore *core, RzOutputMode mode) {
 	Sdb *TDB = core->analysis->sdb_types;
 	SdbKv *kv;
 	SdbListIter *iter;
+	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
 	SdbList *l = sdb_foreach_list(TDB, true);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_a(pj);
+	}
 	ls_foreach (l, iter, kv) {
 		if (!strcmp(sdbkv_value(kv), "func")) {
 			const char *name = sdbkv_key(kv);
-			types_function_print(core, name, mode);
+			types_function_print(core, name, mode, pj);
 		}
 	}
 	ls_free(l);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
 }
 
 static void __core_cmd_tcc(RzCore *core, const char *input) {
@@ -836,7 +840,7 @@ static bool print_type_c(RzCore *core, const char *ctype) {
 		} else if (rz_str_startswith(type, "typedef")) {
 			rz_core_list_typename_alias_c(core, name);
 		} else if (rz_str_startswith(type, "func")) {
-			types_function_print(core, name, RZ_OUTPUT_MODE_STANDARD);
+			types_function_print(core, name, RZ_OUTPUT_MODE_STANDARD, NULL);
 		}
 		return true;
 	}
@@ -1851,7 +1855,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		case 'k': // "tfk"
 			if (input[2] == ' ') {
 				const char *name = rz_str_trim_head_ro(input + 3);
-				types_function_print(core, name, RZ_OUTPUT_MODE_SDB);
+				types_function_print(core, name, RZ_OUTPUT_MODE_SDB, NULL);
 			} else {
 				types_function_print_all(core, RZ_OUTPUT_MODE_SDB);
 			}
@@ -1859,14 +1863,18 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		case 'j': // "tfj"
 			if (input[2] == ' ') {
 				const char *name = rz_str_trim_head_ro(input + 2);
-				types_function_print(core, name, RZ_OUTPUT_MODE_JSON);
+				PJ *pj = rz_core_pj_new(core);
+				types_function_print(core, name, RZ_OUTPUT_MODE_JSON, pj);
+				pj_end(pj);
+				rz_cons_println(pj_string(pj));
+				pj_free(pj);
 			} else {
 				types_function_print_all(core, RZ_OUTPUT_MODE_JSON);
 			}
 			break;
 		case ' ': {
 			const char *name = rz_str_trim_head_ro(input + 2);
-			types_function_print(core, name, RZ_OUTPUT_MODE_SDB);
+			types_function_print(core, name, RZ_OUTPUT_MODE_SDB, NULL);
 			break;
 		}
 		default:
@@ -2010,7 +2018,12 @@ RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *function = argc > 1 ? argv[1] : NULL;
 	if (function) {
-		types_function_print(core, function, mode);
+		PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
+		types_function_print(core, function, mode, pj);
+		if (mode == RZ_OUTPUT_MODE_JSON) {
+			rz_cons_println(pj_string(pj));
+			pj_free(pj);
+		}
 	} else {
 		types_function_print_all(core, mode);
 	}
