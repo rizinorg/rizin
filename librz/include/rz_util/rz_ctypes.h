@@ -31,6 +31,7 @@ RZ_API char *rz_type_get_struct_memb(Sdb *TDB, const char *type, int offset);
 RZ_API char *rz_type_link_at(Sdb *TDB, ut64 addr);
 RZ_API int rz_type_set_link(Sdb *TDB, const char *val, ut64 addr);
 RZ_API int rz_type_unlink(Sdb *TDB, ut64 addr);
+RZ_API int rz_type_unlink_all(Sdb *TDB);
 RZ_API int rz_type_link_offset(Sdb *TDB, const char *val, ut64 addr);
 RZ_API char *rz_type_format(Sdb *TDB, const char *t);
 

@@ -116,6 +116,41 @@ commands:
       - name: type
         type: RZ_CMD_ARG_TYPE_STRING
         optional: true
+  - name: tl
+    summary: Manage type links to the address
+    subcommands:
+      - name: tl
+        cname: type_link
+        summary: List all type links / Add a type link
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_SDB
+          - RZ_OUTPUT_MODE_LONG
+        args:
+          - name: typename
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tls
+        cname: type_link_show
+        summary: Show the type link
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: tl-
+        cname: type_link_del
+        summary: Remove the type link
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: tl-*
+        cname: type_link_del_all
+        summary: Remove all type links
+        args: []
   - name: tn
     summary: Manage noreturn function attributes and marks
     subcommands:
