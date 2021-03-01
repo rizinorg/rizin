@@ -119,20 +119,6 @@ static SymbolsMetadata parseMetadata(RzBuffer *buf, int off) {
 	return sm;
 }
 
-static void printSymbolsHeader(SymbolsHeader sh) {
-	// eprintf ("0x%08x  version  0x%x\n", 4, sh.version);
-	eprintf("0x%08x  uuid     ", 24);
-	int i;
-	for (i = 0; i < 16; i++) {
-		eprintf("%02x", sh.uuid[i]);
-	}
-	eprintf("\n");
-	// parse header
-	// eprintf ("0x%08x  unknown  0x%x\n", 0x28, sh.unk0); //rz_read_le32 (b+ 0x28));
-	// eprintf ("0x%08x  unknown  0x%x\n", 0x2c, sh.unk1); //rz_read_le16 (b+ 0x2c));
-	// eprintf ("0x%08x  slotsize %d\n", 0x2e, sh.slotsize); // rz_read_le16 (b+ 0x2e));
-}
-
 static RzBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect) {
 	if (!sect->name) {
 		return NULL;
@@ -194,7 +180,7 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	return sym;
 }
 
-static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits) {
+static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits, RZ_OWN char *file_name) {
 	D eprintf("Dragons at 0x%x\n", off);
 	ut64 size = rz_buf_size(buf);
 	if (off >= size) {
@@ -262,7 +248,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 		eprintf("0x%08x  eoss   0x%x\n", off + 12, e0ss);
 	}
 	free(b);
-	return rz_coresym_cache_element_new(bf, buf, off + 16, bits);
+	return rz_coresym_cache_element_new(bf, buf, off + 16, bits, file_name);
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
@@ -290,13 +276,23 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		eprintf("Invalid headers\n");
 		return false;
 	}
-	printSymbolsHeader(sh);
 	SymbolsMetadata sm = parseMetadata(buf, 0x40);
-	RzCoreSymCacheElement *element = parseDragons(bf, buf, sm.addr + sm.size, sm.bits);
+	char *file_name = NULL;
+	if (sm.namelen) {
+		file_name = calloc(sm.namelen + 1, 1);
+		if (!file_name) {
+			return false;
+		}
+		if (rz_buf_read_at(buf, 0x50, (ut8 *)file_name, sm.namelen) != sm.namelen) {
+			return false;
+		}
+	}
+	RzCoreSymCacheElement *element = parseDragons(bf, buf, sm.addr + sm.size, sm.bits, file_name);
 	if (element) {
 		*bin_obj = element;
 		return true;
 	}
+	free(file_name);
 	return false;
 }
 
