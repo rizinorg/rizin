@@ -371,32 +371,27 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 
 	// ----
 	// inlined: rz_core_bin_info(r, RZ_CORE_BIN_ACC_ALL, NULL, RZ_MODE_SET, va, NULL, NULL);
-	RzCore *core = r;
-	PJ *pj = NULL;
-	int mode = RZ_MODE_SET;
-	const char *chksum = NULL;
-	const char *name = NULL;
-	ut64 at = UT64_MAX, loadaddr = rz_bin_get_laddr(core->bin);
+	ut64 loadaddr = binobj ? binobj->loadaddr : UT64_MAX;
 
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
-	bin_strings(core, pj, mode, va);
-	bin_info(core, pj, mode, loadaddr);
-	bin_main(core, pj, mode, va);
-	bin_dwarf(core, pj, mode);
-	bin_entry(core, pj, mode, loadaddr, va, false);
-	bin_sections(core, pj, mode, loadaddr, va, at, name, chksum, false);
-	bin_sections(core, pj, mode, loadaddr, va, at, name, chksum, true);
-	if (rz_config_get_i(core->config, "bin.relocs")) {
-		bin_relocs(core, pj, mode, va);
+	bin_strings(r, NULL, RZ_MODE_SET, va);
+	bin_info(r, NULL, RZ_MODE_SET, loadaddr);
+	bin_main(r, NULL, RZ_MODE_SET, va);
+	bin_dwarf(r, NULL, RZ_MODE_SET);
+	bin_entry(r, NULL, RZ_MODE_SET, loadaddr, va, false);
+	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
+	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, true);
+	if (rz_config_get_i(r->config, "bin.relocs")) {
+		bin_relocs(r, NULL, RZ_MODE_SET, va);
 	}
-	bin_libs(core, pj, mode);
-	bin_imports(core, pj, mode, va, name);
-	bin_symbols(core, pj, mode, loadaddr, va, at, name, false, chksum);
-	bin_classes(core, pj, mode);
-	bin_mem(core, pj, mode);
-	bin_resources(core, pj, mode);
-	bin_fields(core, pj, mode, va);
+	bin_libs(r, NULL, RZ_MODE_SET);
+	bin_imports(r, NULL, RZ_MODE_SET, va, NULL);
+	bin_symbols(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, false, NULL);
+	bin_classes(r, NULL, RZ_MODE_SET);
+	bin_mem(r, NULL, RZ_MODE_SET);
+	bin_resources(r, NULL, RZ_MODE_SET);
+	bin_fields(r, NULL, RZ_MODE_SET, va);
 	// ----
 
 	rz_core_bin_set_cur(r, binfile);
