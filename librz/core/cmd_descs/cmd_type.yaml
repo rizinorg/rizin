@@ -197,6 +197,35 @@ commands:
         args:
           - name: file
             type: RZ_CMD_ARG_TYPE_FILE
+  - name: tp
+    summary: Print formatted type casted to the address
+    subcommands:
+      - name: tp
+        cname: type_print
+        summary: Print formatted type casted to the address or variable
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tpv
+        cname: type_print_value
+        summary: Print formatted type casted to the value
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: value
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tpx
+        cname: type_print_hexstring
+        summary: Print formatted type casted to the hexadecimal sequence
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: hexpairs
+            type: RZ_CMD_ARG_TYPE_STRING
   - name: tt
     summary: List loaded typedefs
     subcommands:
