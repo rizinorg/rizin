@@ -902,16 +902,13 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				}
 				RZBININFO("strings", RZ_CORE_BIN_ACC_RAW_STRINGS, NULL);
 			} else {
-				RzBinObject *obj = rz_bin_cur_object(core->bin);
 				if (input[1] == 'q') {
 					mode = (input[2] == 'q')
 						? RZ_MODE_SIMPLEST
 						: RZ_MODE_SIMPLE;
 					input++;
 				}
-				if (obj) {
-					RZBININFO("strings", RZ_CORE_BIN_ACC_STRINGS, NULL);
-				}
+				RZBININFO("strings", RZ_CORE_BIN_ACC_STRINGS, NULL);
 			}
 			break;
 		case 'c': // "ic"
