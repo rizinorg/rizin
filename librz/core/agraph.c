@@ -1032,7 +1032,9 @@ static RzGraphNode *get_sibling(const RzAGraph *g, const RzANode *n, int is_left
 static int hash_get_int(HtPU *ht, const void *key) {
 	bool found;
 	int val = (int)(size_t)ht_pu_find(ht, key, &found);
-	rz_return_val_if_fail(found, 0);
+	if (!found) {
+		val = 0;
+	}
 	return val;
 }
 
