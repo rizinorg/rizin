@@ -318,8 +318,7 @@ EOF
 EXPECT=<<EOF
 {"name":"FOO","values":{"A":1,"B":256,"C":255,"D":4,"E":5}}
 {"name":"BAR","values":{"G":2048,"Z":238,"P":4,"E":5}}
-{"name":"BAR","values":{"G":2048,"Z":238,"P":4,"E":5}}
-{"name":"FOO","values":{"A":1,"B":256,"C":255,"D":4,"E":5}}
+[{"name":"BAR","values":{"G":2048,"Z":238,"P":4,"E":5}},{"name":"FOO","values":{"A":1,"B":256,"C":255,"D":4,"E":5}}]
 EOF
 RUN
 

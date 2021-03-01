@@ -197,7 +197,7 @@ static void types_cc_print_all(RzCore *core, RzOutputMode mode) {
 		RzList *list = rz_core_analysis_calling_conventions(core);
 		RzListIter *iter;
 		const char *cc;
-		PJ *pj = pj_new();
+		PJ *pj = rz_core_pj_new(core);
 		pj_a(pj);
 		rz_list_foreach (list, iter, cc) {
 			char *ccexpr = rz_analysis_cc_get(core->analysis, cc);
@@ -266,14 +266,14 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 	}
 }
 
-static void types_enum_print(RzCore *core, const char *enum_name, RzOutputMode mode) {
+static void types_enum_print(RzCore *core, const char *enum_name, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(enum_name);
 	Sdb *TDB = core->analysis->sdb_types;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
+		rz_return_if_fail(pj);
 		RTypeEnum *member;
 		RzListIter *iter;
-		PJ *pj = pj_new();
 		RzList *list = rz_type_get_enum(TDB, enum_name);
 		pj_o(pj);
 		if (list && !rz_list_empty(list)) {
@@ -286,8 +286,6 @@ static void types_enum_print(RzCore *core, const char *enum_name, RzOutputMode m
 			pj_end(pj);
 		}
 		pj_end(pj);
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
 		rz_list_free(list);
 		break;
 	}
@@ -321,14 +319,23 @@ static void types_enum_print_all(RzCore *core, RzOutputMode mode) {
 	Sdb *TDB = core->analysis->sdb_types;
 	SdbKv *kv;
 	SdbListIter *iter;
+	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
 	SdbList *l = sdb_foreach_list(TDB, true);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_a(pj);
+	}
 	ls_foreach (l, iter, kv) {
 		if (!strcmp(sdbkv_value(kv), "enum")) {
 			const char *name = sdbkv_key(kv);
-			types_enum_print(core, name, mode);
+			types_enum_print(core, name, mode, pj);
 		}
 	}
 	ls_free(l);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
 }
 
 static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, const char *enum_value) {
@@ -374,7 +381,7 @@ static void types_function_print(RzCore *core, const char *function, RzOutputMod
 	}
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
-		PJ *pj = pj_new();
+		PJ *pj = rz_core_pj_new(core);
 		if (!pj) {
 			return;
 		}
@@ -486,7 +493,7 @@ static void type_show_format(RzCore *core, const char *name, RzOutputMode mode) 
 			rz_str_trim(fmt);
 			switch (mode) {
 			case RZ_OUTPUT_MODE_JSON: {
-				PJ *pj = pj_new();
+				PJ *pj = rz_core_pj_new(core);
 				if (!pj) {
 					return;
 				}
@@ -937,7 +944,7 @@ RZ_API void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode) {
 	PJ *pj = NULL;
 	Sdb *TDB = core->analysis->sdb_types;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
+		pj = rz_core_pj_new(core);
 		if (!pj) {
 			return;
 		}
@@ -1489,7 +1496,11 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				if (member_value) {
 					types_enum_member_find(core, name, member_value);
 				} else {
-					types_enum_print(core, name, RZ_OUTPUT_MODE_JSON);
+					PJ *pj = rz_core_pj_new(core);
+					types_enum_print(core, name, RZ_OUTPUT_MODE_JSON, pj);
+					pj_end(pj);
+					rz_cons_println(pj_string(pj));
+					pj_free(pj);
 				}
 			}
 			break;
@@ -1497,7 +1508,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			if (input[2] == 0) { // "tek"
 				types_enum_print_all(core, RZ_OUTPUT_MODE_SDB);
 			} else { // "tek ENUM"
-				types_enum_print(core, name, RZ_OUTPUT_MODE_SDB);
+				types_enum_print(core, name, RZ_OUTPUT_MODE_SDB, NULL);
 			}
 			break;
 		case 'b': // "teb"
@@ -1518,7 +1529,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			if (member_value) {
 				types_enum_member_find(core, name, member_value);
 			} else {
-				types_enum_print(core, name, RZ_OUTPUT_MODE_STANDARD);
+				types_enum_print(core, name, RZ_OUTPUT_MODE_STANDARD, NULL);
 			}
 			break;
 		case '\0': {
@@ -1946,7 +1957,12 @@ RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char 
 		if (member_value) {
 			return types_enum_member_find(core, enum_name, member_value);
 		} else {
-			types_enum_print(core, enum_name, mode);
+			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
+			types_enum_print(core, enum_name, mode, pj);
+			if (mode == RZ_OUTPUT_MODE_JSON) {
+				rz_cons_println(pj_string(pj));
+				pj_free(pj);
+			}
 		}
 	} else {
 		// A special case, since by default `te` returns only the list of all enums
