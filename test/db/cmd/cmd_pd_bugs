@@ -194,7 +194,7 @@ e asm.lines.bb=1
 pd 2
 EOF
 EXPECT=<<EOF
-0: test ();
+test ();
           0x00000000      0000           add   byte [rax], al
           0x00000002      0000           add   byte [rax], al
 EOF
@@ -212,7 +212,7 @@ e asm.lines.bb=0
 pd 2
 EOF
 EXPECT=<<EOF
-/ 0: test ();
+/ test ();
   0x00000000      0000           add   byte [rax], al
   0x00000002      0000           add   byte [rax], al
 EOF

@@ -510,6 +510,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 					si = rz_syscall_get(p->analb.analysis->syscall, off, -1);
 					if (si) {
 						snprintf(num, sizeof(num), "%s()", si->name);
+						rz_syscall_item_free(si);
 					} else {
 						snprintf(num, sizeof(num), "unknown()");
 					}

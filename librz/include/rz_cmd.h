@@ -271,6 +271,13 @@ typedef struct rz_cmd_desc_help_t {
 	 */
 	const char *options;
 	/**
+	 * When true, the subcommands are automatically sorted alphabetically. By
+	 * default subcommands are shown in the order provided by the developer.
+	 *
+	 * Optional.
+	 */
+	bool sort_subcommands;
+	/**
 	 * NULL-terminated array of details sections used to better explain how
 	 * to use the command. This is shown together with the long description.
 	 *
@@ -397,7 +404,6 @@ typedef struct rz_cmd_t {
 	RzCmdItem *cmds[UT8_MAX];
 	RzCmdMacro macro;
 	RzList *lcmds;
-	RzList *plist;
 	RzCmdAlias aliases;
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
@@ -409,6 +415,13 @@ typedef struct rz_cmd_t {
 	 * non-initialized RzCons.
 	 */
 	bool has_cons;
+	/**
+	 * True when you want to add multiple commands in batch. This is an
+	 * optimization mainly for groups that require sorted sub-commands, so
+	 * instead of sorting on each addition we just sort one time at the end.
+	 * False by default.
+	 */
+	bool batch;
 } RzCmd;
 
 // TODO: remove this once transitioned to RzCmdDesc
@@ -420,29 +433,14 @@ typedef struct rz_cmd_descriptor_t {
 	struct rz_cmd_descriptor_t *sub[127];
 } RzCmdDescriptor;
 
-// TODO: move into rz_core.h
-typedef struct rz_core_plugin_t {
-	const char *name;
-	const char *desc;
-	const char *license;
-	const char *author;
-	const char *version;
-	RzCmdCb call; // returns true if command was handled, false otherwise.
-	RzCmdCb init;
-	RzCmdCb fini;
-} RzCorePlugin;
-
 typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const RzCmdDesc *desc, void *user);
 
 #ifdef RZ_API
-RZ_API int rz_core_plugin_init(RzCmd *cmd);
-RZ_API int rz_core_plugin_add(RzCmd *cmd, RzCorePlugin *plugin);
-RZ_API int rz_core_plugin_check(RzCmd *cmd, const char *a0);
-RZ_API int rz_core_plugin_fini(RzCmd *cmd);
-
-RZ_API RzCmd *rz_cmd_new(bool has_cons, bool add_core_plugins);
+RZ_API RzCmd *rz_cmd_new(bool has_cons);
 RZ_API RzCmd *rz_cmd_free(RzCmd *cmd);
 RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
+RZ_API void rz_cmd_batch_start(RzCmd *cmd);
+RZ_API void rz_cmd_batch_end(RzCmd *cmd);
 RZ_API int rz_cmd_add(RzCmd *cmd, const char *command, RzCmdCb callback);
 RZ_API int rz_core_del(RzCmd *cmd, const char *command);
 RZ_API int rz_cmd_call(RzCmd *cmd, const char *command);

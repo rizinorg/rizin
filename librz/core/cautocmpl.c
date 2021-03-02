@@ -161,6 +161,7 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 
 static void autocmplt_cmd_arg_env(RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char **env;
+	res->end_string = "";
 	for (env = rz_sys_get_environ(); *env; env++) {
 		const char *eq = strchr(*env, '=');
 		char *envkey = eq ? rz_str_ndup(*env, eq - *env) : strdup(*env);

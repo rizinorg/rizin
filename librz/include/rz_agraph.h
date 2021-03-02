@@ -49,7 +49,7 @@ typedef struct rz_ascii_graph_t {
 	const RzGraphNode *curnode;
 	char *title;
 	Sdb *db;
-	Sdb *nodes; // Sdb with title(key)=RzANode*(value)
+	HtPP *nodes; // HT with title(key)=RzANode*(value)
 	RzList *dummy_nodes;
 
 	int layout;

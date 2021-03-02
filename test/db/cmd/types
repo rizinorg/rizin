@@ -198,7 +198,7 @@ RUN
 NAME=t-enum
 FILE=-
 CMDS=<<EOF
-td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };
+td "enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };"
 te~?pe_machine
 t-pe_machine
 te~?pe_machine
@@ -256,7 +256,7 @@ RUN
 NAME=t-*
 FILE=-
 CMDS=<<EOF
-td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };
+td "enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };"
 t-*
 t
 EOF
@@ -267,7 +267,7 @@ RUN
 NAME=teb
 FILE=-
 CMDS=<<EOF
-td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };
+td "enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };"
 teb pe_machine IMAGE_FILE_MACHINE_I386
 EOF
 EXPECT=<<EOF
@@ -278,7 +278,7 @@ RUN
 NAME=te
 FILE=-
 CMDS=<<EOF
-td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };
+td "enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };"
 te pe_machine 0x14c
 EOF
 EXPECT=<<EOF
@@ -286,10 +286,115 @@ IMAGE_FILE_MACHINE_I386
 EOF
 RUN
 
+NAME=tef
+FILE=-
+CMDS=<<EOF
+td "enum FOO { A=1, B=0x100, C=0xFF, D=4, E=5 };"
+td "enum BAR { G=0x800, Z=0xEE, P=4, E=5 };"
+tef 0x800
+tef 0x100
+tef 4
+tef 0x5
+EOF
+EXPECT=<<EOF
+BAR.G
+FOO.B
+BAR.P
+FOO.D
+BAR.E
+FOO.E
+EOF
+RUN
+
+NAME=tej
+FILE=-
+CMDS=<<EOF
+td "enum FOO { A=1, B=0x100, C=0xFF, D=4, E=5 };"
+td "enum BAR { G=0x800, Z=0xEE, P=4, E=5 };"
+tej FOO
+tej BAR
+tej
+EOF
+EXPECT=<<EOF
+{"name":"FOO","values":{"A":1,"B":256,"C":255,"D":4,"E":5}}
+{"name":"BAR","values":{"G":2048,"Z":238,"P":4,"E":5}}
+[{"name":"BAR","values":{"G":2048,"Z":238,"P":4,"E":5}},{"name":"FOO","values":{"A":1,"B":256,"C":255,"D":4,"E":5}}]
+EOF
+RUN
+
+NAME=tek
+FILE=-
+CMDS=<<EOF
+td "enum FOO { A=1, B=0x100, C=0xFF, D=4, E=5 };"
+td "enum BAR { G=0x800, Z=0xEE, P=4, E=5 };"
+tek FOO
+tek BAR
+tek
+EOF
+EXPECT=<<EOF
+enum.FOO.0x100=B
+enum.FOO.0x1=A
+enum.FOO.0x4=D
+enum.FOO.0x5=E
+enum.FOO.0xff=C
+enum.FOO.A=0x1
+enum.FOO.B=0x100
+enum.FOO.C=0xff
+enum.FOO.D=0x4
+enum.FOO.E=0x5
+enum.FOO=A,B,C,D,E
+enum.BAR.0x4=P
+enum.BAR.0x5=E
+enum.BAR.0x800=G
+enum.BAR.0xee=Z
+enum.BAR.E=0x5
+enum.BAR.G=0x800
+enum.BAR.P=0x4
+enum.BAR.Z=0xee
+enum.BAR=G,Z,P,E
+enum.BAR.0x4=P
+enum.BAR.0x5=E
+enum.BAR.0x800=G
+enum.BAR.0xee=Z
+enum.BAR.E=0x5
+enum.BAR.G=0x800
+enum.BAR.P=0x4
+enum.BAR.Z=0xee
+enum.BAR=G,Z,P,E
+enum.FOO.0x100=B
+enum.FOO.0x1=A
+enum.FOO.0x4=D
+enum.FOO.0x5=E
+enum.FOO.0xff=C
+enum.FOO.A=0x1
+enum.FOO.B=0x100
+enum.FOO.C=0xff
+enum.FOO.D=0x4
+enum.FOO.E=0x5
+enum.FOO=A,B,C,D,E
+EOF
+RUN
+
+NAME=tf and tfk
+FILE=-
+CMDS=<<EOF
+tf write
+tfk write
+EOF
+EXPECT=<<EOF
+ssize_t write (int fd, const char * ptr, size_t nbytes);
+func.write.arg.0=int,fd
+func.write.arg.1=const char *,ptr
+func.write.arg.2=size_t,nbytes
+func.write.args=3
+func.write.ret=ssize_t
+EOF
+RUN
+
 NAME=tt
 FILE=-
 CMDS=<<EOF
-td typedef char FILE_NAME;
+td "typedef char FILE_NAME;"
 tt FILE_NAME
 td "typedef bool FLAG;"
 tt FLAG
@@ -749,7 +854,7 @@ aat
 pdf
 EOF
 EXPECT=<<EOF
-/ 33: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000      48c7c0000100.  mov   rax, 0x100
 |           0x00000007      488b5008       mov   rdx, qword [rax + foo.c]
 |           0x0000000b      488b4804       mov   rcx, qword [rax + foo.b]
@@ -899,6 +1004,17 @@ enum Foo {
 	COW = 1,
 	BAR = 2
 };
+EOF
+RUN
+
+NAME=ted test
+FILE=-
+CMDS=<<EOF
+td "enum Foo {COW=1,BAR=2};"
+ted Foo
+EOF
+EXPECT=<<EOF
+enum Foo {COW = 1, BAR = 2};
 EOF
 RUN
 
@@ -1127,7 +1243,7 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-154: sym.funcarg (char *arg1, uint32_t arg2);
+sym.funcarg (char *arg1, uint32_t arg2);
 ; var uint32_t var_ch @ rbp-0xc
 ; var char *var_8h @ rbp-0x8
 ; arg char *arg1 @ rdi
@@ -1148,7 +1264,7 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-147: sym.funcarg (char *arg_8h, uint32_t arg_ch);
+sym.funcarg (char *arg_8h, uint32_t arg_ch);
 ; var int32_t var_4h @ ebp-0x4
 ; arg char *arg_8h @ ebp+0x8
 ; arg uint32_t arg_ch @ ebp+0xc

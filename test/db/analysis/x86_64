@@ -517,7 +517,7 @@ dr rsi=0x1111111111111111
 afvd
 EOF
 EXPECT=<<EOF
-/ 114: fcn.00487350 ();
+/ fcn.00487350 ();
 | 0x00487350      8b8710030000   mov   eax, dword [rdi + 0x310]
 | 0x00487356      48b900000000.  movabs rcx, 0x200000000
 | 0x00487360      8d50ff         lea   edx, [rax - 1]
@@ -916,7 +916,7 @@ af
 pd 1~sym.call_gmon_start:0
 EOF
 EXPECT=<<EOF
-/ 23: sym.call_gmon_start ();
+/ sym.call_gmon_start ();
 EOF
 RUN
 
@@ -930,7 +930,7 @@ pd 1~sym.call_gmon_start:0
 EOF
 EXPECT=<<EOF
 name: sym.call_gmon_start
-/ 23: sym.call_gmon_start ();
+/ sym.call_gmon_start ();
 EOF
 RUN
 
@@ -1227,7 +1227,7 @@ s 0x00012740
 pdf
 EOF
 EXPECT=<<EOF
-/ 76: fcn.00012740 (int64_t arg1, int64_t arg2);
+/ fcn.00012740 (int64_t arg1, int64_t arg2);
 |           ; var int64_t var_8h @ rbp-0x8
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
@@ -1266,7 +1266,7 @@ EOF
 EXPECT=<<EOF
 
         ╎   ; CALL XREF from main @ 0x400406
-┌ 6: int sym.imp.puts (const char *s);
+┌ int sym.imp.puts (const char *s);
 └       ╎   0x004003f0      jmp   qword [reloc.puts]                   ; [0x601018:8]=0x4003f6
         ╎   0x004003f6      push  0
         └─< 0x004003fb      jmp   sym..plt
@@ -1403,7 +1403,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- rip:
-/ 59: fcn.14000b54c ();
+/ fcn.14000b54c ();
 |           ; var DWORD dwCreationDisposition @ rsp+0x20
 |           ; var DWORD dwFlagsAndAttributes @ rsp+0x28
 |           ; var HANDLE hTemplateFile @ rsp+0x30
@@ -1663,7 +1663,7 @@ EOF
 EXPECT=<<EOF
 fastcall
             ; CALL XREF from main @ 0x80484c7
-/ 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
+/ sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; var int32_t var_20h @ ebp-0x20
 |           ; var int32_t var_1ch @ ebp-0x1c
 |           ; var int32_t var_10h @ ebp-0x10
@@ -2376,12 +2376,12 @@ pd 1 @0x400610
 EOF
 EXPECT=<<EOF
   ; DATA XREF from entry0 @ 0x4005cf
-2: sym.__libc_csu_fini ();
+sym.__libc_csu_fini ();
 0x00400730      f3c3           ret
 ; CODE XREF from sym.__do_global_ctors_aux @ 0x4007fd
 0x004007f0      4883eb08       sub   rbx, 8
   ; CALL XREF from sym._fini @ 0x40080c
-100: sym.__do_global_dtors_aux ();
+sym.__do_global_dtors_aux ();
 0x00400610      55             push  rbp
 EOF
 RUN
@@ -2517,12 +2517,12 @@ diff: type: new
 0x00000000 0x00000004 00:0000 4 j 0x00000004
 0x00000004 0x00000007 00:0000 3 j 0x00000004
 
-/ 7: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000  ~   b8210000c1     mov   eax, 0xc1000021       ; '!'
 |           ; CODE XREF from fcn.00000000 @ 0x5
 \       .-> 0x00000004      c1ebfd         shr   ebx, 0xfd
 
-/ 7: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
 \       `=< 0x00000005      ebfd           jmp   4
 EOF
@@ -2577,7 +2577,7 @@ diff: type: new
 0x00000000 0x00000007 00:0000 7 j 0x00000004
 0x00000004 0x0000000d 00:0000 9
 
-/ 16: fcn.00000000 ();
+/ fcn.00000000 ();
 | 0x00000000      b8210000c1     mov   eax, 0xc1000021                 ; '!'
 | 0x00000005      ebfd           jmp   4
 | ----------- true: 0x00000004
@@ -2590,7 +2590,7 @@ diff: type: new
 [0x00000000]>  # fcn.00000000 ();
       .------------------------.
       |  0x0                   |
-      | 16: fcn.00000000 ();   |
+      | fcn.00000000 ();       |
       | ; '!'                  |
       | mov eax, 0xc1000021    |
       | jmp 4                  |
@@ -2608,14 +2608,14 @@ diff: type: new
 | int3                                |
 `-------------------------------------'
 
-/ 16: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000  ~   b8210000c1     mov   eax, 0xc1000021       ; '!'
 |           ; CODE XREF from fcn.00000000 @ 0x5
 |       .-> 0x00000004      c1ebfd         shr   ebx, 0xfd
 |           0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
 \           0x0000000c      cc             int3
 
-/ 16: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
 |       `=< 0x00000005      ebfd           jmp   4
 |           0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
@@ -2650,7 +2650,7 @@ diff: type: new
 0x00000000 0x00000007 00:0000 7 j 0x00000004
 0x00000004 0x0000000e 00:0000 10 j 0x00000004
 
-/ 17: fcn.00000000 ();
+/ fcn.00000000 ();
 | 0x00000000      b8210000c1     mov   eax, 0xc1000021                 ; '!'
 | 0x00000005      ebfd           jmp   4
 | ----------- true: 0x00000004
@@ -2663,7 +2663,7 @@ diff: type: new
 [0x00000000]>  # fcn.00000000 ();
           .------------------------.
           |  0x0                   |
-          | 17: fcn.00000000 ();   |
+          | fcn.00000000 ();       |
           | ; '!'                  |
           | mov eax, 0xc1000021    |
           | jmp 4                  |
@@ -2689,14 +2689,14 @@ diff: type: new
 |    |
 `----'
 
-/ 17: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000  ~   b8210000c1     mov   eax, 0xc1000021       ; '!'
 |           ; CODE XREFS from fcn.00000000 @ 0x5, 0xc
 |      ..-> 0x00000004      c1ebfd         shr   ebx, 0xfd
 |       :   0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
 \       `=< 0x0000000c      ebf6           jmp   4
 
-/ 17: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
 |      `==< 0x00000005      ebfd           jmp   4
 |       :   0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
@@ -2732,7 +2732,7 @@ diff: type: new
 0x00000004 0x0000000e 00:0000 10 j 0x00000005
 0x00000005 0x00000007 00:0000 2 j 0x00000004
 
-/ 17: fcn.00000000 ();
+/ fcn.00000000 ();
 | 0x00000000      b8210000c1     mov   eax, 0xc1000021                 ; '!'
 | ----------- true: 0x00000005
 | ; CODE XREF from fcn.00000000 @ 0x5
@@ -2747,7 +2747,7 @@ diff: type: new
 [0x00000000]>  # fcn.00000000 ();
        .------------------------.
        |  0x0                   |
-       | 17: fcn.00000000 ();   |
+       | fcn.00000000 ();       |
        | ; '!'                  |
        | mov eax, 0xc1000021    |
        `------------------------'
@@ -2776,7 +2776,7 @@ diff: type: new
 |    |
 `----'
 
-/ 17: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000  ~   b8210000c1     mov   eax, 0xc1000021       ; '!'
 |           ; CODE XREF from fcn.00000000 @ 0x5
 |       .-> 0x00000004  ~   c1ebfd         shr   ebx, 0xfd
@@ -2785,7 +2785,7 @@ diff: type: new
 |      :    0x00000007      bb2c000000     mov   ebx, 0x2c             ; ','
 \      `==< 0x0000000c      ebf7           jmp   5
 
-/ 17: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000      b8210000c1     mov   eax, 0xc1000021       ; '!'
 |       |   ; CODE XREF from fcn.00000000 @ 0xc
 |      .`=< 0x00000005      ebfd           jmp   4
@@ -2823,7 +2823,7 @@ diff: type: new
 0x00000005 0x0000000c 00:0000 7 j 0x00000009
 0x00000009 0x00000013 00:0000 10 j 0x00000003
 
-/ 24: fcn.00000000 ();
+/ fcn.00000000 ();
 | 0x00000000      0f1f440000     nop   dword [rax + rax]
 | ----------- true: 0x00000005
 | ; CODE XREF from fcn.00000000 @ 0x11
@@ -2841,7 +2841,7 @@ diff: type: new
 [0x00000000]>  # fcn.00000000 ();
        .--------------------------.
        |  0x0                     |
-       | 24: fcn.00000000 ();     |
+       | fcn.00000000 ();         |
        | nop dword [rax + rax]    |
        `--------------------------'
            v
@@ -2880,7 +2880,7 @@ diff: type: new
 |    |
 `----'
 
-/ 24: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000  ~   0f1f440000     nop   dword [rax + rax]
 |           ; CODE XREF from fcn.00000000 @ 0x11
 |       .-> 0x00000003      0000           add   byte [rax], al
@@ -2890,7 +2890,7 @@ diff: type: new
 |       :   0x0000000c      bb2c000000     mov   ebx, 0x2c             ; ','
 \       `=< 0x00000011      ebf0           jmp   3
 
-/ 24: fcn.00000000 ();
+/ fcn.00000000 ();
 |           0x00000000      0f1f440000     nop   dword [rax + rax]
 |       :   0x00000005      b8210000c1     mov   eax, 0xc1000021       ; '!'
 |      `==< 0x0000000a      ebfd           jmp   9
@@ -2951,7 +2951,7 @@ diff: type: new
 | ;-- (0x00000003) fcn.00000003:
 | 0x00000000  ~   b821c10010     mov   eax, 0x1000c121
 | ----------- true: 0x00000005
-/ 9: fcn.00000003 ();
+/ fcn.00000003 ();
 | 0x00000003      0010           add   byte [rax], dl
 | ----------- true: 0x00000005
 | 0x00000005      ebf9           jmp   0
@@ -2962,7 +2962,7 @@ diff: type: new
 |    |
 |.-------------------------------------.   .-----------------------.
 ||  0x0                                |   |  0x3                  |
-|| ; CODE XREF from fcn.00000003 @ 0x5 |   | 9: fcn.00000003 ();   |
+|| ; CODE XREF from fcn.00000003 @ 0x5 |   | fcn.00000003 ();      |
 || ;-- (0x00000003) fcn.00000003:      |   | add byte [rax], dl    |
 || mov eax, 0x1000c121                 |   `-----------------------'
 |`-------------------------------------'       v
@@ -2979,7 +2979,7 @@ diff: type: new
 |                             |
 `-----------------------------'
 
-/ 9: fcn.00000003 ();
+/ fcn.00000003 ();
 |           0x00000003      0010           add   byte [rax], dl
 |           0x00000005      ebf9           jmp   0
 
@@ -2990,7 +2990,7 @@ diff: type: new
 
 |           ; CODE XREF from fcn.00000003 @ 0x5
 |           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
-/ 9: fcn.00000003 ();
+/ fcn.00000003 ();
 |           0x00000003      0010           add   byte [rax], dl
 |           0x00000005      ebf9           jmp   0
 EOF
@@ -3685,7 +3685,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ 82: fcn.140001080 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+/ fcn.140001080 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
 |           ; var int64_t var_50h @ rsp+0x20
 |           ; var int64_t var_20h @ rsp+0x50
 |           ; var int64_t var_18h @ rsp+0x58
@@ -3781,7 +3781,7 @@ aa
 pd 19
 EOF
 EXPECT=<<EOF
-/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
+/ fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
 |           ; var int64_t var_bh @ rbp-0xb
 |           ; var int64_t var_8h @ rbp-0x8
 |           ; arg int64_t arg_8h @ rbp+0x8
@@ -3823,7 +3823,7 @@ aa
 pd 19
 EOF
 EXPECT=<<EOF
-/ 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
+/ fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
 |           ; var int64_t var_bh @ rbp-0xb
 |           ; var int64_t var_8h @ rbp-0x8
 |           ; arg int64_t arg_8h @ rbp+0x8

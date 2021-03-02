@@ -1643,12 +1643,8 @@ static const RzCmdDescHelp cmd_java_help = {
 	.args = cmd_java_args,
 };
 
-static int rz_cmd_java_init_handler(void *user, const char *unused) {
-	RzCmd *cmd = (RzCmd *)user;
-	if (!cmd) {
-		return false;
-	}
-
+static bool rz_cmd_java_init_handler(RzCore *core) {
+	RzCmd *cmd = core->rcmd;
 	RzCmdDesc *root_cd = rz_cmd_get_root(cmd);
 	if (!root_cd) {
 		return false;
@@ -1659,17 +1655,13 @@ static int rz_cmd_java_init_handler(void *user, const char *unused) {
 	return cmd_java_cd != NULL;
 }
 
-static int rz_cmd_java_call_handler(void *user, const char *unused) {
-	return false;
-}
-
 // PLUGIN Definition Info
 RzCorePlugin rz_core_plugin_java = {
 	.name = "java",
 	.desc = "Suite of java commands, java help for more info",
+	.author = "RizinOrg",
 	.license = "Apache",
 	.init = rz_cmd_java_init_handler,
-	.call = rz_cmd_java_call_handler,
 };
 
 #ifndef RZ_PLUGIN_INCORE
