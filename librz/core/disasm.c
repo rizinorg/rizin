@@ -3804,7 +3804,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 }
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
-	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, refaddr)) {
+	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, -1, refaddr)) {
 		return;
 	}
 	// do not resolve strings on arm64 pointed with ADRP

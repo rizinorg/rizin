@@ -2495,8 +2495,8 @@ static bool cb_binmaxstr(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core->bin) {
 		int v = node->i_value;
-		if (v < 1) {
-			v = 4; // HACK
+		if (v < 0) {
+			v = 0;
 		}
 		core->bin->maxstrlen = v;
 		rz_bin_reset_strings(core->bin);
