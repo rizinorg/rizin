@@ -7,8 +7,9 @@
 
 #include "luac_specs.h"
 
+
 /* Macros for bin_luac.c */
-#define LUAC_HDR_SIZE_54 sizeof(luac_hdr)
+#define LUAC_HDR_SIZE_54 sizeof(luacHdr54)
 
 /* luac 5.4 spec */
 RZ_PACKED(
@@ -30,6 +31,6 @@ RZ_PACKED(
 
 
 /* Exported Api to bin_luac.c */
-RzBinInfo *info_54(RzBinFile *bf, ut8 major, ut8 minor);
+RzBinInfo *info_54(RzBinFile *bf, int major, int minor);
 
 #endif //BUILD_LUAC_54_H

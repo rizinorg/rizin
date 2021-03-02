@@ -6,7 +6,8 @@
 #ifndef BUILD_LUAC_SPECS_H
 #define BUILD_LUAC_SPECS_H
 
-/* Include version specs header */
+#include <rz_bin.h>
+#include <rz_lib.h>
 
 /* Macros/Typedefs used in luac */
 typedef	double LUA_NUMBER;

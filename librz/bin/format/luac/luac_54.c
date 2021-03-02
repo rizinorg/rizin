@@ -4,7 +4,7 @@
 
 #include "luac_54.h"
 
-RzBinInfo *info_54(RzBinFile *bf, ut8 major, ut8 minor)
+RzBinInfo *info_54(RzBinFile *bf, int major, int minor)
 {
     RzBinInfo *ret = NULL;
     luacHdr54 hdr;

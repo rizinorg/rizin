@@ -6,8 +6,9 @@
 #include <rz_lib.h>
 #include "luac/luac_54.h"
 
-static ut8 MAJOR_VERSION;
-static ut8 MINOR_VERSION;
+static int MAJOR_VERSION;
+static int MINOR_VERSION;
+static ut8 MAJOR_MINOR_VERSION;
 
 static bool check_buffer(RzBuffer *buff) {
     if (rz_buf_size(buff) > 4 ){
@@ -19,14 +20,15 @@ static bool check_buffer(RzBuffer *buff) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-    rz_buf_read_at(buf, 4, &MAJOR_VERSION, sizeof(MAJOR_VERSION));        /* 1-byte in fact */
-    rz_buf_read_at(buf, 5, &MINOR_VERSION, sizeof(MINOR_VERSION));
+    rz_buf_read_at(buf, 4, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION));        /* 1-byte in fact */
+    MAJOR_VERSION = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
+    MINOR_VERSION = MAJOR_MINOR_VERSION & 0x0F;
     return check_buffer(buf);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
     if (MAJOR_VERSION != 5){
-        eprintf("currently not support lua version < 5\n");
+        eprintf("currently support lua 5.x only\n");
         return NULL;
     }
 
@@ -42,15 +44,15 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 RzBinPlugin rz_bin_plugin_luac = {
         .name = "luac",
-        .desc = "LUAC_FORMAT",
-        .license = "MIT",
+        .desc = "LUA Compiled File",
+        .license = "LGPL3",
         .get_sdb = NULL,
         .load_buffer = &load_buffer,
         .check_buffer = &check_buffer,
         .baddr = NULL,
         .entries = NULL,
         .sections = NULL,
-        .info = NULL
+        .info = &info
 };
 
 #ifndef RZ_PLUGIN_INCORE
