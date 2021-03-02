@@ -104,11 +104,12 @@ $ meson -Db_sanitize=address,undefined build
 
 ## Build fully-static binaries
 
-It may be useful to run Rizin just by using a single file, which can be copied
-on other systems if necessary.
+It may be useful to run Rizin just by using a single file, which can be
+copied on other systems if necessary. On *NIX systems, this adds the classic
+`-static` flag to the linker, while on Windows it uses `/MT`.
 
 ```
-$ CFLAGS="-static" meson --default-library=static build
+$ meson --default-library=static -Dstatic_runtime=true build
 ```
 
 ## Cross-compilation for Android
@@ -131,13 +132,72 @@ feature, which will produce just one executable and link all the other tools to
 that only tool, similar to how busybox works.
 
 ```
-$ CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file ./cross-compile-conf.ini
+$ meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build -Dstatic_runtime=true --cross-file ./cross-compile-conf.ini
 $ ninja -C build
 $ ninja -C build install
 ```
 
 At this point you can find everything under `/tmp/android-dir` and you can copy
 files to your Android device.
+
+## Compile 32-bit Rizin on 64-bit machine
+
+Whenever you want to build Rizin for a different system/architecture than the
+one you are using for building, you are effectively cross-compiling and you
+should provide a full configuration file to tell meson what is the target
+machine.
+
+Even to compile a 32-bit version of Rizin on a 64-bit machine, you should use
+a configuration file like the following:
+
+```
+[binaries]
+c = '/usr/bin/gcc'
+cpp = '/usr/bin/g++'
+ar = '/usr/bin/gcc-ar'
+strip = '/usr/bin/strip'
+pkgconfig = '/usr/bin/i686-redhat-linux-gnu-pkg-config'
+llvm-config = '/usr/bin/llvm-config-32'
+
+[built-in options]
+c_args = ['-m32']
+c_link_args = ['-m32']
+cpp_args = ['-m32']
+cpp_link_args = ['-m32']
+
+[host_machine]
+system = 'linux'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'
+```
+
+Alternatively, if your distribution provide specific compiler tools for the
+i686 architecture, you can use a configuration similar to this:
+
+```
+[binaries]
+c = '/usr/bin/i686-linux-gnu-gcc'
+cpp = '/usr/bin/i686-linux-gnu-g++'
+ar = '/usr/bin/i686-linux-gnu-gcc-ar'
+strip = '/usr/bin/i686-linux-gnu-strip'
+pkgconfig = '/usr/bin/i686-linux-gnu-pkg-config'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'
+```
+
+Of course, you might have to adjust some settings depending on your system
+and you should double check that you have installed all the necessary 32-bit
+libraries and tools. Once you have checked everything, you can setup the
+build directory with:
+
+```
+$ meson build --cross-file ./rizin-i386.ini
+```
 
 # Uninstall
 
