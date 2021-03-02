@@ -1163,7 +1163,10 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 #if __UNIX__
 			close(0);
 			close(1);
-			exit(rz_sys_execl("/bin/sh", "/bin/sh", "-c", p->_system, NULL));
+			char *bin_sh = rz_file_binsh();
+			int ret = rz_sys_execl(bin_sh, "sh", "-c", p->_system, NULL);
+			free(bin_sh);
+			exit(ret);
 #else
 			exit(rz_sys_system(p->_system));
 #endif
