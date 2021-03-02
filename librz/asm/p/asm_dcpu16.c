@@ -16,7 +16,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len < 2) {
 		return -1; // at least 2 bytes!
 	}
-	op->size = dcpu16_disasm(buf_asm, (const ut16 *)buf, len, NULL);
+	op->size = dcpu16_disasm(buf_asm, sizeof(buf_asm), (const ut16 *)buf, len, NULL);
 	rz_strbuf_set(&op->buf_asm, (op->size > 0) ? buf_asm : "(data)");
 	return op->size;
 }
