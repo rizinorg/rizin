@@ -111,9 +111,18 @@ static const RzCmdDescArg type_list_c_nl_args[2];
 static const RzCmdDescArg type_cc_list_args[2];
 static const RzCmdDescArg type_cc_del_args[2];
 static const RzCmdDescArg type_define_args[2];
+static const RzCmdDescArg type_list_enum_args[3];
+static const RzCmdDescArg type_enum_bitfield_args[3];
+static const RzCmdDescArg type_enum_c_args[2];
+static const RzCmdDescArg type_enum_c_nl_args[2];
+static const RzCmdDescArg type_enum_find_args[2];
+static const RzCmdDescArg type_list_function_args[2];
 static const RzCmdDescArg type_kuery_args[2];
 static const RzCmdDescArg type_list_noreturn_args[2];
 static const RzCmdDescArg type_noreturn_del_args[2];
+static const RzCmdDescArg type_open_file_args[2];
+static const RzCmdDescArg type_open_editor_args[2];
+static const RzCmdDescArg type_open_sdb_args[2];
 static const RzCmdDescArg type_list_typedef_args[2];
 static const RzCmdDescArg type_typedef_c_args[2];
 static const RzCmdDescArg type_list_union_args[2];
@@ -2068,6 +2077,111 @@ static const RzCmdDescHelp type_define_help = {
 	.args = type_define_args,
 };
 
+static const RzCmdDescHelp te_help = {
+	.summary = "List loaded enums",
+};
+static const RzCmdDescArg type_list_enum_args[] = {
+	{
+		.name = "enum",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_list_enum_help = {
+	.summary = "List loaded enums / Show enum member",
+	.args = type_list_enum_args,
+};
+
+static const RzCmdDescArg type_enum_bitfield_args[] = {
+	{
+		.name = "enum",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "field",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_enum_bitfield_help = {
+	.summary = "Show enum bitfield",
+	.args = type_enum_bitfield_args,
+};
+
+static const RzCmdDescArg type_enum_c_args[] = {
+	{
+		.name = "enum",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_enum_c_help = {
+	.summary = "Show enum in the C output format",
+	.args = type_enum_c_args,
+};
+
+static const RzCmdDescArg type_enum_c_nl_args[] = {
+	{
+		.name = "enum",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_enum_c_nl_help = {
+	.summary = "Show enum in the C output format without newlines",
+	.args = type_enum_c_nl_args,
+};
+
+static const RzCmdDescArg type_enum_find_args[] = {
+	{
+		.name = "value",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_enum_find_help = {
+	.summary = "Find enum and member by the member value",
+	.args = type_enum_find_args,
+};
+
+static const RzCmdDescHelp tf_help = {
+	.summary = "List loaded functions definitions",
+};
+static const RzCmdDescArg type_list_function_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_list_function_help = {
+	.summary = "List loaded function definitions / Show function signature",
+	.args = type_list_function_args,
+};
+
 static const RzCmdDescArg type_kuery_args[] = {
 	{
 		.name = "type",
@@ -2121,6 +2235,50 @@ static const RzCmdDescArg type_noreturn_del_all_args[] = {
 static const RzCmdDescHelp type_noreturn_del_all_help = {
 	.summary = "Remove all noreturn references",
 	.args = type_noreturn_del_all_args,
+};
+
+static const RzCmdDescHelp to_help = {
+	.summary = "Open C header file and load types from it",
+};
+static const RzCmdDescArg type_open_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_open_file_help = {
+	.summary = "Open C header file and load types from it",
+	.args = type_open_file_args,
+};
+
+static const RzCmdDescArg type_open_editor_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_open_editor_help = {
+	.summary = "Open cfg.editor to edit types",
+	.args = type_open_editor_args,
+};
+
+static const RzCmdDescArg type_open_sdb_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_open_sdb_help = {
+	.summary = "Open SDB file and load types from it",
+	.args = type_open_sdb_args,
 };
 
 static const RzCmdDescHelp tt_help = {
@@ -3704,6 +3862,23 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_define_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_type_cd, "td", rz_type_define_handler, &type_define_help);
 	rz_warn_if_fail(type_define_cd);
 
+	RzCmdDesc *te_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "te", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_type_list_enum_handler, &type_list_enum_help, &te_help);
+	rz_warn_if_fail(te_cd);
+	RzCmdDesc *type_enum_bitfield_cd = rz_cmd_desc_argv_new(core->rcmd, te_cd, "teb", rz_type_enum_bitfield_handler, &type_enum_bitfield_help);
+	rz_warn_if_fail(type_enum_bitfield_cd);
+
+	RzCmdDesc *type_enum_c_cd = rz_cmd_desc_argv_new(core->rcmd, te_cd, "tec", rz_type_enum_c_handler, &type_enum_c_help);
+	rz_warn_if_fail(type_enum_c_cd);
+
+	RzCmdDesc *type_enum_c_nl_cd = rz_cmd_desc_argv_new(core->rcmd, te_cd, "ted", rz_type_enum_c_nl_handler, &type_enum_c_nl_help);
+	rz_warn_if_fail(type_enum_c_nl_cd);
+
+	RzCmdDesc *type_enum_find_cd = rz_cmd_desc_argv_new(core->rcmd, te_cd, "tef", rz_type_enum_find_handler, &type_enum_find_help);
+	rz_warn_if_fail(type_enum_find_cd);
+
+	RzCmdDesc *tf_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_type_list_function_handler, &type_list_function_help, &tf_help);
+	rz_warn_if_fail(tf_cd);
+
 	RzCmdDesc *type_kuery_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_type_cd, "tk", rz_type_kuery_handler, &type_kuery_help);
 	rz_warn_if_fail(type_kuery_cd);
 
@@ -3714,6 +3889,14 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_noreturn_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tn_cd, "tn-*", rz_type_noreturn_del_all_handler, &type_noreturn_del_all_help);
 	rz_warn_if_fail(type_noreturn_del_all_cd);
+
+	RzCmdDesc *to_cd = rz_cmd_desc_group_new(core->rcmd, cmd_type_cd, "to", rz_type_open_file_handler, &type_open_file_help, &to_help);
+	rz_warn_if_fail(to_cd);
+	RzCmdDesc *type_open_editor_cd = rz_cmd_desc_argv_new(core->rcmd, to_cd, "toe", rz_type_open_editor_handler, &type_open_editor_help);
+	rz_warn_if_fail(type_open_editor_cd);
+
+	RzCmdDesc *type_open_sdb_cd = rz_cmd_desc_argv_new(core->rcmd, to_cd, "tos", rz_type_open_sdb_handler, &type_open_sdb_help);
+	rz_warn_if_fail(type_open_sdb_cd);
 
 	RzCmdDesc *tt_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_typedef_handler, &type_list_typedef_help, &tt_help);
 	rz_warn_if_fail(tt_cd);
