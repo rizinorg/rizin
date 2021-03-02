@@ -129,6 +129,9 @@ static const RzCmdDescArg type_open_sdb_args[2];
 static const RzCmdDescArg type_print_args[3];
 static const RzCmdDescArg type_print_value_args[3];
 static const RzCmdDescArg type_print_hexstring_args[3];
+static const RzCmdDescArg type_list_structure_args[2];
+static const RzCmdDescArg type_structure_c_args[2];
+static const RzCmdDescArg type_structure_c_nl_args[2];
 static const RzCmdDescArg type_list_typedef_args[2];
 static const RzCmdDescArg type_typedef_c_args[2];
 static const RzCmdDescArg type_list_union_args[2];
@@ -2409,6 +2412,54 @@ static const RzCmdDescHelp type_print_hexstring_help = {
 	.args = type_print_hexstring_args,
 };
 
+static const RzCmdDescHelp ts_help = {
+	.summary = "List loaded structures",
+};
+static const RzCmdDescArg type_list_structure_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_list_structure_help = {
+	.summary = "List loaded unions / Show pf format string for given union",
+	.args = type_list_structure_args,
+};
+
+static const RzCmdDescArg type_structure_c_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_structure_c_help = {
+	.summary = "Show union in the C output format with newlines",
+	.args = type_structure_c_args,
+};
+
+static const RzCmdDescArg type_structure_c_nl_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_structure_c_nl_help = {
+	.summary = "Show union in the C output format without newlines",
+	.args = type_structure_c_nl_args,
+};
+
 static const RzCmdDescHelp tt_help = {
 	.summary = "List loaded typedefs",
 };
@@ -4044,6 +4095,14 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_print_hexstring_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpx", rz_type_print_hexstring_handler, &type_print_hexstring_help);
 	rz_warn_if_fail(type_print_hexstring_cd);
+
+	RzCmdDesc *ts_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "ts", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_type_list_structure_handler, &type_list_structure_help, &ts_help);
+	rz_warn_if_fail(ts_cd);
+	RzCmdDesc *type_structure_c_cd = rz_cmd_desc_argv_new(core->rcmd, ts_cd, "tsc", rz_type_structure_c_handler, &type_structure_c_help);
+	rz_warn_if_fail(type_structure_c_cd);
+
+	RzCmdDesc *type_structure_c_nl_cd = rz_cmd_desc_argv_new(core->rcmd, ts_cd, "tsd", rz_type_structure_c_nl_handler, &type_structure_c_nl_help);
+	rz_warn_if_fail(type_structure_c_nl_cd);
 
 	RzCmdDesc *tt_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_type_cd, "tt", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_typedef_handler, &type_list_typedef_help, &tt_help);
 	rz_warn_if_fail(tt_cd);

@@ -226,6 +226,34 @@ commands:
             type: RZ_CMD_ARG_TYPE_STRING
           - name: hexpairs
             type: RZ_CMD_ARG_TYPE_STRING
+  - name: ts
+    summary: List loaded structures
+    subcommands:
+      - name: ts
+        cname: type_list_structure
+        summary: List loaded unions / Show pf format string for given union
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tsc
+        cname: type_structure_c
+        summary: Show union in the C output format with newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tsd
+        cname: type_structure_c_nl
+        summary: Show union in the C output format without newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
   - name: tt
     summary: List loaded typedefs
     subcommands:

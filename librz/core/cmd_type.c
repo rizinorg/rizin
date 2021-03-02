@@ -1254,14 +1254,22 @@ beach:
 	free(buf);
 }
 
-static void print_all_union_format(RzCore *core, Sdb *TDB) {
-	SdbList *l = sdb_foreach_list_filter(TDB, stdifunion, true);
+static void print_all_format(RzCore *core, Sdb *TDB, SdbForeachCallback sdbcb) {
+	SdbList *l = sdb_foreach_list_filter(TDB, sdbcb, true);
 	SdbListIter *it;
 	SdbKv *kv;
 	ls_foreach (l, it, kv) {
 		type_show_format(core, sdbkv_key(kv), RZ_OUTPUT_MODE_RIZIN);
 	}
 	ls_free(l);
+}
+
+static void print_all_struct_format(RzCore *core, Sdb *TDB) {
+	print_all_format(core, TDB, stdifstruct);
+}
+
+static void print_all_union_format(RzCore *core, Sdb *TDB) {
+	print_all_format(core, TDB, stdifunion);
 }
 
 static void type_list_c_all(RzCore *core) {
@@ -1521,14 +1529,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			if (input[2] == ' ') {
 				type_show_format(core, rz_str_trim_head_ro(input + 2), RZ_OUTPUT_MODE_RIZIN);
 			} else {
-				SdbList *l = sdb_foreach_list_filter(TDB, stdifstruct, true);
-				SdbListIter *it;
-				SdbKv *kv;
-
-				ls_foreach (l, it, kv) {
-					type_show_format(core, sdbkv_key(kv), RZ_OUTPUT_MODE_RIZIN);
-				}
-				ls_free(l);
+				print_all_struct_format(core, TDB);
 			}
 			break;
 		case ' ':
@@ -2183,6 +2184,37 @@ RZ_IPI RzCmdStatus rz_type_print_value_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_type_print_hexstring_handler(RzCore *core, int argc, const char **argv) {
 	return type_format_print_hexstring(core, argv[1], argv[2]);
+}
+
+RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char *typename = argc > 1 ? argv[1] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	if (typename) {
+		type_show_format(core, typename, mode);
+	} else {
+		if (mode == RZ_OUTPUT_MODE_RIZIN) {
+			print_all_struct_format(core, TDB);
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
+			print_struct_union_list_json(TDB, stdifstruct);
+		} else {
+			print_keys(TDB, core, stdifstruct, printkey_cb, false);
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_structure_c_handler(RzCore *core, int argc, const char **argv) {
+	const char *typename = argc > 1 ? argv[1] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	print_struct_union_in_c_format(TDB, stdifstruct, typename, true);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_structure_c_nl_handler(RzCore *core, int argc, const char **argv) {
+	const char *typename = argc > 1 ? argv[1] : NULL;
+	Sdb *TDB = core->analysis->sdb_types;
+	print_struct_union_in_c_format(TDB, stdifstruct, typename, false);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
