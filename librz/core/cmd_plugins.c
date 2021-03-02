@@ -71,7 +71,7 @@ RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
 		case 'j': {
 			rz_cons_printf("[");
 			bool is_first_element = true;
-			rz_list_foreach (core->rcmd->plist, iter, cp) {
+			rz_list_foreach (core->plugins, iter, cp) {
 				rz_cons_printf("%s{\"Name\":\"%s\",\"Description\":\"%s\"}",
 					is_first_element ? "" : ",", cp->name, cp->desc);
 				is_first_element = false;
@@ -81,7 +81,7 @@ RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
 		}
 		case 0:
 			rz_lib_list(core->lib);
-			rz_list_foreach (core->rcmd->plist, iter, cp) {
+			rz_list_foreach (core->plugins, iter, cp) {
 				rz_cons_printf("%s: %s\n", cp->name, cp->desc);
 			}
 			break;

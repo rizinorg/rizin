@@ -94,6 +94,19 @@ typedef enum {
 	RZ_CORE_VISUAL_MODE_CD = 4
 } RzCoreVisualMode;
 
+typedef bool (*RzCorePluginInit)(RzCore *core);
+typedef bool (*RzCorePluginFini)(RzCore *core);
+
+typedef struct rz_core_plugin_t {
+	const char *name;
+	const char *desc;
+	const char *license;
+	const char *author;
+	const char *version;
+	RzCorePluginInit init;
+	RzCorePluginFini fini;
+} RzCorePlugin;
+
 typedef struct rz_core_rtr_host_t {
 	int proto;
 	char host[512];
@@ -251,6 +264,7 @@ typedef struct rz_core_seek_history_t {
 
 struct rz_core_t {
 	RzBin *bin;
+	RzList *plugins; ///< List of registered core plugins
 	RzConfig *config;
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
@@ -382,6 +396,10 @@ typedef struct rz_core_cmpwatch_t {
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef RZ_API
+RZ_API bool rz_core_plugin_init(RzCore *core);
+RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
+RZ_API bool rz_core_plugin_fini(RzCore *core);
+
 //#define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RzList *rz_core_list_themes(RzCore *core);
 RZ_API char *rz_core_get_theme(void);

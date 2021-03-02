@@ -33,11 +33,16 @@ static const char *rwxstr[] = {
 };
 
 RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
+	int res;
 #ifdef _MSC_VER
-	return stricmp(s1, s2);
+	res = stricmp(s1, s2);
 #else
-	return strcasecmp(s1, s2);
+	res = strcasecmp(s1, s2);
 #endif
+	if (res == 0) {
+		res = strcmp(s1, s2);
+	}
+	return res;
 }
 
 RZ_API int rz_str_ncasecmp(const char *s1, const char *s2, size_t n) {

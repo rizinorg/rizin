@@ -19,7 +19,9 @@ CMDDESCS_C_TEMPLATE = """// SPDX-License-Identifier: LGPL-3.0-only
 {helps}
 RZ_IPI void newshell_cmddescs_init(RzCore *core) {{
 \tRzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
+\trz_cmd_batch_start(core->rcmd);
 {init_code}
+\trz_cmd_batch_end(core->rcmd);
 }}
 """
 
