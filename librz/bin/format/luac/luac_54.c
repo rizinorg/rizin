@@ -6,6 +6,9 @@
 
 RzBinInfo *info_54(RzBinFile *bf, int major, int minor)
 {
+    int INNER_BUFFER_SIZE = 256;
+    unsigned char work_buffer[INNER_BUFFER_SIZE];
+
     RzBinInfo *ret = NULL;
     luacHdr54 hdr;
     memset(&hdr, 0, LUAC_HDR_SIZE_54);
@@ -62,6 +65,16 @@ RzBinInfo *info_54(RzBinFile *bf, int major, int minor)
         return ret;
     }
 
+    rz_buf_read_at(bf->buf, LUAC_HDR_SIZE_54, work_buffer, INNER_BUFFER_SIZE);
+    char *src_file = luaLoadString(work_buffer);
 
+    /* put source file info into GUID */
+    if (src_file == NULL){
+        ret->guid = strdup("stripped");
+        return ret;
+    }
+    ret->guid = strdup(src_file);
+    free(src_file);
+    
     return ret;
 }
