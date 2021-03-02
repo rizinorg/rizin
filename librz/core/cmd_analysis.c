@@ -3073,7 +3073,7 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			rz_core_kuery_print(core, "analysis/cc/*");
 			break;
 		case 'l': // "afcl" list all function Calling conventions.
-			rz_core_analysis_calling_conventions_print(core);
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		case 'o': { // "afco"
 			char *dbpath = rz_str_trim_dup(input + 2);
