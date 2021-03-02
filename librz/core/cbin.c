@@ -411,6 +411,9 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 	RzBinString *string;
 	rz_list_foreach (l, iter, string) {
 		ut64 vaddr = rva(r->bin, string->paddr, string->vaddr, va);
+		if (!rz_bin_string_filter(r->bin, string->string, string->length, vaddr)) {
+			continue;
+		}
 		if (rz_cons_is_breaked()) {
 			break;
 		}
@@ -451,8 +454,6 @@ RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
 
 static void _print_strings(RzCore *r, RZ_NULLABLE const RzList *list, PJ *pj, int mode, int va) {
 	bool b64str = rz_config_get_i(r->config, "bin.b64str");
-	int minstr = rz_config_get_i(r->config, "bin.minstr");
-	int maxstr = rz_config_get_i(r->config, "bin.maxstr");
 	RzTable *table = rz_core_table(r);
 	rz_return_if_fail(table);
 	RzBin *bin = r->bin;
@@ -461,8 +462,6 @@ static void _print_strings(RzCore *r, RZ_NULLABLE const RzList *list, PJ *pj, in
 	RzBinString *string;
 	RzBinSection *section;
 
-	bin->minstrlen = minstr;
-	bin->maxstrlen = maxstr;
 	if (IS_MODE_JSON(mode)) {
 		pj_a(pj);
 	} else if (IS_MODE_RZCMD(mode)) {
@@ -477,13 +476,7 @@ static void _print_strings(RzCore *r, RZ_NULLABLE const RzList *list, PJ *pj, in
 		ut64 paddr, vaddr;
 		paddr = string->paddr;
 		vaddr = rva(r->bin, paddr, string->vaddr, va);
-		if (!rz_bin_string_filter(bin, string->string, vaddr)) {
-			continue;
-		}
-		if (string->length < minstr) {
-			continue;
-		}
-		if (maxstr && string->length > maxstr) {
+		if (!rz_bin_string_filter(bin, string->string, string->length, vaddr)) {
 			continue;
 		}
 
