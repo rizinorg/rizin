@@ -23,8 +23,8 @@ RZ_PACKED(
             ut8 integer_size;
             ut8 number_size;
 
-            ut64 integer_valid_data;        /* test integer data loading */
-            ut64 number_valid_data;         /* test number data loading */
+            ut8 integer_valid_data[8];        /* test integer data loading */
+            ut8 number_valid_data[8];         /* test number data loading */
 
             ut8 upvalues_number;            /* number of upvalue arrays */
         }) luacHdr54;
