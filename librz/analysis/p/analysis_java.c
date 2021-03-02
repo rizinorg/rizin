@@ -55,7 +55,7 @@ static int java_switch_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 		ut32 default_loc = (ut32)(rz_read_at_be32(data, pos)), cur_case = 0;
 		op->switch_op = rz_analysis_switch_op_new(addr, min_val, max_val, default_loc);
 		pos += 12;
-		if (max_val > min_val && ((max_val - min_val) < (UT16_MAX / 4))) {
+		if (max_val > min_val && (((ut32)max_val - (ut32)min_val) < (UT16_MAX / 4))) {
 			//caseop = rz_analysis_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
 			for (cur_case = 0; cur_case <= max_val - min_val; pos += 4, cur_case++) {
 				//ut32 value = (ut32)(rz_read_at_be32 (data, pos));
