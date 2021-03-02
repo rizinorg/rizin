@@ -617,9 +617,8 @@ RZ_API char *rz_core_disassemble_bytes(RzCore *core, ut64 addr, int b);
 RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *func_name);
 RZ_API void rz_core_print_func_args(RzCore *core);
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name);
-RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 
-/* analysis.c */
+/* canalysis.c */
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
 RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *addr);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
@@ -665,6 +664,7 @@ RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
 RZ_API void rz_cmd_analysis_blocks(RzCore *core, const char *input);
 RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly);
+RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn);
@@ -860,9 +860,6 @@ typedef struct {
 typedef struct {
 	RzCoreAnalStatsItem *block;
 } RzCoreAnalStats;
-
-RZ_API void rz_core_list_typename_alias_c(RzCore *core, const char *typedef_name);
-RZ_API void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode);
 
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);

@@ -6,11 +6,11 @@ tcc-*
 tcc
 EOF
 EXPECT=<<EOF
-swift
 amd64
 amd64syscall
 ms
 reg
+swift
 EOF
 RUN
 
@@ -18,11 +18,11 @@ NAME=tcc
 FILE=bins/elf/ls
 CMDS=tcc
 EXPECT=<<EOF
-swift
 amd64
 amd64syscall
 ms
 reg
+swift
 EOF
 RUN
 

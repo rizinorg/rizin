@@ -94,10 +94,14 @@ static int cmpnbbs(const void *_a, const void *_b) {
 					 : 0;
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
+RZ_IPI int bb_cmpaddr(const void *_a, const void *_b) {
+	const RzAnalysisBlock *a = _a, *b = _b;
+	return (a->addr > b->addr) - (a->addr < b->addr);
+}
+
+RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b) {
 	const RzAnalysisFunction *a = _a, *b = _b;
-	return (a->addr > b->addr) ? 1 : (a->addr < b->addr) ? -1
-							     : 0;
+	return (a->addr > b->addr) - (a->addr < b->addr);
 }
 
 static char *getFunctionName(RzCore *core, ut64 addr) {
@@ -3323,7 +3327,7 @@ static int fcn_list_verbose(RzCore *core, RzList *fcns, const char *sortby) {
 		if (!strcmp(sortby, "size")) {
 			rz_list_sort(fcns, cmpsize);
 		} else if (!strcmp(sortby, "addr")) {
-			rz_list_sort(fcns, cmpaddr);
+			rz_list_sort(fcns, fcn_cmpaddr);
 		} else if (!strcmp(sortby, "cc")) {
 			rz_list_sort(fcns, cmpfcncc);
 		} else if (!strcmp(sortby, "edges")) {
@@ -3920,7 +3924,7 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 		rz_core_analysis_fcn_list_size(core);
 		break;
 	case '=': { // afl=
-		rz_list_sort(fcns, cmpaddr);
+		rz_list_sort(fcns, fcn_cmpaddr);
 		RzList *flist = rz_list_newf((RzListFree)rz_listinfo_free);
 		if (!flist) {
 			rz_list_free(fcns);
@@ -6854,31 +6858,6 @@ RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const ch
 	return true;
 }
 
-static bool cc_print(void *p, const char *k, const char *v) {
-	if (!strcmp(v, "cc")) {
-		rz_cons_println(k);
-	}
-	return true;
-}
-
-RZ_IPI RzList *rz_core_analysis_calling_conventions(RzCore *core) {
-	RzList *ccl = rz_list_new();
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(core->analysis->sdb_cc, true);
-	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "cc")) {
-			rz_list_append(ccl, strdup(sdbkv_key(kv)));
-		}
-	}
-	ls_free(l);
-	return ccl;
-}
-
-RZ_IPI void rz_core_analysis_calling_conventions_print(RzCore *core) {
-	sdb_foreach(core->analysis->sdb_cc, cc_print, NULL);
-}
-
 static bool is_unknown_file(RzCore *core) {
 	if (core->bin->cur && core->bin->cur->o) {
 		return (rz_list_empty(core->bin->cur->o->sections));
@@ -7405,88 +7384,30 @@ beach:
 	rz_config_set_i(core->config, "search.align", o_align);
 }
 
-static bool nonreturn_print_rizin(void *p, const char *k, const char *v) {
-	RzCore *core = (RzCore *)p;
-	if (!strncmp(v, "func", strlen("func") + 1)) {
-		char *query = sdb_fmt("func.%s.noreturn", k);
-		if (sdb_bool_get(core->analysis->sdb_types, query, NULL)) {
-			rz_cons_printf("tnn %s\n", k);
+RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
+	int stack = 0, maxstack = 0;
+	ut64 at = from;
+
+	if (from >= to) {
+		return 0;
+	}
+	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = RZ_MAX(1, mininstrsz);
+	while (at < to) {
+		RzAnalysisOp *op = rz_core_analysis_op(core, at, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (!op || op->size <= 0) {
+			at += minopcode;
+			rz_analysis_op_free(op);
+			continue;
 		}
-	}
-	if (!strncmp(k, "addr.", 5)) {
-		rz_cons_printf("tna 0x%s %s\n", k + 5, v);
-	}
-	return true;
-}
-
-static bool nonreturn_print(RzCore *core, RzList *noretl) {
-	RzListIter *it;
-	char *s;
-	rz_list_foreach (noretl, it, s) {
-		rz_cons_println(s);
-	}
-	return true;
-}
-
-static bool nonreturn_print_json(RzCore *core, RzList *noretl) {
-	RzListIter *it;
-	char *s;
-	PJ *pj = rz_core_pj_new(core);
-	pj_a(pj);
-	rz_list_foreach (noretl, it, s) {
-		pj_k(pj, s);
-	}
-	pj_end(pj);
-	rz_cons_println(pj_string(pj));
-	pj_free(pj);
-	return true;
-}
-
-RZ_IPI RzList *rz_core_analysis_noreturn(RzCore *core) {
-	RzList *noretl = rz_list_new();
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(core->analysis->sdb_types, true);
-	ls_foreach (l, iter, kv) {
-		const char *k = sdbkv_key(kv);
-		if (!strncmp(k, "func.", 5) && strstr(k, ".noreturn")) {
-			char *s = strdup(k + 5);
-			char *d = strchr(s, '.');
-			if (d) {
-				*d = 0;
+		if ((op->stackop == RZ_ANALYSIS_STACK_INC) && RZ_ABS(op->stackptr) < 8096) {
+			stack += op->stackptr;
+			if (stack > maxstack) {
+				maxstack = stack;
 			}
-			rz_list_append(noretl, strdup(s));
-			free(s);
 		}
-		if (!strncmp(k, "addr.", 5)) {
-			char *off;
-			if (!(off = strdup(k + 5))) {
-				break;
-			}
-			char *ptr = strstr(off, ".noreturn");
-			if (ptr) {
-				*ptr = 0;
-				char *addr = rz_str_newf("0x%s", off);
-				rz_list_append(noretl, addr);
-			}
-			free(off);
-		}
+		at += op->size;
+		rz_analysis_op_free(op);
 	}
-	ls_free(l);
-	return noretl;
-}
-
-RZ_IPI void rz_core_analysis_noreturn_print(RzCore *core, RzOutputMode mode) {
-	RzList *noretl = rz_core_analysis_noreturn(core);
-	switch (mode) {
-	case RZ_OUTPUT_MODE_RIZIN:
-		sdb_foreach(core->analysis->sdb_types, nonreturn_print_rizin, core);
-		break;
-	case RZ_OUTPUT_MODE_JSON:
-		nonreturn_print_json(core, noretl);
-		break;
-	default:
-		nonreturn_print(core, noretl);
-		break;
-	}
+	return maxstack;
 }
