@@ -254,10 +254,8 @@ commands:
     summary: Seek commands
     subcommands: cmd_seek
   - name: t
-    cname: cmd_type
     summary: Types, noreturn, signatures, C parser and more
     subcommands: cmd_type
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: uniq
     cname: uniq
     summary: List uniq strings in file

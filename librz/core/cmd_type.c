@@ -620,7 +620,7 @@ static void cmd_type_noreturn(RzCore *core, const char *input) {
 	}
 }
 
-static void typesList(RzCore *core, int mode) {
+static void types_list(RzCore *core, int mode) {
 	switch (mode) {
 	case 1:
 	case '*':
@@ -834,7 +834,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 	case 'j': // "tj"
 	case '*': // "t*"
 	case 0: // "t"
-		typesList(core, input[0]);
+		types_list(core, input[0]);
 		break;
 	case 'o': // "to"
 		if (input[1] == '?') {
@@ -1087,6 +1087,27 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 
 // =============================================================================
 //                        END    DEPRECATED
+
+RZ_IPI RzCmdStatus rz_type_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char *type = argc > 1 ? argv[1] : NULL;
+	if (type) {
+		rz_core_types_show_format(core, type, mode);
+	} else {
+		rz_core_types_print_all(core, mode);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_del_handler(RzCore *core, int argc, const char **argv) {
+	rz_analysis_remove_parsed_type(core->analysis, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_del_all_handler(RzCore *core, int argc, const char **argv) {
+	sdb_reset(core->analysis->sdb_types);
+	rz_parse_c_reset(core->parser);
+	return RZ_CMD_STATUS_OK;
+}
 
 RZ_IPI RzCmdStatus rz_type_cc_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *cc = argc > 1 ? argv[1] : NULL;
@@ -1436,4 +1457,3 @@ RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const 
 	types_xrefs_all(core);
 	return RZ_CMD_STATUS_OK;
 }
-
