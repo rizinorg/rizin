@@ -1035,6 +1035,9 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 		}
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
+		// This is a special case, we don't filter anything
+		ls_free(l);
+		l = sdb_foreach_list(TDB, true);
 		ls_foreach (l, it, kv) {
 			rz_cons_printf("tk %s=%s\n", sdbkv_key(kv), sdbkv_value(kv));
 		}
