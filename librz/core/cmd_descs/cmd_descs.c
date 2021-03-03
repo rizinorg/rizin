@@ -137,6 +137,8 @@ static const RzCmdDescArg type_typedef_c_args[2];
 static const RzCmdDescArg type_list_union_args[2];
 static const RzCmdDescArg type_union_c_args[2];
 static const RzCmdDescArg type_union_c_nl_args[2];
+static const RzCmdDescArg type_xrefs_list_args[2];
+static const RzCmdDescArg type_xrefs_function_args[2];
 static const RzCmdDescArg uniq_args[2];
 static const RzCmdDescArg uname_args[2];
 static const RzCmdDescArg write_args[2];
@@ -2541,6 +2543,55 @@ static const RzCmdDescHelp type_union_c_nl_help = {
 	.args = type_union_c_nl_args,
 };
 
+static const RzCmdDescHelp tx_help = {
+	.summary = "Type xrefs",
+};
+static const RzCmdDescArg type_xrefs_list_args[] = {
+	{
+		.name = "type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_xrefs_list_help = {
+	.summary = "List functions using the type",
+	.args = type_xrefs_list_args,
+};
+
+static const RzCmdDescArg type_xrefs_function_args[] = {
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_xrefs_function_help = {
+	.summary = "List all types used in the function",
+	.args = type_xrefs_function_args,
+};
+
+static const RzCmdDescArg type_xrefs_graph_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp type_xrefs_graph_help = {
+	.summary = "Render the type xrefs graph",
+	.args = type_xrefs_graph_args,
+};
+
+static const RzCmdDescArg type_xrefs_list_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp type_xrefs_list_all_help = {
+	.summary = "List all types used by any function",
+	.args = type_xrefs_list_all_args,
+};
+
 static const RzCmdDescArg uniq_args[] = {
 	{
 		.name = "filename",
@@ -4116,6 +4167,17 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_union_c_nl_cd = rz_cmd_desc_argv_new(core->rcmd, tu_cd, "tud", rz_type_union_c_nl_handler, &type_union_c_nl_help);
 	rz_warn_if_fail(type_union_c_nl_cd);
+
+	RzCmdDesc *tx_cd = rz_cmd_desc_group_new(core->rcmd, cmd_type_cd, "tx", rz_type_xrefs_list_handler, &type_xrefs_list_help, &tx_help);
+	rz_warn_if_fail(tx_cd);
+	RzCmdDesc *type_xrefs_function_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txf", rz_type_xrefs_function_handler, &type_xrefs_function_help);
+	rz_warn_if_fail(type_xrefs_function_cd);
+
+	RzCmdDesc *type_xrefs_graph_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txg", rz_type_xrefs_graph_handler, &type_xrefs_graph_help);
+	rz_warn_if_fail(type_xrefs_graph_cd);
+
+	RzCmdDesc *type_xrefs_list_all_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txl", rz_type_xrefs_list_all_handler, &type_xrefs_list_all_help);
+	rz_warn_if_fail(type_xrefs_list_all_cd);
 
 	RzCmdDesc *uniq_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "uniq", rz_uniq_handler, &uniq_help);
 	rz_warn_if_fail(uniq_cd);

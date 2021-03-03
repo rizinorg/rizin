@@ -262,6 +262,91 @@ static void types_open_sdb(RzCore *core, const char *path) {
 	}
 }
 
+static void types_xrefs(RzCore *core, const char *type) {
+	char *type2;
+	RzListIter *iter, *iter2;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+		rz_list_foreach (uniq, iter2, type2) {
+			if (!strcmp(type2, type)) {
+				rz_cons_printf("%s\n", fcn->name);
+				break;
+			}
+		}
+	}
+}
+
+static void types_xrefs_summary(RzCore *core) {
+	char *type;
+	RzListIter *iter, *iter2;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+		if (rz_list_length(uniq)) {
+			rz_cons_printf("%s: ", fcn->name);
+		}
+		rz_list_foreach (uniq, iter2, type) {
+			rz_cons_printf("%s%s", type, iter2->n ? "," : "\n");
+		}
+	}
+}
+
+static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
+	char *type;
+	RzListIter *iter;
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	if (!fcn) {
+		eprintf("Cannot find function at 0x%08" PFMT64x "\n", addr);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+	rz_list_foreach (uniq, iter, type) {
+		rz_cons_println(type);
+	}
+	rz_list_free(uniq);
+	return RZ_CMD_STATUS_OK;
+}
+
+static void types_xrefs_graph(RzCore *core) {
+	char *type;
+	RzListIter *iter, *iter2;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+		if (rz_list_length(uniq)) {
+			rz_cons_printf("agn %s\n", fcn->name);
+		}
+		rz_list_foreach (uniq, iter2, type) {
+			char *myType = strdup(type);
+			rz_str_replace_ch(myType, ' ', '_', true);
+			rz_cons_printf("agn %s\n", myType);
+			rz_cons_printf("age %s %s\n", myType, fcn->name);
+			free(myType);
+		}
+	}
+}
+
+static void types_xrefs_all(RzCore *core) {
+	char *type;
+	RzListIter *iter, *iter2;
+	RzAnalysisFunction *fcn;
+	RzList *uniqList = rz_list_newf(free);
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+		rz_list_foreach (uniq, iter2, type) {
+			if (!rz_list_find(uniqList, type, (RzListComparator)strcmp)) {
+				rz_list_push(uniqList, strdup(type));
+			}
+		}
+	}
+	rz_list_sort(uniqList, (RzListComparator)strcmp);
+	rz_list_foreach (uniqList, iter, type) {
+		rz_cons_printf("%s\n", type);
+	}
+	rz_list_free(uniqList);
+}
+
 // =============================================================================
 //                             DEPRECATED
 
@@ -780,9 +865,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		}
 		break;
 	case 'x': {
-		char *type, *type2;
-		RzListIter *iter, *iter2;
-		RzAnalysisFunction *fcn;
+		char *type;
 		switch (input[1]) {
 		case '.': // "tx." type xrefs
 		case 'f': // "txf" type xrefs
@@ -791,73 +874,20 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			if (input[2] == ' ') {
 				addr = rz_num_math(core->num, input + 2);
 			}
-			fcn = rz_analysis_get_function_at(core->analysis, addr);
-			if (fcn) {
-				RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
-				rz_list_foreach (uniq, iter, type) {
-					rz_cons_println(type);
-				}
-				rz_list_free(uniq);
-			} else {
-				eprintf("cannot find function at 0x%08" PFMT64x "\n", addr);
-			}
+			types_xrefs_function(core, addr);
 		} break;
 		case 0: // "tx"
-			rz_list_foreach (core->analysis->fcns, iter, fcn) {
-				RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
-				if (rz_list_length(uniq)) {
-					rz_cons_printf("%s: ", fcn->name);
-				}
-				rz_list_foreach (uniq, iter2, type) {
-					rz_cons_printf("%s%s", type, iter2->n ? "," : "\n");
-				}
-			}
+			types_xrefs_summary(core);
 			break;
 		case 'g': // "txg"
-		{
-			rz_list_foreach (core->analysis->fcns, iter, fcn) {
-				RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
-				if (rz_list_length(uniq)) {
-					rz_cons_printf("agn %s\n", fcn->name);
-				}
-				rz_list_foreach (uniq, iter2, type) {
-					char *myType = strdup(type);
-					rz_str_replace_ch(myType, ' ', '_', true);
-					rz_cons_printf("agn %s\n", myType);
-					rz_cons_printf("age %s %s\n", myType, fcn->name);
-					free(myType);
-				}
-			}
-		} break;
+			types_xrefs_graph(core);
+			break;
 		case 'l': // "txl"
-		{
-			RzList *uniqList = rz_list_newf(free);
-			rz_list_foreach (core->analysis->fcns, iter, fcn) {
-				RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
-				rz_list_foreach (uniq, iter2, type) {
-					if (!rz_list_find(uniqList, type, (RzListComparator)strcmp)) {
-						rz_list_push(uniqList, strdup(type));
-					}
-				}
-			}
-			rz_list_sort(uniqList, (RzListComparator)strcmp);
-			rz_list_foreach (uniqList, iter, type) {
-				rz_cons_printf("%s\n", type);
-			}
-			rz_list_free(uniqList);
-		} break;
-		case 't':
+			types_xrefs_all(core);
+			break;
 		case ' ': // "tx " -- show which function use given type
 			type = (char *)rz_str_trim_head_ro(input + 2);
-			rz_list_foreach (core->analysis->fcns, iter, fcn) {
-				RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
-				rz_list_foreach (uniq, iter2, type2) {
-					if (!strcmp(type2, type)) {
-						rz_cons_printf("%s\n", fcn->name);
-						break;
-					}
-				}
-			}
+			types_xrefs(core, type);
 			break;
 		default:
 			eprintf("Usage: tx[flg] [...]\n");
@@ -866,7 +896,6 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			eprintf(" txl            list all types used by any function\n");
 			eprintf(" txg            render the type xrefs graph (usage .txg;aggv)\n");
 			eprintf(" tx int32_t     list functions names using this type\n");
-			eprintf(" txt int32_t    same as 'tx type'\n");
 			eprintf(" tx             list functions and the types they use\n");
 			break;
 		}
@@ -1382,3 +1411,29 @@ RZ_IPI RzCmdStatus rz_type_union_c_nl_handler(RzCore *core, int argc, const char
 	rz_types_union_print_c(TDB, typename, false);
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_type_xrefs_list_handler(RzCore *core, int argc, const char **argv) {
+	const char *typename = argc > 1 ? argv[1] : NULL;
+	if (typename) {
+		types_xrefs(core, typename);
+	} else {
+		types_xrefs_summary(core);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_xrefs_function_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
+	return types_xrefs_function(core, addr);
+}
+
+RZ_IPI RzCmdStatus rz_type_xrefs_graph_handler(RzCore *core, int argc, const char **argv) {
+	types_xrefs_graph(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv) {
+	types_xrefs_all(core);
+	return RZ_CMD_STATUS_OK;
+}
+

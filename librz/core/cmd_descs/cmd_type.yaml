@@ -302,3 +302,28 @@ commands:
           - name: type
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+  - name: tx
+    summary: Type xrefs
+    subcommands:
+      - name: tx
+        cname: type_xrefs_list
+        summary: List functions using the type
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: txf
+        cname: type_xrefs_function
+        summary: List all types used in the function
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: txg
+        cname: type_xrefs_graph
+        summary: Render the type xrefs graph
+        args: []
+      - name: txl
+        cname: type_xrefs_list_all
+        summary: List all types used by any function
+        args: []
