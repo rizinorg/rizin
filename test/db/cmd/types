@@ -1760,9 +1760,9 @@ txf main
 ?e =
 txf fcn.00011b90
 ?e =
-txt size_t
+tx size_t
 ?e =
-txt size_t *
+tx "size_t *"
 EOF
 EXPECT=<<EOF
 int
