@@ -367,7 +367,7 @@ jobs:
     - name: Compile with meson
       run: |
         mkdir -p ${HOME}/rizin-static
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dstatic_runtime=true -Dportable=true build
+        meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dstatic_runtime=true -Dportable=true build
         ninja -C build && ninja -C build install
         tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
       working-directory: rizin
@@ -552,7 +552,7 @@ jobs:
     - name: Compile with meson
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
         ninja -C build && ninja -C build install
     - name: Create rizin-android-${{ matrix.name }}.tar.gz
       run: |

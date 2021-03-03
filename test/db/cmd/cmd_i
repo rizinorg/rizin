@@ -272,6 +272,10 @@ nth paddr  size vaddr  vsize perm name
 --------------------------------------
 
 fs sections
+[Strings]
+nth paddr vaddr len size section type string
+--------------------------------------------
+fs strings
 EOF
 RUN
 

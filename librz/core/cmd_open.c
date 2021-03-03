@@ -1079,7 +1079,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			if (file->o && file->o->info) {
 				file->o->info->arch = strdup(arch);
 				file->o->info->bits = bits;
-				rz_core_bin_set_env(core, file);
+				rz_core_bin_apply_all_info(core, file);
 			}
 			free(ptr);
 			return 1;

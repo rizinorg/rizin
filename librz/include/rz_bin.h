@@ -315,7 +315,7 @@ struct rz_bin_t {
 	/* preconfigured values */
 	int debase64;
 	int minstrlen;
-	int maxstrlen;
+	int maxstrlen; //< <= 0 means no limit
 	ut64 maxstrbuf;
 	int rawstr;
 	Sdb *sdb;
@@ -817,7 +817,7 @@ RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList *list);
 RZ_API char *rz_bin_filter_name(RzBinFile *bf, Sdb *db, ut64 addr, char *name);
 RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym);
 RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 addr);
-RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, ut64 addr);
+RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr);
 
 /* plugin pointers */
 extern RzBinPlugin rz_bin_plugin_any;

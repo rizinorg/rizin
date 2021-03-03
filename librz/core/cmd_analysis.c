@@ -2484,7 +2484,7 @@ static Sdb *__core_cmd_analysis_fcn_stats(RzCore *core, const char *input) {
 			rz_table_add_column(t, typeNumber, key, 0);
 		}
 		RzList *items = rz_list_newf(free);
-		rz_list_append(items, fcn->name);
+		rz_list_append(items, strdup(fcn->name));
 		ls_foreach (ls, it, kv) {
 			const char *value = sdbkv_value(kv);
 			int nv = (int)rz_num_get(NULL, value);
