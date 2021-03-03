@@ -1669,18 +1669,15 @@ RUN
 NAME=tn common
 FILE=bins/pe/pe.exe
 CMDS=<<EOF
-tna 8
-tnn 8
+tn 8
 tn
 tn- 0x8
-tn- 8
 tn
 tn-*
 tn
 EOF
 EXPECT=<<EOF
 0x8
-8
 ExitProcess
 ExitThread
 FatalExit
