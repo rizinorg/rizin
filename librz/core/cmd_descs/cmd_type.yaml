@@ -1,6 +1,27 @@
 ---
 name: cmd_type
 commands:
+  - name: t
+    cname: type
+    summary: List all types / Show type information
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: t-
+    cname: type_del
+    summary: Remove the type
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: t-*
+    cname: type_del_all
+    summary: Remove all types
+    args: []
   - name: tc
     summary: List loaded types in C format
     subcommands:

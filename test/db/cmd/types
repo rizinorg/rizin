@@ -195,12 +195,12 @@ Cannot find 'int' type
 EOF
 RUN
 
-NAME=t-enum
+NAME=t- enum
 FILE=-
 CMDS=<<EOF
 td "enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };"
 te~?pe_machine
-t-pe_machine
+t- pe_machine
 te~?pe_machine
 EOF
 EXPECT=<<EOF
@@ -209,12 +209,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=t-struct
+NAME=t- struct
 FILE=-
 CMDS=<<EOF
 t-*
 td "struct three_elements{int x; char y; float z;}"
-t-three_elements
+t- three_elements
 ts~?
 EOF
 EXPECT=<<EOF
@@ -222,12 +222,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=t-union
+NAME=t- union
 FILE=-
 CMDS=<<EOF
 td "union xoo{int x; int y; int z;}"
-tk*~union
-t-xoo
+tk *~union
+t- xoo
 EOF
 EXPECT=<<EOF
 union.xoo=x,y,z
@@ -245,7 +245,7 @@ NAME=typedef
 FILE=-
 CMDS=<<EOF
 td "typedef int Abracadabra"
-t-Abracadabra
+t- Abracadabra
 t~?Abracadabra
 EOF
 EXPECT=<<EOF
