@@ -904,20 +904,15 @@ beach:
 	free(buf);
 }
 
-RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, RzOutputMode mode) {
+RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(type);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
-		PJ *pj = rz_core_pj_new(core);
-		if (!pj) {
-			return;
-		}
+		rz_return_if_fail(pj);
 		pj_o(pj);
-		char *saddr = rz_str_newf("0x%" PFMT64x, addr);
+		char *saddr = rz_str_newf("0x%08" PFMT64x, addr);
 		pj_ks(pj, saddr, type);
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
 		free(saddr);
 		break;
 	}
@@ -946,17 +941,26 @@ RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
 	Sdb *TDB = core->analysis->sdb_types;
 	SdbKv *kv;
 	SdbListIter *iter;
+	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
 	SdbList *l = sdb_foreach_list(TDB, true);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_a(pj);
+	}
 	ls_foreach (l, iter, kv) {
 		if (!strncmp(sdbkv_key(kv), "link.", strlen("link."))) {
 			const char *name = sdbkv_value(kv);
 			char *saddr = rz_str_newf("0x%s", sdbkv_key(kv) + strlen("link."));
 			ut64 addr = rz_num_math(core->num, saddr);
-			rz_core_types_link_print(core, name, addr, mode);
+			rz_core_types_link_print(core, name, addr, mode, pj);
 			free(saddr);
 		}
 	}
 	ls_free(l);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
 }
 
 RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr) {
@@ -984,7 +988,7 @@ RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr) {
 	const char *query = sdb_fmt("link.%08" PFMT64x, addr);
 	const char *link = sdb_const_get(TDB, query, 0);
 	if (link) {
-		rz_core_types_link_print(core, link, addr, RZ_OUTPUT_MODE_LONG);
+		rz_core_types_link_print(core, link, addr, RZ_OUTPUT_MODE_LONG, NULL);
 	}
 }
 
