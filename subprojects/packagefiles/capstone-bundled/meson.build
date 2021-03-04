@@ -75,7 +75,7 @@ libcapstone_c_args = [
     '-DCAPSTONE_HAS_TMS320C64X',
 ]  
 if meson.get_compiler('c').get_id() == 'gcc'
-  libcapstone_c_args += '-Wno-stringop-truncation'
+  libcapstone_c_args += '-Wno-error=stringop-truncation'
 endif
 
 libcapstone = library('capstone', cs_files,
