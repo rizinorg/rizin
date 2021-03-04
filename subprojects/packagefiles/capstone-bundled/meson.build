@@ -74,6 +74,7 @@ libcapstone = library('capstone', cs_files,
     '-DCAPSTONE_HAS_X86',
     '-DCAPSTONE_HAS_XCORE',
     '-DCAPSTONE_HAS_TMS320C64X',
+    '-Wno-stringop-truncation',
   ],
   include_directories: capstone_includes,
   implicit_include_directories: false
