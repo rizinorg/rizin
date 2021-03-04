@@ -450,7 +450,6 @@ extern RzIOPlugin rz_io_plugin_tcp;
 extern RzIOPlugin rz_io_plugin_bochs;
 extern RzIOPlugin rz_io_plugin_null;
 extern RzIOPlugin rz_io_plugin_ar;
-extern RzIOPlugin rz_io_plugin_rbuf;
 extern RzIOPlugin rz_io_plugin_winedbg;
 extern RzIOPlugin rz_io_plugin_gprobe;
 extern RzIOPlugin rz_io_plugin_fd;
