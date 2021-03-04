@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2020 inisider <inisider@gmail.com>
+// SPDX-FileCopyrightText: 2015-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "../../i/private.h"

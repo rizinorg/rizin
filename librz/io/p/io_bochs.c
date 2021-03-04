@@ -1,4 +1,5 @@
-// Copyright (c) 2016-2017 - LGPL, SkUaTeR, All rights reserved.
+// SPDX-FileCopyrightText: 2016-2017 SkUaTeR <skuater@hotmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
 #include <rz_lib.h>

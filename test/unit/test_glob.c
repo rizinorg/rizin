@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 Maijin
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 

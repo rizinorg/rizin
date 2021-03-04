@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2003-2010 University of Illinois at Urbana-Champaign.
+// SPDX-License-Identifier: NCSA
+
 //===-- llvm/Support/MachO.h - The MachO file format ------------*- C -*-===//
 //
 //                     The LLVM Compiler Infrastructure

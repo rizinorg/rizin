@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "opcode.h"
 
 // The actual code of one opcode varies across the versions.

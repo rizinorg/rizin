@@ -1,4 +1,5 @@
-/* rizin - LGPL - 2016-2018 - Copyright (C) moritz */
+// SPDX-FileCopyrightText: 2016-2018 moritz <mo@mightym0.de>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_hash.h>
 

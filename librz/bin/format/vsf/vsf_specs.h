@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015 riq <ricardoquesada@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 #ifndef VSF_SPECS_H
 #define VSF_SPECS_H

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2012, 2013 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Nios II opcode list for GAS, the GNU assembler.
    Copyright (C) 2012, 2013 Free Software Foundation, Inc.
    Contributed by Nigel Gray (ngray@altera.com).

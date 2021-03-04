@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1990-2014 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Table of opcodes for the PA-RISC.
    Copyright (C) 1990-2014 Free Software Foundation, Inc.
 

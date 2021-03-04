@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 d4em0n <n0psledbyte@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 #Inspired by onedark.vim
 # e scr.color = 3 // to enable 16m color
 ec func_var_type white

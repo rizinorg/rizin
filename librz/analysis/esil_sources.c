@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_analysis.h>
 #include <rz_util.h>
 #include <rz_lib.h>

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 condret <condret@runas-racer.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef GB_H
 #define GB_H
 #include <rz_types.h>

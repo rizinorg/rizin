@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2009 Nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_lib.h>

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1990-2014 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* HP PA-RISC SOM object file format:  definitions internal to BFD.
    Copyright (C) 1990-2014 Free Software Foundation, Inc.
 

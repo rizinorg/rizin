@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 Lowly Worm <cutlassc91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_skiplist.h>
 #include "minunit.h"
 

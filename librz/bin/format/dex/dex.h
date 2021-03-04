@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2011 earada <pkedurat@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef DEX_H
 #define DEX_H
 

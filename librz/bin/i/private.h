@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_BIN_PRIVATE_H_
 #define RZ_BIN_PRIVATE_H_
 

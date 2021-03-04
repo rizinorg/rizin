@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2019 - nibble, pancake, maijin */
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 maijin <maijin21@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 

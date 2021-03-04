@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "opcode.h"
 
 pyc_opcodes *opcode_38(void) {

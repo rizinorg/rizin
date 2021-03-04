@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2010-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2010-2019 alvaro <alvaro.felipe91@gmail.com>
+// SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>

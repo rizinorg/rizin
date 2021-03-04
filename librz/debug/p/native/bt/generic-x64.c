@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 static RzList *backtrace_x86_64(RzDebug *dbg, ut64 at) {
 	int i;

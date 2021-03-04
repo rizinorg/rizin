@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2017-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017-2020 cgvwzq
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // http://webassembly.org/docs/binary-encoding/#module-structure

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019 radare <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 

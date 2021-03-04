@@ -1,4 +1,6 @@
-/* Copyright rizin 2014-2020 - Author: pancake, vane11ope */
+// SPDX-FileCopyrightText: 2014-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2014-2020 vane11ope
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
 #include "cmd_descs/cmd_descs.h"

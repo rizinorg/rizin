@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2010-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2010-2018 dark_k3y <alexanderdarkkey@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* AVR assembler realization by Alexander Bolshev aka @dark_k3y, LGPL -- 2015,
    heavily based (and using!) on disassemble module */

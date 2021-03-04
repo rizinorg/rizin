@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2016-2020 - n4x0r, soez, pancake */
+// SPDX-FileCopyrightText: 2016-2020 n4x0r <kalianon2816@gmail.com>
+// SPDX-FileCopyrightText: 2016-2020 soez <soez@amn3s1a.com>
+// SPDX-FileCopyrightText: 2016-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C

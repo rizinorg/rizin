@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2017-2018 - condret */
+// SPDX-FileCopyrightText: 2017-2018 condret <condr3t@protonmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_ID_STORAGE_H
 #define RZ_ID_STORAGE_H

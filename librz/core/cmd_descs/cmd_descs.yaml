@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
+#
 # Format of RzCmdDesc/RzCmdDescHelp descriptor
 # name: name of the YAML file, might be useful to reference another sub-file
 # commands:

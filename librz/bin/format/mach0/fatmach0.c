@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2010-2013 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>

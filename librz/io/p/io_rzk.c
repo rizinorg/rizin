@@ -1,4 +1,6 @@
-/* io_rzk - rizin - LGPL - Copyright 2016-2018 - SkUaTeR + panda */
+// SPDX-FileCopyrightText: 2016-2018 SkUaTeR <skuater@hotmail.com>
+// SPDX-FileCopyrightText: 2016-2018 panda
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
 #include <rz_lib.h>

@@ -1,4 +1,8 @@
 #!/usr/bin/env python2
+#
+# SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
 # -*- coding: utf-8 -*-
 
 import json

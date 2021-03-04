@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2019 a0rtega
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

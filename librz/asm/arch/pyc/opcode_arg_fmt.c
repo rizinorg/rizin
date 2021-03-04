@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "opcode.h"
 
 const char *format_extended_arg(ut32 oparg) {

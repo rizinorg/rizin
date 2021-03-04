@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ne.h"

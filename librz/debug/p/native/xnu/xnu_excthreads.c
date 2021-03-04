@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 alvarofe <alvaro.felipe91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 //FIXME deallocate all the port when they are not longer needed
 
 #include "xnu_threads.h"

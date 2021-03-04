@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2013-2020 xarkes <antide.petit@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* ansi 256 color extension for rz_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */

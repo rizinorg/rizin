@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014 montekki <i.matveychikov@milabs.ru>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>

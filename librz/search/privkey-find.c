@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2008 Nadia Heninger and J. Alex Halderman
+// SPDX-FileCopyrightText: 2008 J. Alex Halderman
+// SPDX-License-Identifier: BSD-3-Clause
+
 // From RSAKeyFinder 1.0 (2008-07-18)
 // By Nadia Heninger and J. Alex Halderman
 // Contribution to r2 by @santitox

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2012-2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2012-2016 Adam Pridgen <dso@rice.edu>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>

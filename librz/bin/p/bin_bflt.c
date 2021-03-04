@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2016-2019 Oscar Salvador <osalvador.vilardaga@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
