@@ -71,7 +71,7 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core, Sdb *TDB);
 RZ_IPI void rz_core_types_union_print_format_all(RzCore *core, Sdb *TDB);
 RZ_IPI RzList *rz_types_links(Sdb *db);
-RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, RzOutputMode mode);
+RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr);
 RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr);
