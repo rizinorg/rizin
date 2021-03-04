@@ -443,6 +443,8 @@ RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
 		o->relocs = list2rbtree(tmp);
 		first = false;
 		bf->rbin->is_reloc_patched = true;
+		tmp->free = NULL;
+		rz_list_free(tmp);
 	}
 	return o->relocs;
 }
