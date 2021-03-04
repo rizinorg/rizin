@@ -57,8 +57,7 @@ cs_files = [
 
 capstone_includes = [include_directories('include'), include_directories('include/capstone')]
 
-libcapstone = library('capstone', cs_files,
-  c_args: [
+libcapstone_c_args = [
     '-DCAPSTONE_X86_ATT_DISABLE_NO',
     '-DCAPSTONE_X86_REDUCE_NO',
     '-DCAPSTONE_USE_SYS_DYN_MEM',
@@ -74,8 +73,13 @@ libcapstone = library('capstone', cs_files,
     '-DCAPSTONE_HAS_X86',
     '-DCAPSTONE_HAS_XCORE',
     '-DCAPSTONE_HAS_TMS320C64X',
-    meson.get_compiler('c').get_id() == 'gcc' ? '-Wno-stringop-truncation' : '',
-  ],
+]  
+if meson.get_compiler('c').get_id() == 'gcc'
+  libcapstone_c_args += '-Wno-stringop-truncation'
+endif
+
+libcapstone = library('capstone', cs_files,
+  c_args: libcapstone_c_args,
   include_directories: capstone_includes,
   implicit_include_directories: false
 )
