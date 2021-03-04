@@ -669,7 +669,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 		}
 		if (!strcmp(opts[h_opt], "cc")) {
 			// XXX TODO: make this work (select with cursor, to delete, or add a new one with 'i', etc)
-			rz_core_cmdf(core, "tfcl");
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 		} else {
 			vt.t_idx = option;
 			vt.t_ctr = 0;
@@ -704,7 +704,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 		case 'o': {
 			char *file = prompt("Filename: ", NULL);
 			if (file) {
-				rz_core_cmdf(core, "\"to %s\"", file);
+				rz_types_open_file(core, file);
 				free(file);
 			}
 		} break;
@@ -755,15 +755,15 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 		case 'a': {
 			txt = prompt("add C type: ", NULL);
 			if (txt) {
-				rz_core_cmdf(core, "td \"%s\"", txt);
+				rz_types_define(core, txt);
 				free(txt);
 			}
 		} break;
 		case 'd':
-			rz_core_cmdf(core, "t- %s", vt.curname);
+			rz_analysis_remove_parsed_type(core->analysis, vt.curname);
 			break;
 		case '-':
-			rz_core_cmd0(core, "to -");
+			rz_types_open_editor(core, NULL);
 			break;
 		case ' ':
 		case '\r':

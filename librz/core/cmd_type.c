@@ -169,99 +169,6 @@ static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, c
 	return RZ_CMD_STATUS_OK;
 }
 
-static void type_define(RzCore *core, const char *type) {
-	// Add trailing semicolon to force the valid C syntax
-	// It allows us to skip the trailing semicolon in the input
-	// to reduce the unnecessary typing
-	char *tmp = rz_str_newf("%s;", type);
-	if (!tmp) {
-		return;
-	}
-	char *error_msg = NULL;
-	char *out = rz_parse_c_string(core->analysis, tmp, &error_msg);
-	free(tmp);
-	if (out) {
-		rz_analysis_save_parsed_type(core->analysis, out);
-		free(out);
-	}
-	if (error_msg) {
-		eprintf("%s", error_msg);
-		free(error_msg);
-	}
-}
-
-static void types_open_file(RzCore *core, const char *path) {
-	const char *dir = rz_config_get(core->config, "dir.types");
-	char *homefile = NULL;
-	if (*path == '~') {
-		if (path[1] && path[2]) {
-			homefile = rz_str_home(path + 2);
-			path = homefile;
-		}
-	}
-	if (!strcmp(path, "-")) {
-		char *tmp = rz_core_editor(core, "*.h", "");
-		if (tmp) {
-			char *error_msg = NULL;
-			char *out = rz_parse_c_string(core->analysis, tmp, &error_msg);
-			if (out) {
-				rz_analysis_save_parsed_type(core->analysis, out);
-				free(out);
-			}
-			if (error_msg) {
-				fprintf(stderr, "%s", error_msg);
-				free(error_msg);
-			}
-			free(tmp);
-		}
-	} else {
-		char *error_msg = NULL;
-		char *out = rz_parse_c_file(core->analysis, path, dir, &error_msg);
-		if (out) {
-			rz_analysis_save_parsed_type(core->analysis, out);
-			free(out);
-		}
-		if (error_msg) {
-			fprintf(stderr, "%s", error_msg);
-			free(error_msg);
-		}
-	}
-	free(homefile);
-}
-
-static void types_open_editor(RzCore *core, const char *typename) {
-	Sdb *TDB = core->analysis->sdb_types;
-	char *str = rz_core_cmd_strf(core, "tc %s", typename ? typename : "");
-	char *tmp = rz_core_editor(core, "*.h", str);
-	if (tmp) {
-		char *error_msg = NULL;
-		char *out = rz_parse_c_string(core->analysis, tmp, &error_msg);
-		if (out) {
-			// remove previous types and save new edited types
-			sdb_reset(TDB);
-			rz_parse_c_reset(core->parser);
-			rz_analysis_save_parsed_type(core->analysis, out);
-			free(out);
-		}
-		if (error_msg) {
-			eprintf("%s\n", error_msg);
-			free(error_msg);
-		}
-		free(tmp);
-	}
-	free(str);
-}
-
-static void types_open_sdb(RzCore *core, const char *path) {
-	Sdb *TDB = core->analysis->sdb_types;
-	if (rz_file_exists(path)) {
-		Sdb *db_tmp = sdb_new(0, path, 0);
-		sdb_merge(TDB, db_tmp);
-		sdb_close(db_tmp);
-		sdb_free(db_tmp);
-	}
-}
-
 static void types_xrefs(RzCore *core, const char *type) {
 	char *type2;
 	RzListIter *iter, *iter2;
@@ -842,11 +749,11 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		}
 		if (input[1] == ' ') {
-			types_open_file(core, input + 2);
+			rz_types_open_file(core, input + 2);
 		} else if (input[1] == 's') { // "tos"
-			types_open_sdb(core, input + 3);
+			rz_types_open_sdb(core, input + 3);
 		} else if (input[1] == 'e') { // "toe"
-			types_open_editor(core, input + 2);
+			rz_types_open_editor(core, input + 2);
 		}
 		break;
 	// td - parse string with cparse engine and load types from it
@@ -859,7 +766,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				       "\nt");
 
 		} else if (input[1] == ' ') {
-			type_define(core, input + 2);
+			rz_types_define(core, input + 2);
 		} else {
 			eprintf("Invalid use of td. See td? for help\n");
 		}
@@ -1150,7 +1057,7 @@ RZ_IPI RzCmdStatus rz_type_list_c_nl_handler(RzCore *core, int argc, const char 
 
 RZ_IPI RzCmdStatus rz_type_define_handler(RzCore *core, int argc, const char **argv) {
 	const char *type = argc > 1 ? argv[1] : NULL;
-	type_define(core, type);
+	rz_types_define(core, type);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1308,18 +1215,18 @@ RZ_IPI RzCmdStatus rz_type_noreturn_del_all_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_type_open_file_handler(RzCore *core, int argc, const char **argv) {
-	types_open_file(core, argv[1]);
+	rz_types_open_file(core, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_open_editor_handler(RzCore *core, int argc, const char **argv) {
 	const char *typename = argc > 1 ? argv[1] : NULL;
-	types_open_editor(core, typename);
+	rz_types_open_editor(core, typename);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_open_sdb_handler(RzCore *core, int argc, const char **argv) {
-	types_open_sdb(core, argv[1]);
+	rz_types_open_sdb(core, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 

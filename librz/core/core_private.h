@@ -77,6 +77,11 @@ RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr);
 RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
 
+RZ_IPI void rz_types_define(RzCore *core, const char *type);
+RZ_IPI void rz_types_open_file(RzCore *core, const char *path);
+RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename);
+RZ_IPI void rz_types_open_sdb(RzCore *core, const char *path);
+
 /* agraph.c */
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
 RZ_IPI void rz_core_agraph_del_node(RzCore *core, const char *title);
