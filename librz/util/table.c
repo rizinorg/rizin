@@ -969,8 +969,8 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		}
 		int col = rz_table_column_nth(t, columnName);
 		if (col == -1) {
-			if (columnName == NULL && strcmp(operation, "uniq")) {
-				eprintf("Invalid column name (%s) for (%s)\n", columnName, query);
+			if (columnName == NULL && strcmp(operation, "uniq")) { // TODO: What query triggers this?
+				eprintf("Column name is NULL for (%s)\n", query);
 			} else if (columnName) {
 				if (*columnName == '[') {
 					col = atoi(columnName + 1);
