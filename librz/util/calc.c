@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2012-2017 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* ported to C by pancake for r2 in 2012-2017 */
 // TODO: integrate floating point support
 // TODO: do not use global variables

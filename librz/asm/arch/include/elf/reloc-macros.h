@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1998, 1999, 2000, 2003 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /* Generic relocation support for BFD.
    Copyright 1998, 1999, 2000, 2003 Free Software Foundation, Inc.
 

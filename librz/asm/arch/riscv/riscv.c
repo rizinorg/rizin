@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2011-2015 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* RISC-V disassembler
    Copyright 2011-2015 Free Software Foundation, Inc.
    Contributed by Andrew Waterman (waterman@cs.berkeley.edu) at UC Berkeley.

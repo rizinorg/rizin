@@ -119,6 +119,13 @@ Will create a directory `${destdir}/usr/share/doc/rizin`, set the attributes to
 https://wiki.archlinux.org/index.php/File_permissions_and_attributes for more
 information about attributes and permissions.
 
+Licenses
+--------
+
+As Rizin is trying to use SPDX, if your packace needs license/copyright
+information, you can use the [REUSE Software](https://reuse.software/) to
+extract the license/copyright of all files in the repository.
+
 Examples
 --------
 

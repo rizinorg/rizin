@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2019 qnix <qnix@0x80.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2018 shengdi <github@sheng.my>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>

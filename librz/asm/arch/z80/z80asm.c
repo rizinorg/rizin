@@ -1,4 +1,8 @@
-/* 2012 - pancake@nopcode.org - rizin integration */
+// SPDX-FileCopyrightText: 2002-2009 Bas Wijnen <wijnen@debian.org>
+// SPDX-FileCopyrightText: 2005 Jan Wilmans <jw@dds.nl>
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Z80 assembler by shevek
 
    Copyright (C) 2002-2009 Bas Wijnen <wijnen@debian.org>

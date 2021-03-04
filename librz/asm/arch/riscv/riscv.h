@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2011-2017 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* riscv.h.  RISC-V opcode list for GDB, the GNU debugger.
    Copyright (C) 2011-2017 Free Software Foundation, Inc.
    Contributed by Andrew Waterman

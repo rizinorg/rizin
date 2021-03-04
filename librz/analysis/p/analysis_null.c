@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014 jn <j.neuschaefer@gmx.net>
+// SPDX-FileCopyrightText: 2014 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>

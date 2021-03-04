@@ -1,6 +1,5 @@
-/* lm32 support for rizin
- * 2-clause BSD
- * Copyright 2015 Felix Held */
+// SPDX-FileCopyrightText: 2015 Felix Held
+// SPDX-License-Identifier: BSD-2-Clause
 
 #include <rz_types.h>
 #include <rz_util.h>

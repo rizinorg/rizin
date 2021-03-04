@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2010-2019 Adam Pridgen <dso@rice.edu>
 // SPDX-License-Identifier: Apache-2.0
 
 #include <string.h>

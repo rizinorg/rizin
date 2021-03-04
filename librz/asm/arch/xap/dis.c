@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* sorbo '07 */
 
 #include <stdio.h>

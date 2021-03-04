@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2010 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2020 FXTi <zjxiang1998@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 
 RZ_API RNumBig *rz_big_new(void) {

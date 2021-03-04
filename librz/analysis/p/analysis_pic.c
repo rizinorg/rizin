@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2015-2018 - oddcoder, thestr4ng3r, courk */
+// SPDX-FileCopyrightText: 2015-2018 oddcoder <ahmedsoliman@oddcoder.com>
+// SPDX-FileCopyrightText: 2015-2018 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2015-2018 courk <courk@courk.cc>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_analysis.h>

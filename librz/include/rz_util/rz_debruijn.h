@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014 crowell <crowell@bu.edu>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_DEBRUIJN_H

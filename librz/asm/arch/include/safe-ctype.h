@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2000, 2001 Free Software Foundation, Inc.
+// SPDX-License-Identifier: LGPL-2.0-or-later
+
 /* <ctype.h> replacement macros.
 
    Copyright (C) 2000, 2001 Free Software Foundation, Inc.

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2019 condret
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // this file was based on analysis_i8080.c

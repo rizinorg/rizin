@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2013-2019 - pancake, astuder */
+// SPDX-FileCopyrightText: 2013-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2013-2019 astuder <github@adrianstuder.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 #include <stdarg.h>

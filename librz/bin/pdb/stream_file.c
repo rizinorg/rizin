@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 inisider <inisider@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "types.h"
 #include "stream_file.h"
 

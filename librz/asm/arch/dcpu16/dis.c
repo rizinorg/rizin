@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* copypasted from http://pastie.org/3732465 */
 /* adapted by pancake // public license */
 /* known bugs: some (%s, NULL) happen */

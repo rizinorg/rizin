@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 eagleoflqj <liumeo@pku.edu.cn>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "binutils_as.h"

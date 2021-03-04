@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2020 - thestr4ng3r */
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2010-2020 maijin <maijin21@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_project.h>
 

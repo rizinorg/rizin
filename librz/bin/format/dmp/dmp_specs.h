@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2020 - abcSup */
+// SPDX-FileCopyrightText: 2020 abcSup <zifan.tan@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef DMP_SPECS_H
 #define DMP_SPECS_H

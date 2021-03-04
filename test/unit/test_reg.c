@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 Khairulmizam Samsudin <xource@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_reg.h>
 #include "minunit.h"
 

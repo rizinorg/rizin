@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // This file is based on the Z80 analyser and modified for

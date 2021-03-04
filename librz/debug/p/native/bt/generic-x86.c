@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* definition */
 
 //static RzList *backtrace_frames_x86_32(RzDebug *dbg, ut64 at);

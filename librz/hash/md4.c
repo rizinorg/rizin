@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 1997-1998 Andrew Tridgell
+// SPDX-FileCopyrightText: 2002-2003 Steve French <sfrench@us.ibm.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /*
    Unix SMB/Netbios implementation.
    Version 1.9.

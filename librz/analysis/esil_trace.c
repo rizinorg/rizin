@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2015-2020 rkx1209 <rkx1209dev@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>

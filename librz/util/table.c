@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2019-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_table.h>

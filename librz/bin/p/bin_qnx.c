@@ -1,4 +1,5 @@
-/* rizin - LGPL3 - 2015-2019 - deepakchethan */
+// SPDX-FileCopyrightText: 2015-2019 deepakchethan <deepakchethan@outlook.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "qnx/qnx.h"
 #include "../i/private.h"

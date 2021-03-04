@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2007-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2007-2018 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #define LOG_CONFIGSTR_SIZE 512

@@ -1,6 +1,7 @@
-/* Apache 2.0 - Copyright 2007-2018 - pancake and dso
-   class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
- */
+// SPDX-FileCopyrightText: 2007-2018 pancake
+// SPDX-FileCopyrightText: 2007-2018 dso
+// SPDX-License-Identifier: Apache-2.0
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

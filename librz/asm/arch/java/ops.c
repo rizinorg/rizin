@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2018 pancake
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "avr_disasm.h"
 #include "format.h"
 #include <string.h>

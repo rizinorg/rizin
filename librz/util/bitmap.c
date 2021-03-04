@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2017-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017-2020 crowell <crowell@bu.edu>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>

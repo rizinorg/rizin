@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2018 defragger <rlaemmert@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>

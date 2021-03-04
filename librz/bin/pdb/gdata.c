@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "types.h"
 #include "gdata.h"
 #include "stream_file.h"
