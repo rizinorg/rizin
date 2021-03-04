@@ -30,7 +30,6 @@ rz_io_sources = [
   'p/io_rzpipe.c',
   'p/io_rzweb.c',
   'p/io_rap.c',
-  'p/io_rbuf.c',
   'p/io_self.c',
   'p/io_shm.c',
   'p/io_sparse.c',
