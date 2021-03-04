@@ -4,7 +4,7 @@ project('rizin', 'c',
   meson_version: '>=0.55.0',
   default_options: [
     'buildtype=debugoptimized',
-    'b_vscrt=from_buildtype'
+    'b_vscrt=from_buildtype',
   ]
 )
 
