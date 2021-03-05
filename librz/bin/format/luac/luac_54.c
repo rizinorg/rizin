@@ -6,16 +6,21 @@
 
 RzBinInfo *info_54(RzBinFile *bf, int major, int minor) {
 	ut8 work_buffer[INNER_BUFFER_SIZE];
-
 	RzBinInfo *ret = NULL;
-	luacHdr54 hdr;
-	memset(&hdr, 0, LUAC_HDR_SIZE_54);
 
-	int reat = rz_buf_read_at(bf->buf, 0, (ut8 *)&hdr, LUAC_HDR_SIZE_54);
-	if (reat != LUAC_HDR_SIZE_54) {
+	st64 reat = rz_buf_read_at(bf->buf, 0, work_buffer, LUAC_54_HDRSIZE);
+	if (reat != LUAC_54_HDRSIZE) {
 		eprintf("Truncated Header\n");
 		return NULL;
 	}
+
+	/* read header members from work buffer */
+	ut8 luac_format = work_buffer[LUAC_54_FORMAT_OFFSET];
+	ut8 instruction_size = work_buffer[LUAC_54_INSTRUCTION_SIZE_OFFSET];
+	ut8 integer_size = work_buffer[LUAC_54_INTEGER_SIZE_OFFSET];
+	ut8 number_size = work_buffer[LUAC_54_NUMBER_SIZE_OFFSET];
+	LUA_INTEGER int_valid = luaLoadInteger(work_buffer + LUAC_54_INTEGER_VALID_OFFSET);
+	LUA_NUMBER number_valid = luaLoadNumber(work_buffer + LUAC_54_NUMBER_VALID_OFFSET);
 
 	/* Common Ret */
 	if (!(ret = RZ_NEW0(RzBinInfo))) {
@@ -31,37 +36,39 @@ RzBinInfo *info_54(RzBinFile *bf, int major, int minor) {
 	ret->bits = 8;
 
 	/* official format ? */
-	if (hdr.format != 0x00) {
+	if (luac_format != LUAC_54_FORMAT) {
 		ret->compiler = strdup("Unofficial Lua Compiler");
 		return ret;
 	}
 	ret->compiler = strdup("Official Lua Compiler");
 
 	/* if LUAC_DATA checksum corrupted */
-	if (memcmp(hdr.luac_data, LUAC_DATA, sizeof(hdr.luac_data)) != 0) {
+	if (memcmp(work_buffer + LUAC_54_LUAC_DATA_OFFSET,
+		    LUAC_54_DATA,
+		    LUAC_54_LUAC_DATA_SIZE) != 0) {
 		eprintf("Corrupted Luac\n");
 		return ret;
 	}
 
 	/* Check Size */
-	if ((hdr.instruction_size != sizeof(LUA_INSTRUCTION)) ||
-		(hdr.integer_size != sizeof(LUA_INTEGER)) ||
-		(hdr.number_size != sizeof(LUA_NUMBER))) {
+	if ((instruction_size != sizeof(LUA_INSTRUCTION)) ||
+		(integer_size != sizeof(LUA_INTEGER)) ||
+		(number_size != sizeof(LUA_NUMBER))) {
 		eprintf("Size Definition not matched\n");
 		return ret;
 	}
 
 	/* Check Loader -- endian */
-	if (luaLoadInteger(hdr.integer_valid_data) != LUAC_INT_VALIDATION) {
+	if (int_valid != LUAC_54_INT_VALIDATION) {
 		eprintf("Integer Format Not Matched\n");
 		return ret;
 	}
-	if (luaLoadNumber(hdr.number_valid_data) != LUAC_NUMBER_VALIDATION) {
+	if (number_valid != LUAC_54_NUMBER_VALIDATION) {
 		eprintf("Number Format Not Matched\n");
 		return ret;
 	}
 
-	rz_buf_read_at(bf->buf, LUAC_HDR_SIZE_54, work_buffer, INNER_BUFFER_SIZE);
+	rz_buf_read_at(bf->buf, LUAC_FILENAME_OFFSET, work_buffer, INNER_BUFFER_SIZE);
 	char *src_file = luaLoadString(work_buffer);
 
 	/* put source file info into GUID */

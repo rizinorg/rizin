@@ -10,15 +10,15 @@ static ut8 MAJOR_MINOR_VERSION;
 
 static bool check_buffer(RzBuffer *buff) {
 	if (rz_buf_size(buff) > 4) {
-		ut8 buf[4];
-		rz_buf_read_at(buff, 0, buf, sizeof(buf));
-		return (!memcmp(buf, LUAC_MAGIC, sizeof(buf)));
+		ut8 buf[LUAC_MAGIC_SIZE];
+		rz_buf_read_at(buff, LUAC_MAGIC_OFFSET, buf, LUAC_MAGIC_SIZE);
+		return (!memcmp(buf, LUAC_MAGIC, LUAC_MAGIC_SIZE));
 	}
 	return false;
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_buf_read_at(buf, 4, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
+	rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
 	MAJOR_VERSION = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
 	MINOR_VERSION = MAJOR_MINOR_VERSION & 0x0F;
 	return check_buffer(buf);

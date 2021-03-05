@@ -20,21 +20,22 @@ typedef uint64_t LUA_INTEGER;
 #define luac_cast_int(i)  luac_cast(int, (i))
 
 /* Macros About Luac Format */
-#define LUAC_MAGIC             "\x1b\x4c\x75\x61"
-#define LUAC_FORMAT            0 /* this is the official format */
-#define LUAC_DATA              "\x19\x93\r\n\x1a\n"
-#define LUAC_INT_VALIDATION    0x5678
-#define LUAC_NUMBER_VALIDATION luac_cast_num(370.5)
+#define LUAC_MAGIC_OFFSET   0x00
+#define LUAC_MAGIC_SIZE     4
+#define LUAC_VERSION_OFFSET 0x04
+#define LUAC_VERSION_SIZE   1
+
+#define LUAC_MAGIC "\x1b\x4c\x75\x61"
 
 /* Lua Functions */
 void luaLoadBlock(void *src, void *dest, size_t size);
 #define luaLoadVector(src, buf, n) luaLoadBlock(src, buf, (n) * sizeof((buf)[0]))
 #define luaLoadVar(raw_data, var)  luaLoadVector(raw_data, &(var), 1)
 
-LUA_INTEGER luaLoadInteger(void *src);
-LUA_NUMBER luaLoadNumber(void *src);
-size_t luaLoadUnsigned(void *src, size_t limit);
-size_t luaLoadSize(void *src);
-char *luaLoadString(void *src);
+LUA_INTEGER luaLoadInteger(ut8 *src);
+LUA_NUMBER luaLoadNumber(ut8 *src);
+size_t luaLoadUnsigned(ut8 *src, size_t limit);
+size_t luaLoadSize(ut8 *src);
+char *luaLoadString(ut8 *src);
 
 #endif //BUILD_LUAC_SPECS_H
