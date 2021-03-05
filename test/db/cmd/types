@@ -551,22 +551,6 @@ tk a=b
 EOF
 RUN
 
-NAME=tp
-FILE=-
-CMDS=<<EOF
-td "struct person { int age; char name[10]; }"
-s 4
-w Carlos
-s 0
-wx 13
-tp person @ 0x0
-EOF
-EXPECT=<<EOF
-  age : 0x00000000 = 19
- name : 0x00000004 = "Carlos"
-EOF
-RUN
-
 NAME=unions
 FILE=-
 CMDS=<<EOF
@@ -689,6 +673,142 @@ teb Foo COW
 EOF
 EXPECT=<<EOF
 0x1
+EOF
+RUN
+
+NAME=tp
+FILE=-
+CMDS=<<EOF
+td "struct person { int age; char name[10]; }"
+s 14
+w Carlos
+s 10
+wx 13
+tp person @ 10
+tp person 10
+EOF
+EXPECT=<<EOF
+  age : 0x0000000a = 19
+ name : 0x0000000e = "Carlos"
+  age : 0x0000000a = 19
+ name : 0x0000000e = "Carlos"
+EOF
+RUN
+
+NAME=tpv
+FILE=-
+CMDS=<<EOF
+td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
+td "struct s16iu { int16_t a_i; uint16_t b_u; int16_t c_i; uint16_t d_u;}"
+td "struct s32ui { uint32_t e_u; int16_t f_i;}"
+td "struct s32iu { int32_t e_i; uint16_t f_u;}"
+e asm.bits=16
+e cfg.bigendian=true
+tpv s16ui 0xcafebabecafebabe
+tpv s16iu 0xcafebabecafebabe
+tpv s32ui 0xcafebabecafebabe
+tpv s32iu 0xcafebabecafebabe
+e cfg.bigendian=false
+tpv s16ui 0xcafebabecafebabe
+tpv s16iu 0xcafebabecafebabe
+tpv s32ui 0xcafebabecafebabe
+tpv s32iu 0xcafebabecafebabe
+e asm.bits=32
+e cfg.bigendian=true
+tpv s16ui 0xcafebabecafebabe
+tpv s16iu 0xcafebabecafebabe
+tpv s32ui 0xcafebabecafebabe
+tpv s32iu 0xcafebabecafebabe
+e cfg.bigendian=false
+tpv s16ui 0xcafebabecafebabe
+tpv s16iu 0xcafebabecafebabe
+tpv s32ui 0xcafebabecafebabe
+tpv s32iu 0xcafebabecafebabe
+e asm.bits=64
+e cfg.bigendian=true
+tpv s16ui 0xcafebabecafebabe
+tpv s16iu 0xcafebabecafebabe
+tpv s32ui 0xcafebabecafebabe
+tpv s32iu 0xcafebabecafebabe
+e cfg.bigendian=false
+tpv s16ui 0xcafebabecafebabe
+tpv s16iu 0xcafebabecafebabe
+tpv s32ui 0xcafebabecafebabe
+tpv s32iu 0xcafebabecafebabe
+EOF
+EXPECT=<<EOF
+ a_u : 0x00000000 = 0xbabe
+ b_i : 0x00000002 = 0x0000
+ c_u : 0x00000004 = 0x0000
+ d_i : 0x00000006 = 0x0000
+ a_i : 0x00000000 = 0xbabe
+ b_u : 0x00000002 = 0x0000
+ c_i : 0x00000004 = 0x0000
+ d_u : 0x00000006 = 0x0000
+ e_u : 0x00000000 = 3133014016
+ f_i : 0x00000004 = 0x0000
+ e_i : 0x00000000 = 3133014016
+ f_u : 0x00000004 = 0x0000
+ a_u : 0x00000000 = 0xbabe
+ b_i : 0x00000002 = 0x0000
+ c_u : 0x00000004 = 0x0000
+ d_i : 0x00000006 = 0x0000
+ a_i : 0x00000000 = 0xbabe
+ b_u : 0x00000002 = 0x0000
+ c_i : 0x00000004 = 0x0000
+ d_u : 0x00000006 = 0x0000
+ e_u : 0x00000000 = 47806
+ f_i : 0x00000004 = 0x0000
+ e_i : 0x00000000 = 47806
+ f_u : 0x00000004 = 0x0000
+ a_u : 0x00000000 = 0xcafe
+ b_i : 0x00000002 = 0xbabe
+ c_u : 0x00000004 = 0x0000
+ d_i : 0x00000006 = 0x0000
+ a_i : 0x00000000 = 0xcafe
+ b_u : 0x00000002 = 0xbabe
+ c_i : 0x00000004 = 0x0000
+ d_u : 0x00000006 = 0x0000
+ e_u : 0x00000000 = 3405691582
+ f_i : 0x00000004 = 0x0000
+ e_i : 0x00000000 = 3405691582
+ f_u : 0x00000004 = 0x0000
+ a_u : 0x00000000 = 0xbabe
+ b_i : 0x00000002 = 0xcafe
+ c_u : 0x00000004 = 0x0000
+ d_i : 0x00000006 = 0x0000
+ a_i : 0x00000000 = 0xbabe
+ b_u : 0x00000002 = 0xcafe
+ c_i : 0x00000004 = 0x0000
+ d_u : 0x00000006 = 0x0000
+ e_u : 0x00000000 = 3405691582
+ f_i : 0x00000004 = 0x0000
+ e_i : 0x00000000 = 3405691582
+ f_u : 0x00000004 = 0x0000
+ a_u : 0x00000000 = 0xcafe
+ b_i : 0x00000002 = 0xbabe
+ c_u : 0x00000004 = 0xcafe
+ d_i : 0x00000006 = 0xbabe
+ a_i : 0x00000000 = 0xcafe
+ b_u : 0x00000002 = 0xbabe
+ c_i : 0x00000004 = 0xcafe
+ d_u : 0x00000006 = 0xbabe
+ e_u : 0x00000000 = 3405691582
+ f_i : 0x00000004 = 0xcafe
+ e_i : 0x00000000 = 3405691582
+ f_u : 0x00000004 = 0xcafe
+ a_u : 0x00000000 = 0xbabe
+ b_i : 0x00000002 = 0xcafe
+ c_u : 0x00000004 = 0xbabe
+ d_i : 0x00000006 = 0xcafe
+ a_i : 0x00000000 = 0xbabe
+ b_u : 0x00000002 = 0xcafe
+ c_i : 0x00000004 = 0xbabe
+ d_u : 0x00000006 = 0xcafe
+ e_u : 0x00000000 = 3405691582
+ f_i : 0x00000004 = 0xbabe
+ e_i : 0x00000000 = 3405691582
+ f_u : 0x00000004 = 0xbabe
 EOF
 RUN
 
