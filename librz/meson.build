@@ -261,7 +261,6 @@ io_plugins = [
   'rzpipe',
   'rzweb',
   'rap',
-  'rbuf',
   'self',
   'shm',
   'sparse',

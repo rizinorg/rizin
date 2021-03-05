@@ -183,6 +183,18 @@ static void autocmplt_cmd_arg_macro(RzCore *core, RzLineNSCompletionResult *res,
 	}
 }
 
+static void autocmplt_cmd_arg_flag(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzFlagItem *item;
+	RzListIter *iter;
+	RzList *list = rz_flag_all_list(core->flags, false);
+	rz_list_foreach (list, iter, item) {
+		char *flag = item->name;
+		if (!strncmp(flag, s, len)) {
+			rz_line_ns_completion_result_add(res, flag);
+		}
+	}
+}
+
 static bool offset_prompt_add_flag(RzFlagItem *fi, void *user) {
 	RzLineNSCompletionResult *res = (RzLineNSCompletionResult *)user;
 	rz_line_ns_completion_result_add(res, fi->name);
@@ -427,6 +439,9 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_FCN_VAR:
 		autocmplt_cmd_arg_fcn_var(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_FLAG:
+		autocmplt_cmd_arg_flag(core, res, s, len);
 		break;
 	default:
 		break;
