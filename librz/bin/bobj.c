@@ -519,3 +519,7 @@ RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo) {
 		}
 	}
 }
+
+RZ_API ut64 rz_bin_object_a2b(RzBinObject *o, ut64 addr) {
+	return o ? addr + o->baddr_shift : addr;
+}

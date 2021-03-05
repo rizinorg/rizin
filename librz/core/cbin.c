@@ -34,7 +34,6 @@
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
 static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
 static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
-static int bin_main(RzCore *r, PJ *pj, int mode, int va);
 static int bin_dwarf(RzCore *core, PJ *pj, int mode);
 static int bin_source(RzCore *r, PJ *pj, int mode);
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
@@ -379,7 +378,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 
 	rz_core_bin_apply_strings(r, binfile);
 	rz_core_bin_apply_config(r, binfile);
-	bin_main(r, NULL, RZ_MODE_SET, va);
+	rz_core_bin_apply_main(r, binfile, va);
 	bin_dwarf(r, NULL, RZ_MODE_SET);
 	bin_entry(r, NULL, RZ_MODE_SET, loadaddr, va, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
@@ -495,6 +494,22 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 		sdb_concat_by_path(r->analysis->sdb_fmts, spath);
 	}
 	free(spath);
+	return true;
+}
+
+RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va) {
+	rz_return_val_if_fail(r && binfile, false);
+	RzBinObject *o = binfile->o;
+	if (!o) {
+		return false;
+	}
+	RzBinAddr *binmain = o->binsym[RZ_BIN_SYM_MAIN];
+	if (!binmain) {
+		return false;
+	}
+	ut64 addr = va ? rz_bin_object_a2b(o, binmain->vaddr) : binmain->paddr;
+	rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
+	rz_flag_set(r->flags, "main", addr, r->blocksize);
 	return true;
 }
 
@@ -1376,10 +1391,7 @@ static int bin_main(RzCore *r, PJ *pj, int mode, int va) {
 	}
 	addr = va ? rz_bin_a2b(r->bin, binmain->vaddr) : binmain->paddr;
 
-	if (IS_MODE_SET(mode)) {
-		rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
-		rz_flag_set(r->flags, "main", addr, r->blocksize);
-	} else if (IS_MODE_SIMPLE(mode)) {
+	if (IS_MODE_SIMPLE(mode)) {
 		rz_cons_printf("%" PFMT64d, addr);
 	} else if (IS_MODE_RZCMD(mode)) {
 		rz_cons_printf("fs symbols\n");
