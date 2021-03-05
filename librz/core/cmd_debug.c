@@ -904,7 +904,6 @@ static int step_until_optype(RzCore *core, RzList *optypes_list) {
 cleanup_after_push:
 	rz_cons_break_pop();
 end:
-	rz_list_free(optypes_list);
 	return res;
 }
 
