@@ -306,6 +306,7 @@ RzBinPlugin rz_bin_plugin_mach064 = {
 	.create = &create,
 	.classes = &MACH0_(parse_classes),
 	.write = &rz_bin_write_mach0,
+	.section_type_to_string = &MACH0_(section_type_to_string),
 };
 
 #ifndef RZ_PLUGIN_INCORE

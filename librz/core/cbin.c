@@ -2713,6 +2713,15 @@ static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode) {
 	return true;
 }
 
+static char* __section_type_to_string(RzBin *bin, int type) {
+	RzBinFile *a = rz_bin_cur(bin);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
+	if (plugin && plugin->section_type_to_string) {
+		return plugin->section_type_to_string(type);
+	}
+	return NULL;
+}
+
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RzBinSection *section;
@@ -3006,9 +3015,11 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				build_hash_string(pj, mode, hashtypes, data, datalen);
 				free(data);
 			}
-			if(section->type) {
-				pj_ks(pj, "type", section->type);
+			char* type = __section_type_to_string(r->bin, section->type);
+			if(type) {
+				pj_ks(pj, "type", type);
 			}
+			free(type);
 			if(section->flag){
 				pj_ks(pj, "Flags", section->flag);
 			}
@@ -3041,18 +3052,20 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
+			char* type = __section_type_to_string(r->bin, section->type);
 			if (hashtypes) {
 				
 				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, hashstr, section_name,section->flag, section->type);
+					perms, hashstr, section_name, type, section->flag);
 			} else {
 				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, section_name, section->flag, section->type);
+					perms, section_name, type, section->flag);
 			}
+			free(type);
 			free(hashstr);
 		}
 		i++;

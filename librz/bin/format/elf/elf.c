@@ -1480,8 +1480,9 @@ char* Elf_(rz_bin_elf_get_section_flag)(struct rz_bin_elf_section_t * section) {
 		}
 	return buff;	
 }
-char *Elf_(rz_bin_elf_get_section_type)(struct rz_bin_elf_section_t * section) {
-	switch (section->type) {
+
+char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type) {
+	switch (type) {
 		case SHT_NULL:
 			return rz_str_new("NULL");
 		case SHT_PROGBITS:
@@ -1541,13 +1542,13 @@ char *Elf_(rz_bin_elf_get_section_type)(struct rz_bin_elf_section_t * section) {
 		case SHT_GNU_versym:
 			return rz_str_new("VERSYM");
 		default:
-			if(section->type >= SHT_LOPROC && section->type <= SHT_HIPROC) {
-				return rz_str_newf("LOPROC+0x%x", section->type-SHT_LOPROC);
+			if(type >= SHT_LOPROC && type <= SHT_HIPROC) {
+				return rz_str_newf("LOPROC+0x%08"PFMT64x, type-SHT_LOPROC);
 			}
-			if(section->type >= SHT_LOUSER && section->type <= SHT_HIUSER) {
-				return rz_str_newf("LOUSER+0x%x", section->type-SHT_LOUSER);
+			if(type >= SHT_LOUSER && type <= SHT_HIUSER) {
+				return rz_str_newf("LOUSER+0x%08"PFMT64x, type-SHT_LOUSER);
 			}
-			return NULL;
+			return rz_str_newf("0x%"PFMT64x, type);
 	}
 }
 

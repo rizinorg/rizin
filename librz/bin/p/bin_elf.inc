@@ -171,6 +171,11 @@ static bool is_wordable_section(const char *name) {
 	return false;
 }
 
+
+static char* section_type_to_string(ut64 type) {
+	return Elf_(rz_bin_elf_section_type_to_string)(type);
+}
+
 static RzList *sections(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	struct rz_bin_elf_section_t *section = NULL;
@@ -204,7 +209,7 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vsize = section[i].size;
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;
-			ptr->type = Elf_(rz_bin_elf_get_section_type)(&section[i]);
+			ptr->type = section[i].type;
 			//ptr->flag = Elf_(rz_bin_elf_get_section_flag)(&section[i]);
 			ptr->flag = rz_str_new("");
 			if (section[i].flags & SHF_WRITE){
