@@ -442,6 +442,7 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_FLAG:
 		autocmplt_cmd_arg_flag(core, res, s, len);
+		break;
 	default:
 		break;
 	}
