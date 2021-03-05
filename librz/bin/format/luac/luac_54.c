@@ -2,9 +2,10 @@
 
 #include "luac_54.h"
 
+#define INNER_BUFFER_SIZE 256
+
 RzBinInfo *info_54(RzBinFile *bf, int major, int minor) {
-	int INNER_BUFFER_SIZE = 256;
-	unsigned char work_buffer[INNER_BUFFER_SIZE];
+	ut8 work_buffer[INNER_BUFFER_SIZE];
 
 	RzBinInfo *ret = NULL;
 	luacHdr54 hdr;
