@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-//
-// Created by heersin on 3/1/21.
-//
-
 #include "luac_54.h"
 
 RzBinInfo *info_54(RzBinFile *bf, int major, int minor) {

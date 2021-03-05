@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-.
+
 // put common definition of luac
 
 #ifndef BUILD_LUAC_SPECS_H
@@ -8,8 +8,8 @@
 #include <rz_bin.h>
 #include <rz_lib.h>
 
-	/* Macros/Typedefs used in luac */
-	typedef double LUA_NUMBER;
+/* Macros/Typedefs used in luac */
+typedef double LUA_NUMBER;
 typedef uint32_t LUA_INSTRUCTION;
 typedef uint64_t LUA_INTEGER;
 

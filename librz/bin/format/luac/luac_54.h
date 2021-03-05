@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-//
-// Created by heersin on 3/1/21.
-//
-
 #ifndef BUILD_LUAC_54_H
 #define BUILD_LUAC_54_H
 
