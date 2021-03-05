@@ -2790,15 +2790,45 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		fd = rz_core_file_cur_fd(r);
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
-	if (IS_MODE_NORMAL(mode)) {
-		rz_cons_printf("Key to Flags:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
+	//char *ft = info->rclass;
+	//bool unknownType = info->rclass == NULL;
+	//bool isMacho = strstr(ft, "mach"); 	// can be used to add support for macho binary section flags
+	//bool isElf = strstr(ft, "elf");
+	//rz_cons_printf("%d",isElf); 
+	//bool isPe = strstr(ft, "pe"); 		//section flags for PE binaries WIP
+	if (IS_MODE_NORMAL(mode) & !print_segments ) { // && isElf
+		rz_cons_printf("Key to ELF Section Flags:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
   L (link order), O (extra OS processing required), G (group), T (TLS),\n  C (compressed), E (exclude)");
 		if (hashtypes) {
-						rz_table_set_columnsf(table, "dXxXxssss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "Flags", "type", hashtypes, "name");
+						rz_table_set_columnsf(table, "dXxXxsssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "Flags");
 		} else {
 			rz_table_set_columnsf(table, "dXxXxssss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "Flags", "type", "name");
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name", "type", "Flags");
+		}
+		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
+		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
+		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
+	}
+	//if (IS_MODE_NORMAL(mode) & !print_segments ) { 
+	//	if (hashtypes) {
+	//					rz_table_set_columnsf(table, "dXxXxsss",
+	//			"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
+	//	} else {
+	//		rz_table_set_columnsf(table, "dXxXxsss",
+	//			"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+	//	}
+	//	// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
+	//	rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
+	//	rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
+	//}
+	if (IS_MODE_NORMAL(mode) & print_segments ) { //& (section->is_segment != print_segments)
+		if (hashtypes) {
+						rz_table_set_columnsf(table, "dXxXxsss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
+		} else {
+			rz_table_set_columnsf(table, "dXxXxss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
 		}
 		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
@@ -3016,12 +3046,12 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms,section->flag, section->type, hashstr, section_name);
+					perms, hashstr, section_name,section->flag, section->type);
 			} else {
 				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, section->flag, section->type,section_name);
+					perms, section_name, section->flag, section->type);
 			}
 			free(hashstr);
 		}

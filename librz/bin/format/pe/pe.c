@@ -4068,6 +4068,72 @@ int PE_(rz_bin_pe_get_bits)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	return bits;
 }
 
+char* PE_(rz_bin_pe_get_section_flag)(struct rz_bin_pe_section_t * section) { //WIP
+	char *buff=NULL;
+	int8_t i=0;
+	buff = (char*)malloc(4*sizeof(char));
+	//struct rz_pe_section_flags * //flg;
+	struct rz_bin_pe_section_t *sections = &section;
+	for(i = 0 ; i < 4 ; i++){
+		if(sections[i].flags & PE_IMAGE_SCN_MEM_SHARED) {
+			buff[i++] = 'S';
+			//flg->scn_mem_shared = true;
+		}
+		if(section[i].flags & PE_IMAGE_SCN_MEM_EXECUTE) {
+			buff[i++] = 'X';
+			//flg->scn_mem_executed = true; 
+		}
+		if(section[i].flags & PE_IMAGE_SCN_MEM_READ) {
+			buff[i++] = 'R'; 
+			//flg->scn_mem_read = true;			
+		}
+		if(section[i].flags & PE_IMAGE_SCN_MEM_WRITE) {
+			buff[i++] = 'W'; 
+			//flg->scn_mem_write = true;
+		}
+		if(section[i].flags & IMAGE_SCN_TYPE_NO_PAD) {
+			buff[i++] = 'N'; 
+			//flg->scn_type_no_pad = true;
+		}
+		if(section[i].flags & IMAGE_SCN_CNT_CODE) {
+			buff[i++] = 'C'; 
+			//flg->scn_cnt_code = true;
+		}
+		if(section[i].flags & IMAGE_SCN_CNT_INITIALIZED_DATA) {
+			buff[i++] = 'I'; 
+			//flg->scn_cnt_init_data = true;
+		}
+		if(section[i].flags & IMAGE_SCN_CNT_UNINITIALIZED_DATA) {
+			buff[i++] = 'U'; 
+			//flg->scn_cnt_uninit_data = true;
+		}
+		if(section[i].flags & IMAGE_SCN_LNK_OTHER) {
+			buff[i++] = 'O'; 
+			//flg->scn_lnk_other = true;
+		}
+		if(section[i].flags & IMAGE_SCN_LNK_INFO) {
+			buff[i++] = 'L'; 
+			//flg->scn_lnk_info = true;
+		}
+		if(section[i].flags & IMAGE_SCN_LNK_REMOVE) {
+			buff[i++] = 'D'; 
+			//flg->scn_lnk_remove = true;
+		}
+		if(section[i].flags & IMAGE_SCN_LNK_COMDAT) {
+			buff[i++] = 'M'; 
+			//flg->scn_lnk_comdat = true;
+		}
+		if(section[i].flags & IMAGE_SCN_GPREL) {
+			buff[i++] = 'G'; 
+			//flg->scn_gprel = true;
+		}
+		if(buff == NULL){
+			buff[i++] = '-';
+		}
+	}
+	return buff;	
+}
+
 char *PE_(rz_bin_pe_get_cc)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	if (bin && bin->nt_headers) {
 		if (is_arm(bin)) {

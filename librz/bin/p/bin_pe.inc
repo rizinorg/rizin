@@ -154,6 +154,47 @@ static RzList *sections(RzBinFile *bf) {
 		if (!ptr->vsize && ptr->size) {
 			ptr->vsize = ptr->size;
 		}
+		//ptr->flag = PE_(rz_bin_pe_get_section_flag)(&sections[i]); 
+		//ptr->flag = rz_str_new("k");
+		//if (sections[i].flags & PE_IMAGE_SCN_MEM_SHARED){ 		// WIP 
+		//	ptr->flag = rz_str_append(ptr->flag, "S");
+		//} 
+		//if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE){
+		//	ptr->flag = rz_str_append(ptr->flag, "X");
+		//}
+		//if (sections[i].flags & PE_IMAGE_SCN_MEM_READ){
+		//	ptr->flag = rz_str_append(ptr->flag, "R");
+		//} 
+		//if (sections[i].flags & PE_IMAGE_SCN_MEM_WRITE){
+		//	ptr->flag = rz_str_append(ptr->flag, "W");
+		//}
+		//if (sections[i].flags & IMAGE_SCN_TYPE_NO_PAD){
+		//	ptr->flag = rz_str_append(ptr->flag, "N");
+		//} 
+		//if (sections[i].flags & IMAGE_SCN_CNT_CODE){
+		//	ptr->flag = rz_str_append(ptr->flag, "C");
+		//}
+		//if (sections[i].flags & IMAGE_SCN_CNT_INITIALIZED_DATA){
+		//	ptr->flag = rz_str_append(ptr->flag, "I");
+		//} 
+		//if (sections[i].flags & IMAGE_SCN_CNT_UNINITIALIZED_DATA){
+		//	ptr->flag = rz_str_append(ptr->flag, "U");
+		//}
+		//if (sections[i].flags & IMAGE_SCN_LNK_OTHER){
+		//	ptr->flag = rz_str_append(ptr->flag, "O");
+		//} 
+		//if (sections[i].flags & IMAGE_SCN_LNK_INFO){
+		//	ptr->flag = rz_str_append(ptr->flag, "L");
+		//}
+		//if (sections[i].flags & IMAGE_SCN_LNK_REMOVE){
+		//	ptr->flag = rz_str_append(ptr->flag, "D");
+		//}
+		//if (sections[i].flags & IMAGE_SCN_LNK_COMDAT){
+		//	ptr->flag = rz_str_append(ptr->flag, "M");
+		//} 
+		//if (sections[i].flags & IMAGE_SCN_GPREL){
+		//	ptr->flag = rz_str_append(ptr->flag, "G");
+		//}
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = true;
