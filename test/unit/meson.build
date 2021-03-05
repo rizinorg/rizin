@@ -1,7 +1,8 @@
+if get_option('enable_tests') or get_option('enable_debug_tests')
+  subdir('auxiliary')
+endif
 
 if get_option('enable_tests')
-  subdir('auxiliary')
-
   tests = [
     'addr_interval',
     'agraph',
@@ -119,4 +120,59 @@ if get_option('enable_tests')
     )
     test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env)
   endforeach
+endif
+
+if get_option('enable_debug_tests')
+  debug_test_exe = executable('test_core_debug'.format(test), 'test_core_debug.c'.format(test),
+    include_directories: [platform_inc],
+    dependencies: [
+      rz_util_dep,
+      rz_main_dep,
+      rz_socket_dep,
+      rz_core_dep,
+      rz_io_dep,
+      rz_bin_dep,
+      rz_flag_dep,
+      rz_cons_dep,
+      rz_asm_dep,
+      rz_debug_dep,
+      rz_config_dep,
+      rz_bp_dep,
+      rz_reg_dep,
+      rz_syscall_dep,
+      rz_analysis_dep,
+      rz_parse_dep,
+      rz_egg_dep,
+      rz_search_dep,
+      rz_hash_dep,
+      rz_crypto_dep,
+      rz_magic_dep,
+      lrt,
+    ],
+    install: false,
+    install_rpath: rpath_exe,
+    implicit_include_directories: false
+  )
+  test('core_debug', debug_test_exe,
+    args: [join_paths(meson.current_build_dir(), 'auxiliary')],
+    workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env)
+
+  if host_machine.system() == 'darwin'
+    # CodeSign the test binary just like main rizin
+    entitlements = files('../../binrz/rizin/rizin_macos.xml')
+    macos_sign_sh = meson.current_source_dir() / '../../binrz/rizin/macos_sign.sh'
+    custom_target('debug-test-signing',
+      build_by_default: true,
+      build_always_stale: true,
+      command: [
+        macos_sign_sh,
+        'false',
+        entitlements,
+        debug_test_exe.full_path(),
+      ],
+      depends: debug_test_exe,
+      output: 'debug-test-signing',
+      install: false,
+    )
+  endif
 endif
