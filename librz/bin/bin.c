@@ -769,6 +769,8 @@ RZ_API RzList *rz_bin_reset_strings(RzBin *bin) {
 		rz_list_free(bf->o->strings);
 		bf->o->strings = NULL;
 	}
+	ht_up_free(bf->o->strings_db);
+	bf->o->strings_db = ht_up_new0();
 
 	bf->rawstr = bin->rawstr;
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
