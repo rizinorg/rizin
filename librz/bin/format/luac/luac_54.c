@@ -35,7 +35,6 @@ RzBinInfo *info_54(RzBinFile *bf, int major, int minor)
 
     /* official format ? */
     if (hdr.format != 0x00){
-        eprintf("Not Official luac format\n");
         ret->compiler = strdup("Unofficial Lua Compiler");
         return ret;
     }
