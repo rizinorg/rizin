@@ -965,7 +965,7 @@ void collect_list(char *input[]) {
 	temp[0] = 0;
 	int i;
 	int conc = 0;
-	int start, end = 0;
+	int start = 0, end = 0;
 	int arrsz;
 	for (arrsz = 1; input[arrsz] != NULL; arrsz++) {
 		;
