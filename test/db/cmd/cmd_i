@@ -3008,12 +3008,112 @@ RUN
 
 NAME=iz (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=iz
+CMDS=<<EOF
+?e -- default --
+iz
+?e -- geq 12 --
+e bin.minstr=12
+iz
+?e -- geq 13 --
+e bin.minstr=13
+iz
+?e -- geq 0 --
+e bin.minstr=0
+iz
+?e -- leq 12 --
+e bin.maxstr=12
+iz
+?e -- leq 11 --
+e bin.maxstr=11
+iz
+?e -- no limit --
+e bin.maxstr=0
+iz
+EOF
 EXPECT=<<EOF
+-- default --
 [Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- geq 12 --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- geq 13 --
+[Strings]
+nth paddr vaddr len size section type string
+--------------------------------------------
+-- geq 0 --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- leq 12 --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- leq 11 --
+[Strings]
+nth paddr vaddr len size section type string
+--------------------------------------------
+-- no limit --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+EOF
+RUN
+
+NAME=iz (__cfstring)
+FILE=bins/mach0/hello-objc-osx
+CMDS=<<EOF
+?e -- default --
+iz
+?e -- geq 12 --
+e bin.minstr=12
+iz
+?e -- leq 13 --
+e bin.maxstr=12
+iz
+EOF
+EXPECT=<<EOF
+-- default --
+[Strings]
+nth paddr       vaddr       len size section            type  string
+--------------------------------------------------------------------
+0   0x00000d58  0x100000d58 9   10   2.__TEXT.__cstring ascii sayHello:
+1   0x00000d62  0x100000d62 4   5    2.__TEXT.__cstring ascii init
+2   0x00000d67  0x100000d67 5   6    2.__TEXT.__cstring ascii alloc
+3   0x00000d6d  0x100000d6d 5   6    2.__TEXT.__cstring ascii Hahha
+4   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
+5   0x00000d86  0x100000d86 9   10   2.__TEXT.__cstring ascii callMeNot
+6   0x00000d90  0x100000d90 7   8    2.__TEXT.__cstring ascii v16@0:8
+7   0x00000d98  0x100000d98 9   10   2.__TEXT.__cstring ascii sayHello2
+8   0x00000da2  0x100000da2 10  11   2.__TEXT.__cstring ascii v20@0:8i16
+9   0x00000dad  0x100000dad 11  12   2.__TEXT.__cstring ascii sayHello3::
+10  0x00000db9  0x100000db9 13  14   2.__TEXT.__cstring ascii v24@0:8i16i20
+11  0x00000dc7  0x100000dc7 8   9    2.__TEXT.__cstring ascii sayLong:
+12  0x00000dd0  0x100000dd0 10  11   2.__TEXT.__cstring ascii v24@0:8Q16
+13  0x00000ddb  0x100000ddb 7   8    2.__TEXT.__cstring ascii @16@0:8
+14  0x00000de3  0x100000de3 4   5    2.__TEXT.__cstring ascii Test
+3   0x100001058 0x100001058 5   6                       ascii cstr.Hahha
+4   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+-- geq 12 --
+[Strings]
+nth paddr       vaddr       len size section            type  string
+--------------------------------------------------------------------
+0   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
+1   0x00000db9  0x100000db9 13  14   2.__TEXT.__cstring ascii v24@0:8i16i20
+0   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
+-- leq 13 --
+[Strings]
+nth paddr       vaddr       len size section            type  string
+--------------------------------------------------------------------
+0   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
+0   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
 EOF
 RUN
 
