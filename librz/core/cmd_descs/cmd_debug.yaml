@@ -7,6 +7,8 @@ commands:
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: ds
     summary: Debug step commands
+    cname: cmd_debug_step
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
     subcommands:
       - name: dsu
         summary: Debug step until commands

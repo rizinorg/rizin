@@ -1383,7 +1383,7 @@ static const RzCmdDescHelp debug_continue_oldhandler_help = {
 	.summary = "Continue execution",
 };
 
-static const RzCmdDescHelp ds_help = {
+static const RzCmdDescHelp cmd_debug_step_help = {
 	.summary = "Debug step commands",
 };
 static const RzCmdDescHelp dsu_help = {
@@ -3779,9 +3779,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *debug_continue_oldhandler_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_cd, "dc", rz_debug_continue_oldhandler, &debug_continue_oldhandler_help);
 	rz_warn_if_fail(debug_continue_oldhandler_cd);
 
-	RzCmdDesc *ds_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "ds", NULL, NULL, &ds_help);
-	rz_warn_if_fail(ds_cd);
-	RzCmdDesc *dsu_cd = rz_cmd_desc_group_new(core->rcmd, ds_cd, "dsu", rz_cmd_debug_step_until_handler, &cmd_debug_step_until_help, &dsu_help);
+	RzCmdDesc *cmd_debug_step_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_cd, "ds", rz_cmd_debug_step, &cmd_debug_step_help);
+	rz_warn_if_fail(cmd_debug_step_cd);
+	RzCmdDesc *dsu_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_step_cd, "dsu", rz_cmd_debug_step_until_handler, &cmd_debug_step_until_help, &dsu_help);
 	rz_warn_if_fail(dsu_cd);
 	RzCmdDesc *cmd_debug_step_until_instr_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsui", rz_cmd_debug_step_until_instr_handler, &cmd_debug_step_until_instr_help);
 	rz_warn_if_fail(cmd_debug_step_until_instr_cd);

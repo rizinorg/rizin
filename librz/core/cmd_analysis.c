@@ -5047,6 +5047,8 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 					char *optypes = strdup(rz_str_trim_head_ro((char *)input + 3));
 					RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
 					step_until_optype(core, optypes_list);
+					free(optypes);
+					rz_list_free(optypes_list);
 					break;
 				}
 				default:

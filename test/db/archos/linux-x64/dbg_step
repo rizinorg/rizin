@@ -189,6 +189,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+
+NAME=dbg.dsui
+FILE=bins/elf/analysis/calls_x64
+ARGS=-a x86 -d
+CMDS=<<EOF
+dcu 0x00400574
+dsi rax=2
+dr rax
+EOF
+EXPECT=<<EOF
+0x00000002
+EOF
+RUN
+
 NAME=dbg.dsei
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d

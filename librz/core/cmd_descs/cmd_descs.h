@@ -103,6 +103,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_esil_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI int rz_cmd_debug_step(void *data, const char *input);
 RZ_IPI int rz_cmd_debug(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
