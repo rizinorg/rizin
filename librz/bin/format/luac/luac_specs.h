@@ -1,7 +1,6 @@
-//
-// Created by heersin on 2/28/21.
+// SPDX-License-Identifier: LGPL-3.0-only
+.
 // put common definition of luac
-//
 
 #ifndef BUILD_LUAC_SPECS_H
 #define BUILD_LUAC_SPECS_H

@@ -1,7 +1,6 @@
-//
-// Created by heersin on 2/28/21.
+// SPDX-License-Identifier: LGPL-3.0-only
+
 // Implement Functions declared in luac_specs.h
-//
 
 #include "luac_specs.h"
 
