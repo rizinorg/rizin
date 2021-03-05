@@ -1,12 +1,3 @@
-NAME=LUAC: open
-FILE=bins/luac/none.luac
-ARGS=-A
-CMDS=q!
-EXPECT=<<EOF
-0   0x00000000 73   luac_8
-EOF
-RUN
-
 NAME=LUAC: info
 FILE=bins/luac/none.luac
 CMDS=i~guid,machine
