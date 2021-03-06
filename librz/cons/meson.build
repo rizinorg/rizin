@@ -42,3 +42,5 @@ pkgconfig_mod.generate(rz_cons,
   ],
   description: 'rizin foundation libraries'
 )
+
+subdir('d')

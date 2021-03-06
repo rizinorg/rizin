@@ -1,3 +1,9 @@
+egg_plugins = [
+  'exec',
+  #'shya',
+  'xor'
+]
+
 rz_egg_sources = [
   'egg.c',
   'egg_Cfile.c',

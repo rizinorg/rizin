@@ -1,3 +1,22 @@
+crypto_plugins = [
+  'aes',
+  'aes_cbc',
+  'base64',
+  'base91',
+  'blowfish',
+  'cps2',
+  'des',
+  'punycode',
+  'rc2',
+  'rc4',
+  'rc6',
+  'rol',
+  'ror',
+  'rot',
+  'serpent',
+  'xor',
+]
+
 rz_crypto_sources = [
   'des.c',
   'crypto.c',

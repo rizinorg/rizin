@@ -27,3 +27,5 @@ pkgconfig_mod.generate(rz_syscall,
   ],
   description: 'rizin foundation libraries'
 )
+
+subdir('d')

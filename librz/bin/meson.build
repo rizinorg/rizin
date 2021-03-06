@@ -1,3 +1,69 @@
+bin_plugins = [
+  'any',
+  'art',
+  'avr',
+  'bf',
+  'bflt',
+  'bios',
+  'bootimg',
+  'cgc',
+  'coff',
+  'dex',
+  'dmp64',
+  'dol',
+  'dyldcache',
+  'elf',
+  'elf64',
+  'java',
+  'le',
+  'luac',
+  'mach0',
+  'mach064',
+  'mbn',
+  'mdmp',
+  'menuet',
+  'mz',
+  'ne',
+  'nes',
+  'nin3ds',
+  'ninds',
+  'ningb',
+  'ningba',
+  'nro',
+  'nso',
+  'omf',
+  'qnx',
+  'p9',
+  'pe',
+  'pe64',
+  'pebble',
+  'prg',
+  'psxexe',
+  'pyc',
+  'sfc',
+  'smd',
+  'sms',
+  'spc700',
+  'symbols',
+  'te',
+  'vsf',
+  'wasm',
+  'xbe',
+  'xnu_kernelcache',
+  'z64',
+  'zimg',
+]
+
+bin_ldr_plugins = [
+  'ldr_linux',
+]
+
+bin_xtr_plugins = [
+  'xtr_dyldcache',
+  'xtr_fatmach0',
+  'xtr_sep64',
+]
+
 rz_bin_sources = [
   'bin.c',
   'bin_write.c',
@@ -181,3 +247,5 @@ pkgconfig_mod.generate(rz_bin,
   ],
   description: 'rizin foundation libraries'
 )
+
+subdir('d')

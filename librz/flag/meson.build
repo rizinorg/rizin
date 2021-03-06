@@ -31,3 +31,5 @@ pkgconfig_mod.generate(rz_flag,
   ],
   description: 'rizin foundation libraries'
 )
+
+subdir('d')
