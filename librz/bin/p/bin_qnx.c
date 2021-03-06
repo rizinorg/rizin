@@ -53,7 +53,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	}
 
 	RzList *sections = rz_list_newf((RzListFree)rz_bin_section_free);
-	RzList *fixups =  rz_list_newf(free);
+	RzList *fixups = rz_list_newf(free);
 	if (!sections || !fixups) {
 		goto beach;
 	}
