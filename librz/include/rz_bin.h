@@ -724,7 +724,6 @@ RZ_API RZ_DEPRECATE int rz_bin_is_big_endian(RzBin *bin);
 RZ_API RZ_DEPRECATE int rz_bin_is_static(RzBin *bin);
 RZ_API RZ_DEPRECATE ut64 rz_bin_get_vaddr(RzBin *bin, ut64 paddr, ut64 vaddr);
 RZ_API ut64 rz_bin_file_get_vaddr(RzBinFile *bf, ut64 paddr, ut64 vaddr);
-RZ_API RZ_DEPRECATE ut64 rz_bin_a2b(RzBin *bin, ut64 addr);
 
 RZ_API int rz_bin_load_languages(RzBinFile *binfile);
 RZ_API RzBinFile *rz_bin_cur(RzBin *bin);

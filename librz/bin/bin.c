@@ -1289,12 +1289,6 @@ RZ_API ut64 rz_bin_get_vaddr(RzBin *bin, ut64 paddr, ut64 vaddr) {
 	return rz_bin_file_get_vaddr(bin->cur, paddr, vaddr);
 }
 
-RZ_API ut64 rz_bin_a2b(RzBin *bin, ut64 addr) {
-	rz_return_val_if_fail(bin, UT64_MAX);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return rz_bin_object_a2b(o, addr);
-}
-
 RZ_API ut64 rz_bin_get_size(RzBin *bin) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 	RzBinObject *o = rz_bin_cur_object(bin);

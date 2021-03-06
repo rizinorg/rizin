@@ -1383,13 +1383,19 @@ static int bin_source(RzCore *r, PJ *pj, int mode) {
 	return true;
 }
 
-static int bin_main(RzCore *r, PJ *pj, int mode, int va) {
-	RzBinAddr *binmain = rz_bin_get_sym(r->bin, RZ_BIN_SYM_MAIN);
-	ut64 addr;
+static int bin_main(RzCore *r, RzBinFile *binfile, PJ *pj, int mode, int va) {
+	if (!binfile) {
+		return false;
+	}
+	RzBinObject *o = binfile->o;
+	if (!o) {
+		return false;
+	}
+	RzBinAddr *binmain = o->binsym[RZ_BIN_SYM_MAIN];
 	if (!binmain) {
 		return false;
 	}
-	addr = va ? rz_bin_a2b(r->bin, binmain->vaddr) : binmain->paddr;
+	ut64 addr = va ? rz_bin_object_a2b(o, binmain->vaddr) : binmain->paddr;
 
 	if (IS_MODE_SIMPLE(mode)) {
 		rz_cons_printf("%" PFMT64d, addr);
@@ -4221,7 +4227,7 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 		ret &= bin_info(core, pj, mode, loadaddr);
 	}
 	if ((action & RZ_CORE_BIN_ACC_MAIN)) {
-		ret &= bin_main(core, pj, mode, va);
+		ret &= bin_main(core, binfile, pj, mode, va);
 	}
 	if ((action & RZ_CORE_BIN_ACC_DWARF)) {
 		ret &= bin_dwarf(core, pj, mode);
