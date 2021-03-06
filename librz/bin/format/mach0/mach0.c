@@ -2433,6 +2433,7 @@ static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 		return true;
 	}
 	ht_pp_insert(hash, key, "1");
+	free(key);
 	return false;
 }
 
@@ -3152,6 +3153,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 
 		struct reloc_t *reloc = RZ_NEW0(struct reloc_t);
 		if (!reloc) {
+			free(info);
 			return;
 		}
 
@@ -3164,7 +3166,9 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		reloc->size = a_info.rz_length;
 		rz_str_ncpy(reloc->name, sym_name, sizeof(reloc->name) - 1);
 		rz_skiplist_insert(relocs, reloc);
+		free(sym_name);
 	}
+	free(info);
 }
 
 static bool is_valid_ordinal_table_size(ut64 size) {
