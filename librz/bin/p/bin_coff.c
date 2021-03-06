@@ -294,7 +294,7 @@ static RzList *_relocs_list(RzBin *rbin, struct rz_bin_coff_obj *bin, bool patch
 	RzBinReloc *reloc;
 	struct coff_reloc *rel;
 	int j, i = 0;
-	RzList *list_rel = rz_list_new();
+	RzList *list_rel = rz_list_newf(free);
 	if (!list_rel) {
 		return NULL;
 	}

@@ -380,9 +380,9 @@ static RzList *relocs(RzBinFile *bf) {
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzListIter *it;
-	RzList *ret;
 
-	if (!(ret = rz_list_new())) {
+	RzList *ret = rz_list_newf(free);
+	if (!ret) {
 		return NULL;
 	}
 
