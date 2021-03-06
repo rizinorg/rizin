@@ -23,11 +23,11 @@ LUA_NUMBER luaLoadNumber(ut8 *src) {
 /* Luac load method , defined in lua source code lundump.c */
 size_t luaLoadUnsigned(ut8 *src, size_t limit) {
 	size_t x = 0;
-	int b;
+	ut32 b;
 	int i = 0;
 	limit >>= 7;
 	do {
-		b = src[i];
+		b = src[i++];
 		if (x >= limit) {
 			eprintf("integer overflow\n");
 			return 0;
