@@ -507,7 +507,7 @@ RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va) {
 	if (!binmain) {
 		return false;
 	}
-	ut64 addr = va ? rz_bin_object_a2b(o, binmain->vaddr) : binmain->paddr;
+	ut64 addr = va ? rz_bin_object_addr_with_base(o, binmain->vaddr) : binmain->paddr;
 	rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
 	rz_flag_set(r->flags, "main", addr, r->blocksize);
 	return true;
@@ -1395,7 +1395,7 @@ static int bin_main(RzCore *r, RzBinFile *binfile, PJ *pj, int mode, int va) {
 	if (!binmain) {
 		return false;
 	}
-	ut64 addr = va ? rz_bin_object_a2b(o, binmain->vaddr) : binmain->paddr;
+	ut64 addr = va ? rz_bin_object_addr_with_base(o, binmain->vaddr) : binmain->paddr;
 
 	if (IS_MODE_SIMPLE(mode)) {
 		rz_cons_printf("%" PFMT64d, addr);

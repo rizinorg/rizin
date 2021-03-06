@@ -752,7 +752,7 @@ RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 		if (section->is_segment) {
 			continue;
 		}
-		from = va ? rz_bin_object_a2b(o, section->vaddr) : section->paddr;
+		from = va ? rz_bin_object_addr_with_base(o, section->vaddr) : section->paddr;
 		to = from + (va ? section->vsize : section->size);
 		if (off >= from && off < to) {
 			return section;
