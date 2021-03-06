@@ -34,8 +34,9 @@ void luaLoadBlock(void *src, void *dest, size_t size);
 
 LUA_INTEGER luaLoadInteger(ut8 *src);
 LUA_NUMBER luaLoadNumber(ut8 *src);
-size_t luaLoadUnsigned(ut8 *src, size_t limit);
-size_t luaLoadSize(ut8 *src);
-char *luaLoadString(ut8 *src);
+
+size_t luaLoadUnsigned(ut8 *src, size_t src_buf_limit, size_t type_limit);
+size_t luaLoadSize(ut8 *src, size_t src_buf_limit);
+char *luaLoadString(ut8 *src, size_t src_buf_limit);
 
 #endif //BUILD_LUAC_SPECS_H

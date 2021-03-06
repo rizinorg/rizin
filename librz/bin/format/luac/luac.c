@@ -21,7 +21,7 @@ LUA_NUMBER luaLoadNumber(ut8 *src) {
 }
 
 /* Luac load method , defined in lua source code lundump.c */
-size_t luaLoadUnsigned(ut8 *src, size_t limit) {
+size_t luaLoadUnsigned(ut8 *src, size_t src_buf_limit, size_t limit) {
 	size_t x = 0;
 	ut32 b;
 	int i = 0;
@@ -33,18 +33,18 @@ size_t luaLoadUnsigned(ut8 *src, size_t limit) {
 			return 0;
 		}
 		x = (x << 7) | (b & 0x7f);
-	} while ((b & 0x80) == 0);
+	} while (((b & 0x80) == 0) && (i < src_buf_limit));
 	return x;
 }
 
-size_t luaLoadSize(ut8 *src) {
-	return luaLoadUnsigned(src, ~(size_t)0);
+size_t luaLoadSize(ut8 *src, size_t src_buf_limit) {
+	return luaLoadUnsigned(src, src_buf_limit, ~(size_t)0);
 }
 
 /* load a null-terminated string, return a malloced string */
-char *luaLoadString(ut8 *src) {
+char *luaLoadString(ut8 *src, size_t src_buf_limit) {
 	/* size is the buffer's size */
-	size_t size = luaLoadSize(src);
+	size_t size = luaLoadSize(src, src_buf_limit);
 	char *ret;
 
 	/* no string */

@@ -69,7 +69,7 @@ RzBinInfo *info_54(RzBinFile *bf, int major, int minor) {
 	}
 
 	rz_buf_read_at(bf->buf, LUAC_FILENAME_OFFSET, work_buffer, INNER_BUFFER_SIZE);
-	char *src_file = luaLoadString(work_buffer);
+	char *src_file = luaLoadString(work_buffer, INNER_BUFFER_SIZE);
 
 	/* put source file info into GUID */
 	if (src_file == NULL) {
