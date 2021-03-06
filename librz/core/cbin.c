@@ -34,8 +34,6 @@
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
 static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
 static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
-static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr);
-static int bin_main(RzCore *r, PJ *pj, int mode, int va);
 static int bin_dwarf(RzCore *core, PJ *pj, int mode);
 static int bin_source(RzCore *r, PJ *pj, int mode);
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
@@ -379,8 +377,8 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	va = va ? VA_TRUE : VA_FALSE;
 
 	rz_core_bin_apply_strings(r, binfile);
-	bin_info(r, NULL, RZ_MODE_SET, loadaddr);
-	bin_main(r, NULL, RZ_MODE_SET, va);
+	rz_core_bin_apply_config(r, binfile);
+	rz_core_bin_apply_main(r, binfile, va);
 	bin_dwarf(r, NULL, RZ_MODE_SET);
 	bin_entry(r, NULL, RZ_MODE_SET, loadaddr, va, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
@@ -433,6 +431,85 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 		free(f_name);
 	}
 	rz_cons_break_pop();
+	return true;
+}
+
+static void sdb_concat_by_path(Sdb *s, const char *path) {
+	Sdb *db = sdb_new(0, path, 0);
+	sdb_merge(s, db);
+	sdb_close(db);
+	sdb_free(db);
+}
+
+RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
+	rz_return_val_if_fail(r && binfile, false);
+	int v;
+	char str[RZ_FLAG_NAME_SIZE];
+	RzBinObject *obj = binfile->o;
+	if (!obj) {
+		return false;
+	}
+	RzBinInfo *info = obj->info;
+	if (!info) {
+		return false;
+	}
+	rz_config_set(r->config, "file.type", info->rclass);
+	rz_config_set(r->config, "cfg.bigendian",
+		info->big_endian ? "true" : "false");
+	if (!info->rclass || strcmp(info->rclass, "fs")) {
+		if (info->lang) {
+			rz_config_set(r->config, "bin.lang", info->lang);
+		}
+		rz_config_set(r->config, "asm.os", info->os);
+		if (info->rclass && !strcmp(info->rclass, "pe")) {
+			rz_config_set(r->config, "analysis.cpp.abi", "msvc");
+		} else {
+			rz_config_set(r->config, "analysis.cpp.abi", "itanium");
+		}
+		rz_config_set(r->config, "asm.arch", info->arch);
+		if (info->cpu && *info->cpu) {
+			rz_config_set(r->config, "asm.cpu", info->cpu);
+		}
+		if (info->features && *info->features) {
+			rz_config_set(r->config, "asm.features", info->features);
+		}
+		rz_config_set(r->config, "analysis.arch", info->arch);
+		snprintf(str, RZ_FLAG_NAME_SIZE, "%i", info->bits);
+		rz_config_set(r->config, "asm.bits", str);
+		rz_config_set(r->config, "asm.dwarf",
+			(RZ_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
+		v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+		if (v != -1) {
+			rz_config_set_i(r->config, "asm.pcalign", v);
+		}
+	}
+	rz_core_analysis_type_init(r);
+	rz_core_analysis_cc_init(r);
+	if (info->default_cc && rz_analysis_cc_exist(r->analysis, info->default_cc)) {
+		rz_config_set(r->config, "analysis.cc", info->default_cc);
+	}
+	const char *dir_prefix = rz_config_get(r->config, "dir.prefix");
+	char *spath = rz_str_newf("%s/" RZ_SDB_FCNSIGN "/spec.sdb", dir_prefix);
+	if (spath && rz_file_exists(spath)) {
+		sdb_concat_by_path(r->analysis->sdb_fmts, spath);
+	}
+	free(spath);
+	return true;
+}
+
+RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va) {
+	rz_return_val_if_fail(r && binfile, false);
+	RzBinObject *o = binfile->o;
+	if (!o) {
+		return false;
+	}
+	RzBinAddr *binmain = o->binsym[RZ_BIN_SYM_MAIN];
+	if (!binmain) {
+		return false;
+	}
+	ut64 addr = va ? rz_bin_object_addr_with_base(o, binmain->vaddr) : binmain->paddr;
+	rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
+	rz_flag_set(r->flags, "main", addr, r->blocksize);
 	return true;
 }
 
@@ -717,13 +794,6 @@ static bool is_executable(RzBinObject *obj) {
 	return false;
 }
 
-static void sdb_concat_by_path(Sdb *s, const char *path) {
-	Sdb *db = sdb_new(0, path, 0);
-	sdb_merge(s, db);
-	sdb_close(db);
-	sdb_free(db);
-}
-
 RZ_API void rz_core_analysis_type_init(RzCore *core) {
 	rz_return_if_fail(core && core->analysis);
 	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
@@ -826,7 +896,6 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 
 static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	int i, j, v;
-	char str[RZ_FLAG_NAME_SIZE];
 	RzBinInfo *info = rz_bin_get_info(r->bin);
 	RzBinFile *bf = rz_bin_cur(r->bin);
 	if (!bf) {
@@ -851,43 +920,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	havecode = is_executable(obj) | (obj->entries != NULL);
 	compiled = get_compile_time(bf->sdb);
 
-	if (IS_MODE_SET(mode)) {
-		rz_config_set(r->config, "file.type", info->rclass);
-		rz_config_set(r->config, "cfg.bigendian",
-			info->big_endian ? "true" : "false");
-		if (!info->rclass || strcmp(info->rclass, "fs")) {
-			if (info->lang) {
-				rz_config_set(r->config, "bin.lang", info->lang);
-			}
-			rz_config_set(r->config, "asm.os", info->os);
-			if (info->rclass && !strcmp(info->rclass, "pe")) {
-				rz_config_set(r->config, "analysis.cpp.abi", "msvc");
-			} else {
-				rz_config_set(r->config, "analysis.cpp.abi", "itanium");
-			}
-			rz_config_set(r->config, "asm.arch", info->arch);
-			if (info->cpu && *info->cpu) {
-				rz_config_set(r->config, "asm.cpu", info->cpu);
-			}
-			if (info->features && *info->features) {
-				rz_config_set(r->config, "asm.features", info->features);
-			}
-			rz_config_set(r->config, "analysis.arch", info->arch);
-			snprintf(str, RZ_FLAG_NAME_SIZE, "%i", info->bits);
-			rz_config_set(r->config, "asm.bits", str);
-			rz_config_set(r->config, "asm.dwarf",
-				(RZ_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
-			v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
-			if (v != -1) {
-				rz_config_set_i(r->config, "asm.pcalign", v);
-			}
-		}
-		rz_core_analysis_type_init(r);
-		rz_core_analysis_cc_init(r);
-		if (info->default_cc && rz_analysis_cc_exist(r->analysis, info->default_cc)) {
-			rz_config_set(r->config, "analysis.cc", info->default_cc);
-		}
-	} else if (IS_MODE_SIMPLE(mode)) {
+	if (IS_MODE_SIMPLE(mode)) {
 		rz_cons_printf("arch %s\n", info->arch);
 		if (info->cpu && *info->cpu) {
 			rz_cons_printf("cpu %s\n", info->cpu);
@@ -1073,11 +1106,6 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 			pj_end(pj);
 			pj_end(pj);
 		}
-	}
-	const char *dir_prefix = rz_config_get(r->config, "dir.prefix");
-	char *spath = sdb_fmt("%s/" RZ_SDB_FCNSIGN "/spec.sdb", dir_prefix);
-	if (rz_file_exists(spath)) {
-		sdb_concat_by_path(r->analysis->sdb_fmts, spath);
 	}
 	return true;
 }
@@ -1355,18 +1383,21 @@ static int bin_source(RzCore *r, PJ *pj, int mode) {
 	return true;
 }
 
-static int bin_main(RzCore *r, PJ *pj, int mode, int va) {
-	RzBinAddr *binmain = rz_bin_get_sym(r->bin, RZ_BIN_SYM_MAIN);
-	ut64 addr;
+static int bin_main(RzCore *r, RzBinFile *binfile, PJ *pj, int mode, int va) {
+	if (!binfile) {
+		return false;
+	}
+	RzBinObject *o = binfile->o;
+	if (!o) {
+		return false;
+	}
+	RzBinAddr *binmain = o->binsym[RZ_BIN_SYM_MAIN];
 	if (!binmain) {
 		return false;
 	}
-	addr = va ? rz_bin_a2b(r->bin, binmain->vaddr) : binmain->paddr;
+	ut64 addr = va ? rz_bin_object_addr_with_base(o, binmain->vaddr) : binmain->paddr;
 
-	if (IS_MODE_SET(mode)) {
-		rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
-		rz_flag_set(r->flags, "main", addr, r->blocksize);
-	} else if (IS_MODE_SIMPLE(mode)) {
+	if (IS_MODE_SIMPLE(mode)) {
 		rz_cons_printf("%" PFMT64d, addr);
 	} else if (IS_MODE_RZCMD(mode)) {
 		rz_cons_printf("fs symbols\n");
@@ -4196,7 +4227,7 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 		ret &= bin_info(core, pj, mode, loadaddr);
 	}
 	if ((action & RZ_CORE_BIN_ACC_MAIN)) {
-		ret &= bin_main(core, pj, mode, va);
+		ret &= bin_main(core, binfile, pj, mode, va);
 	}
 	if ((action & RZ_CORE_BIN_ACC_DWARF)) {
 		ret &= bin_dwarf(core, pj, mode);

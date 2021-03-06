@@ -54,10 +54,6 @@ static const char *__getname(RzBin *bin, int type, int idx, bool sd) {
 	return NULL;
 }
 
-static ut64 binobj_a2b(RzBinObject *o, ut64 addr) {
-	return o ? addr + o->baddr_shift : addr;
-}
-
 // TODO: move these two function do a different file
 RZ_API RzBinXtrData *rz_bin_xtrdata_new(RzBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RzBinXtrMetadata *metadata) {
 	RzBinXtrData *data = RZ_NEW0(RzBinXtrData);
@@ -756,7 +752,7 @@ RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 		if (section->is_segment) {
 			continue;
 		}
-		from = va ? binobj_a2b(o, section->vaddr) : section->paddr;
+		from = va ? rz_bin_object_addr_with_base(o, section->vaddr) : section->paddr;
 		to = from + (va ? section->vsize : section->size);
 		if (off >= from && off < to) {
 			return section;
@@ -1291,12 +1287,6 @@ RZ_API ut64 rz_bin_get_vaddr(RzBin *bin, ut64 paddr, ut64 vaddr) {
 		}
 	}
 	return rz_bin_file_get_vaddr(bin->cur, paddr, vaddr);
-}
-
-RZ_API ut64 rz_bin_a2b(RzBin *bin, ut64 addr) {
-	rz_return_val_if_fail(bin, UT64_MAX);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return binobj_a2b(o, addr);
 }
 
 RZ_API ut64 rz_bin_get_size(RzBin *bin) {

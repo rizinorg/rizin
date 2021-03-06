@@ -29,10 +29,6 @@ static RzBinString *__stringAt(RzBinFile *bf, RzList *ret, ut64 addr) {
 	return NULL;
 }
 
-static ut64 binobj_a2b(RzBinObject *o, ut64 addr) {
-	return o ? addr + o->baddr_shift : addr;
-}
-
 static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
 	rz_return_if_fail(bf && string);
 
@@ -1034,7 +1030,7 @@ RZ_API RzBinField *rz_bin_file_add_field(RzBinFile *binfile, const char *classna
 RZ_API ut64 rz_bin_file_get_vaddr(RzBinFile *bf, ut64 paddr, ut64 vaddr) {
 	rz_return_val_if_fail(bf && bf->o, paddr);
 	if (bf->o->info && bf->o->info->has_va) {
-		return binobj_a2b(bf->o, vaddr);
+		return rz_bin_object_addr_with_base(bf->o, vaddr);
 	}
 	return paddr;
 }
