@@ -162,6 +162,9 @@ RZ_API RzSkipListNode *rz_skiplist_insert(RzSkipList *list, void *data) {
 	x = find_insertpoint(list, data, update, true);
 	// check whether the element is already in the list
 	if (x != list->head && !list->compare(x->data, data)) {
+		if (list->freefn && data) {
+			list->freefn(data);
+		}
 		return x;
 	}
 
