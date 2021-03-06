@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
 #ifndef BUILD_LUAC_54_H
 #define BUILD_LUAC_54_H

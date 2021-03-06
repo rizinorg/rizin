@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
 #include <rz_bin.h>
 #include <rz_lib.h>
