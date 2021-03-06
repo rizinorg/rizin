@@ -1,460 +1,120 @@
-analysis_plugins = [
-  '6502',
-  '8051',
-  'amd29k',
-  'arc',
-  'arm_cs',
-  'arm_gnu',
-  'avr',
-  'bf',
-  'chip8',
-  'cr16',
-  'cris',
-  'dalvik',
-  'ebc',
-  'gb',
-  'h8300',
-  'hexagon',
-  'i4004',
-  'i8080',
-  'java',
-  'm68k_cs',
-  'm680x_cs',
-  'malbolge',
-  'mcore',
-  'mips_cs',
-  'mips_gnu',
-  'msp430',
-  'nios2',
-  'null',
-  'or1k',
-  'pic',
-  'ppc_cs',
-  'ppc_gnu',
-  'propeller',
-  'pyc',
-  'riscv',
-  'rsp',
-  'sh',
-  'snes',
-  'sparc_cs',
-  'sparc_gnu',
-  'spc700',
-  'sysz',
-  'tms320',
-  #'tms320c64x',
-  'tricore',
-  'v810',
-  'v850',
-  'vax',
-  'wasm',
-  'ws',
-  'x86_cs',
-  'xap',
-  'xcore_cs',
-  'xtensa',
-  'z80',
+fs = import('fs')
+
+subdir('include')
+
+# NOTE: Cannot be included here because right now shlr depends on some librz
+# libraries, while other librz libraries depend in turn on shlr.
+#
+# subdir('util')
+# subdir('socket')
+# subdir('hash')
+# subdir('crypto')
+# subdir('cons')
+#
+
+modules = [
+    'io',
+    'bp',
+    'syscall',
+    'search',
+    'magic',
+    'flag',
+    'reg',
+    'bin',
+    'config',
+    'parse',
+    'lang',
+    'asm',
+    'analysis',
+    'egg',
+    'debug',
+    'core',
+    'main',
 ]
 
-asm_plugins = [
-  '6502',
-  '8051',
-  'amd29k',
-  'arc',
-  'arm_as',
-  'arm_cs',
-  'arm_gnu',
-  'arm_winedbg',
-  'avr',
-  'bf',
-  'chip8',
-  'cr16',
-  'cris_gnu',
-  'dalvik',
-  'dcpu16',
-  'ebc',
-  'gb',
-  'h8300',
-  'hexagon',
-  #'hexagon_gnu',
-  'hppa_gnu',
-  'i4004',
-  'i8080',
-  'java',
-  'lanai_gnu',
-  'lh5801',
-  'lm32',
-  'm68k_cs',
-  'm680x_cs',
-  'malbolge',
-  'mcore',
-  'mcs96',
-  'mips_cs',
-  'mips_gnu',
-  'msp430',
-  'nios2',
-  'or1k',
-  'pic',
-  'ppc_as',
-  'ppc_cs',
-  'ppc_gnu',
-  'propeller',
-  'pyc',
-  'riscv',
-  'rsp',
-  'sh',
-  'snes',
-  'sparc_cs',
-  'sparc_gnu',
-  'spc700',
-  'sysz',
-  'tms320',
-  'tms320c64x',
-  'tricore',
-  'v810',
-  'v850',
-  'vax',
-  'wasm',
-  'ws',
-  'x86_as',
-  'x86_cs',
-  'x86_nasm',
-  'x86_nz',
-  'xap',
-  'xcore_cs',
-  'xtensa',
-  'z80',
-]
+# Iterate over modules that may provide plugins that can be linked either
+# statically or dynamically into Rizin. Static plugins are embedded in Rizin
+# itself, while shared plugins are compiled as separate libraries that are load
+# at runtime by Rizin.
+#
+# To define a plugin for a module, add its name in `<module>_plugins` in
+# `<module>/p/meson.build and define:
+# - `<module>_<pluginName>_sources`: an array of source files
+# - `<module>_<pluginName>_headers`: an array of include directories (optional)
+# - `<module>_<pluginName>_deps`: an array of meson dependencies (optional)
+#
+# Example:
+# Plugins for RzAsm are listed in `asm_plugins` in `librz/asm/p/meson.build`.
+# x86_cs plugin is defined with `asm_x86_cs_sources`, to list all C files
+# needed to compile the plugin, and `asm_x86_cs_deps` to list the additional
+# dependencies needed.
+foreach module : modules
+  if fs.is_dir(module / 'p') and fs.exists(module / 'p' / 'meson.build')
+    subdir(module / 'p')
 
-bin_plugins = [
-  'any',
-  'art',
-  'avr',
-  'bf',
-  'bflt',
-  'bios',
-  'bootimg',
-  'cgc',
-  'coff',
-  'dex',
-  'dmp64',
-  'dol',
-  'dyldcache',
-  'elf',
-  'elf64',
-  'java',
-  'le',
-  'mach0',
-  'mach064',
-  'mbn',
-  'mdmp',
-  'menuet',
-  'mz',
-  'ne',
-  'nes',
-  'nin3ds',
-  'ninds',
-  'ningb',
-  'ningba',
-  'nro',
-  'nso',
-  'omf',
-  'qnx',
-  'p9',
-  'pe',
-  'pe64',
-  'pebble',
-  'prg',
-  'psxexe',
-  'pyc',
-  'sfc',
-  'smd',
-  'sms',
-  'spc700',
-  'symbols',
-  'te',
-  'vsf',
-  'wasm',
-  'xbe',
-  'xnu_kernelcache',
-  'z64',
-  'zimg',
-]
+    # compile static plugins
+    plugins = get_variable('@0@_plugins'.format(module), [])
+    if plugins != []
+      static_plugins = get_variable('@0@_enabled_static_plugins'.format(module))
+      module_plugins_dep = []
+      static_plugins_str = []
+      foreach p : plugins
+        c_files = get_variable('@0@_@1@_sources'.format(module, p))
+        h_files = get_variable('@0@_@1@_headers'.format(module, p), [])
+        plugin_deps = get_variable('@0@_@1@_deps'.format(module, p), [])
 
-bin_ldr_plugins = [
-  'ldr_linux',
-]
+        plugin_inc = [h_files, platform_inc]
+        name = '@0@_plugin_@1@'.format(module, p)
 
-bin_xtr_plugins = [
-  'xtr_dyldcache',
-  'xtr_fatmach0',
-  'xtr_sep64',
-]
+        if p in static_plugins
+          plugin = static_library(name, c_files,
+            include_directories: plugin_inc,
+            dependencies: [plugin_deps, rz_util_dep],
+            c_args: library_cflags,
+            install: false,
+          )
 
-bp_plugins = [
-  'arm',
-  'bf',
-  'mips',
-  'ppc',
-  'sh',
-  'x86'
-]
+          plugin_dep = declare_dependency(link_with: plugin, include_directories: plugin_inc)
+          module_plugins_dep += [plugin_dep]
+          static_plugins_str += ['&rz_@0@_plugin_@1@'.format(module, p)]
+        endif
+      endforeach
+      static_plugins_str += ['0']
 
-core_plugins = [
-  'java',
-]
+      set_variable('rz_@0@_plugins_dep'.format(module), module_plugins_dep)
+      set_variable('@0@_enabled_static_plugins_str'.format(module), static_plugins_str)
+    else
+      warning('No @0@_plugins variable defined'.format(module))
+    endif
+  endif
 
-crypto_plugins = [
-  'aes',
-  'aes_cbc',
-  'base64',
-  'base91',
-  'blowfish',
-  'cps2',
-  'des',
-  'punycode',
-  'rc2',
-  'rc4',
-  'rc6',
-  'rol',
-  'ror',
-  'rot',
-  'serpent',
-  'xor',
-]
+  subdir(module)
 
-debug_plugins = [
-  'bf',
-  'bochs',
-  'esil',
-  'gdb',
-  'io',
-  'native',
-  'null',
-  'qnx',
-  'rap',
-  'winkd'
-]
+  if fs.is_dir(module / 'p') and fs.exists(module / 'p' / 'meson.build')
+    # compile static plugins
+    plugins = get_variable('@0@_plugins'.format(module), [])
+    if plugins != []
+      shared_plugins = get_variable('@0@_enabled_shared_plugins'.format(module))
+      module_dep = get_variable('rz_@0@_dep'.format(module))
 
-egg_plugins = [
-  'exec',
-  #'shya',
-  'xor'
-]
+      # compile shared plugins
+      foreach p : plugins
+        c_files = get_variable('@0@_@1@_sources'.format(module, p))
+        h_files = get_variable('@0@_@1@_headers'.format(module, p), [])
+        plugin_deps = get_variable('@0@_@1@_deps'.format(module, p), [])
 
-io_plugins = [
-  'ar',
-  'fd',
-  'bfdbg',
-  'bochs',
-  'debug',
-  'default',
-  'gdb',
-  'gprobe',
-  'gzip',
-  'http',
-  'ihex',
-  'mach',
-  'malloc',
-  'null',
-  'procpid',
-  'ptrace',
-  'qnx',
-  'rzk',
-  'rzpipe',
-  'rzweb',
-  'rap',
-  'self',
-  'shm',
-  'sparse',
-  'tcp',
-  'winkd',
-  'winedbg',
-  'zip'
-]
+        plugin_inc = [h_files, platform_inc]
+        name = '@0@_plugin_@1@'.format(module, p)
 
-if host_machine.system() == 'windows'
-  io_plugins += [
-    'windbg',
-    'w32dbg',
-    'w32',
-  ]
-  debug_plugins += 'windbg'
-endif
-
-lang_plugins = [
-  'lib',
-  'pipe',
-  'rust',
-  'vala'
-]
-
-if host_machine.system() != 'windows'
-  lang_plugins += [
-    'c',
-    'cpipe'
-  ]
-endif
-
-parse_plugins = [
-  '6502_pseudo',
-  'arm_pseudo',
-  'att2intel',
-  'avr_pseudo',
-  'chip8_pseudo',
-  'tms320_pseudo',
-  'dalvik_pseudo',
-  'm68k_pseudo',
-  'mips_pseudo',
-  'ppc_pseudo',
-  'sh_pseudo',
-  'riscv_pseudo',
-  'v850_pseudo',
-  'wasm_pseudo',
-  'x86_pseudo',
-  'z80_pseudo'
-]
-
-include_files =[
-  'include/rznaked.h',
-  'include/rz_agraph.h',
-  'include/rz_analysis.h',
-  'include/rz_asm.h',
-  'include/rz_bind.h',
-  'include/rz_getopt.h',
-  'include/rz_bin_dwarf.h',
-  'include/rz_bin.h',
-  'include/rz_binheap.h',
-  'include/rz_bp.h',
-  'include/rz_cmd.h',
-  'include/rz_config.h',
-  'include/rz_cons.h',
-  'include/rz_core.h',
-  'include/rz_crypto.h',
-  'include/rz_debug.h',
-  'include/rz_diff.h',
-  'include/rz_egg.h',
-  'include/rz_main.h',
-  'include/rz_endian.h',
-  'include/rz_flag.h',
-  'include/rz_flist.h',
-  'include/rz_hash.h',
-  'include/rz_heap_glibc.h',
-  'include/rz_heap_jemalloc.h',
-  'include/rz_io.h',
-  'include/rz_lang.h',
-  'include/rz_lib.h',
-  'include/rz_list.h',
-  'include/rz_magic.h',
-  'include/rz_parse.h',
-  'include/rz_pdb.h',
-  'include/rz_project.h',
-  'include/rz_qrcode.h',
-  'include/rz_regex.h',
-  'include/rz_reg.h',
-  'include/rz_search.h',
-  'include/rz_sign.h',
-  'include/rz_skiplist.h',
-  'include/rz_socket.h',
-  'include/rz_syscall.h',
-  'include/rz_th.h',
-  'include/rz_types_overflow.h',
-  'include/rz_types_base.h',
-  'include/rz_types.h',
-  'include/rz_util.h',
-  'include/rz_vector.h',
-  'include/rz_skyline.h',
-]
-install_headers(include_files, install_dir: rizin_incdir)
-
-rz_util_files = [
-  'include/rz_util/pj.h',
-  'include/rz_util/rz_annotated_code.h',
-  'include/rz_util/rz_ascii_table.h',
-  'include/rz_util/rz_asn1.h',
-  'include/rz_util/rz_assert.h',
-  'include/rz_util/rz_protobuf.h',
-  'include/rz_util/rz_base64.h',
-  'include/rz_util/rz_base91.h',
-  'include/rz_util/rz_big.h',
-  'include/rz_util/rz_bitmap.h',
-  'include/rz_util/rz_buf.h',
-  'include/rz_util/rz_cache.h',
-  'include/rz_util/rz_ctypes.h',
-  'include/rz_util/rz_debruijn.h',
-  'include/rz_util/rz_event.h',
-  'include/rz_util/rz_file.h',
-  'include/rz_util/rz_graph.h',
-  'include/rz_util/rz_graph_drawable.h',
-  'include/rz_util/rz_hex.h',
-  'include/rz_util/rz_idpool.h',
-  'include/rz_util/rz_itv.h',
-  'include/rz_util/rz_json.h',
-  'include/rz_util/rz_log.h',
-  'include/rz_util/rz_mem.h',
-  'include/rz_util/rz_name.h',
-  'include/rz_util/rz_num.h',
-  'include/rz_util/rz_panels.h',
-  'include/rz_util/rz_table.h',
-  'include/rz_util/rz_pkcs7.h',
-  'include/rz_util/rz_pool.h',
-  'include/rz_util/rz_print.h',
-  'include/rz_util/rz_punycode.h',
-  'include/rz_util/rz_queue.h',
-  'include/rz_util/rz_range.h',
-  'include/rz_util/rz_rbtree.h',
-  'include/rz_util/rz_intervaltree.h',
-  'include/rz_util/rz_serialize.h',
-  'include/rz_util/rz_signal.h',
-  'include/rz_util/rz_spaces.h',
-  'include/rz_util/rz_stack.h',
-  'include/rz_util/rz_strbuf.h',
-  'include/rz_util/rz_str.h',
-  'include/rz_util/rz_strpool.h',
-  'include/rz_util/rz_str_constpool.h',
-  'include/rz_util/rz_str_util.h',
-  'include/rz_util/rz_subprocess.h',
-  'include/rz_util/rz_sys.h',
-  'include/rz_util/rz_alloc.h',
-  'include/rz_util/rz_time.h',
-  'include/rz_util/rz_tree.h',
-  'include/rz_util/rz_uleb128.h',
-  'include/rz_util/rz_utf16.h',
-  'include/rz_util/rz_utf32.h',
-  'include/rz_util/rz_utf8.h',
-  'include/rz_util/rz_x509.h',
-]
-install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
-
-rz_crypto_files = [
-  'include/rz_crypto/rz_des.h'
-]
-install_headers(rz_crypto_files, install_dir: join_paths(rizin_incdir, 'rz_crypto'))
-
-sflib_common_files = [
-  'include/sflib/common/sftypes.h',
-  'include/sflib/common/sfsocketcall.h'
-]
-
-sflib_arch = [
-  'linux-x86-64',
-  'linux-x86-32',
-  'linux-arm-64',
-  'linux-arm-32',
-  'darwin-x86-64',
-  'darwin-x86-32',
-  'darwin-arm-64'
-]
-
-sflib_arch_files = [
-  'sflib.h',
-  'sfsyscall.h',
-  'sfsysnr.h'
-]
-
-install_headers(sflib_common_files, install_dir: join_paths(rizin_incdir, 'sflib/common'))
-foreach arch : sflib_arch
-  foreach file : sflib_arch_files
-    install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(rizin_incdir, 'sflib', arch))
-  endforeach
+        if p in shared_plugins
+          plugin = shared_library(name, c_files,
+            include_directories: plugin_inc,
+            dependencies: [module_dep, plugin_deps, rz_util_dep],
+            install: true,
+            install_dir: rizin_plugins,
+          )
+        endif
+      endforeach
+    endif
+  endif
 endforeach

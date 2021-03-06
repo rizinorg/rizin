@@ -44,3 +44,5 @@ pkgconfig_mod.generate(rz_magic,
   description: 'rizin foundation libraries'
 )
 pkgconfig_magic_requires = ['rz_magic']
+
+subdir('d')

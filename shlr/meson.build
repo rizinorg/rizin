@@ -226,3 +226,6 @@ endif
 
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
 yxml_dep = yxml_proj.get_variable('yxml_dep')
+
+# handle gdb dependency
+subdir('gdb')
