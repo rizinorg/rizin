@@ -3154,6 +3154,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		struct reloc_t *reloc = RZ_NEW0(struct reloc_t);
 		if (!reloc) {
 			free(info);
+			free(sym_name);
 			return;
 		}
 
