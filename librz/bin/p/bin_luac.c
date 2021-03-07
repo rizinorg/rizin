@@ -22,10 +22,10 @@ static bool check_buffer(RzBuffer *buff) {
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ut8 MAJOR_MINOR_VERSION;
-        LuaVersion *version_info;
+	LuaVersion *version_info;
 
-        rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
-	if ((version_info = RZ_NEW(LuaVersion)) == NULL){
+	rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
+	if ((version_info = RZ_NEW(LuaVersion)) == NULL) {
 		return false;
 	}
 
