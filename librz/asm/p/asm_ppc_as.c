@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_lib.h>
-#include "../binutils_as.h"
+#include <rz_asm.h>
 
 #define ASSEMBLER "RZ_PPC_AS"
 
@@ -15,7 +15,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	char cmd_opt[4096];
 	snprintf(cmd_opt, sizeof(cmd_opt), "-mregnames -a%d %s",
 		a->bits, a->big_endian ? "-be" : "-le");
-	return binutils_assemble(a, op, buf,
+	return rz_asm_binutils_assemble(a, op, buf,
 		as, ASSEMBLER, "", cmd_opt);
 }
 

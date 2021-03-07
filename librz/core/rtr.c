@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_core.h"
-#include "rz_socket.h"
-#include "gdb/include/libgdbr.h"
-#include "gdb/include/gdbserver/core.h"
+#include <rz_core.h>
+#include <rz_socket.h>
+#include <libgdbr.h>
+#include <gdbserver/core.h>
 
 #if HAVE_LIBUV
 #include <uv.h>

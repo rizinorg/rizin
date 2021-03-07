@@ -8,9 +8,9 @@
 #include <rz_analysis.h>
 
 /* DEPRECATE ?? */
-#include "wine-arm.h"
-#include "../asm/arch/arm/asm-arm.h"
-#include "../asm/arch/arm/winedbg/be_arm.h"
+#include <wine-arm.h>
+#include <asm-arm.h>
+#include <winedbg/be_arm.h>
 #include "./analysis_arm_hacks.inc"
 
 static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {

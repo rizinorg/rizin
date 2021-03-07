@@ -5,7 +5,6 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
-#include "../binutils_as.h"
 
 #define ASSEMBLER32 "RZ_ARM32_AS"
 #define ASSEMBLER64 "RZ_ARM64_AS"
@@ -26,7 +25,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	snprintf(cmd_opt, sizeof(cmd_opt), "%s %s",
 		bits == 16 ? "-mthumb" : "",
 		a->big_endian ? "-EB" : "-EL");
-	return binutils_assemble(a, op, buf, as,
+	return rz_asm_binutils_assemble(a, op, buf, as,
 		bits == 64 ? ASSEMBLER64 : ASSEMBLER32,
 		bits <= 32 ? ".syntax unified\n" : "", cmd_opt);
 }

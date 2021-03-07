@@ -135,6 +135,8 @@ RzAsmPlugin rz_asm_plugin_bf = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
+#include <rz_lib.h>
+
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_bf,
