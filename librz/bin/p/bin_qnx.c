@@ -42,21 +42,19 @@ static void destroy(RzBinFile *bf) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	QnxObj *qo = RZ_NEW0(QnxObj);
-	if (!qo) {
-		return false;
-	}
 	lmf_record lrec;
 	lmf_resource lres;
 	lmf_data ldata;
 	ut64 offset = QNX_RECORD_SIZE;
-	RzList *sections = NULL;
-	RzList *fixups = NULL;
 
+	QnxObj *qo = RZ_NEW0(QnxObj);
 	if (!qo) {
-		goto beach;
+		return false;
 	}
-	if (!(sections = rz_list_newf((RzListFree)rz_bin_section_free)) || !(fixups = rz_list_new())) {
+
+	RzList *sections = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzList *fixups = rz_list_newf(free);
+	if (!sections || !fixups) {
 		goto beach;
 	}
 	qo->kv = sdb_new0();
