@@ -1,8 +1,23 @@
+NAME=LUAC: plugin load
+FILE=bins/luac/none.luac
+CMDS=iI~?luac
+EXPECT=<<EOF
+2
+EOF
+RUN
+
 NAME=LUAC: info
 FILE=bins/luac/none.luac
 CMDS=i~guid,machine
 EXPECT=<<EOF
 guid     @none.lua
 machine  Lua 5.4 VM
+EOF
+RUN
+
+NAME=LUAC: unofficial
+FILE=bins/luac/none_modified.luac
+CMDS=iI~compiler
+compiler Unofficial Lua Compiler
 EOF
 RUN
