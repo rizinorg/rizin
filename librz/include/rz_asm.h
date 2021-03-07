@@ -175,6 +175,8 @@ RZ_API char *rz_asm_describe(RzAsm *a, const char *str);
 RZ_API RzList *rz_asm_get_plugins(RzAsm *a);
 RZ_API void rz_asm_list_directives(void);
 
+RZ_API int rz_asm_binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, const char *env, const char *header, const char *cmd_opt);
+
 /* code.c */
 RZ_API RzAsmCode *rz_asm_code_new(void);
 RZ_API void *rz_asm_code_free(RzAsmCode *acode);

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2014-2015 jn
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "../../arch/lh5801/lh5801.c"
+#include <lh5801.h>
 #include <rz_asm.h>
 #include <rz_types.h>
 #include <rz_lib.h>

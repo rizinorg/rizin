@@ -6,7 +6,7 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_asm.h>
-#include "xap/dis.c"
+#include <xap/dis.h>
 
 static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	struct state *s = get_state();

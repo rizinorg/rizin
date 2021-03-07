@@ -3,7 +3,6 @@
 
 #include <rz_lib.h>
 #include <rz_asm.h>
-#include "../binutils_as.h"
 
 #define ASSEMBLER "RZ_X86_AS"
 
@@ -27,7 +26,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	char header[4096];
 	snprintf(header, sizeof(header), "%s.code%i\n", // .org 0x%"PFMT64x"\n"
 		syntaxstr, a->bits);
-	return binutils_assemble(a, op, buf, as, ASSEMBLER, header, "");
+	return rz_asm_binutils_assemble(a, op, buf, as, ASSEMBLER, header, "");
 }
 
 RzAsmPlugin rz_asm_plugin_x86_as = {

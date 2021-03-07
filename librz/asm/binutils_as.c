@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: 2009-2020 eagleoflqj <liumeo@pku.edu.cn>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "binutils_as.h"
+#include <rz_asm.h>
 
-int binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, const char *env, const char *header, const char *cmd_opt) {
+RZ_API int rz_asm_binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, const char *env, const char *header, const char *cmd_opt) {
 	char *user_as = rz_sys_getenv(env);
 	if (user_as) {
 		as = user_as;

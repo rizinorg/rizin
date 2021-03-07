@@ -6,6 +6,9 @@
  * (system manual) as published by Günter Holtkötter GmbH.
  */
 
+#ifndef LH5801_H_
+#define LH5801_H_
+
 #include <stdint.h>
 #include <stdlib.h>
 typedef uint8_t ut8;
@@ -93,7 +96,7 @@ struct lh5801_insn_class_desc {
 	/* TODO: rizin insn type? */
 };
 
-const struct lh5801_insn_class_desc
+extern const struct lh5801_insn_class_desc
 	lh5801_insn_class_descs[LH5801_INSNC_NUMBER];
 
 /* A decoded instruction */
@@ -107,3 +110,5 @@ struct lh5801_insn {
 
 int lh5801_decode(struct lh5801_insn *, const uint8_t *, int);
 void lh5801_print_insn(char *out, int size, const struct lh5801_insn *);
+
+#endif

@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
 #include "librz/asm/arch/luac/lua_arch.h"
+#include <rz_lib.h>
 
 int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	LuaOpNameList oplist = get_lua54_opnames();
@@ -23,7 +24,7 @@ RzAsmPlugin rz_asm_plugin_luac = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
-	.data = rz_asm_plugin_luac,
+	.data = &rz_asm_plugin_luac,
 	.version = RZ_VERSION
 };
 #endif
