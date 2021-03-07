@@ -17,8 +17,8 @@ RUN
 
 NAME=LUAC: unofficial
 FILE=bins/luac/none_modified.luac
-EXPECT=<<EOF
 CMDS=iI~compiler
+EXPECT=<<EOF
 compiler Unofficial Lua Compiler
 EOF
 RUN
