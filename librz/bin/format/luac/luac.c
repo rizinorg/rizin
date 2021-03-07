@@ -55,13 +55,15 @@ char *luaLoadString(ut8 *src, size_t src_buf_limit) {
 
 	/* skip size byte */
 	void *string_start = src + 1;
+	size -= 1;
+
 	if ((ret = RZ_NEWS(char, size)) == NULL) {
 		eprintf("error in string init\n");
 		return NULL;
 	}
 
-	memcpy(ret, string_start, size - 1);
-	ret[size] = '\0';
+	memcpy(ret, string_start, size);
+	ret[size] = 0x00;
 
 	return ret;
 }

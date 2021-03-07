@@ -32,7 +32,7 @@ RzBinInfo *info_54(RzBinFile *bf, st32 major, st32 minor) {
 	ret->bclass = strdup("Lua compiled file");
 	ret->rclass = strdup("luac");
 	ret->arch = strdup("luac");
-	ret->machine = rz_str_newf("Lua %c.%c VM ", major + '0', minor + '0');
+	ret->machine = rz_str_newf("Lua %c.%c VM", major + '0', minor + '0');
 	ret->os = strdup("any");
 	ret->bits = 8;
 
