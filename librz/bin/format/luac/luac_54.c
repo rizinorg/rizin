@@ -5,7 +5,7 @@
 
 #define INNER_BUFFER_SIZE 256
 
-RzBinInfo *info_54(RzBinFile *bf, int major, int minor) {
+RzBinInfo *info_54(RzBinFile *bf, st32 major, st32 minor) {
 	ut8 work_buffer[INNER_BUFFER_SIZE];
 	RzBinInfo *ret = NULL;
 

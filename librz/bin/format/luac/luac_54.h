@@ -41,6 +41,6 @@
 #define LUAC_FILENAME_OFFSET 0x20
 
 /* Exported Api to bin_luac.c */
-RzBinInfo *info_54(RzBinFile *bf, int major, int minor);
+RzBinInfo *info_54(RzBinFile *bf, st32 major, st32 minor);
 
 #endif //BUILD_LUAC_54_H

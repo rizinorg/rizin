@@ -5,9 +5,11 @@
 #include <rz_lib.h>
 #include "luac/luac_54.h"
 
-static int MAJOR_VERSION;
-static int MINOR_VERSION;
-static ut8 MAJOR_MINOR_VERSION;
+typedef struct version_context_t {
+	st32 major;
+	st32 minor;
+} LuaVersion;
+#define GET_VERSION_INFO_FROM_BINF(bf) ((LuaVersion *)(bf)->o->bin_obj)
 
 static bool check_buffer(RzBuffer *buff) {
 	if (rz_buf_size(buff) > 4) {
@@ -19,24 +21,36 @@ static bool check_buffer(RzBuffer *buff) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
-	MAJOR_VERSION = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
-	MINOR_VERSION = MAJOR_MINOR_VERSION & 0x0F;
+	ut8 MAJOR_MINOR_VERSION;
+        LuaVersion *version_info;
+
+        rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
+	if ((version_info = RZ_NEW(LuaVersion)) == NULL){
+		return false;
+	}
+
+	version_info->major = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
+	version_info->minor = (MAJOR_MINOR_VERSION & 0x0F);
+
+	*bin_obj = version_info;
+
 	return check_buffer(buf);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	if (MAJOR_VERSION != 5) {
+	LuaVersion *version_info = GET_VERSION_INFO_FROM_BINF(bf);
+
+	if (version_info->major != 5) {
 		eprintf("currently support lua 5.x only\n");
 		return NULL;
 	}
 
-	switch (MINOR_VERSION) {
+	switch (version_info->minor) {
 	case 4:
-		return info_54(bf, MAJOR_VERSION, MINOR_VERSION);
+		return info_54(bf, version_info->major, version_info->minor);
 		break;
 	default:
-		eprintf("lua 5.%c not support now\n", MINOR_VERSION + '0');
+		eprintf("lua 5.%c not support now\n", version_info->minor + '0');
 		return NULL;
 	}
 }
