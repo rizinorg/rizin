@@ -3615,7 +3615,7 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin) {
 	}
 	for (i = 0; i < bin->nlibs; i++) {
 		sdb_set(bin->kv, sdb_fmt("libs.%d.name", i), bin->libs[i], 0);
-		strncpy(libs[i].name, bin->libs[i], RZ_BIN_MACH0_STRING_LENGTH);
+		strncpy(libs[i].name, bin->libs[i], RZ_BIN_MACH0_STRING_LENGTH - 1);
 		libs[i].name[RZ_BIN_MACH0_STRING_LENGTH - 1] = '\0';
 		libs[i].last = 0;
 	}
