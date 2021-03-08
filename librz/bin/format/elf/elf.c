@@ -2895,7 +2895,7 @@ RzBinElfLib *Elf_(rz_bin_elf_get_libs)(ELFOBJ *bin) {
 			free(ret);
 			return NULL;
 		}
-		strncpy(ret[k].name, bin->strtab + val, ELF_STRING_LENGTH);
+		strncpy(ret[k].name, bin->strtab + val, ELF_STRING_LENGTH - 1);
 		ret[k].name[ELF_STRING_LENGTH - 1] = '\0';
 		ret[k].last = 0;
 		if (ret[k].name[0]) {

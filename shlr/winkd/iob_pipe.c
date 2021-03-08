@@ -73,7 +73,7 @@ static void *iob_pipe_open(const char *path) {
 	memset(&sa, 0, sizeof(struct sockaddr_un));
 
 	sa.sun_family = AF_UNIX;
-	strncpy(sa.sun_path, path, sizeof(sa.sun_path));
+	strncpy(sa.sun_path, path, sizeof(sa.sun_path) - 1);
 	sa.sun_path[sizeof(sa.sun_path) - 1] = 0;
 	if (connect(sock, (struct sockaddr *)&sa, sizeof(struct sockaddr_un)) == -1) {
 		perror("connect");
