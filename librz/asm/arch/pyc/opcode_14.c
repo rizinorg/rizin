@@ -1,4 +1,6 @@
+// SPDX-FileCopyrightText: 2020 FXTi <zjxiang1998@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #include "opcode.h"
 
 pyc_opcodes *opcode_14(void) {
