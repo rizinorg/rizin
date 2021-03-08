@@ -161,7 +161,7 @@ jobs:
           repository: rizinorg/rizin-testbins
           path: test/bins
     - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
-      if: matrix.run_tests && matrix.enabled
+      if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
       uses: actions/checkout@v2
       with:
           repository: rizinorg/rizin-fuzztargets
@@ -225,7 +225,7 @@ jobs:
       working-directory: build
       run: bash <(curl -s https://codecov.io/bash) -Q github-action -n -F
     - name: Run fuzz tests
-      if: matrix.run_tests && matrix.enabled
+      if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
       run: |
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
