@@ -176,6 +176,10 @@ static char* section_type_to_string(ut64 type) {
 	return Elf_(rz_bin_elf_section_type_to_string)(type);
 }
 
+static char* section_flag_to_string(ut64 flag) {
+	return Elf_(rz_bin_elf_section_flag_to_string)(flag);
+}
+
 static RzList *sections(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	struct rz_bin_elf_section_t *section = NULL;
@@ -210,44 +214,7 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;
 			ptr->type = section[i].type;
-			//ptr->flag = Elf_(rz_bin_elf_get_section_flag)(&section[i]);
-			ptr->flag = rz_str_new("");
-			if (section[i].flags & SHF_WRITE){
-				ptr->flag = rz_str_append(ptr->flag, "W");
-			} 
-			if (section[i].flags & SHF_EXECINSTR){
-				ptr->flag = rz_str_append(ptr->flag, "X");
-			} 
-			if (section[i].flags & SHF_MERGE){
-				ptr->flag = rz_str_append(ptr->flag, "M");
-			} 
-			if (section[i].flags & SHF_STRINGS){
-				ptr->flag = rz_str_append(ptr->flag, "S");
-			} 
-			if (section[i].flags & SHF_INFO_LINK){
-				ptr->flag = rz_str_append(ptr->flag, "I");
-			} 
-			if (section[i].flags & SHF_LINK_ORDER){
-				ptr->flag = rz_str_append(ptr->flag, "L");
-			} 
-			if (section[i].flags & SHF_OS_NONCONFORMING){
-				ptr->flag = rz_str_append(ptr->flag, "O");
-			} 
-			if (section[i].flags & SHF_GROUP){
-				ptr->flag = rz_str_append(ptr->flag, "G");
-			} 
-			if (section[i].flags & SHF_TLS){
-				ptr->flag = rz_str_append(ptr->flag, "T");
-			} 
-			if (section[i].flags & SHF_COMPRESSED){
-				ptr->flag = rz_str_append(ptr->flag, "C");
-			}  
-			if (section[i].flags & SHF_EXCLUDE){
-				ptr->flag = rz_str_append(ptr->flag, "E");
-			} 	
-			if (section[i].flags & SHF_ALLOC){
-				ptr->flag = rz_str_append(ptr->flag, "A");
-			}
+			ptr->flag_i = section[i].flags;
 			ptr->add = !obj->phdr; // Load sections if there is no PHDR
 			ptr->perm = 0;
 			if (RZ_BIN_ELF_SCN_IS_EXECUTABLE(section[i].flags)) {

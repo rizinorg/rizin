@@ -204,4 +204,5 @@ struct rz_bin_pe_addr_t *PE_(check_unknow)(struct PE_(rz_bin_pe_obj_t) * bin);
 struct rz_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(rz_bin_pe_obj_t) * bin);
 struct rz_bin_pe_addr_t *PE_(check_mingw)(struct PE_(rz_bin_pe_obj_t) * bin);
 bool PE_(rz_bin_pe_section_perms)(RzBinFile *bf, const char *name, int perms);
+char *PE_(rz_bin_pe_section_flag_to_string)(ut64 flag);//checking
 RZ_API void PE_(bin_pe_parse_resource)(struct PE_(rz_bin_pe_obj_t) * bin);

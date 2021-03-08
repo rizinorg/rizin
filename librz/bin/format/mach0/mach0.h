@@ -211,4 +211,5 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) * hdr);
 struct MACH0_(mach_header) * MACH0_(get_hdr)(RzBuffer *buf);
 void MACH0_(mach_headerfields)(RzBinFile *bf);
 RzList *MACH0_(mach_fields)(RzBinFile *bf);
+char *MACH0_(section_flag_to_string)(ut64 flag);
 #endif

@@ -480,7 +480,10 @@ static RzList *trycatch(RzBinFile *bf) {
 	}
 	return tclist;
 }
-
+extern struct rz_bin_write_t rz_bin_write_pe;
+static char* PE_(section_flag_to_string)(ut64 flag) {
+	return PE_(rz_bin_pe_section_flag_to_string)(flag);
+}
 RzBinPlugin rz_bin_plugin_pe64 = {
 	.name = "pe64",
 	.desc = "PE64 (PE32+) bin plugin",
@@ -503,7 +506,8 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
 	.write = &rz_bin_write_pe64,
-	.hashes = &compute_hashes
+	.hashes = &compute_hashes,
+	.section_flag_to_string = &PE_(section_flag_to_string),
 };
 
 #ifndef RZ_PLUGIN_INCORE
