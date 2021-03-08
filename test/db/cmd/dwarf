@@ -1371,6 +1371,7 @@ Raw dump of debug contents of section .debug_line:
 0x00001276	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19
 0x000012bf	/home/hound/r2test/dwarf/cpp/dump/main.cpp	24
 EOF
+BROKEN=1
 RUN
 
 NAME="pdf dwarf invalid main for analysis not found (aa)"

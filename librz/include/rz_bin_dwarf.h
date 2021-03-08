@@ -846,11 +846,11 @@ typedef struct rz_bin_dwarf_loc_list_t {
 
 #define rz_bin_dwarf_line_new(o, a, f, l) o->address = a, o->file = strdup(f ? f : ""), o->line = l, o->column = 0, o
 
-RZ_API RzList *rz_bin_dwarf_parse_aranges(RzBin *a, int mode);
-RZ_API RzList *rz_bin_dwarf_parse_line(RzBin *a, int mode);
-RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBin *a, int mode);
-RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinDwarfDebugAbbrev *da, RzBin *a, int mode);
-RZ_API HtUP /*<offset, RzBinDwarfLocList*>*/ *rz_bin_dwarf_parse_loc(RzBin *bin, int addr_size);
+RZ_API RzList *rz_bin_dwarf_parse_aranges(RzBinFile *binfile, int mode);
+RZ_API RzList *rz_bin_dwarf_parse_line(RzBinFile *binfile, int mode);
+RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBinFile *binfile);
+RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwarfDebugAbbrev *da, int mode);
+RZ_API HtUP /*<offset, RzBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RzBinFile *binfile, int addr_size);
 RZ_API void rz_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table, int addr_size, PrintfCallback print);
 RZ_API void rz_bin_dwarf_free_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table);
 RZ_API void rz_bin_dwarf_free_debug_info(RzBinDwarfDebugInfo *inf);

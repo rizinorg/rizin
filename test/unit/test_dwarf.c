@@ -59,7 +59,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 7, "Incorrect number of abbreviation");
 
 	// order matters
@@ -131,7 +131,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	}
 	i++;
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, MODE);
 	mu_assert_eq(rz_list_length(line_list), 8, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
@@ -186,7 +186,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert("Incorrect number of abbreviation", da->count == 32);
 
 	// order matters
@@ -486,7 +486,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 
 	// rz_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, MODE);
 	mu_assert_eq(rz_list_length(line_list), 60, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
@@ -584,7 +584,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 58, "Incorrect number of abbreviation");
 	int i = 18;
 
@@ -598,7 +598,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	check_abbrev_children(false);
 	check_abbrev_code(18);
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, MODE);
 	mu_assert_eq(rz_list_length(line_list), 64, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
@@ -701,11 +701,11 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	// not ignoring null entries -> 755 abbrevs
 	mu_assert_eq(da->count, 731, "Incorrect number of abbreviation");
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, MODE);
 	mu_assert_eq(rz_list_length(line_list), 771, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
@@ -768,7 +768,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	// mode = 0, calls
 	// static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RzBinDwarfDebugAbbrev *da)
 	// which prints out all the abbreviation
-	da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 58, "Incorrect number of abbreviation");
 
 	int i = 18;
@@ -783,7 +783,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	check_abbrev_children(false);
 	check_abbrev_code(18);
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, MODE);
 	mu_assert_eq(rz_list_length(line_list), 64, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
@@ -882,7 +882,7 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 
 	// TODO add abbrev checks
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, MODE);
 	mu_assert_eq(rz_list_length(line_list), 75, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;
@@ -988,7 +988,7 @@ bool test_big_endian_dwarf2(void) {
 	bool res = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert("couldn't open file", res);
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin, MODE);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, MODE);
 	mu_assert_eq(rz_list_length(line_list), 273, "Amount of line information parse doesn't match");
 
 	RzBinDwarfRow *row;

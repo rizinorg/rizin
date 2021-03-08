@@ -8,6 +8,7 @@
 #include <rz_list.h>
 
 typedef struct rz_bin_t RzBin;
+typedef struct rz_bin_file_t RzBinFile;
 
 #include <rz_bin_dwarf.h>
 #include <rz_pdb.h>
@@ -275,7 +276,7 @@ typedef struct rz_bin_object_t {
 
 // XXX: RbinFile may hold more than one RzBinObject
 /// XX curplugin == o->plugin
-typedef struct rz_bin_file_t {
+struct rz_bin_file_t {
 	char *file;
 	int fd;
 	int size;
@@ -298,7 +299,7 @@ typedef struct rz_bin_file_t {
 	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
 	struct rz_bin_t *rbin;
-} RzBinFile;
+}; // RzBinFile
 
 typedef struct rz_bin_file_options_t {
 	int rawstr;
