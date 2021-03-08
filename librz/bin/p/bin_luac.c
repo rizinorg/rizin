@@ -34,7 +34,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 
 	*bin_obj = version_info;
 
-	return check_buffer(buf);
+	return true;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
