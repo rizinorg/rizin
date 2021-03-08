@@ -2007,8 +2007,7 @@ static const RzCmdDescHelp t_help = {
 static const RzCmdDescArg type_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 		.optional = true,
 
 	},
@@ -2022,8 +2021,7 @@ static const RzCmdDescHelp type_help = {
 static const RzCmdDescArg type_del_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 
 	},
 	{ 0 },
@@ -2047,8 +2045,7 @@ static const RzCmdDescHelp tc_help = {
 static const RzCmdDescArg type_list_c_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 		.optional = true,
 
 	},
@@ -2062,8 +2059,7 @@ static const RzCmdDescHelp type_list_c_help = {
 static const RzCmdDescArg type_list_c_nl_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 		.optional = true,
 
 	},
@@ -2134,7 +2130,7 @@ static const RzCmdDescHelp te_help = {
 static const RzCmdDescArg type_list_enum_args[] = {
 	{
 		.name = "enum",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_ENUM_TYPE,
 		.optional = true,
 
 	},
@@ -2155,7 +2151,7 @@ static const RzCmdDescHelp type_list_enum_help = {
 static const RzCmdDescArg type_enum_bitfield_args[] = {
 	{
 		.name = "enum",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_ENUM_TYPE,
 
 	},
 	{
@@ -2174,8 +2170,7 @@ static const RzCmdDescHelp type_enum_bitfield_help = {
 static const RzCmdDescArg type_enum_c_args[] = {
 	{
 		.name = "enum",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ENUM_TYPE,
 		.optional = true,
 
 	},
@@ -2189,8 +2184,7 @@ static const RzCmdDescHelp type_enum_c_help = {
 static const RzCmdDescArg type_enum_c_nl_args[] = {
 	{
 		.name = "enum",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ENUM_TYPE,
 		.optional = true,
 
 	},
@@ -2398,7 +2392,7 @@ static const RzCmdDescHelp tp_help = {
 static const RzCmdDescArg type_print_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 
 	},
 	{
@@ -2418,7 +2412,7 @@ static const RzCmdDescHelp type_print_help = {
 static const RzCmdDescArg type_print_value_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 
 	},
 	{
@@ -2438,7 +2432,7 @@ static const RzCmdDescHelp type_print_value_help = {
 static const RzCmdDescArg type_print_hexstring_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 
 	},
 	{
@@ -2460,45 +2454,42 @@ static const RzCmdDescHelp ts_help = {
 static const RzCmdDescArg type_list_structure_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_STRUCT_TYPE,
 		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp type_list_structure_help = {
-	.summary = "List loaded unions / Show pf format string for given union",
+	.summary = "List loaded structures / Show pf format string for given structure",
 	.args = type_list_structure_args,
 };
 
 static const RzCmdDescArg type_structure_c_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_STRUCT_TYPE,
 		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp type_structure_c_help = {
-	.summary = "Show union in the C output format with newlines",
+	.summary = "Show structure in the C output format with newlines",
 	.args = type_structure_c_args,
 };
 
 static const RzCmdDescArg type_structure_c_nl_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_STRUCT_TYPE,
 		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp type_structure_c_nl_help = {
-	.summary = "Show union in the C output format without newlines",
+	.summary = "Show structure in the C output format without newlines",
 	.args = type_structure_c_nl_args,
 };
 
@@ -2508,8 +2499,7 @@ static const RzCmdDescHelp tt_help = {
 static const RzCmdDescArg type_list_typedef_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ALIAS_TYPE,
 		.optional = true,
 
 	},
@@ -2523,8 +2513,7 @@ static const RzCmdDescHelp type_list_typedef_help = {
 static const RzCmdDescArg type_typedef_c_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ALIAS_TYPE,
 		.optional = true,
 
 	},
@@ -2541,8 +2530,7 @@ static const RzCmdDescHelp tu_help = {
 static const RzCmdDescArg type_list_union_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_UNION_TYPE,
 		.optional = true,
 
 	},
@@ -2556,8 +2544,7 @@ static const RzCmdDescHelp type_list_union_help = {
 static const RzCmdDescArg type_union_c_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_UNION_TYPE,
 		.optional = true,
 
 	},
@@ -2571,8 +2558,7 @@ static const RzCmdDescHelp type_union_c_help = {
 static const RzCmdDescArg type_union_c_nl_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_UNION_TYPE,
 		.optional = true,
 
 	},
@@ -2589,8 +2575,7 @@ static const RzCmdDescHelp tx_help = {
 static const RzCmdDescArg type_xrefs_list_args[] = {
 	{
 		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_ANY_TYPE,
 		.optional = true,
 
 	},

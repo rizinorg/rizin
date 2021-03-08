@@ -12,14 +12,14 @@ commands:
       - RZ_OUTPUT_MODE_JSON
     args:
       - name: type
-        type: RZ_CMD_ARG_TYPE_STRING
+        type: RZ_CMD_ARG_TYPE_ANY_TYPE
         optional: true
   - name: t-
     cname: type_del
     summary: Remove the type
     args:
       - name: type
-        type: RZ_CMD_ARG_TYPE_STRING
+        type: RZ_CMD_ARG_TYPE_ANY_TYPE
   - name: t-*
     cname: type_del_all
     summary: Remove all types
@@ -32,14 +32,14 @@ commands:
         summary: List loaded types in C format with newlines
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
             optional: true
       - name: tcd
         cname: type_list_c_nl
         summary: List loaded types in C format without newlines
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
             optional: true
       - name: tcc
         summary: Manage calling convention types
@@ -85,7 +85,7 @@ commands:
           - RZ_OUTPUT_MODE_SDB
         args:
           - name: enum
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ENUM_TYPE
             optional: true
           - name: value
             type: RZ_CMD_ARG_TYPE_STRING
@@ -95,7 +95,7 @@ commands:
         summary: Show enum bitfield
         args:
           - name: enum
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ENUM_TYPE
           - name: field
             type: RZ_CMD_ARG_TYPE_STRING
       - name: tec
@@ -103,14 +103,14 @@ commands:
         summary: Show enum in the C output format
         args:
           - name: enum
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ENUM_TYPE
             optional: true
       - name: ted
         cname: type_enum_c_nl
         summary: Show enum in the C output format without newlines
         args:
           - name: enum
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ENUM_TYPE
             optional: true
       - name: tef
         cname: type_enum_find
@@ -228,7 +228,7 @@ commands:
         summary: Print formatted type casted to the address or variable
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
           - name: address
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
@@ -237,7 +237,7 @@ commands:
         summary: Print formatted type casted to the value
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
           - name: value
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
@@ -246,7 +246,7 @@ commands:
         summary: Print formatted type casted to the hexadecimal sequence
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
           - name: hexpairs
             type: RZ_CMD_ARG_TYPE_STRING
   - name: ts
@@ -254,28 +254,28 @@ commands:
     subcommands:
       - name: ts
         cname: type_list_structure
-        summary: List loaded unions / Show pf format string for given union
+        summary: List loaded structures / Show pf format string for given structure
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_STRUCT_TYPE
             optional: true
       - name: tsc
         cname: type_structure_c
-        summary: Show union in the C output format with newlines
+        summary: Show structure in the C output format with newlines
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_STRUCT_TYPE
             optional: true
       - name: tsd
         cname: type_structure_c_nl
-        summary: Show union in the C output format without newlines
+        summary: Show structure in the C output format without newlines
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_STRUCT_TYPE
             optional: true
   - name: tt
     summary: List loaded typedefs
@@ -288,14 +288,14 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ALIAS_TYPE
             optional: true
       - name: ttc
         cname: type_typedef_c
         summary: Show typedef in the C output format
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ALIAS_TYPE
             optional: true
   - name: tu
     summary: List loaded unions
@@ -309,21 +309,21 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_UNION_TYPE
             optional: true
       - name: tuc
         cname: type_union_c
         summary: Show union in the C output format with newlines
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_UNION_TYPE
             optional: true
       - name: tud
         cname: type_union_c_nl
         summary: Show union in the C output format without newlines
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_UNION_TYPE
             optional: true
   - name: tx
     summary: Type xrefs
@@ -333,7 +333,7 @@ commands:
         summary: List functions using the type
         args:
           - name: type
-            type: RZ_CMD_ARG_TYPE_STRING
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
             optional: true
       - name: txf
         cname: type_xrefs_function
