@@ -2323,38 +2323,38 @@ char *MACH0_(section_type_to_string)(ut64 type) {
 
 char *MACH0_(section_flag_to_string)(ut64 flag) {
 	
-	char* buff = rz_str_new("");
-	if(flag | S_ATTR_PURE_INSTRUCTIONS){
-		buff = rz_str_append(buff, "I");
-	}
-	if(flag | S_ATTR_NO_TOC){
-		buff = rz_str_append(buff, "T");
-	}
-	if(flag | S_ATTR_SOME_INSTRUCTIONS){
-		buff = rz_str_append(buff, "S");
-	}
-	if(flag | S_ATTR_EXT_RELOC){
-		buff = rz_str_append(buff, "E");
-	}
-	if(flag | S_ATTR_LOC_RELOC){
-		buff = rz_str_append(buff, "L");
-	}
-//		char* buff = rz_str_new("");
+//	char* buff = rz_str_new("");
 //	if(flag | S_ATTR_PURE_INSTRUCTIONS){
-//		buff = rz_str_append(buff, "S_ATTR_PURE_INSTRUCTIONS");
+//		buff = rz_str_append(buff, "I");
 //	}
 //	if(flag | S_ATTR_NO_TOC){
-//		buff = rz_str_append(buff, "S_ATTR_NO_TOC");
+//		buff = rz_str_append(buff, "T");
 //	}
 //	if(flag | S_ATTR_SOME_INSTRUCTIONS){
-//		buff = rz_str_append(buff, "S_ATTR_SOME_INSTRUCTIONS");
+//		buff = rz_str_append(buff, "S");
 //	}
 //	if(flag | S_ATTR_EXT_RELOC){
-//		buff = rz_str_append(buff, "S_ATTR_EXT_RELOC");
+//		buff = rz_str_append(buff, "E");
 //	}
 //	if(flag | S_ATTR_LOC_RELOC){
-//		buff = rz_str_append(buff, "S_ATTR_LOC_RELOC");
-//
+//		buff = rz_str_append(buff, "L");
+//	}
+		char* buff = rz_str_new("");
+	if(flag & S_ATTR_PURE_INSTRUCTIONS){
+		buff = rz_str_append(buff, "S_ATTR_PURE_INSTRUCTIONS ");
+	}
+	if(flag & S_ATTR_NO_TOC){
+		buff = rz_str_append(buff, "S_ATTR_NO_TOC ");
+	}
+	if(flag & S_ATTR_SOME_INSTRUCTIONS){
+		buff = rz_str_append(buff, "S_ATTR_SOME_INSTRUCTIONS ");
+	}
+	if(flag & S_ATTR_EXT_RELOC){
+		buff = rz_str_append(buff, "S_ATTR_EXT_RELOC ");
+	}
+	if(flag & S_ATTR_LOC_RELOC){
+		buff = rz_str_append(buff, "S_ATTR_LOC_RELOC ");
+	}
 	return buff;
 }
 // XXX this function is called so many times

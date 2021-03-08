@@ -1417,43 +1417,42 @@ ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name
 }
 char* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {
 	char *buff;	
-	int8_t i=0;
 	buff = rz_str_new("");
 	if(flag & SHF_WRITE) {
-		buff = rz_str_append(buff,"W"); 
+		buff = rz_str_append(buff,"SHF_WRITE "); 
 	}
 	if(flag & SHF_ALLOC) {
-		buff = rz_str_append(buff,"A"); 
+		buff = rz_str_append(buff,"SHF_ALLOC "); 
 	}
 	if(flag & SHF_EXECINSTR) {
-		buff = rz_str_append(buff,"X");
+		buff = rz_str_append(buff,"SHF_EXECINSTR ");
 	}
 	if(flag & SHF_MERGE) {
-		buff = rz_str_append(buff,"M");
+		buff = rz_str_append(buff,"SHF_MERGE ");
 	}
 	if(flag & SHF_STRINGS) {
-		buff = rz_str_append(buff,"S");
+		buff = rz_str_append(buff,"SHF_STRINGS ");
 	}
 	if(flag & SHF_INFO_LINK) {
-		buff = rz_str_append(buff,"I");
+		buff = rz_str_append(buff,"SHF_INFO_LINK ");
 	}
 	if(flag & SHF_LINK_ORDER) {
-		buff = rz_str_append(buff,"L");
+		buff = rz_str_append(buff,"SHF_LINK_ORDER ");
 	}
 	if(flag & SHF_OS_NONCONFORMING) {
-		buff = rz_str_append(buff,"O");
+		buff = rz_str_append(buff,"SHF_OS_NONCONFORMING ");
 	}
 	if(flag & SHF_GROUP) {
-		buff = rz_str_append(buff,"G");
+		buff = rz_str_append(buff,"SHF_GROUP ");
 	}
 	if(flag & SHF_TLS) {
-		buff = rz_str_append(buff,"T");
+		buff = rz_str_append(buff,"SHF_TLS ");
 	}
 	if(flag & SHF_EXCLUDE) {
-		buff = rz_str_append(buff,"E");
+		buff = rz_str_append(buff,"SHF_EXCLUDE ");
 	}
 	if(flag & SHF_COMPRESSED) {
-		buff = rz_str_append(buff,"C");
+		buff = rz_str_append(buff,"SHF_COMPRESSED ");
 	}
 	return buff;	
 }

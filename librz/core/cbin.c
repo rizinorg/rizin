@@ -2806,48 +2806,25 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		fd = rz_core_file_cur_fd(r);
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
-	if (IS_MODE_NORMAL(mode) && !print_segments && (!strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3) || !strncmp(r->file->core->bin->cur->o->info->rclass, "mach", 4))) { //&& !strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3) 
-//#ifdef RZ_BIN_MACH064
-//	rz_cons_printf("MACH-O Section Flag Keys:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
-//  L (link order), O (extra OS processing required), G (group), T (TLS),\n  C (compressed), E (exclude)");
-//#ifdef RZ_BIN_ELF64
-	rz_cons_printf("ELF Section Flag Keys:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
-  L (link order), O (extra OS processing required), G (group), T (TLS),\n  C (compressed), E (exclude)");
-//#endif
-		
-		if (hashtypes) {
+	if (IS_MODE_NORMAL(mode) && !print_segments ) {
+		if(!strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3) || !strncmp(r->file->core->bin->cur->o->info->rclass, "mach", 4)){
+			if (hashtypes) {
 						rz_table_set_columnsf(table, "dXxXxsssss",
 				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "Flags");
-		} else {
+			} else {
 			rz_table_set_columnsf(table, "dXxXxssss",
 				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name", "type", "Flags");
-		}
-		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
-		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
-		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
-	}
-	if (IS_MODE_NORMAL(mode) && !print_segments && !strncmp(r->file->core->bin->cur->o->info->rclass, "pe", 2)) { //&& !strncmp(r->file->core->bin->cur->o->info->rclass, "pe", 2)
-		//rz_cons_printf("Key to PE Section Flags:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
-  L (link order), O (extra OS processing required), G (group), T (TLS),\n  C (compressed), E (exclude)");
-		if (hashtypes) {
-						rz_table_set_columnsf(table, "dXxXxsss",
+			}
+		}else{
+			if (hashtypes) {
+			rz_table_set_columnsf(table, "dXxXxsss",
 				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
-		} else {
-			rz_table_set_columnsf(table, "dXxXxss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+			} else {
+				rz_table_set_columnsf(table, "dXxXxss",
+					"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+			}
 		}
-		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
-		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
-		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
-	}
-	if (IS_MODE_NORMAL(mode) & print_segments ) { 
-		if (hashtypes) {
-						rz_table_set_columnsf(table, "dXxXxsss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
-		} else {
-			rz_table_set_columnsf(table, "dXxXxss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
-		}
+		
 		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
