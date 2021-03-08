@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2003  Philippe Biondi <biondi@cartel-securite.fr>
+// SPDX-License-Identifier: LGPL-2.1-only
+
 // XXX: This file describes too many things and some of them are not portable.
 /*
  * sftypes.h -- shellforge lib types

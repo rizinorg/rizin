@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2017-2018 - rkx1209 */
+// SPDX-FileCopyrightText: 2017-2018 rkx1209 <rkx1209dev@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>

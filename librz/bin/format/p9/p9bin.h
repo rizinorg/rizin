@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2008 Anant Narayanan
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef P9BIN_H
 #define P9BIN_H
 

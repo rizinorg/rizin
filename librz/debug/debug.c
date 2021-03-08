@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2018 jduck <github.jdrake@qoop.org>
+// SPDX-FileCopyrightText: 2009-2018 TheLemonMan <thatlemon@gmail.com>
+// SPDX-FileCopyrightText: 2009-2018 saucec0de
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>

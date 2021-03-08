@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 Dirk Eibach <dirk.eibach@gdsys.cc>
+// SPDX-FileCopyrightText: 2018 Guntermann
+// SPDX-FileCopyrightText: 2018 Drunck GmbH
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>

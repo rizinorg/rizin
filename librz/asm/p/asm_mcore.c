@@ -1,4 +1,5 @@
-/* rizin - LGPL3 - Copyright 2018 - deroad */
+// SPDX-FileCopyrightText: 2018 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
 #include <rz_lib.h>

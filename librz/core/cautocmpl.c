@@ -1,9 +1,12 @@
+// SPDX-FileCopyrightText: 2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <tree_sitter/api.h>
 #include <rz_core.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
+
+#include "core_private.h"
 
 /**
  * Describe what needs to be autocompleted.
@@ -183,6 +186,18 @@ static void autocmplt_cmd_arg_macro(RzCore *core, RzLineNSCompletionResult *res,
 	}
 }
 
+static void autocmplt_cmd_arg_flag(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzFlagItem *item;
+	RzListIter *iter;
+	RzList *list = rz_flag_all_list(core->flags, false);
+	rz_list_foreach (list, iter, item) {
+		char *flag = item->name;
+		if (!strncmp(flag, s, len)) {
+			rz_line_ns_completion_result_add(res, flag);
+		}
+	}
+}
+
 static bool offset_prompt_add_flag(RzFlagItem *fi, void *user) {
 	RzLineNSCompletionResult *res = (RzLineNSCompletionResult *)user;
 	rz_line_ns_completion_result_add(res, fi->name);
@@ -199,6 +214,66 @@ static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, c
 		}
 		free(name);
 	}
+}
+
+static void autocmplt_cmd_arg_enum_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	char *item;
+	RzListIter *iter;
+	RzList *list = rz_types_enums(core->analysis->sdb_types);
+	rz_list_foreach (list, iter, item) {
+		if (!strncmp(item, s, len)) {
+			rz_line_ns_completion_result_add(res, item);
+		}
+	}
+	rz_list_free(list);
+}
+
+static void autocmplt_cmd_arg_struct_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	char *item;
+	RzListIter *iter;
+	RzList *list = rz_types_structs(core->analysis->sdb_types);
+	rz_list_foreach (list, iter, item) {
+		if (!strncmp(item, s, len)) {
+			rz_line_ns_completion_result_add(res, item);
+		}
+	}
+	rz_list_free(list);
+}
+
+static void autocmplt_cmd_arg_union_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	char *item;
+	RzListIter *iter;
+	RzList *list = rz_types_unions(core->analysis->sdb_types);
+	rz_list_foreach (list, iter, item) {
+		if (!strncmp(item, s, len)) {
+			rz_line_ns_completion_result_add(res, item);
+		}
+	}
+	rz_list_free(list);
+}
+
+static void autocmplt_cmd_arg_alias_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	char *item;
+	RzListIter *iter;
+	RzList *list = rz_types_typedefs(core->analysis->sdb_types);
+	rz_list_foreach (list, iter, item) {
+		if (!strncmp(item, s, len)) {
+			rz_line_ns_completion_result_add(res, item);
+		}
+	}
+	rz_list_free(list);
+}
+
+static void autocmplt_cmd_arg_any_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	char *item;
+	RzListIter *iter;
+	RzList *list = rz_types_all(core->analysis->sdb_types);
+	rz_list_foreach (list, iter, item) {
+		if (!strncmp(item, s, len)) {
+			rz_line_ns_completion_result_add(res, item);
+		}
+	}
+	rz_list_free(list);
 }
 
 static void autocmplt_cmd_arg_help_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -427,6 +502,24 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_FCN_VAR:
 		autocmplt_cmd_arg_fcn_var(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_FLAG:
+		autocmplt_cmd_arg_flag(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_ENUM_TYPE:
+		autocmplt_cmd_arg_enum_type(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_STRUCT_TYPE:
+		autocmplt_cmd_arg_struct_type(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_UNION_TYPE:
+		autocmplt_cmd_arg_union_type(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_ALIAS_TYPE:
+		autocmplt_cmd_arg_alias_type(core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_ANY_TYPE:
+		autocmplt_cmd_arg_any_type(core, res, s, len);
 		break;
 	default:
 		break;

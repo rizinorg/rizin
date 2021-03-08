@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2010-2013 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* pancake // nopcode.org 2010-2013 -- emit module for rcc */
 
 #include <rz_egg.h>

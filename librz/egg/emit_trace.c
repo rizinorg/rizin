@@ -1,4 +1,5 @@
-/* pancake // nopcode.org 2011 -- trace emiter */
+// SPDX-FileCopyrightText: 2011 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_egg.h>
 #define attsyntax 0

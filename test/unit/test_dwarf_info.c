@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 HoundThe <cgkajm@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 #include <rz_bin.h>

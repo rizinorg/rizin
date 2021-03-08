@@ -1,5 +1,5 @@
-/* RAR-VM assembler/disassembler by pancake for rizin with love */
-/* this implementation is licensed under LGPLv3 - 2012 */
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 #include <string.h>

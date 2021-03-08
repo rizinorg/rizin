@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2008-2020 - pancake, Jody Frankowski */
+// SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2008-2020 Jody Frankowski <jody.frankowski@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
 #include <rz_util.h>

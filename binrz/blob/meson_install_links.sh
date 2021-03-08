@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+# SPDX-FileCopyrightText: 2020 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
 set -e
 
 mkdir -p "${DESTDIR}/${MESON_INSTALL_PREFIX}/bin"

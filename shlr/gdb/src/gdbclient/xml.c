@@ -1,4 +1,5 @@
-/* libgdbr - LGPL - Copyright 2017-2018 - srimanta.barua1 */
+// SPDX-FileCopyrightText: 2017-2018 srimanta.barua1 <srimanta.barua1@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "gdbclient/xml.h"
 #include "gdbclient/commands.h"

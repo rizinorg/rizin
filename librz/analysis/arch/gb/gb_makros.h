@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2013 condret <condret@runas-racer.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_types.h>
 
 #define GB_IS_VIRTUAL(x)      (x / 0x10000)

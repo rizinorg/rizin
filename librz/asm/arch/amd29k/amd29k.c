@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "amd29k.h"
 #include "amd29k_internal.h"
 #include <stdio.h>

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_asm.h"
@@ -2412,10 +2413,6 @@ RZ_API void rz_core_print_cmp(RzCore *core, ut64 from, ut64 to) {
 	rz_print_hexdiff(core->print, core->offset, core->block,
 		to + delta, b, core->blocksize, col);
 	free(b);
-}
-
-static void cmd_print_pwn(const RzCore *core) {
-	rz_cons_printf("easter egg license has expired\n");
 }
 
 static int cmd_print_pxA(RzCore *core, int len, const char *input) {
@@ -4890,9 +4887,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	block = core->block;
 	switch (*input) {
 	case 'w': // "pw"
-		if (input[1] == 'n') {
-			cmd_print_pwn(core);
-		} else if (input[1] == 'd') {
+		if (input[1] == 'd') { // "pwd"
 			char *cwd = rz_sys_getdir();
 			if (cwd) {
 				rz_cons_println(cwd);
@@ -6826,9 +6821,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			core->offset = offset0;
 			rz_cons_printf("\n");
 		}
-		break;
-	case 'n': // easter
-		eprintf("easter egg license has expired\n");
 		break;
 	case 't': // "pt"
 		switch (input[1]) {

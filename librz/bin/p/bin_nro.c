@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2017-2019 - pancake */
+// SPDX-FileCopyrightText: 2017-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // TODO: Support NRR and MODF
 #include <rz_types.h>

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2012-2018 Alexander <alexander@demin.ws>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2020 - pancake, nibble, dso */
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2020 dso <dso@rice.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 #include <rz_types.h>
@@ -49,10 +52,6 @@ static const char *__getname(RzBin *bin, int type, int idx, bool sd) {
 		return plugin->get_name(a, type, idx, sd);
 	}
 	return NULL;
-}
-
-static ut64 binobj_a2b(RzBinObject *o, ut64 addr) {
-	return o ? addr + o->baddr_shift : addr;
 }
 
 // TODO: move these two function do a different file
@@ -753,7 +752,7 @@ RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 		if (section->is_segment) {
 			continue;
 		}
-		from = va ? binobj_a2b(o, section->vaddr) : section->paddr;
+		from = va ? rz_bin_object_addr_with_base(o, section->vaddr) : section->paddr;
 		to = from + (va ? section->vsize : section->size);
 		if (off >= from && off < to) {
 			return section;
@@ -772,6 +771,8 @@ RZ_API RzList *rz_bin_reset_strings(RzBin *bin) {
 		rz_list_free(bf->o->strings);
 		bf->o->strings = NULL;
 	}
+	ht_up_free(bf->o->strings_db);
+	bf->o->strings_db = ht_up_new0();
 
 	bf->rawstr = bin->rawstr;
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
@@ -1286,12 +1287,6 @@ RZ_API ut64 rz_bin_get_vaddr(RzBin *bin, ut64 paddr, ut64 vaddr) {
 		}
 	}
 	return rz_bin_file_get_vaddr(bin->cur, paddr, vaddr);
-}
-
-RZ_API ut64 rz_bin_a2b(RzBin *bin, ut64 addr) {
-	rz_return_val_if_fail(bin, UT64_MAX);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return binobj_a2b(o, addr);
 }
 
 RZ_API ut64 rz_bin_get_size(RzBin *bin) {

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 #if 0
 * Use RzList
@@ -82,11 +84,6 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 	}
 
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek);
-
-static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RzAnalysisBlock *a = _a, *b = _b;
-	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
-}
 
 static void cmd_debug_reg(RzCore *core, const char *str);
 static bool lastcmd_repeat(RzCore *core, int next);

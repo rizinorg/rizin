@@ -117,7 +117,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 "wa call 0x10;ret"
-tna 0x10
+tn 0x10
 af
 pif
 EOF

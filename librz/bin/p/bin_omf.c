@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2019 ampotos <mercie_i@epitech.eu>
+// SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

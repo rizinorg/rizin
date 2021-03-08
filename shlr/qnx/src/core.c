@@ -1,4 +1,7 @@
-/* libqnxr - GPL - Copyright 2016 - defragger, madprogrammer, FSF Inc */
+// SPDX-FileCopyrightText: 2016 defragger
+// SPDX-FileCopyrightText: 2016 madprogrammer
+// SPDX-FileCopyrightText: 2016 FSF Inc
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include <errno.h>
 #include <rz_debug.h>

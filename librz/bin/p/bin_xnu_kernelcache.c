@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2019 - mrmacete */
+// SPDX-FileCopyrightText: 2019 mrmacete <mrmacete@protonmail.ch>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2018 maijin <maijin21@gmail.com>
+// SPDX-FileCopyrightText: 2009-2018 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_analysis.h"

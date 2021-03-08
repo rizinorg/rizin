@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 lonetech <yann-github@vernier.se>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <math.h>
 #include <rz_diff.h>
 #include "minunit.h"

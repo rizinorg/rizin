@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2007 Victor Muñoz
+// SPDX-License-Identifier: CC0-1.0
+
 /*
  * Find expanded AES keys in memory 
  * 

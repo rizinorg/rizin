@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "omf.h"
 
 static bool is_valid_omf_type(ut8 type) {

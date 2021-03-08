@@ -1,4 +1,6 @@
-// Copyright (c) 2014-2017, The Lemon Man, All rights reserved. LGPLv3
+// SPDX-FileCopyrightText: 2014-2017 The Lemon Man <thatlemon@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef KD_H
 #define KD_H
 #include <rz_types_base.h>

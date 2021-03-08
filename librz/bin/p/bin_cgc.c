@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2019 ret2libc <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #define RZ_BIN_CGC 1

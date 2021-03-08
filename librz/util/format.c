@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2007-2020 Skia <skia@libskia.so>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_cons.h"

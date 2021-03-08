@@ -1,10 +1,5 @@
-/*
- * TMS320 disassembly analyzer
- *
- * Written by Ilya V. Matveychikov <i.matveychikov@milabs.ru>
- *
- * Distributed under LGPL
- */
+// SPDX-FileCopyrightText: 2014 Ilya V. Matveychikov <i.matveychikov@milabs.ru>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
 #include "analysis_tms320c64x.c"

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2017 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 #include "libps.h"
 #include "libps_internal.h"

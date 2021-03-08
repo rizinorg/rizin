@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
+#
 # Format of RzCmdDesc/RzCmdDescHelp descriptor
 # name: name of the YAML file, might be useful to reference another sub-file
 # commands:
@@ -254,10 +258,8 @@ commands:
     summary: Seek commands
     subcommands: cmd_seek
   - name: t
-    cname: cmd_type
     summary: Types, noreturn, signatures, C parser and more
     subcommands: cmd_type
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: uniq
     cname: uniq
     summary: List uniq strings in file

@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 dso <dso@rice.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 #include <rz_hash.h>
@@ -24,10 +27,6 @@ static RzBinString *__stringAt(RzBinFile *bf, RzList *ret, ut64 addr) {
 		return ht_up_find(bf->o->strings_db, addr, NULL);
 	}
 	return NULL;
-}
-
-static ut64 binobj_a2b(RzBinObject *o, ut64 addr) {
-	return o ? addr + o->baddr_shift : addr;
 }
 
 static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
@@ -1031,7 +1030,7 @@ RZ_API RzBinField *rz_bin_file_add_field(RzBinFile *binfile, const char *classna
 RZ_API ut64 rz_bin_file_get_vaddr(RzBinFile *bf, ut64 paddr, ut64 vaddr) {
 	rz_return_val_if_fail(bf && bf->o, paddr);
 	if (bf->o->info && bf->o->info->has_va) {
-		return binobj_a2b(bf->o, vaddr);
+		return rz_bin_object_addr_with_base(bf->o, vaddr);
 	}
 	return paddr;
 }

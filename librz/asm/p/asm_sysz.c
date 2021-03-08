@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2013-2015 - pancake */
+// SPDX-FileCopyrightText: 2013-2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // instruction set : http://www.tachyonsoft.com/inst390m.htm
 

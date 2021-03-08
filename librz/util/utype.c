@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2013-2020 oddcoder <ahmedsoliman@oddcoder.com>
+// SPDX-FileCopyrightText: 2013-2020 sivaramaaa <sivaramaaa@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -394,6 +397,19 @@ RZ_API int rz_type_unlink(Sdb *TDB, ut64 addr) {
 	char *laddr = sdb_fmt("link.%08" PFMT64x, addr);
 	sdb_unset(TDB, laddr, 0);
 	types_range_del(TDB, addr);
+	return true;
+}
+
+static bool sdbdeletelink(void *p, const char *k, const char *v) {
+	Sdb *TDB = (Sdb *)p;
+	if (!strncmp(k, "link.", strlen("link."))) {
+		rz_type_del(TDB, k);
+	}
+	return true;
+}
+
+RZ_API int rz_type_unlink_all(Sdb *TDB) {
+	sdb_foreach(TDB, sdbdeletelink, TDB);
 	return true;
 }
 

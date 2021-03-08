@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2017-2019 - pancake, cgvwzq */
+// SPDX-FileCopyrightText: 2017-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017-2021 cgvwzq
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 

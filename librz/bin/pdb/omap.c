@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014-2016 iniside <inisider@gmail.com>
+// SPDX-FileCopyrightText: 2014-2016 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "types.h"

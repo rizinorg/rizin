@@ -1,4 +1,6 @@
-/* libqnxr - GPL - Copyright 2014-2016 - defragger, madprogrammer */
+// SPDX-FileCopyrightText: 2014-2016 defragger
+// SPDX-FileCopyrightText: 2014-2016 madprogrammer
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include <errno.h>
 #include "packet.h"

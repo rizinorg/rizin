@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2006 The Android Open Source Project
+// SPDX-License-Identifier: Apache-2.0
+
 /*
  * Copyright (C) 2006 The Android Open Source Project
  *

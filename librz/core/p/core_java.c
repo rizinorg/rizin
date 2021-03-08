@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014-2020 dso
+// SPDX-FileCopyrightText: 2014-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: Apache-2.0
 
 #include <rz_types.h>

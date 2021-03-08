@@ -1,7 +1,5 @@
-/* SHARP LH 5801 disassembler -- instruction decoder,
- * Copyright (C) 2014 jn,
- * Released under the terms and conditions of the GNU LGPL.
- */
+// SPDX-FileCopyrightText: 2014 jn
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /*
  * This disassembler is based on the "SHARP PC-1500/A Systemhandbuch"

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2013 Adam Pridgen <dso@rice.edu>
 // SPDX-License-Identifier: Apache-2.0
 
 #include <rz_analysis.h>

@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2018 - thestr4ng3r */
+// SPDX-FileCopyrightText: 2018 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef PIC_BASELINE_H
 #define PIC_BASELINE_H

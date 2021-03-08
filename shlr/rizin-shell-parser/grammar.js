@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 const SPECIAL_CHARACTERS = ["\\s", "@", "|", "#", '"', "'", ">", ";", "$", "`", "~", "\\", ",", "(", ")"];
 
 const PF_SPECIAL_CHARACTERS = ["\\s", "@", "|", "#", '"', "'", ">", ";", "$", "`", "~", "\\", "(", ")"];

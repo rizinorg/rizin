@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2013-2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2013-2017 fenugrec <fenugrec@users.sourceforge.net>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /*

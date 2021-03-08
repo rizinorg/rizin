@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2003-2015 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Interface definition for configurable Xtensa ISA support.
    Copyright (C) 2003-2015 Free Software Foundation, Inc.
 
