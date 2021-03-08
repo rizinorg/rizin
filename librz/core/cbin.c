@@ -34,7 +34,7 @@
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
 static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
 static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
-static int bin_dwarf(RzCore *core, PJ *pj, int mode);
+static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode);
 static int bin_source(RzCore *r, PJ *pj, int mode);
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
@@ -379,7 +379,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	rz_core_bin_apply_strings(r, binfile);
 	rz_core_bin_apply_config(r, binfile);
 	rz_core_bin_apply_main(r, binfile, va);
-	bin_dwarf(r, NULL, RZ_MODE_SET);
+	bin_dwarf(r, binfile, NULL, RZ_MODE_SET);
 	bin_entry(r, NULL, RZ_MODE_SET, loadaddr, va, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, true);
@@ -1143,17 +1143,14 @@ static void file_lines_free_kv(HtPPKv *kv) {
 	file_lines_free(kv->value);
 }
 
-static int bin_dwarf(RzCore *core, PJ *pj, int mode) {
+static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
+	rz_return_val_if_fail(core && binfile, false);
 	RzBinDwarfRow *row;
 	RzListIter *iter;
 	if (!rz_config_get_i(core->config, "bin.dbginfo")) {
 		return false;
 	}
-	RzBinFile *binfile = rz_bin_cur(core->bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(binfile);
-	if (!binfile) {
-		return false;
-	}
 	RzList *list = NULL;
 	RzList *ownlist = NULL;
 	if (plugin && plugin->lines) {
@@ -1161,10 +1158,9 @@ static int bin_dwarf(RzCore *core, PJ *pj, int mode) {
 		list = plugin->lines(binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		RzBinDwarfDebugAbbrev *da = NULL;
-		da = rz_bin_dwarf_parse_abbrev(core->bin, mode);
-		RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(da, core->bin, mode);
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(core->bin, core->analysis->bits / 8);
+		RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
+		RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(binfile, da, mode);
+		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != RZ_MODE_PRINT) {
 			/* Should we do this by default? */
@@ -1181,8 +1177,8 @@ static int bin_dwarf(RzCore *core, PJ *pj, int mode) {
 			rz_bin_dwarf_free_loc(loc_table);
 		}
 		rz_bin_dwarf_free_debug_info(info);
-		rz_bin_dwarf_parse_aranges(core->bin, mode);
-		list = ownlist = rz_bin_dwarf_parse_line(core->bin, mode);
+		rz_bin_dwarf_parse_aranges(binfile, mode);
+		list = ownlist = rz_bin_dwarf_parse_line(binfile, mode);
 		rz_bin_dwarf_free_debug_abbrev(da);
 	}
 	if (!list) {
@@ -4288,7 +4284,7 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 		ret &= bin_main(core, binfile, pj, mode, va);
 	}
 	if ((action & RZ_CORE_BIN_ACC_DWARF)) {
-		ret &= bin_dwarf(core, pj, mode);
+		ret &= binfile ? bin_dwarf(core, binfile, pj, mode) : false;
 	}
 	if ((action & RZ_CORE_BIN_ACC_PDB)) {
 		ret &= rz_core_pdb_info(core, core->bin->file, pj, mode);

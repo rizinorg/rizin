@@ -1004,12 +1004,10 @@ static size_t parse_opcodes(const RzBin *bin, const ut8 *obuf,
 	return (size_t)(buf - obuf); // number of bytes we've moved by
 }
 
-static int parse_line_raw(const RzBin *a, const ut8 *obuf,
+static int parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
 	ut64 len, int mode) {
-
-	RzBinFile *binfile = a ? a->cur : NULL;
 	rz_return_val_if_fail(binfile && obuf, false);
-	PrintfCallback print = a->cb_printf;
+	PrintfCallback print = binfile->rbin->cb_printf;
 
 	if (mode == RZ_MODE_PRINT) {
 		print("Raw dump of debug contents of section .debug_line:\n\n");
@@ -1030,7 +1028,7 @@ static int parse_line_raw(const RzBin *a, const ut8 *obuf,
 		buf_size = buf_end - buf;
 
 		tmpbuf = buf;
-		buf = parse_line_header(a->cur, buf, buf_end, &hdr, mode, print);
+		buf = parse_line_header(binfile, buf, buf_end, &hdr, mode, print);
 		if (!buf) {
 			line_header_fini(&hdr);
 			return false;
@@ -1066,7 +1064,7 @@ static int parse_line_raw(const RzBin *a, const ut8 *obuf,
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
 			// reads one whole sequence
-			tmp_read = parse_opcodes(a, buf, buf_end - buf, &hdr, &regs, mode);
+			tmp_read = parse_opcodes(binfile->rbin, buf, buf_end - buf, &hdr, &regs, mode);
 			bytes_read += tmp_read;
 			buf += tmp_read; // Move in the buffer forward
 		} while (bytes_read < buf_size && tmp_read != 0); // if nothing is read -> error, exit
@@ -2155,26 +2153,26 @@ static RzBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 	return da;
 }
 
-RzBinSection *getsection(RzBin *a, const char *sn) {
+RzBinSection *getsection(RzBinFile *binfile, const char *sn) {
+	rz_return_val_if_fail(binfile && sn, NULL);
 	RzListIter *iter;
 	RzBinSection *section = NULL;
-	RzBinFile *binfile = a ? a->cur : NULL;
-	RzBinObject *o = binfile ? binfile->o : NULL;
-
-	if (o && o->sections) {
-		rz_list_foreach (o->sections, iter, section) {
-			if (strstr(section->name, sn)) {
-				return section;
-			}
+	RzBinObject *o = binfile->o;
+	if (!o || !o->sections) {
+		return NULL;
+	}
+	rz_list_foreach (o->sections, iter, section) {
+		if (strstr(section->name, sn)) {
+			return section;
 		}
 	}
 	return NULL;
 }
 
-static ut8 *get_section_bytes(RzBin *bin, const char *sect_name, size_t *len) {
-	RzBinSection *section = getsection(bin, sect_name);
-	RzBinFile *binfile = bin ? bin->cur : NULL;
-	if (!section || !binfile) {
+static ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t *len) {
+	rz_return_val_if_fail(binfile && sect_name && len, NULL);
+	RzBinSection *section = getsection(binfile, sect_name);
+	if (!section) {
 		return NULL;
 	}
 	if (section->size > binfile->size) {
@@ -2194,69 +2192,72 @@ static ut8 *get_section_bytes(RzBin *bin, const char *sect_name, size_t *len) {
  * @param mode RZ_MODE_PRINT to print
  * @return RzBinDwarfDebugInfo* Parsed information, NULL if error
  */
-RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinDwarfDebugAbbrev *da, RzBin *bin, int mode) {
-	RzBinDwarfDebugInfo *info = NULL;
-	RzBinSection *debug_str;
-	RzBinSection *section = getsection(bin, "debug_info");
-	RzBinFile *binfile = bin ? bin->cur : NULL;
+RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwarfDebugAbbrev *da, int mode) {
+	rz_return_val_if_fail(binfile, NULL);
+	RzBinSection *section = getsection(binfile, "debug_info");
+	if (!section) {
+		return NULL;
+	}
 
+	RzBinDwarfDebugInfo *info = NULL;
 	ut64 debug_str_len = 0;
 	ut8 *debug_str_buf = NULL;
 
-	if (binfile && section) {
-		debug_str = getsection(bin, "debug_str");
-		if (debug_str) {
-			debug_str_len = debug_str->size;
-			debug_str_buf = calloc(1, debug_str_len + 1);
-			if (!debug_str_buf) {
-				goto cleanup;
-			}
-			st64 ret = rz_buf_read_at(binfile->buf, debug_str->paddr,
-				debug_str_buf, debug_str_len);
-			if (!ret) {
-				goto cleanup;
-			}
+	RzBinSection *debug_str = debug_str = getsection(binfile, "debug_str");
+	if (debug_str) {
+		debug_str_len = debug_str->size;
+		debug_str_buf = calloc(1, debug_str_len + 1);
+		if (!debug_str_buf) {
+			goto cave;
 		}
-
-		ut64 len = section->size;
-		// what is this checking for?
-		if (len > (UT32_MAX >> 1) || len < 1) {
-			goto cleanup;
-		}
-		ut8 *buf = calloc(1, len);
-		if (!buf) {
-			goto cleanup;
-		}
-		if (!rz_buf_read_at(binfile->buf, section->paddr, buf, len)) {
-			free(buf);
-			goto cleanup;
-		}
-		/* set the endianity global [HOTFIX] */
-		big_end = rz_bin_is_big_endian(bin);
-		info = parse_info_raw(binfile->sdb_addrinfo, da, buf, len,
+		st64 ret = rz_buf_read_at(binfile->buf, debug_str->paddr,
 			debug_str_buf, debug_str_len);
-
-		if (mode == RZ_MODE_PRINT && info) {
-			print_debug_info(info, bin->cb_printf);
+		if (!ret) {
+			goto cave_debug_str_buf;
 		}
-		// build hashtable after whole parsing because of possible relocations
-		if (info) {
-			size_t i, j;
-			for (i = 0; i < info->count; i++) {
-				RzBinDwarfCompUnit *unit = &info->comp_units[i];
-				for (j = 0; j < unit->count; j++) {
-					RzBinDwarfDie *die = &unit->dies[j];
-					ht_up_insert(info->lookup_table, die->offset, die); // optimization for further processing}
-				}
+	}
+
+	ut64 len = section->size;
+	// what is this checking for?
+	if (len > (UT32_MAX >> 1) || len < 1) {
+		goto cave_debug_str_buf;
+	}
+	ut8 *buf = calloc(1, len);
+	if (!buf) {
+		goto cave_debug_str_buf;
+	}
+	if (!rz_buf_read_at(binfile->buf, section->paddr, buf, len)) {
+		goto cave_buf;
+	}
+	/* set the endianity global [HOTFIX] */
+	big_end = binfile->o && binfile->o->info && binfile->o->info->big_endian;
+	info = parse_info_raw(binfile->sdb_addrinfo, da, buf, len, debug_str_buf, debug_str_len);
+	if (!info) {
+		goto cave_buf;
+	}
+
+#if 0
+	if (mode == RZ_MODE_PRINT && info) {
+		print_debug_info(info, bin->cb_printf);
+	}
+#endif
+	// build hashtable after whole parsing because of possible relocations
+	if (info) {
+		size_t i, j;
+		for (i = 0; i < info->count; i++) {
+			RzBinDwarfCompUnit *unit = &info->comp_units[i];
+			for (j = 0; j < unit->count; j++) {
+				RzBinDwarfDie *die = &unit->dies[j];
+				ht_up_insert(info->lookup_table, die->offset, die); // optimization for further processing}
 			}
 		}
-		free(debug_str_buf);
-		free(buf);
-		return info;
 	}
-cleanup:
+cave_buf:
+	free(buf);
+cave_debug_str_buf:
 	free(debug_str_buf);
-	return NULL;
+cave:
+	return info;
 }
 
 static RzBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
@@ -2277,12 +2278,12 @@ static void row_free(void *p) {
 	free(row);
 }
 
-RZ_API RzList *rz_bin_dwarf_parse_line(RzBin *bin, int mode) {
+RZ_API RzList *rz_bin_dwarf_parse_line(RzBinFile *binfile, int mode) {
+	rz_return_val_if_fail(binfile, NULL);
 	ut8 *buf;
 	RzList *list = NULL;
 	int len, ret;
-	RzBinSection *section = getsection(bin, "debug_line");
-	RzBinFile *binfile = bin ? bin->cur : NULL;
+	RzBinSection *section = getsection(binfile, "debug_line");
 	if (binfile && section) {
 		len = section->size;
 		if (len < 1) {
@@ -2303,9 +2304,9 @@ RZ_API RzList *rz_bin_dwarf_parse_line(RzBin *bin, int mode) {
 			return NULL;
 		}
 		/* set the endianity global [HOTFIX] */
-		big_end = rz_bin_is_big_endian(bin);
+		big_end = binfile->o && binfile->o->info && binfile->o->info->big_endian;
 		// Actually parse the section
-		parse_line_raw(bin, buf, len, mode);
+		parse_line_raw(binfile, buf, len, mode);
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;
 		SdbKv *kv;
@@ -2340,44 +2341,49 @@ RZ_API RzList *rz_bin_dwarf_parse_line(RzBin *bin, int mode) {
 	return list;
 }
 
-RZ_API RzList *rz_bin_dwarf_parse_aranges(RzBin *bin, int mode) {
+RZ_API RzList *rz_bin_dwarf_parse_aranges(RzBinFile *binfile, int mode) {
+	rz_return_val_if_fail(binfile, NULL);
 	ut8 *buf;
 	int ret;
 	size_t len;
-	RzBinSection *section = getsection(bin, "debug_aranges");
-	RzBinFile *binfile = bin ? bin->cur : NULL;
-
-	if (binfile && section) {
-		len = section->size;
-		if (len < 1 || len > ST32_MAX) {
-			return NULL;
-		}
-		buf = calloc(1, len);
-		ret = rz_buf_read_at(binfile->buf, section->paddr, buf, len);
-		if (!ret) {
-			free(buf);
-			return NULL;
-		}
-		/* set the endianity global [HOTFIX] */
-		big_end = rz_bin_is_big_endian(bin);
-		parse_aranges_raw(buf, len, mode, bin->cb_printf);
-
-		free(buf);
+	RzBinSection *section = getsection(binfile, "debug_aranges");
+	if (!section) {
+		return NULL;
 	}
+
+	len = section->size;
+	if (len < 1 || len > ST32_MAX) {
+		return NULL;
+	}
+	buf = calloc(1, len);
+	ret = rz_buf_read_at(binfile->buf, section->paddr, buf, len);
+	if (!ret) {
+		free(buf);
+		return NULL;
+	}
+	/* set the endianity global [HOTFIX] */
+	big_end = binfile->o && binfile->o->info && binfile->o->info->big_endian;
+	// TODO: remove this printing
+	parse_aranges_raw(buf, len, mode, binfile->rbin->cb_printf);
+
+	free(buf);
 	return NULL;
 }
 
-RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBin *bin, int mode) {
+RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBinFile *binfile) {
+	rz_return_val_if_fail(binfile, NULL);
 	size_t len = 0;
-	ut8 *buf = get_section_bytes(bin, "debug_abbrev", &len);
+	ut8 *buf = get_section_bytes(binfile, "debug_abbrev", &len);
 	if (!buf) {
 		return NULL;
 	}
 	RzBinDwarfDebugAbbrev *abbrevs = parse_abbrev_raw(buf, len);
 
+#if 0
 	if (mode == RZ_MODE_PRINT && abbrevs) {
 		print_abbrev_section(abbrevs, bin->cb_printf);
 	}
+#endif
 	free(buf);
 	return abbrevs;
 }
@@ -2480,20 +2486,20 @@ static HtUP *parse_loc_raw(HtUP /*<offset, List *<LocListEntry>*/ *loc_table, co
  * @brief Parses out the .debug_loc section into a table that maps each list as
  *        offset of a list -> LocationList
  *
- * @param bin
+ * @param binfile
  * @param addr_size machine address size used in executable (necessary for parsing)
  * @return RZ_API*
  */
-RZ_API HtUP /*<offset, RzBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RzBin *bin, int addr_size) {
-	rz_return_val_if_fail(bin, NULL);
+RZ_API HtUP /*<offset, RzBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RzBinFile *binfile, int addr_size) {
+	rz_return_val_if_fail(binfile, NULL);
 	/* The standarparse_loc_raw_frame, not sure why is that */
 	size_t len = 0;
-	ut8 *buf = get_section_bytes(bin, "debug_loc", &len);
+	ut8 *buf = get_section_bytes(binfile, "debug_loc", &len);
 	if (!buf) {
 		return NULL;
 	}
 	/* set the endianity global [HOTFIX] */
-	big_end = rz_bin_is_big_endian(bin);
+	big_end = binfile->o && binfile->o->info && binfile->o->info->big_endian;
 	HtUP /*<offset, RzBinDwarfLocList*/ *loc_table = ht_up_new0();
 	if (!loc_table) {
 		free(buf);
