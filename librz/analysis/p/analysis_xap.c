@@ -6,7 +6,8 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 #include <rz_analysis.h>
-#include "../asm/arch/xap/dis.c"
+
+#include <xap/dis.h>
 
 static int label_off(struct directive *d) {
 	int off = d->d_operand;

@@ -15,7 +15,7 @@ static struct state _state;
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
 
-struct state *get_state(void) {
+RZ_IPI struct state *get_state(void) {
 	memset(&_state, 0, sizeof(struct state));
 	return &_state;
 }
@@ -83,7 +83,7 @@ static int get_num(int num, int shift) {
 	return (int)(x << shift);
 }
 
-static int get_operand(struct state *s, struct directive *d) {
+RZ_IPI int get_operand(struct state *s, struct directive *d) {
 	int total = get_num(d->d_inst.in_operand, 0);
 	if (s->s_prefix)
 		total += get_num(s->s_prefix_val, 8);
@@ -445,7 +445,7 @@ static int decode_known(struct state *s, struct directive *d) {
 	return 1;
 }
 
-void xap_decode(struct state *s, struct directive *d) {
+RZ_IPI void xap_decode(struct state *s, struct directive *d) {
 	int prefix = s->s_prefix;
 	if (!decode_fixed(s, d))
 		if (!decode_known(s, d))
@@ -460,7 +460,7 @@ static int read_bin(struct state *s, struct directive *d) {
 	return 1;
 }
 
-struct directive *next_inst(struct state *s) {
+RZ_IPI struct directive *next_inst(struct state *s) {
 	int rd;
 	struct directive *d = malloc(sizeof(*d));
 	if (!d) {

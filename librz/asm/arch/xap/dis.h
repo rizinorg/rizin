@@ -83,8 +83,9 @@ struct state {
 #define ADDR_MODE_RELATIVE   0
 #define ADDR_MODE_X_RELATIVE 2
 
-void xap_decode(struct state *s, struct directive *d);
-struct state *get_state(void);
-struct directive *next_inst(struct state *s);
+RZ_IPI void xap_decode(struct state *s, struct directive *d);
+RZ_IPI struct state *get_state(void);
+RZ_IPI struct directive *next_inst(struct state *s);
+RZ_IPI int get_operand(struct state *s, struct directive *d);
 
 #endif
