@@ -322,7 +322,6 @@ struct rz_bin_t {
 	RzIDStorage *ids;
 	RzList /*<RzBinPlugin>*/ *plugins;
 	RzList /*<RzBinXtrPlugin>*/ *binxtrs;
-	RzList /*<RzBinLdrPlugin>*/ *binldrs;
 	RzList /*<RzBinFile>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;
@@ -391,15 +390,6 @@ typedef struct rz_bin_xtr_plugin_t {
 	void (*destroy)(RzBin *bin);
 	void (*free_xtr)(void *xtr_obj);
 } RzBinXtrPlugin;
-
-typedef struct rz_bin_ldr_plugin_t {
-	char *name;
-	char *desc;
-	char *license;
-	int (*init)(void *user);
-	int (*fini)(void *user);
-	bool (*load)(RzBin *bin);
-} RzBinLdrPlugin;
 
 typedef struct rz_bin_arch_options_t {
 	const char *arch;
@@ -689,7 +679,6 @@ RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr);
 RZ_API void rz_bin_bind(RzBin *b, RzBinBind *bnd);
 RZ_API bool rz_bin_add(RzBin *bin, RzBinPlugin *foo);
 RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo);
-RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo);
 RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format);
 RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_bytes(RzBin *bin, const ut8 *bytes, ut64 sz);
@@ -856,7 +845,6 @@ extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_fatmach0;
 extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_dyldcache;
 extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed;
 extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64;
-extern RzBinLdrPlugin rz_bin_ldr_plugin_ldr_linux;
 extern RzBinPlugin rz_bin_plugin_zimg;
 extern RzBinPlugin rz_bin_plugin_omf;
 extern RzBinPlugin rz_bin_plugin_art;
