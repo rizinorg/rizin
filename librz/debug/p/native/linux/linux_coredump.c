@@ -96,14 +96,14 @@ static prpsinfo_t *linux_get_prpsinfo(RzDebug *dbg, proc_per_process_t *proc_dat
 		goto error;
 	}
 	basename = rz_file_basename(pfname);
-	strncpy(p->pr_fname, basename, sizeof(p->pr_fname));
+	strncpy(p->pr_fname, basename, sizeof(p->pr_fname) - 1);
 	p->pr_fname[sizeof(p->pr_fname) - 1] = 0;
 	ppsargs = prpsinfo_get_psargs(buffer, (int)len);
 	if (!ppsargs) {
 		goto error;
 	}
 
-	strncpy(p->pr_psargs, ppsargs, sizeof(p->pr_psargs));
+	strncpy(p->pr_psargs, ppsargs, sizeof(p->pr_psargs) - 1);
 	p->pr_psargs[sizeof(p->pr_psargs) - 1] = 0;
 	free(buffer);
 	free(ppsargs);
