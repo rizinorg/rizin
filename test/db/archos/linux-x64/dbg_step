@@ -207,6 +207,7 @@ RUN
 NAME=dbg.dsuo
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
+BROKEN=1
 CMDS=<<EOF
 dsuo jmp
 pi 1 @ rip~[0]

@@ -832,6 +832,17 @@ static int step_until_inst(RzCore *core, const char *instr, bool regex) {
 	return true;
 }
 
+static void dbg_follow_seek_register(RzCore *core) {
+	int follow = rz_config_get_i(core->config, "dbg.follow");
+	rz_cons_break_pop();
+	if (follow > 0) {
+		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+		if ((pc < core->offset) || (pc > (core->offset + follow))) {
+			rz_core_cmd0(core, "sr PC");
+		}
+	}
+}
+
 static int step_until_optype(RzCore *core, RzList *optypes_list) {
 	RzAnalysisOp op;
 	ut8 buf[32];
@@ -4202,47 +4213,46 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_dc);
 		return 0;
 	}
-	int follow = rz_config_get_i(core->config, "dbg.follow");
-	rz_cons_break_pop();
-	if (follow > 0) {
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_seek_to_register(core, "PC", false);
-		}
-	}
+	dbg_follow_seek_register(core);
 	return 1;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv) {
 	rz_reg_arena_swap(core->dbg->reg, true);
 	step_until(core, rz_num_math(core->num, argv[1]));
+	dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc, const char **argv) {
 	step_until_inst(core, argv[1], false);
+	dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int argc, const char **argv) {
 	step_until_inst(core, argv[1], true);
+	dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc, const char **argv) {
 	RzList *optypes_list = rz_list_new_from_array((const void **)argv + 1, argc - 1);
 	step_until_optype(core, optypes_list);
+	dbg_follow_seek_register(core);
 	rz_list_free(optypes_list);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_esil_handler(RzCore *core, int argc, const char **argv) {
 	step_until_esil(core, argv[1]);
+	dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, const char **argv) {
 	step_until_flag(core, argv[1]);
+	dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4418,6 +4428,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_ds);
 		return 0;
 	}
+	dbg_follow_seek_register(core);
 	return 1;
 }
 
@@ -4449,7 +4460,6 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	RzDebugTracepoint *t;
-	int follow = 0;
 	const char *ptr;
 	ut64 addr;
 	int min;
@@ -4787,20 +4797,17 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 's':
-		if (rz_cmd_debug_step(data, input + 1)) {
-			follow = rz_config_get_i(core->config, "dbg.follow");
-		}
+	case 's': // "ds"
+		rz_cmd_debug_step(data, input + 1);
 		break;
-	case 'b':
+	case 'b': // "db"
 		rz_core_cmd_bp(core, input);
 		break;
-	case 'H':
+	case 'H': // "dH"
 		eprintf("TODO: transplant process\n");
 		break;
 	case 'c': // "dc"
 		(void)rz_debug_continue_oldhandler(core, input + 1);
-		follow = 0;
 		break;
 	case 'm': // "dm"
 		cmd_debug_map(core, input + 1);
@@ -5189,11 +5196,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_d);
 		break;
 	}
-	if (follow > 0) {
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_seek_to_register(core, "PC", false);
-		}
-	}
+	dbg_follow_seek_register(core);
 	return 0;
 }
