@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020 FXTi
+// SPDX-FileCopyrightText: 2020 FXTi <zjxiang1998@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* Based on https://github.com/kokke/tiny-bignum-c.
