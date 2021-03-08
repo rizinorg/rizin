@@ -3523,7 +3523,7 @@ static const RzCmdDescDetailEntry tmp_modifiers_empty_detail_entries[] = {
 	{ .text = "<cmd> @", .arg_str = " <addr>!<blocksize>", .comment = "Temporary seek to <addr> and set blocksize to <blocksize>" },
 	{ .text = "<cmd> @..", .arg_str = "<addr>", .comment = "Temporary partial address seek (see s..)" },
 	{ .text = "<cmd> @!", .arg_str = "<blocksize>", .comment = "Temporary change the block size" },
-	{ .text = "<cmd> @{", .arg_str = "<from> <to>}", .comment = "Temporary set from and to for commands supporting ranges" },
+	{ .text = "<cmd> @(", .arg_str = "<from> <to>)", .comment = "Temporary set from and to for commands supporting ranges" },
 	{ .text = "<cmd> @a:", .arg_str = "<arch>[:<bits>]", .comment = "Temporary set arch and bits, if specified" },
 	{ .text = "<cmd> @b:", .arg_str = "<bits>", .comment = "Temporary set asm.bits" },
 	{ .text = "<cmd> @B:", .arg_str = "<nth>", .comment = "Temporary seek to nth instruction in current basic block (negative numbers too)" },
