@@ -703,7 +703,7 @@ if cli_enabled
     'man/rz-run.1',
     'man/rz-asm.1',
     'man/rz-ax.1',
-    'man/esil.7'
+    'man/rz-esil.7'
   )
 
   install_data('doc/hud',
