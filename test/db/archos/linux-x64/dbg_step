@@ -209,7 +209,7 @@ FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
 CMDS=<<EOF
 dsuo jmp
-pi 1~[0]
+pi 1 @ rip~[0]
 EOF
 EXPECT=<<EOF
 jmp
