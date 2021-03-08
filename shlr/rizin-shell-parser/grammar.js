@@ -155,12 +155,9 @@ module.exports = grammar({
     pipe_command: ($) => seq($._simple_command, "|", $.pipe_second_command),
     pipe_second_command: ($) => /[^|\r\n;]+/,
 
-    _offsetsizes_args: ($) => repeat1(seq($.arg, $.arg)),
-
     iter_file_lines_command: ($) => prec.right(1, seq($._simple_command, "@@.", $.arg)),
     iter_offsets_command: ($) => prec.right(1, seq($._simple_command, "@@=", optional($.args))),
-    iter_offsetssizes_command: ($) =>
-      prec.right(1, seq($._simple_command, "@@@=", optional(alias($._offsetsizes_args, $.args)))),
+    iter_offsetssizes_command: ($) => prec.right(1, seq($._simple_command, "@@@=", optional($.args))),
     iter_hit_command: ($) =>
       prec.right(1, seq($._simple_command, "@@", $._concat, alias($._search_command, $.arged_command))),
     iter_interpret_command: ($) => prec.right(1, seq($._simple_command, "@@c:", $._simple_command)),
@@ -182,12 +179,12 @@ module.exports = grammar({
     iter_iomap_command: ($) => prec.right(1, seq($._simple_command, "@@om")),
     iter_dbgmap_command: ($) => prec.right(1, seq($._simple_command, "@@dm")),
     iter_register_command: ($) => prec.right(1, seq($._simple_command, "@@r")),
-    iter_step_command: ($) => prec.right(1, seq($._simple_command, "@@s:", $.arg, $.arg, $.arg)),
+    iter_step_command: ($) => prec.right(1, seq($._simple_command, "@@s:", $.args)),
 
     // tmp changes commands
     tmp_seek_command: ($) => prec.right(1, seq($._simple_command, "@", $.args)),
     tmp_blksz_command: ($) => prec.right(1, seq($._simple_command, "@!", $.args)),
-    tmp_fromto_command: ($) => prec.right(1, seq($._simple_command, "@(", $.arg, $.arg, ")")),
+    tmp_fromto_command: ($) => prec.right(1, seq($._simple_command, "@(", $.args, ")")),
     tmp_arch_command: ($) => prec.right(1, seq($._simple_command, "@a:", $.arg)),
     tmp_bits_command: ($) => prec.right(1, seq($._simple_command, "@b:", $.args)),
     tmp_nthi_command: ($) => prec.right(1, seq($._simple_command, "@B:", $.arg)),

@@ -5674,11 +5674,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -8870,11 +8870,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
