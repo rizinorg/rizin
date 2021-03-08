@@ -51,6 +51,12 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_EVAL_FULL, ///< Argument is the name+(optional)value of a evaluable variable (e.g. `e` command)
 	RZ_CMD_ARG_TYPE_FCN_VAR, ///< Argument is the name of a function variable/argument
 	RZ_CMD_ARG_TYPE_FLAG, ///< Argument is a rizin flag
+	RZ_CMD_ARG_TYPE_ENUM_TYPE, ///< Argument is a C enum type name
+	RZ_CMD_ARG_TYPE_STRUCT_TYPE, ///< Argument is a C struct type name
+	RZ_CMD_ARG_TYPE_UNION_TYPE, ///< Argument is a C union type name
+	RZ_CMD_ARG_TYPE_ALIAS_TYPE, ///< Argument is a C typedef (alias) name
+	RZ_CMD_ARG_TYPE_CLASS_TYPE, ///< Argument is a C++/etc class name
+	RZ_CMD_ARG_TYPE_ANY_TYPE, ///< Argument is the any of the C or C++ type name
 } RzCmdArgType;
 
 /**
