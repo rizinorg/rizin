@@ -3,6 +3,7 @@
 
 #include <rz_types.h>
 #include <rz_analysis.h>
+#include <rz_lib.h>
 
 #include "librz/asm/arch/luac/lua_arch.h"
 
