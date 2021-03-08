@@ -28,13 +28,9 @@ RZ_LIB_VERSION(rz_bin);
 #if !defined(RZ_BIN_XTR_STATIC_PLUGINS)
 #define RZ_BIN_XTR_STATIC_PLUGINS 0
 #endif
-#if !defined(RZ_BIN_LDR_STATIC_PLUGINS)
-#define RZ_BIN_LDR_STATIC_PLUGINS 0
-#endif
 
 static RzBinPlugin *bin_static_plugins[] = { RZ_BIN_STATIC_PLUGINS, NULL };
 static RzBinXtrPlugin *bin_xtr_static_plugins[] = { RZ_BIN_XTR_STATIC_PLUGINS, NULL };
-static RzBinLdrPlugin *bin_ldr_static_plugins[] = { RZ_BIN_LDR_STATIC_PLUGINS, NULL };
 
 static int __getoffset(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
@@ -424,25 +420,6 @@ RZ_API bool rz_bin_add(RzBin *bin, RzBinPlugin *foo) {
 	return true;
 }
 
-RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo) {
-	RzListIter *it;
-	RzBinLdrPlugin *ldr;
-
-	rz_return_val_if_fail(bin && foo, false);
-
-	if (foo->init) {
-		foo->init(bin->user);
-	}
-	// avoid duplicates
-	rz_list_foreach (bin->binldrs, it, ldr) {
-		if (!strcmp(ldr->name, foo->name)) {
-			return false;
-		}
-	}
-	rz_list_append(bin->binldrs, foo);
-	return true;
-}
-
 RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo) {
 	RzListIter *it;
 	RzBinXtrPlugin *xtr;
@@ -472,7 +449,6 @@ RZ_API void rz_bin_free(RzBin *bin) {
 		rz_list_free(bin->binfiles);
 		rz_list_free(bin->binxtrs);
 		rz_list_free(bin->plugins);
-		rz_list_free(bin->binldrs);
 		sdb_free(bin->sdb);
 		rz_id_storage_free(bin->ids);
 		rz_str_constpool_fini(&bin->constpool);
@@ -558,7 +534,6 @@ RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format) {
 	RzListIter *it;
 	RzBinPlugin *bp;
 	RzBinXtrPlugin *bx;
-	RzBinLdrPlugin *ld;
 
 	if (format == 'q') {
 		rz_list_foreach (bin->plugins, it, bp) {
@@ -587,15 +562,6 @@ RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format) {
 			pj_end(pj);
 		}
 		pj_end(pj);
-		pj_ka(pj, "ldr");
-		rz_list_foreach (bin->binxtrs, it, ld) {
-			pj_o(pj);
-			pj_ks(pj, "name", ld->name);
-			pj_ks(pj, "description", ld->desc);
-			pj_ks(pj, "license", ld->license ? ld->license : "???");
-			pj_end(pj);
-		}
-		pj_end(pj);
 		pj_end(pj);
 	} else {
 		rz_list_foreach (bin->plugins, it, bp) {
@@ -608,11 +574,6 @@ RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format) {
 			const char *name = strncmp(bx->name, "xtr.", 4) ? bx->name : bx->name + 3;
 			bin->cb_printf("xtr  %-11s %s (%s)\n", name,
 				bx->desc, bx->license ? bx->license : "???");
-		}
-		rz_list_foreach (bin->binldrs, it, ld) {
-			const char *name = strncmp(ld->name, "ldr.", 4) ? ld->name : ld->name + 3;
-			bin->cb_printf("ldr  %-11s %s (%s)\n", name,
-				ld->desc, ld->license ? ld->license : "???");
 		}
 	}
 }
@@ -843,7 +804,6 @@ RZ_API int rz_bin_is_static(RzBin *bin) {
 RZ_API RzBin *rz_bin_new(void) {
 	int i;
 	RzBinXtrPlugin *static_xtr_plugin;
-	RzBinLdrPlugin *static_ldr_plugin;
 	RzBin *bin = RZ_NEW0(RzBin);
 	if (!bin) {
 		return NULL;
@@ -881,22 +841,7 @@ RZ_API RzBin *rz_bin_new(void) {
 			free(static_xtr_plugin);
 		}
 	}
-	/* loaders */
-	bin->binldrs = rz_list_new();
-	bin->binldrs->free = free;
-	for (i = 0; bin_ldr_static_plugins[i]; i++) {
-		static_ldr_plugin = RZ_NEW0(RzBinLdrPlugin);
-		if (!static_ldr_plugin) {
-			goto trashbin_binldrs;
-		}
-		*static_ldr_plugin = *bin_ldr_static_plugins[i];
-		if (!rz_bin_ldr_add(bin, static_ldr_plugin)) {
-			free(static_ldr_plugin);
-		}
-	}
 	return bin;
-trashbin_binldrs:
-	rz_list_free(bin->binldrs);
 trashbin_binxtrs:
 	rz_list_free(bin->binxtrs);
 	rz_list_free(bin->binfiles);

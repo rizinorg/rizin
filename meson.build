@@ -521,7 +521,6 @@ conf_data.set('plugins_analysis', ', '.join(analysis_enabled_static_plugins_str)
 conf_data.set('plugins_asm', ', '.join(asm_enabled_static_plugins_str))
 conf_data.set('plugins_bp', '&rz_bp_plugin_' + ', &rz_bp_plugin_'.join(bp_plugins) + ', 0')
 conf_data.set('plugins_bin', '&rz_bin_plugin_' + ', &rz_bin_plugin_'.join(bin_plugins) + ', 0')
-conf_data.set('plugins_bin_ldr', '&rz_bin_ldr_plugin_' + ', &rz_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
 conf_data.set('plugins_bin_xtr', '&rz_bin_xtr_plugin_' + ', &rz_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
 conf_data.set('plugins_crypto', '&rz_crypto_plugin_' + ', &rz_crypto_plugin_'.join(crypto_plugins) + ', 0')
 conf_data.set('plugins_io', '&rz_io_plugin_' + ', &rz_io_plugin_'.join(io_plugins) + ', 0')
@@ -640,7 +639,6 @@ summary({
   'Analysis Plugins': analysis_plugins,
   'Assembler Plugins': asm_plugins,
   'Binary Plugins': bin_plugins,
-  'BinLdr Plugins': bin_ldr_plugins,
   'BinXtr Plugins': bin_xtr_plugins,
   'Breakpoint Plugins': bp_plugins,
   'Core Plugins': core_plugins,
