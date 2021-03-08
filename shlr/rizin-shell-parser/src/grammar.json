@@ -551,22 +551,6 @@
       "type": "PATTERN",
       "value": "[^|\\r\\n;]+"
     },
-    "_offsetsizes_args": {
-      "type": "REPEAT1",
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          }
-        ]
-      }
-    },
     "iter_file_lines_command": {
       "type": "PREC_RIGHT",
       "value": 1,
@@ -635,13 +619,8 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "ALIAS",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "_offsetsizes_args"
-                },
-                "named": true,
-                "value": "args"
+                "type": "SYMBOL",
+                "name": "args"
               },
               {
                 "type": "BLANK"
@@ -1100,15 +1079,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1171,11 +1142,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           },
           {
             "type": "STRING",
