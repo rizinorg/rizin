@@ -57,7 +57,7 @@ char *luaLoadString(ut8 *src, size_t src_buf_limit) {
 	void *string_start = src + 1;
 	size -= 1;
 
-	if ((ret = RZ_NEWS(char, size)) == NULL) {
+	if ((ret = RZ_NEWS(char, size + 1)) == NULL) {
 		eprintf("error in string init\n");
 		return NULL;
 	}
