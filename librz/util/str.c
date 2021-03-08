@@ -2253,55 +2253,47 @@ RZ_API void rz_str_filter(char *str, int len) {
 }
 
 RZ_API bool rz_str_glob(const char *str, const char *glob) {
-	const char *cp = NULL, *mp = NULL;
-	if (!glob || !strcmp(glob, "*")) {
+	if (!glob) {
 		return true;
 	}
-	if (!strchr(glob, '*')) {
-		if (*glob == '^') {
-			glob++;
-			while (*str) {
-				if (*glob != *str) {
-					return false;
-				}
-				if (!*++glob) {
-					return true;
-				}
-				str++;
-			}
-		} else {
-			return strstr(str, glob) != NULL;
-		}
-	}
-	if (*glob == '^') {
-		glob++;
-	}
-	while (*str && (*glob != '*')) {
-		if (*glob != *str) {
-			return false;
-		}
-		glob++;
-		str++;
+	char *begin = strchr(glob, '^');
+	if (begin) {
+		glob = ++begin;
 	}
 	while (*str) {
-		if (*glob == '*') {
+		if (!*glob) {
+			return true;
+		}
+		switch (*glob) {
+		case '*':
 			if (!*++glob) {
 				return true;
 			}
-			mp = glob;
-			cp = str + 1;
-		} else if (*glob == *str) {
-			glob++;
+			while (*str) {
+				if (*glob == *str) {
+					break;
+				}
+				str++;
+			}
+			break;
+		case '$':
+			return (*++glob == '\x00');
+		case '?':
 			str++;
-		} else {
-			glob = mp;
-			str = cp++;
+			glob++;
+			break;
+		default:
+			if (*glob != *str) {
+				return false;
+			}
+			str++;
+			glob++;
 		}
 	}
 	while (*glob == '*') {
 		++glob;
 	}
-	return (*glob == '\x00');
+	return ((*glob == '$' && !*glob++) || !*glob);
 }
 
 // Escape the string arg so that it is parsed as a single argument by rz_str_argv
