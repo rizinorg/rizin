@@ -79,6 +79,9 @@ def build_command(check, filenames):
 
 
 def format_files(args, files):
+    if len(files) == 0:
+        print("No C files to format.")
+        sys.exit(0)
     cmd = build_command(args.check, files)
     if args.verbose:
         print(cmd)
