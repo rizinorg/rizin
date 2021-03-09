@@ -117,7 +117,7 @@ static RzList *entries(RzBinFile *bf) {
 }
 
 static char* PE_(section_flag_to_string)(ut64 flag) {
-	return PE_(rz_bin_pe_section_flag_to_string)(flag);
+	return rz_list_to_str(PE_(rz_bin_pe_section_flag_to_string)(flag), ' ');
 }
 
 static RzList *sections(RzBinFile *bf) {
@@ -158,7 +158,7 @@ static RzList *sections(RzBinFile *bf) {
 		if (!ptr->vsize && ptr->size) {
 			ptr->vsize = ptr->size;
 		}
-		ptr->flag = sections[i].flags;
+		ptr->flags = sections[i].flags;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = true;

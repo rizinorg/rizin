@@ -2810,10 +2810,10 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		if(!strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3) || !strncmp(r->file->core->bin->cur->o->info->rclass, "mach", 4)){
 			if (hashtypes) {
 						rz_table_set_columnsf(table, "dXxXxsssss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "Flags");
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "flags");
 			} else {
 			rz_table_set_columnsf(table, "dXxXxssss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name", "type", "Flags");
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name", "type", "flags");
 			}
 		}else{
 			if (hashtypes) {
@@ -3015,7 +3015,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				pj_ks(pj, "type", type);
 			}
 			free(type);
-			char* flag = section_flag_to_string(r->bin, section->flag);
+			char* flag = section_flag_to_string(r->bin, section->flags);
 			if(flag){
 				pj_ks(pj, "flags", flag);
 			}
@@ -3050,7 +3050,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
 			char* type = section_type_to_string(r->bin, section->type);
-			char* flag = section_flag_to_string(r->bin, section->flag);
+			char* flag = section_flag_to_string(r->bin, section->flags);
 			if (hashtypes) {
 				
 				rz_table_add_rowf(table, "dXxXxsssss", i,

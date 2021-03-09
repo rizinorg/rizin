@@ -4069,49 +4069,48 @@ int PE_(rz_bin_pe_get_bits)(struct PE_(rz_bin_pe_obj_t) * bin) {
 }
 extern struct rz_bin_write_t rz_bin_write_pe;
 
-char* PE_(rz_bin_pe_section_flag_to_string)(ut64 flag) { //WIP
-	char *buff;
-	buff = rz_str_new("");
+RzList *PE_(rz_bin_pe_section_flag_to_string)(ut64 flag) { //WIP
+	RzList* flag_list = rz_list_new();
 	if(flag & PE_IMAGE_SCN_MEM_SHARED) {
-		buff = rz_str_append(buff, "S");
+		rz_list_append(flag_list, "PE_IMAGE_SCN_MEM_SHARED");
 	}
 	if(flag & PE_IMAGE_SCN_MEM_EXECUTE) {
-		buff = rz_str_append(buff, "X");
+		rz_list_append(flag_list, "PE_IMAGE_SCN_MEM_EXECUTE");
 	}
 	if(flag & PE_IMAGE_SCN_MEM_READ) {
-		buff = rz_str_append(buff, "R"); 
+		rz_list_append(flag_list, "PE_IMAGE_SCN_MEM_READ"); 
 	}
 	if(flag & PE_IMAGE_SCN_MEM_WRITE) {
-		buff = rz_str_append(buff, "W");
+		rz_list_append(flag_list, "PE_IMAGE_SCN_MEM_WRITE");
 	}
 	if(flag & IMAGE_SCN_TYPE_NO_PAD) {
-		buff = rz_str_append(buff, "N");
+		rz_list_append(flag_list, "IMAGE_SCN_TYPE_NO_PAD");
 	}
 	if(flag & IMAGE_SCN_CNT_CODE) {
-		buff = rz_str_append(buff, "C");
+		rz_list_append(flag_list, "IMAGE_SCN_CNT_CODE");
 	}
 	if(flag & IMAGE_SCN_CNT_INITIALIZED_DATA) {
-		buff = rz_str_append(buff, "I");
+		rz_list_append(flag_list, "IMAGE_SCN_CNT_INITIALIZED_DATA");
 	}
 	if(flag & IMAGE_SCN_CNT_UNINITIALIZED_DATA) {
-		buff = rz_str_append(buff, "U");
+		rz_list_append(flag_list, "IMAGE_SCN_CNT_UNINITIALIZED_DATA");
 	}
 	if(flag & IMAGE_SCN_LNK_OTHER) {
-		buff = rz_str_append(buff, "O");
+		rz_list_append(flag_list, "IMAGE_SCN_LNK_OTHER");
 	}
 	if(flag & IMAGE_SCN_LNK_INFO) {
-		buff = rz_str_append(buff, "L");
+		rz_list_append(flag_list, "IMAGE_SCN_LNK_INFO");
 	}
 	if(flag & IMAGE_SCN_LNK_REMOVE) {
-		buff = rz_str_append(buff, "D");
+		rz_list_append(flag_list, "IMAGE_SCN_LNK_REMOVE");
 	}
 	if(flag & IMAGE_SCN_LNK_COMDAT) {
-		buff = rz_str_append(buff, "M");
+		rz_list_append(flag_list, "IMAGE_SCN_LNK_COMDAT");
 	}
 	if(flag & IMAGE_SCN_GPREL) {
-		buff = rz_str_append(buff, "G");
+		rz_list_append(flag_list, "IMAGE_SCN_GPREL");
 	}
-	return buff;	
+	return flag_list;	
 }
 
 char *PE_(rz_bin_pe_get_cc)(struct PE_(rz_bin_pe_obj_t) * bin) {

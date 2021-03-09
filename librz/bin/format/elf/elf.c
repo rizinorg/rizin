@@ -1415,46 +1415,45 @@ ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name
 	RzBinElfSection *section = get_section_by_name(bin, section_name);
 	return section ? section->rva + section->size : UT64_MAX;
 }
-char* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {
-	char *buff;	
-	buff = rz_str_new("");
+RzList* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {	
+	RzList* flag_list = rz_list_new();
 	if(flag & SHF_WRITE) {
-		buff = rz_str_append(buff,"SHF_WRITE "); 
+		rz_list_append(flag_list, "SHF_WRITE");
 	}
 	if(flag & SHF_ALLOC) {
-		buff = rz_str_append(buff,"SHF_ALLOC "); 
+		rz_list_append(flag_list, "SHF_ALLOC");
 	}
 	if(flag & SHF_EXECINSTR) {
-		buff = rz_str_append(buff,"SHF_EXECINSTR ");
+		rz_list_append(flag_list, "SHF_EXECINSTR");
 	}
 	if(flag & SHF_MERGE) {
-		buff = rz_str_append(buff,"SHF_MERGE ");
+		rz_list_append(flag_list, "SHF_MERGE");
 	}
 	if(flag & SHF_STRINGS) {
-		buff = rz_str_append(buff,"SHF_STRINGS ");
+		rz_list_append(flag_list, "SHF_STRINGS");
 	}
 	if(flag & SHF_INFO_LINK) {
-		buff = rz_str_append(buff,"SHF_INFO_LINK ");
+		rz_list_append(flag_list, "SHF_INFO_LINK");
 	}
 	if(flag & SHF_LINK_ORDER) {
-		buff = rz_str_append(buff,"SHF_LINK_ORDER ");
+		rz_list_append(flag_list, "SHF_LINK_ORDER");
 	}
 	if(flag & SHF_OS_NONCONFORMING) {
-		buff = rz_str_append(buff,"SHF_OS_NONCONFORMING ");
+		rz_list_append(flag_list, "SHF_OS_NONCONFORMING");
 	}
 	if(flag & SHF_GROUP) {
-		buff = rz_str_append(buff,"SHF_GROUP ");
+		rz_list_append(flag_list, "SHF_GROUP");
 	}
 	if(flag & SHF_TLS) {
-		buff = rz_str_append(buff,"SHF_TLS ");
+		rz_list_append(flag_list, "SHF_TLS");
 	}
 	if(flag & SHF_EXCLUDE) {
-		buff = rz_str_append(buff,"SHF_EXCLUDE ");
+		rz_list_append(flag_list, "SHF_EXCLUDE");
 	}
 	if(flag & SHF_COMPRESSED) {
-		buff = rz_str_append(buff,"SHF_COMPRESSED ");
+		rz_list_append(flag_list, "SHF_COMPRESSED");
 	}
-	return buff;	
+	return flag_list;	
 }
 
 char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type) {
