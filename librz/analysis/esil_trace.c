@@ -53,7 +53,9 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 		if (!b) {
 			goto error;
 		}
-		memcpy(b->bytes, a->bytes, b->size);
+		if (b->bytes && a->bytes && b->size > 0) {
+			memcpy(b->bytes, a->bytes, b->size);
+		}
 		trace->arena[i] = b;
 	}
 	return trace;

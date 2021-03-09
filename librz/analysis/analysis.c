@@ -305,7 +305,9 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
 	analysis->big_endian = bigend;
-	analysis->reg->big_endian = bigend;
+	if (analysis->reg) {
+		analysis->reg->big_endian = bigend;
+	}
 	return true;
 }
 

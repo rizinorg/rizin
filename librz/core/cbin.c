@@ -456,32 +456,30 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 	rz_config_set(r->config, "file.type", info->rclass);
 	rz_config_set(r->config, "cfg.bigendian",
 		info->big_endian ? "true" : "false");
-	if (!info->rclass || strcmp(info->rclass, "fs")) {
-		if (info->lang) {
-			rz_config_set(r->config, "bin.lang", info->lang);
-		}
-		rz_config_set(r->config, "asm.os", info->os);
-		if (info->rclass && !strcmp(info->rclass, "pe")) {
-			rz_config_set(r->config, "analysis.cpp.abi", "msvc");
-		} else {
-			rz_config_set(r->config, "analysis.cpp.abi", "itanium");
-		}
-		rz_config_set(r->config, "asm.arch", info->arch);
-		if (info->cpu && *info->cpu) {
-			rz_config_set(r->config, "asm.cpu", info->cpu);
-		}
-		if (info->features && *info->features) {
-			rz_config_set(r->config, "asm.features", info->features);
-		}
-		rz_config_set(r->config, "analysis.arch", info->arch);
-		snprintf(str, RZ_FLAG_NAME_SIZE, "%i", info->bits);
-		rz_config_set(r->config, "asm.bits", str);
-		rz_config_set(r->config, "asm.dwarf",
-			(RZ_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
-		v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
-		if (v != -1) {
-			rz_config_set_i(r->config, "asm.pcalign", v);
-		}
+	if (info->lang) {
+		rz_config_set(r->config, "bin.lang", info->lang);
+	}
+	rz_config_set(r->config, "asm.os", info->os);
+	if (info->rclass && !strcmp(info->rclass, "pe")) {
+		rz_config_set(r->config, "analysis.cpp.abi", "msvc");
+	} else {
+		rz_config_set(r->config, "analysis.cpp.abi", "itanium");
+	}
+	rz_config_set(r->config, "asm.arch", info->arch);
+	if (info->cpu && *info->cpu) {
+		rz_config_set(r->config, "asm.cpu", info->cpu);
+	}
+	if (info->features && *info->features) {
+		rz_config_set(r->config, "asm.features", info->features);
+	}
+	rz_config_set(r->config, "analysis.arch", info->arch);
+	snprintf(str, RZ_FLAG_NAME_SIZE, "%i", info->bits);
+	rz_config_set(r->config, "asm.bits", str);
+	rz_config_set(r->config, "asm.dwarf",
+		(RZ_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
+	v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	if (v != -1) {
+		rz_config_set_i(r->config, "asm.pcalign", v);
 	}
 	rz_core_analysis_type_init(r);
 	rz_core_analysis_cc_init(r);
