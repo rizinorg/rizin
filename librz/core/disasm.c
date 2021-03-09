@@ -1484,15 +1484,15 @@ static void ds_atabs_option(RDisasmState *ds) {
 		return;
 	}
 	int bufasm_len = rz_strbuf_length(&ds->asmop.buf_asm);
-	int size = bufasm_len * (ds->atabs + 1) * 4;
+	int size = bufasm_len * (ds->atabs + 1) * 4 + 4;
 	if (size < 1 || size < bufasm_len) {
 		return;
 	}
-	b = malloc(size + 1);
 	if (ds->opstr) {
-		strcpy(b, ds->opstr);
+		size = strlen(ds->opstr) * (ds->atabs + 1) * 4 + 4;
+		b = rz_str_ndup(ds->opstr, size);
 	} else {
-		strcpy(b, rz_asm_op_get_asm(&ds->asmop));
+		b = rz_str_ndup(rz_asm_op_get_asm(&ds->asmop), size);
 	}
 	if (!b) {
 		return;
