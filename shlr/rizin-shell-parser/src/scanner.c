@@ -16,7 +16,6 @@ enum TokenType {
 	FILE_DESCRIPTOR,
 	EQ_SEP_CONCAT,
 	CONCAT,
-	CONCAT_BRACE,
 	CONCAT_PF_DOT,
 };
 
@@ -95,10 +94,6 @@ static bool is_concat(const int32_t ch) {
 		ch != ')' && ch != '`' && ch != '~' && ch != '\\';
 }
 
-static bool is_concat_brace(const int32_t ch) {
-	return is_concat(ch) && ch != '}' && ch != '{';
-}
-
 static bool is_concat_pf_dot(const int32_t ch) {
 	return is_concat(ch) && ch != '=';
 }
@@ -148,9 +143,6 @@ static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
 bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
 	if (valid_symbols[CONCAT] && is_concat (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT;
-		return true;
-	} else if (valid_symbols[CONCAT_BRACE] && is_concat_brace (lexer->lookahead)) {
-		lexer->result_symbol = CONCAT_BRACE;
 		return true;
 	} else if (valid_symbols[CONCAT_PF_DOT] && is_concat_pf_dot (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT_PF_DOT;

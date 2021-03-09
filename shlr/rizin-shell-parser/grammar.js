@@ -8,18 +8,9 @@ const PF_SPECIAL_CHARACTERS = ["\\s", "@", "|", "#", '"', "'", ">", ";", "$", "`
 const PF_DOT_SPECIAL_CHARACTERS = PF_SPECIAL_CHARACTERS.concat([".", "="]);
 const SPECIAL_CHARACTERS_EQUAL = SPECIAL_CHARACTERS.concat(["="]);
 const SPECIAL_CHARACTERS_COMMA = SPECIAL_CHARACTERS.concat([","]);
-const SPECIAL_CHARACTERS_BRACE = SPECIAL_CHARACTERS.concat(["{", "}"]);
 
 const ARG_IDENTIFIER_BASE = choice(
   repeat1(noneOf(...SPECIAL_CHARACTERS)),
-  "$$$",
-  "$$",
-  /\$[^\s@|#"'>;`~\\({) ]/,
-  /\${[^\r\n $}]+}/,
-  /\\./
-);
-const ARG_IDENTIFIER_BRACE = choice(
-  repeat1(noneOf(...SPECIAL_CHARACTERS_BRACE)),
   "$$$",
   "$$",
   /\$[^\s@|#"'>;`~\\({) ]/,
@@ -54,7 +45,6 @@ module.exports = grammar({
     $.file_descriptor,
     $._eq_sep_concat,
     $._concat,
-    $._concat_brace,
     $._concat_pf_dot,
   ],
 
@@ -165,12 +155,9 @@ module.exports = grammar({
     pipe_command: ($) => seq($._simple_command, "|", $.pipe_second_command),
     pipe_second_command: ($) => /[^|\r\n;]+/,
 
-    _offsetsizes_args: ($) => repeat1(seq($.arg, $.arg)),
-
     iter_file_lines_command: ($) => prec.right(1, seq($._simple_command, "@@.", $.arg)),
     iter_offsets_command: ($) => prec.right(1, seq($._simple_command, "@@=", optional($.args))),
-    iter_offsetssizes_command: ($) =>
-      prec.right(1, seq($._simple_command, "@@@=", optional(alias($._offsetsizes_args, $.args)))),
+    iter_offsetssizes_command: ($) => prec.right(1, seq($._simple_command, "@@@=", optional($.args))),
     iter_hit_command: ($) =>
       prec.right(1, seq($._simple_command, "@@", $._concat, alias($._search_command, $.arged_command))),
     iter_interpret_command: ($) => prec.right(1, seq($._simple_command, "@@c:", $._simple_command)),
@@ -192,14 +179,12 @@ module.exports = grammar({
     iter_iomap_command: ($) => prec.right(1, seq($._simple_command, "@@om")),
     iter_dbgmap_command: ($) => prec.right(1, seq($._simple_command, "@@dm")),
     iter_register_command: ($) => prec.right(1, seq($._simple_command, "@@r")),
-    iter_step_command: ($) => prec.right(1, seq($._simple_command, "@@s:", $.arg, $.arg, $.arg)),
+    iter_step_command: ($) => prec.right(1, seq($._simple_command, "@@s:", $.args)),
 
     // tmp changes commands
     tmp_seek_command: ($) => prec.right(1, seq($._simple_command, "@", $.args)),
     tmp_blksz_command: ($) => prec.right(1, seq($._simple_command, "@!", $.args)),
-    // NOTE: need to use special arg_brace here because of https://github.com/rizinorg/rizin/commit/c3dee9332c19f874ac2cc9294a9ffe17575d8141
-    tmp_fromto_command: ($) =>
-      prec.right(1, seq($._simple_command, "@{", alias($.arg_brace, $.arg), alias($.arg_brace, $.arg), "}")),
+    tmp_fromto_command: ($) => prec.right(1, seq($._simple_command, "@(", $.args, ")")),
     tmp_arch_command: ($) => prec.right(1, seq($._simple_command, "@a:", $.arg)),
     tmp_bits_command: ($) => prec.right(1, seq($._simple_command, "@b:", $.args)),
     tmp_nthi_command: ($) => prec.right(1, seq($._simple_command, "@B:", $.arg)),
@@ -385,7 +370,6 @@ module.exports = grammar({
     html_append_operator: ($) => "H>>",
 
     _arg_with_paren: ($) => seq(alias("(", $.arg_identifier), $.args, alias(")", $.arg_identifier)),
-    _arg_brace_with_paren: ($) => seq(alias("(", $.arg_identifier), $._arg_brace, alias(")", $.arg_identifier)),
     _arg: ($) =>
       choice(
         $.arg_identifier,
@@ -395,17 +379,7 @@ module.exports = grammar({
         alias($._arg_with_paren, $.args),
         alias(",", $.arg_identifier)
       ),
-    _arg_brace: ($) =>
-      choice(
-        alias($.arg_identifier_brace, $.arg_identifier),
-        $.double_quoted_arg,
-        $.single_quoted_arg,
-        $.cmd_substitution_arg,
-        alias($._arg_brace_with_paren, $.args),
-        alias(",", $.arg_identifier)
-      ),
     arg: ($) => choice($._arg, $.concatenation),
-    arg_brace: ($) => choice($._arg_brace, alias($.concatenation_brace, $.concatenation)),
     args: ($) => prec.left(repeat1($.arg)),
     // TODO: this should accept a quoted_arg and a cmd_substitution_arg as well
     tmp_eval_args: ($) => prec.left(seq($.tmp_eval_arg, repeat(seq(",", $.tmp_eval_arg)))),
@@ -437,7 +411,6 @@ module.exports = grammar({
     _any_command: ($) => /[^\r\n;~|]+/,
 
     arg_identifier: ($) => argIdentifier(ARG_IDENTIFIER_BASE),
-    arg_identifier_brace: ($) => argIdentifier(ARG_IDENTIFIER_BRACE),
     double_quoted_arg: ($) =>
       seq(
         '"',
@@ -448,7 +421,6 @@ module.exports = grammar({
     cmd_substitution_arg: ($) =>
       choice(seq("$(", $._commands_singleline, ")"), prec(1, seq("`", $._commands_singleline, "`"))),
     concatenation: ($) => prec(-1, seq($._arg, repeat1(prec(-1, seq($._concat, $._arg))))),
-    concatenation_brace: ($) => prec(-1, seq($._arg_brace, repeat1(prec(-1, seq($._concat_brace, $._arg_brace))))),
 
     _dec_number: ($) => choice(/[1-9][0-9]*/, /[0-9][0-9]+/),
     _comment: ($) => token(choice(/#[^\r\n]*/)),
