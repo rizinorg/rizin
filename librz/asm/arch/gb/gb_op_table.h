@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2013-2014 condret <condret@runas-racer.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #define GB_8BIT  1

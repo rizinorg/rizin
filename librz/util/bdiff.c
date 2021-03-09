@@ -1,4 +1,7 @@
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-FileCopyrightText: 2005, 2006 Matt Mackall <mpm@selenic.com>
+// SPDX-FileCopyrightText: 2009-2010 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /* Adapted code from:
 
  bdiff.c - efficient binary diff extension for Mercurial

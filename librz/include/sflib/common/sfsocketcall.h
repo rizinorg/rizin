@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2003  Philippe Biondi <biondi@cartel-securite.fr>
+// SPDX-License-Identifier: LGPL-2.1-only
+
 /*
  * sfsocketcall.h -- linux socket implementation
  *                   see http://www.secdev.org/projects/shellforge.html

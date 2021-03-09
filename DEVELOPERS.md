@@ -284,3 +284,21 @@ It will produce the following output:
 ```json
 {"id":6,"name":"bla"}
 ```
+
+## Licenses
+
+Rizin is trying to comply with the Software Package Data Exchange® (SPDX®),
+an open standard to communicate in a clear way licenses and copyrights, among
+other things, of a software. All files in the repository should either have
+an header specifying the copyright and the license that apply or an entry in
+.reuse/dep5 file. All pieces of code copied from other projects should have
+a license/copyright entry as well.
+
+In particular, the SPDX header may look like:
+```C
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-License-Identifier: LPGL-3.0-only
+```
+
+You can use the [REUSE Software](https://reuse.software/) to check the
+compliance of the project and get the licenses/copyright of each file.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 Anton Kochkov <xvilka@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef WASM_ASM_H
 #define WASM_ASM_H
 #include <rz_util.h>

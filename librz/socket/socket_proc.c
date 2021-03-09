@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2012 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* XXX : move to rz_util??? rename method names.. to long? */

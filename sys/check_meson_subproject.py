@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 #
+# SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
 # This script is necessary to make sure people notice a subproject has been
 # changed and need to be updated. Meson does not warn you now (0.56.0)
 

@@ -1,5 +1,8 @@
 #!/bin/sh
 # Credits to https://github.com/derekparker/delve/blob/master/scripts/gencert.sh
+#
+# SPDX-FileCopyrightText: 2014 Derek Parker
+# SPDX-License-Identifier: MIT
 
 # Check if the certificate is already present in the system keychain
 security find-certificate -Z -p -c "re.rizin.rizin" /Library/Keychains/System.keychain > /dev/null 2>&1

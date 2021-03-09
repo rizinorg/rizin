@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2006-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* must be included first because of winsock2.h and windows.h */

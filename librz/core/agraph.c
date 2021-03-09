@@ -1,4 +1,6 @@
-/* Copyright rizin - 2014-2020 - pancake, ret2libc */
+// SPDX-FileCopyrightText: 2014-2020 pancake
+// SPDX-FileCopyrightText: 2014-2020 ret2libc
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
 #include <rz_cons.h>

@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 dso <dso@rice.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 #include <rz_util.h>
@@ -515,4 +518,8 @@ RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo) {
 			}
 		}
 	}
+}
+
+RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr) {
+	return o ? addr + o->baddr_shift : addr;
 }

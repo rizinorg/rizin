@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>

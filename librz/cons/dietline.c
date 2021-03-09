@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* dietline is a lightweight and portable library similar to GNU readline */
 

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2019 deepakchethan <deepakchethan@outlook.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _QNX_H

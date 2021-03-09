@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2015-2020 - pancake */
+// SPDX-FileCopyrightText: 2015-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_BIND_H
 #define RZ_BIND_H

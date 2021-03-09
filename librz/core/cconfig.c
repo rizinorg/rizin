@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -2579,7 +2580,7 @@ static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_analysis_calling_conventions_print(core);
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			return false;
 		}
 		rz_analysis_set_syscc_default(core->analysis, node->value);
@@ -2590,7 +2591,7 @@ static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_analysis_calling_conventions_print(core);
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			return false;
 		}
 		rz_analysis_set_cc_default(core->analysis, node->value);

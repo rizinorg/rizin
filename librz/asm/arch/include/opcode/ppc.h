@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1994, 1995, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-1.0-or-later
+
 /* ppc.h -- Header file for PowerPC opcode table
    Copyright 1994, 1995, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
    2007 Free Software Foundation, Inc.

@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2017-2019 - condret, MaskRay */
+// SPDX-FileCopyrightText: 2017-2020 condret <condr3t@protonmail.com>
+// SPDX-FileCopyrightText: 2017-2020 MaskRay <i@maskray.me>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
 #include <stdlib.h>

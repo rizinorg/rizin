@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2020 mrmacete <mrmacete@protonmail.ch>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

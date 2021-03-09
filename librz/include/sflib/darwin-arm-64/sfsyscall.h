@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2004  Philippe Biondi <biondi@cartel-securite.fr>
+// SPDX-License-Identifier: LGPL-2.1-only
+
 //ssed on the registers rdi, rsi, rdx, r10, r8 and r9
 /*
  * sfsyscall.h --- SFLib syscall macros for OpenBSD/i386 

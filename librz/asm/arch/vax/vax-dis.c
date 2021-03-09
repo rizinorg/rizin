@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1995, 1998, 2000, 2001, 2002, 2005, 2007, 2009, 2012 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Print VAX instructions.
    Copyright 1995, 1998, 2000, 2001, 2002, 2005, 2007, 2009, 2012
    Free Software Foundation, Inc.

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2012 earada <pkedurat@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef DALVIK_OPCODE_H
