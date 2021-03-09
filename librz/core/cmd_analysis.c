@@ -5045,9 +5045,14 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				case ' ': // "aesu"
 					until_addr = rz_num_math(core->num, input + 2);
 					break;
-				case 'o': // "aesuo"
-					step_until_optype(core, rz_str_trim_head_ro(input + 3));
+				case 'o': { // "aesuo"
+					char *optypes = strdup(rz_str_trim_head_ro((char *)input + 3));
+					RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
+					step_until_optype(core, optypes_list);
+					free(optypes);
+					rz_list_free(optypes_list);
 					break;
+				}
 				default:
 					rz_core_cmd0(core, "ae?~aesu");
 					break;
