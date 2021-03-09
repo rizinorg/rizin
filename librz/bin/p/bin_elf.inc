@@ -176,7 +176,7 @@ static char* section_type_to_string(ut64 type) {
 	return Elf_(rz_bin_elf_section_type_to_string)(type);
 }
 
-static char* section_flag_to_string(ut64 flag) {
+static char* Elf_(section_flag_to_string)(ut64 flag) {
 	return Elf_(rz_bin_elf_section_flag_to_string)(flag);
 }
 
@@ -214,7 +214,7 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;
 			ptr->type = section[i].type;
-			ptr->flag_i = section[i].flags;
+			ptr->flag = section[i].flags;
 			ptr->add = !obj->phdr; // Load sections if there is no PHDR
 			ptr->perm = 0;
 			if (RZ_BIN_ELF_SCN_IS_EXECUTABLE(section[i].flags)) {

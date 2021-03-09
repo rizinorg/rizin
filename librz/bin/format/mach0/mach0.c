@@ -2257,7 +2257,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
 			// The bottom byte of flags is the section type
 			s->type = bin->sects[i].flags & 0xFF;
-			s->flag_i = bin->sects[i].flags & 0xFFFFFF00; 
+			s->flag = bin->sects[i].flags & 0xFFFFFF00; 
 			// XXX flags
 			s->paddr = (ut64)bin->sects[i].offset;
 			int segment_index = 0;
@@ -2322,24 +2322,7 @@ char *MACH0_(section_type_to_string)(ut64 type) {
 }
 
 char *MACH0_(section_flag_to_string)(ut64 flag) {
-	
-//	char* buff = rz_str_new("");
-//	if(flag | S_ATTR_PURE_INSTRUCTIONS){
-//		buff = rz_str_append(buff, "I");
-//	}
-//	if(flag | S_ATTR_NO_TOC){
-//		buff = rz_str_append(buff, "T");
-//	}
-//	if(flag | S_ATTR_SOME_INSTRUCTIONS){
-//		buff = rz_str_append(buff, "S");
-//	}
-//	if(flag | S_ATTR_EXT_RELOC){
-//		buff = rz_str_append(buff, "E");
-//	}
-//	if(flag | S_ATTR_LOC_RELOC){
-//		buff = rz_str_append(buff, "L");
-//	}
-		char* buff = rz_str_new("");
+	char* buff = rz_str_new("");
 	if(flag & S_ATTR_PURE_INSTRUCTIONS){
 		buff = rz_str_append(buff, "S_ATTR_PURE_INSTRUCTIONS ");
 	}

@@ -2713,7 +2713,7 @@ static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode) {
 	return true;
 }
 
-static char* __section_type_to_string(RzBin *bin, int type) {
+static char* section_type_to_string(RzBin *bin, int type) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->section_type_to_string) {
@@ -2721,7 +2721,7 @@ static char* __section_type_to_string(RzBin *bin, int type) {
 	}
 	return NULL;
 }
-static char* __section_flag_to_string(RzBin *bin, int flag) {
+static char* section_flag_to_string(RzBin *bin, int flag) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->section_flag_to_string) {
@@ -2828,6 +2828,15 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
+	}
+	if (IS_MODE_NORMAL(mode) && print_segments ) {
+		if (hashtypes) {
+			rz_table_set_columnsf(table, "dXxXxsss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
+			} else {
+				rz_table_set_columnsf(table, "dXxXxss",
+					"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+			}
 	}
 	if (IS_MODE_SET(mode)) {
 		rz_list_foreach (sections, iter, section) {
@@ -3001,12 +3010,12 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				build_hash_string(pj, mode, hashtypes, data, datalen);
 				free(data);
 			}
-			char* type = __section_type_to_string(r->bin, section->type);
+			char* type = section_type_to_string(r->bin, section->type);
 			if(type) {
 				pj_ks(pj, "type", type);
 			}
 			free(type);
-			char* flag = __section_flag_to_string(r->bin, section->flag_i);
+			char* flag = section_flag_to_string(r->bin, section->flag);
 			if(flag){
 				pj_ks(pj, "flags", flag);
 			}
@@ -3040,8 +3049,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
-			char* type = __section_type_to_string(r->bin, section->type);
-			char* flag = __section_flag_to_string(r->bin, section->flag_i);
+			char* type = section_type_to_string(r->bin, section->type);
+			char* flag = section_flag_to_string(r->bin, section->flag);
 			if (hashtypes) {
 				
 				rz_table_add_rowf(table, "dXxXxsssss", i,
