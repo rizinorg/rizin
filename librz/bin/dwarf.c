@@ -229,27 +229,7 @@ static const char *dwarf_attr_encodings[] = {
 	[DW_AT_export_symbols] = "DW_AT_export_symbols",
 	[DW_AT_deleted] = "DW_AT_deleted",
 	[DW_AT_defaulted] = "DW_AT_defaulted",
-	[DW_AT_loclists_base] = "DW_AT_loclists_base",
-
-	[DW_AT_lo_user] = "DW_AT_lo_user",
-	[DW_AT_MIPS_linkage_name] = "DW_AT_MIPS_linkage_name",
-	[DW_AT_GNU_call_site_value] = "DW_AT_GNU_call_site_value",
-	[DW_AT_GNU_call_site_data_value] = "DW_AT_GNU_call_site_data_value",
-	[DW_AT_GNU_call_site_target] = "DW_AT_GNU_call_site_target",
-	[DW_AT_GNU_call_site_target_clobbered] = "DW_AT_GNU_call_site_target_clobbered",
-	[DW_AT_GNU_tail_call] = "DW_AT_GNU_tail_call",
-	[DW_AT_GNU_all_tail_call_sites] = "DW_AT_GNU_all_tail_call_sites",
-	[DW_AT_GNU_all_call_sites] = "DW_AT_GNU_all_call_sites",
-	[DW_AT_GNU_all_source_call_sites] = "DW_AT_GNU_all_source_call_sites",
-	[DW_AT_GNU_macros] = "DW_AT_GNU_macros",
-	[DW_AT_GNU_deleted] = "DW_AT_GNU_deleted",
-	[DW_AT_GNU_dwo_name] = "DW_AT_GNU_dwo_name",
-	[DW_AT_GNU_dwo_id] = "DW_AT_GNU_dwo_id",
-	[DW_AT_GNU_ranges_base] = "DW_AT_GNU_ranges_base",
-	[DW_AT_GNU_addr_base] = "DW_AT_GNU_addr_base",
-	[DW_AT_GNU_pubnames] = "DW_AT_GNU_pubnames",
-	[DW_AT_GNU_pubtypes] = "DW_AT_GNU_pubtypes",
-	[DW_AT_hi_user] = "DW_AT_hi_user",
+	[DW_AT_loclists_base] = "DW_AT_loclists_base"
 };
 
 static const char *dwarf_attr_form_encodings[] = {
@@ -340,6 +320,84 @@ static const char *dwarf_unit_types[] = {
 	[DW_UT_hi_user] = "DW_UT_hi_user",
 };
 
+RZ_API const char *rz_bin_dwarf_get_tag_name(ut64 tag) {
+	if (tag >= DW_TAG_LAST) {
+		return NULL;
+	}
+	return dwarf_tag_name_encodings[tag];
+}
+
+RZ_API const char *rz_bin_dwarf_get_attr_name(ut64 attr_code) {
+	if (attr_code < RZ_ARRAY_SIZE(dwarf_attr_encodings)) {
+		return dwarf_attr_encodings[attr_code];
+	}
+	// the below codes are much sparser, so putting them in an array would require a lot of
+	// unused memory
+	switch (attr_code) {
+	case DW_AT_lo_user:
+		return "DW_AT_lo_user";
+	case DW_AT_MIPS_linkage_name:
+		return "DW_AT_MIPS_linkage_name";
+	case DW_AT_GNU_call_site_value:
+		return "DW_AT_GNU_call_site_value";
+	case DW_AT_GNU_call_site_data_value:
+		return "DW_AT_GNU_call_site_data_value";
+	case DW_AT_GNU_call_site_target:
+		return "DW_AT_GNU_call_site_target";
+	case DW_AT_GNU_call_site_target_clobbered:
+		return "DW_AT_GNU_call_site_target_clobbered";
+	case DW_AT_GNU_tail_call:
+		return "DW_AT_GNU_tail_call";
+	case DW_AT_GNU_all_tail_call_sites:
+		return "DW_AT_GNU_all_tail_call_sites";
+	case DW_AT_GNU_all_call_sites:
+		return "DW_AT_GNU_all_call_sites";
+	case DW_AT_GNU_all_source_call_sites:
+		return "DW_AT_GNU_all_source_call_sites";
+	case DW_AT_GNU_macros:
+		return "DW_AT_GNU_macros";
+	case DW_AT_GNU_deleted:
+		return "DW_AT_GNU_deleted";
+	case DW_AT_GNU_dwo_name:
+		return "DW_AT_GNU_dwo_name";
+	case DW_AT_GNU_dwo_id:
+		return "DW_AT_GNU_dwo_id";
+	case DW_AT_GNU_ranges_base:
+		return "DW_AT_GNU_ranges_base";
+	case DW_AT_GNU_addr_base:
+		return "DW_AT_GNU_addr_base";
+	case DW_AT_GNU_pubnames:
+		return "DW_AT_GNU_pubnames";
+	case DW_AT_GNU_pubtypes:
+		return "DW_AT_GNU_pubtypes";
+	case DW_AT_hi_user:
+		return "DW_AT_hi_user";
+	default:
+		return NULL;
+	}
+}
+
+RZ_API const char *rz_bin_dwarf_get_attr_form_name(ut64 form_code) {
+	if (form_code < DW_FORM_addr || form_code > DW_FORM_addrx4) {
+		return NULL;
+	}
+	return dwarf_attr_form_encodings[form_code];
+}
+
+RZ_API const char *rz_bin_dwarf_get_unit_type_name(ut64 unit_type) {
+	if (!unit_type || unit_type > DW_UT_split_type) {
+		return NULL;
+	}
+	return dwarf_unit_types[unit_type];
+}
+
+RZ_API const char *rz_bin_dwarf_get_lang_name(ut64 lang) {
+	if (lang >= RZ_ARRAY_SIZE(dwarf_langs)) {
+		return NULL;
+	}
+	return dwarf_langs[lang];
+}
+
 static int abbrev_cmp(const void *a, const void *b) {
 	const RzBinDwarfAbbrevDecl *first = a;
 	const RzBinDwarfAbbrevDecl *second = b;
@@ -351,25 +409,6 @@ static int abbrev_cmp(const void *a, const void *b) {
 	} else {
 		return 0;
 	}
-}
-
-static inline bool is_printable_attr(ut64 attr_code) {
-	return (attr_code >= DW_AT_sibling && attr_code <= DW_AT_loclists_base) ||
-		attr_code == DW_AT_MIPS_linkage_name ||
-		(attr_code >= DW_AT_GNU_call_site_value && attr_code <= DW_AT_GNU_deleted) ||
-		(attr_code >= DW_AT_GNU_dwo_name && attr_code <= DW_AT_GNU_pubtypes);
-}
-
-static inline bool is_printable_form(ut64 form_code) {
-	return form_code >= DW_FORM_addr && form_code <= DW_FORM_addrx4;
-}
-
-static inline bool is_printable_tag(ut64 attr_code) {
-	return attr_code <= DW_TAG_LAST;
-}
-
-static inline bool is_printable_unit_type(ut64 unit_type) {
-	return unit_type > 0 && unit_type <= DW_UT_split_type;
 }
 
 /**
@@ -1315,36 +1354,6 @@ static int expand_debug_abbrev(RzBinDwarfDebugAbbrev *da) {
 	return 0;
 }
 
-static void print_abbrev_section(RzBinDwarfDebugAbbrev *da, PrintfCallback print) {
-	size_t i, j;
-	ut64 attr_name, attr_form;
-
-	if (!da) {
-		return;
-	}
-	for (i = 0; i < da->count; i++) {
-		int declstag = da->decls[i].tag;
-		print("   %-4" PFMT64d " ", da->decls[i].code);
-		if (declstag >= 0 && declstag < DW_TAG_LAST) {
-			print("  %-25s ", dwarf_tag_name_encodings[declstag]);
-		}
-		print("[%s]", da->decls[i].has_children ? "has children" : "no children");
-		print(" (0x%" PFMT64x ")\n", da->decls[i].offset);
-
-		if (da->decls[i].defs) {
-			for (j = 0; j < da->decls[i].count; j++) {
-				attr_name = da->decls[i].defs[j].attr_name;
-				attr_form = da->decls[i].defs[j].attr_form;
-				if (is_printable_attr(attr_name) && is_printable_form(attr_form)) {
-					print("    %-30s %-30s\n",
-						dwarf_attr_encodings[attr_name],
-						dwarf_attr_form_encodings[attr_form]);
-				}
-			}
-		}
-	}
-}
-
 RZ_API void rz_bin_dwarf_free_debug_abbrev(RzBinDwarfDebugAbbrev *da) {
 	size_t i;
 	if (!da) {
@@ -1414,143 +1423,6 @@ RZ_API void rz_bin_dwarf_free_debug_info(RzBinDwarfDebugInfo *inf) {
 	ht_up_free(inf->lookup_table);
 	free(inf->comp_units);
 	free(inf);
-}
-
-static void print_attr_value(const RzBinDwarfAttrValue *val, PrintfCallback print) {
-	size_t i;
-	rz_return_if_fail(val);
-
-	switch (val->attr_form) {
-	case DW_FORM_block:
-	case DW_FORM_block1:
-	case DW_FORM_block2:
-	case DW_FORM_block4:
-	case DW_FORM_exprloc:
-		print("%" PFMT64u " byte block:", val->block.length);
-		for (i = 0; i < val->block.length; i++) {
-			print(" 0x%02x", val->block.data[i]);
-		}
-		break;
-	case DW_FORM_data1:
-	case DW_FORM_data2:
-	case DW_FORM_data4:
-	case DW_FORM_data8:
-	case DW_FORM_data16:
-		print("%" PFMT64u "", val->uconstant);
-		if (val->attr_name == DW_AT_language) {
-			print("   (%s)", dwarf_langs[val->uconstant]);
-		}
-		break;
-	case DW_FORM_string:
-		if (val->string.content) {
-			print("%s", val->string.content);
-		} else {
-			print("No string found");
-		}
-		break;
-	case DW_FORM_flag:
-		print("%u", val->flag);
-		break;
-	case DW_FORM_sdata:
-		print("%" PFMT64d "", val->sconstant);
-		break;
-	case DW_FORM_udata:
-		print("%" PFMT64u "", val->uconstant);
-		break;
-	case DW_FORM_ref_addr:
-	case DW_FORM_ref1:
-	case DW_FORM_ref2:
-	case DW_FORM_ref4:
-	case DW_FORM_ref8:
-	case DW_FORM_ref_sig8:
-	case DW_FORM_ref_udata:
-	case DW_FORM_ref_sup4:
-	case DW_FORM_ref_sup8:
-	case DW_FORM_sec_offset:
-		print("<0x%" PFMT64x ">", val->reference);
-		break;
-	case DW_FORM_flag_present:
-		print("1");
-		break;
-	case DW_FORM_strx:
-	case DW_FORM_strx1:
-	case DW_FORM_strx2:
-	case DW_FORM_strx3:
-	case DW_FORM_strx4:
-	case DW_FORM_line_ptr:
-	case DW_FORM_strp_sup:
-	case DW_FORM_strp:
-		print("(indirect string, offset: 0x%" PFMT64x "): %s",
-			val->string.offset, val->string.content);
-		break;
-	case DW_FORM_addr:
-	case DW_FORM_addrx:
-	case DW_FORM_addrx1:
-	case DW_FORM_addrx2:
-	case DW_FORM_addrx3:
-	case DW_FORM_addrx4:
-	case DW_FORM_loclistx:
-	case DW_FORM_rnglistx:
-		print("0x%" PFMT64x "", val->address);
-		break;
-	case DW_FORM_implicit_const:
-		print("0x%" PFMT64d "", val->uconstant);
-		break;
-	default:
-		print("Unknown attr value form %" PFMT64d "\n", val->attr_form);
-		break;
-	};
-}
-
-static void print_debug_info(const RzBinDwarfDebugInfo *inf, PrintfCallback print) {
-	size_t i, j, k;
-	RzBinDwarfDie *dies;
-	RzBinDwarfAttrValue *values;
-
-	rz_return_if_fail(inf);
-
-	for (i = 0; i < inf->count; i++) {
-		print("\n");
-		print("  Compilation Unit @ offset 0x%" PFMT64x ":\n", inf->comp_units[i].offset);
-		print("   Length:        0x%" PFMT64x "\n", inf->comp_units[i].hdr.length);
-		print("   Version:       %d\n", inf->comp_units[i].hdr.version);
-		print("   Abbrev Offset: 0x%" PFMT64x "\n", inf->comp_units[i].hdr.abbrev_offset);
-		print("   Pointer Size:  %d\n", inf->comp_units[i].hdr.address_size);
-		if (is_printable_unit_type(inf->comp_units[i].hdr.unit_type)) {
-			print("   Unit Type:     %s\n", dwarf_unit_types[inf->comp_units[i].hdr.unit_type]);
-		}
-		print("\n");
-
-		dies = inf->comp_units[i].dies;
-
-		for (j = 0; j < inf->comp_units[i].count; j++) {
-			print("<0x%" PFMT64x ">: Abbrev Number: %-4" PFMT64u " ", dies[j].offset, dies[j].abbrev_code);
-
-			if (is_printable_tag(dies[j].tag)) {
-				print("(%s)\n", dwarf_tag_name_encodings[dies[j].tag]);
-			} else {
-				print("(Unknown abbrev tag)\n");
-			}
-
-			if (!dies[j].abbrev_code) {
-				continue;
-			}
-			values = dies[j].attr_values;
-
-			for (k = 0; k < dies[j].count; k++) {
-				if (!values[k].attr_name) {
-					continue;
-				}
-				if (is_printable_attr(values[k].attr_name)) {
-					print("     %-25s : ", dwarf_attr_encodings[values[k].attr_name]);
-				} else {
-					print("     AT_UNKWN [0x%-3" PFMT64x "]\t : ", values[k].attr_name);
-				}
-				print_attr_value(&values[k], print);
-				print("\n");
-			}
-		}
-	}
 }
 
 static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RzBinDwarfBlock *block) {
@@ -2189,10 +2061,9 @@ static ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t 
  *
  * @param da Parsed abbreviations
  * @param bin
- * @param mode RZ_MODE_PRINT to print
  * @return RzBinDwarfDebugInfo* Parsed information, NULL if error
  */
-RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwarfDebugAbbrev *da, int mode) {
+RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwarfDebugAbbrev *da) {
 	rz_return_val_if_fail(binfile, NULL);
 	RzBinSection *section = getsection(binfile, "debug_info");
 	if (!section) {
@@ -2236,11 +2107,6 @@ RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwa
 		goto cave_buf;
 	}
 
-#if 0
-	if (mode == RZ_MODE_PRINT && info) {
-		print_debug_info(info, bin->cb_printf);
-	}
-#endif
 	// build hashtable after whole parsing because of possible relocations
 	if (info) {
 		size_t i, j;
@@ -2378,12 +2244,6 @@ RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBinFile *binfile) {
 		return NULL;
 	}
 	RzBinDwarfDebugAbbrev *abbrevs = parse_abbrev_raw(buf, len);
-
-#if 0
-	if (mode == RZ_MODE_PRINT && abbrevs) {
-		print_abbrev_section(abbrevs, bin->cb_printf);
-	}
-#endif
 	free(buf);
 	return abbrevs;
 }
@@ -2508,53 +2368,6 @@ RZ_API HtUP /*<offset, RzBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RzBinFile *bi
 	loc_table = parse_loc_raw(loc_table, buf, len, addr_size);
 	free(buf);
 	return loc_table;
-}
-
-static int offset_comp(const void *a, const void *b) {
-	const RzBinDwarfLocList *f = a;
-	const RzBinDwarfLocList *s = b;
-	ut64 first = f->offset;
-	ut64 second = s->offset;
-	if (first < second) {
-		return -1;
-	}
-	if (first > second) {
-		return 1;
-	}
-	return 0;
-}
-
-static bool sort_loclists(void *user, const ut64 key, const void *value) {
-	RzBinDwarfLocList *loc_list = (RzBinDwarfLocList *)value;
-	RzList *sort_list = user;
-	rz_list_add_sorted(sort_list, loc_list, offset_comp);
-	return true;
-}
-
-RZ_API void rz_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*/ *loc_table, int addr_size, PrintfCallback print) {
-	rz_return_if_fail(loc_table && print);
-	print("\nContents of the .debug_loc section:\n");
-	RzList /*<RzBinDwarfLocList *>*/ *sort_list = rz_list_new();
-	/* sort the table contents by offset and print sorted
-	   a bit ugly, but I wanted to decouple the parsing and printing */
-	ht_up_foreach(loc_table, sort_loclists, sort_list);
-	RzListIter *i;
-	RzBinDwarfLocList *loc_list;
-	rz_list_foreach (sort_list, i, loc_list) {
-		RzListIter *j;
-		RzBinDwarfLocRange *range;
-		ut64 base_offset = loc_list->offset;
-		rz_list_foreach (loc_list->list, j, range) {
-			print("0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x "\n", base_offset, range->start, range->end);
-			base_offset += addr_size * 2;
-			if (range->expression) {
-				base_offset += 2 + range->expression->length; /* 2 bytes for expr length */
-			}
-		}
-		print("0x%" PFMT64x " <End of list>\n", base_offset);
-	}
-	print("\n");
-	rz_list_free(sort_list);
 }
 
 static void free_loc_table_entry(HtUPKv *kv) {
