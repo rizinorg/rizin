@@ -834,11 +834,10 @@ static int step_until_inst(RzCore *core, const char *instr, bool regex) {
 
 static void dbg_follow_seek_register(RzCore *core) {
 	int follow = rz_config_get_i(core->config, "dbg.follow");
-	rz_cons_break_pop();
 	if (follow > 0) {
 		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_cmd0(core, "sr PC");
+			rz_core_seek_to_register(core, "PC", false);
 		}
 	}
 }
@@ -4213,6 +4212,7 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_dc);
 		return 0;
 	}
+	rz_cons_break_pop();
 	dbg_follow_seek_register(core);
 	return 1;
 }
