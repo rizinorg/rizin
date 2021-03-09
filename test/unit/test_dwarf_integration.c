@@ -5,8 +5,6 @@
 #include <rz_bin.h>
 #include "minunit.h"
 
-#define MODE 2
-
 #define check_kv(k, v) \
 	do { \
 		value = sdb_get(sdb, k, NULL); \
@@ -31,7 +29,7 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull(analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 4);
@@ -99,7 +97,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	mu_assert_notnull(analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
 
@@ -155,7 +153,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	mu_assert_notnull(analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
 
@@ -209,7 +207,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_assert_notnull(analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
 

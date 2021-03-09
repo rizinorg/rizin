@@ -6,8 +6,6 @@
 #include <rz_bin.h>
 #include <rz_bin_dwarf.h>
 
-#define MODE 2
-
 #define check_attr_string(attr_idx, expect_string) \
 	mu_assert_streq(cu.dies[i].attr_values[attr_idx].string.content, expect_string, "Wrong string attribute information")
 
@@ -64,7 +62,7 @@ bool test_dwarf3_c(void) {
 
 	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 7, "Incorrect number of abbreviation");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
 	mu_assert_eq(info->count, 1, "Incorrect number of info compilation units");
 
 	// check header
@@ -127,7 +125,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 
 	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 37, "Incorrect number of abbreviation");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
 	mu_assert_notnull(info, "Failed parsing of debug_info");
 	mu_assert_eq(info->count, 2, "Incorrect number of info compilation units");
 
@@ -337,7 +335,7 @@ bool test_dwarf2_big_endian(void) {
 
 	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 108, "Incorrect number of abbreviation");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
 	mu_assert_notnull(info, "Failed parsing of debug_info");
 	mu_assert_eq(info->count, 1, "Incorrect number of info compilation units");
 

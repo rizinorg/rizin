@@ -1159,7 +1159,15 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
 		RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
-		RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(binfile, da, mode);
+		RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(binfile, da);
+		if (mode == RZ_MODE_PRINT) {
+			if (da) {
+				rz_core_bin_dwarf_print_abbrev_section(da);
+			}
+			if (info) {
+				rz_core_bin_dwarf_print_debug_info(info);
+			}
+		}
 		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != RZ_MODE_PRINT) {
@@ -1172,7 +1180,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 		}
 		if (loc_table) {
 			if (mode == RZ_MODE_PRINT) {
-				rz_bin_dwarf_print_loc(loc_table, core->analysis->bits / 8, rz_cons_printf);
+				rz_core_bin_dwarf_print_loc(loc_table, core->analysis->bits / 8);
 			}
 			rz_bin_dwarf_free_loc(loc_table);
 		}
