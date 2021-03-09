@@ -2713,6 +2713,15 @@ static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode) {
 	return true;
 }
 
+static char* __section_flag_to_string(RzBin *bin, int flag) {
+	RzBinFile *a = rz_bin_cur(bin);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
+	if (plugin && plugin->section_flag_to_string) {
+		return plugin->section_flag_to_string(flag);
+	}
+	return NULL;
+}
+
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RzBinSection *section;
@@ -2763,7 +2772,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			RzListInfo *info = rz_listinfo_new(s->name, pitv, vitv, s->perm, strdup(humansz));
 			rz_list_append(list, info);
 			rz_list_append(list, s->type);
-			rz_list_append(list, s->flag);
+			rz_list_append(list, s->flag_i);
 		}
 		RzTable *table = rz_core_table(r);
 		rz_table_visual_list(table, list, r->offset, -1, cols, r->io->va);
@@ -2793,9 +2802,23 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		fd = rz_core_file_cur_fd(r);
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
-	if (IS_MODE_NORMAL(mode) & !print_segments ) { 
-		rz_cons_printf("%d", print_segments);
-		rz_cons_printf("Key to Flags:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
+	//rz_cons_printf("%s", r->file->core->bin->cur->o->info->rclass);
+	if (IS_MODE_NORMAL(mode) && !print_segments && !strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3)) { 
+		rz_cons_printf("ELF Section Flags Keys:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
+  L (link order), O (extra OS processing required), G (group), T (TLS),\n  C (compressed), E (exclude)");
+		if (hashtypes) {
+						rz_table_set_columnsf(table, "dXxXxsssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "Flags");
+		} else {
+			rz_table_set_columnsf(table, "dXxXxssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name", "type", "Flags");
+		}
+		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
+		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
+		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
+	}
+	if (IS_MODE_NORMAL(mode) && !print_segments ) { //&& !strncmp(r->file->core->bin->cur->o->info->rclass, "pe", 2)
+		rz_cons_printf("Key to PE Section Flags:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
   L (link order), O (extra OS processing required), G (group), T (TLS),\n  C (compressed), E (exclude)");
 		if (hashtypes) {
 						rz_table_set_columnsf(table, "dXxXxsssss",
@@ -2995,9 +3018,11 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			if(section->type) {
 				pj_ks(pj, "type", section->type);
 			}
-			if(section->flag){
-				pj_ks(pj, "Flags", section->flag);
+			char* flag = __section_flag_to_string(r->bin, section->flag_i);
+			if(flag){
+				pj_ks(pj, "flags", flag);
 			}
+			free(flag);
 			pj_kN(pj, "paddr", section->paddr);
 			pj_kN(pj, "vaddr", addr);
 			pj_end(pj);
@@ -3027,19 +3052,21 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
+			char* flag = __section_flag_to_string(r->bin, section->flag_i);
 			if (hashtypes) {
 				
 				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, hashstr, section_name,section->type, section->flag);
+					perms, hashstr, section_name,section->type, flag);
 			} else {
 				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms,section_name, section->type, section->flag);
+					perms,section_name, section->type, flag);
 			}
 			free(hashstr);
+			free(flag);
 		}
 		i++;
 		if (printHere) {
@@ -4409,7 +4436,7 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	return count;
 }
 
-RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
+RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {//look here
 	int i;
 
 	RzStrBuf *buf = rz_strbuf_new("");

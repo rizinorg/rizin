@@ -474,7 +474,8 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.create = &create,
 	.get_vaddr = &get_vaddr,
 	.write = &rz_bin_write_pe,
-	.hashes = &compute_hashes
+	.hashes = &compute_hashes,
+	.section_flag_to_string = &section_flag_to_string
 };
 
 #ifndef RZ_PLUGIN_INCORE

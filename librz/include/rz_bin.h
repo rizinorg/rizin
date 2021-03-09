@@ -456,6 +456,7 @@ typedef struct rz_bin_plugin_t {
 	int (*demangle_type)(const char *str);
 	struct rz_bin_dbginfo_t *dbginfo;
 	struct rz_bin_write_t *write;
+	char* (*section_flag_to_string)(ut64 flag);
 	int (*get_offset)(RzBinFile *bf, int type, int idx);
 	char *(*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
@@ -482,6 +483,7 @@ typedef struct rz_bin_section_t {
 	const char *arch;
 	char* type;
 	char* flag;
+	int flag_i;
 	char *format;
 	int bits;
 	bool has_strings;

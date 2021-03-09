@@ -91,6 +91,10 @@ static void add_tls_callbacks(RzBinFile *bf, RzList *list) {
 	} while (vaddr);
 }
 
+static char* section_flag_to_string(ut64 flag) {
+	return PE_(rz_bin_pe_section_flag_to_string)(flag);
+}
+
 static RzList *entries(RzBinFile *bf) {
 	struct rz_bin_pe_addr_t *entry = NULL;
 	RzBinAddr *ptr = NULL;
@@ -156,6 +160,47 @@ static RzList *sections(RzBinFile *bf) {
 		}
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
+		ptr->flag_i = sections[i].flags;
+		//if (sections[i].flags & PE_IMAGE_SCN_MEM_SHARED){ 		// WIP 
+		//	ptr->flag_i |= PE_IMAGE_SCN_MEM_SHARED;
+		//} 
+		//if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE){
+		//	ptr->flag_i |= PE_IMAGE_SCN_MEM_EXECUTE;
+		//}
+		//if (sections[i].flags & PE_IMAGE_SCN_MEM_READ){
+		//	ptr->flag_i |= PE_IMAGE_SCN_MEM_READ;
+		//} 
+		//if (sections[i].flags & PE_IMAGE_SCN_MEM_WRITE){
+		//	ptr->flag_i |= PE_IMAGE_SCN_MEM_WRITE;
+		//}
+		//if (sections[i].flags & IMAGE_SCN_TYPE_NO_PAD){
+		//	ptr->flag_i |= IMAGE_SCN_TYPE_NO_PAD;
+		//} 
+		//if (sections[i].flags & IMAGE_SCN_CNT_CODE){
+		//	ptr->flag_i |= IMAGE_SCN_CNT_CODE;
+		//}
+		//if (sections[i].flags & IMAGE_SCN_CNT_INITIALIZED_DATA){
+		//	ptr->flag_i |= IMAGE_SCN_CNT_INITIALIZED_DATA;
+		//} 
+		//if (sections[i].flags & IMAGE_SCN_CNT_UNINITIALIZED_DATA){
+		//	ptr->flag_i |= IMAGE_SCN_CNT_UNINITIALIZED_DATA;
+		//}
+		//if (sections[i].flags & IMAGE_SCN_LNK_OTHER){
+		//	ptr->flag_i |= IMAGE_SCN_LNK_OTHER;
+		//} 
+		//if (sections[i].flags & IMAGE_SCN_LNK_INFO){
+		//	ptr->flag_i |= IMAGE_SCN_LNK_INFO;
+		//}
+		//if (sections[i].flags & IMAGE_SCN_LNK_REMOVE){
+		//	ptr->flag_i |= IMAGE_SCN_LNK_REMOVE;
+//
+		//}
+		//if (sections[i].flags & IMAGE_SCN_LNK_COMDAT){
+		//	ptr->flag_i |= IMAGE_SCN_LNK_COMDAT;
+		//} 
+		//if (sections[i].flags & IMAGE_SCN_GPREL){
+		//	ptr->flag_i |= IMAGE_SCN_GPREL;
+		//} 
 		ptr->add = true;
 		ptr->perm = 0;
 		if (RZ_BIN_PE_SCN_IS_EXECUTABLE(sections[i].perm)) {

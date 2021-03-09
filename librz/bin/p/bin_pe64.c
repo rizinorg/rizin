@@ -503,7 +503,8 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
 	.write = &rz_bin_write_pe64,
-	.hashes = &compute_hashes
+	.hashes = &compute_hashes,
+	.section_flag_to_string = &section_flag_to_string,
 };
 
 #ifndef RZ_PLUGIN_INCORE

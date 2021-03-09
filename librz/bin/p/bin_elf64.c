@@ -155,6 +155,7 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.file_type = &get_file_type,
 	.regstate = &regstate,
 	.maps = &maps,
+	.section_flag_to_string = &section_flag_to_string,
 };
 
 #ifndef RZ_PLUGIN_INCORE
