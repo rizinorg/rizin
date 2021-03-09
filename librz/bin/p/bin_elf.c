@@ -159,7 +159,7 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.file_type = &get_file_type,
 	.regstate = &regstate,
 	.maps = &maps,
-	.section_type_to_string = &section_type_to_string,
+	.section_type_to_string = &Elf_(section_type_to_string),
 	.section_flag_to_string = &Elf_(section_flag_to_string),
 };
 

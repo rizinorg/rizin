@@ -1415,7 +1415,7 @@ ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name
 	RzBinElfSection *section = get_section_by_name(bin, section_name);
 	return section ? section->rva + section->size : UT64_MAX;
 }
-RzList* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {	
+RzList* Elf_(section_flag_to_rzlist)(ut64 flag) {
 	RzList* flag_list = rz_list_new();
 	if(flag & SHF_WRITE) {
 		rz_list_append(flag_list, "SHF_WRITE");
@@ -1456,7 +1456,7 @@ RzList* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {
 	return flag_list;	
 }
 
-char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type) {
+char *Elf_(section_type_to_string)(ut64 type) {
 	switch (type) {
 		case SHT_NULL:
 			return rz_str_new("NULL");
@@ -1527,6 +1527,9 @@ char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type) {
 	}
 }
 
+char* Elf_(section_flag_to_string)(ut64 flag) {
+	return rz_list_to_str(Elf_(section_flag_to_rzlist)(flag), ' ');
+}
 
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (!rel->rva) {
