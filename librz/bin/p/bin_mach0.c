@@ -12,8 +12,11 @@
 #include <ht_uu.h>
 
 // wip settings
-
+#if RZ_BIN_MACH064
+extern RzBinWrite rz_bin_write_mach064;
+#else
 extern RzBinWrite rz_bin_write_mach0;
+#endif
 
 static RzBinInfo *info(RzBinFile *bf);
 

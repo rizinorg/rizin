@@ -715,8 +715,8 @@ typedef struct rz_bin_bind_t {
 	ut32 visibility;
 } RzBinBind;
 
-RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
-RZ_IPI void rz_bin_section_free(RzBinSection *bs);
+RZ_API RzBinSection *rz_bin_section_new(const char *name);
+RZ_API void rz_bin_section_free(RzBinSection *bs);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RzBinImport *imp);
 RZ_API void rz_bin_symbol_free(RzBinSymbol *sym);
@@ -820,6 +820,7 @@ RZ_API void rz_bin_file_free(void /*RzBinFile*/ *bf_);
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
 RZ_API RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
 RZ_API RzList *rz_bin_file_get_symbols(RzBinFile *bf);
+RZ_API RzList *rz_bin_file_get_strings(RzBinFile *a, int min, int dump, int raw);
 //
 RZ_API ut64 rz_bin_file_get_vaddr(RzBinFile *bf, ut64 paddr, ut64 vaddr);
 // RzBinFile.add
@@ -889,6 +890,8 @@ RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *
 RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 addr);
 RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr);
 
+RZ_API void rz_bin_class_free(RzBinClass *c);
+
 /* plugin pointers */
 extern RzBinPlugin rz_bin_plugin_any;
 extern RzBinPlugin rz_bin_plugin_fs;
@@ -919,10 +922,9 @@ extern RzBinPlugin rz_bin_plugin_ninds;
 extern RzBinPlugin rz_bin_plugin_nin3ds;
 extern RzBinPlugin rz_bin_plugin_xbe;
 extern RzBinPlugin rz_bin_plugin_bflt;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_fatmach0;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_dyldcache;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed;
-extern RzBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64;
+extern RzBinXtrPlugin rz_bin_plugin_xtr_fatmach0;
+extern RzBinXtrPlugin rz_bin_plugin_xtr_dyldcache;
+extern RzBinXtrPlugin rz_bin_plugin_xtr_sep64;
 extern RzBinPlugin rz_bin_plugin_zimg;
 extern RzBinPlugin rz_bin_plugin_omf;
 extern RzBinPlugin rz_bin_plugin_art;

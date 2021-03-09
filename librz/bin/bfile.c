@@ -763,7 +763,7 @@ RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *bf) {
 }
 
 // TODO: searchStrings() instead
-RZ_IPI RzList *rz_bin_file_get_strings(RzBinFile *bf, int min, int dump, int raw) {
+RZ_API RzList *rz_bin_file_get_strings(RzBinFile *bf, int min, int dump, int raw) {
 	rz_return_val_if_fail(bf, NULL);
 	RzListIter *iter;
 	RzBinSection *section;
@@ -960,7 +960,7 @@ RZ_IPI RzBinClass *rz_bin_class_new(const char *name, const char *super, int vie
 	return c;
 }
 
-RZ_IPI void rz_bin_class_free(RzBinClass *k) {
+RZ_API void rz_bin_class_free(RzBinClass *k) {
 	if (k && k->name) {
 		free(k->name);
 		free(k->super);

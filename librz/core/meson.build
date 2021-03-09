@@ -70,6 +70,12 @@ rz_core_sources = [
   'vmenus_zigns.c',
   'yank.c',
   'p/core_java.c',
+  '../bin/format/java/class_bin.c',
+  '../bin/format/java/class_attribute.c',
+  '../bin/format/java/class_const_pool.c',
+  '../bin/format/java/class_field.c',
+  '../bin/format/java/class_method.c',
+  '../bin/format/java/class_interface.c',
   'cannotated_code.c',
   'serialize_core.c'
 ]

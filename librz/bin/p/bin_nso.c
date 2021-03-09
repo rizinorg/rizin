@@ -7,7 +7,7 @@
 #include <rz_bin.h>
 #include <rz_io.h>
 #include <rz_cons.h>
-#include "nxo/nxo.h"
+#include <nxo.h>
 #include <lz4.h>
 
 #define NSO_OFF(x)           rz_offsetof(NSOHeader, x)
