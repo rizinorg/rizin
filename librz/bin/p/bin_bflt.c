@@ -6,7 +6,7 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 #include <rz_io.h>
-#include "bflt/bflt.h"
+#include <bflt/bflt.h>
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = rz_bin_bflt_new_buf(buf);

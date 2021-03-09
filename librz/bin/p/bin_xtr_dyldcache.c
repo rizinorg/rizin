@@ -172,7 +172,7 @@ static RzList *oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
 	return res;
 }
 
-RzBinXtrPlugin rz_bin_xtr_plugin_xtr_dyldcache = {
+RzBinXtrPlugin rz_bin_plugin_xtr_dyldcache = {
 	.name = "xtr.dyldcache",
 	.desc = "dyld cache bin extractor plugin",
 	.license = "LGPL3",
@@ -189,7 +189,7 @@ RzBinXtrPlugin rz_bin_xtr_plugin_xtr_dyldcache = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_BIN_XTR,
-	.data = &rz_bin_xtr_plugin_dyldcache,
+	.data = &rz_bin_plugin_xtr_dyldcache,
 	.version = RZ_VERSION
 };
 #endif

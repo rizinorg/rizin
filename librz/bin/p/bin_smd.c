@@ -334,6 +334,8 @@ RzBinPlugin rz_bin_plugin_smd = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
+#include <rz_lib.h>
+
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_smd,

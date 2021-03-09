@@ -6,7 +6,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
-#include "omf/omf.h"
+#include <omf.h>
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	ut64 size;

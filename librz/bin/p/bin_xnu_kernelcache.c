@@ -2238,7 +2238,7 @@ RzBinPlugin rz_bin_plugin_xnu_kernelcache = {
 #ifndef RZ_PLUGIN_INCORE
 RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_BIN,
-	.data = &rz_bin_plugin_kernelcache,
+	.data = &rz_bin_plugin_xnu_kernelcache,
 	.version = RZ_VERSION
 };
 #endif

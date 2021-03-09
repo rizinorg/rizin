@@ -69,6 +69,7 @@ rz_core_sources = [
   'vmenus_zigns.c',
   'yank.c',
   'p/core_java.c',
+  '../bin/format/java/json.c',
   'cannotated_code.c',
   'serialize_core.c'
 ]

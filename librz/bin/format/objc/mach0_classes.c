@@ -144,7 +144,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 	}
 
 	if (!sctns) {
-		sctns = rz_bin_plugin_mach.sections(bf);
+		sctns = MACH0_(get_segments)(bf);
 		if (!sctns) {
 			// retain just for debug
 			// eprintf ("there is no sections\n");

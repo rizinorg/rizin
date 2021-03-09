@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2015-2019 deepakchethan <deepakchethan@outlook.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "qnx/qnx.h"
+#include <qnx.h>
 #include "../i/private.h"
 
 static int lmf_header_load(lmf_header *lmfh, RzBuffer *buf, Sdb *db) {
