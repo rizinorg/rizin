@@ -1,10 +1,5 @@
-bp_plugins = [
-  'arm',
-  'bf',
-  'mips',
-  'ppc',
-  'sh',
-  'x86'
+rz_bp_dependencies = [
+  rz_util_dep,
 ]
 
 rz_bp_sources = [
@@ -13,18 +8,12 @@ rz_bp_sources = [
   'bp_plugin.c',
   'bp_traptrace.c',
   'bp_watch.c',
-  'p/bp_arm.c',
-  'p/bp_bf.c',
-  'p/bp_mips.c',
-  'p/bp_ppc.c',
-  'p/bp_sh.c',
-  'p/bp_x86.c'
 ]
 
 rz_bp = library('rz_bp', rz_bp_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [rz_util_dep],
+  dependencies: rz_bp_dependencies + rz_bp_plugins_dep,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
