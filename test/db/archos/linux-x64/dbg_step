@@ -189,6 +189,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+
+NAME=dbg.dsui-2
+FILE=bins/elf/analysis/calls_x64
+ARGS=-a x86 -d
+CMDS=<<EOF
+dcu 0x00400574
+dsi rax=2
+dr rax
+EOF
+EXPECT=<<EOF
+0x00000002
+EOF
+RUN
+
+NAME=dbg.dsuo
+FILE=bins/elf/analysis/calls_x64
+ARGS=-a x86 -d
+BROKEN=1
+CMDS=<<EOF
+dsuo jmp
+pi 1 @ rip~[0]
+EOF
+EXPECT=<<EOF
+jmp
+EOF
+RUN
+
 NAME=dbg.dsei
 FILE=bins/elf/analysis/calls_x64
 ARGS=-a x86 -d
