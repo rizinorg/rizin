@@ -6,8 +6,8 @@
 import argparse
 import glob
 import itertools
-import sys
 import subprocess
+import sys
 
 from git import Repo
 
