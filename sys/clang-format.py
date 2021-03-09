@@ -85,7 +85,7 @@ def format_files(args, files):
     cmd = build_command(args.check, files)
     if args.verbose:
         print(cmd)
-    r = subprocess.run(cmd)
+    r = subprocess.run(cmd, check=False)
     sys.exit(r.returncode)
 
 
