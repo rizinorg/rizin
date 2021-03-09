@@ -4461,6 +4461,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	RzDebugTracepoint *t;
 	const char *ptr;
+	int follow = 0;
 	ut64 addr;
 	int min;
 	RzListIter *iter;
@@ -4798,7 +4799,9 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 's': // "ds"
-		rz_cmd_debug_step(data, input + 1);
+		if (rz_cmd_debug_step(core, input + 1)) {
+			follow = rz_config_get_i(core->config, "dbg.follow");
+		}
 		break;
 	case 'b': // "db"
 		rz_core_cmd_bp(core, input);
@@ -5196,6 +5199,8 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_d);
 		break;
 	}
-	dbg_follow_seek_register(core);
+	if (follow > 0) {
+		dbg_follow_seek_register(core);
+	}
 	return 0;
 }
