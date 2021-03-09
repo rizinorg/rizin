@@ -3642,7 +3642,7 @@ onemoretime:
 					off + ntotal, n + ntotal,
 					(const char *)name + 4);
 			}
-			rz_name_filter(name, n + 10);
+			rz_name_filter(name, n + 10, true);
 			rz_flag_set(core->flags, name, off + ntotal, n);
 			free(name);
 			if (is_wide) {
@@ -3691,7 +3691,7 @@ onemoretime:
 			rz_meta_set(core->analysis, RZ_META_TYPE_STRING, off,
 				n, (const char *)name + 4);
 		}
-		rz_name_filter(name, n + 10);
+		rz_name_filter(name, n + 10, true);
 		rz_flag_set(core->flags, name, off, n);
 		wordsize = n;
 		free(name);

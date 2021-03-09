@@ -226,7 +226,7 @@ static void cmd_help_percent(RzCore *core) {
 
 static const char *findBreakChar(const char *s) {
 	while (*s) {
-		if (!rz_name_validate_char(*s)) {
+		if (!rz_name_validate_char(*s, true)) {
 			break;
 		}
 		s++;

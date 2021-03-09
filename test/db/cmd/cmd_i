@@ -20,10 +20,10 @@ vaddr      name
 0x004003a8 .init
 0x00400260 .gnu.hash
 0x00400200 .interp
-0x0040021c .note.ABI_tag
+0x0040021c .note.ABI-tag
 0x00400328 .gnu.version_r
 0x00000000 .comment
-0x0040023c .note.gnu.build_id
+0x0040023c .note.gnu.build-id
 0x006008d0 .got.plt
 0x004005d0 .eh_frame_hdr
 0x004002e0 .dynstr
@@ -2709,8 +2709,8 @@ nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- 
 1   0x00000134   0x13 0x08048134   0x13 -r-- .interp
-2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI_tag
-3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build_id
+2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI-tag
+3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build-id
 4   0x0000018c   0x20 0x0804818c   0x20 -r-- .gnu.hash
 5   0x000001ac   0x50 0x080481ac   0x50 -r-- .dynsym
 6   0x000001fc   0x4a 0x080481fc   0x4a -r-- .dynstr
@@ -2766,7 +2766,7 @@ NAME=iSj
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSj
 EXPECT=<<EOF
-[{"name":"","size":0,"vsize":0,"perm":"----","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":".note.ABI_tag","size":32,"vsize":32,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":".note.gnu.build_id","size":36,"vsize":36,"perm":"-r--","paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","paddr":4300,"vaddr":0}]
+[{"name":"","size":0,"vsize":0,"perm":"----","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":".note.ABI-tag","size":32,"vsize":32,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":".note.gnu.build-id","size":36,"vsize":36,"perm":"-r--","paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","paddr":4300,"vaddr":0}]
 EOF
 RUN
 
@@ -2784,8 +2784,8 @@ CMDS=iSq
 EXPECT=<<EOF
 0x0 0x0 ---- 
 0x8048134 0x8048147 -r-- .interp
-0x8048148 0x8048168 -r-- .note.ABI_tag
-0x8048168 0x804818c -r-- .note.gnu.build_id
+0x8048148 0x8048168 -r-- .note.ABI-tag
+0x8048168 0x804818c -r-- .note.gnu.build-id
 0x804818c 0x80481ac -r-- .gnu.hash
 0x80481ac 0x80481fc -r-- .dynsym
 0x80481fc 0x8048246 -r-- .dynstr
@@ -3265,8 +3265,8 @@ nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- 
 1   0x00000200   0x1a 0x00400200   0x1a -r-- .interp
-2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI_tag
-3   0x0000023c   0x24 0x0040023c   0x24 -r-- .note.gnu.build_id
+2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI-tag
+3   0x0000023c   0x24 0x0040023c   0x24 -r-- .note.gnu.build-id
 4   0x00000260   0x1c 0x00400260   0x1c -r-- .gnu.hash
 5   0x00000280   0x60 0x00400280   0x60 -r-- .dynsym
 6   0x000002e0   0x3d 0x004002e0   0x3d -r-- .dynstr
@@ -4011,7 +4011,7 @@ nth paddr        size vaddr       vsize perm entropy    name
 ------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- 0.00000000 
 1   0x00000154   0x13 0x08048154   0x13 -r-- 3.68188080 .interp
-2   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 .note.ABI_tag
+2   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 .note.ABI-tag
 3   0x00000188   0x38 0x08048188   0x38 -r-- 1.23442903 .hash
 4   0x000001c0   0x20 0x080481c0   0x20 -r-- 1.99254169 .gnu.hash
 5   0x000001e0   0x90 0x080481e0   0x90 -r-- 1.56755604 .dynsym
