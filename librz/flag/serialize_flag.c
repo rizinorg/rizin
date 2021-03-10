@@ -4,10 +4,6 @@
 #include <rz_util/rz_serialize.h>
 #include <rz_flag.h>
 
-#if RZ_FLAG_ZONE_USE_SDB
-#error "RZ_FLAG_ZONE_USE_SDB not supported by rz_serialize"
-#endif
-
 /*
  * SDB Format:
  *
