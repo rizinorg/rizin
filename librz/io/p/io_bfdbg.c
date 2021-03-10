@@ -6,6 +6,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+
+#ifndef RZ_PLUGIN_INCORE
+RzIOPlugin rz_io_plugin_bfdbg;
+
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_IO,
+	.data = &rz_io_plugin_bfdbg,
+	.version = RZ_VERSION
+};
+#endif
+
 #undef RZ_API
 #define RZ_API static inline
 #include "../debug/p/bfvm.h"
@@ -206,11 +217,3 @@ RzIOPlugin rz_io_plugin_bfdbg = {
 	.lseek = __lseek,
 	.write = __write,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_IO,
-	.data = &rz_io_plugin_bfdbg,
-	.version = RZ_VERSION
-};
-#endif
