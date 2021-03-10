@@ -107,8 +107,8 @@ bool test_dwarf3_c(void) {
 	i++;
 	check_die_abbr_code(0);
 
-	rz_bin_dwarf_free_debug_info(info);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_info_free(info);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -317,8 +317,8 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	i++;
 	check_die_abbr_code(0);
 
-	rz_bin_dwarf_free_debug_info(info);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_info_free(info);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -414,8 +414,8 @@ bool test_dwarf2_big_endian(void) {
 	check_attr_name(3, DW_AT_high_pc);
 	check_attr_reference(3, 0x0000000010001ac8);
 
-	rz_bin_dwarf_free_debug_info(info);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_info_free(info);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;

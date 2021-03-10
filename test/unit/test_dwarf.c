@@ -157,7 +157,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	}
 
 	rz_list_free(line_list);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -566,7 +566,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	}
 
 	rz_list_free(line_list);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -682,7 +682,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	}
 
 	rz_list_free(line_list);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -749,7 +749,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	}
 
 	rz_list_free(line_list);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_io_free(io);
 	rz_bin_free(bin);
 	mu_end;
@@ -865,7 +865,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 
 	// add line information check
 	rz_list_free(line_list);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -1283,6 +1283,61 @@ bool test_big_endian_dwarf2(void) {
 	mu_end;
 }
 
+bool test_dwarf3_aranges(void) {
+	// The file's arange version is actually 2 but the format is the same as 3
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBinOptions opt = { 0 };
+	bool res = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
+	mu_assert("couldn't open file", res);
+
+	RzList *aranges = rz_bin_dwarf_parse_aranges(bin->cur);
+	mu_assert_eq(rz_list_length(aranges), 2, "arange sets count");
+
+	RzBinDwarfARangeSet *set = rz_list_get_n(aranges, 0);
+	mu_assert_eq(set->unit_length, 60, "unit length");
+	mu_assert_eq(set->version, 2, "version");
+	mu_assert_eq(set->debug_info_offset, 0x0, "debug_info offset");
+	mu_assert_eq(set->address_size, 8, "address size");
+	mu_assert_eq(set->segment_size, 0, "segment size");
+	mu_assert_eq(set->aranges_count, 3, "aranges count");
+	RzBinDwarfARange ref_0[] = {
+		{ 0x000000000000118a, 0x000000000000009e },
+		{ 0x0000000000001228, 0x0000000000000013 },
+		{ 0x0000000000000000, 0x0000000000000000 }
+	};
+	mu_assert_memeq((const ut8 *)set->aranges, (const ut8 *)&ref_0, sizeof(ref_0), "aranges contents");
+
+	set = rz_list_get_n(aranges, 1);
+	mu_assert_eq(set->unit_length, 188, "unit length");
+	mu_assert_eq(set->version, 2, "version");
+	mu_assert_eq(set->debug_info_offset, 0x22e, "debug_info offset");
+	mu_assert_eq(set->address_size, 8, "address size");
+	mu_assert_eq(set->segment_size, 0, "segment size");
+	mu_assert_eq(set->aranges_count, 11, "aranges count");
+	RzBinDwarfARange ref_1[] = {
+		{ 0x000000000000123b, 0x000000000000008b },
+		{ 0x00000000000012c6, 0x000000000000001d },
+		{ 0x00000000000012e4, 0x000000000000002d },
+		{ 0x0000000000001312, 0x000000000000002d },
+		{ 0x0000000000001340, 0x000000000000002f },
+		{ 0x0000000000001370, 0x0000000000000013 },
+		{ 0x0000000000001384, 0x000000000000001d },
+		{ 0x00000000000013a2, 0x000000000000001d },
+		{ 0x00000000000013c0, 0x000000000000002f },
+		{ 0x00000000000013f0, 0x0000000000000013 },
+		{ 0x0000000000000000, 0x0000000000000000 }
+	};
+	mu_assert_memeq((const ut8 *)set->aranges, (const ut8 *)&ref_1, sizeof(ref_1), "aranges contents");
+
+	rz_list_free(aranges);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_dwarf_cpp_empty_line_info);
 	mu_run_test(test_dwarf2_cpp_many_comp_units);
@@ -1291,6 +1346,7 @@ bool all_tests() {
 	mu_run_test(test_dwarf3_cpp_many_comp_units);
 	mu_run_test(test_dwarf4_cpp_many_comp_units);
 	mu_run_test(test_big_endian_dwarf2);
+	mu_run_test(test_dwarf3_aranges);
 	return tests_passed != tests_run;
 }
 

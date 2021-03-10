@@ -215,3 +215,25 @@ RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*/ *loc
 	rz_cons_print("\n");
 	rz_list_free(sort_list);
 }
+
+RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet>*/ *aranges) {
+	rz_return_if_fail(aranges);
+	rz_cons_print("\nContents of the .debug_aranges section:\n");
+	RzListIter *it;
+	RzBinDwarfARangeSet *set;
+	rz_list_foreach (aranges, it, set) {
+		rz_cons_print("  Address Range Set\n");
+		rz_cons_printf("   Unit Length:           0x%" PFMT64x "\n", set->unit_length);
+		rz_cons_printf("   64bit:                 %s\n", rz_str_bool(set->is_64bit));
+		rz_cons_printf("   Version:               %u\n", (unsigned int)set->version);
+		rz_cons_printf("   Offset in .debug_info: 0x%" PFMT64x "\n", set->debug_info_offset);
+		rz_cons_printf("   Address Size:          %u\n", (unsigned int)set->address_size);
+		rz_cons_printf("   Segment Size:          %u\n", (unsigned int)set->segment_size);
+		rz_cons_print("   Ranges:\n");
+		rz_cons_print("    address            length\n");
+		for (size_t i = 0; i < set->aranges_count; i++) {
+			rz_cons_printf("    0x%016" PFMT64x " 0x%016" PFMT64x "\n", set->aranges[i].addr, set->aranges[i].length);
+		}
+	}
+	rz_cons_print("\n");
+}

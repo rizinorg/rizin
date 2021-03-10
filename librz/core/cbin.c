@@ -1182,12 +1182,18 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 			if (mode == RZ_MODE_PRINT) {
 				rz_core_bin_dwarf_print_loc(loc_table, core->analysis->bits / 8);
 			}
-			rz_bin_dwarf_free_loc(loc_table);
+			rz_bin_dwarf_loc_free(loc_table);
 		}
-		rz_bin_dwarf_free_debug_info(info);
-		rz_bin_dwarf_parse_aranges(binfile, mode);
+		rz_bin_dwarf_debug_info_free(info);
+		if (mode == RZ_MODE_PRINT) {
+			RzList *aranges = rz_bin_dwarf_parse_aranges(binfile);
+			if (aranges) {
+				rz_core_bin_dwarf_print_aranges(aranges);
+				rz_list_free(aranges);
+			}
+		}
 		list = ownlist = rz_bin_dwarf_parse_line(binfile, mode);
-		rz_bin_dwarf_free_debug_abbrev(da);
+		rz_bin_dwarf_debug_abbrev_free(da);
 	}
 	if (!list) {
 		return false;

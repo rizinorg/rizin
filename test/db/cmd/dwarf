@@ -1043,26 +1043,41 @@ EXPECT=<<EOF
      DW_AT_location            : 2 byte block: 0x91 0x68
 <0x69b>: Abbrev Number: 0    (DW_TAG_null_entry)
 <0x69c>: Abbrev Number: 0    (DW_TAG_null_entry)
-parse_aranges
-length 0x3c
-Version 2
-Debug info offset 0
-address size 8
-segment size 0
-length 0x9e address 0x118a
-length 0x13 address 0x1228
-length 0x0 address 0x0
-length 0x80000 address 0x22e0002000000bc
-length 0x8b address 0x123b
-length 0x1d address 0x12c6
-length 0x2d address 0x12e4
-length 0x2d address 0x1312
-length 0x2f address 0x1340
-length 0x13 address 0x1370
-length 0x1d address 0x1384
-length 0x1d address 0x13a2
-length 0x2f address 0x13c0
-length 0x13 address 0x13f0
+
+Contents of the .debug_aranges section:
+  Address Range Set
+   Unit Length:           0x3c
+   64bit:                 false
+   Version:               2
+   Offset in .debug_info: 0x0
+   Address Size:          8
+   Segment Size:          0
+   Ranges:
+    address            length
+    0x000000000000118a 0x000000000000009e
+    0x0000000000001228 0x0000000000000013
+    0x0000000000000000 0x0000000000000000
+  Address Range Set
+   Unit Length:           0xbc
+   64bit:                 false
+   Version:               2
+   Offset in .debug_info: 0x22e
+   Address Size:          8
+   Segment Size:          0
+   Ranges:
+    address            length
+    0x000000000000123b 0x000000000000008b
+    0x00000000000012c6 0x000000000000001d
+    0x00000000000012e4 0x000000000000002d
+    0x0000000000001312 0x000000000000002d
+    0x0000000000001340 0x000000000000002f
+    0x0000000000001370 0x0000000000000013
+    0x0000000000001384 0x000000000000001d
+    0x00000000000013a2 0x000000000000001d
+    0x00000000000013c0 0x000000000000002f
+    0x00000000000013f0 0x0000000000000013
+    0x0000000000000000 0x0000000000000000
+
 Raw dump of debug contents of section .debug_line:
 
  Header information:
