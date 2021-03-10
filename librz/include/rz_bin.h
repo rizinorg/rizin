@@ -483,14 +483,8 @@ typedef struct rz_bin_section_t {
 	ut32 perm;
 	// per section platform info
 	const char *arch;
-<<<<<<< HEAD
-	char* type;
-	char* flag;
-	int flag_i;
-=======
 	ut64 type;
 	int flags;
->>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 	char *format;
 	int bits;
 	bool has_strings;

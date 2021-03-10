@@ -1174,10 +1174,7 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.create = &create,
 	.classes = &MACH0_(parse_classes),
 	.write = &rz_bin_write_mach0,
-<<<<<<< HEAD
-=======
 	.section_type_to_string = &MACH0_(section_type_to_string),
->>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 	.section_flag_to_string = &MACH0_(section_flag_to_string),
 };
 
