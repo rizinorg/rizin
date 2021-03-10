@@ -598,7 +598,7 @@ static void apply_name(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it, bo
 	}
 	rz_analysis_function_rename(fcn, name);
 	if (core->analysis->cb.on_fcn_rename) {
-		core->analysis->cb.on_fcn_rename(core->analysis, core->analysis->user, fcn, name);
+		core->analysis->cb.on_fcn_rename(core->analysis, core, fcn, name);
 	}
 }
 

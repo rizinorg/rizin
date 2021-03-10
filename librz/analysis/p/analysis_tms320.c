@@ -5,8 +5,6 @@
 #include "analysis_tms320c64x.c"
 #include "../../asm/arch/tms320/tms320_dasm.h"
 
-static tms320_dasm_t engine = { 0 };
-
 typedef int (*TMS_ANALYSIS_OP_FN)(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
 
 int tms320_c54x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
@@ -23,10 +21,11 @@ int tms320_c54x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 }
 
 int tms320_c55x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
-	const char *str = engine.syntax;
+	tms320_dasm_t *engine = (tms320_dasm_t *)analysis->plugin_data;
+	const char *str = engine->syntax;
 
 	op->delay = 0;
-	op->size = tms320_dasm(&engine, buf, len);
+	op->size = tms320_dasm(engine, buf, len);
 	op->type = RZ_ANALYSIS_OP_TYPE_NULL;
 
 	str = strstr(str, "||") ? str + 3 : str;
@@ -95,12 +94,22 @@ int tms320_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf,
 	return aop(analysis, op, addr, buf, len);
 }
 
-static int tms320_init(void *unused) {
-	return tms320_dasm_init(&engine);
+static bool tms320_init(void **user) {
+	tms320_dasm_t *engine = RZ_NEW0(tms320_dasm_t);
+	if (!engine) {
+		return false;
+	}
+	tms320_dasm_init(engine);
+	*user = engine;
+	return true;
 }
 
-static int tms320_fini(void *unused) {
-	return tms320_dasm_fini(&engine);
+static bool tms320_fini(void *user) {
+	rz_return_val_if_fail(user, false);
+	tms320_dasm_t *engine = (tms320_dasm_t *)user;
+	tms320_dasm_fini(engine);
+	free(engine);
+	return true;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_tms320 = {

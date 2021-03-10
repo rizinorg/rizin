@@ -2544,7 +2544,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_lang_set_user_ptr(core->lang, core);
 	core->rasm = rz_asm_new();
 	core->rasm->num = core->num;
-	rz_asm_set_user_ptr(core->rasm, core);
+	core->rasm->core = core;
 	core->analysis = rz_analysis_new();
 	core->gadgets = rz_list_newf((RzListFree)rz_core_gadget_free);
 	core->analysis->ev = core->ev;
@@ -2555,7 +2555,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->analysis->cb.on_fcn_rename = on_fcn_rename;
 	core->print->sdb_types = core->analysis->sdb_types;
 	core->rasm->syscall = rz_syscall_ref(core->analysis->syscall); // BIND syscall analysis/asm
-	rz_analysis_set_user_ptr(core->analysis, core);
+	core->analysis->core = core;
 	core->analysis->cb_printf = (void *)rz_cons_printf;
 	core->parser = rz_parse_new();
 	rz_analysis_bind(core->analysis, &(core->parser->analb));

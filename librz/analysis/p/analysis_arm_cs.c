@@ -63,8 +63,13 @@
 #define ISPREINDEX64()  ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64()))
 #define ISPOSTINDEX64() ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64()))
 
-static HtUU *ht_itblock = NULL;
-static HtUU *ht_it = NULL;
+typedef struct arm_cs_context_t {
+	HtUU *ht_itblock;
+	HtUU *ht_it;
+	csh handle;
+	int omode;
+	int obits;
+} ArmCSContext;
 
 static const ut64 bitmask_by_width[] = {
 	0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
@@ -670,11 +675,11 @@ static int decode_sign_ext(arm64_extender extender) {
 }
 
 static const char *decode_shift(arm_shifter shift) {
-	static const char *E_OP_SR = ">>";
-	static const char *E_OP_SL = "<<";
-	static const char *E_OP_RR = ">>>";
-	static const char *E_OP_ASR = ">>>>";
-	static const char *E_OP_VOID = "";
+	const char *E_OP_SR = ">>";
+	const char *E_OP_SL = "<<";
+	const char *E_OP_RR = ">>>";
+	const char *E_OP_ASR = ">>>>";
+	const char *E_OP_VOID = "";
 
 	switch (shift) {
 	case ARM_SFT_ASR:
@@ -702,10 +707,10 @@ static const char *decode_shift(arm_shifter shift) {
 }
 
 static const char *decode_shift_64(arm64_shifter shift) {
-	static const char *E_OP_SR = ">>";
-	static const char *E_OP_SL = "<<";
-	static const char *E_OP_RR = ">>>";
-	static const char *E_OP_VOID = "";
+	const char *E_OP_SR = ">>";
+	const char *E_OP_SL = "<<";
+	const char *E_OP_RR = ">>>";
+	const char *E_OP_VOID = "";
 
 	switch (shift) {
 	case ARM64_SFT_ASR:
@@ -2635,7 +2640,8 @@ static int cond_cs2r2(int cc) {
 	return cc;
 }
 
-static void anop64(csh handle, RzAnalysisOp *op, cs_insn *insn) {
+static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
+	csh handle = ctx->handle;
 	ut64 addr = op->addr;
 
 	/* grab family */
@@ -3072,16 +3078,16 @@ static void anop64(csh handle, RzAnalysisOp *op, cs_insn *insn) {
 	}
 }
 
-static void analysis_itblock(cs_insn *insn) {
+static void analysis_itblock(ArmCSContext *ctx, cs_insn *insn) {
 	size_t i, size = rz_str_nlen(insn->mnemonic, 5);
-	ht_uu_update(ht_itblock, insn->address, size);
+	ht_uu_update(ctx->ht_itblock, insn->address, size);
 	for (i = 1; i < size; i++) {
 		switch (insn->mnemonic[i]) {
 		case 0x74: //'t'
-			ht_uu_update(ht_it, insn->address + (i * insn->size), insn->detail->arm.cc);
+			ht_uu_update(ctx->ht_it, insn->address + (i * insn->size), insn->detail->arm.cc);
 			break;
 		case 0x65: //'e'
-			ht_uu_update(ht_it, insn->address + (i * insn->size), (insn->detail->arm.cc % 2) ? insn->detail->arm.cc + 1 : insn->detail->arm.cc - 1);
+			ht_uu_update(ctx->ht_it, insn->address + (i * insn->size), (insn->detail->arm.cc % 2) ? insn->detail->arm.cc + 1 : insn->detail->arm.cc - 1);
 			break;
 		default:
 			break;
@@ -3089,19 +3095,20 @@ static void analysis_itblock(cs_insn *insn) {
 	}
 }
 
-static void check_itblock(cs_insn *insn) {
+static void check_itblock(ArmCSContext *ctx, cs_insn *insn) {
 	size_t x;
 	bool found;
-	ut64 itlen = ht_uu_find(ht_itblock, insn->address, &found);
+	ut64 itlen = ht_uu_find(ctx->ht_itblock, insn->address, &found);
 	if (found) {
 		for (x = 1; x < itlen; x++) {
-			ht_uu_delete(ht_it, insn->address + (x * insn->size));
+			ht_uu_delete(ctx->ht_it, insn->address + (x * insn->size));
 		}
-		ht_uu_delete(ht_itblock, insn->address);
+		ht_uu_delete(ctx->ht_itblock, insn->address);
 	}
 }
 
 static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
+	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
 	const ut64 addr = op->addr;
 	const int pcdelta = thumb ? 4 : 8;
 	int i;
@@ -3136,7 +3143,7 @@ static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, b
 	}
 
 	if (insn->id != ARM_INS_IT) {
-		check_itblock(insn);
+		check_itblock(ctx, insn);
 	}
 
 	switch (insn->id) {
@@ -3174,7 +3181,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_IT:
-		analysis_itblock(insn);
+		analysis_itblock(ctx, insn);
 		op->cycles = 2;
 		break;
 	case ARM_INS_BKPT:
@@ -3567,7 +3574,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		RZ_LOG_DEBUG("ARM analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
 		break;
 	}
-	itcond = ht_uu_find(ht_it, addr, &found);
+	itcond = ht_uu_find(ctx->ht_it, addr, &found);
 	if (found) {
 		insn->detail->arm.cc = itcond;
 		insn->detail->arm.update_flags = 0;
@@ -3790,9 +3797,8 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 }
 
 static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	static csh handle = 0;
-	static int omode = -1;
-	static int obits = 32;
+	ArmCSContext *ctx = (ArmCSContext *)a->plugin_data;
+
 	cs_insn *insn = NULL;
 	int mode = (a->bits == 16) ? CS_MODE_THUMB : CS_MODE_ARM;
 	int n, ret;
@@ -3801,19 +3807,19 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		mode |= CS_MODE_MCLASS;
 	}
 
-	if (mode != omode || a->bits != obits) {
-		cs_close(&handle);
-		handle = 0; // unnecessary
-		omode = mode;
-		obits = a->bits;
+	if (mode != ctx->omode || a->bits != ctx->obits) {
+		cs_close(&ctx->handle);
+		ctx->handle = 0; // unnecessary
+		ctx->omode = mode;
+		ctx->obits = a->bits;
 	}
 	op->size = (a->bits == 16) ? 2 : 4;
 	op->addr = addr;
-	if (handle == 0) {
-		ret = (a->bits == 64) ? cs_open(CS_ARCH_ARM64, mode, &handle) : cs_open(CS_ARCH_ARM, mode, &handle);
-		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+	if (ctx->handle == 0) {
+		ret = (a->bits == 64) ? cs_open(CS_ARCH_ARM64, mode, &ctx->handle) : cs_open(CS_ARCH_ARM, mode, &ctx->handle);
+		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 		if (ret != CS_ERR_OK) {
-			handle = 0;
+			ctx->handle = 0;
 			return -1;
 		}
 	}
@@ -3822,7 +3828,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		return haa;
 	}
 
-	n = cs_disasm(handle, (ut8 *)buf, len, addr, 1, &insn);
+	n = cs_disasm(ctx->handle, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
@@ -3840,25 +3846,25 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		op->size = insn->size;
 		op->id = insn->id;
 		if (a->bits == 64) {
-			anop64(handle, op, insn);
+			anop64(ctx, op, insn);
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-				opex64(&op->opex, handle, insn);
+				opex64(&op->opex, ctx->handle, insn);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-				analop64_esil(a, op, addr, buf, len, &handle, insn);
+				analop64_esil(a, op, addr, buf, len, &ctx->handle, insn);
 			}
 		} else {
-			anop32(a, handle, op, insn, thumb, (ut8 *)buf, len);
+			anop32(a, ctx->handle, op, insn, thumb, (ut8 *)buf, len);
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-				opex(&op->opex, handle, insn);
+				opex(&op->opex, ctx->handle, insn);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-				analop_esil(a, op, addr, buf, len, &handle, insn, thumb);
+				analop_esil(a, op, addr, buf, len, &ctx->handle, insn, thumb);
 			}
 		}
 		set_opdir(op);
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-			op_fillval(a, op, handle, insn, a->bits);
+			op_fillval(a, op, ctx->handle, insn, a->bits);
 		}
 		cs_free(insn, n);
 	}
@@ -4421,22 +4427,28 @@ static RzList *analysis_preludes(RzAnalysis *analysis) {
 	return l;
 }
 
-static int init(void *user) {
-	if (!ht_it) {
-		ht_it = ht_uu_new0();
+static bool init(void **user) {
+	ArmCSContext *ctx = RZ_NEW0(ArmCSContext);
+	if (!ctx) {
+		return false;
 	}
-	if (!ht_itblock) {
-		ht_itblock = ht_uu_new0();
-	}
-	return 0;
+	ctx->ht_it = ht_uu_new0();
+	ctx->ht_itblock = ht_uu_new0();
+	ctx->handle = 0;
+	ctx->omode = -1;
+	ctx->obits = 32;
+	*user = ctx;
+	return true;
 }
 
-static int fini(void *user) {
-	ht_uu_free(ht_itblock);
-	ht_uu_free(ht_it);
-	ht_itblock = NULL;
-	ht_it = NULL;
-	return 0;
+static bool fini(void *user) {
+	rz_return_val_if_fail(user, false);
+	ArmCSContext *ctx = (ArmCSContext *)user;
+	cs_close(&ctx->handle);
+	ht_uu_free(ctx->ht_itblock);
+	ht_uu_free(ctx->ht_it);
+	free(ctx);
+	return true;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_arm_cs = {

@@ -9,23 +9,8 @@
 #include "../arch/snes/snesdis.c"
 #include "asm_snes.h"
 
-static struct snes_asm_flags *snesflags = NULL;
-
-static bool snes_asm_init(void *user) {
-	if (!snesflags) {
-		snesflags = malloc(sizeof(struct snes_asm_flags));
-	}
-	memset(snesflags, 0, sizeof(struct snes_asm_flags));
-	return 0;
-}
-
-static bool snes_asm_fini(void *user) {
-	free(snesflags);
-	snesflags = NULL;
-	return 0;
-}
-
 static int dis(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	struct snes_asm_flags *snesflags = (struct snes_asm_flags *)a->plugin_data;
 	int dlen = snesDisass(snesflags->M, snesflags->X, a->pc, op, buf, len);
 	if (dlen < 0) {
 		dlen = 0;
@@ -47,6 +32,17 @@ static int dis(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	return dlen;
+}
+
+static bool snes_asm_init(void **user) {
+	*user = RZ_NEW0(struct snes_asm_flags);
+	return *user != NULL;
+}
+
+static bool snes_asm_fini(void *user) {
+	rz_return_val_if_fail(user, false);
+	free(user);
+	return true;
 }
 
 RzAsmPlugin rz_asm_plugin_snes = {
