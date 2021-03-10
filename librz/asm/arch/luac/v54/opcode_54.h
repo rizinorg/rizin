@@ -6,7 +6,7 @@
 
 #include <rz_types.h>
 #include <rz_asm.h>
-#include "opcode.h"
+#include "librz/asm/arch/luac/opcode.h"
 
 /*===========================================================================
   We assume that instructions are unsigned 32-bit integers.

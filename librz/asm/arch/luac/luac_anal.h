@@ -1,0 +1,4 @@
+#ifndef BUILD_LUAC_ANAL_H
+#define BUILD_LUAC_ANAL_H
+
+#endif //BUILD_LUAC_ANAL_H

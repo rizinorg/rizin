@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
-#include "opcode.h"
+#include "librz/asm/arch/luac/opcode.h"
 #include "opcode_54.h"
 
 LuaOpNameList get_lua54_opnames(void) {
