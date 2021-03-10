@@ -57,11 +57,10 @@ struct rz_bin_pe_addr_t {
 struct rz_bin_pe_section_t {
 	ut8 name[PE_IMAGE_SIZEOF_SHORT_NAME * 3];
 	ut64 size;
-	ut32 flags;
 	ut64 vsize;
 	ut64 vaddr;
 	ut64 paddr;
-	ut64 flags;
+	int flags;
 	ut64 perm;
 	int last;
 };
@@ -220,5 +219,5 @@ struct rz_bin_pe_addr_t *PE_(check_unknow)(struct PE_(rz_bin_pe_obj_t) * bin);
 struct rz_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(rz_bin_pe_obj_t) * bin);
 struct rz_bin_pe_addr_t *PE_(check_mingw)(struct PE_(rz_bin_pe_obj_t) * bin);
 bool PE_(rz_bin_pe_section_perms)(RzBinFile *bf, const char *name, int perms);
-RzList* PE_(rz_bin_pe_section_flag_to_string)(ut64 flag);//checking
+RzList* PE_(rz_bin_pe_section_flag_to_string)(int flag);//checking
 RZ_API void PE_(bin_pe_parse_resource)(struct PE_(rz_bin_pe_obj_t) * bin);

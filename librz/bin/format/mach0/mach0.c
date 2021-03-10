@@ -2322,7 +2322,7 @@ char *MACH0_(section_type_to_string)(ut64 type) {
 	}
 }
 
-char* MACH0_(section_flag_to_string)(ut64 flag) {
+char* MACH0_(section_flag_to_string)(int flag) {
 	return rz_list_to_str(MACH0_(section_flag_to_rzlist)(flag), ' ');
 }
 

@@ -1527,7 +1527,7 @@ char *Elf_(section_type_to_string)(ut64 type) {
 	}
 }
 
-char* Elf_(section_flag_to_string)(ut64 flag) {
+char* Elf_(section_flag_to_string)(int flag) {
 	return rz_list_to_str(Elf_(section_flag_to_rzlist)(flag), ' ');
 }
 
