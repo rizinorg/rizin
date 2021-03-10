@@ -47,6 +47,24 @@ typedef struct rz_bin_elf_section_t {
 	int type;
 } RzBinElfSection;
 
+//typedef struct rz_bin_elf_section_flags {
+//	bool shf_write;				// SHF_WRITE
+//	bool shf_alloc;				// SHF_ALLOC
+//	bool shf_execinstr;			// SHF_EXECINSTR
+//	bool shf_merge;				// SHF_MERGE
+//	bool shf_strings;			// SHF_STRINGS
+//	bool shf_info_link;			// SHF_INFO_LINK
+//	bool shf_link_order;		// SHF_LINK_ORDER
+//	bool shf_os_nonconforming;	// SHF_OS_NONCONFORMING
+//	bool shf_group;				// SHF_GROUP
+//	bool shf_tls;				// SHF_TLS
+//	bool shf_compressed;		// SHF_COMPRESSED
+//	bool shf_maskos;			// SHF_MASKOS
+//	bool shf_maskproc;			// SHF_MASKPROC
+//	bool shf_ordered;			// SHF_ORDERED
+//	bool shf_exclude;			// SHF_EXCLUDE
+//} rz_bin_elf_section_flags;
+
 typedef struct rz_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
@@ -168,7 +186,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 int Elf_(rz_bin_elf_has_va)(struct Elf_(rz_bin_elf_obj_t) * bin);
 ut64 Elf_(rz_bin_elf_get_section_addr)(struct Elf_(rz_bin_elf_obj_t) * bin, const char *section_name);
 ut64 Elf_(rz_bin_elf_get_section_offset)(struct Elf_(rz_bin_elf_obj_t) * bin, const char *section_name);
-char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type);
+char *Elf_(section_type_to_string)(ut64 type);
 ut64 Elf_(rz_bin_elf_get_baddr)(struct Elf_(rz_bin_elf_obj_t) * bin);
 ut64 Elf_(rz_bin_elf_p2v)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
@@ -201,7 +219,12 @@ RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(struct Elf_(rz_bin_elf_obj_t) * bin
 RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(struct Elf_(rz_bin_elf_obj_t) * bin);
 struct rz_bin_elf_field_t *Elf_(rz_bin_elf_get_fields)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_get_rpath)(struct Elf_(rz_bin_elf_obj_t) * bin);
-RzList *Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag);
+<<<<<<< HEAD
+char *Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag);
+=======
+char *Elf_(section_flag_to_string)(ut64 flag);
+RzList *Elf_(section_flag_to_rzlist)(ut64 flag);
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 struct Elf_(rz_bin_elf_obj_t) * Elf_(rz_bin_elf_new)(const char *file, bool verbose);
 struct Elf_(rz_bin_elf_obj_t) * Elf_(rz_bin_elf_new_buf)(RzBuffer *buf, bool verbose);
 void Elf_(rz_bin_elf_free)(struct Elf_(rz_bin_elf_obj_t) * bin);

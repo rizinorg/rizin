@@ -505,7 +505,11 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.trycatch = &trycatch,
 	.write = &rz_bin_write_pe64,
 	.hashes = &compute_hashes,
+<<<<<<< HEAD
+	.section_flag_to_string = &section_flag_to_string,
+=======
 	.section_flag_to_string = &PE_(section_flag_to_string),
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -4113,6 +4113,50 @@ RzList *PE_(rz_bin_pe_section_flag_to_string)(ut64 flag) { //WIP
 	return flag_list;	
 }
 
+char* PE_(rz_bin_pe_section_flag_to_string)(ut64 flag) { //WIP
+	char *buff;
+	buff = rz_str_new("pebullshit");
+	if(flag & PE_IMAGE_SCN_MEM_SHARED) {
+		buff = rz_str_append(buff, "S");
+	}
+	if(flag & PE_IMAGE_SCN_MEM_EXECUTE) {
+		buff = rz_str_append(buff, "X");
+	}
+	if(flag & PE_IMAGE_SCN_MEM_READ) {
+		buff = rz_str_append(buff, "R"); 
+	}
+	if(flag & PE_IMAGE_SCN_MEM_WRITE) {
+		buff = rz_str_append(buff, "W");
+	}
+	if(flag & IMAGE_SCN_TYPE_NO_PAD) {
+		buff = rz_str_append(buff, "N");
+	}
+	if(flag & IMAGE_SCN_CNT_CODE) {
+		buff = rz_str_append(buff, "C");
+	}
+	if(flag & IMAGE_SCN_CNT_INITIALIZED_DATA) {
+		buff = rz_str_append(buff, "I");
+	}
+	if(flag & IMAGE_SCN_CNT_UNINITIALIZED_DATA) {
+		buff = rz_str_append(buff, "U");
+	}
+	if(flag & IMAGE_SCN_LNK_OTHER) {
+		buff = rz_str_append(buff, "O");
+	}
+	if(flag & IMAGE_SCN_LNK_INFO) {
+		buff = rz_str_append(buff, "L");
+	}
+	if(flag & IMAGE_SCN_LNK_REMOVE) {
+		buff = rz_str_append(buff, "D");
+	}
+	if(flag & IMAGE_SCN_LNK_COMDAT) {
+		buff = rz_str_append(buff, "M");
+	}
+	if(flag & IMAGE_SCN_GPREL) {
+		buff = rz_str_append(buff, "G");
+	}
+	return buff;	
+}
 char *PE_(rz_bin_pe_get_cc)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	if (bin && bin->nt_headers) {
 		if (is_arm(bin)) {
@@ -4288,6 +4332,7 @@ static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin
 			memcpy(sections[j].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
 			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
 		}
+		//sections[j].flags = bin->section_header; //bruh..where
 		sections[j].vaddr = shdr[i].VirtualAddress;
 		sections[j].size = shdr[i].SizeOfRawData;
 		if (shdr[i].Misc.VirtualSize) {

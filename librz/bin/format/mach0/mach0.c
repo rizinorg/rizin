@@ -2242,6 +2242,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			s->perm = prot2perm(seg->initprot);
 			s->add = true;
 			rz_list_append(list, s);
+			
 		}
 	}
 	if (bin->nsects > 0) {
@@ -2255,9 +2256,13 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			s->vsize = (ut64)bin->sects[i].size;
 			s->is_segment = false;
 			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
+<<<<<<< HEAD
+			s->flag_i = bin->sects[i].flags;
+=======
 			// The bottom byte of flags is the section type
 			s->type = bin->sects[i].flags & 0xFF;
 			s->flags = bin->sects[i].flags & 0xFFFFFF00; 
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 			// XXX flags
 			s->paddr = (ut64)bin->sects[i].offset;
 			int segment_index = 0;
@@ -2290,6 +2295,27 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 	return list;
 }
 
+<<<<<<< HEAD
+char *MACH0_(section_flag_to_string)(ut64 flag) {
+	
+	char* buff = rz_str_new("bullshit");
+	if(flag | S_ATTR_PURE_INSTRUCTIONS){
+		buff = rz_str_append(buff, "I");
+	}
+	if(flag | S_ATTR_NO_TOC){
+		buff = rz_str_append(buff, "T");
+	}
+	if(flag | S_ATTR_SOME_INSTRUCTIONS){
+		buff = rz_str_append(buff, "S");
+	}
+	if(flag | S_ATTR_EXT_RELOC){
+		buff = rz_str_append(buff, "E");
+	}
+	if(flag | S_ATTR_LOC_RELOC){
+		buff = rz_str_append(buff, "L");
+	}
+	return buff;
+=======
 char *MACH0_(section_type_to_string)(ut64 type) {
 	switch (type) {
 		case S_REGULAR:
@@ -2321,7 +2347,11 @@ char *MACH0_(section_type_to_string)(ut64 type) {
 	}
 }
 
-RzList *MACH0_(section_flag_to_string)(int flag) {
+char* MACH0_(section_flag_to_string)(ut64 flag) {
+	return rz_list_to_str(MACH0_(section_flag_to_rzlist)(flag), ' ');
+}
+
+RzList *MACH0_(section_flag_to_rzlist)(ut64 flag) {
 	RzList* flag_list = rz_list_new();
 	if(flag & S_ATTR_PURE_INSTRUCTIONS){
 		rz_list_append(flag_list, "PURE_INSTRUCTIONS");
@@ -2351,6 +2381,7 @@ RzList *MACH0_(section_flag_to_string)(int flag) {
 		rz_list_append(flag_list, "NO_DEAD_STRIP");
 	}
 	return flag_list;
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 }
 // XXX this function is called so many times
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin) {

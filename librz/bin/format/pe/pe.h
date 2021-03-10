@@ -57,6 +57,7 @@ struct rz_bin_pe_addr_t {
 struct rz_bin_pe_section_t {
 	ut8 name[PE_IMAGE_SIZEOF_SHORT_NAME * 3];
 	ut64 size;
+	ut32 flags;
 	ut64 vsize;
 	ut64 vaddr;
 	ut64 paddr;
@@ -65,6 +66,21 @@ struct rz_bin_pe_section_t {
 	int last;
 };
 
+struct rz_pe_section_flags {
+	bool scn_type_no_pad;			//IMAGE_SCN_TYPE_NO_PAD
+	bool scn_cnt_code;				//IMAGE_SCN_CNT_CODE
+	bool scn_cnt_init_data;			//IMAGE_SCN_CNT_INITIALIZED_DATA
+	bool scn_cnt_uninit_data;		//IMAGE_SCN_CNT_UNINITIALIZED_DATA
+	bool scn_lnk_other;				//IMAGE_SCN_LNK_OTHER
+	bool scn_lnk_info;				//IMAGE_SCN_LNK_INFO
+	bool scn_lnk_remove;			//IMAGE_SCN_LNK_REMOVE
+	bool scn_lnk_comdat;			//IMAGE_SCN_LNK_COMDAT
+	bool scn_gprel;					//IMAGE_SCN_GPREL
+	bool scn_mem_shared;			//PE_IMAGE_SCN_MEM_SHARED
+	bool scn_mem_executed;			//PE_IMAGE_SCN_MEM_EXECUTE
+	bool scn_mem_read;				//PE_IMAGE_SCN_MEM_READ
+	bool scn_mem_write;				//PE_IMAGE_SCN_MEM_WRITE
+} rz_pe_section_flags;
 struct rz_bin_pe_import_t {
 	ut8 name[PE_NAME_LENGTH + 1];
 	ut8 libname[PE_NAME_LENGTH + 1];
@@ -199,10 +215,14 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(rz_bin_pe_obj_t) * bin);
 const char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin);
 int PE_(bin_pe_is_authhash_valid)(struct PE_(rz_bin_pe_obj_t) * bin);
 int PE_(bin_pe_get_overlay)(struct PE_(rz_bin_pe_obj_t) * bin, ut64 *size);
-void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) * bin, struct rz_bin_pe_section_t **sects);
+void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) *bin, struct rz_bin_pe_section_t **sects);
 struct rz_bin_pe_addr_t *PE_(check_unknow)(struct PE_(rz_bin_pe_obj_t) * bin);
 struct rz_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(rz_bin_pe_obj_t) * bin);
 struct rz_bin_pe_addr_t *PE_(check_mingw)(struct PE_(rz_bin_pe_obj_t) * bin);
 bool PE_(rz_bin_pe_section_perms)(RzBinFile *bf, const char *name, int perms);
+<<<<<<< HEAD
+char *PE_(rz_bin_pe_section_flag_to_string)(ut64 flag);//checking
+=======
 RzList* PE_(rz_bin_pe_section_flag_to_string)(ut64 flag);//checking
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 RZ_API void PE_(bin_pe_parse_resource)(struct PE_(rz_bin_pe_obj_t) * bin);

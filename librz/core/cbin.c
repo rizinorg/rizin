@@ -2456,7 +2456,7 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				bind,
 				type,
 				symbol->size,
-				symbol->libname ? symbol->libname : "",
+				symbol->libname ? symbol->libname : "", // for 'is' libname empty
 				name);
 		}
 	next:
@@ -2713,6 +2713,9 @@ static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode) {
 	return true;
 }
 
+<<<<<<< HEAD
+static char* __section_flag_to_string(RzBin *bin, int flag) {
+=======
 static char* section_type_to_string(RzBin *bin, int type) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
@@ -2722,6 +2725,7 @@ static char* section_type_to_string(RzBin *bin, int type) {
 	return NULL;
 }
 static char* section_flag_to_string(RzBin *bin, int flag) {
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->section_flag_to_string) {
@@ -2729,6 +2733,10 @@ static char* section_flag_to_string(RzBin *bin, int flag) {
 	}
 	return NULL;
 }
+<<<<<<< HEAD
+
+=======
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RzBinSection *section;
@@ -2772,11 +2780,14 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			if (print_segments != s->is_segment) {
 				continue;
 			}
-			RzInterval pitv = (RzInterval){ s->paddr, s->size };
+			RzInterval pitv = (RzInterval){ s->paddr, s->size }; // 'iSS' command
 			RzInterval vitv = (RzInterval){ s->vaddr, s->vsize };
+
 			rz_num_units(humansz, sizeof(humansz), s->size);
 			RzListInfo *info = rz_listinfo_new(s->name, pitv, vitv, s->perm, strdup(humansz));
 			rz_list_append(list, info);
+			rz_list_append(list, s->type);
+			rz_list_append(list, s->flag_i);
 		}
 		RzTable *table = rz_core_table(r);
 		rz_table_visual_list(table, list, r->offset, -1, cols, r->io->va);
@@ -2806,6 +2817,44 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		fd = rz_core_file_cur_fd(r);
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
+<<<<<<< HEAD
+	//rz_cons_printf("%s", r->file->core->bin->cur->o->info->rclass);
+	if (IS_MODE_NORMAL(mode) && !print_segments && !strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3)) { 
+		rz_cons_printf("ELF Section Flags Keys:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
+  L (link order), O (extra OS processing required), G (group), T (TLS),\n  C (compressed), E (exclude)");
+		if (hashtypes) {
+						rz_table_set_columnsf(table, "dXxXxsssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "Flags");
+		} else {
+			rz_table_set_columnsf(table, "dXxXxssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name", "type", "Flags");
+		}
+		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
+		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
+		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
+	}
+	if (IS_MODE_NORMAL(mode) && !print_segments ) { //&& !strncmp(r->file->core->bin->cur->o->info->rclass, "pe", 2)
+		rz_cons_printf("Key to PE Section Flags:\n  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),\n\
+  L (link order), O (extra OS processing required), G (group), T (TLS),\n  C (compressed), E (exclude)");
+		if (hashtypes) {
+						rz_table_set_columnsf(table, "dXxXxsssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "Flags");
+		} else {
+			rz_table_set_columnsf(table, "dXxXxssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name", "type", "Flags");
+		}
+		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
+		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
+		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
+	}
+	if (IS_MODE_NORMAL(mode) & print_segments ) { //& (section->is_segment != print_segments)
+		if (hashtypes) {
+						rz_table_set_columnsf(table, "dXxXxsss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
+		} else {
+			rz_table_set_columnsf(table, "dXxXxss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+=======
 	if (IS_MODE_NORMAL(mode) && !print_segments ) {
 		if(!strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3) ||  !strncmp(r->file->core->bin->cur->o->info->rclass, "pe", 2)){
 			if (hashtypes) {
@@ -2823,6 +2872,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				rz_table_set_columnsf(table, "dXxXxss",
 					"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
 			}
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 		}
 		
 		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
@@ -3014,8 +3064,12 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			if(type) {
 				pj_ks(pj, "type", type);
 			}
+<<<<<<< HEAD
+			char* flag = __section_flag_to_string(r->bin, section->flag_i);
+=======
 			free(type);
 			char* flag = section_flag_to_string(r->bin, section->flags);
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 			if(flag){
 				pj_ks(pj, "flags", flag);
 			}
@@ -3049,23 +3103,36 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
+<<<<<<< HEAD
+			char* flag = __section_flag_to_string(r->bin, section->flag_i);
+=======
 			char* type = section_type_to_string(r->bin, section->type);
 			char* flag = section_flag_to_string(r->bin, section->flags);
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 			if (hashtypes) {
 				
 				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
+<<<<<<< HEAD
+					perms, hashstr, section_name,section->type, flag);
+=======
 					perms, hashstr, section_name, type, flag);
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 			} else {
 				rz_table_add_rowf(table, "dXxXxsssss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
+<<<<<<< HEAD
+					perms,section_name, section->type, flag);
+=======
 					perms, section_name, type, flag);
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 			}
 			free(type);
 			free(flag);
 			free(hashstr);
+			free(flag);
 		}
 		i++;
 		if (printHere) {
@@ -4435,7 +4502,7 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	return count;
 }
 
-RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
+RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {//look here
 	int i;
 
 	RzStrBuf *buf = rz_strbuf_new("");

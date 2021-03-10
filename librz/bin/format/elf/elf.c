@@ -1415,7 +1415,65 @@ ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name
 	RzBinElfSection *section = get_section_by_name(bin, section_name);
 	return section ? section->rva + section->size : UT64_MAX;
 }
-RzList* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {	
+<<<<<<< HEAD
+char* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {
+	char *buff;	
+	int8_t i=0;
+	RzList* fl = rz_list_new();
+	buff = rz_str_new("");
+	if(flag & SHF_WRITE) {
+		buff = rz_str_append(buff,"W"); 
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_ALLOC) {
+		buff = rz_str_append(buff,"A");
+		rz_list_append(fl, buff); 
+	}
+	if(flag & SHF_EXECINSTR) {
+		buff = rz_str_append(buff,"X");
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_MERGE) {
+		buff = rz_str_append(buff,"M");
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_STRINGS) {
+		buff = rz_str_append(buff,"S");
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_INFO_LINK) {
+		buff = rz_str_append(buff,"I");
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_LINK_ORDER) {
+		buff = rz_str_append(buff,"L");
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_OS_NONCONFORMING) {
+		buff = rz_str_append(buff,"O");
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_GROUP) {
+		buff = rz_str_append(buff,"G");
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_TLS) {
+		buff = rz_str_append(buff,"T");
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_EXCLUDE) {
+		buff = rz_str_append(buff,"E");
+		rz_list_append(fl, buff);
+	}
+	if(flag & SHF_COMPRESSED) {
+		buff = rz_str_append(buff,"C");
+		rz_list_append(fl, buff);
+	}
+	buff = rz_list_to_string(fl, ' ');
+	return buff;	
+
+=======
+RzList* Elf_(section_flag_to_rzlist)(ut64 flag) {
 	RzList* flag_list = rz_list_new();
 	if(flag & SHF_WRITE) {
 		rz_list_append(flag_list, "write");
@@ -1454,9 +1512,10 @@ RzList* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {
 		rz_list_append(flag_list, "compressed");
 	}
 	return flag_list;	
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 }
 
-char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type) {
+char *Elf_(section_type_to_string)(ut64 type) {
 	switch (type) {
 		case SHT_NULL:
 			return rz_str_new("NULL");
@@ -1527,6 +1586,9 @@ char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type) {
 	}
 }
 
+char* Elf_(section_flag_to_string)(ut64 flag) {
+	return rz_list_to_str(Elf_(section_flag_to_rzlist)(flag), ' ');
+}
 
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (!rel->rva) {
