@@ -1415,6 +1415,7 @@ ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name
 	RzBinElfSection *section = get_section_by_name(bin, section_name);
 	return section ? section->rva + section->size : UT64_MAX;
 }
+<<<<<<< HEAD
 char* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {
 	char *buff;	
 	int8_t i=0;
@@ -1471,9 +1472,51 @@ char* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {
 	buff = rz_list_to_string(fl, ' ');
 	return buff;	
 
+=======
+RzList* Elf_(section_flag_to_rzlist)(ut64 flag) {
+	RzList* flag_list = rz_list_new();
+	if(flag & SHF_WRITE) {
+		rz_list_append(flag_list, "SHF_WRITE");
+	}
+	if(flag & SHF_ALLOC) {
+		rz_list_append(flag_list, "SHF_ALLOC");
+	}
+	if(flag & SHF_EXECINSTR) {
+		rz_list_append(flag_list, "SHF_EXECINSTR");
+	}
+	if(flag & SHF_MERGE) {
+		rz_list_append(flag_list, "SHF_MERGE");
+	}
+	if(flag & SHF_STRINGS) {
+		rz_list_append(flag_list, "SHF_STRINGS");
+	}
+	if(flag & SHF_INFO_LINK) {
+		rz_list_append(flag_list, "SHF_INFO_LINK");
+	}
+	if(flag & SHF_LINK_ORDER) {
+		rz_list_append(flag_list, "SHF_LINK_ORDER");
+	}
+	if(flag & SHF_OS_NONCONFORMING) {
+		rz_list_append(flag_list, "SHF_OS_NONCONFORMING");
+	}
+	if(flag & SHF_GROUP) {
+		rz_list_append(flag_list, "SHF_GROUP");
+	}
+	if(flag & SHF_TLS) {
+		rz_list_append(flag_list, "SHF_TLS");
+	}
+	if(flag & SHF_EXCLUDE) {
+		rz_list_append(flag_list, "SHF_EXCLUDE");
+	}
+	if(flag & SHF_COMPRESSED) {
+		rz_list_append(flag_list, "SHF_COMPRESSED");
+	}
+	return flag_list;	
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 }
-char *Elf_(rz_bin_elf_get_section_type)(struct rz_bin_elf_section_t * section) {
-	switch (section->type) {
+
+char *Elf_(section_type_to_string)(ut64 type) {
+	switch (type) {
 		case SHT_NULL:
 			return rz_str_new("NULL");
 		case SHT_PROGBITS:
@@ -1533,16 +1576,19 @@ char *Elf_(rz_bin_elf_get_section_type)(struct rz_bin_elf_section_t * section) {
 		case SHT_GNU_versym:
 			return rz_str_new("VERSYM");
 		default:
-			if(section->type >= SHT_LOPROC && section->type <= SHT_HIPROC) {
-				return rz_str_newf("LOPROC+0x%x", section->type-SHT_LOPROC);
+			if(type >= SHT_LOPROC && type <= SHT_HIPROC) {
+				return rz_str_newf("LOPROC+0x%08"PFMT64x, type-SHT_LOPROC);
 			}
-			if(section->type >= SHT_LOUSER && section->type <= SHT_HIUSER) {
-				return rz_str_newf("LOUSER+0x%x", section->type-SHT_LOUSER);
+			if(type >= SHT_LOUSER && type <= SHT_HIUSER) {
+				return rz_str_newf("LOUSER+0x%08"PFMT64x, type-SHT_LOUSER);
 			}
-			return NULL;
+			return rz_str_newf("0x%"PFMT64x, type);
 	}
 }
 
+char* Elf_(section_flag_to_string)(ut64 flag) {
+	return rz_list_to_str(Elf_(section_flag_to_rzlist)(flag), ' ');
+}
 
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (!rel->rva) {

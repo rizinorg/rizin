@@ -449,6 +449,7 @@ static void header(RzBinFile *bf) {
 }
 
 extern struct rz_bin_write_t rz_bin_write_pe;
+extern struct rz_bin_write_t rz_bin_write_pe;
 
 RzBinPlugin rz_bin_plugin_pe = {
 	.name = "pe",
@@ -475,7 +476,11 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.get_vaddr = &get_vaddr,
 	.write = &rz_bin_write_pe,
 	.hashes = &compute_hashes,
+<<<<<<< HEAD
 	.section_flag_to_string = &section_flag_to_string
+=======
+	.section_flag_to_string = &PE_(section_flag_to_string),
+>>>>>>> 4f2049ed8576f2415ed3a4e61bb5845cd6e7f739
 };
 
 #ifndef RZ_PLUGIN_INCORE
