@@ -91,10 +91,6 @@ static void add_tls_callbacks(RzBinFile *bf, RzList *list) {
 	} while (vaddr);
 }
 
-static char* section_flag_to_string(int flag) {
-	return PE_(rz_bin_pe_section_flag_to_string)(flag);
-}
-
 static RzList *entries(RzBinFile *bf) {
 	struct rz_bin_pe_addr_t *entry = NULL;
 	RzBinAddr *ptr = NULL;
@@ -120,9 +116,10 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static char* PE_(section_flag_to_string)(int flag) {
-	return rz_list_to_str(PE_(rz_bin_pe_section_flag_to_string)(flag), ' ');
-}
+//static char* PE_(section_flag_to_string)(int flag) {
+//	return rz_list_to_str(PE_(section_flag_to_rzlist)(flag), ' ');
+//}
+
 
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;

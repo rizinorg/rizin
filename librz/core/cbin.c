@@ -2810,7 +2810,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL(mode) && !print_segments ) {
-		if(!strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3) ||  !strncmp(r->file->core->bin->cur->o->info->rclass, "pe", 2)){
+		if(!strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3) ||  !strncmp(r->file->core->bin->cur->o->info->rclass, "mach", 4)){
 			if (hashtypes) {
 						rz_table_set_columnsf(table, "dXxXxsssss",
 				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "flags");
@@ -3069,7 +3069,6 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			free(type);
 			free(flag);
 			free(hashstr);
-			free(flag);
 		}
 		i++;
 		if (printHere) {

@@ -47,24 +47,6 @@ typedef struct rz_bin_elf_section_t {
 	int type;
 } RzBinElfSection;
 
-//typedef struct rz_bin_elf_section_flags {
-//	bool shf_write;				// SHF_WRITE
-//	bool shf_alloc;				// SHF_ALLOC
-//	bool shf_execinstr;			// SHF_EXECINSTR
-//	bool shf_merge;				// SHF_MERGE
-//	bool shf_strings;			// SHF_STRINGS
-//	bool shf_info_link;			// SHF_INFO_LINK
-//	bool shf_link_order;		// SHF_LINK_ORDER
-//	bool shf_os_nonconforming;	// SHF_OS_NONCONFORMING
-//	bool shf_group;				// SHF_GROUP
-//	bool shf_tls;				// SHF_TLS
-//	bool shf_compressed;		// SHF_COMPRESSED
-//	bool shf_maskos;			// SHF_MASKOS
-//	bool shf_maskproc;			// SHF_MASKPROC
-//	bool shf_ordered;			// SHF_ORDERED
-//	bool shf_exclude;			// SHF_EXCLUDE
-//} rz_bin_elf_section_flags;
-
 typedef struct rz_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
