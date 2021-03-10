@@ -1210,8 +1210,6 @@ typedef struct rz_analysis_esil_dfg_node_t {
 	RzAnalysisEsilDFGBlockType type;
 } RzAnalysisEsilDFGNode;
 
-typedef int (*RzAnalysisCmdExt)(/* Rcore */ RzAnalysis *analysis, const char *input);
-
 // TODO: rm data + len
 typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask);
 
@@ -1246,9 +1244,6 @@ typedef struct rz_analysis_plugin_t {
 
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
-
-	// command extension to directly call any analysis functions
-	RzAnalysisCmdExt cmd_ext;
 
 	RzAnalysisRegProfCallback set_reg_profile;
 	RzAnalysisRegProfGetCallback get_reg_profile;
