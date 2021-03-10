@@ -244,6 +244,8 @@ RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr) {
 	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
 	opt.filename = bf->file;
 
+	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
+
 	bool res = rz_bin_open_buf(bin, bf->buf, &opt);
 	rz_bin_file_delete(bin, bf->id);
 	return res;
