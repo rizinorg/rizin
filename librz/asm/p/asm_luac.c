@@ -4,7 +4,7 @@
 
 #include "../arch/luac/luac_dis.h"
 
-int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len){
+int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	return luac_disasm(a, opstruct, buf, len);
 }
 

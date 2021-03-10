@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
-
 #ifndef BUILD_LUAC_DIS_H
 #define BUILD_LUAC_DIS_H
 
@@ -12,6 +11,5 @@
 #include "opcode.h"
 
 int luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len);
-
 
 #endif //BUILD_LUAC_DIS_H
