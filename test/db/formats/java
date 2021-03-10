@@ -1,68 +1,1373 @@
-NAME=Java class parsing errors
-FILE=bins/java/TryWithResources.class
-CMDS=?e nop
+NAME=Check if is Java lang
+FILE=bins/java/Hello.class
+CMDS=iI~lang
 EXPECT=<<EOF
-nop
+lang     java
 EOF
 RUN
 
-NAME=detect kotlin in java classes
+
+NAME=Check if is Kotlin lang
 FILE=bins/java/HiKt.class
-CMDS=i~lang[1]
+CMDS=iI~lang
 EXPECT=<<EOF
-kotlin
+lang     kotlin
 EOF
 RUN
 
-NAME=java disasm crash
+
+NAME=Check if is Groovy lang
+FILE=bins/java/test.class
+CMDS=iI~lang
+EXPECT=<<EOF
+lang     groovy
+EOF
+RUN
+
+
+NAME=Check if has line number
+FILE=bins/java/Main.class
+CMDS=iI~linenum
+EXPECT=<<EOF
+linenum  true
+EOF
+RUN
+
+
+NAME=Check that it does not have line number
+FILE=bins/java/TryWithResources.class
+CMDS=iI~linenum
+EXPECT=<<EOF
+linenum  false
+EOF
+RUN
+
+
+NAME=Check that entry point points to main
+FILE=bins/java/HiKt.class
+CMDS=iS ; s
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x201 0x0000000a  0x201 -r-- class.constant_pool
+1   0x00000225   0x31 0x00000225   0x31 -r-x class.methods.main.attr.0.code
+2   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods.main.attr
+3   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods
+4   0x0000025d   0x54 0x0000025d   0x54 -r-- class.attr
+
+0x225
+EOF
+RUN
+
+
+NAME=Check that entry point points to <init>
+FILE=bins/java/jdwpexeccmd.class
+CMDS=iS ; s
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x315 0x0000000a  0x315 -r-- class.constant_pool
+1   0x00000339   0x1d 0x00000339   0x1d -r-x class.methods._init_.attr.0.code
+2   0x00000323   0x2b 0x00000323   0x2b -r-- class.methods._init_.attr
+3   0x00000364   0xe9 0x00000364   0xe9 -r-x class.methods.run.attr.0.code
+4   0x0000034e   0xf9 0x0000034e   0xf9 -r-- class.methods.run.attr
+5   0x00000323  0x124 0x00000323  0x124 -r-- class.methods
+6   0x00000447    0x8 0x00000447    0x8 -r-- class.attr
+
+0x339
+EOF
+RUN
+
+
+NAME=Check that strings are provided by Java class
+FILE=bins/java/HiKt.class
+CMDS=iz
+EXPECT=<<EOF
+[Strings]
+nth paddr      vaddr      len size section             type string
+------------------------------------------------------------------
+1   0x0000000a 0x0000000a 4   4    class.constant_pool utf8 HiKt
+3   0x00000014 0x00000014 16  16   class.constant_pool utf8 java/lang/Object
+5   0x0000002a 0x0000002a 4   4    class.constant_pool utf8 main
+6   0x00000031 0x00000031 22  22   class.constant_pool utf8 ([Ljava/lang/String;)V
+7   0x0000004a 0x0000004a 35  35   class.constant_pool utf8 Lorg/jetbrains/annotations/NotNull;
+8   0x00000070 0x00000070 4   4    class.constant_pool utf8 args
+10  0x0000007a 0x0000007a 30  30   class.constant_pool utf8 kotlin/jvm/internal/Intrinsics
+12  0x0000009e 0x0000009e 23  23   class.constant_pool utf8 checkParameterIsNotNull
+13  0x000000b8 0x000000b8 39  39   class.constant_pool utf8 (Ljava/lang/Object;Ljava/lang/String;)V
+16  0x000000ec 0x000000ec 19  19   class.constant_pool utf8 [Ljava/lang/String;
+17  0x00000102 0x00000102 17  17   class.constant_pool utf8 Lkotlin/Metadata;
+26  0x0000013d 0x0000013d 53  53   class.constant_pool utf8 \u0000\u0012\n\u0000\n\u0002\u0010\u0002\n\u0000\n\u0002\u0010\u0011\n\u0002\u0010\u000e\n\u0000\u001a\u0019\u0010\u0000\u001a\u00020\u00012\f\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003¢\u0006\u0002\u0010\u0005 blocks=Basic Latin,Latin-1 Supplement
+29  0x0000017d 0x0000017d 5   5    class.constant_pool utf8 hi.kt
+30  0x00000185 0x00000185 4   4    class.constant_pool utf8 Code
+31  0x0000018c 0x0000018c 18  18   class.constant_pool utf8 LocalVariableTable
+32  0x000001a1 0x000001a1 15  15   class.constant_pool utf8 LineNumberTable
+33  0x000001b3 0x000001b3 36  36   class.constant_pool utf8 RuntimeInvisibleParameterAnnotations
+34  0x000001da 0x000001da 10  10   class.constant_pool utf8 SourceFile
+35  0x000001e7 0x000001e7 25  25   class.constant_pool utf8 RuntimeVisibleAnnotations
+EOF
+RUN
+
+
+NAME=Java list symbols crash2.class
+FILE=bins/java/crash2.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr vaddr bind type size lib name
+---------------------------------------
+EOF
+RUN
+
+
+NAME=Java list symbols DemoTest.class
+FILE=bins/java/DemoTest.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type  size lib name
+----------------------------------------------------
+0   0x00000190 0x00000190 LOCAL  FUNC  27       DemoTest.fun
+1   0x000001b9 0x000001b9 LOCAL  FUNC  33       DemoTest.<init>
+2   0x000001e8 0x000001e8 LOCAL  FUNC  27       DemoTest.res
+3   0x00000211 0x00000211 LOCAL  FUNC  37       DemoTest.main
+1   0x0000000a 0x0000000a IMPORT METH  0        imp.java.lang.Object.<init>
+3   0x00000012 0x00000012 IMPORT FIELD 0        imp.java.lang.System.out
+5   0x0000001a 0x0000001a IMPORT METH  0        imp.java.io.PrintStream.println
+EOF
+RUN
+
+
+NAME=Java list symbols ExCaseTableSwitch.class
 FILE=bins/java/ExCaseTableSwitch.class
-CMDS=pd 10 >/dev/null
+CMDS=is
 EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type  size lib name
+----------------------------------------------------
+0   0x00000464 0x00000464 LOCAL  FUNC  47       CaseTableSwitch.<init>
+1   0x000004a1 0x000004a1 LOCAL  FUNC  304      CaseTableSwitch.a
+2   0x000005df 0x000005df LOCAL  FUNC  54       CaseTableSwitch.a
+3   0x00000623 0x00000623 LOCAL  FUNC  44       CaseTableSwitch.a
+4   0x0000065d 0x0000065d LOCAL  FUNC  427      CaseTableSwitch.hopskip_line_switch
+5   0x00000816 0x00000816 LOCAL  FUNC  454      CaseTableSwitch.straight_line_switch
+6   0x000009ea 0x000009ea LOCAL  FUNC  446      CaseTableSwitch.straight_line_switch_
+7   0x00000bb6 0x00000bb6 LOCAL  FUNC  446      CaseTableSwitch.main
+8   0x0000004b 0x0000004b IMPORT METH  0        imp.java.lang.Object.<init>
+16  0x000000b3 0x000000b3 IMPORT FIELD 0        imp.java.lang.System.out
+26  0x0000011d 0x0000011d IMPORT METH  0        imp.java.lang.StringBuilder.<init>
+29  0x0000013f 0x0000013f IMPORT METH  0        imp.java.lang.StringBuilder.append
+33  0x00000171 0x00000171 IMPORT METH  0        imp.java.lang.StringBuilder.toString
+37  0x0000019d 0x0000019d IMPORT METH  0        imp.java.io.PrintStream.println
+46  0x000001fd 0x000001fd IMPORT METH  0        imp.java.lang.String.<init>
+55  0x00000267 0x00000267 IMPORT METH  0        imp.java.lang.Integer.valueOf
+61  0x000002ab 0x000002ab IMPORT METH  0        imp.TestVariableSwitchUp.TestMultipleVariable
 EOF
 RUN
 
-NAME=java switch crash
-FILE=bins/fuzzed/zin7a5.class
-CMDS=<<EOF
-e scr.null=true
-pd 100
-EOF
+
+NAME=Java list symbols fuckedup.class
+FILE=bins/java/fuckedup.class
+CMDS=is
 EXPECT=<<EOF
+[Symbols]
+
+nth paddr vaddr bind type size lib name
+---------------------------------------
 EOF
 RUN
 
-NAME=java classes
+
+NAME=Java list symbols Hello.class
+FILE=bins/java/Hello.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type  size lib name
+----------------------------------------------------
+0   0x0000022b 0x0000022b LOCAL  FUNC  42       Hello.<init>
+1   0x00000263 0x00000263 LOCAL  FUNC  57       Hello.say
+2   0x000002aa 0x000002aa LOCAL  FUNC  41       Hello.main
+0   0x0000020b 0x0000020b LOCAL  OBJ   0        Hello.who
+1   0x0000000a 0x0000000a IMPORT METH  0        imp.java.lang.Object.<init>
+2   0x0000000f 0x0000000f IMPORT FIELD 0        imp.Hello.who
+3   0x00000014 0x00000014 IMPORT FIELD 0        imp.java.lang.System.out
+5   0x0000001c 0x0000001c IMPORT METH  0        imp.java.lang.StringBuilder.<init>
+7   0x00000024 0x00000024 IMPORT METH  0        imp.java.lang.StringBuilder.append
+8   0x00000029 0x00000029 IMPORT METH  0        imp.java.lang.StringBuilder.toString
+9   0x0000002e 0x0000002e IMPORT METH  0        imp.java.io.PrintStream.println
+12  0x00000039 0x00000039 IMPORT METH  0        imp.Hello.<init>
+13  0x0000003e 0x0000003e IMPORT METH  0        imp.Hello.say
+EOF
+RUN
+
+
+NAME=Java list symbols HiKt.class
+FILE=bins/java/HiKt.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+0   0x00000225 0x00000225 GLOBAL FUNC 49       HiKt.main
+15  0x000000e7 0x000000e7 IMPORT METH 0        imp.kotlin.jvm.internal.Intrinsics.checkParameterIsNotNull
+EOF
+RUN
+
+
+NAME=Java list symbols invisible.class
+FILE=bins/java/invisible.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type  size lib name
+----------------------------------------------------
+0   ---------- ---------- LOCAL  FUNC  0        Test.main
+7   0x0000003a 0x0000003a IMPORT FIELD 0        imp.java.lang.System.out
+8   0x0000003f 0x0000003f IMPORT METH  0        imp.java.io.PrintStream.println
+EOF
+RUN
+
+
+NAME=Java list symbols jdwpexeccmd.class
+FILE=bins/java/jdwpexeccmd.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+0   0x00000339 0x00000339 LOCAL  FUNC 29       JDWPExecCmd.<init>
+1   0x00000364 0x00000364 LOCAL  FUNC 233      JDWPExecCmd.run
+1   0x0000000a 0x0000000a IMPORT METH 0        imp.java.lang.Object.<init>
+3   0x00000012 0x00000012 IMPORT METH 0        imp.java.lang.StringBuilder.<init>
+4   0x00000017 0x00000017 IMPORT METH 0        imp.java.lang.StringBuilder.append
+6   0x0000001f 0x0000001f IMPORT METH 0        imp.java.lang.StringBuilder.toString
+7   0x00000024 0x00000024 IMPORT METH 0        imp.java.lang.Runtime.getRuntime
+8   0x00000029 0x00000029 IMPORT METH 0        imp.java.lang.Runtime.exec
+11  0x00000034 0x00000034 IMPORT METH 0        imp.java.lang.Process.getInputStream
+12  0x00000039 0x00000039 IMPORT METH 0        imp.java.io.InputStreamReader.<init>
+13  0x0000003e 0x0000003e IMPORT METH 0        imp.java.io.BufferedReader.<init>
+14  0x00000043 0x00000043 IMPORT METH 0        imp.java.io.BufferedReader.readLine
+15  0x00000048 0x00000048 IMPORT METH 0        imp.java.lang.String.trim
+EOF
+RUN
+
+
+NAME=Java list symbols MainActivity.class
+FILE=bins/java/MainActivity.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type  size lib name
+----------------------------------------------------
+0   0x00001c87 0x00001c87 LOCAL  FUNC  113      org.radare2.installer.MainActivity.<init>
+1   0x00001d06 0x00001d06 LOCAL  FUNC  494      org.radare2.installer.MainActivity.onCreate
+2   0x00001f02 0x00001f02 LOCAL  FUNC  74       org.radare2.installer.MainActivity.onCreateOptionsMenu
+3   0x00001f5a 0x00001f5a LOCAL  FUNC  143      org.radare2.installer.MainActivity.onOptionsItemSelected
+4   0x00001ff7 0x00001ff7 LOCAL  FUNC  71       org.radare2.installer.MainActivity.checkForRadare
+5   0x0000204c 0x0000204c LOCAL  FUNC  90       org.radare2.installer.MainActivity.output
+6   0x000020b4 0x000020b4 LOCAL  FUNC  392      org.radare2.installer.MainActivity.unTarGz
+7   0x00002254 0x00002254 LOCAL  FUNC  79       org.radare2.installer.MainActivity.resetButtons
+8   0x000022b1 0x000022b1 LOCAL  FUNC  807      org.radare2.installer.MainActivity.download
+9   0x000025e6 0x000025e6 LOCAL  FUNC  300      org.radare2.installer.MainActivity.onResume
+10  0x00002720 0x00002720 LOCAL  FUNC  47       org.radare2.installer.MainActivity.access$000
+11  0x0000275d 0x0000275d LOCAL  FUNC  58       org.radare2.installer.MainActivity.access$100
+12  0x000027a5 0x000027a5 LOCAL  FUNC  47       org.radare2.installer.MainActivity.access$200
+13  0x000027e2 0x000027e2 LOCAL  FUNC  47       org.radare2.installer.MainActivity.access$300
+14  0x0000281f 0x0000281f LOCAL  FUNC  59       org.radare2.installer.MainActivity.access$402
+15  0x00002868 0x00002868 LOCAL  FUNC  47       org.radare2.installer.MainActivity.access$400
+16  0x000028a5 0x000028a5 LOCAL  FUNC  47       org.radare2.installer.MainActivity.access$500
+17  0x000028e2 0x000028e2 LOCAL  FUNC  47       org.radare2.installer.MainActivity.access$600
+18  0x0000291f 0x0000291f LOCAL  FUNC  59       org.radare2.installer.MainActivity.access$602
+19  0x00002968 0x00002968 LOCAL  FUNC  47       org.radare2.installer.MainActivity.access$700
+20  0x000029a5 0x000029a5 LOCAL  FUNC  69       org.radare2.installer.MainActivity.access$800
+0   0x00001c1f 0x00001c1f LOCAL  OBJ   0        org.radare2.installer.MainActivity.outputView
+1   0x00001c27 0x00001c27 LOCAL  OBJ   0        org.radare2.installer.MainActivity.handler
+2   0x00001c2f 0x00001c2f LOCAL  OBJ   0        org.radare2.installer.MainActivity.remoteRunButton
+3   0x00001c37 0x00001c37 LOCAL  OBJ   0        org.radare2.installer.MainActivity.localRunButton
+4   0x00001c3f 0x00001c3f LOCAL  OBJ   0        org.radare2.installer.MainActivity.context
+5   0x00001c47 0x00001c47 LOCAL  OBJ   0        org.radare2.installer.MainActivity.mUtils
+6   0x00001c4f 0x00001c4f LOCAL  OBJ   0        org.radare2.installer.MainActivity.http_url_default
+7   0x00001c57 0x00001c57 LOCAL  OBJ   0        org.radare2.installer.MainActivity.onLocalRunButtonClick
+8   0x00001c5f 0x00001c5f LOCAL  OBJ   0        org.radare2.installer.MainActivity.thread
+9   0x00001c67 0x00001c67 LOCAL  OBJ   0        org.radare2.installer.MainActivity.onRemoteRunButtonClick
+1   0x0000000a 0x0000000a IMPORT METH  0        imp.org.radare2.installer.MainActivity.download
+2   0x0000000f 0x0000000f IMPORT FIELD 0        imp.org.radare2.installer.MainActivity.handler
+3   0x00000014 0x00000014 IMPORT FIELD 0        imp.org.radare2.installer.MainActivity.thread
+4   0x00000019 0x00000019 IMPORT FIELD 0        imp.org.radare2.installer.MainActivity.outputView
+5   0x0000001e 0x0000001e IMPORT FIELD 0        imp.org.radare2.installer.MainActivity.remoteRunButton
+6   0x00000023 0x00000023 IMPORT METH  0        imp.org.radare2.installer.MainActivity.checkForRadare
+7   0x00000028 0x00000028 IMPORT FIELD 0        imp.org.radare2.installer.MainActivity.http_url_default
+8   0x0000002d 0x0000002d IMPORT METH  0        imp.org.radare2.installer.MainActivity.output
+9   0x00000032 0x00000032 IMPORT FIELD 0        imp.org.radare2.installer.MainActivity.mUtils
+10  0x00000037 0x00000037 IMPORT METH  0        imp.android.app.Activity.<init>
+12  0x0000003f 0x0000003f IMPORT METH  0        imp.android.os.Handler.<init>
+15  0x0000004a 0x0000004a IMPORT METH  0        imp.org.radare2.installer.MainActivity$2.<init>
+16  0x0000004f 0x0000004f IMPORT FIELD 0        imp.org.radare2.installer.MainActivity.onLocalRunButtonClick
+18  0x00000057 0x00000057 IMPORT METH  0        imp.org.radare2.installer.MainActivity$3.<init>
+19  0x0000005c 0x0000005c IMPORT FIELD 0        imp.org.radare2.installer.MainActivity.onRemoteRunButtonClick
+20  0x00000061 0x00000061 IMPORT METH  0        imp.android.app.Activity.onCreate
+23  0x0000006e 0x0000006e IMPORT METH  0        imp.org.radare2.installer.MainActivity.setContentView
+25  0x00000076 0x00000076 IMPORT METH  0        imp.org.radare2.installer.MainActivity.getApplicationContext
+26  0x0000007b 0x0000007b IMPORT METH  0        imp.org.radare2.installer.Utils.<init>
+29  0x00000088 0x00000088 IMPORT METH  0        imp.org.radare2.installer.MainActivity.findViewById
+34  0x0000009d 0x0000009d IMPORT METH  0        imp.org.radare2.installer.Utils.GetPref
+36  0x000000a5 0x000000a5 IMPORT METH  0        imp.java.lang.String.equals
+37  0x000000aa 0x000000aa IMPORT METH  0        imp.android.widget.CheckBox.setChecked
+45  0x000000c8 0x000000c8 IMPORT METH  0        imp.android.widget.Button.setOnClickListener
+47  0x000000d2 0x000000d2 IMPORT FIELD 0        imp.org.radare2.installer.MainActivity.localRunButton
+49  0x000000da 0x000000da IMPORT METH  0        imp.org.radare2.installer.Utils.isInternetAvailable
+50  0x000000df 0x000000df IMPORT METH  0        imp.android.preference.PreferenceManager.getDefaultSharedPreferences
+53  0x000000ea 0x000000ea IMPORT METH  0        imp.org.radare2.installer.MainActivity$1.<init>
+54  0x000000ef 0x000000ef IMPORT METH  0        imp.java.lang.Thread.<init>
+55  0x000000f4 0x000000f4 IMPORT METH  0        imp.java.lang.Thread.start
+58  0x000000ff 0x000000ff IMPORT IMETH 0        imp.android.view.Menu.add
+59  0x00000104 0x00000104 IMPORT METH  0        imp.android.app.Activity.onCreateOptionsMenu
+60  0x00000109 0x00000109 IMPORT IMETH 0        imp.android.view.MenuItem.getItemId
+63  0x00000114 0x00000114 IMPORT METH  0        imp.android.content.Intent.<init>
+65  0x0000011e 0x0000011e IMPORT METH  0        imp.android.content.Intent.setFlags
+66  0x00000123 0x00000123 IMPORT METH  0        imp.org.radare2.installer.MainActivity.startActivity
+69  0x0000012e 0x0000012e IMPORT METH  0        imp.java.io.File.<init>
+70  0x00000133 0x00000133 IMPORT METH  0        imp.java.io.File.exists
+72  0x0000013b 0x0000013b IMPORT METH  0        imp.org.radare2.installer.MainActivity$4.<init>
+73  0x00000140 0x00000140 IMPORT METH  0        imp.android.os.Handler.post
+76  0x0000014b 0x0000014b IMPORT METH  0        imp.java.io.FileInputStream.<init>
+77  0x00000150 0x00000150 IMPORT METH  0        imp.java.util.zip.GZIPInputStream.<init>
+78  0x00000155 0x00000155 IMPORT METH  0        imp.java.lang.String.lastIndexOf
+79  0x0000015a 0x0000015a IMPORT METH  0        imp.java.lang.String.substring
+82  0x00000165 0x00000165 IMPORT METH  0        imp.java.lang.StringBuilder.<init>
+83  0x0000016a 0x0000016a IMPORT METH  0        imp.java.lang.StringBuilder.append
+85  0x00000172 0x00000172 IMPORT METH  0        imp.java.lang.StringBuilder.toString
+87  0x0000017a 0x0000017a IMPORT METH  0        imp.java.io.FileOutputStream.<init>
+88  0x0000017f 0x0000017f IMPORT METH  0        imp.java.util.zip.GZIPInputStream.read
+89  0x00000184 0x00000184 IMPORT METH  0        imp.java.io.OutputStream.write
+90  0x00000189 0x00000189 IMPORT METH  0        imp.java.util.zip.GZIPInputStream.close
+91  0x0000018e 0x0000018e IMPORT METH  0        imp.java.io.OutputStream.close
+93  0x00000196 0x00000196 IMPORT METH  0        imp.com.ice.tar.TarArchive.<init>
+94  0x0000019b 0x0000019b IMPORT METH  0        imp.com.ice.tar.TarArchive.extractContents
+95  0x000001a0 0x000001a0 IMPORT METH  0        imp.com.ice.tar.TarArchive.closeArchive
+96  0x000001a5 0x000001a5 IMPORT METH  0        imp.java.io.File.delete
+98  0x000001ad 0x000001ad IMPORT METH  0        imp.org.radare2.installer.MainActivity$5.<init>
+100 0x000001b5 0x000001b5 IMPORT METH  0        imp.java.net.URL.<init>
+101 0x000001ba 0x000001ba IMPORT METH  0        imp.java.net.URL.openConnection
+104 0x000001c5 0x000001c5 IMPORT METH  0        imp.java.net.HttpURLConnection.setRequestMethod
+105 0x000001ca 0x000001ca IMPORT METH  0        imp.java.net.HttpURLConnection.setInstanceFollowRedirects
+106 0x000001cf 0x000001cf IMPORT METH  0        imp.java.net.HttpURLConnection.getRequestProperties
+107 0x000001d4 0x000001d4 IMPORT METH  0        imp.java.net.HttpURLConnection.connect
+108 0x000001d9 0x000001d9 IMPORT METH  0        imp.java.net.HttpURLConnection.getContentLength
+110 0x000001e1 0x000001e1 IMPORT METH  0        imp.java.lang.StringBuilder.append
+113 0x000001ec 0x000001ec IMPORT METH  0        imp.java.net.HttpURLConnection.getHeaderField
+114 0x000001f1 0x000001f1 IMPORT METH  0        imp.org.radare2.installer.Utils.StorePref
+115 0x000001f6 0x000001f6 IMPORT METH  0        imp.java.net.HttpURLConnection.getInputStream
+117 0x000001fe 0x000001fe IMPORT METH  0        imp.java.io.InputStream.read
+118 0x00000203 0x00000203 IMPORT METH  0        imp.java.io.FileOutputStream.write
+121 0x0000020e 0x0000020e IMPORT METH  0        imp.org.radare2.installer.MainActivity.resetButtons
+123 0x00000216 0x00000216 IMPORT METH  0        imp.java.io.FileOutputStream.close
+124 0x0000021b 0x0000021b IMPORT METH  0        imp.java.io.InputStream.close
+125 0x00000220 0x00000220 IMPORT METH  0        imp.java.net.HttpURLConnection.disconnect
+127 0x00000228 0x00000228 IMPORT METH  0        imp.java.lang.Exception.printStackTrace
+128 0x0000022d 0x0000022d IMPORT METH  0        imp.android.app.Activity.onResume
+131 0x00000238 0x00000238 IMPORT IMETH 0        imp.android.content.SharedPreferences.getString
+132 0x0000023d 0x0000023d IMPORT METH  0        imp.java.lang.Integer.parseInt
+134 0x00000245 0x00000245 IMPORT IMETH 0        imp.android.content.SharedPreferences.getBoolean
+137 0x00000250 0x00000250 IMPORT METH  0        imp.org.radare2.installer.MainActivity.getSystemService
+140 0x0000025b 0x0000025b IMPORT METH  0        imp.android.app.PendingIntent.getService
+141 0x00000260 0x00000260 IMPORT METH  0        imp.android.app.AlarmManager.cancel
+142 0x00000265 0x00000265 IMPORT METH  0        imp.android.os.SystemClock.elapsedRealtime
+143 0x0000026a 0x0000026a IMPORT METH  0        imp.android.app.AlarmManager.setInexactRepeating
+EOF
+RUN
+
+
+NAME=Java list symbols Main.class
+FILE=bins/java/Main.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type  size lib name
+----------------------------------------------------
+0   0x00000389 0x00000389 LOCAL  FUNC  29       Main.<init>
+1   0x000003b4 0x000003b4 LOCAL  FUNC  206      Main.main
+1   0x0000000a 0x0000000a IMPORT METH  0        imp.java.lang.Object.<init>
+2   0x0000000f 0x0000000f IMPORT FIELD 0        imp.java.lang.System.out
+4   0x00000017 0x00000017 IMPORT METH  0        imp.java.io.PrintStream.println
+8   0x00000025 0x00000025 IMPORT METH  0        imp.java.io.FileReader.<init>
+9   0x0000002a 0x0000002a IMPORT METH  0        imp.java.io.BufferedReader.<init>
+10  0x0000002f 0x0000002f IMPORT METH  0        imp.java.io.BufferedReader.readLine
+12  0x00000037 0x00000037 IMPORT METH  0        imp.java.lang.StringBuilder.<init>
+14  0x0000003f 0x0000003f IMPORT METH  0        imp.java.lang.StringBuilder.append
+15  0x00000044 0x00000044 IMPORT METH  0        imp.java.lang.StringBuilder.toString
+16  0x00000049 0x00000049 IMPORT METH  0        imp.java.io.BufferedReader.close
+18  0x00000051 0x00000051 IMPORT FIELD 0        imp.java.lang.System.err
+21  0x0000005c 0x0000005c IMPORT METH  0        imp.java.io.PrintStream.format
+22  0x00000061 0x00000061 IMPORT METH  0        imp.java.lang.Exception.printStackTrace
+EOF
+RUN
+
+
+NAME=Java list symbols sjybq.class
+FILE=bins/java/sjybq.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr vaddr bind type size lib name
+---------------------------------------
+EOF
+RUN
+
+
+NAME=Java list symbols test.class
+FILE=bins/java/test.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type  size lib name
+----------------------------------------------------
+0   0x000008f9 0x000008f9 LOCAL  FUNC  39       test.<init>
+1   0x0000092e 0x0000092e LOCAL  FUNC  50       test.<init>
+2   0x0000096e 0x0000096e LOCAL  FUNC  50       test.main
+3   0x000009ae 0x000009ae LOCAL  FUNC  254      test.run
+4   0x00000aba 0x00000aba LOCAL  FUNC  51       test.$getStaticMetaClass
+5   0x00000afb 0x00000afb LOCAL  FUNC  97       test.$createCallSiteArray_1
+6   0x00000b6a 0x00000b6a LOCAL  FUNC  33       test.$createCallSiteArray
+7   0x00000b99 0x00000b99 LOCAL  FUNC  52       test.$getCallSiteArray
+0   0x000008c9 0x000008c9 LOCAL  OBJ   0        test.$staticClassInfo
+1   0x000008d1 0x000008d1 LOCAL  OBJ   0        test.__$stMC
+2   0x000008d9 0x000008d9 LOCAL  OBJ   0        test.$callSiteArray
+13  0x0000009c 0x0000009c IMPORT METH  0        imp.groovy.lang.Script.<init>
+17  0x000000ef 0x000000ef IMPORT METH  0        imp.test.$getCallSiteArray
+22  0x00000124 0x00000124 IMPORT METH  0        imp.groovy.lang.Script.<init>
+35  0x0000022b 0x0000022b IMPORT IMETH 0        imp.org.codehaus.groovy.runtime.callsite.CallSite.call
+55  0x00000317 0x00000317 IMPORT IMETH 0        imp.org.codehaus.groovy.runtime.callsite.CallSite.callConstructor
+61  0x0000038b 0x0000038b IMPORT METH  0        imp.org.codehaus.groovy.runtime.ScriptBytecodeAdapter.createMap
+67  0x000003a7 0x000003a7 IMPORT IMETH 0        imp.org.codehaus.groovy.runtime.callsite.CallSite.call
+71  0x00000402 0x00000402 IMPORT IMETH 0        imp.org.codehaus.groovy.runtime.callsite.CallSite.callCurrent
+79  0x00000459 0x00000459 IMPORT IMETH 0        imp.org.codehaus.groovy.runtime.callsite.CallSite.callGetProperty
+92  0x000004b5 0x000004b5 IMPORT IMETH 0        imp.org.codehaus.groovy.runtime.callsite.CallSite.call
+100 0x0000052d 0x0000052d IMPORT METH  0        imp.java.lang.Object.getClass
+104 0x00000575 0x00000575 IMPORT METH  0        imp.org.codehaus.groovy.runtime.ScriptBytecodeAdapter.initMetaClass
+106 0x0000057f 0x0000057f IMPORT FIELD 0        imp.test.$staticClassInfo
+112 0x00000606 0x00000606 IMPORT METH  0        imp.org.codehaus.groovy.reflection.ClassInfo.getClassInfo
+115 0x0000061f 0x0000061f IMPORT METH  0        imp.org.codehaus.groovy.reflection.ClassInfo.getMetaClass
+147 0x00000767 0x00000767 IMPORT METH  0        imp.test.$createCallSiteArray_1
+152 0x000007d3 0x000007d3 IMPORT METH  0        imp.org.codehaus.groovy.runtime.callsite.CallSiteArray.<init>
+154 0x000007dd 0x000007dd IMPORT FIELD 0        imp.test.$callSiteArray
+159 0x0000080e 0x0000080e IMPORT METH  0        imp.java.lang.ref.SoftReference.get
+161 0x00000818 0x00000818 IMPORT METH  0        imp.test.$createCallSiteArray
+164 0x0000083a 0x0000083a IMPORT METH  0        imp.java.lang.ref.SoftReference.<init>
+168 0x0000087f 0x0000087f IMPORT FIELD 0        imp.org.codehaus.groovy.runtime.callsite.CallSiteArray.array
+EOF
+RUN
+
+
+NAME=Java list symbols TryWithResources.class
+FILE=bins/java/TryWithResources.class
+CMDS=is
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type  size  lib name
+-----------------------------------------------------
+0   0x00000421 0x00000421 LOCAL  FUNC  21        TryWithResources.$
+1   0x00000444 0x00000444 LOCAL  FUNC  50        TryWithResources.<init>
+2   0x00000484 0x00000484 LOCAL  FUNC  62        TryWithResources.close
+3   0x000004d0 0x000004d0 LOCAL  FUNC  29        TryWithResources.$
+4   0x000004fb 0x000004fb LOCAL  FUNC  20        TryWithResources.$
+5   0x0000051d 0x0000051d LOCAL  FUNC  23        TryWithResources.main
+6   0x0000054c 0x0000054c LOCAL  FUNC  18879     TryWithResources.main
+7   0x00004f19 0x00004f19 LOCAL  FUNC  24        TryWithResources.<clinit>
+0   0x000003f9 0x000003f9 LOCAL  OBJ   0         TryWithResources.$
+1   0x00000401 0x00000401 LOCAL  OBJ   0         TryWithResources.i
+2   0x0000000d 0x0000000d IMPORT METH  0         imp.TryWithResources.<init>
+3   0x00000012 0x00000012 IMPORT METH  0         imp.java.lang.RuntimeException.<init>
+4   0x00000017 0x00000017 IMPORT FIELD 0         imp.java.lang.System.out
+6   0x0000001f 0x0000001f IMPORT METH  0         imp.java.lang.StringBuilder.<init>
+8   0x00000027 0x00000027 IMPORT METH  0         imp.java.lang.StringBuilder.append
+9   0x0000002c 0x0000002c IMPORT METH  0         imp.java.lang.StringBuilder.append
+10  0x00000031 0x00000031 IMPORT METH  0         imp.java.lang.StringBuilder.toString
+11  0x00000036 0x00000036 IMPORT METH  0         imp.java.io.PrintStream.println
+12  0x0000003b 0x0000003b IMPORT FIELD 0         imp.TryWithResources.i
+14  0x00000043 0x00000043 IMPORT METH  0         imp.java.io.PrintStream.println
+15  0x00000048 0x00000048 IMPORT FIELD 0         imp.TryWithResources.$
+17  0x00000050 0x00000050 IMPORT FUNC  0         imp.TryWithResources.main
+19  0x00000058 0x00000058 IMPORT METH  0         imp.TryWithResources.$
+20  0x0000005d 0x0000005d IMPORT METH  0         imp.java.io.PrintStream.println
+21  0x00000062 0x00000062 IMPORT METH  0         imp.TryWithResources.$
+22  0x00000067 0x00000067 IMPORT METH  0         imp.TryWithResources.close
+24  0x0000006f 0x0000006f IMPORT METH  0         imp.java.lang.Throwable.addSuppressed
+25  0x00000074 0x00000074 IMPORT METH  0         imp.TryWithResources.$
+26  0x00000079 0x00000079 IMPORT IMETH 0         imp.java.lang.AutoCloseable.close
+27  0x0000007e 0x0000007e IMPORT METH  0         imp.java.lang.Throwable.printStackTrace
+EOF
+RUN
+
+
+NAME=Java list classes crash2.class
+FILE=bins/java/crash2.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x00000000 - 0x00000000]      0 class 0 unknown_class :: unknown_super
+EOF
+RUN
+
+
+NAME=Java list classes DemoTest.class
 FILE=bins/java/DemoTest.class
 CMDS=ic
 EXPECT=<<EOF
-0x00000000 [0x00000190 - 0x00000211]    129 class 0 DemoTest :: java/lang/Object
-0x00000190 method 0      fun
-0x000001b9 method 1      <init>
-0x000001e8 method 2      res
-0x00000211 method 3      main
+0x00000000 [0x00000190 - 0x00000236]    166 class 0 DemoTest :: java/lang/Object
+0x00000190 method 0      DemoTest.fun
+0x000001b9 method 1      DemoTest.<init>
+0x000001e8 method 2      DemoTest.res
+0x00000211 method 3      DemoTest.main
 EOF
 RUN
 
-NAME=java classes summary
-FILE=bins/java/DemoTest.class
-CMDS=java summary
+
+NAME=Java list classes ExCaseTableSwitch.class
+FILE=bins/java/ExCaseTableSwitch.class
+CMDS=ic
 EXPECT=<<EOF
-Summary for bins/java/DemoTest.class:
-  Size 0x0:
-  Constants  size: 0x166 count: 34:
-  Methods    size: 0xb6 count: 4:
-  Fields     size: 0x2 count: 0:
-  Attributes size: 0xa count: 1:
-  Interfaces size: 0x2 count: 0:
+0x00000000 [0x00000464 - 0x00000d74]   2320 class 0 CaseTableSwitch :: java/lang/Object
+0x00000464 method 0      CaseTableSwitch.<init>
+0x000004a1 method 1      CaseTableSwitch.a
+0x000005df method 2      CaseTableSwitch.a
+0x00000623 method 3      CaseTableSwitch.a
+0x0000065d method 4      CaseTableSwitch.hopskip_line_switch
+0x00000816 method 5      CaseTableSwitch.straight_line_switch
+0x000009ea method 6      CaseTableSwitch.straight_line_switch_
+0x00000bb6 method 7      CaseTableSwitch.main
 EOF
 RUN
 
-NAME=java old format support
+
+NAME=Java list classes fuckedup.class
+FILE=bins/java/fuckedup.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x00000000 - 0x00000000]      0 class 0 unknown_class :: unknown_super
+EOF
+RUN
+
+
+NAME=Java list classes Hello.class
+FILE=bins/java/Hello.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x0000022b - 0x000002d3]    168 class 0 Hello :: java/lang/Object
+0x0000022b method 0      Hello.<init>
+0x00000263 method 1      Hello.say
+0x000002aa method 2      Hello.main
+EOF
+RUN
+
+
+NAME=Java list classes HiKt.class
+FILE=bins/java/HiKt.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x00000225 - 0x00000256]     49 class 0 HiKt :: java/lang/Object
+0x00000225 method 0      HiKt.main
+EOF
+RUN
+
+
+NAME=Java list classes invisible.class
 FILE=bins/java/invisible.class
-CMDS=pi 3
+CMDS=ic
 EXPECT=<<EOF
-getstatic java/lang/System/out Ljava/io/PrintStream;
-ldc "See if you can decompile/disassemble me!"
-invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V
+0x00000000 [0x00000000 - 0x00000000]      0 class 0 Test :: java/lang/Object
+0xffffffffffffffff method 0      Test.main
 EOF
 RUN
+
+
+NAME=Java list classes jdwpexeccmd.class
+FILE=bins/java/jdwpexeccmd.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x00000339 - 0x0000044d]    276 class 0 JDWPExecCmd :: java/lang/Object
+0x00000339 method 0      JDWPExecCmd.<init>
+0x00000364 method 1      JDWPExecCmd.run
+EOF
+RUN
+
+
+NAME=Java list classes MainActivity.class
+FILE=bins/java/MainActivity.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x00001c87 - 0x000029ea]   3427 class 0 org/radare2/installer/MainActivity :: android/app/Activity
+0x00001c87 method 0      org.radare2.installer.MainActivity.<init>
+0x00001d06 method 1      org.radare2.installer.MainActivity.onCreate
+0x00001f02 method 2      org.radare2.installer.MainActivity.onCreateOptionsMenu
+0x00001f5a method 3      org.radare2.installer.MainActivity.onOptionsItemSelected
+0x00001ff7 method 4      org.radare2.installer.MainActivity.checkForRadare
+0x0000204c method 5      org.radare2.installer.MainActivity.output
+0x000020b4 method 6      org.radare2.installer.MainActivity.unTarGz
+0x00002254 method 7      org.radare2.installer.MainActivity.resetButtons
+0x000022b1 method 8      org.radare2.installer.MainActivity.download
+0x000025e6 method 9      org.radare2.installer.MainActivity.onResume
+0x00002720 method 10      org.radare2.installer.MainActivity.access$000
+0x0000275d method 11      org.radare2.installer.MainActivity.access$100
+0x000027a5 method 12      org.radare2.installer.MainActivity.access$200
+0x000027e2 method 13      org.radare2.installer.MainActivity.access$300
+0x0000281f method 14      org.radare2.installer.MainActivity.access$402
+0x00002868 method 15      org.radare2.installer.MainActivity.access$400
+0x000028a5 method 16      org.radare2.installer.MainActivity.access$500
+0x000028e2 method 17      org.radare2.installer.MainActivity.access$600
+0x0000291f method 18      org.radare2.installer.MainActivity.access$602
+0x00002968 method 19      org.radare2.installer.MainActivity.access$700
+0x000029a5 method 20      org.radare2.installer.MainActivity.access$800
+EOF
+RUN
+
+
+NAME=Java list classes Main.class
+FILE=bins/java/Main.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x00000389 - 0x00000482]    249 class 0 Main :: java/lang/Object
+0x00000389 method 0      Main.<init>
+0x000003b4 method 1      Main.main
+EOF
+RUN
+
+
+NAME=Java list classes sjybq.class
+FILE=bins/java/sjybq.class
+CMDS=ic
+EXPECT=<<EOF
+EOF
+RUN
+
+
+NAME=Java list classes test.class
+FILE=bins/java/test.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x000008f9 - 0x00000bcd]    724 class 0 test :: groovy/lang/Script
+0x000008f9 method 0      test.<init>
+0x0000092e method 1      test.<init>
+0x0000096e method 2      test.main
+0x000009ae method 3      test.run
+0x00000aba method 4      test.$getStaticMetaClass
+0x00000afb method 5      test.$createCallSiteArray_1
+0x00000b6a method 6      test.$createCallSiteArray
+0x00000b99 method 7      test.$getCallSiteArray
+EOF
+RUN
+
+
+NAME=Java list classes TryWithResources.class
+FILE=bins/java/TryWithResources.class
+CMDS=ic
+EXPECT=<<EOF
+0x00000000 [0x00000421 - 0x00004f31]  19216 class 0 TryWithResources :: java/lang/RuntimeException
+0x00000421 method 0      TryWithResources.$
+0x00000444 method 1      TryWithResources.<init>
+0x00000484 method 2      TryWithResources.close
+0x000004d0 method 3      TryWithResources.$
+0x000004fb method 4      TryWithResources.$
+0x0000051d method 5      TryWithResources.main
+0x0000054c method 6      TryWithResources.main
+0x00004f19 method 7      TryWithResources.<clinit>
+EOF
+RUN
+
+
+
+
+NAME=Java list imports crash2.class
+FILE=bins/java/crash2.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr bind type lib name
+----------------------------
+
+EOF
+RUN
+
+
+NAME=Java list imports DemoTest.class
+FILE=bins/java/DemoTest.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type  lib name
+----------------------------------
+1   0x00000000 NONE METH      java.lang.Object.<init>
+3   0x00000000 NONE FIELD     java.lang.System.out
+5   0x00000000 NONE METH      java.io.PrintStream.println
+
+EOF
+RUN
+
+
+NAME=Java list imports ExCaseTableSwitch.class
+FILE=bins/java/ExCaseTableSwitch.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type  lib name
+----------------------------------
+8   0x00000000 NONE METH      java.lang.Object.<init>
+16  0x00000000 NONE FIELD     java.lang.System.out
+26  0x00000000 NONE METH      java.lang.StringBuilder.<init>
+29  0x00000000 NONE METH      java.lang.StringBuilder.append
+33  0x00000000 NONE METH      java.lang.StringBuilder.toString
+37  0x00000000 NONE METH      java.io.PrintStream.println
+46  0x00000000 NONE METH      java.lang.String.<init>
+55  0x00000000 NONE METH      java.lang.Integer.valueOf
+61  0x00000000 NONE METH      TestVariableSwitchUp.TestMultipleVariable
+
+EOF
+RUN
+
+
+NAME=Java list imports fuckedup.class
+FILE=bins/java/fuckedup.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr bind type lib name
+----------------------------
+
+EOF
+RUN
+
+
+NAME=Java list imports Hello.class
+FILE=bins/java/Hello.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type  lib name
+----------------------------------
+1   0x00000000 NONE METH      java.lang.Object.<init>
+2   0x00000000 NONE FIELD     Hello.who
+3   0x00000000 NONE FIELD     java.lang.System.out
+5   0x00000000 NONE METH      java.lang.StringBuilder.<init>
+7   0x00000000 NONE METH      java.lang.StringBuilder.append
+8   0x00000000 NONE METH      java.lang.StringBuilder.toString
+9   0x00000000 NONE METH      java.io.PrintStream.println
+12  0x00000000 NONE METH      Hello.<init>
+13  0x00000000 NONE METH      Hello.say
+
+EOF
+RUN
+
+
+NAME=Java list imports HiKt.class
+FILE=bins/java/HiKt.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type lib name
+---------------------------------
+15  0x00000000 NONE METH     kotlin.jvm.internal.Intrinsics.checkParameterIsNotNull
+
+EOF
+RUN
+
+
+NAME=Java list imports invisible.class
+FILE=bins/java/invisible.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type  lib name
+----------------------------------
+7   0x00000000 NONE FIELD     java.lang.System.out
+8   0x00000000 NONE METH      java.io.PrintStream.println
+
+EOF
+RUN
+
+
+NAME=Java list imports jdwpexeccmd.class
+FILE=bins/java/jdwpexeccmd.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type lib name
+---------------------------------
+1   0x00000000 NONE METH     java.lang.Object.<init>
+3   0x00000000 NONE METH     java.lang.StringBuilder.<init>
+4   0x00000000 NONE METH     java.lang.StringBuilder.append
+6   0x00000000 NONE METH     java.lang.StringBuilder.toString
+7   0x00000000 NONE METH     java.lang.Runtime.getRuntime
+8   0x00000000 NONE METH     java.lang.Runtime.exec
+11  0x00000000 NONE METH     java.lang.Process.getInputStream
+12  0x00000000 NONE METH     java.io.InputStreamReader.<init>
+13  0x00000000 NONE METH     java.io.BufferedReader.<init>
+14  0x00000000 NONE METH     java.io.BufferedReader.readLine
+15  0x00000000 NONE METH     java.lang.String.trim
+
+EOF
+RUN
+
+
+NAME=Java list imports MainActivity.class
+FILE=bins/java/MainActivity.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type  lib name
+----------------------------------
+1   0x00000000 NONE METH      org.radare2.installer.MainActivity.download
+2   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.handler
+3   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.thread
+4   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.outputView
+5   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.remoteRunButton
+6   0x00000000 NONE METH      org.radare2.installer.MainActivity.checkForRadare
+7   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.http_url_default
+8   0x00000000 NONE METH      org.radare2.installer.MainActivity.output
+9   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.mUtils
+10  0x00000000 NONE METH      android.app.Activity.<init>
+12  0x00000000 NONE METH      android.os.Handler.<init>
+15  0x00000000 NONE METH      org.radare2.installer.MainActivity$2.<init>
+16  0x00000000 NONE FIELD     org.radare2.installer.MainActivity.onLocalRunButtonClick
+18  0x00000000 NONE METH      org.radare2.installer.MainActivity$3.<init>
+19  0x00000000 NONE FIELD     org.radare2.installer.MainActivity.onRemoteRunButtonClick
+20  0x00000000 NONE METH      android.app.Activity.onCreate
+23  0x00000000 NONE METH      org.radare2.installer.MainActivity.setContentView
+25  0x00000000 NONE METH      org.radare2.installer.MainActivity.getApplicationContext
+26  0x00000000 NONE METH      org.radare2.installer.Utils.<init>
+29  0x00000000 NONE METH      org.radare2.installer.MainActivity.findViewById
+34  0x00000000 NONE METH      org.radare2.installer.Utils.GetPref
+36  0x00000000 NONE METH      java.lang.String.equals
+37  0x00000000 NONE METH      android.widget.CheckBox.setChecked
+45  0x00000000 NONE METH      android.widget.Button.setOnClickListener
+47  0x00000000 NONE FIELD     org.radare2.installer.MainActivity.localRunButton
+49  0x00000000 NONE METH      org.radare2.installer.Utils.isInternetAvailable
+50  0x00000000 NONE METH      android.preference.PreferenceManager.getDefaultSharedPreferences
+53  0x00000000 NONE METH      org.radare2.installer.MainActivity$1.<init>
+54  0x00000000 NONE METH      java.lang.Thread.<init>
+55  0x00000000 NONE METH      java.lang.Thread.start
+58  0x00000000 NONE IMETH     android.view.Menu.add
+59  0x00000000 NONE METH      android.app.Activity.onCreateOptionsMenu
+60  0x00000000 NONE IMETH     android.view.MenuItem.getItemId
+63  0x00000000 NONE METH      android.content.Intent.<init>
+65  0x00000000 NONE METH      android.content.Intent.setFlags
+66  0x00000000 NONE METH      org.radare2.installer.MainActivity.startActivity
+69  0x00000000 NONE METH      java.io.File.<init>
+70  0x00000000 NONE METH      java.io.File.exists
+72  0x00000000 NONE METH      org.radare2.installer.MainActivity$4.<init>
+73  0x00000000 NONE METH      android.os.Handler.post
+76  0x00000000 NONE METH      java.io.FileInputStream.<init>
+77  0x00000000 NONE METH      java.util.zip.GZIPInputStream.<init>
+78  0x00000000 NONE METH      java.lang.String.lastIndexOf
+79  0x00000000 NONE METH      java.lang.String.substring
+82  0x00000000 NONE METH      java.lang.StringBuilder.<init>
+83  0x00000000 NONE METH      java.lang.StringBuilder.append
+85  0x00000000 NONE METH      java.lang.StringBuilder.toString
+87  0x00000000 NONE METH      java.io.FileOutputStream.<init>
+88  0x00000000 NONE METH      java.util.zip.GZIPInputStream.read
+89  0x00000000 NONE METH      java.io.OutputStream.write
+90  0x00000000 NONE METH      java.util.zip.GZIPInputStream.close
+91  0x00000000 NONE METH      java.io.OutputStream.close
+93  0x00000000 NONE METH      com.ice.tar.TarArchive.<init>
+94  0x00000000 NONE METH      com.ice.tar.TarArchive.extractContents
+95  0x00000000 NONE METH      com.ice.tar.TarArchive.closeArchive
+96  0x00000000 NONE METH      java.io.File.delete
+98  0x00000000 NONE METH      org.radare2.installer.MainActivity$5.<init>
+100 0x00000000 NONE METH      java.net.URL.<init>
+101 0x00000000 NONE METH      java.net.URL.openConnection
+104 0x00000000 NONE METH      java.net.HttpURLConnection.setRequestMethod
+105 0x00000000 NONE METH      java.net.HttpURLConnection.setInstanceFollowRedirects
+106 0x00000000 NONE METH      java.net.HttpURLConnection.getRequestProperties
+107 0x00000000 NONE METH      java.net.HttpURLConnection.connect
+108 0x00000000 NONE METH      java.net.HttpURLConnection.getContentLength
+110 0x00000000 NONE METH      java.lang.StringBuilder.append
+113 0x00000000 NONE METH      java.net.HttpURLConnection.getHeaderField
+114 0x00000000 NONE METH      org.radare2.installer.Utils.StorePref
+115 0x00000000 NONE METH      java.net.HttpURLConnection.getInputStream
+117 0x00000000 NONE METH      java.io.InputStream.read
+118 0x00000000 NONE METH      java.io.FileOutputStream.write
+121 0x00000000 NONE METH      org.radare2.installer.MainActivity.resetButtons
+123 0x00000000 NONE METH      java.io.FileOutputStream.close
+124 0x00000000 NONE METH      java.io.InputStream.close
+125 0x00000000 NONE METH      java.net.HttpURLConnection.disconnect
+127 0x00000000 NONE METH      java.lang.Exception.printStackTrace
+128 0x00000000 NONE METH      android.app.Activity.onResume
+131 0x00000000 NONE IMETH     android.content.SharedPreferences.getString
+132 0x00000000 NONE METH      java.lang.Integer.parseInt
+134 0x00000000 NONE IMETH     android.content.SharedPreferences.getBoolean
+137 0x00000000 NONE METH      org.radare2.installer.MainActivity.getSystemService
+140 0x00000000 NONE METH      android.app.PendingIntent.getService
+141 0x00000000 NONE METH      android.app.AlarmManager.cancel
+142 0x00000000 NONE METH      android.os.SystemClock.elapsedRealtime
+143 0x00000000 NONE METH      android.app.AlarmManager.setInexactRepeating
+
+EOF
+RUN
+
+
+NAME=Java list imports Main.class
+FILE=bins/java/Main.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type  lib name
+----------------------------------
+1   0x00000000 NONE METH      java.lang.Object.<init>
+2   0x00000000 NONE FIELD     java.lang.System.out
+4   0x00000000 NONE METH      java.io.PrintStream.println
+8   0x00000000 NONE METH      java.io.FileReader.<init>
+9   0x00000000 NONE METH      java.io.BufferedReader.<init>
+10  0x00000000 NONE METH      java.io.BufferedReader.readLine
+12  0x00000000 NONE METH      java.lang.StringBuilder.<init>
+14  0x00000000 NONE METH      java.lang.StringBuilder.append
+15  0x00000000 NONE METH      java.lang.StringBuilder.toString
+16  0x00000000 NONE METH      java.io.BufferedReader.close
+18  0x00000000 NONE FIELD     java.lang.System.err
+21  0x00000000 NONE METH      java.io.PrintStream.format
+22  0x00000000 NONE METH      java.lang.Exception.printStackTrace
+
+EOF
+RUN
+
+
+NAME=Java list imports sjybq.class
+FILE=bins/java/sjybq.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr bind type lib name
+----------------------------
+
+EOF
+RUN
+
+
+NAME=Java list imports test.class
+FILE=bins/java/test.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type  lib name
+----------------------------------
+13  0x00000000 NONE METH      groovy.lang.Script.<init>
+17  0x00000000 NONE METH      test.$getCallSiteArray
+22  0x00000000 NONE METH      groovy.lang.Script.<init>
+35  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.call
+55  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.callConstructor
+61  0x00000000 NONE METH      org.codehaus.groovy.runtime.ScriptBytecodeAdapter.createMap
+67  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.call
+71  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.callCurrent
+79  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.callGetProperty
+92  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.call
+100 0x00000000 NONE METH      java.lang.Object.getClass
+104 0x00000000 NONE METH      org.codehaus.groovy.runtime.ScriptBytecodeAdapter.initMetaClass
+106 0x00000000 NONE FIELD     test.$staticClassInfo
+112 0x00000000 NONE METH      org.codehaus.groovy.reflection.ClassInfo.getClassInfo
+115 0x00000000 NONE METH      org.codehaus.groovy.reflection.ClassInfo.getMetaClass
+147 0x00000000 NONE METH      test.$createCallSiteArray_1
+152 0x00000000 NONE METH      org.codehaus.groovy.runtime.callsite.CallSiteArray.<init>
+154 0x00000000 NONE FIELD     test.$callSiteArray
+159 0x00000000 NONE METH      java.lang.ref.SoftReference.get
+161 0x00000000 NONE METH      test.$createCallSiteArray
+164 0x00000000 NONE METH      java.lang.ref.SoftReference.<init>
+168 0x00000000 NONE FIELD     org.codehaus.groovy.runtime.callsite.CallSiteArray.array
+
+EOF
+RUN
+
+
+NAME=Java list imports TryWithResources.class
+FILE=bins/java/TryWithResources.class
+CMDS=ii
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind   type  lib name
+------------------------------------
+2   0x00000000 NONE   METH      TryWithResources.<init>
+3   0x00000000 NONE   METH      java.lang.RuntimeException.<init>
+4   0x00000000 NONE   FIELD     java.lang.System.out
+6   0x00000000 NONE   METH      java.lang.StringBuilder.<init>
+8   0x00000000 NONE   METH      java.lang.StringBuilder.append
+9   0x00000000 NONE   METH      java.lang.StringBuilder.append
+10  0x00000000 NONE   METH      java.lang.StringBuilder.toString
+11  0x00000000 NONE   METH      java.io.PrintStream.println
+12  0x00000000 NONE   FIELD     TryWithResources.i
+14  0x00000000 NONE   METH      java.io.PrintStream.println
+15  0x00000000 NONE   FIELD     TryWithResources.$
+17  0x00000000 GLOBAL FUNC      TryWithResources.main
+19  0x00000000 NONE   METH      TryWithResources.$
+20  0x00000000 NONE   METH      java.io.PrintStream.println
+21  0x00000000 NONE   METH      TryWithResources.$
+22  0x00000000 NONE   METH      TryWithResources.close
+24  0x00000000 NONE   METH      java.lang.Throwable.addSuppressed
+25  0x00000000 NONE   METH      TryWithResources.$
+26  0x00000000 NONE   IMETH     java.lang.AutoCloseable.close
+27  0x00000000 NONE   METH      java.lang.Throwable.printStackTrace
+0   0x00000000 WEAK   IFACE     java.lang.AutoCloseable.*
+
+EOF
+RUN
+
+
+NAME=Java list sections crash2.class
+FILE=bins/java/crash2.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr       size vaddr       vsize perm name
+------------------------------------------------
+0   0x0000000a  0x12 0x0000000a   0x12 -r-- class.constant_pool
+
+EOF
+RUN
+
+
+NAME=Java list sections DemoTest.class
+FILE=bins/java/DemoTest.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x16c 0x0000000a  0x16c -r-- class.constant_pool
+1   0x00000190   0x1b 0x00000190   0x1b -r-x class.methods.fun.attr.0.code
+2   0x0000017a   0x29 0x0000017a   0x29 -r-- class.methods.fun.attr
+3   0x000001b9   0x21 0x000001b9   0x21 -r-x class.methods._init_.attr.0.code
+4   0x000001a3   0x2f 0x000001a3   0x2f -r-- class.methods._init_.attr
+5   0x000001e8   0x1b 0x000001e8   0x1b -r-x class.methods.res.attr.0.code
+6   0x000001d2   0x29 0x000001d2   0x29 -r-- class.methods.res.attr
+7   0x00000211   0x25 0x00000211   0x25 -r-x class.methods.main.attr.0.code
+8   0x000001fb   0x35 0x000001fb   0x35 -r-- class.methods.main.attr
+9   0x0000017a   0xb6 0x0000017a   0xb6 -r-- class.methods
+10  0x00000230    0x8 0x00000230    0x8 -r-- class.attr
+
+EOF
+RUN
+
+
+NAME=Java list sections ExCaseTableSwitch.class
+FILE=bins/java/ExCaseTableSwitch.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x440 0x0000000a  0x440 -r-- class.constant_pool
+1   0x00000464   0x2f 0x00000464   0x2f -r-x class.methods._init_.attr.0.code
+2   0x0000044e   0x3d 0x0000044e   0x3d -r-- class.methods._init_.attr
+3   0x000004a1  0x130 0x000004a1  0x130 -r-x class.methods.a.attr.0.code
+4   0x0000048b  0x13e 0x0000048b  0x13e -r-- class.methods.a.attr
+5   0x000005df   0x36 0x000005df   0x36 -r-x class.methods.a_1.attr.0.code
+6   0x000005c9   0x44 0x000005c9   0x44 -r-- class.methods.a_1.attr
+7   0x00000623   0x2c 0x00000623   0x2c -r-x class.methods.a_1.attr.0.code_1
+8   0x0000060d   0x3a 0x0000060d   0x3a -r-- class.methods.a_1.attr_1
+9   0x0000065d  0x1ab 0x0000065d  0x1ab -r-x class.methods.hopskip_line_switch.attr.0.code
+10  0x00000647  0x1b9 0x00000647  0x1b9 -r-- class.methods.hopskip_line_switch.attr
+11  0x00000816  0x1c6 0x00000816  0x1c6 -r-x class.methods.straight_line_switch.attr.0.code
+12  0x00000800  0x1d4 0x00000800  0x1d4 -r-- class.methods.straight_line_switch.attr
+13  0x000009ea  0x1be 0x000009ea  0x1be -r-x class.methods.straight_line_switch_.attr.0.code
+14  0x000009d4  0x1cc 0x000009d4  0x1cc -r-- class.methods.straight_line_switch_.attr
+15  0x00000bb6  0x1be 0x00000bb6  0x1be -r-x class.methods.main.attr.0.code
+16  0x00000ba0  0x1ce 0x00000ba0  0x1ce -r-- class.methods.main.attr
+17  0x0000044e  0x920 0x0000044e  0x920 -r-- class.methods
+18  0x00000d6e    0x8 0x00000d6e    0x8 -r-- class.attr
+
+EOF
+RUN
+
+
+NAME=Java list sections fuckedup.class
+FILE=bins/java/fuckedup.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr       size vaddr       vsize perm name
+------------------------------------------------
+0   0x0000000a  0x41 0x0000000a   0x41 -r-- class.constant_pool
+
+EOF
+RUN
+
+
+NAME=Java list sections Hello.class
+FILE=bins/java/Hello.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x1ff 0x0000000a  0x1ff -r-- class.constant_pool
+1   0x0000020b    0xa 0x0000020b    0xa -r-- class.fields.who.attr
+2   0x0000020b    0xa 0x0000020b    0xa -r-- class.fields
+3   0x0000022b   0x2a 0x0000022b   0x2a -r-x class.methods._init_.attr.0.code
+4   0x00000215   0x38 0x00000215   0x38 -r-- class.methods._init_.attr
+5   0x00000263   0x39 0x00000263   0x39 -r-x class.methods.say.attr.0.code
+6   0x0000024d   0x47 0x0000024d   0x47 -r-- class.methods.say.attr
+7   0x000002aa   0x29 0x000002aa   0x29 -r-x class.methods.main.attr.0.code
+8   0x00000294   0x39 0x00000294   0x39 -r-- class.methods.main.attr
+9   0x00000215   0xb8 0x00000215   0xb8 -r-- class.methods
+10  0x000002cd    0x8 0x000002cd    0x8 -r-- class.attr
+
+EOF
+RUN
+
+
+NAME=Java list sections HiKt.class
+FILE=bins/java/HiKt.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x201 0x0000000a  0x201 -r-- class.constant_pool
+1   0x00000225   0x31 0x00000225   0x31 -r-x class.methods.main.attr.0.code
+2   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods.main.attr
+3   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods
+4   0x0000025d   0x54 0x0000025d   0x54 -r-- class.attr
+
+EOF
+RUN
+
+
+NAME=Java list sections invisible.class
+FILE=bins/java/invisible.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x100 0x0000000a  0x100 -r-- class.constant_pool
+1   0x0000010e   0x21 0x0000010e   0x21 -r-- class.methods.main.attr
+2   0x0000010e   0x21 0x0000010e   0x21 -r-- class.methods
+
+EOF
+RUN
+
+
+NAME=Java list sections jdwpexeccmd.class
+FILE=bins/java/jdwpexeccmd.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x315 0x0000000a  0x315 -r-- class.constant_pool
+1   0x00000339   0x1d 0x00000339   0x1d -r-x class.methods._init_.attr.0.code
+2   0x00000323   0x2b 0x00000323   0x2b -r-- class.methods._init_.attr
+3   0x00000364   0xe9 0x00000364   0xe9 -r-x class.methods.run.attr.0.code
+4   0x0000034e   0xf9 0x0000034e   0xf9 -r-- class.methods.run.attr
+5   0x00000323  0x124 0x00000323  0x124 -r-- class.methods
+6   0x00000447    0x8 0x00000447    0x8 -r-- class.attr
+
+EOF
+RUN
+
+
+NAME=Java list sections MainActivity.class
+FILE=bins/java/MainActivity.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr         size vaddr        vsize perm name
+---------------------------------------------------
+0   0x0000000a  0x1c13 0x0000000a  0x1c13 -r-- class.constant_pool
+1   0x00001c1f     0x8 0x00001c1f     0x8 -r-- class.fields.outputView.attr
+2   0x00001c27     0x8 0x00001c27     0x8 -r-- class.fields.handler.attr
+3   0x00001c2f     0x8 0x00001c2f     0x8 -r-- class.fields.remoteRunButton.attr
+4   0x00001c37     0x8 0x00001c37     0x8 -r-- class.fields.localRunButton.attr
+5   0x00001c3f     0x8 0x00001c3f     0x8 -r-- class.fields.context.attr
+6   0x00001c47     0x8 0x00001c47     0x8 -r-- class.fields.mUtils.attr
+7   0x00001c4f     0x8 0x00001c4f     0x8 -r-- class.fields.http_url_default.attr
+8   0x00001c57     0x8 0x00001c57     0x8 -r-- class.fields.onLocalRunButtonClick.attr
+9   0x00001c5f     0x8 0x00001c5f     0x8 -r-- class.fields.thread.attr
+10  0x00001c67     0xa 0x00001c67     0xa -r-- class.fields.onRemoteRunButtonClick.attr
+11  0x00001c1f    0x52 0x00001c1f    0x52 -r-- class.fields
+12  0x00001c87    0x71 0x00001c87    0x71 -r-x class.methods._init_.attr.0.code
+13  0x00001c71    0x7f 0x00001c71    0x7f -r-- class.methods._init_.attr
+14  0x00001d06   0x1ee 0x00001d06   0x1ee -r-x class.methods.onCreate.attr.0.code
+15  0x00001cf0   0x1fc 0x00001cf0   0x1fc -r-- class.methods.onCreate.attr
+16  0x00001f02    0x4a 0x00001f02    0x4a -r-x class.methods.onCreateOptionsMenu.attr.0.code
+17  0x00001eec    0x58 0x00001eec    0x58 -r-- class.methods.onCreateOptionsMenu.attr
+18  0x00001f5a    0x8f 0x00001f5a    0x8f -r-x class.methods.onOptionsItemSelected.attr.0.code
+19  0x00001f44    0x9d 0x00001f44    0x9d -r-- class.methods.onOptionsItemSelected.attr
+20  0x00001ff7    0x47 0x00001ff7    0x47 -r-x class.methods.checkForRadare.attr.0.code
+21  0x00001fe1    0x55 0x00001fe1    0x55 -r-- class.methods.checkForRadare.attr
+22  0x0000204c    0x5a 0x0000204c    0x5a -r-x class.methods.output.attr.0.code
+23  0x00002036    0x68 0x00002036    0x68 -r-- class.methods.output.attr
+24  0x000020b4   0x188 0x000020b4   0x188 -r-x class.methods.unTarGz.attr.0.code
+25  0x0000209e   0x1a0 0x0000209e   0x1a0 -r-- class.methods.unTarGz.attr
+26  0x00002254    0x4f 0x00002254    0x4f -r-x class.methods.resetButtons.attr.0.code
+27  0x0000223e    0x5d 0x0000223e    0x5d -r-- class.methods.resetButtons.attr
+28  0x000022b1   0x327 0x000022b1   0x327 -r-x class.methods.download.attr.0.code
+29  0x0000229b   0x335 0x0000229b   0x335 -r-- class.methods.download.attr
+30  0x000025e6   0x12c 0x000025e6   0x12c -r-x class.methods.onResume.attr.0.code
+31  0x000025d0   0x13a 0x000025d0   0x13a -r-- class.methods.onResume.attr
+32  0x00002720    0x2f 0x00002720    0x2f -r-x class.methods.access_000.attr.0.code
+33  0x0000270a    0x3d 0x0000270a    0x3d -r-- class.methods.access_000.attr
+34  0x0000275d    0x3a 0x0000275d    0x3a -r-x class.methods.access_100.attr.0.code
+35  0x00002747    0x48 0x00002747    0x48 -r-- class.methods.access_100.attr
+36  0x000027a5    0x2f 0x000027a5    0x2f -r-x class.methods.access_200.attr.0.code
+37  0x0000278f    0x3d 0x0000278f    0x3d -r-- class.methods.access_200.attr
+38  0x000027e2    0x2f 0x000027e2    0x2f -r-x class.methods.access_300.attr.0.code
+39  0x000027cc    0x3d 0x000027cc    0x3d -r-- class.methods.access_300.attr
+40  0x0000281f    0x3b 0x0000281f    0x3b -r-x class.methods.access_402.attr.0.code
+41  0x00002809    0x49 0x00002809    0x49 -r-- class.methods.access_402.attr
+42  0x00002868    0x2f 0x00002868    0x2f -r-x class.methods.access_400.attr.0.code
+43  0x00002852    0x3d 0x00002852    0x3d -r-- class.methods.access_400.attr
+44  0x000028a5    0x2f 0x000028a5    0x2f -r-x class.methods.access_500.attr.0.code
+45  0x0000288f    0x3d 0x0000288f    0x3d -r-- class.methods.access_500.attr
+46  0x000028e2    0x2f 0x000028e2    0x2f -r-x class.methods.access_600.attr.0.code
+47  0x000028cc    0x3d 0x000028cc    0x3d -r-- class.methods.access_600.attr
+48  0x0000291f    0x3b 0x0000291f    0x3b -r-x class.methods.access_602.attr.0.code
+49  0x00002909    0x49 0x00002909    0x49 -r-- class.methods.access_602.attr
+50  0x00002968    0x2f 0x00002968    0x2f -r-x class.methods.access_700.attr.0.code
+51  0x00002952    0x3d 0x00002952    0x3d -r-- class.methods.access_700.attr
+52  0x000029a5    0x45 0x000029a5    0x45 -r-x class.methods.access_800.attr.0.code
+53  0x0000298f    0x55 0x0000298f    0x55 -r-- class.methods.access_800.attr
+54  0x00001c71   0xd73 0x00001c71   0xd73 -r-- class.methods
+55  0x000029e4    0x50 0x000029e4    0x50 -r-- class.attr
+
+EOF
+RUN
+
+
+NAME=Java list sections Main.class
+FILE=bins/java/Main.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x365 0x0000000a  0x365 -r-- class.constant_pool
+1   0x00000389   0x1d 0x00000389   0x1d -r-x class.methods._init_.attr.0.code
+2   0x00000373   0x2b 0x00000373   0x2b -r-- class.methods._init_.attr
+3   0x000003b4   0xce 0x000003b4   0xce -r-x class.methods.main.attr.0.code
+4   0x0000039e   0xde 0x0000039e   0xde -r-- class.methods.main.attr
+5   0x00000373  0x109 0x00000373  0x109 -r-- class.methods
+6   0x0000047c    0x8 0x0000047c    0x8 -r-- class.attr
+
+EOF
+RUN
+
+
+NAME=Java list sections sjybq.class
+FILE=bins/java/sjybq.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr  size vaddr  vsize perm name
+--------------------------------------
+
+EOF
+RUN
+
+
+NAME=Java list sections test.class
+FILE=bins/java/test.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x0000000a  0x8bd 0x0000000a  0x8bd -r-- class.constant_pool
+1   0x000008c9    0x8 0x000008c9    0x8 -r-- class.fields._staticClassInfo.attr
+2   0x000008d1    0x8 0x000008d1    0x8 -r-- class.fields.___stMC.attr
+3   0x000008d9    0xa 0x000008d9    0xa -r-- class.fields._callSiteArray.attr
+4   0x000008c9   0x1a 0x000008c9   0x1a -r-- class.fields
+5   0x000008f9   0x27 0x000008f9   0x27 -r-x class.methods._init_.attr.0.code
+6   0x000008e3   0x35 0x000008e3   0x35 -r-- class.methods._init_.attr
+7   0x0000092e   0x32 0x0000092e   0x32 -r-x class.methods._init__1.attr.0.code
+8   0x00000918   0x40 0x00000918   0x40 -r-- class.methods._init__1.attr
+9   0x0000096e   0x32 0x0000096e   0x32 -r-x class.methods.main.attr.0.code
+10  0x00000958   0x40 0x00000958   0x40 -r-- class.methods.main.attr
+11  0x000009ae   0xfe 0x000009ae   0xfe -r-x class.methods.run.attr.0.code
+12  0x00000998  0x10c 0x00000998  0x10c -r-- class.methods.run.attr
+13  0x00000aba   0x33 0x00000aba   0x33 -r-x class.methods._getStaticMetaClass.attr.0.code
+14  0x00000aa4   0x41 0x00000aa4   0x41 -r-- class.methods._getStaticMetaClass.attr
+15  0x00000afb   0x61 0x00000afb   0x61 -r-x class.methods._createCallSiteArray_1.attr.0.code
+16  0x00000ae5   0x6f 0x00000ae5   0x6f -r-- class.methods._createCallSiteArray_1.attr
+17  0x00000b6a   0x21 0x00000b6a   0x21 -r-x class.methods._createCallSiteArray.attr.0.code
+18  0x00000b54   0x2f 0x00000b54   0x2f -r-- class.methods._createCallSiteArray.attr
+19  0x00000b99   0x34 0x00000b99   0x34 -r-x class.methods._getCallSiteArray.attr.0.code
+20  0x00000b83   0x44 0x00000b83   0x44 -r-- class.methods._getCallSiteArray.attr
+21  0x000008e3  0x2e4 0x000008e3  0x2e4 -r-- class.methods
+22  0x00000bc7    0x8 0x00000bc7    0x8 -r-- class.attr
+
+EOF
+RUN
+
+
+NAME=Java list sections TryWithResources.class
+FILE=bins/java/TryWithResources.class
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr         size vaddr        vsize perm name
+---------------------------------------------------
+0   0x0000000a   0x3eb 0x0000000a   0x3eb -r-- class.constant_pool
+1   0x000003f5     0x4 0x000003f5     0x4 -r-- class.interfaces
+2   0x000003f9     0x8 0x000003f9     0x8 -r-- class.fields._.attr
+3   0x00000401     0xa 0x00000401     0xa -r-- class.fields.i.attr
+4   0x000003f9    0x12 0x000003f9    0x12 -r-- class.fields
+5   0x00000421    0x15 0x00000421    0x15 -r-x class.methods._.attr.0.code
+6   0x0000040b    0x23 0x0000040b    0x23 -r-- class.methods._.attr
+7   0x00000444    0x32 0x00000444    0x32 -r-x class.methods._init_.attr.0.code
+8   0x0000042e    0x40 0x0000042e    0x40 -r-- class.methods._init_.attr
+9   0x00000484    0x3e 0x00000484    0x3e -r-x class.methods.close.attr.0.code
+10  0x0000046e    0x4c 0x0000046e    0x4c -r-- class.methods.close.attr
+11  0x000004d0    0x1d 0x000004d0    0x1d -r-x class.methods.__1.attr.0.code
+12  0x000004ba    0x2b 0x000004ba    0x2b -r-- class.methods.__1.attr
+13  0x000004fb    0x14 0x000004fb    0x14 -r-x class.methods.__1.attr.0.code_1
+14  0x000004e5    0x22 0x000004e5    0x22 -r-- class.methods.__1.attr_1
+15  0x0000051d    0x17 0x0000051d    0x17 -r-x class.methods.main.attr.0.code
+16  0x00000507    0x2f 0x00000507    0x2f -r-- class.methods.main.attr
+17  0x0000054c  0x49bf 0x0000054c  0x49bf -r-x class.methods.main_1.attr.0.code
+18  0x00000536  0x49cd 0x00000536  0x49cd -r-- class.methods.main_1.attr
+19  0x00004f19    0x18 0x00004f19    0x18 -r-x class.methods._clinit_.attr.0.code
+20  0x00004f03    0x28 0x00004f03    0x28 -r-- class.methods._clinit_.attr
+21  0x0000040b  0x4b20 0x0000040b  0x4b20 -r-- class.methods
+
+EOF
+RUN
+
+NAME=Java list exports HiKt.class
+FILE=bins/java/HiKt.class
+CMDS=iE
+EXPECT=<<EOF
+[Exports]
+
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+0   0x00000225 0x00000225 GLOBAL FUNC 49       HiKt.main
+EOF
+RUN
+
+

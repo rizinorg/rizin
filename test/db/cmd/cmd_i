@@ -438,17 +438,20 @@ bintype  class
 bits     32
 canary   false
 retguard false
-class    0x3200 0x0000
+class    Java SE 1.6
 crypto   false
-endian   little
+endian   big
 havecode true
 laddr    0x0
-lang     java 6
+lang     java
 linenum  true
 lsyms    true
 machine  jvm
+maxopsz  16
+minopsz  1
 nx       false
 os       any
+pcalign  0
 pic      false
 relocs   false
 sanitiz  false
@@ -457,10 +460,11 @@ stripped false
 subsys   any
 va       false
   ;-- entry1:
-  ;-- sym.TestVariableSwitchUp.TestMultipleVariable:
-/ method.TestVariableSwitchUp.TestMultipleVariable ();
+  ;-- section.class.methods.TestMultipleVariable.attr.0.code:
+  ;-- sym.TestVariableSwitchUp.TestVariableSwitchUp.TestMultipleVariable:
+/ (fcn) method.TestVariableSwitchUp.TestVariableSwitchUp.TestMultipleVariable 37
 | 0x000002fd      1064           bipush 100
-| 0x000002ff      b8000f         invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;
+| 0x000002ff      b8000f         invokestatic java.lang.Integer java.lang.Integer:valueOf: (int, int)
 | 0x00000302      4b             astore_0
 | 0x00000303      1064           bipush 100
 | 0x00000305      3c             istore_1
@@ -468,15 +472,15 @@ va       false
 | 0x00000308      4d             astore_2
 | 0x00000309      03             iconst_0
 | 0x0000030a      3e             istore_3
-| 0x0000030b      b20017         getstatic java/lang/System/out Ljava/io/PrintStream;
-| 0x0000030e      bb001d         new   java/lang/StringBuilder
+| 0x0000030b      b20017         getstatic java.lang.System:out:Ljava.io.PrintStream;
+| 0x0000030e      bb001d         new   java.lang.StringBuilder
 | 0x00000311      59             dup
 | 0x00000312      121f           ldc   "Attempting print "
-| 0x00000314      b70021         invokespecial java/lang/StringBuilder/<init>(Ljava/lang/String;)V
+| 0x00000314      b70021         invokespecial void java.lang.StringBuilder:<init>: (short, byte, java.lang.String)
 | 0x00000317      2c             aload_2
-| 0x00000318      b60024         invokevirtual java/lang/StringBuilder/append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-| 0x0000031b      b60028         invokevirtual java/lang/StringBuilder/toString()Ljava/lang/String;
-| 0x0000031e      b6002c         invokevirtual java/io/PrintStream/print(Ljava/lang/String;)V
+| 0x00000318      b60024         invokevirtual java.lang.StringBuilder java.lang.StringBuilder:append: (short, byte, java.lang.String)
+| 0x0000031b      b60028         invokevirtual java.lang.String java.lang.StringBuilder:toString: (short, byte, short)
+| 0x0000031e      b6002c         invokevirtual void java.io.PrintStream:print: (short, java.lang.String)
 \ 0x00000321      b1             return
 EOF
 
@@ -4627,10 +4631,10 @@ NAME=ic (file Java)
 FILE=bins/java/Hello.class
 CMDS=ic
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002aa]    127 class 0 Hello :: java/lang/Object
-0x0000022b method 0      <init>
-0x00000263 method 1      say
-0x000002aa method 2      main
+0x00000000 [0x0000022b - 0x000002d3]    168 class 0 Hello :: java/lang/Object
+0x0000022b method 0      Hello.<init>
+0x00000263 method 1      Hello.say
+0x000002aa method 2      Hello.main
 EOF
 RUN
 
@@ -4638,7 +4642,7 @@ NAME=icq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icq
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002aa] Hello java/lang/Object
+0x00000000 [0x0000022b - 0x000002d3] Hello java/lang/Object
 EOF
 RUN
 
