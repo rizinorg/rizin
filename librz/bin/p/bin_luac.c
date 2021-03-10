@@ -15,7 +15,7 @@ static bool check_buffer(RzBuffer *buff) {
 	if (rz_buf_size(buff) > 4) {
 		ut8 buf[LUAC_MAGIC_SIZE];
 		rz_buf_read_at(buff, LUAC_MAGIC_OFFSET, buf, LUAC_MAGIC_SIZE);
-		return (!memcmp(buf, LUAC_MAGIC, LUAC_MAGIC_SIZE));
+		return !memcmp(buf, LUAC_MAGIC, LUAC_MAGIC_SIZE);
 	}
 	return false;
 }

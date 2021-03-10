@@ -73,11 +73,7 @@ RzBinInfo *info_54(RzBinFile *bf, st32 major, st32 minor) {
 	char *src_file = luaLoadString(work_buffer, INNER_BUFFER_SIZE);
 
 	/* put source file info into GUID */
-	if (src_file == NULL) {
-		ret->guid = strdup("stripped");
-		return ret;
-	}
-	ret->guid = strdup(src_file);
+	ret->guid = strdup(src_file ? src_file : "stripped");
 	free(src_file);
 
 	return ret;
