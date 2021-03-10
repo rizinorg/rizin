@@ -121,9 +121,6 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 	int isk = LUA_GETARG_k(instruction);
 	int sj = LUA_GETARG_sJ(instruction);
 
-	/* Debug only */
-	eprintf("Parse Bytes %08x\n", ((ut32 *)buf)[0]);
-
 	char *asm_string;
 
 	switch (opcode) {
