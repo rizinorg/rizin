@@ -496,7 +496,7 @@ RzIOPlugin rz_io_plugin_self = {
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_IO,
-	.data = &rz_io_plugin_mach,
+	.data = &rz_io_plugin_self,
 	.version = RZ_VERSION
 };
 #endif
