@@ -1418,40 +1418,40 @@ ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name
 RzList* Elf_(rz_bin_elf_section_flag_to_string)(ut64 flag) {	
 	RzList* flag_list = rz_list_new();
 	if(flag & SHF_WRITE) {
-		rz_list_append(flag_list, "SHF_WRITE");
+		rz_list_append(flag_list, "write");
 	}
 	if(flag & SHF_ALLOC) {
-		rz_list_append(flag_list, "SHF_ALLOC");
+		rz_list_append(flag_list, "alloc");
 	}
 	if(flag & SHF_EXECINSTR) {
-		rz_list_append(flag_list, "SHF_EXECINSTR");
+		rz_list_append(flag_list, "execute");
 	}
 	if(flag & SHF_MERGE) {
-		rz_list_append(flag_list, "SHF_MERGE");
+		rz_list_append(flag_list, "merge");
 	}
 	if(flag & SHF_STRINGS) {
-		rz_list_append(flag_list, "SHF_STRINGS");
+		rz_list_append(flag_list, "strings");
 	}
 	if(flag & SHF_INFO_LINK) {
-		rz_list_append(flag_list, "SHF_INFO_LINK");
+		rz_list_append(flag_list, "info");
 	}
 	if(flag & SHF_LINK_ORDER) {
-		rz_list_append(flag_list, "SHF_LINK_ORDER");
+		rz_list_append(flag_list, "link order");
 	}
 	if(flag & SHF_OS_NONCONFORMING) {
-		rz_list_append(flag_list, "SHF_OS_NONCONFORMING");
+		rz_list_append(flag_list, "extra os processing required");
 	}
 	if(flag & SHF_GROUP) {
-		rz_list_append(flag_list, "SHF_GROUP");
+		rz_list_append(flag_list, "group");
 	}
 	if(flag & SHF_TLS) {
-		rz_list_append(flag_list, "SHF_TLS");
+		rz_list_append(flag_list, "TLS");
 	}
 	if(flag & SHF_EXCLUDE) {
-		rz_list_append(flag_list, "SHF_EXCLUDE");
+		rz_list_append(flag_list, "exclude");
 	}
 	if(flag & SHF_COMPRESSED) {
-		rz_list_append(flag_list, "SHF_COMPRESSED");
+		rz_list_append(flag_list, "compressed");
 	}
 	return flag_list;	
 }
