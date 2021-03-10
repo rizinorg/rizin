@@ -57,6 +57,7 @@ rz_analysis_sources = [
   'p/analysis_i4004.c',
   'p/analysis_i8080.c',
   'p/analysis_java.c',
+  'p/analysis_luac.c',
   'p/analysis_m68k_cs.c',
   'p/analysis_m680x_cs.c',
   'p/analysis_malbolge.c',
