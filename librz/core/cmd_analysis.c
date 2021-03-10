@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2021 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -2484,7 +2486,7 @@ static Sdb *__core_cmd_analysis_fcn_stats(RzCore *core, const char *input) {
 			rz_table_add_column(t, typeNumber, key, 0);
 		}
 		RzList *items = rz_list_newf(free);
-		rz_list_append(items, fcn->name);
+		rz_list_append(items, strdup(fcn->name));
 		ls_foreach (ls, it, kv) {
 			const char *value = sdbkv_value(kv);
 			int nv = (int)rz_num_get(NULL, value);
@@ -3073,7 +3075,7 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			rz_core_kuery_print(core, "analysis/cc/*");
 			break;
 		case 'l': // "afcl" list all function Calling conventions.
-			rz_core_analysis_calling_conventions_print(core);
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		case 'o': { // "afco"
 			char *dbpath = rz_str_trim_dup(input + 2);
@@ -5043,9 +5045,14 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				case ' ': // "aesu"
 					until_addr = rz_num_math(core->num, input + 2);
 					break;
-				case 'o': // "aesuo"
-					step_until_optype(core, rz_str_trim_head_ro(input + 3));
+				case 'o': { // "aesuo"
+					char *optypes = strdup(rz_str_trim_head_ro((char *)input + 3));
+					RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
+					step_until_optype(core, optypes_list);
+					free(optypes);
+					rz_list_free(optypes_list);
 					break;
+				}
 				default:
 					rz_core_cmd0(core, "ae?~aesu");
 					break;

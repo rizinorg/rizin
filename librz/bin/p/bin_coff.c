@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014-2019 Fedor Sakharov <fedor.sakharov@gmail.com>
+// SPDX-FileCopyrightText: 2019 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -292,7 +294,7 @@ static RzList *_relocs_list(RzBin *rbin, struct rz_bin_coff_obj *bin, bool patch
 	RzBinReloc *reloc;
 	struct coff_reloc *rel;
 	int j, i = 0;
-	RzList *list_rel = rz_list_new();
+	RzList *list_rel = rz_list_newf(free);
 	if (!list_rel) {
 		return NULL;
 	}
@@ -458,9 +460,10 @@ static RzList *relocs(RzBinFile *bf) {
 	return _relocs_list(bf->rbin, bin, false, UT64_MAX);
 }
 
-static RzList *patch_relocs(RzBin *b) {
-	rz_return_val_if_fail(b && b->iob.io && b->iob.io->desc, NULL);
-	RzBinObject *bo = rz_bin_cur_object(b);
+static RzList *patch_relocs(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+	RzBin *b = bf->rbin;
+	RzBinObject *bo = bf->o;
 	RzIO *io = b->iob.io;
 	if (!bo || !bo->bin_obj) {
 		return NULL;

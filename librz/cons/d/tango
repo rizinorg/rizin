@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2014 pancake <pancake@nopcode.org>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 # background of the terminal must be 134 o 033
 # xterm -fn 10x20 -bg rgb:20/20/20 -fg rgb:d0/d0/d0
 # ref: https://github.com/eugeneching/ida-consonance/blob/master/ida-consonance.clr

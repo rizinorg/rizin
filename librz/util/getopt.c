@@ -1,4 +1,7 @@
+// SPDX-FileCopyrightText: 1987, 1993, 1994 The Regents of the University of California
+// SPDX-FileCopyrightText: 2019-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: MIT
+
 /*
  * Copyright (c) 1987, 1993, 1994
  * The Regents of the University of California.  All rights reserved.

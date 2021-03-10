@@ -1,4 +1,5 @@
-/* c55plus - LGPL3 - Copyright 2013 - th0rpe */
+// SPDX-FileCopyrightText: 2013 th0rpe <josediazfer@yahoo.es>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
 #include <stdio.h>

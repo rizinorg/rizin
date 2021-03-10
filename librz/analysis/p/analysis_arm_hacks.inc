@@ -1,4 +1,8 @@
+// SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "rz_analysis.h"
+
 static int hack_handle_dp_reg(ut32 insn, RzAnalysisOp *op) {
 	const bool op0 = (insn >> 30) & 0x1;
 	const bool op1 = (insn >> 28) & 0x1;

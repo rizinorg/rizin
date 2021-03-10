@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2016-2018 - Davis, Alex Kornitzer */
+// SPDX-FileCopyrightText: 2016-2018 Davis
+// SPDX-FileCopyrightText: 2016-2018 Alex Kornitzer <alex.kornitzer@countercept.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -378,9 +380,9 @@ static RzList *relocs(RzBinFile *bf) {
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzListIter *it;
-	RzList *ret;
 
-	if (!(ret = rz_list_new())) {
+	RzList *ret = rz_list_newf(free);
+	if (!ret) {
 		return NULL;
 	}
 

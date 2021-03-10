@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 Rakholiya Jenish <rakholiyajenish.07@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <string.h>
 
 #include <rz_util.h>

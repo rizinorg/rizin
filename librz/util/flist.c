@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2010-2013 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 // XXX. this is dupped inside the rz_flist.h for optimizations
 

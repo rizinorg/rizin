@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -666,7 +667,7 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 #endif
 	}
 	binfile = rz_bin_cur(r->bin);
-	rz_core_bin_set_env(r, binfile);
+	rz_core_bin_apply_all_info(r, binfile);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin && !strcmp(plugin->name, "any")) {
 		// set use of raw strings
@@ -709,7 +710,7 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 		return false;
 	}
 	binfile = rz_bin_cur(r->bin);
-	if (rz_core_bin_set_env(r, binfile)) {
+	if (rz_core_bin_apply_all_info(r, binfile)) {
 		if (!r->analysis->sdb_cc->path) {
 			RZ_LOG_WARN("No calling convention defined for this file, analysis may be inaccurate.\n");
 		}
@@ -930,7 +931,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
 	}
-	//rz_core_bin_set_env (r, binfile);
+	//rz_core_bin_apply_all_info (r, binfile);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin) {
 		if (plugin->strfilter) {

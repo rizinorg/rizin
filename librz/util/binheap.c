@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2017-2018 - maskray */
+// SPDX-FileCopyrightText: 2017-2018 maskray <i@maskray.me>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_binheap.h"
 

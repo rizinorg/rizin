@@ -1,4 +1,5 @@
-/* debugbochs  - LGPL - Copyright 2016 - SkUaTeR */
+// SPDX-FileCopyrightText: 2016 SkUaTeR <skuater@hotmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
 #include <libbochs.h>

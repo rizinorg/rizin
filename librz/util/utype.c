@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2013-2020 oddcoder <ahmedsoliman@oddcoder.com>
+// SPDX-FileCopyrightText: 2013-2020 sivaramaaa <sivaramaaa@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -86,6 +89,29 @@ RZ_API char *rz_type_enum_member(Sdb *TDB, const char *name, const char *member,
 		? sdb_fmt("enum.%s.%s", name, member)
 		: sdb_fmt("enum.%s.0x%" PFMT64x, name, val);
 	return sdb_get(TDB, q, 0);
+}
+
+RZ_API RzList *rz_type_enum_find_member(Sdb *TDB, ut64 val) {
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(TDB, true);
+	RzList *res = rz_list_new();
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "enum")) {
+			const char *name = sdbkv_key(kv);
+			if (name) {
+				const char *q = sdb_fmt("enum.%s.0x%" PFMT64x, name, val);
+				char *member = sdb_get(TDB, q, 0);
+				if (member) {
+					char *pair = rz_str_newf("%s.%s", name, member);
+					rz_list_append(res, pair);
+					free(member);
+				}
+			}
+		}
+	}
+	ls_free(l);
+	return res;
 }
 
 RZ_API char *rz_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
@@ -371,6 +397,19 @@ RZ_API int rz_type_unlink(Sdb *TDB, ut64 addr) {
 	char *laddr = sdb_fmt("link.%08" PFMT64x, addr);
 	sdb_unset(TDB, laddr, 0);
 	types_range_del(TDB, addr);
+	return true;
+}
+
+static bool sdbdeletelink(void *p, const char *k, const char *v) {
+	Sdb *TDB = (Sdb *)p;
+	if (!strncmp(k, "link.", strlen("link."))) {
+		rz_type_del(TDB, k);
+	}
+	return true;
+}
+
+RZ_API int rz_type_unlink_all(Sdb *TDB) {
+	sdb_foreach(TDB, sdbdeletelink, TDB);
 	return true;
 }
 

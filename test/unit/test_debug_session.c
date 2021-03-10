@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 Zi Fan <zifan.tan@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_debug.h>
 #include <rz_util.h>
 #include <rz_reg.h>

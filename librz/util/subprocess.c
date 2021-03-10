@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_cons.h>
 #include <rz_util.h>
 

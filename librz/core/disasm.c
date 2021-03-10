@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2021 dso <dso@rice.edu>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_core.h"
@@ -188,6 +191,7 @@ typedef struct {
 	bool show_varaccess;
 	bool show_vars;
 	bool show_fcnsig;
+	bool show_fcnsize;
 	bool hinted_line;
 	int show_varsum;
 	int midflags;
@@ -678,7 +682,8 @@ static RDisasmState *ds_init(RzCore *core) {
 	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
 	core->parser->localvar_only = rz_config_get_b(core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
-	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcnsig");
+	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcn.signature");
+	ds->show_fcnsize = rz_config_get_b(core->config, "asm.fcn.size");
 	ds->show_vars = rz_config_get_b(core->config, "asm.var");
 	ds->show_varsum = rz_config_get_i(core->config, "asm.var.summary");
 	ds->show_varaccess = rz_config_get_b(core->config, "asm.var.access");
@@ -1479,15 +1484,15 @@ static void ds_atabs_option(RDisasmState *ds) {
 		return;
 	}
 	int bufasm_len = rz_strbuf_length(&ds->asmop.buf_asm);
-	int size = bufasm_len * (ds->atabs + 1) * 4;
+	int size = bufasm_len * (ds->atabs + 1) * 4 + 4;
 	if (size < 1 || size < bufasm_len) {
 		return;
 	}
-	b = malloc(size + 1);
 	if (ds->opstr) {
-		strcpy(b, ds->opstr);
+		size = strlen(ds->opstr) * (ds->atabs + 1) * 4 + 4;
+		b = rz_str_ndup(ds->opstr, size);
 	} else {
-		strcpy(b, rz_asm_op_get_asm(&ds->asmop));
+		b = rz_str_ndup(rz_asm_op_get_asm(&ds->asmop), size);
 	}
 	if (!b) {
 		return;
@@ -1906,7 +1911,10 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_pre(ds, true);
 			rz_cons_printf("%s  ", COLOR_RESET(ds));
 		}
-		rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
+
+		if (ds->show_fcnsize) {
+			rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
+		}
 
 		// show function's realname in the signature if realnames are enabled
 		if (core->flags->realnames) {
@@ -3799,7 +3807,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 }
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
-	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, refaddr)) {
+	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, -1, refaddr)) {
 		return;
 	}
 	// do not resolve strings on arm64 pointed with ADRP

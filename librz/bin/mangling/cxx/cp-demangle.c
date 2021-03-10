@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2003-2018 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /* Demangler for g++ V3 ABI.
    Copyright (C) 2003-2018 Free Software Foundation, Inc.
    Written by Ian Lance Taylor <ian@wasabisystems.com>.

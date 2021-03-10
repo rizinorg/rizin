@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2007-2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_flag.h>
@@ -227,19 +229,11 @@ RZ_API RzFlag *rz_flag_new(void) {
 	}
 	f->base = 0;
 	f->cb_printf = (PrintfCallback)printf;
-#if RZ_FLAG_ZONE_USE_SDB
-	f->zones = sdb_new0();
-#else
 	f->zones = NULL;
-#endif
 	f->tags = sdb_new0();
 	f->ht_name = ht_pp_new(NULL, ht_free_flag, NULL);
 	f->by_off = rz_skiplist_new(flag_skiplist_free, flag_skiplist_cmp);
-#if RZ_FLAG_ZONE_USE_SDB
-	sdb_free(f->zones);
-#else
 	rz_list_free(f->zones);
-#endif
 	new_spaces(f);
 	return f;
 }

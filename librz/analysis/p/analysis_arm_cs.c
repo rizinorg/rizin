@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2013-2020 - pancake */
+// SPDX-FileCopyrightText: 2013-2021 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
@@ -3736,8 +3737,8 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 	case RZ_ANALYSIS_OP_TYPE_ROR:
 	case RZ_ANALYSIS_OP_TYPE_ROL:
 	case RZ_ANALYSIS_OP_TYPE_CAST:
-#if CS_API_MAJOR > 3
 		for (i = 1; i < count; i++) {
+#if CS_API_MAJOR > 3
 			if (bits == 64) {
 				cs_arm64_op arm64op = INSOP64(i);
 				if (arm64op.access == CS_AC_WRITE) {
@@ -3750,9 +3751,9 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh handle, cs_in
 					continue;
 				}
 			}
+#endif
 			break;
 		}
-#endif
 		for (j = 0; j < 3; j++, i++) {
 			set_src_dst(op->src[j], analysis->reg, &handle, insn, i, bits);
 		}

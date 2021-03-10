@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2015 qnix <qnix@0x80.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>

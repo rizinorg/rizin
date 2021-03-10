@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018 JohnPeng47 <johnpeng47@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>

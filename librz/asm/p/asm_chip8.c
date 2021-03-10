@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2017-2018 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>

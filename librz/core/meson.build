@@ -6,6 +6,7 @@ rz_core_sources = [
   'casm.c',
   'cagraph.c',
   'canalysis.c',
+  'ctypes.c',
   'carg.c',
   'cautocmpl.c',
   'cbin.c',

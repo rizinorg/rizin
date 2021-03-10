@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2011 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 #define RZ_API
 #define RZ_ALLOC_USE_MMAP 1
 #define USE_MALLOC        0

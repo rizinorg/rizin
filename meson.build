@@ -3,6 +3,7 @@ project('rizin', 'c',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
   default_options: [
+    'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
   ]
 )
@@ -109,9 +110,18 @@ if host_machine.system() == 'windows'
 endif
 platform_inc = include_directories(platform_inc)
 
-if is_static_build and cc.get_id() == 'msvc'
-  # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
-  add_project_arguments('/MT', language: 'c')
+if is_static_build
+  if cc.get_id() == 'msvc'
+    # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
+    if get_option('b_vscrt') == 'from_buildtype'
+      warning('To avoid warnings due to multiple /M options, please also set -Db_vscrt=mt or -Db_vscrt=mtd.')
+      add_project_arguments('/MT', language: 'c')
+    endif
+  else
+    if cc.has_link_argument('-static')
+      add_project_link_arguments('-static', language: 'c')
+    endif
+  endif
 endif
 
 if cc.has_argument('--std=gnu99')
@@ -611,7 +621,7 @@ if cli_enabled
     'man/rz-run.1',
     'man/rz-asm.1',
     'man/rz-ax.1',
-    'man/esil.7'
+    'man/rz-esil.7'
   )
 
   install_data('doc/hud',

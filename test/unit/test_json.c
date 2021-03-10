@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2020 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2020 Yaroslav Stavnichiy <yarosla@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* rz_json based on nxjson by Yaroslav Stavnichiy */
 

@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2017 - pancake, cgvwzq */
+// SPDX-FileCopyrightText: 2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017 cgvwzq
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -46,7 +48,7 @@ static size_t consume_u32_r(RzBuffer *b, ut64 max, ut32 *out) {
 }
 
 static size_t consume_u7_r(RzBuffer *b, ut64 max, ut8 *out) {
-	size_t n;
+	size_t n = 0;
 	ut32 tmp = consume_r(b, max, &n, read_u32_leb128);
 	if (out) {
 		*out = (ut8)(tmp & 0x7f);
@@ -55,7 +57,7 @@ static size_t consume_u7_r(RzBuffer *b, ut64 max, ut8 *out) {
 }
 
 static size_t consume_s7_r(RzBuffer *b, ut64 max, st8 *out) {
-	size_t n;
+	size_t n = 0;
 	ut32 tmp = consume_r(b, max, &n, (ConsumeFcn)read_i32_leb128);
 	if (out) {
 		*out = (st8)(((tmp & 0x10000000) << 7) | (tmp & 0x7f));
@@ -64,7 +66,7 @@ static size_t consume_s7_r(RzBuffer *b, ut64 max, st8 *out) {
 }
 
 static size_t consume_u1_r(RzBuffer *b, ut64 max, ut8 *out) {
-	size_t n;
+	size_t n = 0;
 	ut32 tmp = consume_r(b, max, &n, read_u32_leb128);
 	if (out) {
 		*out = (ut8)(tmp & 0x1);

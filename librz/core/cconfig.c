@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -2495,8 +2496,8 @@ static bool cb_binmaxstr(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core->bin) {
 		int v = node->i_value;
-		if (v < 1) {
-			v = 4; // HACK
+		if (v < 0) {
+			v = 0;
 		}
 		core->bin->maxstrlen = v;
 		rz_bin_reset_strings(core->bin);
@@ -2579,7 +2580,7 @@ static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_analysis_calling_conventions_print(core);
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			return false;
 		}
 		rz_analysis_set_syscc_default(core->analysis, node->value);
@@ -2590,7 +2591,7 @@ static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_analysis_calling_conventions_print(core);
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			return false;
 		}
 		rz_analysis_set_cc_default(core->analysis, node->value);
@@ -3053,7 +3054,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.lines.out", "true", "Show out of block lines");
 	SETBPREF("asm.lines.right", "false", "Show lines before opcode instead of offset");
 	SETBPREF("asm.lines.wide", "false", "Put a space between lines");
-	SETBPREF("asm.fcnsig", "true", "Show function signature in disasm");
+	SETBPREF("asm.fcn.signature", "true", "Show function signature in disasm");
+	SETBPREF("asm.fcn.size", "false", "Show function size in disasm");
 	SETICB("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETICB("asm.sub.varmin", 0x100, &cb_asmsubvarmin, "Minimum value to substitute in instructions (asm.sub.var)");
 	SETCB("asm.sub.tail", "false", &cb_asmsubtail, "Replace addresses with prefix .. syntax");

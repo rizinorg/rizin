@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2017 rkx1209 <rkx1209dev@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <rz_types.h>

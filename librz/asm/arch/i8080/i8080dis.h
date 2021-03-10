@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2012 Alexander Demin <alexander@demin.ws>
+// SPDX-License-Identifier: MIT
+
 // This file is part of Radio-86RK Tools project.
 //
 // Intel 8080 disassembler.

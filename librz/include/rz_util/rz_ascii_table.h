@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2008-2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2008-2016 r00tus3r <iamakshayajayan@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_ASCII_TABLE_H

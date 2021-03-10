@@ -107,7 +107,7 @@ afb+ 0x00560e67 0x00560eb1 297
 pdf
 EOF
 EXPECT=<<EOF
-/ 318: fcn.00560e67 ();
+/ fcn.00560e67 ();
 |       :   0x00560e67      push  esi
 |      ,==< 0x00560e68      jmp   0x560e7d
 ..
@@ -234,7 +234,7 @@ pdf
 pdr.
 EOF
 EXPECT=<<EOF
-/ 30: fcn.00560e67 ();
+/ fcn.00560e67 ();
 |       :   0x00560e67      56             push  esi
 |      ,==< 0x00560e68      e904000000     jmp   0x560e71
 ..
@@ -252,7 +252,7 @@ EXPECT=<<EOF
 |     ||:   0x00560eb1      5a             test           al, 0x36
 \     ||`=< 0x00560eb2      e940c5edff     jmp   0x43d3f7
 
-/ 30: fcn.00560e67 ();
+/ fcn.00560e67 ();
 | 0x00560e67      56             push  esi
 | 0x00560e68      e904000000     jmp   0x560e71
 | ----------- true: 0x00560e71
@@ -291,7 +291,7 @@ pdf
 agf
 EOF
 EXPECT=<<EOF
-/ 8: fcn.00008174 (func main, int argc);
+/ fcn.00008174 (func main, int argc);
 |           ; arg func main @ r0
 |           ; arg int argc @ r1
 |           0x00008174      b80000eb       bl    sym.__libc_start_main ; lr=0x8178 -> 0xeb0002a4 ; pc=0x845c -> 0xe92d41f0
@@ -299,7 +299,7 @@ EXPECT=<<EOF
 \           0x00008178      a40200eb       bl    sym.abort             ; lr=0x817c -> 0xe92d4030 ; pc=0x8c10 -> 0xe59f62a0
 \                                                                      ; void abort(void)
 
-/ 8: fcn.00008174 (func main, int argc);
+/ fcn.00008174 (func main, int argc);
 |           ; arg func main @ r0
 |           ; arg int argc @ r1
 |              ; lr=0x8178 -> 0xeb0002a4
@@ -314,7 +314,7 @@ EXPECT=<<EOF
 [0x00008174]>  # fcn.00008174 (func main, int argc);
 .----------------------------------------------------.
 |  0x8174                                            |
-| 8: fcn.00008174 (func main, int argc);             |
+| fcn.00008174 (func main, int argc);                |
 | ; arg func main @ r0                               |
 | ; arg int argc @ r1                                |
 |    ; lr=0x8178 -> 0xeb0002a4                       |
@@ -375,7 +375,7 @@ CMDS=<<EOF
 e asm.bb.line=true
 e asm.bytes=false
 e asm.comments=false
-e asm.fcnsig=false
+e asm.fcn.signature=false
 e asm.var=false
 s sym.deregister_tm_clones
 aF
@@ -393,7 +393,7 @@ EOF
 EXPECT=<<EOF
             0x080483cf      nop
 / (fcn) sym.deregister_tm_clones 40
-|   40: sym.deregister_tm_clones ();
+|   sym.deregister_tm_clones ();
 |           0x080483d0      mov   eax, obj.completed.6891
 |           0x080483d5      cmp   eax, obj.completed.6891
 
@@ -885,7 +885,7 @@ FILE=bins/pe/ConsoleApplication1.exe
 ARGS=-A
 CMDS=pdf
 EXPECT=<<EOF
-/ 329: entry0 ();
+/ entry0 ();
 |       :   ; var int32_t var_24h @ ebp-0x24
 |       :   ; var int32_t var_19h @ ebp-0x19
 |       :   ; var int32_t var_4h @ ebp-0x4

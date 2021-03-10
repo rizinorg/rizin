@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2015-2020 rkx1209 <rkx1209dev@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
@@ -51,7 +53,9 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 		if (!b) {
 			goto error;
 		}
-		memcpy(b->bytes, a->bytes, b->size);
+		if (b->bytes && a->bytes && b->size > 0) {
+			memcpy(b->bytes, a->bytes, b->size);
+		}
 		trace->arena[i] = b;
 	}
 	return trace;

@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2009-2020 - pancake */
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
 #include <rz_socket.h>
@@ -2605,6 +2606,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->offset = 0LL;
 	core->prompt_offset = 0LL;
 	rz_core_cmd_init(core);
+	rz_core_plugin_init(core);
+
 	core->dbg = rz_debug_new(true);
 
 	rz_io_bind(core->io, &(core->dbg->iob));
@@ -2680,6 +2683,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	if (!c) {
 		return;
 	}
+	rz_core_plugin_fini(c);
 	rz_core_task_break_all(&c->tasks);
 	rz_core_task_join(&c->tasks, NULL, -1);
 	rz_core_wait(c);

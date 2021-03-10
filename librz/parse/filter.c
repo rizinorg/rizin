@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2019 - nibble, pancake, maijin */
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 maijin <maijin21@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 
@@ -510,6 +513,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 					si = rz_syscall_get(p->analb.analysis->syscall, off, -1);
 					if (si) {
 						snprintf(num, sizeof(num), "%s()", si->name);
+						rz_syscall_item_free(si);
 					} else {
 						snprintf(num, sizeof(num), "unknown()");
 					}

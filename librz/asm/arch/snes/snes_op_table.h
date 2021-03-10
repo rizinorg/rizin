@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2013 condret <condret@runas-racer.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef SNES_OP_TABLE_H

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_core.h>
 #include "minunit.h"
 
@@ -68,7 +71,7 @@ static RzCmdStatus cmd_last_opt_handler(RzCore *core, int argc, const char **arg
 static RzCore *fake_core_new(void) {
 	RzCore *core = rz_core_new();
 	rz_cmd_free(core->rcmd);
-	core->rcmd = rz_cmd_new(true, false);
+	core->rcmd = rz_cmd_new(true);
 	core->rcmd->data = core;
 	RzCmdDesc *root = rz_cmd_get_root(core->rcmd);
 	rz_cmd_desc_argv_new(core->rcmd, root, "string", string_handler, &string_help);

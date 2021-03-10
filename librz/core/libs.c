@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_core.h"
@@ -26,10 +27,20 @@
 	static int __lib_##x##_dt(RzLibPlugin *pl, void *p, void *u) { return true; }
 
 // XXX api consistency issues
+static int __lib_core_cb(RzLibPlugin *pl, void *user, void *data) {
+	struct rz_core_plugin_t *hand = (struct rz_core_plugin_t *)data;
+	RzCore *core = (RzCore *)user;
+	pl->free = NULL;
+	rz_core_plugin_add(core, hand);
+	return true;
+}
+
+static int __lib_core_dt(RzLibPlugin *pl, void *p, void *u) {
+	return true;
+}
+
 #define rz_io_add rz_io_plugin_add
 CB_COPY(io, io)
-#define rz_core_add rz_core_plugin_add
-CB(core, rcmd)
 #define rz_debug_add rz_debug_plugin_add
 CB(debug, dbg)
 #define rz_bp_add rz_bp_plugin_add

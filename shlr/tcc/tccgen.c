@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2001-2004 Fabrice Bellard
+// SPDX-License-Identifier: LGPL-2.0-or-later
+
 /*
  *  TCC - Tiny C Compiler
  *

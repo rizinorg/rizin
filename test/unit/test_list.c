@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 Jeffrey Crowell <crowell@bu.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_list.h>
 #include "minunit.h"
 #define BUF_LENGTH 100

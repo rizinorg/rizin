@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#
+# SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
 
 """ Portable python script to preprocess syscall/d files """
 

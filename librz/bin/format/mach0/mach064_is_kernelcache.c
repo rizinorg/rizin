@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "mach0_defines.h"
 
 static bool is_kernelcache_buffer(RzBuffer *b) {

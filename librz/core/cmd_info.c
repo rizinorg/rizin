@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
@@ -318,7 +319,7 @@ static int __r_core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
 			result = rz_bin_reload(r->bin, bf->id, baseaddr);
 		}
 	}
-	rz_core_bin_set_env(r, rz_bin_cur(r->bin));
+	rz_core_bin_apply_all_info(r, rz_bin_cur(r->bin));
 	return result;
 }
 
@@ -902,16 +903,13 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				}
 				RZBININFO("strings", RZ_CORE_BIN_ACC_RAW_STRINGS, NULL);
 			} else {
-				RzBinObject *obj = rz_bin_cur_object(core->bin);
 				if (input[1] == 'q') {
 					mode = (input[2] == 'q')
 						? RZ_MODE_SIMPLEST
 						: RZ_MODE_SIMPLE;
 					input++;
 				}
-				if (obj) {
-					RZBININFO("strings", RZ_CORE_BIN_ACC_STRINGS, NULL);
-				}
+				RZBININFO("strings", RZ_CORE_BIN_ACC_STRINGS, NULL);
 			}
 			break;
 		case 'c': // "ic"

@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2018 - courk */
+// SPDX-FileCopyrightText: 2018 courk <courk@courk.cc>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "pic_midrange.h"
 

@@ -22,6 +22,7 @@ RZ_API int rz_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val);
 RZ_API void rz_type_del(Sdb *TDB, const char *name);
 RZ_API int rz_type_kind(Sdb *TDB, const char *name);
 RZ_API char *rz_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val);
+RZ_API RzList *rz_type_enum_find_member(Sdb *TDB, ut64 val);
 RZ_API char *rz_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val);
 RZ_API RzList *rz_type_get_enum(Sdb *TDB, const char *name);
 RZ_API ut64 rz_type_get_bitsize(Sdb *TDB, const char *type);
@@ -30,6 +31,7 @@ RZ_API char *rz_type_get_struct_memb(Sdb *TDB, const char *type, int offset);
 RZ_API char *rz_type_link_at(Sdb *TDB, ut64 addr);
 RZ_API int rz_type_set_link(Sdb *TDB, const char *val, ut64 addr);
 RZ_API int rz_type_unlink(Sdb *TDB, ut64 addr);
+RZ_API int rz_type_unlink_all(Sdb *TDB);
 RZ_API int rz_type_link_offset(Sdb *TDB, const char *val, ut64 addr);
 RZ_API char *rz_type_format(Sdb *TDB, const char *t);
 

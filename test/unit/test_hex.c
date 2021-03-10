@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 kriw <kotarou777775@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 
