@@ -6483,7 +6483,7 @@ RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char
 		}
 		rz_analysis_function_rename(fcn, name);
 		if (core->analysis->cb.on_fcn_rename) {
-			core->analysis->cb.on_fcn_rename(core->analysis, core->analysis->user, fcn, name);
+			core->analysis->cb.on_fcn_rename(core->analysis, core, fcn, name);
 		}
 		free(name);
 		return true;

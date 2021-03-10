@@ -5,20 +5,10 @@
 #include <rz_lib.h>
 #include <capstone.h>
 
-#define USE_ITERZ_API 0
-
 static csh cd = 0;
 static int n = 0;
 
 static bool the_end(void *p) {
-#if 0
-#if !USE_ITERZ_API
-	if (insn) {
-		cs_free (insn, n);
-		insn = NULL;
-	}
-#endif
-#endif
 	if (cd) {
 		cs_close(&cd);
 		cd = 0;
@@ -78,23 +68,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->size = 1;
 	cs_insn *insn = NULL;
-#if USE_ITERZ_API
-	{
-		size_t size = len;
-		if (!insn || cd < 1) {
-			insn = cs_malloc(cd);
-		}
-		if (!insn) {
-			cs_free(insn, n);
-			return 0;
-		}
-		memset(insn, 0, insn->size);
-		insn->size = 1;
-		n = cs_disasm_iter(cd, (const uint8_t **)&buf, &size, (uint64_t *)&off, insn);
-	}
-#else
 	n = cs_disasm(cd, (const ut8 *)buf, len, off, 1, &insn);
-#endif
 	if (op) {
 		op->size = 0;
 	}
@@ -126,33 +100,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			memcpy(buf_asm, "jnz", 3);
 		}
 	}
-#if 0
-	// [eax + ebx*4]  =>  [eax + ebx * 4]
-	char *ast = strchr (op->buf_asm, '*');
-	if (ast && ast > op->buf_asm) {
-		ast--;
-		if (ast[0] != ' ') {
-			char *tmp = strdup (ast + 1);
-			if (tmp) {
-				ast[0] = ' ';
-				if (tmp[0] && tmp[1] && tmp[1] != ' ') {
-					strcpy (ast, " * ");
-					strcpy (ast + 3, tmp + 1);
-				} else {
-					strcpy (ast + 1, tmp);
-				}
-				free (tmp);
-			}
-		}
-	}
-#endif
-#if USE_ITERZ_API
-	/* do nothing because it should be allocated once and freed in the_end */
-#else
 	if (insn) {
 		cs_free(insn, n);
 	}
-#endif
 	return op->size;
 }
 
@@ -200,13 +150,9 @@ static int check_features(RzAsm *a, cs_insn *insn) {
 }
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct *rizin_plugin_function(void) {
-	RzLibStruct *rp = RZ_NEW0(RzLibStruct);
-	if (rp) {
-		rp->type = RZ_LIB_TYPE_ASM;
-		rp->data = &rz_asm_plugin_x86_cs;
-		rp->version = RZ_VERSION;
-	}
-	return rp;
-}
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_ASM,
+	.data = &rz_asm_plugin_x86_cs,
+	.version = RZ_VERSION
+};
 #endif

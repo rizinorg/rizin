@@ -187,9 +187,9 @@ static inline int rz_asm_pseudo_incbin(RzAsmOp *op, char *input) {
 	return count;
 }
 
-static void plugin_free(RzAsmPlugin *p) {
-	if (p && p->fini) {
-		p->fini(NULL);
+static void plugin_fini(RzAsm *a) {
+	if (a->cur && a->cur->fini && !a->cur->fini(a->plugin_data)) {
+		RZ_LOG_ERROR("asm plugin '%s' failed to terminate.\n", a->cur->name);
 	}
 }
 
@@ -203,7 +203,7 @@ RZ_API RzAsm *rz_asm_new(void) {
 	a->bits = RZ_SYS_BITS;
 	a->bitshift = 0;
 	a->syntax = RZ_ASM_SYNTAX_INTEL;
-	a->plugins = rz_list_newf((RzListFree)plugin_free);
+	a->plugins = rz_list_newf(NULL);
 	if (!a->plugins) {
 		free(a);
 		return NULL;
@@ -250,9 +250,7 @@ RZ_API void rz_asm_free(RzAsm *a) {
 	if (!a) {
 		return;
 	}
-	if (a->cur && a->cur->fini) {
-		a->cur->fini(a->cur->user);
-	}
+	plugin_fini(a);
 	if (a->plugins) {
 		rz_list_free(a->plugins);
 		a->plugins = NULL;
@@ -265,21 +263,14 @@ RZ_API void rz_asm_free(RzAsm *a) {
 	free(a);
 }
 
-RZ_API void rz_asm_set_user_ptr(RzAsm *a, void *user) {
-	a->user = user;
-}
-
-RZ_API bool rz_asm_add(RzAsm *a, RzAsmPlugin *foo) {
-	if (!foo->name) {
+RZ_API bool rz_asm_add(RzAsm *a, RzAsmPlugin *p) {
+	if (!p->name) {
 		return false;
 	}
-	if (foo->init) {
-		foo->init(a->user);
-	}
-	if (rz_asm_is_valid(a, foo->name)) {
+	if (rz_asm_is_valid(a, p->name)) {
 		return false;
 	}
-	rz_list_append(a->plugins, foo);
+	rz_list_append(a->plugins, p);
 	return true;
 }
 
@@ -326,9 +317,13 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 	if (!a || !name) {
 		return false;
 	}
+	if (a->cur && !strcmp(a->cur->arch, name)) {
+		return true;
+	}
 	rz_list_foreach (a->plugins, iter, h) {
 		if (!strcmp(h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
+				plugin_fini(a);
 				char *rzprefix = rz_str_rz_prefix(RZ_SDB_OPCODES);
 				char *file = rz_str_newf("%s/%s.sdb", rz_str_get_null(rzprefix), h->arch);
 				if (file) {
@@ -338,6 +333,10 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 					free(file);
 				}
 				free(rzprefix);
+			}
+			if (h && h->init && !h->init(&a->plugin_data)) {
+				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
+				return false;
 			}
 			a->cur = h;
 			return true;
@@ -619,7 +618,7 @@ RZ_API RzAsmCode *rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 	RzAsmOp op;
 	ut64 idx;
 	size_t ret;
-	const size_t addrbytes = a->user ? ((RzCore *)a->user)->io->addrbytes : 1;
+	const size_t addrbytes = a->core ? ((RzCore *)a->core)->io->addrbytes : 1;
 
 	if (!(acode = rz_asm_code_new())) {
 		return NULL;

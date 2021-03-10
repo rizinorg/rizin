@@ -1769,7 +1769,7 @@ static bool cb_iopcachewrite(void *user, void *data) {
 
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
-		RzCore *core = esil->analysis->user;
+		RzCore *core = esil->analysis->core;
 		rz_core_cmdf(core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
 		return core->num->value;
 	}

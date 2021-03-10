@@ -133,7 +133,7 @@ RZ_API bool rz_analysis_add_function(RzAnalysis *analysis, RzAnalysisFunction *f
 		return false;
 	}
 	if (analysis->cb.on_fcn_new) {
-		analysis->cb.on_fcn_new(analysis, analysis->user, fcn);
+		analysis->cb.on_fcn_new(analysis, analysis->core, fcn);
 	}
 	if (analysis->flg_fcn_set) {
 		analysis->flg_fcn_set(analysis->flb.f, fcn->name, fcn->addr, rz_analysis_function_size_from_entry(fcn));
@@ -281,7 +281,7 @@ RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBl
 	}
 
 	if (fcn->analysis->cb.on_fcn_bb_new) {
-		fcn->analysis->cb.on_fcn_bb_new(fcn->analysis, fcn->analysis->user, fcn, bb);
+		fcn->analysis->cb.on_fcn_bb_new(fcn->analysis, fcn->analysis->core, fcn, bb);
 	}
 }
 
