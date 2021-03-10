@@ -2173,6 +2173,7 @@ extern RzAnalysisPlugin rz_analysis_plugin_xcore_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_xtensa;
 extern RzAnalysisPlugin rz_analysis_plugin_z80;
 extern RzAnalysisPlugin rz_analysis_plugin_pyc;
+extern RzAnalysisPlugin rz_analysis_plugin_luac;
 #ifdef __cplusplus
 }
 #endif
