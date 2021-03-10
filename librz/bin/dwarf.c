@@ -405,6 +405,21 @@ static int abbrev_cmp(const void *a, const void *b) {
 }
 
 /**
+ * \brief Read an "initial length" value, as specified by dwarf.
+ * This also determines whether it is 64bit or 32bit and reads 4 or 12 bytes respectively.
+ */
+static inline ut64 dwarf_read_initial_length(RZ_OUT bool *is_64bit, bool big_endian, const ut8 **buf, const ut8 *buf_end) {
+	ut64 r = READ32(*buf);
+	if (r == DWARF_INIT_LEN_64) {
+		r = READ64(*buf);
+		*is_64bit = true;
+	} else {
+		*is_64bit = false;
+	}
+	return r;
+}
+
+/**
  * @brief Reads 64/32 bit unsigned based on format
  *
  * @param is_64bit Format of the comp unit
@@ -594,13 +609,7 @@ static const ut8 *parse_line_header(
 	rz_return_val_if_fail(hdr && bf && buf, NULL);
 
 	hdr->is_64bit = false;
-	hdr->unit_length = READ32(buf);
-
-	if (hdr->unit_length == DWARF_INIT_LEN_64) {
-		hdr->unit_length = READ64(buf);
-		hdr->is_64bit = true;
-	}
-
+	hdr->unit_length = dwarf_read_initial_length(&hdr->is_64bit, big_endian, &buf, buf_end);
 	hdr->version = READ16(buf);
 
 	if (hdr->version == 5) {
@@ -1110,102 +1119,86 @@ static int parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
 	return true;
 }
 
-#define READ_BUF(x, y) \
-	if (idx + sizeof(y) >= len) { \
-		return false; \
-	} \
-	(x) = *(y *)buf; \
-	idx += sizeof(y); \
-	buf += sizeof(y)
+RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set) {
+	if (!set) {
+		return;
+	}
+	free(set->aranges);
+	free(set);
+}
 
-#define READ_BUF64(x) \
-	if (idx + sizeof(ut64) >= len) { \
-		return false; \
-	} \
-	(x) = rz_read_ble64(buf, big_endian); \
-	idx += sizeof(ut64); \
-	buf += sizeof(ut64)
-#define READ_BUF32(x) \
-	if (idx + sizeof(ut32) >= len) { \
-		return false; \
-	} \
-	(x) = rz_read_ble32(buf, big_endian); \
-	idx += sizeof(ut32); \
-	buf += sizeof(ut32)
-#define READ_BUF16(x) \
-	if (idx + sizeof(ut16) >= len) { \
-		return false; \
-	} \
-	(x) = rz_read_ble16(buf, big_endian); \
-	idx += sizeof(ut16); \
-	buf += sizeof(ut16)
-
-static int parse_aranges_raw(const ut8 *obuf, int len, int mode, PrintfCallback print, bool big_endian) {
-	ut32 length, offset;
-	ut16 version;
-	ut32 debug_info_offset;
-	ut8 address_size, segment_size;
+static RzList /*<RzBinDwarfARangeSet>*/ *parse_aranges_raw(const ut8 *obuf, size_t obuf_sz, bool big_endian) {
+	rz_return_val_if_fail(obuf, NULL);
 	const ut8 *buf = obuf;
-	int idx = 0;
+	const ut8 *buf_end = buf + obuf_sz;
 
-	if (!buf || len < 4) {
-		return false;
+	RzList *r = rz_list_newf((RzListFree)rz_bin_dwarf_arange_set_free);
+	if (!r) {
+		return NULL;
 	}
 
-	READ_BUF32(length);
-	if (mode == RZ_MODE_PRINT) {
-		print("parse_aranges\n");
-		print("length 0x%x\n", length);
-	}
-
-	if (idx + 12 >= len) {
-		return false;
-	}
-
-	READ_BUF16(version);
-	if (mode == RZ_MODE_PRINT) {
-		print("Version %d\n", version);
-	}
-
-	READ_BUF32(debug_info_offset);
-	if (mode == RZ_MODE_PRINT) {
-		print("Debug info offset %d\n", debug_info_offset);
-	}
-
-	READ_BUF(address_size, ut8);
-	if (mode == RZ_MODE_PRINT) {
-		print("address size %d\n", (int)address_size);
-	}
-
-	READ_BUF(segment_size, ut8);
-	if (mode == RZ_MODE_PRINT) {
-		print("segment size %d\n", (int)segment_size);
-	}
-
-	offset = segment_size + address_size * 2;
-
-	if (offset) {
-		ut64 n = (((ut64)(size_t)buf / offset) + 1) * offset - ((ut64)(size_t)buf);
-		if (idx + n >= len) {
-			return false;
-		}
-		buf += n;
-		idx += n;
-	}
-
-	while ((buf - obuf) < len) {
-		ut64 adr, length;
-		if ((idx + 8) >= len) {
+	// DWARF 3 Standard Section 6.1.2 Lookup by Address
+	// also useful to grep for display_debug_aranges in binutils
+	while (buf < buf_end) {
+		const ut8 *start = buf;
+		bool is_64bit;
+		ut64 unit_length = dwarf_read_initial_length(&is_64bit, big_endian, &buf, buf_end);
+		// Sanity check: length must be at least the minimal size of the remaining header fields
+		// and at maximum the remaining buffer size.
+		size_t header_rest_size = 2 + (is_64bit ? 8 : 4) + 1 + 1;
+		if (unit_length < header_rest_size || unit_length > buf_end - buf) {
 			break;
 		}
-		READ_BUF64(adr);
-		READ_BUF64(length);
-		if (mode == RZ_MODE_PRINT) {
-			print("length 0x%" PFMT64x " address 0x%" PFMT64x "\n", length, adr);
+		const ut8 *next_set_buf = buf + unit_length;
+		RzBinDwarfARangeSet *set = RZ_NEW(RzBinDwarfARangeSet);
+		if (!set) {
+			break;
 		}
+		set->unit_length = unit_length;
+		set->is_64bit = is_64bit;
+		set->version = READ16(buf);
+		set->debug_info_offset = dwarf_read_offset(set->is_64bit, big_endian, &buf, buf_end);
+		set->address_size = READ8(buf);
+		set->segment_size = READ8(buf);
+		unit_length -= header_rest_size;
+
+		// align to 2*addr_size
+		size_t off = buf - start;
+		size_t pad = rz_num_align_delta(off, 2 * set->address_size);
+		if (pad > unit_length || pad > buf_end - buf) {
+			free(set);
+			break;
+		}
+		buf += pad;
+		unit_length -= pad;
+
+		size_t arange_size = 2 * set->address_size;
+		set->aranges_count = unit_length / arange_size;
+		if (!set->aranges_count) {
+			free(set);
+			break;
+		}
+		set->aranges = RZ_NEWS0(RzBinDwarfARange, set->aranges_count);
+		if (!set->aranges) {
+			free(set);
+			break;
+		}
+		size_t i;
+		for (i = 0; i < set->aranges_count; i++) {
+			set->aranges[i].addr = dwarf_read_address(set->address_size, big_endian, &buf, buf_end);
+			set->aranges[i].length = dwarf_read_address(set->address_size, big_endian, &buf, buf_end);
+			if (!set->aranges[i].addr && !set->aranges[i].length) {
+				// last entry has two 0s
+				i++; // so i will be the total count of read entries
+				break;
+			}
+		}
+		set->aranges_count = i;
+		buf = next_set_buf;
+		rz_list_push(r, set);
 	}
 
-	return 0;
+	return r;
 }
 
 static int init_debug_info(RzBinDwarfDebugInfo *inf) {
@@ -1348,7 +1341,7 @@ static int expand_debug_abbrev(RzBinDwarfDebugAbbrev *da) {
 	return 0;
 }
 
-RZ_API void rz_bin_dwarf_free_debug_abbrev(RzBinDwarfDebugAbbrev *da) {
+RZ_API void rz_bin_dwarf_debug_abbrev_free(RzBinDwarfDebugAbbrev *da) {
 	size_t i;
 	if (!da) {
 		return;
@@ -1406,7 +1399,7 @@ static void free_comp_unit(RzBinDwarfCompUnit *cu) {
 	RZ_FREE(cu->dies);
 }
 
-RZ_API void rz_bin_dwarf_free_debug_info(RzBinDwarfDebugInfo *inf) {
+RZ_API void rz_bin_dwarf_debug_info_free(RzBinDwarfDebugInfo *inf) {
 	size_t i;
 	if (!inf) {
 		return;
@@ -1955,7 +1948,7 @@ static RzBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RzBinDwarfDebugAbbrev *da,
 	return info;
 
 cleanup:
-	rz_bin_dwarf_free_debug_info(info);
+	rz_bin_dwarf_debug_info_free(info);
 	return NULL;
 }
 
@@ -2072,7 +2065,7 @@ RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwa
 	RzBinSection *debug_str = debug_str = getsection(binfile, "debug_str");
 	if (debug_str) {
 		debug_str_len = debug_str->size;
-		debug_str_buf = calloc(1, debug_str_len + 1);
+		debug_str_buf = RZ_NEWS0(ut8, debug_str_len + 1);
 		if (!debug_str_buf) {
 			goto cave;
 		}
@@ -2084,11 +2077,10 @@ RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwa
 	}
 
 	ut64 len = section->size;
-	// what is this checking for?
-	if (len > (UT32_MAX >> 1) || len < 1) {
+	if (!len) {
 		goto cave_debug_str_buf;
 	}
-	ut8 *buf = calloc(1, len);
+	ut8 *buf = RZ_NEWS0(ut8, len);
 	if (!buf) {
 		goto cave_debug_str_buf;
 	}
@@ -2199,32 +2191,25 @@ RZ_API RzList *rz_bin_dwarf_parse_line(RzBinFile *binfile, int mode) {
 	return list;
 }
 
-RZ_API RzList *rz_bin_dwarf_parse_aranges(RzBinFile *binfile, int mode) {
+RZ_API RzList /*<RzBinDwarfARangeSet>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile) {
 	rz_return_val_if_fail(binfile, NULL);
-	ut8 *buf;
-	int ret;
-	size_t len;
 	RzBinSection *section = getsection(binfile, "debug_aranges");
 	if (!section) {
 		return NULL;
 	}
-
-	len = section->size;
-	if (len < 1 || len > ST32_MAX) {
+	size_t len = section->size;
+	if (!len) {
 		return NULL;
 	}
-	buf = calloc(1, len);
-	ret = rz_buf_read_at(binfile->buf, section->paddr, buf, len);
+	ut8 *buf = RZ_NEWS0(ut8, len);
+	int ret = rz_buf_read_at(binfile->buf, section->paddr, buf, len);
 	if (!ret) {
 		free(buf);
 		return NULL;
 	}
-	// TODO: remove this printing
-	parse_aranges_raw(buf, len, mode, binfile->rbin->cb_printf,
-		binfile->o && binfile->o->info && binfile->o->info->big_endian);
-
+	RzList *r = parse_aranges_raw(buf, len, binfile->o && binfile->o->info && binfile->o->info->big_endian);
 	free(buf);
-	return NULL;
+	return r;
 }
 
 RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBinFile *binfile) {
@@ -2366,7 +2351,7 @@ static void free_loc_table_entry(HtUPKv *kv) {
 	}
 }
 
-RZ_API void rz_bin_dwarf_free_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table) {
+RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table) {
 	rz_return_if_fail(loc_table);
 	loc_table->opt.freefn = free_loc_table_entry;
 	ht_up_free(loc_table);
