@@ -198,6 +198,7 @@ RZ_API void rz_bin_symbol_free(void *_sym) {
 		free(sym->name);
 		free(sym->libname);
 		free(sym->classname);
+		free(sym->visibility_str);
 		free(sym);
 	}
 }
