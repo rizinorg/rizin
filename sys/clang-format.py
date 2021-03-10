@@ -6,7 +6,7 @@
 import argparse
 import glob
 import itertools
-import os
+import subprocess
 import sys
 
 from git import Repo
@@ -71,26 +71,22 @@ def get_edited_files(args):
             yield filename
 
 
-def build_command(check, filename):
+def build_command(check, filenames):
     if check:
-        return "clang-format --style=file --Werror --dry-run {0}".format(filename)
+        return ["clang-format", "--style=file", "--Werror", "--dry-run"] + filenames
 
-    return "clang-format --style=file -i {0}".format(filename)
+    return ["clang-format", "--style=file", "-i"] + filenames
 
 
 def format_files(args, files):
-    return_code = 0
-
-    for filename in files:
-        cmd = build_command(args.check, filename)
-
-        if args.verbose:
-            print(cmd)
-
-        if os.system(cmd) == 256:
-            return_code = 1
-
-    sys.exit(return_code)
+    if len(files) == 0:
+        print("No C files to format.")
+        sys.exit(0)
+    cmd = build_command(args.check, files)
+    if args.verbose:
+        print(cmd)
+    r = subprocess.run(cmd, check=False)
+    sys.exit(r.returncode)
 
 
 def get_file(args):
@@ -113,7 +109,7 @@ def get_files(args):
 
 def process(args):
     files = get_files(args)
-    format_files(args, files)
+    format_files(args, list(files))
 
 
 def parse():
