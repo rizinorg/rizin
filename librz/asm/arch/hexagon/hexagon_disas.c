@@ -13,7 +13,13 @@
 
 extern ut32 constant_extender;
 
-int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
+#if ASAN
+#define NO_OPT_IF_ASAN __attribute__((optimize(0)))
+#else
+#define NO_OPT_IF_ASAN
+#endif
+
+NO_OPT_IF_ASAN int hexagon_disasm_instruction(ut32 hi_u32, HexInsn *hi, ut32 addr) {
 	// DUPLEXES
 	if (((hi_u32 >> 14) & 0x3) == 0) {
 		switch ((((hi_u32 >> 29) & 0xF) << 1) | ((hi_u32 >> 13) & 1)) {
