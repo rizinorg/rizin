@@ -2,6 +2,17 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
+
+#ifndef RZ_PLUGIN_INCORE
+RzDebugPlugin rz_debug_plugin_bf;
+
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_DBG,
+	.data = &rz_debug_plugin_bf,
+	.version = RZ_VERSION
+};
+#endif
+
 #undef RZ_API
 #define RZ_API static inline
 #include "bfvm.c"
@@ -217,11 +228,3 @@ RzDebugPlugin rz_debug_plugin_bf = {
 	.reg_profile = rz_debug_bf_reg_profile,
 	.map_get = rz_debug_native_map_get,
 };
-
-#ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_DBG,
-	.data = &rz_debug_plugin_bf,
-	.version = RZ_VERSION
-};
-#endif
