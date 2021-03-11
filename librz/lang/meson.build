@@ -1,36 +1,19 @@
-lang_plugins = [
-  'lib',
-  'pipe',
-  'rust',
-  'vala'
+rz_lang_dependencies = [
+  rz_util_dep,
+  rz_cons_dep,
 ]
 
-if host_machine.system() != 'windows'
-  lang_plugins += [
-    'c',
-    'cpipe'
-  ]
-endif
+rz_lang_inc = [platform_inc]
 
 rz_lang_sources = [
   'lang.c',
-  # included in lang.c
-  #'p/c.c',
-  #'p/cpipe.c',
-  #'p/lib.c',
-  #'p/pipe.c',
-  #'p/rust.c',
-  #'p/vala.c'
-  #'p/zig.c',
-  #'p/spp.c',
 ]
 
-spp_inc = [platform_inc, include_directories('../../shlr/spp')]
-
 rz_lang = library('rz_lang', rz_lang_sources,
-  include_directories: [platform_inc, spp_inc],
+  include_directories: rz_lang_inc,
   c_args: library_cflags,
-  dependencies: [rz_util_dep, rz_cons_dep],
+  dependencies: rz_lang_dependencies,
+  link_with: rz_lang_static_plugins,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,

@@ -43,7 +43,7 @@ static int lang_lib_file_run(RzLang *user, const char *file) {
 	return 0;
 }
 
-static RzLangPlugin rz_lang_plugin_lib = {
+RzLangPlugin rz_lang_plugin_lib = {
 	.name = "lib",
 	.ext = RZ_LIB_EXT,
 	.desc = "Load libs directly into rizin",
@@ -51,3 +51,11 @@ static RzLangPlugin rz_lang_plugin_lib = {
 	.init = lang_lib_init,
 	.run_file = lang_lib_file_run,
 };
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_LANG,
+	.data = &rz_lang_plugin_lib,
+	.version = RZ_VERSION
+};
+#endif

@@ -101,7 +101,7 @@ static int lang_zig_run(RzLang *lang, const char *code, int len) {
 	return true;
 }
 
-static RzLangPlugin rz_lang_plugin_zig = {
+RzLangPlugin rz_lang_plugin_zig = {
 	.name = "zig",
 	.ext = "zig",
 	.license = "MIT",
@@ -110,3 +110,11 @@ static RzLangPlugin rz_lang_plugin_zig = {
 	.init = (void *)lang_zig_init,
 	.run_file = (void *)lang_zig_file,
 };
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_LANG,
+	.data = &rz_lang_plugin_zig,
+	.version = RZ_VERSION
+};
+#endif

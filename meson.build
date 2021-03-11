@@ -539,7 +539,7 @@ conf_data.set('plugins_crypto', ', '.join(crypto_enabled_static_plugins_str))
 conf_data.set('plugins_io', ', '.join(io_enabled_static_plugins_str))
 conf_data.set('plugins_debug', ', '.join(debug_enabled_static_plugins_str))
 conf_data.set('plugins_egg', ', '.join(egg_enabled_static_plugins_str))
-conf_data.set('plugins_lang', '&rz_lang_plugin_' + ', &rz_lang_plugin_'.join(lang_plugins) + ', 0')
+conf_data.set('plugins_lang', ', '.join(lang_enabled_static_plugins_str))
 conf_data.set('plugins_parse', '&rz_parse_plugin_' + ', &rz_parse_plugin_'.join(parse_plugins) + ', 0')
 config_h = configure_file(
   input: 'librz/config.h.in',

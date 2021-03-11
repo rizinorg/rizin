@@ -41,7 +41,7 @@ static int lang_spp_file(RzLang *lang, const char *file) {
 	return 0;
 }
 
-static RzLangPlugin rz_lang_plugin_spp = {
+RzLangPlugin rz_lang_plugin_spp = {
 	.name = "spp",
 	.ext = "spp",
 	.license = "MIT",
@@ -50,3 +50,11 @@ static RzLangPlugin rz_lang_plugin_spp = {
 	.init = (void *)lang_spp_init,
 	.run_file = (void *)lang_spp_file,
 };
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_LANG,
+	.data = &rz_lang_plugin_spp,
+	.version = RZ_VERSION
+};
+#endif

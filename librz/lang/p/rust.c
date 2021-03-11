@@ -123,7 +123,7 @@ static int lang_rust_run(RzLang *lang, const char *code, int len) {
 	return true;
 }
 
-static RzLangPlugin rz_lang_plugin_rust = {
+RzLangPlugin rz_lang_plugin_rust = {
 	.name = "rust",
 	.ext = "rs",
 	.license = "MIT",
@@ -132,3 +132,11 @@ static RzLangPlugin rz_lang_plugin_rust = {
 	.init = (void *)lang_rust_init,
 	.run_file = (void *)lang_rust_file,
 };
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_LANG,
+	.data = &rz_lang_plugin_rust,
+	.version = RZ_VERSION
+};
+#endif
