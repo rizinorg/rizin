@@ -889,6 +889,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, con
 			}
 		}
 	}
+	rz_vector_free(vtables);
 
 	char *content = sdb_fmt("0x%" PFMT64x SDB_SS "%" PFMT64u SDB_SS "%" PFMT64u, vtable->addr, vtable->offset, vtable->size);
 	if (vtable->id) {
