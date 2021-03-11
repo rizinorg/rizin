@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
-#include "luac_54.h"
+#include "luac_specs_54.h"
 
 #define INNER_BUFFER_SIZE 256
 

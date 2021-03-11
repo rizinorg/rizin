@@ -3,8 +3,8 @@
 
 // put common definition of luac
 
-#ifndef BUILD_LUAC_SPECS_H
-#define BUILD_LUAC_SPECS_H
+#ifndef BUILD_LUAC_COMMON_H
+#define BUILD_LUAC_COMMON_H
 
 #include <rz_bin.h>
 #include <rz_lib.h>
@@ -28,16 +28,8 @@ typedef uint64_t LUA_INTEGER;
 
 #define LUAC_MAGIC "\x1b\x4c\x75\x61"
 
-/* Lua Functions */
-void luaLoadBlock(void *src, void *dest, size_t size);
-#define luaLoadVector(src, buf, n) luaLoadBlock(src, buf, (n) * sizeof((buf)[0]))
-#define luaLoadVar(raw_data, var)  luaLoadVector(raw_data, &(var), 1)
+/* Export version specified Api to bin_luac.c */
+RzBinInfo *info_54(RzBinFile *bf, st32 major, st32 minor);
 
-LUA_INTEGER luaLoadInteger(ut8 *src);
-LUA_NUMBER luaLoadNumber(ut8 *src);
 
-size_t luaLoadUnsigned(ut8 *src, size_t src_buf_limit, size_t type_limit);
-size_t luaLoadSize(ut8 *src, size_t src_buf_limit);
-char *luaLoadString(ut8 *src, size_t src_buf_limit);
-
-#endif //BUILD_LUAC_SPECS_H
+#endif //BUILD_LUAC_COMMON_H

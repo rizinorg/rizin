@@ -4,7 +4,7 @@
 #ifndef BUILD_LUAC_54_H
 #define BUILD_LUAC_54_H
 
-#include "luac_specs.h"
+#include "librz/bin/format/luac/luac_common.h"
 
 /* Macros for bin_luac.c */
 
@@ -40,7 +40,17 @@
 /* Body */
 #define LUAC_FILENAME_OFFSET 0x20
 
-/* Exported Api to bin_luac.c */
-RzBinInfo *info_54(RzBinFile *bf, st32 major, st32 minor);
+/* Lua Functions */
+void luaLoadBlock(void *src, void *dest, size_t size);
+#define luaLoadVector(src, buf, n) luaLoadBlock(src, buf, (n) * sizeof((buf)[0]))
+#define luaLoadVar(raw_data, var)  luaLoadVector(raw_data, &(var), 1)
+
+LUA_INTEGER luaLoadInteger(ut8 *src);
+LUA_NUMBER luaLoadNumber(ut8 *src);
+
+size_t luaLoadUnsigned(ut8 *src, size_t src_buf_limit, size_t type_limit);
+size_t luaLoadSize(ut8 *src, size_t src_buf_limit);
+char *luaLoadString(ut8 *src, size_t src_buf_limit);
+
 
 #endif //BUILD_LUAC_54_H

@@ -3,7 +3,7 @@
 
 #include <rz_bin.h>
 #include <rz_lib.h>
-#include "luac/luac_54.h"
+#include "librz/bin/format/luac/luac_common.h"
 
 typedef struct version_context_t {
 	st32 major;
