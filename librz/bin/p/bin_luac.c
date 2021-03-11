@@ -47,7 +47,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 	switch (version_info->minor) {
 	case 4:
-		return info_54(bf, version_info->major, version_info->minor);
+		return lua_info_54(bf, version_info->major, version_info->minor);
 		break;
 	default:
 		eprintf("lua 5.%c not support now\n", version_info->minor + '0');

@@ -40,17 +40,44 @@
 /* Body */
 #define LUAC_FILENAME_OFFSET 0x20
 
+/* Lua Constant Tag */
+#define makevariant(t,v)	((t) | ((v) << 4))
+
+#define LUA_TBOOLEAN		1
+#define LUA_TNIL		0
+#define LUA_TNUMBER		3
+#define LUA_TSTRING		4
+
+
+#define LUA_VNIL makevariant(LUA_TNIL, 0)
+#define LUA_VFALSE	makevariant(LUA_TBOOLEAN, 0)
+#define LUA_VTRUE	makevariant(LUA_TBOOLEAN, 1)
+#define LUA_VNUMINT	makevariant(LUA_TNUMBER, 0)  /* integer numbers */
+#define LUA_VNUMFLT	makevariant(LUA_TNUMBER, 1)  /* float numbers */
+#define LUA_VSHRSTR	makevariant(LUA_TSTRING, 0)  /* short strings */
+#define LUA_VLNGSTR	makevariant(LUA_TSTRING, 1)  /* long strings */
+
 /* Lua Functions */
 void luaLoadBlock(void *src, void *dest, size_t size);
 #define luaLoadVector(src, buf, n) luaLoadBlock(src, buf, (n) * sizeof((buf)[0]))
 #define luaLoadVar(raw_data, var)  luaLoadVector(raw_data, &(var), 1)
-
 LUA_INTEGER luaLoadInteger(ut8 *src);
 LUA_NUMBER luaLoadNumber(ut8 *src);
-
 size_t luaLoadUnsigned(ut8 *src, size_t src_buf_limit, size_t type_limit);
 size_t luaLoadSize(ut8 *src, size_t src_buf_limit);
 char *luaLoadString(ut8 *src, size_t src_buf_limit);
+size_t lua_parse_unsigned(const ut8 *data, size_t *dest,size_t src_buf_limit, size_t type_limit);
+size_t lua_parse_size(const ut8 *data, size_t *dest,size_t src_buf_limit);
+
+/* Parse Luac Format */
+ut64 lua_parse_protos(const ut8 *data, ut64 offset, ut64 size, LuaFunction *parent_func, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
+ut64 lua_parse_function(const ut8 *data, ut64 offset, ut64 size, LuaFunction *parent_func, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
+ut64 lua_parse_string(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
+ut64 lua_parse_string_n(const ut8 *data, ut64 offset, ut64 size, char **str_ptr, ut64 *str_len, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
+ut64 lua_parse_code(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
+ut64 lua_parse_constants(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
+ut64 lua_parse_upvalues(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
+ut64 lua_parse_debug(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
 
 
 #endif //BUILD_LUAC_54_H
