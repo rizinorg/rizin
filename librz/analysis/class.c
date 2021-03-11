@@ -878,10 +878,23 @@ RZ_API RzVector /*<RzAnalysisVTable>*/ *rz_analysis_class_vtable_get_all(RzAnaly
 }
 
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, const char *class_name, RzAnalysisVTable *vtable) {
+	/* Check if vtable exists before setting it */
+	RzVector /*<RzAnalysisVTable>*/ *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
+	if (vtables) {
+		RzAnalysisVTable *existing_vtable;
+		rz_vector_foreach(vtables, existing_vtable) {
+			if (vtable->addr == existing_vtable->addr) {
+				rz_vector_free(vtables);
+				return RZ_ANALYSIS_CLASS_ERR_OTHER;
+			}
+		}
+	}
+
 	char *content = sdb_fmt("0x%" PFMT64x SDB_SS "%" PFMT64u SDB_SS "%" PFMT64u, vtable->addr, vtable->offset, vtable->size);
 	if (vtable->id) {
 		return rz_analysis_class_set_attr(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
 	}
+
 	vtable->id = malloc(16);
 	if (!vtable->id) {
 		return RZ_ANALYSIS_CLASS_ERR_OTHER;
