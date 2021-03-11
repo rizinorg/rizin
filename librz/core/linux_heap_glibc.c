@@ -1319,7 +1319,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 
 		switch (format_out) {
 		case 'c':
-			PRINT_YA("\n  Malloc chunk @ ");
+			PRINT_YA("\n  chunk @ ");
 			PRINTF_BA("0x%" PFMT64x " ", prev_chunk_addr);
 			PRINT_GA("[size: ");
 			PRINTF_BA("0x%" PFMT64x, prev_chunk_size);
