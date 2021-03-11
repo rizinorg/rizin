@@ -66,18 +66,6 @@ LUA_NUMBER luaLoadNumber(ut8 *src);
 size_t luaLoadUnsigned(ut8 *src, size_t src_buf_limit, size_t type_limit);
 size_t luaLoadSize(ut8 *src, size_t src_buf_limit);
 char *luaLoadString(ut8 *src, size_t src_buf_limit);
-size_t lua_parse_unsigned(const ut8 *data, size_t *dest,size_t src_buf_limit, size_t type_limit);
-size_t lua_parse_size(const ut8 *data, size_t *dest,size_t src_buf_limit);
-
-/* Parse Luac Format */
-ut64 lua_parse_protos(const ut8 *data, ut64 offset, ut64 size, LuaFunction *parent_func, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
-ut64 lua_parse_function(const ut8 *data, ut64 offset, ut64 size, LuaFunction *parent_func, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
-ut64 lua_parse_string(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
-ut64 lua_parse_string_n(const ut8 *data, ut64 offset, ut64 size, char **str_ptr, ut64 *str_len, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
-ut64 lua_parse_code(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
-ut64 lua_parse_constants(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
-ut64 lua_parse_upvalues(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
-ut64 lua_parse_debug(const ut8 *data, ut64 offset, ut64 size, LuaParseStruct *lua_parse, LuaMetaData *lua_data);
 
 
 #endif //BUILD_LUAC_54_H

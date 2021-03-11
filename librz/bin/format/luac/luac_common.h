@@ -29,79 +29,172 @@ typedef uint64_t LUA_INTEGER;
 
 #define LUAC_MAGIC "\x1b\x4c\x75\x61"
 
-typedef struct lua_metadata{
-	int instruction_size;
-	int integer_size;
-	int number_size;
-	RzList *function_list;
+/* Solution A: only store offset info about different parts
+ * Leave parsing work to function */
+typedef struct lua_proto {
+	ut64 offset;    // proto offset in bytes
+	ut64 size;      // current proto size
 
-        // for 5.3
-        int int_size;
-	int size_size;
+	char *proto_name;       // proto name
+	ut64 name_size;         // size of proto name
 
-} LuaMetaData;
+	ut64 line_defined;      // line number of function start
+	ut64 lastline_defined;  // line number of function end
 
-typedef struct lua_function {
-	ut64 offset;
+	ut8 num_params;         // number of parameters of this proto
+	ut8 is_vararg;          // is varArg?
+	ut8 max_stack_size;     // max stack size
 
-	char *name_ptr; // only valid in onFunction method
-	ut64 name_size;
+	/* Code of this proto */
+	ut64 code_offset;
+	ut64 code_size;
 
-        size_t line_defined;      // line number of function start
-        size_t lastline_defined;   // line number of function end
-        ut8 num_params;
-        ut8 is_vararg;
-        ut8 max_stack_size;
+	/* Constants of this proto */
+	ut64 const_offset;
+	ut64 const_cnt;
+	ut64 const_size;
 
-        struct lua_function *parent_func;// if != NULL, should always be valid
+	/* Upvalues of this proto */
+	ut64 upvalues_offset;
+	ut64 upvalues_cnt;
+	ut64 upvalues_size;
 
-        ut64 const_size;
-        ut64 code_size;
-        ut64 upvalue_size;
-        ut64 protos_size;
+	/* Protos defined in this proto */
+	ut64 protos_offset;
+	ut64 protos_cnt;
+	ut64 protos_size;
 
-        ut64 const_offset;
+	/* Debug info */
+	ut64 lineinfo_offset;
+	ut64 lineinfo_cnt;
+	ut64 lineinfo_size;
+
+	ut64 abs_lineinfo_offset;
+	ut64 abs_lineinfo_cnt;
+	ut64 abs_lineinfo_size;
+
+	ut64 local_vars_offset;
+	ut64 local_vars_cnt;
+	ut64 local_vars_size;
+
+	ut64 dbg_upvalues_offset;
+	ut64 dbg_upvalues_cnt;
+	ut64 dbg_upvalues_size;
+
+} LuaProtoLight;
+
+
+/* =================================================
+ * Solution B : store info in a big struct
+ * construct it in one turn scan
+ * then we can operate on it only
+ * =================================================*/
+typedef struct lua_proto_ex{
+        ut64 offset;    // proto offset in bytes
+        ut64 size;      // current proto size
+
+        char *proto_name;       // proto name
+        ut64 name_size;         // size of proto name
+
+        ut64 line_defined;      // line number of function start
+        ut64 lastline_defined;  // line number of function end
+
+        ut8 num_params;         // number of parameters of this proto
+        ut8 is_vararg;          // is varArg?
+        ut8 max_stack_size;     // max stack size
+
+        /* Code of this proto */
         ut64 code_offset;
-        ut64 upvalue_offset;
-        ut64 protos_offset;
-        ut64 debug_offset;
+        ut64 code_size;
 
-        ut64 size;
-} LuaFunction;
-typedef LuaFunction LuaProto;
+	/* store constant entries */
+	RzList *const_entries;
 
-struct lua_parse_struct;
-typedef void (*LuaOnFunction) (LuaFunction *function, struct lua_parse_struct *parseStruct);
-typedef void (*LuaOnString) (const ut8 *data, ut64 offset, ut64 size, struct lua_parse_struct *parseStruct);
-typedef void (*LuaOnConst) (const ut8 *data, ut64 offset, ut64 size, struct lua_parse_struct *parseStruct);
-typedef struct lua_parse_struct {
-        LuaOnString onString;
-        LuaOnFunction onFunction;
-        LuaOnConst onConst;
-        void *data;
-} LuaParseStruct;
+	/* store upvalue entries */
+	RzList *upvalue_entries;
+
+	/* store protos defined in this proto */
+	RzList *proto_entries;
+
+	/* store Debug info */
+	RzList *line_info_entries;
+	RzList *abs_line_info_entries;
+	RzList *local_var_info_entries;
+	RzList *dbg_upvalue_entries;
+
+} LuaProtoHeavy;
+
+/* Choose one of them */
+typedef LuaProtoHeavy LuaProto;
+// typedef LuaProtoLight LuaProto;
+
+typedef struct lua_constant_entry{
+	ut8 tag;                // type of this constant
+	void *data;             // can be Number/Integer/String
+	int data_len;
+        ut64 offset;            // addr of this constant
+} LuaConstEntry;
+
+typedef struct lua_upvalue_entry{
+	/* attribute of upvalue */
+	ut8 instack;
+	ut8 idx;
+	ut8 kind;
+	ut64 offset;
+} LuaUpvalueEntry;
+
+typedef struct LuaProto LuaProtoEntry;
+
+typedef struct lua_lineinfo_entry{
+	ut8 info_data;
+	ut64 offset;
+} LuaLineinfoEntry;
+
+typedef struct lua_abs_lineinfo_entry{
+	ut64 pc;                /* pc in lua */
+	ut64 line;              /* line number in source file */
+	ut64 offset;
+} LuaAbsLineinfoEntry;
+
+typedef struct lua_local_var_entry{
+	char *varname;
+	int varname_len;
+	ut64 start_pc;
+	ut64 end_pc;
+	ut64 offset;
+} LuaLocalVarEntry;
+
+typedef struct lua_dbg_upvalue_entry{
+	char *upvalue_name;
+	int name_len;
+	ut64 offset;
+}LuaDbgUpvalueEntry;
 
 /* ========================================================
- * Common Operation to LuaMetaData/LuaProto/LuaParseStruct
+ * Common Operation to RzBinInfo & Lua common structures
  * Implemented in 'bin/format/luac/luac_common.c'
  * ======================================================== */
-int lua_store_function(LuaFunction *function, LuaMetaData *lua_data);
-LuaFunction *lua_find_function_by_addr(ut64 addr, LuaMetaData *lua_data);
-LuaFunction *lua_find_function_by_code_addr(ut64 addr, LuaMetaData *lua_data);
+LuaDbgUpvalueEntry *lua_new_dbg_upvalue_entry();
+LuaLocalVarEntry *lua_new_local_var_entry();
+LuaAbsLineinfoEntry *lua_new_abs_lineinfo_entry();
+LuaLineinfoEntry *lua_new_lineinfo_entry();
+LuaUpvalueEntry *lua_new_upvalue_entry();
+LuaConstEntry *lua_new_const_entry();
+LuaProto *lua_new_proto_entry();
 
-/* ========================================================
- * Common Operation to RzBinInfo
- * Implemented in 'bin/format/luac/luac_common.c'
- * ======================================================== */
-void lua_add_section(RzList *list, const char *name, ut64 addr, ut32 size, bool is_func);
-void lua_add_symbol(RzList *list, char *name, ut64 addr, ut32 size, const char *type);
-
-void lua_add_sections(LuaFunction *func, LuaParseStruct *lua_parse);
+void lua_free_dbg_upvalue_entry(LuaDbgUpvalueEntry *);
+void lua_free_local_var_entry(LuaLocalVarEntry *);
+void lua_free_abs_lineinfo_entry(LuaLocalVarEntry *);
+void lua_free_lineinfo_entry(LuaLineinfoEntry *);
+void lua_free_upvalue_entry(LuaUpvalueEntry *);
+void lua_free_const_entry(LuaConstEntry *);
+void lua_free_proto_entry(LuaProto *);
 
 /* ========================================================
  * Export version specified Api to bin_luac.c
  * Implemented in 'bin/format/luac/v[version]/bin_[version]
  * ======================================================== */
 RzBinInfo *lua_info_54(RzBinFile *bf, st32 major, st32 minor);
+LuaProto *lua_parse_body_54(ut8 *data, ut64 offset, ut64 data_size);
 
 #endif //BUILD_LUAC_COMMON_H
