@@ -153,7 +153,7 @@ static int lang_vala_run(RzLang *lang, const char *code, int len) {
 	return false;
 }
 
-static RzLangPlugin rz_lang_plugin_vala = {
+RzLangPlugin rz_lang_plugin_vala = {
 	.name = "vala",
 	.ext = "vala",
 	.license = "LGPL",
@@ -162,3 +162,11 @@ static RzLangPlugin rz_lang_plugin_vala = {
 	.init = (void *)lang_vala_init,
 	.run_file = (void *)vala_run_file,
 };
+
+#ifndef RZ_PLUGIN_INCORE
+RZ_API RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_LANG,
+	.data = &rz_lang_plugin_vala,
+	.version = RZ_VERSION
+};
+#endif
