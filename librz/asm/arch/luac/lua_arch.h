@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
-#ifndef BUILD_OPCODE_H
-#define BUILD_OPCODE_H
+#ifndef BUILD_LUA_ARCH_H
+#define BUILD_LUA_ARCH_H
 
 #include <rz_types.h>
 #include <rz_asm.h>
@@ -46,5 +46,7 @@ bool free_lua_opnames(LuaOpNameList list);
 /* Lua 5.4 specified */
 int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList oplist);
 LuaOpNameList get_lua54_opnames(void);
+int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len);
 
-#endif //BUILD_OPCODE_H
+
+#endif //BUILD_LUA_ARCH_H

@@ -160,9 +160,9 @@ rz_analysis_sources = [
   '../asm/arch/pyc/opcode_arg_fmt.c',
   '../asm/arch/pyc/opcode.c',
   '../asm/arch/pyc/pyc_dis.c',
+  '../asm/arch/luac/lua_arch.c',
   '../asm/arch/luac/v54/analysis_54.c',
-  '../asm/arch/luac/luac_anal.c',
-  '../asm/arch/luac/opcode.c'
+  '../asm/arch/luac/v54/opcode_54.c',
 ]
 
 rz_analysis_inc = [

@@ -1,13 +1,12 @@
 
-#include <string.h>
 #include <rz_types.h>
-#include <rz_lib.h>
 #include <rz_analysis.h>
 
-#include "../asm/arch/luac/luac_anal.h"
+#include "librz/asm/arch/luac/lua_arch.h"
 
 int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len,  RzAnalysisOpMask mask){
-	return lua_anal_op(analysis, op, addr, data, len);
+	// TODO : switch version here
+	return lua54_anal_op(analysis, op, addr, data, len);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_luac = {

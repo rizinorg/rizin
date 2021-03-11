@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
-#ifndef BUILD_OPCODE_54_H
-#define BUILD_OPCODE_54_H
+#ifndef BUILD_ARCH_54_H
+#define BUILD_ARCH_54_H
 
 #include <rz_types.h>
 #include <rz_asm.h>
-#include "librz/asm/arch/luac/opcode.h"
+#include "librz/asm/arch/luac/lua_arch.h"
 
 /*===========================================================================
   We assume that instructions are unsigned 32-bit integers.
@@ -235,4 +235,4 @@ typedef enum {
 #define LUA_TEST_OTMODE(i) ((i) & (1 << 6))
 #define LUA_TEST_MMMODE(i) ((i) & (1 << 7))
 
-#endif //BUILD_OPCODE_54_H
+#endif //BUILD_ARCH_54_H

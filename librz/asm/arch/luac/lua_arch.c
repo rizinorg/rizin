@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
-#include "opcode.h"
+#include "lua_arch.h"
 
 LuaInstruction lua_build_instruction(const ut8 *buf) {
 	LuaInstruction ret = 0;
