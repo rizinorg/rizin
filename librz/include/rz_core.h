@@ -716,6 +716,7 @@ RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val);
 RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *inf);
 RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table, int addr_size);
 RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet>*/ *aranges);
+RZ_API void rz_core_bin_dwarf_print_lines(RzList /*<RzBinDwarfLineInfo>*/ *lines);
 
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
