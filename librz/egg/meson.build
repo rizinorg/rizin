@@ -1,8 +1,11 @@
-egg_plugins = [
-  'exec',
-  #'shya',
-  'xor'
+rz_egg_dependencies = [
+  rz_util_dep,
+  rz_syscall_dep,
+  rz_asm_dep,
+  mpc_dep
 ]
+
+rz_egg_inc = [platform_inc]
 
 rz_egg_sources = [
   'egg.c',
@@ -12,23 +15,12 @@ rz_egg_sources = [
   'emit_trace.c',
   'emit_x64.c',
   'emit_x86.c',
-  #'p/egg_bind.c',
-  #'p/egg_cb.c',
-  'p/egg_exec.c',
-  #'p/egg_reverse.c',
-  #'p/egg_shya.c',
-  'p/egg_xor.c'
 ]
 
 rz_egg = library('rz_egg', rz_egg_sources,
-  include_directories: [platform_inc],
+  include_directories: rz_egg_inc,
   c_args: library_cflags,
-  dependencies: [
-    rz_util_dep,
-    rz_syscall_dep,
-    rz_asm_dep,
-    mpc_dep
-  ],
+  dependencies: rz_egg_dependencies + rz_egg_plugins_dep,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
