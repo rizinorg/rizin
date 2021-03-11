@@ -2160,7 +2160,7 @@ static const char *getPrefixFor(RzBinSymbol *sym) {
 static char *construct_symbol_flagname(const char *pfx, const char *libname, const char *symname, int len) {
 	char *r = rz_str_newf("%s.%s%s%s", pfx, libname ? libname : "", libname ? "_" : "", symname);
 	if (r) {
-		rz_name_filter(r, len, false); // maybe unnecessary..
+		rz_name_filter(r, len, true); // maybe unnecessary..
 		char *R = __filterQuotedShell(r);
 		free(r);
 		return R;
