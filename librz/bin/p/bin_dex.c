@@ -643,18 +643,18 @@ static void dex_parse_debug_item(RzBinFile *bf, RzBinDexClass *c, int MI, int MA
 		sdb_set(bf->sdb_addrinfo, fileline, offset_ptr, 0);
 		free(fileline);
 
-		RzBinDwarfRow *rbindwardrow = RZ_NEW0(RzBinDwarfRow);
-		if (!rbindwardrow) {
+		RzBinSourceRow *row = RZ_NEW0(RzBinSourceRow);
+		if (!row) {
 			dexdump = false;
 			break;
 		}
 		if (line) {
-			rbindwardrow->file = strdup(line);
-			rbindwardrow->address = pos->address;
-			rbindwardrow->line = pos->line;
-			rz_list_append(dex->lines_list, rbindwardrow);
+			row->file = strdup(line);
+			row->address = pos->address;
+			row->line = pos->line;
+			rz_list_append(dex->lines_list, row);
 		} else {
-			free(rbindwardrow);
+			free(row);
 		}
 	}
 	if (!dexdump) {

@@ -237,3 +237,166 @@ RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet>*/ *ar
 	}
 	rz_cons_print("\n");
 }
+
+/**
+ * \param regs optional, the state after op has been executed. If not null, some meaningful results from this context will be shown.
+ */
+static void print_line_op(RzBinDwarfLineOp *op, RzBinDwarfLineHeader *hdr, RZ_NULLABLE RzBinDwarfSMRegisters *regs) {
+	switch (op->type) {
+	case RZ_BIN_DWARF_LINE_OP_TYPE_STD:
+		switch (op->opcode) {
+		case DW_LNS_copy:
+			rz_cons_print("Copy");
+			break;
+		case DW_LNS_advance_pc:
+			rz_cons_printf("Advance PC by %" PFMT64u, op->args.advance_pc * hdr->min_inst_len);
+			if (regs) {
+				rz_cons_printf(" to 0x%" PFMT64x, regs->address);
+			}
+			break;
+		case DW_LNS_advance_line:
+			rz_cons_printf("Advance line by %" PFMT64d, op->args.advance_line);
+			if (regs) {
+				rz_cons_printf(", to %" PFMT64d, regs->line);
+			}
+			break;
+		case DW_LNS_set_file:
+			rz_cons_printf("Set file to %" PFMT64d, op->args.set_file);
+			break;
+		case DW_LNS_set_column:
+			rz_cons_printf("Set column to %" PFMT64d, op->args.set_column);
+			break;
+		case DW_LNS_negate_stmt:
+			if (regs) {
+				rz_cons_printf("Set is_stmt to %u", (unsigned int)regs->is_stmt);
+			} else {
+				rz_cons_print("Negate is_stmt");
+			}
+			break;
+		case DW_LNS_set_basic_block:
+			rz_cons_print("set_basic_block");
+			break;
+		case DW_LNS_const_add_pc:
+			rz_cons_printf("Advance PC by constant %" PFMT64u, rz_bin_dwarf_line_header_get_spec_op_advance_pc(hdr, 255));
+			if (regs) {
+				rz_cons_printf(" to 0x%" PFMT64x, regs->address);
+			}
+			break;
+		case DW_LNS_fixed_advance_pc:
+			rz_cons_printf("Fixed advance pc by %" PFMT64u, op->args.fixed_advance_pc);
+			rz_cons_printf(" to %" PFMT64d, regs->address);
+			break;
+		case DW_LNS_set_prologue_end:
+			rz_cons_print("set_prologue_end");
+			break;
+		case DW_LNS_set_epilogue_begin:
+			rz_cons_print("set_epilogue_begin");
+			break;
+		case DW_LNS_set_isa:
+			rz_cons_printf("set_isa to %" PFMT64u, op->args.set_isa);
+			break;
+		default:
+			rz_cons_printf("Unknown Standard Opcode %u", (unsigned int)op->opcode);
+			break;
+		}
+		break;
+	case RZ_BIN_DWARF_LINE_OP_TYPE_EXT:
+		rz_cons_printf("Extended opcode %u: ", (unsigned int)op->opcode);
+		switch (op->opcode) {
+		case DW_LNE_end_sequence:
+			rz_cons_print("End of Sequence");
+			break;
+		case DW_LNE_set_address:
+			rz_cons_printf("set Address to 0x%" PFMT64x, op->args.set_address);
+			break;
+		case DW_LNE_define_file:
+			rz_cons_printf("define_file \"%s\", dir_index %" PFMT64u ", ",
+				op->args.define_file.filename,
+				op->args.define_file.dir_index);
+			break;
+		case DW_LNE_set_discriminator:
+			rz_cons_printf("set Discriminator to %" PFMT64u "\n", op->args.set_discriminator);
+			break;
+		default:
+			rz_cons_printf("Unknown");
+			break;
+		}
+		break;
+	case RZ_BIN_DWARF_LINE_OP_TYPE_SPEC:
+		rz_cons_printf("Special opcode %u: ", (unsigned int)rz_bin_dwarf_line_header_get_adj_opcode(hdr, op->opcode));
+		rz_cons_printf("advance Address by %" PFMT64u, rz_bin_dwarf_line_header_get_spec_op_advance_pc(hdr, op->opcode));
+		if (regs) {
+			rz_cons_printf(" to 0x%" PFMT64x, regs->address);
+		}
+		rz_cons_printf(" and Line by %" PFMT64d, rz_bin_dwarf_line_header_get_spec_op_advance_line(hdr, op->opcode));
+		if (regs) {
+			rz_cons_printf(" to %" PFMT64u, regs->line);
+		}
+		break;
+	}
+	rz_cons_print("\n");
+}
+
+RZ_API void rz_core_bin_dwarf_print_lines(RzList /*<RzBinDwarfLineInfo>*/ *lines) {
+	rz_return_if_fail(lines);
+	rz_cons_print("Raw dump of debug contents of section .debug_line:\n\n");
+	RzListIter *it;
+	RzBinDwarfLineInfo *li;
+	bool first = true;
+	rz_list_foreach (lines, it, li) {
+		if (first) {
+			first = false;
+		} else {
+			rz_cons_print("\n");
+		}
+		rz_cons_print(" Header information:\n");
+		rz_cons_printf("  Length:                             %" PFMT64u "\n", li->header.unit_length);
+		rz_cons_printf("  DWARF Version:                      %d\n", li->header.version);
+		rz_cons_printf("  Header Length:                      %" PFMT64d "\n", li->header.header_length);
+		rz_cons_printf("  Minimum Instruction Length:         %d\n", li->header.min_inst_len);
+		rz_cons_printf("  Maximum Operations per Instruction: %d\n", li->header.max_ops_per_inst);
+		rz_cons_printf("  Initial value of 'is_stmt':         %d\n", li->header.default_is_stmt);
+		rz_cons_printf("  Line Base:                          %d\n", li->header.line_base);
+		rz_cons_printf("  Line Range:                         %d\n", li->header.line_range);
+		rz_cons_printf("  Opcode Base:                        %d\n\n", li->header.opcode_base);
+		rz_cons_print(" Opcodes:\n");
+		for (size_t i = 1; i < li->header.opcode_base; i++) {
+			rz_cons_printf("  Opcode %zu has %d arg\n", i, li->header.std_opcode_lengths[i - 1]);
+		}
+		rz_cons_print("\n");
+		if (li->header.include_dirs_count && li->header.include_dirs) {
+			rz_cons_printf(" The Directory Table:\n");
+			for (size_t i = 0; i < li->header.include_dirs_count; i++) {
+				rz_cons_printf("  %u     %s\n", (unsigned int)i + 1, li->header.include_dirs[i]);
+			}
+		}
+		if (li->header.file_names_count && li->header.file_names) {
+			rz_cons_print("\n");
+			rz_cons_print(" The File Name Table:\n");
+			rz_cons_print("  Entry Dir     Time      Size       Name\n");
+			for (size_t i = 0; i < li->header.file_names_count; i++) {
+				RzBinDwarfLineFileEntry *f = &li->header.file_names[i];
+				rz_cons_printf("  %u     %" PFMT32u "       %" PFMT32u "         %" PFMT32u "          %s\n",
+					(unsigned int)i + 1, f->id_idx, f->mod_time, f->file_len, f->name);
+			}
+			rz_cons_print("\n");
+		}
+		if (li->ops_count && li->ops) {
+			// also execute all ops simultaneously which gives us nice intermediate value printing
+			RzBinDwarfSMRegisters regs;
+			rz_bin_dwarf_line_header_reset_regs(&li->header, &regs);
+			rz_cons_print(" Line Number Statements:\n");
+			for (size_t i = 0; i < li->ops_count; i++) {
+				rz_bin_dwarf_line_op_run(&li->header, &regs, &li->ops[i], NULL, NULL);
+				rz_cons_print("  ");
+				RzBinDwarfLineOp *op = &li->ops[i];
+				print_line_op(op, &li->header, &regs);
+				if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->opcode == DW_LNE_end_sequence && i + 1 < li->ops_count) {
+					// extra newline for nice sequence separation
+					rz_cons_print("\n");
+				}
+			}
+		}
+	}
+	rz_cons_print("\n");
+}

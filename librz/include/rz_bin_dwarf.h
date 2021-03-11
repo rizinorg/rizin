@@ -647,13 +647,6 @@ typedef struct {
 	int end_sequence;
 } RzBinDwarfState;
 
-typedef struct {
-	ut64 address;
-	char *file;
-	unsigned int line;
-	unsigned int column;
-} RzBinDwarfRow;
-
 #define DWARF_INIT_LEN_64 0xffffffff
 typedef union {
 	ut32 offset32;
@@ -808,10 +801,11 @@ typedef struct {
 	ut64 discriminator;
 } RzBinDwarfSMRegisters;
 
-typedef struct {
+typedef struct rz_bin_dwarf_line_file_entry_t {
+	char *include_dir;
 	char *name;
 	ut32 id_idx, mod_time, file_len;
-} file_entry;
+} RzBinDwarfLineFileEntry;
 
 typedef struct {
 	ut64 unit_length;
@@ -827,11 +821,68 @@ typedef struct {
 	ut8 segment_selector_size;
 	bool is_64bit;
 
+	/**
+	 * \brief The number of LEB128 operands for each of the standard opcodes
+	 * From standard_opcode_lengths in DWARF 3 standard:
+	 * The first element of the array corresponds to the opcode whose value is 1,
+	 * and the last element corresponds to the opcode whose value is opcode_base - 1.
+	 * Thus, the size of this array is opcode_base - 1.
+	 */
 	ut8 *std_opcode_lengths;
-	char **include_directories;
-	file_entry *file_names;
+
+	char **include_dirs;
+	size_t include_dirs_count;
+	RzBinDwarfLineFileEntry *file_names;
 	size_t file_names_count;
 } RzBinDwarfLineHeader;
+
+typedef enum {
+	RZ_BIN_DWARF_LINE_OP_TYPE_SPEC, //< single byte op, no args
+	RZ_BIN_DWARF_LINE_OP_TYPE_STD, //< fixed-size op, 0 or more leb128 args (except DW_LNS_fixed_advance_pc)
+	RZ_BIN_DWARF_LINE_OP_TYPE_EXT //< variable-size op, arbitrary format of args
+} RzBinDwarfLineOpType;
+
+#define RZ_BIN_DWARF_LINE_OP_STD_ARGS_MAX 1
+
+typedef struct {
+	RzBinDwarfLineOpType type;
+	ut8 opcode;
+	struct {
+		union {
+			ut64 advance_pc; //< DW_LNS_advance_pc
+			st64 advance_line; //< DW_LNS_advance_line
+			ut64 set_file; //< DW_LNS_set_file
+			ut64 set_column; //< DW_LNS_set_column
+			ut64 fixed_advance_pc; //< DW_LNS_fixed_advance_pc
+			ut64 set_isa; //< DW_LNS_set_isa
+			ut64 set_address; //< DW_LNE_set_address
+			struct {
+				char *filename;
+				ut64 dir_index;
+			} define_file; //< DW_LNE_define_file
+			ut64 set_discriminator; //< DW_LNE_set_discriminator
+		};
+	} args;
+} RzBinDwarfLineOp;
+
+/**
+ * \brief DWARF 3 Standard Section 6.2 Line Number Information 
+ * This contains the entire line info for one compilation unit.
+ */
+typedef struct {
+	RzBinDwarfLineHeader header;
+
+	size_t ops_count;
+	RzBinDwarfLineOp *ops;
+
+	RzList *rows;
+} RzBinDwarfLineInfo;
+
+typedef enum {
+	RZ_BIN_DWARF_LINE_INFO_MASK_BASIC = 0x0, //< parse just the headers
+	RZ_BIN_DWARF_LINE_INFO_MASK_OPS = 0x1, //< decode and output all instructions
+	RZ_BIN_DWARF_LINE_INFO_MASK_ROWS = 0x2 //< run instructions and ouput the resulting line infos
+} RzBinDwarfLineInfoMask;
 
 typedef struct rz_bin_dwarf_loc_entry_t {
 	ut64 start;
@@ -872,7 +923,6 @@ RZ_API const char *rz_bin_dwarf_get_unit_type_name(ut64 unit_type);
 RZ_API const char *rz_bin_dwarf_get_lang_name(ut64 lang);
 
 RZ_API RzList /*<RzBinDwarfARangeSet>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile);
-RZ_API RzList *rz_bin_dwarf_parse_line(RzBinFile *binfile, int mode);
 RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBinFile *binfile);
 RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwarfDebugAbbrev *da);
 RZ_API HtUP /*<offset, RzBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RzBinFile *binfile, int addr_size);
@@ -880,6 +930,17 @@ RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set);
 RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table);
 RZ_API void rz_bin_dwarf_debug_info_free(RzBinDwarfDebugInfo *inf);
 RZ_API void rz_bin_dwarf_debug_abbrev_free(RzBinDwarfDebugAbbrev *da);
+
+RZ_API RzList *rz_bin_dwarf_parse_line(RzBinFile *binfile, RzBinDwarfLineInfoMask mask);
+RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(Sdb *sdb_addrinfo, const RzBinDwarfLineHeader *header, ut64 file_index);
+RZ_API ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *header, ut8 opcode);
+RZ_API ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *header, ut8 opcode);
+RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *header, ut8 opcode);
+RZ_API void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs);
+RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op,
+	RZ_NULLABLE RZ_OUT RzList /*<RzBinSourceRow>*/ *rows_out, RZ_DEPRECATE Sdb *sdb_addrinfo);
+RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op);
+RZ_API void rz_bin_dwarf_line_info_free(RzBinDwarfLineInfo *li);
 
 #ifdef __cplusplus
 }

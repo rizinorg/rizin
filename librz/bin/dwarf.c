@@ -457,36 +457,28 @@ static inline ut64 dwarf_read_address(size_t size, bool big_endian, const ut8 **
 	return result;
 }
 
-static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
-	if (!s || !incl) {
-		return false;
-	}
-	return sdb_array_set(s, "includedirs", idx, incl, 0);
-}
-
 static void line_header_fini(RzBinDwarfLineHeader *hdr) {
 	if (hdr) {
-		size_t i;
-
-		for (i = 0; i < hdr->file_names_count; i++) {
+		for (size_t i = 0; i < hdr->file_names_count; i++) {
 			free(hdr->file_names[i].name);
 		}
 
 		free(hdr->std_opcode_lengths);
 		free(hdr->file_names);
+
+		if (hdr->include_dirs) {
+			for (size_t i = 0; i < hdr->include_dirs_count; i++) {
+				free(hdr->include_dirs[i]);
+			}
+			free(hdr->include_dirs);
+		}
 	}
 }
 
 // Parses source file header of DWARF version <= 4
-static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RzBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print) {
-	int i = 0;
-	size_t count;
-	const ut8 *tmp_buf = NULL;
-
-	if (mode == RZ_MODE_PRINT) {
-		print(" The Directory Table:\n");
-	}
+static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const ut8 *buf_end, RzBinDwarfLineHeader *hdr) {
+	RzPVector incdirs;
+	rz_pvector_init(&incdirs, free);
 	while (buf + 1 < buf_end) {
 		size_t maxlen = RZ_MIN((size_t)(buf_end - buf) - 1, 0xfff);
 		size_t len = rz_str_nlen((const char *)buf, maxlen);
@@ -496,117 +488,128 @@ static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const 
 			free(str);
 			break;
 		}
-		if (mode == RZ_MODE_PRINT) {
-			print("  %d     %s\n", i + 1, str);
-		}
-		add_sdb_include_dir(sdb, str, i);
-		free(str);
-		i++;
+		rz_pvector_push(&incdirs, str);
 		buf += len + 1;
 	}
+	hdr->include_dirs_count = rz_pvector_len(&incdirs);
+	hdr->include_dirs = (char **)rz_pvector_flush(&incdirs);
+	rz_pvector_fini(&incdirs);
 
-	tmp_buf = buf;
-	count = 0;
-	if (mode == RZ_MODE_PRINT) {
-		print("\n");
-		print(" The File Name Table:\n");
-		print("  Entry Dir     Time      Size       Name\n");
-	}
-	int entry_index = 1; // used for printing information
+	RzVector file_names;
+	rz_vector_init(&file_names, sizeof(RzBinDwarfLineFileEntry), NULL, NULL);
+	while (buf + 1 < buf_end) {
+		const char *filename = (const char *)buf;
+		size_t maxlen = RZ_MIN((size_t)(buf_end - buf - 1), 0xfff);
+		ut64 id_idx, mod_time, file_len;
+		size_t len = rz_str_nlen(filename, maxlen);
 
-	for (i = 0; i < 2; i++) {
-		while (buf + 1 < buf_end) {
-			const char *filename = (const char *)buf;
-			size_t maxlen = RZ_MIN((size_t)(buf_end - buf - 1), 0xfff);
-			ut64 id_idx, mod_time, file_len;
-			size_t len = rz_str_nlen(filename, maxlen);
-
-			if (!len) {
-				buf++;
-				break;
-			}
-			buf += len + 1;
-			if (buf >= buf_end) {
-				buf = NULL;
-				goto beach;
-			}
-			buf = rz_uleb128(buf, buf_end - buf, &id_idx, NULL);
-			if (buf >= buf_end) {
-				buf = NULL;
-				goto beach;
-			}
-			buf = rz_uleb128(buf, buf_end - buf, &mod_time, NULL);
-			if (buf >= buf_end) {
-				buf = NULL;
-				goto beach;
-			}
-			buf = rz_uleb128(buf, buf_end - buf, &file_len, NULL);
-			if (buf >= buf_end) {
-				buf = NULL;
-				goto beach;
-			}
-
-			if (i) {
-				char *include_dir = NULL, *comp_dir = NULL, *pinclude_dir = NULL;
-				if (id_idx > 0) {
-					include_dir = pinclude_dir = sdb_array_get(sdb, "includedirs", id_idx - 1, 0);
-					if (include_dir && include_dir[0] != '/') {
-						comp_dir = sdb_get(bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
-						if (comp_dir) {
-							include_dir = rz_str_newf("%s/%s/", comp_dir, include_dir);
-						}
-					}
-				} else {
-					include_dir = pinclude_dir = sdb_get(bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
-					if (!include_dir) {
-						include_dir = "./";
-					}
-				}
-
-				if (hdr->file_names) {
-					hdr->file_names[count].name = rz_str_newf("%s/%s", include_dir ? include_dir : "", filename);
-					hdr->file_names[count].id_idx = id_idx;
-					hdr->file_names[count].mod_time = mod_time;
-					hdr->file_names[count].file_len = file_len;
-				}
-				if (comp_dir) {
-					RZ_FREE(include_dir);
-					RZ_FREE(comp_dir);
-				}
-				RZ_FREE(pinclude_dir);
-			}
-			count++;
-			if (mode == RZ_MODE_PRINT && i) {
-				print("  %d     %" PFMT64d "       %" PFMT64d "         %" PFMT64d "          %s\n", entry_index++, id_idx, mod_time, file_len, filename);
-			}
+		if (!len) {
+			buf++;
+			break;
 		}
-		if (i == 0) {
-			if (count > 0) {
-				hdr->file_names = calloc(sizeof(file_entry), count);
-			} else {
-				hdr->file_names = NULL;
-			}
-			hdr->file_names_count = count;
-			buf = tmp_buf;
-			count = 0;
+		buf += len + 1;
+		if (buf >= buf_end) {
+			buf = NULL;
+			goto beach;
 		}
+		buf = rz_uleb128(buf, buf_end - buf, &id_idx, NULL);
+		if (buf >= buf_end) {
+			buf = NULL;
+			goto beach;
+		}
+		buf = rz_uleb128(buf, buf_end - buf, &mod_time, NULL);
+		if (buf >= buf_end) {
+			buf = NULL;
+			goto beach;
+		}
+		buf = rz_uleb128(buf, buf_end - buf, &file_len, NULL);
+		if (buf >= buf_end) {
+			buf = NULL;
+			goto beach;
+		}
+		RzBinDwarfLineFileEntry *entry = rz_vector_push(&file_names, NULL);
+		entry->name = strdup(filename);
+		entry->id_idx = id_idx;
+		entry->mod_time = mod_time;
+		entry->file_len = file_len;
 	}
-	if (mode == RZ_MODE_PRINT) {
-		print("\n");
-	}
+	hdr->file_names_count = rz_vector_len(&file_names);
+	hdr->file_names = rz_vector_flush(&file_names);
+	rz_vector_fini(&file_names);
 
 beach:
-	sdb_free(sdb);
-
 	return buf;
+}
+
+RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(Sdb *sdb_addrinfo, const RzBinDwarfLineHeader *header, ut64 file_index) {
+	rz_return_val_if_fail(sdb_addrinfo && header, NULL);
+	if (file_index >= header->file_names_count) {
+		return NULL;
+	}
+	RzBinDwarfLineFileEntry *file = &header->file_names[file_index];
+	if (!file) {
+		return NULL;
+	}
+
+	/*
+	 * Dwarf standard does not seem to specify the exact separator (slash/backslash) of paths
+	 * so apparently it is target-dependent. However we have yet to see a Windows binary that
+	 * also contains dwarf and contains backslashes. The ones we have seen from MinGW have regular
+	 * slashes.
+	 * And since there seems to be no way to reliable check whether the target uses slashes
+	 * or backslashes anyway, we will simply use slashes always here.
+	 */
+	const char *include_dir = NULL, *comp_dir = NULL;
+	if (file->id_idx > 0 && file->id_idx - 1 < header->include_dirs_count) {
+		include_dir = header->include_dirs[file->id_idx - 1];
+		if (include_dir && include_dir[0] != '/') {
+			comp_dir = sdb_const_get(sdb_addrinfo, "DW_AT_comp_dir", 0);
+			if (comp_dir) {
+				include_dir = rz_str_newf("%s/%s/", comp_dir, include_dir);
+			}
+		}
+	} else {
+		include_dir = sdb_const_get(sdb_addrinfo, "DW_AT_comp_dir", 0);
+	}
+	if (!include_dir) {
+		include_dir = "./";
+	}
+	char *r = rz_str_newf("%s/%s", include_dir, file->name);
+	if (comp_dir) {
+		RZ_FREE(include_dir);
+	}
+	return r;
+}
+
+RZ_API ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *header, ut8 opcode) {
+	rz_return_val_if_fail(header, 0);
+	return opcode - header->opcode_base;
+}
+
+RZ_API ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *header, ut8 opcode) {
+	rz_return_val_if_fail(header, 0);
+	if (!header->line_range) {
+		// to dodge division by zero
+		return 0;
+	}
+	ut8 adj_opcode = rz_bin_dwarf_line_header_get_adj_opcode(header, opcode);
+	return (adj_opcode / header->line_range) * header->min_inst_len;
+}
+
+RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *header, ut8 opcode) {
+	rz_return_val_if_fail(header, 0);
+	if (!header->line_range) {
+		// to dodge division by zero
+		return 0;
+	}
+	ut8 adj_opcode = rz_bin_dwarf_line_header_get_adj_opcode(header, opcode);
+	return header->line_base + (adj_opcode % header->line_range);
 }
 
 static const ut8 *parse_line_header(
 	RzBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RzBinDwarfLineHeader *hdr, int mode, PrintfCallback print,
-	bool big_endian) {
-
-	rz_return_val_if_fail(hdr && bf && buf, NULL);
+	RzBinDwarfLineHeader *hdr, bool big_endian) {
+	rz_return_val_if_fail(hdr && bf && buf && buf_end, NULL);
 
 	hdr->is_64bit = false;
 	hdr->unit_length = dwarf_read_initial_length(&hdr->is_64bit, big_endian, &buf, buf_end);
@@ -635,37 +638,14 @@ static const ut8 *parse_line_header(
 
 	hdr->file_names = NULL;
 
-	if (mode == RZ_MODE_PRINT) {
-		print(" Header information:\n");
-		print("  Length:                             %" PFMT64u "\n", hdr->unit_length);
-		print("  DWARF Version:                      %d\n", hdr->version);
-		print("  Header Length:                      %" PFMT64d "\n", hdr->header_length);
-		print("  Minimum Instruction Length:         %d\n", hdr->min_inst_len);
-		print("  Maximum Operations per Instruction: %d\n", hdr->max_ops_per_inst);
-		print("  Initial value of 'is_stmt':         %d\n", hdr->default_is_stmt);
-		print("  Line Base:                          %d\n", hdr->line_base);
-		print("  Line Range:                         %d\n", hdr->line_range);
-		print("  Opcode Base:                        %d\n\n", hdr->opcode_base);
-	}
-
-	if (hdr->opcode_base > 0) {
-		hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base);
-
-		if (mode == RZ_MODE_PRINT) {
-			print(" Opcodes:\n");
-		}
-		size_t i;
-		for (i = 1; i < hdr->opcode_base; i++) {
+	if (hdr->opcode_base > 1) {
+		hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base - 1);
+		for (size_t i = 1; i < hdr->opcode_base; i++) {
 			if (buf + 2 > buf_end) {
+				hdr->opcode_base = i;
 				break;
 			}
-			hdr->std_opcode_lengths[i] = READ8(buf);
-			if (mode == RZ_MODE_PRINT) {
-				print("  Opcode %zu has %d arg\n", i, hdr->std_opcode_lengths[i]);
-			}
-		}
-		if (mode == RZ_MODE_PRINT) {
-			print("\n");
+			hdr->std_opcode_lengths[i - 1] = READ8(buf);
 		}
 	} else {
 		hdr->std_opcode_lengths = NULL;
@@ -677,13 +657,8 @@ static const ut8 *parse_line_header(
 		return tmp_buf;
 	}
 
-	Sdb *sdb = sdb_new(NULL, NULL, 0);
-	if (!sdb) {
-		return NULL;
-	}
-
 	if (hdr->version <= 4) {
-		buf = parse_line_header_source(bf, buf, buf_end, hdr, sdb, mode, print);
+		buf = parse_line_header_source(bf, buf, buf_end, hdr);
 	} else {
 		buf = NULL;
 	}
@@ -691,310 +666,133 @@ static const ut8 *parse_line_header(
 	return buf;
 }
 
-static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 line, int mode, PrintfCallback print) {
-	const char *p;
-	char *fileline;
-	char offset[64];
-	char *offset_ptr;
-
-	if (!s || !file) {
-		return;
+RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op) {
+	rz_return_if_fail(op);
+	if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->opcode == DW_LNE_define_file) {
+		free(op->args.define_file.filename);
 	}
-	p = rz_str_rchr(file, NULL, '/');
-	if (p) {
-		p++;
-	} else {
-		p = file;
-	}
-	// includedirs and properly check full paths
-	switch (mode) {
-	case 1:
-	case 'r':
-	case '*':
-		print("CL %s:%d 0x%08" PFMT64x "\n", p, (int)line, addr);
-		break;
-	}
-#if 0
-	/* THIS IS TOO SLOW */
-	if (rz_file_exists (file)) {
-		p = file;
-	}
-#else
-	p = file;
-#endif
-	fileline = rz_str_newf("%s|%" PFMT64d, p, line);
-	offset_ptr = sdb_itoa(addr, offset, 16);
-	sdb_add(s, offset_ptr, fileline, 0);
-	sdb_add(s, fileline, offset_ptr, 0);
-	free(fileline);
 }
 
-static const ut8 *parse_ext_opcode(const RzBin *bin, const ut8 *obuf,
-	size_t len, const RzBinDwarfLineHeader *hdr,
-	RzBinDwarfSMRegisters *regs, int mode, bool big_endian) {
-
-	rz_return_val_if_fail(bin && bin->cur && obuf && hdr && regs, NULL);
-
-	PrintfCallback print = bin->cb_printf;
-	const ut8 *buf;
-	const ut8 *buf_end;
-	ut8 opcode;
-	ut64 addr;
-	buf = obuf;
-	st64 op_len;
-	RzBinFile *binfile = bin->cur;
-	RzBinObject *o = binfile->o;
-	ut32 addr_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
-	const char *filename;
-
-	buf_end = buf + len;
-	buf = rz_leb128(buf, len, &op_len);
-	if (buf >= buf_end) {
-		return NULL;
-	}
-
-	opcode = *buf++;
-
-	if (mode == RZ_MODE_PRINT) {
-		print("  Extended opcode %d: ", opcode);
-	}
-
-	switch (opcode) {
-	case DW_LNE_end_sequence:
-		regs->end_sequence = DWARF_TRUE;
-
-		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
-			int fnidx = regs->file - 1;
-			if (fnidx >= 0 && fnidx < hdr->file_names_count) {
-				add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
-					hdr->file_names[fnidx].name, regs->line, mode, print);
-			}
-		}
-
-		if (mode == RZ_MODE_PRINT) {
-			print("End of Sequence\n");
-		}
-		break;
-	case DW_LNE_set_address:
-		if (addr_size == 8) {
-			addr = READ64(buf);
-		} else {
-			addr = READ32(buf);
-		}
-		regs->address = addr;
-		if (mode == RZ_MODE_PRINT) {
-			print("set Address to 0x%" PFMT64x "\n", addr);
-		}
-		break;
-	case DW_LNE_define_file:
-		filename = (const char *)buf;
-
-		if (mode == RZ_MODE_PRINT) {
-			print("define_file\n");
-			print("filename %s\n", filename);
-		}
-
-		buf += (strlen(filename) + 1);
-		ut64 dir_idx;
-		ut64 ignore;
-		if (buf + 1 < buf_end) {
-			buf = rz_uleb128(buf, buf_end - buf, &dir_idx, NULL);
-		}
-		if (buf + 1 < buf_end) {
-			buf = rz_uleb128(buf, buf_end - buf, &ignore, NULL);
-		}
-		if (buf + 1 < buf_end) {
-			buf = rz_uleb128(buf, buf_end - buf, &ignore, NULL);
-		}
-		break;
-	case DW_LNE_set_discriminator:
-		buf = rz_uleb128(buf, buf_end - buf, &addr, NULL);
-		if (mode == RZ_MODE_PRINT) {
-			print("set Discriminator to %" PFMT64d "\n", addr);
-		}
-		regs->discriminator = addr;
-		break;
-	default:
-		if (mode == RZ_MODE_PRINT) {
-			print("Unexpected ext opcode %d\n", opcode);
-		}
-		buf = NULL;
-		break;
-	}
-
-	return buf;
-}
-
-static const ut8 *parse_spec_opcode(
-	const RzBin *bin, const ut8 *obuf, size_t len,
-	const RzBinDwarfLineHeader *hdr,
-	RzBinDwarfSMRegisters *regs,
-	ut8 opcode, int mode) {
-
-	rz_return_val_if_fail(bin && obuf && hdr && regs, NULL);
-
-	PrintfCallback print = bin->cb_printf;
-	RzBinFile *binfile = bin->cur;
-	const ut8 *buf = obuf;
-	ut8 adj_opcode = 0;
-	ut64 advance_adr;
-
-	adj_opcode = opcode - hdr->opcode_base;
-	if (!hdr->line_range) {
-		// line line-range information. move away
-		return NULL;
-	}
-	advance_adr = (adj_opcode / hdr->line_range) * hdr->min_inst_len;
-	regs->address += advance_adr;
-	int line_increment = hdr->line_base + (adj_opcode % hdr->line_range);
-	regs->line += line_increment;
-	if (mode == RZ_MODE_PRINT) {
-		print("  Special opcode %d: ", adj_opcode);
-		print("advance Address by %" PFMT64d " to 0x%" PFMT64x " and Line by %d to %" PFMT64d "\n",
-			advance_adr, regs->address, line_increment, regs->line);
-	}
-	if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
-		int idx = regs->file - 1;
-		if (idx >= 0 && idx < hdr->file_names_count) {
-			add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
-				hdr->file_names[idx].name,
-				regs->line, mode, print);
-		}
-	}
-	regs->basic_block = DWARF_FALSE;
-	regs->prologue_end = DWARF_FALSE;
-	regs->epilogue_begin = DWARF_FALSE;
-	regs->discriminator = 0;
-
-	return buf;
-}
-
-static const ut8 *parse_std_opcode(
-	const RzBin *bin, const ut8 *obuf, size_t len,
-	const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs,
-	ut8 opcode, int mode, bool big_endian) {
-
-	rz_return_val_if_fail(bin && bin->cur && obuf && hdr && regs, NULL);
-
-	PrintfCallback print = bin->cb_printf;
-	RzBinFile *binfile = bin->cur;
+static const ut8 *parse_ext_opcode(RzBinDwarfLineOp *op, const RzBinDwarfLineHeader *hdr, const ut8 *obuf, size_t len,
+	bool big_endian, ut8 target_addr_size) {
+	rz_return_val_if_fail(op && hdr && obuf, NULL);
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
-	ut64 addr = 0LL;
-	st64 sbuf;
-	ut8 adj_opcode;
-	ut64 op_advance;
-	ut16 operand;
 
-	if (mode == RZ_MODE_PRINT) {
-		print("  "); // formatting
+	ut64 op_len;
+	buf = rz_uleb128(buf, len, &op_len, NULL);
+	// op_len must fit and be at least 1 (for the opcode byte)
+	if (!buf || buf >= buf_end || !op_len || buf_end - buf < op_len) {
+		return NULL;
 	}
+
+	ut8 opcode = *buf++;
+	op->type = RZ_BIN_DWARF_LINE_OP_TYPE_EXT;
+	op->opcode = opcode;
+
 	switch (opcode) {
-	case DW_LNS_copy:
-		if (mode == RZ_MODE_PRINT) {
-			print("Copy\n");
+	case DW_LNE_set_address: {
+		ut8 addr_size = hdr->address_size;
+		if (hdr->version < 5) { // address_size in header only starting with Dwarf 5
+			addr_size = target_addr_size;
 		}
-		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
-			int fnidx = regs->file - 1;
-			if (fnidx >= 0 && fnidx < hdr->file_names_count) {
-				add_sdb_addrline(binfile->sdb_addrinfo,
-					regs->address,
-					hdr->file_names[fnidx].name,
-					regs->line, mode, print);
-			}
-		}
-		regs->basic_block = DWARF_FALSE;
+		op->args.set_address = dwarf_read_address(addr_size, big_endian, &buf, buf_end);
 		break;
-	case DW_LNS_advance_pc:
-		buf = rz_uleb128(buf, buf_end - buf, &addr, NULL);
-		regs->address += addr * hdr->min_inst_len;
-		if (mode == RZ_MODE_PRINT) {
-			print("Advance PC by %" PFMT64d " to 0x%" PFMT64x "\n",
-				addr * hdr->min_inst_len, regs->address);
+	}
+	case DW_LNE_define_file: {
+		size_t fn_len = rz_str_nlen((const char *)buf, buf_end - buf);
+		char *fn = malloc(fn_len + 1);
+		if (!fn) {
+			return NULL;
 		}
-		break;
-	case DW_LNS_advance_line:
-		buf = rz_leb128(buf, buf_end - buf, &sbuf);
-		regs->line += sbuf;
-		if (mode == RZ_MODE_PRINT) {
-			print("Advance line by %" PFMT64d ", to %" PFMT64d "\n", sbuf, regs->line);
+		memcpy(fn, buf, fn_len);
+		fn[fn_len] = 0;
+		op->args.define_file.filename = fn;
+		buf += fn_len + 1;
+		if (buf + 1 < buf_end) {
+			buf = rz_uleb128(buf, buf_end - buf, &op->args.define_file.dir_index, NULL);
+		}
+		if (buf && buf + 1 < buf_end) {
+			buf = rz_uleb128(buf, buf_end - buf, NULL, NULL);
+		}
+		if (buf && buf + 1 < buf_end) {
+			buf = rz_uleb128(buf, buf_end - buf, NULL, NULL);
 		}
 		break;
-	case DW_LNS_set_file:
-		buf = rz_uleb128(buf, buf_end - buf, &addr, NULL);
-		if (mode == RZ_MODE_PRINT) {
-			print("Set file to %" PFMT64d "\n", addr);
-		}
-		regs->file = addr;
+	}
+	case DW_LNE_set_discriminator:
+		buf = rz_uleb128(buf, buf_end - buf, &op->args.set_discriminator, NULL);
 		break;
-	case DW_LNS_set_column:
-		buf = rz_uleb128(buf, buf_end - buf, &addr, NULL);
-		if (mode == RZ_MODE_PRINT) {
-			print("Set column to %" PFMT64d "\n", addr);
-		}
-		regs->column = addr;
-		break;
-	case DW_LNS_negate_stmt:
-		regs->is_stmt = regs->is_stmt ? DWARF_FALSE : DWARF_TRUE;
-		if (mode == RZ_MODE_PRINT) {
-			print("Set is_stmt to %d\n", regs->is_stmt);
-		}
-		break;
-	case DW_LNS_set_basic_block:
-		if (mode == RZ_MODE_PRINT) {
-			print("set_basic_block\n");
-		}
-		regs->basic_block = DWARF_TRUE;
-		break;
-	case DW_LNS_const_add_pc:
-		adj_opcode = 255 - hdr->opcode_base;
-		if (hdr->line_range > 0) { // to dodge division by zero
-			op_advance = (adj_opcode / hdr->line_range) * hdr->min_inst_len;
-		} else {
-			op_advance = 0;
-		}
-		regs->address += op_advance;
-		if (mode == RZ_MODE_PRINT) {
-			print("Advance PC by constant %" PFMT64d " to 0x%" PFMT64x "\n",
-				op_advance, regs->address);
-		}
-		break;
-	case DW_LNS_fixed_advance_pc:
-		operand = READ16(buf);
-		regs->address += operand;
-		if (mode == RZ_MODE_PRINT) {
-			print("Fixed advance pc to %" PFMT64d "\n", regs->address);
-		}
-		break;
-	case DW_LNS_set_prologue_end:
-		regs->prologue_end = ~0;
-		if (mode == RZ_MODE_PRINT) {
-			print("set_prologue_end\n");
-		}
-		break;
-	case DW_LNS_set_epilogue_begin:
-		regs->epilogue_begin = ~0;
-		if (mode == RZ_MODE_PRINT) {
-			print("set_epilogue_begin\n");
-		}
-		break;
-	case DW_LNS_set_isa:
-		buf = rz_uleb128(buf, buf_end - buf, &addr, NULL);
-		regs->isa = addr;
-		if (mode == RZ_MODE_PRINT) {
-			print("set_isa\n");
-		}
-		break;
+	case DW_LNE_end_sequence:
 	default:
-		if (mode == RZ_MODE_PRINT) {
-			print("Unexpected std opcode %d\n", opcode);
-		}
+		buf += op_len - 1;
 		break;
 	}
 	return buf;
 }
 
-static void set_regs_default(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs) {
+/**
+ * \return the number of leb128 args the std opcode takes, EXCEPT for DW_LNS_fixed_advance_pc! (see Dwarf spec)
+ */
+static size_t std_opcode_args_count(const RzBinDwarfLineHeader *hdr, ut8 opcode) {
+	if (!opcode || opcode > hdr->opcode_base - 1 || !hdr->std_opcode_lengths) {
+		return 0;
+	}
+	return hdr->std_opcode_lengths[opcode - 1];
+}
+
+static const ut8 *parse_std_opcode(RzBinDwarfLineOp *op, const RzBinDwarfLineHeader *hdr, const ut8 *obuf, size_t len, ut8 opcode, bool big_endian) {
+	rz_return_val_if_fail(op && hdr && obuf, NULL);
+	const ut8 *buf = obuf;
+	const ut8 *buf_end = obuf + len;
+
+	op->type = RZ_BIN_DWARF_LINE_OP_TYPE_STD;
+	op->opcode = opcode;
+	switch (opcode) {
+	case DW_LNS_advance_pc:
+		buf = rz_uleb128(buf, buf_end - buf, &op->args.advance_pc, NULL);
+		break;
+	case DW_LNS_advance_line:
+		buf = rz_leb128(buf, buf_end - buf, &op->args.advance_line);
+		break;
+	case DW_LNS_set_file:
+		buf = rz_uleb128(buf, buf_end - buf, &op->args.set_file, NULL);
+		break;
+	case DW_LNS_set_column:
+		buf = rz_uleb128(buf, buf_end - buf, &op->args.set_column, NULL);
+		break;
+	case DW_LNS_fixed_advance_pc:
+		op->args.fixed_advance_pc = READ16(buf);
+		break;
+	case DW_LNS_set_isa:
+		buf = rz_uleb128(buf, buf_end - buf, &op->args.set_isa, NULL);
+		break;
+
+	// known opcodes that take no args
+	case DW_LNS_copy:
+	case DW_LNS_negate_stmt:
+	case DW_LNS_set_basic_block:
+	case DW_LNS_const_add_pc:
+	case DW_LNS_set_prologue_end:
+	case DW_LNS_set_epilogue_begin:
+		break;
+
+	// unknown operands, skip the number of args given in the header.
+	default: {
+		size_t args_count = std_opcode_args_count(hdr, opcode);
+		for (size_t i = 0; i < args_count; i++) {
+			buf = rz_uleb128(buf, buf_end - buf, &op->args.advance_pc, NULL);
+			if (!buf) {
+				break;
+			}
+		}
+	}
+	}
+	return buf;
+}
+
+RZ_API void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs) {
+	rz_return_if_fail(hdr && regs);
 	regs->address = 0;
 	regs->file = 1;
 	regs->line = 1;
@@ -1007,38 +805,154 @@ static void set_regs_default(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegist
 	regs->isa = 0;
 }
 
-// Passing bin should be unnecessary (after we stop printing inside bin_dwarf)
-static size_t parse_opcodes(const RzBin *bin, const ut8 *obuf,
-	size_t len, const RzBinDwarfLineHeader *hdr,
-	RzBinDwarfSMRegisters *regs, int mode, bool big_endian) {
-	const ut8 *buf, *buf_end;
-	ut8 opcode, ext_opcode;
+static void store_line_sample(RzList /*<RzBinSourceRow>*/ *rows_out, const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs,
+	RZ_DEPRECATE Sdb *sdb_addrinfo) {
+	if (!regs->file) {
+		return;
+	}
+	ut64 fnidx = regs->file - 1;
+	char *full_file = rz_bin_dwarf_line_header_get_full_file_path(sdb_addrinfo, hdr, fnidx);
+	if (!full_file) {
+		return;
+	}
+	RzBinSourceRow *row = RZ_NEW(RzBinSourceRow);
+	if (!row) {
+		free(full_file);
+		return;
+	}
+	row->address = regs->address;
+	row->file = full_file;
+	row->line = regs->line;
+	row->column = regs->column;
+	rz_list_push(rows_out, row);
+}
 
-	if (!bin || !obuf || len < 8) {
+RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op,
+	RZ_NULLABLE RZ_OUT RzList /*<RzBinSourceRow>*/ *rows_out, RZ_DEPRECATE Sdb *sdb_addrinfo) {
+	rz_return_val_if_fail(hdr && regs && op && (!rows_out || sdb_addrinfo), false);
+	switch (op->type) {
+	case RZ_BIN_DWARF_LINE_OP_TYPE_STD:
+		switch (op->opcode) {
+		case DW_LNS_copy:
+			if (rows_out) {
+				store_line_sample(rows_out, hdr, regs, sdb_addrinfo);
+			}
+			regs->basic_block = DWARF_FALSE;
+			break;
+		case DW_LNS_advance_pc:
+			regs->address += op->args.advance_pc * hdr->min_inst_len;
+			break;
+		case DW_LNS_advance_line:
+			regs->line += op->args.advance_line;
+			break;
+		case DW_LNS_set_file:
+			regs->file = op->args.set_file;
+			break;
+		case DW_LNS_set_column:
+			regs->column = op->args.set_column;
+			break;
+		case DW_LNS_negate_stmt:
+			regs->is_stmt = regs->is_stmt ? DWARF_FALSE : DWARF_TRUE;
+			break;
+		case DW_LNS_set_basic_block:
+			regs->basic_block = DWARF_TRUE;
+			break;
+		case DW_LNS_const_add_pc:
+			regs->address += rz_bin_dwarf_line_header_get_spec_op_advance_pc(hdr, 255);
+			break;
+		case DW_LNS_fixed_advance_pc:
+			regs->address += op->args.fixed_advance_pc;
+			break;
+		case DW_LNS_set_prologue_end:
+			regs->prologue_end = ~0;
+			break;
+		case DW_LNS_set_epilogue_begin:
+			regs->epilogue_begin = ~0;
+			break;
+		case DW_LNS_set_isa:
+			regs->isa = op->args.set_isa;
+			break;
+		default:
+			return false;
+		}
+		break;
+	case RZ_BIN_DWARF_LINE_OP_TYPE_EXT:
+		switch (op->opcode) {
+		case DW_LNE_end_sequence:
+			regs->end_sequence = DWARF_TRUE;
+			if (rows_out) {
+				// indicate that this is not a real "line" entry but that the previous one stops here.
+				regs->line = 0;
+				regs->column = 0;
+				store_line_sample(rows_out, hdr, regs, sdb_addrinfo);
+			}
+			rz_bin_dwarf_line_header_reset_regs(hdr, regs);
+			break;
+		case DW_LNE_set_address:
+			regs->address = op->args.set_address;
+			break;
+		case DW_LNE_define_file:
+			break;
+		case DW_LNE_set_discriminator:
+			regs->discriminator = op->args.set_discriminator;
+			break;
+		default:
+			return false;
+		}
+		break;
+	case RZ_BIN_DWARF_LINE_OP_TYPE_SPEC:
+		regs->address += rz_bin_dwarf_line_header_get_spec_op_advance_pc(hdr, op->opcode);
+		regs->line += rz_bin_dwarf_line_header_get_spec_op_advance_line(hdr, op->opcode);
+		if (rows_out) {
+			store_line_sample(rows_out, hdr, regs, sdb_addrinfo);
+		}
+		regs->basic_block = DWARF_FALSE;
+		regs->prologue_end = DWARF_FALSE;
+		regs->epilogue_begin = DWARF_FALSE;
+		regs->discriminator = 0;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+static size_t parse_opcodes(const ut8 *obuf,
+	size_t len, const RzBinDwarfLineHeader *hdr, RzVector *ops_out,
+	RzBinDwarfSMRegisters *regs, RzList *rows_out, RZ_DEPRECATE Sdb *sdb_addrinfo,
+	bool big_endian, ut8 target_addr_size) {
+	const ut8 *buf, *buf_end;
+	ut8 opcode;
+
+	if (!obuf || !len) {
 		return 0;
 	}
 	buf = obuf;
 	buf_end = obuf + len;
 
-	while (buf && buf + 1 < buf_end) {
+	while (buf < buf_end) {
 		opcode = *buf++;
-		len--;
+		RzBinDwarfLineOp op = { 0 };
 		if (!opcode) {
-			ext_opcode = *buf;
-			buf = parse_ext_opcode(bin, buf, len, hdr, regs, mode, big_endian);
-			if (!buf || ext_opcode == DW_LNE_end_sequence) {
-				set_regs_default(hdr, regs); // end_sequence should reset regs to default
-				break;
-			}
+			buf = parse_ext_opcode(&op, hdr, buf, (buf_end - buf), big_endian, target_addr_size);
 		} else if (opcode >= hdr->opcode_base) {
-			buf = parse_spec_opcode(bin, buf, len, hdr, regs, opcode, mode);
+			// special opcode without args, no further parsing needed
+			op.type = RZ_BIN_DWARF_LINE_OP_TYPE_SPEC;
+			op.opcode = opcode;
 		} else {
-			buf = parse_std_opcode(bin, buf, len, hdr, regs, opcode, mode, big_endian);
+			buf = parse_std_opcode(&op, hdr, buf, (buf_end - buf), opcode, big_endian);
 		}
-		len = (size_t)(buf_end - buf);
-	}
-	if (mode == RZ_MODE_PRINT) {
-		bin->cb_printf("\n"); // formatting of the output
+		if (!buf) {
+			break;
+		}
+		if (rows_out) {
+			rz_bin_dwarf_line_op_run(hdr, regs, &op, rows_out, sdb_addrinfo);
+		}
+		if (ops_out) {
+			rz_vector_push(ops_out, &op);
+		} else {
+			rz_bin_dwarf_line_op_fini(&op);
+		}
 	}
 	if (!buf) {
 		return 0;
@@ -1046,22 +960,28 @@ static size_t parse_opcodes(const RzBin *bin, const ut8 *obuf,
 	return (size_t)(buf - obuf); // number of bytes we've moved by
 }
 
-static int parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
-	ut64 len, int mode, bool big_endian) {
+static RzList /*<RzBinDwarfLineInfo>*/ *parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
+	ut64 len, RzBinDwarfLineInfoMask mask, bool big_endian) {
+	// Dwarf 3 Standard 6.2 Line Number Information
 	rz_return_val_if_fail(binfile && obuf, false);
-	PrintfCallback print = binfile->rbin->cb_printf;
 
-	if (mode == RZ_MODE_PRINT) {
-		print("Raw dump of debug contents of section .debug_line:\n\n");
-	}
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
 	const ut8 *tmpbuf = NULL;
 	ut64 buf_size;
 
+	// Dwarf < 5 needs this size to be supplied from outside
+	RzBinObject *o = binfile->o;
+	ut8 target_addr_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
+
+	RzList *r = rz_list_newf((RzListFree)rz_bin_dwarf_line_info_free);
+
 	// each iteration we read one header AKA comp. unit
 	while (buf <= buf_end) {
-		RzBinDwarfLineHeader hdr = { 0 };
+		RzBinDwarfLineInfo *li = RZ_NEW0(RzBinDwarfLineInfo);
+		if (!li) {
+			break;
+		}
 
 		// How much did we read from the compilation unit
 		size_t bytes_read = 0;
@@ -1070,53 +990,65 @@ static int parse_line_raw(RzBinFile *binfile, const ut8 *obuf,
 		buf_size = buf_end - buf;
 
 		tmpbuf = buf;
-		buf = parse_line_header(binfile, buf, buf_end, &hdr, mode, print, big_endian);
+		buf = parse_line_header(binfile, buf, buf_end, &li->header, big_endian);
 		if (!buf) {
-			line_header_fini(&hdr);
-			return false;
+			rz_bin_dwarf_line_info_free(li);
+			break;
 		}
 
-		if (mode == RZ_MODE_PRINT) {
-			print(" Line Number Statements:\n");
-		}
 		bytes_read = buf - tmpbuf;
 
 		RzBinDwarfSMRegisters regs;
-		set_regs_default(&hdr, &regs);
+		rz_bin_dwarf_line_header_reset_regs(&li->header, &regs);
 
 		// If there is more bytes in the buffer than size of the header
 		// It means that there has to be another header/comp.unit
-		if (buf_size > hdr.unit_length) {
-			buf_size = hdr.unit_length + (hdr.is_64bit * 8 + 4); // we dif against bytes_read, but
+		if (buf_size > li->header.unit_length) {
+			buf_size = li->header.unit_length + (li->header.is_64bit * 8 + 4); // we dif against bytes_read, but
 				// unit_length doesn't account unit_length field
 		}
 		// this deals with a case that there is compilation unit with any line information
 		if (buf_size == bytes_read) {
-			if (mode == RZ_MODE_PRINT) {
-				print(" Line table is present, but no lines present\n");
-			}
-			line_header_fini(&hdr);
+			rz_bin_dwarf_line_info_free(li);
 			continue;
 		}
 		if (buf_size > (buf_end - buf) + bytes_read || buf > buf_end) {
-			line_header_fini(&hdr);
-			return false;
+			rz_bin_dwarf_line_info_free(li);
+			break;
 		}
 		size_t tmp_read = 0;
+
+		RzVector ops;
+		if (mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) {
+			rz_vector_init(&ops, sizeof(RzBinDwarfLineOp), NULL, NULL);
+		}
+		if (mask & RZ_BIN_DWARF_LINE_INFO_MASK_ROWS) {
+			li->rows = rz_list_newf((RzListFree)rz_bin_source_row_free);
+		}
+
 		// we read the whole compilation unit (that might be composed of more sequences)
 		do {
 			// reads one whole sequence
-			tmp_read = parse_opcodes(binfile->rbin, buf, buf_end - buf, &hdr, &regs, mode, big_endian);
+			tmp_read = parse_opcodes(buf, buf_size - bytes_read, &li->header,
+				(mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) ? &ops : NULL, &regs,
+				li->rows, binfile->sdb_addrinfo, big_endian, target_addr_size);
 			bytes_read += tmp_read;
 			buf += tmp_read; // Move in the buffer forward
 		} while (bytes_read < buf_size && tmp_read != 0); // if nothing is read -> error, exit
 
-		line_header_fini(&hdr);
-		if (!tmp_read) {
-			return false;
+		if (mask & RZ_BIN_DWARF_LINE_INFO_MASK_OPS) {
+			li->ops_count = rz_vector_len(&ops);
+			li->ops = rz_vector_flush(&ops);
+			rz_vector_fini(&ops);
 		}
+
+		if (!tmp_read) {
+			rz_bin_dwarf_line_info_free(li);
+			break;
+		}
+		rz_list_push(r, li);
 	}
-	return true;
+	return r;
 }
 
 RZ_API void rz_bin_dwarf_arange_set_free(RzBinDwarfARangeSet *set) {
@@ -1351,6 +1283,21 @@ RZ_API void rz_bin_dwarf_debug_abbrev_free(RzBinDwarfDebugAbbrev *da) {
 	}
 	RZ_FREE(da->decls);
 	free(da);
+}
+
+RZ_API void rz_bin_dwarf_line_info_free(RzBinDwarfLineInfo *li) {
+	if (!li) {
+		return;
+	}
+	line_header_fini(&li->header);
+	if (li->ops) {
+		for (size_t i = 0; i < li->ops_count; i++) {
+			rz_bin_dwarf_line_op_fini(&li->ops[i]);
+		}
+		free(li->ops);
+	}
+	rz_list_free(li->rows);
+	free(li);
 }
 
 static void free_attr_value(RzBinDwarfAttrValue *val) {
@@ -2052,7 +1999,7 @@ static ut8 *get_section_bytes(RzBinFile *binfile, const char *sect_name, size_t 
  * @return RzBinDwarfDebugInfo* Parsed information, NULL if error
  */
 RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinFile *binfile, RzBinDwarfDebugAbbrev *da) {
-	rz_return_val_if_fail(binfile, NULL);
+	rz_return_val_if_fail(binfile && da, NULL);
 	RzBinSection *section = getsection(binfile, "debug_info");
 	if (!section) {
 		return NULL;
@@ -2112,83 +2059,29 @@ cave:
 	return info;
 }
 
-static RzBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
-	RzBinDwarfRow *row = RZ_NEW0(RzBinDwarfRow);
-	if (!row) {
+RZ_API RzList *rz_bin_dwarf_parse_line(RzBinFile *binfile, RzBinDwarfLineInfoMask mask) {
+	rz_return_val_if_fail(binfile, NULL);
+	RzBinSection *section = getsection(binfile, "debug_line");
+	if (!section) {
 		return NULL;
 	}
-	row->file = strdup(file);
-	row->address = addr;
-	row->line = line;
-	row->column = 0;
-	return row;
-}
-
-static void row_free(void *p) {
-	RzBinDwarfRow *row = (RzBinDwarfRow *)p;
-	free(row->file);
-	free(row);
-}
-
-RZ_API RzList *rz_bin_dwarf_parse_line(RzBinFile *binfile, int mode) {
-	rz_return_val_if_fail(binfile, NULL);
-	ut8 *buf;
-	RzList *list = NULL;
-	int len, ret;
-	RzBinSection *section = getsection(binfile, "debug_line");
-	if (binfile && section) {
-		len = section->size;
-		if (len < 1) {
-			return NULL;
-		}
-		buf = calloc(1, len + 1);
-		if (!buf) {
-			return NULL;
-		}
-		ret = rz_buf_read_at(binfile->buf, section->paddr, buf, len);
-		if (ret != len) {
-			free(buf);
-			return NULL;
-		}
-		list = rz_list_newf(row_free);
-		if (!list) {
-			free(buf);
-			return NULL;
-		}
-		// Actually parse the section
-		parse_line_raw(binfile, buf, len, mode, binfile->o && binfile->o->info && binfile->o->info->big_endian);
-		// k bin/cur/addrinfo/*
-		SdbListIter *iter;
-		SdbKv *kv;
-		SdbList *ls = sdb_foreach_list(binfile->sdb_addrinfo, false);
-		// Use the parsed information from _raw and transform it to more useful format
-		ls_foreach (ls, iter, kv) {
-			if (!strncmp(sdbkv_key(kv), "0x", 2)) {
-				ut64 addr;
-				RzBinDwarfRow *row;
-				int line;
-				char *file = strdup(sdbkv_value(kv));
-				if (!file) {
-					free(buf);
-					ls_free(ls);
-					rz_list_free(list);
-					return NULL;
-				}
-				char *tok = strchr(file, '|');
-				if (tok) {
-					*tok++ = 0;
-					line = atoi(tok);
-					addr = rz_num_math(NULL, sdbkv_key(kv));
-					row = row_new(addr, file, line, 0);
-					rz_list_append(list, row);
-				}
-				free(file);
-			}
-		}
-		ls_free(ls);
-		free(buf);
+	ut64 len = section->size;
+	if (len < 1) {
+		return NULL;
 	}
-	return list;
+	ut8 *buf = RZ_NEWS0(ut8, len + 1);
+	if (!buf) {
+		return NULL;
+	}
+	int ret = rz_buf_read_at(binfile->buf, section->paddr, buf, len);
+	if (ret != len) {
+		free(buf);
+		return NULL;
+	}
+	// Actually parse the section
+	RzList *lines = parse_line_raw(binfile, buf, len, mask, binfile->o && binfile->o->info && binfile->o->info->big_endian);
+	free(buf);
+	return lines;
 }
 
 RZ_API RzList /*<RzBinDwarfARangeSet>*/ *rz_bin_dwarf_parse_aranges(RzBinFile *binfile) {

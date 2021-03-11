@@ -1145,8 +1145,7 @@ static void file_lines_free_kv(HtPPKv *kv) {
 
 static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 	rz_return_val_if_fail(core && binfile, false);
-	RzBinDwarfRow *row;
-	RzListIter *iter;
+	RzBinSourceRow *row;
 	if (!rz_config_get_i(core->config, "bin.dbginfo")) {
 		return false;
 	}
@@ -1159,7 +1158,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
 		RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
-		RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(binfile, da);
+		RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_parse_info(binfile, da) : NULL;
 		if (mode == RZ_MODE_PRINT) {
 			if (da) {
 				rz_core_bin_dwarf_print_abbrev_section(da);
@@ -1192,8 +1191,41 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 				rz_list_free(aranges);
 			}
 		}
-		list = ownlist = rz_bin_dwarf_parse_line(binfile, mode);
+		RzList *lines = rz_bin_dwarf_parse_line(binfile,
+			RZ_BIN_DWARF_LINE_INFO_MASK_ROWS | (mode == RZ_MODE_PRINT ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0));
+		if (lines) {
+			if (mode == RZ_MODE_PRINT) {
+				rz_core_bin_dwarf_print_lines(lines);
+			}
+			// move all produced rows out
+			list = ownlist = rz_list_newf((RzListFree)rz_bin_source_row_free);
+			RzListIter *it;
+			RzBinDwarfLineInfo *li;
+			rz_list_foreach (lines, it, li) {
+				if (!li->rows) {
+					continue;
+				}
+				rz_list_join(list, li->rows);
+			}
+			rz_list_free(lines);
+		}
 		rz_bin_dwarf_debug_abbrev_free(da);
+
+		if (IS_MODE_SET(mode) && list && binfile->sdb_addrinfo) {
+			RzListIter *iter;
+			rz_list_foreach (list, iter, row) {
+				if (!row->file || !row->line) {
+					// !row->file ==> might be theoretically a valid entry but we can't handle it
+					// !row->line ==> just means "end of previous entry"
+					continue;
+				}
+				char k[32];
+				char s[512];
+				sdb_set(binfile->sdb_addrinfo,
+					rz_strf(k, "0x%" PFMT64x, row->address),
+					rz_strf(s, "%s|%u", row->file, row->line), 0);
+			}
+		}
 	}
 	if (!list) {
 		return false;
@@ -1209,6 +1241,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 
 	//TODO we should need to store all this in sdb, or do a filecontentscache in librz/util
 	//XXX this whole thing has leaks
+	RzListIter *iter;
 	rz_list_foreach (list, iter, row) {
 		if (rz_cons_is_breaked()) {
 			break;
@@ -1285,8 +1318,13 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 			free(file);
 			free(line);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x "\t%s\t%d\n",
-				row->address, row->file, row->line);
+			rz_cons_printf("0x%08" PFMT64x "\t%s\t",
+				row->address, row->file);
+			if (row->line) {
+				rz_cons_printf("%u\n", row->line);
+			} else {
+				rz_cons_print("-\n");
+			}
 		}
 	}
 	if (IS_MODE_JSON(mode)) {

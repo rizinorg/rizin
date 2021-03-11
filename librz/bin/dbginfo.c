@@ -5,6 +5,14 @@
 #include <rz_types.h>
 #include <rz_bin.h>
 
+RZ_API void rz_bin_source_row_free(RzBinSourceRow *row) {
+	if (!row) {
+		return;
+	}
+	free(row->file);
+	free(row);
+}
+
 RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line) {
 	rz_return_val_if_fail(bin, false);
 	RzBinFile *binfile = rz_bin_cur(bin);
