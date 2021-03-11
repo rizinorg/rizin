@@ -1,7 +1,7 @@
 /* rizin - LGPL - Copyright 2009-2020 - pancake, nibble, dso */
 
 #include "bin_elf.inc"
-#include "../format/elf/elf.h"
+
 static void headers32(RzBinFile *bf) {
 #define p bf->rbin->cb_printf
 	p("0x00000000  ELF MAGIC   0x%08x\n", rz_buf_read_le32_at(bf->buf, 0));

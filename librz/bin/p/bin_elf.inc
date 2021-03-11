@@ -171,7 +171,6 @@ static bool is_wordable_section(const char *name) {
 	return false;
 }
 
-
 static RzList *sections(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	struct rz_bin_elf_section_t *section = NULL;

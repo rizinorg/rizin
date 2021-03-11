@@ -65,21 +65,6 @@ struct rz_bin_pe_section_t {
 	int last;
 };
 
-struct rz_pe_section_flags {
-	bool scn_type_no_pad;			//IMAGE_SCN_TYPE_NO_PAD
-	bool scn_cnt_code;				//IMAGE_SCN_CNT_CODE
-	bool scn_cnt_init_data;			//IMAGE_SCN_CNT_INITIALIZED_DATA
-	bool scn_cnt_uninit_data;		//IMAGE_SCN_CNT_UNINITIALIZED_DATA
-	bool scn_lnk_other;				//IMAGE_SCN_LNK_OTHER
-	bool scn_lnk_info;				//IMAGE_SCN_LNK_INFO
-	bool scn_lnk_remove;			//IMAGE_SCN_LNK_REMOVE
-	bool scn_lnk_comdat;			//IMAGE_SCN_LNK_COMDAT
-	bool scn_gprel;					//IMAGE_SCN_GPREL
-	bool scn_mem_shared;			//PE_IMAGE_SCN_MEM_SHARED
-	bool scn_mem_executed;			//PE_IMAGE_SCN_MEM_EXECUTE
-	bool scn_mem_read;				//PE_IMAGE_SCN_MEM_READ
-	bool scn_mem_write;				//PE_IMAGE_SCN_MEM_WRITE
-} rz_pe_section_flags;
 struct rz_bin_pe_import_t {
 	ut8 name[PE_NAME_LENGTH + 1];
 	ut8 libname[PE_NAME_LENGTH + 1];
