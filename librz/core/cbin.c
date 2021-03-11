@@ -3082,7 +3082,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 						(ut64)addr, (ut64)section->vsize,
 						perms, hashstr, section_name, type, flag);
 				} else {
-					rz_table_add_rowf(table, "dXxXxsssss", i,
+					rz_table_add_rowf(table, "dXxXxssss", i,
 						(ut64)section->paddr, (ut64)section->size,
 						(ut64)addr, (ut64)section->vsize,
 						perms, section_name, type, flag);
