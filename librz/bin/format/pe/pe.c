@@ -4114,7 +4114,7 @@ extern struct rz_bin_write_t rz_bin_write_pe;
 //}
 //
 //char* PE_(section_flag_to_string)(int flag) {
-//	return rz_list_to_str(PE_(section_flag_to_rzlist)(flag), ',');
+//	return rz_list_to_str(PE_(section_flag_to_rzlist)(flag), ' ');
 //}
 
 char *PE_(rz_bin_pe_get_cc)(struct PE_(rz_bin_pe_obj_t) * bin) {

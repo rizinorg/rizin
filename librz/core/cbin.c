@@ -2721,11 +2721,19 @@ static char* section_type_to_string(RzBin *bin, int type) {
 	}
 	return NULL;
 }
-static char* section_flag_to_string(RzBin *bin, int flag) {
+//static char* section_flag_to_string(RzBin *bin, ut64 flag) {
+//	RzBinFile *a = rz_bin_cur(bin);
+//	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
+//	if (plugin && plugin->section_flag_to_string) {
+//		return plugin->section_flag_to_string(flag);
+//	}
+//	return NULL;
+//}
+static RzList* section_flag_to_rzlist(RzBin *bin, ut64 flag) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
-	if (plugin && plugin->section_flag_to_string) {
-		return plugin->section_flag_to_string(flag);
+	if (plugin && plugin->section_flag_to_rzlist) {
+		return plugin->section_flag_to_rzlist(flag);
 	}
 	return NULL;
 }
@@ -2778,8 +2786,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			rz_num_units(humansz, sizeof(humansz), s->size);
 			RzListInfo *info = rz_listinfo_new(s->name, pitv, vitv, s->perm, strdup(humansz));
 			rz_list_append(list, info);
-			rz_list_append(list, s->type);
-			rz_list_append(list, s->flags);
+			rz_list_append(list, rz_str_newf("%lld", s->type));
+			rz_list_append(list, rz_str_newf("%lld", s->flags));
 		}
 		RzTable *table = rz_core_table(r);
 		rz_table_visual_list(table, list, r->offset, -1, cols, r->io->va);
@@ -2810,6 +2818,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL(mode) && !print_segments ) {
+		//rz_cons_println("");
 		if(!strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3) ||  !strncmp(r->file->core->bin->cur->o->info->rclass, "mach", 4)){
 			if (hashtypes) {
 						rz_table_set_columnsf(table, "dXxXxsssss",
@@ -3018,9 +3027,16 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				pj_ks(pj, "type", type);
 			}
 			free(type);
-			char* flag = section_flag_to_string(r->bin, section->flags);
+			RzList *flag = section_flag_to_rzlist(r->bin, section->flags);
+			char *pos;
 			if(flag){
-				pj_ks(pj, "flags", flag);
+				pj_ka(pj, "flags");
+				RzListIter *it;
+				rz_list_foreach(flag, it, pos) {
+					pj_s(pj, pos);	
+				}
+				pj_end(pj);
+				
 			}
 			free(flag);
 			pj_kN(pj, "paddr", section->paddr);
@@ -3053,7 +3069,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
 			char* type = section_type_to_string(r->bin, section->type);
-			char* flag = section_flag_to_string(r->bin, section->flags);
+			char* flag = rz_list_to_str(section_flag_to_rzlist(r->bin, section->flags), ' ');
 			if (hashtypes) {
 				
 				rz_table_add_rowf(table, "dXxXxsssss", i,

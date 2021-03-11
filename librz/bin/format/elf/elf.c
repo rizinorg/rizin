@@ -1436,10 +1436,10 @@ RzList* Elf_(section_flag_to_rzlist)(ut64 flag) {
 		rz_list_append(flag_list, "info");
 	}
 	if(flag & SHF_LINK_ORDER) {
-		rz_list_append(flag_list, "link order");
+		rz_list_append(flag_list, "link_order");
 	}
 	if(flag & SHF_OS_NONCONFORMING) {
-		rz_list_append(flag_list, "extra os processing required");
+		rz_list_append(flag_list, "extra_os_processing_reqd");
 	}
 	if(flag & SHF_GROUP) {
 		rz_list_append(flag_list, "group");
@@ -1527,9 +1527,9 @@ char *Elf_(section_type_to_string)(ut64 type) {
 	}
 }
 
-char* Elf_(section_flag_to_string)(int flag) {
-	return rz_list_to_str(Elf_(section_flag_to_rzlist)(flag), ',');
-}
+//char* Elf_(section_flag_to_string)(ut64 flag) {
+//	return rz_list_to_str(Elf_(section_flag_to_rzlist)(flag), ' ');
+//}
 
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (!rel->rva) {

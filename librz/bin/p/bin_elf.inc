@@ -171,12 +171,6 @@ static bool is_wordable_section(const char *name) {
 	return false;
 }
 
-//static char* Elf_(section_flag_to_string)(int flag) {
-//	return rz_list_to_str(Elf_(section_flag_to_rzlist)(flag), ',');
-//}
-//static char* section_flag_to_string(ut64 flag) {
-//	return Elf_(rz_bin_elf_section_flag_to_string)(flag);
-//}
 
 static RzList *sections(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;

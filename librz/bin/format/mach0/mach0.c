@@ -2322,9 +2322,9 @@ char *MACH0_(section_type_to_string)(ut64 type) {
 	}
 }
 
-char* MACH0_(section_flag_to_string)(int flag) {
-	return rz_list_to_str(MACH0_(section_flag_to_rzlist)(flag), ' ');
-}
+//char* MACH0_(section_flag_to_string)(ut64 flag) {
+//	return rz_list_to_str(MACH0_(section_flag_to_rzlist)(flag), ' ');
+//}
 
 RzList *MACH0_(section_flag_to_rzlist)(ut64 flag) {
 	RzList* flag_list = rz_list_new();
@@ -2357,6 +2357,7 @@ RzList *MACH0_(section_flag_to_rzlist)(ut64 flag) {
 	}
 	return flag_list;
 }
+
 // XXX this function is called so many times
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin) {
 	rz_return_val_if_fail(bin, NULL);
