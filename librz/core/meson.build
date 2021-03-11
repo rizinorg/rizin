@@ -1,6 +1,38 @@
-core_plugins = [
-  'java',
+rz_core_dependencies = [
+  rz_util_dep,
+  rz_magic_dep,
+  rz_socket_dep,
+  rz_flag_dep,
+  rz_cons_dep,
+  rz_lang_dep,
+  rz_hash_dep,
+  rz_crypto_dep,
+  rz_io_dep,
+  rz_reg_dep,
+  rz_bp_dep,
+  rz_syscall_dep,
+  rz_parse_dep,
+  rz_asm_dep,
+  rz_egg_dep,
+  rz_search_dep,
+  rz_analysis_dep,
+  rz_debug_dep,
+  rz_config_dep,
+  rz_bin_dep,
+  platform_deps,
+  gdb_dep,
+  lrt,
+  shell_parser_dep,
+  libuv_dep,
 ]
+
+rz_core_inc = []
+if host_machine.system() != 'windows'
+  rz_core_inc += ['../../shlr/heap/include']
+else
+  rz_core_inc += ['../../shlr/heap/include/rz_windows']
+endif
+rz_core_inc = [platform_inc, include_directories(rz_core_inc)]
 
 subdir('cmd_descs')
 
@@ -69,61 +101,19 @@ rz_core_sources = [
   'vmenus_graph.c',
   'vmenus_zigns.c',
   'yank.c',
-  'p/core_java.c',
-  '../bin/format/java/class_bin.c',
-  '../bin/format/java/class_attribute.c',
-  '../bin/format/java/class_const_pool.c',
-  '../bin/format/java/class_field.c',
-  '../bin/format/java/class_method.c',
-  '../bin/format/java/class_interface.c',
   'cannotated_code.c',
   'serialize_core.c'
 ]
 
-rz_core_inc = []
-if host_machine.system() != 'windows'
-  rz_core_inc += ['../../shlr/heap/include']
-else
+if host_machine.system() == 'windows'
   rz_core_sources += 'windows_heap.c'
-  rz_core_inc += ['../../shlr/heap/include/rz_windows']
-endif
-rz_core_inc = [platform_inc, include_directories(rz_core_inc)]
-
-rz_core_deps = [
-  rz_util_dep,
-  rz_magic_dep,
-  rz_socket_dep,
-  rz_flag_dep,
-  rz_cons_dep,
-  rz_lang_dep,
-  rz_hash_dep,
-  rz_crypto_dep,
-  rz_io_dep,
-  rz_reg_dep,
-  rz_bp_dep,
-  rz_syscall_dep,
-  rz_parse_dep,
-  rz_asm_dep,
-  rz_egg_dep,
-  rz_search_dep,
-  rz_analysis_dep,
-  rz_debug_dep,
-  rz_config_dep,
-  rz_bin_dep,
-  platform_deps,
-  gdb_dep,
-  lrt,
-  shell_parser_dep
-]
-
-if libuv_dep.found()
-  rz_core_deps += libuv_dep
 endif
 
 rz_core = library('rz_core', rz_core_sources,
   include_directories: rz_core_inc,
   c_args: library_cflags,
-  dependencies: rz_core_deps,
+  dependencies: rz_core_dependencies,
+  link_with: rz_core_static_plugins,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
