@@ -47,7 +47,7 @@ import json
 %include "tmp.h"
 
 %extend RZ {
-  RZ() {
+  RZ(const char *bin = NULL) {
     RZ* r = malloc(sizeof(RZ));
     if (!r) {
       // TODO
@@ -57,6 +57,9 @@ import json
       // TODO
     }
     rz_core_cmd_str(r->_core, "e scr.color=0");
+    if (bin) {
+      rz_core_cmd_strf(r->_core, "o %s", bin);
+    }
     return r;
   }
 

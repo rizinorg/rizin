@@ -13,5 +13,6 @@ print(core.cmd('pd 1').strip())
 print(core.cmdj('pdj 1')[0]['opcode'])
 
 # Use the actual API
+core = rz.RZ('/bin/ls')
 # TODO
 
