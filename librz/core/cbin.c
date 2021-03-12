@@ -2852,9 +2852,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			rz_num_units(humansz, sizeof(humansz), s->size);
 			RzListInfo *info = rz_listinfo_new(s->name, pitv, vitv, s->perm, strdup(humansz));
 			rz_list_append(list, info);
-			//RzListInfo *section_info = rz_listinfo_new(s->type);
-			//rz_list_append(list, rz_str_newf("%"PFMT64d"", s->type));
-			//rz_list_append(list, rz_str_newf("%"PFMT64d"", s->flags));
+			
 		}
 		RzTable *table = rz_core_table(r);
 		rz_table_visual_list(table, list, r->offset, -1, cols, r->io->va);
@@ -2901,9 +2899,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				rz_table_set_columnsf(table, "dXxXxss",
 					"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
 			}
-		}
-
-		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
+		}	
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
 	}
