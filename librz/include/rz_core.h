@@ -391,8 +391,6 @@ typedef struct rz_core_cmpwatch_t {
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef RZ_API
-RZ_API void rz_core_item_free(RzCoreItem *ci);
-
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
 
 RZ_API void rz_core_gadget_free(RzCoreGadget *g);
