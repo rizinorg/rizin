@@ -4,7 +4,7 @@ swig = find_program('swig')
 rz_core_swig = custom_target('rz_core_swig',
   input: 'rz_core.i',
   output: ['rz_core.py', 'rz_core_wrap.c'],
-  command: [swig, '-python', '-py3', '-outdir', '@OUTDIR@', '-o', '@OUTPUT1@', '-I@CURRENT_SOURCE_DIR@/librz/include', '-MMD', '@INPUT@'],
+  command: [swig, '-python', '-py3', '-outdir', '@OUTDIR@', '-o', '@OUTPUT1@', '-I@SOURCE_ROOT@/librz/include', '-MMD', '@INPUT@'],
   install: true,
   install_dir: [py3_exe.get_install_dir(), false]
 )
