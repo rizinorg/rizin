@@ -846,9 +846,9 @@ EOF
 EXPECT=<<EOF
 Current section
 
-nth paddr       size vaddr      vsize perm name               type flags
-------------------------------------------------------------------------
-0   0x00000188  0x24 0x08048188  0x24 -r-- .note.gnu.build-id NOTE alloc, 
+nth paddr       size vaddr       vsize perm name               type flags
+-------------------------------------------------------------------------
+0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build-id NOTE alloc
 
 Current section
 

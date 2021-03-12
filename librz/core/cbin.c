@@ -2821,6 +2821,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
 	bool segments_only = true;
+	bool plugin_type_flags_support = plugin && (plugin->section_type_to_string || plugin->section_flag_to_rzlist);
 	RzList *io_section_info = NULL;
 
 	if (!dup_chk_ht) {
@@ -2885,7 +2886,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL(mode) && !print_segments ) {
-		if(plugin && plugin->section_flag_to_rzlist && plugin->section_type_to_string){
+		if(plugin_type_flags_support){
 			if (hashtypes) {
 						rz_table_set_columnsf(table, "dXxXxsssss",
 				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "flags");
@@ -3146,10 +3147,11 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
-			if(!print_segments) {
-				// Sections only
+			if(!print_segments && plugin_type_flags_support) {
+				// Sections with type or flags only
 				char* type = section_type_to_string(r->bin, section->type);
-				char* flag = rz_list_to_str(section_flag_to_rzlist(r->bin, section->flags), ',');
+				RzList* section_flags = section_flag_to_rzlist(r->bin, section->flags);
+				char* flag = rz_list_to_delim_str(section_flags, ',');
 				if (hashtypes) {
 					rz_table_add_rowf(table, "dXxXxsssss", i,
 						(ut64)section->paddr, (ut64)section->size,
@@ -3161,8 +3163,9 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 						(ut64)addr, (ut64)section->vsize,
 						perms, section_name, type, flag);
 				}
-				free(type);
 				free(flag);
+				rz_list_free(section_flags);
+				free(type);
 			} else {
 				// Segments only
 				if (hashtypes) {

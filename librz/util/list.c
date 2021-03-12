@@ -628,6 +628,25 @@ RZ_API char *rz_list_to_str(RzList *list, char ch) {
 	return rz_strbuf_drain(buf);
 }
 
+RZ_API char *rz_list_to_delim_str(RzList *list, char delim) {
+	RzListIter *iter;
+	RzStrBuf *buf = rz_strbuf_new("");
+	if (!buf) {
+		return NULL;
+	}
+	char *item;
+	bool is_first = true;
+	rz_list_foreach (list, iter, item) {
+		if(is_first) {
+			rz_strbuf_append(buf, item);
+			is_first = false;
+		} else {
+			rz_strbuf_appendf(buf, "%c%s", delim, item);
+		}
+	}
+	return rz_strbuf_drain(buf);
+}
+
 RZ_API RzList *rz_list_of_sdblist(SdbList *sl) {
 	RzList *l = rz_list_newf(free);
 	SdbKv *kv;
