@@ -637,7 +637,7 @@ RZ_API char *rz_list_to_delim_str(RzList *list, char delim) {
 	char *item;
 	bool is_first = true;
 	rz_list_foreach (list, iter, item) {
-		if(is_first) {
+		if (is_first) {
 			rz_strbuf_append(buf, item);
 			is_first = false;
 		} else {

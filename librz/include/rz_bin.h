@@ -459,8 +459,8 @@ typedef struct rz_bin_plugin_t {
 	int (*get_offset)(RzBinFile *bf, int type, int idx);
 	char *(*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
-	char* (*section_type_to_string)(ut64 type);
-	RzList* (*section_flag_to_rzlist)(ut64 flag);
+	char *(*section_type_to_string)(ut64 type);
+	RzList *(*section_flag_to_rzlist)(ut64 flag);
 	RzBuffer *(*create)(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 	char *(*demangle)(const char *str);
 	char *(*regstate)(RzBinFile *bf);

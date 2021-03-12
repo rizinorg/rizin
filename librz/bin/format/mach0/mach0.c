@@ -2244,7 +2244,6 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			s->perm = prot2perm(seg->initprot);
 			s->add = true;
 			rz_list_append(list, s);
-			
 		}
 	}
 	if (bin->nsects > 0) {
@@ -2260,7 +2259,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
 			// The bottom byte of flags is the section type
 			s->type = bin->sects[i].flags & 0xFF;
-			s->flags = bin->sects[i].flags & 0xFFFFFF00; 
+			s->flags = bin->sects[i].flags & 0xFFFFFF00;
 			// XXX flags
 			s->paddr = (ut64)bin->sects[i].offset;
 			int segment_index = 0;
@@ -2295,62 +2294,62 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 
 char *MACH0_(section_type_to_string)(ut64 type) {
 	switch (type) {
-		case S_REGULAR:
-			return rz_str_new("REGULAR");
-		case S_ZEROFILL:
-			return rz_str_new("ZEROFILL");
-		case S_CSTRING_LITERALS:
-			return rz_str_new("CSTRING_LITERALS");
-		case S_4BYTE_LITERALS:
-			return rz_str_new("4BYTE_LITERALS");
-		case S_LITERAL_POINTERS:
-			return rz_str_new("LITERAL_POINTERS");
-		case S_NON_LAZY_SYMBOL_POINTERS:
-			return rz_str_new("NON_LAZY_SYMBOL_POINTERS");
-		case S_LAZY_SYMBOL_POINTERS:
-			return rz_str_new("LAZY_SYMBOL_POINTERS");
-		case S_SYMBOL_STUBS:
-			return rz_str_new("SYMBOL_STUBS");
-		case S_MOD_INIT_FUNC_POINTERS:
-			return rz_str_new("MOD_INIT_FUNC_POINTERS");
-		case S_MOD_TERM_FUNC_POINTERS:
-			return rz_str_new("MOD_TERM_FUNC_POINTERS");
-		case S_COALESCED:
-			return rz_str_new("COALESCED");
-		case S_GB_ZEROFILL:
-			return rz_str_new("GB_ZEROFILL");
-		default:
-			return rz_str_newf("0x%"PFMT64x, type);
+	case S_REGULAR:
+		return rz_str_new("REGULAR");
+	case S_ZEROFILL:
+		return rz_str_new("ZEROFILL");
+	case S_CSTRING_LITERALS:
+		return rz_str_new("CSTRING_LITERALS");
+	case S_4BYTE_LITERALS:
+		return rz_str_new("4BYTE_LITERALS");
+	case S_LITERAL_POINTERS:
+		return rz_str_new("LITERAL_POINTERS");
+	case S_NON_LAZY_SYMBOL_POINTERS:
+		return rz_str_new("NON_LAZY_SYMBOL_POINTERS");
+	case S_LAZY_SYMBOL_POINTERS:
+		return rz_str_new("LAZY_SYMBOL_POINTERS");
+	case S_SYMBOL_STUBS:
+		return rz_str_new("SYMBOL_STUBS");
+	case S_MOD_INIT_FUNC_POINTERS:
+		return rz_str_new("MOD_INIT_FUNC_POINTERS");
+	case S_MOD_TERM_FUNC_POINTERS:
+		return rz_str_new("MOD_TERM_FUNC_POINTERS");
+	case S_COALESCED:
+		return rz_str_new("COALESCED");
+	case S_GB_ZEROFILL:
+		return rz_str_new("GB_ZEROFILL");
+	default:
+		return rz_str_newf("0x%" PFMT64x, type);
 	}
 }
 
 RzList *MACH0_(section_flag_to_rzlist)(ut64 flag) {
-	RzList* flag_list = rz_list_new();
-	if(flag & S_ATTR_PURE_INSTRUCTIONS){
+	RzList *flag_list = rz_list_new();
+	if (flag & S_ATTR_PURE_INSTRUCTIONS) {
 		rz_list_append(flag_list, "PURE_INSTRUCTIONS");
 	}
-	if(flag & S_ATTR_NO_TOC){
+	if (flag & S_ATTR_NO_TOC) {
 		rz_list_append(flag_list, "NO_TOC");
 	}
-	if(flag & S_ATTR_SOME_INSTRUCTIONS){
+	if (flag & S_ATTR_SOME_INSTRUCTIONS) {
 		rz_list_append(flag_list, "SOME_INSTRUCTIONS");
 	}
-	if(flag & S_ATTR_EXT_RELOC){
+	if (flag & S_ATTR_EXT_RELOC) {
 		rz_list_append(flag_list, "EXT_RELOC");
 	}
-	if(flag & S_ATTR_SELF_MODIFYING_CODE){
+	if (flag & S_ATTR_SELF_MODIFYING_CODE) {
 		rz_list_append(flag_list, "SELF_MODIFYING_CODE");
 	}
-	if(flag & S_ATTR_DEBUG){
+	if (flag & S_ATTR_DEBUG) {
 		rz_list_append(flag_list, "DEBUG");
 	}
-	if(flag & S_ATTR_LIVE_SUPPORT){
+	if (flag & S_ATTR_LIVE_SUPPORT) {
 		rz_list_append(flag_list, "LIVE_SUPPORT");
 	}
-	if(flag & S_ATTR_STRIP_STATIC_SYMS){
+	if (flag & S_ATTR_STRIP_STATIC_SYMS) {
 		rz_list_append(flag_list, "STRIP_STATIC_SYMS");
 	}
-	if(flag & S_ATTR_NO_DEAD_STRIP){
+	if (flag & S_ATTR_NO_DEAD_STRIP) {
 		rz_list_append(flag_list, "NO_DEAD_STRIP");
 	}
 	return flag_list;

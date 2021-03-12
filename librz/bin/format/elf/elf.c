@@ -1418,119 +1418,117 @@ ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name
 	RzBinElfSection *section = get_section_by_name(bin, section_name);
 	return section ? section->rva + section->size : UT64_MAX;
 }
-RzList* Elf_(section_flag_to_rzlist)(ut64 flag) {
-	RzList* flag_list = rz_list_new();
-	if(flag & SHF_WRITE) {
+RzList *Elf_(section_flag_to_rzlist)(ut64 flag) {
+	RzList *flag_list = rz_list_new();
+	if (flag & SHF_WRITE) {
 		rz_list_append(flag_list, "write");
 	}
-	if(flag & SHF_ALLOC) {
+	if (flag & SHF_ALLOC) {
 		rz_list_append(flag_list, "alloc");
 	}
-	if(flag & SHF_EXECINSTR) {
+	if (flag & SHF_EXECINSTR) {
 		rz_list_append(flag_list, "execute");
 	}
-	if(flag & SHF_MERGE) {
+	if (flag & SHF_MERGE) {
 		rz_list_append(flag_list, "merge");
 	}
-	if(flag & SHF_STRINGS) {
+	if (flag & SHF_STRINGS) {
 		rz_list_append(flag_list, "strings");
 	}
-	if(flag & SHF_INFO_LINK) {
+	if (flag & SHF_INFO_LINK) {
 		rz_list_append(flag_list, "info");
 	}
-	if(flag & SHF_LINK_ORDER) {
+	if (flag & SHF_LINK_ORDER) {
 		rz_list_append(flag_list, "link_order");
 	}
-	if(flag & SHF_OS_NONCONFORMING) {
+	if (flag & SHF_OS_NONCONFORMING) {
 		rz_list_append(flag_list, "extra_os_processing_reqd");
 	}
-	if(flag & SHF_GROUP) {
+	if (flag & SHF_GROUP) {
 		rz_list_append(flag_list, "group");
 	}
-	if(flag & SHF_TLS) {
+	if (flag & SHF_TLS) {
 		rz_list_append(flag_list, "TLS");
 	}
-	if(flag & SHF_EXCLUDE) {
+	if (flag & SHF_EXCLUDE) {
 		rz_list_append(flag_list, "exclude");
 	}
-	if(flag & SHF_COMPRESSED) {
+	if (flag & SHF_COMPRESSED) {
 		rz_list_append(flag_list, "compressed");
 	}
-	return flag_list;	
+	return flag_list;
 }
 
 char *Elf_(section_type_to_string)(ut64 type) {
 	switch (type) {
-		case SHT_NULL:
-			return rz_str_new("NULL");
-		case SHT_PROGBITS:
-			return rz_str_new("PROGBITS");
-		case SHT_SYMTAB:
-			return rz_str_new("SYMTAB");
-		case SHT_STRTAB:
-			return rz_str_new("STRTAB");
-		case SHT_RELA:
-			return rz_str_new("RELA");
-		case SHT_HASH:
-			return rz_str_new("HASH");
-		case SHT_DYNAMIC:
-			return rz_str_new("DYNAMIC");
-		case SHT_NOTE:
-			return rz_str_new("NOTE");
-		case SHT_NOBITS:
-			return rz_str_new("NOBITS");
-		case SHT_REL:
-			return rz_str_new("REL");
-		case SHT_SHLIB:
-			return rz_str_new("SHLIB");
-		case SHT_DYNSYM:
-			return rz_str_new("DYNSYM");
-		case SHT_INIT_ARRAY:
-			return rz_str_new("INIT_ARRAY");
-		case SHT_FINI_ARRAY:
-			return rz_str_new("FINI_ARRAY");
-		case SHT_PREINIT_ARRAY:
-			return rz_str_new("PREINIT_ARRAY");
-		case SHT_GROUP:
-			return rz_str_new("GROUP");
-		case SHT_SYMTAB_SHNDX:
-			return rz_str_new("SYMTAB_SHNDX");
-		case SHT_NUM:
-			return rz_str_new("NUM");
-		case SHT_LOOS:
-			return rz_str_new("LOOS");
-		case SHT_GNU_ATTRIBUTES:
-			return rz_str_new("GNU_ATTRIBUTES");
-		case SHT_GNU_HASH:
-			return rz_str_new("GNU_HASH");
-		case SHT_GNU_LIBLIST:
-			return rz_str_new("GNU_LIBLIST");
-		case SHT_CHECKSUM:
-			return rz_str_new("CHECKSUM");
-		case SHT_SUNW_move:
-			return rz_str_new("MOVE");
-		case SHT_SUNW_COMDAT:
-			return rz_str_new("COMDAT");
-		case SHT_SUNW_syminfo:
-			return rz_str_new("SYMINFO");
-		case SHT_GNU_verdef:
-			return rz_str_new("VERDEF");
-		case SHT_GNU_verneed:
-			return rz_str_new("VERNEED");
-		case SHT_GNU_versym:
-			return rz_str_new("VERSYM");
-		default:
-			if(type >= SHT_LOPROC && type <= SHT_HIPROC) {
-				return rz_str_newf("LOPROC+0x%08"PFMT64x, type-SHT_LOPROC);
-			}
-			if(type >= SHT_LOUSER && type <= SHT_HIUSER) {
-				return rz_str_newf("LOUSER+0x%08"PFMT64x, type-SHT_LOUSER);
-			}
-			return rz_str_newf("0x%"PFMT64x, type);
+	case SHT_NULL:
+		return rz_str_new("NULL");
+	case SHT_PROGBITS:
+		return rz_str_new("PROGBITS");
+	case SHT_SYMTAB:
+		return rz_str_new("SYMTAB");
+	case SHT_STRTAB:
+		return rz_str_new("STRTAB");
+	case SHT_RELA:
+		return rz_str_new("RELA");
+	case SHT_HASH:
+		return rz_str_new("HASH");
+	case SHT_DYNAMIC:
+		return rz_str_new("DYNAMIC");
+	case SHT_NOTE:
+		return rz_str_new("NOTE");
+	case SHT_NOBITS:
+		return rz_str_new("NOBITS");
+	case SHT_REL:
+		return rz_str_new("REL");
+	case SHT_SHLIB:
+		return rz_str_new("SHLIB");
+	case SHT_DYNSYM:
+		return rz_str_new("DYNSYM");
+	case SHT_INIT_ARRAY:
+		return rz_str_new("INIT_ARRAY");
+	case SHT_FINI_ARRAY:
+		return rz_str_new("FINI_ARRAY");
+	case SHT_PREINIT_ARRAY:
+		return rz_str_new("PREINIT_ARRAY");
+	case SHT_GROUP:
+		return rz_str_new("GROUP");
+	case SHT_SYMTAB_SHNDX:
+		return rz_str_new("SYMTAB_SHNDX");
+	case SHT_NUM:
+		return rz_str_new("NUM");
+	case SHT_LOOS:
+		return rz_str_new("LOOS");
+	case SHT_GNU_ATTRIBUTES:
+		return rz_str_new("GNU_ATTRIBUTES");
+	case SHT_GNU_HASH:
+		return rz_str_new("GNU_HASH");
+	case SHT_GNU_LIBLIST:
+		return rz_str_new("GNU_LIBLIST");
+	case SHT_CHECKSUM:
+		return rz_str_new("CHECKSUM");
+	case SHT_SUNW_move:
+		return rz_str_new("MOVE");
+	case SHT_SUNW_COMDAT:
+		return rz_str_new("COMDAT");
+	case SHT_SUNW_syminfo:
+		return rz_str_new("SYMINFO");
+	case SHT_GNU_verdef:
+		return rz_str_new("VERDEF");
+	case SHT_GNU_verneed:
+		return rz_str_new("VERNEED");
+	case SHT_GNU_versym:
+		return rz_str_new("VERSYM");
+	default:
+		if (type >= SHT_LOPROC && type <= SHT_HIPROC) {
+			return rz_str_newf("LOPROC+0x%08" PFMT64x, type - SHT_LOPROC);
+		}
+		if (type >= SHT_LOUSER && type <= SHT_HIUSER) {
+			return rz_str_newf("LOUSER+0x%08" PFMT64x, type - SHT_LOUSER);
+		}
+		return rz_str_newf("0x%" PFMT64x, type);
 	}
 }
-
-
 
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (!rel->rva) {
