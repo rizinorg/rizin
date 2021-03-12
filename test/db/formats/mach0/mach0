@@ -329,6 +329,7 @@ nth paddr       size vaddr        vsize perm name                     type      
 7   0x00001028  0x10 0x100001028   0x10 -rw- 7.__DATA.__nl_symbol_ptr NON_LAZY_SYMBOL_POINTERS 
 8   0x00001038  0x10 0x100001038   0x10 -rw- 8.__DATA.__la_symbol_ptr LAZY_SYMBOL_POINTERS     
 9   0x00001048  0x20 0x100001048   0x20 -rw- 9.__DATA.__data          REGULAR                  
+
 EOF
 RUN
 
@@ -343,5 +344,6 @@ nth paddr         size vaddr         vsize perm name
 0   0x00000000  0x1000 0x100000000  0x1000 -r-x TEXT
 1   0x00001000  0x1000 0x100001000  0x1000 -rw- DATA
 2   0x00002000  0x1000 0x100002000  0x1000 -r-- LINKEDIT
+
 EOF
 RUN
