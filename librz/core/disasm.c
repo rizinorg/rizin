@@ -3837,7 +3837,7 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 	if (analysis_flag) {
 		char *dupped = strdup(analysis_flag);
 		if (dupped) {
-			rz_name_filter(dupped, -1);
+			rz_name_filter(dupped, -1, true);
 			if (!strcmp(&name[4], dupped)) {
 				return true;
 			}

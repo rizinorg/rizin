@@ -129,7 +129,7 @@ static char *filter_item_name(const char *name) {
 	}
 
 	rz_str_trim(res);
-	rz_name_filter(res, 0);
+	rz_name_filter(res, 0, true);
 	return res;
 }
 

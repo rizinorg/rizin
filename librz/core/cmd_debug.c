@@ -1305,7 +1305,7 @@ static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
 				/* Escape backslashes (e.g. for Windows). */
 				char *escaped_path = rz_str_escape(map->file);
 				char *filtered_name = strdup(map->name);
-				rz_name_filter(filtered_name, 0);
+				rz_name_filter(filtered_name, 0, true);
 				rz_cons_printf("f mod.%s = 0x%08" PFMT64x "\n",
 					filtered_name, map->addr);
 				rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);

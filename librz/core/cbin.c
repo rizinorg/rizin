@@ -419,7 +419,7 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 		}
 		rz_meta_set(r->analysis, RZ_META_TYPE_STRING, vaddr, string->size, string->string);
 		char *f_name = strdup(string->string);
-		rz_name_filter(f_name, -1);
+		rz_name_filter(f_name, -1, true);
 		char *str;
 		if (r->bin->prefix) {
 			str = rz_str_newf("%s.str.%s", r->bin->prefix, f_name);
@@ -615,7 +615,7 @@ static void _print_strings(RzCore *r, RZ_NULLABLE const RzList *list, PJ *pj, in
 			pj_end(pj);
 		} else if (IS_MODE_RZCMD(mode)) {
 			char *f_name = strdup(string->string);
-			rz_name_filter(f_name, RZ_FLAG_NAME_SIZE);
+			rz_name_filter(f_name, RZ_FLAG_NAME_SIZE, true);
 			char *str = (r->bin->prefix)
 				? rz_str_newf("%s.str.%s", r->bin->prefix, f_name)
 				: rz_str_newf("str.%s", f_name);
@@ -1693,7 +1693,7 @@ static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, ch
 			snprintf(flagname, RZ_FLAG_NAME_SIZE, "reloc.%s", demname);
 		}
 	}
-	rz_name_filter(flagname, 0);
+	rz_name_filter(flagname, 0, true);
 	RzFlagItem *fi = rz_flag_set(r->flags, flagname, addr, bin_reloc_size(reloc));
 	if (demname) {
 		char *realname;
@@ -2160,7 +2160,7 @@ static const char *getPrefixFor(RzBinSymbol *sym) {
 static char *construct_symbol_flagname(const char *pfx, const char *libname, const char *symname, int len) {
 	char *r = rz_str_newf("%s.%s%s%s", pfx, libname ? libname : "", libname ? "_" : "", symname);
 	if (r) {
-		rz_name_filter(r, len); // maybe unnecessary..
+		rz_name_filter(r, len, true); // maybe unnecessary..
 		char *R = __filterQuotedShell(r);
 		free(r);
 		return R;
@@ -2194,11 +2194,11 @@ static void snInit(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
 	if (sym->classname && sym->classname[0]) {
 		sn->classname = strdup(sym->classname);
 		sn->classflag = rz_str_newf("sym.%s.%s", sn->classname, sn->name);
-		rz_name_filter(sn->classflag, MAXFLAG_LEN_DEFAULT);
+		rz_name_filter(sn->classflag, MAXFLAG_LEN_DEFAULT, true);
 		const char *name = sym->dname ? sym->dname : sym->name;
 		sn->methname = rz_str_newf("%s::%s", sn->classname, name);
 		sn->methflag = rz_str_newf("sym.%s.%s", sn->classname, name);
-		rz_name_filter(sn->methflag, strlen(sn->methflag));
+		rz_name_filter(sn->methflag, strlen(sn->methflag), true);
 	} else {
 		sn->classname = NULL;
 		sn->classflag = NULL;
@@ -2393,7 +2393,7 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				RzFlagItem *fi = rz_flag_get(r->flags, sn.methflag);
 				if (r->bin->prefix) {
 					char *prname = rz_str_newf("%s.%s", r->bin->prefix, sn.methflag);
-					rz_name_filter(sn.methflag, -1);
+					rz_name_filter(sn.methflag, -1, true);
 					free(sn.methflag);
 					sn.methflag = prname;
 				}
@@ -2901,7 +2901,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			continue;
 		}
 
-		rz_name_filter(section->name, strlen(section->name) + 1);
+		rz_name_filter(section->name, strlen(section->name) + 1, false);
 		if (at != UT64_MAX && (!section->size || !is_in_range(at, addr, section->size))) {
 			continue;
 		}
@@ -3154,7 +3154,7 @@ static int bin_fields(RzCore *r, PJ *pj, int mode, int va) {
 
 		if (IS_MODE_RZCMD(mode)) {
 			char *n = __filterQuotedShell(field->name);
-			rz_name_filter(n, -1);
+			rz_name_filter(n, -1, true);
 			rz_cons_printf("\"f header.%s 1 0x%08" PFMT64x "\"\n", n, addr);
 			if (field->comment && *field->comment) {
 				char *e = sdb_encode((const ut8 *)field->comment, -1);
@@ -3476,7 +3476,7 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 			continue;
 		}
 		name = strdup(c->name);
-		rz_name_filter(name, 0);
+		rz_name_filter(name, 0, true);
 		ut64 at_min = UT64_MAX;
 		ut64 at_max = 0LL;
 
@@ -3503,7 +3503,7 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 				char *method = sdb_fmt("method%s.%s.%s",
 					mflags, c->name, sym->name);
 				RZ_FREE(mflags);
-				rz_name_filter(method, -1);
+				rz_name_filter(method, -1, true);
 				rz_flag_set(r->flags, method, sym->vaddr, 1);
 			}
 #if 0

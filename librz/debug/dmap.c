@@ -32,7 +32,7 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, const
 		char *name = (map->name && *map->name)
 			? rz_str_newf("%s.%s", map->name, rz_str_rwx_i(map->perm))
 			: rz_str_newf("%08" PFMT64x ".%s", map->addr, rz_str_rwx_i(map->perm));
-		rz_name_filter(name, 0);
+		rz_name_filter(name, 0, true);
 		rz_num_units(humansz, sizeof(humansz), map->addr_end - map->addr);
 		dbg->cb_printf("0x%016" PFMT64x " - 0x%016" PFMT64x " %6s %5s %s\n",
 			map->addr,
@@ -53,7 +53,7 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, const
 			flagname = "";
 		} else if (map->name) {
 			char *filtered_name = strdup(map->name);
-			rz_name_filter(filtered_name, 0);
+			rz_name_filter(filtered_name, 0, true);
 			if (!strncmp(flagname, "map.", 4) &&
 				!strcmp(flagname + 4, filtered_name)) {
 				flagname = "";
@@ -112,7 +112,7 @@ RZ_API void rz_debug_map_list(RzDebug *dbg, ut64 addr, const char *input) {
 				char *name = (map->name && *map->name)
 					? rz_str_newf("%s.%s", map->name, rz_str_rwx_i(map->perm))
 					: rz_str_newf("%08" PFMT64x ".%s", map->addr, rz_str_rwx_i(map->perm));
-				rz_name_filter(name, 0);
+				rz_name_filter(name, 0, true);
 				dbg->cb_printf("f map.%s 0x%08" PFMT64x " 0x%08" PFMT64x "\n",
 					name, map->addr_end - map->addr + 1, map->addr);
 				free(name);
