@@ -1354,9 +1354,11 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 
 	switch (format_out) {
 	case 'c':
-		PRINT_YA("\n  Top chunk @ ");
+		PRINT_YA("\n  chunk @ ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(top));
-		PRINT_GA(" - [brk_start: ");
+		PRINT_GA(" [top][size: ");
+		PRINTF_BA("0x%" PFMT64x, (ut64)size_tmp);
+		PRINT_GA( "][brk_start: ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)brk_start);
 		PRINT_GA(", brk_end: ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)brk_end);
