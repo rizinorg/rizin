@@ -236,6 +236,10 @@ void lua_free_proto_entry(LuaProto *proto){
 	rz_list_free(proto->abs_line_info_entries);
 	rz_list_free(proto->local_var_info_entries);
 	rz_list_free(proto->dbg_upvalue_entries);
+	proto->line_info_entries = NULL;
+	proto->abs_line_info_entries = NULL;
+	proto->local_var_info_entries = NULL;
+	proto->dbg_upvalue_entries = NULL;
 
 	/* recursively free protos */
 	LuaProto *sub_proto;
@@ -247,6 +251,7 @@ void lua_free_proto_entry(LuaProto *proto){
 		sub_proto = NULL;
 	}
 	rz_list_free(proto->proto_entries);
+	proto->proto_entries = NULL;
 
 	RZ_FREE(proto->proto_name);
 	RZ_FREE(proto);
