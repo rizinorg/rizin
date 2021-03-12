@@ -2,13 +2,15 @@
 %{
 #include "rz_core.h"
 #include "tmp.h"
+
+RzCorePlugin rz_core_plugin_java;
 %}
 
 %pythoncode %{
 import json
 %}
 
-#if 0
+#if 1
 
 // First way: include the whole rz_core.h and here be dragons
 // currently fails because of extern rz_core_plugin_java but that is the idea
@@ -19,11 +21,20 @@ import json
 %include "rz_core.h"
 
 %extend rz_core_t {
-  rz_core_t() {
-    return rz_core_new();
+  rz_core_t(const char *bin = NULL) {
+    struct rz_core_t *core = rz_core_new();
+    if (!core) {
+      // TODO
+    }
+    rz_core_cmd_str(core, "e scr.color=0");
+    if (bin) {
+      rz_core_cmd_strf(core, "o %s", bin);
+    }
+    return core;
   }
 
   ~rz_core_t() {
+    rz_core_free($self);
   }
 
   char* cmd(const char *cmd) {
