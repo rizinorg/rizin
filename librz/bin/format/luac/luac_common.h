@@ -190,7 +190,7 @@ LuaProto *lua_new_proto_entry();
 
 void lua_free_dbg_upvalue_entry(LuaDbgUpvalueEntry *);
 void lua_free_local_var_entry(LuaLocalVarEntry *);
-void lua_free_abs_lineinfo_entry(LuaLocalVarEntry *);
+void lua_free_abs_lineinfo_entry(LuaAbsLineinfoEntry *);
 void lua_free_lineinfo_entry(LuaLineinfoEntry *);
 void lua_free_upvalue_entry(LuaUpvalueEntry *);
 void lua_free_const_entry(LuaConstEntry *);
