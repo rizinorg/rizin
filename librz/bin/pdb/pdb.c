@@ -1394,7 +1394,7 @@ static void print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			case 1:
 			case '*':
 			case 'r':
-				filtered_name = rz_name_filter2(name);
+				filtered_name = rz_name_filter2(name, true);
 				pdb->cb_printf("f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
 					filtered_name,
 					(ut64)(img_base + omap_remap((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),

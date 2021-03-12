@@ -3,27 +3,26 @@
 
 #include <rz_util.h>
 
-RZ_API bool rz_name_validate_char(const char ch) {
+RZ_API bool rz_name_validate_char(const char ch, bool strict) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT(ch))) {
 		return true;
 	}
-	switch (ch) {
-	case ':':
-	case '.':
-	case '_':
+	const char *vaild_char_str = strict ? ":._" : ":.-_[]";
+	char *pos = strchr(vaild_char_str, ch);
+	if (pos) {
 		return true;
 	}
 	return false;
 }
 
-RZ_API bool rz_name_check(const char *name) {
+RZ_API bool rz_name_check(const char *name, bool strict) {
 	/* Cannot start by number */
 	if (!name || !*name || IS_DIGIT(*name)) {
 		return false;
 	}
 	/* Cannot contain non-alphanumeric chars + [:._] */
 	for (; *name != '\0'; name++) {
-		if (!rz_name_validate_char(*name)) {
+		if (!rz_name_validate_char(*name, strict)) {
 			return false;
 		}
 	}
@@ -35,7 +34,7 @@ static inline bool is_special_char(char *name) {
 	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
 
-RZ_API bool rz_name_filter(char *name, int maxlen) {
+RZ_API bool rz_name_filter(char *name, int maxlen, bool strict) {
 	size_t i, len;
 	if (!name) {
 		return false;
@@ -50,7 +49,7 @@ RZ_API bool rz_name_filter(char *name, int maxlen) {
 			*name = '\0';
 			break;
 		}
-		if (!rz_name_validate_char(*name) && *name != '\\') {
+		if (!rz_name_validate_char(*name, strict) && *name != '\\') {
 			*name = '_';
 			//		rz_str_ccpy (name, name+1, 0);
 			//name--;
@@ -76,24 +75,24 @@ RZ_API bool rz_name_filter(char *name, int maxlen) {
 		;
 	}
 	if (!len) { // name consists only of underscores
-		return rz_name_check(oname);
+		return rz_name_check(oname, strict);
 	}
 	for (i = 0; *(name + i) == '_'; i++, len--) {
 		;
 	}
 	memmove(name, name + i, len);
 	*(name + len) = '\0';
-	return rz_name_check(oname);
+	return rz_name_check(oname, strict);
 }
 
-RZ_API char *rz_name_filter2(const char *name) {
+RZ_API char *rz_name_filter2(const char *name, bool strict) {
 	size_t i;
-	while (!rz_name_validate_char(*name)) {
+	while (!rz_name_validate_char(*name, strict)) {
 		name++;
 	}
 	char *res = strdup(name);
 	for (i = 0; res[i]; i++) {
-		if (!rz_name_validate_char(res[i])) {
+		if (!rz_name_validate_char(res[i], strict)) {
 			res[i] = '_';
 		}
 	}
