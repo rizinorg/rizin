@@ -2322,10 +2322,6 @@ char *MACH0_(section_type_to_string)(ut64 type) {
 	}
 }
 
-//char* MACH0_(section_flag_to_string)(ut64 flag) {
-//	return rz_list_to_str(MACH0_(section_flag_to_rzlist)(flag), ' ');
-//}
-
 RzList *MACH0_(section_flag_to_rzlist)(ut64 flag) {
 	RzList* flag_list = rz_list_new();
 	if(flag & S_ATTR_PURE_INSTRUCTIONS){

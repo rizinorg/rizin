@@ -460,7 +460,6 @@ typedef struct rz_bin_plugin_t {
 	char *(*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	char* (*section_type_to_string)(ut64 type);
-	char* (*section_flag_to_string)(ut64 flag);
 	RzList* (*section_flag_to_rzlist)(ut64 flag);
 	RzBuffer *(*create)(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 	char *(*demangle)(const char *str);

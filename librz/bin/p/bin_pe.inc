@@ -116,11 +116,6 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-//static char* PE_(section_flag_to_string)(int flag) {
-//	return rz_list_to_str(PE_(section_flag_to_rzlist)(flag), ' ');
-//}
-
-
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;

@@ -4069,54 +4069,6 @@ int PE_(rz_bin_pe_get_bits)(struct PE_(rz_bin_pe_obj_t) * bin) {
 }
 extern struct rz_bin_write_t rz_bin_write_pe;
 
-//RzList *PE_(section_flag_to_rzlist)(int flag) { //WIP
-//	RzList* flag_list = rz_list_new();
-//	if(flag & PE_IMAGE_SCN_MEM_SHARED) {
-//		rz_list_append(flag_list, "PE_IMAGE_SCN_MEM_SHARED");
-//	}
-//	if(flag & PE_IMAGE_SCN_MEM_EXECUTE) {
-//		rz_list_append(flag_list, "PE_IMAGE_SCN_MEM_EXECUTE");
-//	}
-//	if(flag & PE_IMAGE_SCN_MEM_READ) {
-//		rz_list_append(flag_list, "PE_IMAGE_SCN_MEM_READ"); 
-//	}
-//	if(flag & PE_IMAGE_SCN_MEM_WRITE) {
-//		rz_list_append(flag_list, "PE_IMAGE_SCN_MEM_WRITE");
-//	}
-//	if(flag & IMAGE_SCN_TYPE_NO_PAD) {
-//		rz_list_append(flag_list, "IMAGE_SCN_TYPE_NO_PAD");
-//	}
-//	if(flag & IMAGE_SCN_CNT_CODE) {
-//		rz_list_append(flag_list, "IMAGE_SCN_CNT_CODE");
-//	}
-//	if(flag & IMAGE_SCN_CNT_INITIALIZED_DATA) {
-//		rz_list_append(flag_list, "IMAGE_SCN_CNT_INITIALIZED_DATA");
-//	}
-//	if(flag & IMAGE_SCN_CNT_UNINITIALIZED_DATA) {
-//		rz_list_append(flag_list, "IMAGE_SCN_CNT_UNINITIALIZED_DATA");
-//	}
-//	if(flag & IMAGE_SCN_LNK_OTHER) {
-//		rz_list_append(flag_list, "IMAGE_SCN_LNK_OTHER");
-//	}
-//	if(flag & IMAGE_SCN_LNK_INFO) {
-//		rz_list_append(flag_list, "IMAGE_SCN_LNK_INFO");
-//	}
-//	if(flag & IMAGE_SCN_LNK_REMOVE) {
-//		rz_list_append(flag_list, "IMAGE_SCN_LNK_REMOVE");
-//	}
-//	if(flag & IMAGE_SCN_LNK_COMDAT) {
-//		rz_list_append(flag_list, "IMAGE_SCN_LNK_COMDAT");
-//	}
-//	if(flag & IMAGE_SCN_GPREL) {
-//		rz_list_append(flag_list, "IMAGE_SCN_GPREL");
-//	}
-//	return flag_list;	
-//}
-//
-//char* PE_(section_flag_to_string)(int flag) {
-//	return rz_list_to_str(PE_(section_flag_to_rzlist)(flag), ' ');
-//}
-
 char *PE_(rz_bin_pe_get_cc)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	if (bin && bin->nt_headers) {
 		if (is_arm(bin)) {

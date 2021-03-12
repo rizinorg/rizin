@@ -184,7 +184,6 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin);
 char* MACH0_(section_type_to_string)(ut64 type);
 //RzList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin);
-//char *MACH0_(section_flag_to_string)(ut64 flag);
 RzList *MACH0_(section_flag_to_rzlist)(ut64 flag);
 RzList *MACH0_(get_segments)(RzBinFile *bf); // struct MACH0_(obj_t) *bin);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);

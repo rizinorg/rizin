@@ -2721,14 +2721,7 @@ static char* section_type_to_string(RzBin *bin, int type) {
 	}
 	return NULL;
 }
-//static char* section_flag_to_string(RzBin *bin, ut64 flag) {
-//	RzBinFile *a = rz_bin_cur(bin);
-//	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
-//	if (plugin && plugin->section_flag_to_string) {
-//		return plugin->section_flag_to_string(flag);
-//	}
-//	return NULL;
-//}
+
 static RzList* section_flag_to_rzlist(RzBin *bin, ut64 flag) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
@@ -2744,6 +2737,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	RzList *sections;
 	RzListIter *iter;
 	RzTable *table = rz_core_table(r);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(rz_bin_cur(r->bin));
 	rz_return_val_if_fail(table, false);
 	int i = 0;
 	int fd = -1;
@@ -2780,14 +2774,16 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			if (print_segments != s->is_segment) {
 				continue;
 			}
-			RzInterval pitv = (RzInterval){ s->paddr, s->size }; // 'iSS' command
+			RzInterval pitv = (RzInterval){ s->paddr, s->size }; 
 			RzInterval vitv = (RzInterval){ s->vaddr, s->vsize };
 
 			rz_num_units(humansz, sizeof(humansz), s->size);
 			RzListInfo *info = rz_listinfo_new(s->name, pitv, vitv, s->perm, strdup(humansz));
 			rz_list_append(list, info);
-			rz_list_append(list, rz_str_newf("%lld", s->type));
-			rz_list_append(list, rz_str_newf("%lld", s->flags));
+			//RzListInfo *section_info = rz_listinfo_new(s->type);
+			//rz_list_append(list, rz_str_newf("%"PFMT64d"", s->type));
+			//rz_list_append(list, rz_str_newf("%"PFMT64d"", s->flags));
+			
 		}
 		RzTable *table = rz_core_table(r);
 		rz_table_visual_list(table, list, r->offset, -1, cols, r->io->va);
@@ -2818,8 +2814,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL(mode) && !print_segments ) {
-		//rz_cons_println("");
-		if(!strncmp(r->file->core->bin->cur->o->info->rclass, "elf", 3) ||  !strncmp(r->file->core->bin->cur->o->info->rclass, "mach", 4)){
+		if(plugin && plugin->section_flag_to_rzlist && plugin->section_type_to_string){
 			if (hashtypes) {
 						rz_table_set_columnsf(table, "dXxXxsssss",
 				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "flags");

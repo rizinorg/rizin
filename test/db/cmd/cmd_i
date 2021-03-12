@@ -2704,32 +2704,32 @@ EXPECT=<<EOF
 nth paddr        size vaddr       vsize perm name               type       flags
 --------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ----                    NULL             
-1   0x00000134   0x13 0x08048134   0x13 -r-- .interp            PROGBITS   alloc     
-2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI_tag      NOTE       alloc     
-3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build_id NOTE       alloc     
-4   0x0000018c   0x20 0x0804818c   0x20 -r-- .gnu.hash          GNU_HASH   alloc     
-5   0x000001ac   0x50 0x080481ac   0x50 -r-- .dynsym            DYNSYM     alloc     
-6   0x000001fc   0x4a 0x080481fc   0x4a -r-- .dynstr            STRTAB     alloc     
-7   0x00000246    0xa 0x08048246    0xa -r-- .gnu.version       VERSYM     alloc     
-8   0x00000250   0x20 0x08048250   0x20 -r-- .gnu.version_r     VERNEED    alloc     
-9   0x00000270    0x8 0x08048270    0x8 -r-- .rel.dyn           REL        alloc     
-10  0x00000278   0x18 0x08048278   0x18 -r-- .rel.plt           REL        alloc     
-11  0x00000290   0x23 0x08048290   0x23 -r-x .init              PROGBITS   execute,alloc    
-12  0x000002c0   0x40 0x080482c0   0x40 -r-x .plt               PROGBITS   execute,alloc    
-13  0x00000300  0x194 0x08048300  0x194 -r-x .text              PROGBITS   execute,alloc    
-14  0x00000494   0x14 0x08048494   0x14 -r-x .fini              PROGBITS   execute,alloc    
-15  0x000004a8   0x15 0x080484a8   0x15 -r-- .rodata            PROGBITS   alloc     
-16  0x000004c0   0x2c 0x080484c0   0x2c -r-- .eh_frame_hdr      PROGBITS   alloc     
-17  0x000004ec   0xb0 0x080484ec   0xb0 -r-- .eh_frame          PROGBITS   alloc     
-18  0x0000059c    0x4 0x0804959c    0x4 -rw- .init_array        INIT_ARRAY write,alloc    
-19  0x000005a0    0x4 0x080495a0    0x4 -rw- .fini_array        FINI_ARRAY write,alloc    
-20  0x000005a4    0x4 0x080495a4    0x4 -rw- .jcr               PROGBITS   write,alloc    
-21  0x000005a8   0xe8 0x080495a8   0xe8 -rw- .dynamic           DYNAMIC    write,alloc    
-22  0x00000690    0x4 0x08049690    0x4 -rw- .got               PROGBITS   write,alloc    
-23  0x00000694   0x18 0x08049694   0x18 -rw- .got.plt           PROGBITS   write,alloc    
-24  0x000006ac    0x8 0x080496ac    0x8 -rw- .data              PROGBITS   write,alloc    
-25  0x000006b4    0x0 0x080496b4    0x4 -rw- .bss               NOBITS     write,alloc    
-26  0x000006b4   0x11 0x00000000   0x11 ---- .comment           PROGBITS   merge,strings    
+1   0x00000134   0x13 0x08048134   0x13 -r-- .interp            PROGBITS   alloc,     
+2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI_tag      NOTE       alloc,     
+3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build_id NOTE       alloc,     
+4   0x0000018c   0x20 0x0804818c   0x20 -r-- .gnu.hash          GNU_HASH   alloc,     
+5   0x000001ac   0x50 0x080481ac   0x50 -r-- .dynsym            DYNSYM     alloc,     
+6   0x000001fc   0x4a 0x080481fc   0x4a -r-- .dynstr            STRTAB     alloc,     
+7   0x00000246    0xa 0x08048246    0xa -r-- .gnu.version       VERSYM     alloc,     
+8   0x00000250   0x20 0x08048250   0x20 -r-- .gnu.version_r     VERNEED    alloc,     
+9   0x00000270    0x8 0x08048270    0x8 -r-- .rel.dyn           REL        alloc,     
+10  0x00000278   0x18 0x08048278   0x18 -r-- .rel.plt           REL        alloc,     
+11  0x00000290   0x23 0x08048290   0x23 -r-x .init              PROGBITS   execute,alloc,    
+12  0x000002c0   0x40 0x080482c0   0x40 -r-x .plt               PROGBITS   execute,alloc,    
+13  0x00000300  0x194 0x08048300  0x194 -r-x .text              PROGBITS   execute,alloc,    
+14  0x00000494   0x14 0x08048494   0x14 -r-x .fini              PROGBITS   execute,alloc,    
+15  0x000004a8   0x15 0x080484a8   0x15 -r-- .rodata            PROGBITS   alloc,     
+16  0x000004c0   0x2c 0x080484c0   0x2c -r-- .eh_frame_hdr      PROGBITS   alloc,     
+17  0x000004ec   0xb0 0x080484ec   0xb0 -r-- .eh_frame          PROGBITS   alloc,     
+18  0x0000059c    0x4 0x0804959c    0x4 -rw- .init_array        INIT_ARRAY write,alloc,    
+19  0x000005a0    0x4 0x080495a0    0x4 -rw- .fini_array        FINI_ARRAY write,alloc,    
+20  0x000005a4    0x4 0x080495a4    0x4 -rw- .jcr               PROGBITS   write,alloc,    
+21  0x000005a8   0xe8 0x080495a8   0xe8 -rw- .dynamic           DYNAMIC    write,alloc,    
+22  0x00000690    0x4 0x08049690    0x4 -rw- .got               PROGBITS   write,alloc,    
+23  0x00000694   0x18 0x08049694   0x18 -rw- .got.plt           PROGBITS   write,alloc,    
+24  0x000006ac    0x8 0x080496ac    0x8 -rw- .data              PROGBITS   write,alloc,    
+25  0x000006b4    0x0 0x080496b4    0x4 -rw- .bss               NOBITS     write,alloc,    
+26  0x000006b4   0x11 0x00000000   0x11 ---- .comment           PROGBITS   merge,strings,    
 27  0x000006c5  0x106 0x00000000  0x106 ---- .shstrtab          STRTAB           
 28  0x00000c7c  0x450 0x00000000  0x450 ---- .symtab            SYMTAB           
 29  0x000010cc  0x257 0x00000000  0x257 ---- .strtab            STRTAB           
@@ -2762,7 +2762,7 @@ NAME=iSj
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSj
 EXPECT=<<EOF
-[{"name":"","size":0,"vsize":0,"perm":"----","paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":".note.ABI_tag","size":32,"vsize":32,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":".note.gnu.build_id","size":36,"vsize":36,"perm":"-r--","paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","paddr":4300,"vaddr":0}]
+[{"name":"","size":0,"vsize":0,"perm":"----","type":"NULL","flags":[],"paddr":0,"vaddr":0},{"name":".interp","size":19,"vsize":19,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":308,"vaddr":134512948},{"name":".note.ABI_tag","size":32,"vsize":32,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":328,"vaddr":134512968},{"name":".note.gnu.build_id","size":36,"vsize":36,"perm":"-r--","type":"NOTE","flags":["alloc"],"paddr":360,"vaddr":134513000},{"name":".gnu.hash","size":32,"vsize":32,"perm":"-r--","type":"GNU_HASH","flags":["alloc"],"paddr":396,"vaddr":134513036},{"name":".dynsym","size":80,"vsize":80,"perm":"-r--","type":"DYNSYM","flags":["alloc"],"paddr":428,"vaddr":134513068},{"name":".dynstr","size":74,"vsize":74,"perm":"-r--","type":"STRTAB","flags":["alloc"],"paddr":508,"vaddr":134513148},{"name":".gnu.version","size":10,"vsize":10,"perm":"-r--","type":"VERSYM","flags":["alloc"],"paddr":582,"vaddr":134513222},{"name":".gnu.version_r","size":32,"vsize":32,"perm":"-r--","type":"VERNEED","flags":["alloc"],"paddr":592,"vaddr":134513232},{"name":".rel.dyn","size":8,"vsize":8,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":624,"vaddr":134513264},{"name":".rel.plt","size":24,"vsize":24,"perm":"-r--","type":"REL","flags":["alloc"],"paddr":632,"vaddr":134513272},{"name":".init","size":35,"vsize":35,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":656,"vaddr":134513296},{"name":".plt","size":64,"vsize":64,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":704,"vaddr":134513344},{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408},{"name":".fini","size":20,"vsize":20,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1172,"vaddr":134513812},{"name":".rodata","size":21,"vsize":21,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1192,"vaddr":134513832},{"name":".eh_frame_hdr","size":44,"vsize":44,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1216,"vaddr":134513856},{"name":".eh_frame","size":176,"vsize":176,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":1260,"vaddr":134513900},{"name":".init_array","size":4,"vsize":4,"perm":"-rw-","type":"INIT_ARRAY","flags":["write","alloc"],"paddr":1436,"vaddr":134518172},{"name":".fini_array","size":4,"vsize":4,"perm":"-rw-","type":"FINI_ARRAY","flags":["write","alloc"],"paddr":1440,"vaddr":134518176},{"name":".jcr","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1444,"vaddr":134518180},{"name":".dynamic","size":232,"vsize":232,"perm":"-rw-","type":"DYNAMIC","flags":["write","alloc"],"paddr":1448,"vaddr":134518184},{"name":".got","size":4,"vsize":4,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1680,"vaddr":134518416},{"name":".got.plt","size":24,"vsize":24,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1684,"vaddr":134518420},{"name":".data","size":8,"vsize":8,"perm":"-rw-","type":"PROGBITS","flags":["write","alloc"],"paddr":1708,"vaddr":134518444},{"name":".bss","size":0,"vsize":4,"perm":"-rw-","type":"NOBITS","flags":["write","alloc"],"paddr":1716,"vaddr":134518452},{"name":".comment","size":17,"vsize":17,"perm":"----","type":"PROGBITS","flags":["merge","strings"],"paddr":1716,"vaddr":0},{"name":".shstrtab","size":262,"vsize":262,"perm":"----","type":"STRTAB","flags":[],"paddr":1733,"vaddr":0},{"name":".symtab","size":1104,"vsize":1104,"perm":"----","type":"SYMTAB","flags":[],"paddr":3196,"vaddr":0},{"name":".strtab","size":599,"vsize":599,"perm":"----","type":"STRTAB","flags":[],"paddr":4300,"vaddr":0}]
 EOF
 RUN
 
@@ -3160,32 +3160,32 @@ EXPECT=<<EOF
 nth paddr        size vaddr       vsize perm name               type       flags
 --------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ----                    NULL             
-1   0x00000200   0x1a 0x00400200   0x1a -r-- .interp            PROGBITS   alloc     
-2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI_tag      NOTE       alloc     
-3   0x0000023c   0x24 0x0040023c   0x24 -r-- .note.gnu.build_id NOTE       alloc     
-4   0x00000260   0x1c 0x00400260   0x1c -r-- .gnu.hash          GNU_HASH   alloc     
-5   0x00000280   0x60 0x00400280   0x60 -r-- .dynsym            DYNSYM     alloc     
-6   0x000002e0   0x3d 0x004002e0   0x3d -r-- .dynstr            STRTAB     alloc     
-7   0x0000031e    0x8 0x0040031e    0x8 -r-- .gnu.version       VERSYM     alloc     
-8   0x00000328   0x20 0x00400328   0x20 -r-- .gnu.version_r     VERNEED    alloc     
-9   0x00000348   0x18 0x00400348   0x18 -r-- .rela.dyn          RELA       alloc     
-10  0x00000360   0x48 0x00400360   0x48 -r-- .rela.plt          RELA       alloc     
-11  0x000003a8   0x1a 0x004003a8   0x1a -r-x .init              PROGBITS   execute,alloc    
-12  0x000003d0   0x40 0x004003d0   0x40 -r-x .plt               PROGBITS   execute,alloc    
-13  0x00000410  0x1a4 0x00400410  0x1a4 -r-x .text              PROGBITS   execute,alloc    
-14  0x000005b4    0x9 0x004005b4    0x9 -r-x .fini              PROGBITS   execute,alloc    
-15  0x000005c0   0x10 0x004005c0   0x10 -r-- .rodata            PROGBITS   alloc     
-16  0x000005d0   0x34 0x004005d0   0x34 -r-- .eh_frame_hdr      PROGBITS   alloc     
-17  0x00000608   0xd4 0x00400608   0xd4 -r-- .eh_frame          PROGBITS   alloc     
-18  0x000006e0    0x8 0x006006e0    0x8 -rw- .init_array        INIT_ARRAY write,alloc    
-19  0x000006e8    0x8 0x006006e8    0x8 -rw- .fini_array        FINI_ARRAY write,alloc    
-20  0x000006f0    0x8 0x006006f0    0x8 -rw- .jcr               PROGBITS   write,alloc    
-21  0x000006f8  0x1d0 0x006006f8  0x1d0 -rw- .dynamic           DYNAMIC    write,alloc    
-22  0x000008c8    0x8 0x006008c8    0x8 -rw- .got               PROGBITS   write,alloc    
-23  0x000008d0   0x30 0x006008d0   0x30 -rw- .got.plt           PROGBITS   write,alloc    
-24  0x00000900   0x10 0x00600900   0x10 -rw- .data              PROGBITS   write,alloc    
-25  0x00000910    0x0 0x00600910    0x8 -rw- .bss               NOBITS     write,alloc    
-26  0x00000910   0x11 0x00000000   0x11 ---- .comment           PROGBITS   merge,strings    
+1   0x00000200   0x1a 0x00400200   0x1a -r-- .interp            PROGBITS   alloc,     
+2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI_tag      NOTE       alloc,     
+3   0x0000023c   0x24 0x0040023c   0x24 -r-- .note.gnu.build_id NOTE       alloc,     
+4   0x00000260   0x1c 0x00400260   0x1c -r-- .gnu.hash          GNU_HASH   alloc,     
+5   0x00000280   0x60 0x00400280   0x60 -r-- .dynsym            DYNSYM     alloc,     
+6   0x000002e0   0x3d 0x004002e0   0x3d -r-- .dynstr            STRTAB     alloc,     
+7   0x0000031e    0x8 0x0040031e    0x8 -r-- .gnu.version       VERSYM     alloc,     
+8   0x00000328   0x20 0x00400328   0x20 -r-- .gnu.version_r     VERNEED    alloc,     
+9   0x00000348   0x18 0x00400348   0x18 -r-- .rela.dyn          RELA       alloc,     
+10  0x00000360   0x48 0x00400360   0x48 -r-- .rela.plt          RELA       alloc,     
+11  0x000003a8   0x1a 0x004003a8   0x1a -r-x .init              PROGBITS   execute,alloc,    
+12  0x000003d0   0x40 0x004003d0   0x40 -r-x .plt               PROGBITS   execute,alloc,    
+13  0x00000410  0x1a4 0x00400410  0x1a4 -r-x .text              PROGBITS   execute,alloc,    
+14  0x000005b4    0x9 0x004005b4    0x9 -r-x .fini              PROGBITS   execute,alloc,    
+15  0x000005c0   0x10 0x004005c0   0x10 -r-- .rodata            PROGBITS   alloc,     
+16  0x000005d0   0x34 0x004005d0   0x34 -r-- .eh_frame_hdr      PROGBITS   alloc,     
+17  0x00000608   0xd4 0x00400608   0xd4 -r-- .eh_frame          PROGBITS   alloc,    
+18  0x000006e0    0x8 0x006006e0    0x8 -rw- .init_array        INIT_ARRAY write,alloc,    
+19  0x000006e8    0x8 0x006006e8    0x8 -rw- .fini_array        FINI_ARRAY write,alloc,    
+20  0x000006f0    0x8 0x006006f0    0x8 -rw- .jcr               PROGBITS   write,alloc,    
+21  0x000006f8  0x1d0 0x006006f8  0x1d0 -rw- .dynamic           DYNAMIC    write,alloc,    
+22  0x000008c8    0x8 0x006008c8    0x8 -rw- .got               PROGBITS   write,alloc,    
+23  0x000008d0   0x30 0x006008d0   0x30 -rw- .got.plt           PROGBITS   write,alloc,    
+24  0x00000900   0x10 0x00600900   0x10 -rw- .data              PROGBITS   write,alloc,    
+25  0x00000910    0x0 0x00600910    0x8 -rw- .bss               NOBITS     write,alloc,    
+26  0x00000910   0x11 0x00000000   0x11 ---- .comment           PROGBITS   merge,strings,    
 27  0x00000921  0x108 0x00000000  0x108 ---- .shstrtab          STRTAB           
 28  0x000011b0  0x648 0x00000000  0x648 ---- .symtab            SYMTAB           
 29  0x000017f8  0x23e 0x00000000  0x23e ---- .strtab            STRTAB           
