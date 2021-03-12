@@ -4247,7 +4247,6 @@ static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin
 			memcpy(sections[j].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
 			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
 		}
-		//sections[j].flags = bin->section_header; //bruh..where
 		sections[j].vaddr = shdr[i].VirtualAddress;
 		sections[j].size = shdr[i].SizeOfRawData;
 		if (shdr[i].Misc.VirtualSize) {

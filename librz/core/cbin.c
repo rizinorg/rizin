@@ -4550,7 +4550,7 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	return count;
 }
 
-RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) { //look here
+RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) { 
 	int i;
 
 	RzStrBuf *buf = rz_strbuf_new("");
