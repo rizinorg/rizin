@@ -103,6 +103,21 @@ static inline st64 rz_num_abs(st64 num) {
 	return num < 0 ? -num : num;
 }
 
+/**
+ * \brief Padding to align v to the next alignment-boundary.
+ * \return the least `d` such that `(v + d) % alignment == 0`.
+ */
+static inline ut64 rz_num_align_delta(ut64 v, ut64 alignment) {
+	if (!alignment) {
+		return 0;
+	}
+	ut64 excess = v % alignment;
+	if (!excess) {
+		return 0;
+	}
+	return alignment - excess;
+}
+
 #ifdef __cplusplus
 }
 #endif

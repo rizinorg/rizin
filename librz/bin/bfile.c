@@ -81,7 +81,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
 	case RZ_MODE_RIZINCMD: {
 		char *f_name, *nstr;
 		f_name = strdup(string->string);
-		rz_name_filter(f_name, 512);
+		rz_name_filter(f_name, 512, true);
 		if (bin->prefix) {
 			nstr = rz_str_newf("%s.str.%s", bin->prefix, f_name);
 			io->cb_printf("f %s.str.%s %u @ 0x%08" PFMT64x "\n"

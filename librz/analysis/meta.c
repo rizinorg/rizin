@@ -279,7 +279,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 			rz_str_sanitize(str);
 			pstr = str;
 		} else if (d->type != 'C') {
-			rz_name_filter(str, 0);
+			rz_name_filter(str, 0, true);
 			pstr = str;
 		} else {
 			pstr = d->str;

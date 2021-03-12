@@ -1163,7 +1163,7 @@ RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core) {
 		if (func_name[0] == 0xff) {
 			break;
 		}
-		rz_name_filter((char *)func_name, 0);
+		rz_name_filter((char *)func_name, 0, true);
 		//rz_cons_printf ("[x] Found symbol %s at 0x%x\n", func_name, func_addr);
 		rz_flag_set(core->flags, sdb_fmt("sym.go.%s", func_name), func_addr, 1);
 		offset += 2 * ptr_size;
@@ -4567,7 +4567,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 			int len = 0;
 			char *str_string = is_string_at(core, xref_to, &len);
 			if (str_string) {
-				rz_name_filter(str_string, -1);
+				rz_name_filter(str_string, -1, true);
 				char *str_flagname = rz_str_newf("str.%s", str_string);
 				rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
 				(void)rz_flag_set(core->flags, str_flagname, xref_to, 1);
@@ -4603,7 +4603,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 			char *str_flagname = is_string_at(core, xref_to, &len);
 			if (str_flagname) {
 				ut64 str_addr = xref_to;
-				rz_name_filter(str_flagname, -1);
+				rz_name_filter(str_flagname, -1, true);
 				rz_cons_printf("f str.%s=0x%" PFMT64x "\n", str_flagname, str_addr);
 				rz_cons_printf("Cs %d @ 0x%" PFMT64x "\n", len, str_addr);
 				free(str_flagname);
@@ -5279,7 +5279,7 @@ static void add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to) {
 	char *str_flagname = is_string_at(core, xref_to, &len);
 	if (str_flagname) {
 		rz_analysis_xrefs_set(core->analysis, xref_from, xref_to, RZ_ANALYSIS_REF_TYPE_DATA);
-		rz_name_filter(str_flagname, -1);
+		rz_name_filter(str_flagname, -1, true);
 		char *flagname = sdb_fmt("str.%s", str_flagname);
 		rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
 		rz_flag_set(core->flags, flagname, xref_to, len);
