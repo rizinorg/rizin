@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 xvilka
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_analysis.h>
 #include "minunit.h"
 

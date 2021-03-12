@@ -3,6 +3,7 @@ project('rizin', 'c',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
   default_options: [
+    'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
   ]
 )
@@ -109,9 +110,18 @@ if host_machine.system() == 'windows'
 endif
 platform_inc = include_directories(platform_inc)
 
-if is_static_build and cc.get_id() == 'msvc'
-  # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
-  add_project_arguments('/MT', language: 'c')
+if is_static_build
+  if cc.get_id() == 'msvc'
+    # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
+    if get_option('b_vscrt') == 'from_buildtype'
+      warning('To avoid warnings due to multiple /M options, please also set -Db_vscrt=mt or -Db_vscrt=mtd.')
+      add_project_arguments('/MT', language: 'c')
+    endif
+  else
+    if cc.has_link_argument('-static')
+      add_project_link_arguments('-static', language: 'c')
+    endif
+  endif
 endif
 
 if cc.has_argument('--std=gnu99')
@@ -150,6 +160,7 @@ rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'
   rizin_prefix = rizin_prefix / ''
+  rizin_datdir_rz = rizin_datdir / ''
   rizin_wwwroot = rizin_datdir / 'www'
   rizin_sdb = rizin_datdir / ''
   rizin_zigns = rizin_datdir / 'zigns'
@@ -278,25 +289,20 @@ message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
 
 userconf = configuration_data()
 userconf.set('RZ_CHECKS_LEVEL', checks_level)
+userconf.set10('IS_PORTABLE', get_option('portable'))
 userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
 userconf.set10('USE_LIB_MAGIC', sys_magic.found())
 userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set('PREFIX', rizin_prefix)
-if host_machine.system() == 'windows'
-  userconf.set('LIBDIR', rizin_libdir)
-  userconf.set('INCLUDEDIR', rizin_incdir)
-  userconf.set('DATADIR_RZ', rizin_datdir)
-else
-  userconf.set('LIBDIR', rizin_prefix / rizin_libdir)
-  userconf.set('INCLUDEDIR', rizin_prefix / rizin_incdir)
-  userconf.set('DATADIR_RZ', rizin_datdir_rz)
-endif
+userconf.set('LIBDIR', rizin_libdir)
+userconf.set('INCLUDEDIR', rizin_incdir)
+userconf.set('DATADIR_RZ', rizin_datdir_rz)
 is_ppc = host_machine.cpu_family() == 'ppc' or host_machine.cpu_family() == 'ppc64'
 userconf.set10('HAVE_JEMALLOC', host_machine.system() != 'windows' and (host_machine.system() != 'darwin' or not is_ppc))
-userconf.set('DATADIR', rizin_prefix / rizin_datdir)
-userconf.set('WWWROOT', rizin_prefix / rizin_wwwroot)
+userconf.set('DATADIR', rizin_datdir)
+userconf.set('WWWROOT', rizin_wwwroot)
 userconf.set('SDB', rizin_sdb)
 userconf.set('ZIGNS', rizin_zigns)
 userconf.set('THEMES', rizin_themes)
@@ -615,7 +621,7 @@ if cli_enabled
     'man/rz-run.1',
     'man/rz-asm.1',
     'man/rz-ax.1',
-    'man/esil.7'
+    'man/rz-esil.7'
   )
 
   install_data('doc/hud',

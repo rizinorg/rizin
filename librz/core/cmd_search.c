@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2010-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <ht_uu.h>
@@ -1599,7 +1600,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 	}
 	if (!core->analysis->esil) {
 		// initialize esil vm
-		rz_core_analysis_esil_init(core);
+		rz_core_analysis_esil_reinit(core);
 		if (!core->analysis->esil) {
 			eprintf("Cannot initialize the ESIL vm\n");
 			return;
@@ -1878,6 +1879,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 					rz_flag_set(core->flags, flag, at, ret);
 					free(flag);
 				}
+				rz_syscall_item_free(item);
 				if (*param->cmd_hit) {
 					ut64 here = core->offset;
 					rz_core_seek(core, at, true);

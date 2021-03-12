@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2013-2020 sghctoma <sghctoma@gmail.com>
+// SPDX-FileCopyrightText: 2013-2020 xarkes <antide.petit@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>

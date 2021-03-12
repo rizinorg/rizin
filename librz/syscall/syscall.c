@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -44,8 +45,11 @@ RZ_API void rz_syscall_free(RzSyscall *s) {
 
 static bool load_sdb(Sdb **db, const char *name) {
 	rz_return_val_if_fail(db, false);
-	char *file = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB, "%s.sdb"),
-		rz_sys_prefix(NULL), name);
+	char *sdb_path = rz_str_rz_prefix(RZ_SDB);
+	char *file_name = rz_str_newf("%s.sdb", name);
+	char *file = rz_file_path_join(sdb_path, file_name);
+	free(file_name);
+	free(sdb_path);
 	if (rz_file_exists(file)) {
 		if (*db) {
 			sdb_reset(*db);

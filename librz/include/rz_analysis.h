@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2020 - nibble, pancake, xvilka */
+// SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2021 xvilka <anton.kochkov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_ANALYSIS_H
 #define RZ_ANALYSIS_H
@@ -1910,7 +1913,6 @@ RZ_API void rz_analysis_set_limits(RzAnalysis *analysis, ut64 from, ut64 to);
 RZ_API void rz_analysis_unset_limits(RzAnalysis *analysis);
 
 /* no-return stuff */
-RZ_API void rz_analysis_noreturn_list(RzAnalysis *analysis, int mode);
 RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut64 addr);
 RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr);
 RZ_API bool rz_analysis_noreturn_at_addr(RzAnalysis *analysis, ut64 addr);

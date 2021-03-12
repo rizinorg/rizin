@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 kriw <kotarou777775@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 
@@ -126,6 +129,20 @@ bool test_rz_num_str_split_list() {
 	mu_end;
 }
 
+bool test_rz_num_align_delta() {
+	ut64 d = rz_num_align_delta(0, 8);
+	mu_assert_eq(d, 0, "align delta");
+	d = rz_num_align_delta(3, 8);
+	mu_assert_eq(d, 5, "align delta");
+	d = rz_num_align_delta(0x10, 8);
+	mu_assert_eq(d, 0, "align delta");
+	d = rz_num_align_delta(0x11, 8);
+	mu_assert_eq(d, 7, "align delta");
+	d = rz_num_align_delta(0x42, 0);
+	mu_assert_eq(d, 0, "align delta");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_num_units);
 	mu_run_test(test_rz_num_minmax_swap_i);
@@ -134,6 +151,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_str_len);
 	mu_run_test(test_rz_num_str_split);
 	mu_run_test(test_rz_num_str_split_list);
+	mu_run_test(test_rz_num_align_delta);
 	return tests_passed != tests_run;
 }
 

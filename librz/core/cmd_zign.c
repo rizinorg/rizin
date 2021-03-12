@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -583,7 +585,7 @@ static void apply_name(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it, bo
 	rz_return_if_fail(core && fcn && it && it->name);
 	const char *name = it->realname ? it->realname : it->name;
 	if (rad) {
-		char *tmp = rz_name_filter2(name);
+		char *tmp = rz_name_filter2(name, true);
 		if (tmp) {
 			rz_cons_printf("\"afn %s @ 0x%08" PFMT64x "\"\n", tmp, fcn->addr);
 			free(tmp);
@@ -635,7 +637,7 @@ static void apply_flag(RzCore *core, RzSignItem *it, ut64 addr, int size, int co
 	char *name = rz_str_newf("%s.%s.%s_%d", zign_prefix, prefix, it->name, count);
 	if (name) {
 		if (rad) {
-			char *tmp = rz_name_filter2(name);
+			char *tmp = rz_name_filter2(name, true);
 			if (tmp) {
 				rz_cons_printf("f %s %d @ 0x%08" PFMT64x "\n", tmp, size, addr);
 				free(tmp);

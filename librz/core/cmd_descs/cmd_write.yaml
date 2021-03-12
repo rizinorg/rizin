@@ -1,0 +1,329 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_write
+commands:
+  - name: w
+    cname: write
+    summary: Write string
+    args:
+      - name: string
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: wB
+    summary: Set or unset bits with given value
+    subcommands:
+      - name: wB
+        cname: write_bits
+        summary: Set bits with given value
+        description: >
+          Set the bits that are set in the value passed as arguments. 0
+          bits in the value argument are ignored, while the others are set
+          at the current offset.
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: wB-
+        cname: write_unset_bits
+        summary: Unset bits with given value
+        description: >
+          Unset the bits that are set in the value passed as arguments. 0
+          bits in the value argument are ignored, while the others are
+          unset at the current offset
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_NUM
+    details:
+      - name: Examples
+        entries:
+          - text: wB
+            arg_str: " 0x20"
+            comment: Sets the 5th bit at current offset, leaving all other bits intact.
+  - name: wv
+    summary: Write value of given size
+    subcommands:
+      - name: wv
+        cname: write_value
+        summary: Write value as 4-bytes/8-bytes based on value
+        description: >
+          Write the number passed as argument at the current offset as a 4
+          - bytes value or 8 - bytes value if the input is bigger than
+          UT32_MAX, respecting the cfg.bigendian variable
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: wv1
+        cname: write_value1
+        summary: Write value of 1 byte
+        description: >
+          Write the number passed as argument at the current offset as 1 -
+          byte, respecting the cfg.bigendian variable
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: wv2
+        cname: write_value2
+        summary: Write value of 2 byte
+        description: >
+          Write the number passed as argument at the current offset as 2 -
+          bytes, respecting the cfg.bigendian variable
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: wv4
+        cname: write_value4
+        summary: Write value of 4 byte
+        description: >
+          Write the number passed as argument at the current offset as 4 -
+          bytes, respecting the cfg.bigendian variable
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: wv8
+        cname: write_value8
+        summary: Write value of 8 byte
+        description: >
+          Write the number passed as argument at the current offset as 8 -
+          bytes, respecting the cfg.bigendian variable
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_NUM
+    details:
+      - name: Examples
+        entries:
+          - text: wv
+            arg_str: " 0xdeadbeef"
+            comment: Write the value 0xdeadbeef at current offset
+          - text: wv2
+            arg_str: " 0xdead"
+            comment: Write the word 0xdead at current offset
+          - text: wv1
+            arg_str: " 0xde"
+            comment: Write the byte 0xde at current offset
+  - name: w0
+    cname: write_zero
+    summary: Write <len> bytes with value 0x00
+    description: Fill len bytes starting from the current offset with the value 0.
+    args:
+      - name: len
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: w
+    cname: write_incdec
+    summary: increment/decrement byte, word, ..
+    options: <1248><+->
+    args_str: " [<n>]"
+    type: RZ_CMD_DESC_TYPE_INNER
+    subcommands:
+      - name: w1
+        summary: Increment/decrement a byte
+        subcommands:
+          - name: w1+
+            cname: write_1_inc
+            summary: Increment a byte
+            description: Increment a byte at the current offset by 1 or n, if specified
+            args:
+              - name: n
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: w1-
+            cname: write_1_dec
+            summary: Decrement a byte
+            description: Decrement a byte at the current offset by 1 or n, if specified
+            args:
+              - name: n
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "w1+"
+                comment: Add 1 to the byte at the current offset.
+              - text: "w1-"
+                comment: Subtract 1 to the byte at the current offset.
+              - text: "w1-"
+                arg_str: " 9"
+                comment: Subtract 9 to the byte at the current offset.
+      - name: w2
+        summary: Increment/decrement a word
+        subcommands:
+          - name: w2+
+            cname: write_2_inc
+            summary: Increment a word
+            description: Increment a word at the current offset by 1 or n, if specified
+            args:
+              - name: n
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: w2-
+            cname: write_2_dec
+            summary: Decrement a word
+            description: Decrement a word at the current offset by 1 or n, if specified
+            args:
+              - name: n
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "w2+"
+                comment: Add 1 to the word at the current offset.
+              - text: "w2-"
+                comment: Subtract 1 to the word at the current offset.
+              - text: "w2-"
+                arg_str: " 9"
+                comment: Subtract 9 to the word at the current offset.
+      - name: w4
+        summary: Increment/decrement a dword
+        subcommands:
+          - name: w4+
+            cname: write_4_inc
+            summary: Increment a dword
+            description: Increment a dword at the current offset by 1 or n, if specified
+            args:
+              - name: n
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: w4-
+            cname: write_4_dec
+            summary: Decrement a dword
+            description: Decrement a dword at the current offset by 1 or n, if specified
+            args:
+              - name: n
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "w4+"
+                comment: Add 1 to the dword at the current offset.
+              - text: "w4-"
+                comment: Subtract 1 to the dword at the current offset.
+              - text: "w4-"
+                arg_str: " 9"
+                comment: Subtract 9 to the dword at the current offset.
+      - name: w8
+        summary: Increment/decrement a qword
+        subcommands:
+          - name: w8+
+            cname: write_8_inc
+            summary: Increment a qword
+            description: Increment a qword at the current offset by 1 or n, if specified
+            args:
+              - name: n
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+          - name: w8-
+            cname: write_8_dec
+            summary: Decrement a qword
+            description: Decrement a qword at the current offset by 1 or n, if specified
+            args:
+              - name: n
+                type: RZ_CMD_ARG_TYPE_NUM
+                optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "w8+"
+                comment: Add 1 to the qword at the current offset.
+              - text: "w8-"
+                comment: Subtract 1 to the qword at the current offset.
+              - text: "w8-"
+                arg_str: " 9"
+                comment: Subtract 9 to the qword at the current offset.
+  - name: w6
+    summary: Write base64 [d]ecoded or [e]ncoded string
+    subcommands:
+      - name: w6d
+        cname: write_base64_decode
+        summary: Write the base64-decoded bytes
+        description: >
+          Base64-Decode the string passed as argument and write it at the
+          current offset.
+        args:
+          - name: base64
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: w6e
+        cname: write_base64_encode
+        summary: Write the base64-encoded bytes
+        description: >
+          Base64-Encode the hex string passed as argument and write it at
+          the current offset
+        args:
+          - name: hexstring
+            type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Examples
+        entries:
+          - text: w6d
+            arg_str: " SGVsbG9Xb3JsZAo="
+            comment: Write the string "HelloWorld" (without quotes) at current offset.
+          - text: w6e
+            arg_str: " 48656c6c6f576f726c64"
+            comment: Write the string "SGVsbG9Xb3JsZAo=" (without quotes) at current offset.
+  - name: wh
+    cname: wh_handler_old
+    summary: whereis/which shell command
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: we
+    cname: we_handler_old
+    summary: Extend write operations (insert bytes instead of replacing)
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wu
+    cname: wu_handler_old
+    summary: Apply unified hex patch (see output of cu)
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wr
+    cname: wr_handler_old
+    summary: Write <num> random bytes
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wA
+    cname: wA_handler_old
+    summary: Alter/modify opcode at current seek (see wA?)
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wc
+    cname: wc_handler_old
+    summary: Write cache commands
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wz
+    cname: wz_handler_old
+    summary: Write zero-terminated string
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wt
+    cname: wt_handler_old
+    summary: Write to file
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wf
+    cname: wf_handler_old
+    summary: Write data from file, socket, offset
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: ww
+    cname: ww_handler_old
+    summary: Write wide string
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wx
+    cname: wx_handler_old
+    summary: Write hexadecimal
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wa
+    cname: wa_handler_old
+    summary: Write opcode, separated by ';'
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wb
+    cname: wb_handler_old
+    summary: Write in current block with cyclic hexstring
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wm
+    cname: wm_handler_old
+    summary: Set binary mask hexpair to be used as cyclic write mask
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wo
+    cname: wo_handler_old
+    summary: Write in block with operation
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: wd
+    cname: wd_handler_old
+    summary: Duplicate N bytes from offset at current seek
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: ws
+    cname: ws_handler_old
+    summary: Write 1 byte for length and then the string
+    type: RZ_CMD_DESC_TYPE_OLDINPUT

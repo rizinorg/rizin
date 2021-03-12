@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014-2015 condret
+// SPDX-FileCopyrightText: 2016 unlogic
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>

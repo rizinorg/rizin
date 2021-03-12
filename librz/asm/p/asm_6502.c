@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2012-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2012-2018 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // copypasta from asm_gb.c

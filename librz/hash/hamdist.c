@@ -1,4 +1,5 @@
-/* License: MIT Copyright (C) 2007-2018 - pancake@nopcode.org */
+// SPDX-FileCopyrightText: 2007-2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
 
 #if 0
 

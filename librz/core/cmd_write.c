@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_crypto.h"
@@ -1742,47 +1743,10 @@ RZ_IPI int rz_wa_handler_old(void *data, const char *input) {
 	case ' ':
 	case 'i':
 	case '*': {
-		const char *file = rz_str_trim_head_ro(input + 1);
-		RzAsmCode *acode;
-		rz_asm_set_pc(core->rasm, core->offset);
-		acode = rz_asm_massemble(core->rasm, file);
-		if (acode) {
-			if (input[0] == 'i') { // "wai"
-				RzAnalysisOp analop;
-				if (!rz_analysis_op(core->analysis, &analop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
-					eprintf("Invalid instruction?\n");
-					break;
-				}
-				if (analop.size < acode->len) {
-					eprintf("Doesnt fit\n");
-					rz_analysis_op_fini(&analop);
-					rz_asm_code_free(acode);
-					break;
-				}
-				rz_analysis_op_fini(&analop);
-				rz_core_cmd0(core, "wao nop");
-			}
-			if (acode->len > 0) {
-				char *hex = rz_asm_code_get_hex(acode);
-				if (input[0] == '*') {
-					rz_cons_printf("wx %s\n", hex);
-				} else {
-					if (!rz_core_write_at(core, core->offset, acode->bytes, acode->len)) {
-						cmd_write_fail(core);
-					} else {
-						if (rz_config_get_i(core->config, "scr.prompt")) {
-							eprintf("Written %d byte(s) (%s) = wx %s\n", acode->len, input + 1, hex);
-						}
-						WSEEK(core, acode->len);
-					}
-					rz_core_block_read(core);
-				}
-				free(hex);
-			} else {
-				eprintf("Nothing to do.\n");
-			}
-			rz_asm_code_free(acode);
-		}
+		bool pad = input[0] == 'i'; // "wai"
+		bool pretend = input[0] == '*'; // "wa*"
+		const char *instructions = rz_str_trim_head_ro(input + 1);
+		rz_core_write_assembly(core, core->offset, instructions, pretend, pad);
 	} break;
 	case 'f': // "waf"
 		if ((input[1] == ' ' || input[1] == '*')) {

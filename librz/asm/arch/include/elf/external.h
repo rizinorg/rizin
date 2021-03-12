@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1991, 1992, 1993, 1995, 1997, 1998, 1999, 2001, 2003, 2005 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /* ELF support for BFD.
    Copyright 1991, 1992, 1993, 1995, 1997, 1998, 1999, 2001, 2003, 2005
    Free Software Foundation, Inc.

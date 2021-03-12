@@ -49,6 +49,14 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_MACRO, ///< Argument is the name of a pre-defined macro
 	RZ_CMD_ARG_TYPE_EVAL_KEY, ///< Argument is the name of a evaluable variable (e.g. `et` command)
 	RZ_CMD_ARG_TYPE_EVAL_FULL, ///< Argument is the name+(optional)value of a evaluable variable (e.g. `e` command)
+	RZ_CMD_ARG_TYPE_FCN_VAR, ///< Argument is the name of a function variable/argument
+	RZ_CMD_ARG_TYPE_FLAG, ///< Argument is a rizin flag
+	RZ_CMD_ARG_TYPE_ENUM_TYPE, ///< Argument is a C enum type name
+	RZ_CMD_ARG_TYPE_STRUCT_TYPE, ///< Argument is a C struct type name
+	RZ_CMD_ARG_TYPE_UNION_TYPE, ///< Argument is a C union type name
+	RZ_CMD_ARG_TYPE_ALIAS_TYPE, ///< Argument is a C typedef (alias) name
+	RZ_CMD_ARG_TYPE_CLASS_TYPE, ///< Argument is a C++/etc class name
+	RZ_CMD_ARG_TYPE_ANY_TYPE, ///< Argument is the any of the C or C++ type name
 } RzCmdArgType;
 
 /**
@@ -270,6 +278,13 @@ typedef struct rz_cmd_desc_help_t {
 	 */
 	const char *options;
 	/**
+	 * When true, the subcommands are automatically sorted alphabetically. By
+	 * default subcommands are shown in the order provided by the developer.
+	 *
+	 * Optional.
+	 */
+	bool sort_subcommands;
+	/**
 	 * NULL-terminated array of details sections used to better explain how
 	 * to use the command. This is shown together with the long description.
 	 *
@@ -396,7 +411,6 @@ typedef struct rz_cmd_t {
 	RzCmdItem *cmds[UT8_MAX];
 	RzCmdMacro macro;
 	RzList *lcmds;
-	RzList *plist;
 	RzCmdAlias aliases;
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;
@@ -408,6 +422,13 @@ typedef struct rz_cmd_t {
 	 * non-initialized RzCons.
 	 */
 	bool has_cons;
+	/**
+	 * True when you want to add multiple commands in batch. This is an
+	 * optimization mainly for groups that require sorted sub-commands, so
+	 * instead of sorting on each addition we just sort one time at the end.
+	 * False by default.
+	 */
+	bool batch;
 } RzCmd;
 
 // TODO: remove this once transitioned to RzCmdDesc
@@ -419,29 +440,14 @@ typedef struct rz_cmd_descriptor_t {
 	struct rz_cmd_descriptor_t *sub[127];
 } RzCmdDescriptor;
 
-// TODO: move into rz_core.h
-typedef struct rz_core_plugin_t {
-	const char *name;
-	const char *desc;
-	const char *license;
-	const char *author;
-	const char *version;
-	RzCmdCb call; // returns true if command was handled, false otherwise.
-	RzCmdCb init;
-	RzCmdCb fini;
-} RzCorePlugin;
-
 typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const RzCmdDesc *desc, void *user);
 
 #ifdef RZ_API
-RZ_API int rz_core_plugin_init(RzCmd *cmd);
-RZ_API int rz_core_plugin_add(RzCmd *cmd, RzCorePlugin *plugin);
-RZ_API int rz_core_plugin_check(RzCmd *cmd, const char *a0);
-RZ_API int rz_core_plugin_fini(RzCmd *cmd);
-
 RZ_API RzCmd *rz_cmd_new(bool has_cons);
 RZ_API RzCmd *rz_cmd_free(RzCmd *cmd);
 RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
+RZ_API void rz_cmd_batch_start(RzCmd *cmd);
+RZ_API void rz_cmd_batch_end(RzCmd *cmd);
 RZ_API int rz_cmd_add(RzCmd *cmd, const char *command, RzCmdCb callback);
 RZ_API int rz_core_del(RzCmd *cmd, const char *command);
 RZ_API int rz_cmd_call(RzCmd *cmd, const char *command);
@@ -500,6 +506,7 @@ RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_newcmd(const char *cmd);
 RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_newargs(int n_args, char **args);
 RZ_API void rz_cmd_parsed_args_free(RzCmdParsedArgs *args);
 RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *arg, int n_args, char **args);
+RZ_API bool rz_cmd_parsed_args_addarg(RzCmdParsedArgs *a, const char *arg);
 RZ_API bool rz_cmd_parsed_args_setcmd(RzCmdParsedArgs *arg, const char *cmd);
 RZ_API char *rz_cmd_parsed_args_argstr(RzCmdParsedArgs *arg);
 RZ_API char *rz_cmd_parsed_args_execstr(RzCmdParsedArgs *arg);

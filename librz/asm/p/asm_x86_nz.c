@@ -1,4 +1,7 @@
-/* Copyright (C) 2008-2020 - pancake, unlogic, emvivre */
+// SPDX-FileCopyrightText: 2008-2020 pancake
+// SPDX-FileCopyrightText: 2008-2020 unlogic
+// SPDX-FileCopyrightText: 2008-2020 emvivre
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_flag.h>
 #include <rz_core.h>

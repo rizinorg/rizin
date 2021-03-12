@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2016 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 //Implemented AES version of RC6. keylen = 16, 23, or 32 bytes; w = 32; and r = 20.

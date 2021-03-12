@@ -58,24 +58,30 @@ cs_files = [
 
 capstone_includes = [include_directories('include'), include_directories('include/capstone')]
 
+libcapstone_c_args = [
+  '-DCAPSTONE_X86_ATT_DISABLE_NO',
+  '-DCAPSTONE_X86_REDUCE_NO',
+  '-DCAPSTONE_USE_SYS_DYN_MEM',
+  '-DCAPSTONE_DIET_NO',
+  '-DCAPSTONE_HAS_ARM',
+  '-DCAPSTONE_HAS_ARM64',
+  '-DCAPSTONE_HAS_M68K',
+  '-DCAPSTONE_HAS_M680X',
+  '-DCAPSTONE_HAS_MIPS',
+  '-DCAPSTONE_HAS_POWERPC',
+  '-DCAPSTONE_HAS_SPARC',
+  '-DCAPSTONE_HAS_SYSZ',
+  '-DCAPSTONE_HAS_X86',
+  '-DCAPSTONE_HAS_XCORE',
+  '-DCAPSTONE_HAS_TMS320C64X',
+]
+warn_trunc_flag = '-Wno-error=stringop-truncation'
+if meson.get_compiler('c').has_argument(warn_trunc_flag)
+  libcapstone_c_args += warn_trunc_flag
+endif
+
 libcapstone = library('capstone', cs_files,
-  c_args: [
-    '-DCAPSTONE_X86_ATT_DISABLE_NO',
-    '-DCAPSTONE_X86_REDUCE_NO',
-    '-DCAPSTONE_USE_SYS_DYN_MEM',
-    '-DCAPSTONE_DIET_NO',
-    '-DCAPSTONE_HAS_ARM',
-    '-DCAPSTONE_HAS_ARM64',
-    '-DCAPSTONE_HAS_M68K',
-    '-DCAPSTONE_HAS_M680X',
-    '-DCAPSTONE_HAS_MIPS',
-    '-DCAPSTONE_HAS_POWERPC',
-    '-DCAPSTONE_HAS_SPARC',
-    '-DCAPSTONE_HAS_SYSZ',
-    '-DCAPSTONE_HAS_X86',
-    '-DCAPSTONE_HAS_XCORE',
-    '-DCAPSTONE_HAS_TMS320C64X',
-  ],
+  c_args: libcapstone_c_args,
   include_directories: capstone_includes,
   implicit_include_directories: false
 )

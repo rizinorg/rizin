@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2015 Jeffrey Crowell <crowell@bu.edu>
+// SPDX-FileCopyrightText: 2018 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 // minunit.h comes from http://www.jera.com/techinfo/jtns/jtn002.html
 //
 // You may use the code in this tech note for any purpose,
@@ -199,6 +203,17 @@ void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 		exp__ = exp__ ? exp__ : "(null)"; \
 		snprintf(_meqstr, MU_BUF_SIZE, "%s: expected %s, got %s.", (message), (exp__), (act__)); \
 		mu_assert(_meqstr, strcmp((exp__), (act__)) == 0); \
+	} while (0)
+
+#define mu_assert_strcontains(actual, expected, message) \
+	do { \
+		char _meqstr[MU_BUF_SIZE]; \
+		const char *act__ = (actual); \
+		act__ = act__ ? act__ : "(null)"; \
+		const char *exp__ = (expected); \
+		exp__ = exp__ ? exp__ : "(null)"; \
+		snprintf(_meqstr, MU_BUF_SIZE, "%s: expected to find %s in %s.", (message), (exp__), (act__)); \
+		mu_assert(_meqstr, strstr((act__), (exp__)) != NULL); \
 	} while (0)
 
 #define mu_assert_streq_free(actual, expected, message) \

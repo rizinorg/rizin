@@ -8,6 +8,8 @@ on:
     - 'dev'
     - 'stable'
     - 'container-*'
+    tags:
+    - v*
   schedule:
     - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
   pull_request:
@@ -50,10 +52,10 @@ jobs:
       matrix:
         name: [
           linux-meson-clang-tests,
-          linux-meson-gcc-build,
           linux-meson-gcc-tests,
           macos-meson-clang-tests,
           linux-gcc-tests-asan,
+          linux-gcc-tests-codecov,
           capstone-v3,
           capstone-next
         ]
@@ -63,32 +65,24 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
+            meson_options: -Dbuildtype=release
             enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-          - name: linux-meson-gcc-build
-            os: ubuntu-20.04
-            build_system: meson
-            compiler: gcc
-            enabled: ${{ github.event_name == 'pull_request' && needs.changes.outputs.edited == 'true' }}
-            timeout: 45
-            cflags: '-Wno-cpp'
-            meson_options: --werror
           - name: linux-meson-gcc-tests
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Db_coverage=true -Duse_webui=true --werror
-            coverage: true
+            meson_options: -Dbuildtype=release --werror
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
-            timeout: 60
+            timeout: 45
             cflags: '-Wno-cpp'
           - name: macos-meson-clang-tests
             os: macos-latest
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Duse_webui=true
+            meson_options: -Dbuildtype=release -Duse_webui=true
             enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
           - name: linux-gcc-tests-asan
@@ -96,17 +90,27 @@ jobs:
             build_system: meson
             compiler: gcc
             cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
-            meson_options: -Db_sanitize=address,undefined -Duse_webui=true --werror
+            meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined -Duse_webui=true --werror
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
             run_tests: true
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
             timeout: 100
+          - name: linux-gcc-tests-codecov
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: gcc
+            run_tests: true
+            meson_options: -Dbuildtype=debug -Db_coverage=true -Duse_webui=true --werror
+            coverage: true
+            enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
+            timeout: 60
+            cflags: '-Wno-cpp'
           - name: capstone-v3
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Duse_capstone_version=v3 --werror
+            meson_options: -Dbuildtype=release -Duse_capstone_version=v3 --werror
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
@@ -115,7 +119,7 @@ jobs:
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Duse_capstone_version=next --werror
+            meson_options: -Dbuildtype=release -Duse_capstone_version=next --werror
             run_tests: false
             enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
@@ -124,6 +128,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       if: matrix.enabled
+      with:
+          fetch-depth: 2
     - name: Install pkg-config and cabextract with Homebrew
       if: matrix.os == 'macos-latest' && matrix.enabled
       run: brew install pkg-config cabextract
@@ -361,7 +367,7 @@ jobs:
     - name: Compile with meson
       run: |
         mkdir -p ${HOME}/rizin-static
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/rizin-static --buildtype release --default-library static build
+        meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dstatic_runtime=true -Dportable=true build
         ninja -C build && ninja -C build install
         tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
       working-directory: rizin
@@ -483,7 +489,7 @@ jobs:
         include:
           - name: vs2019_static
             compiler: cl
-            meson_options: --default-library=static -Db_vscrt=static_from_buildtype
+            meson_options: --default-library=static -Db_vscrt=static_from_buildtype -Dportable=true
             bits: 64
           - name: clang_cl
             compiler: clang-cl
@@ -546,7 +552,7 @@ jobs:
     - name: Compile with meson
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
         ninja -C build && ninja -C build install
     - name: Create rizin-android-${{ matrix.name }}.tar.gz
       run: |
@@ -816,7 +822,7 @@ jobs:
     name: Publish Docker image on Docker Hub
     needs: [build-and-test]
     runs-on: ubuntu-20.04
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'docker'))
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
@@ -835,9 +841,6 @@ jobs:
       uses: crazy-max/ghaction-docker-meta@v1
       with:
         images: ${{ secrets.DOCKERHUB_USERNAME }}/rizin
-        tag-semver: |
-          {{version}}
-          {{major}}.{{minor}}
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx

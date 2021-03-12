@@ -15,15 +15,6 @@ jobs:
       id: filter
       with:
         filters: |
-          Clang:
-            - '**.c'
-            - '**.h'
-            - '**.in'
-            - '**.inc'
-            - '**/meson.build'
-            - 'shlr/rizin-shell-parser/**'
-            - 'subprojects/**'
-            - '.github/workflows/code-analysis.yml'
           CodeQL-cpp:
             - '**.c'
             - '**.h'

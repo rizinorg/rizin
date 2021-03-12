@@ -48,7 +48,7 @@ EOF
 EXPECT=<<EOF
   ;-- entry0:
   ;-- func.100001058:
-/ 2259: int main (int argc, char **argv);
+/ int main (int argc, char **argv);
 | 0x100001058      pushq %rbp
 | 0x100001059      movq  %rsp, %rbp
 | 0x10000105c      pushq %r15
@@ -84,7 +84,7 @@ e asm.comments=false
 pdf
 EOF
 EXPECT=<<EOF
-/ 42: int main (int argc, char **argv, char **envp);
+/ int main (int argc, char **argv, char **envp);
 | 0x004004a6      pushq %rbp
 | 0x004004a7      movq  %rsp, %rbp
 | 0x004004aa      movq  arg_8h, %rax
@@ -113,7 +113,7 @@ e asm.sub.varonly=false
 pdf
 EOF
 EXPECT=<<EOF
-/ 42: int main (int argc, char **argv, char **envp);
+/ int main (int argc, char **argv, char **envp);
 | 0x004004a6      pushq %rbp
 | 0x004004a7      movq  %rsp, %rbp
 | 0x004004aa      movq  arg_8h(%rsp), %rax

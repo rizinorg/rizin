@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_BIN_PRIVATE_H_
 #define RZ_BIN_PRIVATE_H_
 
@@ -26,7 +29,7 @@ RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo);
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *binfile, RzBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
 RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin);
 RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *binfile, const char *arch, int bits, const char *name);
-RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBin *bin, RzBinObject *o);
+RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 
 RZ_IPI const char *rz_bin_lang_tostring(int lang);
 RZ_IPI int rz_bin_lang_type(RzBinFile *binfile, const char *def, const char *sym);

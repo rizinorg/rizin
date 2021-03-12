@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2013 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>

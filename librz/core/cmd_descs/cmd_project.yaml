@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_project
+commands:
+  - name: Ps
+    cname: project_save
+    summary: Save a project
+    args:
+      - name: project.rzdb
+        type: RZ_CMD_ARG_TYPE_FILE
+        optional: true
+  - name: Po
+    cname: project_open
+    summary: Open a project
+    args:
+      - name: project.rzdb
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: Poo
+    cname: project_open_no_bin_io
+    summary: Open a project on top of currently loaded binaries
+    args:
+      - name: project.rzdb
+        type: RZ_CMD_ARG_TYPE_FILE

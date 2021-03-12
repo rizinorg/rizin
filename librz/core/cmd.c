@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 #if 0
 * Use RzList
@@ -27,7 +29,7 @@
 #include <sys/utsname.h>
 #endif
 
-#include "cmd_descs.h"
+#include "cmd_descs/cmd_descs.h"
 
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_rzcmd();
@@ -82,11 +84,6 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 	}
 
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpseek);
-
-static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RzAnalysisBlock *a = _a, *b = _b;
-	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
-}
 
 static void cmd_debug_reg(RzCore *core, const char *str);
 static bool lastcmd_repeat(RzCore *core, int next);
@@ -380,7 +377,8 @@ static bool lastcmd_repeat(RzCore *core, int next) {
 	case '$':
 		if (!strncmp(core->lastcmd, "pd", 2)) {
 			if (core->lastcmd[2] == ' ') {
-				rz_core_cmdf(core, "so %s", core->lastcmd + 3);
+				ut64 addr = rz_num_math(core->num, core->lastcmd + 3);
+				rz_core_seek_opcode(core, addr, false);
 			} else {
 				rz_core_cmd0(core, "so `pi~?`");
 			}
@@ -4360,6 +4358,9 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	core->cmd_in_backticks = false;
 	rz_config_set_i(core->config, "scr.color", ocolor);
 	free(inn_str);
+	if (!o_out) {
+		return NULL;
+	}
 
 	// replace the output of the sub command with the current argument
 	char *out = strdup(o_out);
@@ -4376,6 +4377,10 @@ static void handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg,
 	TSNode inn_cmd = ts_node_child(arg, 1);
 	rz_return_if_fail(!ts_node_is_null(inn_cmd));
 	char *out = do_handle_substitution_cmd(state, inn_cmd);
+	if (!out) {
+		return;
+	}
+
 	char *res = NULL;
 	// escape special chars to prevent creation of new tokens when parsing again
 	if (is_ts_double_quoted_arg(ts_node_parent(arg))) {
@@ -4924,15 +4929,20 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_blksz_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child(node, 0);
-	TSNode from = ts_node_named_child(node, 1);
-	TSNode to = ts_node_named_child(node, 2);
-	char *from_str = ts_node_handle_arg(state, node, from, 1);
-	char *to_str = ts_node_handle_arg(state, node, to, 2);
+	TSNode fromto = ts_node_named_child(node, 1);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, fromto, 1, true);
+	if (!a || a->argc != 2 + 1) {
+		rz_cmd_parsed_args_free(a);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	char *from_str = a->argv[1];
+	char *to_str = a->argv[2];
 
 	const char *fromvars[] = { "analysis.from", "diff.from", "graph.from",
-		"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
+		"search.from", "zoom.from", NULL };
 	const char *tovars[] = { "analysis.to", "diff.to", "graph.to",
-		"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
+		"search.to", "zoom.to", NULL };
 	ut64 from_val = rz_num_math(core->num, from_str);
 	ut64 to_val = rz_num_math(core->num, to_str);
 	RZ_LOG_DEBUG("tmp_fromto_command, changing fromto to (%" PFMT64x ", %" PFMT64x ")\n", from_val, to_val);
@@ -4953,8 +4963,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_command) {
 	rz_config_hold_restore(hc);
 
 	rz_config_hold_free(hc);
-	free(from_str);
-	free(to_str);
+	rz_cmd_parsed_args_free(a);
 	return res;
 }
 
@@ -5296,17 +5305,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_flags_command) {
 			break;
 		}
 
-		char *buf = NULL;
-		const char *tmp = NULL;
 		RZ_LOG_DEBUG("iter_flags_command: seek to %" PFMT64x "\n", flag->offset);
 		rz_core_seek(core, flag->offset, true);
-		rz_cons_push();
 		RzCmdStatus cmd_res = handle_ts_command_tmpseek(state, command);
-		tmp = rz_cons_get_buffer();
-		buf = tmp ? strdup(tmp) : NULL;
-		rz_cons_pop();
-		rz_cons_strcat(buf);
-		free(buf);
 		rz_core_task_yield(&core->tasks);
 		UPDATE_CMD_STATUS_RES(ret, cmd_res, err);
 	}
@@ -5445,8 +5446,9 @@ static RzCmdStatus iter_offsets_common(struct tsr2cmd_state *state, TSNode node,
 	TSNode args = ts_node_named_child(node, 1);
 
 	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, args, 1, true);
-	if (!a) {
+	if (!a || (has_size && (a->argc - 1) % 2 != 0)) {
 		RZ_LOG_ERROR("Cannot parse args\n");
+		rz_cmd_parsed_args_free(a);
 		return RZ_CMD_STATUS_INVALID;
 	}
 
@@ -5500,23 +5502,24 @@ err:
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_step_command) {
 	TSNode command = ts_node_named_child(node, 0);
-	TSNode from_n = ts_node_named_child(node, 1);
-	TSNode to_n = ts_node_named_child(node, 2);
-	TSNode step_n = ts_node_named_child(node, 3);
+	TSNode args = ts_node_named_child(node, 1);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, args, 1, true);
+	if (!a || a->argc != 3 + 1) {
+		rz_cmd_parsed_args_free(a);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
 	RzCore *core = state->core;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	ut64 orig_offset = core->offset;
 	int bs = core->blocksize;
 
-	char *from_str = ts_node_handle_arg(state, node, from_n, 1);
-	char *to_str = ts_node_handle_arg(state, node, to_n, 2);
-	char *step_str = ts_node_handle_arg(state, node, step_n, 3);
+	char *from_str = a->argv[1];
+	char *to_str = a->argv[2];
+	char *step_str = a->argv[3];
 	ut64 from = rz_num_math(core->num, from_str);
 	ut64 to = rz_num_math(core->num, to_str);
 	ut64 step = rz_num_math(core->num, step_str);
-	free(from_str);
-	free(to_str);
-	free(step_str);
 
 	ut64 cur;
 	for (cur = from; cur < to; cur += step) {
@@ -5532,6 +5535,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_step_command) {
 err:
 	rz_core_block_size(core, bs);
 	rz_core_seek(core, orig_offset, true);
+	rz_cmd_parsed_args_free(a);
 	return res;
 }
 
@@ -5577,16 +5581,20 @@ err:
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 	// convert @@c: command into a @@= one, by using the output of the
 	// in_cmd as addr of @@=
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	TSNode in_cmd = ts_node_named_child(node, 1);
 	substitute_args_init(state, node);
 
 	RzList *edits = rz_list_newf((RzListFree)free_tsr2cmd_edit);
 	if (!edits) {
-		substitute_args_fini(state);
-		return RZ_CMD_STATUS_INVALID;
+		goto edits_err;
 	}
 
 	char *in_cmd_out = do_handle_substitution_cmd(state, in_cmd);
+	if (!in_cmd_out) {
+		goto err;
+	}
+
 	char *in_cmd_out_es = rz_cmd_escape_arg(in_cmd_out, RZ_CMD_ESCAPE_MULTI_ARG);
 	free(in_cmd_out);
 	struct tsr2cmd_edit *e = create_cmd_edit(state, in_cmd, in_cmd_out_es);
@@ -5598,12 +5606,12 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 
 	TSNode new_command;
 	if (!substitute_args_do(state, edits, &new_command)) {
-		rz_list_free(edits);
-		substitute_args_fini(state);
-		return RZ_CMD_STATUS_INVALID;
+		goto err;
 	}
-	RzCmdStatus res = handle_ts_command(state, new_command);
+	res = handle_ts_command(state, new_command);
+err:
 	rz_list_free(edits);
+edits_err:
 	substitute_args_fini(state);
 	return res;
 }
@@ -5611,16 +5619,20 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_offsetssizes_command) {
 	// convert @@@c: command into a @@@= one, by using the output of the
 	// in_cmd as addr/blksz of @@@=
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	TSNode in_cmd = ts_node_named_child(node, 1);
 	substitute_args_init(state, node);
 
 	RzList *edits = rz_list_newf((RzListFree)free_tsr2cmd_edit);
 	if (!edits) {
-		substitute_args_fini(state);
-		return RZ_CMD_STATUS_INVALID;
+		goto edits_err;
 	}
 
 	char *in_cmd_out = do_handle_substitution_cmd(state, in_cmd);
+	if (!in_cmd_out) {
+		goto err;
+	}
+
 	char *in_cmd_out_es = rz_cmd_escape_arg(in_cmd_out, RZ_CMD_ESCAPE_MULTI_ARG);
 	free(in_cmd_out);
 	struct tsr2cmd_edit *e = create_cmd_edit(state, in_cmd, in_cmd_out_es);
@@ -5632,12 +5644,12 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_offsetssizes_command) {
 
 	TSNode new_command;
 	if (!substitute_args_do(state, edits, &new_command)) {
-		rz_list_free(edits);
-		substitute_args_fini(state);
-		return RZ_CMD_STATUS_INVALID;
+		goto err;
 	}
-	RzCmdStatus res = handle_ts_command(state, new_command);
+	res = handle_ts_command(state, new_command);
+err:
 	rz_list_free(edits);
+edits_err:
 	substitute_args_fini(state);
 	return res;
 }

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stddef.h>
@@ -225,7 +226,7 @@ static void cmd_help_percent(RzCore *core) {
 
 static const char *findBreakChar(const char *s) {
 	while (*s) {
-		if (!rz_name_validate_char(*s)) {
+		if (!rz_name_validate_char(*s, true)) {
 			break;
 		}
 		s++;

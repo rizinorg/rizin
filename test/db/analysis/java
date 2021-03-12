@@ -141,7 +141,7 @@ wx cafebabe0000002f004008002208003a08003c070031070036070037070038070039090004001
 ib;af;
 s 0x425; p8 2;
 java flags_str_at m 0x425
-java set_flags 0x425 0x009
+java set_flags 0x425 m "public static"
 p8 2;
 java flags_str_at m 0x425
 EOF

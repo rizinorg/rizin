@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
 #include <rz_sign.h>
@@ -155,8 +157,7 @@ bool test_analysis_block_save() {
 	block->traced = true;
 	block->colorize = 0xff0000;
 	block->fingerprint = malloc(block->size);
-	ut8 v;
-	for (v = 0; v < block->size; v++) {
+	for (size_t v = 0; v < block->size; v++) {
 		block->fingerprint[v] = v;
 	}
 	block->diff = rz_analysis_diff_new();
@@ -300,8 +301,7 @@ bool test_analysis_function_save() {
 	f->ninstr = 13;
 	f->fingerprint_size = 0x10;
 	f->fingerprint = malloc(f->fingerprint_size);
-	ut8 v;
-	for (v = 0; v < f->fingerprint_size; v++) {
+	for (size_t v = 0; v < f->fingerprint_size; v++) {
 		f->fingerprint[v] = v;
 	}
 	f->diff->addr = 4321;

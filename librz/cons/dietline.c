@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* dietline is a lightweight and portable library similar to GNU readline */
 
@@ -1373,7 +1374,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	static int gcomp_idx = 0;
 	static bool yank_flag = 0;
 	static int gcomp = 0;
-	signed char buf[10];
+	char buf[10];
 #if USE_UTF8
 	int utflen;
 #endif

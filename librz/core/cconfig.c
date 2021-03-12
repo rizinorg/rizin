@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -2460,7 +2461,7 @@ static bool cb_binprefix(void *user, void *data) {
 			}
 			char *name = (char *)rz_file_basename(core->bin->file);
 			if (name) {
-				rz_name_filter(name, strlen(name));
+				rz_name_filter(name, strlen(name), true);
 				rz_str_filter(name, strlen(name));
 				core->bin->prefix = strdup(name);
 				free(name);
@@ -2495,8 +2496,8 @@ static bool cb_binmaxstr(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core->bin) {
 		int v = node->i_value;
-		if (v < 1) {
-			v = 4; // HACK
+		if (v < 0) {
+			v = 0;
 		}
 		core->bin->maxstrlen = v;
 		rz_bin_reset_strings(core->bin);
@@ -2579,7 +2580,7 @@ static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_analysis_calling_conventions_print(core);
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			return false;
 		}
 		rz_analysis_set_syscc_default(core->analysis, node->value);
@@ -2590,7 +2591,7 @@ static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_analysis_calling_conventions_print(core);
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			return false;
 		}
 		rz_analysis_set_cc_default(core->analysis, node->value);
@@ -2825,14 +2826,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* dir.prefix is used in other modules, set it first */
 	{
 		char *pfx = rz_sys_getenv("RZ_PREFIX");
-#if __WINDOWS__
-		const char *invoke_dir = rz_sys_prefix(NULL);
-		if (!pfx && invoke_dir) {
-			pfx = strdup(invoke_dir);
-		}
-#endif
 		if (!pfx) {
-			pfx = strdup(RZ_PREFIX);
+			pfx = strdup(rz_sys_prefix(NULL));
 		}
 		SETCB("dir.prefix", pfx, (RzConfigCallback)&cb_dirpfx, "Default prefix rizin was compiled for");
 		free(pfx);
@@ -3059,7 +3054,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.lines.out", "true", "Show out of block lines");
 	SETBPREF("asm.lines.right", "false", "Show lines before opcode instead of offset");
 	SETBPREF("asm.lines.wide", "false", "Put a space between lines");
-	SETBPREF("asm.fcnsig", "true", "Show function signature in disasm");
+	SETBPREF("asm.fcn.signature", "true", "Show function signature in disasm");
+	SETBPREF("asm.fcn.size", "false", "Show function size in disasm");
 	SETICB("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETICB("asm.sub.varmin", 0x100, &cb_asmsubvarmin, "Minimum value to substitute in instructions (asm.sub.var)");
 	SETCB("asm.sub.tail", "false", &cb_asmsubtail, "Replace addresses with prefix .. syntax");
@@ -3311,7 +3307,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("dbg.trace_continue", "true", &cb_dbg_trace_continue, "Trace every instruction between the initial PC position and the PC position at the end of continue's execution");
 	SETCB("dbg.create_new_console", "true", &cb_dbg_create_new_console, "Create a new console window for the debugee on debug start");
 	/* debug */
-	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;sHu'");
+	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;shu'");
 #if DEBUGGER
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
 #else
@@ -3425,16 +3421,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("http.index", "index.html", "Main html file to check in directory");
 	SETPREF("http.bind", "localhost", "Server address");
 	SETPREF("http.homeroot", RZ_JOIN_2_PATHS("~", RZ_HOME_WWWROOT), "http home root directory");
-#if __WINDOWS__
-	{
-		char *wwwroot = rz_str_newf("%s\\share\\www", rz_sys_prefix(NULL));
-		SETPREF("http.root", wwwroot, "http root directory");
-		free(wwwroot);
-	}
-#elif __ANDROID__
+#if __ANDROID__
 	SETPREF("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
 #else
-	SETPREF("http.root", RZ_WWWROOT, "http root directory");
+	char *wwwroot = rz_str_rz_prefix(RZ_WWWROOT);
+	SETPREF("http.root", wwwroot, "http root directory");
+	free(wwwroot);
 #endif
 	SETPREF("http.port", "9090", "HTTP server port");
 	SETPREF("http.maxport", "9999", "Last HTTP server port");

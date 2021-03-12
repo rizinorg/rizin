@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2012 Karl Hobley <turbodog10@yahoo.co.uk>
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
+
 /* this code has been modified to be integrated into r2 */
 /* pancake // nopcode.org */
 

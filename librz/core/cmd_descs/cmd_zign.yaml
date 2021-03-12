@@ -1,0 +1,294 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_zign
+commands:
+  - name: z
+    cname: zign_show
+    summary: Show zignatures
+    args: []
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_SDB
+  - name: z.
+    cname: zign_find
+    summary: Find matching zignatures
+    args: []
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+  - name: zb
+    summary: Search for best match
+    subcommands:
+      - name: zb
+        cname: zign_best
+        summary: >
+          Find <n> closest matching zignatures to function at current offset
+        args:
+          - name: n
+            type: RZ_CMD_ARG_TYPE_NUM
+            default_value: 5
+      - name: zbr
+        cname: zign_best_name
+        summary: Search for <n> most similar functions to zigname
+        args:
+          - name: zigname
+            type: RZ_CMD_ARG_TYPE_ZIGN
+          - name: n
+            type: RZ_CMD_ARG_TYPE_NUM
+            default_value: 5
+  - name: z-
+    cname: zign_delete
+    summary: Delete zignature
+    args:
+      - name: zigname|*
+        type: RZ_CMD_ARG_TYPE_ZIGN
+  - name: za
+    summary: Add zignature
+    subcommands:
+      - name: za
+        cname: zign_add
+        summary: Add zignature
+        args:
+          - name: zigname
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: type
+            type: RZ_CMD_ARG_TYPE_CHOICES
+            choices:
+              - a
+              - b
+              - c
+              - n
+              - g
+              - o
+              - r
+              - x
+              - h
+              - v
+          - name: param
+            type: RZ_CMD_ARG_TYPE_STRING
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+        details:
+          - name: Zignature types
+            entries:
+              - text: "a"
+                comment: "bytes pattern (analysis mask)"
+              - text: "b"
+                comment: "bytes pattern"
+              - text: "c"
+                comment: "base64 comment"
+              - text: "n"
+                comment: "real function name"
+              - text: "g"
+                comment: "graph metrics"
+              - text: "o"
+                comment: "original offset"
+              - text: "r"
+                comment: "references"
+              - text: "x"
+                comment: "cross references"
+              - text: "h"
+                comment: "bbhash (hashing of function basic blocks)"
+              - text: "v"
+                comment: "vars (and args)"
+          - name: Bytes patterns
+            entries:
+              - text: ""
+                comment: bytes can contain '..' (dots) to specify a binary mask
+          - name: Graph metrics
+            entries:
+              - text: cc
+                comment: cyclomatic complexity
+              - text: edges
+                comment: number of edges
+              - text: nbbs
+                comment: number of basic blocks
+              - text: ebbs
+                comment: number of end basic blocks
+          - name: Examples
+            entries:
+              - text: "za"
+                arg_str: " foo b 558bec..e8........"
+                comment: ""
+              - text: "za"
+                arg_str: " foo a e811223344"
+                comment: ""
+              - text: "za"
+                arg_str: " foo g cc=2 nbbs=3 edges=3 ebbs=1"
+                comment: ""
+              - text: "za"
+                arg_str: " foo g nbbs=3 edges=3"
+                comment: ""
+              - text: "za"
+                arg_str: " foo v b-32 b-48 b-64"
+                comment: ""
+              - text: "za"
+                arg_str: " foo o 0x08048123"
+                comment: ""
+              - text: "za"
+                arg_str: " foo c this is a comment (base64?)"
+                comment: ""
+              - text: "za"
+                arg_str: " foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen"
+                comment: ""
+              - text: "za"
+                arg_str: " foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+                comment: ""
+      - name: zaf
+        cname: zign_add_fcn
+        summary: Create zignature for function
+        args:
+          - name: fcnname
+            type: RZ_CMD_ARG_TYPE_FCN
+            optional: true
+          - name: zigname
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: zaF
+        cname: zign_add_all_fcns
+        summary: Generate zignatures for all functions
+        args: []
+  - name: zg
+    cname: zign_generate
+    summary: Generate zignatures (alias for zaF)
+    args: []
+  - name: zo
+    summary: Manage zignature files
+    subcommands:
+      - name: zo
+        cname: zign_load_sdb
+        summary: Load zinatures from sdb file
+        args:
+          - name: filename
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: zos
+        cname: zign_save_sdb
+        summary: Save zinatures to sdb file
+        args:
+          - name: filename
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: zoz
+        cname: zign_load_gzip_sdb
+        summary: Load zinatures from gzipped sdb file
+        args:
+          - name: filename
+            type: RZ_CMD_ARG_TYPE_FILE
+  - name: zf
+    summary: Manage FLIRT signatures
+    subcommands:
+      - name: zfd
+        cname: zign_flirt_dump
+        summary: Open FLIRT file and dump
+        args:
+          - name: filename
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: zfs
+        cname: zign_flirt_scan
+        summary: Open FLIRT file and scan
+        args:
+          - name: filename
+            type: RZ_CMD_ARG_TYPE_FILE
+  - name: z/
+    summary: Search zignatures
+    subcommands:
+      - name: z/
+        cname: zign_search
+        summary: Search zignatures on range and flag matches
+        args: []
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: z/f
+        cname: zign_search_fcn
+        summary: Search only function zignatures
+        args: []
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+  - name: zc
+    summary: Compare zignatures in current zignspace with another one
+    subcommands:
+      - name: zc
+        cname: zign_cmp
+        summary: Compare all zignatures in current space with <zignspace>
+        args:
+          - name: zignspace
+            type: RZ_CMD_ARG_TYPE_ZIGN_SPACE
+      - name: zcn
+        summary: Compare current zignspace with zigns on other <zignspace>
+        subcommands:
+          - name: zcn
+            cname: zign_cmp_name
+            summary: >
+              Compare current zignspace with zigns with same name on other
+              <zignspace>
+            args:
+              - name: zignspace
+                type: RZ_CMD_ARG_TYPE_ZIGN_SPACE
+          - name: zcn!
+            cname: zign_cmp_diff_name
+            summary: >
+              Compare current zignspace with zigns with different name on
+              other <zignspace>
+            args:
+              - name: zignspace
+                type: RZ_CMD_ARG_TYPE_ZIGN_SPACE
+  - name: zs
+    summary: Manage zignspaces
+    subcommands:
+      - name: zs
+        cname: zign_space_select
+        summary: Display/select zignspaces
+        args:
+          - name: zignspace
+            type: RZ_CMD_ARG_TYPE_ZIGN_SPACE
+            optional: true
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: zs-
+        cname: zign_space_delete
+        summary: Pop last zignspace or delete <zignspace>
+        args:
+          - name: zignspace
+            type: RZ_CMD_ARG_TYPE_ZIGN_SPACE
+            optional: true
+      - name: zs+
+        cname: zign_space_add
+        summary: Push previous zignspace and set
+        args:
+          - name: zignspace
+            type: RZ_CMD_ARG_TYPE_ZIGN_SPACE
+      - name: zsr
+        cname: zign_space_rename
+        summary: Rename selected zignspace
+        args:
+          - name: newname
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: zi
+    summary: Show zignatures matching information
+    subcommands:
+      - name: zi
+        cname: zign_info
+        summary: Show zignatures matching information
+        args:
+          - name: commens
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_QUIET
+      - name: zii
+        cname: zign_info_range
+        summary: Show zignatures matching information in range
+        args:
+          - name: from
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: to
+            type: RZ_CMD_ARG_TYPE_NUM

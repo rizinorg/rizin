@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2008-2020 TheLemonMan <thatlemon@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_search.h"

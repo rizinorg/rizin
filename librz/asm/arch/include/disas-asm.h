@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1999-2017 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Interface between the opcode library and its callers.
 
    Copyright (C) 1999-2017 Free Software Foundation, Inc.

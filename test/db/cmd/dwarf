@@ -9,7 +9,7 @@ pd 1 @main
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d
-/ 44: int main (int argc, char **argv, char **envp);
+/ int main (int argc, char **argv, char **envp);
 |           ; var int64_t var_4h @ rbp-0x4
 |           0x0040052d      55             push  rbp                   ; dwarftest.c:4
 EOF
@@ -37,7 +37,7 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x10c1
             ;-- main:
-/ 139: int dbg.main (int argc, char **argv, char **envp);
+/ int dbg.main (int argc, char **argv, char **envp);
 |           ; var int output @ rbp-0x24
 |           ; var Bird *b @ rbp-0x20
 |           ; var Mammal *m @ rbp-0x18
@@ -69,7 +69,7 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from main @ 0x5b0d
             ;-- rust::main::h523dcf5432fcfd88:
-/ 940: int dbg.main (int argc, char **argv);
+/ int dbg.main (int argc, char **argv);
 |           ; var int64_t var_8h @ rsp+0x8
 |           ; var int64_t var_10h @ rsp+0x10
 |           ; var int64_t var_18h @ rsp+0x18
@@ -216,7 +216,7 @@ EXPECT=<<EOF
             ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875 ; dbg.main
             ;-- rust::bubble_sort::h0777bc845caabc60:
             ;-- dbg.bubble_sort_i32:
-/ 614: dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2);
+/ dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2);
 |           ; var int64_t var_fh @ rsp+0xf
 |           ; var int64_t var_10h @ rsp+0x10
 |           ; var int64_t var_18h @ rsp+0x18
@@ -302,7 +302,7 @@ EXPECT=<<EOF
             ; CALL XREF from dbg.main @ 0x10001ae8
             ;-- Grid::init():
             ;-- method.Grid.init:
-/ 64: dbg.init (Grid * const this);
+/ dbg.init (Grid * const this);
 |           ; arg Grid * const this @ r3
 |           0x100012bc      39030144       addi  r8, r3, 0x144         ; arg1 [0m; void init(Grid * const this);
 |           0x100012c0      38e30168       addi  r7, r3, 0x168         ; arg1
@@ -336,7 +336,7 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x2271
             ;-- main:
-/ 101: int dbg.main (int argc, char **argv, char **envp);
+/ int dbg.main (int argc, char **argv, char **envp);
 |           ; var char **var_28h @ rbp-0x28
 |           ; var char **var_20h @ rbp-0x20
 |           ; var int64_t var_14h @ rbp-0x14
@@ -383,7 +383,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREFS from sym.main @ +0x1a87, +0x1c7d, +0x23f3, +0x3679
             ;-- P$MOZGKIGYO_$$_PALYA$SMALLINT$SMALLINT:
-/ 439: dbg.palya ();
+/ dbg.palya ();
 |           ; var int64_t var_28h @ rbp-0x28
 |           ; var int64_t var_20h @ rbp-0x20
 |           ; var SmallInt i @ rbp-0x14

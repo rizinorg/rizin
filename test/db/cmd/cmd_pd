@@ -642,7 +642,7 @@ e asm.flags=false
 s sym.func.100004401
 af
 afn newname
-sHu
+s entry0
 pds
 EOF
 EXPECT=<<EOF
@@ -675,7 +675,38 @@ e asm.lines.fcn=false
 pdf
 EOF
 EXPECT=<<EOF
-/ 13: fcn2.0x004017c0 ();
+/ fcn2.0x004017c0 ();
+|           0x004017c0      51             push  ecx
+|           0x004017c1      89e1           mov   ecx, esp
+|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c6      3d00100000     cmp   eax, 0x1000
+\       ,=< 0x004017cb      7210           jb    0x4017dd
+
+fcn2.0x004017c0 ();
+          0x004017c0      51             push  ecx
+          0x004017c1      89e1           mov   ecx, esp
+          0x004017c3      83c108         add   ecx, 8
+          0x004017c6      3d00100000     cmp   eax, 0x1000
+      ,=< 0x004017cb      7210           jb    0x4017dd
+EOF
+RUN
+
+NAME=pdf fcnline with size
+FILE=bins/pe/a.exe
+CMDS=<<EOF
+e asm.bytes=true
+e asm.lines.fcn=true
+s 0x004017c0
+af+ 0x004017c0 fcn2.0x004017c0
+afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
+pdf
+?e
+e asm.lines.fcn=false
+e asm.fcn.size=true
+pdf
+EOF
+EXPECT=<<EOF
+/ fcn2.0x004017c0 ();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
@@ -1246,7 +1277,7 @@ e asm.comments=false
 pdf
 EOF
 EXPECT=<<EOF
-/ 21: int main (int argc, char **argv, char **envp);
+/ int main (int argc, char **argv, char **envp);
 | 0x0000061a      pushq %rbp
 | 0x0000061b      movq  %rsp, %rbp
 | 0x0000061e      movl  $1, obj.sa
@@ -1338,7 +1369,7 @@ pdJ 1 @ 0x00400506
 EOF
 EXPECT=<<EOF
 [{"offset":4195590,"text":"            ;-- main:"},{"offset":4195590,"text":"            0x00400506      55             push  rbp"}]
-[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ 16: int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push  rbp"}]
+[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push  rbp"}]
 EOF
 RUN
 
@@ -2152,7 +2183,7 @@ aa
 pdf
 EOF
 EXPECT=<<EOF
-/ 46: entry0 (int64_t arg3);
+/ entry0 (int64_t arg3);
 |           ; arg int64_t arg3 @ rdx
 |           0x00005ae0      f30f1efa       endbr64
 |           0x00005ae4      31ed           xor   ebp, ebp
@@ -2268,7 +2299,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-66: sym.parell (char *s);
+sym.parell (char *s);
 EOF
 RUN
 
@@ -2282,7 +2313,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-66: parell (char *s);
+parell (char *s);
 EOF
 RUN
 

@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2008-2020 - pancake, Jody Frankowski */
+// SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2008-2020 Jody Frankowski <jody.frankowski@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
 #include <rz_util.h>
@@ -24,6 +26,7 @@ typedef struct {
 	int buf_len;
 	int buf_size;
 	RzConsGrep *grep;
+	bool noflush;
 } RzConsStack;
 
 typedef struct {
@@ -58,6 +61,7 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 			data->buf_len = CTX(buffer_len);
 			data->buf_size = CTX(buffer_sz);
 		}
+		data->noflush = CTX(noflush);
 		data->grep = RZ_NEW0(RzConsGrep);
 		if (data->grep) {
 			memcpy(data->grep, &I.context->grep, sizeof(RzConsGrep));
@@ -92,6 +96,7 @@ static void cons_stack_load(RzConsStack *data, bool free_current) {
 		free(I.context->grep.str);
 		memcpy(&I.context->grep, data->grep, sizeof(RzConsGrep));
 	}
+	I.context->noflush = data->noflush;
 }
 
 static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext *parent) {
@@ -108,6 +113,7 @@ static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext 
 	context->event_interrupt_data = NULL;
 	context->pageable = true;
 	context->log_callback = NULL;
+	context->noflush = false;
 
 	if (parent) {
 		context->color_mode = parent->color_mode;
@@ -544,7 +550,6 @@ RZ_API RzCons *rz_cons_new(void) {
 	I.force_columns = 0;
 	I.event_resize = NULL;
 	I.event_data = NULL;
-	I.noflush = false;
 	I.linesleep = 0;
 	I.fdin = stdin;
 	I.fdout = 1;
@@ -794,6 +799,7 @@ RZ_API void rz_cons_push(void) {
 	if (I.context->buffer) {
 		memset(I.context->buffer, 0, I.context->buffer_sz);
 	}
+	I.context->noflush = true;
 }
 
 RZ_API void rz_cons_pop(void) {
@@ -881,7 +887,7 @@ RZ_API void rz_cons_echo(const char *msg) {
 
 RZ_API void rz_cons_flush(void) {
 	const char *tee = I.teefile;
-	if (I.noflush) {
+	if (CTX(noflush)) {
 		return;
 	}
 	if (I.null) {
@@ -988,7 +994,7 @@ RZ_API void rz_cons_flush(void) {
 }
 
 RZ_API void rz_cons_visual_flush(void) {
-	if (I.noflush) {
+	if (CTX(noflush)) {
 		return;
 	}
 	rz_cons_highlight(I.highlight);
@@ -1955,4 +1961,14 @@ RZ_API void rz_cons_clear_buffer(void) {
 			     "c\x1b[3J",
 			6);
 	}
+}
+
+/**
+ * \brief Set whether RzCons should flush content to screen or not
+ *
+ * \param flush If true, calls to \p rz_cons_flush and \p rz_cons_visual_flush
+ *              would flush cons content to the screen, otherwise they will not.
+ */
+RZ_API void rz_cons_set_flush(bool flush) {
+	CTX(noflush) = !flush;
 }

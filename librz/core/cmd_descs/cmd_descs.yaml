@@ -1,0 +1,576 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
+#
+# Format of RzCmdDesc/RzCmdDescHelp descriptor
+# name: name of the YAML file, might be useful to reference another sub-file
+# commands:
+# - name: same as RzCmdDesc.name (mandatory)
+#   cname: >
+#     name used in the generated C code for structures, handlers, etc. Make sure
+#     this is a valid C name. It cannot contain special characters like `$`, `"`,
+#     `=`, etc.
+#   summary: same as RzCmdDescHelp.summary (mandatory)
+#   description: same as RzCmdDescHelp.description
+#   type: >
+#     same as RzCmdDescType. GROUP and ARGV_MODES are automatically detected
+#     based on the other fields, the rest must be specified. ARGV is the default
+#     mode if not specified.
+#   args_str: same as RzCmdDescHelp.args_str
+#   usage: same as RzCmdDescHelp.usage
+#   options: same as RzCmdDescHelp.options
+#   modes: >
+#     same as RzCmdDesc.modes. When present the type is automatically set to
+#     ARGV_MODES.
+#   details: >
+#     an array of RzCmdDescDetail or a string referencing an already existing
+#     RzCmdDescDetail array
+#   args: >
+#     an array of RzCmdDescArg or a string referencing an already existing
+#     RzCmdDescArg array
+#   handler: >
+#     name of the C handler that handles the command. If not specified it is based
+#     on the cname. For OLDINPUT, the handler has the form `rz_{cname}`, for all
+#     other cases it is `rz_{cname}_handler`.
+#   subcommands: >
+#     array of RzCmdDesc/RzCmdDescHelp descriptors. When present the
+#     type is RZ_CMD_DESC_TYPE_GROUP. Only the first subcommand can contain a
+#     descriptor with the same name as this one.
+#
+# Format of RzCmdDescDetail:
+#   details:
+#     - name: same as RzCmdDescDetail.name (mandatory)
+#       entries: array of RzCmdDescDetailEntry (mandatory)
+#
+# Format of RzCmdDescDetailEntry:
+#   entries:
+#     - text: same as RzCmdDescDetailEntry.text (mandatory)
+#       comment: same as RzCmdDescDetailEntry.comment (mandatory)
+#       arg_str: same as RzCmdDescDetailEntry.arg_str
+#
+# Format of RzCmdDescArg:
+#   args:
+#     - name: same as RzCmdDescArg.name (mandatory)
+#       optional: same as RzCmdDescArg.optional
+#       no_space: same as RzCmdDescArg.no_space
+#       type: same as RzCmdDescArg.type (mandatory)
+#       flags: same as RzCmdDescArg.flags
+#       default_value: same as RzCmdDescArg.default_value
+#       choices: same as RzCmdDescArg.choices (only valid if type is RZ_CMD_ARG_TYPE_CHOICES)
+#
+---
+name: root
+commands:
+  - name: "!"
+    cname: cmd_system
+    summary: Run given commands as in system(3)
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: _
+    cname: last_output
+    summary: Print last output
+    args: []
+  - name: "#!"
+    cname: hash_bang
+    summary: List all available interpreters / Run interpreter
+    args:
+      - name: interpreter-name
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+        no_space: true
+      - name: arg
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "#!"
+            arg_str: "python"
+            comment: Run python commandline
+          - text: "#!"
+            arg_str: "python foo.py"
+            comment: Run foo.py python script
+          - text: "#!"
+            arg_str: "python foo.py arg1"
+            comment: Run foo.py python script and pass it arg1 as argument
+  - name: $
+    cname: cmd_alias
+    summary: Alias commands and strings
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: "%"
+    cname: env_percentage
+    summary: Get/set environment variables
+    args_str: "[<varname>[=<varvalue>]]"
+    args: env
+    details: env
+    handler: env
+  - name: "&"
+    summary: Manage tasks
+    subcommands: cmd_tasks
+  - name: (
+    cname: cmd_macro
+    summary: Manage scripting macros
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: "*"
+    cname: pointer
+    summary: Pointer read/write data/values
+    description: >
+      Read or write values at a given address. When the value starts with `0x`,
+      a 4-bytes value or 8-bytes value is written in the memory at address,
+      depending on the size of the value. When value does not start with `0x`
+      an hexstring with arbitrary length is expected and it is written starting
+      from the specified address.
+    args_str: "<addr>[=<0xvalue>|<hexstring>]"
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: value
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "*"
+            arg_str: "entry0=cc"
+            comment: write trap in entrypoint
+          - text: "*"
+            arg_str: "entry0+10=0x804800"
+            comment: write 0x804800 as a 4-byte value at 10 bytes from the entrypoint
+          - text: "*"
+            arg_str: "entry0"
+            comment: read the value contained at the entrypoint
+  - name: "-"
+    cname: cmd_stdin
+    summary: Open cfg.editor and run script
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: .
+    summary: Interpret commands
+    subcommands: cmd_interpret
+  - name: /
+    cname: cmd_search
+    summary: Search for bytes, regexps, patterns, ..
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: "="
+    summary: Connect with other instances of rizin
+    subcommands: cmd_remote
+  - name: "?*"
+    cname: cmd_help_search
+    summary: Search help
+    args:
+      - name: search_cmd
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: ''
+        optional: true
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: "?"
+    cname: cmd_help
+    options: "[??]"
+    summary: Help or evaluate math expression
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: <
+    cname: push_escaped
+    summary: Push escaped string into the RzCons.readChar buffer
+    args:
+      - name: characters
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: "0"
+    cname: cmd_ox
+    summary: Alias for `s 0x...`
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: a
+    cname: cmd_analysis
+    summary: Analysis commands
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_analysis
+  - name: b
+    cname: cmd_bsize
+    summary: Display or change the block size
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: c
+    cname: cmd_cmp
+    summary: Compare block with given data
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: C
+    cname: cmd_meta
+    summary: Code metadata (comments, format, hints, ..)
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: d
+    cname: cmd_debug
+    summary: Debugger commands
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_debug
+  - name: e
+    summary: List/get/set config evaluable vars
+    subcommands: cmd_eval
+  - name: f
+    cname: cmd_flag
+    summary: Manage flags
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: g
+    cname: cmd_egg
+    summary: Generate shellcodes with rz_egg
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: i
+    cname: cmd_info
+    summary: Get info about opened binary file
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: k
+    cname: cmd_kuery
+    summary: Run sdb-query
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: ls
+    cname: ls
+    summary: List files and directories
+    args:
+      - name: arg
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+  - name: m
+    cname: cmd_m
+    summary: Make directories and move files
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: L
+    cname: cmd_plugins
+    summary: List, unload, load rizin plugins
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: o
+    cname: cmd_open
+    summary: Open file at optional address
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: p
+    cname: cmd_print
+    summary: Print commands
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: P
+    summary: Project management
+    subcommands: cmd_project
+  - name: q
+    summary: Quit rizin
+    subcommands: cmd_quit
+  - name: r
+    cname: cmd_resize
+    summary: Resize file
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: s
+    summary: Seek commands
+    subcommands: cmd_seek
+  - name: t
+    summary: Types, noreturn, signatures, C parser and more
+    subcommands: cmd_type
+  - name: uniq
+    cname: uniq
+    summary: List uniq strings in file
+    args:
+      - name: filename
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: uname
+    cname: uname
+    summary: Provide system info
+    args:
+      - name: r
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_OPTION
+        optional: true
+  - name: V
+    cname: cmd_visual
+    summary: Enter visual mode
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: v
+    cname: cmd_panels
+    summary: Enter visual panel mode
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: w
+    summary: Write commands
+    subcommands: cmd_write
+  - name: x
+    cname: cmd_hexdump
+    summary: Alias for 'px' (print hexadecimal)
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: y
+    cname: cmd_yank
+    summary: Yank/paste bytes from/to memory
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: z
+    summary: Zignatures management
+    subcommands: cmd_zign
+  - name: "@"
+    cname: tmp_modifiers
+    options: "[?]"
+    summary: "'@' help, temporary modifiers"
+    type: RZ_CMD_DESC_TYPE_FAKE
+    usage: "<cmd> <@> <args>"
+    details:
+      - name: ""
+        entries:
+          - text: "<cmd> @"
+            arg_str: " <addr>"
+            comment: "Temporary seek to <addr>"
+          - text: "<cmd> @"
+            arg_str: " <addr>!<blocksize>"
+            comment: "Temporary seek to <addr> and set blocksize to <blocksize>"
+          - text: "<cmd> @.."
+            arg_str: "<addr>"
+            comment: "Temporary partial address seek (see s..)"
+          - text: "<cmd> @!"
+            arg_str: "<blocksize>"
+            comment: "Temporary change the block size"
+          - text: "<cmd> @("
+            arg_str: "<from> <to>)"
+            comment: "Temporary set from and to for commands supporting ranges"
+          - text: "<cmd> @a:"
+            arg_str: "<arch>[:<bits>]"
+            comment: "Temporary set arch and bits, if specified"
+          - text: "<cmd> @b:"
+            arg_str: "<bits>"
+            comment: "Temporary set asm.bits"
+          - text: "<cmd> @B:"
+            arg_str: "<nth>"
+            comment: >
+              Temporary seek to nth instruction in current basic block
+              (negative numbers too)
+          - text: "<cmd> @e:"
+            arg_str: "<k>=<v>[<k>=<v>]"
+            comment: >
+              Temporary change eval vars (multiple vars separated by comma)
+          - text: "<cmd> @f:"
+            arg_str: "<file>"
+            comment: "Temporary replace block with file contents"
+          - text: "<cmd> @F:"
+            arg_str: "<flagspace>"
+            comment: "Temporary change flag space"
+          - text: "<cmd> @i:"
+            arg_str: "<nth.op>"
+            comment: "Temporary seek to the Nth relative instruction"
+          - text: "<cmd> @k:"
+            arg_str: "<key>"
+            comment: "Temporary seek at value of sdb key `key`"
+          - text: "<cmd> @o:"
+            arg_str: "<fd>"
+            comment: "Temporary switch to another fd"
+          - text: "<cmd> @r:"
+            arg_str: "<reg>"
+            comment: "Temporary seek to register value"
+          - text: "<cmd> @s:"
+            arg_str: "<string>"
+            comment: "Temporary replace block with string"
+          - text: "<cmd> @v:"
+            arg_str: "<value>"
+            comment: "Temporary replace block with value, written according to asm.bits and cfg.bigendian"
+          - text: "<cmd> @x:"
+            arg_str: "<hexstring>"
+            comment: "Temporary replace block with hexstring"
+  - name: "@@"
+    cname: iterators
+    options: "[?]"
+    summary: "'@@' help, iterators"
+    type: RZ_CMD_DESC_TYPE_FAKE
+    usage: "<cmd> <@@> <args>"
+    details:
+      - name: ""
+        entries:
+          - text: "<cmd> @@."
+            arg_str: " <file>"
+            comment: >
+              Run <cmd> over the offsets specified in <file>, one per line
+          - text: "<cmd> @@="
+            arg_str: "<addr1> [<addr2> ...]"
+            comment: "Run <cmd> over the listed addresses"
+          - text: "<cmd> @@@="
+            arg_str: "<addr1> <blksz1> [<addr2> <blksz2> ...]"
+            comment: >
+              Run <cmd> over the listed addresses and set the proper block size
+          - text: "<cmd> @@/"
+            arg_str: "<search-cmd>"
+            comment: "Run <cmd> over the search results of /<search-cmd>"
+          - text: "<cmd> @@c:"
+            arg_str: "<cmd2>"
+            comment: "Run <cmd> on all addresses in the output of <cmd2>"
+          - text: "<cmd> @@@c:"
+            arg_str: "<cmd2>"
+            comment:
+              Run <cmd> on all addresses/blocksizes in the output of <cmd2>,
+              similar to @@@=
+          - text: "<cmd> @@C"
+            arg_str: "[:<glob>]"
+            comment:
+              Run <cmd> over all comments matching <glob>. <glob> may contain
+              `*` to indicate multiple chars. If not specified all comments are
+              considered.
+          - text: "<cmd> @@dbt[abs]"
+            arg_str: ""
+            comment: "Run <cmd> on every backtrace address, bp or sp"
+          - text: "<cmd> @@t"
+            arg_str: ""
+            comment: "Run <cmd> over all threads"
+          - text: "<cmd> @@b"
+            arg_str: ""
+            comment: "Run <cmd> over all basic blocks of the current function"
+          - text: "<cmd> @@i"
+            arg_str: ""
+            comment: "Run <cmd> over all instructions of the current basic block"
+          - text: "<cmd> @@iS"
+            arg_str: ""
+            comment: "Run <cmd> over all sections"
+          - text: "<cmd> @@iSS"
+            arg_str: ""
+            comment: "Run <cmd> over all segments"
+          - text: "<cmd> @@is"
+            arg_str: ""
+            comment: "Run <cmd> over all symbols"
+          - text: "<cmd> @@iz"
+            arg_str: ""
+            comment: "Run <cmd> over all strings"
+          - text: "<cmd> @@f"
+            arg_str: "[:<glob>]"
+            comment:
+              Run <cmd> over all flags matching <glob>. <glob> may contain `*`
+              to indicate multiple chars. If not specified all flags are
+              considered.
+          - text: "<cmd> @@F"
+            arg_str: "[:<glob>]"
+            comment:
+              Run <cmd> over all functions matching <glob>. <glob> may contain
+              `*` to indicate multiple chars. If not specified all functions
+              are considered.
+          - text: "<cmd> @@om"
+            arg_str: ""
+            comment: "Run <cmd> over all iomap (see `om`)"
+          - text: "<cmd> @@dm"
+            arg_str: ""
+            comment: "Run <cmd> over all debug maps (see `dm`)"
+          - text: "<cmd> @@r"
+            arg_str: ""
+            comment: "Run <cmd> over all registers"
+          - text: "<cmd> @@s:"
+            arg_str: "<from> <to> <step>"
+            comment:
+              Run <cmd> on all addresses starting from <from> and going up to
+              <to> (excluded), with a step <step>.
+  - name: ">"
+    cname: redirection
+    options: "[?]"
+    summary: Redirection help ('>')
+    type: RZ_CMD_DESC_TYPE_FAKE
+    usage: "<cmd> > <arg>"
+    details:
+      - name: ""
+        entries:
+          - text: "<cmd> >"
+            arg_str: " <file>|<$alias>"
+            comment:
+              Redirect STDOUT of <cmd> to <file> or save it to an alias (see
+              $?)
+          - text: "<cmd> 2>"
+            arg_str: " <file>|<$alias>"
+            comment:
+              Redirect STDERR of <cmd> to <file> or save it to an alias (see
+              $?)
+          - text: "<cmd> H>"
+            arg_str: " <file>|<$alias>"
+            comment:
+              Redirect HTML output of <cmd> to <file> or save it to an alias
+              (see $?)
+  - name: "|"
+    cname: pipe
+    options: "[?]"
+    summary: Pipe help ('|')
+    type: RZ_CMD_DESC_TYPE_FAKE
+    usage: "<cmd> |[<program>|H|T|.|]"
+    details:
+      - name: ""
+        entries:
+          - text: "<cmd> |"
+            comment: "Disable scr.html and scr.color"
+          - text: "<cmd> |H"
+            comment: "Enable scr.html, respect scr.color"
+          - text: "<cmd> |"
+            arg_str: " <program>"
+            comment: "Pipe output of command to program"
+          - text: "<cmd> |."
+            comment: "Alias for .<cmd>"
+  - name: "~"
+    cname: grep
+    options: "[?]"
+    summary: Internal grep help ('~')
+    type: RZ_CMD_DESC_TYPE_FAKE
+    usage: "<command>~[modifier][word,word][endmodifier][[column]][:line]"
+    details:
+      - name: Modifiers
+        entries:
+          - text: "&"
+            comment: "All words must match to grep the line"
+          - text: "$[n]"
+            comment: "Sort numerically / alphabetically the Nth column"
+          - text: "$!"
+            comment: "Sort in inverse order"
+          - text: ","
+            comment: "Token to define another keyword"
+          - text: "+"
+            comment: "Case insensitive grep (grep -i)"
+          - text: "^"
+            comment: "Words must be placed at the beginning of line"
+          - text: "<"
+            comment: "Perform zoom operation on the buffer"
+          - text: "!"
+            comment: "Negate grep"
+          - text: "?"
+            comment: "Count number of matching lines"
+          - text: "?."
+            comment: "Count number chars"
+          - text: ":s..e"
+            comment: "Show lines s-e"
+          - text: ".."
+            comment: "Internal 'less'"
+          - text: "..."
+            comment: "Internal 'hud' (like V_)"
+          - text: "{:"
+            comment: "Human friendly indentation (yes, it's a smiley)"
+          - text: "{:.."
+            comment: "Less the output of {:"
+          - text: "{:..."
+            comment: "Hud the output of {:"
+          - text: "{}"
+            comment: "Json indentation"
+          - text: "{}.."
+            comment: "Less json indentation"
+          - text: "{}..."
+            comment: "Hud json indentation"
+          - text: "{path}"
+            comment: "Json path grep"
+      - name: EndModifiers
+        entries:
+          - text: "$"
+            comment: Words must be placed at the end of line
+      - name: Columns
+        entries:
+          - text: "[n]"
+            comment: Show only columns n
+          - text: "[n-m]"
+            comment: Show column n to m
+          - text: "[n-]"
+            comment: Show all columns starting from column n
+          - text: "[i,j,k]"
+            comment: Show the columns i, j and k
+      - name: Examples
+        entries:
+          - text: i
+            arg_str: "~:0"
+            comment: Show first line of 'i' output
+          - text: i
+            arg_str: "~:-2"
+            comment: Show from the second to the last line of 'i' output
+          - text: i
+            arg_str: "~:0..3"
+            comment: Show first three lines of 'i' output
+          - text: pd
+            arg_str: "~mov"
+            comment: Disasm and grep for mov
+          - text: pi
+            arg_str: "~[0]"
+            comment: Show only opcode
+          - text: i
+            arg_str: "~0x400$"
+            comment: Show lines ending with 0x400

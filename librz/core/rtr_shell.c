@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 static bool rtr_visual(RzCore *core, TextLog T, const char *cmd) {
 	bool autorefresh = false;
 	if (cmd) {

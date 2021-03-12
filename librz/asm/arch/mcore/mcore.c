@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "mcore.h"
 
 #include <rz_analysis.h>

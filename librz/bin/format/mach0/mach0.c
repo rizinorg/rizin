@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
@@ -2498,6 +2500,7 @@ static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 		return true;
 	}
 	ht_pp_insert(hash, key, "1");
+	free(key);
 	return false;
 }
 
@@ -2651,6 +2654,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 		}
 		ut64 tr = read_uleb128(&p, end);
 		if (tr == UT64_MAX) {
+			RZ_FREE(next);
 			goto beach;
 		}
 		next->node = tr + trie;
@@ -2807,6 +2811,8 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin) {
 			}
 			if (!inSymtab(hash, sym->name, sym->vaddr)) {
 				rz_list_append(list, sym);
+			} else {
+				rz_bin_symbol_free(sym);
 			}
 		}
 	}
@@ -2873,7 +2879,7 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin) {
 		}
 	}
 	ht_pp_free(hash);
-	// bin->symbols = symbols;
+	free(symbols);
 	return list;
 }
 
@@ -3214,6 +3220,8 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 
 		struct reloc_t *reloc = RZ_NEW0(struct reloc_t);
 		if (!reloc) {
+			free(info);
+			free(sym_name);
 			return;
 		}
 
@@ -3226,7 +3234,9 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		reloc->size = a_info.rz_length;
 		rz_str_ncpy(reloc->name, sym_name, sizeof(reloc->name) - 1);
 		rz_skiplist_insert(relocs, reloc);
+		free(sym_name);
 	}
+	free(info);
 }
 
 static bool is_valid_ordinal_table_size(ut64 size) {
@@ -3672,7 +3682,7 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin) {
 	}
 	for (i = 0; i < bin->nlibs; i++) {
 		sdb_set(bin->kv, sdb_fmt("libs.%d.name", i), bin->libs[i], 0);
-		strncpy(libs[i].name, bin->libs[i], RZ_BIN_MACH0_STRING_LENGTH);
+		strncpy(libs[i].name, bin->libs[i], RZ_BIN_MACH0_STRING_LENGTH - 1);
 		libs[i].name[RZ_BIN_MACH0_STRING_LENGTH - 1] = '\0';
 		libs[i].last = 0;
 	}

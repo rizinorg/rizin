@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* vala extension for librz (rizin) */
 // TODO: add cache directory (~/.r2/cache)
@@ -37,7 +38,11 @@ static int lang_vala_file(RzLang *lang, const char *file, bool silent) {
 		libname = strdup(file);
 		strcpy(srcdir, ".");
 	}
-	rz_sys_setenv("PKG_CONFIG_PATH", RZ_LIBDIR "/pkgconfig");
+	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
+	char *pkgconf_path = rz_file_path_join(libdir, "pkgconfig");
+	rz_sys_setenv("PKG_CONFIG_PATH", pkgconf_path);
+	free(pkgconf_path);
+	free(libdir);
 	vapidir = rz_sys_getenv("VAPIDIR");
 	char *tail = silent ? " > /dev/null 2>&1" : "";
 	char *src = rz_file_slurp(name, NULL);

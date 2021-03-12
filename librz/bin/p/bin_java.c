@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 Adam Pridgen <dso@rice.edu>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -5,8 +8,8 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-#include "../../shlr/java/class.h"
-#include "../../shlr/java/code.h"
+#include "../asm/arch/java/code.h"
+#include "../format/java/class.h"
 
 #define IFDBG_BIN_JAVA if (0)
 
@@ -61,11 +64,11 @@ static void add_bin_obj_to_sdb(RzBinJavaObj *bin) {
 
 static Sdb *get_sdb(RzBinFile *bf) {
 	RzBinObject *o = bf->o;
-	struct rz_bin_java_obj_t *bin;
+	RzBinJavaObj *bin;
 	if (!o) {
 		return NULL;
 	}
-	bin = (struct rz_bin_java_obj_t *)o->bin_obj;
+	bin = (RzBinJavaObj *)o->bin_obj;
 	if (bin->kv) {
 		return bin->kv;
 	}
@@ -73,7 +76,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	struct rz_bin_java_obj_t *tmp_bin_obj = NULL;
+	RzBinJavaObj *tmp_bin_obj = NULL;
 	RzBuffer *tbuf = rz_buf_ref(buf);
 	tmp_bin_obj = rz_bin_java_new_buf(tbuf, loadaddr, sdb);
 	if (!tmp_bin_obj) {
@@ -89,7 +92,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 }
 
 static void destroy(RzBinFile *bf) {
-	rz_bin_java_free((struct rz_bin_java_obj_t *)bf->o->bin_obj);
+	rz_bin_java_free((RzBinJavaObj *)bf->o->bin_obj);
 	sdb_free(DB);
 	DB = NULL;
 }
@@ -103,15 +106,15 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 static RzList *classes(RzBinFile *bf) {
-	return rz_bin_java_get_classes((struct rz_bin_java_obj_t *)bf->o->bin_obj);
+	return rz_bin_java_get_classes((RzBinJavaObj *)bf->o->bin_obj);
 }
 
 static RzList *symbols(RzBinFile *bf) {
-	return rz_bin_java_get_symbols((struct rz_bin_java_obj_t *)bf->o->bin_obj);
+	return rz_bin_java_get_symbols((RzBinJavaObj *)bf->o->bin_obj);
 }
 
 static RzList *strings(RzBinFile *bf) {
-	return rz_bin_java_get_strings((struct rz_bin_java_obj_t *)bf->o->bin_obj);
+	return rz_bin_java_get_strings((RzBinJavaObj *)bf->o->bin_obj);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {

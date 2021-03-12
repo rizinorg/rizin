@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2016 - Davis, Alex Kornitzer */
+// SPDX-FileCopyrightText: 2016 Davis
+// SPDX-FileCopyrightText: 2016 Alex Kornitzer <alex.kornitzer@countercept.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef MDMP_H
 #define MDMP_H

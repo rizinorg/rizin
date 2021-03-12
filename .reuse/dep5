@@ -1,0 +1,198 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Rizin
+Upstream-Contact: RizinOrg <info@rizin.re>
+Source: https://github.com/rizinorg/rizin
+
+Files: test/db/**
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: **/*.sdb.txt
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: .github/**
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .appveyor.yml
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .builds/*
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .clang-format
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .gitattributes
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .gitignore
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: .pylintrc
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: *.yml
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: *.md
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: **/meson.build
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: meson.build
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: meson_options.txt
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: doc/fortunes*
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: doc/hud
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: doc/img/rizin.svg
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only OR CC-BY-SA-4.0
+
+Files: test/notworking_db/*
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: test/Makefile
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: test/.gitignore
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: test/fuzz/**
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: test/scripts/**
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: test/unit/legacy_unit/**/*
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: shlr/rizin-shell-parser/*
+Copyright: 2020 ret2libc <sirmy15@gmail.com>
+License: LGPL-3.0-only
+
+Files: CODEOWNERS
+Copyright: 2020 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: Dockerfile*
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: Doxyfile
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: dist/**
+Copyright: 2020 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: binrz/rizin/*
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: man/*
+Copyright: 2020 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: librz/bin/d/*
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/flag/d/*
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/magic/d/default/*
+Copyright: 1986, 1987, 1989, 1990, 1991, 1992, 1994, 1995 Ian F. Darwin 
+License: BSD-2-Clause
+
+Files: pkgcfg/*.pc.acr
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: pkgcfg/librz.pc.in
+Copyright: 2009 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: subprojects/*.wrap
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: test/unit/.gitignore
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: test/unit/rz_test_cmd_test
+Copyright: 2021 RizinOrg <info@rizin.re>
+License: LGPL-3.0-only
+
+Files: binrz/preload/trap-*
+Copyright: 2021 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/asm/arch/avr/README
+Copyright: RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/asm/arch/ppc/README
+Copyright: RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/bp/README
+Copyright: RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/egg/README
+Copyright: pancake <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/io/README
+Copyright: pancake <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/magic/README
+Copyright: pancake <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/magic/*
+Copyright: 1986-1995 Ian F. Darwin
+Copyright: 1995-present Christos Zoulas and others
+License: BSD-2-Clause
+
+Files: librz/util/regex/*
+Copyright: 1992, 1993, 1994 Henry Spencer
+Copyright: 1992, 1993, 1994 The Regents of the University of California
+License: BSD-3-Clause
+
+Files: shlr/tcc/*
+Copyright: 2001-2004 Fabrice Bellard
+License: LGPL-2.0-or-later

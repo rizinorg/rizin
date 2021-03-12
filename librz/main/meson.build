@@ -1,16 +1,16 @@
 rz_main_sources = [
   'main.c',
-  'rz_agent.c',
-  'rz_bin.c',
+  'rz-agent.c',
+  'rz-bin.c',
   'rizin.c',
-  'rz_diff.c',
-  'rz_find.c',
-  'rz_gg.c',
-  'rz_hash.c',
-  'rz_run.c',
-  'rz_sign.c',
-  'rz_asm.c',
-  'rz_ax.c'
+  'rz-diff.c',
+  'rz-find.c',
+  'rz-gg.c',
+  'rz-hash.c',
+  'rz-run.c',
+  'rz-sign.c',
+  'rz-asm.c',
+  'rz-ax.c'
 ]
 
 rz_main_deps = [

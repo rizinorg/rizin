@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -832,29 +833,37 @@ static int step_until_inst(RzCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-static int step_until_optype(RzCore *core, const char *_optypes) {
+static void dbg_follow_seek_register(RzCore *core) {
+	int follow = rz_config_get_i(core->config, "dbg.follow");
+	if (follow > 0) {
+		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+		if ((pc < core->offset) || (pc > (core->offset + follow))) {
+			rz_core_seek_to_register(core, "PC", false);
+		}
+	}
+}
+
+static int step_until_optype(RzCore *core, RzList *optypes_list) {
 	RzAnalysisOp op;
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
 
-	RzList *optypes_list = NULL;
 	RzListIter *iter;
-	char *optype, *optypes = strdup(rz_str_trim_head_ro((char *)_optypes));
+	char *optype;
 
 	if (!core || !core->dbg) {
 		eprintf("Wrong state\n");
 		res = false;
 		goto end;
 	}
-	if (!optypes || !*optypes) {
+	if (!optypes_list) {
 		eprintf("Missing optypes. Usage example: 'dsuo ucall ujmp'\n");
 		res = false;
 		goto end;
 	}
 
 	bool debugMode = rz_config_get_i(core->config, "cfg.debug");
-	optypes_list = rz_str_split_list(optypes, " ", 0);
 
 	rz_cons_break_push(NULL, NULL);
 	for (;;) {
@@ -906,8 +915,6 @@ static int step_until_optype(RzCore *core, const char *_optypes) {
 cleanup_after_push:
 	rz_cons_break_pop();
 end:
-	free(optypes);
-	rz_list_free(optypes_list);
 	return res;
 }
 
@@ -1298,7 +1305,7 @@ static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
 				/* Escape backslashes (e.g. for Windows). */
 				char *escaped_path = rz_str_escape(map->file);
 				char *filtered_name = strdup(map->name);
-				rz_name_filter(filtered_name, 0);
+				rz_name_filter(filtered_name, 0, true);
 				rz_cons_printf("f mod.%s = 0x%08" PFMT64x "\n",
 					filtered_name, map->addr);
 				rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
@@ -3620,17 +3627,15 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 	free(str);
 }
 
-static RTreeNode *add_trace_tree_child(Sdb *db, RTree *t, RTreeNode *cur, ut64 addr) {
-	struct trace_node *t_node;
-	char dbkey[TN_KEY_LEN];
-
-	snprintf(dbkey, TN_KEY_LEN, TN_KEY_FMT, addr);
-	t_node = (struct trace_node *)(size_t)sdb_num_get(db, dbkey, NULL);
+static RTreeNode *add_trace_tree_child(HtUP *ht, RTree *t, RTreeNode *cur, ut64 addr) {
+	struct trace_node *t_node = ht_up_find(ht, addr, NULL);
 	if (!t_node) {
 		t_node = RZ_NEW0(struct trace_node);
-		t_node->addr = addr;
-		t_node->refs = 1;
-		sdb_num_set(db, dbkey, (ut64)(size_t)t_node, 0);
+		if (t_node) {
+			t_node->addr = addr;
+			t_node->refs = 1;
+			ht_up_insert(ht, addr, t_node);
+		}
 	} else {
 		t_node->refs++;
 	}
@@ -3670,7 +3675,7 @@ static void trace_traverse(RTree *t) {
 static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_addr) {
 	bool trace_libs = rz_config_get_i(core->config, "dbg.trace.libs");
 	bool shallow_trace = rz_config_get_i(core->config, "dbg.trace.inrange");
-	Sdb *tracenodes = core->dbg->tracenodes;
+	HtUP *tracenodes = core->dbg->tracenodes;
 	RTree *tr = core->dbg->tree;
 	RzDebug *dbg = core->dbg;
 	ut64 debug_to = UT64_MAX;
@@ -3875,7 +3880,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 		if (rz_debug_esil_watch_empty(core->dbg)) {
 			eprintf("Error: no esil watchpoints defined\n");
 		} else {
-			rz_core_analysis_esil_init(core);
+			rz_core_analysis_esil_reinit(core);
 			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
 			rz_debug_esil_continue(core->dbg);
 		}
@@ -3883,7 +3888,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 	case 's': // "des"
 		if (input[1] == 'u' && input[2] == ' ') { // "desu"
 			ut64 addr, naddr, fin = rz_num_math(core->num, input + 2);
-			rz_core_analysis_esil_init(core);
+			rz_core_analysis_esil_reinit(core);
 			addr = rz_debug_reg_get(core->dbg, "PC");
 			while (addr != fin) {
 				rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
@@ -3898,7 +3903,7 @@ static void rz_core_debug_esil(RzCore *core, const char *input) {
 		} else if (input[1] == '?' || !input[1]) {
 			rz_core_cmd_help(core, help_msg_des);
 		} else {
-			rz_core_analysis_esil_init(core);
+			rz_core_analysis_esil_reinit(core);
 			rz_debug_esil_prestep(core->dbg, rz_config_get_i(core->config, "esil.prestep"));
 			// continue
 			rz_debug_esil_step(core->dbg, rz_num_math(core->num, input + 1));
@@ -3938,7 +3943,7 @@ static void rz_core_debug_kill(RzCore *core, const char *input) {
 	} else if (*input == 'o') {
 		switch (input[1]) {
 		case 0: // "dko" - list signal skip/conts
-			rz_debug_signal_list(core->dbg, 1);
+			rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		case ' ': // dko SIGNAL
 			if (input[2]) {
@@ -3980,9 +3985,9 @@ static void rz_core_debug_kill(RzCore *core, const char *input) {
 		}
 		}
 	} else if (*input == 'j') {
-		rz_debug_signal_list(core->dbg, 2);
+		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_JSON);
 	} else if (!*input) {
-		rz_debug_signal_list(core->dbg, 0);
+		rz_debug_signal_list(core->dbg, RZ_OUTPUT_MODE_STANDARD);
 #if 0
 		RzListIter *iter;
 		RzDebugSignal *ds;
@@ -4184,7 +4189,7 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 	case 'u': // "dcu"
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_dcu);
-		} else if (input[1] == '.') {
+		} else if (input[1] == '.' || input[1] == '\0') {
 			cmd_dcu(core, "cu $$");
 		} else {
 			char *tmpinp = rz_str_newf("cu %s", input + 2);
@@ -4208,22 +4213,56 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_dc);
 		return 0;
 	}
-	int follow = rz_config_get_i(core->config, "dbg.follow");
 	rz_cons_break_pop();
-	if (follow > 0) {
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_seek_to_register(core, "PC", false);
-		}
-	}
+	dbg_follow_seek_register(core);
 	return 1;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv) {
+	rz_reg_arena_swap(core->dbg->reg, true);
+	step_until(core, rz_num_math(core->num, argv[1]));
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc, const char **argv) {
+	step_until_inst(core, argv[1], false);
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int argc, const char **argv) {
+	step_until_inst(core, argv[1], true);
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc, const char **argv) {
+	RzList *optypes_list = rz_list_new_from_array((const void **)argv + 1, argc - 1);
+	step_until_optype(core, optypes_list);
+	dbg_follow_seek_register(core);
+	rz_list_free(optypes_list);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_esil_handler(RzCore *core, int argc, const char **argv) {
+	step_until_esil(core, argv[1]);
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, const char **argv) {
+	step_until_flag(core, argv[1]);
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
 }
 
 static char *get_corefile_name(const char *raw_name, int pid) {
 	return (!*raw_name) ? rz_str_newf("core.%u", pid) : rz_str_trim_dup(raw_name);
 }
 
-static int cmd_debug_step(RzCore *core, const char *input) {
+RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
 	ut64 addr = core->offset;
 	ut8 buf[64];
 	RzAnalysisOp aop;
@@ -4235,13 +4274,13 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 	if (times < 1) {
 		times = 1;
 	}
-	switch (input[1]) {
+	switch (input[0]) {
 	case 0: // "ds"
 	case ' ':
 		rz_core_debug_step_one(core, times);
 		break;
 	case 'i': // "dsi"
-		if (input[2] == ' ') {
+		if (input[1] == ' ') {
 			int n = 0;
 			rz_cons_break_push(static_debug_stop, core->dbg);
 			do {
@@ -4255,7 +4294,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 				}
 				rz_core_debug_regs2flags(core, 0);
 				n++;
-			} while (!rz_num_conditional(core->num, input + 3));
+			} while (!rz_num_conditional(core->num, input + 2));
 			rz_cons_break_pop();
 			eprintf("Stopped after %d instructions\n", n);
 		} else {
@@ -4266,26 +4305,31 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 		step_until_eof(core);
 		break;
 	case 'u': // "dsu"
-		switch (input[2]) {
+		switch (input[1]) {
 		case 'f': // dsuf
-			step_until_flag(core, input + 3);
+			step_until_flag(core, input + 2);
 			break;
 		case 'i': // dsui
-			if (input[3] == 'r') {
-				step_until_inst(core, input + 4, true);
+			if (input[2] == 'r') {
+				step_until_inst(core, input + 3, true);
 			} else {
-				step_until_inst(core, input + 3, false);
+				step_until_inst(core, input + 2, false);
 			}
 			break;
 		case 'e': // dsue
-			step_until_esil(core, input + 3);
+			step_until_esil(core, input + 2);
 			break;
-		case 'o': // dsuo
-			step_until_optype(core, input + 3);
+		case 'o': { // dsuo
+			char *optypes = strdup(rz_str_trim_head_ro((char *)input + 2));
+			RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
+			step_until_optype(core, optypes_list);
+			free(optypes);
+			rz_list_free(optypes_list);
 			break;
+		}
 		case ' ': // dsu <address>
 			rz_reg_arena_swap(core->dbg->reg, true);
-			step_until(core, rz_num_math(core->num, input + 2)); // XXX dupped by times
+			step_until(core, rz_num_math(core->num, input + 1)); // XXX dupped by times
 			break;
 		default:
 			rz_core_cmd_help(core, help_msg_dsu);
@@ -4342,7 +4386,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 	}
 	case 'o': // "dso"
 		if (rz_config_get_i(core->config, "dbg.skipover")) {
-			rz_core_cmdf(core, "dss%s", input + 2);
+			rz_core_cmdf(core, "dss%s", input + 1);
 		} else {
 			if (rz_config_get_i(core->config, "cfg.debug")) {
 				int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
@@ -4385,6 +4429,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 		rz_core_cmd_help(core, help_msg_ds);
 		return 0;
 	}
+	dbg_follow_seek_register(core);
 	return 1;
 }
 
@@ -4416,8 +4461,8 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	RzDebugTracepoint *t;
-	int follow = 0;
 	const char *ptr;
+	int follow = 0;
 	ut64 addr;
 	int min;
 	RzListIter *iter;
@@ -4557,18 +4602,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'e': // "dte"
-			if (!core->analysis->esil) {
-				int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-				int romem = rz_config_get_i(core->config, "esil.romem");
-				int stats = rz_config_get_i(core->config, "esil.stats");
-				int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-				int nonull = rz_config_get_i(core->config, "esil.nonull");
-				unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-				if (!(core->analysis->esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
-					return 0;
-				}
-				rz_analysis_esil_setup(core->analysis->esil, core->analysis, romem, stats, nonull);
-			}
+			rz_core_analysis_esil_init(core);
 			switch (input[2]) {
 			case 0: // "dte"
 				rz_analysis_esil_trace_list(core->analysis->esil);
@@ -4765,20 +4799,19 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 's':
-		if (cmd_debug_step(core, input)) {
+	case 's': // "ds"
+		if (rz_cmd_debug_step(core, input + 1)) {
 			follow = rz_config_get_i(core->config, "dbg.follow");
 		}
 		break;
-	case 'b':
+	case 'b': // "db"
 		rz_core_cmd_bp(core, input);
 		break;
-	case 'H':
+	case 'H': // "dH"
 		eprintf("TODO: transplant process\n");
 		break;
 	case 'c': // "dc"
 		(void)rz_debug_continue_oldhandler(core, input + 1);
-		follow = 0;
 		break;
 	case 'm': // "dm"
 		cmd_debug_map(core, input + 1);
@@ -5051,7 +5084,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			// Remove the target's registers from the flag list
 			rz_core_cmd0(core, ".dr-");
 			// Reopen and rebase the original file
-			rz_core_cmd0(core, "oo");
+			rz_core_io_file_open(core, core->io->desc->fd);
 			break;
 		case '?': // "do?"
 		default:
@@ -5149,9 +5182,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		case 's': // "dxs"
 			if (input[2]) {
 				char *str;
-				rz_cons_push();
 				str = rz_core_cmd_str(core, sdb_fmt("gs %s", input + 2));
-				rz_cons_pop();
 				rz_core_cmdf(core, "dx %s", str); //`gs %s`", input + 2);
 				free(str);
 			} else {
@@ -5170,10 +5201,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		break;
 	}
 	if (follow > 0) {
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_seek_to_register(core, "PC", false);
-		}
+		dbg_follow_seek_register(core);
 	}
 	return 0;
 }

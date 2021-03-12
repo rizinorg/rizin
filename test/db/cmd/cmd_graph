@@ -327,7 +327,7 @@ EXPECT=<<EOF
 [0x0008049c]>  # super_mario_fix ();
 .--------------------------------------------.
 |  0x8049c                                   |
-| 8: super_mario_fix ();                     |
+| super_mario_fix ();                        |
 |    ; segment.ehdr                          |
 | lui v0, 8                                  |
 |    ; "\u00a2\u00a2\u00a2World" sym..rodata |
@@ -336,7 +336,7 @@ EXPECT=<<EOF
 [0x0008049c]>  # super_mario_fix ();
 .-----------------------------.
 |  0x8049c                    |
-| 8: super_mario_fix ();      |
+| super_mario_fix ();         |
 |    ; segment.ehdr           |
 | lui v0, 8                   |
 |    ; "...World" sym..rodata |

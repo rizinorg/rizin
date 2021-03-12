@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2013 pancake <pancake@nopcode.org>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 ec prompt yellow
 ec fname rgb:0cf
 ec label rgb:0f3

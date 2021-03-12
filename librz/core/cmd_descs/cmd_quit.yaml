@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_quit
+commands:
+  - name: "q"
+    cname : cmd_quit
+    summary: quit rizin
+    args: []
+  - name: "q!"
+    cname: cmd_force_quit
+    summary: Force quit rizin
+    args: []
+  - name: "q!!"
+    cname: cmd_force_quit_without_history
+    summary: force quit rizin without saving history
+    args: []
+  - name: "q"
+    cname: quit_with_preference
+    summary: Quit rizin and choose to kill the process and save projects
+    options: "<yn><yn>"
+    type: RZ_CMD_DESC_TYPE_INNER
+    subcommands:
+      - name: qy
+        summary: Quit rizin by killing the process and and choose to save the projects or not
+        subcommands:
+          - name: qyy
+            cname: quit_kill_save
+            summary: Quit rizin by killing the process and saving the project
+            args: []
+          - name: qyn
+            cname: quit_kill_nosave
+            summary: Quit rizin by killing the process and not saving the project
+            args: []
+      - name: qn
+        summary: Quit rizin by not killing the process and choose to save the projects or not
+        subcommands:
+          - name: qnn
+            cname: quit_nokill_nosave
+            summary: Quit rizin by not killing the process and not saving the project
+            args: []
+          - name: qny
+            cname: quit_nokill_save
+            summary: Quit rizin by not killing the process and saving the project
+            args: []

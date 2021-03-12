@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -95,6 +96,7 @@ static void print_c_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, int ws,
 }
 
 RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
+	rz_return_if_fail(p && buf);
 	int i, w = (int)(p->cols * 0.7);
 	if (w < 1) {
 		w = 1;

@@ -1,0 +1,141 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_seek
+commands:
+  - name: s
+    cname: seek
+    summary: Print current address / Seek to address
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: "s:"
+    cname: seek_padded
+    summary: Print current address with <n> padded zeros (defaults to 8)
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: s.
+    cname: seek_base
+    summary: Seek honoring a base from core->offset
+    args:
+      - name: hex_offset
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: sd
+    cname: seek_delta
+    summary: Seek to a delta relative to current offset
+    args:
+      - name: delta
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: s--
+    cname: seek_blocksize_backward
+    summary: Seek blocksize bytes backward (/=n)
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: s++
+    cname: seek_blocksize_forward
+    summary: Seek blocksize bytes forward (/=n)
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: sh
+    summary: Seek history commands
+    subcommands:
+      - name: sh
+        cname: seek_history_list
+        summary: List undo seek history
+        args: []
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_RIZIN
+      - name: shr
+        cname: seek_redo
+        summary: Go to position before the last undo (forward in history)
+        args: []
+      - name: shu
+        cname: seek_undo
+        summary: Go to last seek in seek history (back in history)
+        args: []
+      - name: sh-
+        cname: seek_undo_reset
+        summary: Clear seek history
+        args: []
+  - name: s/
+    cname: seek_search
+    summary: Seek to the first hit of a search
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: sa
+    cname: seek_asz
+    summary: Seek to current offset (or <addr>) aligned to <align>
+    args:
+      - name: align
+        type: RZ_CMD_ARG_TYPE_NUM
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+  - name: sb
+    cname: seek_basicblock
+    summary: Seek aligned to bb start
+    args: []
+  - name: sf
+    cname: seek_function
+    summary: Seek to next function / Seek to specific function
+    args:
+      - name: fcn
+        type: RZ_CMD_ARG_TYPE_FCN
+        optional: true
+  - name: sf.
+    cname: seek_function_current
+    summary: Seek to the beginning of current function
+    args: []
+  - name: sg
+    cname: seek_begin
+    summary: Seek to begin of section/file
+    args: []
+  - name: sG
+    cname: seek_end
+    summary: Seek to end of section/file
+    args: []
+  - name: sn
+    cname: seek_next
+    summary: Seek to next location of the given <type> or scr.nkey otherwise
+    description: <type> and scr.nkey can be one of "opcodes", "function", "hit", "flags".
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_CHOICES
+        optional: true
+        choices: ["opcodes", "function", "hit", "flags"]
+  - name: sp
+    cname: seek_prev
+    summary: Seek to prev location
+    description: <type> and scr.nkey can be one of "opcodes", "function", "hit", "flags".
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_CHOICES
+        optional: true
+        choices: ["opcodes", "function", "hit", "flags"]
+  - name: so
+    cname: seek_opcode
+    summary: Seek to <n> next opcodes
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: sr
+    cname: seek_register
+    summary: Seek to register
+    args:
+      - name: reg
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: sleep
+    cname: sleep
+    summary: Sleep for the specified amount of seconds
+    args:
+      - name: seconds
+        type: RZ_CMD_ARG_TYPE_NUM

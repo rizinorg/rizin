@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: MIT
 
 #include <rz_io.h>

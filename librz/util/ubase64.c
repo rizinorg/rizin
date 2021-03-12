@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017-2021 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* Original code from:
  * dmc - dynamic mail client -- author: pancake
  * See LICENSE file for copyright and license details.

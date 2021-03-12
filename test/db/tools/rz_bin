@@ -107,8 +107,8 @@ nth paddr        size vaddr       vsize perm name                        type   
 -----------------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- prixfixe.                   NULL                      
 1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe..interp            PROGBITS   alloc,         
-2   0x00000148   0x20 0x08048148   0x20 -r-- prixfixe..note.ABI_tag      NOTE       alloc,         
-3   0x00000168   0x24 0x08048168   0x24 -r-- prixfixe..note.gnu.build_id NOTE       alloc,         
+2   0x00000148   0x20 0x08048148   0x20 -r-- prixfixe..note.ABI-tag      NOTE       alloc,         
+3   0x00000168   0x24 0x08048168   0x24 -r-- prixfixe..note.gnu.build-id NOTE       alloc,         
 4   0x0000018c   0x20 0x0804818c   0x20 -r-- prixfixe..gnu.hash          GNU_HASH   alloc,         
 5   0x000001ac   0x50 0x080481ac   0x50 -r-- prixfixe..dynsym            DYNSYM     alloc,         
 6   0x000001fc   0x4a 0x080481fc   0x4a -r-- prixfixe..dynstr            STRTAB     alloc,         
@@ -481,8 +481,8 @@ nth paddr        size vaddr       vsize perm name               type       flags
 --------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ----                    NULL                      
 1   0x00000134   0x13 0x08048134   0x13 -r-- .interp            PROGBITS   alloc,         
-2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI_tag      NOTE       alloc,         
-3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build_id NOTE       alloc,         
+2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI-tag      NOTE       alloc,         
+3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build-id NOTE       alloc,         
 4   0x0000018c   0x20 0x0804818c   0x20 -r-- .gnu.hash          GNU_HASH   alloc,         
 5   0x000001ac   0x50 0x080481ac   0x50 -r-- .dynsym            DYNSYM     alloc,         
 6   0x000001fc   0x4a 0x080481fc   0x4a -r-- .dynstr            STRTAB     alloc,         
@@ -694,10 +694,10 @@ Segment      Section
 --------------------
 PHDR         
 INTERP       .interp 
-LOAD0        .interp .note.ABI_tag .note.gnu.build_id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
+LOAD0        .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
 LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss 
 DYNAMIC      .dynamic 
-NOTE         .note.ABI_tag .note.gnu.build_id 
+NOTE         .note.ABI-tag .note.gnu.build-id 
 GNU_EH_FRAME .eh_frame_hdr 
 GNU_STACK    
 ehdr         

@@ -1,4 +1,5 @@
-/* libbochs - rizin - LGPL - Copyright 2016 - SkUaTeR */
+// SPDX-FileCopyrightText: 2016 SkUaTeR <skuater@hotmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "libbochs.h"
 

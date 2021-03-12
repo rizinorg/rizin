@@ -1,4 +1,7 @@
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-FileCopyrightText: 2005, 2006 Matt Mackall <mpm@selenic.com>
+// SPDX-FileCopyrightText: 2009-2010 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /* Adapted code from:
 
  bdiff.c - efficient binary diff extension for Mercurial
@@ -87,7 +90,8 @@ inline static int cmp(struct line *a, struct line *b) {
 }
 
 static int equatelines(struct line *a, int an, struct line *b, int bn) {
-	int i, j, buckets = 1, t, scale;
+	int i, j, t;
+	size_t scale, buckets = 1;
 	struct pos *h = NULL;
 
 	/* build a hash table of the next highest power of 2 */

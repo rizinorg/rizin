@@ -25,7 +25,7 @@ e asm.var=false
 pdb
 EOF
 EXPECT=<<EOF
-/ 337: entry0 (int32_t arg_40h, int32_t arg_44h);
+/ entry0 (int32_t arg_40h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call  fcn.00646b7e
 |           0x006453a6      8d642444       lea   esp, [arg_44h]
 |       ,=< 0x006453aa      0f85a6300000   jne   0x648456
@@ -103,7 +103,7 @@ NAME=cyclomatic
 FILE=bins/pe/rz-bin.exe
 CMDS=<<EOF
 s 0x140002510;af;afi~complex[1]
-afb.@0x14000253e
+afbi@0x14000253e
 EOF
 EXPECT=<<EOF
 67
@@ -176,7 +176,7 @@ NAME=x86: fastcall argument analysis
 FILE=bins/elf/analysis/fast
 CMDS=aa ; s sym.fastcaslled ; e asm.bytes=true; afc fastcall ; afva ; pdf~arg,var
 EXPECT=<<EOF
-/ 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
+/ sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; var int32_t var_20h @ ebp-0x20
 |           ; var int32_t var_1ch @ ebp-0x1c
 |           ; var int32_t var_10h @ ebp-0x10
@@ -558,7 +558,7 @@ FILE=bins/elf/echo
 CMDS=<<EOF
 aaa
 s 0xf34
-afb.
+afbi
 EOF
 EXPECT=<<EOF
 0x00000f34 0x00000f4b 00:0000 23 j 0x00001144
@@ -2760,7 +2760,7 @@ EXPECT=<<EOF
 0x00001180      31c0           xor   eax, eax
 0x00001182      eb06           jmp   loc.start
 | ----------- true: 0x0000118a
-18: int main (int argc, char **argv, char **envp);
+int main (int argc, char **argv, char **envp);
 0x00001184      31c0           xor   eax, eax
 0x00001186      75f8           jne   loc.start2
 | ----------- true: 0x00001180  false: 0x00001188
@@ -3417,7 +3417,7 @@ pdf
 EOF
 EXPECT=<<EOF
             ;-- eip:
-/ 7: entry0 ();
+/ entry0 ();
 |           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
 |           0x08048056      xor   eax, eax
 |           0x08048058      inc   eax
@@ -3434,11 +3434,58 @@ aae
 pdf
 EOF
 EXPECT=<<EOF
-/ 7: entry0 ();
+/ entry0 ();
 |           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
 |           0x08048056      xor   eax, eax
 |           0x08048058      inc   eax
 |           ;-- syscall.exit:
 \           0x08048059      int   0x80
+EOF
+RUN
+
+NAME=tiny1 aae non-start-bb first
+FILE=bins/elf/analysis/tiny1
+CMDS=<<EOF
+e io.cache=true
+$orig_end=?e `omt va_end/cols~[0]:3`
+omr 1 `omt size/cols~[0]:3`+2
+s `$orig_end`
+wa jmp entry0
+aF
+aae
+agf
+?e
+afl
+EOF
+EXPECT=<<EOF
+[0x0804805b]>  # fcn.0804805b ();
+.----.
+|    |
+|.-------------------------------------------.
+||  0x8048054                                |
+|| ; CODE XREF from fcn.0804805b @ 0x804805b |
+|| ;-- entry0:                               |
+|| ; '*'                                     |
+|| ; 42                                      |
+|| mov bl, 0x2a                              |
+|| xor eax, eax                              |
+|| inc eax                                   |
+|| ;-- syscall.exit:                         |
+|| int 0x80                                  |
+|`-------------------------------------------'
+|    v
+|    |
+|    '----------.
+|               |
+|           .--------------------.
+|           |  0x804805b         |
+|           | fcn.0804805b ();   |
+|           | jmp entry0         |
+|           `--------------------'
+|               v
+|               |
+`---------------'
+
+0x0804805b    2 9            fcn.0804805b
 EOF
 RUN

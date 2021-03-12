@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2009-2020 - pancake */
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
 #include <rz_socket.h>
@@ -76,6 +77,7 @@ static void rz_core_debug_breakpoint_hit(RzCore *core, RzBreakpointItem *bpi) {
 		rz_core_cmd0(core, bpi->data);
 	}
 	if (may_output) {
+		rz_cons_set_flush(true);
 		rz_cons_flush();
 		rz_cons_pop();
 	}
@@ -859,7 +861,7 @@ static const char *rizin_argv[] = {
 	"aer", "aets?", "aets+", "aets-", "aes", "aesp", "aesb", "aeso", "aesou", "aess", "aesu", "aesue", "aetr", "aex",
 	"af?", "af", "afr", "af+", "af-",
 	"afa", "afan",
-	"afb?", "afb", "afb.", "afb+", "afbb", "afbr", "afbi", "afbj", "afbe", "afB", "afbc", "afb=",
+	"afb?", "afb", "afb+", "afbb", "afbr", "afbi", "afbil", "afbj", "afbe", "afB", "afbc", "afb=",
 	"afB", "afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj",
 	"afck", "afcl", "afco", "afcR",
 	"afd", "aff", "afi",
@@ -2604,6 +2606,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->offset = 0LL;
 	core->prompt_offset = 0LL;
 	rz_core_cmd_init(core);
+	rz_core_plugin_init(core);
+
 	core->dbg = rz_debug_new(true);
 
 	rz_io_bind(core->io, &(core->dbg->iob));
@@ -2679,6 +2683,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	if (!c) {
 		return;
 	}
+	rz_core_plugin_fini(c);
 	rz_core_task_break_all(&c->tasks);
 	rz_core_task_join(&c->tasks, NULL, -1);
 	rz_core_wait(c);

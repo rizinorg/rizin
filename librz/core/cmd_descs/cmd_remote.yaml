@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_remote
+commands:
+  - name: "="
+    cname: remote
+    summary: List all open connections / Exec <cmd> at remote <fd>
+    args_str: " [[<fd>] <cmd>]"
+    args:
+      - name: fd
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
+  - name: =<
+    cname: remote_send
+    summary: Send output of local <cmd> to remote <fd>
+    args:
+      - name: fd
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
+  - name: =!
+    cname: io_system_run_oldhandler
+    summary: Run <cmd> via rz_io_system
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args_str: "[<cmd>]"
+    options: ""
+  - name: =+
+    cname: remote_add
+    summary: Connect to remote host:port
+    args:
+      - name: "[proto://]host:port"
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: =-
+    cname: remote_del
+    summary: remove all hosts or host 'fd'
+    args:
+      - name: fd
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+  - name: ==
+    cname: remote_open
+    summary: Open remote session with host 'fd', 'q' to quit
+    args:
+      - name: fd
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: =!=
+    cname: remote_mode_enable
+    summary: Enable remote cmd mode, sending commands to remote <fd> server
+    args:
+      - name: fd
+        type: RZ_CMD_ARG_TYPE_NUM
+        default_value: "0"
+  - name: "!=!"
+    cname: remote_mode_disable
+    summary: Disable remote cmd mode
+    args: []
+  - name: "=:"
+    cname: remote_rap
+    summary: Start the rap server (o rap://9999) / Execute <cmd> on rap server
+    args:
+      - name: "[host:]port"
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
+        optional: true
+  - name: =g
+    cname: equal_g_handler_old
+    summary: Start the gdbserver
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: =h
+    cname: equal_h_handler_old
+    summary: Start the http webserver
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: =H
+    cname: equal_H_handler_old
+    summary: Start the http webserver (and launch the web browser)
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: =t
+    cname: remote_tcp
+    summary: Start the tcp server
+    args:
+      - name: "[host:]port"
+        type: RZ_CMD_ARG_TYPE_STRING
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
+        optional: true
+  - name: "=&:"
+    cname: remote_rap_bg
+    summary: Start rap server in background (same as '&_=h')
+    args:
+      - name: port
+        type: RZ_CMD_ARG_TYPE_NUM

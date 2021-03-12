@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2016-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_lib.h"
@@ -31,7 +32,11 @@ static int lang_rust_file(RzLang *lang, const char *file) {
 		libpath = ".";
 		libname = name;
 	}
-	rz_sys_setenv("PKG_CONFIG_PATH", RZ_LIBDIR "/pkgconfig");
+	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
+	char *pkgconf_path = rz_file_path_join(libdir, "pkgconfig");
+	rz_sys_setenv("PKG_CONFIG_PATH", pkgconf_path);
+	free(pkgconf_path);
+	free(libdir);
 	p = strstr(name, ".rs");
 	if (p)
 		*p = 0;

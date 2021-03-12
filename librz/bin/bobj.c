@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 dso <dso@rice.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 #include <rz_util.h>
@@ -425,15 +428,15 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	return true;
 }
 
-RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBin *bin, RzBinObject *o) {
-	rz_return_val_if_fail(bin && o, NULL);
+RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
+	rz_return_val_if_fail(bf && o, NULL);
 
 	static bool first = true;
 	// rz_bin_object_set_items set o->relocs but there we don't have access
 	// to io so we need to be run from bin_relocs, free the previous reloc and get
 	// the patched ones
 	if (first && o->plugin && o->plugin->patch_relocs) {
-		RzList *tmp = o->plugin->patch_relocs(bin);
+		RzList *tmp = o->plugin->patch_relocs(bf);
 		first = false;
 		if (!tmp) {
 			return o->relocs;
@@ -442,7 +445,9 @@ RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBin *bin, RzBinObject *o) {
 		REBASE_PADDR(o, tmp, RzBinReloc);
 		o->relocs = list2rbtree(tmp);
 		first = false;
-		bin->is_reloc_patched = true;
+		bf->rbin->is_reloc_patched = true;
+		tmp->free = NULL;
+		rz_list_free(tmp);
 	}
 	return o->relocs;
 }
@@ -513,4 +518,8 @@ RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo) {
 			}
 		}
 	}
+}
+
+RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr) {
+	return o ? addr + o->baddr_shift : addr;
 }

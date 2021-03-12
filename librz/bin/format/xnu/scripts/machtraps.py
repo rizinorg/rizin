@@ -1,4 +1,8 @@
 #!/usr/bin/env python2
+#
+# SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
 # -*- coding: utf-8 -*-
 
 """
@@ -60,7 +64,7 @@ def carve_traps():
     if len(msgs) == 0:
         r.cmd("s sym._mach_msg")
         r.cmd("aae $SS @ $S")
-        r.cmd("sHu")
+        r.cmd("shu")
         msgs = r.cmdj("axtj sym._mach_msg")
         if len(msgs) == 0:
             print "Cannot find refs to mach_msg!"

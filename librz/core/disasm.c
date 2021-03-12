@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2021 dso <dso@rice.edu>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_core.h"
@@ -188,6 +191,7 @@ typedef struct {
 	bool show_varaccess;
 	bool show_vars;
 	bool show_fcnsig;
+	bool show_fcnsize;
 	bool hinted_line;
 	int show_varsum;
 	int midflags;
@@ -205,6 +209,7 @@ typedef struct {
 	const char *color_flow2;
 	const char *color_flag;
 	const char *color_label;
+	const char *color_offset;
 	const char *color_other;
 	const char *color_nop;
 	const char *color_bin;
@@ -312,7 +317,7 @@ static void ds_control_flow_comments(RDisasmState *ds);
 static void ds_adistrick_comments(RDisasmState *ds);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_show_comments_right(RDisasmState *ds);
-static void ds_show_flags(RDisasmState *ds);
+static void ds_show_flags(RDisasmState *ds, bool overlapped);
 static void ds_update_ref_lines(RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
 static void ds_print_lines_right(RDisasmState *ds);
@@ -583,6 +588,8 @@ static RDisasmState *ds_init(RzCore *core) {
 	    : Color_CYAN;
 	ds->color_label = P(label)
 	    : Color_CYAN;
+	ds->color_offset = P(offset)
+	    : Color_GREEN;
 	ds->color_other = P(other)
 	    : Color_WHITE;
 	ds->color_nop = P(nop)
@@ -675,7 +682,8 @@ static RDisasmState *ds_init(RzCore *core) {
 	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
 	core->parser->localvar_only = rz_config_get_b(core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
-	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcnsig");
+	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcn.signature");
+	ds->show_fcnsize = rz_config_get_b(core->config, "asm.fcn.size");
 	ds->show_vars = rz_config_get_b(core->config, "asm.var");
 	ds->show_varsum = rz_config_get_i(core->config, "asm.var.summary");
 	ds->show_varaccess = rz_config_get_b(core->config, "asm.var.access");
@@ -1476,15 +1484,15 @@ static void ds_atabs_option(RDisasmState *ds) {
 		return;
 	}
 	int bufasm_len = rz_strbuf_length(&ds->asmop.buf_asm);
-	int size = bufasm_len * (ds->atabs + 1) * 4;
+	int size = bufasm_len * (ds->atabs + 1) * 4 + 4;
 	if (size < 1 || size < bufasm_len) {
 		return;
 	}
-	b = malloc(size + 1);
 	if (ds->opstr) {
-		strcpy(b, ds->opstr);
+		size = strlen(ds->opstr) * (ds->atabs + 1) * 4 + 4;
+		b = rz_str_ndup(ds->opstr, size);
 	} else {
-		strcpy(b, rz_asm_op_get_asm(&ds->asmop));
+		b = rz_str_ndup(rz_asm_op_get_asm(&ds->asmop), size);
 	}
 	if (!b) {
 		return;
@@ -1530,8 +1538,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 }
 
 static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
-	int i;
-
+	ds->midflags = rz_config_get_i(core->config, "asm.flags.middle");
 	ds->hasMidflag = false;
 	if (ds->midcursor && core->print->cur != -1) {
 		ut64 cur = core->offset + core->print->cur;
@@ -1541,10 +1548,17 @@ static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
 			return cur - from;
 		}
 	}
-	for (i = 1; i < ds->oplen; i++) {
+	if (!ds->midflags) {
+		return 0;
+	}
+	for (int i = 1; i < ds->oplen; i++) {
 		RzFlagItem *fi = rz_flag_get_i(core->flags, ds->at + i);
 		if (fi && fi->name) {
-			if (ds->midflags == 2 && ((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
+			if (rz_analysis_find_most_relevant_block_in(core->analysis, ds->at + i)) {
+				ds->midflags = ds->midflags ? RZ_MIDFLAGS_SHOW : RZ_MIDFLAGS_HIDE;
+			}
+			if (ds->midflags == RZ_MIDFLAGS_REALIGN &&
+				((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
 				i = 0;
 			} else if (!strncmp(fi->name, "hit.", 4)) { // use search.prefix ?
 				i = 0;
@@ -1614,9 +1628,7 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index + ds->asmop.size);
 	RzBreakpointItem *p = rz_bp_get_at(core->dbg->bp, ds->at);
-	if (ds->midflags) {
-		(void)handleMidFlags(core, ds, false);
-	}
+	(void)handleMidFlags(core, ds, false);
 	if (ds->midbb) {
 		(void)handleMidBB(core, ds);
 	}
@@ -1899,7 +1911,10 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_pre(ds, true);
 			rz_cons_printf("%s  ", COLOR_RESET(ds));
 		}
-		rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
+
+		if (ds->show_fcnsize) {
+			rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
+		}
 
 		// show function's realname in the signature if realnames are enabled
 		if (core->flags->realnames) {
@@ -2221,7 +2236,7 @@ static void __preline_flag(RDisasmState *ds, RzFlagItem *flag) {
 }
 
 #define printPre (outline || !*comma)
-static void ds_show_flags(RDisasmState *ds) {
+static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 	//const char *beginch;
 	RzFlagItem *flag;
 	RzListIter *iter;
@@ -2243,11 +2258,11 @@ static void ds_show_flags(RDisasmState *ds) {
 	bool docolon = true;
 	int nth = 0;
 	rz_list_foreach (uniqlist, iter, flag) {
-		if (f && f->addr == flag->offset && !strcmp(flag->name, f->name)) {
-			// do not show flags that have the same name as the function
+		if (!overlapped && f && f->addr == flag->offset && !strcmp(flag->name, f->name)) {
+			// do not show non-overlapped flags that have the same name as the function
 			continue;
 		}
-		bool no_fcn_lines = (f && f->addr == flag->offset);
+		bool no_fcn_lines = (!overlapped && f && f->addr == flag->offset);
 		if (ds->maxflags && count >= ds->maxflags) {
 			if (printPre) {
 				ds_pre_xrefs(ds, no_fcn_lines);
@@ -2291,13 +2306,13 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 		}
 
+		bool hasColor = false;
+		char *color = NULL;
 		if (ds->show_color) {
-			bool hasColor = false;
 			if (flag->color) {
-				char *color = rz_cons_pal_parse(flag->color, NULL);
+				color = rz_cons_pal_parse(flag->color, NULL);
 				if (color) {
 					rz_cons_strcat(color);
-					free(color);
 					ds->lastflag = flag;
 					hasColor = true;
 				}
@@ -2346,6 +2361,11 @@ static void ds_show_flags(RDisasmState *ds) {
 					rz_str_ansi_filter(name, NULL, NULL, -1);
 					if (!ds->flags_inline || nth == 0) {
 						rz_cons_printf(FLAG_PREFIX);
+						if (overlapped) {
+							rz_cons_printf("%s(0x%08" PFMT64x ")%s ",
+								ds->show_color ? ds->color_offset : "", ds->at,
+								ds->show_color ? (hasColor ? color : ds->color_flag) : "");
+						}
 					}
 					if (outline) {
 						rz_cons_printf("%s:", name);
@@ -2370,6 +2390,7 @@ static void ds_show_flags(RDisasmState *ds) {
 		} else {
 			comma = ", ";
 		}
+		free(color);
 		nth++;
 	}
 	if (!outline && *comma) {
@@ -3786,7 +3807,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 }
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
-	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, refaddr)) {
+	if (ds->core->flags->realnames || !rz_bin_string_filter(ds->core->bin, str, -1, refaddr)) {
 		return;
 	}
 	// do not resolve strings on arm64 pointed with ADRP
@@ -3816,7 +3837,7 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 	if (analysis_flag) {
 		char *dupped = strdup(analysis_flag);
 		if (dupped) {
-			rz_name_filter(dupped, -1);
+			rz_name_filter(dupped, -1, true);
 			if (!strcmp(&name[4], dupped)) {
 				return true;
 			}
@@ -5290,19 +5311,18 @@ toro:
 		if (ds->at >= addr) {
 			rz_print_set_rowoff(core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
-		if (ds->midflags) {
-			skip_bytes_flag = handleMidFlags(core, ds, true);
-			if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW) {
-				ds->at += skip_bytes_flag;
-			}
-		}
-		ds_show_xrefs(ds);
-		ds_show_flags(ds);
-		if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW) {
-			ds->at -= skip_bytes_flag;
-		}
+		skip_bytes_flag = handleMidFlags(core, ds, true);
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB(core, ds);
+		}
+		ds_show_xrefs(ds);
+		ds_show_flags(ds, false);
+		if (skip_bytes_flag && ds->midflags == RZ_MIDFLAGS_SHOW &&
+			(!ds->midbb || !skip_bytes_bb || skip_bytes_bb > skip_bytes_flag)) {
+			ds->at += skip_bytes_flag;
+			ds_show_xrefs(ds);
+			ds_show_flags(ds, true);
+			ds->at -= skip_bytes_flag;
 		}
 		if (ds->pdf) {
 			static bool sparse = false;
@@ -5607,9 +5627,7 @@ toro:
 		ret = rz_asm_disassemble(core->rasm, &ds->asmop,
 			buf + addrbytes * i, nb_bytes - addrbytes * i);
 		ds->oplen = ret;
-		if (ds->midflags) {
-			skip_bytes_flag = handleMidFlags(core, ds, true);
-		}
+		skip_bytes_flag = handleMidFlags(core, ds, true);
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB(core, ds);
 		}
@@ -5943,9 +5961,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		}
 		ds->oplen = rz_asm_op_get_size(&asmop);
 		ds->at = at;
-		if (ds->midflags) {
-			skip_bytes_flag = handleMidFlags(core, ds, false);
-		}
+		skip_bytes_flag = handleMidFlags(core, ds, false);
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB(core, ds);
 		}
@@ -6361,9 +6377,7 @@ toro:
 				.midflags = midflags
 			};
 			int skip_bytes_flag = 0, skip_bytes_bb = 0;
-			if (midflags) {
-				skip_bytes_flag = handleMidFlags(core, &ds, true);
-			}
+			skip_bytes_flag = handleMidFlags(core, &ds, true);
 			if (midbb) {
 				skip_bytes_bb = handleMidBB(core, &ds);
 			}
@@ -6515,7 +6529,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 		pj_a(pj);
 	}
 	if (!core->analysis->esil) {
-		rz_core_analysis_esil_init(core);
+		rz_core_analysis_esil_reinit(core);
 		if (!rz_config_get_b(core->config, "cfg.debug")) {
 			rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 		}

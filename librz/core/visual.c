@@ -1,9 +1,10 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
 #include <rz_cons.h>
 #include "core_private.h"
-#include "cmd_descs.h"
+#include "cmd_descs/cmd_descs.h"
 
 #define NPF  5
 #define PIDX (RZ_ABS(core->printidx % NPF))
@@ -2166,7 +2167,7 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_visual_refs(core, false, true);
 			break;
 		case 'h': // seek history
-			rz_core_cmdf(core, "sH~...");
+			rz_core_cmdf(core, "sh~...");
 			break;
 		case '_':
 			rz_core_visual_hudstuff(core);

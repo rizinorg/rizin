@@ -382,3 +382,16 @@ EXPECT=<<EOF
 0x1c00
 EOF
 RUN
+
+NAME=iter flags with newline
+FILE=bins/elf/ls
+CMDS=<<EOF
+(_;?v $$;?e)() @@f:reloc.std*
+EOF
+EXPECT=<<EOF
+0x22288
+
+0x222c0
+
+EOF
+RUN
