@@ -14,6 +14,7 @@
 typedef double LUA_NUMBER;
 typedef uint32_t LUA_INSTRUCTION;
 typedef uint64_t LUA_INTEGER;
+#define LUA_SIZE_MAX_BYTE 8
 
 /* Macro Functions */
 /* type casts (a macro highlights casts in the code) */
@@ -93,8 +94,8 @@ typedef struct lua_proto_ex{
         ut64 offset;    // proto offset in bytes
         ut64 size;      // current proto size
 
-        char *proto_name;       // proto name
-        ut64 name_size;         // size of proto name
+        ut8 *proto_name;       // proto name
+        int name_size;         // size of proto name
 
         ut64 line_defined;      // line number of function start
         ut64 lastline_defined;  // line number of function end
@@ -109,14 +110,19 @@ typedef struct lua_proto_ex{
 
 	/* store constant entries */
 	RzList *const_entries;
+	ut64 const_offset;
 
 	/* store upvalue entries */
 	RzList *upvalue_entries;
+	ut64 upvalue_offset;
 
 	/* store protos defined in this proto */
 	RzList *proto_entries;
+	ut64 inner_proto_offset;
 
 	/* store Debug info */
+	ut64 debug_offset;
+	ut64 debug_size;
 	RzList *line_info_entries;
 	RzList *abs_line_info_entries;
 	RzList *local_var_info_entries;
@@ -151,21 +157,21 @@ typedef struct lua_lineinfo_entry{
 } LuaLineinfoEntry;
 
 typedef struct lua_abs_lineinfo_entry{
-	ut64 pc;                /* pc in lua */
-	ut64 line;              /* line number in source file */
+	int pc;                /* pc in lua */
+	int line;              /* line number in source file */
 	ut64 offset;
 } LuaAbsLineinfoEntry;
 
 typedef struct lua_local_var_entry{
-	char *varname;
+	ut8 *varname;
 	int varname_len;
-	ut64 start_pc;
-	ut64 end_pc;
+	int start_pc;
+	int end_pc;
 	ut64 offset;
 } LuaLocalVarEntry;
 
 typedef struct lua_dbg_upvalue_entry{
-	char *upvalue_name;
+	ut8 *upvalue_name;
 	int name_len;
 	ut64 offset;
 }LuaDbgUpvalueEntry;
