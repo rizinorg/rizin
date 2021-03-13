@@ -51,25 +51,27 @@ static ut64 lua_parse_string(ut8 *data, ut8 **dest, int *str_len, ut64 offset, u
 	ut64 size_offset;
 	ut64 total_offset;
         ut8 *string_start;
-	int string_buf_size;
+	int ret_buf_size;
+	int src_buf_size;
 	int string_len;
 	ut8 *ret;
 
-	size_offset = lua_parse_szint(data, &string_buf_size, offset, data_size);
+	size_offset = lua_parse_szint(data, &ret_buf_size, offset, data_size);
 
         /* no string */
-        if (string_buf_size == 0) {
+        if (ret_buf_size == 0) {
 		ret = NULL;
 		string_len = 0;
         } else{
                 /* skip size byte */
                 string_start = size_offset + data + offset;
-                string_len = string_buf_size - 1;
-                if ((ret = RZ_NEWS(ut8, string_buf_size)) == NULL) {
+                string_len = ret_buf_size - 1;
+                if ((ret = RZ_NEWS(ut8, ret_buf_size)) == NULL) {
                         eprintf("error in string init\n");
 			string_len = 0;
                 } else {
-			memcpy(ret, string_start, string_len);
+			src_buf_size = data_size - offset - size_offset - 1;
+			rz_mem_copy(ret, ret_buf_size, string_start, src_buf_size);
 			ret[string_len] = 0x00;
 		}
         }
@@ -396,29 +398,30 @@ RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor) {
         if (!(ret = RZ_NEW0(RzBinInfo))) {
                 return NULL;
         }
-        ret->file = strdup(bf->file);
+        ret->file = rz_str_new(bf->file);
         ret->type = rz_str_newf("Lua %c.%c compiled file", major + '0', minor + '0');
-        ret->bclass = strdup("Lua compiled file");
-        ret->rclass = strdup("luac");
-        ret->arch = strdup("luac");
+        ret->bclass = rz_str_new("Lua compiled file");
+        ret->rclass = rz_str_new("luac");
+        ret->arch = rz_str_new("luac");
         ret->machine = rz_str_newf("Lua %c.%c VM", major + '0', minor + '0');
-        ret->os = strdup("any");
+        ret->os = rz_str_new("any");
         ret->bits = 8;
 
         /* official format ? */
         if (luac_format != LUAC_54_FORMAT) {
-                ret->compiler = strdup("Unofficial Lua Compiler");
+                ret->compiler = rz_str_new("Unofficial Lua Compiler");
                 return ret;
         }
-        ret->compiler = strdup("Official Lua Compiler");
+        ret->compiler = rz_str_new("Official Lua Compiler");
 
         /* Check checksum corrupted */
         if (memcmp(work_buffer + LUAC_54_LUAC_DATA_OFFSET,
                    LUAC_54_DATA,
                    LUAC_54_LUAC_DATA_SIZE) != 0) {
-                eprintf("Corrupted Luac\n");
+                ret->actual_checksum = rz_str_new("Corrupted");
                 return ret;
         }
+	ret->actual_checksum = rz_str_new("Verified");
 
         /* Check Size */
         if ((instruction_size != sizeof(LUA_INSTRUCTION)) ||
@@ -445,7 +448,7 @@ RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor) {
 	lua_parse_string(work_buffer, ((ut8 **)&(src_file_name)), &name_len, 0, INNER_BUFFER_SIZE);
 
         /* put source file info into GUID */
-        ret->guid = strdup(src_file_name ? src_file_name : "stripped");
+        ret->guid = rz_str_new(src_file_name ? src_file_name : "stripped");
         free(src_file_name);
 
         return ret;
