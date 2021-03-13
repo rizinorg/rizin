@@ -30,6 +30,23 @@ typedef uint64_t LUA_INTEGER;
 
 #define LUAC_MAGIC "\x1b\x4c\x75\x61"
 
+/* Lua Constant Tag */
+#define makevariant(t,v)	((t) | ((v) << 4))
+
+#define LUA_TBOOLEAN		1
+#define LUA_TNIL		0
+#define LUA_TNUMBER		3
+#define LUA_TSTRING		4
+
+
+#define LUA_VNIL makevariant(LUA_TNIL, 0)
+#define LUA_VFALSE	makevariant(LUA_TBOOLEAN, 0)
+#define LUA_VTRUE	makevariant(LUA_TBOOLEAN, 1)
+#define LUA_VNUMINT	makevariant(LUA_TNUMBER, 0)  /* integer numbers */
+#define LUA_VNUMFLT	makevariant(LUA_TNUMBER, 1)  /* float numbers */
+#define LUA_VSHRSTR	makevariant(LUA_TSTRING, 0)  /* short strings */
+#define LUA_VLNGSTR	makevariant(LUA_TSTRING, 1)  /* long strings */
+
 /* Solution A: only store offset info about different parts
  * Leave parsing work to function */
 typedef struct lua_proto {
@@ -107,18 +124,22 @@ typedef struct lua_proto_ex{
         /* Code of this proto */
         ut64 code_offset;
         ut64 code_size;
+	ut64 code_skipped;      // skip size bytes
 
 	/* store constant entries */
 	RzList *const_entries;
 	ut64 const_offset;
+	ut64 const_size;
 
 	/* store upvalue entries */
 	RzList *upvalue_entries;
 	ut64 upvalue_offset;
+	ut64 upvalue_size;
 
 	/* store protos defined in this proto */
 	RzList *proto_entries;
 	ut64 inner_proto_offset;
+	ut64 inner_proto_size;
 
 	/* store Debug info */
 	ut64 debug_offset;
@@ -176,8 +197,16 @@ typedef struct lua_dbg_upvalue_entry{
 	ut64 offset;
 }LuaDbgUpvalueEntry;
 
+typedef struct luac_bin_info{
+	st32 major;
+	st32 minor;
+	RzList *section_list;
+	RzList *symbol_list;
+	RzList *entry_list;
+} LuacBinInfo;
+
 /* ========================================================
- * Common Operation to RzBinInfo & Lua common structures
+ * Common Operation to Lua structures
  * Implemented in 'bin/format/luac/luac_common.c'
  * ======================================================== */
 LuaDbgUpvalueEntry *lua_new_dbg_upvalue_entry();
@@ -195,6 +224,21 @@ void lua_free_lineinfo_entry(LuaLineinfoEntry *);
 void lua_free_upvalue_entry(LuaUpvalueEntry *);
 void lua_free_const_entry(LuaConstEntry *);
 void lua_free_proto_entry(LuaProto *);
+
+/* ========================================================
+ * Common Operation to RzBinInfo
+ * Implemented in 'bin/format/luac/luac_bin.c'
+ * ======================================================== */
+void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, bool is_func);
+void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, const char *type);
+void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type);
+
+LuacBinInfo *luac_new_bin_info();
+void luac_free_bin_info(LuacBinInfo *info);
+
+LuacBinInfo *luac_build_info(LuaProto *proto);
+void _luac_build_info(LuaProto *proto, LuacBinInfo *info);
+
 
 /* ========================================================
  * Export version specified Api to bin_luac.c

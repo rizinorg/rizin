@@ -5,11 +5,7 @@
 #include <rz_lib.h>
 #include "librz/bin/format/luac/luac_common.h"
 
-typedef struct version_context_t {
-	st32 major;
-	st32 minor;
-} LuaVersion;
-#define GET_VERSION_INFO_FROM_BINF(bf) ((LuaVersion *)(bf)->o->bin_obj)
+#define GET_VERSION_INFO_FROM_BINF(bf) ((LuacBinInfo *)(bf)->o->bin_obj)
 
 static bool check_buffer(RzBuffer *buff) {
 	if (rz_buf_size(buff) > 4) {
@@ -22,38 +18,100 @@ static bool check_buffer(RzBuffer *buff) {
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ut8 MAJOR_MINOR_VERSION;
-	LuaVersion *version_info;
+	LuacBinInfo *bin_info_obj;
 
 	rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
-	if ((version_info = RZ_NEW(LuaVersion)) == NULL) {
+	if ((bin_info_obj = RZ_NEW(LuacBinInfo)) == NULL) {
 		return false;
 	}
 
-	version_info->major = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
-	version_info->minor = (MAJOR_MINOR_VERSION & 0x0F);
+	ut8 *work_buf[4096];
+	rz_buf_read_at(buf, 0, (ut8 *)work_buf, 4096);
 
-	*bin_obj = version_info;
+	// TODO : switch version here
+	LuaProto *proto;
+	proto = lua_parse_body_54((ut8 *)work_buf, 0x20, 4096);
 
+	bin_info_obj = luac_build_info(proto);
+
+	eprintf("sections : %d, symbols : %d, entry : %d\n",
+		rz_list_length(bin_info_obj->section_list),
+		rz_list_length(bin_info_obj->symbol_list),
+		rz_list_length(bin_info_obj->entry_list));
+
+        bin_info_obj->major = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
+        bin_info_obj->minor = (MAJOR_MINOR_VERSION & 0x0F);
+
+	RzListIter *iter;
+	RzBinSection *section;
+	RzBinSymbol *symbol;
+	rz_list_foreach(bin_info_obj->section_list, iter, section){
+		printf("section %s, addr 0x%llx\n", section->name, section->vaddr);
+	}
+
+        rz_list_foreach(bin_info_obj->symbol_list, iter, symbol){
+                printf("symbol %s, addr 0x%llx\n", symbol->name, symbol->vaddr);
+	}
+
+
+        *bin_obj = bin_info_obj;
 	return true;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	LuaVersion *version_info = GET_VERSION_INFO_FROM_BINF(bf);
+	LuacBinInfo *bin_info_obj = GET_VERSION_INFO_FROM_BINF(bf);
 
-	if (version_info->major != 5) {
+	if (bin_info_obj->major != 5) {
 		eprintf("currently support lua 5.x only\n");
 		return NULL;
 	}
 
-	switch (version_info->minor) {
+	switch (bin_info_obj->minor) {
 	case 4:
-		return lua_info_54(bf, version_info->major, version_info->minor);
+		return lua_info_54(bf, bin_info_obj->major, bin_info_obj->minor);
 		break;
 	default:
-		eprintf("lua 5.%c not support now\n", version_info->minor + '0');
+		eprintf("lua 5.%c not support now\n", bin_info_obj->minor + '0');
 		return NULL;
 	}
 }
+
+static RzList *sections(RzBinFile *arch){
+	if (!arch){
+		return NULL;
+	}
+	LuacBinInfo *bin_info_obj = GET_VERSION_INFO_FROM_BINF(arch);
+	if (!bin_info_obj){
+		return NULL;
+	}
+
+	return bin_info_obj->section_list;
+}
+
+static RzList *symbols(RzBinFile *arch){
+        if (!arch){
+                return NULL;
+        }
+        LuacBinInfo *bin_info_obj = GET_VERSION_INFO_FROM_BINF(arch);
+        if (!bin_info_obj){
+                return NULL;
+        }
+
+	return bin_info_obj->symbol_list;
+}
+
+static RzList *entries(RzBinFile *arch){
+        if (!arch){
+                return NULL;
+        }
+        LuacBinInfo *bin_info_obj = GET_VERSION_INFO_FROM_BINF(arch);
+        if (!bin_info_obj){
+                return NULL;
+        }
+
+        return bin_info_obj->entry_list;
+}
+
 
 RzBinPlugin rz_bin_plugin_luac = {
 	.name = "luac",
@@ -63,8 +121,9 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.baddr = NULL,
-	.entries = NULL,
-	.sections = NULL,
+	.entries = &entries,
+	.sections = &sections,
+	.symbols = &symbols,
 	.info = &info
 };
 

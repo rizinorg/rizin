@@ -40,22 +40,7 @@
 /* Body */
 #define LUAC_FILENAME_OFFSET 0x20
 
-/* Lua Constant Tag */
-#define makevariant(t,v)	((t) | ((v) << 4))
 
-#define LUA_TBOOLEAN		1
-#define LUA_TNIL		0
-#define LUA_TNUMBER		3
-#define LUA_TSTRING		4
-
-
-#define LUA_VNIL makevariant(LUA_TNIL, 0)
-#define LUA_VFALSE	makevariant(LUA_TBOOLEAN, 0)
-#define LUA_VTRUE	makevariant(LUA_TBOOLEAN, 1)
-#define LUA_VNUMINT	makevariant(LUA_TNUMBER, 0)  /* integer numbers */
-#define LUA_VNUMFLT	makevariant(LUA_TNUMBER, 1)  /* float numbers */
-#define LUA_VSHRSTR	makevariant(LUA_TSTRING, 0)  /* short strings */
-#define LUA_VLNGSTR	makevariant(LUA_TSTRING, 1)  /* long strings */
 
 /* Lua Functions */
 void luaLoadBlock(void *src, void *dest, size_t size);
