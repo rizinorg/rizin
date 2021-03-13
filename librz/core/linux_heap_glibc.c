@@ -1319,11 +1319,11 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 
 		switch (format_out) {
 		case 'c':
-			PRINT_YA("\n  chunk @ ");
+			PRINT_YA("chunk @ ");
 			PRINTF_BA("0x%" PFMT64x " ", prev_chunk_addr);
 			PRINT_GA("[size: ");
 			PRINTF_BA("0x%" PFMT64x, prev_chunk_size);
-			PRINTF_GA("][%s]", status);
+			PRINTF_GA("][%s]\n", status);
 			break;
 		case 'j':
 			pj_o(pj);
@@ -1354,7 +1354,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 
 	switch (format_out) {
 	case 'c':
-		PRINT_YA("\n  chunk @ ");
+		PRINT_YA("chunk @ ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(top));
 		PRINT_GA(" [top][size: ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)size_tmp);
@@ -1362,7 +1362,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		PRINTF_BA("0x%" PFMT64x, (ut64)brk_start);
 		PRINT_GA(", brk_end: ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)brk_end);
-		PRINT_GA("]\n");
+		PRINT_GA("]");
 		break;
 	case 'j':
 		pj_end(pj);
