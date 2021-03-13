@@ -4275,6 +4275,13 @@ EXPECT=<<EOF
     "size": 2560,
     "vsize": 4096,
     "perm": "-r-x",
+    "flags": [
+      "CNT_CODE",
+      "CNT_INITIALIZED_DATA",
+      "ALIGN_16BYTES",
+      "MEM_EXECUTE",
+      "MEM_READ"
+    ],
     "paddr": 1024,
     "vaddr": 4198400
   },
@@ -4283,6 +4290,12 @@ EXPECT=<<EOF
     "size": 512,
     "vsize": 4096,
     "perm": "-rw-",
+    "flags": [
+      "CNT_INITIALIZED_DATA",
+      "ALIGN_4BYTES",
+      "MEM_READ",
+      "MEM_WRITE"
+    ],
     "paddr": 3584,
     "vaddr": 4202496
   },
@@ -4291,6 +4304,11 @@ EXPECT=<<EOF
     "size": 512,
     "vsize": 4096,
     "perm": "-r--",
+    "flags": [
+      "CNT_INITIALIZED_DATA",
+      "ALIGN_4BYTES",
+      "MEM_READ"
+    ],
     "paddr": 4096,
     "vaddr": 4206592
   },
@@ -4299,6 +4317,12 @@ EXPECT=<<EOF
     "size": 0,
     "vsize": 4096,
     "perm": "-rw-",
+    "flags": [
+      "CNT_UNINITIALIZED",
+      "ALIGN_8BYTES",
+      "MEM_READ",
+      "MEM_WRITE"
+    ],
     "paddr": 0,
     "vaddr": 4210688
   },
@@ -4307,6 +4331,12 @@ EXPECT=<<EOF
     "size": 1024,
     "vsize": 4096,
     "perm": "-rw-",
+    "flags": [
+      "CNT_INITIALIZED_DATA",
+      "ALIGN_4BYTES",
+      "MEM_READ",
+      "MEM_WRITE"
+    ],
     "paddr": 4608,
     "vaddr": 4214784
   }
