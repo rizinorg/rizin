@@ -1671,10 +1671,10 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 }
 
 //TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
-static ut32 tmp_get_realsize(RzAnalysisFunction *f) {
-	ut32 size = rz_analysis_function_realsize(f);
-	return (size > 0) ? size : rz_analysis_function_linear_size(f);
-}
+// static ut32 tmp_get_realsize(RzAnalysisFunction *f) {
+// 	ut32 size = rz_analysis_function_realsize(f);
+// 	return (size > 0) ? size : rz_analysis_function_linear_size(f);
+// }
 
 static void ds_show_functions_argvar(RDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var, const char *base, bool is_var, char sign) {
 	int delta = var->kind == 'b' ? RZ_ABS(var->delta + fcn->bp_off) : RZ_ABS(var->delta);
@@ -1815,8 +1815,8 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
-	bool showSig = ds->show_fcnsig && ds->show_calls;
-	bool call = rz_config_get_b(core->config, "asm.calls");
+	bool fcnsig = ds->show_fcnsig;
+	// bool call = rz_config_get_b(core->config, "asm.calls");
 	const char *lang = demangle ? rz_config_get(core->config, "bin.lang") : NULL;
 	f = rz_analysis_get_function_at(core->analysis, ds->at);
 	if (!f) {
@@ -1838,14 +1838,41 @@ static void ds_show_functions(RDisasmState *ds) {
 	if (empty_signature(sign)) {
 		RZ_FREE(sign);
 	}
+
+	ds->stackptr = core->analysis->stackptr;
+	RzAnalysisFcnVarsCache vars_cache;
+	rz_analysis_fcn_vars_cache_init(core->analysis, &vars_cache, f);
+
+	int o_varsum = ds->show_varsum;
+	if (ds->interactive && !o_varsum) {
+		int padding = 10;
+		int numvars = vars_cache.bvars->length + vars_cache.rvars->length + vars_cache.svars->length + padding;
+		if (numvars > ds->l) {
+			ds->show_varsum = 1;
+		} else {
+			ds->show_varsum = 0;
+		}
+	}
+	// show function's realname in the signature if realnames are enabled
+	if (core->flags->realnames) {
+		RzFlagItem *flag = rz_flag_get(core->flags, fcn_name);
+		if (flag && flag->realname) {
+			fcn_name = flag->realname;
+		}
+	}
+	char *sig = rz_analysis_fcn_format_sig(core->analysis, f, fcn_name, &vars_cache, COLOR(ds, color_fname), COLOR_RESET(ds));
 	if (f->type == RZ_ANALYSIS_FCN_TYPE_LOC) {
 		rz_cons_printf("%s%s ", COLOR(ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
-		if (!showSig) {
-			rz_cons_printf("%s%s%s %" PFMT64u, COLOR(ds, color_floc),
-				fcn_name, COLOR_RESET(ds), rz_analysis_function_linear_size(f));
-			ds_newline(ds);
+		if (fcnsig && sig) {
+			rz_cons_printf("%s%s%s", COLOR(ds, color_floc),
+				sig, COLOR_RESET(ds));
+			RZ_FREE(sig);
+		} else {
+			rz_cons_printf("%s%s%s", COLOR(ds, color_floc),
+				fcn_name, COLOR_RESET(ds));
 		}
+
 	} else {
 		const char *fcntype;
 		char cmt[32];
@@ -1872,64 +1899,23 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_lines_left(ds);
 			ds_print_offset(ds);
 		}
-		if (!showSig) {
-			rz_cons_printf("%s(%s) %s%s%s %d", COLOR(ds, color_fname),
-				fcntype, fcn_name, cmt, COLOR_RESET(ds), tmp_get_realsize(f));
-			ds_newline(ds);
+		if (fcnsig && sig) {
+			rz_cons_printf("%s(%s) %s", COLOR(ds, color_fname),
+				fcntype, sig);
+			RZ_FREE(sig);
+		} else {
+			rz_cons_printf("%s(%s) %s%s%s", COLOR(ds, color_fname),
+				fcntype, fcn_name, cmt, COLOR_RESET(ds));
 		}
 	}
-	if (!showSig) {
-		if (sign) {
-			ds_begin_line(ds);
-			rz_cons_printf("// %s", sign);
-			ds_newline(ds);
-		}
+	if (ds->show_fcnsize) {
+		rz_cons_printf(" %" PFMT64d, rz_analysis_function_realsize(f));
 	}
+	ds_newline(ds);
 	RZ_FREE(sign);
+
 	if (ds->show_lines_fcn) {
 		ds->pre = DS_PRE_FCN_MIDDLE;
-	}
-	ds->stackptr = core->analysis->stackptr;
-	RzAnalysisFcnVarsCache vars_cache;
-	rz_analysis_fcn_vars_cache_init(core->analysis, &vars_cache, f);
-
-	int o_varsum = ds->show_varsum;
-	if (ds->interactive && !o_varsum) {
-		int padding = 10;
-		int numvars = vars_cache.bvars->length + vars_cache.rvars->length + vars_cache.svars->length + padding;
-		if (numvars > ds->l) {
-			ds->show_varsum = 1;
-		} else {
-			ds->show_varsum = 0;
-		}
-	}
-
-	if (call) {
-		if (!showSig) {
-			ds_begin_line(ds);
-			rz_cons_print(COLOR(ds, color_fline));
-			ds_print_pre(ds, true);
-			rz_cons_printf("%s  ", COLOR_RESET(ds));
-		}
-
-		if (ds->show_fcnsize) {
-			rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
-		}
-
-		// show function's realname in the signature if realnames are enabled
-		if (core->flags->realnames) {
-			RzFlagItem *flag = rz_flag_get(core->flags, fcn_name);
-			if (flag && flag->realname) {
-				fcn_name = flag->realname;
-			}
-		}
-
-		char *sig = rz_analysis_fcn_format_sig(core->analysis, f, fcn_name, &vars_cache, COLOR(ds, color_fname), COLOR_RESET(ds));
-		if (sig) {
-			rz_cons_print(sig);
-			free(sig);
-		}
-		ds_newline(ds);
 	}
 
 	if (ds->show_vars) {
