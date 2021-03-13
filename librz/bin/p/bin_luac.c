@@ -56,7 +56,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	bin_info_obj = luac_build_info(proto);
 	bin_info_obj->general_info = general_info;
 
-	//lua_free_proto_entry(proto);
+	lua_free_proto_entry(proto);
 	proto = NULL;
 
         *bin_obj = bin_info_obj;

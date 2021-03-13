@@ -85,6 +85,9 @@ static const char *get_tag_string(ut8 tag){
 	case LUA_VSHRSTR:
 	case LUA_VLNGSTR:
 		return "CONST_STRING";
+	case LUA_VNUMFLT:
+	case LUA_VNUMINT:
+		return "CONST_NUM";
 	default:
 		return "CONST_UNKNOWN";
 	}
@@ -152,7 +155,7 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info){
 
 	// 2. should I construct symbols of proto attr ?
 	//     (for example linedefined ?)
-	// TODO : parse bin to get symbol offset instead of value
+	// TODO : better symbol name (e.g const_i_am_string)
 
         // 3.1 construct constant symbols
 	LuaConstEntry *const_entry;

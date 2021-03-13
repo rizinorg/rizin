@@ -115,6 +115,15 @@ LuaProto *lua_new_proto_entry(){
                 return NULL;
         }
 
+	/* set free functions */
+	proto->const_entries->free = (RzListFree)&lua_free_const_entry;
+	proto->upvalue_entries->free = (RzListFree)&lua_free_upvalue_entry;
+	proto->line_info_entries->free = (RzListFree)&lua_free_lineinfo_entry;
+	proto->abs_line_info_entries->free = (RzListFree)&lua_free_abs_lineinfo_entry;
+	proto->local_var_info_entries->free = (RzListFree)&lua_free_local_var_entry;
+	proto->dbg_upvalue_entries->free = (RzListFree)&lua_free_dbg_upvalue_entry;
+	proto->proto_entries->free = (RzListFree)&lua_free_proto_entry;
+
 	return proto;
 }
 
@@ -125,7 +134,8 @@ void lua_free_dbg_upvalue_entry(LuaDbgUpvalueEntry *entry){
 	if (entry->upvalue_name != NULL){
 		RZ_FREE(entry->upvalue_name);
 	}
-	RZ_FREE(entry);
+        // leave entry to rz_list_free
+        RZ_FREE(entry);
 }
 
 void lua_free_local_var_entry(LuaLocalVarEntry *entry){
@@ -135,7 +145,7 @@ void lua_free_local_var_entry(LuaLocalVarEntry *entry){
 	if (entry->varname != NULL){
 		RZ_FREE(entry->varname);
 	}
-	RZ_FREE(entry);
+        RZ_FREE(entry);
 }
 
 void lua_free_const_entry(LuaConstEntry *entry){
@@ -159,79 +169,26 @@ void lua_free_lineinfo_entry(LuaLineinfoEntry *entry){
 	if (entry == NULL){
 		return;
 	}
-	RZ_FREE(entry);
+        RZ_FREE(entry);
 }
 
 void lua_free_upvalue_entry(LuaUpvalueEntry *entry){
 	if (entry == NULL){
 		return;
 	}
-
-	RZ_FREE(entry);
+        RZ_FREE(entry);
 }
 
 void lua_free_proto_entry(LuaProto *proto){
-	RzListIter *iter;
-
 	/* free constants entries */
-	LuaConstEntry *const_entry;
-	rz_list_foreach(proto->const_entries, iter, const_entry){
-		if (const_entry == NULL){
-			continue;
-		}
-		lua_free_const_entry(const_entry);
-		const_entry = NULL;
-	}
 	rz_list_free(proto->const_entries);
 	proto->const_entries = NULL;
 
 	/* free upvalue entries */
-	LuaUpvalueEntry *upvalue_entry;
-	rz_list_foreach(proto->upvalue_entries, iter, upvalue_entry){
-		if (upvalue_entry == NULL){
-			continue;
-		}
-		lua_free_upvalue_entry(upvalue_entry);
-		upvalue_entry = NULL;
-	}
-	rz_list_free(proto->upvalue_entries);
+        rz_list_free(proto->upvalue_entries);
 	proto->upvalue_entries = NULL;
 
 	/* free debug */
-	LuaLineinfoEntry *lineinfo_entry;
-	LuaAbsLineinfoEntry *abs_entry;
-	LuaLocalVarEntry *var_entry;
-	LuaDbgUpvalueEntry *dbg_entry;
-
-	rz_list_foreach(proto->line_info_entries, iter, lineinfo_entry){
-		if (lineinfo_entry == NULL){
-			continue;
-		}
-		lua_free_lineinfo_entry(lineinfo_entry);
-		lineinfo_entry = NULL;
-	}
-	rz_list_foreach(proto->abs_line_info_entries, iter, abs_entry){
-		if (abs_entry == NULL){
-			continue;
-		}
-		lua_free_abs_lineinfo_entry(abs_entry);
-		abs_entry = NULL;
-	}
-	rz_list_foreach(proto->local_var_info_entries, iter, var_entry){
-		if (var_entry == NULL){
-			continue;
-		}
-		lua_free_local_var_entry(var_entry);
-		var_entry = NULL;
-	}
-	rz_list_foreach(proto->dbg_upvalue_entries, iter, dbg_entry){
-		if (dbg_entry == NULL){
-			continue;
-		}
-		lua_free_dbg_upvalue_entry(dbg_entry);
-		dbg_entry = NULL;
-	}
-
 	rz_list_free(proto->line_info_entries);
 	rz_list_free(proto->abs_line_info_entries);
 	rz_list_free(proto->local_var_info_entries);
@@ -242,14 +199,6 @@ void lua_free_proto_entry(LuaProto *proto){
 	proto->dbg_upvalue_entries = NULL;
 
 	/* recursively free protos */
-	LuaProto *sub_proto;
-	rz_list_foreach(proto->proto_entries, iter, sub_proto){
-		if (sub_proto == NULL){
-			continue;
-		}
-		lua_free_proto_entry(sub_proto);
-		sub_proto = NULL;
-	}
 	rz_list_free(proto->proto_entries);
 	proto->proto_entries = NULL;
 

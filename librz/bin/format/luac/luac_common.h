@@ -23,8 +23,8 @@ typedef ut32 LUA_INSTRUCTION;
 /* Lua Constant Tag */
 #define makevariant(t,v)	((t) | ((v) << 4))
 
-#define LUA_TBOOLEAN		1
 #define LUA_TNIL		0
+#define LUA_TBOOLEAN	1
 #define LUA_TNUMBER		3
 #define LUA_TSTRING		4
 
@@ -148,7 +148,7 @@ typedef struct lua_constant_entry{
 	ut8 tag;                // type of this constant
 	void *data;             // can be Number/Integer/String
 	int data_len;
-        ut64 offset;            // addr of this constant
+	ut64 offset;            // addr of this constant
 } LuaConstEntry;
 
 typedef struct lua_upvalue_entry{

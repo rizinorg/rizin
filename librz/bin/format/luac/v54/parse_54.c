@@ -152,6 +152,9 @@ static ut64 lua_parse_const_entry(LuaProto *proto, ut8 *data, ut64 offset, ut64 
 	case LUA_VNIL:
 	case LUA_VFALSE:
 	case LUA_VTRUE:
+	default:
+		recv_data = NULL;
+		data_len = 0;
 		break;
 	}
 
@@ -350,7 +353,6 @@ LuaProto *lua_parse_body_54(ut8 *data, ut64 base_offset, ut64 data_size){
         /* parse constants */
         ret_proto->const_offset = offset;
 	offset += lua_parse_consts(ret_proto, data, offset, data_size);
-
 
 	/* parse upvalues */
         ret_proto->upvalue_offset = offset;
