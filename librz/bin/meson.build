@@ -103,7 +103,6 @@ rz_bin_sources = [
   'format/le/le.c',
   'format/luac/luac_common.c',
   'format/luac/luac_bin.c',
-  'format/luac/v54/bin_54.c',
   'format/luac/v54/parse_54.c',
   'format/ne/ne.c',
   'format/mz/mz.c',

@@ -10,17 +10,7 @@
 #include <rz_lib.h>
 #include <rz_list.h>
 
-/* Macros/Typedefs used in luac */
-typedef double LUA_NUMBER;
-typedef uint32_t LUA_INSTRUCTION;
-typedef uint64_t LUA_INTEGER;
-#define LUA_SIZE_MAX_BYTE 8
-
-/* Macro Functions */
-/* type casts (a macro highlights casts in the code) */
-#define luac_cast(t, exp) ((t)(exp))
-#define luac_cast_num(i)  luac_cast(LUA_NUMBER, (i))
-#define luac_cast_int(i)  luac_cast(int, (i))
+typedef ut32 LUA_INSTRUCTION;
 
 /* Macros About Luac Format */
 #define LUAC_MAGIC_OFFSET   0x00

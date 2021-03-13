@@ -42,10 +42,12 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 
 	switch (minor) {
 	case 4:
-                proto = lua_parse_body_54((ut8 *)work_buf, 0x20, 4096);
+                proto = lua_parse_body_54((ut8 *)work_buf, 0x20, 4076);
 		general_info = lua_parse_header_54(bf, major, minor);
 		break;
 	default:
+		proto = NULL;
+		general_info = NULL;
 		eprintf("lua 5.%c not support now\n", minor + '0');
 		return false;
         }
@@ -54,7 +56,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	bin_info_obj = luac_build_info(proto);
 	bin_info_obj->general_info = general_info;
 
-	lua_free_proto_entry(proto);
+	//lua_free_proto_entry(proto);
 	proto = NULL;
 
         *bin_obj = bin_info_obj;

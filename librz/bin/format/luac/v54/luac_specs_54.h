@@ -7,6 +7,15 @@
 #include "librz/bin/format/luac/luac_common.h"
 
 /* Macros for bin_luac.c */
+/* Macros/Typedefs used in luac */
+typedef double LUA_NUMBER;
+typedef ut64 LUA_INTEGER;
+
+/* Macro Functions */
+/* type casts (a macro highlights casts in the code) */
+#define luac_cast(t, exp) ((t)(exp))
+#define luac_cast_num(i)  luac_cast(double, (i))
+#define luac_cast_int(i)  luac_cast(int, (i))
 
 /* luac 5.4 spec */
 /* Header Information */
@@ -32,7 +41,7 @@
 
 #define LUAC_54_FORMAT            0 /* this is the official format */
 #define LUAC_54_DATA              "\x19\x93\r\n\x1a\n"
-#define LUAC_54_INT_VALIDATION    0x5678
+#define LUAC_54_INT_VALIDATION    luac_cast_int(0x5678)
 #define LUAC_54_NUMBER_VALIDATION luac_cast_num(370.5)
 
 #define LUAC_54_HDRSIZE 0x20
@@ -43,14 +52,7 @@
 #define INNER_BUFFER_SIZE 256
 
 /* Lua Functions */
-void luaLoadBlock(void *src, void *dest, size_t size);
-#define luaLoadVector(src, buf, n) luaLoadBlock(src, buf, (n) * sizeof((buf)[0]))
-#define luaLoadVar(raw_data, var)  luaLoadVector(raw_data, &(var), 1)
-LUA_INTEGER luaLoadInteger(ut8 *src);
-LUA_NUMBER luaLoadNumber(ut8 *src);
-size_t luaLoadUnsigned(ut8 *src, size_t src_buf_limit, size_t type_limit);
-size_t luaLoadSize(ut8 *src, size_t src_buf_limit);
-char *luaLoadString(ut8 *src, size_t src_buf_limit);
-
+#define lua_load_vector(src, buf, n) memcpy(buf, src, (n) * sizeof((buf)[0]))
+#define lua_load_var(raw_data, var)  lua_load_vector(raw_data, &(var), 1)
 
 #endif //BUILD_LUAC_54_H

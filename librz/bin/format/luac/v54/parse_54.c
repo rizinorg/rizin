@@ -1,66 +1,19 @@
 #include "luac_specs_54.h"
 
-void luaLoadBlock(void *src, void *dest, size_t size) {
+static void lua_load_block(void *src, void *dest, size_t size) {
         memcpy(dest, src, size);
 }
 
-LUA_INTEGER luaLoadInteger(ut8 *src) {
-        LUA_INTEGER x;
-        luaLoadVar(src, x);
-        return x;
+static ut64 lua_load_integer(ut8 *src){
+	ut64 x;
+	lua_load_var(src, x);
+	return x;
 }
 
-LUA_NUMBER luaLoadNumber(ut8 *src) {
-        LUA_NUMBER x;
-        luaLoadVar(src, x);
-        return x;
-}
-
-/* Luac load method , defined in lua source code lundump.c */
-size_t luaLoadUnsigned(ut8 *src, size_t src_buf_limit, size_t limit) {
-        size_t x = 0;
-        ut32 b;
-        int i = 0;
-        limit >>= 7;
-        do {
-                b = src[i++];
-                if (x >= limit) {
-                        eprintf("integer overflow\n");
-                        return 0;
-                }
-                x = (x << 7) | (b & 0x7f);
-        } while (((b & 0x80) == 0) && (i < src_buf_limit));
-        return x;
-}
-
-size_t luaLoadSize(ut8 *src, size_t src_buf_limit) {
-        return luaLoadUnsigned(src, src_buf_limit, ~(size_t)0);
-}
-
-/* load a null-terminated string, return a malloced string */
-char *luaLoadString(ut8 *src, size_t src_buf_limit) {
-        /* size is the buffer's size */
-        size_t size = luaLoadSize(src, src_buf_limit);
-        char *ret;
-
-        /* no string */
-        if (size == 0) {
-                return NULL;
-        }
-
-        /* skip size byte */
-        void *string_start = src + 1;
-        size -= 1;
-
-        if ((ret = RZ_NEWS(char, size + 1)) == NULL) {
-                eprintf("error in string init\n");
-                return NULL;
-        }
-
-        memcpy(ret, string_start, size);
-        ret[size] = 0x00;
-
-        return ret;
+static double lua_load_number(ut8 *src){
+	double x;
+	lua_load_var(src, x);
+	return x;
 }
 
 // return an offset to skip string, return 1 if no string (0x80)
@@ -174,6 +127,7 @@ static ut64 lua_parse_const_entry(LuaProto *proto, ut8 *data, ut64 offset, ut64 
 	int data_len;
 
 	current_entry = lua_new_const_entry();
+	current_entry->offset = offset;
 	base_offset = offset;
 
 	/* read TAG byte */
@@ -188,7 +142,7 @@ static ut64 lua_parse_const_entry(LuaProto *proto, ut8 *data, ut64 offset, ut64 
         case LUA_VNUMINT:
                 data_len = 8;
                 recv_data = RZ_NEWS(ut8, data_len);
-		luaLoadBlock(data, recv_data, data_len);
+		lua_load_block(data, recv_data, data_len);
 		offset += data_len;
                 break;
 	case LUA_VSHRSTR:
@@ -216,12 +170,12 @@ static ut64 lua_parse_consts(LuaProto *proto, ut8 *data, ut64 offset, ut64 data_
 	ut64 base_offset;
 
 	base_offset = offset;
-	offset += lua_parse_szint(data, &consts_cnt, offset, data_size);
+        offset += lua_parse_szint(data, &consts_cnt, offset, data_size);
 
 	for (i = 0; i < consts_cnt; ++i){
 		// TODO check NULL
 		// add an entry of constant
-		offset += lua_parse_const_entry(proto, data, offset, data_size);
+                offset += lua_parse_const_entry(proto, data, offset, data_size);
         }
 
 	proto->const_size = offset - base_offset + 1;
@@ -317,7 +271,7 @@ static ut64 lua_parse_debug(LuaProto *proto, ut8 *data, ut64 offset, ut64 data_s
 		offset += lua_parse_szint(data, &var_entry->start_pc, offset, data_size);
 		offset += lua_parse_szint(data, &var_entry->end_pc, offset, data_size);
 
-		rz_list_append(proto->local_var_info_entries, var_entry);
+                rz_list_append(proto->local_var_info_entries, var_entry);
 	}
 
 	/* parse upvalue */
@@ -332,7 +286,7 @@ static ut64 lua_parse_debug(LuaProto *proto, ut8 *data, ut64 offset, ut64 data_s
 			&dbg_upvalue_entry->upvalue_name, &dbg_upvalue_entry->name_len,
 			offset, data_size);
 
-		rz_list_append(proto->dbg_upvalue_entries, dbg_upvalue_entry);
+                rz_list_append(proto->dbg_upvalue_entries, dbg_upvalue_entry);
 	}
 
 	proto->debug_size = offset - base_offset + 1;
@@ -433,8 +387,8 @@ RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor) {
         ut8 instruction_size = work_buffer[LUAC_54_INSTRUCTION_SIZE_OFFSET];
         ut8 integer_size = work_buffer[LUAC_54_INTEGER_SIZE_OFFSET];
         ut8 number_size = work_buffer[LUAC_54_NUMBER_SIZE_OFFSET];
-        LUA_INTEGER int_valid = luaLoadInteger(work_buffer + LUAC_54_INTEGER_VALID_OFFSET);
-        LUA_NUMBER number_valid = luaLoadNumber(work_buffer + LUAC_54_NUMBER_VALID_OFFSET);
+        ut64 int_valid = lua_load_integer(work_buffer + LUAC_54_INTEGER_VALID_OFFSET);
+        double number_valid = lua_load_number(work_buffer + LUAC_54_NUMBER_VALID_OFFSET);
 
         /* Common Ret */
         if (!(ret = RZ_NEW0(RzBinInfo))) {
@@ -456,7 +410,7 @@ RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor) {
         }
         ret->compiler = strdup("Official Lua Compiler");
 
-        /* if LUAC_DATA checksum corrupted */
+        /* Check checksum corrupted */
         if (memcmp(work_buffer + LUAC_54_LUAC_DATA_OFFSET,
                    LUAC_54_DATA,
                    LUAC_54_LUAC_DATA_SIZE) != 0) {
@@ -472,7 +426,7 @@ RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor) {
                 return ret;
         }
 
-        /* Check Loader -- endian */
+        /* Check endian */
         if (int_valid != LUAC_54_INT_VALIDATION) {
                 eprintf("Integer Format Not Matched\n");
                 return ret;
@@ -482,12 +436,15 @@ RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor) {
                 return ret;
         }
 
+	/* parse source file name */
+        char *src_file_name;
+        int name_len;
         rz_buf_read_at(bf->buf, LUAC_FILENAME_OFFSET, work_buffer, INNER_BUFFER_SIZE);
-        char *src_file = luaLoadString(work_buffer, INNER_BUFFER_SIZE);
+	lua_parse_string(work_buffer, ((ut8 **)&(src_file_name)), &name_len, 0, INNER_BUFFER_SIZE);
 
         /* put source file info into GUID */
-        ret->guid = strdup(src_file ? src_file : "stripped");
-        free(src_file);
+        ret->guid = strdup(src_file_name ? src_file_name : "stripped");
+        free(src_file_name);
 
         return ret;
 }
