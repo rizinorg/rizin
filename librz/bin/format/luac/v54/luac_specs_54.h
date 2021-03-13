@@ -40,7 +40,7 @@
 /* Body */
 #define LUAC_FILENAME_OFFSET 0x20
 
-
+#define INNER_BUFFER_SIZE 256
 
 /* Lua Functions */
 void luaLoadBlock(void *src, void *dest, size_t size);

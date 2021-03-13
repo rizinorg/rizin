@@ -38,7 +38,6 @@ typedef uint64_t LUA_INTEGER;
 #define LUA_TNUMBER		3
 #define LUA_TSTRING		4
 
-
 #define LUA_VNIL makevariant(LUA_TNIL, 0)
 #define LUA_VFALSE	makevariant(LUA_TBOOLEAN, 0)
 #define LUA_VTRUE	makevariant(LUA_TBOOLEAN, 1)
@@ -151,7 +150,7 @@ typedef struct lua_proto_ex{
 
 } LuaProtoHeavy;
 
-/* Choose one of them */
+/* Currently I use LuaProtoHeavy as my approach */
 typedef LuaProtoHeavy LuaProto;
 // typedef LuaProtoLight LuaProto;
 
@@ -198,11 +197,10 @@ typedef struct lua_dbg_upvalue_entry{
 }LuaDbgUpvalueEntry;
 
 typedef struct luac_bin_info{
-	st32 major;
-	st32 minor;
 	RzList *section_list;
 	RzList *symbol_list;
 	RzList *entry_list;
+	RzBinInfo *general_info;
 } LuacBinInfo;
 
 /* ========================================================
@@ -233,9 +231,6 @@ void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, 
 void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, const char *type);
 void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type);
 
-LuacBinInfo *luac_new_bin_info();
-void luac_free_bin_info(LuacBinInfo *info);
-
 LuacBinInfo *luac_build_info(LuaProto *proto);
 void _luac_build_info(LuaProto *proto, LuacBinInfo *info);
 
@@ -244,7 +239,7 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info);
  * Export version specified Api to bin_luac.c
  * Implemented in 'bin/format/luac/v[version]/bin_[version]
  * ======================================================== */
-RzBinInfo *lua_info_54(RzBinFile *bf, st32 major, st32 minor);
+RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor);
 LuaProto *lua_parse_body_54(ut8 *data, ut64 offset, ut64 data_size);
 
 #endif //BUILD_LUAC_COMMON_H

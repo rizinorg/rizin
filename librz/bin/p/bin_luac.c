@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include "librz/bin/format/luac/luac_common.h"
 
-#define GET_VERSION_INFO_FROM_BINF(bf) ((LuacBinInfo *)(bf)->o->bin_obj)
+#define GET_INTERNAL_BIN_INFO_OBJ(bf) ((LuacBinInfo *)(bf)->o->bin_obj)
 
 static bool check_buffer(RzBuffer *buff) {
 	if (rz_buf_size(buff) > 4) {
@@ -18,55 +18,66 @@ static bool check_buffer(RzBuffer *buff) {
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ut8 MAJOR_MINOR_VERSION;
-	LuacBinInfo *bin_info_obj;
+	LuacBinInfo *bin_info_obj = NULL;
+        LuaProto *proto = NULL;
+	RzBinInfo *general_info = NULL;
+        st32 major;
+	st32 minor;
 
 	rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
 	if ((bin_info_obj = RZ_NEW(LuacBinInfo)) == NULL) {
 		return false;
 	}
+        major = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
+        minor = (MAJOR_MINOR_VERSION & 0x0F);
 
-	ut8 *work_buf[4096];
-	rz_buf_read_at(buf, 0, (ut8 *)work_buf, 4096);
+	if (major != 5){
+		eprintf("currently support lua 5.x only\n");
+		return NULL;
+	}
 
-	// TODO : switch version here
-	LuaProto *proto;
-	proto = lua_parse_body_54((ut8 *)work_buf, 0x20, 4096);
+        // TODO : find a way to get whole buffer
+        ut8 *work_buf[4096];
+        rz_buf_read_at(buf, 0, (ut8 *)work_buf, 4096);
 
+	switch (minor) {
+	case 4:
+                proto = lua_parse_body_54((ut8 *)work_buf, 0x20, 4096);
+		general_info = lua_parse_header_54(bf, major, minor);
+		break;
+	default:
+		eprintf("lua 5.%c not support now\n", minor + '0');
+		return false;
+        }
+
+	// how to free it ? in .finit?
 	bin_info_obj = luac_build_info(proto);
+	bin_info_obj->general_info = general_info;
 
 	lua_free_proto_entry(proto);
 	proto = NULL;
-
-        bin_info_obj->major = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
-        bin_info_obj->minor = (MAJOR_MINOR_VERSION & 0x0F);
 
         *bin_obj = bin_info_obj;
 	return true;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	LuacBinInfo *bin_info_obj = GET_VERSION_INFO_FROM_BINF(bf);
-
-	if (bin_info_obj->major != 5) {
-		eprintf("currently support lua 5.x only\n");
+	if (!bf){
+		return NULL;
+	}
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	if (!bin_info_obj){
 		return NULL;
 	}
 
-	switch (bin_info_obj->minor) {
-	case 4:
-		return lua_info_54(bf, bin_info_obj->major, bin_info_obj->minor);
-		break;
-	default:
-		eprintf("lua 5.%c not support now\n", bin_info_obj->minor + '0');
-		return NULL;
-	}
+	return bin_info_obj->general_info;
 }
 
-static RzList *sections(RzBinFile *arch){
-	if (!arch){
+static RzList *sections(RzBinFile *bf){
+	if (!bf){
 		return NULL;
 	}
-	LuacBinInfo *bin_info_obj = GET_VERSION_INFO_FROM_BINF(arch);
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
 	if (!bin_info_obj){
 		return NULL;
 	}
@@ -74,11 +85,11 @@ static RzList *sections(RzBinFile *arch){
 	return bin_info_obj->section_list;
 }
 
-static RzList *symbols(RzBinFile *arch){
-        if (!arch){
+static RzList *symbols(RzBinFile *bf){
+        if (!bf){
                 return NULL;
         }
-        LuacBinInfo *bin_info_obj = GET_VERSION_INFO_FROM_BINF(arch);
+        LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
         if (!bin_info_obj){
                 return NULL;
         }
@@ -86,11 +97,11 @@ static RzList *symbols(RzBinFile *arch){
 	return bin_info_obj->symbol_list;
 }
 
-static RzList *entries(RzBinFile *arch){
-        if (!arch){
+static RzList *entries(RzBinFile *bf){
+        if (!bf){
                 return NULL;
         }
-        LuacBinInfo *bin_info_obj = GET_VERSION_INFO_FROM_BINF(arch);
+        LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
         if (!bin_info_obj){
                 return NULL;
         }
@@ -110,7 +121,8 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
-	.info = &info
+	.info = &info,
+	.fini = NULL
 };
 
 #ifndef RZ_PLUGIN_INCORE
