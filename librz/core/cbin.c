@@ -3111,7 +3111,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 					}
 					pj_end(pj);
 				}
-				free(flag);
+				rz_list_free(flag);
 			}
 			pj_kN(pj, "paddr", section->paddr);
 			pj_kN(pj, "vaddr", addr);
