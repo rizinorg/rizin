@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
+
 #include "arch_54.h"
 
 int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {

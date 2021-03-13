@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
+
 #include "luac_specs_54.h"
 
 static void lua_load_block(void *src, void *dest, size_t size) {

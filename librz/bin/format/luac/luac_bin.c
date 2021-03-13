@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
+
 #include "luac_common.h"
 
 void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, bool is_func){
