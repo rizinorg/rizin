@@ -482,7 +482,6 @@ static RzList *trycatch(RzBinFile *bf) {
 	}
 	return tclist;
 }
-extern struct rz_bin_write_t rz_bin_write_pe;
 
 RzBinPlugin rz_bin_plugin_pe64 = {
 	.name = "pe64",
@@ -507,6 +506,7 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.trycatch = &trycatch,
 	.write = &rz_bin_write_pe64,
 	.hashes = &compute_hashes,
+	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };
 
 #ifndef RZ_PLUGIN_INCORE

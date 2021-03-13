@@ -49,6 +49,8 @@
 #define IMAGE_SCN_MEM_NOT_CACHED         0x04000000 //The section cannot be cached.
 #define IMAGE_SCN_MEM_NOT_PAGED          0x08000000 //The section is not pageable.
 
+#define PE_SCN_ALIGN_MASK 0x00F00000
+
 struct rz_bin_pe_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
@@ -61,7 +63,7 @@ struct rz_bin_pe_section_t {
 	ut64 vsize;
 	ut64 vaddr;
 	ut64 paddr;
-	int flags;
+	ut64 flags;
 	ut64 perm;
 	int last;
 };
@@ -201,6 +203,7 @@ const char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin);
 int PE_(bin_pe_is_authhash_valid)(struct PE_(rz_bin_pe_obj_t) * bin);
 int PE_(bin_pe_get_overlay)(struct PE_(rz_bin_pe_obj_t) * bin, ut64 *size);
 void PE_(rz_bin_pe_check_sections)(struct PE_(rz_bin_pe_obj_t) * bin, struct rz_bin_pe_section_t **sects);
+RzList *PE_(section_flag_to_rzlist)(ut64 flag);
 struct rz_bin_pe_addr_t *PE_(check_unknow)(struct PE_(rz_bin_pe_obj_t) * bin);
 struct rz_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(rz_bin_pe_obj_t) * bin);
 struct rz_bin_pe_addr_t *PE_(check_mingw)(struct PE_(rz_bin_pe_obj_t) * bin);

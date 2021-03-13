@@ -160,7 +160,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->flags = sections[i].flags;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
-		ptr->flags = sections[i].flags;
 
 		ptr->add = true;
 		ptr->perm = 0;

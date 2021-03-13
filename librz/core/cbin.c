@@ -2852,7 +2852,6 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			rz_num_units(humansz, sizeof(humansz), s->size);
 			RzListInfo *info = rz_listinfo_new(s->name, pitv, vitv, s->perm, strdup(humansz));
 			rz_list_append(list, info);
-			
 		}
 		RzTable *table = rz_core_table(r);
 		rz_table_visual_list(table, list, r->offset, -1, cols, r->io->va);
@@ -2899,7 +2898,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				rz_table_set_columnsf(table, "dXxXxss",
 					"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
 			}
-		}	
+		}
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
 	}
@@ -4550,7 +4549,7 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	return count;
 }
 
-RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) { 
+RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 	int i;
 
 	RzStrBuf *buf = rz_strbuf_new("");
