@@ -81,7 +81,6 @@ static ut64 lua_parse_szint(ut8 *data, int *size, ut64 offset, ut64 data_size){
         do {
                 b = data[offset + i];
 		i += 1;
-		eprintf("byte %x\n", b);
                 if (x >= limit) {
                         eprintf("integer overflow\n");
                         return 0;
@@ -280,9 +279,7 @@ static ut64 lua_parse_debug(LuaProto *proto, ut8 *data, ut64 offset, ut64 data_s
 	base_offset = offset;
 
         /* parse line info */
-	eprintf("[0x%llx]Debug - line info entry\n", offset);
         offset += lua_parse_szint(data, &entries_cnt, offset, data_size);
-	eprintf("Total %d\n", entries_cnt);
 	LuaLineinfoEntry *info_entry;
 	for (i = 0; i < entries_cnt; ++i){
                 info_entry = lua_new_lineinfo_entry();
@@ -293,9 +290,7 @@ static ut64 lua_parse_debug(LuaProto *proto, ut8 *data, ut64 offset, ut64 data_s
         }
 
 	/* parse absline info */
-        eprintf("[0x%llx]Debug - line abs info entry\n", offset);
         offset += lua_parse_szint(data, &entries_cnt, offset, data_size);
-        eprintf("Total %d\n", entries_cnt);
         LuaAbsLineinfoEntry *abs_info_entry;
         for (i = 0; i < entries_cnt; ++i){
 		abs_info_entry = lua_new_abs_lineinfo_entry();
@@ -308,9 +303,7 @@ static ut64 lua_parse_debug(LuaProto *proto, ut8 *data, ut64 offset, ut64 data_s
         }
 
 	/* parse local vars */
-        eprintf("[0x%llx]Debug - line var entry\n", offset);
         offset += lua_parse_szint(data, &entries_cnt, offset, data_size);
-        eprintf("Total %d\n", entries_cnt);
         LuaLocalVarEntry *var_entry;
 	for (i = 0; i < entries_cnt; ++i){
 		var_entry = lua_new_local_var_entry();
@@ -328,9 +321,7 @@ static ut64 lua_parse_debug(LuaProto *proto, ut8 *data, ut64 offset, ut64 data_s
 	}
 
 	/* parse upvalue */
-        eprintf("[0x%llx]Debug - upv entry\n", offset);
         offset += lua_parse_szint(data, &entries_cnt, offset, data_size);
-        eprintf("Total %d\n", entries_cnt);
         LuaDbgUpvalueEntry *dbg_upvalue_entry;
 	for (i = 0; i < entries_cnt; ++i){
 		dbg_upvalue_entry = lua_new_dbg_upvalue_entry();
@@ -378,15 +369,12 @@ LuaProto *lua_parse_body_54(ut8 *data, ut64 base_offset, ut64 data_size){
 
         // start parsing
 	offset = base_offset;
-	eprintf("start offset 0x%llx\n", offset);
 
 	/* record offset of main proto */
 	ret_proto->offset = offset;
-        eprintf("main offset 0x%llx\n", offset);
 
         /* parse proto name of main proto */
 	offset += lua_parse_name(ret_proto, data, offset, data_size);
-	eprintf("proto name: %s\n", ret_proto->proto_name);
 
 	/* parse line defined info */
 	offset += lua_parse_line_defined(ret_proto, data, offset, data_size);
@@ -402,23 +390,19 @@ LuaProto *lua_parse_body_54(ut8 *data, ut64 base_offset, ut64 data_size){
 	offset += 3;
 
 	/* parse code */
-        eprintf("code offset 0x%llx\n", offset);
         ret_proto->code_offset = offset;
 	offset += lua_parse_code(ret_proto, data, offset, data_size);
 
         /* parse constants */
-        eprintf("const offset 0x%llx\n", offset);
         ret_proto->const_offset = offset;
 	offset += lua_parse_consts(ret_proto, data, offset, data_size);
 
 
 	/* parse upvalues */
-        eprintf("upv offset 0x%llx\n", offset);
         ret_proto->upvalue_offset = offset;
 	offset += lua_parse_upvalues(ret_proto, data, offset, data_size);
 
 	/* parse inner protos */
-        eprintf("inner proto offset 0x%llx\n", offset);
         ret_proto->inner_proto_offset = offset;
 	offset += lua_parse_protos(ret_proto, data, offset, data_size);
 
@@ -426,7 +410,6 @@ LuaProto *lua_parse_body_54(ut8 *data, ut64 base_offset, ut64 data_size){
 	ret_proto->inner_proto_size = offset - ret_proto->inner_proto_offset;
 
 	/* parse debug */
-        eprintf("debug offset 0x%llx\n", offset);
         ret_proto->debug_offset = offset;
 	offset += lua_parse_debug(ret_proto, data, offset, data_size);
 

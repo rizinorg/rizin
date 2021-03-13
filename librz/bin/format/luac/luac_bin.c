@@ -6,7 +6,7 @@ void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, 
 
 	bin_sec->name = strdup(name);
 	bin_sec->vaddr = bin_sec->paddr = offset;
-	bin_sec->size = size;
+	bin_sec->size = bin_sec->vsize = size;
 	bin_sec->add = true;
 	bin_sec->is_data = false;
 	bin_sec->bits = is_func ? sizeof(LUA_INSTRUCTION) * 8 : 8;
@@ -113,7 +113,6 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info){
 	current_size = proto->size;
 	section_name = rz_str_newf("%s.header", proto_name);
 	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
-        eprintf("%s\n", section_name);
         RZ_FREE(section_name);
 
         // 1.2 set section name as function_name.code
@@ -121,7 +120,6 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info){
 	current_size = proto->code_size;
 	section_name = rz_str_newf("%s.code", proto_name);
 	luac_add_section(info->section_list, section_name, current_offset, current_size, true);
-        eprintf("%s\n", section_name);
         RZ_FREE(section_name);
 
         // 1.3 set const section
@@ -129,7 +127,6 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info){
 	current_size = proto->const_size;
 	section_name = rz_str_newf("%s.const", proto_name);
 	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
-        eprintf("%s\n", section_name);
         RZ_FREE(section_name);
 
         // 1.4 upvalue section
@@ -137,7 +134,6 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info){
 	current_size = proto->upvalue_size;
 	section_name = rz_str_newf("%s.upvalues", proto_name);
 	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
-        eprintf("%s\n", section_name);
         RZ_FREE(section_name);
 
         // 1.5 inner protos section
@@ -145,7 +141,6 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info){
 	current_size = proto->inner_proto_size;
 	section_name = rz_str_newf("%s.protos", proto_name);
 	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
-        eprintf("%s\n", section_name);
         RZ_FREE(section_name);
 
 	// 1.6 debug section
@@ -153,7 +148,6 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info){
 	current_size = proto->debug_size;
 	section_name = rz_str_newf("%s.debug", proto_name);
 	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
-        eprintf("%s\n", section_name);
         RZ_FREE(section_name);
 
 	// 2. should I construct symbols of proto attr ?

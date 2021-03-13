@@ -34,25 +34,11 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 
 	bin_info_obj = luac_build_info(proto);
 
-	eprintf("sections : %d, symbols : %d, entry : %d\n",
-		rz_list_length(bin_info_obj->section_list),
-		rz_list_length(bin_info_obj->symbol_list),
-		rz_list_length(bin_info_obj->entry_list));
+	lua_free_proto_entry(proto);
+	proto = NULL;
 
         bin_info_obj->major = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
         bin_info_obj->minor = (MAJOR_MINOR_VERSION & 0x0F);
-
-	RzListIter *iter;
-	RzBinSection *section;
-	RzBinSymbol *symbol;
-	rz_list_foreach(bin_info_obj->section_list, iter, section){
-		printf("section %s, addr 0x%llx\n", section->name, section->vaddr);
-	}
-
-        rz_list_foreach(bin_info_obj->symbol_list, iter, symbol){
-                printf("symbol %s, addr 0x%llx\n", symbol->name, symbol->vaddr);
-	}
-
 
         *bin_obj = bin_info_obj;
 	return true;
