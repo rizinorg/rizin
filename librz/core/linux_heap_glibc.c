@@ -1169,8 +1169,25 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			const char *status = "corrupted";
 			switch (format_out) {
+			case 'v':
+				PRINT_YA("chunk @ ");
+				PRINTF_BA("0x%" PFMT64x " ", (ut64)next_chunk);
+				PRINTF_RA("[%s]\n", status);
+				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
+					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
+				int size = 0x10;
+				char *data = calloc(1, size);
+				if (data) {
+					rz_io_nread_at(core->io, (ut64)next_chunk + SZ * 2, (ut8 *)data, size);
+					core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
+					PRINT_GA("  ");
+					rz_print_hexdump(core->print, (ut64)next_chunk, (ut8 *)data, size, SZ * 2, 1, 1);
+					core->print->flags |= RZ_PRINT_FLAGS_HEADER;
+					free(data);
+				}
+				break;
 			case 'c':
-				PRINT_YA("\n  Malloc chunk @ ");
+				PRINT_YA("chunk @ ");
 				PRINTF_BA("0x%" PFMT64x " ", (ut64)next_chunk);
 				PRINTF_RA("[%s]\n", status);
 				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
@@ -1325,6 +1342,23 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 			PRINTF_BA("0x%" PFMT64x, prev_chunk_size);
 			PRINTF_GA("][%s]\n", status);
 			break;
+		case 'v':
+			PRINT_YA("chunk @ ");
+			PRINTF_BA("0x%" PFMT64x " ", prev_chunk_addr);
+			PRINT_GA("[size: ");
+			PRINTF_BA("0x%" PFMT64x, prev_chunk_size);
+			PRINTF_GA("][%s]\n", status);
+			int size = 0x10;
+			char *data = calloc(1, size);
+			if (data) {
+				rz_io_nread_at(core->io, prev_chunk_addr + SZ * 2, (ut8 *)data, size);
+				core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
+				PRINT_GA("  ");
+				rz_print_hexdump(core->print, prev_chunk_addr, (ut8 *)data, size, SZ * 2, 1, 1);
+				core->print->flags |= RZ_PRINT_FLAGS_HEADER;
+				free(data);
+			}
+			break;
 		case 'j':
 			pj_o(pj);
 			pj_kn(pj, "addr", prev_chunk_addr);
@@ -1353,12 +1387,13 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	}
 
 	switch (format_out) {
+	case 'v':
 	case 'c':
 		PRINT_YA("chunk @ ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(top));
 		PRINT_GA(" [top][size: ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)size_tmp);
-		PRINT_GA( "][brk_start: ");
+		PRINT_GA("][brk_start: ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)brk_start);
 		PRINT_GA(", brk_end: ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)brk_end);
@@ -1505,6 +1540,7 @@ static const char *GH(help_msg)[] = {
 	"dmhm", "", "List all elements of struct malloc_state of main thread (main_arena)",
 	"dmhm", " @[malloc_state]", "List all malloc_state instance of a particular arena",
 	"dmht", "", "Display all parsed thread cache bins of all arena's tcache instance",
+	"dmhv", " @[malloc_state]", "List heap chunks of a particular arena along with hexdump of first 0x10 bytes",
 	"dmh?", "", "Show map heap help",
 	NULL
 };
@@ -1684,6 +1720,10 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			free(dup);
 		}
 		break;
+	case 'v':
+		if (input[0] == 'v') {
+			format = 'v';
+		}
 	case 'g': //dmhg
 		if (input[0] == 'g') {
 			format = 'g';
