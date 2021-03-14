@@ -40,7 +40,7 @@ NAME=LUAC: symbols
 FILE=bins/luac/none.luac
 CMDS=is~UPVALUE
 EXPECT=<<EOF
-0   0x0000003a 0x0000003a NONE UPVALUE 3        @none.lua_upvalue_0000003a
+0   0x0000003a 0x0000003a NONE UPVALUE 3        @none.lua_upvalue__ENV
 EOF
 RUN
 

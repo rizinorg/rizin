@@ -3,8 +3,12 @@
 
 #include "luac_specs_54.h"
 
-static void lua_load_block(void *src, void *dest, size_t size) {
-	memcpy(dest, src, size);
+static void lua_load_block(void *src, void *dest, size_t size, ut64 offset, ut64 data_size) {
+	if (offset + size >= data_size){
+		eprintf("Bad Luac File : Truncated load block at 0x%llx\n", offset);
+		return;
+	}
+	memcpy(dest, src + offset, size);
 }
 
 static ut64 lua_load_integer(ut8 *src) {
@@ -163,7 +167,7 @@ static ut64 lua_parse_const_entry(LuaProto *proto, ut8 *data, ut64 offset, ut64 
 	case LUA_VNUMINT:
 		data_len = 8;
 		recv_data = RZ_NEWS(ut8, data_len);
-		lua_load_block(data, recv_data, data_len);
+		lua_load_block(data, recv_data, data_len, offset, data_size);
 		if (offset + data_len >= data_size) {
 			return 0;
 		}
