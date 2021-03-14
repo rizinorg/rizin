@@ -143,6 +143,10 @@ bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
 
 pyc_opcodes *get_opcode_by_version(char *version) {
 	version_opcode *vop = version_op;
+	if (version == NULL){
+		eprintf("[x]Require Python Version Info. Please Use rizin instead of rz-asm\n");
+		return NULL;
+	}
 
 	while (vop->version) {
 		if (!strcmp(vop->version, version)) {
