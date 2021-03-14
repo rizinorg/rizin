@@ -191,6 +191,7 @@ typedef struct luac_bin_info {
 	RzList *section_list;
 	RzList *symbol_list;
 	RzList *entry_list;
+	RzList *string_list;
 	RzBinInfo *general_info;
 } LuacBinInfo;
 
@@ -221,6 +222,7 @@ void lua_free_proto_entry(LuaProto *);
 void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, bool is_func);
 void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, const char *type);
 void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type);
+void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size);
 
 LuacBinInfo *luac_build_info(LuaProto *proto);
 void _luac_build_info(LuaProto *proto, LuacBinInfo *info);

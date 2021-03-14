@@ -49,6 +49,19 @@ void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type) {
 	rz_list_append(entry_list, entry);
 }
 
+void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size) {
+	RzBinString *bin_string;
+	rz_return_if_fail(bin_string = RZ_NEW0(RzBinString));
+
+	bin_string->paddr = offset;
+	bin_string->vaddr = offset;
+	bin_string->size = size;
+	bin_string->length = size;
+	bin_string->string = rz_str_new(string);
+
+	rz_list_append(string_list, bin_string);
+}
+
 LuacBinInfo *luac_build_info(LuaProto *proto) {
 	if (proto == NULL) {
 		return NULL;
@@ -64,6 +77,7 @@ LuacBinInfo *luac_build_info(LuaProto *proto) {
 	ret->entry_list = rz_list_new();
 	ret->symbol_list = rz_list_new();
 	ret->section_list = rz_list_new();
+	ret->string_list = rz_list_new();
 
 	_luac_build_info(proto, ret);
 
@@ -94,7 +108,7 @@ static const char *get_tag_string(ut8 tag) {
 }
 
 /* Heap allocated string */
-static char *get_constant_symbol_name(char *proto_name, LuaConstEntry *entry){
+static char *get_constant_symbol_name(char *proto_name, LuaConstEntry *entry) {
 	rz_return_val_if_fail(entry, NULL);
 	rz_return_val_if_fail(proto_name, NULL);
 	ut8 tag = entry->tag;
@@ -103,54 +117,54 @@ static char *get_constant_symbol_name(char *proto_name, LuaConstEntry *entry){
 	double float_value;
 
 	switch (tag) {
-        case LUA_VNIL:
+	case LUA_VNIL:
 		ret = rz_str_newf("%s_const_nil", proto_name);
 		break;
-        case LUA_VTRUE:
+	case LUA_VTRUE:
 		ret = rz_str_newf("%s_const_true", proto_name);
 		break;
-        case LUA_VFALSE:
+	case LUA_VFALSE:
 		ret = rz_str_newf("%s_const_false", proto_name);
 		break;
-        case LUA_VSHRSTR:
-        case LUA_VLNGSTR:
+	case LUA_VSHRSTR:
+	case LUA_VLNGSTR:
 		rz_return_val_if_fail(entry->data, NULL);
 		ret = rz_str_newf("%s_const_%s", proto_name, (char *)entry->data);
 		break;
-        case LUA_VNUMFLT:
-                rz_return_val_if_fail(entry->data, NULL);
-		if (entry->data_len < sizeof(double)){
+	case LUA_VNUMFLT:
+		rz_return_val_if_fail(entry->data, NULL);
+		if (entry->data_len < sizeof(double)) {
 			return NULL;
 		}
 		float_value = *(double *)entry->data;
 		ret = rz_str_newf("%s_const_%f", proto_name, float_value);
 		break;
-        case LUA_VNUMINT:
-                rz_return_val_if_fail(entry->data, NULL);
-		if (entry->data_len < sizeof(int)){
+	case LUA_VNUMINT:
+		rz_return_val_if_fail(entry->data, NULL);
+		if (entry->data_len < sizeof(int)) {
 			return NULL;
 		}
 		integer_value = *(int *)entry->data;
 		ret = rz_str_newf("%s_const_%d", proto_name, integer_value);
-                break;
-        default:
+		break;
+	default:
 		ret = rz_str_newf("%s_const_0x%llx", proto_name, entry->offset);
-                break;
+		break;
 	}
 	return ret;
 }
 
 /* Heap allocated string */
-static char *simple_build_upvalue_symbol(char *proto_name, LuaUpvalueEntry *entry){
+static char *simple_build_upvalue_symbol(char *proto_name, LuaUpvalueEntry *entry) {
 	char *ret = NULL;
 	ret = rz_str_newf("%s_upvalue_0x%llx", proto_name, entry->offset);
 	return ret;
 }
 
-static char *get_upvalue_symbol_name(char *proto_name, LuaUpvalueEntry *entry, char *debug_name){
+static char *get_upvalue_symbol_name(char *proto_name, LuaUpvalueEntry *entry, char *debug_name) {
 	rz_return_val_if_fail(proto_name, NULL);
 	rz_return_val_if_fail(entry, NULL);
-	if (debug_name == NULL){
+	if (debug_name == NULL) {
 		return simple_build_upvalue_symbol(proto_name, entry);
 	}
 
@@ -158,7 +172,6 @@ static char *get_upvalue_symbol_name(char *proto_name, LuaUpvalueEntry *entry, c
 	ret = rz_str_newf("%s_upvalue_%s", proto_name, debug_name);
 	return ret;
 }
-
 
 void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	/* process proto header info */
@@ -170,7 +183,7 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	ut64 current_offset;
 	ut64 current_size;
 
-        int i = 0;              // iter
+	int i = 0; // iter
 
 	// 0. check if stripped (proto name is lost)
 	if (proto->name_size == 0 || proto->proto_name == NULL) {
@@ -222,9 +235,15 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
 	RZ_FREE(section_name);
 
-
-        // 2 TODO parse debug info to strings
 	// 2.1 parse local var info
+	LuaLocalVarEntry *local_var_entry;
+	rz_list_foreach (proto->local_var_info_entries, iter, local_var_entry) {
+		luac_add_string(
+			info->string_list,
+			(char *)local_var_entry->varname,
+			local_var_entry->offset,
+			local_var_entry->varname_len);
+	}
 
 	// 2.2 parse debug_upvalues
 	char **upvalue_names;
@@ -233,8 +252,13 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	dbg_upvalue_cnt = rz_list_length(proto->dbg_upvalue_entries);
 	upvalue_names = RZ_NEWS(char *, dbg_upvalue_cnt);
 	rz_return_if_fail(upvalue_names);
-	rz_list_foreach(proto->dbg_upvalue_entries, iter, debug_upv_entry){
+	rz_list_foreach (proto->dbg_upvalue_entries, iter, debug_upv_entry) {
 		upvalue_names[i] = (char *)debug_upv_entry->upvalue_name;
+		luac_add_string(
+			info->string_list,
+			upvalue_names[i],
+			debug_upv_entry->offset,
+			debug_upv_entry->name_len);
 	}
 
 	// 3.1 construct constant symbols
@@ -247,6 +271,13 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 			const_entry->offset,
 			const_entry->data_len,
 			get_tag_string(const_entry->tag));
+		if (const_entry->tag == LUA_VLNGSTR || const_entry->tag == LUA_VSHRSTR) {
+			luac_add_string(
+				info->string_list,
+				(char *)const_entry->data,
+				const_entry->offset,
+				const_entry->data_len);
+		}
 		RZ_FREE(symbol_name);
 	}
 

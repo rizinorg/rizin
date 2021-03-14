@@ -117,6 +117,18 @@ static RzList *entries(RzBinFile *bf) {
 	return bin_info_obj->entry_list;
 }
 
+static RzList *strings(RzBinFile *bf) {
+	if (!bf) {
+		return NULL;
+	}
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	if (!bin_info_obj) {
+		return NULL;
+	}
+
+	return bin_info_obj->string_list;
+}
+
 RzBinPlugin rz_bin_plugin_luac = {
 	.name = "luac",
 	.desc = "LUA Compiled File",
@@ -129,6 +141,7 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,
+	.strings = &strings,
 	.fini = NULL
 };
 
