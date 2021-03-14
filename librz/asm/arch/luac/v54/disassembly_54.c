@@ -3,7 +3,6 @@
 
 #include "arch_54.h"
 
-
 int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 	if (len < 4) {
 		eprintf("truncated opcode\n");

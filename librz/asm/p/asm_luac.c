@@ -4,11 +4,11 @@
 #include "librz/asm/arch/luac/lua_arch.h"
 
 int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
-        LuaOpNameList oplist = get_lua54_opnames();
-        int r = lua54_disasm(opstruct, buf, len, oplist);
-        free_lua_opnames(oplist);
-        opstruct->size = r;
-        return r;
+	LuaOpNameList oplist = get_lua54_opnames();
+	int r = lua54_disasm(opstruct, buf, len, oplist);
+	free_lua_opnames(oplist);
+	opstruct->size = r;
+	return r;
 }
 
 RzAsmPlugin rz_asm_plugin_luac = {

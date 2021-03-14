@@ -19,30 +19,30 @@ static bool check_buffer(RzBuffer *buff) {
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ut8 MAJOR_MINOR_VERSION;
 	LuacBinInfo *bin_info_obj = NULL;
-        LuaProto *proto = NULL;
+	LuaProto *proto = NULL;
 	RzBinInfo *general_info = NULL;
-        st32 major;
+	st32 major;
 	st32 minor;
 
 	rz_buf_read_at(buf, LUAC_VERSION_OFFSET, &MAJOR_MINOR_VERSION, sizeof(MAJOR_MINOR_VERSION)); /* 1-byte in fact */
 	if ((bin_info_obj = RZ_NEW(LuacBinInfo)) == NULL) {
 		return false;
 	}
-        major = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
-        minor = (MAJOR_MINOR_VERSION & 0x0F);
+	major = (MAJOR_MINOR_VERSION & 0xF0) >> 4;
+	minor = (MAJOR_MINOR_VERSION & 0x0F);
 
-	if (major != 5){
+	if (major != 5) {
 		eprintf("currently support lua 5.x only\n");
 		return NULL;
 	}
 
-        // TODO : find a way to get whole buffer
-        ut8 *work_buf[4096];
-        rz_buf_read_at(buf, 0, (ut8 *)work_buf, 4096);
+	// TODO : find a way to get whole buffer
+	ut8 *work_buf[4096];
+	rz_buf_read_at(buf, 0, (ut8 *)work_buf, 4096);
 
 	switch (minor) {
 	case 4:
-                proto = lua_parse_body_54((ut8 *)work_buf, 0x20, 4076);
+		proto = lua_parse_body_54((ut8 *)work_buf, 0x20, 4076);
 		general_info = lua_parse_header_54(bf, major, minor);
 		break;
 	default:
@@ -50,12 +50,12 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		general_info = NULL;
 		eprintf("lua 5.%c not support now\n", minor + '0');
 		return false;
-        }
+	}
 
 	// how to free it ? in .finit?
 	bin_info_obj = luac_build_info(proto);
-	if (bin_info_obj == NULL){
-                lua_free_proto_entry(proto);
+	if (bin_info_obj == NULL) {
+		lua_free_proto_entry(proto);
 		return false;
 	}
 	bin_info_obj->general_info = general_info;
@@ -65,58 +65,57 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	lua_free_proto_entry(proto);
 	proto = NULL;
 
-        *bin_obj = bin_info_obj;
+	*bin_obj = bin_info_obj;
 	return true;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	if (!bf){
+	if (!bf) {
 		return NULL;
 	}
 	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
-	if (!bin_info_obj){
+	if (!bin_info_obj) {
 		return NULL;
 	}
 
 	return bin_info_obj->general_info;
 }
 
-static RzList *sections(RzBinFile *bf){
-	if (!bf){
+static RzList *sections(RzBinFile *bf) {
+	if (!bf) {
 		return NULL;
 	}
 	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
-	if (!bin_info_obj){
+	if (!bin_info_obj) {
 		return NULL;
 	}
 
 	return bin_info_obj->section_list;
 }
 
-static RzList *symbols(RzBinFile *bf){
-        if (!bf){
-                return NULL;
-        }
-        LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
-        if (!bin_info_obj){
-                return NULL;
-        }
+static RzList *symbols(RzBinFile *bf) {
+	if (!bf) {
+		return NULL;
+	}
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	if (!bin_info_obj) {
+		return NULL;
+	}
 
 	return bin_info_obj->symbol_list;
 }
 
-static RzList *entries(RzBinFile *bf){
-        if (!bf){
-                return NULL;
-        }
-        LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
-        if (!bin_info_obj){
-                return NULL;
-        }
+static RzList *entries(RzBinFile *bf) {
+	if (!bf) {
+		return NULL;
+	}
+	LuacBinInfo *bin_info_obj = GET_INTERNAL_BIN_INFO_OBJ(bf);
+	if (!bin_info_obj) {
+		return NULL;
+	}
 
-        return bin_info_obj->entry_list;
+	return bin_info_obj->entry_list;
 }
-
 
 RzBinPlugin rz_bin_plugin_luac = {
 	.name = "luac",
