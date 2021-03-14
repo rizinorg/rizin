@@ -22,3 +22,72 @@ EXPECT=<<EOF
 compiler Unofficial Lua Compiler
 EOF
 RUN
+
+NAME=LUAC: sections
+FILE=bins/luac/none.luac
+CMDS=iS~none
+EXPECT=<<EOF
+0   0x00000020  0x2a 0x00000020   0x2a -r-- none.lua.header
+1   0x0000002f   0x8 0x0000002f    0x8 -r-x none.lua.code
+2   0x00000038   0x2 0x00000038    0x2 -r-- none.lua.const
+3   0x00000039   0x5 0x00000039    0x5 -r-- none.lua.upvalues
+4   0x0000003d   0x1 0x0000003d    0x1 -r-- none.lua.protos
+5   0x0000003e   0xc 0x0000003e    0xc -r-- none.lua.debug
+EOF
+RUN
+
+NAME=LUAC: symbols
+FILE=bins/luac/none.luac
+CMDS=is~UPVALUE
+EXPECT=<<EOF
+0   0x0000003a 0x0000003a NONE UPVALUE 3        @none.lua_upvalue_0000003a
+EOF
+RUN
+
+NAME=LUAC: entry
+FILE=bins/luac/none.luac
+CMDS=ie~program
+EXPECT=<<EOF
+vaddr=0x00000030 paddr=0x00000030 haddr=-1 type=program
+EOF
+RUN
+
+NAME=LUAC: big file
+FILE=bins/luac/big.luac
+CMDS=iS~header
+EXPECT=<<EOF
+0   0x00000020  0xe44 0x00000020  0xe44 -r-- learnlua.lua.header
+6   0x000007ab   0x70 0x000007ab   0x70 -r-- fcn.000007ab.header
+12  0x0000081a   0x52 0x0000081a   0x52 -r-- fcn.0000081a.header
+18  0x00000830   0x31 0x00000830   0x31 -r-- fcn.00000830.header
+24  0x0000086b   0x6b 0x0000086b   0x6b -r-- fcn.0000086b.header
+30  0x000008d5   0x27 0x000008d5   0x27 -r-- fcn.000008d5.header
+36  0x000008fb   0x27 0x000008fb   0x27 -r-- fcn.000008fb.header
+42  0x00000921   0x44 0x00000921   0x44 -r-- fcn.00000921.header
+48  0x00000964   0x44 0x00000964   0x44 -r-- fcn.00000964.header
+54  0x000009a7   0x3e 0x000009a7   0x3e -r-- fcn.000009a7.header
+60  0x000009e4   0xa6 0x000009e4   0xa6 -r-- fcn.000009e4.header
+66  0x00000a89   0x83 0x00000a89   0x83 -r-- fcn.00000a89.header
+72  0x00000b0b   0x54 0x00000b0b   0x54 -r-- fcn.00000b0b.header
+78  0x00000b5e   0x6b 0x00000b5e   0x6b -r-- fcn.00000b5e.header
+84  0x00000bc8   0x71 0x00000bc8   0x71 -r-- fcn.00000bc8.header
+EOF
+RUN
+
+NAME=LUAC: disasm crash
+FILE=bins/luac/big.luac
+CMDS=pd 10 >/dev/null
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=LUAC: broken file
+FILE=bins/luac/random.luac
+CMDS=<<EOF
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+Bad Luac File : Truncated Code at [0x2f]
+EOF
+RUN
