@@ -538,6 +538,34 @@ void GH(print_heap_chunk)(RzCore *core) {
 	free(cnk);
 }
 
+void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
+	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+
+	if (!cnk) {
+		return;
+	}
+
+	(void)rz_io_read_at(core->io, chunk, (ut8 *)cnk, sizeof(*cnk));
+
+	PRINT_GA("Chunk");
+	rz_cons_printf("(addr=");
+	PRINTF_YA("0x%" PFMT64x, (ut64)chunk);
+	rz_cons_printf(", size=0x%" PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
+	rz_cons_printf(", flags=");
+	if (cnk->size & NON_MAIN_ARENA) {
+		PRINT_RA("NON_MAIN_ARENA,");
+	}
+	if (cnk->size & IS_MMAPPED) {
+		PRINT_RA("IS_MMAPPED,");
+	}
+	if (cnk->size & PREV_INUSE) {
+		PRINT_RA("PREV_INUSE");
+	}
+	rz_cons_printf(")");
+	free(cnk);
+}
+
 static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state) {
 	if (m_arena == m_state) {
 		return true;
@@ -1170,8 +1198,8 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 			const char *status = "corrupted";
 			switch (format_out) {
 			case 'v':
-				PRINT_YA("chunk @ ");
-				PRINTF_BA("0x%" PFMT64x " ", (ut64)next_chunk);
+				GH(print_heap_chunk_simple)
+				(core, next_chunk);
 				PRINTF_RA("[%s]\n", status);
 				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
 					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
@@ -1187,8 +1215,8 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 				}
 				break;
 			case 'c':
-				PRINT_YA("chunk @ ");
-				PRINTF_BA("0x%" PFMT64x " ", (ut64)next_chunk);
+				GH(print_heap_chunk_simple)
+				(core, next_chunk);
 				PRINTF_RA("[%s]\n", status);
 				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
 					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
@@ -1336,24 +1364,20 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 
 		switch (format_out) {
 		case 'c':
-			PRINT_YA("chunk @ ");
-			PRINTF_BA("0x%" PFMT64x " ", prev_chunk_addr);
-			PRINT_GA("[size: ");
-			PRINTF_BA("0x%" PFMT64x, prev_chunk_size);
-			PRINTF_GA("][%s]\n", status);
+			GH(print_heap_chunk_simple)
+			(core, prev_chunk_addr);
+			rz_cons_printf("[%s]\n", status);
 			break;
 		case 'v':
-			PRINT_YA("chunk @ ");
-			PRINTF_BA("0x%" PFMT64x " ", prev_chunk_addr);
-			PRINT_GA("[size: ");
-			PRINTF_BA("0x%" PFMT64x, prev_chunk_size);
-			PRINTF_GA("][%s]\n", status);
+			GH(print_heap_chunk_simple)
+			(core, prev_chunk_addr);
+			rz_cons_printf("[%s]\n", status);
 			int size = 0x10;
 			char *data = calloc(1, size);
 			if (data) {
 				rz_io_nread_at(core->io, prev_chunk_addr + SZ * 2, (ut8 *)data, size);
 				core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
-				PRINT_GA("  ");
+				rz_cons_printf("   ");
 				rz_print_hexdump(core->print, prev_chunk_addr, (ut8 *)data, size, SZ * 2, 1, 1);
 				core->print->flags |= RZ_PRINT_FLAGS_HEADER;
 				free(data);
@@ -1389,15 +1413,9 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	switch (format_out) {
 	case 'v':
 	case 'c':
-		PRINT_YA("chunk @ ");
-		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(top));
-		PRINT_GA(" [top][size: ");
-		PRINTF_BA("0x%" PFMT64x, (ut64)size_tmp);
-		PRINT_GA("][brk_start: ");
-		PRINTF_BA("0x%" PFMT64x, (ut64)brk_start);
-		PRINT_GA(", brk_end: ");
-		PRINTF_BA("0x%" PFMT64x, (ut64)brk_end);
-		PRINT_GA("]");
+		GH(print_heap_chunk_simple)
+		(core, prev_chunk_addr);
+		rz_cons_printf("[top]\n");
 		break;
 	case 'j':
 		pj_end(pj);
