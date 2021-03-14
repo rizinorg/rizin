@@ -93,6 +93,73 @@ static const char *get_tag_string(ut8 tag) {
 	}
 }
 
+/* Heap allocated string */
+static char *get_constant_symbol_name(char *proto_name, LuaConstEntry *entry){
+	rz_return_val_if_fail(entry, NULL);
+	rz_return_val_if_fail(proto_name, NULL);
+	ut8 tag = entry->tag;
+	char *ret;
+	int integer_value;
+	double float_value;
+
+	switch (tag) {
+        case LUA_VNIL:
+		ret = rz_str_newf("%s_const_nil", proto_name);
+		break;
+        case LUA_VTRUE:
+		ret = rz_str_newf("%s_const_true", proto_name);
+		break;
+        case LUA_VFALSE:
+		ret = rz_str_newf("%s_const_false", proto_name);
+		break;
+        case LUA_VSHRSTR:
+        case LUA_VLNGSTR:
+		rz_return_val_if_fail(entry->data, NULL);
+		ret = rz_str_newf("%s_const_%s", proto_name, (char *)entry->data);
+		break;
+        case LUA_VNUMFLT:
+                rz_return_val_if_fail(entry->data, NULL);
+		if (entry->data_len < sizeof(double)){
+			return NULL;
+		}
+		float_value = *(double *)entry->data;
+		ret = rz_str_newf("%s_const_%f", proto_name, float_value);
+		break;
+        case LUA_VNUMINT:
+                rz_return_val_if_fail(entry->data, NULL);
+		if (entry->data_len < sizeof(int)){
+			return NULL;
+		}
+		integer_value = *(int *)entry->data;
+		ret = rz_str_newf("%s_const_%d", proto_name, integer_value);
+                break;
+        default:
+		ret = rz_str_newf("%s_const_0x%llx", proto_name, entry->offset);
+                break;
+	}
+	return ret;
+}
+
+/* Heap allocated string */
+static char *simple_build_upvalue_symbol(char *proto_name, LuaUpvalueEntry *entry){
+	char *ret = NULL;
+	ret = rz_str_newf("%s_upvalue_0x%llx", proto_name, entry->offset);
+	return ret;
+}
+
+static char *get_upvalue_symbol_name(char *proto_name, LuaUpvalueEntry *entry, char *debug_name){
+	rz_return_val_if_fail(proto_name, NULL);
+	rz_return_val_if_fail(entry, NULL);
+	if (debug_name == NULL){
+		return simple_build_upvalue_symbol(proto_name, entry);
+	}
+
+	char *ret = NULL;
+	ret = rz_str_newf("%s_upvalue_%s", proto_name, debug_name);
+	return ret;
+}
+
+
 void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	/* process proto header info */
 	char *section_name;
@@ -102,6 +169,8 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 
 	ut64 current_offset;
 	ut64 current_size;
+
+        int i = 0;              // iter
 
 	// 0. check if stripped (proto name is lost)
 	if (proto->name_size == 0 || proto->proto_name == NULL) {
@@ -153,17 +222,25 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	luac_add_section(info->section_list, section_name, current_offset, current_size, false);
 	RZ_FREE(section_name);
 
-	// 2. should I construct symbols of proto attr ?
-	//     (for example linedefined ?)
-	// TODO : better symbol name (e.g const_i_am_string)
+
+        // 2 TODO parse debug info to strings
+	// 2.1 parse local var info
+
+	// 2.2 parse debug_upvalues
+	char **upvalue_names;
+	int dbg_upvalue_cnt;
+	LuaDbgUpvalueEntry *debug_upv_entry;
+	dbg_upvalue_cnt = rz_list_length(proto->dbg_upvalue_entries);
+	upvalue_names = RZ_NEWS(char *, dbg_upvalue_cnt);
+	rz_return_if_fail(upvalue_names);
+	rz_list_foreach(proto->dbg_upvalue_entries, iter, debug_upv_entry){
+		upvalue_names[i] = (char *)debug_upv_entry->upvalue_name;
+	}
 
 	// 3.1 construct constant symbols
 	LuaConstEntry *const_entry;
 	rz_list_foreach (proto->const_entries, iter, const_entry) {
-		symbol_name = rz_str_newf(
-			"%s_const_%08llx",
-			proto_name,
-			const_entry->offset);
+		symbol_name = get_constant_symbol_name(proto_name, const_entry);
 		luac_add_symbol(
 			info->symbol_list,
 			symbol_name,
@@ -175,11 +252,9 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 
 	// 3.2 construct upvalue symbols
 	LuaUpvalueEntry *upvalue_entry;
+	i = 0;
 	rz_list_foreach (proto->upvalue_entries, iter, upvalue_entry) {
-		symbol_name = rz_str_newf(
-			"%s_upvalue_%08llx",
-			proto_name,
-			upvalue_entry->offset);
+		symbol_name = get_upvalue_symbol_name(proto_name, upvalue_entry, upvalue_names[i++]);
 		luac_add_symbol(
 			info->symbol_list,
 			symbol_name,
@@ -188,8 +263,6 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 			"UPVALUE");
 		RZ_FREE(symbol_name);
 	}
-
-	// 3.3 TODO parse debug info
 
 	// 4. parse sub proto
 	LuaProto *sub_proto;
