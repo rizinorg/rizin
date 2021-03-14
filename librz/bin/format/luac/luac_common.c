@@ -180,6 +180,10 @@ void lua_free_upvalue_entry(LuaUpvalueEntry *entry){
 }
 
 void lua_free_proto_entry(LuaProto *proto){
+	if (proto == NULL){
+		return;
+	}
+
 	/* free constants entries */
 	rz_list_free(proto->const_entries);
 	proto->const_entries = NULL;

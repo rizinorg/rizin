@@ -187,6 +187,8 @@ typedef struct lua_dbg_upvalue_entry{
 }LuaDbgUpvalueEntry;
 
 typedef struct luac_bin_info{
+	st32 major;
+	st32 minor;
 	RzList *section_list;
 	RzList *symbol_list;
 	RzList *entry_list;
@@ -231,5 +233,12 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info);
  * ======================================================== */
 RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor);
 LuaProto *lua_parse_body_54(ut8 *data, ut64 offset, ut64 data_size);
+
+#define lua_check_error_offset(offset) if ((offset) == 0) {return 0;}
+#define lua_check_error_offset_proto(offset, proto) if ((offset) == 0) { \
+	lua_free_proto_entry((proto));                                           \
+	return NULL; \
+	}
+#define lua_return_if_null(proto) if ((proto) == NULL) {return 0;}
 
 #endif //BUILD_LUAC_COMMON_H

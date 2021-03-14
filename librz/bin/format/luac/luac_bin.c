@@ -52,14 +52,12 @@ void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type){
 
 LuacBinInfo *luac_build_info(LuaProto *proto){
 	if (proto == NULL){
-		eprintf("no proto to build info\n");
 		return NULL;
 	}
 
 	LuacBinInfo *ret;
 	ret = RZ_NEW0(LuacBinInfo);
 	if (ret == NULL){
-		eprintf("cannot build luac bin info\n");
 		return NULL;
 	}
 

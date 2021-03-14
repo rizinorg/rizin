@@ -54,7 +54,13 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 
 	// how to free it ? in .finit?
 	bin_info_obj = luac_build_info(proto);
+	if (bin_info_obj == NULL){
+                lua_free_proto_entry(proto);
+		return false;
+	}
 	bin_info_obj->general_info = general_info;
+	bin_info_obj->major = major;
+	bin_info_obj->minor = minor;
 
 	lua_free_proto_entry(proto);
 	proto = NULL;
