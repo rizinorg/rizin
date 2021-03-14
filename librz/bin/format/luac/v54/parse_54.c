@@ -4,7 +4,7 @@
 #include "luac_specs_54.h"
 
 static void lua_load_block(void *src, void *dest, size_t size, ut64 offset, ut64 data_size) {
-	if (offset + size >= data_size){
+	if (offset + size >= data_size) {
 		eprintf("Bad Luac File : Truncated load block at 0x%llx\n", offset);
 		return;
 	}
