@@ -1133,8 +1133,8 @@ Sdb *classes_ref_db() {
 	sdb_set(attrs_db, "attr.Bright.base", "0", 0);
 	sdb_set(attrs_db, "attr.Aeropause.vtable", "0", 0);
 	sdb_set(attrs_db, "attr.Bright.base.0", "Aeropause,8", 0);
-	sdb_set(attrs_db, "attr.Aeropause.method.some_meth", "4919,42", 0);
-	sdb_set(attrs_db, "attr.Aeropause.method.some_other_meth", "4660,32", 0);
+	sdb_set(attrs_db, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth", 0);
+	sdb_set(attrs_db, "attr.Aeropause.method.some_other_meth", "4660,32,0,some_other_meth", 0);
 	return db;
 }
 
@@ -1145,7 +1145,9 @@ bool test_analysis_classes_save() {
 	RzAnalysisMethod crystal = {
 		.name = strdup("some_meth"),
 		.addr = 0x1337,
-		.vtable_offset = 42
+		.vtable_offset = 42,
+		.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT,
+		.real_name = strdup("some_meth")
 	};
 	rz_analysis_class_method_set(analysis, "Aeropause", &crystal);
 	rz_analysis_class_method_fini(&crystal);
@@ -1153,7 +1155,9 @@ bool test_analysis_classes_save() {
 	RzAnalysisMethod meth = {
 		.name = strdup("some_other_meth"),
 		.addr = 0x1234,
-		.vtable_offset = 0x20
+		.vtable_offset = 0x20,
+		.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT,
+		.real_name = strdup("some_other_meth")
 	};
 	rz_analysis_class_method_set(analysis, "Aeropause", &meth);
 	rz_analysis_class_method_fini(&meth);
@@ -1637,7 +1641,7 @@ Sdb *analysis_ref_db() {
 	Sdb *class_attrs = sdb_ns(classes, "attrs", true);
 	sdb_set(class_attrs, "attrtypes.Aeropause", "method", 0);
 	sdb_set(class_attrs, "attr.Aeropause.method", "some_meth", 0);
-	sdb_set(class_attrs, "attr.Aeropause.method.some_meth", "4919,42", 0);
+	sdb_set(class_attrs, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth", 0);
 
 	Sdb *types = sdb_ns(db, "types", true);
 	sdb_set(types, "badchar", "type", 0);
@@ -1698,7 +1702,9 @@ bool test_analysis_save() {
 	RzAnalysisMethod crystal = {
 		.name = strdup("some_meth"),
 		.addr = 0x1337,
-		.vtable_offset = 42
+		.vtable_offset = 42,
+		.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT,
+		.real_name = strdup("some_meth")
 	};
 	rz_analysis_class_method_set(analysis, "Aeropause", &crystal);
 	rz_analysis_class_method_fini(&crystal);
