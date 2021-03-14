@@ -53,6 +53,28 @@ static const char *attr_type_id(RzAnalysisClassAttrType attr_type) {
 	}
 }
 
+RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis) {
+	rz_cons_break_push(NULL, NULL);
+	RzList *classes = rz_bin_get_classes(analysis->binb.bin);
+	if (classes) {
+		RzListIter *iter_class;
+		RzBinClass *class;
+		rz_list_foreach (classes, iter_class, class) {
+			if (rz_cons_is_breaked()) {
+				break;
+			}
+			if (!rz_analysis_class_exists(analysis, class->name)) {
+				rz_analysis_class_create(analysis, class->name);
+				RzList *methods = class->methods;
+				if (methods) {
+					rz_analysis_class_method_recover(analysis, class, methods);
+				}
+			}
+		}
+	}
+	rz_cons_break_pop();
+}
+
 RZ_API void rz_analysis_class_create(RzAnalysis *analysis, const char *name) {
 	char *name_sanitized = rz_str_sanitize_sdb_key(name);
 	if (!name_sanitized) {
@@ -478,11 +500,77 @@ static RzAnalysisClassErr rz_analysis_class_add_attr_unique(RzAnalysis *analysis
 // Format: addr,vtable_offset
 
 static char *flagname_method(const char *class_name, const char *meth_name) {
+	if (rz_str_startswith(meth_name, "method.")) {
+		return rz_str_new(meth_name);
+	}
 	return flagname_attr("method", class_name, meth_name);
 }
 
 RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth) {
 	free(meth->name);
+	free(meth->real_name);
+}
+
+RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *class, RzList *methods) {
+	RzListIter *iter_method;
+	RzBinSymbol *sym;
+	rz_list_foreach (methods, iter_method, sym) {
+		if (!rz_analysis_class_method_exists(analysis, class->name, sym->name)) {
+			//detect constructor or destructor but not implemented
+			//Temporarily set to default
+			RzAnalysisMethod method;
+			method.addr = sym->vaddr;
+			method.vtable_offset = -1;
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, sym->vaddr);
+			char *method_name = rz_str_new(sym->name);
+			rz_str_split(method_name, '(');
+			method.name = fcn ? rz_str_new(fcn->name) : rz_str_new(method_name);
+			method.real_name = method_name;
+			method.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT;
+			rz_analysis_class_method_set(analysis, class->name, &method);
+			rz_analysis_class_method_fini(&method);
+		}
+	}
+}
+
+RZ_API bool rz_analysis_class_method_exists(RzAnalysis *analysis, const char *class_name, const char *meth_name) {
+	char *content = rz_analysis_class_get_attr(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD, meth_name, false);
+	if (!content) {
+		return false;
+	}
+
+	return true;
+}
+
+RZ_API bool rz_analysis_class_method_exists_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr) {
+	RzVector *vec = rz_analysis_class_method_get_all(analysis, class_name);
+	RzAnalysisMethod *meth;
+	rz_vector_foreach(vec, meth) {
+		if (meth->addr == addr) {
+			rz_vector_free(vec);
+			return true;
+		}
+	}
+	rz_vector_free(vec);
+	return false;
+}
+
+RZ_API RzAnalysisClassErr rz_analysis_class_method_get_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr, RzAnalysisMethod *method) {
+	RzVector *vec = rz_analysis_class_method_get_all(analysis, class_name);
+	RzAnalysisMethod *meth;
+	rz_vector_foreach(vec, meth) {
+		if (meth->addr == addr) {
+			method->name = rz_str_new(meth->name);
+			method->addr = meth->addr;
+			method->method_type = meth->method_type;
+			method->vtable_offset = meth->vtable_offset;
+			method->real_name = rz_str_new(meth->real_name);
+			rz_vector_free(vec);
+			return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
+		}
+	}
+	rz_vector_free(vec);
+	return RZ_ANALYSIS_CLASS_ERR_OTHER;
 }
 
 // if the method exists: store it in *meth and return RZ_ANALYSIS_CLASS_ERR_SUCCESS
@@ -498,15 +586,23 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_get(RzAnalysis *analysis, con
 	sdb_anext(cur, &next);
 
 	meth->addr = rz_num_math(NULL, cur);
-
 	cur = next;
+
+	sdb_anext(cur, &next);
+	meth->vtable_offset = atoll(cur);
+	cur = next;
+
+	sdb_anext(cur, &next);
+	meth->method_type = rz_num_math(NULL, cur);
+	cur = next;
+
 	if (!cur) {
 		free(content);
 		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	sdb_anext(cur, NULL);
 
-	meth->vtable_offset = atoll(cur);
+	meth->real_name = rz_str_new(cur);
 
 	free(content);
 
@@ -553,7 +649,7 @@ RZ_API RzVector /*<RzAnalysisMethod>*/ *rz_analysis_class_method_get_all(RzAnaly
 }
 
 RZ_API RzAnalysisClassErr rz_analysis_class_method_set(RzAnalysis *analysis, const char *class_name, RzAnalysisMethod *meth) {
-	char *content = sdb_fmt("%" PFMT64u "%c%" PFMT64d, meth->addr, SDB_RS, meth->vtable_offset);
+	char *content = sdb_fmt("%" PFMT64u "%c%" PFMT64d "%c%" PFMT32u "%c%s", meth->addr, SDB_RS, meth->vtable_offset, SDB_RS, meth->method_type, SDB_RS, meth->real_name);
 	RzAnalysisClassErr err = rz_analysis_class_set_attr(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD, meth->name, content);
 	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
@@ -563,6 +659,13 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_set(RzAnalysis *analysis, con
 }
 
 RZ_API RzAnalysisClassErr rz_analysis_class_method_rename(RzAnalysis *analysis, const char *class_name, const char *old_meth_name, const char *new_meth_name) {
+	RzAnalysisMethod meth;
+	if (rz_analysis_class_method_get(analysis, class_name, old_meth_name, &meth) == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
+		meth.real_name = rz_str_new(new_meth_name);
+		rz_analysis_class_method_set(analysis, class_name, &meth);
+		rz_analysis_class_method_fini(&meth);
+	}
+
 	RzAnalysisClassErr err = rz_analysis_class_rename_attr(analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD, old_meth_name, new_meth_name);
 	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
@@ -999,7 +1102,7 @@ RZ_API void rz_analysis_class_print(RzAnalysis *analysis, const char *class_name
 		if (methods) {
 			RzAnalysisMethod *meth;
 			rz_vector_foreach(methods, meth) {
-				rz_cons_printf("  %s @ 0x%" PFMT64x, meth->name, meth->addr);
+				rz_cons_printf("  %s @ 0x%" PFMT64x, meth->real_name, meth->addr);
 				if (meth->vtable_offset >= 0) {
 					rz_cons_printf(" (vtable + 0x%" PFMT64x ")\n", (ut64)meth->vtable_offset);
 				} else {
@@ -1082,7 +1185,7 @@ RZ_API void rz_analysis_class_json(RzAnalysis *analysis, PJ *j, const char *clas
 		RzAnalysisMethod *meth;
 		rz_vector_foreach(methods, meth) {
 			pj_o(j);
-			pj_ks(j, "name", meth->name);
+			pj_ks(j, "name", meth->real_name);
 			pj_kn(j, "addr", meth->addr);
 			if (meth->vtable_offset >= 0) {
 				pj_kn(j, "vtable_offset", (ut64)meth->vtable_offset);
@@ -1305,4 +1408,9 @@ failure:
 	ht_pp_free(hashmap);
 	rz_graph_free(class_graph);
 	return NULL;
+}
+
+RZ_API void rz_analysis_class_recover_all(RzAnalysis *analysis) {
+	rz_analysis_class_recover_from_rzbin(analysis);
+	rz_analysis_rtti_recover_all(analysis);
 }

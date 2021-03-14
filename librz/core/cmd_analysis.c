@@ -8392,6 +8392,8 @@ static void cmd_analysis_class_method(RzCore *core, const char *input) {
 
 			RzAnalysisMethod meth;
 			meth.name = name_str;
+			meth.real_name = rz_str_new(name_str);
+			meth.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT;
 			meth.addr = rz_num_get(core->num, addr_str);
 			meth.vtable_offset = -1;
 			if (end) {
