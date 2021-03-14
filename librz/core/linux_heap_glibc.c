@@ -1414,7 +1414,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	case 'v':
 	case 'c':
 		GH(print_heap_chunk_simple)
-		(core, prev_chunk_addr);
+		(core, main_arena->GH(top));
 		rz_cons_printf("[top]\n");
 		break;
 	case 'j':
