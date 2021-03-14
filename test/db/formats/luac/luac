@@ -74,6 +74,39 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=LUAC: big file string symbol loading
+FILE=bins/luac/big.luac
+CMDS=is~twas
+EXPECT=<<EOF
+0   0x000005d8 0x000005d8 NONE CONST_STRING 10       @learnlua.lua_const_twas false
+EOF
+RUN
+
+NAME=LUAC: big file num symbol loading
+FILE=bins/luac/big.luac
+CMDS=is~1729,1.21
+EXPECT=<<EOF
+0   0x00000687 0x00000687 NONE CONST_NUM    8        @learnlua.lua_const_1729
+0   0x000006d5 0x000006d5 NONE CONST_NUM    8        @learnlua.lua_const_1.210000
+EOF
+RUN
+
+NAME=LUAC: big file symbols
+FILE=bins/luac/big.luac
+CMDS=is~CONST_NUM
+EXPECT=<<EOF
+0   0x000004db 0x000004db NONE CONST_NUM    8        @learnlua.lua_const_42
+0   0x00000590 0x00000590 NONE CONST_NUM    8        @learnlua.lua_const_5
+0   0x000005fb 0x000005fb NONE CONST_NUM    8        @learnlua.lua_const_0
+0   0x00000687 0x00000687 NONE CONST_NUM    8        @learnlua.lua_const_1729
+0   0x00000690 0x00000690 NONE CONST_NUM    8        @learnlua.lua_const_6.280000
+0   0x000006d5 0x000006d5 NONE CONST_NUM    8        @learnlua.lua_const_1.210000
+0   0x000006ed 0x000006ed NONE CONST_NUM    8        @learnlua.lua_const_1
+0   0x000006f6 0x000006f6 NONE CONST_NUM    8        @learnlua.lua_const_2
+0   0x00000703 0x00000703 NONE CONST_NUM    8        @learnlua.lua_const_3
+EOF
+RUN
+
 NAME=LUAC: disasm crash
 FILE=bins/luac/big.luac
 CMDS=pd 10 >/dev/null
@@ -89,5 +122,13 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 Bad Luac File : Truncated Code at [0x2f]
+EOF
+RUN
+
+NAME=LUAC: iz strings
+FILE=bins/luac/big.luac
+CMDS=iz~?print
+EXPECT=<<EOF
+7
 EOF
 RUN
