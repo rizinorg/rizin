@@ -1818,6 +1818,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	bool fcnsig = ds->show_fcnsig;
 	// bool call = rz_config_get_b(core->config, "asm.calls");
 	const char *lang = demangle ? rz_config_get(core->config, "bin.lang") : NULL;
+	const char *fcntype;
 	f = rz_analysis_get_function_at(core->analysis, ds->at);
 	if (!f) {
 		return;
@@ -1860,21 +1861,13 @@ static void ds_show_functions(RDisasmState *ds) {
 			fcn_name = flag->realname;
 		}
 	}
-	char *sig = rz_analysis_fcn_format_sig(core->analysis, f, fcn_name, &vars_cache, COLOR(ds, color_fname), COLOR_RESET(ds));
+
 	if (f->type == RZ_ANALYSIS_FCN_TYPE_LOC) {
 		rz_cons_printf("%s%s ", COLOR(ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
-		if (fcnsig && sig) {
-			rz_cons_printf("%s%s%s", COLOR(ds, color_floc),
-				sig, COLOR_RESET(ds));
-			RZ_FREE(sig);
-		} else {
-			rz_cons_printf("%s%s%s", COLOR(ds, color_floc),
-				fcn_name, COLOR_RESET(ds));
-		}
+		fcntype = "loc";
 
 	} else {
-		const char *fcntype;
 		char cmt[32];
 		get_bits_comment(core, f, cmt, sizeof(cmt));
 
@@ -1899,17 +1892,25 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_lines_left(ds);
 			ds_print_offset(ds);
 		}
-		if (fcnsig && sig) {
-			rz_cons_printf("%s(%s) %s", COLOR(ds, color_fname),
-				fcntype, sig);
-			RZ_FREE(sig);
-		} else {
-			rz_cons_printf("%s(%s) %s%s%s", COLOR(ds, color_fname),
-				fcntype, fcn_name, cmt, COLOR_RESET(ds));
+	}
+	rz_cons_printf("%s(%s) ", COLOR(ds, color_fname), fcntype);
+	if (ds->show_fcnsize) {
+		rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
+	}
+	// show function's realname in the signature if realnames are enabled
+	if (core->flags->realnames) {
+		RzFlagItem *flag = rz_flag_get(core->flags, fcn_name);
+		if (flag && flag->realname) {
+			fcn_name = flag->realname;
 		}
 	}
-	if (ds->show_fcnsize) {
-		rz_cons_printf(" %" PFMT64d, rz_analysis_function_realsize(f));
+
+	char *sig = rz_analysis_fcn_format_sig(core->analysis, f, fcn_name, &vars_cache, COLOR(ds, color_fname), COLOR_RESET(ds));
+	if (sig && fcnsig) {
+		rz_cons_print(sig);
+		RZ_FREE(sig);
+	} else {
+		rz_cons_printf("%s", fcn_name);
 	}
 	ds_newline(ds);
 	RZ_FREE(sign);
