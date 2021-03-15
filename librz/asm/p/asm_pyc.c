@@ -36,14 +36,14 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	if (!opcodes_cache || !pyc_opcodes_equal(opcodes_cache, a->cpu)) {
 		opcodes_cache = get_opcode_by_version(a->cpu);
 		if (opcodes_cache == NULL){
-			opstruct->size = len;
+			eprintf("[x]Require Info from code object, use rizin instead\n");
 			return len;
 		}
 		opcodes_cache->bits = a->bits;
 	}
 	int r = rz_pyc_disasm(opstruct, buf, cobjs, interned_table, pc, opcodes_cache);
 	opstruct->size = r;
-	return r;
+        return r;
 }
 
 static bool finish(void *user) {
