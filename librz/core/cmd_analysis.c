@@ -8196,7 +8196,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		cmd_analysis_objc(core, false);
 		break;
 	case 'e': { // "aae"
-		bool reg_flags_defined = !!rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
+		bool reg_flags_defined = rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
 		if (input[1] == 'f') { // "aaef"
 			rz_core_analysis_esil_references_all_functions(core);
 		} else if (input[1] == ' ') {
