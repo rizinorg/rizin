@@ -2821,7 +2821,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
 	bool segments_only = true;
-	bool plugin_type_flags_support = plugin && (plugin->section_type_to_string || plugin->section_flag_to_rzlist);
+	bool plugin_type_support = plugin && plugin->section_type_to_string;
+	bool plugin_flags_support = plugin && plugin->section_flag_to_rzlist;
 	RzList *io_section_info = NULL;
 
 	if (!dup_chk_ht) {
@@ -2881,35 +2882,17 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		fd = rz_core_file_cur_fd(r);
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
-	if (IS_MODE_NORMAL(mode) && !print_segments) {
-		if (plugin_type_flags_support) {
-			if (hashtypes) {
-				rz_table_set_columnsf(table, "dXxXxsssss",
-					"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "type", "flags");
-			} else {
-				rz_table_set_columnsf(table, "dXxXxssss",
-					"nth", "paddr", "size", "vaddr", "vsize", "perm", "name", "type", "flags");
-			}
-		} else {
-			if (hashtypes) {
-				rz_table_set_columnsf(table, "dXxXxsss",
-					"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
-			} else {
-				rz_table_set_columnsf(table, "dXxXxss",
-					"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
-			}
-		}
-		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
-		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
-	}
-	if (IS_MODE_NORMAL(mode) && print_segments) {
+	if (IS_MODE_NORMAL(mode) ) {
+		rz_table_set_columnsf(table, "dXxXxss",	"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
 		if (hashtypes) {
-			rz_table_set_columnsf(table, "dXxXxsss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
-		} else {
-			rz_table_set_columnsf(table, "dXxXxss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
-		}
+			rz_table_set_columnsf(table, "s", hashtypes);
+			}
+		if (plugin_type_support && !print_segments) {
+			rz_table_set_columnsf(table, "s", "type");
+			}
+		if (plugin_flags_support && !print_segments) {
+			rz_table_set_columnsf(table, "s", "flags");
+			}
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
 	}
@@ -3141,7 +3124,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
-			if (!print_segments && plugin_type_flags_support) {
+			if (!print_segments ) {
 				// Sections with type or flags only
 				char *type = section_type_to_string(r->bin, section->type);
 				RzList *section_flags = section_flag_to_rzlist(r->bin, section->flags);
