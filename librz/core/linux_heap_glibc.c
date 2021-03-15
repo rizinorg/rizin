@@ -980,8 +980,8 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 			PRINT_GA("bin :");
 			PRINTF_BA("%2zu", i);
 			PRINT_GA(", items :");
-			PRINTF_BA("%2d -> ", count);
-
+			PRINTF_BA("%2d", count);
+			rz_cons_printf(" -> ");
 			GH(print_heap_chunk_simple)
 			(core, (ut64)(entry - GH(HDR_SZ)));
 			if (count > 1) {
@@ -1698,20 +1698,30 @@ static void GH(print_tcache_description)(RzCore *core, GHT m_arena, MallocState 
 
 static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, int format) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
-	GH(print_tcache_description)
-	(core, m_arena, main_arena);
-	rz_cons_newline();
-	GH(print_fastbin_description)
-	(core, m_arena, main_arena, global_max_fast);
-	rz_cons_newline();
-	GH(print_unsortedbin_description)
-	(core, m_arena, main_arena);
-	rz_cons_newline();
-	GH(print_smallbin_description)
-	(core, m_arena, main_arena);
-	rz_cons_newline();
-	GH(print_largebin_description)
-	(core, m_arena, main_arena);
+	if (!format || format == 1) {
+		GH(print_tcache_description)
+		(core, m_arena, main_arena);
+		rz_cons_newline();
+	}
+	if (!format || format == 2) {
+		GH(print_fastbin_description)
+		(core, m_arena, main_arena, global_max_fast);
+		rz_cons_newline();
+	}
+	if (!format || format == 3) {
+		GH(print_unsortedbin_description)
+		(core, m_arena, main_arena);
+		rz_cons_newline();
+	}
+	if (!format || format == 4) {
+		GH(print_smallbin_description)
+		(core, m_arena, main_arena);
+		rz_cons_newline();
+	}
+	if (!format || format == 5) {
+		GH(print_largebin_description)
+		(core, m_arena, main_arena);
+	}
 }
 
 static const char *GH(help_msg)[] = {
@@ -1723,7 +1733,7 @@ static const char *GH(help_msg)[] = {
 	"dmhb", " [bin_num|bin_num:malloc_state]", "Display parsed double linked list of bins instance from a particular arena",
 	"dmhbg", " [bin_num]", "Display double linked list graph of main_arena's bin [Under development]",
 	"dmhc", " @[chunk_addr]", "Display malloc_chunk struct for a given malloc chunk",
-	"dmhd", "", "Display description of bins in the main_arena",
+	"dmhd", " [tcache|unsorted|fast|small|large]", "Display description of bins in the main_arena",
 	"dmhf", " @[malloc_state]", "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
 	"dmhf", " [fastbin_num|fastbin_num:malloc_state]", "Display parsed single linked list in fastbinY instance from a particular arena",
 	"dmhg", "", "Display heap graph of heap segment",
@@ -1885,6 +1895,23 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
 				break;
 			}
+			input += 1;
+			format = 0;
+			if (input[0] == ' ') {
+				input += 1;
+				if (!strcmp(input, "tcache")) {
+					format = 1;
+				} else if (!strcmp(input, "fast")) {
+					format = 2;
+				} else if (!strcmp(input, "unsorted")) {
+					format = 3;
+				} else if (!strcmp(input, "small")) {
+					format = 4;
+				} else if (!strcmp(input, "large")) {
+					format = 5;
+				}
+			}
+
 			GH(print_main_arena_bins)
 			(core, m_arena, main_arena, global_max_fast, format);
 		}
