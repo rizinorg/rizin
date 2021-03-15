@@ -67,9 +67,6 @@ asm_plugins = [
   'z80',
 ]
 
-asm_enabled_static_plugins = asm_plugins
-asm_enabled_shared_plugins = []
-
 asm_6502_sources = files(
   'asm_6502.c',
 )

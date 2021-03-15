@@ -52,9 +52,45 @@ foreach module : modules
   if fs.is_dir(module / 'p') and fs.exists(module / 'p' / 'meson.build')
     subdir(module / 'p')
 
-    # compile static plugins
     plugins = get_variable('@0@_plugins'.format(module), [])
     if plugins != []
+      # determine which plugins to compile and how
+      enabled_plugins = get_option('@0@_plugins'.format(module))
+      enabled_static_plugins = []
+      enabled_shared_plugins = []
+
+      foreach plugin : enabled_plugins
+        parts = plugin.split('.')
+        type = 'static'
+        if parts.length() == 1
+          name = parts[0]
+        elif parts.length() == 2
+          type = parts[0]
+          name = parts[1]
+        else
+          error('Wrong @0@ plugin name format: @1@.'.format(module, plugin))
+        endif
+
+        if name not in plugins and name != '*'
+          error('@0@ plugin @1@ does not exist!'.format(module, name))
+        endif
+
+        if name == '*'
+          to_add = plugins
+        else
+          to_add = [name]
+        endif
+
+        if type == 'static'
+          enabled_static_plugins += to_add
+        else
+          enabled_shared_plugins += to_add
+        endif
+      endforeach
+      set_variable('@0@_enabled_static_plugins'.format(module), enabled_static_plugins)
+      set_variable('@0@_enabled_shared_plugins'.format(module), enabled_shared_plugins)
+
+      # compile static plugins
       static_plugins = get_variable('@0@_enabled_static_plugins'.format(module))
       module_plugins_dep = []
       static_plugins_str = []

@@ -2,9 +2,6 @@ core_plugins = [
   'java',
 ]
 
-core_enabled_static_plugins = core_plugins
-core_enabled_shared_plugins = []
-
 core_java_sources = files(
   'core_java.c',
   '../../bin/format/java/json.c',

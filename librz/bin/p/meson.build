@@ -61,9 +61,6 @@ bin_plugins = [
 
 bin_plugins += bin_xtr_plugins
 
-bin_enabled_static_plugins = bin_plugins
-bin_enabled_shared_plugins = []
-
 bin_any_sources = files(
   'bin_any.c',
 )

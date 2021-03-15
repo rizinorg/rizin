@@ -15,9 +15,6 @@ if host_machine.system() == 'windows'
   debug_plugins += 'windbg'
 endif
 
-debug_enabled_static_plugins = debug_plugins
-debug_enabled_shared_plugins = []
-
 debug_bf_sources = files(
   'debug_bf.c',
   'bfvm.c',

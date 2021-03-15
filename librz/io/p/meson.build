@@ -37,9 +37,6 @@ if host_machine.system() == 'windows'
   ]
 endif
 
-io_enabled_static_plugins = io_plugins
-io_enabled_shared_plugins = []
-
 io_ar_sources = files(
   'io_ar.c',
 )

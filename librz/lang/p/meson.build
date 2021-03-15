@@ -14,9 +14,6 @@ if host_machine.system() != 'windows'
   ]
 endif
 
-lang_enabled_static_plugins = lang_plugins
-lang_enabled_shared_plugins = []
-
 lang_c_sources = files(
   'c.c',
 )
