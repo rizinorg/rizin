@@ -4846,6 +4846,7 @@ static void __core_analysis_appcall(RzCore *core, const char *input) {
 
 	rz_reg_setv(core->analysis->reg, "PC", core->offset);
 	rz_core_esil_step(core, 0, NULL, NULL, false);
+	rz_core_regs2flags(core);
 
 	rz_reg_setv(core->analysis->reg, "SP", sp);
 	free(inp);
