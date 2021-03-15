@@ -2629,11 +2629,11 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			rz_core_analysis_undefine(core, core->offset);
 		} else if (!strcmp(input + 1, "*")) {
 			RzAnalysisFunction *f;
-			RzListIter *iter;
-			rz_list_foreach (core->analysis->fcns, iter, f) {
+			RzListIter *iter, *iter_tmp;
+			rz_list_foreach_safe (core->analysis->fcns, iter, iter_tmp, f) {
 				rz_analysis_del_jmprefs(core->analysis, f);
+				rz_core_analysis_undefine(core, f->addr);
 			}
-			rz_list_purge(core->analysis->fcns);
 		} else {
 			ut64 addr = input[1]
 				? rz_num_math(core->num, input + 1)
