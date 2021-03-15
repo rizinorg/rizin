@@ -1528,8 +1528,21 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			}
 			break;
 		case 10: // ^J -- ignore
-			rz_cons_break_pop();
-			return I.buffer.data;
+			if (I.hud) {
+				I.hud->activate = false;
+				break;
+			}
+			if (I.sel_widget) {
+				selection_widget_select();
+				break;
+			}
+			if (gcomp && I.buffer.length > 0) {
+				strncpy(I.buffer.data, gcomp_line, RZ_LINE_BUFSIZE - 1);
+				I.buffer.data[RZ_LINE_BUFSIZE - 1] = '\0';
+				I.buffer.length = strlen(gcomp_line);
+			}
+			gcomp_idx = gcomp = 0;
+			goto _end;
 		case 11: // ^K
 			I.buffer.data[I.buffer.index] = '\0';
 			I.buffer.length = I.buffer.index;
