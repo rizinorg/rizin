@@ -1237,7 +1237,6 @@ typedef struct rz_analysis_plugin_t {
 	int bits;
 	int esil; // can do esil or not
 	int fileformat_type;
-	void *user;
 	bool (*init)(void **user);
 	bool (*fini)(void *user);
 	//int (*reset_counter) (RzAnalysis *analysis, ut64 start_addr);
