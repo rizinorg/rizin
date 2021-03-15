@@ -462,7 +462,7 @@ va       false
   ;-- entry1:
   ;-- section.class.methods.TestMultipleVariable.attr.0.code:
   ;-- sym.TestVariableSwitchUp.TestVariableSwitchUp.TestMultipleVariable:
-/ (fcn) method.TestVariableSwitchUp.TestVariableSwitchUp.TestMultipleVariable 37
+/ method.TestVariableSwitchUp.TestVariableSwitchUp.TestMultipleVariable ();
 | 0x000002fd      1064           bipush 100
 | 0x000002ff      b8000f         invokestatic java.lang.Integer java.lang.Integer:valueOf: (int, int)
 | 0x00000302      4b             astore_0
