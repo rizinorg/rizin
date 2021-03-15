@@ -32,7 +32,7 @@ static void sigusr1(int s) {
 
 static void sigusr2(int s) {
 	(void)openself();
-	rz_core_cmd0(core, "=H&");
+	rz_equal_H_handler_old(core, "&");
 }
 
 static void _libwrap_init() __attribute__((constructor));
@@ -47,7 +47,7 @@ static void _libwrap_init(void) {
 	core = rz_core_new();
 	rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL, NULL);
 	if (web) {
-		rz_core_cmd0(core, "=H&");
+		rz_equal_H_handler_old(core, "&");
 		rz_sys_setenv("RZ_RUN_WEB", NULL);
 		free(web);
 	}

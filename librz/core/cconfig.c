@@ -460,7 +460,7 @@ static bool cb_scrrainbow(void *user, void *data) {
 		rz_cons_pal_random();
 	} else {
 		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
-		rz_core_cmd0(core, "ecoo");
+		rz_core_load_theme(core, rz_core_get_theme());
 	}
 	rz_print_set_flags(core->print, core->print->flags);
 	return true;
