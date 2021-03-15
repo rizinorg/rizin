@@ -565,7 +565,6 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 	if (!cpool) {
 		return NULL;
 	}
-
 	if (java_constant_pool_is_string(cpool) ||
 		java_constant_pool_is_number(cpool)) {
 		return java_constant_pool_stringify(cpool);
@@ -591,13 +590,17 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 			rz_warn_if_reached();
 			return NULL;
 		}
-		char *s0 = rz_bin_java_class_const_pool_resolve_index(bin, arg0);
+		char *s0 = arg0 ? rz_bin_java_class_const_pool_resolve_index(bin, arg0) : NULL;
 		char *s1 = rz_bin_java_class_const_pool_resolve_index(bin, arg1);
-		if (!s0 || !s1) {
+		if ((arg0 && !s0) || !s1) {
 			rz_warn_if_reached();
 			free(s0);
 			free(s1);
 			return NULL;
+		}
+		if (!arg0) {
+			rz_str_replace_char(s1, '/', '.');
+			return s1;
 		}
 		tmp = rz_str_newf("%s:%s", s0, s1);
 		rz_str_replace_char(tmp, '/', '.');

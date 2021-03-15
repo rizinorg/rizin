@@ -231,6 +231,35 @@ RZ_IPI RzCmdStatus rz_cmd_javas_handler(RzCore *core, int argc, const char **arg
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_javar_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (argc != 2) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	RzBinJavaClass *jclass = core_java_get_class(core);
+	if (!jclass) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	st32 index = rz_num_math(core->num, argv[1]);
+
+	char *resolved = rz_bin_java_class_const_pool_resolve_index(jclass, index);
+	if (!resolved) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	char *demangled = rz_bin_demangle_java(resolved);
+	if (demangled) {
+		rz_cons_println(demangled);
+	} else {
+		rz_cons_println(resolved);
+	}
+
+	free(resolved);
+	free(demangled);
+	return RZ_CMD_STATUS_OK;
+}
+
 static const RzCmdDescArg cmd_java_args[] = {
 	{ 0 },
 };
@@ -252,6 +281,19 @@ static_description_without_args(javam, "prints the class methods");
 static_description_without_args(javap, "prints the class constant pool");
 static_description_without_args(javas, "prints the class like a java source code");
 
+static const RzCmdDescArg name_args(javar)[] = {
+	{
+		.name = "index",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+	},
+	{ 0 },
+};
+
+static const RzCmdDescHelp name_help(javar) = {
+	.summary = "resolves the class constant pool value at a given index",
+	.args = name_args(javar),
+};
+
 static bool rz_cmd_java_init_handler(RzCore *core) {
 	RzCmd *rcmd = core->rcmd;
 	RzCmdDesc *root_cd = rz_cmd_get_root(rcmd);
@@ -271,13 +313,14 @@ static bool rz_cmd_java_init_handler(RzCore *core) {
 	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javam, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON);
 	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javap, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON);
 	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javas, RZ_OUTPUT_MODE_STANDARD);
+	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javar, RZ_OUTPUT_MODE_STANDARD);
 
 	return true;
 }
 
 RzCorePlugin rz_core_plugin_java = {
 	.name = "java",
-	.desc = "Suite of java commands, java help for more info",
+	.desc = "Suite of java commands, type `java` for more info",
 	.license = "LGPL-3.0-only",
 	.author = "deroad",
 	.version = "1.0",
