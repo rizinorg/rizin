@@ -100,7 +100,7 @@ RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name);
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off);
 RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...);
 RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest);
-RZ_API RzList *rz_flag_all_list(RzFlag *f, bool by_space);
+RZ_API RzList * /*<RzFlagItem*>*/ rz_flag_all_list(RzFlag *f, bool by_space);
 RZ_API const RzList * /*<RzFlagItem*>*/ rz_flag_get_list(RzFlag *f, ut64 off);
 RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off);
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item);

@@ -3413,10 +3413,8 @@ CMDS=<<EOF
 aF
 aaef
 pdf
-# TODO eip flag?
 EOF
 EXPECT=<<EOF
-            ;-- eip:
 / entry0 ();
 |           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
 |           0x08048056      xor   eax, eax
