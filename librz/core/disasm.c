@@ -1670,12 +1670,6 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 	ds->line_col = tmp_col;
 }
 
-//TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
-// static ut32 tmp_get_realsize(RzAnalysisFunction *f) {
-// 	ut32 size = rz_analysis_function_realsize(f);
-// 	return (size > 0) ? size : rz_analysis_function_linear_size(f);
-// }
-
 static void ds_show_functions_argvar(RDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var, const char *base, bool is_var, char sign) {
 	int delta = var->kind == 'b' ? RZ_ABS(var->delta + fcn->bp_off) : RZ_ABS(var->delta);
 	const char *pfx = is_var ? "var" : "arg";
@@ -1816,7 +1810,6 @@ static void ds_show_functions(RDisasmState *ds) {
 	bool demangle = rz_config_get_b(core->config, "bin.demangle");
 	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	bool fcnsig = ds->show_fcnsig;
-	// bool call = rz_config_get_b(core->config, "asm.calls");
 	const char *lang = demangle ? rz_config_get(core->config, "bin.lang") : NULL;
 	const char *fcntype;
 	f = rz_analysis_get_function_at(core->analysis, ds->at);
@@ -1866,7 +1859,6 @@ static void ds_show_functions(RDisasmState *ds) {
 		rz_cons_printf("%s%s ", COLOR(ds, color_fline),
 			core->cons->vline[LINE_CROSS]); // |-
 		fcntype = "loc";
-
 	} else {
 		char cmt[32];
 		get_bits_comment(core, f, cmt, sizeof(cmt));
@@ -1893,7 +1885,12 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_offset(ds);
 		}
 	}
-	rz_cons_printf("%s(%s) ", COLOR(ds, color_fname), fcntype);
+	if (!strcmp(fcntype, "fcn")) {
+		rz_cons_printf("%s", COLOR(ds, color_fname));
+	} else {
+		rz_cons_printf("%s(%s) ", COLOR(ds, color_fname), fcntype);
+	}
+
 	if (ds->show_fcnsize) {
 		rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
 	}

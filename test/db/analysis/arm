@@ -278,8 +278,7 @@ af
 pd 4
 EOF
 EXPECT=<<EOF
-/ (fcn) fcn.00000000 16
-// void fcn.00000000 (int32_t arg2);
+/ fcn.00000000 (int32_t arg2);
 |           ; arg int32_t arg2 @ r1
 |           0x00000000      021081e0       add   r1, r1, r2            ; arg2
 |           0x00000004      1eff2f01       bxeq  lr
@@ -651,7 +650,7 @@ pdf@sym.call
 EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ 0x10468
-/ (fcn) sym.call 44
+/ sym.call (int32_t arg1);
 |           ; var int32_t var_8h @ fp-0x8
 |           ; arg int32_t arg1 @ r0
 |           0x00010420      00482de9       push  {fp, lr}
@@ -678,8 +677,7 @@ afva@main
 pdf@main
 EOF
 EXPECT=<<EOF
-/ (fcn) main 44
-// int main (int argc, char **argv);
+/ int main (int argc, char **argv);
 |           ; var int32_t var_ch @ fp-0xc
 |           ; var int32_t var_8h @ fp-0x8
 |           ; arg int argc @ r0
