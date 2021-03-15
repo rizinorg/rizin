@@ -2329,3 +2329,17 @@ and esp, 0xfffffff0
 and esp, 
 EOF
 RUN
+
+NAME=asm.size and meta string
+FILE=bins/elf/ls
+CMDS=<<EOF
+pd 1 @ 0x0001bbe8
+pd 1 @ 0x0001bbe8 @e:asm.size=true
+EOF
+EXPECT=<<EOF
+            ;-- str.Written_by__s___s___s____s___s___s___s____s__and__s.:
+            0x0001bbe8     .string "Written by %s, %s, %s,\n%s, %s, %s, %s,\n%s, and %s.\n" ; len=52
+            ;-- str.Written_by__s___s___s____s___s___s___s____s__and__s.:
+            0x0001bbe8     .string "Written by %s, %s, %s,\n%s, %s, %s, %s,\n%s, and %s.\n" ; len=52
+EOF
+RUN
