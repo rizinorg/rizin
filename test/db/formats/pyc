@@ -37,6 +37,16 @@ machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
 EOF
 RUN
 
+NAME=pyc load version27
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python 2.7a2+ VM (rev edfed0e32cedf3b84c6e999052486a750a3f5bee)
+EOF
+RUN
+
 NAME=pyc symbols
 FILE=bins/pyc/py37.pyc
 CMDS=<<EOF
@@ -94,5 +104,62 @@ EXPECT=<<EOF
         ,=< 0x00000038      JUMP_IF_TRUE_OR_POP                  18
         |   0x0000003a      LOAD_CONST                True
         `-> 0x0000003c      POP_TOP
+EOF
+RUN
+
+NAME=pyc symbols for pyc2.7
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+is~hello_world
+EOF
+EXPECT=<<EOF
+1   0x00000052 0x00000052 NONE FUNC 9        <module>.hello_world
+EOF
+RUN
+
+NAME=pyc disasm for 2.7
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section.module:
+            ;-- <module>:
+            0x0000001e      LOAD_CONSTCodeObject(hello_world) from hello.py ; [00] ---- section size 25 named module
+            0x00000021      MAKE_FUNCTION
+            0x00000024      STORE_NAME         hello_world
+            0x00000027      LOAD_CONST             'world'
+            0x0000002a      PRINT_ITEM
+            0x0000002b      PRINT_NEWLINE
+            0x0000002c      LOAD_NAME         hello_world
+            0x0000002f      CALL_FUNCTION0 positional, 0 named
+            0x00000032      POP_TOP
+            0x00000033      LOAD_CONST                None
+EOF
+RUN
+
+NAME=pyc function
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+aa
+e scr.utf8=false
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section.module:
+            ;-- <module>:
+/ entry0 ();
+|           0x0000001e      LOAD_CONSTCodeObject(hello_world) from hello.py ; [00] ---- section size 25 named module
+|           0x00000021      MAKE_FUNCTION
+|           0x00000024      STORE_NAME         hello_world
+|           0x00000027      LOAD_CONST             'world'
+|           0x0000002a      PRINT_ITEM
+|           0x0000002b      PRINT_NEWLINE
+|           0x0000002c      LOAD_NAME         hello_world
+|           0x0000002f      CALL_FUNCTION0 positional, 0 named
+|           0x00000032      POP_TOP
+|           0x00000033      LOAD_CONST                None
+\           0x00000036      RETURN_VALUE
 EOF
 RUN
