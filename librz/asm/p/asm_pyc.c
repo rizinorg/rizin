@@ -25,17 +25,17 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 		}
 	}
 
-        RzList *cobjs = NULL;
-        RzList *interned_table = NULL;
+	RzList *cobjs = NULL;
+	RzList *interned_table = NULL;
 
-        if (shared){
+	if (shared) {
 		cobjs = rz_list_get_n(shared, 0);
 		interned_table = rz_list_get_n(shared, 1);
 	}
 
 	if (!opcodes_cache || !pyc_opcodes_equal(opcodes_cache, a->cpu)) {
 		opcodes_cache = get_opcode_by_version(a->cpu);
-		if (opcodes_cache == NULL){
+		if (opcodes_cache == NULL) {
 			eprintf("[x]Require Info from code object, use rizin instead\n");
 			return len;
 		}
@@ -43,7 +43,7 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	}
 	int r = rz_pyc_disasm(opstruct, buf, cobjs, interned_table, pc, opcodes_cache);
 	opstruct->size = r;
-        return r;
+	return r;
 }
 
 static bool finish(void *user) {
