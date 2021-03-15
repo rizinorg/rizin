@@ -220,7 +220,7 @@ aa 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-(fcn) fcn.00000000 32
+fcn.00000000 ();
 0x00000000      0800040c   jal   0x100020
 0x00000004      00000000   nop
 0x00000008      00000000   nop
@@ -251,7 +251,7 @@ pd 10
 afl
 EOF
 EXPECT=<<EOF
-(fcn) fcn.80100000 32
+fcn.80100000 ();
 0x80100000      0800040c   jal   fcn.80100020
 0x80100004      00000000   nop
 0x80100008      00000000   nop
@@ -261,7 +261,7 @@ EXPECT=<<EOF
 0x80100018      40040408   j     0x80101100
 0x8010001c      00000000   nop
   ; CALL XREF from fcn.80100000 @ 0x80100000
-(fcn) fcn.80100020 8
+fcn.80100020 ();
 0x80100020      0800e003   jr    ra
 0x80100024      00000000   nop
 0x80100000    1 32           fcn.80100000
@@ -287,7 +287,7 @@ af 2>/dev/null
 pdf
 EOF
 EXPECT=<<EOF
-(fcn) fcn.80100000 8
+fcn.80100000 ();
 0x80100000      0800e003   jr    ra
 0x80100004      0a184400   movz  v1, v0, a0
 EOF
@@ -307,7 +307,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-(fcn) fcn.00000000 8
+fcn.00000000 ();
           0x00000000      0800e003   jr    ra
           0x00000004      0a184400   movz  v1, v0, a0
 EOF
@@ -333,7 +333,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-(fcn) fcn.80100000 32
+fcn.80100000 ();
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      01000010   b     0x80100010
@@ -366,7 +366,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-(fcn) fcn.80100000 32
+fcn.80100000 ();
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      01000010   b     0x80100010
@@ -398,7 +398,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-(fcn) fcn.80100000 32
+fcn.80100000 ();
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      00000000   nop
@@ -430,7 +430,7 @@ af 2> /dev/null
 pdf
 EOF
 EXPECT=<<EOF
-(fcn) fcn.80100000 44
+fcn.80100000 ();
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
 0x80100008      00000000   nop
@@ -469,7 +469,7 @@ EOF
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
-(fcn) fcn.8060b500 80
+fcn.8060b500 (int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b500      002e0500   sll   a1, a1, 0x18
@@ -492,7 +492,7 @@ EXPECT=<<EOF
 0x8060b544      21100000   move  v0, zero
 0x8060b548      0800e003   jr    ra
 0x8060b54c      00000000   nop
-(fcn) fcn.8060b550 36
+fcn.8060b550 (int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b550      0000a290   lbu   v0, (a1)
@@ -505,7 +505,7 @@ EXPECT=<<EOF
 0x8060b56c      0800e003   jr    ra
 0x8060b570      000080a0   sb    zero, (a0)
 0x8060b574      00000000   nop
-(fcn) fcn.8060b578 20
+fcn.8060b578 ();
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal   fcn.8060b550
 0x8060b580      00000000   nop
@@ -538,7 +538,7 @@ EOF
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
-(fcn) fcn.8060b500 80
+fcn.8060b500 (int32_t arg1, int32_t arg2);
 0x8060b500      002e0500   sll a1, a1, 0x18
 0x8060b504      032e0500   sra a1, a1, 0x18
 0x8060b508      0f008010   beqz a0, 0x8060b548
@@ -559,7 +559,7 @@ EXPECT=<<EOF
 0x8060b544      21100000   move v0, zero
 0x8060b548      0800e003   jr ra
 0x8060b54c      00000000   nop
-(fcn) fcn.8060b550 36
+fcn.8060b550 (int32_t arg1, int32_t arg2);
 0x8060b550      0000a290   lbu v0, 0(a1)
 0x8060b554      05004010   beqz v0, 0x8060b56c
 0x8060b558      0100a524   addiu a1, a1, 1
@@ -570,7 +570,7 @@ EXPECT=<<EOF
 0x8060b56c      0800e003   jr ra
 0x8060b570      000080a0   sb zero, (a0)
 0x8060b574      00000000   nop
-(fcn) fcn.8060b578 20
+fcn.8060b578 ();
 0x8060b578      e0ffbd27   addiu sp, sp, -32
 0x8060b57c      542d180c   jal fcn.8060b550
 0x8060b580      00000000   nop
@@ -605,7 +605,7 @@ EOF
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
-(fcn) fcn.8060b500 80
+fcn.8060b500 (int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b500      002e0500   sll   a1, a1, 0x18
@@ -628,7 +628,7 @@ EXPECT=<<EOF
 0x8060b544      21100000   move  v0, zero
 0x8060b548      0800e003   jr    ra
 0x8060b54c      00000000   nop
-(fcn) fcn.8060b550 36
+fcn.8060b550 (int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b550      0000a290   lbu   v0, (a1)
@@ -641,7 +641,7 @@ EXPECT=<<EOF
 0x8060b56c      0800e003   jr    ra
 0x8060b570      000080a0   sb    zero, (a0)
 0x8060b574      00000000   nop
-(fcn) fcn.8060b578 20
+fcn.8060b578 ();
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal   fcn.8060b550
 0x8060b580      00000000   nop
@@ -676,7 +676,7 @@ EOF
 EXPECT=<<EOF
   0x8060b4f8      00000000   nop
   0x8060b4fc      00000000   nop
-/ (fcn) fcn.8060b500 80
+/ fcn.8060b500 (int32_t arg1, int32_t arg2);
 | ; arg int32_t arg1 @ a0
 | ; arg int32_t arg2 @ a1
 | 0x8060b500      002e0500   sll   a1, a1, 0x18
@@ -699,7 +699,7 @@ EXPECT=<<EOF
 | 0x8060b544      21100000   move  v0, zero
 | 0x8060b548      0800e003   jr    ra
 \ 0x8060b54c      00000000   nop
-/ (fcn) fcn.8060b550 36
+/ fcn.8060b550 (int32_t arg1, int32_t arg2);
 | ; arg int32_t arg1 @ a0
 | ; arg int32_t arg2 @ a1
 | 0x8060b550      0000a290   lbu   v0, (a1)
@@ -712,7 +712,7 @@ EXPECT=<<EOF
 | 0x8060b56c      0800e003   jr    ra
 \ 0x8060b570      000080a0   sb    zero, (a0)
   0x8060b574      00000000   nop
-/ (fcn) fcn.8060b578 20
+/ fcn.8060b578 ();
 | 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 | 0x8060b57c      542d180c   jal   fcn.8060b550
 | 0x8060b580      00000000   nop
