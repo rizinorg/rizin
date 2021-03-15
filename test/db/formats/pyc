@@ -15,6 +15,12 @@ EOF
 EXPECT=<<EOF
 machine  Python v3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
 EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
 RUN
 
 NAME=pyc load version37
@@ -24,6 +30,12 @@ iI~machine
 EOF
 EXPECT=<<EOF
 machine  Python v3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
 EOF
 RUN
 
@@ -35,6 +47,12 @@ EOF
 EXPECT=<<EOF
 machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
 EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
 RUN
 
 NAME=pyc load version27
@@ -45,6 +63,12 @@ EOF
 EXPECT=<<EOF
 machine  Python 2.7a2+ VM (rev edfed0e32cedf3b84c6e999052486a750a3f5bee)
 EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
 RUN
 
 NAME=pyc symbols
@@ -54,6 +78,12 @@ is~?Human
 EOF
 EXPECT=<<EOF
 9
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
 EOF
 RUN
 
@@ -71,6 +101,12 @@ EXPECT=<<EOF
 35  0x00002143   0x44 0x00002143   0x44 ---- module_.Batman.__init
 36  0x00002235    0x4 0x00002235    0x4 ---- module_.Batman.sing
 EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
 RUN
 
 NAME=pyc entry
@@ -80,6 +116,12 @@ ie~program
 EOF
 EXPECT=<<EOF
 vaddr=0x0000002a paddr=0x0000002a haddr=-1 type=program
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
 EOF
 RUN
 
@@ -105,6 +147,12 @@ EXPECT=<<EOF
         |   0x0000003a      LOAD_CONST                True
         `-> 0x0000003c      POP_TOP
 EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
+EOF
 RUN
 
 NAME=pyc symbols for pyc2.7
@@ -114,6 +162,12 @@ is~hello_world
 EOF
 EXPECT=<<EOF
 1   0x00000052 0x00000052 NONE FUNC 9        <module>.hello_world
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
 EOF
 RUN
 
@@ -136,6 +190,12 @@ EXPECT=<<EOF
             0x0000002f      CALL_FUNCTION0 positional, 0 named
             0x00000032      POP_TOP
             0x00000033      LOAD_CONST                None
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
 EOF
 RUN
 
@@ -161,5 +221,11 @@ EXPECT=<<EOF
 |           0x00000032      POP_TOP
 |           0x00000033      LOAD_CONST                None
 \           0x00000036      RETURN_VALUE
+EOF
+REGEXP_FILTER_ERR=<<EOF
+free_object\ \(0\)
+EOF
+EXPECT_ERR=<<EOF
+free_object (0)
 EOF
 RUN
