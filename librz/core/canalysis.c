@@ -6688,6 +6688,134 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 	return signature;
 }
 
+static RzAnalysisBlock *find_block_at_xref_addr(RzCore *core, ut64 addr) {
+	RzList *blocks = rz_analysis_get_blocks_in(core->analysis, addr);
+	if (!blocks) {
+		return NULL;
+	}
+	RzAnalysisBlock *block = NULL;
+	RzListIter *bit;
+	RzAnalysisBlock *block_cur;
+	rz_list_foreach (blocks, bit, block_cur) {
+		if (rz_analysis_block_op_starts_at(block_cur, addr)) {
+			block = block_cur;
+			break;
+		}
+	}
+	if (block) {
+		rz_analysis_block_ref(block);
+	}
+	rz_list_free(blocks);
+	return block;
+}
+
+static void relocation_function_process_noreturn(RzCore *core, RzAnalysisBlock *b, SetU *todo, ut64 opsize, ut64 reladdr, ut64 addr) {
+	rz_analysis_noreturn_add(core->analysis, NULL, reladdr);
+
+	// Add all functions that might have become noreturn by this to the todo list to reanalyze them later.
+	// This must be done before chopping because b might get freed.
+	RzListIter *it;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (b->fcns, it, fcn) {
+		set_u_add(todo, (ut64)(size_t)fcn);
+	}
+
+	// Chop the block
+	rz_analysis_block_chop_noreturn(b, addr + opsize);
+}
+
+static void relocation_noreturn_process(RzCore *core, RzList *noretl, SetU *todo, RzAnalysisBlock *b, RzBinReloc *rel, ut64 opsize, ut64 addr) {
+	RzListIter *iter3;
+	char *noret;
+	if (rel->import) {
+		rz_list_foreach (noretl, iter3, noret) {
+			if (!strcmp(rel->import->name, noret)) {
+				relocation_function_process_noreturn(core, b, todo, opsize, rel->vaddr, addr);
+			}
+		}
+	} else if (rel->symbol) {
+		rz_list_foreach (noretl, iter3, noret) {
+			if (!strcmp(rel->symbol->name, noret)) {
+				relocation_function_process_noreturn(core, b, todo, opsize, rel->symbol->vaddr, addr);
+			}
+		}
+	}
+}
+
+#define CALL_BUF_SIZE 32
+
+struct core_noretl {
+	RzCore *core;
+	RzList *noretl;
+	SetU *todo;
+};
+
+static bool process_reference_noreturn_cb(void *u, const ut64 k, const void *v) {
+	RzCore *core = ((struct core_noretl *)u)->core;
+	RzList *noretl = ((struct core_noretl *)u)->noretl;
+	SetU *todo = ((struct core_noretl *)u)->todo;
+	RzAnalysisRef *ref = (RzAnalysisRef *)v;
+	if (ref->type == RZ_ANALYSIS_REF_TYPE_CALL || ref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+		// At first we check if there are any relocations that override the call address
+		// Note, that the relocation overrides only the part of the instruction
+		ut64 addr = k;
+		ut8 buf[CALL_BUF_SIZE] = { 0 };
+		RzAnalysisOp op = { 0 };
+		if (core->analysis->iob.read_at(core->analysis->iob.io, addr, buf, CALL_BUF_SIZE)) {
+			if (rz_analysis_op(core->analysis, &op, addr, buf, core->blocksize, 0)) {
+				RzBinReloc *rel = rz_core_getreloc(core, addr, op.size);
+				if (rel) {
+					// Find the block that has an instruction at exactly the reference addr
+					RzAnalysisBlock *block = find_block_at_xref_addr(core, addr);
+					if (!block) {
+						return true;
+					}
+					relocation_noreturn_process(core, noretl, todo, block, rel, op.size, addr);
+				}
+			}
+		} else {
+			eprintf("Fail to load %d bytes of data at 0x%08" PFMT64x "\n", CALL_BUF_SIZE, addr);
+		}
+	}
+	return true;
+}
+
+static bool process_refs_cb(void *u, const ut64 k, const void *v) {
+	HtUP *ht = (HtUP *)v;
+	ht_up_foreach(ht, process_reference_noreturn_cb, u);
+	return true;
+}
+
+static bool reanalyze_fcns_cb(void *u, const ut64 k, const void *v) {
+	RzCore *core = u;
+	RzAnalysisFunction *fcn = (RzAnalysisFunction *)(size_t)k;
+	if (fcn->addr && analyze_noreturn_function(core, fcn)) {
+		fcn->is_noreturn = true;
+		rz_analysis_noreturn_add(core->analysis, NULL, fcn->addr);
+	}
+	return true;
+}
+
+RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) {
+	// Processing every reference calls rz_analysis_op() which sometimes changes the
+	// state of `asm.bits` variable, thus we save it to restore after the processing
+	// is finished.
+	int bits1 = core->analysis->bits;
+	int bits2 = core->rasm->bits;
+	// find known noreturn functions to propagate
+	RzList *noretl = rz_types_function_noreturn(core->analysis->sdb_types);
+	// List of the potentially noreturn functions
+	SetU *todo = set_u_new();
+	struct core_noretl u = { core, noretl, todo };
+	ht_up_foreach(core->analysis->dict_xrefs, process_refs_cb, &u);
+	rz_list_free(noretl);
+	core->analysis->bits = bits1;
+	core->rasm->bits = bits2;
+	// For every function in todo list analyze if it's potentially become noreturn
+	ht_up_foreach(todo, reanalyze_fcns_cb, core);
+	set_u_free(todo);
+}
+
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 	RzList *todo = rz_list_newf(free);
 	if (!todo) {
@@ -6710,6 +6838,10 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 		}
 	}
 
+	// At first we propagate all noreturn functions that are imports or symbols
+	// via the relocations
+	rz_core_analysis_propagate_noreturn_relocs(core, addr);
+
 	// find known noreturn functions to propagate
 	RzListIter *iter;
 	RzAnalysisFunction *f;
@@ -6719,7 +6851,6 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 			rz_list_append(todo, n);
 		}
 	}
-
 	while (!rz_list_empty(todo)) {
 		ut64 *paddr = (ut64 *)rz_list_pop(todo);
 		ut64 noret_addr = *paddr;
@@ -6743,23 +6874,7 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 			}
 
 			// Find the block that has an instruction at exactly the xref addr
-			RzList *blocks = rz_analysis_get_blocks_in(core->analysis, call_addr);
-			if (!blocks) {
-				continue;
-			}
-			RzAnalysisBlock *block = NULL;
-			RzListIter *bit;
-			RzAnalysisBlock *block_cur;
-			rz_list_foreach (blocks, bit, block_cur) {
-				if (rz_analysis_block_op_starts_at(block_cur, call_addr)) {
-					block = block_cur;
-					break;
-				}
-			}
-			if (block) {
-				rz_analysis_block_ref(block);
-			}
-			rz_list_free(blocks);
+			RzAnalysisBlock *block = find_block_at_xref_addr(core, call_addr);
 			if (!block) {
 				continue;
 			}
