@@ -5397,7 +5397,9 @@ toro:
 				ds_print_core_vmode(ds, ds->asm_hint_pos);
 			}
 		}
-		ds_print_op_size(ds);
+		if (!mi_found || mi_type != RZ_META_TYPE_STRING) {
+			ds_print_op_size(ds);
+		}
 		ds_print_trace(ds);
 		ds_print_cycles(ds);
 		ds_print_family(ds);
