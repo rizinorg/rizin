@@ -218,8 +218,6 @@ typedef struct {
 	char *cmd;
 } RzCoreGadget;
 
-RZ_API void rz_core_gadget_free(RzCoreGadget *g);
-
 typedef struct rz_core_task_t RzCoreTask;
 
 /**
@@ -384,8 +382,6 @@ typedef struct rz_core_item_t {
 
 RZ_API void rz_core_item_free(RzCoreItem *ci);
 
-RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
-
 typedef struct rz_core_cmpwatch_t {
 	ut64 addr;
 	int size;
@@ -397,6 +393,10 @@ typedef struct rz_core_cmpwatch_t {
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef RZ_API
+RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
+
+RZ_API void rz_core_gadget_free(RzCoreGadget *g);
+
 RZ_API bool rz_core_plugin_init(RzCore *core);
 RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
 RZ_API bool rz_core_plugin_fini(RzCore *core);
@@ -419,7 +419,6 @@ RZ_API RzCore *rz_core_ncast(ut64 p);
 RZ_API RzCore *rz_core_cast(void *p);
 RZ_API bool rz_core_bin_load_structs(RzCore *core, const char *file);
 RZ_API int rz_core_config_init(RzCore *core);
-RZ_API void rz_core_config_update(RzCore *core);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
 RZ_API int rz_core_prompt(RzCore *core, int sync);
 RZ_API int rz_core_prompt_exec(RzCore *core);
@@ -498,8 +497,6 @@ RZ_API void rz_core_visual_seek_animation_redo(RzCore *core);
 RZ_API void rz_core_visual_seek_animation_undo(RzCore *core);
 RZ_API void rz_core_visual_asm(RzCore *core, ut64 addr);
 RZ_API void rz_core_visual_colors(RzCore *core);
-RZ_API int rz_core_visual_xrefs_x(RzCore *core);
-RZ_API int rz_core_visual_xrefs_X(RzCore *core);
 RZ_API void rz_core_visual_showcursor(RzCore *core, int x);
 RZ_API void rz_core_visual_offset(RzCore *core);
 RZ_API int rz_core_visual_hud(RzCore *core);
@@ -519,7 +516,6 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core);
 RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 RZ_API void rz_core_analysis_esil_graph(RzCore *core, const char *expr);
 
-RZ_API void rz_core_list_io(RzCore *core);
 RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra);
 RZ_API void rz_listinfo_free(RzListInfo *info);
 /* visual marks */
@@ -559,8 +555,6 @@ RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, int size);
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
-RZ_API int rz_core_set_file_by_fd(RzCore *core, ut64 bin_fd);
-RZ_API int rz_core_set_file_by_name(RzBin *bin, const char *name);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 
 /* cdebug.c */
@@ -641,7 +635,6 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input);
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 RZ_API int rz_core_esil_step_back(RzCore *core);
-RZ_API ut64 rz_core_analysis_get_bbaddr(RzCore *core, ut64 addr);
 RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
 RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name);
 RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 addr, bool analyze_recursively);
@@ -652,18 +645,14 @@ RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core);
 RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad);
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API ut64 rz_core_analysis_fcn_list_size(RzCore *core);
-RZ_API void rz_core_analysis_fcn_labels(RzCore *core, RzAnalysisFunction *fcn, int rad);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
 RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
-RZ_API int rz_core_analysis_graph_fcn(RzCore *core, char *input, int opts);
 RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
-RZ_API int rz_core_analysis_ref_list(RzCore *core, int rad);
 RZ_API int rz_core_analysis_all(RzCore *core);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
-RZ_API void rz_cmd_analysis_blocks(RzCore *core, const char *input);
 RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly);
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 
@@ -703,8 +692,6 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode);
-RZ_API int rz_core_print_fcn_disasm(RzPrint *p, RzCore *core, ut64 addr, int l, int invbreak, int cbytes);
-RZ_API int rz_core_get_prc_cols(RzCore *core);
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 
@@ -716,17 +703,12 @@ RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va);
 RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile);
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd);
 RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name);
-RZ_API int rz_core_bin_reload(RzCore *core, const char *file, ut64 baseaddr);
 RZ_API bool rz_core_bin_load(RzCore *core, const char *file, ut64 baseaddr);
 RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr);
 RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
 RZ_API int rz_core_bin_list(RzCore *core, int mode);
 RZ_API bool rz_core_bin_delete(RzCore *core, ut32 binfile_idx);
 RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name);
-
-// XXX - this is kinda hacky, maybe there should be a way to
-// refresh the bin environment without specific calls?
-RZ_API int rz_core_pseudo_code(RzCore *core, const char *input);
 
 /* gdiff.c */
 RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2);
@@ -796,7 +778,6 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode);
 /* rtr */
 RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port);
 RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *port, const char *cmd);
-RZ_API void rz_core_rtr_help(RzCore *core);
 RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_list(RzCore *core);
 RZ_API void rz_core_rtr_add(RzCore *core, const char *input);
@@ -809,7 +790,6 @@ RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path);
 
 RZ_API int rz_core_visual_prevopsz(RzCore *core, ut64 addr);
 RZ_API void rz_core_visual_config(RzCore *core);
-RZ_API void rz_core_visual_mounts(RzCore *core);
 RZ_API void rz_core_visual_analysis(RzCore *core, const char *input);
 RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input);
 RZ_API void rz_core_visual_define(RzCore *core, const char *arg, int distance);
@@ -868,10 +848,6 @@ RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);
 RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *a, ut64 from, ut64 to, ut64 step);
 RZ_API void rz_core_analysis_stats_free(RzCoreAnalStats *s);
-
-RZ_API void rz_core_syscmd_ls(const char *input);
-RZ_API void rz_core_syscmd_cat(const char *file);
-RZ_API void rz_core_syscmd_mkdir(const char *dir);
 
 RZ_API int rz_line_hist_offset_up(RzLine *line);
 RZ_API int rz_line_hist_offset_down(RzLine *line);
