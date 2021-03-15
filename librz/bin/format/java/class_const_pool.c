@@ -128,6 +128,14 @@ bool java_constant_pool_is_string(const ConstPool *cpool) {
 	return cpool->tag == CONSTANT_POOL_UTF8 || cpool->tag == CONSTANT_POOL_UNICODE;
 }
 
+bool java_constant_pool_is_number(const ConstPool *cpool) {
+	rz_return_val_if_fail(cpool, false);
+	return cpool->tag == CONSTANT_POOL_INTEGER ||
+		cpool->tag == CONSTANT_POOL_FLOAT ||
+		cpool->tag == CONSTANT_POOL_LONG ||
+		cpool->tag == CONSTANT_POOL_DOUBLE;
+}
+
 bool java_constant_pool_is_import(const ConstPool *cpool) {
 	rz_return_val_if_fail(cpool, false);
 	return cpool->tag == CONSTANT_POOL_METHODREF ||

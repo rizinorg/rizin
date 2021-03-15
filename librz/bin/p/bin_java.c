@@ -201,6 +201,38 @@ static int demangle_type(const char *str) {
 	return RZ_BIN_NM_JAVA;
 }
 
+static char *enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
+	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
+	if (!jclass) {
+		return NULL;
+	}
+	for (int i = 0; i < asm_len; ++i) {
+		if (asm_str[i] == 'c' && !strncmp(asm_str + i, "constant_pool.", 14)) {
+			const char *snum = asm_str + i + 14;
+			if (!IS_DIGIT(*snum)) {
+				rz_warn_if_reached();
+				continue;
+			}
+			int index = atoi(snum);
+			char *tmp = rz_bin_java_class_const_pool_resolve_index(jclass, index);
+			if (!tmp) {
+				rz_warn_if_reached();
+				return NULL;
+			}
+			char *dem = rz_bin_demangle_java(tmp);
+			if (!dem) {
+				dem = tmp;
+			} else {
+				free(tmp);
+			}
+			char *result = rz_str_newf("%.*s%s", i, asm_str, dem);
+			free(dem);
+			return result;
+		}
+	}
+	return NULL;
+}
+
 RzBinPlugin rz_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
@@ -216,6 +248,7 @@ RzBinPlugin rz_bin_plugin_java = {
 	.symbols = symbols,
 	.imports = &imports,
 	.strings = &strings,
+	.enrich_asm = &enrich_asm,
 	.info = &info,
 	.fields = fields,
 	.libs = libs,

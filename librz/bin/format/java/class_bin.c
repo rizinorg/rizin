@@ -512,6 +512,67 @@ RZ_API void rz_bin_java_class_as_text(RzBinJavaClass *bin, RzStrBuf *sb) {
 	}
 }
 
+static inline bool is_dual_index(const ConstPool *cpool) {
+	return cpool->tag == CONSTANT_POOL_FIELDREF ||
+		cpool->tag == CONSTANT_POOL_METHODREF ||
+		cpool->tag == CONSTANT_POOL_INTERFACEMETHODREF ||
+		cpool->tag == CONSTANT_POOL_NAMEANDTYPE ||
+		cpool->tag == CONSTANT_POOL_DYNAMIC ||
+		cpool->tag == CONSTANT_POOL_INVOKEDYNAMIC;
+}
+
+RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st32 index) {
+	rz_return_val_if_fail(bin && index > 0, NULL);
+	ut16 arg0, arg1;
+	char *tmp;
+	const ConstPool *cpool = java_class_constant_pool_at(bin, index);
+
+	if (!cpool) {
+		return NULL;
+	}
+
+	if (java_constant_pool_is_string(cpool) ||
+		java_constant_pool_is_number(cpool)) {
+		return java_constant_pool_stringify(cpool);
+	} else if (cpool->tag == CONSTANT_POOL_CLASS) {
+		if (java_constant_pool_resolve(cpool, &arg0, NULL) != 1) {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		tmp = rz_bin_java_class_const_pool_resolve_index(bin, arg0);
+		rz_str_replace_char(tmp, '/', '.');
+		return tmp;
+	} else if (cpool->tag == CONSTANT_POOL_STRING) {
+		if (java_constant_pool_resolve(cpool, &arg0, NULL) != 1) {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		char *s0 = rz_bin_java_class_const_pool_resolve_index(bin, arg0);
+		tmp = rz_str_newf("\"%s\"", s0);
+		free(s0);
+		return tmp;
+	} else if (is_dual_index(cpool)) {
+		if (java_constant_pool_resolve(cpool, &arg0, &arg1) != 2) {
+			rz_warn_if_reached();
+			return NULL;
+		}
+		char *s0 = rz_bin_java_class_const_pool_resolve_index(bin, arg0);
+		char *s1 = rz_bin_java_class_const_pool_resolve_index(bin, arg1);
+		if (!s0 || !s1) {
+			rz_warn_if_reached();
+			free(s0);
+			free(s1);
+			return NULL;
+		}
+		tmp = rz_str_newf("%s:%s", s0, s1);
+		rz_str_replace_char(tmp, '/', '.');
+		free(s0);
+		free(s1);
+		return tmp;
+	}
+	return NULL;
+}
+
 RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) {
 	rz_return_if_fail(bin && sb);
 
@@ -1311,11 +1372,12 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RzBinJavaClass *bin, RzStrBuf *
 
 	char number[16];
 	const char *tag;
-	char *text;
+	char *text, *rtext;
 	rz_strbuf_appendf(sb, "Constant pool: %u\n", bin->constant_pool_count);
 	if (bin->constant_pool) {
 		int padding = calculate_padding_ut16(bin->constant_pool_count) + 1;
 		for (ut32 i = 0; i < bin->constant_pool_count; ++i) {
+			rtext = NULL;
 			const ConstPool *cpool = bin->constant_pool[i];
 			if (!cpool) {
 				continue;
@@ -1327,8 +1389,17 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RzBinJavaClass *bin, RzStrBuf *
 			}
 			snprintf(number, sizeof(number), "#%u", i);
 			text = java_constant_pool_stringify(cpool);
-			rz_strbuf_appendf(sb, "  %*s = %-19s %s\n", padding, number, tag, text);
+			if (i > 0 && !java_constant_pool_is_string(cpool) &&
+				!java_constant_pool_is_number(cpool)) {
+				rtext = rz_bin_java_class_const_pool_resolve_index(bin, i);
+			}
+			if (rtext) {
+				rz_strbuf_appendf(sb, "  %*s = %-19s %-14s // %s\n", padding, number, tag, text, rtext);
+			} else {
+				rz_strbuf_appendf(sb, "  %*s = %-19s %s\n", padding, number, tag, text);
+			}
 			free(text);
+			free(rtext);
 		}
 	}
 }
@@ -1336,10 +1407,11 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RzBinJavaClass *bin, RzStrBuf *
 RZ_API void rz_bin_java_class_const_pool_as_json(RzBinJavaClass *bin, PJ *j) {
 	rz_return_if_fail(bin && j);
 	const char *tag;
-	char *text;
+	char *text, *rtext;
 	pj_a(j);
 	if (bin->constant_pool) {
 		for (ut32 i = 0; i < bin->constant_pool_count; ++i) {
+			rtext = NULL;
 			const ConstPool *cpool = bin->constant_pool[i];
 			if (!cpool) {
 				continue;
@@ -1355,8 +1427,14 @@ RZ_API void rz_bin_java_class_const_pool_as_json(RzBinJavaClass *bin, PJ *j) {
 			pj_kn(j, "tag_n", cpool->tag);
 			pj_ks(j, "tag_s", tag);
 			pj_ks(j, "value", text ? text : "");
+			if (i > 0 && !java_constant_pool_is_string(cpool) &&
+				!java_constant_pool_is_number(cpool)) {
+				rtext = rz_bin_java_class_const_pool_resolve_index(bin, i);
+				pj_ks(j, "resolved", rtext ? rtext : "");
+			}
 			pj_end(j);
 			free(text);
+			free(rtext);
 		}
 	}
 	pj_end(j);

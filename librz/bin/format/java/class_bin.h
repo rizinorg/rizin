@@ -73,6 +73,7 @@ RZ_API ut32 rz_bin_java_class_access_flags(RzBinJavaClass *bin);
 RZ_API char *rz_bin_java_class_access_flags_readable(RzBinJavaClass *bin, ut16 mask);
 RZ_API void rz_bin_java_class_as_json(RzBinJavaClass *bin, PJ *j);
 RZ_API void rz_bin_java_class_as_text(RzBinJavaClass *bin, RzStrBuf *sb);
+RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st32 index);
 
 /* used in bin_java.c and core_java.c */
 RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb);

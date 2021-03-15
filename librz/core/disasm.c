@@ -1048,6 +1048,15 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	if (!ds->opstr) {
 		ds->opstr = strdup(rz_asm_op_get_asm(&ds->asmop));
 	}
+	if (ds->opstr && core->bin && core->bin->cur) {
+		RzBinPlugin *plugin = rz_bin_file_cur_plugin(core->bin->cur);
+		char *tmp = plugin && plugin->enrich_asm ? plugin->enrich_asm(core->bin->cur, ds->opstr, strlen(ds->opstr)) : NULL;
+		if (tmp) {
+			free(ds->opstr);
+			ds->opstr = tmp;
+		}
+	}
+
 	/* initialize */
 	core->parser->subrel = rz_config_get_b(core->config, "asm.sub.rel");
 	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
