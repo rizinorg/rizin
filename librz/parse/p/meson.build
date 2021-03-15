@@ -17,9 +17,6 @@ parse_plugins = [
   'z80_pseudo'
 ]
 
-parse_enabled_static_plugins = parse_plugins
-parse_enabled_shared_plugins = []
-
 parse_6502_pseudo_sources = files(
   'parse_6502_pseudo.c',
 )

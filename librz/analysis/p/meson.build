@@ -55,9 +55,6 @@ analysis_plugins = [
   'z80',
 ]
 
-analysis_enabled_static_plugins = analysis_plugins
-analysis_enabled_shared_plugins = []
-
 analysis_6502_sources = files(
   'analysis_6502.c',
 )

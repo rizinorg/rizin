@@ -649,15 +649,15 @@ summary({
 }, section: 'Configuration', bool_yn: true)
 
 summary({
-  'Analysis Plugins': analysis_plugins,
-  'Assembler Plugins': asm_plugins,
-  'Binary Plugins': bin_plugins,
-  'Breakpoint Plugins': bp_plugins,
-  'Core Plugins': core_plugins,
-  'Crypto Plugins': crypto_plugins,
-  'Debug Plugins': debug_plugins,
-  'Egg Plugins': egg_plugins,
-  'IO Plugins': io_plugins,
-  'Lang Plugins': lang_plugins,
-  'Parse Plugins': parse_plugins,
+  'Analysis Plugins': analysis_enabled_static_plugins + analysis_enabled_shared_plugins,
+  'Assembler Plugins': asm_enabled_static_plugins + asm_enabled_shared_plugins,
+  'Binary Plugins': bin_enabled_static_plugins + bin_enabled_shared_plugins,
+  'Breakpoint Plugins': bp_enabled_static_plugins + bp_enabled_shared_plugins,
+  'Core Plugins': core_enabled_static_plugins + core_enabled_shared_plugins,
+  'Crypto Plugins': crypto_enabled_static_plugins + crypto_enabled_shared_plugins,
+  'Debug Plugins': debug_enabled_static_plugins + debug_enabled_shared_plugins,
+  'Egg Plugins': egg_enabled_static_plugins + egg_enabled_shared_plugins,
+  'IO Plugins': io_enabled_static_plugins + io_enabled_shared_plugins,
+  'Lang Plugins': lang_enabled_static_plugins + lang_enabled_shared_plugins,
+  'Parse Plugins': parse_enabled_static_plugins + parse_enabled_shared_plugins,
 }, section: 'Plugins', list_sep: ', ')

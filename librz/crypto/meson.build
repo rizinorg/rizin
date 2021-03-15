@@ -17,8 +17,38 @@ crypto_plugins = [
   'xor',
 ]
 
-crypto_enabled_static_plugins = crypto_plugins
+crypto_enabled_plugins = get_option('crypto_plugins')
+crypto_enabled_static_plugins = []
 crypto_enabled_shared_plugins = []
+
+foreach plugin : crypto_enabled_plugins
+  parts = plugin.split('.')
+  type = 'static'
+  if parts.length() == 1
+    name = parts[0]
+  elif parts.length() == 2
+    type = parts[0]
+    name = parts[1]
+  else
+    error('Wrong crypto plugin name format: @0@.'.format(plugin))
+  endif
+
+  if name not in crypto_plugins and name != '*'
+    error('Crypto plugin @0@ does not exist!'.format(name))
+  endif
+
+  if name == '*'
+    to_add = crypto_plugins
+  else
+    to_add = [name]
+  endif
+
+  if type == 'static'
+    crypto_enabled_static_plugins += to_add
+  else
+    crypto_enabled_shared_plugins += to_add
+  endif
+endforeach
 
 rz_crypto_dependencies = [
   rz_util_dep,

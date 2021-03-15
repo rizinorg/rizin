@@ -7,9 +7,6 @@ bp_plugins = [
   'x86'
 ]
 
-bp_enabled_static_plugins = bp_plugins
-bp_enabled_shared_plugins = []
-
 bp_arm_sources = files(
   'bp_arm.c',
 )
