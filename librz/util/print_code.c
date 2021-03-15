@@ -240,8 +240,7 @@ RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char l
 			rz_print_cursor(p, i, 1, 0);
 		}
 		pj_end(pj);
-		p->cb_printf(pj_string(pj));
-		p->cb_printf("\n");
+		p->cb_printf("%s\n", pj_string(pj));
 		pj_free(pj);
 	} break;
 	case 'P':
