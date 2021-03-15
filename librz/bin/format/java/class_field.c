@@ -62,7 +62,7 @@ Field *java_field_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 offse
 	for (ut32 i = 0; i < field->attributes_count; ++i) {
 		offset = rz_buf_tell(buf) + base;
 		Attribute *attr = java_attribute_new(buf, offset);
-		if (attr && java_attribute_resolve(pool, poolsize, attr, buf)) {
+		if (attr && java_attribute_resolve(pool, poolsize, attr, buf, false)) {
 			field->attributes[i] = attr;
 		} else {
 			free(attr);

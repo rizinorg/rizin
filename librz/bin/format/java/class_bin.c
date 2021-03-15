@@ -6,10 +6,6 @@
 
 #define ACCESS_FLAG_MASK_SRC (ACCESS_FLAG_PUBLIC | ACCESS_FLAG_PRIVATE | ACCESS_FLAG_PROTECTED | ACCESS_FLAG_STATIC | ACCESS_FLAG_FINAL)
 
-#define java_class_is_older_format(bin) \
-	((bin)->major_version < (45) || \
-		((bin)->major_version == (45) && (bin)->minor_version < (3)))
-
 #define CLASS_ACCESS_FLAGS_SIZE 16
 static const AccessFlagsReadable access_flags_list[CLASS_ACCESS_FLAGS_SIZE] = {
 	{ ACCESS_FLAG_PUBLIC, /*    */ "public" },
@@ -50,6 +46,16 @@ static ut32 sanitize_size(st64 buffer_size, ut32 count, ut32 min_struct_size) {
 	return memory_size <= buffer_size ? count : 0;
 }
 
+static bool java_class_is_oak(RzBinJavaClass *bin) {
+	return bin->major_version < (45) || (bin->major_version == 45 && bin->minor_version < 3);
+}
+
+static bool is_eob(RzBuffer *buf) {
+	st64 size = rz_buf_size(buf);
+	st64 position = rz_buf_tell(buf);
+	return position >= size;
+}
+
 static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *buf, ut64 *size) {
 	// https://docs.oracle.com/javase/specs/jvms/se15/html/jvms-4.html#jvms-4.1
 	ut64 offset = 0;
@@ -62,6 +68,10 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 	bin->magic = rz_buf_read_be32(buf);
 	bin->minor_version = rz_buf_read_be16(buf);
 	bin->major_version = rz_buf_read_be16(buf);
+
+	// Before version 1.0.2 it was called oak
+	// which uses a different file structure.
+	bool is_oak = java_class_is_oak(bin);
 
 	bin->constant_pool_count = rz_buf_read_be16(buf);
 	bin->constant_pool_count = sanitize_size(buffer_size - rz_buf_tell(buf), bin->constant_pool_count, 3);
@@ -85,6 +95,10 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 				bin->constant_pool[i] = java_constant_null_new(offset);
 			}
 		}
+		if (is_eob(buf)) {
+			rz_warn_if_reached();
+			goto java_class_parse_bad;
+		}
 	}
 	bin->access_flags = rz_buf_read_be16(buf);
 	bin->this_class = rz_buf_read_be16(buf);
@@ -103,6 +117,10 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 			offset = rz_buf_tell(buf) + base;
 			bin->interfaces[i] = java_interface_new(buf, offset);
 		}
+		if (is_eob(buf)) {
+			rz_warn_if_reached();
+			goto java_class_parse_bad;
+		}
 	}
 
 	bin->fields_count = rz_buf_read_be16(buf);
@@ -119,6 +137,10 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 			bin->fields[i] = java_field_new(bin->constant_pool,
 				bin->constant_pool_count, buf, offset);
 		}
+		if (is_eob(buf)) {
+			rz_warn_if_reached();
+			goto java_class_parse_bad;
+		}
 	}
 
 	bin->methods_count = rz_buf_read_be16(buf);
@@ -133,7 +155,11 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 		for (ut32 i = 0; i < bin->methods_count; ++i) {
 			offset = rz_buf_tell(buf) + base;
 			bin->methods[i] = java_method_new(bin->constant_pool,
-				bin->constant_pool_count, buf, offset);
+				bin->constant_pool_count, buf, offset, is_oak);
+		}
+		if (is_eob(buf)) {
+			rz_warn_if_reached();
+			goto java_class_parse_bad;
 		}
 	}
 
@@ -149,7 +175,7 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 		for (ut32 i = 0; i < bin->attributes_count; ++i) {
 			offset = rz_buf_tell(buf) + base;
 			Attribute *attr = java_attribute_new(buf, offset);
-			if (attr && java_attribute_resolve(bin->constant_pool, bin->constant_pool_count, attr, buf)) {
+			if (attr && java_attribute_resolve(bin->constant_pool, bin->constant_pool_count, attr, buf, false)) {
 				bin->attributes[i] = attr;
 			} else {
 				java_attribute_free(attr);
@@ -221,32 +247,41 @@ RZ_API char *rz_bin_java_class_version(RzBinJavaClass *bin) {
 		return NULL;
 	}
 #define is_version(bin, major, minor) ((bin)->major_version == (major) && (bin)->minor_version >= (minor))
-	if (is_version(bin, 45, 3)) {
-		return strdup("Java SE base (< 1.5)"); // base level for all attributes
+	if (bin->major_version < 45 ||
+		(bin->major_version == 45 && bin->minor_version < 3)) {
+		return strdup("Java SE 1.0.2"); // old format
+	} else if (is_version(bin, 45, 3)) {
+		return strdup("Java SE 1.1");
+	} else if (is_version(bin, 46, 0)) {
+		return strdup("Java SE 1.2");
+	} else if (is_version(bin, 47, 0)) {
+		return strdup("Java SE 1.3");
+	} else if (is_version(bin, 48, 0)) {
+		return strdup("Java SE 1.4");
 	} else if (is_version(bin, 49, 0)) {
-		return strdup("Java SE 1.5"); // Java SE 1.5: enum, generics, annotations
+		return strdup("Java SE 1.5"); // enum, generics, annotations
 	} else if (is_version(bin, 50, 0)) {
-		return strdup("Java SE 1.6"); // Java SE 1.6: stackmaps
+		return strdup("Java SE 1.6"); // stackmaps
 	} else if (is_version(bin, 51, 0)) {
-		return strdup("Java SE 1.7"); // Java SE 1.7
+		return strdup("Java SE 1.7");
 	} else if (is_version(bin, 52, 0)) {
-		return strdup("Java SE 1.8"); // Java SE 1.8: lambda, type annos, param names
+		return strdup("Java SE 1.8"); // lambda, type annos, param names
 	} else if (is_version(bin, 53, 0)) {
-		return strdup("Java SE 1.9"); // Java SE 1.9: modules, indy string concat
+		return strdup("Java SE 1.9"); // modules, indy string concat
 	} else if (is_version(bin, 54, 0)) {
-		return strdup("Java SE 10"); // Java SE 10
+		return strdup("Java SE 10");
 	} else if (is_version(bin, 55, 0)) {
-		return strdup("Java SE 11"); // Java SE 11: constant dynamic, nest mates
+		return strdup("Java SE 11"); // constant dynamic, nest mates
 	} else if (is_version(bin, 56, 0)) {
-		return strdup("Java SE 12"); // Java SE 12
+		return strdup("Java SE 12");
 	} else if (is_version(bin, 57, 0)) {
-		return strdup("Java SE 13"); // Java SE 13
+		return strdup("Java SE 13");
 	} else if (is_version(bin, 58, 0)) {
-		return strdup("Java SE 14"); // Java SE 14
+		return strdup("Java SE 14");
 	} else if (is_version(bin, 59, 0)) {
-		return strdup("Java SE 15"); // Java SE 15
+		return strdup("Java SE 15");
 	} else if (is_version(bin, 60, 0)) {
-		return strdup("Java SE 16"); // Java SE 16
+		return strdup("Java SE 16");
 	}
 #undef is_version
 	return strdup("unknown");

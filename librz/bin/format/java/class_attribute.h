@@ -129,6 +129,6 @@ typedef struct java_attribute_module_main_class_t {
 
 Attribute *java_attribute_new(RzBuffer *buf, ut64 offset);
 void java_attribute_free(Attribute *attr);
-bool java_attribute_resolve(ConstPool **pool, ut32 poolsize, Attribute *attr, RzBuffer *buf);
+bool java_attribute_resolve(ConstPool **pool, ut32 poolsize, Attribute *attr, RzBuffer *buf, bool is_oak);
 
 #endif /* RZ_BIN_JAVA_CLASS_ATTRIBUTE_H */

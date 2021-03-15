@@ -52,16 +52,16 @@ bool java_attribute_set_constantvalue(Attribute *attr, RzBuffer *buf) {
 	return true;
 }
 
-bool java_attribute_set_code(ConstPool **pool, ut32 poolsize, Attribute *attr, RzBuffer *buf) {
+bool java_attribute_set_code(ConstPool **pool, ut32 poolsize, Attribute *attr, RzBuffer *buf, bool is_oak) {
 	AttributeCode *ac = RZ_NEW0(AttributeCode);
 	if (!ac) {
 		rz_warn_if_reached();
 		return false;
 	}
-	ac->max_stack = rz_buf_read_be16(buf);
-	ac->max_locals = rz_buf_read_be16(buf);
-	ac->code_length = rz_buf_read_be32(buf);
-	ac->code_offset = attr->offset + 14; // 6 bytes for attribute + 8 as code
+	ac->max_stack = is_oak ? rz_buf_read8(buf) : rz_buf_read_be16(buf);
+	ac->max_locals = is_oak ? rz_buf_read8(buf) : rz_buf_read_be16(buf);
+	ac->code_length = is_oak ? rz_buf_read_be16(buf) : rz_buf_read_be32(buf);
+	ac->code_offset = attr->offset + (is_oak ? 10 : 14); // 6 bytes for attribute + 8 as code
 	ac->code = copy_buffer(buf, ac->code_length, false);
 	if (!ac->code) {
 		free(ac);
@@ -98,7 +98,7 @@ bool java_attribute_set_code(ConstPool **pool, ut32 poolsize, Attribute *attr, R
 
 		for (ut32 i = 0; i < ac->attributes_count; ++i) {
 			Attribute *attr = java_attribute_new(buf, UT64_MAX);
-			if (attr && java_attribute_resolve(pool, poolsize, attr, buf)) {
+			if (attr && java_attribute_resolve(pool, poolsize, attr, buf, false)) {
 				ac->attributes[i] = attr;
 			} else {
 				java_attribute_free(attr);
@@ -381,7 +381,7 @@ bool java_attribute_set_modulemainclass(Attribute *attr, RzBuffer *buf) {
 	return true;
 }
 
-bool java_attribute_resolve(ConstPool **pool, ut32 poolsize, Attribute *attr, RzBuffer *buf) {
+bool java_attribute_resolve(ConstPool **pool, ut32 poolsize, Attribute *attr, RzBuffer *buf, bool is_oak) {
 	char *name = resolve_const_pool_index(pool, poolsize, attr->attribute_name_index);
 	if (!name) {
 		return false;
@@ -391,7 +391,7 @@ bool java_attribute_resolve(ConstPool **pool, ut32 poolsize, Attribute *attr, Rz
 	if (!strcmp(name, "ConstantValue")) {
 		result = java_attribute_set_constantvalue(attr, buf);
 	} else if (!strcmp(name, "Code")) {
-		result = java_attribute_set_code(pool, poolsize, attr, buf);
+		result = java_attribute_set_code(pool, poolsize, attr, buf, is_oak);
 	} else if (!strcmp(name, "SourceFile")) {
 		result = java_attribute_set_sourcefile(attr, buf);
 	} else if (!strcmp(name, "SourceDebugExtension")) {
@@ -424,8 +424,7 @@ Attribute *java_attribute_new(RzBuffer *buf, ut64 offset) {
 	attr->offset = offset;
 	attr->attribute_name_index = rz_buf_read_be16(buf);
 	ut32 attribute_length = 0;
-	attribute_length = rz_buf_read_be16(buf) << 16;
-	attribute_length |= rz_buf_read_be16(buf);
+	attribute_length = rz_buf_read_be32(buf);
 	if (attribute_length == UT32_MAX) {
 		free(attr);
 		rz_warn_if_reached();

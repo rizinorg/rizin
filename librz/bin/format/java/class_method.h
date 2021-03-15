@@ -35,7 +35,7 @@ typedef struct java_method_t {
 	Attribute **attributes;
 } Method;
 
-Method *java_method_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 offset);
+Method *java_method_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 offset, bool is_oak);
 void java_method_free(Method *method);
 char *java_method_access_flags_readable(const Method *method);
 bool java_method_is_global(const Method *method);

@@ -420,3 +420,72 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=Output OAK class structure
+FILE=bins/java/invisible.class
+CMDS=javac
+EXPECT=<<EOF
+Version: (45.2) Java SE 1.0.2
+Flags: (0x0001) public
+Class: (#2) Test
+Super: (#3) java/lang/Object
+Constant pool: 22
+   #1 = String              #21            // "See if you can decompile/disassemble me!"
+   #2 = Class               #20            // Test
+   #3 = Class               #19            // java.lang.Object
+   #4 = Utf8                main
+   #5 = Utf8                ([Ljava/lang/String;)V
+   #6 = Utf8                Code
+   #7 = Fieldref            #14:#15        // java.lang.System:out:Ljava.io.PrintStream;
+   #8 = Methodref           #9:#10         // java.io.PrintStream:println:(Ljava.lang.String;)V
+   #9 = Class               #13            // java.io.PrintStream
+  #10 = NameAndType         #11:#12        // println:(Ljava.lang.String;)V
+  #11 = Utf8                println
+  #12 = Utf8                (Ljava/lang/String;)V
+  #13 = Utf8                java/io/PrintStream
+  #14 = Class               #18            // java.lang.System
+  #15 = NameAndType         #16:#17        // out:Ljava.io.PrintStream;
+  #16 = Utf8                out
+  #17 = Utf8                Ljava/io/PrintStream;
+  #18 = Utf8                java/lang/System
+  #19 = Utf8                java/lang/Object
+  #20 = Utf8                Test
+  #21 = Utf8                See if you can decompile/disassemble me!
+Interfaces: 0
+Methods: 1
+  public static main([Ljava/lang/String;)V;
+    name: main
+    descriptor: ([Ljava/lang/String;)V
+    flags: (0x0009) public static
+    attributes: 1
+      #0  = #6     size: 17    Code
+Fields: 0
+Attributes: 0
+EOF
+RUN
+
+
+NAME=Output OAK class structure (json)
+FILE=bins/java/invisible.class
+CMDS=javacj
+EXPECT=<<EOF
+{"version":{"minor":2,"major":45,"version":"Java SE 1.0.2"},"constant_pool_count":22,"constant_pool":[{"index":1,"tag_n":8,"tag_s":"String","value":"#21","resolved":"\"See if you can decompile/disassemble me!\""},{"index":2,"tag_n":7,"tag_s":"Class","value":"#20","resolved":"Test"},{"index":3,"tag_n":7,"tag_s":"Class","value":"#19","resolved":"java.lang.Object"},{"index":4,"tag_n":1,"tag_s":"Utf8","value":"main"},{"index":5,"tag_n":1,"tag_s":"Utf8","value":"([Ljava/lang/String;)V"},{"index":6,"tag_n":1,"tag_s":"Utf8","value":"Code"},{"index":7,"tag_n":9,"tag_s":"Fieldref","value":"#14:#15","resolved":"java.lang.System:out:Ljava.io.PrintStream;"},{"index":8,"tag_n":10,"tag_s":"Methodref","value":"#9:#10","resolved":"java.io.PrintStream:println:(Ljava.lang.String;)V"},{"index":9,"tag_n":7,"tag_s":"Class","value":"#13","resolved":"java.io.PrintStream"},{"index":10,"tag_n":12,"tag_s":"NameAndType","value":"#11:#12","resolved":"println:(Ljava.lang.String;)V"},{"index":11,"tag_n":1,"tag_s":"Utf8","value":"println"},{"index":12,"tag_n":1,"tag_s":"Utf8","value":"(Ljava/lang/String;)V"},{"index":13,"tag_n":1,"tag_s":"Utf8","value":"java/io/PrintStream"},{"index":14,"tag_n":7,"tag_s":"Class","value":"#18","resolved":"java.lang.System"},{"index":15,"tag_n":12,"tag_s":"NameAndType","value":"#16:#17","resolved":"out:Ljava.io.PrintStream;"},{"index":16,"tag_n":1,"tag_s":"Utf8","value":"out"},{"index":17,"tag_n":1,"tag_s":"Utf8","value":"Ljava/io/PrintStream;"},{"index":18,"tag_n":1,"tag_s":"Utf8","value":"java/lang/System"},{"index":19,"tag_n":1,"tag_s":"Utf8","value":"java/lang/Object"},{"index":20,"tag_n":1,"tag_s":"Utf8","value":"Test"},{"index":21,"tag_n":1,"tag_s":"Utf8","value":"See if you can decompile/disassemble me!"}],"access_flags_n":1,"access_flags_s":"public","class_n":2,"class_s":"Test","super_n":3,"super_s":"java/lang/Object","interfaces_count":0,"interfaces":[],"methods_count":1,"methods":[{"offset":270,"access_flags_n":9,"access_flags_s":"public static","name_n":4,"name_s":"main","descriptor_n":5,"descriptor_s":"([Ljava/lang/String;)V","attributes_count":1,"attributes":[{"offset":278,"size":17,"name_n":6,"name_s":"Code"}]}],"fields_count":0,"fields":[],"attributes_count":0,"attributes":[]}
+EOF
+RUN
+
+
+NAME=Output OAK class structure
+FILE=bins/java/invisible.class
+CMDS=af ; pdf
+EXPECT=<<EOF
+            ;-- main:
+            ;-- entry0:
+            ;-- section.class.methods.main.attr.0.code:
+            ;-- sym.Test.Test.main:
+/ method.Test.Test.main ();
+|           0x00000120      getstatic java.lang.System:out:Ljava.io.PrintStream; ; [01] -r-x section size 17 named class.methods.main.attr.0.code
+|           0x00000123      ldc   "See if you can decompile/disassemble me!"
+|           0x00000125      invokevirtual void java.io.PrintStream:println: (short, java.lang.String)
+\           0x00000128      return
+EOF
+RUN

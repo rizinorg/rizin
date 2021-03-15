@@ -44,7 +44,7 @@ char *java_method_access_flags_readable(const Method *method) {
 	return sb ? rz_strbuf_drain(sb) : NULL;
 }
 
-Method *java_method_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 offset) {
+Method *java_method_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 offset, bool is_oak) {
 	Method *method = RZ_NEW0(Method);
 	rz_return_val_if_fail(method, NULL);
 	method->offset = offset;
@@ -68,7 +68,7 @@ Method *java_method_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 off
 	for (ut32 i = 0; i < method->attributes_count; ++i) {
 		offset = rz_buf_tell(buf) + base;
 		Attribute *attr = java_attribute_new(buf, offset);
-		if (attr && java_attribute_resolve(pool, poolsize, attr, buf)) {
+		if (attr && java_attribute_resolve(pool, poolsize, attr, buf, is_oak)) {
 			method->attributes[i] = attr;
 		} else {
 			free(attr);

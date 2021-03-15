@@ -232,7 +232,7 @@ EXPECT=<<EOF
 
 nth paddr      vaddr      bind   type  size lib name
 ----------------------------------------------------
-0   ---------- ---------- LOCAL  FUNC  0        Test.main
+0   0x00000120 0x00000120 LOCAL  FUNC  17       Test.main
 7   0x0000003a 0x0000003a IMPORT FIELD 0        imp.java.lang.System.out
 8   0x0000003f 0x0000003f IMPORT METH  0        imp.java.io.PrintStream.println
 EOF
@@ -591,8 +591,8 @@ NAME=Java list classes invisible.class
 FILE=bins/java/invisible.class
 CMDS=ic
 EXPECT=<<EOF
-0x00000000 [0x00000000 - 0x00000000]      0 class 0 Test :: java/lang/Object
-0xffffffffffffffff method 0      Test.main
+0x00000000 [0x00000120 - 0x00000131]     17 class 0 Test :: java/lang/Object
+0x00000120 method 0      Test.main
 EOF
 RUN
 
@@ -1159,8 +1159,9 @@ EXPECT=<<EOF
 nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
 0   0x0000000a  0x100 0x0000000a  0x100 -r-- class.constant_pool
-1   0x0000010e   0x21 0x0000010e   0x21 -r-- class.methods.main.attr
-2   0x0000010e   0x21 0x0000010e   0x21 -r-- class.methods
+1   0x00000120   0x11 0x00000120   0x11 -r-x class.methods.main.attr.0.code
+2   0x0000010e   0x21 0x0000010e   0x21 -r-- class.methods.main.attr
+3   0x0000010e   0x21 0x0000010e   0x21 -r-- class.methods
 
 EOF
 RUN
