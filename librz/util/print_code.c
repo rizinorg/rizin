@@ -231,15 +231,18 @@ RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char l
 		}
 		p->cb_printf(" }\n");
 		break;
-	case 'j': // "pcj"
-		p->cb_printf("[");
+	case 'j': { // "pcj"
+		PJ *pj = pj_new();
+		pj_a(pj);
 		for (i = 0; !rz_print_is_interrupted() && i < len; i++) {
 			rz_print_cursor(p, i, 1, 1);
-			p->cb_printf("%d%s", buf[i], (i + 1 < len) ? "," : "");
+			pj_i(pj, buf[i]);
 			rz_print_cursor(p, i, 1, 0);
 		}
-		p->cb_printf("]\n");
-		break;
+		pj_end(pj);
+		p->cb_printf("%s\n", pj_string(pj));
+		pj_free(pj);
+	} break;
 	case 'P':
 	case 'p': // "pcp" "pcP"
 		p->cb_printf("import struct\nbuf = struct.pack (\"%dB\", *[", len);

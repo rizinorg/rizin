@@ -748,7 +748,7 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 		char *absfile = rz_file_abspath(file);
 		rz_config_set(core->config, "http.index", absfile);
 		free(absfile);
-		rz_core_cmdf(core, "=H");
+		rz_equal_H_handler_old(core, "");
 		rz_config_set(core->config, "http.index", httpIndex);
 		free(httpIndex);
 		ret = true;

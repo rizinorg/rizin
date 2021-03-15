@@ -5997,7 +5997,7 @@ RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 	}
 	rz_cons_enable_mouse(false);
 	if (fromVisual) {
-		rz_core_cmdf(core, "V");
+		rz_core_visual(core, "");
 	}
 	return true;
 }

@@ -103,6 +103,18 @@ static const char *help_msg_fz[] = {
 	NULL
 };
 
+static const char *help_msg_ft[] = {
+	"Usage: ft", "[?ln] [k] [v ...]", " # Flag tags",
+	"ft", " tag strcpy strlen ...", "set words for the 'string' tag",
+	"ft", " tag", "get offsets of all matching flags",
+	"ft", "", "list all tags",
+	"ftn", " tag", "get matching flagnames fot given tag",
+	"ftw", "", "flag tags within this file",
+	"ftj", "", "list all flagtags in JSON format",
+	"ft*", "", "list all flagtags in rizin commands",
+	NULL
+};
+
 static bool listFlag(RzFlagItem *flag, void *user) {
 	rz_list_append(user, flag);
 	return true;
@@ -523,14 +535,7 @@ static void cmd_flag_tags(RzCore *core, const char *input) {
 		return;
 	}
 	if (mode == '?') {
-		eprintf("Usage: ft[?ln] [k] [v ...]\n");
-		eprintf(" ft tag strcpy strlen ... # set words for the 'string' tag\n");
-		eprintf(" ft tag                   # get offsets of all matching flags\n");
-		eprintf(" ft                       # list all tags\n");
-		eprintf(" ftn tag                  # get matching flagnames fot given tag\n");
-		eprintf(" ftw                      # flag tags within this file\n");
-		eprintf(" ftj                      # list all flagtags in JSON format\n");
-		eprintf(" ft*                      # list all flagtags in rizin commands\n");
+		rz_core_cmd_help(core, help_msg_ft);
 		free(inp);
 		return;
 	}
@@ -546,7 +551,7 @@ static void cmd_flag_tags(RzCore *core, const char *input) {
 		free(inp);
 		return;
 	}
-	if (mode == '*') {
+	if (mode == '*') { // "ft*"
 		RzListIter *iter;
 		const char *tag;
 		RzList *list = rz_flag_tags_list(core->flags, NULL);
