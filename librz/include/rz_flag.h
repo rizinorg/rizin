@@ -107,6 +107,7 @@ RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item);
 RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name);
 RZ_API bool rz_flag_unset_off(RzFlag *f, ut64 addr);
 RZ_API void rz_flag_unset_all(RzFlag *f);
+RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name);
 RZ_API RzFlagItem *rz_flag_set(RzFlag *fo, const char *name, ut64 addr, ut32 size);
 RZ_API RzFlagItem *rz_flag_set_next(RzFlag *fo, const char *name, ut64 addr, ut32 size);
 RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias);

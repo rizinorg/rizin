@@ -841,6 +841,24 @@ RZ_API void rz_flag_unset_all(RzFlag *f) {
 	new_spaces(f);
 }
 
+/**
+ * \brief Unset all flag items in the space with the given name
+ *
+ * \param f an RzFlag
+ * \param space_name name of the space
+ */
+RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name) {
+	rz_flag_space_push(f, space_name);
+	RzList *flags = rz_flag_all_list(f, true);
+	RzFlagItem *flag;
+	RzListIter *iter;
+	rz_list_foreach (flags, iter, flag) {
+		rz_flag_unset(f, flag);
+	}
+	rz_flag_space_pop(f);
+	free(flags);
+}
+
 struct flag_relocate_t {
 	RzFlag *f;
 	ut64 off;
