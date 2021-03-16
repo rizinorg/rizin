@@ -292,9 +292,45 @@ commands:
     summary: Write to file
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: wf
-    cname: wf_handler_old
     summary: Write data from file, socket, offset
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: wf
+        cname: write_from_io
+        summary: Write <size> bytes from <addr> into current offset
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: wfx
+        cname: write_from_io_xchg
+        summary: Exchange <size> bytes between <addr> and current offset
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: wff
+        cname: write_from_file
+        summary: Write data from <file> into current offset
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: offset
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: wfs
+        cname: write_from_socket
+        summary: Write data from socket into current offset
+        args:
+          - name: "host:port"
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
   - name: ww
     cname: ww_handler_old
     summary: Write wide string
