@@ -36,13 +36,9 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		return NULL;
 	}
 
-	// TODO : find a way to get whole buffer
-	ut8 *work_buf[4096];
-	rz_buf_read_at(buf, 0, (ut8 *)work_buf, 4096);
-
 	switch (minor) {
 	case 4:
-		proto = lua_parse_body_54((ut8 *)work_buf, 0x20, 4076);
+		proto = lua_parse_body_54(buf, 0x20, bf->size);
 		general_info = lua_parse_header_54(bf, major, minor);
 		break;
 	default:

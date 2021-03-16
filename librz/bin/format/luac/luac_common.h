@@ -195,7 +195,7 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info);
  * Implemented in 'bin/format/luac/v[version]/bin_[version]
  * ======================================================== */
 RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor);
-LuaProto *lua_parse_body_54(ut8 *data, ut64 offset, ut64 data_size);
+LuaProto *lua_parse_body_54(RzBuffer *buffer, ut64 offset, ut64 data_size);
 
 #define lua_check_error_offset(offset) \
 	if ((offset) == 0) { \
