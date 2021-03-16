@@ -2843,8 +2843,26 @@ static void ds_print_offset(RDisasmState *ds) {
 	}
 }
 
+static bool requires_op_size(RDisasmState *ds) {
+	RzPVector *metas = rz_meta_get_all_in(ds->core->analysis, ds->at, RZ_META_TYPE_STRING);
+	if (metas && !rz_pvector_empty(metas)) {
+		rz_pvector_free(metas);
+		return false;
+	}
+
+	rz_pvector_free(metas);
+	metas = rz_meta_get_all_in(ds->core->analysis, ds->at, RZ_META_TYPE_FORMAT);
+	if (metas && !rz_pvector_empty(metas)) {
+		rz_pvector_free(metas);
+		return false;
+	}
+
+	rz_pvector_free(metas);
+	return true;
+}
+
 static void ds_print_op_size(RDisasmState *ds) {
-	if (ds->show_size) {
+	if (ds->show_size && requires_op_size(ds)) {
 		int size = ds->oplen;
 		rz_cons_printf("%d ", size); //ds->analop.size);
 	}
@@ -5397,9 +5415,7 @@ toro:
 				ds_print_core_vmode(ds, ds->asm_hint_pos);
 			}
 		}
-		if (!mi_found || mi_type != RZ_META_TYPE_STRING) {
-			ds_print_op_size(ds);
-		}
+		ds_print_op_size(ds);
 		ds_print_trace(ds);
 		ds_print_cycles(ds);
 		ds_print_family(ds);
