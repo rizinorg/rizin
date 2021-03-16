@@ -1971,10 +1971,20 @@ RZ_API RzList *rz_analysis_preludes(RzAnalysis *analysis);
 RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len);
 
 /* classes */
+typedef enum {
+	RZ_ANALYSIS_CLASS_METHOD_DEFAULT = 0,
+	RZ_ANALYSIS_CLASS_METHOD_VIRTUAL,
+	RZ_ANALYSIS_CLASS_METHOD_VIRTUAL_DESTRUCTOR,
+	RZ_ANALYSIS_CLASS_METHOD_DESTRUCTOR,
+	RZ_ANALYSIS_CLASS_METHOD_CONSTRUCTOR
+} RzAnalysisMethodType;
+
 typedef struct rz_analysis_method_t {
 	char *name;
+	char *real_name;
 	ut64 addr;
 	st64 vtable_offset; // >= 0 if method is virtual, else -1
+	RzAnalysisMethodType method_type;
 } RzAnalysisMethod;
 
 typedef struct rz_analysis_base_class_t {
@@ -1998,6 +2008,8 @@ typedef enum {
 	RZ_ANALYSIS_CLASS_ERR_OTHER
 } RzAnalysisClassErr;
 
+RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis);
+RZ_API void rz_analysis_class_recover_all(RzAnalysis *analysis);
 RZ_API void rz_analysis_class_create(RzAnalysis *analysis, const char *name);
 RZ_API void rz_analysis_class_delete(RzAnalysis *analysis, const char *name);
 RZ_API bool rz_analysis_class_exists(RzAnalysis *analysis, const char *name);
@@ -2007,10 +2019,14 @@ RZ_API RzAnalysisClassErr rz_analysis_class_rename(RzAnalysis *analysis, const c
 
 RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_get(RzAnalysis *analysis, const char *class_name, const char *meth_name, RzAnalysisMethod *meth);
+RZ_API RzAnalysisClassErr rz_analysis_class_method_get_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr, RzAnalysisMethod *method);
 RZ_API RzVector /*<RzAnalysisMethod>*/ *rz_analysis_class_method_get_all(RzAnalysis *analysis, const char *class_name);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_set(RzAnalysis *analysis, const char *class_name, RzAnalysisMethod *meth);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_rename(RzAnalysis *analysis, const char *class_name, const char *old_meth_name, const char *new_meth_name);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_delete(RzAnalysis *analysis, const char *class_name, const char *meth_name);
+RZ_API bool rz_analysis_class_method_exists(RzAnalysis *analysis, const char *class_name, const char *meth_name);
+RZ_API bool rz_analysis_class_method_exists_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr);
+RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *class, RzList *methods);
 
 RZ_API void rz_analysis_class_base_fini(RzAnalysisBaseClass *base);
 RZ_API RzAnalysisClassErr rz_analysis_class_base_get(RzAnalysis *analysis, const char *class_name, const char *base_id, RzAnalysisBaseClass *base);

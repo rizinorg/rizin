@@ -31,7 +31,7 @@ Flatline
 Flatline=c
 -
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PrayerPosition
 EOF
@@ -70,8 +70,8 @@ Flatline
 Flatline=c
 -
 attr.Flatline.method=PrayerPosition,RemainIndoors
-attr.Flatline.method.PrayerPosition=4919,66
-attr.Flatline.method.RemainIndoors=3735928559,-1
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
+attr.Flatline.method.RemainIndoors=3735928559,-1,0,RemainIndoors
 attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PrayerPosition
 0xdeadbeef 0 method.Flatline.RemainIndoors
@@ -81,7 +81,7 @@ Flatline
 Flatline=c
 -
 attr.Flatline.method=RemainIndoors
-attr.Flatline.method.RemainIndoors=3735928559,-1
+attr.Flatline.method.RemainIndoors=3735928559,-1,0,RemainIndoors
 attrtypes.Flatline=method
 0xdeadbeef 0 method.Flatline.RemainIndoors
 --
@@ -115,7 +115,7 @@ Flatline
 Flatline=c
 -
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PrayerPosition
 --
@@ -124,7 +124,7 @@ Flatline
 Flatline=c
 -
 attr.Flatline.method=Marigold
-attr.Flatline.method.Marigold=4919,66
+attr.Flatline.method.Marigold=4919,66,0,Marigold
 attrtypes.Flatline=method
 0x00001337 0 method.Flatline.Marigold
 EOF
@@ -182,7 +182,7 @@ PeripheryAlbum=c
 attr.Flatline.base=0
 attr.Flatline.base.0=PeripheryAlbum,0
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attr.Flatline.vtable=0
 attr.Flatline.vtable.0=0x1337,0,0
 attr.PeripheryAlbum.base=0
@@ -202,7 +202,7 @@ PeripheryAlbum=c
 attr.Flatline.base=0
 attr.Flatline.base.0=PeripheryAlbum,0
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attr.Flatline.vtable=0
 attr.Flatline.vtable.0=0x1337,0,0
 attrtypes.Flatline=base,method,vtable
@@ -219,7 +219,7 @@ PeripheryAlbum=c
 attr.Flatline.base=0
 attr.Flatline.base.0=PeripheryAlbum,0
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attr.Flatline.vtable=0
 attr.Flatline.vtable.0=0x1337,0,0
 attrtypes.Flatline=base,method,vtable
@@ -415,7 +415,7 @@ attr.Deadwing.base.0=PorcupineTreeAlbum,8
 attr.PorcupineTreeAlbum.base=0
 attr.PorcupineTreeAlbum.base.0=Album,0
 attr.PorcupineTreeAlbum.method=Listen
-attr.PorcupineTreeAlbum.method.Listen=3735928559,-1
+attr.PorcupineTreeAlbum.method.Listen=3735928559,-1,0,Listen
 attr.PorcupineTreeAlbum.vtable=0
 attr.PorcupineTreeAlbum.vtable.0=0x1337,66,0
 attrtypes.Deadwing=base
@@ -437,7 +437,7 @@ attr.Deadwing.base.0=Masterpiece,8
 attr.Masterpiece.base=0
 attr.Masterpiece.base.0=Album,0
 attr.Masterpiece.method=Listen
-attr.Masterpiece.method.Listen=3735928559,-1
+attr.Masterpiece.method.Listen=3735928559,-1,0,Listen
 attr.Masterpiece.vtable=0
 attr.Masterpiece.vtable.0=0x1337,66,0
 attrtypes.Deadwing=base
