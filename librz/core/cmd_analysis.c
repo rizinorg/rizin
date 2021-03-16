@@ -8210,15 +8210,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_core_analysis_esil_default(core);
 		}
 		if (!reg_flags_defined) {
-			rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
-			RzList *reg_flags = rz_flag_all_list(core->flags, true);
-			RzFlagItem *flag;
-			RzListIter *iter;
-			rz_list_foreach (reg_flags, iter, flag) {
-				rz_flag_unset(core->flags, flag);
-			}
-			rz_flag_space_pop(core->flags);
-			free(reg_flags);
+			rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_REGISTERS);
 		}
 		break;
 	}
