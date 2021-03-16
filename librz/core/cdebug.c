@@ -48,7 +48,7 @@ static bool is_x86_ret(RzDebug *dbg, ut64 addr) {
 }
 
 RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		rz_reg_arena_swap(core->dbg->reg, true);
 		// sync registers for BSD PT_STEP/PT_CONT
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);

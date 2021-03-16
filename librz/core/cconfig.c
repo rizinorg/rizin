@@ -747,7 +747,7 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 	if (core->dbg && core->analysis && core->analysis->cur) {
 		rz_debug_set_arch(core->dbg, core->analysis->cur->arch, bits);
-		bool load_from_debug = rz_config_get_i(core->config, "cfg.debug");
+		bool load_from_debug = rz_config_get_b(core->config, "cfg.debug");
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
 // XXX. that should depend on the plugin, not the host os
