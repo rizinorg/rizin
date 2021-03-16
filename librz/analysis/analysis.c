@@ -147,7 +147,7 @@ RZ_API void plugin_fini(RzAnalysis *analysis) {
 	if (p && p->fini && !p->fini(analysis->plugin_data)) {
 		RZ_LOG_ERROR("analysis plugin '%s' failed to terminate.\n", p->name);
 	}
-        analysis->plugin_data = NULL;
+	analysis->plugin_data = NULL;
 }
 
 void __block_free_rb(RBNode *node, void *user);
