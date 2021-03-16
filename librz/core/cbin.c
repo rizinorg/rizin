@@ -3085,17 +3085,17 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				free(section_type);
 			}
 			if (!print_segments && plugin_flags_support) {
-				RzList *flag = section_flag_to_rzlist(r->bin, section->flags);
+				RzList *flags = section_flag_to_rzlist(r->bin, section->flags);
 				char *pos;
-				if (flag) {
+				if (flags) {
 					pj_ka(pj, "flags");
 					RzListIter *it;
-					rz_list_foreach (flag, it, pos) {
+					rz_list_foreach (flags, it, pos) {
 						pj_s(pj, pos);
 					}
 					pj_end(pj);
 				}
-				rz_list_free(flag);
+				rz_list_free(flags);
 			}
 			pj_kN(pj, "paddr", section->paddr);
 			pj_kN(pj, "vaddr", addr);
@@ -3127,7 +3127,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
 
-			RzList *row_list = rz_list_new();
+			RzList *row_list = rz_list_newf(free);
 			if (!row_list) {
 				goto out;
 			}
