@@ -195,11 +195,13 @@ pyc_opcodes *new_pyc_opcodes() {
 void free_opcode(pyc_opcodes *opcodes) {
 	size_t i;
 	for (i = 0; i < 256; i++) {
-		free(opcodes->opcodes[i].op_name);
+		if (opcodes->opcodes && opcodes->opcodes[i].op_name) {
+                        free(opcodes->opcodes[i].op_name);
+                }
 	}
 	free(opcodes->opcodes);
 	rz_list_free(opcodes->opcode_arg_fmt);
-	free(opcodes);
+	// free(opcodes);
 }
 
 void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter)(ut32 oparg)) {
