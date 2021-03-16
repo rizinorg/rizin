@@ -24,6 +24,15 @@ nth paddr         size vaddr        vsize perm name   flags
 EOF
 RUN
 
+NAME=PE: corkami cm01.exe - sections json
+FILE=bins/pe/cm01.exe
+ARGS=-n
+CMDS=!rz-bin -jS bins/pe/cm01.exe
+EXPECT=<<EOF
+{"sections":[{"name":"CODE","size":1536,"vsize":4096,"perm":"-r-x","flags":["CNT_CODE","MEM_EXECUTE","MEM_READ"],"paddr":1536,"vaddr":4198400},{"name":"DATA","size":512,"vsize":4096,"perm":"-rw-","flags":["CNT_INITIALIZED_DATA","MEM_READ","MEM_WRITE"],"paddr":3072,"vaddr":4202496},{"name":".idata","size":2048,"vsize":4096,"perm":"-rw-","flags":["CNT_INITIALIZED_DATA","MEM_READ","MEM_WRITE"],"paddr":3584,"vaddr":4206592},{"name":".edata","size":512,"vsize":4096,"perm":"-r--","flags":["CNT_INITIALIZED_DATA","MEM_READ"],"paddr":5632,"vaddr":4210688},{"name":".reloc","size":512,"vsize":4096,"perm":"sr--","flags":["CNT_INITIALIZED_DATA","MEM_SHARED","MEM_READ"],"paddr":6144,"vaddr":4214784},{"name":".rsrc","size":5120,"vsize":8192,"perm":"sr--","flags":["CNT_INITIALIZED_DATA","MEM_SHARED","MEM_READ"],"paddr":6656,"vaddr":4218880}]}
+EOF
+RUN
+
 NAME=PE: corkami cm01.exe - section seek 1
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF

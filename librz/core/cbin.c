@@ -3077,13 +3077,14 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				build_hash_string(pj, mode, hashtypes, data, datalen);
 				free(data);
 			}
-			if (!print_segments) {
-				// Sections only
-				char *type = section_type_to_string(r->bin, section->type);
-				if (type) {
-					pj_ks(pj, "type", type);
+			if (!print_segments && plugin_type_support) {
+				char *section_type = section_type_to_string(r->bin, section->type);
+				if (section_type) {
+					pj_ks(pj, "type", section_type);
 				}
-				free(type);
+				free(section_type);
+			}
+			if (!print_segments && plugin_flags_support) {
 				RzList *flag = section_flag_to_rzlist(r->bin, section->flags);
 				char *pos;
 				if (flag) {
