@@ -7,19 +7,19 @@ EOF
 EXPECT=<<EOF
 A
   (vtable at 0x400d28)
-  A @ 0x400b36
   greet @ 0x400ac8 (vtable + 0x0)
   printValue @ 0x400af4 (vtable + 0x8)
+  A @ 0x400b36
 B: A
   (vtable at 0x400d08)
   B @ 0x400b4e
-  method.A.greet @ 0x400ac8 (vtable + 0x0)
   printValue @ 0x400b82 (vtable + 0x8)
+  method.A.greet @ 0x400ac8 (vtable + 0x0)
 C: A
   (vtable at 0x400ce8)
   C @ 0x400bc4
-  method.A.greet @ 0x400ac8 (vtable + 0x0)
   printValue @ 0x400bf8 (vtable + 0x8)
+  method.A.greet @ 0x400ac8 (vtable + 0x0)
 std::basic_ostream_char__std::char_traits_char_____std::endl_char__std
   char_traits<char> > @ 0x6012a8
 std::basic_ostream_char__std::char_traits_char_____std::operator____std

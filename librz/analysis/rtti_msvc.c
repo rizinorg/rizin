@@ -845,7 +845,6 @@ static void recovery_apply_vtable(RzAnalysis *analysis, const char *class_name, 
 				meth.real_name = rz_str_new(exist_meth.real_name);
 				meth.vtable_offset = vmeth->vtable_offset;
 				meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
-				rz_analysis_class_method_delete(analysis, class_name, exist_meth.name);
 				rz_analysis_class_method_fini(&exist_meth);
 			}
 		}

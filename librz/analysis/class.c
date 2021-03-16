@@ -499,6 +499,18 @@ static RzAnalysisClassErr rz_analysis_class_add_attr_unique(RzAnalysis *analysis
 // ---- METHODS ----
 // Format: addr,vtable_offset
 
+static int symbol_method_sort_by_addr(const void *x, const void *y) {
+	RzBinSymbol *a = (RzBinSymbol *)x;
+	RzBinSymbol *b = (RzBinSymbol *)y;
+	if (a->vaddr > b->vaddr) {
+		return 1;
+	}
+	if (a->vaddr < b->vaddr) {
+		return -1;
+	}
+	return 0;
+}
+
 static char *flagname_method(const char *class_name, const char *meth_name) {
 	if (rz_str_startswith(meth_name, "method.")) {
 		return rz_str_new(meth_name);
@@ -514,6 +526,7 @@ RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth) {
 RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *class, RzList *methods) {
 	RzListIter *iter_method;
 	RzBinSymbol *sym;
+	rz_list_sort(methods, &symbol_method_sort_by_addr);
 	rz_list_foreach (methods, iter_method, sym) {
 		if (!rz_analysis_class_method_exists(analysis, class->name, sym->name)) {
 			//detect constructor or destructor but not implemented
