@@ -1,6 +1,8 @@
 NAME=LUAC: plugin load
 FILE=bins/luac/none.luac
-CMDS=iI~?luac
+CMDS=<<EOF
+iI~?luac
+EOF
 EXPECT=<<EOF
 2
 EOF
@@ -8,7 +10,9 @@ RUN
 
 NAME=LUAC: info
 FILE=bins/luac/none.luac
-CMDS=i~guid,machine
+CMDS=<<EOF
+i~guid,machine
+EOF
 EXPECT=<<EOF
 guid     @none.lua
 machine  Lua 5.4 VM
@@ -17,7 +21,9 @@ RUN
 
 NAME=LUAC: unofficial
 FILE=bins/luac/none_modified.luac
-CMDS=iI~compiler
+CMDS=<<EOF
+iI~compiler
+EOF
 EXPECT=<<EOF
 compiler Unofficial Lua Compiler
 EOF
@@ -25,7 +31,9 @@ RUN
 
 NAME=LUAC: sections
 FILE=bins/luac/none.luac
-CMDS=iS~none
+CMDS=<<EOF
+iS~none
+EOF
 EXPECT=<<EOF
 0   0x00000020  0x2a 0x00000020   0x2a -r-- none.lua.header
 1   0x0000002f   0x8 0x0000002f    0x8 -r-x none.lua.code
@@ -38,7 +46,9 @@ RUN
 
 NAME=LUAC: symbols
 FILE=bins/luac/none.luac
-CMDS=is~UPVALUE
+CMDS=<<EOF
+is~UPVALUE
+EOF
 EXPECT=<<EOF
 0   0x0000003a 0x0000003a NONE UPVALUE 3        @none.lua_upvalue__ENV
 EOF
@@ -46,7 +56,9 @@ RUN
 
 NAME=LUAC: entry
 FILE=bins/luac/none.luac
-CMDS=ie~program
+CMDS=<<EOF
+ie~program
+EOF
 EXPECT=<<EOF
 vaddr=0x00000030 paddr=0x00000030 haddr=-1 type=program
 EOF
@@ -54,7 +66,9 @@ RUN
 
 NAME=LUAC: big file
 FILE=bins/luac/big.luac
-CMDS=iS~header
+CMDS=<<EOF
+iS~header
+EOF
 EXPECT=<<EOF
 0   0x00000020  0xe44 0x00000020  0xe44 -r-- learnlua.lua.header
 6   0x000007ab   0x70 0x000007ab   0x70 -r-- fcn.000007ab.header
@@ -76,7 +90,9 @@ RUN
 
 NAME=LUAC: big file string symbol loading
 FILE=bins/luac/big.luac
-CMDS=is~twas
+CMDS=<<EOF
+is~twas
+EOF
 EXPECT=<<EOF
 0   0x000005d8 0x000005d8 NONE CONST_STRING 10       @learnlua.lua_const_twas false
 EOF
@@ -84,7 +100,9 @@ RUN
 
 NAME=LUAC: big file num symbol loading
 FILE=bins/luac/big.luac
-CMDS=is~1729,1.21
+CMDS=<<EOF
+is~1729,1.21
+EOF
 EXPECT=<<EOF
 0   0x00000687 0x00000687 NONE CONST_NUM    8        @learnlua.lua_const_1729
 0   0x000006d5 0x000006d5 NONE CONST_NUM    8        @learnlua.lua_const_1.210000
@@ -93,7 +111,9 @@ RUN
 
 NAME=LUAC: big file symbols
 FILE=bins/luac/big.luac
-CMDS=is~CONST_NUM
+CMDS=<<EOF
+is~CONST_NUM
+EOF
 EXPECT=<<EOF
 0   0x000004db 0x000004db NONE CONST_NUM    8        @learnlua.lua_const_42
 0   0x00000590 0x00000590 NONE CONST_NUM    8        @learnlua.lua_const_5
@@ -109,7 +129,9 @@ RUN
 
 NAME=LUAC: disasm crash
 FILE=bins/luac/big.luac
-CMDS=pd 10 >/dev/null
+CMDS=<<EOF
+pd 10 >/dev/null
+EOF
 EXPECT=<<EOF
 EOF
 RUN
@@ -127,7 +149,9 @@ RUN
 
 NAME=LUAC: iz strings
 FILE=bins/luac/big.luac
-CMDS=iz~?print
+CMDS=<<EOF
+iz~?print
+EOF
 EXPECT=<<EOF
 7
 EOF
