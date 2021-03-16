@@ -36,163 +36,127 @@ typedef ut32 LUA_INSTRUCTION;
 #define LUA_VSHRSTR makevariant(LUA_TSTRING, 0) /* short strings */
 #define LUA_VLNGSTR makevariant(LUA_TSTRING, 1) /* long strings */
 
-/* Solution A: only store offset info about different parts
- * Leave parsing work to function */
-typedef struct lua_proto {
-	ut64 offset; // proto offset in bytes
-	ut64 size; // current proto size
-
-	char *proto_name; // proto name
-	ut64 name_size; // size of proto name
-
-	ut64 line_defined; // line number of function start
-	ut64 lastline_defined; // line number of function end
-
-	ut8 num_params; // number of parameters of this proto
-	ut8 is_vararg; // is varArg?
-	ut8 max_stack_size; // max stack size
-
-	/* Code of this proto */
-	ut64 code_offset;
-	ut64 code_size;
-
-	/* Constants of this proto */
-	ut64 const_offset;
-	ut64 const_cnt;
-	ut64 const_size;
-
-	/* Upvalues of this proto */
-	ut64 upvalues_offset;
-	ut64 upvalues_cnt;
-	ut64 upvalues_size;
-
-	/* Protos defined in this proto */
-	ut64 protos_offset;
-	ut64 protos_cnt;
-	ut64 protos_size;
-
-	/* Debug info */
-	ut64 lineinfo_offset;
-	ut64 lineinfo_cnt;
-	ut64 lineinfo_size;
-
-	ut64 abs_lineinfo_offset;
-	ut64 abs_lineinfo_cnt;
-	ut64 abs_lineinfo_size;
-
-	ut64 local_vars_offset;
-	ut64 local_vars_cnt;
-	ut64 local_vars_size;
-
-	ut64 dbg_upvalues_offset;
-	ut64 dbg_upvalues_cnt;
-	ut64 dbg_upvalues_size;
-
-} LuaProtoLight;
-
-/* =================================================
- * Solution B : store info in a big struct
- * construct it in one turn scan
- * then we can operate on it only
- * =================================================*/
+/**@struct lua_proto_ex
+ * @brief Store valuable info when parsing. Treat luac file body as a main function.
+ */
 typedef struct lua_proto_ex {
-	ut64 offset; // proto offset in bytes
-	ut64 size; // current proto size
+	ut64 offset; ///< proto offset in bytes
+	ut64 size; ///< current proto size
 
-	ut8 *proto_name; // proto name
-	int name_size; // size of proto name
+	ut8 *proto_name; ///<  current proto name
+	int name_size; ///< size of proto name
 
-	ut64 line_defined; // line number of function start
-	ut64 lastline_defined; // line number of function end
+	ut64 line_defined; ///< line number of function start
+	ut64 lastline_defined; ///< line number of function end
 
-	ut8 num_params; // number of parameters of this proto
-	ut8 is_vararg; // is varArg?
-	ut8 max_stack_size; // max stack size
+	ut8 num_params; ///< number of parameters of this proto
+	ut8 is_vararg; ///< is variable arg?
+	ut8 max_stack_size; ///< max stack size
 
 	/* Code of this proto */
-	ut64 code_offset;
-	ut64 code_size;
-	ut64 code_skipped; // skip size bytes
+	ut64 code_offset; ///< code section offset
+	ut64 code_size; ///< code section size
+	ut64 code_skipped; ///< opcode data offset to code_offset.
 
 	/* store constant entries */
-	RzList *const_entries;
-	ut64 const_offset;
-	ut64 const_size;
+	RzList *const_entries; ///< A list to store constant entries
+	ut64 const_offset; ///< const section offset
+	ut64 const_size; ///< const section size
 
 	/* store upvalue entries */
-	RzList *upvalue_entries;
-	ut64 upvalue_offset;
-	ut64 upvalue_size;
+	RzList *upvalue_entries; ///< A list to store upvalue entries
+	ut64 upvalue_offset; ///< upvalue section offset
+	ut64 upvalue_size; ///< upvalue section size
 
 	/* store protos defined in this proto */
-	RzList *proto_entries;
-	ut64 inner_proto_offset;
-	ut64 inner_proto_size;
+	RzList *proto_entries; ///< A list to store sub proto entries
+	ut64 inner_proto_offset; ///< sub proto section offset
+	ut64 inner_proto_size; ///< sub proto section size
 
 	/* store Debug info */
-	ut64 debug_offset;
-	ut64 debug_size;
-	RzList *line_info_entries;
-	RzList *abs_line_info_entries;
-	RzList *local_var_info_entries;
-	RzList *dbg_upvalue_entries;
+	ut64 debug_offset; ///< debug section offset
+	ut64 debug_size; ///< debug section size
+	RzList *line_info_entries; ///< A list to store line info entries
+	RzList *abs_line_info_entries; ///< A list to store absolutely line info entries
+	RzList *local_var_info_entries; ///< A list to store local var entries
+	RzList *dbg_upvalue_entries; ///< A list to store upvalue names
 
 } LuaProtoHeavy;
 
-/* Currently I use LuaProtoHeavy as my approach */
 typedef LuaProtoHeavy LuaProto;
-// typedef LuaProtoLight LuaProto;
 
+/**@struct lua_constant_entry
+ * @brief Store constant type, data, and offset of this constant in luac file
+ */
 typedef struct lua_constant_entry {
-	ut8 tag; // type of this constant
-	void *data; // can be Number/Integer/String
-	int data_len;
-	ut64 offset; // addr of this constant
+	ut8 tag; ///< type of this constant, see LUA_V* macros in luac_common.h
+	void *data; ///< can be Number/Integer/String
+	int data_len; ///< len of data
+	ut64 offset; ///< addr of this constant
 } LuaConstEntry;
 
+/**@struct lua_upvalue_entry
+ * @brief Store upvalue attributes
+ */
 typedef struct lua_upvalue_entry {
-	/* attribute of upvalue */
-	ut8 instack;
-	ut8 idx;
-	ut8 kind;
-	ut64 offset;
+	/* attributes of upvalue */
+	ut8 instack;        ///< is in stack
+	ut8 idx;            ///< index
+	ut8 kind;           ///< kind
+	ut64 offset;        ///< offset of this upvalue
 } LuaUpvalueEntry;
 
 typedef struct LuaProto LuaProtoEntry;
 
+/**@struct lua_lineinfo_entry
+ * @brief Store line info attributes
+ */
 typedef struct lua_lineinfo_entry {
 	ut8 info_data;
 	ut64 offset;
 } LuaLineinfoEntry;
 
+/**@struct lua_abs_lineinfo_entry
+ * @brief Store line info attributes
+ */
 typedef struct lua_abs_lineinfo_entry {
-	int pc; /* pc in lua */
-	int line; /* line number in source file */
+	int pc;   ///< pc value of lua
+	int line; ///< line number in source file
 	ut64 offset;
 } LuaAbsLineinfoEntry;
 
+/**@struct lua_local_var_entry
+ * @brief Store local var names and other info
+ */
 typedef struct lua_local_var_entry {
-	ut8 *varname;
-	int varname_len;
-	int start_pc;
-	int end_pc;
-	ut64 offset;
+	ut8 *varname;   ///< name of this variable
+	int varname_len;        ///< length of name
+	int start_pc;           ///< first active position
+	int end_pc;             ///< first deactive position
+	ut64 offset;            ///< offset of this entry
 } LuaLocalVarEntry;
 
+/**@struct lua_dbg_upvalue_entry
+ * @brief Store upvalue's debug info
+ */
 typedef struct lua_dbg_upvalue_entry {
-	ut8 *upvalue_name;
-	int name_len;
+	ut8 *upvalue_name;      ///< upvalue name
+	int name_len;           ///< length of name
 	ut64 offset;
 } LuaDbgUpvalueEntry;
 
+
+/**@struct lua_bin_info
+ * @brief A context info structure for luac plugin.
+ */
 typedef struct luac_bin_info {
-	st32 major;
-	st32 minor;
-	RzList *section_list;
-	RzList *symbol_list;
-	RzList *entry_list;
-	RzList *string_list;
-	RzBinInfo *general_info;
+	st32 major;     ///< major version
+	st32 minor;     ///< minor version
+	RzList *section_list;   ///< list of sections
+	RzList *symbol_list;    ///< list of symbols
+	RzList *entry_list;     ///< list of entries
+	RzList *string_list;    ///< list of strings
+	RzBinInfo *general_info;        ///< general binary info from luac header
 } LuacBinInfo;
 
 /* ========================================================
