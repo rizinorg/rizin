@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2020 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
