@@ -247,10 +247,10 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 
 	// 2.2 parse debug_upvalues
 	char **upvalue_names;
-	int dbg_upvalue_cnt;
+	int real_upvalue_cnt;
 	LuaDbgUpvalueEntry *debug_upv_entry;
-	dbg_upvalue_cnt = rz_list_length(proto->dbg_upvalue_entries);
-	upvalue_names = RZ_NEWS(char *, dbg_upvalue_cnt);
+	real_upvalue_cnt = rz_list_length(proto->upvalue_entries);
+	upvalue_names = RZ_NEWS0(char *, real_upvalue_cnt);
 	rz_return_if_fail(upvalue_names);
 	rz_list_foreach (proto->dbg_upvalue_entries, iter, debug_upv_entry) {
 		upvalue_names[i] = (char *)debug_upv_entry->upvalue_name;
