@@ -538,6 +538,11 @@ void GH(print_heap_chunk)(RzCore *core) {
 	free(cnk);
 }
 
+/**
+ * \brief Prints compact representation of a heap chunk. Format: Chunk(addr=, size=, flags=)
+ * \param core RzCore pointer
+ * \param chunk Offset of the chunk in memory
+ */
 void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
@@ -1548,6 +1553,13 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 	}
 }
 
+/**
+ * \brief Prints fast bin description for an arena (used for `dmhd` command)
+ * \param core RzCore pointer
+ * \param m_arena Offset of the arena
+ * \param main_arena MallocState struct for the arena in which the bins are
+ * \param global_max_fast The largest fast bin size (used for formatting)
+ */
 static void GH(print_fastbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	rz_cons_printf("Fastbins @ ");
@@ -1576,7 +1588,14 @@ static void GH(print_fastbin_description)(RzCore *core, GHT m_arena, MallocState
 	}
 }
 
-static int GH(print_bin_content)(RzCore *core, GHT m_arena, MallocState *main_arena, int bin_num) {
+/**
+ * \brief Prints the heap chunks in a bin with double linked list (small|large|unsorted)
+ * \param core RzCore pointer
+ * \param main_arena MallocState struct for the arena in which bins are
+ * \param bin_num The bin number for the bin from which chunks have to printed
+ * \return number of chunks found in the bin
+ */
+static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_num) {
 	int idx = 2 * bin_num;
 	ut64 fw = main_arena->GH(bins)[idx];
 	ut64 bk = main_arena->GH(bins)[idx + 1];
@@ -1628,14 +1647,26 @@ static int GH(print_bin_content)(RzCore *core, GHT m_arena, MallocState *main_ar
 	return chunks_cnt;
 }
 
+/**
+ * \brief Prints unsorted bin description for an arena (used for `dmhd` command)
+ * \param core RzCore pointer
+ * \param m_arena Offset of the arena in memory
+ * \param main_arena MallocState struct for the arena in which bin are
+ */
 static void GH(print_unsortedbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	rz_cons_printf("Unsorted bin @ ");
 	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-	int chunk_cnt = GH(print_bin_content)(core, m_arena, main_arena, 0);
+	int chunk_cnt = GH(print_bin_content)(core, main_arena, 0);
 	rz_cons_printf("Found %d chunks in unsorted bins \n", chunk_cnt);
 }
 
+/**
+ * \brief Prints small bins description for an arena (used for `dmhd` command)
+ * \param core RzCore pointer
+ * \param m_arena Offset of the arena in memory
+ * \param main_arena Pointer to MallocState struct for the arena in which bins are
+ */
 static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	rz_cons_printf("Small bins @ ");
@@ -1643,7 +1674,7 @@ static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocStat
 	int chunk_cnt = 0;
 	int non_empty_cnt = 0;
 	for (int bin_num = 1; bin_num < NSMALLBINS; bin_num++) {
-		int chunk_found = GH(print_bin_content)(core, m_arena, main_arena, bin_num);
+		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num);
 		if (chunk_found > 0) {
 			non_empty_cnt += 1;
 		}
@@ -1652,6 +1683,12 @@ static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocStat
 	rz_cons_printf("Found %d chunks in %d small bins \n", chunk_cnt, non_empty_cnt);
 }
 
+/**
+ * \brief Prints large bins description for an arena (used for `dmhd` command)
+ * \param core RzCore pointer
+ * \param m_arena Offset of the arena in memory
+ * \param main_arena Pointer to MallocState struct for the arena in which bins are
+ */
 static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	rz_cons_printf("Large bins @ ");
@@ -1659,7 +1696,7 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
 	int chunk_cnt = 0;
 	int non_empty_cnt = 0;
 	for (int bin_num = NSMALLBINS; bin_num < NBINS - 2; bin_num++) {
-		int chunk_found = GH(print_bin_content)(core, m_arena, main_arena, bin_num);
+		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num);
 		if (chunk_found > 0) {
 			non_empty_cnt += 1;
 		}
@@ -1668,6 +1705,12 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
 	rz_cons_printf("Found %d chunks in %d large bins \n", chunk_cnt, non_empty_cnt);
 }
 
+/**
+ * \brief Prints tcache description for main arena (used for `dmhd` command)
+ * \param core RzCore pointer
+ * \param m_arena Offset of main arena in memory
+ * \param main_arena Pointer to MallocState struct for main arena
+ */
 static void GH(print_tcache_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (!tcache) {
@@ -1696,6 +1739,14 @@ static void GH(print_tcache_description)(RzCore *core, GHT m_arena, MallocState 
 	(core, rz_tcache, false);
 }
 
+/**
+ * \brief Prints description of bins for main arena for `dmhd` command
+ * \param core RzCore pointer
+ * \param m_arena Offset of main arena in memory
+ * \param main_arena Pointer to Malloc state struct for main arena
+ * \param global_max_fast The largest fast bin size (used for formatting)
+ * \param format Integer to determine which type of bins to print. 0 means print all types of bins
+ */
 static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, int format) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
 	if (!format || format == 1) {
