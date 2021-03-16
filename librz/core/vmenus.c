@@ -1707,7 +1707,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 			rz_cons_show_cursor(false);
 			break;
 		case 'y':
-			rz_core_cmdf(core, "yfx %s", chainstr);
+			rz_core_yank_hexpair(core, chainstr);
 			break;
 		case 'o': {
 			rz_line_set_prompt("offset: ");

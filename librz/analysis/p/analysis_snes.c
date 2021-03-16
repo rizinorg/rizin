@@ -9,9 +9,8 @@
 #include "../../asm/arch/snes/snes_op_table.h"
 #include "../../asm/p/asm_snes.h"
 
-static struct snes_asm_flags *snesflags = NULL;
-
 static int snes_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+	struct snes_asm_flags *snesflags = (struct snes_asm_flags *)analysis->plugin_data;
 	op->size = snes_op_get_size(snesflags->M, snesflags->X, &snes_op[data[0]]);
 	if (op->size > len) {
 		return op->size = 0;
@@ -380,18 +379,15 @@ static int snes_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	return op->size;
 }
 
-static int snes_analysis_init(void *user) {
-	if (!snesflags) {
-		snesflags = malloc(sizeof(struct snes_asm_flags));
-	}
-	memset(snesflags, 0, sizeof(struct snes_asm_flags));
-	return 0;
+static bool snes_analysis_init(void **user) {
+	*user = RZ_NEW0(struct snes_asm_flags);
+	return *user != NULL;
 }
 
-static int snes_analysis_fini(void *user) {
-	free(snesflags);
-	snesflags = NULL;
-	return 0;
+static bool snes_analysis_fini(void *user) {
+	rz_return_val_if_fail(user, false);
+	free(user);
+	return true;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_snes = {

@@ -4845,7 +4845,8 @@ static void __core_analysis_appcall(RzCore *core, const char *input) {
 	rz_reg_setv(core->analysis->reg, "SP", 0);
 
 	rz_reg_setv(core->analysis->reg, "PC", core->offset);
-	rz_core_cmd0(core, "aesu 0");
+	rz_core_esil_step(core, 0, NULL, NULL, false);
+	rz_core_regs2flags(core);
 
 	rz_reg_setv(core->analysis->reg, "SP", sp);
 	free(inp);
@@ -8194,7 +8195,8 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case 'o': // "aao"
 		cmd_analysis_objc(core, false);
 		break;
-	case 'e': // "aae"
+	case 'e': { // "aae"
+		bool reg_flags_defined = rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
 		if (input[1] == 'f') { // "aaef"
 			rz_core_analysis_esil_references_all_functions(core);
 		} else if (input[1] == ' ') {
@@ -8207,7 +8209,19 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		} else {
 			rz_core_analysis_esil_default(core);
 		}
+		if (!reg_flags_defined) {
+			rz_flag_space_push(core->flags, RZ_FLAGS_FS_REGISTERS);
+			RzList *reg_flags = rz_flag_all_list(core->flags, true);
+			RzFlagItem *flag;
+			RzListIter *iter;
+			rz_list_foreach (reg_flags, iter, flag) {
+				rz_flag_unset(core->flags, flag);
+			}
+			rz_flag_space_pop(core->flags);
+			free(reg_flags);
+		}
 		break;
+	}
 	case 'r': // "aar"
 		(void)rz_core_analysis_refs(core, input + 1);
 		break;

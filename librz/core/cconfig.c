@@ -460,7 +460,7 @@ static bool cb_scrrainbow(void *user, void *data) {
 		rz_cons_pal_random();
 	} else {
 		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
-		rz_core_cmd0(core, "ecoo");
+		rz_core_load_theme(core, rz_core_get_theme());
 	}
 	rz_print_set_flags(core->print, core->print->flags);
 	return true;
@@ -1769,7 +1769,7 @@ static bool cb_iopcachewrite(void *user, void *data) {
 
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
-		RzCore *core = esil->analysis->user;
+		RzCore *core = esil->analysis->core;
 		rz_core_cmdf(core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
 		return core->num->value;
 	}

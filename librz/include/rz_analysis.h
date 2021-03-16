@@ -616,7 +616,8 @@ typedef struct rz_analysis_t {
 	int big_endian; // cfg.bigendian
 	int sleep; // analysis.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
 	RzAnalysisCPPABI cpp_abi; // analysis.cpp.abi
-	void *user;
+	void *plugin_data;
+	void *core;
 	ut64 gp; // analysis.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
 	RzList *fcns;
@@ -1236,8 +1237,8 @@ typedef struct rz_analysis_plugin_t {
 	int bits;
 	int esil; // can do esil or not
 	int fileformat_type;
-	int (*init)(void *user);
-	int (*fini)(void *user);
+	bool (*init)(void **user);
+	bool (*fini)(void *user);
 	//int (*reset_counter) (RzAnalysis *analysis, ut64 start_addr);
 	int (*archinfo)(RzAnalysis *analysis, int query);
 	ut8 *(*analysis_mask)(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
@@ -1459,8 +1460,6 @@ RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn);
 RZ_API RzAnalysis *rz_analysis_new(void);
 RZ_API void rz_analysis_purge(RzAnalysis *analysis);
 RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *r);
-RZ_API void rz_analysis_set_user_ptr(RzAnalysis *analysis, void *user);
-RZ_API void rz_analysis_plugin_free(RzAnalysisPlugin *p);
 RZ_API int rz_analysis_add(RzAnalysis *analysis, RzAnalysisPlugin *foo);
 RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, int query);
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name);
