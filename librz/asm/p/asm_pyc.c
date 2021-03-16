@@ -24,10 +24,21 @@ static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 			shared = bin->cur->o->bin_obj;
 		}
 	}
-	RzList *cobjs = rz_list_get_n(shared, 0);
-	RzList *interned_table = rz_list_get_n(shared, 1);
+
+	RzList *cobjs = NULL;
+	RzList *interned_table = NULL;
+
+	if (shared) {
+		cobjs = rz_list_get_n(shared, 0);
+		interned_table = rz_list_get_n(shared, 1);
+	}
+
 	if (!opcodes_cache || !pyc_opcodes_equal(opcodes_cache, a->cpu)) {
 		opcodes_cache = get_opcode_by_version(a->cpu);
+		if (opcodes_cache == NULL) {
+			eprintf("[x]Require Info from code object, use rizin instead\n");
+			return len;
+		}
 		opcodes_cache->bits = a->bits;
 	}
 	int r = rz_pyc_disasm(opstruct, buf, cobjs, interned_table, pc, opcodes_cache);
