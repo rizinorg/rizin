@@ -4196,6 +4196,117 @@ out_function:
 	return;
 }
 
+RzList *PE_(section_flag_to_rzlist)(ut64 flag) {
+	RzList *flag_list = rz_list_new();
+	if (flag & IMAGE_SCN_TYPE_NO_PAD) {
+		rz_list_append(flag_list, "TYPE_NO_PAD");
+	}
+	if (flag & IMAGE_SCN_CNT_CODE) {
+		rz_list_append(flag_list, "CNT_CODE");
+	}
+	if (flag & IMAGE_SCN_CNT_INITIALIZED_DATA) {
+		rz_list_append(flag_list, "CNT_INITIALIZED_DATA");
+	}
+	if (flag & IMAGE_SCN_CNT_UNINITIALIZED_DATA) {
+		rz_list_append(flag_list, "CNT_UNINITIALIZED");
+	}
+	if (flag & IMAGE_SCN_LNK_OTHER) {
+		rz_list_append(flag_list, "LNK_OTHER");
+	}
+	if (flag & IMAGE_SCN_LNK_INFO) {
+		rz_list_append(flag_list, "LNK_INFO");
+	}
+	if (flag & IMAGE_SCN_LNK_REMOVE) {
+		rz_list_append(flag_list, "LNK_REMOVE");
+	}
+	if (flag & IMAGE_SCN_LNK_COMDAT) {
+		rz_list_append(flag_list, "LNK_COMDAT");
+	}
+	if (flag & IMAGE_SCN_GPREL) {
+		rz_list_append(flag_list, "GPREL");
+	}
+	if (flag & IMAGE_SCN_MEM_PURGEABLE) {
+		rz_list_append(flag_list, "MEM_PURGEABLE");
+	}
+	if (flag & IMAGE_SCN_MEM_16BIT) {
+		rz_list_append(flag_list, "MEM_16BIT");
+	}
+	if (flag & IMAGE_SCN_MEM_LOCKED) {
+		rz_list_append(flag_list, "MEM_LOCKED");
+	}
+	if (flag & IMAGE_SCN_MEM_PRELOAD) {
+		rz_list_append(flag_list, "MEM_PRELOAD");
+	}
+	// Alignment flags overlap
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_1BYTES) {
+		rz_list_append(flag_list, "ALIGN_1BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_2BYTES) {
+		rz_list_append(flag_list, "ALIGN_2BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_4BYTES) {
+		rz_list_append(flag_list, "ALIGN_4BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_8BYTES) {
+		rz_list_append(flag_list, "ALIGN_8BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_16BYTES) {
+		rz_list_append(flag_list, "ALIGN_16BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_32BYTES) {
+		rz_list_append(flag_list, "ALIGN_32BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_64BYTES) {
+		rz_list_append(flag_list, "ALIGN_64BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_128BYTES) {
+		rz_list_append(flag_list, "ALIGN_128BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_256BYTES) {
+		rz_list_append(flag_list, "ALIGN_256BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_512BYTES) {
+		rz_list_append(flag_list, "ALIGN_512BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_1024BYTES) {
+		rz_list_append(flag_list, "ALIGN_1024BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_2048BYTES) {
+		rz_list_append(flag_list, "ALIGN_2048BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_4096BYTES) {
+		rz_list_append(flag_list, "ALIGN_4096BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_8192BYTES) {
+		rz_list_append(flag_list, "ALIGN_8192BYTES");
+	}
+	if (flag & IMAGE_SCN_LNK_NRELOC_OVFL) {
+		rz_list_append(flag_list, "LNK_NRELOC_OVFL");
+	}
+	if (flag & IMAGE_SCN_MEM_DISCARDABLE) {
+		rz_list_append(flag_list, "IMAGE_SCN_MEM_DISCARDABLE");
+	}
+	if (flag & IMAGE_SCN_MEM_NOT_CACHED) {
+		rz_list_append(flag_list, "MEM_NOT_CACHED");
+	}
+	if (flag & IMAGE_SCN_MEM_NOT_PAGED) {
+		rz_list_append(flag_list, "MEM_NOT_PAGED");
+	}
+	if (flag & PE_IMAGE_SCN_MEM_SHARED) {
+		rz_list_append(flag_list, "MEM_SHARED");
+	}
+	if (flag & PE_IMAGE_SCN_MEM_EXECUTE) {
+		rz_list_append(flag_list, "MEM_EXECUTE");
+	}
+	if (flag & PE_IMAGE_SCN_MEM_READ) {
+		rz_list_append(flag_list, "MEM_READ");
+	}
+	if (flag & PE_IMAGE_SCN_MEM_WRITE) {
+		rz_list_append(flag_list, "MEM_WRITE");
+	}
+	return flag_list;
+}
+
 static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	struct rz_bin_pe_section_t *sections = NULL;
 	PE_(image_section_header) * shdr;
@@ -4254,6 +4365,7 @@ static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin
 			sections[j].vsize = shdr[i].SizeOfRawData;
 		}
 		sections[j].paddr = shdr[i].PointerToRawData;
+		sections[j].flags = shdr[i].Characteristics;
 		if (bin->optional_header) {
 			ut32 sa = bin->optional_header->SectionAlignment;
 			if (sa) {

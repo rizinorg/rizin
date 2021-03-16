@@ -846,16 +846,16 @@ EOF
 EXPECT=<<EOF
 Current section
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
-0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build-id
+nth paddr       size vaddr       vsize perm name               type flags
+-------------------------------------------------------------------------
+0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build-id NOTE alloc
 
 Current section
 
-nth paddr  size vaddr  vsize perm name
---------------------------------------
+nth paddr  size vaddr  vsize perm name type flags
+-------------------------------------------------
 
-{"name":".plt","size":240,"vsize":240,"perm":"-r-x","paddr":1888,"vaddr":134514528}
+{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}
 EOF
 RUN
 
