@@ -2845,7 +2845,6 @@ static bool requires_op_size(RDisasmState *ds) {
 		case RZ_META_TYPE_MAGIC:
 		case RZ_META_TYPE_HIDE:
 		case RZ_META_TYPE_RUN:
-		case RZ_META_TYPE_VARTYPE:
 			res = false;
 			break;
 		default:
