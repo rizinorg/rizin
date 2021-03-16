@@ -478,6 +478,8 @@ typedef struct rz_bin_section_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 perm;
+	ut64 offset;
+	ut64 align;
 	// per section platform info
 	const char *arch;
 	char *format;

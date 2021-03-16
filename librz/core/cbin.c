@@ -2863,11 +2863,11 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	}
 	if (IS_MODE_NORMAL(mode)) {
 		if (hashtypes) {
-			rz_table_set_columnsf(table, "dXxXxsss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
+			rz_table_set_columnsf(table, "dXxXxsssXx",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name", "offset", "align");
 		} else {
-			rz_table_set_columnsf(table, "dXxXxss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+			rz_table_set_columnsf(table, "dXxXxssXx",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name", "offset", "align");
 		}
 		// rz_table_align (table, 0, RZ_TABLE_ALIGN_CENTER);
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
@@ -3082,16 +3082,17 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
+			// the last two are offset and align which need read from elf_file
 			if (hashtypes) {
-				rz_table_add_rowf(table, "dXxXxsss", i,
+				rz_table_add_rowf(table, "dXxXxsssXx", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, hashstr, section_name);
+					perms, hashstr, section_name, 0x1000, 0);
 			} else {
-				rz_table_add_rowf(table, "dXxXxss", i,
+				rz_table_add_rowf(table, "dXxXxssXx", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, section_name);
+					perms, section_name, 0x1000, 0);
 			}
 			free(hashstr);
 		}
