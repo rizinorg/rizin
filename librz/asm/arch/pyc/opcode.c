@@ -194,18 +194,18 @@ pyc_opcodes *new_pyc_opcodes() {
 
 void free_opcode(pyc_opcodes *opcodes) {
 	size_t i;
-	if (opcodes == NULL || opcodes->opcodes == NULL){
+	if (opcodes == NULL || opcodes->opcodes == NULL) {
 		return;
 	}
 	for (i = 0; i < 256; i++) {
 		if (opcodes->opcodes[i].op_name) {
-                        free(opcodes->opcodes[i].op_name);
-                }
+			free(opcodes->opcodes[i].op_name);
+		}
 	}
 	free(opcodes->opcodes);
-	if (opcodes->opcode_arg_fmt){
-                rz_list_free(opcodes->opcode_arg_fmt);
-        }
+	if (opcodes->opcode_arg_fmt) {
+		rz_list_free(opcodes->opcode_arg_fmt);
+	}
 	free(opcodes);
 }
 

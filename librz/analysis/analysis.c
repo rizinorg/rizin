@@ -145,11 +145,11 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 RZ_API void plugin_fini(RzAnalysis *analysis) {
 	RzAnalysisPlugin *p = analysis->cur;
 	if (p && p->fini) {
-		if (p->fini(analysis->plugin_data)){
+		if (p->fini(analysis->plugin_data)) {
 			analysis->plugin_data = NULL;
 			return;
 		} else {
-                        RZ_LOG_ERROR("analysis plugin '%s' failed to terminate.\n", p->name);
+			RZ_LOG_ERROR("analysis plugin '%s' failed to terminate.\n", p->name);
 		}
 	}
 }
