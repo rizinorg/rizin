@@ -769,9 +769,25 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 	RVTableMethodInfo *vmeth;
 	rz_vector_foreach(&vtable_info->methods, vmeth) {
 		RzAnalysisMethod meth;
-		meth.addr = vmeth->addr;
-		meth.vtable_offset = vmeth->vtable_offset;
-		meth.name = rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+		if (!rz_analysis_class_method_exists_by_addr(context->analysis, class_name, vmeth->addr)) {
+			meth.addr = vmeth->addr;
+			meth.vtable_offset = vmeth->vtable_offset;
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at(context->analysis, vmeth->addr);
+			meth.name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+			//Temporarily set as attr name
+			meth.real_name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+			meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
+		} else {
+			RzAnalysisMethod exist_meth;
+			if (rz_analysis_class_method_get_by_addr(context->analysis, class_name, vmeth->addr, &exist_meth) == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
+				meth.addr = vmeth->addr;
+				meth.name = rz_str_new(exist_meth.name);
+				meth.real_name = rz_str_new(exist_meth.real_name);
+				meth.vtable_offset = vmeth->vtable_offset;
+				meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
+				rz_analysis_class_method_fini(&exist_meth);
+			}
+		}
 		rz_analysis_class_method_set(context->analysis, class_name, &meth);
 		rz_analysis_class_method_fini(&meth);
 	}
