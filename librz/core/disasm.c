@@ -2844,21 +2844,34 @@ static void ds_print_offset(RDisasmState *ds) {
 }
 
 static bool requires_op_size(RDisasmState *ds) {
-	RzPVector *metas = rz_meta_get_all_in(ds->core->analysis, ds->at, RZ_META_TYPE_STRING);
-	if (metas && !rz_pvector_empty(metas)) {
-		rz_pvector_free(metas);
+	RzPVector *metas = rz_meta_get_all_in(ds->core->analysis, ds->at, RZ_META_TYPE_ANY);
+	if (!metas) {
 		return false;
 	}
 
-	rz_pvector_free(metas);
-	metas = rz_meta_get_all_in(ds->core->analysis, ds->at, RZ_META_TYPE_FORMAT);
-	if (metas && !rz_pvector_empty(metas)) {
-		rz_pvector_free(metas);
-		return false;
+	void **it;
+	bool res = true;
+	rz_pvector_foreach (metas, it) {
+		RzIntervalNode *node = *it;
+		RzAnalysisMetaItem *mi = node->data;
+		switch (mi->type) {
+		case RZ_META_TYPE_DATA:
+		case RZ_META_TYPE_STRING:
+		case RZ_META_TYPE_FORMAT:
+		case RZ_META_TYPE_MAGIC:
+		case RZ_META_TYPE_HIDE:
+		case RZ_META_TYPE_COMMENT:
+		case RZ_META_TYPE_RUN:
+		case RZ_META_TYPE_VARTYPE:
+			res = false;
+			break;
+		default:
+			break;
+		}
 	}
 
 	rz_pvector_free(metas);
-	return true;
+	return res;
 }
 
 static void ds_print_op_size(RDisasmState *ds) {
