@@ -842,10 +842,10 @@ RZ_API void rz_flag_unset_all(RzFlag *f) {
 }
 
 /**
- * @brief Unset all flag items in the space with the given name
+ * \brief Unset all flag items in the space with the given name
  *
- * @param f an RzFlag
- * @param space_name name of the space
+ * \param f an RzFlag
+ * \param space_name name of the space
  */
 RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name) {
 	rz_flag_space_push(f, space_name);
