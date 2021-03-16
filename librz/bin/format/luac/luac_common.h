@@ -100,10 +100,10 @@ typedef struct lua_constant_entry {
  */
 typedef struct lua_upvalue_entry {
 	/* attributes of upvalue */
-	ut8 instack;        ///< is in stack
-	ut8 idx;            ///< index
-	ut8 kind;           ///< kind
-	ut64 offset;        ///< offset of this upvalue
+	ut8 instack; ///< is in stack
+	ut8 idx; ///< index
+	ut8 kind; ///< kind
+	ut64 offset; ///< offset of this upvalue
 } LuaUpvalueEntry;
 
 typedef struct LuaProto LuaProtoEntry;
@@ -120,7 +120,7 @@ typedef struct lua_lineinfo_entry {
  * @brief Store line info attributes
  */
 typedef struct lua_abs_lineinfo_entry {
-	int pc;   ///< pc value of lua
+	int pc; ///< pc value of lua
 	int line; ///< line number in source file
 	ut64 offset;
 } LuaAbsLineinfoEntry;
@@ -129,34 +129,33 @@ typedef struct lua_abs_lineinfo_entry {
  * @brief Store local var names and other info
  */
 typedef struct lua_local_var_entry {
-	ut8 *varname;   ///< name of this variable
-	int varname_len;        ///< length of name
-	int start_pc;           ///< first active position
-	int end_pc;             ///< first deactive position
-	ut64 offset;            ///< offset of this entry
+	ut8 *varname; ///< name of this variable
+	int varname_len; ///< length of name
+	int start_pc; ///< first active position
+	int end_pc; ///< first deactive position
+	ut64 offset; ///< offset of this entry
 } LuaLocalVarEntry;
 
 /**@struct lua_dbg_upvalue_entry
  * @brief Store upvalue's debug info
  */
 typedef struct lua_dbg_upvalue_entry {
-	ut8 *upvalue_name;      ///< upvalue name
-	int name_len;           ///< length of name
+	ut8 *upvalue_name; ///< upvalue name
+	int name_len; ///< length of name
 	ut64 offset;
 } LuaDbgUpvalueEntry;
-
 
 /**@struct lua_bin_info
  * @brief A context info structure for luac plugin.
  */
 typedef struct luac_bin_info {
-	st32 major;     ///< major version
-	st32 minor;     ///< minor version
-	RzList *section_list;   ///< list of sections
-	RzList *symbol_list;    ///< list of symbols
-	RzList *entry_list;     ///< list of entries
-	RzList *string_list;    ///< list of strings
-	RzBinInfo *general_info;        ///< general binary info from luac header
+	st32 major; ///< major version
+	st32 minor; ///< minor version
+	RzList *section_list; ///< list of sections
+	RzList *symbol_list; ///< list of symbols
+	RzList *entry_list; ///< list of entries
+	RzList *string_list; ///< list of strings
+	RzBinInfo *general_info; ///< general binary info from luac header
 } LuacBinInfo;
 
 /* ========================================================
