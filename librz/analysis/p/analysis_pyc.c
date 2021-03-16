@@ -128,7 +128,9 @@ analysis_end:
 }
 
 static bool finish(void *user) {
-	rz_return_val_if_fail(user, false);
+	if (user == NULL) {
+		return true;
+	}
 	pyc_opcodes *ops = (user);
 	free_opcode(ops);
 	return true;
