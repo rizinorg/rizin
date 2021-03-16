@@ -76,6 +76,24 @@ int check(RzCore *c, int a, int b) {
 }
 ```
 
+* Use `rz_warn_if_reached()` macros to emit a runtime warning if the code path is reached.
+  It is often useful in a switch cases handling, in the default case:
+
+```c
+switch(something) {
+	case EXPECTED_CASE1:
+		...
+		break;
+	case EXPECTED_CASE2:
+		...
+		break;
+	case UNEXPECTED_CASE:
+		rz_warn_if_reached();
+		break;
+	...
+}
+```
+
 * Split long conditional expressions into small `static inline` functions to make them more readable:
 
 ```diff
