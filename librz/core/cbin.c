@@ -2882,17 +2882,18 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		fd = rz_core_file_cur_fd(r);
 		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
-	if (IS_MODE_NORMAL(mode) ) {
-		rz_table_set_columnsf(table, "dXxXxss",	"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+	if (IS_MODE_NORMAL(mode)) {
+		rz_table_set_columnsf(table, "dXxXxs", "nth", "paddr", "size", "vaddr", "vsize", "perm");
 		if (hashtypes) {
 			rz_table_set_columnsf(table, "s", hashtypes);
-			}
+		}
+		rz_table_add_column(table, rz_table_type("string"), "name", 0);
 		if (plugin_type_support && !print_segments) {
 			rz_table_set_columnsf(table, "s", "type");
-			}
+		}
 		if (plugin_flags_support && !print_segments) {
 			rz_table_set_columnsf(table, "s", "flags");
-			}
+		}
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
 	}
@@ -3124,40 +3125,38 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = rz_str_sysbits (bits);
-			if (!print_segments ) {
-				// Sections with type or flags only
-				char *type = section_type_to_string(r->bin, section->type);
-				RzList *section_flags = section_flag_to_rzlist(r->bin, section->flags);
-				char *flag = rz_list_to_delim_str(section_flags, ',');
-				if (hashtypes) {
-					rz_table_add_rowf(table, "dXxXxsssss", i,
-						(ut64)section->paddr, (ut64)section->size,
-						(ut64)addr, (ut64)section->vsize,
-						perms, hashstr, section_name, type, flag);
-				} else {
-					rz_table_add_rowf(table, "dXxXxssss", i,
-						(ut64)section->paddr, (ut64)section->size,
-						(ut64)addr, (ut64)section->vsize,
-						perms, section_name, type, flag);
-				}
-				free(flag);
-				rz_list_free(section_flags);
-				free(type);
-			} else {
-				// Segments only
-				if (hashtypes) {
-					rz_table_add_rowf(table, "dXxXxsss", i,
-						(ut64)section->paddr, (ut64)section->size,
-						(ut64)addr, (ut64)section->vsize,
-						perms, hashstr, section_name);
-				} else {
-					rz_table_add_rowf(table, "dXxXxss", i,
-						(ut64)section->paddr, (ut64)section->size,
-						(ut64)addr, (ut64)section->vsize,
-						perms, section_name);
-				}
+
+			RzList *row_list = rz_list_new();
+			if (!row_list) {
+				goto out;
 			}
-			free(hashstr);
+			// Add common fields
+			rz_list_append(row_list, rz_str_newf("%d", i));
+			rz_list_append(row_list, rz_str_newf("0x%08" PFMT64x, section->paddr));
+			rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, section->size));
+			rz_list_append(row_list, rz_str_newf("0x%08" PFMT64x, addr));
+			rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, section->vsize));
+			rz_list_append(row_list, strdup(perms));
+
+			if (hashtypes) {
+				rz_list_append(row_list, hashstr);
+			}
+
+			rz_list_append(row_list, strdup(section_name));
+
+			if (!print_segments && plugin_type_support) {
+				char *section_type = section_type_to_string(r->bin, section->type);
+				rz_list_append(row_list, section_type);
+			}
+
+			if (!print_segments && plugin_flags_support) {
+				RzList *section_flags = section_flag_to_rzlist(r->bin, section->flags);
+				char *section_flags_str = rz_str_list_join(section_flags, ",");
+				rz_list_append(row_list, section_flags_str);
+				rz_list_free(section_flags);
+			}
+
+			rz_table_add_row_list(table, row_list);
 		}
 		i++;
 		if (printHere) {

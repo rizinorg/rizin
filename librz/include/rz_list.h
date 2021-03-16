@@ -110,7 +110,6 @@ RZ_API void *rz_list_pop_head(RzList *list);
 RZ_API void rz_list_reverse(RzList *list);
 RZ_API RzList *rz_list_clone(const RzList *list);
 RZ_API char *rz_list_to_str(RzList *list, char ch);
-RZ_API char *rz_list_to_delim_str(RzList *list, char delim);
 RZ_API RzList *rz_list_of_sdblist(SdbList *sl);
 
 /* hashlike api */
