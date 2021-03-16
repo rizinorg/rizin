@@ -3875,6 +3875,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p;
 	if (analysis->bits == 64) {
+		const char *snReg = (!strcmp(analysis->os, "android") || !strcmp(analysis->os, "linux")) ? "x8" : "x16";
 		p =
 			"=PC	pc\n"
 			"=SP	sp\n"
@@ -3887,7 +3888,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"=SF	nf\n"
 			"=OF	vf\n"
 			"=CF	cf\n"
-			"=SN	x16\n" // x8 on linux?
+			"=SN	%s\n" // x8 on linux or android, x16 for the rest
 
 			/* 8bit sub-registers */
 			"gpr	b0	.8	0	0\n"
@@ -4102,6 +4103,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"flg	cf	.1	280.29	0	carry\n" // set if last op carries
 			"flg	zf	.1	280.30	0	zero\n" // set if last op is 0
 			"flg	nf	.1	280.31	0	sign\n"; // msb bit of last op
+		return rz_str_newf(p, snReg);
 	} else {
 		p =
 			"=PC	r15\n"

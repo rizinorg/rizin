@@ -132,7 +132,7 @@ Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
 Files: librz/magic/d/default/*
-Copyright: 1986, 1987, 1989, 1990, 1991, 1992, 1994, 1995 Ian F. Darwin 
+Copyright: 1986, 1987, 1989, 1990, 1991, 1992, 1994, 1995 Ian F. Darwin
 License: BSD-2-Clause
 
 Files: pkgcfg/*.pc.acr
@@ -175,6 +175,10 @@ Files: librz/egg/README
 Copyright: pancake <pancake@nopcode.org>
 License: LGPL-3.0-only
 
+Files: librz/include/sflib/*
+Copyright: 2004 Philippe Biondi <phil@secdev.org>
+License: GPL-2.0-only
+
 Files: librz/io/README
 Copyright: pancake <pancake@nopcode.org>
 License: LGPL-3.0-only
@@ -192,6 +196,20 @@ Files: librz/util/regex/*
 Copyright: 1992, 1993, 1994 Henry Spencer
 Copyright: 1992, 1993, 1994 The Regents of the University of California
 License: BSD-3-Clause
+
+Files: shlr/arm/omap3430_registers
+Copyright: Anton Kochkov <anton.kochkov@gmail.com>
+License: LGPL-3.0-only
+
+Files: shlr/heap/include/rz_jemalloc/*
+Copyright: 2002-present Jason Evans <jasone@canonware.com>
+Copyright: 2007-2012 Mozilla Foundation.
+Copyright: 2009-present Facebook, Inc.
+License: BSD-2-Clause
+
+Files: shlr/spp/*
+Copyright: 2009-2020 pancake <pancake@nopcode.org>
+License: MIT
 
 Files: shlr/tcc/*
 Copyright: 2001-2004 Fabrice Bellard

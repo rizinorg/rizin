@@ -157,8 +157,10 @@ static RzList *sections(RzBinFile *bf) {
 		if (!ptr->vsize && ptr->size) {
 			ptr->vsize = ptr->size;
 		}
+		ptr->flags = sections[i].flags;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
+
 		ptr->add = true;
 		ptr->perm = 0;
 		if (RZ_BIN_PE_SCN_IS_EXECUTABLE(sections[i].perm)) {

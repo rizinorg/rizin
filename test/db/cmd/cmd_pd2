@@ -392,8 +392,7 @@ pd 3
 EOF
 EXPECT=<<EOF
             0x080483cf      nop
-/ (fcn) sym.deregister_tm_clones 40
-|   sym.deregister_tm_clones ();
+/ sym.deregister_tm_clones
 |           0x080483d0      mov   eax, obj.completed.6891
 |           0x080483d5      cmp   eax, obj.completed.6891
 

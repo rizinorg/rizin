@@ -282,7 +282,7 @@ static ut64 numget(RzCore *core, const char *k) {
 }
 
 static bool __isMapped(RzCore *core, ut64 addr, int perm) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		// RzList *maps = core->dbg->maps;
 		RzDebugMap *map = NULL;
 		RzListIter *iter = NULL;
@@ -305,7 +305,7 @@ static bool __isMapped(RzCore *core, ut64 addr, int perm) {
 }
 
 static bool __syncDebugMaps(RzCore *core) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		return rz_debug_map_sync(core->dbg);
 	}
 	return false;
@@ -595,7 +595,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 					break;
 				}
 				*ptr = 0;
-				if (rz_config_get_i(core->config, "cfg.debug")) {
+				if (rz_config_get_b(core->config, "cfg.debug")) {
 					if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
 						RzRegItem *r = rz_reg_get(core->dbg->reg, bptr, -1);
 						if (r) {

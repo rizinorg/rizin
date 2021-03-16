@@ -846,16 +846,16 @@ EOF
 EXPECT=<<EOF
 Current section
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
-0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build-id
+nth paddr       size vaddr       vsize perm name               type flags
+-------------------------------------------------------------------------
+0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build-id NOTE alloc
 
 Current section
 
-nth paddr  size vaddr  vsize perm name
---------------------------------------
+nth paddr  size vaddr  vsize perm name type flags
+-------------------------------------------------
 
-{"name":".plt","size":240,"vsize":240,"perm":"-r-x","paddr":1888,"vaddr":134514528}
+{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}
 EOF
 RUN
 
@@ -1710,7 +1710,7 @@ EOF
 EXPECT=<<EOF
 cdecl
             ; CALL XREF from main @ 0x80484db
-/ (fcn) sym.nonfastcaslled 51
+/ sym.nonfastcaslled (int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_14h);
 |           ; var int32_t var_10h @ ebp-0x10
 |           ; var int32_t var_ch @ ebp-0xc
 |           ; arg int32_t arg_8h @ ebp+0x8
@@ -1766,8 +1766,7 @@ afvn my_local var_18h
 pd 1
 EOF
 EXPECT=<<EOF
-/ (fcn) fcn.00000000 62
-// void fcn.00000000 (int64_t arg1);
+/ fcn.00000000 (int64_t arg1);
 |           ; var int64_t my_local @ rbp-0x18
 |           ; arg int64_t arg1 @ rdi
 |           0x00000000      0000           add   byte [rax], al
