@@ -863,7 +863,7 @@ static int step_until_optype(RzCore *core, RzList *optypes_list) {
 		goto end;
 	}
 
-	bool debugMode = rz_config_get_i(core->config, "cfg.debug");
+	bool debugMode = rz_config_get_b(core->config, "cfg.debug");
 
 	rz_cons_break_push(NULL, NULL);
 	for (;;) {
@@ -1813,7 +1813,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 #endif
 
 static void foreach_reg_set_or_clear(RzCore *core, bool set) {
-	RzReg *reg = rz_config_get_i(core->config, "cfg.debug")
+	RzReg *reg = rz_config_get_b(core->config, "cfg.debug")
 		? core->dbg->reg
 		: core->analysis->reg;
 	const RzList *regs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
@@ -1950,7 +1950,7 @@ static void show_drpi(RzCore *core) {
 
 static void cmd_reg_profile(RzCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
-	RzReg *r = rz_config_get_i(core->config, "cfg.debug") ? core->dbg->reg : core->analysis->reg;
+	RzReg *r = rz_config_get_b(core->config, "cfg.debug") ? core->dbg->reg : core->analysis->reg;
 	switch (str[1]) {
 	case '\0': // "drp" "arp"
 		if (r->reg_profile_str) {
@@ -2751,7 +2751,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 	case '=': // "dr="
 	{
 		int pcbits2, pcbits = grab_bits(core, str + 1, &pcbits2);
-		if (rz_config_get_i(core->config, "cfg.debug")) {
+		if (rz_config_get_b(core->config, "cfg.debug")) {
 			if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
 				if (pcbits && pcbits != bits) {
 					rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, NULL, '=', use_color); // xxx detect which one is current usage
@@ -4388,7 +4388,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 		if (rz_config_get_i(core->config, "dbg.skipover")) {
 			rz_core_cmdf(core, "dss%s", input + 1);
 		} else {
-			if (rz_config_get_i(core->config, "cfg.debug")) {
+			if (rz_config_get_b(core->config, "cfg.debug")) {
 				int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
 				addr = rz_debug_reg_get(core->dbg, "PC");
 				RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
@@ -4406,7 +4406,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 		}
 		break;
 	case 'b': // "dsb"
-		if (rz_config_get_i(core->config, "cfg.debug")) {
+		if (rz_config_get_b(core->config, "cfg.debug")) {
 			if (!core->dbg->session) {
 				eprintf("Session has not started\n");
 			} else if (rz_debug_step_back(core->dbg, times) < 0) {
@@ -5052,14 +5052,14 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			break;
 		case 'o': // "doo" : reopen in debug mode
 			if (input[2] == 'f') { // "doof" : reopen in debug mode from the given file
-				rz_config_set_i(core->config, "cfg.debug", true);
+				rz_config_set_b(core->config, "cfg.debug", true);
 				rz_core_cmd0(core, sdb_fmt("oodf %s", input + 3));
 			} else {
 				rz_core_file_reopen_debug(core, input + 2);
 			}
 			break;
 		case 'c': // "doc" : close current debug session
-			if (!core || !core->io || !core->io->desc || !rz_config_get_i(core->config, "cfg.debug")) {
+			if (!core || !core->io || !core->io->desc || !rz_config_get_b(core->config, "cfg.debug")) {
 				eprintf("No open debug session\n");
 				break;
 			}

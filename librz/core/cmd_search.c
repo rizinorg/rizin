@@ -607,7 +607,7 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 	if (!mode) {
 		mode = rz_config_get(core->config, bound_in);
 	}
-	if (!rz_config_get_i(core->config, "cfg.debug") && !core->io->va) {
+	if (!rz_config_get_b(core->config, "cfg.debug") && !core->io->va) {
 		append_bound(list, core->io, search_itv, 0, rz_io_size(core->io), 7);
 	} else if (!strcmp(mode, "file")) {
 		append_bound(list, core->io, search_itv, 0, rz_io_size(core->io), 7);
@@ -1583,7 +1583,7 @@ static bool esil_addrinfo(RzAnalysisEsil *esil) {
 
 static void do_esil_search(RzCore *core, struct search_parameters *param, const char *input) {
 	const int hit_combo_limit = rz_config_get_i(core->config, "search.esilcombo");
-	const bool cfgDebug = rz_config_get_i(core->config, "cfg.debug");
+	const bool cfgDebug = rz_config_get_b(core->config, "cfg.debug");
 	RzSearch *search = core->search;
 	RzSearchKeyword kw = RZ_EMPTY;
 	if (input[0] != 'E') {

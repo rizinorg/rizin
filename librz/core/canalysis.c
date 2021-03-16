@@ -4614,7 +4614,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 }
 
 RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
-	int cfg_debug = rz_config_get_i(core->config, "cfg.debug");
+	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
 	ut64 at;
 	int count = 0;
@@ -7004,7 +7004,7 @@ static bool is_apple_target(RzCore *core) {
 RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig) {
 	bool didAap = false;
 	ut64 curseek = core->offset;
-	bool cfg_debug = rz_config_get_i(core->config, "cfg.debug");
+	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	const char *oldstr = NULL;
 	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
 		oldstr = rz_print_rowlog(core->print, "Find function and symbol names from golang binaries (aang)");
@@ -7250,7 +7250,7 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	ut64 seek;
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		eprintf("TOFIX: aaft can't run in debugger mode.\n");
 		return false;
 	}

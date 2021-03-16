@@ -7716,7 +7716,7 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 }
 
 RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
-	int cfg_debug = rz_config_get_i(core->config, "cfg.debug");
+	int cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	ut64 from, to;
 	int rad;
 	PJ *pj = NULL;
