@@ -1527,9 +1527,6 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				__delete_next_char();
 			}
 			break;
-		case 10: // ^J -- ignore
-			rz_cons_break_pop();
-			return I.buffer.data;
 		case 11: // ^K
 			I.buffer.data[I.buffer.index] = '\0';
 			I.buffer.length = I.buffer.index;
@@ -1945,6 +1942,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				rz_cons_flush();
 			}
 			break;
+		case 10: // ^J -- ignore
 		case 13: // enter
 			if (I.hud) {
 				I.hud->activate = false;
