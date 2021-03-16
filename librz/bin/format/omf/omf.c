@@ -1,4 +1,7 @@
+// SPDX-FileCopyrightText: 2015 ampotos <mercie_i@epitech.eu>
+// SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #include "omf.h"
 
 static bool is_valid_omf_type(ut8 type) {
