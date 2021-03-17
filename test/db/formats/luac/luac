@@ -142,6 +142,9 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 EOF
+REGEXP_FILTER_ERR=<<EOF
+Bad Luac File : .*\]
+EOF
 EXPECT_ERR=<<EOF
 Bad Luac File : Truncated Code at [0x2f]
 EOF

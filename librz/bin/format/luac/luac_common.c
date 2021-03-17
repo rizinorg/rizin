@@ -133,40 +133,40 @@ void lua_free_dbg_upvalue_entry(LuaDbgUpvalueEntry *entry) {
 }
 
 void lua_free_local_var_entry(LuaLocalVarEntry *entry) {
-        rz_return_if_fail(entry);
-        if (entry->varname != NULL) {
+	rz_return_if_fail(entry);
+	if (entry->varname != NULL) {
 		RZ_FREE(entry->varname);
 	}
 	RZ_FREE(entry);
 }
 
 void lua_free_const_entry(LuaConstEntry *entry) {
-        rz_return_if_fail(entry);
-        if (entry->data != NULL) {
+	rz_return_if_fail(entry);
+	if (entry->data != NULL) {
 		RZ_FREE(entry->data);
 	}
 	RZ_FREE(entry);
 }
 
 void lua_free_abs_lineinfo_entry(LuaAbsLineinfoEntry *entry) {
-        rz_return_if_fail(entry);
-        RZ_FREE(entry);
+	rz_return_if_fail(entry);
+	RZ_FREE(entry);
 }
 
 void lua_free_lineinfo_entry(LuaLineinfoEntry *entry) {
-        rz_return_if_fail(entry);
-        RZ_FREE(entry);
+	rz_return_if_fail(entry);
+	RZ_FREE(entry);
 }
 
 void lua_free_upvalue_entry(LuaUpvalueEntry *entry) {
-        rz_return_if_fail(entry);
-        RZ_FREE(entry);
+	rz_return_if_fail(entry);
+	RZ_FREE(entry);
 }
 
 void lua_free_proto_entry(LuaProto *proto) {
-        rz_return_if_fail(proto);
+	rz_return_if_fail(proto);
 
-        /* free constants entries */
+	/* free constants entries */
 	rz_list_free(proto->const_entries);
 	proto->const_entries = NULL;
 
