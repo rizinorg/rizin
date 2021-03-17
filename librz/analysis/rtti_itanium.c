@@ -833,6 +833,27 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 	}
 }
 
+static void detect_constructor_destructor(RzAnalysis *analysis, class_type_info *cti) {
+	RzVector *vec = rz_analysis_class_method_get_all(analysis, cti->name);
+	RzAnalysisMethod *meth;
+	rz_vector_foreach(vec, meth) {
+		if (!rz_str_cmp(meth->real_name, cti->name, strlen(cti->name))) {
+			meth->method_type = RZ_ANALYSIS_CLASS_METHOD_CONSTRUCTOR;
+			rz_analysis_class_method_set(analysis, cti->name, meth);
+			continue;
+		} else if (rz_str_startswith(meth->real_name, "~") && !rz_str_cmp(meth->real_name + 1, cti->name, strlen(cti->name))) {
+			if (meth->method_type == RZ_ANALYSIS_CLASS_METHOD_VIRTUAL) {
+				meth->method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL_DESTRUCTOR;
+			} else {
+				meth->method_type = RZ_ANALYSIS_CLASS_METHOD_DESTRUCTOR;
+			}
+			rz_analysis_class_method_set(analysis, cti->name, meth);
+			continue;
+		}
+	}
+	rz_vector_free(vec);
+}
+
 RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList *vtables) {
 	RzList /*<class_type_info>*/ *rtti_list = rz_list_new();
 	rtti_list->free = rtti_itanium_type_info_free;
@@ -850,6 +871,8 @@ RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList
 		rz_analysis_class_create(context->analysis, cti->name);
 		// can't we name virtual functions virtual even without RTTI?
 		recovery_apply_vtable(context, cti->name, vtable);
+		//Temporarily detect by method name
+		detect_constructor_destructor(context->analysis, cti);
 
 		// we only need one of a kind
 		if (set_u_contains(unique_rttis, cti->typeinfo_addr)) {
