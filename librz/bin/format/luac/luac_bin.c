@@ -4,8 +4,10 @@
 #include "luac_common.h"
 
 void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, bool is_func) {
-	RzBinSection *bin_sec;
-	rz_return_if_fail(bin_sec = RZ_NEW0(RzBinSection));
+	RzBinSection *bin_sec = RZ_NEW0(RzBinSection);
+	if (!bin_sec) {
+		return;
+	}
 
 	bin_sec->name = rz_str_new(name);
 	bin_sec->vaddr = bin_sec->paddr = offset;
@@ -27,8 +29,10 @@ void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, 
 }
 
 void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, const char *type) {
-	RzBinSymbol *bin_sym;
-	rz_return_if_fail(bin_sym = RZ_NEW0(RzBinSymbol));
+	RzBinSymbol *bin_sym = RZ_NEW0(RzBinSymbol);
+	if (!bin_sym) {
+		return;
+	}
 
 	bin_sym->name = rz_str_new(name);
 	bin_sym->vaddr = bin_sym->paddr = offset;
@@ -39,8 +43,10 @@ void luac_add_symbol(RzList *symbol_list, char *name, ut64 offset, ut64 size, co
 }
 
 void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type) {
-	RzBinAddr *entry;
-	rz_return_if_fail(entry = RZ_NEW0(RzBinAddr));
+	RzBinAddr *entry = RZ_NEW0(RzBinAddr);
+	if (!entry) {
+		return;
+	}
 
 	entry->vaddr = offset;
 	entry->paddr = offset;
@@ -50,8 +56,10 @@ void luac_add_entry(RzList *entry_list, ut64 offset, int entry_type) {
 }
 
 void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size) {
-	RzBinString *bin_string;
-	rz_return_if_fail(bin_string = RZ_NEW0(RzBinString));
+	RzBinString *bin_string = RZ_NEW0(RzBinString);
+	if (!bin_string) {
+		return;
+	}
 
 	bin_string->paddr = offset;
 	bin_string->vaddr = offset;
@@ -63,13 +71,10 @@ void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size) 
 }
 
 LuacBinInfo *luac_build_info(LuaProto *proto) {
-	if (proto == NULL) {
-		return NULL;
-	}
+	rz_return_val_if_fail(proto, NULL);
 
-	LuacBinInfo *ret;
-	ret = RZ_NEW0(LuacBinInfo);
-	if (ret == NULL) {
+	LuacBinInfo *ret = RZ_NEW0(LuacBinInfo);
+	if (!ret) {
 		return NULL;
 	}
 
@@ -109,8 +114,7 @@ static const char *get_tag_string(ut8 tag) {
 
 /* Heap allocated string */
 static char *get_constant_symbol_name(char *proto_name, LuaConstEntry *entry) {
-	rz_return_val_if_fail(entry, NULL);
-	rz_return_val_if_fail(proto_name, NULL);
+	rz_return_val_if_fail(entry || proto_name, NULL);
 	ut8 tag = entry->tag;
 	char *ret;
 	int integer_value;
@@ -156,21 +160,16 @@ static char *get_constant_symbol_name(char *proto_name, LuaConstEntry *entry) {
 
 /* Heap allocated string */
 static char *simple_build_upvalue_symbol(char *proto_name, LuaUpvalueEntry *entry) {
-	char *ret = NULL;
-	ret = rz_str_newf("%s_upvalue_0x%llx", proto_name, entry->offset);
-	return ret;
+	return rz_str_newf("%s_upvalue_0x%llx", proto_name, entry->offset);
 }
 
 static char *get_upvalue_symbol_name(char *proto_name, LuaUpvalueEntry *entry, char *debug_name) {
-	rz_return_val_if_fail(proto_name, NULL);
-	rz_return_val_if_fail(entry, NULL);
+	rz_return_val_if_fail(proto_name || entry, NULL);
 	if (debug_name == NULL) {
 		return simple_build_upvalue_symbol(proto_name, entry);
 	}
 
-	char *ret = NULL;
-	ret = rz_str_newf("%s_upvalue_%s", proto_name, debug_name);
-	return ret;
+	return rz_str_newf("%s_upvalue_%s", proto_name, debug_name);
 }
 
 void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
