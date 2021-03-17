@@ -169,6 +169,10 @@ static const RzCmdDescArg write_8_inc_args[2];
 static const RzCmdDescArg write_8_dec_args[2];
 static const RzCmdDescArg write_base64_decode_args[2];
 static const RzCmdDescArg write_base64_encode_args[2];
+static const RzCmdDescArg write_from_io_args[3];
+static const RzCmdDescArg write_from_io_xchg_args[3];
+static const RzCmdDescArg write_from_file_args[4];
+static const RzCmdDescArg write_from_socket_args[3];
 static const RzCmdDescArg zign_best_args[2];
 static const RzCmdDescArg zign_best_name_args[3];
 static const RzCmdDescArg zign_delete_args[2];
@@ -3159,8 +3163,91 @@ static const RzCmdDescHelp wt_handler_old_help = {
 	.summary = "Write to file",
 };
 
-static const RzCmdDescHelp wf_handler_old_help = {
+static const RzCmdDescHelp wf_help = {
 	.summary = "Write data from file, socket, offset",
+};
+static const RzCmdDescArg write_from_io_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_from_io_help = {
+	.summary = "Write <size> bytes from <addr> into current offset",
+	.args = write_from_io_args,
+};
+
+static const RzCmdDescArg write_from_io_xchg_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_from_io_xchg_help = {
+	.summary = "Exchange <size> bytes between <addr> and current offset",
+	.args = write_from_io_xchg_args,
+};
+
+static const RzCmdDescArg write_from_file_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "offset",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_from_file_help = {
+	.summary = "Write data from <file> into current offset",
+	.args = write_from_file_args,
+};
+
+static const RzCmdDescArg write_from_socket_args[] = {
+	{
+		.name = "host:port",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_from_socket_help = {
+	.summary = "Write data from socket into current offset",
+	.args = write_from_socket_args,
 };
 
 static const RzCmdDescHelp ww_handler_old_help = {
@@ -4426,8 +4513,16 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *wt_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wt", rz_wt_handler_old, &wt_handler_old_help);
 	rz_warn_if_fail(wt_handler_old_cd);
 
-	RzCmdDesc *wf_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "wf", rz_wf_handler_old, &wf_handler_old_help);
-	rz_warn_if_fail(wf_handler_old_cd);
+	RzCmdDesc *wf_cd = rz_cmd_desc_group_new(core->rcmd, w_cd, "wf", rz_write_from_io_handler, &write_from_io_help, &wf_help);
+	rz_warn_if_fail(wf_cd);
+	RzCmdDesc *write_from_io_xchg_cd = rz_cmd_desc_argv_new(core->rcmd, wf_cd, "wfx", rz_write_from_io_xchg_handler, &write_from_io_xchg_help);
+	rz_warn_if_fail(write_from_io_xchg_cd);
+
+	RzCmdDesc *write_from_file_cd = rz_cmd_desc_argv_new(core->rcmd, wf_cd, "wff", rz_write_from_file_handler, &write_from_file_help);
+	rz_warn_if_fail(write_from_file_cd);
+
+	RzCmdDesc *write_from_socket_cd = rz_cmd_desc_argv_new(core->rcmd, wf_cd, "wfs", rz_write_from_socket_handler, &write_from_socket_help);
+	rz_warn_if_fail(write_from_socket_cd);
 
 	RzCmdDesc *ww_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, w_cd, "ww", rz_ww_handler_old, &ww_handler_old_help);
 	rz_warn_if_fail(ww_handler_old_cd);
