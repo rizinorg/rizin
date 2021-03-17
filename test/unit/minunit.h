@@ -140,6 +140,17 @@ void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 		} \
 	} while (0)
 
+#define mu_assert_eqf(actual, expected, message) \
+	do { \
+		double act__ = (double)(actual); \
+		double exp__ = (double)(expected); \
+		if ((exp__) != (act__)) { \
+			char _meqstr[MU_BUF_SIZE]; \
+			snprintf(_meqstr, MU_BUF_SIZE, "%s: expected %lf, got %lf.", (message), exp__, act__); \
+			mu_assert(_meqstr, false); \
+		} \
+	} while (0)
+
 #define mu_assert_neq(actual, expected, message) \
 	do { \
 		char _meqstr[MU_BUF_SIZE]; \
