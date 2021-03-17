@@ -4,6 +4,7 @@
 #include <rz_analysis.h>
 #include <rz_vector.h>
 #include <rz_util/rz_graph_drawable.h>
+#include <rz_util/rz_table.h>
 #include "../include/rz_analysis.h"
 #include "../include/rz_util/rz_graph.h"
 
@@ -1076,7 +1077,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, 
 // ---- PRINT ----
 
 RZ_API void rz_analysis_class_print(RzAnalysis *analysis, const char *class_name, bool detailed) {
-	rz_cons_print(class_name);
+	rz_cons_printf("[%s", class_name);
 
 	RzVector *bases = rz_analysis_class_base_get_all(analysis, class_name);
 	if (bases) {
@@ -1094,7 +1095,7 @@ RZ_API void rz_analysis_class_print(RzAnalysis *analysis, const char *class_name
 		rz_vector_free(bases);
 	}
 
-	rz_cons_print("\n");
+	rz_cons_print("]\n");
 
 	if (detailed) {
 		RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
@@ -1112,18 +1113,32 @@ RZ_API void rz_analysis_class_print(RzAnalysis *analysis, const char *class_name
 		}
 
 		RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
-		if (methods) {
+		if (methods && rz_vector_len(methods) > 0) {
+			RzTable *table = rz_table_new();
+			rz_table_set_columnsf(table, "dsxxs", "nth", "name", "addr", "vt_offset", "type");
+			rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
+			char *method_type[] = { "DEFAULT", "VIRTUAL", "V_DESTRUCTOR", "DESTRUCTOR", "CONSTRUCTOR" };
 			RzAnalysisMethod *meth;
+			int i = 1;
 			rz_vector_foreach(methods, meth) {
-				rz_cons_printf("  %s @ 0x%" PFMT64x, meth->real_name, meth->addr);
+				RzList *row_list = rz_list_newf(free);
+				rz_list_append(row_list, rz_str_newf("%d", i++));
+				rz_list_append(row_list, rz_str_new(meth->real_name));
+				rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, meth->addr));
 				if (meth->vtable_offset >= 0) {
-					rz_cons_printf(" (vtable + 0x%" PFMT64x ")\n", (ut64)meth->vtable_offset);
+					rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, meth->vtable_offset));
 				} else {
-					rz_cons_print("\n");
+					rz_list_append(row_list, rz_str_new("-1"));
 				}
+				rz_list_append(row_list, rz_str_new(method_type[meth->method_type]));
+				rz_table_add_row_list(table, row_list);
 			}
-			rz_vector_free(methods);
+			char *s = rz_table_tostring(table);
+			rz_cons_printf("%s\n", s);
+			free(s);
+			rz_table_free(table);
 		}
+		rz_vector_free(methods);
 	}
 }
 
