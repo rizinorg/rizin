@@ -3074,7 +3074,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.section", "false", "Show section name before offset");
 	SETBPREF("asm.section.perm", "false", "Show section permissions in the disasm");
 	SETBPREF("asm.section.name", "true", "Show section name in the disasm");
-	SETI("asm.section.col", 20, "Columns width to show asm.section");
+	SETI("asm.section.col", 30, "Columns width to show asm.section");
 	SETCB("asm.sub.section", "false", &cb_asmsubsec, "Show offsets in disasm prefixed with section/map name");
 	SETCB("asm.pseudo", "false", &cb_asmpseudo, "Enable pseudo syntax");
 	SETBPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");
