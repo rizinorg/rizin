@@ -8,7 +8,7 @@ k analysis/classes/*
 k analysis/classes/attrs/*
 EOF
 EXPECT=<<EOF
-Flatline
+[Flatline]
 Flatline=c
 -
 EOF
@@ -26,8 +26,11 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Flatline
-  PrayerPosition @ 0x1337 (vtable + 0x42)
+[Flatline]
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=PrayerPosition
@@ -64,9 +67,12 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Flatline
-  PrayerPosition @ 0x1337 (vtable + 0x42)
-  RemainIndoors @ 0xdeadbeef
+[Flatline]
+nth name                  addr vt_offset type
+---------------------------------------------
+1   PrayerPosition      0x1337 0x42      DEFAULT
+2   RemainIndoors   0xdeadbeef -1        DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=PrayerPosition,RemainIndoors
@@ -76,8 +82,11 @@ attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PrayerPosition
 0xdeadbeef 0 method.Flatline.RemainIndoors
 --
-Flatline
-  RemainIndoors @ 0xdeadbeef
+[Flatline]
+nth name                 addr vt_offset type
+--------------------------------------------
+1   RemainIndoors  0xdeadbeef -1        DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=RemainIndoors
@@ -85,7 +94,7 @@ attr.Flatline.method.RemainIndoors=3735928559,-1,0,RemainIndoors
 attrtypes.Flatline=method
 0xdeadbeef 0 method.Flatline.RemainIndoors
 --
-Flatline
+[Flatline]
 Flatline=c
 -
 EOF
@@ -110,8 +119,11 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Flatline
-  PrayerPosition @ 0x1337 (vtable + 0x42)
+[Flatline]
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=PrayerPosition
@@ -119,8 +131,11 @@ attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PrayerPosition
 --
-Flatline
-  Marigold @ 0x1337 (vtable + 0x42)
+[Flatline]
+nth name        addr vt_offset type
+-----------------------------------
+1   Marigold  0x1337 0x42      DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=Marigold
@@ -170,11 +185,14 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Album
-Flatline: PeripheryAlbum
+[Album]
+[Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-  PrayerPosition @ 0x1337 (vtable + 0x42)
-PeripheryAlbum: Album
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
+[PeripheryAlbum: Album]
 Album=c
 Flatline=c
 PeripheryAlbum=c
@@ -192,10 +210,13 @@ attrtypes.PeripheryAlbum=base
 0x00001337 0 method.Flatline.PrayerPosition
 0x00001337 0 vtable.Flatline.0
 --
-Flatline: PeripheryAlbum
+[Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-  PrayerPosition @ 0x1337 (vtable + 0x42)
-PeripheryAlbum
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
+[PeripheryAlbum]
 Flatline=c
 PeripheryAlbum=c
 -
@@ -209,10 +230,13 @@ attrtypes.Flatline=base,method,vtable
 0x00001337 0 method.Flatline.PrayerPosition
 0x00001337 0 vtable.Flatline.0
 --
-Flatline: PeripheryAlbum
+[Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-  PrayerPosition @ 0x1337 (vtable + 0x42)
-PeripheryAlbum
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
+[PeripheryAlbum]
 Flatline=c
 PeripheryAlbum=c
 -
@@ -226,7 +250,7 @@ attrtypes.Flatline=base,method,vtable
 0x00001337 0 method.Flatline.PrayerPosition
 0x00001337 0 vtable.Flatline.0
 --
-PeripheryAlbum
+[PeripheryAlbum]
 PeripheryAlbum=c
 -
 EOF
@@ -247,9 +271,9 @@ k analysis/classes/attrs/*
 acb Flatline
 EOF
 EXPECT=<<EOF
-Flatline: PeripherySong, NiceSong
-NiceSong
-PeripherySong
+[Flatline: PeripherySong, NiceSong]
+[NiceSong]
+[PeripherySong]
 Flatline=c
 NiceSong=c
 PeripherySong=c
@@ -321,7 +345,7 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Deadwing
+[Deadwing]
   (vtable at 0x1337)
   (vtable at 0xdeadbeef in class at +0x42)
 Deadwing=c
@@ -354,7 +378,7 @@ acll
 f@F:classes
 EOF
 EXPECT=<<EOF
-Deadwing
+[Deadwing]
   (vtable at 0x1337)
   (vtable at 0xdeadbeef in class at +0x42)
   (vtable at 0xefefef in class at +0x42)
@@ -369,7 +393,7 @@ attrtypes.Deadwing=vtable
 0x00efefef 32 vtable.Deadwing.2
 0xdeadbeef 0 vtable.Deadwing.1
 --
-Deadwing
+[Deadwing]
   (vtable at 0xdeadbeef in class at +0x42)
   (vtable at 0xefefef in class at +0x42)
 0x00efefef 32 vtable.Deadwing.2
@@ -401,11 +425,14 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Album
-Deadwing: PorcupineTreeAlbum
-PorcupineTreeAlbum: Album
+[Album]
+[Deadwing: PorcupineTreeAlbum]
+[PorcupineTreeAlbum: Album]
   (vtable at 0x1337 in class at +0x42)
-  Listen @ 0xdeadbeef
+nth name          addr vt_offset type
+-------------------------------------
+1   Listen  0xdeadbeef -1        DEFAULT
+
 Album=c
 Deadwing=c
 PorcupineTreeAlbum=c
@@ -423,11 +450,14 @@ attrtypes.PorcupineTreeAlbum=base,vtable,method
 0x00001337 0 vtable.PorcupineTreeAlbum.0
 0xdeadbeef 0 method.PorcupineTreeAlbum.Listen
 --
-Album
-Deadwing: Masterpiece
-Masterpiece: Album
+[Album]
+[Deadwing: Masterpiece]
+[Masterpiece: Album]
   (vtable at 0x1337 in class at +0x42)
-  Listen @ 0xdeadbeef
+nth name          addr vt_offset type
+-------------------------------------
+1   Listen  0xdeadbeef -1        DEFAULT
+
 Album=c
 Deadwing=c
 Masterpiece=c
@@ -504,11 +534,11 @@ acvf 0x0 000ASDASdjpsadoaspdjasdaspodasDDD
 acv A 0x00400d28 0x0
 EOF
 EXPECT=<<EOF
-A
+[A]
   (vtable at 0x400d28)
-B
+[B]
   (vtable at 0x400d08)
-C
+[C]
   (vtable at 0x400ce8)
 Function address: 0x00400ac8, in A vtable 0
 Function address: 0x00400b82, in B vtable 0
