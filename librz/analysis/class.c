@@ -1210,11 +1210,13 @@ RZ_API void rz_analysis_class_json(RzAnalysis *analysis, PJ *j, const char *clas
 	pj_a(j);
 	RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
 	if (methods) {
+		char *method_type[] = { "DEFAULT", "VIRTUAL", "V_DESTRUCTOR", "DESTRUCTOR", "CONSTRUCTOR" };
 		RzAnalysisMethod *meth;
 		rz_vector_foreach(methods, meth) {
 			pj_o(j);
 			pj_ks(j, "name", meth->real_name);
 			pj_kn(j, "addr", meth->addr);
+			pj_ks(j, "type", method_type[meth->method_type]);
 			if (meth->vtable_offset >= 0) {
 				pj_kn(j, "vtable_offset", (ut64)meth->vtable_offset);
 			}
