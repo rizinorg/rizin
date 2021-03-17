@@ -10,7 +10,6 @@ rz_cons_sources = [
   'input.c',
   'less.c',
   'line.c',
-  'more.c',
   'output.c',
   'pager.c',
   'pal.c',
