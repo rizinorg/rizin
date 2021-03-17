@@ -2657,13 +2657,20 @@ static void ds_print_lines_left(RDisasmState *ds) {
 	RzCore *core = ds->core;
 	if (ds->show_section) {
 		char *str = NULL;
-		if (ds->show_section_perm) {
-			// iosections must die, this should be rbin_section_get
-			RzIOMap *map = rz_io_map_get(core->io, ds->at);
-			str = strdup(map ? rz_str_rwx_i(map->perm) : "---");
+		if (ds->show_section_perm && core->bin && core->bin->cur) {
+			int va = rz_config_get_i(core->config, "io.va");
+			RzBinSection *sec = rz_bin_get_section_at(core->bin->cur->o, ds->at, va);
+			str = strdup(sec ? rz_str_rwx_i(sec->perm) : "---");
 		}
-		if (ds->show_section_name) {
-			str = rz_str_appendf(str, " %s", rz_core_get_section_name(core, ds->at));
+		if (ds->show_section_name && core->bin && core->bin->cur) {
+			int va = rz_config_get_i(core->config, "io.va");
+			RzBinSection *sec = rz_bin_get_section_at(core->bin->cur->o, ds->at, va);
+			if (sec) {
+				if (str) {
+					str = rz_str_append(str, " ");
+				}
+				str = rz_str_appendf(str, "%10.10s", sec->name);
+			}
 		}
 		char *sect = str ? str : strdup("");
 		printCol(ds, sect, ds->show_section_col, ds->color_reg);
@@ -2827,8 +2834,37 @@ static void ds_print_offset(RDisasmState *ds) {
 	}
 }
 
+static bool requires_op_size(RDisasmState *ds) {
+	RzPVector *metas = rz_meta_get_all_in(ds->core->analysis, ds->at, RZ_META_TYPE_ANY);
+	if (!metas) {
+		return false;
+	}
+
+	void **it;
+	bool res = true;
+	rz_pvector_foreach (metas, it) {
+		RzIntervalNode *node = *it;
+		RzAnalysisMetaItem *mi = node->data;
+		switch (mi->type) {
+		case RZ_META_TYPE_DATA:
+		case RZ_META_TYPE_STRING:
+		case RZ_META_TYPE_FORMAT:
+		case RZ_META_TYPE_MAGIC:
+		case RZ_META_TYPE_HIDE:
+		case RZ_META_TYPE_RUN:
+			res = false;
+			break;
+		default:
+			break;
+		}
+	}
+
+	rz_pvector_free(metas);
+	return res;
+}
+
 static void ds_print_op_size(RDisasmState *ds) {
-	if (ds->show_size) {
+	if (ds->show_size && requires_op_size(ds)) {
 		int size = ds->oplen;
 		rz_cons_printf("%d ", size); //ds->analop.size);
 	}
