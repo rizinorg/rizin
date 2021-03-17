@@ -1745,33 +1745,34 @@ static void GH(print_tcache_description)(RzCore *core, GHT m_arena, MallocState 
  * \param m_arena Offset of main arena in memory
  * \param main_arena Pointer to Malloc state struct for main arena
  * \param global_max_fast The largest fast bin size (used for formatting)
- * \param format Integer to determine which type of bins to print. 0 means print all types of bins
+ * \param format Enum to determine which type of bins to print.
  */
-static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, int format) {
+static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, HeapBinType format) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
-	if (!format || format == 1) {
+	if (format == BIN_ANY || format == BIN_TCACHE) {
 		GH(print_tcache_description)
 		(core, m_arena, main_arena);
 		rz_cons_newline();
 	}
-	if (!format || format == 2) {
+	if (format == BIN_ANY || format == BIN_FAST) {
 		GH(print_fastbin_description)
 		(core, m_arena, main_arena, global_max_fast);
 		rz_cons_newline();
 	}
-	if (!format || format == 3) {
+	if (format == BIN_ANY || format == BIN_UNSORTED) {
 		GH(print_unsortedbin_description)
 		(core, m_arena, main_arena);
 		rz_cons_newline();
 	}
-	if (!format || format == 4) {
+	if (format == BIN_ANY || format == BIN_SMALL) {
 		GH(print_smallbin_description)
 		(core, m_arena, main_arena);
 		rz_cons_newline();
 	}
-	if (!format || format == 5) {
+	if (format == BIN_ANY || format == BIN_LARGE) {
 		GH(print_largebin_description)
 		(core, m_arena, main_arena);
+		rz_cons_newline();
 	}
 }
 
@@ -1947,24 +1948,26 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 				break;
 			}
 			input += 1;
-			format = 0;
+			HeapBinType bin_format = BIN_ANY;
 			if (input[0] == ' ') {
 				input += 1;
 				if (!strcmp(input, "tcache")) {
-					format = 1;
+					bin_format = BIN_TCACHE;
 				} else if (!strcmp(input, "fast")) {
-					format = 2;
+					bin_format = BIN_FAST;
 				} else if (!strcmp(input, "unsorted")) {
-					format = 3;
+					bin_format = BIN_UNSORTED;
 				} else if (!strcmp(input, "small")) {
-					format = 4;
+					bin_format = BIN_SMALL;
 				} else if (!strcmp(input, "large")) {
-					format = 5;
+					bin_format = BIN_LARGE;
+				} else {
+					break;
 				}
 			}
 
 			GH(print_main_arena_bins)
-			(core, m_arena, main_arena, global_max_fast, format);
+			(core, m_arena, main_arena, global_max_fast, bin_format);
 		}
 		break;
 	case 'f': // "dmhf"
