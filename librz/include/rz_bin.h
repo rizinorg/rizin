@@ -530,7 +530,7 @@ typedef struct rz_bin_symbol_t {
 	const char *rtype;
 	bool is_imported;
 	/* only used by java */
-	const char *visibility_str;
+	char *visibility_str;
 	// ----------------
 	//char descriptor[RZ_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
