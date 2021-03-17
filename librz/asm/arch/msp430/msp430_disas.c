@@ -1,4 +1,9 @@
+// SPDX-FileCopyrightText: 2014 Fedor Sakharov <fedor.sakharov@gmail.com>
+// SPDX-FileCopyrightText: 2015 Mauro Matteo Cascella <mauromatteo.cascella@gmail.com>
+// SPDX-FileCopyrightText: 2016 Mitchell Johnson <ehntoo@gmail.com>
+// SPDX-FileCopyrightText: 2018 Neven Sajko <nsajko@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_types.h>
 #include <rz_util.h>
 
