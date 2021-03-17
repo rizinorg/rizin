@@ -7062,8 +7062,8 @@ RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		cmd_analysis_objc(core, true);
 	}
 	rz_core_task_yield(&core->tasks);
-	oldstr = rz_print_rowlog(core->print, "Check for vtables");
-	rz_analysis_rtti_recover_all(core->analysis);
+	oldstr = rz_print_rowlog(core->print, "Check for classes");
+	rz_analysis_class_recover_all(core->analysis);
 	rz_print_rowlog_done(core->print, oldstr);
 	rz_core_task_yield(&core->tasks);
 	rz_config_set_i(core->config, "analysis.calls", c);
