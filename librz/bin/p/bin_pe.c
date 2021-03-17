@@ -125,7 +125,7 @@ static char *signature(RzBinFile *bf, bool json) {
 }
 
 static RzList *fields(RzBinFile *bf) {
-	RzList *ret = rz_list_new();
+	RzList *ret = rz_list_newf(rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}
