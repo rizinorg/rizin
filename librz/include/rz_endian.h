@@ -377,7 +377,7 @@ static inline ut32 rz_read_me32(const void *src) {
 		return UT32_MAX;
 	}
 	const ut8 *s = (const ut8 *)src;
-	return (((ut32)s[2]) << 24) | (((ut32)s[1]) << 16) |
+	return (((ut32)s[2]) << 24) | (((ut32)s[3]) << 16) |
 		(((ut32)s[0]) << 8) | (((ut32)s[1]) << 0);
 }
 
