@@ -511,7 +511,7 @@ acm PorcupineTreeAlbum Listen 0xdeadbeef
 aclj
 EOF
 EXPECT=<<EOF
-[{"name":"PorcupineTreeAlbum","bases":[],"vtables":[{"id":"0","addr":4919,"offset":66}],"methods":[{"name":"Listen","addr":3735928559}]},{"name":"Deadwing","bases":[{"id":"0","name":"PorcupineTreeAlbum","offset":8}],"vtables":[],"methods":[]}]
+[{"name":"PorcupineTreeAlbum","bases":[],"vtables":[{"id":"0","addr":4919,"offset":66}],"methods":[{"name":"Listen","addr":3735928559,"type":"DEFAULT"}]},{"name":"Deadwing","bases":[{"id":"0","name":"PorcupineTreeAlbum","offset":8}],"vtables":[],"methods":[]}]
 EOF
 RUN
 
@@ -545,5 +545,27 @@ Function address: 0x00400b82, in B vtable 0
 Function address: 0x00400ac8, in A vtable 0
 Function address: 0x00400ac8, in B vtable 0
 Function address: 0x00400ac8, in C vtable 0
+EOF
+RUN
+
+NAME=aclj2
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+aclj
+EOF
+EXPECT=<<EOF
+[{"name":"B","bases":[{"id":"0","name":"A","offset":0}],"vtables":[{"id":"0","addr":4197640,"offset":0}],"methods":[{"name":"B","addr":4197198,"type":"CONSTRUCTOR"},{"name":"printValue","addr":4197250,"type":"VIRTUAL","vtable_offset":8},{"name":"method.A.greet","addr":4197064,"type":"VIRTUAL","vtable_offset":0}]},{"name":"std::basic_ostream_char__std::char_traits_char_____std::endl_char__std","bases":[],"vtables":[],"methods":[{"name":"char_traits<char> >","addr":6296232,"type":"DEFAULT"}]},{"name":"std::ios_base::Init","bases":[],"vtables":[],"methods":[{"name":"Init","addr":6296184,"type":"DEFAULT"},{"name":"~Init","addr":6296208,"type":"DEFAULT"}]},{"name":"std::ostream","bases":[],"vtables":[],"methods":[{"name":"operator<<","addr":6296224,"type":"DEFAULT"}]},{"name":"std::basic_ostream_char__std::char_traits_char_____std::operator____std","bases":[],"vtables":[],"methods":[{"name":"char_traits<char> >","addr":6296216,"type":"DEFAULT"}]},{"name":"A","bases":[],"vtables":[{"id":"0","addr":4197672,"offset":0}],"methods":[{"name":"greet","addr":4197064,"type":"VIRTUAL","vtable_offset":0},{"name":"printValue","addr":4197108,"type":"VIRTUAL","vtable_offset":8},{"name":"A","addr":4197174,"type":"CONSTRUCTOR"}]},{"name":"C","bases":[{"id":"0","name":"A","offset":0}],"vtables":[{"id":"0","addr":4197608,"offset":0}],"methods":[{"name":"C","addr":4197316,"type":"CONSTRUCTOR"},{"name":"printValue","addr":4197368,"type":"VIRTUAL","vtable_offset":8},{"name":"method.A.greet","addr":4197064,"type":"VIRTUAL","vtable_offset":0}]}]
+EOF
+RUN
+
+NAME=aclj3
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aaa
+aclj
+EOF
+EXPECT=<<EOF
+[{"name":"InAbsentia","bases":[{"id":"0","name":"Album","offset":0}],"vtables":[{"id":"0","addr":4268452,"offset":0}],"methods":[{"name":"virtual_0","addr":4198536,"type":"VIRTUAL","vtable_offset":0},{"name":"virtual_4","addr":4198579,"type":"VIRTUAL","vtable_offset":4}]},{"name":"type_info","bases":[],"vtables":[{"id":"0","addr":4268540,"offset":0}],"methods":[{"name":"virtual_0","addr":4198710,"type":"VIRTUAL","vtable_offset":0}]},{"name":"Album","bases":[],"vtables":[{"id":"0","addr":4268388,"offset":0}],"methods":[{"name":"virtual_0","addr":4198493,"type":"VIRTUAL","vtable_offset":0},{"name":"virtual_4","addr":4198567,"type":"VIRTUAL","vtable_offset":4}]}]
 EOF
 RUN
