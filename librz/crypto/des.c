@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2015 seu <seu@panopticon.re>
 // SPDX-FileCopyrightText: 2015 condret <condret@runas-racer.com>
-// SPDX-FileCopyrightText: 2017 Giovanni <wargio@libero.it>
+// SPDX-FileCopyrightText: 2017 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
