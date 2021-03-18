@@ -1201,7 +1201,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		top_title = rz_str_newf("Top chunk @ 0x%" PFMT64x "\n", (ut64)main_arena->GH(top));
 	case 'c':
 	case 'v':
-		rz_cons_printf("Arena @");
+		rz_cons_printf("Arena @ ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)m_state);
 		rz_cons_newline();
 	}
@@ -1428,7 +1428,11 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	case 'c':
 		GH(print_heap_chunk_simple)
 		(core, main_arena->GH(top));
-		rz_cons_printf("[top]\n");
+		rz_cons_printf("[top][brk_start: ");
+		PRINTF_YA("0x%" PFMT64x, (ut64)brk_start);
+		rz_cons_printf(", brk_end: ");
+		PRINTF_YA("0x%" PFMT64x, (ut64)brk_end);
+		rz_cons_printf("]\n");
 		break;
 	case 'j':
 		pj_end(pj);
@@ -1583,7 +1587,7 @@ static void GH(print_fastbin_description)(RzCore *core, GHT m_arena, MallocState
 		PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)k);
 		bool demangle = false;
 		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i, demangle)) {
-			PRINT_BA("  0x0\n");
+			PRINT_BA("  Empty\n");
 		}
 	}
 }
