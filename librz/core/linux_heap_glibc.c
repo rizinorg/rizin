@@ -1011,7 +1011,7 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 	}
 }
 
-static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *main_arena, bool demangle) {
+static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *main_arena, bool demangle, bool main_thread_only) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
 
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
@@ -1040,10 +1040,13 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 		return;
 	}
 
-	PRINT_GA("Tcache main arena @");
+	rz_cons_printf("Tcache main arena @");
 	PRINTF_BA(" 0x%" PFMT64x "\n", (ut64)m_arena);
 	GH(tcache_print)
 	(core, rz_tcache, demangle);
+	if (main_thread_only) {
+		return;
+	}
 
 	if (main_arena->GH(next) != m_arena) {
 		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
@@ -1710,40 +1713,6 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
 }
 
 /**
- * \brief Prints tcache description for main arena (used for `dmhd` command)
- * \param core RzCore pointer
- * \param m_arena Offset of main arena in memory
- * \param main_arena Pointer to MallocState struct for main arena
- */
-static void GH(print_tcache_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
-	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
-	if (!tcache) {
-		return;
-	}
-	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
-	GH(get_brks)
-	(core, &brk_start, &brk_end);
-	GHT tcache_start = GHT_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
-	tcache_start = brk_start + 0x10;
-
-	GH(RTcache) *rz_tcache = GH(tcache_new)(core);
-	if (!rz_tcache) {
-		return;
-	}
-	if (!GH(tcache_read)(core, tcache_start, rz_tcache)) {
-		return;
-	}
-
-	rz_cons_printf("Tcache @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-
-	GH(tcache_print)
-	(core, rz_tcache, false);
-}
-
-/**
  * \brief Prints description of bins for main arena for `dmhd` command
  * \param core RzCore pointer
  * \param m_arena Offset of main arena in memory
@@ -1754,8 +1723,10 @@ static void GH(print_tcache_description)(RzCore *core, GHT m_arena, MallocState 
 static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, HeapBinType format) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
 	if (format == BIN_ANY || format == BIN_TCACHE) {
-		GH(print_tcache_description)
-		(core, m_arena, main_arena);
+		bool main_thread_only = true;
+		bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
+		GH(print_tcache_instance)
+		(core, m_arena, main_arena, demangle, main_thread_only);
 		rz_cons_newline();
 	}
 	if (format == BIN_ANY || format == BIN_FAST) {
@@ -2054,8 +2025,9 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 				break;
 			}
 			bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
+			bool main_thread_only = false;
 			GH(print_tcache_instance)
-			(core, m_arena, main_arena, demangle);
+			(core, m_arena, main_arena, demangle, main_thread_only);
 		}
 		break;
 	case '?':
