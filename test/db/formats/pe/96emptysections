@@ -39,7 +39,7 @@ EXPECT=<<EOF
 
 nth paddr        size vaddr        vsize perm name    flags
 -----------------------------------------------------------
-0   0x00001200  0x200 0x00001200  0x1000 -rwx sect_0  MEM_EXECUTE,MEM_WRITE
+0   0x00001200  0x200 0x00001200  0x1000 -rwx sect_0  
 1   0x00000000    0x0 0x00000000  0x1000 ---- sect_1  
 2   0x00000000    0x0 0x00000000  0x1000 ---- sect_2  
 3   0x00000000    0x0 0x00000000  0x1000 ---- sect_3  
