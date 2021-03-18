@@ -87,7 +87,7 @@ dmhv~?0x55555555c1c0
 EOF
 EXPECT=<<EOF
 1
-2
+3
 2
 1
 EOF
