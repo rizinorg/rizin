@@ -250,7 +250,9 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info) {
 	LuaDbgUpvalueEntry *debug_upv_entry;
 	real_upvalue_cnt = rz_list_length(proto->upvalue_entries);
 	upvalue_names = RZ_NEWS0(char *, real_upvalue_cnt);
-	rz_return_if_fail(upvalue_names);
+	if (!upvalue_names) {
+		return;
+	}
 	rz_list_foreach (proto->dbg_upvalue_entries, iter, debug_upv_entry) {
 		upvalue_names[i] = (char *)debug_upv_entry->upvalue_name;
 		luac_add_string(
