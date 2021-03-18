@@ -887,8 +887,8 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 	return 0;
 }
 
-void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool demangle) {
-	int i;
+void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool demangle, bool main_arena_only) {
+	size_t i, j, k;
 	GHT num_bin = GHT_MAX, offset = sizeof(int) * 2;
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
@@ -899,22 +899,23 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 
 	switch (input[0]) {
 	case '\0': // dmhf
-		if (core->offset != core->prompt_offset) {
+		if (!main_arena_only && core->offset != core->prompt_offset) {
 			m_arena = core->offset;
 		}
-		PRINT_YA("fastbinY {\n");
-		for (i = 1; i <= NFASTBINS; i++) {
-			if (FASTBIN_IDX_TO_SIZE(i) <= global_max_fast) {
-				PRINTF_YA(" Fastbin %02d\n", i);
+		rz_cons_printf("Fast bins @ ");
+		PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
+		for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
+			if (FASTBIN_IDX_TO_SIZE(j) <= global_max_fast) {
+				PRINTF_YA("Fastbin %02zu", j);
 			} else {
-				PRINTF_RA(" Fastbin %02d\n", i);
+				PRINTF_RA("Fastbin %02zu", j);
 			}
-			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i - 1, demangle)) {
-				PRINT_GA("  Empty bin");
-				PRINT_BA("  0x0\n");
+			PRINT_GA(" [size:");
+			PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)k);
+			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i, demangle)) {
+				PRINT_BA("  Empty\n");
 			}
 		}
-		PRINT_YA("}\n");
 		break;
 	case ' ': // dmhf [bin_num]
 		num_bin = rz_num_get(NULL, input) - 1;
@@ -1561,41 +1562,6 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 }
 
 /**
- * \brief Prints fast bin description for an arena (used for `dmhd` command)
- * \param core RzCore pointer
- * \param m_arena Offset of the arena
- * \param main_arena MallocState struct for the arena in which the bins are
- * \param global_max_fast The largest fast bin size (used for formatting)
- */
-static void GH(print_fastbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	rz_cons_printf("Fastbins @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-
-	GHT offset = sizeof(int) * 2;
-	size_t i, j, k;
-	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
-
-	if (tcache) {
-		offset = 16;
-	}
-
-	for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
-		if (FASTBIN_IDX_TO_SIZE(j) <= global_max_fast) {
-			PRINTF_YA("Fastbin %02zu", j);
-		} else {
-			PRINTF_RA("Fastbin %02zu", j);
-		}
-		PRINT_GA(" [size:");
-		PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)k);
-		bool demangle = false;
-		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i, demangle)) {
-			PRINT_BA("  Empty\n");
-		}
-	}
-}
-
-/**
  * \brief Prints the heap chunks in a bin with double linked list (small|large|unsorted)
  * \param core RzCore pointer
  * \param main_arena MallocState struct for the arena in which bins are
@@ -1722,16 +1688,20 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
  */
 static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, HeapBinType format) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
+	bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
 	if (format == BIN_ANY || format == BIN_TCACHE) {
 		bool main_thread_only = true;
-		bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
 		GH(print_tcache_instance)
 		(core, m_arena, main_arena, demangle, main_thread_only);
 		rz_cons_newline();
 	}
 	if (format == BIN_ANY || format == BIN_FAST) {
-		GH(print_fastbin_description)
-		(core, m_arena, main_arena, global_max_fast);
+		char *input = malloc(sizeof(char) * 1);
+		input[0] = '\0';
+		bool main_arena_only = true;
+		GH(print_heap_fastbin)
+		(core, m_arena, main_arena, global_max_fast, input, demangle, main_arena_only);
+		free(input);
 		rz_cons_newline();
 	}
 	if (format == BIN_ANY || format == BIN_UNSORTED) {
@@ -1948,6 +1918,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 	case 'f': // "dmhf"
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
 			bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
+			bool main_arena_only = false;
 			char *m_state_str, *dup = strdup(input + 1);
 			if (*dup) {
 				strtok(dup, ":");
@@ -1969,7 +1940,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 					break;
 				}
 				GH(print_heap_fastbin)
-				(core, m_state, main_arena, global_max_fast, dup, demangle);
+				(core, m_state, main_arena, global_max_fast, dup, demangle, main_arena_only);
 			} else {
 				PRINT_RA("This address is not part of the arenas\n");
 				free(dup);
