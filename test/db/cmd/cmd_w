@@ -333,3 +333,19 @@ EXPECT_ERR=<<EOF
 Command 'wv8@10' does not exist.
 EOF
 RUN
+
+NAME=wf
+ARGS=
+FILE=-
+CMDS=<<EOF
+wx 9091929394
+s 0x10
+p8 5
+wf 0 5
+p8 5
+EOF
+EXPECT=<<EOF
+0000000000
+9091929394
+EOF
+RUN

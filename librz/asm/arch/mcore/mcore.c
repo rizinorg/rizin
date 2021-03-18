@@ -1,4 +1,8 @@
+// SPDX-FileCopyrightText: 2018-2020 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2018-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2020 Anton Kochkov <anton.kochkov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #include "mcore.h"
 
 #include <rz_analysis.h>

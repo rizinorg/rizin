@@ -776,6 +776,148 @@ static bool cmd_wfs(RzCore *core, const char *input) {
 	return true;
 }
 
+RZ_IPI RzCmdStatus rz_write_from_io_handler(RzCore *core, int argc, const char **argv) {
+	ut64 addr = rz_num_math(core->num, argv[1]);
+	ut64 len = rz_num_math(core->num, argv[2]);
+	bool res = ioMemcpy(core, core->offset, addr, len);
+	return res ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_write_from_io_xchg_handler(RzCore *core, int argc, const char **argv) {
+	ut64 dst = core->offset;
+	ut64 src = rz_num_math(core->num, argv[1]);
+	ut64 len = rz_num_math(core->num, argv[2]);
+	if (len < 0) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut8 *buf = RZ_NEWS0(ut8, len);
+	if (!buf) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
+	if (!rz_io_read_at(core->io, dst, buf, len)) {
+		eprintf("cmd_wfx: failed to read at 0x%08" PFMT64x "\n", dst);
+		goto err;
+	}
+
+	ioMemcpy(core, core->offset, src, len);
+	if (!rz_io_write_at(core->io, src, buf, len)) {
+		eprintf("Failed to write at 0x%08" PFMT64x "\n", src);
+		goto err;
+	}
+
+	rz_core_block_read(core);
+	res = RZ_CMD_STATUS_OK;
+err:
+	free(buf);
+	return res;
+}
+
+RZ_IPI RzCmdStatus rz_write_from_file_handler(RzCore *core, int argc, const char **argv) {
+	int wseek = rz_config_get_i(core->config, "cfg.wseek");
+	ut64 user_size = argc > 2 ? rz_num_math(core->num, argv[2]) : UT64_MAX;
+	ut64 offset = argc > 3 ? rz_num_math(core->num, argv[3]) : 0;
+	const char *filename = argv[1];
+
+	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
+	char *data = NULL;
+	size_t size, w_size;
+	if (!strcmp(filename, "-")) {
+		data = rz_core_editor(core, NULL, NULL);
+		if (!data) {
+			eprintf("No data from editor\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+		size = strlen(data);
+	} else {
+		data = rz_file_slurp(filename, &size);
+		if (!data) {
+			eprintf("Cannot open file '%s'\n", filename);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+
+	w_size = RZ_MIN(size, user_size);
+	if (offset > size) {
+		eprintf("Invalid offset provided\n");
+		goto err;
+	}
+	if (UT64_ADD_OVFCHK(offset, w_size) || offset + w_size > size) {
+		eprintf("Invalid offset/size provided\n");
+		goto err;
+	}
+
+	rz_io_use_fd(core->io, core->file->fd);
+	if (!rz_io_write_at(core->io, core->offset, (ut8 *)data + offset, w_size)) {
+		eprintf("rz_io_write_at failed at 0x%08" PFMT64x "\n", core->offset);
+		goto err;
+	}
+	WSEEK(core, w_size);
+	rz_core_block_read(core);
+	res = RZ_CMD_STATUS_OK;
+
+err:
+	free(data);
+	return res;
+}
+
+RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const char **argv) {
+	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
+	char *address = strdup(argv[1]);
+	ut64 sz = argc > 2 ? rz_num_math(core->num, argv[2]) : core->blocksize;
+
+	size_t n_split = rz_str_split(address, ':');
+	if (n_split != 2) {
+		eprintf("Wrong format for <host:port>\n");
+		goto err;
+	}
+	char *host = address;
+	char *port = host + strlen(host) + 1;
+
+	ut8 *buf = RZ_NEWS0(ut8, sz);
+	if (!buf) {
+		goto err;
+	}
+
+	RzSocket *s = rz_socket_new(false);
+	if (!rz_socket_listen(s, port, NULL)) {
+		eprintf("Cannot listen on port %s\n", port);
+		goto socket_err;
+	}
+	int done = 0;
+	RzSocket *c = rz_socket_accept(s);
+	if (!c) {
+		eprintf("Failing to accept socket\n");
+		goto socket_err;
+	}
+
+	eprintf("Receiving data from client...\n");
+	while (done < sz) {
+		int rc = rz_socket_read(c, buf + done, sz - done);
+		if (rc < 0) {
+			eprintf("Failing to read data from socket: %d\n", rc);
+			goto socket_err;
+		} else if (rc == 0) {
+			break;
+		}
+		done += rc;
+	}
+	if (!rz_io_write_at(core->io, core->offset, buf, done)) {
+		eprintf("Cannot write\n");
+		goto socket_err;
+	}
+	eprintf("Written %d bytes\n", done);
+	res = RZ_CMD_STATUS_OK;
+
+socket_err:
+	rz_socket_free(s);
+err:
+	free(address);
+	return res;
+}
+
 RZ_IPI int rz_wf_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (!core || !*input) {

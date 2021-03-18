@@ -114,6 +114,62 @@ static inline void rz_write_at_be64(void *dest, ut64 val, size_t offset) {
 	rz_write_be64(d, val);
 }
 
+static inline float rz_read_be_float(const void *src) {
+	union {
+		ut32 bits;
+		float flt;
+	} p;
+	p.bits = rz_read_be32(src);
+	return p.flt;
+}
+
+static inline float rz_read_at_be_float(const void *src, size_t offset) {
+	const ut8 *s = (const ut8 *)src + offset;
+	return rz_read_be_float(s);
+}
+
+static inline void rz_write_be_float(void *dest, float val) {
+	union {
+		ut32 bits;
+		float flt;
+	} p;
+	p.flt = val;
+	rz_write_be32(dest, p.bits);
+}
+
+static inline void rz_write_at_be_float(void *dest, float val, size_t offset) {
+	ut8 *d = (ut8 *)dest + offset;
+	rz_write_be_float(d, val);
+}
+
+static inline double rz_read_be_double(const void *src) {
+	union {
+		ut64 bits;
+		double dbl;
+	} p;
+	p.bits = rz_read_be64(src);
+	return p.dbl;
+}
+
+static inline double rz_read_at_be_double(const void *src, size_t offset) {
+	const ut8 *s = (const ut8 *)src + offset;
+	return rz_read_be_double(s);
+}
+
+static inline void rz_write_be_double(void *dest, double val) {
+	union {
+		ut64 bits;
+		double dbl;
+	} p;
+	p.dbl = val;
+	rz_write_be64(dest, p.bits);
+}
+
+static inline void rz_write_at_be_double(void *dest, double val, size_t offset) {
+	ut8 *d = (ut8 *)dest + offset;
+	rz_write_be_double(d, val);
+}
+
 /* Little Endian functions. */
 
 static inline ut8 rz_read_le8(const void *src) {
@@ -216,6 +272,62 @@ static inline void rz_write_at_le64(void *dest, ut64 val, size_t offset) {
 	rz_write_le64(d, val);
 }
 
+static inline float rz_read_le_float(const void *src) {
+	union {
+		ut32 bits;
+		float flt;
+	} p;
+	p.bits = rz_read_le32(src);
+	return p.flt;
+}
+
+static inline float rz_read_at_le_float(const void *src, size_t offset) {
+	const ut8 *s = (const ut8 *)src + offset;
+	return rz_read_le_float(s);
+}
+
+static inline void rz_write_le_float(void *dest, float val) {
+	union {
+		ut32 bits;
+		float flt;
+	} p;
+	p.flt = val;
+	rz_write_le32(dest, p.bits);
+}
+
+static inline void rz_write_at_le_float(void *dest, float val, size_t offset) {
+	ut8 *d = (ut8 *)dest + offset;
+	rz_write_le_float(d, val);
+}
+
+static inline double rz_read_le_double(const void *src) {
+	union {
+		ut64 bits;
+		double dbl;
+	} p;
+	p.bits = rz_read_le64(src);
+	return p.dbl;
+}
+
+static inline double rz_read_at_le_double(const void *src, size_t offset) {
+	const ut8 *s = (const ut8 *)src + offset;
+	return rz_read_le_double(s);
+}
+
+static inline void rz_write_le_double(void *dest, double val) {
+	union {
+		ut64 bits;
+		double dbl;
+	} p;
+	p.dbl = val;
+	rz_write_le64(dest, p.bits);
+}
+
+static inline void rz_write_at_le_double(void *dest, double val, size_t offset) {
+	ut8 *d = (ut8 *)dest + offset;
+	rz_write_le_double(d, val);
+}
+
 /* Middle Endian functions. */
 
 static inline ut8 rz_read_me8(const void *src) {
@@ -265,7 +377,7 @@ static inline ut32 rz_read_me32(const void *src) {
 		return UT32_MAX;
 	}
 	const ut8 *s = (const ut8 *)src;
-	return (((ut32)s[2]) << 24) | (((ut32)s[1]) << 16) |
+	return (((ut32)s[2]) << 24) | (((ut32)s[3]) << 16) |
 		(((ut32)s[0]) << 8) | (((ut32)s[1]) << 0);
 }
 
@@ -306,6 +418,62 @@ static inline void rz_write_me64(void *dest, ut64 val) {
 static inline void rz_write_at_me64(void *dest, ut64 val, size_t offset) {
 	ut8 *d = (ut8 *)dest + offset;
 	rz_write_me64(d, val);
+}
+
+static inline float rz_read_me_float(const void *src) {
+	union {
+		ut32 bits;
+		float flt;
+	} p;
+	p.bits = rz_read_me32(src);
+	return p.flt;
+}
+
+static inline float rz_read_at_me_float(const void *src, size_t offset) {
+	const ut8 *s = (const ut8 *)src + offset;
+	return rz_read_me_float(s);
+}
+
+static inline void rz_write_me_float(void *dest, float val) {
+	union {
+		ut32 bits;
+		float flt;
+	} p;
+	p.flt = val;
+	rz_write_me32(dest, p.bits);
+}
+
+static inline void rz_write_at_me_float(void *dest, float val, size_t offset) {
+	ut8 *d = (ut8 *)dest + offset;
+	rz_write_me_float(d, val);
+}
+
+static inline double rz_read_me_double(const void *src) {
+	union {
+		ut64 bits;
+		double dbl;
+	} p;
+	p.bits = rz_read_me64(src);
+	return p.dbl;
+}
+
+static inline double rz_read_at_me_double(const void *src, size_t offset) {
+	const ut8 *s = (const ut8 *)src + offset;
+	return rz_read_me_double(s);
+}
+
+static inline void rz_write_me_double(void *dest, double val) {
+	union {
+		ut64 bits;
+		double dbl;
+	} p;
+	p.dbl = val;
+	rz_write_me64(dest, p.bits);
+}
+
+static inline void rz_write_at_me_double(void *dest, double val, size_t offset) {
+	ut8 *d = (ut8 *)dest + offset;
+	rz_write_me_double(d, val);
 }
 
 /* Helper functions */

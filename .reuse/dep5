@@ -214,3 +214,13 @@ License: MIT
 Files: shlr/tcc/*
 Copyright: 2001-2004 Fabrice Bellard
 License: LGPL-2.0-or-later
+
+Files: shlr/winkd/profiles.h
+Copyright: 2014-2017 The Lemon Man <thatlemon@gmail.com>
+Copyright: 2019-2020 GustavoLCR <gugulcr@gmail.com>
+License: LGPL-3.0-only
+
+Files: subprojects/mpc/*
+Copyright: 2013-present Daniel Holden <contact@theorangeduck.com>
+License: BSD-2-Clause
+
