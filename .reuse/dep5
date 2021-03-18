@@ -167,6 +167,10 @@ Files: librz/asm/arch/ppc/README
 Copyright: RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
 
+Files: librz/asm/arch/*/gnu/*
+Copyright: 1989-2021 Free Software Foundation, Inc.
+License: GPL-2.0-or-later
+
 Files: librz/bp/README
 Copyright: RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only

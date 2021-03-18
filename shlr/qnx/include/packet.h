@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 madprogrammer
+// SPDX-License-Identifier: GPL-2.0-only
+
 /*! \file */
 #ifndef PACKET_H
 #define PACKET_H

@@ -1,4 +1,7 @@
+// SPDX-FileCopyrightText: 2019-2020 Francesco Tamagni <mrmacete@protonmail.ch>
+// SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #include "mach0_defines.h"
 
 static bool is_kernelcache_buffer(RzBuffer *b) {
