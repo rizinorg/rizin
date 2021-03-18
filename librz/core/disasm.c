@@ -4724,8 +4724,8 @@ static void ds_print_esil_analysis(RDisasmState *ds) {
 			if (ds->asm_types < 1) {
 				break;
 			}
-			const char *fcn_type = rz_type_func_ret(core->analysis->sdb_types, key);
-			int nargs = rz_type_func_args_count(core->analysis->sdb_types, key);
+			const char *fcn_type = rz_type_func_ret(core->analysis->type, key);
+			int nargs = rz_type_func_args_count(core->analysis->type, key);
 			// remove other comments
 			delete_last_comment(ds);
 			// ds_comment_start (ds, "");
@@ -4825,7 +4825,6 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 		return;
 	}
 	RzAnalysis *analysis = ds->core->analysis;
-	Sdb *TDB = analysis->sdb_types;
 	char *name;
 	char *full_name = NULL;
 	if (ds->analop.type == RZ_ANALYSIS_OP_TYPE_CALL) {
@@ -4843,13 +4842,13 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	if (!full_name) {
 		return;
 	}
-	if (rz_type_func_exist(TDB, full_name)) {
+	if (rz_type_func_exist(analysis->type, full_name)) {
 		name = strdup(full_name);
-	} else if (!(name = rz_type_func_guess(TDB, full_name))) {
+	} else if (!(name = rz_type_func_guess(analysis->type, full_name))) {
 		return;
 	}
 	ds_begin_comment(ds);
-	const char *fcn_type = rz_type_func_ret(TDB, name);
+	const char *fcn_type = rz_type_func_ret(analysis->type, name);
 	if (!fcn_type || !*fcn_type) {
 		free(name);
 		return;
@@ -4857,13 +4856,13 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	char *cmt = rz_str_newf("; %s%s%s(", fcn_type,
 		fcn_type[strlen(fcn_type) - 1] == '*' ? "" : " ",
 		name);
-	int i, arg_max = rz_type_func_args_count(TDB, name);
+	int i, arg_max = rz_type_func_args_count(analysis->type, name);
 	if (!arg_max) {
 		cmt = rz_str_append(cmt, "void)");
 	} else {
 		for (i = 0; i < arg_max; i++) {
-			char *type = rz_type_func_args_type(TDB, name, i);
-			const char *tname = rz_type_func_args_name(TDB, name, i);
+			char *type = rz_type_func_args_type(analysis->type, name, i);
+			const char *tname = rz_type_func_args_name(analysis->type, name, i);
 			if (type && *type) {
 				cmt = rz_str_appendf(cmt, "%s%s%s%s%s", i == 0 ? "" : " ", type,
 					type[strlen(type) - 1] == '*' ? "" : " ",
@@ -5286,21 +5285,22 @@ toro:
 		f = ds->fcn = fcnIn(ds, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 		ds_show_comments_right(ds);
 		// TRY adding here
-		char *link_key = sdb_fmt("link.%08" PFMT64x, ds->addr + idx);
-		const char *link_type = sdb_const_get(core->analysis->sdb_types, link_key, 0);
+		char *link_type = rz_type_link_at(core->analysis->type, ds->addr + idx);
 		if (link_type) {
-			char *fmt = rz_type_format(core->analysis->sdb_types, link_type);
+			char *fmt = rz_type_format(core->analysis->type, link_type);
 			if (fmt) {
 				rz_cons_printf("(%s)\n", link_type);
 				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
-				const ut32 type_bitsize = rz_type_get_bitsize(core->analysis->sdb_types, link_type);
+				const ut32 type_bitsize = rz_type_get_bitsize(core->analysis->type, link_type);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
 				free(fmt);
+				free(link_type);
 				rz_analysis_op_fini(&ds->analop);
 				continue;
 			}
+			free(link_type);
 		} else {
 			if (idx >= 0) {
 				ret = ds_disassemble(ds, buf + addrbytes * idx, len - addrbytes * idx);

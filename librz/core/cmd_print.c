@@ -1667,9 +1667,9 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			if (rz_str_endswith(_input, ".h")) {
 				char *error_msg = NULL;
 				const char *dir = rz_config_get(core->config, "dir.types");
-				char *out = rz_parse_c_file(core->analysis, path, dir, &error_msg);
+				char *out = rz_type_parse_c_file(core->analysis->type, path, dir, &error_msg);
 				if (out) {
-					rz_analysis_save_parsed_type(core->analysis, out);
+					rz_type_save_parsed_type(core->analysis->type, out);
 					rz_core_cmd0(core, ".ts*");
 					free(out);
 				} else {

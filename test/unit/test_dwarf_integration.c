@@ -26,7 +26,6 @@ static bool test_parse_dwarf_types(void) {
 	analysis->cpu = strdup("x86");
 	analysis->bits = 32;
 	mu_assert("pe/vista-glass.exe binary could not be opened", res);
-	mu_assert_notnull(analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
@@ -40,7 +39,7 @@ static bool test_parse_dwarf_types(void) {
 	rz_analysis_dwarf_process_info(analysis, &ctx);
 
 	char *value = NULL;
-	Sdb *sdb = analysis->sdb_types;
+	Sdb *sdb = analysis->type->sdb_types;
 	check_kv("_cairo_status", "enum");
 	check_kv("enum._cairo_status.0x0", "CAIRO_STATUS_SUCCESS");
 	check_kv("enum._cairo_status.CAIRO_STATUS_SUCCESS", "0x0");
@@ -61,7 +60,6 @@ static bool test_parse_dwarf_types(void) {
 				       "CAIRO_STATUS_FONT_TYPE_MISMATCH,CAIRO_STATUS_USER_FONT_IMMUTABLE,CAIRO_STATUS_USER_FONT_ERROR,"
 				       "CAIRO_STATUS_NEGATIVE_COUNT,CAIRO_STATUS_INVALID_CLUSTERS,"
 				       "CAIRO_STATUS_INVALID_SLANT,CAIRO_STATUS_INVALID_WEIGHT");
-
 	check_kv("_MARGINS", "struct");
 	// TODO evaluate member_location operations in DWARF to get offset and test it
 	check_kv("struct._MARGINS", "cxLeftWidth,cxRightWidth,cyTopHeight,cyBottomHeight");
@@ -94,7 +92,6 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	analysis->cpu = strdup("x86");
 	analysis->bits = 64;
 	mu_assert("elf/dwarf4_many_comp_units.elf binary could not be opened", res);
-	mu_assert_notnull(analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
@@ -150,7 +147,6 @@ static bool test_dwarf_function_parsing_go(void) {
 	analysis->cpu = strdup("x86");
 	analysis->bits = 64;
 	mu_assert("bins/elf/dwarf_go_tree", res);
-	mu_assert_notnull(analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
@@ -204,7 +200,6 @@ static bool test_dwarf_function_parsing_rust(void) {
 	analysis->cpu = strdup("x86");
 	analysis->bits = 64;
 	mu_assert("bins/elf/dwarf_rust_bubble", res);
-	mu_assert_notnull(analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);

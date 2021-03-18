@@ -499,6 +499,7 @@ if host_machine.system() == 'windows'
     build_root / 'librz' / 'search',
     build_root / 'librz' / 'socket',
     build_root / 'librz' / 'syscall',
+    build_root / 'librz' / 'type',
     build_root / 'librz' / 'util',
   ]
 endif
@@ -523,6 +524,7 @@ subdir('librz/config')
 subdir('librz/parse')
 subdir('librz/lang')
 subdir('librz/asm')
+subdir('librz/type')
 subdir('librz/analysis')
 subdir('librz/egg')
 subdir('librz/debug')
@@ -587,6 +589,7 @@ if meson.is_subproject()
       rz_search_dep,
       rz_socket_dep,
       rz_syscall_dep,
+      rz_type_dep,
       rz_util_dep
     ],
     include_directories: include_directories('.', 'librz/include'),

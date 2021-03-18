@@ -83,29 +83,17 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 		return NULL;
 	}
 
-	char *scratch = rz_str_newf("func.%s.args", fcn->name);
-	if (!scratch) {
-		return NULL;
-	}
-	const char *fcntypes = sdb_const_get(a->sdb_types, scratch, 0);
-	free(scratch);
+	int fcnargs = rz_type_func_args_count(a->type, fcn->name);
+	const char *ret_type = rz_type_func_ret(a->type, fcn->name);
 
-	scratch = rz_str_newf("func.%s.ret", fcn->name);
-	if (!scratch) {
-		return NULL;
-	}
-	const char *ret_type = sdb_const_get(a->sdb_types, scratch, 0);
-	free(scratch);
-
-	if (fcntypes) {
+	if (fcnargs) {
 		if (ret_type) {
 			rz_list_append(ret, rz_str_newf("func.%s.ret=%s", fcn->name, ret_type));
 		}
-		int argc = atoi(fcntypes);
-		rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, argc));
+		rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, fcnargs));
 		int i;
-		for (i = 0; i < argc; i++) {
-			const char *arg = sdb_const_get(a->sdb_types, rz_str_newf("func.%s.arg.%d", fcn->name, i), 0);
+		for (i = 0; i < fcnargs; i++) {
+			const char *arg = rz_type_func_args_name(a->type, fcn->name, i);
 			rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
 		}
 	}

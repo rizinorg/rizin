@@ -1703,15 +1703,9 @@ RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	RzAnalysis *a = function->analysis;
 	PJ *pj = a->coreb.pjWithEncoding(a->coreb.core);
-	char *args = strdup("");
-	char *sdb_ret = rz_str_newf("func.%s.ret", function->name);
-	char *sdb_args = rz_str_newf("func.%s.args", function->name);
-	// RzList *args_list = rz_list_newf ((RzListFree) free);
 	unsigned int i;
-	const char *ret_type = sdb_const_get(a->sdb_types, sdb_ret, 0);
-	const char *argc_str = sdb_const_get(a->sdb_types, sdb_args, 0);
-
-	int argc = argc_str ? atoi(argc_str) : 0;
+	const char *ret_type = rz_type_func_ret(a->type, function->name);
+	int argc = rz_type_func_args_count(a->type, function->name);
 
 	pj_o(pj);
 	pj_ks(pj, "name", function->name);
@@ -1725,26 +1719,19 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	pj_a(pj);
 	for (i = 0; i < argc; i++) {
 		pj_o(pj);
-		char *sdb_arg_i = rz_str_newf("func.%s.arg.%d", function->name, i);
-		char *arg_i = sdb_get(a->sdb_types, sdb_arg_i, 0);
-		char *comma = strchr(arg_i, ',');
-		if (comma) {
-			*comma = 0;
-			pj_ks(pj, "name", comma + 1);
-			pj_ks(pj, "type", arg_i);
-			const char *cc_arg = rz_reg_get_name(a->reg, rz_reg_get_name_idx(sdb_fmt("A%d", i)));
-			if (cc_arg) {
-				pj_ks(pj, "cc", cc_arg);
-			}
+		char *arg_name = rz_type_func_args_name(a->type, function->name, i);
+		char *arg_type = rz_type_func_args_type(a->type, function->name, i);
+		pj_ks(pj, "name", arg_name);
+		pj_ks(pj, "type", arg_type);
+		const char *cc_arg = rz_reg_get_name(a->reg, rz_reg_get_name_idx(sdb_fmt("A%d", i)));
+		if (cc_arg) {
+			pj_ks(pj, "cc", cc_arg);
 		}
-		free(arg_i);
-		free(sdb_arg_i);
+		free(arg_type);
+		free(arg_name);
 		pj_end(pj);
 	}
 	pj_end(pj);
-	free(sdb_args);
-	free(sdb_ret);
-	free(args);
 	pj_end(pj);
 	return pj_drain(pj);
 }
@@ -1765,55 +1752,30 @@ RZ_API char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
 		realname = function->name;
 	}
 
-	char *ret = NULL, *args = strdup("");
-	char *sdb_ret = rz_str_newf("func.%s.ret", realname);
-	char *sdb_args = rz_str_newf("func.%s.args", realname);
-	// RzList *args_list = rz_list_newf ((RzListFree) free);
-	unsigned int i, j;
-	const char *ret_type = sdb_const_get(a->sdb_types, sdb_ret, 0);
-	const char *argc_str = sdb_const_get(a->sdb_types, sdb_args, 0);
+	unsigned int i;
+	const char *ret_type = rz_type_func_ret(a->type, function->name);
+	int argc = rz_type_func_args_count(a->type, function->name);
 
-	int argc = argc_str ? atoi(argc_str) : 0;
-
+	char *args = strdup("");
 	for (i = 0; i < argc; i++) {
-		char *sdb_arg_i = rz_str_newf("func.%s.arg.%d", realname, i);
-		char *arg_i = sdb_get(a->sdb_types, sdb_arg_i, 0);
-		// parse commas
-		int arg_i_len = strlen(arg_i);
-		for (j = 0; j < arg_i_len; j++) {
-			if (j > 0 && arg_i[j] == ',') {
-				if (arg_i[j - 1] == '*') {
-					// remove whitespace
-					memmove(arg_i + j, arg_i + j + 1, strlen(arg_i) - j);
-				} else {
-					arg_i[j] = ' ';
-				}
-			}
-		}
+		char *arg_name = rz_type_func_args_name(a->type, function->name, i);
+		char *arg_type = rz_type_func_args_type(a->type, function->name, i);
 		char *new_args = (i + 1 == argc)
-			? rz_str_newf("%s%s", args, arg_i)
-			: rz_str_newf("%s%s, ", args, arg_i);
+			? rz_str_newf("%s%s %s", args, arg_type, arg_name)
+			: rz_str_newf("%s%s %s, ", args, arg_type, arg_name);
 		free(args);
 		args = new_args;
-
-		free(arg_i);
-		free(sdb_arg_i);
 	}
-	ret = rz_str_newf("%s %s (%s);", ret_type ? ret_type : "void", realname, args);
-
-	free(sdb_args);
-	free(sdb_ret);
-	free(args);
-	return ret;
+	return rz_str_newf("%s %s (%s);", ret_type ? ret_type : "void", realname, args);
 }
 
 /* set function signature from string */
 RZ_API int rz_analysis_str_to_fcn(RzAnalysis *a, RzAnalysisFunction *f, const char *sig) {
 	rz_return_val_if_fail(a || f || sig, false);
 	char *error_msg = NULL;
-	const char *out = rz_parse_c_string(a, sig, &error_msg);
+	const char *out = rz_type_parse_c_string(a->type, sig, &error_msg);
 	if (out) {
-		rz_analysis_save_parsed_type(a, out);
+		rz_type_save_parsed_type(a->type, out);
 	}
 	if (error_msg) {
 		eprintf("%s", error_msg);
@@ -2256,3 +2218,22 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
 	ht_up_free(reachable);
 	rz_list_free(fcns);
 }
+
+static int typecmp(const void *a, const void *b) {
+	return strcmp(a, b);
+}
+
+RZ_API RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
+	RzListIter *iter;
+	RzAnalysisVar *var;
+	RzList *list = rz_analysis_var_all_list(analysis, fcn);
+	RzList *type_used = rz_list_new();
+	rz_list_foreach (list, iter, var) {
+		rz_list_append(type_used, var->type);
+	}
+	RzList *uniq = rz_list_uniq(type_used, typecmp);
+	rz_list_free(type_used);
+	return uniq;
+}
+
+

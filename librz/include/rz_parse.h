@@ -72,55 +72,6 @@ RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hi
 RZ_API bool rz_parse_subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 RZ_API char *rz_parse_immtrim(char *opstr);
 
-/* c */
-// why we have analysis scoped things in rparse
-RZ_API char *rz_parse_c_string(RzAnalysis *analysis, const char *code, char **error_msg);
-RZ_API char *rz_parse_c_file(RzAnalysis *analysis, const char *path, const char *dir, char **error_msg);
-RZ_API void rz_parse_c_reset(RzParse *p);
-
-/* ctype */
-// Parses strings like "const char * [0x42] const * [23]" to RzParseCTypeType
-
-typedef struct rz_parse_ctype_t RzParseCType;
-
-typedef enum {
-	RZ_PARSE_CTYPE_TYPE_KIND_IDENTIFIER,
-	RZ_PARSE_CTYPE_TYPE_KIND_POINTER,
-	RZ_PARSE_CTYPE_TYPE_KIND_ARRAY
-} RzParseCTypeTypeKind;
-
-typedef enum {
-	RZ_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED,
-	RZ_PARSE_CTYPE_IDENTIFIER_KIND_STRUCT,
-	RZ_PARSE_CTYPE_IDENTIFIER_KIND_UNION,
-	RZ_PARSE_CTYPE_IDENTIFIER_KIND_ENUM
-} RzParseCTypeTypeIdentifierKind;
-
-typedef struct rz_parse_ctype_type_t RzParseCTypeType;
-struct rz_parse_ctype_type_t {
-	RzParseCTypeTypeKind kind;
-	union {
-		struct {
-			RzParseCTypeTypeIdentifierKind kind;
-			char *name;
-			bool is_const;
-		} identifier;
-		struct {
-			RzParseCTypeType *type;
-			bool is_const;
-		} pointer;
-		struct {
-			RzParseCTypeType *type;
-			ut64 count;
-		} array;
-	};
-};
-
-RZ_API RzParseCType *rz_parse_ctype_new(void);
-RZ_API void rz_parse_ctype_free(RzParseCType *ctype);
-RZ_API RzParseCTypeType *rz_parse_ctype_parse(RzParseCType *ctype, const char *str, char **error);
-RZ_API void rz_parse_ctype_type_free(RzParseCTypeType *type);
-
 /* plugin pointers */
 extern RzParsePlugin rz_parse_plugin_6502_pseudo;
 extern RzParsePlugin rz_parse_plugin_arm_pseudo;

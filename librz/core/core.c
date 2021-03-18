@@ -1718,34 +1718,6 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 			}
 		}
 		rz_list_free(vars);
-	} else if (!strncmp(buf->data, "t ", 2) || !strncmp(buf->data, "t- ", 3)) {
-		SdbList *l = sdb_foreach_list(core->analysis->sdb_types, true);
-		SdbListIter *iter;
-		SdbKv *kv;
-		int chr = (buf->data[1] == ' ') ? 2 : 3;
-		ls_foreach (l, iter, kv) {
-			int len = strlen(buf->data + chr);
-			if (!len || !strncmp(buf->data + chr, sdbkv_key(kv), len)) {
-				if (!strcmp(sdbkv_value(kv), "type") || !strcmp(sdbkv_value(kv), "enum") || !strcmp(sdbkv_value(kv), "struct")) {
-					rz_line_completion_push(completion, sdbkv_key(kv));
-				}
-			}
-		}
-		ls_free(l);
-	} else if ((!strncmp(buf->data, "te ", 3))) {
-		SdbList *l = sdb_foreach_list(core->analysis->sdb_types, true);
-		SdbListIter *iter;
-		SdbKv *kv;
-		int chr = 3;
-		ls_foreach (l, iter, kv) {
-			int len = strlen(buf->data + chr);
-			if (!len || !strncmp(buf->data + chr, sdbkv_key(kv), len)) {
-				if (!strcmp(sdbkv_value(kv), "enum")) {
-					rz_line_completion_push(completion, sdbkv_key(kv));
-				}
-			}
-		}
-		ls_free(l);
 	} else if (!strncmp(buf->data, "$", 1)) {
 		int i;
 		for (i = 0; i < core->rcmd->aliases.count; i++) {
@@ -1755,21 +1727,6 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 				rz_line_completion_push(completion, key);
 			}
 		}
-	} else if (!strncmp(buf->data, "ts ", 3) || !strncmp(buf->data, "ta ", 3) || !strncmp(buf->data, "tp ", 3) || !strncmp(buf->data, "tl ", 3) || !strncmp(buf->data, "tpx ", 4) || !strncmp(buf->data, "tss ", 4) || !strncmp(buf->data, "ts* ", 4)) {
-		SdbList *l = sdb_foreach_list(core->analysis->sdb_types, true);
-		SdbListIter *iter;
-		SdbKv *kv;
-		int chr = (buf->data[2] == ' ') ? 3 : 4;
-		ls_foreach (l, iter, kv) {
-			int len = strlen(buf->data + chr);
-			const char *key = sdbkv_key(kv);
-			if (!len || !strncmp(buf->data + chr, key, len)) {
-				if (!strncmp(sdbkv_value(kv), "struct", strlen("struct") + 1)) {
-					rz_line_completion_push(completion, key);
-				}
-			}
-		}
-		ls_free(l);
 	} else if (!strncmp(buf->data, "zo ", 3) || !strncmp(buf->data, "zoz ", 4)) {
 		if (core->analysis->zign_path && core->analysis->zign_path[0]) {
 			char *zignpath = rz_file_abspath(core->analysis->zign_path);
@@ -2552,7 +2509,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->analysis->cb.on_fcn_new = on_fcn_new;
 	core->analysis->cb.on_fcn_delete = on_fcn_delete;
 	core->analysis->cb.on_fcn_rename = on_fcn_rename;
-	core->print->sdb_types = core->analysis->sdb_types;
 	core->rasm->syscall = rz_syscall_ref(core->analysis->syscall); // BIND syscall analysis/asm
 	core->analysis->core = core;
 	core->analysis->cb_printf = (void *)rz_cons_printf;

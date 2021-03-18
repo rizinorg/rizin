@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
+#include <rz_vector.h>
+#include <rz_type.h>
 #include <rz_analysis.h>
 
 #include <errno.h>
@@ -1928,12 +1930,11 @@ RZ_API bool rz_serialize_analysis_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 }
 
 RZ_API void rz_serialize_analysis_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	sdb_copy(analysis->sdb_types, db);
+	rz_serialize_types_save(db, analysis->type);
 }
 
 RZ_API bool rz_serialize_analysis_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
-	sdb_reset(analysis->sdb_types);
-	sdb_copy(db, analysis->sdb_types);
+	return rz_serialize_types_load(db, analysis->type, res);
 	return true;
 }
 

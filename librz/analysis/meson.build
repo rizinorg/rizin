@@ -29,14 +29,13 @@ rz_analysis_sources = [
   'rtti_itanium.c',
   'sign.c',
   'switch.c',
-  'type.c',
-  'type_pdb.c',
   'dwarf_process.c',
   'value.c',
   'var.c',
   'vtable.c',
   'xrefs.c',
   'serialize_analysis.c',
+  'type_pdb.c',
   'p/analysis_6502.c',
   'p/analysis_6502_cs.c',
   'p/analysis_8051.c',
@@ -187,6 +186,7 @@ rz_analysis = library('rz_analysis', rz_analysis_sources,
     rz_parse_dep,
     rz_asm_dep,
     rz_bin_dep,
+    rz_type_dep,
     capstone_dep
   ],
   install: true,
@@ -214,7 +214,8 @@ pkgconfig_mod.generate(rz_analysis,
     'rz_search',
     'rz_cons',
     'rz_bin',
-    'rz_flag'
+    'rz_flag',
+    'rz_type'
   ],
   description: 'rizin foundation libraries'
 )

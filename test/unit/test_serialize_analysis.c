@@ -1250,187 +1250,6 @@ bool test_analysis_classes_load() {
 	mu_end;
 }
 
-Sdb *types_ref_db() {
-	Sdb *db = sdb_new0();
-	sdb_set(db, "snatcher", "union", 0);
-	sdb_set(db, "struct.junker.gillian", "char *,0,0", 0);
-	sdb_set(db, "junker", "struct", 0);
-	sdb_set(db, "typedef.human", "union snatcher", 0);
-	sdb_set(db, "union.snatcher.random", "int,0,0", 0);
-	sdb_set(db, "human", "typedef", 0);
-	sdb_set(db, "struct.junker.seed", "uint64_t,8,0", 0);
-	sdb_set(db, "union.snatcher", "random,hajile", 0);
-	sdb_set(db, "struct.junker", "gillian,seed", 0);
-	sdb_set(db, "union.snatcher.hajile", "uint32_t,0,0", 0);
-	sdb_set(db, "badchar", "type", 0);
-	sdb_set(db, "type.badchar.size", "16", 0);
-	sdb_set(db, "type.badchar", "c", 0);
-	sdb_set(db, "enum.mika", "ELIJAH,MODNAR", 0);
-	sdb_set(db, "enum.mika.MODNAR", "0x539", 0);
-	sdb_set(db, "enum.mika.ELIJAH", "0x2a", 0);
-	sdb_set(db, "enum.mika.0x2a", "ELIJAH", 0);
-	sdb_set(db, "mika", "enum", 0);
-	sdb_set(db, "enum.mika.0x539", "MODNAR", 0);
-	return db;
-}
-
-bool test_analysis_types_save() {
-	RzAnalysis *analysis = rz_analysis_new();
-
-	// struct
-	RzAnalysisBaseType *type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT);
-	type->name = strdup("junker");
-
-	RzAnalysisStructMember member;
-	member.name = strdup("gillian");
-	member.offset = 0;
-	member.type = strdup("char *");
-	rz_vector_push(&type->struct_data.members, &member);
-
-	member.name = strdup("seed");
-	member.offset = 8;
-	member.type = strdup("uint64_t");
-	rz_vector_push(&type->struct_data.members, &member);
-
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	// union
-	type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_UNION);
-	type->name = strdup("snatcher");
-
-	RzAnalysisUnionMember mumber;
-	mumber.name = strdup("random");
-	mumber.offset = 0;
-	mumber.type = strdup("int");
-	rz_vector_push(&type->union_data.members, &mumber);
-
-	mumber.name = strdup("hajile");
-	mumber.offset = 0;
-	mumber.type = strdup("uint32_t");
-	rz_vector_push(&type->union_data.members, &mumber);
-
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	// enum
-	type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
-	type->name = strdup("mika");
-
-	RzAnalysisEnumCase cas;
-	cas.name = strdup("ELIJAH");
-	cas.val = 42;
-	rz_vector_push(&type->enum_data.cases, &cas);
-
-	cas.name = strdup("MODNAR");
-	cas.val = 1337;
-	rz_vector_push(&type->enum_data.cases, &cas);
-
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	// typedef
-	type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF);
-	type->name = strdup("human");
-	type->type = strdup("union snatcher");
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	// atomic
-	type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
-	type->name = strdup("badchar");
-	type->size = 16;
-	type->type = strdup("c");
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
-
-	Sdb *db = sdb_new0();
-	rz_serialize_analysis_types_save(db, analysis);
-
-	Sdb *expected = types_ref_db();
-	assert_sdb_eq(db, expected, "types save");
-	sdb_free(db);
-	sdb_free(expected);
-	rz_analysis_free(analysis);
-	mu_end;
-}
-
-bool test_analysis_types_load() {
-	RzAnalysis *analysis = rz_analysis_new();
-	Sdb *db = types_ref_db();
-	bool succ = rz_serialize_analysis_types_load(db, analysis, NULL);
-	sdb_free(db);
-	mu_assert("load success", succ);
-
-	// struct
-	RzAnalysisBaseType *type = rz_analysis_get_base_type(analysis, "junker");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT, "type kind");
-	mu_assert_eq(type->struct_data.members.len, 2, "members count");
-
-	RzAnalysisStructMember *member = rz_vector_index_ptr(&type->struct_data.members, 0);
-	mu_assert_streq(member->name, "gillian", "member name");
-	mu_assert_eq(member->offset, 0, "member offset");
-	mu_assert_streq(member->type, "char *", "member type");
-
-	member = rz_vector_index_ptr(&type->struct_data.members, 1);
-	mu_assert_streq(member->name, "seed", "member name");
-	mu_assert_eq(member->offset, 8, "member offset");
-	mu_assert_streq(member->type, "uint64_t", "member type");
-
-	rz_analysis_base_type_free(type);
-
-	// union
-	type = rz_analysis_get_base_type(analysis, "snatcher");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_UNION, "type kind");
-	mu_assert_eq(type->union_data.members.len, 2, "members count");
-
-	RzAnalysisUnionMember *mumber = rz_vector_index_ptr(&type->union_data.members, 0);
-	mu_assert_streq(mumber->name, "random", "member name");
-	mu_assert_streq(mumber->type, "int", "member type");
-
-	mumber = rz_vector_index_ptr(&type->union_data.members, 1);
-	mu_assert_streq(mumber->name, "hajile", "member name");
-	mu_assert_streq(mumber->type, "uint32_t", "member type");
-
-	rz_analysis_base_type_free(type);
-
-	// enum
-	type = rz_analysis_get_base_type(analysis, "mika");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_ENUM, "type kind");
-	mu_assert_eq(type->enum_data.cases.len, 2, "cases count");
-
-	RzAnalysisEnumCase *cas = rz_vector_index_ptr(&type->enum_data.cases, 0);
-	mu_assert_streq(cas->name, "ELIJAH", "case name");
-	mu_assert_eq(cas->val, 42, "case value");
-
-	cas = rz_vector_index_ptr(&type->enum_data.cases, 1);
-	mu_assert_streq(cas->name, "MODNAR", "case name");
-	mu_assert_eq(cas->val, 1337, "case value");
-
-	rz_analysis_base_type_free(type);
-
-	// typedef
-	type = rz_analysis_get_base_type(analysis, "human");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF, "type kind");
-	mu_assert_streq(type->type, "union snatcher", "typedefd type");
-	rz_analysis_base_type_free(type);
-
-	// atomic
-	type = rz_analysis_get_base_type(analysis, "badchar");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC, "type kind");
-	mu_assert_eq(type->size, 16, "atomic type size");
-	mu_assert_streq(type->type, "c", "atomic type");
-	rz_analysis_base_type_free(type);
-
-	rz_analysis_free(analysis);
-	mu_end;
-}
-
 Sdb *sign_ref_db() {
 	Sdb *db = sdb_new0();
 	Sdb *spaces = sdb_ns(db, "spaces", true);
@@ -1709,12 +1528,12 @@ bool test_analysis_save() {
 	rz_analysis_class_method_set(analysis, "Aeropause", &crystal);
 	rz_analysis_class_method_fini(&crystal);
 
-	RzAnalysisBaseType *type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
+	RzBaseType *type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
 	type->name = strdup("badchar");
 	type->size = 16;
 	type->type = strdup("c");
-	rz_analysis_save_base_type(analysis, type);
-	rz_analysis_base_type_free(type);
+	rz_type_save_base_type(analysis->type, type);
+	rz_type_base_type_free(type);
 
 	rz_spaces_set(&analysis->zign_spaces, "koridai");
 	rz_sign_add_comment(analysis, "sym.boring", "gee it sure is boring around here");
@@ -1779,12 +1598,12 @@ bool test_analysis_load() {
 	mu_assert_streq(meth->name, "some_meth", "method name");
 	rz_vector_free(vals);
 
-	RzAnalysisBaseType *type = rz_analysis_get_base_type(analysis, "badchar");
+	RzBaseType *type = rz_type_get_base_type(analysis->type, "badchar");
 	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC, "type kind");
+	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ATOMIC, "type kind");
 	mu_assert_eq(type->size, 16, "atomic type size");
 	mu_assert_streq(type->type, "c", "atomic type");
-	rz_analysis_base_type_free(type);
+	rz_type_base_type_free(type);
 
 	rz_spaces_set(&analysis->zign_spaces, "koridai");
 	RzSignItem *item = rz_sign_get_item(analysis, "sym.boring");
@@ -1831,8 +1650,6 @@ int all_tests() {
 	mu_run_test(test_analysis_hints_load);
 	mu_run_test(test_analysis_classes_save);
 	mu_run_test(test_analysis_classes_load);
-	mu_run_test(test_analysis_types_save);
-	mu_run_test(test_analysis_types_load);
 	mu_run_test(test_analysis_sign_save);
 	mu_run_test(test_analysis_sign_load);
 	mu_run_test(test_analysis_cc_save);

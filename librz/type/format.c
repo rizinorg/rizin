@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: 2007-2020 Skia <skia@libskia.so>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_cons.h"
-#include "rz_util.h"
-#include "rz_util/rz_print.h"
-#include "rz_reg.h"
+#include <rz_util.h>
+#include <rz_util/rz_print.h>
+#include <rz_reg.h>
+#include <rz_type.h>
 
 #define NOPTR           0
 #define PTRSEEK         1
@@ -1526,12 +1526,121 @@ static void rz_print_format_num(const RzPrint *p, int endian, int mode, const ch
 	}
 }
 
-RZ_API const char *rz_print_format_byname(RzPrint *p, const char *name) {
+RZ_API const char *rz_type_format_byname(RzPrint *p, const char *name) {
 	return sdb_const_get(p->formats, name, NULL);
 }
 
+static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
+	// assumes var list is sorted by offset.. should do more checks here
+	char *p = NULL, *vars = NULL, var2[132], *fmt = NULL;
+	size_t n;
+	char *fields = rz_str_newf("%s.fields", var);
+	char *nfields = (is_typedef) ? fields : var;
+	for (n = 0; (p = sdb_array_get(TDB, nfields, n, NULL)); n++) {
+		char *struct_name;
+		const char *tfmt = NULL;
+		bool isStruct = false;
+		bool isEnum = false;
+		bool isfp = false;
+		snprintf(var2, sizeof(var2), "%s.%s", var, p);
+		size_t alen = sdb_array_size(TDB, var2);
+		int elements = sdb_array_get_num(TDB, var2, alen - 1, NULL);
+		char *type = sdb_array_get(TDB, var2, 0, NULL);
+		if (type) {
+			char var3[128] = { 0 };
+			// Handle general pointers except for char *
+			if ((strstr(type, "*(") || strstr(type, " *")) && strncmp(type, "char *", 7)) {
+				isfp = true;
+			} else if (rz_str_startswith(type, "struct ")) {
+				struct_name = type + 7;
+				// TODO: iterate over all the struct fields, and format the format and vars
+				snprintf(var3, sizeof(var3), "struct.%s", struct_name);
+				tfmt = sdb_const_get(TDB, var3, NULL);
+				isStruct = true;
+			} else {
+				// special case for char[]. Use char* format type without *
+				if (!strcmp(type, "char") && elements > 0) {
+					tfmt = sdb_const_get(TDB, "type.char *", NULL);
+					if (tfmt && *tfmt == '*') {
+						tfmt++;
+					}
+				} else {
+					if (rz_str_startswith(type, "enum ")) {
+						snprintf(var3, sizeof(var3), "%s", type + 5);
+						isEnum = true;
+					} else {
+						snprintf(var3, sizeof(var3), "type.%s", type);
+					}
+					tfmt = sdb_const_get(TDB, var3, NULL);
+				}
+			}
+			if (isfp) {
+				// consider function pointer as void * for printing
+				fmt = rz_str_append(fmt, "p");
+				vars = rz_str_append(vars, p);
+				vars = rz_str_append(vars, " ");
+			} else if (tfmt) {
+				(void)rz_str_replace_ch(type, ' ', '_', true);
+				if (elements > 0) {
+					fmt = rz_str_appendf(fmt, "[%d]", elements);
+				}
+				if (isStruct) {
+					fmt = rz_str_append(fmt, "?");
+					vars = rz_str_appendf(vars, "(%s)%s", struct_name, p);
+					vars = rz_str_append(vars, " ");
+				} else if (isEnum) {
+					fmt = rz_str_append(fmt, "E");
+					vars = rz_str_appendf(vars, "(%s)%s", type + 5, p);
+					vars = rz_str_append(vars, " ");
+				} else {
+					fmt = rz_str_append(fmt, tfmt);
+					vars = rz_str_append(vars, p);
+					vars = rz_str_append(vars, " ");
+				}
+			} else {
+				eprintf("Cannot resolve type '%s'\n", var3);
+			}
+			free(type);
+		}
+		free(p);
+	}
+	free(fields);
+	fmt = rz_str_append(fmt, " ");
+	fmt = rz_str_append(fmt, vars);
+	free(vars);
+	return fmt;
+}
+
+RZ_API char *rz_type_format(RzType *type, const char *t) {
+	char var[130], var2[132];
+	Sdb *TDB = type->sdb_types
+	const char *kind = sdb_const_get(TDB, t, NULL);
+	if (!kind) {
+		return NULL;
+	}
+	// only supports struct atm
+	snprintf(var, sizeof(var), "%s.%s", kind, t);
+	if (!strcmp(kind, "type")) {
+		const char *fmt = sdb_const_get(TDB, var, NULL);
+		if (fmt) {
+			return strdup(fmt);
+		}
+	} else if (!strcmp(kind, "struct") || !strcmp(kind, "union")) {
+		return fmt_struct_union(TDB, var, false);
+	}
+	if (!strcmp(kind, "typedef")) {
+		snprintf(var2, sizeof(var2), "typedef.%s", t);
+		const char *type = sdb_const_get(TDB, var2, NULL);
+		// only supports struct atm
+		if (type && !strcmp(type, "struct")) {
+			return fmt_struct_union(TDB, var, true);
+		}
+	}
+	return NULL;
+}
+
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-RZ_API int rz_print_format_struct_size(RzPrint *p, const char *f, int mode, int n) {
+RZ_API int rz_type_format_struct_size(RzPrint *p, const char *f, int mode, int n) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;

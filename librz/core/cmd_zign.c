@@ -627,7 +627,7 @@ static void apply_types(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it) {
 		}
 	}
 	rz_str_remove_char(alltypes, '"');
-	rz_analysis_save_parsed_type(core->analysis, alltypes);
+	rz_type_save_parsed_type(core->analysis->type, alltypes);
 	free(start);
 	free(alltypes);
 }

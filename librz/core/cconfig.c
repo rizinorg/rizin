@@ -691,8 +691,8 @@ static bool cb_asmarch(void *user, void *data) {
 	// changing asm.arch changes analysis.arch
 	// changing analysis.arch sets types db
 	// so ressetting is redundant and may lead to bugs
-	// 1 case this is usefull is when sdb_types is null
-	if (!core->analysis || !core->analysis->sdb_types) {
+	// 1 case this is usefull is when types is null
+	if (!core->analysis || !core->analysis->type) {
 		rz_core_analysis_type_init(core);
 	}
 	rz_core_analysis_cc_init(core);

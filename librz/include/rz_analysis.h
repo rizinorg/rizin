@@ -21,6 +21,7 @@
 #include <set.h>
 #include <rz_flag.h>
 #include <rz_bin.h>
+#include <rz_type.h>
 
 #define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
 
@@ -205,57 +206,6 @@ enum {
 	RZ_ANALYSIS_DIFF_TYPE_UNMATCH = 'u'
 };
 
-typedef struct rz_analysis_enum_case_t {
-	char *name;
-	int val;
-} RzAnalysisEnumCase;
-
-typedef struct rz_analysis_struct_member_t {
-	char *name;
-	char *type;
-	size_t offset; // in bytes
-	size_t size; // in bits?
-} RzAnalysisStructMember;
-
-typedef struct rz_analysis_union_member_t {
-	char *name;
-	char *type;
-	size_t offset; // in bytes
-	size_t size; // in bits?
-} RzAnalysisUnionMember;
-
-typedef enum {
-	RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT,
-	RZ_ANALYSIS_BASE_TYPE_KIND_UNION,
-	RZ_ANALYSIS_BASE_TYPE_KIND_ENUM,
-	RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF, // probably temporary addition, dev purposes
-	RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
-} RzAnalysisBaseTypeKind;
-
-typedef struct rz_analysis_base_type_struct_t {
-	RzVector /*<RzAnalysisStructMember>*/ members;
-} RzAnalysisBaseTypeStruct;
-
-typedef struct rz_analysis_base_type_union_t {
-	RzVector /*<RzAnalysisUnionMember>*/ members;
-} RzAnalysisBaseTypeUnion;
-
-typedef struct rz_analysis_base_type_enum_t {
-	RzVector /*<RzAnalysisEnumCase*/ cases; // list of all the enum casessssss
-} RzAnalysisBaseTypeEnum;
-
-typedef struct rz_analysis_base_type_t {
-	char *name;
-	char *type; // Used by typedef, atomic type, enum
-	ut64 size; // size of the whole type in bits
-	RzAnalysisBaseTypeKind kind;
-	union {
-		RzAnalysisBaseTypeStruct struct_data;
-		RzAnalysisBaseTypeEnum enum_data;
-		RzAnalysisBaseTypeUnion union_data;
-	};
-} RzAnalysisBaseType;
-
 typedef struct rz_analysis_diff_t {
 	int type;
 	ut64 addr;
@@ -263,7 +213,9 @@ typedef struct rz_analysis_diff_t {
 	char *name;
 	ut32 size;
 } RzAnalysisDiff;
+
 typedef struct rz_analysis_attr_t RzAnalysisAttr;
+
 struct rz_analysis_attr_t {
 	char *key;
 	long value;
@@ -643,7 +595,7 @@ typedef struct rz_analysis_t {
 	struct rz_analysis_plugin_t *cur;
 	RzAnalysisRange *limit; // analysis.from, analysis.to
 	RzList *plugins;
-	Sdb *sdb_types;
+	Sdb *sdb_noret;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
 	HtUP *ht_xrefs_from;
@@ -661,6 +613,7 @@ typedef struct rz_analysis_t {
 	RHintCb hint_cbs;
 	RzIntervalTree meta;
 	RzSpaces meta_spaces;
+	RzType *type; // Types management
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
@@ -1731,6 +1684,7 @@ RZ_API void rz_analysis_set_cc_default(RzAnalysis *analysis, const char *convent
 RZ_API const char *rz_analysis_syscc_default(RzAnalysis *analysis);
 RZ_API void rz_analysis_set_syscc_default(RzAnalysis *analysis, const char *convention);
 RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_name);
+RZ_API RzList *rz_analysis_calling_conventions(RzAnalysis *analysis);
 RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr);
 
 typedef struct rz_analysis_data_t {
@@ -2054,11 +2008,10 @@ RZ_API RzStrBuf *rz_analysis_esil_dfg_filter(RzAnalysisEsilDFG *dfg, const char 
 RZ_API RzStrBuf *rz_analysis_esil_dfg_filter_expr(RzAnalysis *analysis, const char *expr, const char *reg);
 RZ_API RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 
-RZ_API RzAnalysisBaseType *rz_analysis_get_base_type(RzAnalysis *analysis, const char *name);
-RZ_API void rz_parse_pdb_types(const RzAnalysis *analysis, const RzPdb *pdb);
-RZ_API void rz_analysis_save_base_type(const RzAnalysis *analysis, const RzAnalysisBaseType *type);
-RZ_API void rz_analysis_base_type_free(RzAnalysisBaseType *type);
-RZ_API RzAnalysisBaseType *rz_analysis_base_type_new(RzAnalysisBaseTypeKind kind);
+/* PDB */
+RZ_API void rz_parse_pdb_types(const RzType *type, const RzPdb *pdb);
+
+/* DWARF */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysisDwarfContext *ctx);
 RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags, Sdb *dwarf_sdb);
 

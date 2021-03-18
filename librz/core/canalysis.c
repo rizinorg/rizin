@@ -6622,8 +6622,8 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 		}
 
 		if (key) {
-			const char *fcn_type = rz_type_func_ret(core->analysis->sdb_types, key);
-			int nargs = rz_type_func_args_count(core->analysis->sdb_types, key);
+			const char *fcn_type = rz_type_func_ret(core->analysis->type, key);
+			int nargs = rz_type_func_args_count(core->analysis->type, key);
 			if (fcn_type) {
 				pj_o(j);
 				pj_ks(j, "name", rz_str_get_null(key));
@@ -6813,7 +6813,7 @@ RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) 
 	int bits1 = core->analysis->bits;
 	int bits2 = core->rasm->bits;
 	// find known noreturn functions to propagate
-	RzList *noretl = rz_types_function_noreturn(core->analysis->sdb_types);
+	RzList *noretl = rz_type_noreturn_functions(core->analysis->type);
 	// List of the potentially noreturn functions
 	SetU *todo = set_u_new();
 	struct core_noretl u = { core, noretl, todo };
@@ -7186,7 +7186,7 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name) {
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	char *fmt = rz_type_format(analysis->sdb_types, var->type);
+	char *fmt = rz_type_format(analysis->type, var->type);
 	RzRegItem *i;
 	if (!fmt) {
 		RZ_LOG_DEBUG("type:%s doesn't exist\n", var->type);
@@ -7538,3 +7538,70 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
 	}
 	return maxstack;
 }
+
+RZ_API void rz_core_analysis_type_init(RzCore *core) {
+	rz_return_if_fail(core && core->analysis);
+	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
+	int bits = core->rasm->bits;
+	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
+	const char *os = rz_config_get(core->config, "asm.os");
+
+	rz_type_db_init(core->analysis->type, dir_prefix, analysis_arch, bits, os);
+}
+
+static void sdb_concat_by_path(Sdb *s, const char *path) {
+	Sdb *db = sdb_new(0, path, 0);
+	sdb_merge(s, db);
+	sdb_close(db);
+	sdb_free(db);
+}
+
+RZ_API void rz_core_analysis_cc_init(RzCore *core) {
+	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
+	Sdb *cc = core->analysis->sdb_cc;
+	if (!strcmp(analysis_arch, "null")) {
+		sdb_reset(cc);
+		RZ_FREE(cc->path);
+		return;
+	}
+
+	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
+	int bits = core->analysis->bits;
+	char *dbpath = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "cc-%s-%d.sdb"),
+		dir_prefix, analysis_arch, bits);
+	char *dbhomepath = rz_str_newf(RZ_JOIN_3_PATHS("~", RZ_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
+		analysis_arch, bits);
+	// Avoid sdb reloading
+	if (cc->path && (!strcmp(cc->path, dbpath) || !strcmp(cc->path, dbhomepath))) {
+		free(dbpath);
+		free(dbhomepath);
+		return;
+	}
+	sdb_reset(cc);
+	RZ_FREE(cc->path);
+	if (rz_file_exists(dbpath)) {
+		sdb_concat_by_path(cc, dbpath);
+		cc->path = strdup(dbpath);
+	}
+	if (rz_file_exists(dbhomepath)) {
+		sdb_concat_by_path(cc, dbhomepath);
+		cc->path = strdup(dbhomepath);
+	}
+	// same as "tcc `arcc`"
+	char *s = rz_reg_profile_to_cc(core->analysis->reg);
+	if (s) {
+		if (!rz_analysis_cc_set(core->analysis, s)) {
+			eprintf("Warning: Invalid CC from reg profile.\n");
+		}
+		free(s);
+	} else {
+		eprintf("Warning: Cannot derive CC from reg profile.\n");
+	}
+	if (sdb_isempty(core->analysis->sdb_cc)) {
+		eprintf("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", analysis_arch);
+	}
+	free(dbpath);
+	free(dbhomepath);
+}
+
+

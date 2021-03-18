@@ -757,10 +757,10 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 		ret = true;
 	} else if (rz_file_is_c(file)) {
 		const char *dir = rz_config_get(core->config, "dir.types");
-		char *out = rz_parse_c_file(core->analysis, file, dir, NULL);
+		char *out = rz_type_parse_c_file(core->analysis->type, file, dir, NULL);
 		if (out) {
 			rz_cons_strcat(out);
-			sdb_query_lines(core->analysis->sdb_types, out);
+			rz_type_save_parsed_type(core->analysis->type, out);
 			free(out);
 		}
 		ret = out != NULL;
