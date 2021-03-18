@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2017 Srimanta Barua <srimanta.barua1@gmail.com>
+// SPDX-FileCopyrightText: 2018 Alyssa Milburn <noopwafel@gmail.com>
+// SPDX-FileCopyrightText: 2020 Zi Fan <zifan.tan@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "arch.h"
 
