@@ -61,7 +61,7 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 	ut64 offset = 0;
 	st64 buffer_size = rz_buf_size(buf);
 	if (buffer_size < 1) {
-		rz_warn_if_reached();
+		RZ_LOG_ERROR("java bin: invalid buffer size (size < 1)\n");
 		goto java_class_parse_bad;
 	}
 
@@ -383,7 +383,7 @@ RZ_API char *rz_bin_java_class_name(RzBinJavaClass *bin) {
 	const ConstPool *cpool = java_class_constant_pool_at(bin, bin->this_class);
 
 	if (!cpool || java_constant_pool_resolve(cpool, &index, NULL) != 1) {
-		rz_warn_if_reached();
+		RZ_LOG_ERROR("java bin: unknown class name at constant pool index %u\n", bin->this_class);
 		return strdup("unknown_class");
 	}
 
@@ -395,7 +395,7 @@ RZ_API char *rz_bin_java_class_super(RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	const ConstPool *cpool = java_class_constant_pool_at(bin, bin->super_class);
 	if (!cpool || java_constant_pool_resolve(cpool, &index, NULL) != 1) {
-		rz_warn_if_reached();
+		RZ_LOG_ERROR("java bin: unknown super name at constant pool index %u\n", bin->this_class);
 		return strdup("unknown_super");
 	}
 	return java_class_constant_pool_stringify_at(bin, index);
@@ -557,12 +557,12 @@ static inline bool is_dual_index(const ConstPool *cpool) {
 }
 
 RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st32 index) {
-	rz_return_val_if_fail(bin && index > 0, NULL);
+	rz_return_val_if_fail(bin && index >= 0, NULL);
 	ut16 arg0, arg1;
 	char *tmp;
 	const ConstPool *cpool = java_class_constant_pool_at(bin, index);
 
-	if (!cpool) {
+	if (!cpool || !index) {
 		return NULL;
 	}
 	if (java_constant_pool_is_string(cpool) ||
@@ -570,7 +570,7 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 		return java_constant_pool_stringify(cpool);
 	} else if (cpool->tag == CONSTANT_POOL_CLASS) {
 		if (java_constant_pool_resolve(cpool, &arg0, NULL) != 1) {
-			rz_warn_if_reached();
+			RZ_LOG_ERROR("java bin: can't resolve constant pool index %u\n", index);
 			return NULL;
 		}
 		tmp = rz_bin_java_class_const_pool_resolve_index(bin, arg0);
@@ -578,7 +578,7 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 		return tmp;
 	} else if (cpool->tag == CONSTANT_POOL_STRING) {
 		if (java_constant_pool_resolve(cpool, &arg0, NULL) != 1) {
-			rz_warn_if_reached();
+			RZ_LOG_ERROR("java bin: can't resolve constant pool index %u\n", index);
 			return NULL;
 		}
 		char *s0 = rz_bin_java_class_const_pool_resolve_index(bin, arg0);
@@ -587,13 +587,13 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 		return tmp;
 	} else if (is_dual_index(cpool)) {
 		if (java_constant_pool_resolve(cpool, &arg0, &arg1) != 2) {
-			rz_warn_if_reached();
+			RZ_LOG_ERROR("java bin: can't resolve constant pool index %u\n", index);
 			return NULL;
 		}
 		char *s0 = arg0 ? rz_bin_java_class_const_pool_resolve_index(bin, arg0) : NULL;
 		char *s1 = rz_bin_java_class_const_pool_resolve_index(bin, arg1);
 		if ((arg0 && !s0) || !s1) {
-			rz_warn_if_reached();
+			RZ_LOG_ERROR("java bin: can't resolve constant pool index %u\n", index);
 			free(s0);
 			free(s1);
 			return NULL;
@@ -659,7 +659,7 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 			}
 			const ConstPool *cpool = java_class_constant_pool_at(bin, bin->interfaces[i]->index);
 			if (!cpool || java_constant_pool_resolve(cpool, &index, NULL) != 1) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve constant pool index %u\n", bin->interfaces[i]->index);
 				continue;
 			}
 			tmp = java_class_constant_pool_stringify_at(bin, index);
@@ -806,7 +806,7 @@ RZ_API RzBinAddr *rz_bin_java_class_resolve_symbol(RzBinJavaClass *bin, int reso
 				}
 			}
 			if (addr == UT64_MAX) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve symbol address\n");
 				continue;
 			}
 			ret->paddr = addr;
@@ -856,7 +856,7 @@ RZ_API RzList *rz_bin_java_class_entrypoints(RzBinJavaClass *bin) {
 				}
 			}
 			if (addr == UT64_MAX) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve entrypoint address\n");
 				continue;
 			}
 
@@ -889,7 +889,7 @@ RZ_API RzList *rz_bin_java_class_strings(RzBinJavaClass *bin) {
 			}
 			string = java_constant_pool_stringify(cpool);
 			if (!string) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: expecting a string, got NULL\n");
 				continue;
 			}
 			RzBinString *bstr = RZ_NEW0(RzBinString);
@@ -942,7 +942,7 @@ RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
 			}
 			const ConstPool *cpool = java_class_constant_pool_at(bin, method->name_index);
 			if (!cpool || !java_constant_pool_is_string(cpool)) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve method with constant pool index %u\n", method->name_index);
 				continue;
 			}
 			sym = java_constant_pool_stringify(cpool);
@@ -1098,7 +1098,7 @@ RZ_API RzList *rz_bin_java_class_fields_as_symbols(RzBinJavaClass *bin) {
 			}
 			const ConstPool *cpool = java_class_constant_pool_at(bin, field->name_index);
 			if (!cpool || !java_constant_pool_is_string(cpool)) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve field with constant pool index %u\n", field->name_index);
 				continue;
 			}
 			sym = java_constant_pool_stringify(cpool);
@@ -1143,7 +1143,7 @@ RZ_API RzList *rz_bin_java_class_fields_as_binfields(RzBinJavaClass *bin) {
 			}
 			const ConstPool *cpool = java_class_constant_pool_at(bin, field->name_index);
 			if (!cpool || !java_constant_pool_is_string(cpool)) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve field with constant pool index %u\n", field->name_index);
 				continue;
 			}
 			name = java_constant_pool_stringify(cpool);
@@ -1290,19 +1290,19 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_symbols(RzBinJavaClass *bin) {
 				continue;
 			}
 			if (java_constant_pool_resolve(cpool, &class_index, &name_and_type_index) != 2) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve symbol with constant pool index %u\n", i);
 				continue;
 			}
 			const ConstPool *nat = java_class_constant_pool_at(bin, name_and_type_index);
 			if (!nat ||
 				java_constant_pool_resolve(nat, &name_index, &descriptor_index) != 2) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve symbol with constant pool index %u\n", i);
 				continue;
 			}
 			const ConstPool *pclass = java_class_constant_pool_at(bin, class_index);
 			if (!pclass ||
 				java_constant_pool_resolve(pclass, &class_name_index, NULL) != 1) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve symbol with constant pool index %u\n", i);
 				continue;
 			}
 			RzBinSymbol *symbol = rz_bin_symbol_new(NULL, cpool->offset, cpool->offset);
@@ -1342,19 +1342,19 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 				continue;
 			}
 			if (java_constant_pool_resolve(cpool, &class_index, &name_and_type_index) != 2) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve import with constant pool index %u\n", i);
 				continue;
 			}
 			const ConstPool *nat = java_class_constant_pool_at(bin, name_and_type_index);
 			if (!nat ||
 				java_constant_pool_resolve(nat, &name_index, &descriptor_index) != 2) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve import with constant pool index %u\n", i);
 				continue;
 			}
 			const ConstPool *pclass = java_class_constant_pool_at(bin, class_index);
 			if (!pclass ||
 				java_constant_pool_resolve(pclass, &class_name_index, NULL) != 1) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve import with constant pool index %u\n", i);
 				continue;
 			}
 
@@ -1388,7 +1388,7 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 			}
 			const ConstPool *cpool = java_class_constant_pool_at(bin, bin->interfaces[i]->index);
 			if (!cpool || java_constant_pool_resolve(cpool, &class_index, NULL) != 1) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve interface with constant pool index %u\n", i);
 				continue;
 			}
 
@@ -1422,7 +1422,7 @@ RZ_API void rz_bin_java_class_const_pool_as_text(RzBinJavaClass *bin, RzStrBuf *
 			}
 			tag = java_constant_pool_tag_name(cpool);
 			if (!tag) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: invalid tag name for constant pool at index %u\n", i);
 				continue;
 			}
 			snprintf(number, sizeof(number), "#%u", i);
@@ -1456,7 +1456,7 @@ RZ_API void rz_bin_java_class_const_pool_as_json(RzBinJavaClass *bin, PJ *j) {
 			}
 			tag = java_constant_pool_tag_name(cpool);
 			if (!tag) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: invalid tag name for constant pool at index %u\n", i);
 				continue;
 			}
 			text = java_constant_pool_stringify(cpool);
@@ -1650,21 +1650,21 @@ RZ_API RzList *rz_bin_java_class_as_libraries(RzBinJavaClass *bin) {
 			}
 			if (cpool->tag == CONSTANT_POOL_CLASS) {
 				if (java_constant_pool_resolve(cpool, &arg0, &arg1) != 1) {
-					rz_warn_if_reached();
+					RZ_LOG_ERROR("java bin: can't resolve library with constant pool index %u\n", i);
 					continue;
 				}
 				// arg0 is name_index
 				tmp = java_class_constant_pool_stringify_at(bin, arg0);
 			} else if (java_constant_pool_is_import(cpool)) {
 				if (java_constant_pool_resolve(cpool, &arg0, &arg1) != 2) {
-					rz_warn_if_reached();
+					RZ_LOG_ERROR("java bin: can't resolve library with constant pool index %u\n", i);
 					continue;
 				}
 				// arg0 is name_and_type_index
 				const ConstPool *nat = java_class_constant_pool_at(bin, arg0);
 				if (!nat ||
 					java_constant_pool_resolve(nat, &arg0, &arg1) != 1) {
-					rz_warn_if_reached();
+					RZ_LOG_ERROR("java bin: can't resolve library with constant pool index %u\n", i);
 					continue;
 				}
 				// arg0 is name_index
@@ -1695,7 +1695,7 @@ RZ_API void rz_bin_java_class_interfaces_as_text(RzBinJavaClass *bin, RzStrBuf *
 			}
 			const ConstPool *cpool = java_class_constant_pool_at(bin, bin->interfaces[i]->index);
 			if (!cpool || java_constant_pool_resolve(cpool, &index, NULL) != 1) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve interface with constant pool index %u\n", i);
 				continue;
 			}
 			snprintf(number, sizeof(number), "#%u", i);
@@ -1720,7 +1720,7 @@ RZ_API void rz_bin_java_class_interfaces_as_json(RzBinJavaClass *bin, PJ *j) {
 
 			const ConstPool *cpool = java_class_constant_pool_at(bin, bin->interfaces[i]->index);
 			if (!cpool || java_constant_pool_resolve(cpool, &index, NULL) != 1) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: can't resolve interface with constant pool index %u\n", i);
 				continue;
 			}
 			pj_o(j);

@@ -25,6 +25,9 @@
 #define rz_cmd_desc_argv_modes_new_warn(rcmd, root, cmd, flags) \
 	rz_warn_if_fail(rz_cmd_desc_argv_modes_new(rcmd, root, #cmd, flags, name_handler(cmd), &name_help(cmd)))
 
+#define rz_cmd_desc_argv_new_warn(rcmd, root, cmd) \
+	rz_warn_if_fail(rz_cmd_desc_argv_new(rcmd, root, #cmd, name_handler(cmd), &name_help(cmd)))
+
 static RzBinJavaClass *core_java_get_class(RzCore *core) {
 	if (!core) {
 		return NULL;
@@ -39,10 +42,6 @@ static RzBinJavaClass *core_java_get_class(RzCore *core) {
 	}
 	RzBinPlugin *plugin = b->cur->o->plugin;
 	return plugin && !strcmp(plugin->name, "java") ? (RzBinJavaClass *)b->cur->o->bin_obj : NULL;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_java_handler(RzCore *core, int argc, const char **argv) {
-	return RZ_CMD_STATUS_WRONG_ARGS;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_javac_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -210,7 +209,7 @@ RZ_IPI RzCmdStatus rz_cmd_javaf_handler(RzCore *core, int argc, const char **arg
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_javas_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_javas_handler(RzCore *core, int argc, const char **argv) {
 	if (argc != 1) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
@@ -231,7 +230,7 @@ RZ_IPI RzCmdStatus rz_cmd_javas_handler(RzCore *core, int argc, const char **arg
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_javar_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_javar_handler(RzCore *core, int argc, const char **argv) {
 	if (argc != 2) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
@@ -243,9 +242,15 @@ RZ_IPI RzCmdStatus rz_cmd_javar_handler(RzCore *core, int argc, const char **arg
 
 	st32 index = rz_num_math(core->num, argv[1]);
 
+	if (index < 1) {
+		RZ_LOG_ERROR("can't resolve constant pool index %d\n", index);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
 	char *resolved = rz_bin_java_class_const_pool_resolve_index(jclass, index);
 	if (!resolved) {
-		return RZ_CMD_STATUS_ERROR;
+		RZ_LOG_ERROR("can't resolve constant pool index %d\n", index);
+		return RZ_CMD_STATUS_INVALID;
 	}
 
 	char *demangled = rz_bin_demangle_java(resolved);
@@ -259,16 +264,6 @@ RZ_IPI RzCmdStatus rz_cmd_javar_handler(RzCore *core, int argc, const char **arg
 	free(demangled);
 	return RZ_CMD_STATUS_OK;
 }
-
-static const RzCmdDescArg cmd_java_args[] = {
-	{ 0 },
-};
-
-static const RzCmdDescHelp cmd_java_help = {
-	.summary = "This help page",
-	.description = "Type `java` for more commands.",
-	.args = cmd_java_args,
-};
 
 static const RzCmdDescHelp java_usage = {
 	.summary = "Core plugin to visualize java class information",
@@ -301,7 +296,7 @@ static bool rz_cmd_java_init_handler(RzCore *core) {
 		return false;
 	}
 
-	RzCmdDesc *java = rz_cmd_desc_group_new(rcmd, root_cd, "java", name_handler(java), &name_help(java), &java_usage);
+	RzCmdDesc *java = rz_cmd_desc_group_new(rcmd, root_cd, "java", NULL, NULL, &java_usage);
 	if (!java) {
 		rz_warn_if_reached();
 		return false;
@@ -312,8 +307,8 @@ static bool rz_cmd_java_init_handler(RzCore *core) {
 	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javai, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON);
 	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javam, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON);
 	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javap, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON);
-	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javas, RZ_OUTPUT_MODE_STANDARD);
-	rz_cmd_desc_argv_modes_new_warn(rcmd, java, javar, RZ_OUTPUT_MODE_STANDARD);
+	rz_cmd_desc_argv_new_warn(rcmd, java, javas);
+	rz_cmd_desc_argv_new_warn(rcmd, java, javar);
 
 	return true;
 }
