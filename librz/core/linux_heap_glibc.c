@@ -1017,6 +1017,7 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (!tcache) {
+		rz_cons_printf("No Tcache in this libc version\n");
 		return;
 	}
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
