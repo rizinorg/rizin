@@ -38,7 +38,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	switch (ctx->switchop) {
 	case BYTECODE_AA_TABLESWITCH: {
 		if (len < 4) {
-			eprintf("[!] java_analysis: no enough data for lookupswitch case.\n");
+			RZ_LOG_ERROR("[!] java_analysis: no enough data for lookupswitch case.\n");
 			return -1;
 		}
 		op->size = 4;
@@ -49,7 +49,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	case BYTECODE_AB_LOOKUPSWITCH: {
 		if (len < 8) {
-			eprintf("[!] java_analysis: no enough data for lookupswitch case.\n");
+			RZ_LOG_ERROR("[!] java_analysis: no enough data for lookupswitch case.\n");
 			return -1;
 		}
 		op->size = 8;
@@ -77,7 +77,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	if (!jvm_init(&vm, buf, len, a->pc, section)) {
-		eprintf("[!] java_disassemble: bad or invalid data.\n");
+		RZ_LOG_ERROR("[!] java_disassemble: bad or invalid data.\n");
 		return -1;
 	}
 	op->size = 1;
@@ -97,7 +97,7 @@ static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		}
 		bytecode_clean(&bc);
 	} else {
-		eprintf("[!] java_disassemble: jvm fetch failed.\n");
+		RZ_LOG_ERROR("[!] java_disassemble: jvm fetch failed.\n");
 		return -1;
 	}
 	return op->size;
