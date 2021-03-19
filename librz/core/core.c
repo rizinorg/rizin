@@ -1857,7 +1857,7 @@ static int __disasm(void *_core, ut64 addr) {
 }
 
 static void update_sdb(RzCore *core) {
-	Sdb *d;
+	Sdb *s, *d;
 	RzBinObject *o;
 	if (!core) {
 		return;
@@ -1878,13 +1878,12 @@ static void update_sdb(RzCore *core) {
 	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	//SDB// syscall/
+	s = sdb_ns(DB, "syscall", 1);
 	if (core->rasm && core->rasm->syscall && core->rasm->syscall->db) {
-		core->rasm->syscall->db->refs++;
-		sdb_ns_set(DB, "syscall", core->rasm->syscall->db);
+		sdb_ns_set(s, "syscall", core->rasm->syscall->db);
 	}
 	d = sdb_ns(DB, "debug", 1);
 	if (core->dbg->sgnls) {
-		core->dbg->sgnls->refs++;
 		sdb_ns_set(d, "signals", core->dbg->sgnls);
 	}
 }

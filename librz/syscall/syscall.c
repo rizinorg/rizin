@@ -128,11 +128,7 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 		if (dbName) {
 			if (!load_sdb(&s->db, dbName)) {
 				sdb_free(s->db);
-#if __FreeBSD__
-				s->db = sdb_new0();
-#else
 				s->db = NULL;
-#endif
 			}
 			free(dbName);
 		}
@@ -144,11 +140,7 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 		if (dbName) {
 			if (!load_sdb(&s->srdb, dbName)) {
 				sdb_free(s->srdb);
-#if __FreeBSD__
-				s->srdb = sdb_new0();
-#else
 				s->srdb = NULL;
-#endif
 			}
 			free(dbName);
 		}
