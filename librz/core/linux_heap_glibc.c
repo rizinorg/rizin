@@ -564,14 +564,14 @@ void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
 		print_comma = true;
 	}
 	if (cnk->size & IS_MMAPPED) {
-		if (print_comma){
+		if (print_comma) {
 			PRINT_RA(",");
 		}
 		PRINT_RA("IS_MMAPPED,");
 		print_comma = true;
 	}
 	if (cnk->size & PREV_INUSE) {
-		if (print_comma){
+		if (print_comma) {
 			PRINT_RA(",");
 		}
 		PRINT_RA("PREV_INUSE");
@@ -1902,32 +1902,33 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 		}
 		break;
 	case 'd': // "dmhd"
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+		if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+			break;
+		}
+		if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+			break;
+		}
+		input += 1;
+		RzHeapBinType bin_format = RZ_HEAP_BIN_ANY;
+		if (input[0] == ' ') {
+			input += 1;
+			if (!strcmp(input, "tcache")) {
+				bin_format = RZ_HEAP_BIN_TCACHE;
+			} else if (!strcmp(input, "fast")) {
+				bin_format = RZ_HEAP_BIN_FAST;
+			} else if (!strcmp(input, "unsorted")) {
+				bin_format = RZ_HEAP_BIN_UNSORTED;
+			} else if (!strcmp(input, "small")) {
+				bin_format = RZ_HEAP_BIN_SMALL;
+			} else if (!strcmp(input, "large")) {
+				bin_format = RZ_HEAP_BIN_LARGE;
+			} else {
 				break;
 			}
-			input += 1;
-			RzHeapBinType bin_format = RZ_HEAP_BIN_ANY;
-			if (input[0] == ' ') {
-				input += 1;
-				if (!strcmp(input, "tcache")) {
-					bin_format = RZ_HEAP_BIN_TCACHE;
-				} else if (!strcmp(input, "fast")) {
-					bin_format = RZ_HEAP_BIN_FAST;
-				} else if (!strcmp(input, "unsorted")) {
-					bin_format = RZ_HEAP_BIN_UNSORTED;
-				} else if (!strcmp(input, "small")) {
-					bin_format = RZ_HEAP_BIN_SMALL;
-				} else if (!strcmp(input, "large")) {
-					bin_format = RZ_HEAP_BIN_LARGE;
-				} else {
-					break;
-				}
-			}
-
-			GH(print_main_arena_bins)
-			(core, m_arena, main_arena, global_max_fast, bin_format);
 		}
+
+		GH(print_main_arena_bins)
+		(core, m_arena, main_arena, global_max_fast, bin_format);
 		break;
 	case 'f': // "dmhf"
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
