@@ -761,6 +761,13 @@ typedef struct {
 	size_t capacity;
 	RzBinDwarfCompUnit *comp_units;
 	HtUP /*<ut64 offset, DwarfDie *die>*/ *lookup_table;
+
+	/**
+	 * Cache mapping from an offset in the debug_line section to a string
+	 * representing the DW_AT_comp_dir attribute of the compilation unit
+	 * that references this particular line information.
+	 */
+	HtUP /*<ut64, char *>*/ *line_info_offset_comp_dir;
 } RzBinDwarfDebugInfo;
 
 #define ABBREV_DECL_CAP 8
@@ -808,6 +815,7 @@ typedef struct rz_bin_dwarf_line_file_entry_t {
 } RzBinDwarfLineFileEntry;
 
 typedef struct {
+	ut64 offset; //< offset inside the debug_line section, for references from outside
 	ut64 unit_length;
 	ut16 version;
 	ut64 header_length;
@@ -931,14 +939,14 @@ RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_tab
 RZ_API void rz_bin_dwarf_debug_info_free(RzBinDwarfDebugInfo *inf);
 RZ_API void rz_bin_dwarf_debug_abbrev_free(RzBinDwarfDebugAbbrev *da);
 
-RZ_API RzList *rz_bin_dwarf_parse_line(RzBinFile *binfile, RzBinDwarfLineInfoMask mask);
-RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(Sdb *sdb_addrinfo, const RzBinDwarfLineHeader *header, ut64 file_index);
+RZ_API RzList *rz_bin_dwarf_parse_line(RzBinFile *binfile, RZ_NULLABLE RzBinDwarfDebugInfo *info, RzBinDwarfLineInfoMask mask);
+RZ_API char *rz_bin_dwarf_line_header_get_full_file_path(RZ_NULLABLE RzBinDwarfDebugInfo *info, const RzBinDwarfLineHeader *header, ut64 file_index);
 RZ_API ut64 rz_bin_dwarf_line_header_get_adj_opcode(const RzBinDwarfLineHeader *header, ut8 opcode);
 RZ_API ut64 rz_bin_dwarf_line_header_get_spec_op_advance_pc(const RzBinDwarfLineHeader *header, ut8 opcode);
 RZ_API st64 rz_bin_dwarf_line_header_get_spec_op_advance_line(const RzBinDwarfLineHeader *header, ut8 opcode);
 RZ_API void rz_bin_dwarf_line_header_reset_regs(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs);
 RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op,
-	RZ_NULLABLE RZ_OUT RzList /*<RzBinSourceRow>*/ *rows_out, RZ_DEPRECATE Sdb *sdb_addrinfo);
+	RZ_NULLABLE RZ_OUT RzList /*<RzBinSourceRow>*/ *rows_out, RZ_NULLABLE RzBinDwarfDebugInfo *info);
 RZ_API void rz_bin_dwarf_line_op_fini(RzBinDwarfLineOp *op);
 RZ_API void rz_bin_dwarf_line_info_free(RzBinDwarfLineInfo *li);
 

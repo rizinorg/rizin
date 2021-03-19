@@ -113,7 +113,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	}
 	i++;
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
 	mu_assert_eq(rz_list_length(line_list), 1, "Amount of line information parse doesn't match");
 	RzBinDwarfLineInfo *li = rz_list_first(line_list);
 	mu_assert_eq(rz_list_length(li->rows), 8, "rows count");
@@ -469,7 +469,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 
 	// rz_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
 	mu_assert_eq(rz_list_length(line_list), 1, "Amount of line information parse doesn't match");
 	RzBinDwarfLineInfo *li = rz_list_first(line_list);
 	mu_assert_eq(rz_list_length(li->rows), 60, "rows count");
@@ -577,7 +577,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	check_abbrev_children(false);
 	check_abbrev_code(18);
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
 	mu_assert_eq(rz_list_length(line_list), 2, "Amount of line information parse doesn't match");
 	RzBinDwarfLineInfo *li = rz_list_first(line_list);
 	mu_assert_eq(rz_list_length(li->rows), 17, "rows count");
@@ -633,7 +633,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	// not ignoring null entries -> 755 abbrevs
 	mu_assert_eq(da->count, 731, "Incorrect number of abbreviation");
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
 	mu_assert_eq(rz_list_length(line_list), 16, "Amount of line information parse doesn't match");
 	RzBinDwarfLineInfo *li = rz_list_first(line_list);
 	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 0))->rows), 271, "rows count");
@@ -723,7 +723,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	check_abbrev_children(false);
 	check_abbrev_code(18);
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
 	mu_assert_eq(rz_list_length(line_list), 2, "Amount of line information parse doesn't match");
 
 	RzBinDwarfLineInfo *li = rz_list_get_n(line_list, 0);
@@ -832,7 +832,7 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 
 	// TODO add abbrev checks
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
 	mu_assert_eq(rz_list_length(line_list), 2, "Amount of line information parse doesn't match");
 	RzBinDwarfLineInfo *li = rz_list_first(line_list);
 	mu_assert_eq(rz_list_length(li->rows), 61, "rows count");
@@ -928,6 +928,68 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	mu_end;
 }
 
+bool test_dwarf4_multidir_comp_units(void) {
+	RzBin *bin = rz_bin_new();
+	RzIO *io = rz_io_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBinOptions opt = { 0 };
+	bool res = rz_bin_open(bin, "bins/elf/dwarf4_multidir_comp_units", &opt);
+	mu_assert("couldn't open file", res);
+
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
+	mu_assert_notnull(da, "abbrevs");
+	mu_assert_eq(da->count, 8, "abbrevs count");
+
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
+	mu_assert_notnull(info, "info");
+
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, info, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
+	mu_assert_eq(rz_list_length(line_list), 2, "line info count");
+
+	const RzBinSourceRow test_rows0[] = {
+		{ 0x1139, "/home/florian/dev/dwarf-comp-units/main.c", 6, 12 },
+		{ 0x113d, "/home/florian/dev/dwarf-comp-units/main.c", 7, 2 },
+		{ 0x115f, "/home/florian/dev/dwarf-comp-units/main.c", 8, 2 },
+		{ 0x1181, "/home/florian/dev/dwarf-comp-units/main.c", 9, 9 },
+		{ 0x1186, "/home/florian/dev/dwarf-comp-units/main.c", 10, 1 },
+		{ 0x1188, "/home/florian/dev/dwarf-comp-units/main.c", 0, 0 }
+	};
+
+	const RzBinSourceRow test_rows1[] = {
+		{ 0x1188, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 2, 31 },
+		{ 0x1192, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 3, 11 },
+		{ 0x1198, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 3, 20 },
+		{ 0x11a1, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 3, 16 },
+		{ 0x11a3, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 4, 1 },
+		{ 0x11a5, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 0, 0 }
+	};
+
+	const RzBinSourceRow *test_rows[] = { test_rows0, test_rows1 };
+
+	for (size_t i = 0; i < 2; i++) {
+		RzBinDwarfLineInfo *li = rz_list_get_n(line_list, i);
+		mu_assert_eq(rz_list_length(li->rows), i ? RZ_ARRAY_SIZE(test_rows1) : RZ_ARRAY_SIZE(test_rows0), "rows count");
+		RzBinSourceRow *row;
+		RzListIter *iter;
+		size_t j = 0;
+		rz_list_foreach (li->rows, iter, row) {
+			const RzBinSourceRow *expect = &test_rows[i][j++];
+			mu_assert_eq(row->address, expect->address, "Row addr");
+			mu_assert_streq(row->file, expect->file, "Row file");
+			mu_assert_eq(row->line, expect->line, "Row line");
+			mu_assert_eq(row->column, expect->column, "Row column");
+		}
+	}
+
+	rz_list_free(line_list);
+	rz_bin_dwarf_debug_info_free(info);
+	rz_bin_dwarf_debug_abbrev_free(da);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool test_big_endian_dwarf2(void) {
 	RzBin *bin = rz_bin_new();
 	RzIO *io = rz_io_new();
@@ -937,7 +999,7 @@ bool test_big_endian_dwarf2(void) {
 	bool res = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert("couldn't open file", res);
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
+	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
 	mu_assert_eq(rz_list_length(line_list), 1, "Amount of line information parse doesn't match");
 	RzBinDwarfLineInfo *li = rz_list_first(line_list);
 	mu_assert_eq(rz_list_length(li->rows), 475, "rows count");
@@ -1043,6 +1105,7 @@ bool all_tests() {
 	mu_run_test(test_dwarf3_cpp_basic);
 	mu_run_test(test_dwarf3_cpp_many_comp_units);
 	mu_run_test(test_dwarf4_cpp_many_comp_units);
+	mu_run_test(test_dwarf4_multidir_comp_units);
 	mu_run_test(test_big_endian_dwarf2);
 	mu_run_test(test_dwarf3_aranges);
 	return tests_passed != tests_run;
