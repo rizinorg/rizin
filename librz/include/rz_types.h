@@ -42,14 +42,18 @@ typedef enum {
 	RZ_OUTPUT_MODE_TABLE = 1 << 7,
 } RzOutputMode;
 
-#define RZ_IN        /* do not use, implicit */
-#define RZ_OUT       /* parameter is written, not read */
-#define RZ_INOUT     /* parameter is read and written */
-#define RZ_OWN       /* pointer ownership is transferred */
-#define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
-#define RZ_NONNULL   /* pointer can not be null */
-#define RZ_NULLABLE  /* pointer can be null */
+#define RZ_IN       /* do not use, implicit */
+#define RZ_OUT      /* parameter is written, not read */
+#define RZ_INOUT    /* parameter is read and written */
+#define RZ_OWN      /* pointer ownership is transferred */
+#define RZ_BORROW   /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define RZ_NONNULL  /* pointer can not be null */
+#define RZ_NULLABLE /* pointer can be null */
+#ifdef __GNUC__
+#define RZ_DEPRECATE __attribute__((deprecated))
+#else
 #define RZ_DEPRECATE /* should not be used in new code and should/will be removed in the future */
+#endif
 #define RZ_IFNULL(x) /* default value for the pointer when null */
 #ifdef __GNUC__
 #define RZ_UNUSED __attribute__((__unused__))
