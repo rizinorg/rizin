@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2016 Rakholiya Jenish
+// SPDX-FileCopyrightText: 2016 NighterMan <jpenalbae@gmail.com>
+// SPDX-FileCopyrightText: 2017-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef __IO_RZK_LINUX_H__
 #define __IO_RZK_LINUX_H__
 

@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2016 skuater <skuater@hotmail.com>
+// SPDX-FileCopyrightText: 2016 Rakholiya Jenish
+// SPDX-FileCopyrightText: 2017 Jose Diaz <josediazplay@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef __IO_RZK_WINDOWS_H__
 #define __IO_RZK_WINDOWS_H__
 

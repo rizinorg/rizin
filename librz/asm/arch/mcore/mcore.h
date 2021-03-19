@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018-2020 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef MCORE_H
 #define MCORE_H
 

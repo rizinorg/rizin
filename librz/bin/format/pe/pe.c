@@ -4292,18 +4292,6 @@ RzList *PE_(section_flag_to_rzlist)(ut64 flag) {
 	if (flag & IMAGE_SCN_MEM_NOT_PAGED) {
 		rz_list_append(flag_list, "MEM_NOT_PAGED");
 	}
-	if (flag & PE_IMAGE_SCN_MEM_SHARED) {
-		rz_list_append(flag_list, "MEM_SHARED");
-	}
-	if (flag & PE_IMAGE_SCN_MEM_EXECUTE) {
-		rz_list_append(flag_list, "MEM_EXECUTE");
-	}
-	if (flag & PE_IMAGE_SCN_MEM_READ) {
-		rz_list_append(flag_list, "MEM_READ");
-	}
-	if (flag & PE_IMAGE_SCN_MEM_WRITE) {
-		rz_list_append(flag_list, "MEM_WRITE");
-	}
 	return flag_list;
 }
 

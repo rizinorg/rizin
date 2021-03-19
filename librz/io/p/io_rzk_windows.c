@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2016 skuater <skuater@hotmail.com>
+// SPDX-FileCopyrightText: 2016 Rakholiya Jenish
+// SPDX-FileCopyrightText: 2017 Jose Diaz <josediazplay@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "io_rzk_windows.h"
 
 HANDLE gHandleDriver = NULL;

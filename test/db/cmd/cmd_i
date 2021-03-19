@@ -4278,9 +4278,7 @@ EXPECT=<<EOF
     "flags": [
       "CNT_CODE",
       "CNT_INITIALIZED_DATA",
-      "ALIGN_16BYTES",
-      "MEM_EXECUTE",
-      "MEM_READ"
+      "ALIGN_16BYTES"
     ],
     "paddr": 1024,
     "vaddr": 4198400
@@ -4292,9 +4290,7 @@ EXPECT=<<EOF
     "perm": "-rw-",
     "flags": [
       "CNT_INITIALIZED_DATA",
-      "ALIGN_4BYTES",
-      "MEM_READ",
-      "MEM_WRITE"
+      "ALIGN_4BYTES"
     ],
     "paddr": 3584,
     "vaddr": 4202496
@@ -4306,8 +4302,7 @@ EXPECT=<<EOF
     "perm": "-r--",
     "flags": [
       "CNT_INITIALIZED_DATA",
-      "ALIGN_4BYTES",
-      "MEM_READ"
+      "ALIGN_4BYTES"
     ],
     "paddr": 4096,
     "vaddr": 4206592
@@ -4319,9 +4314,7 @@ EXPECT=<<EOF
     "perm": "-rw-",
     "flags": [
       "CNT_UNINITIALIZED",
-      "ALIGN_8BYTES",
-      "MEM_READ",
-      "MEM_WRITE"
+      "ALIGN_8BYTES"
     ],
     "paddr": 0,
     "vaddr": 4210688
@@ -4333,9 +4326,7 @@ EXPECT=<<EOF
     "perm": "-rw-",
     "flags": [
       "CNT_INITIALIZED_DATA",
-      "ALIGN_4BYTES",
-      "MEM_READ",
-      "MEM_WRITE"
+      "ALIGN_4BYTES"
     ],
     "paddr": 4608,
     "vaddr": 4214784

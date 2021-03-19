@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 Srimanta Barua <srimanta.barua1@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 // Notes and useful links:
 // This conversation (https://www.sourceware.org/ml/gdb/2009-02/msg00100.html) suggests GDB clients usually ignore error codes
 // Useful, but not to be blindly trusted - http://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html

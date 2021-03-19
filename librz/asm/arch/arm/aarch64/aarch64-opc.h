@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2012-2018 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* aarch64-opc.h -- Header file for aarch64-opc.c and aarch64-opc-2.c.
    Copyright (C) 2012-2018 Free Software Foundation, Inc.
    Contributed by ARM Ltd.
