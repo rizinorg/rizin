@@ -7,6 +7,7 @@
 #include <rz_bin.h>
 
 #include "../format/java/class_bin.h"
+#include "../../asm/arch/java/const.h"
 
 #define rz_bin_file_get_java_class(bf) ((RzBinJavaClass *)bf->o->bin_obj)
 
@@ -207,8 +208,8 @@ static char *enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
 		return NULL;
 	}
 	for (int i = 0; i < asm_len; ++i) {
-		if (asm_str[i] == 'c' && !strncmp(asm_str + i, "constant_pool.", 14)) {
-			const char *snum = asm_str + i + 14;
+		if (!strncmp(asm_str + i, JAVA_ASM_CONSTANT_POOL_STR, strlen(JAVA_ASM_CONSTANT_POOL_STR))) {
+			const char *snum = asm_str + i + strlen(JAVA_ASM_CONSTANT_POOL_STR);
 			if (!IS_DIGIT(*snum)) {
 				rz_warn_if_reached();
 				continue;

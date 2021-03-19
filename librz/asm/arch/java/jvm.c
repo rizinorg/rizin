@@ -1,4 +1,5 @@
 #include "jvm.h"
+#include "const.h"
 #include <rz_analysis.h>
 
 #define fail_if_no_enough_buffer_or_set(bytecode, jvm, n) \
@@ -1470,7 +1471,7 @@ void bytecode_snprint(RzStrBuf *sb, Bytecode *bytecode) {
 		if (bytecode->type[0] == BYTECODE_TYPE_NUMBER) {
 			rz_strbuf_setf(sb, "%s %d", bytecode->name, bytecode->args[0]);
 		} else if (bytecode->type[0] == BYTECODE_TYPE_CONST_POOL) {
-			rz_strbuf_setf(sb, "%s constant_pool.%u", bytecode->name, bytecode->args[0]);
+			rz_strbuf_setf(sb, "%s " JAVA_ASM_CONSTANT_POOL_STR "%u", bytecode->name, bytecode->args[0]);
 		} else if (bytecode->type[0] == BYTECODE_TYPE_ADDRESS) {
 			address = bytecode->pc + bytecode->args[0];
 			rz_strbuf_setf(sb, "%s 0x%" PFMT64x, bytecode->name, address);
@@ -1519,7 +1520,7 @@ void bytecode_snprint(RzStrBuf *sb, Bytecode *bytecode) {
 			rz_strbuf_setf(sb, "%s %d %d", bytecode->name, bytecode->args[0], bytecode->args[1]);
 		} else if (bytecode->type[0] == BYTECODE_TYPE_CONST_POOL &&
 			bytecode->type[1] == BYTECODE_TYPE_NUMBER) {
-			rz_strbuf_setf(sb, "%s constant_pool.%u %d", bytecode->name, bytecode->args[0], bytecode->args[1]);
+			rz_strbuf_setf(sb, "%s " JAVA_ASM_CONSTANT_POOL_STR "%u %d", bytecode->name, bytecode->args[0], bytecode->args[1]);
 		} else {
 			rz_strbuf_setf(sb, "%s %d %d", bytecode->name, bytecode->args[0], bytecode->args[1]);
 			rz_warn_if_reached();
