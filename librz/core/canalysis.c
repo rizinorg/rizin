@@ -3878,6 +3878,16 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 	char temp[64];
 	rz_return_val_if_fail(core && core->analysis, 0);
 	if (rz_list_empty(core->analysis->fcns)) {
+		if (*rad == 'j') {
+			PJ *pj = rz_core_pj_new(core);
+			if (!pj) {
+				return -1;
+			}
+			pj_a(pj);
+			pj_end(pj);
+			rz_cons_println(pj_string(pj));
+			pj_free(pj);
+		}
 		return 0;
 	}
 	if (*rad == '.') {
