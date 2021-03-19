@@ -558,13 +558,22 @@ void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
 	PRINTF_YA("0x%" PFMT64x, (ut64)chunk);
 	rz_cons_printf(", size=0x%" PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
 	rz_cons_printf(", flags=");
+	bool print_comma = false;
 	if (cnk->size & NON_MAIN_ARENA) {
-		PRINT_RA("NON_MAIN_ARENA,");
+		PRINT_RA("NON_MAIN_ARENA");
+		print_comma = true;
 	}
 	if (cnk->size & IS_MMAPPED) {
+		if (print_comma){
+			PRINT_RA(",");
+		}
 		PRINT_RA("IS_MMAPPED,");
+		print_comma = true;
 	}
 	if (cnk->size & PREV_INUSE) {
+		if (print_comma){
+			PRINT_RA(",");
+		}
 		PRINT_RA("PREV_INUSE");
 	}
 	rz_cons_printf(")");
@@ -1691,16 +1700,16 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
  * \param global_max_fast The largest fast bin size (used for formatting)
  * \param format Enum to determine which type of bins to print.
  */
-static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, HeapBinType format) {
+static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, RzHeapBinType format) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
 	bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
-	if (format == BIN_ANY || format == BIN_TCACHE) {
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_TCACHE) {
 		bool main_thread_only = true;
 		GH(print_tcache_instance)
 		(core, m_arena, main_arena, demangle, main_thread_only);
 		rz_cons_newline();
 	}
-	if (format == BIN_ANY || format == BIN_FAST) {
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_FAST) {
 		char *input = malloc(sizeof(char) * 1);
 		input[0] = '\0';
 		bool main_arena_only = true;
@@ -1709,17 +1718,17 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 		free(input);
 		rz_cons_newline();
 	}
-	if (format == BIN_ANY || format == BIN_UNSORTED) {
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_UNSORTED) {
 		GH(print_unsortedbin_description)
 		(core, m_arena, main_arena);
 		rz_cons_newline();
 	}
-	if (format == BIN_ANY || format == BIN_SMALL) {
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_SMALL) {
 		GH(print_smallbin_description)
 		(core, m_arena, main_arena);
 		rz_cons_newline();
 	}
-	if (format == BIN_ANY || format == BIN_LARGE) {
+	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_LARGE) {
 		GH(print_largebin_description)
 		(core, m_arena, main_arena);
 		rz_cons_newline();
@@ -1898,19 +1907,19 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 				break;
 			}
 			input += 1;
-			HeapBinType bin_format = BIN_ANY;
+			RzHeapBinType bin_format = RZ_HEAP_BIN_ANY;
 			if (input[0] == ' ') {
 				input += 1;
 				if (!strcmp(input, "tcache")) {
-					bin_format = BIN_TCACHE;
+					bin_format = RZ_HEAP_BIN_TCACHE;
 				} else if (!strcmp(input, "fast")) {
-					bin_format = BIN_FAST;
+					bin_format = RZ_HEAP_BIN_FAST;
 				} else if (!strcmp(input, "unsorted")) {
-					bin_format = BIN_UNSORTED;
+					bin_format = RZ_HEAP_BIN_UNSORTED;
 				} else if (!strcmp(input, "small")) {
-					bin_format = BIN_SMALL;
+					bin_format = RZ_HEAP_BIN_SMALL;
 				} else if (!strcmp(input, "large")) {
-					bin_format = BIN_LARGE;
+					bin_format = RZ_HEAP_BIN_LARGE;
 				} else {
 					break;
 				}

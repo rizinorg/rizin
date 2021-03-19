@@ -267,14 +267,14 @@ typedef struct rz_heap_info_64 {
 	/* char pad[NPAD * SZ & MALLOC_ALIGN_MASK]; */
 } RzHeapInfo_64;
 
-typedef enum heap_bin_type {
-	BIN_ANY,
-	BIN_TCACHE,
-	BIN_FAST,
-	BIN_UNSORTED,
-	BIN_SMALL,
-	BIN_LARGE
-} HeapBinType;
+typedef enum rz_heap_bin_type {
+	RZ_HEAP_BIN_ANY,
+	RZ_HEAP_BIN_TCACHE,
+	RZ_HEAP_BIN_FAST,
+	RZ_HEAP_BIN_UNSORTED,
+	RZ_HEAP_BIN_SMALL,
+	RZ_HEAP_BIN_LARGE
+} RzHeapBinType;
 
 #ifdef __cplusplus
 }
