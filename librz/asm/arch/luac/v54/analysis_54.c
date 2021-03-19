@@ -4,7 +4,7 @@
 #include "arch_54.h"
 
 int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {
-	if (!op) {
+	if (!op || len < 4) {
 		return 0;
 	}
 
@@ -30,11 +30,13 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case OP_LOADKX: /*	A	R[A] := K[extra arg]				*/
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		extraArg = lua_build_instruction(data + 4);
-		if (LUA_GET_OPCODE(extraArg) == OP_EXTRAARG) {
-			op->size = 8;
+		if (len >= 8) {
+                        extraArg = lua_build_instruction(data + 4);
+                        if (LUA_GET_OPCODE(extraArg) == OP_EXTRAARG) {
+                                op->size = 8;
+                        }
 		}
-		break;
+		op->size = 0;   // broken opcode
 	case OP_LFALSESKIP: /*A	R[A] := false; pc++				*/
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->size = 8;
