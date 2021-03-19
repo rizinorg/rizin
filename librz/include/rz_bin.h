@@ -103,11 +103,13 @@ RZ_LIB_VERSION_HEADER(rz_bin);
 #define RZ_BIN_BIND_HIOS_STR    "HIOS"
 #define RZ_BIN_BIND_LOPROC_STR  "LOPROC"
 #define RZ_BIN_BIND_HIPROC_STR  "HIPROC"
+#define RZ_BIN_BIND_IMPORT_STR  "IMPORT"
 #define RZ_BIN_BIND_UNKNOWN_STR "UNKNOWN"
 
 #define RZ_BIN_TYPE_NOTYPE_STR      "NOTYPE"
 #define RZ_BIN_TYPE_OBJECT_STR      "OBJ"
 #define RZ_BIN_TYPE_FUNC_STR        "FUNC"
+#define RZ_BIN_TYPE_IFACE_STR       "IFACE"
 #define RZ_BIN_TYPE_METH_STR        "METH"
 #define RZ_BIN_TYPE_STATIC_STR      "STATIC"
 #define RZ_BIN_TYPE_SECTION_STR     "SECT"
@@ -456,6 +458,7 @@ typedef struct rz_bin_plugin_t {
 	int (*demangle_type)(const char *str);
 	struct rz_bin_dbginfo_t *dbginfo;
 	struct rz_bin_write_t *write;
+	char *(*enrich_asm)(RzBinFile *bf, const char *asm_str, int asm_len);
 	int (*get_offset)(RzBinFile *bf, int type, int idx);
 	char *(*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);

@@ -2104,10 +2104,6 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 				rz_table_add_rowf(table, "nXssss", (ut64)import->ordinal, addr, bind, type, libname ? libname : "", symname);
 			}
 
-			if (import->descriptor && import->descriptor[0]) {
-				// Uh?
-				rz_cons_printf(" descriptor=%s", import->descriptor);
-			}
 			if (!IS_MODE_NORMAL(mode)) {
 				rz_cons_newline();
 			}
