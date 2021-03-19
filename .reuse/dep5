@@ -135,6 +135,14 @@ Files: librz/magic/d/default/*
 Copyright: 1986, 1987, 1989, 1990, 1991, 1992, 1994, 1995 Ian F. Darwin
 License: BSD-2-Clause
 
+Files: librz/syscall/d/*
+Copyright: 2011 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
+Files: librz/syscall/d2/*
+Copyright: 2018 RadareOrg <pancake@nopcode.org>
+License: LGPL-3.0-only
+
 Files: pkgcfg/*.pc.acr
 Copyright: 2009 RadareOrg <pancake@nopcode.org>
 License: LGPL-3.0-only
