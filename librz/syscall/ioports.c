@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016 Roman Valls Guimera <brainstorm@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "rz_syscall.h"
 
 RzSyscallPort sysport_x86[] = {

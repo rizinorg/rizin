@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2018 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* AArch64 assembler/disassembler support.
 
    Copyright (C) 2009-2018 Free Software Foundation, Inc.
