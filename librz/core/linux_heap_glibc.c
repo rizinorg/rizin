@@ -1223,10 +1223,10 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 				int size = 0x10;
 				char *data = calloc(1, size);
 				if (data) {
-					rz_io_nread_at(core->io, (ut64)next_chunk + SZ * 2, (ut8 *)data, size);
+					rz_io_nread_at(core->io, (ut64)(next_chunk + SZ * 2), (ut8 *)data, size);
 					core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
 					PRINT_GA("  ");
-					rz_print_hexdump(core->print, (ut64)next_chunk, (ut8 *)data, size, SZ * 2, 1, 1);
+					rz_print_hexdump(core->print, (ut64)(next_chunk + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
 					core->print->flags |= RZ_PRINT_FLAGS_HEADER;
 					free(data);
 				}
@@ -1392,10 +1392,10 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 			int size = 0x10;
 			char *data = calloc(1, size);
 			if (data) {
-				rz_io_nread_at(core->io, prev_chunk_addr + SZ * 2, (ut8 *)data, size);
+				rz_io_nread_at(core->io, (ut64)(prev_chunk_addr + SZ * 2), (ut8 *)data, size);
 				core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
 				rz_cons_printf("   ");
-				rz_print_hexdump(core->print, prev_chunk_addr, (ut8 *)data, size, SZ * 2, 1, 1);
+				rz_print_hexdump(core->print, (ut64)(prev_chunk_addr + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
 				core->print->flags |= RZ_PRINT_FLAGS_HEADER;
 				free(data);
 			}
