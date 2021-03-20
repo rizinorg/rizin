@@ -70,6 +70,72 @@ void luac_add_string(RzList *string_list, char *string, ut64 offset, ut64 size) 
 	rz_list_append(string_list, bin_string);
 }
 
+static void try_free_empty_list(RzList *list) {
+	if (list != NULL) {
+		rz_list_free(list);
+	}
+}
+
+
+static void free_rz_section(RzBinSection *section) {
+	if (!section) {
+		return;
+	}
+
+	if (section->name) {
+		RZ_FREE(section->name);
+	}
+
+	if (section->format) {
+		RZ_FREE(section->format);
+	}
+
+	RZ_FREE(section);
+}
+
+static void free_rz_string(RzBinString *string) {
+	if (!string) {
+		return;
+	}
+
+	if (string->string) {
+		RZ_FREE(string->string);
+	}
+
+	RZ_FREE(string);
+}
+
+static void free_rz_addr(RzBinAddr *addr) {
+	if (!addr) {
+		return;
+	}
+	RZ_FREE(addr);
+}
+
+static void free_rz_symbol(RzBinSymbol *symbol) {
+	if (!symbol) {
+		return;
+	}
+
+	if (symbol->name) {
+		RZ_FREE(symbol->name);
+	}
+
+	if (symbol->dname) {
+		RZ_FREE(symbol->dname);
+	}
+
+	if (symbol->classname) {
+		RZ_FREE(symbol->classname);
+	}
+
+	if (symbol->libname) {
+		RZ_FREE(symbol->libname);
+	}
+
+	RZ_FREE(symbol);
+}
+
 LuacBinInfo *luac_build_info(LuaProto *proto) {
 	rz_return_val_if_fail(proto, NULL);
 
@@ -78,11 +144,17 @@ LuacBinInfo *luac_build_info(LuaProto *proto) {
 		return NULL;
 	}
 
-	// TODO check NULL
-	ret->entry_list = rz_list_new();
-	ret->symbol_list = rz_list_new();
-	ret->section_list = rz_list_new();
-	ret->string_list = rz_list_new();
+	ret->entry_list = rz_list_newf((RzListFree)free_rz_addr);
+	ret->symbol_list = rz_list_newf((RzListFree)free_rz_symbol);
+	ret->section_list = rz_list_newf((RzListFree)free_rz_section);
+	ret->string_list = rz_list_newf((RzListFree)free_rz_string);
+
+	if (!(ret->entry_list && ret->symbol_list && ret->section_list && ret->string_list)) {
+		try_free_empty_list(ret->entry_list);
+		try_free_empty_list(ret->symbol_list);
+		try_free_empty_list(ret->section_list);
+		try_free_empty_list(ret->string_list);
+	}
 
 	_luac_build_info(proto, ret);
 
