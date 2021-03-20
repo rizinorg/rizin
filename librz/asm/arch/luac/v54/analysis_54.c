@@ -10,9 +10,11 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 
 	memset(op, 0, sizeof(RzAnalysisOp));
 	LuaInstruction instruction = lua_build_instruction(data);
-	ut32 extraArg = 0;
 
-	if (LUA_GET_OPCODE(instruction) > OP_EXTRAARG) {
+        op->size = 4;
+	op->addr = addr;
+
+        if (LUA_GET_OPCODE(instruction) > OP_EXTRAARG) {
 		return op->size;
 	}
 
@@ -30,13 +32,8 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case OP_LOADKX: /*	A	R[A] := K[extra arg]				*/
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		if (len >= 8) {
-                        extraArg = lua_build_instruction(data + 4);
-                        if (LUA_GET_OPCODE(extraArg) == OP_EXTRAARG) {
-                                op->size = 8;
-                        }
-		}
-		op->size = 0;   // broken opcode
+                op->size = 4;
+		break;
 	case OP_LFALSESKIP: /*A	R[A] := false; pc++				*/
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->size = 8;
@@ -45,7 +42,9 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	case OP_GETUPVAL: /*	A B	R[A] := UpValue[B]				*/
 	case OP_GETI: /*	A B C	R[A] := R[B][C]					*/
 	case OP_GETFIELD: /*	A B C	R[A] := R[B][K[C]:string]			*/
-		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+        case OP_GETTABLE: /*	A B C	R[A] := R[B][R[C]]				*/
+        case OP_SETTABLE: /*	A B C	R[A][R[B]] := RK(C)				*/
+                op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 	case OP_SETTABUP: /*	A B C	UpValue[A][K[B]:string] := RK(C)		*/
 	case OP_SETUPVAL: /*	A B	UpValue[B] := R[A]				*/
@@ -53,11 +52,9 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	case OP_SETFIELD: /*	A B C	R[A][K[B]:string] := RK(C)			*/
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
-	case OP_GETTABLE: /*	A B C	R[A] := R[B][R[C]]				*/
-	case OP_SETTABLE: /*	A B C	R[A][R[B]] := RK(C)				*/
-		break;
 	case OP_NEWTABLE: /*	A B C k	R[A] := {}					*/
 		op->type = RZ_ANALYSIS_OP_TYPE_NEW;
+		op->size = 4;
 		break;
 	case OP_SELF: /*	A B C	R[A+1] := R[B]; R[A] := R[B][RK(C):string]	*/
 		break;
@@ -101,8 +98,10 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case OP_NOT: /*	A B	R[A] := not R[B]				*/
 		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
+		break;
 	case OP_BNOT: /*	A B	R[A] := ~R[B]					*/
 		op->type = RZ_ANALYSIS_OP_TYPE_CPL;
+		break;
 	case OP_SHRI: /*	A B sC	R[A] := R[B] >> sC				*/
 	case OP_SHR: /*	A B C	R[A] := R[B] >> R[C]				*/
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
@@ -157,14 +156,12 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->stackptr = -4;
 		break;
 	case OP_RETURN: /*	A B C k	return R[A], ... ,R[A+B-2]	(see note)	*/
+        case OP_RETURN1: /*	A	return R[A]					*/
+        case OP_RETURN0: /*		return						*/
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->eob = true;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -4;
-		break;
-	case OP_RETURN0: /*		return						*/
-	case OP_RETURN1: /*	A	return R[A]					*/
-		// TODO handle these 2
 		break;
 	case OP_FORLOOP: /*	A Bx	update counters; if loop continues then pc-=Bx; */
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
@@ -197,7 +194,8 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	case OP_VARARG: /*	A C	R[A], R[A+1], ..., R[A+C-2] = vararg		*/
 	case OP_VARARGPREP: /*A	(adjust vararg parameters)			*/
 	case OP_EXTRAARG: /*	Ax	extra (larger) argument for previous opcode	*/
-		break;
+		op->size = 4;
+                break;
 	}
 	return op->size;
 }

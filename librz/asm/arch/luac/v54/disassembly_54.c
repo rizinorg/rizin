@@ -86,7 +86,6 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 		break;
 
 	case OP_CALL: /*	A B C	R[A], ... ,R[A+C-2] := R[A](R[A+1], ... ,R[A+B-1]) */
-		// TODO : In and Out status
 		asm_string = luaop_new_str_3arg_ex(
 			opnames[opcode],
 			a, b, c,
@@ -130,7 +129,6 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 		break;
 
 		/* iABC - k instructions */
-		// TODO : In and Out Status
 	case OP_TAILCALL: /*	A B C k	return R[A](R[A+1], ... ,R[A+B-1])		*/
 	case OP_RETURN: /*	A B C k	return R[A], ... ,R[A+B-2]	(see note)	*/
 		asm_string = luaop_new_str_3arg(opnames[opcode], a, b, c, NULL);
@@ -141,7 +139,6 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 			LUA_NO_PREFIX, LUA_NO_PREFIX, LUA_NO_PREFIX);
 		break;
 
-		// TODO : Handle Extra Argc (require data of next instruction)
 	case OP_NEWTABLE: /*	A B C k	R[A] := {}					*/
 	case OP_SETLIST: /*	A B C k	R[A][C+i] := R[A+i], 1 <= i <= B		*/
 		asm_string = luaop_new_str_3arg_ex(
@@ -196,7 +193,6 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 			LUA_NO_PREFIX, LUA_NO_PREFIX);
 		break;
 
-		// TODO : In and Out Status
 	case OP_LOADNIL: /*	A B	R[A], R[A+1], ..., R[A+B] := nil		*/
 		asm_string = luaop_new_str_2arg_ex(
 			opnames[opcode],
@@ -248,7 +244,6 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 		break;
 
 		/* iABC - A & C instructions */
-		// TODO : In and Out Status
 	case OP_TFORCALL: /*	A C	R[A+4], ... ,R[A+3+C] := R[A](R[A+1], R[A+2]);	*/
 	case OP_VARARG: /*	A C	R[A], R[A+1], ..., R[A+C-2] = vararg		*/
 		asm_string = luaop_new_str_2arg_ex(
@@ -295,7 +290,6 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 			LUA_REG_PREF, LUA_CONST_PREF);
 		break;
 
-		// TODO : PC status
 	case OP_FORLOOP: /*	A Bx	update counters; if loop continues then pc-=Bx; */
 	case OP_FORPREP: /*	A Bx	<check values and prepare counters>;
                      if not to run then pc+=Bx+1;			*/
@@ -336,7 +330,6 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 		break;
 
 		/* isJ instructions */
-		// TODO : PC status
 	case OP_JMP: /*	        sJ	pc += sJ					*/
 		asm_string = luaop_new_str_1arg_ex(
 			opnames[opcode],
