@@ -8,6 +8,7 @@
 #include <rz_list.h>
 
 typedef struct rz_bin_t RzBin;
+typedef struct rz_bin_file_t RzBinFile;
 
 #include <rz_bin_dwarf.h>
 #include <rz_pdb.h>
@@ -275,7 +276,7 @@ typedef struct rz_bin_object_t {
 
 // XXX: RbinFile may hold more than one RzBinObject
 /// XX curplugin == o->plugin
-typedef struct rz_bin_file_t {
+struct rz_bin_file_t {
 	char *file;
 	int fd;
 	int size;
@@ -296,9 +297,9 @@ typedef struct rz_bin_file_t {
 	RzList *xtr_data;
 	Sdb *sdb;
 	Sdb *sdb_info;
-	Sdb *sdb_addrinfo;
+	RZ_DEPRECATE Sdb *sdb_addrinfo; //< deprecated to use for new code, should be refactored
 	struct rz_bin_t *rbin;
-} RzBinFile;
+}; // RzBinFile
 
 typedef struct rz_bin_file_options_t {
 	int rawstr;
@@ -420,6 +421,31 @@ typedef struct rz_bin_trycatch_t {
 RZ_API RzBinTrycatch *rz_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter);
 RZ_API void rz_bin_trycatch_free(RzBinTrycatch *tc);
 
+typedef struct {
+	/**
+	 * The first address that is covered by the given line and column,
+	 * or, if line == 0, the first address **not contained** by the previous record.
+	 */
+	ut64 address;
+
+	char *file;
+
+	/**
+	 * If > 0, then indicates the line for the given address.
+	 * If == 0, then indicates that the previous record stops here.
+	 * Such a case corresponds for example to what DW_LNE_end_sequence emits in Dwarf.
+	 */
+	unsigned int line;
+
+	/**
+	 * If > 0, then indicates the column.
+	 * If == 0, then no column information is known.
+	 */
+	unsigned int column;
+} RzBinSourceRow;
+
+RZ_API void rz_bin_source_row_free(RzBinSourceRow *row);
+
 typedef struct rz_bin_plugin_t {
 	char *name;
 	char *desc;
@@ -439,7 +465,7 @@ typedef struct rz_bin_plugin_t {
 	RzBinAddr *(*binsym)(RzBinFile *bf, int num);
 	RzList /*<RzBinAddr>*/ *(*entries)(RzBinFile *bf);
 	RzList /*<RzBinSection>*/ *(*sections)(RzBinFile *bf);
-	RZ_BORROW RzList /*<RzBinDwarfRow>*/ *(*lines)(RzBinFile *bf);
+	RZ_BORROW RzList /*<RzBinSourceRow>*/ *(*lines)(RzBinFile *bf);
 	RzList /*<RzBinSymbol>*/ *(*symbols)(RzBinFile *bf);
 	RzList /*<RzBinImport>*/ *(*imports)(RzBinFile *bf);
 	RzList /*<RzBinString>*/ *(*strings)(RzBinFile *bf);

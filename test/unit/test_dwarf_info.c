@@ -6,8 +6,6 @@
 #include <rz_bin.h>
 #include <rz_bin_dwarf.h>
 
-#define MODE 2
-
 #define check_attr_string(attr_idx, expect_string) \
 	mu_assert_streq(cu.dies[i].attr_values[attr_idx].string.content, expect_string, "Wrong string attribute information")
 
@@ -62,9 +60,9 @@ bool test_dwarf3_c(void) {
 	bool res = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert("dwarf3_c.elf binary could not be opened", res);
 
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 7, "Incorrect number of abbreviation");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(da, bin, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
 	mu_assert_eq(info->count, 1, "Incorrect number of info compilation units");
 
 	// check header
@@ -109,8 +107,8 @@ bool test_dwarf3_c(void) {
 	i++;
 	check_die_abbr_code(0);
 
-	rz_bin_dwarf_free_debug_info(info);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_info_free(info);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -125,9 +123,9 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	bool res = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert("dwarf4_many_comp_units.elf binary could not be opened", res);
 
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 37, "Incorrect number of abbreviation");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(da, bin, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
 	mu_assert_notnull(info, "Failed parsing of debug_info");
 	mu_assert_eq(info->count, 2, "Incorrect number of info compilation units");
 
@@ -319,8 +317,8 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	i++;
 	check_die_abbr_code(0);
 
-	rz_bin_dwarf_free_debug_info(info);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_info_free(info);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -335,9 +333,9 @@ bool test_dwarf2_big_endian(void) {
 	bool res = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert("dwarf4_many_comp_units.elf binary could not be opened", res);
 
-	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin, MODE);
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 108, "Incorrect number of abbreviation");
-	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(da, bin, MODE);
+	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
 	mu_assert_notnull(info, "Failed parsing of debug_info");
 	mu_assert_eq(info->count, 1, "Incorrect number of info compilation units");
 
@@ -416,8 +414,8 @@ bool test_dwarf2_big_endian(void) {
 	check_attr_name(3, DW_AT_high_pc);
 	check_attr_reference(3, 0x0000000010001ac8);
 
-	rz_bin_dwarf_free_debug_info(info);
-	rz_bin_dwarf_free_debug_abbrev(da);
+	rz_bin_dwarf_debug_info_free(info);
+	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;

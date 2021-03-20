@@ -34,7 +34,7 @@
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
 static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
 static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
-static int bin_dwarf(RzCore *core, PJ *pj, int mode);
+static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode);
 static int bin_source(RzCore *r, PJ *pj, int mode);
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
@@ -379,7 +379,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	rz_core_bin_apply_strings(r, binfile);
 	rz_core_bin_apply_config(r, binfile);
 	rz_core_bin_apply_main(r, binfile, va);
-	bin_dwarf(r, NULL, RZ_MODE_SET);
+	bin_dwarf(r, binfile, NULL, RZ_MODE_SET);
 	bin_entry(r, NULL, RZ_MODE_SET, loadaddr, va, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, true);
@@ -1108,52 +1108,13 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	return true;
 }
 
-typedef struct {
-	size_t *line_starts;
-	char *content;
-	size_t line_count;
-} FileLines;
-
-static void file_lines_free(FileLines *file) {
-	if (!file) {
-		return;
-	}
-	free(file->line_starts);
-	free(file->content);
-	free(file);
-}
-
-FileLines *read_file_lines(const char *path) {
-	FileLines *result = RZ_NEW0(FileLines);
-	if (!result) {
-		return result;
-	}
-	result->content = rz_file_slurp(path, NULL);
-	if (result->content) {
-		result->line_starts = rz_str_split_lines(result->content, &result->line_count);
-	}
-	if (!result->content || !result->line_starts) {
-		RZ_FREE(result);
-	}
-	return result;
-}
-
-static void file_lines_free_kv(HtPPKv *kv) {
-	free(kv->key);
-	file_lines_free(kv->value);
-}
-
-static int bin_dwarf(RzCore *core, PJ *pj, int mode) {
-	RzBinDwarfRow *row;
-	RzListIter *iter;
+static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
+	rz_return_val_if_fail(core && binfile, false);
+	RzBinSourceRow *row;
 	if (!rz_config_get_i(core->config, "bin.dbginfo")) {
 		return false;
 	}
-	RzBinFile *binfile = rz_bin_cur(core->bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(binfile);
-	if (!binfile) {
-		return false;
-	}
 	RzList *list = NULL;
 	RzList *ownlist = NULL;
 	if (plugin && plugin->lines) {
@@ -1161,10 +1122,17 @@ static int bin_dwarf(RzCore *core, PJ *pj, int mode) {
 		list = plugin->lines(binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		RzBinDwarfDebugAbbrev *da = NULL;
-		da = rz_bin_dwarf_parse_abbrev(core->bin, mode);
-		RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(da, core->bin, mode);
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(core->bin, core->analysis->bits / 8);
+		RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
+		RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_parse_info(binfile, da) : NULL;
+		if (mode == RZ_MODE_PRINT) {
+			if (da) {
+				rz_core_bin_dwarf_print_abbrev_section(da);
+			}
+			if (info) {
+				rz_core_bin_dwarf_print_debug_info(info);
+			}
+		}
+		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != RZ_MODE_PRINT) {
 			/* Should we do this by default? */
@@ -1176,22 +1144,59 @@ static int bin_dwarf(RzCore *core, PJ *pj, int mode) {
 		}
 		if (loc_table) {
 			if (mode == RZ_MODE_PRINT) {
-				rz_bin_dwarf_print_loc(loc_table, core->analysis->bits / 8, rz_cons_printf);
+				rz_core_bin_dwarf_print_loc(loc_table, core->analysis->bits / 8);
 			}
-			rz_bin_dwarf_free_loc(loc_table);
+			rz_bin_dwarf_loc_free(loc_table);
 		}
-		rz_bin_dwarf_free_debug_info(info);
-		rz_bin_dwarf_parse_aranges(core->bin, mode);
-		list = ownlist = rz_bin_dwarf_parse_line(core->bin, mode);
-		rz_bin_dwarf_free_debug_abbrev(da);
+		if (mode == RZ_MODE_PRINT) {
+			RzList *aranges = rz_bin_dwarf_parse_aranges(binfile);
+			if (aranges) {
+				rz_core_bin_dwarf_print_aranges(aranges);
+				rz_list_free(aranges);
+			}
+		}
+		RzList *lines = rz_bin_dwarf_parse_line(binfile, info,
+			RZ_BIN_DWARF_LINE_INFO_MASK_ROWS | (mode == RZ_MODE_PRINT ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0));
+		rz_bin_dwarf_debug_info_free(info);
+		if (lines) {
+			if (mode == RZ_MODE_PRINT) {
+				rz_core_bin_dwarf_print_lines(lines);
+			}
+			// move all produced rows out
+			list = ownlist = rz_list_newf((RzListFree)rz_bin_source_row_free);
+			RzListIter *it;
+			RzBinDwarfLineInfo *li;
+			rz_list_foreach (lines, it, li) {
+				if (!li->rows) {
+					continue;
+				}
+				rz_list_join(list, li->rows);
+			}
+			rz_list_free(lines);
+		}
+		rz_bin_dwarf_debug_abbrev_free(da);
+
+		if (IS_MODE_SET(mode) && list && binfile->sdb_addrinfo) {
+			RzListIter *iter;
+			rz_list_foreach (list, iter, row) {
+				if (!row->file || !row->line) {
+					// !row->file ==> might be theoretically a valid entry but we can't handle it
+					// !row->line ==> just means "end of previous entry"
+					continue;
+				}
+				char k[32];
+				char s[512];
+				sdb_set(binfile->sdb_addrinfo,
+					rz_strf(k, "0x%" PFMT64x, row->address),
+					rz_strf(s, "%s|%u", row->file, row->line), 0);
+			}
+		}
 	}
 	if (!list) {
 		return false;
 	}
 
 	rz_cons_break_push(NULL, NULL);
-	/* cache file:line contents */
-	HtPP *file_lines = ht_pp_new(NULL, file_lines_free_kv, NULL);
 
 	if (IS_MODE_JSON(mode)) {
 		pj_a(pj);
@@ -1199,34 +1204,13 @@ static int bin_dwarf(RzCore *core, PJ *pj, int mode) {
 
 	//TODO we should need to store all this in sdb, or do a filecontentscache in librz/util
 	//XXX this whole thing has leaks
+	RzListIter *iter;
 	rz_list_foreach (list, iter, row) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
 		if (mode) {
 			// TODO: use 'Cl' instead of CC
-			const char *path = row->file;
-			FileLines *current_lines = ht_pp_find(file_lines, path, NULL);
-			if (!current_lines) {
-				current_lines = read_file_lines(path);
-				if (!ht_pp_insert(file_lines, path, current_lines)) {
-					file_lines_free(current_lines);
-					current_lines = NULL;
-				}
-			}
-			char *line = NULL;
-
-			if (current_lines) {
-				int nl = row->line - 1;
-				if (nl >= 0 && nl < current_lines->line_count) {
-					line = strdup(current_lines->content + current_lines->line_starts[nl]);
-				}
-			}
-			if (line) {
-				rz_str_filter(line, strlen(line));
-				line = rz_str_replace(line, "\"", "\\\"", 1);
-				line = rz_str_replace(line, "\\\\", "\\", 1);
-			}
 			bool chopPath = !rz_config_get_i(core->config, "dir.dwarf.abspath");
 			char *file = strdup(row->file);
 			if (chopPath) {
@@ -1248,17 +1232,11 @@ static int bin_dwarf(RzCore *core, PJ *pj, int mode) {
 				pj_a(pj);
 
 				pj_o(pj);
-				pj_ks(pj, "name", "CC");
 				pj_ks(pj, "file", file);
-				pj_ki(pj, "line_num", (int)row->line);
-				pj_kn(pj, "addr", row->address);
-				pj_end(pj);
-
-				pj_o(pj);
-				pj_ks(pj, "name", "CL");
-				pj_ks(pj, "file", file);
-				pj_ki(pj, "line_num", (int)row->line);
-				pj_ks(pj, "line", line ? line : "");
+				pj_kn(pj, "line", (ut64)row->line);
+				if (row->column) {
+					pj_kn(pj, "column", (ut64)row->column);
+				}
 				pj_kn(pj, "addr", row->address);
 				pj_end(pj);
 
@@ -1267,23 +1245,24 @@ static int bin_dwarf(RzCore *core, PJ *pj, int mode) {
 				rz_cons_printf("CL %s:%d 0x%08" PFMT64x "\n",
 					file, (int)row->line,
 					row->address);
-				rz_cons_printf("\"CC %s:%d %s\"@0x%" PFMT64x
-					       "\n",
-					file, row->line,
-					line ? line : "", row->address);
+				rz_cons_printf("\"CC %s:%d\"@0x%" PFMT64x "\n",
+					file, row->line, row->address);
 			}
 			free(file);
-			free(line);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x "\t%s\t%d\n",
-				row->address, row->file, row->line);
+			rz_cons_printf("0x%08" PFMT64x "\t%s\t",
+				row->address, row->file);
+			if (row->line) {
+				rz_cons_printf("%u\n", row->line);
+			} else {
+				rz_cons_print("-\n");
+			}
 		}
 	}
 	if (IS_MODE_JSON(mode)) {
 		pj_end(pj);
 	}
 	rz_cons_break_pop();
-	ht_pp_free(file_lines);
 	rz_list_free(ownlist);
 	return true;
 }
@@ -4288,7 +4267,7 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 		ret &= bin_main(core, binfile, pj, mode, va);
 	}
 	if ((action & RZ_CORE_BIN_ACC_DWARF)) {
-		ret &= bin_dwarf(core, pj, mode);
+		ret &= binfile ? bin_dwarf(core, binfile, pj, mode) : false;
 	}
 	if ((action & RZ_CORE_BIN_ACC_PDB)) {
 		ret &= rz_core_pdb_info(core, core->bin->file, pj, mode);

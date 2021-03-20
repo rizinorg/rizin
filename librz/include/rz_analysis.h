@@ -2021,7 +2021,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_rename(RzAnalysis *analysis, 
 RZ_API RzAnalysisClassErr rz_analysis_class_method_delete(RzAnalysis *analysis, const char *class_name, const char *meth_name);
 RZ_API bool rz_analysis_class_method_exists(RzAnalysis *analysis, const char *class_name, const char *meth_name);
 RZ_API bool rz_analysis_class_method_exists_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr);
-RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *class, RzList *methods);
+RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *cls, RzList *methods);
 
 RZ_API void rz_analysis_class_base_fini(RzAnalysisBaseClass *base);
 RZ_API RzAnalysisClassErr rz_analysis_class_base_get(RzAnalysis *analysis, const char *class_name, const char *base_id, RzAnalysisBaseClass *base);

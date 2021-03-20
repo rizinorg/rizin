@@ -524,12 +524,12 @@ RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth) {
 	free(meth->real_name);
 }
 
-RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *class, RzList *methods) {
+RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *cls, RzList *methods) {
 	RzListIter *iter_method;
 	RzBinSymbol *sym;
 	rz_list_sort(methods, &symbol_method_sort_by_addr);
 	rz_list_foreach (methods, iter_method, sym) {
-		if (!rz_analysis_class_method_exists(analysis, class->name, sym->name)) {
+		if (!rz_analysis_class_method_exists(analysis, cls->name, sym->name)) {
 			//detect constructor or destructor but not implemented
 			//Temporarily set to default
 			RzAnalysisMethod method;
@@ -541,7 +541,7 @@ RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *c
 			method.name = fcn ? rz_str_new(fcn->name) : rz_str_new(method_name);
 			method.real_name = method_name;
 			method.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT;
-			rz_analysis_class_method_set(analysis, class->name, &method);
+			rz_analysis_class_method_set(analysis, cls->name, &method);
 			rz_analysis_class_method_fini(&method);
 		}
 	}
