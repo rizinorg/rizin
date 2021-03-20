@@ -36,8 +36,9 @@ typedef ut32 LUA_INSTRUCTION;
 #define LUA_VSHRSTR makevariant(LUA_TSTRING, 0) /* short strings */
 #define LUA_VLNGSTR makevariant(LUA_TSTRING, 1) /* long strings */
 
-/**@struct lua_proto_ex
- * @brief Store valuable info when parsing. Treat luac file body as a main function.
+/**
+ *  \struct lua_proto_ex
+ *  \brief Store valuable info when parsing. Treat luac file body as a main function.
  */
 typedef struct lua_proto_ex {
 	ut64 offset; ///< proto offset in bytes
@@ -85,8 +86,9 @@ typedef struct lua_proto_ex {
 
 typedef LuaProtoHeavy LuaProto;
 
-/**@struct lua_constant_entry
- * @brief Store constant type, data, and offset of this constant in luac file
+/**
+ * \struct lua_constant_entry
+ * \brief Store constant type, data, and offset of this constant in luac file
  */
 typedef struct lua_constant_entry {
 	ut8 tag; ///< type of this constant, see LUA_V* macros in luac_common.h
@@ -95,8 +97,9 @@ typedef struct lua_constant_entry {
 	ut64 offset; ///< addr of this constant
 } LuaConstEntry;
 
-/**@struct lua_upvalue_entry
- * @brief Store upvalue attributes
+/**
+ * \struct lua_upvalue_entry
+ * \brief Store upvalue attributes
  */
 typedef struct lua_upvalue_entry {
 	/* attributes of upvalue */
@@ -108,16 +111,18 @@ typedef struct lua_upvalue_entry {
 
 typedef struct LuaProto LuaProtoEntry;
 
-/**@struct lua_lineinfo_entry
- * @brief Store line info attributes
+/**
+ * \struct lua_lineinfo_entry
+ * \brief Store line info attributes
  */
 typedef struct lua_lineinfo_entry {
 	ut8 info_data;
 	ut64 offset;
 } LuaLineinfoEntry;
 
-/**@struct lua_abs_lineinfo_entry
- * @brief Store line info attributes
+/**
+ * \struct lua_abs_lineinfo_entry
+ * \brief Store line info attributes
  */
 typedef struct lua_abs_lineinfo_entry {
 	int pc; ///< pc value of lua
@@ -125,8 +130,9 @@ typedef struct lua_abs_lineinfo_entry {
 	ut64 offset;
 } LuaAbsLineinfoEntry;
 
-/**@struct lua_local_var_entry
- * @brief Store local var names and other info
+/**
+ * \struct lua_local_var_entry
+ * \brief Store local var names and other info
  */
 typedef struct lua_local_var_entry {
 	ut8 *varname; ///< name of this variable
@@ -136,8 +142,9 @@ typedef struct lua_local_var_entry {
 	ut64 offset; ///< offset of this entry
 } LuaLocalVarEntry;
 
-/**@struct lua_dbg_upvalue_entry
- * @brief Store upvalue's debug info
+/**
+ * \struct lua_dbg_upvalue_entry
+ * \brief Store upvalue's debug info
  */
 typedef struct lua_dbg_upvalue_entry {
 	ut8 *upvalue_name; ///< upvalue name
@@ -145,8 +152,9 @@ typedef struct lua_dbg_upvalue_entry {
 	ut64 offset;
 } LuaDbgUpvalueEntry;
 
-/**@struct lua_bin_info
- * @brief A context info structure for luac plugin.
+/**
+ * \struct lua_bin_info
+ * \brief A context info structure for luac plugin.
  */
 typedef struct luac_bin_info {
 	st32 major; ///< major version
