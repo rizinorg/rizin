@@ -11,10 +11,10 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	memset(op, 0, sizeof(RzAnalysisOp));
 	LuaInstruction instruction = lua_build_instruction(data);
 
-        op->size = 4;
+	op->size = 4;
 	op->addr = addr;
 
-        if (LUA_GET_OPCODE(instruction) > OP_EXTRAARG) {
+	if (LUA_GET_OPCODE(instruction) > OP_EXTRAARG) {
 		return op->size;
 	}
 
@@ -32,7 +32,7 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case OP_LOADKX: /*	A	R[A] := K[extra arg]				*/
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-                op->size = 4;
+		op->size = 4;
 		break;
 	case OP_LFALSESKIP: /*A	R[A] := false; pc++				*/
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
@@ -42,9 +42,9 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	case OP_GETUPVAL: /*	A B	R[A] := UpValue[B]				*/
 	case OP_GETI: /*	A B C	R[A] := R[B][C]					*/
 	case OP_GETFIELD: /*	A B C	R[A] := R[B][K[C]:string]			*/
-        case OP_GETTABLE: /*	A B C	R[A] := R[B][R[C]]				*/
-        case OP_SETTABLE: /*	A B C	R[A][R[B]] := RK(C)				*/
-                op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+	case OP_GETTABLE: /*	A B C	R[A] := R[B][R[C]]				*/
+	case OP_SETTABLE: /*	A B C	R[A][R[B]] := RK(C)				*/
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 	case OP_SETTABUP: /*	A B C	UpValue[A][K[B]:string] := RK(C)		*/
 	case OP_SETUPVAL: /*	A B	UpValue[B] := R[A]				*/
@@ -156,8 +156,8 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->stackptr = -4;
 		break;
 	case OP_RETURN: /*	A B C k	return R[A], ... ,R[A+B-2]	(see note)	*/
-        case OP_RETURN1: /*	A	return R[A]					*/
-        case OP_RETURN0: /*		return						*/
+	case OP_RETURN1: /*	A	return R[A]					*/
+	case OP_RETURN0: /*		return						*/
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->eob = true;
 		op->stackop = RZ_ANALYSIS_STACK_INC;
@@ -195,7 +195,7 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	case OP_VARARGPREP: /*A	(adjust vararg parameters)			*/
 	case OP_EXTRAARG: /*	Ax	extra (larger) argument for previous opcode	*/
 		op->size = 4;
-                break;
+		break;
 	}
 	return op->size;
 }

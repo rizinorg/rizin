@@ -76,7 +76,6 @@ static void try_free_empty_list(RzList *list) {
 	}
 }
 
-
 static void free_rz_section(RzBinSection *section) {
 	if (!section) {
 		return;
