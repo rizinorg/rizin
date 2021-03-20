@@ -1148,7 +1148,6 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 			}
 			rz_bin_dwarf_loc_free(loc_table);
 		}
-		rz_bin_dwarf_debug_info_free(info);
 		if (mode == RZ_MODE_PRINT) {
 			RzList *aranges = rz_bin_dwarf_parse_aranges(binfile);
 			if (aranges) {
@@ -1156,8 +1155,9 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 				rz_list_free(aranges);
 			}
 		}
-		RzList *lines = rz_bin_dwarf_parse_line(binfile,
+		RzList *lines = rz_bin_dwarf_parse_line(binfile, info,
 			RZ_BIN_DWARF_LINE_INFO_MASK_ROWS | (mode == RZ_MODE_PRINT ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0));
+		rz_bin_dwarf_debug_info_free(info);
 		if (lines) {
 			if (mode == RZ_MODE_PRINT) {
 				rz_core_bin_dwarf_print_lines(lines);
