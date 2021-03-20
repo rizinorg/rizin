@@ -1354,8 +1354,7 @@ RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char
 }
 
 // use void* to honor the RzListFree signature
-RZ_API void rz_bin_field_free(void *_field) {
-	RzBinField *field = (RzBinField *)_field;
+RZ_API void rz_bin_field_free(RzBinField *field) {
 	if (field) {
 		free(field->name);
 		free(field->comment);

@@ -628,7 +628,7 @@ typedef struct rz_bin_field_t {
 } RzBinField;
 
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
-RZ_API void rz_bin_field_free(void *);
+RZ_API void rz_bin_field_free(RzBinField *);
 
 typedef struct rz_bin_mem_t {
 	char *name;

@@ -1128,7 +1128,7 @@ RZ_API RzList *rz_bin_java_class_fields_as_symbols(RzBinJavaClass *bin) {
 RZ_API RzList *rz_bin_java_class_fields_as_binfields(RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *list = rz_list_newf(rz_bin_field_free);
+	RzList *list = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!list) {
 		return NULL;
 	}
