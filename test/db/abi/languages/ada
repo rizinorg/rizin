@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=LANGUAGES : ada
-FILE=bins/abi_bins/elf/languages/ada/tree_travel
+FILE=bins/abi_bins/elf/languages/ada/tree_traversal
 CMDS=<<EOF
 ii~ada
 EOF
