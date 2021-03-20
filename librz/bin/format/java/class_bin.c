@@ -325,10 +325,10 @@ RZ_API const char *rz_bin_java_class_language(RzBinJavaClass *bin) {
 				continue;
 			}
 			char *string = java_constant_pool_stringify(cpool);
-			if (!strncmp(string, "kotlin/jvm", 10)) {
+			if (string && !strncmp(string, "kotlin/jvm", 10)) {
 				language = "kotlin";
 				break;
-			} else if (!strncmp(string, "org/codehaus/groovy/runtime", 27)) {
+			} else if (string && !strncmp(string, "org/codehaus/groovy/runtime", 27)) {
 				language = "groovy";
 				break;
 			}
@@ -660,7 +660,7 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 			const ConstPool *cpool = java_class_constant_pool_at(bin, bin->interfaces[i]->index);
 			if (!cpool || java_constant_pool_resolve(cpool, &index, NULL) != 1) {
 				RZ_LOG_ERROR("java bin: can't resolve constant pool index %u\n", bin->interfaces[i]->index);
-				continue;
+				break;
 			}
 			tmp = java_class_constant_pool_stringify_at(bin, index);
 			rz_str_replace_char(tmp, '/', '.');
@@ -1291,24 +1291,24 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_symbols(RzBinJavaClass *bin) {
 			}
 			if (java_constant_pool_resolve(cpool, &class_index, &name_and_type_index) != 2) {
 				RZ_LOG_ERROR("java bin: can't resolve symbol with constant pool index %u\n", i);
-				continue;
+				break;
 			}
 			const ConstPool *nat = java_class_constant_pool_at(bin, name_and_type_index);
 			if (!nat ||
 				java_constant_pool_resolve(nat, &name_index, &descriptor_index) != 2) {
 				RZ_LOG_ERROR("java bin: can't resolve symbol with constant pool index %u\n", i);
-				continue;
+				break;
 			}
 			const ConstPool *pclass = java_class_constant_pool_at(bin, class_index);
 			if (!pclass ||
 				java_constant_pool_resolve(pclass, &class_name_index, NULL) != 1) {
 				RZ_LOG_ERROR("java bin: can't resolve symbol with constant pool index %u\n", i);
-				continue;
+				break;
 			}
 			RzBinSymbol *symbol = rz_bin_symbol_new(NULL, cpool->offset, cpool->offset);
 			if (!symbol) {
 				rz_warn_if_reached();
-				continue;
+				break;
 			}
 			sym = java_class_constant_pool_stringify_at(bin, name_index);
 			is_main = sym && !strcmp(sym, "main");
@@ -1651,21 +1651,21 @@ RZ_API RzList *rz_bin_java_class_as_libraries(RzBinJavaClass *bin) {
 			if (cpool->tag == CONSTANT_POOL_CLASS) {
 				if (java_constant_pool_resolve(cpool, &arg0, &arg1) != 1) {
 					RZ_LOG_ERROR("java bin: can't resolve library with constant pool index %u\n", i);
-					continue;
+					break;
 				}
 				// arg0 is name_index
 				tmp = java_class_constant_pool_stringify_at(bin, arg0);
 			} else if (java_constant_pool_is_import(cpool)) {
 				if (java_constant_pool_resolve(cpool, &arg0, &arg1) != 2) {
 					RZ_LOG_ERROR("java bin: can't resolve library with constant pool index %u\n", i);
-					continue;
+					break;
 				}
 				// arg0 is name_and_type_index
 				const ConstPool *nat = java_class_constant_pool_at(bin, arg0);
 				if (!nat ||
 					java_constant_pool_resolve(nat, &arg0, &arg1) != 1) {
 					RZ_LOG_ERROR("java bin: can't resolve library with constant pool index %u\n", i);
-					continue;
+					break;
 				}
 				// arg0 is name_index
 				tmp = java_class_constant_pool_stringify_at(bin, arg0);
@@ -1696,7 +1696,7 @@ RZ_API void rz_bin_java_class_interfaces_as_text(RzBinJavaClass *bin, RzStrBuf *
 			const ConstPool *cpool = java_class_constant_pool_at(bin, bin->interfaces[i]->index);
 			if (!cpool || java_constant_pool_resolve(cpool, &index, NULL) != 1) {
 				RZ_LOG_ERROR("java bin: can't resolve interface with constant pool index %u\n", i);
-				continue;
+				break;
 			}
 			snprintf(number, sizeof(number), "#%u", i);
 			tmp = java_class_constant_pool_stringify_at(bin, index);
