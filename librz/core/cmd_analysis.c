@@ -3996,7 +3996,7 @@ RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_ex
 	RzAnalysisOp op = { 0 };
 	RzAnalysisEsil *esil = core->analysis->esil;
 	const char *name = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	ut64 addr;
+	ut64 addr = 0;
 	bool breakoninvalid = rz_config_get_i(core->config, "esil.breakoninvalid");
 	int esiltimeout = rz_config_get_i(core->config, "esil.timeout");
 	ut64 startTime;
