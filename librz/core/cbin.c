@@ -1108,41 +1108,6 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	return true;
 }
 
-typedef struct {
-	size_t *line_starts;
-	char *content;
-	size_t line_count;
-} FileLines;
-
-static void file_lines_free(FileLines *file) {
-	if (!file) {
-		return;
-	}
-	free(file->line_starts);
-	free(file->content);
-	free(file);
-}
-
-FileLines *read_file_lines(const char *path) {
-	FileLines *result = RZ_NEW0(FileLines);
-	if (!result) {
-		return result;
-	}
-	result->content = rz_file_slurp(path, NULL);
-	if (result->content) {
-		result->line_starts = rz_str_split_lines(result->content, &result->line_count);
-	}
-	if (!result->content || !result->line_starts) {
-		RZ_FREE(result);
-	}
-	return result;
-}
-
-static void file_lines_free_kv(HtPPKv *kv) {
-	free(kv->key);
-	file_lines_free(kv->value);
-}
-
 static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 	rz_return_val_if_fail(core && binfile, false);
 	RzBinSourceRow *row;
@@ -1232,8 +1197,6 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 	}
 
 	rz_cons_break_push(NULL, NULL);
-	/* cache file:line contents */
-	HtPP *file_lines = ht_pp_new(NULL, file_lines_free_kv, NULL);
 
 	if (IS_MODE_JSON(mode)) {
 		pj_a(pj);
@@ -1248,28 +1211,6 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 		}
 		if (mode) {
 			// TODO: use 'Cl' instead of CC
-			const char *path = row->file;
-			FileLines *current_lines = ht_pp_find(file_lines, path, NULL);
-			if (!current_lines) {
-				current_lines = read_file_lines(path);
-				if (!ht_pp_insert(file_lines, path, current_lines)) {
-					file_lines_free(current_lines);
-					current_lines = NULL;
-				}
-			}
-			char *line = NULL;
-
-			if (current_lines) {
-				int nl = row->line - 1;
-				if (nl >= 0 && nl < current_lines->line_count) {
-					line = strdup(current_lines->content + current_lines->line_starts[nl]);
-				}
-			}
-			if (line) {
-				rz_str_filter(line, strlen(line));
-				line = rz_str_replace(line, "\"", "\\\"", 1);
-				line = rz_str_replace(line, "\\\\", "\\", 1);
-			}
 			bool chopPath = !rz_config_get_i(core->config, "dir.dwarf.abspath");
 			char *file = strdup(row->file);
 			if (chopPath) {
@@ -1291,17 +1232,11 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 				pj_a(pj);
 
 				pj_o(pj);
-				pj_ks(pj, "name", "CC");
 				pj_ks(pj, "file", file);
-				pj_ki(pj, "line_num", (int)row->line);
-				pj_kn(pj, "addr", row->address);
-				pj_end(pj);
-
-				pj_o(pj);
-				pj_ks(pj, "name", "CL");
-				pj_ks(pj, "file", file);
-				pj_ki(pj, "line_num", (int)row->line);
-				pj_ks(pj, "line", line ? line : "");
+				pj_kn(pj, "line", (ut64)row->line);
+				if (row->column) {
+					pj_kn(pj, "column", (ut64)row->column);
+				}
 				pj_kn(pj, "addr", row->address);
 				pj_end(pj);
 
@@ -1310,13 +1245,10 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 				rz_cons_printf("CL %s:%d 0x%08" PFMT64x "\n",
 					file, (int)row->line,
 					row->address);
-				rz_cons_printf("\"CC %s:%d %s\"@0x%" PFMT64x
-					       "\n",
-					file, row->line,
-					line ? line : "", row->address);
+				rz_cons_printf("\"CC %s:%d\"@0x%" PFMT64x "\n",
+					file, row->line, row->address);
 			}
 			free(file);
-			free(line);
 		} else {
 			rz_cons_printf("0x%08" PFMT64x "\t%s\t",
 				row->address, row->file);
@@ -1331,7 +1263,6 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 		pj_end(pj);
 	}
 	rz_cons_break_pop();
-	ht_pp_free(file_lines);
 	rz_list_free(ownlist);
 	return true;
 }
