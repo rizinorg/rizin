@@ -567,7 +567,7 @@ void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
 		if (print_comma) {
 			PRINT_RA(",");
 		}
-		PRINT_RA("IS_MMAPPED,");
+		PRINT_RA("IS_MMAPPED");
 		print_comma = true;
 	}
 	if (cnk->size & PREV_INUSE) {
