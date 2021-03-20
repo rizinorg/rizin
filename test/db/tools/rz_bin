@@ -1056,7 +1056,7 @@ NAME=rz-bin -dj
 FILE=bins/elf/analysis/dwarftest
 CMDS=!rz-bin -dj ${RZ_FILE}
 EXPECT=<<EOF
-{"dwarf":[[{"name":"CC","file":"dwarftest.c","line_num":4,"addr":4195629},{"name":"CL","file":"dwarftest.c","line_num":4,"line":"","addr":4195629}],[{"name":"CC","file":"dwarftest.c","line_num":7,"addr":4195637},{"name":"CL","file":"dwarftest.c","line_num":7,"line":"","addr":4195637}],[{"name":"CC","file":"dwarftest.c","line_num":8,"addr":4195646},{"name":"CL","file":"dwarftest.c","line_num":8,"line":"","addr":4195646}],[{"name":"CC","file":"dwarftest.c","line_num":7,"addr":4195656},{"name":"CL","file":"dwarftest.c","line_num":7,"line":"","addr":4195656}],[{"name":"CC","file":"dwarftest.c","line_num":7,"addr":4195660},{"name":"CL","file":"dwarftest.c","line_num":7,"line":"","addr":4195660}],[{"name":"CC","file":"dwarftest.c","line_num":11,"addr":4195666},{"name":"CL","file":"dwarftest.c","line_num":11,"line":"","addr":4195666}],[{"name":"CC","file":"dwarftest.c","line_num":12,"addr":4195671},{"name":"CL","file":"dwarftest.c","line_num":12,"line":"","addr":4195671}],[{"name":"CC","file":"dwarftest.c","line_num":0,"addr":4195673},{"name":"CL","file":"dwarftest.c","line_num":0,"line":"","addr":4195673}]]}
+{"dwarf":[[{"file":"dwarftest.c","line":4,"addr":4195629}],[{"file":"dwarftest.c","line":7,"addr":4195637}],[{"file":"dwarftest.c","line":8,"addr":4195646}],[{"file":"dwarftest.c","line":7,"addr":4195656}],[{"file":"dwarftest.c","line":7,"addr":4195660}],[{"file":"dwarftest.c","line":11,"addr":4195666}],[{"file":"dwarftest.c","line":12,"addr":4195671}],[{"file":"dwarftest.c","line":0,"addr":4195673}]]}
 EOF
 RUN
 
