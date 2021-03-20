@@ -86,7 +86,7 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 			offset = rz_buf_tell(buf) + base;
 			ConstPool *cpool = java_constant_pool_new(buf, offset);
 			if (!cpool) {
-				rz_warn_if_reached();
+				RZ_LOG_ERROR("java bin: could not parse the constant pool value at offset %" PFMT64x "\n", offset);
 				break;
 			}
 			bin->constant_pool[i] = cpool;

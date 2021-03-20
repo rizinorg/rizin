@@ -61,7 +61,7 @@ ConstPool *java_constant_pool_new(RzBuffer *buf, ut64 offset) {
 	case CONSTANT_POOL_PACKAGE:
 		return constant_pool_copy_from_buffer(buf, cpool, 2);
 	default:
-		eprintf("invalid constant pool tag: %u at 0x%" PFMT64x "\n", cpool->tag, offset);
+		RZ_LOG_ERROR("java bin: invalid constant pool tag: %u at 0x%" PFMT64x "\n", cpool->tag, offset);
 		break;
 	}
 	rz_buf_seek(buf, offset, SEEK_SET);
