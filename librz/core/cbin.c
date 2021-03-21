@@ -2026,10 +2026,10 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 		rz_table_set_columnsf(table, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
 	}
 	rz_list_foreach (imports, iter, import) {
-		if (name && strcmp(import->name, name)) {
+		if (!import->name || (name && strcmp(import->name, name))) {
 			continue;
 		}
-		char *symname = strdup(import->name);
+		char *symname = import->name ? strdup(import->name) : NULL;
 		char *libname = import->libname ? strdup(import->libname) : NULL;
 		ut64 addr = lit ? rz_core_bin_impaddr(r->bin, va, symname) : 0;
 		if (bin_demangle) {
