@@ -136,9 +136,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# Fix build warning
+# see https://travis-ci.com/github/rizinorg/rizin/jobs/492588616
 NAME=LUAC: broken file
 FILE=bins/luac/random.luac
 CMDS=<<EOF
+EOF
+REGEXP_FILTER_OUT=<<EOF
+Nothing
 EOF
 EXPECT=<<EOF
 EOF
