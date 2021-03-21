@@ -1443,7 +1443,7 @@ static bool decode_instruction(JavaVM *jvm, Bytecode *bytecode) {
 		jvm->current++;
 		return true;
 	}
-	if (!bytecode->type) {
+	if (!bytecode->type[0]) {
 		bytecode->atype = RZ_ANALYSIS_OP_TYPE_UNK;
 	}
 	bytecode->opcode = byte;
