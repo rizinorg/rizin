@@ -227,6 +227,7 @@ extern RzAsmPlugin rz_asm_plugin_java;
 extern RzAsmPlugin rz_asm_plugin_lanai_gnu;
 extern RzAsmPlugin rz_asm_plugin_lh5801;
 extern RzAsmPlugin rz_asm_plugin_lm32;
+extern RzAsmPlugin rz_asm_plugin_luac;
 extern RzAsmPlugin rz_asm_plugin_m68k_cs;
 extern RzAsmPlugin rz_asm_plugin_m680x_cs;
 extern RzAsmPlugin rz_asm_plugin_malbolge;
