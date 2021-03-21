@@ -30,7 +30,7 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 static RzList *fields(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(rz_bin_field_free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}

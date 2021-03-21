@@ -4284,12 +4284,11 @@ RzList *MACH0_(mach_fields)(RzBinFile *bf) {
 	if (!mh) {
 		return NULL;
 	}
-	RzList *ret = rz_list_new();
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		free(mh);
 		return NULL;
 	}
-	ret->free = free;
 	ut64 addr = pa2va(bf, 0);
 	ut64 paddr = 0;
 

@@ -2090,11 +2090,10 @@ static RZ_BORROW RzList *lines(RzBinFile *bf) {
 
 // iH*
 static RzList *dex_fields(RzBinFile *bf) {
-	RzList *ret = rz_list_new();
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	ut64 addr = 0;
 
 #define ROW(nam, siz, val, fmt) \

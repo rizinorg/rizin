@@ -1176,7 +1176,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static RzList *fields(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}
