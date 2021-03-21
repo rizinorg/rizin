@@ -1879,12 +1879,10 @@ static void update_sdb(RzCore *core) {
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	//SDB// syscall/
 	if (core->rasm && core->rasm->syscall && core->rasm->syscall->db) {
-		core->rasm->syscall->db->refs++;
 		sdb_ns_set(DB, "syscall", core->rasm->syscall->db);
 	}
 	d = sdb_ns(DB, "debug", 1);
 	if (core->dbg->sgnls) {
-		core->dbg->sgnls->refs++;
 		sdb_ns_set(d, "signals", core->dbg->sgnls);
 	}
 }
