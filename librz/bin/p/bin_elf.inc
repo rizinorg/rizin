@@ -499,7 +499,7 @@ static RzList *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1041,7 +1041,6 @@ static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 				ret->lang = "rust";
 			}
 		}
-		symbols_list->free = rz_bin_symbol_free;
 		rz_list_free(symbols_list);
 	}
 }

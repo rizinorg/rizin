@@ -1143,7 +1143,7 @@ static void handle_data_sections(RzBinSection *sect) {
 }
 
 static RzList *symbols(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}

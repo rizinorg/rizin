@@ -144,7 +144,7 @@ LuacBinInfo *luac_build_info(LuaProto *proto) {
 	}
 
 	ret->entry_list = rz_list_newf((RzListFree)free_rz_addr);
-	ret->symbol_list = rz_list_newf((RzListFree)free_rz_symbol);
+	ret->symbol_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	ret->section_list = rz_list_newf((RzListFree)free_rz_section);
 	ret->string_list = rz_list_newf((RzListFree)free_rz_string);
 

@@ -129,7 +129,7 @@ static RzList *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf((RzListFree)free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	if (!(codes = rz_bin_wasm_get_codes(bin))) {

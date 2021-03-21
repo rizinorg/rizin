@@ -927,7 +927,7 @@ static char *add_class_name_to_name(char *name, char *classname) {
 RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *list = rz_list_newf(rz_bin_symbol_free);
+	RzList *list = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!list) {
 		return NULL;
 	}

@@ -226,7 +226,6 @@ static RzList *symbols(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			if (!(ptr = RZ_NEW0(RzBinSymbol))) {
