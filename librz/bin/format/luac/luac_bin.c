@@ -111,30 +111,6 @@ static void free_rz_addr(RzBinAddr *addr) {
 	RZ_FREE(addr);
 }
 
-static void free_rz_symbol(RzBinSymbol *symbol) {
-	if (!symbol) {
-		return;
-	}
-
-	if (symbol->name) {
-		RZ_FREE(symbol->name);
-	}
-
-	if (symbol->dname) {
-		RZ_FREE(symbol->dname);
-	}
-
-	if (symbol->classname) {
-		RZ_FREE(symbol->classname);
-	}
-
-	if (symbol->libname) {
-		RZ_FREE(symbol->libname);
-	}
-
-	RZ_FREE(symbol);
-}
-
 LuacBinInfo *luac_build_info(LuaProto *proto) {
 	rz_return_val_if_fail(proto, NULL);
 
