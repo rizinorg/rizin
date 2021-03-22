@@ -340,61 +340,61 @@ static void print_line_op(RzBinDwarfLineOp *op, RzBinDwarfLineHeader *hdr, RZ_NU
 	rz_cons_print("\n");
 }
 
-RZ_API void rz_core_bin_dwarf_print_lines(RzList /*<RzBinDwarfLineInfo>*/ *lines) {
+RZ_API void rz_core_bin_dwarf_print_line_units(RzList /*<RzBinDwarfLineUnit>*/ *lines) {
 	rz_return_if_fail(lines);
 	rz_cons_print("Raw dump of debug contents of section .debug_line:\n\n");
 	RzListIter *it;
-	RzBinDwarfLineInfo *li;
+	RzBinDwarfLineUnit *unit;
 	bool first = true;
-	rz_list_foreach (lines, it, li) {
+	rz_list_foreach (lines, it, unit) {
 		if (first) {
 			first = false;
 		} else {
 			rz_cons_print("\n");
 		}
 		rz_cons_print(" Header information:\n");
-		rz_cons_printf("  Length:                             %" PFMT64u "\n", li->header.unit_length);
-		rz_cons_printf("  DWARF Version:                      %d\n", li->header.version);
-		rz_cons_printf("  Header Length:                      %" PFMT64d "\n", li->header.header_length);
-		rz_cons_printf("  Minimum Instruction Length:         %d\n", li->header.min_inst_len);
-		rz_cons_printf("  Maximum Operations per Instruction: %d\n", li->header.max_ops_per_inst);
-		rz_cons_printf("  Initial value of 'is_stmt':         %d\n", li->header.default_is_stmt);
-		rz_cons_printf("  Line Base:                          %d\n", li->header.line_base);
-		rz_cons_printf("  Line Range:                         %d\n", li->header.line_range);
-		rz_cons_printf("  Opcode Base:                        %d\n\n", li->header.opcode_base);
+		rz_cons_printf("  Length:                             %" PFMT64u "\n", unit->header.unit_length);
+		rz_cons_printf("  DWARF Version:                      %d\n", unit->header.version);
+		rz_cons_printf("  Header Length:                      %" PFMT64d "\n", unit->header.header_length);
+		rz_cons_printf("  Minimum Instruction Length:         %d\n", unit->header.min_inst_len);
+		rz_cons_printf("  Maximum Operations per Instruction: %d\n", unit->header.max_ops_per_inst);
+		rz_cons_printf("  Initial value of 'is_stmt':         %d\n", unit->header.default_is_stmt);
+		rz_cons_printf("  Line Base:                          %d\n", unit->header.line_base);
+		rz_cons_printf("  Line Range:                         %d\n", unit->header.line_range);
+		rz_cons_printf("  Opcode Base:                        %d\n\n", unit->header.opcode_base);
 		rz_cons_print(" Opcodes:\n");
-		for (size_t i = 1; i < li->header.opcode_base; i++) {
-			rz_cons_printf("  Opcode %zu has %d arg\n", i, li->header.std_opcode_lengths[i - 1]);
+		for (size_t i = 1; i < unit->header.opcode_base; i++) {
+			rz_cons_printf("  Opcode %zu has %d arg\n", i, unit->header.std_opcode_lengths[i - 1]);
 		}
 		rz_cons_print("\n");
-		if (li->header.include_dirs_count && li->header.include_dirs) {
+		if (unit->header.include_dirs_count && unit->header.include_dirs) {
 			rz_cons_printf(" The Directory Table:\n");
-			for (size_t i = 0; i < li->header.include_dirs_count; i++) {
-				rz_cons_printf("  %u     %s\n", (unsigned int)i + 1, li->header.include_dirs[i]);
+			for (size_t i = 0; i < unit->header.include_dirs_count; i++) {
+				rz_cons_printf("  %u     %s\n", (unsigned int)i + 1, unit->header.include_dirs[i]);
 			}
 		}
-		if (li->header.file_names_count && li->header.file_names) {
+		if (unit->header.file_names_count && unit->header.file_names) {
 			rz_cons_print("\n");
 			rz_cons_print(" The File Name Table:\n");
 			rz_cons_print("  Entry Dir     Time      Size       Name\n");
-			for (size_t i = 0; i < li->header.file_names_count; i++) {
-				RzBinDwarfLineFileEntry *f = &li->header.file_names[i];
+			for (size_t i = 0; i < unit->header.file_names_count; i++) {
+				RzBinDwarfLineFileEntry *f = &unit->header.file_names[i];
 				rz_cons_printf("  %u     %" PFMT32u "       %" PFMT32u "         %" PFMT32u "          %s\n",
 					(unsigned int)i + 1, f->id_idx, f->mod_time, f->file_len, f->name);
 			}
 			rz_cons_print("\n");
 		}
-		if (li->ops_count && li->ops) {
+		if (unit->ops_count && unit->ops) {
 			// also execute all ops simultaneously which gives us nice intermediate value printing
 			RzBinDwarfSMRegisters regs;
-			rz_bin_dwarf_line_header_reset_regs(&li->header, &regs);
+			rz_bin_dwarf_line_header_reset_regs(&unit->header, &regs);
 			rz_cons_print(" Line Number Statements:\n");
-			for (size_t i = 0; i < li->ops_count; i++) {
-				rz_bin_dwarf_line_op_run(&li->header, &regs, &li->ops[i], NULL, NULL);
+			for (size_t i = 0; i < unit->ops_count; i++) {
+				rz_bin_dwarf_line_op_run(&unit->header, &regs, &unit->ops[i], NULL, NULL, NULL);
 				rz_cons_print("  ");
-				RzBinDwarfLineOp *op = &li->ops[i];
-				print_line_op(op, &li->header, &regs);
-				if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->opcode == DW_LNE_end_sequence && i + 1 < li->ops_count) {
+				RzBinDwarfLineOp *op = &unit->ops[i];
+				print_line_op(op, &unit->header, &regs);
+				if (op->type == RZ_BIN_DWARF_LINE_OP_TYPE_EXT && op->opcode == DW_LNE_end_sequence && i + 1 < unit->ops_count) {
 					// extra newline for nice sequence separation
 					rz_cons_print("\n");
 				}
