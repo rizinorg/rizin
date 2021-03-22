@@ -136,7 +136,10 @@ static void free_rz_symbol(RzBinSymbol *symbol) {
 }
 
 LuacBinInfo *luac_build_info(LuaProto *proto) {
-	rz_return_val_if_fail(proto, NULL);
+	if (proto == NULL) {
+		eprintf("Warning : No proto for building info\n");
+		return NULL;
+	}
 
 	LuacBinInfo *ret = RZ_NEW0(LuacBinInfo);
 	if (!ret) {
