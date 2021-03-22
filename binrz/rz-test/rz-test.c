@@ -570,7 +570,7 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 		RzTest *test = rz_pvector_pop(&state->queue);
 #if COVERAGE
 		if (test->type == RZ_TEST_TYPE_FUZZ &&
-			rz_str_endswith(test->file, "/r2_hoobr_r_bin_java_inner_classes_attr_new")) {
+			rz_str_endswith(test->fuzz_test->file, "/r2_hoobr_r_bin_java_inner_classes_attr_new")) {
 			continue;
 		}
 #endif
