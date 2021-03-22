@@ -164,7 +164,9 @@ void lua_free_upvalue_entry(LuaUpvalueEntry *entry) {
 }
 
 void lua_free_proto_entry(LuaProto *proto) {
-	rz_return_if_fail(proto);
+	if (proto == NULL) {
+		return;
+	}
 
 	/* free constants entries */
 	rz_list_free(proto->const_entries);
