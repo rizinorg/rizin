@@ -134,7 +134,7 @@ static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBuffer *obj = bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	/* atmega8 */

@@ -439,7 +439,7 @@ static RzList *symbols(RzBinFile *bf) {
 	RzList *ret, *list;
 	RzListIter *it;
 
-	if (!(ret = rz_list_newf(rz_bin_symbol_free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 

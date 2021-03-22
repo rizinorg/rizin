@@ -205,7 +205,7 @@ static RzList *symbols(RzBinFile *bf) {
 	struct rz_bin_pe_import_t *imports = NULL;
 	int i;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	if ((symbols = PE_(rz_bin_pe_get_exports)(bf->o->bin_obj))) {

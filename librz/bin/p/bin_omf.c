@@ -110,11 +110,9 @@ static RzList *symbols(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
-
-	ret->free = free;
 
 	while (ct_sym < ((rz_bin_omf_obj *)bf->o->bin_obj)->nb_symbol) {
 		if (!(sym = RZ_NEW0(RzBinSymbol))) {

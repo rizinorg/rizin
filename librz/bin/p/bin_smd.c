@@ -151,7 +151,7 @@ static RzList *symbols(RzBinFile *bf) {
 	const char *name = NULL;
 	int i;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	SMD_Header hdr;

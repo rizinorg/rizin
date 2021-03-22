@@ -681,7 +681,7 @@ RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
 RZ_API void rz_bin_import_free(void *_imp);
-RZ_API void rz_bin_symbol_free(void *_sym);
+RZ_API void rz_bin_symbol_free(RzBinSymbol *sym);
 RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr);
 RZ_API void rz_bin_string_free(void *_str);
 

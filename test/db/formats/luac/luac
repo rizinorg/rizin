@@ -136,6 +136,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# see https://travis-ci.com/github/rizinorg/rizin/jobs/492588616
 NAME=LUAC: broken file
 FILE=bins/luac/random.luac
 CMDS=<<EOF

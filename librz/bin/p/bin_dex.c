@@ -1617,7 +1617,7 @@ static bool dex_loadcode(RzBinFile *bf) {
 	bin->version = rz_bin_dex_get_version(bin);
 	bin->code_from = UT64_MAX;
 	bin->code_to = 0;
-	bin->methods_list = rz_list_newf((RzListFree)free);
+	bin->methods_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!bin->methods_list) {
 		return false;
 	}

@@ -1732,7 +1732,7 @@ static RzList *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
