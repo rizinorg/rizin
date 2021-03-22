@@ -275,10 +275,7 @@ commands:
       - name: zi
         cname: zign_info
         summary: Show zignatures matching information
-        args:
-          - name: commens
-            type: RZ_CMD_ARG_TYPE_STRING
-            optional: true
+        args: []
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON

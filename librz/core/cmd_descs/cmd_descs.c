@@ -190,7 +190,6 @@ static const RzCmdDescArg zign_space_select_args[2];
 static const RzCmdDescArg zign_space_delete_args[2];
 static const RzCmdDescArg zign_space_add_args[2];
 static const RzCmdDescArg zign_space_rename_args[2];
-static const RzCmdDescArg zign_info_args[2];
 static const RzCmdDescArg zign_info_range_args[3];
 
 static const RzCmdDescHelp cmd_system_help = {
@@ -3668,13 +3667,6 @@ static const RzCmdDescHelp zi_help = {
 	.summary = "Show zignatures matching information",
 };
 static const RzCmdDescArg zign_info_args[] = {
-	{
-		.name = "commens",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp zign_info_help = {
