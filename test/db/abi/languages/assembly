@@ -24,5 +24,6 @@ EXPECT=<<EOF
 |           0x00001125      call  loc.foo1                             ; ref_marking_3.s:13     call foo1
 \           0x0000112a      ret                                        ; ref_marking_3.s:14     ret
 EOF
+BROKEN=1
 RUN
 
