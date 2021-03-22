@@ -1,4 +1,4 @@
-project('rizin', 'c',
+project('rizin', ['c', 'cpp'],
   version: 'v0.2.0-git',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
@@ -125,9 +125,9 @@ if is_static_build
 endif
 
 if cc.has_argument('--std=gnu99')
-  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
+  add_project_arguments('--std=gnu99', language: ['c'])
 elif cc.has_argument('--std=c99')
-  add_project_arguments('--std=c99', language: ['c', 'cpp'])
+  add_project_arguments('--std=c99', language: ['c'])
 endif
 
 # Sanitize correct usage of rz_strf()

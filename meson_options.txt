@@ -38,4 +38,5 @@ option('debugger', type: 'boolean', value: true)
 option('use_webui', type: 'boolean', value: false, description: 'Install different WebUIs for rizin')
 
 option('enable_tests', type: 'boolean', value: true, description: 'Build unit tests in test/unit')
+option('enable_cpp_test', type: 'boolean', value: true, description: 'Check for compilation of headers under C++, requires a C++ compiler')
 option('enable_rz_test', type: 'boolean', value: true, description: 'Build rz_test executable for regression testing')

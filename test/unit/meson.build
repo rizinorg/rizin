@@ -121,3 +121,15 @@ if get_option('enable_tests')
     test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env)
   endforeach
 endif
+
+if get_option('enable_cpp_test')
+  compiler = meson.get_compiler('cpp')
+  exe = executable('test_cpp', 'test_cpp.cpp',
+    include_directories: [platform_inc],
+    dependencies: [rz_util_dep, rz_core_dep],
+    install: false,
+    install_rpath: rpath_exe,
+    implicit_include_directories: false
+  )
+  test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env)
+endif
