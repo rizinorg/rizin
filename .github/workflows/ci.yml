@@ -173,9 +173,13 @@ jobs:
         if [ "$ASAN" == "true" ]; then
           export CFLAGS="-DASAN=1 ${CFLAGS}"
         fi
+        if [ "$COVERAGE" == "true" ]; then
+          export CFLAGS="-DCOVERAGE=1 ${CFLAGS}"
+        fi
         meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
       env:
         ASAN: ${{ matrix.asan }}
+        COVERAGE: ${{ matrix.coverage }}
         CC: ${{ matrix.compiler }}
         CFLAGS: ${{ matrix.cflags }}
     - name: Install with meson
