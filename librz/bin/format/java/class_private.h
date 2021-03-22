@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_BIN_JAVA_CLASS_PRIVATE_H
 #define RZ_BIN_JAVA_CLASS_PRIVATE_H
 

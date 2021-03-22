@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "jvm.h"
 #include "const.h"
 #include <rz_analysis.h>
@@ -1443,7 +1446,7 @@ static bool decode_instruction(JavaVM *jvm, Bytecode *bytecode) {
 		jvm->current++;
 		return true;
 	}
-	if (!bytecode->type) {
+	if (!bytecode->atype) {
 		bytecode->atype = RZ_ANALYSIS_OP_TYPE_UNK;
 	}
 	bytecode->opcode = byte;
