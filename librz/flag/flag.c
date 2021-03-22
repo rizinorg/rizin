@@ -295,7 +295,6 @@ struct print_flag_t {
 	ut64 range_to;
 	RzSpace *fs;
 	bool real;
-	const char *pfx;
 };
 
 static bool print_flag_json(RzFlagItem *flag, void *user) {
@@ -347,9 +346,8 @@ static bool print_flag_rad(RzFlagItem *flag, void *user) {
 				flag->name, comment_b64 ? comment_b64 : "");
 		}
 	} else {
-		u->f->cb_printf("f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
+		u->f->cb_printf("f %s %" PFMT64d " 0x%08" PFMT64x " %s\n",
 			flag->name, flag->size, flag->offset,
-			u->pfx ? "+" : "", u->pfx ? u->pfx : "",
 			comment_b64 ? comment_b64 : "");
 	}
 
@@ -429,7 +427,6 @@ RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx) {
 			.range_from = range_from,
 			.range_to = range_to,
 			.fs = NULL,
-			.pfx = pfx
 		};
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_rad, &u);
 		break;
