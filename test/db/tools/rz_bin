@@ -1056,7 +1056,7 @@ NAME=rz-bin -dj
 FILE=bins/elf/analysis/dwarftest
 CMDS=!rz-bin -dj ${RZ_FILE}
 EXPECT=<<EOF
-{"dwarf":[[{"file":"dwarftest.c","line":4,"addr":4195629}],[{"file":"dwarftest.c","line":7,"addr":4195637}],[{"file":"dwarftest.c","line":8,"addr":4195646}],[{"file":"dwarftest.c","line":7,"addr":4195656}],[{"file":"dwarftest.c","line":7,"addr":4195660}],[{"file":"dwarftest.c","line":11,"addr":4195666}],[{"file":"dwarftest.c","line":12,"addr":4195671}],[{"file":"dwarftest.c","line":0,"addr":4195673}]]}
+{"dwarf":[[{"file":"dwarftest.c","line":4,"addr":4195629}],[{"file":"dwarftest.c","line":7,"addr":4195637}],[{"file":"dwarftest.c","line":8,"addr":4195646}],[{"file":"dwarftest.c","line":7,"addr":4195656}],[{"file":"dwarftest.c","line":7,"addr":4195660}],[{"file":"dwarftest.c","line":11,"addr":4195666}],[{"file":"dwarftest.c","line":12,"addr":4195671}]]}
 EOF
 RUN
 
