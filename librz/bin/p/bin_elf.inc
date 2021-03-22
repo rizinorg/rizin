@@ -236,7 +236,7 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->add = false;
 			ptr->size = phdr[i].p_filesz;
 			ptr->vsize = phdr[i].p_memsz;
-			ptr->paddr = phdr[i].p_offset;
+			ptr->paddr = phdr[i].p_paddr;
 			ptr->vaddr = phdr[i].p_vaddr;
 			ptr->perm = phdr[i].p_flags;
 			ptr->is_segment = true;
