@@ -2,19 +2,10 @@ NAME=ELF_ABI : vs2008 debug flagspaces
 FILE=bins/abi_bins/pe/compilers/ooex_vs2008_dbg.exe
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~relocs
 EOF
 EXPECT=<<EOF
-    0 * classes
-   82 * functions
-   60 * imports
-    0 * registers
    60 * relocs
-    1 * resources
-    7 * sections
-    0 * segments
-   48 * strings
-    1 * symbols
 EOF
 RUN
 
@@ -32,17 +23,10 @@ RUN
 NAME=ELF_ABI : vs2008 release flagspaces
 FILE=bins/abi_bins/pe/compilers/ooex_vs2008_release.exe
 CMDS=<<EOF
-fs
+fs~relocs
 EOF
 EXPECT=<<EOF
-    0 * classes
-   43 * imports
    43 * relocs
-    1 * resources
-    5 * sections
-    0 * segments
-   48 * strings
-    1 * symbols
 EOF
 RUN
 
@@ -59,19 +43,12 @@ RUN
 
 NAME=ELF_ABI : vs2010 release flagspaces
 FILE=bins/abi_bins/pe/compilers/ooex_vs2010_release.exe
-ARG=-A
+ARGS=-A
 CMDS=<<EOF
-fs
+fs~relocs
 EOF
 EXPECT=<<EOF
-    0 * classes
-   43 * imports
    43 * relocs
-    1 * resources
-    5 * sections
-    0 * segments
-   48 * strings
-    1 * symbols
 EOF
 RUN
 
@@ -89,17 +66,10 @@ RUN
 NAME=ELF_ABI : vs2010 debug flagspaces
 FILE=bins/abi_bins/pe/compilers/ooex_vs2010_dbg.exe
 CMDS=<<EOF
-fs
+fs~relocs
 EOF
 EXPECT=<<EOF
-    0 * classes
-   59 * imports
    59 * relocs
-    1 * resources
-    7 * sections
-    0 * segments
-   49 * strings
-    1 * symbols
 EOF
 RUN
 

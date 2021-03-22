@@ -33,19 +33,12 @@ RUN
 
 NAME=ELF_ABI : Clang O0 flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_O0
-ARG=-A
+ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
-   45 * imports
-   47 * relocs
-   41 * sections
-   10 * segments
-   69 * strings
-  136 * symbols
-   37 * symbols.sections
+   87 * functions
 EOF
 RUN
 
@@ -53,19 +46,10 @@ NAME=ELF_ABI : Clang O1 flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_O1
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    95 * functions
-   45 * imports
-    0 * registers
-   47 * relocs
-   41 * sections
-   10 * segments
-   67 * strings
-  143 * symbols
-   37 * symbols.sections
 EOF
 RUN
 
@@ -73,19 +57,10 @@ NAME=ELF_ABI : Clang O2 flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_O2
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    50 * functions
-   44 * imports
-    0 * registers
-   46 * relocs
-   42 * sections
-   10 * segments
-   60 * strings
-  119 * symbols
-   38 * symbols.sections
 EOF
 RUN
 
@@ -93,19 +68,10 @@ NAME=ELF_ABI : Clang O3 flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_O3
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    49 * functions
-   44 * imports
-    0 * registers
-   46 * relocs
-   42 * sections
-   10 * segments
-   60 * strings
-  118 * symbols
-   38 * symbols.sections
 EOF
 RUN
 
@@ -113,19 +79,10 @@ NAME=ELF_ABI : Clang Of flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_Of
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    51 * functions
-   44 * imports
-    0 * registers
-   46 * relocs
-   41 * sections
-   10 * segments
-   60 * strings
-  117 * symbols
-   37 * symbols.sections
 EOF
 RUN
 
@@ -133,19 +90,10 @@ NAME=ELF_ABI : Clang Os flagspaces
 FILE=bins/abi_bins/elf/compilers/clang/echo_clang_Os
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    87 * functions
-   45 * imports
-    0 * registers
-   47 * relocs
-   41 * sections
-   10 * segments
-   69 * strings
-  136 * symbols
-   37 * symbols.sections
 EOF
 RUN
 

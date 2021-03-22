@@ -33,19 +33,12 @@ RUN
 
 NAME=ELF_ABI : gcc O0 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O0
-ARG=-A
+ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
-   45 * imports
-   47 * relocs
-   39 * sections
-   10 * segments
-   68 * strings
-  135 * symbols
-   35 * symbols.sections
+   89 * functions
 EOF
 RUN
 
@@ -53,19 +46,10 @@ NAME=ELF_ABI : gcc O1 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O1
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    68 * functions
-   43 * imports
-    0 * registers
-   45 * relocs
-   39 * sections
-   10 * segments
-   66 * strings
-  116 * symbols
-   35 * symbols.sections
 EOF
 RUN
 
@@ -73,19 +57,10 @@ NAME=ELF_ABI : gcc O2 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O2
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    51 * functions
-   44 * imports
-    0 * registers
-   46 * relocs
-   39 * sections
-   10 * segments
-   66 * strings
-  122 * symbols
-   35 * symbols.sections
 EOF
 RUN
 
@@ -93,19 +68,10 @@ NAME=ELF_ABI : gcc O3 flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O3
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    44 * functions
-   44 * imports
-    0 * registers
-   46 * relocs
-   39 * sections
-   10 * segments
-   67 * strings
-  128 * symbols
-   35 * symbols.sections
 EOF
 RUN
 
@@ -113,19 +79,10 @@ NAME=ELF_ABI : gcc Of flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_Of
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    45 * functions
-   44 * imports
-    0 * registers
-   46 * relocs
-   39 * sections
-   10 * segments
-   67 * strings
-  130 * symbols
-   35 * symbols.sections
 EOF
 RUN
 
@@ -133,19 +90,10 @@ NAME=ELF_ABI : gcc Os flagspaces
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_Os
 ARGS=-A
 CMDS=<<EOF
-fs
+fs~functions
 EOF
 EXPECT=<<EOF
-    0 * classes
    85 * functions
-   42 * imports
-    0 * registers
-   44 * relocs
-   39 * sections
-   10 * segments
-   69 * strings
-  134 * symbols
-   35 * symbols.sections
 EOF
 RUN
 
