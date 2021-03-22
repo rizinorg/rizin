@@ -542,12 +542,12 @@ static RzList *symbols(RzBinFile *bf) {
 static RzList *imports(RzBinFile *bf) {
 	RzBinElfSymbol *import = NULL;
 	RzBinImport *ptr = NULL;
-	RzList *ret = NULL;
 	int i;
 
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	struct Elf_(rz_bin_elf_obj_t) *elf = bf->o->bin_obj;
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
 	if (!(import = Elf_(rz_bin_elf_get_imports)(elf))) {

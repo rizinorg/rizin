@@ -1621,7 +1621,7 @@ static bool dex_loadcode(RzBinFile *bf) {
 	if (!bin->methods_list) {
 		return false;
 	}
-	bin->imports_list = rz_list_newf((RzListFree)free);
+	bin->imports_list = rz_list_newf((RzListFree)rz_bin_import_free);
 	if (!bin->imports_list) {
 		rz_list_free(bin->methods_list);
 		return false;

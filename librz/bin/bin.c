@@ -164,8 +164,7 @@ RZ_API RzBinImport *rz_bin_import_clone(RzBinImport *o) {
 	return res;
 }
 
-RZ_API void rz_bin_import_free(void *_imp) {
-	RzBinImport *imp = (RzBinImport *)_imp;
+RZ_API void rz_bin_import_free(RzBinImport *imp) {
 	if (imp) {
 		RZ_FREE(imp->name);
 		RZ_FREE(imp->libname);
@@ -1352,7 +1351,6 @@ RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char
 	return ptr;
 }
 
-// use void* to honor the RzListFree signature
 RZ_API void rz_bin_field_free(RzBinField *field) {
 	if (field) {
 		free(field->name);

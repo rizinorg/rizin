@@ -1329,7 +1329,7 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_symbols(RzBinJavaClass *bin) {
 RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzList *imports = rz_list_newf(rz_bin_import_free);
+	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
 	if (!imports) {
 		return NULL;
 	}

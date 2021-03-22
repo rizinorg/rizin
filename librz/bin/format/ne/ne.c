@@ -312,7 +312,7 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 }
 
 RzList *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
-	RzList *imports = rz_list_newf(free);
+	RzList *imports = rz_list_newf((RzListFree)rz_bin_import_free);
 	if (!imports) {
 		return NULL;
 	}
