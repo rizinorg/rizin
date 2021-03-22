@@ -122,10 +122,9 @@ static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSymbol *ptr[13];
 	int i;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	for (i = 0; i < 8; i++) {
 		if (!(ptr[i] = RZ_NEW0(RzBinSymbol))) {

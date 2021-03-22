@@ -481,10 +481,9 @@ static RzList *symbols(RzBinFile *bf) {
 	int offset = _machines[m_idx].offset_mem;
 	RzList *ret = NULL;
 	RzBinSymbol *ptr;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	int i;
 	for (i = 0; i < SYMBOLS_MAX; i++) {

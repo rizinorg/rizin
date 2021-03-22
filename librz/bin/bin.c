@@ -192,8 +192,7 @@ RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) 
 	return sym;
 }
 
-RZ_API void rz_bin_symbol_free(void *_sym) {
-	RzBinSymbol *sym = (RzBinSymbol *)_sym;
+RZ_API void rz_bin_symbol_free(RzBinSymbol *sym) {
 	if (sym) {
 		free(sym->name);
 		free(sym->libname);

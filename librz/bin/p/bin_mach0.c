@@ -202,7 +202,7 @@ static RzList *symbols(RzBinFile *bf) {
 	const struct symbol_t *syms = NULL;
 	RzBinSymbol *ptr = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 #if 0
 	const char *lang = "c"; // XXX deprecate this
 #endif
