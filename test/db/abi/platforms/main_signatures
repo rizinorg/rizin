@@ -15,6 +15,7 @@ EXPECT=<<EOF
 |       |   ; CODE XREF from main @ 0x88c8
 |      :|   ; CODE XREF from main @ 0x8898
 EOF
+BROKEN=1
 RUN
 
 NAME=MAIN_ABI : arm-linux_gnu_guneabi main
@@ -34,6 +35,7 @@ EXPECT=<<EOF
 |       |   ; CODE XREF from main @ 0x8868
 |      :|   ; CODE XREF from main @ 0x8838
 EOF
+BROKEN=1
 RUN
 
 NAME=MAIN_ABI : mips-linux-gnu-echo main
@@ -53,6 +55,7 @@ EXPECT=<<EOF
 |       |   ; CODE XREF from main @ 0x400cac
 |      :|   ; CODE XREF from main @ 0x400c60
 EOF
+BROKEN=1
 RUN
 
 NAME=MAIN_ABI : mips64-linux-gnueabi main
@@ -72,6 +75,7 @@ EXPECT=<<EOF
 |       |   ; CODE XREF from main @ 0x120001144
 |      :|   ; CODE XREF from main @ 0x1200010fc
 EOF
+BROKEN=1
 RUN
 
 NAME=MAIN_ABI : powerpc-linux-gnu main
@@ -86,6 +90,7 @@ EXPECT=<<EOF
 / dbg.main (signed int arg_20h);
 |       |   ; CODE XREF from dbg.main @ 0x100004ec
 EOF
+BROKEN=1
 RUN
 
 NAME=MAIN_ABI : powerpc32-linux-gnu main
@@ -106,6 +111,7 @@ EXPECT=<<EOF
 |      :|   ; CODE XREF from main @ 0x10000968
 |       |   ; CODE XREF from main @ 0x100009d0
 EOF
+BROKEN=1
 RUN
 
 NAME=MAIN_ABI : x86_64-linux-gnu main
@@ -125,6 +131,7 @@ EXPECT=<<EOF
 |       |   ; CODE XREF from main @ 0x400976
 |      :|   ; CODE XREF from main @ 0x400954
 EOF
+BROKEN=1
 RUN
 
 NAME=MAIN_ABI : x86-linux-gnu main
@@ -144,6 +151,7 @@ EXPECT=<<EOF
 |       |   ; CODE XREF from main @ 0x8048753
 |      :|   ; CODE XREF from main @ 0x8048736
 EOF
+BROKEN=1
 RUN
 
 NAME=MAIN_ABI : i686-w64-mingw32 main
@@ -165,6 +173,7 @@ EXPECT=<<EOF
 |       |   ; CODE XREF from sym._main @ 0x401780
 |      :|   ; CODE XREF from sym._main @ 0x401763
 EOF
+BROKEN=1
 RUN
 
 NAME=MAIN_ABI : x86_64-w64-mingw32 main
@@ -186,4 +195,5 @@ EXPECT=<<EOF
 |       |   ; CODE XREF from sym.main @ 0x40178f
 |      :|   ; CODE XREF from sym.main @ 0x40176d
 EOF
+BROKEN=1
 RUN
