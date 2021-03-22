@@ -570,7 +570,7 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 		RzTest *test = rz_pvector_pop(&state->queue);
 #if COVERAGE
 		if (test->type == RZ_TEST_TYPE_FUZZ) {
-			eprintf("Fuzz file %s\n", test->fuzz_test->file); // DBG
+			eprintf("Started %s\n", test->fuzz_test->file); // DBG
 		}
 #endif
 		rz_th_lock_leave(state->lock);
@@ -578,6 +578,11 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 		RzTestResultInfo *result = rz_test_run_test(&state->run_config, test);
 
 		rz_th_lock_enter(state->lock);
+#if COVERAGE
+		if (test->type == RZ_TEST_TYPE_FUZZ) {
+			eprintf("Completed %s\n", test->fuzz_test->file); // DBG
+		}
+#endif
 		rz_pvector_push(&state->results, result);
 		switch (result->result) {
 		case RZ_TEST_RESULT_OK:
