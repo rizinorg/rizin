@@ -569,3 +569,41 @@ EXPECT=<<EOF
 [{"name":"InAbsentia","bases":[{"id":"0","name":"Album","offset":0}],"vtables":[{"id":"0","addr":4268452,"offset":0}],"methods":[{"name":"virtual_0","addr":4198536,"type":"VIRTUAL","vtable_offset":0},{"name":"virtual_4","addr":4198579,"type":"VIRTUAL","vtable_offset":4}]},{"name":"type_info","bases":[],"vtables":[{"id":"0","addr":4268540,"offset":0}],"methods":[{"name":"virtual_0","addr":4198710,"type":"VIRTUAL","vtable_offset":0}]},{"name":"Album","bases":[],"vtables":[{"id":"0","addr":4268388,"offset":0}],"methods":[{"name":"virtual_0","addr":4198493,"type":"VIRTUAL","vtable_offset":0},{"name":"virtual_4","addr":4198567,"type":"VIRTUAL","vtable_offset":4}]}]
 EOF
 RUN
+
+NAME=acvf2
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+acvf 0
+acvf 0x8 A
+acvf 0x0 C
+acvf 0x10 ABC
+EOF
+EXPECT=<<EOF
+Function address: 0x00400ac8, in A vtable 0
+Function address: 0x00400ac8, in B vtable 0
+Function address: 0x00400ac8, in C vtable 0
+Function address: 0x00400af4, in A vtable 0
+Function address: 0x00400ac8, in C vtable 0
+EOF
+RUN
+
+NAME=acvf3
+FILE=bins/mach0/TestRTTI-arm64
+CMDS=<<EOF
+aaa
+acvf 0 A
+acvf 0x8 B
+acvf 0x10 C
+acvf 0x18 ABC
+EOF
+EXPECT=<<EOF
+Function address: 0x100005f1c, in A vtable 0
+Function address: 0x100005fe0, in B vtable 0
+Function address: 0x100005f44, in B vtable 1
+Function address: 0x100005fe0, in B vtable 2
+Function address: 0x100005f44, in B vtable 3
+Function address: 0x1000060a0, in C vtable 1
+Function address: 0x1000060a0, in C vtable 3
+EOF
+RUN
