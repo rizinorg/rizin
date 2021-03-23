@@ -1,10 +1,11 @@
 NAME=LANGUAGES : freepascal detection
 FILE=bins/abi_bins/elf/languages/freepascal/pick_random
+BROKEN=1
 CMDS=<<EOF
-iI~compiler,lang
+iI~lang
 EOF
 EXPECT=<<EOF
-lang     c
+lang     freepascal
 EOF
 RUN
 

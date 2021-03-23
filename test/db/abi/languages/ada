@@ -1,11 +1,21 @@
 NAME=LANGUAGES : ada detection
 FILE=bins/abi_bins/elf/languages/ada/ada_test
 CMDS=<<EOF
-iI~compiler,lang
+iI~compiler
 EOF
 EXPECT=<<EOF
 compiler GCC: (GNU) 6.2.1 20160916 (Red Hat 6.2.1-2) GCC: (GNU) 6.3.1 20161221 (Red Hat 6.3.1-1)
-lang     c
+EOF
+RUN
+
+NAME=LANGUAGES : ada detection
+FILE=bins/abi_bins/elf/languages/ada/ada_test
+BROKEN=1
+CMDS=<<EOF
+iI~lang
+EOF
+EXPECT=<<EOF
+lang     ada
 EOF
 RUN
 
