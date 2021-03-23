@@ -1,0 +1,199 @@
+NAME=MAIN_ABI : arm-linux_android_abi main
+FILE=bins/abi_bins/elf/platforms/arm-linux-androideabi-echo
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s main
+pdf~main
+EOF
+EXPECT=<<EOF
+/ main ();
+|       |   ; CODE XREF from main @ 0x879c
+|      :|   ; CODE XREF from main @ 0x871c
+|       |   ; CODE XREF from main @ 0x886c
+|      :|   ; CODE XREF from main @ 0x87a8
+|       |   ; CODE XREF from main @ 0x88c8
+|      :|   ; CODE XREF from main @ 0x8898
+EOF
+BROKEN=1
+RUN
+
+NAME=MAIN_ABI : arm-linux_gnu_guneabi main
+FILE=bins/abi_bins/elf/platforms/arm-linux-gnueabi-echo
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s main
+pdf~main
+EOF
+EXPECT=<<EOF
+/ main ();
+|       |   ; CODE XREF from main @ 0x8740
+|      :|   ; CODE XREF from main @ 0x86c0
+|       |   ; CODE XREF from main @ 0x880c
+|      :|   ; CODE XREF from main @ 0x874c
+|       |   ; CODE XREF from main @ 0x8868
+|      :|   ; CODE XREF from main @ 0x8838
+EOF
+BROKEN=1
+RUN
+
+NAME=MAIN_ABI : mips-linux-gnu-echo main
+FILE=bins/abi_bins/elf/platforms/mips-linux-gnu-echo
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s main
+pdf~main
+EOF
+EXPECT=<<EOF
+/ main (int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_20h, int32_t arg_24h, int32_t arg_28h, int32_t arg_2ch, int32_t arg_30h, int32_t arg_34h, int32_t arg_38h, int32_t arg_3ch, int32_t arg_50h, int32_t arg_54h);
+|       |   ; CODE XREF from main @ 0x400b10
+|      :|   ; CODE XREF from main @ 0x400a60
+|       |   ; CODE XREF from main @ 0x400c28
+|      :|   ; CODE XREF from main @ 0x400b1c
+|       |   ; CODE XREF from main @ 0x400cac
+|      :|   ; CODE XREF from main @ 0x400c60
+EOF
+BROKEN=1
+RUN
+
+NAME=MAIN_ABI : mips64-linux-gnueabi main
+FILE=bins/abi_bins/elf/platforms/mips64-linux-gnueabi-echo
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s main
+pdf~main
+EOF
+EXPECT=<<EOF
+/ main (int64_t arg_0h, int64_t arg_4h, int64_t arg_8h, int64_t arg_ch, int64_t arg_10h, int64_t arg_18h, int64_t arg_20h, int64_t arg_28h, int64_t arg_30h, int64_t arg_38h, int64_t arg_40h, int64_t arg_48h);
+|       |   ; CODE XREF from main @ 0x120000fb8
+|      :|   ; CODE XREF from main @ 0x120000f14
+|       |   ; CODE XREF from main @ 0x1200010c0
+|      :|   ; CODE XREF from main @ 0x120000fc4
+|       |   ; CODE XREF from main @ 0x120001144
+|      :|   ; CODE XREF from main @ 0x1200010fc
+EOF
+BROKEN=1
+RUN
+
+NAME=MAIN_ABI : powerpc-linux-gnu main
+FILE=bins/abi_bins/elf/platforms/powerpc-linux-gnu-symexec-guess
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s main
+pdf~dbg.main
+EOF
+EXPECT=<<EOF
+/ dbg.main (signed int arg_20h);
+|       |   ; CODE XREF from dbg.main @ 0x100004ec
+EOF
+BROKEN=1
+RUN
+
+NAME=MAIN_ABI : powerpc32-linux-gnu main
+FILE=bins/abi_bins/elf/platforms/powerpc32-linux-gnu-echo
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s main
+pdf~main
+EOF
+EXPECT=<<EOF
+/ main (signed int arg_50h);
+|       |   ; CODE XREF from main @ 0x10000854
+|      :|   ; CODE XREF from main @ 0x100007cc
+|       |   ; CODE XREF from main @ 0x10000934
+|      :|   ; CODE XREF from main @ 0x10000860
+|       |   ; CODE XREF from main @ 0x100009a0
+|      :|   ; CODE XREF from main @ 0x10000968
+|       |   ; CODE XREF from main @ 0x100009d0
+EOF
+BROKEN=1
+RUN
+
+NAME=MAIN_ABI : x86_64-linux-gnu main
+FILE=bins/abi_bins/elf/platforms/x86_64-linux-gnu-echo
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s main
+pdf~main
+EOF
+EXPECT=<<EOF
+/ main ();
+|       |   ; CODE XREF from main @ 0x400870
+|      :|   ; CODE XREF from main @ 0x400809
+|       |   ; CODE XREF from main @ 0x400926
+|      :|   ; CODE XREF from main @ 0x400879
+|       |   ; CODE XREF from main @ 0x400976
+|      :|   ; CODE XREF from main @ 0x400954
+EOF
+BROKEN=1
+RUN
+
+NAME=MAIN_ABI : x86-linux-gnu main
+FILE=bins/abi_bins/elf/platforms/x86-linux-gnu-echo
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s main
+pdf~main
+EOF
+EXPECT=<<EOF
+/ main (int32_t arg_4h);
+|       |   ; CODE XREF from main @ 0x804866b
+|      :|   ; CODE XREF from main @ 0x8048616
+|       |   ; CODE XREF from main @ 0x804870e
+|      :|   ; CODE XREF from main @ 0x8048674
+|       |   ; CODE XREF from main @ 0x8048753
+|      :|   ; CODE XREF from main @ 0x8048736
+EOF
+BROKEN=1
+RUN
+
+NAME=MAIN_ABI : i686-w64-mingw32 main
+FILE=bins/abi_bins/pe/platforms/i686-w64-mingw32-echo
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s sym._main
+pdf~main
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from dbg.__tmainCRTStartup @ 0x4013db
+/ sym._main (int32_t arg_4h);
+|           0x004015dd      call  dbg.__main
+|       |   ; CODE XREF from sym._main @ 0x401698
+|      :|   ; CODE XREF from sym._main @ 0x401643
+|       |   ; CODE XREF from sym._main @ 0x40173b
+|      :|   ; CODE XREF from sym._main @ 0x4016a1
+|       |   ; CODE XREF from sym._main @ 0x401780
+|      :|   ; CODE XREF from sym._main @ 0x401763
+EOF
+BROKEN=1
+RUN
+
+NAME=MAIN_ABI : x86_64-w64-mingw32 main
+FILE=bins/abi_bins/pe/platforms/x86_64-w64-mingw32-echo
+ARGS=-A
+CMDS=<<EOF
+e scr.utf8=false
+s sym.main
+pdf~main
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from dbg.__tmainCRTStartup @ 0x4013b0
+/ sym.main (signed int64_t arg_20h, int64_t arg_28h);
+|           0x00401592      call  dbg.__main
+|       |   ; CODE XREF from sym.main @ 0x40167e
+|      :|   ; CODE XREF from sym.main @ 0x401617
+|       |   ; CODE XREF from sym.main @ 0x40173f
+|      :|   ; CODE XREF from sym.main @ 0x401687
+|       |   ; CODE XREF from sym.main @ 0x40178f
+|      :|   ; CODE XREF from sym.main @ 0x40176d
+EOF
+BROKEN=1
+RUN
