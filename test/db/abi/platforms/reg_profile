@@ -1,0 +1,445 @@
+NAME=MAIN_ABI : arm-linux_android_abi register
+FILE=bins/abi_bins/elf/platforms/arm-linux-androideabi-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+sb = 0x00000000
+sl = 0x00000000
+fp = 0x00178000
+ip = 0x00000000
+sp = 0x00178000
+lr = 0x00000000
+pc = 0x00008440
+r0 = 0x00000000
+r1 = 0x00000000
+r2 = 0x00000000
+r3 = 0x00000000
+r4 = 0x00000000
+r5 = 0x00000000
+r6 = 0x00000000
+r7 = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00178000
+r12 = 0x00000000
+r13 = 0x00178000
+r14 = 0x00000000
+r15 = 0x00008440
+cpsr = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : arm-linux_gnu_guneabi register
+FILE=bins/abi_bins/elf/platforms/arm-linux-gnueabi-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+sb = 0x00000000
+sl = 0x00000000
+fp = 0x00178000
+ip = 0x00000000
+sp = 0x00178000
+lr = 0x00000000
+pc = 0x00008438
+r0 = 0x00000000
+r1 = 0x00000000
+r2 = 0x00000000
+r3 = 0x00000000
+r4 = 0x00000000
+r5 = 0x00000000
+r6 = 0x00000000
+r7 = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00178000
+r12 = 0x00000000
+r13 = 0x00178000
+r14 = 0x00000000
+r15 = 0x00008438
+cpsr = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : mips-linux-gnu-echo register
+FILE=bins/abi_bins/elf/platforms/mips-linux-gnu-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+zero = 0x00000000
+at = 0x00000000
+v0 = 0x00000000
+v1 = 0x00000000
+a0 = 0x00000000
+a1 = 0x00000000
+a2 = 0x00000000
+a3 = 0x00000000
+t0 = 0x00000000
+t1 = 0x00000000
+t2 = 0x00000000
+t3 = 0x00000000
+t4 = 0x00000000
+t5 = 0x00000000
+t6 = 0x00000000
+t7 = 0x00000000
+s0 = 0x00000000
+s1 = 0x00000000
+s2 = 0x00000000
+s3 = 0x00000000
+s4 = 0x00000000
+s5 = 0x00000000
+s6 = 0x00000000
+s7 = 0x00000000
+t8 = 0x00000000
+t9 = 0x00000000
+k0 = 0x00000000
+k1 = 0x00000000
+gp = 0x00000000
+sp = 0x00178000
+fp = 0x00178000
+ra = 0x00000000
+pc = 0x004006a0
+hi = 0x00000000
+lo = 0x00000000
+t = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : mips64-linux-gnueabi register
+FILE=bins/abi_bins/elf/platforms/mips64-linux-gnueabi-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+zero = 0x00000000
+at = 0x00000000
+v0 = 0x00000000
+v1 = 0x00000000
+a0 = 0x00000000
+a1 = 0x00000000
+a2 = 0x00000000
+a3 = 0x00000000
+t0 = 0x00000000
+t1 = 0x00000000
+t2 = 0x00000000
+t3 = 0x00000000
+t4 = 0x00000000
+t5 = 0x00000000
+t6 = 0x00000000
+t7 = 0x00000000
+s0 = 0x00000000
+s1 = 0x00000000
+s2 = 0x00000000
+s3 = 0x00000000
+s4 = 0x00000000
+s5 = 0x00000000
+s6 = 0x00000000
+s7 = 0x00000000
+t8 = 0x00000000
+t9 = 0x00000000
+k0 = 0x00000000
+k1 = 0x00000000
+gp = 0x00000000
+sp = 0x00178000
+fp = 0x00178000
+ra = 0x00000000
+pc = 0x120000af0
+hi = 0x00000000
+lo = 0x00000000
+t = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : powerpc-linux-gnu register
+FILE=bins/abi_bins/elf/platforms/powerpc-linux-gnu-symexec-guess
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+srr0 = 0x00000000
+srr1 = 0x00000000
+r0 = 0x00000000
+r1 = 0x00178000
+r2 = 0x00000000
+r3 = 0x00000000
+r4 = 0x00000000
+r5 = 0x00000000
+r6 = 0x00000000
+r7 = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+r16 = 0x00000000
+r17 = 0x00000000
+r18 = 0x00000000
+r19 = 0x00000000
+r20 = 0x00000000
+r21 = 0x00000000
+r22 = 0x00000000
+r23 = 0x00000000
+r24 = 0x00000000
+r25 = 0x00000000
+r26 = 0x00000000
+r27 = 0x00000000
+r28 = 0x00000000
+r29 = 0x00000000
+r30 = 0x00000000
+r31 = 0x00178000
+lr = 0x00000000
+ctr = 0x00000000
+msr = 0x00000000
+pc = 0x10000320
+xer = 0x00000000
+mq = 0x00000000
+fpscr = 0x00000000
+vrsave = 0x00000000
+pvr = 0x00000000
+dccr = 0x00000000
+iccr = 0x00000000
+dear = 0x00000000
+hid0 = 0x00000000
+hid1 = 0x00000000
+hid2 = 0x00000000
+hid3 = 0x00000000
+hid4 = 0x00000000
+hid5 = 0x00000000
+hid6 = 0x00000000
+ibat0l = 0x00000000
+ibat1l = 0x00000000
+ibat2l = 0x00000000
+ibat3l = 0x00000000
+ibat0u = 0x00000000
+ibat1u = 0x00000000
+ibat2u = 0x00000000
+ibat3u = 0x00000000
+dbat0l = 0x00000000
+dbat1l = 0x00000000
+dbat2l = 0x00000000
+dbat3l = 0x00000000
+dbat0u = 0x00000000
+dbat1u = 0x00000000
+dbat2u = 0x00000000
+dbat3u = 0x00000000
+mask = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : powerpc32-linux-gnu register
+FILE=bins/abi_bins/elf/platforms/powerpc32-linux-gnu-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+srr0 = 0x00000000
+srr1 = 0x00000000
+r0 = 0x00000000
+r1 = 0x00178000
+r2 = 0x00000000
+r3 = 0x00000000
+r4 = 0x00000000
+r5 = 0x00000000
+r6 = 0x00000000
+r7 = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+r16 = 0x00000000
+r17 = 0x00000000
+r18 = 0x00000000
+r19 = 0x00000000
+r20 = 0x00000000
+r21 = 0x00000000
+r22 = 0x00000000
+r23 = 0x00000000
+r24 = 0x00000000
+r25 = 0x00000000
+r26 = 0x00000000
+r27 = 0x00000000
+r28 = 0x00000000
+r29 = 0x00000000
+r30 = 0x00000000
+r31 = 0x00178000
+lr = 0x00000000
+ctr = 0x00000000
+msr = 0x00000000
+pc = 0x10000420
+xer = 0x00000000
+mq = 0x00000000
+fpscr = 0x00000000
+vrsave = 0x00000000
+pvr = 0x00000000
+dccr = 0x00000000
+iccr = 0x00000000
+dear = 0x00000000
+hid0 = 0x00000000
+hid1 = 0x00000000
+hid2 = 0x00000000
+hid3 = 0x00000000
+hid4 = 0x00000000
+hid5 = 0x00000000
+hid6 = 0x00000000
+ibat0l = 0x00000000
+ibat1l = 0x00000000
+ibat2l = 0x00000000
+ibat3l = 0x00000000
+ibat0u = 0x00000000
+ibat1u = 0x00000000
+ibat2u = 0x00000000
+ibat3u = 0x00000000
+dbat0l = 0x00000000
+dbat1l = 0x00000000
+dbat2l = 0x00000000
+dbat3l = 0x00000000
+dbat0u = 0x00000000
+dbat1u = 0x00000000
+dbat2u = 0x00000000
+dbat3u = 0x00000000
+mask = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-linux-gnu register
+FILE=bins/abi_bins/elf/platforms/x86_64-linux-gnu-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rip = 0x00000000
+rbp = 0x00000000
+rflags = 0x00000000
+rsp = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-macho register
+FILE=bins/abi_bins/elf/platforms/x86_64-macho-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rip = 0x00000000
+rbp = 0x00000000
+rflags = 0x00000000
+rsp = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : x86-linux-gnu register
+FILE=bins/abi_bins/elf/platforms/x86-linux-gnu-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+oeax = 0x00000000
+eax = 0x00000000
+ebx = 0x00000000
+ecx = 0x00000000
+edx = 0x00000000
+esi = 0x00000000
+edi = 0x00000000
+esp = 0x00000000
+ebp = 0x00000000
+eip = 0x00000000
+eflags = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : i686-w64-mingw32 register
+FILE=bins/abi_bins/pe/platforms/i686-w64-mingw32-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+oeax = 0x00000000
+eax = 0x00000000
+ebx = 0x00000000
+ecx = 0x00000000
+edx = 0x00000000
+esi = 0x00000000
+edi = 0x00000000
+esp = 0x00000000
+ebp = 0x00000000
+eip = 0x00000000
+eflags = 0x00000000
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-w64-mingw32 register
+FILE=bins/abi_bins/pe/platforms/x86_64-w64-mingw32-echo
+ARGS=-A
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rip = 0x00000000
+rbp = 0x00000000
+rflags = 0x00000000
+rsp = 0x00000000
+EOF
+RUN
