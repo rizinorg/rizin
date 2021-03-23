@@ -574,6 +574,7 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 				rz_str_endswith(test->fuzz_test->file, "/heap-buffer-overflow-6d9-a70-b3b") ||
 				rz_str_endswith(test->fuzz_test->file, "/heap-buffer-overflow-6d9-633-b3b") ||
 				rz_str_endswith(test->fuzz_test->file, "/new-heap-buffer-overflow-815-a70-b3b")) {
+				rz_pvector_push(&state->results, RZ_NEW0(RzTestResultInfo));
 				goto reduce_count;
 			}
 			eprintf("Started %s\n", test->fuzz_test->file); // DBG
@@ -605,7 +606,7 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 			break;
 		}
 #if COVERAGE
-reduce_count:
+	reduce_count:
 #endif
 		if (state->path_left) {
 			ut64 *count = ht_pp_find(state->path_left, test->path, NULL);
