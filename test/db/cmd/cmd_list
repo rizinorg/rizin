@@ -1,5 +1,5 @@
 NAME=List Parser Plugins Lp
-FILE=-
+FILE==
 CMDS=<<EOF
 Lp~$
 EOF

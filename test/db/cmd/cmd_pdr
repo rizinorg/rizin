@@ -53,7 +53,7 @@ EOF
 RUN
 
 NAME=pdrj and pirj ignore asm.bb.middle
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86

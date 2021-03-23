@@ -208,19 +208,19 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (cmd[0] == '?' || !strcmp(cmd, "help")) {
-		eprintf("Usage: =!cmd args\n"
-			" =!pid             - show targeted pid\n"
-			" =!pkt s           - send packet 's'\n"
-			" =!rd              - show reverse debugging availability\n"
-			" =!dsb             - step backwards\n"
-			" =!dcb             - continue backwards\n"
-			" =!monitor cmd     - hex-encode monitor command and pass"
+		eprintf("Usage: R!cmd args\n"
+			" R!pid             - show targeted pid\n"
+			" R!pkt s           - send packet 's'\n"
+			" R!rd              - show reverse debugging availability\n"
+			" R!dsb             - step backwards\n"
+			" R!dcb             - continue backwards\n"
+			" R!monitor cmd     - hex-encode monitor command and pass"
 			" to target interpreter\n"
-			" =!detach [pid]    - detach from remote/detach specific pid\n"
-			" =!inv.reg         - invalidate reg cache\n"
-			" =!pktsz           - get max packet size used\n"
-			" =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
-			" =!exec_file [pid] - get file which was executed for"
+			" R!detach [pid]    - detach from remote/detach specific pid\n"
+			" R!inv.reg         - invalidate reg cache\n"
+			" R!pktsz           - get max packet size used\n"
+			" R!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
+			" R!exec_file [pid] - get file which was executed for"
 			" current/specified pid\n");
 		return NULL;
 	}

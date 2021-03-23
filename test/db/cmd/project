@@ -233,7 +233,7 @@ EOF
 RUN
 
 NAME=config
-FILE=-
+FILE==
 CMDS=<<EOF
 e cfg.newshell=1
 e asm.describe=1
@@ -273,7 +273,7 @@ EOF
 RUN
 
 NAME=seek
-FILE=-
+FILE==
 CMDS=<<EOF
 e cfg.newshell=1
 s 0x1337
@@ -292,7 +292,7 @@ EOF
 RUN
 
 NAME=analysis
-FILE=-
+FILE==
 CMDS=<<EOF
 e cfg.newshell=1
 af+ 0x100 windowpane

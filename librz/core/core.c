@@ -838,7 +838,7 @@ static const char *rizin_argv[] = {
 	"*?", "*", "$",
 	"(", "(*", "(-", "()", ".?", ".", "..", "...", ".:", ".--", ".-", ".!", ".(", "./", ".*",
 	"_?", "_",
-	"=?", "=", "=<", "=!", "=+", "=-", "==", "=!=", "!=!", "=:", "=&:",
+	"R?", "R", "R<", "R!", "R+", "R-", "R=", "R!=", "R=!", "R:", "R&:",
 	"=g?", "=g", "=g!", "=h?", "=h", "=h-", "=h--", "=h*", "=h&", "=H?", "=H", "=H&",
 	"<",
 	"/?", "/", "/j", "/j!", "/j!x", "/+", "//", "/a", "/a1", "/ab", "/ad", "/aa", "/as", "/asl", "/at", "/atl", "/af", "/afl", "/ae", "/aej", "/ai", "/aij",
@@ -2733,7 +2733,7 @@ static void set_prompt(RzCore *r) {
 		char *s = rz_core_cmd_str(r, "s");
 		r->offset = rz_num_math(NULL, s);
 		free(s);
-		remote = "=!";
+		remote = "R!";
 	}
 
 	if (rz_config_get_i(r->config, "scr.color")) {

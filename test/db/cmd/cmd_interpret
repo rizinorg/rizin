@@ -1,5 +1,5 @@
 NAME=.- (edit, source tmp file)
-FILE=-
+FILE==
 CMDS=<<EOF
 e cfg.editor=/bin/true
 .-
@@ -19,7 +19,7 @@ EOF
 RUN
 
 NAME=.spp
-FILE=-
+FILE==
 CMDS=<<EOF
 . scripts/rztest.spp
 EOF
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=$foo=#!pipe
-FILE=-
+FILE==
 CMDS=<<EOF
 #!pipe echo hello
 $foo=#!pipe echo hello

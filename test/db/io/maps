@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=om 0x100;x@0xff
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.va=false
 e file.nowarn=true
@@ -77,7 +77,7 @@ EOF
 RUN
 
 NAME=o - 0x9000;x@0x8f00
-FILE=-
+FILE==
 CMDS=<<EOF
 o malloc://128 0x9000 > /dev/null
 e io.va=true
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=omfg all rwx
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.null=true
 o malloc://32 0x400
@@ -107,7 +107,7 @@ EOF
 RUN
 
 NAME=Opening a new map doesnt set io.a to false
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.va
 e scr.null=true
@@ -122,7 +122,7 @@ EOF
 RUN
 
 NAME=omf one mapping
-FILE=-
+FILE==
 CMDS=<<EOF
 omf 1 rwx
 om~rwx~?

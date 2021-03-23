@@ -60,7 +60,7 @@ EOF
 RUN
 
 NAME=sum
-FILE=-
+FILE==
 CMDS=<<EOF
 f a@3
 ?v a+3
@@ -77,7 +77,7 @@ EOF
 RUN
 
 NAME=binary
-FILE=-
+FILE==
 CMDS=<<EOF
 ?e
 !rz-ax Bxff3f0000fcff
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=invalid nums
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.interactive=true
 s beach; s

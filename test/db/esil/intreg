@@ -1,5 +1,5 @@
 NAME=intreg $$
-FILE=-
+FILE==
 CMDS=<<EOF
 s 10
 "ae $$,0,+"
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=intreg $$
-FILE=-
+FILE==
 CMDS=<<EOF
 s 10
 "ae 0,$$,+"

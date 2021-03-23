@@ -473,7 +473,7 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 				rz_cons_strcat(ji + 1);
 				return true;
 			} else {
-				nstr = rz_str_newf("=! %s", input);
+				nstr = rz_str_newf("R! %s", input);
 				input = nstr;
 			}
 		}

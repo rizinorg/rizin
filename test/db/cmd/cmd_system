@@ -1,5 +1,5 @@
 NAME=!
-FILE=-
+FILE==
 CMDS=<<EOF
 ?e magic
 ?e yeah
@@ -15,14 +15,14 @@ EOF
 RUN
 
 NAME=!| grep
-FILE=-
+FILE==
 CMDS=!echo magic|grep bob
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=!| sed
-FILE=-
+FILE==
 CMDS=!echo magic|sed -e s,magic,yeah,
 EXPECT=<<EOF
 yeah
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=?e|
-FILE=-
+FILE==
 CMDS=?e magic|sed -e s,magic,yeah,
 EXPECT=<<EOF
 yeah
@@ -38,7 +38,7 @@ EOF
 RUN
 
 NAME=p8 `?e 3`
-FILE=-
+FILE==
 CMDS=p8 `?e 3`
 EXPECT=<<EOF
 000000
@@ -46,7 +46,7 @@ EOF
 RUN
 
 NAME=p8 `!echo 3`
-FILE=-
+FILE==
 CMDS=p8 `!echo 3`
 EXPECT=<<EOF
 000000
@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=!echo "test"
-FILE=-
+FILE==
 CMDS=<<EOF
 !echo test
 "!echo test"
@@ -66,7 +66,7 @@ EOF
 RUN
 
 NAME=%ENV=33 !echo "${ENV}"
-FILE=-
+FILE==
 CMDS=<<EOF
 %ENV=World
 !echo ${ENV}

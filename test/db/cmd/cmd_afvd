@@ -1,5 +1,5 @@
 NAME=afvd
-FILE=-
+FILE==
 CMDS=<<EOF
 e analysis.vars.stackname=true
 e asm.arch=x86

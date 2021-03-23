@@ -1103,7 +1103,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	const bool openmany = rz_config_get_i(r->config, "file.openmany");
 	RzCoreFile *fh = NULL;
 
-	if (!strcmp(file, "-")) {
+	if (!strcmp(file, "=")) {
 		file = "malloc://512";
 	}
 	//if not flags was passed open it with -r--
@@ -1186,7 +1186,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	if (loadaddr != UT64_MAX) {
 		rz_config_set_i(r->config, "bin.laddr", loadaddr);
 	}
-	rz_core_cmd0(r, "=!");
+	rz_core_cmd0(r, "R!");
 beach:
 	r->times->file_open_time = rz_time_now_mono() - prev;
 	return fh;

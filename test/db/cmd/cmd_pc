@@ -261,7 +261,7 @@ EOF
 RUN
 
 NAME=pci1
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32

@@ -1,5 +1,5 @@
 NAME=pf QeQ
-FILE=-
+FILE==
 CMDS=<<EOF
 b 256
 woe 0x11
@@ -19,7 +19,7 @@ EOF
 RUN
 
 NAME=pf.-x
-FILE=-
+FILE==
 CMDS=<<EOF
 pf.foo xxd
 pf.
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=pf.-*
-FILE=-
+FILE==
 CMDS=<<EOF
 pf.foo xxd
 pf.
@@ -45,7 +45,7 @@ EOF
 RUN
 
 NAME=pf i foo @x:0x01
-FILE=-
+FILE==
 ARGS=-a x86 -b 32
 CMDS=pf i foo @x:0x01
 EXPECT=<<EOF
@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=pf [3]ub
-FILE=-
+FILE==
 CMDS=pf [3]ub
 EXPECT=<<EOF
 0x00000000 = [ 0, 0, 0 ]
@@ -62,8 +62,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Cf main
+FILE==
+CMDS=Cf main;C*
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=Cf 1 n2
-FILE=-
+FILE==
 CMDS=Cf 1 n2;C*
 EXPECT=<<EOF
 Cf 1 n2 @ 0x00000000
@@ -872,7 +879,7 @@ EOF
 RUN
 
 NAME=pf z, scr.strconv and str.escbslash
-FILE=-
+FILE==
 CMDS=<<EOF
 wz \x7fabc\\123\n
 (print strconv escbslash; e scr.strconv=$0; e str.escbslash=$1; pf z)
@@ -890,7 +897,7 @@ EOF
 RUN
 
 NAME=pfj and triply-nested struct
-FILE=-
+FILE==
 CMDS=<<EOF
 wv2 0x1234
 wv4 0x56789abc @ 0x2
@@ -949,7 +956,7 @@ EOF
 RUN
 
 NAME=pfj and Matryoshka dolls
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 7f
 wv8 0xdef0123456789abc @ 0x1

@@ -7,53 +7,52 @@
 #include "rz_core.h"
 
 static const char *help_msg_equal[] = {
-	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of rizin",
+	"Usage:", " R[:!+-=ghH] [...]", " # connect with other instances of rizin",
 	"\nremote commands:", "", "",
-	"=", "", "list all open connections",
-	"=<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
-	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
-	"=!", " cmd", "run command via rz_io_system",
-	"=+", " [proto://]host:port", "connect to remote host:port (*rap://, raps://, tcp://, udp://, http://)",
-	"=-", "[fd]", "remove all hosts or host 'fd'",
-	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
-	"=!=", "", "disable remote cmd mode",
-	"!=!", "", "enable remote cmd mode",
+	"R", "", "list all open connections",
+	"R<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
+	"R", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
+	"R!", " cmd", "run command via rz_io_system",
+	"R+", " [proto://]host:port", "connect to remote host:port (*rap://, raps://, tcp://, udp://, http://)",
+	"R-", "[fd]", "remove all hosts or host 'fd'",
+	"R=", "[fd]", "open remote session with host 'fd', 'q' to quit",
+	"R!=", "", "disable remote cmd mode",
+	"R=!", "", "enable remote cmd mode",
 	"\nservers:", "", "",
 	".:", "9000", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
-	"=:", "port", "start the rap server (o rap://9999)",
-	"=g", "[?]", "start the gdbserver",
-	"=h", "[?]", "start the http webserver",
-	"=H", "[?]", "start the http webserver (and launch the web browser)",
+	"R:", "port", "start the rap server (o rap://9999)",
+	"Rg", "[?]", "start the gdbserver",
+	"Rh", "[?]", "start the http webserver",
+	"RH", "[?]", "start the http webserver (and launch the web browser)",
 	"\nother:", "", "",
-	"=&", ":port", "start rap server in background (same as '&_=h')",
-	"=", ":host:port cmd", "run 'cmd' command on remote server",
+	"R&", ":port", "start rap server in background (same as '&_=h')",
+	"R", ":host:port cmd", "run 'cmd' command on remote server",
 	"\nexamples:", "", "",
-	"=+", "tcp://localhost:9090/", "connect to: rizin -c.:9090 ./bin",
-	// "=+", "udp://localhost:9090/", "connect to: rizin -c.:9090 ./bin",
-	"=+", "rap://localhost:9090/", "connect to: rizin rap://:9090",
-	"=+", "http://localhost:9090/cmd/", "connect to: rizin -c'=h 9090' bin",
+	"R+", "tcp://localhost:9090/", "connect to: rizin -c.:9090 ./bin",
+	"R+", "rap://localhost:9090/", "connect to: rizin rap://:9090",
+	"R+", "http://localhost:9090/cmd/", "connect to: rizin -c'=h 9090' bin",
 	"o ", "rap://:9090/", "start the rap server on tcp port 9090",
 	NULL
 };
 
 static const char *help_msg_equalh[] = {
-	"Usage:", " =[hH] [...]", " # http server",
+	"Usage:", " R[hH] [...]", " # http server",
 	"http server:", "", "",
-	"=h", " port", "listen for http connections (rizin -qc=H /bin/ls)",
-	"=h-", "", "stop background webserver",
-	"=h--", "", "stop foreground webserver",
-	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background",
-	"=H", " port", "launch browser and listen for http",
-	"=H&", " port", "launch browser and listen for http in background",
+	"Rh", " port", "listen for http connections (rizin -qc=H /bin/ls)",
+	"Rh-", "", "stop background webserver",
+	"Rh--", "", "stop foreground webserver",
+	"Rh*", "", "restart current webserver",
+	"Rh&", " port", "start http server in background",
+	"RH", " port", "launch browser and listen for http",
+	"RH&", " port", "launch browser and listen for http in background",
 	NULL
 };
 
 static const char *help_msg_equalg[] = {
-	"Usage:", " =[g] [...]", " # gdb server",
+	"Usage:", " R[g] [...]", " # gdb server",
 	"gdbserver:", "", "",
-	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
-	"=g!", " port file [args]", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
+	"Rg", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
+	"Rg!", " port file [args]", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
 	NULL
 };
 
@@ -100,13 +99,13 @@ RZ_IPI int rz_equal_H_handler_old(void *data, const char *input) {
 RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (*input) {
-	case '\0': // "="
+	case '\0': // "R"
 		rz_core_rtr_list(core);
 		break;
-	case 'j': // "=j"
+	case 'j': // "Rj"
 		eprintf("TODO: list connections in json\n");
 		break;
-	case '!': // "=!"
+	case '!': // "R!"
 		if (input[1] == 'q') {
 			RZ_FREE(core->cmdremote);
 		} else if (input[1] == '=') { // =!=0 or =!= for iosystem
@@ -120,29 +119,29 @@ RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 			}
 		}
 		break;
-	case '+': // "=+"
+	case '+': // "R+"
 		rz_core_rtr_add(core, input + 1);
 		break;
-	case '-': // "=-"
+	case '-': // "R-"
 		rz_core_rtr_remove(core, input + 1);
 		break;
 	//case ':': rz_core_rtr_cmds (core, input + 1); break;
-	case '<': // "=<"
+	case '<': // "R<"
 		rz_core_rtr_pushout(core, input + 1);
 		break;
-	case '=': // "=="
+	case '=': // "R="
 		rz_core_rtr_session(core, input + 1);
 		break;
-	case 'g': // "=g"
+	case 'g': // "Rg"
 		rz_equal_g_handler_old(core, input + 1);
 		break;
-	case 'h': // "=h"
+	case 'h': // "Rh"
 		rz_equal_h_handler_old(core, input + 1);
 		break;
-	case 'H': // "=H"
+	case 'H': // "RH"
 		rz_equal_H_handler_old(core, input + 1);
 		break;
-	case '?': // "=?"
+	case '?': // "R?"
 		rz_core_cmd_help(core, help_msg_equal);
 		break;
 	default:

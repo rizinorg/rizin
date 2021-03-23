@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=axf
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

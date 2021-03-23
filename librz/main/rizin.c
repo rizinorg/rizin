@@ -92,8 +92,8 @@ static int main_help(int line) {
 	if (line != 1) {
 		printf(
 			" --           run rizin without opening any file\n"
-			" -            same as 'rizin malloc://512'\n"
-			" =            read file from stdin (use -i and -c to run cmds)\n"
+			" =            same as 'rizin malloc://512'\n"
+			" -            read file from stdin (use -i and -c to run cmds)\n"
 			" -=           perform !=! command to run all commands remotely\n"
 			" -0           print \\x00 after init and every command\n"
 			" -2           close stderr file descriptor (silent warning messages)\n"
@@ -401,10 +401,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		free(fmt);
 		free(sysdbg);
 	}
-	if (argc < 2) {
-		LISTS_FREE();
-		return main_help(1);
-	}
+
 	r = rz_core_new();
 	if (!r) {
 		eprintf("Cannot initialize RzCore\n");
@@ -442,7 +439,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
-	while ((c = rz_getopt_next(&opt)) != -1) {
+	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '=':
 			RZ_FREE(r->cmdremote);
@@ -795,12 +792,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			return 1;
 		}
 		if (strstr(uri, "://")) {
-			rz_core_cmdf(r, "=+ %s", uri);
+			rz_core_cmdf(r, "R+ %s", uri);
 		} else {
 			argv[opt.ind] = rz_str_newf("http://%s/cmd/", argv[opt.ind]);
-			rz_core_cmdf(r, "=+ %s", argv[opt.ind]);
+			rz_core_cmdf(r, "R+ %s", argv[opt.ind]);
 		}
-		rz_core_cmd0(r, "=!=");
+		rz_core_cmd0(r, "R!=");
 		argv[opt.ind] = "-";
 	}
 
@@ -859,7 +856,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_FREE(debugbackend);
 			return 1;
 		}
-	} else if (argv[opt.ind] && !strcmp(argv[opt.ind], "=")) {
+	} else if (argv[opt.ind] && !strcmp(argv[opt.ind], "-")) {
 		int sz;
 		/* stdin/batch mode */
 		char *buf = rz_stdin_slurp(&sz);
@@ -899,7 +896,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			LISTS_FREE();
 			return 1;
 		}
-	} else if (strcmp(argv[opt.ind - 1], "--")) {
+	} else if ((argc >= 2 && strcmp(argv[opt.ind - 1], "--")) || ((!strcmp(argv[opt.ind - 1], "--") && argv[opt.ind]))) {
 		if (debug) {
 			if (asmbits) {
 				rz_config_set(r->config, "asm.bits", asmbits);
@@ -1175,7 +1172,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			const char *fstype = r->bin->cur->o->info->bclass;
 			rz_core_cmdf(r, "m /root %s @ 0", fstype);
 		}
-		rz_core_cmd0(r, "=!"); // initalize io subsystem
+		rz_core_cmd0(r, "R!"); // initalize io subsystem
 		iod = r->io && fh ? rz_io_desc_get(r->io, fh->fd) : NULL;
 		if (mapaddr) {
 			rz_core_seek(r, mapaddr, true);

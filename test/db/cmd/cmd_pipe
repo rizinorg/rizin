@@ -1,5 +1,5 @@
 NAME=pipe args
-FILE=-
+FILE==
 CMDS=#!pipe echo hello world
 EXPECT=<<EOF
 hello world

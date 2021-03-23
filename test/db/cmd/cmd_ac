@@ -1,5 +1,5 @@
 NAME=ac
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Flatline
 acll
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=acm
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=acm-
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
@@ -101,7 +101,7 @@ EOF
 RUN
 
 NAME=acmn
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
@@ -146,7 +146,7 @@ EOF
 RUN
 
 NAME=ac-
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Album
 ac PeripheryAlbum
@@ -257,7 +257,7 @@ EOF
 RUN
 
 NAME=acb
-FILE=-
+FILE==
 CMDS=<<EOF
 ac PeripherySong
 ac NiceSong
@@ -289,7 +289,7 @@ EOF
 RUN
 
 NAME=acb-
-FILE=-
+FILE==
 CMDS=<<EOF
 ac PeripherySong
 ac NiceSong
@@ -333,7 +333,7 @@ EOF
 RUN
 
 NAME=acv
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Deadwing
 acv Deadwing 0x1337
@@ -361,7 +361,7 @@ EOF
 RUN
 
 NAME=acv-
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Deadwing
 acv Deadwing 0x1337
@@ -402,7 +402,7 @@ EOF
 RUN
 
 NAME=acn
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Album
 ac PorcupineTreeAlbum
@@ -478,7 +478,7 @@ EOF
 RUN
 
 NAME=acl*
-FILE=-
+FILE==
 CMDS=<<EOF
 ac Album
 ac PorcupineTreeAlbum
@@ -501,7 +501,7 @@ EOF
 RUN
 
 NAME=aclj
-FILE=-
+FILE==
 CMDS=<<EOF
 ac PorcupineTreeAlbum
 ac Deadwing

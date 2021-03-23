@@ -1,5 +1,5 @@
 NAME=rz-agent -v
-FILE=-
+FILE==
 CMDS=!rz-agent -v | grep -c build
 EXPECT=<<EOF
 1

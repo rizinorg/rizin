@@ -27,7 +27,7 @@ EOF
 RUN
 
 NAME=idpij
-FILE=
+FILE==
 CMDS=idpij bins/pdb/minimal.pdb~{}
 EXPECT=<<EOF
 {

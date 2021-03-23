@@ -1,5 +1,5 @@
 NAME=condition 33??
-FILE=-
+FILE==
 CMDS=<<EOF
 ?= 33
 ?? ?e win
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=condition 33?!
-FILE=-
+FILE==
 CMDS=<<EOF
 ?= 33
 ?! ?e win
@@ -20,7 +20,7 @@ EOF
 RUN
 
 NAME=condition 0??
-FILE=-
+FILE==
 CMDS=<<EOF
 ?= 0
 ?? ?e win
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=condition 0?!
-FILE=-
+FILE==
 CMDS=<<EOF
 ?= 0
 ?! ?e win
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=oneline condition 33??
-FILE=-
+FILE==
 CMDS=?= 33;?? ?e win
 EXPECT=<<EOF
 win
@@ -49,14 +49,14 @@ EOF
 RUN
 
 NAME=oneline condition 33?!
-FILE=-
+FILE==
 CMDS=?= 33;?! ?e win
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=oneline condition 0?!
-FILE=-
+FILE==
 CMDS=?= 0;?! ?e win
 EXPECT=<<EOF
 win
@@ -64,7 +64,7 @@ EOF
 RUN
 
 NAME=oneline condition 0??
-FILE=-
+FILE==
 CMDS=?= 0;?? ?e win
 EXPECT=<<EOF
 EOF

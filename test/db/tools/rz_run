@@ -1,5 +1,5 @@
 NAME=rz-run -v 
-FILE=-
+FILE==
 CMDS=!rz-run -v | grep -c build
 EXPECT=<<EOF
 1
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=rz-run -h
-FILE=-
+FILE==
 CMDS=!rz-run -h | grep -c Usage
 EXPECT=<<EOF
 1
