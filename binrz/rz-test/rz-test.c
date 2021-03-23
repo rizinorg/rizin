@@ -570,6 +570,12 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 		RzTest *test = rz_pvector_pop(&state->queue);
 #if COVERAGE
 		if (test->type == RZ_TEST_TYPE_FUZZ) {
+			if (rz_str_endswith(test->fuzz_test->file, "/hbo_class.c-6689_1.class") ||
+				rz_str_endswith(test->fuzz_test->file, "/heap-buffer-overflow-6d9-a70-b3b") ||
+				rz_str_endswith(test->fuzz_test->file, "/heap-buffer-overflow-6d9-633-b3b") ||
+				rz_str_endswith(test->fuzz_test->file, "/new-heap-buffer-overflow-815-a70-b3b")) {
+				continue;
+			}
 			eprintf("Started %s\n", test->fuzz_test->file); // DBG
 		}
 #endif
