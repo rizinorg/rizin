@@ -373,17 +373,19 @@ static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *i
 static RzList *imports(RzBinFile *bf) {
 	RzBinObject *obj = bf ? bf->o : NULL;
 	struct MACH0_(obj_t) *bin = bf ? bf->o->bin_obj : NULL;
-	struct import_t *imports = NULL;
 	const char *name;
 	RzBinImport *ptr = NULL;
-	RzList *ret = NULL;
 	int i;
 
-	if (!obj || !bin || !obj->bin_obj || !(ret = rz_list_newf(free))) {
+	if (!obj || !bin || !obj->bin_obj) {
 		return NULL;
 	}
-	if (!(imports = MACH0_(get_imports)(bf->o->bin_obj))) {
-		return ret;
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	struct import_t *imports = MACH0_(get_imports)(bf->o->bin_obj);
+	if (!ret || !imports) {
+		rz_list_free(ret);
+		free(imports);
+		return NULL;
 	}
 	bin->has_canary = false;
 	bin->has_retguard = -1;
