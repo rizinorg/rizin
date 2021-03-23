@@ -716,10 +716,6 @@ RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *l
 RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet>*/ *aranges);
 RZ_API void rz_core_bin_dwarf_print_lines(RzList /*<RzBinDwarfLineInfo>*/ *lines);
 
-// XXX - this is kinda hacky, maybe there should be a way to
-// refresh the bin environment without specific calls?
-RZ_API int rz_core_pseudo_code(RzCore *core, const char *input);
-
 /* gdiff.c */
 RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2);
 RZ_API int rz_core_gdiff(RzCore *core1, RzCore *core2);
