@@ -1,0 +1,122 @@
+NAME=MAIN_ABI : arm-linux_android_abi  sections
+FILE=bins/abi_bins/elf/platforms/arm-linux-androideabi-echo
+CMDS=<<EOF
+iS~gold,plt
+EOF
+EXPECT=<<EOF
+6   0x00000378   0x48 0x00008378   0x48 -r-- .rel.plt               REL               alloc
+7   0x000003c0   0x80 0x000083c0   0x80 -r-x .plt                   PROGBITS          alloc,execute
+18  0x00000bac   0x1c 0x00000000   0x1c ---- .note.gnu.gold-version NOTE              
+EOF
+RUN
+
+NAME=MAIN_ABI : arm-linux_gnu_guneabi  sections
+FILE=bins/abi_bins/elf/platforms/arm-linux-gnueabi-echo
+CMDS=<<EOF
+iS~gold,plt
+EOF
+EXPECT=<<EOF
+10  0x00000350   0x50 0x00008350   0x50 -r-- .rel.plt           REL               alloc
+12  0x000003ac   0x8c 0x000083ac   0x8c -r-x .plt               PROGBITS          alloc,execute
+EOF
+RUN
+
+NAME=MAIN_ABI : mips-linux-gnu-echo  sections
+FILE=bins/abi_bins/elf/platforms/mips-linux-gnu-echo
+CMDS=<<EOF
+iS~MIPS
+EOF
+EXPECT=<<EOF
+3   0x000001c8   0x18 0x004001c8   0x18 -r-- .MIPS.abiflags     LOPROC+0x0000002a alloc
+14  0x00000df0   0x90 0x00400df0   0x90 -r-x .MIPS.stubs        PROGBITS          alloc,execute
+EOF
+RUN
+
+NAME=MAIN_ABI : mips64-linux-gnueabi  sections
+FILE=bins/abi_bins/elf/platforms/mips64-linux-gnueabi-echo
+CMDS=<<EOF
+iS~MIPS
+EOF
+EXPECT=<<EOF
+1   0x00000270   0x18 0x120000270   0x18 -r-- .MIPS.abiflags     LOPROC+0x0000002a alloc
+2   0x00000288  0x168 0x120000288  0x168 -r-- .MIPS.options      LOPROC+0x0000000d alloc
+12  0x000012a0   0x90 0x1200012a0   0x90 -r-x .MIPS.stubs        PROGBITS          alloc,execute
+EOF
+RUN
+
+NAME=MAIN_ABI : powerpc-linux-gnu  sections
+FILE=bins/abi_bins/elf/platforms/powerpc-linux-gnu-symexec-guess
+CMDS=<<EOF
+iS~plt
+EOF
+EXPECT=<<EOF
+10  0x00000294   0x30 0x10000294   0x30 -r-- .rela.plt          RELA     alloc,info
+21  0x00010000   0x10 0x10020000   0x10 -rw- .plt               PROGBITS write,alloc
+EOF
+RUN
+
+NAME=MAIN_ABI : powerpc32-linux-gnu  sections
+FILE=bins/abi_bins/elf/platforms/powerpc32-linux-gnu-echo
+CMDS=<<EOF
+iS~gold,plt
+EOF
+EXPECT=<<EOF
+10  0x00000350   0x78 0x10000350   0x78 -r-- .rela.plt          RELA     alloc,info
+22  0x00010000   0x28 0x10020000   0x28 -rw- .plt               PROGBITS write,alloc
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-linux-gnu  sections
+FILE=bins/abi_bins/elf/platforms/x86_64-linux-gnu-echo
+CMDS=<<EOF
+iS~gold,plt
+EOF
+EXPECT=<<EOF
+10  0x00000460   0xd8 0x00400460   0xd8 -r-- .rela.plt          RELA       alloc
+12  0x00000560   0xa0 0x00400560   0xa0 -r-x .plt               PROGBITS   alloc,execute
+23  0x00001000   0x60 0x00601000   0x60 -rw- .got.plt           PROGBITS   write,alloc
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-macho  sections
+FILE=bins/abi_bins/elf/platforms/x86_64-macho-echo
+CMDS=<<EOF
+iS~stub
+EOF
+EXPECT=<<EOF
+1   0x00000f4e   0x1e 0x100000f4e   0x1e -r-x 1.__TEXT.__stubs         SYMBOL_STUBS             PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
+2   0x00000f6c   0x42 0x100000f6c   0x42 -r-x 2.__TEXT.__stub_helper   REGULAR                  PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
+EOF
+RUN
+
+NAME=MAIN_ABI : x86-linux-gnu  sections
+FILE=bins/abi_bins/elf/platforms/x86-linux-gnu-echo
+CMDS=<<EOF
+iS~gold,plt
+EOF
+EXPECT=<<EOF
+10  0x00000330   0x48 0x08048330   0x48 -r-- .rel.plt           REL        alloc
+12  0x000003a0   0xa0 0x080483a0   0xa0 -r-x .plt               PROGBITS   alloc,execute
+23  0x00001000   0x30 0x0804a000   0x30 -rw- .got.plt           PROGBITS   write,alloc
+EOF
+RUN
+
+NAME=MAIN_ABI : i686-w64-mingw32  sections
+FILE=bins/abi_bins/pe/platforms/i686-w64-mingw32-echo
+CMDS=<<EOF
+iS~tls
+EOF
+EXPECT=<<EOF
+6   0x00002e00   0x200 0x00408000  0x1000 -rw- .tls           CNT_INITIALIZED_DATA,ALIGN_4BYTES
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-w64-mingw32  sections
+FILE=bins/abi_bins/pe/platforms/x86_64-w64-mingw32-echo
+CMDS=<<EOF
+iS~tls
+EOF
+EXPECT=<<EOF
+8   0x00004400   0x200 0x0040a000  0x1000 -rw- .tls           CNT_INITIALIZED_DATA,ALIGN_32BYTES
+EOF
+RUN

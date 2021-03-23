@@ -613,7 +613,7 @@ static bool nonreturn_print_json(RzCore *core, RzList *noretl) {
 }
 
 RZ_IPI RzList *rz_types_function_noreturn(Sdb *db) {
-	RzList *noretl = rz_list_new();
+	RzList *noretl = rz_list_newf(free);
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(db, true);
