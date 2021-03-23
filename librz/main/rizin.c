@@ -869,7 +869,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_FREE(debugbackend);
 			return 1;
 		}
-	} else if (argv[opt.ind] && !strcmp(argv[opt.ind], "=")) {
+	} else if (argv[opt.ind] && !strcmp(argv[opt.ind], "-")) {
 		int sz;
 		/* stdin/batch mode */
 		char *buf = rz_stdin_slurp(&sz);

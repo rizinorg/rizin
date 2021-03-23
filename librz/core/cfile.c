@@ -1150,7 +1150,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	const bool openmany = rz_config_get_i(r->config, "file.openmany");
 	RzCoreFile *fh = NULL;
 
-	if (!strcmp(file, "-")) {
+	if (!strcmp(file, "=")) {
 		file = "malloc://512";
 	}
 	//if not flags was passed open it with -r--
