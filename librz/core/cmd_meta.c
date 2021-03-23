@@ -554,7 +554,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 					if (p) {
 						p = (char *)rz_str_trim_head_ro(p);
 						if (*p == '.') {
-							const char *realformat = rz_type_format_byname(core->print, p + 1);
+							const char *realformat = rz_type_format_byname(core->analysis->type, p + 1);
 							if (realformat) {
 								p = (char *)realformat;
 							} else {
@@ -563,7 +563,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 							}
 						}
 						if (n < 1) {
-							n = rz_type_format_struct_size(core->print, p, 0, 0);
+							n = rz_type_format_struct_size(core->analysis->type, p, 0, 0);
 							if (n < 1) {
 								eprintf("Warning: Cannot resolve struct size for '%s'\n", p);
 								n = 32; //
@@ -573,10 +573,13 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 						if (n > core->blocksize) {
 							n = core->blocksize;
 						}
-						int r = rz_type_format(core->print, addr, core->block,
+						char *format = rz_type_format_data(core->analysis->type, core->print, addr, core->block,
 							n, p, 0, NULL, NULL);
-						if (r < 0) {
+						if (!format) {
 							n = -1;
+						} else {
+							rz_cons_print(format);
+							free(format);
 						}
 					} else {
 						eprintf("Usage: Cf [size] [pf-format-string]\n");

@@ -337,5 +337,3 @@ RZ_API RzList *rz_type_get_by_offset(RzType *t, ut64 offset) {
 	ls_free(ls);
 	return offtypes;
 }
-
-

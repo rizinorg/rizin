@@ -563,4 +563,3 @@ RZ_API void rz_type_save_base_type(const RzType *t, const RzBaseType *type) {
 		break;
 	}
 }
-

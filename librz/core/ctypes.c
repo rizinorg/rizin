@@ -1098,4 +1098,3 @@ RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename) {
 	}
 	free(str);
 }
-

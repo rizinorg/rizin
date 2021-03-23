@@ -1152,7 +1152,7 @@ out:
 static int autocomplete_pfele(RzCore *core, RzLineCompletion *completion, char *key, char *pfx, int idx, char *ptr) {
 	int i, ret = 0;
 	int len = strlen(ptr);
-	char *fmt = sdb_get(core->print->formats, key, NULL);
+	char *fmt = rz_type_format_get(core->analysis->type, key);
 	if (fmt) {
 		int nargs = rz_str_word_set0_stack(fmt);
 		if (nargs > 1) {
@@ -1666,6 +1666,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 			ADDARG("gui.alt_background")
 			ADDARG("gui.border")
 		}
+		/*
 	} else if (!strncmp(buf->data, "pf.", 3) || !strncmp(buf->data, "pf*.", 4) || !strncmp(buf->data, "pfd.", 4) || !strncmp(buf->data, "pfv.", 4) || !strncmp(buf->data, "pfj.", 4)) {
 		char pfx[2];
 		int chr = (buf->data[2] == '.') ? 3 : 4;
@@ -1675,10 +1676,10 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		} else {
 			*pfx = 0;
 		}
-		SdbList *sls = sdb_foreach_list(core->print->formats, false);
-		SdbListIter *iter;
-		SdbKv *kv;
-		ls_foreach (sls, iter, kv) {
+		// FIXME: FORMATS
+		RzListIter *iter;
+		RzList *fmtl = rz_type_format_all(core->analysis->type);
+		rz_list_foreach (fmtl, iter, kv) {
 			int len = strlen(buf->data + chr);
 			int minlen = RZ_MIN(len, strlen(sdbkv_key(kv)));
 			if (!len || !strncmp(buf->data + chr, sdbkv_key(kv), minlen)) {
@@ -1693,6 +1694,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 				}
 			}
 		}
+	*/
 	} else if ((!strncmp(buf->data, "afvn ", 5)) || (!strncmp(buf->data, "afan ", 5))) {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 		RzList *vars;
@@ -2545,6 +2547,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_io_bind(core->io, &(core->search->iob));
 	rz_io_bind(core->io, &(core->print->iob));
 	rz_io_bind(core->io, &(core->analysis->iob));
+	rz_io_bind(core->io, &(core->analysis->type->iob));
 	rz_io_bind(core->io, &(core->bin->iob));
 	rz_flag_bind(core->flags, &(core->analysis->flb));
 	core->analysis->flg_class_set = core_flg_class_set;

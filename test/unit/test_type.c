@@ -351,7 +351,6 @@ static bool test_types_get_base_type_not_found(void) {
 	mu_end;
 }
 
-
 bool test_dll_names(void) {
 	RzType *T = rz_type_new();
 	T->sdb_types = setup_sdb_for_function();

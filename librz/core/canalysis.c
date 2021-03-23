@@ -7603,5 +7603,3 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 	free(dbpath);
 	free(dbhomepath);
 }
-
-

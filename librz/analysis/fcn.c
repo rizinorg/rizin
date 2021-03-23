@@ -1719,16 +1719,14 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	pj_a(pj);
 	for (i = 0; i < argc; i++) {
 		pj_o(pj);
-		char *arg_name = rz_type_func_args_name(a->type, function->name, i);
-		char *arg_type = rz_type_func_args_type(a->type, function->name, i);
+		const char *arg_name = rz_type_func_args_name(a->type, function->name, i);
+		const char *arg_type = rz_type_func_args_type(a->type, function->name, i);
 		pj_ks(pj, "name", arg_name);
 		pj_ks(pj, "type", arg_type);
 		const char *cc_arg = rz_reg_get_name(a->reg, rz_reg_get_name_idx(sdb_fmt("A%d", i)));
 		if (cc_arg) {
 			pj_ks(pj, "cc", cc_arg);
 		}
-		free(arg_type);
-		free(arg_name);
 		pj_end(pj);
 	}
 	pj_end(pj);
@@ -1758,8 +1756,8 @@ RZ_API char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
 
 	char *args = strdup("");
 	for (i = 0; i < argc; i++) {
-		char *arg_name = rz_type_func_args_name(a->type, function->name, i);
-		char *arg_type = rz_type_func_args_type(a->type, function->name, i);
+		const char *arg_name = rz_type_func_args_name(a->type, function->name, i);
+		const char *arg_type = rz_type_func_args_type(a->type, function->name, i);
 		char *new_args = (i + 1 == argc)
 			? rz_str_newf("%s%s %s", args, arg_type, arg_name)
 			: rz_str_newf("%s%s %s, ", args, arg_type, arg_name);
@@ -2235,5 +2233,3 @@ RZ_API RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFuncti
 	rz_list_free(type_used);
 	return uniq;
 }
-
-

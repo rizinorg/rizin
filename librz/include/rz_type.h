@@ -5,6 +5,10 @@
 #define RZ_TYPE_H
 
 #include <rz_types.h>
+#include <rz_util/rz_num.h>
+#include <rz_util/rz_print.h>
+#include <rz_bind.h>
+#include <rz_io.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,12 +20,16 @@ typedef struct rz_type_target_t {
 	const char *cpu;
 	int bits;
 	const char *os;
+	bool big_endian;
 } RzTypeTarget;
 
 typedef struct rz_type_t {
 	void *user;
 	Sdb *sdb_types;
+	Sdb *formats; // for `pf` formats
 	RzTypeTarget *target;
+	RNum *num;
+	RzIOBind iob; // for RzIO in formats
 } RzType;
 
 typedef struct rz_type_enum_case_t {
@@ -132,9 +140,18 @@ RZ_API bool rz_type_unlink(RzType *t, ut64 addr);
 RZ_API bool rz_type_unlink_all(RzType *t);
 RZ_API bool rz_type_link_offset(RzType *t, const char *val, ut64 addr);
 
+// Type formats (`tp` and `pf` commands)
+RZ_API const char *rz_type_format_get(RzType *t, const char *name);
+RZ_API void rz_type_format_set(RzType *t, const char *name, const char *fmt);
+RZ_API RZ_OWN RzList *rz_type_format_all(RzType *t);
+RZ_API void rz_type_format_delete(RzType *t, const char *name);
+RZ_API void rz_type_format_purge(RzType *t);
+
 RZ_API char *rz_type_format(RzType *type, const char *t);
-RZ_API int rz_type_format_struct_size(RzPrint *p, const char *f, int mode, int n);
-RZ_API const char *rz_type_format_byname(RzPrint *p, const char *name);
+RZ_API int rz_type_format_struct_size(RzType *t, const char *f, int mode, int n);
+RZ_API const char *rz_type_format_byname(RzType *t, const char *name);
+RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b, const int len,
+	const char *formatname, int mode, const char *setval, char *ofield);
 
 // Function prototypes api
 RZ_API bool rz_type_func_exist(RzType *t, const char *func_name);
@@ -158,7 +175,6 @@ RZ_API RzList *rz_type_links(RzType *type);
 // Serialization API
 RZ_API void rz_serialize_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzType *types);
 RZ_API bool rz_serialize_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzType *types, RZ_NULLABLE RzSerializeResultInfo *res);
-
 
 #endif
 

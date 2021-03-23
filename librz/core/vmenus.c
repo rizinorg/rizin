@@ -755,7 +755,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 			}
 		} break;
 		case 'd':
-			rz_analysis_remove_parsed_type(core->analysis, vt.curname);
+			rz_type_remove_parsed_type(core->analysis->type, vt.curname);
 			break;
 		case '-':
 			rz_types_open_editor(core, NULL);

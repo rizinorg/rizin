@@ -15,5 +15,3 @@ RZ_API bool rz_serialize_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzType *types
 	sdb_copy(db, types->sdb_types);
 	return true;
 }
-
-

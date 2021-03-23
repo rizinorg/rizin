@@ -3123,8 +3123,12 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8 *buf, int len, int idx, in
 		case RZ_META_TYPE_FORMAT: {
 			rz_cons_printf("pf %s # size=%" PFMT64d "\n", mi->str, mi_size);
 			int len_before = rz_cons_get_buffer_len();
-			rz_print_format(core->print, ds->at, buf + idx,
+			char *format = rz_type_format_data(core->analysis->type, core->print, ds->at, buf + idx,
 				len - idx, mi->str, RZ_PRINT_MUSTSEE, NULL, NULL);
+			if (format) {
+				rz_cons_print(format);
+				free(format);
+			}
 			int len_after = rz_cons_get_buffer_len();
 			const char *cons_buf = rz_cons_get_buffer();
 			if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {

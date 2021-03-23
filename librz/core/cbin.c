@@ -207,7 +207,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 					free(error_msg);
 				}
 				if (out) {
-					rz_analysis_save_parsed_type(core->analysis, out);
+					rz_type_save_parsed_type(core->analysis->type, out);
 					free(out);
 				}
 			}
@@ -228,7 +228,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			if (IS_MODE_RZCMD(mode)) {
 				rz_cons_printf("pf.%s %s\n", flagname, v);
 			} else if (IS_MODE_SET(mode)) {
-				sdb_set(core->print->formats, flagname, v, 0);
+				rz_type_format_set(core->analysis->type, flagname, v);
 			}
 		}
 		free(dup);
@@ -243,7 +243,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 				offset = strdup("0");
 			}
 			flagname = dup;
-			int fmtsize = rz_print_format_struct_size(core->print, v, 0, 0);
+			int fmtsize = rz_type_format_struct_size(core->analysis->type, v, 0, 0);
 			char *offset_key = rz_str_newf("%s.offset", flagname);
 			const char *off = sdb_const_get(db, offset_key, 0);
 			free(offset_key);
@@ -255,11 +255,14 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 					ut8 *buf = malloc(fmtsize);
 					if (buf) {
 						rz_io_read_at(core->io, addr, buf, fmtsize);
-						int res = rz_print_format(core->print, addr, buf,
+						char *format = rz_type_format_data(core->analysis->type, core->print, addr, buf,
 							fmtsize, v, 0, NULL, NULL);
 						free(buf);
-						if (res < 0) {
+						if (!format) {
 							eprintf("Warning: Cannot register invalid format (%s)\n", v);
+						} else {
+							rz_cons_print(format);
+							free(format);
 						}
 					}
 				}

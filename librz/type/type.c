@@ -15,13 +15,21 @@ RZ_API RzType *rz_type_new() {
 	if (!type) {
 		return NULL;
 	}
+	type->target = RZ_NEW0(RzTypeTarget);
+	if (!type->target) {
+		return NULL;
+	}
 	Sdb *sdb = sdb_new0();
 	type->sdb_types = sdb_ns(sdb, "types", 1);
+	type->formats = sdb_new0();
+	rz_io_bind_init(type->iob);
 	return type;
 }
 
 RZ_API void rz_type_free(RzType *t) {
 	sdb_free(t->sdb_types);
+	sdb_free(t->formats);
+	free(t->target);
 	free(t);
 }
 
@@ -275,5 +283,3 @@ RZ_API RzList *rz_type_links(RzType *type) {
 	ls_free(l);
 	return ccl;
 }
-
-

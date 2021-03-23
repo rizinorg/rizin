@@ -261,4 +261,3 @@ RZ_API RzList *rz_type_noreturn_functions(RzType *type) {
 	ls_free(l);
 	return noretl;
 }
-

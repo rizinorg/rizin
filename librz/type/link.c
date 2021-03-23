@@ -117,5 +117,3 @@ RZ_API bool rz_type_unlink_all(RzType *t) {
 	sdb_foreach(TDB, sdbdeletelink, TDB);
 	return true;
 }
-
-
