@@ -19,10 +19,32 @@ static double lua_load_number(RzBuffer *buffer, ut64 offset) {
         return x;
 }
 
-static ut64 lua_parse_size(RzBuffer *buffer, int *size, ut64 offset, ut64 data_size) {
-	ut64 base_offset;
-	base_offset = offset;
+static ut32 lua_load_int(RzBuffer *buffer, ut64 offset) {
+	ut32 x;
+	rz_buf_read_at(buffer, offset, (ut8 *)&x, sizeof(ut32));
+	return x;
+}
 
+static ut64 lua_parse_line_defined(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
+        ut64 size_offset;
+        ut64 delta_offset;
+        int line_defined;
+        int last_line_defined;
+
+	size_offset = sizeof(LUA_INT) + sizeof(LUA_INT);
+
+	if (size_offset + offset > data_size) {
+		return 0;
+	}
+	line_defined = lua_load_int(buffer, offset);
+	offset += size_offset;
+	last_line_defined = lua_load_int(buffer, offset);
+
+        /* Set Proto Member */
+        proto->line_defined = line_defined;
+        proto->lastline_defined = last_line_defined;
+
+        return size_offset;
 }
 
 static ut64 lua_parse_string(RzBuffer *buffer, ut8 **dest, int *str_len, ut64 offset, ut64 data_size) {
@@ -37,7 +59,8 @@ static ut64 lua_parse_string(RzBuffer *buffer, ut8 **dest, int *str_len, ut64 of
 	// Long string
 	if (string_buf_size == 0xFF) {
                 offset += size_offset;
-		size_offset = lua_parse_size(buffer, &string_buf_size, offset, data_size);
+		string_buf_size = rz_buf_read8_at(buffer, offset);
+		size_offset = 1;
 	}
 
 	offset += size_offset;
@@ -67,6 +90,183 @@ static ut64 lua_parse_string(RzBuffer *buffer, ut8 **dest, int *str_len, ut64 of
 
 static ut64 lua_parse_name(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
 	return lua_parse_string(buffer, &proto->proto_name, &proto->name_size, offset, data_size);
+}
+
+static ut64 lua_parse_code(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
+        ut64 size_offset;
+        ut64 total_size;
+        int code_size;
+
+	size_offset = sizeof(LUA_INT);
+	if (size_offset + offset > data_size) {
+		return 0;
+	}
+	code_size = lua_load_int(buffer, offset);
+	total_size = code_size * 4 + size_offset;
+
+        if (total_size + offset > data_size) {
+                eprintf("Bad Luac File : Truncated Code at [0x%llx]\n", offset);
+                return 0;
+        }
+
+        /* Set Proto Member */
+        proto->code_size = code_size * 4;
+        proto->code_skipped = size_offset;
+
+        return total_size;
+}
+
+static ut64 lua_parse_const_entry(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
+        LuaConstEntry *current_entry;
+        ut64 base_offset;
+        ut8 *recv_data;
+        ut64 delta_offset;
+        int data_len;
+
+        current_entry = lua_new_const_entry();
+        current_entry->offset = offset;
+        base_offset = offset;
+        delta_offset = 0;
+
+        /* read TAG byte */
+        if (offset + 1 > data_size) {
+                return 0;
+        }
+        current_entry->tag = rz_buf_read8_at(buffer, offset);
+        offset += 1;
+
+        /* read data */
+        // TODO : replace 8 with Macro
+        switch (current_entry->tag) {
+        case LUA_VNUMFLT:
+		data_len = sizeof(LUA_NUMBER);
+                recv_data = RZ_NEWS(ut8, data_len);
+                lua_load_block(buffer, recv_data, data_len, offset, data_size);
+                if (offset + data_len > data_size) {
+                        return 0;
+                }
+                delta_offset = data_len;
+		break;
+        case LUA_VNUMINT:
+                data_len = sizeof(LUA_INT);
+                recv_data = RZ_NEWS(ut8, data_len);
+                lua_load_block(buffer, recv_data, data_len, offset, data_size);
+                if (offset + data_len > data_size) {
+                        return 0;
+                }
+                delta_offset = data_len;
+                break;
+        case LUA_VSHRSTR:
+        case LUA_VLNGSTR:
+                delta_offset = lua_parse_string(buffer, &recv_data, &data_len, offset, data_size);
+                lua_check_error_offset(delta_offset);
+                break;
+	// BOOLEAN
+        case 1:
+		current_entry->tag = (rz_buf_read8_at(buffer, offset) == 0 ? LUA_VFALSE : LUA_VTRUE);
+		recv_data = NULL;
+		data_len = 0;
+		delta_offset = 1;
+		break;
+	// NIL
+        case 0:
+        default:
+                recv_data = NULL;
+		current_entry->tag = LUA_VNIL;
+                data_len = 0;
+                delta_offset = 0;
+                break;
+        }
+
+        offset += delta_offset;
+
+        current_entry->data = recv_data;
+        current_entry->data_len = data_len;
+
+        /* add to list */
+        rz_list_append(proto->const_entries, current_entry);
+
+        return offset - base_offset;
+}
+
+static ut64 lua_parse_consts(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
+        int consts_cnt;
+        int i;
+        ut64 base_offset;
+        ut64 delta_offset;
+
+        base_offset = offset;
+
+        /* parse number of constants */
+	if (offset + sizeof(LUA_INT) > data_size) {
+		return 0;
+	}
+	consts_cnt = lua_load_int(buffer, offset);
+        delta_offset = sizeof(LUA_INT);
+	offset += delta_offset;
+
+        for (i = 0; i < consts_cnt; ++i) {
+                // add an entry of constant
+                delta_offset = lua_parse_const_entry(proto, buffer, offset, data_size);
+                lua_check_error_offset(delta_offset);
+                offset += delta_offset;
+        }
+
+        proto->const_size = offset - base_offset + 1;
+        return offset - base_offset;
+}
+
+static ut64 lua_parse_upvalue_entry(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
+        LuaUpvalueEntry *current_entry;
+        ut64 base_offset;
+
+        base_offset = offset;
+        current_entry = lua_new_upvalue_entry();
+        current_entry->offset = base_offset;
+
+        if (offset + 2 > data_size) {
+                return 0;
+        }
+
+        /* read instack/idx attr */
+	// no kind in lua 5.3
+        current_entry->instack = rz_buf_read8_at(buffer, offset + 0);
+        current_entry->idx = rz_buf_read8_at(buffer, offset + 1);
+        current_entry->kind = 0;
+
+        offset += 2;
+
+        /* add to list */
+        rz_list_append(proto->upvalue_entries, current_entry);
+
+        return offset - base_offset;
+}
+
+static ut64 lua_parse_upvalues(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
+        int upvalues_cnt;
+        int i;
+        ut64 base_offset;
+        ut64 delta_offset;
+
+        base_offset = offset;
+
+        /* parse number of upvalues */
+	delta_offset = sizeof(LUA_INT);
+	if (delta_offset + offset > data_size) {
+		return 0;
+	}
+        upvalues_cnt = lua_load_int(buffer, offset);
+        offset += delta_offset;
+
+        for (i = 0; i < upvalues_cnt; ++i) {
+                delta_offset = lua_parse_upvalue_entry(proto, buffer, offset, data_size);
+                lua_check_error_offset(delta_offset);
+                offset += delta_offset;
+        }
+
+        proto->upvalue_size = offset - base_offset + 1;
+
+        return offset - base_offset;
 }
 
 RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
