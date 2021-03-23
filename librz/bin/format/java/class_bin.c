@@ -179,6 +179,7 @@ static bool java_class_parse(RzBinJavaClass *bin, ut64 base, Sdb *kv, RzBuffer *
 				bin->attributes[i] = attr;
 			} else {
 				java_attribute_free(attr);
+				break;
 			}
 		}
 	}
