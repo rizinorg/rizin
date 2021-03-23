@@ -71,7 +71,8 @@ Method *java_method_new(ConstPool **pool, ut32 poolsize, RzBuffer *buf, ut64 off
 		if (attr && java_attribute_resolve(pool, poolsize, attr, buf, is_oak)) {
 			method->attributes[i] = attr;
 		} else {
-			free(attr);
+			java_attribute_free(attr);
+			break;
 		}
 	}
 	return method;

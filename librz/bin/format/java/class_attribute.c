@@ -102,6 +102,7 @@ bool java_attribute_set_code(ConstPool **pool, ut32 poolsize, Attribute *attr, R
 				ac->attributes[i] = attr;
 			} else {
 				java_attribute_free(attr);
+				break;
 			}
 		}
 	}
