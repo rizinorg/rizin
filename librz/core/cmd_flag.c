@@ -238,14 +238,14 @@ static RzList *__childrenFlagsOf(RzCore *core, RzList *flags, const char *prefix
 	return list;
 }
 
-static void __printRecursive(RzCore *core, RzList *list, const char *prefix, int mode, int depth);
+static void __printRecursive(RzCore *core, RzList *list, const char *prefix, RzOutputMode mode, int depth);
 
-static void __printRecursive(RzCore *core, RzList *flags, const char *prefix, int mode, int depth) {
+static void __printRecursive(RzCore *core, RzList *flags, const char *prefix, RzOutputMode mode, int depth) {
 	char *fn;
 	RzListIter *iter;
 	const int prefix_len = strlen(prefix);
 	// eprintf ("# fg %s\n", prefix);
-	if (mode == '*' && !*prefix) {
+	if (mode == RZ_OUTPUT_MODE_RIZIN && !*prefix) {
 		rz_cons_printf("agn root\n");
 	}
 	if (rz_flag_get(core->flags, prefix)) {
@@ -256,7 +256,7 @@ static void __printRecursive(RzCore *core, RzList *flags, const char *prefix, in
 		if (!strcmp(fn, prefix)) {
 			continue;
 		}
-		if (mode == '*') {
+		if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			rz_cons_printf("agn %s %s\n", fn, fn + prefix_len);
 			rz_cons_printf("age %s %s\n", *prefix ? prefix : "root", fn);
 		} else {
@@ -680,10 +680,10 @@ static bool adjust_offset(RzFlagItem *flag, void *user) {
 	return true;
 }
 
-static void print_space_stack(RzFlag *f, int ordinal, const char *name, bool selected, PJ *pj, int mode) {
+static void print_space_stack(RzFlag *f, int ordinal, const char *name, bool selected, PJ *pj, RzOutputMode mode) {
 	bool first = ordinal == 0;
 	switch (mode) {
-	case 'j': {
+	case RZ_OUTPUT_MODE_JSON: {
 		char *ename = rz_str_escape(name);
 		if (!ename) {
 			return;
@@ -697,7 +697,7 @@ static void print_space_stack(RzFlag *f, int ordinal, const char *name, bool sel
 		free(ename);
 		break;
 	}
-	case '*': {
+	case RZ_OUTPUT_MODE_RIZIN: {
 		const char *fmt = first ? "fs %s\n" : "fs+%s\n";
 		rz_cons_printf(fmt, name);
 		break;
@@ -708,12 +708,12 @@ static void print_space_stack(RzFlag *f, int ordinal, const char *name, bool sel
 	}
 }
 
-static int flag_space_stack_list(RzFlag *f, int mode) {
+static int flag_space_stack_list(RzFlag *f, RzOutputMode mode) {
 	RzListIter *iter;
 	char *space;
 	int i = 0;
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		pj_a(pj);
 	}
@@ -722,7 +722,7 @@ static int flag_space_stack_list(RzFlag *f, int mode) {
 	}
 	const char *cur_name = rz_flag_space_cur_name(f);
 	print_space_stack(f, i++, cur_name, true, pj, mode);
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_printf("%s\n", pj_string(pj));
 		pj_free(pj);

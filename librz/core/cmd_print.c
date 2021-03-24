@@ -4109,7 +4109,7 @@ static int bbcmp(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 }
 
 /* TODO: integrate this into rz_analysis */
-static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *buf, int len, int step, int mode) {
+static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *buf, int len, int step, RzOutputMode mode) {
 	int i;
 	ut64 addr;
 	st32 *delta; // only for step == 4
@@ -4122,7 +4122,7 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 	}
 	if (origin != offset) {
 		switch (mode) {
-		case '*':
+		case RZ_OUTPUT_MODE_RIZIN:
 			rz_cons_printf("CC-@ 0x%08" PFMT64x "\n", origin);
 			rz_cons_printf("CC switch table @ 0x%08" PFMT64x "\n", origin);
 			rz_cons_printf("axd 0x%" PFMT64x " 0x%08" PFMT64x "\n", origin, offset);
@@ -4152,7 +4152,7 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 			}
 			addr = *delta;
 		}
-		if (mode == '*') {
+		if (mode == 'RZ_OUTPUT_MODE_RIZIN') {
 			rz_cons_printf("af case.%d.0x%" PFMT64x " 0x%08" PFMT64x "\n", n, offset, addr);
 			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", offset, addr);
 			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
@@ -4691,7 +4691,7 @@ static void rz_core_disasm_table(RzCore *core, int l, const char *input) {
 	rz_table_free(t);
 }
 
-static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *arg) {
+static void cmd_pxr(RzCore *core, int len, RzOutputMode mode, int wordsize, const char *arg) {
 	PJ *pj = NULL;
 	RzTable *t = NULL;
 	if (mode == ',') {
@@ -4702,13 +4702,13 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 		rz_table_add_column(t, n, "value", 0);
 		rz_table_add_column(t, s, "refs", 0);
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return;
 		}
 	}
-	if (mode == 'j' || mode == ',' || mode == '*' || mode == 'q') {
+	if (mode == RZ_OUTPUT_MODE_JSON || mode == ',' || mode == RZ_OUTPUT_MODE_RIZIN || mode == RZ_OUTPUT_MODE_QUIET) {
 		size_t i;
 		const int be = core->analysis->big_endian;
 		if (pj) {
@@ -4748,10 +4748,10 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 				}
 				refs = rstr;
 			}
-			if (mode == '*' && RZ_STR_ISNOTEMPTY(refs)) {
+			if (mode == RZ_OUTPUT_MODE_RIZIN && RZ_STR_ISNOTEMPTY(refs)) {
 				// Show only the mapped ones?
 				rz_cons_printf("f pxr.%" PFMT64x "=0x%" PFMT64x "\n", val, addr);
-			} else if (mode == 'q' && RZ_STR_ISNOTEMPTY(refs)) {
+			} else if (mode == RZ_OUTPUT_MODE_QUIET && RZ_STR_ISNOTEMPTY(refs)) {
 				rz_cons_printf("%s\n", refs);
 			}
 			if (t) {

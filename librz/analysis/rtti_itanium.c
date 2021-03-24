@@ -696,8 +696,8 @@ static void rtti_itanium_type_info_free(void *info) {
 	}
 }
 
-RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, int mode) {
-	bool use_json = mode == 'j';
+RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode) {
+	bool use_json = mode == RZ_OUTPUT_MODE_JSON;
 	class_type_info *cti = rtti_itanium_type_info_new(context, addr);
 	if (!cti) {
 		return false;

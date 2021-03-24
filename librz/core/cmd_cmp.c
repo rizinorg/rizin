@@ -88,14 +88,14 @@ RZ_API int rz_core_cmpwatch_del(RzCore *core, ut64 addr) {
 	return ret;
 }
 
-RZ_API int rz_core_cmpwatch_show(RzCore *core, ut64 addr, int mode) {
+RZ_API int rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzOutputMode mode) {
 	char cmd[128];
 	RzListIter *iter;
 	RzCoreCmpWatcher *w;
 	rz_list_foreach (core->watchers, iter, w) {
 		int is_diff = w->odata ? memcmp(w->odata, w->ndata, w->size) : 0;
 		switch (mode) {
-		case '*':
+		case RZ_OUTPUT_MODE_RIZIN:
 			rz_cons_printf("cw 0x%08" PFMT64x " %d %s%s\n",
 				w->addr, w->size, w->cmd, is_diff ? " # differs" : "");
 			break;
@@ -236,13 +236,13 @@ static int rizin_compare_unified(RzCore *core, ut64 of, ut64 od, int len) {
 	return true;
 }
 
-static int rizin_compare(RzCore *core, const ut8 *f, const ut8 *d, int len, int mode) {
+static int rizin_compare(RzCore *core, const ut8 *f, const ut8 *d, int len, RzOutputMode mode) {
 	int i, eq = 0;
 	PJ *pj = NULL;
 	if (len < 1) {
 		return 0;
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return -1;
@@ -280,7 +280,7 @@ static int rizin_compare(RzCore *core, const ut8 *f, const ut8 *d, int len, int 
 	}
 	if (mode == 0) {
 		eprintf("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
-	} else if (mode == 'j') {
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		pj_ki(pj, "equal_bytes", eq);
 		pj_ki(pj, "total_bytes", len);

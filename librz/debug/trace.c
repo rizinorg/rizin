@@ -210,7 +210,7 @@ static int cmpaddr(const void *_a, const void *_b) {
 														     : 0;
 }
 
-RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset) {
+RZ_API void rz_debug_trace_list(RzDebug *dbg, RzOutputMode mode, ut64 offset) {
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
 	bool flag = false;
@@ -222,7 +222,7 @@ RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset) {
 	rz_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			switch (mode) {
-			case 'q':
+			case RZ_OUTPUT_MODE_QUIET:
 				dbg->cb_printf("0x%" PFMT64x "\n", trace->addr);
 				break;
 			case '=': {

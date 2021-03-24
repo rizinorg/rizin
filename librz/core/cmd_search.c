@@ -1132,7 +1132,7 @@ ret:
 	return hitlist;
 }
 
-static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
+static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, RzOutputMode mode) {
 	const char *otype;
 	RzCoreAsmHit *hit = NULL;
 	RzListIter *iter;
@@ -1158,7 +1158,7 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 	}
 
 	switch (mode) {
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
 		pj_ka(pj, "opcodes");
 		rz_list_foreach (hitlist, iter, hit) {
@@ -1196,7 +1196,7 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 		}
 		pj_end(pj);
 		break;
-	case 'q':
+	case RZ_OUTPUT_MODE_QUIET:
 		// Print gadgets in a 'linear manner', each sequence
 		// on one line.
 		rz_cons_printf("0x%08" PFMT64x ":",
@@ -1285,7 +1285,7 @@ static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 			rop_classify(core, db, ropList, key, size);
 		}
 	}
-	if (mode != 'j') {
+	if (mode != RZ_OUTPUT_MODE_JSON) {
 		rz_cons_newline();
 	}
 	rz_list_free(ropList);
@@ -2208,7 +2208,7 @@ static void do_section_search(RzCore *core, struct search_parameters *param, con
 	free(buf);
 }
 
-static void do_asm_search(RzCore *core, struct search_parameters *param, const char *input, int mode, RzInterval search_itv) {
+static void do_asm_search(RzCore *core, struct search_parameters *param, const char *input, RzOutputMode mode, RzInterval search_itv) {
 	RzCoreAsmHit *hit;
 	RzListIter *iter, *itermap;
 	int count = 0, maxhits = 0, filter = 0;
@@ -2219,10 +2219,10 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	bool everyByte = regexp && input[2] == 'a';
 	char *end_cmd = strchr(input, ' ');
 	switch ((end_cmd ? *(end_cmd - 1) : input[1])) {
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		param->outmode = RZ_MODE_JSON;
 		break;
-	case '*':
+	case RZ_OUTPUT_MODE_RIZIN:
 		param->outmode = RZ_MODE_RIZINCMD;
 		break;
 	default:

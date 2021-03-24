@@ -106,15 +106,15 @@ static bool load_theme(RzCore *core, const char *path) {
 	return res;
 }
 
-static bool nextpal_item(RzCore *core, int mode, const char *file, int ctr) {
+static bool nextpal_item(RzCore *core, RzOutputMode mode, const char *file, int ctr) {
 	const char *fn = rz_str_lchr(file, '/');
 	if (!fn)
 		fn = file;
 	switch (mode) {
-	case 'j': // json
+	case RZ_OUTPUT_MODE_JSON: // json
 		rz_cons_printf("%s\"%s\"", ctr ? "," : "", fn);
 		break;
-	case 'l': // list
+	case RZ_OUTPUT_MODE_LONG: // list
 		rz_cons_println(fn);
 		break;
 	case 'p': // previous
@@ -211,7 +211,7 @@ RZ_API RzList *rz_core_list_themes(RzCore *core) {
 	return list;
 }
 
-RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
+RZ_IPI void rz_core_theme_nextpal(RzCore *core, RzOutputMode mode) {
 	// TODO: use rz_core_list_themes() here instead of rewalking all the time
 	RzList *files = NULL;
 	RzListIter *iter;
@@ -221,7 +221,7 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 	char *home = rz_str_home(RZ_HOME_THEMES RZ_SYS_DIR);
 
 	getNext = false;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		rz_cons_printf("[");
 	}
 	if (home) {
@@ -292,7 +292,7 @@ done:
 		rz_core_theme_nextpal(core, mode);
 		return;
 	}
-	if (mode == 'l' && !curtheme && !rz_list_empty(files)) {
+	if (mode == RZ_OUTPUT_MODE_LONG && !curtheme && !rz_list_empty(files)) {
 		//rz_core_theme_nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
 		if (curtheme) {
@@ -301,7 +301,7 @@ done:
 	}
 	rz_list_free(files);
 	files = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		rz_cons_printf("]\n");
 	}
 }

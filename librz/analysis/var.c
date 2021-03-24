@@ -1175,18 +1175,18 @@ static int regvar_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 	return (a && b) ? (a->argnum > b->argnum) - (a->argnum < b->argnum) : 0;
 }
 
-RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *fcn, int kind, int mode, PJ *pj) {
+RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *fcn, int kind, RzOutputMode mode, PJ *pj) {
 	RzList *list = rz_analysis_var_list(analysis, fcn, kind);
 	RzAnalysisVar *var;
 	RzListIter *iter;
-	if (!pj && mode == 'j') {
+	if (!pj && mode == RZ_OUTPUT_MODE_JSON) {
 		return;
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
 	if (!list) {
-		if (mode == 'j') {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_end(pj);
 		}
 		return;
@@ -1197,7 +1197,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 			continue;
 		}
 		switch (mode) {
-		case '*':
+		case RZ_OUTPUT_MODE_RIZIN:
 			// we can't express all type info here :(
 			if (kind == RZ_ANALYSIS_VAR_KIND_REG) { // registers
 				RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
@@ -1216,7 +1216,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 					fcn->addr);
 			}
 			break;
-		case 'j':
+		case RZ_OUTPUT_MODE_JSON:
 			switch (var->kind) {
 			case RZ_ANALYSIS_VAR_KIND_BPV: {
 				st64 delta = (st64)var->delta + fcn->bp_off;
@@ -1311,7 +1311,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 			}
 		}
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
 	rz_list_free(list);

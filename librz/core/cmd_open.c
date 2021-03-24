@@ -384,12 +384,12 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 }
 
 // TODO: discuss the output format
-static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
+static void map_list(RzIO *io, RzOutputMode mode, RzPrint *print, int fd) {
 	if (!io || !print || !print->cb_printf) {
 		return;
 	}
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return;
@@ -405,14 +405,14 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 			continue;
 		}
 		switch (mode) {
-		case 'q':
+		case RZ_OUTPUT_MODE_QUIET:
 			if (fd == -2) {
 				print->cb_printf("0x%08" PFMT64x "\n", rz_io_map_get_from(map));
 			} else {
 				print->cb_printf("%d %d\n", map->fd, map->id);
 			}
 			break;
-		case 'j':
+		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
 			pj_ki(pj, "map", map->id);
 			pj_ki(pj, "fd", map->fd);
@@ -425,7 +425,7 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 			break;
 		case 1:
 		case '*':
-		case 'r': {
+		case RZ_OUTPUT_MODE_RIZIN: {
 			// Need FIFO order here
 			char *om_cmd = rz_str_newf("om %d 0x%08" PFMT64x " 0x%08" PFMT64x " 0x%08" PFMT64x " %s%s%s\n",
 				map->fd, rz_io_map_get_from(map), map->itv.size, map->delta, rz_str_rwx_i(map->perm),
@@ -449,7 +449,7 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 		print->cb_printf("%s", om_cmds);
 		free(om_cmds);
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		print->cb_printf("%s\n", pj_string(pj));
 		pj_free(pj);
@@ -994,7 +994,7 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-static bool cmd_op(RzCore *core, char mode, int fd) {
+static bool cmd_op(RzCore *core, RzOutputMode mode, int fd) {
 	int cur_fd = rz_io_fd_get_current(core->io);
 	int next_fd = cur_fd;
 	switch (mode) {
@@ -1007,7 +1007,7 @@ static bool cmd_op(RzCore *core, char mode, int fd) {
 	case 'p':
 		next_fd = rz_io_fd_get_prev(core->io, cur_fd);
 		break;
-	case 'r':
+	case 'RZ_OUTPUT_MODE_RIZIN':
 		next_fd = rz_io_fd_get_next(core->io, cur_fd);
 		if (next_fd == -1) {
 			next_fd = rz_io_fd_get_lowest(core->io);
