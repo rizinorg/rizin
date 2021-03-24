@@ -380,7 +380,7 @@ out_error:
 // XXX. this is using binfile->buf directly :(
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
-static void dex_parse_debug_item(RzBinFile *bf, RzBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, char *class_name, int regsz, int debug_info_off) {
+static void dex_parse_debug_item(RzBinFile *bf, RzBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, char *class_name, int regsz, int debug_info_off, RzBinSourceLineInfoBuilder *bob) {
 	RzBin *rbin = bf->rbin;
 	RzBinDexObj *dex = bf->o->bin_obj; //  bin .. unnecessary arg
 	// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xffffffffff0043fc
@@ -623,38 +623,15 @@ static void dex_parse_debug_item(RzBinFile *bf, RzBinDexClass *c, int MI, int MA
 		}
 	}
 
-	if (!bf->sdb_addrinfo) {
-		bf->sdb_addrinfo = sdb_new0();
-	}
-
 	RzListIter *iter1;
 	struct dex_debug_position_t *pos;
-	// Loading the debug info takes too much time and nobody uses this afaik
-	// 0.5s of 5s is spent in this loop
-	rz_list_foreach (debug_positions, iter1, pos) {
-		const char *line = getstr(dex, pos->source_file_idx);
-		char offset[64] = { 0 };
-		if (!line || !*line) {
-			continue;
-		}
-		char *fileline = rz_str_newf("%s|%" PFMT64d, line, pos->line);
-		char *offset_ptr = sdb_itoa(pos->address + paddr, offset, 16);
-		sdb_set(bf->sdb_addrinfo, offset_ptr, fileline, 0);
-		sdb_set(bf->sdb_addrinfo, fileline, offset_ptr, 0);
-		free(fileline);
-
-		RzBinSourceRow *row = RZ_NEW0(RzBinSourceRow);
-		if (!row) {
-			dexdump = false;
-			break;
-		}
-		if (line) {
-			row->file = strdup(line);
-			row->address = pos->address;
-			row->line = pos->line;
-			rz_list_append(dex->lines_list, row);
-		} else {
-			free(row);
+	if (bob) {
+		rz_list_foreach (debug_positions, iter1, pos) {
+			const char *file = getstr(dex, pos->source_file_idx);
+			if (!file || !*file) {
+				continue;
+			}
+			rz_bin_source_line_info_builder_push_sample(bob, pos->address + paddr, pos->line, 0, file);
 		}
 	}
 	if (!dexdump) {
@@ -1129,7 +1106,7 @@ static void parse_dex_class_fields(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 // TODO: refactor this method
 // XXX it needs a lot of love!!!
 static void parse_dex_class_method(RzBinFile *bf, RzBinDexClass *c, RzBinClass *cls,
-	int *sym_count, ut64 DM, int *methods, bool is_direct) {
+	int *sym_count, ut64 DM, int *methods, bool is_direct, RzBinSourceLineInfoBuilder *bob) {
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	RzBinDexObj *dex = bf->o->bin_obj;
 	bool bin_dbginfo = bf->rbin->want_dbginfo;
@@ -1437,7 +1414,7 @@ static void parse_dex_class_method(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 				if (bin_dbginfo) {
 					ut64 addr = rz_buf_tell(bf->buf);
 					dex_parse_debug_item(bf, c, MI, MA, sym->paddr, ins_size,
-						insns_size, cls->name, regsz, debug_info_off);
+						insns_size, cls->name, regsz, debug_info_off, bob);
 					rz_buf_seek(bf->buf, addr, RZ_BUF_SET);
 				}
 			} else if (MC > 0) {
@@ -1453,7 +1430,7 @@ static void parse_dex_class_method(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 	}
 }
 
-static void parse_class(RzBinFile *bf, RzBinDexClass *c, int class_index, int *methods, int *sym_count) {
+static void parse_class(RzBinFile *bf, RzBinDexClass *c, int class_index, int *methods, int *sym_count, RzBinSourceLineInfoBuilder *bob) {
 	rz_return_if_fail(bf && bf->o && c);
 
 	RzBinDexObj *dex = bf->o->bin_obj;
@@ -1566,13 +1543,13 @@ static void parse_class(RzBinFile *bf, RzBinDexClass *c, int class_index, int *m
 			rbin->cb_printf("  Direct methods    -\n");
 		}
 		parse_dex_class_method(bf, c, cls, sym_count,
-			c->class_data->direct_methods_size, methods, true);
+			c->class_data->direct_methods_size, methods, true, bob);
 
 		if (dexdump) {
 			rbin->cb_printf("  Virtual methods   -\n");
 		}
 		parse_dex_class_method(bf, c, cls, sym_count,
-			c->class_data->virtual_methods_size, methods, false);
+			c->class_data->virtual_methods_size, methods, false, bob);
 	}
 
 	if (dexdump) {
@@ -1626,17 +1603,10 @@ static bool dex_loadcode(RzBinFile *bf) {
 		rz_list_free(bin->methods_list);
 		return false;
 	}
-	bin->lines_list = rz_list_newf((RzListFree)free);
-	if (!bin->lines_list) {
-		rz_list_free(bin->methods_list);
-		rz_list_free(bin->imports_list);
-		return false;
-	}
 	bin->classes_list = rz_list_newf((RzListFree)rz_bin_class_free);
 	if (!bin->classes_list) {
 		rz_list_free(bin->methods_list);
 		rz_list_free(bin->imports_list);
-		rz_list_free(bin->lines_list);
 		return false;
 	}
 
@@ -1657,9 +1627,13 @@ static bool dex_loadcode(RzBinFile *bf) {
 	}
 	dexSubsystem = NULL;
 
+	RzBinSourceLineInfoBuilder bob;
+	rz_bin_source_line_info_builder_init(&bob);
+
 	if (bin->classes) {
 		ut64 amount = sizeof(int) * bin->header.method_size;
 		if (amount > UT32_MAX || amount < bin->header.method_size) {
+			rz_bin_source_line_info_builder_fini(&bob);
 			return false;
 		}
 		methods = calloc(1, amount + 1);
@@ -1668,9 +1642,12 @@ static bool dex_loadcode(RzBinFile *bf) {
 			if (dexdump) {
 				cb_printf("Class #%zu            -\n", i);
 			}
-			parse_class(bf, c, i, methods, &sym_count);
+			parse_class(bf, c, i, methods, &sym_count, &bob);
 		}
 	}
+
+	bin->lines = rz_bin_source_line_info_builder_build_and_fini(&bob);
+
 	if (methods) {
 		int import_count = 0;
 		int sym_count = bin->methods_list->length;
@@ -2083,9 +2060,11 @@ static ut64 size(RzBinFile *bf) {
 	return off + rz_read_le32(u32s);
 }
 
-static RZ_BORROW RzList *lines(RzBinFile *bf) {
+static RzBinSourceLineInfo *lines(RzBinFile *bf) {
 	struct rz_bin_dex_obj_t *dex = bf->o->bin_obj;
-	return dex->lines_list;
+	RzBinSourceLineInfo *r = dex->lines;
+	dex->lines = NULL;
+	return r;
 }
 
 // iH*
@@ -2201,8 +2180,7 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.size = &size,
 	.get_offset = &getoffset,
 	.get_name = &getname,
-	.dbginfo = &rz_bin_dbginfo_dex,
-	.lines = &lines,
+	.lines = lines
 };
 
 #ifndef RZ_PLUGIN_INCORE

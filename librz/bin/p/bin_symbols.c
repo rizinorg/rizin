@@ -429,6 +429,35 @@ static void header(RzBinFile *bf) {
 	pj_free(pj);
 }
 
+static RzBinSourceLineInfo *lines(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, NULL);
+	RzCoreSymCacheElement *element = bf->o->bin_obj;
+	if (!element || !element->hdr) {
+		return NULL;
+	}
+	RzBinSourceLineInfoBuilder alice;
+	rz_bin_source_line_info_builder_init(&alice);
+	if (element->lined_symbols) {
+		for (size_t i = 0; i < element->hdr->n_lined_symbols; i++) {
+			RzCoreSymCacheElementLinedSymbol *lsym = &element->lined_symbols[i];
+			ut64 addr = rz_coresym_cache_element_pa2va(element, lsym->sym.paddr);
+			ut32 sz = lsym->sym.size;
+			rz_bin_source_line_info_builder_push_sample(&alice, addr, lsym->flc.line, lsym->flc.col, lsym->flc.file);
+			rz_bin_source_line_info_builder_push_sample(&alice, addr + (sz ? sz : 1), 0, 0, NULL);
+		}
+	}
+	if (element->line_info) {
+		for (size_t i = 0; i < element->hdr->n_line_info; i++) {
+			RzCoreSymCacheElementLineInfo *info = &element->line_info[i];
+			ut64 addr = rz_coresym_cache_element_pa2va(element, info->paddr);
+			ut32 sz = info->size;
+			rz_bin_source_line_info_builder_push_sample(&alice, addr, info->flc.line, info->flc.col, info->flc.file);
+			rz_bin_source_line_info_builder_push_sample(&alice, addr + (sz ? sz : 1), 0, 0, NULL);
+		}
+	}
+	return rz_bin_source_line_info_builder_build_and_fini(&alice);
+}
+
 RzBinPlugin rz_bin_plugin_symbols = {
 	.name = "symbols",
 	.desc = "Apple Symbols file",
@@ -442,6 +471,7 @@ RzBinPlugin rz_bin_plugin_symbols = {
 	.info = &info,
 	.header = &header,
 	.destroy = &destroy,
+	.lines = lines
 };
 
 #ifndef RZ_PLUGIN_INCORE

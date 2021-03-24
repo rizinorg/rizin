@@ -122,7 +122,6 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
-	.dbginfo = &rz_bin_dbginfo_elf,
 	.create = &create,
 	.patch_relocs = &patch_relocs,
 	.write = &rz_bin_write_elf,
