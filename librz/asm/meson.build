@@ -118,6 +118,8 @@ rz_asm_sources = [
   'arch/luac/lua_arch.c',
   'arch/luac/v54/opcode_54.c',
   'arch/luac/v54/disassembly_54.c',
+  'arch/luac/v53/opcode_53.c',
+  'arch/luac/v53/disassembly_53.c',
   'arch/mips/gnu/mips-dis.c',
   'arch/mips/gnu/mips-opc.c',
   'arch/mips/gnu/mips16-opc.c',
