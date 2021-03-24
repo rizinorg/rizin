@@ -1597,17 +1597,12 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	if (head->fd == fw) {
 		return chunks_cnt;
 	}
-
-	switch (bin_num) {
-	case 0:
+	if (bin_num == 0){
 		rz_cons_printf("Unsorted");
-		break;
-	case 1 ... NSMALLBINS - 1:
+	} else if (bin_num >= 1 && bin_num <= NSMALLBINS - 1) {
 		rz_cons_printf("Small");
-		break;
-	case NSMALLBINS ... NBINS - 2:
+	} else if (bin_num >= NSMALLBINS && bin_num <= NBINS - 2){
 		rz_cons_printf("Large");
-		break;
 	}
 	rz_cons_printf("_bin[%d]: ", bin_num);
 	rz_cons_printf("fd=0x%" PFMT64x, fw);
