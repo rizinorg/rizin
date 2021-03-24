@@ -4028,7 +4028,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_analysis_cd);
 	RzCmdDesc *cmd_analysis_fcn_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_analysis_cd, "af", rz_cmd_analysis_fcn, &cmd_analysis_fcn_help);
 	rz_warn_if_fail(cmd_analysis_fcn_cd);
-	RzCmdDesc *afb_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_list_handler, &analysis_function_blocks_list_help, &afb_help);
+	RzCmdDesc *afb_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_fcn_cd, "afb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_list_handler, &analysis_function_blocks_list_help, &afb_help);
 	rz_warn_if_fail(afb_cd);
 	RzCmdDesc *analysis_function_blocks_add_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb+", rz_analysis_function_blocks_add_handler, &analysis_function_blocks_add_help);
 	rz_warn_if_fail(analysis_function_blocks_add_cd);
@@ -4048,7 +4048,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_blocks_asciiart_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb=", rz_analysis_function_blocks_asciiart_handler, &analysis_function_blocks_asciiart_help);
 	rz_warn_if_fail(analysis_function_blocks_asciiart_cd);
 
-	RzCmdDesc *analysis_function_blocks_info_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afb_cd, "afbi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_info_handler, &analysis_function_blocks_info_help);
+	RzCmdDesc *analysis_function_blocks_info_cd = rz_cmd_desc_argv_state_new(core->rcmd, afb_cd, "afbi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_info_handler, &analysis_function_blocks_info_help);
 	rz_warn_if_fail(analysis_function_blocks_info_cd);
 
 	RzCmdDesc *analysis_function_blocks_color_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbc", rz_analysis_function_blocks_color_handler, &analysis_function_blocks_color_help);
@@ -4296,7 +4296,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *seek_blocksize_forward_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "s++", rz_seek_blocksize_forward_handler, &seek_blocksize_forward_help);
 	rz_warn_if_fail(seek_blocksize_forward_cd);
 
-	RzCmdDesc *sh_cd = rz_cmd_desc_group_modes_new(core->rcmd, s_cd, "sh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_seek_history_list_handler, &seek_history_list_help, &sh_help);
+	RzCmdDesc *sh_cd = rz_cmd_desc_group_state_new(core->rcmd, s_cd, "sh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_seek_history_list_handler, &seek_history_list_help, &sh_help);
 	rz_warn_if_fail(sh_cd);
 	RzCmdDesc *seek_redo_cd = rz_cmd_desc_argv_new(core->rcmd, sh_cd, "shr", rz_seek_redo_handler, &seek_redo_help);
 	rz_warn_if_fail(seek_redo_cd);

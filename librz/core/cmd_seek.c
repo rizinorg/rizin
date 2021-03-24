@@ -631,13 +631,13 @@ RZ_IPI RzCmdStatus rz_seek_undo_reset_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzList *list = rz_core_seek_list(core);
 	RzListIter *iter;
 	RzCoreSeekItem *undo;
 	PJ *pj = NULL;
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = rz_core_pj_new(core);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj = state->d.pj;
 		pj_a(pj);
 	}
 	bool current_met = false;
@@ -653,7 +653,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 			}
 		}
 		current_met |= undo->is_current;
-		switch (mode) {
+		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
 			pj_kn(pj, "offset", undo->offset);
@@ -688,11 +688,8 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 		}
 		free(name);
 	}
-	if (mode == RZ_OUTPUT_MODE_JSON) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		char *s = pj_drain(pj);
-		rz_cons_printf("%s\n", s);
-		free(s);
 	}
 	return RZ_CMD_STATUS_OK;
 }
