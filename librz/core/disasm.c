@@ -1157,7 +1157,7 @@ static char *ds_build_op_str(RDisasmState *ds, bool print_color, char **markinst
 				}
 			}
 
-			char *numstr = (char *)calloc(11, sizeof(char));
+			char *numstr = RZ_NEWS0(char, 11);
 			strncpy(numstr, markinst[1], 10);
 			next_instaddr = rz_num_get_input_value(NULL, numstr);
 			free(numstr);
@@ -1200,7 +1200,9 @@ static char *ds_build_op_str(RDisasmState *ds, bool print_color, char **markinst
 
 					if (find_offset_got_next) {
 						RzFlagItem *str_flag = rz_flag_get_at(core->flags, str_addr, false);
-						ds->comment = rz_str_newf("; %s", str_flag->name);
+						if (str_flag) {
+							ds->comment = rz_str_newf("; %s", str_flag->name);
+						}
 					}
 				}
 			}
