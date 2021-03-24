@@ -13,7 +13,7 @@ print(core.cmd('pd 1').strip())
 print(core.cmdj('pdj 1')[0]['opcode'])
 
 # Use the actual bindings and API
-core = rz.RZ('/bin/ls')
+core = rizin.RZ('/bin/ls')
 sections = core.get_sections()
 for i in range(len(sections)):
     print('section {:02d} {:s}'.format(i, sections[i].name))
