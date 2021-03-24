@@ -261,7 +261,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<RzBinClass>*/ *classes;
 	HtPP *classes_ht;
 	HtPP *methods_ht;
-	RzList /*<RzBinDwarfRow>*/ *lines;
+	RzBinSourceLineInfo *lines;
 	HtUP *strings_db;
 	RzList /*<??>*/ *mem; //RzBinMem maybe?
 	RzList /*<BinMap*/ *maps;
@@ -298,7 +298,6 @@ struct rz_bin_file_t {
 	RzList *xtr_data;
 	Sdb *sdb;
 	Sdb *sdb_info;
-	RZ_DEPRECATE Sdb *sdb_addrinfo; //< deprecated to use for new code, should be refactored
 	struct rz_bin_t *rbin;
 }; // RzBinFile
 
@@ -500,30 +499,6 @@ RZ_API void rz_bin_source_line_info_free(RzBinSourceLineInfo *sli);
 RZ_API const RzBinSourceLineSample *rz_bin_source_line_info_get_first_at(const RzBinSourceLineInfo *sli, ut64 addr);
 RZ_API const RzBinSourceLineSample *rz_bin_source_line_info_get_next(const RzBinSourceLineInfo *sli, RZ_NONNULL const RzBinSourceLineSample *cur);
 
-typedef struct {
-	/**
-	 * The first address that is covered by the given line and column,
-	 * or, if line == 0, the first address **not contained** by the previous record.
-	 */
-	ut64 address;
-
-	char *file;
-
-	/**
-	 * If > 0, then indicates the line for the given address.
-	 * If == 0, then indicates that the previous record stops here.
-	 * Such a case corresponds for example to what DW_LNE_end_sequence emits in Dwarf.
-	 */
-	unsigned int line;
-
-	/**
-	 * If > 0, then indicates the column.
-	 * If == 0, then no column information is known.
-	 */
-	unsigned int column;
-} RzBinSourceRow;
-RZ_API void rz_bin_source_row_free(RzBinSourceRow *row);
-
 typedef struct rz_bin_plugin_t {
 	char *name;
 	char *desc;
@@ -543,7 +518,7 @@ typedef struct rz_bin_plugin_t {
 	RzBinAddr *(*binsym)(RzBinFile *bf, int num);
 	RzList /*<RzBinAddr>*/ *(*entries)(RzBinFile *bf);
 	RzList /*<RzBinSection>*/ *(*sections)(RzBinFile *bf);
-	RZ_BORROW RzList /*<RzBinSourceRow>*/ *(*lines)(RzBinFile *bf);
+	RZ_OWN RzBinSourceLineInfo *(*lines)(RzBinFile *bf); //< only called once on load, ownership is transferred to the caller
 	RzList /*<RzBinSymbol>*/ *(*symbols)(RzBinFile *bf);
 	RzList /*<RzBinImport>*/ *(*imports)(RzBinFile *bf);
 	RzList /*<RzBinString>*/ *(*strings)(RzBinFile *bf);
@@ -560,7 +535,6 @@ typedef struct rz_bin_plugin_t {
 	void (*header)(RzBinFile *bf);
 	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
-	struct rz_bin_dbginfo_t *dbginfo;
 	struct rz_bin_write_t *write;
 	char *(*enrich_asm)(RzBinFile *bf, const char *asm_str, int asm_len);
 	int (*get_offset)(RzBinFile *bf, int type, int idx);
@@ -723,10 +697,6 @@ typedef struct rz_bin_map_t {
 	int perms;
 	char *file;
 } RzBinMap;
-
-typedef struct rz_bin_dbginfo_t {
-	bool (*get_line)(RzBinFile *arch, ut64 addr, char *file, int len, int *line);
-} RzBinDbgInfo;
 
 typedef struct rz_bin_write_t {
 	ut64 (*scn_resize)(RzBinFile *bf, const char *name, ut64 size);
@@ -908,9 +878,9 @@ RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact);
 RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);
 
 /* dbginfo.c */
-RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line);
-RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin);
-RZ_API char *rz_bin_addr2fileline(RzBin *bin, ut64 addr);
+RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line);
+RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin);
+
 /* bin_write.c */
 RZ_API bool rz_bin_wr_addlib(RzBin *bin, const char *lib);
 RZ_API ut64 rz_bin_wr_scn_resize(RzBin *bin, const char *name, ut64 size);

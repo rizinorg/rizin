@@ -710,6 +710,9 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode);
 RZ_API bool rz_core_bin_delete(RzCore *core, ut32 binfile_idx);
 RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name);
 
+RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, int mode, PJ *pj);
+RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, int mode, PJ *pj);
+
 // bin_dwarf
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);
 RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val);

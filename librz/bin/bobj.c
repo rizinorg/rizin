@@ -49,7 +49,7 @@ static void object_delete_items(RzBinObject *o) {
 	rz_list_free(o->classes);
 	ht_pp_free(o->classes_ht);
 	ht_pp_free(o->methods_ht);
-	rz_list_free(o->lines);
+	rz_bin_source_line_info_free(o->lines);
 	sdb_free(o->kv);
 	rz_list_free(o->mem);
 	for (i = 0; i < RZ_BIN_SYM_LAST; i++) {
@@ -179,7 +179,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, ut64 b
 	if (sdb) {
 		Sdb *bdb = bf->sdb; // sdb_new0 ();
 		sdb_ns_set(bdb, "info", o->kv);
-		sdb_ns_set(bdb, "addrinfo", bf->sdb_addrinfo);
 		o->kv = bdb;
 		// bf->sdb = o->kv;
 		// bf->sdb_info = o->kv;
@@ -192,8 +191,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, ut64 b
 		/* And if any namespace is referenced backwards it gets
 		 * double-freed */
 		// bf->sdb_info = sdb_ns (bf->sdb, "info", 1);
-		//	bf->sdb_addrinfo = sdb_ns (bf->sdb, "addrinfo", 1);
-		//	bf->sdb_addrinfo->refs++;
 		sdb_ns_set(sdb, "cur", bdb); // bf->sdb);
 		const char *fdns = sdb_fmt("fd.%d", bf->fd);
 		sdb_ns_set(sdb, fdns, bdb); // bf->sdb);

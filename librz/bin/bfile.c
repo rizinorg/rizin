@@ -445,8 +445,6 @@ RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, in
 		bf->xtr_data = rz_list_newf((RzListFree)rz_bin_xtrdata_free);
 		bf->xtr_obj = NULL;
 		bf->sdb = sdb_new0();
-		bf->sdb_addrinfo = sdb_new0(); //ns (bf->sdb, "addrinfo", 1);
-		// bf->sdb_addrinfo->refs++;
 	}
 	return bf;
 }
@@ -698,11 +696,6 @@ RZ_API void rz_bin_file_free(void /*RzBinFile*/ *_bf) {
 	rz_buf_free(bf->buf);
 	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
 		bf->curxtr->free_xtr((void *)(bf->xtr_obj));
-	}
-	// TODO: unset related sdb namespaces
-	if (bf->sdb_addrinfo) {
-		sdb_free(bf->sdb_addrinfo);
-		bf->sdb_addrinfo = NULL;
 	}
 	free(bf->file);
 	rz_bin_object_free(bf->o);
