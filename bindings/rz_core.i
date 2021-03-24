@@ -1,7 +1,9 @@
 %module rz_core
 %{
 #include "rz_core.h"
+#include "rz_list.h"
 #include "tmp.h"
+#include "rz_bin.h"
 
 RzCorePlugin rz_core_plugin_java;
 %}
@@ -10,56 +12,23 @@ RzCorePlugin rz_core_plugin_java;
 import json
 %}
 
-#if 1
-
-// First way: include the whole rz_core.h and here be dragons
-// currently fails because of extern rz_core_plugin_java but that is the idea
-
-#undef RZ_API
 #define RZ_DEPRECATE
+#define RZ_API
+#define RZ_IPI
+#define RZ_BORROW
+
 %include "rz_types.h"
-%include "rz_core.h"
-
-%extend rz_core_t {
-  rz_core_t(const char *bin = NULL) {
-    struct rz_core_t *core = rz_core_new();
-    if (!core) {
-      // TODO
-    }
-    rz_core_cmd_str(core, "e scr.color=0");
-    if (bin) {
-      rz_core_cmd_strf(core, "o %s", bin);
-    }
-    return core;
-  }
-
-  ~rz_core_t() {
-    rz_core_free($self);
-  }
-
-  char* cmd(const char *cmd) {
-    return rz_core_cmd_str($self, cmd);
-  }
-
-%pythoncode %{
-  def cmdj(self, cmd):
-      data = self.cmd(cmd)
-      return json.loads(data)
-%}
-}
-
-
-
-#else
-
-// Second way : create a wrapper structure and extend it to provide only
-// required APIs
-
 %include "tmp.h"
+
+// Explicitely declare required types to produce bindings generation
+%template(RzBinSectionList) RzListWrapper<RzBinSection*>;
+
+// Create a core wrapper structure and extend it to provide only
+// required APIs
 
 %extend RZ {
   RZ(const char *bin = NULL) {
-    RZ* r = malloc(sizeof(RZ));
+    RZ* r = (RZ*) malloc(sizeof(RZ));
     if (!r) {
       // TODO
     }
@@ -83,24 +52,18 @@ import json
     return rz_core_cmd_str($self->_core, cmd);
   }
 
+  RzList *get_sections_x() {
+    return rz_bin_get_sections($self->_core->bin);
+  }
+
+  RzListWrapper<RzBinSection *> get_sections() {
+    return RzListWrapper<RzBinSection *>(rz_bin_get_sections($self->_core->bin));
+  }
+
 %pythoncode %{
   def cmdj(self, cmd):
       data = self.cmd(cmd)
       return json.loads(data)
 %}
 }
-
-
-#endif
-
-
-
-
-#if 0
-
-//rz_core_t *rz_core_new(void);
-//char *rz_core_cmd_str(rz_core_t *core, const char *cmd);
-//void rz_core_free(rz_core_t *core);
-
-#endif
 

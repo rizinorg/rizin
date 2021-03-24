@@ -3,19 +3,19 @@
 
 import sys
 sys.path.append('../build/bindings')
-import rz_core as rz
+import rz_core as rizin
 
-if 1:
-    core = rz.rz_core_t('/bin/ls')
-else:
-    # Use it like rzpipe
-    core = rz.RZ()
-    core.cmd('e io.cache=true')
-    core.cmd('wx 90')
-    print(core.cmd('pd 1').strip())
-    print(core.cmdj('pdj 1')[0]['opcode'])
+# Use it like rzpipe
+core = rizin.RZ()               # TODO: Rename RZ() to open_file?
+core.cmd('e io.cache=true')
+core.cmd('wx 90')
+print(core.cmd('pd 1').strip())
+print(core.cmdj('pdj 1')[0]['opcode'])
 
-    # Use the actual API
-    core = rz.RZ('/bin/ls')
+# Use the actual bindings and API
+core = rz.RZ('/bin/ls')
+sections = core.get_sections()
+for i in range(len(sections)):
+    print('section {:02d} {:s}'.format(i, sections[i].name))
 
 
