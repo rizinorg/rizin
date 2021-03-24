@@ -837,11 +837,11 @@ static void detect_constructor_destructor(RzAnalysis *analysis, class_type_info 
 	RzVector *vec = rz_analysis_class_method_get_all(analysis, cti->name);
 	RzAnalysisMethod *meth;
 	rz_vector_foreach(vec, meth) {
-		if (!rz_str_cmp(meth->real_name, cti->name, strlen(cti->name))) {
+		if (!rz_str_cmp(meth->real_name, cti->name, -1)) {
 			meth->method_type = RZ_ANALYSIS_CLASS_METHOD_CONSTRUCTOR;
 			rz_analysis_class_method_set(analysis, cti->name, meth);
 			continue;
-		} else if (rz_str_startswith(meth->real_name, "~") && !rz_str_cmp(meth->real_name + 1, cti->name, strlen(cti->name))) {
+		} else if (rz_str_startswith(meth->real_name, "~") && !rz_str_cmp(meth->real_name + 1, cti->name, -1)) {
 			if (meth->method_type == RZ_ANALYSIS_CLASS_METHOD_VIRTUAL) {
 				meth->method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL_DESTRUCTOR;
 			} else {
