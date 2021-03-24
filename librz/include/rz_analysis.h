@@ -2162,7 +2162,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_v810;
 extern RzAnalysisPlugin rz_analysis_plugin_v850;
 extern RzAnalysisPlugin rz_analysis_plugin_vax;
 extern RzAnalysisPlugin rz_analysis_plugin_wasm;
-extern RzAnalysisPlugin rz_analysis_plugin_ws;
 extern RzAnalysisPlugin rz_analysis_plugin_x86;
 extern RzAnalysisPlugin rz_analysis_plugin_x86_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_x86_im;
