@@ -3,7 +3,7 @@
 ---
 name: cmd_remote
 commands:
-  - name: "="
+  - name: "R"
     cname: remote
     summary: List all open connections / Exec <cmd> at remote <fd>
     args_str: " [[<fd>] <cmd>]"
@@ -13,7 +13,7 @@ commands:
         optional: true
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
-  - name: =<
+  - name: R<
     cname: remote_send
     summary: Send output of local <cmd> to remote <fd>
     args:
@@ -22,39 +22,39 @@ commands:
         optional: true
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
-  - name: =!
+  - name: R!
     cname: io_system_run_oldhandler
     summary: Run <cmd> via rz_io_system
     type: RZ_CMD_DESC_TYPE_OLDINPUT
     args_str: "[<cmd>]"
     options: ""
-  - name: =+
+  - name: R+
     cname: remote_add
     summary: Connect to remote host:port
     args:
       - name: "[proto://]host:port"
         type: RZ_CMD_ARG_TYPE_STRING
-  - name: =-
+  - name: R-
     cname: remote_del
     summary: remove all hosts or host 'fd'
     args:
       - name: fd
         type: RZ_CMD_ARG_TYPE_NUM
         optional: true
-  - name: ==
+  - name: R=
     cname: remote_open
     summary: Open remote session with host 'fd', 'q' to quit
     args:
       - name: fd
         type: RZ_CMD_ARG_TYPE_NUM
-  - name: =!=
+  - name: R!=
     cname: remote_mode_enable
     summary: Enable remote cmd mode, sending commands to remote <fd> server
     args:
       - name: fd
         type: RZ_CMD_ARG_TYPE_NUM
         default_value: "0"
-  - name: "!=!"
+  - name: "R=!"
     cname: remote_mode_disable
     summary: Disable remote cmd mode
     args: []

@@ -3936,27 +3936,30 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "/", rz_cmd_search, &cmd_search_help);
 	rz_warn_if_fail(cmd_search_cd);
 
-	RzCmdDesc *equal__cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "=", rz_remote_handler, &remote_help, &equal__help);
+	RzCmdDesc *equal__cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "=", NULL, NULL, &equal__help);
 	rz_warn_if_fail(equal__cd);
-	RzCmdDesc *remote_send_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=<", rz_remote_send_handler, &remote_send_help);
+	RzCmdDesc *remote_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R", rz_remote_handler, &remote_help);
+	rz_warn_if_fail(remote_cd);
+
+	RzCmdDesc *remote_send_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R<", rz_remote_send_handler, &remote_send_help);
 	rz_warn_if_fail(remote_send_cd);
 
-	RzCmdDesc *io_system_run_oldhandler_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=!", rz_io_system_run_oldhandler, &io_system_run_oldhandler_help);
+	RzCmdDesc *io_system_run_oldhandler_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "R!", rz_io_system_run_oldhandler, &io_system_run_oldhandler_help);
 	rz_warn_if_fail(io_system_run_oldhandler_cd);
 
-	RzCmdDesc *remote_add_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=+", rz_remote_add_handler, &remote_add_help);
+	RzCmdDesc *remote_add_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R+", rz_remote_add_handler, &remote_add_help);
 	rz_warn_if_fail(remote_add_cd);
 
-	RzCmdDesc *remote_del_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=-", rz_remote_del_handler, &remote_del_help);
+	RzCmdDesc *remote_del_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R-", rz_remote_del_handler, &remote_del_help);
 	rz_warn_if_fail(remote_del_cd);
 
-	RzCmdDesc *remote_open_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "==", rz_remote_open_handler, &remote_open_help);
+	RzCmdDesc *remote_open_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R=", rz_remote_open_handler, &remote_open_help);
 	rz_warn_if_fail(remote_open_cd);
 
-	RzCmdDesc *remote_mode_enable_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=!=", rz_remote_mode_enable_handler, &remote_mode_enable_help);
+	RzCmdDesc *remote_mode_enable_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R!=", rz_remote_mode_enable_handler, &remote_mode_enable_help);
 	rz_warn_if_fail(remote_mode_enable_cd);
 
-	RzCmdDesc *remote_mode_disable_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "!=!", rz_remote_mode_disable_handler, &remote_mode_disable_help);
+	RzCmdDesc *remote_mode_disable_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R=!", rz_remote_mode_disable_handler, &remote_mode_disable_help);
 	rz_warn_if_fail(remote_mode_disable_cd);
 
 	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=:", rz_remote_rap_handler, &remote_rap_help);
