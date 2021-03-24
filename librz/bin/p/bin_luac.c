@@ -41,6 +41,10 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		proto = lua_parse_body_54(buf, 0x20, bf->size);
 		general_info = lua_parse_header_54(bf, major, minor);
 		break;
+	case 3:
+		proto = lua_parse_body_53(buf, 0x22, bf->size);
+		general_info = lua_parse_header_53(bf, major, minor);
+		break;
 	default:
 		proto = NULL;
 		general_info = NULL;

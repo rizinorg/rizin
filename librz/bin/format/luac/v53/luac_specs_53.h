@@ -32,4 +32,9 @@ typedef ut32 LUA_INT;
 /* Body */
 #define LUAC_FILENAME_OFFSET 0x22
 
+/* Macros of tag */
+// conflict with 5.4
+#define LUA_TNUMFLT	(3 | (0 << 4))  /* float numbers */
+#define LUA_TNUMINT	(3 | (1 << 4))  /* integer numbers */
+
 #endif //BUILD_LUAC_SPECS_53_H

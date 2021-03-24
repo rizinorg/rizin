@@ -27,7 +27,6 @@ static ut32 lua_load_int(RzBuffer *buffer, ut64 offset) {
 
 static ut64 lua_parse_line_defined(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
         ut64 size_offset;
-        ut64 delta_offset;
         int line_defined;
         int last_line_defined;
 
@@ -136,9 +135,10 @@ static ut64 lua_parse_const_entry(LuaProto *proto, RzBuffer *buffer, ut64 offset
         offset += 1;
 
         /* read data */
-        // TODO : replace 8 with Macro
+	// TODO : check tag Macro
+	// RIGHT : 0x843
         switch (current_entry->tag) {
-        case LUA_VNUMFLT:
+        case LUA_TNUMFLT:
 		data_len = sizeof(LUA_NUMBER);
                 recv_data = RZ_NEWS(ut8, data_len);
                 lua_load_block(buffer, recv_data, data_len, offset, data_size);
@@ -146,15 +146,17 @@ static ut64 lua_parse_const_entry(LuaProto *proto, RzBuffer *buffer, ut64 offset
                         return 0;
                 }
                 delta_offset = data_len;
+		current_entry->tag = LUA_VNUMFLT;               // keep the same with 5.4 tag
 		break;
-        case LUA_VNUMINT:
-                data_len = sizeof(LUA_INT);
+        case LUA_TNUMINT:
+                data_len = sizeof(LUA_INTEGER);
                 recv_data = RZ_NEWS(ut8, data_len);
                 lua_load_block(buffer, recv_data, data_len, offset, data_size);
                 if (offset + data_len > data_size) {
                         return 0;
                 }
                 delta_offset = data_len;
+		current_entry->tag = LUA_VNUMINT;               // keep the same with 5.4 tag
                 break;
         case LUA_VSHRSTR:
         case LUA_VLNGSTR:
@@ -162,14 +164,14 @@ static ut64 lua_parse_const_entry(LuaProto *proto, RzBuffer *buffer, ut64 offset
                 lua_check_error_offset(delta_offset);
                 break;
 	// BOOLEAN
-        case 1:
+        case LUA_TBOOLEAN:
 		current_entry->tag = (rz_buf_read8_at(buffer, offset) == 0 ? LUA_VFALSE : LUA_VTRUE);
 		recv_data = NULL;
 		data_len = 0;
 		delta_offset = 1;
 		break;
 	// NIL
-        case 0:
+        case LUA_TNIL:
         default:
                 recv_data = NULL;
 		current_entry->tag = LUA_VNIL;
@@ -269,78 +271,116 @@ static ut64 lua_parse_upvalues(LuaProto *proto, RzBuffer *buffer, ut64 offset, u
         return offset - base_offset;
 }
 
-RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
-        RzBinInfo *ret = NULL;
-        RzBuffer *buffer;
+static ut64 lua_parse_debug(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
+        int entries_cnt;
+        int i;
+        ut64 base_offset;
+        ut64 delta_offset;
 
-        st64 reat = bf->size;
-        if (reat < LUAC_53_HDRSIZE) {
-                eprintf("Truncated Header\n");
-                return NULL;
-        }
-        buffer = bf->buf;
+        base_offset = offset;
 
-        /* read header members from work buffer */
-        ut8 luac_format = rz_buf_read8_at(buffer, LUAC_53_FORMAT_OFFSET);
-	ut8 int_size = rz_buf_read8_at(buffer, LUAC_53_INT_SIZE_OFFSET);
-	ut8 sizet_size = rz_buf_read8_at(buffer, LUAC_53_SIZET_SIZE_OFFSET);
-        ut8 instruction_size = rz_buf_read8_at(buffer, LUAC_53_INSTRUCTION_SIZE_OFFSET);
-        ut8 integer_size = rz_buf_read8_at(buffer, LUAC_53_INTEGER_SIZE_OFFSET);
-        ut8 number_size = rz_buf_read8_at(buffer, LUAC_53_NUMBER_SIZE_OFFSET);
-        ut64 integer_valid = lua_load_integer(buffer, LUAC_53_INTEGER_VALID_OFFSET);
-        double number_valid = lua_load_number(buffer, LUAC_53_NUMBER_VALID_OFFSET);
-
-        /* Common Ret */
-        if (!(ret = RZ_NEW0(RzBinInfo))) {
-                return NULL;
-        }
-        ret->file = rz_str_new(bf->file);
-        ret->type = rz_str_newf("Lua %c.%c compiled file", major + '0', minor + '0');
-        ret->bclass = rz_str_new("Lua compiled file");
-        ret->rclass = rz_str_new("luac");
-        ret->arch = rz_str_new("luac");
-        ret->machine = rz_str_newf("Lua %c.%c VM", major + '0', minor + '0');
-        ret->os = rz_str_newf("%c.%c", major + '0', minor + '0');
-        ret->bits = 8;
-
-        /* official format ? */
-        if (luac_format != LUAC_54_FORMAT) {
-                ret->compiler = rz_str_new("Unofficial Lua Compiler");
-                return ret;
-        }
-        ret->compiler = rz_str_new("Official Lua Compiler");
-
-        /* Check Size */
-	// TODO : remove this check and process different compiler options
-        if ((instruction_size != sizeof(LUA_INSTRUCTION)) ||
-            (integer_size != sizeof(LUA_INTEGER)) ||
-            (number_size != sizeof(LUA_NUMBER)) ||
-		(int_size != sizeof(LUA_INT)) ||
-                (sizet_size != sizeof(size_t))){
-                eprintf("Size Definition not matched\n");
-                return ret;
+        /* parse line info */
+	if (offset + sizeof(LUA_INT) > data_size) {
+		return 0;
+	}
+	entries_cnt = lua_load_int(buffer, offset);
+        offset += sizeof(LUA_INT);
+        LuaLineinfoEntry *info_entry;
+        for (i = 0; i < entries_cnt; ++i) {
+                info_entry = lua_new_lineinfo_entry();
+                info_entry->offset = offset;
+                info_entry->info_data = lua_load_int(buffer, offset);
+                rz_list_append(proto->line_info_entries, info_entry);
+                offset += sizeof(int);
         }
 
-        /* Check endian */
-        if (integer_valid != LUAC_53_INT_VALIDATION) {
-                eprintf("Integer Format Not Matched\n");
-                return ret;
+        /* no parse absline info */
+
+        /* parse local vars */
+        if (offset + sizeof(LUA_INT) > data_size) {
+                return 0;
         }
-        if (number_valid != LUAC_53_NUMBER_VALIDATION) {
-                eprintf("Number Format Not Matched\n");
-                return ret;
+        entries_cnt = lua_load_int(buffer, offset);
+        offset += sizeof(LUA_INT);
+        LuaLocalVarEntry *var_entry;
+        for (i = 0; i < entries_cnt; ++i) {
+                var_entry = lua_new_local_var_entry();
+                var_entry->offset = offset;
+
+                /* string */
+                delta_offset = lua_parse_string(
+                        buffer,
+                        &var_entry->varname, &var_entry->varname_len,
+                        offset, data_size);
+                lua_check_error_offset(delta_offset);
+                offset += delta_offset;
+
+                /* start pc && end pc -- int */
+		if (offset + sizeof(LUA_INT) + sizeof(LUA_INT) > data_size) {
+			return 0;
+		}
+		var_entry->start_pc = lua_load_int(buffer, offset);
+                offset += sizeof(LUA_INT);
+
+                /* end pc -- int */
+		var_entry->end_pc = lua_load_int(buffer, offset);
+                offset += sizeof(LUA_INT);
+
+                rz_list_append(proto->local_var_info_entries, var_entry);
         }
 
-        /* parse source file name */
-        char *src_file_name = NULL;
-        int name_len;
-        lua_parse_string(buffer, ((ut8 **)&(src_file_name)), &name_len, LUAC_FILENAME_OFFSET, bf->size);
+        /* parse upvalue */
+        if (offset + sizeof(LUA_INT) > data_size) {
+                return 0;
+        }
+        entries_cnt = lua_load_int(buffer, offset);
+        offset += sizeof(LUA_INT);
+        LuaDbgUpvalueEntry *dbg_upvalue_entry;
+        for (i = 0; i < entries_cnt; ++i) {
+                dbg_upvalue_entry = lua_new_dbg_upvalue_entry();
+                dbg_upvalue_entry->offset = offset;
 
-        /* put source file info into GUID */
-        ret->guid = rz_str_new(src_file_name ? src_file_name : "stripped");
-        free(src_file_name);
+                delta_offset = lua_parse_string(
+                        buffer,
+                        &dbg_upvalue_entry->upvalue_name, &dbg_upvalue_entry->name_len,
+                        offset, data_size);
+                lua_check_error_offset(delta_offset);
+                offset += delta_offset;
 
-        return ret;
+                rz_list_append(proto->dbg_upvalue_entries, dbg_upvalue_entry);
+        }
+
+        proto->debug_size = offset - base_offset + 1;
+        return offset - base_offset;
+}
+
+static ut64 lua_parse_protos(LuaProto *proto, RzBuffer *buffer, ut64 offset, ut64 data_size) {
+        rz_return_val_if_fail(proto, 0);
+
+        int proto_cnt;
+        int i;
+        ut64 base_offset;
+        ut64 delta_offset;
+
+        base_offset = offset; // store origin offset
+
+	delta_offset = sizeof(LUA_INT);
+	if (offset + delta_offset > data_size) {
+		return 0;
+	}
+	proto_cnt = lua_load_int(buffer, offset);
+        offset += delta_offset;
+
+        LuaProto *current_proto;
+        for (i = 0; i < proto_cnt; ++i) {
+                current_proto = lua_parse_body_53(buffer, offset, data_size);
+                lua_return_if_null(current_proto);
+                rz_list_append(proto->proto_entries, current_proto);
+                offset += current_proto->size - 1; // update offset
+        }
+
+        // return the delta between offset and base_offset
+        return offset - base_offset;
 }
 
 LuaProto *lua_parse_body_53(RzBuffer *buffer, ut64 base_offset, ut64 data_size) {
@@ -359,7 +399,7 @@ LuaProto *lua_parse_body_53(RzBuffer *buffer, ut64 base_offset, ut64 data_size) 
 	ret_proto->offset = offset;
 
 	// parse proto name
-	delta_offset = lua_parse_name(ret_proto, buffer, offset, data_size);
+        delta_offset = lua_parse_name(ret_proto, buffer, offset, data_size);
 	lua_check_error_offset_proto(delta_offset, ret_proto);
 	offset += delta_offset;
 
@@ -414,4 +454,78 @@ LuaProto *lua_parse_body_53(RzBuffer *buffer, ut64 base_offset, ut64 data_size) 
         ret_proto->size = offset - base_offset + 1;
 
         return ret_proto;
+}
+
+RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
+        RzBinInfo *ret = NULL;
+        RzBuffer *buffer;
+
+        st64 reat = bf->size;
+        if (reat < LUAC_53_HDRSIZE) {
+                eprintf("Truncated Header\n");
+                return NULL;
+        }
+        buffer = bf->buf;
+
+        /* read header members from work buffer */
+        ut8 luac_format = rz_buf_read8_at(buffer, LUAC_53_FORMAT_OFFSET);
+        ut8 int_size = rz_buf_read8_at(buffer, LUAC_53_INT_SIZE_OFFSET);
+        ut8 sizet_size = rz_buf_read8_at(buffer, LUAC_53_SIZET_SIZE_OFFSET);
+        ut8 instruction_size = rz_buf_read8_at(buffer, LUAC_53_INSTRUCTION_SIZE_OFFSET);
+        ut8 integer_size = rz_buf_read8_at(buffer, LUAC_53_INTEGER_SIZE_OFFSET);
+        ut8 number_size = rz_buf_read8_at(buffer, LUAC_53_NUMBER_SIZE_OFFSET);
+        ut64 integer_valid = lua_load_integer(buffer, LUAC_53_INTEGER_VALID_OFFSET);
+        double number_valid = lua_load_number(buffer, LUAC_53_NUMBER_VALID_OFFSET);
+
+        /* Common Ret */
+        if (!(ret = RZ_NEW0(RzBinInfo))) {
+                return NULL;
+        }
+        ret->file = rz_str_new(bf->file);
+        ret->type = rz_str_newf("Lua %c.%c compiled file", major + '0', minor + '0');
+        ret->bclass = rz_str_new("Lua compiled file");
+        ret->rclass = rz_str_new("luac");
+        ret->arch = rz_str_new("luac");
+        ret->machine = rz_str_newf("Lua %c.%c VM", major + '0', minor + '0');
+        ret->os = rz_str_newf("%c.%c", major + '0', minor + '0');
+        ret->bits = 8;
+
+        /* official format ? */
+        if (luac_format != LUAC_54_FORMAT) {
+                ret->compiler = rz_str_new("Unofficial Lua Compiler");
+                return ret;
+        }
+        ret->compiler = rz_str_new("Official Lua Compiler");
+
+        /* Check Size */
+        // TODO : remove this check and process different compiler options
+        if ((instruction_size != sizeof(LUA_INSTRUCTION)) ||
+            (integer_size != sizeof(LUA_INTEGER)) ||
+            (number_size != sizeof(LUA_NUMBER)) ||
+            (int_size != sizeof(LUA_INT)) ||
+            (sizet_size != sizeof(size_t))){
+                eprintf("Size Definition not matched\n");
+                return ret;
+        }
+
+        /* Check endian */
+        if (integer_valid != LUAC_53_INT_VALIDATION) {
+                eprintf("Integer Format Not Matched\n");
+                return ret;
+        }
+        if (number_valid != LUAC_53_NUMBER_VALIDATION) {
+                eprintf("Number Format Not Matched\n");
+                return ret;
+        }
+
+        /* parse source file name */
+        char *src_file_name = NULL;
+        int name_len;
+        lua_parse_string(buffer, ((ut8 **)&(src_file_name)), &name_len, LUAC_FILENAME_OFFSET, bf->size);
+
+        /* put source file info into GUID */
+        ret->guid = rz_str_new(src_file_name ? src_file_name : "stripped");
+        free(src_file_name);
+
+        return ret;
 }
