@@ -82,9 +82,31 @@ typedef enum rz_cmd_escape_t {
 	RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG, ///< The string should be escaped so that it can be wrapped in '....'
 } RzCmdEscape;
 
+/**
+ * \brief Represent the output state of a command handler.
+ *
+ * This structure is passed to commands of type \p RZ_CMD_DESC_TYPE_ARGV_STATE .
+ */
+typedef struct rz_cmd_state_output_t {
+	/**
+	 * Output mode expected from the command handler
+	 */
+	RzOutputMode mode;
+	/**
+	 * mode-specific data. Handlers are called with these data already
+	 * initialized as necessary, based on the requested mode, and they do not
+	 * need to be freed by the handler.
+	 */
+	union {
+		PJ *pj;
+		RzTable *t;
+	} d;
+} RzCmdStateOutput;
+
 typedef int (*RzCmdCb)(void *user, const char *input);
 typedef RzCmdStatus (*RzCmdArgvCb)(RzCore *core, int argc, const char **argv);
 typedef RzCmdStatus (*RzCmdArgvModesCb)(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+typedef RzCmdStatus (*RzCmdArgvStateCb)(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 typedef int (*RzCmdNullCb)(void *user);
 
 /**
@@ -339,6 +361,18 @@ typedef enum rz_cmd_desc_type_t {
 	 * be both executed and has sub-commands.
 	 */
 	RZ_CMD_DESC_TYPE_ARGV_MODES,
+	/**
+	 * For handlers that accept argc/argv and that provides multiple output
+	 * modes (e.g. rizin commands, quiet output, json, long). It cannot have
+	 * children. Use RZ_CMD_DESC_TYPE_GROUP if you need a command that can
+	 * be both executed and has sub-commands.
+	 *
+	 * Differently from \p RZ_CMD_DESC_TYPE_ARGV_MODES, these handlers receive
+	 * an output structure with the mode and data already initialized (e.g. PJ,
+	 * RzTable, etc.) and the handler just has to fill the data in those
+	 * structure, while RzCmd will allocate, free and print the data within.
+	 */
+	RZ_CMD_DESC_TYPE_ARGV_STATE,
 } RzCmdDescType;
 
 /**
@@ -402,6 +436,12 @@ typedef struct rz_cmd_desc_t {
 			int min_argc;
 			int max_argc;
 		} argv_modes_data;
+		struct {
+			RzCmdArgvStateCb cb;
+			int modes; ///< A combination of RzOutputMode values
+			int min_argc;
+			int max_argc;
+		} argv_state_data;
 	} d;
 } RzCmdDesc;
 
@@ -486,9 +526,11 @@ static inline int rz_cmd_status2int(RzCmdStatus s) {
 /* RzCmdDescriptor */
 RZ_API RzCmdDesc *rz_cmd_desc_argv_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_argv_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help);
+RZ_API RzCmdDesc *rz_cmd_desc_argv_state_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvStateCb cb, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
 RZ_API RzCmdDesc *rz_cmd_desc_group_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
+RZ_API RzCmdDesc *rz_cmd_desc_group_state_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvStateCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
 RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdCb cb, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd);
