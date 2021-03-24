@@ -555,22 +555,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=flag prefix dump
-FILE=-
-CMDS=<<EOF
-f jiji=1
-f jojo=2
-f base=100
-.f*base
-?vi jiji
-?vi jojo
-EOF
-EXPECT=<<EOF
-101
-102
-EOF
-RUN
-
 NAME=rename flags from bin
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
