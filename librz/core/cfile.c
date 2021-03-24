@@ -1233,7 +1233,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	if (loadaddr != UT64_MAX) {
 		rz_config_set_i(r->config, "bin.laddr", loadaddr);
 	}
-	rz_core_cmd0(r, "=!");
+	rz_core_cmd0(r, "R!");
 beach:
 	r->times->file_open_time = rz_time_now_mono() - prev;
 	return fh;

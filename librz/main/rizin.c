@@ -805,12 +805,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			return 1;
 		}
 		if (strstr(uri, "://")) {
-			rz_core_cmdf(r, "=+ %s", uri);
+			rz_core_cmdf(r, "R+ %s", uri);
 		} else {
 			argv[opt.ind] = rz_str_newf("http://%s/cmd/", argv[opt.ind]);
-			rz_core_cmdf(r, "=+ %s", argv[opt.ind]);
+			rz_core_cmdf(r, "R+ %s", argv[opt.ind]);
 		}
-		rz_core_cmd0(r, "=!=");
+		rz_core_cmd0(r, "R!=");
 		argv[opt.ind] = "-";
 	}
 
@@ -1185,7 +1185,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			const char *fstype = r->bin->cur->o->info->bclass;
 			rz_core_cmdf(r, "m /root %s @ 0", fstype);
 		}
-		rz_core_cmd0(r, "=!"); // initalize io subsystem
+		rz_core_cmd0(r, "R!"); // initalize io subsystem
 		iod = r->io && fh ? rz_io_desc_get(r->io, fh->fd) : NULL;
 		if (mapaddr) {
 			rz_core_seek(r, mapaddr, true);

@@ -2833,7 +2833,7 @@ static void set_prompt(RzCore *r) {
 		char *s = rz_core_cmd_str(r, "s");
 		r->offset = rz_num_math(NULL, s);
 		free(s);
-		remote = "=!";
+		remote = "R!";
 	}
 
 	if (rz_config_get_i(r->config, "scr.color")) {

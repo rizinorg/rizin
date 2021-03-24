@@ -3962,22 +3962,22 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *remote_mode_disable_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R=!", rz_remote_mode_disable_handler, &remote_mode_disable_help);
 	rz_warn_if_fail(remote_mode_disable_cd);
 
-	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=:", rz_remote_rap_handler, &remote_rap_help);
+	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R:", rz_remote_rap_handler, &remote_rap_help);
 	rz_warn_if_fail(remote_rap_cd);
 
-	RzCmdDesc *equal_g_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=g", rz_equal_g_handler_old, &equal_g_handler_old_help);
+	RzCmdDesc *equal_g_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "Rg", rz_equal_g_handler_old, &equal_g_handler_old_help);
 	rz_warn_if_fail(equal_g_handler_old_cd);
 
-	RzCmdDesc *equal_h_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=h", rz_equal_h_handler_old, &equal_h_handler_old_help);
+	RzCmdDesc *equal_h_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "Rh", rz_equal_h_handler_old, &equal_h_handler_old_help);
 	rz_warn_if_fail(equal_h_handler_old_cd);
 
-	RzCmdDesc *equal_H_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=H", rz_equal_H_handler_old, &equal_H_handler_old_help);
+	RzCmdDesc *equal_H_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "RH", rz_equal_H_handler_old, &equal_H_handler_old_help);
 	rz_warn_if_fail(equal_H_handler_old_cd);
 
-	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=t", rz_remote_tcp_handler, &remote_tcp_help);
+	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "Rt", rz_remote_tcp_handler, &remote_tcp_help);
 	rz_warn_if_fail(remote_tcp_cd);
 
-	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=&:", rz_remote_rap_bg_handler, &remote_rap_bg_help);
+	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "R&:", rz_remote_rap_bg_handler, &remote_rap_bg_help);
 	rz_warn_if_fail(remote_rap_bg_cd);
 
 	RzCmdDesc *cmd_help_search_cd = rz_cmd_desc_argv_modes_new(core->rcmd, root_cd, "?*", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_help_search_handler, &cmd_help_search_help);

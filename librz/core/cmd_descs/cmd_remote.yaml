@@ -58,7 +58,7 @@ commands:
     cname: remote_mode_disable
     summary: Disable remote cmd mode
     args: []
-  - name: "=:"
+  - name: "R:"
     cname: remote_rap
     summary: Start the rap server (o rap://9999) / Execute <cmd> on rap server
     args:
@@ -67,19 +67,19 @@ commands:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
         optional: true
-  - name: =g
+  - name: Rg
     cname: equal_g_handler_old
     summary: Start the gdbserver
     type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: =h
+  - name: Rh
     cname: equal_h_handler_old
     summary: Start the http webserver
     type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: =H
+  - name: RH
     cname: equal_H_handler_old
     summary: Start the http webserver (and launch the web browser)
     type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: =t
+  - name: Rt
     cname: remote_tcp
     summary: Start the tcp server
     args:
@@ -88,7 +88,7 @@ commands:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
         optional: true
-  - name: "=&:"
+  - name: "R&:"
     cname: remote_rap_bg
     summary: Start rap server in background (same as '&_=h')
     args:
