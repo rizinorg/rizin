@@ -125,7 +125,7 @@ static bool java_fini(void *user) {
 static int java_assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
 	ut8 buffer[128];
 	st32 written = 0;
-	st32 slen = strlen(str); 
+	st32 slen = strlen(str);
 
 	if (!java_assembler(str, slen, buffer, sizeof(buffer), a->pc, &written)) {
 		return -1;

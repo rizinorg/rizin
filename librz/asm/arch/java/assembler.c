@@ -10,41 +10,41 @@
 			RZ_LOG_ERROR("[!] java_assembler: no enough output buffer (requires %d bytes).\n", b); \
 			return false; \
 		} \
-	} while(0)
+	} while (0)
 
-#define return_error_if_empty_input(a,b) \
+#define return_error_if_empty_input(a, b) \
 	do { \
 		if (RZ_STR_ISEMPTY(a) || b < 1) { \
 			RZ_LOG_ERROR("[!] java_assembler: the input is empty.\n"); \
 			return false; \
 		} \
-	} while(0)
+	} while (0)
 
-typedef bool (*AsmEncoder)(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written);
+typedef bool (*AsmEncoder)(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written);
 
 typedef struct _jasm {
-	const char* opcode;
+	const char *opcode;
 	st32 length;
 	ut8 bytecode;
-	AsmEncoder encode; 
+	AsmEncoder encode;
 } JavaAsm;
 
-static const char* next_printable(const char* s) {
+static const char *next_printable(const char *s) {
 	if (!s) {
 		return NULL;
 	}
-	while(RZ_STR_ISNOTEMPTY(s) && IS_WHITECHAR(*s)) {
+	while (RZ_STR_ISNOTEMPTY(s) && IS_WHITECHAR(*s)) {
 		s++;
 	}
 	return RZ_STR_ISEMPTY(s) ? NULL : s;
 }
 
-static bool encode_not_implemented(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_not_implemented(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	RZ_LOG_ERROR("[!] java_assembler: not implemented.\n");
 	return false;
 }
 
-static bool encode_only_bcode(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_only_bcode(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 1);
 
 	*written = 1;
@@ -52,7 +52,7 @@ static bool encode_only_bcode(ut8 bytecode, const char* input, st32 input_size, 
 	return true;
 }
 
-static bool encode_st8(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_st8(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 2);
 	return_error_if_empty_input(input, input_size);
 
@@ -63,11 +63,11 @@ static bool encode_st8(ut8 bytecode, const char* input, st32 input_size, ut8 *ou
 
 	*written = 2;
 	output[0] = bytecode;
-	((st8*)output)[1] = (st8)strtoll(input, NULL, 0);
+	((st8 *)output)[1] = (st8)strtoll(input, NULL, 0);
 	return true;
 }
 
-static bool encode_ut8(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_ut8(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 2);
 	return_error_if_empty_input(input, input_size);
 
@@ -82,7 +82,7 @@ static bool encode_ut8(ut8 bytecode, const char* input, st32 input_size, ut8 *ou
 	return true;
 }
 
-static bool encode_addr32(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_addr32(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 5);
 	return_error_if_empty_input(input, input_size);
 
@@ -99,7 +99,7 @@ static bool encode_addr32(ut8 bytecode, const char* input, st32 input_size, ut8 
 	return true;
 }
 
-static bool encode_addr16(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_addr16(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 3);
 	return_error_if_empty_input(input, input_size);
 
@@ -116,7 +116,7 @@ static bool encode_addr16(ut8 bytecode, const char* input, st32 input_size, ut8 
 	return true;
 }
 
-static bool encode_st16(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_st16(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 3);
 	return_error_if_empty_input(input, input_size);
 
@@ -132,7 +132,7 @@ static bool encode_st16(ut8 bytecode, const char* input, st32 input_size, ut8 *o
 	return true;
 }
 
-static bool encode_const_pool8(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_const_pool8(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 2);
 	return_error_if_empty_input(input, input_size);
 
@@ -152,7 +152,7 @@ static bool encode_const_pool8(ut8 bytecode, const char* input, st32 input_size,
 	return true;
 }
 
-static bool encode_const_pool16(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_const_pool16(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 3);
 	return_error_if_empty_input(input, input_size);
 
@@ -173,7 +173,7 @@ static bool encode_const_pool16(ut8 bytecode, const char* input, st32 input_size
 	return true;
 }
 
-static bool encode_const_pool16_ut8(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_const_pool16_ut8(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 4);
 	return_error_if_empty_input(input, input_size);
 
@@ -187,8 +187,8 @@ static bool encode_const_pool16_ut8(ut8 bytecode, const char* input, st32 input_
 		return false;
 	}
 
-	const char* next = NULL;
-	char* tmp = NULL;
+	const char *next = NULL;
+	char *tmp = NULL;
 	ut16 cpool = (ut16)strtoll(input, &tmp, 0);
 	if (!tmp || tmp == (input + input_size) || !(next = next_printable(tmp))) {
 		RZ_LOG_ERROR("[!] java_assembler: '%s' is not a valid number between 0 and %u (inclusive).\n", tmp, UINT8_MAX);
@@ -207,7 +207,7 @@ static bool encode_const_pool16_ut8(ut8 bytecode, const char* input, st32 input_
 	return true;
 }
 
-static bool encode_ut8x2(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_ut8x2(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 3);
 	return_error_if_empty_input(input, input_size);
 
@@ -216,8 +216,8 @@ static bool encode_ut8x2(ut8 bytecode, const char* input, st32 input_size, ut8 *
 		return false;
 	}
 
-	const char* next = NULL;
-	char* tmp = NULL;
+	const char *next = NULL;
+	char *tmp = NULL;
 	ut16 arg0 = (ut16)strtoll(input, &tmp, 0);
 	if (!tmp || tmp == (input + input_size) || !(next = next_printable(tmp))) {
 		RZ_LOG_ERROR("[!] java_assembler: '%s' is not a valid number between 0 and %u (inclusive).\n", tmp, UINT8_MAX);
@@ -236,7 +236,7 @@ static bool encode_ut8x2(ut8 bytecode, const char* input, st32 input_size, ut8 *
 	return true;
 }
 
-static bool encode_atype(ut8 bytecode, const char* input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
+static bool encode_atype(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	return_error_if_size_lt(output_size, 2);
 	return_error_if_empty_input(input, input_size);
 
@@ -269,7 +269,7 @@ static bool encode_atype(ut8 bytecode, const char* input, st32 input_size, ut8 *
 	return true;
 }
 
-#define NS(x) x,(sizeof(x)-1)
+#define NS(x) x, (sizeof(x) - 1)
 static const JavaAsm instructions[205] = {
 	{ NS("wide") /*           */, BYTECODE_C4_WIDE /*           */, encode_only_bcode },
 	{ NS("tableswitch") /*    */, BYTECODE_AA_TABLESWITCH /*    */, encode_not_implemented },
@@ -487,7 +487,7 @@ bool java_assembler(const char *input, st32 input_size, ut8 *output, st32 output
 			continue;
 		}
 		if (!rz_str_ncasecmp(input, instructions[i].opcode, instructions[i].length)) {
-			const char* p = next_printable(input + instructions[i].length);
+			const char *p = next_printable(input + instructions[i].length);
 			st32 used = p ? (p - input) : input_size;
 			return instructions[i].encode(instructions[i].bytecode, p, input_size - used, output, output_size, pc, written);
 		}
@@ -496,4 +496,3 @@ bool java_assembler(const char *input, st32 input_size, ut8 *output, st32 output
 	RZ_LOG_ERROR("[!] java_assembler: invalid assembly.\n");
 	return false;
 }
-
