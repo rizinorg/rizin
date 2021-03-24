@@ -36,9 +36,9 @@
 
 #define load_ut16_ut8(bytecode, jvm, t0, t1, c0, c1) \
 	fail_if_no_enough_buffer_or_set(bytecode, jvm, 4); \
-	bytecode->args[0] = (c0)rz_read_at_be16(jvm->buffer, jvm->current + 2); \
+	bytecode->args[0] = (c0)rz_read_at_be16(jvm->buffer, jvm->current + 1); \
 	bytecode->type[0] = (t0); \
-	bytecode->args[1] = (c1)rz_read_at_be8(jvm->buffer, jvm->current + 1); \
+	bytecode->args[1] = (c1)rz_read_at_be8(jvm->buffer, jvm->current + 3); \
 	bytecode->type[1] = (t1)
 
 #define load_ut16x2(bytecode, jvm, t0, t1, c0, c1) \
@@ -1394,8 +1394,8 @@ static bool decode_instruction(JavaVM *jvm, Bytecode *bytecode) {
 		strcpy(bytecode->name, "wide");
 		bytecode->size = 1;
 		break;
-	case BYTECODE_C5_MULTINEWARRAY:
-		strcpy(bytecode->name, "multinewarray");
+	case BYTECODE_C5_MULTIANEWARRAY:
+		strcpy(bytecode->name, "multianewarray");
 		load_ut16_ut8(bytecode, jvm, BYTECODE_TYPE_CONST_POOL, BYTECODE_TYPE_NUMBER, ut32, ut32);
 		bytecode->stack_input = 1;
 		bytecode->stack_output = 1;

@@ -202,7 +202,7 @@
 #define BYTECODE_C2_MONITORENTER    (0xC2)
 #define BYTECODE_C3_MONITOREXIT     (0xC3)
 #define BYTECODE_C4_WIDE            (0xC4)
-#define BYTECODE_C5_MULTINEWARRAY   (0xC5)
+#define BYTECODE_C5_MULTIANEWARRAY  (0xC5)
 #define BYTECODE_C6_IFNULL          (0xC6)
 #define BYTECODE_C7_IFNONNULL       (0xC7)
 #define BYTECODE_C8_GOTO_W          (0xC8)

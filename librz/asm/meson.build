@@ -113,6 +113,7 @@ rz_asm_sources = [
   #'arch/i4004/i4004dis.c',
   #'arch/i8080/i8080dis.c',
   'arch/java/jvm.c',
+  'arch/java/assembler.c',
   'arch/lanai/gnu/lanai-dis.c',
   'arch/lanai/gnu/lanai-opc.c',
   'arch/luac/lua_arch.c',
