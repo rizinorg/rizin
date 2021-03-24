@@ -205,7 +205,7 @@ static RzList *symbols(RzBinFile *bf) {
 	struct rz_bin_pe_import_t *imports = NULL;
 	int i;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	if ((symbols = PE_(rz_bin_pe_get_exports)(bf->o->bin_obj))) {
@@ -263,7 +263,7 @@ static void filter_import(ut8 *n) {
 }
 
 static RzList *imports(RzBinFile *bf) {
-	RzList *ret = NULL, *relocs = NULL;
+	RzList *relocs = NULL;
 	RzBinImport *ptr = NULL;
 	RzBinReloc *rel = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
@@ -272,7 +272,8 @@ static RzList *imports(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
 

@@ -164,8 +164,7 @@ RZ_API RzBinImport *rz_bin_import_clone(RzBinImport *o) {
 	return res;
 }
 
-RZ_API void rz_bin_import_free(void *_imp) {
-	RzBinImport *imp = (RzBinImport *)_imp;
+RZ_API void rz_bin_import_free(RzBinImport *imp) {
 	if (imp) {
 		RZ_FREE(imp->name);
 		RZ_FREE(imp->libname);
@@ -192,8 +191,7 @@ RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) 
 	return sym;
 }
 
-RZ_API void rz_bin_symbol_free(void *_sym) {
-	RzBinSymbol *sym = (RzBinSymbol *)_sym;
+RZ_API void rz_bin_symbol_free(RzBinSymbol *sym) {
 	if (sym) {
 		free(sym->name);
 		free(sym->libname);
@@ -243,6 +241,8 @@ RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr) {
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
 	opt.filename = bf->file;
+
+	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 
 	bool res = rz_bin_open_buf(bin, bf->buf, &opt);
 	rz_bin_file_delete(bin, bf->id);
@@ -1351,9 +1351,7 @@ RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char
 	return ptr;
 }
 
-// use void* to honor the RzListFree signature
-RZ_API void rz_bin_field_free(void *_field) {
-	RzBinField *field = (RzBinField *)_field;
+RZ_API void rz_bin_field_free(RzBinField *field) {
 	if (field) {
 		free(field->name);
 		free(field->comment);

@@ -8,6 +8,7 @@
 #include <rz_list.h>
 
 typedef struct rz_bin_t RzBin;
+typedef struct rz_bin_file_t RzBinFile;
 
 #include <rz_bin_dwarf.h>
 #include <rz_pdb.h>
@@ -103,11 +104,13 @@ RZ_LIB_VERSION_HEADER(rz_bin);
 #define RZ_BIN_BIND_HIOS_STR    "HIOS"
 #define RZ_BIN_BIND_LOPROC_STR  "LOPROC"
 #define RZ_BIN_BIND_HIPROC_STR  "HIPROC"
+#define RZ_BIN_BIND_IMPORT_STR  "IMPORT"
 #define RZ_BIN_BIND_UNKNOWN_STR "UNKNOWN"
 
 #define RZ_BIN_TYPE_NOTYPE_STR      "NOTYPE"
 #define RZ_BIN_TYPE_OBJECT_STR      "OBJ"
 #define RZ_BIN_TYPE_FUNC_STR        "FUNC"
+#define RZ_BIN_TYPE_IFACE_STR       "IFACE"
 #define RZ_BIN_TYPE_METH_STR        "METH"
 #define RZ_BIN_TYPE_STATIC_STR      "STATIC"
 #define RZ_BIN_TYPE_SECTION_STR     "SECT"
@@ -273,7 +276,7 @@ typedef struct rz_bin_object_t {
 
 // XXX: RbinFile may hold more than one RzBinObject
 /// XX curplugin == o->plugin
-typedef struct rz_bin_file_t {
+struct rz_bin_file_t {
 	char *file;
 	int fd;
 	int size;
@@ -294,9 +297,9 @@ typedef struct rz_bin_file_t {
 	RzList *xtr_data;
 	Sdb *sdb;
 	Sdb *sdb_info;
-	Sdb *sdb_addrinfo;
+	RZ_DEPRECATE Sdb *sdb_addrinfo; //< deprecated to use for new code, should be refactored
 	struct rz_bin_t *rbin;
-} RzBinFile;
+}; // RzBinFile
 
 typedef struct rz_bin_file_options_t {
 	int rawstr;
@@ -418,6 +421,31 @@ typedef struct rz_bin_trycatch_t {
 RZ_API RzBinTrycatch *rz_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter);
 RZ_API void rz_bin_trycatch_free(RzBinTrycatch *tc);
 
+typedef struct {
+	/**
+	 * The first address that is covered by the given line and column,
+	 * or, if line == 0, the first address **not contained** by the previous record.
+	 */
+	ut64 address;
+
+	char *file;
+
+	/**
+	 * If > 0, then indicates the line for the given address.
+	 * If == 0, then indicates that the previous record stops here.
+	 * Such a case corresponds for example to what DW_LNE_end_sequence emits in Dwarf.
+	 */
+	unsigned int line;
+
+	/**
+	 * If > 0, then indicates the column.
+	 * If == 0, then no column information is known.
+	 */
+	unsigned int column;
+} RzBinSourceRow;
+
+RZ_API void rz_bin_source_row_free(RzBinSourceRow *row);
+
 typedef struct rz_bin_plugin_t {
 	char *name;
 	char *desc;
@@ -437,7 +465,7 @@ typedef struct rz_bin_plugin_t {
 	RzBinAddr *(*binsym)(RzBinFile *bf, int num);
 	RzList /*<RzBinAddr>*/ *(*entries)(RzBinFile *bf);
 	RzList /*<RzBinSection>*/ *(*sections)(RzBinFile *bf);
-	RZ_BORROW RzList /*<RzBinDwarfRow>*/ *(*lines)(RzBinFile *bf);
+	RZ_BORROW RzList /*<RzBinSourceRow>*/ *(*lines)(RzBinFile *bf);
 	RzList /*<RzBinSymbol>*/ *(*symbols)(RzBinFile *bf);
 	RzList /*<RzBinImport>*/ *(*imports)(RzBinFile *bf);
 	RzList /*<RzBinString>*/ *(*strings)(RzBinFile *bf);
@@ -456,6 +484,7 @@ typedef struct rz_bin_plugin_t {
 	int (*demangle_type)(const char *str);
 	struct rz_bin_dbginfo_t *dbginfo;
 	struct rz_bin_write_t *write;
+	char *(*enrich_asm)(RzBinFile *bf, const char *asm_str, int asm_len);
 	int (*get_offset)(RzBinFile *bf, int type, int idx);
 	char *(*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
@@ -599,7 +628,7 @@ typedef struct rz_bin_field_t {
 } RzBinField;
 
 RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named);
-RZ_API void rz_bin_field_free(void *);
+RZ_API void rz_bin_field_free(RzBinField *);
 
 typedef struct rz_bin_mem_t {
 	char *name;
@@ -651,8 +680,8 @@ typedef struct rz_bin_bind_t {
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
-RZ_API void rz_bin_import_free(void *_imp);
-RZ_API void rz_bin_symbol_free(void *_sym);
+RZ_API void rz_bin_import_free(RzBinImport *imp);
+RZ_API void rz_bin_symbol_free(RzBinSymbol *sym);
 RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr);
 RZ_API void rz_bin_string_free(void *_str);
 
@@ -832,6 +861,7 @@ extern RzBinPlugin rz_bin_plugin_elf64;
 extern RzBinPlugin rz_bin_plugin_p9;
 extern RzBinPlugin rz_bin_plugin_ne;
 extern RzBinPlugin rz_bin_plugin_le;
+extern RzBinPlugin rz_bin_plugin_luac;
 extern RzBinPlugin rz_bin_plugin_pe;
 extern RzBinPlugin rz_bin_plugin_mz;
 extern RzBinPlugin rz_bin_plugin_pe64;

@@ -1210,8 +1210,6 @@ typedef struct rz_analysis_esil_dfg_node_t {
 	RzAnalysisEsilDFGBlockType type;
 } RzAnalysisEsilDFGNode;
 
-typedef int (*RzAnalysisCmdExt)(/* Rcore */ RzAnalysis *analysis, const char *input);
-
 // TODO: rm data + len
 typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask);
 
@@ -1246,9 +1244,6 @@ typedef struct rz_analysis_plugin_t {
 
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
-
-	// command extension to directly call any analysis functions
-	RzAnalysisCmdExt cmd_ext;
 
 	RzAnalysisRegProfCallback set_reg_profile;
 	RzAnalysisRegProfGetCallback get_reg_profile;
@@ -2026,7 +2021,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_rename(RzAnalysis *analysis, 
 RZ_API RzAnalysisClassErr rz_analysis_class_method_delete(RzAnalysis *analysis, const char *class_name, const char *meth_name);
 RZ_API bool rz_analysis_class_method_exists(RzAnalysis *analysis, const char *class_name, const char *meth_name);
 RZ_API bool rz_analysis_class_method_exists_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr);
-RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *class, RzList *methods);
+RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *cls, RzList *methods);
 
 RZ_API void rz_analysis_class_base_fini(RzAnalysisBaseClass *base);
 RZ_API RzAnalysisClassErr rz_analysis_class_base_get(RzAnalysis *analysis, const char *class_name, const char *base_id, RzAnalysisBaseClass *base);
@@ -2178,6 +2173,7 @@ extern RzAnalysisPlugin rz_analysis_plugin_xcore_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_xtensa;
 extern RzAnalysisPlugin rz_analysis_plugin_z80;
 extern RzAnalysisPlugin rz_analysis_plugin_pyc;
+extern RzAnalysisPlugin rz_analysis_plugin_luac;
 #ifdef __cplusplus
 }
 #endif

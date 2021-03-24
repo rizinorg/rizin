@@ -648,6 +648,10 @@ static bool cb_asmarch(void *user, void *data) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
+		sdb_ns_unset(core->sdb, "syscall", NULL);
+		if (core->analysis->syscall->db) {
+			sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
+		}
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");
@@ -775,6 +779,10 @@ static bool cb_asmbits(void *user, void *data) {
 		if (!rz_syscall_setup(core->analysis->syscall, asmarch, bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
+		}
+		sdb_ns_unset(core->sdb, "syscall", NULL);
+		if (core->analysis->syscall->db) {
+			sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
 		}
 		__setsegoff(core->config, asmarch, core->analysis->bits);
 		if (core->dbg) {
@@ -938,6 +946,10 @@ static bool cb_asmos(void *user, void *data) {
 	if (asmarch) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 		rz_syscall_setup(core->analysis->syscall, asmarch->value, core->analysis->bits, asmcpu, node->value);
+		sdb_ns_unset(core->sdb, "syscall", NULL);
+		if (core->analysis->syscall->db) {
+			sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
+		}
 		__setsegoff(core->config, asmarch->value, asmbits);
 	}
 	rz_analysis_set_os(core->analysis, node->value);

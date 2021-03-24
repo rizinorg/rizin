@@ -57,6 +57,7 @@ rz_analysis_sources = [
   'p/analysis_i4004.c',
   'p/analysis_i8080.c',
   'p/analysis_java.c',
+  'p/analysis_luac.c',
   'p/analysis_m68k_cs.c',
   'p/analysis_m680x_cs.c',
   'p/analysis_malbolge.c',
@@ -106,8 +107,7 @@ rz_analysis_sources = [
   '../asm/arch/h8300/h8300_disas.c',
   '../asm/arch/hexagon/hexagon.c',
   '../asm/arch/hexagon/hexagon_disas.c',
-  '../asm/arch/java/code.c',
-  '../asm/arch/java/ops.c',
+  '../asm/arch/java/jvm.c',
   '../asm/arch/mcore/mcore.c',
   '../asm/arch/msp430/msp430_disas.c',
   '../asm/arch/or1k/or1k_disas.c',
@@ -159,7 +159,10 @@ rz_analysis_sources = [
   '../asm/arch/pyc/opcode_analysis.c',
   '../asm/arch/pyc/opcode_arg_fmt.c',
   '../asm/arch/pyc/opcode.c',
-  '../asm/arch/pyc/pyc_dis.c'
+  '../asm/arch/pyc/pyc_dis.c',
+  '../asm/arch/luac/lua_arch.c',
+  '../asm/arch/luac/v54/analysis_54.c',
+  '../asm/arch/luac/v54/opcode_54.c',
 ]
 
 rz_analysis_inc = [

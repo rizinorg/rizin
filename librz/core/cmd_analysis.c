@@ -3996,7 +3996,7 @@ RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_ex
 	RzAnalysisOp op = { 0 };
 	RzAnalysisEsil *esil = core->analysis->esil;
 	const char *name = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	ut64 addr;
+	ut64 addr = 0;
 	bool breakoninvalid = rz_config_get_i(core->config, "esil.breakoninvalid");
 	int esiltimeout = rz_config_get_i(core->config, "esil.timeout");
 	ut64 startTime;
@@ -9055,13 +9055,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		break;
 	case 'h': // "ah"
 		cmd_analysis_hint(core, input + 1);
-		break;
-	case '!': // "a!"
-		if (core->analysis && core->analysis->cur && core->analysis->cur->cmd_ext) {
-			return core->analysis->cur->cmd_ext(core->analysis, input + 1);
-		} else {
-			rz_cons_printf("No plugins for this analysis plugin\n");
-		}
 		break;
 	case 'j': // "aj"
 		rz_core_analysis_fcn_list(core, NULL, "j");

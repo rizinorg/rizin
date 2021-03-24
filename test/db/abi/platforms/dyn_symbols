@@ -1,0 +1,128 @@
+NAME=MAIN_ABI : arm-linux_android_abi  symbols
+FILE=bins/abi_bins/elf/platforms/arm-linux-androideabi-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+25  0x00000528 0x00008528 GLOBAL FUNC   240      print_endline
+29  0x00000618 0x00008618 GLOBAL FUNC   80       print_strings
+EOF
+RUN
+
+NAME=MAIN_ABI : arm-linux_gnu_guneabi  symbols
+FILE=bins/abi_bins/elf/platforms/arm-linux-gnueabi-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+92  0x0000056c 0x0000856c GLOBAL FUNC   88       print_endline
+117 0x000005c4 0x000085c4 GLOBAL FUNC   80       print_strings
+EOF
+RUN
+
+NAME=MAIN_ABI : mips-linux-gnu-echo  symbols
+FILE=bins/abi_bins/elf/platforms/mips-linux-gnu-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+60  0x00000890 0x00400890 GLOBAL FUNC   156      print_endline
+90  0x0000092c 0x0040092c GLOBAL FUNC   112      print_strings
+EOF
+RUN
+
+NAME=MAIN_ABI : mips64-linux-gnueabi  symbols
+FILE=bins/abi_bins/elf/platforms/mips64-linux-gnueabi-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+3   0x00000d20 0x120000d20 GLOBAL FUNC   156      print_endline
+11  0x00000dbc 0x120000dbc GLOBAL FUNC   140      print_strings
+EOF
+RUN
+
+NAME=MAIN_ABI : powerpc-linux-gnu  symbols
+FILE=bins/abi_bins/elf/platforms/powerpc-linux-gnu-symexec-guess
+CMDS=<<EOF
+is~dummy
+EOF
+EXPECT=<<EOF
+40  0x000004a0 0x100004a0 LOCAL  FUNC   0        frame_dummy
+41  0x000004b0 0x100004b0 LOCAL  FUNC   0        call_frame_dummy
+EOF
+RUN
+
+NAME=MAIN_ABI : powerpc32-linux-gnu  symbols
+FILE=bins/abi_bins/elf/platforms/powerpc32-linux-gnu-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+56  0x0000061c 0x1000061c GLOBAL FUNC   116      print_endline
+80  0x00000690 0x10000690 GLOBAL FUNC   104      print_strings
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-linux-gnu  symbols
+FILE=bins/abi_bins/elf/platforms/x86_64-linux-gnu-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+51  0x000006ed 0x004006ed GLOBAL FUNC   70       print_endline
+72  0x00000733 0x00400733 GLOBAL FUNC   56       print_strings
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-macho  symbols
+FILE=bins/abi_bins/elf/platforms/x86_64-macho-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+2   0x00000df0 0x100000df0 GLOBAL FUNC 0        _print_strings
+6   0x00000f60 0x100000f60 LOCAL  FUNC 0        imp.printf
+EOF
+RUN
+
+NAME=MAIN_ABI : x86-linux-gnu  symbols
+FILE=bins/abi_bins/elf/platforms/x86-linux-gnu-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+51  0x0000053d 0x0804853d GLOBAL FUNC   61       print_endline
+74  0x0000057a 0x0804857a GLOBAL FUNC   42       print_strings
+EOF
+RUN
+
+NAME=MAIN_ABI : i686-w64-mingw32  symbols
+FILE=bins/abi_bins/pe/platforms/i686-w64-mingw32-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+8   0x00000960 0x00401560 GLOBAL FUNC 0                 _print_endline
+9   0x0000099d 0x0040159d GLOBAL FUNC 0                 _print_strings
+60  0x00001d88 0x00402988 GLOBAL FUNC 0                 _fprintf
+75  0x00001d98 0x00402998 GLOBAL FUNC 0                 _vfprintf
+18  0x000027b0 0x004061b0 NONE   FUNC 0    msvcrt.dll   imp.fprintf
+31  0x000027e4 0x004061e4 NONE   FUNC 0    msvcrt.dll   imp.vfprintf
+EOF
+RUN
+
+NAME=MAIN_ABI : x86_64-w64-mingw32  symbols
+FILE=bins/abi_bins/pe/platforms/x86_64-w64-mingw32-echo
+CMDS=<<EOF
+is~print
+EOF
+EXPECT=<<EOF
+6   0x00000af0 0x004014f0 GLOBAL FUNC 0                 print_endline
+7   0x00000b3b 0x0040153b GLOBAL FUNC 0                 print_strings
+60  0x000024b0 0x00402eb0 GLOBAL FUNC 0                 fprintf
+74  0x000024c0 0x00402ec0 GLOBAL FUNC 0                 vfprintf
+20  0x00003b5c 0x0040835c NONE   FUNC 0    msvcrt.dll   imp.fprintf
+32  0x00003bbc 0x004083bc NONE   FUNC 0    msvcrt.dll   imp.vfprintf
+EOF
+RUN

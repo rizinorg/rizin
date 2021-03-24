@@ -1143,7 +1143,7 @@ static void handle_data_sections(RzBinSection *sect) {
 }
 
 static RzList *symbols(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1345,7 +1345,7 @@ static RzList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		goto beach;
 	}
 
-	syscalls = rz_list_newf(rz_bin_symbol_free);
+	syscalls = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!syscalls) {
 		goto beach;
 	}
@@ -1480,7 +1480,7 @@ static RzList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 		goto beach;
 	}
 
-	subsystem = rz_list_newf(rz_bin_symbol_free);
+	subsystem = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!subsystem) {
 		goto beach;
 	}

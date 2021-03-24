@@ -643,18 +643,18 @@ static void dex_parse_debug_item(RzBinFile *bf, RzBinDexClass *c, int MI, int MA
 		sdb_set(bf->sdb_addrinfo, fileline, offset_ptr, 0);
 		free(fileline);
 
-		RzBinDwarfRow *rbindwardrow = RZ_NEW0(RzBinDwarfRow);
-		if (!rbindwardrow) {
+		RzBinSourceRow *row = RZ_NEW0(RzBinSourceRow);
+		if (!row) {
 			dexdump = false;
 			break;
 		}
 		if (line) {
-			rbindwardrow->file = strdup(line);
-			rbindwardrow->address = pos->address;
-			rbindwardrow->line = pos->line;
-			rz_list_append(dex->lines_list, rbindwardrow);
+			row->file = strdup(line);
+			row->address = pos->address;
+			row->line = pos->line;
+			rz_list_append(dex->lines_list, row);
 		} else {
-			free(rbindwardrow);
+			free(row);
 		}
 	}
 	if (!dexdump) {
@@ -1617,11 +1617,11 @@ static bool dex_loadcode(RzBinFile *bf) {
 	bin->version = rz_bin_dex_get_version(bin);
 	bin->code_from = UT64_MAX;
 	bin->code_to = 0;
-	bin->methods_list = rz_list_newf((RzListFree)free);
+	bin->methods_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!bin->methods_list) {
 		return false;
 	}
-	bin->imports_list = rz_list_newf((RzListFree)free);
+	bin->imports_list = rz_list_newf((RzListFree)rz_bin_import_free);
 	if (!bin->imports_list) {
 		rz_list_free(bin->methods_list);
 		return false;
@@ -2090,11 +2090,10 @@ static RZ_BORROW RzList *lines(RzBinFile *bf) {
 
 // iH*
 static RzList *dex_fields(RzBinFile *bf) {
-	RzList *ret = rz_list_new();
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	ut64 addr = 0;
 
 #define ROW(nam, siz, val, fmt) \

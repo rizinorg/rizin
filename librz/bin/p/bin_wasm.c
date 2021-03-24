@@ -129,7 +129,7 @@ static RzList *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf((RzListFree)free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	if (!(codes = rz_bin_wasm_get_codes(bin))) {
@@ -234,13 +234,13 @@ static RzList *imports(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
 	RzList *imports = NULL;
 	RzBinImport *ptr = NULL;
-	RzList *ret = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
 	if (!(imports = rz_bin_wasm_get_imports(bin))) {
