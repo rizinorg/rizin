@@ -307,7 +307,7 @@ static void ds_print_esil_analysis(RDisasmState *ds);
 static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
 static RDisasmState *ds_init(RzCore *core);
-static void ds_build_op_str(RDisasmState *ds, bool print_color);
+static char *ds_build_op_str(RDisasmState *ds, bool print_color, char **markinst, ut64 markinst_num);
 static void ds_print_show_bytes(RDisasmState *ds);
 static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines);
 static void ds_show_xrefs(RDisasmState *ds);
@@ -347,12 +347,6 @@ static void ds_start_line_highlight(RDisasmState *ds);
 static void ds_end_line_highlight(RDisasmState *ds);
 static bool line_highlighted(RDisasmState *ds);
 static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos);
-
-// add for str issue
-int begin_mark = 0;
-char **markinst = NULL;
-int markinst_num = 0;
-char *inst_bufferstr = NULL;
 
 RZ_API ut64 rz_core_pava(RzCore *core, ut64 addr) {
 	if (core->print->pava) {
@@ -1035,7 +1029,8 @@ static const char *get_reg_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr) {
 	return rz_analysis_function_get_var_reg_at(fcn, delta, addr);
 }
 
-static void ds_build_op_str(RDisasmState *ds, bool print_color) {
+static char *ds_build_op_str(RDisasmState *ds, bool print_color, char **markinst, ut64 markinst_num) {
+	char *ret = NULL;
 	RzCore *core = ds->core;
 	if (ds->use_esil) {
 		free(ds->opstr);
@@ -1044,12 +1039,12 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		} else {
 			ds->opstr = strdup(",");
 		}
-		return;
+		return ret;
 	}
 	if (ds->decode) {
 		free(ds->opstr);
 		ds->opstr = rz_analysis_op_to_string(core->analysis, &ds->analop);
-		return;
+		return ret;
 	}
 	if (!ds->opstr) {
 		ds->opstr = strdup(rz_asm_op_get_asm(&ds->asmop));
@@ -1104,16 +1099,14 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	ds->opstr = ds_sub_jumps(ds, ds->opstr);
 
-	// add for str issue
-	inst_bufferstr = (char *)malloc(sizeof(char) * (strlen(ds->opstr) + 1));
-	strcpy(inst_bufferstr, ds->opstr);
+	ret = strdup(ds->opstr);
 
 	if (ds->immtrim) {
 		char *res = rz_parse_immtrim(ds->opstr);
 		if (res) {
 			ds->opstr = res;
 		}
-		return;
+		return ret;
 	}
 	if (ds->hint && ds->hint->opcode) {
 		free(ds->opstr);
@@ -1143,8 +1136,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 		}
 
-		// add for str issue
-		if (begin_mark && markinst_num > 1 && strstr(ds->opstr, "0x")) {
+		if (markinst && markinst_num > 2 && strstr(ds->opstr, "0x")) {
 			//calculate: .got beginning addr - next inst addr
 			ut64 got_beginaddr = 0;
 			ut64 rodata_beginaddr = 0;
@@ -1165,14 +1157,12 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				}
 			}
 
-			char *numstr = (char *)malloc(sizeof(char) * 11);
-			memset(numstr, 0, sizeof(char) * 11);
+			char *numstr = (char *)calloc(11, sizeof(char));
 			strncpy(numstr, markinst[1], 10);
-			sscanf(numstr, "%llx", &next_instaddr);
+			next_instaddr = rz_num_get_input_value(NULL, numstr);
+			free(numstr);
 			ut64 offset_got_next = (got_beginaddr > next_instaddr) ? (got_beginaddr - next_instaddr) : (next_instaddr - got_beginaddr);
-			char offset_got_next_str[11] = { 0 };
-			snprintf(offset_got_next_str, 11, "0x%llx", offset_got_next);
-			//printf("%llx %llx\n", got_beginaddr, next_instaddr);
+			char *offset_got_next_str = rz_str_newf("0x%" PFMT64x, offset_got_next);
 
 			//calculate the offset range: [.got begin addr - .rodata end addr, .got begin addr - .rodata begin addr]
 			ut64 offset_got_str_1;
@@ -1188,10 +1178,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			// analyze the offset
 			bool find_offset_got_next = false;
 
-			char eip_reg[4] = "eax";
-			eip_reg[1] = eip_reg[1] + begin_mark - 1;
 			char *inst;
-			for (int j = 1; j < markinst_num; j++) {
+			for (ut64 j = 1; j < markinst_num; j++) {
 				inst = markinst[j] + 11;
 				numstr = strstr(inst, offset_got_next_str);
 				if (numstr) {
@@ -1201,9 +1189,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 
 			if (find_offset_got_next) {
-				ut64 str_addr = 0;
 				numstr = strstr(ds->opstr, "0x");
-				sscanf(numstr, "%llx", &str_addr);
+				ut64 str_addr = rz_num_get_input_value(NULL, numstr);
 				if (str_addr <= offset_got_str_2 && str_addr >= offset_got_str_1) {
 					if (got_beginaddr < rodata_beginaddr) {
 						str_addr = got_beginaddr + str_addr;
@@ -1213,12 +1200,12 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 
 					if (find_offset_got_next) {
 						RzFlagItem *str_flag = rz_flag_get_at(core->flags, str_addr, false);
-						ds->comment = (char *)malloc(sizeof(char) * (strlen(str_flag->name) + 1));
-						memset(ds->comment, 0, strlen(str_flag->name) + 1);
-						snprintf(ds->comment, strlen(str_flag->name) + 3, "; %s", str_flag->name);
+						ds->comment = rz_str_newf("; %s", str_flag->name);
 					}
 				}
 			}
+
+			free(offset_got_next_str);
 		}
 
 		char *asm_str = colorize_asm_string(core, ds, print_color);
@@ -1270,6 +1257,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			ds_highlight_word(ds, word, bgcolor);
 		}
 	}
+	return ret;
 }
 
 RZ_API RzAnalysisHint *rz_core_hint_begin(RzCore *core, RzAnalysisHint *hint, ut64 at) {
@@ -5230,6 +5218,8 @@ RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, i
 	int ret, i, inc = 0, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
 	ut8 *nbuf = NULL;
 	const int addrbytes = core->io->addrbytes;
+	char **markinst = NULL;
+	ut64 markinst_num = 0;
 
 	// TODO: All those ds must be print flags
 	RDisasmState *ds = ds_init(core);
@@ -5469,7 +5459,7 @@ toro:
 
 		if (ds->show_comments && !ds->show_comment_right) {
 			ds_show_refs(ds);
-			ds_build_op_str(ds, false);
+			ds_build_op_str(ds, false, NULL, 0);
 			ds_print_ptr(ds, len + 256, idx);
 			ds_print_sysregs(ds);
 			ds_print_fcn_name(ds);
@@ -5559,7 +5549,21 @@ toro:
 			}
 			ds_print_lines_right(ds);
 			ds_print_optype(ds);
-			ds_build_op_str(ds, true);
+			char *buildopstr_ret = ds_build_op_str(ds, true, markinst, markinst_num);
+
+			if (buildopstr_ret && rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86") && strcmp(rz_config_get(core->config, "asm.bits"), "32") == 0) {
+				if (strstr(buildopstr_ret, "__x86.get_pc_thunk.") != NULL) {
+					markinst_num = 1;
+				} else if (markinst) {
+					markinst_num++;
+				}
+				if (markinst_num != 0) {
+					markinst = (char **)realloc(markinst, sizeof(char *) * markinst_num);
+					markinst[markinst_num - 1] = rz_str_newf("0x%08" PFMT64x " %s", ds->vat, buildopstr_ret);
+				}
+			}
+			free(buildopstr_ret);
+
 			ds_print_opstr(ds);
 			ds_end_line_highlight(ds);
 			ds_print_dwarf(ds);
@@ -5687,6 +5691,12 @@ toro:
 	p->calc_row_offsets = calc_row_offsets;
 	/* used by asm.emu */
 	rz_reg_arena_pop(core->analysis->reg);
+
+	for (ut64 i = 0; i < markinst_num; i++) {
+		free(markinst[i]);
+	}
+	free(markinst);
+
 	return addrbytes * idx; //-ds->lastfail;
 }
 
@@ -5818,7 +5828,7 @@ toro:
 						core->parser->flagspace = NULL;
 					}
 				}
-				ds_build_op_str(ds, true);
+				ds_build_op_str(ds, true, NULL, 0);
 				free(ds->opstr);
 				ds->opstr = strdup(ds->str);
 				asm_str = colorize_asm_string(core, ds, true);
