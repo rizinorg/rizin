@@ -52,6 +52,31 @@ typedef struct rz_diffchar_t {
 	size_t start_align;
 } RzDiffChar;
 
+typedef struct rz_diff_line {
+	int hash;
+	int len;
+	int next;
+	int e; 
+	const char *line;
+} RzDiffLine;
+
+typedef struct rz_pos {
+	int pos;
+	int len;
+} RzPos;
+
+typedef struct rz_hunk {
+	int a1;
+	int a2;
+	int b1;
+	int b2;
+} RzHunk;
+
+struct rz_hunklist {
+	struct rz_hunk *base;
+	struct rz_hunk *head;
+} RzHunkList;
+
 /* XXX: this api needs to be reviewed , constructor with offa+offb?? */
 #ifdef RZ_API
 RZ_API RzDiff *rz_diff_new(void);
@@ -60,7 +85,7 @@ RZ_API RzDiff *rz_diff_free(RzDiff *d);
 
 RZ_API int rz_diff_buffers(RzDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb);
 RZ_API int rz_diff_buffers_static(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
-RZ_API int rz_diff_buffers_radiff(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
+RZ_API int rz_diff_buffers_radiff(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb); // function not defined
 RZ_API int rz_diff_buffers_delta(RzDiff *diff, const ut8 *sa, int la, const ut8 *sb, int lb);
 RZ_API int rz_diff_buffers(RzDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb);
 RZ_API char *rz_diff_buffers_to_string(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
