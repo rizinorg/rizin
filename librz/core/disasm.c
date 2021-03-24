@@ -348,6 +348,12 @@ static void ds_end_line_highlight(RDisasmState *ds);
 static bool line_highlighted(RDisasmState *ds);
 static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos);
 
+// add for str issue
+int begin_mark = 0;
+char **markinst = NULL;
+int markinst_num = 0;
+char *inst_bufferstr = NULL;
+
 RZ_API ut64 rz_core_pava(RzCore *core, ut64 addr) {
 	if (core->print->pava) {
 		RzIOMap *map = rz_io_map_get_paddr(core->io, addr);
@@ -1097,6 +1103,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ds->opstr = strdup(ds->str);
 	}
 	ds->opstr = ds_sub_jumps(ds, ds->opstr);
+
+	// add for str issue
+	inst_bufferstr = (char *)malloc(sizeof(char) * (strlen(ds->opstr) + 1));
+	strcpy(inst_bufferstr, ds->opstr);
+
 	if (ds->immtrim) {
 		char *res = rz_parse_immtrim(ds->opstr);
 		if (res) {
@@ -1131,6 +1142,85 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				core->parser->subrel_addr = killme;
 			}
 		}
+
+		// add for str issue
+		if (begin_mark && markinst_num > 1 && strstr(ds->opstr, "0x")) {
+			//calculate: .got beginning addr - next inst addr
+			ut64 got_beginaddr = 0;
+			ut64 rodata_beginaddr = 0;
+			ut64 rodata_size = 0;
+			ut64 next_instaddr = 0;
+
+			RzList *sections;
+			sections = rz_bin_get_sections(core->bin);
+			RzBinSection *s;
+			RzListIter *iter;
+			rz_list_foreach (sections, iter, s) {
+				if (strcmp(s->name, ".got") == 0) {
+					got_beginaddr = s->vaddr;
+				}
+				if (strcmp(s->name, ".rodata") == 0) {
+					rodata_beginaddr = s->vaddr;
+					rodata_size = s->size;
+				}
+			}
+
+			char *numstr = (char *)malloc(sizeof(char) * 11);
+			memset(numstr, 0, sizeof(char) * 11);
+			strncpy(numstr, markinst[1], 10);
+			sscanf(numstr, "%llx", &next_instaddr);
+			ut64 offset_got_next = (got_beginaddr > next_instaddr) ? (got_beginaddr - next_instaddr) : (next_instaddr - got_beginaddr);
+			char offset_got_next_str[11] = { 0 };
+			snprintf(offset_got_next_str, 11, "0x%llx", offset_got_next);
+			//printf("%llx %llx\n", got_beginaddr, next_instaddr);
+
+			//calculate the offset range: [.got begin addr - .rodata end addr, .got begin addr - .rodata begin addr]
+			ut64 offset_got_str_1;
+			ut64 offset_got_str_2;
+			if (got_beginaddr > rodata_beginaddr) {
+				offset_got_str_1 = got_beginaddr - rodata_beginaddr - rodata_size;
+				offset_got_str_2 = got_beginaddr - rodata_beginaddr;
+			} else {
+				offset_got_str_1 = rodata_beginaddr - got_beginaddr;
+				offset_got_str_2 = rodata_beginaddr - got_beginaddr + rodata_size;
+			}
+
+			// analyze the offset
+			bool find_offset_got_next = false;
+
+			char eip_reg[4] = "eax";
+			eip_reg[1] = eip_reg[1] + begin_mark - 1;
+			char *inst;
+			for (int j = 1; j < markinst_num; j++) {
+				inst = markinst[j] + 11;
+				numstr = strstr(inst, offset_got_next_str);
+				if (numstr) {
+					find_offset_got_next = true;
+					break;
+				}
+			}
+
+			if (find_offset_got_next) {
+				ut64 str_addr = 0;
+				numstr = strstr(ds->opstr, "0x");
+				sscanf(numstr, "%llx", &str_addr);
+				if (str_addr <= offset_got_str_2 && str_addr >= offset_got_str_1) {
+					if (got_beginaddr < rodata_beginaddr) {
+						str_addr = got_beginaddr + str_addr;
+					} else {
+						str_addr = got_beginaddr - str_addr;
+					}
+
+					if (find_offset_got_next) {
+						RzFlagItem *str_flag = rz_flag_get_at(core->flags, str_addr, false);
+						ds->comment = (char *)malloc(sizeof(char) * (strlen(str_flag->name) + 1));
+						memset(ds->comment, 0, strlen(str_flag->name) + 1);
+						snprintf(ds->comment, strlen(str_flag->name) + 3, "; %s", str_flag->name);
+					}
+				}
+			}
+		}
+
 		char *asm_str = colorize_asm_string(core, ds, print_color);
 		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, asm_str,
 			ds->str, sizeof(ds->str), core->print->big_endian);
