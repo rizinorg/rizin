@@ -13,6 +13,7 @@ commands:
         subcommands:
           - name: afb
             summary: List basic blocks of function
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             cname: analysis_function_blocks_list
             modes:
               - RZ_OUTPUT_MODE_STANDARD
@@ -83,6 +84,7 @@ commands:
           - name: afbi
             summary: Print single basic block information
             cname: analysis_function_blocks_info
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_LONG
