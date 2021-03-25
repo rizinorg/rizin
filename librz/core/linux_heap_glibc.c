@@ -1587,6 +1587,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	if (!head) {
 		return 0;
 	}
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
 
 	size_t chunks_cnt = 0;
@@ -1601,8 +1602,10 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		rz_cons_printf("Large");
 	}
 	rz_cons_printf("_bin[%d]: ", bin_num);
-	rz_cons_printf("fd=0x%" PFMT64x, fw);
-	rz_cons_printf(", bk=0x%" PFMT64x, bk);
+	rz_cons_printf("fd=");
+	PRINTF_YA("0x%" PFMT64x, fw);
+	rz_cons_printf(", bk=");
+	PRINTF_YA("0x%" PFMT64x, bk);
 	rz_cons_newline();
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 
@@ -1615,10 +1618,10 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		rz_cons_printf(" -> ");
 		GH(print_heap_chunk_simple)
 		(core, fw);
+		rz_cons_newline();
 		fw = cnk->fd;
 		chunks_cnt += 1;
 	}
-	rz_cons_newline();
 	free(cnk);
 	free(head);
 
@@ -1636,7 +1639,7 @@ static void GH(print_unsortedbin_description)(RzCore *core, GHT m_arena, MallocS
 	rz_cons_printf("Unsorted bin @ ");
 	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
 	int chunk_cnt = GH(print_bin_content)(core, main_arena, 0);
-	rz_cons_printf("Found %d chunks in unsorted bins \n", chunk_cnt);
+	rz_cons_printf("Found %d chunks in unsorted bin\n", chunk_cnt);
 }
 
 /**
@@ -1658,7 +1661,7 @@ static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocStat
 		}
 		chunk_cnt += chunk_found;
 	}
-	rz_cons_printf("Found %d chunks in %d small bins \n", chunk_cnt, non_empty_cnt);
+	rz_cons_printf("Found %d chunks in %d small bins\n", chunk_cnt, non_empty_cnt);
 }
 
 /**
@@ -1680,7 +1683,7 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
 		}
 		chunk_cnt += chunk_found;
 	}
-	rz_cons_printf("Found %d chunks in %d large bins \n", chunk_cnt, non_empty_cnt);
+	rz_cons_printf("Found %d chunks in %d large bins\n", chunk_cnt, non_empty_cnt);
 }
 
 /**
