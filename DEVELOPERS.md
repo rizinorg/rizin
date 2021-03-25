@@ -390,5 +390,5 @@ int main() {
 ```
 
 - You should use these modifiers consistently in both function definition and declaration.
-- We should use these modifiers when and only when it makes sense. For example, if your function returns `const char *`, the caller should not free it because of the `const`. So specifying `RZ_BORROW` in this case is probably redundant.
+- You should use these modifiers when and only when it makes sense. For example, if your function returns `const char *`, the caller should not free it because of the `const`. So specifying `RZ_BORROW` in this case is probably redundant.
 - Since they are used as indications to developers with no special compiler-time restrictions, there is no good way to check if you have used them correctly.
