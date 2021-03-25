@@ -916,7 +916,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 			PRINT_GA(" [size:");
 			PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)k);
 			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i, demangle)) {
-				PRINT_BA("  Empty\n");
+				PRINT_BA(" Empty bin\n");
 			}
 		}
 		break;
@@ -926,9 +926,11 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 			eprintf("Error: 0 < bin <= %d\n", NFASTBINS);
 			break;
 		}
+		PRINTF_YA("Fastbin %02zu", (size_t) (num_bin + 1));
+		PRINT_GA(" [size:");
+		PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)FASTBIN_IDX_TO_SIZE(num_bin + 1));
 		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, demangle)) {
-			PRINT_GA(" Empty bin");
-			PRINT_BA(" 0x0\n");
+			PRINT_BA(" Empty bin\n");
 		}
 		break;
 	}
