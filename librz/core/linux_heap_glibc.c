@@ -844,8 +844,7 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 		return 0;
 	}
 
-	PRINTF_GA("  fastbin %" PFMT64d " @ ", (ut64)bin_num + 1);
-	PRINTF_GA("0x%" PFMT64x " {\n   ", (ut64)bin);
+	rz_cons_printf("\n -> ");
 
 	GHT size = main_arena->GH(top) - brk_start;
 
@@ -853,6 +852,7 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 	while (next && next >= brk_start && next < main_arena->GH(top)) {
 		GH(print_heap_chunk_simple)
 		(core, (ut64)next);
+		rz_cons_printf("\n");
 		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
 			rz_io_read_at(core->io, next_tmp, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 			next_tmp = (!demangle) ? cnk->fd : PROTECT_PTR(next_tmp, cnk->fd);
@@ -866,11 +866,10 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 		}
 		rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		next = (!demangle) ? cnk->fd : PROTECT_PTR(next, cnk->fd);
-		PRINTF_BA("%s", next ? " -> " : "");
+		rz_cons_printf("%s", next ? " -> " : "");
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 			PRINTF_RA(" 0x%" PFMT64x, (ut64)next);
 			PRINT_RA(" Linked list corrupted\n");
-			PRINT_GA("\n  }\n");
 			free(cnk);
 			return -1;
 		}
@@ -879,7 +878,6 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 		if (double_free == next) {
 			PRINTF_RA("0x%" PFMT64x, (ut64)next);
 			PRINT_RA(" Double free detected\n");
-			PRINT_GA("\n  }\n");
 			free(cnk);
 			return -1;
 		}
@@ -888,12 +886,10 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 	if (next && (next < brk_start || next >= main_arena->GH(top))) {
 		PRINTF_RA("0x%" PFMT64x, (ut64)next);
 		PRINT_RA(" Linked list corrupted\n");
-		PRINT_GA("\n  }\n");
 		free(cnk);
 		return -1;
 	}
 
-	PRINT_GA("\n  }\n");
 	free(cnk);
 	return 0;
 }
@@ -915,12 +911,8 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 		}
 		rz_cons_printf("Fast bins @ ");
 		PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-		for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
-			if (FASTBIN_IDX_TO_SIZE(j) <= global_max_fast) {
-				PRINTF_YA("Fastbin %02zu", j);
-			} else {
-				PRINTF_RA("Fastbin %02zu", j);
-			}
+		for (i = 0, j = 1, k = SZ * 4; FASTBIN_IDX_TO_SIZE(j) <= global_max_fast; i++, j++, k += SZ * 2) {
+			PRINTF_YA("Fastbin %02zu", j);
 			PRINT_GA(" [size:");
 			PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)k);
 			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i, demangle)) {
