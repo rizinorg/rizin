@@ -29,16 +29,6 @@ typedef struct _jasm {
 	AsmEncoder encode;
 } JavaAsm;
 
-static const char *next_printable(const char *s) {
-	if (!s) {
-		return NULL;
-	}
-	while (RZ_STR_ISNOTEMPTY(s) && IS_WHITECHAR(*s)) {
-		s++;
-	}
-	return RZ_STR_ISEMPTY(s) ? NULL : s;
-}
-
 static bool encode_not_implemented(ut8 bytecode, const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	RZ_LOG_ERROR("[!] java_assembler: not implemented.\n");
 	return false;
@@ -190,7 +180,7 @@ static bool encode_const_pool16_ut8(ut8 bytecode, const char *input, st32 input_
 	const char *next = NULL;
 	char *tmp = NULL;
 	ut16 cpool = (ut16)strtoll(input, &tmp, 0);
-	if (!tmp || tmp == (input + input_size) || !(next = next_printable(tmp))) {
+	if (!tmp || tmp == (input + input_size) || !(next = rz_str_trim_head_ro(tmp))) {
 		RZ_LOG_ERROR("[!] java_assembler: '%s' is not a valid number between 0 and %u (inclusive).\n", tmp, UINT8_MAX);
 	}
 
@@ -219,7 +209,7 @@ static bool encode_ut8x2(ut8 bytecode, const char *input, st32 input_size, ut8 *
 	const char *next = NULL;
 	char *tmp = NULL;
 	ut16 arg0 = (ut16)strtoll(input, &tmp, 0);
-	if (!tmp || tmp == (input + input_size) || !(next = next_printable(tmp))) {
+	if (!tmp || tmp == (input + input_size) || !(next = rz_str_trim_head_ro(tmp))) {
 		RZ_LOG_ERROR("[!] java_assembler: '%s' is not a valid number between 0 and %u (inclusive).\n", tmp, UINT8_MAX);
 	}
 
@@ -487,7 +477,7 @@ bool java_assembler(const char *input, st32 input_size, ut8 *output, st32 output
 			continue;
 		}
 		if (!rz_str_ncasecmp(input, instructions[i].opcode, instructions[i].length)) {
-			const char *p = next_printable(input + instructions[i].length);
+			const char *p = rz_str_trim_head_ro(input + instructions[i].length);
 			st32 used = p ? (p - input) : input_size;
 			return instructions[i].encode(instructions[i].bytecode, p, input_size - used, output, output_size, pc, written);
 		}
