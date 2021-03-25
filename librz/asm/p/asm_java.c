@@ -8,6 +8,7 @@
 #include <rz_core.h>
 
 #include "../arch/java/jvm.h"
+#include "../arch/java/assembler.h"
 
 typedef struct java_analysis_context_t {
 	LookupSwitch ls;
@@ -121,6 +122,19 @@ static bool java_fini(void *user) {
 	return true;
 }
 
+static int java_assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
+	ut8 buffer[128];
+	st32 written = 0;
+	st32 slen = strlen(str);
+
+	if (!java_assembler(str, slen, buffer, sizeof(buffer), a->pc, &written)) {
+		return -1;
+	}
+
+	rz_strbuf_setbin(&ao->buf, (const ut8 *)&buffer, written);
+	return written;
+}
+
 RzAsmPlugin rz_asm_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode disassembler",
@@ -132,6 +146,7 @@ RzAsmPlugin rz_asm_plugin_java = {
 	.init = java_init,
 	.fini = java_fini,
 	.disassemble = &java_disassemble,
+	.assemble = &java_assemble,
 };
 
 #ifndef RZ_PLUGIN_INCORE
