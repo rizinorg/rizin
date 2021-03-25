@@ -113,6 +113,49 @@ RZ_API void rz_type_base_struct_member_free(void *e, void *user);
 RZ_API void rz_type_base_union_member_free(void *e, void *user);
 RZ_API void rz_type_save_base_type(const RzType *t, const RzBaseType *type);
 
+/* ctype */
+// Parses strings like "const char * [0x42] const * [23]" to RzTypeCTypeType
+
+typedef struct rz_type_ctype_t RzTypeCType;
+
+typedef enum {
+	RZ_TYPE_CTYPE_TYPE_KIND_IDENTIFIER,
+	RZ_TYPE_CTYPE_TYPE_KIND_POINTER,
+	RZ_TYPE_CTYPE_TYPE_KIND_ARRAY
+} RzTypeCTypeTypeKind;
+
+typedef enum {
+	RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED,
+	RZ_TYPE_CTYPE_IDENTIFIER_KIND_STRUCT,
+	RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNION,
+	RZ_TYPE_CTYPE_IDENTIFIER_KIND_ENUM
+} RzTypeCTypeTypeIdentifierKind;
+
+typedef struct rz_type_ctype_type_t RzTypeCTypeType;
+struct rz_type_ctype_type_t {
+	RzTypeCTypeTypeKind kind;
+	union {
+		struct {
+			RzTypeCTypeTypeIdentifierKind kind;
+			char *name;
+			bool is_const;
+		} identifier;
+		struct {
+			RzTypeCTypeType *type;
+			bool is_const;
+		} pointer;
+		struct {
+			RzTypeCTypeType *type;
+			ut64 count;
+		} array;
+	};
+};
+
+RZ_API RzTypeCType *rz_type_ctype_new(void);
+RZ_API void rz_type_ctype_free(RzTypeCType *ctype);
+RZ_API RzTypeCTypeType *rz_type_ctype_parse(RzTypeCType *ctype, const char *str, char **error);
+RZ_API void rz_type_ctype_type_free(RzTypeCTypeType *type);
+
 /* c */
 RZ_API char *rz_type_parse_c_string(RzType *type, const char *code, char **error_msg);
 RZ_API char *rz_type_parse_c_file(RzType *type, const char *path, const char *dir, char **error_msg);
