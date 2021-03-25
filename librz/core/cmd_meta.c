@@ -24,7 +24,6 @@ static const char *help_msg_C[] = {
 	"CCa", "[+-] [addr] [text]", "add/remove comment at given address",
 	"CCu", " [comment-text] [@addr]", "add unique comment",
 	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
-	"CL", "[.]", "show source line information (bininfo)",
 	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
 	"C[Cthsdmf]", "", "list comments/types/hidden/strings/data/magic/formatted in human friendly form",
 	"C[Cthsdmf]*", "", "list comments/types/hidden/strings/data/magic/formatted in rizin commands",
@@ -140,27 +139,6 @@ RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 add
 	if (!oldcomment || (oldcomment && !strstr(oldcomment, comment))) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, addr, comment);
 	}
-}
-
-static int cmd_meta_lineinfo(RzCore *core, const char *input) {
-	rz_return_val_if_fail(core && core->bin, 0);
-	if (!core->bin->cur || !core->bin->cur->o || !core->bin->cur->o->lines) {
-		return 0;
-	}
-	RzBinSourceLineInfo *li = core->bin->cur->o->lines;
-	if (*input == '?') {
-		eprintf("Usage: CL[.?]\n");
-		return 0;
-	}
-	if (*input == '.') {
-		for (const RzBinSourceLineSample *s = rz_bin_source_line_info_get_first_at(li, core->offset);
-			s; s = rz_bin_source_line_info_get_next(li, s)) {
-			rz_core_bin_print_source_line_sample(core, s, 0, NULL);
-		}
-	} else {
-		rz_core_bin_print_source_line_info(core, li, 0, NULL);
-	}
-	return 0;
 }
 
 static int cmd_meta_comment(RzCore *core, const char *input) {
@@ -836,9 +814,6 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 		rz_meta_print_list_at(core->analysis, core->offset, 0);
 		break;
 	}
-	case 'L': // "CL"
-		cmd_meta_lineinfo(core, input + 1);
-		break;
 	case 'C': // "CC"
 		cmd_meta_comment(core, input);
 		break;

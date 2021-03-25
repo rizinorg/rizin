@@ -4251,7 +4251,7 @@ RUN
 
 NAME=iX
 FILE=bins/elf/analysis/dwarf_load
-CMDS=iX
+CMDS=ixf
 EXPECT=<<EOF
 [Source file]
 /home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/ieee754-df.S
@@ -4786,5 +4786,128 @@ izz~^0
 EOF
 EXPECT=<<EOF
 0   0x00000004 0x00000004 7   8            ascii =%s%s%s
+EOF
+RUN
+
+NAME=ix (source line info)
+FILE=bins/elf/dwarf3_many_comp_units.elf
+CMDS=<<EOF
+?e -- Everything
+ix
+?e -- Everything in json
+ixj
+?e -- Single address (exact match)
+ix.@0x00001401
+?e -- Single address (still covered)
+ix.@0x00001402
+?e -- Single address (not covered anymore)
+ix.@0x00001403
+?e -- Single address in json
+ix.j@0x000013a2
+?e -- File Summary
+ixf
+?e -- File Summary in json
+ixfj
+EOF
+EXPECT=<<EOF
+-- Everything
+0x0000118a	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x00001196	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x000011a4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x000011a8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x000011b8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x000011d8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4
+0x000011e4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4
+0x000011e9	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4
+0x000011eb	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10
+0x000011f7	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10
+0x00001206	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	12
+0x00001212	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	13
+0x00001228	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
+0x00001234	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
+0x00001239	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
+0x0000123b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	15
+0x00001248	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18
+0x0000125d	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18
+0x00001261	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19
+0x00001276	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19
+0x0000127a	/home/hound/r2test/dwarf/cpp/dump/main.cpp	20
+0x00001281	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21
+0x0000128f	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21
+0x00001298	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21
+0x0000129b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22
+0x000012a9	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22
+0x000012b2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22
+0x000012b5	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23
+0x000012ba	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23
+0x000012bf	/home/hound/r2test/dwarf/cpp/dump/main.cpp	24
+0x000012c6	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
+0x000012d2	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
+0x000012e0	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
+0x000012e3	-	-
+0x000012e4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
+0x000012f4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
+0x0000130e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
+0x00001311	-	-
+0x00001312	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x00001322	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x0000133c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x0000133f	-	-
+0x00001340	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x00001350	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x0000136f	-	-
+0x00001370	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
+0x0000137c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
+0x00001381	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
+0x00001383	-	-
+0x00001384	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
+0x00001390	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
+0x0000139e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
+0x000013a1	-	-
+0x000013a2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013ae	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013bc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013bf	-	-
+0x000013c0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013d0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013ef	-	-
+0x000013f0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x000013fc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x00001403	-	-
+-- Everything in json
+[{"file":"mammal.cpp","line":3,"column":3,"addr":4490},{"file":"mammal.cpp","line":3,"column":19,"addr":4502},{"file":"mammal.cpp","line":3,"column":22,"addr":4516},{"file":"mammal.cpp","line":3,"column":3,"addr":4520},{"file":"mammal.cpp","line":3,"column":22,"addr":4536},{"file":"mammal.cpp","line":4,"column":22,"addr":4568},{"file":"mammal.cpp","line":4,"column":31,"addr":4580},{"file":"mammal.cpp","line":4,"column":34,"addr":4585},{"file":"mammal.cpp","line":10,"column":12,"addr":4587},{"file":"mammal.cpp","line":10,"column":12,"addr":4599},{"file":"mammal.cpp","line":12,"column":23,"addr":4614},{"file":"mammal.cpp","line":13,"column":1,"addr":4626},{"file":"mammal.cpp","line":7,"column":6,"addr":4648},{"file":"mammal.cpp","line":7,"column":26,"addr":4660},{"file":"mammal.cpp","line":7,"column":28,"addr":4665},{"file":"main.cpp","line":15,"column":12,"addr":4667},{"file":"main.cpp","line":18,"column":16,"addr":4680},{"file":"main.cpp","line":18,"column":5,"addr":4701},{"file":"main.cpp","line":19,"column":15,"addr":4705},{"file":"main.cpp","line":19,"column":5,"addr":4726},{"file":"main.cpp","line":20,"column":7,"addr":4730},{"file":"main.cpp","line":21,"column":20,"addr":4737},{"file":"main.cpp","line":21,"column":19,"addr":4751},{"file":"main.cpp","line":21,"column":10,"addr":4760},{"file":"main.cpp","line":22,"column":21,"addr":4763},{"file":"main.cpp","line":22,"column":20,"addr":4777},{"file":"main.cpp","line":22,"column":10,"addr":4786},{"file":"main.cpp","line":23,"column":23,"addr":4789},{"file":"main.cpp","line":23,"column":24,"addr":4794},{"file":"main.cpp","line":24,"column":1,"addr":4799},{"file":"mammal.h","line":2,"column":3,"addr":4806},{"file":"mammal.h","line":2,"column":12,"addr":4818},{"file":"mammal.h","line":2,"column":15,"addr":4832},{"line":0,"addr":4835},{"file":"main.cpp","line":4,"column":3,"addr":4836},{"file":"main.cpp","line":4,"column":9,"addr":4852},{"file":"main.cpp","line":4,"column":12,"addr":4878},{"line":0,"addr":4881},{"file":"main.cpp","line":5,"column":11,"addr":4882},{"file":"main.cpp","line":5,"column":18,"addr":4898},{"file":"main.cpp","line":5,"column":19,"addr":4924},{"line":0,"addr":4927},{"file":"main.cpp","line":5,"column":11,"addr":4928},{"file":"main.cpp","line":5,"column":19,"addr":4944},{"line":0,"addr":4975},{"file":"main.cpp","line":6,"column":15,"addr":4976},{"file":"main.cpp","line":6,"column":31,"addr":4988},{"file":"main.cpp","line":6,"column":34,"addr":4993},{"line":0,"addr":4995},{"file":"main.cpp","line":10,"column":3,"addr":4996},{"file":"main.cpp","line":10,"column":10,"addr":5008},{"file":"main.cpp","line":10,"column":13,"addr":5022},{"line":0,"addr":5025},{"file":"main.cpp","line":11,"column":11,"addr":5026},{"file":"main.cpp","line":11,"column":19,"addr":5038},{"file":"main.cpp","line":11,"column":20,"addr":5052},{"line":0,"addr":5055},{"file":"main.cpp","line":11,"column":11,"addr":5056},{"file":"main.cpp","line":11,"column":20,"addr":5072},{"line":0,"addr":5103},{"file":"main.cpp","line":12,"column":15,"addr":5104},{"file":"main.cpp","line":12,"column":30,"addr":5116},{"file":"main.cpp","line":12,"column":33,"addr":5121},{"line":0,"addr":5123}]
+
+-- Single address (exact match)
+0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+-- Single address (still covered)
+0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+-- Single address (not covered anymore)
+-- Single address in json
+[{"file":"main.cpp","line":11,"column":11,"addr":5026}]
+-- File Summary
+[Source file]
+/home/hound/r2test/dwarf/cpp/dump/main.cpp
+/home/hound/r2test/dwarf/cpp/dump/mammal.cpp
+/home/hound/r2test/dwarf/cpp/dump/mammal.h
+-- File Summary in json
+["/home/hound/r2test/dwarf/cpp/dump/main.cpp","/home/hound/r2test/dwarf/cpp/dump/mammal.cpp","/home/hound/r2test/dwarf/cpp/dump/mammal.h"]
+EOF
+RUN
+
+NAME=ix same-addr samples
+FILE=bins/elf/libstdc++.so.6
+CMDS=<<EOF
+ix.@0x00091004
+?e --
+ix.j@0x00091004
+EOF
+EXPECT=<<EOF
+0x00091004	/build/gcc/src/gcc/libstdc++-v3/libsupc++/new	57
+0x00091004	/build/gcc/src/gcc/libstdc++-v3/libsupc++/new	57
+0x00091004	/build/gcc/src/gcc-build/x86_64-pc-linux-gnu/libstdc++-v3/include/bits/exception.h	63
+0x00091004	/build/gcc/src/gcc-build/x86_64-pc-linux-gnu/libstdc++-v3/include/bits/exception.h	63
+--
+[{"file":"new","line":57,"column":5,"addr":593924},{"file":"new","line":57,"column":25,"addr":593924},{"file":"exception.h","line":63,"column":5,"addr":593924},{"file":"exception.h","line":63,"column":5,"addr":593924}]
 EOF
 RUN

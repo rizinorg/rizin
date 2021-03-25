@@ -35,7 +35,6 @@ static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile
 static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
 static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
 static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode);
-static int bin_source(RzCore *r, PJ *pj, int mode);
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
 static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode);
@@ -1164,14 +1163,14 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 		return false;
 	}
 	if (!IS_MODE_SET(mode)) {
-		rz_core_bin_print_source_line_info(core, li, mode, pj);
+		rz_core_bin_print_source_line_info(core, li, IS_MODE_JSON(mode) ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD, pj);
 	}
 	return true;
 }
 
-RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, int mode, PJ *pj) {
-	rz_return_if_fail(core && s && (!IS_MODE_JSON(mode) || pj));
-	if (IS_MODE_JSON(mode)) {
+RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(core && s && (mode != RZ_OUTPUT_MODE_JSON || pj));
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		bool chopPath = !rz_config_get_i(core->config, "dir.dwarf.abspath");
 		char *file = s->file ? strdup(s->file) : NULL;
 		if (chopPath && file) {
@@ -1202,9 +1201,9 @@ RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSource
 	}
 }
 
-RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, int mode, PJ *pj) {
-	rz_return_if_fail(li && (!IS_MODE_JSON(mode) || pj));
-	if (IS_MODE_JSON(mode)) {
+RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(li && (mode != RZ_OUTPUT_MODE_JSON || pj));
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
 	rz_cons_break_push(NULL, NULL);
@@ -1215,7 +1214,7 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 		rz_core_bin_print_source_line_sample(core, &li->samples[i], mode, pj);
 	}
 	rz_cons_break_pop();
-	if (IS_MODE_JSON(mode)) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
 }
@@ -1270,58 +1269,6 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 	if (mode == 'j') {
 		pj_end(pj);
 	}
-	return true;
-}
-
-static bool source_file_collect_cb(void *user, const void *k, const void *v) {
-	RzPVector *r = user;
-	char *f = strdup(k);
-	if (f) {
-		rz_pvector_push(r, f);
-	}
-	return true;
-}
-
-static int bin_source(RzCore *r, PJ *pj, int mode) {
-	RzList *final_list = rz_list_new();
-	RzBinFile *binfile = r->bin->cur;
-	if (!binfile || !binfile->o) {
-		bprintf("[Error bin file]\n");
-		rz_list_free(final_list);
-		return false;
-	}
-	RzBinSourceLineInfo *li = binfile->o->lines;
-	if (!li) {
-		rz_cons_printf("No source info available.\n");
-		return true;
-	}
-
-	// collect all filenames uniquely
-	HtPP *files = ht_pp_new0();
-	if (!files) {
-		return false;
-	}
-	for (size_t i = 0; i < li->samples_count; i++) {
-		RzBinSourceLineSample *s = &li->samples[i];
-		if (!s->line || !s->file) {
-			continue;
-		}
-		ht_pp_insert(files, s->file, NULL);
-	}
-	// sort them alphabetically
-	RzPVector sorter;
-	rz_pvector_init(&sorter, free);
-	ht_pp_foreach(files, source_file_collect_cb, &sorter);
-	rz_pvector_sort(&sorter, (RzPVectorComparator)strcmp);
-	ht_pp_free(files);
-	// print them!
-	rz_cons_printf("[Source file]\n");
-	void **it;
-	rz_pvector_foreach (&sorter, it) {
-		const char *file = *it;
-		rz_cons_printf("%s\n", file);
-	}
-	rz_pvector_fini(&sorter);
 	return true;
 }
 
@@ -4236,9 +4183,6 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 	}
 	if ((action & RZ_CORE_BIN_ACC_PDB)) {
 		ret &= rz_core_pdb_info(core, core->bin->file, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_SOURCE)) {
-		ret &= bin_source(core, pj, mode);
 	}
 	if ((action & RZ_CORE_BIN_ACC_ENTRIES)) {
 		ret &= bin_entry(core, pj, mode, loadaddr, va, false);
