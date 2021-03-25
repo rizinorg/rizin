@@ -260,13 +260,13 @@ RUN
 NAME=DEX HelloWorld.dex debug info CL
 FILE=bins/dex/HelloWorld.dex
 CMDS=<<EOF
-CL
+ix
 ?e --
-CL.@0x000002f4
+ix.@0x000002f4
 ?e --
-CL.@0x00000318
+ix.@0x00000318
 ?e --
-CL~?
+ix~?
 EOF
 EXPECT=<<EOF
 0x00000238	Hello.java	4
