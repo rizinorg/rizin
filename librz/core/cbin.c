@@ -34,7 +34,6 @@
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
 static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
 static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
-static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode);
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
 static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode);
@@ -378,7 +377,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	rz_core_bin_apply_strings(r, binfile);
 	rz_core_bin_apply_config(r, binfile);
 	rz_core_bin_apply_main(r, binfile, va);
-	bin_dwarf(r, binfile, NULL, RZ_MODE_SET);
+	rz_core_bin_apply_dwarf(r, binfile);
 	bin_entry(r, NULL, RZ_MODE_SET, loadaddr, va, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, true);
@@ -507,6 +506,40 @@ RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va) {
 	ut64 addr = va ? rz_bin_object_addr_with_base(o, binmain->vaddr) : binmain->paddr;
 	rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
 	rz_flag_set(r->flags, "main", addr, r->blocksize);
+	return true;
+}
+
+RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
+	rz_return_val_if_fail(core && binfile, false);
+	if (!rz_config_get_i(core->config, "bin.dbginfo") || !binfile->o) {
+		return false;
+	}
+	RzBinObject *o = binfile->o;
+	const RzBinSourceLineInfo *li = NULL;
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
+	RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_parse_info(binfile, da) : NULL;
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
+	if (info) {
+		RzAnalysisDwarfContext ctx = {
+			.info = info,
+			.loc = loc_table
+		};
+		rz_analysis_dwarf_process_info(core->analysis, &ctx);
+	}
+	if (loc_table) {
+		rz_bin_dwarf_loc_free(loc_table);
+	}
+	RzBinDwarfLineInfo *lines = rz_bin_dwarf_parse_line(binfile, info, RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	rz_bin_dwarf_debug_info_free(info);
+	if (lines) {
+		// move all produced rows line info out (TODO: bin loading should do that)
+		li = o->lines = lines->lines;
+		lines->lines = NULL;
+	}
+	rz_bin_dwarf_debug_abbrev_free(da);
+	if (!li) {
+		return false;
+	}
 	return true;
 }
 
@@ -1112,8 +1145,6 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 	if (!rz_config_get_i(core->config, "bin.dbginfo") || !binfile->o) {
 		return false;
 	}
-	RzBinObject *o = binfile->o;
-	const RzBinSourceLineInfo *li = NULL;
 	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
 	RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_parse_info(binfile, da) : NULL;
 	if (mode == RZ_MODE_PRINT) {
@@ -1125,15 +1156,6 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 		}
 	}
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
-	// I suppose there is no reason the parse it for a printing purposes
-	if (info && mode != RZ_MODE_PRINT) {
-		/* Should we do this by default? */
-		RzAnalysisDwarfContext ctx = {
-			.info = info,
-			.loc = loc_table
-		};
-		rz_analysis_dwarf_process_info(core->analysis, &ctx);
-	}
 	if (loc_table) {
 		if (mode == RZ_MODE_PRINT) {
 			rz_core_bin_dwarf_print_loc(loc_table, core->analysis->bits / 8);
@@ -1147,6 +1169,7 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 			rz_list_free(aranges);
 		}
 	}
+	bool ret = false;
 	RzBinDwarfLineInfo *lines = rz_bin_dwarf_parse_line(binfile, info,
 		RZ_BIN_DWARF_LINE_INFO_MASK_LINES | (mode == RZ_MODE_PRINT ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0));
 	rz_bin_dwarf_debug_info_free(info);
@@ -1154,18 +1177,14 @@ static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 		if (mode == RZ_MODE_PRINT) {
 			rz_core_bin_dwarf_print_line_units(lines->units);
 		}
-		// move all produced rows line info out (TODO: bin loading should do that)
-		li = o->lines = lines->lines;
-		lines->lines = NULL;
+		if (lines->lines) {
+			ret = true;
+			rz_core_bin_print_source_line_info(core, lines->lines, IS_MODE_JSON(mode) ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD, pj);
+		}
+		rz_bin_dwarf_line_info_free(lines);
 	}
 	rz_bin_dwarf_debug_abbrev_free(da);
-	if (!li) {
-		return false;
-	}
-	if (!IS_MODE_SET(mode)) {
-		rz_core_bin_print_source_line_info(core, li, IS_MODE_JSON(mode) ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD, pj);
-	}
-	return true;
+	return ret;
 }
 
 RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzOutputMode mode, PJ *pj) {
