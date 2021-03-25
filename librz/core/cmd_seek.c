@@ -635,11 +635,8 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 	RzList *list = rz_core_seek_list(core);
 	RzListIter *iter;
 	RzCoreSeekItem *undo;
-	PJ *pj = NULL;
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj = state->d.pj;
-		pj_a(pj);
-	}
+	PJ *pj = state->d.pj;
+	rz_cmd_state_output_array_start(state);
 	bool current_met = false;
 	rz_list_foreach (list, iter, undo) {
 		RzFlagItem *f = rz_flag_get_at(core->flags, undo->offset, true);
@@ -688,9 +685,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 		}
 		free(name);
 	}
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(pj);
-	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 

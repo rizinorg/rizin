@@ -557,6 +557,10 @@ RZ_API const char *rz_cmd_parsed_args_cmd(RzCmdParsedArgs *arg);
 RZ_API char *rz_cmd_escape_arg(const char *arg, RzCmdEscape escape);
 RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape escape);
 
+RZ_API void rz_cmd_state_output_array_start(RzCmdStateOutput *state);
+RZ_API void rz_cmd_state_output_array_end(RzCmdStateOutput *state);
+RZ_API void rz_cmd_state_output_set_columnsf(RzCmdStateOutput *state, const char *fmt, ...);
+
 #define rz_cmd_parsed_args_foreach_arg(args, i, arg) for ((i) = 1; (i) < (args->argc) && ((arg) = (args)->argv[i]); (i)++)
 
 /* rz_cmd_macro */
