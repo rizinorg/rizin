@@ -259,7 +259,6 @@ extern RzAsmPlugin rz_asm_plugin_v810;
 extern RzAsmPlugin rz_asm_plugin_v850;
 extern RzAsmPlugin rz_asm_plugin_vax;
 extern RzAsmPlugin rz_asm_plugin_wasm;
-extern RzAsmPlugin rz_asm_plugin_ws;
 extern RzAsmPlugin rz_asm_plugin_x86_as;
 extern RzAsmPlugin rz_asm_plugin_x86_cs;
 extern RzAsmPlugin rz_asm_plugin_x86_nasm;
