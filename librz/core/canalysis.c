@@ -548,11 +548,9 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 	rz_return_if_fail(core && fcn && state);
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_a(state->d.pj);
-	} else if (state->mode == RZ_OUTPUT_MODE_TABLE) {
-		rz_table_set_columnsf(state->d.t, "xdxx", "addr", "size", "jump", "fail");
-	} else if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
+	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_cons_printf("fs blocks\n");
 	}
 
@@ -561,16 +559,12 @@ RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fc
 		bb_info_print(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);
 	}
 
-	if (state->mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(state->d.pj);
-	}
+	rz_cmd_state_output_array_end(state);
 }
 
 RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state) {
 	rz_return_if_fail(core && bb && state);
-	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
-		rz_table_set_columnsf(state->d.t, "xdxx", "addr", "size", "jump", "fail");
-	}
+	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
 	RzAnalysisFunction *fcn = rz_list_first(bb->fcns);
 	bb_info_print(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
 }

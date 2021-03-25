@@ -2339,3 +2339,51 @@ RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape esc) {
 	}
 	rz_return_val_if_reached(strdup(arg));
 }
+
+/**
+ * \brief Mark the start of an array of elements in the output.
+ *
+ * Output modes that support arrays will use this to mark the start of an array
+ * (e.g. JSON). Used by command handlers before "printing" a list of elements.
+ */
+RZ_API void rz_cmd_state_output_array_start(RzCmdStateOutput *state) {
+	rz_return_if_fail(state);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		rz_return_if_fail(state->d.pj);
+		pj_a(state->d.pj);
+	}
+}
+
+/**
+ * \brief Mark the end of an array of elements in the output.
+ *
+ * Output modes that support arrays will use this to mark the end of an array
+ * (e.g. JSON). Used by command handlers after "printing" a list of elements.
+ */
+RZ_API void rz_cmd_state_output_array_end(RzCmdStateOutput *state) {
+	rz_return_if_fail(state);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		rz_return_if_fail(state->d.pj);
+		pj_end(state->d.pj);
+	}
+}
+
+/**
+ * \brief Specify the columns of the command output
+ *
+ * \param state Reference to \p RzCmdStateOutput
+ * \param fmt String containing the numer and types of the columns (see \p
+ *            RzTable for a reference of the possible types)
+ * \param ... Variable number of strings that specify the names of the columns.
+ *            There should be enough string as characters in \p fmt .
+ */
+RZ_API void rz_cmd_state_output_set_columnsf(RzCmdStateOutput *state, const char *fmt, ...) {
+	rz_return_if_fail(state);
+	va_list ap;
+	va_start(ap, fmt);
+	if (state->mode == RZ_OUTPUT_MODE_TABLE) {
+		rz_return_if_fail(state->d.t);
+		rz_table_set_vcolumnsf(state->d.t, fmt, ap);
+	}
+	va_end(ap);
+}
