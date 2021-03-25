@@ -139,9 +139,15 @@ RZ_API void rz_table_add_row_list(RzTable *t, RzList *items) {
 	t->totalCols = RZ_MAX(t->totalCols, rz_list_length(items));
 }
 
-RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
+/**
+ * \brief Specify the types and names of the referenced table.
+ *
+ * \param t Referenced \p RzTable
+ * \param fmt String containing the numer and types of the columns
+ * \param ap Variable number of strings that specify the names of the columns.
+ *           There should be enough string as characters in \p fmt .
+ */
+RZ_API void rz_table_set_vcolumnsf(RzTable *t, const char *fmt, va_list ap) {
 	RzTableColumnType *typeString = rz_table_type("string");
 	RzTableColumnType *typeNumber = rz_table_type("number");
 	RzTableColumnType *typeBool = rz_table_type("bool");
@@ -172,6 +178,20 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 			break;
 		}
 	}
+}
+
+/**
+ * \brief Specify the types and names of the referenced table.
+ *
+ * \param t Referenced \p RzTable
+ * \param fmt String containing the numer and types of the columns
+ * \param ... Variable number of strings that specify the names of the columns.
+ *            There should be enough string as characters in \p fmt .
+ */
+RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+	rz_table_set_vcolumnsf(t, fmt, ap);
 	va_end(ap);
 }
 
