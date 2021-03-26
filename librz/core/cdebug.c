@@ -244,7 +244,7 @@ RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, c
 	return true;
 }
 
-RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int rad, const char *use_color) {
+RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, RzOutputMode rad, const char *use_color) {
 	RzDebug *dbg = core->dbg;
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
@@ -255,7 +255,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int
 	const RzList *head;
 	ut64 diff;
 	char strvalue[256];
-	bool isJson = (rad == 'j' || rad == 'J');
+	bool isJson = (rad == RZ_OUTPUT_MODE_JSON || rad == RZ_OUTPUT_MODE_LONG_JSON);
 	if (!dbg || !dbg->reg) {
 		return false;
 	}
@@ -296,7 +296,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int
 	if (!head) {
 		return false;
 	}
-	if (rad == 1 || rad == '*') {
+	if (rad == 1 || rad == RZ_OUTPUT_MODE_RIZIN) {
 		dbg->cb_printf("fs+%s\n", RZ_FLAGS_FS_REGISTERS);
 	}
 	rz_list_foreach (head, iter, item) {
@@ -385,7 +385,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int
 			rz_cons_printf("aer %s = %s\n", item->name, strvalue);
 			break;
 		case 1:
-		case '*':
+		case RZ_OUTPUT_MODE_RIZIN:
 			rz_cons_printf("f %s %d %s\n", item->name, item->size / 8, strvalue);
 			break;
 		case '.':
@@ -441,7 +441,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int
 		}
 		n++;
 	}
-	if (rad == 1 || rad == '*') {
+	if (rad == 1 || rad == RZ_OUTPUT_MODE_RIZIN) {
 		dbg->cb_printf("fs-\n");
 	}
 beach:

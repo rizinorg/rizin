@@ -199,14 +199,14 @@ RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 to) {
 	return list;
 }
 
-RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad) {
+RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, RzOutputMode rad) {
 	RzListIter *iter;
 	RzAnalysisRef *ref;
 	PJ *pj = NULL;
 	RzList *list = rz_analysis_ref_list_new();
 	listxrefs(analysis->dict_refs, UT64_MAX, list);
 	sortxrefs(list);
-	if (rad == 'j') {
+	if (rad == RZ_OUTPUT_MODE_JSON) {
 		pj = analysis->coreb.pjWithEncoding(analysis->coreb.core);
 		if (!pj) {
 			return;
@@ -216,7 +216,7 @@ RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad) {
 	rz_list_foreach (list, iter, ref) {
 		int t = ref->type ? ref->type : ' ';
 		switch (rad) {
-		case '*':
+		case RZ_OUTPUT_MODE_RIZIN:
 			analysis->cb_printf("ax%c 0x%" PFMT64x " 0x%" PFMT64x "\n", t, ref->addr, ref->at);
 			break;
 		case '\0': {
@@ -238,10 +238,10 @@ RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad) {
 				analysis->cb_printf("\n");
 			}
 		} break;
-		case 'q':
+		case RZ_OUTPUT_MODE_QUIET:
 			analysis->cb_printf("0x%08" PFMT64x " -> 0x%08" PFMT64x "  %s\n", ref->at, ref->addr, rz_analysis_xrefs_type_tostring(t));
 			break;
-		case 'j': {
+		case RZ_OUTPUT_MODE_JSON: {
 			pj_o(pj);
 			char *name = analysis->coreb.getNameDelta(analysis->coreb.core, ref->at);
 			if (name) {
@@ -264,7 +264,7 @@ RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad) {
 			break;
 		}
 	}
-	if (rad == 'j') {
+	if (rad == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		analysis->cb_printf("%s\n", pj_string(pj));
 		pj_free(pj);

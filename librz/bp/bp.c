@@ -280,12 +280,12 @@ RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set) {
 }
 
 // TODO: deprecate
-RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
+RZ_API int rz_bp_list(RzBreakpoint *bp, RzOutputMode rad) {
 	int n = 0;
 	RzBreakpointItem *b;
 	RzListIter *iter;
 	PJ *pj = NULL;
-	if (rad == 'j') {
+	if (rad == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return 0;

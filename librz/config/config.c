@@ -136,7 +136,7 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx
 	}
 }
 
-RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
+RZ_API void rz_config_list(RzConfig *cfg, const char *str, RzOutputMode rad) {
 	rz_return_if_fail(cfg);
 	RzConfigNode *node;
 	RzListIter *iter;
@@ -154,7 +154,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 			str++;
 			len--;
 			json = true;
-			rad = 'J';
+			rad = RZ_OUTPUT_MODE_LONG_JSON;
 		}
 		if (len > 0 && str[0] == ' ') {
 			str++;
@@ -232,17 +232,17 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 			}
 		}
 		break;
-	case 'q':
+	case RZ_OUTPUT_MODE_QUIET:
 		rz_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp(str, node->name, len)))) {
 				cfg->cb_printf("%s\n", node->name);
 			}
 		}
 		break;
-	case 'J':
+	case RZ_OUTPUT_MODE_LONG_JSON:
 		verbose = true;
 	/* fallthrou */
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		isFirst = true;
 		if (verbose) {
 			cfg->cb_printf("[");

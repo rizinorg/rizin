@@ -731,7 +731,7 @@ static int flag_space_stack_list(RzFlag *f, RzOutputMode mode) {
 }
 
 typedef struct {
-	int rad;
+	RzOutputMode rad;
 	PJ *pj;
 	RzAnalysisFunction *fcn;
 } PrintFcnLabelsCtx;
@@ -740,11 +740,11 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 	const PrintFcnLabelsCtx *ctx = user;
 	const char *name = v;
 	switch (ctx->rad) {
-	case '*':
+	case RZ_OUTPUT_MODE_RIZIN:
 	case 1:
 		rz_cons_printf("f.%s@0x%08" PFMT64x "\n", name, addr);
 		break;
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		pj_kn(ctx->pj, name, addr);
 		break;
 	default:
@@ -756,9 +756,9 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 	return true;
 }
 
-static void print_function_labels_for(RzAnalysisFunction *fcn, int rad, PJ *pj) {
-	rz_return_if_fail(fcn && (rad != 'j' || pj));
-	bool json = rad == 'j';
+static void print_function_labels_for(RzAnalysisFunction *fcn, RzOutputMode rad, PJ *pj) {
+	rz_return_if_fail(fcn && (rad != RZ_OUTPUT_MODE_JSON || pj));
+	bool json = rad == RZ_OUTPUT_MODE_JSON;
 	if (json) {
 		pj_o(pj);
 	}
@@ -769,10 +769,10 @@ static void print_function_labels_for(RzAnalysisFunction *fcn, int rad, PJ *pj) 
 	}
 }
 
-static void print_function_labels(RzAnalysis *analysis, RzAnalysisFunction *fcn, int rad) {
+static void print_function_labels(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzOutputMode rad) {
 	rz_return_if_fail(analysis || fcn);
 	PJ *pj = NULL;
-	bool json = rad == 'j';
+	bool json = rad == RZ_OUTPUT_MODE_JSON;
 	if (json) {
 		pj = pj_new();
 	}

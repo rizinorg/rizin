@@ -94,7 +94,7 @@ RZ_API void rz_flag_bind(RzFlag *io, RzFlagBind *bnd);
 #ifdef RZ_API
 RZ_API RzFlag *rz_flag_new(void);
 RZ_API RzFlag *rz_flag_free(RzFlag *f);
-RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx);
+RZ_API void rz_flag_list(RzFlag *f, RzOutputMode rad, const char *pfx);
 RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name);
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off);

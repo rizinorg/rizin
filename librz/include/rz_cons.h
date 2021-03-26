@@ -952,7 +952,7 @@ RZ_API const char *rz_cons_pal_get_name(int index);
 RZ_API int rz_cons_pal_len(void);
 RZ_API int rz_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 RZ_API char *rz_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
-RZ_API void rz_cons_pal_list(int rad, const char *arg);
+RZ_API void rz_cons_pal_list(RzOutputMode rad, const char *arg);
 RZ_API void rz_cons_pal_show(void);
 RZ_API int rz_cons_get_size(int *rows);
 RZ_API bool rz_cons_isatty(void);

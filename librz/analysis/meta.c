@@ -237,8 +237,8 @@ RZ_API const char *rz_meta_type_to_string(int type) {
 	return "# unknown meta # ";
 }
 
-RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full) {
-	rz_return_if_fail(!(rad == 'j' && !pj)); // rad == 'j' => pj != NULL
+RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, RzOutputMode rad, PJ *pj, bool show_full) {
+	rz_return_if_fail(!(rad == RZ_OUTPUT_MODE_JSON && !pj)); // rad == 'j' => pj != NULL
 	char *pstr, *base64_str;
 	RzCore *core = a->coreb.core;
 	bool esc_bslash = core ? core->print->esc_bslash : false;
@@ -286,7 +286,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 		}
 		//		rz_str_sanitize (str);
 		switch (rad) {
-		case 'j':
+		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
 			pj_kn(pj, "offset", start);
 			pj_ks(pj, "type", rz_meta_type_to_string(d->type));
@@ -339,7 +339,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 			break;
 		case 0:
 		case 1:
-		case '*':
+		case RZ_OUTPUT_MODE_RIZIN:
 		default:
 			switch (d->type) {
 			case RZ_META_TYPE_COMMENT: {
@@ -470,7 +470,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 	}
 }
 
-RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, int rad) {
+RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, RzOutputMode rad) {
 	RzPVector *nodes = collect_nodes_at(a, RZ_META_TYPE_ANY, rz_spaces_current(&a->meta_spaces), addr);
 	if (!nodes) {
 		return;
@@ -483,9 +483,9 @@ RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, int rad) {
 	rz_pvector_free(nodes);
 }
 
-static void print_meta_list(RzAnalysis *a, int type, int rad, ut64 addr) {
+static void print_meta_list(RzAnalysis *a, int type, RzOutputMode rad, ut64 addr) {
 	PJ *pj = NULL;
-	if (rad == 'j') {
+	if (rad == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return;
@@ -522,11 +522,11 @@ beach:
 	}
 }
 
-RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, int rad) {
+RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, RzOutputMode rad) {
 	print_meta_list(a, type, rad, UT64_MAX);
 }
 
-RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, int rad, ut64 addr) {
+RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, RzOutputMode rad, ut64 addr) {
 	print_meta_list(a, type, rad, addr);
 }
 

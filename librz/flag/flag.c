@@ -371,7 +371,7 @@ static bool print_flag_orig_name(RzFlagItem *flag, void *user) {
 }
 
 /* print with rz_cons the flag items in the flag f, given as a parameter */
-RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx) {
+RZ_API void rz_flag_list(RzFlag *f, RzOutputMode rad, const char *pfx) {
 	rz_return_if_fail(f);
 	bool in_range = false;
 	ut64 range_from = UT64_MAX;
@@ -399,10 +399,10 @@ RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx) {
 	}
 
 	switch (rad) {
-	case 'q':
+	case RZ_OUTPUT_MODE_QUIET:
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_name, f);
 		break;
-	case 'j': {
+	case RZ_OUTPUT_MODE_JSON: {
 		PJ *pj = pj_new();
 		struct print_flag_t u = {
 			.f = f,
@@ -420,7 +420,7 @@ RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx) {
 		break;
 	}
 	case 1:
-	case '*': {
+	case RZ_OUTPUT_MODE_RIZIN: {
 		struct print_flag_t u = {
 			.f = f,
 			.in_range = in_range,

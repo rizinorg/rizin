@@ -4555,7 +4555,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, R
 	return count;
 }
 
-static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_analysis_strings) {
+static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType type, PJ *pj, RzOutputMode rad, int cfg_debug, bool cfg_analysis_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
 	// the number of false positives. In debugger mode, the reference
@@ -4594,7 +4594,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 		if (xref_to) {
 			rz_analysis_xrefs_set(core->analysis, at, xref_to, type);
 		}
-	} else if (rad == 'j') {
+	} else if (rad == RZ_OUTPUT_MODE_JSON) {
 		char *key = sdb_fmt("0x%" PFMT64x, xref_to);
 		char *value = sdb_fmt("0x%" PFMT64x, at);
 		pj_ks(pj, key, value);
@@ -4623,7 +4623,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 	return true;
 }
 
-RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
+RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, RzOutputMode rad) {
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
 	ut64 at;

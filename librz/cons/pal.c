@@ -524,18 +524,18 @@ typedef struct {
 	const char *str;
 } RAttrStr;
 
-RZ_API void rz_cons_pal_list(int rad, const char *arg) {
+RZ_API void rz_cons_pal_list(RzOutputMode rad, const char *arg) {
 	char *name, **color;
 	const char *hasnext;
 	int i;
-	if (rad == 'j') {
+	if (rad == RZ_OUTPUT_MODE_JSON) {
 		rz_cons_print("{");
 	}
 	for (i = 0; keys[i].name; i++) {
 		RzColor *rcolor = RZCOLOR_AT(i);
 		color = COLOR_AT(i);
 		switch (rad) {
-		case 'j':
+		case RZ_OUTPUT_MODE_JSON:
 			hasnext = (keys[i + 1].name) ? "," : "";
 			rz_cons_printf("\"%s\":[%d,%d,%d]%s",
 				keys[i].name, rcolor->r, rcolor->g, rcolor->b, hasnext);
@@ -566,7 +566,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 			free(name);
 			break;
 		case '*':
-		case 'r':
+		case RZ_OUTPUT_MODE_RIZIN:
 		case 1:
 			rz_cons_printf("ec %s rgb:%02x%02x%02x",
 				keys[i].name, rcolor->r, rcolor->g, rcolor->b);
@@ -599,7 +599,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 				keys[i].name);
 		}
 	}
-	if (rad == 'j') {
+	if (rad == RZ_OUTPUT_MODE_JSON) {
 		rz_cons_print("}\n");
 	}
 }

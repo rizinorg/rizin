@@ -7718,7 +7718,7 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 	int cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	ut64 from, to;
-	int rad;
+	RzOutputMode rad;
 	PJ *pj = NULL;
 	if (*input == '?') {
 		rz_core_cmd_help(core, help_msg_aar);
@@ -7726,9 +7726,9 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 	}
 
 	if (*input == 'j' || *input == '*') {
-		rad = *input;
+		rad = (*input == 'j' ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_RIZIN);
 		input++;
-		if (rad == 'j') {
+		if (rad == RZ_OUTPUT_MODE_JSON) {
 			pj = rz_core_pj_new(core);
 			if (!pj) {
 				return 0;
