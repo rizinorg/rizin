@@ -92,8 +92,8 @@ static int main_help(int line) {
 	if (line != 1) {
 		printf(
 			" --           run rizin without opening any file\n"
-			" -            same as 'rizin malloc://512'\n"
-			" =            read file from stdin (use -i and -c to run cmds)\n"
+			" -Pm          same as 'rizin malloc://512'\n"
+			" -            read file from stdin (use -i and -c to run cmds)\n"
 			" -=           perform !=! command to run all commands remotely\n"
 			" -0           print \\x00 after init and every command\n"
 			" -2           close stderr file descriptor (silent warning messages)\n"
