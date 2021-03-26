@@ -51,7 +51,7 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 		if (opt->opt == (int)'P' && *place == 'm') {
 			return -1;
 		}
-		if(opt->opt == (int)'-'){
+		if (opt->opt == (int)'-') {
 			return -1;
 		}
 		if (!*place) {
