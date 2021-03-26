@@ -125,7 +125,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 17,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 17,
         "type": "CODE"
@@ -166,7 +166,7 @@ EXPECT=<<EOF
     "type_num": 1,
     "type2_num": 0,
     "jump": 9,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 9,
         "type": "CODE"
@@ -189,7 +189,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 22,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 10,
         "type": "CODE"
@@ -213,7 +213,7 @@ EXPECT=<<EOF
     "reloc": false,
     "type_num": 9,
     "type2_num": 0,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 44,
         "type": "DATA"
@@ -236,7 +236,7 @@ EXPECT=<<EOF
     "type_num": 1,
     "type2_num": 0,
     "jump": 3,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 3,
         "type": "CODE"
@@ -288,7 +288,7 @@ jmp 3
     "reloc": false,
     "type_num": 17,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 17,
         "type": "CODE"
@@ -329,7 +329,7 @@ jmp 3
     "type_num": 1,
     "type2_num": 0,
     "jump": 9,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 9,
         "type": "CODE"
@@ -352,7 +352,7 @@ jmp 3
     "reloc": false,
     "type_num": 22,
     "type2_num": 0,
-    "xrefs": [
+    "xrefs_to": [
       {
         "addr": 10,
         "type": "CODE"
@@ -376,7 +376,7 @@ jmp 3
     "reloc": false,
     "type_num": 9,
     "type2_num": 0,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 44,
         "type": "DATA"
@@ -399,7 +399,7 @@ jmp 3
     "type_num": 1,
     "type2_num": 0,
     "jump": 3,
-    "refs": [
+    "xrefs_from": [
       {
         "addr": 3,
         "type": "CODE"

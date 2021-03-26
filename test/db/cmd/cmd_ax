@@ -58,7 +58,7 @@ CMDS=<<EOF
 aa
 e cfg.json.num=hex
 s sym.imp.wprintf
-axj~{[0].addr}
+axj~{[0].to}
 EOF
 EXPECT=<<EOF
 0x600ff8

@@ -344,21 +344,21 @@ RZ_API RzCore *rz_core_cast(void *p) {
 static ut64 getref(RzCore *core, int n, char t, int type) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	RzListIter *iter;
-	RzAnalysisRef *r;
+	RzAnalysisXRef *r;
 	RzList *list;
 	int i = 0;
 	if (!fcn) {
 		return UT64_MAX;
 	}
 	if (t == 'r') {
-		list = rz_analysis_function_get_refs(fcn);
+		list = rz_analysis_function_get_xrefs_from(fcn);
 	} else {
-		list = rz_analysis_function_get_xrefs(fcn);
+		list = rz_analysis_function_get_xrefs_to(fcn);
 	}
 	rz_list_foreach (list, iter, r) {
 		if (r->type == type) {
 			if (i == n) {
-				ut64 addr = r->addr;
+				ut64 addr = t == 'r' ? r->to : r->from;
 				rz_list_free(list);
 				return addr;
 			}

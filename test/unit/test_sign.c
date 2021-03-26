@@ -28,13 +28,13 @@ static bool test_analysis_sign_get_set(void) {
 
 	item->addr = 0x1337;
 
-	item->refs = rz_list_newf(free);
-	rz_list_append(item->refs, strdup("gwonam"));
-	rz_list_append(item->refs, strdup("link"));
+	item->xrefs_from = rz_list_newf(free);
+	rz_list_append(item->xrefs_from, strdup("gwonam"));
+	rz_list_append(item->xrefs_from, strdup("link"));
 
-	item->xrefs = rz_list_newf(free);
-	rz_list_append(item->xrefs, strdup("king"));
-	rz_list_append(item->xrefs, strdup("ganon"));
+	item->xrefs_to = rz_list_newf(free);
+	rz_list_append(item->xrefs_to, strdup("king"));
+	rz_list_append(item->xrefs_to, strdup("ganon"));
 
 	item->vars = rz_list_newf(free);
 	rz_list_append(item->vars, strdup("r16"));
@@ -76,14 +76,14 @@ static bool test_analysis_sign_get_set(void) {
 	mu_assert_eq(item->graph->edges, 12, "graph edges");
 	mu_assert_eq(item->graph->nbbs, 11, "graph nbbs");
 	mu_assert_eq(item->addr, 0x1337, "addr");
-	mu_assert_notnull(item->refs, "refs");
-	mu_assert_eq(rz_list_length(item->refs), 2, "refs count");
-	mu_assert_streq(rz_list_get_n(item->refs, 0), "gwonam", "ref");
-	mu_assert_streq(rz_list_get_n(item->refs, 1), "link", "ref");
-	mu_assert_notnull(item->xrefs, "xrefs");
-	mu_assert_eq(rz_list_length(item->xrefs), 2, "xrefs count");
-	mu_assert_streq(rz_list_get_n(item->xrefs, 0), "king", "xref");
-	mu_assert_streq(rz_list_get_n(item->xrefs, 1), "ganon", "xref");
+	mu_assert_notnull(item->xrefs_from, "xrefs_from");
+	mu_assert_eq(rz_list_length(item->xrefs_from), 2, "xrefs_from count");
+	mu_assert_streq(rz_list_get_n(item->xrefs_from, 0), "gwonam", "xrefs_from");
+	mu_assert_streq(rz_list_get_n(item->xrefs_from, 1), "link", "xrefs_from");
+	mu_assert_notnull(item->xrefs_to, "xrefs_to");
+	mu_assert_eq(rz_list_length(item->xrefs_to), 2, "xrefs count");
+	mu_assert_streq(rz_list_get_n(item->xrefs_to, 0), "king", "xrefs_to");
+	mu_assert_streq(rz_list_get_n(item->xrefs_to, 1), "ganon", "xrefs_to");
 	mu_assert_notnull(item->vars, "vars");
 	mu_assert_eq(rz_list_length(item->vars), 3, "vars count");
 	mu_assert_streq(rz_list_get_n(item->vars, 0), "r16", "var");

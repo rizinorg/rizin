@@ -175,8 +175,8 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_analysis_pin_fini(a);
 	rz_syscall_free(a->syscall);
 	rz_reg_free(a->reg);
-	ht_up_free(a->dict_refs);
-	ht_up_free(a->dict_xrefs);
+	ht_up_free(a->ht_xrefs_from);
+	ht_up_free(a->ht_xrefs_to);
 	rz_list_free(a->leaddrs);
 	sdb_free(a->sdb);
 	if (a->esil) {

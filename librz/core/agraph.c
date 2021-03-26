@@ -2452,8 +2452,7 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	RzANode *node, *fcn_anode;
 	RzListIter *iter;
-	RzAnalysisRef *ref;
-	RzList *refs;
+	RzAnalysisXRef *xref;
 	if (!f) {
 		return false;
 	}
@@ -2474,22 +2473,22 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
 
-	refs = rz_analysis_function_get_refs(fcn);
-	rz_list_foreach (refs, iter, ref) {
-		title = get_title(ref->addr);
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, iter, xref) {
+		title = get_title(xref->to);
 		if (rz_agraph_get_node(g, title) != NULL) {
 			continue;
 		}
 		free(title);
 
 		int size = 0;
-		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, ref->addr);
+		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, xref->to);
 		if (bb) {
 			size = bb->size;
 		}
 
-		char *body = get_body(core, ref->addr, size, mode2opts(g));
-		title = get_title(ref->addr);
+		char *body = get_body(core, xref->to, size, mode2opts(g));
+		title = get_title(xref->to);
 
 		node = rz_agraph_add_node(g, title, body);
 		if (!node) {
@@ -2504,7 +2503,7 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 
 		rz_agraph_add_edge(g, fcn_anode, node);
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 
 	return true;
 }
@@ -4342,7 +4341,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			}
 			break;
 		case '<':
-			// rz_core_visual_refs (core, true, false);
+			// rz_core_visual_xrefs (core, true, false);
 			if (fcn) {
 				rz_core_agraph_reset(core);
 				rz_core_cmd0(core, ".axtg $FB");
@@ -4392,8 +4391,8 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			if (block) {
 				rz_core_seek(core, block->addr, false);
 			}
-			if ((key == 'x' && !rz_core_visual_refs(core, true, true)) ||
-				(key == 'X' && !rz_core_visual_refs(core, false, true))) {
+			if ((key == 'x' && !rz_core_visual_xrefs(core, true, true)) ||
+				(key == 'X' && !rz_core_visual_xrefs(core, false, true))) {
 				rz_core_seek(core, old_off, false);
 			}
 			break;
