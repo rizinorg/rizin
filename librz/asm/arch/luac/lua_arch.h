@@ -48,4 +48,10 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList oplist);
 LuaOpNameList get_lua54_opnames(void);
 int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len);
 
+/* Lua 5.3 specified */
+int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList oplist);
+LuaOpNameList get_lua53_opnames(void);
+int lua53_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len);
+
+
 #endif //BUILD_LUA_ARCH_H

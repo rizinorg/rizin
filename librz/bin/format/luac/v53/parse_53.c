@@ -488,6 +488,7 @@ RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor) {
         ret->arch = rz_str_new("luac");
         ret->machine = rz_str_newf("Lua %c.%c VM", major + '0', minor + '0');
         ret->os = rz_str_newf("%c.%c", major + '0', minor + '0');
+        ret->cpu = rz_str_newf("%c.%c", major + '0', minor + '0');
         ret->bits = 8;
 
         /* official format ? */

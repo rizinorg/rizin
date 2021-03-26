@@ -4,8 +4,22 @@
 #include "librz/asm/arch/luac/lua_arch.h"
 
 int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
-	LuaOpNameList oplist = get_lua54_opnames();
-	int r = lua54_disasm(opstruct, buf, len, oplist);
+        LuaOpNameList oplist = NULL;
+        int r = 0;
+
+	if (!a->cpu) {
+		eprintf("Warning : no version info\n");
+		return 0;
+	}
+
+	if (strcmp(a->cpu, "5.4") == 0) {
+		oplist = get_lua54_opnames();
+		r = lua54_disasm(opstruct, buf, len, oplist);
+	} else if (strcmp(a->cpu, "5.3") == 0) {
+		oplist = get_lua53_opnames();
+		r = lua53_disasm(opstruct, buf, len, oplist);
+	}
+
 	free_lua_opnames(oplist);
 	opstruct->size = r;
 	return r;
