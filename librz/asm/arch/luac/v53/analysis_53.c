@@ -11,8 +11,7 @@ int lua53_anal_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data
 
         memset (op, 0, sizeof (RzAnalysisOp));
         const ut32 instruction = lua_build_instruction(data);
-	
-	
+
         ut32 extra_arg = 0;
         op->addr = addr;
         op->size = 4;
@@ -142,8 +141,7 @@ int lua53_anal_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data
                 op->stackop = RZ_ANALYSIS_STACK_INC;
                 op->stackptr = -4;
                 break;
-        case OP_FORLOOP:/*   A sBx   R(A)+=R(A+2);
-			                                if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }*/
+        case OP_FORLOOP:/*   A sBx   R(A)+=R(A+2); if R(A) <?= R(A+1) then { pc+=sBx; R(A+3)=R(A) }*/
                 op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
                 op->jump = op->addr + 4 + 4 * (GETARG_sBx (instruction));
                 op->fail = op->addr + 4;

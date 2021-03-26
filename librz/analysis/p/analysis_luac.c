@@ -11,8 +11,8 @@ int rz_lua_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		eprintf("Warning : no version info\n");
 	}
 	if (strcmp(analysis->cpu, "5.4") == 0) {
-                return lua54_anal_op(analysis, op, addr, data, len);
-        } else if (strcmp(analysis->cpu, "5.3") == 0) {
+		return lua54_anal_op(analysis, op, addr, data, len);
+	} else if (strcmp(analysis->cpu, "5.3") == 0) {
 		return lua53_anal_op(analysis, op, addr, data, len);
 	} else {
 		eprintf("Warning : no matched version\n");
