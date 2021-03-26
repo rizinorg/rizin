@@ -200,14 +200,14 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			} else if (IS_MODE_SET(mode)) {
 				char *code = rz_str_newf("%s;", v);
 				char *error_msg = NULL;
-				char *out = rz_type_parse_c_string(core->analysis->type, code, &error_msg);
+				char *out = rz_type_parse_c_string(core->analysis->typedb, code, &error_msg);
 				free(code);
 				if (error_msg) {
 					eprintf("%s", error_msg);
 					free(error_msg);
 				}
 				if (out) {
-					rz_type_save_parsed_type(core->analysis->type, out);
+					rz_type_db_save_parsed_type(core->analysis->typedb, out);
 					free(out);
 				}
 			}
@@ -228,7 +228,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			if (IS_MODE_RZCMD(mode)) {
 				rz_cons_printf("pf.%s %s\n", flagname, v);
 			} else if (IS_MODE_SET(mode)) {
-				rz_type_format_set(core->analysis->type, flagname, v);
+				rz_type_db_format_set(core->analysis->typedb, flagname, v);
 			}
 		}
 		free(dup);
@@ -243,7 +243,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 				offset = strdup("0");
 			}
 			flagname = dup;
-			int fmtsize = rz_type_format_struct_size(core->analysis->type, v, 0, 0);
+			int fmtsize = rz_type_format_struct_size(core->analysis->typedb, v, 0, 0);
 			char *offset_key = rz_str_newf("%s.offset", flagname);
 			const char *off = sdb_const_get(db, offset_key, 0);
 			free(offset_key);
@@ -255,7 +255,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 					ut8 *buf = malloc(fmtsize);
 					if (buf) {
 						rz_io_read_at(core->io, addr, buf, fmtsize);
-						char *format = rz_type_format_data(core->analysis->type, core->print, addr, buf,
+						char *format = rz_type_format_data(core->analysis->typedb, core->print, addr, buf,
 							fmtsize, v, 0, NULL, NULL);
 						free(buf);
 						if (!format) {
@@ -2069,7 +2069,7 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 	pdb.print_types(&pdb, pj, mode);
 	pdb.print_gvars(&pdb, baddr, pj, mode);
 	// Save compound types into types database
-	rz_parse_pdb_types(core->analysis->type, &pdb);
+	rz_parse_pdb_types(core->analysis->typedb, &pdb);
 	pdb.finish_pdb_parse(&pdb);
 
 	if (mode == 'j') {

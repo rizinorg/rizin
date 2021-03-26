@@ -297,7 +297,7 @@ RzAnalysisOp *op_cache_get(HtUP *cache, RzCore *core, ut64 addr) {
 static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, const char *cc,
 	int prev_idx, bool userfnc, ut64 caddr, HtUP *op_cache) {
 	Sdb *trace = core->analysis->esil->trace->db;
-	RzType *T = core->analysis->type;
+	RzTypeDB *typedb = core->analysis->typedb;
 	RzAnalysis *analysis = core->analysis;
 	RzList *types = NULL;
 	int idx = sdb_num_get(trace, "idx", 0);
@@ -307,7 +307,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 	if (!fcn_name || !cc) {
 		return;
 	}
-	int i, j, pos = 0, size = 0, max = rz_type_func_args_count(T, fcn_name);
+	int i, j, pos = 0, size = 0, max = rz_type_func_args_count(typedb, fcn_name);
 	const char *place = rz_analysis_cc_arg(analysis, cc, ST32_MAX);
 	rz_cons_break_push(NULL, NULL);
 
@@ -338,8 +338,8 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			}
 			type = rz_str_new(rz_list_get_n(types, pos++));
 		} else {
-			type = rz_type_func_args_type(T, fcn_name, arg_num);
-			name = rz_type_func_args_name(T, fcn_name, arg_num);
+			type = rz_type_func_args_type(typedb, fcn_name, arg_num);
+			name = rz_type_func_args_name(typedb, fcn_name, arg_num);
 		}
 		if (!type && !userfnc) {
 			continue;
@@ -474,7 +474,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 	}
 
 	RzAnalysis *analysis = core->analysis;
-	RzType *T = analysis->type;
+	RzTypeDB *typedb = analysis->typedb;
 	bool chk_constraint = rz_config_get_i(core->config, "analysis.types.constraint");
 	const int mininstrsz = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX(1, mininstrsz);
@@ -579,10 +579,10 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 					}
 				}
 				if (full_name) {
-					if (rz_type_func_exist(T, full_name)) {
+					if (rz_type_func_exist(typedb, full_name)) {
 						fcn_name = strdup(full_name);
 					} else {
-						fcn_name = rz_type_func_guess(T, full_name);
+						fcn_name = rz_type_func_guess(typedb, full_name);
 					}
 					if (!fcn_name) {
 						fcn_name = strdup(full_name);
@@ -594,7 +594,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 						type_match(core, fcn_name, addr, bb->addr, cc, prev_idx, userfnc, callee_addr, op_cache);
 						prev_idx = cur_idx;
 						RZ_FREE(ret_type);
-						const char *rt = rz_type_func_ret(T, fcn_name);
+						const char *rt = rz_type_func_ret(typedb, fcn_name);
 						if (rt) {
 							ret_type = strdup(rt);
 						}

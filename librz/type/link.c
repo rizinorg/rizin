@@ -39,9 +39,9 @@ static void types_range_add(Sdb *db, ut64 addr) {
 	(void)sdb_array_add_num(db, k, addr, 0);
 }
 
-RZ_API char *rz_type_link_at(RzType *t, ut64 addr) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API char *rz_type_link_at(RzTypeDB *typedb, ut64 addr) {
+	rz_return_val_if_fail(typedb, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
@@ -57,7 +57,7 @@ RZ_API char *rz_type_link_at(RzType *t, ut64 addr) {
 				int delta = addr - laddr;
 				const char *lk = sdb_fmt("link.%08" PFMT64x, laddr);
 				char *k = sdb_get(TDB, lk, 0);
-				res = rz_type_get_struct_memb(t, k, delta);
+				res = rz_type_get_struct_memb(typedb, k, delta);
 				if (res) {
 					break;
 				}
@@ -68,9 +68,9 @@ RZ_API char *rz_type_link_at(RzType *t, ut64 addr) {
 	return res;
 }
 
-RZ_API bool rz_type_set_link(RzType *t, const char *type, ut64 addr) {
-	rz_return_val_if_fail(t, false);
-	Sdb *TDB = t->sdb_types;
+RZ_API bool rz_type_set_link(RzTypeDB *typedb, const char *type, ut64 addr) {
+	rz_return_val_if_fail(typedb, false);
+	Sdb *TDB = typedb->sdb_types;
 	if (sdb_const_get(TDB, type, 0)) {
 		char *laddr = rz_str_newf("link.%08" PFMT64x, addr);
 		sdb_set(TDB, laddr, type, 0);
@@ -81,9 +81,9 @@ RZ_API bool rz_type_set_link(RzType *t, const char *type, ut64 addr) {
 	return false;
 }
 
-RZ_API bool rz_type_link_offset(RzType *t, const char *type, ut64 addr) {
-	rz_return_val_if_fail(t, false);
-	Sdb *TDB = t->sdb_types;
+RZ_API bool rz_type_link_offset(RzTypeDB *typedb, const char *type, ut64 addr) {
+	rz_return_val_if_fail(typedb, false);
+	Sdb *TDB = typedb->sdb_types;
 	if (sdb_const_get(TDB, type, 0)) {
 		char *laddr = rz_str_newf("offset.%08" PFMT64x, addr);
 		sdb_set(TDB, laddr, type, 0);
@@ -93,9 +93,9 @@ RZ_API bool rz_type_link_offset(RzType *t, const char *type, ut64 addr) {
 	return false;
 }
 
-RZ_API bool rz_type_unlink(RzType *t, ut64 addr) {
-	rz_return_val_if_fail(t, false);
-	Sdb *TDB = t->sdb_types;
+RZ_API bool rz_type_unlink(RzTypeDB *typedb, ut64 addr) {
+	rz_return_val_if_fail(typedb, false);
+	Sdb *TDB = typedb->sdb_types;
 	char *laddr = sdb_fmt("link.%08" PFMT64x, addr);
 	sdb_unset(TDB, laddr, 0);
 	types_range_del(TDB, addr);
@@ -111,9 +111,9 @@ static bool sdbdeletelink(void *p, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API bool rz_type_unlink_all(RzType *t) {
-	rz_return_val_if_fail(t, false);
-	Sdb *TDB = t->sdb_types;
+RZ_API bool rz_type_unlink_all(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, false);
+	Sdb *TDB = typedb->sdb_types;
 	sdb_foreach(TDB, sdbdeletelink, TDB);
 	return true;
 }

@@ -7,37 +7,9 @@
 #include <sdb.h>
 #include <rz_type.h>
 
-RZ_API const char *rz_type_get(RzType *t, const char *name) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
-	const char *query = sdb_fmt("type.%s", name);
-	return sdb_const_get(TDB, query, 0);
-}
-
-RZ_API bool rz_type_set(RzType *t, ut64 at, RZ_NONNULL const char *field, ut64 val) {
-	rz_return_val_if_fail(t && field, false);
-	Sdb *TDB = t->sdb_types;
-	const char *kind;
-	char var[128];
-	sprintf(var, "link.%08" PFMT64x, at);
-	kind = sdb_const_get(TDB, var, NULL);
-	if (kind) {
-		const char *p = sdb_const_get(TDB, kind, NULL);
-		if (p) {
-			snprintf(var, sizeof(var), "%s.%s.%s", p, kind, field);
-			int off = sdb_array_get_num(TDB, var, 1, NULL);
-			//int siz = sdb_array_get_num (DB, var, 2, NULL);
-			eprintf("wv 0x%08" PFMT64x " @ 0x%08" PFMT64x, val, at + off);
-			return true;
-		}
-		eprintf("Invalid kind of type\n");
-	}
-	return false;
-}
-
-RZ_API int rz_type_kind(RzType *t, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(t && name, -1);
-	Sdb *TDB = t->sdb_types;
+RZ_API int rz_type_kind(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, -1);
+	Sdb *TDB = typedb->sdb_types;
 	const char *type = sdb_const_get(TDB, name, 0);
 	if (!type) {
 		return -1;
@@ -60,13 +32,13 @@ RZ_API int rz_type_kind(RzType *t, RZ_NONNULL const char *name) {
 	return -1;
 }
 
-RZ_API RzList *rz_type_get_enum(RzType *t, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(t && name, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API RzList *rz_type_db_get_enum(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	char *p, var[130];
 	int n;
 
-	if (rz_type_kind(t, name) != RZ_BASE_TYPE_KIND_ENUM) {
+	if (rz_type_kind(typedb, name) != RZ_BASE_TYPE_KIND_ENUM) {
 		return NULL;
 	}
 	RzList *res = rz_list_new();
@@ -93,10 +65,10 @@ RZ_API RzList *rz_type_get_enum(RzType *t, RZ_NONNULL const char *name) {
 	return res;
 }
 
-RZ_API char *rz_type_enum_member(RzType *t, RZ_NONNULL const char *name, const char *member, ut64 val) {
-	rz_return_val_if_fail(t && name, NULL);
-	Sdb *TDB = t->sdb_types;
-	if (rz_type_kind(t, name) != RZ_BASE_TYPE_KIND_ENUM) {
+RZ_API char *rz_type_db_enum_member(RzTypeDB *typedb, RZ_NONNULL const char *name, const char *member, ut64 val) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	Sdb *TDB = typedb->sdb_types;
+	if (rz_type_kind(typedb, name) != RZ_BASE_TYPE_KIND_ENUM) {
 		return NULL;
 	}
 	const char *q = member
@@ -105,9 +77,9 @@ RZ_API char *rz_type_enum_member(RzType *t, RZ_NONNULL const char *name, const c
 	return sdb_get(TDB, q, 0);
 }
 
-RZ_API RzList *rz_type_enum_find_member(RzType *t, ut64 val) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API RzList *rz_type_db_enum_find_member(RzTypeDB *typedb, ut64 val) {
+	rz_return_val_if_fail(typedb, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(TDB, true);
@@ -130,14 +102,14 @@ RZ_API RzList *rz_type_enum_find_member(RzType *t, ut64 val) {
 	return res;
 }
 
-RZ_API char *rz_type_enum_getbitfield(RzType *t, RZ_NONNULL const char *name, ut64 val) {
-	rz_return_val_if_fail(t && name, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API char *rz_type_enum_getbitfield(RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	char *q, *ret = NULL;
 	const char *res;
 	int i;
 
-	if (rz_type_kind(t, name) != RZ_BASE_TYPE_KIND_ENUM) {
+	if (rz_type_kind(typedb, name) != RZ_BASE_TYPE_KIND_ENUM) {
 		return NULL;
 	}
 	bool isFirst = true;
@@ -163,9 +135,9 @@ RZ_API char *rz_type_enum_getbitfield(RzType *t, RZ_NONNULL const char *name, ut
 	return ret;
 }
 
-RZ_API ut64 rz_type_get_bitsize(RzType *types, RZ_NONNULL const char *type) {
-	rz_return_val_if_fail(types && type, 0);
-	Sdb *TDB = types->sdb_types;
+RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL const char *type) {
+	rz_return_val_if_fail(typedb && type, 0);
+	Sdb *TDB = typedb->sdb_types;
 	char *query;
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
 	const char *tmptype;
@@ -223,9 +195,9 @@ RZ_API ut64 rz_type_get_bitsize(RzType *types, RZ_NONNULL const char *type) {
 						elements = 1;
 					}
 					if (!strcmp(t, "struct")) {
-						ret += rz_type_get_bitsize(types, subtype) * elements;
+						ret += rz_type_db_get_bitsize(typedb, subtype) * elements;
 					} else {
-						ut64 sz = rz_type_get_bitsize(types, subtype) * elements;
+						ut64 sz = rz_type_db_get_bitsize(typedb, subtype) * elements;
 						ret = sz > ret ? sz : ret;
 					}
 				}
@@ -240,9 +212,9 @@ RZ_API ut64 rz_type_get_bitsize(RzType *types, RZ_NONNULL const char *type) {
 	return 0;
 }
 
-RZ_API char *rz_type_get_struct_memb(RzType *t, RZ_NONNULL const char *type, int offset) {
-	rz_return_val_if_fail(t && type, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API char *rz_type_get_struct_memb(RzTypeDB *typedb, RZ_NONNULL const char *type, int offset) {
+	rz_return_val_if_fail(typedb && type, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	int i, cur_offset, next_offset = 0;
 	char *res = NULL;
 
@@ -285,7 +257,7 @@ RZ_API char *rz_type_get_struct_memb(RzType *t, RZ_NONNULL const char *type, int
 			break;
 		}
 		int arrsz = rz_num_math(NULL, rz_str_word_get0(subtype, len - 1));
-		int fsize = (rz_type_get_bitsize(t, subtype) * (arrsz ? arrsz : 1)) / 8;
+		int fsize = (rz_type_db_get_bitsize(typedb, subtype) * (arrsz ? arrsz : 1)) / 8;
 		if (!fsize) {
 			free(subtype);
 			break;
@@ -301,7 +273,7 @@ RZ_API char *rz_type_get_struct_memb(RzType *t, RZ_NONNULL const char *type, int
 					break;
 				}
 				nested_type = (char *)rz_str_word_get0(nested_type, 1);
-				char *nested_res = rz_type_get_struct_memb(t, nested_type, offset - cur_offset);
+				char *nested_res = rz_type_get_struct_memb(typedb, nested_type, offset - cur_offset);
 				if (nested_res) {
 					len = rz_str_split(nested_res, '.');
 					res = rz_str_newf("%s.%s.%s", type, name, rz_str_word_get0(nested_res, len - 1));
@@ -318,9 +290,9 @@ RZ_API char *rz_type_get_struct_memb(RzType *t, RZ_NONNULL const char *type, int
 }
 
 // XXX this function is slow!
-RZ_API RzList *rz_type_get_by_offset(RzType *t, ut64 offset) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API RzList *rz_type_get_by_offset(RzTypeDB *typedb, ut64 offset) {
+	rz_return_val_if_fail(typedb, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	RzList *offtypes = rz_list_new();
 	SdbList *ls = sdb_foreach_list(TDB, true);
 	SdbListIter *lsi;
@@ -328,7 +300,7 @@ RZ_API RzList *rz_type_get_by_offset(RzType *t, ut64 offset) {
 	ls_foreach (ls, lsi, kv) {
 		// TODO: Add unions support
 		if (!strncmp(sdbkv_value(kv), "struct", 6) && strncmp(sdbkv_key(kv), "struct.", 7)) {
-			char *res = rz_type_get_struct_memb(t, sdbkv_key(kv), offset);
+			char *res = rz_type_get_struct_memb(typedb, sdbkv_key(kv), offset);
 			if (res) {
 				rz_list_append(offtypes, res);
 			}

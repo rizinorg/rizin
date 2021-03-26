@@ -1704,8 +1704,8 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	RzAnalysis *a = function->analysis;
 	PJ *pj = a->coreb.pjWithEncoding(a->coreb.core);
 	unsigned int i;
-	const char *ret_type = rz_type_func_ret(a->type, function->name);
-	int argc = rz_type_func_args_count(a->type, function->name);
+	const char *ret_type = rz_type_func_ret(a->typedb, function->name);
+	int argc = rz_type_func_args_count(a->typedb, function->name);
 
 	pj_o(pj);
 	pj_ks(pj, "name", function->name);
@@ -1719,8 +1719,8 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	pj_a(pj);
 	for (i = 0; i < argc; i++) {
 		pj_o(pj);
-		const char *arg_name = rz_type_func_args_name(a->type, function->name, i);
-		const char *arg_type = rz_type_func_args_type(a->type, function->name, i);
+		const char *arg_name = rz_type_func_args_name(a->typedb, function->name, i);
+		const char *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
 		pj_ks(pj, "name", arg_name);
 		pj_ks(pj, "type", arg_type);
 		const char *cc_arg = rz_reg_get_name(a->reg, rz_reg_get_name_idx(sdb_fmt("A%d", i)));
@@ -1751,13 +1751,13 @@ RZ_API char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
 	}
 
 	unsigned int i;
-	const char *ret_type = rz_type_func_ret(a->type, function->name);
-	int argc = rz_type_func_args_count(a->type, function->name);
+	const char *ret_type = rz_type_func_ret(a->typedb, function->name);
+	int argc = rz_type_func_args_count(a->typedb, function->name);
 
 	char *args = strdup("");
 	for (i = 0; i < argc; i++) {
-		const char *arg_name = rz_type_func_args_name(a->type, function->name, i);
-		const char *arg_type = rz_type_func_args_type(a->type, function->name, i);
+		const char *arg_name = rz_type_func_args_name(a->typedb, function->name, i);
+		const char *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
 		char *new_args = (i + 1 == argc)
 			? rz_str_newf("%s%s %s", args, arg_type, arg_name)
 			: rz_str_newf("%s%s %s, ", args, arg_type, arg_name);
@@ -1771,9 +1771,9 @@ RZ_API char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
 RZ_API int rz_analysis_str_to_fcn(RzAnalysis *a, RzAnalysisFunction *f, const char *sig) {
 	rz_return_val_if_fail(a || f || sig, false);
 	char *error_msg = NULL;
-	const char *out = rz_type_parse_c_string(a->type, sig, &error_msg);
+	const char *out = rz_type_parse_c_string(a->typedb, sig, &error_msg);
 	if (out) {
-		rz_type_save_parsed_type(a->type, out);
+		rz_type_db_save_parsed_type(a->typedb, out);
 	}
 	if (error_msg) {
 		eprintf("%s", error_msg);

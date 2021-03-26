@@ -449,11 +449,11 @@ static void rz_type_format_decchar(RzStrBuf *outbuf, int endian, int mode,
 	}
 }
 
-static int rz_type_format_string(RzType *t, RzStrBuf *outbuf, ut64 seeki, ut64 addr64, ut64 addr, int is64, int mode) {
+static int rz_type_format_string(RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, ut64 addr64, ut64 addr, int is64, int mode) {
 	ut8 buffer[255];
 	buffer[0] = 0;
 	const ut64 at = (is64 == 1) ? addr64 : (ut64)addr;
-	int res = t->iob.read_at(t->iob.io, at, buffer, sizeof(buffer) - 8);
+	int res = typedb->iob.read_at(typedb->iob.io, at, buffer, sizeof(buffer) - 8);
 	if (MUSTSEEJSON) {
 		char *encstr = rz_str_utf16_encode((const char *)buffer, -1);
 		if (encstr) {
@@ -898,7 +898,7 @@ static void rz_type_format_hexflag(RzStrBuf *outbuf, int endian, int mode,
 	}
 }
 
-static int rz_type_format_10bytes(RzType *t, RzStrBuf *outbuf, int mode, const char *setval,
+static int rz_type_format_10bytes(RzTypeDB *typedb, RzStrBuf *outbuf, int mode, const char *setval,
 	ut64 seeki, ut64 addr, ut8 *buf) {
 	ut8 buffer[255];
 	int j;
@@ -909,7 +909,7 @@ static int rz_type_format_10bytes(RzType *t, RzStrBuf *outbuf, int mode, const c
 			rz_strbuf_appendf(outbuf, "%02x ", buf[j]);
 		}
 	} else if (MUSTSEE) {
-		t->iob.read_at(t->iob.io, (ut64)addr, buffer, 248);
+		typedb->iob.read_at(typedb->iob.io, (ut64)addr, buffer, 248);
 		if (!SEEVALUE && !ISQUIET) {
 			rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
 		}
@@ -932,7 +932,7 @@ static int rz_type_format_10bytes(RzType *t, RzStrBuf *outbuf, int mode, const c
 			rz_strbuf_append(outbuf, ")");
 		}
 	} else if (MUSTSEEJSON) {
-		t->iob.read_at(t->iob.io, (ut64)addr, buffer, 248);
+		typedb->iob.read_at(typedb->iob.io, (ut64)addr, buffer, 248);
 		rz_strbuf_appendf(outbuf, "[ %d", buf[0]);
 		j = 1;
 		for (; j < 10; j++) {
@@ -1203,26 +1203,26 @@ static void rz_type_byte_escape(const RzPrint *p, const char *src, char **dst, i
 	rz_str_byte_escape(src, dst, dot_nl, !strcmp(p->strconv_mode, "asciidot"), p->esc_bslash);
 }
 
-static void rz_type_format_nulltermstring(RzType *t, RzPrint *p, RzStrBuf *outbuf, int len, int endian, int mode,
+static void rz_type_format_nulltermstring(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, int len, int endian, int mode,
 	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
-	if (!t->iob.is_valid_offset(t->iob.io, seeki, 1)) {
+	if (!typedb->iob.is_valid_offset(typedb->iob.io, seeki, 1)) {
 		ut8 ch = 0xff;
 		// XXX there are some cases where the memory is there but is_valid_offset fails
-		if (t->iob.read_at(t->iob.io, seeki, &ch, 1) != 1 && ch != 0xff) {
+		if (typedb->iob.read_at(typedb->iob.io, seeki, &ch, 1) != 1 && ch != 0xff) {
 			rz_strbuf_append(outbuf, "-1");
 			return;
 		}
 	}
-	if (p->flags & RZ_PRINT_FLAGS_UNALLOC && !(t->iob.io->cached & RZ_PERM_R)) {
+	if (p->flags & RZ_PRINT_FLAGS_UNALLOC && !(typedb->iob.io->cached & RZ_PERM_R)) {
 		ut64 total_map_left = 0;
 		ut64 addr = seeki;
 		RzIOMap *map;
-		while (total_map_left < len && (map = t->iob.io->va ? t->iob.map_get(t->iob.io, addr) : t->iob.map_get_paddr(t->iob.io, addr)) && map->perm & RZ_PERM_R) {
+		while (total_map_left < len && (map = typedb->iob.io->va ? typedb->iob.map_get(typedb->iob.io, addr) : typedb->iob.map_get_paddr(typedb->iob.io, addr)) && map->perm & RZ_PERM_R) {
 			if (!map->itv.size) {
 				total_map_left = addr == 0 ? UT64_MAX : UT64_MAX - addr + 1;
 				break;
 			}
-			total_map_left += map->itv.size - (addr - (t->iob.io->va ? map->itv.addr : map->delta));
+			total_map_left += map->itv.size - (addr - (typedb->iob.io->va ? map->itv.addr : map->delta));
 			addr += total_map_left;
 		}
 		if (total_map_left < len) {
@@ -1340,14 +1340,14 @@ static void rz_type_format_nulltermwidestring(RzPrint *p, RzStrBuf *outbuf, cons
 	}
 }
 
-static void rz_type_format_bitfield(RzType *t, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
+static void rz_type_format_bitfield(RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
 	char *fieldname, ut64 addr, int mode, int size) {
 	char *bitfield = NULL;
 	addr &= (1ULL << (size * 8)) - 1;
 	if (MUSTSEE && !SEEVALUE) {
 		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
 	}
-	bitfield = rz_type_enum_getbitfield(t, fmtname, addr);
+	bitfield = rz_type_enum_getbitfield(typedb, fmtname, addr);
 	if (bitfield && *bitfield) {
 		if (MUSTSEEJSON) {
 			rz_strbuf_appendf(outbuf, "\"%s\"}", bitfield);
@@ -1365,14 +1365,14 @@ static void rz_type_format_bitfield(RzType *t, RzStrBuf *outbuf, ut64 seeki, cha
 	free(bitfield);
 }
 
-static void rz_type_format_enum(RzType *t, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
+static void rz_type_format_enum(RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
 	char *fieldname, ut64 addr, int mode, int size) {
 	char *enumvalue = NULL;
 	addr &= (1ULL << (size * 8)) - 1;
 	if (MUSTSEE && !SEEVALUE) {
 		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
 	}
-	enumvalue = rz_type_enum_member(t, fmtname, NULL, addr);
+	enumvalue = rz_type_db_enum_member(typedb, fmtname, NULL, addr);
 	if (enumvalue && *enumvalue) {
 		if (mode & RZ_PRINT_DOT) {
 			rz_strbuf_appendf(outbuf, "%s.%s", fmtname, enumvalue);
@@ -1516,8 +1516,8 @@ static void rz_type_format_num(RzStrBuf *outbuf, int endian, int mode, const cha
 	}
 }
 
-RZ_API const char *rz_type_format_byname(RzType *t, const char *name) {
-	return sdb_const_get(t->formats, name, NULL);
+RZ_API const char *rz_type_db_format_byname(RzTypeDB *typedb, const char *name) {
+	return sdb_const_get(typedb->formats, name, NULL);
 }
 
 static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
@@ -1601,9 +1601,9 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	return fmt;
 }
 
-RZ_API char *rz_type_format(RzType *type, const char *t) {
+RZ_API char *rz_type_format(RzTypeDB *typedb, const char *t) {
 	char var[130], var2[132];
-	Sdb *TDB = type->sdb_types;
+	Sdb *TDB = typedb->sdb_types;
 	const char *kind = sdb_const_get(TDB, t, NULL);
 	if (!kind) {
 		return NULL;
@@ -1630,7 +1630,7 @@ RZ_API char *rz_type_format(RzType *type, const char *t) {
 }
 
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-RZ_API int rz_type_format_struct_size(RzType *t, const char *f, int mode, int n) {
+RZ_API int rz_type_format_struct_size(RzTypeDB *typedb, const char *f, int mode, int n) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
@@ -1640,7 +1640,7 @@ RZ_API int rz_type_format_struct_size(RzType *t, const char *f, int mode, int n)
 	if (n >= 5) { // This is the nesting level, is this not a bit arbitrary?!
 		return 0;
 	}
-	const char *fmt2 = sdb_get(t->formats, f, NULL);
+	const char *fmt2 = sdb_get(typedb->formats, f, NULL);
 	if (!fmt2) {
 		fmt2 = f;
 	}
@@ -1735,7 +1735,7 @@ RZ_API int rz_type_format_struct_size(RzType *t, const char *f, int mode, int n)
 			size += tabsize;
 			break;
 		case '*':
-			size += tabsize * (t->target->bits / 8);
+			size += tabsize * (typedb->target->bits / 8);
 			i++;
 			idx--; //no need to go ahead for args
 			break;
@@ -1782,14 +1782,14 @@ RZ_API int rz_type_format_struct_size(RzType *t, const char *f, int mode, int n)
 					tmp = *format;
 				}
 			} else {
-				format = sdb_get(t->formats, structname + 1, NULL);
+				format = sdb_get(typedb->formats, structname + 1, NULL);
 				if (format && !strncmp(format, f, strlen(format) - 1)) { // Avoid recursion here
 					free(o);
 					free(structname);
 					return -1;
 				}
 				if (!format) { // Fetch format from types db
-					format = rz_type_format(t, structname + 1);
+					format = rz_type_format(typedb, structname + 1);
 				}
 			}
 			if (!format) {
@@ -1798,7 +1798,7 @@ RZ_API int rz_type_format_struct_size(RzType *t, const char *f, int mode, int n)
 				free(o);
 				return 0;
 			}
-			int newsize = rz_type_format_struct_size(t, format, mode, n + 1);
+			int newsize = rz_type_format_struct_size(typedb, format, mode, n + 1);
 			if (newsize < 1) {
 				eprintf("Cannot find size for `%s'\n", format);
 				free(structname);
@@ -1838,7 +1838,7 @@ RZ_API int rz_type_format_struct_size(RzType *t, const char *f, int mode, int n)
 			} else if (fmt[i + 1] == '8') {
 				size += tabsize * 8;
 			} else {
-				size += tabsize * (t->target->bits / 8);
+				size += tabsize * (typedb->target->bits / 8);
 				break;
 			}
 			i++;
@@ -1885,7 +1885,7 @@ RZ_API int rz_type_format_struct_size(RzType *t, const char *f, int mode, int n)
 	return (mode & RZ_PRINT_UNIONMODE) ? biggest : size;
 }
 
-static int rz_type_format_struct(RzType *t, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, int len, const char *name,
+static int rz_type_format_struct(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, int len, const char *name,
 	int slide, int mode, const char *setval, char *field, int anon) {
 	const char *fmt;
 	char namefmt[128];
@@ -1897,9 +1897,9 @@ static int rz_type_format_struct(RzType *t, RzPrint *p, RzStrBuf *outbuf, ut64 s
 	if (anon) {
 		fmt = name;
 	} else {
-		fmt = sdb_get(t->formats, name, NULL);
+		fmt = sdb_get(typedb->formats, name, NULL);
 		if (!fmt) { // Fetch struct info from types DB
-			fmt = rz_type_format(t, name);
+			fmt = rz_type_format(typedb, name);
 		}
 	}
 	if (!fmt || !*fmt) {
@@ -1915,8 +1915,8 @@ static int rz_type_format_struct(RzType *t, RzPrint *p, RzStrBuf *outbuf, ut64 s
 		}
 		rz_strbuf_appendf(outbuf, "<%s>\n", name);
 	}
-	rz_type_format_data(t, p, seek, b, len, fmt, mode, setval, field);
-	return rz_type_format_struct_size(t, fmt, mode, 0);
+	rz_type_format_data(typedb, p, seek, b, len, fmt, mode, setval, field);
+	return rz_type_format_struct_size(typedb, fmt, mode, 0);
 }
 
 static char *get_args_offset(const char *arg) {
@@ -2033,10 +2033,10 @@ RZ_API void rz_type_db_format_purge(RzTypeDB *typedb) {
 	typedb->formats = sdb_new0();
 }
 
-RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b, const int len,
+RZ_API char *rz_type_format_data(RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, invalid, nexti, idx, times, otimes, endian, isptr = 0;
-	const int old_bits = t->target->bits;
+	const int old_bits = typedb->target->bits;
 	char *args = NULL, *bracket, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	static int slide = 0, oldslide = 0, ident = 4;
@@ -2052,7 +2052,7 @@ RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b,
 	if (!formatname) {
 		return 0;
 	}
-	fmt = sdb_get(t->formats, formatname, NULL);
+	fmt = sdb_get(typedb->formats, formatname, NULL);
 	if (!fmt) {
 		fmt = formatname;
 	}
@@ -2079,7 +2079,7 @@ RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b,
 		return 0;
 	}
 	memcpy(buf, b, len);
-	endian = t->target->big_endian;
+	endian = typedb->target->big_endian;
 
 	if (ofield && ofield != MINUSONE) {
 		field = strdup(ofield);
@@ -2201,7 +2201,7 @@ RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b,
 			seeki = seek + i;
 			addr = 0LL;
 			invalid = 0;
-			t->target->bits = old_bits;
+			typedb->target->bits = old_bits;
 			if (arg[0] == '[') {
 				char *end = strchr(arg, ']');
 				if (!end) {
@@ -2209,13 +2209,13 @@ RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b,
 					goto beach;
 				}
 				*end = '\0';
-				size = rz_get_size(t->num, buf, endian, arg + 1);
+				size = rz_get_size(typedb->num, buf, endian, arg + 1);
 				arg = end + 1;
 				*end = ']';
 			} else {
 				size = -1;
 			}
-			int fs = rz_type_format_struct_size(t, arg, 0, idx);
+			int fs = rz_type_format_struct_size(typedb, arg, 0, idx);
 			if (fs == -2) {
 				i = -1;
 				goto beach;
@@ -2230,7 +2230,7 @@ RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b,
 				} else {
 					updateAddr(buf + i, len - i, endian, &addr, &addr64);
 				}
-				if (t->target->bits == 64) {
+				if (typedb->target->bits == 64) {
 					addr = addr64;
 				}
 			} else {
@@ -2307,7 +2307,7 @@ RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b,
 		feed_me_again:
 			switch (isptr) {
 			case PTRSEEK: {
-				nexti = i + (t->target->bits / 8);
+				nexti = i + (typedb->target->bits / 8);
 				i = 0;
 				if (tmp == '?') {
 					seeki = addr;
@@ -2317,7 +2317,7 @@ RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b,
 					rz_strbuf_appendf(outbuf, "(*0x%" PFMT64x ")", addr);
 				}
 				isptr = (addr) ? PTRBACK : NULLPTR;
-				t->iob.read_at(t->iob.io, (ut64)addr, buf, len - 4);
+				typedb->iob.read_at(typedb->iob.io, (ut64)addr, buf, len - 4);
 				if (((i + 3) < len) || ((i + 7) < len)) {
 					// XXX this breaks pf *D
 					if (tmp != 'D') {
@@ -2378,7 +2378,7 @@ RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b,
 					tmp = 'q';
 					arg++;
 				} else { //If pointer reference is not mentioned explicitly
-					switch (t->target->bits) {
+					switch (typedb->target->bits) {
 					case 16: tmp = 'w'; break;
 					case 32: tmp = 'x'; break;
 					default: tmp = 'q'; break;
@@ -2452,7 +2452,7 @@ RZ_API char *rz_type_format_data(RzType *t, RzPrint *p, ut64 seek, const ut8 *b,
 					rz_strbuf_append(outbuf, "*");
 				}
 				rz_strbuf_appendf(outbuf, "\",\"offset\":%" PFMT64d ",\"value\":",
-					isptr ? (seek + nexti - (t->target->bits / 8)) : seek + i);
+					isptr ? (seek + nexti - (typedb->target->bits / 8)) : seek + i);
 			}
 
 			/* c struct */

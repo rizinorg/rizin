@@ -1532,7 +1532,7 @@ bool test_analysis_save() {
 	type->name = strdup("badchar");
 	type->size = 16;
 	type->type = strdup("c");
-	rz_type_save_base_type(analysis->type, type);
+	rz_type_db_save_base_type(analysis->typedb, type);
 	rz_type_base_type_free(type);
 
 	rz_spaces_set(&analysis->zign_spaces, "koridai");
@@ -1598,7 +1598,7 @@ bool test_analysis_load() {
 	mu_assert_streq(meth->name, "some_meth", "method name");
 	rz_vector_free(vals);
 
-	RzBaseType *type = rz_type_get_base_type(analysis->type, "badchar");
+	RzBaseType *type = rz_type_db_get_base_type(analysis->typedb, "badchar");
 	mu_assert_notnull(type, "get type");
 	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ATOMIC, "type kind");
 	mu_assert_eq(type->size, 16, "atomic type size");

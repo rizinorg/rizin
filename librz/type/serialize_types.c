@@ -6,12 +6,12 @@
 #include <rz_vector.h>
 #include <rz_type.h>
 
-RZ_API void rz_serialize_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzType *types) {
-	sdb_copy(types->sdb_types, db);
+RZ_API void rz_serialize_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb) {
+	sdb_copy(typedb->sdb_types, db);
 }
 
-RZ_API bool rz_serialize_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzType *types, RZ_NULLABLE RzSerializeResultInfo *res) {
-	sdb_reset(types->sdb_types);
-	sdb_copy(db, types->sdb_types);
+RZ_API bool rz_serialize_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb, RZ_NULLABLE RzSerializeResultInfo *res) {
+	sdb_reset(typedb->sdb_types);
+	sdb_copy(db, typedb->sdb_types);
 	return true;
 }

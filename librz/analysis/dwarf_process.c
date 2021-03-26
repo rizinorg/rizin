@@ -578,7 +578,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 			}
 		}
 	}
-	rz_type_save_base_type(ctx->analysis->type, base_type);
+	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
 cleanup:
 	rz_type_base_type_free(base_type);
 }
@@ -641,7 +641,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 			}
 		}
 	}
-	rz_type_save_base_type(ctx->analysis->type, base_type);
+	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
 cleanup:
 	rz_type_base_type_free(base_type);
 }
@@ -694,7 +694,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	}
 	base_type->name = name;
 	base_type->type = type;
-	rz_type_save_base_type(ctx->analysis->type, base_type);
+	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
 	rz_type_base_type_free(base_type);
 	rz_strbuf_fini(&strbuf);
 	return;
@@ -748,7 +748,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	}
 	base_type->name = name;
 	base_type->size = size;
-	rz_type_save_base_type(ctx->analysis->type, base_type);
+	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
 	rz_type_base_type_free(base_type);
 }
 

@@ -34,7 +34,7 @@ Sdb *types_ref_db() {
 }
 
 bool test_types_save() {
-	RzType *types = rz_type_new();
+	RzTypeDB *typedb = rz_type_db_new();
 
 	// struct
 	RzBaseType *type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
@@ -51,7 +51,7 @@ bool test_types_save() {
 	member.type = strdup("uint64_t");
 	rz_vector_push(&type->struct_data.members, &member);
 
-	rz_type_save_base_type(types, type);
+	rz_type_db_save_base_type(typedb, type);
 	rz_type_base_type_free(type);
 
 	// union
@@ -69,7 +69,7 @@ bool test_types_save() {
 	mumber.type = strdup("uint32_t");
 	rz_vector_push(&type->union_data.members, &mumber);
 
-	rz_type_save_base_type(types, type);
+	rz_type_db_save_base_type(typedb, type);
 	rz_type_base_type_free(type);
 
 	// enum
@@ -85,14 +85,14 @@ bool test_types_save() {
 	cas.val = 1337;
 	rz_vector_push(&type->enum_data.cases, &cas);
 
-	rz_type_save_base_type(types, type);
+	rz_type_db_save_base_type(typedb, type);
 	rz_type_base_type_free(type);
 
 	// typedef
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
 	type->name = strdup("human");
 	type->type = strdup("union snatcher");
-	rz_type_save_base_type(types, type);
+	rz_type_db_save_base_type(typedb, type);
 	rz_type_base_type_free(type);
 
 	// atomic
@@ -100,29 +100,29 @@ bool test_types_save() {
 	type->name = strdup("badchar");
 	type->size = 16;
 	type->type = strdup("c");
-	rz_type_save_base_type(types, type);
+	rz_type_db_save_base_type(typedb, type);
 	rz_type_base_type_free(type);
 
 	Sdb *db = sdb_new0();
-	rz_serialize_types_save(db, types);
+	rz_serialize_types_save(db, typedb);
 
 	Sdb *expected = types_ref_db();
 	assert_sdb_eq(db, expected, "types save");
 	sdb_free(db);
 	sdb_free(expected);
-	rz_type_free(types);
+	rz_type_db_free(typedb);
 	mu_end;
 }
 
 bool test_types_load() {
-	RzType *types = rz_type_new();
+	RzTypeDB *typedb = rz_type_db_new();
 	Sdb *db = types_ref_db();
-	bool succ = rz_serialize_types_load(db, types, NULL);
+	bool succ = rz_serialize_types_load(db, typedb, NULL);
 	sdb_free(db);
 	mu_assert("load success", succ);
 
 	// struct
-	RzBaseType *type = rz_type_get_base_type(types, "junker");
+	RzBaseType *type = rz_type_db_get_base_type(typedb, "junker");
 	mu_assert_notnull(type, "get type");
 	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_STRUCT, "type kind");
 	mu_assert_eq(type->struct_data.members.len, 2, "members count");
@@ -140,7 +140,7 @@ bool test_types_load() {
 	rz_type_base_type_free(type);
 
 	// union
-	type = rz_type_get_base_type(types, "snatcher");
+	type = rz_type_db_get_base_type(typedb, "snatcher");
 	mu_assert_notnull(type, "get type");
 	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_UNION, "type kind");
 	mu_assert_eq(type->union_data.members.len, 2, "members count");
@@ -156,7 +156,7 @@ bool test_types_load() {
 	rz_type_base_type_free(type);
 
 	// enum
-	type = rz_type_get_base_type(types, "mika");
+	type = rz_type_db_get_base_type(typedb, "mika");
 	mu_assert_notnull(type, "get type");
 	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ENUM, "type kind");
 	mu_assert_eq(type->enum_data.cases.len, 2, "cases count");
@@ -172,21 +172,21 @@ bool test_types_load() {
 	rz_type_base_type_free(type);
 
 	// typedef
-	type = rz_type_get_base_type(types, "human");
+	type = rz_type_db_get_base_type(typedb, "human");
 	mu_assert_notnull(type, "get type");
 	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_TYPEDEF, "type kind");
 	mu_assert_streq(type->type, "union snatcher", "typedefd type");
 	rz_type_base_type_free(type);
 
 	// atomic
-	type = rz_type_get_base_type(types, "badchar");
+	type = rz_type_db_get_base_type(typedb, "badchar");
 	mu_assert_notnull(type, "get type");
 	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ATOMIC, "type kind");
 	mu_assert_eq(type->size, 16, "atomic type size");
 	mu_assert_streq(type->type, "c", "atomic type");
 	rz_type_base_type_free(type);
 
-	rz_type_free(types);
+	rz_type_db_free(typedb);
 	mu_end;
 }
 

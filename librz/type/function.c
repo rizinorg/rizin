@@ -10,45 +10,45 @@
 #include <sdb.h>
 
 // Function prototypes api
-RZ_API bool rz_type_func_exist(RzType *t, const char *func_name) {
-	rz_return_val_if_fail(t, false);
-	Sdb *TDB = t->sdb_types;
+RZ_API bool rz_type_func_exist(RzTypeDB *typedb, const char *func_name) {
+	rz_return_val_if_fail(typedb && func_name, false);
+	Sdb *TDB = typedb->sdb_types;
 	const char *fcn = sdb_const_get(TDB, func_name, 0);
 	return fcn && !strcmp(fcn, "func");
 }
 
-RZ_API bool rz_type_func_has_args(RzType *t, const char *func_name) {
-	rz_return_val_if_fail(t, false);
-	Sdb *TDB = t->sdb_types;
+RZ_API bool rz_type_func_has_args(RzTypeDB *typedb, const char *func_name) {
+	rz_return_val_if_fail(typedb && func_name, false);
+	Sdb *TDB = typedb->sdb_types;
 	const char *query = sdb_fmt("func.%s.args", func_name);
 	const char *fcn = sdb_const_get(TDB, query, 0);
 	return (fcn != NULL);
 }
 
-RZ_API const char *rz_type_func_ret(RzType *t, const char *func_name) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API const char *rz_type_func_ret(RzTypeDB *typedb, const char *func_name) {
+	rz_return_val_if_fail(typedb && func_name, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	const char *query = sdb_fmt("func.%s.ret", func_name);
 	return sdb_const_get(TDB, query, 0);
 }
 
-RZ_API const char *rz_type_func_cc(RzType *t, const char *func_name) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API const char *rz_type_func_cc(RzTypeDB *typedb, const char *func_name) {
+	rz_return_val_if_fail(typedb && func_name, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	const char *query = sdb_fmt("func.%s.cc", func_name);
 	return sdb_const_get(TDB, query, 0);
 }
 
-RZ_API int rz_type_func_args_count(RzType *t, const char *func_name) {
-	rz_return_val_if_fail(t, 0);
-	Sdb *TDB = t->sdb_types;
+RZ_API int rz_type_func_args_count(RzTypeDB *typedb, const char *func_name) {
+	rz_return_val_if_fail(typedb && func_name, 0);
+	Sdb *TDB = typedb->sdb_types;
 	const char *query = sdb_fmt("func.%s.args", func_name);
 	return sdb_num_get(TDB, query, 0);
 }
 
-RZ_API RZ_OWN char *rz_type_func_args_type(RzType *t, RZ_NONNULL const char *func_name, int i) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API RZ_OWN char *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i) {
+	rz_return_val_if_fail(typedb && func_name, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	const char *query = sdb_fmt("func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get(TDB, query, 0);
 	if (ret) {
@@ -62,9 +62,9 @@ RZ_API RZ_OWN char *rz_type_func_args_type(RzType *t, RZ_NONNULL const char *fun
 	return NULL;
 }
 
-RZ_API const char *rz_type_func_args_name(RzType *t, RZ_NONNULL const char *func_name, int i) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API const char *rz_type_func_args_name(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i) {
+	rz_return_val_if_fail(typedb && func_name, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	const char *query = sdb_fmt("func.%s.arg.%d", func_name, i);
 	const char *get = sdb_const_get(TDB, query, 0);
 	if (get) {
@@ -74,9 +74,9 @@ RZ_API const char *rz_type_func_args_name(RzType *t, RZ_NONNULL const char *func
 	return NULL;
 }
 
-RZ_API bool rz_type_func_arg_count_set(RzType *t, RZ_NONNULL const char *func_name, int arg_count) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API bool rz_type_func_arg_count_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int arg_count) {
+	rz_return_val_if_fail(typedb && func_name, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	bool result = false;
 	RzStrBuf key, value;
 	rz_strbuf_init(&key);
@@ -92,9 +92,9 @@ exit:
 	return result;
 }
 
-RZ_API bool rz_type_func_arg_set(RzType *t, RZ_NONNULL const char *func_name, int i, RZ_NONNULL const char *arg_name, RZ_NONNULL const char *arg_type) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API bool rz_type_func_arg_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i, RZ_NONNULL const char *arg_name, RZ_NONNULL const char *arg_type) {
+	rz_return_val_if_fail(typedb && func_name, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	bool result = false;
 	RzStrBuf key, value;
 	rz_strbuf_init(&key);
@@ -110,9 +110,9 @@ exit:
 	return result;
 }
 
-RZ_API bool rz_type_func_ret_set(RzType *t, const char *func_name, const char *type) {
-	rz_return_val_if_fail(t && func_name && type, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, const char *type) {
+	rz_return_val_if_fail(typedb && func_name && type, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	char *sdb_type = rz_str_newf("type.%s", type);
 	if (!sdb_exists(TDB, sdb_type)) {
 		free(sdb_type);
@@ -195,13 +195,11 @@ static void clean_function_name(char *func_name) {
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
-RZ_API RZ_OWN char *rz_type_func_guess(RzType *t, RZ_NONNULL char *func_name) {
-	rz_return_val_if_fail(t, NULL);
-	Sdb *TDB = t->sdb_types;
+RZ_API RZ_OWN char *rz_type_func_guess(RzTypeDB *typedb, RZ_NONNULL char *func_name) {
+	rz_return_val_if_fail(typedb && func_name, NULL);
+	Sdb *TDB = typedb->sdb_types;
 	char *str = func_name;
 	char *result = NULL;
-	rz_return_val_if_fail(TDB, false);
-	rz_return_val_if_fail(func_name, false);
 
 	size_t slen = strlen(str);
 	if (slen < MIN_MATCH_LEN || is_auto_named(str, slen)) {
@@ -228,11 +226,12 @@ RZ_API RZ_OWN char *rz_type_func_guess(RzType *t, RZ_NONNULL char *func_name) {
 	return result;
 }
 
-RZ_API RzList *rz_type_noreturn_functions(RzType *type) {
+RZ_API RzList *rz_type_noreturn_functions(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
 	RzList *noretl = rz_list_newf(free);
 	SdbKv *kv;
 	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(type->sdb_types, true);
+	SdbList *l = sdb_foreach_list(typedb->sdb_types, true);
 	ls_foreach (l, iter, kv) {
 		const char *k = sdbkv_key(kv);
 		if (!strncmp(k, "func.", 5) && strstr(k, ".noreturn")) {

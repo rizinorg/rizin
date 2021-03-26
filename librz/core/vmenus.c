@@ -584,7 +584,7 @@ static bool sdbforcb(void *p, const char *k, const char *v) {
 		}
 	} else if (!strcmp(v, vt->type)) {
 		if (!strcmp(vt->type, "type")) {
-			const char *fmt = rz_type_get(vt->core->analysis->type, k);
+			const char *fmt = rz_type_db_get(vt->core->analysis->typedb, k);
 			if (vt->t_idx == vt->t_ctr) {
 				free(vt->curname);
 				vt->curname = strdup(k);
@@ -670,7 +670,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 			vt.t_ctr = 0;
 			vt.type = opts[h_opt];
 			vt.optword = optword;
-			sdb_foreach(core->analysis->type->sdb_types, sdbforcb, &vt);
+			sdb_foreach(core->analysis->typedb->sdb_types, sdbforcb, &vt);
 		}
 
 		rz_cons_visual_flush();
@@ -755,7 +755,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 			}
 		} break;
 		case 'd':
-			rz_type_remove_parsed_type(core->analysis->type, vt.curname);
+			rz_type_db_remove_parsed_type(core->analysis->typedb, vt.curname);
 			break;
 		case '-':
 			rz_types_open_editor(core, NULL);

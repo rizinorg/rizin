@@ -39,7 +39,7 @@ static bool test_parse_dwarf_types(void) {
 	rz_analysis_dwarf_process_info(analysis, &ctx);
 
 	char *value = NULL;
-	Sdb *sdb = analysis->type->sdb_types;
+	Sdb *sdb = analysis->typedb->sdb_types;
 	check_kv("_cairo_status", "enum");
 	check_kv("enum._cairo_status.0x0", "CAIRO_STATUS_SUCCESS");
 	check_kv("enum._cairo_status.CAIRO_STATUS_SUCCESS", "0x0");

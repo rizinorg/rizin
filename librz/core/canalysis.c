@@ -6622,8 +6622,8 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 		}
 
 		if (key) {
-			const char *fcn_type = rz_type_func_ret(core->analysis->type, key);
-			int nargs = rz_type_func_args_count(core->analysis->type, key);
+			const char *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
+			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 			if (fcn_type) {
 				pj_o(j);
 				pj_ks(j, "name", rz_str_get_null(key));
@@ -6813,7 +6813,7 @@ RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) 
 	int bits1 = core->analysis->bits;
 	int bits2 = core->rasm->bits;
 	// find known noreturn functions to propagate
-	RzList *noretl = rz_type_noreturn_functions(core->analysis->type);
+	RzList *noretl = rz_type_noreturn_functions(core->analysis->typedb);
 	// List of the potentially noreturn functions
 	SetU *todo = set_u_new();
 	struct core_noretl u = { core, noretl, todo };
@@ -7186,7 +7186,7 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name) {
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	char *fmt = rz_type_format(analysis->type, var->type);
+	char *fmt = rz_type_format(analysis->typedb, var->type);
 	RzRegItem *i;
 	if (!fmt) {
 		RZ_LOG_DEBUG("type:%s doesn't exist\n", var->type);
@@ -7546,7 +7546,7 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
 	const char *os = rz_config_get(core->config, "asm.os");
 
-	rz_type_db_init(core->analysis->type, dir_prefix, analysis_arch, bits, os);
+	rz_type_db_init(core->analysis->typedb, dir_prefix, analysis_arch, bits, os);
 }
 
 static void sdb_concat_by_path(Sdb *s, const char *path) {

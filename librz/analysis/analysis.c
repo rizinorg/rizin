@@ -110,7 +110,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_event_hook(analysis->zign_spaces.event, RZ_SPACE_EVENT_RENAME, zign_rename_for, NULL);
 	rz_analysis_hint_storage_init(analysis);
 	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
-	analysis->type = rz_type_new();
+	analysis->typedb = rz_type_db_new();
 	analysis->sdb_fmts = sdb_ns(analysis->sdb, "spec", 1);
 	analysis->sdb_cc = sdb_ns(analysis->sdb, "cc", 1);
 	analysis->sdb_zigns = sdb_ns(analysis->sdb, "zigns", 1);
@@ -246,7 +246,7 @@ static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
 	}
 	free(analysis->os);
 	analysis->os = strdup(os);
-	rz_type_set_os(analysis->type, os);
+	rz_type_db_set_os(analysis->typedb, os);
 	return true;
 }
 
@@ -267,7 +267,7 @@ RZ_API bool rz_analysis_set_os(RzAnalysis *analysis, const char *os) {
 	const char *dir_prefix = rz_sys_prefix(NULL);
 	const char *dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, os);
-	rz_type_load_sdb(analysis->type, dbpath);
+	rz_type_db_load_sdb(analysis->typedb, dbpath);
 	return rz_analysis_set_triplet(analysis, os, NULL, -1);
 }
 
@@ -280,7 +280,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 	case 64:
 		if (analysis->bits != bits) {
 			analysis->bits = bits;
-			rz_type_set_bits(analysis->type, bits);
+			rz_type_db_set_bits(analysis->typedb, bits);
 			rz_analysis_set_reg_profile(analysis);
 		}
 		return true;
@@ -295,7 +295,7 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	if (v != -1) {
 		analysis->pcalign = v;
 	}
-	rz_type_set_cpu(analysis->type, cpu);
+	rz_type_db_set_cpu(analysis->typedb, cpu);
 }
 
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
@@ -406,7 +406,7 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_analysis_hint_clear(analysis);
 	rz_interval_tree_fini(&analysis->meta);
 	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
-	rz_type_purge(analysis->type);
+	rz_type_db_purge(analysis->typedb);
 	sdb_reset(analysis->sdb_zigns);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);
@@ -462,9 +462,9 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 			fcn->is_noreturn = true;
 		}
 	}
-	if (rz_type_func_exist(analysis->type, tmp_name)) {
+	if (rz_type_func_exist(analysis->typedb, tmp_name)) {
 		fnl_name = strdup(tmp_name);
-	} else if (!(fnl_name = rz_type_func_guess(analysis->type, (char *)tmp_name))) {
+	} else if (!(fnl_name = rz_type_func_guess(analysis->typedb, (char *)tmp_name))) {
 		if (addr == UT64_MAX) {
 			if (name) {
 				sdb_bool_set(NDB, K_NORET_FUNC(name), true, 0);
@@ -520,7 +520,7 @@ static bool rz_analysis_noreturn_at_name(RzAnalysis *analysis, const char *name)
 	if (sdb_bool_get(analysis->sdb_noret, K_NORET_FUNC(name), NULL)) {
 		return true;
 	}
-	char *tmp = rz_type_func_guess(analysis->type, (char *)name);
+	char *tmp = rz_type_func_guess(analysis->typedb, (char *)name);
 	if (tmp) {
 		if (sdb_bool_get(analysis->sdb_noret, K_NORET_FUNC(tmp), NULL)) {
 			free(tmp);

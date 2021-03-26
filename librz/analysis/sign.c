@@ -83,8 +83,8 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 		return NULL;
 	}
 
-	int fcnargs = rz_type_func_args_count(a->type, fcn->name);
-	const char *ret_type = rz_type_func_ret(a->type, fcn->name);
+	int fcnargs = rz_type_func_args_count(a->typedb, fcn->name);
+	const char *ret_type = rz_type_func_ret(a->typedb, fcn->name);
 
 	if (fcnargs) {
 		if (ret_type) {
@@ -93,7 +93,7 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 		rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, fcnargs));
 		int i;
 		for (i = 0; i < fcnargs; i++) {
-			const char *arg = rz_type_func_args_name(a->type, fcn->name, i);
+			const char *arg = rz_type_func_args_name(a->typedb, fcn->name, i);
 			rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
 		}
 	}

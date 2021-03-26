@@ -1930,11 +1930,11 @@ RZ_API bool rz_serialize_analysis_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 }
 
 RZ_API void rz_serialize_analysis_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	rz_serialize_types_save(db, analysis->type);
+	rz_serialize_types_save(db, analysis->typedb);
 }
 
 RZ_API bool rz_serialize_analysis_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
-	return rz_serialize_types_load(db, analysis->type, res);
+	return rz_serialize_types_load(db, analysis->typedb, res);
 	return true;
 }
 

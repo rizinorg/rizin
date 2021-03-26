@@ -219,7 +219,7 @@ RZ_API void rz_analysis_set_syscc_default(RzAnalysis *analysis, const char *cc) 
 
 RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_name) {
 	rz_return_val_if_fail(analysis && func_name, NULL);
-	const char *cc = rz_type_func_cc(analysis->type, func_name);
+	const char *cc = rz_type_func_cc(analysis->typedb, func_name);
 	return cc ? cc : rz_analysis_cc_default(analysis);
 }
 

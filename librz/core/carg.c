@@ -9,8 +9,8 @@ static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *analysis, cons
 	if (!fcn_name || !arg || !analysis) {
 		return;
 	}
-	arg->name = rz_type_func_args_name(analysis->type, fcn_name, arg_num);
-	arg->orig_c_type = rz_type_func_args_type(analysis->type, fcn_name, arg_num);
+	arg->name = rz_type_func_args_name(analysis->typedb, fcn_name, arg_num);
+	arg->orig_c_type = rz_type_func_args_type(analysis->typedb, fcn_name, arg_num);
 	if (!arg->name || !arg->orig_c_type) {
 		eprintf("Missing type for function argument (%s)\n", fcn_name);
 		return;
@@ -20,25 +20,25 @@ static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *analysis, cons
 	} else {
 		arg->c_type = arg->orig_c_type;
 	}
-	arg->fmt = rz_type_get(analysis->type, arg->c_type);
-	arg->size = rz_type_get_bitsize(analysis->type, arg->c_type) / 8;
+	arg->fmt = rz_type_db_get(analysis->typedb, arg->c_type);
+	arg->size = rz_type_db_get_bitsize(analysis->typedb, arg->c_type) / 8;
 	arg->cc_source = rz_analysis_cc_arg(analysis, cc, arg_num);
 }
 
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name) {
 	const char *str = func_name;
 	const char *name = func_name;
-	if (rz_type_func_exist(analysis->type, func_name)) {
+	if (rz_type_func_exist(analysis->typedb, func_name)) {
 		return strdup(func_name);
 	}
 	while ((str = strchr(str, '.'))) {
 		name = str + 1;
 		str++;
 	}
-	if (rz_type_func_exist(analysis->type, name)) {
+	if (rz_type_func_exist(analysis->typedb, name)) {
 		return strdup(name);
 	}
-	return rz_type_func_guess(analysis->type, (char *)func_name);
+	return rz_type_func_guess(analysis->typedb, (char *)func_name);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
@@ -226,7 +226,7 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 		return NULL;
 	}
 	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-	int nargs = rz_type_func_args_count(core->analysis->type, key);
+	int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 	if (!rz_analysis_cc_func(core->analysis, key)) {
 		return NULL;
 	}

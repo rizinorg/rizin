@@ -613,7 +613,7 @@ typedef struct rz_analysis_t {
 	RHintCb hint_cbs;
 	RzIntervalTree meta;
 	RzSpaces meta_spaces;
-	RzType *type; // Types management
+	RzTypeDB *typedb; // Types management
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
@@ -2009,7 +2009,7 @@ RZ_API RzStrBuf *rz_analysis_esil_dfg_filter_expr(RzAnalysis *analysis, const ch
 RZ_API RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 
 /* PDB */
-RZ_API void rz_parse_pdb_types(const RzType *type, const RzPdb *pdb);
+RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb);
 
 /* DWARF */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysisDwarfContext *ctx);
