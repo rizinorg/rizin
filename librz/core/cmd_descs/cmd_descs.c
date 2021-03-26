@@ -4230,7 +4230,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *s_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "s", rz_seek_handler, &seek_help, &s_help);
 	rz_warn_if_fail(s_cd);
-	RzCmdDesc *seek_padded_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "s:", rz_seek_padded_handler, &seek_padded_help);
+	RzCmdDesc *seek_padded_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "spad", rz_seek_padded_handler, &seek_padded_help);
 	rz_warn_if_fail(seek_padded_cd);
 
 	RzCmdDesc *seek_base_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "s.", rz_seek_base_handler, &seek_base_help);
