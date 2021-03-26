@@ -762,12 +762,8 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 		return;
 	}
 
-	ut64 startAddress = vtable_info->saddr;
-	RVTableInfo *vtablet = rz_analysis_vtable_parse_at(context, startAddress);
 	ut64 size = 0;
-	if (vtablet) {
-		size = rz_analysis_vtable_info_get_size(context, vtablet);
-	}
+	size = rz_analysis_vtable_info_get_size(context, vtable_info);
 
 	RzAnalysisVTable vtable = { .id = NULL, .offset = 0, .size = size, .addr = vtable_info->saddr };
 	rz_analysis_class_vtable_set(context->analysis, class_name, &vtable);
