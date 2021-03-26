@@ -39,8 +39,27 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 }
 
 static const char *const config_exclude[] = {
-	"scr.interactive", // especially relevant for Cutter since it needs this to be false
+	"dir.home",
+	"dir.libs",
+	"dir.magic",
+	"dir.plugins",
+	"dir.prefix",
+	"dir.projects",
+	"dir.source",
+	"dir.tmp",
+	"dir.types",
+	"dir.zigns",
 	"scr.color",
+	"scr.color.args",
+	"scr.color.bytes",
+	"scr.color.grep",
+	"scr.color.ops",
+	"scr.color.pipe",
+	"scr.interactive", // especially relevant for Cutter since it needs this to be false
+	"scr.rainbow",
+	"scr.utf8",
+	"scr.utf8.curvy",
+	"ghidra.sleighhome", // also important for Cutter
 	NULL
 };
 
