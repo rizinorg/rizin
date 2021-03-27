@@ -8510,7 +8510,7 @@ static void cmd_analysis_class_vtable(RzCore *core, const char *input) {
 			*end = '\0';
 			end++;
 		}
-		ut64 offset_arg = rz_num_get(core->num, cstr); 
+		ut64 offset_arg = rz_num_get(core->num, cstr);
 		char *class_arg = NULL;
 		if (end) {
 			class_arg = (char *)rz_str_trim_head_ro(end);
