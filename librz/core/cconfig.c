@@ -557,9 +557,10 @@ static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
 }
 
 static void update_syscall_ns(RzCore *core) {
-	sdb_ns_unset(core->sdb, "syscall", NULL);
 	if (core->analysis->syscall->db) {
 		sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
+	} else {
+		sdb_ns_unset(core->sdb, "syscall", NULL);
 	}
 }
 
