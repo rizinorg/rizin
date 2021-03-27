@@ -116,7 +116,7 @@ EOF
 EXPECT=<<EOF
 EOF
 REGEXP_FILTER_ERR=<<EOF
-Warning.*\file
+Warning.*file
 EOF
 EXPECT_ERR=<<EOF
 Warning : Broken luac file
