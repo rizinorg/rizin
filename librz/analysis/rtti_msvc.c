@@ -819,9 +819,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 		return;
 	}
 
-	rz_analysis_vtable_begin(context->analysis, context);
-	ut64 size = 0;
-	size = rz_analysis_vtable_info_get_size(context, vtable_info);
+	ut64 size = rz_analysis_vtable_info_get_size(context, vtable_info);
 
 	RzAnalysisVTable vtable;
 	vtable.size = size;

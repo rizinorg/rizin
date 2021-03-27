@@ -578,6 +578,8 @@ acvf 0
 acvf 0x8 A
 acvf 0x0 C
 acvf 0x10 ABC
+acvf -10
+acvf abc
 EOF
 EXPECT=<<EOF
 Function address: 0x00400ac8, in A vtable 0
@@ -596,6 +598,8 @@ acvf 0 A
 acvf 0x8 B
 acvf 0x10 C
 acvf 0x18 ABC
+acvf -20
+acvf abc
 EOF
 EXPECT=<<EOF
 Function address: 0x100005f1c, in A vtable 0
