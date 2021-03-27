@@ -14,7 +14,7 @@ dc
 dmht~?items : 5
 EOF
 EXPECT=<<EOF
-1
+2
 0
 1
 1
