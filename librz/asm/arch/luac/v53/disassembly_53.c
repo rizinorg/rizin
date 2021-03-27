@@ -93,7 +93,7 @@ int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 			asm_string = luaop_new_str_3arg_ex(
 				opnames[opcode],
 				a, b, special_c,
-                LUA_KFLAG_MARK,
+				LUA_KFLAG_MARK,
 				LUA_REG_PREF, LUA_UPVALUE_PREF, LUA_KR_PREF);
 		} else {
 			asm_string = luaop_new_str_3arg_ex(
@@ -108,7 +108,7 @@ int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 			asm_string = luaop_new_str_3arg_ex(
 				opnames[opcode],
 				a, b, special_c,
-                LUA_KFLAG_MARK,
+				LUA_KFLAG_MARK,
 				LUA_REG_PREF, LUA_REG_PREF, LUA_KR_PREF);
 		} else {
 			asm_string = luaop_new_str_3arg_ex(
@@ -141,13 +141,13 @@ int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 				asm_string = luaop_new_str_3arg_ex(
 					opnames[opcode],
 					a, special_b, special_c,
-                    NULL,
+					NULL,
 					LUA_REG_PREF, LUA_CONST_PREF, LUA_CONST_PREF);
 			} else {
 				asm_string = luaop_new_str_3arg_ex(
 					opnames[opcode],
 					a, special_b, c,
-                    NULL,
+					NULL,
 					LUA_REG_PREF, LUA_CONST_PREF, LUA_REG_PREF);
 			}
 		} else {
@@ -155,13 +155,13 @@ int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 				asm_string = luaop_new_str_3arg_ex(
 					opnames[opcode],
 					a, b, special_c,
-                    NULL,
+					NULL,
 					LUA_REG_PREF, LUA_REG_PREF, LUA_CONST_PREF);
 			} else {
 				asm_string = luaop_new_str_3arg_ex(
 					opnames[opcode],
 					a, b, special_c,
-                    NULL,
+					NULL,
 					LUA_REG_PREF, LUA_REG_PREF, LUA_REG_PREF);
 			}
 		}
@@ -173,7 +173,7 @@ int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 		asm_string = luaop_new_str_2arg_ex(
 			opnames[opcode],
 			a, sb,
-            NULL,
+			NULL,
 			LUA_NO_PREFIX, LUA_NO_PREFIX);
 		break;
 	case OP_EXTRAARG: /*   Ax      extra (larger) argument for previous opcode     */

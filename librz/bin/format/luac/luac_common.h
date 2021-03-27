@@ -208,7 +208,6 @@ LuaProto *lua_parse_body_54(RzBuffer *buffer, ut64 offset, ut64 data_size);
 RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor);
 LuaProto *lua_parse_body_53(RzBuffer *buffer, ut64 offset, ut64 data_size);
 
-
 #define lua_check_error_offset(offset) \
 	if ((offset) == 0) { \
 		return 0; \

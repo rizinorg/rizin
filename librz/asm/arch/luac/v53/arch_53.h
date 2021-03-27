@@ -153,8 +153,7 @@ name            args    description
 /* creates a mask with 'n' 0 bits at position 'p' */
 #define MASK0(n, p) (~MASK1(n, p))
 
-
-#define cast(x, y)               ((x) (y))
+#define cast(x, y) ((x)(y))
 
 #define GET_OPCODE(i)    (cast(LuaOpCode, ((i) >> POS_OP) & MASK1(SIZE_OP, 0)))
 #define SET_OPCODE(i, o) ((i) = (((i)&MASK0(SIZE_OP, POS_OP)) | \
