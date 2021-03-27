@@ -8,8 +8,8 @@ int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
         int r = 0;
 
 	if (!a->cpu) {
-		eprintf("Warning : no version info\n");
-		return 0;
+		eprintf("Warning : no version info, specify it with `-c` option\n");
+		return len;
 	}
 
 	if (strcmp(a->cpu, "5.4") == 0) {
