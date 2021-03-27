@@ -129,12 +129,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='rizin' ; VERSION='0.1.0' ; VERSION_MAJOR=0; VERSION_MINOR=1; VERSION_PATCH=0; VERSION_NUMBER=00100; CONTACT_MAIL="team@rizin.re" ; CONTACT_NAME="Rizin Core Team" ; CONTACT="Rizin Core Team <team@rizin.re>" ;
+ PKGNAME='rizin' ; VERSION='0.1.1' ; VERSION_MAJOR=0; VERSION_MINOR=1; VERSION_PATCH=1; VERSION_NUMBER=00101; CONTACT_MAIL="team@rizin.re" ; CONTACT_NAME="Rizin Core Team" ; CONTACT="Rizin Core Team <team@rizin.re>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures rizin-0.1.0 to adapt to many kinds of systems.
+'configure' configures rizin-0.1.1 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -146,7 +146,7 @@ Defaults for the options are specified in brackets.
 Configuration:
   -h, --help              display this help and exit
   -r, --report            show what libs/programs require to work
-  -q, --quiet             be quiet, less verbose (see ./configure -qV)
+  -q, --quiet             be less verbose
   -V, --version           display version information and exit
 
 Installation directories:
@@ -175,7 +175,8 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "\nOptional Features:
+printf "
+Optional Features:
   --disable-debugger     disable native debugger features
   --with-sysmagic        force to use system's magic
   --with-capstone5       build next branch of the capstone repository
@@ -196,16 +197,21 @@ printf "\nOptional Features:
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
   --without-rz-test      build without rz-test for regression testing
-  --with-checks-level    value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL) (RZ_CHECKS_LEVEL=2)\n"
-printf "\nSome influential environment variables:
+  --with-checks-level    value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL) (RZ_CHECKS_LEVEL=2)
+"
+printf "
+Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
+  CPPFLAGS    C preprocessor flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor\n"
-printf "\nReport bugs to: Rizin Core Team <team@rizin.re>"
+  CPP         C preprocessor
+"
+printf "
+Report bugs to: Rizin Core Team <team@rizin.re>"
 echo ""
 exit 0
 }
@@ -229,10 +235,10 @@ ocho() {
 
 show_version() {
 if [ "$QUIET" = 1 ]; then
-	echo "0.1.0"
+	echo "0.1.1"
 	exit 0
 fi
-echo "rizin-0.1.0 configuration script done with acr v1.9.4.
+echo "rizin-0.1.1 configuration script done with acr v1.9.4.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -261,7 +267,7 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   rizin"
-echo "VERSION:   0.1.0"
+echo "VERSION:   0.1.1"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
@@ -702,6 +708,9 @@ HAVE_LIBUV="0"; fi
 else
 HAVE_LIBUV="0"; fi
 if [ "$USEROSTYPE" = "auto" ]; then
+if [ "$HOST_OS" = "wsl" ]; then
+USEROSTYPE="wsl"
+else
 if [ "$HOST_OS" = "linux" ]; then
 USEROSTYPE="gnulinux"
 else
@@ -729,7 +738,7 @@ if [ "$HOST_OS" = "darwin" ]; then
 USEROSTYPE="darwin"
 else
 if [ "$HOST_OS" = "haiku" ]; then
-USEROSTYPE="haiku"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi;
+USEROSTYPE="haiku"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 if [ "$USEROSTYPE" = "gnulinux" ]; then
