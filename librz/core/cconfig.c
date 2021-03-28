@@ -731,6 +731,10 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 
 	int bits = node->i_value;
+	if (!bits) {
+		// eprintf("Cannot set asm.bits to 0\n");
+		return false;
+	}
 #if 0
 // TODO: pretty good optimization, but breaks many tests when arch is different i think
 	if (bits == core->rasm->bits && bits == core->analysis->bits && bits == core->dbg->bits) {
