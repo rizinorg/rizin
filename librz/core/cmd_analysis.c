@@ -7912,10 +7912,9 @@ static void rz_core_analysis_info(RzCore *core, const char *input) {
 static void cmd_analysis_aad(RzCore *core, const char *input) {
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
-	RzList *list = rz_list_newf(NULL);
-	rz_analysis_xrefs_from(core->analysis, list, "xref", RZ_ANALYSIS_REF_TYPE_DATA, UT64_MAX);
+	RzList *list = rz_analysis_xrefs_get_from(core->analysis, UT64_MAX);
 	rz_list_foreach (list, iter, xref) {
-		if (rz_io_is_valid_offset(core->io, xref->to, false)) {
+		if (xref->type == RZ_ANALYSIS_REF_TYPE_DATA && rz_io_is_valid_offset(core->io, xref->to, false)) {
 			rz_core_analysis_fcn(core, xref->from, xref->to, RZ_ANALYSIS_REF_TYPE_NULL, 1);
 		}
 	}

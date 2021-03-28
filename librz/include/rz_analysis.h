@@ -1593,7 +1593,6 @@ RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 from);
 RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad);
 RZ_API RzList *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn);
 RZ_API RzList *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn);
-RZ_API int rz_analysis_xrefs_from(RzAnalysis *analysis, RzList *list, const char *kind, RzAnalysisXRefType type, ut64 addr);
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 at, ut64 addr);

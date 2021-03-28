@@ -165,12 +165,6 @@ RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to) {
 	return res;
 }
 
-RZ_API int rz_analysis_xrefs_from(RzAnalysis *analysis, RzList *list, const char *kind, RzAnalysisXRefType type, ut64 addr) {
-	listxrefs(analysis->ht_xrefs_from, addr, list);
-	sortxrefs(list);
-	return true;
-}
-
 RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 to) {
 	RzList *list = rz_analysis_xref_list_new();
 	if (!list) {
