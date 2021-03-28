@@ -114,7 +114,7 @@ static bool set_xref(HtUP *m, RzAnalysisXRef *xref, bool from2to) {
 }
 
 // Set a cross reference from FROM to TO.
-RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, const RzAnalysisXRefType type) {
+RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type) {
 	if (!analysis || from == to) {
 		return false;
 	}
@@ -165,12 +165,12 @@ RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to) {
 	return res;
 }
 
-RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 to) {
+RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr) {
 	RzList *list = rz_analysis_xref_list_new();
 	if (!list) {
 		return NULL;
 	}
-	listxrefs(analysis->ht_xrefs_to, to, list);
+	listxrefs(analysis->ht_xrefs_to, addr, list);
 	sortxrefs(list);
 	if (rz_list_empty(list)) {
 		rz_list_free(list);
@@ -179,12 +179,12 @@ RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 to) {
 	return list;
 }
 
-RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 from) {
+RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr) {
 	RzList *list = rz_analysis_xref_list_new();
 	if (!list) {
 		return NULL;
 	}
-	listxrefs(analysis->ht_xrefs_from, from, list);
+	listxrefs(analysis->ht_xrefs_from, addr, list);
 	sortxrefs(list);
 	if (rz_list_empty(list)) {
 		rz_list_free(list);
