@@ -404,7 +404,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (argc < 2) {
 		//LISTS_FREE();
 		//return main_help(1);
-		
 	}
 	r = rz_core_new();
 	if (!r) {
@@ -443,7 +442,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
-	while (argc>=2 && (c = rz_getopt_next(&opt)) != -1) {
+	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '=':
 			RZ_FREE(r->cmdremote);
@@ -694,10 +693,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				eprintf("Cannot read dbg.profile '%s'\n", dbg_profile);
 				pfile = NULL; //strdup ("");
 			}
-		} else{
-			if(argc < 2){
+		} else {
+			if (argc < 2) {
 				pfile = argv[opt.ind] ? strdup(argv[opt.ind]) : NULL;
-			}else{
+			} else {
 				// if(!strcmp(argv[opt.ind-1],"--")){
 				// 	opt.ind ++;
 				// };
@@ -917,7 +916,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			LISTS_FREE();
 			return 1;
 		}
-	} else if ((argc>=2 && strcmp(argv[opt.ind - 1], "--")) ||((!strcmp(argv[opt.ind - 1], "--") && argv[opt.ind]))) {
+	} else if ((argc >= 2 && strcmp(argv[opt.ind - 1], "--")) || ((!strcmp(argv[opt.ind - 1], "--") && argv[opt.ind]))) {
 		if (debug) {
 			if (asmbits) {
 				rz_config_set(r->config, "asm.bits", asmbits);
