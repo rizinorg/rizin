@@ -10,8 +10,7 @@
 #error Old Capstone not supported
 #endif
 
-#define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
-#define INSOP(n)                 insn->detail->xcore.operands[n]
+#define INSOP(n) insn->detail->xcore.operands[n]
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
