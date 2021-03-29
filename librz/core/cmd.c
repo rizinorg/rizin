@@ -6183,6 +6183,7 @@ static RzCmdStatus core_cmd_tsr2cmd(RzCore *core, const char *cstr, bool split_l
 	ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
 
 	TSTree *tree = ts_parser_parse_string(parser, NULL, input, strlen(input));
+	rz_return_val_if_fail(tree, RZ_CMD_STATUS_INVALID);
 	TSNode root = ts_tree_root_node(tree);
 
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
