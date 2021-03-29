@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_core.h>
 
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da) {
