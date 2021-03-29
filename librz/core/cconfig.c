@@ -732,7 +732,6 @@ static bool cb_asmbits(void *user, void *data) {
 
 	int bits = node->i_value;
 	if (!bits) {
-		// eprintf("Cannot set asm.bits to 0\n");
 		return false;
 	}
 #if 0
