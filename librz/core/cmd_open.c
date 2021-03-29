@@ -15,7 +15,7 @@ static const char *help_msg_o[] = {
 	"o-", "!*", "close all opened files",
 	"o--", "", "close all files, analysis, binfiles, flags, same as !rizin --",
 	"o.", "", "show current filename (or o.q/oq to get the fd)",
-	"o:", " [len]", "open a malloc://[len] copying the bytes from current offset",
+	"oC", " [len]", "open a malloc://[len] copying the bytes from current offset",
 	"o=", "", "list opened files (ascii-art bars)",
 	"oL", "", "list all IO plugins registered",
 	"oa", "[-] [A] [B] [filename]", "Specify arch and bits for given file",
@@ -1425,7 +1425,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			}
 		}
 		break;
-	case ':': // "o:"
+	case 'C': // "oC"
 	{
 		int len = rz_num_math(core->num, input + 1);
 		if (len < 1) {

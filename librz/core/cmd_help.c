@@ -91,7 +91,6 @@ static const char *help_msg_question[] = {
 	"?$", "", "show value all the variables ($)",
 	"?+", " [cmd]", "run cmd if $? > 0",
 	"?-", " [cmd]", "run cmd if $? < 0",
-	"?:", "", "list core cmd plugins",
 	"?=", " eip-0x804800", "hex and dec result for this math expr",
 	"?==", " x86 `e asm.arch`", "strcmp two strings",
 	"??", " [cmd]", "run cmd if $? != 0",

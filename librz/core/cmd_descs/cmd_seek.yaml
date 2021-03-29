@@ -10,7 +10,7 @@ commands:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
-  - name: "s:"
+  - name: spad
     cname: seek_padded
     summary: Print current address with <n> padded zeros (defaults to 8)
     args:

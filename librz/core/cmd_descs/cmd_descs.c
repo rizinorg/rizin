@@ -3951,7 +3951,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *remote_mode_disable_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "!=!", rz_remote_mode_disable_handler, &remote_mode_disable_help);
 	rz_warn_if_fail(remote_mode_disable_cd);
 
-	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=:", rz_remote_rap_handler, &remote_rap_help);
+	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=r", rz_remote_rap_handler, &remote_rap_help);
 	rz_warn_if_fail(remote_rap_cd);
 
 	RzCmdDesc *equal_g_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=g", rz_equal_g_handler_old, &equal_g_handler_old_help);
@@ -3966,7 +3966,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=t", rz_remote_tcp_handler, &remote_tcp_help);
 	rz_warn_if_fail(remote_tcp_cd);
 
-	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=&:", rz_remote_rap_bg_handler, &remote_rap_bg_help);
+	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=&r", rz_remote_rap_bg_handler, &remote_rap_bg_help);
 	rz_warn_if_fail(remote_rap_bg_cd);
 
 	RzCmdDesc *cmd_help_search_cd = rz_cmd_desc_argv_modes_new(core->rcmd, root_cd, "?*", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_help_search_handler, &cmd_help_search_help);
@@ -4230,7 +4230,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *s_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "s", rz_seek_handler, &seek_help, &s_help);
 	rz_warn_if_fail(s_cd);
-	RzCmdDesc *seek_padded_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "s:", rz_seek_padded_handler, &seek_padded_help);
+	RzCmdDesc *seek_padded_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "spad", rz_seek_padded_handler, &seek_padded_help);
 	rz_warn_if_fail(seek_padded_cd);
 
 	RzCmdDesc *seek_base_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "s.", rz_seek_base_handler, &seek_base_help);

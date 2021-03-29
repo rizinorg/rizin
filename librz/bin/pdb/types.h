@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2014-2020 inisider <inisider@gmail.com>
+// SPDX-FileCopyrightText: 2020 HoundThe <cgkajm@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef PDB_TYPES_H
 #define PDB_TYPES_H
 
