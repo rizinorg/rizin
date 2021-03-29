@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: LGPL-3.0-only
 
 name: rizin
-version: '4.5.0'
+version: '0.2.0'
 base: core18
 summary: Rizin reverse engineering framework and tool
 description: |
@@ -30,41 +30,41 @@ apps:
   rz-pm:
     command: usr/bin/rz-pm
     plugs: [home]
-  rz_agent:
-    command: usr/bin/rz_agent
+  rz-agent:
+    command: usr/bin/rz-agent
     plugs: [home, network-bind]
-  rz_find:
-    command: usr/bin/rz_find
+  rz-find:
+    command: usr/bin/rz-find
     plugs: [home]
-  rz_hash:
-    command: usr/bin/rz_hash
+  rz-hash:
+    command: usr/bin/rz-hash
     plugs: [home]
-  rz_asm:
-    command: usr/bin/rz_asm
+  rz-asm:
+    command: usr/bin/rz-asm
     plugs: [home]
-  rz_bin:
-    command: usr/bin/rz_bin
+  rz-bin:
+    command: usr/bin/rz-bin
     plugs: [home]
-  rz_diff:
-    command: usr/bin/rz_diff
+  rz-diff:
+    command: usr/bin/rz-diff
     plugs: [home]
-  rz_gg:
-    command: usr/bin/rz_gg
+  rz-gg:
+    command: usr/bin/rz-gg
     plugs: [home]
-  rz_run:
-    command: usr/bin/rz_run
+  rz-run:
+    command: usr/bin/rz-run
     plugs: [home]
-  rz_ax:
-    command: usr/bin/rz_ax
+  rz-ax:
+    command: usr/bin/rz-ax
     plugs: [home]
-  rz_sign:
-    command: usr/bin/rz_sign
+  rz-sign:
+    command: usr/bin/rz-sign
     plugs: [home]
 
 parts:
   rizin:
     source: https://github.com/rizinorg/rizin.git
-    source-tag: '4.5.0'
+    source-tag: '0.2.0'
     plugin: meson
     meson-parameters: [--prefix=/usr]
     override-build: |
