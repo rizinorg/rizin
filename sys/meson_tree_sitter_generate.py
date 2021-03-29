@@ -13,7 +13,9 @@ import sys
 
 def parse():
     if len(sys.argv) <= 3:
-        print("Usage: {} <tree-sitter-path> <output-dir> <grammar.js>".format(sys.argv[0]))
+        print(
+            "Usage: {} <tree-sitter-path> <output-dir> <grammar.js>".format(sys.argv[0])
+        )
         sys.exit(1)
 
     tree_sitter_exe = sys.argv[1]
@@ -31,7 +33,8 @@ def main():
     tree_sitter_exe = os.path.abspath(tree_sitter_exe)
 
     os.chdir(output_dir)
-    subprocess.run([tree_sitter_exe, 'generate', grammar_js], check=True)
+    subprocess.run([tree_sitter_exe, "generate", grammar_js], check=True)
+
 
 if __name__ == "__main__":
     main()
