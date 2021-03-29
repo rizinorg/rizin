@@ -334,7 +334,7 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 		break;
 	case 'o': // "eco"
 		if (input[1] == 'j') {
-			rz_core_theme_nextpal(core, 'j');
+			rz_core_theme_nextpal(core, RZ_OUTPUT_MODE_JSON);
 		} else if (input[1] == ' ') {
 			rz_core_load_theme(core, input + 2);
 		} else if (input[1] == 'o') {
@@ -373,13 +373,13 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 		}
 		break;
 	case 'j': // "ecj"
-		rz_cons_pal_list('j', NULL);
+		rz_cons_pal_list(RZ_OUTPUT_MODE_JSON, NULL);
 		break;
 	case 'c': // "ecc"
 		rz_cons_pal_list('c', input + 1);
 		break;
 	case '\0': // "ec"
-		rz_cons_pal_list(0, NULL);
+		rz_cons_pal_list(RZ_OUTPUT_MODE_QUIET, NULL);
 		break;
 	case 'r': // "ecr"
 		rz_cons_pal_random();
@@ -422,19 +422,19 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 			rz_str_argv_free(argv);
 			return false;
 		case '.':
-			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, core->offset);
+			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_HIGHLIGHT, RZ_OUTPUT_MODE_QUIET, core->offset);
 			rz_str_argv_free(argv);
 			return false;
 		case '\0':
-			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, 0);
+			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, RZ_OUTPUT_MODE_QUIET);
 			rz_str_argv_free(argv);
 			return false;
 		case 'j':
-			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, 'j');
+			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, RZ_OUTPUT_MODE_JSON);
 			rz_str_argv_free(argv);
 			return false;
 		case '*':
-			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, '*');
+			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, RZ_OUTPUT_MODE_RIZIN);
 			rz_str_argv_free(argv);
 			return false;
 		case ' ':
@@ -512,7 +512,7 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {
 	case '\0': // "e"
-		rz_config_list(core->config, NULL, 0);
+		rz_config_list(core->config, NULL, RZ_OUTPUT_MODE_QUIET);
 		break;
 	case '?': // "e?"
 	default:
@@ -573,13 +573,13 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 		// XXX we need headers for the cmd_xxx files.
 		return rz_cmd_quit(data, "");
 	case 'j': // json
-		rz_config_list(core->config, NULL, 'j');
+		rz_config_list(core->config, NULL, RZ_OUTPUT_MODE_JSON);
 		break;
 	case 'v': // verbose
 		rz_config_list(core->config, input + 1, 'v');
 		break;
 	case 'q': // quiet list of eval keys
-		rz_config_list(core->config, NULL, 'q');
+		rz_config_list(core->config, NULL, RZ_OUTPUT_MODE_QUIET);
 		break;
 	case 'c': // "ec"
 		rz_eval_color(core, input + 1);
@@ -631,7 +631,7 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 	case '.': // "e "
 	case ' ': // "e "
 		if (rz_str_endswith(input, ".")) {
-			rz_config_list(core->config, input + 1, 0);
+			rz_config_list(core->config, input + 1, RZ_OUTPUT_MODE_QUIET);
 		} else {
 			// XXX we cant do "e cmd.gprompt=dr=", because the '=' is a token, and quotes dont affect him
 			rz_config_eval(core->config, input + 1, false);
@@ -643,7 +643,7 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
-		rz_config_list(core->config, NULL, 0);
+		rz_config_list(core->config, NULL, RZ_OUTPUT_MODE_QUIET);
 		return RZ_CMD_STATUS_OK;
 	}
 
@@ -665,7 +665,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 
 		if (llen == 1 && rz_str_endswith(key, ".")) {
 			// no value was set, only key with ".". List possible sub-keys.
-			rz_config_list(core->config, key, false);
+			rz_config_list(core->config, key, RZ_OUTPUT_MODE_QUIET);
 		} else if (llen == 1) {
 			// no value was set, show the value of the key
 			const char *v = rz_config_get(core->config, key);
@@ -691,13 +691,13 @@ RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **arg
 		rz_config_list(core->config, arg, 2);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		rz_config_list(core->config, arg, 'j');
+		rz_config_list(core->config, arg, RZ_OUTPUT_MODE_JSON);
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
 		rz_config_list(core->config, arg, 1);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_config_list(core->config, arg, 'q');
+		rz_config_list(core->config, arg, RZ_OUTPUT_MODE_QUIET);
 		break;
 	case RZ_OUTPUT_MODE_LONG:
 		rz_config_list(core->config, arg, 'v');

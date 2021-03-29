@@ -6319,7 +6319,35 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			ut8 *block = calloc(len, 1);
 			if (block) {
 				memcpy(block, core->block, len);
-				_pointer_table(core, origin, core->offset, block, len, 4, input[2]);
+				RzOutputMode mode;
+				switch(input[2]){
+				case 'j':
+					mode = RZ_OUTPUT_MODE_JSON;
+					break;
+				case '*':
+				case 'r':
+					mode = RZ_OUTPUT_MODE_RIZIN;
+					break;
+				case 'q':
+					mode = RZ_OUTPUT_MODE_QUIET;
+					break;
+				case 'k':
+					mode = RZ_OUTPUT_MODE_SDB;
+					break;
+				case 'l':
+					mode = RZ_OUTPUT_MODE_LONG;
+					break;
+				case 'J':
+					mode = RZ_OUTPUT_MODE_LONG_JSON;
+					break;
+				case 't':
+					mode = RZ_OUTPUT_MODE_TABLE;
+					break;
+				default:
+					rz_warn_if_reached();
+					mode = input[2];
+				}
+				_pointer_table(core, origin, core->offset, block, len, 4, mode);
 				free(block);
 			}
 		} break;
@@ -6448,7 +6476,33 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				case 2:
 				case 4:
 				case 8:
-					cmd_pxr(core, len, mode, wordsize, mode ? strchr(input, mode) : NULL);
+					switch(mode){
+					case 'j':
+						cmd_pxr(core, len, RZ_OUTPUT_MODE_JSON, wordsize, mode ? strchr(input, mode) : NULL);
+						break;
+					case '*':
+					case 'r':
+						cmd_pxr(core, len, RZ_OUTPUT_MODE_RIZIN, wordsize, mode ? strchr(input, mode) : NULL);
+						break;
+					case 'q':
+						cmd_pxr(core, len, RZ_OUTPUT_MODE_QUIET, wordsize, mode ? strchr(input, mode) : NULL);
+						break;
+					case 'k':
+						cmd_pxr(core, len, RZ_OUTPUT_MODE_SDB, wordsize, mode ? strchr(input, mode) : NULL);
+						break;
+					case 'l':
+						cmd_pxr(core, len, RZ_OUTPUT_MODE_LONG, wordsize, mode ? strchr(input, mode) : NULL);
+						break;
+					case 'J':
+						cmd_pxr(core, len, RZ_OUTPUT_MODE_LONG_JSON, wordsize, mode ? strchr(input, mode) : NULL);
+						break;
+					case 't':
+						cmd_pxr(core, len, RZ_OUTPUT_MODE_TABLE, wordsize, mode ? strchr(input, mode) : NULL);
+						break;
+					default:
+						rz_warn_if_reached();
+						cmd_pxr(core, len, mode, wordsize, mode ? strchr(input, mode) : NULL);
+					}
 					break;
 				default:
 					eprintf("Invalid word size. Use 1, 2, 4 or 8.\n");

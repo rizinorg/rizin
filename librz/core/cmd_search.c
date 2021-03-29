@@ -1529,11 +1529,37 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 					}
 					if ((mode == 'q') && subchain) {
 						do {
-							print_rop(core, hitlist, NULL, mode);
+							print_rop(core, hitlist, NULL, RZ_OUTPUT_MODE_QUIET);
 							hitlist->head = hitlist->head->n;
 						} while (hitlist->head->n);
 					} else {
-						print_rop(core, hitlist, param->pj, mode);
+						switch(mode){
+						case 'j':
+							print_rop(core, hitlist, param->pj, RZ_OUTPUT_MODE_JSON);
+							break;
+						case '*':
+						case 'r':
+							print_rop(core, hitlist, param->pj, RZ_OUTPUT_MODE_RIZIN);
+							break;
+						case 'q':
+							print_rop(core, hitlist, param->pj, RZ_OUTPUT_MODE_QUIET);
+							break;
+						case 'k':
+							print_rop(core, hitlist, param->pj, RZ_OUTPUT_MODE_SDB);
+							break;
+						case 'l':
+							print_rop(core, hitlist, param->pj, RZ_OUTPUT_MODE_LONG);
+							break;
+						case 'J':
+							print_rop(core, hitlist, param->pj, RZ_OUTPUT_MODE_LONG_JSON);
+							break;
+						case 't':
+							print_rop(core, hitlist, param->pj, RZ_OUTPUT_MODE_TABLE);
+							break;
+						default:
+							rz_warn_if_reached();
+							print_rop(core, hitlist, param->pj, mode);
+						}
 					}
 					rz_list_free(hitlist);
 					if (max_count > 0) {
@@ -3082,7 +3108,33 @@ reread:
 						rz_list_append(hitlist, hit);
 					} while (*(s = strchr(s, ')') + 1) != '\0');
 
-					print_rop(core, hitlist, param.pj, mode);
+					switch(mode){
+					case 'j':
+						print_rop(core, hitlist, param.pj, RZ_OUTPUT_MODE_JSON);
+						break;
+					case '*':
+					case 'r':
+						print_rop(core, hitlist, param.pj, RZ_OUTPUT_MODE_RIZIN);
+						break;
+					case 'q':
+						print_rop(core, hitlist, param.pj, RZ_OUTPUT_MODE_QUIET);
+						break;
+					case 'k':
+						print_rop(core, hitlist, param.pj, RZ_OUTPUT_MODE_SDB);
+						break;
+					case 'l':
+						print_rop(core, hitlist, param.pj, RZ_OUTPUT_MODE_LONG);
+						break;
+					case 'J':
+						print_rop(core, hitlist, param.pj, RZ_OUTPUT_MODE_LONG_JSON);
+						break;
+					case 't':
+						print_rop(core, hitlist, param.pj, RZ_OUTPUT_MODE_TABLE);
+						break;
+					default:
+						rz_warn_if_reached();
+						print_rop(core, hitlist, param.pj, mode);
+					}
 					rz_list_free(hitlist);
 				}
 			}
@@ -3113,7 +3165,7 @@ reread:
 			RzIOMap *map;
 			rz_list_foreach (param.boundaries, iter, map) {
 				eprintf("-- 0x%" PFMT64x " 0x%" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
-				rz_core_analysis_search(core, map->itv.addr, rz_itv_end(map->itv), n, 0);
+				rz_core_analysis_search(core, map->itv.addr, rz_itv_end(map->itv), n, RZ_OUTPUT_MODE_QUIET);
 			}
 		} break;
 		case 'e': // "/re"
@@ -3142,7 +3194,7 @@ reread:
 			RzIOMap *map;
 			rz_list_foreach (param.boundaries, iter, map) {
 				eprintf("-- 0x%" PFMT64x " 0x%" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
-				rz_core_analysis_search(core, map->itv.addr, rz_itv_end(map->itv), n, 'r');
+				rz_core_analysis_search(core, map->itv.addr, rz_itv_end(map->itv), n, RZ_OUTPUT_MODE_RIZIN);
 			}
 		} break;
 		case 'w': // "/rw" - write refs
@@ -3164,10 +3216,10 @@ reread:
 				ut64 to = rz_itv_end(map->itv);
 				if (input[param_offset - 1] == ' ') {
 					rz_core_analysis_search(core, from, to,
-						rz_num_math(core->num, input + 2), 0);
+						rz_num_math(core->num, input + 2), RZ_OUTPUT_MODE_QUIET);
 					do_ref_search(core, rz_num_math(core->num, input + 2), from, to, &param);
 				} else {
-					rz_core_analysis_search(core, from, to, core->offset, 0);
+					rz_core_analysis_search(core, from, to, core->offset, RZ_OUTPUT_MODE_QUIET);
 					do_ref_search(core, core->offset, from, to, &param);
 				}
 				if (rz_cons_is_breaked()) {
@@ -3185,7 +3237,7 @@ reread:
 			rz_core_cmd_help(core, help_msg_slash_a);
 		} else if (input[1] == 'd') { // "ad"
 			dosearch = 0;
-			do_asm_search(core, &param, input + 1, 0, search_itv);
+			do_asm_search(core, &param, input + 1, RZ_OUTPUT_MODE_QUIET, search_itv);
 		} else if (input[1] == 'e') { // "ae"
 			dosearch = 0;
 			do_asm_search(core, &param, input + 2, 'e', search_itv);

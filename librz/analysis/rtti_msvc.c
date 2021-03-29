@@ -616,7 +616,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	return true;
 }
 
-RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode, bool strict) {
+RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, bool strict) {
 	return rtti_msvc_print_complete_object_locator_recurse(context, addr, mode, strict);
 }
 

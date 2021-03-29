@@ -404,7 +404,7 @@ RZ_API bool rz_core_plugin_fini(RzCore *core);
 //#define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RzList *rz_core_list_themes(RzCore *core);
 RZ_API char *rz_core_get_theme(void);
-RZ_API void rz_core_theme_nextpal(RzCore *core, int mode);
+RZ_API void rz_core_theme_nextpal(RzCore *core, RzOutputMode mode);
 RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr);
 RZ_API RzCons *rz_core_get_cons(RzCore *core);
 RZ_API RzBin *rz_core_get_bin(RzCore *core);
@@ -548,7 +548,7 @@ RZ_API RzCoreFile *rz_core_file_get_by_fd(RzCore *core, int fd);
 RZ_API int rz_core_file_close(RzCore *core, RzCoreFile *fh);
 RZ_API bool rz_core_file_close_fd(RzCore *core, int fd);
 RZ_API bool rz_core_file_close_all_but(RzCore *core);
-RZ_API int rz_core_file_list(RzCore *core, int mode);
+RZ_API int rz_core_file_list(RzCore *core, RzOutputMode mode);
 RZ_API int rz_core_file_binlist(RzCore *core);
 RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 num);
 RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, int size);
@@ -781,7 +781,7 @@ typedef struct rz_core_bin_filter_t {
 	const char *name;
 } RzCoreBinFilter;
 
-RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, RzCoreBinFilter *filter, const char *chksum);
+RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, RzOutputMode mode, int va, RzCoreBinFilter *filter, const char *chksum);
 RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *arch, ut16 bits);
 RZ_API int rz_core_bin_update_arch_bits(RzCore *r);
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode);

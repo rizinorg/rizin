@@ -268,7 +268,7 @@ static void __printRecursive(RzCore *core, RzList *flags, const char *prefix, Rz
 	rz_list_free(children);
 }
 
-static void __flag_graph(RzCore *core, const char *input, int mode) {
+static void __flag_graph(RzCore *core, const char *input, RzOutputMode mode) {
 	RzList *flags = rz_list_newf(NULL);
 	rz_flag_foreach_space(core->flags, rz_flag_space_cur(core->flags), listFlag, flags);
 	__printRecursive(core, flags, input, mode, 0);
@@ -1078,11 +1078,11 @@ rep:
 		if (input[1]) {
 			if (input[1] == '*' || input[1] == 'j') {
 				if (input[2] == '*') {
-					print_function_labels(core->analysis, NULL, input[1]);
+					print_function_labels(core->analysis, NULL, input[1] == '*' ? RZ_OUTPUT_MODE_RIZIN : RZ_OUTPUT_MODE_JSON);
 				} else {
 					RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, off, 0);
 					if (fcn) {
-						print_function_labels(core->analysis, fcn, input[1]);
+						print_function_labels(core->analysis, fcn, input[1] == '*' ? RZ_OUTPUT_MODE_RIZIN : RZ_OUTPUT_MODE_JSON);
 					} else {
 						eprintf("Cannot find function at 0x%08" PFMT64x "\n", off);
 					}
@@ -1112,7 +1112,7 @@ rep:
 		} else {
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, off, 0);
 			if (fcn) {
-				print_function_labels(core->analysis, fcn, 0);
+				print_function_labels(core->analysis, fcn, RZ_OUTPUT_MODE_QUIET);
 			} else {
 				eprintf("Local flags require a function to work.");
 			}
@@ -1216,7 +1216,35 @@ rep:
 			}
 			break;
 		case 's':
-			flag_space_stack_list(core->flags, input[2]);
+			RzOutputMode mode;
+			switch(input[2]){
+			case 'j':
+				mode = RZ_OUTPUT_MODE_JSON;
+				break;
+			case '*':
+			case 'r':
+				mode = RZ_OUTPUT_MODE_RIZIN;
+				break;
+			case 'q':
+				mode = RZ_OUTPUT_MODE_QUIET;
+				break;
+			case 'k':
+				mode = RZ_OUTPUT_MODE_SDB;
+				break;
+			case 'l':
+				mode = RZ_OUTPUT_MODE_LONG;
+				break;
+			case 'J':
+				mode = RZ_OUTPUT_MODE_LONG_JSON;
+				break;
+			case 't':
+				mode = RZ_OUTPUT_MODE_TABLE;
+				break;
+			default:
+				rz_warn_if_reached();
+				mode = input[2];
+			}
+			flag_space_stack_list(core->flags, mode);
 			break;
 		case '-':
 			switch (input[2]) {
@@ -1276,13 +1304,13 @@ rep:
 	case 'g': // "fg"
 		switch (input[1]) {
 		case '*':
-			__flag_graph(core, rz_str_trim_head_ro(input + 2), '*');
+			__flag_graph(core, rz_str_trim_head_ro(input + 2), RZ_OUTPUT_MODE_RIZIN);
 			break;
 		case ' ':
 			__flag_graph(core, rz_str_trim_head_ro(input + 2), ' ');
 			break;
 		case 0:
-			__flag_graph(core, rz_str_trim_head_ro(input + 1), 0);
+			__flag_graph(core, rz_str_trim_head_ro(input + 1), RZ_OUTPUT_MODE_QUIET);
 			break;
 		default:
 			eprintf("Usage: fg[*] ([prefix])\n");

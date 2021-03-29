@@ -1099,7 +1099,7 @@ RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core) {
 		if (!strncmp(fcn->name, "fcn.", 4) || !strncmp(fcn->name, "sym.func.", 9)) {
 			RzFlagItem *item = rz_flag_get(core->flags, fcn->name);
 			if (item) {
-				char *name = analysis_fcn_autoname(core, fcn, 0, 0);
+				char *name = analysis_fcn_autoname(core, fcn, 0, RZ_OUTPUT_MODE_QUIET);
 				if (name) {
 					rz_flag_rename(core->flags, item, name);
 					free(fcn->name);
@@ -1181,7 +1181,7 @@ RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core) {
 
 /* suggest a name for the function at the address 'addr'.
  * If dump is true, every strings associated with the function is printed */
-RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode) {
+RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, RzOutputMode mode) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
 	if (fcn) {
 		return analysis_fcn_autoname(core, fcn, dump, mode);
@@ -3593,11 +3593,11 @@ static int fcn_print_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
 		pj_ki(pj, "nargs", rz_analysis_var_count(core->analysis, fcn, 'b', 1) + rz_analysis_var_count(core->analysis, fcn, 'r', 1) + rz_analysis_var_count(core->analysis, fcn, 's', 1));
 
 		pj_k(pj, "bpvars");
-		rz_analysis_var_list_show(core->analysis, fcn, 'b', 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, 'b', RZ_OUTPUT_MODE_JSON, pj);
 		pj_k(pj, "spvars");
-		rz_analysis_var_list_show(core->analysis, fcn, 's', 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, 's', RZ_OUTPUT_MODE_JSON, pj);
 		pj_k(pj, "regvars");
-		rz_analysis_var_list_show(core->analysis, fcn, 'r', 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, 'r', RZ_OUTPUT_MODE_JSON, pj);
 
 		pj_ks(pj, "difftype", fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_MATCH ? "match" : fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? "unmatch"
 																		  : "new");
@@ -3660,9 +3660,9 @@ static int fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
 	}
 	if (fcn) {
 		/* show variables  and arguments */
-		rz_analysis_var_list_show(core->analysis, fcn, 'b', '*', NULL);
-		rz_analysis_var_list_show(core->analysis, fcn, 'r', '*', NULL);
-		rz_analysis_var_list_show(core->analysis, fcn, 's', '*', NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, 'b', RZ_OUTPUT_MODE_RIZIN, NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, 'r', RZ_OUTPUT_MODE_RIZIN, NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, 's', RZ_OUTPUT_MODE_RIZIN, NULL);
 	}
 	/* Show references */
 	RzListIter *refiter;
@@ -3789,9 +3789,9 @@ static int fcn_print_legacy(RzCore *core, RzAnalysisFunction *fcn) {
 		var_count += rz_analysis_var_count(core->analysis, fcn, 'r', 0);
 
 		rz_cons_printf("\nlocals: %d\nargs: %d\n", var_count, args_count);
-		rz_analysis_var_list_show(core->analysis, fcn, 'b', 0, NULL);
-		rz_analysis_var_list_show(core->analysis, fcn, 's', 0, NULL);
-		rz_analysis_var_list_show(core->analysis, fcn, 'r', 0, NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, 'b', RZ_OUTPUT_MODE_QUIET, NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, 's', RZ_OUTPUT_MODE_QUIET, NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, 'r', RZ_OUTPUT_MODE_QUIET, NULL);
 		rz_cons_printf("diff: type: %s",
 			fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_MATCH ? "match" : fcn->diff->type == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? "unmatch"
 																    : "new");
@@ -3988,12 +3988,12 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 		break;
 	case 'm': // "aflm"
 	{
-		char mode = 'm';
+		RzOutputMode mode = 'm';
 		if (rad[1] != 0) {
 			if (rad[1] == 'j') { // "aflmj"
-				mode = 'j';
+				mode = RZ_OUTPUT_MODE_JSON;
 			} else if (rad[1] == 'q') { // "aflmq"
-				mode = 'q';
+				mode = RZ_OUTPUT_MODE_QUIET;
 			}
 		}
 		fcn_print_makestyle(core, fcns, mode);

@@ -16,7 +16,7 @@ struct RZ_PDB7_ROOT_STREAM;
 typedef struct rz_pdb_t {
 	bool (*pdb_parse)(struct rz_pdb_t *pdb);
 	void (*finish_pdb_parse)(struct rz_pdb_t *pdb);
-	void (*print_types)(const struct rz_pdb_t *pdb, PJ *pj, int mode);
+	void (*print_types)(const struct rz_pdb_t *pdb, PJ *pj, RzOutputMode mode);
 	//	FILE *fp;
 	PrintfCallback cb_printf;
 	struct RZ_PDB7_ROOT_STREAM *root_stream;

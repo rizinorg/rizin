@@ -745,7 +745,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 	case 'j': // "tj"
 	case '*': // "t*"
 	case 0: // "t"
-		types_list(core, input[0]);
+		types_list(core, RZ_OUTPUT_MODE_QUIET);
 		break;
 	case 'o': // "to"
 		if (input[1] == '?') {

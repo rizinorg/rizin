@@ -323,10 +323,10 @@ static void cmd_cmp_watcher(RzCore *core, const char *input) {
 		rz_core_cmpwatch_update(core, addr);
 		break;
 	case '*':
-		rz_core_cmpwatch_show(core, UT64_MAX, '*');
+		rz_core_cmpwatch_show(core, UT64_MAX, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case '\0':
-		rz_core_cmpwatch_show(core, UT64_MAX, 0);
+		rz_core_cmpwatch_show(core, UT64_MAX, RZ_OUTPUT_MODE_QUIET);
 		break;
 	case '?': {
 		const char *help_message[] = {
@@ -521,7 +521,8 @@ static void __core_cmp_bits(RzCore *core, ut64 addr) {
 
 RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
-	int ret = 0, i, mode = 0;
+	int ret = 0, i;
+	RzOutputMode mode = RZ_OUTPUT_MODE_QUIET;
 	RzCore *core = (RzCore *)data;
 	ut64 val = UT64_MAX;
 	char *filled;
@@ -563,12 +564,12 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		}
 
 		val = rizin_compare(core, block, (ut8 *)input + 2,
-			strlen(input + 2) + 1, '*');
+			strlen(input + 2) + 1, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case ' ': {
 		char *str = strdup(input + 1);
 		int len = rz_str_unescape(str);
-		val = rizin_compare(core, block, (ut8 *)str, len, 0);
+		val = rizin_compare(core, block, (ut8 *)str, len, RZ_OUTPUT_MODE_QUIET);
 		free(str);
 	} break;
 	case 'j': {
@@ -577,14 +578,14 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		} else {
 			char *str = strdup(input + 2);
 			int len = rz_str_unescape(str);
-			val = rizin_compare(core, block, (ut8 *)str, len, 'j');
+			val = rizin_compare(core, block, (ut8 *)str, len, RZ_OUTPUT_MODE_JSON);
 			free(str);
 		}
 	} break;
 	case 'x':
 		switch (input[1]) {
 		case ' ':
-			mode = 0;
+			mode = RZ_OUTPUT_MODE_QUIET;
 			input += 2;
 			break;
 		case '*':
@@ -592,7 +593,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 				eprintf("Usage: cx* 00..22'\n");
 				return 0;
 			}
-			mode = '*';
+			mode = RZ_OUTPUT_MODE_RIZIN;
 			input += 3;
 			break;
 		default:
@@ -649,7 +650,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 			if (fread(buf, 1, core->blocksize, fd) < 1) {
 				eprintf("Cannot read file %s\n", input + 2);
 			} else {
-				val = rizin_compare(core, block, buf, core->blocksize, 0);
+				val = rizin_compare(core, block, buf, core->blocksize, RZ_OUTPUT_MODE_QUIET);
 			}
 			fclose(fd);
 			free(buf);
@@ -710,15 +711,15 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		break;
 	case '2': // "c2"
 		v16 = (ut16)rz_num_math(core->num, input + 1);
-		val = rizin_compare(core, block, (ut8 *)&v16, sizeof(v16), 0);
+		val = rizin_compare(core, block, (ut8 *)&v16, sizeof(v16), RZ_OUTPUT_MODE_QUIET);
 		break;
 	case '4': // "c4"
 		v32 = (ut32)rz_num_math(core->num, input + 1);
-		val = rizin_compare(core, block, (ut8 *)&v32, sizeof(v32), 0);
+		val = rizin_compare(core, block, (ut8 *)&v32, sizeof(v32), RZ_OUTPUT_MODE_QUIET);
 		break;
 	case '8': // "c8"
 		v64 = (ut64)rz_num_math(core->num, input + 1);
-		val = rizin_compare(core, block, (ut8 *)&v64, sizeof(v64), 0);
+		val = rizin_compare(core, block, (ut8 *)&v64, sizeof(v64), RZ_OUTPUT_MODE_QUIET);
 		break;
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"

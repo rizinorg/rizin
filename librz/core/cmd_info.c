@@ -353,7 +353,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 	int fd = rz_io_fd_get_current(core->io);
 	RzIODesc *desc = rz_io_desc_get(core->io, fd);
 	int i, va = core->io->va || core->bin->is_debugger;
-	int mode = 0; //RZ_MODE_SIMPLE;
+	RzOutputMode mode = RZ_OUTPUT_MODE_QUIET; //RZ_MODE_SIMPLE;
 	bool rdump = false;
 	int is_array = 0;
 	bool is_izzzj = false;
@@ -365,9 +365,9 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 		;
 	if (i > 0) {
 		switch (input[i - 1]) {
-		case '*': mode = RZ_MODE_RIZINCMD; break;
-		case 'j': mode = RZ_MODE_JSON; break;
-		case 'q': mode = RZ_MODE_SIMPLE; break;
+		case '*': mode = RZ_OUTPUT_MODE_RIZIN; break;
+		case 'j': mode = RZ_OUTPUT_MODE_JSON; break;
+		case 'q': mode = RZ_OUTPUT_MODE_QUIET; break;
 		}
 	}
 #define INIT_PJ() \
@@ -377,7 +377,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			return 1; \
 		} \
 	}
-	if (mode == RZ_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		INIT_PJ();
 		int suffix_shift = 0;
 		if (!strncmp(input, "SS", 2) || !strncmp(input, "ee", 2) || !strncmp(input, "zz", 2)) {
@@ -458,7 +458,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				}
 				break;
 			case '*':
-				rz_core_bin_export_info(core, RZ_MODE_RIZINCMD);
+				rz_core_bin_export_info(core, RZ_OUTPUT_MODE_RIZIN);
 				break;
 			case '.':
 			case ' ':
@@ -504,7 +504,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 		case 'A': // "iA"
 			if (input[1] == 'j') {
 				pj_o(pj);
-				rz_bin_list_archs(core->bin, pj, 'j');
+				rz_bin_list_archs(core->bin, pj, RZ_OUTPUT_MODE_JSON);
 				pj_end(pj);
 			} else {
 				rz_bin_list_archs(core->bin, NULL, 1);
@@ -514,7 +514,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 		case 'E': // "iE"
 		{
 			if (input[1] == 'j' && input[2] == '.') {
-				mode = RZ_MODE_JSON;
+				mode = RZ_OUTPUT_MODE_JSON;
 				INIT_PJ();
 				RZBININFO("exports", RZ_CORE_BIN_ACC_EXPORTS, input + 2);
 			} else {
@@ -622,14 +622,14 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				if (input[1] == '=') {
 					mode = RZ_MODE_EQUAL;
 				} else if (input[1] == '*') {
-					mode = RZ_MODE_RIZINCMD;
+					mode = RZ_OUTPUT_MODE_RIZIN;
 				} else if (input[1] == 'q' && input[2] == '.') {
-					mode = RZ_MODE_SIMPLE;
+					mode = RZ_OUTPUT_MODE_QUIET;
 				} else if (input[1] == 'j' && input[2] == '.') {
-					mode = RZ_MODE_JSON;
+					mode = RZ_OUTPUT_MODE_JSON;
 					INIT_PJ();
 				}
-				if (mode == RZ_MODE_RIZINCMD || mode == RZ_MODE_JSON || mode == RZ_MODE_SIMPLE) {
+				if (mode == RZ_OUTPUT_MODE_RIZIN || mode == RZ_OUTPUT_MODE_JSON || mode == RZ_OUTPUT_MODE_QUIET) {
 					if (input[param_shift + 1]) {
 						param_shift++;
 					}
@@ -674,14 +674,14 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 		case 's': { // "is"
 			// Case for isj.
 			if (input[1] == 'j' && input[2] == '.') {
-				mode = RZ_MODE_JSON;
+				mode = RZ_OUTPUT_MODE_JSON;
 				INIT_PJ();
 				RZBININFO("symbols", RZ_CORE_BIN_ACC_SYMBOLS, input + 2);
 			} else if (input[1] == 'q' && input[2] == 'q') {
 				mode = RZ_MODE_SIMPLEST;
 				RZBININFO("symbols", RZ_CORE_BIN_ACC_SYMBOLS, input + 1);
 			} else if (input[1] == 'q' && input[2] == '.') {
-				mode = RZ_MODE_SIMPLE;
+				mode = RZ_OUTPUT_MODE_QUIET;
 				RZBININFO("symbols", RZ_CORE_BIN_ACC_SYMBOLS, input + 2);
 			} else {
 				RZBININFO("symbols", RZ_CORE_BIN_ACC_SYMBOLS, input + 1);
@@ -873,10 +873,10 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 					rdump = true;
 					break;
 				case '*':
-					mode = RZ_MODE_RIZINCMD;
+					mode = RZ_OUTPUT_MODE_RIZIN;
 					break;
 				case 'j':
-					mode = RZ_MODE_JSON;
+					mode = RZ_OUTPUT_MODE_JSON;
 					INIT_PJ();
 					break;
 				case 'q': //izzq
@@ -884,7 +884,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 						mode = RZ_MODE_SIMPLEST;
 						input++;
 					} else {
-						mode = RZ_MODE_SIMPLE;
+						mode = RZ_OUTPUT_MODE_QUIET;
 					}
 					break;
 				default:
@@ -906,7 +906,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				if (input[1] == 'q') {
 					mode = (input[2] == 'q')
 						? RZ_MODE_SIMPLEST
-						: RZ_MODE_SIMPLE;
+						: RZ_OUTPUT_MODE_QUIET;
 					input++;
 				}
 				RZBININFO("strings", RZ_CORE_BIN_ACC_STRINGS, NULL);
@@ -1077,9 +1077,9 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a': // "ia"
 			switch (mode) {
-			case RZ_MODE_RIZINCMD: rz_cmd_info(core, "IieEcsSmz*"); break;
-			case RZ_MODE_JSON: rz_cmd_info(core, "IieEcsSmzj"); break;
-			case RZ_MODE_SIMPLE: rz_cmd_info(core, "IieEcsSmzq"); break;
+			case RZ_OUTPUT_MODE_RIZIN: rz_cmd_info(core, "IieEcsSmz*"); break;
+			case RZ_OUTPUT_MODE_JSON: rz_cmd_info(core, "IieEcsSmzj"); break;
+			case RZ_OUTPUT_MODE_QUIET: rz_cmd_info(core, "IieEcsSmzq"); break;
 			default: rz_cmd_info(core, "IiEecsSmz"); break;
 			}
 			break;
@@ -1087,15 +1087,15 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_i);
 			goto redone;
 		case '*': // "i*"
-			if (mode == RZ_MODE_RIZINCMD) {
+			if (mode == RZ_OUTPUT_MODE_RIZIN) {
 				// TODO:handle ** submodes
-				mode = RZ_MODE_RIZINCMD;
+				mode = RZ_OUTPUT_MODE_RIZIN;
 			} else {
-				mode = RZ_MODE_RIZINCMD;
+				mode = RZ_OUTPUT_MODE_RIZIN;
 			}
 			goto done;
 		case 'q': // "iq"
-			mode = RZ_MODE_SIMPLE;
+			mode = RZ_OUTPUT_MODE_QUIET;
 			cmd_info_bin(core, va, pj, mode);
 			goto done;
 		case 'j': // "ij"

@@ -1104,11 +1104,11 @@ static int var_cmd(RzCore *core, const char *str) {
 		}
 		pj_o(pj);
 		pj_k(pj, "sp");
-		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, RZ_OUTPUT_MODE_JSON, pj);
 		pj_k(pj, "bp");
-		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, RZ_OUTPUT_MODE_JSON, pj);
 		pj_k(pj, "reg");
-		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, RZ_OUTPUT_MODE_JSON, pj);
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
@@ -1250,19 +1250,19 @@ static int var_cmd(RzCore *core, const char *str) {
 	switch (str[1]) { // afv[bsr]
 	case '\0': // "afv"
 	case '*': // "afv[bsr]*"
-		rz_analysis_var_list_show(core->analysis, fcn, type, str[1], NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, type, RZ_OUTPUT_MODE_RIZIN, NULL);
 		break;
 	case 'j': // "afv[bsr]j"
 		pj = rz_core_pj_new(core);
 		if (!pj) {
 			return false;
 		}
-		rz_analysis_var_list_show(core->analysis, fcn, type, str[1], pj);
+		rz_analysis_var_list_show(core->analysis, fcn, type, RZ_OUTPUT_MODE_JSON, pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 		break;
 	case '.': // "afv[bsr]."
-		rz_analysis_var_list_show(core->analysis, fcn, core->offset, 0, NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, core->offset, RZ_OUTPUT_MODE_QUIET, NULL);
 		break;
 	case '-': // "afv[bsr]-"
 		if (!fcn) {
@@ -3336,14 +3336,14 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 		switch (input[1]) {
 		case 's': // "afns"
 			if (input[2] == 'j') { // "afnsj"
-				free(rz_core_analysis_fcn_autoname(core, core->offset, 1, input[2]));
+				free(rz_core_analysis_fcn_autoname(core, core->offset, 1, RZ_OUTPUT_MODE_JSON));
 			} else {
-				free(rz_core_analysis_fcn_autoname(core, core->offset, 1, 0));
+				free(rz_core_analysis_fcn_autoname(core, core->offset, 1, RZ_OUTPUT_MODE_QUIET));
 			}
 			break;
 		case 'a': // "afna"
 		{
-			char *name = rz_core_analysis_fcn_autoname(core, core->offset, 0, 0);
+			char *name = rz_core_analysis_fcn_autoname(core, core->offset, 0, RZ_OUTPUT_MODE_QUIET);
 			if (name) {
 				rz_cons_printf("afn %s 0x%08" PFMT64x "\n", name, core->offset);
 				free(name);
@@ -3712,10 +3712,10 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 	case 'r': // "arr"
 		switch (str[1]) {
 		case 'j': // "arrj"
-			rz_core_debug_rr(core, core->analysis->reg, 'j');
+			rz_core_debug_rr(core, core->analysis->reg, RZ_OUTPUT_MODE_JSON);
 			break;
 		default:
-			rz_core_debug_rr(core, core->analysis->reg, 0);
+			rz_core_debug_rr(core, core->analysis->reg, RZ_OUTPUT_MODE_QUIET);
 			break;
 		}
 		break;
@@ -3842,7 +3842,7 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 		break;
 	case 'o': // "aro"
 		rz_reg_arena_swap(core->dbg->reg, false);
-		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, NULL, 0, use_color); // XXX detect which one is current usage
+		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, NULL, RZ_OUTPUT_MODE_QUIET, use_color); // XXX detect which one is current usage
 		rz_reg_arena_swap(core->dbg->reg, false);
 		break;
 	case '=': // "ar="
@@ -5622,7 +5622,7 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 		}
 		break;
 	case '*': // "ao*"
-		rz_core_analysis_hint_list(core->analysis, input[0]);
+		rz_core_analysis_hint_list(core->analysis, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case 0: // "ao"
 	case ' ': { // "ao "
@@ -6339,7 +6339,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 	case 'j': // "axj"
 	case 'q': // "axq"
 	case '*': // "ax*"
-		rz_analysis_xrefs_list(core->analysis, input[0]);
+		rz_analysis_xrefs_list(core->analysis, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case '.': { // "ax."
 		char *tInput = strdup(input);
@@ -6692,7 +6692,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 	case '?': // "ah?"
 		if (input[1]) {
 			ut64 addr = rz_num_math(core->num, input + 1);
-			rz_core_analysis_hint_print(core->analysis, addr, 0);
+			rz_core_analysis_hint_print(core->analysis, addr, RZ_OUTPUT_MODE_QUIET);
 		} else {
 			rz_core_cmd_help(core, help_msg_ah);
 		}
@@ -7756,7 +7756,7 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 			if (!list) {
 				return 0;
 			}
-			if (rad == 'j') {
+			if (rad == RZ_OUTPUT_MODE_JSON) {
 				pj_o(pj);
 			}
 			rz_list_foreach (list, iter, map) {
@@ -7770,17 +7770,17 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 				} else if (to - from > UT32_MAX) {
 					eprintf("Skipping huge range\n");
 				} else {
-					if (rad == 'j') {
+					if (rad == RZ_OUTPUT_MODE_JSON) {
 						pj_ki(pj, "mapid", map->id);
 						pj_ko(pj, "refs");
 					}
 					rz_core_analysis_search_xrefs(core, from, to, pj, rad);
-					if (rad == 'j') {
+					if (rad == RZ_OUTPUT_MODE_JSON) {
 						pj_end(pj);
 					}
 				}
 			}
-			if (rad == 'j') {
+			if (rad == RZ_OUTPUT_MODE_JSON) {
 				pj_end(pj);
 				rz_cons_println(pj_string(pj));
 				pj_free(pj);
@@ -7806,11 +7806,11 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 	if (to - from > rz_io_size(core->io)) {
 		return false;
 	}
-	if (rad == 'j') {
+	if (rad == RZ_OUTPUT_MODE_JSON) {
 		pj_o(pj);
 	}
 	bool res = rz_core_analysis_search_xrefs(core, from, to, pj, rad);
-	if (rad == 'j') {
+	if (rad == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
@@ -8296,10 +8296,38 @@ static void cmd_analysis_rtti(RzCore *core, const char *input) {
 	switch (input[0]) {
 	case '\0': // "avr"
 	case 'j': // "avrj"
-		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, input[0]);
+		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, RZ_OUTPUT_MODE_JSON);
 		break;
 	case 'a': // "avra"
-		rz_analysis_rtti_print_all(core->analysis, input[1]);
+		RzOutputMode mode = RZ_OUTPUT_MODE_STANDARD;
+		switch(input[1]){
+		case 'j':
+			mode = RZ_OUTPUT_MODE_JSON;
+			break;
+		case '*':
+		case 'r':
+			mode = RZ_OUTPUT_MODE_RIZIN;
+			break;
+		case 'q':
+			mode = RZ_OUTPUT_MODE_QUIET;
+			break;
+		case 'k':
+			mode = RZ_OUTPUT_MODE_SDB;
+			break;
+		case 'l':
+			mode = RZ_OUTPUT_MODE_LONG;
+			break;
+		case 'J':
+			mode = RZ_OUTPUT_MODE_LONG_JSON;
+			break;
+		case 't':
+			mode = RZ_OUTPUT_MODE_TABLE;
+			break;
+		default:
+			rz_warn_if_reached();
+			mode = input[1];
+		}
+		rz_analysis_rtti_print_all(core->analysis, mode);
 		break;
 	case 'r': // "avrr"
 		rz_analysis_rtti_recover_all(core->analysis);
@@ -8325,7 +8353,7 @@ static void cmd_analysis_virtual_functions(RzCore *core, const char *input) {
 	case '\0': // "av"
 	case '*': // "av*"
 	case 'j': // "avj"
-		rz_analysis_list_vtables(core->analysis, input[0]);
+		rz_analysis_list_vtables(core->analysis, RZ_OUTPUT_MODE_JSON);
 		break;
 	case 'r': // "avr"
 		cmd_analysis_rtti(core, input + 1);
@@ -8627,7 +8655,33 @@ static void cmd_analysis_classes(RzCore *core, const char *input) {
 				break;
 			}
 		}
-		rz_analysis_class_list(core->analysis, input[1]);
+		switch(input[1]){
+		case 'j':
+			rz_analysis_class_list(core->analysis, RZ_OUTPUT_MODE_JSON);
+			break;
+		case '*':
+		case 'r':
+			rz_analysis_class_list(core->analysis, RZ_OUTPUT_MODE_RIZIN);
+			break;
+		case 'q':
+			rz_analysis_class_list(core->analysis, RZ_OUTPUT_MODE_QUIET);
+			break;
+		case 'k':
+			rz_analysis_class_list(core->analysis, RZ_OUTPUT_MODE_SDB);
+			break;
+		case 'l':
+			rz_analysis_class_list(core->analysis, RZ_OUTPUT_MODE_LONG);
+			break;
+		case 'J':
+			rz_analysis_class_list(core->analysis, RZ_OUTPUT_MODE_LONG_JSON);
+			break;
+		case 't':
+			rz_analysis_class_list(core->analysis, RZ_OUTPUT_MODE_TABLE);
+			break;
+		default:
+			rz_warn_if_reached();
+			rz_analysis_class_list(core->analysis, input[1]);
+		}
 		break;
 	case ' ': // "ac"
 	case '-': // "ac-"
@@ -8999,8 +9053,8 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		break;
 	case '*': // "a*"
 		rz_core_analysis_fcn_list(core, NULL, "*");
-		rz_core_analysis_hint_list(core->analysis, '*');
-		rz_analysis_xrefs_list(core->analysis, '*');
+		rz_core_analysis_hint_list(core->analysis, RZ_OUTPUT_MODE_RIZIN);
+		rz_analysis_xrefs_list(core->analysis, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case 'a': // "aa"
 		if (!cmd_analysis_all(core, input + 1)) {
@@ -9420,11 +9474,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 		}
 		pj_o(pj);
 		pj_k(pj, "sp");
-		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV, RZ_OUTPUT_MODE_JSON, pj);
 		pj_k(pj, "bp");
-		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV, RZ_OUTPUT_MODE_JSON, pj);
 		pj_k(pj, "reg");
-		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, 'j', pj);
+		rz_analysis_var_list_show(core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG, RZ_OUTPUT_MODE_JSON, pj);
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);

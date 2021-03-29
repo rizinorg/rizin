@@ -4232,7 +4232,7 @@ static int bin_header(RzCore *r, int mode) {
 	return false;
 }
 
-RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, RzCoreBinFilter *filter, const char *chksum) {
+RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, RzOutputMode mode, int va, RzCoreBinFilter *filter, const char *chksum) {
 	RzBinFile *binfile = rz_bin_cur(core->bin);
 	int ret = true;
 	const char *name = NULL;

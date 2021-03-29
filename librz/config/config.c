@@ -688,7 +688,7 @@ static void __evalString(RzConfig *cfg, char *name) {
 		}
 	} else {
 		if (rz_str_endswith(name, ".")) {
-			rz_config_list(cfg, name, 0);
+			rz_config_list(cfg, name, RZ_OUTPUT_MODE_QUIET);
 		} else {
 			const char *v = rz_config_get(cfg, name);
 			if (v) {
@@ -706,7 +706,7 @@ RZ_API bool rz_config_eval(RzConfig *cfg, const char *str, bool many) {
 	char *s = rz_str_trim_dup(str);
 
 	if (!*s || !strcmp(s, "help")) {
-		rz_config_list(cfg, NULL, 0);
+		rz_config_list(cfg, NULL, RZ_OUTPUT_MODE_QUIET);
 		free(s);
 		return false;
 	}

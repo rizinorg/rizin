@@ -1411,7 +1411,7 @@ static int rz_debug_heap(RzCore *core, const char *input) {
 	return true;
 }
 
-static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, int mode, bool symbols_only, RzCoreBinFilter *filter) {
+static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, RzOutputMode mode, bool symbols_only, RzCoreBinFilter *filter) {
 	int fd;
 	if ((fd = rz_io_fd_open(core->io, file, RZ_PERM_R, 0)) == -1) {
 		return false;
@@ -1451,8 +1451,36 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 	case 'm': // "dmm"
 		if (!strcmp(input + 1, ".*")) {
 			cmd_debug_modules(core, ':');
-		} else
-			cmd_debug_modules(core, input[1]);
+		} else{
+			RzOutputMode mode;
+			switch(input[1]){
+			case 'j':
+				mode = RZ_OUTPUT_MODE_JSON;
+				break;
+			case '*':
+			case 'r':
+				mode = RZ_OUTPUT_MODE_RIZIN;
+				break;
+			case 'q':
+				mode = RZ_OUTPUT_MODE_QUIET;
+				break;
+			case 'k':
+				mode = RZ_OUTPUT_MODE_SDB;
+				break;
+			case 'l':
+				mode = RZ_OUTPUT_MODE_LONG;
+				break;
+			case 'J':
+				mode = RZ_OUTPUT_MODE_LONG_JSON;
+				break;
+			case 't':
+				mode = RZ_OUTPUT_MODE_TABLE;
+				break;
+			default:
+				rz_warn_if_reached();
+				mode = input[1];
+			}
+			cmd_debug_modules(core, mode);
 		break;
 	case '?': // "dm?"
 		rz_core_cmd_help(core, help_msg_dm);
@@ -1551,7 +1579,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		case 'a': // "dmia"
 		{
 			const char *libname = NULL, *symname = NULL, *a0;
-			int mode;
+			RzOutputMode mode;
 			ut64 baddr = 0LL;
 			char *ptr;
 			int i = 1;
@@ -1566,17 +1594,17 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 				mode = RZ_MODE_SET;
 				break;
 			case '*':
-				mode = RZ_MODE_RIZINCMD;
+				mode = RZ_OUTPUT_MODE_RIZIN;
 				break;
 			case 'j':
-				mode = RZ_MODE_JSON;
+				mode = RZ_OUTPUT_MODE_JSON;
 				pj = rz_core_pj_new(core);
 				if (!pj) {
 					return false;
 				}
 				break;
 			case 'q':
-				mode = input[2] == 'q' ? input++, RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE;
+				mode = input[2] == 'q' ? input++, RZ_MODE_SIMPLEST : RZ_OUTPUT_MODE_QUIET;
 				break;
 			default:
 				mode = RZ_MODE_PRINT;
@@ -1640,7 +1668,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 					rz_bin_set_baddr(core->bin, baddr);
 				}
 			}
-			if (mode == RZ_MODE_JSON) {
+			if (mode == RZ_OUTPUT_MODE_JSON) {
 				rz_cons_println(pj_string(pj));
 				pj_free(pj);
 			}
@@ -2606,10 +2634,10 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 		} else { // drm # no arg
 			if (str[1] == 'y') { // drmy
 				rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_YMM, false);
-				rz_core_debug_reg_list(core, RZ_REG_TYPE_YMM, 256, NULL, 0, 0);
+				rz_core_debug_reg_list(core, RZ_REG_TYPE_YMM, 256, NULL, RZ_OUTPUT_MODE_QUIET, 0);
 			} else { // drm
 				rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_XMM, false);
-				rz_core_debug_reg_list(core, RZ_REG_TYPE_XMM, 128, NULL, 0, 0);
+				rz_core_debug_reg_list(core, RZ_REG_TYPE_XMM, 128, NULL, RZ_OUTPUT_MODE_QUIET, 0);
 			}
 		}
 		//rz_debug_drx_list (core->dbg);
@@ -2662,7 +2690,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 		cmd_reg_profile(core, 'd', str);
 		break;
 	case 't': { // "drt"
-		char rad = 0;
+		RzOutputMode rad = RZ_OUTPUT_MODE_QUIET;
 		switch (str[1]) {
 		case '\0': // "drt"
 			for (i = 0; (name = rz_reg_get_type(i)); i++) {
@@ -2671,9 +2699,35 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			break;
 		case 'j': // "drtj"
 		case '*': // "drt*"
-			rad = str[1];
+			switch(str[1]){
+			case 'j':
+				rad = RZ_OUTPUT_MODE_JSON;
+				break;
+			case '*':
+			case 'r':
+				rad = RZ_OUTPUT_MODE_RIZIN;
+				break;
+			case 'q':
+				rad = RZ_OUTPUT_MODE_QUIET;
+				break;
+			case 'k':
+				rad = RZ_OUTPUT_MODE_SDB;
+				break;
+			case 'l':
+				rad = RZ_OUTPUT_MODE_LONG;
+				break;
+			case 'J':
+				rad = RZ_OUTPUT_MODE_LONG_JSON;
+				break;
+			case 't':
+				rad = RZ_OUTPUT_MODE_TABLE;
+				break;
+			default:
+				rz_warn_if_reached();
+				rad = str[1];
+			}
 			str++;
-			if (rad == 'j' && !str[1]) {
+			if (rad == RZ_OUTPUT_MODE_JSON && !str[1]) {
 				PJ *pj = rz_core_pj_new(core);
 				if (!pj) {
 					break;
@@ -2738,7 +2792,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 		break;
 	case 'o': // "dro"
 		rz_reg_arena_swap(core->dbg->reg, false);
-		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, NULL, 0, use_color); // xxx detect which one is current usage
+		rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, bits, NULL, RZ_OUTPUT_MODE_QUIET, use_color); // xxx detect which one is current usage
 		rz_reg_arena_swap(core->dbg->reg, false);
 		break;
 	case ',': // "dr,"
@@ -2782,9 +2836,9 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 	case '*': // "dr*"
 		if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
 			int pcbits2, pcbits = grab_bits(core, str + 1, &pcbits2);
-			rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, NULL, '*', use_color);
+			rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, NULL, RZ_OUTPUT_MODE_RIZIN, use_color);
 			if (pcbits2) {
-				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits2, NULL, '*', use_color);
+				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits2, NULL, RZ_OUTPUT_MODE_RIZIN, use_color);
 			}
 			rz_flag_space_pop(core->flags);
 		}
@@ -2795,10 +2849,10 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 	case 'r': // "drr"
 		switch (str[1]) {
 		case 'j': // "drrj"
-			rz_core_debug_rr(core, core->dbg->reg, 'j');
+			rz_core_debug_rr(core, core->dbg->reg, RZ_OUTPUT_MODE_JSON);
 			break;
 		default:
-			rz_core_debug_rr(core, core->dbg->reg, 0);
+			rz_core_debug_rr(core, core->dbg->reg, RZ_OUTPUT_MODE_QUIET);
 			break;
 		}
 		break;
@@ -2818,9 +2872,9 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 				if (!pj) {
 					return;
 				}
-				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, pj, 'j', use_color);
+				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, pj, RZ_OUTPUT_MODE_JSON, use_color);
 			} else {
-				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, NULL, 0, use_color);
+				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, NULL, RZ_OUTPUT_MODE_QUIET, use_color);
 			}
 		} else {
 			eprintf("cannot retrieve registers from pid %d\n", core->dbg->pid);
@@ -3458,9 +3512,9 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 			free(string);
 		}
 		break;
-	case 'j': rz_bp_list(core->dbg->bp, 'j'); break;
+	case 'j': rz_bp_list(core->dbg->bp, RZ_OUTPUT_MODE_JSON); break;
 	case '*': rz_bp_list(core->dbg->bp, 1); break;
-	case '\0': rz_bp_list(core->dbg->bp, 0); break;
+	case '\0': rz_bp_list(core->dbg->bp, RZ_OUTPUT_MODE_QUIET); break;
 	case '-': // "db-"
 		if (input[2] == '*') {
 			rz_bp_del_all(core->dbg->bp);

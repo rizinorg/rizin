@@ -1474,10 +1474,10 @@ RZ_IPI RzCmdStatus rz_zign_space_select_handler(RzCore *core, int argc, const ch
 			spaces_list(&core->analysis->zign_spaces, '\0');
 			break;
 		case RZ_OUTPUT_MODE_JSON:
-			spaces_list(&core->analysis->zign_spaces, 'j');
+			spaces_list(&core->analysis->zign_spaces, RZ_OUTPUT_MODE_JSON);
 			break;
 		case RZ_OUTPUT_MODE_RIZIN:
-			spaces_list(&core->analysis->zign_spaces, '*');
+			spaces_list(&core->analysis->zign_spaces, RZ_OUTPUT_MODE_RIZIN);
 			break;
 		default:
 			return RZ_CMD_STATUS_ERROR;

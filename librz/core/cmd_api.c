@@ -260,7 +260,7 @@ static RzOutputMode suffix2mode(const char *suffix) {
 			return argv_modes[i].mode;
 		}
 	}
-	return 0;
+	return RZ_OUTPUT_MODE_QUIET;
 }
 
 static bool is_valid_argv_modes(RzCmdDesc *cd, char last_letter) {

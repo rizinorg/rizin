@@ -182,7 +182,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 	case 'q': // "obj"
 	case 'j': // "obj"
 	case '*': // "ob*"
-		rz_core_bin_list(core, input[1]);
+		rz_core_bin_list(core, RZ_OUTPUT_MODE_RIZIN);
 		if (input[1] == 'j') {
 			rz_cons_newline();
 		}
@@ -704,7 +704,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 		} else {
 			int fd = rz_io_fd_get_current(core->io);
 			if (rz_io_desc_get(core->io, fd)) {
-				map_list(core->io, 0, core->print, fd);
+				map_list(core->io, RZ_OUTPUT_MODE_QUIET, core->print, fd);
 			} else {
 				eprintf("Invalid fd %d\n", (int)fd);
 			}
@@ -827,9 +827,9 @@ static void cmd_open_map(RzCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] && input[2] == 'q') { // "omqq"
-				map_list(core->io, input[1], core->print, -2);
+				map_list(core->io, RZ_OUTPUT_MODE_QUIET, core->print, -2);
 			} else {
-				map_list(core->io, input[1], core->print, -1);
+				map_list(core->io, RZ_OUTPUT_MODE_QUIET, core->print, -1);
 			}
 		}
 		break;
@@ -1192,7 +1192,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			case ' ': {
 				int fd = rz_num_math(core->num, input + 1);
 				if (fd >= 0 || input[1] == '0') {
-					cmd_op(core, 0, fd);
+					cmd_op(core, RZ_OUTPUT_MODE_QUIET, fd);
 				} else {
 					eprintf("Invalid fd number\n");
 				}
@@ -1287,7 +1287,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			rz_core_cmd_help(core, help_msg_o_star);
 			break;
 		}
-		rz_core_file_list(core, (int)(*input));
+		rz_core_file_list(core, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case 'j': // "oj"
 		if ('?' == input[1]) {
@@ -1347,7 +1347,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		case 'j': // "oij"
 		case '*': // "oi*"
 		case 0: // "oi"
-			rz_core_file_list(core, input[1]);
+			rz_core_file_list(core, RZ_OUTPUT_MODE_QUIET);
 			break;
 		}
 		break;

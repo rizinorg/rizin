@@ -2363,7 +2363,7 @@ static const char *colorfor_cb(void *user, ut64 addr, bool verbose) {
 	return rz_core_analysis_optype_colorfor((RzCore *)user, addr, verbose);
 }
 
-static char *hasrefs_cb(void *user, ut64 addr, int mode) {
+static char *hasrefs_cb(void *user, ut64 addr, RzOutputMode mode) {
 	return rz_core_analysis_hasrefs((RzCore *)user, addr, mode);
 }
 

@@ -1128,9 +1128,9 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	// List fatmach0 sub-binaries, etc
 	if (action & RZ_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) && !rz_bin_select(bin, arch, bits, arch_name))) {
 		if (rad == RZ_MODE_SIMPLEST || rad == RZ_MODE_SIMPLE) {
-			rz_bin_list_archs(bin, pj, 'q');
+			rz_bin_list_archs(bin, pj, RZ_OUTPUT_MODE_QUIET);
 		} else {
-			rz_bin_list_archs(bin, pj, (rad == RZ_MODE_JSON) ? 'j' : 1);
+			rz_bin_list_archs(bin, pj, (rad == RZ_MODE_JSON) ? RZ_OUTPUT_MODE_JSON : 1);
 		}
 		free(arch_name);
 	}
