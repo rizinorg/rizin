@@ -7,7 +7,7 @@
 
 static bool test_rzpipe(void) {
 #ifndef __WINDOWS__
-	RzPipe *r = rzpipe_open("rizin -q0 -");
+	RzPipe *r = rzpipe_open("rizin -q0 -Pm");
 	mu_assert("rzpipe can spawn", r);
 	char *hello = rzpipe_cmd(r, "?e hello world");
 	mu_assert_streq(hello, "hello world\n", "rzpipe hello world");
