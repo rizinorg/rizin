@@ -32,8 +32,9 @@ def main():
     output_dir = os.path.abspath(output_dir)
     tree_sitter_exe = os.path.abspath(tree_sitter_exe)
 
-    os.chdir(output_dir)
-    subprocess.run([tree_sitter_exe, "generate", grammar_js], check=True)
+    subprocess.run(
+        [tree_sitter_exe, "generate", grammar_js], check=True, cwd=output_dir
+    )
 
 
 if __name__ == "__main__":
