@@ -280,12 +280,12 @@ RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set) {
 }
 
 // TODO: deprecate
-RZ_API int rz_bp_list(RzBreakpoint *bp, RzOutputMode rad) {
+RZ_API int rz_bp_list(RzBreakpoint *bp, RzOutputMode mode) {
 	int n = 0;
 	RzBreakpointItem *b;
 	RzListIter *iter;
 	PJ *pj = NULL;
-	if (rad == RZ_OUTPUT_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return 0;
@@ -306,7 +306,7 @@ RZ_API int rz_bp_list(RzBreakpoint *bp, RzOutputMode rad) {
 			pj_ks(pj, "data", rz_str_get(b->data));
 			pj_ks(pj, "cond", rz_str_get(b->cond));
 			pj_end(pj);
-		} else if (rad) {
+		} else if (mode) {
 			if (b->module_name) {
 				bp->cb_printf("dbm %s %" PFMT64d "\n", b->module_name, b->module_delta);
 			} else {

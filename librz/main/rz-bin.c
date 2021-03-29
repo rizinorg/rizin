@@ -328,7 +328,7 @@ static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, 
 	return true;
 }
 
-static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *output, const char *file) {
+static int rabin_do_operation(RzBin *bin, const char *op, RzOutputMode mode, const char *output, const char *file) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 	bool rc = true;
 
@@ -420,7 +420,7 @@ static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 			}
 		}
 		if (plg && plg->signature) {
-			char *sign = plg->signature(cur, rad == RZ_MODE_JSON);
+			char *sign = plg->signature(cur, mode == RZ_OUTPUT_MODE_JSON);
 			if (sign) {
 				rz_cons_println(sign);
 				rz_cons_flush();

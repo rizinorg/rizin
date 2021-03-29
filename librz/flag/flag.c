@@ -371,12 +371,12 @@ static bool print_flag_orig_name(RzFlagItem *flag, void *user) {
 }
 
 /* print with rz_cons the flag items in the flag f, given as a parameter */
-RZ_API void rz_flag_list(RzFlag *f, RzOutputMode rad, const char *pfx) {
+RZ_API void rz_flag_list(RzFlag *f, RzOutputMode mode, const char *pfx) {
 	rz_return_if_fail(f);
 	bool in_range = false;
 	ut64 range_from = UT64_MAX;
 	ut64 range_to = UT64_MAX;
-	if (rad == 'i') {
+	if (mode == 'i') {
 		char *sp, *arg = strdup(pfx + 1);
 		sp = strchr(arg, ' ');
 		if (sp) {
@@ -390,7 +390,7 @@ RZ_API void rz_flag_list(RzFlag *f, RzOutputMode rad, const char *pfx) {
 		}
 		in_range = true;
 		free(arg);
-		rad = pfx[0];
+		mode = pfx[0];
 		pfx = NULL;
 	}
 
@@ -398,7 +398,7 @@ RZ_API void rz_flag_list(RzFlag *f, RzOutputMode rad, const char *pfx) {
 		pfx = NULL;
 	}
 
-	switch (rad) {
+	switch (mode) {
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_name, f);
 		break;
@@ -439,7 +439,7 @@ RZ_API void rz_flag_list(RzFlag *f, RzOutputMode rad, const char *pfx) {
 				.in_range = in_range,
 				.range_from = range_from,
 				.range_to = range_to,
-				.real = (rad == 'n')
+				.real = (mode == 'n')
 			};
 			rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_orig_name, &u);
 		} else {

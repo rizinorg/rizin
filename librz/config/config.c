@@ -136,7 +136,7 @@ static void config_print_node(RzConfig *cfg, RzConfigNode *node, const char *pfx
 	}
 }
 
-RZ_API void rz_config_list(RzConfig *cfg, const char *str, RzOutputMode rad) {
+RZ_API void rz_config_list(RzConfig *cfg, const char *str, RzOutputMode mode) {
 	rz_return_if_fail(cfg);
 	RzConfigNode *node;
 	RzListIter *iter;
@@ -154,7 +154,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, RzOutputMode rad) {
 			str++;
 			len--;
 			json = true;
-			rad = RZ_OUTPUT_MODE_LONG_JSON;
+			mode = RZ_OUTPUT_MODE_LONG_JSON;
 		}
 		if (len > 0 && str[0] == ' ') {
 			str++;
@@ -166,7 +166,7 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, RzOutputMode rad) {
 		}
 	}
 
-	switch (rad) {
+	switch (mode) {
 	case 1:
 		pfx = "\"e ";
 		sfx = "\"";

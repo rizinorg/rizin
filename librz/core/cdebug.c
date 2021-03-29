@@ -244,7 +244,7 @@ RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, c
 	return true;
 }
 
-RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, RzOutputMode rad, const char *use_color) {
+RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, RzOutputMode mode, const char *use_color) {
 	RzDebug *dbg = core->dbg;
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
@@ -255,7 +255,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, RzO
 	const RzList *head;
 	ut64 diff;
 	char strvalue[256];
-	bool isJson = (rad == RZ_OUTPUT_MODE_JSON || rad == RZ_OUTPUT_MODE_LONG_JSON);
+	bool isJson = (mode == RZ_OUTPUT_MODE_JSON || mode == RZ_OUTPUT_MODE_LONG_JSON);
 	if (!dbg || !dbg->reg) {
 		return false;
 	}
@@ -296,7 +296,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, RzO
 	if (!head) {
 		return false;
 	}
-	if (rad == 1 || rad == RZ_OUTPUT_MODE_RIZIN) {
+	if (mode == 1 || mode == RZ_OUTPUT_MODE_RIZIN) {
 		dbg->cb_printf("fs+%s\n", RZ_FLAGS_FS_REGISTERS);
 	}
 	rz_list_foreach (head, iter, item) {
@@ -377,7 +377,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, RzO
 		if (isJson) {
 			continue;
 		}
-		switch (rad) {
+		switch (mode) {
 		case '-':
 			rz_cons_printf("f-%s\n", item->name);
 			break;
@@ -441,13 +441,13 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, RzO
 		}
 		n++;
 	}
-	if (rad == 1 || rad == RZ_OUTPUT_MODE_RIZIN) {
+	if (mode == 1 || mode == RZ_OUTPUT_MODE_RIZIN) {
 		dbg->cb_printf("fs-\n");
 	}
 beach:
 	if (isJson) {
 		pj_end(pj);
-	} else if (n > 0 && (rad == 2 || rad == '=') && ((n % cols))) {
+	} else if (n > 0 && (mode == 2 || mode == '=') && ((n % cols))) {
 		rz_cons_printf("\n");
 	}
 	return n != 0;

@@ -237,8 +237,8 @@ RZ_API const char *rz_meta_type_to_string(int type) {
 	return "# unknown meta # ";
 }
 
-RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, RzOutputMode rad, PJ *pj, bool show_full) {
-	rz_return_if_fail(!(rad == RZ_OUTPUT_MODE_JSON && !pj)); // rad == 'j' => pj != NULL
+RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, RzOutputMode mode, PJ *pj, bool show_full) {
+	rz_return_if_fail(!(mode == RZ_OUTPUT_MODE_JSON && !pj)); // mode == 'j' => pj != NULL
 	char *pstr, *base64_str;
 	RzCore *core = a->coreb.core;
 	bool esc_bslash = core ? core->print->esc_bslash : false;
@@ -285,7 +285,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 			pstr = d->str;
 		}
 		//		rz_str_sanitize (str);
-		switch (rad) {
+		switch (mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
 			pj_kn(pj, "offset", start);
@@ -348,7 +348,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				if (!s) {
 					s = strdup(pstr);
 				}
-				if (rad) {
+				if (mode) {
 					if (!strcmp(type, "CCu")) {
 						a->cb_printf("%s base64:%s @ 0x%08" PFMT64x "\n",
 							type, s, start);
@@ -370,7 +370,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				free(s);
 			} break;
 			case RZ_META_TYPE_STRING:
-				if (rad) {
+				if (mode) {
 					char cmd[] = "Cs#";
 					switch (d->subtype) {
 					case 'a':
@@ -402,7 +402,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				break;
 			case RZ_META_TYPE_HIDE:
 			case RZ_META_TYPE_DATA:
-				if (rad) {
+				if (mode) {
 					a->cb_printf("%s %" PFMT64u " @ 0x%08" PFMT64x "\n",
 						rz_meta_type_to_string(d->type),
 						size, start);
@@ -419,7 +419,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				break;
 			case RZ_META_TYPE_MAGIC:
 			case RZ_META_TYPE_FORMAT:
-				if (rad) {
+				if (mode) {
 					a->cb_printf("%s %" PFMT64u " %s @ 0x%08" PFMT64x "\n",
 						rz_meta_type_to_string(d->type),
 						size, pstr, start);
@@ -434,7 +434,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				}
 				break;
 			case RZ_META_TYPE_VARTYPE:
-				if (rad) {
+				if (mode) {
 					a->cb_printf("%s %s @ 0x%08" PFMT64x "\n",
 						rz_meta_type_to_string(d->type), pstr, start);
 				} else {
@@ -450,7 +450,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				// TODO: d->size
 			} break;
 			default:
-				if (rad) {
+				if (mode) {
 					a->cb_printf("%s %" PFMT64u " 0x%08" PFMT64x " # %s\n",
 						rz_meta_type_to_string(d->type),
 						size, start, pstr);
@@ -470,7 +470,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 	}
 }
 
-RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, RzOutputMode rad) {
+RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, RzOutputMode mode) {
 	RzPVector *nodes = collect_nodes_at(a, RZ_META_TYPE_ANY, rz_spaces_current(&a->meta_spaces), addr);
 	if (!nodes) {
 		return;
@@ -478,14 +478,14 @@ RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, RzOutputMode rad) {
 	void **it;
 	rz_pvector_foreach (nodes, it) {
 		RzIntervalNode *node = *it;
-		rz_meta_print(a, node->data, node->start, rz_meta_node_size(node), rad, NULL, true);
+		rz_meta_print(a, node->data, node->start, rz_meta_node_size(node), mode, NULL, true);
 	}
 	rz_pvector_free(nodes);
 }
 
-static void print_meta_list(RzAnalysis *a, int type, RzOutputMode rad, ut64 addr) {
+static void print_meta_list(RzAnalysis *a, int type, RzOutputMode mode, ut64 addr) {
 	PJ *pj = NULL;
-	if (rad == RZ_OUTPUT_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return;
@@ -511,7 +511,7 @@ static void print_meta_list(RzAnalysis *a, int type, RzOutputMode rad, ut64 addr
 		if (fcn && !rz_analysis_function_contains(fcn, node->start)) {
 			continue;
 		}
-		rz_meta_print(a, item, node->start, rz_meta_node_size(node), rad, pj, true);
+		rz_meta_print(a, item, node->start, rz_meta_node_size(node), mode, pj, true);
 	}
 
 beach:
@@ -522,12 +522,12 @@ beach:
 	}
 }
 
-RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, RzOutputMode rad) {
-	print_meta_list(a, type, rad, UT64_MAX);
+RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, RzOutputMode mode) {
+	print_meta_list(a, type, mode, UT64_MAX);
 }
 
-RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, RzOutputMode rad, ut64 addr) {
-	print_meta_list(a, type, rad, addr);
+RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, RzOutputMode mode, ut64 addr) {
+	print_meta_list(a, type, mode, addr);
 }
 
 RZ_API void rz_meta_rebase(RzAnalysis *analysis, ut64 diff) {

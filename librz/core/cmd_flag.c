@@ -731,7 +731,7 @@ static int flag_space_stack_list(RzFlag *f, RzOutputMode mode) {
 }
 
 typedef struct {
-	RzOutputMode rad;
+	RzOutputMode mode;
 	PJ *pj;
 	RzAnalysisFunction *fcn;
 } PrintFcnLabelsCtx;
@@ -739,7 +739,7 @@ typedef struct {
 static bool print_function_labels_cb(void *user, const ut64 addr, const void *v) {
 	const PrintFcnLabelsCtx *ctx = user;
 	const char *name = v;
-	switch (ctx->rad) {
+	switch (ctx->mode) {
 	case RZ_OUTPUT_MODE_RIZIN:
 	case 1:
 		rz_cons_printf("f.%s@0x%08" PFMT64x "\n", name, addr);
@@ -756,28 +756,28 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 	return true;
 }
 
-static void print_function_labels_for(RzAnalysisFunction *fcn, RzOutputMode rad, PJ *pj) {
-	rz_return_if_fail(fcn && (rad != RZ_OUTPUT_MODE_JSON || pj));
-	bool json = rad == RZ_OUTPUT_MODE_JSON;
+static void print_function_labels_for(RzAnalysisFunction *fcn, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(fcn && (mode != RZ_OUTPUT_MODE_JSON || pj));
+	bool json = mode == RZ_OUTPUT_MODE_JSON;
 	if (json) {
 		pj_o(pj);
 	}
-	PrintFcnLabelsCtx ctx = { rad, pj, fcn };
+	PrintFcnLabelsCtx ctx = { mode, pj, fcn };
 	ht_up_foreach(fcn->labels, print_function_labels_cb, &ctx);
 	if (json) {
 		pj_end(pj);
 	}
 }
 
-static void print_function_labels(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzOutputMode rad) {
+static void print_function_labels(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzOutputMode mode) {
 	rz_return_if_fail(analysis || fcn);
 	PJ *pj = NULL;
-	bool json = rad == RZ_OUTPUT_MODE_JSON;
+	bool json = mode == RZ_OUTPUT_MODE_JSON;
 	if (json) {
 		pj = pj_new();
 	}
 	if (fcn) {
-		print_function_labels_for(fcn, rad, pj);
+		print_function_labels_for(fcn, mode, pj);
 	} else {
 		if (json) {
 			pj_o(pj);
@@ -791,7 +791,7 @@ static void print_function_labels(RzAnalysis *analysis, RzAnalysisFunction *fcn,
 			if (json) {
 				pj_k(pj, f->name);
 			}
-			print_function_labels_for(f, rad, pj);
+			print_function_labels_for(f, mode, pj);
 		}
 		if (json) {
 			pj_end(pj);

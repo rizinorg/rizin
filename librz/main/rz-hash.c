@@ -73,7 +73,7 @@ static void do_hash_seed(const char *seed) {
 	}
 }
 
-static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, RzOutputMode rad) {
+static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, RzOutputMode mode) {
 	int i;
 	char *buf = malloc(len * 2 + 1);
 	if (!buf) {
@@ -88,19 +88,19 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, RzOutputMod
 			snprintf(buf + i * 2, (len - i) * 2 + 1, "%02x", c[i]);
 		}
 	}
-	if (rad == RZ_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ks(pj, "hash", buf);
 	} else {
-		printf("%s%s", buf, rad == 'n' ? "" : "\n");
+		printf("%s%s", buf, mode == 'n' ? RZ_OUTPUT_MODE_STANDARD : "\n");
 	}
 	free(buf);
 }
 
-static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, PJ *pj, RzOutputMode rad, int ule) {
+static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, PJ *pj, RzOutputMode mode, int ule) {
 	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = rz_hash_name(hash);
-	switch (rad) {
+	switch (mode) {
 	case 0:
 		if (!quiet) {
 			printf("0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
@@ -109,16 +109,16 @@ static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, PJ *pj, RzOutputMode
 		if (dlen == RZ_HASH_SIZE_ENTROPY) {
 			printf("%.8f\n", ctx->entropy);
 		} else {
-			do_hash_hexprint(c, dlen, ule, pj, rad);
+			do_hash_hexprint(c, dlen, ule, pj, mode);
 		}
 		break;
 	case 'n':
-		do_hash_hexprint(c, dlen, ule, pj, rad);
+		do_hash_hexprint(c, dlen, ule, pj, mode);
 		break;
 	case RZ_MODE_JSON:
 		pj_o(pj);
 		pj_ks(pj, "name", hname);
-		do_hash_hexprint(c, dlen, ule, pj, rad);
+		do_hash_hexprint(c, dlen, ule, pj, mode);
 		pj_end(pj);
 		break;
 	default:
@@ -129,7 +129,7 @@ static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, PJ *pj, RzOutputMode
 	}
 }
 
-static int do_hash_internal(RzHash *ctx, ut64 hash, const ut8 *buf, int len, PJ *pj, RzOutputMode rad, int print, int le) {
+static int do_hash_internal(RzHash *ctx, ut64 hash, const ut8 *buf, int len, PJ *pj, RzOutputMode mode, int print, int le) {
 	if (len < 0) {
 		return 0;
 	}
@@ -140,11 +140,11 @@ static int do_hash_internal(RzHash *ctx, ut64 hash, const ut8 *buf, int len, PJ 
 	if (iterations > 0) {
 		rz_hash_do_spice(ctx, hash, iterations, _s);
 	}
-	do_hash_print(ctx, hash, dlen, pj, rad, le);
+	do_hash_print(ctx, hash, dlen, pj, mode, le);
 	return 1;
 }
 
-static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, RzOutputMode rad, int ule, const ut8 *compare) {
+static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, RzOutputMode mode, int ule, const ut8 *compare) {
 	ut64 j, fsize, algobit = rz_hash_name_to_bits(algo);
 	RzHash *ctx;
 	ut8 *buf;
@@ -182,7 +182,7 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, RzOu
 	}
 
 	PJ *pj = NULL;
-	if (rad == RZ_OUTPUT_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			free(buf);
@@ -199,15 +199,15 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, RzOu
 				int dlen = rz_hash_size(hashbit);
 				rz_hash_do_begin(ctx, i);
 				if (s.buf && s.prefix) {
-					do_hash_internal(ctx, hashbit, s.buf, s.len, pj, rad, 0, ule);
+					do_hash_internal(ctx, hashbit, s.buf, s.len, pj, mode, 0, ule);
 				}
 				for (j = from; j < to; j += bsize) {
 					int len = ((j + bsize) > to) ? (to - j) : bsize;
 					rz_io_pread_at(io, j, buf, len);
-					do_hash_internal(ctx, hashbit, buf, len, pj, rad, 0, ule);
+					do_hash_internal(ctx, hashbit, buf, len, pj, mode, 0, ule);
 				}
 				if (s.buf && !s.prefix) {
-					do_hash_internal(ctx, hashbit, s.buf, s.len, pj, rad, 0, ule);
+					do_hash_internal(ctx, hashbit, s.buf, s.len, pj, mode, 0, ule);
 				}
 				rz_hash_do_end(ctx, i);
 				if (iterations > 0) {
@@ -216,14 +216,14 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, RzOu
 				if (!*rz_hash_name(i)) {
 					continue;
 				}
-				if (!quiet && rad != RZ_OUTPUT_MODE_JSON) {
+				if (!quiet && mode != RZ_OUTPUT_MODE_JSON) {
 					printf("%s: ", file);
 				}
-				do_hash_print(ctx, i, dlen, pj, quiet ? 'n' : rad, ule);
+				do_hash_print(ctx, i, dlen, pj, quiet ? 'n' : mode, ule);
 				if (quiet == 1) {
 					printf(" %s\n", file);
 				} else {
-					if (quiet && !rad) {
+					if (quiet && !mode) {
 						printf("\n");
 					}
 				}
@@ -253,15 +253,15 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, RzOu
 					if (to > fsize) {
 						to = fsize;
 					}
-					do_hash_internal(ctx, hashbit, buf, nsize, pj, rad, 1, ule);
+					do_hash_internal(ctx, hashbit, buf, nsize, pj, mode, 1, ule);
 				}
-				do_hash_internal(ctx, hashbit, NULL, 0, pj, rad, 1, ule);
+				do_hash_internal(ctx, hashbit, NULL, 0, pj, mode, 1, ule);
 				from = ofrom;
 				to = oto;
 			}
 		}
 	}
-	if (rad == RZ_OUTPUT_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
@@ -434,7 +434,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 	ut64 i;
 	int ret, c, bsize = 0, numblocks = 0, ule = 0;
-	RzOutputMode rad = RZ_OUTPUT_MODE_QUIET;
+	RzOutputMode mode = RZ_OUTPUT_MODE_QUIET;
 	const char *file = NULL;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
@@ -466,7 +466,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 				return 1;
 			}
 			break;
-		case 'j': rad = RZ_OUTPUT_MODE_JSON; break;
+		case 'j': mode = RZ_OUTPUT_MODE_JSON; break;
 		case 'S': seed = opt.arg; break;
 		case 'I': ivseed = opt.arg; break;
 		case 'n': numblocks = 1; break;
@@ -474,7 +474,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 		case 'E': encrypt = opt.arg; break;
 		case 'L': algolist(); return 0;
 		case 'e': ule = 1; break;
-		case 'k': rad = 2; break;
+		case 'k': mode = 2; break;
 		case 'p': ptype = opt.arg; break;
 		case 'a': algo = opt.arg; break;
 		case 'B': incremental = false; break;
@@ -650,7 +650,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 				return 1;
 			}
 			PJ *pj = NULL;
-			if (rad == RZ_OUTPUT_MODE_JSON) {
+			if (mode == RZ_OUTPUT_MODE_JSON) {
 				pj = pj_new();
 				if (!pj) {
 					if (str != hashstr) {
@@ -667,12 +667,12 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 					ctx = rz_hash_new(true, hashbit);
 					from = 0;
 					to = strsz;
-					do_hash_internal(ctx, hashbit, (const ut8 *)str, strsz, pj, rad, 1, ule);
+					do_hash_internal(ctx, hashbit, (const ut8 *)str, strsz, pj, mode, 1, ule);
 					compare_hashes(ctx, compareBin, rz_hash_size(algobit), &ret);
 					rz_hash_free(ctx);
 				}
 			}
-			if (rad == RZ_OUTPUT_MODE_JSON) {
+			if (mode == RZ_OUTPUT_MODE_JSON) {
 				pj_end(pj);
 				printf("%s\n", pj_string(pj));
 				pj_free(pj);
@@ -751,7 +751,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 					return 1;
 				}
 			}
-			ret |= do_hash(argv[i], algo, io, bsize, rad, ule, compareBin);
+			ret |= do_hash(argv[i], algo, io, bsize, mode, ule, compareBin);
 			to = 0;
 			rz_io_desc_close(desc);
 		}

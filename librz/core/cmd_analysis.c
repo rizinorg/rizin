@@ -7718,7 +7718,7 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 	int cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	ut64 from, to;
-	RzOutputMode rad;
+	RzOutputMode mode;
 	PJ *pj = NULL;
 	if (*input == '?') {
 		rz_core_cmd_help(core, help_msg_aar);
@@ -7726,16 +7726,16 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 	}
 
 	if (*input == 'j' || *input == '*') {
-		rad = (*input == 'j' ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_RIZIN);
+		mode = (*input == 'j' ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_RIZIN);
 		input++;
-		if (rad == RZ_OUTPUT_MODE_JSON) {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj = rz_core_pj_new(core);
 			if (!pj) {
 				return 0;
 			}
 		}
 	} else {
-		rad = 0;
+		mode = 0;
 	}
 
 	from = to = 0;
@@ -7756,7 +7756,7 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 			if (!list) {
 				return 0;
 			}
-			if (rad == RZ_OUTPUT_MODE_JSON) {
+			if (mode == RZ_OUTPUT_MODE_JSON) {
 				pj_o(pj);
 			}
 			rz_list_foreach (list, iter, map) {
@@ -7770,17 +7770,17 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 				} else if (to - from > UT32_MAX) {
 					eprintf("Skipping huge range\n");
 				} else {
-					if (rad == RZ_OUTPUT_MODE_JSON) {
+					if (mode == RZ_OUTPUT_MODE_JSON) {
 						pj_ki(pj, "mapid", map->id);
 						pj_ko(pj, "refs");
 					}
-					rz_core_analysis_search_xrefs(core, from, to, pj, rad);
-					if (rad == RZ_OUTPUT_MODE_JSON) {
+					rz_core_analysis_search_xrefs(core, from, to, pj, mode);
+					if (mode == RZ_OUTPUT_MODE_JSON) {
 						pj_end(pj);
 					}
 				}
 			}
-			if (rad == RZ_OUTPUT_MODE_JSON) {
+			if (mode == RZ_OUTPUT_MODE_JSON) {
 				pj_end(pj);
 				rz_cons_println(pj_string(pj));
 				pj_free(pj);
@@ -7806,11 +7806,11 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 	if (to - from > rz_io_size(core->io)) {
 		return false;
 	}
-	if (rad == RZ_OUTPUT_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(pj);
 	}
-	bool res = rz_core_analysis_search_xrefs(core, from, to, pj, rad);
-	if (rad == RZ_OUTPUT_MODE_JSON) {
+	bool res = rz_core_analysis_search_xrefs(core, from, to, pj, mode);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);

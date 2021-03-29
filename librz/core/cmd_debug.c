@@ -2690,7 +2690,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 		cmd_reg_profile(core, 'd', str);
 		break;
 	case 't': { // "drt"
-		RzOutputMode rad = RZ_OUTPUT_MODE_QUIET;
+		RzOutputMode mode = RZ_OUTPUT_MODE_QUIET;
 		switch (str[1]) {
 		case '\0': // "drt"
 			for (i = 0; (name = rz_reg_get_type(i)); i++) {
@@ -2701,33 +2701,33 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 		case '*': // "drt*"
 			switch(str[1]){
 			case 'j':
-				rad = RZ_OUTPUT_MODE_JSON;
+				mode = RZ_OUTPUT_MODE_JSON;
 				break;
 			case '*':
 			case 'r':
-				rad = RZ_OUTPUT_MODE_RIZIN;
+				mode = RZ_OUTPUT_MODE_RIZIN;
 				break;
 			case 'q':
-				rad = RZ_OUTPUT_MODE_QUIET;
+				mode = RZ_OUTPUT_MODE_QUIET;
 				break;
 			case 'k':
-				rad = RZ_OUTPUT_MODE_SDB;
+				mode = RZ_OUTPUT_MODE_SDB;
 				break;
 			case 'l':
-				rad = RZ_OUTPUT_MODE_LONG;
+				mode = RZ_OUTPUT_MODE_LONG;
 				break;
 			case 'J':
-				rad = RZ_OUTPUT_MODE_LONG_JSON;
+				mode = RZ_OUTPUT_MODE_LONG_JSON;
 				break;
 			case 't':
-				rad = RZ_OUTPUT_MODE_TABLE;
+				mode = RZ_OUTPUT_MODE_TABLE;
 				break;
 			default:
 				rz_warn_if_reached();
-				rad = str[1];
+				mode = str[1];
 			}
 			str++;
-			if (rad == RZ_OUTPUT_MODE_JSON && !str[1]) {
+			if (mode == RZ_OUTPUT_MODE_JSON && !str[1]) {
 				PJ *pj = rz_core_pj_new(core);
 				if (!pj) {
 					break;
@@ -2759,11 +2759,11 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 				}
 				type = rz_reg_type_by_name(str + 2);
 				rz_debug_reg_sync(core->dbg, type, false);
-				rz_core_debug_reg_list(core, type, size, NULL, rad, use_color);
+				rz_core_debug_reg_list(core, type, size, NULL, mode, use_color);
 			} else {
 				if (type != RZ_REG_TYPE_LAST) {
 					rz_debug_reg_sync(core->dbg, type, false);
-					rz_core_debug_reg_list(core, type, size, NULL, rad, use_color);
+					rz_core_debug_reg_list(core, type, size, NULL, mode, use_color);
 				} else {
 					eprintf("cmd_debug_reg: unknown type\n");
 				}
