@@ -3830,6 +3830,7 @@ static int fcn_list_table(RzCore *core, const char *q, int fmt) {
 	rz_table_add_column(t, typeNumber, "xref", 0);
 	rz_table_add_column(t, typeNumber, "calls", 0);
 	rz_table_add_column(t, typeNumber, "cc", 0);
+	rz_table_add_column(t, typeNumber, "noreturn", 0);
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		const char *fcnAddr = sdb_fmt("0x%08" PFMT64x, fcn->addr);
 		const char *fcnSize = sdb_fmt("%" PFMT64u, rz_analysis_function_linear_size(fcn));
@@ -3845,8 +3846,8 @@ static int fcn_list_table(RzCore *core, const char *q, int fmt) {
 		const char *callstr = sdb_fmt("%d", rz_list_length(calls));
 		rz_list_free(calls);
 		snprintf(ccstr, sizeof(ccstr), "%d", rz_analysis_function_complexity(fcn));
-
-		rz_table_add_row(t, fcnAddr, fcnSize, fcn->name, nbbs, xref, callstr, ccstr, NULL);
+		const char *noret = fcn->is_noreturn ? "yes" : "";
+		rz_table_add_row(t, fcnAddr, fcnSize, fcn->name, nbbs, xref, callstr, ccstr, noret, NULL);
 	}
 	if (rz_table_query(t, q)) {
 		char *s = (fmt == 'j')
