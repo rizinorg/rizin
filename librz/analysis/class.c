@@ -1338,7 +1338,7 @@ static void list_all_functions_at_vtable_offset(RzAnalysis *analysis, const char
 	}
 
 	rz_vector_foreach(vtables, vtable) {
-		if (vtable->size < offset + function_ptr_size) {
+		if (vtable->size < offset + function_ptr_size || offset % function_ptr_size) {
 			continue;
 		}
 

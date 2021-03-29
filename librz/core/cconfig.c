@@ -556,6 +556,14 @@ static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
 	}
 }
 
+static void update_syscall_ns(RzCore *core) {
+	if (core->analysis->syscall->db) {
+		sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
+	} else {
+		sdb_ns_unset(core->sdb, "syscall", NULL);
+	}
+}
+
 static bool cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RzCore *core = (RzCore *)user;
@@ -648,10 +656,7 @@ static bool cb_asmarch(void *user, void *data) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
-		sdb_ns_unset(core->sdb, "syscall", NULL);
-		if (core->analysis->syscall->db) {
-			sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
-		}
+		update_syscall_ns(core);
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");
@@ -726,6 +731,9 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 
 	int bits = node->i_value;
+	if (!bits) {
+		return false;
+	}
 #if 0
 // TODO: pretty good optimization, but breaks many tests when arch is different i think
 	if (bits == core->rasm->bits && bits == core->analysis->bits && bits == core->dbg->bits) {
@@ -780,10 +788,7 @@ static bool cb_asmbits(void *user, void *data) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
-		sdb_ns_unset(core->sdb, "syscall", NULL);
-		if (core->analysis->syscall->db) {
-			sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
-		}
+		update_syscall_ns(core);
 		__setsegoff(core->config, asmarch, core->analysis->bits);
 		if (core->dbg) {
 			rz_bp_use(core->dbg->bp, asmarch, core->analysis->bits);
@@ -946,10 +951,7 @@ static bool cb_asmos(void *user, void *data) {
 	if (asmarch) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 		rz_syscall_setup(core->analysis->syscall, asmarch->value, core->analysis->bits, asmcpu, node->value);
-		sdb_ns_unset(core->sdb, "syscall", NULL);
-		if (core->analysis->syscall->db) {
-			sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
-		}
+		update_syscall_ns(core);
 		__setsegoff(core->config, asmarch->value, asmbits);
 	}
 	rz_analysis_set_os(core->analysis, node->value);

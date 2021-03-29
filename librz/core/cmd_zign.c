@@ -1519,8 +1519,6 @@ static RzCmdStatus zi_handler_common(RzCore *core, int mode, const char *pfx) {
 }
 
 RZ_IPI RzCmdStatus rz_zign_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	char *pfx;
-	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		return zi_handler_common(core, '\0', "");
@@ -1529,10 +1527,7 @@ RZ_IPI RzCmdStatus rz_zign_info_handler(RzCore *core, int argc, const char **arg
 	case RZ_OUTPUT_MODE_QUIET:
 		return zi_handler_common(core, 'q', "");
 	case RZ_OUTPUT_MODE_RIZIN:
-		pfx = argc > 1 ? rz_str_newf(" %s", argv[1]) : rz_str_new("");
-		res = zi_handler_common(core, '\0', pfx);
-		free(pfx);
-		return res;
+		return zi_handler_common(core, '*', "");
 	default:
 		return RZ_CMD_STATUS_ERROR;
 	}

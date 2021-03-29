@@ -89,7 +89,6 @@ rz_analysis_sources = [
   'p/analysis_v850.c',
   'p/analysis_vax.c',
   'p/analysis_wasm.c',
-  'p/analysis_ws.c',
   'p/analysis_x86_cs.c',
   'p/analysis_xap.c',
   'p/analysis_xcore_cs.c',
