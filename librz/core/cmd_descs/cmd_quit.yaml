@@ -5,7 +5,7 @@ name: cmd_quit
 commands:
   - name: "q"
     cname : cmd_quit
-    summary: quit rizin
+    summary: Quit rizin
     args: []
   - name: "q!"
     cname: cmd_force_quit
@@ -13,7 +13,7 @@ commands:
     args: []
   - name: "q!!"
     cname: cmd_force_quit_without_history
-    summary: force quit rizin without saving history
+    summary: Force quit rizin without saving history
     args: []
   - name: "q"
     cname: quit_with_preference
