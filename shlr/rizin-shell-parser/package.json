@@ -2,7 +2,7 @@
   "name": "tree-sitter-rzcmd",
   "version": "1.0.0",
   "description": "Tree-Sitter grammar for parsing rizin commands",
-  "main": "index.js",
+  "main": "bindings/node",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,6 +12,6 @@
     "nan": "^2.14.0"
   },
   "devDependencies": {
-    "tree-sitter-cli": "^0.16.8"
+    "tree-sitter-cli": "^0.19.4"
   }
 }
