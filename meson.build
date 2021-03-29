@@ -7,6 +7,7 @@ pkgconfig_mod = import('pkgconfig')
 # Python scripts used during the build process
 create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
+tree_sitter_wrap_py = files('sys/meson_tree_sitter_generate.py')
 
 # Get rizin version
 rizin_version = 'unknown-error'

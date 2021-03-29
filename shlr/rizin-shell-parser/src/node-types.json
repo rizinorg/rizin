@@ -323,7 +323,7 @@
     "fields": {},
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
         {
           "type": "arged_command",
@@ -6492,13 +6492,7 @@
   {
     "type": "legacy_quoted_command",
     "named": true,
-    "fields": {
-      "string": {
-        "multiple": false,
-        "required": false,
-        "types": []
-      }
-    }
+    "fields": {}
   },
   {
     "type": "macro_args",

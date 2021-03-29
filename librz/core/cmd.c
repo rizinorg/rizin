@@ -6091,9 +6091,15 @@ static RzCmdStatus core_cmd_tsr2cmd(RzCore *core, const char *cstr, bool split_l
 	ts_symbols_init(core->rcmd);
 
 	TSParser *parser = ts_parser_new();
-	ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
+	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
+	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
 
 	TSTree *tree = ts_parser_parse_string(parser, NULL, input, strlen(input));
+	if (!tree) {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_INVALID;
+	}
+
 	TSNode root = ts_tree_root_node(tree);
 
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
