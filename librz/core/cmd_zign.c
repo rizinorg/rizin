@@ -1236,7 +1236,35 @@ static int cmdInfo(void *data, const char *input) {
 	}
 	RzCore *core = (RzCore *)data;
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SIGNS);
-	rz_flag_list(core->flags, *input, input[0] ? input + 1 : "");
+	RzOutputMode mode;
+	switch(*input){
+	case 'j':
+		mode = RZ_OUTPUT_MODE_JSON;
+		break;
+	case '*':
+	case 'r':
+		mode = RZ_OUTPUT_MODE_RIZIN;
+		break;
+	case 'q':
+		mode = RZ_OUTPUT_MODE_QUIET;
+		break;
+	case 'k':
+		mode = RZ_OUTPUT_MODE_SDB;
+		break;
+	case 'l':
+		mode = RZ_OUTPUT_MODE_LONG;
+		break;
+	case 'J':
+		mode = 	RZ_OUTPUT_MODE_LONG_JSON;
+		break;
+	case 't':
+		mode = RZ_OUTPUT_MODE_TABLE;
+		break;
+	default:
+		rz_warn_if_reached();
+		mode = *input;
+	}
+	rz_flag_list(core->flags, mode, input[0] ? input + 1 : "");
 	rz_flag_space_pop(core->flags);
 	return true;
 }
@@ -1511,7 +1539,7 @@ RZ_IPI RzCmdStatus rz_zign_space_rename_handler(RzCore *core, int argc, const ch
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus zi_handler_common(RzCore *core, int mode, const char *pfx) {
+static RzCmdStatus zi_handler_common(RzCore *core, RzOutputMode mode, const char *pfx) {
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_SIGNS);
 	rz_flag_list(core->flags, mode, pfx);
 	rz_flag_space_pop(core->flags);
@@ -1523,11 +1551,11 @@ RZ_IPI RzCmdStatus rz_zign_info_handler(RzCore *core, int argc, const char **arg
 	case RZ_OUTPUT_MODE_STANDARD:
 		return zi_handler_common(core, '\0', "");
 	case RZ_OUTPUT_MODE_JSON:
-		return zi_handler_common(core, 'j', "");
+		return zi_handler_common(core, RZ_OUTPUT_MODE_JSON, "");
 	case RZ_OUTPUT_MODE_QUIET:
-		return zi_handler_common(core, 'q', "");
+		return zi_handler_common(core, RZ_OUTPUT_MODE_QUIET, "");
 	case RZ_OUTPUT_MODE_RIZIN:
-		return zi_handler_common(core, '*', "");
+		return zi_handler_common(core, RZ_OUTPUT_MODE_RIZIN, "");
 	default:
 		return RZ_CMD_STATUS_ERROR;
 	}

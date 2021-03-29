@@ -433,7 +433,8 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 
 RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 	ut64 i;
-	int ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
+	int ret, c, bsize = 0, numblocks = 0, ule = 0;
+	RzOutputMode rad = RZ_OUTPUT_MODE_QUIET;
 	const char *file = NULL;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
@@ -465,7 +466,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 				return 1;
 			}
 			break;
-		case 'j': rad = 'j'; break;
+		case 'j': rad = RZ_OUTPUT_MODE_JSON; break;
 		case 'S': seed = opt.arg; break;
 		case 'I': ivseed = opt.arg; break;
 		case 'n': numblocks = 1; break;
@@ -649,7 +650,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 				return 1;
 			}
 			PJ *pj = NULL;
-			if (rad == 'j') {
+			if (rad == RZ_OUTPUT_MODE_JSON) {
 				pj = pj_new();
 				if (!pj) {
 					if (str != hashstr) {
@@ -671,7 +672,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 					rz_hash_free(ctx);
 				}
 			}
-			if (rad == 'j') {
+			if (rad == RZ_OUTPUT_MODE_JSON) {
 				pj_end(pj);
 				printf("%s\n", pj_string(pj));
 				pj_free(pj);

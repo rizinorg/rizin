@@ -225,7 +225,35 @@ static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 					} else if (rz_str_endswith(str, "f")) {
 						out_mode = 'l';
 					}
-					return format_output(num, out_mode, str, *fm, flags);
+					RzOutputMode mode;
+					switch(out_mode){
+					case 'j':
+						mode = RZ_OUTPUT_MODE_JSON;
+						break;
+					case '*':
+					case 'r':
+						mode = RZ_OUTPUT_MODE_RIZIN;
+						break;
+					case 'q':
+						mode = RZ_OUTPUT_MODE_QUIET;
+						break;
+					case 'k':
+						mode = RZ_OUTPUT_MODE_SDB;
+						break;
+					case 'l':
+						mode = RZ_OUTPUT_MODE_LONG;
+						break;
+					case 'J':
+						mode = 	RZ_OUTPUT_MODE_LONG_JSON;
+						break;
+					case 't':
+						mode = RZ_OUTPUT_MODE_TABLE;
+						break;
+					default:
+						rz_warn_if_reached();
+						mode = out_mode;
+					}
+					return format_output(num, mode, str, *fm, flags);
 				}
 				printf("Usage: rz-ax [options] [expr ...]\n");
 				return help();
@@ -620,13 +648,41 @@ dotherax:
 		str[strlen(str) - 2] = 't';
 		str[strlen(str) - 1] = '\0';
 	}
+	RzOutputMode mode;
+	switch(out_mode){
+	case 'j':
+		mode = RZ_OUTPUT_MODE_JSON;
+		break;
+	case '*':
+	case 'r':
+		mode = RZ_OUTPUT_MODE_RIZIN;
+		break;
+	case 'q':
+		mode = RZ_OUTPUT_MODE_QUIET;
+		break;
+	case 'k':
+		mode = RZ_OUTPUT_MODE_SDB;
+		break;
+	case 'l':
+		mode = RZ_OUTPUT_MODE_LONG;
+		break;
+	case 'J':
+		mode = 	RZ_OUTPUT_MODE_LONG_JSON;
+		break;
+	case 't':
+		mode = RZ_OUTPUT_MODE_TABLE;
+		break;
+	default:
+		rz_warn_if_reached();
+		mode = out_mode;
+	}
 	while ((p = strchr(str, ' '))) {
 		*p = 0;
-		format_output(num, out_mode, str, *fm, flags);
+		format_output(num, mode, str, *fm, flags);
 		str = p + 1;
 	}
 	if (*str) {
-		format_output(num, out_mode, str, *fm, flags);
+		format_output(num, mode, str, *fm, flags);
 	}
 	return true;
 }

@@ -414,7 +414,7 @@ static void cmd_fz(RzCore *core, const char *input) {
 		}
 		break;
 	case '*':
-		rz_flag_zone_list(core->flags, '*');
+		rz_flag_zone_list(core->flags, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case 0:
 		rz_flag_zone_list(core->flags, 0);
@@ -1484,7 +1484,35 @@ rep:
 				free(s);
 			}
 		} else {
-			rz_flag_list(core->flags, *input, input[0] ? input + 1 : "");
+			RzOutputMode mode;
+			switch(*input){
+			case 'j':
+				mode = RZ_OUTPUT_MODE_JSON;
+				break;
+			case '*':
+			case 'r':
+				mode = RZ_OUTPUT_MODE_RIZIN;
+				break;
+			case 'q':
+				mode = RZ_OUTPUT_MODE_QUIET;
+				break;
+			case 'k':
+				mode = RZ_OUTPUT_MODE_SDB;
+				break;
+			case 'l':
+				mode = RZ_OUTPUT_MODE_LONG;
+				break;
+			case 'J':
+				mode = 	RZ_OUTPUT_MODE_LONG_JSON;
+				break;
+			case 't':
+				mode = RZ_OUTPUT_MODE_TABLE;
+				break;
+			default:
+				rz_warn_if_reached();
+				mode = *input;
+			}
+			rz_flag_list(core->flags, mode, input[0] ? input + 1 : "");
 		}
 		break;
 	case 'i': // "fi"

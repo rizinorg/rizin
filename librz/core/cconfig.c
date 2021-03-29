@@ -1531,7 +1531,7 @@ static bool cb_dbgbackend(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (!strcmp(node->value, "?")) {
-		rz_debug_plugin_list(core->dbg, 'q');
+		rz_debug_plugin_list(core->dbg, RZ_OUTPUT_MODE_QUIET);
 		return false;
 	}
 	if (!strcmp(node->value, "bf")) {

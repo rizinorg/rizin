@@ -46,7 +46,7 @@ static int task_break(RzCore *core, int tid) {
 
 RZ_IPI RzCmdStatus rz_tasks_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 1) {
-		rz_core_task_list(core, mode == RZ_OUTPUT_MODE_STANDARD ? '\0' : 'j');
+		rz_core_task_list(core, mode == RZ_OUTPUT_MODE_STANDARD ? '\0' : RZ_OUTPUT_MODE_JSON);
 		return RZ_CMD_STATUS_OK;
 	} else if (argc == 2) {
 		return rz_cmd_int2status(task_enqueue(core, argv[1], false));

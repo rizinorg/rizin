@@ -5439,7 +5439,35 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_core_cmd_help(core, help_msg_pda);
 				break;
 			}
-			rz_core_print_disasm_all(core, core->offset, l, len, input[2]);
+			RzOutputMode mode;
+			switch(input[2]){
+			case 'j':
+				mode = RZ_OUTPUT_MODE_JSON;
+				break;
+			case '*':
+			case 'r':
+				mode = RZ_OUTPUT_MODE_RIZIN;
+				break;
+			case 'q':
+				mode = RZ_OUTPUT_MODE_QUIET;
+				break;
+			case 'k':
+				mode = RZ_OUTPUT_MODE_SDB;
+				break;
+			case 'l':
+				mode = RZ_OUTPUT_MODE_LONG;
+				break;
+			case 'J':
+				mode = 	RZ_OUTPUT_MODE_LONG_JSON;
+				break;
+			case 't':
+				mode = RZ_OUTPUT_MODE_TABLE;
+				break;
+			default:
+				rz_warn_if_reached();
+				mode = input[2];
+			}
+			rz_core_print_disasm_all(core, core->offset, l, len, mode);
 			pd_result = true;
 			break;
 		case 'e': // "pde"
@@ -5447,14 +5475,14 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			if (!core->fixedblock && !sp) {
 				l /= 4;
 			}
-			int mode = RZ_MODE_PRINT;
+			RzOutputMode mode = RZ_MODE_PRINT;
 			if (input[2] == 'j') {
-				mode = RZ_MODE_JSON;
+				mode = RZ_OUTPUT_MODE_JSON;
 			} else if (input[2] == 'q') {
 				if (input[3] == 'q') {
 					mode = RZ_MODE_SIMPLEST; // Like pi
 				} else {
-					mode = RZ_MODE_SIMPLE; // Like pdi
+					mode = RZ_OUTPUT_MODE_QUIET; // Like pdi
 				}
 			}
 			rz_core_disasm_pde(core, l, mode);

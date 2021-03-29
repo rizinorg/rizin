@@ -496,7 +496,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			free(debugbackend);
 			debugbackend = strdup(opt.arg);
 			if (!strcmp(opt.arg, "?")) {
-				rz_debug_plugin_list(r->dbg, 'q');
+				rz_debug_plugin_list(r->dbg, RZ_OUTPUT_MODE_QUIET);
 				rz_cons_flush();
 				LISTS_FREE();
 				return 0;

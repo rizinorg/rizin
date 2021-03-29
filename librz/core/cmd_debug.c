@@ -4544,7 +4544,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			rz_debug_trace_list(core->dbg, '=', core->offset);
 			break;
 		case 'q': // "dtq"
-			rz_debug_trace_list(core->dbg, 'q', core->offset);
+			rz_debug_trace_list(core->dbg, RZ_OUTPUT_MODE_QUIET, core->offset);
 			break;
 		case '*': // "dt*"
 			rz_debug_trace_list(core->dbg, 1, core->offset);
@@ -4885,7 +4885,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		switch (input[1]) {
 		case 'q':
 		case 'j':
-			rz_debug_plugin_list(core->dbg, input[1]);
+			rz_debug_plugin_list(core->dbg, RZ_OUTPUT_MODE_JSON);
 			break;
 		case '?':
 			rz_core_cmd_help(core, help_msg_dL);
