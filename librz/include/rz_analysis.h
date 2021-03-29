@@ -1685,7 +1685,6 @@ RZ_API const char *rz_analysis_syscc_default(RzAnalysis *analysis);
 RZ_API void rz_analysis_set_syscc_default(RzAnalysis *analysis, const char *convention);
 RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_name);
 RZ_API RzList *rz_analysis_calling_conventions(RzAnalysis *analysis);
-RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr);
 
 typedef struct rz_analysis_data_t {
 	ut64 addr;
@@ -1862,6 +1861,8 @@ RZ_API void rz_analysis_unset_limits(RzAnalysis *analysis);
 RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut64 addr);
 RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr);
 RZ_API bool rz_analysis_noreturn_at_addr(RzAnalysis *analysis, ut64 addr);
+RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr);
+RZ_API RzList *rz_analysis_noreturn_functions(RzAnalysis *analysis);
 
 /* zign spaces */
 RZ_API int rz_sign_space_count_for(RzAnalysis *a, const RzSpace *space);

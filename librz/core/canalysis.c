@@ -6813,7 +6813,7 @@ RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) 
 	int bits1 = core->analysis->bits;
 	int bits2 = core->rasm->bits;
 	// find known noreturn functions to propagate
-	RzList *noretl = rz_type_noreturn_functions(core->analysis->typedb);
+	RzList *noretl = rz_analysis_noreturn_functions(core->analysis);
 	// List of the potentially noreturn functions
 	SetU *todo = set_u_new();
 	struct core_noretl u = { core, noretl, todo };

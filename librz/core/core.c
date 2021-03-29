@@ -1148,6 +1148,7 @@ out:
 	free(input);
 }
 
+/*
 //TODO: make it recursive to handle nested struct
 static int autocomplete_pfele(RzCore *core, RzLineCompletion *completion, char *key, char *pfx, int idx, char *ptr) {
 	int i, ret = 0;
@@ -1175,6 +1176,7 @@ static int autocomplete_pfele(RzCore *core, RzLineCompletion *completion, char *
 	}
 	return ret;
 }
+*/
 
 #define ADDARG(x) \
 	if (!strncmp(buf->data + chr, x, strlen(buf->data + chr))) { \

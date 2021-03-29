@@ -116,6 +116,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->sdb_zigns = sdb_ns(analysis->sdb, "zigns", 1);
 	analysis->sdb_classes = sdb_ns(analysis->sdb, "classes", 1);
 	analysis->sdb_classes_attrs = sdb_ns(analysis->sdb_classes, "attrs", 1);
+	analysis->sdb_noret = sdb_ns(analysis->sdb, "noreturn", 1);
 	analysis->zign_path = strdup("");
 	analysis->cb_printf = (PrintfCallback)printf;
 	(void)rz_analysis_pin_init(analysis);
@@ -413,6 +414,7 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_analysis_pin_fini(analysis);
 	rz_analysis_pin_init(analysis);
 	sdb_reset(analysis->sdb_cc);
+	sdb_reset(analysis->sdb_noret);
 	rz_list_free(analysis->fcns);
 	analysis->fcns = rz_list_newf(rz_analysis_function_free);
 	rz_analysis_purge_imports(analysis);
@@ -598,6 +600,44 @@ RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr) {
 		return noreturn_recurse(analysis, addr);
 	}
 	return false;
+}
+
+RZ_API RzList *rz_analysis_noreturn_functions(RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	// At first we read all noreturn functions from the Types DB
+	RzList *noretl = rz_type_noreturn_functions(analysis->typedb);
+	// Then we propagate all noreturn functions that were inferred by
+	// the analysis process
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(analysis->sdb_noret, true);
+	ls_foreach (l, iter, kv) {
+		const char *k = sdbkv_key(kv);
+		if (!strncmp(k, "func.", 5) && strstr(k, ".noreturn")) {
+			char *s = strdup(k + 5);
+			char *d = strchr(s, '.');
+			if (d) {
+				*d = 0;
+			}
+			rz_list_append(noretl, strdup(s));
+			free(s);
+		}
+		if (!strncmp(k, "addr.", 5)) {
+			char *off;
+			if (!(off = strdup(k + 5))) {
+				break;
+			}
+			char *ptr = strstr(off, ".noreturn");
+			if (ptr) {
+				*ptr = 0;
+				char *addr = rz_str_newf("0x%s", off);
+				rz_list_append(noretl, addr);
+			}
+			free(off);
+		}
+	}
+	ls_free(l);
+	return noretl;
 }
 
 RZ_API void rz_analysis_bind(RzAnalysis *analysis, RzAnalysisBind *b) {
