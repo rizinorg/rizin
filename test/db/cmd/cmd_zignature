@@ -253,7 +253,7 @@ z
 EOF
 EXPECT=<<EOF
 test:
-  refs: sym1, sym3, sym2
+  xrefs_from: sym1, sym3, sym2
 EOF
 RUN
 
@@ -429,7 +429,7 @@ zigs:main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   realname: main
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
@@ -452,7 +452,7 @@ zigs:main:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   realname: main
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
@@ -473,7 +473,7 @@ main:
   mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
@@ -496,7 +496,7 @@ foobar:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   realname: main
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
@@ -518,7 +518,7 @@ foobar:
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
   realname: main
-  refs: sym.print
+  xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
@@ -1199,7 +1199,7 @@ zaf fcn.00484d40 fcn.00484d40
 zj
 EOF
 EXPECT=<<EOF
-[{"name":"fcn.00484d40","bytes":"55534883ec08488b1f4885db741b4889fd4889dfe857b7f7ff4801d8803800751748c74500000000004883c4084889d85b5dc30f1f440000c600004883c001488945004883c4084889d85b5dc3","mask":"ffffffffffffffffffffffffff00ffffffffffffff00000000ffffffffffffff00ffffffffffffffffffffffffffffffffffff0000000000ffffffffffffffffffffffffffffffffffffffffff","graph":{"cc":4,"nbbs":5,"edges":5,"ebbs":2,"bbsum":72},"addr":4738368,"refs":[],"xrefs":[],"vars":["r82"],"types":[{"name":"arg1","type":"int64_t"}],"hash":{"bbhash":"8ff8a5c7f84179483b764fbb18dc4c44f39da6527a0a16485c7ae519f00e687f"}}]
+[{"name":"fcn.00484d40","bytes":"55534883ec08488b1f4885db741b4889fd4889dfe857b7f7ff4801d8803800751748c74500000000004883c4084889d85b5dc30f1f440000c600004883c001488945004883c4084889d85b5dc3","mask":"ffffffffffffffffffffffffff00ffffffffffffff00000000ffffffffffffff00ffffffffffffffffffffffffffffffffffff0000000000ffffffffffffffffffffffffffffffffffffffffff","graph":{"cc":4,"nbbs":5,"edges":5,"ebbs":2,"bbsum":72},"addr":4738368,"xrefs_from":[],"xrefs_to":[],"vars":["r82"],"types":[{"name":"arg1","type":"int64_t"}],"hash":{"bbhash":"8ff8a5c7f84179483b764fbb18dc4c44f39da6527a0a16485c7ae519f00e687f"}}]
 EOF
 RUN
 
