@@ -17,6 +17,7 @@ enum TokenType {
 	EQ_SEP_CONCAT,
 	CONCAT,
 	CONCAT_PF_DOT,
+	SPEC_SEP,
 };
 
 void *tree_sitter_rzcmd_external_scanner_create() {
@@ -82,8 +83,8 @@ static bool is_mid_command(const char *res, int len, const int32_t ch) {
 		return ch == '?';
 	}
 	return iswalnum (ch) || ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
-		ch == ':' || ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
-		ch == '-' || ch == ',' || ch == '&' || ch == '_' ||
+		ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
+		ch == '-' || ch == '&' || ch == '_' ||
 		(is_interpret_cmd (res) && ch == '(') ||
 		(is_remote_cmd (res) && ch == '<') || (is_at_cmd (res) && ch == '@');
 }
@@ -141,13 +142,17 @@ static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
 }
 
 bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
-	if (valid_symbols[CONCAT] && is_concat (lexer->lookahead)) {
+	if (valid_symbols[SPEC_SEP] && lexer->lookahead == ':') {
+		lexer->advance(lexer, false);
+		lexer->result_symbol = SPEC_SEP;
+		return true;
+	} else if (valid_symbols[CONCAT] && is_concat(lexer->lookahead)) {
 		lexer->result_symbol = CONCAT;
 		return true;
-	} else if (valid_symbols[CONCAT_PF_DOT] && is_concat_pf_dot (lexer->lookahead)) {
+	} else if (valid_symbols[CONCAT_PF_DOT] && is_concat_pf_dot(lexer->lookahead)) {
 		lexer->result_symbol = CONCAT_PF_DOT;
 		return true;
-	} else if (valid_symbols[EQ_SEP_CONCAT] && is_concat_eq_sep (lexer->lookahead)) {
+	} else if (valid_symbols[EQ_SEP_CONCAT] && is_concat_eq_sep(lexer->lookahead)) {
 		lexer->result_symbol = EQ_SEP_CONCAT;
 		return true;
 	}

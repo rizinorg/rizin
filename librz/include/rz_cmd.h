@@ -116,6 +116,7 @@ typedef struct rz_cmd_parsed_args_t {
 	int argc;
 	char **argv;
 	bool has_space_after_cmd;
+	char *extra; ///< Extra data that is neither a command name nor an argument (e.g. command modifiers/specifiers, table queries, etc.)
 } RzCmdParsedArgs;
 
 typedef struct rz_cmd_macro_label_t {

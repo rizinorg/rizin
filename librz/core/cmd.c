@@ -4591,7 +4591,20 @@ static char *ts_node_handle_arg(struct tsr2cmd_state *state, TSNode command, TSN
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
 	rz_return_val_if_fail(!ts_node_is_null(command), false);
-	char *command_str = ts_node_sub_string(command, state->input);
+
+	TSNode command_extra = ts_node_child_by_field_name(command, "extra", strlen("extra"));
+	char *command_str = NULL, *command_extra_str = NULL;
+	if (!ts_node_is_null(command_extra)) {
+		command_extra_str = ts_node_sub_string(command_extra, state->input);
+		RZ_LOG_DEBUG("command_extra_str = '%s'\n", command_extra_str);
+
+		ut32 start = ts_node_start_byte(command);
+		ut32 end = ts_node_start_byte(command_extra);
+		command_str = rz_str_newf("%.*s", end - start, state->input + start);
+	} else {
+		command_str = ts_node_sub_string(command, state->input);
+	}
+
 	rz_str_unescape(command_str);
 	RZ_LOG_DEBUG("arged_command command: '%s'\n", command_str);
 	TSNode args = ts_node_child_by_field_name(node, "args", strlen("args"));
@@ -4625,6 +4638,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 		}
 	}
 
+	pr_args->extra = command_extra_str;
 	pr_args->has_space_after_cmd = !ts_node_is_null(args) && ts_node_end_byte(command) < ts_node_start_byte(args);
 	res = rz_cmd_call_parsed_args(state->core->rcmd, pr_args);
 	if (res == RZ_CMD_STATUS_WRONG_ARGS) {

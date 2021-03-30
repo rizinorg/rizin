@@ -226,7 +226,7 @@ Interpreter commands
 ===================
 
 #!
-#!python arg0
+#!python arg1
 #!rust
 #!?
 
@@ -302,8 +302,8 @@ R- 3
 R= 3
 R!=
 R=!
-R: host:3000 cmd
-R&: 3000
+Rr host:3000 cmd
+R&r 3000
 
 ---
 

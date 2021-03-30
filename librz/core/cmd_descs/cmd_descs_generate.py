@@ -175,6 +175,8 @@ def compute_cname(name):
                 "!": "_escl_",
                 "#": "_hash_",
                 " ": "_space_",
+                "(": "_oparen_",
+                ")": "_cparen_",
             }
         )
     )
