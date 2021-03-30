@@ -1862,6 +1862,11 @@ static void cmd_autocomplete(RzCore *core, const char *input) {
 	eprintf("Invalid usage of !!!\n");
 }
 
+RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv) {
+	core->num->value = 0LL;
+	return RZ_CMD_STATUS_EXIT;
+}
+
 RZ_IPI int rz_cmd_last(void *data, const char *input) {
 	switch (*input) {
 	case 0:
