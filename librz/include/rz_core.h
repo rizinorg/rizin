@@ -700,6 +700,7 @@ RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);
 RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va);
+RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile);
 RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile);
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd);
 RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name);
@@ -710,13 +711,16 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode);
 RZ_API bool rz_core_bin_delete(RzCore *core, ut32 binfile_idx);
 RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name);
 
+RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzOutputMode mode, PJ *pj);
+RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzOutputMode mode, PJ *pj);
+
 // bin_dwarf
 RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);
 RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val);
 RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *inf);
 RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table, int addr_size);
 RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet>*/ *aranges);
-RZ_API void rz_core_bin_dwarf_print_lines(RzList /*<RzBinDwarfLineInfo>*/ *lines);
+RZ_API void rz_core_bin_dwarf_print_line_units(RzList /*<RzBinDwarfLineUnit>*/ *lines);
 
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
@@ -756,7 +760,6 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 #define RZ_CORE_BIN_ACC_RESOURCES        0x100000
 #define RZ_CORE_BIN_ACC_INITFINI         0x200000
 #define RZ_CORE_BIN_ACC_SEGMENTS         0x400000
-#define RZ_CORE_BIN_ACC_SOURCE           0x800000
 #define RZ_CORE_BIN_ACC_HASHES           0x10000000
 #define RZ_CORE_BIN_ACC_TRYCATCH         0x20000000
 #define RZ_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000

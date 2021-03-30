@@ -25,6 +25,54 @@
 #define check_abbrev_attr_form(expected_form) \
 	mu_assert_eq(da->decls[i].defs[j].attr_form, expected_form, "Incorrect children flag");
 
+static bool check_line_samples_eq(const RzBinSourceLineInfo *actual,
+	size_t samples_count_expect, const RzBinSourceLineSample *samples_expect) {
+	mu_assert_eq(actual->samples_count, samples_count_expect, "samples count");
+	if (samples_expect) {
+		mu_assert_notnull(actual->samples, "samples");
+		for (size_t i = 0; i < samples_count_expect; i++) {
+			mu_assert_eq(actual->samples[i].address, samples_expect[i].address, "sample addr");
+			mu_assert_eq(actual->samples[i].line, samples_expect[i].line, "sample line");
+			mu_assert_eq(actual->samples[i].column, samples_expect[i].column, "sample column");
+			if (samples_expect[i].file) {
+				mu_assert_notnull(actual->samples[i].file, "sample file");
+				mu_assert_streq(actual->samples[i].file, samples_expect[i].file, "sample file");
+			} else {
+				mu_assert_null(actual->samples[i].file, "sample file");
+			}
+		}
+	} else {
+		mu_assert_null(actual->samples, "samples");
+	}
+	return true;
+}
+
+static void print_line_samples(size_t samples_count, const RzBinSourceLineSample *samples) {
+	printf("{\n");
+	for (size_t i = 0; i < samples_count; i++) {
+		printf("\t{ 0x%" PFMT64x ", %" PFMT32u ", %" PFMT32u ", %s%s%s }%s\n",
+			samples[i].address,
+			samples[i].line,
+			samples[i].column,
+			samples[i].file ? "\"" : "",
+			samples[i].file ? samples[i].file : "NULL",
+			samples[i].file ? "\"" : "",
+			i + 1 < samples_count ? "," : "");
+	}
+	printf("};\n");
+}
+
+#define assert_line_samples_eq(actual, count_expect, samples_expect) \
+	do { \
+		if (!check_line_samples_eq(actual, count_expect, samples_expect)) { \
+			printf("---- EXPECTED:\n"); \
+			print_line_samples(count_expect, samples_expect); \
+			printf("---- GOT:\n"); \
+			print_line_samples(actual->samples_count, actual->samples); \
+			return false; \
+		} \
+	} while (0);
+
 /**
  * @brief Tests correct parsing of abbreviations and line information of DWARF3 C binary
  */
@@ -113,33 +161,23 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	}
 	i++;
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
-	mu_assert_eq(rz_list_length(line_list), 1, "Amount of line information parse doesn't match");
-	RzBinDwarfLineInfo *li = rz_list_first(line_list);
-	mu_assert_eq(rz_list_length(li->rows), 8, "rows count");
-
-	const RzBinSourceRow test_rows[] = {
-		{ 0x1129, ".//main.c", 3, 1 },
-		{ 0x1131, ".//main.c", 6, 1 },
-		{ 0x1134, ".//main.c", 7, 12 },
-		{ 0x1140, ".//main.c", 8, 2 },
-		{ 0x114a, ".//main.c", 9, 6 },
-		{ 0x1151, ".//main.c", 10, 9 },
-		{ 0x1154, ".//main.c", 11, 1 },
-		{ 0x1156, ".//main.c", 0, 0 }
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	mu_assert_notnull(li, "line info");
+	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
+	mu_assert_notnull(li->lines, "line info");
+	const RzBinSourceLineSample test_line_samples[] = {
+		{ 0x1129, 3, 1, ".//main.c" },
+		{ 0x1131, 6, 1, ".//main.c" },
+		{ 0x1134, 7, 12, ".//main.c" },
+		{ 0x1140, 8, 2, ".//main.c" },
+		{ 0x114a, 9, 6, ".//main.c" },
+		{ 0x1151, 10, 9, ".//main.c" },
+		{ 0x1154, 11, 1, ".//main.c" },
+		{ 0x1156, 0, 0, NULL }
 	};
-	i = 0;
-	RzBinSourceRow *row;
-	RzListIter *iter;
-	rz_list_foreach (li->rows, iter, row) {
-		const RzBinSourceRow *expect = &test_rows[i++];
-		mu_assert_eq(row->address, expect->address, "Row addr");
-		mu_assert_streq(row->file, expect->file, "Row file");
-		mu_assert_eq(row->line, expect->line, "Row line");
-		mu_assert_eq(row->column, expect->column, "Row column");
-	}
+	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
+	rz_bin_dwarf_line_info_free(li);
 
-	rz_list_free(line_list);
 	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
@@ -469,87 +507,81 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 
 	// rz_bin_dwarf_parse_aranges (core->bin, MODE); Information not stored anywhere, not testable now?
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
-	mu_assert_eq(rz_list_length(line_list), 1, "Amount of line information parse doesn't match");
-	RzBinDwarfLineInfo *li = rz_list_first(line_list);
-	mu_assert_eq(rz_list_length(li->rows), 60, "rows count");
-
-	int test_addresses[] = {
-		0x11ee,
-		0x11fa,
-		0x1208,
-		0x120b,
-		0x120c,
-		0x1218,
-		0x1226,
-		0x1229,
-		0x122a,
-		0x123a,
-		0x1259,
-		0x125a,
-		0x1266,
-		0x126b,
-		0x126d,
-		0x126e,
-		0x127e,
-		0x1298,
-		0x129b,
-		0x129c,
-		0x12ac,
-		0x12c6,
-		0x12c9,
-		0x12ca,
-		0x12da,
-		0x12f9,
-		0x12fa,
-		0x1306,
-		0x130b,
-		0x130d,
-		0x130e,
-		0x131a,
-		0x1328,
-		0x132b,
-		0x132c,
-		0x1338,
-		0x1346,
-		0x1349,
-		0x134a,
-		0x135a,
-		0x1379,
-		0x137a,
-		0x1386,
-		0x138b,
-		0x138d,
-		0x1169,
-		0x1176,
-		0x118b,
-		0x118f,
-		0x11a4,
-		0x11a8,
-		0x11af,
-		0x11bd,
-		0x11c6,
-		0x11c9,
-		0x11d7,
-		0x11e0,
-		0x11e3,
-		0x11e6,
-		0x11ed
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	mu_assert_notnull(li, "line info");
+	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
+	mu_assert_notnull(li->lines, "line info");
+	const RzBinSourceLineSample test_line_samples[] = {
+		{ 0x1169, 19, 12, ".//main.cpp" },
+		{ 0x1176, 22, 16, ".//main.cpp" },
+		{ 0x118b, 22, 5, ".//main.cpp" },
+		{ 0x118f, 23, 15, ".//main.cpp" },
+		{ 0x11a4, 23, 5, ".//main.cpp" },
+		{ 0x11a8, 24, 7, ".//main.cpp" },
+		{ 0x11af, 25, 20, ".//main.cpp" },
+		{ 0x11bd, 25, 19, ".//main.cpp" },
+		{ 0x11c6, 25, 10, ".//main.cpp" },
+		{ 0x11c9, 26, 21, ".//main.cpp" },
+		{ 0x11d7, 26, 20, ".//main.cpp" },
+		{ 0x11e0, 26, 10, ".//main.cpp" },
+		{ 0x11e3, 27, 10, ".//main.cpp" },
+		{ 0x11e6, 28, 1, ".//main.cpp" },
+		{ 0x11ed, 0, 0, NULL },
+		{ 0x11ee, 2, 3, ".//main.cpp" },
+		{ 0x11fa, 2, 12, ".//main.cpp" },
+		{ 0x1208, 2, 15, ".//main.cpp" },
+		{ 0x120b, 0, 0, NULL },
+		{ 0x120c, 3, 11, ".//main.cpp" },
+		{ 0x1218, 3, 21, ".//main.cpp" },
+		{ 0x1226, 3, 22, ".//main.cpp" },
+		{ 0x1229, 0, 0, NULL },
+		{ 0x122a, 3, 11, ".//main.cpp" },
+		{ 0x123a, 3, 22, ".//main.cpp" },
+		{ 0x1259, 0, 0, NULL },
+		{ 0x125a, 4, 15, ".//main.cpp" },
+		{ 0x1266, 4, 31, ".//main.cpp" },
+		{ 0x126b, 4, 34, ".//main.cpp" },
+		{ 0x126d, 0, 0, NULL },
+		{ 0x126e, 8, 3, ".//main.cpp" },
+		{ 0x127e, 8, 9, ".//main.cpp" },
+		{ 0x1298, 8, 12, ".//main.cpp" },
+		{ 0x129b, 0, 0, NULL },
+		{ 0x129c, 9, 11, ".//main.cpp" },
+		{ 0x12ac, 9, 18, ".//main.cpp" },
+		{ 0x12c6, 9, 19, ".//main.cpp" },
+		{ 0x12c9, 0, 0, NULL },
+		{ 0x12ca, 9, 11, ".//main.cpp" },
+		{ 0x12da, 9, 19, ".//main.cpp" },
+		{ 0x12f9, 0, 0, NULL },
+		{ 0x12fa, 10, 15, ".//main.cpp" },
+		{ 0x1306, 10, 31, ".//main.cpp" },
+		{ 0x130b, 10, 34, ".//main.cpp" },
+		{ 0x130d, 0, 0, NULL },
+		{ 0x130e, 14, 3, ".//main.cpp" },
+		{ 0x131a, 14, 10, ".//main.cpp" },
+		{ 0x1328, 14, 13, ".//main.cpp" },
+		{ 0x132b, 0, 0, NULL },
+		{ 0x132c, 15, 11, ".//main.cpp" },
+		{ 0x1338, 15, 19, ".//main.cpp" },
+		{ 0x1346, 15, 20, ".//main.cpp" },
+		{ 0x1349, 0, 0, NULL },
+		{ 0x134a, 15, 11, ".//main.cpp" },
+		{ 0x135a, 15, 20, ".//main.cpp" },
+		{ 0x1379, 0, 0, NULL },
+		{ 0x137a, 16, 15, ".//main.cpp" },
+		{ 0x1386, 16, 30, ".//main.cpp" },
+		{ 0x138b, 16, 33, ".//main.cpp" },
+		{ 0x138d, 0, 0, NULL }
 	};
-	i = 0;
+	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
+	rz_bin_dwarf_line_info_free(li);
 
-	RzBinSourceRow *row;
-	RzListIter *iter;
-	rz_list_foreach (li->rows, iter, row) {
-		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
-	}
-
-	rz_list_free(line_list);
 	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
 }
+
 bool test_dwarf3_cpp_many_comp_units(void) {
 	RzBin *bin = rz_bin_new();
 	RzIO *io = rz_io_new();
@@ -577,39 +609,79 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	check_abbrev_children(false);
 	check_abbrev_code(18);
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
-	mu_assert_eq(rz_list_length(line_list), 2, "Amount of line information parse doesn't match");
-	RzBinDwarfLineInfo *li = rz_list_first(line_list);
-	mu_assert_eq(rz_list_length(li->rows), 17, "rows count");
-
-	int test_addresses[] = {
-		0x118a,
-		0x1196,
-		0x11a4,
-		0x11a8,
-		0x11b8,
-		0x11d8,
-		0x11e4,
-		0x11e9,
-		0x11eb,
-		0x11f7,
-		0x1206,
-		0x1212,
-		0x1228,
-		0x1228,
-		0x1234,
-		0x1239,
-		0x123b
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	mu_assert_notnull(li, "line info");
+	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_notnull(li->lines, "line info");
+	const RzBinSourceLineSample test_line_samples[] = {
+		{ 0x118a, 3, 3, ".//mammal.cpp" },
+		{ 0x1196, 3, 19, ".//mammal.cpp" },
+		{ 0x11a4, 3, 22, ".//mammal.cpp" },
+		{ 0x11a8, 3, 3, ".//mammal.cpp" },
+		{ 0x11b8, 3, 22, ".//mammal.cpp" },
+		{ 0x11d8, 4, 22, ".//mammal.cpp" },
+		{ 0x11e4, 4, 31, ".//mammal.cpp" },
+		{ 0x11e9, 4, 34, ".//mammal.cpp" },
+		{ 0x11eb, 10, 12, ".//mammal.cpp" },
+		{ 0x11f7, 10, 12, ".//mammal.cpp" },
+		{ 0x1206, 12, 23, ".//mammal.cpp" },
+		{ 0x1212, 13, 1, ".//mammal.cpp" },
+		{ 0x1228, 7, 6, ".//mammal.cpp" },
+		{ 0x1234, 7, 26, ".//mammal.cpp" },
+		{ 0x1239, 7, 28, ".//mammal.cpp" },
+		{ 0x123b, 15, 12, ".//main.cpp" },
+		{ 0x1248, 18, 16, ".//main.cpp" },
+		{ 0x125d, 18, 5, ".//main.cpp" },
+		{ 0x1261, 19, 15, ".//main.cpp" },
+		{ 0x1276, 19, 5, ".//main.cpp" },
+		{ 0x127a, 20, 7, ".//main.cpp" },
+		{ 0x1281, 21, 20, ".//main.cpp" },
+		{ 0x128f, 21, 19, ".//main.cpp" },
+		{ 0x1298, 21, 10, ".//main.cpp" },
+		{ 0x129b, 22, 21, ".//main.cpp" },
+		{ 0x12a9, 22, 20, ".//main.cpp" },
+		{ 0x12b2, 22, 10, ".//main.cpp" },
+		{ 0x12b5, 23, 23, ".//main.cpp" },
+		{ 0x12ba, 23, 24, ".//main.cpp" },
+		{ 0x12bf, 24, 1, ".//main.cpp" },
+		{ 0x12c6, 2, 3, ".//mammal.h" },
+		{ 0x12d2, 2, 12, ".//mammal.h" },
+		{ 0x12e0, 2, 15, ".//mammal.h" },
+		{ 0x12e3, 0, 0, NULL },
+		{ 0x12e4, 4, 3, ".//main.cpp" },
+		{ 0x12f4, 4, 9, ".//main.cpp" },
+		{ 0x130e, 4, 12, ".//main.cpp" },
+		{ 0x1311, 0, 0, NULL },
+		{ 0x1312, 5, 11, ".//main.cpp" },
+		{ 0x1322, 5, 18, ".//main.cpp" },
+		{ 0x133c, 5, 19, ".//main.cpp" },
+		{ 0x133f, 0, 0, NULL },
+		{ 0x1340, 5, 11, ".//main.cpp" },
+		{ 0x1350, 5, 19, ".//main.cpp" },
+		{ 0x136f, 0, 0, NULL },
+		{ 0x1370, 6, 15, ".//main.cpp" },
+		{ 0x137c, 6, 31, ".//main.cpp" },
+		{ 0x1381, 6, 34, ".//main.cpp" },
+		{ 0x1383, 0, 0, NULL },
+		{ 0x1384, 10, 3, ".//main.cpp" },
+		{ 0x1390, 10, 10, ".//main.cpp" },
+		{ 0x139e, 10, 13, ".//main.cpp" },
+		{ 0x13a1, 0, 0, NULL },
+		{ 0x13a2, 11, 11, ".//main.cpp" },
+		{ 0x13ae, 11, 19, ".//main.cpp" },
+		{ 0x13bc, 11, 20, ".//main.cpp" },
+		{ 0x13bf, 0, 0, NULL },
+		{ 0x13c0, 11, 11, ".//main.cpp" },
+		{ 0x13d0, 11, 20, ".//main.cpp" },
+		{ 0x13ef, 0, 0, NULL },
+		{ 0x13f0, 12, 15, ".//main.cpp" },
+		{ 0x13fc, 12, 30, ".//main.cpp" },
+		{ 0x1401, 12, 33, ".//main.cpp" },
+		{ 0x1403, 0, 0, NULL }
 	};
-	i = 0;
+	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
+	rz_bin_dwarf_line_info_free(li);
 
-	RzBinSourceRow *row;
-	RzListIter *iter;
-	rz_list_foreach (li->rows, iter, row) {
-		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
-	}
-
-	rz_list_free(line_list);
 	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
@@ -633,26 +705,11 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	// not ignoring null entries -> 755 abbrevs
 	mu_assert_eq(da->count, 731, "Incorrect number of abbreviation");
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
-	mu_assert_eq(rz_list_length(line_list), 16, "Amount of line information parse doesn't match");
-	RzBinDwarfLineInfo *li = rz_list_first(line_list);
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 0))->rows), 271, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 1))->rows), 45, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 2))->rows), 41, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 3))->rows), 4, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 4))->rows), 4, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 5))->rows), 69, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 6))->rows), 46, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 7))->rows), 36, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 9))->rows), 4, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 0xa))->rows), 220, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 0xb))->rows), 72, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 0xc))->rows), 155, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 0xd))->rows), 331, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 0xe))->rows), 16, "rows count");
-	mu_assert_eq(rz_list_length(((RzBinDwarfLineInfo *)rz_list_get_n(line_list, 0xf))->rows), 13, "rows count");
-
-	const int test_addresses[] = {
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	mu_assert_notnull(li, "line info");
+	mu_assert_eq(rz_list_length(li->units), 16, "line units count");
+	mu_assert_notnull(li->lines, "line info");
+	const ut64 test_addresses[] = {
 		0x00401000,
 		0x00401000,
 		0x00401010,
@@ -677,18 +734,13 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 		0x00401046,
 		0x00401046
 	};
-
-	int i = 0;
-
-	RzBinSourceRow *row;
-	RzListIter *iter;
-	rz_list_foreach (li->rows, iter, row) {
-		mu_assert_eq(row->address, test_addresses[i++], "row addr");
-		if (i == 23)
-			break;
+	mu_assert_eq(li->lines->samples_count, 1331, "samples count");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(test_addresses); i++) {
+		mu_assert_eq(li->lines->samples[i].address, test_addresses[i], "line addr");
 	}
 
-	rz_list_free(line_list);
+	rz_bin_dwarf_line_info_free(li);
+
 	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_io_free(io);
 	rz_bin_free(bin);
@@ -723,98 +775,79 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	check_abbrev_children(false);
 	check_abbrev_code(18);
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
-	mu_assert_eq(rz_list_length(line_list), 2, "Amount of line information parse doesn't match");
-
-	RzBinDwarfLineInfo *li = rz_list_get_n(line_list, 0);
-	mu_assert_eq(rz_list_length(li->rows), 17, "rows count");
-	const ut64 test_addresses0[] = {
-		0x118a,
-		0x1196,
-		0x11a4,
-		0x11a8,
-		0x11b8,
-		0x11d8,
-		0x11e4,
-		0x11e9,
-		0x11eb,
-		0x11f7,
-		0x1206,
-		0x1212,
-		0x1228,
-		0x1228,
-		0x1234,
-		0x1239,
-		0x123b
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	mu_assert_notnull(li, "line info");
+	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_notnull(li->lines, "line info");
+	const RzBinSourceLineSample test_line_samples[] = {
+		{ 0x118a, 3, 3, ".//mammal.cpp" },
+		{ 0x1196, 3, 19, ".//mammal.cpp" },
+		{ 0x11a4, 3, 22, ".//mammal.cpp" },
+		{ 0x11a8, 3, 3, ".//mammal.cpp" },
+		{ 0x11b8, 3, 22, ".//mammal.cpp" },
+		{ 0x11d8, 4, 22, ".//mammal.cpp" },
+		{ 0x11e4, 4, 31, ".//mammal.cpp" },
+		{ 0x11e9, 4, 34, ".//mammal.cpp" },
+		{ 0x11eb, 10, 12, ".//mammal.cpp" },
+		{ 0x11f7, 10, 12, ".//mammal.cpp" },
+		{ 0x1206, 12, 23, ".//mammal.cpp" },
+		{ 0x1212, 13, 1, ".//mammal.cpp" },
+		{ 0x1228, 7, 6, ".//mammal.cpp" },
+		{ 0x1234, 7, 26, ".//mammal.cpp" },
+		{ 0x1239, 7, 28, ".//mammal.cpp" },
+		{ 0x123b, 15, 12, ".//main.cpp" },
+		{ 0x1248, 18, 16, ".//main.cpp" },
+		{ 0x125d, 18, 5, ".//main.cpp" },
+		{ 0x1261, 19, 15, ".//main.cpp" },
+		{ 0x1276, 19, 5, ".//main.cpp" },
+		{ 0x127a, 20, 7, ".//main.cpp" },
+		{ 0x1281, 21, 20, ".//main.cpp" },
+		{ 0x128f, 21, 19, ".//main.cpp" },
+		{ 0x1298, 21, 10, ".//main.cpp" },
+		{ 0x129b, 22, 21, ".//main.cpp" },
+		{ 0x12a9, 22, 20, ".//main.cpp" },
+		{ 0x12b2, 22, 10, ".//main.cpp" },
+		{ 0x12b5, 23, 23, ".//main.cpp" },
+		{ 0x12ba, 23, 24, ".//main.cpp" },
+		{ 0x12bf, 24, 1, ".//main.cpp" },
+		{ 0x12c6, 2, 3, ".//mammal.h" },
+		{ 0x12d2, 2, 12, ".//mammal.h" },
+		{ 0x12e0, 2, 15, ".//mammal.h" },
+		{ 0x12e3, 0, 0, NULL },
+		{ 0x12e4, 4, 3, ".//main.cpp" },
+		{ 0x12f4, 4, 9, ".//main.cpp" },
+		{ 0x130e, 4, 12, ".//main.cpp" },
+		{ 0x1311, 0, 0, NULL },
+		{ 0x1312, 5, 11, ".//main.cpp" },
+		{ 0x1322, 5, 18, ".//main.cpp" },
+		{ 0x133c, 5, 19, ".//main.cpp" },
+		{ 0x133f, 0, 0, NULL },
+		{ 0x1340, 5, 11, ".//main.cpp" },
+		{ 0x1350, 5, 19, ".//main.cpp" },
+		{ 0x136f, 0, 0, NULL },
+		{ 0x1370, 6, 15, ".//main.cpp" },
+		{ 0x137c, 6, 31, ".//main.cpp" },
+		{ 0x1381, 6, 34, ".//main.cpp" },
+		{ 0x1383, 0, 0, NULL },
+		{ 0x1384, 10, 3, ".//main.cpp" },
+		{ 0x1390, 10, 10, ".//main.cpp" },
+		{ 0x139e, 10, 13, ".//main.cpp" },
+		{ 0x13a1, 0, 0, NULL },
+		{ 0x13a2, 11, 11, ".//main.cpp" },
+		{ 0x13ae, 11, 19, ".//main.cpp" },
+		{ 0x13bc, 11, 20, ".//main.cpp" },
+		{ 0x13bf, 0, 0, NULL },
+		{ 0x13c0, 11, 11, ".//main.cpp" },
+		{ 0x13d0, 11, 20, ".//main.cpp" },
+		{ 0x13ef, 0, 0, NULL },
+		{ 0x13f0, 12, 15, ".//main.cpp" },
+		{ 0x13fc, 12, 30, ".//main.cpp" },
+		{ 0x1401, 12, 33, ".//main.cpp" },
+		{ 0x1403, 0, 0, NULL }
 	};
-	RzBinSourceRow *row;
-	RzListIter *iter;
-	i = 0;
-	rz_list_foreach (li->rows, iter, row) {
-		mu_assert_eq(row->address, test_addresses0[i++], "row addr");
-	}
+	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
+	rz_bin_dwarf_line_info_free(li);
 
-	li = rz_list_get_n(line_list, 1);
-	mu_assert_eq(rz_list_length(li->rows), 50, "rows count");
-	const ut64 test_addresses1[] = {
-		0x12c6,
-		0x12d2,
-		0x12e0,
-		0x12e3,
-		0x12e4,
-		0x12f4,
-		0x130e,
-		0x1311,
-		0x1312,
-		0x1322,
-		0x133c,
-		0x133f,
-		0x1340,
-		0x1350,
-		0x136f,
-		0x1370,
-		0x137c,
-		0x1381,
-		0x1383,
-		0x1384,
-		0x1390,
-		0x139e,
-		0x13a1,
-		0x13a2,
-		0x13ae,
-		0x13bc,
-		0x13bf,
-		0x13c0,
-		0x13d0,
-		0x13ef,
-		0x13f0,
-		0x13fc,
-		0x1401,
-		0x1403,
-		0x123b,
-		0x1248,
-		0x125d,
-		0x1261,
-		0x1276,
-		0x127a,
-		0x1281,
-		0x128f,
-		0x1298,
-		0x129b,
-		0x12a9,
-		0x12b2,
-		0x12b5,
-		0x12ba,
-		0x12bf,
-		0x12c6
-	};
-	i = 0;
-	rz_list_foreach (li->rows, iter, row) {
-		mu_assert_eq(row->address, test_addresses1[i++], "row addr");
-	}
-
-	// add line information check
-	rz_list_free(line_list);
 	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
 	rz_io_free(io);
@@ -832,97 +865,90 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 
 	// TODO add abbrev checks
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
-	mu_assert_eq(rz_list_length(line_list), 2, "Amount of line information parse doesn't match");
-	RzBinDwarfLineInfo *li = rz_list_first(line_list);
-	mu_assert_eq(rz_list_length(li->rows), 61, "rows count");
-
-	const int test_addresses[] = {
-		0x00401160,
-		0x00401174,
-		0x0040117f,
-		0x00401194,
-		0x00401198,
-		0x004011a1,
-		0x004011ac,
-		0x004011c1,
-		0x004011c5,
-		0x004011c9,
-		0x004011d0,
-		0x004011d4,
-		0x004011dd,
-		0x004011e3,
-		0x004011e7,
-		0x004011f0,
-		0x004011f6,
-		0x004011fc,
-		0x00401204,
-		0x00401206,
-		0x0040120e,
-		0x00401219,
-		0x00401223,
-		0x0040122e,
-		0x00401233,
-		0x0040123c,
-		0x00401240,
-		0x0040125c,
-		0x0040125f,
-		0x00401261,
-		0x00401270,
-		0x00401280,
-		0x00401283,
-		0x004012a3,
-		0x004012a6,
-		0x004012ac,
-		0x004012b0,
-		0x004012b8,
-		0x004012ba,
-		0x004012c0,
-		0x004012d0,
-		0x004012e8,
-		0x004012ee,
-		0x004012f0,
-		0x004012f8,
-		0x004012ff,
-		0x00401300,
-		0x0040131c,
-		0x0040131f,
-		0x00401321,
-		0x00401330,
-		0x00401340,
-		0x00401348,
-		0x0040134e,
-		0x00401350,
-		0x00401360,
-		0x00401378,
-		0x0040137e,
-		0x00401380,
-		0x00401388,
-		0x0040138f,
-		0x00401390,
-		0x00401398,
-		0x004013a0,
-		0x004013b0,
-		0x004013c8,
-		0x004013d0,
-		0x004013d8,
-		0x004013e0,
-		0x004013e8,
-		0x004013f1,
-		0x004013f7,
-		0x00401400,
-		0x00401408,
-		0x0040140f,
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	mu_assert_notnull(li, "line info");
+	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_notnull(li->lines, "line info");
+	const RzBinSourceLineSample test_line_samples[] = {
+		{ 0x401160, 15, 0, "../main.cpp" },
+		{ 0x401174, 18, 7, "../main.cpp" },
+		{ 0x40117f, 18, 11, "../main.cpp" },
+		{ 0x401194, 0, 11, "../main.cpp" },
+		{ 0x401198, 18, 5, "../main.cpp" },
+		{ 0x4011a1, 19, 7, "../main.cpp" },
+		{ 0x4011ac, 19, 11, "../main.cpp" },
+		{ 0x4011c1, 0, 11, "../main.cpp" },
+		{ 0x4011c5, 19, 5, "../main.cpp" },
+		{ 0x4011c9, 20, 7, "../main.cpp" },
+		{ 0x4011d0, 21, 13, "../main.cpp" },
+		{ 0x4011d4, 21, 16, "../main.cpp" },
+		{ 0x4011dd, 21, 10, "../main.cpp" },
+		{ 0x4011e3, 22, 13, "../main.cpp" },
+		{ 0x4011e7, 22, 16, "../main.cpp" },
+		{ 0x4011f0, 22, 10, "../main.cpp" },
+		{ 0x4011f6, 23, 10, "../main.cpp" },
+		{ 0x4011fc, 23, 19, "../main.cpp" },
+		{ 0x401204, 23, 17, "../main.cpp" },
+		{ 0x401206, 23, 3, "../main.cpp" },
+		{ 0x40120e, 24, 1, "../main.cpp" },
+		{ 0x401219, 18, 7, "../main.cpp" },
+		{ 0x401223, 24, 1, "../main.cpp" },
+		{ 0x40122e, 19, 7, "../main.cpp" },
+		{ 0x401233, 18, 7, "../main.cpp" },
+		{ 0x40123c, 0, 0, NULL },
+		{ 0x401240, 10, 0, "../main.cpp" },
+		{ 0x40125c, 10, 10, "../main.cpp" },
+		{ 0x40125f, 10, 13, "../main.cpp" },
+		{ 0x401261, 0, 0, NULL },
+		{ 0x401270, 4, 0, "../main.cpp" },
+		{ 0x401280, 4, 9, "../main.cpp" },
+		{ 0x401283, 4, 3, "../main.cpp" },
+		{ 0x4012a3, 4, 9, "../main.cpp" },
+		{ 0x4012a6, 4, 12, "../main.cpp" },
+		{ 0x4012ac, 0, 0, NULL },
+		{ 0x4012b0, 11, 0, "../main.cpp" },
+		{ 0x4012b8, 11, 20, "../main.cpp" },
+		{ 0x4012ba, 0, 0, NULL },
+		{ 0x4012c0, 11, 0, "../main.cpp" },
+		{ 0x4012d0, 11, 19, "../main.cpp" },
+		{ 0x4012e8, 11, 20, "../main.cpp" },
+		{ 0x4012ee, 0, 0, NULL },
+		{ 0x4012f0, 12, 0, "../main.cpp" },
+		{ 0x4012f8, 12, 23, "../main.cpp" },
+		{ 0x4012ff, 0, 0, NULL },
+		{ 0x401300, 2, 0, "../mammal.h" },
+		{ 0x40131c, 2, 12, "../mammal.h" },
+		{ 0x40131f, 2, 15, "../mammal.h" },
+		{ 0x401321, 0, 0, NULL },
+		{ 0x401330, 5, 0, "../main.cpp" },
+		{ 0x401340, 5, 19, "../main.cpp" },
+		{ 0x401348, 5, 19, "../main.cpp" },
+		{ 0x40134e, 0, 0, NULL },
+		{ 0x401350, 5, 0, "../main.cpp" },
+		{ 0x401360, 5, 18, "../main.cpp" },
+		{ 0x401378, 5, 19, "../main.cpp" },
+		{ 0x40137e, 0, 0, NULL },
+		{ 0x401380, 6, 0, "../main.cpp" },
+		{ 0x401388, 6, 24, "../main.cpp" },
+		{ 0x40138f, 0, 0, NULL },
+		{ 0x401390, 3, 0, "../mammal.cpp" },
+		{ 0x401398, 3, 22, "../mammal.cpp" },
+		{ 0x4013a0, 3, 0, "../mammal.cpp" },
+		{ 0x4013b0, 3, 21, "../mammal.cpp" },
+		{ 0x4013c8, 3, 22, "../mammal.cpp" },
+		{ 0x4013d0, 4, 0, "../mammal.cpp" },
+		{ 0x4013d8, 4, 24, "../mammal.cpp" },
+		{ 0x4013e0, 10, 0, "../mammal.cpp" },
+		{ 0x4013e8, 12, 14, "../mammal.cpp" },
+		{ 0x4013f1, 12, 2, "../mammal.cpp" },
+		{ 0x4013f7, 0, 0, NULL },
+		{ 0x401400, 7, 0, "../mammal.cpp" },
+		{ 0x401408, 7, 19, "../mammal.cpp" },
+		{ 0x40140f, 0, 0, NULL }
 	};
+	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
+	rz_bin_dwarf_line_info_free(li);
 
-	RzBinSourceRow *row;
-	RzListIter *iter;
-	int i = 0;
-	rz_list_foreach (li->rows, iter, row) {
-		mu_assert_eq(row->address, test_addresses[i++], "Line number statement address doesn't match");
-	}
-
-	rz_list_free(line_list);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -944,45 +970,26 @@ bool test_dwarf4_multidir_comp_units(void) {
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, da);
 	mu_assert_notnull(info, "info");
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, info, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
-	mu_assert_eq(rz_list_length(line_list), 2, "line info count");
-
-	const RzBinSourceRow test_rows0[] = {
-		{ 0x1139, "/home/florian/dev/dwarf-comp-units/main.c", 6, 12 },
-		{ 0x113d, "/home/florian/dev/dwarf-comp-units/main.c", 7, 2 },
-		{ 0x115f, "/home/florian/dev/dwarf-comp-units/main.c", 8, 2 },
-		{ 0x1181, "/home/florian/dev/dwarf-comp-units/main.c", 9, 9 },
-		{ 0x1186, "/home/florian/dev/dwarf-comp-units/main.c", 10, 1 },
-		{ 0x1188, "/home/florian/dev/dwarf-comp-units/main.c", 0, 0 }
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, info, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	mu_assert_notnull(li, "line info");
+	mu_assert_eq(rz_list_length(li->units), 2, "line units count");
+	mu_assert_notnull(li->lines, "line info");
+	const RzBinSourceLineSample test_line_samples[] = {
+		{ 0x1139, 6, 12, "/home/florian/dev/dwarf-comp-units/main.c" },
+		{ 0x113d, 7, 2, "/home/florian/dev/dwarf-comp-units/main.c" },
+		{ 0x115f, 8, 2, "/home/florian/dev/dwarf-comp-units/main.c" },
+		{ 0x1181, 9, 9, "/home/florian/dev/dwarf-comp-units/main.c" },
+		{ 0x1186, 10, 1, "/home/florian/dev/dwarf-comp-units/main.c" },
+		{ 0x1188, 2, 31, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c" },
+		{ 0x1192, 3, 11, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c" },
+		{ 0x1198, 3, 20, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c" },
+		{ 0x11a1, 3, 16, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c" },
+		{ 0x11a3, 4, 1, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c" },
+		{ 0x11a5, 0, 0, NULL }
 	};
+	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
+	rz_bin_dwarf_line_info_free(li);
 
-	const RzBinSourceRow test_rows1[] = {
-		{ 0x1188, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 2, 31 },
-		{ 0x1192, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 3, 11 },
-		{ 0x1198, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 3, 20 },
-		{ 0x11a1, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 3, 16 },
-		{ 0x11a3, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 4, 1 },
-		{ 0x11a5, "/home/florian/dev/dwarf-comp-units/some_subfolder/subfile.c", 0, 0 }
-	};
-
-	const RzBinSourceRow *test_rows[] = { test_rows0, test_rows1 };
-
-	for (size_t i = 0; i < 2; i++) {
-		RzBinDwarfLineInfo *li = rz_list_get_n(line_list, i);
-		mu_assert_eq(rz_list_length(li->rows), i ? RZ_ARRAY_SIZE(test_rows1) : RZ_ARRAY_SIZE(test_rows0), "rows count");
-		RzBinSourceRow *row;
-		RzListIter *iter;
-		size_t j = 0;
-		rz_list_foreach (li->rows, iter, row) {
-			const RzBinSourceRow *expect = &test_rows[i][j++];
-			mu_assert_eq(row->address, expect->address, "Row addr");
-			mu_assert_streq(row->file, expect->file, "Row file");
-			mu_assert_eq(row->line, expect->line, "Row line");
-			mu_assert_eq(row->column, expect->column, "Row column");
-		}
-	}
-
-	rz_list_free(line_list);
 	rz_bin_dwarf_debug_info_free(info);
 	rz_bin_dwarf_debug_abbrev_free(da);
 	rz_bin_free(bin);
@@ -999,45 +1006,490 @@ bool test_big_endian_dwarf2(void) {
 	bool res = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert("couldn't open file", res);
 
-	RzList *line_list = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_ROWS);
-	mu_assert_eq(rz_list_length(line_list), 1, "Amount of line information parse doesn't match");
-	RzBinDwarfLineInfo *li = rz_list_first(line_list);
-	mu_assert_eq(rz_list_length(li->rows), 475, "rows count");
-
-	const RzBinSourceRow test_rows[] = {
-		{ 0x10000ec4, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 30, 1 },
-		{ 0x10000f18, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 31, 5 },
-		{ 0x10000f18, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 31, 11 },
-		{ 0x10000f28, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 32, 5 },
-		{ 0x10000f28, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 32, 22 },
-		{ 0x10000f2c, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 31, 11 },
-		{ 0x10000f30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 32, 13 },
-		{ 0x10000f34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 34, 17 },
-		{ 0x10000f38, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 53, 22 },
-		{ 0x10000f44, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 38, 54 },
-		{ 0x10000f44, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h", 335, 2 },
-		{ 0x10000f44, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream", 570, 18 },
-		{ 0x10000f5c, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream", 572, 14 },
-		{ 0x10000f60, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp", 42, 22 },
-		{ 0x10000f60, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h", 335, 2 },
-		{ 0x10000f60, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream", 570, 18 }
+	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	mu_assert_notnull(li, "line info");
+	mu_assert_eq(rz_list_length(li->units), 1, "line units count");
+	mu_assert_notnull(li->lines, "line info");
+	const RzBinSourceLineSample test_line_samples[] = {
+		{ 0x10000ec4, 30, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f18, 31, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f18, 31, 11, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f28, 32, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f28, 32, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f2c, 31, 11, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f30, 32, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f34, 34, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f38, 53, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f44, 38, 54, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f44, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x10000f44, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10000f5c, 572, 14, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10000f60, 42, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f60, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x10000f60, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10000f78, 53, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f78, 53, 18, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f80, 53, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f90, 53, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000f98, 54, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000fa0, 34, 26, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000fa0, 55, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000fa4, 36, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000fb4, 38, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000fc0, 38, 35, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000fcc, 39, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000fcc, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x10000fcc, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10000fe4, 40, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10000fe4, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x10000fe4, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10000ffc, 41, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001008, 41, 35, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001014, 41, 54, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001014, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x10001014, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x1000102c, 572, 14, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10001030, 46, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000103c, 46, 35, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001048, 47, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001048, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x10001048, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10001060, 48, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001060, 48, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001074, 49, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001080, 49, 35, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000108c, 50, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000108c, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x1000108c, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100010a4, 572, 14, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100010a8, 46, 54, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100010a8, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x100010a8, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100010c0, 572, 14, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100010c4, 49, 54, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100010c4, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x100010c4, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100010dc, 572, 14, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100010e0, 53, 32, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100010e0, 335, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/char_traits.h" },
+		{ 0x100010e0, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100010f8, 572, 14, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100010fc, 54, 24, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100010fc, 600, 19, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10001108, 450, 30, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/basic_ios.h" },
+		{ 0x10001114, 49, 7, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/basic_ios.h" },
+		{ 0x1000111c, 874, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001128, 875, 4, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001128, 875, 51, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x1000112c, 600, 19, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x1000113c, 622, 25, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10001144, 55, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001144, 55, 32, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001154, 55, 23, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000115c, 32, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000115c, 34, 26, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001164, 32, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001178, 32, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001178, 34, 26, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000117c, 34, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001180, 570, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100011ac, 50, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/basic_ios.h" },
+		{ 0x100011b4, 876, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x100011b4, 876, 21, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x100011c0, 877, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x100011c0, 877, 27, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x100011c4, 877, 23, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x100011e0, 877, 27, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x100011e4, 55, 42, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100011e4, 600, 19, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x100011f0, 450, 30, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/basic_ios.h" },
+		{ 0x100011fc, 49, 7, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/basic_ios.h" },
+		{ 0x10001204, 874, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001210, 875, 4, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001210, 875, 51, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001214, 600, 19, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10001224, 622, 25, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x1000122c, 600, 46, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/ostream" },
+		{ 0x10001230, 50, 18, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/basic_ios.h" },
+		{ 0x10001238, 876, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001238, 876, 21, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001244, 877, 2, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001244, 877, 27, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001248, 877, 23, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001264, 877, 27, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/bits/locale_facets.h" },
+		{ 0x10001268, 58, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012bc, 61, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012bc, 62, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012bc, 62, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012c4, 66, 24, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012c8, 64, 26, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012d4, 66, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012d4, 66, 24, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012d8, 64, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012d8, 64, 26, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012e0, 62, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012e0, 62, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012ec, 69, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012ec, 69, 15, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012f4, 70, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012f4, 70, 15, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100012f8, 71, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001308, 74, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001314, 75, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001334, 84, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001334, 85, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001334, 85, 24, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001338, 85, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001348, 87, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001350, 88, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001350, 88, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000136c, 75, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001374, 98, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001374, 99, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001374, 99, 24, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001378, 99, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001388, 101, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001390, 102, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001390, 102, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013a8, 105, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013a8, 106, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013a8, 106, 18, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013ac, 106, 18, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013ac, 107, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013b4, 110, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013bc, 77, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013bc, 78, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013bc, 78, 24, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013c0, 78, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013d0, 80, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013d8, 81, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013d8, 81, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013e8, 91, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013e8, 92, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013e8, 92, 24, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013ec, 92, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100013fc, 94, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001404, 95, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001404, 95, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001420, 134, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001420, 135, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001420, 136, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001420, 137, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001420, 137, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001430, 136, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001440, 137, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001440, 137, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001444, 139, 6, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001450, 140, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000145c, 142, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000145c, 142, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000145c, 144, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001460, 145, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001474, 150, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001474, 151, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001474, 152, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001474, 153, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001474, 153, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001480, 152, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001490, 153, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001490, 153, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001498, 155, 2, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014a4, 155, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014b0, 157, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014b0, 157, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014b0, 159, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014b4, 160, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014c8, 165, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014cc, 166, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014cc, 167, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014cc, 168, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014cc, 168, 23, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014d0, 168, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014d8, 170, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014d8, 170, 27, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014dc, 170, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014ec, 167, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100014f4, 176, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001500, 176, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000150c, 172, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000150c, 172, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000150c, 174, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000150c, 174, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001514, 174, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001514, 176, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001528, 174, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001528, 174, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001528, 176, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001534, 174, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001534, 174, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001534, 176, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001540, 176, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000154c, 180, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000154c, 180, 32, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001550, 180, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001560, 167, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001568, 186, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001574, 186, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001580, 182, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001580, 182, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001580, 184, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001580, 184, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001588, 184, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001588, 186, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000159c, 184, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000159c, 184, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000159c, 186, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015a8, 184, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015a8, 184, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015a8, 186, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015b4, 186, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015c0, 190, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015c0, 190, 32, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015c4, 268, 12, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015c8, 190, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015dc, 196, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015e8, 196, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015f4, 192, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015f4, 192, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015f4, 194, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015f4, 194, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015fc, 194, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100015fc, 196, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001610, 194, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001610, 194, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001610, 196, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000161c, 194, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000161c, 194, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000161c, 196, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001628, 196, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001634, 201, 10, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001634, 201, 28, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001638, 201, 10, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001640, 203, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001640, 203, 27, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001644, 203, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001654, 167, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000165c, 209, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001668, 209, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001674, 205, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001674, 205, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001674, 207, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001674, 207, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000167c, 207, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000167c, 209, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001690, 207, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001690, 207, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001690, 209, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000169c, 207, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000169c, 207, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000169c, 209, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016a8, 209, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016b4, 213, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016b4, 213, 32, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016b8, 213, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016c8, 167, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016d0, 219, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016dc, 219, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016e8, 215, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016e8, 215, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016e8, 217, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016e8, 217, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016f0, 217, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100016f0, 219, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001704, 217, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001704, 217, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001704, 219, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001710, 217, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001710, 217, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001710, 219, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000171c, 219, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001728, 223, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001728, 223, 32, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000172c, 268, 12, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001730, 223, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001744, 229, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001750, 229, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000175c, 225, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000175c, 225, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000175c, 227, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000175c, 227, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001764, 227, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001764, 229, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001778, 227, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001778, 227, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001778, 229, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001784, 227, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001784, 227, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001784, 229, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001790, 229, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000179c, 234, 10, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000179c, 234, 28, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017a0, 268, 12, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017a4, 234, 10, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017ac, 236, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017ac, 236, 27, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017b0, 236, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017c4, 242, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017d0, 242, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017dc, 238, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017dc, 238, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017dc, 240, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017dc, 240, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017e4, 240, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017e4, 242, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017f8, 240, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017f8, 240, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100017f8, 242, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001804, 240, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001804, 240, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001804, 242, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001810, 242, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000181c, 246, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000181c, 246, 32, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001820, 246, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001830, 167, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001838, 252, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001844, 252, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001850, 248, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001850, 248, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001850, 250, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001850, 250, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001858, 250, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001858, 252, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000186c, 250, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000186c, 250, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000186c, 252, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001878, 250, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001878, 250, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001878, 252, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001884, 252, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001890, 256, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001890, 256, 32, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001894, 268, 12, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001898, 256, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018ac, 262, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018b8, 262, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018c4, 258, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018c4, 258, 30, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018c4, 260, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018c4, 260, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018cc, 260, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018cc, 262, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018e0, 260, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018e0, 260, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018e0, 262, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018ec, 260, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018ec, 260, 34, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018ec, 262, 21, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100018f8, 262, 41, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001904, 267, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000190c, 269, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000190c, 270, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000191c, 113, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000194c, 115, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001954, 115, 15, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001954, 115, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000195c, 116, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000195c, 116, 26, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001960, 116, 37, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001964, 116, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001974, 117, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001974, 117, 32, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001978, 119, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001978, 119, 18, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001984, 119, 40, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x1000198c, 119, 36, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001998, 119, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019a0, 119, 54, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019ac, 119, 40, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019b4, 121, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019b4, 121, 36, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019c4, 122, 6, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019c4, 122, 11, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019cc, 128, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019cc, 129, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019f4, 126, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x100019f4, 126, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/grid.cpp" },
+		{ 0x10001a0c, 10, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a0c, 11, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a0c, 11, 23, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a10, 11, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a1c, 13, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a30, 16, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a30, 17, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a30, 17, 23, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a34, 17, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a40, 19, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a54, 11, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a54, 11, 23, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a54, 22, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a54, 23, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a58, 23, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a64, 25, 8, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a64, 25, 10, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a6c, 26, 8, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a6c, 29, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a7c, 17, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a7c, 17, 23, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a7c, 31, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a7c, 32, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a80, 32, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a8c, 34, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a8c, 34, 11, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a94, 35, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001a94, 38, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001aa4, 41, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001aa4, 42, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001aa4, 42, 16, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001aa8, 42, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001ab4, 44, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001ac8, 16, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001ae4, 17, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001ae4, 18, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001ae4, 20, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001ae4, 20, 16, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001aec, 22, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001aec, 22, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001af8, 30, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001af8, 30, 26, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b04, 31, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b04, 31, 24, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b10, 32, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b10, 32, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b28, 40, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b28, 40, 23, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b3c, 42, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b44, 24, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b44, 26, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b44, 26, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b50, 26, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b54, 27, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b54, 27, 15, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b68, 17, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001b68, 17, 23, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001b68, 28, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b6c, 28, 9, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b78, 34, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b78, 42, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001b78, 42, 16, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/alphanum.cpp" },
+		{ 0x10001b7c, 34, 14, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b88, 36, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b88, 36, 23, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b94, 37, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001b94, 37, 24, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001ba0, 38, 13, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001ba0, 38, 22, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001bb4, 42, 17, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001bb8, 44, 5, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001bb8, 45, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001be0, 45, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001bf8, 74, 25, "/home/hound/Crosscompilation/powerpc64-linux-musl-cross/powerpc64-linux-musl/include/c++/9.3.0/iostream" },
+		{ 0x10001c28, 45, 1, "/home/hound/Projects/r2test/dwarf/cpp/sudoku_cpp/play.cpp" },
+		{ 0x10001c48, 0, 0, NULL }
 	};
+	assert_line_samples_eq(li->lines, RZ_ARRAY_SIZE(test_line_samples), test_line_samples);
+	rz_bin_dwarf_line_info_free(li);
 
-	RzBinSourceRow *row;
-	RzListIter *iter;
-	int i = 0;
-	rz_list_foreach (li->rows, iter, row) {
-		const RzBinSourceRow *expect = &test_rows[i++];
-		mu_assert_eq(row->address, expect->address, "Row addr");
-		mu_assert_streq(row->file, expect->file, "Row file");
-		mu_assert_eq(row->line, expect->line, "Row line");
-		mu_assert_eq(row->column, expect->column, "Row column");
-		if (i == 0x10) {
-			break;
-		}
-	}
-
-	rz_list_free(line_list);
 	rz_bin_free(bin);
 	rz_io_free(io);
 	mu_end;
@@ -1099,6 +1551,7 @@ bool test_dwarf3_aranges(void) {
 }
 
 bool all_tests() {
+	srand(time(0));
 	mu_run_test(test_dwarf3_c_basic);
 	mu_run_test(test_dwarf_cpp_empty_line_info);
 	mu_run_test(test_dwarf2_cpp_many_comp_units);

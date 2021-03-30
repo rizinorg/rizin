@@ -116,27 +116,6 @@ ut64 rz_coresym_cache_element_pa2va(RzCoreSymCacheElement *element, ut64 pa) {
 	return pa;
 }
 
-static void meta_add_fileline(RzBinFile *bf, ut64 vaddr, ut32 size, RzCoreSymCacheElementFLC *flc) {
-	Sdb *s = bf->sdb_addrinfo;
-	if (!s) {
-		return;
-	}
-	char aoffset[64];
-	ut64 cursor = vaddr;
-	ut64 end = cursor + RZ_MAX(size, 1);
-	char *fileline = rz_str_newf("%s:%d", flc->file, flc->line);
-	while (cursor < end) {
-		char *aoffsetptr = sdb_itoa(cursor, aoffset, 16);
-		if (!aoffsetptr) {
-			break;
-		}
-		sdb_set(s, aoffsetptr, fileline, 0);
-		sdb_set(s, fileline, aoffsetptr, 0);
-		cursor += 2;
-	}
-	free(fileline);
-}
-
 static char *str_dup_safe(const ut8 *b, const ut8 *str, const ut8 *end) {
 	if (str >= b && str < end) {
 		int len = rz_str_nlen((const char *)str, end - str);
@@ -351,7 +330,6 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 				continue;
 			}
 			cursor += RZ_CS_EL_SIZE_LSYM;
-			meta_add_fileline(bf, rz_coresym_cache_element_pa2va(result, lsym->sym.paddr), lsym->sym.size, &lsym->flc);
 		}
 	}
 	if (hdr->n_line_info) {
@@ -374,7 +352,6 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf
 				break;
 			}
 			cursor += RZ_CS_EL_SIZE_LINFO;
-			meta_add_fileline(bf, rz_coresym_cache_element_pa2va(result, info->paddr), info->size, &info->flc);
 		}
 	}
 
