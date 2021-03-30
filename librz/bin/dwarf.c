@@ -846,6 +846,7 @@ static void store_line_sample(RzBinSourceLineInfoBuilder *bob, const RzBinDwarfL
 
 /**
  * \brief Execute a single line op on regs and optionally store the resulting line info in bob
+ * \param fnc if not null, filenames will be resolved to their full paths using this cache.
  */
 RZ_API bool rz_bin_dwarf_line_op_run(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs, RzBinDwarfLineOp *op,
 	RZ_NULLABLE RzBinSourceLineInfoBuilder *bob, RZ_NULLABLE RzBinDwarfDebugInfo *info, RZ_NULLABLE RzBinDwarfLineFileCache fnc) {
