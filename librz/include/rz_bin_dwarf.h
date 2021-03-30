@@ -947,6 +947,12 @@ RZ_API void rz_bin_dwarf_loc_free(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_tab
 RZ_API void rz_bin_dwarf_debug_info_free(RzBinDwarfDebugInfo *inf);
 RZ_API void rz_bin_dwarf_debug_abbrev_free(RzBinDwarfDebugAbbrev *da);
 
+/**
+ * \brief Opaque cache for fully resolved filenames during Dwarf Line Info Generation
+ * This cache stores full file paths to be optionally used in rz_bin_dwarf_line_op_run().
+ * It is strictly associated with the RzBinDwarfLineHeader it has been created with in rz_bin_dwarf_line_header_new_file_cache()
+ * and must be freed with the same header in rz_bin_dwarf_line_header_free_file_cache().
+ */
 typedef char **RzBinDwarfLineFileCache;
 
 RZ_API RzBinDwarfLineInfo *rz_bin_dwarf_parse_line(RzBinFile *binfile, RZ_NULLABLE RzBinDwarfDebugInfo *info, RzBinDwarfLineInfoMask mask);
