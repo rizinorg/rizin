@@ -24,6 +24,7 @@ static const RzCmdDescDetail iterators_details[2];
 static const RzCmdDescDetail redirection_details[2];
 static const RzCmdDescDetail pipe_details[2];
 static const RzCmdDescDetail grep_details[5];
+static const RzCmdDescDetail specifiers_details[4];
 static const RzCmdDescArg hash_bang_args[3];
 static const RzCmdDescArg tasks_args[2];
 static const RzCmdDescArg tasks_transient_args[2];
@@ -3897,6 +3898,50 @@ static const RzCmdDescHelp grep_help = {
 	.details = grep_details,
 };
 
+static const RzCmdDescDetailEntry specifiers_Table_space_format_space_specifiers_space__oparen__minor_table_spec_greater__cparen__detail_entries[] = {
+	{ .text = "<col>/sort/<inc|dec>", .arg_str = NULL, .comment = "Sort table by column <col> in increasing or decreasing order." },
+	{ .text = "<col>/sortlen/<inc|dec>", .arg_str = NULL, .comment = "Sort table length of column <col> in increasing or decreasing order." },
+	{ .text = "<col>/cols[/<col2>[/<colN>...]", .arg_str = NULL, .comment = "Show only specified columns in the table." },
+	{ .text = "<col>/gt/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is greather than <val>." },
+	{ .text = "<col>/lt/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is less than <val>." },
+	{ .text = "<col>/eq/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is equal to <val>." },
+	{ .text = "<col>/ne/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is not equal to <val>." },
+	{ .text = "<col|*>/uniq", .arg_str = NULL, .comment = "Only get the first row where column <col> or all columns are unique." },
+	{ .text = "*/page/<n_page>/<page_size>", .arg_str = NULL, .comment = "Show <page_size> rows starting from the page number <n_page>." },
+	{ .text = "<col>/str/<value>", .arg_str = NULL, .comment = "Grep rows where string <value> is a substring of column <col>." },
+	{ .text = "<col>/strlen/<value>", .arg_str = NULL, .comment = "Grep rows where the length of column <col> is <value>." },
+	{ .text = "<col>/minlen/<value>", .arg_str = NULL, .comment = "Grep rows where the length of column <col> is greater than <value>." },
+	{ .text = "<col>/maxlen/<value>", .arg_str = NULL, .comment = "Grep rows where the length of column <col> is less than <value>." },
+	{ .text = "<col>/sum/<value>", .arg_str = NULL, .comment = "Sum all the values of column <col>." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry specifiers_Output_space_format_space_specifiers_space__oparen__minor_output_spec_greater__cparen__detail_entries[] = {
+	{ .text = "csv", .arg_str = NULL, .comment = "Print the table in CSV format." },
+	{ .text = "json", .arg_str = NULL, .comment = "Print the table in JSON format." },
+	{ .text = "fancy", .arg_str = NULL, .comment = "Print the table in a nice form with borders and headers." },
+	{ .text = "simple", .arg_str = NULL, .comment = "Print the table in a simple form, only with headers." },
+	{ .text = "quiet", .arg_str = NULL, .comment = "Print the table in a simple form, without headers." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry specifiers_Examples_detail_entries[] = {
+	{ .text = "aflt", .arg_str = ":addr/cols/name/nbbs:nbbs/sort/dec:nbbs/gt/1:nbbs/lt/10:fancy", .comment = "Show only the address, name and number of basic blocks of the identified functions with more than 1 block but less than 10, sorted decrementally by number of blocks." },
+	{ 0 },
+};
+static const RzCmdDescDetail specifiers_details[] = {
+	{ .name = "Table format specifiers (<table_spec>)", .entries = specifiers_Table_space_format_space_specifiers_space__oparen__minor_table_spec_greater__cparen__detail_entries },
+	{ .name = "Output format specifiers (<output_spec>)", .entries = specifiers_Output_space_format_space_specifiers_space__oparen__minor_output_spec_greater__cparen__detail_entries },
+	{ .name = "Examples", .entries = specifiers_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp specifiers_help = {
+	.summary = "Command specifiers (table-output only for now)",
+	.usage = "<command>[:<table_spec>[:<table_spec>:...]:<output_spec>]",
+	.options = "[?]",
+	.details = specifiers_details,
+};
+
 RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
@@ -4679,5 +4724,8 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *grep_cd = rz_cmd_desc_fake_new(core->rcmd, root_cd, "~", &grep_help);
 	rz_warn_if_fail(grep_cd);
+
+	RzCmdDesc *specifiers_cd = rz_cmd_desc_fake_new(core->rcmd, root_cd, ":", &specifiers_help);
+	rz_warn_if_fail(specifiers_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

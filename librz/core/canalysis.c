@@ -3826,10 +3826,7 @@ static int fcn_list_table(RzCore *core, const char *q, int fmt) {
 		rz_table_add_row(t, fcnAddr, fcnSize, fcn->name, nbbs, xref, callstr, ccstr, noret, NULL);
 	}
 	if (rz_table_query(t, q)) {
-		char *s = (fmt == 'j')
-			? rz_table_tojson(t)
-			: rz_table_tofancystring(t);
-		// char *s = rz_table_tostring (t);
+		char *s = rz_table_tostring(t);
 		rz_cons_printf("%s\n", s);
 		free(s);
 	}

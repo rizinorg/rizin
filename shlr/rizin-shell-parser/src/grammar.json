@@ -3353,6 +3353,53 @@
         }
       ]
     },
+    "spec_arg_identifier": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "TOKEN",
+          "content": {
+            "type": "REPEAT1",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "REPEAT1",
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\\s@|#\"'>;$`~\\\\,():]"
+                  }
+                },
+                {
+                  "type": "STRING",
+                  "value": "$$$"
+                },
+                {
+                  "type": "STRING",
+                  "value": "$$"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\$[^\\s@|#\"'>;`~\\\\({) ]"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\${[^\\r\\n $}]+}"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\\\."
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "$"
+        }
+      ]
+    },
     "double_quoted_arg": {
       "type": "SEQ",
       "members": [
@@ -3559,6 +3606,60 @@
           "value": ";"
         }
       ]
+    },
+    "specifiers": {
+      "type": "REPEAT1",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "_spec_sep"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_concat"
+          },
+          {
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "spec_arg_identifier"
+            },
+            "named": true,
+            "value": "arg_identifier"
+          }
+        ]
+      }
+    },
+    "cmd_identifier": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "id",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_cmd_identifier"
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "extra",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "specifiers"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          }
+        }
+      ]
     }
   },
   "extras": [
@@ -3576,7 +3677,7 @@
   "externals": [
     {
       "type": "SYMBOL",
-      "name": "cmd_identifier"
+      "name": "_cmd_identifier"
     },
     {
       "type": "SYMBOL",
@@ -3597,6 +3698,10 @@
     {
       "type": "SYMBOL",
       "name": "_concat_pf_dot"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_spec_sep"
     }
   ],
   "inline": [

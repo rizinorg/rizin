@@ -323,7 +323,18 @@
   {
     "type": "cmd_identifier",
     "named": true,
-    "fields": {}
+    "fields": {
+      "extra": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "specifiers",
+            "named": true
+          }
+        ]
+      }
+    }
   },
   {
     "type": "cmd_substitution_arg",
@@ -7568,6 +7579,21 @@
     "type": "single_quoted_arg",
     "named": true,
     "fields": {}
+  },
+  {
+    "type": "specifiers",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "arg_identifier",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "tmp_arch_command",
