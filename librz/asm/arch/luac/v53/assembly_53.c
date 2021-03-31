@@ -240,7 +240,7 @@ static LuaInstruction encode_iabc_abc(ut8 opcode, const char *arg_start, st32 li
                 return -1;
         }
 
-        /* Find the 2nd arg */
+        /* Find the 3rd arg */
         arg3_offset = load_next_arg_start(arg_start + arg1_offset + arg2_offset, buffer);
         if (arg3_offset == 0) {
                 return -1;
@@ -270,8 +270,6 @@ bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 
 	ut8 opcode;
 	LuaInstruction instruction = 0x00;
-
-	eprintf("Input : %s, size : %d\n", input, input_size);
 
 	/* Find the opcode */
 	opcode_start = input;
