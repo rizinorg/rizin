@@ -93,8 +93,9 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 		rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, fcnargs));
 		int i;
 		for (i = 0; i < fcnargs; i++) {
-			const char *arg = rz_type_func_args_name(a->typedb, fcn->name, i);
-			rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
+			const char *arg_name = rz_type_func_args_name(a->typedb, fcn->name, i);
+			const char *arg_type = rz_type_func_args_type(a->typedb, fcn->name, i);
+			rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s,%s\"", fcn->name, i, arg_type, arg_name));
 		}
 	}
 
