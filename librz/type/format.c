@@ -1885,6 +1885,9 @@ RZ_API int rz_type_format_struct_size(RzTypeDB *typedb, const char *f, int mode,
 	return (mode & RZ_PRINT_UNIONMODE) ? biggest : size;
 }
 
+static int rz_type_format_data_internal(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
+	const char *formatname, int mode, const char *setval, char *ofield);
+
 static int rz_type_format_struct(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, int len, const char *name,
 	int slide, int mode, const char *setval, char *field, int anon) {
 	const char *fmt;
@@ -1915,7 +1918,7 @@ static int rz_type_format_struct(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf,
 		}
 		rz_strbuf_appendf(outbuf, "<%s>\n", name);
 	}
-	rz_type_format_data(typedb, p, seek, b, len, fmt, mode, setval, field);
+	rz_type_format_data_internal(typedb, p, outbuf, seek, b, len, fmt, mode, setval, field);
 	return rz_type_format_struct_size(typedb, fmt, mode, 0);
 }
 
@@ -2033,7 +2036,7 @@ RZ_API void rz_type_db_format_purge(RzTypeDB *typedb) {
 	typedb->formats = sdb_new0();
 }
 
-RZ_API char *rz_type_format_data(RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
+static int rz_type_format_data_internal(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const int old_bits = typedb->target->bits;
@@ -2070,7 +2073,6 @@ RZ_API char *rz_type_format_data(RzTypeDB *typedb, RzPrint *p, ut64 seek, const 
 		free(internal_format);
 		return 0;
 	}
-	RzStrBuf *outbuf = rz_strbuf_new("");
 
 	// len+2 to save space for the null termination in wide strings
 	ut8 *buf = calloc(1, len + 2);
@@ -2842,7 +2844,13 @@ beach:
 	free(buf);
 	free(field);
 	free(args);
-	//return i;
+	return i;
+}
+
+RZ_API char *rz_type_format_data(RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
+	const char *formatname, int mode, const char *setval, char *ofield) {
+	RzStrBuf *outbuf = rz_strbuf_new("");
+	rz_type_format_data_internal(typedb, p, outbuf, seek, b, len, formatname, mode, setval, ofield);
 	char *outstr = rz_strbuf_drain(outbuf);
 	return outstr;
 }
