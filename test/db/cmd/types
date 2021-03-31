@@ -1789,15 +1789,13 @@ RUN
 NAME=tn common
 FILE=bins/pe/pe.exe
 CMDS=<<EOF
-tn 8
 tn
-tn- 0x8
+tn- FatalExit
 tn
 tn-*
 tn
 EOF
 EXPECT=<<EOF
-0x8
 ExitProcess
 ExitThread
 FatalExit
@@ -1806,7 +1804,6 @@ RaiseException
 RtlRaiseException
 ExitProcess
 ExitThread
-FatalExit
 FreeLibraryAndExitThread
 RaiseException
 RtlRaiseException
