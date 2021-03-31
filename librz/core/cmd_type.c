@@ -458,7 +458,7 @@ static void noreturn_del(RzCore *core, const char *s) {
 	char *k;
 	RzList *list = rz_str_split_duplist(s, " ", false);
 	rz_list_foreach (list, iter, k) {
-		rz_analysis_noreturn_drop(core->analysis, k);
+		rz_type_func_noreturn_drop(core->analysis->typedb, k);
 	}
 	rz_list_free(list);
 }
@@ -471,7 +471,7 @@ static void cmd_type_noreturn(RzCore *core, const char *input) {
 			RzListIter *iter;
 			char *name;
 			rz_list_foreach (noretl, iter, name) {
-				rz_analysis_noreturn_drop(core->analysis, name);
+				rz_type_func_noreturn_drop(core->analysis->typedb, name);
 			}
 		} else {
 			char *s = strdup(rz_str_trim_head_ro(input + 1));
@@ -486,7 +486,7 @@ static void cmd_type_noreturn(RzCore *core, const char *input) {
 		if (n) {
 			rz_analysis_noreturn_add(core->analysis, arg, n);
 		} else {
-			rz_analysis_noreturn_add(core->analysis, arg, UT64_MAX);
+			rz_type_func_noreturn_add(core->analysis->typedb, arg);
 		}
 	} break;
 	case 'a': // "tna"
@@ -1173,7 +1173,7 @@ RZ_IPI RzCmdStatus rz_type_list_noreturn_handler(RzCore *core, int argc, const c
 		if (n) {
 			rz_analysis_noreturn_add(core->analysis, name, n);
 		} else {
-			rz_analysis_noreturn_add(core->analysis, name, UT64_MAX);
+			rz_type_func_noreturn_add(core->analysis->typedb, name);
 		}
 	} else {
 		rz_core_types_function_noreturn_print(core, mode);
@@ -1183,7 +1183,7 @@ RZ_IPI RzCmdStatus rz_type_list_noreturn_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_type_noreturn_del_handler(RzCore *core, int argc, const char **argv) {
 	for (int i = 1; i < argc; i++) {
-		rz_analysis_noreturn_drop(core->analysis, argv[i]);
+		rz_type_func_noreturn_drop(core->analysis->typedb, argv[i]);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -1193,7 +1193,7 @@ RZ_IPI RzCmdStatus rz_type_noreturn_del_all_handler(RzCore *core, int argc, cons
 	RzListIter *iter;
 	char *name;
 	rz_list_foreach (noretl, iter, name) {
-		rz_analysis_noreturn_drop(core->analysis, name);
+		rz_type_func_noreturn_drop(core->analysis->typedb, name);
 	}
 	return RZ_CMD_STATUS_OK;
 }

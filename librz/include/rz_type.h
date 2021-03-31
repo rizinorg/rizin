@@ -210,7 +210,11 @@ RZ_API bool rz_type_func_arg_count_set(RzTypeDB *typedb, RZ_NONNULL const char *
 RZ_API bool rz_type_func_arg_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i, RZ_NONNULL const char *arg_name, RZ_NONNULL const char *arg_type);
 RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, const char *type);
 RZ_API RZ_OWN char *rz_type_func_guess(RzTypeDB *typedb, RZ_NONNULL char *func_name);
+
 RZ_API RzList *rz_type_noreturn_functions(RzTypeDB *typedb);
+RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *name);
+RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *name);
+RZ_API bool rz_type_func_noreturn_drop(RzTypeDB *typedb, RZ_NONNULL const char *name);
 
 // Listing API
 RZ_API RzList *rz_type_db_enums(RzTypeDB *typedb);

@@ -260,3 +260,19 @@ RZ_API RzList *rz_type_noreturn_functions(RzTypeDB *typedb) {
 	ls_free(l);
 	return noretl;
 }
+
+RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, false);
+	return sdb_bool_get(typedb->sdb_types, sdb_fmt("func.%s.noreturn", name), NULL);
+}
+
+RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, false);
+	return sdb_bool_set(typedb->sdb_types, sdb_fmt("func.%s.noreturn", name), true, 0);
+}
+
+RZ_API bool rz_type_func_noreturn_drop(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, false);
+	sdb_unset(typedb->sdb_types, sdb_fmt("func.%s.noreturn", name), 0);
+	return true;
+}

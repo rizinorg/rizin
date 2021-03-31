@@ -518,13 +518,18 @@ RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr) {
 	return false;
 }
 
+static bool rz_analysis_is_noreturn(RzAnalysis *analysis, const char *name) {
+	return rz_type_func_is_noreturn(analysis->typedb, name) ||
+		sdb_bool_get(analysis->sdb_noret, K_NORET_FUNC(name), NULL);
+}
+
 static bool rz_analysis_noreturn_at_name(RzAnalysis *analysis, const char *name) {
-	if (sdb_bool_get(analysis->sdb_noret, K_NORET_FUNC(name), NULL)) {
+	if (rz_analysis_is_noreturn(analysis, name)) {
 		return true;
 	}
 	char *tmp = rz_type_func_guess(analysis->typedb, (char *)name);
 	if (tmp) {
-		if (sdb_bool_get(analysis->sdb_noret, K_NORET_FUNC(tmp), NULL)) {
+		if (rz_analysis_is_noreturn(analysis, tmp)) {
 			free(tmp);
 			return true;
 		}
