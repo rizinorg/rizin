@@ -3761,8 +3761,8 @@ static void visual_refresh(RzCore *core) {
 	} else {
 		rz_cons_clear();
 	}
-	rz_cons_flush();
 	rz_cons_print_clear();
+	rz_cons_flush();
 
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");
 	int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
