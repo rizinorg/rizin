@@ -31,7 +31,7 @@ RZ_API int rz_main_rz_run(int argc, const char **argv) {
 		return 1;
 	}
 	if (!strcmp(argv[1], "-v")) {
-		return rz_main_version_print("rz_run");
+		return rz_main_version_print("rz-run");
 	}
 	const char *file = argv[1];
 	if (!strcmp(file, "-t")) {

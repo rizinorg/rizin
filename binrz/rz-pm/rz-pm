@@ -135,7 +135,7 @@ confirm() {
 
 purgeRZ() {
 	P="$1"
-	BINS="rizin rz_bin rz_find rz-pm "
+	BINS="rizin rz-bin rz-find rz-pm "
 	cd "$P/bin" && rm -f ${BINS}
 	cd "$P/lib" && rm -f libr_*
 	cd "$P/lib" && rm -rf rizin

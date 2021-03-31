@@ -58,7 +58,7 @@ static int help(bool verbose) {
 			" -r [rizin] path to rizin executable (default is " RIZIN_CMD_DEFAULT ")\n"
 			" -m [rz-asm]   path to rz-asm executable (default is " RZ_ASM_CMD_DEFAULT ")\n"
 			" -f [file]    file to use for json tests (default is " JSON_TEST_FILE_DEFAULT ")\n"
-			" -C [dir]     chdir before running rz_test (default follows executable symlink + test/new\n"
+			" -C [dir]     chdir before running rz-test (default follows executable symlink + test/new\n"
 			" -t [seconds] timeout per test (default is " TIMEOUT_DEFAULT_STR ")\n"
 			" -o [file]    output test run information in JSON format to file"
 			"\n"
@@ -81,7 +81,7 @@ static bool rz_test_chdir(const char *argv0) {
 	char *rz_test_path = rz_file_path(argv0);
 	bool found = false;
 	if (readlink(rz_test_path, src_path, sizeof(src_path)) != -1) {
-		char *p = strstr(src_path, RZ_SYS_DIR "binrz" RZ_SYS_DIR "rz_test" RZ_SYS_DIR "rz_test");
+		char *p = strstr(src_path, RZ_SYS_DIR "binrz" RZ_SYS_DIR "rz-test" RZ_SYS_DIR "rz-test");
 		if (p) {
 			*p = 0;
 			strcat(src_path, RZ_SYS_DIR "test" RZ_SYS_DIR);
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
 			if (quiet) {
 				printf(RZ_VERSION "\n");
 			} else {
-				char *s = rz_str_version("rz_test");
+				char *s = rz_str_version("rz-test");
 				printf("%s\n", s);
 				free(s);
 			}
@@ -1067,7 +1067,7 @@ static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results
 		return;
 	}
 	char *name = NULL;
-	int fd = rz_file_mkstemp("rz_test-cmds", &name);
+	int fd = rz_file_mkstemp("rz-test-cmds", &name);
 	if (fd == -1) {
 		free(name);
 		eprintf("Failed to open tmp file\n");

@@ -27,7 +27,7 @@ static int usage(int v) {
 }
 
 static int showversion(void) {
-	return rz_main_version_print("rz_agent");
+	return rz_main_version_print("rz-agent");
 }
 
 RZ_API int rz_main_rz_agent(int argc, const char **argv) {

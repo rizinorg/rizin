@@ -797,7 +797,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'r': rad = true; break;
 		case 'v':
 			rz_core_fini(&core);
-			return rz_main_version_print("rz_bin");
+			return rz_main_version_print("rz-bin");
 		case 'L':
 			set_action(RZ_BIN_REQ_LISTPLUGINS);
 			break;
@@ -1070,7 +1070,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		//if this return false means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
-			eprintf("rz_bin: Cannot open file\n");
+			eprintf("rz-bin: Cannot open file\n");
 			rz_core_file_free(fh);
 			rz_core_fini(&core);
 			return 1;

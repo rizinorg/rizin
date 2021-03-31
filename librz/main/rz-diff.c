@@ -1060,7 +1060,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			ro.diffmode = 'U';
 			break;
 		case 'v':
-			return rz_main_version_print("rz_diff");
+			return rz_main_version_print("rz-diff");
 		case 'q':
 			ro.quiet = true;
 			break;
@@ -1208,13 +1208,13 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		bufa = slurp(&ro, &c, ro.file, &fsz);
 		sza = fsz;
 		if (!bufa) {
-			eprintf("rz_diff: Cannot open %s\n", rz_str_get_null(ro.file));
+			eprintf("rz-diff: Cannot open %s\n", rz_str_get_null(ro.file));
 			return 1;
 		}
 		bufb = slurp(&ro, &c, ro.file2, &fsz);
 		szb = fsz;
 		if (!bufb) {
-			eprintf("rz_diff: Cannot open: %s\n", rz_str_get_null(ro.file2));
+			eprintf("rz-diff: Cannot open: %s\n", rz_str_get_null(ro.file2));
 			free(bufa);
 			return 1;
 		}
