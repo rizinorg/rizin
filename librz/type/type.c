@@ -63,6 +63,10 @@ RZ_API void rz_type_db_set_cpu(RzTypeDB *typedb, const char *cpu) {
 	typedb->target->cpu = cpu;
 }
 
+RZ_API void rz_type_db_set_endian(RzTypeDB *typedb, bool big_endian) {
+	typedb->target->big_endian = big_endian;
+}
+
 RZ_API char *rz_type_db_kuery(RzTypeDB *typedb, const char *query) {
 	char *output = NULL;
 	if (query) {

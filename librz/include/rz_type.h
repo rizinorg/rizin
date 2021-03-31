@@ -97,6 +97,7 @@ RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 RZ_API void rz_type_db_set_bits(RzTypeDB *typedb, int bits);
 RZ_API void rz_type_db_set_os(RzTypeDB *typedb, const char *os);
 RZ_API void rz_type_db_set_cpu(RzTypeDB *typedb, const char *cpu);
+RZ_API void rz_type_db_set_endian(RzTypeDB *typedb, bool big_endian);
 RZ_API char *rz_type_db_kuery(RzTypeDB *typedb, const char *query);
 
 RZ_API const char *rz_type_db_get(RzTypeDB *typedb, const char *name);

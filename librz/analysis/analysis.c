@@ -304,6 +304,7 @@ RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
 	if (analysis->reg) {
 		analysis->reg->big_endian = bigend;
 	}
+	rz_type_db_set_endian(analysis->typedb, bigend);
 	return true;
 }
 

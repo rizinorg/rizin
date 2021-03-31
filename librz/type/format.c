@@ -2538,7 +2538,7 @@ static int rz_type_format_data_internal(RzTypeDB *typedb, RzPrint *p, RzStrBuf *
 				/*
 				case 'D':
 					if (isptr) {
-						if (p->bits == 64) {
+						if (typedb->target->bits == 64) {
 							i += rz_print_format_disasm(p, addr64, size);
 						} else {
 							i += rz_print_format_disasm(p, addr, size);
@@ -2684,7 +2684,7 @@ static int rz_type_format_data_internal(RzTypeDB *typedb, RzPrint *p, RzStrBuf *
 						s = rz_type_format_struct(typedb, p, outbuf, seeki,
 							buf + i, len - i, fmtname, slide,
 							mode, setval, nxtfield, anon);
-						i += (isptr) ? (p->bits / 8) : s;
+						i += (isptr) ? (typedb->target->bits / 8) : s;
 						if (MUSTSEEJSON) {
 							if (!isptr && (!arg[1] || arg[1] == ' ')) {
 								rz_strbuf_append(outbuf, "]}");
@@ -2717,7 +2717,7 @@ static int rz_type_format_data_internal(RzTypeDB *typedb, RzPrint *p, RzStrBuf *
 							if (elem > -1) {
 								elem--;
 							}
-							i += (isptr) ? (p->bits / 8) : s;
+							i += (isptr) ? (typedb->target->bits / 8) : s;
 						}
 						if (mode & RZ_PRINT_ISFIELD) {
 							if (!SEEVALUE) {
