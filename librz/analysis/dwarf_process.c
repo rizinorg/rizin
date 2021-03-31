@@ -1609,6 +1609,120 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
 	return !strcmp(v, "fcn");
 }
 
+static RzAnalysisFunction *get_fcn_from_sname(RzAnalysis *analysis, Sdb *dwarf_sdb, const char *func_sname) {
+	char *addr_key = rz_str_newf("fcn.%s.addr", func_sname);
+	ut64 faddr = sdb_num_get(dwarf_sdb, addr_key, 0);
+	free(addr_key);
+
+	return rz_analysis_get_function_at(analysis, faddr);
+}
+
+static char *get_fcn_real_name(Sdb *dwarf_sdb, const char *func_sname) {
+	char *real_name_key = rz_str_newf("fcn.%s.name", func_sname);
+	char *real_name = sdb_get(dwarf_sdb, real_name_key, 0);
+	free(real_name_key);
+
+	return real_name;
+}
+
+static char *get_fcn_dwf_name(Sdb *dwarf_sdb, const char *func_sname) {
+	char *real_name = get_fcn_real_name(dwarf_sdb, func_sname);
+	char *dwf_name = rz_str_newf("dbg.%s", real_name);
+	free(real_name);
+
+	return dwf_name;
+}
+
+static char *get_fcn_sig(Sdb *dwarf_sdb, const char *func_sname) {
+	char *tmp = rz_str_newf("fcn.%s.sig", func_sname);
+	char *fcnstr = sdb_get(dwarf_sdb, tmp, 0);
+	free(tmp);
+
+	return fcnstr;
+}
+
+static void update_fcn_with_dwarf_info(RzAnalysis *analysis, Sdb *dwarf_sdb, RzAnalysisFunction *fcn, char *func_sname) {
+	/* prepend dwarf debug info stuff with dbg. */
+	char *dwf_name = get_fcn_dwf_name(dwarf_sdb, func_sname);
+	rz_analysis_function_rename(fcn, dwf_name);
+
+	/* Apply signature as a comment at a function address */
+	char *fcn_sig = get_fcn_sig(dwarf_sdb, func_sname);
+	rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, fcn->addr, fcn_sig);
+
+	free(fcn_sig);
+	free(dwf_name);
+}
+
+static char *get_fcn_vars(Sdb *dwarf_sdb, const char *func_sname) {
+	char *var_names_key = rz_str_newf("fcn.%s.vars", func_sname);
+	char *vars = sdb_get(dwarf_sdb, var_names_key, NULL);
+	free(var_names_key);
+
+	return vars;
+}
+
+static char *get_var_from_func_sname(Sdb *dwarf_sdb, const char *func_sname, const char *var_name) {
+	char *var_key = rz_str_newf("fcn.%s.var.%s", func_sname, var_name);
+	char *var_data = sdb_get(dwarf_sdb, var_key, NULL);
+	free(var_key);
+
+	return var_data;
+}
+
+static void update_global_name(RzFlag *flags, st64 offset, const char *var_name) {
+	char *global_name = rz_str_newf("global_%s", var_name);
+	rz_flag_unset_off(flags, offset);
+	rz_flag_set_next(flags, global_name, offset, 4);
+	free(global_name);
+}
+
+static void update_fcn_var_with_dwarf_info(RzAnalysis *analysis, Sdb *dwarf_sdb, RzFlag *flags, RzAnalysisFunction *fcn, char *var_data, const char *var_name) {
+	char *extra = NULL;
+	char *kind = sdb_anext(var_data, &extra);
+	char *type = NULL;
+	extra = sdb_anext(extra, &type);
+	st64 offset = 0;
+
+	if (*kind != 'r') {
+		offset = strtol(extra, NULL, 10);
+	}
+
+	if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
+		update_global_name(flags, offset, var_name);
+	} else if (*kind == 's' && fcn) {
+		rz_analysis_function_set_var(fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
+	} else if (*kind == 'r' && fcn) {
+		RzRegItem *i = rz_reg_get(analysis->reg, extra, -1);
+		if (!i) {
+			return;
+		}
+		rz_analysis_function_set_var(fcn, i->index, *kind, type, 4, false, var_name);
+	} else if (fcn) { /* kind == 'b' */
+		rz_analysis_function_set_var(fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
+	}
+}
+
+static void update_fcn_vars_with_dwarf_info(RzAnalysis *analysis, Sdb *dwarf_sdb, RzFlag *flags, RzAnalysisFunction *fcn, char *func_sname) {
+	char *vars = get_fcn_vars(dwarf_sdb, func_sname);
+	char *var_name;
+
+	sdb_aforeach(var_name, vars) {
+		char *var_data = get_var_from_func_sname(dwarf_sdb, func_sname, var_name);
+		if (!var_data) {
+			goto loop_end;
+		}
+
+		update_fcn_var_with_dwarf_info(analysis, dwarf_sdb, flags, fcn, var_data, var_name);
+
+		free(var_data);
+	loop_end:
+		sdb_aforeach_next(var_name);
+	}
+
+	free(vars);
+}
+
 /**
  * @brief Use parsed DWARF function info from Sdb in the function analysis
  *  XXX right now we only save parsed name and variables, we can't use signature now
@@ -1623,75 +1737,16 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 	SdbList *sdb_list = sdb_foreach_list_filter(dwarf_sdb, filter_sdb_function_names, false);
 	SdbListIter *it;
 	SdbKv *kv;
+
 	/* iterate all function entries */
 	ls_foreach (sdb_list, it, kv) {
 		char *func_sname = kv->base.key;
-
-		char *addr_key = rz_str_newf("fcn.%s.addr", func_sname);
-		ut64 faddr = sdb_num_get(dwarf_sdb, addr_key, 0);
-		free(addr_key);
-
+		RzAnalysisFunction *fcn = get_fcn_from_sname(analysis, dwarf_sdb, func_sname);
 		/* if the function is analyzed so we can edit */
-		RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, faddr);
 		if (fcn) {
-			/* prepend dwarf debug info stuff with dbg. */
-			char *real_name_key = rz_str_newf("fcn.%s.name", func_sname);
-			char *real_name = sdb_get(dwarf_sdb, real_name_key, 0);
-			free(real_name_key);
-
-			char *dwf_name = rz_str_newf("dbg.%s", real_name);
-			free(real_name);
-
-			rz_analysis_function_rename(fcn, dwf_name);
-			free(dwf_name);
-
-			char *tmp = rz_str_newf("fcn.%s.sig", func_sname);
-			char *fcnstr = sdb_get(dwarf_sdb, tmp, 0);
-			free(tmp);
-			/* Apply signature as a comment at a function address */
-			rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, faddr, fcnstr);
-			free(fcnstr);
+			update_fcn_with_dwarf_info(analysis, dwarf_sdb, fcn, func_sname);
 		}
-		char *var_names_key = rz_str_newf("fcn.%s.vars", func_sname);
-		char *vars = sdb_get(dwarf_sdb, var_names_key, NULL);
-		char *var_name;
-		sdb_aforeach(var_name, vars) {
-			char *var_key = rz_str_newf("fcn.%s.var.%s", func_sname, var_name);
-			char *var_data = sdb_get(dwarf_sdb, var_key, NULL);
-			if (!var_data) {
-				goto loop_end;
-			}
-			char *extra = NULL;
-			char *kind = sdb_anext(var_data, &extra);
-			char *type = NULL;
-			extra = sdb_anext(extra, &type);
-			st64 offset = 0;
-			if (*kind != 'r') {
-				offset = strtol(extra, NULL, 10);
-			}
-			if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
-				char *global_name = rz_str_newf("global_%s", var_name);
-				rz_flag_unset_off(flags, offset);
-				rz_flag_set_next(flags, global_name, offset, 4);
-				free(global_name);
-			} else if (*kind == 's' && fcn) {
-				rz_analysis_function_set_var(fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
-			} else if (*kind == 'r' && fcn) {
-				RzRegItem *i = rz_reg_get(analysis->reg, extra, -1);
-				if (!i) {
-					goto loop_end;
-				}
-				rz_analysis_function_set_var(fcn, i->index, *kind, type, 4, false, var_name);
-			} else if (fcn) { /* kind == 'b' */
-				rz_analysis_function_set_var(fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
-			}
-			free(var_key);
-			free(var_data);
-		loop_end:
-			sdb_aforeach_next(var_name);
-		}
-		free(var_names_key);
-		free(vars);
+		update_fcn_vars_with_dwarf_info(analysis, dwarf_sdb, flags, fcn, func_sname);
 	}
 	ls_free(sdb_list);
 }
