@@ -2808,7 +2808,7 @@ edges: 4
 end-bbs: 0
 call-refs: 0x00000009 J 0x00000003 J
 data-refs: 0x0000002c
-code-xrefs: 0x00000011 J 0x0000000a J
+code-xrefs: 0x0000000a J 0x00000011 J
 noreturn: false
 in-degree: 2
 out-degree: 0

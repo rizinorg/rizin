@@ -344,21 +344,21 @@ RZ_API RzCore *rz_core_cast(void *p) {
 static ut64 getref(RzCore *core, int n, char t, int type) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	RzListIter *iter;
-	RzAnalysisRef *r;
+	RzAnalysisXRef *r;
 	RzList *list;
 	int i = 0;
 	if (!fcn) {
 		return UT64_MAX;
 	}
 	if (t == 'r') {
-		list = rz_analysis_function_get_refs(fcn);
+		list = rz_analysis_function_get_xrefs_from(fcn);
 	} else {
-		list = rz_analysis_function_get_xrefs(fcn);
+		list = rz_analysis_function_get_xrefs_to(fcn);
 	}
 	rz_list_foreach (list, iter, r) {
 		if (r->type == type) {
 			if (i == n) {
-				ut64 addr = r->addr;
+				ut64 addr = t == 'r' ? r->to : r->from;
 				rz_list_free(list);
 				return addr;
 			}
@@ -2320,8 +2320,9 @@ static void __init_autocomplete_default(RzCore *core) {
 	const char *files[] = {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
-		"idp", "idpi", "L", "obf", "o+", "oc", "rz", "rz_bin", "rz_asm", "rz_hash", "rz_ax",
-		"rz_find", "cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
+		"idp", "idpi", "L", "obf", "o+", "oc",
+		"rizin", "rz-agent", "rz-asm", "rz-ax", "rz-bin", "rz-diff", "rz-find", "rz-gg", "rz-hash", "rz-pm", "rz-run", "rz-sign",
+		"cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
 		"less", "head", "Ps", "Pl", NULL
 	};

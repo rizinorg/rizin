@@ -204,6 +204,10 @@ commands:
   - name: e
     summary: List/get/set config evaluable vars
     subcommands: cmd_eval
+  - name: exit
+    cname: cmd_exit
+    summary: Exit Rizin
+    args: []
   - name: f
     cname: cmd_flag
     summary: Manage flags

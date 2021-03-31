@@ -81,22 +81,18 @@ static bool __rebase_flags(RzFlagItem *flag, void *user) {
 	return true;
 }
 
-static bool __rebase_refs_i(void *user, const ut64 k, const void *v) {
+static bool __rebase_xrefs_i(void *user, const ut64 k, const void *v) {
 	struct __rebase_struct *reb = (void *)user;
-	RzAnalysisRef *ref = (RzAnalysisRef *)v;
-	ref->addr += reb->diff;
-	ref->at += reb->diff;
-	if (reb->type) {
-		rz_analysis_xrefs_set(reb->core->analysis, ref->addr, ref->at, ref->type);
-	} else {
-		rz_analysis_xrefs_set(reb->core->analysis, ref->at, ref->addr, ref->type);
-	}
+	RzAnalysisXRef *xref = (RzAnalysisXRef *)v;
+	xref->from += reb->diff;
+	xref->to += reb->diff;
+	rz_analysis_xrefs_set(reb->core->analysis, xref->from, xref->to, xref->type);
 	return true;
 }
 
-static bool __rebase_refs(void *user, const ut64 k, const void *v) {
+static bool __rebase_xrefs(void *user, const ut64 k, const void *v) {
 	HtUP *ht = (HtUP *)v;
-	ht_up_foreach(ht, __rebase_refs_i, user);
+	ht_up_foreach(ht, __rebase_xrefs_i, user);
 	return true;
 }
 
@@ -148,18 +144,15 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 	// META
 	rz_meta_rebase(core->analysis, diff);
 
-	// REFS
-	HtUP *old_refs = core->analysis->dict_refs;
-	HtUP *old_xrefs = core->analysis->dict_xrefs;
-	core->analysis->dict_refs = NULL;
-	core->analysis->dict_xrefs = NULL;
+	// XREFS
+	HtUP *xrefs_from = core->analysis->ht_xrefs_from;
+	HtUP *xrefs_to = core->analysis->ht_xrefs_to;
+	core->analysis->ht_xrefs_from = NULL;
+	core->analysis->ht_xrefs_to = NULL;
 	rz_analysis_xrefs_init(core->analysis);
-	reb.type = 0;
-	ht_up_foreach(old_refs, __rebase_refs, &reb);
-	reb.type = 1;
-	ht_up_foreach(old_xrefs, __rebase_refs, &reb);
-	ht_up_free(old_refs);
-	ht_up_free(old_xrefs);
+	ht_up_foreach(xrefs_from, __rebase_xrefs, &reb);
+	ht_up_free(xrefs_from);
+	ht_up_free(xrefs_to);
 
 	// BREAKPOINTS
 	rz_debug_bp_rebase(core->dbg, old_base, new_base);

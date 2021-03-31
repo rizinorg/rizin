@@ -1405,39 +1405,36 @@ static int __runMain(RzMainCallback cb, const char *arg) {
 static bool cmd_rzcmd(RzCore *core, const char *_input) {
 	char *input = rz_str_newf("r%s", _input);
 	int rc = 0;
-	if (rz_str_startswith(input, "rz_ax")) {
-		rc = __runMain(core->rz_main_rz_ax, input);
-	} else if (rz_str_startswith(input, "rz")) {
+	if (rz_str_startswith(input, "rizin")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rizin, input);
-	} else if (rz_str_startswith(input, "rizin")) {
+	} else if (rz_str_startswith(input, "rz-agent")) {
 		rz_sys_cmdf("%s", input);
-		// rc = __runMain (core->rz_main_rizin, input);
-	} else if (rz_str_startswith(input, "rz_asm")) {
+	} else if (rz_str_startswith(input, "rz-asm")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_asm, input);
-	} else if (rz_str_startswith(input, "rz_bin")) {
+	} else if (rz_str_startswith(input, "rz-ax")) {
+		rc = __runMain(core->rz_main_rz_ax, input);
+	} else if (rz_str_startswith(input, "rz-bin")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_bin, input);
-	} else if (rz_str_startswith(input, "rz_gg")) {
+	} else if (rz_str_startswith(input, "rz-diff")) {
+		rc = __runMain(core->rz_main_rz_diff, input);
+	} else if (rz_str_startswith(input, "rz-find")) {
+		rz_sys_cmdf("%s", input);
+	} else if (rz_str_startswith(input, "rz-gg")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_gg, input);
-	} else if (rz_str_startswith(input, "rz_pm")) {
+	} else if (rz_str_startswith(input, "rz-hash")) {
+		rz_sys_cmdf("%s", input);
+	} else if (rz_str_startswith(input, "rz-pm")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_pm, input);
-	} else if (rz_str_startswith(input, "rz_diff")) {
-		rc = __runMain(core->rz_main_rz_diff, input);
+	} else if (rz_str_startswith(input, "rz-run")) {
+		rz_sys_cmdf("%s", input);
+	} else if (rz_str_startswith(input, "rz-sign")) {
+		rz_sys_cmdf("%s", input);
 	} else {
-		const char *rzcmds[] = {
-			"rz-ax", "rz-pm", "rz-asm", "rz-bin", "rz-hash", "rz-find", "rz-run", "rz-gg", "rizin", "rz", NULL
-		};
-		int i;
-		for (i = 0; rzcmds[i]; i++) {
-			if (rz_str_startswith(input, rzcmds[i])) {
-				free(input);
-				return true;
-			}
-		}
 		free(input);
 		return false;
 	}
@@ -1860,6 +1857,11 @@ static void cmd_autocomplete(RzCore *core, const char *input) {
 		}
 	}
 	eprintf("Invalid usage of !!!\n");
+}
+
+RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv) {
+	core->num->value = 0LL;
+	return RZ_CMD_STATUS_EXIT;
 }
 
 RZ_IPI int rz_cmd_last(void *data, const char *input) {
@@ -6180,9 +6182,15 @@ static RzCmdStatus core_cmd_tsr2cmd(RzCore *core, const char *cstr, bool split_l
 	ts_symbols_init(core->rcmd);
 
 	TSParser *parser = ts_parser_new();
-	ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
+	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
+	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
 
 	TSTree *tree = ts_parser_parse_string(parser, NULL, input, strlen(input));
+	if (!tree) {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_INVALID;
+	}
+
 	TSNode root = ts_tree_root_node(tree);
 
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;

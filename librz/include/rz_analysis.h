@@ -646,8 +646,8 @@ typedef struct rz_analysis_t {
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
-	HtUP *dict_refs;
-	HtUP *dict_xrefs;
+	HtUP *ht_xrefs_from;
+	HtUP *ht_xrefs_to;
 	bool recursive_noreturn; // analysis.rnr
 	RzSpaces zign_spaces;
 	char *zign_path; // dir.zigns
@@ -937,14 +937,14 @@ typedef enum {
 	RZ_ANALYSIS_REF_TYPE_CALL = 'C', // code ref (call)
 	RZ_ANALYSIS_REF_TYPE_DATA = 'd', // mem ref
 	RZ_ANALYSIS_REF_TYPE_STRING = 's' // string ref
-} RzAnalysisRefType;
+} RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
-	ut64 addr;
-	ut64 at;
-	RzAnalysisRefType type;
-} RzAnalysisRef;
-RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisRefType t);
+	ut64 from;
+	ut64 to;
+	RzAnalysisXRefType type;
+} RzAnalysisXRef;
+RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t);
 
 /* represents a reference line from one address (from) to another (to) */
 typedef struct rz_analysis_refline_t {
@@ -1583,21 +1583,19 @@ RZ_API bool rz_analysis_fcn_bbadd(RzAnalysisFunction *fcn, RzAnalysisBlock *bb);
 RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize);
 RZ_API bool rz_analysis_function_purity(RzAnalysisFunction *fcn);
 
-typedef bool (*RzAnalysisRefCmp)(RzAnalysisRef *ref, void *data);
-RZ_API RzList *rz_analysis_ref_list_new(void);
+typedef bool (*RzAnalysisRefCmp)(RzAnalysisXRef *ref, void *data);
+RZ_API RzList *rz_analysis_xref_list_new(void);
 RZ_API ut64 rz_analysis_xrefs_count(RzAnalysis *analysis);
-RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisRefType type);
-RZ_API RzAnalysisRefType rz_analysis_xrefs_type(char ch);
-RZ_API RzList *rz_analysis_xrefs_get(RzAnalysis *analysis, ut64 to);
-RZ_API RzList *rz_analysis_refs_get(RzAnalysis *analysis, ut64 to);
-RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 from);
+RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type);
+RZ_API RzAnalysisXRefType rz_analysis_xrefs_type(char ch);
+RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr);
+RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr);
 RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad);
-RZ_API RzList *rz_analysis_function_get_refs(RzAnalysisFunction *fcn);
-RZ_API RzList *rz_analysis_function_get_xrefs(RzAnalysisFunction *fcn);
-RZ_API int rz_analysis_xrefs_from(RzAnalysis *analysis, RzList *list, const char *kind, const RzAnalysisRefType type, ut64 addr);
-RZ_API int rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, const RzAnalysisRefType type);
-RZ_API int rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, const RzAnalysisRefType type);
-RZ_API int rz_analysis_xref_del(RzAnalysis *analysis, ut64 at, ut64 addr);
+RZ_API RzList *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn);
+RZ_API RzList *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn);
+RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
+RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
+RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
 
 RZ_API RzList *rz_analysis_get_fcns(RzAnalysis *analysis);
 

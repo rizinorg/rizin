@@ -1670,6 +1670,14 @@ static const RzCmdDescHelp env_help = {
 	.args = env_args,
 };
 
+static const RzCmdDescArg cmd_exit_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_exit_help = {
+	.summary = "Exit Rizin",
+	.args = cmd_exit_args,
+};
+
 static const RzCmdDescHelp cmd_flag_help = {
 	.summary = "Manage flags",
 };
@@ -1767,7 +1775,7 @@ static const RzCmdDescArg cmd_quit_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_quit_help = {
-	.summary = "quit rizin",
+	.summary = "Quit rizin",
 	.args = cmd_quit_args,
 };
 
@@ -1783,7 +1791,7 @@ static const RzCmdDescArg cmd_force_quit_without_history_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_force_quit_without_history_help = {
-	.summary = "force quit rizin without saving history",
+	.summary = "Force quit rizin without saving history",
 	.args = cmd_force_quit_without_history_args,
 };
 
@@ -4160,6 +4168,9 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *env_cd = rz_cmd_desc_argv_new(core->rcmd, e_cd, "env", rz_env_handler, &env_help);
 	rz_warn_if_fail(env_cd);
+
+	RzCmdDesc *cmd_exit_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "exit", rz_cmd_exit_handler, &cmd_exit_help);
+	rz_warn_if_fail(cmd_exit_cd);
 
 	RzCmdDesc *cmd_flag_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "f", rz_cmd_flag, &cmd_flag_help);
 	rz_warn_if_fail(cmd_flag_cd);

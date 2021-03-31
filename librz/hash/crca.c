@@ -56,7 +56,7 @@ static void crc_final(RZ_CRC_CTX *ctx, utcrc *r) {
 #define CRC_PRESET(crc, size, reflect, poly, xout) \
 	{ UTCRC_C(crc), (size), (reflect), UTCRC_C(poly), UTCRC_C(xout) }
 
-/* NOTE: Run `rz_hash -a <algo> -s 123456789` to test CRC. */
+/* NOTE: Run `rz-hash -a <algo> -s 123456789` to test CRC. */
 RZ_CRC_CTX crc_presets[] = {
 	CRC_PRESET(0x00, 8, 0, 0x07, 0x00), //CRC-8-SMBUS, test vector for "1234567892: f4
 #if RZ_HAVE_CRC8_EXTRA

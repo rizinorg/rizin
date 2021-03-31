@@ -1,7 +1,7 @@
 static const char *page_index =
 	"<html>"
 	"<head>"
-	"<title>rz_agent</title>"
+	"<title>rz-agent</title>"
 	"<script>"
 	"function file_open() {"
 	"  var file = window.prompt ('path to file?');"
@@ -10,7 +10,7 @@ static const char *page_index =
 	"</script>"
 	"</head>"
 	"<body>"
-	"  <h2>rz_agent</h2>"
+	"  <h2>rz-agent</h2>"
 	"  <hr size=1 />"
 	"File<br />"
 	" - <a href='javascript:file_open()'>open</a><br />"

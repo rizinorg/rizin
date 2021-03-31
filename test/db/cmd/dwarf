@@ -1331,45 +1331,9 @@ Raw dump of debug contents of section .debug_line:
 0x000011f7	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10
 0x00001206	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	12
 0x00001212	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	13
-0x00001228	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	-
 0x00001228	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
 0x00001234	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
 0x00001239	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
-0x0000123b	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	-
-0x000012c6	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
-0x000012d2	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
-0x000012e0	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
-0x000012e3	/home/hound/r2test/dwarf/cpp/dump/mammal.h	-
-0x000012e4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
-0x000012f4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
-0x0000130e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
-0x00001311	/home/hound/r2test/dwarf/cpp/dump/main.cpp	-
-0x00001312	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x00001322	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x0000133c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x0000133f	/home/hound/r2test/dwarf/cpp/dump/main.cpp	-
-0x00001340	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x00001350	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
-0x0000136f	/home/hound/r2test/dwarf/cpp/dump/main.cpp	-
-0x00001370	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
-0x0000137c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
-0x00001381	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
-0x00001383	/home/hound/r2test/dwarf/cpp/dump/main.cpp	-
-0x00001384	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
-0x00001390	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
-0x0000139e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
-0x000013a1	/home/hound/r2test/dwarf/cpp/dump/main.cpp	-
-0x000013a2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013ae	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013bc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013bf	/home/hound/r2test/dwarf/cpp/dump/main.cpp	-
-0x000013c0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013d0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
-0x000013ef	/home/hound/r2test/dwarf/cpp/dump/main.cpp	-
-0x000013f0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
-0x000013fc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
-0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
-0x00001403	/home/hound/r2test/dwarf/cpp/dump/main.cpp	-
 0x0000123b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	15
 0x00001248	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18
 0x0000125d	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18
@@ -1385,7 +1349,40 @@ Raw dump of debug contents of section .debug_line:
 0x000012b5	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23
 0x000012ba	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23
 0x000012bf	/home/hound/r2test/dwarf/cpp/dump/main.cpp	24
-0x000012c6	/home/hound/r2test/dwarf/cpp/dump/main.cpp	-
+0x000012c6	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
+0x000012d2	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
+0x000012e0	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
+0x000012e3	-	-
+0x000012e4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
+0x000012f4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
+0x0000130e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
+0x00001311	-	-
+0x00001312	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x00001322	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x0000133c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x0000133f	-	-
+0x00001340	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x00001350	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x0000136f	-	-
+0x00001370	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
+0x0000137c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
+0x00001381	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
+0x00001383	-	-
+0x00001384	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
+0x00001390	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
+0x0000139e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
+0x000013a1	-	-
+0x000013a2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013ae	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013bc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013bf	-	-
+0x000013c0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013d0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013ef	-	-
+0x000013f0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x000013fc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x00001403	-	-
 EOF
 RUN
 
@@ -1408,12 +1405,9 @@ RUN
 
 NAME="Mach-O dSYM lines (armv7)"
 FILE=bins/mach0/TestRTTI-armv7-dSYM
-CMDS=<<EOF
-CL 0x0000a24e
-EOF
+CMDS=ix.@0x0000a24e
 EXPECT=<<EOF
-file: /Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp
-line: 18
+0x0000a24e	/Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp	18
 EOF
 RUN
 

@@ -323,13 +323,13 @@ static bool purity_checked(HtUP *ht, RzAnalysisFunction *fcn) {
  */
 static void check_purity(HtUP *ht, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
-	RzList *refs = rz_analysis_function_get_refs(fcn);
-	RzAnalysisRef *ref;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	RzAnalysisXRef *xref;
 	ht_up_insert(ht, fcn->addr, NULL);
 	fcn->is_pure = true;
-	rz_list_foreach (refs, iter, ref) {
-		if (ref->type == RZ_ANALYSIS_REF_TYPE_CALL || ref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
-			RzAnalysisFunction *called_fcn = rz_analysis_get_fcn_in(fcn->analysis, ref->addr, 0);
+	rz_list_foreach (xrefs, iter, xref) {
+		if (xref->type == RZ_ANALYSIS_REF_TYPE_CALL || xref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+			RzAnalysisFunction *called_fcn = rz_analysis_get_fcn_in(fcn->analysis, xref->to, 0);
 			if (!called_fcn) {
 				continue;
 			}
@@ -341,12 +341,12 @@ static void check_purity(HtUP *ht, RzAnalysisFunction *fcn) {
 				break;
 			}
 		}
-		if (ref->type == RZ_ANALYSIS_REF_TYPE_DATA) {
+		if (xref->type == RZ_ANALYSIS_REF_TYPE_DATA) {
 			fcn->is_pure = false;
 			break;
 		}
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 }
 
 typedef struct {
@@ -1418,30 +1418,30 @@ RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut
 }
 
 RZ_API void rz_analysis_trim_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
-	RzAnalysisRef *ref;
-	RzList *refs = rz_analysis_function_get_refs(fcn);
+	RzAnalysisXRef *xref;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	RzListIter *iter;
 	const bool is_x86 = analysis->cur->arch && !strcmp(analysis->cur->arch, "x86"); // HACK
 
-	rz_list_foreach (refs, iter, ref) {
-		if (ref->type == RZ_ANALYSIS_REF_TYPE_CODE && rz_analysis_function_contains(fcn, ref->addr) && (!is_x86 || !rz_analysis_function_contains(fcn, ref->at))) {
-			rz_analysis_xrefs_deln(analysis, ref->at, ref->addr, ref->type);
+	rz_list_foreach (xrefs, iter, xref) {
+		if (xref->type == RZ_ANALYSIS_REF_TYPE_CODE && rz_analysis_function_contains(fcn, xref->to) && (!is_x86 || !rz_analysis_function_contains(fcn, xref->from))) {
+			rz_analysis_xrefs_deln(analysis, xref->from, xref->to, xref->type);
 		}
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 }
 
 RZ_API void rz_analysis_del_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
-	RzAnalysisRef *ref;
-	RzList *refs = rz_analysis_function_get_refs(fcn);
+	RzAnalysisXRef *xref;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	RzListIter *iter;
 
-	rz_list_foreach (refs, iter, ref) {
-		if (ref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
-			rz_analysis_xrefs_deln(analysis, ref->at, ref->addr, ref->type);
+	rz_list_foreach (xrefs, iter, xref) {
+		if (xref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+			rz_analysis_xrefs_deln(analysis, xref->from, xref->to, xref->type);
 		}
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 }
 
 /* Does NOT invalidate read-ahead cache. */

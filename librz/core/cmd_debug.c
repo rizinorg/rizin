@@ -280,9 +280,9 @@ static const char *help_msg_dmp[] = {
 static const char *help_msg_do[] = {
 	"Usage:", "do", " # Debug (re)open commands",
 	"do", "", "Open process (reload, alias for 'oo')",
-	"dor", " [rz_run]", "Comma separated list of k=v rz_run profile options (e dbg.profile)",
-	"doe", "", "Show rz_run startup profile",
-	"doe!", "", "Edit rz_run startup profile with $EDITOR",
+	"dor", " [rz-run]", "Comma separated list of k=v rz-run profile options (e dbg.profile)",
+	"doe", "", "Show rz-run startup profile",
+	"doe!", "", "Edit rz-run startup profile with $EDITOR",
 	"doo", " [args]", "Reopen in debug mode with args (alias for 'ood')",
 	"doof", " [args]", "Reopen in debug mode from file (alias for 'oodf')",
 	"doc", "", "Close debug session",
@@ -515,7 +515,7 @@ struct trace_node {
 
 // XXX those tmp files are never removed and we shuoldnt use files for this
 static void setRarunProfileString(RzCore *core, const char *str) {
-	char *file = rz_file_temp("rz_run");
+	char *file = rz_file_temp("rz-run");
 	char *s = strdup(str);
 	rz_config_set(core->config, "dbg.profile", file);
 	rz_str_replace_char(s, ',', '\n');
@@ -5047,7 +5047,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				setRarunProfileString(core, input + 3);
 			} else {
 				// TODO use the api
-				rz_sys_xsystem("rz_run -h");
+				rz_sys_xsystem("rz-run -h");
 			}
 			break;
 		case 'o': // "doo" : reopen in debug mode

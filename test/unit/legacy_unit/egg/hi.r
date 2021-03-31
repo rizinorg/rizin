@@ -1,4 +1,4 @@
-#!/usr/bin/rz_gg -FO
+#!/usr/bin/rz-gg -FO
 goto(main);
 
 exit@syscall(1);

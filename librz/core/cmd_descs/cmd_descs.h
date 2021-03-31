@@ -115,6 +115,7 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_flag(void *data, const char *input);
 RZ_IPI int rz_cmd_egg(void *data, const char *input);
 RZ_IPI int rz_cmd_info(void *data, const char *input);

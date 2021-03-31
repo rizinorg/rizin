@@ -34,8 +34,6 @@
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
 static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
 static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
-static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode);
-static int bin_source(RzCore *r, PJ *pj, int mode);
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
 static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode);
@@ -379,7 +377,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	rz_core_bin_apply_strings(r, binfile);
 	rz_core_bin_apply_config(r, binfile);
 	rz_core_bin_apply_main(r, binfile, va);
-	bin_dwarf(r, binfile, NULL, RZ_MODE_SET);
+	rz_core_bin_apply_dwarf(r, binfile);
 	bin_entry(r, NULL, RZ_MODE_SET, loadaddr, va, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, true);
@@ -508,6 +506,40 @@ RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va) {
 	ut64 addr = va ? rz_bin_object_addr_with_base(o, binmain->vaddr) : binmain->paddr;
 	rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
 	rz_flag_set(r->flags, "main", addr, r->blocksize);
+	return true;
+}
+
+RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
+	rz_return_val_if_fail(core && binfile, false);
+	if (!rz_config_get_i(core->config, "bin.dbginfo") || !binfile->o) {
+		return false;
+	}
+	RzBinObject *o = binfile->o;
+	const RzBinSourceLineInfo *li = NULL;
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
+	RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_parse_info(binfile, da) : NULL;
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
+	if (info) {
+		RzAnalysisDwarfContext ctx = {
+			.info = info,
+			.loc = loc_table
+		};
+		rz_analysis_dwarf_process_info(core->analysis, &ctx);
+	}
+	if (loc_table) {
+		rz_bin_dwarf_loc_free(loc_table);
+	}
+	RzBinDwarfLineInfo *lines = rz_bin_dwarf_parse_line(binfile, info, RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
+	rz_bin_dwarf_debug_info_free(info);
+	if (lines) {
+		// move all produced rows line info out (TODO: bin loading should do that)
+		li = o->lines = lines->lines;
+		lines->lines = NULL;
+	}
+	rz_bin_dwarf_debug_abbrev_free(da);
+	if (!li) {
+		return false;
+	}
 	return true;
 }
 
@@ -1110,161 +1142,100 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 
 static bool bin_dwarf(RzCore *core, RzBinFile *binfile, PJ *pj, int mode) {
 	rz_return_val_if_fail(core && binfile, false);
-	RzBinSourceRow *row;
-	if (!rz_config_get_i(core->config, "bin.dbginfo")) {
+	if (!rz_config_get_i(core->config, "bin.dbginfo") || !binfile->o) {
 		return false;
 	}
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(binfile);
-	RzList *list = NULL;
-	RzList *ownlist = NULL;
-	if (plugin && plugin->lines) {
-		// list is not cloned to improve speed. avoid use after free
-		list = plugin->lines(binfile);
-	} else if (core->bin) {
-		// TODO: complete and speed-up support for dwarf
-		RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
-		RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_parse_info(binfile, da) : NULL;
-		if (mode == RZ_MODE_PRINT) {
-			if (da) {
-				rz_core_bin_dwarf_print_abbrev_section(da);
-			}
-			if (info) {
-				rz_core_bin_dwarf_print_debug_info(info);
-			}
+	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(binfile);
+	RzBinDwarfDebugInfo *info = da ? rz_bin_dwarf_parse_info(binfile, da) : NULL;
+	if (mode == RZ_MODE_PRINT) {
+		if (da) {
+			rz_core_bin_dwarf_print_abbrev_section(da);
 		}
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
-		// I suppose there is no reason the parse it for a printing purposes
-		if (info && mode != RZ_MODE_PRINT) {
-			/* Should we do this by default? */
-			RzAnalysisDwarfContext ctx = {
-				.info = info,
-				.loc = loc_table
-			};
-			rz_analysis_dwarf_process_info(core->analysis, &ctx);
-		}
-		if (loc_table) {
-			if (mode == RZ_MODE_PRINT) {
-				rz_core_bin_dwarf_print_loc(loc_table, core->analysis->bits / 8);
-			}
-			rz_bin_dwarf_loc_free(loc_table);
-		}
-		if (mode == RZ_MODE_PRINT) {
-			RzList *aranges = rz_bin_dwarf_parse_aranges(binfile);
-			if (aranges) {
-				rz_core_bin_dwarf_print_aranges(aranges);
-				rz_list_free(aranges);
-			}
-		}
-		RzList *lines = rz_bin_dwarf_parse_line(binfile, info,
-			RZ_BIN_DWARF_LINE_INFO_MASK_ROWS | (mode == RZ_MODE_PRINT ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0));
-		rz_bin_dwarf_debug_info_free(info);
-		if (lines) {
-			if (mode == RZ_MODE_PRINT) {
-				rz_core_bin_dwarf_print_lines(lines);
-			}
-			// move all produced rows out
-			list = ownlist = rz_list_newf((RzListFree)rz_bin_source_row_free);
-			RzListIter *it;
-			RzBinDwarfLineInfo *li;
-			rz_list_foreach (lines, it, li) {
-				if (!li->rows) {
-					continue;
-				}
-				rz_list_join(list, li->rows);
-			}
-			rz_list_free(lines);
-		}
-		rz_bin_dwarf_debug_abbrev_free(da);
-
-		if (IS_MODE_SET(mode) && list && binfile->sdb_addrinfo) {
-			RzListIter *iter;
-			rz_list_foreach (list, iter, row) {
-				if (!row->file || !row->line) {
-					// !row->file ==> might be theoretically a valid entry but we can't handle it
-					// !row->line ==> just means "end of previous entry"
-					continue;
-				}
-				char k[32];
-				char s[512];
-				sdb_set(binfile->sdb_addrinfo,
-					rz_strf(k, "0x%" PFMT64x, row->address),
-					rz_strf(s, "%s|%u", row->file, row->line), 0);
-			}
+		if (info) {
+			rz_core_bin_dwarf_print_debug_info(info);
 		}
 	}
-	if (!list) {
-		return false;
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(binfile, core->analysis->bits / 8);
+	if (loc_table) {
+		if (mode == RZ_MODE_PRINT) {
+			rz_core_bin_dwarf_print_loc(loc_table, core->analysis->bits / 8);
+		}
+		rz_bin_dwarf_loc_free(loc_table);
 	}
+	if (mode == RZ_MODE_PRINT) {
+		RzList *aranges = rz_bin_dwarf_parse_aranges(binfile);
+		if (aranges) {
+			rz_core_bin_dwarf_print_aranges(aranges);
+			rz_list_free(aranges);
+		}
+	}
+	bool ret = false;
+	RzBinDwarfLineInfo *lines = rz_bin_dwarf_parse_line(binfile, info,
+		RZ_BIN_DWARF_LINE_INFO_MASK_LINES | (mode == RZ_MODE_PRINT ? RZ_BIN_DWARF_LINE_INFO_MASK_OPS : 0));
+	rz_bin_dwarf_debug_info_free(info);
+	if (lines) {
+		if (mode == RZ_MODE_PRINT) {
+			rz_core_bin_dwarf_print_line_units(lines->units);
+		}
+		if (lines->lines) {
+			ret = true;
+			rz_core_bin_print_source_line_info(core, lines->lines, IS_MODE_JSON(mode) ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD, pj);
+		}
+		rz_bin_dwarf_line_info_free(lines);
+	}
+	rz_bin_dwarf_debug_abbrev_free(da);
+	return ret;
+}
 
-	rz_cons_break_push(NULL, NULL);
+RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(core && s && (mode != RZ_OUTPUT_MODE_JSON || pj));
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		bool chopPath = !rz_config_get_i(core->config, "dir.dwarf.abspath");
+		char *file = s->file ? strdup(s->file) : NULL;
+		if (chopPath && file) {
+			const char *slash = rz_str_lchr(file, '/');
+			if (slash) {
+				memmove(file, slash + 1, strlen(slash));
+			}
+		}
+		pj_o(pj);
+		if (file) {
+			pj_ks(pj, "file", file);
+		}
+		pj_kn(pj, "line", (ut64)s->line);
+		if (s->column) {
+			pj_kn(pj, "column", (ut64)s->column);
+		}
+		pj_kn(pj, "addr", s->address);
+		pj_end(pj);
+		free(file);
+	} else {
+		rz_cons_printf("0x%08" PFMT64x "\t%s\t",
+			s->address, s->file ? s->file : "-");
+		if (s->line) {
+			rz_cons_printf("%" PFMT32u "\n", s->line);
+		} else {
+			rz_cons_print("-\n");
+		}
+	}
+}
 
-	if (IS_MODE_JSON(mode)) {
+RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(li && (mode != RZ_OUTPUT_MODE_JSON || pj));
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
-
-	//TODO we should need to store all this in sdb, or do a filecontentscache in librz/util
-	//XXX this whole thing has leaks
-	RzListIter *iter;
-	rz_list_foreach (list, iter, row) {
+	rz_cons_break_push(NULL, NULL);
+	for (size_t i = 0; i < li->samples_count; i++) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		if (mode) {
-			// TODO: use 'Cl' instead of CC
-			bool chopPath = !rz_config_get_i(core->config, "dir.dwarf.abspath");
-			char *file = strdup(row->file);
-			if (chopPath) {
-				const char *slash = rz_str_lchr(file, '/');
-				if (slash) {
-					memmove(file, slash + 1, strlen(slash));
-				}
-			}
-			// TODO: implement internal : if ((mode & RZ_MODE_SET))
-			if ((mode & RZ_MODE_SET)) {
-				// TODO: use CL here.. but its not necessary.. so better not do anything imho
-				// rz_core_cmdf (core, "CL %s:%d 0x%08"PFMT64x, file, (int)row->line, row->address);
-#if 0
-				char *cmt = rz_str_newf ("%s:%d %s", file, (int)row->line, line? line: "");
-				rz_meta_set_string (core->analysis, RZ_META_TYPE_COMMENT, row->address, cmt);
-				free (cmt);
-#endif
-			} else if (IS_MODE_JSON(mode)) {
-				pj_a(pj);
-
-				pj_o(pj);
-				pj_ks(pj, "file", file);
-				pj_kn(pj, "line", (ut64)row->line);
-				if (row->column) {
-					pj_kn(pj, "column", (ut64)row->column);
-				}
-				pj_kn(pj, "addr", row->address);
-				pj_end(pj);
-
-				pj_end(pj);
-			} else {
-				rz_cons_printf("CL %s:%d 0x%08" PFMT64x "\n",
-					file, (int)row->line,
-					row->address);
-				rz_cons_printf("\"CC %s:%d\"@0x%" PFMT64x "\n",
-					file, row->line, row->address);
-			}
-			free(file);
-		} else {
-			rz_cons_printf("0x%08" PFMT64x "\t%s\t",
-				row->address, row->file);
-			if (row->line) {
-				rz_cons_printf("%u\n", row->line);
-			} else {
-				rz_cons_print("-\n");
-			}
-		}
-	}
-	if (IS_MODE_JSON(mode)) {
-		pj_end(pj);
+		rz_core_bin_print_source_line_sample(core, &li->samples[i], mode, pj);
 	}
 	rz_cons_break_pop();
-	rz_list_free(ownlist);
-	return true;
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+	}
 }
 
 RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, RzOutputMode mode) {
@@ -1317,46 +1288,6 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, RzOutputMod
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
-	return true;
-}
-
-static int srclineCmp(const void *a, const void *b) {
-	return rz_str_cmp(a, b, -1);
-}
-
-static int bin_source(RzCore *r, PJ *pj, int mode) {
-	RzList *final_list = rz_list_new();
-	RzBinFile *binfile = r->bin->cur;
-
-	if (!binfile) {
-		bprintf("[Error bin file]\n");
-		rz_list_free(final_list);
-		return false;
-	}
-
-	SdbListIter *iter;
-	RzListIter *iter2;
-	char *srcline;
-	SdbKv *kv;
-	SdbList *ls = sdb_foreach_list(binfile->sdb_addrinfo, false);
-	ls_foreach (ls, iter, kv) {
-		char *v = sdbkv_value(kv);
-		RzList *list = rz_str_split_list(v, "|", 0);
-		srcline = rz_list_get_bottom(list);
-		if (srcline) {
-			if (!strstr(srcline, "0x")) {
-				rz_list_append(final_list, srcline);
-			}
-		}
-		rz_list_free(list);
-	}
-	rz_cons_printf("[Source file]\n");
-	RzList *uniqlist = rz_list_uniq(final_list, srclineCmp);
-	rz_list_foreach (uniqlist, iter2, srcline) {
-		rz_cons_printf("%s\n", srcline);
-	}
-	rz_list_free(uniqlist);
-	rz_list_free(final_list);
 	return true;
 }
 
@@ -4271,9 +4202,6 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 	}
 	if ((action & RZ_CORE_BIN_ACC_PDB)) {
 		ret &= rz_core_pdb_info(core, core->bin->file, pj, mode);
-	}
-	if ((action & RZ_CORE_BIN_ACC_SOURCE)) {
-		ret &= bin_source(core, pj, mode);
 	}
 	if ((action & RZ_CORE_BIN_ACC_ENTRIES)) {
 		ret &= bin_entry(core, pj, mode, loadaddr, va, false);
