@@ -31,6 +31,7 @@ typedef char **LuaOpNameList;
 
 /* convert a 4-byte ut8 buffer into a lua instruction (ut32) */
 LuaInstruction lua_build_instruction(const ut8 *buf);
+void lua_set_instruction(LuaInstruction instruction, ut8 *data);
 
 /* formatted output strings */
 char *luaop_new_str_3arg(char *opname, int a, int b, int c, char *mark);
@@ -52,5 +53,7 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList oplist);
 LuaOpNameList get_lua53_opnames(void);
 int lua53_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len);
+ut8 get_lua_opcode_by_name(const char *name, int n);
+bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruction);
 
 #endif //BUILD_LUA_ARCH_H

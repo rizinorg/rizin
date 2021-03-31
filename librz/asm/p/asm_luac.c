@@ -25,13 +25,42 @@ int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	return r;
 }
 
+int rz_luac_asm(RzAsm *a, RzAsmOp *opstruct, const char *str) {
+	int str_len = strlen(str);
+	ut32 instruction;
+	ut8 buffer[4];
+
+	if (!a->cpu) {
+		eprintf("Warning : no version info, specify it with `-c` option\n");
+		return -1;
+	}
+
+	if (strcmp(a->cpu, "5.3") == 0) {
+		if (!lua53_assembly(str, str_len, &instruction)) {
+			return -1;
+		}
+	} else if (strcmp(a->cpu, "5.4") == 0) {
+		return -1;
+	}
+
+	lua_set_instruction(instruction, buffer);
+	for (int i = 0; i < 4; ++i) {
+		eprintf("0x%x ", buffer[i]);
+	}
+	eprintf("\n");
+
+	rz_strbuf_setbin(&opstruct->buf, (const ut8 *)&buffer, 4);
+	return 4;
+}
+
 RzAsmPlugin rz_asm_plugin_luac = {
 	.name = "luac",
 	.arch = "luac",
 	.license = "LGPL3",
 	.bits = 8,
 	.desc = "luac disassemble plugin",
-	.disassemble = &rz_luac_disasm
+	.disassemble = &rz_luac_disasm,
+	.assemble = &rz_luac_asm,
 };
 
 #ifndef RZ_PLUGIN_INCORE

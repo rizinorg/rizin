@@ -63,3 +63,13 @@ LuaOpNameList get_lua53_opnames(void) {
 
 	return list;
 }
+
+ut8 get_lua_opcode_by_name(const char *name, int n){
+	if (rz_str_ncasecmp(name, "move", 4) == 0){
+		return OP_MOVE;
+	} else if (rz_str_ncasecmp(name, "loadk", 5) == 0){
+		return OP_LOADKX;
+	} else {
+		return 255;
+	}
+}

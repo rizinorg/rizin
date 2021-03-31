@@ -12,6 +12,13 @@ LuaInstruction lua_build_instruction(const ut8 *buf) {
 	return ret;
 }
 
+void lua_set_instruction(LuaInstruction instruction, ut8 *data){
+        data[3] = instruction >> 24;
+        data[2] = instruction >> 16;
+        data[1] = instruction >> 8;
+        data[0] = instruction >> 0;
+}
+
 bool free_lua_opnames(LuaOpNameList list) {
 	if (list != NULL) {
 		RZ_FREE(list);
