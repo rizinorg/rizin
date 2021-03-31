@@ -3907,3 +3907,53 @@ EXPECT=<<EOF
 |           0x0000004a      488d45f8       rax = var_8h
 EOF
 RUN
+
+NAME=Double analysis with aaa
+FILE=bins/elf/001.make.elf.x86_64
+CMDS=<<EOF
+aaa
+aaa
+s 0x0040bbe0
+pdf
+EOF
+EXPECT=<<EOF
+        :   ; CALL XREF from dbg.expand_deps @ 0x40cc17
+        :   ; CALL XREF from dbg.pattern_search @ 0x412775
+/ sym.variable_expand_for_file (void *arg1, int64_t arg2);
+|       :   ; arg void *arg1 @ rdi
+|       :   ; arg int64_t arg2 @ rsi
+|       :   0x0040bbe0      test  rsi, rsi                             ; expand.c:458 ; arg2
+|      ,==< 0x0040bbe3      je    0x40bc50
+|      |:   0x0040bbe5      push  rbp
+|      |:   0x0040bbe6      push  rbx
+|      |:   0x0040bbe7      sub   rsp, 8
+|      |:   0x0040bbeb      mov   rax, qword [rsi + 0x50]              ; expand.c:467 ; arg2
+|      |:   0x0040bbef      mov   rbp, qword [obj.current_variable_set_list] ; expand.c:466 ; [0x6331a0:8]=0x6331b0 obj.global_setlist
+|      |:   0x0040bbf6      mov   rbx, qword [obj.reading_file]        ; expand.c:467 ; [0x636050:8]=0
+|      |:   0x0040bbfd      mov   qword [obj.current_variable_set_list], rax ; [0x6331a0:8]=0x6331b0 obj.global_setlist
+|      |:   0x0040bc04      mov   rax, qword [rsi + 0x20]              ; expand.c:469 ; arg2
+|      |:   0x0040bc08      test  rax, rax                             ; expand.c:470
+|     ,===< 0x0040bc0b      je    0x40bc1a
+|     ||:   0x0040bc0d      cmp   qword [rax], 0                       ; expand.c:473
+|     ||:   0x0040bc11      mov   edx, 0
+|     ||:   0x0040bc16      cmove rax, rdx
+|     ||:   ; CODE XREF from sym.variable_expand_for_file @ 0x40bc0b
+|     `---> 0x0040bc1a      mov   rsi, rdi                             ; expand.c:417 ; arg1
+|      |:   0x0040bc1d      mov   rdx, 0xffffffffffffffff
+|      |:   0x0040bc24      xor   edi, edi
+|      |:   0x0040bc26      mov   qword [obj.reading_file], rax        ; [0x636050:8]=0
+|      |:   0x0040bc2d      call  dbg.variable_expand_string
+|      |:   0x0040bc32      mov   qword [obj.current_variable_set_list], rbp ; expand.c:477 ; [0x6331a0:8]=0x6331b0 obj.global_setlist
+|      |:   0x0040bc39      mov   qword [obj.reading_file], rbx        ; expand.c:478 ; [0x636050:8]=0
+|      |:   0x0040bc40      add   rsp, 8                               ; expand.c:480
+|      |:   0x0040bc44      pop   rbx
+|      |:   0x0040bc45      pop   rbp
+|      |:   0x0040bc46      ret
+..
+|      |:   ; CODE XREF from sym.variable_expand_for_file @ 0x40bbe3
+|      `--> 0x0040bc50      nop     word [rax + rax]                   ; expand.c:417 ; arg1
+|       :   0x0040bc53      mov   rdx, 0xffffffffffffffff
+|       :   0x0040bc5a      xor   edi, edi
+\       `=< 0x0040bc5c      jmp   dbg.variable_expand_string
+EOF
+RUN

@@ -4771,6 +4771,10 @@ static bool isSkippable(RzBinSymbol *s) {
 	return false;
 }
 
+static bool has_old_analysis_value(RzCore *core) {
+	return core->analysis->fcns->length > 0;
+}
+
 RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzList *list;
 	RzListIter *iter;
@@ -4781,6 +4785,10 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzBinSymbol *symbol;
 	int depth = core->analysis->opt.depth;
 	bool analysis_vars = rz_config_get_i(core->config, "analysis.vars");
+
+	if (has_old_analysis_value(core)) {
+		rz_list_purge(core->analysis->fcns);
+	}
 
 	/* Analyze Functions */
 	/* Entries */
