@@ -1758,9 +1758,13 @@ RZ_API char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
 	for (i = 0; i < argc; i++) {
 		const char *arg_name = rz_type_func_args_name(a->typedb, function->name, i);
 		const char *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
+		// Here we check if the type is a pointer, in this case we don't put
+		// the space between type and name for the style reasons
+		// "char *var" looks much better than "char * var"
+		const char *maybe_space = rz_str_endswith(arg_type, "*") ? "" : " ";
 		char *new_args = (i + 1 == argc)
-			? rz_str_newf("%s%s %s", args, arg_type, arg_name)
-			: rz_str_newf("%s%s %s, ", args, arg_type, arg_name);
+			? rz_str_newf("%s%s%s%s", args, arg_type, maybe_space, arg_name)
+			: rz_str_newf("%s%s%s%s, ", args, arg_type, maybe_space, arg_name);
 		free(args);
 		args = new_args;
 	}
