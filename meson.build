@@ -1,5 +1,5 @@
 project('rizin', 'c',
-  version: 'v0.2.0-git',
+  version: 'v0.2.0',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
   default_options: [
