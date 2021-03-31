@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2020 NIRMAL MANOJ C <nimmumanoj@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 #include <rz_util/rz_annotated_code.h>
 
 #include <rz_util.h>
@@ -259,7 +261,8 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_o
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
 	RzAnnotatedCode *code = user;
 	const RzCodeAnnotation *annotation = val;
-	char *b64statement = rz_base64_encode_dyn(code->code + annotation->start, annotation->end - annotation->start);
+	char *b64statement = rz_base64_encode_dyn((const ut8 *)(code->code + annotation->start),
+		annotation->end - annotation->start);
 	rz_cons_printf("CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
 	free(b64statement);
 	return true;

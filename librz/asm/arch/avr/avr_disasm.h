@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2007-2010 Vanya A. Sergeev <vsergeev@gmail.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /*
  * vAVRdisasm - AVR program disassembler.
  * Version 1.4 - June 2009.

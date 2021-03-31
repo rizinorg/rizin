@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019-2020 GustavoLCR <gugulcr@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef W32DBG_WRAP
 #define W32DBG_WRAP
 

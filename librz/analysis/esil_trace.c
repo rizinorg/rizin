@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2015-2020 rkx1209 <rkx1209dev@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
@@ -51,7 +53,9 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 		if (!b) {
 			goto error;
 		}
-		memcpy(b->bytes, a->bytes, b->size);
+		if (b->bytes && a->bytes && b->size > 0) {
+			memcpy(b->bytes, a->bytes, b->size);
+		}
 		trace->arena[i] = b;
 	}
 	return trace;
@@ -347,6 +351,10 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 }
 
 RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
+	if (!esil->trace) {
+		return;
+	}
+
 	PrintfCallback p = esil->analysis->cb_printf;
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -359,6 +367,10 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 }
 
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
+	if (!esil->trace) {
+		return;
+	}
+
 	PrintfCallback p = esil->analysis->cb_printf;
 	const char *str2;
 	const char *str;

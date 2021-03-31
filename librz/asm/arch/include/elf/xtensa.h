@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2003-2015 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Xtensa ELF support for BFD.
    Copyright (C) 2003-2015 Free Software Foundation, Inc.
    Contributed by Bob Wilson (bwilson@tensilica.com) at Tensilica.

@@ -222,13 +222,13 @@ CMDS=iE
 EXPECT=<<EOF
 [Exports]
 
-nth paddr       vaddr      bind   type size lib name
-----------------------------------------------------
-2    0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
-3    0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
-4    0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V
-7    0x000002f4 0x000002f4 GLOBAL FUNC 20       LWorld.method.<init>()V
-8    0x00000318 0x00000318 GLOBAL FUNC 68       LWorld.method.foo(I)V
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+2   0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
+3   0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
+4   0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V
+7   0x000002f4 0x000002f4 GLOBAL FUNC 20       LWorld.method.<init>()V
+8   0x00000318 0x00000318 GLOBAL FUNC 68       LWorld.method.foo(I)V
 EOF
 RUN
 
@@ -260,17 +260,38 @@ RUN
 NAME=DEX HelloWorld.dex debug info CL
 FILE=bins/dex/HelloWorld.dex
 CMDS=<<EOF
-CL 0x00000290;CL.@0x000002f4;CL.@0x00000318
-CL~?
+ix
+?e --
+ix.@0x000002f4
+?e --
+ix.@0x00000318
+?e --
+ix~?
 EOF
 EXPECT=<<EOF
-file: Hello.java
-line: 9
-file: World.java
-line: 5
-file: World.java
-line: 11
-34
+0x00000238	Hello.java	4
+0x0000023b	Hello.java	5
+0x0000023e	Hello.java	6
+0x00000241	Hello.java	7
+0x0000025c	Hello.java	14
+0x00000263	Hello.java	15
+0x00000268	Hello.java	16
+0x0000026c	Hello.java	17
+0x00000290	Hello.java	9
+0x000002b1	Hello.java	10
+0x000002b9	Hello.java	11
+0x000002f4	World.java	5
+0x000002f7	World.java	6
+0x000002fa	World.java	7
+0x000002fd	World.java	8
+0x00000318	World.java	11
+0x00000339	World.java	12
+--
+0x000002f4	World.java	5
+--
+0x00000318	World.java	11
+--
+17
 EOF
 RUN
 
@@ -427,8 +448,8 @@ NAME=DEX radare2installer.dex classes (is getProper)
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=is~getProper
 EXPECT=<<EOF
-1649  0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
-1650  0x00006a28 0x00006a28 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+1649 0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
+1650 0x00006a28 0x00006a28 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 EOF
 RUN
 

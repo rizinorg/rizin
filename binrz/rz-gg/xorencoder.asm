@@ -1,4 +1,6 @@
 #!/usr/bin/rz_asm -a x86 -b 64 -f
+# SPDX-FileCopyrightText: 2011 pancake <pancake@nopcode.org>
+# SPDX-License-Identifier: LGPL-3.0-only
 # - pancake xor encoder egg engine  #
 # rz_asm -a x86.nasm -f xorencoder.asm
 

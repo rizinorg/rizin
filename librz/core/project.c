@@ -1,8 +1,8 @@
-/* rizin - LGPL - Copyright 2020 - thestr4ng3r */
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2010-2020 maijin <maijin21@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_project.h>
-
-#include "../util/serialize_helper.h"
 
 #define RZ_DB_KEY_TYPE    "type"
 #define RZ_DB_KEY_VERSION "version"
@@ -75,7 +75,7 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_
 
 	Sdb *core_db = sdb_ns(prj, "core", false);
 	if (!core_db) {
-		SERIALIZE_ERR("missing core namespace");
+		RZ_SERIALIZE_ERR(res, "missing core namespace");
 		return RZ_PROJECT_ERR_INVALID_CONTENTS;
 	}
 	if (!rz_serialize_core_load(core_db, core, load_bin_io, file, res)) {
@@ -93,7 +93,7 @@ RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, bool lo
 		return RZ_PROJECT_ERR_UNKNOWN;
 	}
 	if (!sdb_text_load(prj, file)) {
-		SERIALIZE_ERR("failed to read database file");
+		RZ_SERIALIZE_ERR(res, "failed to read database file");
 		return RZ_PROJECT_ERR_FILE;
 	}
 	RzProjectErr ret = rz_project_load(core, prj, load_bin_io, file, res);

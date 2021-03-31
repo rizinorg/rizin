@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2017-2020 - condret, pancake, alvaro */
+// SPDX-FileCopyrightText: 2017-2020 condret <condr3t@protonmail.com>
+// SPDX-FileCopyrightText: 2017-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017-2020 alvaro <alvaro.felipe91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_IO_H
 #define RZ_IO_H
@@ -450,7 +453,6 @@ extern RzIOPlugin rz_io_plugin_tcp;
 extern RzIOPlugin rz_io_plugin_bochs;
 extern RzIOPlugin rz_io_plugin_null;
 extern RzIOPlugin rz_io_plugin_ar;
-extern RzIOPlugin rz_io_plugin_rbuf;
 extern RzIOPlugin rz_io_plugin_winedbg;
 extern RzIOPlugin rz_io_plugin_gprobe;
 extern RzIOPlugin rz_io_plugin_fd;

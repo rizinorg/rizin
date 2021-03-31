@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /*
  * This code was done 
  *    by an anonymous gnome

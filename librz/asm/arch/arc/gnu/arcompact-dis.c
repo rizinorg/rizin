@@ -2829,7 +2829,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       state->source_operand.registerNum = fieldC;
       state->sourceType = fieldCisReg ? ARC_REGISTER : ARC_LIMM ;
       fieldA  = FIELDD9(state->words[0]); /* shimm */
-      fieldAisReg=0;
 
       /* [B,A offset] */
       if (dbg) {
@@ -2917,7 +2916,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       {
         CHECK_FIELD_B();
       }
-      fieldAisReg = fieldA = 0;
+      fieldAisReg = 0;
       fieldA = FIELDS9(state->words[0]);
       fieldA += (addr & ~0x3);
       CHECK_NULLIFY();
@@ -2981,7 +2980,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       add_target(fieldC);
       state->flow = state->_opcode == op_BLC ? direct_call : direct_jump;
 
-      fieldCisReg = 0;
       strcat(formatString, "%s"); /* address/label name */
       my_sprintf(state, state->operandBuffer, formatString, post_address(state, fieldC));
       break;
@@ -3371,7 +3369,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldC = sign_extend (fieldC, 8);
 
       fieldC += (addr & ~0x3);
-      fieldA = fieldAisReg = fieldCisReg = 0;
+      fieldA = fieldAisReg = 0;
 
       write_instr_name();
       /* This address could be a label we know.  Convert it. */
@@ -3520,8 +3518,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
        instructions */
     fieldC = FIELDC_AC(state->words[0]);
     fieldB = FIELDB_AC(state->words[0]);
-    fieldCisReg = 0;
-    fieldBisReg = 0;
     write_instr_name();
     strcat(formatString,"%d");
     my_sprintf(state,state->operandBuffer,formatString, ((fieldB << 3) | fieldC));
@@ -3833,7 +3829,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
   {
     s.instructionLen = 2;
     s.words[0] = (buffer[lowbyte] << 8) | buffer[highbyte];
-    status = (*info->read_memory_func) (address + 2, buffer, 4, info);
+    (*info->read_memory_func) (address + 2, buffer, 4, info);
     if (info->endian == BFD_ENDIAN_LITTLE) {
 	    s.words[1] = bfd_getl32 (buffer);
     } else {
@@ -3857,7 +3853,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
 
     /* always read second word in case of limm */
     /* we ignore the result since last insn may not have a limm */
-    status = (*info->read_memory_func) (address + 4, buffer, 4, info);
+    (*info->read_memory_func) (address + 4, buffer, 4, info);
     if (info->endian == BFD_ENDIAN_LITTLE) {
 	    s.words[1] = bfd_getl32 (buffer);
     } else {
@@ -3912,7 +3908,8 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
         {
           /* Branch instruction with 3 operands, Translation is required
              only for the third operand. Print the first 2 operands */
-          strncpy(buf, operand, sizeof (buf) - 1);
+          strncpy(buf, operand, sizeof(buf));
+          buf[sizeof(buf) - 1] = '\0';
           tmpBuffer = strtok(buf,"@");
           (*func) (stream, "%s", tmpBuffer);
           i = strlen(tmpBuffer) + 1;
@@ -3970,7 +3967,7 @@ arcAnalyzeInstr
   {
     s.instructionLen = 2;
     s.words[0] = (buffer[lowbyte] << 8) | buffer[highbyte];
-    status = (*info->read_memory_func) (address + 2, buffer, 4, info);
+    (*info->read_memory_func) (address + 2, buffer, 4, info);
     if (info->endian == BFD_ENDIAN_LITTLE) {
 	    s.words[1] = bfd_getl32 (buffer);
     } else {
@@ -3995,7 +3992,7 @@ arcAnalyzeInstr
 
     /* always read second word in case of limm */
     /* we ignore the result since last insn may not have a limm */
-    status = (*info->read_memory_func) (address + 4, buffer, 4, info);
+    (*info->read_memory_func) (address + 4, buffer, 4, info);
     if (info->endian == BFD_ENDIAN_LITTLE) {
 	    s.words[1] = bfd_getl32 (buffer);
     } else {

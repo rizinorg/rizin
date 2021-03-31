@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2013-2019 - pancake */
+// SPDX-FileCopyrightText: 2013-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
@@ -26,13 +27,10 @@ call = 4
 #define HAVE_CSGRP_PRIVILEGE 0
 #endif
 
-#define USE_ITERZ_API 0
-
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported
 #endif
 
-#define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
 #define opexprintf(op, fmt, ...) rz_strbuf_setf(&op->opex, fmt, ##__VA_ARGS__)
 #define INSOP(n)                 insn->detail->x86.operands[n]
 #define INSOPS                   insn->detail->x86.op_count
@@ -54,13 +52,17 @@ call = 4
 #define ARG1_AR   1
 #define ARG2_AR   2
 
+typedef struct x86_cs_context_t {
+	csh handle;
+	int omode;
+	cs_insn *insn;
+} X86CSContext;
+
 struct Getarg {
 	csh handle;
 	cs_insn *insn;
 	int bits;
 };
-
-static csh handle = 0;
 
 static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	unsigned int id = insn->id;
@@ -106,7 +108,8 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	}
 }
 
-static void opex(RzStrBuf *buf, cs_insn *insn, int mode) {
+static void opex(RzStrBuf *buf, X86CSContext *ctx, int mode) {
+	cs_insn *insn = ctx->insn;
 	int i;
 	PJ *pj = pj_new();
 	if (!pj) {
@@ -128,7 +131,7 @@ static void opex(RzStrBuf *buf, cs_insn *insn, int mode) {
 		switch (op->type) {
 		case X86_OP_REG:
 			pj_ks(pj, "type", "reg");
-			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
+			pj_ks(pj, "value", cs_reg_name(ctx->handle, op->reg));
 			break;
 		case X86_OP_IMM:
 			pj_ks(pj, "type", "imm");
@@ -137,13 +140,13 @@ static void opex(RzStrBuf *buf, cs_insn *insn, int mode) {
 		case X86_OP_MEM:
 			pj_ks(pj, "type", "mem");
 			if (op->mem.segment != X86_REG_INVALID) {
-				pj_ks(pj, "segment", cs_reg_name(handle, op->mem.segment));
+				pj_ks(pj, "segment", cs_reg_name(ctx->handle, op->mem.segment));
 			}
 			if (op->mem.base != X86_REG_INVALID) {
-				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
+				pj_ks(pj, "base", cs_reg_name(ctx->handle, op->mem.base));
 			}
 			if (op->mem.index != X86_REG_INVALID) {
-				pj_ks(pj, "index", cs_reg_name(handle, op->mem.index));
+				pj_ks(pj, "index", cs_reg_name(ctx->handle, op->mem.index));
 			}
 			pj_ki(pj, "scale", op->mem.scale);
 			pj_kN(pj, "disp", op->mem.disp);
@@ -169,10 +172,10 @@ static void opex(RzStrBuf *buf, cs_insn *insn, int mode) {
 	}
 	if (x->sib_index != X86_REG_INVALID) {
 		pj_ki(pj, "sib_scale", x->sib_scale);
-		pj_ks(pj, "sib_index", cs_reg_name(handle, x->sib_index));
+		pj_ks(pj, "sib_index", cs_reg_name(ctx->handle, x->sib_index));
 	}
 	if (x->sib_base != X86_REG_INVALID) {
-		pj_ks(pj, "sib_base", cs_reg_name(handle, x->sib_base));
+		pj_ks(pj, "sib_base", cs_reg_name(ctx->handle, x->sib_base));
 	}
 	pj_end(pj);
 
@@ -1817,7 +1820,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 					(insn->id == X86_INS_BTS) ? '|' : '^', width);
 				break;
 			case X86_INS_BTR:
-				dst_w = getarg(&gop, 0, 1, "&", DST_R_AR, NULL);
+				getarg(&gop, 0, 1, "&", DST_R_AR, NULL);
 				rz_strbuf_appendf(&op->esil, ",%d,%s,%%,1,<<,-1,^,%d,%s,/,%s,+,&=[%d]",
 					width * 8, src, width * 8, src, dst_r, width);
 				break;
@@ -3116,47 +3119,43 @@ static int cs_len_prefix_opcode(uint8_t *item) {
 	return len;
 }
 
+static inline int select_mode(RzAnalysis *a) {
+	switch (a->bits) {
+	case 64:
+		return CS_MODE_64;
+	case 32:
+		return CS_MODE_32;
+	case 16:
+		return CS_MODE_16;
+	default:
+		return 0;
+	}
+}
+
 static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	static int omode = 0;
-#if USE_ITERZ_API
-	static
-#endif
-		cs_insn *insn = NULL;
-	int mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32
-		: (a->bits == 16)                                 ? CS_MODE_16
-								  : 0;
+	X86CSContext *ctx = (X86CSContext *)a->plugin_data;
+
+	int mode = select_mode(a);
 	int n, ret;
 
-	if (handle && mode != omode) {
-		if (handle != 0) {
-			cs_close(&handle);
-			handle = 0;
+	if (ctx->handle && mode != ctx->omode) {
+		if (ctx->handle != 0) {
+			cs_close(&ctx->handle);
+			ctx->handle = 0;
 		}
 	}
-	omode = mode;
-	if (handle == 0) {
-		ret = cs_open(CS_ARCH_X86, mode, &handle);
+	ctx->omode = mode;
+	if (ctx->handle == 0) {
+		ret = cs_open(CS_ARCH_X86, mode, &ctx->handle);
 		if (ret != CS_ERR_OK) {
-			handle = 0;
+			ctx->handle = 0;
 			return 0;
 		}
 	}
 	op->cycles = 1; // aprox
-	cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+	cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	// capstone-next
-#if USE_ITERZ_API
-	{
-		ut64 naddr = addr;
-		size_t size = len;
-		if (!insn) {
-			insn = cs_malloc(handle);
-		}
-		n = cs_disasm_iter(handle, (const uint8_t **)&buf,
-			&size, (uint64_t *)&naddr, insn);
-	}
-#else
-	n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
-#endif
+	n = cs_disasm(ctx->handle, (const ut8 *)buf, len, addr, 1, &ctx->insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
@@ -3165,21 +3164,18 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	} else {
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = rz_str_newf("%s%s%s",
-				insn->mnemonic,
-				insn->op_str[0] ? " " : "",
-				insn->op_str);
+				ctx->insn->mnemonic,
+				ctx->insn->op_str[0] ? " " : "",
+				ctx->insn->op_str);
 		}
-		// int rs = a->bits / 8;
-		//const char *pc = (a->bits==16)?"ip": (a->bits==32)?"eip":"rip";
-		//const char *sp = (a->bits==16)?"sp": (a->bits==32)?"esp":"rsp";
-		//const char *bp = (a->bits==16)?"bp": (a->bits==32)?"ebp":"rbp";
-		op->nopcode = cs_len_prefix_opcode(insn->detail->x86.prefix) + cs_len_prefix_opcode(insn->detail->x86.opcode);
-		op->size = insn->size;
-		op->id = insn->id;
+
+		op->nopcode = cs_len_prefix_opcode(ctx->insn->detail->x86.prefix) + cs_len_prefix_opcode(ctx->insn->detail->x86.opcode);
+		op->size = ctx->insn->size;
+		op->id = ctx->insn->id;
 		op->family = RZ_ANALYSIS_OP_FAMILY_CPU; // almost everything is CPU
 		op->prefix = 0;
-		op->cond = cond_x862r2(insn->id);
-		switch (insn->detail->x86.prefix[0]) {
+		op->cond = cond_x862r2(ctx->insn->id);
+		switch (ctx->insn->detail->x86.prefix[0]) {
 		case X86_PREFIX_REPNE:
 			op->prefix |= RZ_ANALYSIS_OP_PREFIX_REPNE;
 			break;
@@ -3191,74 +3187,30 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			op->family = RZ_ANALYSIS_OP_FAMILY_THREAD; // XXX ?
 			break;
 		}
-		anop(a, op, addr, buf, len, &handle, insn);
-		set_opdir(op, insn);
+		anop(a, op, addr, buf, len, &ctx->handle, ctx->insn);
+		set_opdir(op, ctx->insn);
 		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-			anop_esil(a, op, addr, buf, len, &handle, insn);
+			anop_esil(a, op, addr, buf, len, &ctx->handle, ctx->insn);
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-			opex(&op->opex, insn, mode);
+			opex(&op->opex, ctx, mode);
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
-			op_fillval(a, op, &handle, insn, mode);
+			op_fillval(a, op, &ctx->handle, ctx->insn, mode);
 		}
 	}
 	//#if X86_GRP_PRIVILEGE>0
-	if (insn) {
+	if (ctx->insn) {
 #if HAVE_CSGRP_PRIVILEGE
-		if (cs_insn_group(handle, insn, X86_GRP_PRIVILEGE)) {
+		if (cs_insn_group(ctx->handle, ctx->insn, X86_GRP_PRIVILEGE)) {
 			op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		}
 #endif
-#if !USE_ITERZ_API
-		cs_free(insn, n);
-#endif
+		cs_free(ctx->insn, n);
 	}
-	//cs_close (&handle);
+	//cs_close (&ctx->handle);
 	return op->size;
 }
-
-#if 0
-static int x86_int_0x80(RzAnalysisEsil *esil, int interrupt) {
-	int syscall;
-	ut64 eax, ebx, ecx, edx;
-	if (!esil || (interrupt != 0x80))
-		return false;
-	rz_analysis_esil_reg_read (esil, "eax", &eax, NULL);
-	rz_analysis_esil_reg_read (esil, "ebx", &ebx, NULL);
-	rz_analysis_esil_reg_read (esil, "ecx", &ecx, NULL);
-	rz_analysis_esil_reg_read (esil, "edx", &edx, NULL);
-	syscall = (int) eax;
-	switch (syscall) {
-	case 3:
-		{
-			char *dst = calloc (1, (size_t)edx);
-			rz_xread ((ut32)ebx, dst, (size_t)edx);
-			rz_analysis_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
-			free (dst);
-			return true;
-		}
-	case 4:
-		{
-			char *src = malloc ((size_t)edx);
-			rz_analysis_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
-			rz_xwrite ((ut32)ebx, src, (size_t)edx);
-			free (src);
-			return true;
-		}
-	}
-	eprintf ("syscall %d not implemented yet\n", syscall);
-	return false;
-}
-#endif
-
-#if 0
-static int esil_x86_cs_intr(RzAnalysisEsil *esil, int intr) {
-	if (!esil) return false;
-	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
-	return true;
-}
-#endif
 
 static int esil_x86_cs_init(RzAnalysisEsil *esil) {
 	if (!esil) {
@@ -3271,16 +3223,20 @@ static int esil_x86_cs_init(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static int init(void *p) {
-	handle = 0;
+static bool x86_init(void **user) {
+	X86CSContext *ctx = RZ_NEW0(X86CSContext);
+	if (!ctx) {
+		return false;
+	}
+	*user = ctx;
 	return true;
 }
 
-static int fini(void *p) {
-	if (handle != 0) {
-		cs_close(&handle);
-		handle = 0;
-	}
+static bool x86_fini(void *user) {
+	rz_return_val_if_fail(user, false);
+	X86CSContext *ctx = (X86CSContext *)user;
+	cs_close(&ctx->handle);
+	free(ctx);
 	return true;
 }
 
@@ -3731,8 +3687,8 @@ RzAnalysisPlugin rz_analysis_plugin_x86_cs = {
 	.preludes = analysis_preludes,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,
-	.init = init,
-	.fini = fini,
+	.init = x86_init,
+	.fini = x86_fini,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
 	//	.esil_intr = esil_x86_cs_intr,

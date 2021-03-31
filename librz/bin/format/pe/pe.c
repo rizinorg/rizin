@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2008-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2008-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2008-2019 inisider <inisider@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
@@ -321,7 +324,7 @@ struct rz_bin_pe_addr_t *PE_(check_mingw)(struct PE_(rz_bin_pe_obj_t) * bin) {
 		//E8 A3 01 00 00                             call    sub_4013EE
 		for (n = 0; n < sizeof(b) - 12; n++) {
 			if (b[n] == 0xa1 && b[n + 5] == 0x89 && b[n + 8] == 0xe8) {
-				sw = follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 8);
+				follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, n + 8);
 				return entry;
 			}
 		}
@@ -1450,8 +1453,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t) * bin) {
 		import_dir_size = data_dir_import->Size = 0xffff;
 	}
 	if (!delay_import_dir_size) {
-		// asume 1 entry for each
-		delay_import_dir_size = data_dir_delay_import->Size = 0xffff;
+		data_dir_delay_import->Size = 0xffff;
 	}
 	int maxidsz = RZ_MIN((PE_DWord)bin->size, import_dir_offset + import_dir_size);
 	maxidsz -= import_dir_offset;
@@ -4194,6 +4196,105 @@ out_function:
 	return;
 }
 
+RzList *PE_(section_flag_to_rzlist)(ut64 flag) {
+	RzList *flag_list = rz_list_new();
+	if (flag & IMAGE_SCN_TYPE_NO_PAD) {
+		rz_list_append(flag_list, "TYPE_NO_PAD");
+	}
+	if (flag & IMAGE_SCN_CNT_CODE) {
+		rz_list_append(flag_list, "CNT_CODE");
+	}
+	if (flag & IMAGE_SCN_CNT_INITIALIZED_DATA) {
+		rz_list_append(flag_list, "CNT_INITIALIZED_DATA");
+	}
+	if (flag & IMAGE_SCN_CNT_UNINITIALIZED_DATA) {
+		rz_list_append(flag_list, "CNT_UNINITIALIZED");
+	}
+	if (flag & IMAGE_SCN_LNK_OTHER) {
+		rz_list_append(flag_list, "LNK_OTHER");
+	}
+	if (flag & IMAGE_SCN_LNK_INFO) {
+		rz_list_append(flag_list, "LNK_INFO");
+	}
+	if (flag & IMAGE_SCN_LNK_REMOVE) {
+		rz_list_append(flag_list, "LNK_REMOVE");
+	}
+	if (flag & IMAGE_SCN_LNK_COMDAT) {
+		rz_list_append(flag_list, "LNK_COMDAT");
+	}
+	if (flag & IMAGE_SCN_GPREL) {
+		rz_list_append(flag_list, "GPREL");
+	}
+	if (flag & IMAGE_SCN_MEM_PURGEABLE) {
+		rz_list_append(flag_list, "MEM_PURGEABLE");
+	}
+	if (flag & IMAGE_SCN_MEM_16BIT) {
+		rz_list_append(flag_list, "MEM_16BIT");
+	}
+	if (flag & IMAGE_SCN_MEM_LOCKED) {
+		rz_list_append(flag_list, "MEM_LOCKED");
+	}
+	if (flag & IMAGE_SCN_MEM_PRELOAD) {
+		rz_list_append(flag_list, "MEM_PRELOAD");
+	}
+	// Alignment flags overlap
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_1BYTES) {
+		rz_list_append(flag_list, "ALIGN_1BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_2BYTES) {
+		rz_list_append(flag_list, "ALIGN_2BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_4BYTES) {
+		rz_list_append(flag_list, "ALIGN_4BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_8BYTES) {
+		rz_list_append(flag_list, "ALIGN_8BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_16BYTES) {
+		rz_list_append(flag_list, "ALIGN_16BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_32BYTES) {
+		rz_list_append(flag_list, "ALIGN_32BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_64BYTES) {
+		rz_list_append(flag_list, "ALIGN_64BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_128BYTES) {
+		rz_list_append(flag_list, "ALIGN_128BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_256BYTES) {
+		rz_list_append(flag_list, "ALIGN_256BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_512BYTES) {
+		rz_list_append(flag_list, "ALIGN_512BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_1024BYTES) {
+		rz_list_append(flag_list, "ALIGN_1024BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_2048BYTES) {
+		rz_list_append(flag_list, "ALIGN_2048BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_4096BYTES) {
+		rz_list_append(flag_list, "ALIGN_4096BYTES");
+	}
+	if ((flag & PE_SCN_ALIGN_MASK) == IMAGE_SCN_ALIGN_8192BYTES) {
+		rz_list_append(flag_list, "ALIGN_8192BYTES");
+	}
+	if (flag & IMAGE_SCN_LNK_NRELOC_OVFL) {
+		rz_list_append(flag_list, "LNK_NRELOC_OVFL");
+	}
+	if (flag & IMAGE_SCN_MEM_DISCARDABLE) {
+		rz_list_append(flag_list, "IMAGE_SCN_MEM_DISCARDABLE");
+	}
+	if (flag & IMAGE_SCN_MEM_NOT_CACHED) {
+		rz_list_append(flag_list, "MEM_NOT_CACHED");
+	}
+	if (flag & IMAGE_SCN_MEM_NOT_PAGED) {
+		rz_list_append(flag_list, "MEM_NOT_PAGED");
+	}
+	return flag_list;
+}
+
 static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin_pe_obj_t) * bin) {
 	struct rz_bin_pe_section_t *sections = NULL;
 	PE_(image_section_header) * shdr;
@@ -4252,6 +4353,7 @@ static struct rz_bin_pe_section_t *PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin
 			sections[j].vsize = shdr[i].SizeOfRawData;
 		}
 		sections[j].paddr = shdr[i].PointerToRawData;
+		sections[j].flags = shdr[i].Characteristics;
 		if (bin->optional_header) {
 			ut32 sa = bin->optional_header->SectionAlignment;
 			if (sa) {

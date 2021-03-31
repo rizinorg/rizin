@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2020 NIRMAL MANOJ C <nimmumanoj@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_annotated_code.h>
 #include <rz_core.h>

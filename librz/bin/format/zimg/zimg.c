@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2015 ninjahacker <wardjm@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

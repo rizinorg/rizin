@@ -1,6 +1,7 @@
-/* lm32 support for rizin
- * 2-clause BSD
- * Copyright 2015 Felix Held */
+// SPDX-FileCopyrightText: 2015 Felix Held
+// SPDX-License-Identifier: BSD-2-Clause
+
+/* lm32 support for rizin */
 #ifndef INCLUDE_LM32_ISA_H
 #define INCLUDE_LM32_ISA_H
 

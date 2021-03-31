@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015 julien (jvoisin) voisin <julien.voisin@dustri.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>

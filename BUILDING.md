@@ -1,21 +1,11 @@
 # Clone the Rizin project and keep it updated
 
-Rizin uses submodules, so make sure to clone them as well. The first time you
-download Rizin you can use:
-```
-$ git clone --recurse-submodules https://github.com/rizinorg/rizin
-```
-or:
+The first time you download Rizin you can use:
 ```
 $ git clone https://github.com/rizinorg/rizin
-$ cd rizin
-$ git submodule init
-$ git submodule update
 ```
 
-After that, use `git pull --recurse-submodules` to update both the Rizin
-codebase and submodules, or `git submodule update` to just update the
-submodules.
+After that, use `git pull` to update the Rizin codebase.
 
 # Build
 
@@ -27,6 +17,10 @@ from `pip` with `pip install meson`. If necessary, also install `ninja` with
 If you are trying to build Rizin to create a package for a distribution,
 take a look at [doc/PACKAGERS.md][].
 
+## Note about debugging
+
+Unless you are interested in debugging Rizin, it is a good idea to pass the `--buildtype=release` flag to `meson` for increased performance and to prevent the buggy `mspdbsrv.exe` process from [blocking/breaking the building process](https://social.msdn.microsoft.com/Forums/en-US/9e58b7d1-a47d-4a76-943a-4f35090616e8/link-fatal-error-lnk1318?forum=vclanguage) when generating `PDB` files in Windows. See the first table in the [Running Meson Documentation](https://mesonbuild.com/Running-Meson.html#configuring-the-build-directory) for other build types.
+
 ## *NIX systems
 
 ### Build system-wide, in `/usr/local`
@@ -36,7 +30,7 @@ version while keeping, if provided, the Rizin version shipped by your
 distribution in `/usr`.
 
 ```
-$ meson build
+$ meson --buildtype=release build
 $ ninja -C build                # or `meson compile -C build`
 $ sudo ninja -C build install   # or `sudo meson install -C build`
 ```
@@ -56,7 +50,7 @@ with all other binaries on your system, you can also install it system-wide in
 `/usr`.
 
 ```
-$ meson --prefix=/usr build
+$ meson --buildtype=release --prefix=/usr build
 $ ninja -C build
 $ sudo ninja -C build install
 ```
@@ -73,7 +67,7 @@ available for your current user, without requiring you to have `sudo` access to
 the machine (or if you don't trust our build scripts enough).
 
 ```
-$ meson --prefix=~/.local build
+$ meson --buildtype=release --prefix=~/.local build
 $ ninja -C build
 $ ninja -C build install
 ```
@@ -96,7 +90,7 @@ To install Meson on Windows, follow instructions
 [here](https://mesonbuild.com/Getting-meson.html).
 
 ```
-$ meson --prefix=%CD%\rizin-install build
+$ meson --buildtype=release --prefix=%CD%\rizin-install build
 $ ninja -C build
 $ ninja -C build install
 ```
@@ -109,16 +103,17 @@ You can run rizin from `%CD%\rizin-install\bin`. If you don't specify any
 Use `-Db_sanitize=address,undefined` during the setup phase.
 
 ```
-$ meson -Db_sanitize=address,undefined build
+$ meson --buildtype=release -Db_sanitize=address,undefined build
 ```
 
 ## Build fully-static binaries
 
-It may be useful to run Rizin just by using a single file, which can be copied
-on other systems if necessary.
+It may be useful to run Rizin just by using a single file, which can be
+copied on other systems if necessary. On *NIX systems, this adds the classic
+`-static` flag to the linker, while on Windows it uses `/MT`.
 
 ```
-$ CFLAGS="-static" meson --default-library=static build
+$ meson --buildtype=release --default-library=static -Dstatic_runtime=true build
 ```
 
 ## Cross-compilation for Android
@@ -141,7 +136,7 @@ feature, which will produce just one executable and link all the other tools to
 that only tool, similar to how busybox works.
 
 ```
-$ CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file ./cross-compile-conf.ini
+$ meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build -Dstatic_runtime=true --cross-file ./cross-compile-conf.ini
 $ ninja -C build
 $ ninja -C build install
 ```
@@ -149,16 +144,63 @@ $ ninja -C build install
 At this point you can find everything under `/tmp/android-dir` and you can copy
 files to your Android device.
 
-# Build with acr/Makefile (deprecated)
+## Compile 32-bit Rizin on 64-bit machine
 
-Rizin also support compilation with configure+make, however this is not
-suggested and it is going to be removed in future releases.
+Whenever you want to build Rizin for a different system/architecture than the
+one you are using for building, you are effectively cross-compiling and you
+should provide a full configuration file to tell meson what is the target
+machine.
 
-To compile use:
+Even to compile a 32-bit version of Rizin on a 64-bit machine, you should use
+a configuration file like the following:
+
 ```
-$ ./configure --prefix=/usr
-$ make
-$ sudo make install
+[binaries]
+c = '/usr/bin/gcc'
+cpp = '/usr/bin/g++'
+ar = '/usr/bin/gcc-ar'
+strip = '/usr/bin/strip'
+pkgconfig = '/usr/bin/i686-redhat-linux-gnu-pkg-config'
+llvm-config = '/usr/bin/llvm-config-32'
+
+[built-in options]
+c_args = ['-m32']
+c_link_args = ['-m32']
+cpp_args = ['-m32']
+cpp_link_args = ['-m32']
+
+[host_machine]
+system = 'linux'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'
+```
+
+Alternatively, if your distribution provide specific compiler tools for the
+i686 architecture, you can use a configuration similar to this:
+
+```
+[binaries]
+c = '/usr/bin/i686-linux-gnu-gcc'
+cpp = '/usr/bin/i686-linux-gnu-g++'
+ar = '/usr/bin/i686-linux-gnu-gcc-ar'
+strip = '/usr/bin/i686-linux-gnu-strip'
+pkgconfig = '/usr/bin/i686-linux-gnu-pkg-config'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'
+```
+
+Of course, you might have to adjust some settings depending on your system
+and you should double check that you have installed all the necessary 32-bit
+libraries and tools. Once you have checked everything, you can setup the
+build directory with:
+
+```
+$ meson build --cross-file ./rizin-i386.ini
 ```
 
 # Uninstall
@@ -170,19 +212,12 @@ same build directory where you had previously installed Rizin:
 $ sudo ninja -C uninstall # `sudo` may not be required based on how you configured the `build` directory with meson the first time```
 ```
 
-If you had compiled Rizin using `configure` and `make` (**deprecated**), use:
-
-```
-$ sudo make uninstall
-```
-
 Furthermore, if you had installed Rizin using a distribution package, use the
 corresponding package manager's method for removing a package to uninstall Rizin.
 
 # Update
 
-Firstly, use `git pull --recurse-submodules` to update both the Rizin
-codebase and its submodules to the latest version.
+Firstly, use `git pull` to update the Rizin codebase to the latest version.
 
 To re-build Rizin after you have updated your source code, you can use:
 ```
@@ -193,5 +228,9 @@ $ sudo ninja -C build install # or `sudo meson install -C build`. `sudo` may not
 If you are a developer, it might not be necessary to run the `install` step
 (the second step from above) every time you build Rizin. You can directly use
 `rizin` from `./build/binrz/rizin/rizin.`
+
+If you encounter issues while re-building Rizin, try to remove the existing
+build directory (e.g. `rm -r ./build`) and clean the subproject files
+downloaded by meson (e.g. `git clean -dxff subprojects/`).
 
 [doc/PACKAGERS.md]: https://github.com/rizinorg/rizin/blob/dev/doc/PACKAGERS.md

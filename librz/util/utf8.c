@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2014-2018 - thelemon, kazarmy, pancake */
+// SPDX-FileCopyrightText: 2014-2018 thelemon <thatlemon@gmail.com>
+// SPDX-FileCopyrightText: 2014-2018 kazarmy <kazarmy@gmail.com>
+// SPDX-FileCopyrightText: 2014-2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>

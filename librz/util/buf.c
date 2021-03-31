@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 ret2libc <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -541,7 +543,6 @@ static st64 buf_format(RzBuffer *dst, RzBuffer *src, const char *fmt, int n) {
 			}
 
 			m = 1;
-			bigendian = true;
 		}
 	}
 	return res;

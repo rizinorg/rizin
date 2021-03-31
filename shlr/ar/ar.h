@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2017 xarkes <antide.petit@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 #ifndef _AR_H
 #define _AR_H

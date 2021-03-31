@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2001-2004 Fabrice Bellard
+// SPDX-License-Identifier: LGPL-2.0-or-later
+
 /*
  *  TCC - Tiny C Compiler
  *
@@ -19,6 +22,7 @@
  */
 
 #include "tcc.h"
+#include "rz_util.h"
 #include <math.h>
 /********************************************************/
 /* global variables */
@@ -121,8 +125,11 @@ ST_FUNC void cstr_ccat(CString *cstr, int ch) {
 	if (size > cstr->size_allocated) {
 		cstr_realloc(cstr, size);
 	}
-	((unsigned char *)cstr->data)[size - 1] = ch;
-	cstr->size = size;
+	unsigned char *uchar = ((unsigned char *)cstr->data);
+	if (uchar) {
+		uchar[size - 1] = ch;
+		cstr->size = size;
+	}
 }
 
 ST_FUNC void cstr_cat(CString *cstr, const char *str) {
@@ -284,12 +291,16 @@ ST_FUNC char *get_tok_str(int v, CValue *cv) {
 		cstr_ccat(&cstr_buf, '\0');
 		break;
 	case TOK_PPNUM:
-		cstr = cv->cstr;
-		len = cstr->size - 1;
-		for (i = 0; i < len; i++) {
-			add_char(&cstr_buf, ((unsigned char *)cstr->data)[i]);
+		if (cv) {
+			cstr = cv->cstr;
+			len = cstr->size - 1;
+			for (i = 0; i < len; i++) {
+				add_char(&cstr_buf, ((unsigned char *)cstr->data)[i]);
+			}
+			cstr_ccat(&cstr_buf, '\0');
+		} else {
+			eprintf("cv = nil\n");
 		}
-		cstr_ccat(&cstr_buf, '\0');
 		break;
 	case TOK_LSTR:
 		cstr_ccat(&cstr_buf, 'L');
@@ -2653,6 +2664,10 @@ keep_tok_flags:
 /* return next token without macro substitution. Can read input from
    macro_ptr buffer */
 static void next_nomacro_spc(void) {
+	if (!file) {
+		eprintf("file = null\n");
+		return;
+	}
 	if (macro_ptr) {
 	redo:
 		tok = *macro_ptr;
@@ -2801,16 +2816,16 @@ static int macro_subst_tok(TokenString *tok_str,
 		goto add_cstr;
 	} else if (tok == TOK___DATE__ || tok == TOK___TIME__) {
 		time_t ti;
-		struct tm *tm;
+		struct tm tminfo;
 
 		time(&ti);
-		tm = localtime(&ti);
+		rz_localtime_r(&ti, &tminfo);
 		if (tok == TOK___DATE__) {
 			snprintf(buf, sizeof(buf), "%s %2d %d",
-				ab_month_name[tm->tm_mon], tm->tm_mday, tm->tm_year + 1900);
+				ab_month_name[tminfo.tm_mon], tminfo.tm_mday, tminfo.tm_year + 1900);
 		} else {
 			snprintf(buf, sizeof(buf), "%02d:%02d:%02d",
-				tm->tm_hour, tm->tm_min, tm->tm_sec);
+				tminfo.tm_hour, tminfo.tm_min, tminfo.tm_sec);
 		}
 		cstrval = buf;
 	add_cstr:
@@ -3249,6 +3264,11 @@ ST_FUNC void preprocess_new(void) {
 
 /* Preprocess the current file */
 ST_FUNC int tcc_preprocess(TCCState *s1) {
+	if (!file) {
+		eprintf("file = null\n");
+		return -1;
+	}
+
 	Sym *define_start;
 
 	BufferedFile *file_ref, **iptr, **iptr_new;

@@ -1,0 +1,352 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_type
+commands:
+  - name: t
+    cname: type
+    summary: List all types / Show type information
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_ANY_TYPE
+        optional: true
+  - name: t-
+    cname: type_del
+    summary: Remove the type
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_ANY_TYPE
+  - name: t-*
+    cname: type_del_all
+    summary: Remove all types
+    args: []
+  - name: tc
+    summary: List loaded types in C format
+    subcommands:
+      - name: tc
+        cname: type_list_c
+        summary: List loaded types in C format with newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+            optional: true
+      - name: tcd
+        cname: type_list_c_nl
+        summary: List loaded types in C format without newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+            optional: true
+      - name: tcc
+        summary: Manage calling convention types
+        subcommands:
+          - name: tcc
+            cname: type_cc_list
+            summary: List all calling conventions
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_SDB
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: tcc-
+            cname: type_cc_del
+            summary: Remove the calling convention
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: tcc-*
+            cname: type_cc_del_all
+            summary: Remove all calling conventions
+            args: []
+  - name: td
+    cname: type_define
+    summary: Define type from C definition
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_STRING
+  - name: te
+    summary: List loaded enums
+    subcommands:
+      - name: te
+        cname: type_list_enum
+        summary: List loaded enums / Show enum member
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_SDB
+        args:
+          - name: enum
+            type: RZ_CMD_ARG_TYPE_ENUM_TYPE
+            optional: true
+          - name: value
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: teb
+        cname: type_enum_bitfield
+        summary: Show enum bitfield
+        args:
+          - name: enum
+            type: RZ_CMD_ARG_TYPE_ENUM_TYPE
+          - name: field
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: tec
+        cname: type_enum_c
+        summary: Show enum in the C output format
+        args:
+          - name: enum
+            type: RZ_CMD_ARG_TYPE_ENUM_TYPE
+            optional: true
+      - name: ted
+        cname: type_enum_c_nl
+        summary: Show enum in the C output format without newlines
+        args:
+          - name: enum
+            type: RZ_CMD_ARG_TYPE_ENUM_TYPE
+            optional: true
+      - name: tef
+        cname: type_enum_find
+        summary: Find enum and member by the member value
+        args:
+          - name: value
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: tf
+    summary: List loaded functions definitions
+    subcommands:
+      - name: tf
+        cname: type_list_function
+        summary: List loaded function definitions / Show function signature
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_SDB
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+  - name: tk
+    cname: type_kuery
+    summary: Perform SDB query on types database
+    args:
+      - name: type
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+  - name: tl
+    summary: Manage type links to the address
+    subcommands:
+      - name: tl
+        cname: type_link
+        summary: List all type links / Add a type link
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+          - RZ_OUTPUT_MODE_SDB
+          - RZ_OUTPUT_MODE_LONG
+        args:
+          - name: typename
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tls
+        cname: type_link_show
+        summary: Show the type link
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: tl-
+        cname: type_link_del
+        summary: Remove the type link
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: tl-*
+        cname: type_link_del_all
+        summary: Remove all type links
+        args: []
+  - name: tn
+    summary: Manage noreturn function attributes and marks
+    subcommands:
+      - name: tn
+        cname: type_list_noreturn
+        summary: List all noreturn references / Add a noreturn function
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tn-
+        cname: type_noreturn_del
+        summary: Remove the noreturn reference
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+            flags: RZ_CMD_ARG_FLAG_ARRAY
+      - name: tn-*
+        cname: type_noreturn_del_all
+        summary: Remove all noreturn references
+        args: []
+  - name: to
+    summary: Open C header file and load types from it
+    subcommands:
+      - name: to
+        cname: type_open_file
+        summary: Open C header file and load types from it
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: toe
+        cname: type_open_editor
+        summary: Open cfg.editor to edit types
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tos
+        cname: type_open_sdb
+        summary: Open SDB file and load types from it
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+  - name: tp
+    summary: Print formatted type casted to the address
+    subcommands:
+      - name: tp
+        cname: type_print
+        summary: Print formatted type casted to the address or variable
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tpv
+        cname: type_print_value
+        summary: Print formatted type casted to the value
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+          - name: value
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: tpx
+        cname: type_print_hexstring
+        summary: Print formatted type casted to the hexadecimal sequence
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+          - name: hexpairs
+            type: RZ_CMD_ARG_TYPE_STRING
+  - name: ts
+    summary: List loaded structures
+    subcommands:
+      - name: ts
+        cname: type_list_structure
+        summary: List loaded structures / Show pf format string for given structure
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRUCT_TYPE
+            optional: true
+      - name: tsc
+        cname: type_structure_c
+        summary: Show structure in the C output format with newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRUCT_TYPE
+            optional: true
+      - name: tsd
+        cname: type_structure_c_nl
+        summary: Show structure in the C output format without newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_STRUCT_TYPE
+            optional: true
+  - name: tt
+    summary: List loaded typedefs
+    subcommands:
+      - name: tt
+        cname: type_list_typedef
+        summary: List loaded typedefs / Show name for given type alias
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ALIAS_TYPE
+            optional: true
+      - name: ttc
+        cname: type_typedef_c
+        summary: Show typedef in the C output format
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ALIAS_TYPE
+            optional: true
+  - name: tu
+    summary: List loaded unions
+    subcommands:
+      - name: tu
+        cname: type_list_union
+        summary: List loaded unions / Show pf format string for given union
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_UNION_TYPE
+            optional: true
+      - name: tuc
+        cname: type_union_c
+        summary: Show union in the C output format with newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_UNION_TYPE
+            optional: true
+      - name: tud
+        cname: type_union_c_nl
+        summary: Show union in the C output format without newlines
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_UNION_TYPE
+            optional: true
+  - name: tx
+    summary: Type xrefs
+    subcommands:
+      - name: tx
+        cname: type_xrefs_list
+        summary: List functions using the type
+        args:
+          - name: type
+            type: RZ_CMD_ARG_TYPE_ANY_TYPE
+            optional: true
+      - name: txf
+        cname: type_xrefs_function
+        summary: List all types used in the function
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: txg
+        cname: type_xrefs_graph
+        summary: Render the type xrefs graph
+        args: []
+      - name: txl
+        cname: type_xrefs_list_all
+        summary: List all types used by any function
+        args: []

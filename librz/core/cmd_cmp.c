@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_core.h"
@@ -628,12 +629,11 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 			if (!rz_io_read_at(core->io, rz_num_math(core->num, input + 1), buf, core->blocksize)) {
 				eprintf("Cannot read hexdump\n");
 			} else {
-				val = rizin_compare(core, block, buf, ret, mode);
+				rizin_compare(core, block, buf, ret, mode);
 			}
 			free(buf);
 		}
 		return false;
-		break;
 	case 'f':
 		if (input[1] != ' ') {
 			eprintf("Please. use 'cf [file]'\n");

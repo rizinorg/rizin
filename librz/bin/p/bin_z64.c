@@ -1,4 +1,5 @@
-/* rizin - LGPL 3 - Copyright 2018-2019 - lowlyw */
+// SPDX-FileCopyrightText: 2018-2019 lowlyw <cutlassc91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /*
  * info comes from here.

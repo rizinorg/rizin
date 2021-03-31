@@ -1,11 +1,15 @@
 extraction:
     cpp:
+        prepare:
+            packages:
+                - python3-pip
+                - python3-setuptools
+                - python3-wheel
         after_prepare:
-            - export GNU_MAKE=make
+            - pip3 install meson
+            - export PATH="$HOME/.local/bin/:$PATH"
         configure:
-            command: "./configure"
-        before_index:
-            - export CS_COMMIT_ARCHIVE=1
+            command: meson build
         index:
             build_command:
-                - $GNU_MAKE -j2 -s
+                - ninja -C build

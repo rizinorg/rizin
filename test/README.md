@@ -21,6 +21,7 @@ Rizin uses both regression and unit tests.
 # Usage
 
 ## Regression tests
+
 To run regressions tests use `rz-test` from within the `test` directory.
 By default it will run all tests under the `db` subdirectory, however you can
 also specify which tests you want to run, by providing its name as argument to
@@ -38,9 +39,11 @@ can automatically fix the test so that it matches the new output (if that is the
 right behaviour!) or it can mark it as broken for you.
 
 ## Unit tests
+
 To run unit tests, just use `ninja -C build test` (or `meson test -C build`)
 from the top directory (replace `build` with the name of the directory you used
 to build Rizin).
+You can run one specific testcase category (e.g. the whole `test_bin.c` file) using `meson test -C build bin`.
 
 # Failure Levels
 

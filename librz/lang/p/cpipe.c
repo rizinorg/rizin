@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* vala extension for librz (rizin) */
 // TODO: add cache directory (~/.r2/cache)
@@ -42,19 +43,22 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 		free(cc);
 		cc = strdup("gcc");
 	}
+	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
+	char *pkgconf_path = rz_file_path_join(libdir, "pkgconfig");
 	char *file_esc = rz_str_escape_sh(file);
 	char *libpath_esc = rz_str_escape_sh(libpath);
 	char *libname_esc = rz_str_escape_sh(libname);
 	char *buf = rz_str_newf("%s \"%s\" -o \"%s/bin%s\""
 				" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs rz_socket)",
-		cc, file_esc, libpath_esc, libname_esc, RZ_LIBDIR "/pkgconfig");
+		cc, file_esc, libpath_esc, libname_esc, pkgconf_path);
 	free(libname_esc);
 	free(libpath_esc);
 	free(file_esc);
+	free(pkgconf_path);
 	free(cc);
 	if (rz_sys_system(buf) == 0) {
 		char *o_ld_path = rz_sys_getenv("LD_LIBRARY_PATH");
-		rz_sys_setenv("LD_LIBRARY_PATH", RZ_LIBDIR);
+		rz_sys_setenv("LD_LIBRARY_PATH", libdir);
 		char *binfile = rz_str_newf("%s/bin%s", libpath, libname);
 		lang_pipe_run(lang, binfile, -1);
 		rz_file_rm(binfile);
@@ -62,6 +66,7 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 		free(o_ld_path);
 		free(binfile);
 	}
+	free(libdir);
 	free(buf);
 	return 0;
 }

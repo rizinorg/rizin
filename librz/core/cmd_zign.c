@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -6,6 +8,8 @@
 #include <rz_list.h>
 #include <rz_cons.h>
 #include <rz_util.h>
+
+#include "core_private.h"
 
 #define ZB_DEFAULT_N 5
 
@@ -581,7 +585,7 @@ static void apply_name(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it, bo
 	rz_return_if_fail(core && fcn && it && it->name);
 	const char *name = it->realname ? it->realname : it->name;
 	if (rad) {
-		char *tmp = rz_name_filter2(name);
+		char *tmp = rz_name_filter2(name, true);
 		if (tmp) {
 			rz_cons_printf("\"afn %s @ 0x%08" PFMT64x "\"\n", tmp, fcn->addr);
 			free(tmp);
@@ -594,7 +598,7 @@ static void apply_name(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it, bo
 	}
 	rz_analysis_function_rename(fcn, name);
 	if (core->analysis->cb.on_fcn_rename) {
-		core->analysis->cb.on_fcn_rename(core->analysis, core->analysis->user, fcn, name);
+		core->analysis->cb.on_fcn_rename(core->analysis, core, fcn, name);
 	}
 }
 
@@ -633,7 +637,7 @@ static void apply_flag(RzCore *core, RzSignItem *it, ut64 addr, int size, int co
 	char *name = rz_str_newf("%s.%s.%s_%d", zign_prefix, prefix, it->name, count);
 	if (name) {
 		if (rad) {
-			char *tmp = rz_name_filter2(name);
+			char *tmp = rz_name_filter2(name, true);
 			if (tmp) {
 				rz_cons_printf("f %s %d @ 0x%08" PFMT64x "\n", tmp, size, addr);
 				free(tmp);
@@ -1249,7 +1253,7 @@ RZ_IPI int rz_cmd_zign(void *data, const char *input) {
 		rz_sign_list(core->analysis, *input);
 		break;
 	case 'k': // "zk"
-		rz_core_cmd0(core, "k analysis/zigns/*");
+		rz_core_kuery_print(core, "analysis/zigns/*");
 		break;
 	case '-': // "z-"
 		rz_sign_delete(core->analysis, arg);
@@ -1515,8 +1519,6 @@ static RzCmdStatus zi_handler_common(RzCore *core, int mode, const char *pfx) {
 }
 
 RZ_IPI RzCmdStatus rz_zign_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	char *pfx;
-	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		return zi_handler_common(core, '\0', "");
@@ -1525,10 +1527,7 @@ RZ_IPI RzCmdStatus rz_zign_info_handler(RzCore *core, int argc, const char **arg
 	case RZ_OUTPUT_MODE_QUIET:
 		return zi_handler_common(core, 'q', "");
 	case RZ_OUTPUT_MODE_RIZIN:
-		pfx = argc > 1 ? rz_str_newf(" %s", argv[1]) : rz_str_new("");
-		res = zi_handler_common(core, '\0', pfx);
-		free(pfx);
-		return res;
+		return zi_handler_common(core, '*', "");
 	default:
 		return RZ_CMD_STATUS_ERROR;
 	}

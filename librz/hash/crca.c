@@ -1,5 +1,6 @@
-//author: Victor Mu~noz (vmunoz@ingenieria-inversa.cl
-//license: the very same than rizin, blah, blah
+// SPDX-FileCopyrightText: 2009 Victor Mu~noz <vmunoz@ingenieria-inversa.cl>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 //some definitions and test cases borrowed from http://www.nightmare.com/~ryb/code/CrcMoose.py (Ray Burr)
 
 #include <rz_hash.h>

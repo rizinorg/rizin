@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2013-2015 Fedor Sakharov <fedor.sakharov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ebc_disas.h"
@@ -148,7 +149,6 @@ static int decode_jmp(const ut8 *bytes, ebc_command_t *cmd) {
 
 	if (TEST_BIT(bytes[0], 6)) {
 		immed = *(ut64 *)(bytes + 2);
-		bits = 64;
 		ret = 10;
 		snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "0x%lx", immed);
 	} else {

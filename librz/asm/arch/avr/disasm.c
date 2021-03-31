@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2007-2010 Vanya A. Sergeev <vsergeev@gmail.com>
+// SPDX-FileCopyrightText: 2010-2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2021 Giovanni <wargio@libero.it>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "avr_disasm.h"
 #include "format.h"
 #include <string.h>

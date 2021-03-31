@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2014 pancake <pancake@nopcode.org>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 ec b0x00 rgb:ccc
 ec b0x7f rgb:777
 ec b0xff rgb:333

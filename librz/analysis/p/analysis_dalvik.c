@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -429,7 +430,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		break;
 	case 0x2a: // goto/32
 		if (len > 5) {
-			st64 dst = (st64)(data[2] | (data[3] << 8) | (data[4] << 16) | (data[5] << 24));
+			st64 dst = (st64)(data[2] | (data[3] << 8) | (data[4] << 16) | ((ut32)data[5] << 24));
 			op->jump = addr + (dst * 2);
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			op->eob = true;

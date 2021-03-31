@@ -850,7 +850,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 
       if (!fieldBisReg)
 	{
-	  fieldAisReg = 0;
 	  fieldA = (fieldB >> 25) & 0x7F; /* Flags.  */
 	  fieldB = (fieldB & 0xFFFFFF) << 2;
 	  state->flow = is_linked ? direct_call : direct_jump;
@@ -876,7 +875,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	      IS_REG (B) ? "[%r]" : "%s"); /* Address/label name.  */
       if (fieldA != 0)
 	{
-	  fieldAisReg = 0;
 	  WRITE_FORMAT_COMMA_x (A);
 	}
 	if (IS_REG (B)) {
@@ -1132,7 +1130,7 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
     }
     /* Always read second word in case of limm.  */
     /* We ignore the result since last insn may not have a limm.  */
-    status = (*info->read_memory_func) (address + 4, buffer, 4, info);
+    (*info->read_memory_func) (address + 4, buffer, 4, info);
     if (info->endian == BFD_ENDIAN_LITTLE) {
 	    s.words[1] = bfd_getl32 (buffer);
     } else {

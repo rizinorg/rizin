@@ -25,9 +25,9 @@ Use `meson` to compile and install Rizin. Please make sure to get an updated
 `meson` (e.g. get it with `pip install meson` if your system does not provide
 one that is at least version 0.55.0).
 
-Clone this repository and make sure to clone the submodules as well:
+Clone this repository:
 ```
-$ git clone --recurse-submodules https://github.com/rizinorg/rizin
+$ git clone https://github.com/rizinorg/rizin
 ```
 
 Then compile and install with:
@@ -75,7 +75,7 @@ XAP, System Z, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
 V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
 NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
-c55+, c66), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
+c55+, c66), Hexagon, Brainfuck, Malbolge, DCPU16, LANAI,
 MCORE, mcs96, RSP, SuperH-4, VAX, AMD Am29000.
 
 ## Supported File Formats

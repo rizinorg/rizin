@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 set -x
 
 export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
@@ -17,7 +21,7 @@ if [ "${RZ_SYS_ZLIB}" != "" ] ; then
 	OPTS="${OPTS} -D use_sys_zlib=${RZ_SYS_ZLIB}"
 fi
 if [ "${RZ_SYS_ZIP}" != "" ] ; then
-	OPTS="${OPTS} -D use_sys_zip=${RZ_SYS_ZIP}"
+	OPTS="${OPTS} -D use_sys_libzip=${RZ_SYS_ZIP}"
 fi
 if [ "${RZ_SYS_LZ4}" != "" ] ; then
 	OPTS="${OPTS} -D use_sys_lz4=${RZ_SYS_LZ4}"

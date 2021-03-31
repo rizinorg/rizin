@@ -1,0 +1,30 @@
+NAME=LANGUAGES : rust detection
+FILE=bins/abi_bins/elf/languages/rust/bubble_sort
+CMDS=<<EOF
+iI~compiler,lang
+EOF
+EXPECT=<<EOF
+compiler GCC: (GNU) 8.1.1 20180502 (Red Hat 8.1.1-1) GCC: (GNU) 8.1.1 20180712 (Red Hat 8.1.1-5)
+lang     rust
+EOF
+RUN
+
+NAME=LANGUAGES : rust disasembly
+FILE=bins/abi_bins/elf/languages/rust/tree_traversal
+CMDS=<<EOF
+e io.cache=true
+pi 10
+EOF
+EXPECT=<<EOF
+xor ebp, ebp
+mov r9, rdx
+pop rsi
+mov rdx, rsp
+and rsp, 0xfffffffffffffff0
+push rax
+push rsp
+lea r8, sym.__libc_csu_fini
+lea rcx, sym.__libc_csu_init
+lea rdi, main
+EOF
+RUN

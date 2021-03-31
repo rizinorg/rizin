@@ -1,4 +1,8 @@
 #!/bin/sh
+#
+# SPDX-FileCopyrightText: 2015-2020 pancake
+# SPDX-License-Identifier: LGPL-3.0-only
+#
 
 # rz-pm
 # Honor user environment

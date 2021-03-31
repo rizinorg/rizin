@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 dso <dso@rice.edu>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_core.h"
@@ -38,30 +40,21 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
 	RzIODesc *yankdesc = NULL;
-	ut64 fd = core->file ? core->file->fd : -1, yank_file_sz = 0,
-	     loadaddr = 0, addr = offset;
+	ut64 fd = core->file ? core->file->fd : -1, yank_file_sz = 0, addr = offset;
 	int res = false;
 
 	if (filename && *filename) {
 		ut64 load_align = rz_config_get_i(core->config, "file.loadalign");
-		RzIOMap *map = NULL;
 		yankdesc = rz_io_open_nomap(core->io, filename, RZ_PERM_R, 0644);
 		// map the file in for IO operations.
 		if (yankdesc && load_align) {
 			yank_file_sz = rz_io_size(core->io);
 			ut64 addr = rz_io_map_next_available(core->io, 0, yank_file_sz, load_align);
-			map = rz_io_map_new(core->io, yankdesc->fd, RZ_PERM_R, 0, addr, yank_file_sz);
-			loadaddr = map ? map->itv.addr : -1;
-			if (yankdesc && map && loadaddr != -1) {
-				// ***NOTE*** this is important, we need to
-				// address the file at its physical address!
-				addr += loadaddr;
-			} else if (yankdesc) {
+			RzIOMap *map = rz_io_map_new(core->io, yankdesc->fd, RZ_PERM_R, 0, addr, yank_file_sz);
+			if (!map || map->itv.addr == -1) {
 				eprintf("Unable to map the opened file: %s", filename);
 				rz_io_desc_close(yankdesc);
 				yankdesc = NULL;
-			} else {
-				eprintf("Unable to open the file: %s", filename);
 			}
 		}
 	}
@@ -79,11 +72,8 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 		ut8 *buf = NULL;
 		if (actual_len > 0 && res == addr) {
 			buf = malloc(actual_len);
-			if (!rz_io_read_at(core->io, addr, buf, actual_len)) {
-				actual_len = 0;
-			}
+			rz_io_read_at(core->io, addr, buf, actual_len);
 			rz_core_yank_set(core, RZ_CORE_FOREIGN_ADDR, buf, len);
-			res = true;
 		} else if (res != addr) {
 			eprintf(
 				"ERROR: Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%" PFMT64x ")\n", res, addr,
@@ -246,12 +236,23 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, int format) {
 				rz_cons_newline();
 				break;
 			case 'j': {
-				rz_cons_printf("{\"addr\":%" PFMT64u ",\"bytes\":\"", core->yank_addr);
-				for (i = pos; i < rz_buf_size(core->yank_buf); i++) {
-					rz_cons_printf("%02x", rz_buf_read8_at(core->yank_buf, i));
+				PJ *pj = rz_core_pj_new(core);
+				if (!pj) {
+					break;
 				}
-				rz_cons_printf("\"}\n");
-			} break;
+				pj_o(pj);
+				pj_kn(pj, "addr", core->yank_addr);
+				RzStrBuf *buf = rz_strbuf_new("");
+				for (i = pos; i < rz_buf_size(core->yank_buf); i++) {
+					rz_strbuf_appendf(buf, "%02x", rz_buf_read8_at(core->yank_buf, i));
+				}
+				pj_ks(pj, "bytes", rz_strbuf_get(buf));
+				rz_strbuf_free(buf);
+				pj_end(pj);
+				rz_cons_println(pj_string(pj));
+				pj_free(pj);
+				break;
+			}
 			case '*':
 				//rz_cons_printf ("yfx ");
 				rz_cons_printf("wx ");

@@ -453,7 +453,6 @@ pdj -1
 EOF
 EXPECT=<<EOF
 [{"offset":1,"ptr":4248444,"val":4248444,"esil":"4248444,4,esp,-,=[4],4,esp,-=","refptr":false,"fcn_addr":0,"fcn_last":1020,"size":5,"opcode":"push 0x40d37c","disasm":"push 0x40d37c","bytes":"687cd34000","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":0}]
-
 EOF
 RUN
 
@@ -466,7 +465,6 @@ pdj 3 @ main
 EOF
 EXPECT=<<EOF
 [{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
-
 EOF
 RUN
 
@@ -479,7 +477,6 @@ pdj -3 @ 0x0040050f
 EOF
 EXPECT=<<EOF
 [{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
-
 EOF
 RUN
 
@@ -487,8 +484,7 @@ NAME=pdj str in opcode
 FILE=bins/java/Hello.class
 CMDS=pdj 1 @ 0x000002ae
 EXPECT=<<EOF
-[{"offset":686,"esil":"","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
-
+[{"offset":686,"esil":"","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc constant_pool.11","disasm":"ldc constant_pool.11","bytes":"120b","family":"cpu","type":"load","reloc":false,"type_num":32,"type2_num":0}]
 EOF
 RUN
 
@@ -646,7 +642,7 @@ e asm.flags=false
 s sym.func.100004401
 af
 afn newname
-sHu
+s entry0
 pds
 EOF
 EXPECT=<<EOF
@@ -679,7 +675,38 @@ e asm.lines.fcn=false
 pdf
 EOF
 EXPECT=<<EOF
-/ 13: fcn2.0x004017c0 ();
+/ fcn2.0x004017c0 ();
+|           0x004017c0      51             push  ecx
+|           0x004017c1      89e1           mov   ecx, esp
+|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c6      3d00100000     cmp   eax, 0x1000
+\       ,=< 0x004017cb      7210           jb    0x4017dd
+
+fcn2.0x004017c0 ();
+          0x004017c0      51             push  ecx
+          0x004017c1      89e1           mov   ecx, esp
+          0x004017c3      83c108         add   ecx, 8
+          0x004017c6      3d00100000     cmp   eax, 0x1000
+      ,=< 0x004017cb      7210           jb    0x4017dd
+EOF
+RUN
+
+NAME=pdf fcnline with size
+FILE=bins/pe/a.exe
+CMDS=<<EOF
+e asm.bytes=true
+e asm.lines.fcn=true
+s 0x004017c0
+af+ 0x004017c0 fcn2.0x004017c0
+afb+ 0x4017c0 0x4017c0 13 0x4017dd 0x4017cd
+pdf
+?e
+e asm.lines.fcn=false
+e asm.fcn.size=true
+pdf
+EOF
+EXPECT=<<EOF
+/ fcn2.0x004017c0 ();
 |           0x004017c0      51             push  ecx
 |           0x004017c1      89e1           mov   ecx, esp
 |           0x004017c3      83c108         add   ecx, 8
@@ -1250,7 +1277,7 @@ e asm.comments=false
 pdf
 EOF
 EXPECT=<<EOF
-/ 21: int main (int argc, char **argv, char **envp);
+/ int main (int argc, char **argv, char **envp);
 | 0x0000061a      pushq %rbp
 | 0x0000061b      movq  %rsp, %rbp
 | 0x0000061e      movl  $1, obj.sa
@@ -1342,7 +1369,7 @@ pdJ 1 @ 0x00400506
 EOF
 EXPECT=<<EOF
 [{"offset":4195590,"text":"            ;-- main:"},{"offset":4195590,"text":"            0x00400506      55             push  rbp"}]
-[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ 16: int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push  rbp"}]
+[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push  rbp"}]
 EOF
 RUN
 
@@ -2156,7 +2183,7 @@ aa
 pdf
 EOF
 EXPECT=<<EOF
-/ 46: entry0 (int64_t arg3);
+/ entry0 (int64_t arg3);
 |           ; arg int64_t arg3 @ rdx
 |           0x00005ae0      f30f1efa       endbr64
 |           0x00005ae4      31ed           xor   ebp, ebp
@@ -2272,7 +2299,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-66: sym.parell (char *s);
+sym.parell (char *s);
 EOF
 RUN
 
@@ -2286,7 +2313,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-66: parell (char *s);
+parell (char *s);
 EOF
 RUN
 
@@ -2302,3 +2329,34 @@ and esp, 0xfffffff0
 and esp, 
 EOF
 RUN
+
+NAME=asm.size and meta string
+FILE=bins/elf/ls
+CMDS=<<EOF
+pd 1 @ 0x0001bbe8
+pd 1 @ 0x0001bbe8 @e:asm.size=true
+EOF
+EXPECT=<<EOF
+            ;-- str.Written_by__s___s___s____s___s___s___s____s__and__s.:
+            0x0001bbe8     .string "Written by %s, %s, %s,\n%s, %s, %s, %s,\n%s, and %s.\n" ; len=52
+            ;-- str.Written_by__s___s___s____s___s___s___s____s__and__s.:
+            0x0001bbe8     .string "Written by %s, %s, %s,\n%s, %s, %s, %s,\n%s, and %s.\n" ; len=52
+EOF
+RUN
+
+NAME=print section perm
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+pd 1 @ 0x080483d2
+pd 1 @ 0x08049f24
+pd 1 @ 0x080483d2 @e:asm.section=true,asm.section.perm=true
+pd 1 @ 0x08049f24 @e:asm.section=true,asm.section.perm=true
+EOF
+EXPECT=<<EOF
+            0x080483d2      pop   esi
+            0x08049f24      .dword 0x00000010
+   r-x      .text           0x080483d2      pop   esi
+   rw-   .dynamic           0x08049f24      .dword 0x00000010
+EOF
+RUN
+

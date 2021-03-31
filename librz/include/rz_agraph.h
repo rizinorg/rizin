@@ -49,7 +49,8 @@ typedef struct rz_ascii_graph_t {
 	const RzGraphNode *curnode;
 	char *title;
 	Sdb *db;
-	Sdb *nodes; // Sdb with title(key)=RzANode*(value)
+	HtPP *nodes; // HT with title(key)=RzANode*(value)
+	RzList *dummy_nodes;
 
 	int layout;
 	int is_instep;
@@ -84,7 +85,7 @@ typedef struct rz_ascii_graph_t {
 	RzList *back_edges;
 	RzList *long_edges;
 	struct layer_t *layers;
-	int n_layers;
+	unsigned int n_layers;
 	RzList *dists; /* RzList<struct dist_t> */
 	RzList *edges; /* RzList<AEdge> */
 	RzAGraphHits ghits;

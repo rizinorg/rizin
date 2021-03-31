@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <tree_sitter/parser.h>
 #include <ctype.h>
 #include <wctype.h>
@@ -13,7 +16,6 @@ enum TokenType {
 	FILE_DESCRIPTOR,
 	EQ_SEP_CONCAT,
 	CONCAT,
-	CONCAT_BRACE,
 	CONCAT_PF_DOT,
 };
 
@@ -92,10 +94,6 @@ static bool is_concat(const int32_t ch) {
 		ch != ')' && ch != '`' && ch != '~' && ch != '\\';
 }
 
-static bool is_concat_brace(const int32_t ch) {
-	return is_concat(ch) && ch != '}' && ch != '{';
-}
-
 static bool is_concat_pf_dot(const int32_t ch) {
 	return is_concat(ch) && ch != '=';
 }
@@ -104,8 +102,12 @@ static bool is_concat_eq_sep(const int32_t ch) {
 	return is_concat(ch) && ch != '=';
 }
 
-static bool is_recursive_help(int id_len, const int32_t before_last_ch, const int32_t last_ch) {
-	return id_len >= 2 && before_last_ch == '?' && last_ch == '*';
+static bool is_recursive_help(const int32_t before_last_ch, const int32_t last_ch) {
+	return before_last_ch == '?' && last_ch == '*';
+}
+
+static bool is_recursive_help_json(const int32_t trd_last_ch, const int32_t snd_last_ch, const int32_t last_ch) {
+	return trd_last_ch == '?' && snd_last_ch == '*' && last_ch == 'j';
 }
 
 static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
@@ -142,9 +144,6 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 	if (valid_symbols[CONCAT] && is_concat (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT;
 		return true;
-	} else if (valid_symbols[CONCAT_BRACE] && is_concat_brace (lexer->lookahead)) {
-		lexer->result_symbol = CONCAT_BRACE;
-		return true;
 	} else if (valid_symbols[CONCAT_PF_DOT] && is_concat_pf_dot (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT_PF_DOT;
 		return true;
@@ -178,7 +177,9 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 			return false;
 		}
 		// ?? is not considered an help command, just a regular one
-		if ((res[i_res - 1] == '?' && strcmp (res, "??")) || (i_res >= 2 && is_recursive_help (i_res, res[i_res - 2], res[i_res - 1]))) {
+		if ((res[i_res - 1] == '?' && strcmp (res, "??") != 0) ||
+			(i_res > 2 && is_recursive_help (res[i_res - 2], res[i_res - 1])) ||
+			(i_res > 3 && is_recursive_help_json (res[i_res - 3], res[i_res - 2], res[i_res - 1]))) {
 			if (i_res == 1) {
 				return false;
 			}

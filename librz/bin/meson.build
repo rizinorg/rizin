@@ -17,9 +17,6 @@ rz_bin_sources = [
   'p/bin_bootimg.c',
   'p/bin_cgc.c',
   'p/bin_coff.c',
-  'p/bin_dbginfo_dex.c',
-  'p/bin_dbginfo_elf.c',
-  'p/bin_dbginfo_elf64.c',
   'p/bin_dex.c',
   'p/bin_dmp64.c',
   'p/bin_dol.c',
@@ -29,6 +26,7 @@ rz_bin_sources = [
   'p/bin_java.c',
   'p/bin_ldr_linux.c',
   'p/bin_le.c',
+  'p/bin_luac.c',
   'p/bin_mach0.c',
   'p/bin_mach064.c',
   'p/bin_mbn.c',
@@ -84,6 +82,12 @@ rz_bin_sources = [
   'format/elf/elf64.c',
   'format/elf/elf64_write.c',
   'format/elf/elf_write.c',
+  'format/java/class_attribute.c',
+  'format/java/class_const_pool.c',
+  'format/java/class_interface.c',
+  'format/java/class_bin.c',
+  'format/java/class_field.c',
+  'format/java/class_method.c',
   'format/mach0/coresymbolication.c',
   'format/mach0/dyldcache.c',
   'format/mach0/fatmach0.c',
@@ -94,6 +98,9 @@ rz_bin_sources = [
   'format/mdmp/mdmp_pe.c',
   'format/mdmp/mdmp_pe64.c',
   'format/le/le.c',
+  'format/luac/luac_common.c',
+  'format/luac/luac_bin.c',
+  'format/luac/v54/parse_54.c',
   'format/ne/ne.c',
   'format/mz/mz.c',
   'format/nxo/nxo.c',
@@ -135,23 +142,21 @@ rz_bin_sources = [
   'pdb/tpi.c'
 ]
 
-rz_bin_inc = [platform_inc, yxml_inc, include_directories('mangling', 'format')]
+rz_bin_inc = [platform_inc, include_directories('mangling', 'format')]
 
 rz_bin = library('rz_bin', rz_bin_sources,
   include_directories: rz_bin_inc,
   c_args: ['-DRZ_API_BIN_ONLY=1'] + library_cflags,
   dependencies: [
+    lz4_dep,
+    yxml_dep,
     rz_util_dep,
-    rz_io_dep,
     rz_socket_dep,
     rz_magic_dep,
     rz_hash_dep,
     rz_syscall_dep,
     rz_cons_dep,
-    rz_crypto_dep,
-    java_dep,
-    lz4_dep,
-    yxml_dep
+    rz_io_dep,
   ],
   install: true,
   implicit_include_directories: false,

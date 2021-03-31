@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2018 - thestr4ng3r, courk */
+// SPDX-FileCopyrightText: 2018 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2018 courk <courk@courk.cc>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
 #include <rz_lib.h>

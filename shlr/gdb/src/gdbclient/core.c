@@ -1,4 +1,5 @@
-/* libgdbr - LGPL - Copyright 2014-2018 - defragger */
+// SPDX-FileCopyrightText: 2014-2018 defragger <rlaemmert@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "gdbclient/responses.h"
 #include "gdbclient/commands.h"
@@ -244,7 +245,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		goto end;
 	}
 	read_packet(g, false);
-	if ((ret = handle_qC(g)) < 0) {
+	if (handle_qC(g) < 0) {
 		g->stub_features.qC = false;
 	}
 	// Check if vCont is supported
@@ -1278,7 +1279,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	}
 
 	bed = rz_cons_sleep_begin();
-	while ((ret = read_packet(g, true)) < 0 && !g->isbreaked && rz_socket_is_connected(g->sock))
+	while (read_packet(g, true) < 0 && !g->isbreaked && rz_socket_is_connected(g->sock))
 		;
 	if (g->isbreaked) {
 		g->isbreaked = false;
@@ -1505,10 +1506,10 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 	data_sz = g->stub_features.pkt_sz / 2;
 	ret = 0;
 	while (ret < max_len) {
-		if ((ret1 = snprintf(command, sizeof(command) - 1,
-			     "vFile:pread:%x,%" PFMT64x ",%" PFMT64x,
-			     (int)g->remote_file_fd, (ut64)RZ_MIN(data_sz, max_len - ret),
-			     (ut64)ret)) < 0) {
+		if (snprintf(command, sizeof(command) - 1,
+			    "vFile:pread:%x,%" PFMT64x ",%" PFMT64x,
+			    (int)g->remote_file_fd, (ut64)RZ_MIN(data_sz, max_len - ret),
+			    (ut64)ret) < 0) {
 			ret = -1;
 			goto end;
 		}

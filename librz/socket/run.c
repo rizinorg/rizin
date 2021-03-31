@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* this helper api is here because it depends on rz_util and rz_socket */
@@ -724,7 +725,7 @@ static int redirect_socket_to_pty(RzSocket *sock) {
 	// in case of interactive applications
 	int fdm, fds;
 
-	if (dyn_openpty && dyn_openpty(&fdm, &fds, NULL, NULL, NULL) == -1) {
+	if (!dyn_openpty || (dyn_openpty && dyn_openpty(&fdm, &fds, NULL, NULL, NULL) == -1)) {
 		perror("opening pty");
 		return -1;
 	}
@@ -1009,11 +1010,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		if (p->_preload) {
 			eprintf("WARNING: Only one library can be opened at a time\n");
 		}
-#ifdef __WINDOWS__
 		p->_preload = rz_str_rz_prefix(RZ_JOIN_2_PATHS(RZ_LIBDIR, "librz." RZ_LIB_EXT));
-#else
-		p->_preload = strdup(RZ_LIBDIR "/librz." RZ_LIB_EXT);
-#endif
 	}
 	if (p->_libpath) {
 #if __WINDOWS__
@@ -1166,7 +1163,10 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 #if __UNIX__
 			close(0);
 			close(1);
-			exit(rz_sys_execl("/bin/sh", "/bin/sh", "-c", p->_system, NULL));
+			char *bin_sh = rz_file_binsh();
+			int ret = rz_sys_execl(bin_sh, "sh", "-c", p->_system, NULL);
+			free(bin_sh);
+			exit(ret);
 #else
 			exit(rz_sys_system(p->_system));
 #endif

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1998, 2000 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /* Symbol concatenation utilities.
 
    Copyright (C) 1998, 2000 Free Software Foundation, Inc.

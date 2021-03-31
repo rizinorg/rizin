@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2011 earada <pkedurat@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef DEX_H
 #define DEX_H
 
@@ -120,7 +123,7 @@ typedef struct rz_bin_dex_obj_t {
 	RzList *trycatch_list;
 	RzList *imports_list;
 	RzList *classes_list;
-	RzList *lines_list;
+	RzBinSourceLineInfo *lines; //< moved out when bin queries it to avoid dup
 	ut64 code_from;
 	ut64 code_to;
 	char *version;

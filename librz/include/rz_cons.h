@@ -470,6 +470,7 @@ typedef struct rz_cons_context_t {
 	bool lastEnabled;
 	bool is_interactive;
 	bool pageable;
+	bool noflush;
 
 	int color_mode;
 	RzConsPalette cpal;
@@ -493,7 +494,6 @@ typedef struct rz_cons_t {
 	int fix_rows;
 	int fix_columns;
 	bool break_lines;
-	int noflush;
 	bool show_autocomplete_widget;
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
@@ -864,6 +864,7 @@ RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list 
 #endif
 
 RZ_API void rz_cons_push(void);
+RZ_API void rz_cons_push_capture(void);
 RZ_API void rz_cons_pop(void);
 RZ_API RzConsContext *rz_cons_context_new(RZ_NULLABLE RzConsContext *parent);
 RZ_API void rz_cons_context_free(RzConsContext *context);
@@ -914,6 +915,7 @@ RZ_API int rz_cons_memcat(const char *str, int len);
 RZ_API void rz_cons_newline(void);
 RZ_API void rz_cons_filter(void);
 RZ_API void rz_cons_flush(void);
+RZ_API void rz_cons_set_flush(bool flush);
 RZ_API void rz_cons_print_fps(int col);
 RZ_API void rz_cons_last(void);
 RZ_API int rz_cons_less_str(const char *str, const char *exitkeys);
@@ -977,10 +979,9 @@ RZ_API int rz_cons_grep_line(char *buf, int len); // must be static
 RZ_API void rz_cons_grepbuf(void);
 
 RZ_API void rz_cons_rgb(ut8 r, ut8 g, ut8 b, ut8 a);
-RZ_API void rz_cons_rgb_fgbg(ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
 RZ_API void rz_cons_rgb_init(void);
-RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, RzColor *rcolor);
-RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, RzColor *rcolor);
+RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, const RzColor *rcolor);
+RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, const RzColor *rcolor);
 RZ_API char *rz_cons_rgb_str_off(char *outstr, size_t sz, ut64 off);
 RZ_API void rz_cons_color(int fg, int r, int g, int b);
 
@@ -1022,10 +1023,12 @@ typedef struct rz_selection_widget_t {
 
 typedef struct rz_line_hist_t {
 	char **data;
+	char *match;
 	int size;
 	int index;
 	int top;
 	int autosave;
+	bool do_setup_match;
 } RzLineHistory;
 
 typedef struct rz_line_buffer_t {

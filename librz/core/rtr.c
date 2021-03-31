@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_core.h"
@@ -884,8 +886,6 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 	if (fd != -1) {
 		if (fd >= 0 && fd < RTR_MAX_HOSTS) {
 			rtr_n = fd;
-		} else {
-			fd = -1;
 		}
 	} else {
 		// XXX

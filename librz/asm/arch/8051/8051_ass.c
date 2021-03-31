@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2019 hmht
 // SPDX-License-Identifier: LGPL-3.0-only
 #include "8051_ass.h"
 
@@ -534,7 +535,6 @@ static bool mnem_add(char const *const *arg, ut16 pc, ut8 **out) {
 		return false;
 	}
 	switch (arg[1][0]) {
-		break;
 	case '@':
 	case '[':
 		return singlearg_register(0x26, arg[1], out);

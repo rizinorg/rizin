@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2009-2020 - pancake */
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bp.h>
 #include <config.h>
@@ -302,8 +303,8 @@ RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
 			pj_kb(pj, "trace", b->trace);
 			pj_kb(pj, "enabled", b->enabled);
 			pj_kb(pj, "valid", rz_bp_is_valid(bp, b));
-			pj_ks(pj, "data", rz_str_get2(b->data));
-			pj_ks(pj, "cond", rz_str_get2(b->cond));
+			pj_ks(pj, "data", rz_str_get(b->data));
+			pj_ks(pj, "cond", rz_str_get(b->cond));
 			pj_end(pj);
 		} else if (rad) {
 			if (b->module_name) {
@@ -323,10 +324,10 @@ RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
 				rz_bp_is_valid(bp, b) ? "valid" : "invalid",
-				rz_str_get2(b->data),
-				rz_str_get2(b->cond),
-				rz_str_get2(b->name),
-				rz_str_get2(b->module_name));
+				rz_str_get(b->data),
+				rz_str_get(b->cond),
+				rz_str_get(b->name),
+				rz_str_get(b->module_name));
 		}
 		n++;
 	}

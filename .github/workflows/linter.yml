@@ -3,18 +3,121 @@ name: "Mixed linter and checks"
 on:
   push:
   pull_request:
-  
+
 jobs:
-  cmd_descs_yaml_check:
+  changes:
     runs-on: ubuntu-latest
+    outputs:
+      yaml: ${{ steps.filter.outputs.yaml }}
+      clang-format: ${{ steps.filter.outputs.clang-format }}
+      prettier: ${{ steps.filter.outputs.prettier }}
+      python: ${{ steps.filter.outputs.python }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          yaml:
+            - '**.yml'
+            - '**.yaml'
+            - '.github/workflows/linter.yml'
+          clang-format:
+            - '**.c'
+            - '**.h'
+            - '**.in'
+            - '**.inc'
+            - '.github/workflows/linter.yml'
+            - 'sys/clang-format.py'
+            - '.clang-format'
+          prettier:
+            - '**.js'
+            - '.github/workflows/linter.yml'
+          python:
+            - '**.py'
+            - '.github/workflows/linter.yml'
+            - '.pylintrc'
+
+  cmd_descs_yaml_check:
+    needs: changes
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
       - uses: actions/checkout@v2
       - name: Install tools
         run: sudo apt-get install yamllint python3-yaml
       - name: Check YamlLint
         run: |
-          yamllint -d "{rules: {line-length: {max: 120}}}" ./librz/core/cmd_descs.yaml
+          yamllint -d "{rules: {line-length: {max: 120}}}" ./librz/core/cmd_descs/*.yaml
       - name: Check sync between yaml and C/H files
         run: |
-          ./librz/core/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs.yaml
-          diff /tmp/cmd_descs.c ./librz/core/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs.h
+          ./librz/core/cmd_descs/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs/*.yaml
+          diff /tmp/cmd_descs.c ./librz/core/cmd_descs/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs/cmd_descs.h
+
+  clang-format:
+    needs: changes
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.clang-format == 'true' }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install wget
+      run: sudo apt --assume-yes install wget
+
+    - name: Install automatic llvm (stable branch)
+      run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+
+    - name: Install clang-format-11
+      run: sudo apt --assume-yes install clang-format-11
+
+    - name: Install gitpython
+      run: sudo pip install gitpython
+
+    - name: Run clang-format
+      run: |
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 110
+        clang-format --version
+        python sys/clang-format.py --check --verbose
+
+  prettier:
+    needs: changes
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.prettier == 'true' }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install prettier
+      run: |
+        sudo apt --assume-yes install npm
+        npm install prettier
+
+    - name: Run prettier
+      run: find . -name "*.js" | grep -v "subprojects" | xargs npx prettier  --print-width 120 --check
+
+  python:
+    needs: changes
+    runs-on: ubuntu-20.04
+    if: ${{ needs.changes.outputs.python == 'true' }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install pylint, black, isort
+      run: pip install pylint black isort
+
+    - name: Run black
+      run: |
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        find . -name "*.py" | grep -v "subprojects" | xargs black --check
+
+    - name: Run isort
+      run: |
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        find . -name "*.py" | grep -v "subprojects" | xargs isort --check
+
+    - name: Run pylint
+      run: |
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        find . -name "*.py" | grep -v "subprojects" | grep -v "librz/bin/format/xnu/scripts/" | xargs pylint

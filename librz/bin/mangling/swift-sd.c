@@ -1,6 +1,7 @@
-/* work-in-progress reverse engineered swift-demangler in C 
- * Copyright MIT 2015-2019
- * by pancake@nopcode.org */
+// SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
+
+/* work-in-progress reverse engineered swift-demangler in C */
 
 #include <stdio.h>
 #include <string.h>
@@ -299,8 +300,7 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 			p += 3;
 		}
 #endif
-		q = getnum(q, &len);
-
+		getnum(q, &len);
 		q = numpos(p);
 		//printf ("(%s)\n", getstring (p, (q-p)));
 		for (i = 0, len = 1; len && q < q_end; q += len, i++) {
@@ -495,9 +495,7 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 								}
 								break;
 							}
-							p = resolve(types, *q ? q + 1 : q, &attr); // type
-							//printf ("RETURN TYPE %s\n", attr);
-							//					printf ("RET %s\n", attr);
+							resolve(types, *q ? q + 1 : q, &attr); // type
 							if (attr) {
 								strcat(out, " -> ");
 								STRCAT_BOUNDS(strlen(attr));

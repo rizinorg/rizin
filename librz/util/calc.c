@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2012-2017 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* ported to C by pancake for r2 in 2012-2017 */
 // TODO: integrate floating point support
 // TODO: do not use global variables
@@ -470,28 +473,3 @@ RZ_API ut64 rz_num_calc(RNum *num, const char *str, const char **err) {
 	nc->under_calc = false;
 	return n.n;
 }
-
-#ifdef TEST
-int main(int argc, char *argv[]) {
-	RNumCalcValue n;
-	RNumCalc nc;
-	while (!feof(stdin)) {
-		get_token(nc);
-		if (nc.curr_tok == RNCEND) {
-			break;
-		}
-		if (nc.curr_tok == RNCPRINT) {
-			continue;
-		}
-		n = expr(num, nc, 0);
-		if (n.d == ((double)(int)n.d))
-			 {
-				printf("%llx\n", n.n);
-			}
-		else {
-			printf("%lf\n", n.d);
-		}
-	}
-	return nc->errors;
-}
-#endif

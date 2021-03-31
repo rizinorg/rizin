@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2017-2018 - rkx1209 */
+// SPDX-FileCopyrightText: 2017-2018 rkx1209 <rkx1209dev@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -7,11 +8,7 @@
 #include <rz_io.h>
 #include <rz_cons.h>
 #include "nxo/nxo.h"
-#ifdef RZ_MESON_VERSION
 #include <lz4.h>
-#else
-#include "../../../shlr/lz4/lz4.c"
-#endif
 
 #define NSO_OFF(x)           rz_offsetof(NSOHeader, x)
 #define NSO_OFFSET_MODMEMOFF rz_offsetof(NXOStart, mod_memoffset)

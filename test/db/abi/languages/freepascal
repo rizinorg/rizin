@@ -1,0 +1,27 @@
+NAME=LANGUAGES : freepascal detection
+FILE=bins/abi_bins/elf/languages/freepascal/pick_random
+BROKEN=1
+CMDS=<<EOF
+iI~lang
+EOF
+EXPECT=<<EOF
+lang     freepascal
+EOF
+RUN
+
+NAME=LANGUAGES: freepascal main detection
+FILE=bins/abi_bins/elf/languages/freepascal/pick_random
+ARGS=-A
+CMDS=<<EOF
+s main
+pdf
+EOF
+EXPECT=<<EOF
+EOF
+REGEXP_FILTER_ERR=<<EOF
+0x48c1c748
+EOF
+EXPECT_ERR=<<EOF
+0x48c1c748
+EOF
+RUN

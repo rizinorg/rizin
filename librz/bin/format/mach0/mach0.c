@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2010-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
@@ -1010,7 +1012,6 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 	if (rz_buf_read_at(bin->b, off + sizeof(struct thread_command) + sizeof(flavor), tmp, 4) < 4) {
 		goto wrong_read;
 	}
-	count = rz_read_ble32(tmp, bin->big_endian);
 	ptr_thread = off + sizeof(struct thread_command) + sizeof(flavor) + sizeof(count);
 
 	if (ptr_thread > bin->size) {
@@ -1025,8 +1026,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			if (ptr_thread + sizeof(struct x86_thread_state32) > bin->size) {
 				return false;
 			}
-			if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.x86_32, "16i", 1)) == -1) {
+			if (rz_buf_fread_at(bin->b, ptr_thread,
+				    (ut8 *)&bin->thread_state.x86_32, "16i", 1) == -1) {
 				bprintf("Error: read (thread state x86_32)\n");
 				return false;
 			}
@@ -1039,8 +1040,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			if (ptr_thread + sizeof(struct x86_thread_state64) > bin->size) {
 				return false;
 			}
-			if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.x86_64, "32l", 1)) == -1) {
+			if (rz_buf_fread_at(bin->b, ptr_thread,
+				    (ut8 *)&bin->thread_state.x86_64, "32l", 1) == -1) {
 				bprintf("Error: read (thread state x86_64)\n");
 				return false;
 			}
@@ -1058,8 +1059,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			if (ptr_thread + sizeof(struct ppc_thread_state32) > bin->size) {
 				return false;
 			}
-			if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.ppc_32, bin->big_endian ? "40I" : "40i", 1)) == -1) {
+			if (rz_buf_fread_at(bin->b, ptr_thread,
+				    (ut8 *)&bin->thread_state.ppc_32, bin->big_endian ? "40I" : "40i", 1) == -1) {
 				bprintf("Error: read (thread state ppc_32)\n");
 				return false;
 			}
@@ -1071,8 +1072,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			if (ptr_thread + sizeof(struct ppc_thread_state64) > bin->size) {
 				return false;
 			}
-			if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.ppc_64, bin->big_endian ? "34LI3LI" : "34li3li", 1)) == -1) {
+			if (rz_buf_fread_at(bin->b, ptr_thread,
+				    (ut8 *)&bin->thread_state.ppc_64, bin->big_endian ? "34LI3LI" : "34li3li", 1) == -1) {
 				bprintf("Error: read (thread state ppc_64)\n");
 				return false;
 			}
@@ -1086,8 +1087,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 		if (ptr_thread + sizeof(struct arm_thread_state32) > bin->size) {
 			return false;
 		}
-		if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-			     (ut8 *)&bin->thread_state.arm_32, bin->big_endian ? "17I" : "17i", 1)) == -1) {
+		if (rz_buf_fread_at(bin->b, ptr_thread,
+			    (ut8 *)&bin->thread_state.arm_32, bin->big_endian ? "17I" : "17i", 1) == -1) {
 			bprintf("Error: read (thread state arm)\n");
 			return false;
 		}
@@ -1100,8 +1101,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 		if (ptr_thread + sizeof(struct arm_thread_state64) > bin->size) {
 			return false;
 		}
-		if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-			     (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "34LI1I" : "34Li1i", 1)) == -1) {
+		if (rz_buf_fread_at(bin->b, ptr_thread,
+			    (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "34LI1I" : "34Li1i", 1) == -1) {
 			bprintf("Error: read (thread state arm)\n");
 			return false;
 		}
@@ -2256,6 +2257,9 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			s->vsize = (ut64)bin->sects[i].size;
 			s->is_segment = false;
 			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
+			// The bottom byte of flags is the section type
+			s->type = bin->sects[i].flags & 0xFF;
+			s->flags = bin->sects[i].flags & 0xFFFFFF00;
 			// XXX flags
 			s->paddr = (ut64)bin->sects[i].offset;
 			int segment_index = 0;
@@ -2286,6 +2290,69 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 		}
 	}
 	return list;
+}
+
+char *MACH0_(section_type_to_string)(ut64 type) {
+	switch (type) {
+	case S_REGULAR:
+		return rz_str_new("REGULAR");
+	case S_ZEROFILL:
+		return rz_str_new("ZEROFILL");
+	case S_CSTRING_LITERALS:
+		return rz_str_new("CSTRING_LITERALS");
+	case S_4BYTE_LITERALS:
+		return rz_str_new("4BYTE_LITERALS");
+	case S_LITERAL_POINTERS:
+		return rz_str_new("LITERAL_POINTERS");
+	case S_NON_LAZY_SYMBOL_POINTERS:
+		return rz_str_new("NON_LAZY_SYMBOL_POINTERS");
+	case S_LAZY_SYMBOL_POINTERS:
+		return rz_str_new("LAZY_SYMBOL_POINTERS");
+	case S_SYMBOL_STUBS:
+		return rz_str_new("SYMBOL_STUBS");
+	case S_MOD_INIT_FUNC_POINTERS:
+		return rz_str_new("MOD_INIT_FUNC_POINTERS");
+	case S_MOD_TERM_FUNC_POINTERS:
+		return rz_str_new("MOD_TERM_FUNC_POINTERS");
+	case S_COALESCED:
+		return rz_str_new("COALESCED");
+	case S_GB_ZEROFILL:
+		return rz_str_new("GB_ZEROFILL");
+	default:
+		return rz_str_newf("0x%" PFMT64x, type);
+	}
+}
+
+RzList *MACH0_(section_flag_to_rzlist)(ut64 flag) {
+	RzList *flag_list = rz_list_new();
+	if (flag & S_ATTR_PURE_INSTRUCTIONS) {
+		rz_list_append(flag_list, "PURE_INSTRUCTIONS");
+	}
+	if (flag & S_ATTR_NO_TOC) {
+		rz_list_append(flag_list, "NO_TOC");
+	}
+	if (flag & S_ATTR_SOME_INSTRUCTIONS) {
+		rz_list_append(flag_list, "SOME_INSTRUCTIONS");
+	}
+	if (flag & S_ATTR_EXT_RELOC) {
+		rz_list_append(flag_list, "EXT_RELOC");
+	}
+	if (flag & S_ATTR_SELF_MODIFYING_CODE) {
+		rz_list_append(flag_list, "SELF_MODIFYING_CODE");
+	}
+	if (flag & S_ATTR_DEBUG) {
+		rz_list_append(flag_list, "DEBUG");
+	}
+	if (flag & S_ATTR_LIVE_SUPPORT) {
+		rz_list_append(flag_list, "LIVE_SUPPORT");
+	}
+	if (flag & S_ATTR_STRIP_STATIC_SYMS) {
+		rz_list_append(flag_list, "STRIP_STATIC_SYMS");
+	}
+	if (flag & S_ATTR_NO_DEAD_STRIP) {
+		rz_list_append(flag_list, "NO_DEAD_STRIP");
+	}
+	return flag_list;
 }
 
 // XXX this function is called so many times
@@ -2432,6 +2499,7 @@ static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 		return true;
 	}
 	ht_pp_insert(hash, key, "1");
+	free(key);
 	return false;
 }
 
@@ -2585,6 +2653,7 @@ static int walk_exports(struct MACH0_(obj_t) * bin, RExportsIterator iterator, v
 		}
 		ut64 tr = read_uleb128(&p, end);
 		if (tr == UT64_MAX) {
+			RZ_FREE(next);
 			goto beach;
 		}
 		next->node = tr + trie;
@@ -2741,6 +2810,8 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin) {
 			}
 			if (!inSymtab(hash, sym->name, sym->vaddr)) {
 				rz_list_append(list, sym);
+			} else {
+				rz_bin_symbol_free(sym);
 			}
 		}
 	}
@@ -2807,7 +2878,7 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin) {
 		}
 	}
 	ht_pp_free(hash);
-	// bin->symbols = symbols;
+	free(symbols);
 	return list;
 }
 
@@ -3148,6 +3219,8 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 
 		struct reloc_t *reloc = RZ_NEW0(struct reloc_t);
 		if (!reloc) {
+			free(info);
+			free(sym_name);
 			return;
 		}
 
@@ -3160,7 +3233,9 @@ static void parse_relocation_info(struct MACH0_(obj_t) * bin, RzSkipList *relocs
 		reloc->size = a_info.rz_length;
 		rz_str_ncpy(reloc->name, sym_name, sizeof(reloc->name) - 1);
 		rz_skiplist_insert(relocs, reloc);
+		free(sym_name);
 	}
+	free(info);
 }
 
 static bool is_valid_ordinal_table_size(ut64 size) {
@@ -3606,7 +3681,7 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) * bin) {
 	}
 	for (i = 0; i < bin->nlibs; i++) {
 		sdb_set(bin->kv, sdb_fmt("libs.%d.name", i), bin->libs[i], 0);
-		strncpy(libs[i].name, bin->libs[i], RZ_BIN_MACH0_STRING_LENGTH);
+		strncpy(libs[i].name, bin->libs[i], RZ_BIN_MACH0_STRING_LENGTH - 1);
 		libs[i].name[RZ_BIN_MACH0_STRING_LENGTH - 1] = '\0';
 		libs[i].last = 0;
 	}
@@ -4209,12 +4284,11 @@ RzList *MACH0_(mach_fields)(RzBinFile *bf) {
 	if (!mh) {
 		return NULL;
 	}
-	RzList *ret = rz_list_new();
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		free(mh);
 		return NULL;
 	}
-	ret->free = free;
 	ut64 addr = pa2va(bf, 0);
 	ut64 paddr = 0;
 

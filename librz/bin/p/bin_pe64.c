@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 #define RZ_BIN_PE64 1
 #include "bin_pe.inc"
@@ -28,7 +30,7 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 static RzList *fields(RzBinFile *bf) {
-	RzList *ret = rz_list_new();
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -503,7 +505,8 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
 	.write = &rz_bin_write_pe64,
-	.hashes = &compute_hashes
+	.hashes = &compute_hashes,
+	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };
 
 #ifndef RZ_PLUGIN_INCORE

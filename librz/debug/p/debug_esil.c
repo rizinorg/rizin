@@ -1,7 +1,7 @@
+// SPDX-FileCopyrightText: 2013-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 // r2 -Desil ls
 
-#include <rz_asm.h>
 #include <rz_debug.h>
 
 #if 0

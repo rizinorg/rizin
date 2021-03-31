@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 madprogrammer
+// SPDX-License-Identifier: GPL-2.0-only
+
 /*! \file */
 #ifndef ARCH_H
 #define ARCH_H

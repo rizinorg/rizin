@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2017-2020 polsha3 <polsha3@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>

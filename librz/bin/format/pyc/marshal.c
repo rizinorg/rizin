@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016-2020 c0riolis
+// SPDX-FileCopyrightText: 2016-2020 Tardy
+// SPDX-FileCopyrightText: 2016-2020 l0stb1t
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>

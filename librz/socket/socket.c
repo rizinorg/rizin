@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2006-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* must be included first because of winsock2.h and windows.h */
@@ -345,7 +346,7 @@ RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, i
 				FD_ZERO(&wfds);
 				FD_SET(s->fd, &wfds);
 
-				if ((ret = select(s->fd + 1, NULL, &wfds, NULL, &tv)) != -1) {
+				if (select(s->fd + 1, NULL, &wfds, NULL, &tv) != -1) {
 					if (rz_socket_is_connected(s)) {
 						freeaddrinfo(res);
 						goto success;

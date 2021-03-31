@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2016 oblique <psyberbits@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 ec b0x7f rgb:ff5f5f
 ec b0xff rgb:ff005f
 ec b0x00 rgb:262626

@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2019 - nibble, pancake, maijin */
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 maijin <maijin21@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 
@@ -49,7 +52,6 @@ static void replaceWords(char *s, const char *k, const char *v) {
 		char *d = p + strlen(v);
 		memmove(d, s, strlen(s) + 1);
 		memmove(p, v, strlen(v));
-		s = p + strlen(v);
 	}
 }
 
@@ -481,7 +483,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				snprintf(num, sizeof(num), "0%o", (int)off);
 				break;
 			case 10: {
-				RzList *regs = rz_reg_get_list(p->analb.analysis->reg, RZ_REG_TYPE_GPR);
+				const RzList *regs = rz_reg_get_list(p->analb.analysis->reg, RZ_REG_TYPE_GPR);
 				RzRegItem *reg;
 				RzListIter *iter;
 				bool imm32 = false;
@@ -511,6 +513,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 					si = rz_syscall_get(p->analb.analysis->syscall, off, -1);
 					if (si) {
 						snprintf(num, sizeof(num), "%s()", si->name);
+						rz_syscall_item_free(si);
 					} else {
 						snprintf(num, sizeof(num), "unknown()");
 					}

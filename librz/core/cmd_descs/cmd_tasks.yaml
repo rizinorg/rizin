@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_tasks
+commands:
+  - name: "&"
+    cname: tasks
+    summary: List all tasks / Run <cmd> in a new background task
+    args:
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
+        optional: true
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+  - name: "&t"
+    cname: tasks_transient
+    summary: Run <cmd> in a new transient background task (auto-delete when it is finished)
+    args:
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
+  - name: "&="
+    cname: tasks_output
+    summary: Show output of task <n>
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: "&b"
+    cname: tasks_break
+    summary: Break task <n>
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: "&-"
+    cname: tasks_delete
+    summary: Delete task <n> or schedule for deletion when it is finished
+    args:
+      - name: n
+        type: RZ_CMD_ARG_TYPE_NUM
+  - name: "&-*"
+    cname: tasks_delete_all
+    summary: Delete all done tasks
+    args: []
+  - name: "&&"
+    cname: tasks_wait
+    summary: Wait until task <n> is finished / all tasks are finished
+    args:
+      - name: name
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true

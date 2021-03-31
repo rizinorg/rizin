@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stddef.h>
@@ -71,53 +72,6 @@ static const char *help_msg_exclamation[] = {
 	NULL
 };
 
-static const char *help_msg_root[] = {
-	"%var", "=value", "alias for 'env' command",
-	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
-	"(macro arg0 arg1)", "", "manage scripting macros",
-	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load rizin, cparse or rlang file",
-	"_", "[?]", "Print last output",
-	"=", "[?] [cmd]", "send/listen for remote commands (rap://, raps://, udp://, http://, <fd>)",
-	"<", "[...]", "push escaped string into the RzCons.readChar buffer",
-	"/", "[?]", "search for bytes, regexps, patterns, ..",
-	"!", "[?] [cmd]", "run given command as in system(3)",
-	"#", "[?] !lang [..]", "Hashbang to run an rlang script",
-	"a", "[?]", "analysis commands",
-	"b", "[?]", "display or change the block size",
-	"c", "[?] [arg]", "compare block with given data",
-	"C", "[?]", "code metadata (comments, format, hints, ..)",
-	"d", "[?]", "debugger commands",
-	"e", "[?] [a[=b]]", "list/get/set config evaluable vars",
-	"f", "[?] [name][sz][at]", "add flag at current address",
-	"g", "[?] [arg]", "generate shellcodes with rz_egg",
-	"i", "[?] [file]", "get info about opened file from rz_bin",
-	"k", "[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
-	"l", " [filepattern]", "list files and directories",
-	"L", "[?] [-] [plugin]", "list, unload load rizin plugins",
-	"m", "[?]", "mountpoints commands",
-	"o", "[?] [file] ([offset])", "open file at optional address",
-	"p", "[?] [len]", "print current block with format and length",
-	"P", "[?]", "project management utilities",
-	"q", "[?] [ret]", "quit program with a return value",
-	"r", "[?] [len]", "resize file",
-	"s", "[?] [addr]", "seek to address (also for '0x', '0x1' == 's 0x1')",
-	"t", "[?]", "types, noreturn, signatures, C parser and more",
-	"T", "[?] [-] [num|msg]", "Text log utility (used to chat, sync, log, ...)",
-	"u", "[?]", "uname/undo seek/write",
-	"v", "", "visual mode (v! = panels, vv = fcnview, vV = fcngraph, vVV = callgraph)",
-	"w", "[?] [str]", "multiple write operations",
-	"x", "[?] [len]", "alias for 'px' (print hexadecimal)",
-	"y", "[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
-	"z", "[?]", "zignatures management",
-	"?[??]", "[expr]", "Help or evaluate math expression",
-	"?$?", "", "show available '$' variables and aliases",
-	"?@?", "", "misc help for '@' (seek), '~' (grep) (see ~?"
-		   "?)",
-	"?>?", "", "output redirection",
-	"?|?", "", "help for '|' (pipe)",
-	NULL
-};
-
 static const char *help_msg_question_e[] = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
@@ -137,7 +91,6 @@ static const char *help_msg_question[] = {
 	"?$", "", "show value all the variables ($)",
 	"?+", " [cmd]", "run cmd if $? > 0",
 	"?-", " [cmd]", "run cmd if $? < 0",
-	"?:", "", "list core cmd plugins",
 	"?=", " eip-0x804800", "hex and dec result for this math expr",
 	"?==", " x86 `e asm.arch`", "strcmp two strings",
 	"??", " [cmd]", "run cmd if $? != 0",
@@ -260,13 +213,6 @@ static const char *help_msg_greater_sign[] = {
 	NULL
 };
 
-static const char *help_msg_intro[] = {
-	"Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...", "", "",
-	"Append '?' to any char command to get detailed help", "", "",
-	"Prefix with number to repeat command N times (f.ex: 3x)", "", "",
-	NULL
-};
-
 static void cmd_help_exclamation(RzCore *core) {
 	rz_core_cmd_help(core, help_msg_exclamation);
 	rz_core_cmd_help(core, help_msg_env);
@@ -279,7 +225,7 @@ static void cmd_help_percent(RzCore *core) {
 
 static const char *findBreakChar(const char *s) {
 	while (*s) {
-		if (!rz_name_validate_char(*s)) {
+		if (!rz_name_validate_char(*s, true)) {
 			break;
 		}
 		s++;
@@ -416,7 +362,7 @@ enum {
 /**
  * \brief Returns all the $ variable names in a NULL-terminated array.
  */
-RZ_API const char **rz_core_get_help_vars(RzCore *core) {
+RZ_API const char **rz_core_help_vars_get(RzCore *core) {
 	static const char *vars[] = {
 		"$$", "$$$", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
 		"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
@@ -424,6 +370,21 @@ RZ_API const char **rz_core_get_help_vars(RzCore *core) {
 		"$o", "$p", "$P", "$r", "$s", "$S", "$SS", "$v", "$w", "$Xn", NULL
 	};
 	return vars;
+}
+
+RZ_API void rz_core_help_vars_print(RzCore *core) {
+	int i = 0;
+	const char **vars = rz_core_help_vars_get(core);
+	const bool wideOffsets = rz_config_get_i(core->config, "scr.wideoff");
+	while (vars[i]) {
+		const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));
+		if (wideOffsets) {
+			eprintf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+		} else {
+			eprintf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
+		}
+		i++;
+	}
 }
 
 RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
@@ -517,7 +478,8 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			if (input[3] == '-') {
 				rz_base64_decode((ut8 *)buf, input + 4, -1);
 			} else if (input[3] == ' ') {
-				rz_base64_encode(buf, (const ut8 *)input + 4, -1);
+				const char *s = input + 4;
+				rz_base64_encode(buf, (const ut8 *)s, strlen(s));
 			}
 			rz_cons_println(buf);
 			free(buf);
@@ -841,18 +803,7 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_question_v);
 		} else {
-			int i = 0;
-			const char **vars = rz_core_get_help_vars(core);
-			const bool wideOffsets = rz_config_get_i(core->config, "scr.wideoff");
-			while (vars[i]) {
-				const char *pad = rz_str_pad(' ', 6 - strlen(vars[i]));
-				if (wideOffsets) {
-					eprintf("%s %s 0x%016" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
-				} else {
-					eprintf("%s %s 0x%08" PFMT64x "\n", vars[i], pad, rz_num_math(core->num, vars[i]));
-				}
-				i++;
-			}
+			rz_core_help_vars_print(core);
 		}
 		return true;
 	case 'V': // "?V"
@@ -860,17 +811,12 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		case '?': // "?V?"
 			rz_core_cmd_help(core, help_msg_question_V);
 			break;
-		case 0: // "?V"
-#if RZ_VERSION_COMMIT == 0
-			rz_cons_printf("%s release\n", RZ_VERSION);
-#else
-			if (!strcmp(RZ_VERSION, RZ_GITTAP)) {
-				rz_cons_printf("%s %d\n", RZ_VERSION, RZ_VERSION_COMMIT);
-			} else {
-				rz_cons_printf("%s aka %s commit %d\n", RZ_VERSION, RZ_GITTAP, RZ_VERSION_COMMIT);
-			}
-#endif
+		case 0: { // "?V"
+			char *v = rz_str_version(NULL);
+			rz_cons_printf("%s\n", v);
+			free(v);
 			break;
+		}
 		case 'c': // "?Vc"
 			rz_cons_printf("%d\n", vernum(RZ_VERSION));
 			break;
@@ -881,8 +827,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			pj_ks(pj, "arch", RZ_SYS_ARCH);
 			pj_ks(pj, "os", RZ_SYS_OS);
 			pj_ki(pj, "bits", RZ_SYS_BITS);
-			pj_ki(pj, "commit", RZ_VERSION_COMMIT);
-			pj_ks(pj, "tap", RZ_GITTAP);
 			pj_ki(pj, "major", RZ_VERSION_MAJOR);
 			pj_ki(pj, "minor", RZ_VERSION_MINOR);
 			pj_ki(pj, "patch", RZ_VERSION_PATCH);
@@ -1181,9 +1125,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		break;
 	case '\0': // "?"
 	default:
-		// TODO #7967 help refactor
-		rz_core_cmd_help(core, help_msg_intro);
-		rz_core_cmd_help(core, help_msg_root);
 		break;
 	}
 	return 0;

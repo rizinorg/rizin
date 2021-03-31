@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "le.h"
@@ -166,6 +167,8 @@ static void __get_symbols_at(rz_bin_le_obj_t *bin, RzList *syml, RzList *entl, u
 				sym->bind = RZ_BIN_BIND_GLOBAL_STR;
 				sym->type = RZ_BIN_TYPE_FUNC_STR;
 				rz_list_append(syml, sym);
+			} else {
+				rz_bin_symbol_free(sym);
 			}
 		} else {
 			rz_bin_symbol_free(sym);
@@ -440,6 +443,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		int ret = rz_buf_read_at(bin->buf, offset, (ut8 *)&header, sizeof(header));
 		if (ret != sizeof(header)) {
 			eprintf("Warning: oobread in LE header parsing relocs\n");
+			free(rel);
 			break;
 		}
 		offset += sizeof(header);

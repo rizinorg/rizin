@@ -1,0 +1,142 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_eval
+commands:
+  - name: e
+    cname: eval_getset
+    summary: Get/Set value of config variable <key>
+    args_str: " <key>[=<val|?>] [<key>[=<val|?>] ...]]"
+    args:
+      - name: key=value
+        type: RZ_CMD_ARG_TYPE_EVAL_FULL
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+    details:
+      - name: Examples
+        entries:
+          - text: e
+            arg_str: " asm.bytes"
+            comment: "Show current value of config variable `asm.bytes`"
+          - text: e
+            arg_str: " asm.bytes=true"
+            comment: "Set config variable `asm.bytes` to `true`"
+          - text: e
+            arg_str: " search.in=?"
+            comment: "Show all possible values for config variable `search.in`"
+          - text: e
+            arg_str: " search.in=??"
+            comment: "Show all possible values for config variable `search.in` together with description"
+          - text: e
+            arg_str: " asm.bytes=true asm.offset=false"
+            comment: "Set asm.bytes to true and asm.offset to false"
+  - name: el
+    cname: eval_list
+    summary: List config variables with their descriptions
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_QUIET
+      - RZ_OUTPUT_MODE_LONG
+      - RZ_OUTPUT_MODE_LONG_JSON
+    args:
+      - name: key
+        type: RZ_CMD_ARG_TYPE_EVAL_KEY
+        optional: true
+  - name: e-
+    cname: eval_reset
+    summary: Reset config variables
+    args: []
+  - name: e!
+    cname: eval_bool_invert
+    summary: Invert the boolean value of config variable <key>
+    args:
+      - name: key
+        type: RZ_CMD_ARG_TYPE_EVAL_KEY
+  - name: ec
+    cname: eval_color
+    summary: Set color for given key (prompt, offset, ...)
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args: []
+  - name: ee
+    cname: eval_editor
+    summary: Open editor to change the value of config variable <key>
+    args:
+      - name: key
+        type: RZ_CMD_ARG_TYPE_EVAL_KEY
+  - name: er
+    cname: eval_readonly
+    summary: Set config variable <key> as read-only
+    args:
+      - name: key
+        type: RZ_CMD_ARG_TYPE_EVAL_KEY
+  - name: es
+    cname: eval_spaces
+    summary: List all config variable spaces or sub-keys/sub-spaces if a <key> is provided
+    args:
+      - name: key
+        type: RZ_CMD_ARG_TYPE_EVAL_KEY
+        optional: true
+  - name: et
+    cname: eval_type
+    summary: Show type of given config variable <key>
+    args:
+      - name: key
+        type: RZ_CMD_ARG_TYPE_EVAL_KEY
+  - name: env
+    cname: env
+    summary: Get/set environment variables
+    args_str: " [<varname>[=<varvalue>]]"
+    args:
+      - name: varname
+        optional: true
+        type: RZ_CMD_ARG_TYPE_ENV
+      - name: varvalue
+        optional: true
+        type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Examples
+        entries:
+          - text: "%"
+            comment: List all environment variables
+          - text: "%"
+            arg_str: "SHELL"
+            comment: Print value of SHELL variable
+          - text: "%"
+            arg_str: "TMPDIR=/tmp"
+            comment: Set TMPDIR to "/tmp"
+          - text: "env"
+            arg_str: " SHELL"
+            comment: Same as `%SHELL`
+      - name: Environment
+        entries:
+          - text: "RZ_FILE"
+            comment: "currently opened file name"
+          - text: "RZ_OFFSET"
+            comment: "10base offset 64bit value"
+          - text: "RZ_BYTES"
+            comment: "TODO: variable with bytes in curblock"
+          - text: "RZ_XOFFSET"
+            comment: "same as above, but in 16 base"
+          - text: "RZ_BSIZE"
+            comment: "block size"
+          - text: "RZ_ENDIAN"
+            comment: "'big' or 'little'"
+          - text: "RZ_IOVA"
+            comment: "is io.va true? virtual addressing (1,0)"
+          - text: "RZ_DEBUG"
+            comment: "debug mode enabled? (1,0)"
+          - text: "RZ_BLOCK"
+            comment: "TODO: dump current block to tmp file"
+          - text: "RZ_SIZE"
+            comment: "file size"
+          - text: "RZ_ARCH"
+            comment: "value of asm.arch"
+          - text: "RZ_BITS"
+            comment: "arch reg size (8, 16, 32, 64)"
+          - text: "RZ_BIN_LANG"
+            comment: "assume this lang to demangle"
+          - text: "RZ_BIN_DEMANGLE"
+            comment: "demangle or not"
+          - text: "RZ_BIN_PDBSERVER"
+            comment: "e pdb.server"

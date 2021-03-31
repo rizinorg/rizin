@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2001-2004 Fabrice Bellard
+// SPDX-License-Identifier: LGPL-2.0-or-later
+
 /* Simple libc header for TCC 
  * 
  * Add any function you want from the libc there. This file is here

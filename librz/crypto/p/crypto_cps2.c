@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016 esanfelix
+// SPDX-FileCopyrightText: 2016 pof
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* XXX this must be specified by the user/rom? */

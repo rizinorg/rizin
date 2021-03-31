@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2011-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2011-2021 Oddcoder <ahmedsoliman@oddcoder.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* Universal calling convention implementation based on sdb */

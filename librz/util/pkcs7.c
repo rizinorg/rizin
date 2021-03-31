@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2017-2018 - wargio */
+// SPDX-FileCopyrightText: 2017-2018 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdlib.h>
 #include <string.h>
@@ -326,6 +327,7 @@ RZ_API RCMS *rz_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
 		container->contentType = rz_asn1_stringify_oid(object->list.objects[0]->sector, object->list.objects[0]->length);
 		if (!container->contentType) {
 			rz_asn1_free_object(object);
+			free(container);
 			return NULL;
 		}
 	}

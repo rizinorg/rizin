@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2020 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2020 Yaroslav Stavnichiy <yarosla@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* rz_json based on nxjson by Yaroslav Stavnichiy */
 
@@ -7,11 +9,11 @@
 
 typedef struct json_test_t {
 	const char *json;
-	int (*check)(RJson *j);
+	int (*check)(RzJson *j);
 } JsonTest;
 
-static int check_expected_0(RJson *j) {
-	RJson *child_0, *child_1, *child_2;
+static int check_expected_0(RzJson *j) {
+	RzJson *child_0, *child_1, *child_2;
 	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq(j->children.count, 16, "object size");
 	child_0 = j->children.first;
@@ -187,8 +189,8 @@ static int check_expected_0(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_4(RJson *j) {
-	RJson *child_0;
+static int check_expected_4(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq(j->children.count, 4, "array size");
 	child_0 = j->children.first;
@@ -216,32 +218,32 @@ static int check_expected_4(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_5(RJson *j) {
+static int check_expected_5(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq(j->str_value, "string value", "string value");
 	return MU_PASSED;
 }
 
-static int check_expected_6(RJson *j) {
+static int check_expected_6(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq(j->num.u_value, 1, "boolean value");
 	return MU_PASSED;
 }
 
-static int check_expected_7(RJson *j) {
+static int check_expected_7(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert("double value",
 		j->num.dbl_value < (-1.0e-2 + 1.0e-13) && j->num.dbl_value > (-1.0e-2 - 1.0e-13));
 	return MU_PASSED;
 }
 
-static int check_expected_8(RJson *j) {
+static int check_expected_8(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_NULL, "null type");
 	return MU_PASSED;
 }
 
-static int check_expected_9(RJson *j) {
-	RJson *child_0, *child_1, *child_2, *child_3, *child_4, *child_5;
+static int check_expected_9(RzJson *j) {
+	RzJson *child_0, *child_1, *child_2, *child_3, *child_4, *child_5;
 	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq(j->children.count, 1, "object size");
 	child_0 = j->children.first;
@@ -353,8 +355,8 @@ static int check_expected_9(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_10(RJson *j) {
-	RJson *child_0;
+static int check_expected_10(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq(j->children.count, 3, "object size");
 	child_0 = j->children.first;
@@ -380,20 +382,20 @@ static int check_expected_10(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_11(RJson *j) {
+static int check_expected_11(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq(j->num.u_value, 0, "boolean value");
 	return MU_PASSED;
 }
 
-static int check_expected_13(RJson *j) {
+static int check_expected_13(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq(j->num.u_value, 1221, "integer value");
 	return MU_PASSED;
 }
 
-static int check_expected_14(RJson *j) {
-	RJson *child_0;
+static int check_expected_14(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq(j->children.count, 0, "object size");
 	child_0 = j->children.first;
@@ -401,8 +403,8 @@ static int check_expected_14(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_19(RJson *j) {
-	RJson *child_0, *child_1, *child_2;
+static int check_expected_19(RzJson *j) {
+	RzJson *child_0, *child_1, *child_2;
 	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq(j->children.count, 9, "array size");
 	child_0 = j->children.first;
@@ -483,14 +485,14 @@ static int check_expected_19(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_22(RJson *j) {
+static int check_expected_22(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq(j->str_value, "\xf0\x90\x8c\x82M\xd0\xb0\xe4\xba\x8c\xf0\x90\x8c\x82", "string value");
 	return MU_PASSED;
 }
 
-static int check_expected_23(RJson *j) {
-	RJson *child_0, *child_1, *child_2, *child_3, *child_4, *child_5;
+static int check_expected_23(RzJson *j) {
+	RzJson *child_0, *child_1, *child_2, *child_3, *child_4, *child_5;
 	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq(j->children.count, 1, "object size");
 	child_0 = j->children.first;
@@ -602,8 +604,8 @@ static int check_expected_23(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_24(RJson *j) {
-	RJson *child_0;
+static int check_expected_24(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq(j->children.count, 5, "array size");
 	child_0 = j->children.first;
@@ -641,8 +643,8 @@ static int check_expected_24(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_25(RJson *j) {
-	RJson *child_0;
+static int check_expected_25(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq(j->children.count, 4, "array size");
 	child_0 = j->children.first;
@@ -674,14 +676,14 @@ static int check_expected_25(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_26(RJson *j) {
+static int check_expected_26(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq(j->str_value, "", "string value");
 	return MU_PASSED;
 }
 
-static int check_expected_27(RJson *j) {
-	RJson *child_0, *child_1;
+static int check_expected_27(RzJson *j) {
+	RzJson *child_0, *child_1;
 	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq(j->children.count, 2, "object size");
 	child_0 = j->children.first;
@@ -718,14 +720,14 @@ static int check_expected_27(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_28(RJson *j) {
+static int check_expected_28(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq(j->num.u_value, 2009, "integer value");
 	return MU_PASSED;
 }
 
-static int check_expected_29(RJson *j) {
-	RJson *child_0;
+static int check_expected_29(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq(j->children.count, 1, "object size");
 	child_0 = j->children.first;
@@ -739,8 +741,8 @@ static int check_expected_29(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_30(RJson *j) {
-	RJson *child_0;
+static int check_expected_30(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq(j->children.count, 11, "array size");
 	child_0 = j->children.first;
@@ -803,8 +805,8 @@ static int check_expected_30(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_31(RJson *j) {
-	RJson *child_0;
+static int check_expected_31(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq(j->children.count, 1, "array size");
 	child_0 = j->children.first;
@@ -817,8 +819,8 @@ static int check_expected_31(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_32(RJson *j) {
-	RJson *child_0;
+static int check_expected_32(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq(j->children.count, 1, "object size");
 	child_0 = j->children.first;
@@ -832,22 +834,22 @@ static int check_expected_32(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_35(RJson *j) {
+static int check_expected_35(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert("double value",
 		j->num.dbl_value < (1000.0 + 1.0e-13) && j->num.dbl_value > (1000.0 - 1.0e-13));
 	return MU_PASSED;
 }
 
-static int check_expected_36(RJson *j) {
+static int check_expected_36(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert("double value",
 		j->num.dbl_value < (10.0 + 1.0e-13) && j->num.dbl_value > (10.0 - 1.0e-13));
 	return MU_PASSED;
 }
 
-static int check_expected_37(RJson *j) {
-	RJson *child_0;
+static int check_expected_37(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq(j->children.count, 3, "object size");
 	child_0 = j->children.first;
@@ -872,8 +874,8 @@ static int check_expected_37(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_38(RJson *j) {
-	RJson *child_0;
+static int check_expected_38(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq(j->children.count, 1, "array size");
 	child_0 = j->children.first;
@@ -888,8 +890,8 @@ static int check_expected_38(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_39(RJson *j) {
-	RJson *child_0;
+static int check_expected_39(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq(j->children.count, 3, "array size");
 	child_0 = j->children.first;
@@ -912,20 +914,20 @@ static int check_expected_39(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_40(RJson *j) {
+static int check_expected_40(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq(j->str_value, "la di dah.  this is a string, and I can do this, \n, but not this\n", "string value");
 	return MU_PASSED;
 }
 
-static int check_expected_43(RJson *j) {
+static int check_expected_43(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq(j->num.u_value, 123, "integer value");
 	return MU_PASSED;
 }
 
-static int check_expected_45(RJson *j) {
-	RJson *child_0;
+static int check_expected_45(RzJson *j) {
+	RzJson *child_0;
 	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq(j->children.count, 4, "array size");
 	child_0 = j->children.first;
@@ -953,13 +955,13 @@ static int check_expected_45(RJson *j) {
 	return MU_PASSED;
 }
 
-static int check_expected_46(RJson *j) {
+static int check_expected_46(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq(j->str_value, "foobar", "string value");
 	return MU_PASSED;
 }
 
-static int check_expected_48(RJson *j) {
+static int check_expected_48(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq(j->str_value, "\xd0\x9f\xd1\x80\xd0\xbe\xd0\xb2\xd0\xb5\xd1\x80\xd0\xba\xd0\xb0", "string value");
 	return MU_PASSED;
@@ -1180,8 +1182,8 @@ JsonTest tests[] = {
 		NULL }
 };
 
-static int test_json(int test_number, char *input, int (*check)(RJson *j)) {
-	RJson *json = rz_json_parse(input);
+static int test_json(int test_number, char *input, int (*check)(RzJson *j)) {
+	RzJson *json = rz_json_parse(input);
 	if (!check) {
 		mu_assert_null(json, "parse failure expected");
 	} else {
