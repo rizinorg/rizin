@@ -89,7 +89,7 @@ e scr.rows=12
 ?e
 EOF
 EXPECT=<<EOF
-[?25l[?25l[0;0H[0;0H[0m[0x00005ae0 [Xadvc]0 11% 192 bins/elf/ls]> xc @ entry0                          [0;0H[0m[0x00005ae0 [Xadvc]0 11% 192 bins/elf/ls]> xc @ entry0
+[?25l[?25l[0;0H[0;0H[0m[0x00005ae0 [Xadvc]0 11% 192 bins/elf/ls]> xc @ entry0                          
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF  comment  
 0x00005ae0  f30f 1efa 31ed 4989 d15e 4889 e248 83e4  ....1.I..^H..H..  ; entry0 
 0x00005af0  f050 544c 8d05 660c 0100 488d 0def 0b01  .PTL..f...H.....           
