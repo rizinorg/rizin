@@ -8,15 +8,13 @@
 #include "minunit.h"
 #include "test_sdb.h"
 
-static Sdb *setup_sdb_for_function(void) {
-	Sdb *res = sdb_new0();
+static void setup_sdb_for_function(Sdb *res) {
 	sdb_set(res, "ExitProcess", "func", 0);
 	sdb_set(res, "ReadFile", "func", 0);
 	sdb_set(res, "memcpy", "func", 0);
 	sdb_set(res, "strchr", "func", 0);
 	sdb_set(res, "__stack_chk_fail", "func", 0);
 	sdb_set(res, "WSAStartup", "func", 0);
-	return res;
 }
 
 static void setup_sdb_for_struct(Sdb *res) {
@@ -74,7 +72,7 @@ static void setup_sdb_for_not_found(Sdb *res) {
 
 static bool test_types_get_base_type_struct(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDb");
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
 
 	setup_sdb_for_struct(typedb->sdb_types);
@@ -197,6 +195,7 @@ static bool test_types_save_base_type_union(void) {
 static bool test_types_get_base_type_enum(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
 
 	setup_sdb_for_enum(typedb->sdb_types);
 
@@ -221,7 +220,8 @@ static bool test_types_get_base_type_enum(void) {
 
 static bool test_types_save_base_type_enum(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDb");
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
 
 	RzBaseType *base = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
 	base->name = strdup("foo");
@@ -251,6 +251,7 @@ static bool test_types_save_base_type_enum(void) {
 static bool test_types_get_base_type_typedef(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
 
 	setup_sdb_for_typedef(typedb->sdb_types);
 
@@ -353,7 +354,10 @@ static bool test_types_get_base_type_not_found(void) {
 
 bool test_dll_names(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	typedb->sdb_types = setup_sdb_for_function();
+	setup_sdb_for_function(typedb->sdb_types);
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+
 	char *s;
 
 	s = rz_type_func_guess(typedb, "sub.KERNEL32.dll_ExitProcess");
@@ -386,14 +390,16 @@ bool test_dll_names(void) {
 	mu_assert_streq(s, "WSAStartup", "dll_ and number should be ignored case 4");
 	free(s);
 
-	sdb_free(typedb->sdb_types);
 	rz_type_db_free(typedb);
 	mu_end;
 }
 
 bool test_ignore_prefixes(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	typedb->sdb_types = setup_sdb_for_function();
+	setup_sdb_for_function(typedb->sdb_types);
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+
 	char *s;
 
 	s = rz_type_func_guess(typedb, "fcn.KERNEL32.dll_ExitProcess_32");
@@ -404,14 +410,16 @@ bool test_ignore_prefixes(void) {
 	mu_assert_null(s, "loc. names should be ignored");
 	free(s);
 
-	sdb_free(typedb->sdb_types);
 	rz_type_db_free(typedb);
 	mu_end;
 }
 
 bool test_remove_rz_prefixes(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	typedb->sdb_types = setup_sdb_for_function();
+	setup_sdb_for_function(typedb->sdb_types);
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+
 	char *s;
 
 	s = rz_type_func_guess(typedb, "sym.imp.ExitProcess");
@@ -428,14 +436,16 @@ bool test_remove_rz_prefixes(void) {
 	mu_assert_null(s, "prefixes longer than 3 should not be ignored");
 	free(s);
 
-	sdb_free(typedb->sdb_types);
 	rz_type_db_free(typedb);
 	mu_end;
 }
 
 bool test_autonames(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	typedb->sdb_types = setup_sdb_for_function();
+	setup_sdb_for_function(typedb->sdb_types);
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+
 	char *s;
 
 	s = rz_type_func_guess(typedb, "sub.strchr_123");
@@ -455,14 +465,16 @@ bool test_autonames(void) {
 	mu_assert_streq(s, "strchr", "strchr should be identified");
 	free(s);
 
-	sdb_free(typedb->sdb_types);
 	rz_type_db_free(typedb);
 	mu_end;
 }
 
 bool test_initial_underscore(void) {
 	RzTypeDB *typedb = rz_type_db_new();
-	typedb->sdb_types = setup_sdb_for_function();
+	setup_sdb_for_function(typedb->sdb_types);
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+
 	char *s;
 
 	s = rz_type_func_guess(typedb, "sym._strchr");
@@ -470,7 +482,6 @@ bool test_initial_underscore(void) {
 	mu_assert_streq(s, "strchr", "strchr should be identified");
 	free(s);
 
-	sdb_free(typedb->sdb_types);
 	rz_type_db_free(typedb);
 	mu_end;
 }
