@@ -39,7 +39,7 @@ static const char *help_msg_pp[] = {
 	"pp4", "", "print incremental dword pattern",
 	"pp8", "", "print incremental qword pattern",
 	"ppa", "[lu]", "latin alphabet (lowercase, uppercases restrictions)",
-	"ppd", "", "print debruijn pattern (see rz_gg -P, -q and wopD)",
+	"ppd", "", "print debruijn pattern (see rz-gg -P, -q and wopD)",
 	"ppf", "", "print buffer filled with 0xff",
 	"ppn", "", "numeric pin patterns",
 	NULL

@@ -269,12 +269,12 @@ static RzRunProfile *_get_run_profile(RzIO *io, int bits, char **argv) {
 			rz_run_free(rp);
 			return NULL;
 		}
-		if (strstr(io->runprofile, RZ_SYS_DIR ".rz_run.")) {
+		if (strstr(io->runprofile, RZ_SYS_DIR ".rz-run.")) {
 			(void)rz_file_rm(io->runprofile);
 		}
 	} else if (io->envprofile) {
 		if (!rz_run_parse(rp, io->envprofile)) {
-			eprintf("Can't parse default rz_run profile\n");
+			eprintf("Can't parse default rz-run profile\n");
 			rz_run_free(rp);
 			return NULL;
 		}

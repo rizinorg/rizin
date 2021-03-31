@@ -151,7 +151,7 @@ static const char *help_msg_ood[] = {
 	"Usage:", "ood", " # Debug (re)open commands",
 	"ood", " [args]", " # reopen in debug mode (with args)",
 	"oodf", " [file]", " # reopen in debug mode using the given file",
-	"oodr", " [rz_run]", " # same as dor ..;ood",
+	"oodr", " [rz-run]", " # same as dor ..;ood",
 	NULL
 };
 

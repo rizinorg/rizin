@@ -480,7 +480,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 		case 'b': bsize = (int)rz_num_math(NULL, opt.arg); break;
 		case 'f': from = rz_num_math(NULL, opt.arg); break;
 		case 't': to = 1 + rz_num_math(NULL, opt.arg); break;
-		case 'v': return rz_main_version_print("rz_hash");
+		case 'v': return rz_main_version_print("rz-hash");
 		case 'h': return do_help(0);
 		case 's': setHashString(opt.arg, 0); break;
 		case 'x': setHashString(opt.arg, 1); break;

@@ -1405,39 +1405,36 @@ static int __runMain(RzMainCallback cb, const char *arg) {
 static bool cmd_rzcmd(RzCore *core, const char *_input) {
 	char *input = rz_str_newf("r%s", _input);
 	int rc = 0;
-	if (rz_str_startswith(input, "rz_ax")) {
-		rc = __runMain(core->rz_main_rz_ax, input);
-	} else if (rz_str_startswith(input, "rz")) {
+	if (rz_str_startswith(input, "rizin")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rizin, input);
-	} else if (rz_str_startswith(input, "rizin")) {
+	} else if (rz_str_startswith(input, "rz-agent")) {
 		rz_sys_cmdf("%s", input);
-		// rc = __runMain (core->rz_main_rizin, input);
-	} else if (rz_str_startswith(input, "rz_asm")) {
+	} else if (rz_str_startswith(input, "rz-asm")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_asm, input);
-	} else if (rz_str_startswith(input, "rz_bin")) {
+	} else if (rz_str_startswith(input, "rz-ax")) {
+		rc = __runMain(core->rz_main_rz_ax, input);
+	} else if (rz_str_startswith(input, "rz-bin")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_bin, input);
-	} else if (rz_str_startswith(input, "rz_gg")) {
+	} else if (rz_str_startswith(input, "rz-diff")) {
+		rc = __runMain(core->rz_main_rz_diff, input);
+	} else if (rz_str_startswith(input, "rz-find")) {
+		rz_sys_cmdf("%s", input);
+	} else if (rz_str_startswith(input, "rz-gg")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_gg, input);
-	} else if (rz_str_startswith(input, "rz_pm")) {
+	} else if (rz_str_startswith(input, "rz-hash")) {
+		rz_sys_cmdf("%s", input);
+	} else if (rz_str_startswith(input, "rz-pm")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_pm, input);
-	} else if (rz_str_startswith(input, "rz_diff")) {
-		rc = __runMain(core->rz_main_rz_diff, input);
+	} else if (rz_str_startswith(input, "rz-run")) {
+		rz_sys_cmdf("%s", input);
+	} else if (rz_str_startswith(input, "rz-sign")) {
+		rz_sys_cmdf("%s", input);
 	} else {
-		const char *rzcmds[] = {
-			"rz-ax", "rz-pm", "rz-asm", "rz-bin", "rz-hash", "rz-find", "rz-run", "rz-gg", "rizin", "rz", NULL
-		};
-		int i;
-		for (i = 0; rzcmds[i]; i++) {
-			if (rz_str_startswith(input, rzcmds[i])) {
-				free(input);
-				return true;
-			}
-		}
 		free(input);
 		return false;
 	}

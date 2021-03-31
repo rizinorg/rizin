@@ -15,7 +15,7 @@ static void rasign_show_help(void) {
 	       " -s signspace     save all signatures under this signspace\n"
 	       " -v               show version information\n"
 	       "Examples:\n"
-	       "  rz_sign -o libc.sdb libc.so.6\n");
+	       "  rz-sign -o libc.sdb libc.so.6\n");
 }
 
 static RzCore *opencore(const char *fname) {
@@ -94,7 +94,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			flirt = true;
 			break;
 		case 'v':
-			return rz_main_version_print("rz_sign");
+			return rz_main_version_print("rz-sign");
 		case 'h':
 			rasign_show_help();
 			return 0;

@@ -326,7 +326,7 @@ RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStr
 				int minor = dot ? atoi(dot + 1) : 0;
 				// The pkgname member was introduced in 4.2.0
 				if (major > 4 || (major == 4 && minor >= 2)) {
-					printf("rz_pm -ci %s\n", stru->pkgname);
+					printf("rz-pm -ci %s\n", stru->pkgname);
 				}
 			}
 			return -1;

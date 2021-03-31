@@ -439,7 +439,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			ro.quiet = true;
 			break;
 		case 'v':
-			return rz_main_version_print("rz_find");
+			return rz_main_version_print("rz-find");
 		case 'h':
 			return show_help(argv[0], 0);
 		case 'z':
