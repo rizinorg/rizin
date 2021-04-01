@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2017 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2018 Maijin
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
 #ifndef BUILD_LUAC_SPECS_53_H

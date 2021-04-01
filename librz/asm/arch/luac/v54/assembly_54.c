@@ -1,13 +1,12 @@
-//
-// Created by heersin on 3/31/21.
-//
+// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
 #include "arch_54.h"
 
 static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16 flag, ut8 arg_num) {
 	LuaInstruction instruction = 0;
 	int args[4];
-	char buffer[64];        // buffer for digits
+	char buffer[64]; // buffer for digits
 	int cur_cnt = 0;
 	int delta_offset;
 
@@ -29,18 +28,18 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 	}
 
 	LUA_SET_OPCODE(instruction, opcode);
-        if (has_param_flag(flag, PARAM_A)) {
-                SETARG_A(instruction, args[cur_cnt++]);
-        }
-        if (has_param_flag(flag, PARAM_B)) {
-                SETARG_B(instruction, args[cur_cnt++]);
-        }
-        if (has_param_flag(flag, PARAM_C)) {
-                SETARG_C(instruction, args[cur_cnt++]);
-        }
-        if (has_param_flag(flag, PARAM_Ax)) {
-                SETARG_Ax(instruction, args[cur_cnt++]);
-        }
+	if (has_param_flag(flag, PARAM_A)) {
+		SETARG_A(instruction, args[cur_cnt++]);
+	}
+	if (has_param_flag(flag, PARAM_B)) {
+		SETARG_B(instruction, args[cur_cnt++]);
+	}
+	if (has_param_flag(flag, PARAM_C)) {
+		SETARG_C(instruction, args[cur_cnt++]);
+	}
+	if (has_param_flag(flag, PARAM_Ax)) {
+		SETARG_Ax(instruction, args[cur_cnt++]);
+	}
 	if (has_param_flag(flag, PARAM_sBx)) {
 		SETARG_sBx(instruction, args[cur_cnt++]);
 	}
@@ -65,31 +64,28 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 }
 
 bool lua54_assembly(const char *input, st32 input_size, LuaInstruction *instruction_p) {
-        const char *opcode_start; // point to the header
-        const char *opcode_end; // point to the first white space
-        int opcode_len;
+	const char *opcode_start; // point to the header
+	const char *opcode_end; // point to the first white space
 
-        const char *arg_start;
+	const char *arg_start;
 
-        ut8 opcode;
-        LuaInstruction instruction = 0x00;
+	ut8 opcode;
+	LuaInstruction instruction = 0x00;
 
-        /* Find the opcode */
-        opcode_start = input;
-        opcode_end = strchr(input, ' ');
-        if (opcode_end == NULL) {
-                opcode_end = input + input_size;
-        }
+	/* Find the opcode */
+	opcode_start = input;
+	opcode_end = strchr(input, ' ');
+	if (opcode_end == NULL) {
+		opcode_end = input + input_size;
+	}
 
-        opcode_len = opcode_end - opcode_start;
-        opcode = get_lua54_opcode_by_name(opcode_start);
-        eprintf("[start]:%s, [end]:%s, [size]:%d, [opcode]:%d\n", opcode_start, opcode_end, opcode_len, opcode);
+	opcode = get_lua54_opcode_by_name(opcode_start);
 
-        /* Find the arguments */
-        arg_start = rz_str_trim_head_ro(opcode_end);
+	/* Find the arguments */
+	arg_start = rz_str_trim_head_ro(opcode_end);
 
-        /* Encode opcode and args */
-        switch (opcode) {
+	/* Encode opcode and args */
+	switch (opcode) {
 	case OP_SETTABUP:
 	case OP_SETI:
 	case OP_GETI:
@@ -242,14 +238,14 @@ bool lua54_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 			PARAM_sJ,
 			1);
 		break;
-        default:
-                return false;
-        }
+	default:
+		return false;
+	}
 
-        if (instruction == -1) {
-                return false;
-        }
+	if (instruction == -1) {
+		return false;
+	}
 
-        *instruction_p = instruction;
-        return true;
+	*instruction_p = instruction;
+	return true;
 }

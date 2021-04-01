@@ -12,11 +12,11 @@ LuaInstruction lua_build_instruction(const ut8 *buf) {
 	return ret;
 }
 
-void lua_set_instruction(LuaInstruction instruction, ut8 *data){
-        data[3] = instruction >> 24;
-        data[2] = instruction >> 16;
-        data[1] = instruction >> 8;
-        data[0] = instruction >> 0;
+void lua_set_instruction(LuaInstruction instruction, ut8 *data) {
+	data[3] = instruction >> 24;
+	data[2] = instruction >> 16;
+	data[1] = instruction >> 8;
+	data[0] = instruction >> 0;
 }
 
 bool free_lua_opnames(LuaOpNameList list) {
@@ -119,44 +119,44 @@ char *luaop_new_str_1arg_ex(char *opname, int a, char *mark, char *prefix_a) {
 }
 
 int lua_load_next_arg_start(const char *raw_string, char *recv_buf) {
-        if (!raw_string) {
-                return 0;
-        }
+	if (!raw_string) {
+		return 0;
+	}
 
-        const char *arg_start = NULL;
-        const char *arg_end = NULL;
-        int arg_len = 0;
+	const char *arg_start = NULL;
+	const char *arg_end = NULL;
+	int arg_len = 0;
 
-        /* locate the start point */
-        arg_start = rz_str_trim_head_ro(raw_string);
-        if (strlen(arg_start) == 0) {
-                return 0;
-        }
+	/* locate the start point */
+	arg_start = rz_str_trim_head_ro(raw_string);
+	if (strlen(arg_start) == 0) {
+		return 0;
+	}
 
-        arg_end = strchr(arg_start, ' ');
-        if (arg_end == NULL) {
-                /* is last arg */
-                arg_len = strlen(arg_start);
-        } else {
-                arg_len = arg_end - arg_start;
-        }
+	arg_end = strchr(arg_start, ' ');
+	if (arg_end == NULL) {
+		/* is last arg */
+		arg_len = strlen(arg_start);
+	} else {
+		arg_len = arg_end - arg_start;
+	}
 
-        /* Set NUL */
-        memcpy(recv_buf, arg_start, arg_len);
-        recv_buf[arg_len] = 0x00;
+	/* Set NUL */
+	memcpy(recv_buf, arg_start, arg_len);
+	recv_buf[arg_len] = 0x00;
 
-        /* Calculate offset */
-        return arg_start - raw_string + arg_len;
+	/* Calculate offset */
+	return arg_start - raw_string + arg_len;
 }
 
 bool lua_is_valid_num_value_string(const char *str) {
-        if (!rz_is_valid_input_num_value(NULL, str)) {
-                eprintf("luac_assembler: %s is not a valid number argument\n", str);
-                return false;
-        }
-        return true;
+	if (!rz_is_valid_input_num_value(NULL, str)) {
+		eprintf("luac_assembler: %s is not a valid number argument\n", str);
+		return false;
+	}
+	return true;
 }
 
 int lua_convert_str_to_num(const char *str) {
-        return strtoll(str, NULL, 0);
+	return strtoll(str, NULL, 0);
 }

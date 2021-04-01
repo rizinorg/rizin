@@ -46,11 +46,6 @@ int rz_luac_asm(RzAsm *a, RzAsmOp *opstruct, const char *str) {
 	}
 
 	lua_set_instruction(instruction, buffer);
-	for (int i = 0; i < 4; ++i) {
-		eprintf("0x%x ", buffer[i]);
-	}
-	eprintf("\n");
-
 	rz_strbuf_setbin(&opstruct->buf, (const ut8 *)&buffer, 4);
 	return 4;
 }

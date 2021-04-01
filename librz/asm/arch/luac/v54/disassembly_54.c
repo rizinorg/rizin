@@ -131,7 +131,6 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 		/* iABC - k instructions */
 	case OP_TAILCALL: /*	A B C k	return R[A](R[A+1], ... ,R[A+B-1])		*/
 	case OP_RETURN: /*	A B C k	return R[A], ... ,R[A+B-2]	(see note)	*/
-		asm_string = luaop_new_str_3arg(opnames[opcode], a, b, c, NULL);
 		asm_string = luaop_new_str_3arg_ex(
 			opnames[opcode],
 			a, b, c,

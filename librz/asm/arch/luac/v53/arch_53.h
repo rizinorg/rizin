@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2017 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2018 Maijin
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
 #ifndef BUILD_ARCH_53_H
@@ -36,11 +35,11 @@ typedef enum {
 } LuaOpMode;
 
 /* parameter flags */
-#define PARAM_A 1
-#define PARAM_B 2
-#define PARAM_C 4
-#define PARAM_Ax 8
-#define PARAM_Bx 16
+#define PARAM_A   1
+#define PARAM_B   2
+#define PARAM_C   4
+#define PARAM_Ax  8
+#define PARAM_Bx  16
 #define PARAM_sBx 32
 
 #define has_param_flag(flag, bit) ((flag) & (bit)) ? true : false
