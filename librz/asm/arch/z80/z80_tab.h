@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014-2016 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef Z80_TAB_H

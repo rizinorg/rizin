@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1989, 1991, 1992, 1995, 2010 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Vax opcde list.
    Copyright 1989, 1991, 1992, 1995, 2010 Free Software Foundation, Inc.
 

@@ -159,7 +159,7 @@ RZ_API const char *rz_reg_get_type(int idx);
 RZ_API const char *rz_reg_get_name(RzReg *reg, int kind);
 RZ_API const char *rz_reg_get_role(int role);
 RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type);
-RZ_API RzList *rz_reg_get_list(RzReg *reg, int type);
+RZ_API const RzList *rz_reg_get_list(RzReg *reg, int type);
 RZ_API RzRegItem *rz_reg_get_at(RzReg *reg, int type, int regsize, int delta);
 RZ_API RzRegItem *rz_reg_next_diff(RzReg *reg, int type, const ut8 *buf, int buflen, RzRegItem *prev_ri, int regsize);
 

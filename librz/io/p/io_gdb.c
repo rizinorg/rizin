@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2010-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
@@ -66,7 +67,6 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		isdev = true;
 	}
 
-	rw |= RZ_PERM_W;
 	if (isdev) {
 		port = strchr(host, '@');
 		if (port) {

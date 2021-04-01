@@ -4,7 +4,7 @@ CMDS=<<EOF
 aaa
 s main
 afvb*
-"td struct S1 { int a; int b; int c; char d[256]; short e; }"
+td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
 afvt s1 S1
 afvb*
@@ -28,7 +28,7 @@ CMDS=<<EOF
 e asm.bytes=true
 aaa
 s main
-"td struct S1 { int a; int b; int c; char d[256]; short e; }"
+td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
 pd 4 @ 0x004004be~[2-4]
 afvt s1 S1
@@ -52,11 +52,11 @@ CMDS=<<EOF
 e asm.bytes=true
 aaa
 s main
-"td struct S1 { int a; int b; int c; char d[256]; short e; }"
+td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
 afvt s1 S1
 pd 4 @ 0x004004be~[2-4]
-"td struct S1 { int x; int y; int c; char d[256]; short e; }"
+td "struct S1 { int x; int y; int c; char d[256]; short e; }"
 pd 4 @ 0x004004be~[2-4]
 EOF
 EXPECT=<<EOF

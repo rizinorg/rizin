@@ -103,7 +103,7 @@ FILE=bins/arm/elf/hello_world-buildroot-201402
 CMDS=<<EOF
 ?v main
 aaa
-afo main
+afo @ main
 !!rz-bin -M ${RZ_FILE}
 EOF
 EXPECT=<<EOF
@@ -119,7 +119,7 @@ FILE=bins/arm/elf/hello_world-linaro-201201
 CMDS=<<EOF
 ?v main
 aaa
-afo main
+afo @ main
 !!rz-bin -M ${RZ_FILE}
 EOF
 EXPECT=<<EOF
@@ -135,7 +135,7 @@ FILE=bins/arm/elf/hello_world-linaro-201902
 CMDS=<<EOF
 ?v main
 aaa
-afo main
+afo @ main
 !!rz-bin -M ${RZ_FILE}
 EOF
 EXPECT=<<EOF

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 Rene Laemmert <rlaemmert@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 ec call rgb:ffff00
 ec ucall rgb:ffff00
 ec comment rgb:32302f

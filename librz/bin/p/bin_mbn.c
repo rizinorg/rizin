@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2015-2019 - pancake */
+// SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // XXX: this plugin have 0 tests and no binaries
 //

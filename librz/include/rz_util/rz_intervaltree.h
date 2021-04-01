@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2019 - thestr4ng3r */
+// SPDX-FileCopyrightText: 2019 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_INTERVALTREE_H
 #define RZ_INTERVALTREE_H

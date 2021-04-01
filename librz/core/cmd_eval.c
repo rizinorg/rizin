@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2009-2020 - pancake */
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -137,44 +138,40 @@ static bool nextpal_item(RzCore *core, int mode, const char *file, int ctr) {
 	return true;
 }
 
-static bool cmd_load_theme(RzCore *core, const char *_arg) {
+RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name) {
 	bool failed = false;
 	char *path;
-	if (!_arg || !*_arg) {
+	if (!name || !*name) {
 		return false;
 	}
-	if (!rz_str_cmp(_arg, "default", strlen(_arg))) {
-		curtheme = strdup(_arg);
+	if (!rz_str_cmp(name, "default", strlen(name))) {
+		curtheme = strdup(name);
 		rz_cons_pal_init(core->cons->context);
 		return true;
 	}
-	char *arg = strdup(_arg);
 
-	char *tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_THEMES, "%s"), arg);
+	char *tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_HOME_THEMES, "%s"), name);
 	char *home = tmp ? rz_str_home(tmp) : NULL;
 	free(tmp);
 
-	tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_THEMES, "%s"), arg);
+	tmp = rz_str_newf(RZ_JOIN_2_PATHS(RZ_THEMES, "%s"), name);
 	path = tmp ? rz_str_rz_prefix(tmp) : NULL;
 	free(tmp);
 
 	if (!load_theme(core, home)) {
 		if (load_theme(core, path)) {
-			curtheme = rz_str_dup(curtheme, arg);
+			curtheme = rz_str_dup(curtheme, name);
 		} else {
-			if (load_theme(core, arg)) {
-				curtheme = rz_str_dup(curtheme, arg);
+			if (load_theme(core, name)) {
+				curtheme = rz_str_dup(curtheme, name);
 			} else {
-				char *absfile = rz_file_abspath(arg);
-				eprintf("eco: cannot open colorscheme profile (%s)\n", absfile);
-				free(absfile);
+				eprintf("eco: cannot open colorscheme profile (%s)\n", name);
 				failed = true;
 			}
 		}
 	}
 	free(home);
 	free(path);
-	free(arg);
 	return !failed;
 }
 
@@ -214,7 +211,7 @@ RZ_API RzList *rz_core_list_themes(RzCore *core) {
 	return list;
 }
 
-static void nextpal(RzCore *core, int mode) {
+RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 	// TODO: use rz_core_list_themes() here instead of rewalking all the time
 	RzList *files = NULL;
 	RzListIter *iter;
@@ -238,7 +235,7 @@ static void nextpal(RzCore *core, int mode) {
 						rz_list_free(files);
 						return;
 					}
-					eprintf("%s %s %s\n", nfn ? nfn : "(null)", curtheme, fn);
+					eprintf("%s %s %s\n", rz_str_get_null(nfn), curtheme, fn);
 					if (nfn && !strcmp(nfn, curtheme)) {
 						rz_list_free(files);
 						files = NULL;
@@ -273,7 +270,7 @@ static void nextpal(RzCore *core, int mode) {
 						rz_list_free(files);
 						return;
 					}
-					eprintf("%s %s %s\n", nfn ? nfn : "(null)", curtheme, fn);
+					eprintf("%s %s %s\n", rz_str_get_null(nfn), curtheme, fn);
 					if (nfn && !strcmp(nfn, curtheme)) {
 						free(curtheme);
 						curtheme = strdup(fn);
@@ -292,14 +289,14 @@ done:
 	free(path);
 	if (getNext) {
 		RZ_FREE(curtheme);
-		nextpal(core, mode);
+		rz_core_theme_nextpal(core, mode);
 		return;
 	}
 	if (mode == 'l' && !curtheme && !rz_list_empty(files)) {
-		//nextpal (core, mode);
+		//rz_core_theme_nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
 		if (curtheme) {
-			rz_core_cmdf(core, "eco %s", curtheme);
+			rz_core_load_theme(core, curtheme);
 		}
 	}
 	rz_list_free(files);
@@ -337,11 +334,11 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 		break;
 	case 'o': // "eco"
 		if (input[1] == 'j') {
-			nextpal(core, 'j');
+			rz_core_theme_nextpal(core, 'j');
 		} else if (input[1] == ' ') {
-			cmd_load_theme(core, input + 2);
+			rz_core_load_theme(core, input + 2);
 		} else if (input[1] == 'o') {
-			cmd_load_theme(core, rz_core_get_theme());
+			rz_core_load_theme(core, rz_core_get_theme());
 		} else if (input[1] == 'c' || input[1] == '.') {
 			rz_cons_printf("%s\n", rz_core_get_theme());
 		} else if (input[1] == '?') {
@@ -388,10 +385,10 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 		rz_cons_pal_random();
 		break;
 	case 'n': // "ecn"
-		nextpal(core, 'n');
+		rz_core_theme_nextpal(core, 'n');
 		break;
 	case 'p': // "ecp"
-		nextpal(core, 'p');
+		rz_core_theme_nextpal(core, 'p');
 		break;
 	case 'H': { // "ecH"
 		char *color_code = NULL;

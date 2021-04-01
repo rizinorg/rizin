@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019 xarkes
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_flag.h>
 #include "minunit.h"
 

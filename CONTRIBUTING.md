@@ -106,11 +106,11 @@ rules to make the git history more readable and consistent:
 * ##projects - saving/loading state
 * ##refactor - improve code quality
 * ##remote   - rizin over tcp, http, rap, serial .. including collaboration
-* ##search   - rz_find, / command, ..
+* ##search   - rz-find, / command, ..
 * ##shell    - commandline, newshell, ..
 * ##signatures-searching/generating them
 * ##test     - testing infrastructure fixes/changes
-* ##tools    - rz-pm, rz_run, rz_ax ... that don't fit in other categories
+* ##tools    - rz-pm, rz-run, rz-ax ... that don't fit in other categories
 * ##util     - core APIs
 * ##visual   - visual UI, including panels
 

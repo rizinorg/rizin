@@ -4462,7 +4462,6 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			  {
 			    func (stream, "<illegal constant %.8x:%x:%x>",
                                   bits, cmode, op);
-                            size = 32;
 			    break;
 			  }
                         switch (size)
@@ -4754,13 +4753,13 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 					  break;
 
 				  case 'a':
-					  value_in_comment = print_arm_address (pc, info, given);
+					  print_arm_address (pc, info, given);
 					  break;
 
 				  case 'P':
 					  /* Set P address bit and use normal address
 			 printing routine.  */
-					  value_in_comment = print_arm_address (pc, info, given | (1 << P_BIT));
+					  print_arm_address (pc, info, given | (1 << P_BIT));
 					  break;
 
 				  case 'S':
@@ -4805,12 +4804,6 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 									  func (stream, ", %s%d",
 										  NEGATIVE_BIT_SET ? "-" : "", offset);
 								  }
-
-								  if (NEGATIVE_BIT_SET) {
-									  offset = -offset;
-								  }
-
-								  value_in_comment = offset;
 							  } else {
 								  /* Register Offset or Register Pre-Indexed.  */
 								  func (stream, ", %s%s",
@@ -4832,10 +4825,6 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 								  /* PR 10924: Offset must be printed, even if it is zero.  */
 								  func (stream, "], %s%d",
 									  NEGATIVE_BIT_SET ? "-" : "", offset);
-								  if (NEGATIVE_BIT_SET) {
-									  offset = -offset;
-								  }
-								  value_in_comment = offset;
 							  } else {
 								  /* Register Post-indexed.  */
 								  func (stream, "], %s%s",
@@ -4920,7 +4909,6 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 						  } else {
 							  func (stream, "%d", a);
 						  }
-						  value_in_comment = a;
 					  } else {
 						  arm_decode_shift (given, func, stream, TRUE);
 					  }
@@ -4976,7 +4964,6 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 							  }
 						  } else {
 							  func (stream, ", {%d}", (int)offset);
-							  value_in_comment = offset;
 						  }
 					  }
 				  } break;
@@ -5105,15 +5092,12 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 						  break;
 					  case 'd':
 						  func (stream, "%ld", value);
-						  value_in_comment = value;
 						  break;
 					  case 'b':
 						  func (stream, "%ld", value * 8);
-						  value_in_comment = value * 8;
 						  break;
 					  case 'W':
 						  func (stream, "%ld", value + 1);
-						  value_in_comment = value + 1;
 						  break;
 					  case 'x':
 						  func (stream, "0x%08lx", value);
@@ -5128,7 +5112,6 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 						  break;
 					  case 'X':
 						  func (stream, "%01lx", value & 0xf);
-						  value_in_comment = value;
 						  break;
 					  case '`':
 						  c++;
@@ -5156,7 +5139,6 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 
 					  imm = (given & 0xf) | ((given & 0xfff00) >> 4);
 					  func (stream, "%d", imm);
-					  value_in_comment = imm;
 				  } break;
 
 				  case 'E':
@@ -5201,7 +5183,6 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 						  long imm16 = hi | lo;
 
 						  func (stream, "%lu", imm16);
-						  value_in_comment = imm16;
 					  }
 					  break;
 				  }
@@ -5210,11 +5191,6 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 				  func (stream, "%c", *c);
 			  }
 		  }
-
-#if 0
-	  if (value_in_comment > 32 || value_in_comment < -16)
-	    func (stream, " ; 0x%lx", (value_in_comment & 0xffffffffUL));
-#endif
 
 		  if (is_unpredictable) {
 			  func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -6685,7 +6661,6 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 		  if (get_sym_code_type (info, n, &type))
 		    {
 		      last_sym = n;
-		      found = TRUE;
 		      break;
 		    }
 		}

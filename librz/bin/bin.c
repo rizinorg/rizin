@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2020 - pancake, nibble, dso */
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2020 dso <dso@rice.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 #include <rz_types.h>
@@ -49,10 +52,6 @@ static const char *__getname(RzBin *bin, int type, int idx, bool sd) {
 		return plugin->get_name(a, type, idx, sd);
 	}
 	return NULL;
-}
-
-static ut64 binobj_a2b(RzBinObject *o, ut64 addr) {
-	return o ? addr + o->baddr_shift : addr;
 }
 
 // TODO: move these two function do a different file
@@ -165,8 +164,7 @@ RZ_API RzBinImport *rz_bin_import_clone(RzBinImport *o) {
 	return res;
 }
 
-RZ_API void rz_bin_import_free(void *_imp) {
-	RzBinImport *imp = (RzBinImport *)_imp;
+RZ_API void rz_bin_import_free(RzBinImport *imp) {
 	if (imp) {
 		RZ_FREE(imp->name);
 		RZ_FREE(imp->libname);
@@ -193,12 +191,12 @@ RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) 
 	return sym;
 }
 
-RZ_API void rz_bin_symbol_free(void *_sym) {
-	RzBinSymbol *sym = (RzBinSymbol *)_sym;
+RZ_API void rz_bin_symbol_free(RzBinSymbol *sym) {
 	if (sym) {
 		free(sym->name);
 		free(sym->libname);
 		free(sym->classname);
+		free(sym->visibility_str);
 		free(sym);
 	}
 }
@@ -243,6 +241,8 @@ RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr) {
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
 	opt.filename = bf->file;
+
+	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 
 	bool res = rz_bin_open_buf(bin, bf->buf, &opt);
 	rz_bin_file_delete(bin, bf->id);
@@ -709,8 +709,11 @@ static RzList *relocs_rbtree2list(RBNode *root) {
 
 RZ_API RBNode *rz_bin_patch_relocs(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? rz_bin_object_patch_relocs(bin, o) : NULL;
+	RzBinFile *bf = rz_bin_cur(bin);
+	if (!bf || !bf->o) {
+		return NULL;
+	}
+	return rz_bin_object_patch_relocs(bf, bf->o);
 }
 
 // return a list of <const RzBinReloc> that needs to be freed by the caller
@@ -750,7 +753,7 @@ RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 		if (section->is_segment) {
 			continue;
 		}
-		from = va ? binobj_a2b(o, section->vaddr) : section->paddr;
+		from = va ? rz_bin_object_addr_with_base(o, section->vaddr) : section->paddr;
 		to = from + (va ? section->vsize : section->size);
 		if (off >= from && off < to) {
 			return section;
@@ -874,7 +877,9 @@ RZ_API RzBin *rz_bin_new(void) {
 			goto trashbin_binxtrs;
 		}
 		*static_xtr_plugin = *bin_xtr_static_plugins[i];
-		rz_bin_xtr_add(bin, static_xtr_plugin);
+		if (!rz_bin_xtr_add(bin, static_xtr_plugin)) {
+			free(static_xtr_plugin);
+		}
 	}
 	/* loaders */
 	bin->binldrs = rz_list_new();
@@ -885,7 +890,9 @@ RZ_API RzBin *rz_bin_new(void) {
 			goto trashbin_binldrs;
 		}
 		*static_ldr_plugin = *bin_ldr_static_plugins[i];
-		rz_bin_ldr_add(bin, static_ldr_plugin);
+		if (!rz_bin_ldr_add(bin, static_ldr_plugin)) {
+			free(static_ldr_plugin);
+		}
 	}
 	return bin;
 trashbin_binldrs:
@@ -1283,12 +1290,6 @@ RZ_API ut64 rz_bin_get_vaddr(RzBin *bin, ut64 paddr, ut64 vaddr) {
 	return rz_bin_file_get_vaddr(bin->cur, paddr, vaddr);
 }
 
-RZ_API ut64 rz_bin_a2b(RzBin *bin, ut64 addr) {
-	rz_return_val_if_fail(bin, UT64_MAX);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return binobj_a2b(o, addr);
-}
-
 RZ_API ut64 rz_bin_get_size(RzBin *bin) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 	RzBinObject *o = rz_bin_cur_object(bin);
@@ -1350,9 +1351,7 @@ RZ_API RzBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char
 	return ptr;
 }
 
-// use void* to honor the RzListFree signature
-RZ_API void rz_bin_field_free(void *_field) {
-	RzBinField *field = (RzBinField *)_field;
+RZ_API void rz_bin_field_free(RzBinField *field) {
 	if (field) {
 		free(field->name);
 		free(field->comment);

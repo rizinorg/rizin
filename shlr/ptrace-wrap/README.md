@@ -1,4 +1,3 @@
-
 # ptrace-wrap
 
 ptrace on Linux has one major issue: When one process attaches to another, the tracer's pid is
@@ -15,7 +14,7 @@ Thus, it is possible to create multi-threaded applications that use ptrace.
 
 Initialize a ptrace-wrap instance:
 
-```
+```c
 ptrace_wrap_instance inst;
 int r = ptrace_wrap_instance_start (&inst);
 if (r != 0) {
@@ -25,7 +24,7 @@ if (r != 0) {
 
 Then, simply use the `ptrace_wrap()` function instead of `ptrace()` for your calls.
 
-```
+```c
 long pr = ptrace_wrap (&inst, <request>, <pid>, <addr>, <data>);
 if (pr < 0) {
     perror ("ptrace");
@@ -37,7 +36,7 @@ from inside of it, `ptrace_wrap_fork()` has to be used instead of plain `fork()`
 The behaviour in the child process is slightly different then. Instead of returning 0,
 `ptrace_wrap_fork()` calls a callback in the child process. Example:
 
-```
+```c
 void child_callback(void *user) {
     const char *file = user;
     ptrace (PTRACE_TRACEME, 0, NULL, NULL);
@@ -55,7 +54,7 @@ if (pid < 0) {
 ```
 
 Finally, stop the ptrace-wrap instance:
-```
+```c
 ptrace_wrap_instance_stop (&inst);
 ```
 

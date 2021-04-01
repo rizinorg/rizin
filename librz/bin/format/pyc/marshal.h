@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2016 c0riolis
+// SPDX-FileCopyrightText: 2016 Tardy
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef MARSHAL_H

@@ -1,0 +1,148 @@
+NAME=bug_duplicate_vtable #acll displays duplicate vtable info when using aaa command in many times
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+acll
+aaa
+acll
+aaa
+acll
+EOF
+EXPECT=<<EOF
+[A]
+  (vtable at 0x400d28)
+nth name            addr vt_offset type
+---------------------------------------
+1   greet       0x400ac8 0x0       VIRTUAL
+2   printValue  0x400af4 0x8       VIRTUAL
+3   A           0x400b36 -1        CONSTRUCTOR
+
+[B: A]
+  (vtable at 0x400d08)
+nth name                addr vt_offset type
+-------------------------------------------
+1   B               0x400b4e -1        CONSTRUCTOR
+2   printValue      0x400b82 0x8       VIRTUAL
+3   method.A.greet  0x400ac8 0x0       VIRTUAL
+
+[C: A]
+  (vtable at 0x400ce8)
+nth name                addr vt_offset type
+-------------------------------------------
+1   C               0x400bc4 -1        CONSTRUCTOR
+2   printValue      0x400bf8 0x8       VIRTUAL
+3   method.A.greet  0x400ac8 0x0       VIRTUAL
+
+[std::basic_ostream_char__std::char_traits_char_____std::endl_char__std]
+nth name                     addr vt_offset type
+------------------------------------------------
+1   char_traits<char> >  0x6012a8 -1        DEFAULT
+
+[std::basic_ostream_char__std::char_traits_char_____std::operator____std]
+nth name                     addr vt_offset type
+------------------------------------------------
+1   char_traits<char> >  0x601298 -1        DEFAULT
+
+[std::ios_base::Init]
+nth name       addr vt_offset type
+----------------------------------
+1   Init   0x601278 -1        DEFAULT
+2   ~Init  0x601290 -1        DEFAULT
+
+[std::ostream]
+nth name            addr vt_offset type
+---------------------------------------
+1   operator<<  0x6012a0 -1        DEFAULT
+
+[A]
+  (vtable at 0x400d28)
+nth name            addr vt_offset type
+---------------------------------------
+1   greet       0x400ac8 0x0       VIRTUAL
+2   printValue  0x400af4 0x8       VIRTUAL
+3   A           0x400b36 -1        CONSTRUCTOR
+
+[B: A]
+  (vtable at 0x400d08)
+nth name                addr vt_offset type
+-------------------------------------------
+1   B               0x400b4e -1        CONSTRUCTOR
+2   printValue      0x400b82 0x8       VIRTUAL
+3   method.A.greet  0x400ac8 0x0       VIRTUAL
+
+[C: A]
+  (vtable at 0x400ce8)
+nth name                addr vt_offset type
+-------------------------------------------
+1   C               0x400bc4 -1        CONSTRUCTOR
+2   printValue      0x400bf8 0x8       VIRTUAL
+3   method.A.greet  0x400ac8 0x0       VIRTUAL
+
+[std::basic_ostream_char__std::char_traits_char_____std::endl_char__std]
+nth name                     addr vt_offset type
+------------------------------------------------
+1   char_traits<char> >  0x6012a8 -1        DEFAULT
+
+[std::basic_ostream_char__std::char_traits_char_____std::operator____std]
+nth name                     addr vt_offset type
+------------------------------------------------
+1   char_traits<char> >  0x601298 -1        DEFAULT
+
+[std::ios_base::Init]
+nth name       addr vt_offset type
+----------------------------------
+1   Init   0x601278 -1        DEFAULT
+2   ~Init  0x601290 -1        DEFAULT
+
+[std::ostream]
+nth name            addr vt_offset type
+---------------------------------------
+1   operator<<  0x6012a0 -1        DEFAULT
+
+[A]
+  (vtable at 0x400d28)
+nth name            addr vt_offset type
+---------------------------------------
+1   greet       0x400ac8 0x0       VIRTUAL
+2   printValue  0x400af4 0x8       VIRTUAL
+3   A           0x400b36 -1        CONSTRUCTOR
+
+[B: A]
+  (vtable at 0x400d08)
+nth name                addr vt_offset type
+-------------------------------------------
+1   B               0x400b4e -1        CONSTRUCTOR
+2   printValue      0x400b82 0x8       VIRTUAL
+3   method.A.greet  0x400ac8 0x0       VIRTUAL
+
+[C: A]
+  (vtable at 0x400ce8)
+nth name                addr vt_offset type
+-------------------------------------------
+1   C               0x400bc4 -1        CONSTRUCTOR
+2   printValue      0x400bf8 0x8       VIRTUAL
+3   method.A.greet  0x400ac8 0x0       VIRTUAL
+
+[std::basic_ostream_char__std::char_traits_char_____std::endl_char__std]
+nth name                     addr vt_offset type
+------------------------------------------------
+1   char_traits<char> >  0x6012a8 -1        DEFAULT
+
+[std::basic_ostream_char__std::char_traits_char_____std::operator____std]
+nth name                     addr vt_offset type
+------------------------------------------------
+1   char_traits<char> >  0x601298 -1        DEFAULT
+
+[std::ios_base::Init]
+nth name       addr vt_offset type
+----------------------------------
+1   Init   0x601278 -1        DEFAULT
+2   ~Init  0x601290 -1        DEFAULT
+
+[std::ostream]
+nth name            addr vt_offset type
+---------------------------------------
+1   operator<<  0x6012a0 -1        DEFAULT
+
+EOF
+RUN

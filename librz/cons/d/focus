@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2014 condret <condret@runas-racer.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 ec fname rgb:0cf rgb:000
 ec label rgb:0cf rgb:000
 ec math rgb:ccc

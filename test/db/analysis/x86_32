@@ -25,7 +25,7 @@ e asm.var=false
 pdb
 EOF
 EXPECT=<<EOF
-/ 337: entry0 (int32_t arg_40h, int32_t arg_44h);
+/ (loc) entry0 (int32_t arg_40h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call  fcn.00646b7e
 |           0x006453a6      8d642444       lea   esp, [arg_44h]
 |       ,=< 0x006453aa      0f85a6300000   jne   0x648456
@@ -103,7 +103,7 @@ NAME=cyclomatic
 FILE=bins/pe/rz-bin.exe
 CMDS=<<EOF
 s 0x140002510;af;afi~complex[1]
-afb.@0x14000253e
+afbi@0x14000253e
 EOF
 EXPECT=<<EOF
 67
@@ -176,7 +176,7 @@ NAME=x86: fastcall argument analysis
 FILE=bins/elf/analysis/fast
 CMDS=aa ; s sym.fastcaslled ; e asm.bytes=true; afc fastcall ; afva ; pdf~arg,var
 EXPECT=<<EOF
-/ 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
+/ sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; var int32_t var_20h @ ebp-0x20
 |           ; var int32_t var_1ch @ ebp-0x1c
 |           ; var int32_t var_10h @ ebp-0x10
@@ -558,7 +558,7 @@ FILE=bins/elf/echo
 CMDS=<<EOF
 aaa
 s 0xf34
-afb.
+afbi
 EOF
 EXPECT=<<EOF
 0x00000f34 0x00000f4b 00:0000 23 j 0x00001144
@@ -629,7 +629,7 @@ aaa
 f~?case
 EOF
 EXPECT=<<EOF
-90
+91
 EOF
 RUN
 
@@ -955,20 +955,20 @@ f~case.
 EOF
 EXPECT=<<EOF
 0x080483fd 1 switch.0x080483fd
-0x08048404 1 case.0x80483fd.1
 0x08048404 1 case.0x80483fd.2
 0x08048404 1 case.0x80483fd.3
-0x0804840d 1 case.0x80483fd.0
-0x08048416 1 case.0x80483fd.4
-0x0804841f 1 case.0x80483fd.5
-0x08048428 1 case.0x80483fd.6
-0x08048431 1 case.0x80483fd.7
-0x08048431 1 case.0x80483fd.9
+0x08048404 1 case.0x80483fd.4
+0x0804840d 1 case.0x80483fd.1
+0x08048416 1 case.0x80483fd.5
+0x0804841f 1 case.0x80483fd.6
+0x08048428 1 case.0x80483fd.7
+0x08048431 1 case.0x80483fd.8
+0x08048431 1 case.0x80483fd.10
 0x08048431 1 case.default.0x80483fd
-0x0804843a 1 case.0x80483fd.8
-0x08048443 1 case.0x80483fd.10
-0x0804844c 1 case.0x80483fd.11
-0x08048455 1 case.0x80483fd.12
+0x0804843a 1 case.0x80483fd.9
+0x08048443 1 case.0x80483fd.11
+0x0804844c 1 case.0x80483fd.12
+0x08048455 1 case.0x80483fd.13
 EOF
 RUN
 
@@ -982,20 +982,20 @@ f~case.
 EOF
 EXPECT=<<EOF
 0x080483fd 1 switch.0x080483fd
-0x08048404 1 case.0x80483fd.1
 0x08048404 1 case.0x80483fd.2
 0x08048404 1 case.0x80483fd.3
-0x0804840d 1 case.0x80483fd.0
-0x08048416 1 case.0x80483fd.4
-0x0804841f 1 case.0x80483fd.5
-0x08048428 1 case.0x80483fd.6
-0x08048431 1 case.0x80483fd.7
-0x08048431 1 case.0x80483fd.9
+0x08048404 1 case.0x80483fd.4
+0x0804840d 1 case.0x80483fd.1
+0x08048416 1 case.0x80483fd.5
+0x0804841f 1 case.0x80483fd.6
+0x08048428 1 case.0x80483fd.7
+0x08048431 1 case.0x80483fd.8
+0x08048431 1 case.0x80483fd.10
 0x08048431 1 case.default.0x80483fd
-0x0804843a 1 case.0x80483fd.8
-0x08048443 1 case.0x80483fd.10
-0x0804844c 1 case.0x80483fd.11
-0x08048455 1 case.0x80483fd.12
+0x0804843a 1 case.0x80483fd.9
+0x08048443 1 case.0x80483fd.11
+0x0804844c 1 case.0x80483fd.12
+0x08048455 1 case.0x80483fd.13
 EOF
 RUN
 
@@ -1012,19 +1012,19 @@ EXPECT=<<EOF
 0x0040be85 1 switch.0x0040be85
 0x0040beb5 1 switch.0x0040beb5
 0x0040bf68 1 switch.0x0040bf68
-0x00401015 1 case.0x40100e.0
-0x00401025 1 case.0x40100e.1
+0x00401015 1 case.0x40100e.1
 0x00401025 1 case.0x40100e.2
 0x00401025 1 case.0x40100e.3
-0x00401035 1 case.0x40100e.4
-0x00401045 1 case.0x40100e.5
-0x00401055 1 case.0x40100e.6
-0x00401065 1 case.0x40100e.8
-0x00401075 1 case.0x40100e.10
-0x00401085 1 case.0x40100e.11
-0x00401095 1 case.0x40100e.12
-0x004010a5 1 case.0x40100e.7
-0x004010a5 1 case.0x40100e.9
+0x00401025 1 case.0x40100e.4
+0x00401035 1 case.0x40100e.5
+0x00401045 1 case.0x40100e.6
+0x00401055 1 case.0x40100e.7
+0x00401065 1 case.0x40100e.9
+0x00401075 1 case.0x40100e.11
+0x00401085 1 case.0x40100e.12
+0x00401095 1 case.0x40100e.13
+0x004010a5 1 case.0x40100e.8
+0x004010a5 1 case.0x40100e.10
 0x004010a5 1 case.default.0x40100e
 0x0040be7e 1 case.default.0x40be85
 0x0040bed4 1 case.0x40beb5.0
@@ -1057,19 +1057,19 @@ EXPECT=<<EOF
 0x00402875 1 switch.0x00402875
 0x004028a5 1 switch.0x004028a5
 0x00402958 1 switch.0x00402958
-0x00401015 1 case.0x40100e.0
-0x00401026 1 case.0x40100e.1
+0x00401015 1 case.0x40100e.1
 0x00401026 1 case.0x40100e.2
 0x00401026 1 case.0x40100e.3
-0x00401037 1 case.0x40100e.4
-0x00401048 1 case.0x40100e.5
-0x00401059 1 case.0x40100e.6
-0x0040106a 1 case.0x40100e.8
-0x0040107b 1 case.0x40100e.10
-0x0040108c 1 case.0x40100e.11
-0x0040109d 1 case.0x40100e.12
-0x004010ae 1 case.0x40100e.7
-0x004010ae 1 case.0x40100e.9
+0x00401026 1 case.0x40100e.4
+0x00401037 1 case.0x40100e.5
+0x00401048 1 case.0x40100e.6
+0x00401059 1 case.0x40100e.7
+0x0040106a 1 case.0x40100e.9
+0x0040107b 1 case.0x40100e.11
+0x0040108c 1 case.0x40100e.12
+0x0040109d 1 case.0x40100e.13
+0x004010ae 1 case.0x40100e.8
+0x004010ae 1 case.0x40100e.10
 0x004010ae 1 case.default.0x40100e
 0x0040286e 1 case.default.0x402875
 0x004028c4 1 case.0x4028a5.0
@@ -2760,7 +2760,7 @@ EXPECT=<<EOF
 0x00001180      31c0           xor   eax, eax
 0x00001182      eb06           jmp   loc.start
 | ----------- true: 0x0000118a
-18: int main (int argc, char **argv, char **envp);
+int main (int argc, char **argv, char **envp);
 0x00001184      31c0           xor   eax, eax
 0x00001186      75f8           jne   loc.start2
 | ----------- true: 0x00001180  false: 0x00001188
@@ -3116,8 +3116,7 @@ aa > /dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-┌ (fcn) fcn.00000000 1645
-// void fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
+┌ fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
 │           ; var int32_t var_30h @ esp+0x1c
 │           ; var int32_t var_20h @ esp+0x2c
 │           ; arg int32_t arg_4h @ esp+0x50
@@ -3181,8 +3180,7 @@ aa >/dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-/ (fcn) fcn.00000000 1645
-// void fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
+/ fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
 |           ; var int32_t var_30h @ esp+0x1c
 |           ; var int32_t var_20h @ esp+0x2c
 |           ; arg int32_t arg_4h @ esp+0x50
@@ -3262,8 +3260,7 @@ afva
 pdf
 EOF
 EXPECT=<<EOF
-/ (fcn) fcn.00000000 89
-// void fcn.00000000 (int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
+/ fcn.00000000 (int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
 |           ; var int32_t var_ch @ esp+0x4
 |           ; var int32_t var_8h @ esp+0x8
 |           ; var int32_t var_4h @ esp+0xc
@@ -3363,32 +3360,31 @@ af
 f~case
 EOF
 EXPECT=<<EOF
-0x00401027 1 case.0x401020.0
-0x0040103a 1 case.0x401020.1
-0x0040104d 1 case.0x401020.2
-0x0040104d 1 case.0x401020.10
-0x00401060 1 case.0x401020.12
-0x00401073 1 case.0x401020.14
-0x00401086 1 case.0x401020.15
-0x00401099 1 case.0x401020.18
-0x004010ac 1 case.0x401020.35
-0x004010ac 1 case.0x401020.37
+0x00401027 1 case.0x401020.1
+0x0040103a 1 case.0x401020.2
+0x0040104d 1 case.0x401020.3
+0x0040104d 1 case.0x401020.11
+0x00401060 1 case.0x401020.13
+0x00401073 1 case.0x401020.15
+0x00401086 1 case.0x401020.16
+0x00401099 1 case.0x401020.19
+0x004010ac 1 case.0x401020.36
 0x004010ac 1 case.0x401020.38
 0x004010ac 1 case.0x401020.39
-0x004010bf 1 case.0x401020.29
-0x004010d2 1 case.0x401020.19
-0x004010e5 1 case.0x401020.9
-0x004010f8 1 case.0x401020.3
+0x004010ac 1 case.0x401020.40
+0x004010bf 1 case.0x401020.30
+0x004010d2 1 case.0x401020.20
+0x004010e5 1 case.0x401020.10
 0x004010f8 1 case.0x401020.4
 0x004010f8 1 case.0x401020.5
 0x004010f8 1 case.0x401020.6
 0x004010f8 1 case.0x401020.7
 0x004010f8 1 case.0x401020.8
-0x004010f8 1 case.0x401020.11
-0x004010f8 1 case.0x401020.13
-0x004010f8 1 case.0x401020.16
+0x004010f8 1 case.0x401020.9
+0x004010f8 1 case.0x401020.12
+0x004010f8 1 case.0x401020.14
 0x004010f8 1 case.0x401020.17
-0x004010f8 1 case.0x401020.20
+0x004010f8 1 case.0x401020.18
 0x004010f8 1 case.0x401020.21
 0x004010f8 1 case.0x401020.22
 0x004010f8 1 case.0x401020.23
@@ -3397,12 +3393,94 @@ EXPECT=<<EOF
 0x004010f8 1 case.0x401020.26
 0x004010f8 1 case.0x401020.27
 0x004010f8 1 case.0x401020.28
-0x004010f8 1 case.0x401020.30
+0x004010f8 1 case.0x401020.29
 0x004010f8 1 case.0x401020.31
 0x004010f8 1 case.0x401020.32
 0x004010f8 1 case.0x401020.33
 0x004010f8 1 case.0x401020.34
-0x004010f8 1 case.0x401020.36
+0x004010f8 1 case.0x401020.35
+0x004010f8 1 case.0x401020.37
 0x004010f8 1 case.default.0x401020
+EOF
+RUN
+
+NAME=tiny1 aaef
+FILE=bins/elf/analysis/tiny1
+CMDS=<<EOF
+aF
+aaef
+pdf
+EOF
+EXPECT=<<EOF
+/ entry0 ();
+|           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
+|           0x08048056      xor   eax, eax
+|           0x08048058      inc   eax
+|           ;-- syscall.exit:
+\           0x08048059      int   0x80
+EOF
+RUN
+
+NAME=tiny1 aae
+FILE=bins/elf/analysis/tiny1
+CMDS=<<EOF
+aF
+aae
+pdf
+EOF
+EXPECT=<<EOF
+/ entry0 ();
+|           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
+|           0x08048056      xor   eax, eax
+|           0x08048058      inc   eax
+|           ;-- syscall.exit:
+\           0x08048059      int   0x80
+EOF
+RUN
+
+NAME=tiny1 aae non-start-bb first
+FILE=bins/elf/analysis/tiny1
+CMDS=<<EOF
+e io.cache=true
+$orig_end=?e `omt va_end/cols~[0]:3`
+omr 1 `omt size/cols~[0]:3`+2
+s `$orig_end`
+wa jmp entry0
+aF
+aae
+agf
+?e
+afl
+EOF
+EXPECT=<<EOF
+[0x0804805b]>  # fcn.0804805b ();
+.----.
+|    |
+|.-------------------------------------------.
+||  0x8048054                                |
+|| ; CODE XREF from fcn.0804805b @ 0x804805b |
+|| ;-- entry0:                               |
+|| ; '*'                                     |
+|| ; 42                                      |
+|| mov bl, 0x2a                              |
+|| xor eax, eax                              |
+|| inc eax                                   |
+|| ;-- syscall.exit:                         |
+|| int 0x80                                  |
+|`-------------------------------------------'
+|    v
+|    |
+|    '----------.
+|               |
+|           .--------------------.
+|           |  0x804805b         |
+|           | fcn.0804805b ();   |
+|           | jmp entry0         |
+|           `--------------------'
+|               v
+|               |
+`---------------'
+
+0x0804805b    2 9            fcn.0804805b
 EOF
 RUN

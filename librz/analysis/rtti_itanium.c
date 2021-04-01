@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2018 r00tus3r <iamakshayajayan@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
@@ -760,16 +762,34 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 		return;
 	}
 
-	RzAnalysisVTable vtable = { .id = NULL, .offset = 0, .size = 0, .addr = vtable_info->saddr };
+	ut64 size = rz_analysis_vtable_info_get_size(context, vtable_info);
+
+	RzAnalysisVTable vtable = { .id = NULL, .offset = 0, .size = size, .addr = vtable_info->saddr };
 	rz_analysis_class_vtable_set(context->analysis, class_name, &vtable);
 	rz_analysis_class_vtable_fini(&vtable);
 
 	RVTableMethodInfo *vmeth;
 	rz_vector_foreach(&vtable_info->methods, vmeth) {
 		RzAnalysisMethod meth;
-		meth.addr = vmeth->addr;
-		meth.vtable_offset = vmeth->vtable_offset;
-		meth.name = rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+		if (!rz_analysis_class_method_exists_by_addr(context->analysis, class_name, vmeth->addr)) {
+			meth.addr = vmeth->addr;
+			meth.vtable_offset = vmeth->vtable_offset;
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at(context->analysis, vmeth->addr);
+			meth.name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+			//Temporarily set as attr name
+			meth.real_name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+			meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
+		} else {
+			RzAnalysisMethod exist_meth;
+			if (rz_analysis_class_method_get_by_addr(context->analysis, class_name, vmeth->addr, &exist_meth) == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
+				meth.addr = vmeth->addr;
+				meth.name = rz_str_new(exist_meth.name);
+				meth.real_name = rz_str_new(exist_meth.real_name);
+				meth.vtable_offset = vmeth->vtable_offset;
+				meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
+				rz_analysis_class_method_fini(&exist_meth);
+			}
+		}
 		rz_analysis_class_method_set(context->analysis, class_name, &meth);
 		rz_analysis_class_method_fini(&meth);
 	}
@@ -815,6 +835,27 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 	}
 }
 
+static void detect_constructor_destructor(RzAnalysis *analysis, class_type_info *cti) {
+	RzVector *vec = rz_analysis_class_method_get_all(analysis, cti->name);
+	RzAnalysisMethod *meth;
+	rz_vector_foreach(vec, meth) {
+		if (!rz_str_cmp(meth->real_name, cti->name, -1)) {
+			meth->method_type = RZ_ANALYSIS_CLASS_METHOD_CONSTRUCTOR;
+			rz_analysis_class_method_set(analysis, cti->name, meth);
+			continue;
+		} else if (rz_str_startswith(meth->real_name, "~") && !rz_str_cmp(meth->real_name + 1, cti->name, -1)) {
+			if (meth->method_type == RZ_ANALYSIS_CLASS_METHOD_VIRTUAL) {
+				meth->method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL_DESTRUCTOR;
+			} else {
+				meth->method_type = RZ_ANALYSIS_CLASS_METHOD_DESTRUCTOR;
+			}
+			rz_analysis_class_method_set(analysis, cti->name, meth);
+			continue;
+		}
+	}
+	rz_vector_free(vec);
+}
+
 RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList *vtables) {
 	RzList /*<class_type_info>*/ *rtti_list = rz_list_new();
 	rtti_list->free = rtti_itanium_type_info_free;
@@ -832,6 +873,8 @@ RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *context, RzList
 		rz_analysis_class_create(context->analysis, cti->name);
 		// can't we name virtual functions virtual even without RTTI?
 		recovery_apply_vtable(context, cti->name, vtable);
+		//Temporarily detect by method name
+		detect_constructor_destructor(context->analysis, cti);
 
 		// we only need one of a kind
 		if (set_u_contains(unique_rttis, cti->typeinfo_addr)) {

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 Project Nayuki
+// SPDX-License-Identifier: MIT
+
 /*
  * modified by pancake to adapt it to the r2 coding style and make a simpler api
  * QR Code generator library (C)

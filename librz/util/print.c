@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_print.h>
@@ -678,6 +679,7 @@ RZ_API void rz_print_section(RzPrint *p, ut64 at) {
 }
 
 RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
+	rz_return_if_fail(p && buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
 #define print(x) printfmt("%s", x)
 	bool c = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;
@@ -792,7 +794,6 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 			print(color_title);
 		}
 		if (base < 32) {
-			ut32 opad = (ut32)(addr >> 32);
 			{ // XXX: use rz_print_addr_header
 				int i, delta;
 				char soff[32];
@@ -823,7 +824,6 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 			}
 			/* column after number, before hex data */
 			print((col == 1) ? "|" : space);
-			opad >>= 4;
 			if (use_hdroff) {
 				k = addr & 0xf;
 				K = (addr >> 4) & 0xf;
@@ -1196,13 +1196,11 @@ RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int
 					if (comment) {
 						if (p && p->colorfor) {
 							a = p->colorfor(p->user, addr + j, true);
-							if (a && *a) {
-								b = Color_RESET;
-							} else {
-								a = b = "";
+							if (!a || !*a) {
+								a = "";
 							}
 						} else {
-							a = b = "";
+							a = "";
 						}
 						printfmt("%s  ; %s", a, comment);
 						free(comment);
@@ -1457,11 +1455,7 @@ RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut
 		len = 1;
 	}
 
-	if (mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size == p->zoom->size) {
-		// get from cache
-		bufz = p->zoom->buf;
-		size = p->zoom->size;
-	} else {
+	if (mode != p->zoom->mode || from != p->zoom->from || to != p->zoom->to || size != p->zoom->size) {
 		mode = p->zoom->mode;
 		bufz = (ut8 *)calloc(1, len);
 		if (!bufz) {
@@ -1517,11 +1511,13 @@ static inline void printHistBlock(RzPrint *p, int k, int cols) {
 	const bool show_colors = (p && (p->flags & RZ_PRINT_FLAGS_COLOR));
 	if (show_colors) {
 		int idx = (int)((k * 4) / cols);
-		const char *str = kol[idx];
-		if (p->histblock) {
-			p->cb_printf("%s%s%s", str, block, Color_RESET);
-		} else {
-			p->cb_printf("%s%s%s", str, h_line, Color_RESET);
+		if (idx < 5) {
+			const char *str = kol[idx];
+			if (p->histblock) {
+				p->cb_printf("%s%s%s", str, block, Color_RESET);
+			} else {
+				p->cb_printf("%s%s%s", str, h_line, Color_RESET);
+			}
 		}
 	} else {
 		if (p->histblock) {

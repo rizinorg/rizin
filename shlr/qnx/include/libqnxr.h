@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 madprogrammer
+// SPDX-License-Identifier: GPL-2.0-only
+
 /*! \file */
 #ifndef LIBQNXR_H
 #define LIBQNXR_H
@@ -29,7 +32,7 @@ typedef struct
 	st64 tid;
 } ptid_t;
 
-/*! 
+/*!
  * Core "object" that saves
  * the instance of the lib
  */

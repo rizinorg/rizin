@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_interpret
+commands:
+  - name: .
+    cname: interpret
+    summary: >
+      Repeat last executed command backward / Interpret the output of the
+      command as rizin commands
+    args:
+      - name: cmd
+        type: RZ_CMD_ARG_TYPE_CMD
+        optional: true
+        no_space: true
+  - name: ". "
+    cname: interpret_script
+    summary: Interpret script
+    args:
+      - name: file.rz
+        type: RZ_CMD_ARG_TYPE_FILE
+        no_space: true
+  - name: ...
+    cname: repeat_forward
+    summary: Repeat last executed command forward (same as \\n)
+    args: []
+  - name: ..
+    cname: interpret_output
+    summary: Run the output of the execution of a script as rizin commands
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: .-
+    cname: interpret_editor_2
+    summary: Open cfg.editor and interpret tmp file
+    args: []
+  - name: .*
+    cname: interpret_pipe
+    summary: >
+      Same as #!pipe open cfg.editor and interpret tmp file
+    args:
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: .!
+    cname: interpret_system
+    summary: Interpret output of command
+    args:
+      - name: bin
+        type: RZ_CMD_ARG_TYPE_FILE
+        no_space: true
+      - name: arg
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+  - name: .(
+    cname: interpret_macro
+    summary: Interpret output of macro
+    args:
+      - name: macro-name
+        type: RZ_CMD_ARG_TYPE_MACRO
+        no_space: true
+      - name: macro-arg
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+      - name: )
+        type: RZ_CMD_ARG_TYPE_FAKE

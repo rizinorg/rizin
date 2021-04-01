@@ -1,4 +1,5 @@
-/* rizin - MIT - Copyright 2018 - pancake */
+// SPDX-FileCopyrightText: 2018 pancake
+// SPDX-License-Identifier: MIT
 
 #include <rz_util.h>
 #include <rz_vector.h>

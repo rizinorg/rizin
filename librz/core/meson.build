@@ -1,30 +1,18 @@
-cmd_descs_generate_py = files('cmd_descs_generate.py')
-cmd_descs_yaml = files('cmd_descs.yaml')
-cmd_descs_src_c = files('cmd_descs.c')
-
-r = run_command(py3_exe, '-c', 'import yaml')
-if r.returncode() == 0
-  cmd_descs_c = custom_target(
-    'cmd_descs.c',
-    output: ['cmd_descs.c'],
-    input: [cmd_descs_generate_py, cmd_descs_yaml],
-    command: [py3_exe, cmd_descs_generate_py, '--output-dir', '@OUTDIR@', '--src-output-dir', meson.current_source_dir(), cmd_descs_yaml]
-  )
-else
-  warning('PyYAML python module was not found, using cmd_descs.c/cmd_descs.h from source directory. Install PyYAML (either from your package manager or through pip) if you need to modify cmd_descs files.')
-  cmd_descs_c = cmd_descs_src_c
-endif
+subdir('cmd_descs')
 
 rz_core_sources = [
   'analysis_tp.c',
   'analysis_objc.c',
   'casm.c',
-  'blaze.c',
+  'cagraph.c',
   'canalysis.c',
+  'ctypes.c',
   'carg.c',
   'cautocmpl.c',
   'cbin.c',
   'cconfig.c',
+  'cdebug.c',
+  'cdwarf.c',
   'cio.c',
   'cmd.c',
   cmd_descs_c,
@@ -92,34 +80,33 @@ endif
 rz_core_inc = [platform_inc, include_directories(rz_core_inc)]
 
 rz_core_deps = [
-  rz_config_dep,
-  rz_cons_dep,
-  rz_io_dep,
   rz_util_dep,
-  rz_flag_dep,
-  rz_asm_dep,
-  rz_debug_dep,
-  rz_hash_dep,
-  rz_bin_dep,
-  rz_lang_dep,
-  rz_analysis_dep,
-  rz_parse_dep,
-  rz_bp_dep,
-  rz_egg_dep,
-  rz_reg_dep,
-  rz_search_dep,
-  rz_syscall_dep,
-  rz_socket_dep,
   rz_magic_dep,
+  rz_socket_dep,
+  rz_flag_dep,
+  rz_cons_dep,
+  rz_lang_dep,
+  rz_hash_dep,
   rz_crypto_dep,
+  rz_io_dep,
+  rz_reg_dep,
+  rz_bp_dep,
+  rz_syscall_dep,
+  rz_parse_dep,
+  rz_asm_dep,
+  rz_egg_dep,
+  rz_search_dep,
+  rz_analysis_dep,
+  rz_debug_dep,
+  rz_config_dep,
+  rz_bin_dep,
   platform_deps,
   gdb_dep,
-  java_dep,
   lrt,
   shell_parser_dep
 ]
 
-if use_libuv
+if libuv_dep.found()
   rz_core_deps += libuv_dep
 endif
 

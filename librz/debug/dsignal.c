@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
@@ -85,43 +86,55 @@ static bool siglistcb(void *p, const char *k, const char *v) {
 	return true;
 }
 
+struct debug_pj {
+	RzDebug *dbg;
+	PJ *pj;
+};
+
 static bool siglistjsoncb(void *p, const char *k, const char *v) {
 	static char key[32] = "cfg.";
-	RzDebug *dbg = (RzDebug *)p;
+	struct debug_pj *dpj = (struct debug_pj *)p;
 	int opt;
 	if (atoi(k) > 0) {
 		strncpy(key + 4, k, 20);
-		opt = (int)sdb_num_get(DB, key, 0);
-		if (dbg->_mode == 2) {
-			dbg->_mode = 0;
-		} else {
-			rz_cons_strcat(",");
+		opt = (int)sdb_num_get(dpj->dbg->sgnls, key, 0);
+		if (dpj->dbg->_mode == 2) {
+			dpj->dbg->_mode = 0;
 		}
-		rz_cons_printf("{\"signum\":\"%s\",\"name\":\"%s\",\"option\":", k, v);
+		pj_o(dpj->pj);
+		pj_ks(dpj->pj, "signum", k);
+		pj_ks(dpj->pj, "name", v);
 		if (opt & RZ_DBG_SIGNAL_CONT) {
-			rz_cons_strcat("\"cont\"");
+			pj_ks(dpj->pj, "option", "cont");
 		} else if (opt & RZ_DBG_SIGNAL_SKIP) {
-			rz_cons_strcat("\"skip\"");
+			pj_ks(dpj->pj, "option", "skip");
 		} else {
-			rz_cons_strcat("null");
+			pj_knull(dpj->pj, "option");
 		}
-		rz_cons_strcat("}");
+		pj_end(dpj->pj);
 	}
 	return true;
 }
 
-RZ_API void rz_debug_signal_list(RzDebug *dbg, int mode) {
+RZ_API void rz_debug_signal_list(RzDebug *dbg, RzOutputMode mode) {
 	dbg->_mode = mode;
 	switch (mode) {
-	case 0:
-	case 1:
-		sdb_foreach(DB, siglistcb, dbg);
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = pj_new();
+		if (!pj) {
+			break;
+		}
+		struct debug_pj dpj = { dbg, pj };
+		pj_a(pj);
+		sdb_foreach(DB, siglistjsoncb, &dpj);
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
 		break;
-	case 2:
-		rz_cons_strcat("[");
-		sdb_foreach(DB, siglistjsoncb, dbg);
-		rz_cons_strcat("]");
-		rz_cons_newline();
+	}
+	case RZ_OUTPUT_MODE_STANDARD:
+	default:
+		sdb_foreach(DB, siglistcb, dbg);
 		break;
 	}
 	dbg->_mode = 0;

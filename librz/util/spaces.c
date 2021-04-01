@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2019 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_util/rz_spaces.h"

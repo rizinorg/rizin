@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2020 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_test.h"
@@ -8,13 +9,13 @@ static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[
 	if (!proc) {
 		return NULL;
 	}
-	bool timeout = !rz_subprocess_wait(proc, timeout_ms);
-	if (timeout) {
+	RzSubprocessWaitReason r = rz_subprocess_wait(proc, timeout_ms);
+	if (r == RZ_SUBPROCESS_TIMEDOUT) {
 		rz_subprocess_kill(proc);
 	}
 	RzSubprocessOutput *out = rz_subprocess_drain(proc);
 	if (out) {
-		out->timeout = timeout;
+		out->timeout = r == RZ_SUBPROCESS_TIMEDOUT;
 	}
 	rz_subprocess_free(proc);
 	return out;
@@ -280,7 +281,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 		rz_pvector_push(&args, test->disasm);
 		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
-		if (!rz_subprocess_wait(proc, config->timeout_ms)) {
+		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->as_timeout = true;
 			goto rip;
@@ -314,7 +315,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		rz_pvector_push(&args, "-d");
 		rz_pvector_push(&args, hex);
 		RzSubprocess *proc = rz_subprocess_start(config->rz_asm_cmd, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
-		if (!rz_subprocess_wait(proc, config->timeout_ms)) {
+		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->disas_timeout = true;
 			goto ship;

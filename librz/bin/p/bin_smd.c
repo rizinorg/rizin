@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
@@ -150,7 +151,7 @@ static RzList *symbols(RzBinFile *bf) {
 	const char *name = NULL;
 	int i;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	SMD_Header hdr;

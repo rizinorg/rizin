@@ -1,9 +1,12 @@
+// SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <rz_util.h>
 #include <rz_list.h>
 
-#include "yxml.h"
+#include <yxml.h>
 #include "rz_cf_dict.h"
 
 #define XMLBUFSIZE 4096

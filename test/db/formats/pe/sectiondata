@@ -12,15 +12,24 @@ CMDS=!rz-bin -S bins/pe/cm01.exe
 EXPECT=<<EOF
 [Sections]
 
-nth paddr         size vaddr        vsize perm name
----------------------------------------------------
-0   0x00000600   0x600 0x00401000  0x1000 -r-x CODE
-1   0x00000c00   0x200 0x00402000  0x1000 -rw- DATA
-2   0x00000e00   0x800 0x00403000  0x1000 -rw- .idata
-3   0x00001600   0x200 0x00404000  0x1000 -r-- .edata
-4   0x00001800   0x200 0x00405000  0x1000 sr-- .reloc
-5   0x00001a00  0x1400 0x00406000  0x2000 sr-- .rsrc
+nth paddr         size vaddr        vsize perm name   flags
+-----------------------------------------------------------
+0   0x00000600   0x600 0x00401000  0x1000 -r-x CODE   CNT_CODE
+1   0x00000c00   0x200 0x00402000  0x1000 -rw- DATA   CNT_INITIALIZED_DATA
+2   0x00000e00   0x800 0x00403000  0x1000 -rw- .idata CNT_INITIALIZED_DATA
+3   0x00001600   0x200 0x00404000  0x1000 -r-- .edata CNT_INITIALIZED_DATA
+4   0x00001800   0x200 0x00405000  0x1000 sr-- .reloc CNT_INITIALIZED_DATA
+5   0x00001a00  0x1400 0x00406000  0x2000 sr-- .rsrc  CNT_INITIALIZED_DATA
 
+EOF
+RUN
+
+NAME=PE: corkami cm01.exe - sections json
+FILE=bins/pe/cm01.exe
+ARGS=-n
+CMDS=!rz-bin -jS bins/pe/cm01.exe
+EXPECT=<<EOF
+{"sections":[{"name":"CODE","size":1536,"vsize":4096,"perm":"-r-x","flags":["CNT_CODE"],"paddr":1536,"vaddr":4198400},{"name":"DATA","size":512,"vsize":4096,"perm":"-rw-","flags":["CNT_INITIALIZED_DATA"],"paddr":3072,"vaddr":4202496},{"name":".idata","size":2048,"vsize":4096,"perm":"-rw-","flags":["CNT_INITIALIZED_DATA"],"paddr":3584,"vaddr":4206592},{"name":".edata","size":512,"vsize":4096,"perm":"-r--","flags":["CNT_INITIALIZED_DATA"],"paddr":5632,"vaddr":4210688},{"name":".reloc","size":512,"vsize":4096,"perm":"sr--","flags":["CNT_INITIALIZED_DATA"],"paddr":6144,"vaddr":4214784},{"name":".rsrc","size":5120,"vsize":8192,"perm":"sr--","flags":["CNT_INITIALIZED_DATA"],"paddr":6656,"vaddr":4218880}]}
 EOF
 RUN
 

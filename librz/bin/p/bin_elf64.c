@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #define RZ_BIN_ELF64 1
@@ -148,13 +150,14 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
-	.dbginfo = &rz_bin_dbginfo_elf64,
 	.create = &create,
 	.write = &rz_bin_write_elf64,
 	.get_vaddr = &get_elf_vaddr64,
 	.file_type = &get_file_type,
 	.regstate = &regstate,
 	.maps = &maps,
+	.section_type_to_string = &Elf_(section_type_to_string),
+	.section_flag_to_rzlist = &Elf_(section_flag_to_rzlist),
 };
 
 #ifndef RZ_PLUGIN_INCORE

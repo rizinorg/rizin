@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 1995 Tatu Ylonen <ylo@cs.hut.fi>
+// SPDX-FileCopyrightText: 2000, 2001 Markus Friedl
+// SPDX-License-Identifier: BSD-2-Clause
+
 /*
  * This code is originally taken from OpenSSH:
  * http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.bin/ssh/key.c?rev=1.75&content-type=text/x-cvsweb-markup

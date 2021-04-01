@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stddef.h>
@@ -99,6 +100,18 @@ static const char *help_msg_fz[] = {
 	" fz.", "", "show around flagzone context",
 	" fz:", "", "show what's in scr.flagzone for visual",
 	" fz*", "", "dump into rizin commands, for projects",
+	NULL
+};
+
+static const char *help_msg_ft[] = {
+	"Usage: ft", "[?ln] [k] [v ...]", " # Flag tags",
+	"ft", " tag strcpy strlen ...", "set words for the 'string' tag",
+	"ft", " tag", "get offsets of all matching flags",
+	"ft", "", "list all tags",
+	"ftn", " tag", "get matching flagnames fot given tag",
+	"ftw", "", "flag tags within this file",
+	"ftj", "", "list all flagtags in JSON format",
+	"ft*", "", "list all flagtags in rizin commands",
 	NULL
 };
 
@@ -262,18 +275,18 @@ static void __flag_graph(RzCore *core, const char *input, int mode) {
 	rz_list_free(flags);
 }
 
-static void spaces_list(RzSpaces *sp, int mode) {
+static void spaces_list(RzSpaces *sp, RzOutputMode mode) {
 	RzSpaceIter it;
 	RzSpace *s;
 	const RzSpace *cur = rz_spaces_current(sp);
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		pj_a(pj);
 	}
 	rz_spaces_foreach(sp, it, s) {
 		int count = rz_spaces_count(sp, s->name);
-		if (mode == 'j') {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(pj);
 			pj_ks(pj, "name", s->name);
 			pj_ki(pj, "count", count);
@@ -288,13 +301,65 @@ static void spaces_list(RzSpaces *sp, int mode) {
 				s->name);
 		}
 	}
-	if (mode == '*' && rz_spaces_current(sp)) {
+	if (mode == RZ_OUTPUT_MODE_RIZIN && rz_spaces_current(sp)) {
 		rz_cons_printf("%s %s # current\n", sp->name, rz_spaces_current_name(sp));
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_printf("%s\n", pj_string(pj));
 		pj_free(pj);
+	}
+}
+
+RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzOutputMode mode) {
+	RzFlagItem *f = rz_flag_get_at(core->flags, addr, !strict_offset);
+	if (f) {
+		if (f->offset != addr) {
+			if (mode == RZ_OUTPUT_MODE_JSON) {
+				PJ *pj = pj_new();
+				pj_o(pj);
+				pj_kn(pj, "offset", f->offset);
+				pj_ks(pj, "name", f->name);
+				// Print flag's real name if defined
+				if (f->realname) {
+					pj_ks(pj, "realname", f->realname);
+				}
+				pj_end(pj);
+				rz_cons_println(pj_string(pj));
+				if (pj) {
+					pj_free(pj);
+				}
+			} else {
+				// Print realname if exists and asm.flags.real is enabled
+				if (core->flags->realnames && f->realname) {
+					rz_cons_printf("%s + %d\n", f->realname,
+						(int)(addr - f->offset));
+				} else {
+					rz_cons_printf("%s + %d\n", f->name,
+						(int)(addr - f->offset));
+				}
+			}
+		} else {
+			if (mode == RZ_OUTPUT_MODE_JSON) {
+				PJ *pj = pj_new();
+				pj_o(pj);
+				pj_ks(pj, "name", f->name);
+				// Print flag's real name if defined
+				if (f->realname) {
+					pj_ks(pj, "realname", f->realname);
+				}
+				pj_end(pj);
+				rz_cons_println(pj_string(pj));
+				pj_free(pj);
+			} else {
+				// Print realname if exists and asm.flags.real is enabled
+				if (core->flags->realnames && f->realname) {
+					rz_cons_println(f->realname);
+				} else {
+					rz_cons_println(f->name);
+				}
+			}
+		}
 	}
 }
 
@@ -470,14 +535,7 @@ static void cmd_flag_tags(RzCore *core, const char *input) {
 		return;
 	}
 	if (mode == '?') {
-		eprintf("Usage: ft[?ln] [k] [v ...]\n");
-		eprintf(" ft tag strcpy strlen ... # set words for the 'string' tag\n");
-		eprintf(" ft tag                   # get offsets of all matching flags\n");
-		eprintf(" ft                       # list all tags\n");
-		eprintf(" ftn tag                  # get matching flagnames fot given tag\n");
-		eprintf(" ftw                      # flag tags within this file\n");
-		eprintf(" ftj                      # list all flagtags in JSON format\n");
-		eprintf(" ft*                      # list all flagtags in rizin commands\n");
+		rz_core_cmd_help(core, help_msg_ft);
 		free(inp);
 		return;
 	}
@@ -493,7 +551,7 @@ static void cmd_flag_tags(RzCore *core, const char *input) {
 		free(inp);
 		return;
 	}
-	if (mode == '*') {
+	if (mode == '*') { // "ft*"
 		RzListIter *iter;
 		const char *tag;
 		RzList *list = rz_flag_tags_list(core->flags, NULL);
@@ -1201,13 +1259,17 @@ rep:
 			}
 		} break;
 		case 'j':
-		case '\0':
-		case '*':
-		case 'q':
-			spaces_list(&core->flags->spaces, input[1]);
+			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_JSON);
 			break;
+		case '*':
+			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_RIZIN);
+			break;
+		case 'q':
+			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_QUIET);
+			break;
+		case '\0':
 		default:
-			spaces_list(&core->flags->spaces, 0);
+			spaces_list(&core->flags->spaces, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		}
 		break;
@@ -1432,7 +1494,6 @@ rep:
 	{
 		ut64 addr = core->offset;
 		char *arg = NULL;
-		RzFlagItem *f = NULL;
 		bool strict_offset = false;
 		switch (input[1]) {
 		case '?':
@@ -1547,56 +1608,10 @@ rep:
 			}
 			break;
 		}
-		f = rz_flag_get_at(core->flags, addr, !strict_offset);
-		if (f) {
-			if (f->offset != addr) {
-				// if input contains 'j' print json
-				if (strchr(input, 'j')) {
-					PJ *pj = pj_new();
-					pj_o(pj);
-					pj_kn(pj, "offset", f->offset);
-					pj_ks(pj, "name", f->name);
-					// Print flag's real name if defined
-					if (f->realname) {
-						pj_ks(pj, "realname", f->realname);
-					}
-					pj_end(pj);
-					rz_cons_println(pj_string(pj));
-					if (pj) {
-						pj_free(pj);
-					}
-				} else {
-					// Print realname if exists and asm.flags.real is enabled
-					if (core->flags->realnames && f->realname) {
-						rz_cons_printf("%s + %d\n", f->realname,
-							(int)(addr - f->offset));
-					} else {
-						rz_cons_printf("%s + %d\n", f->name,
-							(int)(addr - f->offset));
-					}
-				}
-			} else {
-				if (strchr(input, 'j')) {
-					PJ *pj = pj_new();
-					pj_o(pj);
-					pj_ks(pj, "name", f->name);
-					// Print flag's real name if defined
-					if (f->realname) {
-						pj_ks(pj, "realname", f->realname);
-					}
-					pj_end(pj);
-					rz_cons_println(pj_string(pj));
-					pj_free(pj);
-				} else {
-					// Print realname if exists and asm.flags.real is enabled
-					if (core->flags->realnames && f->realname) {
-						rz_cons_println(f->realname);
-					} else {
-						rz_cons_println(f->name);
-					}
-				}
-			}
-		}
+		RzOutputMode mode = strchr(input, 'j')
+			? RZ_OUTPUT_MODE_JSON
+			: RZ_OUTPUT_MODE_STANDARD;
+		rz_core_flag_describe(core, addr, strict_offset, mode);
 	} break;
 	case '?':
 	default:

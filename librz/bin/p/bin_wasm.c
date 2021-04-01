@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2017-2019 - pancake, cgvwzq */
+// SPDX-FileCopyrightText: 2017-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017-2021 cgvwzq
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 
@@ -127,7 +129,7 @@ static RzList *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf((RzListFree)free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	if (!(codes = rz_bin_wasm_get_codes(bin))) {
@@ -232,13 +234,13 @@ static RzList *imports(RzBinFile *bf) {
 	RzBinWasmObj *bin = NULL;
 	RzList *imports = NULL;
 	RzBinImport *ptr = NULL;
-	RzList *ret = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
 	if (!(imports = rz_bin_wasm_get_imports(bin))) {

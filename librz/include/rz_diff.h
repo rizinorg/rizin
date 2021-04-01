@@ -67,7 +67,7 @@ RZ_API char *rz_diff_buffers_to_string(RzDiff *d, const ut8 *a, int la, const ut
 RZ_API int rz_diff_set_callback(RzDiff *d, RzDiffCallback callback, void *user);
 RZ_API bool rz_diff_buffers_distance(RzDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
 RZ_API bool rz_diff_buffers_distance_myers(RzDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
-RZ_API bool rz_diff_buffers_distance_levenstein(RzDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
+RZ_API bool rz_diff_buffers_distance_levenshtein(RzDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
 RZ_API char *rz_diff_buffers_unified(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
 /* static method !??! */
 RZ_API int rz_diff_lines(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb);

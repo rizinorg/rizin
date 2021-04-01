@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_debug
+commands:
+  - name: dc
+    cname: debug_continue_oldhandler
+    summary: Continue execution
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: ds
+    summary: Debug step commands
+    cname: cmd_debug_step
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: dsu
+        summary: Debug step until commands
+        subcommands:
+          - name: dsu
+            cname: cmd_debug_step_until
+            summary: Step until <addr>
+            args:
+            - name: addr
+              type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: dsui
+            cname: cmd_debug_step_until_instr
+            summary: Step until an instruction that matches <instr>
+            args:
+            - name: instr
+              type: RZ_CMD_ARG_TYPE_STRING
+          - name: dsuir
+            cname: cmd_debug_step_until_instr_regex
+            summary: Step until an instruction that matches <regex>
+            args:
+            - name: regex
+              type: RZ_CMD_ARG_TYPE_STRING
+          - name: dsuo
+            cname: cmd_debug_step_until_optype
+            summary: Step until an instruction matches one of the <optype>s
+            args:
+            - name: optype
+              type: RZ_CMD_ARG_TYPE_STRING
+              flags: RZ_CMD_ARG_FLAG_ARRAY
+          - name: dsue
+            cname: cmd_debug_step_until_esil
+            summary: Step until <esil> expression matches
+            args:
+            - name: esil
+              type: RZ_CMD_ARG_TYPE_STRING
+          - name: dsuf
+            cname: cmd_debug_step_until_flag
+            summary: Step until pc == <flag> matching name
+            args:
+            - name: flag
+              type: RZ_CMD_ARG_TYPE_FLAG

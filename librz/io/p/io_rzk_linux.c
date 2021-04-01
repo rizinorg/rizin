@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2016 Rakholiya Jenish
+// SPDX-FileCopyrightText: 2016 NighterMan <jpenalbae@gmail.com>
+// SPDX-FileCopyrightText: 2017-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef __GNU__
 
 #include "io_rzk_linux.h"
@@ -574,7 +579,7 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 				memcpy(databuf, buf, strlen(buf) + 1);
 				len = rz_str_unescape((char *)databuf);
 			}
-			ret = WriteMemory(io, iodesc, ioctl_n, pid, addr, (const ut8 *)databuf, len);
+			WriteMemory(io, iodesc, ioctl_n, pid, addr, (const ut8 *)databuf, len);
 		} else {
 			eprintf("Failed to allocate buffer.\n");
 		}

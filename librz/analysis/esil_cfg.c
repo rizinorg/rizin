@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2019 condret <condr3t@protonmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_analysis.h>
@@ -229,7 +232,6 @@ void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
 		rz_graph_add_edge(gen->cfg->g, gen->cur, leaving_node);
 		rz_rbtree_cont_insert(gen->blocks, leaving_node, _graphnode_esilbb_insert_cmp, NULL);
 		gen->cur = leaving_node;
-		cur_bb = leaving_bb;
 	}
 	rz_graph_add_edge(gen->cfg->g, cookie->is_else ? cookie->if_block : cookie->else_block, gen->cur);
 	free(cookie);

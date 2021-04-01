@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014-2017 The Lemon Man <thatlemon@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef _TRANSPORT_H_
 #define _TRANSPORT_H_
 

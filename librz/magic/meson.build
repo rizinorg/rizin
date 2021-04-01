@@ -10,7 +10,7 @@ rz_magic_sources = [
 ]
 
 rz_magic_deps = [rz_util_dep]
-if use_syslib_magic
+if sys_magic.found()
   message('Use system-provided magic library')
   rz_magic_deps += [sys_magic]
 else

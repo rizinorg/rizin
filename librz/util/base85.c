@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2011 Remy Oukaour
+// SPDX-FileCopyrightText: 2017 pancake
+// SPDX-License-Identifier: MIT
+
 /*
  * ascii85 - Ascii85 encode/decode data and print to standard output
  *

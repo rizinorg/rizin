@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2018 - pancake */
+// SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -6,6 +7,7 @@
 #include <rz_bin.h>
 #include <rz_core.h>
 #include <rz_io.h>
+#include <ht_pu.h>
 // #include "../format/mach0/mach0_defines.h"
 #define RZ_BIN_MACH064 1
 #include "../format/mach0/mach0.h"
@@ -260,7 +262,7 @@ static ut64 rebase_infos_get_slide(RDyldCache *cache) {
 	return 0;
 }
 
-static void rz_dyld_locsym_entries_by_offset(RDyldCache *cache, RzList *symbols, HtPP *hash, ut64 bin_header_offset) {
+static void rz_dyld_locsym_entries_by_offset(RDyldCache *cache, RzList *symbols, SetU *hash, ut64 bin_header_offset) {
 	RDyldLocSym *locsym = cache->locsym;
 	if (!locsym->entries) {
 		return;
@@ -282,13 +284,10 @@ static void rz_dyld_locsym_entries_by_offset(RDyldCache *cache, RzList *symbols,
 		ut32 j;
 		for (j = 0; j != entry->nlistCount; j++) {
 			struct MACH0_(nlist) *nlist = &locsym->nlists[j + entry->nlistStartIndex];
-			bool found;
-			const char *key = sdb_fmt("%" PFMT64x, (ut64)nlist->n_value);
-			ht_pp_find(hash, key, &found);
-			if (found) {
+			if (set_u_contains(hash, (ut64)nlist->n_value)) {
 				continue;
 			}
-			ht_pp_insert(hash, key, "1");
+			set_u_add(hash, (ut64)nlist->n_value);
 			if (nlist->n_strx >= locsym->strings_size) {
 				continue;
 			}
@@ -914,26 +913,24 @@ static int string_contains(const void *a, const void *b) {
 	return !strstr((const char *)a, (const char *)b);
 }
 
-static HtPP *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
-	HtPP *path_to_idx = ht_pp_new0();
+static HtPU *create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
+	HtPU *path_to_idx = ht_pu_new0();
 	if (!path_to_idx) {
 		return NULL;
 	}
-	size_t i;
-	for (i = 0; i != hdr->imagesCount; i++) {
+	for (size_t i = 0; i != hdr->imagesCount; i++) {
 		char file[256];
 		if (rz_buf_read_at(cache_buf, img[i].pathFileOffset, (ut8 *)&file, sizeof(file)) != sizeof(file)) {
 			continue;
 		}
 		file[255] = 0;
-		const char *key = sdb_fmt("%s", file);
-		ht_pp_insert(path_to_idx, key, (void *)i);
+		ht_pu_insert(path_to_idx, file, (ut64)i);
 	}
 
 	return path_to_idx;
 }
 
-static void carve_deps_at_address(RzBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr, cache_map_t *maps, HtPP *path_to_idx, ut64 address, int *deps) {
+static void carve_deps_at_address(RzBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr, cache_map_t *maps, HtPU *path_to_idx, ut64 address, int *deps) {
 	ut64 pa = va2pa(address, hdr, maps, cache_buf, 0, NULL, NULL);
 	if (pa == UT64_MAX) {
 		return;
@@ -965,7 +962,7 @@ static void carve_deps_at_address(RzBuffer *cache_buf, cache_img_t *img, cache_h
 				break;
 			}
 			const char *key = (const char *)cursor + 24;
-			size_t dep_index = (size_t)ht_pp_find(path_to_idx, key, &found);
+			size_t dep_index = (size_t)ht_pu_find(path_to_idx, key, &found);
 			if (!found || dep_index >= hdr->imagesCount) {
 				eprintf("WARNING: alien dep '%s'\n", key);
 				continue;
@@ -1010,7 +1007,7 @@ static RzList *create_cache_bins(RzBinFile *bf, RzBuffer *cache_buf, cache_hdr_t
 			goto error;
 		}
 
-		HtPP *path_to_idx = NULL;
+		HtPU *path_to_idx = NULL;
 		if (accel) {
 			depArray = RZ_NEWS0(ut16, accel->depListCount);
 			if (!depArray) {
@@ -1063,7 +1060,7 @@ static RzList *create_cache_bins(RzBinFile *bf, RzBuffer *cache_buf, cache_hdr_t
 			}
 		}
 
-		ht_pp_free(path_to_idx);
+		ht_pu_free(path_to_idx);
 		RZ_FREE(depArray);
 		RZ_FREE(extras);
 		RZ_FREE(target_libs);
@@ -1584,7 +1581,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0x180000000;
 }
 
-void symbols_from_bin(RzList *ret, RzBinFile *bf, RDyldBinImage *bin, HtPP *hash) {
+void symbols_from_bin(RzList *ret, RzBinFile *bf, RDyldBinImage *bin, SetU *hash) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0(bf, bin);
 	if (!mach0) {
 		return;
@@ -1616,8 +1613,7 @@ void symbols_from_bin(RzList *ret, RzBinFile *bf, RDyldBinImage *bin, HtPP *hash
 		sym->size = symbols[i].size;
 		sym->ordinal = i;
 
-		const char *key = sdb_fmt("%" PFMT64x, sym->vaddr);
-		ht_pp_insert(hash, key, "1");
+		set_u_add(hash, sym->vaddr);
 		rz_list_append(ret, sym);
 	}
 	MACH0_(mach0_free)
@@ -1736,7 +1732,7 @@ static RzList *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1744,14 +1740,14 @@ static RzList *symbols(RzBinFile *bf) {
 	RzListIter *iter;
 	RDyldBinImage *bin;
 	rz_list_foreach (cache->bins, iter, bin) {
-		HtPP *hash = ht_pp_new0();
+		SetU *hash = set_u_new();
 		if (!hash) {
 			rz_list_free(ret);
 			return NULL;
 		}
 		symbols_from_bin(ret, bf, bin, hash);
 		rz_dyld_locsym_entries_by_offset(cache, ret, hash, bin->header_at);
-		ht_pp_free(hash);
+		set_u_free(hash);
 	}
 
 	ut64 slide = rebase_infos_get_slide(cache);

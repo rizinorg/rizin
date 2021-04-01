@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2020 karliss <karlis3p70l1ij@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_core.h>
 #include <rz_util/rz_graph_drawable.h>
 

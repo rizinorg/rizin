@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #if __i386__ || __x86_64__
 static bool xnu_thread_get_gpr(RzDebug *dbg, xnu_thread_t *thread);
 static xnu_thread_t *get_xnu_thread(RzDebug *dbg, int tid);

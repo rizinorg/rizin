@@ -1,0 +1,80 @@
+#ifndef RZ_CONFIGURE_H
+#define RZ_CONFIGURE_H
+
+#include "rz_version.h"
+
+#define RZ_CHECKS_LEVEL             @RZ_CHECKS_LEVEL@
+#define DEBUGGER                    @DEBUGGER@
+#define HAVE_DECL_ADDR_NO_RANDOMIZE @HAVE_DECL_ADDR_NO_RANDOMIZE@
+#define HAVE_ARC4RANDOM_UNIFORM     @HAVE_ARC4RANDOM_UNIFORM@
+#define HAVE_EXPLICIT_BZERO         @HAVE_EXPLICIT_BZERO@
+#define HAVE_EXPLICIT_MEMSET        @HAVE_EXPLICIT_MEMSET@
+#define HAVE_CLOCK_NANOSLEEP        @HAVE_CLOCK_NANOSLEEP@
+#define HAVE_SIGACTION              @HAVE_SIGACTION@
+#define HAVE_PIPE                   @HAVE_PIPE@
+#define HAVE_EXECV                  @HAVE_EXECV@
+#define HAVE_EXECVE                 @HAVE_EXECVE@
+#define HAVE_EXECVP                 @HAVE_EXECVP@
+#define HAVE_EXECL                  @HAVE_EXECL@
+#define HAVE_SYSTEM                 @HAVE_SYSTEM@
+#define HAVE_PIPE2                  @HAVE_PIPE2@
+#define HAVE_LIB_MAGIC              @HAVE_LIB_MAGIC@
+#define USE_LIB_MAGIC               @USE_LIB_MAGIC@
+#define HAVE_LIB_XXHASH             @HAVE_LIB_XXHASH@
+#define USE_LIB_XXHASH              @USE_LIB_XXHASH@
+#define HAVE_LIB_SSL                @HAVE_OPENSSL@
+#define HAVE_LIBUV                  @HAVE_LIBUV@
+#define HAVE_PTRACE                 @HAVE_PTRACE@
+#define USE_PTRACE_WRAP             @USE_PTRACE_WRAP@
+#define HAVE_FORK                   @HAVE_FORK@
+#define WANT_DYLINK                 @WANT_DYLINK@
+#define WITH_GPL                    @WITH_GPL@
+#define HAVE_JEMALLOC               @HAVE_JEMALLOC@
+
+#define RZ_IS_PORTABLE @IS_PORTABLE@
+
+#define RZ_PREFIX  "@PREFIX@"
+#define RZ_LIBDIR  "@LIBDIR@"
+#define RZ_INCDIR  "@INCLUDEDIR@"
+#define RZ_DATDIR  "@DATADIR@"
+#define RZ_WWWROOT "@WWWROOT@"
+
+#define RZ_PLUGINS   "@PLUGINS@"
+#define RZ_EXTRAS    "@EXTRAS@"
+#define RZ_BINDINGS  "@BINDINGS@"
+#define RZ_DATDIR_RZ "@DATADIR_RZ@"
+#define RZ_SDB       "@SDB@"
+#define RZ_ZIGNS     "@ZIGNS@"
+#define RZ_THEMES    "@THEMES@"
+#define RZ_FORTUNES  "@FORTUNES@"
+#define RZ_FLAGS     "@FLAGS@"
+#define RZ_HUD       "@HUD@"
+
+#define RZ_SDB_FCNSIGN RZ_JOIN_2_PATHS(RZ_SDB, "fcnsign")
+#define RZ_SDB_OPCODES RZ_JOIN_2_PATHS(RZ_SDB, "opcodes")
+#define RZ_SDB_MAGIC   RZ_JOIN_2_PATHS(RZ_SDB, "magic")
+#define RZ_SDB_FORMAT  RZ_JOIN_2_PATHS(RZ_SDB, "format")
+
+#define RZ_HOME_CONFIGDIR RZ_JOIN_2_PATHS(".config", "rizin")
+#define RZ_HOME_DATADIR   RZ_JOIN_3_PATHS(".local", "share", "rizin")
+#define RZ_HOME_CACHEDIR  RZ_JOIN_2_PATHS(".cache", "rizin")
+
+#define RZ_HOME_THEMES      RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "cons")
+#define RZ_HOME_PLUGINS     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "plugins")
+#define RZ_HOME_ZIGNS       RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "zigns")
+#define RZ_HOME_PDB         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "pdb")
+#define RZ_HOME_PROJECTS    RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "projects")
+#define RZ_HOME_WWWROOT     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "www")
+#define RZ_HOME_SDB_FCNSIGN RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "fcnsign")
+#define RZ_HOME_SDB_FORMAT  RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "format")
+#define RZ_HOME_HUD         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "hud")
+#define RZ_HOME_BINRC       RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "rc.d")
+#define RZ_HOME_BIN         RZ_JOIN_3_PATHS(RZ_HOME_DATADIR, "prefix", "bin")
+
+#define RZ_HOME_HISTORY RZ_JOIN_2_PATHS(RZ_HOME_CACHEDIR, "history")
+
+#define RZ_HOME_RC     RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc")
+#define RZ_HOME_RC_DIR RZ_JOIN_2_PATHS(RZ_HOME_CONFIGDIR, "rizinrc.d")
+#define RZ_GLOBAL_RC   RZ_JOIN_2_PATHS(RZ_DATDIR_RZ, "rizinrc")
+
+#endif

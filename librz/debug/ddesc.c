@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2010-2013 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // XXX: All this stuff must be linked to the code injection api

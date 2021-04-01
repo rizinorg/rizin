@@ -1,4 +1,5 @@
-/* License: MIT Copyright (C) 2007-2018 - pancake@nopcode.org */
+// SPDX-FileCopyrightText: 2007-2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
 
 #if 0
 
@@ -25,7 +26,7 @@ static int hamdist(int x, int y) {
 
 RZ_API ut8 rz_hash_hamdist(const ut8 *buf, int len) {
 	int i, x, y;
-	x = y = i = 0;
+	x = 0;
 	for (i = 0; i < len; i++) {
 		y = buf[i];
 		x = hamdist(x, y);

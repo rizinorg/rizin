@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2004  Philippe Biondi <phil@secdev.org>
+// SPDX-License-Identifier: LGPL-2.1-only
+
 /*
  * sfsyscall.h --- SFLib syscall macros for OpenBSD/i386 
  * see http://www.secdev.org/projects/shellforge.html for more informations

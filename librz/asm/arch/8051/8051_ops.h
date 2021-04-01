@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2015-2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2015-2016 condret <condr3t@protonmail.com>
+// SPDX-FileCopyrightText: 2015-2016 riq <ricardoquesada@gmail.com>
+// SPDX-FileCopyrightText: 2015-2016 qnix <qnix@0x80.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _8051_OPS_H

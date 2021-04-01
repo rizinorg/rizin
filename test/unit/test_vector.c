@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 Florian Märkl <info@florianmaerkl.de>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include <rz_vector.h>
 #include "minunit.h"
@@ -600,6 +603,17 @@ static bool test_vector_shrink(void) {
 	mu_end;
 }
 
+static bool test_vector_flush(void) {
+	RzVector v;
+	init_test_vector(&v, 5, 5, NULL, NULL);
+	ut32 *r = rz_vector_flush(&v);
+	rz_vector_fini(&v);
+	for (size_t i = 0; i < 5; i++) {
+		mu_assert_eq(r[i], i, "flushed contents");
+	}
+	mu_end;
+}
+
 static bool test_vector_foreach(void) {
 	RzVector v;
 	init_test_vector(&v, 5, 5, NULL, NULL);
@@ -1115,6 +1129,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_push_front);
 	mu_run_test(test_vector_reserve);
 	mu_run_test(test_vector_shrink);
+	mu_run_test(test_vector_flush);
 	mu_run_test(test_vector_foreach);
 	mu_run_test(test_vector_lower_bound);
 

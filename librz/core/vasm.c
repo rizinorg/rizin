@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -85,13 +86,7 @@ RZ_API void rz_core_visual_asm(RzCore *core, ut64 off) {
 				eprintf("ERROR: Cannot write in here, check map permissions or reopen the file with oo+\n");
 				rz_cons_any_key(NULL);
 			}
-			// rz_core_cmdf (core, "wx %s @ 0x%"PFMT64x, cva.acode->buf_hex, off);
 		}
-#if 0
-	} else if (!cva.acode || cva.acode->len == 0) {
-		eprintf ("ERROR: Cannot assemble those instructions\n");
-//		rz_cons_any_key (NULL);
-#endif
 	}
 	rz_asm_code_free(cva.acode);
 }

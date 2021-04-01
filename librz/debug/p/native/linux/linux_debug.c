@@ -1,10 +1,10 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_userconf.h>
 
 #if DEBUGGER
 #include <rz_debug.h>
-#include <rz_asm.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
 #include <rz_analysis.h>
@@ -475,7 +475,7 @@ static void linux_dbg_wait_break(RzDebug *dbg) {
 
 RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
-	int tid;
+	int tid = 0;
 	int status, flags = __WALL;
 	int ret = -1;
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2003-2018 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /* Demangler for g++ V3 ABI.
    Copyright (C) 2003-2018 Free Software Foundation, Inc.
    Written by Ian Lance Taylor <ian@wasabisystems.com>.
@@ -4687,6 +4690,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	struct d_print_mod adpm[4];
 	unsigned int i;
 	struct d_print_template dpt;
+	dpt.next = NULL;
 
 	/* Pass the name down to the type so that it can be printed in
 	   the right place for the type.  We also have to pass down

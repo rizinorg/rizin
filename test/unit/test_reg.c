@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 Khairulmizam Samsudin <xource@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_reg.h>
 #include "minunit.h"
 
@@ -169,7 +172,7 @@ bool test_rz_reg_get(void) {
 
 bool test_rz_reg_get_list(void) {
 	RzReg *reg;
-	RzList *l;
+	const RzList *l;
 	int mask;
 
 	reg = rz_reg_new();

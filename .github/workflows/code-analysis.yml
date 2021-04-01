@@ -1,0 +1,125 @@
+name: "Code scanning"
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      tools: ${{ steps.filter.outputs.changes }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          CodeQL-cpp:
+            - '**.c'
+            - '**.h'
+            - '**.in'
+            - '**.inc'
+            - '**/meson.build'
+            - 'shlr/rizin-shell-parser/**'
+            - 'subprojects/**'
+            - '.github/workflows/code-analysis.yml'
+          CodeQL-javascript:
+            - '**.js'
+            - '.github/workflows/code-analysis.yml'
+          CodeQL-python:
+            - '**.py'
+            - '.github/workflows/code-analysis.yml'
+
+  build:
+    needs: changes
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJson(needs.changes.outputs.tools) }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install meson and ninja
+      if: matrix.name == 'CodeQL-cpp' || matrix.name == 'Clang'
+      run: |
+        sudo apt --assume-yes install python3-wheel python3-setuptools
+        sudo pip3 install meson ninja PyYAML
+
+    - name: Install microsoft/sarif-multitool
+      if: matrix.name == 'Clang'
+      run: |
+        sudo apt --assume-yes install npm
+        npm install @microsoft/sarif-multitool
+
+    - name: Initialize CodeQL - cpp
+      if: matrix.name == 'CodeQL-cpp'
+      uses: github/codeql-action/init@v1
+      with:
+        languages: cpp
+        setup-python-dependencies: false
+
+    - name: Initialize CodeQL - javascript
+      if: matrix.name == 'CodeQL-javascript'
+      uses: github/codeql-action/init@v1
+      with:
+        languages: javascript
+        setup-python-dependencies: false
+
+    - name: Initialize CodeQL - python
+      if: matrix.name == 'CodeQL-python'
+      uses: github/codeql-action/init@v1
+      with:
+        languages: python
+        setup-python-dependencies: false
+
+    - name: Autobuild CodeQL
+      if: matrix.name == 'CodeQL-cpp'
+      uses: github/codeql-action/autobuild@v1
+
+    - name: Perform CodeQL Analysis
+      if: startsWith( matrix.name, 'CodeQL' )
+      uses: github/codeql-action/analyze@v1
+      with:
+        output: "reports"
+        upload: false
+
+    - name: Move file to merged.sarif (CodeQL)
+      if: startsWith( matrix.name, 'CodeQL' )
+      run: mv reports/*.sarif merged.sarif
+
+    - name: Install clang-tools-11 (Clang)
+      if: matrix.name == 'Clang'
+      run: |
+        sudo apt --assume-yes install wget
+        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+        sudo apt --assume-yes install clang-tools-11
+
+    - name: Analysis (Clang)
+      if: matrix.name == 'Clang'
+      run: |
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        scan-build-11 -v -sarif -o reports "meson build && meson compile -C build"
+
+    - name: Merge all files (Clang)
+      if: matrix.name == 'Clang'
+      run: npx @microsoft/sarif-multitool merge reports/**/*.sarif
+
+    - name: Exclude external lib
+      run: |
+        jq 'del(.runs[].results[].locations[] | select(.physicalLocation.artifactLocation.uri | contains("subprojects/")))' merged.sarif > tmp0.sarif
+        jq 'del(.runs[].results[] | select(.locations | length == 0))' tmp0.sarif > filtered.sarif
+
+    - name: Treat warnings as errors
+      run: |
+        jq '.runs[].tool.driver.rules[] |= . + {"defaultConfiguration": {"level": "error"}}' filtered.sarif > final.sarif
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v1
+      with:
+        sarif_file: final.sarif

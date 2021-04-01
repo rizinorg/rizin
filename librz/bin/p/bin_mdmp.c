@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2016-2018 - Davis, Alex Kornitzer */
+// SPDX-FileCopyrightText: 2016-2018 Davis
+// SPDX-FileCopyrightText: 2016-2018 Alex Kornitzer <alex.kornitzer@countercept.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -378,9 +380,9 @@ static RzList *relocs(RzBinFile *bf) {
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzListIter *it;
-	RzList *ret;
 
-	if (!(ret = rz_list_new())) {
+	RzList *ret = rz_list_newf(free);
+	if (!ret) {
 		return NULL;
 	}
 
@@ -404,10 +406,11 @@ static RzList *imports(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
-	RzList *ret = NULL, *list;
+	RzList *list;
 	RzListIter *it;
 
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
 
@@ -437,7 +440,7 @@ static RzList *symbols(RzBinFile *bf) {
 	RzList *ret, *list;
 	RzListIter *it;
 
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 

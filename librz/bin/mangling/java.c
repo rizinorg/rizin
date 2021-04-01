@@ -1,9 +1,12 @@
+// SPDX-FileCopyrightText: 2011-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 
 // http://code.google.com/p/smali/wiki/TypesMethodsAndFields
 RZ_API char *rz_bin_demangle_java(const char *str) {
+	rz_return_val_if_fail(str, NULL);
+
 	const char *w = NULL;
 	int is_array = 0;
 	const char *ptr;

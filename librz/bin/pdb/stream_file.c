@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 inisider <inisider@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "types.h"
 #include "stream_file.h"
 
@@ -45,9 +48,9 @@ static void stream_file_read_pages(RZ_STREAM_FILE *stream_file, int start_indx, 
 // size by default = -1
 ///////////////////////////////////////////////////////////////////////////////
 void stream_file_read(RZ_STREAM_FILE *stream_file, int size, char *res) {
-	int pn_start, off_start, pn_end, off_end;
+	size_t pn_start, off_start, pn_end, off_end;
 	if (size == -1) {
-		char *pdata = (char *)malloc(stream_file->pages_amount * stream_file->page_size);
+		char *pdata = (char *)malloc((size_t)stream_file->pages_amount * (size_t)stream_file->page_size);
 		if (pdata) {
 			GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
 			(void)off_end; // hack to remove unused warning

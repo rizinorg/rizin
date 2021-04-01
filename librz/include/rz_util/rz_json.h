@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2020 thestr4ng3r <info@florianmaerkl.de>
+// SPDX-FileCopyrightText: 2020 Yaroslav Stavnichiy <yarosla@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_JSON_H
@@ -16,7 +18,7 @@ extern "C" {
  *
  * rz_json does NOT format json, it only parses. To format json, see pj.h instead.
  * It operates in-place, which means the parsed string will be MODIFIED.
- * This means all string values in RJson point directly into the input string,
+ * This means all string values in RzJson point directly into the input string,
  * removing the need to copy them.
  *
  * It also supports both line and block style comments.
@@ -30,10 +32,10 @@ typedef enum rz_json_type_t {
 	RZ_JSON_INTEGER, // value can be found in the num.u_value/num.s_value fields
 	RZ_JSON_DOUBLE, // value can be found in the num.dbl_value field
 	RZ_JSON_BOOLEAN // value can be found in the num.u_value field
-} RJsonType;
+} RzJsonType;
 
 typedef struct rz_json_t {
-	RJsonType type; // type of json node, see above
+	RzJsonType type; // type of json node, see above
 	const char *key; // key of the property; for object's children only
 	union {
 		const char *str_value; // text value of STRING node
@@ -51,14 +53,14 @@ typedef struct rz_json_t {
 		} children;
 	};
 	struct rz_json_t *next; // points to next child
-} RJson;
+} RzJson;
 
-RZ_API RJson *rz_json_parse(char *text);
+RZ_API RzJson *rz_json_parse(char *text);
 
-RZ_API void rz_json_free(RJson *js);
+RZ_API void rz_json_free(RzJson *js);
 
-RZ_API const RJson *rz_json_get(const RJson *json, const char *key); // get object's property by key
-RZ_API const RJson *rz_json_item(const RJson *json, size_t idx); // get array element by index
+RZ_API const RzJson *rz_json_get(const RzJson *json, const char *key); // get object's property by key
+RZ_API const RzJson *rz_json_item(const RzJson *json, size_t idx); // get array element by index
 
 #ifdef __cplusplus
 }

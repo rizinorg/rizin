@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2017-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_types_base.h"
@@ -138,7 +139,7 @@ static int __close(RzIODesc *fd) {
 		return -1;
 	}
 	// XXX
-	rz_sys_cmdf("pkill rz_run");
+	rz_sys_cmdf("pkill rz-run");
 	return 0;
 }
 
@@ -243,7 +244,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		eprintf("pid : show current process id\n");
 	} else if (!strncmp(cmd, "dr8", 3)) {
 		struct winedbg_x86_32 r = regState();
-		ut8 *arena = (ut8 *)calloc(3, sizeof(struct winedbg_x86_32));
+		struct winedbg_x86_32 *arena = RZ_NEWS0(struct winedbg_x86_32, 3);
 		if (arena) {
 			rz_hex_bin2str((ut8 *)&r, sizeof(r), (char *)arena);
 			return (char *)arena;

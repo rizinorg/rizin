@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
@@ -364,7 +365,14 @@ static bool bin_strfilter(RzBin *bin, const char *str) {
 	return true;
 }
 
-RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, ut64 addr) {
+/**
+ * Filter the given string, respecting bin->strpurge, bin->strfilter,
+ * and if len >= 0, also bin->minstrlen and bin->maxstrlen.
+ */
+RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr) {
+	if (len >= 0 && (len < bin->minstrlen || (bin->maxstrlen > 0 && len > bin->maxstrlen))) {
+		return false;
+	}
 	if (rz_bin_strpurge(bin, str, addr) || !bin_strfilter(bin, str)) {
 		return false;
 	}

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 Project Nayuki
+// SPDX-License-Identifier: MIT
+
 /* 
  * QR Code generator library (C)
  * 

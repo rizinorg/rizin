@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2001-2004 Fabrice Bellard
+// SPDX-License-Identifier: LGPL-2.0-or-later
+
 /*
  *  TCC - Tiny C Compiler
  *
@@ -107,7 +110,7 @@ typedef long long int int64_t;
 #define MAX_ALIGN     8
 #define PTR_SIZE      4
 
-#if !defined(__HAIKU__)
+#if !defined(__HAIKU__) && !defined(__MSYS__)
 typedef uint64_t addr_t;
 #endif
 

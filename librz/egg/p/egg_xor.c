@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2016 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* based on @santitox patch */

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1995, 1997, 2000, 2007 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Random host-dependent support code.
    Copyright 1995, 1997, 2000, 2007 Free Software Foundation, Inc.
    Written by Ken Raeburn.

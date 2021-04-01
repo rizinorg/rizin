@@ -6,15 +6,26 @@ Thank you for taking the time to package Rizin!
 There are some things to consider when packaging Rizin for your distribution.
 We will look at each step below.
 
-Cloning Source
+Releases vs Git content
 --------------
 
-Rizin uses git submodules to track versions of dependencies. You can check out
-the Rizin source and all dependencies using
-`git clone --recursive https://github.com/rizinorg/rizin`.
+If you package a Rizin Release, you will find the tarball with all
+dependencies used by Rizin in the
+[Release page](https://github.com/rizinorg/rizin/releases) and you can go to
+the next step in this document.
 
-If you change branches run `git submodule update --init --recursive` to ensure
-you are tracking the correct versions of the submodules.
+If you want to package a particular git version, keep in mind that Rizin uses
+meson subprojects to track versions of dependencies. Subprojects are usually
+downloaded during the meson setup step, however if you can't download
+additional code while building the package for your distribution you can
+predownload everything with the following command:
+```
+$ git clone https://github.com/rizinorg/rizin
+$ cd rizin
+$ meson subprojects download
+```
+If you want to prepare a special tarball to use within your distribution,
+have a look at [`meson dist`](https://mesonbuild.com/Creating-releases.html).
 
 See [BUILDING.md][] for more details.
 
@@ -24,7 +35,18 @@ Building
 Rizin uses the `meson` build system. Command line flags passed to meson can
 change how Rizin is built.
 
-To define the base install location for Rizin use the `--prefix` flag when
+First, we suggest you use the options `-Dpackager_version=<package-version>`
+and `-Dpackager=<packager>` to help us track the version of Rizin users are
+using, because these options are used when you run `rizin -v`. In this way
+when a user reports a issue and he provides his `rizin -v` output, we know
+how Rizin was built. Below you can see an example of how rizin uses the
+additional information:
+```
+rizin 0.2.0-git @ linux-x86-64, package: 0.2.0-git (rizinorg)
+commit: 84d2892e7210dc3ced88ae006ba5a9502f4847c8, build: 2021-01-29__09:35:03
+```
+
+Then, to define the base install location for Rizin use the `--prefix` flag when
 invoking `meson`. For system installs it is common to use `/usr`. If in doubt
 check your distributions packaging guidelines.
 
@@ -41,15 +63,15 @@ Rizin uses the Capstone disassembly engine and supports versions 3, 4, and 5.
 By default we use a custom version of Capstone based on v4 and statically link
 it into the Rizin executables.  Some distributions might prefer that a system
 version of Capstone be dynamically linked at runtime. To do this, use the
-`-Duse_sys_capstone=true` command line option when running `meson`.
+`-Duse_sys_capstone=enabled` command line option when running `meson`.
 
 You can override the version of Capstone Rizin will use by setting
-`use_capstone_version` to one of `v3`, `v4` or `v5`.
+`use_capstone_version` to one of `v3`, `v4` or `next`.
 
 There are more bundled dependencies that can be swapped out for system versions.
 At time of writing these are:
 * `use_sys_magic`
-* `use_sys_zip`
+* `use_sys_libzip`
 * `use_sys_zlib`
 * `use_sys_lz4`
 * `use_sys_xxhash`
@@ -96,6 +118,13 @@ Will create a directory `${destdir}/usr/share/doc/rizin`, set the attributes to
 `644`, and copy the docs files into that new directory. See
 https://wiki.archlinux.org/index.php/File_permissions_and_attributes for more
 information about attributes and permissions.
+
+Licenses
+--------
+
+As Rizin is trying to use SPDX, if your packace needs license/copyright
+information, you can use the [REUSE Software](https://reuse.software/) to
+extract the license/copyright of all files in the repository.
 
 Examples
 --------

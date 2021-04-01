@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2019 - mrmacete */
+// SPDX-FileCopyrightText: 2019 mrmacete <mrmacete@protonmail.ch>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -1142,7 +1143,7 @@ static void handle_data_sections(RzBinSection *sect) {
 }
 
 static RzList *symbols(RzBinFile *bf) {
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -1344,7 +1345,7 @@ static RzList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		goto beach;
 	}
 
-	syscalls = rz_list_newf(rz_bin_symbol_free);
+	syscalls = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!syscalls) {
 		goto beach;
 	}
@@ -1384,6 +1385,7 @@ static RzList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		if (item && item->name) {
 			RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 			if (!sym) {
+				rz_syscall_item_free(item);
 				goto beach;
 			}
 
@@ -1395,10 +1397,9 @@ static RzList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 			sym->bind = "GLOBAL";
 			sym->type = "FUNC";
 			rz_list_append(syscalls, sym);
-
-			rz_syscall_item_free(item);
 		}
 
+		rz_syscall_item_free(item);
 		cursor += 24;
 		i++;
 	}
@@ -1479,7 +1480,7 @@ static RzList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 		goto beach;
 	}
 
-	subsystem = rz_list_newf(rz_bin_symbol_free);
+	subsystem = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!subsystem) {
 		goto beach;
 	}
@@ -2086,7 +2087,7 @@ static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RzIODesc *fd, ut8 *buf
 }
 
 static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RzIODesc *fd, ut8 *buf, int count) {
-	if (kobj->rebasing_buffer) {
+	if (kobj->rebasing_buffer || !buf) {
 		return;
 	}
 	kobj->rebasing_buffer = true;

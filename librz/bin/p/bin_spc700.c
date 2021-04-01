@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2019 - maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>

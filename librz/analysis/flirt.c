@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014-2016 jfrankowski <jody.frankowski@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* credits to IDA for the flirt tech */
 /* original cpp code from Rheax <rheaxmascot@gmail.com> */
@@ -602,7 +603,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			if (!flirt_func->name[name_offs]) {
 				continue;
 			}
-			name = rz_name_filter2(flirt_func->name + name_offs);
+			name = rz_name_filter2(flirt_func->name + name_offs, true);
 			free(next_module_function->name);
 			next_module_function->name = rz_str_newf("flirt.%s", name);
 			analysis->flb.set(analysis->flb.f, next_module_function->name,

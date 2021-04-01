@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1998-2003 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-1.0-or-later
+
 /* Definitions dealing with TriCore/PCP opcodes and core registers.
    Copyright (C) 1998-2003 Free Software Foundation, Inc.
    Contributed by Michael Schumacher (mike@hightec-rt.com).

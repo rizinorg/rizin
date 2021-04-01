@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* dietline is a lightweight and portable library similar to GNU readline */
 
@@ -342,6 +343,21 @@ RZ_API int rz_line_set_hist_callback(RzLine *line, RzLineHistoryUpCb up, RzLineH
 	return 1;
 }
 
+static inline bool match_hist_line(char *hist_line, char *cur_line) {
+	// Starts with but not equal to
+	return rz_str_startswith(hist_line, cur_line) && strcmp(hist_line, cur_line);
+}
+
+static void setup_hist_match(RzLine *line) {
+	if (line->history.do_setup_match) {
+		RZ_FREE(line->history.match);
+		if (*line->buffer.data) {
+			line->history.match = strdup(line->buffer.data);
+		}
+	}
+	line->history.do_setup_match = false;
+}
+
 RZ_API int rz_line_hist_cmd_up(RzLine *line) {
 	if (line->hist_up) {
 		return line->hist_up(line->user);
@@ -350,7 +366,22 @@ RZ_API int rz_line_hist_cmd_up(RzLine *line) {
 		inithist();
 	}
 	if (line->history.index > 0 && line->history.data) {
-		strncpy(line->buffer.data, line->history.data[--line->history.index], RZ_LINE_BUFSIZE - 1);
+		setup_hist_match(line);
+		if (line->history.match) {
+			int i;
+			for (i = line->history.index - 1; i >= 0; i--) {
+				if (match_hist_line(line->history.data[i], line->history.match)) {
+					line->history.index = i;
+					break;
+				}
+			}
+			if (i < 0) {
+				return false;
+			}
+		} else {
+			line->history.index--;
+		}
+		strncpy(line->buffer.data, line->history.data[line->history.index], RZ_LINE_BUFSIZE - 1);
 		line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 		return true;
 	}
@@ -361,17 +392,29 @@ RZ_API int rz_line_hist_cmd_down(RzLine *line) {
 	if (line->hist_down) {
 		return line->hist_down(line->user);
 	}
-	line->buffer.index = 0;
 	if (!line->history.data) {
 		inithist();
 	}
-	if (line->history.index == line->history.top) {
-		return false;
+	setup_hist_match(line);
+	if (line->history.match) {
+		int i;
+		for (i = line->history.index + 1; i < line->history.top; i++) {
+			if (match_hist_line(line->history.data[i], line->history.match)) {
+				break;
+			}
+		}
+		line->history.index = i;
+	} else {
+		line->history.index++;
 	}
-	line->history.index++;
-	if (line->history.index == line->history.top) {
-		line->buffer.data[0] = '\0';
-		line->buffer.index = line->buffer.length = 0;
+	if (line->history.index >= line->history.top) {
+		line->history.index = line->history.top;
+		if (line->history.match) {
+			strncpy(line->buffer.data, line->history.match, RZ_LINE_BUFSIZE - 1);
+		} else {
+			line->buffer.data[0] = '\0';
+		}
+		line->buffer.index = line->buffer.length = strlen(line->buffer.data);
 		return false;
 	}
 	if (line->history.data && line->history.data[line->history.index]) {
@@ -1127,6 +1170,8 @@ static void __vi_mode(void) {
 			__update_prompt_color();
 			break;
 		}
+		bool o_do_setup_match = I.history.do_setup_match;
+		I.history.do_setup_match = true;
 		ch = rz_cons_readchar();
 		while (IS_DIGIT(ch)) { // handle commands like 3b
 			if (ch == '0' && rep == 0) { // to handle the command 0
@@ -1165,6 +1210,7 @@ static void __vi_mode(void) {
 			break;
 		case 'c':
 			I.vi_mode = INSERT_MODE; // goto insert mode
+			/* fall through */
 		case 'd': {
 			char c = rz_cons_readchar();
 			while (rep--) {
@@ -1249,6 +1295,7 @@ static void __vi_mode(void) {
 			break;
 		case 'a':
 			__move_cursor_right();
+			/* fall through */
 		case 'i':
 			I.vi_mode = INSERT_MODE;
 			if (I.hud) {
@@ -1299,9 +1346,11 @@ static void __vi_mode(void) {
 			ch = tolower(rz_cons_arrow_to_hjkl(ch));
 			switch (ch) {
 			case 'k': // up
+				I.history.do_setup_match = o_do_setup_match;
 				rz_line_hist_up();
 				break;
 			case 'j': // down
+				I.history.do_setup_match = o_do_setup_match;
 				rz_line_hist_down();
 				break;
 			case 'l': // right
@@ -1325,7 +1374,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	static int gcomp_idx = 0;
 	static bool yank_flag = 0;
 	static int gcomp = 0;
-	signed char buf[10];
+	char buf[10];
 #if USE_UTF8
 	int utflen;
 #endif
@@ -1406,6 +1455,8 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		buf[0] = ch;
 #endif
 #endif
+		bool o_do_setup_match = I.history.do_setup_match;
+		I.history.do_setup_match = true;
 		if (I.echo && cons->context->color_mode) {
 			rz_cons_clear_line(0);
 		}
@@ -1476,9 +1527,6 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				__delete_next_char();
 			}
 			break;
-		case 10: // ^J -- ignore
-			rz_cons_break_pop();
-			return I.buffer.data;
 		case 11: // ^K
 			I.buffer.data[I.buffer.index] = '\0';
 			I.buffer.length = I.buffer.index;
@@ -1586,6 +1634,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 					gcomp_idx--;
 				}
 			} else {
+				I.history.do_setup_match = o_do_setup_match;
 				rz_line_hist_down();
 			}
 			break;
@@ -1600,6 +1649,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			} else if (gcomp) {
 				gcomp_idx++;
 			} else {
+				I.history.do_setup_match = o_do_setup_match;
 				rz_line_hist_up();
 			}
 			break;
@@ -1743,9 +1793,12 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 							selection_widget_draw();
 						} else if (gcomp) {
 							gcomp_idx++;
-						} else if (rz_line_hist_up() == -1) {
-							rz_cons_break_pop();
-							return NULL;
+						} else {
+							I.history.do_setup_match = o_do_setup_match;
+							if (rz_line_hist_up() == -1) {
+								rz_cons_break_pop();
+								return NULL;
+							}
 						}
 						break;
 					case 'B': // down arrow
@@ -1760,9 +1813,12 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 							if (gcomp_idx > 0) {
 								gcomp_idx--;
 							}
-						} else if (rz_line_hist_down() == -1) {
-							rz_cons_break_pop();
-							return NULL;
+						} else {
+							I.history.do_setup_match = o_do_setup_match;
+							if (rz_line_hist_down() == -1) {
+								rz_cons_break_pop();
+								return NULL;
+							}
 						}
 						break;
 					case 'C': // right arrow
@@ -1832,6 +1888,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 						break;
 					case 0x37: // HOME xrvt-unicode
 						rz_cons_readchar();
+						/* fall through */
 					case 0x48: // HOME
 						if (I.sel_widget) {
 							selection_widget_up(I.sel_widget->options_len - 1);
@@ -1885,6 +1942,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				rz_cons_flush();
 			}
 			break;
+		case 10: // ^J -- ignore
 		case 13: // enter
 			if (I.hud) {
 				I.hud->activate = false;

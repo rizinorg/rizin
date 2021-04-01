@@ -1,4 +1,5 @@
-/* libgdbr - LGPL - Copyright 2014 - defragger */
+// SPDX-FileCopyrightText: 2014 defragger <rlaemmert@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "arch.h"
 #include "gdbclient/responses.h"

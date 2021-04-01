@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2017-2019 - pancake */
+// SPDX-FileCopyrightText: 2017-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // TODO: Support NRR and MODF
 #include <rz_types.h>
@@ -43,8 +44,8 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadadd
 	RzBinNXOObj *bin = RZ_NEW0(RzBinNXOObj);
 	if (bin) {
 		ut64 ba = baddr(bf);
-		bin->methods_list = rz_list_newf((RzListFree)free);
-		bin->imports_list = rz_list_newf((RzListFree)free);
+		bin->methods_list = rz_list_newf((RzListFree)rz_bin_symbol_free);
+		bin->imports_list = rz_list_newf((RzListFree)rz_bin_import_free);
 		bin->classes_list = rz_list_newf((RzListFree)free);
 		ut32 mod0 = rz_buf_read_le32_at(b, NRO_OFFSET_MODMEMOFF);
 		parseMod(b, bin, mod0, ba);

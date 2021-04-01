@@ -16,7 +16,7 @@ rizin-built farm beats the facebook one.
 Thank you for using rizin. Have a nice night!
 Your rizin was built 20h ago. TOO OLD!
 Use rizin! Lemons included!
-rz_ax -s 20e296b20ae296b220e296b20a
+rz-ax -s 20e296b20ae296b220e296b20a
 Connection lost with the license server, your rizin session will terminate in 30 minutes.
 This is amazing ...
 I love gradients.
@@ -212,7 +212,7 @@ This accessory is not supported by this version of rizin.
 When can we have an official anime mascot for rizin?
 Sorry, rizin has experienced an internal error.
 Segmentation fault (core dumped)
-Use rz_bin to discover the real TRUTH
+Use rz-bin to discover the real TRUTH
 ==1337== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 **** COMMODORE 64 RIZIN V2 ****  64K RAM SYSTEM  38911 DISASM BYTES FREE  READY.
 Most likely your core dump fell into a blackhole, can't see it.

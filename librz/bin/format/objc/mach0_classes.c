@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2015-2020 inisider <inisider@gmail.com>
+// SPDX-FileCopyrightText: 2015-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "../../i/private.h"
@@ -1339,11 +1341,13 @@ RzList *MACH0_(parse_classes)(RzBinFile *bf) {
 		}
 		rz_list_append(ret, klass);
 	}
+	rz_skiplist_free(relocs);
 	return ret;
 
 get_classes_error:
 	rz_list_free(sctns);
 	rz_list_free(ret);
+	rz_skiplist_free(relocs);
 	// XXX DOUBLE FREE rz_bin_class_free (klass);
 	return NULL;
 }
@@ -1524,7 +1528,7 @@ void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBinClass *klass, RzSkip
 		if (target_class_name) {
 			demangled = demangle_classname(target_class_name);
 		}
-		klass->name = rz_str_newf("%s(%s)", demangled ? demangled : "(null)", category_name);
+		klass->name = rz_str_newf("%s(%s)", rz_str_get_null(demangled), category_name);
 		RZ_FREE(target_class_name);
 		RZ_FREE(demangled);
 	}

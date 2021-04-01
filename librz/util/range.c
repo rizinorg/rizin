@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
@@ -368,7 +369,6 @@ RRange *rz_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	if (fr < to) {
 		//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, to);
 		rz_range_add(newrgs, fr, to, 1);
-		total += (to - fr);
 	}
 	// eprintf("Total bytes: %"PFMT64d"\n", total);
 	return newrgs;

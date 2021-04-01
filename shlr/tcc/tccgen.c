@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2001-2004 Fabrice Bellard
+// SPDX-License-Identifier: LGPL-2.0-or-later
+
 /*
  *  TCC - Tiny C Compiler
  *
@@ -1522,6 +1525,7 @@ static void post_type(CType *type, AttributeDef *ad) {
 	Sym **plast, *s, *first;
 	AttributeDef ad1;
 	CType pt;
+	pt.ref = NULL;
 	char *symname = NULL;
 	int narg = 0;
 
@@ -1680,10 +1684,9 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td) {
 	Sym *s;
 	int qualifiers, storage;
 	CType *type1 = RZ_NEW0(CType);
-	CType *type2 = RZ_NEW0(CType);
-	if (!type1 || !type2) {
+	CType *type2 = NULL;
+	if (!type1) {
 		free(type1);
-		free(type2);
 		return;
 	}
 
@@ -1764,7 +1767,6 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td) {
 
 	if (!type1->t) {
 		free(type1);
-		free(type2);
 		return;
 	}
 	/* append type at the end of type1 */
@@ -2576,8 +2578,9 @@ static void init_putz(CType *t, unsigned long c, int size) {
    size only evaluation is wanted (only for arrays). */
 static void decl_initializer(CType *type, unsigned long c, int first, int size_only) {
 	long long index;
-	int array_length, n, no_oblock, nb, parlevel, parlevel1, i;
-	int size1, align1, expr_type;
+	int n, no_oblock, nb, parlevel, parlevel1;
+	size_t array_length, size1, i;
+	int align1, expr_type;
 	Sym *s, *f;
 	CType *t1;
 

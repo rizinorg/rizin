@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 FXTi <zjxiang1998@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "opcode.h"
 
 static version_opcode version_op[] = {
@@ -124,6 +127,9 @@ static version_opcode version_op[] = {
 };
 
 bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
+	if (version == NULL || op == NULL) {
+		return false;
+	}
 	version_opcode *vop = version_op;
 
 	while (vop->version) {
@@ -139,6 +145,9 @@ bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
 }
 
 pyc_opcodes *get_opcode_by_version(char *version) {
+	if (version == NULL) {
+		return NULL;
+	}
 	version_opcode *vop = version_op;
 
 	while (vop->version) {
@@ -185,11 +194,18 @@ pyc_opcodes *new_pyc_opcodes() {
 
 void free_opcode(pyc_opcodes *opcodes) {
 	size_t i;
+	if (opcodes == NULL || opcodes->opcodes == NULL) {
+		return;
+	}
 	for (i = 0; i < 256; i++) {
-		free(opcodes->opcodes[i].op_name);
+		if (opcodes->opcodes[i].op_name) {
+			free(opcodes->opcodes[i].op_name);
+		}
 	}
 	free(opcodes->opcodes);
-	rz_list_free(opcodes->opcode_arg_fmt);
+	if (opcodes->opcode_arg_fmt) {
+		rz_list_free(opcodes->opcode_arg_fmt);
+	}
 	free(opcodes);
 }
 
