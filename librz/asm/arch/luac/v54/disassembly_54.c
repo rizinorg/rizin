@@ -28,12 +28,7 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 
 	switch (opcode) {
 		/* iABC Instruction */
-	case OP_SETTABUP: /*	A B C	UpValue[A][K[B]:string] := RK(C)		*/
-	case OP_SETI: /*	A B C	R[A][B] := RK(C)				*/
 	case OP_GETI: /*	A B C	R[A] := R[B][C]					*/
-	case OP_SELF: /*	A B C	R[A+1] := R[B]; R[A] := R[B][RK(C):string]	*/
-	case OP_SETTABLE: /*	A B C	R[A][R[B]] := RK(C)				*/
-	case OP_SETFIELD: /*	A B C	R[A][K[B]:string] := RK(C)			*/
 	case OP_MMBIN: /*	A B C	call C metamethod over R[A] and R[B]		*/
 	case OP_GETTABUP: /*	A B C	R[A] := UpValue[B][K[C]:string]			*/
 	case OP_CALL: /*	A B C	R[A], ... ,R[A+C-2] := R[A](R[A+1], ... ,R[A+B-1]) */
@@ -69,7 +64,12 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 	case OP_NEWTABLE: /*	A B C k	R[A] := {}					*/
 	case OP_SETLIST: /*	A B C k	R[A][C+i] := R[A+i], 1 <= i <= B		*/
 	case OP_MMBINK: /*	A B C k		call C metamethod over R[A] and K[B]	*/
-		asm_string = luaop_new_str_3arg_ex(opnames[opcode], a, b, c, isk);
+        case OP_SETTABUP: /*	A B C	UpValue[A][K[B]:string] := RK(C)		*/
+        case OP_SETTABLE: /*	A B C	R[A][R[B]] := RK(C)				*/
+        case OP_SETI: /*	A B C	R[A][B] := RK(C)				*/
+        case OP_SETFIELD: /*	A B C	R[A][K[B]:string] := RK(C)			*/
+        case OP_SELF: /*	A B C	R[A+1] := R[B]; R[A] := R[B][RK(C):string]	*/
+                asm_string = luaop_new_str_3arg_ex(opnames[opcode], a, b, c, isk);
 		break;
 		/* iABC - signed B with k instruction */
 	case OP_MMBINI: /*	A sB C k	call C metamethod over R[A] and sB	*/

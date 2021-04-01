@@ -3,7 +3,7 @@
 
 #include "arch_54.h"
 #define lua_strcase(case_str) if ( \
-	((limit) <= sizeof(case_str)) && \
+	((limit) <= sizeof(case_str) - 1) && \
 	rz_str_ncasecmp((name), (case_str), sizeof(case_str) - 1) == 0)
 
 LuaOpNameList get_lua54_opnames(void) {
