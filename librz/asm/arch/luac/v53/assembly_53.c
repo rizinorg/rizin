@@ -4,214 +4,50 @@
 
 #include "arch_53.h"
 
-#define LUA_ASM_OPCODE_NUM LUA_NUM_OPCODES
-#define GET_ASM_SIZE(x)    (sizeof(x) - 1)
+static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16 flag, ut8 arg_num) {
+        LuaInstruction instruction = 0;
+        int args[3];
+        char buffer[64];        // buffer for digits
+        int cur_cnt = 0;
+        int delta_offset;
 
+        if (arg_num > sizeof(args)) {
+                return -1;
+        }
 
-static LuaInstruction encode_iabc_a(ut8 opcode, const char *arg_start, st32 limit) {
-	LuaInstruction instruction = -1;
-
-	if (!rz_is_valid_input_num_value(NULL, arg_start)) {
-		eprintf("luac_assembler: %s is not a valid number argument\n", arg_start);
-		return instruction;
-	}
-
-	SET_OPCODE(instruction, opcode);
-	SETARG_A(instruction, strtol(arg_start, NULL, 0));
-
-	return instruction;
-}
-
-static LuaInstruction encode_iax(ut8 opcode, const char *arg_start, st32 limit) {
-        LuaInstruction instruction = -1;
-
-        if (!rz_is_valid_input_num_value(NULL, arg_start)) {
-                eprintf("luac_assembler: %s is not a valid number argument\n", arg_start);
-                return instruction;
+        for (int i = 0; i < arg_num; ++i) {
+                delta_offset = lua_load_next_arg_start(arg_start, buffer);
+                if (delta_offset == 0) {
+                        return -1;
+                }
+                if (lua_is_valid_num_value_string(buffer)) {
+                        args[i] = lua_convert_str_to_num(buffer);
+                        arg_start += delta_offset;
+                } else {
+                        return -1;
+                }
         }
 
         SET_OPCODE(instruction, opcode);
-        SETARG_Ax(instruction, strtol(arg_start, NULL, 0));
-
-        return instruction;
-}
-
-static LuaInstruction encode_isbx(ut8 opcode, const char *arg_start, st32 limit) {
-        LuaInstruction instruction = -1;
-
-        if (!rz_is_valid_input_num_value(NULL, arg_start)) {
-                eprintf("luac_assembler: %s is not a valid number argument\n", arg_start);
-                return instruction;
+        if (has_param_flag(flag, PARAM_A)) {
+                SETARG_A(instruction, args[cur_cnt++]);
         }
-
-        SET_OPCODE(instruction, opcode);
-        SETARG_sBx(instruction, strtol(arg_start, NULL, 0));
-
-        return instruction;
-}
-
-static LuaInstruction encode_iabx(ut8 opcode, const char *arg_start, st32 limit) {
-        LuaInstruction instruction = -1;
-        int arg1_offset;
-        int arg2_offset;
-        int arg1;
-        int arg2;
-        char buffer[64];
-
-        /* Find 1st first arg */
-        arg1_offset = lua_load_next_arg_start(arg_start, buffer);
-        if (arg1_offset == 0) {
-                return -1;
+        if (has_param_flag(flag, PARAM_B)) {
+                SETARG_B(instruction, args[cur_cnt++]);
         }
-        if (lua_is_valid_num_value_string(buffer)) {
-                arg1 = lua_convert_str_to_num(buffer);
-        } else {
-                return -1;
+        if (has_param_flag(flag, PARAM_C)) {
+                SETARG_C(instruction, args[cur_cnt++]);
         }
-
-        /* Find the 2nd arg */
-        arg2_offset = lua_load_next_arg_start(arg_start + arg1_offset, buffer);
-        if (arg2_offset == 0) {
-                return -1;
+        if (has_param_flag(flag, PARAM_Ax)) {
+                SETARG_Ax(instruction, args[cur_cnt++]);
         }
-        if (lua_is_valid_num_value_string(buffer)) {
-                arg2 = lua_convert_str_to_num(buffer);
-        } else {
-                return -1;
+        if (has_param_flag(flag, PARAM_sBx)) {
+                SETARG_sBx(instruction, args[cur_cnt++]);
         }
-
-        instruction = 0;
-        SET_OPCODE(instruction, opcode);
-        SETARG_A(instruction, arg1);
-        SETARG_Bx(instruction, arg2);
-
-        return instruction;
-}
-
-static LuaInstruction encode_iabc_ab(ut8 opcode, const char *arg_start, st32 limit) {
-	LuaInstruction instruction = -1;
-	int arg1_offset;
-	int arg2_offset;
-	int arg1;
-	int arg2;
-	char buffer[64];
-
-	/* Find 1st first arg */
-	arg1_offset = lua_load_next_arg_start(arg_start, buffer);
-	if (arg1_offset == 0) {
-		return -1;
-	}
-	if (lua_is_valid_num_value_string(buffer)) {
-		arg1 = lua_convert_str_to_num(buffer);
-	} else {
-		return -1;
-	}
-
-	/* Find the 2nd arg */
-	arg2_offset = lua_load_next_arg_start(arg_start + arg1_offset, buffer);
-	if (arg2_offset == 0) {
-		return -1;
-	}
-	if (lua_is_valid_num_value_string(buffer)) {
-		arg2 = lua_convert_str_to_num(buffer);
-	} else {
-		return -1;
-	}
-
-	instruction = 0;
-	SET_OPCODE(instruction, opcode);
-	SETARG_A(instruction, arg1);
-	SETARG_B(instruction, arg2);
-
-	return instruction;
-}
-
-static LuaInstruction encode_iabc_ac(ut8 opcode, const char *arg_start, st32 limit) {
-        LuaInstruction instruction = -1;
-        int arg1_offset;
-        int arg2_offset;
-        int arg1;
-        int arg2;
-        char buffer[64];
-
-        /* Find 1st first arg */
-        arg1_offset = lua_load_next_arg_start(arg_start, buffer);
-        if (arg1_offset == 0) {
-                return -1;
+        if (has_param_flag(flag, PARAM_Bx)) {
+                SETARG_Bx(instruction, args[cur_cnt++]);
         }
-        if (lua_is_valid_num_value_string(buffer)) {
-                arg1 = lua_convert_str_to_num(buffer);
-        } else {
-                return -1;
-        }
-
-        /* Find the 2nd arg */
-        arg2_offset = lua_load_next_arg_start(arg_start + arg1_offset, buffer);
-        if (arg2_offset == 0) {
-                return -1;
-        }
-        if (lua_is_valid_num_value_string(buffer)) {
-                arg2 = lua_convert_str_to_num(buffer);
-        } else {
-                return -1;
-        }
-
-        instruction = 0;
-        SET_OPCODE(instruction, opcode);
-        SETARG_A(instruction, arg1);
-        SETARG_B(instruction, arg2);
-
-        return instruction;
-}
-
-static LuaInstruction encode_iabc_abc(ut8 opcode, const char *arg_start, st32 limit) {
-        LuaInstruction instruction = -1;
-        int arg1_offset;
-        int arg2_offset;
-	int arg3_offset;
-        int arg1;
-        int arg2;
-	int arg3;
-        char buffer[64];
-
-        /* Find 1st first arg */
-        arg1_offset = lua_load_next_arg_start(arg_start, buffer);
-        if (arg1_offset == 0) {
-                return -1;
-        }
-        if (lua_is_valid_num_value_string(buffer)) {
-                arg1 = lua_convert_str_to_num(buffer);
-        } else {
-                return -1;
-        }
-
-        /* Find the 2nd arg */
-        arg2_offset = lua_load_next_arg_start(arg_start + arg1_offset, buffer);
-        if (arg2_offset == 0) {
-                return -1;
-        }
-        if (lua_is_valid_num_value_string(buffer)) {
-                arg2 = lua_convert_str_to_num(buffer);
-        } else {
-                return -1;
-        }
-
-        /* Find the 3rd arg */
-        arg3_offset = lua_load_next_arg_start(arg_start + arg1_offset + arg2_offset, buffer);
-        if (arg3_offset == 0) {
-                return -1;
-        }
-        if (lua_is_valid_num_value_string(buffer)) {
-                arg3 = lua_convert_str_to_num(buffer);
-        } else {
-                return -1;
-        }
-
-        instruction = 0;
-        SET_OPCODE(instruction, opcode);
-        SETARG_A(instruction, arg1);
-        SETARG_B(instruction, arg2);
-	SETARG_C(instruction, arg3);
+        assert(cur_cnt == arg_num);
 
         return instruction;
 }
@@ -222,7 +58,6 @@ bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 	int opcode_len;
 
 	const char *arg_start;
-	int arg_limit;
 
 	ut8 opcode;
 	LuaInstruction instruction = 0x00;
@@ -240,12 +75,11 @@ bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 
 	/* Find the arguments */
 	arg_start = rz_str_trim_head_ro(opcode_end);
-	arg_limit = arg_start - opcode_start;
 
 	/* Encode opcode and args */
 	switch (opcode) {
 	case OP_LOADKX:
-		instruction = encode_iabc_a(opcode, arg_start, arg_limit);
+		instruction = encode_instruction(opcode, arg_start, PARAM_A, 1);
 		break;
 	case OP_MOVE:
 	case OP_SETUPVAL:
@@ -257,15 +91,15 @@ bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 	case OP_RETURN:
 	case OP_VARARG:
 	case OP_GETUPVAL:
-		instruction = encode_iabc_ab(opcode, arg_start, arg_limit);
+		instruction = encode_instruction(opcode, arg_start, PARAM_A | PARAM_B, 2);
 		break;
 	case OP_TEST:
 	case OP_TFORCALL:
-		instruction = encode_iabc_ac(opcode, arg_start, arg_limit);
+		instruction = encode_instruction(opcode, arg_start, PARAM_A | PARAM_C, 2);
 		break;
 	case OP_LOADK:
 	case OP_CLOSURE:
-		instruction = encode_iabx(opcode, arg_start, arg_limit);
+		instruction = encode_instruction(opcode, arg_start, PARAM_A | PARAM_Bx, 2);
 		break;
 	case OP_CONCAT:
 	case OP_TESTSET:
@@ -275,41 +109,37 @@ bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 	case OP_SETLIST:
 	case OP_LOADBOOL:
 	case OP_SELF:
-		instruction = encode_iabc_abc(opcode, arg_start, arg_limit);
-		break;
-	case OP_GETTABUP:
-	case OP_GETTABLE:
-		// special C
-		instruction = encode_iabc_abc(opcode, arg_start, arg_limit);
-		break;
-	case OP_SETTABUP:
-	case OP_SETTABLE:
-	case OP_ADD:
-	case OP_SUB:
-	case OP_MUL:
-	case OP_MOD:
-	case OP_POW:
-	case OP_DIV:
-	case OP_IDIV:
-	case OP_BAND:
-	case OP_BOR:
-	case OP_BXOR:
-	case OP_SHL:
-	case OP_SHR:
-	case OP_EQ:
-	case OP_LT:
-	case OP_LE:
-		// special B and C
-		instruction = encode_iabc_abc(opcode, arg_start, arg_limit);
+        case OP_GETTABUP:
+        case OP_GETTABLE:
+        case OP_SETTABUP:
+        case OP_SETTABLE:
+        case OP_ADD:
+        case OP_SUB:
+        case OP_MUL:
+        case OP_MOD:
+        case OP_POW:
+        case OP_DIV:
+        case OP_IDIV:
+        case OP_BAND:
+        case OP_BOR:
+        case OP_BXOR:
+        case OP_SHL:
+        case OP_SHR:
+        case OP_EQ:
+        case OP_LT:
+        case OP_LE:
+		instruction = encode_instruction(opcode, arg_start,
+			PARAM_A | PARAM_B | PARAM_C,
+			3);
 		break;
 	case OP_JMP:
 	case OP_FORLOOP:
 	case OP_FORPREP:
 	case OP_TFORLOOP:
-		instruction = encode_isbx(opcode, arg_start, arg_limit);
+		instruction = encode_instruction(opcode, arg_start, PARAM_sBx, 1);
 		break;
 	case OP_EXTRAARG:
-		instruction = encode_iax(opcode, arg_start, arg_limit);
+		instruction = encode_instruction(opcode, arg_start, PARAM_Ax, 1);
 		break;
 	default:
 		return false;

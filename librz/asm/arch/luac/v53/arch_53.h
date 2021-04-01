@@ -35,6 +35,16 @@ typedef enum {
 	iAx
 } LuaOpMode;
 
+/* parameter flags */
+#define PARAM_A 1
+#define PARAM_B 2
+#define PARAM_C 4
+#define PARAM_Ax 8
+#define PARAM_Bx 16
+#define PARAM_sBx 32
+
+#define has_param_flag(flag, bit) ((flag) & (bit)) ? true : false
+
 /* Offset of arguments in opcode */
 #define SIZE_C  9
 #define SIZE_B  9

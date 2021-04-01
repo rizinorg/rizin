@@ -223,9 +223,25 @@ typedef enum {
 #define SETARG_Ax(i,v)	LUA_SETARG(i, v, LUAOP_Ax_OFFSET, LUAOP_Ax_SIZE)
 #define SETARG_sBx(i,b)	SETARG_Bx((i), LUA_CAST(ut32, (b) + LUAOP_FIX_sBx))
 #define SETARG_sJ(i,j) \
-	LUA_SETARG((i), LUA_CAST((j)+LUAOP_FIX_sJ), LUAOP_sJ_OFFSET, LUAOP_sJ_SIZE)
+	LUA_SETARG((i), LUA_CAST(ut32, (j)+LUAOP_FIX_sJ), LUAOP_sJ_OFFSET, LUAOP_sJ_SIZE)
+#define SETARG_sC(i, v) SETARG_C((i), int2sC(v))
+#define SETARG_sB(i, v)  SETARG_B((i), int2sC(v))
 
 #define SETARG_k(i,v)	LUA_SETARG(i, v, LUAOP_k_OFFSET, 1)
+
+/* parameter flags */
+#define PARAM_A 1
+#define PARAM_B 2
+#define PARAM_C 4
+#define PARAM_Ax 8
+#define PARAM_Bx 16
+#define PARAM_sBx 32
+#define PARAM_sJ 64
+#define PARAM_sC 128
+#define PARAM_sB 256
+#define PARAM_k 512
+
+#define has_param_flag(flag, bit) ((flag) & (bit)) ? true : false
 
 
 #define ISK(isk)    ((isk) ? "#CONST" : "#R")
