@@ -32,9 +32,6 @@
 	eprintf
 
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
-static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
-static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
-static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
 static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode);
 static int bin_libs(RzCore *r, PJ *pj, int mode);
 static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name);
@@ -377,8 +374,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	rz_core_bin_apply_main(r, binfile, va);
 	rz_core_bin_apply_dwarf(r, binfile);
 	rz_core_bin_apply_entry(r, binfile, va);
-	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
-	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, true);
+	rz_core_bin_apply_sections(r, binfile, va);
 	if (rz_config_get_i(r->config, "bin.relocs")) {
 		rz_core_bin_apply_relocs(r, binfile, va);
 	}
@@ -598,6 +594,278 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, int va) {
 		rz_core_seek(core, at, false);
 	}
 	return true;
+}
+
+struct io_bin_section_info_t {
+	RzBinSection *sec;
+	ut64 addr;
+	int fd;
+};
+
+typedef struct {
+	const char *uri;
+	int perm;
+	RzIODesc *desc;
+} FindFile;
+
+static bool findFile(void *user, void *data, ut32 id) {
+	FindFile *res = (FindFile *)user;
+	RzIODesc *desc = (RzIODesc *)data;
+	if (desc->perm && res->perm && !strcmp(desc->uri, res->uri)) {
+		res->desc = desc;
+		return false;
+	}
+	return true;
+}
+
+static RzIODesc *findReusableFile(RzIO *io, const char *uri, int perm) {
+	FindFile arg = {
+		.uri = uri,
+		.perm = perm,
+		.desc = NULL,
+	};
+	rz_id_storage_foreach(io->files, findFile, &arg);
+	return arg.desc;
+}
+
+static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
+	rz_return_val_if_fail(io && sec, false);
+
+	bool reused = false;
+	ut64 gap = sec->vsize - sec->size;
+	char *uri = rz_str_newf("null://%" PFMT64u, gap);
+	RzIODesc *desc = findReusableFile(io, uri, sec->perm);
+	if (desc) {
+		RzIOMap *map = rz_io_map_get(io, at);
+		if (!map && gap) {
+			rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
+		}
+		reused = true;
+	}
+	if (!desc) {
+		desc = rz_io_open_at(io, uri, sec->perm, 0664, at);
+	}
+	free(uri);
+	if (!desc) {
+		return false;
+	}
+	// this works, because new maps are always born on the top
+	RzIOMap *map = rz_io_map_get(io, at);
+	// check if the mapping failed
+	if (!map) {
+		if (!reused) {
+			rz_io_desc_close(desc);
+		}
+		return false;
+	}
+	// let the section refere to the map as a memory-map
+	free(map->name);
+	map->name = rz_str_newf("mmap.%s", sec->name);
+	return true;
+}
+
+static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
+	if (!rz_io_desc_get(core->io, fd) || UT64_ADD_OVFCHK(sec->size, sec->paddr) ||
+		UT64_ADD_OVFCHK(sec->size, addr) || !sec->vsize) {
+		return;
+	}
+
+	ut64 size = sec->vsize;
+	// if there is some part of the section that needs to be zeroed by the loader
+	// we add a null map that takes care of it
+	if (sec->vsize > sec->size) {
+		if (!io_create_mem_map(core->io, sec, addr + sec->size)) {
+			return;
+		}
+
+		size = sec->size;
+	}
+
+	// then we map the part of the section that comes from the physical file
+	char *map_name = rz_str_newf("fmap.%s", sec->name);
+	if (!map_name) {
+		return;
+	}
+
+	int perm = sec->perm;
+	// workaround to force exec bit in text section
+	if (sec->name && strstr(sec->name, "text")) {
+		perm |= RZ_PERM_X;
+	}
+
+	if (size) {
+		RzIOMap *map = rz_io_map_add_batch(core->io, fd, perm, sec->paddr, addr, size);
+		if (!map) {
+			free(map_name);
+			return;
+		}
+		map->name = map_name;
+	}
+	return;
+}
+
+RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va) {
+	char *str = NULL;
+	RzBinSection *section;
+	RzList *sections;
+	RzListIter *iter;
+	sections = rz_bin_get_sections(core->bin);
+#if LOAD_BSS_MALLOC
+	bool inDebugger = rz_config_get_i(r->config, "cfg.debug");
+#endif
+	HtPP *dup_chk_ht = ht_pp_new0();
+	bool ret = false;
+	RzList *io_section_info = NULL;
+
+	if (!dup_chk_ht) {
+		return false;
+	}
+
+	int fd = rz_core_file_cur_fd(core);
+
+	// make sure both flag spaces exist.
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_SEGMENTS);
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_SECTIONS);
+
+	bool segments_only = true;
+	rz_list_foreach (sections, iter, section) {
+		if (!section->is_segment) {
+			segments_only = false;
+			break;
+		}
+	}
+
+	int section_index = 0;
+	io_section_info = rz_list_newf((RzListFree)free);
+	rz_list_foreach (sections, iter, section) {
+		char perms[] = "----";
+		int va_sect = va;
+		ut64 addr;
+
+		if (va && !(section->perm & RZ_PERM_R)) {
+			va_sect = VA_NOREBASE;
+		}
+		addr = rva(core->bin, section->paddr, section->vaddr, va_sect);
+
+		rz_name_filter(section->name, strlen(section->name) + 1, false);
+
+		// XXX use rz_str_perm instead of doing it here imho
+		if (section->perm & RZ_PERM_SHAR) {
+			perms[0] = 's';
+		}
+		if (section->perm & RZ_PERM_R) {
+			perms[1] = 'r';
+		}
+		if (section->perm & RZ_PERM_W) {
+			perms[2] = 'w';
+		}
+		if (section->perm & RZ_PERM_X) {
+			perms[3] = 'x';
+		}
+		const char *arch = section->arch;
+		if (!arch) {
+			arch = rz_config_get(core->config, "asm.arch");
+		}
+		int bits = section->bits;
+		if (!bits) {
+			bits = RZ_SYS_BITS;
+		}
+#if LOAD_BSS_MALLOC
+		if (!strcmp(section->name, ".bss")) {
+			// check if there's already a file opened there
+			int loaded = 0;
+			RzListIter *iter;
+			RzIOMap *m;
+			rz_list_foreach (r->io->maps, iter, m) {
+				if (m->from == addr) {
+					loaded = 1;
+				}
+			}
+			if (!loaded && !inDebugger) {
+				char *ptr = rz_str_newf("malloc://%d", section->vsize);
+				if ((desc = rz_io_open_at(core->io, ptr, RZ_PERM_R, 0644, addr))) {
+					fd = desc->fd;
+				}
+				if (fd == -1) {
+					eprintf("Cannot open file '%'\n", ptr);
+				}
+				free(ptr);
+				core->num->value = fd;
+				rz_core_block_read(core);
+			}
+		}
+#endif
+		if (section->format) {
+			// This is really slow if section vsize is HUGE
+			if (section->vsize < 1024 * 1024 * 2) {
+				rz_core_cmdf(core, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
+			}
+		}
+		const char *type;
+		if (section->is_segment) {
+			type = "segment";
+			rz_flag_space_set(core->flags, RZ_FLAGS_FS_SEGMENTS);
+		} else {
+			type = "section";
+			rz_flag_space_set(core->flags, RZ_FLAGS_FS_SECTIONS);
+		}
+		if (core->bin->prefix) {
+			str = rz_str_newf("%s.%s.%s", core->bin->prefix, type, section->name);
+		} else {
+			str = rz_str_newf("%s.%s", type, section->name);
+		}
+		ut64 size = core->io->va ? section->vsize : section->size;
+		rz_flag_set(core->flags, str, addr, size);
+		RZ_FREE(str);
+
+		if (!section->is_segment || segments_only) {
+			char *pfx = core->bin->prefix;
+			str = rz_str_newf("[%02d] %s %s size %" PFMT64d " named %s%s%s",
+				section_index++, perms, type, size,
+				pfx ? pfx : "", pfx ? "." : "", section->name);
+			rz_meta_set(core->analysis, RZ_META_TYPE_COMMENT, addr, 1, str);
+			RZ_FREE(str);
+		}
+		if (section->add) {
+			bool found;
+			str = rz_str_newf("%" PFMT64x ".%" PFMT64x ".%" PFMT64x ".%" PFMT64x ".%" PFMT32u ".%s.%" PFMT32u ".%d",
+				section->paddr, addr, section->size, section->vsize, section->perm, section->name, core->bin->cur->id, fd);
+			ht_pp_find(dup_chk_ht, str, &found);
+			if (!found) {
+				// can't directly add maps because they
+				// need to be reversed, otherwise for
+				// the way IO works maps would be shown
+				// in reverse order
+				struct io_bin_section_info_t *ibs = RZ_NEW(struct io_bin_section_info_t);
+				if (!ibs) {
+					eprintf("Could not allocate memory\n");
+					goto out;
+				}
+
+				ibs->sec = section;
+				ibs->addr = addr;
+				ibs->fd = fd;
+				rz_list_append(io_section_info, ibs);
+				ht_pp_insert(dup_chk_ht, str, NULL);
+			}
+			RZ_FREE(str);
+		}
+	}
+	if (!rz_io_desc_is_dbg(core->io->desc)) {
+		RzListIter *it;
+		struct io_bin_section_info_t *ibs;
+		rz_list_foreach_prev(io_section_info, it, ibs) {
+			add_section(core, ibs->sec, ibs->addr, ibs->fd);
+		}
+		rz_io_update(core->io);
+		rz_list_free(io_section_info);
+		io_section_info = NULL;
+	}
+
+	ret = true;
+out:
+	ht_pp_free(dup_chk_ht);
+	return ret;
 }
 
 /*
@@ -2595,114 +2863,6 @@ static char *filter_hash_string(const char *chksum) {
 	return ret;
 }
 
-typedef struct {
-	const char *uri;
-	int perm;
-	RzIODesc *desc;
-} FindFile;
-
-static bool findFile(void *user, void *data, ut32 id) {
-	FindFile *res = (FindFile *)user;
-	RzIODesc *desc = (RzIODesc *)data;
-	if (desc->perm && res->perm && !strcmp(desc->uri, res->uri)) {
-		res->desc = desc;
-		return false;
-	}
-	return true;
-}
-
-static RzIODesc *findReusableFile(RzIO *io, const char *uri, int perm) {
-	FindFile arg = {
-		.uri = uri,
-		.perm = perm,
-		.desc = NULL,
-	};
-	rz_id_storage_foreach(io->files, findFile, &arg);
-	return arg.desc;
-}
-
-static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
-	rz_return_val_if_fail(io && sec, false);
-
-	bool reused = false;
-	ut64 gap = sec->vsize - sec->size;
-	char *uri = rz_str_newf("null://%" PFMT64u, gap);
-	RzIODesc *desc = findReusableFile(io, uri, sec->perm);
-	if (desc) {
-		RzIOMap *map = rz_io_map_get(io, at);
-		if (!map && gap) {
-			rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
-		}
-		reused = true;
-	}
-	if (!desc) {
-		desc = rz_io_open_at(io, uri, sec->perm, 0664, at);
-	}
-	free(uri);
-	if (!desc) {
-		return false;
-	}
-	// this works, because new maps are always born on the top
-	RzIOMap *map = rz_io_map_get(io, at);
-	// check if the mapping failed
-	if (!map) {
-		if (!reused) {
-			rz_io_desc_close(desc);
-		}
-		return false;
-	}
-	// let the section refere to the map as a memory-map
-	free(map->name);
-	map->name = rz_str_newf("mmap.%s", sec->name);
-	return true;
-}
-
-static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
-	if (!rz_io_desc_get(core->io, fd) || UT64_ADD_OVFCHK(sec->size, sec->paddr) ||
-		UT64_ADD_OVFCHK(sec->size, addr) || !sec->vsize) {
-		return;
-	}
-
-	ut64 size = sec->vsize;
-	// if there is some part of the section that needs to be zeroed by the loader
-	// we add a null map that takes care of it
-	if (sec->vsize > sec->size) {
-		if (!io_create_mem_map(core->io, sec, addr + sec->size)) {
-			return;
-		}
-
-		size = sec->size;
-	}
-
-	// then we map the part of the section that comes from the physical file
-	char *map_name = rz_str_newf("fmap.%s", sec->name);
-	if (!map_name) {
-		return;
-	}
-
-	int perm = sec->perm;
-	// workaround to force exec bit in text section
-	if (sec->name && strstr(sec->name, "text")) {
-		perm |= RZ_PERM_X;
-	}
-
-	if (size) {
-		RzIOMap *map = rz_io_map_add_batch(core->io, fd, perm, sec->paddr, addr, size);
-		if (!map) {
-			free(map_name);
-			return;
-		}
-		map->name = map_name;
-	}
-	return;
-}
-
-struct io_bin_section_info_t {
-	RzBinSection *sec;
-	ut64 addr;
-	int fd;
-};
-
 /* Map Sections to Segments https://github.com/rizinorg/rizin/issues/14647 */
 static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode) {
 	RzListIter *iter, *iter2;
@@ -2775,6 +2935,7 @@ static RzList *section_flag_to_rzlist(RzBin *bin, ut64 flag) {
 	}
 	return NULL;
 }
+
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RzBinSection *section;
