@@ -542,29 +542,28 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 	return true;
 }
 
-/* Define new data at relocation address if it's not in an executable section */
-static void add_metadata(RzCore *r, RzBinReloc *reloc, ut64 addr, int mode) {
-	RzBinFile *binfile = r->bin->cur;
-	RzBinObject *binobj = binfile ? binfile->o : NULL;
+/*
+ * Decide whether a meta item should be created for the given reloc
+ * and figure out what size it should have.
+ * \return whether to put a meta item for the given reloc
+ */
+static bool meta_for_reloc(RzCore *r, RzBinObject *binobj, RzBinReloc *reloc, ut64 addr, RZ_OUT ut64 *size) {
+	rz_return_val_if_fail(binobj && reloc, false);
 	RzBinInfo *info = binobj ? binobj->info : NULL;
 
-	int cdsz = info ? (info->bits == 64 ? 8 : info->bits == 32 ? 4
-					  : info->bits == 16       ? 4
-								   : 0)
-			: 0;
-	if (cdsz == 0) {
-		return;
+	int cdsz = info ? (info->bits / 8) : 0;
+	if (cdsz <= 0) {
+		return false;
 	}
 
+	// only set meta if it's not in an executable section
 	RzIOMap *map = rz_io_map_get(r->io, addr);
 	if (!map || map->perm & RZ_PERM_X) {
-		return;
+		return false;
 	}
-	if (IS_MODE_SET(mode)) {
-		rz_meta_set(r->analysis, RZ_META_TYPE_DATA, reloc->vaddr, cdsz, NULL);
-	} else if (IS_MODE_RZCMD(mode)) {
-		rz_cons_printf("Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
-	}
+
+	*size = cdsz;
+	return true;
 }
 
 static bool is_section_symbol(RzBinSymbol *s) {
@@ -730,20 +729,23 @@ static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, ch
 
 RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_bool) {
 	rz_return_val_if_fail(core && binfile, false);
-	RBIter iter;
-	RzBinReloc *reloc = NULL;
-	Sdb *db = NULL;
-	char *sdb_module = NULL;
+	RzBinObject *o = binfile->o;
+	if (!o) {
+		return false;
+	}
 
 	int va = VA_TRUE; // XXX relocs always vaddr?
-	//this has been created for reloc object files
-	RBNode *relocs = rz_bin_patch_relocs(core->bin);
+	RBNode *relocs = rz_bin_object_patch_relocs(binfile, o);
 	if (!relocs) {
-		relocs = rz_bin_get_relocs(core->bin);
+		relocs = o->relocs;
 	}
 
 	rz_flag_space_set(core->flags, RZ_FLAGS_FS_RELOCS);
 
+	Sdb *db = NULL;
+	char *sdb_module = NULL;
+	RBIter iter;
+	RzBinReloc *reloc = NULL;
 	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
 		ut64 addr = rva(core->bin, reloc->paddr, reloc->vaddr, va);
 		if ((is_section_reloc(reloc) || is_file_reloc(reloc))) {
@@ -754,12 +756,13 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 			continue;
 		}
 		set_bin_relocs(core, reloc, addr, &db, &sdb_module);
-		add_metadata(core, reloc, addr, RZ_MODE_SET); // TODO: kill the mode here
+		ut64 meta_sz;
+		if (meta_for_reloc(core, o, reloc, addr, &meta_sz)) {
+			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, addr, meta_sz, NULL);
+		}
 	}
-
 	RZ_FREE(sdb_module);
 	sdb_free(db);
-	db = NULL;
 
 	return relocs != NULL;
 }
@@ -1751,7 +1754,10 @@ static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
 				rz_cons_printf("\"f %s%s%s %d 0x%08" PFMT64x "\"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
 					r->bin->prefix ? "." : "", n, reloc_size, addr);
-				add_metadata(r, reloc, addr, mode);
+				ut64 meta_sz;
+				if (r->bin->cur && r->bin->cur->o && meta_for_reloc(r, r->bin->cur->o, reloc, addr, &meta_sz)) {
+					rz_cons_printf("Cd %" PFMT64u " @ 0x%08" PFMT64x "\n", meta_sz, addr);
+				}
 				free(n);
 				free(name);
 			}
