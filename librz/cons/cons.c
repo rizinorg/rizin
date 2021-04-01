@@ -672,8 +672,9 @@ RZ_API void rz_cons_gotoxy(int x, int y) {
 #endif
 }
 
-RZ_API void rz_cons_print_clear(void) {
-	rz_cons_strcat("\x1b[0;0H\x1b[0m");
+RZ_API void rz_cons_goto_origin_reset(void) {
+	rz_cons_gotoxy(0, 0);
+	rz_cons_strcat(Color_RESET);
 }
 
 RZ_API void rz_cons_fill_line(void) {

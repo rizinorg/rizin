@@ -3756,12 +3756,10 @@ static void visual_refresh(RzCore *core) {
 
 	int w = visual_responsive(core);
 
-	if (autoblocksize) {
-		rz_cons_gotoxy(0, 0);
-	} else {
+	if (!autoblocksize) {
 		rz_cons_clear();
 	}
-	rz_cons_print_clear();
+	rz_cons_goto_origin_reset();
 	rz_cons_flush();
 
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");

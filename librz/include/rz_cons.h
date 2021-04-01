@@ -879,7 +879,7 @@ RZ_API void rz_cons_context_break_pop(RzConsContext *context, bool sig);
 RZ_API char *rz_cons_editor(const char *file, const char *str);
 RZ_API void rz_cons_reset(void);
 RZ_API void rz_cons_reset_colors(void);
-RZ_API void rz_cons_print_clear(void);
+RZ_API void rz_cons_goto_origin_reset(void);
 RZ_API void rz_cons_echo(const char *msg);
 RZ_API void rz_cons_zero(void);
 RZ_API void rz_cons_highlight(const char *word);
