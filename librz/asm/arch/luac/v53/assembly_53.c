@@ -7,48 +7,6 @@
 #define LUA_ASM_OPCODE_NUM LUA_NUM_OPCODES
 #define GET_ASM_SIZE(x)    (sizeof(x) - 1)
 
-static int load_next_arg_start(const char *raw_string, char *recv_buf) {
-	if (!raw_string) {
-		return 0;
-	}
-
-	const char *arg_start = NULL;
-	const char *arg_end = NULL;
-	int arg_len = 0;
-
-	/* locate the start point */
-	arg_start = rz_str_trim_head_ro(raw_string);
-	if (strlen(arg_start) == 0) {
-		return 0;
-	}
-
-	arg_end = strchr(arg_start, ' ');
-	if (arg_end == NULL) {
-                /* is last arg */
-		arg_len = strlen(arg_start);
-	} else {
-		arg_len = arg_end - arg_start;
-	}
-
-	/* Set NUL */
-	memcpy(recv_buf, arg_start, arg_len);
-	recv_buf[arg_len] = 0x00;
-
-	/* Calculate offset */
-	return arg_start - raw_string + arg_len;
-}
-
-static bool is_valid_num_value_string(const char *str) {
-	if (!rz_is_valid_input_num_value(NULL, str)) {
-                eprintf("luac_assembler: %s is not a valid number argument\n", str);
-                return false;
-	}
-	return true;
-}
-
-static int convert_str_to_num(const char *str) {
-	return strtoll(str, NULL, 0);
-}
 
 static LuaInstruction encode_iabc_a(ut8 opcode, const char *arg_start, st32 limit) {
 	LuaInstruction instruction = -1;
@@ -101,23 +59,23 @@ static LuaInstruction encode_iabx(ut8 opcode, const char *arg_start, st32 limit)
         char buffer[64];
 
         /* Find 1st first arg */
-        arg1_offset = load_next_arg_start(arg_start, buffer);
+        arg1_offset = lua_load_next_arg_start(arg_start, buffer);
         if (arg1_offset == 0) {
                 return -1;
         }
-        if (is_valid_num_value_string(buffer)) {
-                arg1 = convert_str_to_num(buffer);
+        if (lua_is_valid_num_value_string(buffer)) {
+                arg1 = lua_convert_str_to_num(buffer);
         } else {
                 return -1;
         }
 
         /* Find the 2nd arg */
-        arg2_offset = load_next_arg_start(arg_start + arg1_offset, buffer);
+        arg2_offset = lua_load_next_arg_start(arg_start + arg1_offset, buffer);
         if (arg2_offset == 0) {
                 return -1;
         }
-        if (is_valid_num_value_string(buffer)) {
-                arg2 = convert_str_to_num(buffer);
+        if (lua_is_valid_num_value_string(buffer)) {
+                arg2 = lua_convert_str_to_num(buffer);
         } else {
                 return -1;
         }
@@ -139,28 +97,26 @@ static LuaInstruction encode_iabc_ab(ut8 opcode, const char *arg_start, st32 lim
 	char buffer[64];
 
 	/* Find 1st first arg */
-	arg1_offset = load_next_arg_start(arg_start, buffer);
+	arg1_offset = lua_load_next_arg_start(arg_start, buffer);
 	if (arg1_offset == 0) {
 		return -1;
 	}
-	if (is_valid_num_value_string(buffer)) {
-		arg1 = convert_str_to_num(buffer);
+	if (lua_is_valid_num_value_string(buffer)) {
+		arg1 = lua_convert_str_to_num(buffer);
 	} else {
 		return -1;
 	}
-	eprintf("[arg1]:%s\n", buffer);
 
 	/* Find the 2nd arg */
-	arg2_offset = load_next_arg_start(arg_start + arg1_offset, buffer);
+	arg2_offset = lua_load_next_arg_start(arg_start + arg1_offset, buffer);
 	if (arg2_offset == 0) {
 		return -1;
 	}
-	if (is_valid_num_value_string(buffer)) {
-		arg2 = convert_str_to_num(buffer);
+	if (lua_is_valid_num_value_string(buffer)) {
+		arg2 = lua_convert_str_to_num(buffer);
 	} else {
 		return -1;
 	}
-        eprintf("[arg2]:%s\n", buffer);
 
 	instruction = 0;
 	SET_OPCODE(instruction, opcode);
@@ -179,23 +135,23 @@ static LuaInstruction encode_iabc_ac(ut8 opcode, const char *arg_start, st32 lim
         char buffer[64];
 
         /* Find 1st first arg */
-        arg1_offset = load_next_arg_start(arg_start, buffer);
+        arg1_offset = lua_load_next_arg_start(arg_start, buffer);
         if (arg1_offset == 0) {
                 return -1;
         }
-        if (is_valid_num_value_string(buffer)) {
-                arg1 = convert_str_to_num(buffer);
+        if (lua_is_valid_num_value_string(buffer)) {
+                arg1 = lua_convert_str_to_num(buffer);
         } else {
                 return -1;
         }
 
         /* Find the 2nd arg */
-        arg2_offset = load_next_arg_start(arg_start + arg1_offset, buffer);
+        arg2_offset = lua_load_next_arg_start(arg_start + arg1_offset, buffer);
         if (arg2_offset == 0) {
                 return -1;
         }
-        if (is_valid_num_value_string(buffer)) {
-                arg2 = convert_str_to_num(buffer);
+        if (lua_is_valid_num_value_string(buffer)) {
+                arg2 = lua_convert_str_to_num(buffer);
         } else {
                 return -1;
         }
@@ -219,34 +175,34 @@ static LuaInstruction encode_iabc_abc(ut8 opcode, const char *arg_start, st32 li
         char buffer[64];
 
         /* Find 1st first arg */
-        arg1_offset = load_next_arg_start(arg_start, buffer);
+        arg1_offset = lua_load_next_arg_start(arg_start, buffer);
         if (arg1_offset == 0) {
                 return -1;
         }
-        if (is_valid_num_value_string(buffer)) {
-                arg1 = convert_str_to_num(buffer);
+        if (lua_is_valid_num_value_string(buffer)) {
+                arg1 = lua_convert_str_to_num(buffer);
         } else {
                 return -1;
         }
 
         /* Find the 2nd arg */
-        arg2_offset = load_next_arg_start(arg_start + arg1_offset, buffer);
+        arg2_offset = lua_load_next_arg_start(arg_start + arg1_offset, buffer);
         if (arg2_offset == 0) {
                 return -1;
         }
-        if (is_valid_num_value_string(buffer)) {
-                arg2 = convert_str_to_num(buffer);
+        if (lua_is_valid_num_value_string(buffer)) {
+                arg2 = lua_convert_str_to_num(buffer);
         } else {
                 return -1;
         }
 
         /* Find the 3rd arg */
-        arg3_offset = load_next_arg_start(arg_start + arg1_offset + arg2_offset, buffer);
+        arg3_offset = lua_load_next_arg_start(arg_start + arg1_offset + arg2_offset, buffer);
         if (arg3_offset == 0) {
                 return -1;
         }
-        if (is_valid_num_value_string(buffer)) {
-                arg3 = convert_str_to_num(buffer);
+        if (lua_is_valid_num_value_string(buffer)) {
+                arg3 = lua_convert_str_to_num(buffer);
         } else {
                 return -1;
         }
@@ -279,7 +235,7 @@ bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 	}
 
 	opcode_len = opcode_end - opcode_start;
-	opcode = get_lua_opcode_by_name(opcode_start, opcode_len);
+	opcode = get_lua53_opcode_by_name(opcode_start);
         eprintf("[start]:%s, [end]:%s, [size]:%d, [opcode]:%d\n", opcode_start, opcode_end, opcode_len, opcode);
 
 	/* Find the arguments */

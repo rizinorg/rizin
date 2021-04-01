@@ -40,7 +40,9 @@ int rz_luac_asm(RzAsm *a, RzAsmOp *opstruct, const char *str) {
 			return -1;
 		}
 	} else if (strcmp(a->cpu, "5.4") == 0) {
-		return -1;
+		if (!lua54_assembly(str, str_len, &instruction)) {
+			return -1;
+		}
 	}
 
 	lua_set_instruction(instruction, buffer);

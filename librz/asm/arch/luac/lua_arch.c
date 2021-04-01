@@ -117,3 +117,46 @@ char *luaop_new_str_1arg_ex(char *opname, int a, char *mark, char *prefix_a) {
 
 	return asm_string;
 }
+
+int lua_load_next_arg_start(const char *raw_string, char *recv_buf) {
+        if (!raw_string) {
+                return 0;
+        }
+
+        const char *arg_start = NULL;
+        const char *arg_end = NULL;
+        int arg_len = 0;
+
+        /* locate the start point */
+        arg_start = rz_str_trim_head_ro(raw_string);
+        if (strlen(arg_start) == 0) {
+                return 0;
+        }
+
+        arg_end = strchr(arg_start, ' ');
+        if (arg_end == NULL) {
+                /* is last arg */
+                arg_len = strlen(arg_start);
+        } else {
+                arg_len = arg_end - arg_start;
+        }
+
+        /* Set NUL */
+        memcpy(recv_buf, arg_start, arg_len);
+        recv_buf[arg_len] = 0x00;
+
+        /* Calculate offset */
+        return arg_start - raw_string + arg_len;
+}
+
+bool lua_is_valid_num_value_string(const char *str) {
+        if (!rz_is_valid_input_num_value(NULL, str)) {
+                eprintf("luac_assembler: %s is not a valid number argument\n", str);
+                return false;
+        }
+        return true;
+}
+
+int lua_convert_str_to_num(const char *str) {
+        return strtoll(str, NULL, 0);
+}

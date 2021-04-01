@@ -65,7 +65,7 @@ LuaOpNameList get_lua53_opnames(void) {
 	return list;
 }
 
-ut8 get_lua_opcode_by_name(const char *name, int n) {
+ut8 get_lua53_opcode_by_name(const char *name) {
 	lua_strcase(name, "move") return OP_MOVE;
 	lua_strcase(name, "loadk") return OP_LOADK;
 	lua_strcase(name, "loadkx") return OP_LOADKX;

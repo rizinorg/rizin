@@ -196,9 +196,13 @@ typedef enum {
 
 /* OPCODE getter */
 #define LUA_GET_OPCODE(i) (LUA_CAST(LuaOpCode, ((i) >> LUAOP_OP_OFFSET) & LUA_MASK1(LUAOP_OP_SIZE, 0)))
+#define LUA_SET_OPCODE(i,o)	((i) = (((i)&LUA_MASK0(LUAOP_OP_SIZE,LUAOP_OP_OFFSET)) | \
+		((LUA_CAST(LuaInstruction, o)<<LUAOP_OP_OFFSET)&LUA_MASK1(LUAOP_OP_SIZE,LUAOP_OP_OFFSET))))
 
 /* Arguments getter */
 #define LUA_GETARG(i, offset, size) (LUA_CAST(int, ((i) >> (offset)) & LUA_MASK1(size, 0)))
+#define LUA_SETARG(i,v,pos,size)	((i) = (((i)&LUA_MASK0(size,pos)) | \
+                ((LUA_CAST(LuaInstruction, v)<<(pos))&LUA_MASK1(size,pos))))
 
 #define LUA_GETARG_A(i)   LUA_GETARG(i, LUAOP_A_OFFSET, LUAOP_A_SIZE)
 #define LUA_GETARG_B(i)   LUA_GETARG(i, LUAOP_B_OFFSET, LUAOP_B_SIZE)
@@ -211,6 +215,18 @@ typedef enum {
 #define LUA_GETARG_sB(i)  sC2int(LUA_GETARG_B(i))
 
 #define LUA_GETARG_k(i) LUA_GETARG(i, LUAOP_k_OFFSET, 1)
+
+#define SETARG_A(i,v)	LUA_SETARG(i, v, LUAOP_A_OFFSET, LUAOP_A_SIZE)
+#define SETARG_B(i,v)	LUA_SETARG(i, v, LUAOP_B_OFFSET, LUAOP_B_SIZE)
+#define SETARG_C(i,v)	LUA_SETARG(i, v, LUAOP_C_OFFSET, LUAOP_C_SIZE)
+#define SETARG_Bx(i,v)	LUA_SETARG(i, v, LUAOP_Bx_OFFSET, LUAOP_Bx_SIZE)
+#define SETARG_Ax(i,v)	LUA_SETARG(i, v, LUAOP_Ax_OFFSET, LUAOP_Ax_SIZE)
+#define SETARG_sBx(i,b)	SETARG_Bx((i), LUA_CAST(ut32, (b) + LUAOP_FIX_sBx))
+#define SETARG_sJ(i,j) \
+	LUA_SETARG((i), LUA_CAST((j)+LUAOP_FIX_sJ), LUAOP_sJ_OFFSET, LUAOP_sJ_SIZE)
+
+#define SETARG_k(i,v)	LUA_SETARG(i, v, LUAOP_k_OFFSET, 1)
+
 
 #define ISK(isk)    ((isk) ? "#CONST" : "#R")
 #define ISFLIP(isk) ((isk) ? "#FLIP" : "")
