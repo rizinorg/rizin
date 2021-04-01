@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2012-2018 pancake */
+// SPDX-FileCopyrightText: 2012-2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -12,11 +13,11 @@
 #include "../arch/dcpu16/asm.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	char buf_asm[32];
+	char buf_asm[96];
 	if (len < 2) {
 		return -1; // at least 2 bytes!
 	}
-	op->size = dcpu16_disasm(buf_asm, (const ut16 *)buf, len, NULL);
+	op->size = dcpu16_disasm(buf_asm, sizeof(buf_asm), (const ut16 *)buf, len, NULL);
 	rz_strbuf_set(&op->buf_asm, (op->size > 0) ? buf_asm : "(data)");
 	return op->size;
 }

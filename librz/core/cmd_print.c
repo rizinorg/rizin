@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_asm.h"
@@ -6,6 +7,8 @@
 #include "rz_util.h"
 #include "rz_types.h"
 #include <limits.h>
+
+#include "core_private.h"
 
 #define RZ_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR       "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
@@ -36,7 +39,7 @@ static const char *help_msg_pp[] = {
 	"pp4", "", "print incremental dword pattern",
 	"pp8", "", "print incremental qword pattern",
 	"ppa", "[lu]", "latin alphabet (lowercase, uppercases restrictions)",
-	"ppd", "", "print debruijn pattern (see rz_gg -P, -q and wopD)",
+	"ppd", "", "print debruijn pattern (see rz-gg -P, -q and wopD)",
 	"ppf", "", "print buffer filled with 0xff",
 	"ppn", "", "numeric pin patterns",
 	NULL
@@ -1098,7 +1101,6 @@ static void cmd_pCd(RzCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	rz_cons_push();
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
 	c->color = rz_config_get_i(core->config, "scr.color");
@@ -1114,7 +1116,6 @@ static void cmd_pCd(RzCore *core, const char *input) {
 	rz_core_block_size(core, obsz);
 	rz_core_seek(core, osek, true);
 
-	rz_cons_pop();
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
 	if (asm_minicols) {
@@ -1181,7 +1182,6 @@ static void cmd_pCD(RzCore *core, const char *input) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	rz_cons_push();
 	RzConsCanvas *c = rz_cons_canvas_new(w, rows);
 	ut64 osek = core->offset;
 	c->color = rz_config_get_i(core->config, "scr.color");
@@ -1208,7 +1208,6 @@ static void cmd_pCD(RzCore *core, const char *input) {
 	rz_core_block_size(core, obsz);
 	rz_core_seek(core, osek, true);
 
-	rz_cons_pop();
 	rz_cons_canvas_print(c);
 	rz_cons_canvas_free(c);
 	if (asm_minicols) {
@@ -1283,7 +1282,7 @@ static char get_string_type(const ut8 *buf, ut64 len) {
 		} else {
 			str_type = 'a';
 		}
-		for (rc = i = 0; needle < len; i += rc) {
+		for (i = 0; needle < len; i += rc) {
 			RzRune r;
 			if (str_type == 'w') {
 				if (needle + 1 < len) {
@@ -1363,7 +1362,7 @@ static void cmd_pDj(RzCore *core, const char *arg) {
 		eprintf("cannot allocate %d byte(s)\n", bsize);
 	}
 	pj_end(pj);
-	rz_cons_printf("%s", pj_string(pj));
+	rz_cons_println(pj_string(pj));
 	pj_free(pj);
 }
 
@@ -1376,7 +1375,7 @@ static void cmd_pdj(RzCore *core, const char *arg, ut8 *block) {
 	pj_a(pj);
 	rz_core_print_disasm_json(core, core->offset, block, core->blocksize, nblines, pj);
 	pj_end(pj);
-	rz_cons_printf("%s\n", pj_string(pj));
+	rz_cons_println(pj_string(pj));
 	pj_free(pj);
 }
 
@@ -2416,10 +2415,6 @@ RZ_API void rz_core_print_cmp(RzCore *core, ut64 from, ut64 to) {
 	free(b);
 }
 
-static void cmd_print_pwn(const RzCore *core) {
-	rz_cons_printf("easter egg license has expired\n");
-}
-
 static int cmd_print_pxA(RzCore *core, int len, const char *input) {
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	int show_offset = true;
@@ -2794,7 +2789,6 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 	rz_config_set_i(core->config, "scr.html", 0);
 	rz_config_set_i(core->config, "asm.cmt.right", true);
 
-	rz_cons_push();
 	line = NULL;
 	s = NULL;
 	if (!strncmp(input, "dsb", 3)) {
@@ -2817,7 +2811,6 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 	} else {
 		line = s = rz_core_cmd_str(core, "pd");
 	}
-	rz_cons_pop();
 
 	rz_config_set_i(core->config, "scr.html", scr_html);
 	rz_config_set_i(core->config, "scr.color", use_color);
@@ -3720,7 +3713,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		skipblocks = 0;
 	}
 	if (totalsize == UT64_MAX) {
-		if (rz_config_get_i(core->config, "cfg.debug")) {
+		if (rz_config_get_b(core->config, "cfg.debug")) {
 			RzDebugMap *map = rz_debug_map_get(core->dbg, core->offset);
 			if (map) {
 				totalsize = map->addr_end - map->addr;
@@ -3744,7 +3737,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		eprintf("Invalid block size: %d\n", (int)blocksize);
 		goto beach;
 	}
-	if (!rz_config_get_i(core->config, "cfg.debug")) {
+	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		RzIOMap *map1 = rz_list_first(list);
 		if (map1) {
 			from = map1->itv.addr;
@@ -4135,16 +4128,16 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 			rz_cons_printf("axd 0x%" PFMT64x " 0x%08" PFMT64x "\n", origin, offset);
 			break;
 		case '.':
-			rz_core_cmdf(core, "CC-@ 0x%08" PFMT64x "\n", origin);
-			rz_core_cmdf(core, "CC switch table @ 0x%08" PFMT64x "\n", origin);
+			rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
+			rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, origin, "switch table");
 			rz_core_cmdf(core, "f switch.0x%08" PFMT64x "=0x%08" PFMT64x "\n", origin, origin);
 			rz_core_cmdf(core, "f jmptbl.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); //origin, origin);
-			rz_core_cmdf(core, "axd 0x%" PFMT64x " 0x%08" PFMT64x "\n", origin, offset);
+			rz_analysis_xrefs_set(core->analysis, offset, origin, RZ_ANALYSIS_REF_TYPE_DATA);
 			break;
 		}
 	} else if (mode == '.') {
-		rz_core_cmdf(core, "CC-@ 0x%08" PFMT64x "\n", origin);
-		rz_core_cmdf(core, "CC switch basic block @ 0x%08" PFMT64x "\n", offset);
+		rz_meta_del(core->analysis, RZ_META_TYPE_COMMENT, origin, 1);
+		rz_meta_set_string(core->analysis, RZ_META_TYPE_COMMENT, offset, "switch basic block");
 		rz_core_cmdf(core, "f switch.0x%08" PFMT64x "=0x%08" PFMT64x "\n", offset, offset); // basic block @ 0x%08"PFMT64x "\n", offset);
 	}
 	int n = 0;
@@ -4163,16 +4156,18 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 			rz_cons_printf("af case.%d.0x%" PFMT64x " 0x%08" PFMT64x "\n", n, offset, addr);
 			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", offset, addr);
 			rz_cons_printf("ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
+			// FIXME: "aho" doesn't accept anything here after the "case" word
 			rz_cons_printf("aho case 0x%" PFMT64x " 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", (ut64)i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
 			rz_cons_printf("ahs %d @ 0x%08" PFMT64x "\n", step, offset + i);
 		} else if (mode == '.') {
-			rz_core_cmdf(core, "af case.%d.0x%" PFMT64x " @ 0x%08" PFMT64x "\n", n, offset, addr);
-			rz_core_cmdf(core, "ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", offset, addr);
-			rz_core_cmdf(core, "ax 0x%" PFMT64x " 0x%08" PFMT64x "\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
-			// rz_core_cmdf (core, "CC+ case %d: 0x%08"PFMT64x " @ 0x%08"PFMT64x "\n", i / step, addr, origin);
-			rz_core_cmdf(core, "CCu case %d: @ 0x%08" PFMT64x "\n", n, addr); //, origin);
-			rz_core_cmdf(core, "aho case %d 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n", n, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
-			rz_core_cmdf(core, "ahs %d @ 0x%08" PFMT64x "\n", step, offset + i);
+			const char *case_name = rz_str_newf("case.%d.0x%" PFMT64x, n, offset);
+			rz_core_analysis_function_add(core, case_name, addr, false);
+			rz_analysis_xrefs_set(core->analysis, addr, offset, RZ_ANALYSIS_REF_TYPE_NULL);
+			rz_analysis_xrefs_set(core->analysis, offset, addr, RZ_ANALYSIS_REF_TYPE_NULL); // wrong, but useful because forward xrefs dont work :?
+			const char *case_comment = rz_str_newf("case %d:", n);
+			rz_core_meta_comment_add(core, case_comment, addr);
+			rz_analysis_hint_set_type(core->analysis, offset + i, RZ_ANALYSIS_OP_TYPE_CASE); // wrong, but useful because forward xrefs dont work :?
+			rz_analysis_hint_set_size(core->analysis, offset + i, step);
 		} else {
 			rz_cons_printf("0x%08" PFMT64x " -> 0x%08" PFMT64x "\n", offset + i, addr);
 		}
@@ -4268,7 +4263,6 @@ static void __printPattern(RzCore *core, const char *_input) {
 	case 'a':
 		// TODO
 		{
-			i = core->offset;
 			size_t bs = 4; // XXX hardcoded
 			ut8 *buf = calloc(bs, 1);
 			// for (;i>0;i--) { incDigitBuffer (buf, bs); }
@@ -4285,7 +4279,6 @@ static void __printPattern(RzCore *core, const char *_input) {
 		break;
 	case 'n': // "ppn"
 	{
-		i = core->offset;
 		size_t bs = 4; // XXX hardcoded
 		ut8 *buf = calloc(bs, 1);
 		// for (;i>0;i--) { incDigitBuffer (buf, bs); }
@@ -4626,11 +4619,11 @@ static char *__op_refs(RzCore *core, RzAnalysisOp *op, int n) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	if (n) {
 		// RzList *list = rz_analysis_xrefs_get_from (core->analysis, op->addr);
-		RzList *list = rz_analysis_xrefs_get(core->analysis, op->addr);
-		RzAnalysisRef *ref;
+		RzList *list = rz_analysis_xrefs_get_to(core->analysis, op->addr);
+		RzAnalysisXRef *xref;
 		RzListIter *iter;
-		rz_list_foreach (list, iter, ref) {
-			rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", ref->at);
+		rz_list_foreach (list, iter, xref) {
+			rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", xref->to);
 		}
 	} else {
 		if (op->jump != UT64_MAX) {
@@ -4806,11 +4799,11 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	int i, len, ret;
 	ut8 *block;
 	ut32 tbs = core->blocksize;
-	ut64 n, off, from, to, at, ate, piece;
+	ut64 n, off, from, to;
 	ut64 tmpseek = UT64_MAX;
 	const size_t addrbytes = core->io->addrbytes;
-	i = l = len = ret = 0;
-	n = off = from = to = at = ate = piece = 0;
+	ret = 0;
+	to = 0;
 	PJ *pj = NULL;
 
 	rz_print_init_rowoffsets(core->print);
@@ -4894,9 +4887,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	block = core->block;
 	switch (*input) {
 	case 'w': // "pw"
-		if (input[1] == 'n') {
-			cmd_print_pwn(core);
-		} else if (input[1] == 'd') {
+		if (input[1] == 'd') { // "pwd"
 			char *cwd = rz_sys_getdir();
 			if (cwd) {
 				rz_cons_println(cwd);
@@ -5216,7 +5207,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_core_cmdf(core, "pdfj%s", input + 3);
 			} else if (input[2] == 'c') { // "pifc"
 				RzListIter *iter;
-				RzAnalysisRef *refi;
+				RzAnalysisXRef *xrefi;
 				RzList *refs = NULL;
 				PJ *pj = NULL;
 
@@ -5263,14 +5254,14 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					rz_config_set_i(core->config, "emu.str", false);
 
 					// iterate over all call references
-					rz_list_foreach (refs, iter, refi) {
+					rz_list_foreach (refs, iter, xrefi) {
 						if (pj) {
-							RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, refi->addr,
+							RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, xrefi->to,
 								RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
-							char *dst = rz_str_newf((f ? f->name : "0x%08" PFMT64x), refi->addr);
+							char *dst = rz_str_newf((f ? f->name : "0x%08" PFMT64x), xrefi->to);
 							char *dst2 = NULL;
-							RzAnalysisOp *op = rz_core_analysis_op(core, refi->addr, RZ_ANALYSIS_OP_MASK_BASIC);
-							RzBinReloc *rel = rz_core_getreloc(core, refi->addr, op->size);
+							RzAnalysisOp *op = rz_core_analysis_op(core, xrefi->to, RZ_ANALYSIS_OP_MASK_BASIC);
+							RzBinReloc *rel = rz_core_getreloc(core, xrefi->to, op->size);
 							if (rel) {
 								if (rel && rel->import && rel->import->name) {
 									dst2 = rel->import->name;
@@ -5282,12 +5273,12 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 							}
 							pj_o(pj);
 							pj_ks(pj, "dest", dst2);
-							pj_kn(pj, "addr", refi->addr);
-							pj_kn(pj, "at", refi->at);
+							pj_kn(pj, "addr", xrefi->to);
+							pj_kn(pj, "at", xrefi->from);
 							pj_end(pj);
 							rz_analysis_op_free(op);
 						} else {
-							char *s = rz_core_cmd_strf(core, "pdi %i @ 0x%08" PFMT64x, 1, refi->at);
+							char *s = rz_core_cmd_strf(core, "pdi %i @ 0x%08" PFMT64x, 1, xrefi->from);
 							rz_cons_printf("%s", s);
 						}
 					}
@@ -5658,7 +5649,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			} else {
 				cmd_pdj(core, input + 2, block);
 			}
-			rz_cons_newline();
 			pd_result = 0;
 			break;
 		case 'J': // pdJ
@@ -6831,9 +6821,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			core->offset = offset0;
 			rz_cons_printf("\n");
 		}
-		break;
-	case 'n': // easter
-		eprintf("easter egg license has expired\n");
 		break;
 	case 't': // "pt"
 		switch (input[1]) {

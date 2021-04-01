@@ -14,6 +14,7 @@ EOF
 RUN
 
 NAME=asm.assembler
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -24,13 +25,5 @@ EOF
 EXPECT=<<EOF
 ffd0
 1021
-EOF
-RUN
-
-NAME=att pa
-FILE=--
-CMDS=pa add $33, %rbx @a:x86.as:64 @e:asm.syntax=att
-EXPECT=<<EOF
-4883c321
 EOF
 RUN

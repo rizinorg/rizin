@@ -327,8 +327,9 @@ p8 @@s:0xd000 0xe000 0x100
 (commands
   (iter_step_command
     (arged_command (cmd_identifier))
-    (arg (arg_identifier))
-    (arg (arg_identifier))
-    (arg (arg_identifier))))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
 
 

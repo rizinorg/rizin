@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2019 - v3l0c1r4pt0r */
+// SPDX-FileCopyrightText: 2019 v3l0c1r4pt0r <v3l0c1r4pt0r@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
 #include <rz_lib.h>

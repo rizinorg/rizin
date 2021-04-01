@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015 nodepad <nod3pad@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef MZ_H

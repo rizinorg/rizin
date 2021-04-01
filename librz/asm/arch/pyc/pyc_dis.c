@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2016-2020 c0riolis
+// SPDX-FileCopyrightText: 2016-2020 x0urc3
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "pyc_dis.h"
@@ -8,7 +10,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList *names, R
 
 int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList *cobjs, RzList *interned_table, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
-	ut32 extended_arg = 0, i = 0, oparg;
+	ut32 i = 0, oparg;
 	st64 start_offset, end_offset;
 	RzListIter *iter = NULL;
 
@@ -38,19 +40,11 @@ int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList *cobjs, RzList *int
 		}
 		if (op >= ops->have_argument) {
 			if (ops->bits == 16) {
-				oparg = code[i] + code[i + 1] * 256 + extended_arg;
+				oparg = code[i] + code[i + 1] * 256;
 				i += 2;
 			} else {
-				oparg = code[i] + extended_arg;
+				oparg = code[i];
 				i += 1;
-			}
-			extended_arg = 0;
-			if (op == ops->extended_arg) {
-				if (ops->bits == 16) {
-					extended_arg = oparg * 65536;
-				} else {
-					extended_arg = oparg << 8;
-				}
 			}
 			const char *arg = parse_arg(&ops->opcodes[op], oparg, names, consts, varnames, interned_table, freevars, cellvars, ops->opcode_arg_fmt);
 			if (arg != NULL) {

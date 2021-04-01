@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2019 nodepad <nod3pad@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

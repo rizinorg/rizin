@@ -1,0 +1,359 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_analysis
+commands:
+  - name: af
+    summary: Analyze Functions commands
+    cname: cmd_analysis_fcn
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: afb
+        summary: Basic blocks commands
+        subcommands:
+          - name: afb
+            summary: List basic blocks of function
+            cname: analysis_function_blocks_list
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_TABLE
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: afb+
+            summary: Add basic block by hand
+            cname: analysis_function_blocks_add
+            args:
+              - name: fcn_addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: size
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: jump
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: fail
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+              - name: diff
+                type: RZ_CMD_ARG_TYPE_CHOICES
+                optional: true
+                choices: ["m", "u"]
+          - name: afb-
+            summary: Remove basic block from function
+            cname: analysis_function_blocks_del
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: afb-*
+            summary: Remove all basic blocks from function
+            cname: analysis_function_blocks_del_all
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: afbe
+            summary: Add basic-block edge for switch-cases
+            cname: analysis_function_blocks_edge
+            args:
+              - name: switch_addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: case_addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: afbr
+            summary: Show addresses of instructions which leave the function
+            cname: analysis_function_returns
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: afb=
+            summary: Display ascii-art bars for basic block regions
+            cname: analysis_function_blocks_asciiart
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: afbi
+            summary: Print single basic block information
+            cname: analysis_function_blocks_info
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_LONG
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_QUIET
+              - RZ_OUTPUT_MODE_TABLE
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+                optional: true
+          - name: afbc
+            summary: Set a color for the basic block at a given address
+            cname: analysis_function_blocks_color
+            args:
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: color
+                type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afB
+        cname: analysis_function_setbits
+        summary: Set asm.bits for the current function
+        args:
+          - name: bits
+            type: RZ_CMD_ARG_TYPE_NUM
+      - name: afs
+        summary: Function signatures commands
+        subcommands:
+          - name: afs
+            cname: analysis_function_signature
+            summary: Get/Set function signature at current address
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: signature
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: afs!
+            cname: analysis_function_signature_editor
+            summary: Set function signature at current address by using the editor
+            args: []
+          - name: afsr
+            cname: analysis_function_signature_type
+            summary: Change type for current function
+            args:
+              - name: type
+                type: RZ_CMD_ARG_TYPE_STRING
+      - name: afo
+        cname: analysis_function_address
+        summary: Show address of current function
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: afu
+        cname: analysis_function_until
+        summary: Resize and analyze function from current address until addr
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afx
+        cname: analysis_function_xrefs
+        summary: List function references
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
+      - name: afS
+        cname: analysis_function_stacksz
+        summary: Set stack frame size for function at current address
+        args:
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: afv
+        summary: Manipulate arguments/variables in a function
+        subcommands:
+          - name: afv
+            cname: analysis_function_vars
+            summary: List all variables and arguments of the current function
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+              - RZ_OUTPUT_MODE_RIZIN
+            args: []
+          - name: afv=
+            cname: analysis_function_vars_dis_refs
+            summary: List function variables and arguments with disasm refs
+            args: []
+          - name: afv-
+            cname: analysis_function_vars_del
+            summary: Remove all variables/arguments or just the specified one
+            args:
+              - name: varname|*
+                type: RZ_CMD_ARG_TYPE_FCN_VAR
+          - name: afva
+            cname: analysis_function_vars_detect
+            summary: Analyze function arguments/locals
+            args: []
+          - name: afvd
+            cname: analysis_function_vars_display
+            summary: Display the value of arguments/variables
+            args:
+              - name: varname
+                type: RZ_CMD_ARG_TYPE_FCN_VAR
+                optional: true
+          - name: afvf
+            cname: analysis_function_vars_stackframe
+            summary: Show BP relative stackframe variables
+            args: []
+          - name: afvn
+            cname: analysis_function_vars_rename
+            summary: Rename argument/variable in current function
+            args:
+              - name: new_name
+                type: RZ_CMD_ARG_TYPE_STRING
+              - name: old_name
+                type: RZ_CMD_ARG_TYPE_FCN_VAR
+                optional: true
+          - name: afvR
+            cname: analysis_function_vars_reads
+            summary: List addresses where vars are accessed (READ)
+            args:
+              - name: varname
+                type: RZ_CMD_ARG_TYPE_FCN_VAR
+                optional: true
+          - name: afvW
+            cname: analysis_function_vars_writes
+            summary: List addresses where vars are accessed (WRITE)
+            args:
+              - name: varname
+                type: RZ_CMD_ARG_TYPE_FCN_VAR
+                optional: true
+          - name: afvt
+            cname: analysis_function_vars_type
+            summary: Change type for given argument/local
+            args:
+              - name: varname
+                type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: type
+                type: RZ_CMD_ARG_TYPE_STRING
+          - name: afvx
+            cname: analysis_function_vars_xrefs
+            summary: Show function variable xrefs (same as afvR+afvW)
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: varname
+                type: RZ_CMD_ARG_TYPE_FCN_VAR
+                optional: true
+          - name: afvb
+            summary: Manipulate BP based arguments/locals
+            subcommands:
+              - name: afvb
+                cname: analysis_function_vars_bp
+                summary: List base pointer based arguments and locals / Define a new one
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_RIZIN
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: delta
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: name
+                    type: RZ_CMD_ARG_TYPE_STRING
+                  - name: type
+                    type: RZ_CMD_ARG_TYPE_STRING
+                    optional: true
+              - name: afvb-
+                cname: analysis_function_vars_bp_del
+                summary: Delete argument/local with the given name
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: afvbg
+                cname: analysis_function_vars_bp_getref
+                summary: Define var get reference
+                args:
+                  - name: delta
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                  - name: addr
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: afvbs
+                cname: analysis_function_vars_bp_setref
+                summary: Define var set reference
+                args:
+                  - name: delta
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                  - name: addr
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: afvr
+            summary: Manipulate register-based arguments/locals
+            subcommands:
+              - name: afvr
+                cname: analysis_function_vars_regs
+                summary: List register-based arguments and locals / Define a new one
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_RIZIN
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: reg
+                    type: RZ_CMD_ARG_TYPE_STRING
+                    optional: true
+                  - name: name
+                    type: RZ_CMD_ARG_TYPE_STRING
+                  - name: type
+                    type: RZ_CMD_ARG_TYPE_STRING
+                    optional: true
+              - name: afvr-
+                cname: analysis_function_vars_regs_del
+                summary: Delete register-based argument/local with the given name
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: afvrg
+                cname: analysis_function_vars_regs_getref
+                summary: Define register-based arguments and locals get references
+                args:
+                  - name: reg
+                    type: RZ_CMD_ARG_TYPE_STRING
+                  - name: addr
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: afvrs
+                cname: analysis_function_vars_regs_setref
+                summary: Define register-based arguments and locals set references
+                args:
+                  - name: reg
+                    type: RZ_CMD_ARG_TYPE_STRING
+                  - name: addr
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: afvs
+            summary: Manipulate SP based arguments/locals
+            subcommands:
+              - name: afvs
+                cname: analysis_function_vars_sp
+                summary: List stack based arguments and locals / Define a new one
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_RIZIN
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: delta
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                    optional: true
+                  - name: name
+                    type: RZ_CMD_ARG_TYPE_STRING
+                  - name: type
+                    type: RZ_CMD_ARG_TYPE_STRING
+                    optional: true
+              - name: afvs-
+                cname: analysis_function_vars_sp_del
+                summary: Delete argument/local with the given name
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+              - name: afvsg
+                cname: analysis_function_vars_sp_getref
+                summary: Define var get reference
+                args:
+                  - name: delta
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                  - name: addr
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: afvss
+                cname: analysis_function_vars_sp_setref
+                summary: Define var set reference
+                args:
+                  - name: delta
+                    type: RZ_CMD_ARG_TYPE_RZNUM
+                  - name: addr
+                    type: RZ_CMD_ARG_TYPE_RZNUM

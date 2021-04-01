@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2019 riq <ricardoquesada@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* VICE Snapshot File loader: http://vice-emu.sourceforge.net/ */
@@ -480,10 +481,9 @@ static RzList *symbols(RzBinFile *bf) {
 	int offset = _machines[m_idx].offset_mem;
 	RzList *ret = NULL;
 	RzBinSymbol *ptr;
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
-	ret->free = free;
 
 	int i;
 	for (i = 0; i < SYMBOLS_MAX; i++) {

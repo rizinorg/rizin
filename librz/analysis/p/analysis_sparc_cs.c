@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2014-2017 - pancake */
+// SPDX-FileCopyrightText: 2014-2017 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
 #include <rz_lib.h>
@@ -9,9 +10,8 @@
 #error Old Capstone not supported
 #endif
 
-#define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
-#define INSOP(n)                 insn->detail->sparc.operands[n]
-#define INSCC                    insn->detail->sparc.cc
+#define INSOP(n) insn->detail->sparc.operands[n]
+#define INSCC    insn->detail->sparc.cc
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;

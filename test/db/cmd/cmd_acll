@@ -1,0 +1,110 @@
+NAME=acll list class detailed
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+acll
+EOF
+EXPECT=<<EOF
+[A]
+  (vtable at 0x400d28)
+nth name            addr vt_offset type
+---------------------------------------
+1   greet       0x400ac8 0x0       VIRTUAL
+2   printValue  0x400af4 0x8       VIRTUAL
+3   A           0x400b36 -1        CONSTRUCTOR
+
+[B: A]
+  (vtable at 0x400d08)
+nth name                addr vt_offset type
+-------------------------------------------
+1   B               0x400b4e -1        CONSTRUCTOR
+2   printValue      0x400b82 0x8       VIRTUAL
+3   method.A.greet  0x400ac8 0x0       VIRTUAL
+
+[C: A]
+  (vtable at 0x400ce8)
+nth name                addr vt_offset type
+-------------------------------------------
+1   C               0x400bc4 -1        CONSTRUCTOR
+2   printValue      0x400bf8 0x8       VIRTUAL
+3   method.A.greet  0x400ac8 0x0       VIRTUAL
+
+[std::basic_ostream_char__std::char_traits_char_____std::endl_char__std]
+nth name                     addr vt_offset type
+------------------------------------------------
+1   char_traits<char> >  0x6012a8 -1        DEFAULT
+
+[std::basic_ostream_char__std::char_traits_char_____std::operator____std]
+nth name                     addr vt_offset type
+------------------------------------------------
+1   char_traits<char> >  0x601298 -1        DEFAULT
+
+[std::ios_base::Init]
+nth name       addr vt_offset type
+----------------------------------
+1   Init   0x601278 -1        DEFAULT
+2   ~Init  0x601290 -1        DEFAULT
+
+[std::ostream]
+nth name            addr vt_offset type
+---------------------------------------
+1   operator<<  0x6012a0 -1        DEFAULT
+
+EOF
+RUN
+
+NAME=PR#898
+FILE=bins/elf/analysis/classes_Polygon
+CMDS=<<EOF
+aaa
+acll
+EOF
+EXPECT=<<EOF
+[Polygon]
+  (vtable at 0x3d20)
+nth name          addr vt_offset type
+-------------------------------------
+1   Polygon     0x11ea -1        CONSTRUCTOR
+2   Polygon1    0x121e -1        DEFAULT
+3   Poly        0x122e -1        DEFAULT
+4   ~Polygon    0x123e -1        DESTRUCTOR
+5   set_values  0x14b6 -1        DEFAULT
+6   area        0x14e0 0x0       VIRTUAL
+7   sides       0x14f4 0x8       VIRTUAL
+
+[Rectangle: Polygon]
+  (vtable at 0x3d00)
+nth name          addr vt_offset type
+-------------------------------------
+1   area        0x1508 0x0       VIRTUAL
+2   sides       0x1528 0x8       VIRTUAL
+3   Rectangle   0x1578 -1        CONSTRUCTOR
+4   ~Rectangle  0x15a6 -1        DESTRUCTOR
+
+[Triangle: Polygon]
+  (vtable at 0x3ce0)
+nth name         addr vt_offset type
+------------------------------------
+1   area       0x153c 0x0       VIRTUAL
+2   sides      0x1564 0x8       VIRTUAL
+3   Triangle   0x15d4 -1        CONSTRUCTOR
+4   ~Triangle  0x1602 -1        DESTRUCTOR
+
+[std::basic_ostream_char__std::char_traits_char_____std::endl_char__std]
+nth name                   addr vt_offset type
+----------------------------------------------
+1   char_traits<char> >  0x3fd0 -1        DEFAULT
+
+[std::ios_base::Init]
+nth name     addr vt_offset type
+--------------------------------
+1   Init   0x3fb0 -1        DEFAULT
+2   ~Init  0x3ff8 -1        DEFAULT
+
+[std::ostream]
+nth name          addr vt_offset type
+-------------------------------------
+1   operator<<  0x3fb8 -1        DEFAULT
+
+EOF
+RUN

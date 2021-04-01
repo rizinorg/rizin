@@ -1,4 +1,5 @@
-// Copyright (c) 2014-2017, The Lemon Man, All rights reserved. LGPLv3
+// SPDX-FileCopyrightText: 2014-2017 The Lemon Man <thatlemon@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -72,7 +73,7 @@ static void *iob_pipe_open(const char *path) {
 	memset(&sa, 0, sizeof(struct sockaddr_un));
 
 	sa.sun_family = AF_UNIX;
-	strncpy(sa.sun_path, path, sizeof(sa.sun_path));
+	strncpy(sa.sun_path, path, sizeof(sa.sun_path) - 1);
 	sa.sun_path[sizeof(sa.sun_path) - 1] = 0;
 	if (connect(sock, (struct sockaddr *)&sa, sizeof(struct sockaddr_un)) == -1) {
 		perror("connect");

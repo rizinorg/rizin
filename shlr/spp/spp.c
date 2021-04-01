@@ -160,9 +160,7 @@ retry:
 
 	/* (post) tag */
 	if (!ptr) {
-		if (do_fputs (out, buf)) {
-			printed = 1;
-		}
+		do_fputs (out, buf);
 		return;
 	}
 	ptr2 = strstr (ptr, proc->tag_post);
@@ -190,9 +188,7 @@ retry:
 			D printf("==> 1 (%s)\n", proc->buf.lbuf);
 			if (ptr) {
 				lbuf_strcat (&proc->buf, buf);
-				if (do_fputs (out, buf)) {
-					printed = 1;
-				}
+				do_fputs (out, buf);
 				spp_run (ptr, out);
 			} else {
 				lbuf_strcat (&proc->buf, buf);
@@ -214,14 +210,10 @@ retry:
 				D printf (" ==> 2.1: continue(%s)\n", buf);
 				goto retry;
 			} else {
-				if (do_fputs (out, buf)) {
-					printed = 1;
-				}
+				do_fputs (out, buf);
 			}
 		}
-		if (do_fputs (out, buf)) {
-			printed = 1;
-		}
+		do_fputs (out, buf);
 	} else {
 		D printf ("==> 3\n");
 		lbuf_strcat (&proc->buf, ptr);

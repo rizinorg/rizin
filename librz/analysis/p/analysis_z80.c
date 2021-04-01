@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2012 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2013 condret
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>

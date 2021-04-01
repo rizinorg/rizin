@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2015-2019 - pancake, alvaro_fe */
+// SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2015-2019 alvaro_fe <alvaro.felipe91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_userconf.h>
 #if DEBUGGER
@@ -11,7 +13,6 @@
 // ------------------------------------
 
 #include <rz_debug.h>
-#include <rz_asm.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
 #include <rz_analysis.h>

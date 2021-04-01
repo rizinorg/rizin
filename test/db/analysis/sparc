@@ -56,7 +56,7 @@ CMDS=<<EOF
 s main
 af
 afi~complex[1]
-afb.@main
+afbi@main
 EOF
 EXPECT=<<EOF
 165
@@ -86,7 +86,7 @@ EXPECT=<<EOF
 0x000a0dec 0x000a0e04 00:0000 24 j 0x000a0d98 f 0x000a0e04
 0x000a0e04 0x000a0e0c 00:0000 8
 
-/ 140: sym.zwrite (int fd, const char *ptr, size_t nbytes);
+/ sym.zwrite (int fd, const char *ptr, size_t nbytes);
 |           ; arg int fd @ i0
 |           ; arg const char *ptr @ i1
 |           ; arg size_t nbytes @ i2

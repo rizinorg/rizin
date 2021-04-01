@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014-2020 inisider <inisider@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_pdb.h>
@@ -491,7 +492,7 @@ static bool pdb7_parse(RzPdb *pdb) {
 		if (UT64_MUL_OVFCHK(root_index_pages[i], page_size)) {
 			break;
 		}
-		rz_buf_seek(pdb->buf, root_index_pages[i] * page_size,
+		rz_buf_seek(pdb->buf, (st64)root_index_pages[i] * (st64)page_size,
 			RZ_BUF_SET);
 		rz_buf_read(pdb->buf, p_tmp, page_size);
 		p_tmp = (char *)p_tmp + page_size;
@@ -1393,7 +1394,7 @@ static void print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			case 1:
 			case '*':
 			case 'r':
-				filtered_name = rz_name_filter2(name);
+				filtered_name = rz_name_filter2(name, true);
 				pdb->cb_printf("f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
 					filtered_name,
 					(ut64)(img_base + omap_remap((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),

@@ -1,4 +1,6 @@
-// Copyright (c) 2014-2017, The Lemon Man, All rights reserved. LGPLv3
+// SPDX-FileCopyrightText: 2014-2017 The Lemon Man <thatlemon@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "transport.h"
 

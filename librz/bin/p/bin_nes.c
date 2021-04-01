@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2019 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
@@ -53,7 +54,7 @@ static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
 
 static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	addsym(ret, "NMI_VECTOR_START_ADDRESS", NMI_VECTOR_START_ADDRESS, 2);

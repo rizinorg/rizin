@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>

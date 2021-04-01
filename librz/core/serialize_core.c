@@ -1,9 +1,8 @@
+// SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
 #include <rz_core.h>
-
-#include "../util/serialize_helper.h"
 
 /*
  * SDB Format:
@@ -70,7 +69,7 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	RZ_NULLABLE const char *prj_file, RZ_NULLABLE RzSerializeResultInfo *res) {
 	Sdb *subdb;
 
-#define SUB(ns, call) SUB_DO(ns, call, return false;)
+#define SUB(ns, call) RZ_SERIALIZE_SUB_DO(db, subdb, res, ns, call, return false;)
 
 	if (load_bin_io) {
 		SUB("file", file_load(subdb, core, prj_file, res));
@@ -81,14 +80,14 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 
 	const char *str = sdb_get(db, "offset", 0);
 	if (!str || !*str) {
-		SERIALIZE_ERR("missing offset in core");
+		RZ_SERIALIZE_ERR(res, "missing offset in core");
 		return false;
 	}
 	core->offset = strtoull(str, NULL, 0);
 
 	str = sdb_get(db, "blocksize", 0);
 	if (!str || !*str) {
-		SERIALIZE_ERR("missing blocksize in core");
+		RZ_SERIALIZE_ERR(res, "missing blocksize in core");
 		return false;
 	}
 	ut64 bs = strtoull(str, NULL, 0);
@@ -203,7 +202,7 @@ static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, RZ_NULLA
 
 	RzCoreFile *fh = rz_core_file_open(core, file, RZ_PERM_RX, 0);
 	if (!fh) {
-		SERIALIZE_ERR("failed re-open file \"%s\" referenced by project", file);
+		RZ_SERIALIZE_ERR(res, "failed re-open file \"%s\" referenced by project", file);
 		return FILE_LOAD_FAIL;
 	}
 	rz_core_bin_load(core, file, UT64_MAX);
@@ -250,6 +249,6 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		return r == FILE_SUCCESS;
 	}
 
-	SERIALIZE_ERR("failed to re-locate file referenced by project");
+	RZ_SERIALIZE_ERR(res, "failed to re-locate file referenced by project");
 	return false;
 }

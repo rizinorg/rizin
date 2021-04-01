@@ -14,3 +14,27 @@ true
 EOF
 RUN
 
+NAME=noreturn exit (relocation)
+FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
+CMDS=<<EOF
+aaa
+s sym.showVersion
+afi~size[1]
+afi~noreturn[1]
+s sym.showHelp
+afi~size[1]
+afi~noreturn[1]
+s sym.main
+afi~size[1]
+afi~noreturn[1]
+EOF
+EXPECT=<<EOF
+38
+true
+89
+true
+1202
+false
+EOF
+RUN
+

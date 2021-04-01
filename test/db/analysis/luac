@@ -1,0 +1,30 @@
+NAME=LUAC: function boundary
+FILE=bins/luac/big.luac
+CMDS=<<EOF
+aa
+pdf~?
+EOF
+EXPECT=<<EOF
+289
+EOF
+RUN
+
+NAME=LUAC: jump states
+FILE=bins/luac/big.luac
+CMDS=<<EOF
+e scr.utf8=false
+aa
+s 0x51
+pd 7
+EOF
+EXPECT=<<EOF
+|      ,==< 0x00000051      LTI   R[0] [50] [0]#Kflag
+|     ,===< 0x00000055      JMP   [5]#To
+|     |`--> 0x00000059      GETTABUP R[0] UPV[0] CONST[0]
+|     |     0x0000005d      ADDI  R[0] R[0] [1]
+|     |     0x00000061      MMBINI R[0] [1] EVENT[6]
+|     |     0x00000065      SETTABUP UPV[0] CONST[0] R/CONST[0]#R
+|     `-,=< 0x00000069      JMP   [-8]#To
+EOF
+RUN
+

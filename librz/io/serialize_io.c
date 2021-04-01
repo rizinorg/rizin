@@ -1,9 +1,8 @@
-/* rizin - LGPL - Copyright 2020 - thestr4ng3r */
+// SPDX-FileCopyrightText: 2020 thestr4ng3r
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
 #include <rz_io.h>
-
-#include "../util/serialize_helper.h"
 
 #include <errno.h>
 
@@ -103,7 +102,7 @@ RZ_API bool rz_serialize_io_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io, RZ_NUL
 	// TODO: purge RzIO?
 	bool ret = false;
 	Sdb *subdb;
-#define SUB(ns, call) SUB_DO(ns, call, goto beach;)
+#define SUB(ns, call) RZ_SERIALIZE_SUB_DO(db, subdb, res, ns, call, goto beach;)
 	SUB("files", rz_serialize_io_files_load(subdb, io, res));
 #undef SUB
 	ret = true;

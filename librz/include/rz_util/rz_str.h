@@ -19,6 +19,25 @@ typedef enum {
 	RZ_STRING_ENC_GUESS = 'g',
 } RzStrEnc;
 
+/**
+ * \brief Convenience macro for local temporary strings
+ * \param buf Target buffer, **must** be an array type, not a pointer.
+ *
+ * This eases the common pattern where a stack-allocated string of a fixed
+ * size is created and filled with `snprintf()` to be used as a temporary string.
+ *
+ * Example:
+ *
+ *     char k[32];
+ *     char v[32];
+ *     sdb_set(db, rz_strf(k, "key.%d", 42), rz_strf(v, "val.%d", 123));
+ */
+#define rz_strf(buf, ...) ( \
+	snprintf(buf, sizeof(buf), __VA_ARGS__) < 0 \
+	? rz_assert_log(RZ_LOGLVL_FATAL, "rz_strf error while using snprintf"), \
+	NULL \
+	: buf)
+
 typedef int (*RzStrRangeCallback)(void *, int);
 
 #define RZ_STR_ISEMPTY(x)    (!(x) || !*(x))
@@ -51,7 +70,7 @@ RZ_API char *rz_str_sanitize_sdb_key(const char *s);
 RZ_API const char *rz_str_casestr(const char *a, const char *b);
 RZ_API const char *rz_str_firstbut(const char *s, char ch, const char *but);
 RZ_API const char *rz_str_lastbut(const char *s, char ch, const char *but);
-RZ_API int rz_str_split(char *str, char ch);
+RZ_API size_t rz_str_split(char *str, char ch);
 RZ_API RzList *rz_str_split_list(char *str, const char *c, int n);
 RZ_API RzList *rz_str_split_duplist(const char *str, const char *c, bool trim);
 RZ_API RzList *rz_str_split_duplist_n(const char *str, const char *c, int n, bool trim);
@@ -102,6 +121,9 @@ RZ_API int rz_str_char_count(const char *string, char ch);
 RZ_API char *rz_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
 RZ_API int rz_str_word_set0(char *str);
 RZ_API int rz_str_word_set0_stack(char *str);
+static inline const char *rz_str_word_get_next0(const char *str) {
+	return str + strlen(str) + 1;
+}
 RZ_API const char *rz_str_word_get0(const char *str, int idx);
 RZ_API char *rz_str_word_get_first(const char *string);
 RZ_API void rz_str_trim(char *str);
@@ -125,8 +147,12 @@ RZ_API int rz_str_cmp(const char *dst, const char *orig, int len);
 RZ_API int rz_str_casecmp(const char *dst, const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
 RZ_API int rz_str_ccpy(char *dst, char *orig, int ch);
-RZ_API const char *rz_str_get(const char *str);
-RZ_API const char *rz_str_get2(const char *str);
+static inline const char *rz_str_get(const char *str) {
+	return str ? str : "";
+}
+static inline const char *rz_str_get_null(const char *str) {
+	return str ? str : "(null)";
+}
 RZ_API char *rz_str_ndup(const char *ptr, int len);
 RZ_API char *rz_str_dup(char *ptr, const char *string);
 RZ_API int rz_str_inject(char *begin, char *end, char *str, int maxlen);

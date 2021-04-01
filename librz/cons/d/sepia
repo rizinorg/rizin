@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
+# SPDX-License-Identifier: LGPL-3.0-only
+
 # requires e scr.color=3
 
 ec b0x00 rgb:431

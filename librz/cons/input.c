@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
@@ -318,7 +319,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 				}
 				break;
 			case ':': // arrow+shift
-				ch = rz_cons_readchar();
+				rz_cons_readchar();
 				ch = rz_cons_readchar();
 				switch (ch) {
 				case 'A': ch = 'K'; break;

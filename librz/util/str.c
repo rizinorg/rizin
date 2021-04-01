@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_types.h"
@@ -12,8 +13,6 @@
 #include <rz_util/rz_base64.h>
 
 /* stable code */
-static const char *nullstr = "";
-static const char *nullstr_c = "(null)";
 static const char *rwxstr[] = {
 	[0] = "---",
 	[1] = "--x",
@@ -35,11 +34,16 @@ static const char *rwxstr[] = {
 };
 
 RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
+	int res;
 #ifdef _MSC_VER
-	return stricmp(s1, s2);
+	res = stricmp(s1, s2);
 #else
-	return strcasecmp(s1, s2);
+	res = strcasecmp(s1, s2);
 #endif
+	if (res == 0) {
+		res = strcmp(s1, s2);
+	}
+	return res;
 }
 
 RZ_API int rz_str_ncasecmp(const char *s1, const char *s2, size_t n) {
@@ -328,9 +332,9 @@ RZ_API int rz_str_delta(char *p, char a, char b) {
  * Replaces all instances of \p ch in \p str with a NULL byte and it returns
  * the number of split strings.
  */
-RZ_API int rz_str_split(char *str, char ch) {
+RZ_API size_t rz_str_split(char *str, char ch) {
 	rz_return_val_if_fail(str, 0);
-	int i;
+	size_t i;
 	char *p;
 	for (i = 1, p = str; *p; p++) {
 		if (*p == ch) {
@@ -524,10 +528,10 @@ RZ_API const char *rz_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
 	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
-		return (char *)nullstr;
+		return "";
 	}
 	for (i = 0; i != idx; i++) {
-		ptr += strlen(ptr) + 1;
+		ptr = rz_str_word_get_next0(ptr);
 	}
 	return ptr;
 }
@@ -543,23 +547,37 @@ RZ_API int rz_str_char_count(const char *string, char ch) {
 	return count;
 }
 
+static const char *separator_get_first(const char *text) {
+	for (; *text && !IS_SEPARATOR(*text); text++)
+		;
+	;
+
+	return text;
+}
+
+static const char *word_get_first(const char *text) {
+	for (; *text && IS_SEPARATOR(*text); text++)
+		;
+	;
+
+	return text;
+}
+
+RZ_API char *rz_str_word_get_first(const char *text) {
+	return strdup(word_get_first(text));
+}
+
 // Counts the number of words (separated by separator characters: newlines, tabs,
 // return, space). See rz_util.h for more details of the IS_SEPARATOR macro.
 RZ_API int rz_str_word_count(const char *string) {
-	const char *text, *tmp;
 	int word;
+	const char *text = word_get_first(string);
 
-	for (text = tmp = string; *text && IS_SEPARATOR(*text); text++) {
-		;
-	}
 	for (word = 0; *text; word++) {
-		for (; *text && !IS_SEPARATOR(*text); text++) {
-			;
-		}
-		for (tmp = text; *text && IS_SEPARATOR(*text); text++) {
-			;
-		}
+		text = separator_get_first(text);
+		text = word_get_first(text);
 	}
+
 	return word;
 }
 
@@ -811,21 +829,6 @@ RZ_API int rz_str_ccpy(char *dst, char *src, int ch) {
 	return i;
 }
 
-RZ_API char *rz_str_word_get_first(const char *text) {
-	for (; *text && IS_SEPARATOR(*text); text++) {
-		;
-	}
-	return strdup(text);
-}
-
-RZ_API const char *rz_str_get(const char *str) {
-	return str ? str : nullstr_c;
-}
-
-RZ_API const char *rz_str_get2(const char *str) {
-	return str ? str : nullstr;
-}
-
 RZ_API char *rz_str_ndup(const char *ptr, int len) {
 	if (len < 0) {
 		return NULL;
@@ -841,8 +844,9 @@ RZ_API char *rz_str_ndup(const char *ptr, int len) {
 
 // TODO: deprecate?
 RZ_API char *rz_str_dup(char *ptr, const char *string) {
-	free(ptr);
-	return rz_str_new(string);
+	char *str = rz_str_new(string);
+	free(ptr); // in case ptr == string
+	return str;
 }
 
 RZ_API char *rz_str_prepend(char *ptr, const char *string) {
@@ -1514,7 +1518,7 @@ RZ_API char *rz_str_encoded_json(const char *buf, int buf_size, int encoding) {
 	char *encoded_str;
 
 	if (encoding == PJ_ENCODING_STR_BASE64) {
-		encoded_str = rz_base64_encode_dyn(buf, buf_sz);
+		encoded_str = rz_base64_encode_dyn((const ut8 *)buf, buf_sz);
 	} else if (encoding == PJ_ENCODING_STR_HEX || encoding == PJ_ENCODING_STR_ARRAY) {
 		size_t loop = 0;
 		size_t i = 0;
@@ -2249,55 +2253,47 @@ RZ_API void rz_str_filter(char *str, int len) {
 }
 
 RZ_API bool rz_str_glob(const char *str, const char *glob) {
-	const char *cp = NULL, *mp = NULL;
-	if (!glob || !strcmp(glob, "*")) {
+	if (!glob) {
 		return true;
 	}
-	if (!strchr(glob, '*')) {
-		if (*glob == '^') {
-			glob++;
-			while (*str) {
-				if (*glob != *str) {
-					return false;
-				}
-				if (!*++glob) {
-					return true;
-				}
-				str++;
-			}
-		} else {
-			return strstr(str, glob) != NULL;
-		}
-	}
-	if (*glob == '^') {
-		glob++;
-	}
-	while (*str && (*glob != '*')) {
-		if (*glob != *str) {
-			return false;
-		}
-		glob++;
-		str++;
+	char *begin = strchr(glob, '^');
+	if (begin) {
+		glob = ++begin;
 	}
 	while (*str) {
-		if (*glob == '*') {
+		if (!*glob) {
+			return true;
+		}
+		switch (*glob) {
+		case '*':
 			if (!*++glob) {
 				return true;
 			}
-			mp = glob;
-			cp = str + 1;
-		} else if (*glob == *str) {
-			glob++;
+			while (*str) {
+				if (*glob == *str) {
+					break;
+				}
+				str++;
+			}
+			break;
+		case '$':
+			return (*++glob == '\x00');
+		case '?':
 			str++;
-		} else {
-			glob = mp;
-			str = cp++;
+			glob++;
+			break;
+		default:
+			if (*glob != *str) {
+				return false;
+			}
+			str++;
+			glob++;
 		}
 	}
 	while (*glob == '*') {
 		++glob;
 	}
-	return (*glob == '\x00');
+	return ((*glob == '$' && !*glob++) || !*glob);
 }
 
 // Escape the string arg so that it is parsed as a single argument by rz_str_argv
@@ -3798,10 +3794,6 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 #include <rz_userconf.h>
 #include <rz_util.h>
 
-#ifndef RZ_GITTAP
-#define RZ_GITTAP ""
-#endif
-
 #ifndef RZ_GITTIP
 #define RZ_GITTIP ""
 #endif
@@ -3810,13 +3802,31 @@ RZ_API RzList *rz_str_wrap(char *str, size_t width) {
 #define RZ_BIRTH "unknown"
 #endif
 
+#ifdef RZ_PACKAGER_VERSION
+#ifdef RZ_PACKAGER
+#define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION " (" RZ_PACKAGER ")"
+#else
+#define RZ_STR_PKG_VERSION_STRING ", package: " RZ_PACKAGER_VERSION
+#endif
+#else
+#define RZ_STR_PKG_VERSION_STRING ""
+#endif
+
 RZ_API char *rz_str_version(const char *program) {
-	char *s = rz_str_newf("%s " RZ_VERSION " %d @ " RZ_SYS_OS "-" RZ_SYS_ARCH "-%d git.%s\n",
-		program, RZ_VERSION_COMMIT,
-		(RZ_SYS_BITS & 8) ? 64 : 32,
-		*RZ_GITTAP ? RZ_GITTAP : "");
-	if (*RZ_GITTIP) {
-		s = rz_str_appendf(s, "commit: " RZ_GITTIP " build: " RZ_BIRTH);
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	if (program) {
+		rz_strbuf_appendf(sb, "%s ", program);
 	}
-	return s;
+	rz_strbuf_appendf(sb, RZ_VERSION " @ " RZ_SYS_OS "-" RZ_SYS_ARCH "-%d",
+		(RZ_SYS_BITS & 8) ? 64 : 32);
+	if (RZ_STR_ISNOTEMPTY(RZ_STR_PKG_VERSION_STRING)) {
+		rz_strbuf_append(sb, RZ_STR_PKG_VERSION_STRING);
+	}
+	if (RZ_STR_ISNOTEMPTY(RZ_GITTIP)) {
+		rz_strbuf_append(sb, "\n");
+		rz_strbuf_append(sb, "commit: " RZ_GITTIP ", build: " RZ_BIRTH);
+	}
+	return rz_strbuf_drain(sb);
 }
+
+#undef RZ_STR_PKG_VERSION_STRING

@@ -450,12 +450,12 @@ CMDS=<<EOF
 e str.escbslash=true
 s 0x140016018
 Csa
-Cs*~`s:`
+Cs*~`spad`
 Cs.
 Cs..
 pd 1
 Csg
-Cs*~`s:`
+Cs*~`spad`
 Cs.
 Cs..
 pd 1
@@ -505,12 +505,12 @@ FILE=bins/elf/strenc
 CMDS=<<EOF
 e str.escbslash=true
 s 0x004021ff
-Cs*~`s:`
+Cs*~`spad`
 Cs.
 Cs..
 pd 1
 Cs8
-Cs*~`s:`
+Cs*~`spad`
 Cs.
 Cs..
 pd 1

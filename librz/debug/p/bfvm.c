@@ -1,7 +1,5 @@
-/*
- * Copyright (C) 2008-2011 -- pancake <@nopcode.org>
- * NOTE: This file has been ported from r1 and relicensed to LGPL
- */
+// SPDX-FileCopyrightText: 2008-2011 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "bfvm.h"
 

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2010-2018 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2010-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
@@ -57,7 +59,7 @@ struct rz_bin_dyldcache_lib_t *rz_bin_dyldcache_extract(struct rz_bin_dyldcache_
 		return NULL;
 	}
 	if (bin->size < 1) {
-		eprintf("Empty file? (%s)\n", bin->file ? bin->file : "(null)");
+		eprintf("Empty file? (%s)\n", rz_str_get_null(bin->file));
 		return NULL;
 	}
 	if (bin->nlibs < 0 || idx < 0 || idx >= bin->nlibs) {

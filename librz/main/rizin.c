@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #define USE_THREADS       1
@@ -28,7 +29,7 @@ static char *get_file_in_cur_dir(const char *filepath) {
 static int rz_main_version_verify(int show) {
 	int i, ret;
 	typedef const char *(*vc)();
-	const char *base = RZ_GITTAP;
+	const char *base = RZ_VERSION;
 	struct vcs_t {
 		const char *name;
 		vc callback;
@@ -123,11 +124,11 @@ static int main_help(int line) {
 			" -qq          quit after running all -c and -i\n"
 			" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 			" -p [p.rzdb]  load project file\n"
-			" -r [rz_run]  specify rz_run profile to load (same as -e dbg.profile=X)\n"
-			" -R [rrz_testule] specify custom rz_run directive\n"
+			" -r [rz-run]  specify rz-run profile to load (same as -e dbg.profile=X)\n"
+			" -R [rrz_testule] specify custom rz-run directive\n"
 			" -s [addr]    initial seek\n"
 #if USE_THREADS && ALLOW_THREADED
-			" -t           load rz_bin info in thread\n"
+			" -t           load rz-bin info in thread\n"
 #endif
 			" -T           do not compute file hashes\n"
 			" -u           set bin.filter=false to get raw sym/sec/cls names\n"
@@ -139,6 +140,8 @@ static int main_help(int line) {
 	}
 	if (line == 2) {
 		char *datahome = rz_str_home(RZ_HOME_DATADIR);
+		char *incdir = rz_str_rz_prefix(RZ_INCDIR);
+		char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
 		const char *dirPrefix = rz_sys_prefix(NULL);
 		printf(
 			"Scripts:\n"
@@ -160,11 +163,13 @@ static int main_help(int line) {
 																																																					   " RZ_RDATAHOME %s\n" // TODO: rename to RHOME RZHOME?
 																																																					   " RZ_VERSION   contains the current version of rizin\n"
 																																																					   "Paths:\n"
-																																																					   " RZ_PREFIX    " RZ_PREFIX "\n"
-																																																					   " RZ_INCDIR    " RZ_INCDIR "\n"
-																																																					   " RZ_LIBDIR    " RZ_LIBDIR "\n"
+																																																					   " RZ_PREFIX    %s\n"
+																																																					   " RZ_INCDIR    %s\n"
+																																																					   " RZ_LIBDIR    %s\n"
 																																																					   " RZ_LIBEXT    " RZ_LIB_EXT "\n",
-			dirPrefix, datahome, dirPrefix);
+			dirPrefix, datahome, dirPrefix, dirPrefix, incdir, libdir);
+		free(libdir);
+		free(incdir);
 		free(datahome);
 	}
 	return 0;
@@ -172,13 +177,9 @@ static int main_help(int line) {
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
-#ifdef __WINDOWS__
+	const char *prefix = rz_sys_prefix(NULL);
 	char *incdir = rz_str_rz_prefix(RZ_INCDIR);
 	char *libdir = rz_str_rz_prefix(RZ_LIBDIR);
-#else
-	char *incdir = strdup(RZ_INCDIR);
-	char *libdir = strdup(RZ_LIBDIR);
-#endif
 	char *confighome = rz_str_home(RZ_HOME_CONFIGDIR);
 	char *datahome = rz_str_home(RZ_HOME_DATADIR);
 	char *cachehome = rz_str_home(RZ_HOME_CACHEDIR);
@@ -186,12 +187,13 @@ static int main_print_var(const char *var_name) {
 	char *homezigns = rz_str_home(RZ_HOME_ZIGNS);
 	char *plugins = rz_str_rz_prefix(RZ_PLUGINS);
 	char *magicpath = rz_str_rz_prefix(RZ_SDB_MAGIC);
+	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
 	struct rizin_var_t {
 		const char *name;
 		const char *value;
 	} rz_vars[] = {
 		{ "RZ_VERSION", RZ_VERSION },
-		{ "RZ_PREFIX", RZ_PREFIX },
+		{ "RZ_PREFIX", prefix },
 		{ "RZ_MAGICPATH", magicpath },
 		{ "RZ_INCDIR", incdir },
 		{ "RZ_LIBDIR", libdir },
@@ -202,6 +204,7 @@ static int main_print_var(const char *var_name) {
 		{ "RZ_LIBR_PLUGINS", plugins },
 		{ "RZ_USER_PLUGINS", homeplugins },
 		{ "RZ_USER_ZIGNS", homezigns },
+		{ "RZ_IS_PORTABLE", is_portable },
 		{ NULL, NULL }
 	};
 	int delta = 0;
@@ -381,7 +384,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #endif
 
 	rz_sys_env_init();
-	// Create rz_run profile with startup environ
+	// Create rz-run profile with startup environ
 	char **env = rz_sys_get_environ();
 	char *envprofile = rz_run_get_environ_profile(env);
 
@@ -587,7 +590,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'r':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
-				eprintf("Cannot open empty rz_run profile path\n");
+				eprintf("Cannot open empty rz-run profile path\n");
 				ret = 1;
 				goto beach;
 			}
@@ -728,7 +731,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	pfile = rz_acp_to_utf8(pfile);
 #endif // __WINDOWS__
 	if (customRarunProfile) {
-		char *tfn = rz_file_temp(".rz_run");
+		char *tfn = rz_file_temp(".rz-run");
 		if (!rz_file_dump(tfn, (const ut8 *)customRarunProfile, strlen(customRarunProfile), 0)) {
 			eprintf("Cannot create %s\n", tfn);
 		} else {
@@ -773,7 +776,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (rz_config_get_i(r->config, "cfg.plugins")) {
 		rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL, NULL);
 	}
-	ret = run_commands(r, NULL, prefiles, false, do_analysis);
+	run_commands(r, NULL, prefiles, false, do_analysis);
 	rz_list_free(prefiles);
 	prefiles = NULL;
 
@@ -1355,11 +1358,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	// no flagspace selected by default the beginning
 	rz_flag_space_set(r->flags, NULL);
-	if (!debug && r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info) {
-		if (r->bin->cur->o->info->arch) {
-			rz_core_cmd0(r, "aeip");
-		}
-	}
 	for (;;) {
 		rz_core_prompt_loop(r);
 		ret = r->num->value;

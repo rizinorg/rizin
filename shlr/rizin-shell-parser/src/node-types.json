@@ -4,7 +4,7 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
@@ -303,6 +303,14 @@
       "types": [
         {
           "type": "arg",
+          "named": true
+        },
+        {
+          "type": "arg_identifier",
+          "named": true
+        },
+        {
+          "type": "args",
           "named": true
         },
         {
@@ -5666,11 +5674,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -8856,11 +8864,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -11042,6 +11050,10 @@
     "named": false
   },
   {
+    "type": "@(",
+    "named": false
+  },
+  {
     "type": "@@",
     "named": false
   },
@@ -11194,10 +11206,6 @@
     "named": false
   },
   {
-    "type": "@{",
-    "named": false
-  },
-  {
     "type": "`",
     "named": false
   },
@@ -11239,10 +11247,6 @@
   },
   {
     "type": "|H",
-    "named": false
-  },
-  {
-    "type": "}",
     "named": false
   },
   {

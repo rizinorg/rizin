@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2019-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_table.h>
@@ -204,7 +205,11 @@ RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...) {
 		case 'X': {
 			ut64 n = va_arg(ap, ut64);
 			if (n == UT64_MAX) {
-				rz_list_append(list, strdup("-1"));
+				if (*f == 'X') {
+					rz_list_append(list, strdup("----------"));
+				} else {
+					rz_list_append(list, strdup("-1"));
+				}
 			} else {
 				if (*f == 'X') {
 					rz_list_append(list, rz_str_newf("0x%08" PFMT64x, n));
@@ -537,7 +542,7 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 	RzListIter *iter, *iter2;
 	ut64 uv = rz_num_math(NULL, un);
 	ut64 sum = 0;
-	int page = 0, page_items = 0;
+	size_t page = 0, page_items = 0;
 	size_t lrow = 0;
 	if (op == 't') {
 		size_t ll = rz_list_length(t->rows);
@@ -546,14 +551,12 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 		}
 	}
 	if (op == 'p') {
-		sscanf(un, "%d/%d", &page, &page_items);
+		sscanf(un, "%ld/%ld", &page, &page_items);
 		if (page < 1) {
 			page = 1;
 		}
-		if (!ST32_MUL_OVFCHK(page, page_items)) {
-			lrow = page_items * (page - 1);
-			uv = page_items * (page);
-		}
+		lrow = page_items * (page - 1);
+		uv = page_items * (page);
 	}
 	size_t nrow = 0;
 	rz_list_foreach_safe (t->rows, iter, iter2, row) {
@@ -967,8 +970,8 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		}
 		int col = rz_table_column_nth(t, columnName);
 		if (col == -1) {
-			if (columnName == NULL && strcmp(operation, "uniq")) {
-				eprintf("Invalid column name (%s) for (%s)\n", columnName, query);
+			if (columnName == NULL && strcmp(operation, "uniq")) { // TODO: What query triggers this?
+				eprintf("Column name is NULL for (%s)\n", query);
 			} else if (columnName) {
 				if (*columnName == '[') {
 					col = atoi(columnName + 1);

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2003 Free Software Foundation, Inc.
+// SPDX-FileCopyrightText: 2005 QNX Software Systems
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /*
  * $QNXtpLicenseC:
  * Copyright 2005, QNX Software Systems. All Rights Reserved.

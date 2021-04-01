@@ -1,0 +1,107 @@
+NAME=ELF_ABI : gcc m32 O0 load
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O0
+CMDS=<<EOF
+s
+EOF
+EXPECT=<<EOF
+0x8048e40
+EOF
+RUN
+
+NAME=ELF_ABI : gcc m32 O0 arch/bits/size ground truth
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O0
+CMDS=<<EOF
+iI~arch,binsz,bits
+EOF
+EXPECT=<<EOF
+arch     x86
+binsz    110669
+bits     32
+EOF
+RUN
+
+NAME=ELF_ABI : gcc m32 O0 dwarf info
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O0
+CMDS=<<EOF
+id~?
+EOF
+EXPECT=<<EOF
+25638
+EOF
+RUN
+
+NAME=ELF_ABI : gcc m32 O0 flagspaces
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O0
+ARGS=-A
+CMDS=<<EOF
+fs~symbols$
+EOF
+EXPECT=<<EOF
+  137 * symbols
+EOF
+RUN
+
+NAME=ELF_ABI : gcc m32 O1 flagspaces
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O1
+ARGS=-A
+CMDS=<<EOF
+fs~functions
+EOF
+EXPECT=<<EOF
+   67 * functions
+EOF
+RUN
+
+NAME=ELF_ABI : gcc m32 O2 flagspaces
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O2
+ARGS=-A
+CMDS=<<EOF
+fs~functions
+EOF
+EXPECT=<<EOF
+   51 * functions
+EOF
+RUN
+
+NAME=ELF_ABI : gcc m32 O3 flagspaces
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_O3
+ARGS=-A
+CMDS=<<EOF
+fs~functions
+EOF
+EXPECT=<<EOF
+   43 * functions
+EOF
+RUN
+
+NAME=ELF_ABI : gcc m32 Of flagspaces
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_Of
+ARGS=-A
+CMDS=<<EOF
+fs~functions
+EOF
+EXPECT=<<EOF
+   45 * functions
+EOF
+RUN
+
+NAME=ELF_ABI : gcc m32 Os flagspaces
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_Os
+ARGS=-A
+CMDS=<<EOF
+fs~functions
+EOF
+EXPECT=<<EOF
+   85 * functions
+EOF
+RUN
+
+NAME=ELF_ABI : gcc m32 Os size
+FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_m32_Os
+CMDS=<<EOF
+iI~binsz
+EOF
+EXPECT=<<EOF
+binsz    138487
+EOF
+RUN

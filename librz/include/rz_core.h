@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_CORE_H
@@ -55,6 +56,7 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_FUNCTIONS        "functions"
 #define RZ_FLAGS_FS_IMPORTS          "imports"
 #define RZ_FLAGS_FS_RELOCS           "relocs"
+#define RZ_FLAGS_FS_REGISTERS        "registers"
 #define RZ_FLAGS_FS_RESOURCES        "resources"
 #define RZ_FLAGS_FS_SECTIONS         "sections"
 #define RZ_FLAGS_FS_SEGMENTS         "segments"
@@ -92,6 +94,19 @@ typedef enum {
 	RZ_CORE_VISUAL_MODE_OV = 3,
 	RZ_CORE_VISUAL_MODE_CD = 4
 } RzCoreVisualMode;
+
+typedef bool (*RzCorePluginInit)(RzCore *core);
+typedef bool (*RzCorePluginFini)(RzCore *core);
+
+typedef struct rz_core_plugin_t {
+	const char *name;
+	const char *desc;
+	const char *license;
+	const char *author;
+	const char *version;
+	RzCorePluginInit init;
+	RzCorePluginFini fini;
+} RzCorePlugin;
 
 typedef struct rz_core_rtr_host_t {
 	int proto;
@@ -203,8 +218,6 @@ typedef struct {
 	char *cmd;
 } RzCoreGadget;
 
-RZ_API void rz_core_gadget_free(RzCoreGadget *g);
-
 typedef struct rz_core_task_t RzCoreTask;
 
 /**
@@ -250,6 +263,7 @@ typedef struct rz_core_seek_history_t {
 
 struct rz_core_t {
 	RzBin *bin;
+	RzList *plugins; ///< List of registered core plugins
 	RzConfig *config;
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
@@ -368,8 +382,6 @@ typedef struct rz_core_item_t {
 
 RZ_API void rz_core_item_free(RzCoreItem *ci);
 
-RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
-
 typedef struct rz_core_cmpwatch_t {
 	ut64 addr;
 	int size;
@@ -381,9 +393,18 @@ typedef struct rz_core_cmpwatch_t {
 typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef RZ_API
+RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
+
+RZ_API void rz_core_gadget_free(RzCoreGadget *g);
+
+RZ_API bool rz_core_plugin_init(RzCore *core);
+RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
+RZ_API bool rz_core_plugin_fini(RzCore *core);
+
 //#define rz_core_ncast(x) (RzCore*)(size_t)(x)
 RZ_API RzList *rz_core_list_themes(RzCore *core);
 RZ_API char *rz_core_get_theme(void);
+RZ_API void rz_core_theme_nextpal(RzCore *core, int mode);
 RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr);
 RZ_API RzCons *rz_core_get_cons(RzCore *core);
 RZ_API RzBin *rz_core_get_bin(RzCore *core);
@@ -398,7 +419,6 @@ RZ_API RzCore *rz_core_ncast(ut64 p);
 RZ_API RzCore *rz_core_cast(void *p);
 RZ_API bool rz_core_bin_load_structs(RzCore *core, const char *file);
 RZ_API int rz_core_config_init(RzCore *core);
-RZ_API void rz_core_config_update(RzCore *core);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
 RZ_API int rz_core_prompt(RzCore *core, int sync);
 RZ_API int rz_core_prompt_exec(RzCore *core);
@@ -446,16 +466,20 @@ RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr);
 RZ_API int rz_core_block_read(RzCore *core);
 RZ_API int rz_core_block_size(RzCore *core, int bsize);
 RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset);
+RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
+RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
+RZ_API void rz_core_help_vars_print(RzCore *core);
 RZ_API void rz_core_visual_prompt_input(RzCore *core);
+RZ_API void rz_core_visual_toggle_hints(RzCore *core);
 RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset);
 RZ_API void rz_core_visual_applyDisMode(RzCore *core, int disMode);
 RZ_API void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
-RZ_API int rz_core_visual_refs(RzCore *core, bool xref, bool fcnInsteadOfAddr);
+RZ_API int rz_core_visual_xrefs(RzCore *core, bool xref_to, bool fcnInsteadOfAddr);
 RZ_API void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help);
 RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr);
 RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs);
@@ -473,8 +497,6 @@ RZ_API void rz_core_visual_seek_animation_redo(RzCore *core);
 RZ_API void rz_core_visual_seek_animation_undo(RzCore *core);
 RZ_API void rz_core_visual_asm(RzCore *core, ut64 addr);
 RZ_API void rz_core_visual_colors(RzCore *core);
-RZ_API int rz_core_visual_xrefs_x(RzCore *core);
-RZ_API int rz_core_visual_xrefs_X(RzCore *core);
 RZ_API void rz_core_visual_showcursor(RzCore *core, int x);
 RZ_API void rz_core_visual_offset(RzCore *core);
 RZ_API int rz_core_visual_hud(RzCore *core);
@@ -489,12 +511,11 @@ RZ_API char *rz_core_add_asmqjmp(RzCore *core, ut64 addr);
 RZ_API void rz_core_analysis_type_init(RzCore *core);
 RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj, int depth);
 RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn);
-RZ_API bool cmd_analysis_objc(RzCore *core, const char *input, bool auto_analysis);
+RZ_API bool cmd_analysis_objc(RzCore *core, bool auto_analysis);
 RZ_API void rz_core_analysis_cc_init(RzCore *core);
 RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 RZ_API void rz_core_analysis_esil_graph(RzCore *core, const char *expr);
 
-RZ_API void rz_core_list_io(RzCore *core);
 RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra);
 RZ_API void rz_listinfo_free(RzListInfo *info);
 /* visual marks */
@@ -510,6 +531,8 @@ RZ_API bool rz_core_serve(RzCore *core, RzIODesc *fd);
 RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int binload);
 RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args);
 RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr);
+RZ_API bool rz_core_file_resize(RzCore *core, ut64 newsize);
+RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta);
 RZ_API RzCoreFile *rz_core_file_find_by_fd(RzCore *core, ut64 fd);
 RZ_API RzCoreFile *rz_core_file_find_by_name(RzCore *core, const char *name);
 RZ_API RzCoreFile *rz_core_file_cur(RzCore *r);
@@ -532,11 +555,16 @@ RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, int size);
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8 *rz_core_transform_op(RzCore *core, const char *arg, char op);
-RZ_API int rz_core_set_file_by_fd(RzCore *core, ut64 bin_fd);
-RZ_API int rz_core_set_file_by_name(RzBin *bin, const char *name);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 
+/* cdebug.c */
+RZ_API bool rz_core_debug_step_one(RzCore *core, int times);
+RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr, ut64 to);
+
+RZ_API void rz_core_debug_ri(RzCore *core, RzReg *reg, int mode);
 RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode);
+RZ_API void rz_core_debug_set_register_flags(RzCore *core);
+RZ_API void rz_core_debug_clear_register_flags(RzCore *core);
 
 /* fortune */
 RZ_API void rz_core_fortune_list_types(void);
@@ -584,9 +612,8 @@ RZ_API char *rz_core_disassemble_bytes(RzCore *core, ut64 addr, int b);
 RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *func_name);
 RZ_API void rz_core_print_func_args(RzCore *core);
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name);
-RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 
-/* analysis.c */
+/* canalysis.c */
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
 RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *addr);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
@@ -608,7 +635,9 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input);
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 RZ_API int rz_core_esil_step_back(RzCore *core);
-RZ_API ut64 rz_core_analysis_get_bbaddr(RzCore *core, ut64 addr);
+RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
+RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name);
+RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 addr, bool analyze_recursively);
 RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int depth);
 RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
@@ -616,22 +645,22 @@ RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core);
 RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad);
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API ut64 rz_core_analysis_fcn_list_size(RzCore *core);
-RZ_API void rz_core_analysis_fcn_labels(RzCore *core, RzAnalysisFunction *fcn, int rad);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
 RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
-RZ_API int rz_core_analysis_graph_fcn(RzCore *core, char *input, int opts);
 RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
-RZ_API int rz_core_analysis_ref_list(RzCore *core, int rad);
 RZ_API int rz_core_analysis_all(RzCore *core);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
+RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly);
+RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn);
 
 /* asm.c */
+#define RZ_MIDFLAGS_HIDE     0
 #define RZ_MIDFLAGS_SHOW     1
 #define RZ_MIDFLAGS_REALIGN  2
 #define RZ_MIDFLAGS_SYMALIGN 3
@@ -663,23 +692,35 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode);
-RZ_API int rz_core_print_fcn_disasm(RzPrint *p, RzCore *core, ut64 addr, int l, int invbreak, int cbytes);
-RZ_API int rz_core_get_prc_cols(RzCore *core);
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);
 
-RZ_API int rz_core_bin_set_env(RzCore *r, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va);
+RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile);
+RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile);
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd);
 RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name);
-RZ_API int rz_core_bin_reload(RzCore *core, const char *file, ut64 baseaddr);
 RZ_API bool rz_core_bin_load(RzCore *core, const char *file, ut64 baseaddr);
 RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr);
 RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
 RZ_API int rz_core_bin_list(RzCore *core, int mode);
 RZ_API bool rz_core_bin_delete(RzCore *core, ut32 binfile_idx);
 RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name);
+
+RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzOutputMode mode, PJ *pj);
+RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzOutputMode mode, PJ *pj);
+
+// bin_dwarf
+RZ_API void rz_core_bin_dwarf_print_abbrev_section(const RzBinDwarfDebugAbbrev *da);
+RZ_API void rz_core_bin_dwarf_print_attr_value(const RzBinDwarfAttrValue *val);
+RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *inf);
+RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table, int addr_size);
+RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet>*/ *aranges);
+RZ_API void rz_core_bin_dwarf_print_line_units(RzList /*<RzBinDwarfLineUnit>*/ *lines);
 
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
@@ -719,7 +760,6 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 #define RZ_CORE_BIN_ACC_RESOURCES        0x100000
 #define RZ_CORE_BIN_ACC_INITFINI         0x200000
 #define RZ_CORE_BIN_ACC_SEGMENTS         0x400000
-#define RZ_CORE_BIN_ACC_SOURCE           0x800000
 #define RZ_CORE_BIN_ACC_HASHES           0x10000000
 #define RZ_CORE_BIN_ACC_TRYCATCH         0x20000000
 #define RZ_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
@@ -753,7 +793,6 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode);
 /* rtr */
 RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port);
 RZ_API char *rz_core_rtr_cmds_query(RzCore *core, const char *host, const char *port, const char *cmd);
-RZ_API void rz_core_rtr_help(RzCore *core);
 RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input);
 RZ_API void rz_core_rtr_list(RzCore *core);
 RZ_API void rz_core_rtr_add(RzCore *core, const char *input);
@@ -766,7 +805,6 @@ RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path);
 
 RZ_API int rz_core_visual_prevopsz(RzCore *core, ut64 addr);
 RZ_API void rz_core_visual_config(RzCore *core);
-RZ_API void rz_core_visual_mounts(RzCore *core);
 RZ_API void rz_core_visual_analysis(RzCore *core, const char *input);
 RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input);
 RZ_API void rz_core_visual_define(RzCore *core, const char *arg, int distance);
@@ -802,7 +840,7 @@ RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, Pri
 RZ_API PJ *rz_core_pj_new(RzCore *core);
 /* help */
 RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]);
-RZ_API const char **rz_core_get_help_vars(RzCore *core);
+RZ_API const char **rz_core_help_vars_get(RzCore *core);
 
 /* analysis stats */
 
@@ -821,16 +859,10 @@ typedef struct {
 	RzCoreAnalStatsItem *block;
 } RzCoreAnalStats;
 
-RZ_API bool core_analysis_bbs(RzCore *core, const char *input);
-RZ_API bool core_analysis_bbs_range(RzCore *core, const char *input);
 RZ_API char *rz_core_analysis_hasrefs(RzCore *core, ut64 value, int mode);
 RZ_API char *rz_core_analysis_get_comments(RzCore *core, ut64 addr);
 RZ_API RzCoreAnalStats *rz_core_analysis_get_stats(RzCore *a, ut64 from, ut64 to, ut64 step);
 RZ_API void rz_core_analysis_stats_free(RzCoreAnalStats *s);
-
-RZ_API void rz_core_syscmd_ls(const char *input);
-RZ_API void rz_core_syscmd_cat(const char *file);
-RZ_API void rz_core_syscmd_mkdir(const char *dir);
 
 RZ_API int rz_line_hist_offset_up(RzLine *line);
 RZ_API int rz_line_hist_offset_down(RzLine *line);
@@ -932,31 +964,31 @@ extern RzCorePlugin rz_core_plugin_java;
 /* DECOMPILER PRINTING FUNCTIONS */
 /**
  * @brief Prints the data contained in the specified RzAnnotatedCode in JSON format.
- * 
+ *
  * The function will print the output in console using the function rz_cons_printf();
- * 
+ *
  * @param code Pointer to a RzAnnotatedCode.
  */
 RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code);
 /**
  * @brief Prints the decompiled code from the specified RzAnnotatedCode.
- * 
+ *
  * This function is used for printing the output of commands pdg and pdgo.
  * It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
  * the output will be printed without offsets (pdg), otherwise, the output will be
  * printed with offsets.
  * This function will print the output in console using the function rz_cons_printf();
- * 
+ *
  * @param code Pointer to a RzAnnotatedCode.
  * @param line_offsets Pointer to a @ref RzVector that contains offsets for the decompiled code.
  */
 RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_offsets);
 /**
  * @brief  Prints the decompiled code as comments
- * 
+ *
  * This function is used for the output of command pdg*
  * Output will be printed in console using the function rz_cons_printf();
- * 
+ *
  * @param code Pointer to a RzAnnotatedCode.
  */
 RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code);

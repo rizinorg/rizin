@@ -20,9 +20,30 @@ on:
     - 'release-*'
 
 jobs:
-  # TODO: build rz-bindings
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      edited: ${{ steps.filter.outputs.edited }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          edited:
+            - '**.c'
+            - '**.h'
+            - '**.in'
+            - '**.inc'
+            - '**/meson.build'
+            - 'shlr/rizin-shell-parser/**'
+            - 'subprojects/**'
+            - '.github/workflows/ci.yml'
+            - 'test/**'
 
+  # TODO: build rz-bindings
   build-and-test:
+    needs: changes
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ matrix.timeout }}
@@ -30,97 +51,85 @@ jobs:
       fail-fast: false
       matrix:
         name: [
-          linux-acr-gcc-tests,
-          linux-acr-clang-tests,
-          linux-acr-clang-build,
-          linux-meson-gcc-build,
+          linux-meson-clang-tests,
           linux-meson-gcc-tests,
           macos-meson-clang-tests,
           linux-gcc-tests-asan,
+          linux-gcc-tests-codecov,
           capstone-v3,
-          capstone-v5
+          capstone-next
         ]
         include:
-          - name: linux-acr-gcc-tests
-            os: ubuntu-20.04
-            build_system: acr
-            compiler: gcc
-            run_tests: true
-            enabled: true
-            timeout: 45
-          - name: linux-acr-clang-tests
-            os: ubuntu-20.04
-            build_system: acr
-            compiler: clang
-            run_tests: true
-            enabled: ${{ github.event_name != 'pull_request' }}
-            timeout: 45
-          - name: linux-acr-clang-build
-            os: ubuntu-20.04
-            build_system: acr
-            compiler: clang
-            enabled: ${{ github.event_name == 'pull_request' }}
-            timeout: 45
-          - name: linux-meson-gcc-build
+          - name: linux-meson-clang-tests
             os: ubuntu-20.04
             build_system: meson
-            compiler: gcc
-            enabled: ${{ github.event_name == 'pull_request' }}
+            compiler: clang
+            run_tests: true
+            meson_options: -Dbuildtype=release
+            enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: '-Werror -Wno-cpp'
           - name: linux-meson-gcc-tests
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Db_coverage=true -Duse_webui=true
-            coverage: true
-            enabled: true
-            timeout: 60
-            cflags: '-Werror -Wno-cpp'
+            meson_options: -Dbuildtype=release --werror
+            enabled: ${{ needs.changes.outputs.edited == 'true' }}
+            timeout: 45
+            cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
           - name: macos-meson-clang-tests
             os: macos-latest
             build_system: meson
             compiler: clang
             run_tests: true
-            meson_options: -Duse_webui=true
-            enabled: true
+            meson_options: -Dbuildtype=release -Duse_webui=true
+            enabled: ${{ needs.changes.outputs.edited == 'true' }}
             timeout: 60
           - name: linux-gcc-tests-asan
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            cflags: '-DRZ_ASSERT_STDOUT=1 -Werror -Wno-cpp'
-            meson_options: -Db_sanitize=address,undefined -Duse_webui=true
+            cflags: '-DRZ_ASSERT_STDOUT=1 -Wno-cpp'
+            meson_options: -Dbuildtype=debugoptimized -Db_sanitize=address,undefined -Duse_webui=true --werror
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
             run_tests: true
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')}}
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')) && needs.changes.outputs.edited == 'true' }}
             timeout: 100
+          - name: linux-gcc-tests-codecov
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: gcc
+            run_tests: true
+            meson_options: -Dbuildtype=debug -Db_coverage=true -Duse_webui=true --werror
+            coverage: true
+            enabled: ${{ github.event_name != 'pull_request' && needs.changes.outputs.edited == 'true' }}
+            timeout: 60
+            cflags: '-Wno-cpp'
           - name: capstone-v3
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Duse_capstone_version=v3
+            meson_options: -Dbuildtype=release -Duse_capstone_version=v3 --werror
             run_tests: false
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: '-Werror -Wno-cpp'
-          - name: capstone-v5
+            cflags: '-Wno-cpp'
+          - name: capstone-next
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Duse_capstone_version=v5
+            meson_options: -Dbuildtype=release -Duse_capstone_version=next --werror
             run_tests: false
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            enabled: ${{ (github.event_name != 'pull_request' || contains(github.head_ref, 'capstone')) && needs.changes.outputs.edited == 'true' }}
             timeout: 45
-            cflags: '-Werror -Wno-cpp'
+            cflags: '-Wno-cpp'
 
     steps:
     - uses: actions/checkout@v2
       if: matrix.enabled
       with:
-          submodules: recursive
+          fetch-depth: 2
     - name: Install pkg-config and cabextract with Homebrew
       if: matrix.os == 'macos-latest' && matrix.enabled
       run: brew install pkg-config cabextract
@@ -139,6 +148,9 @@ jobs:
     - name: Install test dependencies
       if: matrix.run_tests && matrix.enabled
       run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
+    - name: Install gdbserver dependency
+      if: matrix.run_tests && matrix.enabled && (matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-20.04')
+      run: sudo apt-get --assume-yes install gdbserver
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
       run: sudo apt-get --assume-yes install clang
@@ -154,12 +166,6 @@ jobs:
       with:
           repository: rizinorg/rizin-fuzztargets
           path: test/fuzz/targets
-    - name: Configure with ACR and build
-      if: matrix.build_system == 'acr' && matrix.enabled
-      run: ./configure --prefix=${HOME} && make
-      env:
-        CC: ${{ matrix.compiler }}
-        CFLAGS: ${{ matrix.cflags }}
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
@@ -172,14 +178,6 @@ jobs:
         ASAN: ${{ matrix.asan }}
         CC: ${{ matrix.compiler }}
         CFLAGS: ${{ matrix.cflags }}
-    - name: Install with make
-      if: matrix.build_system == 'acr' && matrix.enabled
-      run: |
-        # Install the rizin
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        make install
     - name: Install with meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
@@ -204,21 +202,6 @@ jobs:
           export ASAN=1
         fi
         ninja -C build test
-      env:
-        ASAN: ${{ matrix.asan }}
-        ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Run unit tests (make)
-      if: matrix.build_system == 'acr' && matrix.enabled
-      run: |
-        # Running the test suite
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        if [ "$ASAN" == "true" ]; then
-          export ASAN=1
-        fi
-        cd test
-        make unit_tests
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
@@ -248,7 +231,7 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         cd test
-        make fuzz-tests
+        rz-test -LF bins/fuzzed @fuzz
       env:
         ASAN_OPTIONS: ${{ matrix.asan_options }}
     - name: Upload test results
@@ -265,29 +248,30 @@ jobs:
     container: centos:7
     steps:
     - name: Install tools
-      run: yum install -y patch unzip git gcc make
+      run: yum install -y patch unzip git gcc make python3-pip
+    - name: Install meson and ninja
+      run: pip3 install meson ninja PyYAML
     - name: Checkout rizin
       run: |
         git clone https://github.com/${{ github.repository }}
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
-        git submodule init
-        git submodule update
-    - name: Configure with ACR and build
-      run: ./configure --prefix=/usr && make CS_RELEASE=1
+    - name: Checkout our Testsuite Binaries
+      run: git clone https://github.com/rizinorg/rizin-testbins test/bins
       working-directory: rizin
-    - name: Install with make
-      run: make install
+    - name: Build
+      run: meson --prefix=/usr build && ninja -C build
+      working-directory: rizin
+    - name: Install
+      run: ninja -C build install
+      working-directory: rizin
+    - name: Run unit tests
+      run: ninja -C build test
       working-directory: rizin
     - name: Run tests
-      run: cd test/unit && make
-      working-directory: rizin
-      env:
-        # `make install` installs, for some unknown reasons, pkgconfig files in
-        # /usr/lib and not in /usr/lib64, thus pkg-config cannot find the right
-        # .pc files if the right path is not specified
-        PKG_CONFIG_PATH: /usr/lib/pkgconfig
+      run: rz-test -L -o results.json || true
+      working-directory: rizin/test
 
   build-debian:
     name: Build on old Debian ${{ matrix.container }}
@@ -337,12 +321,6 @@ jobs:
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
-        git submodule init
-        git submodule update
-    - name: Fetch capstone manually
-      if: matrix.container == 'debian:wheezy'
-      run: git clone -b v4 https://github.com/rizinorg/capstone shlr/capstone
-      working-directory: rizin
     - name: Checkout our Testsuite Binaries
       run: git clone https://github.com/rizinorg/rizin-testbins test/bins
       working-directory: rizin
@@ -383,15 +361,13 @@ jobs:
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
-        git submodule init
-        git submodule update
     - name: Checkout our Testsuite Binaries
       run: git clone https://github.com/rizinorg/rizin-testbins test/bins
       working-directory: rizin
     - name: Compile with meson
       run: |
         mkdir -p ${HOME}/rizin-static
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/rizin-static --buildtype release --default-library static build
+        meson --prefix=${HOME}/rizin-static --buildtype release --default-library static -Dstatic_runtime=true -Dportable=true build
         ninja -C build && ninja -C build install
         tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
       working-directory: rizin
@@ -428,11 +404,11 @@ jobs:
     steps:
     - name: Install python and other dependencies
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
+    - name: Download meson from git (temporary)
+      run: pip3 install --user git+https://github.com/mesonbuild/meson
     - name: Install meson and ninja
-      run: pip3 install --user meson ninja PyYAML
+      run: pip3 install --user ninja PyYAML
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=version;]$(python sys/version.py)"
@@ -440,7 +416,6 @@ jobs:
     - name: Create archive
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        meson rewrite kwargs set project / version ${{ steps.extract_version.outputs.version }}
         meson build
         cd build
         meson dist --include-subprojects --no-tests
@@ -451,6 +426,36 @@ jobs:
         name: rizin-src.tar.xz
         path: build/meson-dist/rizin-src.tar.xz
 
+  test-tarball:
+    name: Test source tarball
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable'
+    runs-on: ubuntu-latest
+    needs: [create-tarball]
+    steps:
+    - name: Install python and other dependencies
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
+    - name: Install meson and ninja
+      run: sudo pip3 install meson ninja PyYAML
+    - uses: actions/download-artifact@v2
+      with:
+        name: rizin-src.tar.xz
+    - name: Extract source tarball
+      run: |
+          mkdir rizin && pwd && ls -l
+          tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
+    - name: Install rizin
+      run: |
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
+        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+      working-directory: rizin
+    - name: Check that installed rizin runs
+      run: rizin -qcq /bin/ls
+    - name: Check that libraries can be used
+      run: |
+        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        clang -o test test.c $(pkg-config --libs --cflags rz_util)
+        ./test
+
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
@@ -458,8 +463,6 @@ jobs:
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - name: Install pkg-config with Homebrew
       run: brew install pkg-config
     - name: Install meson and ninja
@@ -486,7 +489,7 @@ jobs:
         include:
           - name: vs2019_static
             compiler: cl
-            meson_options: --default-library=static -Dstatic_runtime=true
+            meson_options: --default-library=static -Db_vscrt=static_from_buildtype -Dportable=true
             bits: 64
           - name: clang_cl
             compiler: clang-cl
@@ -498,8 +501,6 @@ jobs:
             bits: 32
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - uses: actions/setup-python@v2
     - name: Install dependencies
       run: |
@@ -546,14 +547,12 @@ jobs:
         name: [x86_64, arm, aarch64]
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - name: Install dependencies
       run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with meson
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dportable=true -Dblob=true -Dstatic_runtime=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
         ninja -C build && ninja -C build install
     - name: Create rizin-android-${{ matrix.name }}.tar.gz
       run: |
@@ -568,7 +567,7 @@ jobs:
 #  build-extras:
 #    name: Build rizin extras and rzpipe
 #    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
-#    needs: [create-tarball]
+#    needs: [test-tarball]
 #    runs-on: ubuntu-latest
 #    env:
 #      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
@@ -609,7 +608,7 @@ jobs:
   build-rzpipe:
     name: Build rizin rzpipe
     if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.ref == 'refs/heads/stable' || github.event_name == 'schedule'
-    needs: [create-tarball]
+    needs: [test-tarball]
     runs-on: ubuntu-latest
     env:
       RZPIPE_TESTS: 'rz-pipe-py rz-pipe-go'
@@ -674,8 +673,6 @@ jobs:
             bits: 32
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - uses: actions/setup-python@v2
     - name: Install pkg-config
       shell: pwsh
@@ -722,8 +719,6 @@ jobs:
     ]
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -827,11 +822,15 @@ jobs:
     name: Publish Docker image on Docker Hub
     needs: [build-and-test]
     runs-on: ubuntu-20.04
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
     - uses: actions/checkout@v2
-      with:
-          submodules: recursive
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson
+    - name: Download subprojects
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        meson subprojects download
     - name: Login to DockerHub
       uses: docker/login-action@v1
       with:

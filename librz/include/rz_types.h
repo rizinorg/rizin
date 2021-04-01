@@ -151,6 +151,10 @@ typedef enum {
 #define __KFBSD__ 0
 #endif
 
+#ifdef __MSYS__
+#define __UNIX__ 1
+#endif
+
 #ifdef _MSC_VER
 #define restrict
 #define strcasecmp  stricmp
@@ -320,7 +324,7 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #define RZ_LIB_VERSION_HEADER(x) \
 	RZ_API const char *x##_version(void)
 #define RZ_LIB_VERSION(x) \
-	RZ_API const char *x##_version(void) { return "" RZ_GITTAP; }
+	RZ_API const char *x##_version(void) { return "" RZ_VERSION; }
 
 #define BITS2BYTES(x)    (((x) / 8) + (((x) % 8) ? 1 : 0))
 #define ZERO_FILL(x)     memset(&x, 0, sizeof(x))
@@ -603,7 +607,7 @@ typedef enum {
 	RZ_SYS_ARCH_RISCV
 } RzSysArch;
 
-#if HAVE_CLOCK_NANOSLEEP && CLOCK_MONOTONIC && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
+#if HAVE_CLOCK_NANOSLEEP && defined(CLOCK_MONOTONIC) && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
 #define HAS_CLOCK_NANOSLEEP 1
 #else
 #define HAS_CLOCK_NANOSLEEP 0

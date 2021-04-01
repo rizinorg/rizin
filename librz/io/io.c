@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2008-2019 - condret, pancake, alvaro_fe */
+// SPDX-FileCopyrightText: 2008-2019 condret <condr3t@protonmail.com>
+// SPDX-FileCopyrightText: 2008-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2008-2019 alvaro_fe <alvaro.felipe91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
 #include <sdb.h>
@@ -676,6 +679,7 @@ RZ_API int rz_io_fini(RzIO *io) {
 		RZ_FREE(io->runprofile);
 	}
 	rz_event_free(io->event);
+	free(io->envprofile);
 #if RZ_IO_USE_PTRACE_WRAP
 	if (io->ptrace_wrap) {
 		ptrace_wrap_instance_stop(io->ptrace_wrap);

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2007-2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_flag.h>
@@ -127,7 +129,7 @@ static char *filter_item_name(const char *name) {
 	}
 
 	rz_str_trim(res);
-	rz_name_filter(res, 0);
+	rz_name_filter(res, 0, true);
 	return res;
 }
 
@@ -227,19 +229,11 @@ RZ_API RzFlag *rz_flag_new(void) {
 	}
 	f->base = 0;
 	f->cb_printf = (PrintfCallback)printf;
-#if RZ_FLAG_ZONE_USE_SDB
-	f->zones = sdb_new0();
-#else
 	f->zones = NULL;
-#endif
 	f->tags = sdb_new0();
 	f->ht_name = ht_pp_new(NULL, ht_free_flag, NULL);
 	f->by_off = rz_skiplist_new(flag_skiplist_free, flag_skiplist_cmp);
-#if RZ_FLAG_ZONE_USE_SDB
-	sdb_free(f->zones);
-#else
 	rz_list_free(f->zones);
-#endif
 	new_spaces(f);
 	return f;
 }
@@ -301,7 +295,6 @@ struct print_flag_t {
 	ut64 range_to;
 	RzSpace *fs;
 	bool real;
-	const char *pfx;
 };
 
 static bool print_flag_json(RzFlagItem *flag, void *user) {
@@ -338,7 +331,7 @@ static bool print_flag_rad(RzFlagItem *flag, void *user) {
 		u->f->cb_printf("fs %s\n", u->fs ? u->fs->name : "*");
 	}
 	if (flag->comment && *flag->comment) {
-		comment_b64 = rz_base64_encode_dyn(flag->comment, -1);
+		comment_b64 = rz_base64_encode_dyn((const ut8 *)flag->comment, strlen(flag->comment));
 		// prefix the armored string with "base64:"
 		if (comment_b64) {
 			tmp = rz_str_newf("base64:%s", comment_b64);
@@ -353,9 +346,8 @@ static bool print_flag_rad(RzFlagItem *flag, void *user) {
 				flag->name, comment_b64 ? comment_b64 : "");
 		}
 	} else {
-		u->f->cb_printf("f %s %" PFMT64d " 0x%08" PFMT64x "%s%s %s\n",
+		u->f->cb_printf("f %s %" PFMT64d " 0x%08" PFMT64x " %s\n",
 			flag->name, flag->size, flag->offset,
-			u->pfx ? "+" : "", u->pfx ? u->pfx : "",
 			comment_b64 ? comment_b64 : "");
 	}
 
@@ -435,7 +427,6 @@ RZ_API void rz_flag_list(RzFlag *f, int rad, const char *pfx) {
 			.range_from = range_from,
 			.range_to = range_to,
 			.fs = NULL,
-			.pfx = pfx
 		};
 		rz_flag_foreach_space(f, rz_flag_space_cur(f), print_flag_rad, &u);
 		break;
@@ -845,6 +836,24 @@ RZ_API void rz_flag_unset_all(RzFlag *f) {
 	rz_skiplist_purge(f->by_off);
 	rz_spaces_fini(&f->spaces);
 	new_spaces(f);
+}
+
+/**
+ * \brief Unset all flag items in the space with the given name
+ *
+ * \param f an RzFlag
+ * \param space_name name of the space
+ */
+RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name) {
+	rz_flag_space_push(f, space_name);
+	RzList *flags = rz_flag_all_list(f, true);
+	RzFlagItem *flag;
+	RzListIter *iter;
+	rz_list_foreach (flags, iter, flag) {
+		rz_flag_unset(f, flag);
+	}
+	rz_flag_space_pop(f);
+	free(flags);
 }
 
 struct flag_relocate_t {

@@ -1,4 +1,8 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
+
+#include <string.h>
 
 #include <rz_types.h>
 #include <rz_list.h>
@@ -8,7 +12,7 @@
 #include <ht_uu.h>
 #include <rz_util/rz_graph_drawable.h>
 
-#include <string.h>
+#include "core_private.h"
 
 HEAPTYPE(ut64);
 
@@ -92,33 +96,33 @@ static int cmpnbbs(const void *_a, const void *_b) {
 					 : 0;
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
+RZ_IPI int bb_cmpaddr(const void *_a, const void *_b) {
+	const RzAnalysisBlock *a = _a, *b = _b;
+	return (a->addr > b->addr) - (a->addr < b->addr);
+}
+
+RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b) {
 	const RzAnalysisFunction *a = _a, *b = _b;
-	return (a->addr > b->addr) ? 1 : (a->addr < b->addr) ? -1
-							     : 0;
+	return (a->addr > b->addr) - (a->addr < b->addr);
 }
 
 static char *getFunctionName(RzCore *core, ut64 addr) {
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (bf && bf->o) {
-		Sdb *kv = bf->o->addrzklassmethod;
-		char *at = sdb_fmt("0x%08" PFMT64x, addr);
-		char *res = sdb_get(kv, at, 0);
-		if (res) {
-			return res;
+		RzBinSymbol *sym = ht_up_find(bf->o->addrzklassmethod, addr, NULL);
+		if (sym && sym->classname && sym->name) {
+			return rz_str_newf("method.%s.%s", sym->classname, sym->name);
 		}
 	}
-	RzListIter *iter;
-	RzFlagItem *flag;
-	const RzList *flags = rz_flag_get_list(core->flags, addr);
-	const char *name = NULL;
-	rz_list_foreach (flags, iter, flag) {
-		name = flag->name;
-		if (rz_str_startswith(name, "sym.")) {
-			break;
-		}
+	RzFlagItem *flag = rz_core_flag_get_by_spaces(core->flags, addr);
+	return (flag && flag->name) ? strdup(flag->name) : NULL;
+}
+
+static char *getFunctionNamePrefix(RzCore *core, ut64 off, const char *name) {
+	if (rz_reg_get(core->analysis->reg, name, -1)) {
+		return rz_str_newf("%s.%08" PFMT64x, "fcn", off);
 	}
-	return name ? strdup(name) : NULL;
+	return strdup(name);
 }
 
 static RzCore *mycore = NULL;
@@ -365,6 +369,609 @@ RZ_API ut64 rz_core_analysis_address(RzCore *core, ut64 addr) {
 	return types;
 }
 
+RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn) {
+	RzList *flist = rz_list_newf((RzListFree)rz_listinfo_free);
+	if (!flist) {
+		return;
+	}
+	RzListIter *iter;
+	RzAnalysisBlock *b;
+	ls_foreach (fcn->bbs, iter, b) {
+		RzInterval inter = (RzInterval){ b->addr, b->size };
+		RzListInfo *info = rz_listinfo_new(NULL, inter, inter, -1, NULL);
+		if (!info) {
+			break;
+		}
+		rz_list_append(flist, info);
+	}
+	RzTable *table = rz_core_table(core);
+	rz_table_visual_list(table, flist, core->offset, core->blocksize,
+		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
+	rz_cons_printf("\n%s\n", rz_table_tostring(table));
+	rz_table_free(table);
+	rz_list_free(flist);
+	return;
+}
+
+RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) {
+	RzListIter *iter;
+	RzAnalysisBlock *b;
+	ls_foreach (fcn->bbs, iter, b) {
+		if (b->jump == UT64_MAX) {
+			ut64 retaddr = rz_analysis_block_get_op_addr(b, b->ninstr - 1);
+			if (retaddr == UT64_MAX) {
+				break;
+			}
+
+			rz_cons_printf("0x%08" PFMT64x "\n", retaddr);
+		}
+	}
+}
+
+static int casecmp(const void *_a, const void *_b) {
+	const RzAnalysisCaseOp *a = _a;
+	const RzAnalysisCaseOp *b = _b;
+	return a->addr != b->addr;
+}
+
+static ut64 __opaddr(RzAnalysisBlock *b, ut64 addr) {
+	int i;
+	if (addr >= b->addr && addr < (b->addr + b->size)) {
+		for (i = 0; i < b->ninstr; i++) {
+			ut64 aa = rz_analysis_block_get_op_addr(b, i);
+			ut64 ab = rz_analysis_block_get_op_addr(b, i + 1);
+			if (addr >= aa && addr < ab) {
+				return aa;
+			}
+		}
+	}
+	return UT64_MAX;
+}
+
+static void bb_info_print(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *bb,
+	ut64 addr, RzOutputMode mode, PJ *pj, RzTable *t) {
+	RzDebugTracepoint *tp = NULL;
+	RzListIter *iter;
+	RzAnalysisBlock *bb2;
+	int outputs = (bb->jump != UT64_MAX) + (bb->fail != UT64_MAX);
+	int inputs = 0;
+	rz_list_foreach (fcn->bbs, iter, bb2) {
+		inputs += (bb2->jump == bb->addr) + (bb2->fail == bb->addr);
+	}
+	if (bb->switch_op) {
+		RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp);
+		outputs += rz_list_length(unique_cases);
+		rz_list_free(unique_cases);
+	}
+	ut64 opaddr = __opaddr(bb, addr);
+
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		tp = rz_debug_trace_get(core->dbg, bb->addr);
+		rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %02X:%04X %" PFMT64d,
+			bb->addr, bb->addr + bb->size,
+			tp ? tp->times : 0, tp ? tp->count : 0,
+			bb->size);
+		if (bb->jump != UT64_MAX) {
+			rz_cons_printf(" j 0x%08" PFMT64x, bb->jump);
+		}
+		if (bb->fail != UT64_MAX) {
+			rz_cons_printf(" f 0x%08" PFMT64x, bb->fail);
+		}
+		if (bb->switch_op) {
+			RzAnalysisCaseOp *cop;
+			RzListIter *iter;
+			RzList *unique_cases = rz_list_uniq(bb->switch_op->cases, casecmp);
+			rz_list_foreach (unique_cases, iter, cop) {
+				rz_cons_printf(" s 0x%08" PFMT64x, cop->addr);
+			}
+			rz_list_free(unique_cases);
+		}
+		rz_cons_newline();
+		break;
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_o(pj);
+		if (bb->jump != UT64_MAX) {
+			pj_kn(pj, "jump", bb->jump);
+		}
+		if (bb->fail != UT64_MAX) {
+			pj_kn(pj, "fail", bb->fail);
+		}
+		if (bb->switch_op) {
+			pj_k(pj, "switch_op");
+			pj_o(pj);
+			pj_kn(pj, "addr", bb->switch_op->addr);
+			pj_kn(pj, "min_val", bb->switch_op->min_val);
+			pj_kn(pj, "def_val", bb->switch_op->def_val);
+			pj_kn(pj, "max_val", bb->switch_op->max_val);
+			pj_k(pj, "cases");
+			pj_a(pj);
+			{
+				RzListIter *case_op_iter;
+				RzAnalysisCaseOp *case_op;
+				rz_list_foreach (bb->switch_op->cases, case_op_iter, case_op) {
+					pj_o(pj);
+					pj_kn(pj, "addr", case_op->addr);
+					pj_kn(pj, "jump", case_op->jump);
+					pj_kn(pj, "value", case_op->value);
+					pj_end(pj);
+				}
+			}
+			pj_end(pj);
+			pj_end(pj);
+		}
+		pj_kn(pj, "opaddr", opaddr);
+		pj_kn(pj, "addr", bb->addr);
+		pj_ki(pj, "size", bb->size);
+		pj_ki(pj, "inputs", inputs);
+		pj_ki(pj, "outputs", outputs);
+		pj_ki(pj, "ninstr", bb->ninstr);
+		pj_kb(pj, "traced", bb->traced);
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_table_add_rowf(t, "xdxx", bb->addr, bb->size, bb->jump, bb->fail);
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_cons_printf("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n", bb->addr & 0xFFFFF, bb->addr);
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_printf("0x%08" PFMT64x "\n", bb->addr);
+		break;
+	case RZ_OUTPUT_MODE_LONG: {
+		if (bb->jump != UT64_MAX) {
+			rz_cons_printf("jump: 0x%08" PFMT64x "\n", bb->jump);
+		}
+		if (bb->fail != UT64_MAX) {
+			rz_cons_printf("fail: 0x%08" PFMT64x "\n", bb->fail);
+		}
+		rz_cons_printf("opaddr: 0x%08" PFMT64x "\n", opaddr);
+		rz_cons_printf("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
+			bb->addr, bb->size, inputs, outputs, bb->ninstr, rz_str_bool(bb->traced));
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+static int bb_cmp(const void *a, const void *b) {
+	const RzAnalysisBlock *ba = a;
+	const RzAnalysisBlock *bb = b;
+	return ba->addr - bb->addr;
+}
+
+RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzOutputMode mode) {
+	RzListIter *iter;
+	RzAnalysisBlock *bb;
+	PJ *pj = NULL;
+	RzTable *t = NULL;
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj = rz_core_pj_new(core);
+		pj_a(pj);
+	} else if (mode == RZ_OUTPUT_MODE_TABLE) {
+		t = rz_table_new();
+		rz_table_set_columnsf(t, "xdxx", "addr", "size", "jump", "fail");
+	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
+		rz_cons_printf("fs blocks\n");
+	}
+
+	rz_list_sort(fcn->bbs, bb_cmp);
+	rz_list_foreach (fcn->bbs, iter, bb) {
+		bb_info_print(core, fcn, bb, bb->addr, mode, pj, t);
+	}
+
+	if (mode == RZ_OUTPUT_MODE_TABLE) {
+		char *ts = rz_table_tofancystring(t);
+		rz_cons_printf("%s", ts);
+		free(ts);
+		rz_table_free(t);
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
+}
+
+RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzOutputMode mode) {
+	PJ *pj = NULL;
+	RzTable *t = NULL;
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj = rz_core_pj_new(core);
+	} else if (mode == RZ_OUTPUT_MODE_TABLE) {
+		t = rz_table_new();
+		rz_table_set_columnsf(t, "xdxx", "addr", "size", "jump", "fail");
+	}
+	RzAnalysisFunction *fcn = rz_list_first(bb->fcns);
+	bb_info_print(core, fcn, bb, addr, mode, pj, t);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	} else if (mode == RZ_OUTPUT_MODE_TABLE) {
+		char *ts = rz_table_tofancystring(t);
+		rz_cons_printf("%s", ts);
+		free(ts);
+		rz_table_free(t);
+	}
+}
+
+RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val) {
+	int bits = (core->analysis->bits & RZ_SYS_BITS_64) ? 64 : 32;
+	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
+	if (!r) {
+		int role = rz_reg_get_name_idx(regname);
+		if (role != -1) {
+			const char *alias = rz_reg_get_name(core->dbg->reg, role);
+			if (alias) {
+				r = rz_reg_get(core->dbg->reg, alias, -1);
+			}
+		}
+	}
+	if (!r) {
+		eprintf("ar: Unknown register '%s'\n", regname);
+		return -1;
+	}
+	rz_reg_set_value(core->dbg->reg, r, val);
+	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+	rz_core_debug_regs2flags(core, bits);
+	return 0;
+}
+
+static void core_esil_init(RzCore *core, RzAnalysisEsil *esil) {
+	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
+	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
+	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
+	int romem = rz_config_get_i(core->config, "esil.romem");
+	int stats = rz_config_get_i(core->config, "esil.stats");
+	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
+	int verbose = rz_config_get_i(core->config, "esil.verbose");
+	if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+		return;
+	}
+	rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL); // setup io
+	core->analysis->esil = esil;
+	esil->verbose = verbose;
+	const char *s = rz_config_get(core->config, "cmd.esil.intr");
+	if (s) {
+		char *my = strdup(s);
+		if (my) {
+			rz_config_set(core->config, "cmd.esil.intr", my);
+			free(my);
+		}
+	}
+}
+
+RZ_IPI void rz_core_analysis_esil_init(RzCore *core) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (esil) {
+		return;
+	}
+	core_esil_init(core, esil);
+}
+
+RZ_IPI void rz_core_analysis_esil_reinit(RzCore *core) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	rz_analysis_esil_free(esil);
+	core_esil_init(core, esil);
+	// reinitialize
+	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
+	if (pc && rz_reg_getv(core->analysis->reg, pc) == 0LL) {
+		rz_core_analysis_set_reg(core, "PC", core->offset);
+	}
+}
+
+static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
+	const char *mode = rz_config_get(core->config, "esil.fillstack");
+	if (mode && *mode && *mode != '0') {
+		const ut64 bs = 4096 * 32;
+		ut64 i;
+		for (i = 0; i < size; i += bs) {
+			ut64 left = RZ_MIN(bs, size - i);
+			//	rz_core_cmdf (core, "wx 10203040 @ 0x%llx", addr);
+			switch (*mode) {
+			case 'd': { // "debrujn"
+				ut8 *buf = (ut8 *)rz_debruijn_pattern(left, 0, NULL);
+				if (buf) {
+					if (!rz_core_write_at(core, addr + i, buf, left)) {
+						eprintf("Couldn't write at %" PFMT64x "\n", addr + i);
+					}
+					free(buf);
+				} else {
+					eprintf("Couldn't generate pattern of length %" PFMT64d "\n", left);
+				}
+			} break;
+			case 's': // "seq"
+				rz_core_cmdf(core, "woe 1 0xff 1 4 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
+				break;
+			case 'r': // "random"
+				rz_core_cmdf(core, "woR %" PFMT64u " @ 0x%" PFMT64x "!0x%" PFMT64x, left, addr + i, left);
+				break;
+			case 'z': // "zero"
+			case '0':
+				rz_core_cmdf(core, "wow 00 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
+				break;
+			}
+		}
+	}
+}
+
+static char *get_esil_stack_name(RzCore *core, const char *name, ut64 *addr, ut32 *size) {
+	ut64 sx_addr = rz_config_get_i(core->config, "esil.stack.addr");
+	ut32 sx_size = rz_config_get_i(core->config, "esil.stack.size");
+	RzIOMap *map = rz_io_map_get(core->io, sx_addr);
+	if (map) {
+		sx_addr = UT64_MAX;
+	}
+	if (sx_addr == UT64_MAX) {
+		const ut64 align = 0x10000000;
+		sx_addr = rz_io_map_next_available(core->io, core->offset, sx_size, align);
+	}
+	if (*addr != UT64_MAX) {
+		sx_addr = *addr;
+	}
+	if (*size != UT32_MAX) {
+		sx_size = *size;
+	}
+	if (sx_size < 1) {
+		sx_size = 0xf0000;
+	}
+	*addr = sx_addr;
+	*size = sx_size;
+	if (RZ_STR_ISEMPTY(name)) {
+		return rz_str_newf("mem.0x%" PFMT64x "_0x%x", sx_addr, sx_size);
+	} else {
+		return rz_str_newf("mem.%s", name);
+	}
+}
+
+/**
+ * Initialize ESIL memory stack region.
+ *
+ * \param core RzCore reference
+ * \param name Optional name of the memory stack region. If NULL, a name is
+ *             computed automatically based on \p addr and \p size
+ * \param addr Base address of the stack region, if UT64_MAX it is automatically computed
+ * \param size Size of the stack region, if UT32_MAX it is automatically computed
+ */
+RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 addr, ut32 size) {
+	ut64 current_offset = core->offset;
+	rz_core_analysis_esil_init(core);
+	RzAnalysisEsil *esil = core->analysis->esil;
+	RzIOMap *stack_map;
+	if (!name && addr == UT64_MAX && size == UT32_MAX) {
+		char *fi = sdb_get(core->sdb, "aeim.fd", 0);
+		if (fi) {
+			// Close the fd associated with the aeim stack
+			ut64 fd = sdb_atoi(fi);
+			(void)rz_io_fd_close(core->io, fd);
+		}
+	}
+	const char *pattern = rz_config_get(core->config, "esil.stack.pattern");
+	char *stack_name = get_esil_stack_name(core, name, &addr, &size);
+
+	char uri[32];
+	rz_strf(uri, "malloc://%u", size);
+	esil->stack_fd = rz_io_fd_open(core->io, uri, RZ_PERM_RW, 0);
+	if (!(stack_map = rz_io_map_add(core->io, esil->stack_fd, RZ_PERM_RW, 0LL, addr, size))) {
+		rz_io_fd_close(core->io, esil->stack_fd);
+		eprintf("Cannot create map for tha stack, fd %d got closed again\n", esil->stack_fd);
+		free(stack_name);
+		esil->stack_fd = 0;
+		return;
+	}
+	rz_io_map_set_name(stack_map, stack_name);
+	free(stack_name);
+	char val[128], *v;
+	v = sdb_itoa(esil->stack_fd, val, 10);
+	sdb_set(core->sdb, "aeim.fd", v, 0);
+
+	rz_config_set_i(core->config, "io.va", true);
+	if (pattern && *pattern) {
+		switch (*pattern) {
+		case '0':
+			// do nothing
+			break;
+		case 'd':
+			rz_core_cmdf(core, "wopD %d @ 0x%" PFMT64x, size, addr);
+			break;
+		case 'i':
+			rz_core_cmdf(core, "woe 0 255 1 @ 0x%" PFMT64x "!%d", addr, size);
+			break;
+		case 'w':
+			rz_core_cmdf(core, "woe 0 0xffff 1 4 @ 0x%" PFMT64x "!%d", addr, size);
+			break;
+		}
+	}
+	// SP
+	const char *sp = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_SP);
+	if (sp) {
+		rz_debug_reg_set(core->dbg, sp, addr + (size / 2));
+	}
+	// BP
+	const char *bp = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_BP);
+	if (bp) {
+		rz_debug_reg_set(core->dbg, bp, addr + (size / 2));
+	}
+	// PC
+	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
+	if (pc) {
+		rz_debug_reg_set(core->dbg, pc, current_offset);
+	}
+	rz_core_regs2flags(core);
+	if (esil) {
+		esil->stack_addr = addr;
+		esil->stack_size = size;
+	}
+	initialize_stack(core, addr, size);
+	rz_core_seek(core, current_offset, false);
+}
+
+RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core) {
+	rz_core_analysis_esil_init(core);
+	RzAnalysisEsil *esil = core->analysis->esil;
+	ut64 addr = 0x100000;
+	ut32 size = 0xf0000;
+	RzFlagItem *fi = rz_flag_get(core->flags, "aeim.stack");
+	if (fi) {
+		addr = fi->offset;
+		size = fi->size;
+	} else {
+		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
+	}
+	if (esil) {
+		esil->stack_addr = addr;
+		esil->stack_size = size;
+	}
+	initialize_stack(core, addr, size);
+	return;
+}
+
+RZ_IPI void rz_core_analysis_esil_init_mem_del(RzCore *core, const char *name, ut64 addr, ut32 size) {
+	rz_core_analysis_esil_init(core);
+	RzAnalysisEsil *esil = core->analysis->esil;
+	char *stack_name = get_esil_stack_name(core, name, &addr, &size);
+	if (esil->stack_fd > 2) { //0, 1, 2 are reserved for stdio/stderr
+		rz_io_fd_close(core->io, esil->stack_fd);
+		// no need to kill the maps, rz_io_map_cleanup does that for us in the close
+		esil->stack_fd = 0;
+	} else {
+		eprintf("Cannot deinitialize %s\n", stack_name);
+	}
+	rz_flag_unset_name(core->flags, stack_name);
+	rz_flag_unset_name(core->flags, "aeim.stack");
+	sdb_unset(core->sdb, "aeim.fd", 0);
+	free(stack_name);
+	return;
+}
+/**
+ * Initialize ESIL registers.
+ *
+ * \param core RzCore reference
+ */
+RZ_IPI void rz_core_analysis_esil_init_regs(RzCore *core) {
+	rz_core_analysis_set_reg(core, "PC", core->offset);
+}
+
+RZ_IPI void rz_core_analysis_esil_step_over(RzCore *core) {
+	RzAnalysisOp *op = rz_core_analysis_op(core, rz_reg_getv(core->analysis->reg, rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC)), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+	ut64 until_addr = UT64_MAX;
+	if (op && op->type == RZ_ANALYSIS_OP_TYPE_CALL) {
+		until_addr = op->addr + op->size;
+	}
+	rz_core_esil_step(core, until_addr, NULL, NULL, false);
+	rz_analysis_op_free(op);
+	rz_core_regs2flags(core);
+}
+
+RZ_IPI void rz_core_analysis_esil_step_over_until(RzCore *core, ut64 addr) {
+	rz_core_esil_step(core, addr, NULL, NULL, true);
+	rz_core_regs2flags(core);
+}
+
+RZ_IPI void rz_core_analysis_esil_step_over_untilexpr(RzCore *core, const char *expr) {
+	rz_core_esil_step(core, UT64_MAX, expr, NULL, true);
+	rz_core_regs2flags(core);
+}
+
+RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
+	RzListIter *it;
+	RzAnalysisFunction *fcn;
+	ut64 cur_seek = core->offset;
+	rz_list_foreach (core->analysis->fcns, it, fcn) {
+		rz_core_seek(core, fcn->addr, true);
+		rz_core_analysis_esil(core, "f", NULL);
+	}
+	rz_core_seek(core, cur_seek, true);
+}
+
+/**
+ * Emulate \p n_instr instructions from \p addr. If \p until_addr is
+ * specified and that address is met before all the instructions are emulated,
+ * stop there.
+ */
+RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_addr, int off) {
+	RzAnalysisEsil *esil = core->analysis->esil;
+	int i, j = 0;
+	ut8 *buf;
+	RzAnalysisOp aop = { 0 };
+	int ret, bsize = RZ_MAX(4096, core->blocksize);
+	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = RZ_MAX(1, mininstrsz);
+	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
+	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
+	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
+	ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
+
+	if (!esil) {
+		eprintf("Warning: cmd_espc: creating new esil instance\n");
+		if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+			return;
+		}
+		core->analysis->esil = esil;
+	}
+	buf = malloc(bsize);
+	if (!buf) {
+		eprintf("Cannot allocate %d byte(s)\n", bsize);
+		free(buf);
+		return;
+	}
+	if (addr == -1) {
+		addr = rz_reg_getv(core->dbg->reg, pc);
+	}
+	(void)rz_analysis_esil_setup(core->analysis->esil, core->analysis, 0, 0, 0); // int romem, int stats, int nonull) {
+	ut64 cursp = rz_reg_getv(core->dbg->reg, "SP");
+	ut64 oldoff = core->offset;
+	const ut64 flags = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_DISASM;
+	for (i = 0, j = 0; j < off; i++, j++) {
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		if (i >= (bsize - 32)) {
+			i = 0;
+			eprintf("Warning: Chomp\n");
+		}
+		if (!i) {
+			rz_io_read_at(core->io, addr, buf, bsize);
+		}
+		if (addr == until_addr) {
+			break;
+		}
+		ret = rz_analysis_op(core->analysis, &aop, addr, buf + i, bsize - i, flags);
+		if (ret < 1) {
+			eprintf("Failed analysis at 0x%08" PFMT64x "\n", addr);
+			break;
+		}
+		// skip calls and such
+		if (aop.type == RZ_ANALYSIS_OP_TYPE_CALL) {
+			// nothing
+		} else {
+			rz_reg_setv(core->analysis->reg, "PC", aop.addr + aop.size);
+			rz_reg_setv(core->dbg->reg, "PC", aop.addr + aop.size);
+			const char *e = RZ_STRBUF_SAFEGET(&aop.esil);
+			if (e && *e) {
+				// eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
+				(void)rz_analysis_esil_parse(esil, e);
+			}
+		}
+		int inc = (core->search->align > 0) ? core->search->align - 1 : ret - 1;
+		if (inc < 0) {
+			inc = minopcode;
+		}
+		i += inc;
+		addr += ret; // aop.size;
+		rz_analysis_op_fini(&aop);
+	}
+	rz_core_seek(core, oldoff, true);
+	rz_reg_setv(core->dbg->reg, "SP", cursp);
+}
+
+RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
+	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, core->offset);
+	rz_core_analysis_esil_emulate(core, bb->addr, UT64_MAX, bb->ninstr);
+}
+
 static bool blacklisted_word(char *name) {
 	const char *list[] = {
 		"__stack_chk_guard",
@@ -387,17 +994,17 @@ static char *analysis_fcn_autoname(RzCore *core, RzAnalysisFunction *fcn, int du
 	int use_isatty = 0;
 	PJ *pj = NULL;
 	char *do_call = NULL;
-	RzAnalysisRef *ref;
+	RzAnalysisXRef *xref;
 	RzListIter *iter;
-	RzList *refs = rz_analysis_function_get_refs(fcn);
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	if (mode == 'j') {
 		// start a new JSON object
 		pj = rz_core_pj_new(core);
 		pj_a(pj);
 	}
-	if (refs) {
-		rz_list_foreach (refs, iter, ref) {
-			RzFlagItem *f = rz_flag_get_i(core->flags, ref->addr);
+	if (xrefs) {
+		rz_list_foreach (xrefs, iter, xref) {
+			RzFlagItem *f = rz_flag_get_i(core->flags, xref->to);
 			if (f) {
 				// If dump is true, print all strings referenced by the function
 				if (dump) {
@@ -406,12 +1013,12 @@ static char *analysis_fcn_autoname(RzCore *core, RzAnalysisFunction *fcn, int du
 						if (mode == 'j') {
 							// add new json item
 							pj_o(pj);
-							pj_kn(pj, "addr", ref->at);
-							pj_kn(pj, "ref", ref->addr);
+							pj_kn(pj, "addr", xref->from);
+							pj_kn(pj, "ref", xref->to);
 							pj_ks(pj, "flag", f->name);
 							pj_end(pj);
 						} else {
-							rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %s\n", ref->at, ref->addr, f->name);
+							rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x " %s\n", xref->from, xref->to, f->name);
 						}
 					}
 				} else if (do_call) { // break if a proper autoname found and not in dump mode
@@ -451,7 +1058,7 @@ static char *analysis_fcn_autoname(RzCore *core, RzAnalysisFunction *fcn, int du
 				}
 			}
 		}
-		rz_list_free(refs);
+		rz_list_free(xrefs);
 	}
 	if (mode == 'j') {
 		pj_end(pj);
@@ -556,7 +1163,7 @@ RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core) {
 		if (func_name[0] == 0xff) {
 			break;
 		}
-		rz_name_filter((char *)func_name, 0);
+		rz_name_filter((char *)func_name, 0, true);
 		//rz_cons_printf ("[x] Found symbol %s at 0x%x\n", func_name, func_addr);
 		rz_flag_set(core->flags, sdb_fmt("sym.go.%s", func_name), func_addr, 1);
 		offset += 2 * ptr_size;
@@ -595,73 +1202,73 @@ static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
 
 static void rz_analysis_set_stringrefs(RzCore *core, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
-	RzAnalysisRef *ref;
-	RzList *refs = rz_analysis_function_get_refs(fcn);
-	rz_list_foreach (refs, iter, ref) {
-		if (ref->type == RZ_ANALYSIS_REF_TYPE_DATA &&
-			rz_bin_is_string(core->bin, ref->addr)) {
-			rz_analysis_xrefs_set(core->analysis, ref->at, ref->addr, RZ_ANALYSIS_REF_TYPE_STRING);
+	RzAnalysisXRef *xref;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, iter, xref) {
+		if (xref->type == RZ_ANALYSIS_REF_TYPE_DATA &&
+			rz_bin_is_string(core->bin, xref->to)) {
+			rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, RZ_ANALYSIS_REF_TYPE_STRING);
 		}
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 }
 
-static bool rz_analysis_try_get_fcn(RzCore *core, RzAnalysisRef *ref, int fcndepth, int refdepth) {
+static bool rz_analysis_try_get_fcn(RzCore *core, RzAnalysisXRef *xref, int fcndepth, int refdepth) {
 	if (!refdepth) {
 		return false;
 	}
-	RzIOMap *map = rz_io_map_get(core->io, ref->addr);
+	RzIOMap *map = rz_io_map_get(core->io, xref->to);
 	if (!map) {
 		return false;
 	}
 
 	if (map->perm & RZ_PERM_X) {
 		ut8 buf[64];
-		rz_io_read_at(core->io, ref->addr, buf, sizeof(buf));
-		bool looksLikeAFunction = rz_analysis_check_fcn(core->analysis, buf, sizeof(buf), ref->addr, map->itv.addr,
+		rz_io_read_at(core->io, xref->to, buf, sizeof(buf));
+		bool looksLikeAFunction = rz_analysis_check_fcn(core->analysis, buf, sizeof(buf), xref->to, map->itv.addr,
 			map->itv.addr + map->itv.size);
 		if (looksLikeAFunction) {
 			if (core->analysis->limit) {
-				if (ref->addr < core->analysis->limit->from ||
-					ref->addr > core->analysis->limit->to) {
+				if (xref->to < core->analysis->limit->from ||
+					xref->to > core->analysis->limit->to) {
 					return 1;
 				}
 			}
-			rz_core_analysis_fcn(core, ref->addr, ref->at, ref->type, fcndepth - 1);
+			rz_core_analysis_fcn(core, xref->to, xref->from, xref->type, fcndepth - 1);
 		}
 	} else {
 		ut64 offs = 0;
 		ut64 sz = core->analysis->bits >> 3;
-		RzAnalysisRef ref1;
-		ref1.type = RZ_ANALYSIS_REF_TYPE_DATA;
-		ref1.at = ref->addr;
-		ref1.addr = 0;
+		RzAnalysisXRef xref1;
+		xref1.type = RZ_ANALYSIS_REF_TYPE_DATA;
+		xref1.from = xref->to;
+		xref1.to = 0;
 		ut32 i32;
 		ut16 i16;
 		ut8 i8;
 		ut64 offe = offs + 1024;
-		for (offs = 0; offs < offe; offs += sz, ref1.at += sz) {
+		for (offs = 0; offs < offe; offs += sz, xref1.from += sz) {
 			ut8 bo[8];
-			rz_io_read_at(core->io, ref->addr + offs, bo, RZ_MIN(sizeof(bo), sz));
+			rz_io_read_at(core->io, xref->to + offs, bo, RZ_MIN(sizeof(bo), sz));
 			bool be = core->analysis->big_endian;
 			switch (sz) {
 			case 1:
 				i8 = rz_read_ble8(bo);
-				ref1.addr = (ut64)i8;
+				xref1.to = (ut64)i8;
 				break;
 			case 2:
 				i16 = rz_read_ble16(bo, be);
-				ref1.addr = (ut64)i16;
+				xref1.to = (ut64)i16;
 				break;
 			case 4:
 				i32 = rz_read_ble32(bo, be);
-				ref1.addr = (ut64)i32;
+				xref1.to = (ut64)i32;
 				break;
 			case 8:
-				ref1.addr = rz_read_ble64(bo, be);
+				xref1.to = rz_read_ble64(bo, be);
 				break;
 			}
-			rz_analysis_try_get_fcn(core, &ref1, fcndepth, refdepth - 1);
+			rz_analysis_try_get_fcn(core, &xref1, fcndepth, refdepth - 1);
 		}
 	}
 	return 1;
@@ -669,22 +1276,22 @@ static bool rz_analysis_try_get_fcn(RzCore *core, RzAnalysisRef *ref, int fcndep
 
 static int rz_analysis_analyze_fcn_refs(RzCore *core, RzAnalysisFunction *fcn, int depth) {
 	RzListIter *iter;
-	RzAnalysisRef *ref;
-	RzList *refs = rz_analysis_function_get_refs(fcn);
+	RzAnalysisXRef *xref;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 
-	rz_list_foreach (refs, iter, ref) {
-		if (ref->addr == UT64_MAX) {
+	rz_list_foreach (xrefs, iter, xref) {
+		if (xref->to == UT64_MAX) {
 			continue;
 		}
-		switch (ref->type) {
+		switch (xref->type) {
 		case RZ_ANALYSIS_REF_TYPE_DATA:
 			if (core->analysis->opt.followdatarefs) {
-				rz_analysis_try_get_fcn(core, ref, depth, 2);
+				rz_analysis_try_get_fcn(core, xref, depth, 2);
 			}
 			break;
 		case RZ_ANALYSIS_REF_TYPE_CODE:
 		case RZ_ANALYSIS_REF_TYPE_CALL:
-			rz_core_analysis_fcn(core, ref->addr, ref->at, ref->type, depth - 1);
+			rz_core_analysis_fcn(core, xref->to, xref->from, xref->type, depth - 1);
 			break;
 		default:
 			break;
@@ -692,7 +1299,7 @@ static int rz_analysis_analyze_fcn_refs(RzCore *core, RzAnalysisFunction *fcn, i
 		// TODO: fix memleak here, fcn not freed even though it is
 		// added in core->analysis->fcns which is freed in rz_analysis_free()
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 	return 1;
 }
 
@@ -719,18 +1326,18 @@ static void function_rename(RzFlag *flags, RzAnalysisFunction *fcn) {
 
 static void autoname_imp_trampoline(RzCore *core, RzAnalysisFunction *fcn) {
 	if (rz_list_length(fcn->bbs) == 1 && ((RzAnalysisBlock *)rz_list_first(fcn->bbs))->ninstr == 1) {
-		RzList *refs = rz_analysis_function_get_refs(fcn);
-		if (refs && rz_list_length(refs) == 1) {
-			RzAnalysisRef *ref = rz_list_first(refs);
-			if (ref->type != RZ_ANALYSIS_REF_TYPE_CALL) { /* Some fcns don't return */
-				RzFlagItem *flg = rz_flag_get_i(core->flags, ref->addr);
+		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+		if (xrefs && rz_list_length(xrefs) == 1) {
+			RzAnalysisXRef *xref = rz_list_first(xrefs);
+			if (xref->type != RZ_ANALYSIS_REF_TYPE_CALL) { /* Some fcns don't return */
+				RzFlagItem *flg = rz_flag_get_i(core->flags, xref->to);
 				if (flg && rz_str_startswith(flg->name, "sym.imp.")) {
 					RZ_FREE(fcn->name);
 					fcn->name = rz_str_newf("sub.%s", flg->name + 8);
 				}
 			}
 		}
-		rz_list_free(refs);
+		rz_list_free(xrefs);
 	}
 }
 
@@ -1738,7 +2345,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 
 						if (is_star) {
 							char *title = get_title(bbi->addr);
-							char *body_b64 = rz_base64_encode_dyn(diffstr, -1);
+							char *body_b64 = rz_base64_encode_dyn((const ut8 *)diffstr, strlen(diffstr));
 							if (!title || !body_b64) {
 								free(body_b64);
 								free(title);
@@ -1753,9 +2360,9 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 							diffstr = rz_str_replace(diffstr, "\n", "\\l", 1);
 							diffstr = rz_str_replace(diffstr, "\"", "'", 1);
 							rz_cons_printf(" \"0x%08" PFMT64x "\" [fillcolor=\"%s\","
-								       "color=\"black\", fontname=\"Courier\","
+								       "color=\"black\", fontname=\"%s\","
 								       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
-								bbi->addr, difftype, diffstr, fcn->name,
+								bbi->addr, difftype, diffstr, font, fcn->name,
 								bbi->addr);
 						}
 						free(diffstr);
@@ -1763,7 +2370,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 					} else {
 						if (is_star) {
 							char *title = get_title(bbi->addr);
-							char *body_b64 = rz_base64_encode_dyn(str, -1);
+							char *body_b64 = rz_base64_encode_dyn((const ut8 *)str, strlen(title));
 							int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
 							if (!title || !body_b64) {
 								free(body_b64);
@@ -1777,9 +2384,9 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 							free(title);
 						} else {
 							rz_cons_printf(" \"0x%08" PFMT64x "\" [fillcolor=\"%s\","
-								       "color=\"black\", fontname=\"Courier\","
+								       "color=\"black\", fontname=\"%s\","
 								       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
-								bbi->addr, difftype, str, fcn->name, bbi->addr);
+								bbi->addr, difftype, str, font, fcn->name, bbi->addr);
 						}
 					}
 					rz_diff_free(d);
@@ -1808,7 +2415,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 					nodes++;
 					if (is_star) {
 						char *title = get_title(bbi->addr);
-						char *body_b64 = rz_base64_encode_dyn(str, -1);
+						char *body_b64 = rz_base64_encode_dyn((const ut8 *)str, strlen(str));
 						int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
 						if (!title || !body_b64) {
 							free(body_b64);
@@ -1873,7 +2480,7 @@ static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int 
 		// TODO: show vars, refs and xrefs
 		char *fcn_name_escaped = rz_str_escape_utf8_for_json(fcn->name, -1);
 		pj_o(pj);
-		pj_ks(pj, "name", rz_str_get(fcn_name_escaped));
+		pj_ks(pj, "name", rz_str_get_null(fcn_name_escaped));
 		free(fcn_name_escaped);
 		pj_kn(pj, "offset", fcn->addr);
 		pj_ki(pj, "ninstr", fcn->ninstr);
@@ -2011,7 +2618,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 			return 0; // already analyzed function
 		}
 		if (rz_analysis_function_contains(fcn, from)) { // inner function
-			RzList *l = rz_analysis_xrefs_get(core->analysis, from);
+			RzList *l = rz_analysis_xrefs_get_to(core->analysis, from);
 			if (l && !rz_list_empty(l)) {
 				rz_list_free(l);
 				return true;
@@ -2082,7 +2689,7 @@ RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalysisFunction *fcn) {
 		}
 		char *title = get_title(bb->addr);
 		char *body = rz_core_cmd_strf(core, "pdb @ 0x%08" PFMT64x, bb->addr);
-		char *body_b64 = rz_base64_encode_dyn(body, -1);
+		char *body_b64 = rz_base64_encode_dyn((const ut8 *)body, strlen(body));
 		if (!title || !body || !body_b64) {
 			free(body_b64);
 			free(body);
@@ -2258,23 +2865,23 @@ RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr) {
 		bool found = false;
 		const char *me = fcn->name;
 		RzListIter *iter;
-		RzAnalysisRef *ref;
-		RzList *refs = rz_analysis_function_get_refs(fcn);
-		rz_list_foreach (refs, iter, ref) {
+		RzAnalysisXRef *xref;
+		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+		rz_list_foreach (xrefs, iter, xref) {
 			RzBinObject *obj = rz_bin_cur_object(core->bin);
-			RzBinSection *binsec = rz_bin_get_section_at(obj, ref->addr, true);
+			RzBinSection *binsec = rz_bin_get_section_at(obj, xref->to, true);
 			if (binsec && binsec->is_data) {
 				if (!found) {
 					rz_cons_printf("agn %s\n", me);
 					found = true;
 				}
-				RzFlagItem *item = rz_flag_get_i(core->flags, ref->addr);
-				const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, ref->addr);
+				RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
+				const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, xref->to);
 				rz_cons_printf("agn %s\n", dst);
 				rz_cons_printf("age %s %s\n", me, dst);
 			}
 		}
-		rz_list_free(refs);
+		rz_list_free(xrefs);
 	} else {
 		eprintf("Not in a function. Use 'df' to define it.\n");
 	}
@@ -2285,16 +2892,16 @@ RZ_API void rz_core_analysis_coderefs(RzCore *core, ut64 addr) {
 	if (fcn) {
 		const char *me = fcn->name;
 		RzListIter *iter;
-		RzAnalysisRef *ref;
-		RzList *refs = rz_analysis_function_get_refs(fcn);
+		RzAnalysisXRef *xref;
+		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 		rz_cons_printf("agn %s\n", me);
-		rz_list_foreach (refs, iter, ref) {
-			RzFlagItem *item = rz_flag_get_i(core->flags, ref->addr);
-			const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, ref->addr);
+		rz_list_foreach (xrefs, iter, xref) {
+			RzFlagItem *item = rz_flag_get_i(core->flags, xref->to);
+			const char *dst = item ? item->name : sdb_fmt("0x%08" PFMT64x, xref->from);
 			rz_cons_printf("agn %s\n", dst);
 			rz_cons_printf("age %s %s\n", me, dst);
 		}
-		rz_list_free(refs);
+		rz_list_free(xrefs);
 	} else {
 		eprintf("Not in a function. Use 'df' to define it.\n");
 	}
@@ -2313,12 +2920,12 @@ static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
 		return;
 	}
 	RzListIter *iter;
-	RzAnalysisRef *ref;
-	RzList *list = rz_analysis_xrefs_get(core->analysis, addr);
-	rz_list_foreach (list, iter, ref) {
-		RzFlagItem *item = rz_flag_get_i(core->flags, ref->addr);
-		char *src = item ? rz_str_new(item->name) : rz_str_newf("0x%08" PFMT64x, ref->addr);
-		RzGraphNode *reference_from = rz_graph_add_node_info(graph, src, NULL, ref->addr);
+	RzAnalysisXRef *xref;
+	RzList *list = rz_analysis_xrefs_get_to(core->analysis, addr);
+	rz_list_foreach (list, iter, xref) {
+		RzFlagItem *item = rz_flag_get_i(core->flags, xref->from);
+		char *src = item ? rz_str_new(item->name) : rz_str_newf("0x%08" PFMT64x, xref->from);
+		RzGraphNode *reference_from = rz_graph_add_node_info(graph, src, NULL, xref->from);
 		free(src);
 		rz_graph_add_edge(graph, reference_from, curr_node);
 	}
@@ -2360,8 +2967,8 @@ RZ_API RzGraph *rz_core_analysis_codexrefs(RzCore *core, ut64 addr) {
 	return graph;
 }
 
-static int RzAnalysisRef_cmp(const RzAnalysisRef *ref1, const RzAnalysisRef *ref2) {
-	return ref1->addr != ref2->addr;
+static int RzAnalysisRef_cmp(const RzAnalysisXRef *xref1, const RzAnalysisXRef *xref2) {
+	return xref1->to != xref2->to;
 }
 
 RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
@@ -2372,7 +2979,7 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	int usenames = rz_config_get_i(core->config, "graph.json.usenames");
 	;
 	RzAnalysisFunction *fcni;
-	RzAnalysisRef *fcnr;
+	RzAnalysisXRef *fcnr;
 	PJ *pj = NULL;
 
 	ut64 from = rz_config_get_i(core->config, "graph.from");
@@ -2396,14 +3003,15 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	case RZ_GRAPH_FORMAT_DOT:
 		if (!is_html) {
 			const char *gv_edge = rz_config_get(core->config, "graph.gv.edge");
-			const char *gv_node = rz_config_get(core->config, "graph.gv.node");
+			char *gv_node = strdup(rz_config_get(core->config, "graph.gv.node"));
 			const char *gv_grph = rz_config_get(core->config, "graph.gv.graph");
 			const char *gv_spline = rz_config_get(core->config, "graph.gv.spline");
 			if (!gv_edge || !*gv_edge) {
 				gv_edge = "arrowhead=\"normal\" style=bold weight=2";
 			}
 			if (!gv_node || !*gv_node) {
-				gv_node = "penwidth=4 fillcolor=white style=filled fontname=\"Courier New Bold\" fontsize=14 shape=box";
+				free(gv_node);
+				gv_node = rz_str_newf("penwidth=4 fillcolor=white style=filled fontname=\"%s Bold\" fontsize=14 shape=box", font);
 			}
 			if (!gv_grph || !*gv_grph) {
 				gv_grph = "bgcolor=azure";
@@ -2420,6 +3028,7 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 				       "edge [%s];\n",
 				gv_grph, font, gv_spline,
 				gv_node, gv_edge);
+			free(gv_node);
 		}
 		break;
 	}
@@ -2439,17 +3048,17 @@ repeat:
 		if (addr != UT64_MAX && addr != fcni->addr) {
 			continue;
 		}
-		RzList *refs = rz_analysis_function_get_refs(fcni);
+		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcni);
 		RzList *calls = rz_list_new();
 		// TODO: maybe fcni->calls instead ?
-		rz_list_foreach (refs, iter2, fcnr) {
+		rz_list_foreach (xrefs, iter2, fcnr) {
 			//  TODO: tail calll jumps are also calls
 			if (fcnr->type == 'C' && rz_list_find(calls, fcnr, (RzListComparator)RzAnalysisRef_cmp) == NULL) {
 				rz_list_append(calls, fcnr);
 			}
 		}
 		if (rz_list_empty(calls)) {
-			rz_list_free(refs);
+			rz_list_free(xrefs);
 			rz_list_free(calls);
 			continue;
 		}
@@ -2492,8 +3101,8 @@ repeat:
 		}
 		rz_list_foreach (calls, iter2, fcnr) {
 			// TODO: display only code or data refs?
-			RzFlagItem *flag = rz_flag_get_i(core->flags, fcnr->addr);
-			char *fcnr_name = (flag && flag->name) ? flag->name : rz_str_newf("unk.0x%" PFMT64x, fcnr->addr);
+			RzFlagItem *flag = rz_flag_get_i(core->flags, fcnr->to);
+			char *fcnr_name = (flag && flag->name) ? flag->name : rz_str_newf("unk.0x%" PFMT64x, fcnr->to);
 			switch (fmt) {
 			case RZ_GRAPH_FORMAT_GMLFCN:
 				if (iteration == 0) {
@@ -2501,12 +3110,12 @@ repeat:
 						       "    id  %" PFMT64d "\n"
 						       "    label  \"%s\"\n"
 						       "  ]\n",
-						fcnr->addr - base, fcnr_name);
+						fcnr->to - base, fcnr_name);
 					rz_cons_printf("  edge [\n"
 						       "    source  %" PFMT64d "\n"
 						       "    target  %" PFMT64d "\n"
 						       "  ]\n",
-						fcni->addr - base, fcnr->addr - base);
+						fcni->addr - base, fcnr->to - base);
 				}
 			case RZ_GRAPH_FORMAT_GML:
 				if (iteration != 0) {
@@ -2514,28 +3123,28 @@ repeat:
 						       "    source  %" PFMT64d "\n"
 						       "    target  %" PFMT64d "\n"
 						       "  ]\n",
-						fcni->addr - base, fcnr->addr - base); //, "#000000"
+						fcni->addr - base, fcnr->to - base); //, "#000000"
 				}
 				break;
 			case RZ_GRAPH_FORMAT_DOT:
 				rz_cons_printf("  \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" "
 					       "[color=\"%s\" URL=\"%s/0x%08" PFMT64x "\"];\n",
 					//"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
-					fcni->addr, fcnr->addr, //, fcnr_name,
+					fcni->addr, fcnr->to, //, fcnr_name,
 					"#61afef",
-					fcnr_name, fcnr->addr);
+					fcnr_name, fcnr->to);
 				rz_cons_printf("  \"0x%08" PFMT64x "\" "
 					       "[label=\"%s\""
 					       " URL=\"%s/0x%08" PFMT64x "\"];\n",
-					fcnr->addr, fcnr_name,
-					fcnr_name, fcnr->addr);
+					fcnr->to, fcnr_name,
+					fcnr_name, fcnr->to);
 				break;
 			case RZ_GRAPH_FORMAT_JSON:
 				if (usenames) {
 					pj_s(pj, fcnr_name);
 				} else {
 					char fcnr_addr[20];
-					snprintf(fcnr_addr, sizeof(fcnr_addr) - 1, "0x%08" PFMT64x, fcnr->addr);
+					snprintf(fcnr_addr, sizeof(fcnr_addr) - 1, "0x%08" PFMT64x, fcnr->to);
 					pj_s(pj, fcnr_addr);
 				}
 				break;
@@ -2546,14 +3155,14 @@ repeat:
 					rz_cons_printf("agn %s\n", fcnr_name);
 					rz_cons_printf("age %s %s\n", fcni->name, fcnr_name);
 				} else {
-					rz_cons_printf("# - 0x%08" PFMT64x " (%c)\n", fcnr->addr, fcnr->type);
+					rz_cons_printf("# - 0x%08" PFMT64x " (%c)\n", fcnr->to, fcnr->type);
 				}
 			}
 			if (!(flag && flag->name)) {
 				free(fcnr_name);
 			}
 		}
-		rz_list_free(refs);
+		rz_list_free(xrefs);
 		rz_list_free(calls);
 		if (fmt == RZ_GRAPH_FORMAT_JSON) {
 			pj_end(pj);
@@ -2621,22 +3230,21 @@ RZ_API ut64 rz_core_analysis_fcn_list_size(RzCore *core) {
 static int fcnlist_gather_metadata(RzAnalysis *analysis, RzList *fcns) {
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
-	RzList *xrefs;
 
 	rz_list_foreach (fcns, iter, fcn) {
 		// Count the number of references and number of calls
 		RzListIter *callrefiter;
-		RzAnalysisRef *ref;
-		RzList *refs = rz_analysis_function_get_refs(fcn);
+		RzAnalysisXRef *xref;
+		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 		int numcallrefs = 0;
-		rz_list_foreach (refs, callrefiter, ref) {
-			if (ref->type == RZ_ANALYSIS_REF_TYPE_CALL) {
+		rz_list_foreach (xrefs, callrefiter, xref) {
+			if (xref->type == RZ_ANALYSIS_REF_TYPE_CALL) {
 				numcallrefs++;
 			}
 		}
-		rz_list_free(refs);
+		rz_list_free(xrefs);
 		fcn->meta.numcallrefs = numcallrefs;
-		xrefs = rz_analysis_xrefs_get(analysis, fcn->addr);
+		xrefs = rz_analysis_xrefs_get_to(analysis, fcn->addr);
 		fcn->meta.numrefs = xrefs ? xrefs->length : 0;
 		rz_list_free(xrefs);
 	}
@@ -2720,7 +3328,7 @@ static int fcn_list_verbose(RzCore *core, RzList *fcns, const char *sortby) {
 		if (!strcmp(sortby, "size")) {
 			rz_list_sort(fcns, cmpsize);
 		} else if (!strcmp(sortby, "addr")) {
-			rz_list_sort(fcns, cmpaddr);
+			rz_list_sort(fcns, fcn_cmpaddr);
 		} else if (!strcmp(sortby, "cc")) {
 			rz_list_sort(fcns, cmpfcncc);
 		} else if (!strcmp(sortby, "edges")) {
@@ -2786,21 +3394,21 @@ static int fcn_list_default(RzCore *core, RzList *fcns, bool quiet) {
 
 // for a given function returns an RzList of all functions that were called in it
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn) {
-	RzAnalysisRef *refi;
+	RzAnalysisXRef *xrefi;
 	RzListIter *iter, *iter2;
 
 	// get all references from this function
-	RzList *refs = rz_analysis_function_get_refs(fcn);
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	// sanity check
-	if (!rz_list_empty(refs)) {
+	if (!rz_list_empty(xrefs)) {
 		// iterate over all the references and remove these which aren't of type call
-		rz_list_foreach_safe (refs, iter, iter2, refi) {
-			if (refi->type != RZ_ANALYSIS_REF_TYPE_CALL) {
-				rz_list_delete(refs, iter);
+		rz_list_foreach_safe (xrefs, iter, iter2, xrefi) {
+			if (xrefi->type != RZ_ANALYSIS_REF_TYPE_CALL) {
+				rz_list_delete(xrefs, iter);
 			}
 		}
 	}
-	return refs;
+	return xrefs;
 }
 
 // Lists function names and their calls (uniqified)
@@ -2808,8 +3416,8 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 	RzListIter *refiter;
 	RzListIter *fcniter;
 	RzAnalysisFunction *fcn;
-	RzAnalysisRef *refi;
-	RzList *refs = NULL;
+	RzAnalysisXRef *xrefi;
+	RzList *xrefs = NULL;
 	PJ *pj = NULL;
 
 	if (mode == 'j') {
@@ -2820,12 +3428,12 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 	// Iterate over all functions
 	rz_list_foreach (fcns, fcniter, fcn) {
 		// Get all refs for a function
-		refs = rz_core_analysis_fcn_get_calls(core, fcn);
+		xrefs = rz_core_analysis_fcn_get_calls(core, fcn);
 		// Uniquify the list by ref->addr
-		refs = rz_list_uniq(refs, (RzListComparator)RzAnalysisRef_cmp);
+		xrefs = rz_list_uniq(xrefs, (RzListComparator)RzAnalysisRef_cmp);
 
 		// don't enter for functions with 0 refs
-		if (!rz_list_empty(refs)) {
+		if (!rz_list_empty(xrefs)) {
 			if (pj) { // begin json output of function
 				pj_o(pj);
 				pj_ks(pj, "name", fcn->name);
@@ -2842,13 +3450,13 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 				rz_cons_printf(" -> ");
 			}
 			// Iterate over all refs from a function
-			rz_list_foreach (refs, refiter, refi) {
-				RzFlagItem *f = rz_flag_get_i(core->flags, refi->addr);
-				char *dst = rz_str_newf((f ? f->name : "0x%08" PFMT64x), refi->addr);
+			rz_list_foreach (xrefs, refiter, xrefi) {
+				RzFlagItem *f = rz_flag_get_i(core->flags, xrefi->to);
+				char *dst = rz_str_newf((f ? f->name : "0x%08" PFMT64x), xrefi->to);
 				if (pj) { // Append calee json item
 					pj_o(pj);
 					pj_ks(pj, "name", dst);
-					pj_kn(pj, "addr", refi->addr);
+					pj_kn(pj, "addr", xrefi->from);
 					pj_end(pj); // close referenced item
 				} else if (mode == 'q') {
 					rz_cons_printf("%s ", dst);
@@ -2877,8 +3485,7 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 
 static int fcn_print_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
 	RzListIter *iter;
-	RzAnalysisRef *refi;
-	RzList *refs, *xrefs;
+	RzAnalysisXRef *xrefi;
 	if (!pj) {
 		return -1;
 	}
@@ -2905,7 +3512,7 @@ static int fcn_print_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
 	pj_ki(pj, "edges", rz_analysis_function_count_edges(fcn, &ebbs));
 	pj_ki(pj, "ebbs", ebbs);
 	{
-		char *sig = rz_core_cmd_strf(core, "afcf @ 0x%" PFMT64x, fcn->addr);
+		char *sig = rz_core_analysis_function_signature(core, RZ_OUTPUT_MODE_STANDARD, fcn->name);
 		if (sig) {
 			rz_str_trim(sig);
 			pj_ks(pj, "signature", sig);
@@ -2916,20 +3523,20 @@ static int fcn_print_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
 	pj_kn(pj, "maxbound", rz_analysis_function_max_addr(fcn));
 
 	int outdegree = 0;
-	refs = rz_analysis_function_get_refs(fcn);
-	if (!rz_list_empty(refs)) {
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	if (!rz_list_empty(xrefs)) {
 		pj_k(pj, "callrefs");
 		pj_a(pj);
-		rz_list_foreach (refs, iter, refi) {
-			if (refi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
+		rz_list_foreach (xrefs, iter, xrefi) {
+			if (xrefi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
 				outdegree++;
 			}
-			if (refi->type == RZ_ANALYSIS_REF_TYPE_CODE ||
-				refi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
+			if (xrefi->type == RZ_ANALYSIS_REF_TYPE_CODE ||
+				xrefi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
 				pj_o(pj);
-				pj_kn(pj, "addr", refi->addr);
-				pj_ks(pj, "type", rz_analysis_xrefs_type_tostring(refi->type));
-				pj_kn(pj, "at", refi->at);
+				pj_kn(pj, "from", xrefi->from);
+				pj_kn(pj, "to", xrefi->to);
+				pj_ks(pj, "type", rz_analysis_xrefs_type_tostring(xrefi->type));
 				pj_end(pj);
 			}
 		}
@@ -2937,28 +3544,28 @@ static int fcn_print_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
 
 		pj_k(pj, "datarefs");
 		pj_a(pj);
-		rz_list_foreach (refs, iter, refi) {
-			if (refi->type == RZ_ANALYSIS_REF_TYPE_DATA) {
-				pj_n(pj, refi->addr);
+		rz_list_foreach (xrefs, iter, xrefi) {
+			if (xrefi->type == RZ_ANALYSIS_REF_TYPE_DATA) {
+				pj_n(pj, xrefi->to);
 			}
 		}
 		pj_end(pj);
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 
 	int indegree = 0;
-	xrefs = rz_analysis_function_get_xrefs(fcn);
+	xrefs = rz_analysis_function_get_xrefs_to(fcn);
 	if (!rz_list_empty(xrefs)) {
 		pj_k(pj, "codexrefs");
 		pj_a(pj);
-		rz_list_foreach (xrefs, iter, refi) {
-			if (refi->type == RZ_ANALYSIS_REF_TYPE_CODE ||
-				refi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
+		rz_list_foreach (xrefs, iter, xrefi) {
+			if (xrefi->type == RZ_ANALYSIS_REF_TYPE_CODE ||
+				xrefi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
 				indegree++;
 				pj_o(pj);
-				pj_kn(pj, "addr", refi->addr);
-				pj_ks(pj, "type", rz_analysis_xrefs_type_tostring(refi->type));
-				pj_kn(pj, "at", refi->at);
+				pj_kn(pj, "from", xrefi->from);
+				pj_kn(pj, "to", xrefi->to);
+				pj_ks(pj, "type", rz_analysis_xrefs_type_tostring(xrefi->type));
 				pj_end(pj);
 			}
 		}
@@ -2967,9 +3574,9 @@ static int fcn_print_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
 		pj_k(pj, "dataxrefs");
 		pj_a(pj);
 
-		rz_list_foreach (xrefs, iter, refi) {
-			if (refi->type == RZ_ANALYSIS_REF_TYPE_DATA) {
-				pj_n(pj, refi->addr);
+		rz_list_foreach (xrefs, iter, xrefi) {
+			if (xrefi->type == RZ_ANALYSIS_REF_TYPE_DATA) {
+				pj_n(pj, xrefi->from);
 			}
 		}
 		pj_end(pj);
@@ -3051,35 +3658,35 @@ static int fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
 	}
 	if (fcn) {
 		/* show variables  and arguments */
-		rz_core_cmdf(core, "afvb* @ 0x%" PFMT64x "\n", fcn->addr);
-		rz_core_cmdf(core, "afvr* @ 0x%" PFMT64x "\n", fcn->addr);
-		rz_core_cmdf(core, "afvs* @ 0x%" PFMT64x "\n", fcn->addr);
+		rz_analysis_var_list_show(core->analysis, fcn, 'b', '*', NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, 'r', '*', NULL);
+		rz_analysis_var_list_show(core->analysis, fcn, 's', '*', NULL);
 	}
 	/* Show references */
 	RzListIter *refiter;
-	RzAnalysisRef *refi;
-	RzList *refs = rz_analysis_function_get_refs(fcn);
-	rz_list_foreach (refs, refiter, refi) {
-		switch (refi->type) {
+	RzAnalysisXRef *xrefi;
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, refiter, xrefi) {
+		switch (xrefi->type) {
 		case RZ_ANALYSIS_REF_TYPE_CALL:
-			rz_cons_printf("axC 0x%" PFMT64x " 0x%" PFMT64x "\n", refi->addr, refi->at);
+			rz_cons_printf("axC 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_DATA:
-			rz_cons_printf("axd 0x%" PFMT64x " 0x%" PFMT64x "\n", refi->addr, refi->at);
+			rz_cons_printf("axd 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_CODE:
-			rz_cons_printf("axc 0x%" PFMT64x " 0x%" PFMT64x "\n", refi->addr, refi->at);
+			rz_cons_printf("axc 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_STRING:
-			rz_cons_printf("axs 0x%" PFMT64x " 0x%" PFMT64x "\n", refi->addr, refi->at);
+			rz_cons_printf("axs 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		case RZ_ANALYSIS_REF_TYPE_NULL:
 		default:
-			rz_cons_printf("ax 0x%" PFMT64x " 0x%" PFMT64x "\n", refi->addr, refi->at);
+			rz_cons_printf("ax 0x%" PFMT64x " 0x%" PFMT64x "\n", xrefi->to, xrefi->from);
 			break;
 		}
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 	/*Saving Function stack frame*/
 	rz_cons_printf("afS %d @ 0x%" PFMT64x "\n", fcn->maxstack, fcn->addr);
 	free(name);
@@ -3104,8 +3711,7 @@ static bool is_fcn_traced(RzDebugTrace *traced, RzAnalysisFunction *fcn) {
 
 static int fcn_print_legacy(RzCore *core, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
-	RzAnalysisRef *refi;
-	RzList *refs, *xrefs;
+	RzAnalysisXRef *xrefi;
 	int ebbs = 0;
 	char *name = rz_core_analysis_fcn_name(core, fcn);
 
@@ -3131,42 +3737,42 @@ static int fcn_print_legacy(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_cons_printf("\nend-bbs: %d", ebbs);
 	rz_cons_printf("\ncall-refs:");
 	int outdegree = 0;
-	refs = rz_analysis_function_get_refs(fcn);
-	rz_list_foreach (refs, iter, refi) {
-		if (refi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
+	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+	rz_list_foreach (xrefs, iter, xrefi) {
+		if (xrefi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
 			outdegree++;
 		}
-		if (refi->type == RZ_ANALYSIS_REF_TYPE_CODE || refi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
-			rz_cons_printf(" 0x%08" PFMT64x " %c", refi->addr,
-				refi->type == RZ_ANALYSIS_REF_TYPE_CALL ? 'C' : 'J');
+		if (xrefi->type == RZ_ANALYSIS_REF_TYPE_CODE || xrefi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
+			rz_cons_printf(" 0x%08" PFMT64x " %c", xrefi->to,
+				xrefi->type == RZ_ANALYSIS_REF_TYPE_CALL ? 'C' : 'J');
 		}
 	}
 	rz_cons_printf("\ndata-refs:");
-	rz_list_foreach (refs, iter, refi) {
+	rz_list_foreach (xrefs, iter, xrefi) {
 		// global or local?
-		if (refi->type == RZ_ANALYSIS_REF_TYPE_DATA) {
-			rz_cons_printf(" 0x%08" PFMT64x, refi->addr);
+		if (xrefi->type == RZ_ANALYSIS_REF_TYPE_DATA) {
+			rz_cons_printf(" 0x%08" PFMT64x, xrefi->to);
 		}
 	}
-	rz_list_free(refs);
+	rz_list_free(xrefs);
 
 	int indegree = 0;
 	rz_cons_printf("\ncode-xrefs:");
-	xrefs = rz_analysis_function_get_xrefs(fcn);
-	rz_list_foreach (xrefs, iter, refi) {
-		if (refi->type == RZ_ANALYSIS_REF_TYPE_CODE || refi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
+	xrefs = rz_analysis_function_get_xrefs_to(fcn);
+	rz_list_foreach (xrefs, iter, xrefi) {
+		if (xrefi->type == RZ_ANALYSIS_REF_TYPE_CODE || xrefi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
 			indegree++;
-			rz_cons_printf(" 0x%08" PFMT64x " %c", refi->addr,
-				refi->type == RZ_ANALYSIS_REF_TYPE_CALL ? 'C' : 'J');
+			rz_cons_printf(" 0x%08" PFMT64x " %c", xrefi->from,
+				xrefi->type == RZ_ANALYSIS_REF_TYPE_CALL ? 'C' : 'J');
 		}
 	}
 	rz_cons_printf("\nnoreturn: %s", rz_str_bool(fcn->is_noreturn));
 	rz_cons_printf("\nin-degree: %d", indegree);
 	rz_cons_printf("\nout-degree: %d", outdegree);
 	rz_cons_printf("\ndata-xrefs:");
-	rz_list_foreach (xrefs, iter, refi) {
-		if (refi->type == RZ_ANALYSIS_REF_TYPE_DATA) {
-			rz_cons_printf(" 0x%08" PFMT64x, refi->addr);
+	rz_list_foreach (xrefs, iter, xrefi) {
+		if (xrefi->type == RZ_ANALYSIS_REF_TYPE_DATA) {
+			rz_cons_printf(" 0x%08" PFMT64x, xrefi->from);
 		}
 	}
 	rz_list_free(xrefs);
@@ -3229,7 +3835,7 @@ static int fcn_list_table(RzCore *core, const char *q, int fmt) {
 		const char *fcnAddr = sdb_fmt("0x%08" PFMT64x, fcn->addr);
 		const char *fcnSize = sdb_fmt("%" PFMT64u, rz_analysis_function_linear_size(fcn));
 		const char *nbbs = sdb_fmt("%d", rz_list_length(fcn->bbs)); // rz_analysis_fcn_size (fcn));
-		RzList *xrefs = rz_analysis_function_get_xrefs(fcn);
+		RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 		char xref[128], ccstr[128];
 		snprintf(xref, sizeof(xref), "%d", rz_list_length(xrefs));
 		rz_list_free(xrefs);
@@ -3269,13 +3875,23 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 	char temp[64];
 	rz_return_val_if_fail(core && core->analysis, 0);
 	if (rz_list_empty(core->analysis->fcns)) {
+		if (*rad == 'j') {
+			PJ *pj = rz_core_pj_new(core);
+			if (!pj) {
+				return -1;
+			}
+			pj_a(pj);
+			pj_end(pj);
+			rz_cons_println(pj_string(pj));
+			pj_free(pj);
+		}
 		return 0;
 	}
 	if (*rad == '.') {
 		RzList *fcns = rz_analysis_get_functions_in(core->analysis, core->offset);
-		if (!fcns || rz_list_empty (fcns)) {
+		if (!fcns || rz_list_empty(fcns)) {
 			eprintf("No functions at current address.\n");
-			rz_list_free (fcns);
+			rz_list_free(fcns);
 			return -1;
 		}
 		fcn_list_default(core, fcns, false);
@@ -3317,7 +3933,7 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 		rz_core_analysis_fcn_list_size(core);
 		break;
 	case '=': { // afl=
-		rz_list_sort(fcns, cmpaddr);
+		rz_list_sort(fcns, fcn_cmpaddr);
 		RzList *flist = rz_list_newf((RzListFree)rz_listinfo_free);
 		if (!flist) {
 			rz_list_free(fcns);
@@ -3509,7 +4125,7 @@ static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList *bbs, 
 	rz_return_val_if_fail(bbs, false);
 	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, from);
 	RzListIter *iter = NULL;
-	RzAnalysisRef *refi;
+	RzAnalysisXRef *xrefi;
 
 	if (depth < 1) {
 		eprintf("going too deep\n");
@@ -3539,21 +4155,21 @@ static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList *bbs, 
 
 	// get call refs from current basic block and find a path from them
 	if (cur_fcn) {
-		RzList *refs = rz_analysis_function_get_refs(cur_fcn);
-		if (refs) {
-			rz_list_foreach (refs, iter, refi) {
-				if (refi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
-					if (rz_analysis_block_contains(bb, refi->at)) {
-						if ((refi->at != refi->addr) && !ht_up_find(state, refi->addr, NULL) && analysis_path_exists(core, refi->addr, to, bbs, depth - 1, state, avoid)) {
+		RzList *xrefs = rz_analysis_function_get_xrefs_from(cur_fcn);
+		if (xrefs) {
+			rz_list_foreach (xrefs, iter, xrefi) {
+				if (xrefi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
+					if (rz_analysis_block_contains(bb, xrefi->from)) {
+						if ((xrefi->from != xrefi->to) && !ht_up_find(state, xrefi->to, NULL) && analysis_path_exists(core, xrefi->to, to, bbs, depth - 1, state, avoid)) {
 							rz_list_prepend(bbs, bb);
-							rz_list_free(refs);
+							rz_list_free(xrefs);
 							return true;
 						}
 					}
 				}
 			}
 		}
-		rz_list_free(refs);
+		rz_list_free(xrefs);
 	}
 
 	return false;
@@ -3577,14 +4193,14 @@ static RzList *analysis_graph_to(RzCore *core, ut64 addr, int depth, HtUP *avoid
 	}
 
 	// backward search
-	RzList *xrefs = rz_analysis_xrefs_get(core->analysis, cur_fcn->addr);
+	RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, cur_fcn->addr);
 	if (xrefs) {
 		RzListIter *iter;
-		RzAnalysisRef *xref = NULL;
+		RzAnalysisXRef *xref = NULL;
 		rz_list_foreach (xrefs, iter, xref) {
 			if (xref->type == RZ_ANALYSIS_REF_TYPE_CALL) {
 				ut64 offset = core->offset;
-				core->offset = xref->addr;
+				core->offset = xref->from;
 				rz_list_free(list);
 				list = analysis_graph_to(core, addr, depth - 1, avoid);
 				core->offset = offset;
@@ -3731,7 +4347,7 @@ static int core_analysis_followptr(RzCore *core, int type, ut64 at, ut64 ptr, ut
 		return false;
 	}
 	if (ref == UT64_MAX || ptr == ref) {
-		const RzAnalysisRefType t = code ? type ? type : RZ_ANALYSIS_REF_TYPE_CODE : RZ_ANALYSIS_REF_TYPE_DATA;
+		const RzAnalysisXRefType t = code ? type ? type : RZ_ANALYSIS_REF_TYPE_CODE : RZ_ANALYSIS_REF_TYPE_DATA;
 		rz_analysis_xrefs_set(core->analysis, at, ptr, t);
 		return true;
 	}
@@ -3936,7 +4552,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	return count;
 }
 
-static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_analysis_strings) {
+static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisXRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_analysis_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
 	// the number of false positives. In debugger mode, the reference
@@ -3958,7 +4574,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 			int len = 0;
 			char *str_string = is_string_at(core, xref_to, &len);
 			if (str_string) {
-				rz_name_filter(str_string, -1);
+				rz_name_filter(str_string, -1, true);
 				char *str_flagname = rz_str_newf("str.%s", str_string);
 				rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
 				(void)rz_flag_set(core->flags, str_flagname, xref_to, 1);
@@ -3994,7 +4610,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 			char *str_flagname = is_string_at(core, xref_to, &len);
 			if (str_flagname) {
 				ut64 str_addr = xref_to;
-				rz_name_filter(str_flagname, -1);
+				rz_name_filter(str_flagname, -1, true);
 				rz_cons_printf("f str.%s=0x%" PFMT64x "\n", str_flagname, str_addr);
 				rz_cons_printf("Cs %d @ 0x%" PFMT64x "\n", len, str_addr);
 				free(str_flagname);
@@ -4005,7 +4621,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 }
 
 RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
-	int cfg_debug = rz_config_get_i(core->config, "cfg.debug");
+	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
 	bool cfg_analysis_strings = rz_config_get_i(core->config, "analysis.strings");
 	ut64 at;
 	int count = 0;
@@ -4171,9 +4787,9 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	item = rz_flag_get(core->flags, "entry0");
 	if (item) {
 		rz_core_analysis_fcn(core, item->offset, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth - 1);
-		rz_core_cmdf(core, "afn entry0 0x%08" PFMT64x, item->offset);
+		rz_core_analysis_function_rename(core, item->offset, "entry0");
 	} else {
-		rz_core_cmd0(core, "af");
+		rz_core_analysis_function_add(core, NULL, core->offset, false);
 	}
 
 	rz_core_task_yield(&core->tasks);
@@ -4670,7 +5286,7 @@ static void add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to) {
 	char *str_flagname = is_string_at(core, xref_to, &len);
 	if (str_flagname) {
 		rz_analysis_xrefs_set(core->analysis, xref_from, xref_to, RZ_ANALYSIS_REF_TYPE_DATA);
-		rz_name_filter(str_flagname, -1);
+		rz_name_filter(str_flagname, -1, true);
 		char *flagname = sdb_fmt("str.%s", str_flagname);
 		rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
 		rz_flag_set(core->flags, flagname, xref_to, len);
@@ -5130,19 +5746,20 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	esilbreak_last_read = UT64_MAX;
 	rz_io_read_at(core->io, start, buf, iend + 1);
 	if (!ESIL) {
-		rz_core_cmd0(core, "aei");
+		rz_core_analysis_esil_reinit(core);
 		ESIL = core->analysis->esil;
 		if (!ESIL) {
 			eprintf("ESIL not initialized\n");
 			return;
 		}
-		rz_core_cmd0(core, "aeim");
+		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
+	const char *spname = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
 	EsilBreakCtx ctx = {
 		&op,
 		fcn,
-		rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP),
-		rz_reg_getv(core->analysis->reg, ctx.spname)
+		spname,
+		rz_reg_getv(core->analysis->reg, spname)
 	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop
@@ -5192,6 +5809,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		if (esil_analysis_stop || rz_cons_is_breaked()) {
 			break;
 		}
+		size_t i_old = i;
 		cur = start + i;
 		if (!rz_io_is_valid_offset(core->io, cur, 0)) {
 			break;
@@ -5232,21 +5850,21 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		if (op.type == RZ_ANALYSIS_OP_TYPE_ILL || op.type == RZ_ANALYSIS_OP_TYPE_UNK) {
 			// i += 2
 			rz_analysis_op_fini(&op);
-			continue;
+			goto repeat;
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i+= minopsize - 1
 		if (i > iend) {
-			break;
+			goto repeat;
 		}
 		if (op.size < 1) {
 			i += minopsize - 1;
-			continue;
+			goto repeat;
 		}
 		if (emu_lazy) {
 			if (op.type & RZ_ANALYSIS_OP_TYPE_REP) {
 				i += op.size - 1;
-				continue;
+				goto repeat;
 			}
 			switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
@@ -5268,12 +5886,12 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			case RZ_ANALYSIS_OP_TYPE_CSWI:
 			case RZ_ANALYSIS_OP_TYPE_TRAP:
 				i += op.size - 1;
-				continue;
+				goto repeat;
 			//  those require write support
 			case RZ_ANALYSIS_OP_TYPE_PUSH:
 			case RZ_ANALYSIS_OP_TYPE_POP:
 				i += op.size - 1;
-				continue;
+				goto repeat;
 			}
 		}
 		if (sn && op.type == RZ_ANALYSIS_OP_TYPE_SWI) {
@@ -5283,6 +5901,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			if (si) {
 				//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
 				rz_flag_set_next(core->flags, sdb_fmt("syscall.%s", si->name), cur, 1);
+				rz_syscall_item_free(si);
 			} else {
 				//todo were doing less filtering up top because we can't match against 80 on all platforms
 				// might get too many of this path now..
@@ -5294,7 +5913,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op.esil);
 		i += op.size - 1;
 		if (!esilstr || !*esilstr) {
-			continue;
+			goto repeat;
 		}
 		rz_analysis_esil_set_pc(ESIL, cur);
 		rz_reg_setv(core->analysis->reg, pcname, cur + op.size);
@@ -5424,7 +6043,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			}
 			if (CHECKREF(dst)) {
 				if (myvalid(core->io, dst)) {
-					RzAnalysisRefType ref =
+					RzAnalysisXRefType ref =
 						(op.type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_UCALL
 						? RZ_ANALYSIS_REF_TYPE_CALL
 						: RZ_ANALYSIS_REF_TYPE_CODE;
@@ -5443,7 +6062,18 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 			break;
 		}
 		rz_analysis_esil_stack_free(ESIL);
-	repeat:;
+	repeat:
+		if (!rz_analysis_get_block_at(core->analysis, cur)) {
+			for (size_t bb_i = i_old + 1; bb_i <= i; bb_i++) {
+				if (rz_analysis_get_block_at(core->analysis, start + bb_i)) {
+					i = bb_i - 1;
+					break;
+				}
+			}
+		}
+		if (i > iend) {
+			break;
+		}
 	} while (get_next_i(&ictx, &i));
 	free(buf);
 	ESIL->cb.hook_mem_read = NULL;
@@ -5454,6 +6084,39 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 	rz_cons_break_pop();
 	// restore register
 	rz_reg_arena_pop(core->analysis->reg);
+}
+
+RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
+	ut64 at = core->offset;
+	RzIOMap *map;
+	RzListIter *iter;
+	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "analysis");
+	if (!list) {
+		return;
+	}
+	if (!strcmp("range", rz_config_get(core->config, "analysis.in"))) {
+		ut64 from = rz_config_get_i(core->config, "analysis.from");
+		ut64 to = rz_config_get_i(core->config, "analysis.to");
+		if (to > from) {
+			char *len = rz_str_newf(" 0x%" PFMT64x, to - from);
+			rz_core_seek(core, from, true);
+			rz_core_analysis_esil(core, len, NULL);
+			free(len);
+		} else {
+			eprintf("Assert: analysis.from > analysis.to\n");
+		}
+	} else {
+		rz_list_foreach (list, iter, map) {
+			if (map->perm & RZ_PERM_X) {
+				char *ss = rz_str_newf(" 0x%" PFMT64x, map->itv.size);
+				rz_core_seek(core, map->itv.addr, true);
+				rz_core_analysis_esil(core, ss, NULL);
+				free(ss);
+			}
+		}
+		rz_list_free(list);
+	}
+	rz_core_seek(core, at, true);
 }
 
 static bool isValidAddress(RzCore *core, ut64 addr) {
@@ -5491,9 +6154,9 @@ static bool stringAt(RzCore *core, ut64 addr) {
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut64 vmin,
 	ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
 	int i, align = core->search->align, hitctr = 0;
-	bool vinfun = rz_config_get_i(core->config, "analysis.vinfun");
-	bool vinfunr = rz_config_get_i(core->config, "analysis.vinfunrange");
-	bool analStrings = rz_config_get_i(core->config, "analysis.strings");
+	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
+	bool vinfunr = rz_config_get_b(core->config, "analysis.vinfunrange");
+	bool analyze_strings = rz_config_get_b(core->config, "analysis.strings");
 	mycore = core;
 	ut8 buf[4096];
 	ut64 v64, value = 0, size;
@@ -5600,7 +6263,7 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 				}
 				if (isValidMatch) {
 					cb(core, addr, value, vsize, cb_user);
-					if (analStrings && stringAt(core, addr)) {
+					if (analyze_strings && stringAt(core, addr)) {
 						add_string_ref(mycore, addr, value);
 					}
 					hitctr++;
@@ -5618,7 +6281,7 @@ beach:
 }
 
 typedef struct {
-	dict visited;
+	HtUU *visited;
 	RzList *path;
 	RzCore *core;
 	ut64 from;
@@ -5661,7 +6324,9 @@ static void analPathFollow(RzCoreAnalPaths *p, ut64 addr, PJ *pj) {
 	if (addr == UT64_MAX) {
 		return;
 	}
-	if (!dict_get(&p->visited, addr)) {
+	bool found;
+	ht_uu_find(p->visited, addr, &found);
+	if (!found) {
 		p->cur = rz_analysis_find_most_relevant_block_in(p->core->analysis, addr);
 		analPaths(p, pj);
 	}
@@ -5677,7 +6342,7 @@ static void analPaths(RzCoreAnalPaths *p, PJ *pj) {
 	if (rz_cons_is_breaked()) {
 		return;
 	}
-	dict_set(&p->visited, cur->addr, 1, NULL);
+	ht_uu_insert(p->visited, cur->addr, 1);
 	rz_list_append(p->path, cur);
 	if (p->followDepth && --p->followDepth == 0) {
 		return;
@@ -5707,7 +6372,7 @@ static void analPaths(RzCoreAnalPaths *p, PJ *pj) {
 		}
 	}
 	p->cur = rz_list_pop(p->path);
-	dict_del(&p->visited, cur->addr);
+	ht_uu_delete(p->visited, cur->addr);
 	if (p->followDepth) {
 		p->followDepth++;
 	}
@@ -5725,8 +6390,8 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 		eprintf("Cannot find basic block for 0x%08" PFMT64x "\n", to);
 		return;
 	}
-	RzCoreAnalPaths rcap = { { 0 } };
-	dict_init(&rcap.visited, 32, free);
+	RzCoreAnalPaths rcap = { 0 };
+	rcap.visited = ht_uu_new0();
 	rcap.path = rz_list_new();
 	rcap.core = core;
 	rcap.from = from;
@@ -5756,7 +6421,7 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 		pj_free(pj);
 	}
 
-	dict_fini(&rcap.visited);
+	ht_uu_free(rcap.visited);
 	rz_list_free(rcap.path);
 }
 
@@ -5793,6 +6458,371 @@ static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {
 	return true;
 }
 
+/* set flags for every function */
+RZ_API void rz_core_analysis_flag_every_function(RzCore *core) {
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		rz_flag_set(core->flags, fcn->name,
+			fcn->addr, rz_analysis_function_size_from_entry(fcn));
+	}
+	rz_flag_space_pop(core->flags);
+}
+
+/* TODO: move into rz_analysis_function_rename (); */
+RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name) {
+	rz_return_val_if_fail(core && _name, false);
+	_name = rz_str_trim_head_ro(_name);
+	char *name = getFunctionNamePrefix(core, addr, _name);
+	// RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_ANY);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+	if (fcn) {
+		RzFlagItem *flag = rz_flag_get(core->flags, fcn->name);
+		if (flag && flag->space && strcmp(flag->space->name, RZ_FLAGS_FS_FUNCTIONS) == 0) {
+			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
+			rz_flag_rename(core->flags, flag, name);
+		} else {
+			// No flag or not specific to the function, create a new one.
+			rz_flag_space_push(core->flags, RZ_FLAGS_FS_FUNCTIONS);
+			rz_flag_set(core->flags, name, fcn->addr, rz_analysis_function_size_from_entry(fcn));
+			rz_flag_space_pop(core->flags);
+		}
+		rz_analysis_function_rename(fcn, name);
+		if (core->analysis->cb.on_fcn_rename) {
+			core->analysis->cb.on_fcn_rename(core->analysis, core, fcn, name);
+		}
+		free(name);
+		return true;
+	}
+	free(name);
+	return false;
+}
+
+RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 addr, bool analyze_recursively) {
+	int depth = rz_config_get_i(core->config, "analysis.depth");
+	RzAnalysisFunction *fcn = NULL;
+
+	//rz_core_analysis_undefine (core, core->offset);
+	rz_core_analysis_fcn(core, addr, UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
+	fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
+	if (fcn) {
+		/* ensure we use a proper name */
+		rz_core_analysis_function_rename(core, addr, fcn->name);
+		if (core->analysis->opt.vars) {
+			rz_core_recover_vars(core, fcn, true);
+		}
+		rz_analysis_fcn_vars_add_types(core->analysis, fcn);
+	} else {
+		if (core->analysis->verbose) {
+			eprintf("Warning: Unable to analyze function at 0x%08" PFMT64x "\n", addr);
+			return false;
+		}
+	}
+	if (analyze_recursively) {
+		fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0); /// XXX wrong in case of nopskip
+		if (fcn) {
+			RzAnalysisXRef *xref;
+			RzListIter *iter;
+			RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+			rz_list_foreach (xrefs, iter, xref) {
+				if (xref->to == UT64_MAX) {
+					//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
+					continue;
+				}
+				if (xref->type != RZ_ANALYSIS_REF_TYPE_CODE && xref->type != RZ_ANALYSIS_REF_TYPE_CALL) {
+					/* only follow code/call references */
+					continue;
+				}
+				if (!rz_io_is_valid_offset(core->io, xref->to, !core->analysis->opt.noncode)) {
+					continue;
+				}
+				rz_core_analysis_fcn(core, xref->to, fcn->addr, RZ_ANALYSIS_REF_TYPE_CALL, depth);
+				/* use recursivity here */
+				RzAnalysisFunction *f = rz_analysis_get_function_at(core->analysis, xref->to);
+				if (f) {
+					RzListIter *iter;
+					RzAnalysisXRef *xref1;
+					RzList *xrefs1 = rz_analysis_function_get_xrefs_from(f);
+					rz_list_foreach (xrefs1, iter, xref1) {
+						if (!rz_io_is_valid_offset(core->io, xref1->to, !core->analysis->opt.noncode)) {
+							continue;
+						}
+						if (xref1->type != 'c' && xref1->type != 'C') {
+							continue;
+						}
+						rz_core_analysis_fcn(core, xref1->to, f->addr, RZ_ANALYSIS_REF_TYPE_CALL, depth);
+						// recursively follow fcn->refs again and again
+					}
+					rz_list_free(xrefs1);
+				} else {
+					f = rz_analysis_get_fcn_in(core->analysis, fcn->addr, 0);
+					if (f) {
+						/* cut function */
+						rz_analysis_function_resize(f, addr - fcn->addr);
+						rz_core_analysis_fcn(core, xref->to, fcn->addr,
+							RZ_ANALYSIS_REF_TYPE_CALL, depth);
+						f = rz_analysis_get_function_at(core->analysis, fcn->addr);
+					}
+					if (!f) {
+						eprintf("af: Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
+						rz_list_free(xrefs);
+						return false;
+					}
+				}
+			}
+			rz_list_free(xrefs);
+			if (core->analysis->opt.vars) {
+				rz_core_recover_vars(core, fcn, true);
+			}
+		}
+	}
+	if (name) {
+		if (*name && !rz_core_analysis_function_rename(core, addr, name)) {
+			eprintf("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
+			return false;
+		}
+	}
+	rz_core_analysis_propagate_noreturn(core, addr);
+	rz_core_analysis_flag_every_function(core);
+	return true;
+}
+
+RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name) {
+	RzListIter *iter;
+	RzAnalysisFuncArg *arg;
+	RzAnalysisFunction *fcn;
+	if (fcn_name) {
+		fcn = rz_analysis_get_function_byname(core->analysis, fcn_name);
+	} else {
+		fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+		if (fcn) {
+			fcn_name = fcn->name;
+		}
+	}
+	if (!fcn) {
+		return NULL;
+	}
+
+	char *signature = NULL;
+
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *j = pj_new();
+		if (!j) {
+			return NULL;
+		}
+		pj_a(j);
+
+		char *key = NULL;
+		if (fcn_name) {
+			key = resolve_fcn_name(core->analysis, fcn_name);
+		}
+
+		if (key) {
+			const char *fcn_type = rz_type_func_ret(core->analysis->sdb_types, key);
+			int nargs = rz_type_func_args_count(core->analysis->sdb_types, key);
+			if (fcn_type) {
+				pj_o(j);
+				pj_ks(j, "name", rz_str_get_null(key));
+				pj_ks(j, "return", rz_str_get_null(fcn_type));
+				pj_k(j, "args");
+				pj_a(j);
+				if (nargs) {
+					RzList *list = rz_core_get_func_args(core, fcn_name);
+					rz_list_foreach (list, iter, arg) {
+						char *type = arg->orig_c_type;
+						pj_o(j);
+						pj_ks(j, "name", arg->name);
+						pj_ks(j, "type", type);
+						pj_end(j);
+					}
+					rz_list_free(list);
+				}
+				pj_end(j);
+				pj_ki(j, "count", nargs);
+				pj_end(j);
+			}
+			free(key);
+		} else {
+			pj_o(j);
+			pj_ks(j, "name", rz_str_get_null(fcn_name));
+			pj_k(j, "args");
+			pj_a(j);
+
+			RzAnalysisFcnVarsCache cache;
+			rz_analysis_fcn_vars_cache_init(core->analysis, &cache, fcn);
+			int nargs = 0;
+			RzAnalysisVar *var;
+			rz_list_foreach (cache.rvars, iter, var) {
+				nargs++;
+				pj_o(j);
+				pj_ks(j, "name", var->name);
+				pj_ks(j, "type", var->type);
+				pj_end(j);
+			}
+			rz_list_foreach (cache.bvars, iter, var) {
+				if (var->delta <= 0) {
+					continue;
+				}
+				nargs++;
+				pj_o(j);
+				pj_ks(j, "name", var->name);
+				pj_ks(j, "type", var->type);
+				pj_end(j);
+			}
+			rz_list_foreach (cache.svars, iter, var) {
+				if (!var->isarg) {
+					continue;
+				}
+				nargs++;
+				pj_o(j);
+				pj_ks(j, "name", var->name);
+				pj_ks(j, "type", var->type);
+				pj_end(j);
+			}
+			rz_analysis_fcn_vars_cache_fini(&cache);
+
+			pj_end(j);
+			pj_ki(j, "count", nargs);
+			pj_end(j);
+		}
+		pj_end(j);
+		signature = strdup(pj_string(j));
+		pj_free(j);
+	} else {
+		signature = rz_analysis_fcn_format_sig(core->analysis, fcn, fcn_name, NULL, NULL, NULL);
+	}
+	return signature;
+}
+
+static RzAnalysisBlock *find_block_at_xref_addr(RzCore *core, ut64 addr) {
+	RzList *blocks = rz_analysis_get_blocks_in(core->analysis, addr);
+	if (!blocks) {
+		return NULL;
+	}
+	RzAnalysisBlock *block = NULL;
+	RzListIter *bit;
+	RzAnalysisBlock *block_cur;
+	rz_list_foreach (blocks, bit, block_cur) {
+		if (rz_analysis_block_op_starts_at(block_cur, addr)) {
+			block = block_cur;
+			break;
+		}
+	}
+	if (block) {
+		rz_analysis_block_ref(block);
+	}
+	rz_list_free(blocks);
+	return block;
+}
+
+static void relocation_function_process_noreturn(RzCore *core, RzAnalysisBlock *b, SetU *todo, ut64 opsize, ut64 reladdr, ut64 addr) {
+	rz_analysis_noreturn_add(core->analysis, NULL, reladdr);
+
+	// Add all functions that might have become noreturn by this to the todo list to reanalyze them later.
+	// This must be done before chopping because b might get freed.
+	RzListIter *it;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (b->fcns, it, fcn) {
+		set_u_add(todo, (ut64)(size_t)fcn);
+	}
+
+	// Chop the block
+	rz_analysis_block_chop_noreturn(b, addr + opsize);
+}
+
+static void relocation_noreturn_process(RzCore *core, RzList *noretl, SetU *todo, RzAnalysisBlock *b, RzBinReloc *rel, ut64 opsize, ut64 addr) {
+	RzListIter *iter3;
+	char *noret;
+	if (rel->import) {
+		rz_list_foreach (noretl, iter3, noret) {
+			if (!strcmp(rel->import->name, noret)) {
+				relocation_function_process_noreturn(core, b, todo, opsize, rel->vaddr, addr);
+			}
+		}
+	} else if (rel->symbol) {
+		rz_list_foreach (noretl, iter3, noret) {
+			if (!strcmp(rel->symbol->name, noret)) {
+				relocation_function_process_noreturn(core, b, todo, opsize, rel->symbol->vaddr, addr);
+			}
+		}
+	}
+}
+
+#define CALL_BUF_SIZE 32
+
+struct core_noretl {
+	RzCore *core;
+	RzList *noretl;
+	SetU *todo;
+};
+
+static bool process_reference_noreturn_cb(void *u, const ut64 k, const void *v) {
+	RzCore *core = ((struct core_noretl *)u)->core;
+	RzList *noretl = ((struct core_noretl *)u)->noretl;
+	SetU *todo = ((struct core_noretl *)u)->todo;
+	RzAnalysisXRef *xref = (RzAnalysisXRef *)v;
+	if (xref->type == RZ_ANALYSIS_REF_TYPE_CALL || xref->type == RZ_ANALYSIS_REF_TYPE_CODE) {
+		// At first we check if there are any relocations that override the call address
+		// Note, that the relocation overrides only the part of the instruction
+		ut64 addr = k;
+		ut8 buf[CALL_BUF_SIZE] = { 0 };
+		RzAnalysisOp op = { 0 };
+		if (core->analysis->iob.read_at(core->analysis->iob.io, addr, buf, CALL_BUF_SIZE)) {
+			if (rz_analysis_op(core->analysis, &op, addr, buf, core->blocksize, 0)) {
+				RzBinReloc *rel = rz_core_getreloc(core, addr, op.size);
+				if (rel) {
+					// Find the block that has an instruction at exactly the reference addr
+					RzAnalysisBlock *block = find_block_at_xref_addr(core, addr);
+					if (!block) {
+						return true;
+					}
+					relocation_noreturn_process(core, noretl, todo, block, rel, op.size, addr);
+				}
+			}
+		} else {
+			eprintf("Fail to load %d bytes of data at 0x%08" PFMT64x "\n", CALL_BUF_SIZE, addr);
+		}
+	}
+	return true;
+}
+
+static bool process_refs_cb(void *u, const ut64 k, const void *v) {
+	HtUP *ht = (HtUP *)v;
+	ht_up_foreach(ht, process_reference_noreturn_cb, u);
+	return true;
+}
+
+static bool reanalyze_fcns_cb(void *u, const ut64 k, const void *v) {
+	RzCore *core = u;
+	RzAnalysisFunction *fcn = (RzAnalysisFunction *)(size_t)k;
+	if (fcn->addr && analyze_noreturn_function(core, fcn)) {
+		fcn->is_noreturn = true;
+		rz_analysis_noreturn_add(core->analysis, NULL, fcn->addr);
+	}
+	return true;
+}
+
+RZ_API void rz_core_analysis_propagate_noreturn_relocs(RzCore *core, ut64 addr) {
+	// Processing every reference calls rz_analysis_op() which sometimes changes the
+	// state of `asm.bits` variable, thus we save it to restore after the processing
+	// is finished.
+	int bits1 = core->analysis->bits;
+	int bits2 = core->rasm->bits;
+	// find known noreturn functions to propagate
+	RzList *noretl = rz_types_function_noreturn(core->analysis->sdb_types);
+	// List of the potentially noreturn functions
+	SetU *todo = set_u_new();
+	struct core_noretl u = { core, noretl, todo };
+	ht_up_foreach(core->analysis->ht_xrefs_to, process_refs_cb, &u);
+	rz_list_free(noretl);
+	core->analysis->bits = bits1;
+	core->rasm->bits = bits2;
+	// For every function in todo list analyze if it's potentially become noreturn
+	ht_up_foreach(todo, reanalyze_fcns_cb, core);
+	set_u_free(todo);
+}
+
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 	RzList *todo = rz_list_newf(free);
 	if (!todo) {
@@ -5815,6 +6845,10 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 		}
 	}
 
+	// At first we propagate all noreturn functions that are imports or symbols
+	// via the relocations
+	rz_core_analysis_propagate_noreturn_relocs(core, addr);
+
 	// find known noreturn functions to propagate
 	RzListIter *iter;
 	RzAnalysisFunction *f;
@@ -5824,7 +6858,6 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 			rz_list_append(todo, n);
 		}
 	}
-
 	while (!rz_list_empty(todo)) {
 		ut64 *paddr = (ut64 *)rz_list_pop(todo);
 		ut64 noret_addr = *paddr;
@@ -5832,15 +6865,15 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 		if (rz_cons_is_breaked()) {
 			break;
 		}
-		RzList *xrefs = rz_analysis_xrefs_get(core->analysis, noret_addr);
-		RzAnalysisRef *xref;
+		RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, noret_addr);
+		RzAnalysisXRef *xref;
 		rz_list_foreach (xrefs, iter, xref) {
-			RzAnalysisOp *xrefop = rz_core_op_analysis(core, xref->addr, RZ_ANALYSIS_OP_MASK_ALL);
+			RzAnalysisOp *xrefop = rz_core_op_analysis(core, xref->from, RZ_ANALYSIS_OP_MASK_ALL);
 			if (!xrefop) {
-				eprintf("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->addr);
+				eprintf("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->from);
 				continue;
 			}
-			ut64 call_addr = xref->addr;
+			ut64 call_addr = xref->from;
 			ut64 chop_addr = call_addr + xrefop->size;
 			rz_analysis_op_free(xrefop);
 			if (xref->type != RZ_ANALYSIS_REF_TYPE_CALL) {
@@ -5848,23 +6881,7 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 			}
 
 			// Find the block that has an instruction at exactly the xref addr
-			RzList *blocks = rz_analysis_get_blocks_in(core->analysis, call_addr);
-			if (!blocks) {
-				continue;
-			}
-			RzAnalysisBlock *block = NULL;
-			RzListIter *bit;
-			RzAnalysisBlock *block_cur;
-			rz_list_foreach (blocks, bit, block_cur) {
-				if (rz_analysis_block_op_starts_at(block_cur, call_addr)) {
-					block = block_cur;
-					break;
-				}
-			}
-			if (block) {
-				rz_analysis_block_ref(block);
-			}
-			rz_list_free(blocks);
+			RzAnalysisBlock *block = find_block_at_xref_addr(core, call_addr);
 			if (!block) {
 				continue;
 			}
@@ -5917,7 +6934,7 @@ RZ_API void rz_core_analysis_esil_graph(RzCore *core, const char *expr) {
 		if (enode->type == RZ_ANALYSIS_ESIL_DFG_BLOCK_GENERATIVE) {
 			rz_strbuf_prepend(buf, "generative:");
 		}
-		char *b64_buf = rz_base64_encode_dyn(rz_strbuf_get(buf), buf->len);
+		char *b64_buf = rz_base64_encode_dyn((const ut8 *)rz_strbuf_get(buf), buf->len);
 		rz_cons_printf("agn %d base64:%s\n", enode->idx, b64_buf);
 		free(b64_buf);
 		free(esc_str);
@@ -5933,4 +6950,588 @@ RZ_API void rz_core_analysis_esil_graph(RzCore *core, const char *expr) {
 	}
 
 	rz_analysis_esil_dfg_free(edf);
+}
+
+RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname) {
+	RzAnalysisOp *op = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_BASIC);
+	if (!name) {
+		RzAnalysisVar *var = op ? rz_analysis_get_used_function_var(core->analysis, op->addr) : NULL;
+		if (var) {
+			name = var->name;
+		} else {
+			eprintf("Cannot find var @ 0x%08" PFMT64x "\n", core->offset);
+			rz_analysis_op_free(op);
+			return false;
+		}
+	}
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (fcn) {
+		RzAnalysisVar *v1 = rz_analysis_function_get_var_byname(fcn, name);
+		if (v1) {
+			rz_analysis_var_rename(v1, newname, true);
+		} else {
+			eprintf("Cant find var by name\n");
+			return false;
+		}
+	} else {
+		eprintf("afv: Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		rz_analysis_op_free(op);
+		return false;
+	}
+	rz_analysis_op_free(op);
+	return true;
+}
+
+static bool is_unknown_file(RzCore *core) {
+	if (core->bin->cur && core->bin->cur->o) {
+		return (rz_list_empty(core->bin->cur->o->sections));
+	}
+	return true;
+}
+
+static bool is_apple_target(RzCore *core) {
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	if (!strstr(arch, "ppc") && !strstr(arch, "arm") && !strstr(arch, "x86")) {
+		return false;
+	}
+	RzBinObject *bo = rz_bin_cur_object(core->bin);
+	rz_return_val_if_fail(!bo || (bo->plugin && bo->plugin->name), false);
+	return bo ? strstr(bo->plugin->name, "mach") : false;
+}
+
+/**
+ * Runs all the steps of the deep analysis.
+ *
+ * Returns true if all steps were finished and false if it was interrupted.
+ *
+ * \param core RzCore reference
+ * \param experimental Enable more experimental analysis stages ("aaaa" command)
+ * \param dh_orig Name of the debug handler, e.g. "esil"
+ */
+RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig) {
+	bool didAap = false;
+	ut64 curseek = core->offset;
+	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
+	const char *oldstr = NULL;
+	if (rz_str_startswith(rz_config_get(core->config, "bin.lang"), "go")) {
+		oldstr = rz_print_rowlog(core->print, "Find function and symbol names from golang binaries (aang)");
+		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_analysis_autoname_all_golang_fcns(core);
+		oldstr = rz_print_rowlog(core->print, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+		rz_core_cmd0(core, "aF @@f:sym.go.*");
+		rz_print_rowlog_done(core->print, oldstr);
+	}
+	rz_core_task_yield(&core->tasks);
+	if (!cfg_debug) {
+		if (dh_orig && strcmp(dh_orig, "esil")) {
+			rz_config_set(core->config, "dbg.backend", "esil");
+			rz_core_task_yield(&core->tasks);
+		}
+	}
+	int c = rz_config_get_i(core->config, "analysis.calls");
+	rz_config_set_i(core->config, "analysis.calls", 1);
+	ut64 t = rz_num_math(core->num, "$S");
+	rz_core_seek(core, t, true);
+	if (rz_cons_is_breaked()) {
+		return false;
+	}
+
+	oldstr = rz_print_rowlog(core->print, "Analyze function calls (aac)");
+	(void)rz_cmd_analysis_calls(core, "", false, false); // "aac"
+	rz_core_seek(core, curseek, true);
+	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_task_yield(&core->tasks);
+	if (rz_cons_is_breaked()) {
+		return false;
+	}
+
+	if (is_unknown_file(core)) {
+		oldstr = rz_print_rowlog(core->print, "find and analyze function preludes (aap)");
+		(void)rz_core_search_preludes(core, false); // "aap"
+		didAap = true;
+		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_task_yield(&core->tasks);
+		if (rz_cons_is_breaked()) {
+			return false;
+		}
+	}
+
+	oldstr = rz_print_rowlog(core->print, "Analyze len bytes of instructions for references (aar)");
+	(void)rz_core_analysis_refs(core, ""); // "aar"
+	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_task_yield(&core->tasks);
+	if (rz_cons_is_breaked()) {
+		return false;
+	}
+	if (is_apple_target(core)) {
+		oldstr = rz_print_rowlog(core->print, "Check for objc references");
+		rz_print_rowlog_done(core->print, oldstr);
+		cmd_analysis_objc(core, true);
+	}
+	rz_core_task_yield(&core->tasks);
+	oldstr = rz_print_rowlog(core->print, "Check for classes");
+	rz_analysis_class_recover_all(core->analysis);
+	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_task_yield(&core->tasks);
+	rz_config_set_i(core->config, "analysis.calls", c);
+	rz_core_task_yield(&core->tasks);
+	if (rz_cons_is_breaked()) {
+		return false;
+	}
+	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
+		rz_core_analysis_value_pointers(core, RZ_OUTPUT_MODE_STANDARD);
+		rz_core_task_yield(&core->tasks);
+		bool ioCache = rz_config_get_i(core->config, "io.pcache");
+		rz_config_set_i(core->config, "io.pcache", 1);
+		oldstr = rz_print_rowlog(core->print, "Emulate functions to find computed references (aaef)");
+		rz_core_analysis_esil_references_all_functions(core);
+		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_task_yield(&core->tasks);
+		rz_config_set_i(core->config, "io.pcache", ioCache);
+		if (rz_cons_is_breaked()) {
+			return false;
+		}
+	}
+	if (rz_config_get_i(core->config, "analysis.autoname")) {
+		oldstr = rz_print_rowlog(core->print, "Speculatively constructing a function name "
+						      "for fcn.* and sym.func.* functions (aan)");
+		rz_core_analysis_autoname_all_fcns(core);
+		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_task_yield(&core->tasks);
+	}
+	if (core->analysis->opt.vars) {
+		RzAnalysisFunction *fcni;
+		RzListIter *iter;
+		rz_list_foreach (core->analysis->fcns, iter, fcni) {
+			if (rz_cons_is_breaked()) {
+				break;
+			}
+			RzList *list = rz_analysis_var_list(core->analysis, fcni, 'r');
+			if (!rz_list_empty(list)) {
+				rz_list_free(list);
+				continue;
+			}
+			//extract only reg based var here
+			rz_core_recover_vars(core, fcni, true);
+			rz_list_free(list);
+		}
+		rz_core_task_yield(&core->tasks);
+	}
+	if (!sdb_isempty(core->analysis->sdb_zigns)) {
+		oldstr = rz_print_rowlog(core->print, "Check for zignature from zigns folder (z/)");
+		rz_core_cmd0(core, "z/");
+		rz_print_rowlog_done(core->print, oldstr);
+		rz_core_task_yield(&core->tasks);
+	}
+
+	oldstr = rz_print_rowlog(core->print, "Type matching analysis for all functions (aaft)");
+	rz_core_analysis_types_propagation(core);
+	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_task_yield(&core->tasks);
+
+	oldstr = rz_print_rowlog(core->print, "Propagate noreturn information");
+	rz_core_analysis_propagate_noreturn(core, UT64_MAX);
+	rz_print_rowlog_done(core->print, oldstr);
+	rz_core_task_yield(&core->tasks);
+
+	// Apply DWARF function information
+	Sdb *dwarf_sdb = sdb_ns(core->analysis->sdb, "dwarf", 0);
+	if (dwarf_sdb) {
+		oldstr = rz_print_rowlog(core->print, "Integrate dwarf function information.");
+		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags, dwarf_sdb);
+		rz_print_rowlog_done(core->print, oldstr);
+	}
+
+	oldstr = rz_print_rowlog(core->print, "Use -AA or aaaa to perform additional experimental analysis.");
+	rz_print_rowlog_done(core->print, oldstr);
+
+	if (experimental) {
+		if (!didAap) {
+			oldstr = rz_print_rowlog(core->print, "Finding function preludes");
+			(void)rz_core_search_preludes(core, false); // "aap"
+			rz_print_rowlog_done(core->print, oldstr);
+			rz_core_task_yield(&core->tasks);
+		}
+
+		oldstr = rz_print_rowlog(core->print, "Enable constraint types analysis for variables");
+		rz_config_set(core->config, "analysis.types.constraint", "true");
+		rz_print_rowlog_done(core->print, oldstr);
+	}
+	rz_core_seek_undo(core);
+	if (dh_orig) {
+		rz_config_set(core->config, "dbg.backend", dh_orig);
+		rz_core_task_yield(&core->tasks);
+	}
+	return true;
+}
+
+RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id) {
+	RzAnalysisVar *var = NULL;
+	if (IS_DIGIT(*id)) {
+		int delta = rz_num_math(core->num, id);
+		var = rz_analysis_function_get_var(fcn, kind, delta);
+	} else {
+		var = rz_analysis_function_get_var_byname(fcn, id);
+	}
+	if (!var || var->kind != kind) {
+		return false;
+	}
+	rz_analysis_var_delete(var);
+	return true;
+}
+
+RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name) {
+	RzAnalysis *analysis = core->analysis;
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	char *fmt = rz_type_format(analysis->sdb_types, var->type);
+	RzRegItem *i;
+	if (!fmt) {
+		RZ_LOG_DEBUG("type:%s doesn't exist\n", var->type);
+		return rz_strbuf_drain(sb);
+	}
+	bool usePxr = !strcmp(var->type, "int"); // hacky but useful
+	if (add_name) {
+		rz_strbuf_appendf(sb, "%s %s = ", var->isarg ? "arg" : "var", var->name);
+	}
+	switch (var->kind) {
+	case RZ_ANALYSIS_VAR_KIND_REG:
+		i = rz_reg_index_get(analysis->reg, var->delta);
+		if (i) {
+			char *r;
+			if (usePxr) {
+				r = rz_core_cmd_strf(core, "pxr $w @r:%s", i->name);
+			} else {
+				r = rz_core_cmd_strf(core, "pf r (%s)", i->name);
+			}
+			rz_strbuf_append(sb, r);
+			free(r);
+		} else {
+			RZ_LOG_DEBUG("register not found\n");
+		}
+		break;
+	case RZ_ANALYSIS_VAR_KIND_BPV: {
+		const st32 real_delta = var->delta + var->fcn->bp_off;
+		const ut32 udelta = RZ_ABS(real_delta);
+		const char sign = real_delta >= 0 ? '+' : '-';
+		char *r;
+		if (usePxr) {
+			r = rz_core_cmd_strf(core, "pxr $w @%s%c0x%x", analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
+		} else {
+			r = rz_core_cmd_strf(core, "pf %s @%s%c0x%x", fmt, analysis->reg->name[RZ_REG_NAME_BP], sign, udelta);
+		}
+		rz_strbuf_append(sb, r);
+		free(r);
+	} break;
+	case RZ_ANALYSIS_VAR_KIND_SPV: {
+		ut32 udelta = RZ_ABS(var->delta + var->fcn->maxstack);
+		char *r;
+		if (usePxr) {
+			r = rz_core_cmd_strf(core, "pxr $w @%s+0x%x", analysis->reg->name[RZ_REG_NAME_SP], udelta);
+		} else {
+			r = rz_core_cmd_strf(core, "pf %s @ %s+0x%x", fmt, analysis->reg->name[RZ_REG_NAME_SP], udelta);
+		}
+		rz_strbuf_append(sb, r);
+		free(r);
+		break;
+	}
+	}
+	free(fmt);
+	return rz_strbuf_drain(sb);
+}
+
+RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name) {
+	RzListIter *iter;
+	RzAnalysisVar *p;
+	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	rz_list_foreach (list, iter, p) {
+		char *r = rz_core_analysis_var_display(core, p, add_name);
+		rz_strbuf_append(sb, r);
+		free(r);
+	}
+	rz_list_free(list);
+	return rz_strbuf_drain(sb);
+}
+
+RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
+	RzListIter *it;
+	RzAnalysisFunction *fcn;
+	ut64 seek;
+	if (rz_config_get_b(core->config, "cfg.debug")) {
+		eprintf("TOFIX: aaft can't run in debugger mode.\n");
+		return false;
+	}
+	const char *io_cache_key = "io.pcache.write";
+	RzConfigHold *hold = rz_config_hold_new(core->config);
+	rz_config_hold_i(hold, "io.va", io_cache_key, NULL);
+	bool io_cache = rz_config_get_i(core->config, io_cache_key);
+	if (!io_cache) {
+		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
+		rz_config_set_i(core->config, io_cache_key, true);
+	}
+	const bool delete_regs = !rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
+	seek = core->offset;
+	rz_reg_arena_push(core->analysis->reg);
+	rz_reg_arena_zero(core->analysis->reg);
+	rz_core_analysis_esil_init(core);
+	rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
+	ut8 *saved_arena = rz_reg_arena_peek(core->analysis->reg);
+	// Iterating Reverse so that we get function in top-bottom call order
+	rz_list_foreach_prev(core->analysis->fcns, it, fcn) {
+		int ret = rz_core_seek(core, fcn->addr, true);
+		if (!ret) {
+			continue;
+		}
+		rz_reg_arena_poke(core->analysis->reg, saved_arena);
+		rz_analysis_esil_set_pc(core->analysis->esil, fcn->addr);
+		rz_core_analysis_type_match(core, fcn);
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+		rz_analysis_fcn_vars_add_types(core->analysis, fcn);
+	}
+	if (delete_regs) {
+		rz_core_debug_clear_register_flags(core);
+	}
+	rz_core_seek(core, seek, true);
+	rz_reg_arena_pop(core->analysis->reg);
+	rz_config_hold_restore(hold);
+	rz_config_hold_free(hold);
+	free(saved_arena);
+	return true;
+}
+
+RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunction *fcn, const char *newsig) {
+	bool res = false;
+	char *fcnstr = rz_str_newf("%s;", newsig);
+	char *fcnstr_copy = strdup(fcnstr);
+	char *fcnname_aux = strtok(fcnstr_copy, "(");
+	rz_str_trim_tail(fcnname_aux);
+	char *fcnname = NULL;
+	const char *ls = rz_str_lchr(fcnname_aux, ' ');
+	fcnname = strdup(ls ? ls : fcnname_aux);
+	if (!fcnname) {
+		goto err;
+	}
+	// TODO: move this into rz_analysis_str_to_fcn()
+	if (strcmp(fcn->name, fcnname)) {
+		(void)rz_core_analysis_function_rename(core, fcn->addr, fcnname);
+		fcn = rz_analysis_get_fcn_in(core->analysis, fcn->addr, -1);
+	}
+	rz_analysis_str_to_fcn(core->analysis, fcn, fcnstr);
+	res = true;
+err:
+	free(fcnname);
+	free(fcnstr_copy);
+	free(fcnstr);
+	return res;
+}
+
+RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr) {
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (!f) {
+		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
+		return;
+	}
+
+	char *sig = rz_analysis_function_get_signature(f);
+	char *data = rz_core_editor(core, NULL, sig);
+	if (sig && data) {
+		rz_core_analysis_function_set_signature(core, f, data);
+	}
+	free(sig);
+	free(data);
+}
+
+RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end) {
+	rz_return_if_fail(core->offset <= addr_end);
+	ut64 addr = core->offset;
+	int depth = 1;
+	ut64 a, b;
+	const char *c;
+	a = rz_config_get_i(core->config, "analysis.from");
+	b = rz_config_get_i(core->config, "analysis.to");
+	c = rz_config_get(core->config, "analysis.limits");
+	rz_config_set_i(core->config, "analysis.from", addr);
+	rz_config_set_i(core->config, "analysis.to", addr_end);
+	rz_config_set(core->config, "analysis.limits", "true");
+
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
+	if (fcn) {
+		rz_analysis_function_resize(fcn, addr_end - addr);
+	}
+	rz_core_analysis_fcn(core, addr, UT64_MAX,
+		RZ_ANALYSIS_REF_TYPE_NULL, depth);
+	fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
+	if (fcn) {
+		rz_analysis_function_resize(fcn, addr_end - addr);
+	}
+	rz_config_set_i(core->config, "analysis.from", a);
+	rz_config_set_i(core->config, "analysis.to", b);
+	rz_config_set(core->config, "analysis.limits", c ? c : "");
+}
+
+static bool archIsThumbable(RzCore *core) {
+	RzAsm *as = core ? core->rasm : NULL;
+	if (as && as->cur && as->bits <= 32 && as->cur->name) {
+		return strstr(as->cur->name, "arm");
+	}
+	return false;
+}
+
+static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
+	bool pretend = (user && *(RzOutputMode *)user == RZ_OUTPUT_MODE_RIZIN);
+	int arch_align = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	bool vinfun = rz_config_get_b(core->config, "analysis.vinfun");
+	int searchAlign = rz_config_get_i(core->config, "search.align");
+	int align = (searchAlign > 0) ? searchAlign : arch_align;
+	if (align > 1) {
+		if ((from % align) || (to % align)) {
+			bool itsFine = false;
+			if (archIsThumbable(core)) {
+				if ((from & 1) || (to & 1)) {
+					itsFine = true;
+				}
+			}
+			if (!itsFine) {
+				return;
+			}
+			if (core->analysis->verbose) {
+				eprintf("Warning: aav: false positive in 0x%08" PFMT64x "\n", from);
+			}
+		}
+	}
+	if (!vinfun) {
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, from, -1);
+		if (fcn) {
+			return;
+		}
+	}
+	if (pretend) {
+		rz_cons_printf("ax 0x%" PFMT64x " 0x%" PFMT64x "\n", to, from);
+		rz_cons_printf("Cd %d @ 0x%" PFMT64x "\n", vsize, from);
+		rz_cons_printf("f+ aav.0x%08" PFMT64x "= 0x%08" PFMT64x, to, to);
+	} else {
+		rz_analysis_xrefs_set(core->analysis, from, to, RZ_ANALYSIS_REF_TYPE_NULL);
+		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, from, vsize, NULL);
+		if (!rz_flag_get_at(core->flags, to, false)) {
+			char *name = rz_str_newf("aav.0x%08" PFMT64x, to);
+			rz_flag_set(core->flags, name, to, vsize);
+			free(name);
+		}
+	}
+}
+
+RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
+	ut64 o_align = rz_config_get_i(core->config, "search.align");
+	const char *analysisin = rz_config_get(core->config, "analysis.in");
+	char *tmp = strdup(analysisin);
+	bool is_debug = rz_config_get_b(core->config, "cfg.debug");
+	int archAlign = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+	rz_config_set_i(core->config, "search.align", archAlign);
+	rz_config_set(core->config, "analysis.in", "io.maps.x");
+	const char *oldstr = rz_print_rowlog(core->print, "Finding xrefs in noncode section with analysis.in=io.maps");
+	rz_print_rowlog_done(core->print, oldstr);
+
+	int vsize = 4; // 32bit dword
+	if (core->rasm->bits == 64) {
+		vsize = 8;
+	}
+
+	// body
+	oldstr = rz_print_rowlog(core->print, "Analyze value pointers (aav)");
+	rz_print_rowlog_done(core->print, oldstr);
+	rz_cons_break_push(NULL, NULL);
+	if (is_debug) {
+		RzList *list = rz_core_get_boundaries_prot(core, 0, "dbg.map", "analysis");
+		RzListIter *iter;
+		RzIOMap *map;
+		if (!list) {
+			goto beach;
+		}
+		rz_list_foreach (list, iter, map) {
+			if (rz_cons_is_breaked()) {
+				break;
+			}
+			oldstr = rz_print_rowlog(core->print, sdb_fmt("from 0x%" PFMT64x " to 0x%" PFMT64x " (aav)", map->itv.addr, rz_itv_end(map->itv)));
+			rz_print_rowlog_done(core->print, oldstr);
+			(void)rz_core_search_value_in_range(core, map->itv,
+				map->itv.addr, rz_itv_end(map->itv), vsize, _CbInRangeAav, (void *)&mode);
+		}
+		rz_list_free(list);
+	} else {
+		RzList *list = rz_core_get_boundaries_prot(core, 0, NULL, "analysis");
+		if (!list) {
+			goto beach;
+		}
+		RzListIter *iter, *iter2;
+		RzIOMap *map, *map2;
+		ut64 from = UT64_MAX;
+		ut64 to = UT64_MAX;
+		// find values pointing to non-executable regions
+		rz_list_foreach (list, iter2, map2) {
+			if (rz_cons_is_breaked()) {
+				break;
+			}
+			//TODO: Reduce multiple hits for same addr
+			from = rz_itv_begin(map2->itv);
+			to = rz_itv_end(map2->itv);
+			oldstr = rz_print_rowlog(core->print, sdb_fmt("Value from 0x%08" PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
+			if ((to - from) > MAX_SCAN_SIZE) {
+				eprintf("Warning: Skipping large region\n");
+				continue;
+			}
+			rz_print_rowlog_done(core->print, oldstr);
+			rz_list_foreach (list, iter, map) {
+				ut64 begin = map->itv.addr;
+				ut64 end = rz_itv_end(map->itv);
+				if (rz_cons_is_breaked()) {
+					break;
+				}
+				if (end - begin > UT32_MAX) {
+					oldstr = rz_print_rowlog(core->print, "Skipping huge range");
+					rz_print_rowlog_done(core->print, oldstr);
+					continue;
+				}
+				oldstr = rz_print_rowlog(core->print, sdb_fmt("0x%08" PFMT64x "-0x%08" PFMT64x " in 0x%" PFMT64x "-0x%" PFMT64x " (aav)", from, to, begin, end));
+				rz_print_rowlog_done(core->print, oldstr);
+				(void)rz_core_search_value_in_range(core, map->itv, from, to, vsize, _CbInRangeAav, (void *)&mode);
+			}
+		}
+		rz_list_free(list);
+	}
+beach:
+	rz_cons_break_pop();
+	// end
+	rz_config_set(core->config, "analysis.in", tmp);
+	free(tmp);
+	rz_config_set_i(core->config, "search.align", o_align);
+}
+
+RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
+	int stack = 0, maxstack = 0;
+	ut64 at = from;
+
+	if (from >= to) {
+		return 0;
+	}
+	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = RZ_MAX(1, mininstrsz);
+	while (at < to) {
+		RzAnalysisOp *op = rz_core_analysis_op(core, at, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (!op || op->size <= 0) {
+			at += minopcode;
+			rz_analysis_op_free(op);
+			continue;
+		}
+		if ((op->stackop == RZ_ANALYSIS_STACK_INC) && RZ_ABS(op->stackptr) < 8096) {
+			stack += op->stackptr;
+			if (stack > maxstack) {
+				maxstack = stack;
+			}
+		}
+		at += op->size;
+		rz_analysis_op_free(op);
+	}
+	return maxstack;
 }

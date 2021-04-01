@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2013-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2013-2020 xarkes <antide.petit@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 /* ansi 256 color extension for rz_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
@@ -287,7 +289,7 @@ static void rz_cons_rgb_gen(RzConsColorMode mode, char *outstr, size_t sz, ut8 a
 }
 
 /* Return the computed color string for the specified color in the specified mode */
-RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, RzColor *rcolor) {
+RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, const RzColor *rcolor) {
 	if (!rcolor) {
 		return NULL;
 	}
@@ -313,7 +315,7 @@ RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz,
 }
 
 /* Return the computed color string for the specified color */
-RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, RzColor *rcolor) {
+RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, const RzColor *rcolor) {
 	return rz_cons_rgb_str_mode(rz_cons_singleton()->context->color_mode, outstr, sz, rcolor);
 }
 

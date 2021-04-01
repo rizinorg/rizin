@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2008-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
@@ -252,7 +253,7 @@ RZ_API char *rz_cons_hud(RzList *list, const char *prompt) {
 #endif
 		rz_cons_visual_flush();
 		(void)rz_line_readline();
-		strncpy(user_input, I(line)->buffer.data, HUD_BUF_SIZE); // to search
+		rz_str_ncpy(user_input, I(line)->buffer.data, HUD_BUF_SIZE); // to search
 
 		if (!hud->activate) {
 			hud->top_entry_n = 0;

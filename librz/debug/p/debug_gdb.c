@@ -1,7 +1,8 @@
+// SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2018 defragger <rlaemmert@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
-#include <rz_asm.h>
 #include <rz_debug.h>
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
@@ -392,7 +393,7 @@ static int rz_debug_gdb_detach(RzDebug *dbg, int pid) {
 	int ret = 0;
 
 	if (pid <= 0 || !desc->stub_features.multiprocess) {
-		ret = gdbr_detach(desc);
+		gdbr_detach(desc);
 	}
 	ret = gdbr_detach_pid(desc, pid);
 

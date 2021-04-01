@@ -1,6 +1,9 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+
+#include "core_private.h"
 
 #define NODECB(w, x, y)    rz_config_set_cb(cfg, w, x, y)
 #define NODEICB(w, x, y)   rz_config_set_i_cb(cfg, w, x, y)
@@ -454,10 +457,10 @@ static bool cb_scrrainbow(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_RAINBOW;
-		rz_core_cmd0(core, "ecr");
+		rz_cons_pal_random();
 	} else {
 		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
-		rz_core_cmd0(core, "ecoo");
+		rz_core_load_theme(core, rz_core_get_theme());
 	}
 	rz_print_set_flags(core->print, core->print->flags);
 	return true;
@@ -553,6 +556,14 @@ static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
 	}
 }
 
+static void update_syscall_ns(RzCore *core) {
+	if (core->analysis->syscall->db) {
+		sdb_ns_set(core->sdb, "syscall", core->analysis->syscall->db);
+	} else {
+		sdb_ns_unset(core->sdb, "syscall", NULL);
+	}
+}
+
 static bool cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RzCore *core = (RzCore *)user;
@@ -645,6 +656,7 @@ static bool cb_asmarch(void *user, void *data) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
+		update_syscall_ns(core);
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");
@@ -719,6 +731,9 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 
 	int bits = node->i_value;
+	if (!bits) {
+		return false;
+	}
 #if 0
 // TODO: pretty good optimization, but breaks many tests when arch is different i think
 	if (bits == core->rasm->bits && bits == core->analysis->bits && bits == core->dbg->bits) {
@@ -744,7 +759,7 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 	if (core->dbg && core->analysis && core->analysis->cur) {
 		rz_debug_set_arch(core->dbg, core->analysis->cur->arch, bits);
-		bool load_from_debug = rz_config_get_i(core->config, "cfg.debug");
+		bool load_from_debug = rz_config_get_b(core->config, "cfg.debug");
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
 // XXX. that should depend on the plugin, not the host os
@@ -773,6 +788,7 @@ static bool cb_asmbits(void *user, void *data) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
+		update_syscall_ns(core);
 		__setsegoff(core->config, asmarch, core->analysis->bits);
 		if (core->dbg) {
 			rz_bp_use(core->dbg->bp, asmarch, core->analysis->bits);
@@ -935,6 +951,7 @@ static bool cb_asmos(void *user, void *data) {
 	if (asmarch) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 		rz_syscall_setup(core->analysis->syscall, asmarch->value, core->analysis->bits, asmcpu, node->value);
+		update_syscall_ns(core);
 		__setsegoff(core->config, asmarch->value, asmbits);
 	}
 	rz_analysis_set_os(core->analysis, node->value);
@@ -1766,7 +1783,7 @@ static bool cb_iopcachewrite(void *user, void *data) {
 
 RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
-		RzCore *core = esil->analysis->user;
+		RzCore *core = esil->analysis->core;
 		rz_core_cmdf(core, "%s %" PFMT64d " %" PFMT64d, cmd, a1, a2);
 		return core->num->value;
 	}
@@ -2458,7 +2475,7 @@ static bool cb_binprefix(void *user, void *data) {
 			}
 			char *name = (char *)rz_file_basename(core->bin->file);
 			if (name) {
-				rz_name_filter(name, strlen(name));
+				rz_name_filter(name, strlen(name), true);
 				rz_str_filter(name, strlen(name));
 				core->bin->prefix = strdup(name);
 				free(name);
@@ -2493,8 +2510,8 @@ static bool cb_binmaxstr(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (core->bin) {
 		int v = node->i_value;
-		if (v < 1) {
-			v = 4; // HACK
+		if (v < 0) {
+			v = 0;
 		}
 		core->bin->maxstrlen = v;
 		rz_bin_reset_strings(core->bin);
@@ -2577,7 +2594,7 @@ static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_cmd0(core, "afcl");
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			return false;
 		}
 		rz_analysis_set_syscc_default(core->analysis, node->value);
@@ -2588,7 +2605,7 @@ static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp(node->value, "?")) {
-			rz_core_cmd0(core, "afcl");
+			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
 			return false;
 		}
 		rz_analysis_set_cc_default(core->analysis, node->value);
@@ -2823,14 +2840,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* dir.prefix is used in other modules, set it first */
 	{
 		char *pfx = rz_sys_getenv("RZ_PREFIX");
-#if __WINDOWS__
-		const char *invoke_dir = rz_sys_prefix(NULL);
-		if (!pfx && invoke_dir) {
-			pfx = strdup(invoke_dir);
-		}
-#endif
 		if (!pfx) {
-			pfx = strdup(RZ_PREFIX);
+			pfx = strdup(rz_sys_prefix(NULL));
 		}
 		SETCB("dir.prefix", pfx, (RzConfigCallback)&cb_dirpfx, "Default prefix rizin was compiled for");
 		free(pfx);
@@ -3057,7 +3068,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.lines.out", "true", "Show out of block lines");
 	SETBPREF("asm.lines.right", "false", "Show lines before opcode instead of offset");
 	SETBPREF("asm.lines.wide", "false", "Put a space between lines");
-	SETBPREF("asm.fcnsig", "true", "Show function signature in disasm");
+	SETBPREF("asm.fcn.signature", "true", "Show function signature in disasm");
+	SETBPREF("asm.fcn.size", "false", "Show function size in disasm");
 	SETICB("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETICB("asm.sub.varmin", 0x100, &cb_asmsubvarmin, "Minimum value to substitute in instructions (asm.sub.var)");
 	SETCB("asm.sub.tail", "false", &cb_asmsubtail, "Replace addresses with prefix .. syntax");
@@ -3076,7 +3088,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.section", "false", "Show section name before offset");
 	SETBPREF("asm.section.perm", "false", "Show section permissions in the disasm");
 	SETBPREF("asm.section.name", "true", "Show section name in the disasm");
-	SETI("asm.section.col", 20, "Columns width to show asm.section");
+	SETI("asm.section.col", 30, "Columns width to show asm.section");
 	SETCB("asm.sub.section", "false", &cb_asmsubsec, "Show offsets in disasm prefixed with section/map name");
 	SETCB("asm.pseudo", "false", &cb_asmpseudo, "Enable pseudo syntax");
 	SETBPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");
@@ -3309,7 +3321,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("dbg.trace_continue", "true", &cb_dbg_trace_continue, "Trace every instruction between the initial PC position and the PC position at the end of continue's execution");
 	SETCB("dbg.create_new_console", "true", &cb_dbg_create_new_console, "Create a new console window for the debugee on debug start");
 	/* debug */
-	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;sHu'");
+	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;shu'");
 #if DEBUGGER
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
 #else
@@ -3423,16 +3435,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("http.index", "index.html", "Main html file to check in directory");
 	SETPREF("http.bind", "localhost", "Server address");
 	SETPREF("http.homeroot", RZ_JOIN_2_PATHS("~", RZ_HOME_WWWROOT), "http home root directory");
-#if __WINDOWS__
-	{
-		char *wwwroot = rz_str_newf("%s\\share\\www", rz_sys_prefix(NULL));
-		SETPREF("http.root", wwwroot, "http root directory");
-		free(wwwroot);
-	}
-#elif __ANDROID__
+#if __ANDROID__
 	SETPREF("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
 #else
-	SETPREF("http.root", RZ_WWWROOT, "http root directory");
+	char *wwwroot = rz_str_rz_prefix(RZ_WWWROOT);
+	SETPREF("http.root", wwwroot, "http root directory");
+	free(wwwroot);
 #endif
 	SETPREF("http.port", "9090", "HTTP server port");
 	SETPREF("http.maxport", "9999", "Last HTTP server port");
@@ -3469,7 +3477,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("graph.font", "Courier", "Font for dot graphs");
 	SETBPREF("graph.offset", "false", "Show offsets in graphs");
 	SETBPREF("graph.bytes", "false", "Show opcode bytes in graphs");
-	SETBPREF("graph.web", "false", "Display graph in web browser (VV)");
 	SETI("graph.from", UT64_MAX, "Lower bound address when drawing global graphs");
 	SETI("graph.to", UT64_MAX, "Upper bound address when drawing global graphs");
 	SETI("graph.scroll", 5, "Scroll speed in ascii-art graph");

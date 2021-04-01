@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2014-2019 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -789,6 +791,8 @@ RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j) 
 		case RZ_CORE_TASK_STATE_DONE:
 			state = "done";
 			break;
+		default:
+			state = "invalid";
 		}
 		pj_ks(j, "state", state);
 		pj_kb(j, "transient", task->transient);

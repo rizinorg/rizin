@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2017-2020 maskray <i@maskray.me>
+// SPDX-FileCopyrightText: 2017-2020 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_vector.h"
@@ -211,6 +213,15 @@ RZ_API void *rz_vector_shrink(RzVector *vec) {
 		RESIZE_OR_RETURN_NULL(vec->len);
 	}
 	return vec->a;
+}
+
+RZ_API void *rz_vector_flush(RzVector *vec) {
+	rz_return_val_if_fail(vec, NULL);
+	rz_vector_shrink(vec);
+	void *r = vec->a;
+	vec->a = NULL;
+	vec->capacity = vec->len = 0;
+	return r;
 }
 
 // pvector

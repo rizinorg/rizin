@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2011-2015 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* RISC-V opcode list
    Copyright 2011-2015 Free Software Foundation, Inc.
 

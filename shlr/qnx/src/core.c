@@ -1,4 +1,7 @@
-/* libqnxr - GPL - Copyright 2016 - defragger, madprogrammer, FSF Inc */
+// SPDX-FileCopyrightText: 2016 defragger
+// SPDX-FileCopyrightText: 2016 madprogrammer
+// SPDX-FileCopyrightText: 2016 FSF Inc
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include <errno.h>
 #include <rz_debug.h>
@@ -366,7 +369,7 @@ int qnxr_read_memory(libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
 	if (!g || !data)
 		return -1;
 
-	tot_len = rcv_len = ask_len = 0;
+	tot_len = ask_len = 0;
 
 	do {
 		nto_send_init(g, DStMsg_memrd, 0, SET_CHANNEL_DEBUG);

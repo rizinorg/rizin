@@ -12,11 +12,11 @@ Install SDK from Arduino:
 
 Install avarice, the gdbserver <-> jtag:
 
-	rz_pm -i avarice
+	rz-pm -i avarice
 
 Run the proxy:
 
-	rz_pm -r avarice --jtag /dev/tty.wch* --mkI :4242
+	rz-pm -r avarice --jtag /dev/tty.wch* --mkI :4242
 
 Using GDB:
 

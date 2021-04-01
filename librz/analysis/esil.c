@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2014-2021 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
@@ -103,6 +105,7 @@ RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned 
 	rz_analysis_esil_sources_init(esil);
 	rz_analysis_esil_interrupts_init(esil);
 	esil->addrmask = genmask(addrsize - 1);
+	rz_strbuf_init(&esil->current_opstr);
 	return esil;
 }
 
@@ -177,6 +180,7 @@ RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil) {
 	if (esil->analysis && esil->analysis->cur && esil->analysis->cur->esil_fini) {
 		esil->analysis->cur->esil_fini(esil);
 	}
+	rz_strbuf_fini(&esil->current_opstr);
 	rz_analysis_esil_trace_free(esil->trace);
 	esil->trace = NULL;
 	free(esil->cmd_intr);
@@ -2955,12 +2959,11 @@ static bool runword(RzAnalysisEsil *esil, const char *word) {
 					return 1; // XXX cannot return != 1
 				}
 			}
-			esil->current_opstr = strdup(word);
+			rz_strbuf_set(&esil->current_opstr, word);
 			//so this is basically just sharing what's the operation with the operation
 			//useful for wrappers
 			const bool ret = op->code(esil);
-			free(esil->current_opstr);
-			esil->current_opstr = NULL;
+			rz_strbuf_fini(&esil->current_opstr);
 			if (!ret) {
 				if (esil->verbose) {
 					eprintf("%s returned 0\n", word);
@@ -3158,7 +3161,7 @@ RZ_API bool rz_analysis_esil_runword(RzAnalysisEsil *esil, const char *word) {
 		}
 		int ew = evalWord(esil, word, &str);
 		eprintf("ew %d\n", ew);
-		eprintf("--> %s\n", rz_str_get(str));
+		eprintf("--> %s\n", rz_str_get_null(str));
 	}
 	return true;
 }

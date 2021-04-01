@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1994, 1995 Myricom, Inc.
+// SPDX-License-Identifier: GPL-2.0-only
+
 /*************************************************************************
  *                                                                       *
  * Definitions for opcode table for the Lanai.                          *

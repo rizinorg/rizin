@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 condret <condr3t@protonmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 
@@ -139,16 +142,16 @@ static bool test_prevnext(void) {
 
 	bool idw;
 	ut32 idi = id0list;
-	idw = rz_id_storage_get_next(ids, &idi);
+	rz_id_storage_get_next(ids, &idi);
 	mu_assert_eq(idi, id1list, "next of id0 should be id1");
-	idw = rz_id_storage_get_next(ids, &idi);
+	rz_id_storage_get_next(ids, &idi);
 	mu_assert_eq(idi, id2list, "next of id1 should be id2");
 	idw = rz_id_storage_get_next(ids, &idi);
 	mu_assert_eq(idw, false, "next of id2 (last) should not exist (-1)");
 
-	idw = rz_id_storage_get_prev(ids, &idi);
+	rz_id_storage_get_prev(ids, &idi);
 	mu_assert_eq(idi, id1list, "prev of id2 should be id1");
-	idw = rz_id_storage_get_prev(ids, &idi);
+	rz_id_storage_get_prev(ids, &idi);
 	mu_assert_eq(idi, id0list, "prev of id1 should be id0");
 	idw = rz_id_storage_get_prev(ids, &id0list);
 	mu_assert_eq(idw, false, "prev of id0 (first) should not exist (-1)");

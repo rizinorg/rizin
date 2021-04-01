@@ -167,7 +167,7 @@ Interpret r2 commands
 .. myfile
 . myfile.r2
 .* file
-.!rz_bin -ri $FILE
+.!rz-bin -ri $FILE
 .(foo 1 2 3)
 ./ ELF
 pd 10 |.

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2016-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
@@ -133,7 +134,7 @@ static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBuffer *obj = bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_symbol_free))) {
 		return NULL;
 	}
 	/* atmega8 */

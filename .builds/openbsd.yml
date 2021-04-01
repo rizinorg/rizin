@@ -35,7 +35,7 @@ tasks:
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/rizin-testbins test/bins
         # Running the unit tests
-        ninja -C build test
+        MALLOC_OPTIONS=S ninja -C build test
     - test: |
         cd rizin
         export PATH=${HOME}/bin:/usr/local/bin:${PATH}
@@ -46,4 +46,4 @@ tasks:
         ln -s ${HOME}/rizin-testbins test/bins
         cd test
         # Running the unit tests
-        rz-test -L -o results.json
+        MALLOC_OPTIONS=S rz-test -L -o results.json

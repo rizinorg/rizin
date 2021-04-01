@@ -1,0 +1,6 @@
+[wrap-file]
+source_url = https://github.com/aquynh/capstone/archive/3.0.5.tar.gz
+source_filename = 3.0.5.tar.gz
+source_hash = 913dd695e7c5a2b972a6f427cb31f2e93677ec1c38f39dda37d18a91c70b6df1
+patch_directory = capstone-3.0.5
+directory = capstone-3.0.5

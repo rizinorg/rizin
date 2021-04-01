@@ -48,7 +48,7 @@ p8 10 @! 30
 Temporary from/to
 =================
 
-/x 9090 @{0xbeef 0xdead}
+/x 9090 @(0xbeef 0xdead)
 
 ---
 
@@ -56,8 +56,9 @@ Temporary from/to
   (tmp_fromto_command
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier))))
-    (arg (arg_identifier))
-    (arg (arg_identifier))))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
 
 
 =================

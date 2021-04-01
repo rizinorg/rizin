@@ -1,7 +1,7 @@
+// SPDX-FileCopyrightText: 2016-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
-#include <rz_asm.h>
 #include <rz_debug.h>
 
 static int __io_step(RzDebug *dbg) {
@@ -86,6 +86,7 @@ static char *__io_reg_profile(RzDebug *dbg) {
 		rz_cons_pop();
 		return ret;
 	}
+	rz_cons_pop();
 	return rz_analysis_get_reg_profile(dbg->analysis);
 }
 

@@ -1,7 +1,13 @@
 #!/usr/bin/env python2
+#
+# SPDX-FileCopyrightText: 2019 Francesco Tamagni <mrmacete@protonmail.ch>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
 # -*- coding: utf-8 -*-
 
-import sys, re, json
+import json
+import re
+import sys
 
 header = """ /*
  * This file is generated in this way:
@@ -14,50 +20,50 @@ header = """ /*
  */
 """
 
-def convert (trace_codes, trap_json):
+
+def convert(trace_codes, trap_json):
     data = {}
-    with open(trace_codes, 'r') as f:
+    with open(trace_codes, "r") as f:
         for line in f:
-            splitted = re.compile('\s+').split(line.rstrip('\n'))
+            splitted = re.compile("\s+").split(line.rstrip("\n"))
             name = splitted[1]
             code = int(splitted[0], 0)
-            klass = code & 0xff000000
-            if klass == 0xff000000: # MIG
-                name = name.replace('MSG_', '')
-                num = (code & 0x00ffffff) >> 2
+            klass = code & 0xFF000000
+            if klass == 0xFF000000:  # MIG
+                name = name.replace("MSG_", "")
+                num = (code & 0x00FFFFFF) >> 2
                 data[num] = name
 
-    with open(trap_json, 'r') as f:
+    with open(trap_json, "r") as f:
         traps = json.loads(f.read())
         for routine in traps:
-            num = routine['num']
+            num = routine["num"]
             if num in data:
                 continue
-            data[num] = routine['name']
+            data[num] = routine["name"]
 
     result = []
     for num in data:
         result.append((num, data[num]))
 
-    result.sort(key = lambda x: x[0])
+    result.sort(key=lambda x: x[0])
 
     print header
-    print '#ifndef RZ_MIG_INDEX_H'
-    print '#define RZ_MIG_INDEX_H\n'
+    print "#ifndef RZ_MIG_INDEX_H"
+    print "#define RZ_MIG_INDEX_H\n"
 
-    print '#define RZ_MIG_INDEX_LEN %d\n' % (len(data) * 2)
+    print "#define RZ_MIG_INDEX_LEN %d\n" % (len(data) * 2)
 
-    print 'static const char * mig_index[RZ_MIG_INDEX_LEN] = {'
+    print "static const char * mig_index[RZ_MIG_INDEX_LEN] = {"
     for pair in result:
         print '\t"%d", "%s",' % pair
-    print '};\n'
+    print "};\n"
 
-    print '#endif'
+    print "#endif"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print 'usage %s bsd/kern/trace_codes traps.json' % sys.argv[0]
+        print "usage %s bsd/kern/trace_codes traps.json" % sys.argv[0]
     else:
         convert(sys.argv[1], sys.argv[2])
-

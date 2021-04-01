@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2018 maijin <maijin21@gmail.com>
+// SPDX-FileCopyrightText: 2009-2018 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_analysis.h"
@@ -496,9 +499,6 @@ RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *co
 }
 
 static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *context, ut64 atAddress, int mode, bool strict) {
-	bool use_json = mode == 'j';
-	PJ *pj;
-
 	ut64 colRefAddr = atAddress - context->word_size;
 	ut64 colAddr;
 	if (!context->read_addr(context->analysis, colRefAddr, &colAddr)) {
@@ -552,6 +552,8 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 
 	// print
+	bool use_json = mode == 'j';
+	PJ *pj = NULL;
 	if (use_json) {
 		pj = pj_new();
 		if (!pj) {
@@ -812,25 +814,44 @@ static char *unique_class_name(RzAnalysis *analysis, const char *original_name) 
 	return name;
 }
 
-static void recovery_apply_vtable(RzAnalysis *analysis, const char *class_name, RVTableInfo *vtable_info) {
+static void recovery_apply_vtable(RVTableContext *context, const char *class_name, RVTableInfo *vtable_info) {
 	if (!vtable_info) {
 		return;
 	}
 
+	ut64 size = rz_analysis_vtable_info_get_size(context, vtable_info);
+
 	RzAnalysisVTable vtable;
+	vtable.size = size;
 	vtable.id = NULL;
 	vtable.offset = 0;
 	vtable.addr = vtable_info->saddr;
-	rz_analysis_class_vtable_set(analysis, class_name, &vtable);
+	rz_analysis_class_vtable_set(context->analysis, class_name, &vtable);
 	rz_analysis_class_vtable_fini(&vtable);
 
 	RVTableMethodInfo *vmeth;
 	rz_vector_foreach(&vtable_info->methods, vmeth) {
 		RzAnalysisMethod meth;
-		meth.addr = vmeth->addr;
-		meth.vtable_offset = vmeth->vtable_offset;
-		meth.name = rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
-		rz_analysis_class_method_set(analysis, class_name, &meth);
+		if (!rz_analysis_class_method_exists_by_addr(context->analysis, class_name, vmeth->addr)) {
+			meth.addr = vmeth->addr;
+			meth.vtable_offset = vmeth->vtable_offset;
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at(context->analysis, vmeth->addr);
+			meth.name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+			//Temporarily set as attr name
+			meth.real_name = fcn ? rz_str_new(fcn->name) : rz_str_newf("virtual_%" PFMT64d, meth.vtable_offset);
+			meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
+		} else {
+			RzAnalysisMethod exist_meth;
+			if (rz_analysis_class_method_get_by_addr(context->analysis, class_name, vmeth->addr, &exist_meth) == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
+				meth.addr = vmeth->addr;
+				meth.name = rz_str_new(exist_meth.name);
+				meth.real_name = rz_str_new(exist_meth.real_name);
+				meth.vtable_offset = vmeth->vtable_offset;
+				meth.method_type = RZ_ANALYSIS_CLASS_METHOD_VIRTUAL;
+				rz_analysis_class_method_fini(&exist_meth);
+			}
+		}
+		rz_analysis_class_method_set(context->analysis, class_name, &meth);
 		rz_analysis_class_method_fini(&meth);
 	}
 }
@@ -913,7 +934,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	rz_analysis_class_create(analysis, name);
 	ht_up_insert(context->col_td_classes, col->addr, name);
 
-	recovery_apply_vtable(analysis, name, col->vtable);
+	recovery_apply_vtable(context->vt_context, name, col->vtable);
 	recovery_apply_bases(context, name, &col->base_td);
 
 	return name;
@@ -949,7 +970,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 		return name;
 	}
 
-	recovery_apply_vtable(analysis, name, td->col->vtable);
+	recovery_apply_vtable(context->vt_context, name, td->col->vtable);
 	recovery_apply_bases(context, name, &td->col->base_td);
 
 	return name;

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -118,20 +119,6 @@ static SymbolsMetadata parseMetadata(RzBuffer *buf, int off) {
 	return sm;
 }
 
-static void printSymbolsHeader(SymbolsHeader sh) {
-	// eprintf ("0x%08x  version  0x%x\n", 4, sh.version);
-	eprintf("0x%08x  uuid     ", 24);
-	int i;
-	for (i = 0; i < 16; i++) {
-		eprintf("%02x", sh.uuid[i]);
-	}
-	eprintf("\n");
-	// parse header
-	// eprintf ("0x%08x  unknown  0x%x\n", 0x28, sh.unk0); //rz_read_le32 (b+ 0x28));
-	// eprintf ("0x%08x  unknown  0x%x\n", 0x2c, sh.unk1); //rz_read_le16 (b+ 0x2c));
-	// eprintf ("0x%08x  slotsize %d\n", 0x2e, sh.slotsize); // rz_read_le16 (b+ 0x2e));
-}
-
 static RzBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect) {
 	if (!sect->name) {
 		return NULL;
@@ -193,7 +180,7 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	return sym;
 }
 
-static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits) {
+static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits, RZ_OWN char *file_name) {
 	D eprintf("Dragons at 0x%x\n", off);
 	ut64 size = rz_buf_size(buf);
 	if (off >= size) {
@@ -261,7 +248,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off
 		eprintf("0x%08x  eoss   0x%x\n", off + 12, e0ss);
 	}
 	free(b);
-	return rz_coresym_cache_element_new(bf, buf, off + 16, bits);
+	return rz_coresym_cache_element_new(bf, buf, off + 16, bits, file_name);
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
@@ -289,13 +276,23 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		eprintf("Invalid headers\n");
 		return false;
 	}
-	printSymbolsHeader(sh);
 	SymbolsMetadata sm = parseMetadata(buf, 0x40);
-	RzCoreSymCacheElement *element = parseDragons(bf, buf, sm.addr + sm.size, sm.bits);
+	char *file_name = NULL;
+	if (sm.namelen) {
+		file_name = calloc(sm.namelen + 1, 1);
+		if (!file_name) {
+			return false;
+		}
+		if (rz_buf_read_at(buf, 0x50, (ut8 *)file_name, sm.namelen) != sm.namelen) {
+			return false;
+		}
+	}
+	RzCoreSymCacheElement *element = parseDragons(bf, buf, sm.addr + sm.size, sm.bits, file_name);
 	if (element) {
 		*bin_obj = element;
 		return true;
 	}
+	free(file_name);
 	return false;
 }
 
@@ -432,6 +429,35 @@ static void header(RzBinFile *bf) {
 	pj_free(pj);
 }
 
+static RzBinSourceLineInfo *lines(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, NULL);
+	RzCoreSymCacheElement *element = bf->o->bin_obj;
+	if (!element || !element->hdr) {
+		return NULL;
+	}
+	RzBinSourceLineInfoBuilder alice;
+	rz_bin_source_line_info_builder_init(&alice);
+	if (element->lined_symbols) {
+		for (size_t i = 0; i < element->hdr->n_lined_symbols; i++) {
+			RzCoreSymCacheElementLinedSymbol *lsym = &element->lined_symbols[i];
+			ut64 addr = rz_coresym_cache_element_pa2va(element, lsym->sym.paddr);
+			ut32 sz = lsym->sym.size;
+			rz_bin_source_line_info_builder_push_sample(&alice, addr, lsym->flc.line, lsym->flc.col, lsym->flc.file);
+			rz_bin_source_line_info_builder_push_sample(&alice, addr + (sz ? sz : 1), 0, 0, NULL);
+		}
+	}
+	if (element->line_info) {
+		for (size_t i = 0; i < element->hdr->n_line_info; i++) {
+			RzCoreSymCacheElementLineInfo *info = &element->line_info[i];
+			ut64 addr = rz_coresym_cache_element_pa2va(element, info->paddr);
+			ut32 sz = info->size;
+			rz_bin_source_line_info_builder_push_sample(&alice, addr, info->flc.line, info->flc.col, info->flc.file);
+			rz_bin_source_line_info_builder_push_sample(&alice, addr + (sz ? sz : 1), 0, 0, NULL);
+		}
+	}
+	return rz_bin_source_line_info_builder_build_and_fini(&alice);
+}
+
 RzBinPlugin rz_bin_plugin_symbols = {
 	.name = "symbols",
 	.desc = "Apple Symbols file",
@@ -445,6 +471,7 @@ RzBinPlugin rz_bin_plugin_symbols = {
 	.info = &info,
 	.header = &header,
 	.destroy = &destroy,
+	.lines = lines
 };
 
 #ifndef RZ_PLUGIN_INCORE

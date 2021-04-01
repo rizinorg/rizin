@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 dso <dso@rice.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 #include <rz_util.h>
@@ -33,7 +36,7 @@ static void reloc_free(RBNode *rbn, void *user) {
 static void object_delete_items(RzBinObject *o) {
 	ut32 i = 0;
 	rz_return_if_fail(o);
-	sdb_free(o->addrzklassmethod);
+	ht_up_free(o->addrzklassmethod);
 	rz_list_free(o->entries);
 	rz_list_free(o->fields);
 	rz_list_free(o->imports);
@@ -46,7 +49,7 @@ static void object_delete_items(RzBinObject *o) {
 	rz_list_free(o->classes);
 	ht_pp_free(o->classes_ht);
 	ht_pp_free(o->methods_ht);
-	rz_list_free(o->lines);
+	rz_bin_source_line_info_free(o->lines);
 	sdb_free(o->kv);
 	rz_list_free(o->mem);
 	for (i = 0; i < RZ_BIN_SYM_LAST; i++) {
@@ -176,7 +179,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, ut64 b
 	if (sdb) {
 		Sdb *bdb = bf->sdb; // sdb_new0 ();
 		sdb_ns_set(bdb, "info", o->kv);
-		sdb_ns_set(bdb, "addrinfo", bf->sdb_addrinfo);
 		o->kv = bdb;
 		// bf->sdb = o->kv;
 		// bf->sdb_info = o->kv;
@@ -189,8 +191,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, ut64 b
 		/* And if any namespace is referenced backwards it gets
 		 * double-freed */
 		// bf->sdb_info = sdb_ns (bf->sdb, "info", 1);
-		//	bf->sdb_addrinfo = sdb_ns (bf->sdb, "addrinfo", 1);
-		//	bf->sdb_addrinfo->refs++;
 		sdb_ns_set(sdb, "cur", bdb); // bf->sdb);
 		const char *fdns = sdb_fmt("fd.%d", bf->fd);
 		sdb_ns_set(sdb, fdns, bdb); // bf->sdb);
@@ -312,7 +312,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	if (p->fields) {
 		o->fields = p->fields(bf);
 		if (o->fields) {
-			o->fields->free = rz_bin_field_free;
+			rz_warn_if_fail(o->fields->free);
 			REBASE_PADDR(o, o->fields, RzBinField);
 		}
 	}
@@ -320,13 +320,13 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 		rz_list_free(o->imports);
 		o->imports = p->imports(bf);
 		if (o->imports) {
-			o->imports->free = rz_bin_import_free;
+			rz_warn_if_fail(o->imports->free);
 		}
 	}
 	if (p->symbols) {
 		o->symbols = p->symbols(bf); // 5s
 		if (o->symbols) {
-			o->symbols->free = rz_bin_symbol_free;
+			rz_warn_if_fail(o->symbols->free);
 			REBASE_PADDR(o, o->symbols, RzBinSymbol);
 			if (bin->filter) {
 				rz_bin_filter_symbols(bf, o->symbols); // 5s
@@ -397,12 +397,10 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			RzBinSymbol *method;
 			if (!o->addrzklassmethod) {
 				// this is slow. must be optimized, but at least its cached
-				o->addrzklassmethod = sdb_new0();
+				o->addrzklassmethod = ht_up_new0();
 				rz_list_foreach (klasses, iter, klass) {
 					rz_list_foreach (klass->methods, iter2, method) {
-						char *km = sdb_fmt("method.%s.%s", klass->name, method->name);
-						char *at = sdb_fmt("0x%08" PFMT64x, method->vaddr);
-						sdb_set(o->addrzklassmethod, at, km, 0);
+						ht_up_insert(o->addrzklassmethod, method->vaddr, method);
 					}
 				}
 			}
@@ -427,15 +425,15 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	return true;
 }
 
-RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBin *bin, RzBinObject *o) {
-	rz_return_val_if_fail(bin && o, NULL);
+RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
+	rz_return_val_if_fail(bf && o, NULL);
 
 	static bool first = true;
 	// rz_bin_object_set_items set o->relocs but there we don't have access
 	// to io so we need to be run from bin_relocs, free the previous reloc and get
 	// the patched ones
 	if (first && o->plugin && o->plugin->patch_relocs) {
-		RzList *tmp = o->plugin->patch_relocs(bin);
+		RzList *tmp = o->plugin->patch_relocs(bf);
 		first = false;
 		if (!tmp) {
 			return o->relocs;
@@ -444,7 +442,9 @@ RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBin *bin, RzBinObject *o) {
 		REBASE_PADDR(o, tmp, RzBinReloc);
 		o->relocs = list2rbtree(tmp);
 		first = false;
-		bin->is_reloc_patched = true;
+		bf->rbin->is_reloc_patched = true;
+		tmp->free = NULL;
+		rz_list_free(tmp);
 	}
 	return o->relocs;
 }
@@ -515,4 +515,8 @@ RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo) {
 			}
 		}
 	}
+}
+
+RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr) {
+	return o ? addr + o->baddr_shift : addr;
 }

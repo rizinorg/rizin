@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 Jeffrey Crowell <crowell@bu.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 
@@ -19,6 +22,18 @@ void add_to_list(RTreeNode *n, RTreeVisitor *vis) {
 			int a = (int)(intptr_t)rz_list_iter_get(ita); \
 			int e = (int)(intptr_t)rz_list_iter_get(ite); \
 			mu_assert_eq(a, e, descr); \
+		} \
+		mu_assert("lists must have same elements", (!ita && !ite)); \
+	} while (0)
+
+#define check_str_list(act, exp, descr) \
+	do { \
+		RzListIter *ita = rz_list_iterator(act); \
+		RzListIter *ite = rz_list_iterator(exp); \
+		while (rz_list_iter_next(ita) && rz_list_iter_next(ite)) { \
+			char *a = rz_list_iter_get(ita); \
+			char *e = rz_list_iter_get(ite); \
+			mu_assert_streq(a, e, descr); \
 		} \
 		mu_assert("lists must have same elements", (!ita && !ite)); \
 	} while (0)
@@ -92,7 +107,7 @@ bool test_rz_tree() {
 	rz_list_append(exp3, "third");
 	lister.data = rz_list_new();
 	rz_tree_dfs(t, &lister);
-	check_list((RzList *)lister.data, exp3, "lister.reset.preorder");
+	check_str_list((RzList *)lister.data, exp3, "lister.reset.preorder");
 	rz_list_free(exp3);
 	rz_list_free((RzList *)lister.data);
 

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -15,7 +17,9 @@ static char *get_filetype(RzBuffer *b) {
 	}
 	const char *tmp = NULL;
 	// TODO: dir.magic not honored here
-	rz_magic_load(ck, RZ_SDB_MAGIC);
+	char *m = rz_str_rz_prefix(RZ_SDB_MAGIC);
+	rz_magic_load(ck, m);
+	free(m);
 	rz_buf_read_at(b, 0, buf, sizeof(buf));
 	tmp = rz_magic_buffer(ck, buf, sizeof(buf));
 	if (tmp) {

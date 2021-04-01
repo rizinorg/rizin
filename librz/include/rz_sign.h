@@ -27,8 +27,8 @@ typedef enum {
 	RZ_SIGN_GRAPH = 'g', // graph metrics
 	RZ_SIGN_OFFSET = 'o', // addr
 	RZ_SIGN_NAME = 'n', // real name
-	RZ_SIGN_REFS = 'r', // references
-	RZ_SIGN_XREFS = 'x', // xrefs
+	RZ_SIGN_REFS = 'r', // xrefs from
+	RZ_SIGN_XREFS = 'x', // xrefs to
 	RZ_SIGN_VARS = 'v', // variables
 	RZ_SIGN_TYPES = 't', // types
 	RZ_SIGN_BBHASH = 'h', // basic block hash
@@ -61,8 +61,8 @@ typedef struct rz_sign_item_t {
 	RzSignBytes *bytes;
 	RzSignGraph *graph;
 	ut64 addr;
-	RzList *refs;
-	RzList *xrefs;
+	RzList *xrefs_from;
+	RzList *xrefs_to;
 	RzList *vars;
 	RzList *types;
 	RzSignHash *hash;
@@ -143,8 +143,8 @@ RZ_API void rz_sign_item_free(RzSignItem *item);
 RZ_API void rz_sign_graph_free(RzSignGraph *graph);
 RZ_API void rz_sign_bytes_free(RzSignBytes *bytes);
 
-RZ_API RzList *rz_sign_fcn_refs(RzAnalysis *a, RzAnalysisFunction *fcn);
-RZ_API RzList *rz_sign_fcn_xrefs(RzAnalysis *a, RzAnalysisFunction *fcn);
+RZ_API RzList *rz_sign_fcn_xrefs_from(RzAnalysis *a, RzAnalysisFunction *fcn);
+RZ_API RzList *rz_sign_fcn_xrefs_to(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn);
 

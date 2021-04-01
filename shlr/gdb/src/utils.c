@@ -1,4 +1,5 @@
-/* libgdbr - LGPL - Copyright 2014 - defragger */
+// SPDX-FileCopyrightText: 2014 defragger <rlaemmert@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_types.h"
 #include "rz_util.h"
@@ -95,7 +96,11 @@ int unpack_hex(const char *src, ut64 len, char *dst) {
 	int i = 0;
 	while (i < (len / 2)) {
 		int val = hex2int(src[(i * 2)]);
-		val <<= 4;
+		if (val > 0) {
+			val <<= 4;
+		} else {
+			val = 0;
+		}
 		val |= hex2int(src[(i * 2) + 1]);
 		dst[i++] = val;
 	}

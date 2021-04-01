@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1991-1992 RSA Data Security, Inc.
+// SPDX-License-Identifier: RSA-MD
+
 /* MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
  *
  * Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All rights reserved.

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
@@ -49,7 +51,7 @@ RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
 		rz_core_cmdf(core, "dL%s", input + 1);
 		break;
 	case 'h': // "Lh"
-		rz_core_cmd0(core, "ph"); // rz_hash -L is more verbose
+		rz_core_cmd0(core, "ph"); // rz-hash -L is more verbose
 		break;
 	case 'a': // "La"
 		rz_core_cmd0(core, "e asm.arch=??");
@@ -71,7 +73,7 @@ RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
 		case 'j': {
 			rz_cons_printf("[");
 			bool is_first_element = true;
-			rz_list_foreach (core->rcmd->plist, iter, cp) {
+			rz_list_foreach (core->plugins, iter, cp) {
 				rz_cons_printf("%s{\"Name\":\"%s\",\"Description\":\"%s\"}",
 					is_first_element ? "" : ",", cp->name, cp->desc);
 				is_first_element = false;
@@ -81,7 +83,7 @@ RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
 		}
 		case 0:
 			rz_lib_list(core->lib);
-			rz_list_foreach (core->rcmd->plist, iter, cp) {
+			rz_list_foreach (core->plugins, iter, cp) {
 				rz_cons_printf("%s: %s\n", cp->name, cp->desc);
 			}
 			break;

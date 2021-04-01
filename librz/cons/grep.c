@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
@@ -321,8 +323,8 @@ while_end:
 				eprintf("too many grep strings\n");
 				break;
 			}
-			strncpy(grep->strings[grep->nstrings - 1],
-				optr, RZ_CONS_GREP_WORD_SIZE - 1);
+			rz_str_ncpy(grep->strings[grep->nstrings - 1],
+				optr, RZ_CONS_GREP_WORD_SIZE);
 		} while (ptr);
 	} else {
 		grep->str = strdup(ptr);
