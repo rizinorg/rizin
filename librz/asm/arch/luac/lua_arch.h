@@ -51,13 +51,13 @@ int lua54_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList oplist);
 int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len);
 bool lua54_assembly(const char *input, st32 input_size, LuaInstruction *instruction);
 LuaOpNameList get_lua54_opnames(void);
-ut8 get_lua54_opcode_by_name(const char *name);
+ut8 get_lua54_opcode_by_name(const char *name, int len);
 
 /* Lua 5.3 specified */
 int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList oplist);
 int lua53_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len);
 bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruction);
 LuaOpNameList get_lua53_opnames(void);
-ut8 get_lua53_opcode_by_name(const char *name);
+ut8 get_lua53_opcode_by_name(const char *name, int len);
 
 #endif //BUILD_LUA_ARCH_H

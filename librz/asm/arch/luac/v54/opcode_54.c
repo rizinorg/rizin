@@ -2,7 +2,9 @@
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
 
 #include "arch_54.h"
-#define lua_strcase(name, case_str) if (rz_str_ncasecmp((name), (case_str), sizeof(case_str) - 1) == 0)
+#define lua_strcase(case_str) if ( \
+	((limit) <= sizeof(case_str)) && \
+	rz_str_ncasecmp((name), (case_str), sizeof(case_str) - 1) == 0)
 
 LuaOpNameList get_lua54_opnames(void) {
 	LuaOpNameList list = RZ_NEWS(char *, LUA_NUM_OPCODES + 1);
@@ -100,114 +102,114 @@ LuaOpNameList get_lua54_opnames(void) {
 	return list;
 }
 
-ut8 get_lua54_opcode_by_name(const char *name) {
-	lua_strcase(name, "move") return OP_MOVE;
-	lua_strcase(name, "loadi") return OP_LOADI;
-	lua_strcase(name, "loadf") return OP_LOADF;
-	lua_strcase(name, "loadk") return OP_LOADK;
-	lua_strcase(name, "loadkx") return OP_LOADKX;
-	lua_strcase(name, "loadfalse") return OP_LOADFALSE;
-	lua_strcase(name, "lfalseskip") return OP_LFALSESKIP;
-	lua_strcase(name, "loadtrue") return OP_LOADTRUE;
-	lua_strcase(name, "loadnil") return OP_LOADNIL;
-	lua_strcase(name, "getupval") return OP_GETUPVAL;
-	lua_strcase(name, "setupval") return OP_SETUPVAL;
+ut8 get_lua54_opcode_by_name(const char *name, int limit) {
+	lua_strcase("move") return OP_MOVE;
+	lua_strcase("loadi") return OP_LOADI;
+	lua_strcase("loadf") return OP_LOADF;
+	lua_strcase("loadk") return OP_LOADK;
+	lua_strcase("loadkx") return OP_LOADKX;
+	lua_strcase("loadfalse") return OP_LOADFALSE;
+	lua_strcase("lfalseskip") return OP_LFALSESKIP;
+	lua_strcase("loadtrue") return OP_LOADTRUE;
+	lua_strcase("loadnil") return OP_LOADNIL;
+	lua_strcase("getupval") return OP_GETUPVAL;
+	lua_strcase("setupval") return OP_SETUPVAL;
 
-	lua_strcase(name, "gettabup") return OP_GETTABUP;
-	lua_strcase(name, "gettable") return OP_GETTABLE;
-	lua_strcase(name, "geti") return OP_GETI;
-	lua_strcase(name, "getfield") return OP_GETFIELD;
+	lua_strcase("gettabup") return OP_GETTABUP;
+	lua_strcase("gettable") return OP_GETTABLE;
+	lua_strcase("geti") return OP_GETI;
+	lua_strcase("getfield") return OP_GETFIELD;
 
-	lua_strcase(name, "settabup") return OP_SETTABUP;
-	lua_strcase(name, "settable") return OP_SETTABLE;
-	lua_strcase(name, "seti") return OP_SETI;
-	lua_strcase(name, "setfield") return OP_SETFIELD;
+	lua_strcase("settabup") return OP_SETTABUP;
+	lua_strcase("settable") return OP_SETTABLE;
+	lua_strcase("seti") return OP_SETI;
+	lua_strcase("setfield") return OP_SETFIELD;
 
-	lua_strcase(name, "newtable") return OP_NEWTABLE;
+	lua_strcase("newtable") return OP_NEWTABLE;
 
-	lua_strcase(name, "self") return OP_SELF;
+	lua_strcase("self") return OP_SELF;
 
-	lua_strcase(name, "addi") return OP_ADDI;
+	lua_strcase("addi") return OP_ADDI;
 
-	lua_strcase(name, "addk") return OP_ADDK;
-	lua_strcase(name, "subk") return OP_SUBK;
-	lua_strcase(name, "mulk") return OP_MULK;
-	lua_strcase(name, "modk") return OP_MODK;
-	lua_strcase(name, "powk") return OP_POWK;
-	lua_strcase(name, "divk") return OP_DIVK;
-	lua_strcase(name, "idivk") return OP_IDIVK;
+	lua_strcase("addk") return OP_ADDK;
+	lua_strcase("subk") return OP_SUBK;
+	lua_strcase("mulk") return OP_MULK;
+	lua_strcase("modk") return OP_MODK;
+	lua_strcase("powk") return OP_POWK;
+	lua_strcase("divk") return OP_DIVK;
+	lua_strcase("idivk") return OP_IDIVK;
 
-	lua_strcase(name, "bandk") return OP_BANDK;
-	lua_strcase(name, "bork") return OP_BORK;
-	lua_strcase(name, "bxork") return OP_BXORK;
+	lua_strcase("bandk") return OP_BANDK;
+	lua_strcase("bork") return OP_BORK;
+	lua_strcase("bxork") return OP_BXORK;
 
-	lua_strcase(name, "shri") return OP_SHRI;
-	lua_strcase(name, "shli") return OP_SHLI;
+	lua_strcase("shri") return OP_SHRI;
+	lua_strcase("shli") return OP_SHLI;
 
-	lua_strcase(name, "add") return OP_ADD;
-	lua_strcase(name, "sub") return OP_SUB;
-	lua_strcase(name, "mul") return OP_MUL;
-	lua_strcase(name, "mod") return OP_MOD;
-	lua_strcase(name, "pow") return OP_POW;
-	lua_strcase(name, "div") return OP_DIV;
-	lua_strcase(name, "idiv") return OP_IDIV;
+	lua_strcase("add") return OP_ADD;
+	lua_strcase("sub") return OP_SUB;
+	lua_strcase("mul") return OP_MUL;
+	lua_strcase("mod") return OP_MOD;
+	lua_strcase("pow") return OP_POW;
+	lua_strcase("div") return OP_DIV;
+	lua_strcase("idiv") return OP_IDIV;
 
-	lua_strcase(name, "band") return OP_BAND;
-	lua_strcase(name, "bor") return OP_BOR;
-	lua_strcase(name, "bxor") return OP_BXOR;
-	lua_strcase(name, "shl") return OP_SHL;
-	lua_strcase(name, "shr") return OP_SHR;
+	lua_strcase("band") return OP_BAND;
+	lua_strcase("bor") return OP_BOR;
+	lua_strcase("bxor") return OP_BXOR;
+	lua_strcase("shl") return OP_SHL;
+	lua_strcase("shr") return OP_SHR;
 
-	lua_strcase(name, "mmbin") return OP_MMBIN;
-	lua_strcase(name, "mmbini") return OP_MMBINI;
-	lua_strcase(name, "mmbink") return OP_MMBINK;
+	lua_strcase("mmbin") return OP_MMBIN;
+	lua_strcase("mmbini") return OP_MMBINI;
+	lua_strcase("mmbink") return OP_MMBINK;
 
-	lua_strcase(name, "unm") return OP_UNM;
-	lua_strcase(name, "bnot") return OP_BNOT;
-	lua_strcase(name, "not") return OP_NOT;
-	lua_strcase(name, "len") return OP_LEN;
-	lua_strcase(name, "concat") return OP_CONCAT;
+	lua_strcase("unm") return OP_UNM;
+	lua_strcase("bnot") return OP_BNOT;
+	lua_strcase("not") return OP_NOT;
+	lua_strcase("len") return OP_LEN;
+	lua_strcase("concat") return OP_CONCAT;
 
-	lua_strcase(name, "close") return OP_CLOSE;
-	lua_strcase(name, "tbc") return OP_TBC;
-	lua_strcase(name, "jmp") return OP_JMP;
-	lua_strcase(name, "eq") return OP_EQ;
-	lua_strcase(name, "lt") return OP_LT;
-	lua_strcase(name, "le") return OP_LE;
+	lua_strcase("close") return OP_CLOSE;
+	lua_strcase("tbc") return OP_TBC;
+	lua_strcase("jmp") return OP_JMP;
+	lua_strcase("eq") return OP_EQ;
+	lua_strcase("lt") return OP_LT;
+	lua_strcase("le") return OP_LE;
 
-	lua_strcase(name, "eqk") return OP_EQK;
-	lua_strcase(name, "eqi") return OP_EQI;
-	lua_strcase(name, "lti") return OP_LTI;
-	lua_strcase(name, "lei") return OP_LEI;
-	lua_strcase(name, "gti") return OP_GTI;
-	lua_strcase(name, "gei") return OP_GEI;
+	lua_strcase("eqk") return OP_EQK;
+	lua_strcase("eqi") return OP_EQI;
+	lua_strcase("lti") return OP_LTI;
+	lua_strcase("lei") return OP_LEI;
+	lua_strcase("gti") return OP_GTI;
+	lua_strcase("gei") return OP_GEI;
 
-	lua_strcase(name, "test") return OP_TEST;
-	lua_strcase(name, "testset") return OP_TESTSET;
+	lua_strcase("test") return OP_TEST;
+	lua_strcase("testset") return OP_TESTSET;
 
-	lua_strcase(name, "call") return OP_CALL;
-	lua_strcase(name, "tailcall") return OP_TAILCALL;
+	lua_strcase("call") return OP_CALL;
+	lua_strcase("tailcall") return OP_TAILCALL;
 
-	lua_strcase(name, "return") return OP_RETURN;
-	lua_strcase(name, "return0") return OP_RETURN0;
-	lua_strcase(name, "return1") return OP_RETURN1;
+	lua_strcase("return") return OP_RETURN;
+	lua_strcase("return0") return OP_RETURN0;
+	lua_strcase("return1") return OP_RETURN1;
 
-	lua_strcase(name, "forloop") return OP_FORLOOP;
-	lua_strcase(name, "forprep") return OP_FORPREP;
+	lua_strcase("forloop") return OP_FORLOOP;
+	lua_strcase("forprep") return OP_FORPREP;
 
-	lua_strcase(name, "tforprep") return OP_TFORPREP;
-	lua_strcase(name, "tforcall") return OP_TFORCALL;
-	lua_strcase(name, "tforloop") return OP_TFORLOOP;
+	lua_strcase("tforprep") return OP_TFORPREP;
+	lua_strcase("tforcall") return OP_TFORCALL;
+	lua_strcase("tforloop") return OP_TFORLOOP;
 
-	lua_strcase(name, "setlist") return OP_SETLIST;
+	lua_strcase("setlist") return OP_SETLIST;
 
-	lua_strcase(name, "closure") return OP_CLOSURE;
+	lua_strcase("closure") return OP_CLOSURE;
 
-	lua_strcase(name, "vararg") return OP_VARARG;
+	lua_strcase("vararg") return OP_VARARG;
 
-	lua_strcase(name, "varargprep") return OP_VARARGPREP;
+	lua_strcase("varargprep") return OP_VARARGPREP;
 
-	lua_strcase(name, "extraarg") return OP_EXTRAARG;
+	lua_strcase("extraarg") return OP_EXTRAARG;
 
 	return OP_EXTRAARG + 1; //invalid
 }

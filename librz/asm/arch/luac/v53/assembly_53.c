@@ -55,6 +55,7 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruction_p) {
 	const char *opcode_start; // point to the header
 	const char *opcode_end; // point to the first white space
+	int opcode_len;
 
 	const char *arg_start;
 
@@ -68,7 +69,8 @@ bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 		opcode_end = input + input_size;
 	}
 
-	opcode = get_lua53_opcode_by_name(opcode_start);
+	opcode_len = opcode_end - opcode_start;
+	opcode = get_lua53_opcode_by_name(opcode_start, opcode_len);
 
 	/* Find the arguments */
 	arg_start = rz_str_trim_head_ro(opcode_end);
