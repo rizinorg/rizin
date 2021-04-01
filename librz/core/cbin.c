@@ -704,6 +704,18 @@ static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
 	return;
 }
 
+/**
+ * \brief Write a section-specific permission string like srwx.
+ * \param dst must be at least 5 bytes large
+ */
+static void section_perms_str(char *dst, int perms) {
+	dst[0] = (perms & RZ_PERM_SHAR) ? 's' : '-';
+	dst[1] = (perms & RZ_PERM_R) ? 'r' : '-';
+	dst[2] = (perms & RZ_PERM_W) ? 'w' : '-';
+	dst[3] = (perms & RZ_PERM_WX) ? 'x' : '-';
+	dst[4] = '\0';
+}
+
 RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va) {
 	char *str = NULL;
 	RzBinSection *section;
@@ -738,7 +750,6 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va)
 	int section_index = 0;
 	io_section_info = rz_list_newf((RzListFree)free);
 	rz_list_foreach (sections, iter, section) {
-		char perms[] = "----";
 		int va_sect = va;
 		ut64 addr;
 
@@ -749,19 +760,8 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va)
 
 		rz_name_filter(section->name, strlen(section->name) + 1, false);
 
-		// XXX use rz_str_perm instead of doing it here imho
-		if (section->perm & RZ_PERM_SHAR) {
-			perms[0] = 's';
-		}
-		if (section->perm & RZ_PERM_R) {
-			perms[1] = 'r';
-		}
-		if (section->perm & RZ_PERM_W) {
-			perms[2] = 'w';
-		}
-		if (section->perm & RZ_PERM_X) {
-			perms[3] = 'x';
-		}
+		char perms[5];
+		section_perms_str(perms, section->perm);
 		const char *arch = section->arch;
 		if (!arch) {
 			arch = rz_config_get(core->config, "asm.arch");
@@ -3023,7 +3023,6 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
 	}
 	rz_list_foreach (sections, iter, section) {
-		char perms[] = "----";
 		int va_sect = va;
 		ut64 addr;
 
@@ -3048,19 +3047,10 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		if (section->is_segment != print_segments) {
 			continue;
 		}
-		// XXX use rz_str_perm instead of doing it here imho
-		if (section->perm & RZ_PERM_SHAR) {
-			perms[0] = 's';
-		}
-		if (section->perm & RZ_PERM_R) {
-			perms[1] = 'r';
-		}
-		if (section->perm & RZ_PERM_W) {
-			perms[2] = 'w';
-		}
-		if (section->perm & RZ_PERM_X) {
-			perms[3] = 'x';
-		}
+
+		char perms[5];
+		section_perms_str(perms, section->perm);
+
 		const char *arch = NULL;
 		int bits = 0;
 		if (section->arch || section->bits) {
