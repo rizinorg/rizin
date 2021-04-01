@@ -447,7 +447,7 @@ librzspp = static_library('rzspp', spp_files,
 )
 
 spp_dep = declare_dependency(
-  link_with: librzspp,
+  link_whole: librzspp,
   include_directories: spp_inc
 )
 
