@@ -32,7 +32,6 @@
 	eprintf
 
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
-static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode);
 static int bin_libs(RzCore *r, PJ *pj, int mode);
 static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name);
 static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args);
@@ -717,29 +716,26 @@ static void section_perms_str(char *dst, int perms) {
 }
 
 RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va) {
-	char *str = NULL;
-	RzBinSection *section;
-	RzList *sections;
-	RzListIter *iter;
-	sections = rz_bin_get_sections(core->bin);
-#if LOAD_BSS_MALLOC
-	bool inDebugger = rz_config_get_i(r->config, "cfg.debug");
-#endif
-	HtPP *dup_chk_ht = ht_pp_new0();
+	rz_return_val_if_fail(core && binfile, NULL);
 	bool ret = false;
-	RzList *io_section_info = NULL;
-
+	HtPP *dup_chk_ht = ht_pp_new0();
 	if (!dup_chk_ht) {
 		return false;
 	}
 
-	int fd = rz_core_file_cur_fd(core);
+	RzBinObject *o = binfile->o;
+	if (!o) {
+		return false;
+	}
+	RzList *sections = o->sections;
 
 	// make sure both flag spaces exist.
 	rz_flag_space_set(core->flags, RZ_FLAGS_FS_SEGMENTS);
 	rz_flag_space_set(core->flags, RZ_FLAGS_FS_SECTIONS);
 
 	bool segments_only = true;
+	RzListIter *iter;
+	RzBinSection *section;
 	rz_list_foreach (sections, iter, section) {
 		if (!section->is_segment) {
 			segments_only = false;
@@ -748,7 +744,7 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va)
 	}
 
 	int section_index = 0;
-	io_section_info = rz_list_newf((RzListFree)free);
+	RzList *io_section_info = rz_list_newf((RzListFree)free);
 	rz_list_foreach (sections, iter, section) {
 		int va_sect = va;
 		ut64 addr;
@@ -762,39 +758,6 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va)
 
 		char perms[5];
 		section_perms_str(perms, section->perm);
-		const char *arch = section->arch;
-		if (!arch) {
-			arch = rz_config_get(core->config, "asm.arch");
-		}
-		int bits = section->bits;
-		if (!bits) {
-			bits = RZ_SYS_BITS;
-		}
-#if LOAD_BSS_MALLOC
-		if (!strcmp(section->name, ".bss")) {
-			// check if there's already a file opened there
-			int loaded = 0;
-			RzListIter *iter;
-			RzIOMap *m;
-			rz_list_foreach (r->io->maps, iter, m) {
-				if (m->from == addr) {
-					loaded = 1;
-				}
-			}
-			if (!loaded && !inDebugger) {
-				char *ptr = rz_str_newf("malloc://%d", section->vsize);
-				if ((desc = rz_io_open_at(core->io, ptr, RZ_PERM_R, 0644, addr))) {
-					fd = desc->fd;
-				}
-				if (fd == -1) {
-					eprintf("Cannot open file '%'\n", ptr);
-				}
-				free(ptr);
-				core->num->value = fd;
-				rz_core_block_read(core);
-			}
-		}
-#endif
 		if (section->format) {
 			// This is really slow if section vsize is HUGE
 			if (section->vsize < 1024 * 1024 * 2) {
@@ -809,6 +772,7 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va)
 			type = "section";
 			rz_flag_space_set(core->flags, RZ_FLAGS_FS_SECTIONS);
 		}
+		char *str;
 		if (core->bin->prefix) {
 			str = rz_str_newf("%s.%s.%s", core->bin->prefix, type, section->name);
 		} else {
@@ -829,7 +793,7 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va)
 		if (section->add) {
 			bool found;
 			str = rz_str_newf("%" PFMT64x ".%" PFMT64x ".%" PFMT64x ".%" PFMT64x ".%" PFMT32u ".%s.%" PFMT32u ".%d",
-				section->paddr, addr, section->size, section->vsize, section->perm, section->name, core->bin->cur->id, fd);
+				section->paddr, addr, section->size, section->vsize, section->perm, section->name, binfile->id, binfile->fd);
 			ht_pp_find(dup_chk_ht, str, &found);
 			if (!found) {
 				// can't directly add maps because they
@@ -844,7 +808,7 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va)
 
 				ibs->sec = section;
 				ibs->addr = addr;
-				ibs->fd = fd;
+				ibs->fd = binfile->fd;
 				rz_list_append(io_section_info, ibs);
 				ht_pp_insert(dup_chk_ht, str, NULL);
 			}
