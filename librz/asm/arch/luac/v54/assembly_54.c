@@ -34,15 +34,15 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 	if (has_param_flag(flag, PARAM_B)) {
 		SETARG_B(instruction, args[cur_cnt++]);
 	}
-        if (has_param_flag(flag, PARAM_sB)) {
-                SETARG_sB(instruction, args[cur_cnt++]);
-        }
+	if (has_param_flag(flag, PARAM_sB)) {
+		SETARG_sB(instruction, args[cur_cnt++]);
+	}
 	if (has_param_flag(flag, PARAM_C)) {
 		SETARG_C(instruction, args[cur_cnt++]);
 	}
-        if (has_param_flag(flag, PARAM_sC)) {
-                SETARG_sC(instruction, args[cur_cnt++]);
-        }
+	if (has_param_flag(flag, PARAM_sC)) {
+		SETARG_sC(instruction, args[cur_cnt++]);
+	}
 	if (has_param_flag(flag, PARAM_Ax)) {
 		SETARG_Ax(instruction, args[cur_cnt++]);
 	}
@@ -124,12 +124,12 @@ bool lua54_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 	case OP_NEWTABLE:
 	case OP_SETLIST:
 	case OP_MMBINK:
-        case OP_SETTABUP:
+	case OP_SETTABUP:
 	case OP_SETTABLE:
-        case OP_SETI:
-        case OP_SETFIELD:
-        case OP_SELF:
-                instruction = encode_instruction(opcode, arg_start,
+	case OP_SETI:
+	case OP_SETFIELD:
+	case OP_SELF:
+		instruction = encode_instruction(opcode, arg_start,
 			PARAM_A | PARAM_B | PARAM_C | PARAM_k,
 			4);
 		break;

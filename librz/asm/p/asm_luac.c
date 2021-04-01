@@ -4,8 +4,8 @@
 #include "librz/asm/arch/luac/lua_arch.h"
 
 int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
-        LuaOpNameList oplist = NULL;
-        int r = 0;
+	LuaOpNameList oplist = NULL;
+	int r = 0;
 
 	if (!a->cpu) {
 		eprintf("Warning : no version info, specify it with `-c` option\n");
