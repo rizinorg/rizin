@@ -123,7 +123,7 @@ int lua54_anal_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case OP_JMP: /*	sJ	pc += sJ					*/
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = op->addr + 4 * (LUA_GETARG_sJ(instruction));
+		op->jump = op->addr + (st32)(4 * (LUA_GETARG_sJ(instruction)));
 		op->fail = op->addr + 4;
 		break;
 	case OP_EQ: /*	A B k	if ((R[A] == R[B]) ~= k) then pc++		*/
