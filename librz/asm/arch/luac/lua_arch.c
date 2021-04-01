@@ -28,92 +28,69 @@ bool free_lua_opnames(LuaOpNameList list) {
 }
 
 /* formatted strings for asm_buf */
-char *luaop_new_str_3arg(char *opname, int a, int b, int c, char *mark) {
-	char *comment_mark;
+char *luaop_new_str_3arg(char *opname, int a, int b, int c) {
 	char *asm_string;
 
-	comment_mark = mark ? mark : "";
-
 	asm_string = rz_str_newf(
-		"%s R[%d] R[%d] R[%d]%s",
+		"%s %d %d %d",
 		opname,
-		a, b, c, comment_mark);
+		a, b, c);
 
 	return asm_string;
 }
 
-char *luaop_new_str_2arg(char *opname, int a, int b, char *mark) {
-	char *comment_mark;
+char *luaop_new_str_2arg(char *opname, int a, int b) {
 	char *asm_string;
 
-	comment_mark = mark ? mark : "";
-
 	asm_string = rz_str_newf(
-		"%s R[%d] R[%d]%s",
+		"%s %d %d",
 		opname,
-		a, b, comment_mark);
+		a, b);
 
 	return asm_string;
 }
 
-char *luaop_new_str_1arg(char *opname, int a, char *mark) {
-	char *comment_mark;
+char *luaop_new_str_1arg(char *opname, int a) {
 	char *asm_string;
 
-	comment_mark = mark ? mark : "";
-
 	asm_string = rz_str_newf(
-		"%s R[%d]%s",
+		"%s %d",
 		opname,
-		a, comment_mark);
+		a);
 
 	return asm_string;
 }
 
-char *luaop_new_str_3arg_ex(char *opname, int a, int b, int c, char *mark, char *prefix_a, char *prefix_b, char *prefix_c) {
-	char *comment_mark;
+/* For the k flag */
+char *luaop_new_str_3arg_ex(char *opname, int a, int b, int c, int isk) {
 	char *asm_string;
 
-	comment_mark = mark ? mark : "";
-
 	asm_string = rz_str_newf(
-		"%s %s[%d] %s[%d] %s[%d]%s",
+		"%s %d %d %d %d",
 		opname,
-		prefix_a, a,
-		prefix_b, b,
-		prefix_c, c,
-		comment_mark);
+		a, b, c, isk);
 
 	return asm_string;
 }
 
-char *luaop_new_str_2arg_ex(char *opname, int a, int b, char *mark, char *prefix_a, char *prefix_b) {
-	char *comment_mark;
+char *luaop_new_str_2arg_ex(char *opname, int a, int b, int isk) {
 	char *asm_string;
 
-	comment_mark = mark ? mark : "";
-
 	asm_string = rz_str_newf(
-		"%s %s[%d] %s[%d]%s",
+		"%s %d %d %d",
 		opname,
-		prefix_a, a,
-		prefix_b, b,
-		comment_mark);
+		a, b, isk);
 
 	return asm_string;
 }
 
-char *luaop_new_str_1arg_ex(char *opname, int a, char *mark, char *prefix_a) {
-	char *comment_mark;
+char *luaop_new_str_1arg_ex(char *opname, int a, int isk) {
 	char *asm_string;
 
-	comment_mark = mark ? mark : "";
-
 	asm_string = rz_str_newf(
-		"%s %s[%d]%s",
+		"%s %d %d",
 		opname,
-		prefix_a, a,
-		comment_mark);
+		a, isk);
 
 	return asm_string;
 }
