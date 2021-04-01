@@ -263,8 +263,8 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 			}
 			break;
 		case 'I': // interfaces
-			/* TODO */
-			break;
+			// TODO
+			return NULL;
 		}
 	}
 	if (tail) {
