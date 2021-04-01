@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
@@ -49,7 +51,7 @@ RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
 		rz_core_cmdf(core, "dL%s", input + 1);
 		break;
 	case 'h': // "Lh"
-		rz_core_cmd0(core, "ph"); // rz_hash -L is more verbose
+		rz_core_cmd0(core, "ph"); // rz-hash -L is more verbose
 		break;
 	case 'a': // "La"
 		rz_core_cmd0(core, "e asm.arch=??");

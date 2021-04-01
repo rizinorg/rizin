@@ -1,6 +1,5 @@
-// (c) 2016 Jeffrey Crowell
-// BSD 3 Clause License
-// rizin
+// SPDX-FileCopyrightText: 2016 Jeffrey Crowell
+// SPDX-License-Identifier: BSD-3-Clause
 
 // Skiplists are a probabilistic datastructure than can be used as a k-v store
 // with average case O(lg n) lookup time, and worst case O(n).

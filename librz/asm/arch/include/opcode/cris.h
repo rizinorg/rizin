@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2000, 2001, 2004 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 /* cris.h -- Header file for CRIS opcode and register tables.
    Copyright (C) 2000, 2001, 2004 Free Software Foundation, Inc.
    Contributed by Axis Communications AB, Lund, Sweden.

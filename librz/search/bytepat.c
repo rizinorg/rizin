@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2006-2019 esteve <eslack.org>
+// SPDX-FileCopyrightText: 2006-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_search.h>

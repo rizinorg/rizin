@@ -52,11 +52,9 @@ git-clang-format-11 --extensions c,cpp,h,hpp,inc --style file dev
 * In general, don't use goto. The goto statement only comes in handy when a
   function exits from multiple locations and some common work such as cleanup
   has to be done. If there is no cleanup needed, then just return directly.
-
-  Choose label names which say what the goto does or why the goto exists.  An
+* Choose label names which say what the goto does or why the goto exists.  An
   example of a good name could be "out_buffer:" if the goto frees "buffer".
   Avoid using GW-BASIC names like "err1:" and "err2:".
-
 * Use `rz_return_*` functions to check preconditions that are caused by
   programmers' errors. Please note the difference between conditions that should
   never happen, and that are handled through `rz_return_*` functions, and
@@ -73,6 +71,24 @@ int check(RzCore *c, int a, int b) {
 		...
 	}
 	... /* do something else */
+}
+```
+
+* Use `rz_warn_if_reached()` macros to emit a runtime warning if the code path is reached.
+  It is often useful in a switch cases handling, in the default case:
+
+```c
+switch(something) {
+	case EXPECTED_CASE1:
+		...
+		break;
+	case EXPECTED_CASE2:
+		...
+		break;
+	case UNEXPECTED_CASE:
+		rz_warn_if_reached();
+		break;
+	...
 }
 ```
 
@@ -284,3 +300,95 @@ It will produce the following output:
 ```json
 {"id":6,"name":"bla"}
 ```
+
+## Licenses
+
+Rizin is trying to comply with the Software Package Data Exchange® (SPDX®),
+an open standard to communicate in a clear way licenses and copyrights, among
+other things, of a software. All files in the repository should either have
+an header specifying the copyright and the license that apply or an entry in
+.reuse/dep5 file. All pieces of code copied from other projects should have
+a license/copyright entry as well.
+
+In particular, the SPDX header may look like:
+```C
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-License-Identifier: LPGL-3.0-only
+```
+
+You can use the [REUSE Software](https://reuse.software/) to check the
+compliance of the project and get the licenses/copyright of each file.
+
+# Custom Pointer Modifiers
+
+In Rizin code there are some conventions to help developers use pointers more safely, which are defined in `librz/include/rz_types.h`:
+
+```c
+#define RZ_IN        /* do not use, implicit */
+#define RZ_OUT       /* parameter is written, not read */
+#define RZ_INOUT     /* parameter is read and written */
+#define RZ_OWN       /* pointer ownership is transferred */
+#define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define RZ_NONNULL   /* pointer can not be null */
+#define RZ_NULLABLE  /* pointer can be null */
+#define RZ_DEPRECATE /* should not be used in new code and should/will be removed in the future */
+```
+
+Most of them are easy to understand and you can see brief explanation in the comments. But `RZ_OWN` and `RZ_BORROW` may be a little tricky to new developers.
+
+Sometimes it may not be immediately clear whether the object you are getting from a function shall be freed or not. Rizin uses `RZ_OWN` and `RZ_BORROW` to indicate pointer ownership so you don't have to read complicated function definitions to know whether they should still free objects or not.
+
+You can use the two modifiers in two places and their explanations are as below:
+
+- before the return type of function
+  - `RZ_OWN`: the ownership of the returned object is transferred to the caller. The caller *owns* the object, so it must free it (or ensure that something else frees it).
+  - `RZ_BORROW`: the ownership of the returned object is not transferred. The caller can use the object, but it does not own it, so it should not free it.
+- before the parameter of function
+  - `RZ_OWN`: the ownership of the passed argument is transferred to the callee. The callee now owns the object and it is its duty to free it (or ensure that something else frees it). In any case, the caller should not care anymore about freeing that passed object.
+  - `RZ_BORROW`: the ownership of the passed argument is *not* transferred to the callee, which can use it but it should not free it. After calling this function, the caller still owns the passed object and it should ensure that at some point it is freed.
+
+Examples:
+
+```c
+RZ_OWN MyString *capitalize_str(RZ_BORROW char *s) {
+  MyString *m = RZ_NEWS(MyString);
+  m->s = strdup(s);
+  capitalize(m->s);
+  return m;
+}
+
+int main() {
+  char *s = strdup("Hello World");
+  MyString *m = capitalize_str(s);
+  // s was RZ_BORROW, so main still need to free it
+  free(s);
+  // ... use m ....
+  // m was RZ_OWN, so main now has to free it
+  my_string_free(m);
+}
+```
+
+```c
+RZ_BORROW MyString *capitalize_str(RZ_BORROW MyFile *f, RZ_OWN char *s) {
+  MyString *m = RZ_NEWS(MyString);
+  m->s = s;
+  capitalize(m->s);
+  f->m = m;
+  return m;
+}
+
+int main() {
+  char *s = strdup("Hello World");
+  MyFile *f = create_my_file();
+  MyString *m = capitalize_str(f, s);
+  // s was RZ_OWN, so main does not need to free it. s is now owned by `m`
+  // ... use m ....
+  // m was RZ_BORROW, so main is just borrowing it from `f`, and it does not have to free it.
+  my_file_free(f);
+  // f was created by main and never transferred to anything else, so main needs to free it.
+}
+```
+
+- You should use these modifiers consistently in both function definition and declaration.
+- You should use these modifiers when and only when it makes sense. For example, if your function returns `const char *`, the caller should not free it because of the `const`. So specifying `RZ_BORROW` in this case is probably redundant.
+- Since they are used as indications to developers with no special compiler-time restrictions, there is no good way to check if you have used them correctly.

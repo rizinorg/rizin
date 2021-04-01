@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 // included from p/debug_native.c
 // split for better reading/cleaning up
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014 esteve <youterm.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 // author: esteve <youterm.com>
 #ifndef ARM_H
 #define ARM_H

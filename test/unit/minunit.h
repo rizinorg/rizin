@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2015 Jeffrey Crowell <crowell@bu.edu>
+// SPDX-FileCopyrightText: 2018 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 // minunit.h comes from http://www.jera.com/techinfo/jtns/jtn002.html
 //
 // You may use the code in this tech note for any purpose,
@@ -132,6 +136,17 @@ void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 		if ((exp__) != (act__)) { \
 			char _meqstr[MU_BUF_SIZE]; \
 			snprintf(_meqstr, MU_BUF_SIZE, "%s: expected %" PFMT64d ", got %" PFMT64d ".", (message), (ut64)(exp__), (ut64)(act__)); \
+			mu_assert(_meqstr, false); \
+		} \
+	} while (0)
+
+#define mu_assert_eqf(actual, expected, message) \
+	do { \
+		double act__ = (double)(actual); \
+		double exp__ = (double)(expected); \
+		if ((exp__) != (act__)) { \
+			char _meqstr[MU_BUF_SIZE]; \
+			snprintf(_meqstr, MU_BUF_SIZE, "%s: expected %lf, got %lf.", (message), exp__, act__); \
 			mu_assert(_meqstr, false); \
 		} \
 	} while (0)

@@ -18,16 +18,10 @@ RZ_LIB_VERSION_HEADER(rz_flag);
 
 /* zones.c */
 
-#define RZ_FLAG_ZONE_USE_SDB 0
-
 typedef struct rz_flag_zone_item_t {
 	ut64 from;
 	ut64 to;
-#if RZ_FLAG_ZONE_USE_SDB
-	const char *name;
-#else
 	char *name;
-#endif
 } RzFlagZoneItem;
 
 /* flag.c */
@@ -58,11 +52,7 @@ typedef struct rz_flag_t {
 	RzSkipList *by_off; /* flags sorted by offset, value=RzFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RzFlagItem * */
 	PrintfCallback cb_printf;
-#if RZ_FLAG_ZONE_USE_SDB
-	Sdb *zones;
-#else
 	RzList *zones;
-#endif
 } RzFlag;
 
 /* compile time dependency */
@@ -110,13 +100,14 @@ RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name);
 RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off);
 RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...);
 RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest);
-RZ_API RzList *rz_flag_all_list(RzFlag *f, bool by_space);
+RZ_API RzList * /*<RzFlagItem*>*/ rz_flag_all_list(RzFlag *f, bool by_space);
 RZ_API const RzList * /*<RzFlagItem*>*/ rz_flag_get_list(RzFlag *f, ut64 off);
 RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off);
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item);
 RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name);
 RZ_API bool rz_flag_unset_off(RzFlag *f, ut64 addr);
 RZ_API void rz_flag_unset_all(RzFlag *f);
+RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name);
 RZ_API RzFlagItem *rz_flag_set(RzFlag *fo, const char *name, ut64 addr, ut32 size);
 RZ_API RzFlagItem *rz_flag_set_next(RzFlag *fo, const char *name, ut64 addr, ut32 size);
 RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias);

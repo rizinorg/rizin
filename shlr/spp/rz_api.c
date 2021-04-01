@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2013-2020 - pancake */
+// SPDX-FileCopyrightText: 2013-2020 pancake
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #if __UNIX__
 #include <unistd.h>

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2014 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 #include "rz_cmd.h"
 #include "rz_core.h"

@@ -12,6 +12,7 @@ rz_core_sources = [
   'cbin.c',
   'cconfig.c',
   'cdebug.c',
+  'cdwarf.c',
   'cio.c',
   'cmd.c',
   cmd_descs_c,

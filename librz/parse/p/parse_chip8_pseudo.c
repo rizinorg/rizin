@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2019 Vasilij Schneidermann <mail@vasilij.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_lib.h>

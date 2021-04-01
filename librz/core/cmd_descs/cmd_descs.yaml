@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+#
+#
 # Format of RzCmdDesc/RzCmdDescHelp descriptor
 # name: name of the YAML file, might be useful to reference another sub-file
 # commands:
@@ -200,6 +204,10 @@ commands:
   - name: e
     summary: List/get/set config evaluable vars
     subcommands: cmd_eval
+  - name: exit
+    cname: cmd_exit
+    summary: Exit Rizin
+    args: []
   - name: f
     cname: cmd_flag
     summary: Manage flags
@@ -313,8 +321,8 @@ commands:
           - text: "<cmd> @!"
             arg_str: "<blocksize>"
             comment: "Temporary change the block size"
-          - text: "<cmd> @{"
-            arg_str: "<from> <to>}"
+          - text: "<cmd> @("
+            arg_str: "<from> <to>)"
             comment: "Temporary set from and to for commands supporting ranges"
           - text: "<cmd> @a:"
             arg_str: "<arch>[:<bits>]"

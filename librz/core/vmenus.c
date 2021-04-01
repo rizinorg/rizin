@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
@@ -1706,7 +1707,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 			rz_cons_show_cursor(false);
 			break;
 		case 'y':
-			rz_core_cmdf(core, "yfx %s", chainstr);
+			rz_core_yank_hexpair(core, chainstr);
 			break;
 		case 'o': {
 			rz_line_set_prompt("offset: ");
@@ -2718,7 +2719,7 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 }
 
 static const char *help_fun_visual[] = {
-	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs ", "(X)", "refs   j/k next/prev\n",
+	"(a)", "analyze ", "(-)", "delete ", "(x)", "xrefs to", "(X)", "xrefs from  j/k next/prev\n",
 	"(r)", "rename ", "(c)", "calls ", "(d)", "definetab column (_) hud\n",
 	"(d)", "define ", "(v)", "vars ", "(?)", " help ", "(:)", "shell ", "(q)", "quit\n",
 	"(s)", "edit function signature.  \n\n",
@@ -3143,10 +3144,10 @@ RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 			}
 			break;
 		case 'x':
-			rz_core_visual_refs(core, false, true);
+			rz_core_visual_xrefs(core, false, true);
 			break;
 		case 'X':
-			rz_core_visual_refs(core, true, true);
+			rz_core_visual_xrefs(core, true, true);
 			break;
 		case 's':
 			rz_core_analysis_function_signature_editor(core, addr);
@@ -3641,7 +3642,7 @@ onemoretime:
 					off + ntotal, n + ntotal,
 					(const char *)name + 4);
 			}
-			rz_name_filter(name, n + 10);
+			rz_name_filter(name, n + 10, true);
 			rz_flag_set(core->flags, name, off + ntotal, n);
 			free(name);
 			if (is_wide) {
@@ -3690,7 +3691,7 @@ onemoretime:
 			rz_meta_set(core->analysis, RZ_META_TYPE_STRING, off,
 				n, (const char *)name + 4);
 		}
-		rz_name_filter(name, n + 10);
+		rz_name_filter(name, n + 10, true);
 		rz_flag_set(core->flags, name, off, n);
 		wordsize = n;
 		free(name);

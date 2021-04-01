@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2011-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2011-2019 Roc Valles <vallesroc@gmail.com>
+// SPDX-FileCopyrightText: 2011-2019 condret <condr3t@protonmail.com>
+// SPDX-FileCopyrightText: 2011-2019 killabyte <killabytenow@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #if 0

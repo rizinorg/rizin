@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2012-2015 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2012-2015 Fedor Sakharov <fedor.sakharov@gmail.com>
+// SPDX-FileCopyrightText: 2012-2015 Bhootravi <ravi2809@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>

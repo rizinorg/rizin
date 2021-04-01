@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 static void rz_core_visual_tab_free(RzCoreVisualTab *tab) {
 	free(tab);

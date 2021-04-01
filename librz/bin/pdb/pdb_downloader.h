@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2014-2015 inisider <inisider@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef PDB_DOWNLOADER_H
 #define PDB_DOWNLOADER_H
 

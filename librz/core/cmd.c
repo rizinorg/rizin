@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 #if 0
 * Use RzList
@@ -746,7 +748,7 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 		char *absfile = rz_file_abspath(file);
 		rz_config_set(core->config, "http.index", absfile);
 		free(absfile);
-		rz_core_cmdf(core, "=H");
+		rz_equal_H_handler_old(core, "");
 		rz_config_set(core->config, "http.index", httpIndex);
 		free(httpIndex);
 		ret = true;
@@ -1403,39 +1405,36 @@ static int __runMain(RzMainCallback cb, const char *arg) {
 static bool cmd_rzcmd(RzCore *core, const char *_input) {
 	char *input = rz_str_newf("r%s", _input);
 	int rc = 0;
-	if (rz_str_startswith(input, "rz_ax")) {
-		rc = __runMain(core->rz_main_rz_ax, input);
-	} else if (rz_str_startswith(input, "rz")) {
+	if (rz_str_startswith(input, "rizin")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rizin, input);
-	} else if (rz_str_startswith(input, "rizin")) {
+	} else if (rz_str_startswith(input, "rz-agent")) {
 		rz_sys_cmdf("%s", input);
-		// rc = __runMain (core->rz_main_rizin, input);
-	} else if (rz_str_startswith(input, "rz_asm")) {
+	} else if (rz_str_startswith(input, "rz-asm")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_asm, input);
-	} else if (rz_str_startswith(input, "rz_bin")) {
+	} else if (rz_str_startswith(input, "rz-ax")) {
+		rc = __runMain(core->rz_main_rz_ax, input);
+	} else if (rz_str_startswith(input, "rz-bin")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_bin, input);
-	} else if (rz_str_startswith(input, "rz_gg")) {
+	} else if (rz_str_startswith(input, "rz-diff")) {
+		rc = __runMain(core->rz_main_rz_diff, input);
+	} else if (rz_str_startswith(input, "rz-find")) {
+		rz_sys_cmdf("%s", input);
+	} else if (rz_str_startswith(input, "rz-gg")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_gg, input);
-	} else if (rz_str_startswith(input, "rz_pm")) {
+	} else if (rz_str_startswith(input, "rz-hash")) {
+		rz_sys_cmdf("%s", input);
+	} else if (rz_str_startswith(input, "rz-pm")) {
 		rz_sys_cmdf("%s", input);
 		// rc = __runMain (core->rz_main_rz_pm, input);
-	} else if (rz_str_startswith(input, "rz_diff")) {
-		rc = __runMain(core->rz_main_rz_diff, input);
+	} else if (rz_str_startswith(input, "rz-run")) {
+		rz_sys_cmdf("%s", input);
+	} else if (rz_str_startswith(input, "rz-sign")) {
+		rz_sys_cmdf("%s", input);
 	} else {
-		const char *rzcmds[] = {
-			"rz-ax", "rz-pm", "rz-asm", "rz-bin", "rz-hash", "rz-find", "rz-run", "rz-gg", "rizin", "rz", NULL
-		};
-		int i;
-		for (i = 0; rzcmds[i]; i++) {
-			if (rz_str_startswith(input, rzcmds[i])) {
-				free(input);
-				return true;
-			}
-		}
 		free(input);
 		return false;
 	}
@@ -1858,6 +1857,11 @@ static void cmd_autocomplete(RzCore *core, const char *input) {
 		}
 	}
 	eprintf("Invalid usage of !!!\n");
+}
+
+RZ_IPI RzCmdStatus rz_cmd_exit_handler(RzCore *core, int argc, const char **argv) {
+	core->num->value = 0LL;
+	return RZ_CMD_STATUS_EXIT;
 }
 
 RZ_IPI int rz_cmd_last(void *data, const char *input) {
@@ -4927,15 +4931,20 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_blksz_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child(node, 0);
-	TSNode from = ts_node_named_child(node, 1);
-	TSNode to = ts_node_named_child(node, 2);
-	char *from_str = ts_node_handle_arg(state, node, from, 1);
-	char *to_str = ts_node_handle_arg(state, node, to, 2);
+	TSNode fromto = ts_node_named_child(node, 1);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, fromto, 1, true);
+	if (!a || a->argc != 2 + 1) {
+		rz_cmd_parsed_args_free(a);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	char *from_str = a->argv[1];
+	char *to_str = a->argv[2];
 
 	const char *fromvars[] = { "analysis.from", "diff.from", "graph.from",
-		"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
+		"search.from", "zoom.from", NULL };
 	const char *tovars[] = { "analysis.to", "diff.to", "graph.to",
-		"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
+		"search.to", "zoom.to", NULL };
 	ut64 from_val = rz_num_math(core->num, from_str);
 	ut64 to_val = rz_num_math(core->num, to_str);
 	RZ_LOG_DEBUG("tmp_fromto_command, changing fromto to (%" PFMT64x ", %" PFMT64x ")\n", from_val, to_val);
@@ -4956,8 +4965,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_command) {
 	rz_config_hold_restore(hc);
 
 	rz_config_hold_free(hc);
-	free(from_str);
-	free(to_str);
+	rz_cmd_parsed_args_free(a);
 	return res;
 }
 
@@ -5440,8 +5448,9 @@ static RzCmdStatus iter_offsets_common(struct tsr2cmd_state *state, TSNode node,
 	TSNode args = ts_node_named_child(node, 1);
 
 	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, args, 1, true);
-	if (!a) {
+	if (!a || (has_size && (a->argc - 1) % 2 != 0)) {
 		RZ_LOG_ERROR("Cannot parse args\n");
+		rz_cmd_parsed_args_free(a);
 		return RZ_CMD_STATUS_INVALID;
 	}
 
@@ -5495,23 +5504,24 @@ err:
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_step_command) {
 	TSNode command = ts_node_named_child(node, 0);
-	TSNode from_n = ts_node_named_child(node, 1);
-	TSNode to_n = ts_node_named_child(node, 2);
-	TSNode step_n = ts_node_named_child(node, 3);
+	TSNode args = ts_node_named_child(node, 1);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, args, 1, true);
+	if (!a || a->argc != 3 + 1) {
+		rz_cmd_parsed_args_free(a);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
 	RzCore *core = state->core;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	ut64 orig_offset = core->offset;
 	int bs = core->blocksize;
 
-	char *from_str = ts_node_handle_arg(state, node, from_n, 1);
-	char *to_str = ts_node_handle_arg(state, node, to_n, 2);
-	char *step_str = ts_node_handle_arg(state, node, step_n, 3);
+	char *from_str = a->argv[1];
+	char *to_str = a->argv[2];
+	char *step_str = a->argv[3];
 	ut64 from = rz_num_math(core->num, from_str);
 	ut64 to = rz_num_math(core->num, to_str);
 	ut64 step = rz_num_math(core->num, step_str);
-	free(from_str);
-	free(to_str);
-	free(step_str);
 
 	ut64 cur;
 	for (cur = from; cur < to; cur += step) {
@@ -5527,6 +5537,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_step_command) {
 err:
 	rz_core_block_size(core, bs);
 	rz_core_seek(core, orig_offset, true);
+	rz_cmd_parsed_args_free(a);
 	return res;
 }
 
@@ -6171,9 +6182,15 @@ static RzCmdStatus core_cmd_tsr2cmd(RzCore *core, const char *cstr, bool split_l
 	ts_symbols_init(core->rcmd);
 
 	TSParser *parser = ts_parser_new();
-	ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
+	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
+	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
 
 	TSTree *tree = ts_parser_parse_string(parser, NULL, input, strlen(input));
+	if (!tree) {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_INVALID;
+	}
+
 	TSNode root = ts_tree_root_node(tree);
 
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;

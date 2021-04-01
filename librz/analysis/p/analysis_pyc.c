@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2016-2020 FXTi <zjxiang1998@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -6,8 +7,6 @@
 #include <rz_asm.h>
 
 #include "../../asm/arch/pyc/pyc_dis.h"
-
-static pyc_opcodes *ops = NULL;
 
 static int archinfo(RzAnalysis *analysis, int query) {
 	if (!strcmp(analysis->cpu, "x86")) {
@@ -44,6 +43,7 @@ static RzList *get_pyc_code_obj(RzAnalysis *analysis) {
 }
 
 static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+	pyc_opcodes *ops = (pyc_opcodes *)a->plugin_data;
 	RzList *cobjs = rz_list_get_n(get_pyc_code_obj(a), 0);
 	RzListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
@@ -65,10 +65,16 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	op->id = op_code;
 
-	if (!ops || !pyc_opcodes_equal(ops, a->cpu)) {
+	if (!pyc_opcodes_equal(ops, a->cpu)) {
+		free_opcode(ops);
+		ops = NULL;
+	}
+
+	if (!ops) {
 		if (!(ops = get_opcode_by_version(a->cpu))) {
 			return -1;
 		}
+		a->plugin_data = ops;
 	}
 	bool is_python36 = a->bits == 8;
 	pyc_opcode_object *op_obj = &ops->opcodes[op_code];
@@ -118,16 +124,13 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 	analysis_pyc_op(op, op_obj, oparg);
 
 analysis_end:
-	//free_opcode (ops);
 	return op->size;
 }
 
-static int finish(void *user) {
-	if (ops) {
-		free_opcode(ops);
-		ops = NULL;
-	}
-	return 0;
+static bool finish(void *user) {
+	pyc_opcodes *ops = (user);
+	free_opcode(ops);
+	return true;
 }
 
 RzAnalysisPlugin rz_analysis_plugin_pyc = {

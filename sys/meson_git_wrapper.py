@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#
+# SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
 
 """ Portable python script to execute git -C (even on system where -C is not available) """
 
@@ -30,7 +33,11 @@ def simple_git_execution(args):
 
 def parse():
     if len(sys.argv) <= 3:
-        print("Usage: %s <git_executable_path> <repo_path> [git_args...]")
+        print(
+            "Usage: {} <git_executable_path> <repo_path> [git_args...]".format(
+                sys.argv[0]
+            )
+        )
         sys.exit(1)
 
     git_exe = sys.argv[1]

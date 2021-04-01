@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_userconf.h>
@@ -616,7 +617,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 	switch ((pid = rz_sys_fork())) {
 	case -1:
 		return false;
-	case 0:
+	case 0: {
 		while ((dup2(sh_in[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
 		}
 		rz_sys_pipe_close(sh_in[0]);
@@ -635,7 +636,11 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 		} else {
 			close(2);
 		}
-		exit(rz_sys_execl("/bin/sh", "sh", "-c", cmd, (const char *)NULL));
+		char *bin_sh = rz_file_binsh();
+		int ret = rz_sys_execl(bin_sh, "sh", "-c", cmd, (const char *)NULL);
+		free(bin_sh);
+		exit(ret);
+	}
 	default:
 		outputptr = strdup("");
 		if (!outputptr) {
@@ -783,7 +788,9 @@ RZ_API int rz_sys_cmdbg(const char *str) {
 	if (pid) {
 		return pid;
 	}
-	ret = rz_sys_execl("/bin/sh", "sh", "-c", str, (const char *)NULL);
+	char *bin_sh = rz_file_binsh();
+	ret = rz_sys_execl(bin_sh, "sh", "-c", str, (const char *)NULL);
+	free(bin_sh);
 	eprintf("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
 	exit(0);
 	return -1;
@@ -1764,9 +1771,11 @@ RZ_API int rz_sys_system(const char *command) {
 	if (child) {
 		return waitpid(child, NULL, 0);
 	}
-	if (rz_sys_execl("/bin/sh", "sh", "-c", command, (const char *)NULL) == -1) {
+	char *bin_sh = rz_file_binsh();
+	if (rz_sys_execl(bin_sh, "sh", "-c", command, (const char *)NULL) == -1) {
 		perror("execl");
 	}
+	free(bin_sh);
 	exit(1);
 }
 #elif !HAVE_SYSTEM

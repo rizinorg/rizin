@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2009-2020 - pancake */
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
 #include <rz_socket.h>
@@ -281,7 +282,7 @@ static ut64 numget(RzCore *core, const char *k) {
 }
 
 static bool __isMapped(RzCore *core, ut64 addr, int perm) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		// RzList *maps = core->dbg->maps;
 		RzDebugMap *map = NULL;
 		RzListIter *iter = NULL;
@@ -304,7 +305,7 @@ static bool __isMapped(RzCore *core, ut64 addr, int perm) {
 }
 
 static bool __syncDebugMaps(RzCore *core) {
-	if (rz_config_get_i(core->config, "cfg.debug")) {
+	if (rz_config_get_b(core->config, "cfg.debug")) {
 		return rz_debug_map_sync(core->dbg);
 	}
 	return false;
@@ -343,21 +344,21 @@ RZ_API RzCore *rz_core_cast(void *p) {
 static ut64 getref(RzCore *core, int n, char t, int type) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 	RzListIter *iter;
-	RzAnalysisRef *r;
+	RzAnalysisXRef *r;
 	RzList *list;
 	int i = 0;
 	if (!fcn) {
 		return UT64_MAX;
 	}
 	if (t == 'r') {
-		list = rz_analysis_function_get_refs(fcn);
+		list = rz_analysis_function_get_xrefs_from(fcn);
 	} else {
-		list = rz_analysis_function_get_xrefs(fcn);
+		list = rz_analysis_function_get_xrefs_to(fcn);
 	}
 	rz_list_foreach (list, iter, r) {
 		if (r->type == type) {
 			if (i == n) {
-				ut64 addr = r->addr;
+				ut64 addr = t == 'r' ? r->to : r->from;
 				rz_list_free(list);
 				return addr;
 			}
@@ -594,7 +595,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 					break;
 				}
 				*ptr = 0;
-				if (rz_config_get_i(core->config, "cfg.debug")) {
+				if (rz_config_get_b(core->config, "cfg.debug")) {
 					if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
 						RzRegItem *r = rz_reg_get(core->dbg->reg, bptr, -1);
 						if (r) {
@@ -1878,12 +1879,10 @@ static void update_sdb(RzCore *core) {
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	//SDB// syscall/
 	if (core->rasm && core->rasm->syscall && core->rasm->syscall->db) {
-		core->rasm->syscall->db->refs++;
 		sdb_ns_set(DB, "syscall", core->rasm->syscall->db);
 	}
 	d = sdb_ns(DB, "debug", 1);
 	if (core->dbg->sgnls) {
-		core->dbg->sgnls->refs++;
 		sdb_ns_set(d, "signals", core->dbg->sgnls);
 	}
 }
@@ -2321,8 +2320,9 @@ static void __init_autocomplete_default(RzCore *core) {
 	const char *files[] = {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
-		"idp", "idpi", "L", "obf", "o+", "oc", "rz", "rz_bin", "rz_asm", "rz_hash", "rz_ax",
-		"rz_find", "cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
+		"idp", "idpi", "L", "obf", "o+", "oc",
+		"rizin", "rz-agent", "rz-asm", "rz-ax", "rz-bin", "rz-diff", "rz-find", "rz-gg", "rz-hash", "rz-pm", "rz-run", "rz-sign",
+		"cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
 		"less", "head", "Ps", "Pl", NULL
 	};
@@ -2543,7 +2543,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_lang_set_user_ptr(core->lang, core);
 	core->rasm = rz_asm_new();
 	core->rasm->num = core->num;
-	rz_asm_set_user_ptr(core->rasm, core);
+	core->rasm->core = core;
 	core->analysis = rz_analysis_new();
 	core->gadgets = rz_list_newf((RzListFree)rz_core_gadget_free);
 	core->analysis->ev = core->ev;
@@ -2554,7 +2554,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->analysis->cb.on_fcn_rename = on_fcn_rename;
 	core->print->sdb_types = core->analysis->sdb_types;
 	core->rasm->syscall = rz_syscall_ref(core->analysis->syscall); // BIND syscall analysis/asm
-	rz_analysis_set_user_ptr(core->analysis, core);
+	core->analysis->core = core;
 	core->analysis->cb_printf = (void *)rz_cons_printf;
 	core->parser = rz_parse_new();
 	rz_analysis_bind(core->analysis, &(core->parser->analb));

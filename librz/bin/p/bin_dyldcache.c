@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2018 - pancake */
+// SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -1731,7 +1732,7 @@ static RzList *symbols(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}

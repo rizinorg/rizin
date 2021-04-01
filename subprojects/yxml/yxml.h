@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2013-2014 Yoran Heling
+// SPDX-License-Identifier: MIT
+
 /* Copyright (c) 2013-2014 Yoran Heling
 
   Permission is hereby granted, free of charge, to any person obtaining

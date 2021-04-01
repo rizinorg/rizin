@@ -1,4 +1,6 @@
-/* libqnxr - GPL - Copyright 2016 - madprogrammer, FSF Inc */
+// SPDX-FileCopyrightText: 2016 madprogrammer
+// SPDX-FileCopyrightText: 2016 FSF Inc
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include <signal.h>
 #include "gdb_signals.h"

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
 ---
 name: cmd_remote
 commands:
@@ -56,7 +58,7 @@ commands:
     cname: remote_mode_disable
     summary: Disable remote cmd mode
     args: []
-  - name: "=:"
+  - name: "=r"
     cname: remote_rap
     summary: Start the rap server (o rap://9999) / Execute <cmd> on rap server
     args:
@@ -86,7 +88,7 @@ commands:
       - name: cmd
         type: RZ_CMD_ARG_TYPE_CMD
         optional: true
-  - name: "=&:"
+  - name: "=&r"
     cname: remote_rap_bg
     summary: Start rap server in background (same as '&_=h')
     args:

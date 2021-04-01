@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_types.h"
@@ -355,6 +356,21 @@ RZ_API char *rz_file_path(const char *bin) {
 	free(path_env);
 	free(path);
 	return strdup(bin);
+}
+
+RZ_API char *rz_file_binsh(void) {
+	char *bin_sh = rz_sys_getenv("SHELL");
+	if (RZ_STR_ISNOTEMPTY(bin_sh)) {
+		return bin_sh;
+	}
+	free(bin_sh);
+	bin_sh = rz_file_path("sh");
+	if (RZ_STR_ISNOTEMPTY(bin_sh)) {
+		return bin_sh;
+	}
+	free(bin_sh);
+	bin_sh = strdup("/bin/sh");
+	return bin_sh;
 }
 
 RZ_API char *rz_stdin_slurp(int *sz) {

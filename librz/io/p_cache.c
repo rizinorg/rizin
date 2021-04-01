@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2017-2018 - condret, alvaro */
+// SPDX-FileCopyrightText: 2017-2018 condret <condr3t@protonmail.com>
+// SPDX-FileCopyrightText: 2017-2018 alvaro <alvaro.felipe91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
 #include <rz_types.h>

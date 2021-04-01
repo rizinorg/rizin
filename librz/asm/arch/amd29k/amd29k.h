@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2019 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
 #ifndef ASM_AMD_29K_H
 #define ASM_AMD_29K_H
 

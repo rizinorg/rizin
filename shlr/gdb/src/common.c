@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017-2019 Srimanta Barua <srimanta.barua1@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /* Common functions for both client and server. Not part of the libgdbr interface */
 
 #include "libgdbr.h"

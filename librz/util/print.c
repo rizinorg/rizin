@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2007-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_print.h>
@@ -678,6 +679,7 @@ RZ_API void rz_print_section(RzPrint *p, ut64 at) {
 }
 
 RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
+	rz_return_if_fail(p && buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
 #define print(x) printfmt("%s", x)
 	bool c = p ? (p->flags & RZ_PRINT_FLAGS_COLOR) : false;

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2016 bobby.smiles32 <bobby.smiles32@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rsp_idec.h"

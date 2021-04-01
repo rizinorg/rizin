@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
@@ -204,6 +206,8 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vsize = section[i].size;
 			ptr->paddr = section[i].offset;
 			ptr->vaddr = section[i].rva;
+			ptr->type = section[i].type;
+			ptr->flags = section[i].flags;
 			ptr->add = !obj->phdr; // Load sections if there is no PHDR
 			ptr->perm = 0;
 			if (RZ_BIN_ELF_SCN_IS_EXECUTABLE(section[i].flags)) {
@@ -495,7 +499,7 @@ static RzList *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -538,12 +542,12 @@ static RzList *symbols(RzBinFile *bf) {
 static RzList *imports(RzBinFile *bf) {
 	RzBinElfSymbol *import = NULL;
 	RzBinImport *ptr = NULL;
-	RzList *ret = NULL;
 	int i;
 
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	struct Elf_(rz_bin_elf_obj_t) *elf = bf->o->bin_obj;
-	if (!(ret = rz_list_newf(rz_bin_import_free))) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
+	if (!ret) {
 		return NULL;
 	}
 	if (!(import = Elf_(rz_bin_elf_get_imports)(elf))) {
@@ -1037,7 +1041,6 @@ static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 				ret->lang = "rust";
 			}
 		}
-		symbols_list->free = rz_bin_symbol_free;
 		rz_list_free(symbols_list);
 	}
 }
@@ -1172,7 +1175,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static RzList *fields(RzBinFile *bf) {
-	RzList *ret = rz_list_newf((RzListFree)free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}

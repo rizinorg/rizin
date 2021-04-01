@@ -191,3 +191,32 @@ x86
 EOF
 RUN
 
+NAME=Test arch switch
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+wx 00b5884206bf01300130042000bd
+e asm.arch=arm asm.bits=16
+pd 7
+pd 2 @ 6
+pd 2 @ 6 @a:x86
+pd 2 @ 6
+EOF
+EXPECT=<<EOF
+            0x00000000      push  {lr}
+            0x00000002      cmp   r0, r1
+            0x00000004      itte  eq
+            0x00000006      addeq r0, 1
+            0x00000008      addeq r0, 1
+            0x0000000a      movne r0, 4
+            0x0000000c      pop   {pc}
+            0x00000006      addeq r0, 1
+            0x00000008      addeq r0, 1
+            0000:0006     add   word [bx + si], si
+            0000:0008     add   word [bx + si], si
+            0x00000006      addeq r0, 1
+            0x00000008      addeq r0, 1
+EOF
+RUN
+
+

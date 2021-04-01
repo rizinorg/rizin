@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
@@ -14,7 +15,7 @@ static const char *help_msg_o[] = {
 	"o-", "!*", "close all opened files",
 	"o--", "", "close all files, analysis, binfiles, flags, same as !rizin --",
 	"o.", "", "show current filename (or o.q/oq to get the fd)",
-	"o:", " [len]", "open a malloc://[len] copying the bytes from current offset",
+	"oC", " [len]", "open a malloc://[len] copying the bytes from current offset",
 	"o=", "", "list opened files (ascii-art bars)",
 	"oL", "", "list all IO plugins registered",
 	"oa", "[-] [A] [B] [filename]", "Specify arch and bits for given file",
@@ -150,7 +151,7 @@ static const char *help_msg_ood[] = {
 	"Usage:", "ood", " # Debug (re)open commands",
 	"ood", " [args]", " # reopen in debug mode (with args)",
 	"oodf", " [file]", " # reopen in debug mode using the given file",
-	"oodr", " [rz_run]", " # same as dor ..;ood",
+	"oodr", " [rz-run]", " # same as dor ..;ood",
 	NULL
 };
 
@@ -1424,7 +1425,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			}
 		}
 		break;
-	case ':': // "o:"
+	case 'C': // "oC"
 	{
 		int len = rz_num_math(core->num, input + 1);
 		if (len < 1) {

@@ -272,12 +272,12 @@ static bool objc_find_refs(RzCore *core) {
 				break;
 			}
 
-			RzList *list = rz_analysis_xrefs_get(core->analysis, selRefVA);
+			RzList *list = rz_analysis_xrefs_get_to(core->analysis, selRefVA);
 			if (list) {
 				RzListIter *iter;
-				RzAnalysisRef *ref;
-				rz_list_foreach (list, iter, ref) {
-					rz_analysis_xrefs_set(core->analysis, ref->addr, funcVA, RZ_ANALYSIS_REF_TYPE_CODE);
+				RzAnalysisXRef *xref;
+				rz_list_foreach (list, iter, xref) {
+					rz_analysis_xrefs_set(core->analysis, xref->from, funcVA, RZ_ANALYSIS_REF_TYPE_CODE);
 					total_xrefs++;
 				}
 			}

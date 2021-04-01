@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #define USE_THREADS       1
@@ -123,11 +124,11 @@ static int main_help(int line) {
 			" -qq          quit after running all -c and -i\n"
 			" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 			" -p [p.rzdb]  load project file\n"
-			" -r [rz_run]  specify rz_run profile to load (same as -e dbg.profile=X)\n"
-			" -R [rrz_testule] specify custom rz_run directive\n"
+			" -r [rz-run]  specify rz-run profile to load (same as -e dbg.profile=X)\n"
+			" -R [rrz_testule] specify custom rz-run directive\n"
 			" -s [addr]    initial seek\n"
 #if USE_THREADS && ALLOW_THREADED
-			" -t           load rz_bin info in thread\n"
+			" -t           load rz-bin info in thread\n"
 #endif
 			" -T           do not compute file hashes\n"
 			" -u           set bin.filter=false to get raw sym/sec/cls names\n"
@@ -383,7 +384,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #endif
 
 	rz_sys_env_init();
-	// Create rz_run profile with startup environ
+	// Create rz-run profile with startup environ
 	char **env = rz_sys_get_environ();
 	char *envprofile = rz_run_get_environ_profile(env);
 
@@ -589,7 +590,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'r':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
-				eprintf("Cannot open empty rz_run profile path\n");
+				eprintf("Cannot open empty rz-run profile path\n");
 				ret = 1;
 				goto beach;
 			}
@@ -730,7 +731,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	pfile = rz_acp_to_utf8(pfile);
 #endif // __WINDOWS__
 	if (customRarunProfile) {
-		char *tfn = rz_file_temp(".rz_run");
+		char *tfn = rz_file_temp(".rz-run");
 		if (!rz_file_dump(tfn, (const ut8 *)customRarunProfile, strlen(customRarunProfile), 0)) {
 			eprintf("Cannot create %s\n", tfn);
 		} else {

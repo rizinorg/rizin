@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 oddcoder <ahmedsoliman@oddcoder.com>
+// SPDX-FileCopyrightText: 2009-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2009-2020 Jody Frankowski <jody.frankowski@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
@@ -367,7 +371,25 @@ RZ_IPI void rz_types_struct_print_c(Sdb *TDB, const char *name, bool multiline) 
 	ls_free(l);
 }
 
+RZ_IPI RzList *rz_types_unions(Sdb *TDB) {
+	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_union_cb, true, TDB);
+	RzList *l = rz_list_of_sdblist(sl);
+	ls_free(sl);
+	return l;
+}
+
+RZ_IPI RzList *rz_types_structs(Sdb *TDB) {
+	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_struct_cb, true, TDB);
+	RzList *l = rz_list_of_sdblist(sl);
+	ls_free(sl);
+	return l;
+}
+
 // Typedefs
+
+static bool sdb_if_typedef_cb(void *p, const char *k, const char *v) {
+	return !strncmp(v, "typedef", strlen("typedef") + 1);
+}
 
 RZ_IPI bool rz_core_types_typedef_info(RzCore *core, const char *name) {
 	const char *istypedef;
@@ -457,6 +479,13 @@ RZ_IPI void rz_types_typedef_print_c(Sdb *TDB, const char *typedef_name) {
 	}
 	free(name);
 	ls_free(l);
+}
+
+RZ_IPI RzList *rz_types_typedefs(Sdb *TDB) {
+	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_typedef_cb, true, TDB);
+	RzList *l = rz_list_of_sdblist(sl);
+	ls_free(sl);
+	return l;
 }
 
 // Function types
@@ -584,7 +613,7 @@ static bool nonreturn_print_json(RzCore *core, RzList *noretl) {
 }
 
 RZ_IPI RzList *rz_types_function_noreturn(Sdb *db) {
-	RzList *noretl = rz_list_new();
+	RzList *noretl = rz_list_newf(free);
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(db, true);
@@ -1051,6 +1080,17 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 		break;
 	}
 	ls_free(l);
+}
+
+static bool sdb_if_c_type_cb(void *p, const char *k, const char *v) {
+	return sdb_if_union_cb(p, k, v) || sdb_if_struct_cb(p, k, v) || sdb_if_type_cb(p, k, v);
+}
+
+RZ_IPI RzList *rz_types_all(Sdb *TDB) {
+	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_c_type_cb, true, TDB);
+	RzList *l = rz_list_of_sdblist(sl);
+	ls_free(sl);
+	return l;
 }
 
 RZ_IPI void rz_types_define(RzCore *core, const char *type) {

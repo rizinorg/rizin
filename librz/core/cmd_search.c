@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2010-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <ht_uu.h>
@@ -606,7 +607,7 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 	if (!mode) {
 		mode = rz_config_get(core->config, bound_in);
 	}
-	if (!rz_config_get_i(core->config, "cfg.debug") && !core->io->va) {
+	if (!rz_config_get_b(core->config, "cfg.debug") && !core->io->va) {
 		append_bound(list, core->io, search_itv, 0, rz_io_size(core->io), 7);
 	} else if (!strcmp(mode, "file")) {
 		append_bound(list, core->io, search_itv, 0, rz_io_size(core->io), 7);
@@ -1582,7 +1583,7 @@ static bool esil_addrinfo(RzAnalysisEsil *esil) {
 
 static void do_esil_search(RzCore *core, struct search_parameters *param, const char *input) {
 	const int hit_combo_limit = rz_config_get_i(core->config, "search.esilcombo");
-	const bool cfgDebug = rz_config_get_i(core->config, "cfg.debug");
+	const bool cfgDebug = rz_config_get_b(core->config, "cfg.debug");
 	RzSearch *search = core->search;
 	RzSearchKeyword kw = RZ_EMPTY;
 	if (input[0] != 'E') {
@@ -1915,22 +1916,22 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 	const int size = 12;
 	char str[512];
 	RzAnalysisFunction *fcn;
-	RzAnalysisRef *ref;
+	RzAnalysisXRef *xref;
 	RzListIter *iter;
 	ut8 buf[12];
 	RzAsmOp asmop;
-	RzList *list = rz_analysis_xrefs_get(core->analysis, addr);
+	RzList *list = rz_analysis_xrefs_get_to(core->analysis, addr);
 	if (list) {
-		rz_list_foreach (list, iter, ref) {
-			rz_io_read_at(core->io, ref->addr, buf, size);
-			rz_asm_set_pc(core->rasm, ref->addr);
+		rz_list_foreach (list, iter, xref) {
+			rz_io_read_at(core->io, xref->from, buf, size);
+			rz_asm_set_pc(core->rasm, xref->from);
 			rz_asm_disassemble(core->rasm, &asmop, buf, size);
-			fcn = rz_analysis_get_fcn_in(core->analysis, ref->addr, 0);
-			RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, ref->addr);
-			rz_parse_filter(core->parser, ref->addr, core->flags, hint, rz_strbuf_get(&asmop.buf_asm),
+			fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
+			RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, xref->from);
+			rz_parse_filter(core->parser, xref->from, core->flags, hint, rz_strbuf_get(&asmop.buf_asm),
 				str, sizeof(str), core->print->big_endian);
 			rz_analysis_hint_free(hint);
-			const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, ref->addr);
+			const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, xref->from);
 			char *print_comment = NULL;
 			const char *nl = comment ? strchr(comment, '\n') : NULL;
 			if (nl) { // display only until the first newline
@@ -1940,12 +1941,12 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 				? rz_str_newf("%s; %s", fcn ? fcn->name : "(nofunc)", comment)
 				: rz_str_newf("%s", fcn ? fcn->name : "(nofunc)");
 			free(print_comment);
-			if (from <= ref->addr && to >= ref->addr) {
+			if (from <= xref->from && to >= xref->from) {
 				rz_cons_printf("%s 0x%" PFMT64x " [%s] %s\n",
-					buf_fcn, ref->addr, rz_analysis_xrefs_type_tostring(ref->type), str);
+					buf_fcn, xref->from, rz_analysis_xrefs_type_tostring(xref->type), str);
 				if (*param->cmd_hit) {
 					ut64 here = core->offset;
-					rz_core_seek(core, ref->addr, true);
+					rz_core_seek(core, xref->from, true);
 					rz_core_cmd(core, param->cmd_hit, 0);
 					rz_core_seek(core, here, true);
 				}

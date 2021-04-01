@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 Fangrui Song <i@maskray.me>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util/rz_itv.h>
 #include "minunit.h"
 

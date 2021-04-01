@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stddef.h>
@@ -90,7 +91,6 @@ static const char *help_msg_question[] = {
 	"?$", "", "show value all the variables ($)",
 	"?+", " [cmd]", "run cmd if $? > 0",
 	"?-", " [cmd]", "run cmd if $? < 0",
-	"?:", "", "list core cmd plugins",
 	"?=", " eip-0x804800", "hex and dec result for this math expr",
 	"?==", " x86 `e asm.arch`", "strcmp two strings",
 	"??", " [cmd]", "run cmd if $? != 0",
@@ -225,7 +225,7 @@ static void cmd_help_percent(RzCore *core) {
 
 static const char *findBreakChar(const char *s) {
 	while (*s) {
-		if (!rz_name_validate_char(*s)) {
+		if (!rz_name_validate_char(*s, true)) {
 			break;
 		}
 		s++;

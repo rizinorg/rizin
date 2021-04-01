@@ -1,4 +1,5 @@
-/* libgdbr - LGPL - Copyright 2014 - defragger */
+// SPDX-FileCopyrightText: 2014 defragger <rlaemmert@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_types.h"
 #include "rz_util.h"

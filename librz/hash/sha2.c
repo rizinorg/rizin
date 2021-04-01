@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2000-2001, Aaron D. Gifford
+// SPDX-License-Identifier: BSD-3-Clause
+
 /*
  * FILE:	sha2.c
  * AUTHOR:	Aaron D. Gifford <me@aarongifford.com>

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2008-2013 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2008-2013 xvilka <anton.kochkov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #undef TE_

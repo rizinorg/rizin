@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1998, 1999, 2000, 2007 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* opintl.h - opcodes specific header for gettext code.
    Copyright 1998, 1999, 2000, 2007 Free Software Foundation, Inc.
 

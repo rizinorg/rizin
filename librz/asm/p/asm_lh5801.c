@@ -1,5 +1,5 @@
-/* rizin, Sharp LH5801 disassembler.
- * (C) Copyright 2014-2015 jn, published under the LGPLv3 */
+// SPDX-FileCopyrightText: 2014-2015 jn
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "../../arch/lh5801/lh5801.c"
 #include <rz_asm.h>

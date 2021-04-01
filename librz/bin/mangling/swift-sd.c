@@ -1,6 +1,7 @@
-/* work-in-progress reverse engineered swift-demangler in C 
- * Copyright MIT 2015-2019
- * by pancake@nopcode.org */
+// SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: MIT
+
+/* work-in-progress reverse engineered swift-demangler in C */
 
 #include <stdio.h>
 #include <string.h>

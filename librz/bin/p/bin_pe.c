@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2009-2019 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2019 alvarofe <alvaro.felipe91@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "bin_pe.inc"
@@ -122,7 +125,7 @@ static char *signature(RzBinFile *bf, bool json) {
 }
 
 static RzList *fields(RzBinFile *bf) {
-	RzList *ret = rz_list_new();
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_field_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -474,7 +477,8 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.create = &create,
 	.get_vaddr = &get_vaddr,
 	.write = &rz_bin_write_pe,
-	.hashes = &compute_hashes
+	.hashes = &compute_hashes,
+	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };
 
 #ifndef RZ_PLUGIN_INCORE

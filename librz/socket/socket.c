@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2006-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* must be included first because of winsock2.h and windows.h */
@@ -210,7 +211,7 @@ RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout) 
 	int childPid = rz_sys_fork();
 	if (childPid == 0) {
 		char *a = rz_str_replace(strdup(cmd), "\\", "\\\\", true);
-		int res = rz_sys_cmdf("rz_run system=\"%s\" listen=%d", a, port);
+		int res = rz_sys_cmdf("rz-run system=\"%s\" listen=%d", a, port);
 		free(a);
 #if 0
 		// TODO: use the api
@@ -223,7 +224,7 @@ RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout) 
 		free (profile);
 #endif
 		if (res != 0) {
-			eprintf("rz_socket_spawn: rz_run failed\n");
+			eprintf("rz_socket_spawn: rz-run failed\n");
 			exit(1);
 		}
 		eprintf("rz_socket_spawn: %s is dead\n", cmd);

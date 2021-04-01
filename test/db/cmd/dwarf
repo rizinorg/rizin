@@ -1,3 +1,1391 @@
+NAME=id Dwarf Printing
+FILE=bins/elf/dwarf3_many_comp_units.elf
+CMDS=<<EOF
+id
+EOF
+EXPECT=<<EOF
+   1      DW_TAG_compile_unit       [has children] (0x0)
+    DW_AT_producer                 DW_FORM_strp                  
+    DW_AT_language                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_comp_dir                 DW_FORM_strp                  
+    DW_AT_ranges                   DW_FORM_data4                 
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_entry_pc                 DW_FORM_addr                  
+    DW_AT_stmt_list                DW_FORM_data4                 
+   2      DW_TAG_structure_type     [has children] (0x15)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_siblings                 DW_FORM_ref4                  
+   3      DW_TAG_subprogram         [has children] (0x26)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+   4      DW_TAG_formal_parameter   [no children] (0x3e)
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_artificial               DW_FORM_flag                  
+   5      DW_TAG_base_type          [no children] (0x47)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_string                
+   6      DW_TAG_const_type         [no children] (0x52)
+    DW_AT_type                     DW_FORM_ref4                  
+   7      DW_TAG_pointer_type       [no children] (0x59)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+   8      DW_TAG_structure_type     [has children] (0x62)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_containing_type          DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   9      DW_TAG_member             [no children] (0x75)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_data_member_location     DW_FORM_data1                 
+    DW_AT_artificial               DW_FORM_flag                  
+   10     DW_TAG_subprogram         [has children] (0x82)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   11     DW_TAG_subprogram         [has children] (0x9a)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_virtuality               DW_FORM_data1                 
+    DW_AT_containing_type          DW_FORM_ref4                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   12     DW_TAG_subprogram         [has children] (0xb6)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_virtuality               DW_FORM_data1                 
+    DW_AT_vtable_elem_location     DW_FORM_block1                
+    DW_AT_containing_type          DW_FORM_ref4                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+   13     DW_TAG_subroutine_type    [has children] (0xd4)
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   14     DW_TAG_unspecified_parameters [no children] (0xdd)
+   15     DW_TAG_pointer_type       [no children] (0xe2)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+   16     DW_TAG_subprogram         [has children] (0xed)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   17     DW_TAG_variable           [no children] (0x10c)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_location                 DW_FORM_block1                
+   18     DW_TAG_subprogram         [has children] (0x11d)
+    DW_AT_specification            DW_FORM_ref4                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_call_sites       DW_FORM_flag                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   19     DW_TAG_formal_parameter   [no children] (0x131)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_artificial               DW_FORM_flag                  
+    DW_AT_location                 DW_FORM_block1                
+   20     DW_TAG_subprogram         [has children] (0x13e)
+    DW_AT_specification            DW_FORM_ref4                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_inline                   DW_FORM_data1                 
+    DW_AT_siblings                 DW_FORM_ref4                  
+   21     DW_TAG_formal_parameter   [no children] (0x14b)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_artificial               DW_FORM_flag                  
+   22     DW_TAG_subprogram         [has children] (0x156)
+    DW_AT_abstract_origin          DW_FORM_ref4                  
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   23     DW_TAG_formal_parameter   [no children] (0x16d)
+    DW_AT_abstract_origin          DW_FORM_ref4                  
+    DW_AT_location                 DW_FORM_block1                
+   24     DW_TAG_subprogram         [has children] (0x176)
+    DW_AT_abstract_origin          DW_FORM_ref4                  
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_call_sites       DW_FORM_flag                  
+   1      DW_TAG_compile_unit       [has children] (0x18c)
+    DW_AT_producer                 DW_FORM_strp                  
+    DW_AT_language                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_comp_dir                 DW_FORM_strp                  
+    DW_AT_ranges                   DW_FORM_data4                 
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_entry_pc                 DW_FORM_addr                  
+    DW_AT_stmt_list                DW_FORM_data4                 
+   2      DW_TAG_structure_type     [has children] (0x1a1)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_containing_type          DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   3      DW_TAG_subprogram         [has children] (0x1b4)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_artificial               DW_FORM_flag                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   4      DW_TAG_formal_parameter   [no children] (0x1c8)
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_artificial               DW_FORM_flag                  
+   5      DW_TAG_formal_parameter   [no children] (0x1d1)
+    DW_AT_type                     DW_FORM_ref4                  
+   6      DW_TAG_member             [no children] (0x1d8)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_data_member_location     DW_FORM_data1                 
+    DW_AT_artificial               DW_FORM_flag                  
+   7      DW_TAG_subprogram         [has children] (0x1e5)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   8      DW_TAG_subprogram         [has children] (0x1fd)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_virtuality               DW_FORM_data1                 
+    DW_AT_containing_type          DW_FORM_ref4                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   9      DW_TAG_subprogram         [has children] (0x219)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_string                
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_virtuality               DW_FORM_data1                 
+    DW_AT_vtable_elem_location     DW_FORM_block1                
+    DW_AT_containing_type          DW_FORM_ref4                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+   10     DW_TAG_const_type         [no children] (0x237)
+    DW_AT_type                     DW_FORM_ref4                  
+   11     DW_TAG_pointer_type       [no children] (0x23e)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+   12     DW_TAG_reference_type     [no children] (0x247)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+   13     DW_TAG_subroutine_type    [has children] (0x250)
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   14     DW_TAG_unspecified_parameters [no children] (0x259)
+   15     DW_TAG_base_type          [no children] (0x25e)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_string                
+   16     DW_TAG_pointer_type       [no children] (0x269)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+   17     DW_TAG_structure_type     [has children] (0x274)
+    DW_AT_name                     DW_FORM_string                
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_containing_type          DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   18     DW_TAG_inheritance        [no children] (0x287)
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_data_member_location     DW_FORM_data1                 
+   19     DW_TAG_subprogram         [has children] (0x290)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_string                
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_artificial               DW_FORM_flag                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   20     DW_TAG_subprogram         [has children] (0x2a4)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_string                
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   21     DW_TAG_subprogram         [has children] (0x2bc)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_virtuality               DW_FORM_data1                 
+    DW_AT_vtable_elem_location     DW_FORM_block1                
+    DW_AT_containing_type          DW_FORM_ref4                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+   22     DW_TAG_structure_type     [has children] (0x2da)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   23     DW_TAG_subprogram         [has children] (0x2e5)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_declaration              DW_FORM_flag                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+   24     DW_TAG_subprogram         [has children] (0x2fb)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   25     DW_TAG_variable           [no children] (0x317)
+    DW_AT_name                     DW_FORM_string                
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_location                 DW_FORM_block1                
+   26     DW_TAG_variable           [no children] (0x328)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_location                 DW_FORM_block1                
+   27     DW_TAG_subprogram         [has children] (0x339)
+    DW_AT_specification            DW_FORM_ref4                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_call_sites       DW_FORM_flag                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   28     DW_TAG_formal_parameter   [no children] (0x34d)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_artificial               DW_FORM_flag                  
+    DW_AT_location                 DW_FORM_block1                
+   29     DW_TAG_subprogram         [has children] (0x35a)
+    DW_AT_specification            DW_FORM_ref4                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_inline                   DW_FORM_data1                 
+    DW_AT_siblings                 DW_FORM_ref4                  
+   30     DW_TAG_formal_parameter   [no children] (0x367)
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_artificial               DW_FORM_flag                  
+   31     DW_TAG_subprogram         [has children] (0x372)
+    DW_AT_abstract_origin          DW_FORM_ref4                  
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   32     DW_TAG_formal_parameter   [no children] (0x389)
+    DW_AT_abstract_origin          DW_FORM_ref4                  
+    DW_AT_location                 DW_FORM_block1                
+   33     DW_TAG_subprogram         [has children] (0x392)
+    DW_AT_abstract_origin          DW_FORM_ref4                  
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_call_sites       DW_FORM_flag                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   34     DW_TAG_subprogram         [has children] (0x3a9)
+    DW_AT_abstract_origin          DW_FORM_ref4                  
+    DW_AT_MIPS_linkage_name        DW_FORM_strp                  
+    DW_AT_object_pointer           DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_call_sites       DW_FORM_flag                  
+
+  Compilation Unit @ offset 0x0:
+   Length:        0x22a
+   Version:       3
+   Abbrev Offset: 0x0
+   Pointer Size:  8
+
+<0xb>: Abbrev Number: 1    (DW_TAG_compile_unit)
+     DW_AT_producer            : (indirect string, offset: 0x76): GNU C++14 9.3.0 -mtune=generic -march=x86-64 -gdwarf-3 -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
+     DW_AT_language            : 4   (C++)
+     DW_AT_name                : (indirect string, offset: 0x120): mammal.cpp
+     DW_AT_comp_dir            : (indirect string, offset: 0x14b): /home/hound/r2test/dwarf/cpp/dump
+     DW_AT_ranges              : 0
+     DW_AT_low_pc              : 0x0
+     DW_AT_entry_pc            : 0x0
+     DW_AT_stmt_list           : 0
+<0x31>: Abbrev Number: 2    (DW_TAG_structure_type)
+     DW_AT_name                : (indirect string, offset: 0x4a): calculator
+     DW_AT_byte_size           : 1
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 6
+     DW_AT_decl_column         : 8
+     DW_AT_siblings            : <0x5c>
+<0x3e>: Abbrev Number: 3    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x172): calculate
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 7
+     DW_AT_decl_column         : 6
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x2e): _ZN10calculator9calculateEv
+     DW_AT_type                : <0x5c>
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x54>
+<0x54>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x68>
+     DW_AT_artificial          : 1
+<0x5a>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x5b>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x5c>: Abbrev Number: 5    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 5
+     DW_AT_name                : int
+<0x63>: Abbrev Number: 6    (DW_TAG_const_type)
+     DW_AT_type                : <0x5c>
+<0x68>: Abbrev Number: 7    (DW_TAG_pointer_type)
+     DW_AT_byte_size           : 8
+     DW_AT_type                : <0x31>
+<0x6e>: Abbrev Number: 6    (DW_TAG_const_type)
+     DW_AT_type                : <0x68>
+<0x73>: Abbrev Number: 8    (DW_TAG_structure_type)
+     DW_AT_name                : (indirect string, offset: 0x136): Mammal
+     DW_AT_byte_size           : 8
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 1
+     DW_AT_decl_column         : 8
+     DW_AT_containing_type     : <0x73>
+     DW_AT_siblings            : <0xfa>
+<0x84>: Abbrev Number: 9    (DW_TAG_member)
+     DW_AT_name                : (indirect string, offset: 0x130): _vptr.Mammal
+     DW_AT_type                : <0x105>
+     DW_AT_data_member_location : 0
+     DW_AT_artificial          : 1
+<0x8f>: Abbrev Number: 10   (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x136): Mammal
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 2
+     DW_AT_decl_column         : 3
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x0): _ZN6MammalC4Ev
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0xa5>
+     DW_AT_siblings            : <0xac>
+<0xa5>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x115>
+     DW_AT_artificial          : 1
+<0xab>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0xac>: Abbrev Number: 11   (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x186): ~Mammal
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 3
+     DW_AT_decl_column         : 3
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0xf): _ZN6MammalD4Ev
+     DW_AT_virtuality          : 1
+     DW_AT_containing_type     : <0x73>
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0xc7>
+     DW_AT_siblings            : <0xd4>
+<0xc7>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x115>
+     DW_AT_artificial          : 1
+<0xcd>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x5c>
+     DW_AT_artificial          : 1
+<0xd3>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0xd4>: Abbrev Number: 12   (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x146): walk
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 4
+     DW_AT_decl_column         : 7
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x64): _ZN6Mammal4walkEv
+     DW_AT_type                : <0x5c>
+     DW_AT_virtuality          : 1
+     DW_AT_vtable_elem_location : 2 byte block: 0x10 0x02
+     DW_AT_containing_type     : <0x73>
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0xf2>
+<0xf2>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x115>
+     DW_AT_artificial          : 1
+<0xf8>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0xf9>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0xfa>: Abbrev Number: 13   (DW_TAG_subroutine_type)
+     DW_AT_type                : <0x5c>
+     DW_AT_siblings            : <0x105>
+<0x103>: Abbrev Number: 14   (DW_TAG_unspecified_parameters)
+<0x104>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x105>: Abbrev Number: 7    (DW_TAG_pointer_type)
+     DW_AT_byte_size           : 8
+     DW_AT_type                : <0x10b>
+<0x10b>: Abbrev Number: 15   (DW_TAG_pointer_type)
+     DW_AT_byte_size           : 8
+     DW_AT_name                : (indirect string, offset: 0x1e): __vtbl_ptr_type
+     DW_AT_type                : <0xfa>
+<0x115>: Abbrev Number: 7    (DW_TAG_pointer_type)
+     DW_AT_byte_size           : 8
+     DW_AT_type                : <0x73>
+<0x11b>: Abbrev Number: 6    (DW_TAG_const_type)
+     DW_AT_type                : <0x115>
+<0x120>: Abbrev Number: 16   (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x16d): pepa
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 10
+     DW_AT_decl_column         : 5
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x13d): _Z4pepav
+     DW_AT_type                : <0x5c>
+     DW_AT_low_pc              : 0x11eb
+     DW_AT_high_pc             : 0x1228
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+     DW_AT_siblings            : <0x158>
+<0x148>: Abbrev Number: 17   (DW_TAG_variable)
+     DW_AT_name                : (indirect string, offset: 0x12b): calc
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 11
+     DW_AT_decl_column         : 13
+     DW_AT_type                : <0x31>
+     DW_AT_location            : 2 byte block: 0x91 0x67
+<0x157>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x158>: Abbrev Number: 18   (DW_TAG_subprogram)
+     DW_AT_specification       : <0x3e>
+     DW_AT_object_pointer      : <0x178>
+     DW_AT_low_pc              : 0x1228
+     DW_AT_high_pc             : 0x123b
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_call_sites  : 1
+     DW_AT_siblings            : <0x186>
+<0x178>: Abbrev Number: 19   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x6e>
+     DW_AT_artificial          : 1
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x185>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x186>: Abbrev Number: 18   (DW_TAG_subprogram)
+     DW_AT_specification       : <0xd4>
+     DW_AT_object_pointer      : <0x1a6>
+     DW_AT_low_pc              : 0x11d8
+     DW_AT_high_pc             : 0x11eb
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_call_sites  : 1
+     DW_AT_siblings            : <0x1b4>
+<0x1a6>: Abbrev Number: 19   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x11b>
+     DW_AT_artificial          : 1
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x1b3>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x1b4>: Abbrev Number: 20   (DW_TAG_subprogram)
+     DW_AT_specification       : <0xac>
+     DW_AT_object_pointer      : <0x1c2>
+     DW_AT_inline              : 0
+     DW_AT_siblings            : <0x1d7>
+<0x1c2>: Abbrev Number: 21   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x11b>
+     DW_AT_artificial          : 1
+<0x1cc>: Abbrev Number: 21   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x17c): __in_chrg
+     DW_AT_type                : <0x63>
+     DW_AT_artificial          : 1
+<0x1d6>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x1d7>: Abbrev Number: 22   (DW_TAG_subprogram)
+     DW_AT_abstract_origin     : <0x1b4>
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x10c): _ZN6MammalD0Ev
+     DW_AT_object_pointer      : <0x1fb>
+     DW_AT_low_pc              : 0x11a8
+     DW_AT_high_pc             : 0x11d7
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+     DW_AT_siblings            : <0x204>
+<0x1fb>: Abbrev Number: 23   (DW_TAG_formal_parameter)
+     DW_AT_abstract_origin     : <0x1c2>
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x203>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x204>: Abbrev Number: 24   (DW_TAG_subprogram)
+     DW_AT_abstract_origin     : <0x1b4>
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x55): _ZN6MammalD2Ev
+     DW_AT_object_pointer      : <0x224>
+     DW_AT_low_pc              : 0x118a
+     DW_AT_high_pc             : 0x11a7
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_call_sites  : 1
+<0x224>: Abbrev Number: 23   (DW_TAG_formal_parameter)
+     DW_AT_abstract_origin     : <0x1c2>
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x22c>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x22d>: Abbrev Number: 0    (DW_TAG_null_entry)
+
+  Compilation Unit @ offset 0x22e:
+   Length:        0x46b
+   Version:       3
+   Abbrev Offset: 0x18c
+   Pointer Size:  8
+
+<0x239>: Abbrev Number: 1    (DW_TAG_compile_unit)
+     DW_AT_producer            : (indirect string, offset: 0x76): GNU C++14 9.3.0 -mtune=generic -march=x86-64 -gdwarf-3 -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
+     DW_AT_language            : 4   (C++)
+     DW_AT_name                : (indirect string, offset: 0x1cc): main.cpp
+     DW_AT_comp_dir            : (indirect string, offset: 0x14b): /home/hound/r2test/dwarf/cpp/dump
+     DW_AT_ranges              : 48
+     DW_AT_low_pc              : 0x0
+     DW_AT_entry_pc            : 0x0
+     DW_AT_stmt_list           : 129
+<0x25f>: Abbrev Number: 2    (DW_TAG_structure_type)
+     DW_AT_name                : (indirect string, offset: 0x240): Bird
+     DW_AT_byte_size           : 8
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 9
+     DW_AT_decl_column         : 8
+     DW_AT_containing_type     : <0x25f>
+     DW_AT_siblings            : <0x306>
+<0x270>: Abbrev Number: 3    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x240): Bird
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x1bc): _ZN4BirdC4ERKS_
+     DW_AT_artificial          : 1
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x284>
+     DW_AT_siblings            : <0x290>
+<0x284>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x30b>
+     DW_AT_artificial          : 1
+<0x28a>: Abbrev Number: 5    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x316>
+<0x28f>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x290>: Abbrev Number: 6    (DW_TAG_member)
+     DW_AT_name                : (indirect string, offset: 0x23a): _vptr.Bird
+     DW_AT_type                : <0x333>
+     DW_AT_data_member_location : 0
+     DW_AT_artificial          : 1
+<0x29b>: Abbrev Number: 7    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x240): Bird
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 10
+     DW_AT_decl_column         : 3
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x275): _ZN4BirdC4Ev
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x2b1>
+     DW_AT_siblings            : <0x2b8>
+<0x2b1>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x30b>
+     DW_AT_artificial          : 1
+<0x2b7>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x2b8>: Abbrev Number: 8    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x26f): ~Bird
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 11
+     DW_AT_decl_column         : 11
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x202): _ZN4BirdD4Ev
+     DW_AT_virtuality          : 1
+     DW_AT_containing_type     : <0x25f>
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x2d3>
+     DW_AT_siblings            : <0x2e0>
+<0x2d3>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x30b>
+     DW_AT_artificial          : 1
+<0x2d9>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x327>
+     DW_AT_artificial          : 1
+<0x2df>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x2e0>: Abbrev Number: 9    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : fly
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 12
+     DW_AT_decl_column         : 15
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x245): _ZN4Bird3flyEv
+     DW_AT_type                : <0x327>
+     DW_AT_virtuality          : 1
+     DW_AT_vtable_elem_location : 2 byte block: 0x10 0x02
+     DW_AT_containing_type     : <0x25f>
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x2fe>
+<0x2fe>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x30b>
+     DW_AT_artificial          : 1
+<0x304>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x305>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x306>: Abbrev Number: 10   (DW_TAG_const_type)
+     DW_AT_type                : <0x25f>
+<0x30b>: Abbrev Number: 11   (DW_TAG_pointer_type)
+     DW_AT_byte_size           : 8
+     DW_AT_type                : <0x25f>
+<0x311>: Abbrev Number: 10   (DW_TAG_const_type)
+     DW_AT_type                : <0x30b>
+<0x316>: Abbrev Number: 12   (DW_TAG_reference_type)
+     DW_AT_byte_size           : 8
+     DW_AT_type                : <0x306>
+<0x31c>: Abbrev Number: 13   (DW_TAG_subroutine_type)
+     DW_AT_type                : <0x327>
+     DW_AT_siblings            : <0x327>
+<0x325>: Abbrev Number: 14   (DW_TAG_unspecified_parameters)
+<0x326>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x327>: Abbrev Number: 15   (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 5
+     DW_AT_name                : int
+<0x32e>: Abbrev Number: 10   (DW_TAG_const_type)
+     DW_AT_type                : <0x327>
+<0x333>: Abbrev Number: 11   (DW_TAG_pointer_type)
+     DW_AT_byte_size           : 8
+     DW_AT_type                : <0x339>
+<0x339>: Abbrev Number: 16   (DW_TAG_pointer_type)
+     DW_AT_byte_size           : 8
+     DW_AT_name                : (indirect string, offset: 0x1e): __vtbl_ptr_type
+     DW_AT_type                : <0x31c>
+<0x343>: Abbrev Number: 17   (DW_TAG_structure_type)
+     DW_AT_name                : Dog
+     DW_AT_byte_size           : 8
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 3
+     DW_AT_decl_column         : 8
+     DW_AT_containing_type     : <0x3ea>
+     DW_AT_siblings            : <0x3e5>
+<0x354>: Abbrev Number: 18   (DW_TAG_inheritance)
+     DW_AT_type                : <0x3ea>
+     DW_AT_data_member_location : 0
+<0x35a>: Abbrev Number: 19   (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : Dog
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x260): _ZN3DogC4ERKS_
+     DW_AT_artificial          : 1
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x36e>
+     DW_AT_siblings            : <0x37a>
+<0x36e>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x40e>
+     DW_AT_artificial          : 1
+<0x374>: Abbrev Number: 5    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x419>
+<0x379>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x37a>: Abbrev Number: 20   (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : Dog
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 4
+     DW_AT_decl_column         : 3
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x1f6): _ZN3DogC4Ev
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x390>
+     DW_AT_siblings            : <0x397>
+<0x390>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x40e>
+     DW_AT_artificial          : 1
+<0x396>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x397>: Abbrev Number: 8    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x19a): ~Dog
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 5
+     DW_AT_decl_column         : 11
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x18e): _ZN3DogD4Ev
+     DW_AT_virtuality          : 1
+     DW_AT_containing_type     : <0x343>
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x3b2>
+     DW_AT_siblings            : <0x3bf>
+<0x3b2>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x40e>
+     DW_AT_artificial          : 1
+<0x3b8>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x327>
+     DW_AT_artificial          : 1
+<0x3be>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x3bf>: Abbrev Number: 21   (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x146): walk
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 6
+     DW_AT_decl_column         : 15
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x20f): _ZN3Dog4walkEv
+     DW_AT_type                : <0x327>
+     DW_AT_virtuality          : 1
+     DW_AT_vtable_elem_location : 2 byte block: 0x10 0x02
+     DW_AT_containing_type     : <0x343>
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x3dd>
+<0x3dd>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x40e>
+     DW_AT_artificial          : 1
+<0x3e3>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x3e4>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x3e5>: Abbrev Number: 10   (DW_TAG_const_type)
+     DW_AT_type                : <0x343>
+<0x3ea>: Abbrev Number: 22   (DW_TAG_structure_type)
+     DW_AT_name                : (indirect string, offset: 0x136): Mammal
+     DW_AT_declaration         : 1
+     DW_AT_siblings            : <0x40e>
+<0x3f4>: Abbrev Number: 23   (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x136): Mammal
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 2
+     DW_AT_decl_column         : 3
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x0): _ZN6MammalC4Ev
+     DW_AT_declaration         : 1
+     DW_AT_object_pointer      : <0x406>
+<0x406>: Abbrev Number: 4    (DW_TAG_formal_parameter)
+     DW_AT_type                : <0x46d>
+     DW_AT_artificial          : 1
+<0x40c>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x40d>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x40e>: Abbrev Number: 11   (DW_TAG_pointer_type)
+     DW_AT_byte_size           : 8
+     DW_AT_type                : <0x343>
+<0x414>: Abbrev Number: 10   (DW_TAG_const_type)
+     DW_AT_type                : <0x40e>
+<0x419>: Abbrev Number: 12   (DW_TAG_reference_type)
+     DW_AT_byte_size           : 8
+     DW_AT_type                : <0x3e5>
+<0x41f>: Abbrev Number: 24   (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x19f): main
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 15
+     DW_AT_decl_column         : 5
+     DW_AT_type                : <0x327>
+     DW_AT_low_pc              : 0x123b
+     DW_AT_high_pc             : 0x12c6
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+     DW_AT_siblings            : <0x46d>
+<0x443>: Abbrev Number: 25   (DW_TAG_variable)
+     DW_AT_name                : b
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 16
+     DW_AT_decl_column         : 9
+     DW_AT_type                : <0x30b>
+     DW_AT_location            : 2 byte block: 0x91 0x50
+<0x450>: Abbrev Number: 25   (DW_TAG_variable)
+     DW_AT_name                : m
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 17
+     DW_AT_decl_column         : 11
+     DW_AT_type                : <0x46d>
+     DW_AT_location            : 2 byte block: 0x91 0x58
+<0x45d>: Abbrev Number: 26   (DW_TAG_variable)
+     DW_AT_name                : (indirect string, offset: 0x1e2): output
+     DW_AT_decl_file           : 2
+     DW_AT_decl_line           : 20
+     DW_AT_decl_column         : 7
+     DW_AT_type                : <0x327>
+     DW_AT_location            : 2 byte block: 0x91 0x4c
+<0x46c>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x46d>: Abbrev Number: 11   (DW_TAG_pointer_type)
+     DW_AT_byte_size           : 8
+     DW_AT_type                : <0x3ea>
+<0x473>: Abbrev Number: 10   (DW_TAG_const_type)
+     DW_AT_type                : <0x46d>
+<0x478>: Abbrev Number: 27   (DW_TAG_subprogram)
+     DW_AT_specification       : <0x2e0>
+     DW_AT_object_pointer      : <0x498>
+     DW_AT_low_pc              : 0x13f0
+     DW_AT_high_pc             : 0x1403
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_call_sites  : 1
+     DW_AT_siblings            : <0x4a6>
+<0x498>: Abbrev Number: 28   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x311>
+     DW_AT_artificial          : 1
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x4a5>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x4a6>: Abbrev Number: 29   (DW_TAG_subprogram)
+     DW_AT_specification       : <0x2b8>
+     DW_AT_object_pointer      : <0x4b4>
+     DW_AT_inline              : 2
+     DW_AT_siblings            : <0x4c9>
+<0x4b4>: Abbrev Number: 30   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x311>
+     DW_AT_artificial          : 1
+<0x4be>: Abbrev Number: 30   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x17c): __in_chrg
+     DW_AT_type                : <0x32e>
+     DW_AT_artificial          : 1
+<0x4c8>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x4c9>: Abbrev Number: 31   (DW_TAG_subprogram)
+     DW_AT_abstract_origin     : <0x4a6>
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x21e): _ZN4BirdD0Ev
+     DW_AT_object_pointer      : <0x4ed>
+     DW_AT_low_pc              : 0x13c0
+     DW_AT_high_pc             : 0x13ef
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+     DW_AT_siblings            : <0x4f6>
+<0x4ed>: Abbrev Number: 32   (DW_TAG_formal_parameter)
+     DW_AT_abstract_origin     : <0x4b4>
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x4f5>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x4f6>: Abbrev Number: 33   (DW_TAG_subprogram)
+     DW_AT_abstract_origin     : <0x4a6>
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x1d5): _ZN4BirdD2Ev
+     DW_AT_object_pointer      : <0x51a>
+     DW_AT_low_pc              : 0x13a2
+     DW_AT_high_pc             : 0x13bf
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_call_sites  : 1
+     DW_AT_siblings            : <0x523>
+<0x51a>: Abbrev Number: 32   (DW_TAG_formal_parameter)
+     DW_AT_abstract_origin     : <0x4b4>
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x522>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x523>: Abbrev Number: 29   (DW_TAG_subprogram)
+     DW_AT_specification       : <0x29b>
+     DW_AT_object_pointer      : <0x531>
+     DW_AT_inline              : 2
+     DW_AT_siblings            : <0x53c>
+<0x531>: Abbrev Number: 30   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x311>
+     DW_AT_artificial          : 1
+<0x53b>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x53c>: Abbrev Number: 33   (DW_TAG_subprogram)
+     DW_AT_abstract_origin     : <0x523>
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x1e9): _ZN4BirdC2Ev
+     DW_AT_object_pointer      : <0x560>
+     DW_AT_low_pc              : 0x1384
+     DW_AT_high_pc             : 0x13a1
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_call_sites  : 1
+     DW_AT_siblings            : <0x569>
+<0x560>: Abbrev Number: 32   (DW_TAG_formal_parameter)
+     DW_AT_abstract_origin     : <0x531>
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x568>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x569>: Abbrev Number: 27   (DW_TAG_subprogram)
+     DW_AT_specification       : <0x3bf>
+     DW_AT_object_pointer      : <0x589>
+     DW_AT_low_pc              : 0x1370
+     DW_AT_high_pc             : 0x1383
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_call_sites  : 1
+     DW_AT_siblings            : <0x597>
+<0x589>: Abbrev Number: 28   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x414>
+     DW_AT_artificial          : 1
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x596>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x597>: Abbrev Number: 29   (DW_TAG_subprogram)
+     DW_AT_specification       : <0x397>
+     DW_AT_object_pointer      : <0x5a5>
+     DW_AT_inline              : 2
+     DW_AT_siblings            : <0x5ba>
+<0x5a5>: Abbrev Number: 30   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x414>
+     DW_AT_artificial          : 1
+<0x5af>: Abbrev Number: 30   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x17c): __in_chrg
+     DW_AT_type                : <0x32e>
+     DW_AT_artificial          : 1
+<0x5b9>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x5ba>: Abbrev Number: 31   (DW_TAG_subprogram)
+     DW_AT_abstract_origin     : <0x597>
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x1a4): _ZN3DogD0Ev
+     DW_AT_object_pointer      : <0x5de>
+     DW_AT_low_pc              : 0x1340
+     DW_AT_high_pc             : 0x136f
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+     DW_AT_siblings            : <0x5e7>
+<0x5de>: Abbrev Number: 32   (DW_TAG_formal_parameter)
+     DW_AT_abstract_origin     : <0x5a5>
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x5e6>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x5e7>: Abbrev Number: 31   (DW_TAG_subprogram)
+     DW_AT_abstract_origin     : <0x597>
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x254): _ZN3DogD2Ev
+     DW_AT_object_pointer      : <0x60b>
+     DW_AT_low_pc              : 0x1312
+     DW_AT_high_pc             : 0x133f
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+     DW_AT_siblings            : <0x614>
+<0x60b>: Abbrev Number: 32   (DW_TAG_formal_parameter)
+     DW_AT_abstract_origin     : <0x5a5>
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x613>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x614>: Abbrev Number: 29   (DW_TAG_subprogram)
+     DW_AT_specification       : <0x37a>
+     DW_AT_object_pointer      : <0x622>
+     DW_AT_inline              : 2
+     DW_AT_siblings            : <0x62d>
+<0x622>: Abbrev Number: 30   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x414>
+     DW_AT_artificial          : 1
+<0x62c>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x62d>: Abbrev Number: 31   (DW_TAG_subprogram)
+     DW_AT_abstract_origin     : <0x614>
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x1b0): _ZN3DogC2Ev
+     DW_AT_object_pointer      : <0x651>
+     DW_AT_low_pc              : 0x12e4
+     DW_AT_high_pc             : 0x1311
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+     DW_AT_siblings            : <0x65a>
+<0x651>: Abbrev Number: 32   (DW_TAG_formal_parameter)
+     DW_AT_abstract_origin     : <0x622>
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x659>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x65a>: Abbrev Number: 29   (DW_TAG_subprogram)
+     DW_AT_specification       : <0x3f4>
+     DW_AT_object_pointer      : <0x668>
+     DW_AT_inline              : 2
+     DW_AT_siblings            : <0x673>
+<0x668>: Abbrev Number: 30   (DW_TAG_formal_parameter)
+     DW_AT_name                : (indirect string, offset: 0x11b): this
+     DW_AT_type                : <0x473>
+     DW_AT_artificial          : 1
+<0x672>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x673>: Abbrev Number: 34   (DW_TAG_subprogram)
+     DW_AT_abstract_origin     : <0x65a>
+     DW_AT_MIPS_linkage_name   : (indirect string, offset: 0x22b): _ZN6MammalC2Ev
+     DW_AT_object_pointer      : <0x693>
+     DW_AT_low_pc              : 0x12c6
+     DW_AT_high_pc             : 0x12e3
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_call_sites  : 1
+<0x693>: Abbrev Number: 32   (DW_TAG_formal_parameter)
+     DW_AT_abstract_origin     : <0x668>
+     DW_AT_location            : 2 byte block: 0x91 0x68
+<0x69b>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x69c>: Abbrev Number: 0    (DW_TAG_null_entry)
+
+Contents of the .debug_aranges section:
+  Address Range Set
+   Unit Length:           0x3c
+   64bit:                 false
+   Version:               2
+   Offset in .debug_info: 0x0
+   Address Size:          8
+   Segment Size:          0
+   Ranges:
+    address            length
+    0x000000000000118a 0x000000000000009e
+    0x0000000000001228 0x0000000000000013
+    0x0000000000000000 0x0000000000000000
+  Address Range Set
+   Unit Length:           0xbc
+   64bit:                 false
+   Version:               2
+   Offset in .debug_info: 0x22e
+   Address Size:          8
+   Segment Size:          0
+   Ranges:
+    address            length
+    0x000000000000123b 0x000000000000008b
+    0x00000000000012c6 0x000000000000001d
+    0x00000000000012e4 0x000000000000002d
+    0x0000000000001312 0x000000000000002d
+    0x0000000000001340 0x000000000000002f
+    0x0000000000001370 0x0000000000000013
+    0x0000000000001384 0x000000000000001d
+    0x00000000000013a2 0x000000000000001d
+    0x00000000000013c0 0x000000000000002f
+    0x00000000000013f0 0x0000000000000013
+    0x0000000000000000 0x0000000000000000
+
+Raw dump of debug contents of section .debug_line:
+
+ Header information:
+  Length:                             125
+  DWARF Version:                      3
+  Header Length:                      45
+  Minimum Instruction Length:         1
+  Maximum Operations per Instruction: 0
+  Initial value of 'is_stmt':         1
+  Line Base:                          -5
+  Line Range:                         14
+  Opcode Base:                        13
+
+ Opcodes:
+  Opcode 1 has 0 arg
+  Opcode 2 has 1 arg
+  Opcode 3 has 1 arg
+  Opcode 4 has 1 arg
+  Opcode 5 has 1 arg
+  Opcode 6 has 0 arg
+  Opcode 7 has 0 arg
+  Opcode 8 has 0 arg
+  Opcode 9 has 1 arg
+  Opcode 10 has 0 arg
+  Opcode 11 has 0 arg
+  Opcode 12 has 1 arg
+
+
+ The File Name Table:
+  Entry Dir     Time      Size       Name
+  1     0       0         0          mammal.cpp
+  2     0       0         0          mammal.h
+
+ Line Number Statements:
+  Set column to 3
+  Extended opcode 2: set Address to 0x118a
+  Special opcode 7: advance Address by 0 to 0x118a and Line by 2 to 3
+  Set column to 19
+  Special opcode 173: advance Address by 12 to 0x1196 and Line by 0 to 3
+  Set column to 22
+  Special opcode 201: advance Address by 14 to 0x11a4 and Line by 0 to 3
+  Set column to 3
+  Special opcode 61: advance Address by 4 to 0x11a8 and Line by 0 to 3
+  Set column to 22
+  Special opcode 229: advance Address by 16 to 0x11b8 and Line by 0 to 3
+  Advance PC by constant 17 to 0x11c9
+  Special opcode 216: advance Address by 15 to 0x11d8 and Line by 1 to 4
+  Set column to 31
+  Special opcode 173: advance Address by 12 to 0x11e4 and Line by 0 to 4
+  Set column to 34
+  Special opcode 75: advance Address by 5 to 0x11e9 and Line by 0 to 4
+  Set column to 12
+  Special opcode 39: advance Address by 2 to 0x11eb and Line by 6 to 10
+  Special opcode 173: advance Address by 12 to 0x11f7 and Line by 0 to 10
+  Set column to 23
+  Special opcode 217: advance Address by 15 to 0x1206 and Line by 2 to 12
+  Set column to 1
+  Special opcode 174: advance Address by 12 to 0x1212 and Line by 1 to 13
+  Advance PC by 22 to 0x1228
+  Extended opcode 1: End of Sequence
+
+  Set column to 6
+  Extended opcode 2: set Address to 0x1228
+  Special opcode 11: advance Address by 0 to 0x1228 and Line by 6 to 7
+  Set column to 26
+  Special opcode 173: advance Address by 12 to 0x1234 and Line by 0 to 7
+  Set column to 28
+  Special opcode 75: advance Address by 5 to 0x1239 and Line by 0 to 7
+  Advance PC by 2 to 0x123b
+  Extended opcode 1: End of Sequence
+
+ Header information:
+  Length:                             361
+  DWARF Version:                      3
+  Header Length:                      43
+  Minimum Instruction Length:         1
+  Maximum Operations per Instruction: 0
+  Initial value of 'is_stmt':         1
+  Line Base:                          -5
+  Line Range:                         14
+  Opcode Base:                        13
+
+ Opcodes:
+  Opcode 1 has 0 arg
+  Opcode 2 has 1 arg
+  Opcode 3 has 1 arg
+  Opcode 4 has 1 arg
+  Opcode 5 has 1 arg
+  Opcode 6 has 0 arg
+  Opcode 7 has 0 arg
+  Opcode 8 has 0 arg
+  Opcode 9 has 1 arg
+  Opcode 10 has 0 arg
+  Opcode 11 has 0 arg
+  Opcode 12 has 1 arg
+
+
+ The File Name Table:
+  Entry Dir     Time      Size       Name
+  1     0       0         0          mammal.h
+  2     0       0         0          main.cpp
+
+ Line Number Statements:
+  Set column to 3
+  Extended opcode 2: set Address to 0x12c6
+  Special opcode 6: advance Address by 0 to 0x12c6 and Line by 1 to 2
+  Set column to 12
+  Special opcode 173: advance Address by 12 to 0x12d2 and Line by 0 to 2
+  Set column to 15
+  Special opcode 201: advance Address by 14 to 0x12e0 and Line by 0 to 2
+  Advance PC by 3 to 0x12e3
+  Extended opcode 1: End of Sequence
+
+  Set file to 2
+  Set column to 3
+  Extended opcode 2: set Address to 0x12e4
+  Special opcode 8: advance Address by 0 to 0x12e4 and Line by 3 to 4
+  Set column to 9
+  Special opcode 229: advance Address by 16 to 0x12f4 and Line by 0 to 4
+  Set column to 12
+  Advance PC by constant 17 to 0x1305
+  Special opcode 131: advance Address by 9 to 0x130e and Line by 0 to 4
+  Advance PC by 3 to 0x1311
+  Extended opcode 1: End of Sequence
+
+  Set file to 2
+  Set column to 11
+  Extended opcode 2: set Address to 0x1312
+  Special opcode 9: advance Address by 0 to 0x1312 and Line by 4 to 5
+  Set column to 18
+  Special opcode 229: advance Address by 16 to 0x1322 and Line by 0 to 5
+  Set column to 19
+  Advance PC by constant 17 to 0x1333
+  Special opcode 131: advance Address by 9 to 0x133c and Line by 0 to 5
+  Advance PC by 3 to 0x133f
+  Extended opcode 1: End of Sequence
+
+  Set file to 2
+  Set column to 11
+  Extended opcode 2: set Address to 0x1340
+  Special opcode 9: advance Address by 0 to 0x1340 and Line by 4 to 5
+  Set column to 19
+  Special opcode 229: advance Address by 16 to 0x1350 and Line by 0 to 5
+  Advance PC by 31 to 0x136f
+  Extended opcode 1: End of Sequence
+
+  Set file to 2
+  Set column to 15
+  Extended opcode 2: set Address to 0x1370
+  Special opcode 10: advance Address by 0 to 0x1370 and Line by 5 to 6
+  Set column to 31
+  Special opcode 173: advance Address by 12 to 0x137c and Line by 0 to 6
+  Set column to 34
+  Special opcode 75: advance Address by 5 to 0x1381 and Line by 0 to 6
+  Advance PC by 2 to 0x1383
+  Extended opcode 1: End of Sequence
+
+  Set file to 2
+  Set column to 3
+  Extended opcode 2: set Address to 0x1384
+  Advance line by 9, to 10
+  Copy
+  Set column to 10
+  Special opcode 173: advance Address by 12 to 0x1390 and Line by 0 to 10
+  Set column to 13
+  Special opcode 201: advance Address by 14 to 0x139e and Line by 0 to 10
+  Advance PC by 3 to 0x13a1
+  Extended opcode 1: End of Sequence
+
+  Set file to 2
+  Set column to 11
+  Extended opcode 2: set Address to 0x13a2
+  Advance line by 10, to 11
+  Copy
+  Set column to 19
+  Special opcode 173: advance Address by 12 to 0x13ae and Line by 0 to 11
+  Set column to 20
+  Special opcode 201: advance Address by 14 to 0x13bc and Line by 0 to 11
+  Advance PC by 3 to 0x13bf
+  Extended opcode 1: End of Sequence
+
+  Set file to 2
+  Set column to 11
+  Extended opcode 2: set Address to 0x13c0
+  Advance line by 10, to 11
+  Copy
+  Set column to 20
+  Special opcode 229: advance Address by 16 to 0x13d0 and Line by 0 to 11
+  Advance PC by 31 to 0x13ef
+  Extended opcode 1: End of Sequence
+
+  Set file to 2
+  Set column to 15
+  Extended opcode 2: set Address to 0x13f0
+  Advance line by 11, to 12
+  Copy
+  Set column to 30
+  Special opcode 173: advance Address by 12 to 0x13fc and Line by 0 to 12
+  Set column to 33
+  Special opcode 75: advance Address by 5 to 0x1401 and Line by 0 to 12
+  Advance PC by 2 to 0x1403
+  Extended opcode 1: End of Sequence
+
+  Set file to 2
+  Set column to 12
+  Extended opcode 2: set Address to 0x123b
+  Advance line by 14, to 15
+  Copy
+  Set column to 16
+  Special opcode 190: advance Address by 13 to 0x1248 and Line by 3 to 18
+  Set column to 5
+  Advance PC by constant 17 to 0x1259
+  Special opcode 61: advance Address by 4 to 0x125d and Line by 0 to 18
+  Set column to 15
+  Special opcode 62: advance Address by 4 to 0x1261 and Line by 1 to 19
+  Set column to 5
+  Advance PC by constant 17 to 0x1272
+  Special opcode 61: advance Address by 4 to 0x1276 and Line by 0 to 19
+  Set column to 7
+  Special opcode 62: advance Address by 4 to 0x127a and Line by 1 to 20
+  Set column to 20
+  Special opcode 104: advance Address by 7 to 0x1281 and Line by 1 to 21
+  Set column to 19
+  Special opcode 201: advance Address by 14 to 0x128f and Line by 0 to 21
+  Set column to 10
+  Special opcode 131: advance Address by 9 to 0x1298 and Line by 0 to 21
+  Set column to 21
+  Special opcode 48: advance Address by 3 to 0x129b and Line by 1 to 22
+  Set column to 20
+  Special opcode 201: advance Address by 14 to 0x12a9 and Line by 0 to 22
+  Set column to 10
+  Special opcode 131: advance Address by 9 to 0x12b2 and Line by 0 to 22
+  Set column to 23
+  Special opcode 48: advance Address by 3 to 0x12b5 and Line by 1 to 23
+  Set column to 24
+  Special opcode 75: advance Address by 5 to 0x12ba and Line by 0 to 23
+  Set column to 1
+  Special opcode 76: advance Address by 5 to 0x12bf and Line by 1 to 24
+  Advance PC by 7 to 0x12c6
+  Extended opcode 1: End of Sequence
+
+0x0000118a	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x00001196	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x000011a4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x000011a8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x000011b8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	3
+0x000011d8	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4
+0x000011e4	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4
+0x000011e9	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	4
+0x000011eb	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10
+0x000011f7	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	10
+0x00001206	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	12
+0x00001212	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	13
+0x00001228	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
+0x00001234	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
+0x00001239	/home/hound/r2test/dwarf/cpp/dump/mammal.cpp	7
+0x0000123b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	15
+0x00001248	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18
+0x0000125d	/home/hound/r2test/dwarf/cpp/dump/main.cpp	18
+0x00001261	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19
+0x00001276	/home/hound/r2test/dwarf/cpp/dump/main.cpp	19
+0x0000127a	/home/hound/r2test/dwarf/cpp/dump/main.cpp	20
+0x00001281	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21
+0x0000128f	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21
+0x00001298	/home/hound/r2test/dwarf/cpp/dump/main.cpp	21
+0x0000129b	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22
+0x000012a9	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22
+0x000012b2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	22
+0x000012b5	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23
+0x000012ba	/home/hound/r2test/dwarf/cpp/dump/main.cpp	23
+0x000012bf	/home/hound/r2test/dwarf/cpp/dump/main.cpp	24
+0x000012c6	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
+0x000012d2	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
+0x000012e0	/home/hound/r2test/dwarf/cpp/dump/mammal.h	2
+0x000012e3	-	-
+0x000012e4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
+0x000012f4	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
+0x0000130e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	4
+0x00001311	-	-
+0x00001312	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x00001322	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x0000133c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x0000133f	-	-
+0x00001340	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x00001350	/home/hound/r2test/dwarf/cpp/dump/main.cpp	5
+0x0000136f	-	-
+0x00001370	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
+0x0000137c	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
+0x00001381	/home/hound/r2test/dwarf/cpp/dump/main.cpp	6
+0x00001383	-	-
+0x00001384	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
+0x00001390	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
+0x0000139e	/home/hound/r2test/dwarf/cpp/dump/main.cpp	10
+0x000013a1	-	-
+0x000013a2	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013ae	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013bc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013bf	-	-
+0x000013c0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013d0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	11
+0x000013ef	-	-
+0x000013f0	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x000013fc	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x00001401	/home/hound/r2test/dwarf/cpp/dump/main.cpp	12
+0x00001403	-	-
+EOF
+RUN
+
 NAME="pdf dwarf invalid main for analysis not found (aa)"
 FILE=bins/src/dwarftest
 CMDS=<<EOF
@@ -17,12 +1405,9 @@ RUN
 
 NAME="Mach-O dSYM lines (armv7)"
 FILE=bins/mach0/TestRTTI-armv7-dSYM
-CMDS=<<EOF
-CL 0x0000a24e
-EOF
+CMDS=ix.@0x0000a24e
 EXPECT=<<EOF
-file: /Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp
-line: 18
+0x0000a24e	/Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp	18
 EOF
 RUN
 

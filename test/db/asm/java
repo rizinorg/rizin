@@ -1,76 +1,240 @@
+ad "aaload" 32
+ad "aastore" 53
+ad "aconst_null" 01
+ad "aload 10" 190a
+ad "aload_0" 2a
+ad "aload_1" 2b
+ad "aload_2" 2c
+ad "aload_3" 2d
+ad "anewarray constant_pool.511" bd01ff
+a "anewarray 511" bd01ff
+ad "areturn" b0
+ad "arraylength" be
+ad "astore 10" 3a0a
+ad "astore_0" 4b
+ad "astore_1" 4c
+ad "astore_2" 4d
+ad "astore_3" 4e
+ad "athrow" bf
+ad "baload" 33
+ad "bastore" 54
+ad "bipush 100" 1064
+ad "bipush 100" 1064 0x00000006
+ad "bipush 32" 1020
 ad "bipush 33" 1021
+ad "breakpoint" ca
+ad "caload" 34
+ad "castore" 55
+ad "checkcast constant_pool.511" c001ff
+a "checkcast 511" c001ff
+ad "d2f" 90
+ad "d2i" 8e
+ad "d2l" 8f
+ad "dadd" 63
+ad "daload" 31
+ad "dastore" 52
+ad "dcmpg" 98
+ad "dcmpl" 97
+ad "dconst_0" 0e
+ad "dconst_1" 0f
+ad "ddiv" 6f
+ad "dload 10" 180a
+ad "dload_0" 26
+ad "dload_1" 27
+ad "dload_2" 28
+ad "dload_3" 29
+ad "dmul" 6b
+ad "dneg" 77
+ad "drem" 73
+ad "dreturn" af
+ad "dstore 10" 390a
+ad "dstore_0" 47
+ad "dstore_1" 48
+ad "dstore_2" 49
+ad "dstore_3" 4a
+ad "dsub" 67
+ad "dup" 59
+ad "dup2" 5c
+ad "dup2_x1" 5d
+ad "dup2_x2" 5e
+ad "dup_x1" 5a
+ad "dup_x2" 5b
+ad "f2d" 8d
+ad "f2i" 8b
+ad "f2l" 8c
+ad "fadd" 62
+ad "faload" 30
+ad "fastore" 51
+ad "fcmpg" 96
+ad "fcmpl" 95
+ad "fconst_0" 0b
+ad "fconst_1" 0c
+ad "fconst_2" 0d
+ad "fdiv" 6e
+ad "fload 10" 170a
+ad "fload_0" 22
+ad "fload_1" 23
+ad "fload_2" 24
+ad "fload_3" 25
+ad "fmul" 6a
+ad "fneg" 76
+ad "frem" 72
+ad "freturn" ae
+ad "fstore 10" 380a
+ad "fstore_0" 43
+ad "fstore_1" 44
+ad "fstore_2" 45
+ad "fstore_3" 46
+ad "fsub" 66
+ad "getfield constant_pool.511" b401ff
+a "getfield 511" b401ff
+ad "getstatic constant_pool.511" b201ff
+a "getstatic 511" b201ff
+ad "goto 0x10"  a70007 0x00000009
+ad "goto 0x10" a70007 0x00000009
+ad "goto 0x19" a70010 0x00000009
+ad "goto 0x1ff" a701ff
+ad "goto 0x3b" a70037 0x00000004
+ad "goto_w 0xa64" c800000a64
+ad "i2b" 91
+ad "i2c" 92
+ad "i2d" 87
+ad "i2f" 86
+ad "i2l" 85
+ad "i2s" 93
+ad "iadd" 60
+ad "iaload" 2e
+ad "iand" 7e
+ad "iastore" 4f
+ad "iconst_0" 03
+ad "iconst_1" 04
+ad "iconst_2" 05
+ad "iconst_3" 06
+ad "iconst_4" 07
+ad "iconst_5" 08
+ad "iconst_m1" 02
+ad "idiv" 6c
+ad "if_acmpeq 0xc" a50008 0x00000004
+ad "if_acmpne 0xc" a60008 0x00000004
+ad "if_icmpeq 0xc" 9f0008 0x00000004
+ad "if_icmpge 0xc" a20008 0x00000004
+ad "if_icmpgt 0xc" a30008 0x00000004
+ad "if_icmple 0xc" a40008 0x00000004
+ad "if_icmplt 0xc" a10008 0x00000004
+ad "if_icmplt 0xc" a1ffe7 0x00000025
+ad "if_icmplt 0xc" a1fff1 0x0000001b
+ad "if_icmpne 0x1a" a00006 0x00000014
+ad "if_icmpne 0xc" a00008 0x00000004
+ad "ifeq 0xc" 990008 0x00000004
+ad "ifge 0xc" 9c0008 0x00000004
+ad "ifgt 0xc" 9d0008 0x00000004
+ad "ifle 0xc" 9e0008 0x00000004
+ad "iflt 0xc" 9b0008 0x00000004
+ad "ifne 0xc" 9a0008 0x00000004
+ad "ifnonnull 0xc" c70008 0x00000004
+ad "ifnull 0xc" c60008 0x00000004
+ad "iinc 0 1" 840001
+ad "iinc 5 15" 84050f
+ad "iload 10" 150a
+ad "iload_0" 1a
+ad "iload_1" 1b
+ad "iload_2" 1c
+ad "iload_3" 1d
+ad "impdep1" fe
+ad "impdep2" ff
+ad "imul" 68
+ad "ineg" 74
+ad "instanceof constant_pool.511" c101ff
+a "instanceof 511" c101ff
+ad "invokedynamic constant_pool.511 10" ba01ff0a
+a "invokedynamic 511 10" ba01ff0a
+ad "invokeinterface constant_pool.511 10" b901ff0a
+a "invokeinterface 511 10" b901ff0a
+ad "invokespecial constant_pool.511" b701ff
+a "invokespecial 511" b701ff
+ad "invokestatic constant_pool.511" b801ff
+a "invokestatic 511" b801ff
+ad "invokevirtual constant_pool.511" b601ff
+a "invokevirtual 511" b601ff
+ad "ior" 80
+ad "irem" 70
+ad "ireturn" ac
+ad "ireturn" ac 0x00000011
+ad "ishl" 78
+ad "ishr" 7a
+ad "istore 10" 360a
+ad "istore_0" 3b
+ad "istore_1" 3c
+ad "istore_2" 3d
+ad "istore_3" 3e
+ad "isub" 64
+ad "iushr" 7c
+ad "ixor" 82
+ad "jsr 0x1ff" a801ff
+ad "jsr_w 0xa64" c900000a64
+ad "l2d" 8a
+ad "l2f" 89
+ad "l2i" 88
+ad "ladd" 61
+ad "laload" 2f
+ad "land" 7f
+ad "lastore" 50
+ad "lcmp" 94
+ad "lconst_0" 09
+ad "lconst_1" 0a
+ad "ldc constant_pool.255" 12ff
+a "ldc 255" 12ff
+ad "ldc2_w constant_pool.511" 1401ff
+a "ldc2_w 511" 1401ff
+ad "ldc_w constant_pool.511" 1301ff
+a "ldc_w 511" 1301ff
+ad "ldiv" 6d
+ad "lload 10" 160a
+ad "lload_0" 1e
+ad "lload_1" 1f
+ad "lload_2" 20
+ad "lload_3" 21
+ad "lmul" 69
+ad "lneg" 75
+ad "lor" 81
+ad "lrem" 71
+ad "lreturn" ad
+ad "lshl" 79
+ad "lshr" 7b
+ad "lstore 10" 370a
+ad "lstore_0" 3f
+ad "lstore_1" 40
+ad "lstore_2" 41
+ad "lstore_3" 42
+ad "lsub" 65
+ad "lushr" 7d
+ad "lxor" 83
+ad "monitorenter" c2
+ad "monitorexit" c3
+ad "multianewarray constant_pool.10 100" c5000a64
+a "multianewarray 10 100" c5000a64
+ad "new constant_pool.511" bb01ff
+a "new 511" bb01ff
+ad "newarray bool" bc04
+ad "newarray byte" bc08
+ad "newarray char" bc05
+ad "newarray double" bc07
+ad "newarray float" bc06
+ad "newarray int" bc0a
+ad "newarray long" bc0b
+ad "newarray short" bc09
 ad "nop" 00
-d "iconst_0" 03
-d "istore_1" 3c
-d "iload_1" 1b
-d "iconst_1" 04
-d "ixor" 82
-d "istore_1" 3c
-d "iload_1" 1b
-d "ireturn" ac
-d "iconst_0" 03
-d "istore_1" 3c
-d "iload_0" 1a
-d "iconst_1" 04
-d "if_icmpne 0x000c" a00008 0x00000004
-d "iconst_0" 03
-d "istore_1" 3c
-d "goto 0x0010" a70007 0x00000009
-d "iload_1" 1b
-d "iconst_1" 04
-d "ixor" 82
-d "istore_1" 3c
-d "iload_1" 1b
-d "ireturn" ac
-d "iconst_0" 03
-d "istore_1" 3c
-d "iload_0" 1a
-d "iconst_1" 04
-d "if_icmpeq 0x000c" 9f0008 0x00000004
-d "iconst_0" 03
-d "istore_1" 3c
-d "goto 0x0010" a70007 0x00000009
-d "iload_1" 1b
-d "iconst_1" 04
-d "ixor" 82
-d "istore_1" 3c
-d "iload_1" 1b
-d "ireturn" ac
-d "iconst_0" 03
-d "istore_1" 3c
-d "iload_0" 1a
-d "iconst_1" 04
-d "if_icmplt 0x000c" a10008 0x00000004
-d "iconst_0" 03
-d "istore_1" 3c
-d "goto 0x0010" a70007 0x00000009
-d "iload_1" 1b
-d "iconst_1" 04
-d "ixor" 82
-d "istore_1" 3c
-d "iload_1" 1b
-d "ireturn" ac 0x00000011
-d "if_icmple 0x000c" a40008 0x00000004
-d "goto 0x0010" a70007 0x00000009
-d "if_icmpgt 0x000c" a30008 0x00000004
-d "goto 0x0010"  a70007 0x00000009
-d "if_icmpge 0x000c" a20008 0x00000004
-d "goto 0x0010" a70007 0x00000009
-d "aload_0" 2a
-d "return" b1
-d "bipush 100" 1064 0x00000006
-d "istore_2" 3d
-d "goto 0x0019" a70010 0x00000009
-d "iload_2" 1c
-d "sipush 255" 1100ff
-d "irem" 70
-d "iinc 0 1" 840001
-d "if_icmplt 0x000c" a1fff1 0x0000001b
-d "iload_2" 1c
-d "i2b" 91
-d "if_icmpne 0x001a" a00006 0x00000014
-d "if_icmplt 0x000c" a1ffe7 0x00000025
-d "goto 0x003b" a70037 0x00000004
-d "bipush 32" 1020
-d "nop" 00
-d "iadd" 60
+ad "pop" 57
+ad "pop2" 58
+ad "putfield constant_pool.511" b501ff
+a "putfield 511" b501ff
+ad "putstatic constant_pool.511" b301ff
+a "putstatic 511" b301ff
+ad "ret 7" a907
+ad "return" b1
+ad "saload" 35
+ad "sastore" 56
+ad "sipush 100" 110064
+ad "sipush 511" 1101ff
+ad "swap" 5f
+ad "wide" c4

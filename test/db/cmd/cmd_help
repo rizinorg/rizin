@@ -250,10 +250,10 @@ CMDS=<<EOF
 ?* zi
 EOF
 EXPECT=<<EOF
-| zi [<commens>]       # Show zignatures matching information
-| zij [<commens>]      # Show zignatures matching information (JSON mode)
-| zi* [<commens>]      # Show zignatures matching information (rizin mode)
-| ziq [<commens>]      # Show zignatures matching information (quiet mode)
+| zi                   # Show zignatures matching information
+| zij                  # Show zignatures matching information (JSON mode)
+| zi*                  # Show zignatures matching information (rizin mode)
+| ziq                  # Show zignatures matching information (quiet mode)
 | zii <from> <to>      # Show zignatures matching information in range
 EOF
 RUN
@@ -264,7 +264,7 @@ CMDS=<<EOF
 ?*j zi
 EOF
 EXPECT=<<EOF
-{"zi":{"cmd":"zi","type":"argv_modes","args_str":" [<commens>]","args":[{"type":"string","name":"commens","is_last":true}],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":" [<commens>]","args":[{"type":"string","name":"commens","is_last":true}],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":" [<commens>]","args":[{"type":"string","name":"commens","is_last":true}],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":" [<commens>]","args":[{"type":"string","name":"commens","is_last":true}],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
+{"zi":{"cmd":"zi","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
 EOF
 RUN
 
@@ -275,10 +275,10 @@ CMDS=<<EOF
 zi?*
 EOF
 EXPECT=<<EOF
-| zi [<commens>]       # Show zignatures matching information
-| zij [<commens>]      # Show zignatures matching information (JSON mode)
-| zi* [<commens>]      # Show zignatures matching information (rizin mode)
-| ziq [<commens>]      # Show zignatures matching information (quiet mode)
+| zi                   # Show zignatures matching information
+| zij                  # Show zignatures matching information (JSON mode)
+| zi*                  # Show zignatures matching information (rizin mode)
+| ziq                  # Show zignatures matching information (quiet mode)
 | zii <from> <to>      # Show zignatures matching information in range
 EOF
 RUN
@@ -289,7 +289,7 @@ CMDS=<<EOF
 zi?*j
 EOF
 EXPECT=<<EOF
-{"zi":{"cmd":"zi","type":"argv_modes","args_str":" [<commens>]","args":[{"type":"string","name":"commens","is_last":true}],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":" [<commens>]","args":[{"type":"string","name":"commens","is_last":true}],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":" [<commens>]","args":[{"type":"string","name":"commens","is_last":true}],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":" [<commens>]","args":[{"type":"string","name":"commens","is_last":true}],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
+{"zi":{"cmd":"zi","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information"},"zij":{"cmd":"zij","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (JSON mode)"},"zi*":{"cmd":"zi*","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (rizin mode)"},"ziq":{"cmd":"ziq","type":"argv_modes","args_str":"","args":[],"description":"","summary":"Show zignatures matching information (quiet mode)"},"zii":{"cmd":"zii","type":"argv","args_str":" <from> <to>","args":[{"type":"number","name":"from","required":true},{"type":"number","name":"to","required":true}],"description":"","summary":"Show zignatures matching information in range"}}
 EOF
 RUN
 

@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2012-2018 pancake */
+// SPDX-FileCopyrightText: 2012-2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 #include <stdarg.h>

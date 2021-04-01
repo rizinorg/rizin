@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014-2019 thatlemon@gmail.com <thatlemon@gmail.com>
+// SPDX-FileCopyrightText: 2014-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -259,11 +261,10 @@ static RzList *symbols(RzBinFile *bf) {
 	obj = bf->o->bin_obj;
 	h = &obj->header;
 	kt_addr = h->kernel_thunk_addr ^ obj->kt_key;
-	ret = rz_list_new();
+	ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	eprintf("sections %d\n", h->sections);
 	int limit = h->sections;
 	if (limit * (sizeof(xbe_section)) >= bf->size - h->sechdr_addr) {

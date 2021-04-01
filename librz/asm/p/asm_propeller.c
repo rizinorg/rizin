@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014 fedor.sakharov <fedor.sakharov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>

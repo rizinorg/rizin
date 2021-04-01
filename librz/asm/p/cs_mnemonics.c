@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016-2018 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 static char *mnemonics(RzAsm *a, int id, bool json) {
 	int i;
 	a->cur->disassemble(a, NULL, NULL, -1);

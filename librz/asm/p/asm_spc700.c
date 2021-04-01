@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2012-2014 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2014 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2010-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
@@ -965,7 +966,7 @@ void collect_list(char *input[]) {
 	temp[0] = 0;
 	int i;
 	int conc = 0;
-	int start, end = 0;
+	int start = 0, end = 0;
 	int arrsz;
 	for (arrsz = 1; input[arrsz] != NULL; arrsz++) {
 		;
@@ -6225,7 +6226,7 @@ void thisplay(const char *str) {
 	char cmd[32];
 	int op = armass_assemble(str, 0x1000, 1);
 	printf("[%04x] %s\n", op, str);
-	snprintf(cmd, sizeof(cmd), "rz_asm -d -b 16 -a arm %04x", op);
+	snprintf(cmd, sizeof(cmd), "rz-asm -d -b 16 -a arm %04x", op);
 	system(cmd);
 }
 
@@ -6233,7 +6234,7 @@ void display(const char *str) {
 	char cmd[32];
 	int op = armass_assemble(str, 0x1000, 0);
 	printf("[%08x] %s\n", op, str);
-	snprintf(cmd, sizeof(cmd), "rz_asm -d -a arm %08x", op);
+	snprintf(cmd, sizeof(cmd), "rz-asm -d -a arm %08x", op);
 	system(cmd);
 }
 

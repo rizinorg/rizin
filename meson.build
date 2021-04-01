@@ -3,6 +3,7 @@ project('rizin', 'c',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
   default_options: [
+    'buildtype=debugoptimized',
     'b_vscrt=from_buildtype',
   ]
 )
@@ -16,6 +17,7 @@ create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 check_meson_subproject_py = files('sys/check_meson_subproject.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
+tree_sitter_wrap_py = files('sys/meson_tree_sitter_generate.py')
 
 is_static_build = get_option('static_runtime')
 if is_static_build and get_option('default_library') != 'static'
@@ -620,7 +622,8 @@ if cli_enabled
     'man/rz-run.1',
     'man/rz-asm.1',
     'man/rz-ax.1',
-    'man/esil.7'
+    'man/rz-sign.1',
+    'man/rz-esil.7',
   )
 
   install_data('doc/hud',

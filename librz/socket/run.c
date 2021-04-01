@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* this helper api is here because it depends on rz_util and rz_socket */
@@ -395,12 +396,12 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			if (rz_sys_pipe(pipes, true) != -1) {
 				size_t cmdl = strlen(cmd) - 2;
 				if (write(pipes[1], cmd + 1, cmdl) != cmdl) {
-					eprintf("[ERROR] rz_run: Cannot write to the pipe\n");
+					eprintf("[ERROR] rz-run: Cannot write to the pipe\n");
 					close(0);
 					return 1;
 				}
 				if (write(pipes[1], "\n", 1) != 1) {
-					eprintf("[ERROR] rz_run: Cannot write to the pipe\n");
+					eprintf("[ERROR] rz-run: Cannot write to the pipe\n");
 					close(0);
 					return 1;
 				}
@@ -409,7 +410,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 				rz_sys_pipe_close(pipes[0]);
 				rz_sys_pipe_close(pipes[1]);
 			} else {
-				eprintf("[ERROR] rz_run: Cannot create pipe\n");
+				eprintf("[ERROR] rz-run: Cannot create pipe\n");
 			}
 		}
 #else
@@ -435,7 +436,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #endif
 		f = open(cmd, flag, mode);
 		if (f < 0) {
-			eprintf("[ERROR] rz_run: Cannot open: %s\n", cmd);
+			eprintf("[ERROR] rz-run: Cannot open: %s\n", cmd);
 			return 1;
 		}
 #define DUP(x) \
@@ -626,7 +627,7 @@ RZ_API const char *rz_run_help(void) {
 	       "# arg2=hello\n"
 	       "# arg3=\"hello\\nworld\"\n"
 	       "# arg4=:048490184058104849\n"
-	       "# arg5=:!rz_gg -p n50 -d 10:0x8048123\n"
+	       "# arg5=:!rz-gg -p n50 -d 10:0x8048123\n"
 	       "# arg6=@arg.txt\n"
 	       "# arg7=@300@ABCD # 300 chars filled with ABCD pattern\n"
 	       "# system=rizin -\n"
@@ -867,7 +868,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 		RzSocket *child, *fd = rz_socket_new(0);
 		bool is_child = false;
 		if (!rz_socket_listen(fd, p->_listen, NULL)) {
-			eprintf("rz_run: cannot listen\n");
+			eprintf("rz-run: cannot listen\n");
 			rz_socket_free(fd);
 			return 1;
 		}
@@ -879,7 +880,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 				if (p->_dofork && !p->_dodebug) {
 					pid_t child_pid = rz_sys_fork();
 					if (child_pid == -1) {
-						eprintf("rz_run: cannot fork\n");
+						eprintf("rz-run: cannot fork\n");
 						rz_socket_free(child);
 						rz_socket_free(fd);
 						return 1;
@@ -989,14 +990,14 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 			close(0);
 			dup2(f2[0], 0);
 		} else {
-			eprintf("[ERROR] rz_run: Cannot create pipe\n");
+			eprintf("[ERROR] rz-run: Cannot create pipe\n");
 			return 1;
 		}
 		inp = getstr(p->_input);
 		if (inp) {
 			size_t inpl = strlen(inp);
 			if (write(f2[1], inp, inpl) != inpl) {
-				eprintf("[ERROR] rz_run: Cannot write to the pipe\n");
+				eprintf("[ERROR] rz-run: Cannot write to the pipe\n");
 			}
 			rz_sys_pipe_close(f2[1]);
 			free(inp);
@@ -1013,7 +1014,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 	}
 	if (p->_libpath) {
 #if __WINDOWS__
-		eprintf("rz_run: libpath unsupported for this platform\n");
+		eprintf("rz-run: libpath unsupported for this platform\n");
 #elif __HAIKU__
 		rz_sys_setenv("LIBRARY_PATH", p->_libpath);
 #elif __APPLE__
@@ -1162,7 +1163,10 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 #if __UNIX__
 			close(0);
 			close(1);
-			exit(rz_sys_execl("/bin/sh", "/bin/sh", "-c", p->_system, NULL));
+			char *bin_sh = rz_file_binsh();
+			int ret = rz_sys_execl(bin_sh, "sh", "-c", p->_system, NULL);
+			free(bin_sh);
+			exit(ret);
 #else
 			exit(rz_sys_system(p->_system));
 #endif
@@ -1181,7 +1185,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				p->_program = progpath;
 			} else {
 				free(progpath);
-				eprintf("rz_run: %s: file not found\n", p->_program);
+				eprintf("rz-run: %s: file not found\n", p->_program);
 				return 1;
 			}
 		}

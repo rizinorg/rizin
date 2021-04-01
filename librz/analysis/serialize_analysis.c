@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2020-2021 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
@@ -1226,7 +1227,7 @@ beach:
 }
 
 static bool store_xref_cb(void *j, const ut64 k, const void *v) {
-	const RzAnalysisRef *xref = v;
+	const RzAnalysisXRef *xref = v;
 	pj_o(j);
 	pj_kn(j, "to", k);
 	if (xref->type != RZ_ANALYSIS_REF_TYPE_NULL) {
@@ -1256,7 +1257,7 @@ static bool store_xrefs_list_cb(void *db, const ut64 k, const void *v) {
 }
 
 RZ_API void rz_serialize_analysis_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	ht_up_foreach(analysis->dict_refs, store_xrefs_list_cb, db);
+	ht_up_foreach(analysis->ht_xrefs_from, store_xrefs_list_cb, db);
 }
 
 static bool xrefs_load_cb(void *user, const char *k, const char *v) {
@@ -1289,7 +1290,7 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 		}
 		ut64 to = baby->num.u_value;
 
-		RzAnalysisRefType type = RZ_ANALYSIS_REF_TYPE_NULL;
+		RzAnalysisXRefType type = RZ_ANALYSIS_REF_TYPE_NULL;
 		baby = rz_json_get(child, "type");
 		if (baby) {
 			// must be a 1-char string

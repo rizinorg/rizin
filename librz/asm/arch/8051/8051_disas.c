@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2015-2019 condret <condr3t@protonmail.com>
+// SPDX-FileCopyrightText: 2015-2019 riq <ricardoquesada@gmail.com>
+// SPDX-FileCopyrightText: 2015-2019 qnix <qnix@0x80.org>
+// SPDX-FileCopyrightText: 2015-2019 astuder <github@adrianstuder.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>

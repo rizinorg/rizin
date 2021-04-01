@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2020 - nibble, pancake, xvilka */
+// SPDX-FileCopyrightText: 2009-2021 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2021 xvilka <anton.kochkov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_ANALYSIS_H
 #define RZ_ANALYSIS_H
@@ -613,7 +616,8 @@ typedef struct rz_analysis_t {
 	int big_endian; // cfg.bigendian
 	int sleep; // analysis.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
 	RzAnalysisCPPABI cpp_abi; // analysis.cpp.abi
-	void *user;
+	void *plugin_data;
+	void *core;
 	ut64 gp; // analysis.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
 	RzList *fcns;
@@ -642,8 +646,8 @@ typedef struct rz_analysis_t {
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
-	HtUP *dict_refs;
-	HtUP *dict_xrefs;
+	HtUP *ht_xrefs_from;
+	HtUP *ht_xrefs_to;
 	bool recursive_noreturn; // analysis.rnr
 	RzSpaces zign_spaces;
 	char *zign_path; // dir.zigns
@@ -933,14 +937,14 @@ typedef enum {
 	RZ_ANALYSIS_REF_TYPE_CALL = 'C', // code ref (call)
 	RZ_ANALYSIS_REF_TYPE_DATA = 'd', // mem ref
 	RZ_ANALYSIS_REF_TYPE_STRING = 's' // string ref
-} RzAnalysisRefType;
+} RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
-	ut64 addr;
-	ut64 at;
-	RzAnalysisRefType type;
-} RzAnalysisRef;
-RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisRefType t);
+	ut64 from;
+	ut64 to;
+	RzAnalysisXRefType type;
+} RzAnalysisXRef;
+RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t);
 
 /* represents a reference line from one address (from) to another (to) */
 typedef struct rz_analysis_refline_t {
@@ -1206,8 +1210,6 @@ typedef struct rz_analysis_esil_dfg_node_t {
 	RzAnalysisEsilDFGBlockType type;
 } RzAnalysisEsilDFGNode;
 
-typedef int (*RzAnalysisCmdExt)(/* Rcore */ RzAnalysis *analysis, const char *input);
-
 // TODO: rm data + len
 typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask);
 
@@ -1233,8 +1235,8 @@ typedef struct rz_analysis_plugin_t {
 	int bits;
 	int esil; // can do esil or not
 	int fileformat_type;
-	int (*init)(void *user);
-	int (*fini)(void *user);
+	bool (*init)(void **user);
+	bool (*fini)(void *user);
 	//int (*reset_counter) (RzAnalysis *analysis, ut64 start_addr);
 	int (*archinfo)(RzAnalysis *analysis, int query);
 	ut8 *(*analysis_mask)(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
@@ -1242,9 +1244,6 @@ typedef struct rz_analysis_plugin_t {
 
 	// legacy rz_analysis_functions
 	RzAnalysisOpCallback op;
-
-	// command extension to directly call any analysis functions
-	RzAnalysisCmdExt cmd_ext;
 
 	RzAnalysisRegProfCallback set_reg_profile;
 	RzAnalysisRegProfGetCallback get_reg_profile;
@@ -1456,8 +1455,6 @@ RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn);
 RZ_API RzAnalysis *rz_analysis_new(void);
 RZ_API void rz_analysis_purge(RzAnalysis *analysis);
 RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *r);
-RZ_API void rz_analysis_set_user_ptr(RzAnalysis *analysis, void *user);
-RZ_API void rz_analysis_plugin_free(RzAnalysisPlugin *p);
 RZ_API int rz_analysis_add(RzAnalysis *analysis, RzAnalysisPlugin *foo);
 RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, int query);
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name);
@@ -1586,21 +1583,19 @@ RZ_API bool rz_analysis_fcn_bbadd(RzAnalysisFunction *fcn, RzAnalysisBlock *bb);
 RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize);
 RZ_API bool rz_analysis_function_purity(RzAnalysisFunction *fcn);
 
-typedef bool (*RzAnalysisRefCmp)(RzAnalysisRef *ref, void *data);
-RZ_API RzList *rz_analysis_ref_list_new(void);
+typedef bool (*RzAnalysisRefCmp)(RzAnalysisXRef *ref, void *data);
+RZ_API RzList *rz_analysis_xref_list_new(void);
 RZ_API ut64 rz_analysis_xrefs_count(RzAnalysis *analysis);
-RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisRefType type);
-RZ_API RzAnalysisRefType rz_analysis_xrefs_type(char ch);
-RZ_API RzList *rz_analysis_xrefs_get(RzAnalysis *analysis, ut64 to);
-RZ_API RzList *rz_analysis_refs_get(RzAnalysis *analysis, ut64 to);
-RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 from);
+RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type);
+RZ_API RzAnalysisXRefType rz_analysis_xrefs_type(char ch);
+RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr);
+RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr);
 RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad);
-RZ_API RzList *rz_analysis_function_get_refs(RzAnalysisFunction *fcn);
-RZ_API RzList *rz_analysis_function_get_xrefs(RzAnalysisFunction *fcn);
-RZ_API int rz_analysis_xrefs_from(RzAnalysis *analysis, RzList *list, const char *kind, const RzAnalysisRefType type, ut64 addr);
-RZ_API int rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, const RzAnalysisRefType type);
-RZ_API int rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, const RzAnalysisRefType type);
-RZ_API int rz_analysis_xref_del(RzAnalysis *analysis, ut64 at, ut64 addr);
+RZ_API RzList *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn);
+RZ_API RzList *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn);
+RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
+RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
+RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
 
 RZ_API RzList *rz_analysis_get_fcns(RzAnalysis *analysis);
 
@@ -1969,10 +1964,20 @@ RZ_API RzList *rz_analysis_preludes(RzAnalysis *analysis);
 RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len);
 
 /* classes */
+typedef enum {
+	RZ_ANALYSIS_CLASS_METHOD_DEFAULT = 0,
+	RZ_ANALYSIS_CLASS_METHOD_VIRTUAL,
+	RZ_ANALYSIS_CLASS_METHOD_VIRTUAL_DESTRUCTOR,
+	RZ_ANALYSIS_CLASS_METHOD_DESTRUCTOR,
+	RZ_ANALYSIS_CLASS_METHOD_CONSTRUCTOR
+} RzAnalysisMethodType;
+
 typedef struct rz_analysis_method_t {
 	char *name;
+	char *real_name;
 	ut64 addr;
 	st64 vtable_offset; // >= 0 if method is virtual, else -1
+	RzAnalysisMethodType method_type;
 } RzAnalysisMethod;
 
 typedef struct rz_analysis_base_class_t {
@@ -1996,6 +2001,8 @@ typedef enum {
 	RZ_ANALYSIS_CLASS_ERR_OTHER
 } RzAnalysisClassErr;
 
+RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis);
+RZ_API void rz_analysis_class_recover_all(RzAnalysis *analysis);
 RZ_API void rz_analysis_class_create(RzAnalysis *analysis, const char *name);
 RZ_API void rz_analysis_class_delete(RzAnalysis *analysis, const char *name);
 RZ_API bool rz_analysis_class_exists(RzAnalysis *analysis, const char *name);
@@ -2005,10 +2012,14 @@ RZ_API RzAnalysisClassErr rz_analysis_class_rename(RzAnalysis *analysis, const c
 
 RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_get(RzAnalysis *analysis, const char *class_name, const char *meth_name, RzAnalysisMethod *meth);
+RZ_API RzAnalysisClassErr rz_analysis_class_method_get_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr, RzAnalysisMethod *method);
 RZ_API RzVector /*<RzAnalysisMethod>*/ *rz_analysis_class_method_get_all(RzAnalysis *analysis, const char *class_name);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_set(RzAnalysis *analysis, const char *class_name, RzAnalysisMethod *meth);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_rename(RzAnalysis *analysis, const char *class_name, const char *old_meth_name, const char *new_meth_name);
 RZ_API RzAnalysisClassErr rz_analysis_class_method_delete(RzAnalysis *analysis, const char *class_name, const char *meth_name);
+RZ_API bool rz_analysis_class_method_exists(RzAnalysis *analysis, const char *class_name, const char *meth_name);
+RZ_API bool rz_analysis_class_method_exists_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr);
+RZ_API void rz_analysis_class_method_recover(RzAnalysis *analysis, RzBinClass *cls, RzList *methods);
 
 RZ_API void rz_analysis_class_base_fini(RzAnalysisBaseClass *base);
 RZ_API RzAnalysisClassErr rz_analysis_class_base_get(RzAnalysis *analysis, const char *class_name, const char *base_id, RzAnalysisBaseClass *base);
@@ -2149,7 +2160,6 @@ extern RzAnalysisPlugin rz_analysis_plugin_v810;
 extern RzAnalysisPlugin rz_analysis_plugin_v850;
 extern RzAnalysisPlugin rz_analysis_plugin_vax;
 extern RzAnalysisPlugin rz_analysis_plugin_wasm;
-extern RzAnalysisPlugin rz_analysis_plugin_ws;
 extern RzAnalysisPlugin rz_analysis_plugin_x86;
 extern RzAnalysisPlugin rz_analysis_plugin_x86_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_x86_im;
@@ -2160,6 +2170,7 @@ extern RzAnalysisPlugin rz_analysis_plugin_xcore_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_xtensa;
 extern RzAnalysisPlugin rz_analysis_plugin_z80;
 extern RzAnalysisPlugin rz_analysis_plugin_pyc;
+extern RzAnalysisPlugin rz_analysis_plugin_luac;
 #ifdef __cplusplus
 }
 #endif

@@ -1,4 +1,6 @@
-/* Copyright rizin 2014-2020 - Author: pancake, vane11ope */
+// SPDX-FileCopyrightText: 2014-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2014-2020 vane11ope
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
 #include "cmd_descs/cmd_descs.h"
@@ -2108,10 +2110,10 @@ void __handle_refs(RzCore *core, RzPanel *panel, ut64 tmp) {
 	int key = __show_status(core, "xrefs:x refs:X ");
 	switch (key) {
 	case 'x':
-		(void)rz_core_visual_refs(core, true, false);
+		(void)rz_core_visual_xrefs(core, true, false);
 		break;
 	case 'X':
-		(void)rz_core_visual_refs(core, false, false);
+		(void)rz_core_visual_xrefs(core, false, false);
 		break;
 	default:
 		break;
@@ -5995,7 +5997,7 @@ RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 	}
 	rz_cons_enable_mouse(false);
 	if (fromVisual) {
-		rz_core_cmdf(core, "V");
+		rz_core_visual(core, "");
 	}
 	return true;
 }
@@ -6579,7 +6581,7 @@ repeat:
 	case 'X':
 #if 0
 // already accessible via xX
-		rz_core_visual_refs (core, false, true);
+		rz_core_visual_xrefs (core, false, true);
 		cur->model->addr = core->offset;
 		set_refresh_all (panels, false);
 #endif

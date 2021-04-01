@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2009-2020 - pancake, nibble, dso */
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2020 dso <dso@rice.edu>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "bin_elf.inc"
 
@@ -153,12 +156,13 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
-	.dbginfo = &rz_bin_dbginfo_elf,
 	.create = &create,
 	.write = &rz_bin_write_elf,
 	.file_type = &get_file_type,
 	.regstate = &regstate,
 	.maps = &maps,
+	.section_type_to_string = &Elf_(section_type_to_string),
+	.section_flag_to_rzlist = &Elf_(section_flag_to_rzlist),
 };
 
 #ifndef RZ_PLUGIN_INCORE

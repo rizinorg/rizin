@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 javierptd <javierptd@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
 #define INCLUDE_HEAP_JEMALLOC_STD_C
 #define HEAP32 1

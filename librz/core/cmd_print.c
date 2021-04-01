@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_asm.h"
@@ -38,7 +39,7 @@ static const char *help_msg_pp[] = {
 	"pp4", "", "print incremental dword pattern",
 	"pp8", "", "print incremental qword pattern",
 	"ppa", "[lu]", "latin alphabet (lowercase, uppercases restrictions)",
-	"ppd", "", "print debruijn pattern (see rz_gg -P, -q and wopD)",
+	"ppd", "", "print debruijn pattern (see rz-gg -P, -q and wopD)",
 	"ppf", "", "print buffer filled with 0xff",
 	"ppn", "", "numeric pin patterns",
 	NULL
@@ -2414,10 +2415,6 @@ RZ_API void rz_core_print_cmp(RzCore *core, ut64 from, ut64 to) {
 	free(b);
 }
 
-static void cmd_print_pwn(const RzCore *core) {
-	rz_cons_printf("easter egg license has expired\n");
-}
-
 static int cmd_print_pxA(RzCore *core, int len, const char *input) {
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	int show_offset = true;
@@ -3716,7 +3713,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		skipblocks = 0;
 	}
 	if (totalsize == UT64_MAX) {
-		if (rz_config_get_i(core->config, "cfg.debug")) {
+		if (rz_config_get_b(core->config, "cfg.debug")) {
 			RzDebugMap *map = rz_debug_map_get(core->dbg, core->offset);
 			if (map) {
 				totalsize = map->addr_end - map->addr;
@@ -3740,7 +3737,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		eprintf("Invalid block size: %d\n", (int)blocksize);
 		goto beach;
 	}
-	if (!rz_config_get_i(core->config, "cfg.debug")) {
+	if (!rz_config_get_b(core->config, "cfg.debug")) {
 		RzIOMap *map1 = rz_list_first(list);
 		if (map1) {
 			from = map1->itv.addr;
@@ -4622,11 +4619,11 @@ static char *__op_refs(RzCore *core, RzAnalysisOp *op, int n) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	if (n) {
 		// RzList *list = rz_analysis_xrefs_get_from (core->analysis, op->addr);
-		RzList *list = rz_analysis_xrefs_get(core->analysis, op->addr);
-		RzAnalysisRef *ref;
+		RzList *list = rz_analysis_xrefs_get_to(core->analysis, op->addr);
+		RzAnalysisXRef *xref;
 		RzListIter *iter;
-		rz_list_foreach (list, iter, ref) {
-			rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", ref->at);
+		rz_list_foreach (list, iter, xref) {
+			rz_strbuf_appendf(sb, "0x%08" PFMT64x " ", xref->to);
 		}
 	} else {
 		if (op->jump != UT64_MAX) {
@@ -4890,9 +4887,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	block = core->block;
 	switch (*input) {
 	case 'w': // "pw"
-		if (input[1] == 'n') {
-			cmd_print_pwn(core);
-		} else if (input[1] == 'd') {
+		if (input[1] == 'd') { // "pwd"
 			char *cwd = rz_sys_getdir();
 			if (cwd) {
 				rz_cons_println(cwd);
@@ -5212,7 +5207,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				rz_core_cmdf(core, "pdfj%s", input + 3);
 			} else if (input[2] == 'c') { // "pifc"
 				RzListIter *iter;
-				RzAnalysisRef *refi;
+				RzAnalysisXRef *xrefi;
 				RzList *refs = NULL;
 				PJ *pj = NULL;
 
@@ -5259,14 +5254,14 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					rz_config_set_i(core->config, "emu.str", false);
 
 					// iterate over all call references
-					rz_list_foreach (refs, iter, refi) {
+					rz_list_foreach (refs, iter, xrefi) {
 						if (pj) {
-							RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, refi->addr,
+							RzAnalysisFunction *f = rz_analysis_get_fcn_in(core->analysis, xrefi->to,
 								RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
-							char *dst = rz_str_newf((f ? f->name : "0x%08" PFMT64x), refi->addr);
+							char *dst = rz_str_newf((f ? f->name : "0x%08" PFMT64x), xrefi->to);
 							char *dst2 = NULL;
-							RzAnalysisOp *op = rz_core_analysis_op(core, refi->addr, RZ_ANALYSIS_OP_MASK_BASIC);
-							RzBinReloc *rel = rz_core_getreloc(core, refi->addr, op->size);
+							RzAnalysisOp *op = rz_core_analysis_op(core, xrefi->to, RZ_ANALYSIS_OP_MASK_BASIC);
+							RzBinReloc *rel = rz_core_getreloc(core, xrefi->to, op->size);
 							if (rel) {
 								if (rel && rel->import && rel->import->name) {
 									dst2 = rel->import->name;
@@ -5278,12 +5273,12 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 							}
 							pj_o(pj);
 							pj_ks(pj, "dest", dst2);
-							pj_kn(pj, "addr", refi->addr);
-							pj_kn(pj, "at", refi->at);
+							pj_kn(pj, "addr", xrefi->to);
+							pj_kn(pj, "at", xrefi->from);
 							pj_end(pj);
 							rz_analysis_op_free(op);
 						} else {
-							char *s = rz_core_cmd_strf(core, "pdi %i @ 0x%08" PFMT64x, 1, refi->at);
+							char *s = rz_core_cmd_strf(core, "pdi %i @ 0x%08" PFMT64x, 1, xrefi->from);
 							rz_cons_printf("%s", s);
 						}
 					}
@@ -6826,9 +6821,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			core->offset = offset0;
 			rz_cons_printf("\n");
 		}
-		break;
-	case 'n': // easter
-		eprintf("easter egg license has expired\n");
 		break;
 	case 't': // "pt"
 		switch (input[1]) {

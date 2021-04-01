@@ -484,7 +484,7 @@ NAME=pdj str in opcode
 FILE=bins/java/Hello.class
 CMDS=pdj 1 @ 0x000002ae
 EXPECT=<<EOF
-[{"offset":686,"esil":"","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
+[{"offset":686,"esil":"","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc constant_pool.11","disasm":"ldc constant_pool.11","bytes":"120b","family":"cpu","type":"load","reloc":false,"type_num":32,"type2_num":0}]
 EOF
 RUN
 
@@ -2329,3 +2329,34 @@ and esp, 0xfffffff0
 and esp, 
 EOF
 RUN
+
+NAME=asm.size and meta string
+FILE=bins/elf/ls
+CMDS=<<EOF
+pd 1 @ 0x0001bbe8
+pd 1 @ 0x0001bbe8 @e:asm.size=true
+EOF
+EXPECT=<<EOF
+            ;-- str.Written_by__s___s___s____s___s___s___s____s__and__s.:
+            0x0001bbe8     .string "Written by %s, %s, %s,\n%s, %s, %s, %s,\n%s, and %s.\n" ; len=52
+            ;-- str.Written_by__s___s___s____s___s___s___s____s__and__s.:
+            0x0001bbe8     .string "Written by %s, %s, %s,\n%s, %s, %s, %s,\n%s, and %s.\n" ; len=52
+EOF
+RUN
+
+NAME=print section perm
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+pd 1 @ 0x080483d2
+pd 1 @ 0x08049f24
+pd 1 @ 0x080483d2 @e:asm.section=true,asm.section.perm=true
+pd 1 @ 0x08049f24 @e:asm.section=true,asm.section.perm=true
+EOF
+EXPECT=<<EOF
+            0x080483d2      pop   esi
+            0x08049f24      .dword 0x00000010
+   r-x      .text           0x080483d2      pop   esi
+   rw-   .dynamic           0x08049f24      .dword 0x00000010
+EOF
+RUN
+

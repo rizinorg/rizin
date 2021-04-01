@@ -25,7 +25,7 @@ e asm.var=false
 pdb
 EOF
 EXPECT=<<EOF
-/ entry0 (int32_t arg_40h, int32_t arg_44h);
+/ (loc) entry0 (int32_t arg_40h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call  fcn.00646b7e
 |           0x006453a6      8d642444       lea   esp, [arg_44h]
 |       ,=< 0x006453aa      0f85a6300000   jne   0x648456
@@ -3116,8 +3116,7 @@ aa > /dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-┌ (fcn) fcn.00000000 1645
-// void fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
+┌ fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
 │           ; var int32_t var_30h @ esp+0x1c
 │           ; var int32_t var_20h @ esp+0x2c
 │           ; arg int32_t arg_4h @ esp+0x50
@@ -3181,8 +3180,7 @@ aa >/dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-/ (fcn) fcn.00000000 1645
-// void fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
+/ fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
 |           ; var int32_t var_30h @ esp+0x1c
 |           ; var int32_t var_20h @ esp+0x2c
 |           ; arg int32_t arg_4h @ esp+0x50
@@ -3262,8 +3260,7 @@ afva
 pdf
 EOF
 EXPECT=<<EOF
-/ (fcn) fcn.00000000 89
-// void fcn.00000000 (int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
+/ fcn.00000000 (int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
 |           ; var int32_t var_ch @ esp+0x4
 |           ; var int32_t var_8h @ esp+0x8
 |           ; var int32_t var_4h @ esp+0xc
@@ -3413,10 +3410,8 @@ CMDS=<<EOF
 aF
 aaef
 pdf
-# TODO eip flag?
 EOF
 EXPECT=<<EOF
-            ;-- eip:
 / entry0 ();
 |           0x08048054      mov   bl, 0x2a                             ; '*' ; 42
 |           0x08048056      xor   eax, eax

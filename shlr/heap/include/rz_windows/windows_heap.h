@@ -1,10 +1,13 @@
+// SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef WINDOWS_HEAP_H
 #define WINDOWS_HEAP_H
 
 #include <windows.h>
 #include <winternl.h>
 
-/* 
+/*
 	Defines most of heap related structures on Windows (some still missing)
 	Tested only on Windows 10 1809 x64
 	TODO:

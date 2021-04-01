@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2018-2020 - ret2libc */
+// SPDX-FileCopyrightText: 2018-2020 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
 

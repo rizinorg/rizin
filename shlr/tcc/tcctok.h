@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2001-2004 Fabrice Bellard
+// SPDX-License-Identifier: LGPL-2.0-or-later
+
 /* keywords */
 /* Here we define intN_t as an atoms
  * due to the specific application of this parser */

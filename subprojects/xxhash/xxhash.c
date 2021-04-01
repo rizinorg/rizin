@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2012-2016, Yann Collet
+// SPDX-License-Identifier: BSD-2-Clause
+
 /*
 *  xxHash - Fast Hash algorithm
 *  Copyright (C) 2012-2016, Yann Collet

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 ret2libc <sirmy15@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_CORE_PRIVATE_INCLUDE_H_
 #define RZ_CORE_PRIVATE_INCLUDE_H_
 
@@ -51,7 +54,10 @@ RZ_IPI void rz_types_enum_print_c(Sdb *TDB, const char *arg, bool multiline);
 RZ_IPI bool rz_core_types_typedef_info(RzCore *core, const char *name);
 RZ_IPI void rz_types_typedef_print_c(Sdb *TDB, const char *typedef_name);
 RZ_IPI void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode);
+RZ_IPI RzList *rz_types_typedefs(Sdb *TDB);
 
+RZ_IPI RzList *rz_types_unions(Sdb *TDB);
+RZ_IPI RzList *rz_types_structs(Sdb *TDB);
 // Structured types JSON
 RZ_IPI void rz_types_structured_print_json(Sdb *TDB, SdbList *l);
 RZ_IPI void rz_types_union_print_json(Sdb *TDB);
@@ -76,7 +82,7 @@ RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr);
 RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
-
+RZ_IPI RzList *rz_types_all(Sdb *TDB);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
 RZ_IPI void rz_types_open_file(RzCore *core, const char *path);
 RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename);

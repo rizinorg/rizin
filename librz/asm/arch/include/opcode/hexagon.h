@@ -1,4 +1,5 @@
-
+// SPDX-FileCopyrightText: 2004 Free Software Foundation, Inc.
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 /* Opcode table for the Hexagon.
    Copyright 2004 Free Software Foundation, Inc.

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2014-2019 Fedor Sakharov <fedor.sakharov@gmail.com>
+// SPDX-FileCopyrightText: 2019 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -224,7 +226,6 @@ static RzList *symbols(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			if (!(ptr = RZ_NEW0(RzBinSymbol))) {
@@ -292,7 +293,7 @@ static RzList *_relocs_list(RzBin *rbin, struct rz_bin_coff_obj *bin, bool patch
 	RzBinReloc *reloc;
 	struct coff_reloc *rel;
 	int j, i = 0;
-	RzList *list_rel = rz_list_new();
+	RzList *list_rel = rz_list_newf(free);
 	if (!list_rel) {
 		return NULL;
 	}

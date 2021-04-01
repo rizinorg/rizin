@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2020 Florian Märkl <info@florianmaerkl.de>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
 #include <rz_sign.h>
@@ -654,43 +656,43 @@ bool test_analysis_xrefs_load() {
 
 	RzList *xrefs = rz_analysis_xrefs_get_from(analysis, 0x1337);
 	mu_assert_eq(rz_list_length(xrefs), 2, "xrefs from count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 4242, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 0x1337, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_NULL, "xref type");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->addr, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->at, 0x1337, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 0x1337, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4242, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_NULL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->from, 0x1337, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->to, 4243, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 1234);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 4243, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 1234, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 1234, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4243, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 42);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 4321, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 42, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_DATA, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 42, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4321, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_DATA, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 666);
 	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 333, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 666, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_STRING, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 666, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 333, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_STRING, "xref type");
 	rz_list_free(xrefs);
 
-	xrefs = rz_analysis_xrefs_get(analysis, 4243);
+	xrefs = rz_analysis_xrefs_get_to(analysis, 4243);
 	mu_assert_eq(rz_list_length(xrefs), 2, "xrefs to count");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->addr, 1234, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->at, 4243, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->addr, 0x1337, "xref to");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->at, 4243, "xref addr");
-	mu_assert_eq(((RzAnalysisRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 1234, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4243, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_REF_TYPE_CALL, "xref type");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->from, 0x1337, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->to, 4243, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 1))->type, RZ_ANALYSIS_REF_TYPE_CODE, "xref type");
 	rz_list_free(xrefs);
 
 	sdb_free(db);
@@ -1131,8 +1133,8 @@ Sdb *classes_ref_db() {
 	sdb_set(attrs_db, "attr.Bright.base", "0", 0);
 	sdb_set(attrs_db, "attr.Aeropause.vtable", "0", 0);
 	sdb_set(attrs_db, "attr.Bright.base.0", "Aeropause,8", 0);
-	sdb_set(attrs_db, "attr.Aeropause.method.some_meth", "4919,42", 0);
-	sdb_set(attrs_db, "attr.Aeropause.method.some_other_meth", "4660,32", 0);
+	sdb_set(attrs_db, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth", 0);
+	sdb_set(attrs_db, "attr.Aeropause.method.some_other_meth", "4660,32,0,some_other_meth", 0);
 	return db;
 }
 
@@ -1143,7 +1145,9 @@ bool test_analysis_classes_save() {
 	RzAnalysisMethod crystal = {
 		.name = strdup("some_meth"),
 		.addr = 0x1337,
-		.vtable_offset = 42
+		.vtable_offset = 42,
+		.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT,
+		.real_name = strdup("some_meth")
 	};
 	rz_analysis_class_method_set(analysis, "Aeropause", &crystal);
 	rz_analysis_class_method_fini(&crystal);
@@ -1151,7 +1155,9 @@ bool test_analysis_classes_save() {
 	RzAnalysisMethod meth = {
 		.name = strdup("some_other_meth"),
 		.addr = 0x1234,
-		.vtable_offset = 0x20
+		.vtable_offset = 0x20,
+		.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT,
+		.real_name = strdup("some_other_meth")
 	};
 	rz_analysis_class_method_set(analysis, "Aeropause", &meth);
 	rz_analysis_class_method_fini(&meth);
@@ -1459,13 +1465,13 @@ bool test_analysis_sign_save() {
 
 	item->addr = 0x1337;
 
-	item->refs = rz_list_newf(free);
-	rz_list_append(item->refs, strdup("gwonam"));
-	rz_list_append(item->refs, strdup("link"));
+	item->xrefs_from = rz_list_newf(free);
+	rz_list_append(item->xrefs_from, strdup("gwonam"));
+	rz_list_append(item->xrefs_from, strdup("link"));
 
-	item->xrefs = rz_list_newf(free);
-	rz_list_append(item->xrefs, strdup("king"));
-	rz_list_append(item->xrefs, strdup("ganon"));
+	item->xrefs_to = rz_list_newf(free);
+	rz_list_append(item->xrefs_to, strdup("king"));
+	rz_list_append(item->xrefs_to, strdup("ganon"));
 
 	item->vars = rz_list_newf(free);
 	rz_list_append(item->vars, strdup("r16"));
@@ -1523,14 +1529,14 @@ bool test_analysis_sign_load() {
 	mu_assert_eq(item->graph->edges, 12, "graph edges");
 	mu_assert_eq(item->graph->nbbs, 11, "graph nbbs");
 	mu_assert_eq(item->addr, 0x1337, "addr");
-	mu_assert_notnull(item->refs, "refs");
-	mu_assert_eq(rz_list_length(item->refs), 2, "refs count");
-	mu_assert_streq(rz_list_get_n(item->refs, 0), "gwonam", "ref");
-	mu_assert_streq(rz_list_get_n(item->refs, 1), "link", "ref");
-	mu_assert_notnull(item->xrefs, "xrefs");
-	mu_assert_eq(rz_list_length(item->xrefs), 2, "xrefs count");
-	mu_assert_streq(rz_list_get_n(item->xrefs, 0), "king", "xref");
-	mu_assert_streq(rz_list_get_n(item->xrefs, 1), "ganon", "xref");
+	mu_assert_notnull(item->xrefs_from, "xrefs_from");
+	mu_assert_eq(rz_list_length(item->xrefs_from), 2, "xrefs_from count");
+	mu_assert_streq(rz_list_get_n(item->xrefs_from, 0), "gwonam", "xrefs_from");
+	mu_assert_streq(rz_list_get_n(item->xrefs_from, 1), "link", "xrefs_from");
+	mu_assert_notnull(item->xrefs_to, "xrefs_to");
+	mu_assert_eq(rz_list_length(item->xrefs_to), 2, "xrefs_to count");
+	mu_assert_streq(rz_list_get_n(item->xrefs_to, 0), "king", "xrefs_to");
+	mu_assert_streq(rz_list_get_n(item->xrefs_to, 1), "ganon", "xrefs_to");
 	mu_assert_notnull(item->vars, "vars");
 	mu_assert_eq(rz_list_length(item->vars), 3, "vars count");
 	mu_assert_streq(rz_list_get_n(item->vars, 0), "r16", "var");
@@ -1635,7 +1641,7 @@ Sdb *analysis_ref_db() {
 	Sdb *class_attrs = sdb_ns(classes, "attrs", true);
 	sdb_set(class_attrs, "attrtypes.Aeropause", "method", 0);
 	sdb_set(class_attrs, "attr.Aeropause.method", "some_meth", 0);
-	sdb_set(class_attrs, "attr.Aeropause.method.some_meth", "4919,42", 0);
+	sdb_set(class_attrs, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth", 0);
 
 	Sdb *types = sdb_ns(db, "types", true);
 	sdb_set(types, "badchar", "type", 0);
@@ -1696,7 +1702,9 @@ bool test_analysis_save() {
 	RzAnalysisMethod crystal = {
 		.name = strdup("some_meth"),
 		.addr = 0x1337,
-		.vtable_offset = 42
+		.vtable_offset = 42,
+		.method_type = RZ_ANALYSIS_CLASS_METHOD_DEFAULT,
+		.real_name = strdup("some_meth")
 	};
 	rz_analysis_class_method_set(analysis, "Aeropause", &crystal);
 	rz_analysis_class_method_fini(&crystal);

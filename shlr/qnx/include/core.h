@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 madprogrammer
+// SPDX-License-Identifier: GPL-2.0-only
+
 /*! \file */
 #ifndef QNX_CORE_H
 #define QNX_CORE_H

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
@@ -131,7 +133,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->leaddrs = NULL;
 	analysis->imports = rz_list_newf(free);
 	rz_analysis_set_bits(analysis, 32);
-	analysis->plugins = rz_list_newf((RzListFree)rz_analysis_plugin_free);
+	analysis->plugins = rz_list_newf(NULL);
 	if (analysis->plugins) {
 		for (i = 0; analysis_static_plugins[i]; i++) {
 			rz_analysis_add(analysis, analysis_static_plugins[i]);
@@ -140,10 +142,12 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	return analysis;
 }
 
-RZ_API void rz_analysis_plugin_free(RzAnalysisPlugin *p) {
-	if (p && p->fini) {
-		p->fini(NULL);
+RZ_API void plugin_fini(RzAnalysis *analysis) {
+	RzAnalysisPlugin *p = analysis->cur;
+	if (p && p->fini && !p->fini(analysis->plugin_data)) {
+		RZ_LOG_ERROR("analysis plugin '%s' failed to terminate.\n", p->name);
 	}
+	analysis->plugin_data = NULL;
 }
 
 void __block_free_rb(RBNode *node, void *user);
@@ -152,6 +156,9 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	if (!a) {
 		return NULL;
 	}
+
+	plugin_fini(a);
+
 	rz_list_free(a->fcns);
 	ht_up_free(a->ht_addr_fun);
 	ht_pp_free(a->ht_name_fun);
@@ -168,8 +175,8 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_analysis_pin_fini(a);
 	rz_syscall_free(a->syscall);
 	rz_reg_free(a->reg);
-	ht_up_free(a->dict_refs);
-	ht_up_free(a->dict_xrefs);
+	ht_up_free(a->ht_xrefs_from);
+	ht_up_free(a->ht_xrefs_to);
 	rz_list_free(a->leaddrs);
 	sdb_free(a->sdb);
 	if (a->esil) {
@@ -183,15 +190,8 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	return NULL;
 }
 
-RZ_API void rz_analysis_set_user_ptr(RzAnalysis *analysis, void *user) {
-	analysis->user = user;
-}
-
-RZ_API int rz_analysis_add(RzAnalysis *analysis, RzAnalysisPlugin *foo) {
-	if (foo->init) {
-		foo->init(analysis->user);
-	}
-	rz_list_append(analysis->plugins, foo);
+RZ_API int rz_analysis_add(RzAnalysis *analysis, RzAnalysisPlugin *p) {
+	rz_list_append(analysis->plugins, p);
 	return true;
 }
 
@@ -204,13 +204,12 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 			if (!h->name || strcmp(h->name, name)) {
 				continue;
 			}
-#if 0
-			// regression happening here for asm.emu
-			if (analysis->cur && analysis->cur == h) {
-				return true;
-			}
-#endif
+			plugin_fini(analysis);
 			analysis->cur = h;
+			if (h && h->init && !h->init(&analysis->plugin_data)) {
+				RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
+				return false;
+			}
 			rz_analysis_set_reg_profile(analysis);
 			return true;
 		}
@@ -303,7 +302,9 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
 	analysis->big_endian = bigend;
-	analysis->reg->big_endian = bigend;
+	if (analysis->reg) {
+		analysis->reg->big_endian = bigend;
+	}
 	return true;
 }
 

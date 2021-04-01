@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2018 inisider <inisider@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>

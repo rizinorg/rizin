@@ -28,12 +28,15 @@ jobs:
             - '**.in'
             - '**.inc'
             - '.github/workflows/linter.yml'
+            - 'sys/clang-format.py'
+            - '.clang-format'
           prettier:
             - '**.js'
             - '.github/workflows/linter.yml'
           python:
             - '**.py'
             - '.github/workflows/linter.yml'
+            - '.pylintrc'
 
   cmd_descs_yaml_check:
     needs: changes

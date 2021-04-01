@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -279,9 +280,9 @@ static const char *help_msg_dmp[] = {
 static const char *help_msg_do[] = {
 	"Usage:", "do", " # Debug (re)open commands",
 	"do", "", "Open process (reload, alias for 'oo')",
-	"dor", " [rz_run]", "Comma separated list of k=v rz_run profile options (e dbg.profile)",
-	"doe", "", "Show rz_run startup profile",
-	"doe!", "", "Edit rz_run startup profile with $EDITOR",
+	"dor", " [rz-run]", "Comma separated list of k=v rz-run profile options (e dbg.profile)",
+	"doe", "", "Show rz-run startup profile",
+	"doe!", "", "Edit rz-run startup profile with $EDITOR",
 	"doo", " [args]", "Reopen in debug mode with args (alias for 'ood')",
 	"doof", " [args]", "Reopen in debug mode from file (alias for 'oodf')",
 	"doc", "", "Close debug session",
@@ -514,7 +515,7 @@ struct trace_node {
 
 // XXX those tmp files are never removed and we shuoldnt use files for this
 static void setRarunProfileString(RzCore *core, const char *str) {
-	char *file = rz_file_temp("rz_run");
+	char *file = rz_file_temp("rz-run");
 	char *s = strdup(str);
 	rz_config_set(core->config, "dbg.profile", file);
 	rz_str_replace_char(s, ',', '\n');
@@ -832,29 +833,37 @@ static int step_until_inst(RzCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-static int step_until_optype(RzCore *core, const char *_optypes) {
+static void dbg_follow_seek_register(RzCore *core) {
+	int follow = rz_config_get_i(core->config, "dbg.follow");
+	if (follow > 0) {
+		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+		if ((pc < core->offset) || (pc > (core->offset + follow))) {
+			rz_core_seek_to_register(core, "PC", false);
+		}
+	}
+}
+
+static int step_until_optype(RzCore *core, RzList *optypes_list) {
 	RzAnalysisOp op;
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
 
-	RzList *optypes_list = NULL;
 	RzListIter *iter;
-	char *optype, *optypes = strdup(rz_str_trim_head_ro((char *)_optypes));
+	char *optype;
 
 	if (!core || !core->dbg) {
 		eprintf("Wrong state\n");
 		res = false;
 		goto end;
 	}
-	if (!optypes || !*optypes) {
+	if (!optypes_list) {
 		eprintf("Missing optypes. Usage example: 'dsuo ucall ujmp'\n");
 		res = false;
 		goto end;
 	}
 
-	bool debugMode = rz_config_get_i(core->config, "cfg.debug");
-	optypes_list = rz_str_split_list(optypes, " ", 0);
+	bool debugMode = rz_config_get_b(core->config, "cfg.debug");
 
 	rz_cons_break_push(NULL, NULL);
 	for (;;) {
@@ -906,8 +915,6 @@ static int step_until_optype(RzCore *core, const char *_optypes) {
 cleanup_after_push:
 	rz_cons_break_pop();
 end:
-	free(optypes);
-	rz_list_free(optypes_list);
 	return res;
 }
 
@@ -1298,7 +1305,7 @@ static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
 				/* Escape backslashes (e.g. for Windows). */
 				char *escaped_path = rz_str_escape(map->file);
 				char *filtered_name = strdup(map->name);
-				rz_name_filter(filtered_name, 0);
+				rz_name_filter(filtered_name, 0, true);
 				rz_cons_printf("f mod.%s = 0x%08" PFMT64x "\n",
 					filtered_name, map->addr);
 				rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
@@ -1806,7 +1813,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 #endif
 
 static void foreach_reg_set_or_clear(RzCore *core, bool set) {
-	RzReg *reg = rz_config_get_i(core->config, "cfg.debug")
+	RzReg *reg = rz_config_get_b(core->config, "cfg.debug")
 		? core->dbg->reg
 		: core->analysis->reg;
 	const RzList *regs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
@@ -1943,7 +1950,7 @@ static void show_drpi(RzCore *core) {
 
 static void cmd_reg_profile(RzCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
-	RzReg *r = rz_config_get_i(core->config, "cfg.debug") ? core->dbg->reg : core->analysis->reg;
+	RzReg *r = rz_config_get_b(core->config, "cfg.debug") ? core->dbg->reg : core->analysis->reg;
 	switch (str[1]) {
 	case '\0': // "drp" "arp"
 		if (r->reg_profile_str) {
@@ -2744,7 +2751,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 	case '=': // "dr="
 	{
 		int pcbits2, pcbits = grab_bits(core, str + 1, &pcbits2);
-		if (rz_config_get_i(core->config, "cfg.debug")) {
+		if (rz_config_get_b(core->config, "cfg.debug")) {
 			if (rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false)) {
 				if (pcbits && pcbits != bits) {
 					rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, pcbits, NULL, '=', use_color); // xxx detect which one is current usage
@@ -4206,22 +4213,56 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_dc);
 		return 0;
 	}
-	int follow = rz_config_get_i(core->config, "dbg.follow");
 	rz_cons_break_pop();
-	if (follow > 0) {
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_seek_to_register(core, "PC", false);
-		}
-	}
+	dbg_follow_seek_register(core);
 	return 1;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv) {
+	rz_reg_arena_swap(core->dbg->reg, true);
+	step_until(core, rz_num_math(core->num, argv[1]));
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc, const char **argv) {
+	step_until_inst(core, argv[1], false);
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int argc, const char **argv) {
+	step_until_inst(core, argv[1], true);
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc, const char **argv) {
+	RzList *optypes_list = rz_list_new_from_array((const void **)argv + 1, argc - 1);
+	step_until_optype(core, optypes_list);
+	dbg_follow_seek_register(core);
+	rz_list_free(optypes_list);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_esil_handler(RzCore *core, int argc, const char **argv) {
+	step_until_esil(core, argv[1]);
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, const char **argv) {
+	step_until_flag(core, argv[1]);
+	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
 }
 
 static char *get_corefile_name(const char *raw_name, int pid) {
 	return (!*raw_name) ? rz_str_newf("core.%u", pid) : rz_str_trim_dup(raw_name);
 }
 
-static int cmd_debug_step(RzCore *core, const char *input) {
+RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
 	ut64 addr = core->offset;
 	ut8 buf[64];
 	RzAnalysisOp aop;
@@ -4233,13 +4274,13 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 	if (times < 1) {
 		times = 1;
 	}
-	switch (input[1]) {
+	switch (input[0]) {
 	case 0: // "ds"
 	case ' ':
 		rz_core_debug_step_one(core, times);
 		break;
 	case 'i': // "dsi"
-		if (input[2] == ' ') {
+		if (input[1] == ' ') {
 			int n = 0;
 			rz_cons_break_push(static_debug_stop, core->dbg);
 			do {
@@ -4253,7 +4294,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 				}
 				rz_core_debug_regs2flags(core, 0);
 				n++;
-			} while (!rz_num_conditional(core->num, input + 3));
+			} while (!rz_num_conditional(core->num, input + 2));
 			rz_cons_break_pop();
 			eprintf("Stopped after %d instructions\n", n);
 		} else {
@@ -4264,26 +4305,31 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 		step_until_eof(core);
 		break;
 	case 'u': // "dsu"
-		switch (input[2]) {
+		switch (input[1]) {
 		case 'f': // dsuf
-			step_until_flag(core, input + 3);
+			step_until_flag(core, input + 2);
 			break;
 		case 'i': // dsui
-			if (input[3] == 'r') {
-				step_until_inst(core, input + 4, true);
+			if (input[2] == 'r') {
+				step_until_inst(core, input + 3, true);
 			} else {
-				step_until_inst(core, input + 3, false);
+				step_until_inst(core, input + 2, false);
 			}
 			break;
 		case 'e': // dsue
-			step_until_esil(core, input + 3);
+			step_until_esil(core, input + 2);
 			break;
-		case 'o': // dsuo
-			step_until_optype(core, input + 3);
+		case 'o': { // dsuo
+			char *optypes = strdup(rz_str_trim_head_ro((char *)input + 2));
+			RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
+			step_until_optype(core, optypes_list);
+			free(optypes);
+			rz_list_free(optypes_list);
 			break;
+		}
 		case ' ': // dsu <address>
 			rz_reg_arena_swap(core->dbg->reg, true);
-			step_until(core, rz_num_math(core->num, input + 2)); // XXX dupped by times
+			step_until(core, rz_num_math(core->num, input + 1)); // XXX dupped by times
 			break;
 		default:
 			rz_core_cmd_help(core, help_msg_dsu);
@@ -4340,9 +4386,9 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 	}
 	case 'o': // "dso"
 		if (rz_config_get_i(core->config, "dbg.skipover")) {
-			rz_core_cmdf(core, "dss%s", input + 2);
+			rz_core_cmdf(core, "dss%s", input + 1);
 		} else {
-			if (rz_config_get_i(core->config, "cfg.debug")) {
+			if (rz_config_get_b(core->config, "cfg.debug")) {
 				int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
 				addr = rz_debug_reg_get(core->dbg, "PC");
 				RzBreakpointItem *bpi = rz_bp_get_at(core->dbg->bp, addr);
@@ -4360,7 +4406,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "dsb"
-		if (rz_config_get_i(core->config, "cfg.debug")) {
+		if (rz_config_get_b(core->config, "cfg.debug")) {
 			if (!core->dbg->session) {
 				eprintf("Session has not started\n");
 			} else if (rz_debug_step_back(core->dbg, times) < 0) {
@@ -4383,6 +4429,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 		rz_core_cmd_help(core, help_msg_ds);
 		return 0;
 	}
+	dbg_follow_seek_register(core);
 	return 1;
 }
 
@@ -4414,8 +4461,8 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	RzDebugTracepoint *t;
-	int follow = 0;
 	const char *ptr;
+	int follow = 0;
 	ut64 addr;
 	int min;
 	RzListIter *iter;
@@ -4752,20 +4799,19 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 's':
-		if (cmd_debug_step(core, input)) {
+	case 's': // "ds"
+		if (rz_cmd_debug_step(core, input + 1)) {
 			follow = rz_config_get_i(core->config, "dbg.follow");
 		}
 		break;
-	case 'b':
+	case 'b': // "db"
 		rz_core_cmd_bp(core, input);
 		break;
-	case 'H':
+	case 'H': // "dH"
 		eprintf("TODO: transplant process\n");
 		break;
 	case 'c': // "dc"
 		(void)rz_debug_continue_oldhandler(core, input + 1);
-		follow = 0;
 		break;
 	case 'm': // "dm"
 		cmd_debug_map(core, input + 1);
@@ -5001,19 +5047,19 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				setRarunProfileString(core, input + 3);
 			} else {
 				// TODO use the api
-				rz_sys_xsystem("rz_run -h");
+				rz_sys_xsystem("rz-run -h");
 			}
 			break;
 		case 'o': // "doo" : reopen in debug mode
 			if (input[2] == 'f') { // "doof" : reopen in debug mode from the given file
-				rz_config_set_i(core->config, "cfg.debug", true);
+				rz_config_set_b(core->config, "cfg.debug", true);
 				rz_core_cmd0(core, sdb_fmt("oodf %s", input + 3));
 			} else {
 				rz_core_file_reopen_debug(core, input + 2);
 			}
 			break;
 		case 'c': // "doc" : close current debug session
-			if (!core || !core->io || !core->io->desc || !rz_config_get_i(core->config, "cfg.debug")) {
+			if (!core || !core->io || !core->io->desc || !rz_config_get_b(core->config, "cfg.debug")) {
 				eprintf("No open debug session\n");
 				break;
 			}
@@ -5155,10 +5201,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		break;
 	}
 	if (follow > 0) {
-		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-		if ((pc < core->offset) || (pc > (core->offset + follow))) {
-			rz_core_seek_to_register(core, "PC", false);
-		}
+		dbg_follow_seek_register(core);
 	}
 	return 0;
 }

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_ASM_H
@@ -96,7 +98,8 @@ typedef struct rz_asm_t {
 	int big_endian;
 	int syntax;
 	ut64 pc;
-	void *user;
+	void *core;
+	void *plugin_data;
 	_RzAsmPlugin *cur;
 	_RzAsmPlugin *acur;
 	RzList *plugins;
@@ -127,10 +130,9 @@ typedef struct rz_asm_plugin_t {
 	const char *cpus;
 	const char *desc;
 	const char *license;
-	void *user; // user data pointer
 	int bits;
 	int endian;
-	bool (*init)(void *user);
+	bool (*init)(void **user);
 	bool (*fini)(void *user);
 	int (*disassemble)(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RzAsm *a, RzAsmOp *op, const char *buf);
@@ -146,7 +148,6 @@ RZ_API void rz_asm_free(RzAsm *a);
 RZ_API bool rz_asm_modify(RzAsm *a, ut8 *buf, int field, ut64 val);
 RZ_API char *rz_asm_mnemonics(RzAsm *a, int id, bool json);
 RZ_API int rz_asm_mnemonics_byname(RzAsm *a, const char *name);
-RZ_API void rz_asm_set_user_ptr(RzAsm *a, void *user);
 RZ_API bool rz_asm_add(RzAsm *a, RzAsmPlugin *foo);
 RZ_API bool rz_asm_setup(RzAsm *a, const char *arch, int bits, int big_endian);
 RZ_API bool rz_asm_is_valid(RzAsm *a, const char *name);
@@ -226,6 +227,7 @@ extern RzAsmPlugin rz_asm_plugin_java;
 extern RzAsmPlugin rz_asm_plugin_lanai_gnu;
 extern RzAsmPlugin rz_asm_plugin_lh5801;
 extern RzAsmPlugin rz_asm_plugin_lm32;
+extern RzAsmPlugin rz_asm_plugin_luac;
 extern RzAsmPlugin rz_asm_plugin_m68k_cs;
 extern RzAsmPlugin rz_asm_plugin_m680x_cs;
 extern RzAsmPlugin rz_asm_plugin_malbolge;
@@ -257,7 +259,6 @@ extern RzAsmPlugin rz_asm_plugin_v810;
 extern RzAsmPlugin rz_asm_plugin_v850;
 extern RzAsmPlugin rz_asm_plugin_vax;
 extern RzAsmPlugin rz_asm_plugin_wasm;
-extern RzAsmPlugin rz_asm_plugin_ws;
 extern RzAsmPlugin rz_asm_plugin_x86_as;
 extern RzAsmPlugin rz_asm_plugin_x86_cs;
 extern RzAsmPlugin rz_asm_plugin_x86_nasm;

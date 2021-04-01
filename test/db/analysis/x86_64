@@ -846,16 +846,16 @@ EOF
 EXPECT=<<EOF
 Current section
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
-0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build_id
+nth paddr       size vaddr       vsize perm name               type flags
+-------------------------------------------------------------------------
+0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build-id NOTE alloc
 
 Current section
 
-nth paddr  size vaddr  vsize perm name
---------------------------------------
+nth paddr  size vaddr  vsize perm name type flags
+-------------------------------------------------
 
-{"name":".plt","size":240,"vsize":240,"perm":"-r-x","paddr":1888,"vaddr":134514528}
+{"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}
 EOF
 RUN
 
@@ -1710,7 +1710,7 @@ EOF
 EXPECT=<<EOF
 cdecl
             ; CALL XREF from main @ 0x80484db
-/ (fcn) sym.nonfastcaslled 51
+/ sym.nonfastcaslled (int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_14h);
 |           ; var int32_t var_10h @ ebp-0x10
 |           ; var int32_t var_ch @ ebp-0xc
 |           ; arg int32_t arg_8h @ ebp+0x8
@@ -1766,8 +1766,7 @@ afvn my_local var_18h
 pd 1
 EOF
 EXPECT=<<EOF
-/ (fcn) fcn.00000000 62
-// void fcn.00000000 (int64_t arg1);
+/ fcn.00000000 (int64_t arg1);
 |           ; var int64_t my_local @ rbp-0x18
 |           ; arg int64_t arg1 @ rdi
 |           0x00000000      0000           add   byte [rax], al
@@ -2809,7 +2808,7 @@ edges: 4
 end-bbs: 0
 call-refs: 0x00000009 J 0x00000003 J
 data-refs: 0x0000002c
-code-xrefs: 0x00000011 J 0x0000000a J
+code-xrefs: 0x0000000a J 0x00000011 J
 noreturn: false
 in-degree: 2
 out-degree: 0
@@ -2993,6 +2992,63 @@ diff: type: new
 / fcn.00000003 ();
 |           0x00000003      0010           add   byte [rax], dl
 |           0x00000005      ebf9           jmp   0
+EOF
+RUN
+
+NAME=af-* removes function flags
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bytes=true
+e asm.bits=64
+e io.cache=true
+wx b821c10010ebf9
+s 0
+af; af-*
+s 3
+af
+pdr
+?e
+agf
+?e
+afll
+EOF
+EXPECT=<<EOF
+| ; CODE XREF from fcn.00000003 @ 0x5
+| ;-- (0x00000003) fcn.00000003:
+| 0x00000000  ~   b821c10010     mov   eax, 0x1000c121
+| ----------- true: 0x00000005
+/ fcn.00000003 ();
+| 0x00000003      0010           add   byte [rax], dl
+| ----------- true: 0x00000005
+| 0x00000005      ebf9           jmp   0
+| ----------- true: 0x00000000
+
+[0x00000003]>  # fcn.00000003 ();
+.----.
+|    |
+|.-------------------------------------.   .-----------------------.
+||  0x0                                |   |  0x3                  |
+|| ; CODE XREF from fcn.00000003 @ 0x5 |   | fcn.00000003 ();      |
+|| ;-- (0x00000003) fcn.00000003:      |   | add byte [rax], dl    |
+|| mov eax, 0x1000c121                 |   `-----------------------'
+|`-------------------------------------'       v
+|    v                                         |
+|    |                                         |
+|    '----------------------------.            |
+|                               .--------------'
+|                               | |
+|                         .--------------------.
+|                         |  0x5               |
+|                         | jmp 0              |
+|                         `--------------------'
+|                             v
+|                             |
+`-----------------------------'
+
+address            size  nbbs edges    cc cost          min bound range max bound          calls locals args xref frame name
+================== ==== ===== ===== ===== ==== ================== ===== ================== ===== ====== ==== ==== ===== ====
+0x0000000000000003    9     3     3     0    4 0x0000000000000000     7 0x0000000000000007     0    0      0    0     0 fcn.00000003
 EOF
 RUN
 

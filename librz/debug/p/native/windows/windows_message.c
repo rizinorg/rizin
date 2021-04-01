@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2019 - GustavoLCR */
+// SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 #include <rz_debug.h>
 #include "windows_message.h"
 

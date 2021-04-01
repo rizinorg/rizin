@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 condret <condr3t@protonmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util.h>
 #include "minunit.h"
 

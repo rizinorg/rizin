@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 securisec
+# SPDX-License-Identifier: LGPL-3.0-only
+
 ec b0x00 rgb:7c7c61
 ec b0x7f rgb:aaff00
 ec b0xff rgb:aaff00

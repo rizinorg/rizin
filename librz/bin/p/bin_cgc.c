@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2019 ret2libc <sirmy15@gmail.com>
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #define RZ_BIN_CGC 1
@@ -120,11 +122,12 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
-	.dbginfo = &rz_bin_dbginfo_elf,
 	.create = &create,
 	.patch_relocs = &patch_relocs,
 	.write = &rz_bin_write_elf,
 	.file_type = get_file_type,
 	.regstate = regstate,
 	.maps = maps,
+	.section_type_to_string = &Elf_(section_type_to_string),
+	.section_flag_to_rzlist = &Elf_(section_flag_to_rzlist),
 };

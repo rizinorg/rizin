@@ -314,19 +314,7 @@
           "named": true
         },
         {
-          "type": "cmd_substitution_arg",
-          "named": true
-        },
-        {
-          "type": "double_quoted_arg",
-          "named": true
-        },
-        {
           "type": "pf_args",
-          "named": true
-        },
-        {
-          "type": "single_quoted_arg",
           "named": true
         }
       ]
@@ -343,7 +331,7 @@
     "fields": {},
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
         {
           "type": "arged_command",
@@ -5686,11 +5674,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -6512,13 +6500,7 @@
   {
     "type": "legacy_quoted_command",
     "named": true,
-    "fields": {
-      "string": {
-        "multiple": false,
-        "required": false,
-        "types": []
-      }
-    }
+    "fields": {}
   },
   {
     "type": "macro_args",
@@ -8882,11 +8864,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -11068,6 +11050,10 @@
     "named": false
   },
   {
+    "type": "@(",
+    "named": false
+  },
+  {
     "type": "@@",
     "named": false
   },
@@ -11220,10 +11206,6 @@
     "named": false
   },
   {
-    "type": "@{",
-    "named": false
-  },
-  {
     "type": "`",
     "named": false
   },
@@ -11265,10 +11247,6 @@
   },
   {
     "type": "|H",
-    "named": false
-  },
-  {
-    "type": "}",
     "named": false
   },
   {

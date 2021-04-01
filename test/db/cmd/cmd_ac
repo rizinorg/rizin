@@ -8,7 +8,7 @@ k analysis/classes/*
 k analysis/classes/attrs/*
 EOF
 EXPECT=<<EOF
-Flatline
+[Flatline]
 Flatline=c
 -
 EOF
@@ -26,12 +26,15 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Flatline
-  PrayerPosition @ 0x1337 (vtable + 0x42)
+[Flatline]
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PrayerPosition
 EOF
@@ -64,28 +67,34 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Flatline
-  PrayerPosition @ 0x1337 (vtable + 0x42)
-  RemainIndoors @ 0xdeadbeef
+[Flatline]
+nth name                  addr vt_offset type
+---------------------------------------------
+1   PrayerPosition      0x1337 0x42      DEFAULT
+2   RemainIndoors   0xdeadbeef -1        DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=PrayerPosition,RemainIndoors
-attr.Flatline.method.PrayerPosition=4919,66
-attr.Flatline.method.RemainIndoors=3735928559,-1
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
+attr.Flatline.method.RemainIndoors=3735928559,-1,0,RemainIndoors
 attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PrayerPosition
 0xdeadbeef 0 method.Flatline.RemainIndoors
 --
-Flatline
-  RemainIndoors @ 0xdeadbeef
+[Flatline]
+nth name                 addr vt_offset type
+--------------------------------------------
+1   RemainIndoors  0xdeadbeef -1        DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=RemainIndoors
-attr.Flatline.method.RemainIndoors=3735928559,-1
+attr.Flatline.method.RemainIndoors=3735928559,-1,0,RemainIndoors
 attrtypes.Flatline=method
 0xdeadbeef 0 method.Flatline.RemainIndoors
 --
-Flatline
+[Flatline]
 Flatline=c
 -
 EOF
@@ -110,21 +119,27 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Flatline
-  PrayerPosition @ 0x1337 (vtable + 0x42)
+[Flatline]
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attrtypes.Flatline=method
 0x00001337 0 method.Flatline.PrayerPosition
 --
-Flatline
-  Marigold @ 0x1337 (vtable + 0x42)
+[Flatline]
+nth name        addr vt_offset type
+-----------------------------------
+1   Marigold  0x1337 0x42      DEFAULT
+
 Flatline=c
 -
 attr.Flatline.method=Marigold
-attr.Flatline.method.Marigold=4919,66
+attr.Flatline.method.Marigold=4919,66,0,Marigold
 attrtypes.Flatline=method
 0x00001337 0 method.Flatline.Marigold
 EOF
@@ -170,11 +185,14 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Album
-Flatline: PeripheryAlbum
+[Album]
+[Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-  PrayerPosition @ 0x1337 (vtable + 0x42)
-PeripheryAlbum: Album
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
+[PeripheryAlbum: Album]
 Album=c
 Flatline=c
 PeripheryAlbum=c
@@ -182,7 +200,7 @@ PeripheryAlbum=c
 attr.Flatline.base=0
 attr.Flatline.base.0=PeripheryAlbum,0
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attr.Flatline.vtable=0
 attr.Flatline.vtable.0=0x1337,0,0
 attr.PeripheryAlbum.base=0
@@ -192,41 +210,47 @@ attrtypes.PeripheryAlbum=base
 0x00001337 0 method.Flatline.PrayerPosition
 0x00001337 0 vtable.Flatline.0
 --
-Flatline: PeripheryAlbum
+[Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-  PrayerPosition @ 0x1337 (vtable + 0x42)
-PeripheryAlbum
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
+[PeripheryAlbum]
 Flatline=c
 PeripheryAlbum=c
 -
 attr.Flatline.base=0
 attr.Flatline.base.0=PeripheryAlbum,0
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attr.Flatline.vtable=0
 attr.Flatline.vtable.0=0x1337,0,0
 attrtypes.Flatline=base,method,vtable
 0x00001337 0 method.Flatline.PrayerPosition
 0x00001337 0 vtable.Flatline.0
 --
-Flatline: PeripheryAlbum
+[Flatline: PeripheryAlbum]
   (vtable at 0x1337)
-  PrayerPosition @ 0x1337 (vtable + 0x42)
-PeripheryAlbum
+nth name              addr vt_offset type
+-----------------------------------------
+1   PrayerPosition  0x1337 0x42      DEFAULT
+
+[PeripheryAlbum]
 Flatline=c
 PeripheryAlbum=c
 -
 attr.Flatline.base=0
 attr.Flatline.base.0=PeripheryAlbum,0
 attr.Flatline.method=PrayerPosition
-attr.Flatline.method.PrayerPosition=4919,66
+attr.Flatline.method.PrayerPosition=4919,66,0,PrayerPosition
 attr.Flatline.vtable=0
 attr.Flatline.vtable.0=0x1337,0,0
 attrtypes.Flatline=base,method,vtable
 0x00001337 0 method.Flatline.PrayerPosition
 0x00001337 0 vtable.Flatline.0
 --
-PeripheryAlbum
+[PeripheryAlbum]
 PeripheryAlbum=c
 -
 EOF
@@ -247,9 +271,9 @@ k analysis/classes/attrs/*
 acb Flatline
 EOF
 EXPECT=<<EOF
-Flatline: PeripherySong, NiceSong
-NiceSong
-PeripherySong
+[Flatline: PeripherySong, NiceSong]
+[NiceSong]
+[PeripherySong]
 Flatline=c
 NiceSong=c
 PeripherySong=c
@@ -321,7 +345,7 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Deadwing
+[Deadwing]
   (vtable at 0x1337)
   (vtable at 0xdeadbeef in class at +0x42)
 Deadwing=c
@@ -354,7 +378,7 @@ acll
 f@F:classes
 EOF
 EXPECT=<<EOF
-Deadwing
+[Deadwing]
   (vtable at 0x1337)
   (vtable at 0xdeadbeef in class at +0x42)
   (vtable at 0xefefef in class at +0x42)
@@ -369,7 +393,7 @@ attrtypes.Deadwing=vtable
 0x00efefef 32 vtable.Deadwing.2
 0xdeadbeef 0 vtable.Deadwing.1
 --
-Deadwing
+[Deadwing]
   (vtable at 0xdeadbeef in class at +0x42)
   (vtable at 0xefefef in class at +0x42)
 0x00efefef 32 vtable.Deadwing.2
@@ -401,11 +425,14 @@ k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
-Album
-Deadwing: PorcupineTreeAlbum
-PorcupineTreeAlbum: Album
+[Album]
+[Deadwing: PorcupineTreeAlbum]
+[PorcupineTreeAlbum: Album]
   (vtable at 0x1337 in class at +0x42)
-  Listen @ 0xdeadbeef
+nth name          addr vt_offset type
+-------------------------------------
+1   Listen  0xdeadbeef -1        DEFAULT
+
 Album=c
 Deadwing=c
 PorcupineTreeAlbum=c
@@ -415,7 +442,7 @@ attr.Deadwing.base.0=PorcupineTreeAlbum,8
 attr.PorcupineTreeAlbum.base=0
 attr.PorcupineTreeAlbum.base.0=Album,0
 attr.PorcupineTreeAlbum.method=Listen
-attr.PorcupineTreeAlbum.method.Listen=3735928559,-1
+attr.PorcupineTreeAlbum.method.Listen=3735928559,-1,0,Listen
 attr.PorcupineTreeAlbum.vtable=0
 attr.PorcupineTreeAlbum.vtable.0=0x1337,66,0
 attrtypes.Deadwing=base
@@ -423,11 +450,14 @@ attrtypes.PorcupineTreeAlbum=base,vtable,method
 0x00001337 0 vtable.PorcupineTreeAlbum.0
 0xdeadbeef 0 method.PorcupineTreeAlbum.Listen
 --
-Album
-Deadwing: Masterpiece
-Masterpiece: Album
+[Album]
+[Deadwing: Masterpiece]
+[Masterpiece: Album]
   (vtable at 0x1337 in class at +0x42)
-  Listen @ 0xdeadbeef
+nth name          addr vt_offset type
+-------------------------------------
+1   Listen  0xdeadbeef -1        DEFAULT
+
 Album=c
 Deadwing=c
 Masterpiece=c
@@ -437,7 +467,7 @@ attr.Deadwing.base.0=Masterpiece,8
 attr.Masterpiece.base=0
 attr.Masterpiece.base.0=Album,0
 attr.Masterpiece.method=Listen
-attr.Masterpiece.method.Listen=3735928559,-1
+attr.Masterpiece.method.Listen=3735928559,-1,0,Listen
 attr.Masterpiece.vtable=0
 attr.Masterpiece.vtable.0=0x1337,66,0
 attrtypes.Deadwing=base
@@ -481,7 +511,7 @@ acm PorcupineTreeAlbum Listen 0xdeadbeef
 aclj
 EOF
 EXPECT=<<EOF
-[{"name":"PorcupineTreeAlbum","bases":[],"vtables":[{"id":"0","addr":4919,"offset":66}],"methods":[{"name":"Listen","addr":3735928559}]},{"name":"Deadwing","bases":[{"id":"0","name":"PorcupineTreeAlbum","offset":8}],"vtables":[],"methods":[]}]
+[{"name":"PorcupineTreeAlbum","bases":[],"vtables":[{"id":"0","addr":4919,"offset":66}],"methods":[{"name":"Listen","addr":3735928559,"type":"DEFAULT"}]},{"name":"Deadwing","bases":[{"id":"0","name":"PorcupineTreeAlbum","offset":8}],"vtables":[],"methods":[]}]
 EOF
 RUN
 
@@ -504,16 +534,80 @@ acvf 0x0 000ASDASdjpsadoaspdjasdaspodasDDD
 acv A 0x00400d28 0x0
 EOF
 EXPECT=<<EOF
-A
+[A]
   (vtable at 0x400d28)
-B
+[B]
   (vtable at 0x400d08)
-C
+[C]
   (vtable at 0x400ce8)
 Function address: 0x00400ac8, in A vtable 0
 Function address: 0x00400b82, in B vtable 0
 Function address: 0x00400ac8, in A vtable 0
 Function address: 0x00400ac8, in B vtable 0
 Function address: 0x00400ac8, in C vtable 0
+EOF
+RUN
+
+NAME=aclj2
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+aclj
+EOF
+EXPECT=<<EOF
+[{"name":"B","bases":[{"id":"0","name":"A","offset":0}],"vtables":[{"id":"0","addr":4197640,"offset":0}],"methods":[{"name":"B","addr":4197198,"type":"CONSTRUCTOR"},{"name":"printValue","addr":4197250,"type":"VIRTUAL","vtable_offset":8},{"name":"method.A.greet","addr":4197064,"type":"VIRTUAL","vtable_offset":0}]},{"name":"std::basic_ostream_char__std::char_traits_char_____std::endl_char__std","bases":[],"vtables":[],"methods":[{"name":"char_traits<char> >","addr":6296232,"type":"DEFAULT"}]},{"name":"std::ios_base::Init","bases":[],"vtables":[],"methods":[{"name":"Init","addr":6296184,"type":"DEFAULT"},{"name":"~Init","addr":6296208,"type":"DEFAULT"}]},{"name":"std::ostream","bases":[],"vtables":[],"methods":[{"name":"operator<<","addr":6296224,"type":"DEFAULT"}]},{"name":"std::basic_ostream_char__std::char_traits_char_____std::operator____std","bases":[],"vtables":[],"methods":[{"name":"char_traits<char> >","addr":6296216,"type":"DEFAULT"}]},{"name":"A","bases":[],"vtables":[{"id":"0","addr":4197672,"offset":0}],"methods":[{"name":"greet","addr":4197064,"type":"VIRTUAL","vtable_offset":0},{"name":"printValue","addr":4197108,"type":"VIRTUAL","vtable_offset":8},{"name":"A","addr":4197174,"type":"CONSTRUCTOR"}]},{"name":"C","bases":[{"id":"0","name":"A","offset":0}],"vtables":[{"id":"0","addr":4197608,"offset":0}],"methods":[{"name":"C","addr":4197316,"type":"CONSTRUCTOR"},{"name":"printValue","addr":4197368,"type":"VIRTUAL","vtable_offset":8},{"name":"method.A.greet","addr":4197064,"type":"VIRTUAL","vtable_offset":0}]}]
+EOF
+RUN
+
+NAME=aclj3
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aaa
+aclj
+EOF
+EXPECT=<<EOF
+[{"name":"InAbsentia","bases":[{"id":"0","name":"Album","offset":0}],"vtables":[{"id":"0","addr":4268452,"offset":0}],"methods":[{"name":"virtual_0","addr":4198536,"type":"VIRTUAL","vtable_offset":0},{"name":"virtual_4","addr":4198579,"type":"VIRTUAL","vtable_offset":4}]},{"name":"type_info","bases":[],"vtables":[{"id":"0","addr":4268540,"offset":0}],"methods":[{"name":"virtual_0","addr":4198710,"type":"VIRTUAL","vtable_offset":0}]},{"name":"Album","bases":[],"vtables":[{"id":"0","addr":4268388,"offset":0}],"methods":[{"name":"virtual_0","addr":4198493,"type":"VIRTUAL","vtable_offset":0},{"name":"virtual_4","addr":4198567,"type":"VIRTUAL","vtable_offset":4}]}]
+EOF
+RUN
+
+NAME=acvf2
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+acvf 0
+acvf 0x8 A
+acvf 0x0 C
+acvf 0x10 ABC
+acvf -10
+acvf abc
+EOF
+EXPECT=<<EOF
+Function address: 0x00400ac8, in A vtable 0
+Function address: 0x00400ac8, in B vtable 0
+Function address: 0x00400ac8, in C vtable 0
+Function address: 0x00400af4, in A vtable 0
+Function address: 0x00400ac8, in C vtable 0
+EOF
+RUN
+
+NAME=acvf3
+FILE=bins/mach0/TestRTTI-arm64
+CMDS=<<EOF
+aaa
+acvf 0 A
+acvf 0x8 B
+acvf 0x10 C
+acvf 0x18 ABC
+acvf -20
+acvf abc
+EOF
+EXPECT=<<EOF
+Function address: 0x100005f1c, in A vtable 0
+Function address: 0x100005fe0, in B vtable 0
+Function address: 0x100005f44, in B vtable 1
+Function address: 0x100005fe0, in B vtable 2
+Function address: 0x100005f44, in B vtable 3
+Function address: 0x1000060a0, in C vtable 1
+Function address: 0x1000060a0, in C vtable 3
 EOF
 RUN

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2017-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_types_base.h"
@@ -138,7 +139,7 @@ static int __close(RzIODesc *fd) {
 		return -1;
 	}
 	// XXX
-	rz_sys_cmdf("pkill rz_run");
+	rz_sys_cmdf("pkill rz-run");
 	return 0;
 }
 
