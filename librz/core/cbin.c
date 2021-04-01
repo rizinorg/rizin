@@ -1718,11 +1718,6 @@ static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
 	RZ_TIME_PROFILE_BEGIN;
 
 	va = VA_TRUE; // XXX relocs always vaddr?
-	//this has been created for reloc object files
-	RBNode *relocs = rz_bin_patch_relocs(r->bin);
-	if (!relocs) {
-		relocs = rz_bin_get_relocs(r->bin);
-	}
 
 	if (IS_MODE_RZCMD(mode)) {
 		rz_cons_println("fs relocs");
@@ -1733,104 +1728,114 @@ static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
 		pj_a(pj);
 	}
 
-	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
-		ut64 addr = rva(r->bin, reloc->paddr, reloc->vaddr, va);
-		if (IS_MODE_SIMPLE(mode)) {
-			rz_cons_printf("0x%08" PFMT64x "  %s\n", addr, reloc->import ? reloc->import->name : "");
-		} else if (IS_MODE_RZCMD(mode)) {
-			char *name = reloc->import
-				? strdup(reloc->import->name)
-				: (reloc->symbol ? strdup(reloc->symbol->name) : NULL);
-			if (name && bin_demangle) {
-				char *mn = rz_bin_demangle(r->bin->cur, NULL, name, addr, keep_lib);
-				if (mn) {
-					free(name);
-					name = mn;
-				}
-			}
-			if (name) {
-				int reloc_size = 4;
-				char *n = __filterQuotedShell(name);
-				rz_cons_printf("\"f %s%s%s %d 0x%08" PFMT64x "\"\n",
-					r->bin->prefix ? r->bin->prefix : "reloc.",
-					r->bin->prefix ? "." : "", n, reloc_size, addr);
-				ut64 meta_sz;
-				if (r->bin->cur && r->bin->cur->o && meta_for_reloc(r, r->bin->cur->o, reloc, addr, &meta_sz)) {
-					rz_cons_printf("Cd %" PFMT64u " @ 0x%08" PFMT64x "\n", meta_sz, addr);
-				}
-				free(n);
-				free(name);
-			}
-		} else if (IS_MODE_JSON(mode)) {
-			pj_o(pj);
-			char *mn = NULL;
-			char *relname = NULL;
-
-			// take care with very long symbol names! do not use sdb_fmt or similar
-			if (reloc->import) {
-				mn = rz_bin_demangle(r->bin->cur, lang, reloc->import->name, addr, keep_lib);
-				relname = strdup(reloc->import->name);
-			} else if (reloc->symbol) {
-				mn = rz_bin_demangle(r->bin->cur, lang, reloc->symbol->name, addr, keep_lib);
-				relname = strdup(reloc->symbol->name);
-			}
-
-			// check if name is available
-			if (relname && *relname) {
-				pj_ks(pj, "name", relname);
-			}
-			pj_ks(pj, "demname", mn ? mn : "");
-			pj_ks(pj, "type", bin_reloc_type_name(reloc));
-			pj_kn(pj, "vaddr", reloc->vaddr);
-			pj_kn(pj, "paddr", reloc->paddr);
-			if (reloc->symbol) {
-				pj_kn(pj, "sym_va", reloc->symbol->vaddr);
-			}
-			pj_kb(pj, "is_ifunc", reloc->is_ifunc);
-			// end reloc item
-			pj_end(pj);
-
-			free(mn);
-			if (relname) {
-				free(relname);
-			}
-		} else if (IS_MODE_NORMAL(mode)) {
-			char *name = reloc->import
-				? strdup(reloc->import->name)
-				: reloc->symbol
-				? strdup(reloc->symbol->name)
-				: NULL;
-			if (bin_demangle) {
-				char *mn = rz_bin_demangle(r->bin->cur, NULL, name, addr, keep_lib);
-				if (mn && *mn) {
-					free(name);
-					name = mn;
-				}
-			}
-			char *reloc_name = construct_reloc_name(reloc, name);
-			RzStrBuf *buf = rz_strbuf_new(reloc_name ? reloc_name : "");
-			free(reloc_name);
-			RZ_FREE(name);
-			if (reloc->addend) {
-				if ((reloc->import || reloc->symbol) && !rz_strbuf_is_empty(buf) && reloc->addend > 0) {
-					rz_strbuf_append(buf, " +");
-				}
-				if (reloc->addend < 0) {
-					rz_strbuf_appendf(buf, " - 0x%08" PFMT64x, -reloc->addend);
-				} else {
-					rz_strbuf_appendf(buf, " 0x%08" PFMT64x, reloc->addend);
-				}
-			}
-			if (reloc->is_ifunc) {
-				rz_strbuf_append(buf, " (ifunc)");
-			}
-			char *res = rz_strbuf_drain(buf);
-			rz_table_add_rowf(table, "XXss", addr, reloc->paddr,
-				bin_reloc_type_name(reloc), res);
-			free(res);
+	RBNode *relocs = NULL;
+	if (r->bin->cur && r->bin->cur->o) {
+		RzBinFile *bf = r->bin->cur;
+		RzBinObject *o = bf->o;
+		relocs = rz_bin_object_patch_relocs(bf, o);
+		if (!relocs) {
+			relocs = rz_bin_get_relocs(r->bin);
 		}
-		i++;
+		rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
+			ut64 addr = rva(r->bin, reloc->paddr, reloc->vaddr, va);
+			if (IS_MODE_SIMPLE(mode)) {
+				rz_cons_printf("0x%08" PFMT64x "  %s\n", addr, reloc->import ? reloc->import->name : "");
+			} else if (IS_MODE_RZCMD(mode)) {
+				char *name = reloc->import
+					? strdup(reloc->import->name)
+					: (reloc->symbol ? strdup(reloc->symbol->name) : NULL);
+				if (name && bin_demangle) {
+					char *mn = rz_bin_demangle(r->bin->cur, NULL, name, addr, keep_lib);
+					if (mn) {
+						free(name);
+						name = mn;
+					}
+				}
+				if (name) {
+					int reloc_size = 4;
+					char *n = __filterQuotedShell(name);
+					rz_cons_printf("\"f %s%s%s %d 0x%08" PFMT64x "\"\n",
+						r->bin->prefix ? r->bin->prefix : "reloc.",
+						r->bin->prefix ? "." : "", n, reloc_size, addr);
+					ut64 meta_sz;
+					if (meta_for_reloc(r, o, reloc, addr, &meta_sz)) {
+						rz_cons_printf("Cd %" PFMT64u " @ 0x%08" PFMT64x "\n", meta_sz, addr);
+					}
+					free(n);
+					free(name);
+				}
+			} else if (IS_MODE_JSON(mode)) {
+				pj_o(pj);
+				char *mn = NULL;
+				char *relname = NULL;
+
+				// take care with very long symbol names! do not use sdb_fmt or similar
+				if (reloc->import) {
+					mn = rz_bin_demangle(r->bin->cur, lang, reloc->import->name, addr, keep_lib);
+					relname = strdup(reloc->import->name);
+				} else if (reloc->symbol) {
+					mn = rz_bin_demangle(r->bin->cur, lang, reloc->symbol->name, addr, keep_lib);
+					relname = strdup(reloc->symbol->name);
+				}
+
+				// check if name is available
+				if (relname && *relname) {
+					pj_ks(pj, "name", relname);
+				}
+				pj_ks(pj, "demname", mn ? mn : "");
+				pj_ks(pj, "type", bin_reloc_type_name(reloc));
+				pj_kn(pj, "vaddr", reloc->vaddr);
+				pj_kn(pj, "paddr", reloc->paddr);
+				if (reloc->symbol) {
+					pj_kn(pj, "sym_va", reloc->symbol->vaddr);
+				}
+				pj_kb(pj, "is_ifunc", reloc->is_ifunc);
+				// end reloc item
+				pj_end(pj);
+
+				free(mn);
+				if (relname) {
+					free(relname);
+				}
+			} else if (IS_MODE_NORMAL(mode)) {
+				char *name = reloc->import
+					? strdup(reloc->import->name)
+					: reloc->symbol
+					? strdup(reloc->symbol->name)
+					: NULL;
+				if (bin_demangle) {
+					char *mn = rz_bin_demangle(r->bin->cur, NULL, name, addr, keep_lib);
+					if (mn && *mn) {
+						free(name);
+						name = mn;
+					}
+				}
+				char *reloc_name = construct_reloc_name(reloc, name);
+				RzStrBuf *buf = rz_strbuf_new(reloc_name ? reloc_name : "");
+				free(reloc_name);
+				RZ_FREE(name);
+				if (reloc->addend) {
+					if ((reloc->import || reloc->symbol) && !rz_strbuf_is_empty(buf) && reloc->addend > 0) {
+						rz_strbuf_append(buf, " +");
+					}
+					if (reloc->addend < 0) {
+						rz_strbuf_appendf(buf, " - 0x%08" PFMT64x, -reloc->addend);
+					} else {
+						rz_strbuf_appendf(buf, " 0x%08" PFMT64x, reloc->addend);
+					}
+				}
+				if (reloc->is_ifunc) {
+					rz_strbuf_append(buf, " (ifunc)");
+				}
+				char *res = rz_strbuf_drain(buf);
+				rz_table_add_rowf(table, "XXss", addr, reloc->paddr,
+					bin_reloc_type_name(reloc), res);
+				free(res);
+			}
+			i++;
+		}
 	}
+
 	if (IS_MODE_JSON(mode)) {
 		pj_end(pj);
 	}

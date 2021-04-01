@@ -790,8 +790,6 @@ RZ_API RZ_DEPRECATE RzList *rz_bin_get_entries(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_fields(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_imports(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_libs(RzBin *bin);
-RZ_API RZ_DEPRECATE RBNode *rz_bin_patch_relocs(RzBin *bin);
-RZ_API RZ_DEPRECATE RzList *rz_bin_patch_relocs_list(RzBin *bin);
 RZ_API RZ_DEPRECATE RBNode *rz_bin_get_relocs(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_relocs_list(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_sections(RzBin *bin);

@@ -707,22 +707,6 @@ static RzList *relocs_rbtree2list(RBNode *root) {
 	return res;
 }
 
-RZ_API RBNode *rz_bin_patch_relocs(RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinFile *bf = rz_bin_cur(bin);
-	if (!bf || !bf->o) {
-		return NULL;
-	}
-	return rz_bin_object_patch_relocs(bf, bf->o);
-}
-
-// return a list of <const RzBinReloc> that needs to be freed by the caller
-RZ_API RzList *rz_bin_patch_relocs_list(RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RBNode *root = rz_bin_patch_relocs(bin);
-	return root ? relocs_rbtree2list(root) : NULL;
-}
-
 RZ_API RBNode *rz_bin_get_relocs(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
