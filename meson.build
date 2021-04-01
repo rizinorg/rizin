@@ -1,4 +1,4 @@
-project('rizin', 'c',
+project('rizin', 'c', 'cpp',
   version: 'v0.2.0-git',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
@@ -631,6 +631,10 @@ if cli_enabled
     rename: 'main'
   )
 endif
+
+#TODO: if bindings_enabled
+subdir('bindings')
+#endif
 
 summary({
   'prefix': rizin_prefix,

@@ -380,8 +380,6 @@ typedef struct rz_core_item_t {
 	char *fcnname;
 } RzCoreItem;
 
-RZ_API void rz_core_item_free(RzCoreItem *ci);
-
 typedef struct rz_core_cmpwatch_t {
 	ut64 addr;
 	int size;
@@ -721,10 +719,6 @@ RZ_API void rz_core_bin_dwarf_print_debug_info(const RzBinDwarfDebugInfo *inf);
 RZ_API void rz_core_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table, int addr_size);
 RZ_API void rz_core_bin_dwarf_print_aranges(RzList /*<RzBinDwarfARangeSet>*/ *aranges);
 RZ_API void rz_core_bin_dwarf_print_line_units(RzList /*<RzBinDwarfLineUnit>*/ *lines);
-
-// XXX - this is kinda hacky, maybe there should be a way to
-// refresh the bin environment without specific calls?
-RZ_API int rz_core_pseudo_code(RzCore *core, const char *input);
 
 /* gdiff.c */
 RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2);
