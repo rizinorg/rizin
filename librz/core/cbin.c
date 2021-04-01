@@ -2937,7 +2937,6 @@ static RzList *section_flag_to_rzlist(RzBin *bin, ut64 flag) {
 }
 
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
-	char *str = NULL;
 	RzBinSection *section;
 	RzBinInfo *info = NULL;
 	RzList *sections;
@@ -2946,19 +2945,13 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(rz_bin_cur(r->bin));
 	rz_return_val_if_fail(table, false);
 	int i = 0;
-	int fd = -1;
 	bool printHere = false;
 	sections = rz_bin_get_sections(r->bin);
-#if LOAD_BSS_MALLOC
-	bool inDebugger = rz_config_get_i(r->config, "cfg.debug");
-#endif
 	HtPP *dup_chk_ht = ht_pp_new0();
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
-	bool segments_only = true;
 	bool plugin_type_support = plugin && plugin->section_type_to_string;
 	bool plugin_flags_support = plugin && plugin->section_flag_to_rzlist;
-	RzList *io_section_info = NULL;
 
 	if (!dup_chk_ht) {
 		return false;
@@ -3013,9 +3006,6 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		rz_cons_printf("[%s]\n", print_segments ? "Segments" : "Sections");
 	} else if (IS_MODE_NORMAL(mode) && printHere) {
 		rz_cons_printf("Current section\n");
-	} else if (IS_MODE_SET(mode)) {
-		fd = rz_core_file_cur_fd(r);
-		rz_flag_space_set(r->flags, print_segments ? RZ_FLAGS_FS_SEGMENTS : RZ_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL(mode)) {
 		rz_table_set_columnsf(table, "dXxXxs", "nth", "paddr", "size", "vaddr", "vsize", "perm");
@@ -3031,16 +3021,6 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		}
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
-	}
-	if (IS_MODE_SET(mode)) {
-		rz_list_foreach (sections, iter, section) {
-			if (!section->is_segment) {
-				segments_only = false;
-				break;
-			}
-		}
-
-		io_section_info = rz_list_newf((RzListFree)free);
 	}
 	rz_list_foreach (sections, iter, section) {
 		char perms[] = "----";
@@ -3105,79 +3085,6 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			char *n = __filterQuotedShell(section->name);
 			rz_cons_printf("\"f %s.%s 1 0x%08" PFMT64x "\"\n", type, n, section->vaddr);
 			free(n);
-		} else if (IS_MODE_SET(mode)) {
-#if LOAD_BSS_MALLOC
-			if (!strcmp(section->name, ".bss")) {
-				// check if there's already a file opened there
-				int loaded = 0;
-				RzListIter *iter;
-				RzIOMap *m;
-				rz_list_foreach (r->io->maps, iter, m) {
-					if (m->from == addr) {
-						loaded = 1;
-					}
-				}
-				if (!loaded && !inDebugger) {
-					char *ptr = rz_str_newf("malloc://%d", section->vsize);
-					if ((desc = rz_io_open_at(core->io, ptr, RZ_PERM_R, 0644, addr))) {
-						fd = desc->fd;
-					}
-					if (fd == -1) {
-						eprintf("Cannot open file '%'\n", ptr);
-					}
-					free(ptr);
-					core->num->value = fd;
-					rz_core_block_read(core);
-				}
-			}
-#endif
-			if (section->format) {
-				// This is really slow if section vsize is HUGE
-				if (section->vsize < 1024 * 1024 * 2) {
-					rz_core_cmdf(r, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
-				}
-			}
-			if (r->bin->prefix) {
-				str = rz_str_newf("%s.%s.%s", r->bin->prefix, type, section->name);
-			} else {
-				str = rz_str_newf("%s.%s", type, section->name);
-			}
-			ut64 size = r->io->va ? section->vsize : section->size;
-			rz_flag_set(r->flags, str, addr, size);
-			RZ_FREE(str);
-
-			if (!section->is_segment || segments_only) {
-				char *pfx = r->bin->prefix;
-				str = rz_str_newf("[%02d] %s %s size %" PFMT64d " named %s%s%s",
-					i, perms, type, size,
-					pfx ? pfx : "", pfx ? "." : "", section->name);
-				rz_meta_set(r->analysis, RZ_META_TYPE_COMMENT, addr, 1, str);
-				RZ_FREE(str);
-			}
-			if (section->add) {
-				bool found;
-				str = rz_str_newf("%" PFMT64x ".%" PFMT64x ".%" PFMT64x ".%" PFMT64x ".%" PFMT32u ".%s.%" PFMT32u ".%d",
-					section->paddr, addr, section->size, section->vsize, section->perm, section->name, r->bin->cur->id, fd);
-				ht_pp_find(dup_chk_ht, str, &found);
-				if (!found) {
-					// can't directly add maps because they
-					// need to be reversed, otherwise for
-					// the way IO works maps would be shown
-					// in reverse order
-					struct io_bin_section_info_t *ibs = RZ_NEW(struct io_bin_section_info_t);
-					if (!ibs) {
-						eprintf("Could not allocate memory\n");
-						goto out;
-					}
-
-					ibs->sec = section;
-					ibs->addr = addr;
-					ibs->fd = fd;
-					rz_list_append(io_section_info, ibs);
-					ht_pp_insert(dup_chk_ht, str, NULL);
-				}
-				RZ_FREE(str);
-			}
 		} else if (IS_MODE_SIMPLE(mode)) {
 			char *hashstr = NULL;
 			if (hashtypes) {
@@ -3298,16 +3205,6 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		if (printHere) {
 			break;
 		}
-	}
-	if (IS_MODE_SET(mode) && !rz_io_desc_is_dbg(r->io->desc)) {
-		RzListIter *it;
-		struct io_bin_section_info_t *ibs;
-		rz_list_foreach_prev(io_section_info, it, ibs) {
-			add_section(r, ibs->sec, ibs->addr, ibs->fd);
-		}
-		rz_io_update(r->io);
-		rz_list_free(io_section_info);
-		io_section_info = NULL;
 	}
 	if (IS_MODE_JSON(mode) && !printHere) {
 		pj_end(pj);
