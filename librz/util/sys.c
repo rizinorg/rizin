@@ -1247,7 +1247,7 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 RZ_API void rz_sys_env_init(void) {
 	char **envp = rz_sys_get_environ();
 	if (envp) {
-		rz_sys_set_environ(envp);
+		env = envp;
 	}
 }
 
@@ -1266,6 +1266,9 @@ RZ_API char **rz_sys_get_environ(void) {
 
 RZ_API void rz_sys_set_environ(char **e) {
 	env = e;
+#if HAVE_ENVIRON
+	environ = e;
+#endif
 }
 
 RZ_API char *rz_sys_whoami(char *buf) {
