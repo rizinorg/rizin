@@ -2946,8 +2946,9 @@ RZ_API RzGraph *rz_core_analysis_importxrefs(RzCore *core) {
 		return NULL;
 	}
 	rz_list_foreach (obj->imports, iter, imp) {
-		ut64 addr = rz_core_bin_impaddr(core->bin, va, imp->name);
-		if (addr) {
+		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(obj, imp);
+		ut64 addr = sym ? (va ? rz_bin_object_get_vaddr(obj, sym->paddr, sym->vaddr) : sym->paddr) : UT64_MAX;
+		if (addr && addr != UT64_MAX) {
 			add_single_addr_xrefs(core, addr, graph);
 		} else {
 			rz_graph_add_node_info(graph, imp->name, NULL, 0);

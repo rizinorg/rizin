@@ -712,9 +712,9 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type  lib name
 ----------------------------------
-1   0x00000000 NONE METH      java.lang.Object.<init>
-3   0x00000000 NONE FIELD     java.lang.System.out
-5   0x00000000 NONE METH      java.io.PrintStream.println
+1   ---------- NONE METH      java.lang.Object.<init>
+3   ---------- NONE FIELD     java.lang.System.out
+5   ---------- NONE METH      java.io.PrintStream.println
 
 EOF
 RUN
@@ -727,15 +727,15 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type  lib name
 ----------------------------------
-8   0x00000000 NONE METH      java.lang.Object.<init>
-16  0x00000000 NONE FIELD     java.lang.System.out
-26  0x00000000 NONE METH      java.lang.StringBuilder.<init>
-29  0x00000000 NONE METH      java.lang.StringBuilder.append
-33  0x00000000 NONE METH      java.lang.StringBuilder.toString
-37  0x00000000 NONE METH      java.io.PrintStream.println
-46  0x00000000 NONE METH      java.lang.String.<init>
-55  0x00000000 NONE METH      java.lang.Integer.valueOf
-61  0x00000000 NONE METH      TestVariableSwitchUp.TestMultipleVariable
+8   ---------- NONE METH      java.lang.Object.<init>
+16  ---------- NONE FIELD     java.lang.System.out
+26  ---------- NONE METH      java.lang.StringBuilder.<init>
+29  ---------- NONE METH      java.lang.StringBuilder.append
+33  ---------- NONE METH      java.lang.StringBuilder.toString
+37  ---------- NONE METH      java.io.PrintStream.println
+46  ---------- NONE METH      java.lang.String.<init>
+55  ---------- NONE METH      java.lang.Integer.valueOf
+61  ---------- NONE METH      TestVariableSwitchUp.TestMultipleVariable
 
 EOF
 RUN
@@ -760,15 +760,15 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type  lib name
 ----------------------------------
-1   0x00000000 NONE METH      java.lang.Object.<init>
-2   0x00000000 NONE FIELD     Hello.who
-3   0x00000000 NONE FIELD     java.lang.System.out
-5   0x00000000 NONE METH      java.lang.StringBuilder.<init>
-7   0x00000000 NONE METH      java.lang.StringBuilder.append
-8   0x00000000 NONE METH      java.lang.StringBuilder.toString
-9   0x00000000 NONE METH      java.io.PrintStream.println
-12  0x00000000 NONE METH      Hello.<init>
-13  0x00000000 NONE METH      Hello.say
+1   ---------- NONE METH      java.lang.Object.<init>
+2   ---------- NONE FIELD     Hello.who
+3   ---------- NONE FIELD     java.lang.System.out
+5   ---------- NONE METH      java.lang.StringBuilder.<init>
+7   ---------- NONE METH      java.lang.StringBuilder.append
+8   ---------- NONE METH      java.lang.StringBuilder.toString
+9   ---------- NONE METH      java.io.PrintStream.println
+12  ---------- NONE METH      Hello.<init>
+13  ---------- NONE METH      Hello.say
 
 EOF
 RUN
@@ -781,7 +781,7 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib name
 ---------------------------------
-15  0x00000000 NONE METH     kotlin.jvm.internal.Intrinsics.checkParameterIsNotNull
+15  ---------- NONE METH     kotlin.jvm.internal.Intrinsics.checkParameterIsNotNull
 
 EOF
 RUN
@@ -794,8 +794,8 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type  lib name
 ----------------------------------
-7   0x00000000 NONE FIELD     java.lang.System.out
-8   0x00000000 NONE METH      java.io.PrintStream.println
+7   ---------- NONE FIELD     java.lang.System.out
+8   ---------- NONE METH      java.io.PrintStream.println
 
 EOF
 RUN
@@ -808,17 +808,17 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib name
 ---------------------------------
-1   0x00000000 NONE METH     java.lang.Object.<init>
-3   0x00000000 NONE METH     java.lang.StringBuilder.<init>
-4   0x00000000 NONE METH     java.lang.StringBuilder.append
-6   0x00000000 NONE METH     java.lang.StringBuilder.toString
-7   0x00000000 NONE METH     java.lang.Runtime.getRuntime
-8   0x00000000 NONE METH     java.lang.Runtime.exec
-11  0x00000000 NONE METH     java.lang.Process.getInputStream
-12  0x00000000 NONE METH     java.io.InputStreamReader.<init>
-13  0x00000000 NONE METH     java.io.BufferedReader.<init>
-14  0x00000000 NONE METH     java.io.BufferedReader.readLine
-15  0x00000000 NONE METH     java.lang.String.trim
+1   ---------- NONE METH     java.lang.Object.<init>
+3   ---------- NONE METH     java.lang.StringBuilder.<init>
+4   ---------- NONE METH     java.lang.StringBuilder.append
+6   ---------- NONE METH     java.lang.StringBuilder.toString
+7   ---------- NONE METH     java.lang.Runtime.getRuntime
+8   ---------- NONE METH     java.lang.Runtime.exec
+11  ---------- NONE METH     java.lang.Process.getInputStream
+12  ---------- NONE METH     java.io.InputStreamReader.<init>
+13  ---------- NONE METH     java.io.BufferedReader.<init>
+14  ---------- NONE METH     java.io.BufferedReader.readLine
+15  ---------- NONE METH     java.lang.String.trim
 
 EOF
 RUN
@@ -831,90 +831,90 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type  lib name
 ----------------------------------
-1   0x00000000 NONE METH      org.radare2.installer.MainActivity.download
-2   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.handler
-3   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.thread
-4   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.outputView
-5   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.remoteRunButton
-6   0x00000000 NONE METH      org.radare2.installer.MainActivity.checkForRadare
-7   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.http_url_default
-8   0x00000000 NONE METH      org.radare2.installer.MainActivity.output
-9   0x00000000 NONE FIELD     org.radare2.installer.MainActivity.mUtils
-10  0x00000000 NONE METH      android.app.Activity.<init>
-12  0x00000000 NONE METH      android.os.Handler.<init>
-15  0x00000000 NONE METH      org.radare2.installer.MainActivity$2.<init>
-16  0x00000000 NONE FIELD     org.radare2.installer.MainActivity.onLocalRunButtonClick
-18  0x00000000 NONE METH      org.radare2.installer.MainActivity$3.<init>
-19  0x00000000 NONE FIELD     org.radare2.installer.MainActivity.onRemoteRunButtonClick
-20  0x00000000 NONE METH      android.app.Activity.onCreate
-23  0x00000000 NONE METH      org.radare2.installer.MainActivity.setContentView
-25  0x00000000 NONE METH      org.radare2.installer.MainActivity.getApplicationContext
-26  0x00000000 NONE METH      org.radare2.installer.Utils.<init>
-29  0x00000000 NONE METH      org.radare2.installer.MainActivity.findViewById
-34  0x00000000 NONE METH      org.radare2.installer.Utils.GetPref
-36  0x00000000 NONE METH      java.lang.String.equals
-37  0x00000000 NONE METH      android.widget.CheckBox.setChecked
-45  0x00000000 NONE METH      android.widget.Button.setOnClickListener
-47  0x00000000 NONE FIELD     org.radare2.installer.MainActivity.localRunButton
-49  0x00000000 NONE METH      org.radare2.installer.Utils.isInternetAvailable
-50  0x00000000 NONE METH      android.preference.PreferenceManager.getDefaultSharedPreferences
-53  0x00000000 NONE METH      org.radare2.installer.MainActivity$1.<init>
-54  0x00000000 NONE METH      java.lang.Thread.<init>
-55  0x00000000 NONE METH      java.lang.Thread.start
-58  0x00000000 NONE IMETH     android.view.Menu.add
-59  0x00000000 NONE METH      android.app.Activity.onCreateOptionsMenu
-60  0x00000000 NONE IMETH     android.view.MenuItem.getItemId
-63  0x00000000 NONE METH      android.content.Intent.<init>
-65  0x00000000 NONE METH      android.content.Intent.setFlags
-66  0x00000000 NONE METH      org.radare2.installer.MainActivity.startActivity
-69  0x00000000 NONE METH      java.io.File.<init>
-70  0x00000000 NONE METH      java.io.File.exists
-72  0x00000000 NONE METH      org.radare2.installer.MainActivity$4.<init>
-73  0x00000000 NONE METH      android.os.Handler.post
-76  0x00000000 NONE METH      java.io.FileInputStream.<init>
-77  0x00000000 NONE METH      java.util.zip.GZIPInputStream.<init>
-78  0x00000000 NONE METH      java.lang.String.lastIndexOf
-79  0x00000000 NONE METH      java.lang.String.substring
-82  0x00000000 NONE METH      java.lang.StringBuilder.<init>
-83  0x00000000 NONE METH      java.lang.StringBuilder.append
-85  0x00000000 NONE METH      java.lang.StringBuilder.toString
-87  0x00000000 NONE METH      java.io.FileOutputStream.<init>
-88  0x00000000 NONE METH      java.util.zip.GZIPInputStream.read
-89  0x00000000 NONE METH      java.io.OutputStream.write
-90  0x00000000 NONE METH      java.util.zip.GZIPInputStream.close
-91  0x00000000 NONE METH      java.io.OutputStream.close
-93  0x00000000 NONE METH      com.ice.tar.TarArchive.<init>
-94  0x00000000 NONE METH      com.ice.tar.TarArchive.extractContents
-95  0x00000000 NONE METH      com.ice.tar.TarArchive.closeArchive
-96  0x00000000 NONE METH      java.io.File.delete
-98  0x00000000 NONE METH      org.radare2.installer.MainActivity$5.<init>
-100 0x00000000 NONE METH      java.net.URL.<init>
-101 0x00000000 NONE METH      java.net.URL.openConnection
-104 0x00000000 NONE METH      java.net.HttpURLConnection.setRequestMethod
-105 0x00000000 NONE METH      java.net.HttpURLConnection.setInstanceFollowRedirects
-106 0x00000000 NONE METH      java.net.HttpURLConnection.getRequestProperties
-107 0x00000000 NONE METH      java.net.HttpURLConnection.connect
-108 0x00000000 NONE METH      java.net.HttpURLConnection.getContentLength
-110 0x00000000 NONE METH      java.lang.StringBuilder.append
-113 0x00000000 NONE METH      java.net.HttpURLConnection.getHeaderField
-114 0x00000000 NONE METH      org.radare2.installer.Utils.StorePref
-115 0x00000000 NONE METH      java.net.HttpURLConnection.getInputStream
-117 0x00000000 NONE METH      java.io.InputStream.read
-118 0x00000000 NONE METH      java.io.FileOutputStream.write
-121 0x00000000 NONE METH      org.radare2.installer.MainActivity.resetButtons
-123 0x00000000 NONE METH      java.io.FileOutputStream.close
-124 0x00000000 NONE METH      java.io.InputStream.close
-125 0x00000000 NONE METH      java.net.HttpURLConnection.disconnect
-127 0x00000000 NONE METH      java.lang.Exception.printStackTrace
-128 0x00000000 NONE METH      android.app.Activity.onResume
-131 0x00000000 NONE IMETH     android.content.SharedPreferences.getString
-132 0x00000000 NONE METH      java.lang.Integer.parseInt
-134 0x00000000 NONE IMETH     android.content.SharedPreferences.getBoolean
-137 0x00000000 NONE METH      org.radare2.installer.MainActivity.getSystemService
-140 0x00000000 NONE METH      android.app.PendingIntent.getService
-141 0x00000000 NONE METH      android.app.AlarmManager.cancel
-142 0x00000000 NONE METH      android.os.SystemClock.elapsedRealtime
-143 0x00000000 NONE METH      android.app.AlarmManager.setInexactRepeating
+1   ---------- NONE METH      org.radare2.installer.MainActivity.download
+2   ---------- NONE FIELD     org.radare2.installer.MainActivity.handler
+3   ---------- NONE FIELD     org.radare2.installer.MainActivity.thread
+4   ---------- NONE FIELD     org.radare2.installer.MainActivity.outputView
+5   ---------- NONE FIELD     org.radare2.installer.MainActivity.remoteRunButton
+6   ---------- NONE METH      org.radare2.installer.MainActivity.checkForRadare
+7   ---------- NONE FIELD     org.radare2.installer.MainActivity.http_url_default
+8   ---------- NONE METH      org.radare2.installer.MainActivity.output
+9   ---------- NONE FIELD     org.radare2.installer.MainActivity.mUtils
+10  ---------- NONE METH      android.app.Activity.<init>
+12  ---------- NONE METH      android.os.Handler.<init>
+15  ---------- NONE METH      org.radare2.installer.MainActivity$2.<init>
+16  ---------- NONE FIELD     org.radare2.installer.MainActivity.onLocalRunButtonClick
+18  ---------- NONE METH      org.radare2.installer.MainActivity$3.<init>
+19  ---------- NONE FIELD     org.radare2.installer.MainActivity.onRemoteRunButtonClick
+20  ---------- NONE METH      android.app.Activity.onCreate
+23  ---------- NONE METH      org.radare2.installer.MainActivity.setContentView
+25  ---------- NONE METH      org.radare2.installer.MainActivity.getApplicationContext
+26  ---------- NONE METH      org.radare2.installer.Utils.<init>
+29  ---------- NONE METH      org.radare2.installer.MainActivity.findViewById
+34  ---------- NONE METH      org.radare2.installer.Utils.GetPref
+36  ---------- NONE METH      java.lang.String.equals
+37  ---------- NONE METH      android.widget.CheckBox.setChecked
+45  ---------- NONE METH      android.widget.Button.setOnClickListener
+47  ---------- NONE FIELD     org.radare2.installer.MainActivity.localRunButton
+49  ---------- NONE METH      org.radare2.installer.Utils.isInternetAvailable
+50  ---------- NONE METH      android.preference.PreferenceManager.getDefaultSharedPreferences
+53  ---------- NONE METH      org.radare2.installer.MainActivity$1.<init>
+54  ---------- NONE METH      java.lang.Thread.<init>
+55  ---------- NONE METH      java.lang.Thread.start
+58  ---------- NONE IMETH     android.view.Menu.add
+59  ---------- NONE METH      android.app.Activity.onCreateOptionsMenu
+60  ---------- NONE IMETH     android.view.MenuItem.getItemId
+63  ---------- NONE METH      android.content.Intent.<init>
+65  ---------- NONE METH      android.content.Intent.setFlags
+66  ---------- NONE METH      org.radare2.installer.MainActivity.startActivity
+69  ---------- NONE METH      java.io.File.<init>
+70  ---------- NONE METH      java.io.File.exists
+72  ---------- NONE METH      org.radare2.installer.MainActivity$4.<init>
+73  ---------- NONE METH      android.os.Handler.post
+76  ---------- NONE METH      java.io.FileInputStream.<init>
+77  ---------- NONE METH      java.util.zip.GZIPInputStream.<init>
+78  ---------- NONE METH      java.lang.String.lastIndexOf
+79  ---------- NONE METH      java.lang.String.substring
+82  ---------- NONE METH      java.lang.StringBuilder.<init>
+83  ---------- NONE METH      java.lang.StringBuilder.append
+85  ---------- NONE METH      java.lang.StringBuilder.toString
+87  ---------- NONE METH      java.io.FileOutputStream.<init>
+88  ---------- NONE METH      java.util.zip.GZIPInputStream.read
+89  ---------- NONE METH      java.io.OutputStream.write
+90  ---------- NONE METH      java.util.zip.GZIPInputStream.close
+91  ---------- NONE METH      java.io.OutputStream.close
+93  ---------- NONE METH      com.ice.tar.TarArchive.<init>
+94  ---------- NONE METH      com.ice.tar.TarArchive.extractContents
+95  ---------- NONE METH      com.ice.tar.TarArchive.closeArchive
+96  ---------- NONE METH      java.io.File.delete
+98  ---------- NONE METH      org.radare2.installer.MainActivity$5.<init>
+100 ---------- NONE METH      java.net.URL.<init>
+101 ---------- NONE METH      java.net.URL.openConnection
+104 ---------- NONE METH      java.net.HttpURLConnection.setRequestMethod
+105 ---------- NONE METH      java.net.HttpURLConnection.setInstanceFollowRedirects
+106 ---------- NONE METH      java.net.HttpURLConnection.getRequestProperties
+107 ---------- NONE METH      java.net.HttpURLConnection.connect
+108 ---------- NONE METH      java.net.HttpURLConnection.getContentLength
+110 ---------- NONE METH      java.lang.StringBuilder.append
+113 ---------- NONE METH      java.net.HttpURLConnection.getHeaderField
+114 ---------- NONE METH      org.radare2.installer.Utils.StorePref
+115 ---------- NONE METH      java.net.HttpURLConnection.getInputStream
+117 ---------- NONE METH      java.io.InputStream.read
+118 ---------- NONE METH      java.io.FileOutputStream.write
+121 ---------- NONE METH      org.radare2.installer.MainActivity.resetButtons
+123 ---------- NONE METH      java.io.FileOutputStream.close
+124 ---------- NONE METH      java.io.InputStream.close
+125 ---------- NONE METH      java.net.HttpURLConnection.disconnect
+127 ---------- NONE METH      java.lang.Exception.printStackTrace
+128 ---------- NONE METH      android.app.Activity.onResume
+131 ---------- NONE IMETH     android.content.SharedPreferences.getString
+132 ---------- NONE METH      java.lang.Integer.parseInt
+134 ---------- NONE IMETH     android.content.SharedPreferences.getBoolean
+137 ---------- NONE METH      org.radare2.installer.MainActivity.getSystemService
+140 ---------- NONE METH      android.app.PendingIntent.getService
+141 ---------- NONE METH      android.app.AlarmManager.cancel
+142 ---------- NONE METH      android.os.SystemClock.elapsedRealtime
+143 ---------- NONE METH      android.app.AlarmManager.setInexactRepeating
 
 EOF
 RUN
@@ -927,19 +927,19 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type  lib name
 ----------------------------------
-1   0x00000000 NONE METH      java.lang.Object.<init>
-2   0x00000000 NONE FIELD     java.lang.System.out
-4   0x00000000 NONE METH      java.io.PrintStream.println
-8   0x00000000 NONE METH      java.io.FileReader.<init>
-9   0x00000000 NONE METH      java.io.BufferedReader.<init>
-10  0x00000000 NONE METH      java.io.BufferedReader.readLine
-12  0x00000000 NONE METH      java.lang.StringBuilder.<init>
-14  0x00000000 NONE METH      java.lang.StringBuilder.append
-15  0x00000000 NONE METH      java.lang.StringBuilder.toString
-16  0x00000000 NONE METH      java.io.BufferedReader.close
-18  0x00000000 NONE FIELD     java.lang.System.err
-21  0x00000000 NONE METH      java.io.PrintStream.format
-22  0x00000000 NONE METH      java.lang.Exception.printStackTrace
+1   ---------- NONE METH      java.lang.Object.<init>
+2   ---------- NONE FIELD     java.lang.System.out
+4   ---------- NONE METH      java.io.PrintStream.println
+8   ---------- NONE METH      java.io.FileReader.<init>
+9   ---------- NONE METH      java.io.BufferedReader.<init>
+10  ---------- NONE METH      java.io.BufferedReader.readLine
+12  ---------- NONE METH      java.lang.StringBuilder.<init>
+14  ---------- NONE METH      java.lang.StringBuilder.append
+15  ---------- NONE METH      java.lang.StringBuilder.toString
+16  ---------- NONE METH      java.io.BufferedReader.close
+18  ---------- NONE FIELD     java.lang.System.err
+21  ---------- NONE METH      java.io.PrintStream.format
+22  ---------- NONE METH      java.lang.Exception.printStackTrace
 
 EOF
 RUN
@@ -964,28 +964,28 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type  lib name
 ----------------------------------
-13  0x00000000 NONE METH      groovy.lang.Script.<init>
-17  0x00000000 NONE METH      test.$getCallSiteArray
-22  0x00000000 NONE METH      groovy.lang.Script.<init>
-35  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.call
-55  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.callConstructor
-61  0x00000000 NONE METH      org.codehaus.groovy.runtime.ScriptBytecodeAdapter.createMap
-67  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.call
-71  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.callCurrent
-79  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.callGetProperty
-92  0x00000000 NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.call
-100 0x00000000 NONE METH      java.lang.Object.getClass
-104 0x00000000 NONE METH      org.codehaus.groovy.runtime.ScriptBytecodeAdapter.initMetaClass
-106 0x00000000 NONE FIELD     test.$staticClassInfo
-112 0x00000000 NONE METH      org.codehaus.groovy.reflection.ClassInfo.getClassInfo
-115 0x00000000 NONE METH      org.codehaus.groovy.reflection.ClassInfo.getMetaClass
-147 0x00000000 NONE METH      test.$createCallSiteArray_1
-152 0x00000000 NONE METH      org.codehaus.groovy.runtime.callsite.CallSiteArray.<init>
-154 0x00000000 NONE FIELD     test.$callSiteArray
-159 0x00000000 NONE METH      java.lang.ref.SoftReference.get
-161 0x00000000 NONE METH      test.$createCallSiteArray
-164 0x00000000 NONE METH      java.lang.ref.SoftReference.<init>
-168 0x00000000 NONE FIELD     org.codehaus.groovy.runtime.callsite.CallSiteArray.array
+13  ---------- NONE METH      groovy.lang.Script.<init>
+17  ---------- NONE METH      test.$getCallSiteArray
+22  ---------- NONE METH      groovy.lang.Script.<init>
+35  ---------- NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.call
+55  ---------- NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.callConstructor
+61  ---------- NONE METH      org.codehaus.groovy.runtime.ScriptBytecodeAdapter.createMap
+67  ---------- NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.call
+71  ---------- NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.callCurrent
+79  ---------- NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.callGetProperty
+92  ---------- NONE IMETH     org.codehaus.groovy.runtime.callsite.CallSite.call
+100 ---------- NONE METH      java.lang.Object.getClass
+104 ---------- NONE METH      org.codehaus.groovy.runtime.ScriptBytecodeAdapter.initMetaClass
+106 ---------- NONE FIELD     test.$staticClassInfo
+112 ---------- NONE METH      org.codehaus.groovy.reflection.ClassInfo.getClassInfo
+115 ---------- NONE METH      org.codehaus.groovy.reflection.ClassInfo.getMetaClass
+147 ---------- NONE METH      test.$createCallSiteArray_1
+152 ---------- NONE METH      org.codehaus.groovy.runtime.callsite.CallSiteArray.<init>
+154 ---------- NONE FIELD     test.$callSiteArray
+159 ---------- NONE METH      java.lang.ref.SoftReference.get
+161 ---------- NONE METH      test.$createCallSiteArray
+164 ---------- NONE METH      java.lang.ref.SoftReference.<init>
+168 ---------- NONE FIELD     org.codehaus.groovy.runtime.callsite.CallSiteArray.array
 
 EOF
 RUN
@@ -998,27 +998,27 @@ EXPECT=<<EOF
 [Imports]
 nth vaddr      bind   type  lib name
 ------------------------------------
-2   0x00000000 NONE   METH      TryWithResources.<init>
-3   0x00000000 NONE   METH      java.lang.RuntimeException.<init>
-4   0x00000000 NONE   FIELD     java.lang.System.out
-6   0x00000000 NONE   METH      java.lang.StringBuilder.<init>
-8   0x00000000 NONE   METH      java.lang.StringBuilder.append
-9   0x00000000 NONE   METH      java.lang.StringBuilder.append
-10  0x00000000 NONE   METH      java.lang.StringBuilder.toString
-11  0x00000000 NONE   METH      java.io.PrintStream.println
-12  0x00000000 NONE   FIELD     TryWithResources.i
-14  0x00000000 NONE   METH      java.io.PrintStream.println
-15  0x00000000 NONE   FIELD     TryWithResources.$
-17  0x00000000 GLOBAL FUNC      TryWithResources.main
-19  0x00000000 NONE   METH      TryWithResources.$
-20  0x00000000 NONE   METH      java.io.PrintStream.println
-21  0x00000000 NONE   METH      TryWithResources.$
-22  0x00000000 NONE   METH      TryWithResources.close
-24  0x00000000 NONE   METH      java.lang.Throwable.addSuppressed
-25  0x00000000 NONE   METH      TryWithResources.$
-26  0x00000000 NONE   IMETH     java.lang.AutoCloseable.close
-27  0x00000000 NONE   METH      java.lang.Throwable.printStackTrace
-0   0x00000000 WEAK   IFACE     java.lang.AutoCloseable.*
+2   ---------- NONE   METH      TryWithResources.<init>
+3   ---------- NONE   METH      java.lang.RuntimeException.<init>
+4   ---------- NONE   FIELD     java.lang.System.out
+6   ---------- NONE   METH      java.lang.StringBuilder.<init>
+8   ---------- NONE   METH      java.lang.StringBuilder.append
+9   ---------- NONE   METH      java.lang.StringBuilder.append
+10  ---------- NONE   METH      java.lang.StringBuilder.toString
+11  ---------- NONE   METH      java.io.PrintStream.println
+12  ---------- NONE   FIELD     TryWithResources.i
+14  ---------- NONE   METH      java.io.PrintStream.println
+15  ---------- NONE   FIELD     TryWithResources.$
+17  ---------- GLOBAL FUNC      TryWithResources.main
+19  ---------- NONE   METH      TryWithResources.$
+20  ---------- NONE   METH      java.io.PrintStream.println
+21  ---------- NONE   METH      TryWithResources.$
+22  ---------- NONE   METH      TryWithResources.close
+24  ---------- NONE   METH      java.lang.Throwable.addSuppressed
+25  ---------- NONE   METH      TryWithResources.$
+26  ---------- NONE   IMETH     java.lang.AutoCloseable.close
+27  ---------- NONE   METH      java.lang.Throwable.printStackTrace
+0   ---------- WEAK   IFACE     java.lang.AutoCloseable.*
 
 EOF
 RUN

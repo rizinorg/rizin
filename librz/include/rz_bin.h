@@ -252,6 +252,11 @@ typedef struct rz_bin_object_t {
 	RzList /*<RzBinSection>*/ *sections;
 	RzList /*<RzBinImport>*/ *imports;
 	RzList /*<RzBinSymbol>*/ *symbols;
+	/**
+	 * \brief Acceleration structure for fast access of the symbol for a given import.
+	 * This associates the name of every symbol where is_imported == true to the symbol itself.
+	 */
+	HtPP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
 	RzList /*<??>*/ *entries;
 	RzList /*<??>*/ *fields;
 	RzList /*<??>*/ *libs;
@@ -857,6 +862,7 @@ RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
 RZ_API RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym);
 RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
+RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImport *imp);
 RZ_API void rz_bin_mem_free(void *data);
 
 // demangle functions

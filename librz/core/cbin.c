@@ -1956,7 +1956,7 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 }
 
 /**
- * \brief fetche relocs for the object and print them
+ * \brief fetch relocs for the object and print them
  * \return the number of relocs or -1 on failure
  */
 static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int va, int mode, PJ *pj, RzTable *table) {
@@ -2121,105 +2121,7 @@ static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
 	return relocs_count >= 0;
 }
 
-#define MYDB 1
-/* this is a VERY VERY VERY hacky and bad workaround that needs proper refactoring in Rbin to use Sdb */
-#if MYDB
-RZ_DEPRECATE static Sdb *mydb = NULL;
-RZ_DEPRECATE static RzList *osymbols = NULL;
-
-RZ_DEPRECATE static RzBinSymbol *get_import(RzBin *bin, RzList *symbols, const char *name, ut64 addr) {
-	RzBinSymbol *symbol, *res = NULL;
-	RzListIter *iter;
-	if (mydb && symbols && symbols != osymbols) {
-		sdb_free(mydb);
-		mydb = NULL;
-		osymbols = symbols;
-	}
-	if (mydb) {
-		if (name) {
-			res = (RzBinSymbol *)(void *)(size_t)
-				sdb_num_get(mydb, sdb_fmt("%x", sdb_hash(name)), NULL);
-		} else {
-			res = (RzBinSymbol *)(void *)(size_t)
-				sdb_num_get(mydb, sdb_fmt("0x%08" PFMT64x, addr), NULL);
-		}
-	} else {
-		mydb = sdb_new0();
-		rz_list_foreach (symbols, iter, symbol) {
-			if (!symbol->name || !symbol->is_imported) {
-				continue;
-			}
-			/* ${name}=${ptrToSymbol} */
-			if (!sdb_num_add(mydb, sdb_fmt("%x", sdb_hash(symbol->name)), (ut64)(size_t)symbol, 0)) {
-				//	eprintf ("DUP (%s)\n", symbol->name);
-			}
-			/* 0x${vaddr}=${ptrToSymbol} */
-			if (!sdb_num_add(mydb, sdb_fmt("0x%08" PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
-				//	eprintf ("DUP (%s)\n", symbol->name);
-			}
-			if (name) {
-				if (!res && !strcmp(symbol->name, name)) {
-					res = symbol;
-				}
-			} else {
-				if (symbol->vaddr == addr) {
-					res = symbol;
-				}
-			}
-		}
-		osymbols = symbols;
-	}
-	return res;
-}
-#else
-static RzList *osymbols = NULL;
-static RzBinSymbol *get_symbol(RzBin *bin, RzList *symbols, const char *name, ut64 addr) {
-	RzBinSymbol *symbol;
-	RzListIter *iter;
-	// XXX this is slow, we should use a hashtable here
-	rz_list_foreach (symbols, iter, symbol) {
-		if (name) {
-			if (!strcmp(symbol->name, name))
-				return symbol;
-		} else {
-			if (symbol->vaddr == addr) {
-				return symbol;
-			}
-		}
-	}
-	return NULL;
-}
-#endif
-
-/* XXX: This is a hack to get PLT references in rz_bin -i */
-RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name) {
-	RzList *symbols;
-
-	if (!name || !*name) {
-		return false;
-	}
-	if (!(symbols = rz_bin_get_symbols(bin))) {
-		return false;
-	}
-	RzBinSymbol *s = get_import(bin, symbols, name, 0LL);
-	// maybe ut64_MAX to indicate import not found?
-	ut64 addr = 0LL;
-	if (s) {
-		if (va) {
-			if (s->paddr == UT64_MAX) {
-				addr = s->vaddr;
-			} else if (bin->cur && bin->cur->o) {
-				addr = rz_bin_object_get_vaddr(bin->cur->o, s->paddr, s->vaddr);
-			}
-		} else {
-			addr = s->paddr;
-		}
-	}
-	return addr;
-}
-
 static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
-	RzBinInfo *info = rz_bin_get_info(r->bin);
 	int bin_demangle = rz_config_get_i(r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
 	RzTable *table = rz_core_table(r);
@@ -2228,6 +2130,9 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 	RzListIter *iter;
 	int i = 0;
 
+	RzBinFile *bf = rz_bin_cur(r->bin);
+	RzBinObject *o = bf ? bf->o : NULL;
+	RzBinInfo *info = bf->o ? o->info : NULL;
 	if (!info) {
 		if (IS_MODE_JSON(mode)) {
 			pj_a(pj);
@@ -2255,7 +2160,8 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 		}
 		char *symname = import->name ? strdup(import->name) : NULL;
 		char *libname = import->libname ? strdup(import->libname) : NULL;
-		ut64 addr = rz_core_bin_impaddr(r->bin, va, symname);
+		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(o, import);
+		ut64 addr = sym ? rva(o, sym->paddr, sym->vaddr, va) : UT64_MAX;
 		if (bin_demangle) {
 			char *dname = rz_bin_demangle(r->bin->cur, NULL, symname, addr, keep_lib);
 			if (dname) {
@@ -2295,7 +2201,9 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 			if (libname) {
 				pj_ks(pj, "libname", libname);
 			}
-			pj_kn(pj, "plt", addr);
+			if (addr != UT64_MAX) {
+				pj_kn(pj, "plt", addr);
+			}
 			pj_end(pj);
 		} else if (IS_MODE_RZCMD(mode)) {
 		} else {
@@ -2328,13 +2236,6 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 	}
 
 	rz_table_free(table);
-#if MYDB
-	// NOTE: if we comment out this, it will leak.. but it will be faster
-	// because it will keep the cache across multiple RzBin calls
-	osymbols = NULL;
-	sdb_free(mydb);
-	mydb = NULL;
-#endif
 	return true;
 }
 
