@@ -425,7 +425,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	return true;
 }
 
-RZ_IPI RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
+RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
 	rz_return_val_if_fail(bf && o, NULL);
 
 	static bool first = true;

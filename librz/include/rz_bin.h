@@ -790,8 +790,6 @@ RZ_API RZ_DEPRECATE RzList *rz_bin_get_entries(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_fields(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_imports(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_libs(RzBin *bin);
-RZ_API RZ_DEPRECATE RBNode *rz_bin_patch_relocs(RzBin *bin);
-RZ_API RZ_DEPRECATE RzList *rz_bin_patch_relocs_list(RzBin *bin);
 RZ_API RZ_DEPRECATE RBNode *rz_bin_get_relocs(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_relocs_list(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_sections(RzBin *bin);
@@ -860,6 +858,7 @@ RZ_API void rz_bin_file_hash_free(RzBinFileHash *fhash);
 RZ_API int rz_bin_object_set_items(RzBinFile *binfile, RzBinObject *o);
 RZ_API bool rz_bin_object_delete(RzBin *bin, ut32 binfile_id);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
+RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 RZ_API void rz_bin_mem_free(void *data);
 
 // demangle functions

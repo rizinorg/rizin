@@ -37,7 +37,6 @@ static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
 static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode);
-static int bin_relocs(RzCore *r, PJ *pj, int mode, int va);
 static int bin_libs(RzCore *r, PJ *pj, int mode);
 static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name);
 static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args);
@@ -382,7 +381,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, true);
 	if (rz_config_get_i(r->config, "bin.relocs")) {
-		bin_relocs(r, NULL, RZ_MODE_SET, va);
+		rz_core_bin_apply_relocs(r, binfile, va);
 	}
 	bin_libs(r, NULL, RZ_MODE_SET);
 	bin_imports(r, NULL, RZ_MODE_SET, va, NULL);
@@ -541,6 +540,231 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 		return false;
 	}
 	return true;
+}
+
+/*
+ * Decide whether a meta item should be created for the given reloc
+ * and figure out what size it should have.
+ * \return whether to put a meta item for the given reloc
+ */
+static bool meta_for_reloc(RzCore *r, RzBinObject *binobj, RzBinReloc *reloc, ut64 addr, RZ_OUT ut64 *size) {
+	rz_return_val_if_fail(binobj && reloc, false);
+	RzBinInfo *info = binobj ? binobj->info : NULL;
+
+	int cdsz = info ? (info->bits / 8) : 0;
+	if (cdsz <= 0) {
+		return false;
+	}
+
+	// only set meta if it's not in an executable section
+	RzIOMap *map = rz_io_map_get(r->io, addr);
+	if (!map || map->perm & RZ_PERM_X) {
+		return false;
+	}
+
+	*size = cdsz;
+	return true;
+}
+
+static bool is_section_symbol(RzBinSymbol *s) {
+	/* workaround for some bin plugs (e.g. ELF) */
+	if (!s || *s->name) {
+		return false;
+	}
+	return (s->type && !strcmp(s->type, RZ_BIN_TYPE_SECTION_STR));
+}
+
+static bool is_special_symbol(RzBinSymbol *s) {
+	return s->type && !strcmp(s->type, RZ_BIN_TYPE_SPECIAL_SYM_STR);
+}
+
+static bool is_file_symbol(RzBinSymbol *s) {
+	/* workaround for some bin plugs (e.g. ELF) */
+	return (s && s->type && !strcmp(s->type, RZ_BIN_TYPE_FILE_STR));
+}
+
+static bool is_section_reloc(RzBinReloc *r) {
+	return is_section_symbol(r->symbol);
+}
+
+static bool is_file_reloc(RzBinReloc *r) {
+	return is_file_symbol(r->symbol);
+}
+
+static ut8 bin_reloc_size(RzBinReloc *reloc) {
+#define CASE(T) \
+	case RZ_BIN_RELOC_##T: return (T) / 8
+	switch (reloc->type) {
+		CASE(8);
+		CASE(16);
+		CASE(32);
+		CASE(64);
+	}
+	return 0;
+#undef CASE
+}
+
+static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
+	Sdb *db = sdb;
+	char *foo = sdb_get(db, sdb_fmt("%d", ordinal), 0);
+	return (foo && *foo) ? foo : NULL;
+}
+
+// name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
+static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE const char *name) {
+	RzStrBuf *buf = rz_strbuf_new("");
+
+	// (optional) libname_
+	if (reloc->import && reloc->import->libname) {
+		rz_strbuf_appendf(buf, "%s_", reloc->import->libname);
+	} else if (reloc->symbol && reloc->symbol->libname) {
+		rz_strbuf_appendf(buf, "%s_", reloc->symbol->libname);
+	}
+
+	// actual name
+	if (name) {
+		rz_strbuf_append(buf, name);
+	} else if (reloc->import && reloc->import->name && *reloc->import->name) {
+		rz_strbuf_append(buf, reloc->import->name);
+	} else if (reloc->symbol && reloc->symbol->name && *reloc->symbol->name) {
+		rz_strbuf_appendf(buf, "%s", reloc->symbol->name);
+	} else if (reloc->is_ifunc) {
+		// addend is the function pointer for the resolving ifunc
+		rz_strbuf_appendf(buf, "ifunc_%" PFMT64x, reloc->addend);
+	} else {
+		rz_strbuf_set(buf, "");
+	}
+
+	return rz_strbuf_drain(buf);
+}
+
+static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
+	int bin_demangle = rz_config_get_i(r->config, "bin.demangle");
+	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
+	const char *lang = rz_config_get(r->config, "bin.lang");
+	bool is_pe = true;
+
+	if (is_pe && reloc->import && reloc->import->name && reloc->import->libname && rz_str_startswith(reloc->import->name, "Ordinal_")) {
+		char *module = reloc->import->libname;
+		rz_str_case(module, false);
+
+		// strip trailing ".dll"
+		size_t module_len = strlen(module);
+		if (module_len > 4 && !strcmp(module + module_len - 4, ".dll")) {
+			module[module_len - 4] = '\0';
+		}
+
+		const char *import = reloc->import->name + strlen("Ordinal_");
+		if (import) {
+			char *filename = NULL;
+			int ordinal = atoi(import);
+			if (!*sdb_module || strcmp(module, *sdb_module)) {
+				sdb_free(*db);
+				*db = NULL;
+				free(*sdb_module);
+				*sdb_module = strdup(module);
+				/* always lowercase */
+				filename = sdb_fmt("%s.sdb", module);
+				rz_str_case(filename, false);
+				if (rz_file_exists(filename)) {
+					*db = sdb_new(NULL, filename, 0);
+				} else {
+					const char *dirPrefix = rz_sys_prefix(NULL);
+					filename = sdb_fmt(RZ_JOIN_4_PATHS("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"),
+						dirPrefix, module);
+					if (rz_file_exists(filename)) {
+						*db = sdb_new(NULL, filename, 0);
+					}
+				}
+			}
+			if (*db) {
+				// ordinal-1 because we enumerate starting at 0
+				char *symname = resolveModuleOrdinal(*db, module, ordinal - 1); // uses sdb_get
+				if (symname) {
+					if (r->bin->prefix) {
+						reloc->import->name = rz_str_newf("%s.%s", r->bin->prefix, symname);
+						RZ_FREE(symname);
+					} else {
+						reloc->import->name = symname;
+					}
+				}
+			}
+		}
+		rz_analysis_hint_set_size(r->analysis, reloc->vaddr, 4);
+		rz_meta_set(r->analysis, RZ_META_TYPE_DATA, reloc->vaddr, 4, NULL);
+	}
+
+	char flagname[RZ_FLAG_NAME_SIZE];
+	char *reloc_name = construct_reloc_name(reloc, NULL);
+	if (!reloc_name || !*reloc_name) {
+		free(reloc_name);
+		return;
+	}
+	if (r->bin->prefix) {
+		snprintf(flagname, RZ_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
+	} else {
+		snprintf(flagname, RZ_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
+	}
+	free(reloc_name);
+	char *demname = NULL;
+	if (bin_demangle) {
+		demname = rz_bin_demangle(r->bin->cur, lang, flagname, addr, keep_lib);
+		if (demname) {
+			snprintf(flagname, RZ_FLAG_NAME_SIZE, "reloc.%s", demname);
+		}
+	}
+	rz_name_filter(flagname, 0, true);
+	RzFlagItem *fi = rz_flag_set(r->flags, flagname, addr, bin_reloc_size(reloc));
+	if (demname) {
+		char *realname;
+		if (r->bin->prefix) {
+			realname = sdb_fmt("%s.reloc.%s", r->bin->prefix, demname);
+		} else {
+			realname = sdb_fmt("reloc.%s", demname);
+		}
+		rz_flag_item_set_realname(fi, realname);
+	}
+	free(demname);
+}
+
+RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_bool) {
+	rz_return_val_if_fail(core && binfile, false);
+	RzBinObject *o = binfile->o;
+	if (!o) {
+		return false;
+	}
+
+	int va = VA_TRUE; // XXX relocs always vaddr?
+	RBNode *relocs = rz_bin_object_patch_relocs(binfile, o);
+	if (!relocs) {
+		relocs = o->relocs;
+	}
+
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_RELOCS);
+
+	Sdb *db = NULL;
+	char *sdb_module = NULL;
+	RBIter iter;
+	RzBinReloc *reloc = NULL;
+	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
+		ut64 addr = rva(core->bin, reloc->paddr, reloc->vaddr, va);
+		if ((is_section_reloc(reloc) || is_file_reloc(reloc))) {
+			/*
+			 * Skip section reloc because they will have their own flag.
+			 * Skip also file reloc because not useful for now.
+			 */
+			continue;
+		}
+		set_bin_relocs(core, reloc, addr, &db, &sdb_module);
+		ut64 meta_sz;
+		if (meta_for_reloc(core, o, reloc, addr, &meta_sz)) {
+			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, addr, meta_sz, NULL);
+		}
+	}
+	RZ_FREE(sdb_module);
+	sdb_free(db);
+
+	return relocs != NULL;
 }
 
 RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
@@ -1481,235 +1705,28 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 #undef CASE
 }
 
-static ut8 bin_reloc_size(RzBinReloc *reloc) {
-#define CASE(T) \
-	case RZ_BIN_RELOC_##T: return (T) / 8
-	switch (reloc->type) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
-	}
-	return 0;
-#undef CASE
-}
-
-static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
-	Sdb *db = sdb;
-	char *foo = sdb_get(db, sdb_fmt("%d", ordinal), 0);
-	return (foo && *foo) ? foo : NULL;
-}
-
-// name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
-static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE const char *name) {
-	RzStrBuf *buf = rz_strbuf_new("");
-
-	// (optional) libname_
-	if (reloc->import && reloc->import->libname) {
-		rz_strbuf_appendf(buf, "%s_", reloc->import->libname);
-	} else if (reloc->symbol && reloc->symbol->libname) {
-		rz_strbuf_appendf(buf, "%s_", reloc->symbol->libname);
-	}
-
-	// actual name
-	if (name) {
-		rz_strbuf_append(buf, name);
-	} else if (reloc->import && reloc->import->name && *reloc->import->name) {
-		rz_strbuf_append(buf, reloc->import->name);
-	} else if (reloc->symbol && reloc->symbol->name && *reloc->symbol->name) {
-		rz_strbuf_appendf(buf, "%s", reloc->symbol->name);
-	} else if (reloc->is_ifunc) {
-		// addend is the function pointer for the resolving ifunc
-		rz_strbuf_appendf(buf, "ifunc_%" PFMT64x, reloc->addend);
-	} else {
-		rz_strbuf_set(buf, "");
-	}
-
-	return rz_strbuf_drain(buf);
-}
-
-static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
-	int bin_demangle = rz_config_get_i(r->config, "bin.demangle");
-	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
-	const char *lang = rz_config_get(r->config, "bin.lang");
-	bool is_pe = true;
-
-	if (is_pe && reloc->import && reloc->import->name && reloc->import->libname && rz_str_startswith(reloc->import->name, "Ordinal_")) {
-		char *module = reloc->import->libname;
-		rz_str_case(module, false);
-
-		// strip trailing ".dll"
-		size_t module_len = strlen(module);
-		if (module_len > 4 && !strcmp(module + module_len - 4, ".dll")) {
-			module[module_len - 4] = '\0';
-		}
-
-		const char *import = reloc->import->name + strlen("Ordinal_");
-		if (import) {
-			char *filename = NULL;
-			int ordinal = atoi(import);
-			if (!*sdb_module || strcmp(module, *sdb_module)) {
-				sdb_free(*db);
-				*db = NULL;
-				free(*sdb_module);
-				*sdb_module = strdup(module);
-				/* always lowercase */
-				filename = sdb_fmt("%s.sdb", module);
-				rz_str_case(filename, false);
-				if (rz_file_exists(filename)) {
-					*db = sdb_new(NULL, filename, 0);
-				} else {
-					const char *dirPrefix = rz_sys_prefix(NULL);
-					filename = sdb_fmt(RZ_JOIN_4_PATHS("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"),
-						dirPrefix, module);
-					if (rz_file_exists(filename)) {
-						*db = sdb_new(NULL, filename, 0);
-					}
-				}
-			}
-			if (*db) {
-				// ordinal-1 because we enumerate starting at 0
-				char *symname = resolveModuleOrdinal(*db, module, ordinal - 1); // uses sdb_get
-				if (symname) {
-					if (r->bin->prefix) {
-						reloc->import->name = rz_str_newf("%s.%s", r->bin->prefix, symname);
-						RZ_FREE(symname);
-					} else {
-						reloc->import->name = symname;
-					}
-				}
-			}
-		}
-		rz_analysis_hint_set_size(r->analysis, reloc->vaddr, 4);
-		rz_meta_set(r->analysis, RZ_META_TYPE_DATA, reloc->vaddr, 4, NULL);
-	}
-
-	char flagname[RZ_FLAG_NAME_SIZE];
-	char *reloc_name = construct_reloc_name(reloc, NULL);
-	if (!reloc_name || !*reloc_name) {
-		free(reloc_name);
-		return;
-	}
-	if (r->bin->prefix) {
-		snprintf(flagname, RZ_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
-	} else {
-		snprintf(flagname, RZ_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
-	}
-	free(reloc_name);
-	char *demname = NULL;
-	if (bin_demangle) {
-		demname = rz_bin_demangle(r->bin->cur, lang, flagname, addr, keep_lib);
-		if (demname) {
-			snprintf(flagname, RZ_FLAG_NAME_SIZE, "reloc.%s", demname);
-		}
-	}
-	rz_name_filter(flagname, 0, true);
-	RzFlagItem *fi = rz_flag_set(r->flags, flagname, addr, bin_reloc_size(reloc));
-	if (demname) {
-		char *realname;
-		if (r->bin->prefix) {
-			realname = sdb_fmt("%s.reloc.%s", r->bin->prefix, demname);
-		} else {
-			realname = sdb_fmt("reloc.%s", demname);
-		}
-		rz_flag_item_set_realname(fi, realname);
-	}
-	free(demname);
-}
-
-/* Define new data at relocation address if it's not in an executable section */
-static void add_metadata(RzCore *r, RzBinReloc *reloc, ut64 addr, int mode) {
-	RzBinFile *binfile = r->bin->cur;
-	RzBinObject *binobj = binfile ? binfile->o : NULL;
-	RzBinInfo *info = binobj ? binobj->info : NULL;
-
-	int cdsz = info ? (info->bits == 64 ? 8 : info->bits == 32 ? 4
-					  : info->bits == 16       ? 4
-								   : 0)
-			: 0;
-	if (cdsz == 0) {
-		return;
-	}
-
-	RzIOMap *map = rz_io_map_get(r->io, addr);
-	if (!map || map->perm & RZ_PERM_X) {
-		return;
-	}
-	if (IS_MODE_SET(mode)) {
-		rz_meta_set(r->analysis, RZ_META_TYPE_DATA, reloc->vaddr, cdsz, NULL);
-	} else if (IS_MODE_RZCMD(mode)) {
-		rz_cons_printf("Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
-	}
-}
-
-static bool is_section_symbol(RzBinSymbol *s) {
-	/* workaround for some bin plugs (e.g. ELF) */
-	if (!s || *s->name) {
-		return false;
-	}
-	return (s->type && !strcmp(s->type, RZ_BIN_TYPE_SECTION_STR));
-}
-
-static bool is_special_symbol(RzBinSymbol *s) {
-	return s->type && !strcmp(s->type, RZ_BIN_TYPE_SPECIAL_SYM_STR);
-}
-
-static bool is_section_reloc(RzBinReloc *r) {
-	return is_section_symbol(r->symbol);
-}
-
-static bool is_file_symbol(RzBinSymbol *s) {
-	/* workaround for some bin plugs (e.g. ELF) */
-	return (s && s->type && !strcmp(s->type, RZ_BIN_TYPE_FILE_STR));
-}
-
-static bool is_file_reloc(RzBinReloc *r) {
-	return is_file_symbol(r->symbol);
-}
-
-static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
+/**
+ * \brief fetche relocs for the object and print them
+ * \return the number of relocs or -1 on failure
+ */
+static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int va, int mode, PJ *pj, RzTable *table) {
 	bool bin_demangle = rz_config_get_i(r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get(r->config, "bin.lang");
-	RzTable *table = rz_core_table(r);
-	rz_return_val_if_fail(table, false);
-	RBIter iter;
-	RzBinReloc *reloc = NULL;
-	Sdb *db = NULL;
-	char *sdb_module = NULL;
-	int i = 0;
 
-	RZ_TIME_PROFILE_BEGIN;
-
-	va = VA_TRUE; // XXX relocs always vaddr?
-	//this has been created for reloc object files
-	RBNode *relocs = rz_bin_patch_relocs(r->bin);
+	RBNode *relocs = rz_bin_object_patch_relocs(bf, o);
 	if (!relocs) {
 		relocs = rz_bin_get_relocs(r->bin);
 	}
-
-	if (IS_MODE_RZCMD(mode)) {
-		rz_cons_println("fs relocs");
-	} else if (IS_MODE_NORMAL(mode)) {
-		rz_cons_println("[Relocations]");
-		rz_table_set_columnsf(table, "XXss", "vaddr", "paddr", "type", "name");
-	} else if (IS_MODE_JSON(mode)) {
-		pj_a(pj);
-	} else if (IS_MODE_SET(mode)) {
-		rz_flag_space_set(r->flags, RZ_FLAGS_FS_RELOCS);
+	if (!relocs) {
+		return -1;
 	}
-
+	int count = 0;
+	RBIter iter;
+	RzBinReloc *reloc;
 	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
 		ut64 addr = rva(r->bin, reloc->paddr, reloc->vaddr, va);
-		if (IS_MODE_SET(mode) && (is_section_reloc(reloc) || is_file_reloc(reloc))) {
-			/*
-			 * Skip section reloc because they will have their own flag.
-			 * Skip also file reloc because not useful for now.
-			 */
-		} else if (IS_MODE_SET(mode)) {
-			set_bin_relocs(r, reloc, addr, &db, &sdb_module);
-			add_metadata(r, reloc, addr, mode);
-		} else if (IS_MODE_SIMPLE(mode)) {
+		if (IS_MODE_SIMPLE(mode)) {
 			rz_cons_printf("0x%08" PFMT64x "  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RZCMD(mode)) {
 			char *name = reloc->import
@@ -1728,7 +1745,10 @@ static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
 				rz_cons_printf("\"f %s%s%s %d 0x%08" PFMT64x "\"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
 					r->bin->prefix ? "." : "", n, reloc_size, addr);
-				add_metadata(r, reloc, addr, mode);
+				ut64 meta_sz;
+				if (meta_for_reloc(r, o, reloc, addr, &meta_sz)) {
+					rz_cons_printf("Cd %" PFMT64u " @ 0x%08" PFMT64x "\n", meta_sz, addr);
+				}
 				free(n);
 				free(name);
 			}
@@ -1800,8 +1820,35 @@ static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
 				bin_reloc_type_name(reloc), res);
 			free(res);
 		}
-		i++;
+		count++;
 	}
+	return count;
+}
+
+static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
+	RzTable *table = rz_core_table(r);
+	rz_return_val_if_fail(table, false);
+
+	RZ_TIME_PROFILE_BEGIN;
+
+	va = VA_TRUE; // XXX relocs always vaddr?
+
+	if (IS_MODE_RZCMD(mode)) {
+		rz_cons_println("fs relocs");
+	} else if (IS_MODE_NORMAL(mode)) {
+		rz_cons_println("[Relocations]");
+		rz_table_set_columnsf(table, "XXss", "vaddr", "paddr", "type", "name");
+	} else if (IS_MODE_JSON(mode)) {
+		pj_a(pj);
+	}
+
+	int relocs_count = -1;
+	if (r->bin->cur && r->bin->cur->o) {
+		RzBinFile *bf = r->bin->cur;
+		RzBinObject *o = bf->o;
+		relocs_count = print_relocs_for_object(r, bf, o, va, mode, pj, table);
+	}
+
 	if (IS_MODE_JSON(mode)) {
 		pj_end(pj);
 	}
@@ -1812,19 +1859,16 @@ static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
 		char *s = rz_table_tostring(table);
 		rz_cons_printf("\n%s\n", s);
 		free(s);
-		rz_cons_printf("\n%i relocations\n", i);
+		rz_cons_printf("\n%i relocations\n", relocs_count >= 0 ? relocs_count : 0);
 	}
 
 	rz_table_free(table);
-	RZ_FREE(sdb_module);
-	sdb_free(db);
-	db = NULL;
 
 	RZ_TIME_PROFILE_END;
-	if (IS_MODE_JSON(mode) && relocs == NULL) {
-		return true;
+	if (IS_MODE_JSON(mode)) {
+		return true; // ignore relocs_count here
 	}
-	return relocs != NULL;
+	return relocs_count >= 0;
 }
 
 #define MYDB 1
