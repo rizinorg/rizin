@@ -1,4 +1,5 @@
 #include "crypto_serpent_algo.h"
+#include <rz_util/rz_assert.h>
 
 static const ut8 S[][16] = {
 	{ 3, 8, 15, 1, 10, 6, 5, 11, 14, 13, 4, 2, 7, 0, 9, 12 }, /* S0: */
@@ -64,10 +65,7 @@ static inline ut8 apply_sbox_inv(int si, ut8 x) {
 }
 
 static inline ut8 get_bit(int i, ut32 input) {
-	if (i >= 32) {
-		eprintf("Wrong bit asked");
-		exit(1);
-	}
+	rz_return_val_if_fail(i < 32, 0);
 	return (input >> i) & 1;
 }
 
@@ -91,10 +89,7 @@ void apply_FP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 
 void serpent_keyschedule(struct serpent_state st,
 	ut32 subkeys[NB_SUBKEYS * DW_BY_BLOCK]) {
-	if ((st.key_size != 128) && (st.key_size != 192) && (st.key_size != 256)) {
-		eprintf("Invalid key size");
-		exit(1);
-	}
+	rz_return_if_fail((st.key_size == 128) || (st.key_size == 192) || (st.key_size == 256));
 
 	ut32 tmpkeys[DW_BY_BLOCK * NB_SUBKEYS + DW_BY_USERKEY] = { 0 };
 	const ut32 phi = 0x9e3779b9;
