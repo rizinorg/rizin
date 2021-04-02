@@ -43,11 +43,6 @@ static char **env = NULL;
 #endif
 #if __APPLE__
 #include <errno.h>
-#ifdef __MAC_10_8
-#define HAVE_ENVIRON 1
-#else
-#define HAVE_ENVIRON 0
-#endif
 
 #if HAVE_ENVIRON
 #include <execinfo.h>
