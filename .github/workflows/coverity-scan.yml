@@ -51,13 +51,12 @@ jobs:
         run: |
           tar czvf rizin.tgz cov-int
           curl \
-            --form project="rizinorg%2Frizin" \
             --form token=$TOKEN \
             --form email=noreply@rizin.re \
             --form file=@rizin.tgz \
             --form version=trunk \
             --form description="rizin" \
-            https://scan.coverity.com/builds
+            https://scan.coverity.com/builds?project=rizinorg%2Frizin
         env:
           TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
