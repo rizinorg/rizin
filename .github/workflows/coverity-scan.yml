@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Download Coverity Build Tool
         run: |
-          wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=rizin%2Frizin" -O cov-analysis-linux64.tar.gz
+          wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=rizinorg%2Frizin" -O cov-analysis-linux64.tar.gz
           mkdir cov-analysis-linux64
           tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
         env:
@@ -26,15 +26,21 @@ jobs:
           chmod go-w $HOME
           sudo chmod -R go-w /usr/share
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
+        
+      - name: Installing build dependencies
+        run: |
+           sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
+           pip3 install --user meson ninja PyYAML
+        if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
-      - name: Configure
-        run: ./configure
+      - name: Meson
+        run: meson build
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       - name: Build with cov-build
         run: |
           export PATH=`pwd`/cov-analysis-linux64/bin:$PATH
-          cov-build --dir cov-int make
+          cov-build --dir cov-int ninja -C build
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       # TODO: Make it GitHub Action instead
@@ -42,13 +48,12 @@ jobs:
         run: |
           tar czvf rizin.tgz cov-int
           curl \
-            --form project="rizin%2Frizin" \
             --form token=$TOKEN \
             --form email=noreply@rizin.re \
             --form file=@rizin.tgz \
             --form version=trunk \
             --form description="rizin" \
-            https://scan.coverity.com/builds?project=rizin
+            https://scan.coverity.com/builds?project=rizinorg%2Frizin
         env:
           TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
         if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
