@@ -144,11 +144,11 @@ RZ_API RzList *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows) 
 	return list;
 }
 
-RZ_API bool rz_flag_zone_list(RzFlag *f, int mode) {
+RZ_API bool rz_flag_zone_list(RzFlag *f, RzOutputMode mode) {
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
 	rz_list_foreach (DB, iter, zi) {
-		if (mode == '*') {
+		if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			f->cb_printf("fz %s @ 0x08%" PFMT64x "\n", zi->name, zi->from);
 			f->cb_printf("f %s %" PFMT64d " 0x08%" PFMT64x "\n", zi->name,
 				zi->to - zi->from, zi->from);

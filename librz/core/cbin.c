@@ -1238,7 +1238,7 @@ RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLi
 	}
 }
 
-RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
+RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, RzOutputMode mode) {
 	rz_return_val_if_fail(core && file, false);
 
 	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
@@ -1265,17 +1265,17 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 		rz_core_cmd0(core, ".iP*");
 		return true;
 	case RZ_MODE_JSON:
-		mode = 'j';
+		mode = RZ_OUTPUT_MODE_JSON;
 		break;
 	case '*':
 	case 1:
-		mode = 'r';
+		mode = RZ_OUTPUT_MODE_RIZIN;
 		break;
 	default:
 		mode = 'd'; // default
 		break;
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(pj);
 	}
 
@@ -1285,7 +1285,7 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 	rz_parse_pdb_types(core->analysis, &pdb);
 	pdb.finish_pdb_parse(&pdb);
 
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
 	return true;
@@ -4353,7 +4353,7 @@ RZ_API bool rz_core_bin_delete(RzCore *core, ut32 bf_id) {
 	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
 }
 
-static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, PJ *pj, int mode) {
+static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, PJ *pj, RzOutputMode mode) {
 	rz_return_val_if_fail(core && bf && bf->o, NULL);
 	const char *name = bf ? bf->file : NULL;
 	(void)rz_bin_get_info(core->bin); // XXX is this necssary for proper iniitialization
@@ -4361,16 +4361,16 @@ static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, PJ *pj, int mode
 	// TODO: handle mode to print in json and r2 commands
 
 	switch (mode) {
-	case '*': {
+	case RZ_OUTPUT_MODE_RIZIN: {
 		char *n = __filterShell(name);
 		rz_cons_printf("oba 0x%08" PFMT64x " %s # %d\n", bf->o->boffset, n, bf->id);
 		free(n);
 		break;
 	}
-	case 'q':
+	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_printf("%d\n", bf->id);
 		break;
-	case 'j': {
+	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(pj);
 		pj_ks(pj, "name", name ? name : "");
 		pj_ki(pj, "iofd", bf->fd);
@@ -4406,7 +4406,7 @@ static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, PJ *pj, int mode
 	return true;
 }
 
-RZ_API int rz_core_bin_list(RzCore *core, int mode) {
+RZ_API int rz_core_bin_list(RzCore *core, RzOutputMode mode) {
 	// list all binfiles and there objects and there archs
 	int count = 0;
 	RzListIter *iter;
@@ -4417,7 +4417,7 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 		return false;
 	}
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = rz_core_pj_new(core);
 		if (!pj) {
 			return 0;
@@ -4427,7 +4427,7 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	rz_list_foreach (binfiles, iter, binfile) {
 		rz_core_bin_file_print(core, binfile, pj, mode);
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_print(pj_string(pj));
 		pj_free(pj);

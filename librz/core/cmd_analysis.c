@@ -3501,12 +3501,12 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 }
 
 // size: 0: bits; -1: any; >0: exact size
-static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
+static void __analysis_reg_list(RzCore *core, int type, int bits, RzOutputMode mode) {
 	PJ *pj = NULL;
 	if (mode == 'i') {
 		rz_core_debug_ri(core, core->analysis->reg, 0);
 		return;
-	} else if (mode == 'j') {
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = rz_core_pj_new(core);
 		if (!pj) {
 			return;
@@ -3529,7 +3529,7 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 	} else if (!bits) {
 		bits = core->analysis->bits;
 	}
-	int mode2 = mode;
+	RzOutputMode mode2 = mode;
 	if (core->analysis) {
 		core->dbg->reg = core->analysis->reg;
 		if (core->analysis->cur && core->analysis->cur->arch) {
@@ -3539,8 +3539,8 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 			}
 			/* workaround for 6502 and avr*/
 			if ((!strcmp(core->analysis->cur->arch, "6502") && bits == 8) || (!strcmp(core->analysis->cur->arch, "avr") && bits == 8)) {
-				if (mode == 'j') {
-					mode2 = 'J';
+				if (mode == RZ_OUTPUT_MODE_JSON) {
+					mode2 = RZ_OUTPUT_MODE_LONG_JSON;
 					pj_o(pj);
 				}
 				rz_core_debug_reg_list(core, RZ_REG_TYPE_GPR, 16, pj, mode2, use_color); // XXX detect which one is current usage
@@ -3562,7 +3562,7 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 		}
 	}
 	rz_core_debug_reg_list(core, type, bits, pj, mode2, use_color);
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		if (mode2 == 'J') {
 			pj_end(pj);
 		}

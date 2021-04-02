@@ -1257,7 +1257,7 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 	return ret;
 }
 
-static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
+static void cmd_debug_modules(RzCore *core, RzOutputMode mode) { // "dmm"
 	ut64 addr = core->offset;
 	RzDebugMap *map;
 	RzList *list;
@@ -1270,7 +1270,7 @@ static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
 		return;
 	}
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = rz_core_pj_new(core);
 		if (!pj) {
 			return;
@@ -1290,7 +1290,7 @@ static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
 				goto beach;
 			}
 			break;
-		case 'j': {
+		case RZ_OUTPUT_MODE_JSON: {
 			/* Escape backslashes (e.g. for Windows). */
 			pj_o(pj);
 			pj_kn(pj, "addr", map->addr);
@@ -1300,8 +1300,8 @@ static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
 			pj_end(pj);
 		} break;
 		case ':':
-		case '*':
-			if (mode == '*' || (mode == ':' && addr >= map->addr && addr < map->addr_end)) {
+		case 'RZ_OUTPUT_MODE_RIZIN':
+			if (mode == 'RZ_OUTPUT_MODE_RIZIN' || (mode == ':' && addr >= map->addr && addr < map->addr_end)) {
 				/* Escape backslashes (e.g. for Windows). */
 				char *escaped_path = rz_str_escape(map->file);
 				char *filtered_name = strdup(map->name);
@@ -1322,7 +1322,7 @@ static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
 		}
 	}
 beach:
-	if (mode == 'j') {
+	if (mode == 'RZ_OUTPUT_MODE_JSON') {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 	}
@@ -1839,7 +1839,7 @@ RZ_API void rz_core_debug_clear_register_flags(RzCore *core) {
 	foreach_reg_set_or_clear(core, false);
 }
 
-RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
+RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, RzOutputMode mode) {
 	char *color = "";
 	char *colorend = "";
 	int had_colors = rz_config_get_i(core->config, "scr.color");
@@ -1853,7 +1853,7 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 	RzRegItem *r;
 	RzTable *t = rz_core_table(core);
 
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		rz_config_set_i(core->config, "scr.color", false);
 		use_colors = 0;
 	}
@@ -1913,7 +1913,7 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 		free(rrstr);
 	}
 
-	char *s = (mode == 'j') ? rz_table_tojson(t) : rz_table_tostring(t);
+	char *s = (mode == RZ_OUTPUT_MODE_JSON) ? rz_table_tojson(t) : rz_table_tostring(t);
 	rz_cons_print(s);
 	free(s);
 	rz_table_free(t);

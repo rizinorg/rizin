@@ -1307,7 +1307,7 @@ static void print_types_format(const RzPdb *pdb, const RzList *types) {
  * @param pdb PDB information
  * @param mode printing mode
  */
-static void print_types(const RzPdb *pdb, PJ *pj, const int mode) {
+static void print_types(const RzPdb *pdb, PJ *pj, const RzOutputMode mode) {
 	RzList *plist = pdb->pdb_streams;
 	STpiStream *tpi_stream = rz_list_get_n(plist, ePDB_STREAM_TPI);
 
@@ -1317,8 +1317,8 @@ static void print_types(const RzPdb *pdb, PJ *pj, const int mode) {
 	}
 	switch (mode) {
 	case 'd': print_types_regular(pdb, tpi_stream->types); return;
-	case 'j': print_types_json(pdb, pj, tpi_stream->types); return;
-	case 'r': print_types_format(pdb, tpi_stream->types); return;
+	case RZ_OUTPUT_MODE_JSON: print_types_json(pdb, pj, tpi_stream->types); return;
+	case RZ_OUTPUT_MODE_RIZIN: print_types_format(pdb, tpi_stream->types); return;
 	}
 }
 

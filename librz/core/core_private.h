@@ -106,7 +106,7 @@ RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename);
 
 /* cdebug.c */
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval);
-RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int rad, const char *use_color);
+RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, RzOutputMode rad, const char *use_color);
 RZ_IPI void rz_core_debug_regs2flags(RzCore *core, int bits);
 RZ_IPI void rz_core_regs2flags(RzCore *core);
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core);

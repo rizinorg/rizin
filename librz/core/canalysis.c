@@ -989,7 +989,7 @@ static bool blacklisted_word(char *name) {
 	return false;
 }
 
-static char *analysis_fcn_autoname(RzCore *core, RzAnalysisFunction *fcn, int dump, int mode) {
+static char *analysis_fcn_autoname(RzCore *core, RzAnalysisFunction *fcn, int dump, RzOutputMode mode) {
 	int use_getopt = 0;
 	int use_isatty = 0;
 	PJ *pj = NULL;
@@ -1010,7 +1010,7 @@ static char *analysis_fcn_autoname(RzCore *core, RzAnalysisFunction *fcn, int du
 				if (dump) {
 					// take only strings flags
 					if (!strncmp(f->name, "str.", 4)) {
-						if (mode == 'j') {
+						if (mode == RZ_OUTPUT_MODE_JSON) {
 							// add new json item
 							pj_o(pj);
 							pj_kn(pj, "addr", xref->from);
@@ -1060,7 +1060,7 @@ static char *analysis_fcn_autoname(RzCore *core, RzAnalysisFunction *fcn, int du
 		}
 		rz_list_free(xrefs);
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
 	if (pj) {
@@ -1728,9 +1728,9 @@ static void print_hint_h_format(HintNode *node) {
 }
 
 // if mode == 'j', pj must be an existing PJ!
-static void hint_node_print(HintNode *node, int mode, PJ *pj) {
+static void hint_node_print(HintNode *node, RzOutputMode mode, PJ *pj) {
 	switch (mode) {
-	case '*':
+	case RZ_OUTPUT_MODE_RIZIN:
 #define HINTCMD_ADDR(hint, fmt, x) rz_cons_printf(fmt " @ 0x%" PFMT64x "\n", x, (hint)->addr)
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
@@ -1802,7 +1802,7 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 		}
 #undef HINTCMD_ADDR
 		break;
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RzAnalysisAddrHintRecord *record;
@@ -1933,16 +1933,16 @@ bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 	return true;
 }
 
-static void print_hint_tree(RBTree tree, int mode) {
+static void print_hint_tree(RBTree tree, RzOutputMode mode) {
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		pj_a(pj);
 	}
 #define END_ADDR \
 	if (pj) { \
 		pj_end(pj); \
-	} else if (mode != '*') { \
+	} else if (mode != RZ_OUTPUT_MODE_RIZIN) { \
 		rz_cons_newline(); \
 	}
 	RBIter it;
@@ -1959,7 +1959,7 @@ static void print_hint_tree(RBTree tree, int mode) {
 			if (pj) {
 				pj_o(pj);
 				pj_kn(pj, "addr", node->addr);
-			} else if (mode != '*') {
+			} else if (mode != RZ_OUTPUT_MODE_RIZIN) {
 				rz_cons_printf(" 0x%08" PFMT64x " =>", node->addr);
 			}
 		}
@@ -1977,7 +1977,7 @@ static void print_hint_tree(RBTree tree, int mode) {
 	}
 }
 
-RZ_API void rz_core_analysis_hint_list(RzAnalysis *a, int mode) {
+RZ_API void rz_core_analysis_hint_list(RzAnalysis *a, RzOutputMode mode) {
 	RBTree tree = NULL;
 	// Collect all hints in the tree to sort them
 	rz_analysis_arch_hints_foreach(a, print_arch_hint_cb, &tree);
@@ -1987,7 +1987,7 @@ RZ_API void rz_core_analysis_hint_list(RzAnalysis *a, int mode) {
 	rz_rbtree_free(tree, hint_node_free, NULL);
 }
 
-RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, int mode) {
+RZ_API void rz_core_analysis_hint_print(RzAnalysis *a, ut64 addr, RzOutputMode mode) {
 	RBTree tree = NULL;
 	ut64 hint_addr = UT64_MAX;
 	const char *arch = rz_analysis_hint_arch_at(a, addr, &hint_addr);
@@ -3412,7 +3412,7 @@ RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *
 }
 
 // Lists function names and their calls (uniqified)
-static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
+static int fcn_print_makestyle(RzCore *core, RzList *fcns, RzOutputMode mode) {
 	RzListIter *refiter;
 	RzListIter *fcniter;
 	RzAnalysisFunction *fcn;
@@ -3420,7 +3420,7 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 	RzList *xrefs = NULL;
 	PJ *pj = NULL;
 
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = rz_core_pj_new(core);
 		pj_a(pj);
 	}
@@ -3446,7 +3446,7 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 
 			if (mode == 'm') {
 				rz_cons_printf(":\n");
-			} else if (mode == 'q') {
+			} else if (mode == RZ_OUTPUT_MODE_QUIET) {
 				rz_cons_printf(" -> ");
 			}
 			// Iterate over all refs from a function
@@ -3458,7 +3458,7 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 					pj_ks(pj, "name", dst);
 					pj_kn(pj, "addr", xrefi->from);
 					pj_end(pj); // close referenced item
-				} else if (mode == 'q') {
+				} else if (mode == RZ_OUTPUT_MODE_QUIET) {
 					rz_cons_printf("%s ", dst);
 				} else {
 					rz_cons_printf("    %s\n", dst);
@@ -3473,7 +3473,7 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 		}
 	}
 
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj); // close json output
 		rz_cons_printf("%s\n", pj_string(pj));
 	}
@@ -4395,7 +4395,7 @@ static bool opiscall(RzCore *core, RzAnalysisOp *aop, ut64 addr, const ut8 *buf,
 }
 
 #define OPSZ 8
-RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
+RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, RzOutputMode mode) {
 	ut8 *buf = (ut8 *)malloc(core->blocksize);
 	if (!buf) {
 		return -1;
@@ -4461,11 +4461,11 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 						op.size = 1;
 					}
 					break;
-				case 'r':
+				case RZ_OUTPUT_MODE_RIZIN:
 				case 'w':
 				case 'x': {
 					rz_analysis_op(core->analysis, &op, at + i, buf + i, core->blocksize - i, RZ_ANALYSIS_OP_MASK_BASIC);
-					int mask = mode == 'r' ? 1 : mode == 'w' ? 2
+					int mask = mode == RZ_OUTPUT_MODE_RIZIN ? 1 : mode == 'w' ? 2
 						: mode == 'x'                    ? 4
 										 : 0;
 					if (op.direction == mask) {

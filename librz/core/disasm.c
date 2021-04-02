@@ -6159,7 +6159,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	return result;
 }
 
-RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int mode) {
+RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, RzOutputMode mode) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
@@ -6174,7 +6174,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		rz_io_read_at(core->io, addr, buf, l);
 	}
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = rz_core_pj_new(core);
 		if (!pj) {
 			return 0;
@@ -6192,7 +6192,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		ret = rz_asm_disassemble(core->rasm, &asmop, buf + i, l - i);
 		if (ret < 1) {
 			switch (mode) {
-			case 'j':
+			case RZ_OUTPUT_MODE_JSON:
 			case '=':
 				break;
 			case 'i':
@@ -6244,7 +6244,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 					free(str);
 				}
 				break;
-			case 'j': {
+			case RZ_OUTPUT_MODE_JSON: {
 				char *op_hex = rz_asm_op_get_hex(&asmop);
 				pj_o(pj);
 				pj_kn(pj, "addr", addr + i);
@@ -6268,7 +6268,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 	if (buf != core->block) {
 		free(buf);
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
@@ -6539,7 +6539,7 @@ static bool read_ahead(RzIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t
 	return rz_io_read_at_mapped(io, address, *buf + offset_into_buf, bytes_to_read);
 }
 
-RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
+RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, RzOutputMode mode) {
 	if (nb_opcodes < 1) {
 		return 0;
 	}
@@ -6549,7 +6549,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 		return -1;
 	}
 	PJ *pj = NULL;
-	if (mode == RZ_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = rz_core_pj_new(core);
 		if (!pj) {
 			return -1;
@@ -6637,7 +6637,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 			}
 			if (block_instr) {
 				switch (mode) {
-				case RZ_MODE_JSON:
+				case RZ_OUTPUT_MODE_JSON:
 					rz_core_print_disasm_json(core, block_start, buf, block_sz, block_instr, pj);
 					break;
 				case RZ_MODE_SIMPLE:
@@ -6670,7 +6670,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 			rz_core_seek_arch_bits(core, block_start);
 		}
 	}
-	if (mode == RZ_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_print(pj_string(pj));
 		pj_free(pj);

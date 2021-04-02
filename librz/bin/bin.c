@@ -956,7 +956,7 @@ RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id) {
 	return bf ? rz_bin_file_set_obj(bin, bf, NULL) : false;
 }
 
-static void list_xtr_archs(RzBin *bin, PJ *pj, int mode) {
+static void list_xtr_archs(RzBin *bin, PJ *pj, RzOutputMode mode) {
 	RzBinFile *binfile = rz_bin_cur(bin);
 	if (binfile->xtr_data) {
 		RzListIter *iter_xtr;
@@ -964,7 +964,7 @@ static void list_xtr_archs(RzBin *bin, PJ *pj, int mode) {
 		int bits, i = 0;
 		char *arch, *machine;
 
-		if (mode == 'j') {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_ka(pj, "bins");
 		}
 
@@ -977,10 +977,10 @@ static void list_xtr_archs(RzBin *bin, PJ *pj, int mode) {
 			machine = xtr_data->metadata->machine;
 			bits = xtr_data->metadata->bits;
 			switch (mode) {
-			case 'q': // "iAq"
+			case RZ_OUTPUT_MODE_QUIET: // "iAq"
 				bin->cb_printf("%s\n", arch);
 				break;
-			case 'j': { // "iAj"
+			case RZ_OUTPUT_MODE_JSON: { // "iAj"
 				pj_o(pj);
 				pj_ks(pj, "arch", arch);
 				pj_ki(pj, "bits", bits);
@@ -1000,13 +1000,13 @@ static void list_xtr_archs(RzBin *bin, PJ *pj, int mode) {
 			}
 		}
 
-		if (mode == 'j') {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_end(pj);
 		}
 	}
 }
 
-RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, int mode) {
+RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, RzOutputMode mode) {
 	rz_return_if_fail(bin);
 
 	char unk[128];
@@ -1036,7 +1036,7 @@ RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, int mode) {
 	}
 	RzTable *table = rz_table_new();
 	const char *fmt = "dXnss";
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_ka(pj, "bins");
 	}
 	RzBinObject *obj = nbinfile->o;
@@ -1057,10 +1057,10 @@ RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, int mode) {
 
 	if (info && narch > 1) {
 		switch (mode) {
-		case 'q':
+		case RZ_OUTPUT_MODE_QUIET:
 			bin->cb_printf("%s\n", arch);
 			break;
-		case 'j':
+		case RZ_OUTPUT_MODE_JSON:
 			pj_o(pj);
 			pj_ks(pj, "arch", arch);
 			pj_ki(pj, "bits", bits);
@@ -1089,10 +1089,10 @@ RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, int mode) {
 	} else {
 		if (info) {
 			switch (mode) {
-			case 'q':
+			case RZ_OUTPUT_MODE_QUIET:
 				bin->cb_printf("%s\n", arch);
 				break;
-			case 'j':
+			case RZ_OUTPUT_MODE_JSON:
 				pj_o(pj);
 				pj_ks(pj, "arch", arch);
 				pj_ki(pj, "bits", bits);
@@ -1118,10 +1118,10 @@ RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, int mode) {
 				boffset, obj_size, arch, bits);
 		} else if (nbinfile && mode) {
 			switch (mode) {
-			case 'q':
+			case RZ_OUTPUT_MODE_QUIET:
 				bin->cb_printf("%s\n", arch);
 				break;
-			case 'j':
+			case RZ_OUTPUT_MODE_JSON:
 				pj_o(pj);
 				pj_ks(pj, "arch", arch);
 				pj_ki(pj, "bits", bits);
@@ -1144,7 +1144,7 @@ RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, int mode) {
 		}
 		//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 	}
 	rz_table_free(table);

@@ -531,13 +531,13 @@ static void cmd_type_noreturn(RzCore *core, const char *input) {
 	}
 }
 
-static void types_list(RzCore *core, int mode) {
+static void types_list(RzCore *core, RzOutputMode mode) {
 	switch (mode) {
 	case 1:
-	case '*':
+	case RZ_OUTPUT_MODE_RIZIN:
 		rz_core_types_print_all(core, RZ_OUTPUT_MODE_RIZIN);
 		break;
-	case 'j':
+	case RZ_OUTPUT_MODE_JSON:
 		rz_core_types_print_all(core, RZ_OUTPUT_MODE_JSON);
 		break;
 	default:

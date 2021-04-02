@@ -1319,7 +1319,7 @@ RZ_API RzCoreFile *rz_core_file_get_by_fd(RzCore *core, int fd) {
 	return NULL;
 }
 
-RZ_API int rz_core_file_list(RzCore *core, int mode) {
+RZ_API int rz_core_file_list(RzCore *core, RzOutputMode mode) {
 	int count = 0;
 	RzCoreFile *f;
 	RzIODesc *desc;
@@ -1328,7 +1328,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 	RzBinFile *bf;
 	RzListIter *iter;
 	PJ *pj;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return 0;
@@ -1343,7 +1343,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 		}
 		from = 0LL;
 		switch (mode) {
-		case 'j': { // "oij"
+		case RZ_OUTPUT_MODE_JSON: { // "oij"
 			pj_o(pj);
 			pj_kb(pj, "raised", core->io->desc->fd == f->fd);
 			pj_ki(pj, "fd", f->fd);
@@ -1354,8 +1354,8 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 			pj_end(pj);
 			break;
 		}
-		case '*':
-		case 'r':
+		case RZ_OUTPUT_MODE_RIZIN:
+		case RZ_OUTPUT_MODE_RIZIN:
 			// TODO: use a getter
 			{
 				bool fileHaveBin = false;
@@ -1412,7 +1412,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 		}
 		count++;
 	}
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);

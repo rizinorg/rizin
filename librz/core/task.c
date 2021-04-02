@@ -759,8 +759,8 @@ RZ_API const char *rz_core_task_status(RzCoreTask *task) {
 	}
 }
 
-RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j) {
-	rz_return_if_fail(mode != 'j' || j);
+RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, RzOutputMode mode, PJ *j) {
+	rz_return_if_fail(mode != RZ_OUTPUT_MODE_JSON || j);
 	if (task != core->tasks.main_task && task->runner != cmd_task_runner) {
 		// don't print tasks that are custom function-runners, which come from internal code.
 		// only main and command ones, which should be user-visible.
@@ -771,7 +771,7 @@ RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j) 
 		cmd = ((CmdTaskCtx *)task->runner_user)->cmd;
 	}
 	switch (mode) {
-	case 'j': {
+	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(j);
 		pj_ki(j, "id", task->id);
 		const char *state;
@@ -812,11 +812,11 @@ RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j) 
 	}
 }
 
-RZ_API void rz_core_task_list(RzCore *core, int mode) {
+RZ_API void rz_core_task_list(RzCore *core, RzOutputMode mode) {
 	RzListIter *iter;
 	RzCoreTask *task;
 	PJ *j = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		j = pj_new();
 		pj_a(j);
 	}

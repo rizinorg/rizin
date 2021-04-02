@@ -148,7 +148,7 @@ static bool demangle(RzCore *core, const char *s) {
 }
 
 #define STR(x) (x) ? (x) : ""
-static void rz_core_file_info(RzCore *core, PJ *pj, int mode) {
+static void rz_core_file_info(RzCore *core, PJ *pj, RzOutputMode mode) {
 	const char *fn = NULL;
 	bool io_cache = rz_config_get_i(core->config, "io.cache");
 	RzBinInfo *info = rz_bin_get_info(core->bin);
@@ -156,10 +156,10 @@ static void rz_core_file_info(RzCore *core, PJ *pj, int mode) {
 	int fd = rz_io_fd_get_current(core->io);
 	RzIODesc *desc = rz_io_desc_get(core->io, fd);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(binfile);
-	if (mode == RZ_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(pj);
 	}
-	if (mode == RZ_MODE_RIZINCMD) {
+	if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		return;
 	}
 	if (mode == RZ_MODE_SIMPLE) {
@@ -167,13 +167,13 @@ static void rz_core_file_info(RzCore *core, PJ *pj, int mode) {
 	}
 	if (info) {
 		fn = info->file;
-		if (mode == RZ_MODE_JSON) {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_ks(pj, "type", info->type ? info->type : "");
 		}
 	} else {
 		fn = desc ? desc->name : NULL;
 	}
-	if (mode == RZ_MODE_JSON) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		const char *uri = fn;
 		if (!uri) {
 			if (desc && desc->uri && *desc->uri) {
@@ -268,27 +268,27 @@ static int bin_is_executable(RzBinObject *obj) {
 	return false;
 }
 
-static void cmd_info_bin(RzCore *core, int va, PJ *pj, int mode) {
+static void cmd_info_bin(RzCore *core, int va, PJ *pj, RzOutputMode mode) {
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	int array = 0;
 	if (core->file) {
-		if (mode & RZ_MODE_JSON) {
+		if (mode & RZ_OUTPUT_MODE_JSON) {
 			if (!(mode & RZ_MODE_ARRAY)) {
 				pj_o(pj);
 			} else {
 				array = 1;
 			}
-			mode = RZ_MODE_JSON;
+			mode = RZ_OUTPUT_MODE_JSON;
 			pj_k(pj, "core");
 		}
 		rz_core_file_info(core, pj, mode);
 		if (bin_is_executable(obj)) {
-			if ((mode & RZ_MODE_JSON)) {
+			if ((mode & RZ_OUTPUT_MODE_JSON)) {
 				pj_k(pj, "bin");
 			}
 			rz_core_bin_info(core, RZ_CORE_BIN_ACC_INFO, pj, mode, va, NULL, NULL);
 		}
-		if ((mode & RZ_MODE_JSON) && array == 0) {
+		if ((mode & RZ_OUTPUT_MODE_JSON) && array == 0) {
 			pj_end(pj);
 		}
 	} else {

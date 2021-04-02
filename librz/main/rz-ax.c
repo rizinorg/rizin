@@ -48,7 +48,7 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 	return 0;
 }
 
-static int format_output(RNum *num, char mode, const char *s, int force_mode, ut64 flags) {
+static int format_output(RNum *num, RzOutputMode mode, const char *s, int force_mode, ut64 flags) {
 	ut64 n = rz_num_math(num, s);
 	char strbits[65];
 	if (force_mode) {
@@ -74,7 +74,7 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 		printf("%ff\n", *f);
 	} break;
 	case 'f': printf("%.01lf\n", num->fvalue); break;
-	case 'l':
+	case RZ_OUTPUT_MODE_LONG:
 		RZ_STATIC_ASSERT(sizeof(float) == 4);
 		float f = (float)num->fvalue;
 		ut32 *p = (ut32 *)&f;

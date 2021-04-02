@@ -814,7 +814,7 @@ RZ_API RzBinObject *rz_bin_cur_object(RzBin *bin);
 RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *name);
 RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id);
 RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *name);
-RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, int mode);
+RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, RzOutputMode mode);
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 RZ_API RzBuffer *rz_bin_package(RzBin *bin, const char *type, const char *file, RzList *files);
 

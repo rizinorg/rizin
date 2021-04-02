@@ -184,7 +184,7 @@ RZ_API void rz_flag_zone_item_free(void *a);
 RZ_API bool rz_flag_zone_add(RzFlag *fz, const char *name, ut64 addr);
 RZ_API bool rz_flag_zone_del(RzFlag *fz, const char *name);
 RZ_API bool rz_flag_zone_around(RzFlag *fz, ut64 addr, const char **prev, const char **next);
-RZ_API bool rz_flag_zone_list(RzFlag *fz, int mode);
+RZ_API bool rz_flag_zone_list(RzFlag *fz, RzOutputMode mode);
 RZ_API bool rz_flag_zone_reset(RzFlag *f);
 RZ_API RzList *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows);
 
