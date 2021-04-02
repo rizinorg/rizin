@@ -8203,7 +8203,7 @@ static void cmd_analysis_rtti(RzCore *core, const char *input) {
 	switch (input[0]) {
 	case '\0': // "avr"
 	case 'j': // "avrj"
-		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, input[0]);
+		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, RZ_OUTPUT_MODE_JSON);
 		break;
 	case 'a': // "avra"
 		rz_analysis_rtti_print_all(core->analysis, input[1]);
