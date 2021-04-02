@@ -477,7 +477,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->bits = PE_(rz_bin_pe_get_bits)(bf->o->bin_obj);
 	ret->big_endian = PE_(rz_bin_pe_is_big_endian)(bf->o->bin_obj);
 	ret->dbg_info = 0;
-	ret->has_lit = true;
 	ret->has_canary = has_canary(bf);
 	ret->has_nx = haschr(bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr(bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);

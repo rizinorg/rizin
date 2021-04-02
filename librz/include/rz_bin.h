@@ -231,7 +231,6 @@ typedef struct rz_bin_info_t {
 	int has_crypto;
 	int has_nx;
 	int big_endian;
-	bool has_lit;
 	char *actual_checksum;
 	char *claimed_checksum;
 	int pe_overlay;

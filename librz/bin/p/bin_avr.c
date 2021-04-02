@@ -86,7 +86,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 		bi->machine = strdup("ATmel");
 		bi->os = strdup("avr");
 		bi->has_va = 0; // 1;
-		bi->has_lit = false;
 		bi->arch = strdup("avr");
 		bi->bits = 8;
 	}

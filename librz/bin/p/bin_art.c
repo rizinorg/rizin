@@ -118,7 +118,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->machine = strdup("arm");
 	ret->arch = strdup("arm");
 	ret->has_va = 1;
-	ret->has_lit = true;
 	ret->has_pi = ao->art.compile_pic;
 	ret->bits = 16; // 32? 64?
 	ret->big_endian = 0;
