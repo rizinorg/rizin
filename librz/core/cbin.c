@@ -711,7 +711,7 @@ static void section_perms_str(char *dst, int perms) {
 	dst[0] = (perms & RZ_PERM_SHAR) ? 's' : '-';
 	dst[1] = (perms & RZ_PERM_R) ? 'r' : '-';
 	dst[2] = (perms & RZ_PERM_W) ? 'w' : '-';
-	dst[3] = (perms & RZ_PERM_WX) ? 'x' : '-';
+	dst[3] = (perms & RZ_PERM_X) ? 'x' : '-';
 	dst[4] = '\0';
 }
 
