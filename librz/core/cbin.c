@@ -580,26 +580,17 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, int va) {
 		rz_flag_space_set(core->flags, RZ_FLAGS_FS_SYMBOLS);
 		char str[RZ_FLAG_NAME_SIZE];
 		if (entry->type == RZ_BIN_ENTRY_TYPE_INIT) {
-			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.init%i", init_i);
+			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.init%i", init_i++);
 		} else if (entry->type == RZ_BIN_ENTRY_TYPE_FINI) {
-			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.fini%i", fini_i);
+			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.fini%i", fini_i++);
 		} else if (entry->type == RZ_BIN_ENTRY_TYPE_PREINIT) {
-			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.preinit%i", preinit_i);
+			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.preinit%i", preinit_i++);
 		} else {
-			snprintf(str, RZ_FLAG_NAME_SIZE, "entry%i", i);
+			snprintf(str, RZ_FLAG_NAME_SIZE, "entry%i", i++);
 		}
 		rz_flag_set(core->flags, str, at, 1);
 		if (is_initfini(entry) && hvaddr != UT64_MAX) {
 			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, hvaddr, entry->bits / 8, NULL);
-		}
-		if (entry->type == RZ_BIN_ENTRY_TYPE_INIT) {
-			init_i++;
-		} else if (entry->type == RZ_BIN_ENTRY_TYPE_FINI) {
-			fini_i++;
-		} else if (entry->type == RZ_BIN_ENTRY_TYPE_PREINIT) {
-			preinit_i++;
-		} else {
-			i++;
 		}
 	}
 	if (entry) {
