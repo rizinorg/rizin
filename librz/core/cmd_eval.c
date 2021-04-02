@@ -420,11 +420,11 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 			rz_str_argv_free(argv);
 			return false;
 		case 'j':
-			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, 'j');
+			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, RZ_OUTPUT_MODE_JSON);
 			rz_str_argv_free(argv);
 			return false;
 		case '*':
-			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, '*');
+			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, RZ_OUTPUT_MODE_RIZIN);
 			rz_str_argv_free(argv);
 			return false;
 		case ' ':

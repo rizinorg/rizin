@@ -1770,10 +1770,10 @@ RZ_API void rz_meta_rebase(RzAnalysis *analysis, ut64 diff);
 RZ_API ut64 rz_meta_get_size(RzAnalysis *a, RzAnalysisMetaType type);
 
 RZ_API const char *rz_meta_type_to_string(int type);
-RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
-RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, int rad);
-RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, int rad);
-RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, int rad, ut64 addr);
+RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, RzOutputMode mode, PJ *pj, bool show_full);
+RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, RzOutputMode mode);
+RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, RzOutputMode mode);
+RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, RzOutputMode mode, ut64 addr);
 
 /* hints */
 
