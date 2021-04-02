@@ -8535,7 +8535,7 @@ static void cmd_analysis_classes(RzCore *core, const char *input) {
 			}
 		}
 		RzOutputMode mode;
-		switch(input[1]){
+		switch (input[1]) {
 		case 'j':
 			mode = RZ_OUTPUT_MODE_JSON;
 			break;
