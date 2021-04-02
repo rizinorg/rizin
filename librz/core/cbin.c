@@ -34,7 +34,6 @@
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
 static void _print_strings(RzCore *r, const RzList *list, PJ *pj, int mode, int va);
 static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va);
-static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin);
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments);
 static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode);
 static int bin_libs(RzCore *r, PJ *pj, int mode);
@@ -377,7 +376,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	rz_core_bin_apply_config(r, binfile);
 	rz_core_bin_apply_main(r, binfile, va);
 	rz_core_bin_apply_dwarf(r, binfile);
-	bin_entry(r, NULL, RZ_MODE_SET, loadaddr, va, false);
+	rz_core_bin_apply_entry(r, binfile, va);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, false);
 	bin_sections(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, NULL, true);
 	if (rz_config_get_i(r->config, "bin.relocs")) {
@@ -538,6 +537,65 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile) {
 	rz_bin_dwarf_debug_abbrev_free(da);
 	if (!li) {
 		return false;
+	}
+	return true;
+}
+
+static inline bool is_initfini(RzBinAddr *entry) {
+	switch (entry->type) {
+	case RZ_BIN_ENTRY_TYPE_INIT:
+	case RZ_BIN_ENTRY_TYPE_FINI:
+	case RZ_BIN_ENTRY_TYPE_PREINIT:
+		return true;
+	default:
+		return false;
+	}
+}
+
+RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, int va) {
+	rz_return_val_if_fail(core && binfile, false);
+	RzBinObject *o = binfile->o;
+	if (!o) {
+		return false;
+	}
+	RzList *entries = o->entries;
+	RzListIter *iter;
+	RzBinAddr *entry = NULL;
+	int i = 0, init_i = 0, fini_i = 0, preinit_i = 0;
+	rz_list_foreach (entries, iter, entry) {
+		ut64 paddr = entry->paddr;
+		ut64 hpaddr = UT64_MAX;
+		ut64 hvaddr = UT64_MAX;
+		if (entry->hpaddr) {
+			hpaddr = entry->hpaddr;
+			if (entry->hvaddr) {
+				hvaddr = rva(core->bin, hpaddr, entry->hvaddr, va);
+			}
+		}
+		ut64 at = rva(core->bin, paddr, entry->vaddr, va);
+		const char *type = rz_bin_entry_type_string(entry->type);
+		if (!type) {
+			type = "unknown";
+		}
+		rz_flag_space_set(core->flags, RZ_FLAGS_FS_SYMBOLS);
+		char str[RZ_FLAG_NAME_SIZE];
+		if (entry->type == RZ_BIN_ENTRY_TYPE_INIT) {
+			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.init%i", init_i++);
+		} else if (entry->type == RZ_BIN_ENTRY_TYPE_FINI) {
+			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.fini%i", fini_i++);
+		} else if (entry->type == RZ_BIN_ENTRY_TYPE_PREINIT) {
+			snprintf(str, RZ_FLAG_NAME_SIZE, "entry.preinit%i", preinit_i++);
+		} else {
+			snprintf(str, RZ_FLAG_NAME_SIZE, "entry%i", i++);
+		}
+		rz_flag_set(core->flags, str, at, 1);
+		if (is_initfini(entry) && hvaddr != UT64_MAX) {
+			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, hvaddr, entry->bits / 8, NULL);
+		}
+	}
+	if (entry) {
+		ut64 at = rva(core->bin, entry->paddr, entry->vaddr, va);
+		rz_core_seek(core, at, false);
 	}
 	return true;
 }
@@ -1547,19 +1605,7 @@ static int bin_main(RzCore *r, RzBinFile *binfile, PJ *pj, int mode, int va) {
 	return true;
 }
 
-static inline bool is_initfini(RzBinAddr *entry) {
-	switch (entry->type) {
-	case RZ_BIN_ENTRY_TYPE_INIT:
-	case RZ_BIN_ENTRY_TYPE_FINI:
-	case RZ_BIN_ENTRY_TYPE_PREINIT:
-		return true;
-	default:
-		return false;
-	}
-}
-
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin) {
-	char str[RZ_FLAG_NAME_SIZE];
 	RzList *entries = rz_bin_get_entries(r->bin);
 	RzListIter *iter;
 	RzBinAddr *entry = NULL;
@@ -1582,15 +1628,13 @@ static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 		ut64 paddr = entry->paddr;
 		ut64 hpaddr = UT64_MAX;
 		ut64 hvaddr = UT64_MAX;
-		if (mode != RZ_MODE_SET) {
-			if (inifin) {
-				if (entry->type == RZ_BIN_ENTRY_TYPE_PROGRAM) {
-					continue;
-				}
-			} else {
-				if (entry->type != RZ_BIN_ENTRY_TYPE_PROGRAM) {
-					continue;
-				}
+		if (inifin) {
+			if (entry->type == RZ_BIN_ENTRY_TYPE_PROGRAM) {
+				continue;
+			}
+		} else {
+			if (entry->type != RZ_BIN_ENTRY_TYPE_PROGRAM) {
+				continue;
 			}
 		}
 		if (entry->hpaddr) {
@@ -1607,22 +1651,7 @@ static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 		const char *hpaddr_key = (entry->type == RZ_BIN_ENTRY_TYPE_PROGRAM)
 			? "haddr"
 			: "hpaddr";
-		if (IS_MODE_SET(mode)) {
-			rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
-			if (entry->type == RZ_BIN_ENTRY_TYPE_INIT) {
-				snprintf(str, RZ_FLAG_NAME_SIZE, "entry.init%i", init_i);
-			} else if (entry->type == RZ_BIN_ENTRY_TYPE_FINI) {
-				snprintf(str, RZ_FLAG_NAME_SIZE, "entry.fini%i", fini_i);
-			} else if (entry->type == RZ_BIN_ENTRY_TYPE_PREINIT) {
-				snprintf(str, RZ_FLAG_NAME_SIZE, "entry.preinit%i", preinit_i);
-			} else {
-				snprintf(str, RZ_FLAG_NAME_SIZE, "entry%i", i);
-			}
-			rz_flag_set(r->flags, str, at, 1);
-			if (is_initfini(entry) && hvaddr != UT64_MAX) {
-				rz_meta_set(r->analysis, RZ_META_TYPE_DATA, hvaddr, entry->bits / 8, NULL);
-			}
-		} else if (IS_MODE_SIMPLE(mode)) {
+		if (IS_MODE_SIMPLE(mode)) {
 			rz_cons_printf("0x%08" PFMT64x "\n", at);
 		} else if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
@@ -1679,12 +1708,7 @@ static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 			i++;
 		}
 	}
-	if (IS_MODE_SET(mode)) {
-		if (entry) {
-			ut64 at = rva(r->bin, entry->paddr, entry->vaddr, va);
-			rz_core_seek(r, at, false);
-		}
-	} else if (IS_MODE_JSON(mode)) {
+	if (IS_MODE_JSON(mode)) {
 		pj_end(pj);
 	} else if (IS_MODE_NORMAL(mode)) {
 		rz_cons_printf("\n%i entrypoints\n", init_i + fini_i + preinit_i + i);
