@@ -32,7 +32,6 @@
 	eprintf
 
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
-static int bin_libs(RzCore *r, PJ *pj, int mode);
 static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name);
 static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args);
 static int bin_classes(RzCore *r, PJ *pj, int mode);
@@ -377,7 +376,6 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	if (rz_config_get_i(r->config, "bin.relocs")) {
 		rz_core_bin_apply_relocs(r, binfile, va);
 	}
-	bin_libs(r, NULL, RZ_MODE_SET);
 	bin_imports(r, NULL, RZ_MODE_SET, va, NULL);
 	bin_symbols(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, false, NULL);
 	bin_classes(r, NULL, RZ_MODE_SET);
@@ -3739,10 +3737,7 @@ static int bin_libs(RzCore *r, PJ *pj, int mode) {
 		}
 	}
 	rz_list_foreach (libs, iter, lib) {
-		if (IS_MODE_SET(mode)) {
-			// Nothing to set.
-			// TODO: load libraries with iomaps?
-		} else if (IS_MODE_RZCMD(mode)) {
+		if (IS_MODE_RZCMD(mode)) {
 			rz_cons_printf("\"CCa entry0 %s\"\n", lib);
 		} else if (IS_MODE_JSON(mode)) {
 			pj_s(pj, lib);
