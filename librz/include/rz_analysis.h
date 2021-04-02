@@ -1989,7 +1989,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, 
 
 RZ_API void rz_analysis_class_print(RzAnalysis *analysis, const char *class_name, bool detailed);
 RZ_API void rz_analysis_class_json(RzAnalysis *analysis, PJ *j, const char *class_name);
-RZ_API void rz_analysis_class_list(RzAnalysis *analysis, int mode);
+RZ_API void rz_analysis_class_list(RzAnalysis *analysis, RzOutputMode mode);
 RZ_API void rz_analysis_class_list_bases(RzAnalysis *analysis, const char *class_name);
 RZ_API void rz_analysis_class_list_vtables(RzAnalysis *analysis, const char *class_name);
 RZ_API void rz_analysis_class_list_vtable_offset_functions(RzAnalysis *analysis, const char *class_name, ut64 offset);

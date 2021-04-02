@@ -8534,7 +8534,35 @@ static void cmd_analysis_classes(RzCore *core, const char *input) {
 				break;
 			}
 		}
-		rz_analysis_class_list(core->analysis, input[1]);
+		RzOutputMode mode;
+		switch(input[1]){
+		case 'j':
+			mode = RZ_OUTPUT_MODE_JSON;
+			break;
+		case '*':
+		case 'r':
+			mode = RZ_OUTPUT_MODE_RIZIN;
+			break;
+		case 'q':
+			mode = RZ_OUTPUT_MODE_QUIET;
+			break;
+		case 'l':
+			mode = RZ_OUTPUT_MODE_LONG;
+			break;
+		case 'J':
+			mode = RZ_OUTPUT_MODE_LONG_JSON;
+			break;
+		case 'k':
+			mode = RZ_OUTPUT_MODE_SDB;
+			break;
+		case 't':
+			mode = RZ_OUTPUT_MODE_TABLE;
+			break;
+		default:
+			rz_warn_if_reached();
+			mode = input[1];
+		}
+		rz_analysis_class_list(core->analysis, mode);
 		break;
 	case ' ': // "ac"
 	case '-': // "ac-"
