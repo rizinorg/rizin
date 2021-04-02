@@ -326,7 +326,7 @@ EXPECT=<<EOF
 nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
-1   0x00000000 NONE FUNC     dyld_stub_binder
+1   ---------- NONE FUNC     dyld_stub_binder
 
 EOF
 RUN
@@ -339,7 +339,7 @@ EXPECT=<<EOF
 nth vaddr      bind type lib name
 ---------------------------------
 0   0x00001f94 NONE FUNC     exit
-1   0x00000000 NONE FUNC     dyld_stub_binder
+1   ---------- NONE FUNC     dyld_stub_binder
 
 EOF
 RUN
