@@ -103,8 +103,9 @@ rz_core_deps = [
   rz_bin_dep,
   platform_deps,
   gdb_dep,
+  shell_parser_dep,
   lrt,
-  shell_parser_dep
+  mth
 ]
 
 if libuv_dep.found()
