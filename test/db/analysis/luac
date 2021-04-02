@@ -5,7 +5,7 @@ aa
 pdf~?
 EOF
 EXPECT=<<EOF
-289
+294
 EOF
 RUN
 
@@ -23,7 +23,7 @@ EXPECT=<<EOF
 |     |`--> 0x00000059      gettabup 0 0 0
 |     | :   0x0000005d      addi  0 0 1
 |     | :   0x00000061      mmbini 0 1 6 0
-|     | :   0x00000065      settabup 0 0 0
+|     | :   0x00000065      settabup 0 0 0 0
 |     `-`=< 0x00000069      jmp   -8
 EOF
 RUN

@@ -118,6 +118,9 @@ int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 	case OP_EXTRAARG: /*   Ax      extra (larger) argument for previous opcode     */
 		asm_string = luaop_new_str_1arg(opnames[opcode], ax);
 		break;
+	default:
+		asm_string = rz_str_new("invalid");
+		break;
 	}
 
 	rz_strbuf_append(&op->buf_asm, asm_string);
