@@ -37,7 +37,6 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 static int bin_classes(RzCore *r, PJ *pj, int mode);
 static int bin_trycatch(RzCore *core, PJ *pj, int mode);
 static int bin_size(RzCore *r, PJ *pj, int mode);
-static int bin_mem(RzCore *r, PJ *pj, int mode);
 static int bin_versioninfo(RzCore *r, PJ *pj, int mode);
 static int bin_resources(RzCore *r, PJ *pj, int mode);
 static int bin_signature(RzCore *r, PJ *pj, int mode);
@@ -379,7 +378,6 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	bin_imports(r, NULL, RZ_MODE_SET, va, NULL);
 	bin_symbols(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, false, NULL);
 	bin_classes(r, NULL, RZ_MODE_SET);
-	bin_mem(r, NULL, RZ_MODE_SET);
 	bin_resources(r, NULL, RZ_MODE_SET);
 	bin_fields(r, NULL, RZ_MODE_SET, va);
 	// ----
