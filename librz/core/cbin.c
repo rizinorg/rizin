@@ -2226,7 +2226,6 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 	rz_return_val_if_fail(table, false);
 	RzBinImport *import;
 	RzListIter *iter;
-	bool lit = info ? info->has_lit : false;
 	int i = 0;
 
 	if (!info) {
@@ -2256,7 +2255,7 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 		}
 		char *symname = import->name ? strdup(import->name) : NULL;
 		char *libname = import->libname ? strdup(import->libname) : NULL;
-		ut64 addr = lit ? rz_core_bin_impaddr(r->bin, va, symname) : 0;
+		ut64 addr = rz_core_bin_impaddr(r->bin, va, symname);
 		if (bin_demangle) {
 			char *dname = rz_bin_demangle(r->bin->cur, NULL, symname, addr, keep_lib);
 			if (dname) {

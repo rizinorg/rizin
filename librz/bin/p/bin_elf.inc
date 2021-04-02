@@ -1112,7 +1112,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	ret->type = str;
 	ret->has_pi = (strstr(str, "DYN")) ? 1 : 0;
-	ret->has_lit = true;
 	ret->has_sanitizers = has_sanitizers(bf);
 	if (!(str = Elf_(rz_bin_elf_get_elf_class)(obj))) {
 		free(ret);

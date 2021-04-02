@@ -518,7 +518,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->subsystem = strdup("darwin");
 	ret->arch = strdup(MACH0_(get_cputype)(bf->o->bin_obj));
 	ret->machine = MACH0_(get_cpusubtype)(bf->o->bin_obj);
-	ret->has_lit = true;
 	ret->type = MACH0_(get_filetype)(bf->o->bin_obj);
 	ret->big_endian = MACH0_(is_big_endian)(bf->o->bin_obj);
 	ret->bits = 32;

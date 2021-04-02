@@ -65,9 +65,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->rpath = strdup("NONE");
 	ret->type = strdup("MDMP (MiniDump crash report data)");
 
-	// FIXME: Needed to fix issue with PLT resolving. Can we get away with setting this for all children bins?
-	ret->has_lit = true;
-
 	sdb_set(bf->sdb, "mdmp.flags", sdb_fmt("0x%08" PFMT64x, obj->hdr->flags), 0);
 	sdb_num_set(bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 

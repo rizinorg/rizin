@@ -267,7 +267,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->type = strdup("EXEC (executable file)");
 	ret->bits = 64;
 	ret->has_va = true;
-	ret->has_lit = true;
 	ret->big_endian = false;
 	ret->dbg_info = 0;
 	return ret;

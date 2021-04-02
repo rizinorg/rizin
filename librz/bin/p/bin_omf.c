@@ -146,7 +146,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->arch = strdup("x86");
 	ret->big_endian = false;
 	ret->has_va = true;
-	ret->has_lit = true;
 	ret->bits = rz_bin_omf_get_bits(bf->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_nx = false;

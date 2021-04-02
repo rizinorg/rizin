@@ -753,7 +753,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->file = bf->file ? strdup(bf->file) : NULL;
 	ret->type = strdup("DEX CLASS");
 	ret->has_va = true;
-	ret->has_lit = true;
 	ret->bclass = rz_bin_dex_get_version(bf->o->bin_obj);
 	ret->rclass = strdup("class");
 	ret->os = strdup("linux");

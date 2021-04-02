@@ -2933,9 +2933,7 @@ static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
 }
 
 RZ_API RzGraph *rz_core_analysis_importxrefs(RzCore *core) {
-	RzBinInfo *info = rz_bin_get_info(core->bin);
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
-	bool lit = info ? info->has_lit : false;
 	bool va = core->io->va || core->bin->is_debugger;
 
 	RzListIter *iter;
@@ -2948,7 +2946,7 @@ RZ_API RzGraph *rz_core_analysis_importxrefs(RzCore *core) {
 		return NULL;
 	}
 	rz_list_foreach (obj->imports, iter, imp) {
-		ut64 addr = lit ? rz_core_bin_impaddr(core->bin, va, imp->name) : 0;
+		ut64 addr = rz_core_bin_impaddr(core->bin, va, imp->name);
 		if (addr) {
 			add_single_addr_xrefs(core, addr, graph);
 		} else {
