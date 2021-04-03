@@ -32,7 +32,6 @@
 	eprintf
 
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
-static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name);
 static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args);
 static int bin_classes(RzCore *r, PJ *pj, int mode);
 static int bin_resources(RzCore *r, PJ *pj, int mode);
@@ -367,7 +366,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	if (rz_config_get_i(r->config, "bin.relocs")) {
 		rz_core_bin_apply_relocs(r, binfile, va);
 	}
-	bin_imports(r, NULL, RZ_MODE_SET, va, NULL);
+	rz_core_bin_apply_imports(r, binfile, va);
 	bin_symbols(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, false, NULL);
 	bin_classes(r, NULL, RZ_MODE_SET);
 	bin_resources(r, NULL, RZ_MODE_SET);
@@ -1047,6 +1046,34 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 	sdb_free(db);
 
 	return relocs != NULL;
+}
+
+RZ_API bool rz_core_bin_apply_imports(RzCore *core, RzBinFile *binfile, bool va) {
+	rz_return_val_if_fail(core && binfile, NULL);
+	RzBinObject *o = binfile->o;
+	RzBinInfo *info = o ? o->info : NULL;
+	if (!info) {
+		return false;
+	}
+	int cdsz = info->bits / 8;
+	if (cdsz <= 0) {
+		return false;
+	}
+	RzListIter *iter;
+	RzBinImport *import;
+	RzList *imports = o->imports;
+	rz_list_foreach (imports, iter, import) {
+		if (!import->libname || !strstr(import->libname, ".dll")) {
+			continue;
+		}
+		RzBinSymbol *sym = rz_bin_object_get_symbol_of_import(o, import);
+		if (!sym) {
+			continue;
+		}
+		ut64 addr = rva(o, sym->paddr, sym->vaddr, va ? VA_TRUE : VA_FALSE);
+		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, addr, cdsz, NULL);
+	}
+	return true;
 }
 
 RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
@@ -2142,10 +2169,6 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 	}
 
 	RzList *imports = rz_bin_get_imports(r->bin);
-	int cdsz = info ? (info->bits == 64 ? 8 : info->bits == 32 ? 4
-					  : info->bits == 16       ? 4
-								   : 0)
-			: 0;
 	if (IS_MODE_JSON(mode)) {
 		pj_a(pj);
 	} else if (IS_MODE_RZCMD(mode)) {
@@ -2175,11 +2198,7 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 			free(symname);
 			symname = prname;
 		}
-		if (IS_MODE_SET(mode)) {
-			if (libname && strstr(libname, ".dll") && cdsz) {
-				rz_meta_set(r->analysis, RZ_META_TYPE_DATA, addr, cdsz, NULL);
-			}
-		} else if (IS_MODE_SIMPLE(mode)) {
+		if (IS_MODE_SIMPLE(mode)) {
 			rz_cons_printf("%s%s%s\n",
 				libname ? libname : "", libname ? " " : "", symname);
 		} else if (IS_MODE_SIMPLEST(mode)) {
