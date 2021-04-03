@@ -719,6 +719,14 @@ typedef struct dwarf_attr_kind {
 	};
 } RzBinDwarfAttrValue;
 
+/**
+ * \brief Safely get the string content from an RzBinDwarfAttrValue if it has one.
+ */
+static inline const char *rz_bin_dwarf_attr_value_get_string_content(const RzBinDwarfAttrValue *val) {
+	rz_return_val_if_fail(val, NULL);
+	return val->kind == DW_AT_KIND_STRING ? val->string.content : NULL;
+}
+
 typedef struct {
 	// A 4-byte (or 8 byte for 64bit dwarf) unsigned length of the .debug_info contribution
 	// for that compilation unit, not including the length field itself.
