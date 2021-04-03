@@ -704,6 +704,7 @@ RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, int va);
 RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va);
 RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va);
+RZ_API bool rz_core_bin_apply_imports(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile);
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd);
 RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name);
