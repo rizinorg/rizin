@@ -326,14 +326,65 @@ RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name) {
 	return false;
 }
 
-RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
+RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
+	rz_return_val_if_fail(r && binfile && mask, false);
+	RzBinObject *binobj = binfile->o;
+	RzBinInfo *info = binobj ? binobj->info : NULL;
+	if (!info) {
+		return false;
+	}
+
+	// ----
+	// inlined: rz_core_bin_info(r, RZ_CORE_BIN_ACC_ALL, NULL, RZ_MODE_SET, va, NULL, NULL);
+
+	bool va = info->has_va;
+
+	if (mask & RZ_CORE_BIN_ACC_STRINGS) {
+		rz_core_bin_apply_strings(r, binfile);
+	}
+	if (mask & RZ_CORE_BIN_ACC_INFO) {
+		rz_core_bin_apply_config(r, binfile);
+	}
+	if (mask & RZ_CORE_BIN_ACC_MAIN) {
+		rz_core_bin_apply_main(r, binfile, va);
+	}
+	if (mask & RZ_CORE_BIN_ACC_DWARF) {
+		rz_core_bin_apply_dwarf(r, binfile);
+	}
+	if (mask & RZ_CORE_BIN_ACC_ENTRIES) {
+		rz_core_bin_apply_entry(r, binfile, va);
+	}
+	if (mask & RZ_CORE_BIN_ACC_SECTIONS) {
+		rz_core_bin_apply_sections(r, binfile, va);
+	}
+	if (mask & RZ_CORE_BIN_ACC_RELOCS && rz_config_get_b(r->config, "bin.relocs")) {
+		rz_core_bin_apply_relocs(r, binfile, va);
+	}
+	if (mask & RZ_CORE_BIN_ACC_IMPORTS) {
+		rz_core_bin_apply_imports(r, binfile, va);
+	}
+	if (mask & RZ_CORE_BIN_ACC_SYMBOLS) {
+		ut64 loadaddr = binobj ? binobj->loadaddr : UT64_MAX;
+		bin_symbols(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, false, NULL);
+	}
+	if (mask & RZ_CORE_BIN_ACC_CLASSES) {
+		bin_classes(r, NULL, RZ_MODE_SET);
+	}
+	if (mask & RZ_CORE_BIN_ACC_RESOURCES) {
+		bin_resources(r, NULL, RZ_MODE_SET);
+	}
+	// ----
+
+	return true;
+}
+
+RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	rz_return_val_if_fail(r && binfile, false);
 	RzBinObject *binobj = binfile->o;
 	RzBinInfo *info = binobj ? binobj->info : NULL;
 	if (!info) {
 		return false;
 	}
-	int va = info->has_va;
 	const char *arch = info->arch;
 	ut16 bits = info->bits;
 	ut64 baseaddr = rz_bin_get_baddr(r->bin);
@@ -350,27 +401,7 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 	}
 	rz_asm_use(r->rasm, arch);
 
-	// ----
-	// inlined: rz_core_bin_info(r, RZ_CORE_BIN_ACC_ALL, NULL, RZ_MODE_SET, va, NULL, NULL);
-	ut64 loadaddr = binobj ? binobj->loadaddr : UT64_MAX;
-
-	// use our internal values for va
-	va = va ? VA_TRUE : VA_FALSE;
-
-	rz_core_bin_apply_strings(r, binfile);
-	rz_core_bin_apply_config(r, binfile);
-	rz_core_bin_apply_main(r, binfile, va);
-	rz_core_bin_apply_dwarf(r, binfile);
-	rz_core_bin_apply_entry(r, binfile, va);
-	rz_core_bin_apply_sections(r, binfile, va);
-	if (rz_config_get_i(r->config, "bin.relocs")) {
-		rz_core_bin_apply_relocs(r, binfile, va);
-	}
-	rz_core_bin_apply_imports(r, binfile, va);
-	bin_symbols(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, false, NULL);
-	bin_classes(r, NULL, RZ_MODE_SET);
-	bin_resources(r, NULL, RZ_MODE_SET);
-	// ----
+	rz_core_bin_apply_info(r, binfile, RZ_CORE_BIN_ACC_ALL);
 
 	rz_core_bin_set_cur(r, binfile);
 	return true;
@@ -538,7 +569,7 @@ static inline bool is_initfini(RzBinAddr *entry) {
 	}
 }
 
-RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, int va) {
+RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
 	if (!o) {
@@ -706,7 +737,7 @@ static void section_perms_str(char *dst, int perms) {
 	dst[4] = '\0';
 }
 
-RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va) {
+RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va) {
 	rz_return_val_if_fail(core && binfile, NULL);
 	bool ret = false;
 	HtPP *dup_chk_ht = ht_pp_new0();
@@ -737,7 +768,7 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va)
 	int section_index = 0;
 	RzList *io_section_info = rz_list_newf((RzListFree)free);
 	rz_list_foreach (sections, iter, section) {
-		int va_sect = va;
+		int va_sect = va ? VA_TRUE : VA_FALSE;
 		ut64 addr;
 
 		if (va && !(section->perm & RZ_PERM_R)) {
@@ -4213,7 +4244,7 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 	if ((action & RZ_CORE_BIN_ACC_SECTIONS_MAPPING)) {
 		ret &= bin_map_sections_to_segments(core->bin, pj, mode);
 	}
-	if (rz_config_get_i(core->config, "bin.relocs")) {
+	if (rz_config_get_b(core->config, "bin.relocs")) {
 		if ((action & RZ_CORE_BIN_ACC_RELOCS)) {
 			ret &= bin_relocs(core, pj, mode, va);
 		}
