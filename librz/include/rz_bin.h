@@ -126,13 +126,13 @@ RZ_LIB_VERSION_HEADER(rz_bin);
 #define RZ_BIN_TYPE_SPECIAL_SYM_STR "SPCL"
 #define RZ_BIN_TYPE_UNKNOWN_STR     "UNK"
 
-enum {
-	RZ_BIN_SYM_ENTRY,
-	RZ_BIN_SYM_INIT,
-	RZ_BIN_SYM_MAIN,
-	RZ_BIN_SYM_FINI,
-	RZ_BIN_SYM_LAST
-};
+typedef enum {
+	RZ_BIN_SPECIAL_SYMBOL_ENTRY,
+	RZ_BIN_SPECIAL_SYMBOL_INIT,
+	RZ_BIN_SPECIAL_SYMBOL_MAIN,
+	RZ_BIN_SPECIAL_SYMBOL_FINI,
+	RZ_BIN_SPECIAL_SYMBOL_LAST
+} RzBinSpecialSymbol;
 
 // name mangling types
 // TODO: Rename to RZ_BIN_LANG_
@@ -267,7 +267,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<BinMap*/ *maps;
 	char *regstate;
 	RzBinInfo *info;
-	RzBinAddr *binsym[RZ_BIN_SYM_LAST];
+	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
 	int lang;
 	Sdb *kv;
@@ -515,7 +515,7 @@ typedef struct rz_bin_plugin_t {
 	bool (*check_buffer)(RzBuffer *buf);
 	ut64 (*baddr)(RzBinFile *bf);
 	ut64 (*boffset)(RzBinFile *bf);
-	RzBinAddr *(*binsym)(RzBinFile *bf, int num);
+	RzBinAddr *(*binsym)(RzBinFile *bf, RzBinSpecialSymbol num);
 	RzList /*<RzBinAddr>*/ *(*entries)(RzBinFile *bf);
 	RzList /*<RzBinSection>*/ *(*sections)(RzBinFile *bf);
 	RZ_OWN RzBinSourceLineInfo *(*lines)(RzBinFile *bf); //< only called once on load, ownership is transferred to the caller
@@ -781,7 +781,6 @@ RZ_API RzBinInfo *rz_bin_get_info(RzBin *bin);
 RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr);
 RZ_API ut64 rz_bin_get_laddr(RzBin *bin);
 RZ_API ut64 rz_bin_get_size(RzBin *bin);
-RZ_API RzBinAddr *rz_bin_get_sym(RzBin *bin, int sym);
 RZ_API RzList *rz_bin_raw_strings(RzBinFile *a, int min);
 RZ_API RzList *rz_bin_dump_strings(RzBinFile *a, int min, int raw);
 
@@ -857,6 +856,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *binfile, RzBinObject *o);
 RZ_API bool rz_bin_object_delete(RzBin *bin, ut32 binfile_id);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
+RZ_API RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym);
 RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 RZ_API void rz_bin_mem_free(void *data);
 

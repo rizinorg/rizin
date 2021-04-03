@@ -270,16 +270,18 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	return buf;
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int sym) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	ut64 addr;
 	RzBinAddr *ret = NULL;
 	switch (sym) {
-	case RZ_BIN_SYM_MAIN:
+	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 		addr = MACH0_(get_main)(bf->o->bin_obj);
 		if (!addr || !(ret = RZ_NEW0(RzBinAddr))) {
 			return NULL;
 		}
 		ret->paddr = ret->vaddr = addr;
+		break;
+	default:
 		break;
 	}
 	return ret;

@@ -4799,7 +4799,7 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzBinFile *bf = core->bin->cur;
 	RzBinObject *o = bf ? bf->o : NULL;
 	/* Symbols (Imports are already analyzed by rz_bin on init) */
-	if ((list = rz_bin_get_symbols(core->bin)) != NULL) {
+	if (o && (list = o->symbols) != NULL) {
 		rz_list_foreach (list, iter, symbol) {
 			if (rz_cons_is_breaked()) {
 				break;
@@ -4816,7 +4816,7 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	}
 	rz_core_task_yield(&core->tasks);
 	/* Main */
-	if ((binmain = rz_bin_get_sym(core->bin, RZ_BIN_SYM_MAIN))) {
+	if (o && (binmain = rz_bin_object_get_special_symbol(o, RZ_BIN_SPECIAL_SYMBOL_MAIN))) {
 		if (binmain->paddr != UT64_MAX) {
 			ut64 addr = rz_bin_object_get_vaddr(o, binmain->paddr, binmain->vaddr);
 			rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth - 1);

@@ -24,7 +24,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0x1000000; // XXX
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	return NULL; // TODO
 }
 

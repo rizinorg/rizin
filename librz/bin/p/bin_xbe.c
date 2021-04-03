@@ -53,8 +53,8 @@ static void destroy(RzBinFile *bf) {
 	RZ_FREE(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
-	if (!bf || !bf->buf || type != RZ_BIN_SYM_MAIN) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
+	if (!bf || !bf->buf || type != RZ_BIN_SPECIAL_SYMBOL_MAIN) {
 		return NULL;
 	}
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;

@@ -24,8 +24,8 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
-	if (type == RZ_BIN_SYM_MAIN && bf && bf->buf) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
+	if (type == RZ_BIN_SPECIAL_SYMBOL_MAIN && bf && bf->buf) {
 		ut8 init_jmp[4];
 		RzBinAddr *ret = RZ_NEW0(RzBinAddr);
 		if (!ret) {

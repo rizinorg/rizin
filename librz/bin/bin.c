@@ -656,15 +656,6 @@ RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr) {
 	// maybe in RzBinFile.rebase() ?
 }
 
-RZ_API RzBinAddr *rz_bin_get_sym(RzBin *bin, int sym) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	if (sym < 0 || sym >= RZ_BIN_SYM_LAST) {
-		return NULL;
-	}
-	return o ? o->binsym[sym] : NULL;
-}
-
 // XXX: those accessors are redundant
 RZ_API RzList *rz_bin_get_entries(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
