@@ -114,12 +114,14 @@ static void destroy(RzBinFile *bf) {
 	rz_bin_mz_free((struct rz_bin_mz_obj_t *)bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	RzBinAddr *mzaddr = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
-		case RZ_BIN_SYM_MAIN:
+		case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 			mzaddr = rz_bin_mz_get_main_vaddr(bf->o->bin_obj);
+			break;
+		default:
 			break;
 		}
 	}

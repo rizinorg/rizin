@@ -484,7 +484,7 @@ RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va) {
 	if (!o) {
 		return false;
 	}
-	RzBinAddr *binmain = o->binsym[RZ_BIN_SYM_MAIN];
+	RzBinAddr *binmain = rz_bin_object_get_special_symbol(o, RZ_BIN_SPECIAL_SYMBOL_MAIN);
 	if (!binmain) {
 		return false;
 	}
@@ -1805,7 +1805,7 @@ static int bin_main(RzCore *r, RzBinFile *binfile, PJ *pj, int mode, int va) {
 	if (!o) {
 		return false;
 	}
-	RzBinAddr *binmain = o->binsym[RZ_BIN_SYM_MAIN];
+	RzBinAddr *binmain = rz_bin_object_get_special_symbol(o, RZ_BIN_SPECIAL_SYMBOL_MAIN);
 	if (!binmain) {
 		return false;
 	}

@@ -171,7 +171,7 @@ static RzList *libs(RzBinFile *bf) {
 	return rz_bin_java_class_as_libraries(jclass);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int sym) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	RzBinJavaClass *jclass = rz_bin_file_get_java_class(bf);
 	if (!jclass) {
 		return NULL;

@@ -118,23 +118,25 @@ static ut64 boffset(RzBinFile *bf) {
 	return Elf_(rz_bin_elf_get_boffset)(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int sym) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	RzBinAddr *ret = NULL;
 	ut64 addr = 0LL;
 
 	switch (sym) {
-	case RZ_BIN_SYM_ENTRY:
+	case RZ_BIN_SPECIAL_SYMBOL_ENTRY:
 		addr = Elf_(rz_bin_elf_get_entry_offset)(bf->o->bin_obj);
 		break;
-	case RZ_BIN_SYM_MAIN:
+	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 		addr = Elf_(rz_bin_elf_get_main_offset)(bf->o->bin_obj);
 		break;
-	case RZ_BIN_SYM_INIT:
+	case RZ_BIN_SPECIAL_SYMBOL_INIT:
 		addr = Elf_(rz_bin_elf_get_init_offset)(bf->o->bin_obj);
 		break;
-	case RZ_BIN_SYM_FINI:
+	case RZ_BIN_SPECIAL_SYMBOL_FINI:
 		addr = Elf_(rz_bin_elf_get_fini_offset)(bf->o->bin_obj);
+		break;
+	default:
 		break;
 	}
 	if (addr && addr != UT64_MAX && (ret = RZ_NEW0(RzBinAddr))) {

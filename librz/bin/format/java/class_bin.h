@@ -77,7 +77,7 @@ RZ_API char *rz_bin_java_class_const_pool_resolve_index(RzBinJavaClass *bin, st3
 
 /* used in bin_java.c and core_java.c */
 RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb);
-RZ_API RzBinAddr *rz_bin_java_class_resolve_symbol(RzBinJavaClass *bin, int resolve);
+RZ_API RzBinAddr *rz_bin_java_class_resolve_symbol(RzBinJavaClass *bin, RzBinSpecialSymbol resolve);
 RZ_API RzList *rz_bin_java_class_strings(RzBinJavaClass *bin);
 RZ_API RzList *rz_bin_java_class_entrypoints(RzBinJavaClass *bin);
 RZ_API RzList *rz_bin_java_class_methods_as_symbols(RzBinJavaClass *bin);

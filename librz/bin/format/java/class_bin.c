@@ -763,7 +763,7 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 	rz_strbuf_append(sb, "}\n");
 }
 
-RZ_API RzBinAddr *rz_bin_java_class_resolve_symbol(RzBinJavaClass *bin, int resolve) {
+RZ_API RzBinAddr *rz_bin_java_class_resolve_symbol(RzBinJavaClass *bin, RzBinSpecialSymbol resolve) {
 	rz_return_val_if_fail(bin, NULL);
 
 	RzBinAddr *ret = RZ_NEW0(RzBinAddr);
@@ -785,12 +785,12 @@ RZ_API RzBinAddr *rz_bin_java_class_resolve_symbol(RzBinJavaClass *bin, int reso
 				continue;
 			}
 
-			if (resolve == RZ_BIN_SYM_ENTRY || resolve == RZ_BIN_SYM_INIT) {
+			if (resolve == RZ_BIN_SPECIAL_SYMBOL_ENTRY || resolve == RZ_BIN_SPECIAL_SYMBOL_INIT) {
 				if (strcmp(name, "<init>") != 0 && strcmp(name, "<clinit>") != 0) {
 					free(name);
 					continue;
 				}
-			} else if (resolve == RZ_BIN_SYM_MAIN) {
+			} else if (resolve == RZ_BIN_SPECIAL_SYMBOL_MAIN) {
 				if (strcmp(name, "main") != 0) {
 					free(name);
 					continue;

@@ -39,14 +39,16 @@ static ut64 baddr(RzBinFile *bf) {
 	return rz_bin_te_get_image_base(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	RzBinAddr *ret = NULL;
 	switch (type) {
-	case RZ_BIN_SYM_MAIN:
+	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 		if (!(ret = RZ_NEW(RzBinAddr))) {
 			return NULL;
 		}
 		ret->paddr = ret->vaddr = rz_bin_te_get_main_paddr(bf->o->bin_obj);
+		break;
+	default:
 		break;
 	}
 	return ret;

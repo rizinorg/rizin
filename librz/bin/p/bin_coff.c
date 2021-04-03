@@ -39,7 +39,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int sym) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 	return NULL;
 }
 

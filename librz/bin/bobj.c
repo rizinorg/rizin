@@ -52,7 +52,7 @@ static void object_delete_items(RzBinObject *o) {
 	rz_bin_source_line_info_free(o->lines);
 	sdb_free(o->kv);
 	rz_list_free(o->mem);
-	for (i = 0; i < RZ_BIN_SYM_LAST; i++) {
+	for (i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 		free(o->binsym[i]);
 	}
 }
@@ -298,7 +298,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	}
 	// XXX this is expensive because is O(n^n)
 	if (p->binsym) {
-		for (i = 0; i < RZ_BIN_SYM_LAST; i++) {
+		for (i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 			o->binsym[i] = p->binsym(bf, i);
 			if (o->binsym[i]) {
 				o->binsym[i]->paddr += o->loadaddr;
@@ -553,4 +553,12 @@ RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr) {
 		return rz_bin_object_addr_with_base(o, vaddr);
 	}
 	return paddr;
+}
+
+RZ_API RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym) {
+	rz_return_val_if_fail(o, NULL);
+	if (sym < 0 || sym >= RZ_BIN_SPECIAL_SYMBOL_LAST) {
+		return NULL;
+	}
+	return o ? o->binsym[sym] : NULL;
 }

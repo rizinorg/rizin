@@ -40,13 +40,15 @@ static ut64 baddr(RzBinFile *bf) {
 	return PE_(rz_bin_pe_get_image_base)(bf->o->bin_obj);
 }
 
-static RzBinAddr *binsym(RzBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	struct rz_bin_pe_addr_t *peaddr = NULL;
 	RzBinAddr *ret = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
-		case RZ_BIN_SYM_MAIN:
+		case RZ_BIN_SPECIAL_SYMBOL_MAIN:
 			peaddr = PE_(rz_bin_pe_get_main_vaddr)(bf->o->bin_obj);
+			break;
+		default:
 			break;
 		}
 	}
