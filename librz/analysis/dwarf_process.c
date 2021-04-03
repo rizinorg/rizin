@@ -241,20 +241,25 @@ static st32 parse_array_type(Context *ctx, ut64 idx, RzStrBuf *strbuf) {
 }
 
 /**
- * @brief Recursively parses type entry of a certain offset into strbuf
+ * \brief Recursively parses type entry of a certain offset into strbuf
  *        saves type size into *size
  *
- * @param ctx
- * @param offset offset of the type entry
- * @param strbuf string to store the type into
- * @param size ptr to size of a type to fill up (can be NULL if unwanted)
- * @return st32 -1 if error else DW_TAG of the entry
+ * \param ctx
+ * \param offset offset of the type entry
+ * \param strbuf string to store the type into
+ * \param size ptr to size of a type to fill up (can be NULL if unwanted)
+ * \param set of visited die offsets, to prevent infinite recursion
+ * \return st32 -1 if error else DW_TAG of the entry
  *
  * TODO make cache for type entries, one type is usually referenced
  * multiple times which means it's parsed multiple times instead of once
  */
-static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *size) {
-	rz_return_val_if_fail(strbuf, -1);
+static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *size, RZ_NONNULL SetU *visited) {
+	rz_return_val_if_fail(strbuf && visited, -1);
+	if (set_u_contains(visited, offset)) {
+		return -1;
+	}
+	set_u_add(visited, offset);
 	RzBinDwarfDie *die = ht_up_find(ctx->die_map, offset, NULL);
 	if (!die) {
 		return -1;
@@ -275,7 +280,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *
 			rz_strbuf_append(strbuf, "void");
 			rz_strbuf_append(strbuf, " *");
 		} else {
-			tag = parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			tag = parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 			if (tag == DW_TAG_subroutine_type) {
 				strbuf_rev_prepend_char(strbuf, "(*)", '(');
 			} else if (tag == DW_TAG_pointer_type) {
@@ -304,7 +309,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *
 		if (type_idx == -1) {
 			rz_strbuf_append(strbuf, "void");
 		} else {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " (");
 		if (die->has_children) { // has parameters
@@ -314,49 +319,64 @@ static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *
 	case DW_TAG_array_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		parse_array_type(ctx, die - ctx->all_dies, strbuf);
 		break;
 	case DW_TAG_const_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " const");
 		break;
 	case DW_TAG_volatile_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " volatile");
 		break;
 	case DW_TAG_restrict_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " restrict");
 		break;
 	case DW_TAG_rvalue_reference_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " &&");
 		break;
 	case DW_TAG_reference_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " &");
 		break;
 	default:
 		break;
 	}
+	set_u_delete(visited, offset);
 	return (st32)die->tag;
+}
+
+/**
+ * \brief Convenience function for calling parse_type with an empty visited set
+ * See documentation of parse_type
+ */
+static st32 parse_type_outer(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *size) {
+	SetU *visited = set_u_new();
+	if (!visited) {
+		return -1;
+	}
+	st32 r = parse_type(ctx, offset, strbuf, size, visited);
+	set_u_free(visited);
+	return r;
 }
 
 /**
@@ -390,7 +410,7 @@ static RzAnalysisStructMember *parse_struct_member(Context *ctx, ut64 idx, RzAna
 			}
 			break;
 		case DW_AT_type:
-			parse_type(ctx, value->reference, &strbuf, &size);
+			parse_type_outer(ctx, value->reference, &strbuf, &size);
 			free(type);
 			type = rz_strbuf_drain_nofree(&strbuf);
 			if (!type || !*type) {
@@ -587,7 +607,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 	if (type_attr_idx != -1) {
 		RzStrBuf strbuf;
 		rz_strbuf_init(&strbuf);
-		parse_type(ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
+		parse_type_outer(ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
 		base_type->type = rz_strbuf_drain_nofree(&strbuf);
 	}
 
@@ -654,7 +674,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 			}
 			break;
 		case DW_AT_type:
-			parse_type(ctx, value->reference, &strbuf, &size);
+			parse_type_outer(ctx, value->reference, &strbuf, &size);
 			type = rz_strbuf_drain_nofree(&strbuf);
 			if (!type) {
 				goto cleanup;
@@ -753,7 +773,7 @@ static void get_spec_die_type(Context *ctx, RzBinDwarfDie *die, RzStrBuf *ret_ty
 	st32 attr_idx = find_attr_idx(die, DW_AT_type);
 	if (attr_idx != -1) {
 		ut64 size = 0;
-		parse_type(ctx, die->attr_values[attr_idx].reference, ret_type, &size);
+		parse_type_outer(ctx, die->attr_values[attr_idx].reference, ret_type, &size);
 	}
 }
 
@@ -789,7 +809,7 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RzStrBuf *type, con
 				has_linkage_name = true;
 				break;
 			case DW_AT_type:
-				parse_type(ctx, val->reference, type, &size);
+				parse_type_outer(ctx, val->reference, type, &size);
 				break;
 			default:
 				break;
@@ -1185,7 +1205,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 						has_linkage_name = true;
 						break;
 					case DW_AT_type:
-						parse_type(ctx, val->reference, &type, NULL);
+						parse_type_outer(ctx, val->reference, &type, NULL);
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
@@ -1372,7 +1392,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 			}
 		} break;
 		case DW_AT_type:
-			parse_type(ctx, val->reference, &ret_type, NULL);
+			parse_type_outer(ctx, val->reference, &ret_type, NULL);
 			break;
 		case DW_AT_virtuality:
 			fcn.is_method = true; /* method specific attr */
