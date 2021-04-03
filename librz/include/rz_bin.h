@@ -801,8 +801,6 @@ RZ_API RZ_DEPRECATE RzList *rz_bin_reset_strings(RzBin *bin);
 RZ_API RZ_DEPRECATE int rz_bin_is_string(RzBin *bin, ut64 va);
 RZ_API RZ_DEPRECATE int rz_bin_is_big_endian(RzBin *bin);
 RZ_API RZ_DEPRECATE int rz_bin_is_static(RzBin *bin);
-RZ_API RZ_DEPRECATE ut64 rz_bin_get_vaddr(RzBin *bin, ut64 paddr, ut64 vaddr);
-RZ_API ut64 rz_bin_file_get_vaddr(RzBinFile *bf, ut64 paddr, ut64 vaddr);
 
 RZ_API int rz_bin_load_languages(RzBinFile *binfile);
 RZ_API RzBinFile *rz_bin_cur(RzBin *bin);
@@ -858,6 +856,7 @@ RZ_API void rz_bin_file_hash_free(RzBinFileHash *fhash);
 RZ_API int rz_bin_object_set_items(RzBinFile *binfile, RzBinObject *o);
 RZ_API bool rz_bin_object_delete(RzBin *bin, ut32 binfile_id);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
+RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
 RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 RZ_API void rz_bin_mem_free(void *data);
 

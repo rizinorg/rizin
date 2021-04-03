@@ -4795,6 +4795,9 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	rz_core_task_yield(&core->tasks);
 
 	rz_cons_break_push(NULL, NULL);
+
+	RzBinFile *bf = core->bin->cur;
+	RzBinObject *o = bf ? bf->o : NULL;
 	/* Symbols (Imports are already analyzed by rz_bin on init) */
 	if ((list = rz_bin_get_symbols(core->bin)) != NULL) {
 		rz_list_foreach (list, iter, symbol) {
@@ -4806,8 +4809,7 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 				continue;
 			}
 			if (isValidSymbol(symbol)) {
-				ut64 addr = rz_bin_get_vaddr(core->bin, symbol->paddr,
-					symbol->vaddr);
+				ut64 addr = rz_bin_object_get_vaddr(o, symbol->paddr, symbol->vaddr);
 				rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth - 1);
 			}
 		}
@@ -4816,7 +4818,7 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	/* Main */
 	if ((binmain = rz_bin_get_sym(core->bin, RZ_BIN_SYM_MAIN))) {
 		if (binmain->paddr != UT64_MAX) {
-			ut64 addr = rz_bin_get_vaddr(core->bin, binmain->paddr, binmain->vaddr);
+			ut64 addr = rz_bin_object_get_vaddr(o, binmain->paddr, binmain->vaddr);
 			rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth - 1);
 		}
 	}
@@ -4826,7 +4828,7 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 			if (entry->paddr == UT64_MAX) {
 				continue;
 			}
-			ut64 addr = rz_bin_get_vaddr(core->bin, entry->paddr, entry->vaddr);
+			ut64 addr = rz_bin_object_get_vaddr(o, entry->paddr, entry->vaddr);
 			rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth - 1);
 		}
 	}

@@ -143,11 +143,9 @@ static void pair_str(PJ *pj, const char *key, const char *val) {
 #define STR(x) (x) ? (x) : ""
 RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile);
 
-static ut64 rva(RzBin *bin, ut64 paddr, ut64 vaddr, int va) {
+static ut64 rva(RzBinObject *o, ut64 paddr, ut64 vaddr, int va) {
 	if (va == VA_TRUE) {
-		if (paddr != UT64_MAX) {
-			return rz_bin_get_vaddr(bin, paddr, vaddr);
-		}
+		return rz_bin_object_get_vaddr(o, paddr, vaddr);
 	}
 	if (va == VA_NOREBASE) {
 		return vaddr;
@@ -380,6 +378,11 @@ RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile) {
 }
 
 RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
+	rz_return_val_if_fail(r && binfile, false);
+	RzBinObject *o = binfile->o;
+	if (!o) {
+		return false;
+	}
 	const RzList *l = core_bin_strings(r, binfile);
 	if (!l) {
 		return false;
@@ -390,7 +393,7 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 	RzListIter *iter;
 	RzBinString *string;
 	rz_list_foreach (l, iter, string) {
-		ut64 vaddr = rva(r->bin, string->paddr, string->vaddr, va);
+		ut64 vaddr = rva(o, string->paddr, string->vaddr, va);
 		if (!rz_bin_string_filter(r->bin, string->string, string->length, vaddr)) {
 			continue;
 		}
@@ -553,10 +556,10 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, int va) {
 		if (entry->hpaddr) {
 			hpaddr = entry->hpaddr;
 			if (entry->hvaddr) {
-				hvaddr = rva(core->bin, hpaddr, entry->hvaddr, va);
+				hvaddr = rva(o, hpaddr, entry->hvaddr, va);
 			}
 		}
-		ut64 at = rva(core->bin, paddr, entry->vaddr, va);
+		ut64 at = rva(o, paddr, entry->vaddr, va);
 		const char *type = rz_bin_entry_type_string(entry->type);
 		if (!type) {
 			type = "unknown";
@@ -578,7 +581,7 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, int va) {
 		}
 	}
 	if (entry) {
-		ut64 at = rva(core->bin, entry->paddr, entry->vaddr, va);
+		ut64 at = rva(o, entry->paddr, entry->vaddr, va);
 		rz_core_seek(core, at, false);
 	}
 	return true;
@@ -741,7 +744,7 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va)
 		if (va && !(section->perm & RZ_PERM_R)) {
 			va_sect = VA_NOREBASE;
 		}
-		addr = rva(core->bin, section->paddr, section->vaddr, va_sect);
+		addr = rva(o, section->paddr, section->vaddr, va_sect);
 
 		rz_name_filter(section->name, strlen(section->name) + 1, false);
 
@@ -1026,7 +1029,7 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 	RBIter iter;
 	RzBinReloc *reloc = NULL;
 	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
-		ut64 addr = rva(core->bin, reloc->paddr, reloc->vaddr, va);
+		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
 		if ((is_section_reloc(reloc) || is_file_reloc(reloc))) {
 			/*
 			 * Skip section reloc because they will have their own flag.
@@ -1087,7 +1090,7 @@ static void _print_strings(RzCore *r, RZ_NULLABLE const RzList *list, PJ *pj, in
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr;
 		paddr = string->paddr;
-		vaddr = rva(r->bin, paddr, string->vaddr, va);
+		vaddr = obj ? rva(obj, paddr, string->vaddr, va) : paddr;
 		if (!rz_bin_string_filter(bin, string->string, string->length, vaddr)) {
 			continue;
 		}
@@ -1827,7 +1830,9 @@ static int bin_main(RzCore *r, RzBinFile *binfile, PJ *pj, int mode, int va) {
 }
 
 static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin) {
-	RzList *entries = rz_bin_get_entries(r->bin);
+	RzBinFile *bf = r->bin->cur;
+	RzBinObject *o = bf ? bf->o : NULL;
+	RzList *entries = o ? o->entries : NULL;
 	RzListIter *iter;
 	RzBinAddr *entry = NULL;
 	int i = 0, init_i = 0, fini_i = 0, preinit_i = 0;
@@ -1861,10 +1866,10 @@ static int bin_entry(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifi
 		if (entry->hpaddr) {
 			hpaddr = entry->hpaddr;
 			if (entry->hvaddr) {
-				hvaddr = rva(r->bin, hpaddr, entry->hvaddr, va);
+				hvaddr = rva(o, hpaddr, entry->hvaddr, va);
 			}
 		}
-		ut64 at = rva(r->bin, paddr, entry->vaddr, va);
+		ut64 at = rva(o, paddr, entry->vaddr, va);
 		const char *type = rz_bin_entry_type_string(entry->type);
 		if (!type) {
 			type = "unknown";
@@ -1970,7 +1975,7 @@ static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int
 	RBIter iter;
 	RzBinReloc *reloc;
 	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
-		ut64 addr = rva(r->bin, reloc->paddr, reloc->vaddr, va);
+		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SIMPLE(mode)) {
 			rz_cons_printf("0x%08" PFMT64x "  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RZCMD(mode)) {
@@ -2203,8 +2208,8 @@ RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name) {
 		if (va) {
 			if (s->paddr == UT64_MAX) {
 				addr = s->vaddr;
-			} else {
-				addr = rz_bin_get_vaddr(bin, s->paddr, s->vaddr);
+			} else if (bin->cur && bin->cur->o) {
+				addr = rz_bin_object_get_vaddr(bin->cur->o, s->paddr, s->vaddr);
 			}
 		} else {
 			addr = s->paddr;
@@ -2430,12 +2435,8 @@ static bool isAnExport(RzBinSymbol *s) {
 	return (s->bind && !strcmp(s->bind, RZ_BIN_BIND_GLOBAL_STR));
 }
 
-static ut64 compute_addr(RzBin *bin, ut64 paddr, ut64 vaddr, int va) {
-	return paddr == UT64_MAX ? vaddr : rva(bin, paddr, vaddr, va);
-}
-
-static void handle_arm_special_symbol(RzCore *core, RzBinSymbol *symbol, int va) {
-	ut64 addr = compute_addr(core->bin, symbol->paddr, symbol->vaddr, va);
+static void handle_arm_special_symbol(RzCore *core, RzBinObject *o, RzBinSymbol *symbol, int va) {
+	ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
 	if (!strcmp(symbol->name, "$a")) {
 		rz_analysis_hint_set_bits(core->analysis, addr, 32);
 	} else if (!strcmp(symbol->name, "$x")) {
@@ -2453,13 +2454,17 @@ static void handle_arm_special_symbol(RzCore *core, RzBinSymbol *symbol, int va)
 	}
 }
 
-static void handle_arm_hint(RzCore *core, RzBinInfo *info, ut64 paddr, ut64 vaddr, int bits, int va) {
+static void handle_arm_hint(RzCore *core, RzBinObject *o, ut64 paddr, ut64 vaddr, int bits, int va) {
+	RzBinInfo *info = o->info;
+	if (!info) {
+		return;
+	}
 	if (info->bits > 32) { // we look at 16 or 32 bit only
 		return;
 	}
 
 	int force_bits = 0;
-	ut64 addr = compute_addr(core->bin, paddr, vaddr, va);
+	ut64 addr = rva(o, paddr, vaddr, va);
 	if (paddr & 1 || bits == 16) {
 		force_bits = 16;
 	} else if (info->bits == 16 && bits == 32) {
@@ -2472,12 +2477,12 @@ static void handle_arm_hint(RzCore *core, RzBinInfo *info, ut64 paddr, ut64 vadd
 	}
 }
 
-static void handle_arm_symbol(RzCore *core, RzBinSymbol *symbol, RzBinInfo *info, int va) {
-	handle_arm_hint(core, info, symbol->paddr, symbol->vaddr, symbol->bits, va);
+static void handle_arm_symbol(RzCore *core, RzBinObject *o, RzBinSymbol *symbol, int va) {
+	handle_arm_hint(core, o, symbol->paddr, symbol->vaddr, symbol->bits, va);
 }
 
-static void handle_arm_entry(RzCore *core, RzBinAddr *entry, RzBinInfo *info, int va) {
-	handle_arm_hint(core, info, entry->paddr, entry->vaddr, entry->bits, va);
+static void handle_arm_entry(RzCore *core, RzBinObject *o, RzBinAddr *entry, int va) {
+	handle_arm_hint(core, o, entry->paddr, entry->vaddr, entry->bits, va);
 }
 
 static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
@@ -2491,8 +2496,10 @@ static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
 }
 
 static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
-	RzBinInfo *info = rz_bin_get_info(r->bin);
-	RzList *entries = rz_bin_get_entries(r->bin);
+	RzBinFile *bf = r->bin->cur;
+	RzBinObject *o = bf ? bf->o : NULL;
+	RzBinInfo *info = o ? o->info : NULL;
+	RzList *entries = o ? o->entries : NULL;
 	RzBinSymbol *symbol;
 	RzBinAddr *entry;
 	RzListIter *iter;
@@ -2555,7 +2562,7 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		if (name && strcmp(symbol->name, name)) {
 			continue;
 		}
-		ut64 addr = compute_addr(r->bin, symbol->paddr, symbol->vaddr, va);
+		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
 		ut32 len = symbol->size ? symbol->size : 32;
 		if (at != UT64_MAX && (!symbol->size || !is_in_range(at, addr, symbol->size))) {
 			continue;
@@ -2575,12 +2582,12 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			 */
 		} else if (IS_MODE_SET(mode) && is_special_symbol(symbol)) {
 			if (is_arm) {
-				handle_arm_special_symbol(r, symbol, va);
+				handle_arm_special_symbol(r, o, symbol, va);
 			}
 		} else if (IS_MODE_SET(mode)) {
 			// TODO: provide separate API in RzBinPlugin to let plugins handle analysis hints/metadata
 			if (is_arm) {
-				handle_arm_symbol(r, symbol, info, va);
+				handle_arm_symbol(r, o, symbol, va);
 			}
 			select_flag_space(r, symbol);
 			/* If that's a Classed symbol (method or so) */
@@ -2749,7 +2756,7 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	if (is_arm) {
 		rz_list_foreach (entries, iter, entry) {
 			if (IS_MODE_SET(mode)) {
-				handle_arm_entry(r, entry, info, va);
+				handle_arm_entry(r, o, entry, va);
 			}
 		}
 	}
@@ -2892,14 +2899,15 @@ static RzList *section_flag_to_rzlist(RzBin *bin, ut64 flag) {
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	RzBinSection *section;
 	RzBinInfo *info = NULL;
-	RzList *sections;
 	RzListIter *iter;
 	RzTable *table = rz_core_table(r);
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(rz_bin_cur(r->bin));
+	RzBinFile *bf = r->bin->cur;
+	RzBinObject *o = bf ? bf->o : NULL;
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
 	rz_return_val_if_fail(table, false);
 	int i = 0;
 	bool printHere = false;
-	sections = rz_bin_get_sections(r->bin);
+	RzList *sections = o ? o->sections : NULL;
 	HtPP *dup_chk_ht = ht_pp_new0();
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
@@ -2982,7 +2990,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		if (va && !(section->perm & RZ_PERM_R)) {
 			va_sect = VA_NOREBASE;
 		}
-		addr = rva(r->bin, section->paddr, section->vaddr, va_sect);
+		addr = rva(o, section->paddr, section->vaddr, va_sect);
 
 		if (name && strcmp(section->name, name)) {
 			continue;
@@ -3172,13 +3180,15 @@ out:
 }
 
 static int bin_fields(RzCore *r, PJ *pj, int mode, int va) {
-	RzList *fields;
 	RzListIter *iter;
 	RzBinField *field;
 	int i = 0;
 	RzBin *bin = r->bin;
 
-	if (!(fields = rz_bin_get_fields(bin))) {
+	RzBinFile *bf = bin->cur;
+	RzBinObject *o = bf ? bf->o : NULL;
+	RzList *fields = o ? o->fields : NULL;
+	if (!fields) {
 		return false;
 	}
 	if (IS_MODE_JSON(mode)) {
@@ -3189,7 +3199,7 @@ static int bin_fields(RzCore *r, PJ *pj, int mode, int va) {
 		rz_cons_println("[Header fields]");
 	}
 	rz_list_foreach (fields, iter, field) {
-		ut64 addr = rva(bin, field->paddr, field->vaddr, va);
+		ut64 addr = rva(o, field->paddr, field->vaddr, va);
 
 		if (IS_MODE_RZCMD(mode)) {
 			char *n = __filterQuotedShell(field->name);
