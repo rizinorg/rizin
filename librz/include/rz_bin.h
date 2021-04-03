@@ -263,7 +263,7 @@ typedef struct rz_bin_object_t {
 	HtPP *methods_ht;
 	RzBinSourceLineInfo *lines;
 	HtUP *strings_db;
-	RzList /*<??>*/ *mem; //RzBinMem maybe?
+	RzList /*<RzBinMem>*/ *mem;
 	RzList /*<BinMap*/ *maps;
 	char *regstate;
 	RzBinInfo *info;
