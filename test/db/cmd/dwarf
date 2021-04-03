@@ -1797,3 +1797,211 @@ EXPECT=<<EOF
 |       |   0x004019ce      e82d280200     call  sym.fpc_get_output
 EOF
 RUN
+
+NAME=Invalid kind for DW_AT_name
+FILE=bins/elf/dwarf3_c.elf.patched0
+CMDS=<<EOF
+aaa
+id
+EOF
+EXPECT=<<EOF
+   1      DW_TAG_compile_unit       [has children] (0x0)
+    DW_AT_producer                 DW_FORM_strp                  
+    DW_AT_language                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_comp_dir                 DW_FORM_strp                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_stmt_list                DW_FORM_data4                 
+   2      DW_TAG_variable           [no children] (0x13)
+    DW_AT_name                     DW_FORM_string                
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_location                 DW_FORM_block1                
+   3      DW_TAG_base_type          [no children] (0x26)
+    DW_AT_byte_size                DW_FORM_data1                 
+    DW_AT_encoding                 DW_FORM_data1                 
+    DW_AT_name                     DW_FORM_data4                 
+   4      DW_TAG_subprogram         [has children] (0x31)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_strp                  
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_tail_call_sites  DW_FORM_flag                  
+    DW_AT_siblings                 DW_FORM_ref4                  
+   5      DW_TAG_variable           [no children] (0x4d)
+    DW_AT_name                     DW_FORM_string                
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+    DW_AT_location                 DW_FORM_block1                
+   6      DW_TAG_subprogram         [has children] (0x5e)
+    DW_AT_external                 DW_FORM_flag                  
+    DW_AT_name                     DW_FORM_string                
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_low_pc                   DW_FORM_addr                  
+    DW_AT_high_pc                  DW_FORM_addr                  
+    DW_AT_frame_base               DW_FORM_block1                
+    DW_AT_GNU_all_call_sites       DW_FORM_flag                  
+   7      DW_TAG_variable           [no children] (0x76)
+    DW_AT_name                     DW_FORM_string                
+    DW_AT_decl_file                DW_FORM_data1                 
+    DW_AT_decl_line                DW_FORM_data1                 
+    DW_AT_decl_column              DW_FORM_data1                 
+    DW_AT_type                     DW_FORM_ref4                  
+
+  Compilation Unit @ offset 0x0:
+   Length:        0xa9
+   Version:       3
+   Abbrev Offset: 0x0
+   Pointer Size:  8
+
+<0xb>: Abbrev Number: 1    (DW_TAG_compile_unit)
+     DW_AT_producer            : (indirect string, offset: 0x0): GNU C17 9.3.0 -mtune=generic -march=x86-64 -gdwarf-3 -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
+     DW_AT_language            : 12   (C99)
+     DW_AT_name                : (indirect string, offset: 0x94): main.c
+     DW_AT_comp_dir            : (indirect string, offset: 0xa0): /home/hound/r2test/dwarf/c
+     DW_AT_low_pc              : 0x1129
+     DW_AT_high_pc             : 0x1156
+     DW_AT_stmt_list           : 0
+<0x2d>: Abbrev Number: 2    (DW_TAG_variable)
+     DW_AT_name                : a
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 1
+     DW_AT_decl_column         : 5
+     DW_AT_type                : <0x42>
+     DW_AT_external            : 1
+     DW_AT_location            : 9 byte block: 0x03 0x14 0x40 0x00 0x00 0x00 0x00 0x00 0x00
+<0x42>: Abbrev Number: 3    (DW_TAG_base_type)
+     DW_AT_byte_size           : 4
+     DW_AT_encoding            : 5
+     DW_AT_name                : 7630441
+<0x49>: Abbrev Number: 4    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : (indirect string, offset: 0x9b): main
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 7
+     DW_AT_decl_column         : 5
+     DW_AT_type                : <0x42>
+     DW_AT_low_pc              : 0x1134
+     DW_AT_high_pc             : 0x1156
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_tail_call_sites : 1
+     DW_AT_siblings            : <0x7b>
+<0x6d>: Abbrev Number: 5    (DW_TAG_variable)
+     DW_AT_name                : i
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 9
+     DW_AT_decl_column         : 6
+     DW_AT_type                : <0x42>
+     DW_AT_location            : 2 byte block: 0x91 0x6c
+<0x7a>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0x7b>: Abbrev Number: 6    (DW_TAG_subprogram)
+     DW_AT_external            : 1
+     DW_AT_name                : foo
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 2
+     DW_AT_decl_column         : 6
+     DW_AT_low_pc              : 0x1129
+     DW_AT_high_pc             : 0x1134
+     DW_AT_frame_base          : 1 byte block: 0x9c
+     DW_AT_GNU_all_call_sites  : 1
+<0x97>: Abbrev Number: 7    (DW_TAG_variable)
+     DW_AT_name                : b
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 4
+     DW_AT_decl_column         : 15
+     DW_AT_type                : <0x42>
+<0xa1>: Abbrev Number: 7    (DW_TAG_variable)
+     DW_AT_name                : c
+     DW_AT_decl_file           : 1
+     DW_AT_decl_line           : 5
+     DW_AT_decl_column         : 6
+     DW_AT_type                : <0x42>
+<0xab>: Abbrev Number: 0    (DW_TAG_null_entry)
+<0xac>: Abbrev Number: 0    (DW_TAG_null_entry)
+
+Contents of the .debug_aranges section:
+  Address Range Set
+   Unit Length:           0x2c
+   64bit:                 false
+   Version:               2
+   Offset in .debug_info: 0x0
+   Address Size:          8
+   Segment Size:          0
+   Ranges:
+    address            length
+    0x0000000000001129 0x000000000000002d
+    0x0000000000000000 0x0000000000000000
+
+Raw dump of debug contents of section .debug_line:
+
+ Header information:
+  Length:                             70
+  DWARF Version:                      3
+  Header Length:                      29
+  Minimum Instruction Length:         1
+  Maximum Operations per Instruction: 0
+  Initial value of 'is_stmt':         1
+  Line Base:                          -5
+  Line Range:                         14
+  Opcode Base:                        13
+
+ Opcodes:
+  Opcode 1 has 0 arg
+  Opcode 2 has 1 arg
+  Opcode 3 has 1 arg
+  Opcode 4 has 1 arg
+  Opcode 5 has 1 arg
+  Opcode 6 has 0 arg
+  Opcode 7 has 0 arg
+  Opcode 8 has 0 arg
+  Opcode 9 has 1 arg
+  Opcode 10 has 0 arg
+  Opcode 11 has 0 arg
+  Opcode 12 has 1 arg
+
+
+ The File Name Table:
+  Entry Dir     Time      Size       Name
+  1     0       0         0          main.c
+
+ Line Number Statements:
+  Set column to 1
+  Extended opcode 2: set Address to 0x1129
+  Special opcode 7: advance Address by 0 to 0x1129 and Line by 2 to 3
+  Special opcode 120: advance Address by 8 to 0x1131 and Line by 3 to 6
+  Set column to 12
+  Special opcode 48: advance Address by 3 to 0x1134 and Line by 1 to 7
+  Set column to 2
+  Special opcode 174: advance Address by 12 to 0x1140 and Line by 1 to 8
+  Set column to 6
+  Special opcode 146: advance Address by 10 to 0x114a and Line by 1 to 9
+  Set column to 9
+  Special opcode 104: advance Address by 7 to 0x1151 and Line by 1 to 10
+  Set column to 1
+  Special opcode 48: advance Address by 3 to 0x1154 and Line by 1 to 11
+  Advance PC by 2 to 0x1156
+  Extended opcode 1: End of Sequence
+
+0x00001129	/home/hound/r2test/dwarf/c/main.c	3
+0x00001131	/home/hound/r2test/dwarf/c/main.c	6
+0x00001134	/home/hound/r2test/dwarf/c/main.c	7
+0x00001140	/home/hound/r2test/dwarf/c/main.c	8
+0x0000114a	/home/hound/r2test/dwarf/c/main.c	9
+0x00001151	/home/hound/r2test/dwarf/c/main.c	10
+0x00001154	/home/hound/r2test/dwarf/c/main.c	11
+0x00001156	-	-
+EOF
+RUN

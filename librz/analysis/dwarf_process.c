@@ -158,7 +158,7 @@ static inline char *create_type_name_from_offset(ut64 offset) {
 }
 
 /**
- * @brief Get the DIE name or create unique one from it's offset
+ * @brief Get the DIE name or create unique one from its offset
  *
  * @param die
  * @return char* DIEs name or NULL if error
@@ -166,13 +166,11 @@ static inline char *create_type_name_from_offset(ut64 offset) {
 static char *get_die_name(const RzBinDwarfDie *die) {
 	char *name = NULL;
 	st32 name_attr_idx = find_attr_idx(die, DW_AT_name);
-
-	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
-		name = strdup(die->attr_values[name_attr_idx].string.content);
-	} else {
-		name = create_type_name_from_offset(die->offset);
+	if (name_attr_idx != -1) {
+		const char *s = rz_bin_dwarf_attr_value_get_string_content(&die->attr_values[name_attr_idx]);
+		name = RZ_STR_DUP(s);
 	}
-	return name;
+	return name ? name : create_type_name_from_offset(die->offset);
 }
 
 /**
@@ -695,17 +693,19 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	for (i = 0; i < die->count; i++) {
 		RzBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
-		case DW_AT_name:
+		case DW_AT_name: {
 			free(name);
-			if (!value->string.content) {
-				name = create_type_name_from_offset(die->offset);
+			const char *s = rz_bin_dwarf_attr_value_get_string_content(&die->attr_values[i]);
+			if (s) {
+				name = strdup(s);
 			} else {
-				name = strdup(value->string.content);
+				name = create_type_name_from_offset(die->offset);
 			}
 			if (!name) {
 				return;
 			}
 			break;
+		}
 		case DW_AT_byte_size:
 			size = value->uconstant * CHAR_BIT;
 			break;
@@ -733,12 +733,18 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 
 static const char *get_specification_die_name(const RzBinDwarfDie *die) {
 	st32 linkage_name_attr_idx = find_attr_idx(die, DW_AT_linkage_name);
-	if (linkage_name_attr_idx != -1 && die->attr_values[linkage_name_attr_idx].string.content) {
-		return die->attr_values[linkage_name_attr_idx].string.content;
+	if (linkage_name_attr_idx != -1) {
+		const char *s = rz_bin_dwarf_attr_value_get_string_content(&die->attr_values[linkage_name_attr_idx]);
+		if (s) {
+			return s;
+		}
 	}
 	st32 name_attr_idx = find_attr_idx(die, DW_AT_name);
-	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
-		return die->attr_values[name_attr_idx].string.content;
+	if (name_attr_idx != -1) {
+		const char *s = rz_bin_dwarf_attr_value_get_string_content(&die->attr_values[name_attr_idx]);
+		if (s) {
+			return s;
+		}
 	}
 	return NULL;
 }
