@@ -517,6 +517,40 @@ RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo) {
 	}
 }
 
+/**
+ * \brief Put the given address on top of o's base address
+ */
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr) {
 	return o ? addr + o->baddr_shift : addr;
+}
+
+/* \brief Resolve the given address pair to a vaddr if possible
+ * returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
+ * paddr otherwise
+ */
+RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr) {
+	rz_return_val_if_fail(o, UT64_MAX);
+
+	if (paddr == UT64_MAX) {
+		// everything we have is the vaddr
+		return vaddr;
+	}
+
+	/* hack to realign thumb symbols */
+	if (o->info && o->info->arch) {
+		if (o->info->bits == 16) {
+			RzBinSection *s = rz_bin_get_section_at(o, paddr, false);
+			// autodetect thumb
+			if (s && (s->perm & RZ_PERM_X) && strstr(s->name, "text")) {
+				if (!strcmp(o->info->arch, "arm") && (vaddr & 1)) {
+					vaddr = (vaddr >> 1) << 1;
+				}
+			}
+		}
+	}
+
+	if (o->info && o->info->has_va) {
+		return rz_bin_object_addr_with_base(o, vaddr);
+	}
+	return paddr;
 }

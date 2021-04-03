@@ -49,7 +49,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
 	}
 	section_name = s ? s->name : "";
 	type_string = rz_bin_string_type(string->type);
-	vaddr = addr = rz_bin_get_vaddr(bin, string->paddr, string->vaddr);
+	vaddr = addr = bf->o ? rz_bin_object_get_vaddr(bf->o, string->paddr, string->vaddr) : UT64_MAX;
 
 	// If raw string dump mode, use printf to dump directly to stdout.
 	//  PrintfCallback temp = io->cb_printf;
@@ -1015,17 +1015,6 @@ RZ_API RzBinField *rz_bin_file_add_field(RzBinFile *binfile, const char *classna
 	//TODO: add_field into class
 	//eprintf ("TODO add field: %s \n", name);
 	return NULL;
-}
-
-// XXX this api name makes no sense
-/* returns vaddr, rebased with the baseaddr of binfile, if va is enabled for
- * bin, paddr otherwise */
-RZ_API ut64 rz_bin_file_get_vaddr(RzBinFile *bf, ut64 paddr, ut64 vaddr) {
-	rz_return_val_if_fail(bf && bf->o, paddr);
-	if (bf->o->info && bf->o->info->has_va) {
-		return rz_bin_object_addr_with_base(bf->o, vaddr);
-	}
-	return paddr;
 }
 
 RZ_API RzList *rz_bin_file_get_trycatch(RzBinFile *bf) {
