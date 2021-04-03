@@ -1431,7 +1431,11 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	} else if (mode == RZ_MODE_SET || mode == RZ_MODE_RIZINCMD) {
 		action &= ~RZ_CORE_BIN_ACC_ENTRIES & ~RZ_CORE_BIN_ACC_MAIN;
 	}
-	rz_core_bin_info(core, action, pj, mode, 1, filter, NULL);
+	if (mode == RZ_MODE_SET) {
+		rz_core_bin_apply_info(core, core->bin->cur, action);
+	} else {
+		rz_core_bin_info(core, action, pj, mode, 1, filter, NULL);
+	}
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	rz_bin_file_delete(core->bin, bf->id);
 	rz_bin_file_set_cur_binfile(core->bin, obf);
