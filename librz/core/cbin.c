@@ -32,7 +32,6 @@
 	eprintf
 
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
-static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args);
 static int bin_classes(RzCore *r, PJ *pj, int mode);
 static int bin_resources(RzCore *r, PJ *pj, int mode);
 
@@ -364,7 +363,7 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, int mask) {
 		rz_core_bin_apply_imports(r, binfile, va);
 	}
 	if (mask & RZ_CORE_BIN_ACC_SYMBOLS) {
-		bin_symbols(r, NULL, RZ_MODE_SET, loadaddr, va, UT64_MAX, NULL, false, NULL);
+		rz_core_bin_apply_symbols(r, binfile, va);
 	}
 	if (mask & RZ_CORE_BIN_ACC_CLASSES) {
 		bin_classes(r, NULL, RZ_MODE_SET);
@@ -1103,6 +1102,259 @@ RZ_API bool rz_core_bin_apply_imports(RzCore *core, RzBinFile *binfile, bool va)
 		ut64 addr = rva(o, sym->paddr, sym->vaddr, va ? VA_TRUE : VA_FALSE);
 		rz_meta_set(core->analysis, RZ_META_TYPE_DATA, addr, cdsz, NULL);
 	}
+	return true;
+}
+
+static const char *getPrefixFor(RzBinSymbol *sym) {
+	if (sym) {
+		// workaround for ELF
+		if (sym->type) {
+			if (!strcmp(sym->type, RZ_BIN_TYPE_NOTYPE_STR)) {
+				return sym->is_imported ? "loc.imp" : "loc";
+			}
+			if (!strcmp(sym->type, RZ_BIN_TYPE_OBJECT_STR)) {
+				return sym->is_imported ? "obj.imp" : "obj";
+			}
+		}
+		return sym->is_imported ? "sym.imp" : "sym";
+	}
+	return "sym";
+}
+
+#define MAXFLAG_LEN_DEFAULT 128
+
+static char *construct_symbol_flagname(const char *pfx, const char *libname, const char *symname, int len) {
+	char *r = rz_str_newf("%s.%s%s%s", pfx, libname ? libname : "", libname ? "_" : "", symname);
+	if (r) {
+		rz_name_filter(r, len, true); // maybe unnecessary..
+		char *R = __filterQuotedShell(r);
+		free(r);
+		return R;
+	}
+	return NULL;
+}
+
+typedef struct {
+	const char *pfx; // prefix for flags
+	char *name; // raw symbol name
+	char *libname; // name of the lib this symbol is specific to, if any
+	char *nameflag; // flag name for symbol
+	char *demname; // demangled raw symbol name
+	char *demflag; // flag name for demangled symbol
+	char *classname; // classname
+	char *classflag; // flag for classname
+	char *methname; // methods [class]::[method]
+	char *methflag; // methods flag sym.[class].[method]
+} SymName;
+
+static void snInit(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
+	int bin_demangle = lang != NULL;
+	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
+	if (!r || !sym || !sym->name) {
+		return;
+	}
+	sn->name = rz_str_newf("%s%s", sym->is_imported ? "imp." : "", sym->name);
+	sn->libname = sym->libname ? strdup(sym->libname) : NULL;
+	const char *pfx = getPrefixFor(sym);
+	sn->nameflag = construct_symbol_flagname(pfx, sym->libname, rz_bin_symbol_name(sym), MAXFLAG_LEN_DEFAULT);
+	if (sym->classname && sym->classname[0]) {
+		sn->classname = strdup(sym->classname);
+		sn->classflag = rz_str_newf("sym.%s.%s", sn->classname, sn->name);
+		rz_name_filter(sn->classflag, MAXFLAG_LEN_DEFAULT, true);
+		const char *name = sym->dname ? sym->dname : sym->name;
+		sn->methname = rz_str_newf("%s::%s", sn->classname, name);
+		sn->methflag = rz_str_newf("sym.%s.%s", sn->classname, name);
+		rz_name_filter(sn->methflag, strlen(sn->methflag), true);
+	} else {
+		sn->classname = NULL;
+		sn->classflag = NULL;
+		sn->methname = NULL;
+		sn->methflag = NULL;
+	}
+	sn->demname = NULL;
+	sn->demflag = NULL;
+	if (bin_demangle && sym->paddr) {
+		sn->demname = rz_bin_demangle(r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
+		if (sn->demname) {
+			sn->demflag = construct_symbol_flagname(pfx, sym->libname, sn->demname, -1);
+		}
+	}
+}
+
+static void snFini(SymName *sn) {
+	RZ_FREE(sn->name);
+	RZ_FREE(sn->libname);
+	RZ_FREE(sn->nameflag);
+	RZ_FREE(sn->demname);
+	RZ_FREE(sn->demflag);
+	RZ_FREE(sn->classname);
+	RZ_FREE(sn->classflag);
+	RZ_FREE(sn->methname);
+	RZ_FREE(sn->methflag);
+}
+
+static void handle_arm_special_symbol(RzCore *core, RzBinObject *o, RzBinSymbol *symbol, int va) {
+	ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
+	if (!strcmp(symbol->name, "$a")) {
+		rz_analysis_hint_set_bits(core->analysis, addr, 32);
+	} else if (!strcmp(symbol->name, "$x")) {
+		rz_analysis_hint_set_bits(core->analysis, addr, 64);
+	} else if (!strcmp(symbol->name, "$t")) {
+		rz_analysis_hint_set_bits(core->analysis, addr, 16);
+	} else if (!strcmp(symbol->name, "$d")) {
+		// TODO: we could add data meta type at addr, but sometimes $d
+		// is in the middle of the code and it would make the code less
+		// readable.
+	} else {
+		if (core->bin->verbose) {
+			RZ_LOG_WARN("Special symbol %s not handled\n", symbol->name);
+		}
+	}
+}
+
+static void handle_arm_hint(RzCore *core, RzBinObject *o, ut64 paddr, ut64 vaddr, int bits, int va) {
+	RzBinInfo *info = o->info;
+	if (!info) {
+		return;
+	}
+	if (info->bits > 32) { // we look at 16 or 32 bit only
+		return;
+	}
+
+	int force_bits = 0;
+	ut64 addr = rva(o, paddr, vaddr, va);
+	if (paddr & 1 || bits == 16) {
+		force_bits = 16;
+	} else if (info->bits == 16 && bits == 32) {
+		force_bits = 32;
+	} else if (!(paddr & 1) && bits == 32) {
+		force_bits = 32;
+	}
+	if (force_bits) {
+		rz_analysis_hint_set_bits(core->analysis, addr, force_bits);
+	}
+}
+
+static void handle_arm_symbol(RzCore *core, RzBinObject *o, RzBinSymbol *symbol, int va) {
+	handle_arm_hint(core, o, symbol->paddr, symbol->vaddr, symbol->bits, va);
+}
+
+static void handle_arm_entry(RzCore *core, RzBinObject *o, RzBinAddr *entry, int va) {
+	handle_arm_hint(core, o, entry->paddr, entry->vaddr, entry->bits, va);
+}
+
+static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
+	if (symbol->is_imported) {
+		rz_flag_space_push(core->flags, RZ_FLAGS_FS_IMPORTS);
+	} else if (symbol->type && !strcmp(symbol->type, RZ_BIN_TYPE_SECTION_STR)) {
+		rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS_SECTIONS);
+	} else {
+		rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
+	}
+}
+
+RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va) {
+	rz_return_val_if_fail(core && binfile, NULL);
+	RzBinObject *o = binfile->o;
+	RzBinInfo *info = o ? o->info : NULL;
+	if (!info) {
+		return false;
+	}
+
+	bool is_arm = info && info->arch && !strncmp(info->arch, "arm", 3);
+	bool bin_demangle = rz_config_get_i(core->config, "bin.demangle");
+	const char *lang = bin_demangle ? rz_config_get(core->config, "bin.lang") : NULL;
+
+	rz_spaces_push(&core->analysis->meta_spaces, "bin");
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_SYMBOLS);
+
+	RzList *symbols = rz_bin_get_symbols(core->bin);
+	size_t count = 0;
+	RzListIter *iter;
+	RzBinSymbol *symbol;
+	rz_list_foreach (symbols, iter, symbol) {
+		if (!symbol->name) {
+			continue;
+		}
+		ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
+		SymName sn = { 0 };
+		count++;
+		snInit(core, &sn, symbol, lang);
+		char *rz_symbol_name = rz_str_escape_utf8(sn.name, false, true);
+
+		if (is_section_symbol(symbol) || is_file_symbol(symbol)) {
+			/*
+			 * Skip section symbols because they will have their own flag.
+			 * Skip also file symbols because not useful for now.
+			 */
+		} else if (is_special_symbol(symbol)) {
+			if (is_arm) {
+				handle_arm_special_symbol(core, o, symbol, va);
+			}
+		} else {
+			// TODO: provide separate API in RzBinPlugin to let plugins handle analysis hints/metadata
+			if (is_arm) {
+				handle_arm_symbol(core, o, symbol, va);
+			}
+			select_flag_space(core, symbol);
+			/* If that's a Classed symbol (method or so) */
+			if (sn.classname) {
+				RzFlagItem *fi = rz_flag_get(core->flags, sn.methflag);
+				if (core->bin->prefix) {
+					char *prname = rz_str_newf("%s.%s", core->bin->prefix, sn.methflag);
+					rz_name_filter(sn.methflag, -1, true);
+					free(sn.methflag);
+					sn.methflag = prname;
+				}
+				if (fi) {
+					rz_flag_item_set_realname(fi, sn.methname);
+					if ((fi->offset - core->flags->base) == addr) {
+						//		char *comment = fi->comment ? strdup (fi->comment) : NULL;
+						rz_flag_unset(core->flags, fi);
+					}
+				} else {
+					fi = rz_flag_set(core->flags, sn.methflag, addr, symbol->size);
+					char *comment = (fi && fi->comment) ? strdup(fi->comment) : NULL;
+					if (comment) {
+						rz_flag_item_set_comment(fi, comment);
+						RZ_FREE(comment);
+					}
+				}
+			} else {
+				const char *n = sn.demname ? sn.demname : symbol->name;
+				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
+				char *fnp = (core->bin->prefix) ? rz_str_newf("%s.%s", core->bin->prefix, fn) : strdup(fn ? fn : "");
+				RzFlagItem *fi = rz_flag_set(core->flags, fnp, addr, symbol->size);
+				if (fi) {
+					rz_flag_item_set_realname(fi, n);
+					fi->demangled = (bool)(size_t)sn.demname;
+				} else {
+					if (fn) {
+						eprintf("[Warning] Can't find flag (%s)\n", fn);
+					}
+				}
+				free(fnp);
+			}
+			if (sn.demname) {
+				ut64 size = symbol->size ? symbol->size : 1;
+				rz_meta_set(core->analysis, RZ_META_TYPE_COMMENT, addr, size, sn.demname);
+			}
+			rz_flag_space_pop(core->flags);
+		}
+		snFini(&sn);
+		free(rz_symbol_name);
+	}
+
+	//handle thumb and arm for entry point since they are not present in symbols
+	if (is_arm) {
+		RzList *entries = o ? o->entries : NULL;
+		RzBinAddr *entry;
+		rz_list_foreach (entries, iter, entry) {
+			handle_arm_entry(core, o, entry, va);
+		}
+	}
+
+	rz_spaces_pop(&core->analysis->meta_spaces);
 	return true;
 }
 
@@ -2288,94 +2540,6 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 	return true;
 }
 
-static const char *getPrefixFor(RzBinSymbol *sym) {
-	if (sym) {
-		// workaround for ELF
-		if (sym->type) {
-			if (!strcmp(sym->type, RZ_BIN_TYPE_NOTYPE_STR)) {
-				return sym->is_imported ? "loc.imp" : "loc";
-			}
-			if (!strcmp(sym->type, RZ_BIN_TYPE_OBJECT_STR)) {
-				return sym->is_imported ? "obj.imp" : "obj";
-			}
-		}
-		return sym->is_imported ? "sym.imp" : "sym";
-	}
-	return "sym";
-}
-
-#define MAXFLAG_LEN_DEFAULT 128
-
-static char *construct_symbol_flagname(const char *pfx, const char *libname, const char *symname, int len) {
-	char *r = rz_str_newf("%s.%s%s%s", pfx, libname ? libname : "", libname ? "_" : "", symname);
-	if (r) {
-		rz_name_filter(r, len, true); // maybe unnecessary..
-		char *R = __filterQuotedShell(r);
-		free(r);
-		return R;
-	}
-	return NULL;
-}
-
-typedef struct {
-	const char *pfx; // prefix for flags
-	char *name; // raw symbol name
-	char *libname; // name of the lib this symbol is specific to, if any
-	char *nameflag; // flag name for symbol
-	char *demname; // demangled raw symbol name
-	char *demflag; // flag name for demangled symbol
-	char *classname; // classname
-	char *classflag; // flag for classname
-	char *methname; // methods [class]::[method]
-	char *methflag; // methods flag sym.[class].[method]
-} SymName;
-
-static void snInit(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
-	int bin_demangle = lang != NULL;
-	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
-	if (!r || !sym || !sym->name) {
-		return;
-	}
-	sn->name = rz_str_newf("%s%s", sym->is_imported ? "imp." : "", sym->name);
-	sn->libname = sym->libname ? strdup(sym->libname) : NULL;
-	const char *pfx = getPrefixFor(sym);
-	sn->nameflag = construct_symbol_flagname(pfx, sym->libname, rz_bin_symbol_name(sym), MAXFLAG_LEN_DEFAULT);
-	if (sym->classname && sym->classname[0]) {
-		sn->classname = strdup(sym->classname);
-		sn->classflag = rz_str_newf("sym.%s.%s", sn->classname, sn->name);
-		rz_name_filter(sn->classflag, MAXFLAG_LEN_DEFAULT, true);
-		const char *name = sym->dname ? sym->dname : sym->name;
-		sn->methname = rz_str_newf("%s::%s", sn->classname, name);
-		sn->methflag = rz_str_newf("sym.%s.%s", sn->classname, name);
-		rz_name_filter(sn->methflag, strlen(sn->methflag), true);
-	} else {
-		sn->classname = NULL;
-		sn->classflag = NULL;
-		sn->methname = NULL;
-		sn->methflag = NULL;
-	}
-	sn->demname = NULL;
-	sn->demflag = NULL;
-	if (bin_demangle && sym->paddr) {
-		sn->demname = rz_bin_demangle(r->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
-		if (sn->demname) {
-			sn->demflag = construct_symbol_flagname(pfx, sym->libname, sn->demname, -1);
-		}
-	}
-}
-
-static void snFini(SymName *sn) {
-	RZ_FREE(sn->name);
-	RZ_FREE(sn->libname);
-	RZ_FREE(sn->nameflag);
-	RZ_FREE(sn->demname);
-	RZ_FREE(sn->demflag);
-	RZ_FREE(sn->classname);
-	RZ_FREE(sn->classflag);
-	RZ_FREE(sn->methname);
-	RZ_FREE(sn->methflag);
-}
-
 static bool isAnExport(RzBinSymbol *s) {
 	/* workaround for some bin plugs */
 	if (s->is_imported) {
@@ -2384,73 +2548,11 @@ static bool isAnExport(RzBinSymbol *s) {
 	return (s->bind && !strcmp(s->bind, RZ_BIN_BIND_GLOBAL_STR));
 }
 
-static void handle_arm_special_symbol(RzCore *core, RzBinObject *o, RzBinSymbol *symbol, int va) {
-	ut64 addr = rva(o, symbol->paddr, symbol->vaddr, va);
-	if (!strcmp(symbol->name, "$a")) {
-		rz_analysis_hint_set_bits(core->analysis, addr, 32);
-	} else if (!strcmp(symbol->name, "$x")) {
-		rz_analysis_hint_set_bits(core->analysis, addr, 64);
-	} else if (!strcmp(symbol->name, "$t")) {
-		rz_analysis_hint_set_bits(core->analysis, addr, 16);
-	} else if (!strcmp(symbol->name, "$d")) {
-		// TODO: we could add data meta type at addr, but sometimes $d
-		// is in the middle of the code and it would make the code less
-		// readable.
-	} else {
-		if (core->bin->verbose) {
-			RZ_LOG_WARN("Special symbol %s not handled\n", symbol->name);
-		}
-	}
-}
-
-static void handle_arm_hint(RzCore *core, RzBinObject *o, ut64 paddr, ut64 vaddr, int bits, int va) {
-	RzBinInfo *info = o->info;
-	if (!info) {
-		return;
-	}
-	if (info->bits > 32) { // we look at 16 or 32 bit only
-		return;
-	}
-
-	int force_bits = 0;
-	ut64 addr = rva(o, paddr, vaddr, va);
-	if (paddr & 1 || bits == 16) {
-		force_bits = 16;
-	} else if (info->bits == 16 && bits == 32) {
-		force_bits = 32;
-	} else if (!(paddr & 1) && bits == 32) {
-		force_bits = 32;
-	}
-	if (force_bits) {
-		rz_analysis_hint_set_bits(core->analysis, addr, force_bits);
-	}
-}
-
-static void handle_arm_symbol(RzCore *core, RzBinObject *o, RzBinSymbol *symbol, int va) {
-	handle_arm_hint(core, o, symbol->paddr, symbol->vaddr, symbol->bits, va);
-}
-
-static void handle_arm_entry(RzCore *core, RzBinObject *o, RzBinAddr *entry, int va) {
-	handle_arm_hint(core, o, entry->paddr, entry->vaddr, entry->bits, va);
-}
-
-static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
-	if (symbol->is_imported) {
-		rz_flag_space_push(core->flags, RZ_FLAGS_FS_IMPORTS);
-	} else if (symbol->type && !strcmp(symbol->type, RZ_BIN_TYPE_SECTION_STR)) {
-		rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS_SECTIONS);
-	} else {
-		rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
-	}
-}
-
-static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
+static int bin_symbols(RzCore *r, PJ *pj, int mode, int va, ut64 at, const char *name, bool exponly, const char *args) {
 	RzBinFile *bf = r->bin->cur;
 	RzBinObject *o = bf ? bf->o : NULL;
 	RzBinInfo *info = o ? o->info : NULL;
-	RzList *entries = o ? o->entries : NULL;
 	RzBinSymbol *symbol;
-	RzBinAddr *entry;
 	RzListIter *iter;
 	bool firstexp = true;
 	bool printHere = (args && *args == '.');
@@ -2475,15 +2577,11 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		return 0;
 	}
 
-	bool is_arm = info && info->arch && !strncmp(info->arch, "arm", 3);
 	const char *lang = bin_demangle ? rz_config_get(r->config, "bin.lang") : NULL;
 
 	RzList *symbols = rz_bin_get_symbols(r->bin);
-	rz_spaces_push(&r->analysis->meta_spaces, "bin");
 
-	if (IS_MODE_SET(mode)) {
-		rz_flag_space_set(r->flags, RZ_FLAGS_FS_SYMBOLS);
-	} else if (at == UT64_MAX && exponly) {
+	if (at == UT64_MAX && exponly) {
 		if (IS_MODE_RZCMD(mode)) {
 			rz_cons_printf("fs exports\n");
 		} else if (IS_MODE_NORMAL(mode)) {
@@ -2524,66 +2622,7 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		snInit(r, &sn, symbol, lang);
 		char *rz_symbol_name = rz_str_escape_utf8(sn.name, false, true);
 
-		if (IS_MODE_SET(mode) && (is_section_symbol(symbol) || is_file_symbol(symbol))) {
-			/*
-			 * Skip section symbols because they will have their own flag.
-			 * Skip also file symbols because not useful for now.
-			 */
-		} else if (IS_MODE_SET(mode) && is_special_symbol(symbol)) {
-			if (is_arm) {
-				handle_arm_special_symbol(r, o, symbol, va);
-			}
-		} else if (IS_MODE_SET(mode)) {
-			// TODO: provide separate API in RzBinPlugin to let plugins handle analysis hints/metadata
-			if (is_arm) {
-				handle_arm_symbol(r, o, symbol, va);
-			}
-			select_flag_space(r, symbol);
-			/* If that's a Classed symbol (method or so) */
-			if (sn.classname) {
-				RzFlagItem *fi = rz_flag_get(r->flags, sn.methflag);
-				if (r->bin->prefix) {
-					char *prname = rz_str_newf("%s.%s", r->bin->prefix, sn.methflag);
-					rz_name_filter(sn.methflag, -1, true);
-					free(sn.methflag);
-					sn.methflag = prname;
-				}
-				if (fi) {
-					rz_flag_item_set_realname(fi, sn.methname);
-					if ((fi->offset - r->flags->base) == addr) {
-						//		char *comment = fi->comment ? strdup (fi->comment) : NULL;
-						rz_flag_unset(r->flags, fi);
-					}
-				} else {
-					fi = rz_flag_set(r->flags, sn.methflag, addr, symbol->size);
-					char *comment = (fi && fi->comment) ? strdup(fi->comment) : NULL;
-					if (comment) {
-						rz_flag_item_set_comment(fi, comment);
-						RZ_FREE(comment);
-					}
-				}
-			} else {
-				const char *n = sn.demname ? sn.demname : symbol->name;
-				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
-				char *fnp = (r->bin->prefix) ? rz_str_newf("%s.%s", r->bin->prefix, fn) : strdup(fn ? fn : "");
-				RzFlagItem *fi = rz_flag_set(r->flags, fnp, addr, symbol->size);
-				if (fi) {
-					rz_flag_item_set_realname(fi, n);
-					fi->demangled = (bool)(size_t)sn.demname;
-				} else {
-					if (fn) {
-						eprintf("[Warning] Can't find flag (%s)\n", fn);
-					}
-				}
-				free(fnp);
-			}
-			if (sn.demname) {
-				ut64 size = symbol->size ? symbol->size : 1;
-				rz_meta_set(r->analysis, RZ_META_TYPE_COMMENT,
-					addr, size, sn.demname);
-			}
-			rz_flag_space_pop(r->flags);
-		} else if (IS_MODE_JSON(mode)) {
+		if (IS_MODE_JSON(mode)) {
 			none = false;
 			pj_o(pj);
 			pj_ks(pj, "name", rz_symbol_name);
@@ -2701,14 +2740,6 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		free(s);
 	}
 
-	//handle thumb and arm for entry point since they are not present in symbols
-	if (is_arm) {
-		rz_list_foreach (entries, iter, entry) {
-			if (IS_MODE_SET(mode)) {
-				handle_arm_entry(r, o, entry, va);
-			}
-		}
-	}
 	if (IS_MODE_JSON(mode)) {
 		if (!printHere) {
 			pj_end(pj);
@@ -2718,7 +2749,6 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		}
 	}
 
-	rz_spaces_pop(&r->analysis->meta_spaces);
 	rz_table_free(table);
 	return true;
 }
@@ -4255,10 +4285,10 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, 
 		ret &= bin_imports(core, pj, mode, va, name);
 	}
 	if ((action & RZ_CORE_BIN_ACC_EXPORTS)) {
-		ret &= bin_symbols(core, pj, mode, loadaddr, va, at, name, true, chksum);
+		ret &= bin_symbols(core, pj, mode, va, at, name, true, chksum);
 	}
 	if ((action & RZ_CORE_BIN_ACC_SYMBOLS)) { // 6s
-		ret &= bin_symbols(core, pj, mode, loadaddr, va, at, name, false, chksum);
+		ret &= bin_symbols(core, pj, mode, va, at, name, false, chksum);
 	}
 	if ((action & RZ_CORE_BIN_ACC_CLASSES)) { // 6s
 		ret &= bin_classes(core, pj, mode);
