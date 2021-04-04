@@ -59,3 +59,30 @@ EXPECT=<<EOF
         ,=< 0x7ffe70f68000      7f45           jg 0x7ffe70f68047
 EOF
 RUN
+
+NAME=core maps
+FILE=bins/elf/analysis/core.1159
+CMDS=<<EOF
+om
+EOF
+EXPECT=<<EOF
+18 fd: 3 +0x00001000 0x00400000 - 0x00400fff r-x /home/pancake/a.out
+17 fd: 3 +0x00002000 0x00600000 - 0x00600fff r-- /home/pancake/a.out
+16 fd: 3 +0x00003000 0x7f594847d000 - 0x7f594847dfff r-x /usr/lib/libc-2.22.so
+15 fd: 6 +0x00000000 0x7f594847e000 - 0x7f5948617fff r-x mmap.LOAD2
+14 fd: 5 +0x00000000 0x7f5948618000 - 0x7f5948817fff r-- /usr/lib/libc-2.22.so
+13 fd: 3 +0x00004000 0x7f5948818000 - 0x7f594881bfff r-- /usr/lib/libc-2.22.so
+12 fd: 3 +0x00008000 0x7f594881c000 - 0x7f594881dfff r-- /usr/lib/libc-2.22.so
+11 fd: 3 +0x0000a000 0x7f594881e000 - 0x7f5948821fff r-- fmap.LOAD6
+10 fd: 3 +0x0000e000 0x7f5948822000 - 0x7f5948822fff r-x /usr/lib/ld-2.22.so
+ 9 fd: 4 +0x00000000 0x7f5948823000 - 0x7f5948843fff r-x mmap.LOAD7
+ 8 fd: 3 +0x0000f000 0x7f5948a1e000 - 0x7f5948a20fff r-- fmap.LOAD8
+ 7 fd: 3 +0x00012000 0x7f5948a43000 - 0x7f5948a43fff r-- /usr/lib/ld-2.22.so
+ 6 fd: 3 +0x00013000 0x7f5948a44000 - 0x7f5948a44fff r-- /usr/lib/ld-2.22.so
+ 5 fd: 3 +0x00014000 0x7f5948a45000 - 0x7f5948a45fff r-- fmap.LOAD11
+ 4 fd: 3 +0x00015000 0x7ffe70de6000 - 0x7ffe70e07fff r-- [stack]
+ 3 fd: 3 +0x00037000 0x7ffe70f66000 - 0x7ffe70f67fff r-- fmap.LOAD13
+ 2 fd: 3 +0x00039000 0x7ffe70f68000 - 0x7ffe70f69fff r-x fmap.LOAD14
+ 1 fd: 3 +0x0003b000 0xffffffffff600000 - 0xffffffffff600fff r-x fmap.LOAD15
+EOF
+RUN
