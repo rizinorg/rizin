@@ -707,6 +707,7 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_imports(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask);
 RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile);
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd);
