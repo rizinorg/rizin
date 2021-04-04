@@ -32,7 +32,6 @@
 	eprintf
 
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
-static int bin_resources(RzCore *r, PJ *pj, int mode);
 
 static void pair(const char *key, const char *val) {
 	if (!val || !*val) {
@@ -368,7 +367,7 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 		rz_core_bin_apply_classes(r, binfile);
 	}
 	if (mask & RZ_CORE_BIN_ACC_RESOURCES) {
-		bin_resources(r, NULL, RZ_MODE_SET);
+		rz_core_bin_apply_resources(r, binfile);
 	}
 	// ----
 
@@ -1397,6 +1396,38 @@ RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile) {
 		}
 	}
 
+	return true;
+}
+
+RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
+	rz_return_val_if_fail(core && binfile, NULL);
+	RzBinObject *o = binfile->o;
+	RzBinInfo *info = o ? o->info : NULL;
+	if (!info || !info->rclass) {
+		return false;
+	}
+	if (strncmp("pe", info->rclass, 2)) {
+		// only pe will be applied for now
+		return true;
+	}
+	Sdb *sdb = NULL;
+	int index = 0;
+	const char *pe_path = "bin/cur/info/pe_resource";
+	if (!(sdb = sdb_ns_path(core->sdb, pe_path, 0))) {
+		return false;
+	}
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_RESOURCES);
+	while (true) {
+		char key[64];
+		char *timestr = sdb_get(sdb, rz_strf(key, "resource.%d.timestr", index), 0);
+		if (!timestr) {
+			break;
+		}
+		ut64 vaddr = sdb_num_get(sdb, rz_strf(key, "resource.%d.vaddr", index), 0);
+		int size = (int)sdb_num_get(sdb, rz_strf(key, "resource.%d.size", index), 0);
+		rz_flag_set(core->flags, rz_strf(key, "resource.%d", index), vaddr, size);
+		index++;
+	}
 	return true;
 }
 
@@ -4086,9 +4117,7 @@ static void bin_pe_resources(RzCore *r, PJ *pj, int mode) {
 	if (!(sdb = sdb_ns_path(r->sdb, pe_path, 0))) {
 		return;
 	}
-	if (IS_MODE_SET(mode)) {
-		rz_flag_space_set(r->flags, RZ_FLAGS_FS_RESOURCES);
-	} else if (IS_MODE_RZCMD(mode)) {
+	if (IS_MODE_RZCMD(mode)) {
 		rz_cons_printf("fs resources\n");
 	} else if (IS_MODE_JSON(mode)) {
 		pj_a(pj);
@@ -4110,10 +4139,7 @@ static void bin_pe_resources(RzCore *r, PJ *pj, int mode) {
 		char *type = sdb_get(sdb, typeKey, 0);
 		char *lang = sdb_get(sdb, languageKey, 0);
 
-		if (IS_MODE_SET(mode)) {
-			const char *name = sdb_fmt("resource.%d", index);
-			rz_flag_set(r->flags, name, vaddr, size);
-		} else if (IS_MODE_RZCMD(mode)) {
+		if (IS_MODE_RZCMD(mode)) {
 			rz_cons_printf("f resource.%d %d 0x%08" PFMT64x "\n", index, size, vaddr);
 		} else if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
