@@ -32,7 +32,6 @@
 	eprintf
 
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
-static int bin_classes(RzCore *r, PJ *pj, int mode);
 static int bin_resources(RzCore *r, PJ *pj, int mode);
 
 static void pair(const char *key, const char *val) {
@@ -366,7 +365,7 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 		rz_core_bin_apply_symbols(r, binfile, va);
 	}
 	if (mask & RZ_CORE_BIN_ACC_CLASSES) {
-		bin_classes(r, NULL, RZ_MODE_SET);
+		rz_core_bin_apply_classes(r, binfile);
 	}
 	if (mask & RZ_CORE_BIN_ACC_RESOURCES) {
 		bin_resources(r, NULL, RZ_MODE_SET);
@@ -1354,6 +1353,50 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 	}
 
 	rz_spaces_pop(&core->analysis->meta_spaces);
+	return true;
+}
+
+RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile) {
+	rz_return_val_if_fail(core && binfile, false);
+	RzBinObject *o = binfile->o;
+	RzList *cs = o ? o->classes : NULL;
+	if (!cs) {
+		return false;
+	}
+	if (!rz_config_get_b(core->config, "bin.classes")) {
+		return false;
+	}
+
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_CLASSES);
+
+	RzListIter *iter;
+	RzBinClass *c;
+	rz_list_foreach (cs, iter, c) {
+		if (!c || !c->name || !c->name[0]) {
+			continue;
+		}
+
+		// set class flag
+		char *classname = rz_str_newf("class.%s", c->name);
+		if (!classname) {
+			break;
+		}
+		rz_name_filter(classname, 0, true);
+		rz_flag_set(core->flags, classname, c->addr, 1);
+		free(classname);
+
+		// set method flags
+		RzBinSymbol *sym;
+		RzListIter *iter2;
+		rz_list_foreach (c->methods, iter2, sym) {
+			char *fn = rz_core_bin_method_build_flag_name(c, sym);
+			if (fn) {
+				rz_flag_set(core->flags, fn, sym->vaddr, 1);
+				free(fn);
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -3489,11 +3532,6 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 	// XXX: support for classes is broken and needs more love
 	if (IS_MODE_JSON(mode)) {
 		pj_a(pj);
-	} else if (IS_MODE_SET(mode)) {
-		if (!rz_config_get_i(r->config, "bin.classes")) {
-			return false;
-		}
-		rz_flag_space_set(r->flags, RZ_FLAGS_FS_CLASSES);
 	} else if (IS_MODE_RZCMD(mode) && !IS_MODE_CLASSDUMP(mode)) {
 		rz_cons_println("fs classes");
 	}
@@ -3522,26 +3560,7 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 			at_max = c->addr; // XXX + size?
 		}
 
-		if (IS_MODE_SET(mode)) {
-			const char *classname = sdb_fmt("class.%s", name);
-			rz_flag_set(r->flags, classname, c->addr, 1);
-			rz_list_foreach (c->methods, iter2, sym) {
-				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, mode);
-				char *method = sdb_fmt("method%s.%s.%s",
-					mflags, c->name, sym->name);
-				RZ_FREE(mflags);
-				rz_name_filter(method, -1, true);
-				rz_flag_set(r->flags, method, sym->vaddr, 1);
-			}
-#if 0
-			rz_list_foreach (c->fields, iter2, f) {
-				char *fn = rz_str_newf ("field.%s.%s", classname, f->name);
-				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
-				rz_flag_set (r->flags, fn, at, 1);
-				free (fn);
-			}
-#endif
-		} else if (IS_MODE_SIMPLEST(mode)) {
+		if (IS_MODE_SIMPLEST(mode)) {
 			rz_cons_printf("%s\n", c->name);
 		} else if (IS_MODE_SIMPLE(mode)) {
 			rz_cons_printf("0x%08" PFMT64x " [0x%08" PFMT64x " - 0x%08" PFMT64x "] %s%s%s\n",
@@ -3575,26 +3594,11 @@ static int bin_classes(RzCore *r, PJ *pj, int mode) {
 				// free (su);
 			}
 			rz_list_foreach (c->methods, iter2, sym) {
-				char *mflags = rz_core_bin_method_flags_str(sym->method_flags, mode);
-				char *n = c->name; //  __filterShell (c->name);
-				char *sn = sym->name; //__filterShell (sym->name);
-				char *cmd = rz_str_newf("\"f method%s.%s.%s = 0x%" PFMT64x "\"\n", mflags, n, sn, sym->vaddr);
-				// free (n);
-				// free (sn);
-				if (cmd) {
-					rz_str_replace_char(cmd, ' ', '_');
-					if (strlen(cmd) > 2) {
-						cmd[2] = ' ';
-					}
-					char *eq = (char *)rz_str_rchr(cmd, NULL, '=');
-					if (eq && eq != cmd) {
-						eq[-1] = eq[1] = ' ';
-					}
-					rz_str_replace_char(cmd, '\n', 0);
-					rz_cons_printf("%s\n", cmd);
-					free(cmd);
+				char *fn = rz_core_bin_method_build_flag_name(c, sym);
+				if (fn) {
+					rz_cons_printf("\"f %s = 0x%" PFMT64x "\"\n", fn, sym->vaddr);
+					free(fn);
 				}
-				RZ_FREE(mflags);
 			}
 			rz_list_foreach (c->fields, iter2, f) {
 				char *fn = rz_str_newf("field.%s.%s", c->name, f->name);
@@ -4489,25 +4493,39 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	return count;
 }
 
+RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *meth) {
+	rz_return_val_if_fail(cls && meth, NULL);
+	if (!cls->name || !meth->name) {
+		return NULL;
+	}
+
+	RzStrBuf buf;
+	rz_strbuf_initf(&buf, "method");
+
+	ut64 flags = meth->method_flags;
+	for (int i = 0; flags; flags >>= 1, i++) {
+		if (!(flags & 1)) {
+			continue;
+		}
+		const char *flag_string = rz_bin_get_meth_flag_string(1ULL << i, false);
+		if (flag_string) {
+			rz_strbuf_appendf(&buf, ".%s", flag_string);
+		}
+	}
+
+	rz_strbuf_appendf(&buf, ".%s.%s", cls->name, meth->name);
+	char *ret = rz_strbuf_drain_nofree(&buf);
+	if (ret) {
+		rz_name_filter(ret, -1, true);
+	}
+	return ret;
+}
+
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 	int i;
 
 	RzStrBuf *buf = rz_strbuf_new("");
-	if (IS_MODE_SET(mode) || IS_MODE_RZCMD(mode)) {
-		if (!flags) {
-			goto out;
-		}
-
-		for (i = 0; i < 64; i++) {
-			ut64 flag = flags & (1ULL << i);
-			if (flag) {
-				const char *flag_string = rz_bin_get_meth_flag_string(flag, false);
-				if (flag_string) {
-					rz_strbuf_appendf(buf, ".%s", flag_string);
-				}
-			}
-		}
-	} else if (IS_MODE_JSON(mode)) {
+	if (IS_MODE_JSON(mode)) {
 		if (!flags) {
 			rz_strbuf_append(buf, "[]");
 			goto out;
