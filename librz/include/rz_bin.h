@@ -691,7 +691,7 @@ typedef struct rz_bin_mem_t {
 	ut64 addr;
 	int size;
 	int perms;
-	RzList *mirrors; //for mirror access; stuff here should only create new maps not new fds
+	RzList /*<RzBinMem>*/ *mirrors; //for mirror access; stuff here should only create new maps not new fds
 } RzBinMem;
 
 typedef struct rz_bin_map_t {

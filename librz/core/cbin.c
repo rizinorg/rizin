@@ -331,9 +331,6 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 		return false;
 	}
 
-	// ----
-	// inlined: rz_core_bin_info(r, RZ_CORE_BIN_ACC_ALL, NULL, RZ_MODE_SET, va, NULL, NULL);
-
 	bool va = info->has_va;
 
 	if (mask & RZ_CORE_BIN_ACC_STRINGS) {
@@ -369,7 +366,6 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	if (mask & RZ_CORE_BIN_ACC_RESOURCES) {
 		rz_core_bin_apply_resources(r, binfile);
 	}
-	// ----
 
 	return true;
 }
@@ -3726,8 +3722,6 @@ static int bin_size(RzCore *r, PJ *pj, int mode) {
 		pj_n(pj, size);
 	} else if (IS_MODE_RZCMD(mode)) {
 		rz_cons_printf("f bin_size @ %" PFMT64u "\n", size);
-	} else if (IS_MODE_SET(mode)) {
-		rz_core_cmdf(r, "f bin_size @ %" PFMT64u "\n", size);
 	} else {
 		rz_cons_printf("%" PFMT64u "\n", size);
 	}
@@ -3820,7 +3814,7 @@ static int bin_mem(RzCore *r, PJ *pj, int mode) {
 		bin_mem_print(pj, mem, 7, 0, RZ_MODE_JSON);
 		pj_end(pj);
 		return true;
-	} else if (!(IS_MODE_RZCMD(mode) || IS_MODE_SET(mode))) {
+	} else if (!IS_MODE_RZCMD(mode)) {
 		bin_mem_print(NULL, mem, 7, 0, mode);
 	}
 	return true;
