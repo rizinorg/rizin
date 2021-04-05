@@ -169,9 +169,10 @@ RZ_API bool rz_file_fexists(const char *fmt, ...) {
 }
 
 RZ_API bool rz_file_exists(const char *str) {
+	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
 	char *absfile = rz_file_abspath(str);
 	struct stat buf = { 0 };
-	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
+
 	if (file_stat(absfile, &buf) == -1) {
 		free(absfile);
 		return false;

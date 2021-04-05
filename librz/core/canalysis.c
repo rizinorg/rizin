@@ -3940,7 +3940,9 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 		}
 		ls_foreach (fcns, iter, fcn) {
 			RzInterval inter = { rz_analysis_function_min_addr(fcn), rz_analysis_function_linear_size(fcn) };
-			RzListInfo *info = rz_listinfo_new(rz_core_analysis_fcn_name(core, fcn), inter, inter, -1, sdb_itoa(fcn->bits, temp, 10));
+			char *fcn_name = rz_core_analysis_fcn_name(core, fcn);
+			RzListInfo *info = rz_listinfo_new(fcn_name, inter, inter, -1, sdb_itoa(fcn->bits, temp, 10));
+			free(fcn_name);
 			if (!info) {
 				break;
 			}

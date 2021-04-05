@@ -6177,17 +6177,18 @@ static void ts_symbols_init(RzCmd *cmd) {
 }
 
 static RzCmdStatus core_cmd_tsr2cmd(RzCore *core, const char *cstr, bool split_lines, bool log) {
-	char *input = strdup(rz_str_trim_head_ro(cstr));
-
 	ts_symbols_init(core->rcmd);
 
 	TSParser *parser = ts_parser_new();
 	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
 	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
 
+	char *input = strdup(rz_str_trim_head_ro(cstr));
+
 	TSTree *tree = ts_parser_parse_string(parser, NULL, input, strlen(input));
 	if (!tree) {
 		rz_warn_if_reached();
+		free(input);
 		return RZ_CMD_STATUS_INVALID;
 	}
 
