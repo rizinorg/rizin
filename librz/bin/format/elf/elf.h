@@ -124,6 +124,38 @@ typedef struct rz_bin_elf_lib_t {
 	int last;
 } RzBinElfLib;
 
+/// A single file entry in a PT_NOTE of type NT_FILE
+typedef struct Elf_(rz_bin_elf_note_file_t) {
+	Elf_(Addr) start_vaddr;
+	Elf_(Addr) end_vaddr;
+	Elf_(Addr) file_off;
+	char *file;
+}
+RzBinElfNoteFile;
+
+/// A single PT_NOTE entry, parsed from an ElfW(Nhdr) and associated data.
+typedef struct Elf_(rz_bin_elf_note_t) {
+	Elf_(Word) type;
+	union {
+		struct {
+			size_t files_count;
+			RzBinElfNoteFile *files;
+		} file; //< for type == NT_FILE
+		struct {
+			size_t regstate_size;
+			ut8 *regstate;
+		} prstatus; //< for type = NT_PRSTATUS
+	};
+}
+RzBinElfNote;
+
+/// A single parsed PT_NOTE segment
+typedef struct Elf_(rz_bin_elf_note_segment_t) {
+	size_t notes_count;
+	RzBinElfNote *notes;
+}
+RzBinElfNoteSegment;
+
 struct Elf_(rz_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
 	Elf_(Phdr) * phdr;
@@ -138,6 +170,8 @@ struct Elf_(rz_bin_elf_obj_t) {
 	char *shstrtab;
 
 	RzBinElfDynamicInfo dyn_info;
+
+	RzList /*<RzBinElfNoteSegment>*/ *note_segments;
 
 	ut64 version_info[DT_VERSIONTAGNUM];
 
@@ -218,7 +252,7 @@ bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf);
 bool Elf_(rz_bin_elf_is_executable)(ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(struct Elf_(rz_bin_elf_obj_t) * bin);
 int Elf_(rz_bin_elf_has_nx)(struct Elf_(rz_bin_elf_obj_t) * bin);
-ut8 *Elf_(rz_bin_elf_grab_regstate)(struct Elf_(rz_bin_elf_obj_t) * bin, int *len);
+const ut8 *Elf_(rz_bin_elf_grab_regstate)(struct Elf_(rz_bin_elf_obj_t) * bin, size_t *size);
 RzList *Elf_(rz_bin_elf_get_maps)(ELFOBJ *bin);
 RzBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(rz_bin_elf_obj_t) * bin,
 	struct rz_bin_elf_symbol_t *symbol,
