@@ -41,11 +41,10 @@ static char *regstate(RzBinFile *bf) {
 		return NULL;
 	}
 
-	int len = 0;
-	ut8 *regs = Elf_(rz_bin_elf_grab_regstate)(obj, &len);
-	char *hexregs = (regs && len > 0) ? rz_hex_bin2strdup(regs, len) : NULL;
+	size_t sz = 0;
+	const ut8 *regs = Elf_(rz_bin_elf_grab_regstate)(obj, &sz);
+	char *hexregs = (regs && sz) ? rz_hex_bin2strdup(regs, sz) : NULL;
 
-	free(regs);
 	return hexregs;
 }
 
