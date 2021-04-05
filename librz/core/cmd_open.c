@@ -538,8 +538,9 @@ static void rz_core_cmd_omt(RzCore *core, const char *arg) {
 		rz_table_add_rowf(t, "ddxxxxxss", m->id, m->fd, pa, pa_end, pa_size, va, va_end, rz_str_rwx_i(m->perm), name);
 	}
 
+	t->showFancy = true;
 	if (rz_table_query(t, arg)) {
-		char *ts = rz_table_tofancystring(t);
+		char *ts = rz_table_tostring(t);
 		rz_cons_printf("%s", ts);
 		free(ts);
 	}
