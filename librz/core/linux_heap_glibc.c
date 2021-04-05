@@ -545,7 +545,7 @@ void GH(print_heap_chunk)(RzCore *core) {
  * \param core RzCore pointer
  * \param chunk Offset of the chunk in memory
  */
-void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
+void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk, const char *status) {
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
@@ -556,9 +556,20 @@ void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
 	(void)rz_io_read_at(core->io, chunk, (ut8 *)cnk, sizeof(*cnk));
 
 	PRINT_GA("Chunk");
-	rz_cons_printf("(addr=");
+	rz_cons_printf("(");
+	if (status) {
+		rz_cons_printf("status=");
+		if (!strcmp(status, "free")) {
+			PRINTF_GA("%9s", status);
+		} else {
+			rz_cons_printf("%9s", status);
+		}
+		rz_cons_printf(", ");
+	}
+	rz_cons_printf("addr=");
 	PRINTF_YA("0x%" PFMT64x, (ut64)chunk);
-	rz_cons_printf(", size=0x%" PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
+	rz_cons_printf(", size=");
+	PRINTF_BA("0x%" PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
 	rz_cons_printf(", flags=");
 	bool print_comma = false;
 	if (cnk->size & NON_MAIN_ARENA) {
@@ -851,7 +862,7 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 	GHT next_root = next, next_tmp = next, double_free = GHT_MAX;
 	while (next && next >= brk_start && next < main_arena->GH(top)) {
 		GH(print_heap_chunk_simple)
-		(core, (ut64)next);
+		(core, (ut64)next, NULL);
 		rz_cons_newline();
 		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
 			rz_io_read_at(core->io, next_tmp, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
@@ -998,7 +1009,7 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 			rz_cons_newline();
 			rz_cons_printf(" -> ");
 			GH(print_heap_chunk_simple)
-			(core, (ut64)(entry - GH(HDR_SZ)));
+			(core, (ut64)(entry - GH(HDR_SZ)), NULL);
 			if (count > 1) {
 				tcache_fd = entry;
 				size_t n;
@@ -1013,7 +1024,7 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 
 					rz_cons_printf("\n -> ");
 					GH(print_heap_chunk_simple)
-					(core, (ut64)(tcache_tmp - TC_HDR_SZ));
+					(core, (ut64)(tcache_tmp - TC_HDR_SZ), NULL);
 					tcache_fd = tcache_tmp;
 				}
 			}
@@ -1227,8 +1238,8 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 			switch (format_out) {
 			case 'v':
 				GH(print_heap_chunk_simple)
-				(core, next_chunk);
-				PRINTF_RA("[%s]\n", status);
+				(core, next_chunk, status);
+				rz_cons_newline();
 				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
 					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 				int size = 0x10;
@@ -1246,8 +1257,8 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 				break;
 			case 'c':
 				GH(print_heap_chunk_simple)
-				(core, next_chunk);
-				PRINTF_RA("[%s]\n", status);
+				(core, next_chunk, status);
+				rz_cons_newline();
 				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
 					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 				break;
@@ -1395,13 +1406,13 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		switch (format_out) {
 		case 'c':
 			GH(print_heap_chunk_simple)
-			(core, prev_chunk_addr);
-			rz_cons_printf("[%s]\n", status);
+			(core, prev_chunk_addr, status);
+			rz_cons_newline();
 			break;
 		case 'v':
 			GH(print_heap_chunk_simple)
-			(core, prev_chunk_addr);
-			rz_cons_printf("[%s]\n", status);
+			(core, prev_chunk_addr, status);
+			rz_cons_newline();
 			int size = 0x10;
 			char *data = calloc(1, size);
 			if (data) {
@@ -1446,7 +1457,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	case 'v':
 	case 'c':
 		GH(print_heap_chunk_simple)
-		(core, main_arena->GH(top));
+		(core, main_arena->GH(top), NULL);
 		rz_cons_printf("[top][brk_start: ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)brk_start);
 		rz_cons_printf(", brk_end: ");
@@ -1622,7 +1633,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		rz_cons_printf(" -> ");
 		GH(print_heap_chunk_simple)
-		(core, fw);
+		(core, fw, NULL);
 		rz_cons_newline();
 		fw = cnk->fd;
 		chunks_cnt += 1;
