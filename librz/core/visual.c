@@ -4009,7 +4009,6 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			printfmtSingle[2] = debugstr;
 		}
 #endif
-		rz_cons_show_cursor(false);
 		rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
