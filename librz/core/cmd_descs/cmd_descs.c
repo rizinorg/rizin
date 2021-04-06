@@ -3376,6 +3376,7 @@ static const RzCmdDescDetailEntry zign_add_Zignature_space_types_detail_entries[
 	{ .text = "g", .arg_str = NULL, .comment = "graph metrics" },
 	{ .text = "o", .arg_str = NULL, .comment = "original offset" },
 	{ .text = "r", .arg_str = NULL, .comment = "references" },
+	{ .text = "t", .arg_str = NULL, .comment = "types" },
 	{ .text = "x", .arg_str = NULL, .comment = "cross references" },
 	{ .text = "h", .arg_str = NULL, .comment = "bbhash (hashing of function basic blocks)" },
 	{ .text = "v", .arg_str = NULL, .comment = "vars (and args)" },
@@ -3404,6 +3405,7 @@ static const RzCmdDescDetailEntry zign_add_Examples_detail_entries[] = {
 	{ .text = "za", .arg_str = " foo o 0x08048123", .comment = "" },
 	{ .text = "za", .arg_str = " foo c this is a comment (base64?)", .comment = "" },
 	{ .text = "za", .arg_str = " foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen", .comment = "" },
+	{ .text = "za", .arg_str = " foo t func.sym.imp.strlen.ret=int", .comment = "" },
 	{ .text = "za", .arg_str = " foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae", .comment = "" },
 	{ 0 },
 };
@@ -3414,7 +3416,7 @@ static const RzCmdDescDetail zign_add_details[] = {
 	{ .name = "Examples", .entries = zign_add_Examples_detail_entries },
 	{ 0 },
 };
-static const char *zign_add_type_choices[] = { "a", "b", "c", "n", "g", "o", "r", "x", "h", "v", NULL };
+static const char *zign_add_type_choices[] = { "a", "b", "c", "n", "g", "o", "r", "t", "x", "h", "v", NULL };
 static const RzCmdDescArg zign_add_args[] = {
 	{
 		.name = "zigname",
