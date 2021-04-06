@@ -139,7 +139,7 @@ pkgconfig_mod.generate(
     'rz_cons',
     'rz_analysis',
     'rz_socket',
-	'rz_type',
+    'rz_type',
     'rz_io',
     'rz_lang',
     'rz_hash',

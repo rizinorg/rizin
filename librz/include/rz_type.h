@@ -9,6 +9,7 @@
 #include <rz_util/rz_print.h>
 #include <rz_bind.h>
 #include <rz_io.h>
+#include <rz_list.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,7 +69,7 @@ typedef struct rz_base_type_union_t {
 } RzBaseTypeUnion;
 
 typedef struct rz_base_type_enum_t {
-	RzVector /*<RzTypeEnumCase*/ cases; // list of all the enum casessssss
+	RzVector /*<RzTypeEnumCase*/ cases; // list of all the enum cases
 } RzBaseTypeEnum;
 
 typedef struct rz_base_type_t {

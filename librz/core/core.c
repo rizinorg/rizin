@@ -1148,36 +1148,6 @@ out:
 	free(input);
 }
 
-/*
-//TODO: make it recursive to handle nested struct
-static int autocomplete_pfele(RzCore *core, RzLineCompletion *completion, char *key, char *pfx, int idx, char *ptr) {
-	int i, ret = 0;
-	int len = strlen(ptr);
-	const char *fmt = rz_type_db_format_get(core->analysis->typedb, key);
-	if (fmt) {
-		int nargs = rz_str_word_set0_stack(fmt);
-		if (nargs > 1) {
-			for (i = 1; i < nargs; i++) {
-				const char *arg = rz_str_word_get0(fmt, i);
-				char *p = strchr(arg, '(');
-				char *p2 = strchr(arg, ')');
-				// remove '(' and ')' from fmt
-				if (p && p2) {
-					arg = p + 1;
-					*p2 = '\0';
-				}
-				if (!len || !strncmp(ptr, arg, len)) {
-					char *s = rz_str_newf("pf%s.%s.%s", pfx, key, arg);
-					rz_line_completion_push(completion, s);
-					free(s);
-				}
-			}
-		}
-	}
-	return ret;
-}
-*/
-
 #define ADDARG(x) \
 	if (!strncmp(buf->data + chr, x, strlen(buf->data + chr))) { \
 		rz_line_completion_push(completion, x); \
@@ -1667,35 +1637,6 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 			ADDARG("gui.alt_background")
 			ADDARG("gui.border")
 		}
-		/*
-	} else if (!strncmp(buf->data, "pf.", 3) || !strncmp(buf->data, "pf*.", 4) || !strncmp(buf->data, "pfd.", 4) || !strncmp(buf->data, "pfv.", 4) || !strncmp(buf->data, "pfj.", 4)) {
-		char pfx[2];
-		int chr = (buf->data[2] == '.') ? 3 : 4;
-		if (chr == 4) {
-			pfx[0] = buf->data[2];
-			pfx[1] = 0;
-		} else {
-			*pfx = 0;
-		}
-		// FIXME: FORMATS
-		RzListIter *iter;
-		RzList *fmtl = rz_type_db_format_all(core->analysis->typedb);
-		rz_list_foreach (fmtl, iter, kv) {
-			int len = strlen(buf->data + chr);
-			int minlen = RZ_MIN(len, strlen(sdbkv_key(kv)));
-			if (!len || !strncmp(buf->data + chr, sdbkv_key(kv), minlen)) {
-				char *p = strchr(buf->data + chr, '.');
-				if (p) {
-					autocomplete_pfele(core, completion, sdbkv_key(kv), pfx, 0, p + 1);
-					break;
-				} else {
-					char *s = rz_str_newf("pf%s.%s", pfx, sdbkv_key(kv));
-					rz_line_completion_push(completion, s);
-					free(s);
-				}
-			}
-		}
-	*/
 	} else if ((!strncmp(buf->data, "afvn ", 5)) || (!strncmp(buf->data, "afan ", 5))) {
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 		RzList *vars;

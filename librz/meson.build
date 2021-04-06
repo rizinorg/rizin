@@ -362,6 +362,7 @@ include_files =[
   'include/rz_types_overflow.h',
   'include/rz_types_base.h',
   'include/rz_types.h',
+  'include/rz_type.h',
   'include/rz_util.h',
   'include/rz_vector.h',
   'include/rz_skyline.h',
