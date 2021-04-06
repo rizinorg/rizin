@@ -428,7 +428,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
 endif
 
 sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])
-sdb_dep = sdb_proj.get_variable('sdb_dep')
+sdb_dep = sdb_proj.get_variable('sdb_whole_dep')
 sdb_exe  = sdb_proj.get_variable('sdb_native_exe')
 
 sdb_gen_cmd = [
@@ -445,14 +445,14 @@ spp_files = [
 spp_inc = [platform_inc, include_directories('shlr/spp')]
 
 librzspp = static_library('rzspp', spp_files,
-  dependencies: sdb_dep,
+  dependencies: sdb_dep.partial_dependency(includes: true),
   include_directories: spp_inc,
   c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
   implicit_include_directories: false
 )
 
 spp_dep = declare_dependency(
-  link_with: librzspp,
+  link_whole: librzspp,
   include_directories: spp_inc
 )
 
