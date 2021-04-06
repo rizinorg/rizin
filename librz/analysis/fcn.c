@@ -1751,13 +1751,13 @@ RZ_API char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
 	}
 
 	unsigned int i;
-	const char *ret_type = rz_type_func_ret(a->typedb, function->name);
-	int argc = rz_type_func_args_count(a->typedb, function->name);
+	const char *ret_type = rz_type_func_ret(a->typedb, realname);
+	int argc = rz_type_func_args_count(a->typedb, realname);
 
 	char *args = strdup("");
 	for (i = 0; i < argc; i++) {
-		const char *arg_name = rz_type_func_args_name(a->typedb, function->name, i);
-		const char *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
+		const char *arg_name = rz_type_func_args_name(a->typedb, realname, i);
+		const char *arg_type = rz_type_func_args_type(a->typedb, realname, i);
 		// Here we check if the type is a pointer, in this case we don't put
 		// the space between type and name for the style reasons
 		// "char *var" looks much better than "char * var"
