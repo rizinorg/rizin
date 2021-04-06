@@ -200,14 +200,14 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			} else if (IS_MODE_SET(mode)) {
 				char *code = rz_str_newf("%s;", v);
 				char *error_msg = NULL;
-				char *out = rz_parse_c_string(core->analysis, code, &error_msg);
+				char *out = rz_type_parse_c_string(core->analysis->typedb, code, &error_msg);
 				free(code);
 				if (error_msg) {
 					eprintf("%s", error_msg);
 					free(error_msg);
 				}
 				if (out) {
-					rz_analysis_save_parsed_type(core->analysis, out);
+					rz_type_db_save_parsed_type(core->analysis->typedb, out);
 					free(out);
 				}
 			}
@@ -228,7 +228,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			if (IS_MODE_RZCMD(mode)) {
 				rz_cons_printf("pf.%s %s\n", flagname, v);
 			} else if (IS_MODE_SET(mode)) {
-				sdb_set(core->print->formats, flagname, v, 0);
+				rz_type_db_format_set(core->analysis->typedb, flagname, v);
 			}
 		}
 		free(dup);
@@ -243,7 +243,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 				offset = strdup("0");
 			}
 			flagname = dup;
-			int fmtsize = rz_print_format_struct_size(core->print, v, 0, 0);
+			int fmtsize = rz_type_format_struct_size(core->analysis->typedb, v, 0, 0);
 			char *offset_key = rz_str_newf("%s.offset", flagname);
 			const char *off = sdb_const_get(db, offset_key, 0);
 			free(offset_key);
@@ -255,11 +255,14 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 					ut8 *buf = malloc(fmtsize);
 					if (buf) {
 						rz_io_read_at(core->io, addr, buf, fmtsize);
-						int res = rz_print_format(core->print, addr, buf,
+						char *format = rz_type_format_data(core->analysis->typedb, core->print, addr, buf,
 							fmtsize, v, 0, NULL, NULL);
 						free(buf);
-						if (res < 0) {
+						if (!format) {
 							eprintf("Warning: Cannot register invalid format (%s)\n", v);
+						} else {
+							rz_cons_print(format);
+							free(format);
 						}
 					}
 				}
@@ -1708,106 +1711,6 @@ static bool is_executable(RzBinObject *obj) {
 	return false;
 }
 
-RZ_API void rz_core_analysis_type_init(RzCore *core) {
-	rz_return_if_fail(core && core->analysis);
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
-	int bits = core->rasm->bits;
-	Sdb *types = core->analysis->sdb_types;
-	// make sure they are empty this is initializing
-	sdb_reset(types);
-	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
-	const char *os = rz_config_get(core->config, "asm.os");
-	// spaguetti ahead
-
-	const char *dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types.sdb"), dir_prefix);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(types, dbpath);
-	}
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
-		dir_prefix, analysis_arch);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(types, dbpath);
-	}
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
-		dir_prefix, os);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(types, dbpath);
-	}
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%d.sdb"),
-		dir_prefix, bits);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(types, dbpath);
-	}
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%d.sdb"),
-		dir_prefix, os, bits);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(types, dbpath);
-	}
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%d.sdb"),
-		dir_prefix, analysis_arch, bits);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(types, dbpath);
-	}
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%s.sdb"),
-		dir_prefix, analysis_arch, os);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(types, dbpath);
-	}
-	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
-		dir_prefix, analysis_arch, os, bits);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(types, dbpath);
-	}
-}
-
-RZ_API void rz_core_analysis_cc_init(RzCore *core) {
-	const char *analysis_arch = rz_config_get(core->config, "analysis.arch");
-	Sdb *cc = core->analysis->sdb_cc;
-	if (!strcmp(analysis_arch, "null")) {
-		sdb_reset(cc);
-		RZ_FREE(cc->path);
-		return;
-	}
-
-	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
-	int bits = core->analysis->bits;
-	char *dbpath = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "cc-%s-%d.sdb"),
-		dir_prefix, analysis_arch, bits);
-	char *dbhomepath = rz_str_newf(RZ_JOIN_3_PATHS("~", RZ_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
-		analysis_arch, bits);
-	// Avoid sdb reloading
-	if (cc->path && (!strcmp(cc->path, dbpath) || !strcmp(cc->path, dbhomepath))) {
-		free(dbpath);
-		free(dbhomepath);
-		return;
-	}
-	sdb_reset(cc);
-	RZ_FREE(cc->path);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(cc, dbpath);
-		cc->path = strdup(dbpath);
-	}
-	if (rz_file_exists(dbhomepath)) {
-		sdb_concat_by_path(cc, dbhomepath);
-		cc->path = strdup(dbhomepath);
-	}
-	// same as "tcc `arcc`"
-	char *s = rz_reg_profile_to_cc(core->analysis->reg);
-	if (s) {
-		if (!rz_analysis_cc_set(core->analysis, s)) {
-			eprintf("Warning: Invalid CC from reg profile.\n");
-		}
-		free(s);
-	} else {
-		eprintf("Warning: Cannot derive CC from reg profile.\n");
-	}
-	if (sdb_isempty(core->analysis->sdb_cc)) {
-		eprintf("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", analysis_arch);
-	}
-	free(dbpath);
-	free(dbhomepath);
-}
-
 static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	int i, j, v;
 	RzBinInfo *info = rz_bin_get_info(r->bin);
@@ -2165,8 +2068,8 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 
 	pdb.print_types(&pdb, pj, mode);
 	pdb.print_gvars(&pdb, baddr, pj, mode);
-	// Save compound types into SDB
-	rz_parse_pdb_types(core->analysis, &pdb);
+	// Save compound types into types database
+	rz_parse_pdb_types(core->analysis->typedb, &pdb);
 	pdb.finish_pdb_parse(&pdb);
 
 	if (mode == 'j') {

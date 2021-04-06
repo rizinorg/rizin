@@ -62,17 +62,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Cf main
+NAME=Cf 1 n2
 FILE=-
-CMDS=Cf main;C*
+CMDS=Cf 1 n2;C*
 EXPECT=<<EOF
-EOF
-RUN
-
-NAME=Cf 1 main
-FILE=-
-CMDS=Cf 1 main;C*
-EXPECT=<<EOF
+Cf 1 n2 @ 0x00000000
 EOF
 RUN
 

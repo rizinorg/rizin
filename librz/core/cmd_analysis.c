@@ -2951,13 +2951,7 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 		case 'r': { // "afsr"
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 			if (fcn) {
-				char *type = rz_str_newf("type.%s", input + 3);
-				if (sdb_exists(core->analysis->sdb_types, type)) {
-					char *query = rz_str_newf("analysis/types/func.%s.ret=%s", fcn->name, input + 3);
-					sdb_querys(core->sdb, NULL, 0, query);
-					free(query);
-				}
-				free(type);
+				rz_type_func_ret_set(core->analysis->typedb, fcn->name, input + 3);
 			} else {
 				eprintf("There's no function defined in here.\n");
 			}
@@ -6908,7 +6902,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 			rz_str_trim(off);
 			int toff = rz_num_math(NULL, off);
 			if (toff) {
-				RzList *typeoffs = rz_type_get_by_offset(core->analysis->sdb_types, toff);
+				RzList *typeoffs = rz_type_get_by_offset(core->analysis->typedb, toff);
 				RzListIter *iter;
 				char *ty;
 				rz_list_foreach (typeoffs, iter, ty) {
@@ -6977,14 +6971,14 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 						offimm += rz_num_math(NULL, off);
 					}
 					// TODO: Allow to select from multiple choices
-					RzList *otypes = rz_type_get_by_offset(core->analysis->sdb_types, offimm);
+					RzList *otypes = rz_type_get_by_offset(core->analysis->typedb, offimm);
 					RzListIter *iter;
 					char *otype = NULL;
 					rz_list_foreach (otypes, iter, otype) {
 						// TODO: I don't think we should silently error, it is confusing
 						if (!strcmp(type, otype)) {
 							//eprintf ("Adding type offset %s\n", type);
-							rz_type_link_offset(core->analysis->sdb_types, type, addr);
+							rz_type_link_offset(core->analysis->typedb, type, addr);
 							rz_analysis_hint_set_offset(core->analysis, addr, otype);
 							break;
 						}
@@ -8758,8 +8752,8 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 		}
 		char *key = (fcn_name) ? resolve_fcn_name(core->analysis, fcn_name) : NULL;
 		if (key) {
-			const char *fcn_type = rz_type_func_ret(core->analysis->sdb_types, key);
-			int nargs = rz_type_func_args_count(core->analysis->sdb_types, key);
+			const char *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
+			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 			// remove other comments
 			if (fcn_type) {
 				rz_strbuf_appendf(sb, "%s%s%s(", rz_str_get_null(fcn_type),
@@ -9257,13 +9251,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	char *type = rz_str_newf("type.%s", argv[1]);
-	if (sdb_exists(core->analysis->sdb_types, type)) {
-		char *query = rz_str_newf("analysis/types/func.%s.ret=%s", fcn->name, argv[1]);
-		sdb_querys(core->sdb, NULL, 0, query);
-		free(query);
+	if (!rz_type_func_ret_set(core->analysis->typedb, fcn->name, argv[1])) {
+		eprintf("Cannot find type %s\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
 	}
-	free(type);
 	return RZ_CMD_STATUS_OK;
 }
 

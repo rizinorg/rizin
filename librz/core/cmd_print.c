@@ -5,6 +5,7 @@
 #include "rz_core.h"
 #include "rz_config.h"
 #include "rz_util.h"
+#include "rz_type.h"
 #include "rz_types.h"
 #include <limits.h>
 
@@ -1603,9 +1604,9 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		_input += 2;
 		if (*_input == '.') {
 			_input++;
-			val = sdb_get(core->print->formats, _input, NULL);
+			val = rz_type_db_format_get(core->analysis->typedb, _input);
 			if (val) {
-				rz_cons_printf("%d\n", rz_print_format_struct_size(core->print, val, mode, 0));
+				rz_cons_printf("%d\n", rz_type_format_struct_size(core->analysis->typedb, val, mode, 0));
 			} else {
 				eprintf("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -1614,7 +1615,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 				_input++;
 			}
 			if (*_input) {
-				rz_cons_printf("%d\n", rz_print_format_struct_size(core->print, _input, mode, 0));
+				rz_cons_printf("%d\n", rz_type_format_struct_size(core->analysis->typedb, _input, mode, 0));
 			} else {
 				eprintf("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
@@ -1640,7 +1641,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 				}
 			} else {
 				const char *struct_name = rz_str_trim_head_ro(_input);
-				const char *val = sdb_get(core->print->formats, struct_name, NULL);
+				const char *val = rz_type_db_format_get(core->analysis->typedb, struct_name);
 				if (val) {
 					rz_cons_printf("%s\n", val);
 				} else {
@@ -1667,9 +1668,9 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			if (rz_str_endswith(_input, ".h")) {
 				char *error_msg = NULL;
 				const char *dir = rz_config_get(core->config, "dir.types");
-				char *out = rz_parse_c_file(core->analysis, path, dir, &error_msg);
+				char *out = rz_type_parse_c_file(core->analysis->typedb, path, dir, &error_msg);
 				if (out) {
-					rz_analysis_save_parsed_type(core->analysis, out);
+					rz_type_db_save_parsed_type(core->analysis->typedb, out);
 					rz_core_cmd0(core, ".ts*");
 					free(out);
 				} else {
@@ -1743,19 +1744,19 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		core->print->num = core->num;
 		/* print all stored format */
 		if (!input[1] || !input[2]) { // "pf."
-			SdbListIter *iter;
-			SdbKv *kv;
-			SdbList *sdbls = sdb_foreach_list(core->print->formats, true);
-			ls_foreach (sdbls, iter, kv) {
-				rz_cons_printf("pf.%s %s\n", sdbkv_key(kv), sdbkv_value(kv));
+			RzListIter *iter;
+			char *fmt = NULL;
+			RzList *fmtl = rz_type_db_format_all(core->analysis->typedb);
+			rz_list_foreach (fmtl, iter, fmt) {
+				rz_cons_printf("pf.%s\n", fmt);
 			}
+			rz_list_free(fmtl);
 			/* delete a format */
 		} else if (input[1] && input[2] == '-') { // "pf-"
 			if (input[3] == '*') { // "pf-*"
-				sdb_free(core->print->formats);
-				core->print->formats = sdb_new0();
+				rz_type_db_format_purge(core->analysis->typedb);
 			} else { // "pf-xxx"
-				sdb_unset(core->print->formats, input + 3, 0);
+				rz_type_db_format_delete(core->analysis->typedb, input + 3);
 			}
 		} else {
 			char *name = strdup(input + (input[1] ? 2 : 1));
@@ -1776,7 +1777,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 					eprintf("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
 					// pf.foo=xxx
-					sdb_set(core->print->formats, name, space, 0);
+					rz_type_db_format_set(core->analysis->typedb, name, space);
 				}
 				free(name);
 				free(input);
@@ -1784,7 +1785,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			}
 
 			if (!strchr(name, '.') &&
-				!sdb_get(core->print->formats, name, NULL)) {
+				!rz_type_db_format_get(core->analysis->typedb, name)) {
 				eprintf("Cannot find '%s' format.\n", name);
 				free(name);
 				free(input);
@@ -1802,9 +1803,9 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			/* Load format from name into fmt to get the size */
 			/* This make sure the whole structure will be printed */
 			const char *fmt = NULL;
-			fmt = sdb_get(core->print->formats, name, NULL);
+			fmt = rz_type_db_format_get(core->analysis->typedb, name);
 			if (fmt) {
-				int size = rz_print_format_struct_size(core->print, fmt, mode, 0) + 10;
+				int size = rz_type_format_struct_size(core->analysis->typedb, fmt, mode, 0) + 10;
 				if (size > core->blocksize) {
 					rz_core_block_size(core, size);
 				}
@@ -1816,22 +1817,34 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 				if (eq) { // Write mode (pf.field=value)
 					*eq++ = 0;
 					mode = RZ_PRINT_MUSTSET;
-					rz_print_format(core->print, core->offset,
+					char *format = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
 						core->block, core->blocksize, name, mode, eq, dot);
+					if (format) {
+						rz_cons_print(format);
+						free(format);
+					}
 				} else {
-					rz_print_format(core->print, core->offset,
+					char *format = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
 						core->block, core->blocksize, name, mode, NULL, dot);
+					if (format) {
+						rz_cons_print(format);
+						free(format);
+					}
 				}
 			} else {
-				rz_print_format(core->print, core->offset,
+				char *format = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
 					core->block, core->blocksize, name, mode, NULL, NULL);
+				if (format) {
+					rz_cons_print(format);
+					free(format);
+				}
 			}
 			free(name);
 		}
 	} else {
 		/* This make sure the structure will be printed entirely */
 		const char *fmt = rz_str_trim_head_ro(input + 1);
-		int struct_sz = rz_print_format_struct_size(core->print, fmt, mode, 0);
+		int struct_sz = rz_type_format_struct_size(core->analysis->typedb, fmt, mode, 0);
 		int size = RZ_MAX(core->blocksize, struct_sz);
 		ut8 *buf = calloc(1, size);
 		if (!buf) {
@@ -1854,8 +1867,12 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 		}
 		free(args);
 		if (syntax_ok) {
-			rz_print_format(core->print, core->offset,
+			char *format = rz_type_format_data(core->analysis->typedb, core->print, core->offset,
 				buf, size, fmt, mode, NULL, NULL);
+			if (format) {
+				rz_cons_print(format);
+				free(format);
+			}
 		}
 		free(buf);
 	}

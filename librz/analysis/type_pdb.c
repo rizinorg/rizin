@@ -3,9 +3,10 @@
 
 #include <rz_bin.h>
 #include <rz_core.h>
+#include <rz_type.h>
 #include <rz_analysis.h>
+
 #include "../bin/pdb/types.h"
-#include "base_types.h"
 
 static bool is_parsable_type(const ELeafType type) {
 	return (type == eLF_STRUCTURE ||
@@ -32,9 +33,9 @@ static char *create_type_name_from_offset(ut64 offset) {
  *
  * @param type_info Current type info (member)
  * @param types List of all types
- * @return RzAnalysisStructMember* parsed member, NULL if fail
+ * @return RzTypeStructMember* parsed member, NULL if fail
  */
-static RzAnalysisStructMember *parse_member(STypeInfo *type_info, RzList *types) {
+static RzTypeStructMember *parse_member(STypeInfo *type_info, RzList *types) {
 	rz_return_val_if_fail(type_info && types, NULL);
 	if (type_info->leaf_type != eLF_MEMBER) {
 		return NULL;
@@ -49,7 +50,7 @@ static RzAnalysisStructMember *parse_member(STypeInfo *type_info, RzList *types)
 	type_info->get_val(type_info, &offset); // gets offset
 	type_info->get_name(type_info, &name);
 	type_info->get_print_type(type_info, &type);
-	RzAnalysisStructMember *member = RZ_NEW0(RzAnalysisStructMember);
+	RzTypeStructMember *member = RZ_NEW0(RzTypeStructMember);
 	if (!member) {
 		goto cleanup;
 	}
@@ -67,9 +68,9 @@ cleanup:
  *
  * @param type_info Current type info (enum case)
  * @param types List of all types
- * @return RzAnalysisEnumCase* parsed enum case, NULL if fail
+ * @return RzTypeEnumCase* parsed enum case, NULL if fail
  */
-static RzAnalysisEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) {
+static RzTypeEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) {
 	rz_return_val_if_fail(type_info && types && type_info->leaf_type == eLF_ENUMERATE, NULL);
 	rz_return_val_if_fail(type_info->get_val && type_info->get_name, NULL);
 
@@ -78,7 +79,7 @@ static RzAnalysisEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) 
 	// sometimes, the type doesn't have get_val for some reason
 	type_info->get_val(type_info, &value);
 	type_info->get_name(type_info, &name);
-	RzAnalysisEnumCase *cas = RZ_NEW0(RzAnalysisEnumCase);
+	RzTypeEnumCase *cas = RZ_NEW0(RzTypeEnumCase);
 	if (!cas) {
 		goto cleanup;
 	}
@@ -93,19 +94,19 @@ cleanup:
 /**
  * @brief Parses enum into BaseType and saves it into SDB
  *
- * @param analysis
+ * @param t RzTypeDB instance
  * @param type Current type
  * @param types List of all types
  */
-static void parse_enum(const RzAnalysis *analysis, SType *type, RzList *types) {
-	rz_return_if_fail(analysis && type && types);
+static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
+	rz_return_if_fail(typedb && type && types);
 	STypeInfo *type_info = &type->type_data;
 	// assert all member functions we need info from
 	rz_return_if_fail(type_info->get_members &&
 		type_info->get_name &&
 		type_info->get_utype);
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
+	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -131,7 +132,7 @@ static void parse_enum(const RzAnalysis *analysis, SType *type, RzList *types) {
 	RzListIter *it = rz_list_iterator(members);
 	while (rz_list_iter_next(it)) {
 		STypeInfo *member_info = rz_list_iter_get(it);
-		RzAnalysisEnumCase *enum_case = parse_enumerate(member_info, types);
+		RzTypeEnumCase *enum_case = parse_enumerate(member_info, types);
 		if (!enum_case) {
 			continue; // skip it, move forward
 		}
@@ -145,24 +146,24 @@ static void parse_enum(const RzAnalysis *analysis, SType *type, RzList *types) {
 	base_type->size = size;
 	base_type->type = strdup(type_name); // we assume it's sanitized
 
-	rz_analysis_save_base_type(analysis, base_type);
+	rz_type_db_save_base_type(typedb, base_type);
 cleanup:
 	if (to_free_name) {
 		RZ_FREE(name);
 	}
-	rz_analysis_base_type_free(base_type);
+	rz_type_base_type_free(base_type);
 	return;
 }
 
 /**
  * @brief Parses classes, unions and structures into BaseType and saves them into SDB
  *
- * @param analysis
+ * @param t RzTypeDB instance
  * @param type Current type
  * @param types List of all types
  */
-static void parse_structure(const RzAnalysis *analysis, SType *type, RzList *types) {
-	rz_return_if_fail(analysis && type && types);
+static void parse_structure(const RzTypeDB *typedb, SType *type, RzList *types) {
+	rz_return_if_fail(typedb && type && types);
 	STypeInfo *type_info = &type->type_data;
 	// assert all member functions we need info from
 	rz_return_if_fail(type_info->get_members &&
@@ -170,7 +171,7 @@ static void parse_structure(const RzAnalysis *analysis, SType *type, RzList *typ
 		type_info->get_name &&
 		type_info->get_val);
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT);
+	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return;
 	}
@@ -191,7 +192,7 @@ static void parse_structure(const RzAnalysis *analysis, SType *type, RzList *typ
 	RzListIter *it = rz_list_iterator(members);
 	while (rz_list_iter_next(it)) {
 		STypeInfo *member_info = rz_list_iter_get(it);
-		RzAnalysisStructMember *struct_member = parse_member(member_info, types);
+		RzTypeStructMember *struct_member = parse_member(member_info, types);
 		if (!struct_member) {
 			continue; // skip the failure
 		}
@@ -201,31 +202,31 @@ static void parse_structure(const RzAnalysis *analysis, SType *type, RzList *typ
 		}
 	}
 	if (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS) {
-		base_type->kind = RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT;
+		base_type->kind = RZ_BASE_TYPE_KIND_STRUCT;
 	} else { // union
-		base_type->kind = RZ_ANALYSIS_BASE_TYPE_KIND_UNION;
+		base_type->kind = RZ_BASE_TYPE_KIND_UNION;
 	}
 	char *sname = rz_str_sanitize_sdb_key(name);
 	base_type->name = sname;
 	base_type->size = size;
-	rz_analysis_save_base_type(analysis, base_type);
+	rz_type_db_save_base_type(typedb, base_type);
 cleanup:
 	if (to_free_name) {
 		RZ_FREE(name);
 	}
-	rz_analysis_base_type_free(base_type);
+	rz_type_base_type_free(base_type);
 	return;
 }
 
 /**
  * @brief Delegate the type parsing to appropriate function
  *
- * @param analysis
+ * @param t RzTypeDB instance
  * @param type Current type
  * @param types List of all types
  */
-static void parse_type(const RzAnalysis *analysis, SType *type, RzList *types) {
-	rz_return_if_fail(analysis && type && types);
+static void parse_type(const RzTypeDB *typedb, SType *type, RzList *types) {
+	rz_return_if_fail(typedb && type && types);
 
 	int is_forward_decl;
 	if (type->type_data.is_fwdref) {
@@ -238,10 +239,10 @@ static void parse_type(const RzAnalysis *analysis, SType *type, RzList *types) {
 	case eLF_CLASS:
 	case eLF_STRUCTURE:
 	case eLF_UNION:
-		parse_structure(analysis, type, types);
+		parse_structure(typedb, type, types);
 		break;
 	case eLF_ENUM:
-		parse_enum(analysis, type, types);
+		parse_enum(typedb, type, types);
 		break;
 	default:
 		// shouldn't happen, happens when someone modifies leafs that get here
@@ -254,11 +255,11 @@ static void parse_type(const RzAnalysis *analysis, SType *type, RzList *types) {
 /**
  * @brief Saves PDB types from TPI stream into the SDB
  *
- * @param analysis
+ * @param t RzTypeDB instance
  * @param pdb PDB information
  */
-RZ_API void rz_parse_pdb_types(const RzAnalysis *analysis, const RzPdb *pdb) {
-	rz_return_if_fail(analysis && pdb);
+RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb) {
+	rz_return_if_fail(typedb && pdb);
 	RzList *plist = pdb->pdb_streams;
 	// getting the TPI stream from the streams list
 	STpiStream *tpi_stream = rz_list_get_n(plist, ePDB_STREAM_TPI);
@@ -270,7 +271,7 @@ RZ_API void rz_parse_pdb_types(const RzAnalysis *analysis, const RzPdb *pdb) {
 	while (rz_list_iter_next(iter)) { // iterate all types
 		SType *type = rz_list_iter_get(iter);
 		if (type && is_parsable_type(type->type_data.leaf_type)) {
-			parse_type(analysis, type, tpi_stream->types);
+			parse_type(typedb, type, tpi_stream->types);
 		}
 	}
 }

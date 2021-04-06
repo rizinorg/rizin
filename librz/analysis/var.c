@@ -46,7 +46,7 @@ RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *
 // If the type of var is a struct,
 // remove all other vars that are overlapped by var and are at the offset of one of its struct members
 static void shadow_var_struct_members(RzAnalysisVar *var) {
-	Sdb *TDB = var->fcn->analysis->sdb_types;
+	Sdb *TDB = var->fcn->analysis->typedb->sdb_types;
 	const char *type_kind = sdb_const_get(TDB, var->type, 0);
 	if (type_kind && rz_str_startswith(type_kind, "struct")) {
 		char *field;
@@ -557,7 +557,7 @@ RZ_API int rz_analysis_var_count(RzAnalysis *a, RzAnalysisFunction *fcn, int kin
 }
 
 static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, RzList *list) {
-	Sdb *TDB = a->sdb_types;
+	Sdb *TDB = a->typedb->sdb_types;
 	const char *type_kind = sdb_const_get(TDB, av->type, 0);
 	if (type_kind && !strcmp(type_kind, "struct")) {
 		char *field_name, *new_name;
@@ -726,30 +726,30 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 		if (isarg) {
 			const char *place = fcn->cc ? rz_analysis_cc_arg(analysis, fcn->cc, ST32_MAX) : NULL;
 			bool stack_rev = place ? !strcmp(place, "stack_rev") : false;
-			char *fname = rz_type_func_guess(analysis->sdb_types, fcn->name);
+			char *fname = rz_type_func_guess(analysis->typedb, fcn->name);
 			if (fname) {
 				ut64 sum_sz = 0;
 				size_t from, to, i;
 				if (stack_rev) {
-					const size_t cnt = rz_type_func_args_count(analysis->sdb_types, fname);
+					const size_t cnt = rz_type_func_args_count(analysis->typedb, fname);
 					from = cnt ? cnt - 1 : cnt;
 					to = fcn->cc ? rz_analysis_cc_max_arg(analysis, fcn->cc) : 0;
 				} else {
 					from = fcn->cc ? rz_analysis_cc_max_arg(analysis, fcn->cc) : 0;
-					to = rz_type_func_args_count(analysis->sdb_types, fname);
+					to = rz_type_func_args_count(analysis->typedb, fname);
 				}
 				const int bytes = (fcn->bits ? fcn->bits : analysis->bits) / 8;
 				for (i = from; stack_rev ? i >= to : i < to; stack_rev ? i-- : i++) {
-					char *tp = rz_type_func_args_type(analysis->sdb_types, fname, i);
+					char *tp = rz_type_func_args_type(analysis->typedb, fname, i);
 					if (!tp) {
 						break;
 					}
 					if (sum_sz == frame_off) {
 						vartype = tp;
-						varname = strdup(rz_type_func_args_name(analysis->sdb_types, fname, i));
+						varname = strdup(rz_type_func_args_name(analysis->typedb, fname, i));
 						break;
 					}
-					ut64 bit_sz = rz_type_get_bitsize(analysis->sdb_types, tp);
+					ut64 bit_sz = rz_type_db_get_bitsize(analysis->typedb, tp);
 					sum_sz += bit_sz ? bit_sz / 8 : bytes;
 					sum_sz = RZ_ROUND(sum_sz, bytes);
 					free(tp);
@@ -884,15 +884,14 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 		RZ_LOG_DEBUG("No calling convention for function '%s' to extract register arguments\n", fcn->name);
 		return;
 	}
-	char *fname = rz_type_func_guess(analysis->sdb_types, fcn->name);
-	Sdb *TDB = analysis->sdb_types;
+	char *fname = rz_type_func_guess(analysis->typedb, fcn->name);
 	int max_count = rz_analysis_cc_max_arg(analysis, fcn->cc);
 	if (!max_count || (*count >= max_count)) {
 		free(fname);
 		return;
 	}
 	if (fname) {
-		argc = rz_type_func_args_count(TDB, fname);
+		argc = rz_type_func_args_count(analysis->typedb, fname);
 	}
 
 	bool is_call = (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_CALL || (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_UCALL;
@@ -906,18 +905,18 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			RzCore *core = (RzCore *)analysis->coreb.core;
 			RzFlagItem *flag = rz_flag_get_by_spaces(core->flags, offset, RZ_FLAGS_FS_IMPORTS, NULL);
 			if (flag) {
-				callee = rz_type_func_guess(TDB, flag->name);
+				callee = rz_type_func_guess(analysis->typedb, flag->name);
 				if (callee) {
 					const char *cc = rz_analysis_cc_func(analysis, callee);
 					if (cc && !strcmp(fcn->cc, cc)) {
-						callee_rargs = RZ_MIN(max_count, rz_type_func_args_count(TDB, callee));
+						callee_rargs = RZ_MIN(max_count, rz_type_func_args_count(analysis->typedb, callee));
 					}
 				}
 			}
 		} else if (!f->is_variadic && !strcmp(fcn->cc, f->cc)) {
-			callee = rz_type_func_guess(TDB, f->name);
+			callee = rz_type_func_guess(analysis->typedb, f->name);
 			if (callee) {
-				callee_rargs = RZ_MIN(max_count, rz_type_func_args_count(TDB, callee));
+				callee_rargs = RZ_MIN(max_count, rz_type_func_args_count(analysis->typedb, callee));
 			}
 			callee_rargs = callee_rargs
 				? callee_rargs
@@ -939,12 +938,12 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				delta = ri->index;
 			}
 			if (fname) {
-				type = rz_type_func_args_type(TDB, fname, i);
-				vname = rz_type_func_args_name(TDB, fname, i);
+				type = rz_type_func_args_type(analysis->typedb, fname, i);
+				vname = rz_type_func_args_name(analysis->typedb, fname, i);
 			}
 			if (!vname && callee) {
-				type = rz_type_func_args_type(TDB, callee, i);
-				vname = rz_type_func_args_name(TDB, callee, i);
+				type = rz_type_func_args_type(analysis->typedb, callee, i);
+				vname = rz_type_func_args_name(analysis->typedb, callee, i);
 			}
 			if (vname) {
 				reg_set[i] = 1;
@@ -997,8 +996,8 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				char *type = NULL;
 				char *name = NULL;
 				if ((i < argc) && fname) {
-					type = rz_type_func_args_type(TDB, fname, i);
-					vname = rz_type_func_args_name(TDB, fname, i);
+					type = rz_type_func_args_type(analysis->typedb, fname, i);
+					vname = rz_type_func_args_name(analysis->typedb, fname, i);
 				}
 				if (!vname) {
 					name = rz_str_newf("arg%d", i + 1);
@@ -1356,10 +1355,9 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 		return NULL;
 	}
 
-	Sdb *TDB = analysis->sdb_types;
-	char *type_fcn_name = rz_type_func_guess(TDB, fcn_name);
-	if (type_fcn_name && rz_type_func_exist(TDB, type_fcn_name)) {
-		const char *fcn_type = rz_type_func_ret(analysis->sdb_types, type_fcn_name);
+	char *type_fcn_name = rz_type_func_guess(analysis->typedb, fcn_name);
+	if (type_fcn_name && rz_type_func_exist(analysis->typedb, type_fcn_name)) {
+		const char *fcn_type = rz_type_func_ret(analysis->typedb, type_fcn_name);
 		if (fcn_type) {
 			const char *sp = " ";
 			if (*fcn_type && (fcn_type[strlen(fcn_type) - 1] == '*')) {
@@ -1378,14 +1376,14 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	}
 	rz_strbuf_append(buf, " (");
 
-	if (type_fcn_name && rz_type_func_exist(TDB, type_fcn_name)) {
-		int i, argc = rz_type_func_args_count(TDB, type_fcn_name);
+	if (type_fcn_name && rz_type_func_exist(analysis->typedb, type_fcn_name)) {
+		int i, argc = rz_type_func_args_count(analysis->typedb, type_fcn_name);
 		bool comma = true;
 		// This avoids false positives present in argument recovery
 		// and straight away print arguments fetched from types db
 		for (i = 0; i < argc; i++) {
-			char *type = rz_type_func_args_type(TDB, type_fcn_name, i);
-			const char *name = rz_type_func_args_name(TDB, type_fcn_name, i);
+			char *type = rz_type_func_args_type(analysis->typedb, type_fcn_name, i);
+			const char *name = rz_type_func_args_name(analysis->typedb, type_fcn_name, i);
 			if (!type || !name) {
 				eprintf("Missing type for %s\n", type_fcn_name);
 				goto beach;
@@ -1487,29 +1485,14 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RzAnalysisFunct
 	rz_list_join(all_vars, cache.bvars);
 	rz_list_join(all_vars, cache.svars);
 
-	RzStrBuf key, value;
-	rz_strbuf_init(&key);
-	rz_strbuf_init(&value);
-
 	rz_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
-			if (!rz_strbuf_setf(&key, "func.%s.arg.%d", fcn->name, arg_count) ||
-				!rz_strbuf_setf(&value, "%s,%s", var->type, var->name)) {
-				goto exit;
-			}
-			sdb_set(analysis->sdb_types, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
+			rz_type_func_arg_set(analysis->typedb, fcn->name, arg_count, var->name, var->type);
 			arg_count++;
 		}
 	}
 	if (arg_count > 0) {
-		if (!rz_strbuf_setf(&key, "func.%s.args", fcn->name) ||
-			!rz_strbuf_setf(&value, "%d", arg_count)) {
-			goto exit;
-		}
-		sdb_set(analysis->sdb_types, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
+		rz_type_func_arg_count_set(analysis->typedb, fcn->name, arg_count);
 	}
-exit:
-	rz_strbuf_fini(&key);
-	rz_strbuf_fini(&value);
 	rz_analysis_fcn_vars_cache_fini(&cache);
 }

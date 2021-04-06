@@ -12,7 +12,7 @@
 
 #define check_kv(k, v) \
 	do { \
-		char *value = sdb_get(analysis->sdb_types, k, NULL); \
+		char *value = sdb_get(analysis->typedb->sdb_types, k, NULL); \
 		mu_assert_nullable_streq(value, v, "Wrong key - value pair"); \
 	} while (0)
 
@@ -40,7 +40,7 @@ int pdb_info_save_types(RzAnalysis *analysis, const char *file, RzPdb *pdb) {
 		pdb->finish_pdb_parse(pdb);
 		return false;
 	}
-	rz_parse_pdb_types(analysis, pdb);
+	rz_parse_pdb_types(analysis->typedb, pdb);
 	pdb->finish_pdb_parse(pdb);
 	return true;
 }

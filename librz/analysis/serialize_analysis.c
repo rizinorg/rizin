@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
+#include <rz_vector.h>
+#include <rz_type.h>
 #include <rz_analysis.h>
 
 #include <errno.h>
@@ -1226,6 +1228,16 @@ beach:
 	return ret;
 }
 
+RZ_API void rz_serialize_analysis_function_noreturn_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
+	sdb_copy(analysis->sdb_noret, db);
+}
+
+RZ_API bool rz_serialize_analysis_function_noreturn_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
+	sdb_reset(analysis->sdb_noret);
+	sdb_copy(db, analysis->sdb_noret);
+	return true;
+}
+
 static bool store_xref_cb(void *j, const ut64 k, const void *v) {
 	const RzAnalysisXRef *xref = v;
 	pj_o(j);
@@ -1928,12 +1940,11 @@ RZ_API bool rz_serialize_analysis_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL Rz
 }
 
 RZ_API void rz_serialize_analysis_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
-	sdb_copy(analysis->sdb_types, db);
+	rz_serialize_types_save(db, analysis->typedb);
 }
 
 RZ_API bool rz_serialize_analysis_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
-	sdb_reset(analysis->sdb_types);
-	sdb_copy(db, analysis->sdb_types);
+	return rz_serialize_types_load(db, analysis->typedb, res);
 	return true;
 }
 
@@ -1995,6 +2006,7 @@ RZ_API void rz_serialize_analysis_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	rz_serialize_analysis_xrefs_save(sdb_ns(db, "xrefs", true), analysis);
 	rz_serialize_analysis_blocks_save(sdb_ns(db, "blocks", true), analysis);
 	rz_serialize_analysis_functions_save(sdb_ns(db, "functions", true), analysis);
+	rz_serialize_analysis_function_noreturn_save(sdb_ns(db, "noreturn", true), analysis);
 	rz_serialize_analysis_meta_save(sdb_ns(db, "meta", true), analysis);
 	rz_serialize_analysis_hints_save(sdb_ns(db, "hints", true), analysis);
 	rz_serialize_analysis_classes_save(sdb_ns(db, "classes", true), analysis);
@@ -2021,6 +2033,7 @@ RZ_API bool rz_serialize_analysis_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis
 	SUB("blocks", rz_serialize_analysis_blocks_load(subdb, analysis, diff_parser, res));
 	// All bbs have ref=1 now
 	SUB("functions", rz_serialize_analysis_functions_load(subdb, analysis, diff_parser, res));
+	SUB("noreturn", rz_serialize_analysis_function_noreturn_load(subdb, analysis, res));
 	// BB's refs have increased if they are part of a function.
 	// We must subtract from each to hold our invariant again.
 	// If any block has ref=0 then, it should be deleted. But we can't do this while

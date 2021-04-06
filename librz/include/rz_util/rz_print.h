@@ -94,7 +94,6 @@ typedef struct rz_print_t {
 	RzPrintHasRefs hasrefs;
 	RzPrintCommentCallback get_comments;
 	RzPrintSectionGet get_section_name;
-	Sdb *formats;
 	Sdb *sdb_types;
 	RzCons *cons;
 	RzConsBind consbind;
@@ -176,9 +175,7 @@ RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char l
 #define RZ_PRINT_DOT       (1 << 7)
 #define RZ_PRINT_QUIET     (1 << 8)
 #define RZ_PRINT_STRUCT    (1 << 9)
-RZ_API int rz_print_format_struct_size(RzPrint *p, const char *format, int mode, int n);
-RZ_API int rz_print_format(RzPrint *p, ut64 seek, const ut8 *buf, const int len, const char *fmt, int elem, const char *setval, char *field);
-RZ_API const char *rz_print_format_byname(RzPrint *p, const char *name);
+
 RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
 RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
 #define RZ_PRINT_STRING_WIDE      1

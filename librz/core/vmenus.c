@@ -60,11 +60,6 @@ static char *prompt(const char *str, const char *txt) {
 	return res;
 }
 
-static inline char *getformat(RzCoreVisualTypes *vt, const char *k) {
-	return sdb_get(vt->core->analysis->sdb_types,
-		sdb_fmt("type.%s", k), 0);
-}
-
 static char *colorize_asm_string(RzCore *core, const char *buf_asm, int optype, ut64 addr) {
 	char *tmp, *spacer = NULL;
 	char *source = (char *)buf_asm;
@@ -589,7 +584,7 @@ static bool sdbforcb(void *p, const char *k, const char *v) {
 		}
 	} else if (!strcmp(v, vt->type)) {
 		if (!strcmp(vt->type, "type")) {
-			char *fmt = getformat(vt, k);
+			const char *fmt = rz_type_db_get(vt->core->analysis->typedb, k);
 			if (vt->t_idx == vt->t_ctr) {
 				free(vt->curname);
 				vt->curname = strdup(k);
@@ -604,7 +599,6 @@ static bool sdbforcb(void *p, const char *k, const char *v) {
 				rz_cons_printf(" %s pf %3s   %s\n",
 					pre, fmt, k);
 			}
-			free(fmt);
 		} else {
 			if (vt->t_idx == vt->t_ctr) {
 				free(vt->curname);
@@ -676,7 +670,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 			vt.t_ctr = 0;
 			vt.type = opts[h_opt];
 			vt.optword = optword;
-			sdb_foreach(core->analysis->sdb_types, sdbforcb, &vt);
+			sdb_foreach(core->analysis->typedb->sdb_types, sdbforcb, &vt);
 		}
 
 		rz_cons_visual_flush();
@@ -761,7 +755,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 			}
 		} break;
 		case 'd':
-			rz_analysis_remove_parsed_type(core->analysis, vt.curname);
+			rz_type_db_remove_parsed_type(core->analysis->typedb, vt.curname);
 			break;
 		case '-':
 			rz_types_open_editor(core, NULL);
