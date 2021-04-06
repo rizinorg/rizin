@@ -69,9 +69,8 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
 RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
-	// From analysis/types/*:
-	// Get key-value types from sdb matching "func.%s", fcn->name
-	// Get func.%s.args (number of args)
+	// Get key-value types from types db fcn->name
+	// Get number of function args
 	// Get type,name pairs
 	// Put everything in RzList following the next format:
 	// types: main.ret=%type%, main.args=%num%, main.arg.0="int,argc", ...
@@ -86,10 +85,10 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	int fcnargs = rz_type_func_args_count(a->typedb, fcn->name);
 	const char *ret_type = rz_type_func_ret(a->typedb, fcn->name);
 
+	if (ret_type) {
+		rz_list_append(ret, rz_str_newf("func.%s.ret=%s", fcn->name, ret_type));
+	}
 	if (fcnargs) {
-		if (ret_type) {
-			rz_list_append(ret, rz_str_newf("func.%s.ret=%s", fcn->name, ret_type));
-		}
 		rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, fcnargs));
 		int i;
 		for (i = 0; i < fcnargs; i++) {
