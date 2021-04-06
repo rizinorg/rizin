@@ -11,10 +11,8 @@ rz_lang_sources = [
   #'p/spp.c',
 ]
 
-spp_inc = [platform_inc, include_directories('../../shlr/spp')]
-
 rz_lang = library('rz_lang', rz_lang_sources,
-  include_directories: [platform_inc, spp_inc],
+  include_directories: platform_inc,
   c_args: library_cflags,
   dependencies: [rz_util_dep, rz_cons_dep],
   install: true,
