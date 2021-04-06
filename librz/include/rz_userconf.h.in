@@ -18,6 +18,7 @@
 #define HAVE_EXECL                  @HAVE_EXECL@
 #define HAVE_SYSTEM                 @HAVE_SYSTEM@
 #define HAVE_PIPE2                  @HAVE_PIPE2@
+#define HAVE_ENVIRON                @HAVE_ENVIRON@
 #define HAVE_LIB_MAGIC              @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC               @USE_LIB_MAGIC@
 #define HAVE_LIB_XXHASH             @HAVE_LIB_XXHASH@

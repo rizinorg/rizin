@@ -331,6 +331,11 @@ if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
+code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
+have_environ = cc.links(code, name: 'have extern char **environ')
+userconf.set10('HAVE_ENVIRON', have_environ)
+message('HAVE_ENVIRON: @0@'.format(have_environ))
+
 foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>', []],
     ['explicit_bzero', '#include <string.h>', []],
