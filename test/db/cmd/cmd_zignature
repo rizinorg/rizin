@@ -1770,7 +1770,7 @@ FILE=bins/elf/ls
 CMDS=<<EOF
 zs *
 za main o 0x00004070
-za main t func.sym.new_function_name.ret=int func.sym.new_function_name.args=2 func.sym.new_function_name.arg.0=\"int,NEWARGC\" func.sym.new_function_name.arg.1=\"char **,NEWARGV\"
+za main t func.sym.new_function_name.ret=int func.sym.new_function_name.args=2 func.sym.new_function_name.arg.0="\"int,NEWARGC\"" func.sym.new_function_name.arg.1="\"char **,NEWARGV\""
 za main n sym.new_function_name
 s main
 af
