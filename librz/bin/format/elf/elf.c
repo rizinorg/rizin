@@ -798,11 +798,12 @@ static void parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, 
 	rz_vector_init(&files, sizeof(RzBinElfNoteFile), NULL, NULL);
 	rz_vector_reserve(&files, n_maps);
 	(void)RZ_BIN_ELF_BREADWORD(bin->b, offset); // skip page size
-	ut64 strings_begin = ((RZ_BIN_ELF_WORDSIZE * 3) * n_maps) + offset; // offset after the addr-array
+	ut64 offset_begin = offset;
+	ut64 strings_begin = ((RZ_BIN_ELF_WORDSIZE * 3) * n_maps); // offset after the addr-array
 	ut64 len_str = 0;
-	while (n_maps--) {
+	while (n_maps-- && strings_begin + len_str < nhdr->n_descsz) {
 		char str[512] = { 0 };
-		st64 r = rz_buf_read_at(bin->b, strings_begin + len_str, (ut8 *)str, sizeof(str) - 1);
+		st64 r = rz_buf_read_at(bin->b, offset_begin + strings_begin + len_str, (ut8 *)str, sizeof(str) - 1);
 		if (r < 0) {
 			break;
 		}
@@ -885,7 +886,8 @@ static bool init_notes(ELFOBJ *bin) {
 		rz_vector_init(&notes, sizeof(RzBinElfNote), NULL, NULL);
 
 		ut64 offset = p->p_offset;
-		while (offset + 9 < p->p_offset + p->p_filesz) {
+		ut64 buf_sz = rz_buf_size(bin->b);
+		while (offset + 9 < RZ_MIN(p->p_offset + p->p_filesz, buf_sz)) {
 			Elf_(Nhdr) nhdr;
 			nhdr.n_namesz = BREAD32(bin->b, offset);
 			nhdr.n_descsz = BREAD32(bin->b, offset);
