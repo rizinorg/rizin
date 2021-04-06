@@ -479,6 +479,60 @@ bool test_analysis_function_load() {
 	mu_end;
 }
 
+static Sdb *noreturn_ref_db() {
+	Sdb *db = sdb_new0();
+	sdb_bool_set(db, "addr.8000500.noreturn", true, 0);
+	sdb_bool_set(db, "addr.8000555.noreturn", true, 0);
+	sdb_bool_set(db, "addr.8000610.noreturn", true, 0);
+	sdb_bool_set(db, "addr.8000632.noreturn", true, 0);
+	return db;
+}
+
+bool test_analysis_function_noreturn_save() {
+	RzAnalysis *analysis = rz_analysis_new();
+
+	rz_analysis_noreturn_add(analysis, NULL, 0x800800);
+	bool has = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn", 0);
+	mu_assert_true(has, "noreturn add error");
+	rz_analysis_noreturn_drop(analysis, "0x800800");
+	bool hasnt = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn", 0);
+	mu_assert_false(hasnt, "noreturn drop error");
+
+	rz_analysis_noreturn_add(analysis, NULL, 0x8000500);
+	rz_analysis_noreturn_add(analysis, NULL, 0x8000555);
+	rz_analysis_noreturn_add(analysis, NULL, 0x8000610);
+	rz_analysis_noreturn_add(analysis, NULL, 0x8000632);
+	Sdb *db = sdb_new0();
+	rz_serialize_analysis_function_noreturn_save(db, analysis);
+
+	Sdb *expected = noreturn_ref_db();
+	assert_sdb_eq(db, expected, "function noreturn save");
+	sdb_free(db);
+	sdb_free(expected);
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
+bool test_analysis_function_noreturn_load() {
+	RzAnalysis *analysis = rz_analysis_new();
+	Sdb *db = noreturn_ref_db();
+	bool succ = rz_serialize_analysis_function_noreturn_load(db, analysis, NULL);
+	sdb_free(db);
+	mu_assert("load success", succ);
+
+	bool has = sdb_bool_get(analysis->sdb_noret, "addr.8000500.noreturn", 0);
+	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000555.noreturn", 0);
+	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000610.noreturn", 0);
+	has &= sdb_bool_get(analysis->sdb_noret, "addr.8000632.noreturn", 0);
+	mu_assert_true(has, "noreturn load error");
+
+	bool hasnt = sdb_bool_get(analysis->sdb_noret, "addr.800800.noreturn", 0);
+	mu_assert_false(hasnt, "noreturn should not exist");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 Sdb *vars_ref_db() {
 	Sdb *db = sdb_new0();
 	sdb_set(db, "0x539", "{\"name\":\"hirsch\",\"bits\":64,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[],"
@@ -1441,6 +1495,9 @@ Sdb *analysis_ref_db() {
 	sdb_set(functions, "0x4d2", "{\"name\":\"effekt\",\"bits\":32,\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[1337]}", 0);
 	sdb_set(functions, "0x539", "{\"name\":\"hirsch\",\"bits\":32,\"type\":0,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[1337,1234]}", 0);
 
+	Sdb *noret = sdb_ns(db, "noreturn", true);
+	sdb_bool_set(noret, "addr.800800.noreturn", true, 0);
+
 	Sdb *xrefs = sdb_ns(db, "xrefs", true);
 	sdb_set(xrefs, "0x42", "[{\"to\":1337,\"type\":\"C\"}]", 0);
 	sdb_set(xrefs, "0x539", "[{\"to\":12648430,\"type\":\"d\"}]", 0);
@@ -1509,6 +1566,8 @@ bool test_analysis_save() {
 
 	rz_analysis_block_unref(ba);
 	rz_analysis_block_unref(bb);
+
+	rz_analysis_noreturn_add(analysis, NULL, 0x800800);
 
 	rz_analysis_xrefs_set(analysis, 0x42, 1337, RZ_ANALYSIS_REF_TYPE_CALL);
 	rz_analysis_xrefs_set(analysis, 1337, 0xc0ffee, RZ_ANALYSIS_REF_TYPE_DATA);
@@ -1640,6 +1699,8 @@ int all_tests() {
 	mu_run_test(test_analysis_block_load);
 	mu_run_test(test_analysis_function_save);
 	mu_run_test(test_analysis_function_load);
+	mu_run_test(test_analysis_function_noreturn_save);
+	mu_run_test(test_analysis_function_noreturn_load);
 	mu_run_test(test_analysis_var_save);
 	mu_run_test(test_analysis_var_load);
 	mu_run_test(test_analysis_xrefs_save);
