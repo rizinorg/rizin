@@ -1552,10 +1552,6 @@ RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
 
 RZ_API RzList *rz_analysis_get_fcns(RzAnalysis *analysis);
 
-/* type.c */
-RZ_API void rz_analysis_remove_parsed_type(RzAnalysis *analysis, const char *name);
-RZ_API void rz_analysis_save_parsed_type(RzAnalysis *analysis, const char *parsed);
-
 /* var.c */
 RZ_API RZ_OWN char *rz_analysis_function_autoname_var(RzAnalysisFunction *fcn, char kind, const char *pfx, int ptr);
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_NULLABLE const char *type, int size, bool isarg, RZ_NONNULL const char *name);
