@@ -8206,7 +8206,8 @@ static void cmd_analysis_rtti(RzCore *core, const char *input) {
 		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, RZ_OUTPUT_MODE_JSON);
 		break;
 	case 'a': // "avra"
-		rz_analysis_rtti_print_all(core->analysis, input[1]);
+		RzOutputMode mode = setMode(input[1]);
+		rz_analysis_rtti_print_all(core->analysis, mode);
 		break;
 	case 'r': // "avrr"
 		rz_analysis_rtti_recover_all(core->analysis);
@@ -8396,6 +8397,38 @@ static void cmd_analysis_class_base(RzCore *core, const char *input) {
 	if (err == RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS) {
 		eprintf("Class does not exist.\n");
 	}
+}
+
+RZ_API RzOutputMode setMode(char input){
+	RzOutputMode mode;
+	switch (input) {
+	case 'j':
+		mode = RZ_OUTPUT_MODE_JSON;
+		break;
+	case '*':
+	case 'r':
+		mode = RZ_OUTPUT_MODE_RIZIN;
+		break;
+	case 'q':
+		mode = RZ_OUTPUT_MODE_QUIET;
+		break;
+	case 'l':
+		mode = RZ_OUTPUT_MODE_LONG;
+		break;
+	case 'J':
+		mode = RZ_OUTPUT_MODE_LONG_JSON;
+		break;
+	case 'k':
+		mode = RZ_OUTPUT_MODE_SDB;
+		break;
+	case 't':
+		mode = RZ_OUTPUT_MODE_TABLE;
+		break;
+	default:
+		rz_warn_if_reached();
+		mode = input;
+	}
+	return mode;
 }
 
 static void cmd_analysis_class_vtable(RzCore *core, const char *input) {

@@ -472,34 +472,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 			ut64 size;
 			RzAnalysisMetaItem *mi = rz_meta_get_at(core->analysis, addr, type, &size);
 			if (mi) {
-				RzOutputMode mode;
-				switch (input[3]) {
-				case 'j':
-					mode = RZ_OUTPUT_MODE_JSON;
-					break;
-				case '*':
-				case 'r':
-					mode = RZ_OUTPUT_MODE_RIZIN;
-					break;
-				case 'q':
-					mode = RZ_OUTPUT_MODE_QUIET;
-					break;
-				case 'l':
-					mode = RZ_OUTPUT_MODE_LONG;
-					break;
-				case 'J':
-					mode = RZ_OUTPUT_MODE_LONG_JSON;
-					break;
-				case 'k':
-					mode = RZ_OUTPUT_MODE_SDB;
-					break;
-				case 't':
-					mode = RZ_OUTPUT_MODE_TABLE;
-					break;
-				default:
-					rz_warn_if_reached();
-					mode = input[3];
-				}
+				RzOutputMode mode = setMode(input[3]);
 				rz_meta_print(core->analysis, mi, addr, size, mode, NULL, false);
 			}
 			break;

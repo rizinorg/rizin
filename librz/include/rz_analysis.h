@@ -1911,7 +1911,7 @@ RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *vt_context, RzL
 
 RZ_API char *rz_analysis_rtti_demangle_class_name(RzAnalysis *analysis, const char *name);
 RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, RzOutputMode mode);
-RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, int mode);
+RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode);
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
 
 RZ_API RzList *rz_analysis_preludes(RzAnalysis *analysis);

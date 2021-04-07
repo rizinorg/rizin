@@ -33,11 +33,11 @@ RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, Rz
 	}
 }
 
-RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, int mode) {
+RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode) {
 	RVTableContext context;
 	rz_analysis_vtable_begin(analysis, &context);
 
-	bool use_json = mode == 'j';
+	bool use_json = mode == RZ_OUTPUT_MODE_JSON;
 	if (use_json) {
 		rz_cons_print("[");
 	}
