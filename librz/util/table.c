@@ -906,7 +906,7 @@ static bool __table_special(RzTable *t, const char *columnName) {
 		return false;
 	}
 	if (!strcmp(columnName, ":quiet")) {
-		t->showHeader = true;
+		t->showHeader = false;
 	} else if (!strcmp(columnName, ":fancy")) {
 		t->showFancy = true;
 	} else if (!strcmp(columnName, ":simple")) {

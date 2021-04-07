@@ -3442,8 +3442,8 @@ NAME=tiny1 aae non-start-bb first
 FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
 e io.cache=true
-$orig_end=?e `omt va_end/cols,:simple~:2`
-omr 1 `omt size/cols,:simple~:2`+2
+$orig_end=?e `omt va_end/cols,:simple,:quiet`
+omr 1 `omt size/cols,:simple,:quiet`+2
 s `$orig_end`
 wa jmp entry0
 aF
