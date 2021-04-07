@@ -53,6 +53,7 @@ rz_core_sources = [
   'panels.c',
   'cplugin.c',
   'project.c',
+  'project_migrate.c',
   'rtr.c',
   #'rtr_http.c',
   #'rtr_shell.c',

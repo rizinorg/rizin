@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2020-2021 Florian Märkl <info@florianmaerkl.de>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_PROJECT_H
 #define RZ_PROJECT_H
@@ -10,6 +12,8 @@
 extern "C" {
 #endif
 
+#define RZ_PROJECT_VERSION 2
+
 typedef Sdb RzProject;
 
 typedef enum rz_project_err {
@@ -19,6 +23,7 @@ typedef enum rz_project_err {
 	RZ_PROJECT_ERR_INVALID_VERSION,
 	RZ_PROJECT_ERR_NEWER_VERSION,
 	RZ_PROJECT_ERR_INVALID_CONTENTS,
+	RZ_PROJECT_ERR_MIGRATION_FAILED,
 	RZ_PROJECT_ERR_UNKNOWN
 } RzProjectErr;
 
