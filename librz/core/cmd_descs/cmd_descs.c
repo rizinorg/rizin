@@ -70,6 +70,8 @@ static const RzCmdDescArg analysis_function_vars_reads_args[2];
 static const RzCmdDescArg analysis_function_vars_writes_args[2];
 static const RzCmdDescArg analysis_function_vars_type_args[3];
 static const RzCmdDescArg analysis_function_vars_xrefs_args[2];
+static const RzCmdDescArg analysis_function_vars_xrefs_args_args[2];
+static const RzCmdDescArg analysis_function_vars_xrefs_vars_args[2];
 static const RzCmdDescArg analysis_function_vars_bp_args[4];
 static const RzCmdDescArg analysis_function_vars_bp_del_args[2];
 static const RzCmdDescArg analysis_function_vars_bp_getref_args[3];
@@ -1127,6 +1129,9 @@ static const RzCmdDescHelp analysis_function_vars_type_help = {
 	.args = analysis_function_vars_type_args,
 };
 
+static const RzCmdDescHelp afvx_help = {
+	.summary = "Show argument/variable xrefs in a function",
+};
 static const RzCmdDescArg analysis_function_vars_xrefs_args[] = {
 	{
 		.name = "varname",
@@ -4101,13 +4106,12 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_type_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvt", rz_analysis_function_vars_type_handler, &analysis_function_vars_type_help);
 	rz_warn_if_fail(analysis_function_vars_type_cd);
 
-	RzCmdDesc *analysis_function_vars_xrefs_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afv_cd, "afvx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_handler, &analysis_function_vars_xrefs_help);
-	rz_warn_if_fail(analysis_function_vars_xrefs_cd);
-
-	RzCmdDesc *analysis_function_vars_xrefs_args_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afv_cd, "afvxa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_args_handler, &analysis_function_vars_xrefs_args_help);
+	RzCmdDesc *afvx_cd = rz_cmd_desc_group_modes_new(core->rcmd, afv_cd, "afvx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_handler, &analysis_function_vars_xrefs_help, &afvx_help);
+	rz_warn_if_fail(afvx_cd);
+	RzCmdDesc *analysis_function_vars_xrefs_args_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afvx_cd, "afvxa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_args_handler, &analysis_function_vars_xrefs_args_help);
 	rz_warn_if_fail(analysis_function_vars_xrefs_args_cd);
 
-	RzCmdDesc *analysis_function_vars_xrefs_vars_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afv_cd, "afvxv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_vars_handler, &analysis_function_vars_xrefs_vars_help);
+	RzCmdDesc *analysis_function_vars_xrefs_vars_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afvx_cd, "afvxv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_vars_handler, &analysis_function_vars_xrefs_vars_help);
 	rz_warn_if_fail(analysis_function_vars_xrefs_vars_cd);
 
 	RzCmdDesc *afvb_cd = rz_cmd_desc_group_modes_new(core->rcmd, afv_cd, "afvb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_bp_handler, &analysis_function_vars_bp_help, &afvb_help);
