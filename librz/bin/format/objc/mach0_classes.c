@@ -14,8 +14,9 @@
 #define FAST_DATA_MASK 0xfffffffcUL
 #endif
 
-#define METHOD_LIST_FLAG_IS_SMALL  0x80000000
-#define METHOD_LIST_FLAG_IS_PREOPT 0x3
+#define METHOD_LIST_FLAG_IS_SMALL     0x80000000
+#define METHOD_LIST_FLAG_IS_PREOPT    0x3
+#define METHOD_LIST_ENTSIZE_FLAG_MASK 0xffff0003
 
 #define RO_DATA_PTR(x) ((x)&FAST_DATA_MASK)
 
@@ -560,6 +561,12 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 	}
 	ml.entsize = rz_read_ble(&sml[0], bigendian, 32);
 	ml.count = rz_read_ble(&sml[4], bigendian, 32);
+	if (ml.count < 1 || ml.count > ST32_MAX) {
+		return;
+	}
+	if (r + (ml.count * (ml.entsize & ~METHOD_LIST_ENTSIZE_FLAG_MASK)) > bf->size) {
+		return;
+	}
 
 	bool is_small = (ml.entsize & METHOD_LIST_FLAG_IS_SMALL) != 0;
 	ut8 mlflags = ml.entsize & 0x3;
@@ -571,7 +578,7 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 
 	for (i = 0; i < ml.count; i++) {
 		r = va2pa(p, &offset, &left, bf);
-		if (!r) {
+		if (!r || r == -1) {
 			return;
 		}
 
