@@ -606,7 +606,10 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 static void print_diff(const char *actual, const char *expected, bool diffchar, const char *regexp) {
 	RzDiff *d = rz_diff_new();
 #ifdef __WINDOWS__
-	d->diff_cmd = "git diff --no-index";
+	static const char *diff_cmd[] = {
+		"git", "diff", "--no-index", NULL
+	};
+	d->diff_cmd = diff_cmd;
 #endif
 	const char *output = actual;
 	if (regexp) {
@@ -623,7 +626,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 			rz_diffchar_free(diff);
 			goto cleanup;
 		}
-		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
+		static const char *diff_cmd_char[] = {
+			"git", "diff", "--no-index", "--word-diff=porcelain", "--word-diff-regex=.", NULL
+		};
+		d->diff_cmd = diff_cmd_char;
 	}
 	char *uni = rz_diff_buffers_to_string(d, (const ut8 *)expected, (int)strlen(expected),
 		(const ut8 *)output, (int)strlen(output));
