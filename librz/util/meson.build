@@ -6,6 +6,7 @@ rz_util_sources = [
   'asn1.c',
   'assert.c',
   'astr.c',
+  'axml.c',
   'base85.c',
   'base91.c',
   'bitmap.c',
