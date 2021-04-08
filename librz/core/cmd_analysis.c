@@ -905,8 +905,9 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 	if (name && *name) {
 		var = rz_analysis_function_get_var_byname(fcn, name);
 		if (var) {
-			if (var->isarg == vlt || vlt == IS_ARG_AND_VAR)
+			if (var->isarg == vlt || vlt == IS_ARG_AND_VAR) {
 				var_accesses_list(fcn, var, pj, access_type, var->name);
+			}
 		}
 	} else {
 		rz_list_foreach (list, iter, var) {
