@@ -177,6 +177,7 @@ bin_plugins = [
   'vsf',
   'wasm',
   'xbe',
+  'xex',
   'xnu_kernelcache',
   'z64',
   'zimg',

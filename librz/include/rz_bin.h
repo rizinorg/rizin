@@ -956,6 +956,7 @@ extern RzBinPlugin rz_bin_plugin_xnu_kernelcache;
 extern RzBinPlugin rz_bin_plugin_avr;
 extern RzBinPlugin rz_bin_plugin_menuet;
 extern RzBinPlugin rz_bin_plugin_wasm;
+extern RzBinPlugin rz_bin_plugin_xex;
 extern RzBinPlugin rz_bin_plugin_nro;
 extern RzBinPlugin rz_bin_plugin_nso;
 extern RzBinPlugin rz_bin_plugin_sfc;
