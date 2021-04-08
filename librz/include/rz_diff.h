@@ -39,7 +39,7 @@ typedef struct rz_diff_t {
 	void *user;
 	bool verbose;
 	int type;
-	const char *diff_cmd;
+	const char **diff_cmd; // null-terminated array of cmd+args
 	int (*callback)(struct rz_diff_t *diff, void *user, RzDiffOp *op);
 } RzDiff;
 
