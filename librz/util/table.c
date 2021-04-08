@@ -907,6 +907,7 @@ static bool __table_special(RzTable *t, const char *columnName) {
 	}
 	if (!strcmp(columnName, ":quiet")) {
 		t->showHeader = false;
+		t->showFancy = false;
 	} else if (!strcmp(columnName, ":fancy")) {
 		t->showFancy = true;
 	} else if (!strcmp(columnName, ":simple")) {
@@ -951,8 +952,9 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		eprintf(" c/sum             sum all the values of given column\n");
 		eprintf(" :csv              .tostring() == .tocsv()\n");
 		eprintf(" :json             .tostring() == .tojson()\n");
+		eprintf(" :fancy            fancy table output with lines\n");
 		eprintf(" :simple           simple table output without lines\n");
-		eprintf(" :quiet            do not print column names header\n");
+		eprintf(" :quiet            do not print column names header, implies :simple\n");
 		return false;
 	}
 
