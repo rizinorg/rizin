@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 smac89 <noblechuk5[at]web[dot]de>
 // SPDX-License-Identifier: LPGL-3.0-only
 
+#include <rz_util.h>
 #include <rz_bin.h>
-#include <rz_lib.h>
-#include <rz_types.h>
+#include <string.h>
 #include "librz/bin/format/xex/xex.h"
 
 /**
@@ -12,24 +12,46 @@
  * \param b
  */
 static bool check_buffer(RzBuffer *b) {
-    eprintf("[xex] check_buffer");
+	eprintf("[xex] check_buffer\n");
 	if (rz_buf_size(b) >= XEX_MAGIC_SIZE) {
 		ut8 buff[XEX_MAGIC_SIZE];
 		rz_buf_read_at(b, XEX_MAGIC_OFFSET, buff, XEX_MAGIC_SIZE);
-		return (!memcmp(buff, XEX_MAGIC, XEX_MAGIC_SIZE));
+		return 0 == memcmp(buff, XEX_MAGIC, XEX_MAGIC_SIZE);
 	}
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	eprintf("[xex] load_buffer");
-    return check_buffer(b);
+static bool load_buffer(RZ_UNUSED RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, RZ_UNUSED Sdb *sdb) {
+	eprintf("[xex] load_buffer\n");
+	RzBinXex *xex_bin = xex_parse(b);
+	if (xex_bin) {
+		*bin_obj = xex_bin;
+		return true;
+	}
+	return false;
 }
 
+/**
+ * \brief Called to initialize the headers of the file
+ *
+ * \param bf the xex binary file abstraction
+ */
+static void init_header(RzBinFile *bf) {
+	eprintf("[xex] header\n");
+	RzBinXex *xex_bin = bf->o->bin_obj;
+	construct_header(xex_bin, bf->buf);
+}
+
+/**
+ * \brief Called to free any data used by this plugin
+ *
+ * \param bf the xex binary file abstraction
+ */
 static void destroy(RzBinFile *bf) {
-    eprintf("[xex] destroy");
-	// rz_bin_free_all_nes_obj(bf->o->bin_obj);
-	// bf->o->bin_obj = NULL;
+	eprintf("[xex] destroy\n");
+	xex_destroy_bin(&bf->o->bin_obj);
+
+	rz_return_if_fail(NULL == bf->o->bin_obj);
 }
 
 // http://meseec.ce.rit.edu/551-projects/fall2016/3-4.pdf
@@ -42,10 +64,12 @@ static RzBinInfo *info(RzBinFile *arch) {
 		free(ret);
 		return NULL;
 	}
+	ret->big_endian = 1;
+	ret->has_crypto = 1;
 	ret->file = strdup(arch->file);
 	ret->type = strdup("Xbox 360 XEX file");
 	ret->machine = strdup("Xbox system software");
-	ret->os = strdup("xex");
+	ret->os = strdup("Xbox 360");
 	ret->arch = strdup("x86_64");
 	ret->bits = 8;
 
@@ -58,6 +82,7 @@ struct rz_bin_plugin_t rz_bin_plugin_xex = {
 	.license = "LGPL3",
 	.get_sdb = NULL,
 	.load_buffer = &load_buffer,
+	.header = &init_header,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = NULL,
