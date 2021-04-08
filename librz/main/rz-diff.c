@@ -957,6 +957,9 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	RzDiff *d;
 	RzGetopt opt;
 
+	rz_subprocess_init();
+	atexit(rz_subprocess_fini);
+
 	rzdiff_options_init(&ro);
 	rz_getopt_init(&opt, argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ");
 	while ((o = rz_getopt_next(&opt)) != -1) {

@@ -7,6 +7,10 @@
 // the non-system-diff doesnt work well
 #define USE_SYSTEM_DIFF 1
 
+static const char *diff_cmd_default[] = {
+	"diff", "-u", NULL
+};
+
 RZ_API RzDiff *rz_diff_new_from(ut64 off_a, ut64 off_b) {
 	RzDiff *d = RZ_NEW0(RzDiff);
 	if (d) {
@@ -14,7 +18,7 @@ RZ_API RzDiff *rz_diff_new_from(ut64 off_a, ut64 off_b) {
 		d->user = NULL;
 		d->off_a = off_a;
 		d->off_b = off_b;
-		d->diff_cmd = "diff -u";
+		d->diff_cmd = diff_cmd_default;
 	}
 	return d;
 }
@@ -135,30 +139,35 @@ RZ_API int rz_diff_buffers_static(RzDiff *d, const ut8 *a, int la, const ut8 *b,
 	return 0;
 }
 
-// XXX: temporary files are
+// XXX: temporary files are bad
 RZ_API char *rz_diff_buffers_unified(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+	rz_return_val_if_fail(d && d->diff_cmd && *d->diff_cmd && a && b, NULL);
 	rz_file_dump(".a", a, la, 0);
 	rz_file_dump(".b", b, lb, 0);
-#if 0
-	if (rz_mem_is_printable (a, RZ_MIN (5, la))) {
-		rz_file_dump (".a", a, la, 0);
-		rz_file_dump (".b", b, lb, 0);
-	} else {
-		rz_file_hexdump (".a", a, la, 0);
-		rz_file_hexdump (".b", b, lb, 0);
-	}
-#endif
-	char *err = NULL;
 	char *out = NULL;
-	int out_len;
-	char *diff_cmdline = rz_str_newf("%s .a .b", d->diff_cmd);
-	if (diff_cmdline) {
-		(void)rz_sys_cmd_str_full(diff_cmdline, NULL, &out, &out_len, &err);
-		free(diff_cmdline);
+	RzPVector args;
+	rz_pvector_init(&args, NULL);
+	for (const char **i = d->diff_cmd; *i; i++) {
+		rz_pvector_push(&args, (void *)*i);
 	}
+	rz_pvector_push(&args, ".a");
+	rz_pvector_push(&args, ".b");
+	RzSubprocess *proc = rz_subprocess_start(rz_pvector_at(&args, 0),
+		(const char **)rz_pvector_index_ptr(&args, 1), rz_pvector_len(&args) - 1, NULL, NULL, 0);
+	if (!proc) {
+		goto terria;
+	}
+	rz_subprocess_wait(proc, 500);
+	RzSubprocessOutput *pout = rz_subprocess_drain(proc);
+	rz_subprocess_free(proc);
+	if (pout) {
+		out = pout->out;
+		pout->out = NULL;
+		rz_subprocess_output_free(pout);
+	}
+terria:
 	rz_file_rm(".a");
 	rz_file_rm(".b");
-	free(err);
 	return out;
 }
 
