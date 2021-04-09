@@ -757,7 +757,7 @@ static int cmpname(const void *_a, const void *_b) {
 static int cmpsize(const void *a, const void *b) {
 	ut64 sa = (int)rz_analysis_function_linear_size((RzAnalysisFunction *)a);
 	ut64 sb = (int)rz_analysis_function_linear_size((RzAnalysisFunction *)b);
-	return (sa > sb) ? -1 : (sa < sb) ? 1
+	return (sa > sb) ? 1 : (sa < sb) ? -1
 					  : 0;
 }
 
@@ -765,7 +765,7 @@ static int cmpbbs(const void *_a, const void *_b) {
 	const RzAnalysisFunction *a = _a, *b = _b;
 	int la = (int)rz_list_length(a->bbs);
 	int lb = (int)rz_list_length(b->bbs);
-	return (la > lb) ? -1 : (la < lb) ? 1
+	return (la > lb) ? 1 : (la < lb) ? -1
 					  : 0;
 }
 
@@ -2908,22 +2908,27 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			case 'a': // "aflsa"
 				core->analysis->fcns->sorted = false;
 				rz_list_sort(core->analysis->fcns, cmpaddr);
+				rz_core_analysis_fcn_list(core, NULL, "o");
 				break;
 			case 'b': // "aflsb"
 				core->analysis->fcns->sorted = false;
 				rz_list_sort(core->analysis->fcns, cmpbbs);
+				rz_core_analysis_fcn_list(core, NULL, "o");
 				break;
 			case 's': // "aflss"
 				core->analysis->fcns->sorted = false;
 				rz_list_sort(core->analysis->fcns, cmpsize);
+				rz_core_analysis_fcn_list(core, NULL, "o");
 				break;
 			case 'n': // "aflsn"
 				core->analysis->fcns->sorted = false;
 				rz_list_sort(core->analysis->fcns, cmpname);
+				rz_core_analysis_fcn_list(core, NULL, "o");
 				break;
 			default:
 				core->analysis->fcns->sorted = false;
 				rz_list_sort(core->analysis->fcns, cmpaddr);
+				rz_core_analysis_fcn_list(core, NULL, "o");
 				break;
 			}
 			break;

@@ -577,8 +577,8 @@ RZ_API void rz_list_insertion_sort(RzList *list, RzListComparator cmp) {
 				}
 			}
 		}
-		list->sorted = true;
 	}
+	list->sorted = true;
 }
 
 //chose wisely based on length
