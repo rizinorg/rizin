@@ -328,14 +328,14 @@ static inline char *drain(RzStrBuf *sb) {
 		: strdup(sb->buf);
 }
 
-RZ_API char *rz_strbuf_drain(RzStrBuf *sb) {
+RZ_API RZ_OWN char *rz_strbuf_drain(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
 	char *ret = drain(sb);
 	free(sb);
 	return ret;
 }
 
-RZ_API char *rz_strbuf_drain_nofree(RzStrBuf *sb) {
+RZ_API RZ_OWN char *rz_strbuf_drain_nofree(RzStrBuf *sb) {
 	rz_return_val_if_fail(sb, NULL);
 	char *ret = drain(sb);
 	sb->ptr = NULL;
