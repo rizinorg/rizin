@@ -60,7 +60,7 @@ RZ_API bool rz_file_exists(const char *str);
 RZ_API bool rz_file_fexists(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API char *rz_file_slurp_line(const char *file, int line, int context);
 RZ_API char *rz_file_slurp_lines(const char *file, int line, int count);
-RZ_API char *rz_file_slurp_lines_from_bottom(const char *file, int line);
+RZ_API RZ_OWN char *rz_file_slurp_lines_from_bottom(const char *file, int line);
 RZ_API int rz_file_mkstemp(const char *prefix, char **oname);
 RZ_API char *rz_file_tmpdir(void);
 RZ_API char *rz_file_readlink(const char *path);

@@ -673,7 +673,7 @@ RZ_API char *rz_file_slurp_line(const char *file, int line, int context) {
 	return ptr;
 }
 
-RZ_API char *rz_file_slurp_lines_from_bottom(const char *file, int line) {
+RZ_API RZ_OWN char *rz_file_slurp_lines_from_bottom(const char *file, int line) {
 	rz_return_val_if_fail(file, NULL);
 	int i, lines = 0;
 	size_t sz;
@@ -686,7 +686,7 @@ RZ_API char *rz_file_slurp_lines_from_bottom(const char *file, int line) {
 			}
 		}
 		if (line > lines) {
-			return strdup(str); // number of lines requested in more than present, return all
+			return str; // number of lines requested in more than present, return all
 		}
 		i--;
 		for (; str[i] && line; i--) {
