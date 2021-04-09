@@ -220,11 +220,11 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	if (!fcn_name || !core->analysis) {
 		return NULL;
 	}
-	RzList *list = rz_list_newf((RzListFree)rz_analysis_fcn_arg_free);
 	char *key = resolve_fcn_name(core->analysis, fcn_name);
 	if (!key) {
 		return NULL;
 	}
+	RzList *list = rz_list_newf((RzListFree)rz_analysis_fcn_arg_free);
 	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
 	int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 	if (!rz_analysis_cc_func(core->analysis, key)) {
