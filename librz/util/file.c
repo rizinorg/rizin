@@ -419,7 +419,7 @@ RZ_API char *rz_stdin_slurp(int *sz) {
 #endif
 }
 
-RZ_API char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz) {
+RZ_API RZ_OWN char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz) {
 	rz_return_val_if_fail(str, NULL);
 	if (usz) {
 		*usz = 0;
