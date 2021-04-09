@@ -127,7 +127,12 @@ RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAn
 		}
 	}
 	RzAnalysisXRef *xref = rz_analysis_xref_new(from, to, type);
-	if (!xref || !set_xref(analysis->ht_xrefs_from, xref, true)) {
+	if (!xref) {
+		return false;
+	}
+	if (!set_xref(analysis->ht_xrefs_from, xref, true)) {
+		// Pointer isn't added to <ht_xrefs_from> so we have to release it
+		rz_analysis_xref_free(xref);
 		return false;
 	}
 	if (!set_xref(analysis->ht_xrefs_to, xref, false)) {
