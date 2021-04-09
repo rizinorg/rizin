@@ -716,6 +716,8 @@ static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
 			return;
 		}
 		map->name = map_name;
+	} else {
+		free(map_name);
 	}
 	return;
 }
