@@ -459,6 +459,7 @@ RZ_API char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz) {
 			} while (!feof(fd));
 			char *nbuf = realloc(buf, size + 1);
 			if (!nbuf) {
+				fclose(fd);
 				free(buf);
 				return NULL;
 			}
