@@ -851,7 +851,13 @@ static void var_accesses_list(RzAnalysisFunction *fcn, RzAnalysisVar *var, PJ *p
 	}
 }
 
-static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, const char *name) {
+typedef enum {
+	IS_VAR = 0,
+	IS_ARG,
+	IS_ARG_AND_VAR
+} RzVarListType;
+
+static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, const char *name, RzVarListType vlt) {
 	RzAnalysisVar *var = NULL;
 	RzListIter *iter;
 	RzList *list = rz_analysis_var_all_list(core->analysis, fcn);
@@ -899,11 +905,15 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 	if (name && *name) {
 		var = rz_analysis_function_get_var_byname(fcn, name);
 		if (var) {
-			var_accesses_list(fcn, var, pj, access_type, var->name);
+			if (var->isarg == vlt || vlt == IS_ARG_AND_VAR) {
+				var_accesses_list(fcn, var, pj, access_type, var->name);
+			}
 		}
 	} else {
 		rz_list_foreach (list, iter, var) {
-			var_accesses_list(fcn, var, pj, access_type, var->name);
+			if (var->isarg == vlt || vlt == IS_ARG_AND_VAR) {
+				var_accesses_list(fcn, var, pj, access_type, var->name);
+			}
 		}
 	}
 	if (pj) {
@@ -925,13 +935,13 @@ static void cmd_afvx(RzCore *core, RzAnalysisFunction *fcn, bool json) {
 		} else {
 			rz_cons_printf("afvR\n");
 		}
-		list_vars(core, fcn, pj, 'R', NULL);
+		list_vars(core, fcn, pj, 'R', NULL, IS_ARG_AND_VAR);
 		if (json) {
 			pj_k(pj, "writes");
 		} else {
 			rz_cons_printf("afvW\n");
 		}
-		list_vars(core, fcn, pj, 'W', NULL);
+		list_vars(core, fcn, pj, 'W', NULL, IS_ARG_AND_VAR);
 		if (json) {
 			pj_end(pj);
 			char *j = pj_drain(pj);
@@ -1145,7 +1155,7 @@ static int var_cmd(RzCore *core, const char *str) {
 					return false;
 				}
 			}
-			list_vars(core, fcn, pj, str[0], name);
+			list_vars(core, fcn, pj, str[0], name, IS_ARG_AND_VAR);
 			if (str[1] == 'j') {
 				pj_end(pj);
 				rz_cons_println(pj_string(pj));
@@ -9576,7 +9586,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_analysis_function_args_and_vars_xrefs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode, bool use_args, bool use_vars) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 	if (!fcn) {
 		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
@@ -9590,13 +9600,23 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_handler(RzCore *core, int arg
 	} else {
 		rz_cons_printf("afvR\n");
 	}
-	list_vars(core, fcn, pj, 'R', argv[1]);
+	if (use_args) {
+		list_vars(core, fcn, pj, 'R', argv[1], IS_ARG);
+	}
+	if (use_vars) {
+		list_vars(core, fcn, pj, 'R', argv[1], IS_VAR);
+	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_k(pj, "writes");
 	} else {
 		rz_cons_printf("afvW\n");
 	}
-	list_vars(core, fcn, pj, 'W', argv[1]);
+	if (use_args) {
+		list_vars(core, fcn, pj, 'W', argv[1], IS_ARG);
+	}
+	if (use_vars) {
+		list_vars(core, fcn, pj, 'W', argv[1], IS_VAR);
+	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		char *j = pj_drain(pj);
@@ -9604,6 +9624,18 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_handler(RzCore *core, int arg
 		free(j);
 	}
 	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return rz_analysis_function_args_and_vars_xrefs_handler(core, argc, argv, mode, true, true);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_args_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return rz_analysis_function_args_and_vars_xrefs_handler(core, argc, argv, mode, true, false);
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_vars_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return rz_analysis_function_args_and_vars_xrefs_handler(core, argc, argv, mode, false, true);
 }
 
 static RzCmdStatus analysis_function_vars_kind_list(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, RzOutputMode mode) {

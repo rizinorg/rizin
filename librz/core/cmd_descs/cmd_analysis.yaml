@@ -225,15 +225,38 @@ commands:
               - name: type
                 type: RZ_CMD_ARG_TYPE_STRING
           - name: afvx
-            cname: analysis_function_vars_xrefs
-            summary: Show function variable xrefs (same as afvR+afvW)
-            modes:
-              - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_JSON
-            args:
-              - name: varname
-                type: RZ_CMD_ARG_TYPE_FCN_VAR
-                optional: true
+            summary: Show argument/variable xrefs in a function
+            subcommands:
+              - name: afvx
+                cname: analysis_function_vars_xrefs
+                summary: Show function variable xrefs (same as afvR+afvW)
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+                    optional: true
+              - name: afvxa
+                cname: analysis_function_vars_xrefs_args
+                summary: Show function argument xrefs
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+                    optional: true
+              - name: afvxv
+                cname: analysis_function_vars_xrefs_vars
+                summary: Show function local variable xrefs
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+                    optional: true
           - name: afvb
             summary: Manipulate BP based arguments/locals
             subcommands:
