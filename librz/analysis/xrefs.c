@@ -39,78 +39,30 @@ RZ_API RzList *rz_analysis_xref_list_new() {
 	return rz_list_newf((RzListFree)free);
 }
 
-static void xrefs_ht_free(HtUPKv *kv) {
+static void xrefs_l1_free_kv(HtUPKv *kv) {
 	ht_up_free(kv->value);
 }
 
-static void xrefs_ref_free(HtUPKv *kv) {
+static void xrefs_l2_free_kv(HtUPKv *kv) {
 	rz_analysis_xref_free(kv->value);
 }
 
-static bool appendRef(void *u, const ut64 k, const void *v) {
-	RzList *list = (RzList *)u;
-	RzAnalysisXRef *xref = (RzAnalysisXRef *)v;
-	RzAnalysisXRef *cloned = rz_analysis_xref_new(xref->from, xref->to, xref->type);
-	if (cloned) {
-		rz_list_append(list, cloned);
-		return true;
-	}
-	return false;
-}
-
-static bool mylistrefs_cb(void *list, const ut64 k, const void *v) {
-	HtUP *ht = (HtUP *)v;
-	ht_up_foreach(ht, appendRef, list);
-	return true;
-}
-
-static int ref_cmp(const RzAnalysisXRef *a, const RzAnalysisXRef *b) {
-	if (a->from < b->from) {
-		return -1;
-	}
-	if (a->from > b->from) {
-		return 1;
-	}
-	if (a->to < b->to) {
-		return -1;
-	}
-	if (a->to > b->to) {
-		return 1;
-	}
-	return 0;
-}
-
-static void sortxrefs(RzList *list) {
-	rz_list_sort(list, (RzListComparator)ref_cmp);
-}
-
-static void listxrefs(HtUP *m, ut64 addr, RzList *list) {
-	if (addr == UT64_MAX) {
-		ht_up_foreach(m, mylistrefs_cb, list);
-	} else {
-		HtUP *d = ht_up_find(m, addr, NULL);
-		if (d) {
-			ht_up_foreach(d, appendRef, list);
-		}
-	}
-}
-
-static bool set_xref(HtUP *m, RzAnalysisXRef *xref, bool from2to) {
+static bool set_xref(HtUP *l1, RzAnalysisXRef *xref, bool from2to) {
 	ut64 key1 = from2to ? xref->from : xref->to;
-	HtUP *ht = ht_up_find(m, key1, NULL);
-	if (!ht) {
+	HtUP *l2 = ht_up_find(l1, key1, NULL);
+	if (!l2) {
 		// RzAnalysis::ht_xrefs_to is responsible for releasing of pointers.
-		HtUPKvFreeFunc cb = from2to ? NULL : xrefs_ref_free;
-		ht = ht_up_new(NULL, cb, NULL);
-		if (!ht) {
+		HtUPKvFreeFunc cb = from2to ? NULL : xrefs_l2_free_kv;
+		l2 = ht_up_new(NULL, cb, NULL);
+		if (!l2) {
 			return false;
 		}
-		if (!ht_up_insert(m, key1, ht)) {
+		if (!ht_up_insert(l1, key1, l2)) {
 			return false;
 		}
 	}
 	ut64 key2 = from2to ? xref->to : xref->from;
-	return ht_up_update(ht, key2, xref);
+	return ht_up_update(l2, key2, xref);
 }
 
 // Set a cross reference from FROM to TO.
@@ -170,13 +122,91 @@ RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to) {
 	return res;
 }
 
-RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr) {
+typedef struct xrefs_foreach_ctx {
+	RzAnalysisXRefCb cb;
+	void *user;
+	bool stop;
+} xrefs_foreach_ctx_t;
+
+static bool l2_item_cb(xrefs_foreach_ctx_t *ctx, RZ_UNUSED ut64 addr, RzAnalysisXRef *xref) {
+	ctx->stop = !ctx->cb(xref, ctx->user);
+	return !ctx->stop;
+}
+
+static bool l1_item_cb(xrefs_foreach_ctx_t *ctx, RZ_UNUSED ut64 addr, HtUP *l2) {
+	ht_up_foreach(l2, (HtUPForeachCallback)l2_item_cb, ctx);
+	return !ctx->stop;
+}
+
+RZ_API void rz_analysis_xrefs_foreach(RzAnalysis *analysis, RzAnalysisXRefCb cb, void *user) {
+	rz_return_if_fail(analysis && cb);
+	xrefs_foreach_ctx_t ctx = {
+		.cb = cb,
+		.user = user,
+		.stop = false
+	};
+	ht_up_foreach(analysis->ht_xrefs_from, (HtUPForeachCallback)l1_item_cb, &ctx);
+}
+
+void l1_item_foreach(HtUP *l1, ut64 addr, RzAnalysisXRefCb cb, void *user) {
+	xrefs_foreach_ctx_t ctx = {
+		.cb = cb,
+		.user = user,
+		.stop = false
+	};
+	HtUP *l2 = ht_up_find(l1, addr, NULL);
+	if (l2) {
+		ht_up_foreach(l2, (HtUPForeachCallback)l2_item_cb, &ctx);
+	}
+}
+
+RZ_API void rz_analysis_xrefs_to_foreach(RzAnalysis *analysis, ut64 addr, RzAnalysisXRefCb cb, void *user) {
+	rz_return_if_fail(analysis && cb);
+	l1_item_foreach(analysis->ht_xrefs_to, addr, cb, user);
+}
+
+RZ_API void rz_analysis_xrefs_from_foreach(RzAnalysis *analysis, ut64 addr, RzAnalysisXRefCb cb, void *user) {
+	rz_return_if_fail(analysis && cb);
+	l1_item_foreach(analysis->ht_xrefs_from, addr, cb, user);
+}
+
+static int xref_cmp(const RzAnalysisXRef *a, const RzAnalysisXRef *b) {
+	if (a->from < b->from) {
+		return -1;
+	}
+	if (a->from > b->from) {
+		return 1;
+	}
+	if (a->to < b->to) {
+		return -1;
+	}
+	if (a->to > b->to) {
+		return 1;
+	}
+	return 0;
+}
+
+static void xrefs_list_sort(RzList *list) {
+	rz_list_sort(list, (RzListComparator)xref_cmp);
+}
+
+static bool xrefs_list_append(RzAnalysisXRef *xref, void *user) {
+	RzList *list = (RzList *)user;
+	RzAnalysisXRef *cloned = rz_analysis_xref_new(xref->from, xref->to, xref->type);
+	if (cloned) {
+		rz_list_append(list, cloned);
+		return true;
+	}
+	return false;
+}
+
+static RzList *xrefs_list_addr(HtUP *l1, ut64 addr) {
 	RzList *list = rz_analysis_xref_list_new();
 	if (!list) {
 		return NULL;
 	}
-	listxrefs(analysis->ht_xrefs_to, addr, list);
-	sortxrefs(list);
+	l1_item_foreach(l1, addr, xrefs_list_append, list);
+	xrefs_list_sort(list);
 	if (rz_list_empty(list)) {
 		rz_list_free(list);
 		list = NULL;
@@ -184,18 +214,14 @@ RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr) {
 	return list;
 }
 
+RZ_API RzList *rz_analysis_xrefs_get_to(RzAnalysis *analysis, ut64 addr) {
+	rz_return_val_if_fail(analysis, NULL);
+	return xrefs_list_addr(analysis->ht_xrefs_to, addr);
+}
+
 RZ_API RzList *rz_analysis_xrefs_get_from(RzAnalysis *analysis, ut64 addr) {
-	RzList *list = rz_analysis_xref_list_new();
-	if (!list) {
-		return NULL;
-	}
-	listxrefs(analysis->ht_xrefs_from, addr, list);
-	sortxrefs(list);
-	if (rz_list_empty(list)) {
-		rz_list_free(list);
-		list = NULL;
-	}
-	return list;
+	rz_return_val_if_fail(analysis, NULL);
+	return xrefs_list_addr(analysis->ht_xrefs_from, addr);
 }
 
 RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad) {
@@ -203,8 +229,11 @@ RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad) {
 	RzAnalysisXRef *xref;
 	PJ *pj = NULL;
 	RzList *list = rz_analysis_xref_list_new();
-	listxrefs(analysis->ht_xrefs_from, UT64_MAX, list);
-	sortxrefs(list);
+	if (!list) {
+		return;
+	}
+	rz_analysis_xrefs_foreach(analysis, xrefs_list_append, list);
+	xrefs_list_sort(list);
 	if (rad == 'j') {
 		pj = analysis->coreb.pjWithEncoding(analysis->coreb.core);
 		if (!pj) {
@@ -306,13 +335,13 @@ RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis) {
 	ht_up_free(analysis->ht_xrefs_to);
 	analysis->ht_xrefs_to = NULL;
 
-	HtUP *tmp = ht_up_new(NULL, xrefs_ht_free, NULL);
+	HtUP *tmp = ht_up_new(NULL, xrefs_l1_free_kv, NULL);
 	if (!tmp) {
 		return false;
 	}
 	analysis->ht_xrefs_from = tmp;
 
-	tmp = ht_up_new(NULL, xrefs_ht_free, NULL);
+	tmp = ht_up_new(NULL, xrefs_l1_free_kv, NULL);
 	if (!tmp) {
 		ht_up_free(analysis->ht_xrefs_from);
 		analysis->ht_xrefs_from = NULL;
@@ -333,33 +362,43 @@ RZ_API ut64 rz_analysis_xrefs_count(RzAnalysis *analysis) {
 	return ret;
 }
 
-static RzList *fcn_get_refs(RzAnalysisFunction *fcn, HtUP *ht) {
+static void fcn_bb_op_xrefs_foreach(RzAnalysisFunction *fcn, RzAnalysisXRefCb cb, void *user, HtUP *l1) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
+	rz_list_foreach (fcn->bbs, iter, bb) {
+		for (int i = 0; i < bb->ninstr; i++) {
+			ut64 addr = bb->addr + rz_analysis_block_get_op_offset(bb, i);
+			l1_item_foreach(l1, addr, cb, user);
+		}
+	}
+}
+
+RZ_API void rz_analysis_function_xrefs_from_foreach(RzAnalysisFunction *fcn, RzAnalysisXRefCb cb, void *user) {
+	fcn_bb_op_xrefs_foreach(fcn, cb, user, fcn->analysis->ht_xrefs_from);
+}
+
+RZ_API void rz_analysis_function_xrefs_to_foreach(RzAnalysisFunction *fcn, RzAnalysisXRefCb cb, void *user) {
+	fcn_bb_op_xrefs_foreach(fcn, cb, user, fcn->analysis->ht_xrefs_from);
+}
+
+static RzList *fcn_xrefs_list(RzAnalysisFunction *fcn, HtUP *l1) {
 	RzList *list = rz_analysis_xref_list_new();
 	if (!list) {
 		return NULL;
 	}
-	rz_list_foreach (fcn->bbs, iter, bb) {
-		int i;
-
-		for (i = 0; i < bb->ninstr; i++) {
-			ut64 at = bb->addr + rz_analysis_block_get_op_offset(bb, i);
-			listxrefs(ht, at, list);
-		}
-	}
-	sortxrefs(list);
+	fcn_bb_op_xrefs_foreach(fcn, xrefs_list_append, list, l1);
+	xrefs_list_sort(list);
 	return list;
 }
 
 RZ_API RzList *rz_analysis_function_get_xrefs_from(RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(fcn, NULL);
-	return fcn_get_refs(fcn, fcn->analysis->ht_xrefs_from);
+	return fcn_xrefs_list(fcn, fcn->analysis->ht_xrefs_from);
 }
 
 RZ_API RzList *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(fcn, NULL);
-	return fcn_get_refs(fcn, fcn->analysis->ht_xrefs_to);
+	return fcn_xrefs_list(fcn, fcn->analysis->ht_xrefs_to);
 }
 
 RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t) {

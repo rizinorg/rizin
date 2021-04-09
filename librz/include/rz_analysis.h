@@ -1549,6 +1549,14 @@ RZ_API RzList *rz_analysis_function_get_xrefs_to(RzAnalysisFunction *fcn);
 RZ_API bool rz_analysis_xrefs_set(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xrefs_deln(RzAnalysis *analysis, ut64 from, ut64 to, RzAnalysisXRefType type);
 RZ_API bool rz_analysis_xref_del(RzAnalysis *analysis, ut64 from, ut64 to);
+// If the cb returns false, the iteration is stopped.
+// cb is only allowed to modify a type of xref.
+typedef bool (*RzAnalysisXRefCb)(RzAnalysisXRef *xref, void *user);
+RZ_API void rz_analysis_xrefs_foreach(RzAnalysis *analysis, RzAnalysisXRefCb cb, void *user);
+RZ_API void rz_analysis_xrefs_from_foreach(RzAnalysis *analysis, ut64 addr, RzAnalysisXRefCb cb, void *user);
+RZ_API void rz_analysis_xrefs_to_foreach(RzAnalysis *analysis, ut64 addr, RzAnalysisXRefCb cb, void *user);
+RZ_API void rz_analysis_function_xrefs_from_foreach(RzAnalysisFunction *fcn, RzAnalysisXRefCb cb, void *user);
+RZ_API void rz_analysis_function_xrefs_to_foreach(RzAnalysisFunction *fcn, RzAnalysisXRefCb cb, void *user);
 
 RZ_API RzList *rz_analysis_get_fcns(RzAnalysis *analysis);
 
