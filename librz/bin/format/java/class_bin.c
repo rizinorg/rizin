@@ -41,7 +41,7 @@ static char *java_class_constant_pool_stringify_at(RzBinJavaClass *bin, ut32 ind
 	return java_constant_pool_stringify(cpool);
 }
 
-static ut32 sanitize_size(st64 buffer_size, ut32 count, ut32 min_struct_size) {
+static ut32 sanitize_size(st64 buffer_size, ut64 count, ut32 min_struct_size) {
 	ut64 memory_size = count * min_struct_size;
 	return memory_size <= buffer_size ? count : 0;
 }
