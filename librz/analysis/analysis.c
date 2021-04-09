@@ -179,6 +179,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	ht_up_free(a->ht_xrefs_from);
 	ht_up_free(a->ht_xrefs_to);
 	rz_list_free(a->leaddrs);
+	rz_type_db_free(a->typedb);
 	sdb_free(a->sdb);
 	if (a->esil) {
 		rz_analysis_esil_free(a->esil);
