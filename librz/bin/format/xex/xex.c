@@ -24,36 +24,33 @@ static void xex_header_init(RzBinXex *xex_bin, RzBuffer *buf) {
  * \param offset The offset of the optional header
  */
 static void xex_opt_header_init(RzBinXex *xex_bin, RzBuffer *buf, ut32 offset) {
+	// ut32 header_id = rz_buf_read_be32_at(buf, offset);
+	// ut32 header_mask = 0;
+	// ut32 header_data_size = 0;
+	// offset += 0x4; /* move offset in preparation for reading the data/offset */
+	// switch ((header_mask = (header_id & 0xFF))) {
+	// case 0x01:
+	// 	/* data is just in the next offset */
+	// 	xex_opt_header->header_data = rz_buf_read_be64_at(buf, offset);
+	// 	break;
+	// case 0xFF:
+	// 	/* 0xFF means the size is encoded in the data
+	// 	TODO: verify this please */
+	// 	header_data_size = 0xFF;
+
+	// 	break;
+	// default:
+	// 	/* size in DWORDS (times by 0x4 to get real size) */
+	// 	header_data_size = header_mask << 2;
+	// }
+
+	// switch (header_data_size) {
+	// }
 	RzBinXexOptHeader *xex_opt_header = RZ_NEW(RzBinXexOptHeader);
 	xex_opt_header->header_id = rz_buf_read_be32_at(buf, offset);
 	xex_opt_header->header_data = rz_buf_read_be64_at(buf, offset + 0x4);
 	rz_list_append(xex_bin->opt_headers, xex_opt_header);
 }
-
-/*
-ut32 header_id = rz_buf_read_be32_at(buf, offset);
-	ut32 header_mask = 0;
-	ut32 header_data_size = 0;
-	offset += 0x4; /* move offset in preparation for reading the data/offset */
-// switch ((header_mask = (header_id & 0xFF))) {
-// case 0x01:
-// 	/* data is just in the next offset */
-// 	xex_opt_header->header_data = rz_buf_read_be64_at(buf, offset);
-// 	break;
-// case 0xFF:
-// /* 0xFF means the size is encoded in the data
-// TODO: verify this please */
-// 	header_data_size = 0xFF;
-
-// 	break;
-// default:
-// 	/* size in DWORDS (times by 0x4 to get real size) */
-// 	header_data_size = header_mask << 2;
-// }
-
-// switch (header_data_size) {
-
-// }
 
 RzBinXexHeader *construct_header(RzBinXex *xex_bin, RzBuffer *buf) {
 	rz_return_val_if_fail(xex_bin, NULL);
