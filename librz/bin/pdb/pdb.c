@@ -828,9 +828,11 @@ static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf 
 		}
 	} else if (type_info->leaf_type == eLF_METHOD ||
 		type_info->leaf_type == eLF_ONEMETHOD) {
+		free(name);
 		return 0; // skip method member
 	} else {
 		rz_warn_if_reached();
+		free(name);
 		return -1;
 	}
 	type_info = &under_type->type_data;
