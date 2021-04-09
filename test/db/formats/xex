@@ -1,0 +1,9 @@
+NAME=XEX: plugin load
+FILE=bins/xex/default.xex
+CMDS=<<EOF
+iI~machine[1-]
+EOF
+EXPECT=<<EOF
+Xbox system software
+EOF
+RUN
