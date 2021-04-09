@@ -5,6 +5,10 @@
 
 static ut8 *copy_buffer(RzBuffer *buf, st64 size, bool null_terminator) {
 	ut8 *buffer;
+	st64 buffer_size = rz_buf_size(buf);
+	if (size < 1 || size >= buffer_size) {
+		return NULL;
+	}
 	if (null_terminator) {
 		buffer = (ut8 *)malloc(size + 1);
 	} else {
