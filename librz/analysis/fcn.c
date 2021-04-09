@@ -2227,7 +2227,7 @@ static int typecmp(const void *a, const void *b) {
 	return strcmp(a, b);
 }
 
-RZ_API RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
+RZ_API RZ_OWN RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzAnalysisVar *var;
 	RzList *list = rz_analysis_var_all_list(analysis, fcn);
@@ -2237,5 +2237,6 @@ RZ_API RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFuncti
 	}
 	RzList *uniq = rz_list_uniq(type_used, typecmp);
 	rz_list_free(type_used);
+	rz_list_free(list);
 	return uniq;
 }
