@@ -1546,7 +1546,6 @@ RZ_API RzList *rz_bin_java_class_as_sections(RzBinJavaClass *bin) {
 				continue;
 			}
 			snprintf(secname, sizeof(secname), "class.fields.%s.attr", tmp);
-			free(tmp);
 			if ((i + 1) < bin->fields_count && bin->fields[i + 1]) {
 				end_offset = bin->fields[i + 1]->offset;
 			} else {
@@ -1555,6 +1554,7 @@ RZ_API RzList *rz_bin_java_class_as_sections(RzBinJavaClass *bin) {
 			for (iname = 0; rz_list_find(sections, secname, compare_section_names); iname++) {
 				snprintf(secname, sizeof(secname), "class.fields.%s_%d.attr", tmp, iname);
 			}
+			free(tmp);
 			rz_list_append(sections, new_section(secname, field->offset, end_offset, RZ_PERM_R));
 		}
 		rz_list_append(sections,
