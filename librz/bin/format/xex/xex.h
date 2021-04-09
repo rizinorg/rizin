@@ -29,7 +29,7 @@
 /**
  * \brief XEX header module flags
  */
-typedef enum rz_bin_xex_module_flag_t {
+typedef enum xex_header_module_flag_t {
 	XEX_NS(TITLE_MODULE), /* bit 0 - Title Module */
 	XEX_NS(EXPORTS_TO_TITLE), /* bit 1 - Exports to Title */
 	XEX_NS(SYSTEM_DEBUGGER), /* bit 2 - System Debugger */
@@ -38,15 +38,15 @@ typedef enum rz_bin_xex_module_flag_t {
 	XEX_NS(PATCH_FULL), /* bit 5 - Patch Full */
 	XEX_NS(PATCH_DELTA), /* bit 6 - Patch Delta */
 	XEX_NS(USER_MODE), /* bit 7 - User Mode */
-} RzBinXexModuleFlag;
+} XexHeaderModuleFlag;
 
 /**
  * \brief XEX header ids
- *
+ * These correspond to the possible values of the optional headers' Id
  * https://free60project.github.io/wiki/XEX/#header-ids
  */
-typedef enum rz_bin_xex_opt_header_data_t {
-	XEX_NS(DATA) = 0x1, /* Resource Info */
+typedef enum xex_opt_header_data_t {
+	XEX_NS(DATA) = 0x1,
 	XEX_NS(RESOURCE_INFO) = 0x2FF, /* Resource Info */
 	XEX_NS(BASE_FILE_FORMAT) = 0x3FF,
 	XEX_NS(BASE_REFERENCE) = 0x405,
@@ -78,7 +78,10 @@ typedef enum rz_bin_xex_opt_header_data_t {
 	XEX_NS(ALTERNATE_TITLE_IDS) = 0x407FF,
 	XEX_NS(ADDITIONAL_TITLE_MEMORY) = 0x40801,
 	XEX_NS(EXPORTS_BY_NAME) = 0xE10402,
-} RzBinXexOptHeaderData;
+} XexOptHeaderData;
+
+/* opt */
+typedef char *XexOptHeaderOriginalPeName;
 
 /**
  * \brief xex optional headers
@@ -88,6 +91,7 @@ typedef enum rz_bin_xex_opt_header_data_t {
 typedef struct rz_bin_xex_opt_header_t {
 	ut32 header_id;
 	ut64 header_data;
+	void (*display_data)(RzBuffer *buf, void *data);
 } RzBinXexOptHeader;
 
 typedef struct rz_bin_xex_header_t {
@@ -109,7 +113,20 @@ typedef struct rz_bin_xex_t {
  * \return RzBinXexHeader* a pointer to the created header
  */
 RZ_API RzBinXexHeader *RZ_BORROW construct_header(RzBinXex *xex_bin, RzBuffer *buf);
+
+/**
+ * \brief Parse the file buffer and lazily populates the RzBinXex object
+ *
+ * \param buf The bufer to read from
+ * \return RzBinXex* The xex binary asbtraction
+ */
 RZ_API RzBinXex *RZ_BORROW xex_parse(RzBuffer *buf);
+
+/**
+ * \brief Frees memory accumulated by the RzBinXex object
+ *
+ * \param bin_obj The xex binary asbtraction
+ */
 RZ_API void xex_destroy_bin(RZ_INOUT RzBinXex **bin_obj);
 
 #endif

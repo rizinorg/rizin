@@ -9,14 +9,14 @@
 /**
  * \brief Check the buffer for the existence of the xex magic string
  *
- * \param b
+ * \param b buffer connected to the binary file contents
  */
 static bool check_buffer(RzBuffer *b) {
 	eprintf("[xex] check_buffer\n");
 	if (rz_buf_size(b) >= XEX_MAGIC_SIZE) {
 		ut8 buff[XEX_MAGIC_SIZE];
 		rz_buf_read_at(b, XEX_MAGIC_OFFSET, buff, XEX_MAGIC_SIZE);
-		return 0 == memcmp(buff, XEX_MAGIC, XEX_MAGIC_SIZE);
+		return !memcmp(buff, XEX_MAGIC, XEX_MAGIC_SIZE);
 	}
 	return false;
 }
@@ -49,29 +49,29 @@ static void init_header(RzBinFile *bf) {
  */
 static void destroy(RzBinFile *bf) {
 	eprintf("[xex] destroy\n");
-	xex_destroy_bin(&bf->o->bin_obj);
+	xex_destroy_bin((RzBinXex **)(&bf->o->bin_obj));
 
 	rz_return_if_fail(NULL == bf->o->bin_obj);
 }
 
 // http://meseec.ce.rit.edu/551-projects/fall2016/3-4.pdf
-static RzBinInfo *info(RzBinFile *arch) {
+static RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret)
 		return NULL;
 
-	if (!arch || !arch->buf) {
+	if (!bf || !bf->buf) {
 		free(ret);
 		return NULL;
 	}
 	ret->big_endian = 1;
 	ret->has_crypto = 1;
-	ret->file = strdup(arch->file);
+	ret->file = strdup(bf->file);
 	ret->type = strdup("Xbox 360 XEX file");
 	ret->machine = strdup("Xbox system software");
 	ret->os = strdup("Xbox 360");
-	ret->arch = strdup("x86_64");
-	ret->bits = 8;
+	ret->arch = strdup("ppc64");
+	ret->bits = 64;
 
 	return ret;
 }
