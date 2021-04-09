@@ -62,6 +62,8 @@ RzBinXexHeader *construct_header(RzBinXex *xex_bin, RzBuffer *buf) {
 			for (xex_bin->opt_headers = rz_list_new(); count--; offset++) {
 				xex_opt_header_init(xex_bin, buf, offset * XEX_OPT_HEADER_BASE_OFFSET);
 			}
+			/* TODO: poplulate the opt headers with data (either here or as the need arises?) */
+			return xex_bin->xex_header;
 		}
 		rz_return_val_if_reached(NULL);
 	}
