@@ -20,8 +20,7 @@ RZ_API RzTypeDB *rz_type_db_new() {
 		free(typedb);
 		return NULL;
 	}
-	Sdb *sdb = sdb_new0();
-	typedb->sdb_types = sdb_ns(sdb, "types", 1);
+	typedb->sdb_types = sdb_new0();
 	typedb->formats = sdb_new0();
 	rz_io_bind_init(typedb->iob);
 	return typedb;
