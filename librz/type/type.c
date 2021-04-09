@@ -17,6 +17,7 @@ RZ_API RzTypeDB *rz_type_db_new() {
 	}
 	typedb->target = RZ_NEW0(RzTypeTarget);
 	if (!typedb->target) {
+		free(typedb);
 		return NULL;
 	}
 	Sdb *sdb = sdb_new0();
