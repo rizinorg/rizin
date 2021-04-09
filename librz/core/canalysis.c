@@ -1199,17 +1199,16 @@ static ut64 *next_append(ut64 *next, int *nexti, ut64 v) {
 	return next;
 }
 
-static void rz_analysis_set_stringrefs(RzCore *core, RzAnalysisFunction *fcn) {
-	RzListIter *iter;
-	RzAnalysisXRef *xref;
-	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_REF_TYPE_DATA &&
-			rz_bin_is_string(core->bin, xref->to)) {
-			rz_analysis_xrefs_set(core->analysis, xref->from, xref->to, RZ_ANALYSIS_REF_TYPE_STRING);
-		}
+static bool set_stringrefs_cb(RzAnalysisXRef *xref, void *user) {
+	RzBin *bin = (RzBin *)user;
+	if (xref->type == RZ_ANALYSIS_REF_TYPE_DATA && rz_bin_is_string(bin, xref->to)) {
+		xref->type = RZ_ANALYSIS_REF_TYPE_STRING;
 	}
-	rz_list_free(xrefs);
+	return true;
+}
+
+static void rz_analysis_set_stringrefs(RzCore *core, RzAnalysisFunction *fcn) {
+	rz_analysis_function_xrefs_from_foreach(fcn, set_stringrefs_cb, core->bin);
 }
 
 static bool rz_analysis_try_get_fcn(RzCore *core, RzAnalysisXRef *xref, int fcndepth, int refdepth) {
