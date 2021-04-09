@@ -1390,6 +1390,7 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 			const ConstPool *cpool = java_class_constant_pool_at(bin, bin->interfaces[i]->index);
 			if (!cpool || java_constant_pool_resolve(cpool, &class_index, NULL) != 1) {
 				RZ_LOG_ERROR("java bin: can't resolve interface with constant pool index %u\n", i);
+				rz_bin_import_free(import);
 				continue;
 			}
 
