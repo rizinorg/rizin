@@ -12,7 +12,7 @@
  * \param b buffer connected to the binary file contents
  */
 static bool check_buffer(RzBuffer *b) {
-	eprintf("[xex] check_buffer\n");
+	RZ_LOG_DEBUG("[xex] check_buffer\n");
 	if (rz_buf_size(b) >= XEX_MAGIC_SIZE) {
 		ut8 buff[XEX_MAGIC_SIZE];
 		rz_buf_read_at(b, XEX_MAGIC_OFFSET, buff, XEX_MAGIC_SIZE);
@@ -22,7 +22,7 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 static bool load_buffer(RZ_UNUSED RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, RZ_UNUSED Sdb *sdb) {
-	eprintf("[xex] load_buffer\n");
+	RZ_LOG_DEBUG("[xex] load_buffer\n");
 	RzBinXex *xex_bin = xex_parse(b);
 	if (xex_bin) {
 		*bin_obj = xex_bin;
@@ -37,7 +37,7 @@ static bool load_buffer(RZ_UNUSED RzBinFile *bf, void **bin_obj, RzBuffer *b, ut
  * \param bf the xex binary file abstraction
  */
 static void init_header(RzBinFile *bf) {
-	eprintf("[xex] header\n");
+	RZ_LOG_DEBUG("[xex] header\n");
 	RzBinXex *xex_bin = bf->o->bin_obj;
 	construct_header(xex_bin, bf->buf);
 }
@@ -48,7 +48,7 @@ static void init_header(RzBinFile *bf) {
  * \param bf the xex binary file abstraction
  */
 static void destroy(RzBinFile *bf) {
-	eprintf("[xex] destroy\n");
+	RZ_LOG_DEBUG("[xex] destroy\n");
 	xex_destroy_bin((RzBinXex **)(&bf->o->bin_obj));
 
 	rz_return_if_fail(NULL == bf->o->bin_obj);
@@ -70,7 +70,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->type = strdup("Xbox 360 XEX file");
 	ret->machine = strdup("Xbox system software");
 	ret->os = strdup("Xbox 360");
-	ret->arch = strdup("ppc64");
+	ret->arch = strdup("ppc");
 	ret->bits = 64;
 
 	return ret;
