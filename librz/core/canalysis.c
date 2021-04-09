@@ -2443,6 +2443,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 }
 
 static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int opts, PJ *pj) {
+	rz_return_val_if_fail(fcn && fcn->bbs, -1);
 	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
 	int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
 	int nodes = 0;
@@ -2453,10 +2454,6 @@ static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int 
 	char *pal_curr = palColorFor("graph.current");
 	char *pal_traced = palColorFor("graph.traced");
 	char *pal_box4 = palColorFor("graph.box4");
-	if (!fcn || !fcn->bbs) {
-		eprintf("No fcn\n");
-		return -1;
-	}
 
 	if (is_keva) {
 		char ns[64];
