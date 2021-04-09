@@ -1005,7 +1005,10 @@ RZ_API void *rz_file_mmap_resize(RzMmap *m, ut64 newsize) {
 		rz_file_mmap_free(m);
 		return NULL;
 	}
-	file_mmap(m);
+	// In case of mmap failure it frees the RzMmap and return NULL
+	if (!file_mmap(m)) {
+		return NULL;
+	}
 	return m->buf;
 }
 
