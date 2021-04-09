@@ -1527,7 +1527,7 @@ RZ_API void rz_analysis_trim_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *f
 RZ_API void rz_analysis_del_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function);
 RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr);
-RZ_API char *rz_analysis_function_get_signature(RzAnalysisFunction *function);
+RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *function);
 RZ_API int rz_analysis_str_to_fcn(RzAnalysis *a, RzAnalysisFunction *f, const char *_str);
 RZ_API int rz_analysis_fcn_count(RzAnalysis *a, ut64 from, ut64 to);
 RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_in(const RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr);

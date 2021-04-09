@@ -1734,7 +1734,7 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	return pj_drain(pj);
 }
 
-RZ_API char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
+RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
 	RzAnalysis *a = function->analysis;
 	const char *realname = NULL, *import_substring = NULL;
 
@@ -1768,7 +1768,9 @@ RZ_API char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
 		free(args);
 		args = new_args;
 	}
-	return rz_str_newf("%s %s (%s);", ret_type ? ret_type : "void", realname, args);
+	char *signature = rz_str_newf("%s %s (%s);", ret_type ? ret_type : "void", realname, args);
+	free(args);
+	return signature;
 }
 
 /* set function signature from string */
