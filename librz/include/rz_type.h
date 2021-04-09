@@ -213,7 +213,7 @@ RZ_API bool rz_type_func_arg_set(RzTypeDB *typedb, RZ_NONNULL const char *func_n
 RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, const char *type);
 RZ_API RZ_OWN char *rz_type_func_guess(RzTypeDB *typedb, RZ_NONNULL char *func_name);
 
-RZ_API RzList *rz_type_noreturn_functions(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList *rz_type_noreturn_functions(RzTypeDB *typedb);
 RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API bool rz_type_func_noreturn_drop(RzTypeDB *typedb, RZ_NONNULL const char *name);
