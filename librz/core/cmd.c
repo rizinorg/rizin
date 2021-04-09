@@ -5924,6 +5924,7 @@ err:
 	rz_cons_break_pop();
 	rz_core_block_size(core, obs);
 	rz_core_seek(core, offorig, true);
+	free(filter);
 	return res;
 }
 
