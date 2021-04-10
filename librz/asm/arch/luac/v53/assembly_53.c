@@ -32,26 +32,26 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 	SET_OPCODE(instruction, opcode);
 	if (has_param_flag(flag, PARAM_A)) {
 		SETARG_A(instruction, args[cur_cnt++]);
-        }
+	}
 	if (has_param_flag(flag, PARAM_B)) {
-                temp = args[cur_cnt++];
-                temp = temp < 0 ? 0xFF - temp : temp;
+		temp = args[cur_cnt++];
+		temp = temp < 0 ? 0xFF - temp : temp;
 		SETARG_B(instruction, temp);
-        }
+	}
 	if (has_param_flag(flag, PARAM_C)) {
-                temp = args[cur_cnt++];
-                temp = temp < 0 ? 0xFF - temp : temp;
+		temp = args[cur_cnt++];
+		temp = temp < 0 ? 0xFF - temp : temp;
 		SETARG_C(instruction, temp);
-        }
+	}
 	if (has_param_flag(flag, PARAM_Ax)) {
-        	SETARG_Ax(instruction, args[cur_cnt++]);
-        }
+		SETARG_Ax(instruction, args[cur_cnt++]);
+	}
 	if (has_param_flag(flag, PARAM_sBx)) {
-        	SETARG_sBx(instruction, args[cur_cnt++]);
-        }
+		SETARG_sBx(instruction, args[cur_cnt++]);
+	}
 	if (has_param_flag(flag, PARAM_Bx)) {
-        	SETARG_Bx(instruction, args[cur_cnt++]);
-        }
+		SETARG_Bx(instruction, args[cur_cnt++]);
+	}
 	assert(cur_cnt == arg_num);
 
 	return instruction;
