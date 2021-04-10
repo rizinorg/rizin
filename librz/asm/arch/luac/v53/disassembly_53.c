@@ -23,8 +23,8 @@ int lua53_disasm(RzAsmOp *op, const ut8 *buf, int len, LuaOpNameList opnames) {
 	int is_special_B = b & 0x100;
 	int is_special_C = c & 0x100;
 
-	int special_c = c & 0xFF;
-	int special_b = b & 0xFF;
+	int special_c = 0xFF - c;
+	int special_b = 0xFF - b;
 
 	char *asm_string;
 

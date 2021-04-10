@@ -10,6 +10,7 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 	char buffer[64]; // buffer for digits
 	int cur_cnt = 0;
 	int delta_offset;
+	int temp;
 
 	if (arg_num > sizeof(args)) {
 		return -1;
@@ -31,22 +32,26 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 	SET_OPCODE(instruction, opcode);
 	if (has_param_flag(flag, PARAM_A)) {
 		SETARG_A(instruction, args[cur_cnt++]);
-	}
+        }
 	if (has_param_flag(flag, PARAM_B)) {
-		SETARG_B(instruction, args[cur_cnt++]);
-	}
+                temp = args[cur_cnt++];
+                temp = temp < 0 ? 0xFF - temp : temp;
+		SETARG_B(instruction, temp);
+        }
 	if (has_param_flag(flag, PARAM_C)) {
-		SETARG_C(instruction, args[cur_cnt++]);
-	}
+                temp = args[cur_cnt++];
+                temp = temp < 0 ? 0xFF - temp : temp;
+		SETARG_C(instruction, temp);
+        }
 	if (has_param_flag(flag, PARAM_Ax)) {
-		SETARG_Ax(instruction, args[cur_cnt++]);
-	}
+        	SETARG_Ax(instruction, args[cur_cnt++]);
+        }
 	if (has_param_flag(flag, PARAM_sBx)) {
-		SETARG_sBx(instruction, args[cur_cnt++]);
-	}
+        	SETARG_sBx(instruction, args[cur_cnt++]);
+        }
 	if (has_param_flag(flag, PARAM_Bx)) {
-		SETARG_Bx(instruction, args[cur_cnt++]);
-	}
+        	SETARG_Bx(instruction, args[cur_cnt++]);
+        }
 	assert(cur_cnt == arg_num);
 
 	return instruction;
@@ -135,7 +140,7 @@ bool lua53_assembly(const char *input, st32 input_size, LuaInstruction *instruct
 	case OP_FORLOOP:
 	case OP_FORPREP:
 	case OP_TFORLOOP:
-		instruction = encode_instruction(opcode, arg_start, PARAM_sBx, 1);
+		instruction = encode_instruction(opcode, arg_start, PARAM_A | PARAM_sBx, 2);
 		break;
 	case OP_EXTRAARG:
 		instruction = encode_instruction(opcode, arg_start, PARAM_Ax, 1);
