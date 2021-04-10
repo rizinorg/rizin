@@ -713,10 +713,15 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 					rz_str_replace_char(tmp, '/', '.');
 
 					char *ptr = strchr(dem, '(');
-					*(ptr - 1) = 0;
-					rz_strbuf_append(sb, dem);
-					rz_strbuf_appendf(sb, "%s", tmp);
-					rz_strbuf_append(sb, ptr);
+					if (ptr) {
+						*(ptr - 1) = 0;
+						rz_strbuf_append(sb, dem);
+						rz_strbuf_append(sb, tmp);
+						rz_strbuf_append(sb, ptr);
+					} else {
+						rz_strbuf_append(sb, dem);
+						rz_strbuf_append(sb, tmp);
+					}
 					free(tmp);
 				}
 			}
