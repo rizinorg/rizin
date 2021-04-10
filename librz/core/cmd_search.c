@@ -2654,6 +2654,7 @@ static ut8 *v_writebuf(RzCore *core, RzList *nums, int len, char ch, int bsize) 
 			break;
 		}
 		if (ptr > ptr + bsize) {
+			free(buf);
 			return NULL;
 		}
 	}

@@ -1175,7 +1175,6 @@ static int regvar_comparator(const RzAnalysisVar *a, const RzAnalysisVar *b) {
 }
 
 RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *fcn, int kind, int mode, PJ *pj) {
-	RzList *list = rz_analysis_var_list(analysis, fcn, kind);
 	RzAnalysisVar *var;
 	RzListIter *iter;
 	if (!pj && mode == 'j') {
@@ -1184,6 +1183,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 	if (mode == 'j') {
 		pj_a(pj);
 	}
+	RzList *list = rz_analysis_var_list(analysis, fcn, kind);
 	if (!list) {
 		if (mode == 'j') {
 			pj_end(pj);

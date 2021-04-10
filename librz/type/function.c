@@ -226,7 +226,7 @@ RZ_API RZ_OWN char *rz_type_func_guess(RzTypeDB *typedb, RZ_NONNULL char *func_n
 	return result;
 }
 
-RZ_API RzList *rz_type_noreturn_functions(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList *rz_type_noreturn_functions(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *noretl = rz_list_newf(free);
 	SdbKv *kv;

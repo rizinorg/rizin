@@ -1512,6 +1512,7 @@ RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const ch
 	}
 	RzList *lb = deserialize_sign_space(a, other_space);
 	if (!lb) {
+		rz_list_free(la);
 		return false;
 	}
 

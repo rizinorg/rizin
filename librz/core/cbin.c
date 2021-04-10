@@ -716,6 +716,8 @@ static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
 			return;
 		}
 		map->name = map_name;
+	} else {
+		free(map_name);
 	}
 	return;
 }
@@ -742,6 +744,7 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 
 	RzBinObject *o = binfile->o;
 	if (!o) {
+		ht_pp_free(dup_chk_ht);
 		return false;
 	}
 	RzList *sections = o->sections;

@@ -2786,7 +2786,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 	}
 	switch (level) {
 	// Show functions list help in visual mode
-	case 0:
+	case 0: {
 		buf = rz_strbuf_new("");
 		if (color) {
 			rz_cons_strcat(core->cons->context->pal.prompt);
@@ -2800,10 +2800,13 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 			rz_cons_strcat("\n" Color_RESET);
 		}
 		rz_core_vmenu_append_help(buf, help_fun_visual);
-		rz_cons_printf("%s", rz_strbuf_drain(buf));
+		char *drained = rz_strbuf_drain(buf);
+		rz_cons_printf("%s", drained);
+		free(drained);
 		addr = var_functions_show(core, option, 1, cols);
 		break;
-	case 1:
+	}
+	case 1: {
 		buf = rz_strbuf_new("");
 		if (color) {
 			rz_cons_strcat(core->cons->context->pal.prompt);
@@ -2819,7 +2822,8 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		free(drained);
 		// var_index_show (core->analysis, fcn, addr, option);
 		break;
-	case 2:
+	}
+	case 2: {
 		rz_cons_printf("Press 'q' to quit call refs\n");
 		if (color) {
 			rz_cons_strcat(core->cons->context->pal.prompt);
@@ -2844,8 +2848,9 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 			}
 		}
 		break;
+	}
 	default:
-		// assert
+		rz_warn_if_reached();
 		break;
 	}
 	rz_cons_flush();

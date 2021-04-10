@@ -202,12 +202,12 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 
 	if (analysis) {
 		rz_list_foreach (analysis->plugins, it, h) {
-			if (!h->name || strcmp(h->name, name)) {
+			if (!h || !h->name || strcmp(h->name, name)) {
 				continue;
 			}
 			plugin_fini(analysis);
 			analysis->cur = h;
-			if (h && h->init && !h->init(&analysis->plugin_data)) {
+			if (h->init && !h->init(&analysis->plugin_data)) {
 				RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
 				return false;
 			}

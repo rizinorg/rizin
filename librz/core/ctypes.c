@@ -584,6 +584,7 @@ RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mod
 		nonreturn_print(core, noretl);
 		break;
 	}
+	rz_list_free(noretl);
 }
 
 // Type formatting

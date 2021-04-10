@@ -299,6 +299,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad) {
 	if (rad == 'j') {
 		PJ *pj = pj_new();
 		if (!pj) {
+			rz_list_free(vtables);
 			return;
 		}
 		pj_a(pj);
