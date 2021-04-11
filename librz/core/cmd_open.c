@@ -118,7 +118,7 @@ static const char *help_msg_om[] = {
 	"omq", "", "list all maps and their fds",
 	"omqq", "", "list all maps addresses (See $MM to get the size)",
 	"omr", " mapid newsize", "resize map with corresponding id",
-	"omt", " [query]", "list maps using table api",
+	"omt", "[q] [query]", "list maps using table api",
 	NULL
 };
 
@@ -660,7 +660,21 @@ static void cmd_open_map(RzCore *core, const char *input) {
 		}
 		break;
 	case 't': // "omt"
-		rz_core_cmd_omt(core, input + 2);
+		switch (input[2]) {
+		case 'q': // "omtq"
+		{
+			const char *arg = rz_str_trim_head_ro(input + 3);
+			char *query = rz_str_newf("%s%s:quiet", arg, *arg ? "," : "");
+			if (query) {
+				rz_core_cmd_omt(core, query);
+			}
+			free(query);
+			break;
+		}
+		default:
+			rz_core_cmd_omt(core, input + 2);
+			break;
+		}
 		break;
 	case ' ': // "om"
 		s = strdup(input + 2);
