@@ -105,29 +105,47 @@ enum {
 	X86_64,
 	ARM,
 	AARCH64,
-	RCE,
 	ARCH_LEN
 };
 
-/// Offset and length of the regstate inside a NT_PRSTATUS note for core files of a certain architecture
-typedef struct reginfo {
-	ut32 regsize;
+/// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
+typedef struct prstatus_layout_t {
+	ut64 regsize;
 
 	/**
 	 * This delta is the offset into the actual data of an NT_PRSTATUS note
 	 * where the regstate of size regsize lies.
 	 * That is, it is the offset after the Elf_(Nhdr) and the variable-length string + optional padding
 	 * have already been skipped.
+	 *
+	 * see size_t ELFLinuxPrStatus::GetSize(const lldb_private::ArchSpec &arch) in lldb source or similar
+	 * to determine values for this.
 	 */
-	ut32 regdelta;
-} reginfo_t;
+	ut64 regdelta;
 
-static reginfo_t reginf[ARCH_LEN] = {
-	{ 160, 0x48 },
-	{ 216, 0x70 },
-	{ 72, 0x48 },
-	{ 272, 0x70 },
-	{ 272, 0x70 }
+	/// Size of the stack pointer register in bits
+	ut8 sp_size;
+
+	/**
+	 * Offset of the stack pointer register inside the regstate
+	 * To determine the layout of the regstate, see lldb source, for example:
+	 *   RegisterContextSP ThreadElfCore::CreateRegisterContextForFrame(StackFrame *frame) decides what to use for the file
+	 *   RegisterContextLinux_x86_64 leads to...
+	 *   g_register_infos_x86_64 which is eventually filled with info using...
+	 *   GPR_OFFSET which takes its info from...
+	 *   the offsets into the GPR struct in RegisterContextLinux_x86_64.cpp
+	 */
+	ut64 sp_offset;
+
+	// These NT_PRSTATUS notes hold much more than this, but it's not needed for us yet.
+	// If necessary, new members can be introduced here.
+} PrStatusLayout;
+
+static PrStatusLayout prstatus_layouts[ARCH_LEN] = {
+	[X86] = { 160, 0x48, 32, 0x3c },
+	[X86_64] = { 216, 0x70, 64, 0x98 },
+	[ARM] = { 72, 0x48, 32, 0x34 },
+	[AARCH64] = { 272, 0x70, 64, 0xf8 }
 };
 
 static inline int __strnlen(const char *str, int len) {
@@ -823,41 +841,38 @@ static void parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, 
 	rz_vector_fini(&files);
 }
 
-/// Parse NT_PRSTATUS note
-static void parse_note_prstatus(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, ut64 offset) {
-	int regdelta = 0;
-	int regsize = 0;
+static PrStatusLayout *get_prstatus_layout(ELFOBJ *bin) {
 	switch (bin->ehdr.e_machine) {
 	case EM_AARCH64:
-		regsize = reginf[AARCH64].regsize;
-		regdelta = reginf[AARCH64].regdelta;
-		break;
+		return &prstatus_layouts[AARCH64];
 	case EM_ARM:
-		regsize = reginf[ARM].regsize;
-		regdelta = reginf[ARM].regdelta;
-		break;
+		return &prstatus_layouts[ARM];
 	case EM_386:
-		regsize = reginf[X86].regsize;
-		regdelta = reginf[X86].regdelta;
-		break;
+		return &prstatus_layouts[X86];
 	case EM_X86_64:
-		regsize = reginf[X86_64].regsize;
-		regdelta = reginf[X86_64].regdelta;
-		break;
+		return &prstatus_layouts[X86_64];
 	default:
+		return NULL;
+	}
+}
+
+/// Parse NT_PRSTATUS note
+static void parse_note_prstatus(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, ut64 offset) {
+	PrStatusLayout *layout = get_prstatus_layout(bin);
+	if (!layout) {
 		eprintf("Fetching registers from core file not supported for this architecture.\n");
 		return;
 	}
-	ut8 *buf = malloc(regsize);
+	ut8 *buf = malloc(layout->regsize);
 	if (!buf) {
 		return;
 	}
-	if (rz_buf_read_at(bin->b, offset + regdelta, buf, regsize) != regsize) {
+	if (rz_buf_read_at(bin->b, offset + layout->regdelta, buf, layout->regsize) != layout->regsize) {
 		free(buf);
 		bprintf("Cannot read register state from CORE file\n");
 		return;
 	}
-	note->prstatus.regstate_size = regsize;
+	note->prstatus.regstate_size = layout->regsize;
 	note->prstatus.regstate = buf;
 }
 
@@ -2821,7 +2836,15 @@ char *Elf_(rz_bin_elf_get_osabi_name)(ELFOBJ *bin) {
 	return strdup("linux");
 }
 
-const ut8 *Elf_(rz_bin_elf_grab_regstate)(ELFOBJ *bin, RZ_NONNULL size_t *size) {
+static RzBinElfNotePrStatus *get_prstatus(ELFOBJ *bin) {
+	// TODO: there can be multiple NT_PRSTATUS notes in the case of multiple threads.
+	// Relevant citation from lldb source:
+	// 5) If a core file contains multiple thread contexts then there is two data forms
+	//    a) Each thread context(2 or more NOTE entries) contained in its own segment (PT_NOTE)
+	//    b) All thread context is stored in a single segment(PT_NOTE).
+	//        This case is little tricker since while parsing we have to find where the
+	//        new thread starts. The current implementation marks beginning of
+	//        new thread when it finds NT_PRSTATUS or NT_PRPSINFO NOTE entry.
 	if (!bin->note_segments) {
 		return NULL;
 	}
@@ -2831,20 +2854,30 @@ const ut8 *Elf_(rz_bin_elf_grab_regstate)(ELFOBJ *bin, RZ_NONNULL size_t *size) 
 		for (size_t i = 0; i < seg->notes_count; i++) {
 			RzBinElfNote *note = &seg->notes[i];
 			if (note->type == NT_PRSTATUS) {
-				// TODO: there can be multiple of these in the case of multiple threads.
-				// Relevant citation from lldb source:
-				// 5) If a core file contains multiple thread contexts then there is two data forms
-				//    a) Each thread context(2 or more NOTE entries) contained in its own segment (PT_NOTE)
-				//    b) All thread context is stored in a single segment(PT_NOTE).
-				//        This case is little tricker since while parsing we have to find where the
-				//        new thread starts. The current implementation marks beginning of
-				//        new thread when it finds NT_PRSTATUS or NT_PRPSINFO NOTE entry.
-				*size = note->prstatus.regstate_size;
-				return note->prstatus.regstate;
+				return &note->prstatus;
 			}
 		}
 	}
 	return NULL;
+}
+
+const ut8 *Elf_(rz_bin_elf_grab_regstate)(ELFOBJ *bin, RZ_NONNULL size_t *size) {
+	RzBinElfNotePrStatus *prs = get_prstatus(bin);
+	if (!prs) {
+		return NULL;
+	}
+	*size = prs->regstate_size;
+	return prs->regstate;
+}
+
+/// Get the value of the stackpointer register in a core file
+ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin) {
+	PrStatusLayout *layout = get_prstatus_layout(bin);
+	RzBinElfNotePrStatus *prs = get_prstatus(bin);
+	if (!layout || !prs || layout->sp_offset + layout->sp_size / 8 > prs->regstate_size || !prs->regstate) {
+		return UT64_MAX;
+	}
+	return rz_read_ble(prs->regstate + layout->sp_offset, bin->endian, layout->sp_size);
 }
 
 int Elf_(rz_bin_elf_is_big_endian)(ELFOBJ *bin) {
