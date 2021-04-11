@@ -85,4 +85,5 @@ EXPECT=<<EOF
  2 fd: 3 +0x00039000 0x7ffe70f68000 - 0x7ffe70f69fff r-x fmap.LOAD14
  1 fd: 3 +0x0003b000 0xffffffffff600000 - 0xffffffffff600fff r-x fmap.LOAD15
 EOF
+BROKEN=1
 RUN
