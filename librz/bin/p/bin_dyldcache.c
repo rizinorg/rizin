@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2018 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2021 keegan
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
@@ -264,7 +265,7 @@ static ut64 rebase_infos_get_slide(RDyldCache *cache) {
 
 static void rz_dyld_locsym_entries_by_offset(RDyldCache *cache, RzList *symbols, SetU *hash, ut64 bin_header_offset) {
 	RDyldLocSym *locsym = cache->locsym;
-	if (!locsym->entries) {
+	if (!locsym || !locsym->entries) {
 		return;
 	}
 
@@ -844,17 +845,13 @@ static bool check_buffer(RzBuffer *buf) {
 		return false;
 	}
 
-	ut8 hdr[4];
-	ut8 arch[9] = { 0 };
-	int rarch = rz_buf_read_at(buf, 9, arch, sizeof(arch) - 1);
-	int rhdr = rz_buf_read_at(buf, 0, hdr, sizeof(hdr));
-	if (rhdr != sizeof(hdr) || memcmp(hdr, "dyld", 4)) {
+	char hdr[17] = { 0 };
+	int rzhdr = rz_buf_read_at(buf, 0, (ut8 *)&hdr, sizeof(hdr) - 1);
+	if (rzhdr != sizeof(hdr) - 1) {
 		return false;
 	}
-	if (rarch > 0 && arch[0] && !strstr((const char *)arch, "arm64")) {
-		return false;
-	}
-	return true;
+
+	return !strcmp(hdr, "dyld_v1   arm64") || !strcmp(hdr, "dyld_v1  arm64e") || !strcmp(hdr, "dyld_v1  x86_64") || !strcmp(hdr, "dyld_v1 x86_64h");
 }
 
 static cache_img_t *read_cache_images(RzBuffer *cache_buf, cache_hdr_t *hdr) {
@@ -1499,10 +1496,6 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	}
 	cache->accel = read_cache_accel(cache->buf, cache->hdr, cache->maps);
 	cache->locsym = rz_dyld_locsym_new(cache->buf, cache->hdr);
-	if (!cache->locsym) {
-		rz_dyldcache_free(cache);
-		return false;
-	}
 	cache->bins = create_cache_bins(bf, cache->buf, cache->hdr, cache->maps, cache->accel);
 	if (!cache->bins) {
 		rz_dyldcache_free(cache);
@@ -1558,12 +1551,16 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->bclass = strdup("dyldcache");
 	ret->rclass = strdup("ios");
 	ret->os = strdup("iOS");
-	ret->arch = strdup("arm"); // XXX
+	if (strstr(cache->hdr->magic, "x86_64")) {
+		ret->arch = strdup("x86");
+		ret->bits = 64;
+	} else {
+		ret->arch = strdup("arm");
+		ret->bits = strstr(cache->hdr->magic, "arm64") ? 64 : 32;
+	}
 	ret->machine = strdup(ret->arch);
 	ret->subsystem = strdup("xnu");
 	ret->type = strdup("library-cache");
-	bool dyld64 = strstr(cache->hdr->magic, "arm64") != NULL;
-	ret->bits = dyld64 ? 64 : 32;
 	ret->has_va = true;
 	ret->big_endian = big_endian;
 	ret->dbg_info = 0;
