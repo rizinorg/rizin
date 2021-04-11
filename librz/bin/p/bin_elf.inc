@@ -169,7 +169,7 @@ static bool is_wordable_section(const char *name) {
 	return false;
 }
 
-static RzBinElfNoteFile *note_file_for_load_segment(struct Elf_(rz_bin_elf_obj_t) *obj, Elf_(Phdr) *phdr) {
+static RzBinElfNoteFile *note_file_for_load_segment(struct Elf_(rz_bin_elf_obj_t) * obj, Elf_(Phdr) * phdr) {
 	if (!obj->note_segments) {
 		return false;
 	}
@@ -246,6 +246,7 @@ static RzList *sections(RzBinFile *bf) {
 	ut16 mach = obj->ehdr.e_machine;
 	num = obj->ehdr.e_phnum;
 	phdr = obj->phdr;
+	ut64 core_sp = Elf_(rz_bin_elf_get_sp_val)(obj);
 	if (phdr) {
 		int n = 0;
 		for (i = 0; i < num; i++) {
@@ -268,9 +269,13 @@ static RzList *sections(RzBinFile *bf) {
 				ptr->perm |= RZ_PERM_R;
 				found_load = 1;
 				ptr->add = true;
-				RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &phdr[i]);
-				if (nf && nf->file) {
-					ptr->map_name = strdup(nf->file);
+				if (core_sp != UT64_MAX && core_sp >= phdr[i].p_vaddr && core_sp < phdr[i].p_vaddr + phdr[i].p_memsz) {
+					ptr->map_name = strdup("[stack]");
+				} else {
+					RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &phdr[i]);
+					if (nf && nf->file) {
+						ptr->map_name = strdup(nf->file);
+					}
 				}
 				break;
 			}
