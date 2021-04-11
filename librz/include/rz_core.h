@@ -651,6 +651,7 @@ RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
 RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
+RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
 RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly);
