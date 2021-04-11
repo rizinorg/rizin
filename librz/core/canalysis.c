@@ -7009,7 +7009,7 @@ static bool is_apple_target(RzCore *core) {
  * \param experimental Enable more experimental analysis stages ("aaaa" command)
  * \param dh_orig Name of the debug handler, e.g. "esil"
  */
-RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig) {
+RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig) {
 	bool didAap = false;
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");
