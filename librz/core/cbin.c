@@ -676,7 +676,7 @@ static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
 	}
 	// let the section refere to the map as a memory-map
 	free(map->name);
-	map->name = rz_str_newf("mmap.%s", sec->name);
+	map->name = sec->map_name && !sec->size ? strdup(sec->map_name) : rz_str_newf("mmap.%s", sec->name);
 	return true;
 }
 
@@ -698,7 +698,7 @@ static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
 	}
 
 	// then we map the part of the section that comes from the physical file
-	char *map_name = rz_str_newf("fmap.%s", sec->name);
+	char *map_name = sec->map_name ? strdup(sec->map_name) : rz_str_newf("fmap.%s", sec->name);
 	if (!map_name) {
 		return;
 	}

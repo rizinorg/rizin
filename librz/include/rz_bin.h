@@ -268,7 +268,6 @@ typedef struct rz_bin_object_t {
 	RzBinSourceLineInfo *lines;
 	HtUP *strings_db;
 	RzList /*<RzBinMem>*/ *mem;
-	RzList /*<BinMap*/ *maps;
 	char *regstate;
 	RzBinInfo *info;
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
@@ -534,7 +533,6 @@ typedef struct rz_bin_plugin_t {
 	RzList /*<RzBinClass>*/ *(*classes)(RzBinFile *bf);
 	RzList /*<RzBinMem>*/ *(*mem)(RzBinFile *bf);
 	RzList /*<RzBinReloc>*/ *(*patch_relocs)(RzBinFile *bf);
-	RzList /*<RzBinMap>*/ *(*maps)(RzBinFile *bf);
 	RzList /*<RzBinFileHash>*/ *(*hashes)(RzBinFile *bf);
 	void (*header)(RzBinFile *bf);
 	char *(*signature)(RzBinFile *bf, bool json);
@@ -575,6 +573,7 @@ typedef struct rz_bin_section_t {
 	bool add; // indicates when you want to add the section to io `S` command
 	bool is_data;
 	bool is_segment;
+	char *map_name; ///< name for the io map, only temporary while old RzBinMap has been removed and new does not exist yet
 } RzBinSection;
 
 typedef struct rz_bin_class_t {

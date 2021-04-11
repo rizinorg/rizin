@@ -253,7 +253,6 @@ bool Elf_(rz_bin_elf_is_executable)(ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(struct Elf_(rz_bin_elf_obj_t) * bin);
 int Elf_(rz_bin_elf_has_nx)(struct Elf_(rz_bin_elf_obj_t) * bin);
 const ut8 *Elf_(rz_bin_elf_grab_regstate)(struct Elf_(rz_bin_elf_obj_t) * bin, size_t *size);
-RzList *Elf_(rz_bin_elf_get_maps)(ELFOBJ *bin);
 RzBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(rz_bin_elf_obj_t) * bin,
 	struct rz_bin_elf_symbol_t *symbol,
 	const char *namefmt);
