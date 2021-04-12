@@ -672,7 +672,7 @@ beach:
 
 static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut64 laddr, ut64 at, int offimm) {
 	Sdb *TDB = core->analysis->typedb->sdb_types;
-	char *res = rz_type_get_struct_memb(core->analysis->typedb, type, offimm);
+	char *res = rz_type_db_get_struct_member(core->analysis->typedb, type, offimm);
 	const char *cmt = ((offimm == 0) && res) ? res : type;
 	if (offimm > 0) {
 		// set hint only if link is present
