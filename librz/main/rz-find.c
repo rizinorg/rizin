@@ -38,7 +38,6 @@ typedef struct {
 
 static void rzfind_options_fini(RzfindOptions *ro) {
 	free(ro->buf);
-	rz_list_free(ro->keywords);
 }
 
 static void rzfind_options_init(RzfindOptions *ro) {
@@ -467,10 +466,12 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 
 		if (RZ_STR_ISEMPTY(file)) {
 			eprintf("Cannot open empty path\n");
+			rz_list_free(ro.keywords);
 			return 1;
 		}
 		rzfind_open(&ro, file);
 	}
+	rz_list_free(ro.keywords);
 	if (ro.json) {
 		printf("]\n");
 	}
