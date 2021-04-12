@@ -5972,7 +5972,7 @@ RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 	{
 		const char *l = rz_config_get(core->config, "scr.layout");
 		if (l && *l) {
-			rz_core_cmdf(core, "v %s", l);
+			rz_load_panels_layout(core, l);
 		}
 	}
 	RzPanels *panels = panels_root->panels[panels_root->cur_panels];
