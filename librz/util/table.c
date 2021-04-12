@@ -936,8 +936,8 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		eprintf("RzTableQuery> comma separated. 'c' stands for column name.\n");
 		eprintf(" c/sort/inc        sort rows by given colname\n");
 		eprintf(" c/sortlen/inc     sort rows by strlen()\n");
-		eprintf(" c                 only show column c\n");
 		eprintf(" c/cols/c1/c2      only show selected columns\n");
+		eprintf(" c                 only show column c\n");
 		eprintf(" c/gt/0x800        grep rows matching col0 > 0x800\n");
 		eprintf(" c/lt/0x800        grep rows matching col0 < 0x800\n");
 		eprintf(" c/eq/0x800        grep rows matching col0 == 0x800\n");
