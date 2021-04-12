@@ -185,11 +185,11 @@ RZ_API void rz_type_db_save_parsed_type(RzTypeDB *typedb, const char *parsed);
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
 RZ_API char *rz_type_db_enum_member(RzTypeDB *typedb, const char *name, const char *member, ut64 val);
 RZ_API RzList *rz_type_db_enum_find_member(RzTypeDB *typedb, ut64 val);
-RZ_API char *rz_type_enum_getbitfield(RzTypeDB *typedb, const char *name, ut64 val);
+RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, const char *name, ut64 val);
 RZ_API RzList *rz_type_db_get_enum(RzTypeDB *typedb, const char *name);
 RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, const char *type);
-RZ_API RzList *rz_type_get_by_offset(RzTypeDB *typedb, ut64 offset);
-RZ_API char *rz_type_get_struct_memb(RzTypeDB *typedb, const char *type, int offset);
+RZ_API RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset);
+RZ_API char *rz_type_db_get_struct_member(RzTypeDB *typedb, const char *type, int offset);
 
 // Maintaining type links
 RZ_API char *rz_type_link_at(RzTypeDB *typedb, ut64 addr);

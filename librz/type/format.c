@@ -1347,7 +1347,7 @@ static void rz_type_format_bitfield(RzTypeDB *typedb, RzStrBuf *outbuf, ut64 see
 	if (MUSTSEE && !SEEVALUE) {
 		rz_strbuf_appendf(outbuf, "0x%08" PFMT64x " = ", seeki);
 	}
-	bitfield = rz_type_enum_getbitfield(typedb, fmtname, addr);
+	bitfield = rz_type_db_enum_get_bitfield(typedb, fmtname, addr);
 	if (bitfield && *bitfield) {
 		if (MUSTSEEJSON) {
 			rz_strbuf_appendf(outbuf, "\"%s\"}", bitfield);
