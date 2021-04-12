@@ -220,7 +220,6 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 	int ctr = 0;
 	char *home = rz_str_home(RZ_HOME_THEMES RZ_SYS_DIR);
 
-	getNext = false;
 	if (mode == 'j') {
 		rz_cons_printf("[");
 	}
@@ -237,8 +236,6 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 					}
 					eprintf("%s %s %s\n", rz_str_get_null(nfn), curtheme, fn);
 					if (nfn && !strcmp(nfn, curtheme)) {
-						rz_list_free(files);
-						files = NULL;
 						free(curtheme);
 						curtheme = strdup(fn);
 						RZ_FREE(home);
@@ -246,16 +243,15 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 					}
 				} else {
 					if (!nextpal_item(core, mode, fn, ctr++)) {
-						rz_list_free(files);
-						files = NULL;
 						RZ_FREE(home);
 						goto done;
 					}
 				}
 			}
 		}
-		rz_list_free(files);
 		RZ_FREE(home);
+		rz_list_free(files);
+		files = NULL;
 	}
 
 	path = rz_str_rz_prefix(RZ_THEMES RZ_SYS_DIR);
@@ -287,11 +283,6 @@ RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 
 done:
 	free(path);
-	if (getNext) {
-		RZ_FREE(curtheme);
-		rz_core_theme_nextpal(core, mode);
-		return;
-	}
 	if (mode == 'l' && !curtheme && !rz_list_empty(files)) {
 		//rz_core_theme_nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
@@ -300,7 +291,6 @@ done:
 		}
 	}
 	rz_list_free(files);
-	files = NULL;
 	if (mode == 'j') {
 		rz_cons_printf("]\n");
 	}
