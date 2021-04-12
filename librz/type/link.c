@@ -57,7 +57,7 @@ RZ_API char *rz_type_link_at(RzTypeDB *typedb, ut64 addr) {
 				int delta = addr - laddr;
 				const char *lk = sdb_fmt("link.%08" PFMT64x, laddr);
 				char *k = sdb_get(TDB, lk, 0);
-				res = rz_type_get_struct_memb(typedb, k, delta);
+				res = rz_type_db_get_struct_member(typedb, k, delta);
 				if (res) {
 					break;
 				}

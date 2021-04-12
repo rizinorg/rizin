@@ -610,6 +610,7 @@ if get_option('use_webui')
 endif
 
 subdir('test/unit')
+subdir('test/integration')
 
 install_data(
   'doc/fortunes.fun',
