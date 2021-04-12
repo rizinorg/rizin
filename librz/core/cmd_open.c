@@ -360,7 +360,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			return;
 		}
 		rz_list_foreach (bin->binfiles, iter, bf) {
-			char temp[4];
+			char temp[64];
 			RzInterval inter = (RzInterval){ bf->o->baddr, bf->o->size };
 			RzListInfo *info = rz_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
 			if (!info) {
