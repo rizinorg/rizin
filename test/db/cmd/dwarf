@@ -1616,19 +1616,17 @@ EXPECT=<<EOF
 |           ; var int64_t var_60h @ rsp+0x60
 |           ; var int64_t var_68h @ rsp+0x68
 |           ; var Range<usize> iter @ rsp+0x70
-|           ; var int64_t var_78h @ rsp+0x78
 |           ; var int64_t var_80h @ rsp+0x80
 |           ; var int64_t var_88h @ rsp+0x88
 |           ; var &mut [i32] values @ rsp+0x90
-|           ; var int64_t var_98h @ rsp+0x98
 |           ; var usize val @ rsp+0xa0
 |           ; var usize __next @ rsp+0xa8
 |           ; var usize i @ rsp+0xb0
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
 |           0x00005270      4881ecb80000.  sub   rsp, 0xb8             ; void bubble_sort<i32>(&mut [i32] values);
-|           0x00005277      4889bc249000.  mov   qword [values], rdi   ; arg1
-|           0x0000527f      4889b4249800.  mov   qword [var_98h], rsi  ; arg2
+|           0x00005277      4889bc249000.  mov   qword [values.data_ptr], rdi ; arg1
+|           0x0000527f      4889b4249800.  mov   qword [rsp + 0x98], rsi ; arg2
 |           0x00005287      48897c2448     mov   qword [var_48h], rdi  ; arg1
 |           0x0000528c      4889742440     mov   qword [var_40h], rsi  ; arg2
 |           ; DATA XREF from core::fmt::builders::DebugTuple::finish::hfbbe40c195c334d6 @ 0x28b56
@@ -1651,11 +1649,11 @@ EXPECT=<<EOF
 |           0x000052d6      4889442438     mov   qword [var_38h], rax
 |           0x000052db      4889542430     mov   qword [var_30h], rdx
 |           0x000052e0      488b442438     mov   rax, qword [var_38h]
-|           0x000052e5      4889442470     mov   qword [iter], rax
+|           0x000052e5      4889442470     mov   qword [iter.start], rax
 |           0x000052ea      488b4c2430     mov   rcx, qword [var_30h]
-|           0x000052ef      48894c2478     mov   qword [var_78h], rcx
+|           0x000052ef      48894c2478     mov   qword [rsp + 0x78], rcx
 |           ; CODE XREF from rust::bubble_sort::h0777bc845caabc60 @ 0x5432
-|           0x000052f4      488d7c2470     lea   rdi, [iter]           ; int64_t arg1
+|           0x000052f4      488d7c2470     lea   rdi, [iter.start]     ; int64_t arg1
 |           0x000052f9      e812130000     call  sym core::iter::range::_<impl core::iter::traits::iterator::Iterator for core::ops::range::Range<A>>::next::h707e8283b20ce50a ; dbg.next<usize>
 |           0x000052fe      488994248800.  mov   qword [var_88h], rdx
 |           0x00005306      488984248000.  mov   qword [var_80h], rax

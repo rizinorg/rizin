@@ -182,6 +182,7 @@ RZ_API void rz_type_parse_c_reset(RzTypeDB *typedb);
 RZ_API void rz_type_db_remove_parsed_type(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_save_parsed_type(RzTypeDB *typedb, const char *parsed);
 
+// Type-specific APIs
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
 RZ_API char *rz_type_db_enum_member(RzTypeDB *typedb, const char *name, const char *member, ut64 val);
 RZ_API RzList *rz_type_db_enum_find_member(RzTypeDB *typedb, ut64 val);
