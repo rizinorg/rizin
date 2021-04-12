@@ -90,6 +90,8 @@ rz_asm_sources = [
   'arch/arm/gnu/arm-dis.c',
   'arch/arm/gnu/floatformat.c',
   'arch/arm/winedbg/be_arm.c',
+  'arch/avr/new/disassembler.c',
+  'arch/avr/new/assembler.c',
   'arch/avr/avr_disasm.c',
   'arch/avr/format.c',
   'arch/avr/disasm.c',
