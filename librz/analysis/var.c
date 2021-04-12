@@ -46,29 +46,21 @@ RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *
 // If the type of var is a struct,
 // remove all other vars that are overlapped by var and are at the offset of one of its struct members
 static void shadow_var_struct_members(RzAnalysisVar *var) {
-	Sdb *TDB = var->fcn->analysis->typedb->sdb_types;
-	const char *type_kind = sdb_const_get(TDB, var->type, 0);
-	if (type_kind && rz_str_startswith(type_kind, "struct")) {
-		char *field;
-		int field_n;
-		char *type_key = rz_str_newf("%s.%s", type_kind, var->type);
-		for (field_n = 0; (field = sdb_array_get(TDB, type_key, field_n, NULL)); field_n++) {
-			char field_key[0x300];
-			if (snprintf(field_key, sizeof(field_key), "%s.%s", type_key, field) < 0) {
-				continue;
+	RzBaseType *btype = rz_type_db_get_base_type(var->fcn->analysis->typedb, var->type);
+	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+		return;
+	}
+	if (rz_vector_empty(&btype->struct_data.members)) {
+		return;
+	}
+	RzTypeStructMember *member;
+	rz_vector_foreach(&btype->struct_data.members, member) {
+		if (member->offset != 0) { // delete variables which are overlaid by structure
+			RzAnalysisVar *other = rz_analysis_function_get_var(var->fcn, var->kind, var->delta + member->offset);
+			if (other && other != var) {
+				rz_analysis_var_delete(other);
 			}
-			char *field_type = sdb_array_get(TDB, field_key, 0, NULL);
-			ut64 field_offset = sdb_array_get_num(TDB, field_key, 1, NULL);
-			if (field_offset != 0) { // delete variables which are overlaid by structure
-				RzAnalysisVar *other = rz_analysis_function_get_var(var->fcn, var->kind, var->delta + field_offset);
-				if (other && other != var) {
-					rz_analysis_var_delete(other);
-				}
-			}
-			free(field_type);
-			free(field);
 		}
-		free(type_key);
 	}
 }
 
@@ -557,28 +549,21 @@ RZ_API int rz_analysis_var_count(RzAnalysis *a, RzAnalysisFunction *fcn, int kin
 }
 
 static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, RzList *list) {
-	Sdb *TDB = a->typedb->sdb_types;
-	const char *type_kind = sdb_const_get(TDB, av->type, 0);
-	if (type_kind && !strcmp(type_kind, "struct")) {
-		char *field_name, *new_name;
-		int field_n;
-		char *type_key = rz_str_newf("%s.%s", type_kind, av->type);
-		for (field_n = 0; (field_name = sdb_array_get(TDB, type_key, field_n, NULL)); field_n++) {
-			char *field_key = rz_str_newf("%s.%s", type_key, field_name);
-			char *field_type = sdb_array_get(TDB, field_key, 0, NULL);
-			ut64 field_offset = sdb_array_get_num(TDB, field_key, 1, NULL);
-			new_name = rz_str_newf("%s.%s", av->name, field_name);
-			RzAnalysisVarField *field = RZ_NEW0(RzAnalysisVarField);
-			field->name = new_name;
-			field->delta = av->delta + field_offset;
-			field->field = true;
-			rz_list_append(list, field);
-			free(field_type);
-			free(field_key);
-			free(field_name);
-		}
-		free(type_key);
-		return true;
+	RzBaseType *btype = rz_type_db_get_base_type(a->typedb, av->type);
+	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+		return false;
+	}
+	if (rz_vector_empty(&btype->struct_data.members)) {
+		return false;
+	}
+	RzTypeStructMember *member;
+	rz_vector_foreach(&btype->struct_data.members, member) {
+		char *new_name = rz_str_newf("%s.%s", av->name, member->name);
+		RzAnalysisVarField *field = RZ_NEW0(RzAnalysisVarField);
+		field->name = new_name;
+		field->delta = av->delta + member->offset;
+		field->field = true;
+		rz_list_append(list, field);
 	}
 	return false;
 }
