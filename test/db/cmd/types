@@ -322,59 +322,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=tek
-FILE=-
-CMDS=<<EOF
-td "enum FOO { A=1, B=0x100, C=0xFF, D=4, E=5 };"
-td "enum BAR { G=0x800, Z=0xEE, P=4, E=5 };"
-tek FOO
-tek BAR
-tek
-EOF
-EXPECT=<<EOF
-enum.FOO.0x100=B
-enum.FOO.0x1=A
-enum.FOO.0x4=D
-enum.FOO.0x5=E
-enum.FOO.0xff=C
-enum.FOO.A=0x1
-enum.FOO.B=0x100
-enum.FOO.C=0xff
-enum.FOO.D=0x4
-enum.FOO.E=0x5
-enum.FOO=A,B,C,D,E
-enum.BAR.0x4=P
-enum.BAR.0x5=E
-enum.BAR.0x800=G
-enum.BAR.0xee=Z
-enum.BAR.E=0x5
-enum.BAR.G=0x800
-enum.BAR.P=0x4
-enum.BAR.Z=0xee
-enum.BAR=G,Z,P,E
-enum.BAR.0x4=P
-enum.BAR.0x5=E
-enum.BAR.0x800=G
-enum.BAR.0xee=Z
-enum.BAR.E=0x5
-enum.BAR.G=0x800
-enum.BAR.P=0x4
-enum.BAR.Z=0xee
-enum.BAR=G,Z,P,E
-enum.FOO.0x100=B
-enum.FOO.0x1=A
-enum.FOO.0x4=D
-enum.FOO.0x5=E
-enum.FOO.0xff=C
-enum.FOO.A=0x1
-enum.FOO.B=0x100
-enum.FOO.C=0xff
-enum.FOO.D=0x4
-enum.FOO.E=0x5
-enum.FOO=A,B,C,D,E
-EOF
-RUN
-
 NAME=tf and tfk
 FILE=-
 CMDS=<<EOF

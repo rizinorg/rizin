@@ -43,7 +43,7 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, const char *enum_value) {
 	rz_return_val_if_fail(enum_name || enum_value, RZ_CMD_STATUS_ERROR);
 	ut64 value = rz_num_math(core->num, enum_value);
-	char *enum_member = rz_type_db_enum_member(core->analysis->typedb, enum_name, NULL, value);
+	char *enum_member = rz_type_db_enum_member_by_val(core->analysis->typedb, enum_name, value);
 	if (!enum_member) {
 		eprintf("Cannot find matching enum member");
 		return RZ_CMD_STATUS_ERROR;
@@ -56,7 +56,7 @@ static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, c
 static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_value) {
 	rz_return_val_if_fail(enum_value, RZ_CMD_STATUS_ERROR);
 	ut64 value = rz_num_math(core->num, enum_value);
-	RzList *matches = rz_type_db_enum_find_member(core->analysis->typedb, value);
+	RzList *matches = rz_type_db_find_enums_by_val(core->analysis->typedb, value);
 	if (!matches || rz_list_empty(matches)) {
 		eprintf("Cannot find matching enum member");
 		return RZ_CMD_STATUS_ERROR;
@@ -99,7 +99,7 @@ static void type_list_c_all(RzCore *core) {
 	// List all typedefs in the C format with newlines
 	rz_types_typedef_print_c(core->analysis->typedb, NULL);
 	// List all enums in the C format with newlines
-	rz_types_enum_print_c(core->analysis->typedb, NULL, true);
+	rz_types_enum_print_c_all(core->analysis->typedb, true);
 }
 
 static void type_list_c_all_nl(RzCore *core) {
@@ -110,7 +110,7 @@ static void type_list_c_all_nl(RzCore *core) {
 	// List all typedefs in the C format without newlines
 	rz_types_typedef_print_c(core->analysis->typedb, NULL);
 	// List all enums in the C format without newlines
-	rz_types_enum_print_c(core->analysis->typedb, NULL, false);
+	rz_types_enum_print_c_all(core->analysis->typedb, false);
 }
 
 static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 address) {
@@ -690,22 +690,29 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'k': // "tek"
-			if (input[2] == 0) { // "tek"
-				rz_core_types_enum_print_all(core, RZ_OUTPUT_MODE_SDB);
-			} else { // "tek ENUM"
-				rz_core_types_enum_print(core, name, RZ_OUTPUT_MODE_SDB, NULL);
+		case 'b': { // "teb"
+			int value = rz_type_db_enum_member_by_name(typedb, name, member_value);
+			res = rz_str_newf("0x%x", value);
+			break;
+		}
+		case 'c': { // "tec"
+			const char *enum_name = rz_str_trim_head_ro(input + 2);
+			if (enum_name) {
+				rz_types_enum_print_c(typedb, enum_name, true);
+			} else {
+				rz_types_enum_print_c_all(typedb, true);
 			}
 			break;
-		case 'b': // "teb"
-			res = rz_type_db_enum_member(typedb, name, member_value, 0);
+		}
+		case 'd': { // "ted"
+			const char *enum_name = rz_str_trim_head_ro(input + 2);
+			if (enum_name) {
+				rz_types_enum_print_c(typedb, enum_name, false);
+			} else {
+				rz_types_enum_print_c_all(typedb, false);
+			}
 			break;
-		case 'c': // "tec"
-			rz_types_enum_print_c(typedb, rz_str_trim_head_ro(input + 2), true);
-			break;
-		case 'd': // "ted"
-			rz_types_enum_print_c(typedb, rz_str_trim_head_ro(input + 2), false);
-			break;
+		}
 		case 'f': // "tef"
 			if (member_value) {
 				types_enum_member_find_all(core, member_value);
@@ -1084,25 +1091,30 @@ RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_type_enum_bitfield_handler(RzCore *core, int argc, const char **argv) {
 	const char *enum_name = argc > 1 ? argv[1] : NULL;
 	const char *enum_member = argc > 2 ? argv[2] : NULL;
-	char *output = rz_type_db_enum_member(core->analysis->typedb, enum_name, enum_member, 0);
-	if (!output) {
+	int value = rz_type_db_enum_member_by_name(core->analysis->typedb, enum_name, enum_member);
+	if (value == -1) {
 		eprintf("Cannot find anything matching the specified bitfield");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(output);
-	free(output);
+	rz_cons_printf("0x%x\n", value);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_enum_c_handler(RzCore *core, int argc, const char **argv) {
-	const char *enum_name = argc > 1 ? argv[1] : NULL;
-	rz_types_enum_print_c(core->analysis->typedb, enum_name, true);
+	if (argc > 1) {
+		rz_types_enum_print_c(core->analysis->typedb, argv[1], true);
+	} else {
+		rz_types_enum_print_c_all(core->analysis->typedb, true);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char **argv) {
-	const char *enum_name = argc > 1 ? argv[1] : NULL;
-	rz_types_enum_print_c(core->analysis->typedb, enum_name, false);
+	if (argc > 1) {
+		rz_types_enum_print_c(core->analysis->typedb, argv[1], false);
+	} else {
+		rz_types_enum_print_c_all(core->analysis->typedb, false);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

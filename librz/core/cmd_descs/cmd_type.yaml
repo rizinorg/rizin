@@ -82,7 +82,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_SDB
         args:
           - name: enum
             type: RZ_CMD_ARG_TYPE_ENUM_TYPE
