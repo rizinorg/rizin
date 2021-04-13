@@ -153,15 +153,17 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 		sdb_unset(TDB, sdb_fmt("func.%s.args", name), 0);
 		sdb_unset(TDB, name, 0);
 	} else if (!strcmp(kind, "enum")) {
-		RzList *list = rz_type_db_get_enum(typedb, name);
-		RzTypeEnum *member;
-		RzListIter *iter;
-		rz_list_foreach (list, iter, member) {
-			sdb_unset(TDB, sdb_fmt("enum.%s.%s", name, member->name), 0);
-			sdb_unset(TDB, sdb_fmt("enum.%s.%s", name, member->val), 0);
+		RzBaseType *e = rz_type_db_get_enum(typedb, name);
+		if (!e || e->kind != RZ_BASE_TYPE_KIND_ENUM) {
+			return false;
+		}
+		RzTypeEnumCase *cas;
+		rz_vector_foreach(&e->enum_data.cases, cas) {
+			sdb_unset(TDB, sdb_fmt("enum.%s.%s", name, cas->name), 0);
+			sdb_unset(TDB, sdb_fmt("enum.%s.0x%x", name, cas->val), 0);
 		}
 		sdb_unset(TDB, name, 0);
-		rz_list_free(list);
+		rz_type_base_type_free(e);
 	} else if (!strcmp(kind, "typedef")) {
 		RzStrBuf buf;
 		rz_strbuf_init(&buf);
@@ -370,6 +372,14 @@ RZ_API RzList *rz_type_db_links(RzTypeDB *typedb) {
 }
 
 // Type-specific APIs
+RZ_API int rz_type_kind(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, -1);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
+		return -1;
+	}
+	return btype->kind;
+}
 
 // FIXME: this function is slow!
 RZ_API RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset) {
@@ -392,120 +402,100 @@ RZ_API RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset) {
 	return offtypes;
 }
 
-RZ_API int rz_type_kind(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
+		return NULL;
+	}
+	if (btype->kind != RZ_BASE_TYPE_KIND_ENUM) {
+		return NULL;
+	}
+	return btype;
+}
+
+RZ_API char *rz_type_db_enum_member_by_val(RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
+		return NULL;
+	}
+	if (btype->kind != RZ_BASE_TYPE_KIND_ENUM) {
+		return NULL;
+	}
+	RzTypeEnumCase *cas;
+	rz_vector_foreach(&btype->enum_data.cases, cas) {
+		if (cas->val == val) {
+			return cas->name;
+		}
+	}
+	return NULL;
+}
+
+RZ_API int rz_type_db_enum_member_by_name(RzTypeDB *typedb, RZ_NONNULL const char *name, const char *member) {
 	rz_return_val_if_fail(typedb && name, -1);
-	Sdb *TDB = typedb->sdb_types;
-	const char *type = sdb_const_get(TDB, name, 0);
-	if (!type) {
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
 		return -1;
 	}
-	if (!strcmp(type, "enum")) {
-		return RZ_BASE_TYPE_KIND_ENUM;
+	if (btype->kind != RZ_BASE_TYPE_KIND_ENUM) {
+		return -1;
 	}
-	if (!strcmp(type, "struct")) {
-		return RZ_BASE_TYPE_KIND_STRUCT;
-	}
-	if (!strcmp(type, "union")) {
-		return RZ_BASE_TYPE_KIND_UNION;
-	}
-	if (!strcmp(type, "type")) {
-		return RZ_BASE_TYPE_KIND_ATOMIC;
-	}
-	if (!strcmp(type, "typedef")) {
-		return RZ_BASE_TYPE_KIND_TYPEDEF;
-	}
-	return -1;
-}
-
-RZ_API RzList *rz_type_db_get_enum(RzTypeDB *typedb, RZ_NONNULL const char *name) {
-	rz_return_val_if_fail(typedb && name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	char *p, var[130];
-	int n;
-
-	if (rz_type_kind(typedb, name) != RZ_BASE_TYPE_KIND_ENUM) {
-		return NULL;
-	}
-	RzList *res = rz_list_new();
-	snprintf(var, sizeof(var), "enum.%s", name);
-	for (n = 0; (p = sdb_array_get(TDB, var, n, NULL)); n++) {
-		RzTypeEnum *member = RZ_NEW0(RzTypeEnum);
-		if (member) {
-			char *var2 = rz_str_newf("%s.%s", var, p);
-			if (var2) {
-				char *val = sdb_array_get(TDB, var2, 0, NULL);
-				if (val) {
-					member->name = p;
-					member->val = val;
-					rz_list_append(res, member);
-				} else {
-					free(member);
-					free(var2);
-				}
-			} else {
-				free(member);
-			}
+	RzTypeEnumCase *cas;
+	int result = -1;
+	rz_vector_foreach(&btype->enum_data.cases, cas) {
+		if (!strcmp(cas->name, member)) {
+			result = cas->val;
+			break;
 		}
 	}
-	return res;
+	return result;
 }
 
-RZ_API char *rz_type_db_enum_member(RzTypeDB *typedb, RZ_NONNULL const char *name, const char *member, ut64 val) {
-	rz_return_val_if_fail(typedb && name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	if (rz_type_kind(typedb, name) != RZ_BASE_TYPE_KIND_ENUM) {
-		return NULL;
-	}
-	const char *q = member
-		? sdb_fmt("enum.%s.%s", name, member)
-		: sdb_fmt("enum.%s.0x%" PFMT64x, name, val);
-	return sdb_get(TDB, q, 0);
-}
-
-RZ_API RzList *rz_type_db_enum_find_member(RzTypeDB *typedb, ut64 val) {
+RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(RzTypeDB *typedb, ut64 val) {
 	rz_return_val_if_fail(typedb, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(TDB, true);
-	RzList *res = rz_list_new();
-	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "enum")) {
-			const char *name = sdbkv_key(kv);
-			if (name) {
-				const char *q = sdb_fmt("enum.%s.0x%" PFMT64x, name, val);
-				char *member = sdb_get(TDB, q, 0);
-				if (member) {
-					char *pair = rz_str_newf("%s.%s", name, member);
-					rz_list_append(res, pair);
-					free(member);
-				}
+	RzList *enums = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
+	RzList *result = rz_list_newf(free);
+	RzListIter *iter;
+	RzBaseType *e;
+	rz_list_foreach (enums, iter, e) {
+		RzTypeEnumCase *cas;
+		rz_vector_foreach(&e->enum_data.cases, cas) {
+			if (cas->val == val) {
+				rz_list_append(result, rz_str_newf("%s.%s", e->name, cas->name));
 			}
 		}
 	}
-	ls_free(l);
-	return res;
+	rz_list_free(enums);
+	return result;
 }
 
 RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
 	rz_return_val_if_fail(typedb && name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	char *q, *ret = NULL;
-	const char *res;
+	char *res = NULL;
 	int i;
+	bool isFirst = true;
+	char *ret = rz_str_newf("0x%08" PFMT64x " : ", val);
 
-	if (rz_type_kind(typedb, name) != RZ_BASE_TYPE_KIND_ENUM) {
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
 		return NULL;
 	}
-	bool isFirst = true;
-	ret = rz_str_appendf(ret, "0x%08" PFMT64x " : ", val);
+	if (btype->kind != RZ_BASE_TYPE_KIND_ENUM) {
+		return NULL;
+	}
 	for (i = 0; i < 32; i++) {
 		ut32 n = 1ULL << i;
 		if (!(val & n)) {
 			continue;
 		}
-		q = sdb_fmt("enum.%s.0x%x", name, n);
-		res = sdb_const_get(TDB, q, 0);
+		RzTypeEnumCase *cas;
+		rz_vector_foreach(&btype->enum_data.cases, cas) {
+			if (cas->val == n) {
+				res = cas->name;
+				break;
+			}
+		}
 		if (isFirst) {
 			isFirst = false;
 		} else {

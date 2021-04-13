@@ -4367,7 +4367,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_define_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "td", rz_type_define_handler, &type_define_help);
 	rz_warn_if_fail(type_define_cd);
 
-	RzCmdDesc *te_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "te", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_type_list_enum_handler, &type_list_enum_help, &te_help);
+	RzCmdDesc *te_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "te", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_enum_handler, &type_list_enum_help, &te_help);
 	rz_warn_if_fail(te_cd);
 	RzCmdDesc *type_enum_bitfield_cd = rz_cmd_desc_argv_new(core->rcmd, te_cd, "teb", rz_type_enum_bitfield_handler, &type_enum_bitfield_help);
 	rz_warn_if_fail(type_enum_bitfield_cd);
