@@ -249,6 +249,7 @@ typedef struct rz_bin_object_t {
 	ut64 boffset;
 	ut64 size;
 	ut64 obj_size;
+	RzList /*<RzBinMap>*/ *maps;
 	RzList /*<RzBinSection>*/ *sections;
 	RzList /*<RzBinImport>*/ *imports;
 	RzList /*<RzBinSymbol>*/ *symbols;
@@ -282,7 +283,7 @@ typedef struct rz_bin_object_t {
 /// XX curplugin == o->plugin
 struct rz_bin_file_t {
 	char *file;
-	int fd;
+	int fd; ///< when used in combination with RzIO, this refers to the io fd.
 	int size;
 	int rawstr;
 	int strmode;
@@ -512,12 +513,13 @@ typedef struct rz_bin_plugin_t {
 	int (*fini)(void *user);
 	Sdb *(*get_sdb)(RzBinFile *obj);
 	bool (*load_buffer)(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb);
-	ut64 (*size)(RzBinFile *bin); // return ut64 maybe? meh
+	ut64 (*size)(RzBinFile *bin);
 	void (*destroy)(RzBinFile *bf);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
 	bool (*check_buffer)(RzBuffer *buf);
 	ut64 (*baddr)(RzBinFile *bf);
 	ut64 (*boffset)(RzBinFile *bf);
+	RzList /*<RzBinMap>*/ *(*maps)(RzBinFile *bf);
 	RzBinAddr *(*binsym)(RzBinFile *bf, RzBinSpecialSymbol num);
 	RzList /*<RzBinAddr>*/ *(*entries)(RzBinFile *bf);
 	RzList /*<RzBinSection>*/ *(*sections)(RzBinFile *bf);
@@ -556,6 +558,16 @@ typedef struct rz_bin_plugin_t {
 
 typedef void (*RzBinSymbollCallback)(RzBinObject *obj, void *symbol);
 
+/// Description of a single memory mapping into virtual memory from a binary
+typedef struct rz_bin_map_t {
+	ut64 paddr; ///< address of the map inside the file
+	ut64 psize; ///< size of the data inside the file
+	ut64 vaddr; ///< address in the destination address space to map to
+	ut64 vsize; ///< size to map in the destination address space. If vsize > psize, excessive bytes are meant to be filled with 0
+	char *name;
+	ut32 perm;
+} RzBinMap;
+
 typedef struct rz_bin_section_t {
 	char *name;
 	ut64 size;
@@ -570,7 +582,6 @@ typedef struct rz_bin_section_t {
 	char *format;
 	int bits;
 	bool has_strings;
-	bool add; // indicates when you want to add the section to io `S` command
 	bool is_data;
 	bool is_segment;
 	char *map_name; ///< name for the io map, only temporary while old RzBinMap has been removed and new does not exist yet
@@ -692,14 +703,6 @@ typedef struct rz_bin_mem_t {
 	int perms;
 	RzList /*<RzBinMem>*/ *mirrors; //for mirror access; stuff here should only create new maps not new fds
 } RzBinMem;
-
-typedef struct rz_bin_map_t {
-	ut64 addr;
-	ut64 offset;
-	int size;
-	int perms;
-	char *file;
-} RzBinMap;
 
 typedef struct rz_bin_write_t {
 	ut64 (*scn_resize)(RzBinFile *bf, const char *name, ut64 size);

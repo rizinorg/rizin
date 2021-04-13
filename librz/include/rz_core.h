@@ -699,6 +699,7 @@ RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);
 
 RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va);

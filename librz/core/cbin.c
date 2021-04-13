@@ -615,12 +615,6 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 	return true;
 }
 
-struct io_bin_section_info_t {
-	RzBinSection *sec;
-	ut64 addr;
-	int fd;
-};
-
 typedef struct {
 	const char *uri;
 	int perm;
@@ -647,20 +641,19 @@ static RzIODesc *findReusableFile(RzIO *io, const char *uri, int perm) {
 	return arg.desc;
 }
 
-static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
-	rz_return_val_if_fail(io && sec, false);
-
+/// Create null-map for excessive vsize over psize
+static bool io_create_mem_map(RzIO *io, RzBinMap *map, ut64 at) {
+	rz_return_val_if_fail(io && map && map->vsize > map->psize, false);
 	bool reused = false;
-	ut64 gap = sec->vsize - sec->size;
+	ut64 gap = map->vsize - map->psize;
 	char *uri = rz_str_newf("null://%" PFMT64u, gap);
 	RzIOMap *iomap = NULL;
-	RzIODesc *desc = findReusableFile(io, uri, sec->perm);
+	RzIODesc *desc = findReusableFile(io, uri, map->perm);
 	if (desc) {
 		iomap = rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
 		reused = true;
-	}
-	if (!desc) {
-		desc = rz_io_open_at(io, uri, sec->perm, 0664, at, &iomap);
+	} else {
+		desc = rz_io_open_at(io, uri, map->perm, 0664, at, &iomap);
 	}
 	free(uri);
 	if (!desc) {
@@ -673,52 +666,86 @@ static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
 		}
 		return false;
 	}
-	// let the section refere to the map as a memory-map
-	free(iomap->name);
-	iomap->name = sec->map_name && !sec->size ? strdup(sec->map_name) : rz_str_newf("mmap.%s", sec->name);
+	// update the io map's name to refer to the bin map
+	if (map->name) {
+		free(iomap->name);
+		iomap->name = !map->psize ? strdup(map->name) : rz_str_newf("mmap.%s", map->name);
+	}
 	return true;
 }
 
-static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
-	if (!rz_io_desc_get(core->io, fd) || UT64_ADD_OVFCHK(sec->size, sec->paddr) ||
-		UT64_ADD_OVFCHK(sec->size, addr) || !sec->vsize) {
+static void add_map(RzCore *core, RzBinMap *map, ut64 addr, int fd) {
+	if (!rz_io_desc_get(core->io, fd) || UT64_ADD_OVFCHK(map->psize, map->paddr) ||
+		UT64_ADD_OVFCHK(map->vsize, addr) || !map->vsize) {
 		return;
 	}
 
-	ut64 size = sec->vsize;
-	// if there is some part of the section that needs to be zeroed by the loader
+	ut64 size = map->vsize;
+	// if there is some part of the map that needs to be zeroed by the loader
 	// we add a null map that takes care of it
-	if (sec->vsize > sec->size) {
-		if (!io_create_mem_map(core->io, sec, addr + sec->size)) {
+	if (map->vsize > map->psize) {
+		if (!io_create_mem_map(core->io, map, addr + map->psize)) {
 			return;
 		}
+		size = map->psize;
+	}
 
-		size = sec->size;
+	// It's a valid case to have vsize > 0 and psize == 0, which just creates a map of zeroes.
+	if (!size) {
+		return;
 	}
 
 	// then we map the part of the section that comes from the physical file
-	char *map_name = sec->map_name ? strdup(sec->map_name) : rz_str_newf("fmap.%s", sec->name);
+	char *map_name = map->name ? strdup(map->name) : rz_str_newf("fmap.%d", fd);
 	if (!map_name) {
 		return;
 	}
 
-	int perm = sec->perm;
+	int perm = map->perm;
 	// workaround to force exec bit in text section
-	if (sec->name && strstr(sec->name, "text")) {
+	if (map->name && strstr(map->name, "text")) {
 		perm |= RZ_PERM_X;
 	}
 
 	if (size) {
-		RzIOMap *map = rz_io_map_add_batch(core->io, fd, perm, sec->paddr, addr, size);
-		if (!map) {
+		RzIOMap *iomap = rz_io_map_add_batch(core->io, fd, perm, map->paddr, addr, size);
+		if (!iomap) {
 			free(map_name);
 			return;
 		}
-		map->name = map_name;
+		free(iomap->name);
+		iomap->name = map_name;
 	} else {
 		free(map_name);
 	}
 	return;
+}
+
+RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
+	rz_return_val_if_fail(core && binfile, NULL);
+	RzIODesc *desc = rz_io_desc_get(core->io, binfile->fd);
+	if (desc && rz_io_desc_is_dbg(desc)) {
+		// In debug mode, mapping comes from the process, not the file
+		return true;
+	}
+	RzBinObject *o = binfile->o;
+	if (!o || !o->maps) {
+		return false;
+	}
+	RzList *maps = o->maps;
+
+	RzListIter *it;
+	RzBinMap *map;
+	// reverse because of the way io handles maps
+	rz_list_foreach_prev (maps, it, map) {
+		int va_map = va ? VA_TRUE : VA_FALSE;
+		if (va && !(map->perm & RZ_PERM_R)) {
+			va_map = VA_NOREBASE;
+		}
+		ut64 addr = rva(o, map->paddr, map->vaddr, va_map);
+		add_map(core, map, addr, binfile->fd);
+	}
+	rz_io_update(core->io);
 }
 
 /**
@@ -733,17 +760,11 @@ static void section_perms_str(char *dst, int perms) {
 	dst[4] = '\0';
 }
 
+
 RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va) {
 	rz_return_val_if_fail(core && binfile, NULL);
-	bool ret = false;
-	HtPP *dup_chk_ht = ht_pp_new0();
-	if (!dup_chk_ht) {
-		return false;
-	}
-
 	RzBinObject *o = binfile->o;
 	if (!o) {
-		ht_pp_free(dup_chk_ht);
 		return false;
 	}
 	RzList *sections = o->sections;
@@ -763,15 +784,12 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 	}
 
 	int section_index = 0;
-	RzList *io_section_info = rz_list_newf((RzListFree)free);
 	rz_list_foreach (sections, iter, section) {
 		int va_sect = va ? VA_TRUE : VA_FALSE;
-		ut64 addr;
-
 		if (va && !(section->perm & RZ_PERM_R)) {
 			va_sect = VA_NOREBASE;
 		}
-		addr = rva(o, section->paddr, section->vaddr, va_sect);
+		ut64 addr = rva(o, section->paddr, section->vaddr, va_sect);
 
 		rz_name_filter(section->name, strlen(section->name) + 1, false);
 
@@ -809,46 +827,9 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 			rz_meta_set(core->analysis, RZ_META_TYPE_COMMENT, addr, 1, str);
 			RZ_FREE(str);
 		}
-		if (section->add) {
-			bool found;
-			str = rz_str_newf("%" PFMT64x ".%" PFMT64x ".%" PFMT64x ".%" PFMT64x ".%" PFMT32u ".%s.%" PFMT32u ".%d",
-				section->paddr, addr, section->size, section->vsize, section->perm, section->name, binfile->id, binfile->fd);
-			ht_pp_find(dup_chk_ht, str, &found);
-			if (!found) {
-				// can't directly add maps because they
-				// need to be reversed, otherwise for
-				// the way IO works maps would be shown
-				// in reverse order
-				struct io_bin_section_info_t *ibs = RZ_NEW(struct io_bin_section_info_t);
-				if (!ibs) {
-					eprintf("Could not allocate memory\n");
-					goto out;
-				}
-
-				ibs->sec = section;
-				ibs->addr = addr;
-				ibs->fd = binfile->fd;
-				rz_list_append(io_section_info, ibs);
-				ht_pp_insert(dup_chk_ht, str, NULL);
-			}
-			RZ_FREE(str);
-		}
-	}
-	if (!rz_io_desc_is_dbg(core->io->desc)) {
-		RzListIter *it;
-		struct io_bin_section_info_t *ibs;
-		rz_list_foreach_prev(io_section_info, it, ibs) {
-			add_section(core, ibs->sec, ibs->addr, ibs->fd);
-		}
-		rz_io_update(core->io);
-		rz_list_free(io_section_info);
-		io_section_info = NULL;
 	}
 
-	ret = true;
-out:
-	ht_pp_free(dup_chk_ht);
-	return ret;
+	return true;
 }
 
 /*
