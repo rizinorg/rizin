@@ -823,7 +823,7 @@ static RDyldRebaseInfos *get_rebase_infos(RzBinFile *bf, RDyldCache *cache) {
 	if (cache->hdr->mappingCount > 1) {
 		RDyldRebaseInfosEntry *infos = RZ_NEWS0(RDyldRebaseInfosEntry, 1);
 		if (!infos) {
-			return NULL;
+			goto beach;
 		}
 
 		infos[0].start = cache->maps[1].fileOffset;
