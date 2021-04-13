@@ -147,9 +147,9 @@ static RzIODesc *__rap_open(RzIO *io, const char *pathname, int rw, int mode) {
 		if (i > 0) {
 			eprintf("rap connection was successful. open %d\n", i);
 			// io->corebind.cmd (io->corebind.core, "e io.va=0");
-			io->corebind.cmd(io->corebind.core, ".=!i*");
-			io->corebind.cmd(io->corebind.core, ".=!f*");
-			io->corebind.cmd(io->corebind.core, ".=!om*");
+			io->corebind.cmd(io->corebind.core, ".R!i*");
+			io->corebind.cmd(io->corebind.core, ".R!f*");
+			io->corebind.cmd(io->corebind.core, ".R!om*");
 		}
 	}
 	return rz_io_desc_new(io, &rz_io_plugin_rap,

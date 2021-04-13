@@ -1,5 +1,5 @@
 NAME=multiline0
-FILE=-
+FILE==
 CMDS=<<EOF
 rm -rf /
 EOF
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=singleline0
-FILE=-
+FILE==
 CMDS=<<EOF
 rm -rf
 EOF
@@ -18,7 +18,7 @@ EXPECT=
 RUN
 
 NAME=multiline1
-FILE=-
+FILE==
 CMDS=<<EOF
 rm -rf
 EOF
@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME=singleline1
-FILE=-
+FILE==
 CMDS=<<EOF
 rm -rf
 EOF

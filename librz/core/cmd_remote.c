@@ -25,12 +25,12 @@ static const char *help_msg_equal[] = {
 	"Rh", "[?]", "start the http webserver",
 	"RH", "[?]", "start the http webserver (and launch the web browser)",
 	"\nother:", "", "",
-	"R&", ":port", "start rap server in background (same as '&_=h')",
+	"R&", ":port", "start rap server in background (same as '& Rr')",
 	"R", ":host:port cmd", "run 'cmd' command on remote server",
 	"\nexamples:", "", "",
 	"R+", "tcp://localhost:9090/", "connect to: rizin -c.:9090 ./bin",
 	"R+", "rap://localhost:9090/", "connect to: rizin rap://:9090",
-	"R+", "http://localhost:9090/cmd/", "connect to: rizin -c'=h 9090' bin",
+	"R+", "http://localhost:9090/cmd/", "connect to: rizin -c'Rh 9090' bin",
 	"o ", "rap://:9090/", "start the rap server on tcp port 9090",
 	NULL
 };
@@ -38,7 +38,7 @@ static const char *help_msg_equal[] = {
 static const char *help_msg_equalh[] = {
 	"Usage:", " R[hH] [...]", " # http server",
 	"http server:", "", "",
-	"Rh", " port", "listen for http connections (rizin -qc=H /bin/ls)",
+	"Rh", " port", "listen for http connections (rizin -qcRH /bin/ls)",
 	"Rh-", "", "stop background webserver",
 	"Rh--", "", "stop foreground webserver",
 	"Rh*", "", "restart current webserver",
@@ -108,7 +108,7 @@ RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 	case '!': // "R!"
 		if (input[1] == 'q') {
 			RZ_FREE(core->cmdremote);
-		} else if (input[1] == '=') { // =!=0 or =!= for iosystem
+		} else if (input[1] == '=') { // R!=0 or R!= for iosystem
 			RZ_FREE(core->cmdremote);
 			core->cmdremote = rz_str_trim_dup(input + 2);
 		} else {

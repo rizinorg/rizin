@@ -683,7 +683,7 @@ static const RzCmdDescArg remote_rap_bg_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp remote_rap_bg_help = {
-	.summary = "Start rap server in background (same as '&_=h')",
+	.summary = "Start rap server in background (same as '& Rr')",
 	.args = remote_rap_bg_args,
 };
 

@@ -861,7 +861,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		return;
 	}
 
-	if (*input == '&') { // "=h&" "=&:9090"
+	if (*input == '&') { // "Rh&" "R&:9090"
 		if (rapthread) {
 			eprintf("RAP Thread is already running\n");
 			eprintf("This is experimental and probably buggy. Use at your own risk\n");

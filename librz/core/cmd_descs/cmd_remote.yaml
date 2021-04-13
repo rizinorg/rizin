@@ -90,7 +90,7 @@ commands:
         optional: true
   - name: "R&r"
     cname: remote_rap_bg
-    summary: Start rap server in background (same as '&_=h')
+    summary: Start rap server in background (same as '& Rr')
     args:
       - name: port
         type: RZ_CMD_ARG_TYPE_NUM

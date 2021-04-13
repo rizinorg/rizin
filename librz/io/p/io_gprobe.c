@@ -1218,7 +1218,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 
-	printf("Try: '=!?'\n");
+	printf("Try: 'R!?'\n");
 
 	return NULL;
 }

@@ -396,7 +396,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		desc->get_baddr = true;
 		return NULL;
 	}
-	eprintf("Try: '=!?'\n");
+	eprintf("Try: 'R!?'\n");
 	return NULL;
 }
 

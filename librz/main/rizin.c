@@ -93,8 +93,8 @@ static int main_help(int line) {
 		printf(
 			" --           run rizin without opening any file\n"
 			" =            same as 'rizin malloc://512'\n"
-			" -            read file from stdin (use -i and -c to run cmds)\n"
-			" -=           perform !=! command to run all commands remotely\n"
+			" -            read file from stdin \n"
+			" -=           perform R=! command to run all commands remotely\n"
 			" -0           print \\x00 after init and every command\n"
 			" -2           close stderr file descriptor (silent warning messages)\n"
 			" -a [arch]    set asm.arch\n"
@@ -102,7 +102,7 @@ static int main_help(int line) {
 			" -b [bits]    set asm.bits\n"
 			" -B [baddr]   set base address for PIE binaries\n"
 			" -c 'cmd..'   execute rizin command\n"
-			" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
+			" -C           file is host:port (alias for -cR+http://%%s/cmd/)\n"
 			" -d           debug the executable 'file' or running process 'pid'\n"
 			" -D [backend] enable debug mode (e cfg.debug=true)\n"
 			" -e k=v       evaluate config var\n"
@@ -441,6 +441,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	rz_getopt_init(&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
+		case '-':
+
+			eprintf("%c: invalid combinations of argument flags - %s\n", opt.opt, opt.argv[2]);
+			ret = 1;
+			goto beach;
+
+			break;
 		case '=':
 			RZ_FREE(r->cmdremote);
 			r->cmdremote = strdup("");
