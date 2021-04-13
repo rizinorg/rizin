@@ -486,7 +486,6 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 RZ_API bool rz_core_visual_hudstuff(RzCore *core);
 RZ_API int rz_core_visual_classes(RzCore *core);
 RZ_API int rz_core_visual_analysis_classes(RzCore *core);
-RZ_API int rz_core_visual_types(RzCore *core);
 RZ_API int rz_core_visual(RzCore *core, const char *input);
 RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
 RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
