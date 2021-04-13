@@ -284,7 +284,7 @@ static int cb(RzDiff *d, void *user, RzDiffOp *op) {
 					free(bufasm);
 					free(acbufasm);
 				}
-				// rz_asm_code_free (ac);
+				rz_asm_code_free(ac);
 			}
 		} else {
 			printf(" => ");
