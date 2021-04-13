@@ -3557,6 +3557,7 @@ reread:
 			goto beach;
 		}
 		ignorecase = true;
+		// fallthrough
 	case 'j': // "/j"
 		if (input[0] == 'j' && input[1] == ' ') {
 			param.outmode = RZ_MODE_JSON;
