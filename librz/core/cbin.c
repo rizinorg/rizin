@@ -2900,7 +2900,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		RzTable *table = rz_core_table(r);
 		rz_table_visual_list(table, list, r->offset, -1, cols, r->io->va);
 		if (r->table_query) {
-			rz_table_query(table, r->table_query);
+			// TODO iS/iSS entropy,sha1,... <query>
+			rz_table_query(table, hashtypes ? "" : r->table_query);
 		}
 		{
 			char *s = rz_table_tostring(table);
@@ -3121,7 +3122,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 out:
 	if (IS_MODE_NORMAL(mode)) {
 		if (r->table_query) {
-			rz_table_query(table, r->table_query);
+			// TODO iS/iSS entropy,sha1,... <query>
+			rz_table_query(table, hashtypes ? "" : r->table_query);
 		}
 		char *s = rz_table_tostring(table);
 		rz_cons_printf("\n%s\n", s);
