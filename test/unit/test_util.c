@@ -19,6 +19,7 @@ bool test_file_slurp(void) {
 	close(f);
 
 	char *content = rz_file_slurp(test_file, &s);
+	mu_assert_notnull(content, "content should not be NULL");
 	mu_assert_eq(s, 0, "size should be zero");
 	mu_assert_eq(strlen(content), 0, "returned buffer should be empty");
 	free(content);
