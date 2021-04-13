@@ -1256,10 +1256,10 @@ static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
 RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va) {
 	rz_return_val_if_fail(core && binfile, NULL);
 	RzBinObject *o = binfile->o;
-	RzBinInfo *info = o ? o->info : NULL;
-	if (!info) {
+	if (!o || !o->info) {
 		return false;
 	}
+	RzBinInfo *info = o->info;
 
 	bool is_arm = info && info->arch && !strncmp(info->arch, "arm", 3);
 	bool bin_demangle = rz_config_get_b(core->config, "bin.demangle");
@@ -1346,9 +1346,8 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 
 	//handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
-		RzList *entries = o ? o->entries : NULL;
 		RzBinAddr *entry;
-		rz_list_foreach (entries, iter, entry) {
+		rz_list_foreach (o->entries, iter, entry) {
 			handle_arm_entry(core, o, entry, va);
 		}
 	}
