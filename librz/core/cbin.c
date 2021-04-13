@@ -354,6 +354,9 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	if (mask & RZ_CORE_BIN_ACC_ENTRIES) {
 		rz_core_bin_apply_entry(r, binfile, va);
 	}
+	if (mask & RZ_CORE_BIN_ACC_MAPS) {
+		rz_core_bin_apply_maps(r, binfile, va);
+	}
 	if (mask & RZ_CORE_BIN_ACC_SECTIONS) {
 		rz_core_bin_apply_sections(r, binfile, va);
 	}
@@ -696,7 +699,7 @@ static void add_map(RzCore *core, RzBinMap *map, ut64 addr, int fd) {
 	}
 
 	// then we map the part of the section that comes from the physical file
-	char *map_name = map->name ? strdup(map->name) : rz_str_newf("fmap.%d", fd);
+	char *map_name = map->name ? rz_str_newf("fmap.%s", map->name) : rz_str_newf("fmap.%d", fd);
 	if (!map_name) {
 		return;
 	}
@@ -746,6 +749,7 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 		add_map(core, map, addr, binfile->fd);
 	}
 	rz_io_update(core->io);
+	return true;
 }
 
 /**

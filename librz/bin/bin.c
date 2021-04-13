@@ -1363,6 +1363,14 @@ RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
+RZ_IPI void rz_bin_map_free(RzBinMap *map) {
+	if (!map) {
+		return;
+	}
+	free(map->name);
+	free(map);
+}
+
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name) {
 	RzBinSection *s = RZ_NEW0(RzBinSection);
 	if (s) {

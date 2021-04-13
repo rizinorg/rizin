@@ -66,27 +66,27 @@ CMDS=<<EOF
 om
 EOF
 EXPECT=<<EOF
-21 fd: 3 +0x00001000 0x56621000 - 0x56621fff r-- /home/florian/dev/crash/crash-linux-x86
+21 fd: 3 +0x00001000 0x56621000 - 0x56621fff r-- fmap./home/florian/dev/crash/crash-linux-x86
 20 fd: 6 +0x00000000 0x56622000 - 0x56622fff r-- /home/florian/dev/crash/crash-linux-x86
 19 fd: 6 +0x00000000 0x56623000 - 0x56623fff r-- /home/florian/dev/crash/crash-linux-x86
-18 fd: 3 +0x00002000 0x56624000 - 0x56624fff r-- /home/florian/dev/crash/crash-linux-x86
-17 fd: 3 +0x00003000 0x56625000 - 0x56625fff r-- /home/florian/dev/crash/crash-linux-x86
-16 fd: 3 +0x00004000 0xf7d50000 - 0xf7d50fff r-- /usr/lib32/libc-2.33.so
-15 fd: 9 +0x00000000 0xf7d51000 - 0xf7d6cfff r-- mmap.LOAD5
+18 fd: 3 +0x00002000 0x56624000 - 0x56624fff r-- fmap./home/florian/dev/crash/crash-linux-x86
+17 fd: 3 +0x00003000 0x56625000 - 0x56625fff r-- fmap./home/florian/dev/crash/crash-linux-x86
+16 fd: 3 +0x00004000 0xf7d50000 - 0xf7d50fff r-- fmap./usr/lib32/libc-2.33.so
+15 fd: 9 +0x00000000 0xf7d51000 - 0xf7d6cfff r-- mmap./usr/lib32/libc-2.33.so
 14 fd: 8 +0x00000000 0xf7d6d000 - 0xf7ec9fff r-x /usr/lib32/libc-2.33.so
 13 fd: 7 +0x00000000 0xf7eca000 - 0xf7f3bfff r-- /usr/lib32/libc-2.33.so
 12 fd: 6 +0x00000000 0xf7f3c000 - 0xf7f3cfff r-- /usr/lib32/libc-2.33.so
-11 fd: 3 +0x00005000 0xf7f3d000 - 0xf7f3efff r-- /usr/lib32/libc-2.33.so
-10 fd: 3 +0x00007000 0xf7f3f000 - 0xf7f40fff r-- /usr/lib32/libc-2.33.so
+11 fd: 3 +0x00005000 0xf7f3d000 - 0xf7f3efff r-- fmap./usr/lib32/libc-2.33.so
+10 fd: 3 +0x00007000 0xf7f3f000 - 0xf7f40fff r-- fmap./usr/lib32/libc-2.33.so
  9 fd: 3 +0x00009000 0xf7f41000 - 0xf7f49fff r-- fmap.LOAD11
  8 fd: 3 +0x00012000 0xf7f97000 - 0xf7f9afff r-- fmap.LOAD12
  7 fd: 3 +0x00016000 0xf7f9b000 - 0xf7f9cfff r-x fmap.LOAD13
- 6 fd: 3 +0x00018000 0xf7f9d000 - 0xf7f9dfff r-- /usr/lib32/ld-2.33.so
+ 6 fd: 3 +0x00018000 0xf7f9d000 - 0xf7f9dfff r-- fmap./usr/lib32/ld-2.33.so
  5 fd: 5 +0x00000000 0xf7f9e000 - 0xf7fbffff r-x /usr/lib32/ld-2.33.so
  4 fd: 4 +0x00000000 0xf7fc0000 - 0xf7fccfff r-- /usr/lib32/ld-2.33.so
- 3 fd: 3 +0x00019000 0xf7fcd000 - 0xf7fcefff r-- /usr/lib32/ld-2.33.so
- 2 fd: 3 +0x0001b000 0xf7fcf000 - 0xf7fcffff r-- /usr/lib32/ld-2.33.so
- 1 fd: 3 +0x0001c000 0xffb6b000 - 0xffb8bfff r-- [stack]
+ 3 fd: 3 +0x00019000 0xf7fcd000 - 0xf7fcefff r-- fmap./usr/lib32/ld-2.33.so
+ 2 fd: 3 +0x0001b000 0xf7fcf000 - 0xf7fcffff r-- fmap./usr/lib32/ld-2.33.so
+ 1 fd: 3 +0x0001c000 0xffb6b000 - 0xffb8bfff r-- fmap.[stack]
 EOF
 RUN
 
@@ -116,25 +116,25 @@ CMDS=<<EOF
 om
 EOF
 EXPECT=<<EOF
-22 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- /home/florian/dev/crash/crash-linux-x86_64
+22 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
 21 fd: 9 +0x00000000 0x56149dfb0000 - 0x56149dfb0fff r-- /home/florian/dev/crash/crash-linux-x86_64
 20 fd: 9 +0x00000000 0x56149dfb1000 - 0x56149dfb1fff r-- /home/florian/dev/crash/crash-linux-x86_64
-19 fd: 3 +0x00003000 0x56149dfb2000 - 0x56149dfb2fff r-- /home/florian/dev/crash/crash-linux-x86_64
-18 fd: 3 +0x00004000 0x56149dfb3000 - 0x56149dfb3fff r-- /home/florian/dev/crash/crash-linux-x86_64
+19 fd: 3 +0x00003000 0x56149dfb2000 - 0x56149dfb2fff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
+18 fd: 3 +0x00004000 0x56149dfb3000 - 0x56149dfb3fff r-- fmap./home/florian/dev/crash/crash-linux-x86_64
 17 fd: 3 +0x00005000 0x7f582fa2e000 - 0x7f582fa2ffff r-- fmap.LOAD5
-16 fd: 3 +0x00007000 0x7f582fa30000 - 0x7f582fa30fff r-- /usr/lib/libc-2.33.so
-15 fd: 8 +0x00000000 0x7f582fa31000 - 0x7f582fa55fff r-- mmap.LOAD6
+16 fd: 3 +0x00007000 0x7f582fa30000 - 0x7f582fa30fff r-- fmap./usr/lib/libc-2.33.so
+15 fd: 8 +0x00000000 0x7f582fa31000 - 0x7f582fa55fff r-- mmap./usr/lib/libc-2.33.so
 14 fd: 7 +0x00000000 0x7f582fa56000 - 0x7f582fba1fff r-x /usr/lib/libc-2.33.so
 13 fd: 6 +0x00000000 0x7f582fba2000 - 0x7f582fbedfff r-- /usr/lib/libc-2.33.so
-12 fd: 3 +0x00008000 0x7f582fbee000 - 0x7f582fbf0fff r-- /usr/lib/libc-2.33.so
-11 fd: 3 +0x0000b000 0x7f582fbf1000 - 0x7f582fbf3fff r-- /usr/lib/libc-2.33.so
+12 fd: 3 +0x00008000 0x7f582fbee000 - 0x7f582fbf0fff r-- fmap./usr/lib/libc-2.33.so
+11 fd: 3 +0x0000b000 0x7f582fbf1000 - 0x7f582fbf3fff r-- fmap./usr/lib/libc-2.33.so
 10 fd: 3 +0x0000e000 0x7f582fbf4000 - 0x7f582fbfefff r-- fmap.LOAD11
- 9 fd: 3 +0x00019000 0x7f582fc4c000 - 0x7f582fc4cfff r-- /usr/lib/ld-2.33.so
+ 9 fd: 3 +0x00019000 0x7f582fc4c000 - 0x7f582fc4cfff r-- fmap./usr/lib/ld-2.33.so
  8 fd: 5 +0x00000000 0x7f582fc4d000 - 0x7f582fc70fff r-x /usr/lib/ld-2.33.so
  7 fd: 4 +0x00000000 0x7f582fc71000 - 0x7f582fc79fff r-- /usr/lib/ld-2.33.so
- 6 fd: 3 +0x0001a000 0x7f582fc7b000 - 0x7f582fc7cfff r-- /usr/lib/ld-2.33.so
- 5 fd: 3 +0x0001c000 0x7f582fc7d000 - 0x7f582fc7efff r-- /usr/lib/ld-2.33.so
- 4 fd: 3 +0x0001e000 0x7ffc8352d000 - 0x7ffc8354dfff r-- [stack]
+ 6 fd: 3 +0x0001a000 0x7f582fc7b000 - 0x7f582fc7cfff r-- fmap./usr/lib/ld-2.33.so
+ 5 fd: 3 +0x0001c000 0x7f582fc7d000 - 0x7f582fc7efff r-- fmap./usr/lib/ld-2.33.so
+ 4 fd: 3 +0x0001e000 0x7ffc8352d000 - 0x7ffc8354dfff r-- fmap.[stack]
  3 fd: 3 +0x0003f000 0x7ffc83558000 - 0x7ffc8355bfff r-- fmap.LOAD18
  2 fd: 3 +0x00043000 0x7ffc8355c000 - 0x7ffc8355dfff r-x fmap.LOAD19
  1 fd: 3 +0x00045000 0xffffffffff600000 - 0xffffffffff600fff r-x fmap.LOAD20
@@ -174,23 +174,23 @@ CMDS=<<EOF
 om
 EOF
 EXPECT=<<EOF
-17 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x /home/alarm/crash/crash-linux-arm64
-16 fd: 3 +0x00002000 0x558ce47000 - 0x558ce47fff r-- /home/alarm/crash/crash-linux-arm64
-15 fd: 3 +0x00003000 0x558ce48000 - 0x558ce48fff r-- /home/alarm/crash/crash-linux-arm64
-14 fd: 3 +0x00004000 0x7f8bd60000 - 0x7f8bd60fff r-x /usr/lib/libc-2.32.so
-13 fd: 6 +0x00000000 0x7f8bd61000 - 0x7f8bebafff r-x mmap.LOAD3
+17 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x fmap./home/alarm/crash/crash-linux-arm64
+16 fd: 3 +0x00002000 0x558ce47000 - 0x558ce47fff r-- fmap./home/alarm/crash/crash-linux-arm64
+15 fd: 3 +0x00003000 0x558ce48000 - 0x558ce48fff r-- fmap./home/alarm/crash/crash-linux-arm64
+14 fd: 3 +0x00004000 0x7f8bd60000 - 0x7f8bd60fff r-x fmap./usr/lib/libc-2.32.so
+13 fd: 6 +0x00000000 0x7f8bd61000 - 0x7f8bebafff r-x mmap./usr/lib/libc-2.32.so
 12 fd: 5 +0x00000000 0x7f8bebb000 - 0x7f8becafff r-- /usr/lib/libc-2.32.so
-11 fd: 3 +0x00005000 0x7f8becb000 - 0x7f8becdfff r-- /usr/lib/libc-2.32.so
-10 fd: 3 +0x00008000 0x7f8bece000 - 0x7f8bed0fff r-- /usr/lib/libc-2.32.so
+11 fd: 3 +0x00005000 0x7f8becb000 - 0x7f8becdfff r-- fmap./usr/lib/libc-2.32.so
+10 fd: 3 +0x00008000 0x7f8bece000 - 0x7f8bed0fff r-- fmap./usr/lib/libc-2.32.so
  9 fd: 3 +0x0000b000 0x7f8bed1000 - 0x7f8bed3fff r-- fmap.LOAD7
- 8 fd: 3 +0x0000e000 0x7f8bef8000 - 0x7f8bef8fff r-x /usr/lib/ld-2.32.so
- 7 fd: 4 +0x00000000 0x7f8bef9000 - 0x7f8bf19fff r-x mmap.LOAD8
+ 8 fd: 3 +0x0000e000 0x7f8bef8000 - 0x7f8bef8fff r-x fmap./usr/lib/ld-2.32.so
+ 7 fd: 4 +0x00000000 0x7f8bef9000 - 0x7f8bf19fff r-x mmap./usr/lib/ld-2.32.so
  6 fd: 3 +0x0000f000 0x7f8bf26000 - 0x7f8bf27fff r-- fmap.LOAD9
  5 fd: 3 +0x00011000 0x7f8bf28000 - 0x7f8bf28fff r-- fmap.LOAD10
  4 fd: 3 +0x00012000 0x7f8bf29000 - 0x7f8bf29fff r-x fmap.LOAD11
- 3 fd: 3 +0x00013000 0x7f8bf2a000 - 0x7f8bf2afff r-- /usr/lib/ld-2.32.so
- 2 fd: 3 +0x00014000 0x7f8bf2b000 - 0x7f8bf2cfff r-- /usr/lib/ld-2.32.so
- 1 fd: 3 +0x00016000 0x7ff5e96000 - 0x7ff5eb6fff r-- [stack]
+ 3 fd: 3 +0x00013000 0x7f8bf2a000 - 0x7f8bf2afff r-- fmap./usr/lib/ld-2.32.so
+ 2 fd: 3 +0x00014000 0x7f8bf2b000 - 0x7f8bf2cfff r-- fmap./usr/lib/ld-2.32.so
+ 1 fd: 3 +0x00016000 0x7ff5e96000 - 0x7ff5eb6fff r-- fmap.[stack]
 EOF
 RUN
 
@@ -280,25 +280,25 @@ CMDS=<<EOF
 om
 EOF
 EXPECT=<<EOF
-23 fd: 3 +0x00001000 0x00010000 - 0x00010fff r-x /home/pi/crash/crash-linux-arm32
-22 fd: 3 +0x00002000 0x00020000 - 0x00020fff r-- /home/pi/crash/crash-linux-arm32
-21 fd: 3 +0x00003000 0x00021000 - 0x00021fff r-- /home/pi/crash/crash-linux-arm32
-20 fd: 3 +0x00004000 0x76e49000 - 0x76e49fff r-x /usr/lib/arm-linux-gnueabihf/libc-2.28.so
-19 fd: 8 +0x00000000 0x76e4a000 - 0x76f80fff r-x mmap.LOAD3
+23 fd: 3 +0x00001000 0x00010000 - 0x00010fff r-x fmap./home/pi/crash/crash-linux-arm32
+22 fd: 3 +0x00002000 0x00020000 - 0x00020fff r-- fmap./home/pi/crash/crash-linux-arm32
+21 fd: 3 +0x00003000 0x00021000 - 0x00021fff r-- fmap./home/pi/crash/crash-linux-arm32
+20 fd: 3 +0x00004000 0x76e49000 - 0x76e49fff r-x fmap./usr/lib/arm-linux-gnueabihf/libc-2.28.so
+19 fd: 8 +0x00000000 0x76e4a000 - 0x76f80fff r-x mmap./usr/lib/arm-linux-gnueabihf/libc-2.28.so
 18 fd: 7 +0x00000000 0x76f81000 - 0x76f90fff r-- /usr/lib/arm-linux-gnueabihf/libc-2.28.so
-17 fd: 3 +0x00005000 0x76f91000 - 0x76f92fff r-- /usr/lib/arm-linux-gnueabihf/libc-2.28.so
-16 fd: 3 +0x00007000 0x76f93000 - 0x76f93fff r-- /usr/lib/arm-linux-gnueabihf/libc-2.28.so
+17 fd: 3 +0x00005000 0x76f91000 - 0x76f92fff r-- fmap./usr/lib/arm-linux-gnueabihf/libc-2.28.so
+16 fd: 3 +0x00007000 0x76f93000 - 0x76f93fff r-- fmap./usr/lib/arm-linux-gnueabihf/libc-2.28.so
 15 fd: 3 +0x00008000 0x76f94000 - 0x76f96fff r-- fmap.LOAD7
 14 fd: 6 +0x00000000 0x76f97000 - 0x76f9afff r-x /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
 13 fd: 5 +0x00000000 0x76f9b000 - 0x76fa9fff r-- /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
-12 fd: 3 +0x0000b000 0x76faa000 - 0x76faafff r-- /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
-11 fd: 3 +0x0000c000 0x76fab000 - 0x76fabfff r-- /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
-10 fd: 3 +0x0000d000 0x76fac000 - 0x76facfff r-x /usr/lib/arm-linux-gnueabihf/ld-2.28.so
- 9 fd: 4 +0x00000000 0x76fad000 - 0x76fcbfff r-x mmap.LOAD12
+12 fd: 3 +0x0000b000 0x76faa000 - 0x76faafff r-- fmap./usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
+11 fd: 3 +0x0000c000 0x76fab000 - 0x76fabfff r-- fmap./usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
+10 fd: 3 +0x0000d000 0x76fac000 - 0x76facfff r-x fmap./usr/lib/arm-linux-gnueabihf/ld-2.28.so
+ 9 fd: 4 +0x00000000 0x76fad000 - 0x76fcbfff r-x mmap./usr/lib/arm-linux-gnueabihf/ld-2.28.so
  8 fd: 3 +0x0000e000 0x76fda000 - 0x76fdbfff r-- fmap.LOAD13
- 7 fd: 3 +0x00010000 0x76fdc000 - 0x76fdcfff r-- /usr/lib/arm-linux-gnueabihf/ld-2.28.so
- 6 fd: 3 +0x00011000 0x76fdd000 - 0x76fddfff r-- /usr/lib/arm-linux-gnueabihf/ld-2.28.so
- 5 fd: 3 +0x00012000 0x7ea6c000 - 0x7ea8cfff r-- [stack]
+ 7 fd: 3 +0x00010000 0x76fdc000 - 0x76fdcfff r-- fmap./usr/lib/arm-linux-gnueabihf/ld-2.28.so
+ 6 fd: 3 +0x00011000 0x76fdd000 - 0x76fddfff r-- fmap./usr/lib/arm-linux-gnueabihf/ld-2.28.so
+ 5 fd: 3 +0x00012000 0x7ea6c000 - 0x7ea8cfff r-- fmap.[stack]
  4 fd: 3 +0x00033000 0x7eb68000 - 0x7eb68fff r-x fmap.LOAD17
  3 fd: 3 +0x00034000 0x7eb69000 - 0x7eb69fff r-- fmap.LOAD18
  2 fd: 3 +0x00035000 0x7eb6a000 - 0x7eb6afff r-x fmap.LOAD19
