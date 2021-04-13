@@ -1148,11 +1148,11 @@ typedef struct {
 } SymName;
 
 static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
-	int bin_demangle = lang != NULL;
-	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
 	if (!r || !sym || !sym->name) {
 		return;
 	}
+	int bin_demangle = lang != NULL;
+	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
 	sn->name = rz_str_newf("%s%s", sym->is_imported ? "imp." : "", sym->name);
 	sn->libname = sym->libname ? strdup(sym->libname) : NULL;
 	const char *pfx = get_prefix_for_sym(sym);
