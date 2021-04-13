@@ -1634,8 +1634,9 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 		rz_cons_flush();
 		rz_cons_gotoxy(0, 20);
 		rz_cons_printf("ROPChain:\n  %s\n", chainstr ? chainstr : "");
+		int chainstrlen = chainstr ? strlen(chainstr) : 0;
 		rz_list_foreach (core->ropchain, iter, msg) {
-			int extra = strlen(chainstr) / scr_w;
+			int extra = chainstrlen / scr_w;
 			rz_cons_gotoxy(0, extra + 22 + count);
 			rz_cons_strcat(msg);
 			const char *cmt = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, rz_num_get(NULL, msg));
