@@ -2415,15 +2415,14 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 	int i = 0;
 
 	RzBinFile *bf = rz_bin_cur(r->bin);
-	RzBinObject *o = bf ? bf->o : NULL;
-	RzBinInfo *info = bf->o ? o->info : NULL;
-	if (!info) {
+	if (!bf || !bf->o || !bf->o->info) {
 		if (IS_MODE_JSON(mode)) {
 			pj_a(pj);
 			pj_end(pj);
 		}
 		return false;
 	}
+	RzBinObject *o = bf->o;
 
 	RzList *imports = rz_bin_get_imports(r->bin);
 	if (IS_MODE_JSON(mode)) {
