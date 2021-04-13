@@ -129,7 +129,7 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *enum_name, RzOutp
 }
 
 RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
-	RzList *enumlist = rz_type_db_enums(core->analysis->typedb);
+	RzList *enumlist = rz_type_db_enum_names(core->analysis->typedb);
 	RzListIter *it;
 	char *e;
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;

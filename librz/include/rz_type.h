@@ -231,10 +231,10 @@ RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *n
 RZ_API bool rz_type_func_noreturn_drop(RzTypeDB *typedb, RZ_NONNULL const char *name);
 
 // Listing API
-RZ_API RzList *rz_type_db_enums(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_structs(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_unions(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_typedefs(RzTypeDB *typedb);
+RZ_API RzList *rz_type_db_enum_names(RzTypeDB *typedb);
+RZ_API RzList *rz_type_db_struct_names(RzTypeDB *typedb);
+RZ_API RzList *rz_type_db_union_names(RzTypeDB *typedb);
+RZ_API RzList *rz_type_db_typedef_names(RzTypeDB *typedb);
 RZ_API RzList *rz_type_db_links(RzTypeDB *typedb);
 RZ_API RzList *rz_type_db_all(RzTypeDB *typedb);
 

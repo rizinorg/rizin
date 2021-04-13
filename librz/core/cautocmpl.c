@@ -219,7 +219,7 @@ static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, c
 static void autocmplt_cmd_arg_enum_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_type_db_enums(core->analysis->typedb);
+	RzList *list = rz_type_db_enum_names(core->analysis->typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -231,7 +231,7 @@ static void autocmplt_cmd_arg_enum_type(RzCore *core, RzLineNSCompletionResult *
 static void autocmplt_cmd_arg_struct_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_type_db_structs(core->analysis->typedb);
+	RzList *list = rz_type_db_struct_names(core->analysis->typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -243,7 +243,7 @@ static void autocmplt_cmd_arg_struct_type(RzCore *core, RzLineNSCompletionResult
 static void autocmplt_cmd_arg_union_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_type_db_unions(core->analysis->typedb);
+	RzList *list = rz_type_db_union_names(core->analysis->typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);
@@ -255,7 +255,7 @@ static void autocmplt_cmd_arg_union_type(RzCore *core, RzLineNSCompletionResult 
 static void autocmplt_cmd_arg_alias_type(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	char *item;
 	RzListIter *iter;
-	RzList *list = rz_type_db_typedefs(core->analysis->typedb);
+	RzList *list = rz_type_db_typedef_names(core->analysis->typedb);
 	rz_list_foreach (list, iter, item) {
 		if (!strncmp(item, s, len)) {
 			rz_line_ns_completion_result_add(res, item);

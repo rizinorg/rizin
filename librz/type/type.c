@@ -277,7 +277,7 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 
 // Listing all available types by category
 
-RZ_API RzList *rz_type_db_enums(RzTypeDB *typedb) {
+RZ_API RzList *rz_type_db_enum_names(RzTypeDB *typedb) {
 	RzList *ccl = rz_list_new();
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -295,7 +295,7 @@ static bool sdb_if_union_cb(void *p, const char *k, const char *v) {
 	return !strncmp(v, "union", strlen("union") + 1);
 }
 
-RZ_API RzList *rz_type_db_unions(RzTypeDB *typedb) {
+RZ_API RzList *rz_type_db_union_names(RzTypeDB *typedb) {
 	Sdb *TDB = typedb->sdb_types;
 	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_union_cb, true, TDB);
 	RzList *l = rz_list_of_sdblist(sl);
@@ -319,7 +319,7 @@ static bool sdb_if_struct_cb(void *user, const char *k, const char *v) {
 	return false;
 }
 
-RZ_API RzList *rz_type_db_structs(RzTypeDB *typedb) {
+RZ_API RzList *rz_type_db_struct_names(RzTypeDB *typedb) {
 	Sdb *TDB = typedb->sdb_types;
 	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_struct_cb, true, TDB);
 	RzList *l = rz_list_of_sdblist(sl);
@@ -331,7 +331,7 @@ static bool sdb_if_typedef_cb(void *p, const char *k, const char *v) {
 	return !strncmp(v, "typedef", strlen("typedef") + 1);
 }
 
-RZ_API RzList *rz_type_db_typedefs(RzTypeDB *typedb) {
+RZ_API RzList *rz_type_db_typedef_names(RzTypeDB *typedb) {
 	Sdb *TDB = typedb->sdb_types;
 	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_typedef_cb, true, TDB);
 	RzList *l = rz_list_of_sdblist(sl);
