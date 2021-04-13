@@ -1699,6 +1699,7 @@ static RzList *sections(RzBinFile *bf) {
 	int i;
 	for (i = 0; i < cache->hdr->mappingCount; i++) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
+			rz_list_free(ret);
 			return NULL;
 		}
 		ptr->name = rz_str_newf("cache_map.%d", i);
