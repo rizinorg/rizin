@@ -307,15 +307,18 @@ RZ_API bool rz_core_bin_load_structs(RzCore *core, const char *file) {
 		return false;
 	}
 	RzBinOptions opt = { 0 };
-	rz_bin_open(core->bin, file, &opt);
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	if (bf) {
-		rz_core_bin_export_info(core, RZ_MODE_SET);
-		rz_bin_file_delete(core->bin, bf->id);
-		return true;
+	if (!rz_bin_open(core->bin, file, &opt)) {
+		eprintf("Cannot open bin '%s'\n", file);
+		return false;
 	}
-	eprintf("Cannot open bin '%s'\n", file);
-	return false;
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf) {
+		eprintf("Cannot open bin '%s'\n", file);
+		return false;
+	}
+	rz_core_bin_export_info(core, RZ_MODE_SET);
+	rz_bin_file_delete(core->bin, bf->id);
+	return true;
 }
 
 RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name) {
