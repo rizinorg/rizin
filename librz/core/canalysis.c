@@ -2351,6 +2351,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 								free(body_b64);
 								free(title);
 								rz_diff_free(d);
+								rz_config_hold_free(hc);
 								return false;
 							}
 							body_b64 = rz_str_prepend(body_b64, "base64:");
@@ -2377,6 +2378,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 								free(body_b64);
 								free(title);
 								rz_diff_free(d);
+								rz_config_hold_free(hc);
 								return false;
 							}
 							body_b64 = rz_str_prepend(body_b64, "base64:");
