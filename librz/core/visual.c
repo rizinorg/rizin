@@ -2077,7 +2077,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		" q  quit\n"
 		" r  ROP gadgets\n"
 		" s  symbols\n"
-		" t  types\n"
 		" T  themes\n"
 		" v  vars\n"
 		" x  xrefs\n"
@@ -2139,9 +2138,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			break;
 		case 'C': // "vbC"
 			rz_core_visual_comments(core);
-			break;
-		case 't': // "vbt"
-			rz_core_visual_types(core);
 			break;
 		case 'T': // "vbT"
 			rz_core_cmd0(core, "eco $(eco~...)");
