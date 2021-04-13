@@ -52,6 +52,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_entrypoint)(struct PE_(rz_bin_mdmp_pe_bin) * pe_b
 		return NULL;
 	}
 	if (!(ret = rz_list_new())) {
+		free(entry);
 		return NULL;
 	}
 
