@@ -167,6 +167,9 @@ RZ_API void rz_type_base_union_member_free(void *e, void *user);
 RZ_API RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type);
 
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(RzTypeDB *typedb, RzBaseTypeKind kind);
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(RzTypeDB *typedb);
+
 // AST types
 
 RZ_API RzASTParser *rz_ast_parser_new(void);
