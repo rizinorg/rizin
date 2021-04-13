@@ -7,7 +7,6 @@ rz_type_sources = [
   'link.c',
   'serialize_types.c',
   'type.c',
-  'utype.c'
 ]
 
 rz_type_inc = [

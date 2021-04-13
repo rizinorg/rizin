@@ -129,7 +129,7 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *enum_name, RzOutp
 }
 
 RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
-	RzList *enumlist = rz_type_db_enums(core->analysis->typedb);
+	RzList *enumlist = rz_type_db_enum_names(core->analysis->typedb);
 	RzListIter *it;
 	char *e;
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
@@ -672,7 +672,7 @@ beach:
 
 static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut64 laddr, ut64 at, int offimm) {
 	Sdb *TDB = core->analysis->typedb->sdb_types;
-	char *res = rz_type_get_struct_memb(core->analysis->typedb, type, offimm);
+	char *res = rz_type_db_get_struct_member(core->analysis->typedb, type, offimm);
 	const char *cmt = ((offimm == 0) && res) ? res : type;
 	if (offimm > 0) {
 		// set hint only if link is present

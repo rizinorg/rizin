@@ -133,6 +133,14 @@ typedef struct Elf_(rz_bin_elf_note_file_t) {
 }
 RzBinElfNoteFile;
 
+/// Parsed PT_NOTE of type NT_PRSTATUS
+typedef struct Elf_(rz_bin_elf_note_prstatus_t) {
+	size_t regstate_size;
+	ut8 *regstate;
+	// Hint: there is more info in NT_PRSTATUS notes that could be parsed if needed.
+}
+RzBinElfNotePrStatus;
+
 /// A single PT_NOTE entry, parsed from an ElfW(Nhdr) and associated data.
 typedef struct Elf_(rz_bin_elf_note_t) {
 	Elf_(Word) type;
@@ -141,10 +149,7 @@ typedef struct Elf_(rz_bin_elf_note_t) {
 			size_t files_count;
 			RzBinElfNoteFile *files;
 		} file; //< for type == NT_FILE
-		struct {
-			size_t regstate_size;
-			ut8 *regstate;
-		} prstatus; //< for type = NT_PRSTATUS
+		RzBinElfNotePrStatus prstatus; //< for type = NT_PRSTATUS
 	};
 }
 RzBinElfNote;
@@ -253,7 +258,7 @@ bool Elf_(rz_bin_elf_is_executable)(ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(struct Elf_(rz_bin_elf_obj_t) * bin);
 int Elf_(rz_bin_elf_has_nx)(struct Elf_(rz_bin_elf_obj_t) * bin);
 const ut8 *Elf_(rz_bin_elf_grab_regstate)(struct Elf_(rz_bin_elf_obj_t) * bin, size_t *size);
-RzList *Elf_(rz_bin_elf_get_maps)(ELFOBJ *bin);
+ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(rz_bin_elf_obj_t) * bin,
 	struct rz_bin_elf_symbol_t *symbol,
 	const char *namefmt);

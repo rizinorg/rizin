@@ -3867,10 +3867,11 @@ static int fcn_list_legacy(RzCore *core, RzList *fcns) {
 	return 0;
 }
 
-RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad) {
-	char temp[64];
+RZ_DEPRECATE RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad) {
 	rz_return_val_if_fail(core && core->analysis, 0);
-	if (rz_list_empty(core->analysis->fcns)) {
+	char temp[64];
+	RzList *fcnlist = rz_analysis_function_list(core->analysis);
+	if (rz_list_empty(fcnlist)) {
 		if (*rad == 'j') {
 			PJ *pj = rz_core_pj_new(core);
 			if (!pj) {
@@ -3896,7 +3897,7 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 	}
 
 	if (rad && (*rad == 'l' || *rad == 'j')) {
-		fcnlist_gather_metadata(core->analysis, core->analysis->fcns);
+		fcnlist_gather_metadata(core->analysis, fcnlist);
 	}
 
 	const char *name = input;
@@ -3912,7 +3913,7 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 	}
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+	rz_list_foreach (fcnlist, iter, fcn) {
 		if (!input || rz_analysis_function_contains(fcn, addr) || (!strcmp(name, fcn->name))) {
 			rz_list_append(fcns, fcn);
 		}
@@ -7008,7 +7009,7 @@ static bool is_apple_target(RzCore *core) {
  * \param experimental Enable more experimental analysis stages ("aaaa" command)
  * \param dh_orig Name of the debug handler, e.g. "esil"
  */
-RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig) {
+RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig) {
 	bool didAap = false;
 	ut64 curseek = core->offset;
 	bool cfg_debug = rz_config_get_b(core->config, "cfg.debug");

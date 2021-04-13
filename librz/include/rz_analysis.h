@@ -1369,6 +1369,9 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_at(RzAnalysis *analysis, ut6
 
 RZ_API bool rz_analysis_function_delete(RzAnalysisFunction *fcn);
 
+// returns the list of functions in the RzAnalysis instance
+RZ_API RZ_BORROW RzList *rz_analysis_function_list(RzAnalysis *analysis);
+
 // rhange the entrypoint of fcn
 // This can fail (and return false) if there is already another function at the new address
 RZ_API bool rz_analysis_function_relocate(RzAnalysisFunction *fcn, ut64 addr);

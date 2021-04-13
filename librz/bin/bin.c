@@ -1375,6 +1375,7 @@ RZ_IPI void rz_bin_section_free(RzBinSection *bs) {
 	if (bs) {
 		free(bs->name);
 		free(bs->format);
+		free(bs->map_name);
 		free(bs);
 	}
 }

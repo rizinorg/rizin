@@ -6912,7 +6912,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 			rz_str_trim(off);
 			int toff = rz_num_math(NULL, off);
 			if (toff) {
-				RzList *typeoffs = rz_type_get_by_offset(core->analysis->typedb, toff);
+				RzList *typeoffs = rz_type_db_get_by_offset(core->analysis->typedb, toff);
 				RzListIter *iter;
 				char *ty;
 				rz_list_foreach (typeoffs, iter, ty) {
@@ -6981,7 +6981,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 						offimm += rz_num_math(NULL, off);
 					}
 					// TODO: Allow to select from multiple choices
-					RzList *otypes = rz_type_get_by_offset(core->analysis->typedb, offimm);
+					RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
 					RzListIter *iter;
 					char *otype = NULL;
 					rz_list_foreach (otypes, iter, otype) {

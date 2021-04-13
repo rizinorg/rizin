@@ -676,7 +676,7 @@ static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
 	}
 	// let the section refere to the map as a memory-map
 	free(map->name);
-	map->name = rz_str_newf("mmap.%s", sec->name);
+	map->name = sec->map_name && !sec->size ? strdup(sec->map_name) : rz_str_newf("mmap.%s", sec->name);
 	return true;
 }
 
@@ -698,7 +698,7 @@ static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
 	}
 
 	// then we map the part of the section that comes from the physical file
-	char *map_name = rz_str_newf("fmap.%s", sec->name);
+	char *map_name = sec->map_name ? strdup(sec->map_name) : rz_str_newf("fmap.%s", sec->name);
 	if (!map_name) {
 		return;
 	}
@@ -2900,7 +2900,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		RzTable *table = rz_core_table(r);
 		rz_table_visual_list(table, list, r->offset, -1, cols, r->io->va);
 		if (r->table_query) {
-			rz_table_query(table, r->table_query);
+			// TODO iS/iSS entropy,sha1,... <query>
+			rz_table_query(table, hashtypes ? "" : r->table_query);
 		}
 		{
 			char *s = rz_table_tostring(table);
@@ -3121,7 +3122,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 out:
 	if (IS_MODE_NORMAL(mode)) {
 		if (r->table_query) {
-			rz_table_query(table, r->table_query);
+			// TODO iS/iSS entropy,sha1,... <query>
+			rz_table_query(table, hashtypes ? "" : r->table_query);
 		}
 		char *s = rz_table_tostring(table);
 		rz_cons_printf("\n%s\n", s);
