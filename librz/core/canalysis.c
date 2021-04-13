@@ -738,6 +738,10 @@ RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 
 	ut64 current_offset = core->offset;
 	rz_core_analysis_esil_init(core);
 	RzAnalysisEsil *esil = core->analysis->esil;
+	if (!esil) {
+		eprintf("Cannot initialize ESIL\n");
+		return;
+	}
 	RzIOMap *stack_map;
 	if (!name && addr == UT64_MAX && size == UT32_MAX) {
 		char *fi = sdb_get(core->sdb, "aeim.fd", 0);
@@ -799,10 +803,8 @@ RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 
 		rz_debug_reg_set(core->dbg, pc, current_offset);
 	}
 	rz_core_regs2flags(core);
-	if (esil) {
-		esil->stack_addr = addr;
-		esil->stack_size = size;
-	}
+	esil->stack_addr = addr;
+	esil->stack_size = size;
 	initialize_stack(core, addr, size);
 	rz_core_seek(core, current_offset, false);
 }
