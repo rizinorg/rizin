@@ -72,13 +72,9 @@ typedef struct rz_asm_op_t {
 } RzAsmOp;
 
 typedef struct rz_asm_code_t {
-#if 1
 	int len;
 	ut8 *bytes;
 	char *assembly;
-#else
-	RzAsmOp op; // we have those fields already inside RzAsmOp
-#endif
 	RzList *equs; // TODO: must be a hash
 	ut64 code_offset;
 	ut64 data_offset;
