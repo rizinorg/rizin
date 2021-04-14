@@ -966,6 +966,11 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 	rz_list_foreach (queries, iter, query) {
 		RzList *q = rz_str_split_list(query, "/", 2);
 		const char *columnName = rz_list_get_n(q, 0);
+		if (!columnName) {
+			eprintf("Column name is NULL for (%s)\n", query);
+			rz_list_free(q);
+			continue;
+		}
 		const char *operation = rz_list_get_n(q, 1);
 		const char *operand = rz_list_get_n(q, 2);
 		if (__table_special(t, columnName)) {
@@ -973,12 +978,8 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		}
 		int col = rz_table_column_nth(t, columnName);
 		if (col == -1) {
-			if (columnName == NULL && strcmp(operation, "uniq")) { // TODO: What query triggers this?
-				eprintf("Column name is NULL for (%s)\n", query);
-			} else if (columnName) {
-				if (*columnName == '[') {
-					col = atoi(columnName + 1);
-				}
+			if (*columnName == '[') {
+				col = atoi(columnName + 1);
 			}
 		}
 		if (!operation) {
