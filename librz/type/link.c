@@ -11,6 +11,12 @@
 // XXX 12 is the maxstructsizedelta
 #define TYPE_RANGE_BASE(x) ((x) >> 16)
 
+// TODO:
+// 1. Move this to RzAnalysis
+// 2. Switch to Hashtable instead
+// 3. Change the serialization/deserialization code
+// 4. Add to projects migration/tests
+
 static RzList *types_range_list(Sdb *db, ut64 addr) {
 	RzList *list = NULL;
 	ut64 base = TYPE_RANGE_BASE(addr);

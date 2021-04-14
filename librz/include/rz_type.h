@@ -41,6 +41,14 @@ typedef struct rz_type_db_t {
 
 // Base types
 
+typedef enum {
+	RZ_BASE_TYPE_KIND_STRUCT,
+	RZ_BASE_TYPE_KIND_UNION,
+	RZ_BASE_TYPE_KIND_ENUM,
+	RZ_BASE_TYPE_KIND_TYPEDEF, // probably temporary addition, dev purposes
+	RZ_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
+} RzBaseTypeKind;
+
 typedef struct rz_type_enum_case_t {
 	char *name;
 	int val;
@@ -59,14 +67,6 @@ typedef struct rz_type_union_member_t {
 	size_t offset; // in bytes
 	size_t size; // in bits?
 } RzTypeUnionMember;
-
-typedef enum {
-	RZ_BASE_TYPE_KIND_STRUCT,
-	RZ_BASE_TYPE_KIND_UNION,
-	RZ_BASE_TYPE_KIND_ENUM,
-	RZ_BASE_TYPE_KIND_TYPEDEF, // probably temporary addition, dev purposes
-	RZ_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
-} RzBaseTypeKind;
 
 typedef struct rz_base_type_struct_t {
 	RzVector /*<RzTypeStructMember>*/ members;
@@ -91,11 +91,6 @@ typedef struct rz_base_type_t {
 		RzBaseTypeUnion union_data;
 	};
 } RzBaseType;
-
-typedef struct rz_type_enum {
-	const char *name;
-	const char *val;
-} RzTypeEnum;
 
 // AST-level types for C and C++
 // Parses strings like "const char * [0x42] const * [23]" to RzType
@@ -166,6 +161,7 @@ RZ_API void rz_type_base_union_member_free(void *e, void *user);
 
 RZ_API RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type);
+RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
 
 RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(RzTypeDB *typedb, RzBaseTypeKind kind);
 RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(RzTypeDB *typedb);
