@@ -205,7 +205,7 @@ bool test_rz_buf_io(void) {
 	char *tmpfile = rz_file_temp(NULL);
 	char *filename = rz_str_newf("file://%s", tmpfile);
 	free(tmpfile);
-	RzIODesc *desc = rz_io_open_at(io, filename, RZ_PERM_RW | RZ_PERM_CREAT, 0644, 0);
+	RzIODesc *desc = rz_io_open_at(io, filename, RZ_PERM_RW | RZ_PERM_CREAT, 0644, 0, NULL);
 	free(filename);
 	mu_assert_notnull(desc, "file should be opened for writing");
 

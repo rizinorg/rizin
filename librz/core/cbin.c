@@ -653,33 +653,32 @@ static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
 	bool reused = false;
 	ut64 gap = sec->vsize - sec->size;
 	char *uri = rz_str_newf("null://%" PFMT64u, gap);
+	RzIOMap *iomap = NULL;
 	RzIODesc *desc = findReusableFile(io, uri, sec->perm);
 	if (desc) {
-		RzIOMap *map = rz_io_map_get(io, at);
-		if (!map && gap) {
-			rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
+		iomap = rz_io_map_get(io, at);
+		if (!iomap && gap) {
+			iomap = rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
 		}
 		reused = true;
 	}
 	if (!desc) {
-		desc = rz_io_open_at(io, uri, sec->perm, 0664, at);
+		desc = rz_io_open_at(io, uri, sec->perm, 0664, at, &iomap);
 	}
 	free(uri);
 	if (!desc) {
 		return false;
 	}
-	// this works, because new maps are always born on the top
-	RzIOMap *map = rz_io_map_get(io, at);
 	// check if the mapping failed
-	if (!map) {
+	if (!iomap) {
 		if (!reused) {
 			rz_io_desc_close(desc);
 		}
 		return false;
 	}
 	// let the section refere to the map as a memory-map
-	free(map->name);
-	map->name = sec->map_name && !sec->size ? strdup(sec->map_name) : rz_str_newf("mmap.%s", sec->name);
+	free(iomap->name);
+	iomap->name = sec->map_name && !sec->size ? strdup(sec->map_name) : rz_str_newf("mmap.%s", sec->name);
 	return true;
 }
 
