@@ -3639,7 +3639,8 @@ static int fcn_list_verbose_json(RzCore *core, RzList *fcns) {
 	return fcn_list_json(core, fcns, false);
 }
 
-static int fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
+static bool fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(core && fcn, false);
 	const char *defaultCC = rz_analysis_cc_default(core->analysis);
 	char *name = rz_core_analysis_fcn_name(core, fcn);
 	rz_cons_printf("\"f %s %" PFMT64u " 0x%08" PFMT64x "\"\n", name, rz_analysis_function_linear_size(fcn), fcn->addr);
@@ -3659,12 +3660,10 @@ static int fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
 	if (fcn->cc || defaultCC) {
 		rz_cons_printf("afc %s @ 0x%08" PFMT64x "\n", fcn->cc ? fcn->cc : defaultCC, fcn->addr);
 	}
-	if (fcn) {
-		/* show variables  and arguments */
-		rz_analysis_var_list_show(core->analysis, fcn, 'b', '*', NULL);
-		rz_analysis_var_list_show(core->analysis, fcn, 'r', '*', NULL);
-		rz_analysis_var_list_show(core->analysis, fcn, 's', '*', NULL);
-	}
+	/* show variables  and arguments */
+	rz_analysis_var_list_show(core->analysis, fcn, 'b', '*', NULL);
+	rz_analysis_var_list_show(core->analysis, fcn, 'r', '*', NULL);
+	rz_analysis_var_list_show(core->analysis, fcn, 's', '*', NULL);
 	/* Show references */
 	RzListIter *refiter;
 	RzAnalysisXRef *xrefi;
@@ -3693,7 +3692,7 @@ static int fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
 	/*Saving Function stack frame*/
 	rz_cons_printf("afS %d @ 0x%" PFMT64x "\n", fcn->maxstack, fcn->addr);
 	free(name);
-	return 0;
+	return true;
 }
 
 static bool is_fcn_traced(RzDebugTrace *traced, RzAnalysisFunction *fcn) {
@@ -3811,14 +3810,15 @@ static int fcn_print_legacy(RzCore *core, RzAnalysisFunction *fcn) {
 	return 0;
 }
 
-static int fcn_list_detail(RzCore *core, RzList *fcns) {
+static bool fcn_list_detail(RzCore *core, RzList *fcns) {
+	rz_return_val_if_fail(core && fcns, false);
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (fcns, iter, fcn) {
 		fcn_print_detail(core, fcn);
 	}
 	rz_cons_newline();
-	return 0;
+	return true;
 }
 
 static int fcn_list_table(RzCore *core, const char *q, int fmt) {
