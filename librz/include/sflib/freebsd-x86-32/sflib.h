@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2004  Philippe Biondi <phil@secdev.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 /*
  * sflib.h --- SFLib syscall library for FreeBSD/i386 
  * see http://www.secdev.org/projects/shellforge.html for more informations
