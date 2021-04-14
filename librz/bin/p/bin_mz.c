@@ -141,6 +141,35 @@ static RzList *entries(RzBinFile *bf) {
 	return res;
 }
 
+static RzList *maps(RzBinFile *bf) {
+	RzList *r = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!r) {
+		return NULL;
+	}
+	RzList *segs = rz_bin_mz_get_segments(bf->o->bin_obj);
+	if (!segs) {
+		return r;
+	}
+	RzBinSection *seg;
+	RzListIter *it;
+	rz_list_foreach(segs, it, seg) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			goto hcf;
+		}
+		map->name = seg->name ? strdup(seg->name) : NULL;
+		map->paddr = seg->paddr;
+		map->psize = seg->size;
+		map->vaddr = seg->vaddr;
+		map->vsize = seg->vsize;
+		map->perm = seg->perm;
+		rz_list_push(r, map);
+	}
+hcf:
+	rz_list_free(segs);
+	return r;
+}
+
 static RzList *sections(RzBinFile *bf) {
 	return rz_bin_mz_get_segments(bf->o->bin_obj);
 }
@@ -243,6 +272,7 @@ RzBinPlugin rz_bin_plugin_mz = {
 	.check_buffer = &check_buffer,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &maps,
 	.sections = &sections,
 	.info = &info,
 	.header = &header,
