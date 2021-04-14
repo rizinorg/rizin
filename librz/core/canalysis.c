@@ -2346,9 +2346,13 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 
 						if (is_star) {
 							char *title = get_title(bbi->addr);
+							if (!title) {
+								rz_diff_free(d);
+								rz_config_hold_free(hc);
+								return false;
+							}
 							char *body_b64 = rz_base64_encode_dyn((const ut8 *)diffstr, strlen(diffstr));
-							if (!title || !body_b64) {
-								free(body_b64);
+							if (!body_b64) {
 								free(title);
 								rz_diff_free(d);
 								rz_config_hold_free(hc);
