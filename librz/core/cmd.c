@@ -757,10 +757,10 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 		ret = true;
 	} else if (rz_file_is_c(file)) {
 		const char *dir = rz_config_get(core->config, "dir.types");
-		char *out = rz_parse_c_file(core->analysis, file, dir, NULL);
+		char *out = rz_type_parse_c_file(core->analysis->typedb, file, dir, NULL);
 		if (out) {
 			rz_cons_strcat(out);
-			sdb_query_lines(core->analysis->sdb_types, out);
+			rz_type_db_save_parsed_type(core->analysis->typedb, out);
 			free(out);
 		}
 		ret = out != NULL;
@@ -5924,6 +5924,7 @@ err:
 	rz_cons_break_pop();
 	rz_core_block_size(core, obs);
 	rz_core_seek(core, offorig, true);
+	free(filter);
 	return res;
 }
 
@@ -6177,17 +6178,18 @@ static void ts_symbols_init(RzCmd *cmd) {
 }
 
 static RzCmdStatus core_cmd_tsr2cmd(RzCore *core, const char *cstr, bool split_lines, bool log) {
-	char *input = strdup(rz_str_trim_head_ro(cstr));
-
 	ts_symbols_init(core->rcmd);
 
 	TSParser *parser = ts_parser_new();
 	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
 	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
 
+	char *input = strdup(rz_str_trim_head_ro(cstr));
+
 	TSTree *tree = ts_parser_parse_string(parser, NULL, input, strlen(input));
 	if (!tree) {
 		rz_warn_if_reached();
+		free(input);
 		return RZ_CMD_STATUS_INVALID;
 	}
 

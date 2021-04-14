@@ -69,9 +69,8 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
 RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
-	// From analysis/types/*:
-	// Get key-value types from sdb matching "func.%s", fcn->name
-	// Get func.%s.args (number of args)
+	// Get key-value types from types db fcn->name
+	// Get number of function args
 	// Get type,name pairs
 	// Put everything in RzList following the next format:
 	// types: main.ret=%type%, main.args=%num%, main.arg.0="int,argc", ...
@@ -83,30 +82,19 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 		return NULL;
 	}
 
-	char *scratch = rz_str_newf("func.%s.args", fcn->name);
-	if (!scratch) {
-		return NULL;
-	}
-	const char *fcntypes = sdb_const_get(a->sdb_types, scratch, 0);
-	free(scratch);
+	int fcnargs = rz_type_func_args_count(a->typedb, fcn->name);
+	const char *ret_type = rz_type_func_ret(a->typedb, fcn->name);
 
-	scratch = rz_str_newf("func.%s.ret", fcn->name);
-	if (!scratch) {
-		return NULL;
+	if (ret_type) {
+		rz_list_append(ret, rz_str_newf("func.%s.ret=%s", fcn->name, ret_type));
 	}
-	const char *ret_type = sdb_const_get(a->sdb_types, scratch, 0);
-	free(scratch);
-
-	if (fcntypes) {
-		if (ret_type) {
-			rz_list_append(ret, rz_str_newf("func.%s.ret=%s", fcn->name, ret_type));
-		}
-		int argc = atoi(fcntypes);
-		rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, argc));
+	if (fcnargs) {
+		rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, fcnargs));
 		int i;
-		for (i = 0; i < argc; i++) {
-			const char *arg = sdb_const_get(a->sdb_types, rz_str_newf("func.%s.arg.%d", fcn->name, i), 0);
-			rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
+		for (i = 0; i < fcnargs; i++) {
+			const char *arg_name = rz_type_func_args_name(a->typedb, fcn->name, i);
+			const char *arg_type = rz_type_func_args_type(a->typedb, fcn->name, i);
+			rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s,%s\"", fcn->name, i, arg_type, arg_name));
 		}
 	}
 
@@ -1524,6 +1512,7 @@ RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const ch
 	}
 	RzList *lb = deserialize_sign_space(a, other_space);
 	if (!lb) {
+		rz_list_free(la);
 		return false;
 	}
 

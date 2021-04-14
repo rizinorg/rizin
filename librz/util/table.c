@@ -906,7 +906,8 @@ static bool __table_special(RzTable *t, const char *columnName) {
 		return false;
 	}
 	if (!strcmp(columnName, ":quiet")) {
-		t->showHeader = true;
+		t->showHeader = false;
+		t->showFancy = false;
 	} else if (!strcmp(columnName, ":fancy")) {
 		t->showFancy = true;
 	} else if (!strcmp(columnName, ":simple")) {
@@ -936,6 +937,7 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		eprintf(" c/sort/inc        sort rows by given colname\n");
 		eprintf(" c/sortlen/inc     sort rows by strlen()\n");
 		eprintf(" c/cols/c1/c2      only show selected columns\n");
+		eprintf(" c                 only show column c\n");
 		eprintf(" c/gt/0x800        grep rows matching col0 > 0x800\n");
 		eprintf(" c/lt/0x800        grep rows matching col0 < 0x800\n");
 		eprintf(" c/eq/0x800        grep rows matching col0 == 0x800\n");
@@ -951,8 +953,9 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		eprintf(" c/sum             sum all the values of given column\n");
 		eprintf(" :csv              .tostring() == .tocsv()\n");
 		eprintf(" :json             .tostring() == .tojson()\n");
+		eprintf(" :fancy            fancy table output with lines\n");
 		eprintf(" :simple           simple table output without lines\n");
-		eprintf(" :quiet            do not print column names header\n");
+		eprintf(" :quiet            do not print column names header, implies :simple\n");
 		return false;
 	}
 
@@ -979,9 +982,13 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 			}
 		}
 		if (!operation) {
-			break;
-		}
-		if (!strcmp(operation, "sort")) {
+			RzList *list = rz_list_new();
+			if (list) {
+				rz_list_append(list, strdup(columnName));
+				rz_table_columns(t, list);
+				rz_list_free(list);
+			}
+		} else if (!strcmp(operation, "sort")) {
 			rz_table_sort(t, col, operand && !strcmp(operand, "dec"));
 		} else if (!strcmp(operation, "uniq")) {
 			rz_table_group(t, col, NULL);

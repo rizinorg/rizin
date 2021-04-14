@@ -23,16 +23,6 @@ enum {
 	SORT_OFFSET
 };
 
-typedef struct {
-	RzCore *core;
-	int t_idx;
-	int t_ctr;
-	const char *type;
-	char *curname;
-	char *curfmt;
-	const char *optword;
-} RzCoreVisualTypes;
-
 // TODO: move this helper into rz_cons
 static char *prompt(const char *str, const char *txt) {
 	char cmd[1024];
@@ -58,11 +48,6 @@ static char *prompt(const char *str, const char *txt) {
 	free(oprompt);
 	RZ_FREE(rz_cons_singleton()->line->contents);
 	return res;
-}
-
-static inline char *getformat(RzCoreVisualTypes *vt, const char *k) {
-	return sdb_get(vt->core->analysis->sdb_types,
-		sdb_fmt("type.%s", k), 0);
 }
 
 static char *colorize_asm_string(RzCore *core, const char *buf_asm, int optype, ut64 addr) {
@@ -530,302 +515,6 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			}
 			rz_cons_clear();
 		} break;
-		}
-	}
-	return true;
-}
-
-// belongs to rz_core_visual_types
-static bool sdbforcb(void *p, const char *k, const char *v) {
-	const char *pre = " ";
-	RzCoreVisualTypes *vt = (RzCoreVisualTypes *)p;
-	bool use_color = vt->core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char *color_sel = vt->core->cons->context->pal.prompt;
-	if (vt->optword) {
-		if (!strcmp(vt->type, "struct")) {
-			char *s = rz_str_newf("struct.%s.", vt->optword);
-			/* enum */
-			if (!strncmp(s, k, strlen(s))) {
-				if (vt->t_idx == vt->t_ctr) {
-					free(vt->curname);
-					vt->curname = strdup(k);
-					free(vt->curfmt);
-					vt->curfmt = strdup(v);
-					pre = ">";
-				}
-				if (use_color && *pre == '>') {
-					rz_cons_printf("%s %s %s  %s %10s\n", color_sel,
-						Color_RESET, pre, k + strlen(s), v);
-				} else {
-					rz_cons_printf("   %s %s %10s\n",
-						pre, k + strlen(s), v);
-				}
-				vt->t_ctr++;
-			}
-			free(s);
-		} else {
-			char *s = rz_str_newf("%s.", vt->optword);
-			/* enum */
-			if (!strncmp(s, k, strlen(s))) {
-				if (!strstr(k, ".0x")) {
-					if (vt->t_idx == vt->t_ctr) {
-						free(vt->curname);
-						vt->curname = strdup(v);
-						free(vt->curfmt);
-						vt->curfmt = strdup(v);
-						pre = ">";
-					}
-					if (use_color && *pre == '>') {
-						rz_cons_printf("%s" Color_RESET " %s %s  %s\n", color_sel,
-							pre, k, v);
-					} else {
-						rz_cons_printf(" %s %s  %s\n",
-							pre, k, v);
-					}
-					vt->t_ctr++;
-				}
-			}
-			free(s);
-		}
-	} else if (!strcmp(v, vt->type)) {
-		if (!strcmp(vt->type, "type")) {
-			char *fmt = getformat(vt, k);
-			if (vt->t_idx == vt->t_ctr) {
-				free(vt->curname);
-				vt->curname = strdup(k);
-				free(vt->curfmt);
-				vt->curfmt = strdup(fmt);
-				pre = ">";
-			}
-			if (use_color && *pre == '>') {
-				rz_cons_printf("%s %s pf %3s   %s\n" Color_RESET,
-					color_sel, pre, fmt, k);
-			} else {
-				rz_cons_printf(" %s pf %3s   %s\n",
-					pre, fmt, k);
-			}
-			free(fmt);
-		} else {
-			if (vt->t_idx == vt->t_ctr) {
-				free(vt->curname);
-				vt->curname = strdup(k);
-				free(vt->curfmt);
-				vt->curfmt = strdup(v);
-				pre = ">";
-			}
-			if (use_color && *pre == '>') {
-				rz_cons_printf("%s %s %s\n" Color_RESET, color_sel,
-					(vt->t_idx == vt->t_ctr) ? ">" : " ", k);
-			} else {
-				rz_cons_printf(" %s %s\n",
-					(vt->t_idx == vt->t_ctr) ? ">" : " ", k);
-			}
-		}
-		vt->t_ctr++;
-	}
-	return true;
-}
-
-RZ_API int rz_core_visual_types(RzCore *core) {
-	RzCoreVisualTypes vt = { core, 0, 0 };
-	int i, ch;
-	int _option = 0;
-	int option = 0;
-	char *txt;
-	char cmd[1024];
-	int menu = 0;
-	int h_opt = 0;
-	char *optword = NULL;
-	const char *opts[] = {
-		"type",
-		"enum",
-		"struct",
-		"func",
-		"union",
-		"cc",
-		NULL
-	};
-	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	if (rz_flag_space_is_empty(core->flags)) {
-		menu = 1;
-	}
-	for (;;) {
-		rz_cons_clear00();
-		for (i = 0; opts[i]; i++) {
-			if (use_color) {
-				if (h_opt == i) {
-					rz_cons_printf("%s[%s]%s ", core->cons->context->pal.call,
-						opts[i], Color_RESET);
-				} else {
-					rz_cons_printf("%s%s%s  ", core->cons->context->pal.other,
-						opts[i], Color_RESET);
-				}
-			} else {
-				rz_cons_printf(h_opt == i ? "[%s] " : " %s  ", opts[i]);
-			}
-		}
-		rz_cons_newline();
-		if (optword) {
-			rz_cons_printf(">> %s\n", optword);
-		}
-		if (!strcmp(opts[h_opt], "cc")) {
-			// XXX TODO: make this work (select with cursor, to delete, or add a new one with 'i', etc)
-			rz_core_types_calling_conventions_print(core, RZ_OUTPUT_MODE_STANDARD);
-		} else {
-			vt.t_idx = option;
-			vt.t_ctr = 0;
-			vt.type = opts[h_opt];
-			vt.optword = optword;
-			sdb_foreach(core->analysis->sdb_types, sdbforcb, &vt);
-		}
-
-		rz_cons_visual_flush();
-		ch = rz_cons_readchar();
-		if (ch == -1 || ch == 4) {
-			return false;
-		}
-		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
-		switch (ch) {
-		case 'h':
-			h_opt--;
-			if (h_opt < 0) {
-				h_opt = 0;
-			}
-			option = 0;
-			RZ_FREE(optword);
-			break;
-		case 'l':
-			h_opt++;
-			option = 0;
-			if (!opts[h_opt]) {
-				h_opt--;
-			}
-			RZ_FREE(optword);
-			break;
-		case 'o': {
-			char *file = prompt("Filename: ", NULL);
-			if (file) {
-				rz_types_open_file(core, file);
-				free(file);
-			}
-		} break;
-		case 'j':
-			if (++option >= vt.t_ctr) {
-				option = vt.t_ctr - 1;
-			}
-			break;
-		case 'J':
-			option += 10;
-			if (option >= vt.t_ctr) {
-				option = vt.t_ctr - 1;
-			}
-			break;
-		case 'k':
-			if (--option < 0) {
-				option = 0;
-			}
-			break;
-		case 'K':
-			option -= 10;
-			if (option < 0) {
-				option = 0;
-			}
-			break;
-		case 'b':
-			rz_core_cmdf(core, "tl %s", vt.curname);
-			break;
-		case -1: // EOF
-		case 'Q':
-		case 'q':
-			if (optword) {
-				RZ_FREE(optword);
-				break;
-			}
-			if (menu <= 0) {
-				return true;
-			}
-			menu--;
-			option = _option;
-			if (menu == 0) {
-				// if no flagspaces, just quit
-				if (rz_flag_space_is_empty(core->flags)) {
-					return true;
-				}
-			}
-			break;
-		case 'a': {
-			txt = prompt("add C type: ", NULL);
-			if (txt) {
-				rz_types_define(core, txt);
-				free(txt);
-			}
-		} break;
-		case 'd':
-			rz_analysis_remove_parsed_type(core->analysis, vt.curname);
-			break;
-		case '-':
-			rz_types_open_editor(core, NULL);
-			break;
-		case ' ':
-		case '\r':
-		case '\n':
-		case 'e':
-			if (optword) {
-				/* TODO: edit field */
-			} else {
-				switch (h_opt) {
-				case 0: // type
-					/* TODO: do something with this data */
-					prompt("name: ", vt.curname);
-					prompt("pf: ", vt.curfmt);
-					break;
-				case 1: // enum
-				case 2: // struct
-					free(optword);
-					if (vt.curname) {
-						optword = strdup(vt.curname);
-					} else {
-						optword = NULL;
-					}
-					break;
-				default:
-					break;
-				}
-			}
-			break;
-		case '?':
-			rz_cons_clear00();
-			rz_cons_printf(
-				"Vt?: Visual Types Help:\n\n"
-				" q     - quit menu\n"
-				" j/k   - down/up keys\n"
-				" h/l   - left-right\n"
-				" a     - add new type (C syntax)\n"
-				" b	- bind type to current offset\n"
-				" d     - delete current type\n"
-				" e     - edit current type\n"
-				" o     - open .h include file\n"
-				" -	- Open cfg.editor to load types\n"
-				" :     - enter command\n");
-			rz_cons_flush();
-			rz_cons_any_key(NULL);
-			break;
-		case ':':
-			rz_cons_show_cursor(true);
-			rz_cons_set_raw(0);
-			cmd[0] = '\0';
-			rz_line_set_prompt(":> ");
-			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
-				cmd[0] = '\0';
-			}
-			rz_core_cmd(core, cmd, 1);
-			rz_cons_set_raw(1);
-			rz_cons_show_cursor(false);
-			if (cmd[0]) {
-				rz_cons_any_key(NULL);
-			}
-			rz_cons_clear();
-			continue;
 		}
 	}
 	return true;
@@ -1640,8 +1329,9 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 		rz_cons_flush();
 		rz_cons_gotoxy(0, 20);
 		rz_cons_printf("ROPChain:\n  %s\n", chainstr ? chainstr : "");
+		int chainstrlen = chainstr ? strlen(chainstr) : 0;
 		rz_list_foreach (core->ropchain, iter, msg) {
-			int extra = strlen(chainstr) / scr_w;
+			int extra = chainstrlen / scr_w;
 			rz_cons_gotoxy(0, extra + 22 + count);
 			rz_cons_strcat(msg);
 			const char *cmt = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, rz_num_get(NULL, msg));
@@ -2792,7 +2482,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 	}
 	switch (level) {
 	// Show functions list help in visual mode
-	case 0:
+	case 0: {
 		buf = rz_strbuf_new("");
 		if (color) {
 			rz_cons_strcat(core->cons->context->pal.prompt);
@@ -2806,10 +2496,13 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 			rz_cons_strcat("\n" Color_RESET);
 		}
 		rz_core_vmenu_append_help(buf, help_fun_visual);
-		rz_cons_printf("%s", rz_strbuf_drain(buf));
+		char *drained = rz_strbuf_drain(buf);
+		rz_cons_printf("%s", drained);
+		free(drained);
 		addr = var_functions_show(core, option, 1, cols);
 		break;
-	case 1:
+	}
+	case 1: {
 		buf = rz_strbuf_new("");
 		if (color) {
 			rz_cons_strcat(core->cons->context->pal.prompt);
@@ -2825,7 +2518,8 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		free(drained);
 		// var_index_show (core->analysis, fcn, addr, option);
 		break;
-	case 2:
+	}
+	case 2: {
 		rz_cons_printf("Press 'q' to quit call refs\n");
 		if (color) {
 			rz_cons_strcat(core->cons->context->pal.prompt);
@@ -2850,8 +2544,9 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 			}
 		}
 		break;
+	}
 	default:
-		// assert
+		rz_warn_if_reached();
 		break;
 	}
 	rz_cons_flush();

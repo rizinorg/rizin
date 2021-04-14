@@ -118,7 +118,7 @@ NAME=DEX Hello.dex method flags (r2 commands) (ic*)
 FILE=bins/dex/Hello.dex
 CMDS=ic*~main
 EXPECT=<<EOF
-"f method.static.public.LHello.LHello.method.main([Ljava/lang/String;)V = 0x1c0"
+"f method.static.public.LHello.LHello.method.main__Ljava_lang_String__V = 0x1c0"
 EOF
 RUN
 

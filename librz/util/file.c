@@ -169,9 +169,10 @@ RZ_API bool rz_file_fexists(const char *fmt, ...) {
 }
 
 RZ_API bool rz_file_exists(const char *str) {
+	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
 	char *absfile = rz_file_abspath(str);
 	struct stat buf = { 0 };
-	rz_return_val_if_fail(!RZ_STR_ISEMPTY(str), false);
+
 	if (file_stat(absfile, &buf) == -1) {
 		free(absfile);
 		return false;
@@ -418,7 +419,7 @@ RZ_API char *rz_stdin_slurp(int *sz) {
 #endif
 }
 
-RZ_API char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz) {
+RZ_API RZ_OWN char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz) {
 	rz_return_val_if_fail(str, NULL);
 	if (usz) {
 		*usz = 0;
@@ -458,6 +459,7 @@ RZ_API char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz) {
 			} while (!feof(fd));
 			char *nbuf = realloc(buf, size + 1);
 			if (!nbuf) {
+				fclose(fd);
 				free(buf);
 				return NULL;
 			}
@@ -671,7 +673,7 @@ RZ_API char *rz_file_slurp_line(const char *file, int line, int context) {
 	return ptr;
 }
 
-RZ_API char *rz_file_slurp_lines_from_bottom(const char *file, int line) {
+RZ_API RZ_OWN char *rz_file_slurp_lines_from_bottom(const char *file, int line) {
 	rz_return_val_if_fail(file, NULL);
 	int i, lines = 0;
 	size_t sz;
@@ -684,7 +686,7 @@ RZ_API char *rz_file_slurp_lines_from_bottom(const char *file, int line) {
 			}
 		}
 		if (line > lines) {
-			return strdup(str); // number of lines requested in more than present, return all
+			return str; // number of lines requested in more than present, return all
 		}
 		i--;
 		for (; str[i] && line; i--) {
@@ -1005,7 +1007,10 @@ RZ_API void *rz_file_mmap_resize(RzMmap *m, ut64 newsize) {
 		rz_file_mmap_free(m);
 		return NULL;
 	}
-	file_mmap(m);
+	// In case of mmap failure it frees the RzMmap and return NULL
+	if (!file_mmap(m)) {
+		return NULL;
+	}
 	return m->buf;
 }
 

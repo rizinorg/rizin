@@ -219,7 +219,20 @@ RZ_API void rz_analysis_set_syscc_default(RzAnalysis *analysis, const char *cc) 
 
 RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_name) {
 	rz_return_val_if_fail(analysis && func_name, NULL);
-	const char *query = sdb_fmt("func.%s.cc", func_name);
-	const char *cc = sdb_const_get(analysis->sdb_types, query, 0);
+	const char *cc = rz_type_func_cc(analysis->typedb, func_name);
 	return cc ? cc : rz_analysis_cc_default(analysis);
+}
+
+RZ_API RzList *rz_analysis_calling_conventions(RzAnalysis *analysis) {
+	RzList *ccl = rz_list_new();
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(analysis->sdb_cc, true);
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "cc")) {
+			rz_list_append(ccl, strdup(sdbkv_key(kv)));
+		}
+	}
+	ls_free(l);
+	return ccl;
 }

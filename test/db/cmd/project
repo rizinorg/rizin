@@ -363,3 +363,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=migrate info
+FILE=--
+CMDS=<<EOF
+Po prj/v1-noreturn.rzdb
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+Detailed project load info:
+  project migrated from version 1 to 2.
+EOF
+RUN

@@ -603,7 +603,6 @@ RZ_API void rz_subprocess_fini(void) {
 	rz_th_lock_free(subprocs_mutex);
 }
 
-extern char **environ;
 static char **create_child_env(const char *envvars[], const char *envvals[], size_t env_size) {
 	char **ep;
 	size_t new_env_size = env_size, size = 0;
@@ -612,6 +611,7 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 		positions[i] = SIZE_MAX;
 	}
 
+	char **environ = rz_sys_get_environ();
 	for (ep = environ; *ep; ep++, size++) {
 		size_t j;
 
@@ -764,7 +764,7 @@ RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 		}
 
 		// Use the previously created environment
-		environ = child_env;
+		rz_sys_set_environ(child_env);
 
 		rz_sys_execvp(opt->file, argv);
 		perror("exec");

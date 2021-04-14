@@ -1,5 +1,5 @@
 project('rizin', 'c',
-  version: 'v0.2.0-git',
+  version: 'v0.3.0-git',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
   default_options: [
@@ -331,6 +331,11 @@ if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_
   lrt = cc.find_library('rt', required: true, static: is_static_build)
 endif
 
+code = '#include <unistd.h>\nextern char **environ;\nint main() { char **env = environ; }'
+have_environ = cc.links(code, name: 'have extern char **environ')
+userconf.set10('HAVE_ENVIRON', have_environ)
+message('HAVE_ENVIRON: @0@'.format(have_environ))
+
 foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>', []],
     ['explicit_bzero', '#include <string.h>', []],
@@ -423,7 +428,7 @@ if r.returncode() == 1 and get_option('subprojects_check')
 endif
 
 sdb_proj = subproject('sdb', default_options: ['default_library=static', 'sdb_includedir=' + rizin_incdir])
-sdb_dep = sdb_proj.get_variable('sdb_dep')
+sdb_dep = sdb_proj.get_variable('sdb_whole_dep')
 sdb_exe  = sdb_proj.get_variable('sdb_native_exe')
 
 sdb_gen_cmd = [
@@ -440,14 +445,14 @@ spp_files = [
 spp_inc = [platform_inc, include_directories('shlr/spp')]
 
 librzspp = static_library('rzspp', spp_files,
-  dependencies: sdb_dep,
+  dependencies: sdb_dep.partial_dependency(includes: true),
   include_directories: spp_inc,
   c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
   implicit_include_directories: false
 )
 
 spp_dep = declare_dependency(
-  link_with: librzspp,
+  link_whole: librzspp,
   include_directories: spp_inc
 )
 
@@ -499,6 +504,7 @@ if host_machine.system() == 'windows'
     build_root / 'librz' / 'search',
     build_root / 'librz' / 'socket',
     build_root / 'librz' / 'syscall',
+    build_root / 'librz' / 'type',
     build_root / 'librz' / 'util',
   ]
 endif
@@ -523,6 +529,7 @@ subdir('librz/config')
 subdir('librz/parse')
 subdir('librz/lang')
 subdir('librz/asm')
+subdir('librz/type')
 subdir('librz/analysis')
 subdir('librz/egg')
 subdir('librz/debug')
@@ -587,6 +594,7 @@ if meson.is_subproject()
       rz_search_dep,
       rz_socket_dep,
       rz_syscall_dep,
+      rz_type_dep,
       rz_util_dep
     ],
     include_directories: include_directories('.', 'librz/include'),
@@ -602,6 +610,7 @@ if get_option('use_webui')
 endif
 
 subdir('test/unit')
+subdir('test/integration')
 
 install_data(
   'doc/fortunes.fun',

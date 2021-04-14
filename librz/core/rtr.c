@@ -937,6 +937,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		char *str = rz_socket_http_get(uri, NULL, &len);
 		if (!str) {
 			eprintf("Cannot find '%s'\n", uri);
+			free(uri);
 			return;
 		}
 		core->num->value = 0;

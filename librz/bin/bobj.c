@@ -282,9 +282,6 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			if (p->regstate) {
 				o->regstate = p->regstate(bf);
 			}
-			if (p->maps) {
-				o->maps = p->maps(bf);
-			}
 		}
 	}
 

@@ -29,14 +29,13 @@ rz_analysis_sources = [
   'rtti_itanium.c',
   'sign.c',
   'switch.c',
-  'type.c',
-  'type_pdb.c',
   'dwarf_process.c',
   'value.c',
   'var.c',
   'vtable.c',
   'xrefs.c',
   'serialize_analysis.c',
+  'type_pdb.c',
   'p/analysis_6502.c',
   'p/analysis_6502_cs.c',
   'p/analysis_8051.c',
@@ -162,6 +161,8 @@ rz_analysis_sources = [
   '../asm/arch/luac/lua_arch.c',
   '../asm/arch/luac/v54/analysis_54.c',
   '../asm/arch/luac/v54/opcode_54.c',
+  '../asm/arch/luac/v53/analysis_53.c',
+  '../asm/arch/luac/v53/opcode_53.c'
 ]
 
 rz_analysis_inc = [
@@ -187,6 +188,7 @@ rz_analysis = library('rz_analysis', rz_analysis_sources,
     rz_parse_dep,
     rz_asm_dep,
     rz_bin_dep,
+    rz_type_dep,
     capstone_dep
   ],
   install: true,
@@ -214,7 +216,8 @@ pkgconfig_mod.generate(rz_analysis,
     'rz_search',
     'rz_cons',
     'rz_bin',
-    'rz_flag'
+    'rz_flag',
+    'rz_type'
   ],
   description: 'rizin foundation libraries'
 )

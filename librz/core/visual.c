@@ -2077,7 +2077,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		" q  quit\n"
 		" r  ROP gadgets\n"
 		" s  symbols\n"
-		" t  types\n"
 		" T  themes\n"
 		" v  vars\n"
 		" x  xrefs\n"
@@ -2139,9 +2138,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			break;
 		case 'C': // "vbC"
 			rz_core_visual_comments(core);
-			break;
-		case 't': // "vbt"
-			rz_core_visual_types(core);
 			break;
 		case 'T': // "vbT"
 			rz_core_cmd0(core, "eco $(eco~...)");
@@ -4009,7 +4005,6 @@ RZ_API int rz_core_visual(RzCore *core, const char *input) {
 			printfmtSingle[2] = debugstr;
 		}
 #endif
-		rz_cons_show_cursor(false);
 		rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;

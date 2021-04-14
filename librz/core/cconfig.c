@@ -691,10 +691,12 @@ static bool cb_asmarch(void *user, void *data) {
 	// changing asm.arch changes analysis.arch
 	// changing analysis.arch sets types db
 	// so ressetting is redundant and may lead to bugs
-	// 1 case this is usefull is when sdb_types is null
-	if (!core->analysis || !core->analysis->sdb_types) {
+	// 1 case this is usefull is when types is null
+	if (!core->analysis || !core->analysis->typedb) {
 		rz_core_analysis_type_init(core);
 	}
+	// set endian of RzAnalysis to match binary
+	rz_analysis_set_big_endian(core->analysis, bigbin);
 	rz_core_analysis_cc_init(core);
 
 	return true;
@@ -1175,12 +1177,16 @@ static bool cb_bigendian(void *user, void *data) {
 	bool isbig = rz_asm_set_big_endian(core->rasm, node->i_value);
 	// Set analysis endianness the same as asm
 	rz_analysis_set_big_endian(core->analysis, isbig);
+	// While analysis sets endianess for TypesDB there might
+	// be cases when it isn't availble for the chosen analysis
+	// plugin but types and printing commands still need the
+	// corresponding endianness. Thus we set these explicitly:
+	rz_type_db_set_endian(core->analysis->typedb, node->i_value);
+	core->print->big_endian = node->i_value;
 	// the big endian should also be assigned to dbg->bp->endian
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
 	}
-	// Set printing endian to user's choice
-	core->print->big_endian = node->i_value;
 	return true;
 }
 

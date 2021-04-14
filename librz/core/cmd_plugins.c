@@ -71,14 +71,20 @@ RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
 		RzCorePlugin *cp;
 		switch (input[1]) {
 		case 'j': {
-			rz_cons_printf("[");
-			bool is_first_element = true;
-			rz_list_foreach (core->plugins, iter, cp) {
-				rz_cons_printf("%s{\"Name\":\"%s\",\"Description\":\"%s\"}",
-					is_first_element ? "" : ",", cp->name, cp->desc);
-				is_first_element = false;
+			PJ *pj = pj_new();
+			if (!pj) {
+				break;
 			}
-			rz_cons_printf("]\n");
+			pj_a(pj);
+			rz_list_foreach (core->plugins, iter, cp) {
+				pj_o(pj);
+				pj_ks(pj, "Name", cp->name);
+				pj_ks(pj, "Description", cp->desc);
+				pj_end(pj);
+			}
+			pj_end(pj);
+			rz_cons_println(pj_string(pj));
+			pj_free(pj);
 			break;
 		}
 		case 0:

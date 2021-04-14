@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2012-2020 houndthe <cgkajm@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "base_types.h"
+#include <rz_util.h>
+#include <rz_type.h>
 #include <sdb.h>
 #include <rz_analysis.h>
 #include <rz_bin_dwarf.h>
@@ -158,7 +159,7 @@ static inline char *create_type_name_from_offset(ut64 offset) {
 }
 
 /**
- * @brief Get the DIE name or create unique one from it's offset
+ * @brief Get the DIE name or create unique one from its offset
  *
  * @param die
  * @return char* DIEs name or NULL if error
@@ -166,13 +167,11 @@ static inline char *create_type_name_from_offset(ut64 offset) {
 static char *get_die_name(const RzBinDwarfDie *die) {
 	char *name = NULL;
 	st32 name_attr_idx = find_attr_idx(die, DW_AT_name);
-
-	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
-		name = strdup(die->attr_values[name_attr_idx].string.content);
-	} else {
-		name = create_type_name_from_offset(die->offset);
+	if (name_attr_idx != -1) {
+		const char *s = rz_bin_dwarf_attr_value_get_string_content(&die->attr_values[name_attr_idx]);
+		name = RZ_STR_DUP(s);
 	}
-	return name;
+	return name ? name : create_type_name_from_offset(die->offset);
 }
 
 /**
@@ -243,20 +242,25 @@ static st32 parse_array_type(Context *ctx, ut64 idx, RzStrBuf *strbuf) {
 }
 
 /**
- * @brief Recursively parses type entry of a certain offset into strbuf
+ * \brief Recursively parses type entry of a certain offset into strbuf
  *        saves type size into *size
  *
- * @param ctx
- * @param offset offset of the type entry
- * @param strbuf string to store the type into
- * @param size ptr to size of a type to fill up (can be NULL if unwanted)
- * @return st32 -1 if error else DW_TAG of the entry
+ * \param ctx
+ * \param offset offset of the type entry
+ * \param strbuf string to store the type into
+ * \param size ptr to size of a type to fill up (can be NULL if unwanted)
+ * \param set of visited die offsets, to prevent infinite recursion
+ * \return st32 -1 if error else DW_TAG of the entry
  *
  * TODO make cache for type entries, one type is usually referenced
  * multiple times which means it's parsed multiple times instead of once
  */
-static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *size) {
-	rz_return_val_if_fail(strbuf, -1);
+static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *size, RZ_NONNULL SetU *visited) {
+	rz_return_val_if_fail(strbuf && visited, -1);
+	if (set_u_contains(visited, offset)) {
+		return -1;
+	}
+	set_u_add(visited, offset);
 	RzBinDwarfDie *die = ht_up_find(ctx->die_map, offset, NULL);
 	if (!die) {
 		return -1;
@@ -277,7 +281,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *
 			rz_strbuf_append(strbuf, "void");
 			rz_strbuf_append(strbuf, " *");
 		} else {
-			tag = parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			tag = parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 			if (tag == DW_TAG_subroutine_type) {
 				strbuf_rev_prepend_char(strbuf, "(*)", '(');
 			} else if (tag == DW_TAG_pointer_type) {
@@ -306,7 +310,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *
 		if (type_idx == -1) {
 			rz_strbuf_append(strbuf, "void");
 		} else {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " (");
 		if (die->has_children) { // has parameters
@@ -316,61 +320,76 @@ static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *
 	case DW_TAG_array_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		parse_array_type(ctx, die - ctx->all_dies, strbuf);
 		break;
 	case DW_TAG_const_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " const");
 		break;
 	case DW_TAG_volatile_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " volatile");
 		break;
 	case DW_TAG_restrict_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " restrict");
 		break;
 	case DW_TAG_rvalue_reference_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " &&");
 		break;
 	case DW_TAG_reference_type:
 		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		rz_strbuf_append(strbuf, " &");
 		break;
 	default:
 		break;
 	}
+	set_u_delete(visited, offset);
 	return (st32)die->tag;
 }
 
 /**
- * @brief Parses structured entry into *result RzAnalysisStructMember
+ * \brief Convenience function for calling parse_type with an empty visited set
+ * See documentation of parse_type
+ */
+static st32 parse_type_outer(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *size) {
+	SetU *visited = set_u_new();
+	if (!visited) {
+		return -1;
+	}
+	st32 r = parse_type(ctx, offset, strbuf, size, visited);
+	set_u_free(visited);
+	return r;
+}
+
+/**
+ * @brief Parses structured entry into *result RzTypeStructMember
  * http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
  *
  * @param ctx
  * @param idx index of the current entry
  * @param result ptr to result member to fill up
- * @return RzAnalysisStructMember* ptr to parsed Member
+ * @return RzTypeStructMember* ptr to parsed Member
  */
-static RzAnalysisStructMember *parse_struct_member(Context *ctx, ut64 idx, RzAnalysisStructMember *result) {
+static RzTypeStructMember *parse_struct_member(Context *ctx, ut64 idx, RzTypeStructMember *result) {
 	rz_return_val_if_fail(result, NULL);
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
@@ -392,7 +411,7 @@ static RzAnalysisStructMember *parse_struct_member(Context *ctx, ut64 idx, RzAna
 			}
 			break;
 		case DW_AT_type:
-			parse_type(ctx, value->reference, &strbuf, &size);
+			parse_type_outer(ctx, value->reference, &strbuf, &size);
 			free(type);
 			type = rz_strbuf_drain_nofree(&strbuf);
 			if (!type || !*type) {
@@ -443,15 +462,15 @@ cleanup:
 }
 
 /**
- * @brief  Parses enum entry into *result RzAnalysisEnumCase
+ * @brief  Parses enum entry into *result RzTypeEnumCase
  * http://www.dwarfstd.org/doc/DWARF4.pdf#page=110&zoom=100,0,0
  *
  * @param ctx
  * @param idx index of the current entry
  * @param result ptr to result case to fill up
- * @return RzAnalysisEnumCase* Ptr to parsed enum case
+ * @return RzTypeEnumCase* Ptr to parsed enum case
  */
-static RzAnalysisEnumCase *parse_enumerator(Context *ctx, ut64 idx, RzAnalysisEnumCase *result) {
+static RzTypeEnumCase *parse_enumerator(Context *ctx, ut64 idx, RzTypeEnumCase *result) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
 	char *name = NULL;
@@ -488,7 +507,7 @@ cleanup:
 
 /**
  * @brief  Parses a structured entry (structs, classes, unions) into
- *         RzAnalysisBaseType and saves it using rz_analysis_save_base_type ()
+ *         RzBaseType and saves it using rz_analysis_save_base_type ()
  *
  * @param ctx
  * @param idx index of the current entry
@@ -497,14 +516,14 @@ cleanup:
 static void parse_structure_type(Context *ctx, ut64 idx) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
-	RzAnalysisBaseTypeKind kind;
+	RzBaseTypeKind kind;
 	if (die->tag == DW_TAG_union_type) {
-		kind = RZ_ANALYSIS_BASE_TYPE_KIND_UNION;
+		kind = RZ_BASE_TYPE_KIND_UNION;
 	} else {
-		kind = RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT;
+		kind = RZ_BASE_TYPE_KIND_STRUCT;
 	}
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(kind);
+	RzBaseType *base_type = rz_type_base_type_new(kind);
 	if (!base_type) {
 		return;
 	}
@@ -530,7 +549,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 
 	base_type->size = get_die_size(die);
 
-	RzAnalysisStructMember member = { 0 };
+	RzTypeStructMember member = { 0 };
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
@@ -541,7 +560,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 			// we take only direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
 			if (child_depth == 1 && child_die->tag == DW_TAG_member) {
-				RzAnalysisStructMember *result = parse_struct_member(ctx, j, &member);
+				RzTypeStructMember *result = parse_struct_member(ctx, j, &member);
 				if (!result) {
 					goto cleanup;
 				} else {
@@ -559,13 +578,13 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 			}
 		}
 	}
-	rz_analysis_save_base_type(ctx->analysis, base_type);
+	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
 cleanup:
-	rz_analysis_base_type_free(base_type);
+	rz_type_base_type_free(base_type);
 }
 
 /**
- * @brief Parses a enum entry into RzAnalysisBaseType and saves it
+ * @brief Parses a enum entry into RzBaseType and saves it
  *        int Sdb using rz_analysis_save_base_type ()
  *
  * @param ctx
@@ -574,7 +593,7 @@ cleanup:
 static void parse_enum_type(Context *ctx, ut64 idx) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
+	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -589,11 +608,11 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 	if (type_attr_idx != -1) {
 		RzStrBuf strbuf;
 		rz_strbuf_init(&strbuf);
-		parse_type(ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
+		parse_type_outer(ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
 		base_type->type = rz_strbuf_drain_nofree(&strbuf);
 	}
 
-	RzAnalysisEnumCase cas;
+	RzTypeEnumCase cas;
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
 		size_t j;
@@ -602,13 +621,13 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 			const RzBinDwarfDie *child_die = &ctx->all_dies[j];
 			// we take only direct descendats of the structure
 			if (child_depth == 1 && child_die->tag == DW_TAG_enumerator) {
-				RzAnalysisEnumCase *result = parse_enumerator(ctx, j, &cas);
+				RzTypeEnumCase *result = parse_enumerator(ctx, j, &cas);
 				if (!result) {
 					goto cleanup;
 				} else {
 					void *element = rz_vector_push(&base_type->enum_data.cases, &cas);
 					if (!element) {
-						enum_type_case_free(result, NULL);
+						rz_type_base_enum_case_free(result, NULL);
 						goto cleanup;
 					}
 				}
@@ -622,13 +641,13 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 			}
 		}
 	}
-	rz_analysis_save_base_type(ctx->analysis, base_type);
+	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
 cleanup:
-	rz_analysis_base_type_free(base_type);
+	rz_type_base_type_free(base_type);
 }
 
 /**
- * @brief Parses a typedef entry into RzAnalysisBaseType and saves it
+ * @brief Parses a typedef entry into RzBaseType and saves it
  *        using rz_analysis_save_base_type ()
  *
  * http://www.dwarfstd.org/doc/DWARF4.pdf#page=96&zoom=100,0,0
@@ -656,7 +675,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 			}
 			break;
 		case DW_AT_type:
-			parse_type(ctx, value->reference, &strbuf, &size);
+			parse_type_outer(ctx, value->reference, &strbuf, &size);
 			type = rz_strbuf_drain_nofree(&strbuf);
 			if (!type) {
 				goto cleanup;
@@ -669,14 +688,14 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		goto cleanup;
 	}
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF);
+	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		goto cleanup;
 	}
 	base_type->name = name;
 	base_type->type = type;
-	rz_analysis_save_base_type(ctx->analysis, base_type);
-	rz_analysis_base_type_free(base_type);
+	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
+	rz_type_base_type_free(base_type);
 	rz_strbuf_fini(&strbuf);
 	return;
 cleanup:
@@ -695,17 +714,19 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	for (i = 0; i < die->count; i++) {
 		RzBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
-		case DW_AT_name:
+		case DW_AT_name: {
 			free(name);
-			if (!value->string.content) {
-				name = create_type_name_from_offset(die->offset);
+			const char *s = rz_bin_dwarf_attr_value_get_string_content(&die->attr_values[i]);
+			if (s) {
+				name = strdup(s);
 			} else {
-				name = strdup(value->string.content);
+				name = create_type_name_from_offset(die->offset);
 			}
 			if (!name) {
 				return;
 			}
 			break;
+		}
 		case DW_AT_byte_size:
 			size = value->uconstant * CHAR_BIT;
 			break;
@@ -720,25 +741,31 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		return;
 	}
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
+	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		free(name);
 		return;
 	}
 	base_type->name = name;
 	base_type->size = size;
-	rz_analysis_save_base_type(ctx->analysis, base_type);
-	rz_analysis_base_type_free(base_type);
+	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
+	rz_type_base_type_free(base_type);
 }
 
 static const char *get_specification_die_name(const RzBinDwarfDie *die) {
 	st32 linkage_name_attr_idx = find_attr_idx(die, DW_AT_linkage_name);
-	if (linkage_name_attr_idx != -1 && die->attr_values[linkage_name_attr_idx].string.content) {
-		return die->attr_values[linkage_name_attr_idx].string.content;
+	if (linkage_name_attr_idx != -1) {
+		const char *s = rz_bin_dwarf_attr_value_get_string_content(&die->attr_values[linkage_name_attr_idx]);
+		if (s) {
+			return s;
+		}
 	}
 	st32 name_attr_idx = find_attr_idx(die, DW_AT_name);
-	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
-		return die->attr_values[name_attr_idx].string.content;
+	if (name_attr_idx != -1) {
+		const char *s = rz_bin_dwarf_attr_value_get_string_content(&die->attr_values[name_attr_idx]);
+		if (s) {
+			return s;
+		}
 	}
 	return NULL;
 }
@@ -747,7 +774,7 @@ static void get_spec_die_type(Context *ctx, RzBinDwarfDie *die, RzStrBuf *ret_ty
 	st32 attr_idx = find_attr_idx(die, DW_AT_type);
 	if (attr_idx != -1) {
 		ut64 size = 0;
-		parse_type(ctx, die->attr_values[attr_idx].reference, ret_type, &size);
+		parse_type_outer(ctx, die->attr_values[attr_idx].reference, ret_type, &size);
 	}
 }
 
@@ -783,7 +810,7 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RzStrBuf *type, con
 				has_linkage_name = true;
 				break;
 			case DW_AT_type:
-				parse_type(ctx, val->reference, type, &size);
+				parse_type_outer(ctx, val->reference, type, &size);
 				break;
 			default:
 				break;
@@ -1179,7 +1206,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 						has_linkage_name = true;
 						break;
 					case DW_AT_type:
-						parse_type(ctx, val->reference, &type, NULL);
+						parse_type_outer(ctx, val->reference, &type, NULL);
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
@@ -1366,7 +1393,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 			}
 		} break;
 		case DW_AT_type:
-			parse_type(ctx, val->reference, &ret_type, NULL);
+			parse_type_outer(ctx, val->reference, &ret_type, NULL);
 			break;
 		case DW_AT_virtuality:
 			fcn.is_method = true; /* method specific attr */

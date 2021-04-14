@@ -284,7 +284,7 @@ static int cb(RzDiff *d, void *user, RzDiffOp *op) {
 					free(bufasm);
 					free(acbufasm);
 				}
-				// rz_asm_code_free (ac);
+				rz_asm_code_free(ac);
 			}
 		} else {
 			printf(" => ");
@@ -956,6 +956,9 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	double sim = 0.0;
 	RzDiff *d;
 	RzGetopt opt;
+
+	rz_subprocess_init();
+	atexit(rz_subprocess_fini);
 
 	rzdiff_options_init(&ro);
 	rz_getopt_init(&opt, argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ");

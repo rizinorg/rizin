@@ -172,7 +172,6 @@ RZ_API RzPrint *rz_print_new(void) {
 	p->cols = 16;
 	p->cur_enabled = false;
 	p->cur = p->ocur = -1;
-	p->formats = sdb_new0();
 	p->addrmod = 4;
 	p->flags =
 		RZ_PRINT_FLAGS_COLOR |
@@ -200,8 +199,6 @@ RZ_API RzPrint *rz_print_free(RzPrint *p) {
 	if (!p) {
 		return NULL;
 	}
-	sdb_free(p->formats);
-	p->formats = NULL;
 	RZ_FREE(p->strconv_mode);
 	if (p->zoom) {
 		free(p->zoom->buf);

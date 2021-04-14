@@ -486,7 +486,6 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 RZ_API bool rz_core_visual_hudstuff(RzCore *core);
 RZ_API int rz_core_visual_classes(RzCore *core);
 RZ_API int rz_core_visual_analysis_classes(RzCore *core);
-RZ_API int rz_core_visual_types(RzCore *core);
 RZ_API int rz_core_visual(RzCore *core, const char *input);
 RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
 RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
@@ -642,7 +641,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
 RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core);
-RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad);
+RZ_DEPRECATE RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad);
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API ut64 rz_core_analysis_fcn_list_size(RzCore *core);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
@@ -651,6 +650,7 @@ RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
 RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
+RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
 RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly);
@@ -701,10 +701,15 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile);
-RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, int va);
-RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, int va);
+RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va);
+RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va);
-RZ_API int rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_imports(RzCore *core, RzBinFile *binfile, bool va);
+RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va);
+RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask);
+RZ_API bool rz_core_bin_apply_all_info(RzCore *r, RzBinFile *binfile);
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd);
 RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name);
 RZ_API bool rz_core_bin_load(RzCore *core, const char *file, ut64 baseaddr);
@@ -790,6 +795,7 @@ typedef struct rz_core_bin_filter_t {
 RZ_API int rz_core_bin_info(RzCore *core, int action, PJ *pj, int mode, int va, RzCoreBinFilter *filter, const char *chksum);
 RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char *arch, ut16 bits);
 RZ_API int rz_core_bin_update_arch_bits(RzCore *r);
+RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *meth);
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode);
 RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode);
 
@@ -1009,6 +1015,11 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
  */
 RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, bool load_bin_io,
 	RZ_NULLABLE const char *prj_file, RZ_NULLABLE RzSerializeResultInfo *res);
+
+/**
+ * \brief Load a project and print info and errors
+ */
+RZ_API bool rz_core_project_load_for_cli(RzCore *core, const char *file, bool load_bin_io);
 
 #endif
 

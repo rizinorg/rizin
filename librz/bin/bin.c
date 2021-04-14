@@ -1312,8 +1312,6 @@ RZ_API void rz_bin_field_free(RzBinField *field) {
 	}
 }
 
-// method name too long
-// RzBin.methFlagToString(RzBin.Method.CLASS)
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	switch (flag) {
 	case RZ_BIN_METH_CLASS:
@@ -1377,6 +1375,7 @@ RZ_IPI void rz_bin_section_free(RzBinSection *bs) {
 	if (bs) {
 		free(bs->name);
 		free(bs->format);
+		free(bs->map_name);
 		free(bs);
 	}
 }

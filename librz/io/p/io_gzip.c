@@ -164,10 +164,11 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		size_t len;
-		ut8 *data = (ut8 *)rz_file_slurp(pathname + 7, &len); //memleak here?
+		ut8 *data = (ut8 *)rz_file_slurp(pathname + 7, &len);
 		int *size = (int *)&mal->size;
 		mal->buf = rz_inflate(data, (int)len, NULL, size);
 		if (mal->buf) {
+			free(data);
 			return rz_io_desc_new(io, &rz_io_plugin_gzip, pathname, rw, mode, mal);
 		}
 		free(data);

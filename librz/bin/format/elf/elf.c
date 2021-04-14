@@ -105,21 +105,47 @@ enum {
 	X86_64,
 	ARM,
 	AARCH64,
-	RCE,
 	ARCH_LEN
 };
 
-typedef struct reginfo {
-	ut32 regsize;
-	ut32 regdelta;
-} reginfo_t;
+/// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
+typedef struct prstatus_layout_t {
+	ut64 regsize;
 
-static reginfo_t reginf[ARCH_LEN] = {
-	{ 160, 0x5c },
-	{ 216, 0x84 },
-	{ 72, 0x5c },
-	{ 272, 0x84 },
-	{ 272, 0x84 }
+	/**
+	 * This delta is the offset into the actual data of an NT_PRSTATUS note
+	 * where the regstate of size regsize lies.
+	 * That is, it is the offset after the Elf_(Nhdr) and the variable-length string + optional padding
+	 * have already been skipped.
+	 *
+	 * see size_t ELFLinuxPrStatus::GetSize(const lldb_private::ArchSpec &arch) in lldb source or similar
+	 * to determine values for this.
+	 */
+	ut64 regdelta;
+
+	/// Size of the stack pointer register in bits
+	ut8 sp_size;
+
+	/**
+	 * Offset of the stack pointer register inside the regstate
+	 * To determine the layout of the regstate, see lldb source, for example:
+	 *   RegisterContextSP ThreadElfCore::CreateRegisterContextForFrame(StackFrame *frame) decides what to use for the file
+	 *   RegisterContextLinux_x86_64 leads to...
+	 *   g_register_infos_x86_64 which is eventually filled with info using...
+	 *   GPR_OFFSET which takes its info from...
+	 *   the offsets into the GPR struct in RegisterContextLinux_x86_64.cpp
+	 */
+	ut64 sp_offset;
+
+	// These NT_PRSTATUS notes hold much more than this, but it's not needed for us yet.
+	// If necessary, new members can be introduced here.
+} PrStatusLayout;
+
+static PrStatusLayout prstatus_layouts[ARCH_LEN] = {
+	[X86] = { 160, 0x48, 32, 0x3c },
+	[X86_64] = { 216, 0x70, 64, 0x98 },
+	[ARM] = { 72, 0x48, 32, 0x34 },
+	[AARCH64] = { 272, 0x70, 64, 0xf8 }
 };
 
 static inline int __strnlen(const char *str, int len) {
@@ -750,6 +776,171 @@ static int init_dynamic_section(ELFOBJ *bin) {
 	return true;
 }
 
+static void note_fini(RzBinElfNote *note) {
+	switch (note->type) {
+	case NT_FILE:
+		for (size_t i = 0; i < note->file.files_count; i++) {
+			free(note->file.files[i].file);
+		}
+		free(note->file.files);
+		break;
+	case NT_PRSTATUS:
+		free(note->prstatus.regstate);
+		break;
+	}
+}
+
+static void note_segment_free(RzBinElfNoteSegment *seg) {
+	if (!seg) {
+		return;
+	}
+	if (seg->notes) {
+		for (size_t i = 0; i < seg->notes_count; i++) {
+			note_fini(&seg->notes[i]);
+		}
+		free(seg->notes);
+	}
+	free(seg);
+}
+
+/// Parse NT_FILE note
+static void parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, ut64 offset) {
+	if (nhdr->n_descsz < RZ_BIN_ELF_WORDSIZE * 2) {
+		return;
+	}
+	ut64 n_maps = RZ_BIN_ELF_BREADWORD(bin->b, offset);
+	if (n_maps > (ut64)SIZE_MAX) {
+		return;
+	}
+	RzVector files;
+	rz_vector_init(&files, sizeof(RzBinElfNoteFile), NULL, NULL);
+	rz_vector_reserve(&files, n_maps);
+	(void)RZ_BIN_ELF_BREADWORD(bin->b, offset); // skip page size
+	ut64 offset_begin = offset;
+	ut64 strings_begin = ((RZ_BIN_ELF_WORDSIZE * 3) * n_maps); // offset after the addr-array
+	ut64 len_str = 0;
+	while (n_maps-- && strings_begin + len_str < nhdr->n_descsz) {
+		char str[512] = { 0 };
+		st64 r = rz_buf_read_at(bin->b, offset_begin + strings_begin + len_str, (ut8 *)str, sizeof(str) - 1);
+		if (r < 0) {
+			break;
+		}
+		str[r] = 0;
+		len_str += strlen(str) + 1;
+		RzBinElfNoteFile *f = rz_vector_push(&files, NULL);
+		if (!f) {
+			break;
+		}
+		f->start_vaddr = RZ_BIN_ELF_BREADWORD(bin->b, offset);
+		f->end_vaddr = RZ_BIN_ELF_BREADWORD(bin->b, offset);
+		f->file_off = RZ_BIN_ELF_BREADWORD(bin->b, offset);
+		f->file = strdup(str);
+	}
+	note->file.files_count = rz_vector_len(&files);
+	note->file.files = rz_vector_flush(&files);
+	rz_vector_fini(&files);
+}
+
+static PrStatusLayout *get_prstatus_layout(ELFOBJ *bin) {
+	switch (bin->ehdr.e_machine) {
+	case EM_AARCH64:
+		return &prstatus_layouts[AARCH64];
+	case EM_ARM:
+		return &prstatus_layouts[ARM];
+	case EM_386:
+		return &prstatus_layouts[X86];
+	case EM_X86_64:
+		return &prstatus_layouts[X86_64];
+	default:
+		return NULL;
+	}
+}
+
+/// Parse NT_PRSTATUS note
+static void parse_note_prstatus(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, ut64 offset) {
+	PrStatusLayout *layout = get_prstatus_layout(bin);
+	if (!layout) {
+		eprintf("Fetching registers from core file not supported for this architecture.\n");
+		return;
+	}
+	ut8 *buf = malloc(layout->regsize);
+	if (!buf) {
+		return;
+	}
+	if (rz_buf_read_at(bin->b, offset + layout->regdelta, buf, layout->regsize) != layout->regsize) {
+		free(buf);
+		bprintf("Cannot read register state from CORE file\n");
+		return;
+	}
+	note->prstatus.regstate_size = layout->regsize;
+	note->prstatus.regstate = buf;
+}
+
+/// Parse PT_NOTE segments, which are used in core files for cpu state, etc.
+static bool init_notes(ELFOBJ *bin) {
+	bin->note_segments = rz_list_newf((RzListFree)note_segment_free);
+	if (!bin->note_segments) {
+		return false;
+	}
+	ut16 ph, ph_num = bin->ehdr.e_phnum;
+	for (ph = 0; ph < ph_num; ph++) {
+		Elf_(Phdr) *p = &bin->phdr[ph];
+		if (p->p_type != PT_NOTE || p->p_filesz < 9) {
+			// not a note with at least size for one header
+			continue;
+		}
+		if (p->p_offset + p->p_filesz < p->p_offset) {
+			// don't overflow
+			return false;
+		}
+		RzBinElfNoteSegment *seg = RZ_NEW0(RzBinElfNoteSegment);
+		if (!seg) {
+			return false;
+		}
+		RzVector notes;
+		rz_vector_init(&notes, sizeof(RzBinElfNote), NULL, NULL);
+
+		ut64 offset = p->p_offset;
+		ut64 buf_sz = rz_buf_size(bin->b);
+		while (offset + 9 < RZ_MIN(p->p_offset + p->p_filesz, buf_sz)) {
+			Elf_(Nhdr) nhdr;
+			nhdr.n_namesz = BREAD32(bin->b, offset);
+			nhdr.n_descsz = BREAD32(bin->b, offset);
+			nhdr.n_type = BREAD32(bin->b, offset);
+
+			if (p->p_filesz < offset - p->p_offset + round_up(nhdr.n_namesz) + round_up(nhdr.n_descsz)) {
+				// segment too small
+				break;
+			}
+
+			// skip name, not needed for us
+			offset += round_up(nhdr.n_namesz);
+
+			RzBinElfNote *note = rz_vector_push(&notes, NULL);
+			memset(note, 0, sizeof(*note));
+			note->type = nhdr.n_type;
+
+			// there are many more note types but for now we only need these:
+			switch (nhdr.n_type) {
+			case NT_FILE:
+				parse_note_file(note, &nhdr, bin, offset);
+				break;
+			case NT_PRSTATUS:
+				parse_note_prstatus(note, &nhdr, bin, offset);
+				break;
+			}
+
+			offset += round_up(nhdr.n_descsz);
+		}
+
+		seg->notes_count = rz_vector_len(&notes);
+		seg->notes = rz_vector_flush(&notes);
+		rz_vector_fini(&notes);
+		rz_list_push(bin->note_segments, seg);
+	}
+	return true;
+}
+
 static RzBinElfSection *get_section_by_name(ELFOBJ *bin, const char *section_name) {
 	if (bin->g_sections) {
 		size_t i;
@@ -1376,7 +1567,11 @@ static bool elf_init(ELFOBJ *bin) {
 	if (!init_phdr(bin) && !is_bin_etrel(bin)) {
 		bprintf("Cannot initialize program headers\n");
 	}
-	if (bin->ehdr.e_type != ET_CORE) {
+	if (bin->ehdr.e_type == ET_CORE) {
+		if (!init_notes(bin)) {
+			bprintf("Cannot parse PT_NOTE segments\n");
+		}
+	} else {
 		if (!init_shdr(bin)) {
 			bprintf("Cannot initialize section headers\n");
 		}
@@ -2641,80 +2836,48 @@ char *Elf_(rz_bin_elf_get_osabi_name)(ELFOBJ *bin) {
 	return strdup("linux");
 }
 
-ut8 *Elf_(rz_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
-	if (bin->phdr) {
-		size_t i;
-		int num = bin->ehdr.e_phnum;
-		for (i = 0; i < num; i++) {
-			if (bin->phdr[i].p_type != PT_NOTE) {
-				continue;
+static RzBinElfNotePrStatus *get_prstatus(ELFOBJ *bin) {
+	// TODO: there can be multiple NT_PRSTATUS notes in the case of multiple threads.
+	// Relevant citation from lldb source:
+	// 5) If a core file contains multiple thread contexts then there is two data forms
+	//    a) Each thread context(2 or more NOTE entries) contained in its own segment (PT_NOTE)
+	//    b) All thread context is stored in a single segment(PT_NOTE).
+	//        This case is little tricker since while parsing we have to find where the
+	//        new thread starts. The current implementation marks beginning of
+	//        new thread when it finds NT_PRSTATUS or NT_PRPSINFO NOTE entry.
+	if (!bin->note_segments) {
+		return NULL;
+	}
+	RzBinElfNoteSegment *seg;
+	RzListIter *it;
+	rz_list_foreach (bin->note_segments, it, seg) {
+		for (size_t i = 0; i < seg->notes_count; i++) {
+			RzBinElfNote *note = &seg->notes[i];
+			if (note->type == NT_PRSTATUS) {
+				return &note->prstatus;
 			}
-			int bits = Elf_(rz_bin_elf_get_bits)(bin);
-			int elf_nhdr_size = (bits == 64) ? sizeof(Elf64_Nhdr) : sizeof(Elf32_Nhdr);
-			void *elf_nhdr = calloc(elf_nhdr_size, 1);
-			bool regs_found = false;
-			ut64 offset = 0;
-
-			while (!regs_found) {
-				ut32 n_descsz, n_namesz, n_type;
-				int ret;
-				ret = rz_buf_read_at(bin->b, bin->phdr[i].p_offset + offset, elf_nhdr, elf_nhdr_size);
-				if (ret != elf_nhdr_size) {
-					bprintf("Cannot read NOTES hdr from CORE file\n");
-					free(elf_nhdr);
-					return NULL;
-				}
-				if (bits == 64) {
-					n_descsz = round_up(((Elf64_Nhdr *)elf_nhdr)->n_descsz);
-					n_namesz = round_up(((Elf64_Nhdr *)elf_nhdr)->n_namesz);
-					n_type = ((Elf64_Nhdr *)elf_nhdr)->n_type;
-				} else {
-					n_descsz = round_up(((Elf32_Nhdr *)elf_nhdr)->n_descsz);
-					n_namesz = round_up(((Elf32_Nhdr *)elf_nhdr)->n_namesz);
-					n_type = ((Elf32_Nhdr *)elf_nhdr)->n_type;
-				}
-				if (n_type == NT_PRSTATUS) {
-					regs_found = true;
-					free(elf_nhdr);
-				} else {
-					offset += elf_nhdr_size + n_descsz + n_namesz;
-				}
-			}
-
-			int regdelta = 0;
-			int regsize = 0;
-			switch (bin->ehdr.e_machine) {
-			case EM_AARCH64:
-				regsize = reginf[AARCH64].regsize;
-				regdelta = reginf[AARCH64].regdelta;
-				break;
-			case EM_ARM:
-				regsize = reginf[ARM].regsize;
-				regdelta = reginf[ARM].regdelta;
-				break;
-			case EM_386:
-				regsize = reginf[X86].regsize;
-				regdelta = reginf[X86].regdelta;
-				break;
-			case EM_X86_64:
-				regsize = reginf[X86_64].regsize;
-				regdelta = reginf[X86_64].regdelta;
-				break;
-			}
-			ut8 *buf = malloc(regsize);
-			if (rz_buf_read_at(bin->b, bin->phdr[i].p_offset + offset + regdelta, buf, regsize) != regsize) {
-				free(buf);
-				bprintf("Cannot read register state from CORE file\n");
-				return NULL;
-			}
-			if (len) {
-				*len = regsize;
-			}
-			return buf;
 		}
 	}
-	bprintf("Cannot find NOTE section\n");
 	return NULL;
+}
+
+const ut8 *Elf_(rz_bin_elf_grab_regstate)(ELFOBJ *bin, RZ_NONNULL size_t *size) {
+	RzBinElfNotePrStatus *prs = get_prstatus(bin);
+	if (!prs) {
+		return NULL;
+	}
+	*size = prs->regstate_size;
+	return prs->regstate;
+}
+
+/// Get the value of the stackpointer register in a core file
+ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin) {
+	PrStatusLayout *layout = get_prstatus_layout(bin);
+	RzBinElfNotePrStatus *prs = get_prstatus(bin);
+	if (!layout || !prs || layout->sp_offset + layout->sp_size / 8 > prs->regstate_size || !prs->regstate) {
+		return UT64_MAX;
+	}
+	return rz_read_ble(prs->regstate + layout->sp_offset, bin->endian, layout->sp_size);
 }
 
 int Elf_(rz_bin_elf_is_big_endian)(ELFOBJ *bin) {
@@ -3938,6 +4101,7 @@ void Elf_(rz_bin_elf_free)(ELFOBJ *bin) {
 	free(bin->shstrtab);
 	free(bin->dynstr);
 	rz_vector_fini(&bin->dyn_info.dt_needed);
+	rz_list_free(bin->note_segments);
 	//free (bin->strtab_section);
 	size_t i;
 	if (bin->imports_by_ord) {
@@ -4079,128 +4243,6 @@ ut64 Elf_(rz_bin_elf_v2p_new)(ELFOBJ *bin, ut64 vaddr) {
 		}
 	}
 	return UT64_MAX;
-}
-
-static bool get_nt_file_maps(ELFOBJ *bin, RzList *core_maps) {
-	ut16 ph, ph_num = bin->ehdr.e_phnum;
-
-	for (ph = 0; ph < ph_num; ph++) {
-		Elf_(Phdr) *p = &bin->phdr[ph];
-		if (p->p_type == PT_NOTE) {
-			int bits = Elf_(rz_bin_elf_get_bits)(bin);
-			int elf_nhdr_size = (bits == 64) ? sizeof(Elf64_Nhdr) : sizeof(Elf32_Nhdr);
-			int size_of = (bits == 64) ? sizeof(ut64) : sizeof(ut32);
-			void *elf_nhdr = calloc(elf_nhdr_size, 1);
-			ut64 offset = 0;
-			bool found = false;
-
-			while (!found) {
-				int ret;
-				ut32 n_descsz, n_namesz, n_type;
-				ret = rz_buf_read_at(bin->b,
-					bin->phdr[ph].p_offset + offset,
-					elf_nhdr, elf_nhdr_size);
-				if (ret != elf_nhdr_size) {
-					eprintf("Cannot read more NOTES header from CORE\n");
-					free(elf_nhdr);
-					goto fail;
-				}
-				if (bits == 64) {
-					n_descsz = round_up(((Elf64_Nhdr *)elf_nhdr)->n_descsz);
-					n_namesz = round_up(((Elf64_Nhdr *)elf_nhdr)->n_namesz);
-					n_type = ((Elf64_Nhdr *)elf_nhdr)->n_type;
-				} else {
-					n_descsz = round_up(((Elf32_Nhdr *)elf_nhdr)->n_descsz);
-					n_namesz = round_up(((Elf32_Nhdr *)elf_nhdr)->n_namesz);
-					n_type = ((Elf32_Nhdr *)elf_nhdr)->n_type;
-				}
-
-				if (n_type == NT_FILE) {
-					found = true;
-					offset += elf_nhdr_size + n_namesz;
-					free(elf_nhdr);
-				} else {
-					offset += elf_nhdr_size + n_descsz + n_namesz;
-				}
-			}
-			ut64 i = bin->phdr[ph].p_offset + offset;
-			ut64 n_maps;
-			if (bits == 64) {
-				n_maps = BREAD64(bin->b, i);
-				(void)BREAD64(bin->b, i);
-			} else {
-				n_maps = BREAD32(bin->b, i);
-				(void)BREAD32(bin->b, i);
-			}
-			ut64 jump = ((size_of * 3) * n_maps) + i;
-			int len_str = 0;
-			while (n_maps > 0) {
-				ut64 addr;
-				if (bits == 64) {
-					addr = BREAD64(bin->b, i);
-				} else {
-					addr = BREAD32(bin->b, i);
-				}
-				if (addr == UT64_MAX) {
-					break;
-				}
-				char str[512] = { 0 };
-				rz_buf_read_at(bin->b, jump + len_str, (ut8 *)str, sizeof(str) - 1);
-				str[sizeof(str) - 1] = 0; // null terminate string
-				RzListIter *iter;
-				RzBinMap *p;
-				rz_list_foreach (core_maps, iter, p) {
-					if (p->addr == addr) {
-						p->file = strdup(str);
-					}
-				}
-				len_str += strlen(str) + 1;
-				n_maps--;
-				i += (size_of * 2);
-			}
-		}
-	}
-
-	return true;
-fail:
-	return false;
-}
-
-static void rz_bin_elf_map_free(RzBinMap *map) {
-	if (map) {
-		free(map->file);
-		free(map);
-	}
-}
-
-RzList *Elf_(rz_bin_elf_get_maps)(ELFOBJ *bin) {
-	ut16 ph, ph_num = bin->ehdr.e_phnum; //Skip PT_NOTE
-	if (!bin->phdr) {
-		return NULL;
-	}
-	RzList *maps = rz_list_newf((RzListFree)rz_bin_elf_map_free);
-	for (ph = 0; ph < ph_num; ph++) {
-		Elf_(Phdr) *p = &bin->phdr[ph];
-		if (p->p_type == PT_LOAD) {
-			RzBinMap *map = RZ_NEW0(RzBinMap);
-			if (map) {
-				map->addr = p->p_vaddr;
-				map->size = p->p_memsz;
-				map->perms = p->p_flags;
-				map->offset = p->p_offset;
-				map->file = NULL;
-				rz_list_append(maps, map);
-			}
-		}
-	}
-
-	if (!rz_list_empty(maps)) {
-		if (!get_nt_file_maps(bin, maps)) {
-			eprintf("Could not retrieve the names of all maps from NT_FILE\n");
-		}
-	}
-
-	return maps;
 }
 
 char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin) {

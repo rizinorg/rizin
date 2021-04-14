@@ -31,7 +31,6 @@ rz_util_sources = [
   'log.c',
   'mem.c',
   'name.c',
-  'format.c',
   'pie.c',
   'seven.c',
   'print.c',
@@ -43,7 +42,6 @@ rz_util_sources = [
   'astr.c',
   'pkcs7.c',
   'x509.c',
-  'utype.c',
   'randomart.c',
   'range.c',
   'rbtree.c',
@@ -85,7 +83,7 @@ rz_util_sources = [
   'subprocess.c',
 ]
 
-rz_util_deps = [ldl, lrt, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]
+rz_util_deps = [ldl, lrt, mth, pth, utl, sdb_dep, spp_dep, zlib_dep, platform_deps]
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd') or host_machine.system().startswith('haiku')
   # backtrace_symbols_fd requires -lexecinfo
   rz_util_deps += [cc.find_library('execinfo', static: is_static_build)]
@@ -108,9 +106,14 @@ rz_util = library('rz_util', rz_util_sources,
   soversion: rizin_libversion
 )
 
-rz_util_dep = declare_dependency(link_with: rz_util,
-                                include_directories: platform_inc,
-                                dependencies: rz_util_deps)
+rz_util_dep = declare_dependency(
+  link_with: rz_util,
+  include_directories: platform_inc,
+  dependencies: [
+    sdb_dep.partial_dependency(includes: true),
+    spp_dep.partial_dependency(includes: true)
+  ]
+)
 
 pkgconfig_mod.generate(rz_util,
   subdirs: ['librz', 'librz/sdb'],

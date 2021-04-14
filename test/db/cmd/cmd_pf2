@@ -205,38 +205,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pf rop64
-FILE=malloc://1024
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
-wx 5558 @ 0x22
-wv8 0x22 @ 0x50
-wv8 0x23 @ 0x58
-pf *D*D @ 0x50
-EOF
-EXPECT=<<EOF
-(*0x22)push rbp
-(*0x23)pop rax
-EOF
-RUN
-
-NAME=pf rop32
-FILE=malloc://1024
-CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=32
-wx 5558 @ 0x22
-wv4 0x22 @ 0x50
-wv4 0x23 @ 0x54
-pf *D*D @ 0x50
-EOF
-EXPECT=<<EOF
-(*0x22)push ebp
-(*0x23)pop eax
-EOF
-RUN
-
 NAME=pf *z (64bit addr)
 FILE=-
 CMDS=<<EOF

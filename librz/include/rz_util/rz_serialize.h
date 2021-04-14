@@ -86,6 +86,30 @@ static inline void rz_key_parser_add(RzKeyParser *parser, const char *key, int v
 	}
 
 /**
+ * \brief Get an sdb sub-namespace or fail
+ * \param db Sdb * the Sdb from which to take the sub-namespace
+ * \param subdb Sdb * where to put the sub-namespace
+ * \param res RzSerializeResult * where to push an error on failure
+ * \param ns const char *
+ * \param rip code to execute if the function failed
+ *
+ * Example:
+ *
+ *     Sdb *subdb;
+ *     RZ_SERIALIZE_SUB(db, subdb, res, "files", return false;)
+ *     // do something with subdb
+ *
+ */
+#define RZ_SERIALIZE_SUB(db, subdb, res, ns, rip) \
+	do { \
+		subdb = sdb_ns(db, ns, false); \
+		if (!subdb) { \
+			RZ_SERIALIZE_ERR(res, "missing " ns " namespace"); \
+			rip \
+		} \
+	} while (0)
+
+/**
  * \brief Get an sdb sub-namespace and evaluate `call` or fail
  * \param db Sdb * the Sdb from which to take the sub-namespace
  * \param subdb Sdb * where to put the sub-namespace
@@ -102,11 +126,7 @@ static inline void rz_key_parser_add(RzKeyParser *parser, const char *key, int v
  *
  */
 #define RZ_SERIALIZE_SUB_DO(db, subdb, res, ns, call, rip) \
-	subdb = sdb_ns(db, ns, false); \
-	if (!subdb) { \
-		RZ_SERIALIZE_ERR(res, "missing " ns " namespace"); \
-		rip \
-	} \
+	RZ_SERIALIZE_SUB(db, subdb, res, ns, rip); \
 	if (!(call)) { \
 		rip \
 	}

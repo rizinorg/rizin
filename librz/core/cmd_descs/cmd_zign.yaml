@@ -65,6 +65,7 @@ commands:
               - g
               - o
               - r
+              - t
               - x
               - h
               - v
@@ -88,6 +89,8 @@ commands:
                 comment: "original offset"
               - text: "r"
                 comment: "references"
+              - text: "t"
+                comment: "types"
               - text: "x"
                 comment: "cross references"
               - text: "h"
@@ -133,6 +136,9 @@ commands:
                 comment: ""
               - text: "za"
                 arg_str: " foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen"
+                comment: ""
+              - text: "za"
+                arg_str: " foo t func.sym.imp.strlen.ret=int"
                 comment: ""
               - text: "za"
                 arg_str: " foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"

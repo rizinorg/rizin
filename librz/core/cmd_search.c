@@ -2654,6 +2654,7 @@ static ut8 *v_writebuf(RzCore *core, RzList *nums, int len, char ch, int bsize) 
 			break;
 		}
 		if (ptr > ptr + bsize) {
+			free(buf);
 			return NULL;
 		}
 	}
@@ -3556,6 +3557,7 @@ reread:
 			goto beach;
 		}
 		ignorecase = true;
+		// fallthrough
 	case 'j': // "/j"
 		if (input[0] == 'j' && input[1] == ' ') {
 			param.outmode = RZ_MODE_JSON;

@@ -1040,9 +1040,6 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 
 	//If type == RZ_BIN_TYPE_CORE, we need to create all the maps
 	if (plugin && binfile && plugin->file_type && plugin->file_type(binfile) == RZ_BIN_TYPE_CORE) {
-		ut64 sp_addr = (ut64)-1;
-		RzIOMap *stack_map = NULL;
-
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {
 			RzBinInfo *inf = plugin->info(binfile);
@@ -1056,46 +1053,9 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 				eprintf("Setting up coredump: Problem while setting the registers\n");
 			} else {
 				eprintf("Setting up coredump: Registers have been set\n");
-				const char *regname = rz_reg_get_name(r->analysis->reg, RZ_REG_NAME_SP);
-				if (regname) {
-					RzRegItem *reg = rz_reg_get(r->analysis->reg, regname, -1);
-					if (reg) {
-						sp_addr = rz_reg_get_value(r->analysis->reg, reg);
-						stack_map = rz_io_map_get(r->io, sp_addr);
-					}
-				}
-				regname = rz_reg_get_name(r->analysis->reg, RZ_REG_NAME_PC);
-				if (regname) {
-					RzRegItem *reg = rz_reg_get(r->analysis->reg, regname, -1);
-					if (reg) {
-						ut64 seek = rz_reg_get_value(r->analysis->reg, reg);
-						rz_core_seek(r, seek, true);
-					}
-				}
 			}
 		}
-
-		RzBinObject *o = binfile->o;
-		int map = 0;
-		if (o && o->maps) {
-			RzList *maps = o->maps;
-			RzListIter *iter;
-			RzBinMap *mapcore;
-
-			rz_list_foreach (maps, iter, mapcore) {
-				RzIOMap *iomap = rz_io_map_get(r->io, mapcore->addr);
-				if (iomap && (mapcore->file || stack_map == iomap)) {
-					rz_io_map_set_name(iomap, mapcore->file ? mapcore->file : "[stack]");
-				}
-				map++;
-			}
-			rz_list_free(maps);
-			o->maps = NULL;
-		}
-		eprintf("Setting up coredump: %d maps have been found and created\n", map);
-		goto beach;
 	}
-beach:
 	return true;
 }
 

@@ -70,6 +70,8 @@ static const RzCmdDescArg analysis_function_vars_reads_args[2];
 static const RzCmdDescArg analysis_function_vars_writes_args[2];
 static const RzCmdDescArg analysis_function_vars_type_args[3];
 static const RzCmdDescArg analysis_function_vars_xrefs_args[2];
+static const RzCmdDescArg analysis_function_vars_xrefs_args_args[2];
+static const RzCmdDescArg analysis_function_vars_xrefs_vars_args[2];
 static const RzCmdDescArg analysis_function_vars_bp_args[4];
 static const RzCmdDescArg analysis_function_vars_bp_del_args[2];
 static const RzCmdDescArg analysis_function_vars_bp_getref_args[3];
@@ -1127,6 +1129,9 @@ static const RzCmdDescHelp analysis_function_vars_type_help = {
 	.args = analysis_function_vars_type_args,
 };
 
+static const RzCmdDescHelp afvx_help = {
+	.summary = "Show argument/variable xrefs in a function",
+};
 static const RzCmdDescArg analysis_function_vars_xrefs_args[] = {
 	{
 		.name = "varname",
@@ -1139,6 +1144,34 @@ static const RzCmdDescArg analysis_function_vars_xrefs_args[] = {
 static const RzCmdDescHelp analysis_function_vars_xrefs_help = {
 	.summary = "Show function variable xrefs (same as afvR+afvW)",
 	.args = analysis_function_vars_xrefs_args,
+};
+
+static const RzCmdDescArg analysis_function_vars_xrefs_args_args[] = {
+	{
+		.name = "varname",
+		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_xrefs_args_help = {
+	.summary = "Show function argument xrefs",
+	.args = analysis_function_vars_xrefs_args_args,
+};
+
+static const RzCmdDescArg analysis_function_vars_xrefs_vars_args[] = {
+	{
+		.name = "varname",
+		.type = RZ_CMD_ARG_TYPE_FCN_VAR,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_vars_xrefs_vars_help = {
+	.summary = "Show function local variable xrefs",
+	.args = analysis_function_vars_xrefs_vars_args,
 };
 
 static const RzCmdDescHelp afvb_help = {
@@ -3376,6 +3409,7 @@ static const RzCmdDescDetailEntry zign_add_Zignature_space_types_detail_entries[
 	{ .text = "g", .arg_str = NULL, .comment = "graph metrics" },
 	{ .text = "o", .arg_str = NULL, .comment = "original offset" },
 	{ .text = "r", .arg_str = NULL, .comment = "references" },
+	{ .text = "t", .arg_str = NULL, .comment = "types" },
 	{ .text = "x", .arg_str = NULL, .comment = "cross references" },
 	{ .text = "h", .arg_str = NULL, .comment = "bbhash (hashing of function basic blocks)" },
 	{ .text = "v", .arg_str = NULL, .comment = "vars (and args)" },
@@ -3404,6 +3438,7 @@ static const RzCmdDescDetailEntry zign_add_Examples_detail_entries[] = {
 	{ .text = "za", .arg_str = " foo o 0x08048123", .comment = "" },
 	{ .text = "za", .arg_str = " foo c this is a comment (base64?)", .comment = "" },
 	{ .text = "za", .arg_str = " foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen", .comment = "" },
+	{ .text = "za", .arg_str = " foo t func.sym.imp.strlen.ret=int", .comment = "" },
 	{ .text = "za", .arg_str = " foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae", .comment = "" },
 	{ 0 },
 };
@@ -3414,7 +3449,7 @@ static const RzCmdDescDetail zign_add_details[] = {
 	{ .name = "Examples", .entries = zign_add_Examples_detail_entries },
 	{ 0 },
 };
-static const char *zign_add_type_choices[] = { "a", "b", "c", "n", "g", "o", "r", "x", "h", "v", NULL };
+static const char *zign_add_type_choices[] = { "a", "b", "c", "n", "g", "o", "r", "t", "x", "h", "v", NULL };
 static const RzCmdDescArg zign_add_args[] = {
 	{
 		.name = "zigname",
@@ -4071,8 +4106,13 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_type_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvt", rz_analysis_function_vars_type_handler, &analysis_function_vars_type_help);
 	rz_warn_if_fail(analysis_function_vars_type_cd);
 
-	RzCmdDesc *analysis_function_vars_xrefs_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afv_cd, "afvx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_handler, &analysis_function_vars_xrefs_help);
-	rz_warn_if_fail(analysis_function_vars_xrefs_cd);
+	RzCmdDesc *afvx_cd = rz_cmd_desc_group_modes_new(core->rcmd, afv_cd, "afvx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_handler, &analysis_function_vars_xrefs_help, &afvx_help);
+	rz_warn_if_fail(afvx_cd);
+	RzCmdDesc *analysis_function_vars_xrefs_args_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afvx_cd, "afvxa", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_args_handler, &analysis_function_vars_xrefs_args_help);
+	rz_warn_if_fail(analysis_function_vars_xrefs_args_cd);
+
+	RzCmdDesc *analysis_function_vars_xrefs_vars_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afvx_cd, "afvxv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_xrefs_vars_handler, &analysis_function_vars_xrefs_vars_help);
+	rz_warn_if_fail(analysis_function_vars_xrefs_vars_cd);
 
 	RzCmdDesc *afvb_cd = rz_cmd_desc_group_modes_new(core->rcmd, afv_cd, "afvb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_bp_handler, &analysis_function_vars_bp_help, &afvb_help);
 	rz_warn_if_fail(afvb_cd);
@@ -4327,7 +4367,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_define_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "td", rz_type_define_handler, &type_define_help);
 	rz_warn_if_fail(type_define_cd);
 
-	RzCmdDesc *te_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "te", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_type_list_enum_handler, &type_list_enum_help, &te_help);
+	RzCmdDesc *te_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "te", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_enum_handler, &type_list_enum_help, &te_help);
 	rz_warn_if_fail(te_cd);
 	RzCmdDesc *type_enum_bitfield_cd = rz_cmd_desc_argv_new(core->rcmd, te_cd, "teb", rz_type_enum_bitfield_handler, &type_enum_bitfield_help);
 	rz_warn_if_fail(type_enum_bitfield_cd);

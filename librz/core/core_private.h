@@ -30,7 +30,6 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
-RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id);
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name);
 RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name);
@@ -45,48 +44,41 @@ RZ_IPI void rz_core_analysis_function_until(RzCore *core, ut64 addr_end);
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
 
 /* ctypes.c */
-RZ_IPI RzList *rz_types_calling_conventions(Sdb *db);
 RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode mode);
-RZ_IPI RzList *rz_types_enums(Sdb *db);
 RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *enum_name, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI void rz_types_enum_print_c(Sdb *TDB, const char *arg, bool multiline);
+RZ_IPI void rz_types_enum_print_c(RzTypeDB *typedb, const char *name, bool multiline);
+RZ_IPI void rz_types_enum_print_c_all(RzTypeDB *typedb, bool multiline);
 RZ_IPI bool rz_core_types_typedef_info(RzCore *core, const char *name);
-RZ_IPI void rz_types_typedef_print_c(Sdb *TDB, const char *typedef_name);
+RZ_IPI void rz_types_typedef_print_c(RzTypeDB *typedb, const char *typedef_name);
 RZ_IPI void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode);
-RZ_IPI RzList *rz_types_typedefs(Sdb *TDB);
 
-RZ_IPI RzList *rz_types_unions(Sdb *TDB);
-RZ_IPI RzList *rz_types_structs(Sdb *TDB);
 // Structured types JSON
-RZ_IPI void rz_types_structured_print_json(Sdb *TDB, SdbList *l);
-RZ_IPI void rz_types_union_print_json(Sdb *TDB);
-RZ_IPI void rz_types_struct_print_json(Sdb *TDB);
+RZ_IPI void rz_types_structured_print_json(SdbList *l);
+RZ_IPI void rz_types_union_print_json(RzTypeDB *typedb);
+RZ_IPI void rz_types_struct_print_json(RzTypeDB *typedb);
 // Structured types SDB
-RZ_IPI void rz_types_structured_print_sdb(Sdb *TDB, SdbList *l);
-RZ_IPI void rz_types_union_print_sdb(Sdb *TDB);
-RZ_IPI void rz_types_struct_print_sdb(Sdb *TDB);
+RZ_IPI void rz_types_structured_print_sdb(SdbList *l);
+RZ_IPI void rz_types_union_print_sdb(RzTypeDB *typedb);
+RZ_IPI void rz_types_struct_print_sdb(RzTypeDB *typedb);
 // Structured types C format
-RZ_IPI void rz_types_union_print_c(Sdb *TDB, const char *name, bool multiline);
-RZ_IPI void rz_types_struct_print_c(Sdb *TDB, const char *name, bool multiline);
-RZ_IPI void rz_types_function_print(Sdb *TDB, const char *function, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_types_union_print_c(RzTypeDB *typedb, const char *name, bool multiline);
+RZ_IPI void rz_types_struct_print_c(RzTypeDB *typedb, const char *name, bool multiline);
+RZ_IPI void rz_types_function_print(RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI RzList *rz_types_function_noreturn(Sdb *db);
 RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode);
-RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core, Sdb *TDB);
-RZ_IPI void rz_core_types_union_print_format_all(RzCore *core, Sdb *TDB);
-RZ_IPI RzList *rz_types_links(Sdb *db);
+RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core);
+RZ_IPI void rz_core_types_union_print_format_all(RzCore *core);
 RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr);
 RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr);
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI RzList *rz_types_all(Sdb *TDB);
 RZ_IPI void rz_types_define(RzCore *core, const char *type);
 RZ_IPI void rz_types_open_file(RzCore *core, const char *path);
 RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename);
-RZ_IPI void rz_types_open_sdb(RzCore *core, const char *path);
+RZ_IPI void rz_types_open_sdb(RzTypeDB *typedb, const char *path);
 
 /* agraph.c */
 RZ_IPI void rz_core_agraph_add_node(RzCore *core, const char *title, const char *body, int color);
