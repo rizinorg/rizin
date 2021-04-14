@@ -1363,12 +1363,44 @@ RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
-RZ_IPI void rz_bin_map_free(RzBinMap *map) {
+RZ_API void rz_bin_map_free(RzBinMap *map) {
 	if (!map) {
 		return;
 	}
 	free(map->name);
 	free(map);
+}
+
+/**
+ * \brief Create a list of RzBinMap from RzBinSections
+ *
+ * Some binary formats have a 1:1 correspondence of mapping and
+ * their RzBinSections. This is not always the case (e.g. ELF)
+ * but if it is, plugins can use this function to generate
+ * mappings from sections.
+ */
+RZ_API RzList *rz_bin_maps_of_sections(RzList /*<RzBinSection>*/ *sections) {
+	rz_return_val_if_fail(sections, NULL);
+	RzList *r = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!r) {
+		return NULL;
+	}
+	RzBinSection *sec;
+	RzListIter *it;
+	rz_list_foreach(sections, it, sec) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			return r;
+		}
+		map->name = sec->name ? strdup(sec->name) : NULL;
+		map->paddr = sec->paddr;
+		map->psize = sec->size;
+		map->vaddr = sec->vaddr;
+		map->vsize = sec->vsize;
+		map->perm = sec->perm;
+		rz_list_push(r, map);
+	}
+	return r;
 }
 
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name) {

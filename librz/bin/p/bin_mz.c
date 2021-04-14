@@ -142,30 +142,11 @@ static RzList *entries(RzBinFile *bf) {
 }
 
 static RzList *maps(RzBinFile *bf) {
-	RzList *r = rz_list_newf((RzListFree)rz_bin_map_free);
-	if (!r) {
-		return NULL;
-	}
 	RzList *segs = rz_bin_mz_get_segments(bf->o->bin_obj);
 	if (!segs) {
-		return r;
+		return NULL;
 	}
-	RzBinSection *seg;
-	RzListIter *it;
-	rz_list_foreach(segs, it, seg) {
-		RzBinMap *map = RZ_NEW0(RzBinMap);
-		if (!map) {
-			goto hcf;
-		}
-		map->name = seg->name ? strdup(seg->name) : NULL;
-		map->paddr = seg->paddr;
-		map->psize = seg->size;
-		map->vaddr = seg->vaddr;
-		map->vsize = seg->vsize;
-		map->perm = seg->perm;
-		rz_list_push(r, map);
-	}
-hcf:
+	RzList *r = rz_bin_maps_of_sections(segs);
 	rz_list_free(segs);
 	return r;
 }

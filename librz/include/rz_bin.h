@@ -732,7 +732,8 @@ typedef struct rz_bin_bind_t {
 	ut32 visibility;
 } RzBinBind;
 
-RZ_IPI void rz_bin_map_free(RzBinMap *map);
+RZ_API void rz_bin_map_free(RzBinMap *map);
+RZ_API RzList *rz_bin_maps_of_sections(RzList /*<RzBinSection>*/ *sections);
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
