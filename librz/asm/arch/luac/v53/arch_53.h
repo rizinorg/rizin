@@ -158,7 +158,7 @@ name            args    description
 #define MAXARG_C ((1 << SIZE_C) - 1)
 
 /* creates a mask with 'n' 1 bits at position 'p' */
-#define MASK1(n, p) ((~((~0) << (n))) << (p))
+#define MASK1(n, p) ((~((~0u) << (n))) << (p))
 
 /* creates a mask with 'n' 0 bits at position 'p' */
 #define MASK0(n, p) (~MASK1(n, p))
