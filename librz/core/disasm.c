@@ -549,6 +549,11 @@ static void ds_print_esil_analysis_fini(RDisasmState *ds) {
 		core->analysis->last_disasm_reg = rz_reg_arena_peek(core->analysis->reg);
 		const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
 		RzRegSet *regset = rz_reg_regset_get(ds->core->analysis->reg, RZ_REG_TYPE_GPR);
+		if (!regset) {
+			eprintf("ESIL: fail to get regset\n");
+			RZ_FREE(ds->esil_regstate);
+			return;
+		}
 		if (ds->esil_regstate_size == regset->arena->size) {
 			rz_reg_arena_poke(core->analysis->reg, ds->esil_regstate);
 		}
