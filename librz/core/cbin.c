@@ -672,7 +672,7 @@ static bool io_create_mem_map(RzIO *io, RzBinMap *map, ut64 at) {
 	// update the io map's name to refer to the bin map
 	if (map->name) {
 		free(iomap->name);
-		iomap->name = !map->psize ? strdup(map->name) : rz_str_newf("mmap.%s", map->name);
+		iomap->name = rz_str_newf("mmap.%s", map->name);
 	}
 	return true;
 }

@@ -121,6 +121,64 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
+static ut32 perm_of_section_perm(ut64 perm) {
+	ut32 r = 0;
+	if (RZ_BIN_PE_SCN_IS_EXECUTABLE(perm)) {
+		r |= RZ_PERM_X;
+		r |= RZ_PERM_R; // implicit
+	}
+	if (RZ_BIN_PE_SCN_IS_WRITABLE(perm)) {
+		r |= RZ_PERM_W;
+	}
+	if (RZ_BIN_PE_SCN_IS_READABLE(perm)) {
+		r |= RZ_PERM_R;
+	}
+	if (RZ_BIN_PE_SCN_IS_SHAREABLE(perm)) {
+		r |= RZ_PERM_SHAR;
+	}
+	return r;
+}
+
+static RzList *maps(RzBinFile *bf) {
+	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *)bf->o->bin_obj;
+	struct rz_bin_pe_section_t *sections = NULL;
+	if (!bin || !(sections = bin->sections)) {
+		return NULL;
+	}
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+	ut64 ba = baddr(bf);
+	PE_(rz_bin_pe_check_sections)
+	(bin, &sections);
+	for (size_t i = 0; !sections[i].last; i++) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			break;
+		}
+		map->paddr = sections[i].paddr;
+		map->name = strdup(sections[i].name);
+		map->psize = sections[i].size;
+		if (map->psize > bin->size) {
+			if (sections[i].vsize < bin->size) {
+				map->psize = sections[i].vsize;
+			} else {
+				//hack give it page size
+				map->psize = 4096;
+			}
+		}
+		map->vsize = sections[i].vsize;
+		if (!map->vsize && map->psize) {
+			map->vsize = map->psize;
+		}
+		map->vaddr = sections[i].vaddr + ba;
+		map->perm = perm_of_section_perm(sections[i].perm);
+		rz_list_append(ret, map);
+	}
+	return ret;
+}
+
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
@@ -141,44 +199,13 @@ static RzList *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
-		if (sections[i].name[0]) {
-			ptr->name = strdup((char *)sections[i].name);
-		} else {
-			ptr->name = strdup("");
-		}
+		ptr->name = strdup(sections[i].name);
 		ptr->size = sections[i].size;
-		if (ptr->size > bin->size) {
-			if (sections[i].vsize < bin->size) {
-				ptr->size = sections[i].vsize;
-			} else {
-				//hack give it page size
-				ptr->size = 4096;
-			}
-		}
 		ptr->vsize = sections[i].vsize;
-		if (!ptr->vsize && ptr->size) {
-			ptr->vsize = ptr->size;
-		}
 		ptr->flags = sections[i].flags;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
-
-		ptr->add = true;
-		ptr->perm = 0;
-		if (RZ_BIN_PE_SCN_IS_EXECUTABLE(sections[i].perm)) {
-			ptr->perm |= RZ_PERM_X;
-			ptr->perm |= RZ_PERM_R; // implicit
-		}
-		if (RZ_BIN_PE_SCN_IS_WRITABLE(sections[i].perm)) {
-			ptr->perm |= RZ_PERM_W;
-		}
-		if (RZ_BIN_PE_SCN_IS_READABLE(sections[i].perm)) {
-			ptr->perm |= RZ_PERM_R;
-		}
-		// this is causing may tests to fail because rx != srx
-		if (RZ_BIN_PE_SCN_IS_SHAREABLE(sections[i].perm)) {
-			ptr->perm |= RZ_PERM_SHAR;
-		}
+		ptr->perm = perm_of_section_perm(sections[i].perm);
 		if ((ptr->perm & RZ_PERM_RW) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
 			if (!strcmp(ptr->name, ".rsrc") ||
 				!strcmp(ptr->name, ".data") ||
