@@ -499,14 +499,10 @@ static RzList *patch_relocs(RzBinFile *bf) {
 		m_vaddr = RZ_ROUND(offset, 16);
 		ut64 size = nimports * BYTES_PER_IMP_RELOC;
 		char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-		RzIODesc *desc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, m_vaddr);
+		RzIOMap *map;
+		RzIODesc *desc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, m_vaddr, &map);
 		free(muri);
-		if (!desc) {
-			return NULL;
-		}
-
-		RzIOMap *map = b->iob.map_get(io, m_vaddr);
-		if (!map) {
+		if (!desc || !map) {
 			return NULL;
 		}
 		map->name = strdup(".imports.rz");

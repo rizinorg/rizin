@@ -174,7 +174,7 @@ typedef bool (*RzIODescUse)(RzIO *io, int fd);
 typedef RzIODesc *(*RzIODescGet)(RzIO *io, int fd);
 typedef ut64 (*RzIODescSize)(RzIODesc *desc);
 typedef RzIODesc *(*RzIOOpen)(RzIO *io, const char *uri, int flags, int mode);
-typedef RzIODesc *(*RzIOOpenAt)(RzIO *io, const char *uri, int flags, int mode, ut64 at);
+typedef RzIODesc *(*RzIOOpenAt)(RzIO *io, const char *uri, int flags, int mode, ut64 at, RZ_NULLABLE RZ_OUT RzIOMap **map);
 typedef bool (*RzIOClose)(RzIO *io, int fd);
 typedef bool (*RzIOReadAt)(RzIO *io, ut64 addr, ut8 *buf, int len);
 typedef bool (*RzIOWriteAt)(RzIO *io, ut64 addr, const ut8 *buf, int len);
@@ -287,7 +287,7 @@ RZ_API RzIO *rz_io_new(void);
 RZ_API RzIO *rz_io_init(RzIO *io);
 RZ_API RzIODesc *rz_io_open_nomap(RzIO *io, const char *uri, int flags, int mode); //should return int
 RZ_API RzIODesc *rz_io_open(RzIO *io, const char *uri, int flags, int mode);
-RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int flags, int mode, ut64 at);
+RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int flags, int mode, ut64 at, RZ_NULLABLE RZ_OUT RzIOMap **map);
 RZ_API RzList *rz_io_open_many(RzIO *io, const char *uri, int flags, int mode);
 RZ_API RzIODesc *rz_io_open_buffer(RzIO *io, RzBuffer *b, int flags, int mode);
 RZ_API bool rz_io_close(RzIO *io);

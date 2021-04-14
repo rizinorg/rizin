@@ -159,8 +159,18 @@ RZ_API RzIODesc *rz_io_open(RzIO *io, const char *uri, int perm, int mode) {
 	return desc;
 }
 
-/* opens a file and maps it to an offset specified by the "at"-parameter */
-RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int perm, int mode, ut64 at) {
+/**
+ * \brief Open a file and directly map it at the given offset
+ *
+ * This executes both rz_io_open_nomap() and rz_io_map_new() and returns their
+ * results without updating the skyline.
+ *
+ * \param uri file uri to open
+ * \param at where to map the file
+ * \param map optionally returns the created RzIOMap
+ * \return the opened RzIODesc of the file
+ * */
+RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int perm, int mode, ut64 at, RZ_NULLABLE RZ_OUT RzIOMap **map) {
 	rz_return_val_if_fail(io && uri, NULL);
 
 	RzIODesc *desc = rz_io_open_nomap(io, uri, perm, mode);
@@ -176,7 +186,10 @@ RZ_API RzIODesc *rz_io_open_at(RzIO *io, const char *uri, int perm, int mode, ut
 		size = UT64_MAX - at + 1;
 	}
 	// skyline not updated
-	rz_io_map_new(io, desc->fd, desc->perm, 0LL, at, size);
+	RzIOMap *m = rz_io_map_new(io, desc->fd, desc->perm, 0LL, at, size);
+	if (map) {
+		*map = m;
+	}
 	return desc;
 }
 

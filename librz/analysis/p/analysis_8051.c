@@ -89,7 +89,7 @@ static void map_cpu_memory(RzAnalysis *analysis, int entry, ut32 addr, ut32 size
 	} else {
 		// allocate memory for address space
 		char *mstr = rz_str_newf("malloc://%d", size);
-		desc = analysis->iob.open_at(analysis->iob.io, mstr, RZ_PERM_RW, 0, addr);
+		desc = analysis->iob.open_at(analysis->iob.io, mstr, RZ_PERM_RW, 0, addr, NULL);
 		free(mstr);
 		// set 8051 address space as name of mapped memory
 		if (desc && analysis->iob.fd_get_name(analysis->iob.io, desc->fd)) {

@@ -642,7 +642,7 @@ static RzIODesc *cpu_memory_map(RzIOBind *iob, RzIODesc *desc, ut32 addr,
 	if (desc && iob->fd_get_name(iob->io, desc->fd)) {
 		iob->fd_remap(iob->io, desc->fd, addr);
 	} else {
-		desc = iob->open_at(iob->io, mstr, RZ_PERM_RW, 0, addr);
+		desc = iob->open_at(iob->io, mstr, RZ_PERM_RW, 0, addr, NULL);
 	}
 	free(mstr);
 	return desc;

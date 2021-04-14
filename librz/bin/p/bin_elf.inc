@@ -987,14 +987,10 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	// reserve at least that space
 	size = bin->g_reloc_num * cdsz;
 	char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-	RzIODesc *gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr);
+	RzIOMap *gotrzmap;
+	RzIODesc *gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr, &gotrzmap);
 	free(muri);
-	if (!gotrzdesc) {
-		return NULL;
-	}
-
-	RzIOMap *gotrzmap = b->iob.map_get(io, n_vaddr);
-	if (!gotrzmap) {
+	if (!gotrzdesc || !gotrzmap) {
 		return NULL;
 	}
 	gotrzmap->name = strdup(".got.rz");

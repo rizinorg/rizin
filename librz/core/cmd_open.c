@@ -1144,7 +1144,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		if (!strcmp(ptr, "-")) {
 			ptr = "malloc://512";
 		}
-		if ((desc = rz_io_open_at(core->io, ptr, perms, 0644, addr))) {
+		if ((desc = rz_io_open_at(core->io, ptr, perms, 0644, addr, NULL))) {
 			fd = desc->fd;
 		}
 		if (fd == -1) {
