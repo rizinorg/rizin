@@ -703,6 +703,10 @@ static char *langFromHashbang(RzCore *core, const char *file) {
 	if (fd != -1) {
 		char firstLine[128] = { 0 };
 		int len = read(fd, (ut8 *)firstLine, sizeof(firstLine) - 1);
+		if (len < 1) {
+			close(fd);
+			return NULL;
+		}
 		firstLine[len] = 0;
 		if (!strncmp(firstLine, "#!/", 3)) {
 			// I CAN HAS A HASHBANG
