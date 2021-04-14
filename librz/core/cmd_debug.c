@@ -780,18 +780,18 @@ static bool is_repeatable_inst(RzCore *core, ut64 addr) {
 	return ret;
 }
 
-static int step_until_inst(RzCore *core, const char *instr, bool regex) {
+static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
+	rz_return_val_if_fail(core, false);
+	instr = rz_str_trim_head_ro(instr);
+	if (!instr || !core->dbg) {
+		eprintf("Wrong debugger state\n");
+		return false;
+	}
 	RzAsmOp asmop;
 	ut8 buf[32];
 	ut64 pc;
 	int ret;
 	bool is_x86 = rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86");
-
-	instr = rz_str_trim_head_ro(instr);
-	if (!core || !instr || !core->dbg) {
-		eprintf("Wrong state\n");
-		return false;
-	}
 	rz_cons_break_push(NULL, NULL);
 	for (;;) {
 		if (rz_cons_is_breaked()) {
@@ -4226,13 +4226,17 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc, const char **argv) {
-	step_until_inst(core, argv[1], false);
+	if (!step_until_inst(core, argv[1], false)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int argc, const char **argv) {
-	step_until_inst(core, argv[1], true);
+	if (!step_until_inst(core, argv[1], true)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
