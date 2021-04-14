@@ -51,6 +51,7 @@ COPY . /tmp/rizin/
 # Install all build dependencies
 # Install bindings
 # Build and install rizin on master branch
+# Build and install rz-ghidra
 # Remove all build dependencies
 # Cleanup
 # gcc git python3-pip ccache patch
@@ -64,6 +65,7 @@ RUN apt-get update && \
 	g++ \
 	git \
 	make \
+	pkg-config \
 	libc-dev-bin libc6-dev linux-libc-dev \
 	python3-pip \
 	python3-setuptools \
@@ -80,11 +82,15 @@ RUN apt-get update && \
 	meson compile -C /tmp/build && \
 	meson install -C /tmp/build && \
 	rm -rf /tmp/build && \
+	rz-pm init && \
+	rz-pm -gi rz-ghidra && \
+	rm -rf $HOME/.local/share/rizin/rz-pm/git/rz-ghidra && \
 	pip3 uninstall -y meson ninja && \
 	apt-get remove --purge -y \
 	cmake \
 	cpp \
 	g++ \
+	pkg-config \
 	python3-pip \
 	python3-setuptools \
 	python3-wheel && \
