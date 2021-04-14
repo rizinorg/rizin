@@ -95,7 +95,7 @@ typedef enum {
 #define __POWERPC__ 1
 #endif
 
-#if __IPHONE_8_0 && TARGET_OS_IPHONE
+#if __IPHONE_8_0 && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 #define LIBC_HAVE_SYSTEM 0
 #else
 #define LIBC_HAVE_SYSTEM 1
