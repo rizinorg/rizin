@@ -71,7 +71,7 @@ RzList *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin) {
 		return NULL;
 	}
 
-	seg_list = rz_list_newf(free);
+	seg_list = rz_list_newf((RzListFree)rz_bin_section_free);
 	if (!seg_list) {
 		return NULL;
 	}
