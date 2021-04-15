@@ -1372,15 +1372,22 @@ RZ_API void rz_bin_map_free(RzBinMap *map) {
 }
 
 /**
- * \brief Create a list of RzBinMap from RzBinSections
+ * \brief Create a list of RzBinMap from RzBinSections queried from the given file
  *
  * Some binary formats have a 1:1 correspondence of mapping and
  * their RzBinSections. This is not always the case (e.g. ELF)
- * but if it is, plugins can use this function to generate
- * mappings from sections.
- */
-RZ_API RzList *rz_bin_maps_of_sections(RzList /*<RzBinSection>*/ *sections) {
-	rz_return_val_if_fail(sections, NULL);
+ * but if it is, plugins can use this function as their maps callback,
+ * which will generate mappings for sections.
+ * */
+RZ_API RzList *rz_bin_maps_of_file_sections(RzBinFile *binfile) {
+	rz_return_val_if_fail(binfile, NULL);
+	if (!binfile->o || !binfile->o->plugin || !binfile->o->plugin->sections) {
+		return NULL;
+	}
+	RzList *sections = binfile->o->plugin->sections(binfile);
+	if (!sections) {
+		return NULL;
+	}
 	RzList *r = rz_list_newf((RzListFree)rz_bin_map_free);
 	if (!r) {
 		return NULL;
@@ -1390,7 +1397,7 @@ RZ_API RzList *rz_bin_maps_of_sections(RzList /*<RzBinSection>*/ *sections) {
 	rz_list_foreach(sections, it, sec) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
-			return r;
+			goto hcf;
 		}
 		map->name = sec->name ? strdup(sec->name) : NULL;
 		map->paddr = sec->paddr;
@@ -1400,6 +1407,8 @@ RZ_API RzList *rz_bin_maps_of_sections(RzList /*<RzBinSection>*/ *sections) {
 		map->perm = sec->perm;
 		rz_list_push(r, map);
 	}
+hcf:
+	rz_list_free(sections);
 	return r;
 }
 

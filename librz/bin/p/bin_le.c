@@ -102,16 +102,6 @@ static void header(RzBinFile *bf) {
 	p("Stack Size: 0x%04x\n", h->stacksize);
 }
 
-static RzList *maps(RzBinFile *bf) {
-	RzList *secs = rz_bin_le_get_sections(bf->o->bin_obj);
-	if (!secs) {
-		return NULL;
-	}
-	RzList *r = rz_bin_maps_of_sections(secs);
-	rz_list_free(secs);
-	return r;
-}
-
 static RzList *sections(RzBinFile *bf) {
 	return rz_bin_le_get_sections(bf->o->bin_obj);
 }
@@ -164,7 +154,7 @@ RzBinPlugin rz_bin_plugin_le = {
 	.destroy = &destroy,
 	.info = &info,
 	.header = &header,
-	.maps = &maps,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.entries = &entries,
 	.symbols = &symbols,

@@ -190,7 +190,6 @@ static RzList *sections(RzBinFile *bf) {
 		if (obj->scn_va) {
 			ptr->vaddr = obj->scn_va[i];
 		}
-		ptr->add = true;
 		ptr->perm = 0;
 		if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
 			ptr->perm |= RZ_PERM_R;
@@ -624,6 +623,7 @@ RzBinPlugin rz_bin_plugin_coff = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

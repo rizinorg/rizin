@@ -205,16 +205,6 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *maps(RzBinFile *bf) {
-	RzList *secs = sections(bf);
-	if (!secs) {
-		return NULL;
-	}
-	RzList *r = rz_bin_maps_of_sections(secs);
-	rz_list_free(secs);
-	return r;
-}
-
 RzBinPlugin rz_bin_plugin_art = {
 	.name = "art",
 	.desc = "Android Runtime",
@@ -224,7 +214,7 @@ RzBinPlugin rz_bin_plugin_art = {
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
-	.maps = &maps,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.entries = entries,
 	.strings = &strings,

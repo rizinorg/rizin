@@ -158,7 +158,7 @@ static RzList *maps(RzBinFile *bf) {
 			break;
 		}
 		map->paddr = sections[i].paddr;
-		map->name = strdup(sections[i].name);
+		map->name = strdup((char *)sections[i].name);
 		map->psize = sections[i].size;
 		if (map->psize > bin->size) {
 			if (sections[i].vsize < bin->size) {
@@ -199,7 +199,7 @@ static RzList *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
-		ptr->name = strdup(sections[i].name);
+		ptr->name = strdup((char *)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->flags = sections[i].flags;

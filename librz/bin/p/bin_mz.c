@@ -141,16 +141,6 @@ static RzList *entries(RzBinFile *bf) {
 	return res;
 }
 
-static RzList *maps(RzBinFile *bf) {
-	RzList *segs = rz_bin_mz_get_segments(bf->o->bin_obj);
-	if (!segs) {
-		return NULL;
-	}
-	RzList *r = rz_bin_maps_of_sections(segs);
-	rz_list_free(segs);
-	return r;
-}
-
 static RzList *sections(RzBinFile *bf) {
 	return rz_bin_mz_get_segments(bf->o->bin_obj);
 }
@@ -253,7 +243,7 @@ RzBinPlugin rz_bin_plugin_mz = {
 	.check_buffer = &check_buffer,
 	.binsym = &binsym,
 	.entries = &entries,
-	.maps = &maps,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 	.header = &header,

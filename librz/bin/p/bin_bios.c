@@ -109,16 +109,6 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *maps(RzBinFile *bf) {
-	RzList *secs = sections(bf);
-	if (!secs) {
-		return NULL;
-	}
-	RzList *r = rz_bin_maps_of_sections(secs);
-	rz_list_free(secs);
-	return r;
-}
-
 static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
@@ -144,7 +134,7 @@ RzBinPlugin rz_bin_plugin_bios = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,
-	.maps = maps,
+	.maps = rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.strings = &strings,
 	.info = &info,

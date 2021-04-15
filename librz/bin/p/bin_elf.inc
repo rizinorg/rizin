@@ -302,7 +302,7 @@ static RzList *maps(RzBinFile *bf) {
 static RzList *sections(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	struct rz_bin_elf_section_t *section = NULL;
-	int i, num, found_load = 0;
+	int i, num;
 	Elf_(Phdr) *phdr = NULL;
 	RzBinSection *ptr = NULL;
 	RzList *ret = NULL;
@@ -343,7 +343,6 @@ static RzList *sections(RzBinFile *bf) {
 	ut16 mach = obj->ehdr.e_machine;
 	num = obj->ehdr.e_phnum;
 	phdr = obj->phdr;
-	ut64 core_sp = Elf_(rz_bin_elf_get_sp_val)(obj);
 	if (phdr) {
 		int n = 0;
 		for (i = 0; i < num; i++) {
