@@ -969,7 +969,8 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	}
 
 	void **it;
-	rz_pvector_foreach (&io->maps, it) {
+	RzPVector *maps = rz_io_maps(io);
+	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
 		if (map->itv.addr > offset) {
 			offset = map->itv.addr;

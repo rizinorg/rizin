@@ -101,6 +101,35 @@ bool test_rz_io_mapsplit3(void) {
 	mu_end;
 }
 
+bool test_rz_io_maps_vector(void) {
+	RzIO *io = rz_io_new();
+	io->ff = 1;
+	int fd = rz_io_fd_open(io, "malloc://3", RZ_PERM_RW, 0);
+	int perms[4] = { RZ_PERM_RW, RZ_PERM_R, RZ_PERM_RW, RZ_PERM_W };
+	ut64 deltas[4] = { 0ULL, 1, 1, 1 };
+	ut64 addrs[4] = { 0ULL, 1, 2, 3 };
+	ut64 sizes[4] = { 1, 1, 1, 1 };
+	rz_io_map_add(io, fd, perms[0], deltas[0], addrs[0], sizes[0]);
+	rz_io_map_add(io, fd, perms[1], deltas[1], addrs[1], sizes[1]);
+	rz_io_map_add(io, fd, perms[2], deltas[2], addrs[2], sizes[2]);
+	rz_io_map_add(io, fd, perms[3], deltas[3], addrs[3], sizes[3]);
+	RzPVector *maps = rz_io_maps(io);
+	mu_assert_notnull(maps, "maps vector should not be null");
+	mu_assert_eq(rz_pvector_len(maps), 4, "expected 4 maps");
+	int i = 3; // They are located in the reverse order
+	void **it;
+	rz_pvector_foreach_prev(maps, it) {
+		RzIOMap *map = *it;
+		mu_assert_eq(map->perm, perms[i], "expected valid map permission");
+		mu_assert_eq(map->delta, deltas[i], "expected valid map delta");
+		mu_assert_eq(map->delta, deltas[i], "expected valid map delta");
+		mu_assert_eq(map->itv.addr, addrs[i], "expected to have right addr");
+		i--;
+	}
+	rz_io_free(io);
+	mu_end;
+}
+
 bool test_rz_io_pcache(void) {
 	RzIO *io = rz_io_new();
 	io->ff = 1;
@@ -323,6 +352,7 @@ bool all_tests(void) {
 	mu_run_test(test_rz_io_mapsplit);
 	mu_run_test(test_rz_io_mapsplit2);
 	mu_run_test(test_rz_io_mapsplit3);
+	mu_run_test(test_rz_io_maps_vector);
 	mu_run_test(test_rz_io_pcache);
 	mu_run_test(test_rz_io_desc_exchange);
 	mu_run_test(test_rz_io_priority);

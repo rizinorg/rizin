@@ -261,8 +261,9 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 	case 'g':
 		if (core->io->va) {
 			RzIOMap *map = rz_io_map_get(core->io, core->offset);
-			if (!map && !rz_pvector_empty(&core->io->maps)) {
-				map = rz_pvector_at(&core->io->maps, rz_pvector_len(&core->io->maps) - 1);
+			RzPVector *maps = rz_io_maps(core->io);
+			if (!map && !rz_pvector_empty(maps)) {
+				map = rz_pvector_at(maps, rz_pvector_len(maps) - 1);
 			}
 			if (map) {
 				rz_core_seek_and_save(core, rz_itv_begin(map->itv), true);
@@ -271,10 +272,11 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 			rz_core_seek_and_save(core, 0, true);
 		}
 		return true;
-	case 'G':
+	case 'G': {
 		map = rz_io_map_get(core->io, core->offset);
-		if (!map && !rz_pvector_empty(&core->io->maps)) {
-			map = rz_pvector_at(&core->io->maps, 0);
+		RzPVector *maps = rz_io_maps(core->io);
+		if (!map && !rz_pvector_empty(maps)) {
+			map = rz_pvector_at(maps, 0);
 		}
 		if (map) {
 			RzPrint *p = core->print;
@@ -287,6 +289,7 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 			rz_core_seek_and_save(core, rz_itv_end(map->itv) - (scr_rows - 2) * scols, true);
 		}
 		return true;
+	}
 	}
 	return false;
 }
@@ -3242,13 +3245,14 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						if (s) {
 							entry = s->vaddr;
 						} else {
-							RzIOMap *map = rz_pvector_pop(&core->io->maps);
+							RzPVector *maps = rz_io_maps(core->io);
+							RzIOMap *map = rz_pvector_pop(maps);
 							if (map) {
 								entry = map->itv.addr;
 							} else {
 								entry = rz_config_get_i(core->config, "bin.baddr");
 							}
-							rz_pvector_push_front(&core->io->maps, map);
+							rz_pvector_push_front(maps, map);
 						}
 					}
 					if (entry != UT64_MAX) {

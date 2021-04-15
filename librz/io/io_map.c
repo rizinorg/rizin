@@ -417,3 +417,13 @@ RZ_API ut64 rz_io_map_location(RzIO *io, ut64 size) {
 	}
 	return base;
 }
+
+/**
+ * \brief Returns the pointer to vector containing maps list
+ *
+ * \param io RzIO instance
+ */
+RZ_API RZ_BORROW RzPVector *rz_io_maps(RzIO *io) {
+	rz_return_val_if_fail(io, NULL);
+	return &io->maps;
+}
