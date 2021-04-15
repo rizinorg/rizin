@@ -227,7 +227,8 @@ static void GH(get_brks)(RzCore *core, GHT *brk_start, GHT *brk_end) {
 		}
 	} else {
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if (map->name) {
 				if (strstr(map->name, "[heap]")) {
@@ -423,7 +424,8 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 		}
 	} else {
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if (map->name && strstr(map->name, "arena")) {
 				libc_addr_sta = map->itv.addr;

@@ -302,7 +302,8 @@ RZ_API ut64 rz_core_analysis_address(RzCore *core, ut64 addr) {
 		if (core->io) {
 			// sections
 			void **it;
-			rz_pvector_foreach (&core->io->maps, it) {
+			RzPVector *maps = rz_io_maps(core->io);
+			rz_pvector_foreach (maps, it) {
 				RzIOMap *s = *it;
 				if (addr >= s->itv.addr && addr < (s->itv.addr + s->itv.size)) {
 					// sections overlap, so we want to get the one with lower perms

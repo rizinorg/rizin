@@ -1566,7 +1566,8 @@ RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
 RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
 	if (rz_io_reopen(core->io, fd, perms, 644)) {
 		void **it;
-		rz_pvector_foreach_prev(&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach_prev(maps, it) {
 			RzIOMap *map = *it;
 			if (map->fd == fd) {
 				map->perm |= RZ_PERM_WX;
