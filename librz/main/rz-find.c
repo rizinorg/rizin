@@ -91,7 +91,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			str[j] = 0;
 		} else {
 			size_t i;
-			for (i = 0; i < sizeof(_str); i++) {
+			for (i = 0; i < sizeof(_str) - 1; i++) {
 				char ch = ro->buf[delta + i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
@@ -105,7 +105,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	} else {
 		size_t i;
-		for (i = 0; i < sizeof(_str); i++) {
+		for (i = 0; i < sizeof(_str) - 1; i++) {
 			char ch = ro->buf[delta + i];
 			if (ch == '"' || ch == '\\') {
 				ch = '\'';

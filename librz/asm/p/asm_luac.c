@@ -9,7 +9,7 @@ int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 
 	if (!a->cpu) {
 		eprintf("Warning : no version info, specify it with `-c` option\n");
-		return len;
+		return -1;
 	}
 
 	if (strcmp(a->cpu, "5.4") == 0) {
@@ -18,6 +18,9 @@ int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	} else if (strcmp(a->cpu, "5.3") == 0) {
 		oplist = get_lua53_opnames();
 		r = lua53_disasm(opstruct, buf, len, oplist);
+	} else {
+		eprintf("Warning : version %s is not supported\n", a->cpu);
+		return -1;
 	}
 
 	free_lua_opnames(oplist);
@@ -27,7 +30,7 @@ int rz_luac_disasm(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 
 int rz_luac_asm(RzAsm *a, RzAsmOp *opstruct, const char *str) {
 	int str_len = strlen(str);
-	ut32 instruction;
+	ut32 instruction = 0;
 	ut8 buffer[4];
 
 	if (!a->cpu) {
@@ -43,6 +46,9 @@ int rz_luac_asm(RzAsm *a, RzAsmOp *opstruct, const char *str) {
 		if (!lua54_assembly(str, str_len, &instruction)) {
 			return -1;
 		}
+	} else {
+		eprintf("Warning : version %s is not supported\n", a->cpu);
+		return -1;
 	}
 
 	lua_set_instruction(instruction, buffer);
