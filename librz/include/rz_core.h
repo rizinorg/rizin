@@ -486,7 +486,6 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 RZ_API bool rz_core_visual_hudstuff(RzCore *core);
 RZ_API int rz_core_visual_classes(RzCore *core);
 RZ_API int rz_core_visual_analysis_classes(RzCore *core);
-RZ_API int rz_core_visual_types(RzCore *core);
 RZ_API int rz_core_visual(RzCore *core, const char *input);
 RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_fcn, int is_interactive);
 RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
@@ -642,7 +641,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
 RZ_API void rz_core_analysis_autoname_all_golang_fcns(RzCore *core);
-RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad);
+RZ_DEPRECATE RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char *rad);
 RZ_API char *rz_core_analysis_fcn_name(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API ut64 rz_core_analysis_fcn_list_size(RzCore *core);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
@@ -651,6 +650,7 @@ RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
 RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
+RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
 RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly);

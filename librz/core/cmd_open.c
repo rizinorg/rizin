@@ -118,7 +118,7 @@ static const char *help_msg_om[] = {
 	"omq", "", "list all maps and their fds",
 	"omqq", "", "list all maps addresses (See $MM to get the size)",
 	"omr", " mapid newsize", "resize map with corresponding id",
-	"omt", " [query]", "list maps using table api",
+	"omt", "[q] [query]", "list maps using table api",
 	NULL
 };
 
@@ -360,7 +360,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			return;
 		}
 		rz_list_foreach (bin->binfiles, iter, bf) {
-			char temp[4];
+			char temp[64];
 			RzInterval inter = (RzInterval){ bf->o->baddr, bf->o->size };
 			RzListInfo *info = rz_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
 			if (!info) {
@@ -660,7 +660,21 @@ static void cmd_open_map(RzCore *core, const char *input) {
 		}
 		break;
 	case 't': // "omt"
-		rz_core_cmd_omt(core, input + 2);
+		switch (input[2]) {
+		case 'q': // "omtq"
+		{
+			const char *arg = rz_str_trim_head_ro(input + 3);
+			char *query = rz_str_newf("%s%s:quiet", arg, *arg ? "," : "");
+			if (query) {
+				rz_core_cmd_omt(core, query);
+			}
+			free(query);
+			break;
+		}
+		default:
+			rz_core_cmd_omt(core, input + 2);
+			break;
+		}
 		break;
 	case ' ': // "om"
 		s = strdup(input + 2);
@@ -1130,7 +1144,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		if (!strcmp(ptr, "-")) {
 			ptr = "malloc://512";
 		}
-		if ((desc = rz_io_open_at(core->io, ptr, perms, 0644, addr))) {
+		if ((desc = rz_io_open_at(core->io, ptr, perms, 0644, addr, NULL))) {
 			fd = desc->fd;
 		}
 		if (fd == -1) {

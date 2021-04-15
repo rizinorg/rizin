@@ -30,7 +30,6 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
-RZ_IPI bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, const char *id);
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name);
 RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name);
@@ -48,7 +47,8 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *enum_name, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode);
-RZ_IPI void rz_types_enum_print_c(RzTypeDB *typedb, const char *arg, bool multiline);
+RZ_IPI void rz_types_enum_print_c(RzTypeDB *typedb, const char *name, bool multiline);
+RZ_IPI void rz_types_enum_print_c_all(RzTypeDB *typedb, bool multiline);
 RZ_IPI bool rz_core_types_typedef_info(RzCore *core, const char *name);
 RZ_IPI void rz_types_typedef_print_c(RzTypeDB *typedb, const char *typedef_name);
 RZ_IPI void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode);

@@ -307,15 +307,18 @@ RZ_API bool rz_core_bin_load_structs(RzCore *core, const char *file) {
 		return false;
 	}
 	RzBinOptions opt = { 0 };
-	rz_bin_open(core->bin, file, &opt);
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	if (bf) {
-		rz_core_bin_export_info(core, RZ_MODE_SET);
-		rz_bin_file_delete(core->bin, bf->id);
-		return true;
+	if (!rz_bin_open(core->bin, file, &opt)) {
+		eprintf("Cannot open bin '%s'\n", file);
+		return false;
 	}
-	eprintf("Cannot open bin '%s'\n", file);
-	return false;
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf) {
+		eprintf("Cannot open bin '%s'\n", file);
+		return false;
+	}
+	rz_core_bin_export_info(core, RZ_MODE_SET);
+	rz_bin_file_delete(core->bin, bf->id);
+	return true;
 }
 
 RZ_API int rz_core_bin_set_by_name(RzCore *core, const char *name) {
@@ -650,33 +653,32 @@ static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
 	bool reused = false;
 	ut64 gap = sec->vsize - sec->size;
 	char *uri = rz_str_newf("null://%" PFMT64u, gap);
+	RzIOMap *iomap = NULL;
 	RzIODesc *desc = findReusableFile(io, uri, sec->perm);
 	if (desc) {
-		RzIOMap *map = rz_io_map_get(io, at);
-		if (!map && gap) {
-			rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
+		iomap = rz_io_map_get(io, at);
+		if (!iomap && gap) {
+			iomap = rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
 		}
 		reused = true;
 	}
 	if (!desc) {
-		desc = rz_io_open_at(io, uri, sec->perm, 0664, at);
+		desc = rz_io_open_at(io, uri, sec->perm, 0664, at, &iomap);
 	}
 	free(uri);
 	if (!desc) {
 		return false;
 	}
-	// this works, because new maps are always born on the top
-	RzIOMap *map = rz_io_map_get(io, at);
 	// check if the mapping failed
-	if (!map) {
+	if (!iomap) {
 		if (!reused) {
 			rz_io_desc_close(desc);
 		}
 		return false;
 	}
 	// let the section refere to the map as a memory-map
-	free(map->name);
-	map->name = rz_str_newf("mmap.%s", sec->name);
+	free(iomap->name);
+	iomap->name = sec->map_name && !sec->size ? strdup(sec->map_name) : rz_str_newf("mmap.%s", sec->name);
 	return true;
 }
 
@@ -698,7 +700,7 @@ static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
 	}
 
 	// then we map the part of the section that comes from the physical file
-	char *map_name = rz_str_newf("fmap.%s", sec->name);
+	char *map_name = sec->map_name ? strdup(sec->map_name) : rz_str_newf("fmap.%s", sec->name);
 	if (!map_name) {
 		return;
 	}
@@ -1148,11 +1150,11 @@ typedef struct {
 } SymName;
 
 static void sym_name_init(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
-	int bin_demangle = lang != NULL;
-	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
 	if (!r || !sym || !sym->name) {
 		return;
 	}
+	int bin_demangle = lang != NULL;
+	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
 	sn->name = rz_str_newf("%s%s", sym->is_imported ? "imp." : "", sym->name);
 	sn->libname = sym->libname ? strdup(sym->libname) : NULL;
 	const char *pfx = get_prefix_for_sym(sym);
@@ -1256,10 +1258,10 @@ static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
 RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va) {
 	rz_return_val_if_fail(core && binfile, NULL);
 	RzBinObject *o = binfile->o;
-	RzBinInfo *info = o ? o->info : NULL;
-	if (!info) {
+	if (!o || !o->info) {
 		return false;
 	}
+	RzBinInfo *info = o->info;
 
 	bool is_arm = info && info->arch && !strncmp(info->arch, "arm", 3);
 	bool bin_demangle = rz_config_get_b(core->config, "bin.demangle");
@@ -1346,9 +1348,8 @@ RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va)
 
 	//handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
-		RzList *entries = o ? o->entries : NULL;
 		RzBinAddr *entry;
-		rz_list_foreach (entries, iter, entry) {
+		rz_list_foreach (o->entries, iter, entry) {
 			handle_arm_entry(core, o, entry, va);
 		}
 	}
@@ -2415,15 +2416,14 @@ static int bin_imports(RzCore *r, PJ *pj, int mode, int va, const char *name) {
 	int i = 0;
 
 	RzBinFile *bf = rz_bin_cur(r->bin);
-	RzBinObject *o = bf ? bf->o : NULL;
-	RzBinInfo *info = bf->o ? o->info : NULL;
-	if (!info) {
+	if (!bf || !bf->o || !bf->o->info) {
 		if (IS_MODE_JSON(mode)) {
 			pj_a(pj);
 			pj_end(pj);
 		}
 		return false;
 	}
+	RzBinObject *o = bf->o;
 
 	RzList *imports = rz_bin_get_imports(r->bin);
 	if (IS_MODE_JSON(mode)) {
@@ -2900,7 +2900,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		RzTable *table = rz_core_table(r);
 		rz_table_visual_list(table, list, r->offset, -1, cols, r->io->va);
 		if (r->table_query) {
-			rz_table_query(table, r->table_query);
+			// TODO iS/iSS entropy,sha1,... <query>
+			rz_table_query(table, hashtypes ? "" : r->table_query);
 		}
 		{
 			char *s = rz_table_tostring(table);
@@ -3121,7 +3122,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 out:
 	if (IS_MODE_NORMAL(mode)) {
 		if (r->table_query) {
-			rz_table_query(table, r->table_query);
+			// TODO iS/iSS entropy,sha1,... <query>
+			rz_table_query(table, hashtypes ? "" : r->table_query);
 		}
 		char *s = rz_table_tostring(table);
 		rz_cons_printf("\n%s\n", s);

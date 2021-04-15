@@ -937,6 +937,7 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		eprintf(" c/sort/inc        sort rows by given colname\n");
 		eprintf(" c/sortlen/inc     sort rows by strlen()\n");
 		eprintf(" c/cols/c1/c2      only show selected columns\n");
+		eprintf(" c                 only show column c\n");
 		eprintf(" c/gt/0x800        grep rows matching col0 > 0x800\n");
 		eprintf(" c/lt/0x800        grep rows matching col0 < 0x800\n");
 		eprintf(" c/eq/0x800        grep rows matching col0 == 0x800\n");
@@ -965,6 +966,11 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 	rz_list_foreach (queries, iter, query) {
 		RzList *q = rz_str_split_list(query, "/", 2);
 		const char *columnName = rz_list_get_n(q, 0);
+		if (!columnName) {
+			eprintf("Column name is NULL for (%s)\n", query);
+			rz_list_free(q);
+			continue;
+		}
 		const char *operation = rz_list_get_n(q, 1);
 		const char *operand = rz_list_get_n(q, 2);
 		if (__table_special(t, columnName)) {
@@ -972,18 +978,18 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		}
 		int col = rz_table_column_nth(t, columnName);
 		if (col == -1) {
-			if (columnName == NULL && strcmp(operation, "uniq")) { // TODO: What query triggers this?
-				eprintf("Column name is NULL for (%s)\n", query);
-			} else if (columnName) {
-				if (*columnName == '[') {
-					col = atoi(columnName + 1);
-				}
+			if (*columnName == '[') {
+				col = atoi(columnName + 1);
 			}
 		}
 		if (!operation) {
-			break;
-		}
-		if (!strcmp(operation, "sort")) {
+			RzList *list = rz_list_new();
+			if (list) {
+				rz_list_append(list, strdup(columnName));
+				rz_table_columns(t, list);
+				rz_list_free(list);
+			}
+		} else if (!strcmp(operation, "sort")) {
 			rz_table_sort(t, col, operand && !strcmp(operand, "dec"));
 		} else if (!strcmp(operation, "uniq")) {
 			rz_table_group(t, col, NULL);

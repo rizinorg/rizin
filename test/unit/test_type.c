@@ -352,6 +352,126 @@ static bool test_types_get_base_type_not_found(void) {
 	mu_end;
 }
 
+static void setup_sdb_for_base_types_all(Sdb *res) {
+	// td "struct kappa {int bar;int cow;};"
+	sdb_set(res, "kappa", "struct", 0);
+	sdb_set(res, "struct.kappa", "bar,cow", 0);
+	sdb_set(res, "struct.kappa.bar", "int32_t,0,0", 0);
+	sdb_set(res, "struct.kappa.cow", "int32_t,4,0", 0);
+	// td "struct theta {long foo;double *bar[5];};"
+	sdb_set(res, "theta", "struct", 0);
+	sdb_set(res, "struct.theta", "foo,bar", 0);
+	sdb_set(res, "struct.theta.foo", "int64_t,0,0", 0);
+	sdb_set(res, "struct.theta.bar", "double *,8,5", 0);
+	// td "union omega {int bar;int cow;};"
+	sdb_set(res, "omega", "union", 0);
+	sdb_set(res, "union.omega", "bar,cow", 0);
+	sdb_set(res, "union.omega.bar", "int32_t,0,0", 0);
+	sdb_set(res, "union.omega.cow", "int32_t,0,0", 0);
+	// td "union omicron {char foo;float bar;};"
+	sdb_set(res, "omicron", "union", 0);
+	sdb_set(res, "union.omicron", "foo,bar", 0);
+	sdb_set(res, "union.omicron.bar", "float,0,0", 0);
+	sdb_set(res, "union.omicron.foo", "char,0,0", 0);
+	// td "enum foo { firstCase=1, secondCase=2,};"
+	sdb_set(res, "foo", "enum", 0);
+	sdb_set(res, "enum.foo", "firstCase,secondCase", 0);
+	sdb_set(res, "enum.foo.firstCase", "0x1", 0);
+	sdb_set(res, "enum.foo.secondCase", "0x2", 0);
+	sdb_set(res, "enum.foo.0x1", "firstCase", 0);
+	sdb_set(res, "enum.foo.0x2", "secondCase", 0);
+	// td "enum bla { minusFirstCase=0x100, minusSecondCase=0xf000,};"
+	sdb_set(res, "bla", "enum", 0);
+	sdb_set(res, "enum.bla", "minusFirstCase,minusSecondCase", 0);
+	sdb_set(res, "enum.bla.minusFirstCase", "0x100", 0);
+	sdb_set(res, "enum.bla.minusSecondCase", "0xf000", 0);
+	sdb_set(res, "enum.bla.0x100", "minusFirstCase", 0);
+	sdb_set(res, "enum.bla.0xf000", "minusSecondCase", 0);
+	// td typedef char *string;
+	sdb_set(res, "string", "typedef", 0);
+	sdb_set(res, "typedef.string", "char *", 0);
+	sdb_set(res, "char", "type", 0);
+	sdb_set(res, "type.char.size", "8", 0);
+	sdb_set(res, "type.char", "c", 0);
+}
+
+// RzBaseType name comparator
+static int basetypenamecmp(const void *a, const void *b) {
+	const char *name = (const char *)a;
+	const RzBaseType *btype = (const RzBaseType *)b;
+	return btype->name && strcmp(name, btype->name);
+}
+
+static bool typelist_has(RzList *types, const char *name) {
+	return rz_list_find(types, name, basetypenamecmp);
+}
+
+static bool test_types_get_base_types(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+
+	// We remove first all preloaded types
+	rz_type_db_purge(typedb);
+	setup_sdb_for_base_types_all(typedb->sdb_types);
+
+	RzList *types = rz_type_db_get_base_types(typedb);
+	mu_assert_notnull(types, "Couldn't get list of all base types");
+	// One additional is `char` as a target for `string` typedef
+	mu_assert_eq(rz_list_length(types), 8, "get all base types");
+	mu_assert_true(typelist_has(types, "kappa"), "has kappa");
+	mu_assert_false(typelist_has(types, "dsgdfg"), "has sdfsfd");
+	mu_assert_true(typelist_has(types, "theta"), "has theta");
+	mu_assert_true(typelist_has(types, "omega"), "has omega");
+	mu_assert_true(typelist_has(types, "omicron"), "has omicron");
+	mu_assert_true(typelist_has(types, "foo"), "has foo");
+	mu_assert_true(typelist_has(types, "bla"), "has bla");
+	mu_assert_true(typelist_has(types, "string"), "has string");
+
+	rz_list_free(types);
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+static bool test_types_get_base_types_of_kind(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->sdb_types, "Couldn't create new RzTypeDB.sdb_types");
+
+	rz_type_db_purge(typedb);
+	setup_sdb_for_base_types_all(typedb->sdb_types);
+
+	RzList *structs = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
+	mu_assert_notnull(structs, "Couldn't get list of all struct types");
+	mu_assert_eq(rz_list_length(structs), 2, "get all struct types");
+	mu_assert_true(typelist_has(structs, "kappa"), "has kappa");
+	mu_assert_true(typelist_has(structs, "theta"), "has theta");
+	rz_list_free(structs);
+
+	RzList *unions = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
+	mu_assert_notnull(unions, "Couldn't get list of all union types");
+	mu_assert_eq(rz_list_length(unions), 2, "get all union types");
+	mu_assert_true(typelist_has(unions, "omega"), "has omega");
+	mu_assert_true(typelist_has(unions, "omicron"), "has omicron");
+	rz_list_free(unions);
+
+	RzList *enums = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
+	mu_assert_notnull(enums, "Couldn't get list of all enum types");
+	mu_assert_eq(rz_list_length(enums), 2, "get all enum types");
+	mu_assert_true(typelist_has(enums, "foo"), "has foo");
+	mu_assert_true(typelist_has(enums, "bla"), "has bla");
+	rz_list_free(enums);
+
+	RzList *typedefs = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
+	mu_assert_notnull(typedefs, "Couldn't get list of all typedefs");
+	mu_assert_eq(rz_list_length(typedefs), 1, "get all typedefs");
+	mu_assert_true(typelist_has(typedefs, "string"), "has string");
+	rz_list_free(typedefs);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 bool test_dll_names(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	setup_sdb_for_function(typedb->sdb_types);
@@ -534,6 +654,8 @@ int all_tests() {
 	mu_run_test(test_types_get_base_type_atomic);
 	mu_run_test(test_types_save_base_type_atomic);
 	mu_run_test(test_types_get_base_type_not_found);
+	mu_run_test(test_types_get_base_types);
+	mu_run_test(test_types_get_base_types_of_kind);
 	mu_run_test(test_ignore_prefixes);
 	mu_run_test(test_remove_rz_prefixes);
 	mu_run_test(test_dll_names);

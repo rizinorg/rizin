@@ -376,3 +376,8 @@ RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn) {
 	}
 	return false;
 }
+
+RZ_API RZ_BORROW RzList *rz_analysis_function_list(RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return analysis->fcns;
+}

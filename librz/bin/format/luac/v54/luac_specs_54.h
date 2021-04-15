@@ -49,10 +49,4 @@ typedef ut64 LUA_INTEGER;
 /* Body */
 #define LUAC_FILENAME_OFFSET 0x20
 
-#define INNER_BUFFER_SIZE 256
-
-/* Lua Functions */
-#define lua_load_vector(src, buf, n) memcpy(buf, src, (n) * sizeof((buf)[0]))
-#define lua_load_var(raw_data, var)  lua_load_vector(raw_data, &(var), 1)
-
 #endif //BUILD_LUAC_54_H

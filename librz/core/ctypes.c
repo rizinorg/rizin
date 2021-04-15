@@ -78,66 +78,64 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 
 // Enums
 
-RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *enum_name, RzOutputMode mode, PJ *pj) {
-	rz_return_if_fail(enum_name);
-	RzTypeDB *typedb = core->analysis->typedb;
+static void core_types_enum_print(RzCore *core, RzBaseType *btype, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(core && btype);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		rz_return_if_fail(pj);
-		RzTypeEnum *member;
-		RzListIter *iter;
-		RzList *list = rz_type_db_get_enum(typedb, enum_name);
 		pj_o(pj);
-		if (list && !rz_list_empty(list)) {
-			pj_ks(pj, "name", enum_name);
+		if (btype && !rz_vector_empty(&btype->enum_data.cases)) {
+			pj_ks(pj, "name", btype->name);
 			pj_k(pj, "values");
 			pj_o(pj);
-			rz_list_foreach (list, iter, member) {
-				pj_kn(pj, member->name, rz_num_math(NULL, member->val));
+			RzTypeEnumCase *cas;
+			rz_vector_foreach(&btype->enum_data.cases, cas) {
+				pj_kn(pj, cas->name, cas->val);
 			}
 			pj_end(pj);
 		}
 		pj_end(pj);
-		rz_list_free(list);
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
-		RzList *list = rz_type_db_get_enum(typedb, enum_name);
-		RzListIter *iter;
-		RzTypeEnum *member;
-		rz_list_foreach (list, iter, member) {
-			rz_cons_printf("%s = %s\n", member->name, member->val);
+		if (btype && !rz_vector_empty(&btype->enum_data.cases)) {
+			RzTypeEnumCase *cas;
+			rz_vector_foreach(&btype->enum_data.cases, cas) {
+				rz_cons_printf("%s = 0x%x\n", cas->name, cas->val);
+			}
 		}
-		rz_list_free(list);
 		break;
 	}
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(enum_name);
+		rz_cons_println(btype->name);
 		break;
-	case RZ_OUTPUT_MODE_SDB: {
-		Sdb *TDB = typedb->sdb_types;
-		char *keys = sdb_querys(TDB, NULL, -1, sdb_fmt("~~enum.%s", enum_name));
-		if (keys) {
-			kv_lines_print_sorted(keys);
-			free(keys);
-		}
-		break;
-	}
 	default:
+		rz_warn_if_reached();
 		break;
 	}
 }
 
+RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *enum_name, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(enum_name);
+	RzTypeDB *typedb = core->analysis->typedb;
+	RzBaseType *btype = rz_type_db_get_enum(typedb, enum_name);
+	if (!btype) {
+		return;
+	}
+	core_types_enum_print(core, btype, mode, pj);
+	rz_type_base_type_free(btype);
+}
+
 RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
-	RzList *enumlist = rz_type_db_enums(core->analysis->typedb);
+	RzList *enumlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzListIter *it;
-	char *e;
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
-	rz_list_foreach (enumlist, it, e) {
-		rz_core_types_enum_print(core, e, mode, pj);
+	RzBaseType *btype;
+	rz_list_foreach (enumlist, it, btype) {
+		core_types_enum_print(core, btype, mode, pj);
 	}
 	rz_list_free(enumlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -147,48 +145,37 @@ RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-RZ_IPI void rz_types_enum_print_c(RzTypeDB *typedb, const char *arg, bool multiline) {
-	char *name = NULL;
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(typedb->sdb_types, true);
-	const char *separator = "";
-	bool match = false;
-	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "enum")) {
-			if (!name || strcmp(sdbkv_value(kv), name)) {
-				free(name);
-				name = strdup(sdbkv_key(kv));
-				if (name && (arg && *arg)) {
-					if (!strcmp(arg, name)) {
-						match = true;
-					} else {
-						continue;
-					}
-				}
-				rz_cons_printf("%s %s {%s", sdbkv_value(kv), name, multiline ? "\n" : "");
-				{
-					RzList *list = rz_type_db_get_enum(typedb, name);
-					if (list && !rz_list_empty(list)) {
-						RzListIter *iter;
-						RzTypeEnum *member;
-						separator = multiline ? "\t" : "";
-						rz_list_foreach (list, iter, member) {
-							rz_cons_printf("%s%s = %" PFMT64u, separator, member->name, rz_num_math(NULL, member->val));
-							separator = multiline ? ",\n\t" : ", ";
-						}
-					}
-					rz_list_free(list);
-				}
-				rz_cons_println(multiline ? "\n};" : "};");
-				if (match) {
-					break;
-				}
-			}
+static void core_types_enum_print_c(RzBaseType *btype, bool multiline) {
+	char *separator;
+	rz_cons_printf("enum %s {%s", btype->name, multiline ? "\n" : "");
+	if (!rz_vector_empty(&btype->enum_data.cases)) {
+		separator = multiline ? "\t" : "";
+		RzTypeEnumCase *cas;
+		rz_vector_foreach(&btype->enum_data.cases, cas) {
+			rz_cons_printf("%s%s = %u", separator, cas->name, cas->val);
+			separator = multiline ? ",\n\t" : ", ";
 		}
+		rz_cons_println(multiline ? "\n};" : "};");
 	}
-	free(name);
-	ls_free(l);
+}
+
+RZ_IPI void rz_types_enum_print_c(RzTypeDB *typedb, const char *enum_name, bool multiline) {
+	RzBaseType *btype = rz_type_db_get_enum(typedb, enum_name);
+	if (!btype) {
+		return;
+	}
+	core_types_enum_print_c(btype, multiline);
+	rz_type_base_type_free(btype);
+}
+
+RZ_IPI void rz_types_enum_print_c_all(RzTypeDB *typedb, bool multiline) {
+	RzList *enumlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
+	RzListIter *it;
+	RzBaseType *btype;
+	rz_list_foreach (enumlist, it, btype) {
+		core_types_enum_print_c(btype, multiline);
+	}
+	rz_list_free(enumlist);
 }
 
 // Structured types (structures and unions)
@@ -672,7 +659,7 @@ beach:
 
 static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut64 laddr, ut64 at, int offimm) {
 	Sdb *TDB = core->analysis->typedb->sdb_types;
-	char *res = rz_type_get_struct_memb(core->analysis->typedb, type, offimm);
+	char *res = rz_type_db_get_struct_member(core->analysis->typedb, type, offimm);
 	const char *cmt = ((offimm == 0) && res) ? res : type;
 	if (offimm > 0) {
 		// set hint only if link is present

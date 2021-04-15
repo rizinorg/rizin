@@ -24,7 +24,7 @@ typedef struct rz_type_target_t {
 	bool big_endian;
 } RzTypeTarget;
 
-typedef struct rz_type_t {
+typedef struct rz_type_db_t {
 	void *user;
 	Sdb *sdb_types;
 	Sdb *formats; // for `pf` formats
@@ -32,6 +32,14 @@ typedef struct rz_type_t {
 	RNum *num;
 	RzIOBind iob; // for RzIO in formats
 } RzTypeDB;
+
+// All types in RzTypeDB module are either concrete,
+// "base" types that are types already having the
+// concrete size and memory layout
+// or the "AST" types that are returned from the parser
+// and don't contain the size or memory laoyout
+
+// Base types
 
 typedef struct rz_type_enum_case_t {
 	char *name;
@@ -89,6 +97,45 @@ typedef struct rz_type_enum {
 	const char *val;
 } RzTypeEnum;
 
+// AST-level types for C and C++
+// Parses strings like "const char * [0x42] const * [23]" to RzType
+
+typedef struct rz_ast_parser_t RzASTParser;
+
+typedef enum {
+	RZ_TYPE_KIND_IDENTIFIER,
+	RZ_TYPE_KIND_POINTER,
+	RZ_TYPE_KIND_ARRAY
+} RzTypeKind;
+
+typedef enum {
+	RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED,
+	RZ_TYPE_CTYPE_IDENTIFIER_KIND_STRUCT,
+	RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNION,
+	RZ_TYPE_CTYPE_IDENTIFIER_KIND_ENUM
+} RzTypeIdentifierKind;
+
+typedef struct rz_type_t RzType;
+
+struct rz_type_t {
+	RzTypeKind kind;
+	union {
+		struct {
+			RzTypeIdentifierKind kind;
+			char *name;
+			bool is_const;
+		} identifier;
+		struct {
+			RzType *type;
+			bool is_const;
+		} pointer;
+		struct {
+			RzType *type;
+			ut64 count;
+		} array;
+	};
+};
+
 #ifdef RZ_API
 
 RZ_API RzTypeDB *rz_type_db_new();
@@ -120,48 +167,15 @@ RZ_API void rz_type_base_union_member_free(void *e, void *user);
 RZ_API RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type);
 
-/* ctype */
-// Parses strings like "const char * [0x42] const * [23]" to RzTypeCTypeType
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(RzTypeDB *typedb, RzBaseTypeKind kind);
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(RzTypeDB *typedb);
 
-typedef struct rz_type_ctype_t RzTypeCType;
+// AST types
 
-typedef enum {
-	RZ_TYPE_CTYPE_TYPE_KIND_IDENTIFIER,
-	RZ_TYPE_CTYPE_TYPE_KIND_POINTER,
-	RZ_TYPE_CTYPE_TYPE_KIND_ARRAY
-} RzTypeCTypeTypeKind;
-
-typedef enum {
-	RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED,
-	RZ_TYPE_CTYPE_IDENTIFIER_KIND_STRUCT,
-	RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNION,
-	RZ_TYPE_CTYPE_IDENTIFIER_KIND_ENUM
-} RzTypeCTypeTypeIdentifierKind;
-
-typedef struct rz_type_ctype_type_t RzTypeCTypeType;
-struct rz_type_ctype_type_t {
-	RzTypeCTypeTypeKind kind;
-	union {
-		struct {
-			RzTypeCTypeTypeIdentifierKind kind;
-			char *name;
-			bool is_const;
-		} identifier;
-		struct {
-			RzTypeCTypeType *type;
-			bool is_const;
-		} pointer;
-		struct {
-			RzTypeCTypeType *type;
-			ut64 count;
-		} array;
-	};
-};
-
-RZ_API RzTypeCType *rz_type_ctype_new(void);
-RZ_API void rz_type_ctype_free(RzTypeCType *ctype);
-RZ_API RzTypeCTypeType *rz_type_ctype_parse(RzTypeCType *ctype, const char *str, char **error);
-RZ_API void rz_type_ctype_type_free(RzTypeCTypeType *type);
+RZ_API RzASTParser *rz_ast_parser_new(void);
+RZ_API void rz_ast_parser_free(RzASTParser *parser);
+RZ_API RzType *rz_type_parse(RzASTParser *parser, const char *str, char **error);
+RZ_API void rz_type_free(RzType *type);
 
 /* c */
 RZ_API char *rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **error_msg);
@@ -171,14 +185,16 @@ RZ_API void rz_type_parse_c_reset(RzTypeDB *typedb);
 RZ_API void rz_type_db_remove_parsed_type(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_save_parsed_type(RzTypeDB *typedb, const char *parsed);
 
+// Type-specific APIs
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
-RZ_API char *rz_type_db_enum_member(RzTypeDB *typedb, const char *name, const char *member, ut64 val);
-RZ_API RzList *rz_type_db_enum_find_member(RzTypeDB *typedb, ut64 val);
-RZ_API char *rz_type_enum_getbitfield(RzTypeDB *typedb, const char *name, ut64 val);
-RZ_API RzList *rz_type_db_get_enum(RzTypeDB *typedb, const char *name);
+RZ_API int rz_type_db_enum_member_by_name(RzTypeDB *typedb, const char *name, const char *member);
+RZ_API char *rz_type_db_enum_member_by_val(RzTypeDB *typedb, const char *name, ut64 val);
+RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(RzTypeDB *typedb, ut64 val);
+RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, const char *name, ut64 val);
+RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, const char *name);
 RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, const char *type);
-RZ_API RzList *rz_type_get_by_offset(RzTypeDB *typedb, ut64 offset);
-RZ_API char *rz_type_get_struct_memb(RzTypeDB *typedb, const char *type, int offset);
+RZ_API RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset);
+RZ_API char *rz_type_db_get_struct_member(RzTypeDB *typedb, const char *type, int offset);
 
 // Maintaining type links
 RZ_API char *rz_type_link_at(RzTypeDB *typedb, ut64 addr);
@@ -219,10 +235,10 @@ RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *n
 RZ_API bool rz_type_func_noreturn_drop(RzTypeDB *typedb, RZ_NONNULL const char *name);
 
 // Listing API
-RZ_API RzList *rz_type_db_enums(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_structs(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_unions(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_typedefs(RzTypeDB *typedb);
+RZ_API RzList *rz_type_db_enum_names(RzTypeDB *typedb);
+RZ_API RzList *rz_type_db_struct_names(RzTypeDB *typedb);
+RZ_API RzList *rz_type_db_union_names(RzTypeDB *typedb);
+RZ_API RzList *rz_type_db_typedef_names(RzTypeDB *typedb);
 RZ_API RzList *rz_type_db_links(RzTypeDB *typedb);
 RZ_API RzList *rz_type_db_all(RzTypeDB *typedb);
 

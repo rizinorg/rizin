@@ -161,6 +161,8 @@ rz_analysis_sources = [
   '../asm/arch/luac/lua_arch.c',
   '../asm/arch/luac/v54/analysis_54.c',
   '../asm/arch/luac/v54/opcode_54.c',
+  '../asm/arch/luac/v53/analysis_53.c',
+  '../asm/arch/luac/v53/opcode_53.c'
 ]
 
 rz_analysis_inc = [

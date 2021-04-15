@@ -637,14 +637,10 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	ut64 size = num_ext_relocs * cdsz;
 	char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-	gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr);
+	RzIOMap *gotrzmap;
+	gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr, &gotrzmap);
 	free(muri);
 	if (!gotrzdesc) {
-		goto beach;
-	}
-
-	RzIOMap *gotrzmap = b->iob.map_get(io, n_vaddr);
-	if (!gotrzmap) {
 		goto beach;
 	}
 	gotrzmap->name = strdup(".got.rz");

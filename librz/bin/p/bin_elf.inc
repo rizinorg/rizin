@@ -25,11 +25,6 @@ static int get_file_type(RzBinFile *bf) {
 	return res;
 }
 
-static RzList *maps(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->o, NULL);
-	return Elf_(rz_bin_elf_get_maps)(bf->o->bin_obj);
-}
-
 static char *regstate(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	if (obj->ehdr.e_machine != EM_AARCH64 &&
@@ -174,6 +169,29 @@ static bool is_wordable_section(const char *name) {
 	return false;
 }
 
+static RzBinElfNoteFile *note_file_for_load_segment(struct Elf_(rz_bin_elf_obj_t) * obj, Elf_(Phdr) * phdr) {
+	if (!obj->note_segments) {
+		return false;
+	}
+	RzBinElfNoteSegment *seg;
+	RzListIter *it;
+	rz_list_foreach (obj->note_segments, it, seg) {
+		for (size_t i = 0; i < seg->notes_count; i++) {
+			RzBinElfNote *note = &seg->notes[i];
+			if (note->type != NT_FILE) {
+				continue;
+			}
+			for (size_t j = 0; j < note->file.files_count; j++) {
+				RzBinElfNoteFile *f = &note->file.files[j];
+				if (f->start_vaddr == phdr->p_vaddr) {
+					return f;
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
 static RzList *sections(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	struct rz_bin_elf_section_t *section = NULL;
@@ -228,6 +246,7 @@ static RzList *sections(RzBinFile *bf) {
 	ut16 mach = obj->ehdr.e_machine;
 	num = obj->ehdr.e_phnum;
 	phdr = obj->phdr;
+	ut64 core_sp = Elf_(rz_bin_elf_get_sp_val)(obj);
 	if (phdr) {
 		int n = 0;
 		for (i = 0; i < num; i++) {
@@ -245,12 +264,21 @@ static RzList *sections(RzBinFile *bf) {
 			case PT_DYNAMIC:
 				ptr->name = strdup("DYNAMIC");
 				break;
-			case PT_LOAD:
+			case PT_LOAD: {
 				ptr->name = rz_str_newf("LOAD%d", n++);
 				ptr->perm |= RZ_PERM_R;
 				found_load = 1;
 				ptr->add = true;
+				if (core_sp != UT64_MAX && core_sp >= phdr[i].p_vaddr && core_sp < phdr[i].p_vaddr + phdr[i].p_memsz) {
+					ptr->map_name = strdup("[stack]");
+				} else {
+					RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &phdr[i]);
+					if (nf && nf->file) {
+						ptr->map_name = strdup(nf->file);
+					}
+				}
 				break;
+			}
 			case PT_INTERP:
 				ptr->name = strdup("INTERP");
 				break;
@@ -959,14 +987,10 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	// reserve at least that space
 	size = bin->g_reloc_num * cdsz;
 	char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-	RzIODesc *gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr);
+	RzIOMap *gotrzmap;
+	RzIODesc *gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr, &gotrzmap);
 	free(muri);
-	if (!gotrzdesc) {
-		return NULL;
-	}
-
-	RzIOMap *gotrzmap = b->iob.map_get(io, n_vaddr);
-	if (!gotrzmap) {
+	if (!gotrzdesc || !gotrzmap) {
 		return NULL;
 	}
 	gotrzmap->name = strdup(".got.rz");

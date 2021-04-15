@@ -6,7 +6,7 @@
 
 #include <mpc.h>
 
-struct rz_type_ctype_t {
+struct rz_ast_parser_t {
 	mpc_parser_t *integerlit;
 	mpc_parser_t *identifier;
 	mpc_parser_t *qualifier;
@@ -15,8 +15,8 @@ struct rz_type_ctype_t {
 	mpc_parser_t *type;
 };
 
-#define ALL_PARSERS(ctype) ctype->integerlit, ctype->identifier, ctype->qualifier, ctype->pointer, ctype->array, ctype->type
-#define ALL_PARSERS_COUNT  6
+#define ALL_PARSERS(cparser) cparser->integerlit, cparser->identifier, cparser->qualifier, cparser->pointer, cparser->array, cparser->type
+#define ALL_PARSERS_COUNT    6
 
 static const char *lang =
 	"integerlit : /0x[0-9A-Fa-f]+/ | /[0-9]+/;"
@@ -26,36 +26,36 @@ static const char *lang =
 	"array      : '[' <integerlit> ']';"
 	"type       : <qualifier>? <identifier> (<pointer> | <array>)*;";
 
-RZ_API RzTypeCType *rz_type_ctype_new(void) {
-	RzTypeCType *ctype = RZ_NEW(RzTypeCType);
-	if (!ctype) {
+RZ_API RzASTParser *rz_ast_parser_new(void) {
+	RzASTParser *cparser = RZ_NEW(RzASTParser);
+	if (!cparser) {
 		return NULL;
 	}
 
-	ctype->integerlit = mpc_new("integerlit");
-	ctype->identifier = mpc_new("identifier");
-	ctype->qualifier = mpc_new("qualifier");
-	ctype->pointer = mpc_new("pointer");
-	ctype->array = mpc_new("array");
-	ctype->type = mpc_new("type");
+	cparser->integerlit = mpc_new("integerlit");
+	cparser->identifier = mpc_new("identifier");
+	cparser->qualifier = mpc_new("qualifier");
+	cparser->pointer = mpc_new("pointer");
+	cparser->array = mpc_new("array");
+	cparser->type = mpc_new("type");
 
-	mpc_err_t *err = mpca_lang(MPCA_LANG_DEFAULT, lang, ALL_PARSERS(ctype), NULL);
+	mpc_err_t *err = mpca_lang(MPCA_LANG_DEFAULT, lang, ALL_PARSERS(cparser), NULL);
 	if (err) {
 		mpc_err_print(err);
 		mpc_err_delete(err);
-		rz_type_ctype_free(ctype);
+		rz_ast_parser_free(cparser);
 		return NULL;
 	}
 
-	return ctype;
+	return cparser;
 }
 
-RZ_API void rz_type_ctype_free(RzTypeCType *ctype) {
-	if (!ctype) {
+RZ_API void rz_ast_parser_free(RzASTParser *cparser) {
+	if (!cparser) {
 		return;
 	}
-	mpc_cleanup(ALL_PARSERS_COUNT, ALL_PARSERS(ctype));
-	free(ctype);
+	mpc_cleanup(ALL_PARSERS_COUNT, ALL_PARSERS(cparser));
+	free(cparser);
 }
 
 static bool is_qualifier_const(mpc_ast_t *a) {
@@ -82,9 +82,9 @@ static bool is_array(mpc_ast_t *a) {
 	return strcmp(a->tag, "array|>") == 0 && a->children_num == 3 && strcmp(a->children[0]->tag, "char") == 0 && a->children[0]->contents && strcmp(a->children[0]->contents, "[") == 0 && strcmp(a->children[1]->tag, "integerlit|regex") == 0 && a->children[1]->contents && strcmp(a->children[2]->tag, "char") == 0 && a->children[2]->contents && strcmp(a->children[2]->contents, "]") == 0;
 }
 
-static RzTypeCTypeType *ctype_convert_ast(mpc_ast_t *a) {
+static RzType *ctype_convert_ast(mpc_ast_t *a) {
 	bool is_const = false;
-	RzTypeCTypeType *cur = NULL;
+	RzType *cur = NULL;
 	int i;
 	for (i = 0; i < a->children_num; i++) {
 		mpc_ast_t *child = a->children[i];
@@ -100,11 +100,11 @@ static RzTypeCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 				// identifier should always be the innermost type
 				goto beach;
 			}
-			cur = RZ_NEW0(RzTypeCTypeType);
+			cur = RZ_NEW0(RzType);
 			if (!cur) {
 				goto beach;
 			}
-			cur->kind = RZ_TYPE_CTYPE_TYPE_KIND_IDENTIFIER;
+			cur->kind = RZ_TYPE_KIND_IDENTIFIER;
 			cur->identifier.is_const = is_const;
 			cur->identifier.kind = RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
 			if (is_identifier_string(child)) {
@@ -133,11 +133,11 @@ static RzTypeCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 				// identifier should always be the innermost type
 				goto beach;
 			}
-			cur = RZ_NEW0(RzTypeCTypeType);
+			cur = RZ_NEW0(RzType);
 			if (!cur) {
 				goto beach;
 			}
-			cur->kind = RZ_TYPE_CTYPE_TYPE_KIND_IDENTIFIER;
+			cur->kind = RZ_TYPE_KIND_IDENTIFIER;
 			cur->identifier.kind = RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
 			cur->identifier.is_const = is_const;
 			cur->identifier.name = strdup(child->contents);
@@ -149,11 +149,11 @@ static RzTypeCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 
 		// *
 		else if (is_non_const_pointer(child)) {
-			RzTypeCTypeType *pointer = RZ_NEW0(RzTypeCTypeType);
+			RzType *pointer = RZ_NEW0(RzType);
 			if (!pointer) {
 				goto beach;
 			}
-			pointer->kind = RZ_TYPE_CTYPE_TYPE_KIND_POINTER;
+			pointer->kind = RZ_TYPE_KIND_POINTER;
 			pointer->pointer.is_const = false;
 			pointer->pointer.type = cur;
 			cur = pointer;
@@ -161,11 +161,11 @@ static RzTypeCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 
 		// const *
 		else if (is_const_pointer(child)) {
-			RzTypeCTypeType *pointer = RZ_NEW0(RzTypeCTypeType);
+			RzType *pointer = RZ_NEW0(RzType);
 			if (!pointer) {
 				goto beach;
 			}
-			pointer->kind = RZ_TYPE_CTYPE_TYPE_KIND_POINTER;
+			pointer->kind = RZ_TYPE_KIND_POINTER;
 			pointer->pointer.is_const = true;
 			pointer->pointer.type = cur;
 			cur = pointer;
@@ -173,11 +173,11 @@ static RzTypeCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 
 		// <array>
 		else if (is_array(child)) {
-			RzTypeCTypeType *array = RZ_NEW0(RzTypeCTypeType);
+			RzType *array = RZ_NEW0(RzType);
 			if (!array) {
 				goto beach;
 			}
-			array->kind = RZ_TYPE_CTYPE_TYPE_KIND_ARRAY;
+			array->kind = RZ_TYPE_KIND_ARRAY;
 			array->array.count = strtoull(child->children[1]->contents, NULL, 0);
 			array->array.type = cur;
 			cur = array;
@@ -190,14 +190,14 @@ static RzTypeCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 
 	return cur;
 beach:
-	rz_type_ctype_type_free(cur);
+	rz_type_free(cur);
 	return NULL;
 }
 
-RZ_API RzTypeCTypeType *rz_type_ctype_parse(RzTypeCType *ctype, const char *str, char **error) {
+RZ_API RzType *rz_type_parse(RzASTParser *cparser, const char *str, char **error) {
 	mpc_result_t r;
-	if (mpc_parse("<string>", str, ctype->type, &r)) {
-		RzTypeCTypeType *ret = ctype_convert_ast(r.output);
+	if (mpc_parse("<string>", str, cparser->type, &r)) {
+		RzType *ret = ctype_convert_ast(r.output);
 		if (error) {
 			*error = !ret ? strdup("internal error") : NULL;
 		}
@@ -212,19 +212,19 @@ RZ_API RzTypeCTypeType *rz_type_ctype_parse(RzTypeCType *ctype, const char *str,
 	}
 }
 
-RZ_API void rz_type_ctype_type_free(RzTypeCTypeType *type) {
+RZ_API void rz_type_free(RzType *type) {
 	if (!type) {
 		return;
 	}
 	switch (type->kind) {
-	case RZ_TYPE_CTYPE_TYPE_KIND_IDENTIFIER:
+	case RZ_TYPE_KIND_IDENTIFIER:
 		free(type->identifier.name);
 		break;
-	case RZ_TYPE_CTYPE_TYPE_KIND_POINTER:
-		rz_type_ctype_type_free(type->pointer.type);
+	case RZ_TYPE_KIND_POINTER:
+		rz_type_free(type->pointer.type);
 		break;
-	case RZ_TYPE_CTYPE_TYPE_KIND_ARRAY:
-		rz_type_ctype_type_free(type->array.type);
+	case RZ_TYPE_KIND_ARRAY:
+		rz_type_free(type->array.type);
 		break;
 	}
 	free(type);

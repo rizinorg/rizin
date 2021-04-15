@@ -60,29 +60,281 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=core maps
-FILE=bins/elf/analysis/core.1159
+NAME=core maps linux x86
+FILE=bins/elf/core/core-linux-x86
 CMDS=<<EOF
 om
 EOF
 EXPECT=<<EOF
-18 fd: 3 +0x00001000 0x00400000 - 0x00400fff r-x /home/pancake/a.out
-17 fd: 3 +0x00002000 0x00600000 - 0x00600fff r-- /home/pancake/a.out
-16 fd: 3 +0x00003000 0x7f594847d000 - 0x7f594847dfff r-x /usr/lib/libc-2.22.so
-15 fd: 6 +0x00000000 0x7f594847e000 - 0x7f5948617fff r-x mmap.LOAD2
-14 fd: 5 +0x00000000 0x7f5948618000 - 0x7f5948817fff r-- /usr/lib/libc-2.22.so
-13 fd: 3 +0x00004000 0x7f5948818000 - 0x7f594881bfff r-- /usr/lib/libc-2.22.so
-12 fd: 3 +0x00008000 0x7f594881c000 - 0x7f594881dfff r-- /usr/lib/libc-2.22.so
-11 fd: 3 +0x0000a000 0x7f594881e000 - 0x7f5948821fff r-- fmap.LOAD6
-10 fd: 3 +0x0000e000 0x7f5948822000 - 0x7f5948822fff r-x /usr/lib/ld-2.22.so
- 9 fd: 4 +0x00000000 0x7f5948823000 - 0x7f5948843fff r-x mmap.LOAD7
- 8 fd: 3 +0x0000f000 0x7f5948a1e000 - 0x7f5948a20fff r-- fmap.LOAD8
- 7 fd: 3 +0x00012000 0x7f5948a43000 - 0x7f5948a43fff r-- /usr/lib/ld-2.22.so
- 6 fd: 3 +0x00013000 0x7f5948a44000 - 0x7f5948a44fff r-- /usr/lib/ld-2.22.so
- 5 fd: 3 +0x00014000 0x7f5948a45000 - 0x7f5948a45fff r-- fmap.LOAD11
- 4 fd: 3 +0x00015000 0x7ffe70de6000 - 0x7ffe70e07fff r-- [stack]
- 3 fd: 3 +0x00037000 0x7ffe70f66000 - 0x7ffe70f67fff r-- fmap.LOAD13
- 2 fd: 3 +0x00039000 0x7ffe70f68000 - 0x7ffe70f69fff r-x fmap.LOAD14
- 1 fd: 3 +0x0003b000 0xffffffffff600000 - 0xffffffffff600fff r-x fmap.LOAD15
+21 fd: 3 +0x00001000 0x56621000 - 0x56621fff r-- /home/florian/dev/crash/crash-linux-x86
+20 fd: 6 +0x00000000 0x56622000 - 0x56622fff r-- /home/florian/dev/crash/crash-linux-x86
+19 fd: 6 +0x00000000 0x56623000 - 0x56623fff r-- /home/florian/dev/crash/crash-linux-x86
+18 fd: 3 +0x00002000 0x56624000 - 0x56624fff r-- /home/florian/dev/crash/crash-linux-x86
+17 fd: 3 +0x00003000 0x56625000 - 0x56625fff r-- /home/florian/dev/crash/crash-linux-x86
+16 fd: 3 +0x00004000 0xf7d50000 - 0xf7d50fff r-- /usr/lib32/libc-2.33.so
+15 fd: 9 +0x00000000 0xf7d51000 - 0xf7d6cfff r-- mmap.LOAD5
+14 fd: 8 +0x00000000 0xf7d6d000 - 0xf7ec9fff r-x /usr/lib32/libc-2.33.so
+13 fd: 7 +0x00000000 0xf7eca000 - 0xf7f3bfff r-- /usr/lib32/libc-2.33.so
+12 fd: 6 +0x00000000 0xf7f3c000 - 0xf7f3cfff r-- /usr/lib32/libc-2.33.so
+11 fd: 3 +0x00005000 0xf7f3d000 - 0xf7f3efff r-- /usr/lib32/libc-2.33.so
+10 fd: 3 +0x00007000 0xf7f3f000 - 0xf7f40fff r-- /usr/lib32/libc-2.33.so
+ 9 fd: 3 +0x00009000 0xf7f41000 - 0xf7f49fff r-- fmap.LOAD11
+ 8 fd: 3 +0x00012000 0xf7f97000 - 0xf7f9afff r-- fmap.LOAD12
+ 7 fd: 3 +0x00016000 0xf7f9b000 - 0xf7f9cfff r-x fmap.LOAD13
+ 6 fd: 3 +0x00018000 0xf7f9d000 - 0xf7f9dfff r-- /usr/lib32/ld-2.33.so
+ 5 fd: 5 +0x00000000 0xf7f9e000 - 0xf7fbffff r-x /usr/lib32/ld-2.33.so
+ 4 fd: 4 +0x00000000 0xf7fc0000 - 0xf7fccfff r-- /usr/lib32/ld-2.33.so
+ 3 fd: 3 +0x00019000 0xf7fcd000 - 0xf7fcefff r-- /usr/lib32/ld-2.33.so
+ 2 fd: 3 +0x0001b000 0xf7fcf000 - 0xf7fcffff r-- /usr/lib32/ld-2.33.so
+ 1 fd: 3 +0x0001c000 0xffb6b000 - 0xffb8bfff r-- [stack]
+EOF
+RUN
+
+NAME=core regs linux x86
+FILE=bins/elf/core/core-linux-x86
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+oeax = 0xffffffff
+eax = 0x56625000
+ebx = 0x00000000
+ecx = 0xffb8a8a0
+edx = 0x00000000
+esi = 0x00000001
+edi = 0x56622060
+esp = 0xffb8a870
+ebp = 0xffb8a888
+eip = 0x566221c3
+eflags = 0x00010216
+EOF
+RUN
+
+NAME=core maps linux x86_64
+FILE=bins/elf/core/core-linux-x86_64
+CMDS=<<EOF
+om
+EOF
+EXPECT=<<EOF
+22 fd: 3 +0x00002000 0x56149dfaf000 - 0x56149dfaffff r-- /home/florian/dev/crash/crash-linux-x86_64
+21 fd: 9 +0x00000000 0x56149dfb0000 - 0x56149dfb0fff r-- /home/florian/dev/crash/crash-linux-x86_64
+20 fd: 9 +0x00000000 0x56149dfb1000 - 0x56149dfb1fff r-- /home/florian/dev/crash/crash-linux-x86_64
+19 fd: 3 +0x00003000 0x56149dfb2000 - 0x56149dfb2fff r-- /home/florian/dev/crash/crash-linux-x86_64
+18 fd: 3 +0x00004000 0x56149dfb3000 - 0x56149dfb3fff r-- /home/florian/dev/crash/crash-linux-x86_64
+17 fd: 3 +0x00005000 0x7f582fa2e000 - 0x7f582fa2ffff r-- fmap.LOAD5
+16 fd: 3 +0x00007000 0x7f582fa30000 - 0x7f582fa30fff r-- /usr/lib/libc-2.33.so
+15 fd: 8 +0x00000000 0x7f582fa31000 - 0x7f582fa55fff r-- mmap.LOAD6
+14 fd: 7 +0x00000000 0x7f582fa56000 - 0x7f582fba1fff r-x /usr/lib/libc-2.33.so
+13 fd: 6 +0x00000000 0x7f582fba2000 - 0x7f582fbedfff r-- /usr/lib/libc-2.33.so
+12 fd: 3 +0x00008000 0x7f582fbee000 - 0x7f582fbf0fff r-- /usr/lib/libc-2.33.so
+11 fd: 3 +0x0000b000 0x7f582fbf1000 - 0x7f582fbf3fff r-- /usr/lib/libc-2.33.so
+10 fd: 3 +0x0000e000 0x7f582fbf4000 - 0x7f582fbfefff r-- fmap.LOAD11
+ 9 fd: 3 +0x00019000 0x7f582fc4c000 - 0x7f582fc4cfff r-- /usr/lib/ld-2.33.so
+ 8 fd: 5 +0x00000000 0x7f582fc4d000 - 0x7f582fc70fff r-x /usr/lib/ld-2.33.so
+ 7 fd: 4 +0x00000000 0x7f582fc71000 - 0x7f582fc79fff r-- /usr/lib/ld-2.33.so
+ 6 fd: 3 +0x0001a000 0x7f582fc7b000 - 0x7f582fc7cfff r-- /usr/lib/ld-2.33.so
+ 5 fd: 3 +0x0001c000 0x7f582fc7d000 - 0x7f582fc7efff r-- /usr/lib/ld-2.33.so
+ 4 fd: 3 +0x0001e000 0x7ffc8352d000 - 0x7ffc8354dfff r-- [stack]
+ 3 fd: 3 +0x0003f000 0x7ffc83558000 - 0x7ffc8355bfff r-- fmap.LOAD18
+ 2 fd: 3 +0x00043000 0x7ffc8355c000 - 0x7ffc8355dfff r-x fmap.LOAD19
+ 1 fd: 3 +0x00045000 0xffffffffff600000 - 0xffffffffff600fff r-x fmap.LOAD20
+EOF
+RUN
+
+NAME=core regs linux x86_64
+FILE=bins/elf/core/core-linux-x86_64
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x56149dfb0170
+rcx = 0x7f582fbf1598
+rdx = 0x7ffc8354c1c8
+rsi = 0x7ffc8354c1b8
+rdi = 0x00000001
+r8 = 0x00000000
+r9 = 0x7f582fc5c070
+r10 = 0x069682ac
+r11 = 0x00000202
+r12 = 0x56149dfb0040
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rip = 0x56149dfb014d
+rbp = 0x7ffc8354c0c0
+rflags = 0x00010202
+rsp = 0x7ffc8354c0b0
+EOF
+RUN
+
+NAME=core maps linux arm64
+FILE=bins/elf/core/core-linux-arm64
+CMDS=<<EOF
+om
+EOF
+EXPECT=<<EOF
+17 fd: 3 +0x00001000 0x558ce37000 - 0x558ce37fff r-x /home/alarm/crash/crash-linux-arm64
+16 fd: 3 +0x00002000 0x558ce47000 - 0x558ce47fff r-- /home/alarm/crash/crash-linux-arm64
+15 fd: 3 +0x00003000 0x558ce48000 - 0x558ce48fff r-- /home/alarm/crash/crash-linux-arm64
+14 fd: 3 +0x00004000 0x7f8bd60000 - 0x7f8bd60fff r-x /usr/lib/libc-2.32.so
+13 fd: 6 +0x00000000 0x7f8bd61000 - 0x7f8bebafff r-x mmap.LOAD3
+12 fd: 5 +0x00000000 0x7f8bebb000 - 0x7f8becafff r-- /usr/lib/libc-2.32.so
+11 fd: 3 +0x00005000 0x7f8becb000 - 0x7f8becdfff r-- /usr/lib/libc-2.32.so
+10 fd: 3 +0x00008000 0x7f8bece000 - 0x7f8bed0fff r-- /usr/lib/libc-2.32.so
+ 9 fd: 3 +0x0000b000 0x7f8bed1000 - 0x7f8bed3fff r-- fmap.LOAD7
+ 8 fd: 3 +0x0000e000 0x7f8bef8000 - 0x7f8bef8fff r-x /usr/lib/ld-2.32.so
+ 7 fd: 4 +0x00000000 0x7f8bef9000 - 0x7f8bf19fff r-x mmap.LOAD8
+ 6 fd: 3 +0x0000f000 0x7f8bf26000 - 0x7f8bf27fff r-- fmap.LOAD9
+ 5 fd: 3 +0x00011000 0x7f8bf28000 - 0x7f8bf28fff r-- fmap.LOAD10
+ 4 fd: 3 +0x00012000 0x7f8bf29000 - 0x7f8bf29fff r-x fmap.LOAD11
+ 3 fd: 3 +0x00013000 0x7f8bf2a000 - 0x7f8bf2afff r-- /usr/lib/ld-2.32.so
+ 2 fd: 3 +0x00014000 0x7f8bf2b000 - 0x7f8bf2cfff r-- /usr/lib/ld-2.32.so
+ 1 fd: 3 +0x00016000 0x7ff5e96000 - 0x7ff5eb6fff r-- [stack]
+EOF
+RUN
+
+NAME=core regs linux arm64
+FILE=bins/elf/core/core-linux-arm64
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+x0 = 0x00000000
+x1 = 0x7ff5eb5ed8
+x2 = 0x7ff5eb5ee8
+x3 = 0x558ce37744
+x4 = 0x00000000
+x5 = 0x2bc88a8092e0763f
+x6 = 0x7f8bed0590
+x7 = 0x4554415649
+x8 = 0x000000d7
+x9 = 0x00000000
+x10 = 0x00000000
+x11 = 0x00000000
+x12 = 0x7f8bd67310
+x13 = 0x00000000
+x14 = 0x00000000
+x15 = 0x6fffff47
+x16 = 0x00000000
+x17 = 0x00000000
+x18 = 0x00000000
+x19 = 0x558ce37780
+x20 = 0x00000000
+x21 = 0x558ce37630
+x22 = 0x00000000
+x23 = 0x00000000
+x24 = 0x00000000
+x25 = 0x00000000
+x26 = 0x00000000
+x27 = 0x00000000
+x28 = 0x00000000
+x29 = 0x7ff5eb5d60
+x30 = 0x7f8bd84538
+tmp = 0x00000000
+d0 = 0x00000000
+d1 = 0x7ff5eb5ed8
+d2 = 0x7ff5eb5ee8
+d3 = 0x558ce37744
+d4 = 0x00000000
+d5 = 0x2bc88a8092e0763f
+d6 = 0x7f8bed0590
+d7 = 0x4554415649
+d8 = 0x000000d7
+d9 = 0x00000000
+d10 = 0x00000000
+d11 = 0x00000000
+d12 = 0x7f8bd67310
+d13 = 0x00000000
+d14 = 0x00000000
+d15 = 0x6fffff47
+d16 = 0x00000000
+d17 = 0x00000000
+d18 = 0x00000000
+d19 = 0x558ce37780
+d20 = 0x00000000
+d21 = 0x558ce37630
+d22 = 0x00000000
+d23 = 0x00000000
+d24 = 0x00000000
+d25 = 0x00000000
+d26 = 0x00000000
+d27 = 0x00000000
+d28 = 0x00000000
+d29 = 0x7ff5eb5d60
+d30 = 0x7f8bd84538
+dsp = 0x7ff5eb5d60
+fp = 0x7ff5eb5d60
+lr = 0x7f8bd84538
+sp = 0x7ff5eb5d60
+pc = 0x558ce37754
+zr = 0x00000000
+xzr = 0x00000000
+pstate = 0x00000000
+EOF
+RUN
+
+NAME=core maps linux arm32
+FILE=bins/elf/core/core-linux-arm32
+CMDS=<<EOF
+om
+EOF
+EXPECT=<<EOF
+23 fd: 3 +0x00001000 0x00010000 - 0x00010fff r-x /home/pi/crash/crash-linux-arm32
+22 fd: 3 +0x00002000 0x00020000 - 0x00020fff r-- /home/pi/crash/crash-linux-arm32
+21 fd: 3 +0x00003000 0x00021000 - 0x00021fff r-- /home/pi/crash/crash-linux-arm32
+20 fd: 3 +0x00004000 0x76e49000 - 0x76e49fff r-x /usr/lib/arm-linux-gnueabihf/libc-2.28.so
+19 fd: 8 +0x00000000 0x76e4a000 - 0x76f80fff r-x mmap.LOAD3
+18 fd: 7 +0x00000000 0x76f81000 - 0x76f90fff r-- /usr/lib/arm-linux-gnueabihf/libc-2.28.so
+17 fd: 3 +0x00005000 0x76f91000 - 0x76f92fff r-- /usr/lib/arm-linux-gnueabihf/libc-2.28.so
+16 fd: 3 +0x00007000 0x76f93000 - 0x76f93fff r-- /usr/lib/arm-linux-gnueabihf/libc-2.28.so
+15 fd: 3 +0x00008000 0x76f94000 - 0x76f96fff r-- fmap.LOAD7
+14 fd: 6 +0x00000000 0x76f97000 - 0x76f9afff r-x /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
+13 fd: 5 +0x00000000 0x76f9b000 - 0x76fa9fff r-- /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
+12 fd: 3 +0x0000b000 0x76faa000 - 0x76faafff r-- /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
+11 fd: 3 +0x0000c000 0x76fab000 - 0x76fabfff r-- /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so
+10 fd: 3 +0x0000d000 0x76fac000 - 0x76facfff r-x /usr/lib/arm-linux-gnueabihf/ld-2.28.so
+ 9 fd: 4 +0x00000000 0x76fad000 - 0x76fcbfff r-x mmap.LOAD12
+ 8 fd: 3 +0x0000e000 0x76fda000 - 0x76fdbfff r-- fmap.LOAD13
+ 7 fd: 3 +0x00010000 0x76fdc000 - 0x76fdcfff r-- /usr/lib/arm-linux-gnueabihf/ld-2.28.so
+ 6 fd: 3 +0x00011000 0x76fdd000 - 0x76fddfff r-- /usr/lib/arm-linux-gnueabihf/ld-2.28.so
+ 5 fd: 3 +0x00012000 0x7ea6c000 - 0x7ea8cfff r-- [stack]
+ 4 fd: 3 +0x00033000 0x7eb68000 - 0x7eb68fff r-x fmap.LOAD17
+ 3 fd: 3 +0x00034000 0x7eb69000 - 0x7eb69fff r-- fmap.LOAD18
+ 2 fd: 3 +0x00035000 0x7eb6a000 - 0x7eb6afff r-x fmap.LOAD19
+ 1 fd: 3 +0x00036000 0xffff0000 - 0xffff0fff r-x fmap.LOAD20
+EOF
+RUN
+
+NAME=core regs linux arm32
+FILE=bins/elf/core/core-linux-arm32
+CMDS=<<EOF
+dr
+EOF
+EXPECT=<<EOF
+sb = 0x00000000
+sl = 0x76fdd000
+fp = 0x7ea8c4f4
+ip = 0x7ea8c570
+sp = 0x7ea8c4e8
+lr = 0x76e60718
+pc = 0x00010420
+r0 = 0x00000001
+r1 = 0x7ea8c644
+r2 = 0x7ea8c64c
+r3 = 0x00000000
+r4 = 0x00000000
+r5 = 0x00010444
+r6 = 0x00010318
+r7 = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x76fdd000
+r11 = 0x7ea8c4f4
+r12 = 0x7ea8c570
+r13 = 0x7ea8c4e8
+r14 = 0x76e60718
+r15 = 0x00010420
+cpsr = 0x60000010
 EOF
 RUN

@@ -51,6 +51,7 @@ static RzBaseType *get_enum_type(RzTypeDB *typedb, const char *sname) {
 		goto error;
 	}
 
+	base_type->name = strdup(sname);
 	RzVector *cases = &base_type->enum_data.cases;
 	if (!rz_vector_reserve(cases, (size_t)sdb_alen(members))) {
 		goto error;
@@ -101,6 +102,7 @@ static RzBaseType *get_struct_type(RzTypeDB *typedb, const char *sname) {
 		goto error;
 	}
 
+	base_type->name = strdup(sname);
 	RzVector *members = &base_type->struct_data.members;
 	if (!rz_vector_reserve(members, (size_t)sdb_alen(sdb_members))) {
 		goto error;
@@ -163,6 +165,7 @@ static RzBaseType *get_union_type(RzTypeDB *typedb, const char *sname) {
 		goto error;
 	}
 
+	base_type->name = strdup(sname);
 	RzVector *members = &base_type->union_data.members;
 	if (!rz_vector_reserve(members, (size_t)sdb_alen(sdb_members))) {
 		goto error;
@@ -209,6 +212,7 @@ static RzBaseType *get_typedef_type(RzTypeDB *typedb, const char *sname) {
 		return NULL;
 	}
 
+	base_type->name = strdup(sname);
 	base_type->type = get_type_data(typedb->sdb_types, "typedef", sname);
 	if (!base_type->type) {
 		goto error;
@@ -234,6 +238,7 @@ static RzBaseType *get_atomic_type(RzTypeDB *typedb, const char *sname) {
 	}
 
 	RzStrBuf key;
+	base_type->name = strdup(sname);
 	base_type->size = sdb_num_get(typedb->sdb_types, rz_strbuf_initf(&key, "type.%s.size", sname), 0);
 	rz_strbuf_fini(&key);
 
@@ -275,6 +280,69 @@ RZ_API RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, const char *name) 
 	}
 
 	return base_type;
+}
+
+/**
+ * \brief Returns the list of all basic types of the chosen kind
+ *
+ * \param typedb Types Database instance
+ * \param kind Kind of the types to list
+ */
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(RzTypeDB *typedb, RzBaseTypeKind kind) {
+	rz_return_val_if_fail(typedb, NULL);
+	SdbKv *kv;
+	SdbListIter *iter;
+	RzList *types = rz_list_newf((RzListFree)rz_type_base_type_free);
+	SdbList *l = sdb_foreach_list(typedb->sdb_types, true);
+	ls_foreach (l, iter, kv) {
+		RzBaseType *base_type = NULL;
+		if (!strcmp(sdbkv_value(kv), "struct") && kind == RZ_BASE_TYPE_KIND_STRUCT) {
+			base_type = get_struct_type(typedb, sdbkv_key(kv));
+		} else if (!strcmp(sdbkv_value(kv), "enum") && kind == RZ_BASE_TYPE_KIND_ENUM) {
+			base_type = get_enum_type(typedb, sdbkv_key(kv));
+		} else if (!strcmp(sdbkv_value(kv), "union") && kind == RZ_BASE_TYPE_KIND_UNION) {
+			base_type = get_union_type(typedb, sdbkv_key(kv));
+		} else if (!strcmp(sdbkv_value(kv), "typedef") && kind == RZ_BASE_TYPE_KIND_TYPEDEF) {
+			base_type = get_typedef_type(typedb, sdbkv_key(kv));
+		} else if (!strcmp(sdbkv_value(kv), "type") && kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+			base_type = get_atomic_type(typedb, sdbkv_key(kv));
+		}
+		if (base_type) {
+			rz_list_append(types, base_type);
+		}
+	}
+	return types;
+}
+
+/**
+ * \brief Returns the list of all basic types
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
+	SdbKv *kv;
+	SdbListIter *iter;
+	RzList *types = rz_list_newf((RzListFree)rz_type_base_type_free);
+	SdbList *l = sdb_foreach_list(typedb->sdb_types, true);
+	ls_foreach (l, iter, kv) {
+		RzBaseType *base_type = NULL;
+		if (!strcmp(sdbkv_value(kv), "struct")) {
+			base_type = get_struct_type(typedb, sdbkv_key(kv));
+		} else if (!strcmp(sdbkv_value(kv), "enum")) {
+			base_type = get_enum_type(typedb, sdbkv_key(kv));
+		} else if (!strcmp(sdbkv_value(kv), "union")) {
+			base_type = get_union_type(typedb, sdbkv_key(kv));
+		} else if (!strcmp(sdbkv_value(kv), "typedef")) {
+			base_type = get_typedef_type(typedb, sdbkv_key(kv));
+		} else if (!strcmp(sdbkv_value(kv), "type")) {
+			base_type = get_atomic_type(typedb, sdbkv_key(kv));
+		}
+		if (base_type) {
+			rz_list_append(types, base_type);
+		}
+	}
+	return types;
 }
 
 static void save_struct(const RzTypeDB *typedb, const RzBaseType *type) {
@@ -534,9 +602,8 @@ RZ_API RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
 /**
  * \brief Saves RzBaseType into the Types DB
  *
- * \param t
+ * \param typedb Type Database instance
  * \param type RzBaseType to save
- * \param name Name of the type
  */
 RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type) {
 	rz_return_if_fail(typedb && type && type->name);

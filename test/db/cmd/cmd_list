@@ -22,3 +22,19 @@ x86.pseudo
 z80.pseudo
 EOF
 RUN
+
+NAME=List core plugins
+FILE=-
+CMDS=Lc
+EXPECT=<<EOF
+java: Suite of java commands, type `java` for more info
+EOF
+RUN
+
+NAME=List core plugins in JSON
+FILE=-
+CMDS=Lcj
+EXPECT=<<EOF
+[{"Name":"java","Description":"Suite of java commands, type `java` for more info"}]
+EOF
+RUN

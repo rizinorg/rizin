@@ -1094,6 +1094,10 @@ static void function_delete_var_cmd(RzCore *core, RzAnalysisFunction *fcn, RzAna
 static int var_cmd(RzCore *core, const char *str) {
 	int delta, type = *str, res = true;
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (!fcn) {
+		eprintf("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return false;
+	}
 	RzAnalysisVar *v1;
 	if (!str[0]) {
 		// "afv"
@@ -1134,48 +1138,36 @@ static int var_cmd(RzCore *core, const char *str) {
 		function_delete_var_cmd(core, fcn, RZ_ANALYSIS_VAR_KIND_REG, str + 1);
 		return true;
 	case 'x': // "afvx"
-		if (fcn) {
-			cmd_afvx(core, fcn, str[1] == 'j');
-		} else {
-			eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
-		}
+		cmd_afvx(core, fcn, str[1] == 'j');
 		return true;
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
-	case '=': // "afv="
-		if (fcn) {
-			const char *name = strchr(ostr, ' ');
-			if (name) {
-				name = rz_str_trim_head_ro(name);
-			}
-			if (str[1] == 'j') {
-				pj = rz_core_pj_new(core);
-				if (!pj) {
-					return false;
-				}
-			}
-			list_vars(core, fcn, pj, str[0], name, IS_ARG_AND_VAR);
-			if (str[1] == 'j') {
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-				pj_free(pj);
-			}
-			return true;
-		} else {
-			eprintf("afv: Cannot find function in 0x%08" PFMT64x "\n", core->offset);
-			return false;
+	case '=': { // "afv="
+		const char *name = strchr(ostr, ' ');
+		if (name) {
+			name = rz_str_trim_head_ro(name);
 		}
-	case 'a': // "afva"
-		if (fcn) {
-			rz_analysis_function_delete_all_vars(fcn);
-			rz_core_recover_vars(core, fcn, false);
-			free(p);
-			return true;
-		} else {
-			eprintf("afv: Cannot find function in 0x%08" PFMT64x "\n", core->offset);
-			return false;
+		if (str[1] == 'j') {
+			pj = rz_core_pj_new(core);
+			if (!pj) {
+				return false;
+			}
 		}
+		list_vars(core, fcn, pj, str[0], name, IS_ARG_AND_VAR);
+		if (str[1] == 'j') {
+			pj_end(pj);
+			rz_cons_println(pj_string(pj));
+			pj_free(pj);
+		}
+		return true;
+	}
+	case 'a': { // "afva"
+		rz_analysis_function_delete_all_vars(fcn);
+		rz_core_recover_vars(core, fcn, false);
+		free(p);
+		return true;
+	}
 	case 'n': // "afvn"
 		if (str[1]) {
 			const char *new_name = rz_str_trim_head_ro(strchr(ostr, ' '));
@@ -1202,9 +1194,7 @@ static int var_cmd(RzCore *core, const char *str) {
 		}
 		return true;
 	case 'd': // "afvd"
-		if (!fcn) {
-			eprintf("Cannot find function.\n");
-		} else if (str[1]) {
+		if (str[1]) {
 			p = strchr(ostr, ' ');
 			if (!p) {
 				free(ostr);
@@ -1229,33 +1219,29 @@ static int var_cmd(RzCore *core, const char *str) {
 	case 'f': // "afvf"
 		__cmd_afvf(core, ostr);
 		break;
-	case 't': // "afvt"
-		if (fcn) {
-			p = strchr(ostr, ' ');
-			if (!p++) {
-				free(ostr);
-				return false;
-			}
-
-			char *type = strchr(p, ' ');
-			if (!type) {
-				free(ostr);
-				return false;
-			}
-			*type++ = 0;
-			v1 = rz_analysis_function_get_var_byname(fcn, p);
-			if (!v1) {
-				eprintf("Cant find get by name %s\n", p);
-				free(ostr);
-				return false;
-			}
-			rz_analysis_var_set_type(v1, type);
+	case 't': { // "afvt"
+		p = strchr(ostr, ' ');
+		if (!p++) {
 			free(ostr);
-			return true;
-		} else {
-			eprintf("Cannot find function\n");
 			return false;
 		}
+
+		char *type = strchr(p, ' ');
+		if (!type) {
+			free(ostr);
+			return false;
+		}
+		*type++ = 0;
+		v1 = rz_analysis_function_get_var_byname(fcn, p);
+		if (!v1) {
+			eprintf("Cant find get by name %s\n", p);
+			free(ostr);
+			return false;
+		}
+		rz_analysis_var_set_type(v1, type);
+		free(ostr);
+		return true;
+	}
 	}
 	switch (str[1]) { // afv[bsr]
 	case '\0': // "afv"
@@ -1275,10 +1261,6 @@ static int var_cmd(RzCore *core, const char *str) {
 		rz_analysis_var_list_show(core->analysis, fcn, core->offset, 0, NULL);
 		break;
 	case '-': // "afv[bsr]-"
-		if (!fcn) {
-			eprintf("Cannot find function\n");
-			return false;
-		}
 		function_delete_var_cmd(core, fcn, type, str + 2);
 		break;
 	case 't': // "afv[bsr]t"
@@ -1321,10 +1303,6 @@ static int var_cmd(RzCore *core, const char *str) {
 		p = strchr(ostr, ' ');
 		if (!p) {
 			var_help(core, type);
-			break;
-		}
-		if (!fcn) {
-			eprintf("Missing function at 0x%08" PFMT64x "\n", core->offset);
 			break;
 		}
 		*p++ = 0;
@@ -6912,7 +6890,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 			rz_str_trim(off);
 			int toff = rz_num_math(NULL, off);
 			if (toff) {
-				RzList *typeoffs = rz_type_get_by_offset(core->analysis->typedb, toff);
+				RzList *typeoffs = rz_type_db_get_by_offset(core->analysis->typedb, toff);
 				RzListIter *iter;
 				char *ty;
 				rz_list_foreach (typeoffs, iter, ty) {
@@ -6981,7 +6959,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 						offimm += rz_num_math(NULL, off);
 					}
 					// TODO: Allow to select from multiple choices
-					RzList *otypes = rz_type_get_by_offset(core->analysis->typedb, offimm);
+					RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
 					RzListIter *iter;
 					char *otype = NULL;
 					rz_list_foreach (otypes, iter, otype) {

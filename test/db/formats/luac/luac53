@@ -1,0 +1,134 @@
+NAME=LUAC: info
+FILE=bins/luac/none53.luac
+CMDS=<<EOF
+i~guid,machine
+EOF
+EXPECT=<<EOF
+guid     @/home/heersin/blackhole/lua53_src/none.lua
+machine  Lua 5.3 VM
+EOF
+RUN
+
+NAME=LUAC: sections
+FILE=bins/luac/none53.luac
+CMDS=<<EOF
+iS~none
+EOF
+EXPECT=<<EOF
+0   0x00000022  0x63 0x00000022   0x63 -r-- home_heersin_blackhole_lua53_src_none.lua.header
+1   0x00000059   0x4 0x00000059    0x4 -r-x home_heersin_blackhole_lua53_src_none.lua.code
+2   0x00000061   0x5 0x00000061    0x5 -r-- home_heersin_blackhole_lua53_src_none.lua.const
+3   0x00000065   0x7 0x00000065    0x7 -r-- home_heersin_blackhole_lua53_src_none.lua.upvalues
+4   0x0000006b   0x4 0x0000006b    0x4 -r-- home_heersin_blackhole_lua53_src_none.lua.protos
+5   0x0000006f  0x16 0x0000006f   0x16 -r-- home_heersin_blackhole_lua53_src_none.lua.debug
+EOF
+RUN
+
+NAME=LUAC: symbols
+FILE=bins/luac/none53.luac
+CMDS=<<EOF
+is~UPV
+EOF
+EXPECT=<<EOF
+0   0x00000069 0x00000069 NONE UPVALUE 3        @/home/heersin/blackhole/lua53_src/none.lua_upvalue__ENV
+EOF
+RUN
+
+NAME=LUAC: entry
+FILE=bins/luac/none53.luac
+CMDS=<<EOF
+ie~program
+EOF
+EXPECT=<<EOF
+vaddr=0x0000005d paddr=0x0000005d haddr=-1 type=program
+EOF
+RUN
+
+NAME=LUAC: big file
+FILE=bins/luac/big53.luac
+CMDS=<<EOF
+iS~header
+EOF
+EXPECT=<<EOF
+0   0x00000022  0x14f4 0x00000022  0x14f4 -r-- home_heersin_blackhole_src_code_learnlua.lua.header
+6   0x000007dd    0xb9 0x000007dd    0xb9 -r-- fcn.000007dd.header
+12  0x00000895    0xa1 0x00000895    0xa1 -r-- fcn.00000895.header
+18  0x000008bd    0x57 0x000008bd    0x57 -r-- fcn.000008bd.header
+24  0x00000935    0xf3 0x00000935    0xf3 -r-- fcn.00000935.header
+30  0x00000a27    0x4b 0x00000a27    0x4b -r-- fcn.00000a27.header
+36  0x00000a71    0x4b 0x00000a71    0x4b -r-- fcn.00000a71.header
+42  0x00000abb    0x75 0x00000abb    0x75 -r-- fcn.00000abb.header
+48  0x00000b2f    0x75 0x00000b2f    0x75 -r-- fcn.00000b2f.header
+54  0x00000ba3    0x67 0x00000ba3    0x67 -r-- fcn.00000ba3.header
+60  0x00000c09    0xe9 0x00000c09    0xe9 -r-- fcn.00000c09.header
+66  0x00000cf1    0xb9 0x00000cf1    0xb9 -r-- fcn.00000cf1.header
+72  0x00000da9    0x83 0x00000da9    0x83 -r-- fcn.00000da9.header
+78  0x00000e2b    0xa9 0x00000e2b    0xa9 -r-- fcn.00000e2b.header
+84  0x00000ed3    0xa4 0x00000ed3    0xa4 -r-- fcn.00000ed3.header
+EOF
+RUN
+
+NAME=LUAC: big file string symbol loading
+FILE=bins/luac/big53.luac
+CMDS=<<EOF
+is~pizza
+EOF
+EXPECT=<<EOF
+0   0x0000078c 0x0000078c NONE CONST_STRING 5        @/home/heersin/blackhole/src_code/learnlua.lua_const_pizza
+EOF
+RUN
+
+NAME=LUAC: big file num symbol loading
+FILE=bins/luac/big53.luac
+CMDS=<<EOF
+is~1729,1.21
+EOF
+EXPECT=<<EOF
+0   0x000006cf 0x000006cf NONE CONST_NUM    8        @/home/heersin/blackhole/src_code/learnlua.lua_const_1729
+0   0x0000071d 0x0000071d NONE CONST_NUM    8        @/home/heersin/blackhole/src_code/learnlua.lua_const_1.210000
+EOF
+RUN
+
+NAME=LUAC: big file symbols
+FILE=bins/luac/big53.luac
+CMDS=<<EOF
+is~math
+EOF
+EXPECT=<<EOF
+0   0x00000ae7 0x00000ae7 NONE CONST_STRING 4        fcn.00000abb_const_math
+0   0x00000b5b 0x00000b5b NONE CONST_STRING 4        fcn.00000b2f_const_math
+EOF
+RUN
+
+NAME=LUAC: disasm crash
+FILE=bins/luac/big53.luac
+CMDS=<<EOF
+pd 10 >/dev/null
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=LUAC: broken file
+FILE=bins/luac/random53.luac
+CMDS=<<EOF
+EOF
+EXPECT=<<EOF
+EOF
+REGEXP_FILTER_ERR=<<EOF
+Warning.*file
+EOF
+EXPECT_ERR=<<EOF
+Warning : Broken luac file
+EOF
+RUN
+
+NAME=LUAC: iz strings
+FILE=bins/luac/big53.luac
+CMDS=<<EOF
+iz~print?
+EOF
+EXPECT=<<EOF
+7
+EOF
+RUN

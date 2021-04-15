@@ -116,7 +116,7 @@ typedef struct LuaProto LuaProtoEntry;
  * \brief Store line info attributes
  */
 typedef struct lua_lineinfo_entry {
-	ut8 info_data;
+	ut32 info_data;
 	ut64 offset;
 } LuaLineinfoEntry;
 
@@ -204,6 +204,9 @@ void _luac_build_info(LuaProto *proto, LuacBinInfo *info);
  * ======================================================== */
 RzBinInfo *lua_parse_header_54(RzBinFile *bf, st32 major, st32 minor);
 LuaProto *lua_parse_body_54(RzBuffer *buffer, ut64 offset, ut64 data_size);
+
+RzBinInfo *lua_parse_header_53(RzBinFile *bf, st32 major, st32 minor);
+LuaProto *lua_parse_body_53(RzBuffer *buffer, ut64 offset, ut64 data_size);
 
 #define lua_check_error_offset(offset) \
 	if ((offset) == 0) { \
