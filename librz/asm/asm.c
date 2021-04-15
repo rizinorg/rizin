@@ -321,7 +321,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 		return true;
 	}
 	rz_list_foreach (a->plugins, iter, h) {
-		if (!strcmp(h->name, name) && h->arch) {
+		if (h->arch && h->name && !strcmp(h->name, name)) {
 			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
 				plugin_fini(a);
 				char *rzprefix = rz_str_rz_prefix(RZ_SDB_OPCODES);
@@ -334,7 +334,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 				}
 				free(rzprefix);
 			}
-			if (h && h->init && !h->init(&a->plugin_data)) {
+			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
 				return false;
 			}
