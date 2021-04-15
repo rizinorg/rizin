@@ -36,7 +36,6 @@ static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
 	return (int)written;
 }
 
-
 RzAsmPlugin rz_asm_plugin_avr = {
 	.name = "avr",
 	.arch = "avr",
