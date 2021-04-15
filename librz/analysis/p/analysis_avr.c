@@ -17,7 +17,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
-#include "../../asm/arch/avr/disasm.h"
+#include "../../asm/arch/avr/disassembler.h"
 
 static RDESContext desctx;
 
@@ -1638,19 +1638,19 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	CPU_MODEL *cpu;
 	ut64 offset;
 	int size = -1;
-	char mnemonic[32] = { 0 };
 
 	set_invalid_op(op, addr);
 
-	size = avr_decode(mnemonic, addr, buf, len);
-	if (!strcmp(mnemonic, "invalid") ||
-		!strcmp(mnemonic, "truncated")) {
-		op->eob = true;
-		op->mnemonic = strdup(mnemonic);
-		return -1;
+	RzStrBuf *sb = rz_strbuf_new("invalid");
+	if (len > 1) {
+		size = avr_disassembler(buf, len, addr, analysis->big_endian, sb);
 	}
+	op->mnemonic = rz_strbuf_drain(sb);
 
-	if (!op) {
+	if (!op->mnemonic) {
+		return -1;
+	} else if (!strcmp(op->mnemonic, "invalid")) {
+		op->eob = true;
 		return -1;
 	}
 
@@ -1677,7 +1677,6 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	// process opcode
 	avr_op_analyze(analysis, op, addr, buf, len, cpu);
 
-	op->mnemonic = strdup(mnemonic);
 	op->size = size;
 
 	return size;

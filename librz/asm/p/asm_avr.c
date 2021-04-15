@@ -10,8 +10,8 @@
 #include <rz_lib.h>
 #include <rz_asm.h>
 
-#include "../arch/avr/new/assembler.h"
-#include "../arch/avr/new/disassembler.h"
+#include "../arch/avr/assembler.h"
+#include "../arch/avr/disassembler.h"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	op->size = avr_disassembler(buf, len, a->pc, a->big_endian, &op->buf_asm);
