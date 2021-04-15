@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2015-2018 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -166,7 +167,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;
 	ptr->perm = RZ_PERM_R; // r--
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -178,7 +178,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.image_base + art.bitmap_offset;
 	ptr->perm = RZ_PERM_RX; // r-x
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -190,7 +189,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
 	ptr->perm = RZ_PERM_RX; // r-x
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -202,10 +200,19 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->size = art.oat_data_end - art.oat_data_begin;
 	ptr->vsize = ptr->size;
 	ptr->perm = RZ_PERM_R; // r--
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	return ret;
+}
+
+static RzList *maps(RzBinFile *bf) {
+	RzList *secs = sections(bf);
+	if (!secs) {
+		return NULL;
+	}
+	RzList *r = rz_bin_maps_of_sections(secs);
+	rz_list_free(secs);
+	return r;
 }
 
 RzBinPlugin rz_bin_plugin_art = {
@@ -217,6 +224,7 @@ RzBinPlugin rz_bin_plugin_art = {
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
+	.maps = &maps,
 	.sections = &sections,
 	.entries = entries,
 	.strings = &strings,
