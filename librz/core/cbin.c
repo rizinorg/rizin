@@ -656,10 +656,7 @@ static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
 	RzIOMap *iomap = NULL;
 	RzIODesc *desc = findReusableFile(io, uri, sec->perm);
 	if (desc) {
-		iomap = rz_io_map_get(io, at);
-		if (!iomap && gap) {
-			iomap = rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
-		}
+		iomap = rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
 		reused = true;
 	}
 	if (!desc) {
