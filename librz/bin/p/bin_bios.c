@@ -93,7 +93,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = rz_buf_size(bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = RZ_PERM_RWX;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
@@ -105,10 +104,19 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = rz_buf_size(obj) - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;
 		ptr->perm = RZ_PERM_RWX;
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 	return ret;
+}
+
+static RzList *maps(RzBinFile *bf) {
+	RzList *secs = sections(bf);
+	if (!secs) {
+		return NULL;
+	}
+	RzList *r = rz_bin_maps_of_sections(secs);
+	rz_list_free(secs);
+	return r;
 }
 
 static RzList *entries(RzBinFile *bf) {
@@ -136,6 +144,7 @@ RzBinPlugin rz_bin_plugin_bios = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,
+	.maps = maps,
 	.sections = sections,
 	.strings = &strings,
 	.info = &info,
