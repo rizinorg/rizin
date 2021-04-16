@@ -913,6 +913,24 @@ RZ_API RzList *rz_bin_java_class_strings(RzBinJavaClass *bin) {
 			rz_list_append(list, bstr);
 		}
 	}
+
+	for (ut32 i = 0; i < bin->attributes_count; ++i) {
+		Attribute *attr = bin->attributes[i];
+		if (attr && attr->type == ATTRIBUTE_TYPE_SOURCEDEBUGEXTENSION) {
+			RzBinString *bstr = RZ_NEW0(RzBinString);
+			if (!bstr) {
+				rz_warn_if_reached();
+				continue;
+			}
+			bstr->paddr = attr->offset;
+			bstr->ordinal = i;
+			bstr->length = attr->attribute_length;
+			bstr->size = attr->attribute_length;
+			bstr->string = strdup(attr->info);
+			bstr->type = RZ_STRING_TYPE_UTF8;
+			rz_list_append(list, bstr);
+		}
+	}
 	return list;
 }
 
