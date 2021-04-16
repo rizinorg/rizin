@@ -590,7 +590,10 @@ static const AvrInstruction instructions[] = {
 };
 
 ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, RzStrBuf *sb) {
-	rz_return_val_if_fail(buffer && size > 1 && sb, false);
+	rz_return_val_if_fail(buffer && size && sb, false);
+	if (size < 2) {
+		return AVR_INVALID_SIZE;
+	}
 
 	ut16 masked;
 	ut16 data[2] = {0};
