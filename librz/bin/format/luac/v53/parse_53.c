@@ -392,8 +392,9 @@ LuaProto *lua_parse_body_53(RzBuffer *buffer, ut64 base_offset, ut64 data_size) 
 	ut64 delta_offset;
 
 	LuaProto *ret_proto = lua_new_proto_entry();
-	if (ret_proto == NULL) {
+	if (!ret_proto) {
 		eprintf("unable to init proto\n");
+		return NULL;
 	}
 
 	// start parsing
