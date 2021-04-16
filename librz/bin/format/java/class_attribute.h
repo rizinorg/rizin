@@ -71,7 +71,6 @@ typedef struct java_attribute_code_t {
 	ut16 max_locals;
 	ut32 code_length;
 	ut32 code_offset;
-	ut8 *code;
 	ut16 exceptions_count;
 	ExceptionTable *exceptions;
 	ut16 attributes_count;
