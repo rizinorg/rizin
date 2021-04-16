@@ -100,8 +100,6 @@ fi
 export RZPM_GITSKIP="${RZPM_GITSKIP}"
 
 # Global Vars
-TRAVIS_TYPE=XX
-TRAVIS_JOB=86948888
 IS_SYSPKG=0
 [ -z "$RZPM_USRDIR" ] && RZPM_USRDIR="${RZDATAHOME}/rz-pm"
 RZPM_ETCD="${RZCONFIGHOME}/rizinrc.d"
@@ -133,19 +131,6 @@ confirm() {
 	return 1
 }
 
-purgeRZ() {
-	P="$1"
-	BINS="rizin rz-bin rz-find rz-pm "
-	cd "$P/bin" && rm -f ${BINS}
-	cd "$P/lib" && rm -f libr_*
-	cd "$P/lib" && rm -rf rizin
-	cd "$P/lib64" && rm -f libr_*
-	cd "$P/lib64" && rm -rf rizin
-	cd "$P/share" && rm -rf rizin
-	cd "$P/share/man" && rm -rf man1/r*2.1
-	cd "$P/share/doc" && rm -rf rizin
-}
-
 countDown() {
 	M="$1"
 	C="$2"
@@ -156,28 +141,6 @@ countDown() {
 		[ "$C" = 0 ] && break
 	done
 	echo 'Go!'
-}
-
-purgeSystem() {
-	confirm "Do you wanna purge rizin completely from your system and home?"
-	if [ $? != 0 ]; then
-		echo "Aborted." > /dev/stderr
-		exit 1
-	fi
-	countDown "Self destroying in" 3
-	confirm "> Delete $RHOMEDIR" && (
-		rm -rf "$RHOMEDIR"
-	)
-	RZPATHS="${PREFIX}:/usr:/usr/local:/opt/rizin:${RHOMEDIR}/prefix:/"
-	IFS=:
-	for a in $RZPATHS ; do
-		if [ -x "${a}/bin/rizin" ]; then
-			confirm "> Delete rizin from ${a}" && (
-				purgeRZ "$a"
-			)
-		fi
-	done
-	unset IFS
 }
 
 case "$1" in
@@ -515,22 +478,6 @@ case "$1" in
 -u|uninstall)
 	rz_pm_uninstall "$@"
 	;;
--t|test)
-	[ -n "$2" ] && TRAVIS_TYPE="$2"
-	if [ -n "$3" ]; then
-		TRAVIS_JOB="$3"
-	else
-		TRAVIS_JOB=`${CURL} -s https://api.travis-ci.com/repos?slug=rizin%2Frizin| jq .[0].last_build_id`
-		TRAVIS_JOB=$(($TRAVIS_JOB+1))
-	fi
-	echo $TRAVIS_JOB >&2
-	# storage
-	${CURL} -s https://s3.amazonaws.com/archive.travis-ci.com/jobs/${TRAVIS_JOB}/log.txt |\
-		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
-# wip
-	${CURL} -s https://api.travis-ci.com/jobs/${TRAVIS_JOB}/log.txt |\
-		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
-	;;
 -l|list)
 	RZPM_List "$2"
 	;;
@@ -709,9 +656,6 @@ cache)
 	fi
 	eval echo "\$$2"
 	;;
-purge)
-	purgeSystem
-	;;
 -d|doc|--doc)
 	rz_pm_doc "$2"
 	;;
@@ -727,7 +671,6 @@ Commands:
  -l,list                     list installed pkgs
  -r,run [cmd ...args]        run shell command with RZPM_BINDIR in PATH
  -s,search [<keyword>]       search in database
- -t,test FX,XX,BR BID        check in Travis regressions
  -v,version                  show version
  -h,help                     show this message
  -H variable                 show value of given variable
@@ -739,7 +682,6 @@ Commands:
  init | update ..            initialize/update database
  cd [git/dir]                cd into given git (see 'rz-pm ls')
  ls                          ls all cloned git repos in GITDIR
- purge                       self remove all (home + system) installations of rizin
  cache                       cache contents of rizin -H to make rz-pm rizin-independent
 Environment:
  SUDO=sudo                    use this tool as sudo
