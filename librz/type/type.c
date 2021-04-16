@@ -122,59 +122,29 @@ RZ_API bool rz_type_db_set(RzTypeDB *typedb, ut64 at, RZ_NONNULL const char *fie
 RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
 	Sdb *TDB = typedb->sdb_types;
-	const char *kind = sdb_const_get(TDB, name, 0);
-	if (!kind) {
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
+		// TODO: Extract this to the separate type RzCallable:
+		// see https://github.com/rizinorg/rizin/issues/373
+		const char *kind = sdb_const_get(TDB, name, 0);
+		if (!strcmp(kind, "func")) {
+			int i, n = sdb_num_get(TDB, sdb_fmt("func.%s.args", name), 0);
+			for (i = 0; i < n; i++) {
+				sdb_unset(TDB, sdb_fmt("func.%s.arg.%d", name, i), 0);
+			}
+			sdb_unset(TDB, sdb_fmt("func.%s.ret", name), 0);
+			sdb_unset(TDB, sdb_fmt("func.%s.cc", name), 0);
+			sdb_unset(TDB, sdb_fmt("func.%s.noreturn", name), 0);
+			sdb_unset(TDB, sdb_fmt("func.%s.args", name), 0);
+			sdb_unset(TDB, name, 0);
+			return true;
+		} else {
+			eprintf("Unrecognized type kind \"%s\"\n", kind);
+		}
 		return false;
 	}
-	if (!strcmp(kind, "type")) {
-		sdb_unset(TDB, sdb_fmt("type.%s", name), 0);
-		sdb_unset(TDB, sdb_fmt("type.%s.size", name), 0);
-		sdb_unset(TDB, sdb_fmt("type.%s.meta", name), 0);
-		sdb_unset(TDB, name, 0);
-	} else if (!strcmp(kind, "struct") || !strcmp(kind, "union")) {
-		int i, n = sdb_array_length(TDB, sdb_fmt("%s.%s", kind, name));
-		char *elements_key = rz_str_newf("%s.%s", kind, name);
-		for (i = 0; i < n; i++) {
-			char *p = sdb_array_get(TDB, elements_key, i, NULL);
-			sdb_unset(TDB, sdb_fmt("%s.%s", elements_key, p), 0);
-			free(p);
-		}
-		sdb_unset(TDB, elements_key, 0);
-		sdb_unset(TDB, name, 0);
-		free(elements_key);
-	} else if (!strcmp(kind, "func")) {
-		int i, n = sdb_num_get(TDB, sdb_fmt("func.%s.args", name), 0);
-		for (i = 0; i < n; i++) {
-			sdb_unset(TDB, sdb_fmt("func.%s.arg.%d", name, i), 0);
-		}
-		sdb_unset(TDB, sdb_fmt("func.%s.ret", name), 0);
-		sdb_unset(TDB, sdb_fmt("func.%s.cc", name), 0);
-		sdb_unset(TDB, sdb_fmt("func.%s.noreturn", name), 0);
-		sdb_unset(TDB, sdb_fmt("func.%s.args", name), 0);
-		sdb_unset(TDB, name, 0);
-	} else if (!strcmp(kind, "enum")) {
-		RzBaseType *e = rz_type_db_get_enum(typedb, name);
-		if (!e || e->kind != RZ_BASE_TYPE_KIND_ENUM) {
-			return false;
-		}
-		RzTypeEnumCase *cas;
-		rz_vector_foreach(&e->enum_data.cases, cas) {
-			sdb_unset(TDB, sdb_fmt("enum.%s.%s", name, cas->name), 0);
-			sdb_unset(TDB, sdb_fmt("enum.%s.0x%x", name, cas->val), 0);
-		}
-		sdb_unset(TDB, name, 0);
-		rz_type_base_type_free(e);
-	} else if (!strcmp(kind, "typedef")) {
-		RzStrBuf buf;
-		rz_strbuf_init(&buf);
-		rz_strbuf_setf(&buf, "typedef.%s", name);
-		sdb_unset(TDB, rz_strbuf_get(&buf), 0);
-		rz_strbuf_fini(&buf);
-		sdb_unset(TDB, name, 0);
-	} else {
-		eprintf("Unrecognized type kind \"%s\"\n", kind);
-		return false;
-	}
+	rz_type_db_delete_base_type(typedb, btype);
+	rz_type_base_type_free(btype);
 	return true;
 }
 
@@ -279,84 +249,97 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 
 // Listing all available types by category
 
-RZ_API RzList *rz_type_db_enum_names(RzTypeDB *typedb) {
-	RzList *ccl = rz_list_new();
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(typedb->sdb_types, true);
-	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "enum")) {
-			rz_list_append(ccl, strdup(sdbkv_key(kv)));
-		}
+/**
+ * \brief Returns the list of all enum names
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API RZ_OWN RzList *rz_type_db_enum_names(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
+	RzList *enums = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
+	RzList *result = rz_list_newf(free);
+	RzListIter *iter;
+	RzBaseType *e;
+	rz_list_foreach (enums, iter, e) {
+		rz_list_append(result, e->name);
 	}
-	ls_free(l);
-	return ccl;
+	rz_list_free(enums);
+	return result;
 }
 
-static bool sdb_if_union_cb(void *p, const char *k, const char *v) {
-	return !strncmp(v, "union", strlen("union") + 1);
-}
-
-RZ_API RzList *rz_type_db_union_names(RzTypeDB *typedb) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_union_cb, true, TDB);
-	RzList *l = rz_list_of_sdblist(sl);
-	ls_free(sl);
-	return l;
-}
-
-static bool sdb_if_struct_cb(void *user, const char *k, const char *v) {
-	rz_return_val_if_fail(user, false);
-	Sdb *TDB = (Sdb *)user;
-	if (!strcmp(v, "struct") && !rz_str_startswith(k, "typedef")) {
-		return true;
+/**
+ * \brief Returns the list of all union names
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API RZ_OWN RzList *rz_type_db_union_names(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
+	RzList *unions = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
+	RzList *result = rz_list_newf(free);
+	RzListIter *iter;
+	RzBaseType *u;
+	rz_list_foreach (unions, iter, u) {
+		rz_list_append(result, u->name);
 	}
-	if (!strcmp(v, "typedef")) {
-		const char *typedef_key = sdb_fmt("typedef.%s", k);
-		const char *type = sdb_const_get(TDB, typedef_key, NULL);
-		if (type && rz_str_startswith(type, "struct")) {
-			return true;
-		}
+	rz_list_free(unions);
+	return result;
+}
+
+/**
+ * \brief Returns the list of all struct names
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API RZ_OWN RzList *rz_type_db_struct_names(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
+	RzList *structs = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
+	RzList *result = rz_list_newf(free);
+	RzListIter *iter;
+	RzBaseType *s;
+	rz_list_foreach (structs, iter, s) {
+		rz_list_append(result, s->name);
 	}
-	return false;
+	rz_list_free(structs);
+	return result;
 }
 
-RZ_API RzList *rz_type_db_struct_names(RzTypeDB *typedb) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_struct_cb, true, TDB);
-	RzList *l = rz_list_of_sdblist(sl);
-	ls_free(sl);
-	return l;
+/**
+ * \brief Returns the list of all typedef (type aliases) names
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API RZ_OWN RzList *rz_type_db_typedef_names(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
+	RzList *typedefs = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
+	RzList *result = rz_list_newf(free);
+	RzListIter *iter;
+	RzBaseType *t;
+	rz_list_foreach (typedefs, iter, t) {
+		rz_list_append(result, t->name);
+	}
+	rz_list_free(typedefs);
+	return result;
 }
 
-static bool sdb_if_typedef_cb(void *p, const char *k, const char *v) {
-	return !strncmp(v, "typedef", strlen("typedef") + 1);
+/**
+ * \brief Returns the list of all type names
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API RZ_OWN RzList *rz_type_db_all(RzTypeDB *typedb) {
+	rz_return_val_if_fail(typedb, NULL);
+	RzList *types = rz_type_db_get_base_types(typedb);
+	RzList *result = rz_list_newf(free);
+	RzListIter *iter;
+	RzBaseType *t;
+	rz_list_foreach (types, iter, t) {
+		rz_list_append(result, t->name);
+	}
+	rz_list_free(types);
+	return result;
 }
 
-RZ_API RzList *rz_type_db_typedef_names(RzTypeDB *typedb) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_typedef_cb, true, TDB);
-	RzList *l = rz_list_of_sdblist(sl);
-	ls_free(sl);
-	return l;
-}
-
-static bool sdb_if_type_cb(void *p, const char *k, const char *v) {
-	return !strncmp(v, "type", strlen("type") + 1);
-}
-
-static bool sdb_if_c_type_cb(void *p, const char *k, const char *v) {
-	return sdb_if_union_cb(p, k, v) || sdb_if_struct_cb(p, k, v) || sdb_if_type_cb(p, k, v);
-}
-
-RZ_API RzList *rz_type_db_all(RzTypeDB *typedb) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *sl = sdb_foreach_list_filter_user(TDB, sdb_if_c_type_cb, true, TDB);
-	RzList *l = rz_list_of_sdblist(sl);
-	ls_free(sl);
-	return l;
-}
-
+// TODO: Move this to RzAnalysis along with link.c
 RZ_API RzList *rz_type_db_links(RzTypeDB *typedb) {
 	RzList *ccl = rz_list_new();
 	SdbKv *kv;
@@ -372,6 +355,13 @@ RZ_API RzList *rz_type_db_links(RzTypeDB *typedb) {
 }
 
 // Type-specific APIs
+
+/**
+ * \brief Returns the kind (RzBaseTypeKind) of the type
+ *
+ * \param typedb Types Database instance
+ * \param name Name of the type
+ */
 RZ_API int rz_type_kind(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, -1);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
@@ -381,25 +371,77 @@ RZ_API int rz_type_kind(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	return btype->kind;
 }
 
-// FIXME: this function is slow!
-RZ_API RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset) {
+/*
+static bool structured_member_walker(RzList (RzBaseType) *list, RzBaseType *btype, ut64 offset) {
+	rz_return_val_if_fail(list && btype, false);
+	bool result = true;
+	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&btype->struct_data.members, memb) {
+			if (memb->offset == offset) {
+				rz_list_append(list, memb);
+			}
+			// FIXME: Support nested
+			// result &= structured_member_walker(list, NULL, offset);
+		}
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION) {
+		RzTypeUnionMember *memb;
+		rz_vector_foreach(&btype->union_data.members, memb) {
+			if (memb->offset == offset) {
+				rz_list_append(list, memb);
+			}
+			// FIXME: Support nested
+			// result &= structured_member_walker(list, NULL, offset);
+		}
+	}
+	return result;
+}
+*/
+
+RZ_API RZ_OWN RzList *rz_type_structured_member_by_offset(RzBaseType *btype, ut64 offset) {
+	// TODO: Return the whole RzBaseType instead of the string
+	//RzList *list = rz_list_newf((RzListFree)rz_type_base_type_free);
+	RzList *list = rz_list_newf(free);
+	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&btype->struct_data.members, memb) {
+			if (memb->offset == offset) {
+				rz_list_append(list, rz_str_newf("%s.%s", btype->name, memb->name));
+			}
+			// FIXME: Support nested
+			// nofail &= structured_member_walker(list, NULL, offset);
+		}
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION) {
+		RzTypeUnionMember *memb;
+		rz_vector_foreach(&btype->union_data.members, memb) {
+			if (memb->offset == offset) {
+				rz_list_append(list, rz_str_newf("%s.%s", btype->name, memb->name));
+			}
+			// FIXME: Support nested
+			// nofail &= structured_member_walker(list, NULL, offset);
+		}
+	}
+	return list;
+}
+
+RZ_API RZ_OWN RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset) {
 	rz_return_val_if_fail(typedb, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	RzList *offtypes = rz_list_new();
-	SdbList *ls = sdb_foreach_list(TDB, true);
-	SdbListIter *lsi;
-	SdbKv *kv;
-	ls_foreach (ls, lsi, kv) {
-		// TODO: Add unions support
-		if (!strncmp(sdbkv_value(kv), "struct", 6) && strncmp(sdbkv_key(kv), "struct.", 7)) {
-			char *res = rz_type_db_get_struct_member(typedb, sdbkv_key(kv), offset);
-			if (res) {
-				rz_list_append(offtypes, res);
+	RzList *types = rz_type_db_get_base_types(typedb);
+	// TODO: Return the whole RzBaseType instead of the string
+	//RzList *list = rz_list_newf((RzListFree)rz_type_base_type_free);
+	RzList *result = rz_list_newf(free);
+	RzListIter *iter;
+	RzBaseType *t;
+	rz_list_foreach (types, iter, t) {
+		if (t->kind == RZ_BASE_TYPE_KIND_STRUCT || t->kind == RZ_BASE_TYPE_KIND_UNION) {
+			RzList *list = rz_type_structured_member_by_offset(t, offset);
+			if (list) {
+				rz_list_join(result, list);
 			}
 		}
 	}
-	ls_free(ls);
-	return offtypes;
+	rz_list_free(types);
+	return result;
 }
 
 RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, RZ_NONNULL const char *name) {
@@ -475,7 +517,6 @@ RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, RZ_NONNULL const cha
 	char *res = NULL;
 	int i;
 	bool isFirst = true;
-	char *ret = rz_str_newf("0x%08" PFMT64x " : ", val);
 
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype) {
@@ -484,6 +525,7 @@ RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, RZ_NONNULL const cha
 	if (btype->kind != RZ_BASE_TYPE_KIND_ENUM) {
 		return NULL;
 	}
+	char *ret = rz_str_newf("0x%08" PFMT64x " : ", val);
 	for (i = 0; i < 32; i++) {
 		ut32 n = 1ULL << i;
 		if (!(val & n)) {

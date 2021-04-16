@@ -1879,6 +1879,7 @@ EOF
 RUN
 
 NAME=ahts nested
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 td "struct foo {int bar;int cow;};"
