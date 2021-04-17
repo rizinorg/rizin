@@ -740,7 +740,7 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 	RzListIter *it;
 	RzBinMap *map;
 	// reverse because of the way io handles maps
-	rz_list_foreach_prev (maps, it, map) {
+	rz_list_foreach_prev(maps, it, map) {
 		int va_map = va ? VA_TRUE : VA_FALSE;
 		if (va && !(map->perm & RZ_PERM_R)) {
 			va_map = VA_NOREBASE;
@@ -763,7 +763,6 @@ static void section_perms_str(char *dst, int perms) {
 	dst[3] = (perms & RZ_PERM_X) ? 'x' : '-';
 	dst[4] = '\0';
 }
-
 
 RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va) {
 	rz_return_val_if_fail(core && binfile, NULL);

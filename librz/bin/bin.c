@@ -1394,7 +1394,7 @@ RZ_API RzList *rz_bin_maps_of_file_sections(RzBinFile *binfile) {
 	}
 	RzBinSection *sec;
 	RzListIter *it;
-	rz_list_foreach(sections, it, sec) {
+	rz_list_foreach (sections, it, sec) {
 		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
 			goto hcf;
