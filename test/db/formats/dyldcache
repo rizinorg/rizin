@@ -1,0 +1,142 @@
+NAME=dyldcache loading
+FILE=bins/dyldcache/dyld_shared_cache_arm64-macOS
+CMDS=<<EOF
+i
+is
+iS
+om
+pi 4@sym._what_is_cool
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/dyldcache/dyld_shared_cache_arm64-macOS
+size     0x34000
+humansz  208K
+mode     r-x
+format   dyldcache
+iorw     false
+block    0x100
+type     library-cache
+arch     arm
+baddr    0x180000000
+binsz    212992
+bits     64
+canary   false
+retguard false
+class    dyldcache
+crypto   false
+endian   little
+havecode true
+laddr    0x0
+linenum  false
+lsyms    false
+machine  arm
+maxopsz  4
+minopsz  4
+nx       false
+os       Darwin
+pcalign  4
+pic      false
+relocs   false
+sanitiz  false
+static   true
+stripped false
+subsys   xnu
+va       true
+[Symbols]
+
+nth paddr      vaddr       bind   type size lib name
+----------------------------------------------------
+0   0x00004f60 0x180004f60 GLOBAL FUNC 0        _func_in_liba
+1   0x00004f9c 0x180004f9c GLOBAL FUNC 0        _what_is_cool
+0   0x00008fa0 0x180008fa0 GLOBAL FUNC 0        _func_in_libb
+[Sections]
+
+nth paddr       size vaddr        vsize perm name
+-------------------------------------------------
+0   0x00004f60  0x48 0x180004f60   0x48 -r-x lib_liba-1.0.dylib.0.__TEXT.__text
+1   0x00004fa8   0x6 0x180004fa8    0x6 -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring
+2   0x00004fb0  0x50 0x180004fb0   0x50 -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info
+3   0x00008fa0  0x18 0x180008fa0   0x18 -r-x lib_libb-1.0.dylib.0.__TEXT.__text
+4   0x00008fb8  0x48 0x180008fb8   0x48 -r-x lib_libb-1.0.dylib.1.__TEXT.__unwind_info
+
+ 3 fd: 3 +0x00000000 0x180000000 - 0x180017fff r-x fmap.cache_map.0
+ 2 fd: 3 +0x00018000 0x182018000 - 0x18201bfff r-- fmap.cache_map.1
+ 1 fd: 3 +0x0001c000 0x18401c000 - 0x18402ffff r-- fmap.cache_map.2
+adrp x0, 0x180004000
+add x0, x0, 0xfa8
+ret
+ldpsw x18, x26, [x11, -0x30]
+EOF
+RUN
+
+NAME=dyldcache filter
+FILE=--
+CMDS=<<EOF
+env RZ_DYLDCACHE_FILTER=liba-1.0.dylib
+o bins/dyldcache/dyld_shared_cache_arm64-macOS
+i
+is
+iS
+om
+pi 4@sym._what_is_cool
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/dyldcache/dyld_shared_cache_arm64-macOS
+size     0x34000
+humansz  208K
+mode     r-x
+format   dyldcache
+iorw     false
+block    0x100
+type     library-cache
+arch     arm
+baddr    0x180000000
+binsz    212992
+bits     64
+canary   false
+retguard false
+class    dyldcache
+crypto   false
+endian   little
+havecode true
+laddr    0x0
+linenum  false
+lsyms    false
+machine  arm
+maxopsz  4
+minopsz  4
+nx       false
+os       Darwin
+pcalign  4
+pic      false
+relocs   false
+sanitiz  false
+static   true
+stripped false
+subsys   xnu
+va       true
+[Symbols]
+
+nth paddr      vaddr       bind   type size lib name
+----------------------------------------------------
+0   0x00004f60 0x180004f60 GLOBAL FUNC 0        _func_in_liba
+1   0x00004f9c 0x180004f9c GLOBAL FUNC 0        _what_is_cool
+[Sections]
+
+nth paddr       size vaddr        vsize perm name
+-------------------------------------------------
+0   0x00004f60  0x48 0x180004f60   0x48 -r-x lib_liba-1.0.dylib.0.__TEXT.__text
+1   0x00004fa8   0x6 0x180004fa8    0x6 -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring
+2   0x00004fb0  0x50 0x180004fb0   0x50 -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info
+
+ 3 fd: 3 +0x00000000 0x180000000 - 0x180017fff r-x fmap.cache_map.0
+ 2 fd: 3 +0x00018000 0x182018000 - 0x18201bfff r-- fmap.cache_map.1
+ 1 fd: 3 +0x0001c000 0x18401c000 - 0x18402ffff r-- fmap.cache_map.2
+adrp x0, 0x180004000
+add x0, x0, 0xfa8
+ret
+ldpsw x18, x26, [x11, -0x30]
+EOF
+RUN
