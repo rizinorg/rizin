@@ -89,7 +89,7 @@ static RzList *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	return bin_info_obj->section_list;
+	return rz_list_clone(bin_info_obj->section_list);
 }
 
 static RzList *symbols(RzBinFile *bf) {
@@ -137,6 +137,7 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.check_buffer = &check_buffer,
 	.baddr = NULL,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,
