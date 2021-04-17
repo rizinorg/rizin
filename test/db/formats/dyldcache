@@ -4,6 +4,7 @@ CMDS=<<EOF
 i
 is
 iS
+iH
 om
 pi 4@sym._what_is_cool
 EOF
@@ -60,6 +61,7 @@ nth paddr       size vaddr        vsize perm name
 3   0x00008fa0  0x18 0x180008fa0   0x18 -r-x lib_libb-1.0.dylib.0.__TEXT.__text
 4   0x00008fb8  0x48 0x180008fb8   0x48 -r-x lib_libb-1.0.dylib.1.__TEXT.__unwind_info
 
+{"header":{"magic":"dyld_v1   arm64","mappingOffset":320,"mappingCount":3,"imagesOffset":656,"imagesCount":2,"dyldBaseAddress":0,"codeSignatureOffset":196608,"codeSignatureSize":16384,"slideInfoOffset":0,"slideInfoSize":0,"localSymbolsOffset":0,"localSymbolsSize":0,"uuid":"857bce1a017e34649909d58ee21cf8dc","cacheType":"production","branchPoolsOffset":0,"branchPoolsCount":0,"accelerateInfoAddr":0,"accelerateInfoSize":0,"imagesTextOffset":720,"imagesTextCount":2},"slideInfo":[{"start":98304,"end":114688,"version":2,"slide":0,"page_starts_count":4,"page_extras_count":0,"delta_mask":72056494526300160,"value_mask":18374687579183251455,"value_add":0,"delta_shift":38,"page_size":4096}],"images":[{"uuid":"ccbf29d455693a1592314e14d41a542a","address":6442455040,"textSegmentSize":16384,"path":"/usr/lib/liba-1.0.dylib","name":"liba-1.0.dylib"},{"uuid":"60d2f3d644a2391087503a56a3d8ff07","address":6442471424,"textSegmentSize":16384,"path":"/usr/lib/libb-1.0.dylib","name":"libb-1.0.dylib"}]}
  3 fd: 3 +0x00000000 0x180000000 - 0x180017fff r-x fmap.cache_map.0
  2 fd: 3 +0x00018000 0x182018000 - 0x18201bfff r-- fmap.cache_map.1
  1 fd: 3 +0x0001c000 0x18401c000 - 0x18402ffff r-- fmap.cache_map.2
@@ -78,6 +80,7 @@ o bins/dyldcache/dyld_shared_cache_arm64-macOS
 i
 is
 iS
+iH
 om
 pi 4@sym._what_is_cool
 EOF
@@ -131,6 +134,7 @@ nth paddr       size vaddr        vsize perm name
 1   0x00004fa8   0x6 0x180004fa8    0x6 -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring
 2   0x00004fb0  0x50 0x180004fb0   0x50 -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info
 
+{"header":{"magic":"dyld_v1   arm64","mappingOffset":320,"mappingCount":3,"imagesOffset":656,"imagesCount":2,"dyldBaseAddress":0,"codeSignatureOffset":196608,"codeSignatureSize":16384,"slideInfoOffset":0,"slideInfoSize":0,"localSymbolsOffset":0,"localSymbolsSize":0,"uuid":"857bce1a017e34649909d58ee21cf8dc","cacheType":"production","branchPoolsOffset":0,"branchPoolsCount":0,"accelerateInfoAddr":0,"accelerateInfoSize":0,"imagesTextOffset":720,"imagesTextCount":2},"slideInfo":[{"start":98304,"end":114688,"version":2,"slide":0,"page_starts_count":4,"page_extras_count":0,"delta_mask":72056494526300160,"value_mask":18374687579183251455,"value_add":0,"delta_shift":38,"page_size":4096}],"images":[{"uuid":"ccbf29d455693a1592314e14d41a542a","address":6442455040,"textSegmentSize":16384,"path":"/usr/lib/liba-1.0.dylib","name":"liba-1.0.dylib"},{"uuid":"60d2f3d644a2391087503a56a3d8ff07","address":6442471424,"textSegmentSize":16384,"path":"/usr/lib/libb-1.0.dylib","name":"libb-1.0.dylib"}]}
  3 fd: 3 +0x00000000 0x180000000 - 0x180017fff r-x fmap.cache_map.0
  2 fd: 3 +0x00018000 0x182018000 - 0x18201bfff r-- fmap.cache_map.1
  1 fd: 3 +0x0001c000 0x18401c000 - 0x18402ffff r-- fmap.cache_map.2
