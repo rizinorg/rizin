@@ -245,6 +245,7 @@ RzBinPlugin rz_bin_plugin_java = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entrypoints,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.symbols = symbols,
 	.imports = &imports,
