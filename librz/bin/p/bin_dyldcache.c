@@ -1549,8 +1549,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	ret->file = strdup(bf->file);
 	ret->bclass = strdup("dyldcache");
-	ret->rclass = strdup("ios");
-	ret->os = strdup("iOS");
+	ret->os = strdup("Darwin"); // TODO: actual OS info is available. See the platform member of struct dyld_cache_header in dyld source.
 	if (strstr(cache->hdr->magic, "x86_64")) {
 		ret->arch = strdup("x86");
 		ret->bits = 64;
