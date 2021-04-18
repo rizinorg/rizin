@@ -3510,17 +3510,16 @@ err_r_str_mb_to_wc:
 
 RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	char *res_buf = NULL;
-	bool fail = true;
 	size_t sz;
 
 	if (!buf || len <= 0) {
 		return NULL;
 	}
-	sz = wcstombs(NULL, buf, len);
+	sz = wcstombs(NULL, buf, 0);
 	if (sz == (size_t)-1) {
 		goto err_r_str_wc_to_mb;
 	}
-	res_buf = (char *)calloc(1, (sz + 1) * sizeof(char));
+	res_buf = RZ_NEWS0(char, sz + 1);
 	if (!res_buf) {
 		goto err_r_str_wc_to_mb;
 	}
@@ -3528,12 +3527,11 @@ RZ_API char *rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	if (sz == (size_t)-1) {
 		goto err_r_str_wc_to_mb;
 	}
-	fail = false;
-err_r_str_wc_to_mb:
-	if (fail) {
-		RZ_FREE(res_buf);
-	}
 	return res_buf;
+
+err_r_str_wc_to_mb:
+	free(res_buf);
+	return NULL;
 }
 
 RZ_API char *rz_str_wc_to_mb(const wchar_t *buf) {
