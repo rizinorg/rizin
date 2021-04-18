@@ -29,7 +29,7 @@ RZ_API void rz_hash_do_begin(RzHash *ctx, ut64 flags) {
 	CHKFLAG(RZ_HASH_MD5)
 	rz_hash_do_md5(ctx, NULL, -1);
 	CHKFLAG(RZ_HASH_SHA1)
-	SHA1_Init(&ctx->sha1);
+	rz_sha1_init(&ctx->sha1);
 	CHKFLAG(RZ_HASH_SHA256)
 	SHA256_Init(&ctx->sha256);
 	CHKFLAG(RZ_HASH_SHA384)
@@ -43,7 +43,7 @@ RZ_API void rz_hash_do_end(RzHash *ctx, ut64 flags) {
 	CHKFLAG(RZ_HASH_MD5)
 	rz_hash_do_md5(ctx, NULL, -2);
 	CHKFLAG(RZ_HASH_SHA1)
-	SHA1_Final(ctx->digest, &ctx->sha1);
+	rz_sha1_fini(ctx->digest, &ctx->sha1);
 	CHKFLAG(RZ_HASH_SHA256)
 	SHA256_Final(ctx->digest, &ctx->sha256);
 	CHKFLAG(RZ_HASH_SHA384)
@@ -62,11 +62,11 @@ RZ_API ut8 *rz_hash_do_sha1(RzHash *ctx, const ut8 *input, int len) {
 		return NULL;
 	}
 	if (ctx->rst) {
-		SHA1_Init(&ctx->sha1);
+		rz_sha1_init(&ctx->sha1);
 	}
-	SHA1_Update(&ctx->sha1, input, len);
+	rz_sha1_update(&ctx->sha1, input, len);
 	if (ctx->rst || len == 0) {
-		SHA1_Final(ctx->digest, &ctx->sha1);
+		rz_sha1_fini(ctx->digest, &ctx->sha1);
 	}
 	return ctx->digest;
 }
