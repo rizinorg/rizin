@@ -560,7 +560,9 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisVar *var) {
 	pj_o(j);
 	pj_ks(j, "name", var->name);
-	pj_ks(j, "type", var->type);
+	// FIXME: Save it properly?
+	char *vartype = rz_type_as_string(var->fcn->analysis->typedb, var->type);
+	pj_ks(j, "type", vartype);
 	switch (var->kind) {
 	case RZ_ANALYSIS_VAR_KIND_REG:
 		pj_ks(j, "kind", "r");

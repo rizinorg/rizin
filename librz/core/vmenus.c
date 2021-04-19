@@ -2329,6 +2329,7 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 				break;
 			}
 			if (show) {
+				const char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
 				switch (var->kind & 0xff) {
 				case 'r': {
 					RzRegItem *r = rz_reg_index_get(core->analysis->reg, var->delta);
@@ -2338,14 +2339,14 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 					}
 					rz_cons_printf("%sarg %s %s @ %s\n",
 						i == *vindex ? "* " : "  ",
-						var->type, var->name,
+						vartype, var->name,
 						r->name);
 				} break;
 				case 'b':
 					rz_cons_printf("%s%s %s %s @ %s%s0x%x\n",
 						i == *vindex ? "* " : "  ",
 						var->delta < 0 ? "var" : "arg",
-						var->type, var->name,
+						vartype, var->name,
 						core->analysis->reg->name[RZ_REG_NAME_BP],
 						(var->kind == 'v') ? "-" : "+",
 						var->delta);
@@ -2354,7 +2355,7 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 					rz_cons_printf("%s%s %s %s @ %s%s0x%x\n",
 						i == *vindex ? "* " : "  ",
 						var->delta < 0 ? "var" : "arg",
-						var->type, var->name,
+						vartype, var->name,
 						core->analysis->reg->name[RZ_REG_NAME_BP],
 						(var->kind == 'v') ? "-" : "+",
 						var->delta);

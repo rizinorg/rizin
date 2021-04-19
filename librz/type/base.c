@@ -835,3 +835,59 @@ RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *
 		break;
 	}
 }
+
+/**
+ * \brief Returns C representation as string of RzBaseType
+ *
+ * \param typedb Type Database instance
+ * \param type RzBaseType to convert
+ */
+RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type) {
+	rz_return_val_if_fail(typedb && type && type->name, NULL);
+
+	RzStrBuf *buf = rz_strbuf_new("");
+	switch (type->kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT: {
+		rz_strbuf_appendf(buf, "struct %s { ", type->name);
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&type->struct_data.members, memb) {
+			const char *membtype = rz_type_as_string(typedb, memb->type);
+			rz_strbuf_appendf(buf, "%s %s; ", membtype, memb->name);
+		}
+		rz_strbuf_append(buf, " };");
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_ENUM: {
+		rz_strbuf_appendf(buf, "enum %s { ", type->name);
+		RzTypeEnumCase *cas;
+		rz_vector_foreach(&type->enum_data.cases, cas) {
+			rz_strbuf_appendf(buf, "%s = 0x" PFMT64x ", ", cas->name, cas->val);
+		}
+		rz_strbuf_append(buf, " };");
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_UNION: {
+		rz_strbuf_appendf(buf, "union %s { ", type->name);
+		RzTypeUnionMember *memb;
+		rz_vector_foreach(&type->union_data.members, memb) {
+			const char *membtype = rz_type_as_string(typedb, memb->type);
+			rz_strbuf_appendf(buf, "%s %s; ", membtype, memb->name);
+		}
+		rz_strbuf_append(buf, " };");
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_TYPEDEF: {
+		const char *ttype = rz_type_as_string(typedb, type->type);
+		rz_strbuf_appendf(buf, "typedef %s %s;", ttype, type->name);
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_ATOMIC:
+		rz_strbuf_append(buf, type->name);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	char *bufstr = rz_strbuf_drain(buf);
+	return bufstr;
+}

@@ -24,11 +24,14 @@ typedef struct rz_type_target_t {
 	bool big_endian;
 } RzTypeTarget;
 
+typedef struct rz_ast_parser_t RzASTParser;
+
 typedef struct rz_type_db_t {
 	void *user;
 	Sdb *sdb_types;
 	Sdb *formats; // for `pf` formats
 	RzTypeTarget *target;
+	RzASTParser *parser;
 	RNum *num;
 	RzIOBind iob; // for RzIO in formats
 } RzTypeDB;
@@ -38,6 +41,8 @@ typedef struct rz_type_db_t {
 // concrete size and memory layout
 // or the "AST" types that are returned from the parser
 // and don't contain the size or memory laoyout
+
+typedef struct rz_type_t RzType;
 
 // Base types
 
@@ -56,14 +61,14 @@ typedef struct rz_type_enum_case_t {
 
 typedef struct rz_type_struct_member_t {
 	char *name;
-	char *type;
+	RzType *type;
 	size_t offset; // in bytes
 	size_t size; // in bits?
 } RzTypeStructMember;
 
 typedef struct rz_type_union_member_t {
 	char *name;
-	char *type;
+	RzType *type;
 	size_t offset; // in bytes
 	size_t size; // in bits?
 } RzTypeUnionMember;
@@ -82,7 +87,7 @@ typedef struct rz_base_type_enum_t {
 
 typedef struct rz_base_type_t {
 	char *name;
-	char *type; // Used by typedef, atomic type, enum
+	RzType *type; // Used by typedef, atomic type, enum
 	ut64 size; // size of the whole type in bits
 	RzBaseTypeKind kind;
 	union {
@@ -95,8 +100,6 @@ typedef struct rz_base_type_t {
 // AST-level types for C and C++
 // Parses strings like "const char * [0x42] const * [23]" to RzType
 
-typedef struct rz_ast_parser_t RzASTParser;
-
 typedef enum {
 	RZ_TYPE_KIND_IDENTIFIER,
 	RZ_TYPE_KIND_POINTER,
@@ -105,13 +108,11 @@ typedef enum {
 } RzTypeKind;
 
 typedef enum {
-	RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED,
-	RZ_TYPE_CTYPE_IDENTIFIER_KIND_STRUCT,
-	RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNION,
-	RZ_TYPE_CTYPE_IDENTIFIER_KIND_ENUM
+	RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED,
+	RZ_TYPE_IDENTIFIER_KIND_STRUCT,
+	RZ_TYPE_IDENTIFIER_KIND_UNION,
+	RZ_TYPE_IDENTIFIER_KIND_ENUM
 } RzTypeIdentifierKind;
-
-typedef struct rz_type_t RzType;
 
 typedef struct rz_callable_arg_t {
 	RZ_NULLABLE char *name; // optional
@@ -155,6 +156,8 @@ RZ_API void rz_type_db_set_bits(RzTypeDB *typedb, int bits);
 RZ_API void rz_type_db_set_os(RzTypeDB *typedb, const char *os);
 RZ_API void rz_type_db_set_cpu(RzTypeDB *typedb, const char *cpu);
 RZ_API void rz_type_db_set_endian(RzTypeDB *typedb, bool big_endian);
+RZ_API ut8 rz_type_db_pointer_size(RzTypeDB *typedb);
+
 RZ_API char *rz_type_db_kuery(RzTypeDB *typedb, const char *query);
 
 RZ_API const char *rz_type_db_get(RzTypeDB *typedb, const char *name);
@@ -180,11 +183,14 @@ RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType 
 RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(RzTypeDB *typedb, RzBaseTypeKind kind);
 RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(RzTypeDB *typedb);
 
+RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+
 // AST types
 
 RZ_API RzASTParser *rz_ast_parser_new(void);
 RZ_API void rz_ast_parser_free(RzASTParser *parser);
 RZ_API RzType *rz_type_parse(RzASTParser *parser, const char *str, char **error);
+RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API void rz_type_free(RzType *type);
 
 /* c */
@@ -202,7 +208,7 @@ RZ_API char *rz_type_db_enum_member_by_val(RzTypeDB *typedb, const char *name, u
 RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(RzTypeDB *typedb, ut64 val);
 RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, const char *name, ut64 val);
 RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, const char *name);
-RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, const char *type);
+RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL RzType *type);
 RZ_API RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset);
 RZ_API char *rz_type_db_get_struct_member(RzTypeDB *typedb, const char *type, int offset);
 
@@ -235,7 +241,7 @@ RZ_API int rz_type_func_args_count(RzTypeDB *typedb, RZ_NONNULL const char *func
 RZ_API RZ_OWN char *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i);
 RZ_API const char *rz_type_func_args_name(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i);
 RZ_API bool rz_type_func_arg_count_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int arg_count);
-RZ_API bool rz_type_func_arg_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i, RZ_NONNULL const char *arg_name, RZ_NONNULL const char *arg_type);
+RZ_API bool rz_type_func_arg_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i, RZ_NONNULL const char *arg_name, RZ_NONNULL RzType *arg_type);
 RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, const char *type);
 RZ_API RZ_OWN char *rz_type_func_guess(RzTypeDB *typedb, RZ_NONNULL char *func_name);
 

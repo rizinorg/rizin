@@ -1688,9 +1688,10 @@ static void ds_show_functions_argvar(RDisasmState *ds, RzAnalysisFunction *fcn, 
 	int delta = var->kind == 'b' ? RZ_ABS(var->delta + fcn->bp_off) : RZ_ABS(var->delta);
 	const char *pfx = is_var ? "var" : "arg";
 	char *constr = rz_analysis_var_get_constraints_readable(var);
+	const char *vartype = rz_type_as_string(ds->core->analysis->typedb, var->type);
 	rz_cons_printf("%s%s %s%s%s%s %s%s%s%s@ %s%c0x%x", COLOR_ARG(ds, color_func_var), pfx,
-		COLOR_ARG(ds, color_func_var_type), var->type,
-		rz_str_endswith(var->type, "*") ? "" : " ",
+		COLOR_ARG(ds, color_func_var_type), vartype,
+		rz_str_endswith(vartype, "*") ? "" : " ",
 		var->name, COLOR_ARG(ds, color_func_var_addr),
 		constr ? " { " : "",
 		constr ? constr : "",
@@ -1972,9 +1973,10 @@ static void ds_show_functions(RDisasmState *ds) {
 						eprintf("Register not found");
 						break;
 					}
+					const char *vartype = rz_type_as_string(analysis->typedb, var->type);
 					rz_cons_printf("%sarg %s%s%s%s %s@ %s", COLOR_ARG(ds, color_func_var),
 						COLOR_ARG(ds, color_func_var_type),
-						var->type, rz_str_endswith(var->type, "*") ? "" : " ",
+						vartype, rz_str_endswith(vartype, "*") ? "" : " ",
 						var->name, COLOR_ARG(ds, color_func_var_addr), i->name);
 					if (ds->show_varsum == -1) {
 						char *val = rz_core_analysis_var_display(ds->core, var, false);
