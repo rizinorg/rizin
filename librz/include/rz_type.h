@@ -100,7 +100,8 @@ typedef struct rz_ast_parser_t RzASTParser;
 typedef enum {
 	RZ_TYPE_KIND_IDENTIFIER,
 	RZ_TYPE_KIND_POINTER,
-	RZ_TYPE_KIND_ARRAY
+	RZ_TYPE_KIND_ARRAY,
+	RZ_TYPE_KIND_CALLABLE
 } RzTypeKind;
 
 typedef enum {
@@ -111,6 +112,18 @@ typedef enum {
 } RzTypeIdentifierKind;
 
 typedef struct rz_type_t RzType;
+
+typedef struct rz_callable_arg_t {
+	RZ_NULLABLE char *name; // optional
+	RzType *type;
+} RzCallableArg;
+
+typedef struct rz_callable_at {
+	RzType *ret;
+	RzPVector /* RzCallableArg */ args;
+	RZ_NULLABLE const char *cc; // optional
+	bool noret; // Does not return
+} RzCallable;
 
 struct rz_type_t {
 	RzTypeKind kind;
@@ -128,6 +141,7 @@ struct rz_type_t {
 			RzType *type;
 			ut64 count;
 		} array;
+		RzCallable callable;
 	};
 };
 
