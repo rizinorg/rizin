@@ -226,6 +226,9 @@ RZ_API void rz_type_free(RzType *type) {
 	case RZ_TYPE_KIND_ARRAY:
 		rz_type_free(type->array.type);
 		break;
+	case RZ_TYPE_KIND_CALLABLE:
+		rz_warn_if_reached();
+		break;
 	}
 	free(type);
 }
