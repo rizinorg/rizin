@@ -148,7 +148,7 @@ endif
 
 if get_option('default_library') == 'shared'
   if cc.has_argument('-fvisibility=hidden')
-    add_project_arguments('-fvisibility=hidden', language: 'c')
+    add_global_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
 
