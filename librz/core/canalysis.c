@@ -6635,7 +6635,8 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
-				pj_ks(j, "type", var->type);
+				const char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+				pj_ks(j, "type", vartype);
 				pj_end(j);
 			}
 			rz_list_foreach (cache.bvars, iter, var) {
@@ -6645,7 +6646,8 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
-				pj_ks(j, "type", var->type);
+				const char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+				pj_ks(j, "type", vartype);
 				pj_end(j);
 			}
 			rz_list_foreach (cache.svars, iter, var) {
@@ -6655,7 +6657,8 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
-				pj_ks(j, "type", var->type);
+				const char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+				pj_ks(j, "type", vartype);
 				pj_end(j);
 			}
 			rz_analysis_fcn_vars_cache_fini(&cache);
@@ -7161,13 +7164,14 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name) {
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	char *fmt = rz_type_format(analysis->typedb, var->type);
+	const char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+	char *fmt = rz_type_format(analysis->typedb, vartype);
 	RzRegItem *i;
 	if (!fmt) {
-		RZ_LOG_DEBUG("type:%s doesn't exist\n", var->type);
+		RZ_LOG_DEBUG("type:%s doesn't exist\n", vartype);
 		return rz_strbuf_drain(sb);
 	}
-	bool usePxr = !strcmp(var->type, "int"); // hacky but useful
+	bool usePxr = !strcmp(vartype, "int"); // hacky but useful
 	if (add_name) {
 		rz_strbuf_appendf(sb, "%s %s = ", var->isarg ? "arg" : "var", var->name);
 	}

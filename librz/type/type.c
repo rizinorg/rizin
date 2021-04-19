@@ -23,11 +23,13 @@ RZ_API RzTypeDB *rz_type_db_new() {
 	}
 	typedb->sdb_types = sdb_new0();
 	typedb->formats = sdb_new0();
+	typedb->parser = rz_ast_parser_new();
 	rz_io_bind_init(typedb->iob);
 	return typedb;
 }
 
 RZ_API void rz_type_db_free(RzTypeDB *typedb) {
+	rz_ast_parser_free(typedb->parser);
 	sdb_free(typedb->sdb_types);
 	sdb_free(typedb->formats);
 	free(typedb->target);
@@ -66,6 +68,12 @@ RZ_API void rz_type_db_set_cpu(RzTypeDB *typedb, const char *cpu) {
 
 RZ_API void rz_type_db_set_endian(RzTypeDB *typedb, bool big_endian) {
 	typedb->target->big_endian = big_endian;
+}
+
+RZ_API ut8 rz_type_db_pointer_size(RzTypeDB *typedb) {
+	// TODO: Handle more special cases where the pointer
+	// size is different from the target bitness
+	return typedb->target->bits;
 }
 
 RZ_API char *rz_type_db_kuery(RzTypeDB *typedb, const char *query) {
@@ -424,6 +432,12 @@ RZ_API RZ_OWN RzList *rz_type_structured_member_by_offset(RzBaseType *btype, ut6
 	return list;
 }
 
+/**
+ * \brief Returns the list of all structured types that have members matching the offset
+ *
+ * \param typedb Types Database instance
+ * \param offset The offset of the member to match against
+ */
 RZ_API RZ_OWN RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_type_db_get_base_types(typedb);
@@ -444,6 +458,12 @@ RZ_API RZ_OWN RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset) {
 	return result;
 }
 
+/**
+ * \brief Returns the enum base type matching the specified name
+ *
+ * \param typedb Types Database instance
+ * \param name The name of the enum to match against
+ */
 RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
@@ -456,6 +476,13 @@ RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, RZ_NONNULL const char *
 	return btype;
 }
 
+/**
+ * \brief Returns the enum case name matching the cpecified value
+ *
+ * \param typedb Types Database instance
+ * \param name The name of the enum to search in
+ * \param val The value to search for
+ */
 RZ_API char *rz_type_db_enum_member_by_val(RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
@@ -474,6 +501,13 @@ RZ_API char *rz_type_db_enum_member_by_val(RzTypeDB *typedb, RZ_NONNULL const ch
 	return NULL;
 }
 
+/**
+ * \brief Returns the enum case value matched by the enum case name
+ *
+ * \param typedb Types Database instance
+ * \param name The name of the enum to search in
+ * \param member The enum case name to search for
+ */
 RZ_API int rz_type_db_enum_member_by_name(RzTypeDB *typedb, RZ_NONNULL const char *name, const char *member) {
 	rz_return_val_if_fail(typedb && name, -1);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
@@ -494,6 +528,12 @@ RZ_API int rz_type_db_enum_member_by_name(RzTypeDB *typedb, RZ_NONNULL const cha
 	return result;
 }
 
+/**
+ * \brief Returns all enums and cases name matching the cpecified value
+ *
+ * \param typedb Types Database instance
+ * \param val The value to search for
+ */
 RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(RzTypeDB *typedb, ut64 val) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *enums = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
@@ -552,80 +592,68 @@ RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, RZ_NONNULL const cha
 	return ret;
 }
 
-RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL const char *type) {
+RZ_API ut64 rz_type_db_atomic_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
+	return btype->size;
+}
+
+RZ_API ut64 rz_type_db_enum_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
+	// FIXME: Need a proper way to determine size of enum
+	return 32;
+}
+
+RZ_API ut64 rz_type_db_struct_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
+	RzTypeStructMember *memb;
+	ut64 size = 0;
+	rz_vector_foreach(&btype->struct_data.members, memb) {
+		size += memb->size;
+		// FIXME: Support nested
+	}
+	return size;
+}
+
+RZ_API ut64 rz_type_db_union_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
+	RzTypeUnionMember *memb;
+	ut64 size = 0;
+	// Union has the size of the maximum size of its elements
+	rz_vector_foreach(&btype->union_data.members, memb) {
+		size = RZ_MAX(memb->size, size);
+		// FIXME: Support nested
+	}
+	return size;
+}
+
+RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(typedb && type, 0);
-	Sdb *TDB = typedb->sdb_types;
-	char *query;
-	/* Filter out the structure keyword if type looks like "struct mystruc" */
-	const char *tmptype;
-	if (!strncmp(type, "struct ", 7)) {
-		tmptype = type + 7;
-	} else if (!strncmp(type, "union ", 6)) {
-		tmptype = type + 6;
-	} else {
-		tmptype = type;
+	// Detect if the pointer and return the corresponding size
+	if (type->kind == RZ_TYPE_KIND_POINTER || type->kind == RZ_TYPE_KIND_CALLABLE) {
+		// Note, that function types (RzCallable) are in fact pointers too
+		return rz_type_db_pointer_size(typedb);
+		// Detect if the pointer is array, then return the bitsize of the base type
+		// multiplied to the array size
+	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
+		return type->array.count * rz_type_db_get_bitsize(typedb, type->array.type);
 	}
-	if ((strstr(type, "*(") || strstr(type, " *")) && strncmp(type, "char *", 7)) {
-		return 32;
-	}
-	const char *t = sdb_const_get(TDB, tmptype, 0);
-	if (!t) {
-		if (!strncmp(tmptype, "enum ", 5)) {
-			//XXX: Need a proper way to determine size of enum
-			return 32;
-		}
+	// The rest of the logic is for the normal, identifier types
+	if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED) {
+		eprintf("Wrong identifier type - cannot determine its size\n");
 		return 0;
 	}
-	if (!strcmp(t, "type")) {
-		query = rz_str_newf("type.%s.size", tmptype);
-		ut64 r = sdb_num_get(TDB, query, 0); // returns size in bits
-		free(query);
-		return r;
+	const char *tname = type->identifier.name;
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, tname);
+	if (!btype) {
+		return NULL;
 	}
-	if (!strcmp(t, "struct") || !strcmp(t, "union")) {
-		query = rz_str_newf("%s.%s", t, tmptype);
-		char *members = sdb_get(TDB, query, 0);
-		char *next, *ptr = members;
-		ut64 ret = 0;
-		if (members) {
-			do {
-				char *name = sdb_anext(ptr, &next);
-				if (!name) {
-					break;
-				}
-				free(query);
-				query = rz_str_newf("%s.%s.%s", t, tmptype, name);
-				char *subtype = sdb_get(TDB, query, 0);
-				RZ_FREE(query);
-				if (!subtype) {
-					break;
-				}
-				char *tmp = strchr(subtype, ',');
-				if (tmp) {
-					*tmp++ = 0;
-					tmp = strchr(tmp, ',');
-					if (tmp) {
-						*tmp++ = 0;
-					}
-					int elements = rz_num_math(NULL, tmp);
-					if (elements == 0) {
-						elements = 1;
-					}
-					if (!strcmp(t, "struct")) {
-						ret += rz_type_db_get_bitsize(typedb, subtype) * elements;
-					} else {
-						ut64 sz = rz_type_db_get_bitsize(typedb, subtype) * elements;
-						ret = sz > ret ? sz : ret;
-					}
-				}
-				free(subtype);
-				ptr = next;
-			} while (next);
-			free(members);
-		}
-		free(query);
-		return ret;
+	if (btype->kind == RZ_BASE_TYPE_KIND_ENUM && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_ENUM) {
+		return rz_type_db_enum_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_STRUCT) {
+		return rz_type_db_struct_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNION) {
+		return rz_type_db_union_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+		return rz_type_db_atomic_bitsize(typedb, btype);
 	}
+	// Should not happen
+	rz_warn_if_reached();
 	return 0;
 }
 
