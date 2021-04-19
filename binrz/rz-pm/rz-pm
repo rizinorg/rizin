@@ -304,7 +304,7 @@ RZPM_GIT() {
 			git pull
 		fi
 	else
-		git clone --depth 1 --recursive "${URL}" "${DIR}" || RZPM_FAIL "Oops"
+		git clone --recursive "${URL}" "${DIR}" || RZPM_FAIL "Oops"
 		cd "${DIR}" || RZPM_FAIL "Oops"
 	fi
 	rizin -qv | grep -q git || { # rizin >= 4.5

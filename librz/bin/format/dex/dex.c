@@ -25,6 +25,12 @@ void rz_bin_dex_free(RzBinDexObj *dex) {
 		}
 	}
 	free(dex->cal_strings);
+	free(dex->strings);
+	free(dex->classes);
+	free(dex->methods);
+	free(dex->types);
+	free(dex->fields);
+	free(dex->protos);
 	free(dex);
 }
 

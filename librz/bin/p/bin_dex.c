@@ -1080,7 +1080,7 @@ static void parse_dex_class_fields(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 		sym->ordinal = (*sym_count)++;
 
 		if (dexdump) {
-			const char *accessStr = createAccessFlagStr(
+			char *accessStr = createAccessFlagStr(
 				accessFlags, kAccessForField);
 			bin->cb_printf("    #%zu              : (in %s;)\n", i,
 				cls->name);
@@ -1088,6 +1088,7 @@ static void parse_dex_class_fields(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 			bin->cb_printf("      type          : '%s'\n", type_str);
 			bin->cb_printf("      access        : 0x%04x (%s)\n",
 				(ut32)accessFlags, accessStr ? accessStr : "");
+			free(accessStr);
 		}
 		rz_list_append(dex->methods_list, sym);
 
@@ -1459,8 +1460,8 @@ static void parse_class(RzBinFile *bf, RzBinDexClass *c, int class_index, int *m
 		free(cls);
 		goto beach;
 	}
-	const char *str = createAccessFlagStr(c->access_flags, kAccessForClass);
-	cls->visibility_str = strdup(str ? str : "");
+	char *str = createAccessFlagStr(c->access_flags, kAccessForClass);
+	cls->visibility_str = str ? str : strdup("");
 	rz_list_append(dex->classes_list, cls);
 	if (dexdump) {
 		rbin->cb_printf("  Class descriptor  : '%s;'\n", cls->name);
@@ -1972,7 +1973,7 @@ static RzList *sections(RzBinFile *bf) {
 	if (!bin->code_from || !bin->code_to) {
 		fast_code_size(bf);
 	}
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
