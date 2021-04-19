@@ -33,7 +33,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 
 	if (major != 5) {
 		eprintf("currently support lua 5.x only\n");
-		return NULL;
+		return false;
 	}
 
 	switch (minor) {

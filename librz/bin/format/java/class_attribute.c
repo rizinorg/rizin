@@ -86,7 +86,7 @@ bool java_attribute_set_code(ConstPool **pool, ut32 poolsize, Attribute *attr, R
 			free(ac->exceptions);
 			free(ac);
 			rz_warn_if_reached();
-			return NULL;
+			return false;
 		}
 
 		for (ut32 i = 0; i < ac->attributes_count; ++i) {
