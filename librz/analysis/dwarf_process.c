@@ -451,7 +451,7 @@ static RzTypeStructMember *parse_struct_member(Context *ctx, ut64 idx, RzTypeStr
 	}
 
 	result->name = name;
-	result->type = type;
+	result->type = rz_type_parse(ctx->analysis->typedb->parser, type, NULL);
 	result->offset = offset;
 	result->size = size;
 	return result;
