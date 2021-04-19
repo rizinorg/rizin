@@ -92,15 +92,17 @@ exit:
 	return result;
 }
 
-RZ_API bool rz_type_func_arg_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i, RZ_NONNULL const char *arg_name, RZ_NONNULL const char *arg_type) {
+RZ_API bool rz_type_func_arg_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i, RZ_NONNULL const char *arg_name, RZ_NONNULL RzType *arg_type) {
 	rz_return_val_if_fail(typedb && func_name, NULL);
 	Sdb *TDB = typedb->sdb_types;
 	bool result = false;
 	RzStrBuf key, value;
 	rz_strbuf_init(&key);
 	rz_strbuf_init(&value);
+	// TODO: Figure out if we should save the whole type here or just a name?
+	const char *typestr = rz_type_as_string(typedb, arg_type);
 	if (!rz_strbuf_setf(&key, "func.%s.arg.%d", func_name, i) ||
-		!rz_strbuf_setf(&value, "%s,%s", arg_type, arg_name)) {
+		!rz_strbuf_setf(&value, "%s,%s", typestr, arg_name)) {
 		goto exit;
 	}
 	sdb_set(TDB, rz_strbuf_get(&key), rz_strbuf_get(&value), 0);
