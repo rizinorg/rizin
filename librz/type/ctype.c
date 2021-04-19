@@ -106,16 +106,16 @@ static RzType *ctype_convert_ast(mpc_ast_t *a) {
 			}
 			cur->kind = RZ_TYPE_KIND_IDENTIFIER;
 			cur->identifier.is_const = is_const;
-			cur->identifier.kind = RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
+			cur->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 			if (is_identifier_string(child)) {
 				cur->identifier.name = strdup(child->contents);
 			} else if (is_identifier_kind(child)) {
 				if (strcmp(child->children[0]->contents, "struct") == 0) {
-					cur->identifier.kind = RZ_TYPE_CTYPE_IDENTIFIER_KIND_STRUCT;
+					cur->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
 				} else if (strcmp(child->children[0]->contents, "union") == 0) {
-					cur->identifier.kind = RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNION;
+					cur->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
 				} else if (strcmp(child->children[0]->contents, "enum") == 0) {
-					cur->identifier.kind = RZ_TYPE_CTYPE_IDENTIFIER_KIND_ENUM;
+					cur->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
 				}
 				cur->identifier.name = strdup(child->children[1]->contents);
 			} else {
@@ -138,7 +138,7 @@ static RzType *ctype_convert_ast(mpc_ast_t *a) {
 				goto beach;
 			}
 			cur->kind = RZ_TYPE_KIND_IDENTIFIER;
-			cur->identifier.kind = RZ_TYPE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
+			cur->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 			cur->identifier.is_const = is_const;
 			cur->identifier.name = strdup(child->contents);
 			if (!cur->identifier.name) {
@@ -210,6 +210,44 @@ RZ_API RzType *rz_type_parse(RzASTParser *cparser, const char *str, char **error
 		mpc_err_delete(r.error);
 		return NULL;
 	}
+}
+
+RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(typedb && type, NULL);
+
+	RzStrBuf *buf = rz_strbuf_new("");
+	switch (type->kind) {
+	case RZ_TYPE_KIND_IDENTIFIER: {
+		// Here it can be any of the RzBaseType
+		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
+		if (!btype) {
+			return NULL;
+		}
+		const char *btypestr = rz_type_db_base_type_as_string(typedb, btype);
+		rz_strbuf_append(buf, btypestr);
+		break;
+	}
+	case RZ_TYPE_KIND_POINTER: {
+		const char *typestr = rz_type_as_string(typedb, type->pointer.type);
+		if (type->pointer.is_const) {
+			rz_strbuf_appendf(buf, "const %s *", typestr);
+		} else {
+			rz_strbuf_appendf(buf, "%s *", typestr);
+		}
+		break;
+	}
+	case RZ_TYPE_KIND_ARRAY: {
+		const char *typestr = rz_type_as_string(typedb, type->array.type);
+		rz_strbuf_appendf(buf, "%s[%d]", typestr, type->array.count);
+		break;
+	}
+	case RZ_TYPE_KIND_CALLABLE:
+		// FIXME: Implement it
+		rz_warn_if_reached();
+		break;
+	}
+	char *result = rz_strbuf_drain(buf);
+	return result;
 }
 
 RZ_API void rz_type_free(RzType *type) {
