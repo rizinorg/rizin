@@ -150,7 +150,7 @@ static size_t consume_limits_r(RzBuffer *b, ut64 max, struct rz_bin_wasm_resizab
 	if (out->flags && (!(consume_u32_r(b, max, &out->maximum)))) {
 		return 0;
 	}
-	return (size_t)RZ_ABS(rz_buf_tell(b) - i);
+	return (size_t)(rz_buf_tell(b) - i);
 }
 
 // Utils

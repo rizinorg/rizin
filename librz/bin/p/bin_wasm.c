@@ -25,7 +25,7 @@ static bool find_export(const ut32 *p, const RzBinWasmExportEntry *q) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && buf && rz_buf_size(buf) != UT64_MAX, NULL);
+	rz_return_val_if_fail(bf && buf && rz_buf_size(buf) != UT64_MAX, false);
 
 	if (check_buffer(buf)) {
 		*bin_obj = rz_bin_wasm_init(bf, buf);

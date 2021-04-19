@@ -135,7 +135,7 @@ fail:
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && buf, NULL);
+	rz_return_val_if_fail(bf && buf, false);
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
 	const ut8 *bytes = rz_buf_data(buf, &sz);

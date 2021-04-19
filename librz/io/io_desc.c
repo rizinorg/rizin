@@ -379,7 +379,7 @@ static bool desc_fini_cb(void *user, void *data, ut32 id) {
 
 //closes all descs and frees all descs and io->files
 RZ_IPI bool rz_io_desc_fini(RzIO *io) {
-	rz_return_val_if_fail(io, NULL);
+	rz_return_val_if_fail(io, false);
 	if (io->files) {
 		rz_id_storage_foreach(io->files, desc_fini_cb, io);
 		rz_id_storage_free(io->files);
