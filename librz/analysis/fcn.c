@@ -1704,14 +1704,18 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	RzAnalysis *a = function->analysis;
 	PJ *pj = pj_new();
 	unsigned int i;
-	const char *ret_type = rz_type_func_ret(a->typedb, function->name);
+	RzType *ret_type = rz_type_func_ret(a->typedb, function->name);
+	if (!ret_type) {
+		return NULL;
+	}
+	const char *ret_type_str = rz_type_as_string(a->typedb, ret_type);
 	int argc = rz_type_func_args_count(a->typedb, function->name);
 
 	pj_o(pj);
 	pj_ks(pj, "name", function->name);
 	const bool no_return = rz_analysis_noreturn_at_addr(a, function->addr);
 	pj_kb(pj, "noreturn", no_return);
-	pj_ks(pj, "ret", ret_type ? ret_type : "void");
+	pj_ks(pj, "ret", ret_type_str ? ret_type_str : "void");
 	if (function->cc) {
 		pj_ks(pj, "cc", function->cc);
 	}
@@ -1720,9 +1724,10 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	for (i = 0; i < argc; i++) {
 		pj_o(pj);
 		const char *arg_name = rz_type_func_args_name(a->typedb, function->name, i);
-		const char *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
+		RzType *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
+		const char *arg_type_str = rz_type_as_string(a->typedb, arg_type);
 		pj_ks(pj, "name", arg_name);
-		pj_ks(pj, "type", arg_type);
+		pj_ks(pj, "type", arg_type_str);
 		const char *cc_arg = rz_reg_get_name(a->reg, rz_reg_get_name_idx(sdb_fmt("A%d", i)));
 		if (cc_arg) {
 			pj_ks(pj, "cc", cc_arg);
@@ -1751,25 +1756,29 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *funct
 	}
 
 	unsigned int i;
-	const char *ret_type = rz_type_func_ret(a->typedb, realname);
+	RzType *ret_type = rz_type_func_ret(a->typedb, realname);
+	if (!ret_type) {
+		return NULL;
+	}
+	const char *ret_type_str = rz_type_as_string(a->typedb, ret_type);
 	int argc = rz_type_func_args_count(a->typedb, realname);
 
 	char *args = strdup("");
 	for (i = 0; i < argc; i++) {
 		const char *arg_name = rz_type_func_args_name(a->typedb, realname, i);
-		char *arg_type = rz_type_func_args_type(a->typedb, realname, i);
+		RzType *arg_type = rz_type_func_args_type(a->typedb, realname, i);
+		const char *arg_type_str = rz_type_as_string(a->typedb, arg_type);
 		// Here we check if the type is a pointer, in this case we don't put
 		// the space between type and name for the style reasons
 		// "char *var" looks much better than "char * var"
-		const char *maybe_space = rz_str_endswith(arg_type, "*") ? "" : " ";
+		const char *maybe_space = arg_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 		char *new_args = (i + 1 == argc)
-			? rz_str_newf("%s%s%s%s", args, arg_type, maybe_space, arg_name)
-			: rz_str_newf("%s%s%s%s, ", args, arg_type, maybe_space, arg_name);
+			? rz_str_newf("%s%s%s%s", args, arg_type_str, maybe_space, arg_name)
+			: rz_str_newf("%s%s%s%s, ", args, arg_type_str, maybe_space, arg_name);
 		free(args);
-		free(arg_type);
 		args = new_args;
 	}
-	char *signature = rz_str_newf("%s %s (%s);", ret_type ? ret_type : "void", realname, args);
+	char *signature = rz_str_newf("%s %s (%s);", ret_type_str ? ret_type_str : "void", realname, args);
 	free(args);
 	return signature;
 }

@@ -25,11 +25,12 @@ RZ_API bool rz_type_func_has_args(RzTypeDB *typedb, const char *func_name) {
 	return (fcn != NULL);
 }
 
-RZ_API const char *rz_type_func_ret(RzTypeDB *typedb, const char *func_name) {
+RZ_API RzType *rz_type_func_ret(RzTypeDB *typedb, const char *func_name) {
 	rz_return_val_if_fail(typedb && func_name, NULL);
 	Sdb *TDB = typedb->sdb_types;
 	const char *query = sdb_fmt("func.%s.ret", func_name);
-	return sdb_const_get(TDB, query, 0);
+	const char *typestr = sdb_const_get(TDB, query, 0);
+	return rz_type_parse(typedb->parser, typestr, NULL);
 }
 
 RZ_API const char *rz_type_func_cc(RzTypeDB *typedb, const char *func_name) {
@@ -46,20 +47,26 @@ RZ_API int rz_type_func_args_count(RzTypeDB *typedb, const char *func_name) {
 	return sdb_num_get(TDB, query, 0);
 }
 
-RZ_API RZ_OWN char *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i) {
+RZ_API RZ_OWN RzType *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i) {
 	rz_return_val_if_fail(typedb && func_name, NULL);
 	Sdb *TDB = typedb->sdb_types;
 	const char *query = sdb_fmt("func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get(TDB, query, 0);
+	char *typestr = NULL;
 	if (ret) {
 		char *comma = strchr(ret, ',');
 		if (comma) {
 			*comma = 0;
-			return ret;
+			typestr = ret;
 		}
 		free(ret);
 	}
-	return NULL;
+	if (!typestr) {
+		return NULL;
+	}
+	RzType *type = rz_type_parse(typedb->parser, typestr, NULL);
+	free(typestr);
+	return type;
 }
 
 RZ_API const char *rz_type_func_args_name(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i) {
@@ -112,16 +119,20 @@ exit:
 	return result;
 }
 
-RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, const char *type) {
+RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(typedb && func_name && type, NULL);
 	Sdb *TDB = typedb->sdb_types;
-	char *sdb_type = rz_str_newf("type.%s", type);
+	// Check if type exists in types database. If not - we can't
+	// refer it by the name
+	// TODO: Figure out if we should save the whole type here or just a name?
+	const char *typestr = rz_type_as_string(typedb, type);
+	char *sdb_type = rz_str_newf("type.%s", typestr);
 	if (!sdb_exists(TDB, sdb_type)) {
 		free(sdb_type);
 		return false;
 	}
 	free(sdb_type);
-	const char *query = sdb_fmt("func.%s.ret=%s", func_name, type);
+	const char *query = sdb_fmt("func.%s.ret=%s", func_name, typestr);
 	return sdb_querys(TDB, NULL, 0, query);
 }
 
