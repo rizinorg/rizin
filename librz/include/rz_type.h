@@ -56,7 +56,7 @@ typedef enum {
 
 typedef struct rz_type_enum_case_t {
 	char *name;
-	int val;
+	st64 val;
 } RzTypeEnumCase;
 
 typedef struct rz_type_struct_member_t {
@@ -190,7 +190,7 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 RZ_API RzASTParser *rz_ast_parser_new(void);
 RZ_API void rz_ast_parser_free(RzASTParser *parser);
 RZ_API RzType *rz_type_parse(RzASTParser *parser, const char *str, char **error);
-RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API RZ_OWN char *rz_type_as_string(RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API void rz_type_free(RzType *type);
 
 /* c */
@@ -200,6 +200,9 @@ RZ_API void rz_type_parse_c_reset(RzTypeDB *typedb);
 
 RZ_API void rz_type_db_remove_parsed_type(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_save_parsed_type(RzTypeDB *typedb, const char *parsed);
+
+RZ_API bool rz_type_atomic_eq(RzTypeDB *typedb, RzType *typ1, RzType *typ2);
+RZ_API bool rz_type_atomic_str_eq(RzTypeDB *typedb, RzType *typ1, RZ_NONNULL const char *name);
 
 // Type-specific APIs
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
@@ -211,6 +214,24 @@ RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, const char *name);
 RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL RzType *type);
 RZ_API RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset);
 RZ_API char *rz_type_db_get_struct_member(RzTypeDB *typedb, const char *type, int offset);
+
+// Various type helpers
+RZ_API bool rz_type_atomic_is_void(RzTypeDB *typedb, RzType *type);
+RZ_API bool rz_type_atomic_is_signed(RzTypeDB *typedb, RzType *type);
+RZ_API bool rz_type_atomic_is_const(RzTypeDB *typedb, RzType *type);
+RZ_API bool rz_type_atomic_is_num(RzTypeDB *typedb, RzType *type);
+RZ_API bool rz_type_atomic_set_sign(RzTypeDB *typedb, RzType *type, bool sign);
+
+RZ_API bool rz_type_is_void_ptr(RzType *type);
+RZ_API bool rz_type_is_default(RzTypeDB *typedb, RzType *type);
+
+RZ_API RZ_OWN RzType *rz_type_identifier_of_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
+RZ_API RZ_OWN RzType *rz_type_identifier_of_base_type_str(RzTypeDB *typedb, RZ_NONNULL const char *name);
+RZ_API RZ_OWN RzType *rz_type_pointer_of_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype, bool is_const);
+RZ_API RZ_OWN RzType *rz_type_pointer_of_base_type_str(RzTypeDB *typedb, RZ_NONNULL const char *name, bool is_const);
+RZ_API RZ_OWN RzType *rz_type_array_of_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype, size_t count);
+RZ_API RZ_OWN RzType *rz_type_array_of_base_type_str(RzTypeDB *typedb, RZ_NONNULL const char *name, size_t count);
+RZ_API RZ_OWN RzType *rz_type_pointer_of_type(RzTypeDB *typedb, RZ_NONNULL RzType *type, bool is_const);
 
 // Maintaining type links
 RZ_API char *rz_type_link_at(RzTypeDB *typedb, ut64 addr);
@@ -235,14 +256,14 @@ RZ_API char *rz_type_format_data(RzTypeDB *t, RzPrint *p, ut64 seek, const ut8 *
 // Function prototypes api
 RZ_API bool rz_type_func_exist(RzTypeDB *typedb, const char *func_name);
 RZ_API const char *rz_type_func_cc(RzTypeDB *typedb, const char *func_name);
-RZ_API const char *rz_type_func_ret(RzTypeDB *typedb, const char *func_name);
+RZ_API RZ_OWN RzType *rz_type_func_ret(RzTypeDB *typedb, const char *func_name);
 RZ_API const char *rz_type_func_cc(RzTypeDB *typedb, const char *func_name);
 RZ_API int rz_type_func_args_count(RzTypeDB *typedb, RZ_NONNULL const char *func_name);
-RZ_API RZ_OWN char *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i);
+RZ_API RZ_OWN RzType *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i);
 RZ_API const char *rz_type_func_args_name(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i);
 RZ_API bool rz_type_func_arg_count_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int arg_count);
 RZ_API bool rz_type_func_arg_set(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i, RZ_NONNULL const char *arg_name, RZ_NONNULL RzType *arg_type);
-RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, const char *type);
+RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, RZ_NONNULL RzType *type);
 RZ_API RZ_OWN char *rz_type_func_guess(RzTypeDB *typedb, RZ_NONNULL char *func_name);
 
 RZ_API RZ_OWN RzList *rz_type_noreturn_functions(RzTypeDB *typedb);

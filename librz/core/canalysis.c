@@ -6581,7 +6581,6 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 	if (!fcn) {
 		return NULL;
 	}
-
 	char *signature = NULL;
 
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -6597,18 +6596,22 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 		}
 
 		if (key) {
-			const char *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
+			RzType *ret_type = rz_type_func_ret(core->analysis->typedb, key);
+			if (!ret_type) {
+				return NULL;
+			}
+			const char *ret_type_str = rz_type_as_string(core->analysis->typedb, ret_type);
 			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
-			if (fcn_type) {
+			if (ret_type_str) {
 				pj_o(j);
 				pj_ks(j, "name", rz_str_get_null(key));
-				pj_ks(j, "return", rz_str_get_null(fcn_type));
+				pj_ks(j, "return", rz_str_get_null(ret_type_str));
 				pj_k(j, "args");
 				pj_a(j);
 				if (nargs) {
 					RzList *list = rz_core_get_func_args(core, fcn_name);
 					rz_list_foreach (list, iter, arg) {
-						char *type = arg->orig_c_type;
+						char *type = rz_type_as_string(core->analysis->typedb, arg->orig_c_type);
 						pj_o(j);
 						pj_ks(j, "name", arg->name);
 						pj_ks(j, "type", type);
