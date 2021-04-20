@@ -933,8 +933,9 @@ static HtPP *compute_vertical_nodes(const RzAGraph *g) {
 	if (!res) {
 		return NULL;
 	}
-	for (int i = 0; i < g->n_layers; i++) {
-		for (int j = 0; j < g->layers[i].n_nodes; j++) {
+	int i,j;
+	for (i = 0; i < g->n_layers; i++) {
+		for (j = 0; j < g->layers[i].n_nodes; j++) {
 			RzGraphNode *gn = g->layers[i].nodes[j];
 			const RzList *Ln = ht_pp_find(res, gn, NULL);
 			const RzANode *an = get_anode(gn);

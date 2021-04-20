@@ -4428,7 +4428,8 @@ RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *me
 	rz_strbuf_initf(&buf, "method");
 
 	ut64 flags = meth->method_flags;
-	for (int i = 0; flags; flags >>= 1, i++) {
+	int i;
+	for (i = 0; flags; flags >>= 1, i++) {
 		if (!(flags & 1)) {
 			continue;
 		}

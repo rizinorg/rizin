@@ -14,7 +14,8 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 		return -1;
 	}
 
-	for (int i = 0; i < arg_num; ++i) {
+	int i;
+	for (i = 0; i < arg_num; ++i) {
 		delta_offset = lua_load_next_arg_start(arg_start, buffer);
 		if (delta_offset == 0) {
 			return -1;

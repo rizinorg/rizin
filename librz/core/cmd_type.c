@@ -1194,7 +1194,8 @@ RZ_IPI RzCmdStatus rz_type_list_noreturn_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_type_noreturn_del_handler(RzCore *core, int argc, const char **argv) {
-	for (int i = 1; i < argc; i++) {
+	int i;
+	for (i = 1; i < argc; i++) {
 		rz_type_func_noreturn_drop(core->analysis->typedb, argv[i]);
 	}
 	return RZ_CMD_STATUS_OK;

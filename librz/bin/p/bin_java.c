@@ -207,7 +207,8 @@ static char *enrich_asm(RzBinFile *bf, const char *asm_str, int asm_len) {
 	if (!jclass) {
 		return NULL;
 	}
-	for (int i = 0; i < asm_len; ++i) {
+	int i;
+	for (i = 0; i < asm_len; ++i) {
 		if (!strncmp(asm_str + i, JAVA_ASM_CONSTANT_POOL_STR, strlen(JAVA_ASM_CONSTANT_POOL_STR))) {
 			const char *snum = asm_str + i + strlen(JAVA_ASM_CONSTANT_POOL_STR);
 			if (!IS_DIGIT(*snum)) {

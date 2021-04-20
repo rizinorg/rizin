@@ -1657,7 +1657,8 @@ static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocStat
 	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
 	int chunk_cnt = 0;
 	int non_empty_cnt = 0;
-	for (int bin_num = 1; bin_num < NSMALLBINS; bin_num++) {
+	int bin_num;
+	for (bin_num = 1; bin_num < NSMALLBINS; bin_num++) {
 		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num);
 		if (chunk_found > 0) {
 			non_empty_cnt += 1;
@@ -1679,7 +1680,8 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
 	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
 	int chunk_cnt = 0;
 	int non_empty_cnt = 0;
-	for (int bin_num = NSMALLBINS; bin_num < NBINS - 2; bin_num++) {
+	int bin_num;
+	for (bin_num = NSMALLBINS; bin_num < NBINS - 2; bin_num++) {
 		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num);
 		if (chunk_found > 0) {
 			non_empty_cnt += 1;

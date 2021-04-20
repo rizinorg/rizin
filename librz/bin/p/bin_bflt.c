@@ -64,7 +64,8 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	}
 	if (bin->got_table) {
 		struct reloc_struct_t *got_table = bin->got_table;
-		for (int i = 0; i < bin->n_got; i++) {
+		int i;
+		for (i = 0; i < bin->n_got; i++) {
 			__patch_reloc(bin->b, got_table[i].addr_to_patch,
 				got_table[i].data_offset);
 			RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
@@ -80,7 +81,8 @@ static RzList *patch_relocs(RzBinFile *bf) {
 
 	if (bin->reloc_table) {
 		struct reloc_struct_t *reloc_table = bin->reloc_table;
-		for (int i = 0; i < bin->hdr->reloc_count; i++) {
+		int i;
+		for (i = 0; i < bin->hdr->reloc_count; i++) {
 			int found = search_old_relocation(reloc_table,
 				reloc_table[i].addr_to_patch,
 				bin->hdr->reloc_count);

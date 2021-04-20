@@ -1565,7 +1565,8 @@ static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
 	if (!ds->midflags) {
 		return 0;
 	}
-	for (int i = 1; i < ds->oplen; i++) {
+	int i;
+	for (i = 1; i < ds->oplen; i++) {
 		RzFlagItem *fi = rz_flag_get_i(core->flags, ds->at + i);
 		if (fi && fi->name) {
 			if (rz_analysis_find_most_relevant_block_in(core->analysis, ds->at + i)) {
