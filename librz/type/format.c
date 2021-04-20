@@ -2854,3 +2854,34 @@ RZ_API char *rz_type_format_data(RzTypeDB *typedb, RzPrint *p, ut64 seek, const 
 	char *outstr = rz_strbuf_drain(outbuf);
 	return outstr;
 }
+
+static void type_to_format(RzTypeDB *typedb, RzStrBuf *buf, RzType *type) {
+	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
+		Sdb *TDB = typedb->sdb_types;
+		const char *query = sdb_fmt("type.%s", type->identifier.name);
+		const char *format = sdb_const_get(TDB, query, 0);
+		rz_strbuf_append(buf, format);
+	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
+		rz_strbuf_appendf(buf, "[%" PFMT64d "]", type->array.count);
+		type_to_format(typedb, buf, type->array.type);
+	} else if (type->kind == RZ_TYPE_KIND_POINTER) {
+		rz_strbuf_append(buf, "*");
+		type_to_format(typedb, buf, type->pointer.type);
+	}
+}
+
+RZ_API const char *rz_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzType *type) {
+	rz_return_val_if_fail(typedb && type, NULL);
+	if (type->kind == RZ_TYPE_KIND_CALLABLE) {
+		// We can't print anything useful for function type
+		return NULL;
+	}
+	// Special case of `void *`
+	if (rz_type_is_void_ptr(type)) {
+		return "p";
+	}
+	RzStrBuf *buf = rz_strbuf_new("");
+	type_to_format(typedb, buf, type);
+	return rz_strbuf_drain(buf);
+}
+

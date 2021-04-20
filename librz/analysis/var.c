@@ -136,7 +136,7 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 	}
 	var->name = strdup(name);
 	var->regname = reg ? strdup(reg->name) : NULL; // TODO: no strdup here? pool? or not keep regname at all?
-	var->type = rz_type_parse(fcn->analysis->typedb->parser, type, NULL);
+	var->type = type;
 	var->kind = kind;
 	var->isarg = isarg;
 	var->delta = delta;
@@ -144,13 +144,8 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 	return var;
 }
 
-RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, const char *type) {
-	char *nt = strdup(type);
-	if (!nt) {
-		return;
-	}
-	free(var->type);
-	var->type = nt;
+RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type) {
+	var->type = type;
 	shadow_var_struct_members(var);
 }
 
@@ -568,7 +563,10 @@ RZ_API int rz_analysis_var_count(RzAnalysis *a, RzAnalysisFunction *fcn, int kin
 }
 
 static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, RzList *list) {
-	RzBaseType *btype = rz_type_db_get_base_type(a->typedb, av->type);
+	if (av->type->kind != RZ_TYPE_KIND_IDENTIFIER) {
+		return false;
+	}
+	RzBaseType *btype = rz_type_db_get_base_type(a->typedb, av->type->identifier.name);
 	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
 		return false;
 	}
@@ -726,7 +724,8 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 			rz_analysis_var_set_access(var, reg, op->addr, rw, ptr);
 			goto beach;
 		}
-		char *varname = NULL, *vartype = NULL;
+		char *varname = NULL;
+		RzType *vartype = NULL;
 		if (isarg) {
 			const char *place = fcn->cc ? rz_analysis_cc_arg(analysis, fcn->cc, ST32_MAX) : NULL;
 			bool stack_rev = place ? !strcmp(place, "stack_rev") : false;
@@ -744,7 +743,7 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 				}
 				const int bytes = (fcn->bits ? fcn->bits : analysis->bits) / 8;
 				for (i = from; stack_rev ? i >= to : i < to; stack_rev ? i-- : i++) {
-					char *tp = rz_type_func_args_type(analysis->typedb, fname, i);
+					RzType *tp = rz_type_func_args_type(analysis->typedb, fname, i);
 					if (!tp) {
 						break;
 					}
@@ -756,7 +755,7 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 					ut64 bit_sz = rz_type_db_get_bitsize(analysis->typedb, tp);
 					sum_sz += bit_sz ? bit_sz / 8 : bytes;
 					sum_sz = RZ_ROUND(sum_sz, bytes);
-					free(tp);
+					rz_type_free(tp);
 				}
 				free(fname);
 			}
@@ -775,7 +774,7 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 			}
 			free(varname);
 		}
-		free(vartype);
+		rz_type_free(vartype);
 	} else {
 		st64 frame_off = -(ptr + fcn->bp_off);
 		RzAnalysisVar *var = get_stack_var(fcn, frame_off);
@@ -933,7 +932,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				continue;
 			}
 			const char *vname = NULL;
-			char *type = NULL;
+			RzType *type = NULL;
 			char *name = NULL;
 			int delta = 0;
 			const char *regname = rz_analysis_cc_arg(analysis, fcn->cc, i);
@@ -961,8 +960,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 					}
 				}
 				if (found_arg) {
-					const char *argtype = rz_type_as_string(analysis->typedb, found_arg->type);
-					type = argtype;
+					type = found_arg->type;
 					vname = name = strdup(found_arg->name);
 				}
 			}
@@ -973,7 +971,6 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, type, size, true, vname);
 			(*count)++;
 			free(name);
-			free(type);
 		}
 		free(callee);
 		rz_list_free(callee_rargs_l);
@@ -998,7 +995,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				var = rz_analysis_function_get_var(fcn, RZ_ANALYSIS_VAR_KIND_REG, delta);
 			} else if (reg_set[i] != 2 && is_used_like_an_arg) {
 				const char *vname = NULL;
-				char *type = NULL;
+				RzType *type = NULL;
 				char *name = NULL;
 				if ((i < argc) && fname) {
 					type = rz_type_func_args_type(analysis->typedb, fname, i);
@@ -1010,7 +1007,6 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				}
 				var = rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, type, size, true, vname);
 				free(name);
-				free(type);
 				(*count)++;
 			} else {
 				if (is_reg_in_src(regname, analysis, op) || STR_EQUAL(opdreg, regname)) {
@@ -1370,13 +1366,11 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 
 	char *type_fcn_name = rz_type_func_guess(analysis->typedb, fcn_name);
 	if (type_fcn_name && rz_type_func_exist(analysis->typedb, type_fcn_name)) {
-		const char *fcn_type = rz_type_func_ret(analysis->typedb, type_fcn_name);
+		RzType *fcn_type = rz_type_func_ret(analysis->typedb, type_fcn_name);
 		if (fcn_type) {
-			const char *sp = " ";
-			if (*fcn_type && (fcn_type[strlen(fcn_type) - 1] == '*')) {
-				sp = "";
-			}
-			rz_strbuf_appendf(buf, "%s%s", fcn_type, sp);
+			const char *fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
+			const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+			rz_strbuf_appendf(buf, "%s%s", fcn_type_str, sp);
 		}
 	}
 
@@ -1395,18 +1389,18 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 		// This avoids false positives present in argument recovery
 		// and straight away print arguments fetched from types db
 		for (i = 0; i < argc; i++) {
-			char *type = rz_type_func_args_type(analysis->typedb, type_fcn_name, i);
+			RzType *type = rz_type_func_args_type(analysis->typedb, type_fcn_name, i);
 			const char *name = rz_type_func_args_name(analysis->typedb, type_fcn_name, i);
 			if (!type || !name) {
 				eprintf("Missing type for %s\n", type_fcn_name);
 				goto beach;
 			}
+			const char *type_str = rz_type_as_string(analysis->typedb, type);
 			if (i == argc - 1) {
 				comma = false;
 			}
-			size_t len = strlen(type);
-			const char *tc = len > 0 && type[len - 1] == '*' ? "" : " ";
-			rz_strbuf_appendf(buf, "%s%s%s%s", type, tc, name, comma ? ", " : "");
+			const char *sp = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+			rz_strbuf_appendf(buf, "%s%s%s%s", type_str, sp, name, comma ? ", " : "");
 			free(type);
 		}
 		goto beach;

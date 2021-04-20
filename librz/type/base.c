@@ -126,10 +126,12 @@ static RzBaseType *get_struct_type(RzTypeDB *typedb, const char *sname) {
 			free(values);
 			goto error;
 		}
+		// Parse type as a C string
+		RzType *ttype = rz_type_parse(typedb->parser, type, NULL);
 		offset = sdb_anext(offset, NULL);
 		RzTypeStructMember cas = {
 			.name = strdup(cur),
-			.type = strdup(type),
+			.type = ttype,
 			.offset = strtol(offset, NULL, 10)
 		};
 
@@ -184,9 +186,10 @@ static RzBaseType *get_union_type(RzTypeDB *typedb, const char *sname) {
 			goto error;
 		}
 		char *value = sdb_anext(values, NULL);
+		RzType *ttype = rz_type_parse(typedb->parser, value, NULL);
 		RzTypeUnionMember cas = {
 			.name = strdup(cur),
-			.type = strdup(value)
+			.type = ttype
 		};
 		free(values);
 
@@ -216,7 +219,9 @@ static RzBaseType *get_typedef_type(RzTypeDB *typedb, const char *sname) {
 	}
 
 	base_type->name = strdup(sname);
-	base_type->type = get_type_data(typedb->sdb_types, "typedef", sname);
+	char *type = get_type_data(typedb->sdb_types, "typedef", sname);
+	RzType *ttype = rz_type_parse(typedb->parser, type, NULL);
+	base_type->type = ttype;
 	if (!base_type->type) {
 		goto error;
 	}
@@ -235,7 +240,9 @@ static RzBaseType *get_atomic_type(RzTypeDB *typedb, const char *sname) {
 		return NULL;
 	}
 
-	base_type->type = get_type_data(typedb->sdb_types, "type", sname);
+	char *type = get_type_data(typedb->sdb_types, "type", sname);
+	RzType *ttype = rz_type_parse(typedb->parser, type, NULL);
+	base_type->type = ttype;
 	if (!base_type->type) {
 		goto error;
 	}
@@ -392,7 +399,7 @@ static void delete_enum(const RzTypeDB *typedb, const RzBaseType *type) {
 		sdb_unset(typedb->sdb_types,
 			rz_strbuf_setf(&param_key, "enum.%s.%s", sname, case_sname), 0);
 		sdb_unset(typedb->sdb_types,
-			rz_strbuf_setf(&param_key, "enum.%s.0x%" PFMT32x "", sname, cas->val), 0);
+			rz_strbuf_setf(&param_key, "enum.%s.0x%" PFMT64x "", sname, cas->val), 0);
 		free(case_sname);
 	}
 	// enum.name=arg1,arg2,argN
@@ -579,9 +586,11 @@ static void save_struct(const RzTypeDB *typedb, const RzBaseType *type) {
 	rz_vector_foreach(&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
+		char *member_type = rz_type_as_string(typedb, member->type);
 		sdb_set(typedb->sdb_types,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf(&param_val, "%s,%zu,%u", member->type, member->offset, 0), 0ULL);
+			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0), 0ULL);
+		free(member_type);
 		free(member_sname);
 
 		rz_strbuf_appendf(&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -627,9 +636,10 @@ static void save_union(const RzTypeDB *typedb, const RzBaseType *type) {
 	rz_vector_foreach(&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
+		char *mtype = rz_type_as_string(typedb, member->type);
 		sdb_set(typedb->sdb_types,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf(&param_val, "%s,%zu,%u", member->type, member->offset, 0), 0ULL);
+			rz_strbuf_setf(&param_val, "%s,%zu,%u", mtype, member->offset, 0), 0ULL);
 		free(member_sname);
 
 		rz_strbuf_appendf(&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -720,9 +730,10 @@ static void save_atomic_type(const RzTypeDB *typedb, const RzBaseType *type) {
 		rz_strbuf_setf(&key, "type.%s.size", sname),
 		rz_strbuf_setf(&val, "%" PFMT64u "", type->size), 0);
 
+	char *atype = rz_type_as_string(typedb, type->type);
 	sdb_set(typedb->sdb_types,
 		rz_strbuf_setf(&key, "type.%s", sname),
-		type->type, 0);
+		atype, 0);
 
 	free(sname);
 
@@ -747,11 +758,13 @@ static void save_typedef(const RzTypeDB *typedb, const RzBaseType *type) {
 	rz_strbuf_init(&key);
 	rz_strbuf_init(&val);
 
+	char *ttype = rz_type_as_string(typedb, type->type);
 	sdb_set(typedb->sdb_types,
 		rz_strbuf_setf(&key, "typedef.%s", sname),
-		rz_strbuf_setf(&val, "%s", type->type), 0);
+		rz_strbuf_setf(&val, "%s", ttype), 0);
 
 	free(sname);
+	free(ttype);
 
 	rz_strbuf_fini(&key);
 	rz_strbuf_fini(&val);
@@ -861,7 +874,7 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		rz_strbuf_appendf(buf, "enum %s { ", type->name);
 		RzTypeEnumCase *cas;
 		rz_vector_foreach(&type->enum_data.cases, cas) {
-			rz_strbuf_appendf(buf, "%s = 0x" PFMT64x ", ", cas->name, cas->val);
+			rz_strbuf_appendf(buf, "%s = 0x%" PFMT64x ", ", cas->name, cas->val);
 		}
 		rz_strbuf_append(buf, " };");
 		break;
