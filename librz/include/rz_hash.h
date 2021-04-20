@@ -31,8 +31,7 @@ typedef struct {
 	ut8 buffer[64];
 } RZ_MD5_CTX;
 
-
-#define RZ_HASH_SHA1_DIGEST_SIZE 0x14
+#define RZ_HASH_SHA1_DIGEST_SIZE  0x14
 #define RZ_HASH_SHA1_BLOCK_LENGTH 0x40
 typedef struct sha1_context_t {
 	ut32 digest[5];
