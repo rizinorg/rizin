@@ -829,7 +829,8 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	if (!name || !type || kind == -1 || delta == ST64_MAX) {
 		goto beach;
 	}
-	ret = rz_analysis_function_set_var(fcn, delta, kind, type, 0, arg, name);
+	RzType *vartype = rz_type_parse(fcn->analysis->typedb->parser, type, NULL);
+	ret = rz_analysis_function_set_var(fcn, delta, kind, vartype, 0, arg, name);
 	if (!ret) {
 		goto beach;
 	}

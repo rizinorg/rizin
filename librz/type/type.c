@@ -641,7 +641,7 @@ RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL RzType *type) {
 	const char *tname = type->identifier.name;
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, tname);
 	if (!btype) {
-		return NULL;
+		return 0;
 	}
 	if (btype->kind == RZ_BASE_TYPE_KIND_ENUM && type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_ENUM) {
 		return rz_type_db_enum_bitsize(typedb, btype);

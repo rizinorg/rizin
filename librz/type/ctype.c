@@ -212,7 +212,7 @@ RZ_API RzType *rz_type_parse(RzASTParser *cparser, const char *str, char **error
 	}
 }
 
-RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
+RZ_API RZ_OWN char *rz_type_as_string(RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
 
 	RzStrBuf *buf = rz_strbuf_new("");
@@ -238,7 +238,7 @@ RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const R
 	}
 	case RZ_TYPE_KIND_ARRAY: {
 		const char *typestr = rz_type_as_string(typedb, type->array.type);
-		rz_strbuf_appendf(buf, "%s[%d]", typestr, type->array.count);
+		rz_strbuf_appendf(buf, "%s[%" PFMT64d "]", typestr, type->array.count);
 		break;
 	}
 	case RZ_TYPE_KIND_CALLABLE:
