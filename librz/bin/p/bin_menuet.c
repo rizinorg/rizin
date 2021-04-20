@@ -131,7 +131,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = rz_read_ble32(buf + 12, false);
 	ptr->vaddr = ptr->paddr + baddr(bf);
 	ptr->perm = RZ_PERM_RX; // r-x
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (MENUET_VERSION(buf)) {
@@ -147,7 +146,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = rz_read_ble32(buf + 40, false);
 		ptr->vaddr = ptr->paddr + baddr(bf);
 		ptr->perm = RZ_PERM_R; // r--
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 
@@ -213,6 +211,7 @@ RzBinPlugin rz_bin_plugin_menuet = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 	.create = &create,
