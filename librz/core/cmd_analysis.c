@@ -1288,7 +1288,7 @@ static int var_cmd(RzCore *core, const char *str) {
 				break;
 			}
 			int rw = (str[1] == 'g') ? RZ_ANALYSIS_VAR_ACCESS_TYPE_READ : RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE;
-			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
+			int ptr = var->kind == 's' ? idx - fcn->maxstack : idx;
 			RzAnalysisOp *op = rz_core_analysis_op(core, addr, 0);
 			const char *ireg = op ? op->ireg : NULL;
 			rz_analysis_var_set_access(var, ireg, addr, rw, ptr);
