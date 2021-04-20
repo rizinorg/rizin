@@ -4564,11 +4564,12 @@ static void ds_print_bbline(RDisasmState *ds) {
 	}
 }
 
-static void print_fcn_arg(RzCore *core, const char *type, const char *name,
+static void print_fcn_arg(RzCore *core, RzType *type, const char *name,
 	const char *fmt, const ut64 addr,
 	const int on_stack, int asm_types) {
 	if (on_stack == 1 && asm_types > 1) {
-		rz_cons_printf("%s", type);
+		const char *typestr = rz_type_as_string(core->analysis->typedb, type);
+		rz_cons_printf("%s", typestr);
 	}
 	if (addr != UT32_MAX && addr != UT64_MAX && addr != 0) {
 		char *res = rz_core_cmd_strf(core, "pf%s %s%s %s @ 0x%08" PFMT64x,
@@ -4739,15 +4740,16 @@ static void ds_print_esil_analysis(RDisasmState *ds) {
 			if (ds->asm_types < 1) {
 				break;
 			}
-			const char *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
+			RzType *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
 			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 			// remove other comments
 			delete_last_comment(ds);
 			// ds_comment_start (ds, "");
 			ds_comment_esil(ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 			if (fcn_type) {
-				ds_comment_middle(ds, "; %s%s%s(", rz_str_get_null(fcn_type),
-					(*fcn_type && fcn_type[strlen(fcn_type) - 1] == '*') ? "" : " ",
+				const char *fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
+				const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+				ds_comment_middle(ds, "; %s%s%s(", rz_str_get_null(fcn_type_str), sp,
 					rz_str_get_null(key));
 				if (!nargs) {
 					ds_comment_end(ds, "void)");
@@ -4863,24 +4865,25 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 		return;
 	}
 	ds_begin_comment(ds);
-	const char *fcn_type = rz_type_func_ret(analysis->typedb, name);
-	if (!fcn_type || !*fcn_type) {
+	RzType *fcn_type = rz_type_func_ret(analysis->typedb, name);
+	if (!fcn_type) {
 		free(name);
 		return;
 	}
-	char *cmt = rz_str_newf("; %s%s%s(", fcn_type,
-		fcn_type[strlen(fcn_type) - 1] == '*' ? "" : " ",
-		name);
+	const char *fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
+	const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+	char *cmt = rz_str_newf("; %s%s%s(", fcn_type_str, sp, name);
 	int i, arg_max = rz_type_func_args_count(analysis->typedb, name);
 	if (!arg_max) {
 		cmt = rz_str_append(cmt, "void)");
 	} else {
 		for (i = 0; i < arg_max; i++) {
-			char *type = rz_type_func_args_type(analysis->typedb, name, i);
+			RzType *type = rz_type_func_args_type(analysis->typedb, name, i);
 			const char *tname = rz_type_func_args_name(analysis->typedb, name, i);
-			if (type && *type) {
-				cmt = rz_str_appendf(cmt, "%s%s%s%s%s", i == 0 ? "" : " ", type,
-					type[strlen(type) - 1] == '*' ? "" : " ",
+			if (type) {
+				const char *type_str = rz_type_as_string(analysis->typedb, type);
+				const char *sp = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+				cmt = rz_str_appendf(cmt, "%s%s%s%s%s", i == 0 ? "" : " ", type_str, sp,
 					tname, i == arg_max - 1 ? ")" : ",");
 			} else if (tname && !strcmp(tname, "...")) {
 				cmt = rz_str_appendf(cmt, "%s%s%s", i == 0 ? "" : " ",
@@ -5308,7 +5311,12 @@ toro:
 			if (fmt) {
 				rz_cons_printf("(%s)\n", link_type);
 				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
-				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, link_type);
+				RzType *ltype = rz_type_parse(core->analysis->typedb->parser, link_type, NULL);
+				if (!ltype) {
+					free(fmt);
+					continue;
+				}
+				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, ltype);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
