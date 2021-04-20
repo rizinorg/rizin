@@ -43,12 +43,16 @@ bool test_types_save() {
 	RzTypeStructMember member;
 	member.name = strdup("gillian");
 	member.offset = 0;
-	member.type = strdup("char *");
+	RzType *mtype = rz_type_parse(typedb->parser, "char *", NULL);
+	mu_assert_notnull(mtype, "member type parsing");
+	member.type = mtype;
 	rz_vector_push(&type->struct_data.members, &member);
 
 	member.name = strdup("seed");
 	member.offset = 8;
-	member.type = strdup("uint64_t");
+	mtype = rz_type_parse(typedb->parser, "uint64_t", NULL);
+	mu_assert_notnull(mtype, "member type parsing");
+	member.type = mtype;
 	rz_vector_push(&type->struct_data.members, &member);
 
 	rz_type_db_save_base_type(typedb, type);
@@ -61,12 +65,16 @@ bool test_types_save() {
 	RzTypeUnionMember mumber;
 	mumber.name = strdup("random");
 	mumber.offset = 0;
-	mumber.type = strdup("int");
+	mtype = rz_type_parse(typedb->parser, "int", NULL);
+	mu_assert_notnull(mtype, "member type parsing");
+	member.type = mtype;
 	rz_vector_push(&type->union_data.members, &mumber);
 
 	mumber.name = strdup("hajile");
 	mumber.offset = 0;
-	mumber.type = strdup("uint32_t");
+	mtype = rz_type_parse(typedb->parser, "uint32_t", NULL);
+	mu_assert_notnull(mtype, "member type parsing");
+	member.type = mtype;
 	rz_vector_push(&type->union_data.members, &mumber);
 
 	rz_type_db_save_base_type(typedb, type);
@@ -91,7 +99,9 @@ bool test_types_save() {
 	// typedef
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
 	type->name = strdup("human");
-	type->type = strdup("union snatcher");
+	mtype = rz_type_parse(typedb->parser, "union snatcher", NULL);
+	mu_assert_notnull(mtype, "typedef type parsing");
+	type->type = mtype;
 	rz_type_db_save_base_type(typedb, type);
 	rz_type_base_type_free(type);
 
@@ -99,7 +109,9 @@ bool test_types_save() {
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
 	type->name = strdup("badchar");
 	type->size = 16;
-	type->type = strdup("c");
+	mtype = rz_type_parse(typedb->parser, "c", NULL);
+	mu_assert_notnull(mtype, "atomic type parsing");
+	type->type = mtype;
 	rz_type_db_save_base_type(typedb, type);
 	rz_type_base_type_free(type);
 
@@ -130,12 +142,14 @@ bool test_types_load() {
 	RzTypeStructMember *member = rz_vector_index_ptr(&type->struct_data.members, 0);
 	mu_assert_streq(member->name, "gillian", "member name");
 	mu_assert_eq(member->offset, 0, "member offset");
-	mu_assert_streq(member->type, "char *", "member type");
+	mu_assert_eq(member->type->kind, RZ_TYPE_KIND_POINTER, "member type pointer");
+	mu_assert_streq(member->type->identifier.name, "char", "member type");
 
 	member = rz_vector_index_ptr(&type->struct_data.members, 1);
 	mu_assert_streq(member->name, "seed", "member name");
 	mu_assert_eq(member->offset, 8, "member offset");
-	mu_assert_streq(member->type, "uint64_t", "member type");
+	mu_assert_eq(member->type->kind, RZ_TYPE_KIND_IDENTIFIER, "member type");
+	mu_assert_streq(member->type->identifier.name, "uint64_t", "member type");
 
 	rz_type_base_type_free(type);
 
@@ -147,11 +161,13 @@ bool test_types_load() {
 
 	RzTypeUnionMember *mumber = rz_vector_index_ptr(&type->union_data.members, 0);
 	mu_assert_streq(mumber->name, "random", "member name");
-	mu_assert_streq(mumber->type, "int", "member type");
+	mu_assert_eq(mumber->type->kind, RZ_TYPE_KIND_IDENTIFIER, "member type");
+	mu_assert_streq(mumber->type->identifier.name, "int", "member type");
 
 	mumber = rz_vector_index_ptr(&type->union_data.members, 1);
 	mu_assert_streq(mumber->name, "hajile", "member name");
-	mu_assert_streq(mumber->type, "uint32_t", "member type");
+	mu_assert_eq(mumber->type->kind, RZ_TYPE_KIND_IDENTIFIER, "member type");
+	mu_assert_streq(mumber->type->identifier.name, "uint32_t", "member type");
 
 	rz_type_base_type_free(type);
 
@@ -175,7 +191,11 @@ bool test_types_load() {
 	type = rz_type_db_get_base_type(typedb, "human");
 	mu_assert_notnull(type, "get type");
 	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_TYPEDEF, "type kind");
-	mu_assert_streq(type->type, "union snatcher", "typedefd type");
+	mu_assert_eq(type->type->kind, RZ_TYPE_KIND_IDENTIFIER, "type identifier kind");
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, type->type->identifier.name);
+	mu_assert_notnull(btype, "get union type");
+	mu_assert_eq(btype->kind, RZ_BASE_TYPE_KIND_UNION, "union type kind");
+	rz_type_base_type_free(btype);
 	rz_type_base_type_free(type);
 
 	// atomic
@@ -183,7 +203,6 @@ bool test_types_load() {
 	mu_assert_notnull(type, "get type");
 	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ATOMIC, "type kind");
 	mu_assert_eq(type->size, 16, "atomic type size");
-	mu_assert_streq(type->type, "c", "atomic type");
 	rz_type_base_type_free(type);
 
 	rz_type_db_free(typedb);

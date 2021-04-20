@@ -101,7 +101,7 @@ static void core_types_enum_print(RzCore *core, RzBaseType *btype, RzOutputMode 
 		if (btype && !rz_vector_empty(&btype->enum_data.cases)) {
 			RzTypeEnumCase *cas;
 			rz_vector_foreach(&btype->enum_data.cases, cas) {
-				rz_cons_printf("%s = 0x%x\n", cas->name, cas->val);
+				rz_cons_printf("%s = 0x%" PFMT64x "\n", cas->name, cas->val);
 			}
 		}
 		break;
@@ -152,7 +152,7 @@ static void core_types_enum_print_c(RzBaseType *btype, bool multiline) {
 		separator = multiline ? "\t" : "";
 		RzTypeEnumCase *cas;
 		rz_vector_foreach(&btype->enum_data.cases, cas) {
-			rz_cons_printf("%s%s = %u", separator, cas->name, cas->val);
+			rz_cons_printf("%s%s = %" PFMT64u, separator, cas->name, cas->val);
 			separator = multiline ? ",\n\t" : ", ";
 		}
 		rz_cons_println(multiline ? "\n};" : "};");
