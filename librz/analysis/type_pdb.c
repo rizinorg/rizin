@@ -31,11 +31,12 @@ static char *create_type_name_from_offset(ut64 offset) {
 /**
  * @brief Parses class/struct/union member
  *
+ * @param typedb Types DB instance
  * @param type_info Current type info (member)
  * @param types List of all types
  * @return RzTypeStructMember* parsed member, NULL if fail
  */
-static RzTypeStructMember *parse_member(STypeInfo *type_info, RzList *types) {
+static RzTypeStructMember *parse_member(const RzTypeDB *typedb, STypeInfo *type_info, RzList *types) {
 	rz_return_val_if_fail(type_info && types, NULL);
 	if (type_info->leaf_type != eLF_MEMBER) {
 		return NULL;
@@ -55,8 +56,12 @@ static RzTypeStructMember *parse_member(STypeInfo *type_info, RzList *types) {
 		goto cleanup;
 	}
 	char *sname = rz_str_sanitize_sdb_key(name);
+	RzType *mtype = rz_type_parse(typedb->parser, type, NULL);
+	if (!mtype) {
+		goto cleanup;
+	}
 	member->name = sname;
-	member->type = strdup(type); // we assume it's sanitized
+	member->type = mtype;
 	member->offset = offset;
 	return member;
 cleanup:
@@ -142,9 +147,13 @@ static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
 		}
 	}
 	char *sname = rz_str_sanitize_sdb_key(name);
+	RzType *btype = rz_type_parse(typedb->parser, type_name, NULL);
+	if (!btype) {
+		goto cleanup;
+	}
 	base_type->name = sname;
 	base_type->size = size;
-	base_type->type = strdup(type_name); // we assume it's sanitized
+	base_type->type = btype;
 
 	rz_type_db_save_base_type(typedb, base_type);
 cleanup:
@@ -192,7 +201,7 @@ static void parse_structure(const RzTypeDB *typedb, SType *type, RzList *types) 
 	RzListIter *it = rz_list_iterator(members);
 	while (rz_list_iter_next(it)) {
 		STypeInfo *member_info = rz_list_iter_get(it);
-		RzTypeStructMember *struct_member = parse_member(member_info, types);
+		RzTypeStructMember *struct_member = parse_member(typedb, member_info, types);
 		if (!struct_member) {
 			continue; // skip the failure
 		}

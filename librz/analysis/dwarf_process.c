@@ -609,7 +609,8 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		RzStrBuf strbuf;
 		rz_strbuf_init(&strbuf);
 		parse_type_outer(ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
-		base_type->type = rz_strbuf_drain_nofree(&strbuf);
+		const char *type = rz_strbuf_drain_nofree(&strbuf);
+		base_type->type = rz_type_parse(ctx->analysis->typedb->parser, type, NULL);
 	}
 
 	RzTypeEnumCase cas;
@@ -693,7 +694,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 		goto cleanup;
 	}
 	base_type->name = name;
-	base_type->type = type;
+	base_type->type = rz_type_parse(ctx->analysis->typedb->parser, type, NULL);
 	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
 	rz_type_base_type_free(base_type);
 	rz_strbuf_fini(&strbuf);
@@ -1665,6 +1666,10 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 			char *kind = sdb_anext(var_data, &extra);
 			char *type = NULL;
 			extra = sdb_anext(extra, &type);
+			RzType *ttype = rz_type_parse(analysis->typedb->parser, type, NULL);
+			if (!ttype) {
+				goto loop_end;
+			}
 			st64 offset = 0;
 			if (*kind != 'r') {
 				offset = strtol(extra, NULL, 10);
@@ -1675,15 +1680,15 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 				rz_flag_set_next(flags, global_name, offset, 4);
 				free(global_name);
 			} else if (*kind == 's' && fcn) {
-				rz_analysis_function_set_var(fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
+				rz_analysis_function_set_var(fcn, offset - fcn->maxstack, *kind, ttype, 4, false, var_name);
 			} else if (*kind == 'r' && fcn) {
 				RzRegItem *i = rz_reg_get(analysis->reg, extra, -1);
 				if (!i) {
 					goto loop_end;
 				}
-				rz_analysis_function_set_var(fcn, i->index, *kind, type, 4, false, var_name);
+				rz_analysis_function_set_var(fcn, i->index, *kind, ttype, 4, false, var_name);
 			} else if (fcn) { /* kind == 'b' */
-				rz_analysis_function_set_var(fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
+				rz_analysis_function_set_var(fcn, offset - fcn->bp_off, *kind, ttype, 4, false, var_name);
 			}
 			free(var_key);
 			free(var_data);

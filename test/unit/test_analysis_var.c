@@ -48,6 +48,14 @@ static bool sanitize(RzAnalysisFunction *fcn) {
 		} \
 	} while (0);
 
+static RzAnalysisVar *set_var_str(RzAnalysisFunction *fcn, int delta, char kind, const char *type, int size, bool isarg, const char *name) {
+	RzType *ttype = rz_type_parse(fcn->analysis->typedb->parser, type, NULL);
+	if (!ttype) {
+		return NULL;
+	}
+	return rz_analysis_function_set_var(fcn, delta, kind, ttype, size, isarg, name);
+}
+
 bool test_rz_analysis_var() {
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
@@ -58,16 +66,16 @@ bool test_rz_analysis_var() {
 
 	// creating variables and renaming
 
-	RzAnalysisVar *a = rz_analysis_function_set_var(fcn, -8, RZ_ANALYSIS_VAR_KIND_BPV, "char *", 8, false, "random_name");
+	RzAnalysisVar *a = set_var_str(fcn, -8, RZ_ANALYSIS_VAR_KIND_BPV, "char *", 8, false, "random_name");
 	mu_assert_notnull(a, "create a var");
 	mu_assert_streq(a->name, "random_name", "var name");
 	bool succ = rz_analysis_var_rename(a, "var_a", false);
 	mu_assert("rename success", succ);
 	mu_assert_streq(a->name, "var_a", "var name after rename");
 
-	RzAnalysisVar *b = rz_analysis_function_set_var(fcn, -0x10, RZ_ANALYSIS_VAR_KIND_SPV, "char *", 8, false, "var_a");
+	RzAnalysisVar *b = set_var_str(fcn, -0x10, RZ_ANALYSIS_VAR_KIND_SPV, "char *", 8, false, "var_a");
 	mu_assert_null(b, "create a var with the same name");
-	b = rz_analysis_function_set_var(fcn, -0x10, RZ_ANALYSIS_VAR_KIND_SPV, "char *", 8, false, "new_var");
+	b = set_var_str(fcn, -0x10, RZ_ANALYSIS_VAR_KIND_SPV, "char *", 8, false, "new_var");
 	mu_assert_notnull(b, "create a var with another name");
 	mu_assert_streq(b->name, "new_var", "var name");
 	succ = rz_analysis_var_rename(b, "random_name", false);
@@ -80,7 +88,7 @@ bool test_rz_analysis_var() {
 	mu_assert("rename success", succ);
 	mu_assert_streq(b->name, "var_b", "var name after rename");
 
-	RzAnalysisVar *c = rz_analysis_function_set_var(fcn, 0x30, RZ_ANALYSIS_VAR_KIND_REG, "int64_t", 8, true, "arg42");
+	RzAnalysisVar *c = set_var_str(fcn, 0x30, RZ_ANALYSIS_VAR_KIND_REG, "int64_t", 8, true, "arg42");
 	mu_assert_notnull(c, "create a var");
 
 	// querying variables
