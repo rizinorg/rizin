@@ -577,6 +577,12 @@ static int __cons_readchar_w32(ut32 usec) {
 #endif
 
 RZ_API int rz_cons_readchar_timeout(ut32 usec) {
+	if (readbuffer_length > 0) {
+		int ch = *readbuffer;
+		readbuffer_length--;
+		memmove(readbuffer, readbuffer + 1, readbuffer_length);
+		return ch;
+	}
 #if __UNIX__
 	struct timeval tv;
 	fd_set fdset, errset;
