@@ -349,7 +349,7 @@ struct rz_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RzList *ropchain;
 	bool use_tree_sitter_rzcmd;
-	bool use_newshell_autocompletion;
+	bool use_rzshell_autocompletion;
 	RzCoreSeekHistory seek_history;
 
 	bool marks_init;
@@ -425,7 +425,7 @@ RZ_API int rz_core_prompt_exec(RzCore *core);
 RZ_API void rz_core_prompt_loop(RzCore *core);
 RZ_API ut64 rz_core_pava(RzCore *core, ut64 addr);
 RZ_API int rz_core_cmd(RzCore *core, const char *cmd, int log);
-RZ_API RzCmdStatus rz_core_cmd_newshell(RzCore *core, const char *cmd, int log);
+RZ_API RzCmdStatus rz_core_cmd_rzshell(RzCore *core, const char *cmd, int log);
 RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *str);
 RZ_API int rz_core_fgets(char *buf, int len, void *user);
 RZ_API RzFlagItem *rz_core_flag_get_by_spaces(RzFlag *f, ut64 off);
@@ -439,7 +439,7 @@ RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHEC
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd);
 RZ_API int rz_core_cmd_file(RzCore *core, const char *file);
 RZ_API int rz_core_cmd_lines(RzCore *core, const char *lines);
-RZ_API RzCmdStatus rz_core_cmd_lines_newshell(RzCore *core, const char *lines);
+RZ_API RzCmdStatus rz_core_cmd_lines_rzshell(RzCore *core, const char *lines);
 RZ_API int rz_core_cmd_command(RzCore *core, const char *command);
 RZ_API bool rz_core_run_script(RzCore *core, const char *file);
 RZ_API void rz_core_seek_item_free(RzCoreSeekItem *item);
@@ -470,7 +470,7 @@ RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
 RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
-RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
+RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
 RZ_API void rz_core_help_vars_print(RzCore *core);
@@ -598,7 +598,7 @@ RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path);
 RZ_API int rz_core_cmd_buffer(RzCore *core, const char *buf);
 RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_core_cmd0(RzCore *core, const char *cmd);
-RZ_API RzCmdStatus rz_core_cmd0_newshell(RzCore *core, const char *cmd);
+RZ_API RzCmdStatus rz_core_cmd0_rzshell(RzCore *core, const char *cmd);
 RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd);
 RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each);
 RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each);

@@ -650,7 +650,7 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
  * Returns a \p RzLineNSCompletionResult structure containing all the info to
  * autocomplete what is currently in \p buf.
  */
-RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type) {
+RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type) {
 	RzLineNSCompletionResult *res = NULL;
 	if (prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		res = rz_line_ns_completion_result_new(0, buf->length, NULL);

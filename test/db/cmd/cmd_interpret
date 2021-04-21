@@ -42,7 +42,7 @@ $foo
 $foo
 ?e --
 $-*
-e cfg.newshell=true
+e cfg.rzshell=true
 $foo=\#!pipe echo hello
 $foo
 ?e --

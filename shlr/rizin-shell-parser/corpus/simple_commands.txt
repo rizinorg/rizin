@@ -63,7 +63,7 @@ Question mark commands
 ???
 ?t cmd
 ?x hello
-e? cfg.newshell
+e? cfg.rzshell
 
 ---
 

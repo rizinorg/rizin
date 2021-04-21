@@ -2112,17 +2112,17 @@ static bool cb_scrhtml(void *user, void *data) {
 	return true;
 }
 
-static bool cb_newshell(void *user, void *data) {
+static bool cb_rzshell(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
 	core->use_tree_sitter_rzcmd = node->i_value;
 	return true;
 }
 
-static bool cb_newshell_autocompletion(void *user, void *data) {
+static bool cb_rzshell_autocompletion(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
-	core->use_newshell_autocompletion = node->i_value;
+	core->use_rzshell_autocompletion = node->i_value;
 	return true;
 }
 
@@ -3220,9 +3220,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("cfg.seek.silent", "false", NULL, "When true, seek movements are not logged in seek history");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	p = rz_sys_getenv("RZ_CFG_OLDSHELL");
-	SETCB("cfg.newshell", p ? "false" : "true", &cb_newshell, "Use new commands parser");
+	SETCB("cfg.rzshell", p ? "false" : "true", &cb_rzshell, "Use rizin commands parser based on tree-sitter and centralized commands db");
 	free(p);
-	SETCB("cfg.newshell.autocompletion", "false", &cb_newshell_autocompletion, "Use autocompletion based on newshell data");
+	SETCB("cfg.rzshell.autocompletion", "false", &cb_rzshell_autocompletion, "Use autocompletion based on rzshell data");
 	SETI("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */

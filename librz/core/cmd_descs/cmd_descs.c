@@ -3942,7 +3942,7 @@ static const RzCmdDescHelp specifiers_help = {
 	.details = specifiers_details,
 };
 
-RZ_IPI void newshell_cmddescs_init(RzCore *core) {
+RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
 

@@ -6272,7 +6272,7 @@ static int run_cmd_depth(RzCore *core, char *cmd) {
 	return ret;
 }
 
-RZ_API RzCmdStatus rz_core_cmd_newshell(RzCore *core, const char *cstr, int log) {
+RZ_API RzCmdStatus rz_core_cmd_rzshell(RzCore *core, const char *cstr, int log) {
 	return core_cmd_tsr2cmd(core, cstr, false, log);
 }
 
@@ -6352,7 +6352,7 @@ beach:
 	return ret;
 }
 
-RZ_API RzCmdStatus rz_core_cmd_lines_newshell(RzCore *core, const char *lines) {
+RZ_API RzCmdStatus rz_core_cmd_lines_rzshell(RzCore *core, const char *lines) {
 	return core_cmd_tsr2cmd(core, lines, true, false);
 }
 
@@ -6495,8 +6495,8 @@ RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) {
 	return ret;
 }
 
-RZ_API RzCmdStatus rz_core_cmd0_newshell(RzCore *core, const char *cmd) {
-	return rz_core_cmd_newshell(core, cmd, 0);
+RZ_API RzCmdStatus rz_core_cmd0_rzshell(RzCore *core, const char *cmd) {
+	return rz_core_cmd_rzshell(core, cmd, 0);
 }
 
 RZ_API int rz_core_cmd0(RzCore *core, const char *cmd) {
@@ -6697,5 +6697,5 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, u);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, y);
 	cmd_descriptor_init(core);
-	newshell_cmddescs_init(core);
+	rzshell_cmddescs_init(core);
 }

@@ -62,7 +62,7 @@ static RzCmdStatus cmd_last_opt_handler(RzCore *core, int argc, const char **arg
 	}
 	if (argc == 3) {
 		mu_assert_streq(argv[2], "cmd string\\ hello", "second cmd, optional, should be cmd");
-		RzCmdStatus s = rz_core_cmd0_newshell(core, argv[2]);
+		RzCmdStatus s = rz_core_cmd0_rzshell(core, argv[2]);
 		mu_assert_eq(s, RZ_CMD_STATUS_OK, "cmd_last second arg should be executed well");
 	}
 	return RZ_CMD_STATUS_OK;
@@ -84,7 +84,7 @@ static RzCore *fake_core_new(void) {
 
 static bool test_arg_cmd(void) {
 	RzCore *core = fake_core_new();
-	RzCmdStatus s = rz_core_cmd0_newshell(core, "cmd \"string hello\"");
+	RzCmdStatus s = rz_core_cmd0_rzshell(core, "cmd \"string hello\"");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed");
 	rz_core_free(core);
 	mu_end;
@@ -92,7 +92,7 @@ static bool test_arg_cmd(void) {
 
 static bool test_arg_cmd_last(void) {
 	RzCore *core = fake_core_new();
-	RzCmdStatus s = rz_core_cmd0_newshell(core, "cmd_last string hello");
+	RzCmdStatus s = rz_core_cmd0_rzshell(core, "cmd_last string hello");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed as a single arg");
 	rz_core_free(core);
 	mu_end;
@@ -100,7 +100,7 @@ static bool test_arg_cmd_last(void) {
 
 static bool test_arg_cmd_last_with_at(void) {
 	RzCore *core = fake_core_new();
-	RzCmdStatus s = rz_core_cmd0_newshell(core, "cmd_last_with_at string hello \\@ 0xdeadbeef");
+	RzCmdStatus s = rz_core_cmd0_rzshell(core, "cmd_last_with_at string hello \\@ 0xdeadbeef");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed as a single arg");
 	rz_core_free(core);
 	mu_end;
@@ -108,9 +108,9 @@ static bool test_arg_cmd_last_with_at(void) {
 
 static bool test_arg_cmd_last_opt(void) {
 	RzCore *core = fake_core_new();
-	RzCmdStatus s = rz_core_cmd0_newshell(core, "cmd_last_opt \"string 'hello everybody'\" cmd 'string hello'");
+	RzCmdStatus s = rz_core_cmd0_rzshell(core, "cmd_last_opt \"string 'hello everybody'\" cmd 'string hello'");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed as a single arg");
-	s = rz_core_cmd0_newshell(core, "cmd_last_opt \"string 'hello everybody'\"");
+	s = rz_core_cmd0_rzshell(core, "cmd_last_opt \"string 'hello everybody'\"");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed as a single arg");
 	rz_core_free(core);
 	mu_end;
