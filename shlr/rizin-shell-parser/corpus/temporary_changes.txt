@@ -6,8 +6,8 @@ Temporary changes help
 
 ---
 
-(commands
-  (help_command (cmd_identifier)))
+(statements
+  (help_stmt (cmd_identifier)))
 
 ==============
 Temporary seek
@@ -18,13 +18,13 @@ p8 10 @ flag
 
 ---
 
-(commands
-  (tmp_seek_command
-    (arged_command (cmd_identifier)
+(statements
+  (tmp_seek_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (args (arg (arg_identifier))))
-  (tmp_seek_command
-    (arged_command (cmd_identifier)
+  (tmp_seek_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (args (arg (arg_identifier)))))
 
@@ -37,9 +37,9 @@ p8 10 @! 30
 
 ---
 
-(commands
-  (tmp_blksz_command
-    (arged_command (cmd_identifier)
+(statements
+  (tmp_blksz_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (args (arg (arg_identifier)))))
 
@@ -52,9 +52,9 @@ Temporary from/to
 
 ---
 
-(commands
-  (tmp_fromto_command
-    (arged_command (cmd_identifier)
+(statements
+  (tmp_fromto_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (args
       (arg (arg_identifier))
@@ -69,9 +69,9 @@ pd 2 @a:x86
 
 ---
 
-(commands
-  (tmp_arch_command
-    (arged_command (cmd_identifier)
+(statements
+  (tmp_arch_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (arg (arg_identifier))))
 
@@ -83,9 +83,9 @@ pd 2 @b:16
 
 ---
 
-(commands
-  (tmp_bits_command
-    (arged_command (cmd_identifier)
+(statements
+  (tmp_bits_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (args (arg (arg_identifier)))))
 
@@ -97,9 +97,9 @@ pd 2 @B:3
 
 ---
 
-(commands
-  (tmp_nthi_command
-    (arged_command (cmd_identifier)
+(statements
+  (tmp_nthi_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (arg (arg_identifier))))
 
@@ -112,13 +112,13 @@ pd 2 @e:asm.arch=x86,scr.utf8=true
 
 ---
 
-(commands
-  (tmp_eval_command
-    (arged_command command: (cmd_identifier)
+(statements
+  (tmp_eval_stmt
+    (arged_stmt command: (cmd_identifier)
       args: (args (arg (arg_identifier))))
     (tmp_eval_args (tmp_eval_arg)))
-  (tmp_eval_command
-    (arged_command command: (cmd_identifier)
+  (tmp_eval_stmt
+    (arged_stmt command: (cmd_identifier)
       args: (args (arg (arg_identifier))))
     (tmp_eval_args
       (tmp_eval_arg)
@@ -132,9 +132,9 @@ f @F:symbols
 
 ---
 
-(commands
-  (tmp_fs_command
-    (arged_command (cmd_identifier))
+(statements
+  (tmp_fs_stmt
+    (arged_stmt (cmd_identifier))
     (arg (arg_identifier))))
 
 =================
@@ -145,9 +145,9 @@ pd 2 @i:4
 
 ---
 
-(commands
-  (tmp_reli_command
-    (arged_command (cmd_identifier)
+(statements
+  (tmp_reli_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (args (arg (arg_identifier)))))
 
@@ -159,9 +159,9 @@ pd @k:key
 
 ---
 
-(commands
-  (tmp_kuery_command
-    (arged_command (cmd_identifier))
+(statements
+  (tmp_kuery_stmt
+    (arged_stmt (cmd_identifier))
     (arg (arg_identifier))))
 
 =================
@@ -172,9 +172,9 @@ pd @o:3
 
 ---
 
-(commands
-  (tmp_fd_command
-    (arged_command (cmd_identifier))
+(statements
+  (tmp_fd_stmt
+    (arged_stmt (cmd_identifier))
     (args (arg (arg_identifier)))))
 
 =================
@@ -185,9 +185,9 @@ pd @r:rax
 
 ---
 
-(commands
-  (tmp_reg_command
-    (arged_command (cmd_identifier))
+(statements
+  (tmp_reg_stmt
+    (arged_stmt (cmd_identifier))
     (arg (arg_identifier))))
 
 =================
@@ -198,9 +198,9 @@ pd @f:myfile
 
 ---
 
-(commands
-  (tmp_file_command
-    (arged_command (cmd_identifier))
+(statements
+  (tmp_file_stmt
+    (arged_stmt (cmd_identifier))
     (arg (arg_identifier))))
 
 
@@ -212,9 +212,9 @@ pd @s:mystring
 
 ---
 
-(commands
-  (tmp_string_command
-    (arged_command (cmd_identifier))
+(statements
+  (tmp_string_stmt
+    (arged_stmt (cmd_identifier))
     (arg (arg_identifier))))
 
 
@@ -226,9 +226,9 @@ pd @x:90deadbeef
 
 ---
 
-(commands
-  (tmp_hex_command
-    (arged_command (cmd_identifier))
+(statements
+  (tmp_hex_stmt
+    (arged_stmt (cmd_identifier))
     (arg (arg_identifier))))
 
 
@@ -240,11 +240,11 @@ p8 4 @ 0xdead @a:x86 > /tmp/out.txt
 
 ---
 
-(commands
-  (redirect_command
-    (tmp_arch_command
-      (tmp_seek_command
-        (arged_command (cmd_identifier)
+(statements
+  (redirect_stmt
+    (tmp_arch_stmt
+      (tmp_seek_stmt
+        (arged_stmt (cmd_identifier)
 	  (args (arg (arg_identifier))))
 	(args (arg (arg_identifier))))
       (arg (arg_identifier)))
@@ -257,9 +257,9 @@ Spaces after tmp_seek
 =====================
 wx  0x68a0a@entry0 
 ---
-(commands
-  (tmp_seek_command
-    (arged_command (cmd_identifier)
+(statements
+  (tmp_seek_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (args (arg (arg_identifier)))))
 
@@ -272,9 +272,9 @@ pd @ entry0 + 2
 
 ---
 
-(commands
-  (tmp_seek_command
-    (arged_command (cmd_identifier))
+(statements
+  (tmp_seek_stmt
+    (arged_stmt (cmd_identifier))
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))
@@ -288,7 +288,7 @@ pv4 @v:0xdeadbeef
 
 ---
 
-(commands
-  (tmp_value_command
-    (arged_command (cmd_identifier))
+(statements
+  (tmp_value_stmt
+    (arged_stmt (cmd_identifier))
 	(arg (arg_identifier))))

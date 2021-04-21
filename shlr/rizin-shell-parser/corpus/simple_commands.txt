@@ -7,9 +7,9 @@ afl
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)))
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)))
 
 =============
 One argument
@@ -19,28 +19,28 @@ af 0xdeadbeef
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
      (args (arg (arg_identifier)))))
 
 
 ==============================
-Semi-colon separated commands
+Semi-colon separated statements
 ==============================
 
 afl;af 0xdeadbeef  ; afl
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)))
+  (arged_stmt (cmd_identifier)))
 
 
 =========================
-Newline separate commands
+Newline separate statements
 =========================
 
 afl
@@ -48,14 +48,14 @@ af 0xdeadbeef
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))
 
 
 ======================
-Question mark commands
+Question mark statements
 ======================
 
 ? x
@@ -67,21 +67,21 @@ e? cfg.rzshell
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))
 
 
 ===============
-Search commands
+Search statements
 ===============
 
 /x 90
@@ -89,10 +89,10 @@ Search commands
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))
 
 
@@ -106,14 +106,14 @@ aflj
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)))
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)))
 
 
 =============
-Help commands
+Help statements
 =============
 
 ?
@@ -142,30 +142,30 @@ pf???
 
 ---
 
-(commands
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (arged_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier))
-  (help_command (cmd_identifier)))
+(statements
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier))
+  (help_stmt (cmd_identifier)))
 
 
 ===============================
@@ -176,8 +176,8 @@ Command with concatenation args
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args
       (arg
 	(concatenation
@@ -200,12 +200,12 @@ Number command
 
 ---
 
-(commands
-  (number_command)
-  (number_command)
-  (number_command) (ERROR)
-  (number_command)
-  (number_command) (ERROR))
+(statements
+  (number_stmt)
+  (number_stmt)
+  (number_stmt) (ERROR)
+  (number_stmt)
+  (number_stmt) (ERROR))
 
 
 =============
@@ -219,15 +219,15 @@ Tasks command
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
 	(args
 		(arg (arg_identifier))
 		(arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)))
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)))
 
 
 ==============
@@ -238,8 +238,8 @@ Arg with (...)
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args
       (arg
         (concatenation
@@ -258,8 +258,8 @@ Expressions with (...)
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args
       (arg (args
              (arg_identifier)
@@ -292,22 +292,22 @@ s $
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))
 
 
@@ -321,12 +321,12 @@ md /root/
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))
 
 
@@ -339,10 +339,10 @@ md /root/
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (help_command (cmd_identifier)))
+  (help_stmt (cmd_identifier)))
 
 
 =============================
@@ -357,12 +357,12 @@ pd\@0xdeadbeef
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)))
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)))
 
 ===========
 UTF-8 chars
@@ -372,8 +372,8 @@ rz-find -S واسع bins/pe/testapp-msvc64.exe
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))

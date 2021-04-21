@@ -50,7 +50,7 @@ module.exports = grammar({
 
   externals: ($) => [
     $._cmd_identifier,
-    $._help_command,
+    $._help_stmt,
     $.file_descriptor,
     $._eq_sep_concat,
     $._concat,
@@ -58,96 +58,96 @@ module.exports = grammar({
     $._spec_sep,
   ],
 
-  inline: ($) => [$.cmd_delimiter, $.cmd_delimiter_singleline, $._comment],
+  inline: ($) => [$.stmt_delimiter, $.stmt_delimiter_singleline, $._comment],
 
   rules: {
-    commands: ($) =>
+    statements: ($) =>
       choice(
         seq(),
-        seq(repeat($.cmd_delimiter)),
-        seq(repeat($.cmd_delimiter), $._command, repeat(seq($.cmd_delimiter, optional($._command))))
+        seq(repeat($.stmt_delimiter)),
+        seq(repeat($.stmt_delimiter), $._statement, repeat(seq($.stmt_delimiter, optional($._statement))))
       ),
-    _commands_singleline: ($) =>
+    _statements_singleline: ($) =>
       prec(
         1,
         seq(
-          repeat($.cmd_delimiter_singleline),
-          $._command,
-          repeat(seq($.cmd_delimiter_singleline, optional($._command)))
+          repeat($.stmt_delimiter_singleline),
+          $._statement,
+          repeat(seq($.stmt_delimiter_singleline, optional($._statement)))
         )
       ),
 
-    _command: ($) => choice($.redirect_command, $._simple_command),
+    _statement: ($) => choice($.redirect_stmt, $._simple_stmt),
 
-    legacy_quoted_command: ($) => seq('"', field("string", token(prec(-1, /([^"\\]|\\(.|\n))+/))), '"'),
+    legacy_quoted_stmt: ($) => seq('"', field("string", token(prec(-1, /([^"\\]|\\(.|\n))+/))), '"'),
 
-    _simple_command: ($) =>
+    _simple_stmt: ($) =>
       choice(
-        $.help_command,
-        $.repeat_command,
-        $.arged_command,
-        $.number_command,
-        $._tmp_command,
-        $._iter_command,
-        $._pipe_command,
-        $.grep_command,
-        $.legacy_quoted_command,
-        $._pf_commands
+        $.help_stmt,
+        $.repeat_stmt,
+        $.arged_stmt,
+        $.number_stmt,
+        $._tmp_stmt,
+        $._iter_stmt,
+        $._pipe_stmt,
+        $.grep_stmt,
+        $.legacy_quoted_stmt,
+        $._pf_stmts
       ),
 
-    _tmp_command: ($) =>
+    _tmp_stmt: ($) =>
       choice(
-        $.tmp_seek_command,
-        $.tmp_blksz_command,
-        $.tmp_fromto_command,
-        $.tmp_arch_command,
-        $.tmp_bits_command,
-        $.tmp_nthi_command,
-        $.tmp_eval_command,
-        $.tmp_fs_command,
-        $.tmp_reli_command,
-        $.tmp_kuery_command,
-        $.tmp_fd_command,
-        $.tmp_reg_command,
-        $.tmp_file_command,
-        $.tmp_string_command,
-        $.tmp_value_command,
-        $.tmp_hex_command
+        $.tmp_seek_stmt,
+        $.tmp_blksz_stmt,
+        $.tmp_fromto_stmt,
+        $.tmp_arch_stmt,
+        $.tmp_bits_stmt,
+        $.tmp_nthi_stmt,
+        $.tmp_eval_stmt,
+        $.tmp_fs_stmt,
+        $.tmp_reli_stmt,
+        $.tmp_kuery_stmt,
+        $.tmp_fd_stmt,
+        $.tmp_reg_stmt,
+        $.tmp_file_stmt,
+        $.tmp_string_stmt,
+        $.tmp_value_stmt,
+        $.tmp_hex_stmt
       ),
 
-    _iter_command: ($) =>
+    _iter_stmt: ($) =>
       choice(
-        $.iter_file_lines_command,
-        $.iter_offsets_command,
-        $.iter_offsetssizes_command,
-        $.iter_hit_command,
-        $.iter_interpret_command,
-        $.iter_interpret_offsetssizes_command,
-        $.iter_comment_command,
-        $.iter_dbta_command,
-        $.iter_dbtb_command,
-        $.iter_dbts_command,
-        $.iter_threads_command,
-        $.iter_bbs_command,
-        $.iter_instrs_command,
-        $.iter_import_command,
-        $.iter_sections_command,
-        $.iter_segments_command,
-        $.iter_symbol_command,
-        $.iter_string_command,
-        $.iter_flags_command,
-        $.iter_function_command,
-        $.iter_iomap_command,
-        $.iter_dbgmap_command,
-        $.iter_register_command,
-        $.iter_step_command
+        $.iter_file_lines_stmt,
+        $.iter_offsets_stmt,
+        $.iter_offsetssizes_stmt,
+        $.iter_hit_stmt,
+        $.iter_interpret_stmt,
+        $.iter_interpret_offsetssizes_stmt,
+        $.iter_comment_stmt,
+        $.iter_dbta_stmt,
+        $.iter_dbtb_stmt,
+        $.iter_dbts_stmt,
+        $.iter_threads_stmt,
+        $.iter_bbs_stmt,
+        $.iter_instrs_stmt,
+        $.iter_import_stmt,
+        $.iter_sections_stmt,
+        $.iter_segments_stmt,
+        $.iter_symbol_stmt,
+        $.iter_string_stmt,
+        $.iter_flags_stmt,
+        $.iter_function_stmt,
+        $.iter_iomap_stmt,
+        $.iter_dbgmap_stmt,
+        $.iter_register_stmt,
+        $.iter_step_stmt
       ),
 
-    _pipe_command: ($) => choice($.html_disable_command, $.html_enable_command, $.pipe_command),
+    _pipe_stmt: ($) => choice($.html_disable_stmt, $.html_enable_stmt, $.pipe_stmt),
 
-    grep_command: ($) => seq(field("command", $._simple_command), "~", field("specifier", $.grep_specifier)),
+    grep_stmt: ($) => seq(field("command", $._simple_stmt), "~", field("specifier", $.grep_specifier)),
     // FIXME: improve parser for grep specifier
-    // grep_specifier_identifier also includes ~ because r2 does not support nested grep commands yet
+    // grep_specifier_identifier also includes ~ because r2 does not support nested grep statements yet
     grep_specifier_identifier: ($) => token(seq(repeat1(choice(/[^\n\r;#@>|`$()]+/, /\\./, /\$[^(\r\n;#>|`]/)))),
     grep_specifier: ($) =>
       prec.left(
@@ -160,92 +160,90 @@ module.exports = grammar({
         )
       ),
 
-    html_disable_command: ($) => prec.right(1, seq(field("command", $._simple_command), "|")),
-    html_enable_command: ($) => prec.right(1, seq(field("command", $._simple_command), "|H")),
-    pipe_command: ($) => seq($._simple_command, "|", $.pipe_second_command),
-    pipe_second_command: ($) => /[^|\r\n;]+/,
+    html_disable_stmt: ($) => prec.right(1, seq(field("command", $._simple_stmt), "|")),
+    html_enable_stmt: ($) => prec.right(1, seq(field("command", $._simple_stmt), "|H")),
+    pipe_stmt: ($) => seq($._simple_stmt, "|", $.pipe_second_stmt),
+    pipe_second_stmt: ($) => /[^|\r\n;]+/,
 
-    iter_file_lines_command: ($) => prec.right(1, seq($._simple_command, "@@.", $.arg)),
-    iter_offsets_command: ($) => prec.right(1, seq($._simple_command, "@@=", optional($.args))),
-    iter_offsetssizes_command: ($) => prec.right(1, seq($._simple_command, "@@@=", optional($.args))),
-    iter_hit_command: ($) =>
-      prec.right(1, seq($._simple_command, "@@", $._concat, alias($._search_command, $.arged_command))),
-    iter_interpret_command: ($) => prec.right(1, seq($._simple_command, "@@c:", $._simple_command)),
-    iter_interpret_offsetssizes_command: ($) => prec.right(1, seq($._simple_command, "@@@c:", $._simple_command)),
-    iter_comment_command: ($) => prec.right(1, seq($._simple_command, "@@C", optional(seq(":", $.arg)))),
-    iter_dbta_command: ($) => prec.right(1, seq($._simple_command, choice("@@dbt", "@@dbta"))),
-    iter_dbtb_command: ($) => prec.right(1, seq($._simple_command, "@@dbtb")),
-    iter_dbts_command: ($) => prec.right(1, seq($._simple_command, "@@dbts")),
-    iter_threads_command: ($) => prec.right(1, seq($._simple_command, "@@t")),
-    iter_bbs_command: ($) => prec.right(1, seq($._simple_command, "@@b")),
-    iter_instrs_command: ($) => prec.right(1, seq($._simple_command, "@@i")),
-    iter_import_command: ($) => prec.right(1, seq($._simple_command, "@@ii")),
-    iter_sections_command: ($) => prec.right(1, seq($._simple_command, "@@iS")),
-    iter_segments_command: ($) => prec.right(1, seq($._simple_command, "@@iSS")),
-    iter_symbol_command: ($) => prec.right(1, seq($._simple_command, "@@is")),
-    iter_string_command: ($) => prec.right(1, seq($._simple_command, "@@iz")),
-    iter_flags_command: ($) => prec.right(1, seq($._simple_command, "@@f", optional(seq(":", $.arg)))),
-    iter_function_command: ($) => prec.right(1, seq($._simple_command, "@@F", optional(seq(":", $.arg)))),
-    iter_iomap_command: ($) => prec.right(1, seq($._simple_command, "@@om")),
-    iter_dbgmap_command: ($) => prec.right(1, seq($._simple_command, "@@dm")),
-    iter_register_command: ($) => prec.right(1, seq($._simple_command, "@@r")),
-    iter_step_command: ($) => prec.right(1, seq($._simple_command, "@@s:", $.args)),
+    iter_file_lines_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@.", $.arg)),
+    iter_offsets_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@=", optional($.args))),
+    iter_offsetssizes_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@@=", optional($.args))),
+    iter_hit_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@", $._concat, alias($._search_stmt, $.arged_stmt))),
+    iter_interpret_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@c:", $._simple_stmt)),
+    iter_interpret_offsetssizes_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@@c:", $._simple_stmt)),
+    iter_comment_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@C", optional(seq(":", $.arg)))),
+    iter_dbta_stmt: ($) => prec.right(1, seq($._simple_stmt, choice("@@dbt", "@@dbta"))),
+    iter_dbtb_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@dbtb")),
+    iter_dbts_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@dbts")),
+    iter_threads_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@t")),
+    iter_bbs_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@b")),
+    iter_instrs_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@i")),
+    iter_import_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@ii")),
+    iter_sections_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@iS")),
+    iter_segments_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@iSS")),
+    iter_symbol_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@is")),
+    iter_string_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@iz")),
+    iter_flags_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@f", optional(seq(":", $.arg)))),
+    iter_function_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@F", optional(seq(":", $.arg)))),
+    iter_iomap_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@om")),
+    iter_dbgmap_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@dm")),
+    iter_register_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@r")),
+    iter_step_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@s:", $.args)),
 
-    // tmp changes commands
-    tmp_seek_command: ($) => prec.right(1, seq($._simple_command, "@", $.args)),
-    tmp_blksz_command: ($) => prec.right(1, seq($._simple_command, "@!", $.args)),
-    tmp_fromto_command: ($) => prec.right(1, seq($._simple_command, "@(", $.args, ")")),
-    tmp_arch_command: ($) => prec.right(1, seq($._simple_command, "@a:", $.arg)),
-    tmp_bits_command: ($) => prec.right(1, seq($._simple_command, "@b:", $.args)),
-    tmp_nthi_command: ($) => prec.right(1, seq($._simple_command, "@B:", $.arg)),
-    tmp_eval_command: ($) => prec.right(1, seq($._simple_command, "@e:", $.tmp_eval_args)),
-    tmp_fs_command: ($) => prec.right(1, seq($._simple_command, "@F:", $.arg)),
-    tmp_reli_command: ($) => prec.right(1, seq($._simple_command, "@i:", $.args)),
-    tmp_kuery_command: ($) => prec.right(1, seq($._simple_command, "@k:", $.arg)),
-    tmp_fd_command: ($) => prec.right(1, seq($._simple_command, "@o:", $.args)),
-    tmp_reg_command: ($) => prec.right(1, seq($._simple_command, "@r:", $.arg)),
-    tmp_file_command: ($) => prec.right(1, seq($._simple_command, "@f:", $.arg)),
-    tmp_string_command: ($) => prec.right(1, seq($._simple_command, "@s:", $.arg)),
-    tmp_value_command: ($) => prec.right(1, seq($._simple_command, "@v:", $.arg)),
-    tmp_hex_command: ($) => prec.right(1, seq($._simple_command, "@x:", $.arg)),
+    // tmp changes statements
+    tmp_seek_stmt: ($) => prec.right(1, seq($._simple_stmt, "@", $.args)),
+    tmp_blksz_stmt: ($) => prec.right(1, seq($._simple_stmt, "@!", $.args)),
+    tmp_fromto_stmt: ($) => prec.right(1, seq($._simple_stmt, "@(", $.args, ")")),
+    tmp_arch_stmt: ($) => prec.right(1, seq($._simple_stmt, "@a:", $.arg)),
+    tmp_bits_stmt: ($) => prec.right(1, seq($._simple_stmt, "@b:", $.args)),
+    tmp_nthi_stmt: ($) => prec.right(1, seq($._simple_stmt, "@B:", $.arg)),
+    tmp_eval_stmt: ($) => prec.right(1, seq($._simple_stmt, "@e:", $.tmp_eval_args)),
+    tmp_fs_stmt: ($) => prec.right(1, seq($._simple_stmt, "@F:", $.arg)),
+    tmp_reli_stmt: ($) => prec.right(1, seq($._simple_stmt, "@i:", $.args)),
+    tmp_kuery_stmt: ($) => prec.right(1, seq($._simple_stmt, "@k:", $.arg)),
+    tmp_fd_stmt: ($) => prec.right(1, seq($._simple_stmt, "@o:", $.args)),
+    tmp_reg_stmt: ($) => prec.right(1, seq($._simple_stmt, "@r:", $.arg)),
+    tmp_file_stmt: ($) => prec.right(1, seq($._simple_stmt, "@f:", $.arg)),
+    tmp_string_stmt: ($) => prec.right(1, seq($._simple_stmt, "@s:", $.arg)),
+    tmp_value_stmt: ($) => prec.right(1, seq($._simple_stmt, "@v:", $.arg)),
+    tmp_hex_stmt: ($) => prec.right(1, seq($._simple_stmt, "@x:", $.arg)),
 
-    // basic commands
-    number_command: ($) => choice($._dec_number, "0", /(0x[0-9A-Fa-f]+|0b[0-1]+)/),
-    help_command: ($) =>
+    // basic statements
+    number_stmt: ($) => choice($._dec_number, "0", /(0x[0-9A-Fa-f]+|0b[0-1]+)/),
+    help_stmt: ($) =>
       prec.left(
         1,
         choice(
           field("command", alias($.question_mark_identifier, $.cmd_identifier)),
-          field("command", alias($._help_command, $.cmd_identifier))
+          field("command", alias($._help_stmt, $.cmd_identifier))
         )
       ),
-    arged_command: ($) =>
+    arged_stmt: ($) =>
       choice(
-        $._simple_arged_command,
-        $._math_arged_command,
-        $._pointer_arged_command,
-        $._macro_arged_command,
-        $._system_command,
-        $._interpret_command,
-        $._env_command,
-        $._pf_arged_command,
-        $._last_command,
-        $._simple_arged_command_question
+        $._simple_arged_stmt,
+        $._math_arged_stmt,
+        $._pointer_arged_stmt,
+        $._macro_arged_stmt,
+        $._system_stmt,
+        $._interpret_stmt,
+        $._env_stmt,
+        $._pf_arged_stmt,
+        $._last_stmt,
+        $._simple_arged_stmt_question
       ),
 
-    _simple_arged_command_question: ($) =>
-      prec.left(1, seq(field("command", alias($._help_command, $.cmd_identifier)), field("args", $.args))),
+    _simple_arged_stmt_question: ($) =>
+      prec.left(1, seq(field("command", alias($._help_stmt, $.cmd_identifier)), field("args", $.args))),
 
-    _simple_arged_command: ($) =>
-      prec.left(1, seq(field("command", $.cmd_identifier), field("args", optional($.args)))),
-    _search_command: ($) =>
+    _simple_arged_stmt: ($) => prec.left(1, seq(field("command", $.cmd_identifier), field("args", optional($.args)))),
+    _search_stmt: ($) =>
       prec.left(
         1,
         seq(field("command", alias(/\/[A-Za-z0-9+!\/*]*/, $.cmd_identifier)), field("args", optional($.args)))
       ),
-    _math_arged_command: ($) =>
+    _math_arged_stmt: ($) =>
       prec.left(1, seq(field("command", alias($.question_mark_identifier, $.cmd_identifier)), field("args", $.args))),
-    _pointer_arged_command: ($) =>
+    _pointer_arged_stmt: ($) =>
       prec.left(
         1,
         seq(
@@ -253,44 +251,44 @@ module.exports = grammar({
           field("args", alias($.eq_sep_args, $.args))
         )
       ),
-    _macro_arged_command: ($) =>
+    _macro_arged_stmt: ($) =>
       prec.left(
         1,
         seq(field("command", alias($.macro_identifier, $.cmd_identifier)), field("args", optional($.macro_args)))
       ),
-    _system_command: ($) => prec.left(1, seq(field("command", $.system_identifier), optional(field("args", $.args)))),
-    _interpret_command: ($) =>
+    _system_stmt: ($) => prec.left(1, seq(field("command", $.system_identifier), optional(field("args", $.args)))),
+    _interpret_stmt: ($) =>
       prec.left(
         1,
         choice(
-          seq(field("command", alias(".", $.cmd_identifier)), field("args", $._simple_command)),
+          seq(field("command", alias(".", $.cmd_identifier)), field("args", $._simple_stmt)),
           seq(field("command", alias(/\.[\.:\-*]+/, $.cmd_identifier)), /[ ]+/, field("args", optional($.args))),
           seq(field("command", alias(/\.[ ]+/, $.cmd_identifier)), field("args", optional($.args))),
           seq(field("command", alias(".!", $.cmd_identifier)), field("args", $.interpret_arg)),
           seq(field("command", alias(".(", $.cmd_identifier)), field("args", $.macro_call_content)),
           seq(field("command", alias($._interpret_search_identifier, $.cmd_identifier)), field("args", $.args)),
-          prec.right(1, seq(field("args", $._simple_command), field("command", "|.")))
+          prec.right(1, seq(field("args", $._simple_stmt), field("command", "|.")))
         )
       ),
     _interpret_search_identifier: ($) => seq("./"),
-    _pf_arged_command: ($) =>
+    _pf_arged_stmt: ($) =>
       choice(
         seq(field("command", alias($.pf_dot_cmd_identifier, $.cmd_identifier))),
         seq(field("command", alias("pfo", $.cmd_identifier)), field("args", $.args))
       ),
-    _pf_commands: ($) =>
+    _pf_stmts: ($) =>
       prec.left(
         1,
         choice(
           // pf fmt, pf* fmt_name|fmt, pfc fmt_name|fmt, pfd.fmt_name, pfj fmt_name|fmt, pfq fmt, pfs.struct_name, pfs format
-          alias($.pf_cmd, $.arged_command),
+          alias($.pf_cmd, $.arged_stmt),
           // pf.fmt_name.field_name, pf.fmt_name.field_name[i], pf.fmt_name.field_name=33, pfv.fmt_name[.field]
-          alias($.pf_dot_cmd, $.arged_command),
+          alias($.pf_dot_cmd, $.arged_stmt),
           // pf.name [0|cnt]fmt
-          alias($.pf_new_cmd, $.arged_command),
+          alias($.pf_new_cmd, $.arged_stmt),
           // Cf [sz] [fmt]
-          alias($.Cf_cmd, $.arged_command)
-          // pf., pfo fdf_name: will be handled as regular arged_command
+          alias($.Cf_cmd, $.arged_stmt)
+          // pf., pfo fdf_name: will be handled as regular arged_stmt
         )
       ),
     Cf_cmd: ($) =>
@@ -337,23 +335,23 @@ module.exports = grammar({
           repeat(seq($._concat_pf_dot, ".", $._concat_pf_dot, alias($.pf_dot_arg, $.pf_arg)))
         )
       ),
-    _env_command: ($) =>
+    _env_stmt: ($) =>
       prec.left(
         seq(
-          field("command", alias($._env_command_identifier, $.cmd_identifier)),
+          field("command", alias($._env_stmt_identifier, $.cmd_identifier)),
           field("args", optional(alias($.eq_sep_args, $.args)))
         )
       ),
-    _env_command_identifier: ($) => choice("%", "env"),
-    _last_command: ($) => seq(field("command", alias($.last_command_identifier, $.cmd_identifier))),
+    _env_stmt_identifier: ($) => choice("%", "env"),
+    _last_stmt: ($) => seq(field("command", alias($.last_stmt_identifier, $.cmd_identifier))),
 
-    last_command_identifier: ($) => choice(".", "..."),
-    interpret_arg: ($) => $._any_command,
+    last_stmt_identifier: ($) => choice(".", "..."),
+    interpret_arg: ($) => $._any_stmt,
     system_identifier: ($) => /![\*!-=]*/,
     question_mark_identifier: ($) => "?",
 
-    repeat_command: ($) =>
-      prec.left(1, seq(field("arg", alias($._dec_number, $.number)), field("command", $._simple_command))),
+    repeat_stmt: ($) =>
+      prec.left(1, seq(field("arg", alias($._dec_number, $.number)), field("command", $._simple_stmt))),
 
     pointer_identifier: ($) => "*",
     eq_sep_args: ($) => seq(alias($._eq_sep_key, $.arg), optional(seq("=", alias($._eq_sep_val, $.arg)))),
@@ -363,14 +361,19 @@ module.exports = grammar({
     macro_content: ($) =>
       prec(
         1,
-        seq(field("name", $.arg), optional($.args), optional(seq(";", $._command, repeat(seq(";", $._command)))), ")")
+        seq(
+          field("name", $.arg),
+          optional($.args),
+          optional(seq(";", $._statement, repeat(seq(";", $._statement)))),
+          ")"
+        )
       ),
     macro_args: ($) => seq($.macro_content, optional(seq(optional($.macro_call_full_content)))),
 
-    redirect_command: ($) =>
+    redirect_stmt: ($) =>
       prec.right(
         2,
-        seq(field("command", $._simple_command), field("redirect_operator", $._redirect_operator), field("arg", $.arg))
+        seq(field("command", $._simple_stmt), field("redirect_operator", $._redirect_operator), field("arg", $.arg))
       ),
     _redirect_operator: ($) =>
       choice($.fdn_redirect_operator, $.fdn_append_operator, $.html_redirect_operator, $.html_append_operator),
@@ -418,7 +421,7 @@ module.exports = grammar({
       ),
     _eq_sep_val_concatenation: ($) => prec.left(1, seq($.arg, repeat1(seq($._eq_sep_concat, $.arg)))),
     _eq_sep_val: ($) => choice($._arg, alias($._eq_sep_val_concatenation, $.concatenation)),
-    _any_command: ($) => /[^\r\n;~|]+/,
+    _any_stmt: ($) => /[^\r\n;~|]+/,
 
     arg_identifier: ($) => argIdentifier(ARG_IDENTIFIER_BASE),
     spec_arg_identifier: ($) => argIdentifier(SPEC_ARG_IDENTIFIER_BASE),
@@ -431,14 +434,14 @@ module.exports = grammar({
       ),
     single_quoted_arg: ($) => seq("'", repeat(choice(token.immediate(prec(1, /[^\\'\n]+/)), /\\[\\'\n]?/)), "'"),
     cmd_substitution_arg: ($) =>
-      choice(seq("$(", $._commands_singleline, ")"), prec(1, seq("`", $._commands_singleline, "`"))),
+      choice(seq("$(", $._statements_singleline, ")"), prec(1, seq("`", $._statements_singleline, "`"))),
     concatenation: ($) => prec(-1, seq($._arg, repeat1(prec(-1, seq($._concat, $._arg))))),
 
     _dec_number: ($) => choice(/[1-9][0-9]*/, /[0-9][0-9]+/),
     _comment: ($) => token(choice(/#[^\r\n]*/)),
 
-    cmd_delimiter: ($) => choice("\n", "\r", $.cmd_delimiter_singleline),
-    cmd_delimiter_singleline: ($) => choice(";"),
+    stmt_delimiter: ($) => choice("\n", "\r", $.stmt_delimiter_singleline),
+    stmt_delimiter_singleline: ($) => choice(";"),
 
     specifiers: ($) => repeat1(seq($._spec_sep, $._concat, alias($.spec_arg_identifier, $.arg_identifier))),
     cmd_identifier: ($) => seq(field("id", $._cmd_identifier), field("extra", optional($.specifiers))),

@@ -6,8 +6,8 @@ pd 10\@test\>name
 
 ---
 
-(commands
-  (arged_command
+(statements
+  (arged_stmt
     command: (cmd_identifier)
     args: (args (arg (arg_identifier)))))
 
@@ -20,8 +20,8 @@ Use newlines in echo
 
 ---
 
-(commands
-  (arged_command
+(statements
+  (arged_stmt
     command: (cmd_identifier)
     args: (args (arg (double_quoted_arg)))))
 
@@ -34,7 +34,7 @@ Escape hash
 
 ---
 
-(commands
-  (arged_command
+(statements
+  (arged_stmt
     command: (cmd_identifier)
     args: (args (arg (arg_identifier)))))
