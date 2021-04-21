@@ -584,8 +584,6 @@ typedef struct rz_bin_section_t {
 	bool has_strings;
 	bool is_data;
 	bool is_segment;
-	char *map_name; ///< name for the io map, only temporary while old RzBinMap has been removed and new does not exist yet
-	bool add;
 } RzBinSection;
 
 typedef struct rz_bin_class_t {
