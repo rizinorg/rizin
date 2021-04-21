@@ -560,11 +560,12 @@ void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk, const char *status) {
 	if (status) {
 		rz_cons_printf("status=");
 		if (!strcmp(status, "free")) {
-			PRINTF_GA("%9s", status);
+			PRINTF_GA("%s", status);
+			rz_cons_printf("%-6s", ",");
 		} else {
-			rz_cons_printf("%9s", status);
+			rz_cons_printf("%s,", status);
 		}
-		rz_cons_printf(", ");
+		rz_cons_printf(" ");
 	}
 	rz_cons_printf("addr=");
 	PRINTF_YA("0x%" PFMT64x, (ut64)chunk);
@@ -1457,8 +1458,9 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	case 'v':
 	case 'c':
 		GH(print_heap_chunk_simple)
-		(core, main_arena->GH(top), NULL);
-		rz_cons_printf("[top][brk_start: ");
+		(core, main_arena->GH(top), "free");
+		PRINT_RA("[top]");
+		rz_cons_printf("[brk_start: ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)brk_start);
 		rz_cons_printf(", brk_end: ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)brk_end);
