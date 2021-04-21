@@ -22,9 +22,19 @@ typedef SHA512_CTX RZ_SHA512_CTX;
 #define SHA384_BLOCK_LENGTH SHA384_CBLOCK
 #define SHA512_BLOCK_LENGTH SHA512_CBLOCK
 #else
-#define MD5_CTX RZ_MD5_CTX
+#define MD5_CTX                  RZ_MD5_CTX
 
 /* hashing */
+#define RZ_HASH_MD4_DIGEST_SIZE  0x10
+#define RZ_HASH_MD4_BLOCK_LENGTH 0x40
+typedef struct {
+	ut32 digest[4];
+	ut8 block[RZ_HASH_MD4_BLOCK_LENGTH];
+	ut64 index;
+	ut64 len_high;
+	ut64 len_low;
+} RZ_MD4_CTX;
+
 typedef struct {
 	ut32 state[4];
 	ut32 count[2];
@@ -175,6 +185,7 @@ enum CRC_PRESETS {
 #define RzHash struct rz_hash_t
 
 struct rz_hash_t {
+	RZ_MD4_CTX md4;
 	RZ_MD5_CTX md5;
 	RZ_SHA_CTX sha1;
 	RZ_SHA256_CTX sha256;
