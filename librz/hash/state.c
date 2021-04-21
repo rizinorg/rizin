@@ -26,6 +26,8 @@ RZ_API RzHash *rz_hash_new(bool rst, ut64 flags) {
 }
 
 RZ_API void rz_hash_do_begin(RzHash *ctx, ut64 flags) {
+	CHKFLAG(RZ_HASH_MD4)
+	rz_md4_init(&ctx->md4);
 	CHKFLAG(RZ_HASH_MD5)
 	rz_hash_do_md5(ctx, NULL, -1);
 	CHKFLAG(RZ_HASH_SHA1)
@@ -40,6 +42,8 @@ RZ_API void rz_hash_do_begin(RzHash *ctx, ut64 flags) {
 }
 
 RZ_API void rz_hash_do_end(RzHash *ctx, ut64 flags) {
+	CHKFLAG(RZ_HASH_MD4)
+	rz_md4_fini(ctx->digest, &ctx->md4);
 	CHKFLAG(RZ_HASH_MD5)
 	rz_hash_do_md5(ctx, NULL, -2);
 	CHKFLAG(RZ_HASH_SHA1)
@@ -137,11 +141,17 @@ RZ_API ut8 *rz_hash_do_md5(RzHash *ctx, const ut8 *input, int len) {
 }
 
 RZ_API ut8 *rz_hash_do_md4(RzHash *ctx, const ut8 *input, int len) {
-	if (len >= 0) {
-		MD4(input, len, ctx->digest);
-		return ctx->digest;
+	if (len < 0) {
+		return NULL;
 	}
-	return NULL;
+	if (ctx->rst) {
+		rz_md4_init(&ctx->md4);
+	}
+	rz_md4_update(&ctx->md4, input, len);
+	if (ctx->rst || len == 0) {
+		rz_md4_fini(ctx->digest, &ctx->md4);
+	}
+	return ctx->digest;
 }
 
 RZ_API ut8 *rz_hash_do_hmac_sha256(RzHash *ctx, const ut8 *input, int len, const ut8 *key, int klen) {
