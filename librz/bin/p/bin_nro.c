@@ -85,17 +85,76 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return kv;
 }
 
+static RzList *maps(RzBinFile *bf) {
+	RzBuffer *b = bf->buf;
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+
+	ut64 ba = baddr(bf);
+	ut64 bufsz = rz_buf_size(bf->buf);
+
+	ut32 sig0 = rz_buf_read_le32_at(bf->buf, 0x18);
+	if (sig0 && sig0 + 8 < bufsz) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			return ret;
+		}
+		ut32 sig0sz = rz_buf_read_le32_at(bf->buf, sig0 + 4);
+		map->name = strdup("sig0");
+		map->paddr = sig0;
+		map->psize = sig0sz;
+		map->vsize = sig0sz;
+		map->vaddr = sig0 + ba;
+		map->perm = RZ_PERM_R;
+		rz_list_append(ret, map);
+	} else {
+		eprintf("Invalid SIG0 address\n");
+	}
+
+	// add text segment
+	RzBinMap *map;
+	if (!(map = RZ_NEW0(RzBinMap))) {
+		return ret;
+	}
+	map->name = strdup("text");
+	map->paddr = rz_buf_read_le32_at(b, NRO_OFF(text_memoffset));
+	map->vsize = map->psize = rz_buf_read_le32_at(b, NRO_OFF(text_size));
+	map->vaddr = map->paddr + ba;
+	map->perm = RZ_PERM_RX;
+	rz_list_append(ret, map);
+
+	// add ro segment
+	if (!(map = RZ_NEW0(RzBinMap))) {
+		return ret;
+	}
+	map->name = strdup("ro");
+	map->paddr = rz_buf_read_le32_at(b, NRO_OFF(ro_memoffset));
+	map->vsize = map->psize = rz_buf_read_le32_at(b, NRO_OFF(ro_size));
+	map->vaddr = map->paddr + ba;
+	map->perm = RZ_PERM_R;
+	rz_list_append(ret, map);
+
+	// add data segment
+	if (!(map = RZ_NEW0(RzBinMap))) {
+		return ret;
+	}
+	map->name = strdup("data");
+	map->paddr = rz_buf_read_le32_at(b, NRO_OFF(data_memoffset));
+	map->vsize = map->psize = rz_buf_read_le32_at(b, NRO_OFF(data_size));
+	map->vaddr = map->paddr + ba;
+	map->perm = RZ_PERM_RW;
+	rz_list_append(ret, map);
+	return ret;
+}
+
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
-	RzBuffer *b = bf->buf;
-	if (!bf->o->info) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
-		return NULL;
-	}
-	ret->free = free;
 
 	ut64 ba = baddr(bf);
 
@@ -108,7 +167,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;
-	ptr->add = false;
 	rz_list_append(ret, ptr);
 
 	int bufsz = rz_buf_size(bf->buf);
@@ -125,70 +183,20 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = mod0;
 		ptr->vaddr = mod0 + ba;
 		ptr->perm = RZ_PERM_R; // rw-
-		ptr->add = false;
 		rz_list_append(ret, ptr);
 	} else {
 		eprintf("Invalid MOD0 address\n");
 	}
 
-	ut32 sig0 = rz_buf_read_le32_at(bf->buf, 0x18);
-	if (sig0 && sig0 + 8 < bufsz) {
-		if (!(ptr = RZ_NEW0(RzBinSection))) {
-			return ret;
+	RzList *mappies = maps(bf);
+	if (mappies) {
+		RzList *msecs = rz_bin_sections_of_maps(mappies);
+		if (msecs) {
+			rz_list_join(ret, msecs);
+			rz_list_free(msecs);
 		}
-		ut32 sig0sz = rz_buf_read_le32_at(bf->buf, sig0 + 4);
-		ptr->name = strdup("sig0");
-		ptr->size = sig0sz;
-		ptr->vsize = sig0sz;
-		ptr->paddr = sig0;
-		ptr->vaddr = sig0 + ba;
-		ptr->perm = RZ_PERM_R; // r--
-		ptr->add = true;
-		rz_list_append(ret, ptr);
-	} else {
-		eprintf("Invalid SIG0 address\n");
+		rz_list_free(mappies);
 	}
-
-	// add text segment
-	if (!(ptr = RZ_NEW0(RzBinSection))) {
-		return ret;
-	}
-	ptr->name = strdup("text");
-	ptr->vsize = rz_buf_read_le32_at(b, NRO_OFF(text_size));
-	ptr->size = ptr->vsize;
-	ptr->paddr = rz_buf_read_le32_at(b, NRO_OFF(text_memoffset));
-	ptr->vaddr = ptr->paddr + ba;
-	ptr->perm = RZ_PERM_RX; // r-x
-	ptr->add = true;
-	rz_list_append(ret, ptr);
-
-	// add ro segment
-	if (!(ptr = RZ_NEW0(RzBinSection))) {
-		return ret;
-	}
-	ptr->name = strdup("ro");
-	ptr->vsize = rz_buf_read_le32_at(b, NRO_OFF(ro_size));
-	ptr->size = ptr->vsize;
-	ptr->paddr = rz_buf_read_le32_at(b, NRO_OFF(ro_memoffset));
-	ptr->vaddr = ptr->paddr + ba;
-	ptr->perm = RZ_PERM_R; // r-x
-	ptr->add = true;
-	rz_list_append(ret, ptr);
-
-	// add data segment
-	if (!(ptr = RZ_NEW0(RzBinSection))) {
-		return ret;
-	}
-	ptr->name = strdup("data");
-	ptr->vsize = rz_buf_read_le32_at(b, NRO_OFF(data_size));
-	ptr->size = ptr->vsize;
-	ptr->paddr = rz_buf_read_le32_at(b, NRO_OFF(data_memoffset));
-	ptr->vaddr = ptr->paddr + ba;
-	ptr->perm = RZ_PERM_RW;
-	ptr->add = true;
-	eprintf("Base Address 0x%08" PFMT64x "\n", ba);
-	eprintf("BSS Size 0x%08" PFMT64x "\n", (ut64)rz_buf_read_le32_at(bf->buf, NRO_OFF(bss_size)));
-	rz_list_append(ret, ptr);
 	return ret;
 }
 
@@ -260,6 +268,7 @@ RzBinPlugin rz_bin_plugin_nro = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &maps,
 	.sections = &sections,
 	.get_sdb = &get_sdb,
 	.symbols = &symbols,

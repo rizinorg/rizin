@@ -1412,6 +1412,41 @@ hcf:
 	return r;
 }
 
+/**
+ * \brief Create a list of RzBinSection from RzBinMaps
+ *
+ * Some binary formats have a 1:1 correspondence of mapping and
+ * some of their RzBinSections, but also want to add some unmapped sections.
+ * In this case, they can implement their mapped sections in their maps callback,
+ * then in their sections callback use this function to create sections from them
+ * and add some additional ones.
+ * See also rz_bin_maps_of_file_sections() for the inverse, when no additional
+ * sections should be added.
+ * */
+RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps) {
+	rz_return_val_if_fail(maps, NULL);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
+	if (!ret) {
+		return NULL;
+	}
+	RzListIter *it;
+	RzBinMap *map;
+	rz_list_foreach (maps, it, map) {
+		RzBinSection *sec = RZ_NEW0(RzBinSection);
+		if (!sec) {
+			break;
+		}
+		sec->name = map->name ? strdup(map->name) : NULL;
+		sec->paddr = map->paddr;
+		sec->size = map->psize;
+		sec->vaddr = map->vaddr;
+		sec->vsize = map->vsize;
+		sec->perm = map->perm;
+		rz_list_append(ret, sec);
+	}
+	return ret;
+}
+
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name) {
 	RzBinSection *s = RZ_NEW0(RzBinSection);
 	if (s) {
