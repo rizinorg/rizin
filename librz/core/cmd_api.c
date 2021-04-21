@@ -265,8 +265,12 @@ static RzOutputMode suffix2mode(const char *suffix) {
 	return 0;
 }
 
+static bool has_cd_submodes(const RzCmdDesc *cd) {
+	return cd->type == RZ_CMD_DESC_TYPE_ARGV_MODES || cd->type == RZ_CMD_DESC_TYPE_ARGV_STATE;
+}
+
 static bool is_valid_argv_modes(RzCmdDesc *cd, char last_letter) {
-	if (!cd || (cd->type != RZ_CMD_DESC_TYPE_ARGV_MODES && cd->type != RZ_CMD_DESC_TYPE_ARGV_STATE) || last_letter == '\0') {
+	if (!cd || !has_cd_submodes(cd) || last_letter == '\0') {
 		return false;
 	}
 	char suffix[] = { last_letter, '\0' };
@@ -540,7 +544,7 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 }
 
 static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
-	if (cd->type != RZ_CMD_DESC_TYPE_ARGV_MODES && cd->type != RZ_CMD_DESC_TYPE_ARGV_STATE) {
+	if (!has_cd_submodes(cd)) {
 		return 0;
 	}
 	return suffix2mode(cmdid + strlen(cd->name));
@@ -792,7 +796,7 @@ static size_t fill_children_chars(RzStrBuf *sb, const RzCmdDesc *cd) {
 
 static bool show_children_shortcut(const RzCmdDesc *cd) {
 	return cd->n_children || cd->help->options || cd->type == RZ_CMD_DESC_TYPE_OLDINPUT ||
-		cd->type == RZ_CMD_DESC_TYPE_ARGV_MODES || cd->type == RZ_CMD_DESC_TYPE_ARGV_STATE;
+		has_cd_submodes(cd);
 }
 
 static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, size_t columns) {
