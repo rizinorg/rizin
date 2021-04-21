@@ -14,7 +14,7 @@
 #include "sha2.h"
 #endif
 
-#define CHKFLAG(x) if (!flags || flags & (x))
+#define if_has_flag(x) if (!flags || flags & (x))
 
 RZ_API RzHash *rz_hash_new(bool rst, ut64 flags) {
 	RzHash *ctx = RZ_NEW0(RzHash);
@@ -26,34 +26,46 @@ RZ_API RzHash *rz_hash_new(bool rst, ut64 flags) {
 }
 
 RZ_API void rz_hash_do_begin(RzHash *ctx, ut64 flags) {
-	CHKFLAG(RZ_HASH_MD4)
-	rz_md4_init(&ctx->md4);
-	CHKFLAG(RZ_HASH_MD5)
-	rz_hash_do_md5(ctx, NULL, -1);
-	CHKFLAG(RZ_HASH_SHA1)
-	rz_sha1_init(&ctx->sha1);
-	CHKFLAG(RZ_HASH_SHA256)
-	SHA256_Init(&ctx->sha256);
-	CHKFLAG(RZ_HASH_SHA384)
-	SHA384_Init(&ctx->sha384);
-	CHKFLAG(RZ_HASH_SHA512)
-	SHA512_Init(&ctx->sha512);
+	if_has_flag(RZ_HASH_MD4) {
+		rz_md4_init(&ctx->md4);
+	}
+	if_has_flag(RZ_HASH_MD5) {
+		rz_hash_do_md5(ctx, NULL, -1);
+	}
+	if_has_flag(RZ_HASH_SHA1) {
+		rz_sha1_init(&ctx->sha1);
+	}
+	if_has_flag(RZ_HASH_SHA256) {
+		SHA256_Init(&ctx->sha256);
+	}
+	if_has_flag(RZ_HASH_SHA384) {
+		SHA384_Init(&ctx->sha384);
+	}
+	if_has_flag(RZ_HASH_SHA512) {
+		SHA512_Init(&ctx->sha512);
+	}
 	ctx->rst = false;
 }
 
 RZ_API void rz_hash_do_end(RzHash *ctx, ut64 flags) {
-	CHKFLAG(RZ_HASH_MD4)
-	rz_md4_fini(ctx->digest, &ctx->md4);
-	CHKFLAG(RZ_HASH_MD5)
-	rz_hash_do_md5(ctx, NULL, -2);
-	CHKFLAG(RZ_HASH_SHA1)
-	rz_sha1_fini(ctx->digest, &ctx->sha1);
-	CHKFLAG(RZ_HASH_SHA256)
-	SHA256_Final(ctx->digest, &ctx->sha256);
-	CHKFLAG(RZ_HASH_SHA384)
-	SHA384_Final(ctx->digest, &ctx->sha384);
-	CHKFLAG(RZ_HASH_SHA512)
-	SHA512_Final(ctx->digest, &ctx->sha512);
+	if_has_flag(RZ_HASH_MD4) {
+		rz_md4_fini(ctx->digest, &ctx->md4);
+	}
+	if_has_flag(RZ_HASH_MD5) {
+		rz_hash_do_md5(ctx, NULL, -2);
+	}
+	if_has_flag(RZ_HASH_SHA1) {
+		rz_sha1_fini(ctx->digest, &ctx->sha1);
+	}
+	if_has_flag(RZ_HASH_SHA256) {
+		SHA256_Final(ctx->digest, &ctx->sha256);
+	}
+	if_has_flag(RZ_HASH_SHA384) {
+		SHA384_Final(ctx->digest, &ctx->sha384);
+	}
+	if_has_flag(RZ_HASH_SHA512) {
+		SHA512_Final(ctx->digest, &ctx->sha512);
+	}
 	ctx->rst = true;
 }
 
