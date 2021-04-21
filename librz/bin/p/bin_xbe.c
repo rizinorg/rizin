@@ -144,7 +144,6 @@ static RzList *sections(RzBinFile *bf) {
 		item->vaddr = sect[i].vaddr;
 		item->size = sect[i].size;
 		item->vsize = sect[i].vsize;
-		item->add = true;
 
 		item->perm = RZ_PERM_R;
 		if (sect[i].flags & SECT_FLAG_X) {
@@ -364,6 +363,7 @@ RzBinPlugin rz_bin_plugin_xbe = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,
