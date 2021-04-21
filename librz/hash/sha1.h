@@ -6,8 +6,8 @@
 
 #include <rz_hash.h>
 
-void rz_sha1_init(RZ_SHA_CTX *context);
-bool rz_sha1_update(RZ_SHA_CTX *context, const ut8 *data, ut64 length);
-void rz_sha1_fini(ut8 *hash, RZ_SHA_CTX *context);
+void rz_sha1_init(RZ_SHA1_CTX *context);
+bool rz_sha1_update(RZ_SHA1_CTX *context, const ut8 *data, ut64 length);
+void rz_sha1_fini(ut8 *hash, RZ_SHA1_CTX *context);
 
 #endif /* RZ_HASH_SHA1_H */
