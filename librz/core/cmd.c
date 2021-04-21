@@ -6625,7 +6625,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "-", "open cfg.editor and run script", rz_cmd_stdin },
 		{ ".", "interpret", rz_cmd_interpret },
 		{ "/", "search kw, pattern aes", rz_cmd_search },
-		{ "=", "io pipe", rz_cmd_remote },
+		{ "R", "io pipe", rz_cmd_remote },
 		{ "?", "help message", rz_cmd_help },
 		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
 		{ "0", "alias for s 0x", rz_cmd_ox },

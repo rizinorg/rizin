@@ -1,5 +1,5 @@
 NAME=Cd 4096
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=Cd 4096 asm.meta=false
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.meta=false
 e asm.arch=x86
@@ -50,7 +50,7 @@ RUN
 
 
 NAME=bytes for invalid insn (#11434)
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
@@ -348,7 +348,7 @@ EOF
 RUN
 
 NAME=aht asm.cmt.right=false fix (#12330)
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
@@ -868,7 +868,7 @@ EOF
 RUN
 
 NAME=seek with spaces
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 010203040506
 p8 1 @ 1 + 3

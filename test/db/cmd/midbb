@@ -83,7 +83,7 @@ EOF
 RUN
 
 NAME=asm.bb.middle json
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -521,7 +521,7 @@ EOF
 RUN
 
 NAME=asm.bb.middle and pdi
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
@@ -557,7 +557,7 @@ EOF
 RUN
 
 NAME=asm.bb.middle and pif
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

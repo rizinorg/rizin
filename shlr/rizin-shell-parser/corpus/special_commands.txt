@@ -290,20 +290,20 @@ editor -
 
 
 ==============
-equal commands
+R commands
 ==============
 
-=
-=<
-= 3 cmd
-=! cmd
-=+ http://host:3000
-=- 3
-== 3
-=!=
-!=!
-=: host:3000 cmd
-=&: 3000
+R
+R<
+R 3 cmd
+R! cmd
+R+ http://host:3000
+R- 3
+R= 3
+R!=
+R=!
+R: host:3000 cmd
+R&: 3000
 
 ---
 

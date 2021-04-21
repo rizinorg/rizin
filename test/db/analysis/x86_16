@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=lcall offset (#12284)
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=ljmp offset (#12284)
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16
@@ -38,7 +38,7 @@ EOF1
 RUN
 
 NAME=aoj pushf
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=16

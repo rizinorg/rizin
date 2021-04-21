@@ -1,5 +1,5 @@
 NAME=aoj 4140f008
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=sysz
 e asm.bits=64

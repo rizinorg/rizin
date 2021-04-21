@@ -1,13 +1,13 @@
-NAME=rz -
-FILE=-
+NAME=rz =
+FILE==
 CMDS=e file.path
 EXPECT=<<EOF
 
 EOF
 RUN
 
-NAME=rz -
-FILE=-
+NAME=rz =
+FILE==
 CMDS=e file.lastpath
 EXPECT=<<EOF
 
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=seek undo/redo
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 01
 s 1
@@ -46,7 +46,7 @@ EOF
 RUN
 
 NAME=seek undo/redo
-FILE=-
+FILE==
 CMDS=wx 01; s 1; shu; shr; pb 8
 EXPECT=<<EOF
 00000000
@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=rizin -V
-FILE=-
+FILE==
 CMDS=!!rizin -V~rz_analysis?
 EXPECT=<<EOF
 1
@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=rizin -h
-FILE=-
+FILE==
 CMDS=!!rizin -h~Usage?
 EXPECT=<<EOF
 1
@@ -70,7 +70,7 @@ EOF
 RUN
 
 NAME=rizin -hh
-FILE=-
+FILE==
 CMDS=!!rizin -hh~RZ_USER_PLUGINS?
 EXPECT=<<EOF
 1
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=rizin -L
-FILE=-
+FILE==
 CMDS=!!rizin -L~default?
 EXPECT=<<EOF
 1
@@ -86,7 +86,7 @@ EOF
 RUN
 
 NAME=rizin shortcut
-FILE=-
+FILE==
 CMDS=<<EOF
 ?q `!!rizin -h~Usage?`
 ?+ ?vi $?
@@ -98,8 +98,8 @@ EOF
 RUN
 
 NAME=no-nl-at-eof script
-FILE=-
-CMDS=!rizin -i scripts/no-nl-at-eof.rz -NQ -
+FILE==
+CMDS=!rizin -i scripts/no-nl-at-eof.rz -NQ =
 EXPECT=<<EOF
 1
 EOF
@@ -108,10 +108,10 @@ EOF
 RUN
 
 NAME=rizin -i -Q with missing script
-FILE=-
+FILE==
 CMDS=<<EOF
 # Should not hang
-!rizin -i script/missing.rz -NQ -
+!rizin -i script/missing.rz -NQ =
 EOF
 EXPECT=<<EOF
 EOF
@@ -121,23 +121,23 @@ EOF
 RUN
 
 NAME=rizin empty -i
-FILE=-
-CMDS=!rizin -i "" -
+FILE==
+CMDS=!rizin -i "" =
 EXPECT_ERR=<<EOF
 Cannot open empty script path
 EOF
 RUN
 
 NAME=rizin empty -I
-FILE=-
-CMDS=!rizin -I "" -
+FILE==
+CMDS=!rizin -I "" =
 EXPECT_ERR=<<EOF
 Cannot open empty script path
 EOF
 RUN
 
 NAME=rizin empty -R
-FILE=-
+FILE==
 CMDS=!rizin -R ""
 EXPECT_ERR=<<EOF
 Missing file to open
@@ -145,7 +145,7 @@ EOF
 RUN
 
 NAME=rizin project with explicit file
-FILE=-
+FILE==
 CMDS=<<EOF
 !rizin -escr.utf8=0 -easm.bytes=1 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00
 ?e Same project, different file
@@ -164,7 +164,7 @@ EOF
 RUN
 
 NAME=rizin project with implicit file
-FILE=-
+FILE==
 CMDS=<<EOF
 !rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme2.rzdb" bins/elf/ioli/crackme0x00
 ?e Reload project including file

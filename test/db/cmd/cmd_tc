@@ -243,7 +243,7 @@ EOF
 RUN
 
 NAME=tc typedef
-FILE=-
+FILE==
 CMDS=<<EOF
 td "typedef char *string;"
 ttc string
@@ -254,7 +254,7 @@ EOF
 RUN
 
 NAME=ttj typedef
-FILE=-
+FILE==
 CMDS=<<EOF
 t-*
 td "typedef char *string;"
@@ -299,7 +299,7 @@ EOF
 RUN
 
 NAME=test cmd tec
-FILE=-
+FILE==
 CMDS=<<EOF
 td "enum foo {bar = 1, cow = 3};"
 tec
@@ -313,7 +313,7 @@ EOF
 RUN
 
 NAME=test cmd tuc
-FILE=-
+FILE==
 CMDS=<<EOF
 td "union Data {int i,j;};"
 tuc

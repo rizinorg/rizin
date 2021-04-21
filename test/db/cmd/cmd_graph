@@ -1,5 +1,5 @@
 NAME=one node
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 body1
 aggk~nodes=
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=two nodes
-FILE=-
+FILE==
 CMDS=<<EOF
 agn "Title with super long text and space" body1
 agn title2 "SuperLongBodyWithALot Of text and spaces"
@@ -40,7 +40,7 @@ EOF
 RUN
 
 NAME=base64 body
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 base64:aGVsbG8gd29ybGQ=
 aggk~nodes.title1.body=
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=long base64 body
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 base64:dGhpcyBpcyBhIHZlcnkgbG9uZyB0ZXh0IHRoYXQgd2hlbiBlbmNvZGVkIHdpbGwgY2F1c2UgYSAKIGluIHRoZSBiYXNlNjQ=
 aggk~nodes.title1.body=
@@ -62,7 +62,7 @@ EOF
 RUN
 
 NAME=two nodes same title
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 body1
 agn title1 "Super long body with something"
@@ -79,7 +79,7 @@ EOF
 RUN
 
 NAME=remove node
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 body1
 agn- title1
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=remove node with title that contain spaces
-FILE=-
+FILE==
 CMDS=<<EOF
 agn "Title with spaces" body1
 agn- "Title with spaces"
@@ -103,7 +103,7 @@ EOF
 RUN
 
 NAME=remove non-existent node
-FILE=-
+FILE==
 CMDS=<<EOF
 agn "Title with spaces" body1
 agn- NotValid
@@ -117,7 +117,7 @@ EOF
 RUN
 
 NAME=remove edge
-FILE=-
+FILE==
 CMDS=<<EOF
 agn "Title with spaces" body1
 agn "Title with spaces 2" body2
@@ -143,7 +143,7 @@ EOF
 RUN
 
 NAME=no selected node in non-interactive
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 body1
 agg
@@ -157,7 +157,7 @@ EOF
 RUN
 
 NAME=agf one
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -180,7 +180,7 @@ EOF
 RUN
 
 NAME=agg one
-FILE=-
+FILE==
 CMDS=<<EOF
 agn 0x0 base64:cHVzaCBlYnAKbW92IGVicCwgZXNwCnBvcCBlYnAKcmV0
 agg
@@ -197,7 +197,7 @@ EOF
 RUN
 
 NAME=graph size
-FILE=-
+FILE==
 CMDS=<<EOF
 aggk~agraph.w=
 aggk~agraph.h=
@@ -214,7 +214,7 @@ EOF
 RUN
 
 NAME=graph size with edges
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 body1
 agn title2 "body2 long body with a lot of spaces and dots...."
@@ -231,7 +231,7 @@ EOF
 RUN
 
 NAME=graph size with self-referenced bb
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 body1
 age title1 title1
@@ -243,7 +243,7 @@ EOF
 RUN
 
 NAME=graph title
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 body1
 e graph.title="This is the graph title"
@@ -259,7 +259,7 @@ EOF
 RUN
 
 NAME=print r2 commands to create graph
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 body1
 agn title2 body2
@@ -278,7 +278,7 @@ EOF
 RUN
 
 NAME=graph self-ref block
-FILE=-
+FILE==
 CMDS=<<EOF
 agn title1 body1
 age title1 title1

@@ -67,8 +67,8 @@ static const char *help_msg_exclamation[] = {
 	"!", "echo $RZ_SIZE", "display file size",
 	"!-", "", "clear history in current session",
 	"!-*", "", "clear and save empty history log",
-	"!=!", "", "enable remotecmd mode",
-	"=!=", "", "disable remotecmd mode",
+	"R=!", "", "enable remotecmd mode",
+	"R!=", "", "disable remotecmd mode",
 	NULL
 };
 

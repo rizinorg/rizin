@@ -1,5 +1,5 @@
 NAME=pD@x:90
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits= 32
@@ -12,7 +12,7 @@ EOF
 RUN
 
 NAME=pd@x:90
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits= 32
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=pd@x:90909090
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=pd@x:909090
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
@@ -56,7 +56,7 @@ EOF
 RUN
 
 NAME=pd 4;?=
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 00000000000000000000
 e asm.arch=x86
@@ -75,7 +75,7 @@ EOF
 RUN
 
 NAME=pd 4 > /dev/null; ?=
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 00000000000000000000
 e asm.arch=x86
@@ -89,7 +89,7 @@ EOF
 RUN
 
 NAME=wx e9010f;?v $l
-FILE=-
+FILE==
 CMDS=<<EOF
 wx e9010f
 e asm.arch=x86
@@ -106,7 +106,7 @@ EOF
 RUN
 
 NAME=dis-16/32/64
-FILE=-
+FILE==
 CMDS=<<EOF
 wx e99300 e869390000 e828350000
 e asm.arch=x86
@@ -129,7 +129,7 @@ EOF
 RUN
 
 NAME=unaligned arm code
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 00000000
 e asm.bits=16
@@ -142,7 +142,7 @@ EOF
 RUN
 
 NAME=unaligned arm code
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 00000000
 e asm.bits=32
@@ -155,7 +155,7 @@ EOF
 RUN
 
 NAME=unaligned x86 issue
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 00000000
 e asm.arch=arm
@@ -172,7 +172,7 @@ EOF
 RUN
 
 NAME=reflines on last line
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32

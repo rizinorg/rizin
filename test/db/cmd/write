@@ -237,7 +237,7 @@ RUN
 
 # see bug #503
 NAME=wt
-FILE=-
+FILE==
 #bins/pe/b.exe
 CMDS=<<EOF
 wt a_piece_of_ls_saved_to_PWD 0x400
@@ -253,7 +253,7 @@ EOF
 RUN
 
 NAME=endian tests: wv
-FILE=-
+FILE==
 CMDS=<<EOF
 e cfg.bigendian=false
 e asm.bits=32
@@ -436,7 +436,7 @@ EOF
 RUN
 
 NAME=wz esc seqs
-FILE=-
+FILE==
 CMDS=<<EOF
 e str.escbslash=true
 wz \a\b\t\n\v\f\r\e\\\x40\7\15\176
@@ -450,7 +450,7 @@ EOF
 RUN
 
 NAME=Automatically reanalyze function control flow after a write
-FILE=-
+FILE==
 ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 e asm.bytes=true
@@ -509,7 +509,7 @@ EOF
 RUN
 
 NAME=Write misaligns jump instruction, control flow is reanalyzed
-FILE=-
+FILE==
 ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 e asm.bytes=true
@@ -556,7 +556,7 @@ EOF
 RUN
 
 NAME=Write reanalysis keeps already unreachable block
-FILE=-
+FILE==
 ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 e asm.bytes=true
@@ -584,7 +584,7 @@ EOF
 RUN
 
 NAME=Write reanalysis of child of non-modified block
-FILE=-
+FILE==
 ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 e asm.bytes=true

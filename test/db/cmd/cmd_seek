@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=s0x
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x33
 s
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=seek far offset
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x7fffff8000b54000 ; ?v $$
 s 0x8fffff8000b54000 ; ?v $$
@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=seek opcodes
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -120,7 +120,7 @@ EOF
 RUN
 
 NAME=seek silent
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x100
 s
@@ -152,7 +152,7 @@ EOF
 RUN
 
 NAME=seek silent to register
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -323,7 +323,7 @@ EOF
 RUN
 
 NAME=relative tmp seek
-FILE=-
+FILE==
 CMDS=<<EOF
 s 0x10
 ?v $$ @ +0x10

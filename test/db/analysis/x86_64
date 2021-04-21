@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=analysis.ijmp missing branch bug
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -1740,7 +1740,7 @@ EOF
 RUN
 
 NAME=analysis vars crash
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 af
@@ -1752,7 +1752,7 @@ EOF
 RUN
 
 NAME=analysis vars crash 2
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.bits=64
@@ -2052,7 +2052,7 @@ EOF
 RUN
 
 NAME=ax-
-FILE=-
+FILE==
 CMDS=<<EOF
 ax 10 20
 axq
@@ -2065,7 +2065,7 @@ EOF
 RUN
 
 NAME=ax-@
-FILE=-
+FILE==
 CMDS=<<EOF
 s 20
 ax 10
@@ -2079,7 +2079,7 @@ EOF
 RUN
 
 NAME=ax-*
-FILE=-
+FILE==
 CMDS=<<EOF
 ax 10
 ax
@@ -2126,7 +2126,7 @@ EOF
 RUN
 
 NAME=x86 ref issue
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -2139,7 +2139,7 @@ EOF
 RUN
 
 NAME=aoj pushf
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -2224,7 +2224,7 @@ EOF
 RUN
 
 NAME=delete references with ax-
-FILE=-
+FILE==
 CMDS=<<EOF
 ax 10 20
 axq
@@ -2327,7 +2327,7 @@ EOF
 RUN
 
 NAME=axs
-FILE=-
+FILE==
 CMDS=<<EOF
 axs 0x10
 axq
@@ -2467,7 +2467,7 @@ EOF
 RUN
 
 NAME=r_analysis_fcn_split_bb FITFCNSZ fix (#12008)
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
@@ -2528,7 +2528,7 @@ EOF
 RUN
 
 NAME=overlapping basic blocks and analysis.jmp.mid
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
@@ -2899,7 +2899,7 @@ EOF
 RUN
 
 NAME=basic block overlaps function start
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
@@ -2996,7 +2996,7 @@ EOF
 RUN
 
 NAME=af-* removes function flags
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
@@ -3053,7 +3053,7 @@ EOF
 RUN
 
 NAME=so -N and overlapping basic blocks
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3076,7 +3076,7 @@ EOF
 RUN
 
 NAME=a8 analyze bytes
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3184,7 +3184,7 @@ EOF
 RUN
 
 NAME=sar on x86-64
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3209,7 +3209,7 @@ EOF
 RUN
 
 NAME=aes
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3780,7 +3780,7 @@ EOF
 RUN
 
 NAME=x86_64 show registers in table
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -3825,7 +3825,7 @@ EOF
 RUN
 
 NAME=lea pseudo improvements (pseudo disabled)
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
@@ -3867,7 +3867,7 @@ EOF
 RUN
 
 NAME=lea pseudo improvements (pseudo enabled)
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true

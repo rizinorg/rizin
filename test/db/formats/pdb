@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=PDB downloader json
-FILE=-
+FILE==
 CMDS=<<EOF
 %RZ_CURL=1
 !!rz-bin -PPj bins/pdb/user32.dll
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=idp 404
-FILE=-
+FILE==
 CMDS=<<EOF
 idp 404.pdb
 EOF
@@ -43,7 +43,7 @@ EOF
 RUN
 
 NAME=idp and baddr
-FILE=-
+FILE==
 CMDS=<<EOF
 e bin.baddr=0
 idp bins/pdb/Project1.pdb
@@ -236,7 +236,7 @@ EOF
 RUN
 
 NAME=PDB set flag realname
-FILE=-
+FILE==
 CMDS=<<EOF
 idp bins/pdb/Project1.pdb
 fN @ 0x00011000

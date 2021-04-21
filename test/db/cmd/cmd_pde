@@ -125,7 +125,7 @@ RUN
 
 NAME=pde dont pollute
 ARGS=-a x86 -b 32
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 31c0c700ffff0000ffe0
 pdeqq
@@ -144,7 +144,7 @@ RUN
 
 NAME=pde use cache but dont pollute it
 ARGS=-a x86 -b 32
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.cache=1
 wx 20 @ 0x30

@@ -375,7 +375,7 @@ EOF
 RUN
 
 NAME=duplicate af+
-FILE=-
+FILE==
 CMDS=<<EOF
 af+ 0x1337 func
 af+ 0x1337 func
@@ -408,7 +408,7 @@ EOF
 RUN
 
 NAME=function naming
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

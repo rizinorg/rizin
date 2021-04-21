@@ -1165,13 +1165,13 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	gprobe = (RzIOGprobe *)fd->data;
 
 	if (!cmd[0] || cmd[0] == '?' || !strcmp(cmd, "help")) {
-		printf("Usage: =!cmd args\n"
-		       " =!reset code\n"
-		       " =!debugon\n"
-		       " =!debugoff\n"
-		       " =!runcode address\n"
-		       " =!getdeviceid\n"
-		       " =!getinformation\n");
+		printf("Usage: R!cmd args\n"
+		       " R!reset code\n"
+		       " R!debugon\n"
+		       " R!debugoff\n"
+		       " R!runcode address\n"
+		       " R!getdeviceid\n"
+		       " R!getinformation\n");
 		return NULL;
 	}
 
@@ -1218,7 +1218,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 
-	printf("Try: '=!?'\n");
+	printf("Try: 'R!?'\n");
 
 	return NULL;
 }

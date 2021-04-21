@@ -17,7 +17,7 @@ EOF
 RUN
 
 NAME=iter file lines
-FILE=-
+FILE==
 CMDS=<<EOF
 rm .iter-file-lines.tmp
 ?e 10 > .iter-file-lines.tmp
@@ -36,7 +36,7 @@ EOF
 RUN
 
 NAME=iter offsets
-FILE=-
+FILE==
 CMDS=<<EOF
 s @@=10 20 30 0xdeadbeef
 EOF
@@ -49,7 +49,7 @@ EOF
 RUN
 
 NAME=iter offsetssizes
-FILE=-
+FILE==
 CMDS=<<EOF
 (_; s; b)() @@@=10 1 20 2 30 3 0xdeadbeef 10
 EOF
@@ -66,7 +66,7 @@ EOF
 RUN
 
 NAME=iter hit
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 000090000000009000
 s @@/x 90
@@ -80,7 +80,7 @@ EOF
 RUN
 
 NAME=iter interpret
-FILE=-
+FILE==
 CMDS=<<EOF
 s @@c:?e 10 20
 EOF
@@ -91,7 +91,7 @@ EOF
 RUN
 
 NAME=iter interpret offsetssizes
-FILE=-
+FILE==
 CMDS=<<EOF
 (_;s;b)() @@@c:?e 10 1 20 2
 EOF
@@ -104,7 +104,7 @@ EOF
 RUN
 
 NAME=iter comment
-FILE=-
+FILE==
 CMDS=<<EOF
 CC hello
 CC world @ 0xdeadbeef
@@ -124,7 +124,7 @@ EOF
 RUN
 
 NAME=iter dbt
-FILE=-
+FILE==
 CMDS=<<EOF
 EOF
 EXPECT=<<EOF
@@ -132,7 +132,7 @@ EOF
 RUN
 
 NAME=iter threads
-FILE=-
+FILE==
 CMDS=<<EOF
 EOF
 EXPECT=<<EOF
@@ -275,7 +275,7 @@ EOF
 RUN
 
 NAME=iter flag
-FILE=-
+FILE==
 CMDS=<<EOF
 f hello @ 0x30
 f world @ 0xdeadbeef
@@ -321,7 +321,7 @@ EOF
 RUN
 
 NAME=iter dbgmap
-FILE=-
+FILE==
 CMDS=<<EOF
 EOF
 EXPECT=<<EOF
@@ -329,7 +329,7 @@ EOF
 RUN
 
 NAME=iter register
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -371,7 +371,7 @@ EOF
 RUN
 
 NAME=iter step
-FILE=-
+FILE==
 CMDS=<<EOF
 s @@s:0x1000 0x2000 0x400
 EOF

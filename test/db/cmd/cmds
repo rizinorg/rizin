@@ -131,7 +131,7 @@ EOF
 RUN
 
 NAME=r2 asm with pa
-FILE=-
+FILE==
 BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
@@ -145,7 +145,7 @@ EOF
 RUN
 
 NAME=r2 asm with pa
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32

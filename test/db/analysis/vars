@@ -286,7 +286,7 @@ EOF
 RUN
 
 NAME=Detect register args used only by callee
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
@@ -353,7 +353,7 @@ EOF
 RUN
 
 NAME=Variable access with misc registers (x86)
-FILE=-
+FILE==
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.flags=false
@@ -411,7 +411,7 @@ RUN
 
 
 NAME=Variable access with misc registers (ARM)
-FILE=-
+FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e asm.bytes=true
@@ -480,7 +480,7 @@ EOF
 RUN
 
 NAME=Takeover variables
-FILE=-
+FILE==
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 wx e805000000e80600000039d1742577145589e583ec048b5d088b4d0c895dfc83f90174098b45fc8945fc49ebf28b45fc89ec5dc3

@@ -21,7 +21,7 @@ bool test_rz_test_database_load_cmd(void) {
 	mu_assert_eq(test->type, RZ_TEST_TYPE_CMD, "test type");
 	RzCmdTest *cmd_test = test->cmd_test;
 	mu_assert_streq(cmd_test->name.value, "multiline0", "name");
-	mu_assert_streq(cmd_test->file.value, "-", "file");
+	mu_assert_streq(cmd_test->file.value, "=", "file");
 	mu_assert_streq(cmd_test->cmds.value, "rm -rf /\n", "cmds");
 	mu_assert_streq(cmd_test->expect.value, "expected\noutput\n", "expect");
 	mu_assert_eq(cmd_test->expect.line_begin, 6, "line begin");
@@ -124,7 +124,7 @@ bool test_rz_test_fix(void) {
 
 	mu_assert_streq(content,
 		"NAME=multiline0\n"
-		"FILE=-\n"
+		"FILE==\n"
 		"CMDS=<<EOF\n"
 		"rm -rf /\n"
 		"EOF\n"
@@ -137,7 +137,7 @@ bool test_rz_test_fix(void) {
 		"RUN\n"
 		"\n"
 		"NAME=singleline0\n"
-		"FILE=-\n"
+		"FILE==\n"
 		"CMDS=<<EOF\n"
 		"rm -rf\n"
 		"EOF\n"
@@ -150,7 +150,7 @@ bool test_rz_test_fix(void) {
 		"RUN\n"
 		"\n"
 		"NAME=multiline1\n"
-		"FILE=-\n"
+		"FILE==\n"
 		"CMDS=<<EOF\n"
 		"rm -rf\n"
 		"EOF\n"
@@ -163,7 +163,7 @@ bool test_rz_test_fix(void) {
 		"RUN\n"
 		"\n"
 		"NAME=singleline1\n"
-		"FILE=-\n"
+		"FILE==\n"
 		"CMDS=<<EOF\n"
 		"rm -rf\n"
 		"EOF\n"

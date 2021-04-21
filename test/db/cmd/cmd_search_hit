@@ -306,7 +306,7 @@ EOF
 RUN
 
 NAME=from/to /v
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -324,7 +324,7 @@ EOF
 RUN
 
 NAME=from/to /v not in range
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 01
 e cmd.hit="pi 1"
@@ -338,7 +338,7 @@ EOF
 RUN
 
 NAME=from/to /V
-FILE=-
+FILE==
 BROKEN=1
 CMDS=<<EOF
 wx 05
@@ -355,7 +355,7 @@ EOF
 RUN
 
 NAME=from/to /V not in range
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 05
 e cmd.hit=pi 1

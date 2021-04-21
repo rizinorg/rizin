@@ -1,10 +1,10 @@
 NAME=dupfd bug
-FILE=-
+FILE==
 CMDS=<<EOF
 e file.nowarn=true
 e file.loadmethod=append
 e scr.null=true
-10o -
+10o =
 e scr.null=false
 o~?
 EOF
@@ -14,12 +14,12 @@ EOF
 RUN
 
 NAME=dupfd hard
-FILE=-
+FILE==
 CMDS=<<EOF
 e file.loadmethod=append
 e file.nowarn=true
 e scr.null=true
-1000o -
+1000o =
 e scr.null=false
 o~?
 EOF
@@ -29,10 +29,10 @@ EOF
 RUN
 
 NAME=dupfd hard
-FILE=-
+FILE==
 CMDS=<<EOF
 op
-o -
+o =
 op
 opn
 op

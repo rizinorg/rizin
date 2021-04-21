@@ -1,5 +1,5 @@
 NAME=rz-asm i4004
-FILE=-
+FILE==
 CMDS=<<EOF
 !!rz-asm -L~4004
 EOF
@@ -9,7 +9,7 @@ EOF
 RUN
 
 NAME=rz-asm arm asm/dis endian
-FILE=-
+FILE==
 CMDS=<<EOF
 !rz-asm -a arm -b32 "mov r0, 3"
 !rz-asm -a arm -b32 -e "mov r0, 3"
@@ -25,7 +25,7 @@ EOF
 RUN
 
 NAME=1: rz-asm
-FILE=-
+FILE==
 CMDS=!rz-asm -a arm -b32 "mov r0, 3"
 EXPECT=<<EOF
 0300a0e3
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=rz-asm blx arm/thumb
-FILE=-
+FILE==
 CMDS=!rz-asm -o 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
@@ -41,7 +41,7 @@ EOF
 RUN
 
 NAME=rz-asm blx arm/thumb 2
-FILE=-
+FILE==
 CMDS=!rz-asm -o 0x4000 -a arm -b 16 -d 80f018ea
 EXPECT=<<EOF
 blx 0x84434
@@ -50,7 +50,7 @@ RUN
 
 NAME=rz-asm arm/thumb branch errors
 BROKEN=1 # Only on Windows
-FILE=-
+FILE==
 CMDS=<<EOF
 !rz-asm -a arm -b 16 'b.n 8'
 !rz-asm -a arm -b 16 'b.w 8'
@@ -79,7 +79,7 @@ EOF
 RUN
 
 NAME=2: rz-asm
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 64 -d "5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3"
 EXPECT=<<EOF
 push rbp
@@ -97,7 +97,7 @@ EOF
 RUN
 
 NAME=rz-asm #1167
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 64 "cmp rax,rbx"
 EXPECT=<<EOF
 4839d8
@@ -105,7 +105,7 @@ EOF
 RUN
 
 NAME=rz-asm #1167 2
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 64 "test rax, rbx"
 EXPECT=<<EOF
 4885d8
@@ -113,7 +113,7 @@ EOF
 RUN
 
 NAME=rz-asm #1900
-FILE=-
+FILE==
 CMDS=<<EOF
 !rz-asm -a x86 -b 32 "mov [0x33], eax"
 !rz-asm -a x86 -b 32 "mov eax, 33"
@@ -127,7 +127,7 @@ EOF
 RUN
 
 NAME=rz-asm #1900 (detect syntax error - case 1)
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov hello, eax"
 EXPECT=<<EOF
 EOF
@@ -138,7 +138,7 @@ EOF
 RUN
 
 NAME=rz-asm #1900 (detect syntax error - case 2)
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov 33, eax"
 EXPECT=<<EOF
 EOF
@@ -149,7 +149,7 @@ EOF
 RUN
 
 NAME=rz-asm #1900 (detect syntax error - case 3)
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov eax, hello"
 EXPECT=<<EOF
 EOF
@@ -160,7 +160,7 @@ EOF
 RUN
 
 NAME=rz-asm x86_32 overlarge operand
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov eax, 0x1122334455"
 EXPECT=
 EXPECT_ERR=<<EOF
@@ -170,7 +170,7 @@ EOF
 RUN
 
 NAME=rz-asm x86_64 overlarge operand
-FILE=-
+FILE==
 CMDS=<<EOF
 !rz-asm -a x86 -b 64 "mov rax, 0x112233445566778899"
 !rz-asm -a x86 -b 64 "mov eax, 0x1122334455"
@@ -185,7 +185,7 @@ EOF
 RUN
 
 NAME=rz-asm #9197
-FILE=-
+FILE==
 CMDS=!rz-asm -a arm -b 64 "ldur x1, [x29, -8]"
 EXPECT=<<EOF
 a1835ff8
@@ -193,7 +193,7 @@ EOF
 RUN
 
 NAME=rz-asm -h~Usage?"
-FILE=-
+FILE==
 CMDS=!!rz-asm -h~Usage?
 EXPECT=<<EOF
 1
@@ -201,7 +201,7 @@ EOF
 RUN
 
 NAME=rz-asm -C
-FILE=-
+FILE==
 CMDS=!rz-asm -C -a x86 -b 32 "mov eax, 33"
 EXPECT=<<EOF
 "\xb8\x21\x00\x00\x00"
@@ -209,7 +209,7 @@ EOF
 RUN
 
 NAME=rz-asm -d
-FILE=-
+FILE==
 CMDS=!rz-asm -d -a x86 -b 32 "b821000000"
 EXPECT=<<EOF
 mov eax, 0x21
@@ -217,7 +217,7 @@ EOF
 RUN
 
 NAME=rz-asm -D
-FILE=-
+FILE==
 CMDS=!rz-asm -D -a x86 -b 32 "b821000000"
 EXPECT=<<EOF
 0x00000000   5               b821000000  mov eax, 0x21
@@ -225,7 +225,7 @@ EOF
 RUN
 
 NAME=rz-asm -s
-FILE=-
+FILE==
 CMDS=!rz-asm -s att -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
 0x00000000   2                     31ed  xorl %ebp, %ebp
@@ -233,7 +233,7 @@ EOF
 RUN
 
 NAME=rz-asm -o
-FILE=-
+FILE==
 CMDS=!rz-asm -s att -o 0xa -a x86 -b 32 -D "31ed"
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xorl %ebp, %ebp
@@ -241,7 +241,7 @@ EOF
 RUN
 
 NAME=rz-asm -F pseudo
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  ebp = 0
@@ -249,7 +249,7 @@ EOF
 RUN
 
 NAME=rz-asm -F
-FILE=-
+FILE==
 CMDS=!rz-asm -o 0xa -a x86 -b 32 -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
@@ -257,7 +257,7 @@ EOF
 RUN
 
 NAME=rz-asm -F -o order bug
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 32 -o 0xa -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  xor ebp, ebp
@@ -265,7 +265,7 @@ EOF
 RUN
 
 NAME=rz-asm -B
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b16 -B "xor al, 0x34";ps
 EXPECT=<<EOF
 44
@@ -273,7 +273,7 @@ EOF
 RUN
 
 NAME=rz-asm -v~commit?"
-FILE=-
+FILE==
 CMDS=!!rz-asm -v~commit?
 EXPECT=<<EOF
 1
@@ -281,7 +281,7 @@ EOF
 RUN
 
 NAME=rz-asm -w
-FILE=-
+FILE==
 CMDS=!rz-asm -w -a x86 -b 32 "mov"
 EXPECT=<<EOF
 moves data from src to dst
@@ -289,7 +289,7 @@ EOF
 RUN
 
 NAME=rz-asm  dissassemble ARM32 binary file
-FILE=-
+FILE==
 CMDS=!rz-asm -DB -a arm -o 0x200 -b 32 -f bins/other/rz-asm/testARM32.bin
 EXPECT=<<EOF
 0x00000200   4                 4661b0e1  asrs r6, r6, 2
@@ -306,7 +306,7 @@ EOF
 RUN
 
 NAME=rz-asm  dissassemble ARM32 binary file with skip
-FILE=-
+FILE==
 CMDS=!rz-asm -DB -a arm -o 0x200 -b 32 -f bins/other/rz-asm/testARM32.bin -i 4
 EXPECT=<<EOF
 0x00000200   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
@@ -322,7 +322,7 @@ EOF
 RUN
 
 NAME=rz-asm endian test 1
-FILE=-
+FILE==
 CMDS=!rz-asm -e -a arm -b 32 -d 0ad0a0e1
 EXPECT=<<EOF
 beq 0xff42838c
@@ -330,7 +330,7 @@ EOF
 RUN
 
 NAME=rz-asm endian test 2
-FILE=-
+FILE==
 CMDS=!rz-asm -e -a arm -b 32 -d fff0a0e3
 EXPECT=<<EOF
 invalid
@@ -338,7 +338,7 @@ EOF
 RUN
 
 NAME=rz-asm  SPP include directive
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 32 -p -f bins/other/rz-asm/asm/include.asm
 EXPECT=<<EOF
 9083e803bb00000000cd80c3
@@ -346,7 +346,7 @@ EOF
 RUN
 
 NAME=rz-asm  SPP nested conditionals
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 32 -p -f bins/other/rz-asm/asm/nest.asm
 EXPECT=<<EOF
 83c10283e90583c301b90200000090
@@ -358,7 +358,7 @@ EOF
 RUN
 
 NAME=rz-asm x86.asm.32
-FILE=-
+FILE==
 CMDS=!rz-asm -f bins/elf/analysis/hello.asm
 EXPECT=<<EOF
 ba0e000000b91d000000bb01000000b804000000cd80b801000000cd8048656c6c6f2c20776f726c64210a00
@@ -366,7 +366,7 @@ EOF
 RUN
 
 NAME=rz-asm bswap x64 #8095
-FILE=-
+FILE==
 CMDS="!rz-asm -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""
 EXPECT=<<EOF
 480fc8480fcb480fc9480fca
@@ -375,13 +375,13 @@ RUN
 
 NAME=rz-asm bswap x64 #8095 (with single quotes)
 BROKEN=1 # Only on Windows
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 64 'bswap rax;bswap rbx;bswap rcx;bswap rdx'
 EXPECT=480fc8480fcb480fc9480fca
 RUN
 
 NAME=rz-asm mov eax, [eax * 2 + 8]
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 32 "mov eax, [eax * 2 + 8]"
 EXPECT=<<EOF
 8b044508000000
@@ -389,7 +389,7 @@ EOF
 RUN
 
 NAME=rz-asm -a x86 -b 64 -A 0x55
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 64 -A 0x55
 EXPECT=<<EOF
 offset:   0x00000000
@@ -403,7 +403,7 @@ EOF
 RUN
 
 NAME=rz-asm -c
-FILE=-
+FILE==
 CMDS=!rz-asm -a arm -b 16 -d -c cortex 0x80f30988
 EXPECT=<<EOF
 msr psp, r0
@@ -412,14 +412,14 @@ RUN
 
 NAME=rz-asm -k
 BROKEN=1
-FILE=-
+FILE==
 CMDS=!rz-asm -k darwin 0x90
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=rz-asm -a x86 -b 64 -E 0x55
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 64 -E 0x55
 EXPECT=<<EOF
 rbp,8,rsp,-,=[8],8,rsp,-=
@@ -427,7 +427,7 @@ EOF
 RUN
 
 NAME=rz-asm -a x86 -b 64 -Aj 0x55
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 64 -Aj 0x55
 EXPECT=<<EOF
 [{"opcode":0,"bytes":"55","type":"rpush","stackop":"unknown","esil":"rbp,8,rsp,-,=[8],8,rsp,-=","stackptr":8}]
@@ -435,7 +435,7 @@ EOF
 RUN
 
 NAME=rz-asm -L
-FILE=-
+FILE==
 CMDS=!rz-asm -L | grep -c arm.gnu
 EXPECT=<<EOF
 1
@@ -443,7 +443,7 @@ EOF
 RUN
 
 NAME=rz-asm -qL
-FILE=-
+FILE==
 CMDS=!rz-asm -qL | grep -c arm.gnu
 EXPECT=<<EOF
 1
@@ -451,7 +451,7 @@ EOF
 RUN
 
 NAME=rz-asm -v
-FILE=-
+FILE==
 CMDS=!rz-asm -v  | grep -c build
 EXPECT=<<EOF
 1
@@ -459,7 +459,7 @@ EOF
 RUN
 
 NAME=rz-asm -a x86 -b 64 -r push ebp
-FILE=-
+FILE==
 CMDS=!rz-asm -a x86 -b 64 -r push ebp
 EXPECT=<<EOF
 e asm.arch=x86
@@ -471,7 +471,7 @@ EOF
 RUN
 
 NAME=rz-asm -a sh -e -d
-FILE=-
+FILE==
 CMDS=!rz-asm -a sh -e -d "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
 bt.s 0x00000004
@@ -485,7 +485,7 @@ EOF
 RUN
 
 NAME=rz-asm -a sh -e -D
-FILE=-
+FILE==
 CMDS=!rz-asm -a sh -e -D "8d00 000b 2029 8ffb 0009 420b 31e0"
 EXPECT=<<EOF
 0x00000000   2                     8d00  bt.s 0x00000004
@@ -499,7 +499,7 @@ EOF
 RUN
 
 NAME=rz-asm -a sh -d
-FILE=-
+FILE==
 CMDS=!rz-asm -a sh -d "008d 0b00 2920 fb8f 0900 0b42 e031"
 EXPECT=<<EOF
 bt.s 0x00000004
@@ -513,7 +513,7 @@ EOF
 RUN
 
 NAME=rz-asm -a sh -D
-FILE=-
+FILE==
 CMDS=!rz-asm -a sh -D "008d 0b00 2920 fb8f 0900 0b42 e031"
 EXPECT=<<EOF
 0x00000000   2                     008d  bt.s 0x00000004
@@ -527,7 +527,7 @@ EOF
 RUN
 
 NAME=rz-asm -a ppc.as -b 64 "std r31, -8(r1)"
-FILE=-
+FILE==
 BROKEN=1
 CMDS=!rz-asm -a ppc.as -b 64 "std r31, -8(r1)"
 EXPECT=<<EOF
@@ -536,7 +536,7 @@ EOF
 RUN
 
 NAME=rz-asm -a ppc -b 64 -d f8ffe1fb
-FILE=-
+FILE==
 CMDS=!rz-asm -a ppc -b 64 -d f8ffe1fb
 EXPECT=<<EOF
 std r31, -8(r1)
@@ -544,7 +544,7 @@ EOF
 RUN
 
 NAME=rz-asm -a ppc.as -b 32 -e "mr r10, r4"
-FILE=-
+FILE==
 BROKEN=1
 CMDS=!rz-asm -a ppc.as -b 32 -e "mr r10, r4"
 EXPECT=<<EOF
@@ -553,7 +553,7 @@ EOF
 RUN
 
 NAME=rz-asm -a ppc -b 32 -d 78238a7c
-FILE=-
+FILE==
 CMDS=!rz-asm -a ppc -b 32 -d 78238a7c
 EXPECT=<<EOF
 mr r10, r4
@@ -561,7 +561,7 @@ EOF
 RUN
 
 NAME=rz-asm -a arm.as -b 16 "wfe"
-FILE=-
+FILE==
 BROKEN=1
 CMDS=!rz-asm -a arm.as -b 16 "wfe"
 EXPECT=<<EOF
@@ -570,7 +570,7 @@ EOF
 RUN
 
 NAME=rz-asm -a arm.as -b 32 "add fp, sp, 0"
-FILE=-
+FILE==
 BROKEN=1
 CMDS=!rz-asm -a arm.as -b 32 "add fp, sp, 0"
 EXPECT=<<EOF
@@ -579,7 +579,7 @@ EOF
 RUN
 
 NAME=rz-asm -a arm.as -b 32 -e "ldr fp, [sp], 4"
-FILE=-
+FILE==
 BROKEN=1
 CMDS=!rz-asm -a arm.as -b 32 -e "ldr fp, [sp], 4"
 EXPECT=<<EOF
@@ -588,7 +588,7 @@ EOF
 RUN
 
 NAME=rz-asm -a arm.as -b 64 "sub sp, sp, 16"
-FILE=-
+FILE==
 BROKEN=1
 CMDS=!rz-asm -a arm.as -b 64 "sub sp, sp, 16"
 EXPECT=<<EOF

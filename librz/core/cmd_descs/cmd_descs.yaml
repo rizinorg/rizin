@@ -150,7 +150,7 @@ commands:
     cname: cmd_search
     summary: Search for bytes, regexps, patterns, ..
     type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: "="
+  - name: "R"
     summary: Connect with other instances of rizin
     subcommands: cmd_remote
   - name: "?*"

@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=p= 0xff 0x00
-FILE=-
+FILE==
 BROKEN=1
 CMDS=<<EOF
 b 2
@@ -29,7 +29,7 @@ EOF
 RUN
 
 NAME=p=b 0xff 0x00
-FILE=-
+FILE==
 CMDS=<<EOF
 b 2
 wx 0xff
@@ -43,7 +43,7 @@ EOF
 RUN
 
 NAME=p= - crash
-FILE=-
+FILE==
 CMDS=<<EOF
 e zoom.in=block
 p=p" 1 " 1 EN
@@ -315,7 +315,7 @@ EOF
 RUN
 
 NAME=tmpbits
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -329,7 +329,7 @@ EOF
 RUN
 
 NAME=tmpbits
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -524,7 +524,7 @@ EOF
 RUN
 
 NAME=tmpbits
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -538,7 +538,7 @@ EOF
 RUN
 
 NAME=tmpbits
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -736,7 +736,7 @@ EOF
 RUN
 
 NAME=prc text color
-FILE=-
+FILE==
 CMDS=<<EOF
 . scripts/palette.rz
 woe 0 0xff 1
@@ -766,7 +766,7 @@ EOF
 RUN
 
 NAME=prc single-char-flag fix
-FILE=-
+FILE==
 CMDS=<<EOF
 woe 0 0xff 1
 f s @ 0x77
@@ -793,7 +793,7 @@ EOF
 RUN
 
 NAME=prc hex.offset=0
-FILE=-
+FILE==
 CMDS=<<EOF
 e hex.offset=0
 woe 0 0xff 1
@@ -821,7 +821,7 @@ EOF
 RUN
 
 NAME=p=e hex.offset=0
-FILE=-
+FILE==
 CMDS=<<EOF
 e hex.offset=0
 e scr.color=0
@@ -843,7 +843,7 @@ EOF
 RUN
 
 NAME=pxA hex.offset=0
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

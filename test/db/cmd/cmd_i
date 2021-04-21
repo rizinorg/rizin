@@ -3571,7 +3571,7 @@ EOF
 RUN
 
 NAME=izzzj
-FILE=-
+FILE==
 CMDS=<<EOF
 w abcd\00012345\0efghi\0
 izzzj
@@ -3671,7 +3671,7 @@ EOF
 RUN
 
 NAME=izz escaping backslash
-FILE=-
+FILE==
 CMDS=<<EOF
 wz QUVWXWYZ[\\]^_R
 px 16
@@ -3699,7 +3699,7 @@ EOF
 RUN
 
 NAME=izz and bin.str.enc
-FILE=-
+FILE==
 CMDS=<<EOF
 wz k\0i\0abcdefgh
 (izzenc enc; e bin.str.enc=$0; izz~:3..)
@@ -3920,7 +3920,7 @@ EOF
 RUN
 
 NAME=iz-
-FILE=-
+FILE==
 CMDS=<<EOF
 iz- @ 0x412420
 e bin.str.purge
@@ -4515,7 +4515,7 @@ EOF
 RUN
 
 NAME=it
-FILE=-
+FILE==
 ARGS=-w
 CMDS=it ; wx 0x90 ; it
 EXPECT=<<EOF
@@ -4779,7 +4779,7 @@ EOF
 RUN
 
 NAME=izz libcap (#298)
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 7500 6900 3d25 7325 7325 7300 2573 2c00 2b25 7325 7325 7300 2d25 7325 7325 7300 6361 705f 6368 6f77 6e00 6361 705f 6461
 izz~^0
