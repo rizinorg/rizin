@@ -150,7 +150,7 @@ static RzList *sections(RzBinFile *bf) {
 		return NULL;
 	}
 	const int m_idx = vsf_obj->machine_idx;
-	// Radare doesn't support BANK switching.
+	// Rizin doesn't support BANK switching.
 	// But by adding the ROM sections first, and then the RAM
 	// it kind of simulate bank switching since users can remove existing sections
 	// and the RAM section won't overwrite the ROM since it was added last.
@@ -167,7 +167,6 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xa000;
 			ptr->vsize = 1024 * 8; // BASIC size (8k)
 			ptr->perm = RZ_PERM_RX;
-			ptr->add = true;
 			rz_list_append(ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
@@ -180,7 +179,6 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8; // KERNAL size (8k)
 			ptr->perm = RZ_PERM_RX;
-			ptr->add = true;
 			rz_list_append(ret, ptr);
 
 			// CHARGEN section ignored
@@ -196,7 +194,6 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = 0x4000;
 			ptr->vsize = 1024 * 28; // BASIC size (28k)
 			ptr->perm = RZ_PERM_RX;
-			ptr->add = true;
 			rz_list_append(ret, ptr);
 
 			// MONITOR (0xb000 - 0xbfff)
@@ -210,7 +207,6 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xb000;
 			ptr->vsize = 1024 * 4; // BASIC size (4k)
 			ptr->perm = RZ_PERM_RX;
-			ptr->add = true;
 			rz_list_append(ret, ptr);
 
 			// EDITOR (0xc000 - 0xcfff)
@@ -223,7 +219,6 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xc000;
 			ptr->vsize = 1024 * 4; // BASIC size (4k)
 			ptr->perm = RZ_PERM_RX;
-			ptr->add = true;
 			rz_list_append(ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
@@ -236,7 +231,6 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8; // KERNAL size (8k)
 			ptr->perm = RZ_PERM_RX;
-			ptr->add = true;
 			rz_list_append(ret, ptr);
 
 			// CHARGEN section ignored
@@ -257,7 +251,6 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
 			ptr->perm = RZ_PERM_RWX;
-			ptr->add = true;
 			rz_list_append(ret, ptr);
 		} else {
 			// RAM C128 (0x0000 - 0xffff): Bank 0
@@ -274,7 +267,6 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
 			ptr->perm = RZ_PERM_RWX;
-			ptr->add = true;
 			rz_list_append(ret, ptr);
 
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -286,7 +278,6 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
 			ptr->perm = RZ_PERM_RWX;
-			ptr->add = true;
 			rz_list_append(ret, ptr);
 		}
 	}
@@ -549,6 +540,7 @@ RzBinPlugin rz_bin_plugin_vsf = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.symbols = &symbols,
 	.info = &info,
