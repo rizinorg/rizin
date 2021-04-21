@@ -6,3 +6,26 @@ SPC700
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=SPC700: sections
+FILE=bins/spc700/bin.spc
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr          size vaddr         vsize perm name
+-----------------------------------------------------
+0   0x00000100  0x10000 0x00000000  0x10000 -r-- RAM
+
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=SPC700: maps
+FILE=bins/spc700/bin.spc
+CMDS=om
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000100 0x00000000 - 0x0000ffff r-- fmap.RAM
+EOF
+EXPECT_ERR=
+RUN
