@@ -6,7 +6,7 @@
 #include <rz_endian.h>
 #include <rz_util.h>
 
-void rz_sha1_init(RZ_SHA_CTX *context) {
+void rz_sha1_init(RZ_SHA1_CTX *context) {
 	rz_return_if_fail(context);
 
 	context->digest[0] = 0x67452301;
@@ -23,7 +23,7 @@ static inline ut32 rotate_left_32(ut32 value, ut32 rot) {
 	return ((((value) << (rot)) & 0xFFFFFFFF) | ((value) >> (32 - (rot))));
 }
 
-static void sha1_digest_block(RZ_SHA_CTX *context) {
+static void sha1_digest_block(RZ_SHA1_CTX *context) {
 	ut32 tmp;
 	ut32 W[80];
 	ut32 A = context->digest[0];
@@ -85,7 +85,7 @@ static void sha1_digest_block(RZ_SHA_CTX *context) {
 	context->index = 0;
 }
 
-bool rz_sha1_update(RZ_SHA_CTX *context, const ut8 *data, ut64 length) {
+bool rz_sha1_update(RZ_SHA1_CTX *context, const ut8 *data, ut64 length) {
 	rz_return_val_if_fail(context && data, false);
 	for (ut64 i = 0; i < length; ++i) {
 		context->block[context->index++] = data[i];
@@ -109,7 +109,7 @@ bool rz_sha1_update(RZ_SHA_CTX *context, const ut8 *data, ut64 length) {
 	return true;
 }
 
-void sha1_padding(RZ_SHA_CTX *context) {
+void sha1_padding(RZ_SHA1_CTX *context) {
 	if (context->index > 55) {
 		context->block[context->index++] = 0x80;
 		for (; context->index < RZ_HASH_SHA1_BLOCK_LENGTH;) {
@@ -134,7 +134,7 @@ void sha1_padding(RZ_SHA_CTX *context) {
 	sha1_digest_block(context);
 }
 
-void rz_sha1_fini(ut8 *hash, RZ_SHA_CTX *context) {
+void rz_sha1_fini(ut8 *hash, RZ_SHA1_CTX *context) {
 	rz_return_if_fail(context && hash);
 
 	sha1_padding(context);

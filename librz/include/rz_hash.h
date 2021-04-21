@@ -14,7 +14,7 @@ RZ_LIB_VERSION_HEADER(rz_hash);
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 typedef MD5_CTX RZ_MD5_CTX;
-typedef SHA_CTX RZ_SHA_CTX;
+typedef SHA_CTX RZ_SHA1_CTX;
 typedef SHA256_CTX RZ_SHA256_CTX;
 typedef SHA512_CTX RZ_SHA384_CTX;
 typedef SHA512_CTX RZ_SHA512_CTX;
@@ -49,7 +49,7 @@ typedef struct sha1_context_t {
 	ut64 index;
 	ut64 len_high;
 	ut64 len_low;
-} RZ_SHA_CTX;
+} RZ_SHA1_CTX;
 
 #define SHA256_BLOCK_LENGTH 64
 typedef struct _SHA256_CTX {
@@ -187,7 +187,7 @@ enum CRC_PRESETS {
 struct rz_hash_t {
 	RZ_MD4_CTX md4;
 	RZ_MD5_CTX md5;
-	RZ_SHA_CTX sha1;
+	RZ_SHA1_CTX sha1;
 	RZ_SHA256_CTX sha256;
 	RZ_SHA384_CTX sha384;
 	RZ_SHA512_CTX sha512;
