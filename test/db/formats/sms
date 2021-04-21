@@ -5,3 +5,11 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=SMS: maps
+FILE=bins/sms/demo.sms
+CMDS=om
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000000 0x00000000 - 0x00007fff r-x 
+EOF
+RUN
