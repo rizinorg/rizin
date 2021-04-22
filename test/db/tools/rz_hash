@@ -6,6 +6,14 @@ bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 entropy: 3.27819072
 EOF
 RUN
 
+NAME=rz-hash -a md4
+FILE==
+CMDS=!rz-hash -a md4 bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 md4: d4d61472a12d59be3a85e07ff9065658
+EOF
+RUN
+
 NAME=rz-hash -a md5
 FILE==
 CMDS=!rz-hash -a md5 bins/elf/analysis/hello-linux-x86_64
@@ -111,6 +119,24 @@ RUN
 NAME=rz-hash -a md5 -x "61646d696e" -s "admin"
 FILE==
 CMDS=!rz-hash -a md5 -x "61646d696e" -s "admin"
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+Hashstring already defined
+EOF
+RUN
+
+NAME=rz-hash -a md4 -x "61646d696e"
+FILE==
+CMDS=!rz-hash -a md4 -x "61646d696e"
+EXPECT=<<EOF
+0x00000000-0x00000004 md4: f9d4049dd6a4dc35d40e5265954b2a46
+EOF
+RUN
+
+NAME=rz-hash -a md4 -x "61646d696e" -s "admin"
+FILE==
+CMDS=!rz-hash -a md4 -x "61646d696e" -s "admin"
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
@@ -340,6 +366,87 @@ FILE==
 CMDS=!!rz-hash -v~commit?
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=rz-hash -qa md4 -s hello1
+FILE==
+CMDS=!rz-hash -qa md4 -s hello1
+EXPECT=<<EOF
+a2e1a2c510ebbe66c57e8a3060cd36f8
+EOF
+RUN
+
+NAME=rz-hash -qa md4 -s hello\x31
+FILE==
+CMDS=!rz-hash -qa md4 -s "hello\x31"
+EXPECT=<<EOF
+a2e1a2c510ebbe66c57e8a3060cd36f8
+EOF
+RUN
+
+NAME=rz-hash zero length hashes md4
+FILE==
+CMDS=!rz-hash -a md4 -s ""
+EXPECT=<<EOF
+0x00000000-0x00000000 md4: 31d6cfe0d16ae931b73c59d7e0c089c0
+EOF
+RUN
+
+NAME=rz-hash zero length hashes md4
+FILE==
+CMDS=!rz-hash -a md4 -s ""
+EXPECT=<<EOF
+0x00000000-0x00000000 md4: 31d6cfe0d16ae931b73c59d7e0c089c0
+EOF
+RUN
+
+NAME=rz-hash -c with correct expected hash
+FILE==
+CMDS=!rz-hash -a md4 -s "admin" -c f9d4049dd6a4dc35d40e5265954b2a46
+EXPECT=<<EOF
+0x00000000-0x00000004 md4: f9d4049dd6a4dc35d40e5265954b2a46
+rz-hash: Computed hash matches the expected one.
+EOF
+RUN
+
+NAME=rz-hash -c with incorrect expected hash
+FILE==
+CMDS=!rz-hash -a md4 -s "admin" -c f9d4049dd6a4dc35d40e5265954b2a47
+EXPECT=<<EOF
+0x00000000-0x00000004 md4: f9d4049dd6a4dc35d40e5265954b2a46
+EOF
+EXPECT_ERR=<<EOF
+rz-hash: Computed hash doesn't match the expected one.
+EOF
+RUN
+
+NAME=rz-hash -c with correct expected hash and quiet
+FILE==
+CMDS=!rz-hash -q -a md4 -s "admin" -c f9d4049dd6a4dc35d40e5265954b2a46
+EXPECT=<<EOF
+f9d4049dd6a4dc35d40e5265954b2a46
+rz-hash: Computed hash matches the expected one.
+EOF
+RUN
+
+NAME=rz-hash -c with missing nibble
+FILE==
+CMDS=!rz-hash -a md4 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+rz-hash: Invalid -c hex hash
+EOF
+RUN
+
+NAME=rz-hash -c with incorrect md4 hash length
+FILE==
+CMDS=!rz-hash -a md4 -s "admin" -c 21232f297a57a5a743894a0e4a801f
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+rz-hash: Given -c hash has 15 byte(s) but the selected algorithm returns 16 byte(s).
 EOF
 RUN
 
@@ -995,5 +1102,61 @@ FILE==
 CMDS=!rz-hash -j -a sha1,sha256 -s 233
 EXPECT=<<EOF
 [{"name":"sha1","hash":"52fdb9f68c503e11d168fe52035901864c0a4861"},{"name":"sha256","hash":"c0509a487a18b003ba05e505419ebb63e57a29158073e381f57160b5c5b86426"}]
+EOF
+RUN
+
+NAME=rz-hash -qa md4 -s ""
+FILE==
+CMDS=!rz-hash -qa md4 -s ""
+EXPECT=<<EOF
+31d6cfe0d16ae931b73c59d7e0c089c0
+EOF
+RUN
+
+NAME=rz-hash -qa md4 -s "a"
+FILE==
+CMDS=!rz-hash -qa md4 -s "a"
+EXPECT=<<EOF
+bde52cb31de33e46245e05fbdbd6fb24
+EOF
+RUN
+
+NAME=rz-hash -qa md4 -s "abc"
+FILE==
+CMDS=!rz-hash -qa md4 -s "abc"
+EXPECT=<<EOF
+a448017aaf21d8525fc10ae87aa6729d
+EOF
+RUN
+
+NAME=rz-hash -qa md4 -s "message digest"
+FILE==
+CMDS=!rz-hash -qa md4 -s "message digest"
+EXPECT=<<EOF
+d9130a8164549fe818874806e1c7014b
+EOF
+RUN
+
+NAME=rz-hash -qa md4 -s "abcdefghijklmnopqrstuvwxyz"
+FILE==
+CMDS=!rz-hash -qa md4 -s "abcdefghijklmnopqrstuvwxyz"
+EXPECT=<<EOF
+d79e1c308aa5bbcdeea8ed63df412da9
+EOF
+RUN
+
+NAME=rz-hash -qa md4 -s "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+FILE==
+CMDS=!rz-hash -qa md4 -s "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+EXPECT=<<EOF
+043f8582f241db351ce627e153e7f0e4
+EOF
+RUN
+
+NAME=rz-hash -qa md4 -s "12345678901234567890123456789012345678901234567890123456789012345678901234567890"
+FILE==
+CMDS=!rz-hash -qa md4 -s "12345678901234567890123456789012345678901234567890123456789012345678901234567890"
+EXPECT=<<EOF
+e33b4ddc9c38f2199c3e7b164fcc0536
 EOF
 RUN

@@ -126,29 +126,28 @@ static inline ut8 rgbnum(const char ch1, const char ch2) {
 }
 
 static void __cons_pal_update_event(RzConsContext *ctx) {
-	Sdb *db = sdb_new0();
-	int i, n = 0;
+	RzPVector sorter;
+	rz_pvector_init(&sorter, NULL);
 	/* Compute cons->pal values */
-	for (i = 0; keys[i].name; i++) {
+	for (int i = 0; keys[i].name; i++) {
 		RzColor *rcolor = (RzColor *)(((ut8 *)&(ctx->cpal)) + keys[i].coff);
 		char **color = (char **)(((ut8 *)&(ctx->pal)) + keys[i].off);
 		// Color is dynamically allocated, needs to be freed
 		RZ_FREE(*color);
 		*color = rz_cons_rgb_str_mode(ctx->color_mode, NULL, 0, rcolor);
-		const char *rgb = sdb_fmt("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
-		sdb_set(db, rgb, "1", 0);
+		char *rgb = rz_str_newf("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
+		rz_pvector_push(&sorter, rgb);
 	}
-	SdbList *list = sdb_foreach_list(db, true);
-	SdbListIter *iter;
-	SdbKv *kv;
+	rz_pvector_sort(&sorter, (RzPVectorComparator)strcmp);
 	rz_cons_rainbow_free(ctx);
-	rz_cons_rainbow_new(ctx, list->length);
-	ls_foreach (list, iter, kv) {
-		ctx->pal.rainbow[n++] = strdup(sdbkv_key(kv));
+	rz_cons_rainbow_new(ctx, rz_pvector_len(&sorter));
+	int n = 0;
+	void **iter;
+	rz_pvector_foreach (&sorter, iter) {
+		ctx->pal.rainbow[n++] = (char *)(*iter);
 	}
 	ctx->pal.rainbow_sz = n;
-	ls_free(list);
-	sdb_free(db);
+	rz_pvector_fini(&sorter);
 }
 
 RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
