@@ -5,7 +5,6 @@ rz_type_sources = [
   'format.c',
   'function.c',
   'helpers.c',
-  'link.c',
   'serialize_types.c',
   'type.c',
 ]
