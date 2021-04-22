@@ -207,6 +207,15 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 
 #if __WINDOWS__
 static int rz_line_readchar_win(ut8 *s, int slen) { // this function handle the input in console mode
+	if (slen > 0 && rz_cons_readbuffer_readchar(s)) {
+		if (s[0] == '\x1b' && rz_cons_readbuffer_readchar(s + 1)) {
+			if (s[1] == '\x31' && rz_cons_readbuffer_readchar(s + 2)) {
+				return 3;
+			}
+			return 2;
+		}
+		return 1;
+	}
 	INPUT_RECORD irInBuf = { { 0 } };
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
