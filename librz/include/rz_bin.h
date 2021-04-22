@@ -564,7 +564,7 @@ typedef struct rz_bin_map_t {
 	ut64 psize; ///< size of the data inside the file
 	ut64 vaddr; ///< address in the destination address space to map to
 	ut64 vsize; ///< size to map in the destination address space. If vsize > psize, excessive bytes are meant to be filled with 0
-	char *name;
+	RZ_NULLABLE char *name;
 	ut32 perm;
 } RzBinMap;
 
