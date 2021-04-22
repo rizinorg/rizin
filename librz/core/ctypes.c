@@ -115,10 +115,10 @@ static void core_types_enum_print(RzCore *core, RzBaseType *btype, RzOutputMode 
 	}
 }
 
-RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *enum_name, RzOutputMode mode, PJ *pj) {
-	rz_return_if_fail(enum_name);
+RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *name, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(name);
 	RzTypeDB *typedb = core->analysis->typedb;
-	RzBaseType *btype = rz_type_db_get_enum(typedb, enum_name);
+	RzBaseType *btype = rz_type_db_get_enum(typedb, name);
 	if (!btype) {
 		return;
 	}
@@ -159,8 +159,8 @@ static void core_types_enum_print_c(RzBaseType *btype, bool multiline) {
 	}
 }
 
-RZ_IPI void rz_types_enum_print_c(RzTypeDB *typedb, const char *enum_name, bool multiline) {
-	RzBaseType *btype = rz_type_db_get_enum(typedb, enum_name);
+RZ_IPI void rz_core_types_enum_print_c(RzTypeDB *typedb, const char *name, bool multiline) {
+	RzBaseType *btype = rz_type_db_get_enum(typedb, name);
 	if (!btype) {
 		return;
 	}
@@ -168,7 +168,7 @@ RZ_IPI void rz_types_enum_print_c(RzTypeDB *typedb, const char *enum_name, bool 
 	rz_type_base_type_free(btype);
 }
 
-RZ_IPI void rz_types_enum_print_c_all(RzTypeDB *typedb, bool multiline) {
+RZ_IPI void rz_core_types_enum_print_c_all(RzTypeDB *typedb, bool multiline) {
 	RzList *enumlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzListIter *it;
 	RzBaseType *btype;
@@ -178,256 +178,306 @@ RZ_IPI void rz_types_enum_print_c_all(RzTypeDB *typedb, bool multiline) {
 	rz_list_free(enumlist);
 }
 
-// Structured types (structures and unions)
+// Unions
 
-static bool sdb_if_union_cb(void *p, const char *k, const char *v) {
-	return !strncmp(v, "union", strlen("union") + 1);
-}
-
-static bool sdb_if_struct_cb(void *user, const char *k, const char *v) {
-	rz_return_val_if_fail(user, false);
-	Sdb *TDB = (Sdb *)user;
-	if (!strcmp(v, "struct") && !rz_str_startswith(k, "typedef")) {
-		return true;
-	}
-	if (!strcmp(v, "typedef")) {
-		const char *typedef_key = sdb_fmt("typedef.%s", k);
-		const char *type = sdb_const_get(TDB, typedef_key, NULL);
-		if (type && rz_str_startswith(type, "struct")) {
-			return true;
+static void core_types_union_print(RzCore *core, RzBaseType *btype, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(core && btype);
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		rz_return_if_fail(pj);
+		pj_o(pj);
+		if (btype && !rz_vector_empty(&btype->union_data.members)) {
+			pj_ks(pj, "name", btype->name);
+			pj_k(pj, "members");
+			pj_o(pj);
+			RzTypeUnionMember *memb;
+			rz_vector_foreach(&btype->union_data.members, memb) {
+				const char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
+				pj_ks(pj, memb->name, mtype);
+			}
+			pj_end(pj);
 		}
+		pj_end(pj);
+		break;
 	}
-	return false;
+	case RZ_OUTPUT_MODE_STANDARD: {
+		if (btype && !rz_vector_empty(&btype->union_data.members)) {
+			RzTypeUnionMember *memb;
+			rz_vector_foreach(&btype->union_data.members, memb) {
+				const char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
+				rz_cons_printf("%s: %s\n", memb->name, mtype);
+			}
+		}
+		break;
+	}
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_println(btype->name);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
 }
 
-RZ_IPI void rz_types_structured_print_json(SdbList *l) {
-	SdbKv *kv;
-	SdbListIter *it;
-	PJ *pj = pj_new();
-	if (!pj) {
+RZ_IPI void rz_core_types_union_print(RzCore *core, const char *name, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(name);
+	RzTypeDB *typedb = core->analysis->typedb;
+	RzBaseType *btype = rz_type_db_get_union(typedb, name);
+	if (!btype) {
 		return;
 	}
-
-	pj_a(pj); // [
-	ls_foreach (l, it, kv) {
-		const char *k = sdbkv_key(kv);
-		if (!k || !*k) {
-			continue;
-		}
-		pj_o(pj); // {
-		pj_ks(pj, "type", k); // key value pair of string and string
-		pj_end(pj); // }
-	}
-	pj_end(pj); // ]
-
-	rz_cons_println(pj_string(pj));
-	pj_free(pj);
+	core_types_union_print(core, btype, mode, pj);
+	rz_type_base_type_free(btype);
 }
 
-RZ_IPI void rz_types_union_print_json(RzTypeDB *typedb) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *l = sdb_foreach_list_filter(TDB, sdb_if_union_cb, true);
-	rz_types_structured_print_json(l);
-	ls_free(l);
-}
-
-RZ_IPI void rz_types_struct_print_json(RzTypeDB *typedb) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *l = sdb_foreach_list_filter_user(TDB, sdb_if_struct_cb, true, TDB);
-	rz_types_structured_print_json(l);
-	ls_free(l);
-}
-
-RZ_IPI void rz_types_structured_print_sdb(SdbList *l) {
-	SdbKv *kv;
-	SdbListIter *it;
-	ls_foreach (l, it, kv) {
-		rz_cons_println(sdbkv_key(kv));
-	}
-}
-
-RZ_IPI void rz_types_union_print_sdb(RzTypeDB *typedb) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *l = sdb_foreach_list_filter(TDB, sdb_if_union_cb, true);
-	rz_types_structured_print_sdb(l);
-	ls_free(l);
-}
-
-RZ_IPI void rz_types_struct_print_sdb(RzTypeDB *typedb) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *l = sdb_foreach_list_filter_user(TDB, sdb_if_struct_cb, true, TDB);
-	rz_types_structured_print_sdb(l);
-	ls_free(l);
-}
-
-RZ_IPI void rz_types_structured_print_c(Sdb *TDB, SdbList *l, const char *arg, bool multiline) {
-	char *name = NULL;
-	SdbKv *kv;
-	SdbListIter *iter;
-	const char *space = "";
-	bool match = false;
-
-	ls_foreach (l, iter, kv) {
-		if (name && !strcmp(sdbkv_value(kv), name)) {
-			continue;
-		}
-		free(name);
-		int n;
-		name = strdup(sdbkv_key(kv));
-		if (name && (arg && *arg)) {
-			if (!strcmp(arg, name)) {
-				match = true;
-			} else {
-				continue;
-			}
-		}
-		rz_cons_printf("%s %s {%s", sdbkv_value(kv), name, multiline ? "\n" : "");
-		char *p, *var = rz_str_newf("%s.%s", sdbkv_value(kv), name);
-		for (n = 0; (p = sdb_array_get(TDB, var, n, NULL)); n++) {
-			char *var2 = rz_str_newf("%s.%s", var, p);
-			if (var2) {
-				char *val = sdb_array_get(TDB, var2, 0, NULL);
-				if (val) {
-					char *arr = sdb_array_get(TDB, var2, 2, NULL);
-					int arrnum = atoi(arr);
-					free(arr);
-					if (multiline) {
-						rz_cons_printf("\t%s", val);
-						if (p && p[0] != '\0') {
-							rz_cons_printf("%s%s", strstr(val, " *") ? "" : " ", p);
-							if (arrnum) {
-								rz_cons_printf("[%d]", arrnum);
-							}
-						}
-						rz_cons_println(";");
-					} else {
-						rz_cons_printf("%s%s %s", space, val, p);
-						if (arrnum) {
-							rz_cons_printf("[%d]", arrnum);
-						}
-						rz_cons_print(";");
-						space = " ";
-					}
-					free(val);
-				}
-				free(var2);
-			}
-			free(p);
-		}
-		free(var);
-		rz_cons_println("};");
-		space = "";
-		if (match) {
-			break;
-		}
-	}
-	free(name);
-}
-
-RZ_IPI void rz_types_union_print_c(RzTypeDB *typedb, const char *name, bool multiline) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *l = sdb_foreach_list_filter(TDB, sdb_if_union_cb, true);
-	rz_types_structured_print_c(TDB, l, name, multiline);
-	ls_free(l);
-}
-
-RZ_IPI void rz_types_struct_print_c(RzTypeDB *typedb, const char *name, bool multiline) {
-	Sdb *TDB = typedb->sdb_types;
-	SdbList *l = sdb_foreach_list_filter_user(TDB, sdb_if_struct_cb, true, TDB);
-	rz_types_structured_print_c(TDB, l, name, multiline);
-	ls_free(l);
-}
-
-// Typedefs
-
-RZ_IPI bool rz_core_types_typedef_info(RzCore *core, const char *name) {
-	const char *istypedef;
-	Sdb *TDB = core->analysis->typedb->sdb_types;
-	istypedef = sdb_const_get(TDB, name, 0);
-	if (istypedef && !strncmp(istypedef, "typedef", 7)) {
-		const char *q = sdb_fmt("typedef.%s", name);
-		const char *res = sdb_const_get(TDB, q, 0);
-		if (res) {
-			rz_cons_println(res);
-		} else {
-			return false;
-		}
-	} else {
-		eprintf("This is not an typedef\n");
-		return false;
-	}
-	return true;
-}
-
-RZ_IPI void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode) {
-	PJ *pj = NULL;
-	Sdb *TDB = core->analysis->typedb->sdb_types;
+RZ_IPI void rz_core_types_union_print_all(RzCore *core, RzOutputMode mode) {
+	RzList *unionlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_UNION);
+	RzListIter *it;
+	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
-		if (!pj) {
-			return;
-		}
-		pj_o(pj);
+		pj_a(pj);
 	}
-	char *name = NULL;
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(TDB, true);
-	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "typedef")) {
-			if (!name || strcmp(sdbkv_value(kv), name)) {
-				free(name);
-				name = strdup(sdbkv_key(kv));
-				if (mode == RZ_OUTPUT_MODE_STANDARD) {
-					rz_cons_println(name);
-				} else {
-					const char *q = sdb_fmt("typedef.%s", name);
-					const char *res = sdb_const_get(TDB, q, 0);
-					pj_ks(pj, name, res);
-				}
-			}
-		}
+	RzBaseType *btype;
+	rz_list_foreach (unionlist, it, btype) {
+		core_types_union_print(core, btype, mode, pj);
 	}
+	rz_list_free(unionlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 		pj_free(pj);
 	}
-	free(name);
-	ls_free(l);
 }
 
-RZ_IPI void rz_types_typedef_print_c(RzTypeDB *typedb, const char *typedef_name) {
-	char *name = NULL;
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(typedb->sdb_types, true);
-	bool match = false;
-	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "typedef")) {
-			if (!name || strcmp(sdbkv_value(kv), name)) {
-				free(name);
-				name = strdup(sdbkv_key(kv));
-				if (name && (typedef_name && *typedef_name)) {
-					if (!strcmp(typedef_name, name)) {
-						match = true;
-					} else {
-						continue;
-					}
-				}
-				const char *q = sdb_fmt("typedef.%s", name);
-				const char *res = sdb_const_get(typedb->sdb_types, q, 0);
-				if (res) {
-					rz_cons_printf("%s %s %s;\n", sdbkv_value(kv), res, name);
-				}
-				if (match) {
-					break;
-				}
+static void core_types_union_print_c(RzTypeDB *typedb, RzBaseType *btype, bool multiline) {
+	char *separator;
+	rz_cons_printf("union %s {%s", btype->name, multiline ? "\n" : "");
+	if (!rz_vector_empty(&btype->enum_data.cases)) {
+		separator = multiline ? "\t" : "";
+		RzTypeUnionMember *memb;
+		rz_vector_foreach(&btype->union_data.members, memb) {
+			const char *membtype = rz_type_as_string(typedb, memb->type);
+			if (memb->type->kind == RZ_TYPE_KIND_ARRAY) {
+				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
+					memb->name, memb->type->array.count);
+			} else {
+				rz_cons_printf("%s%s %s", separator, membtype, memb->name);
+			}
+			separator = multiline ? ";\n\t" : "; ";
+		}
+		rz_cons_println(multiline ? "\n};" : "};");
+	}
+}
+
+RZ_IPI void rz_core_types_union_print_c(RzTypeDB *typedb, const char *name, bool multiline) {
+	RzBaseType *btype = rz_type_db_get_union(typedb, name);
+	if (!btype) {
+		return;
+	}
+	core_types_union_print_c(typedb, btype, multiline);
+	rz_type_base_type_free(btype);
+}
+
+RZ_IPI void rz_core_types_union_print_c_all(RzTypeDB *typedb, bool multiline) {
+	RzList *unionlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
+	RzListIter *it;
+	RzBaseType *btype;
+	rz_list_foreach (unionlist, it, btype) {
+		core_types_union_print_c(typedb, btype, multiline);
+	}
+	rz_list_free(unionlist);
+}
+
+// Structures
+
+static void core_types_struct_print(RzCore *core, RzBaseType *btype, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(core && btype);
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		rz_return_if_fail(pj);
+		pj_o(pj);
+		if (btype && !rz_vector_empty(&btype->struct_data.members)) {
+			pj_ks(pj, "name", btype->name);
+			pj_k(pj, "members");
+			pj_o(pj);
+			RzTypeStructMember *memb;
+			rz_vector_foreach(&btype->struct_data.members, memb) {
+				const char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
+				pj_ks(pj, memb->name, mtype);
+			}
+			pj_end(pj);
+		}
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		if (btype && !rz_vector_empty(&btype->union_data.members)) {
+			RzTypeStructMember *memb;
+			rz_vector_foreach(&btype->struct_data.members, memb) {
+				const char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
+				rz_cons_printf("%s: %s\n", memb->name, mtype);
 			}
 		}
+		break;
 	}
-	free(name);
-	ls_free(l);
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_println(btype->name);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+RZ_IPI void rz_core_types_struct_print(RzCore *core, const char *name, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(name);
+	RzTypeDB *typedb = core->analysis->typedb;
+	RzBaseType *btype = rz_type_db_get_struct(typedb, name);
+	if (!btype) {
+		return;
+	}
+	core_types_struct_print(core, btype, mode, pj);
+	rz_type_base_type_free(btype);
+}
+
+RZ_IPI void rz_core_types_struct_print_all(RzCore *core, RzOutputMode mode) {
+	RzList *structlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_STRUCT);
+	RzListIter *it;
+	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_a(pj);
+	}
+	RzBaseType *btype;
+	rz_list_foreach (structlist, it, btype) {
+		core_types_enum_print(core, btype, mode, pj);
+	}
+	rz_list_free(structlist);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
+}
+
+static void core_types_struct_print_c(RzTypeDB *typedb, RzBaseType *btype, bool multiline) {
+	char *separator;
+	rz_cons_printf("struct %s {%s", btype->name, multiline ? "\n" : "");
+	if (!rz_vector_empty(&btype->struct_data.members)) {
+		separator = multiline ? "\t" : "";
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&btype->struct_data.members, memb) {
+			const char *membtype = rz_type_as_string(typedb, memb->type);
+			if (memb->type->kind == RZ_TYPE_KIND_ARRAY) {
+				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
+					memb->name, memb->type->array.count);
+			} else {
+				rz_cons_printf("%s%s %s", separator, membtype, memb->name);
+			}
+			separator = multiline ? ";\n\t" : "; ";
+		}
+		rz_cons_println(multiline ? "\n};" : "};");
+	}
+}
+
+RZ_IPI void rz_core_types_struct_print_c(RzTypeDB *typedb, const char *name, bool multiline) {
+	rz_return_if_fail(name);
+	RzBaseType *btype = rz_type_db_get_struct(typedb, name);
+	if (!btype) {
+		return;
+	}
+	core_types_struct_print_c(typedb, btype, multiline);
+	rz_type_base_type_free(btype);
+}
+
+RZ_IPI void rz_core_types_struct_print_c_all(RzTypeDB *typedb, bool multiline) {
+	RzList *structlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
+	RzListIter *it;
+	RzBaseType *btype;
+	rz_list_foreach (structlist, it, btype) {
+		core_types_struct_print_c(typedb, btype, multiline);
+	}
+	rz_list_free(structlist);
+}
+
+// Typedefs
+
+static void core_types_typedef_print(RzCore *core, RzBaseType *btype, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(core && btype);
+	const char *typestr = rz_type_as_string(core->analysis->typedb, btype->type);
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		rz_return_if_fail(pj);
+		pj_o(pj);
+		pj_ks(pj, "name", btype->name);
+		pj_ks(pj, "type", typestr);
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		rz_cons_printf("%s = %s\n", btype->name, typestr);
+		break;
+	}
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_cons_println(btype->name);
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+RZ_IPI void rz_core_types_typedef_print(RzCore *core, const char *name, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(name);
+	RzTypeDB *typedb = core->analysis->typedb;
+	RzBaseType *btype = rz_type_db_get_typedef(typedb, name);
+	if (!btype) {
+		return;
+	}
+	core_types_typedef_print(core, btype, mode, pj);
+	rz_type_base_type_free(btype);
+}
+
+RZ_IPI void rz_core_types_typedef_print_all(RzCore *core, RzOutputMode mode) {
+	RzList *typedeflist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
+	RzListIter *it;
+	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_a(pj);
+	}
+	RzBaseType *btype;
+	rz_list_foreach (typedeflist, it, btype) {
+		core_types_enum_print(core, btype, mode, pj);
+	}
+	rz_list_free(typedeflist);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+	}
+}
+
+static void core_types_typedef_print_c(RzTypeDB *typedb, RzBaseType *btype) {
+	const char *typestr = rz_type_as_string(typedb, btype->type);
+	rz_cons_printf("typedef %s %s;", btype->name, typestr);
+}
+
+RZ_IPI void rz_core_types_typedef_print_c(RzTypeDB *typedb, const char *typedef_name) {
+	RzBaseType *btype = rz_type_db_get_typedef(typedb, typedef_name);
+	if (!btype) {
+		return;
+	}
+	core_types_typedef_print_c(typedb, btype);
+	rz_type_base_type_free(btype);
+}
+
+RZ_IPI void rz_core_types_typedef_print_c_all(RzTypeDB *typedb) {
+	RzList *typedeflist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
+	RzListIter *it;
+	RzBaseType *btype;
+	rz_list_foreach (typedeflist, it, btype) {
+		core_types_typedef_print_c(typedb, btype);
+	}
+	rz_list_free(typedeflist);
 }
 
 // Function types
@@ -610,25 +660,26 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 	}
 }
 
-static void print_all_format(RzCore *core, SdbForeachCallback sdbcb) {
-	Sdb *TDB = core->analysis->typedb->sdb_types;
-	SdbList *l = sdb_foreach_list(TDB, true);
-	SdbListIter *it;
-	SdbKv *kv;
-	ls_foreach (l, it, kv) {
-		if (sdbcb(TDB, sdbkv_key(kv), sdbkv_value(kv))) {
-			rz_core_types_show_format(core, sdbkv_key(kv), RZ_OUTPUT_MODE_RIZIN);
-		}
-	}
-	ls_free(l);
-}
-
 RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core) {
-	print_all_format(core, sdb_if_struct_cb);
+	RzTypeDB *typedb = core->analysis->typedb;
+	RzList *structlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
+	RzListIter *it;
+	RzBaseType *btype;
+	rz_list_foreach (structlist, it, btype) {
+		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_RIZIN);
+	}
+	rz_list_free(structlist);
 }
 
 RZ_IPI void rz_core_types_union_print_format_all(RzCore *core) {
-	print_all_format(core, sdb_if_union_cb);
+	RzTypeDB *typedb = core->analysis->typedb;
+	RzList *unionlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
+	RzListIter *it;
+	RzBaseType *btype;
+	rz_list_foreach (unionlist, it, btype) {
+		rz_core_types_show_format(core, btype->name, RZ_OUTPUT_MODE_RIZIN);
+	}
+	rz_list_free(unionlist);
 }
 
 // Type links
