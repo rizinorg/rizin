@@ -203,6 +203,7 @@ RZ_API bool rz_type_atomic_eq(RzTypeDB *typedb, RzType *typ1, RzType *typ2);
 RZ_API bool rz_type_atomic_str_eq(RzTypeDB *typedb, RzType *typ1, RZ_NONNULL const char *name);
 
 // Type-specific APIs
+RZ_API bool rz_type_exists(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
 
 RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, const char *name);
@@ -243,13 +244,6 @@ RZ_API RZ_OWN RzType *rz_type_array_of_base_type(RzTypeDB *typedb, RZ_NONNULL Rz
 RZ_API RZ_OWN RzType *rz_type_array_of_base_type_str(RzTypeDB *typedb, RZ_NONNULL const char *name, size_t count);
 RZ_API RZ_OWN RzType *rz_type_pointer_of_type(RzTypeDB *typedb, RZ_NONNULL RzType *type, bool is_const);
 
-// Maintaining type links
-RZ_API char *rz_type_link_at(RzTypeDB *typedb, ut64 addr);
-RZ_API bool rz_type_set_link(RzTypeDB *typedb, const char *val, ut64 addr);
-RZ_API bool rz_type_unlink(RzTypeDB *typedb, ut64 addr);
-RZ_API bool rz_type_unlink_all(RzTypeDB *typedb);
-RZ_API bool rz_type_link_offset(RzTypeDB *typedb, const char *val, ut64 addr);
-
 // Type formats (`tp` and `pf` commands)
 RZ_API const char *rz_type_db_format_get(RzTypeDB *typedb, const char *name);
 RZ_API const char *rz_type_db_format_byname(RzTypeDB *typedb, const char *name);
@@ -287,7 +281,6 @@ RZ_API RzList *rz_type_db_enum_names(RzTypeDB *typedb);
 RZ_API RzList *rz_type_db_struct_names(RzTypeDB *typedb);
 RZ_API RzList *rz_type_db_union_names(RzTypeDB *typedb);
 RZ_API RzList *rz_type_db_typedef_names(RzTypeDB *typedb);
-RZ_API RzList *rz_type_db_links(RzTypeDB *typedb);
 RZ_API RzList *rz_type_db_all(RzTypeDB *typedb);
 
 // Serialization API

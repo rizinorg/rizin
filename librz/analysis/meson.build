@@ -38,6 +38,7 @@ rz_analysis_sources = [
   'xrefs.c',
   'serialize_analysis.c',
   'type_pdb.c',
+  'typelink.c',
   'p/analysis_6502.c',
   'p/analysis_6502_cs.c',
   'p/analysis_8051.c',
