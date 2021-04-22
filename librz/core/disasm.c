@@ -5306,7 +5306,7 @@ toro:
 		f = ds->fcn = fcnIn(ds, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 		ds_show_comments_right(ds);
 		// TRY adding here
-		char *link_type = rz_type_link_at(core->analysis->typedb, ds->addr + idx);
+		char *link_type = rz_analysis_type_link_at(core->analysis, ds->addr + idx);
 		if (link_type) {
 			char *fmt = rz_type_format(core->analysis->typedb, link_type);
 			if (fmt) {
