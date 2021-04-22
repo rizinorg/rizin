@@ -319,22 +319,19 @@ RZ_API RZ_OWN RzList *rz_type_db_all(RzTypeDB *typedb) {
 	return result;
 }
 
-// TODO: Move this to RzAnalysis along with link.c
-RZ_API RzList *rz_type_db_links(RzTypeDB *typedb) {
-	RzList *ccl = rz_list_new();
-	SdbKv *kv;
-	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(typedb->sdb_types, true);
-	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "link")) {
-			rz_list_append(ccl, strdup(sdbkv_key(kv)));
-		}
-	}
-	ls_free(l);
-	return ccl;
-}
-
 // Type-specific APIs
+
+/**
+ * \brief Checks if the type exists in the Type database
+ *
+ * \param typedb Types Database instance
+ * \param name Name of the type
+ */
+RZ_API bool rz_type_exists(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, -1);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	return btype != NULL;
+}
 
 /**
  * \brief Returns the kind (RzBaseTypeKind) of the type
