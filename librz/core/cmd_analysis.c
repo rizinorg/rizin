@@ -6806,7 +6806,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 						// TODO: I don't think we should silently error, it is confusing
 						if (!strcmp(type, otype)) {
 							//eprintf ("Adding type offset %s\n", type);
-							rz_type_link_offset(core->analysis->typedb, type, addr);
+							rz_analysis_type_link_offset(core->analysis, type, addr);
 							rz_analysis_hint_set_offset(core->analysis, addr, otype);
 							break;
 						}
