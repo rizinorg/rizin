@@ -6649,7 +6649,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "q", "exit program session", rz_cmd_quit },
 		{ "r", "change file size", rz_cmd_resize },
 		{ "s", "seek to an offset", rz_cmd_seek },
-		{ "t", "type information (cparse)", rz_cmd_type },
 		{ "V", "enter visual mode", rz_cmd_visual },
 		{ "v", "enter visual mode", rz_cmd_panels },
 		{ "w", "write bytes", rz_cmd_write },
