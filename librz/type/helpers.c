@@ -51,25 +51,24 @@ RZ_API RZ_OWN RzType *rz_type_pointer_of_base_type_str(RzTypeDB *typedb, RZ_NONN
 	return rz_type_pointer_of_base_type(typedb, btype, is_const);
 }
 
-
 RZ_API RZ_OWN RzType *rz_type_pointer_of_type(RzTypeDB *typedb, RZ_NONNULL RzType *type, bool is_const) {
 	rz_return_val_if_fail(typedb && type, NULL);
 	switch (type->kind) {
-		case RZ_TYPE_KIND_IDENTIFIER: {
-			return rz_type_pointer_of_base_type_str(typedb, type->identifier.name, is_const);
-		}
-		case RZ_TYPE_KIND_POINTER: {
-			// Pointer of a pointer
-			break;
-		}
-		case RZ_TYPE_KIND_ARRAY: {
-			// Pointer of an array
-			break;
-		}
-		case RZ_TYPE_KIND_CALLABLE: {
-			rz_warn_if_reached();
-			break;
-		}
+	case RZ_TYPE_KIND_IDENTIFIER: {
+		return rz_type_pointer_of_base_type_str(typedb, type->identifier.name, is_const);
+	}
+	case RZ_TYPE_KIND_POINTER: {
+		// Pointer of a pointer
+		break;
+	}
+	case RZ_TYPE_KIND_ARRAY: {
+		// Pointer of an array
+		break;
+	}
+	case RZ_TYPE_KIND_CALLABLE: {
+		rz_warn_if_reached();
+		break;
+	}
 	}
 	return NULL;
 }
@@ -149,9 +148,6 @@ RZ_API bool rz_type_atomic_is_signed(RzTypeDB *typedb, RzType *type) {
 	if (!t) {
 		return false;
 	}
-	if (t->kind != RZ_BASE_TYPE_KIND_ATOMIC) {
-		return false;
-	}
 	return false;
 }
 
@@ -191,9 +187,7 @@ RZ_API bool rz_type_is_void_ptr(RzType *type) {
 	// There should not exist pointers to the empty types
 	RzType *ptr = type->pointer.type;
 	rz_return_val_if_fail(ptr, false);
-	return ptr->kind == RZ_TYPE_KIND_IDENTIFIER
-		&& ptr->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED
-		&& !strcmp(ptr->identifier.name, "void");
+	return ptr->kind == RZ_TYPE_KIND_IDENTIFIER && ptr->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED && !strcmp(ptr->identifier.name, "void");
 }
 
 RZ_API bool rz_type_is_default(RzTypeDB *typedb, RzType *type) {
@@ -208,4 +202,3 @@ RZ_API bool rz_type_atomic_set_sign(RzTypeDB *typedb, RzType *type, bool sign) {
 	}
 	return false;
 }
-

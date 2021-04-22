@@ -99,34 +99,6 @@ static char *is_ctype(char *type) {
 	return NULL;
 }
 
-RZ_API const char *rz_type_db_get(RzTypeDB *typedb, const char *name) {
-	rz_return_val_if_fail(typedb && name, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	const char *query = sdb_fmt("type.%s", name);
-	return sdb_const_get(TDB, query, 0);
-}
-
-RZ_API bool rz_type_db_set(RzTypeDB *typedb, ut64 at, RZ_NONNULL const char *field, ut64 val) {
-	rz_return_val_if_fail(typedb && field, false);
-	Sdb *TDB = typedb->sdb_types;
-	const char *kind;
-	char var[128];
-	sprintf(var, "link.%08" PFMT64x, at);
-	kind = sdb_const_get(TDB, var, NULL);
-	if (kind) {
-		const char *p = sdb_const_get(TDB, kind, NULL);
-		if (p) {
-			snprintf(var, sizeof(var), "%s.%s.%s", p, kind, field);
-			int off = sdb_array_get_num(TDB, var, 1, NULL);
-			//int siz = sdb_array_get_num (DB, var, 2, NULL);
-			eprintf("wv 0x%08" PFMT64x " @ 0x%08" PFMT64x, val, at + off);
-			return true;
-		}
-		eprintf("Invalid kind of type\n");
-	}
-	return false;
-}
-
 RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
 	Sdb *TDB = typedb->sdb_types;
@@ -552,7 +524,14 @@ RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(RzTypeDB *typedb, ut64 val) {
 	return result;
 }
 
-RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
+/**
+ * \brief Returns all matching bitfields as an OR mask given the resulting value
+ *
+ * \param typedb Types Database instance
+ * \param name The name of the bitfield enum
+ * \param val The value to search for
+ */
+RZ_OWN RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	char *res = NULL;
 	int i;
@@ -592,16 +571,117 @@ RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, RZ_NONNULL const cha
 	return ret;
 }
 
-RZ_API ut64 rz_type_db_atomic_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
+/**
+ * \brief Returns the union base type matching the specified name
+ *
+ * \param typedb Types Database instance
+ * \param name The name of the union to match against
+ */
+RZ_API RzBaseType *rz_type_db_get_union(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
+		return NULL;
+	}
+	if (btype->kind != RZ_BASE_TYPE_KIND_UNION) {
+		return NULL;
+	}
+	return btype;
+}
+
+/**
+ * \brief returns the struct base type matching the specified name
+ *
+ * \param typedb types database instance
+ * \param name the name of the struct to match against
+ */
+RZ_API RzBaseType *rz_type_db_get_struct(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
+		return NULL;
+	}
+	if (btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+		return NULL;
+	}
+	return btype;
+}
+
+/**
+ * \brief Search for the structure member that has matching offset
+ *
+ * \param typedb Types Database instance
+ * \param name The structure type name
+ * \param offset The offset to search for
+ */
+RZ_OWN RZ_API char *rz_type_db_get_struct_member(RzTypeDB *typedb, RZ_NONNULL const char *name, int offset) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+		return NULL;
+	}
+	RzTypeStructMember *memb;
+	char *result = NULL;
+	rz_vector_foreach(&btype->struct_data.members, memb) {
+		if (memb->offset == offset) {
+			result = rz_str_newf("%s.%s", btype->name, memb->name);
+			break;
+		}
+		// FIXME: Support nested
+		// nofail &= structured_member_walker(list, NULL, offset);
+	}
+	return result;
+}
+
+/**
+ * \brief Returns the typedef base type matching the specified name
+ *
+ * \param typedb Types Database instance
+ * \param name The name of the typedef to match against
+ */
+RZ_API RzBaseType *rz_type_db_get_typedef(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
+		return NULL;
+	}
+	if (btype->kind != RZ_BASE_TYPE_KIND_TYPEDEF) {
+		return NULL;
+	}
+	return btype;
+}
+
+/**
+ * \brief Returns the atomic type size in bits (target dependent)
+ *
+ * \param typedb Types Database instance
+ * \param btype The base type
+ */
+RZ_API ut64 rz_type_db_atomic_bitsize(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_ATOMIC, 0);
 	return btype->size;
 }
 
-RZ_API ut64 rz_type_db_enum_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
+/**
+ * \brief Returns the enum type size in bits (target dependent)
+ *
+ * \param typedb Types Database instance
+ * \param btype The base type
+ */
+RZ_API ut64 rz_type_db_enum_bitsize(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_ENUM, 0);
 	// FIXME: Need a proper way to determine size of enum
 	return 32;
 }
 
-RZ_API ut64 rz_type_db_struct_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
+/**
+ * \brief Returns the struct type size in bits (target dependent)
+ *
+ * \param typedb Types Database instance
+ * \param btype The base type
+ */
+RZ_API ut64 rz_type_db_struct_bitsize(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_STRUCT, 0);
 	RzTypeStructMember *memb;
 	ut64 size = 0;
 	rz_vector_foreach(&btype->struct_data.members, memb) {
@@ -611,7 +691,14 @@ RZ_API ut64 rz_type_db_struct_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
 	return size;
 }
 
-RZ_API ut64 rz_type_db_union_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
+/**
+ * \brief Returns the union type size in bits (target dependent)
+ *
+ * \param typedb Types Database instance
+ * \param btype The base type
+ */
+RZ_API ut64 rz_type_db_union_bitsize(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_UNION, 0);
 	RzTypeUnionMember *memb;
 	ut64 size = 0;
 	// Union has the size of the maximum size of its elements
@@ -622,6 +709,12 @@ RZ_API ut64 rz_type_db_union_bitsize(RzTypeDB *typedb, RzBaseType *btype) {
 	return size;
 }
 
+/**
+ * \brief Returns the type size in bits (target dependent)
+ *
+ * \param typedb Types Database instance
+ * \param btype The base type
+ */
 RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(typedb && type, 0);
 	// Detect if the pointer and return the corresponding size
@@ -655,81 +748,4 @@ RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL RzType *type) {
 	// Should not happen
 	rz_warn_if_reached();
 	return 0;
-}
-
-RZ_API char *rz_type_db_get_struct_member(RzTypeDB *typedb, RZ_NONNULL const char *type, int offset) {
-	rz_return_val_if_fail(typedb && type, NULL);
-	Sdb *TDB = typedb->sdb_types;
-	int i, cur_offset, next_offset = 0;
-	char *res = NULL;
-
-	if (offset < 0) {
-		return NULL;
-	}
-	char *query = sdb_fmt("struct.%s", type);
-	char *members = sdb_get(TDB, query, 0);
-	if (!members) {
-		//eprintf ("%s is not a struct\n", type);
-		return NULL;
-	}
-	int nargs = rz_str_split(members, ',');
-	for (i = 0; i < nargs; i++) {
-		const char *name = rz_str_word_get0(members, i);
-		if (!name) {
-			break;
-		}
-		query = sdb_fmt("struct.%s.%s", type, name);
-		char *subtype = sdb_get(TDB, query, 0);
-		if (!subtype) {
-			break;
-		}
-		int len = rz_str_split(subtype, ',');
-		if (len < 3) {
-			free(subtype);
-			break;
-		}
-		cur_offset = rz_num_math(NULL, rz_str_word_get0(subtype, len - 2));
-		if (cur_offset > 0 && cur_offset < next_offset) {
-			free(subtype);
-			break;
-		}
-		if (!cur_offset) {
-			cur_offset = next_offset;
-		}
-		if (cur_offset == offset) {
-			res = rz_str_newf("%s.%s", type, name);
-			free(subtype);
-			break;
-		}
-		int arrsz = rz_num_math(NULL, rz_str_word_get0(subtype, len - 1));
-		int fsize = (rz_type_db_get_bitsize(typedb, subtype) * (arrsz ? arrsz : 1)) / 8;
-		if (!fsize) {
-			free(subtype);
-			break;
-		}
-		next_offset = cur_offset + fsize;
-		// Handle nested structs
-		if (offset > cur_offset && offset < next_offset) {
-			char *nested_type = (char *)rz_str_word_get0(subtype, 0);
-			if (rz_str_startswith(nested_type, "struct ") && !rz_str_endswith(nested_type, " *")) {
-				len = rz_str_split(nested_type, ' ');
-				if (len < 2) {
-					free(subtype);
-					break;
-				}
-				nested_type = (char *)rz_str_word_get0(nested_type, 1);
-				char *nested_res = rz_type_db_get_struct_member(typedb, nested_type, offset - cur_offset);
-				if (nested_res) {
-					len = rz_str_split(nested_res, '.');
-					res = rz_str_newf("%s.%s.%s", type, name, rz_str_word_get0(nested_res, len - 1));
-					free(nested_res);
-					free(subtype);
-					break;
-				}
-			}
-		}
-		free(subtype);
-	}
-	free(members);
-	return res;
 }

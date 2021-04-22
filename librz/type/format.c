@@ -2884,4 +2884,3 @@ RZ_API const char *rz_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzType *type) 
 	type_to_format(typedb, buf, type);
 	return rz_strbuf_drain(buf);
 }
-
