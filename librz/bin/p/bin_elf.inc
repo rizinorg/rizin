@@ -354,6 +354,7 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->paddr = phdr[i].p_offset;
 			ptr->vaddr = phdr[i].p_vaddr;
 			ptr->perm = phdr[i].p_flags;
+			ptr->align = phdr[i].p_align;
 			ptr->is_segment = true;
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
