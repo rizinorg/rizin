@@ -160,8 +160,6 @@ RZ_API ut8 rz_type_db_pointer_size(RzTypeDB *typedb);
 
 RZ_API char *rz_type_db_kuery(RzTypeDB *typedb, const char *query);
 
-RZ_API const char *rz_type_db_get(RzTypeDB *typedb, const char *name);
-RZ_API bool rz_type_db_set(RzTypeDB *typedb, ut64 at, const char *field, ut64 val);
 RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name);
 
 RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char *arch, int bits, const char *os);
@@ -206,14 +204,26 @@ RZ_API bool rz_type_atomic_str_eq(RzTypeDB *typedb, RzType *typ1, RZ_NONNULL con
 
 // Type-specific APIs
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
+
+RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, const char *name);
+RZ_API RzBaseType *rz_type_db_get_union(RzTypeDB *typedb, const char *name);
+RZ_API RzBaseType *rz_type_db_get_struct(RzTypeDB *typedb, const char *name);
+RZ_API RzBaseType *rz_type_db_get_typedef(RzTypeDB *typedb, RZ_NONNULL const char *name);
+
 RZ_API int rz_type_db_enum_member_by_name(RzTypeDB *typedb, const char *name, const char *member);
 RZ_API char *rz_type_db_enum_member_by_val(RzTypeDB *typedb, const char *name, ut64 val);
 RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(RzTypeDB *typedb, ut64 val);
 RZ_API char *rz_type_db_enum_get_bitfield(RzTypeDB *typedb, const char *name, ut64 val);
-RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, const char *name);
+RZ_OWN RZ_API char *rz_type_db_get_struct_member(RzTypeDB *typedb, RZ_NONNULL const char *name, int offset);
+
+// Type size calculation
+RZ_API ut64 rz_type_db_atomic_bitsize(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
+RZ_API ut64 rz_type_db_enum_bitsize(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
+RZ_API ut64 rz_type_db_struct_bitsize(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
+RZ_API ut64 rz_type_db_union_bitsize(RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
 RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL RzType *type);
+
 RZ_API RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset);
-RZ_API char *rz_type_db_get_struct_member(RzTypeDB *typedb, const char *type, int offset);
 
 // Various type helpers
 RZ_API bool rz_type_atomic_is_void(RzTypeDB *typedb, RzType *type);
@@ -252,6 +262,7 @@ RZ_API char *rz_type_format(RzTypeDB *typedb, const char *type);
 RZ_API int rz_type_format_struct_size(RzTypeDB *typedb, const char *f, int mode, int n);
 RZ_API char *rz_type_format_data(RzTypeDB *t, RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield);
+RZ_API const char *rz_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzType *type);
 
 // Function prototypes api
 RZ_API bool rz_type_func_exist(RzTypeDB *typedb, const char *func_name);
