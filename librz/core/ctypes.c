@@ -709,14 +709,13 @@ beach:
 }
 
 static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut64 laddr, ut64 at, int offimm) {
-	Sdb *TDB = core->analysis->typedb->sdb_types;
 	char *res = rz_type_db_get_struct_member(core->analysis->typedb, type, offimm);
 	const char *cmt = ((offimm == 0) && res) ? res : type;
 	if (offimm > 0) {
 		// set hint only if link is present
-		char *query = sdb_fmt("link.%08" PFMT64x, laddr);
-		if (res && sdb_const_get(TDB, query, 0)) {
-			rz_analysis_hint_set_offset(core->analysis, at, res);
+		if (rz_analysis_type_link_exists(core->analysis, laddr)) {
+			const char *link = rz_analysis_type_link_at(core->analysis, laddr);
+			rz_analysis_hint_set_offset(core->analysis, at, link);
 		}
 	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
 		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
@@ -828,9 +827,9 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 				rz_analysis_op_fini(&aop);
 				continue;
 			}
-			char *slink = rz_type_link_at(typedb, src_addr);
-			char *vlink = rz_type_link_at(typedb, src_addr + src_imm);
-			char *dlink = rz_type_link_at(typedb, dst_addr);
+			char *slink = rz_analysis_type_link_at(core->analysis, src_addr);
+			char *vlink = rz_analysis_type_link_at(core->analysis, src_addr + src_imm);
+			char *dlink = rz_analysis_type_link_at(core->analysis, dst_addr);
 			//TODO: Handle register based arg for struct offset propgation
 			if (vlink && var && var->kind != 'r') {
 				if (rz_type_kind(typedb, vlink) == RZ_BASE_TYPE_KIND_UNION) {
@@ -911,7 +910,7 @@ RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, 
 }
 
 RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
-	Sdb *TDB = core->analysis->typedb->sdb_types;
+	Sdb *TDB = core->analysis->type_links;
 	SdbKv *kv;
 	SdbListIter *iter;
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
@@ -937,14 +936,11 @@ RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
 }
 
 RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr) {
-	Sdb *TDB = core->analysis->typedb->sdb_types;
-	char *tmp = sdb_get(TDB, type, 0);
-	if (RZ_STR_ISEMPTY(tmp)) {
+	if (!rz_type_exists(core->analysis->typedb, type)) {
 		eprintf("unknown type %s\n", type);
-		free(tmp);
 		return;
 	}
-	rz_type_set_link(core->analysis->typedb, type, addr);
+	rz_analysis_type_set_link(core->analysis, type, addr);
 	RzList *fcns = rz_analysis_get_functions_in(core->analysis, core->offset);
 	if (rz_list_length(fcns) > 1) {
 		eprintf("Multiple functions found in here.\n");
@@ -953,13 +949,10 @@ RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr) {
 		rz_core_link_stroff(core, fcn);
 	}
 	rz_list_free(fcns);
-	free(tmp);
 }
 
 RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr) {
-	Sdb *TDB = core->analysis->typedb->sdb_types;
-	const char *query = sdb_fmt("link.%08" PFMT64x, addr);
-	const char *link = sdb_const_get(TDB, query, 0);
+	const char *link = rz_analysis_type_link_at(core->analysis, addr);
 	if (link) {
 		rz_core_types_link_print(core, link, addr, RZ_OUTPUT_MODE_LONG, NULL);
 	}
