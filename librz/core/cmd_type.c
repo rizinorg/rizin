@@ -421,12 +421,12 @@ RZ_IPI RzCmdStatus rz_type_link_show_handler(RzCore *core, int argc, const char 
 
 RZ_IPI RzCmdStatus rz_type_link_del_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = rz_num_math(core->num, argv[1]);
-	rz_type_unlink(core->analysis->typedb, addr);
+	rz_analysis_type_unlink(core->analysis, addr);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_link_del_all_handler(RzCore *core, int argc, const char **argv) {
-	rz_type_unlink_all(core->analysis->typedb);
+	rz_analysis_type_unlink_all(core->analysis);
 	return RZ_CMD_STATUS_OK;
 }
 
