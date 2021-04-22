@@ -76,13 +76,13 @@ static bool print_type_c(RzCore *core, const char *ctype) {
 	if (name && type) {
 		name++; // skip the '.'
 		if (rz_str_startswith(type, "struct")) {
-			rz_types_struct_print_c(core->analysis->typedb, name, true);
+			rz_core_types_struct_print_c(core->analysis->typedb, name, true);
 		} else if (rz_str_startswith(type, "union")) {
-			rz_types_union_print_c(core->analysis->typedb, name, true);
+			rz_core_types_union_print_c(core->analysis->typedb, name, true);
 		} else if (rz_str_startswith(type, "enum")) {
-			rz_types_enum_print_c(core->analysis->typedb, name, true);
+			rz_core_types_enum_print_c(core->analysis->typedb, name, true);
 		} else if (rz_str_startswith(type, "typedef")) {
-			rz_types_typedef_print_c(core->analysis->typedb, name);
+			rz_core_types_typedef_print_c(core->analysis->typedb, name);
 		} else if (rz_str_startswith(type, "func")) {
 			rz_types_function_print(core->analysis->typedb, name, RZ_OUTPUT_MODE_STANDARD, NULL);
 		}
@@ -93,24 +93,24 @@ static bool print_type_c(RzCore *core, const char *ctype) {
 
 static void type_list_c_all(RzCore *core) {
 	// List all unions in the C format with newlines
-	rz_types_union_print_c(core->analysis->typedb, NULL, true);
+	rz_core_types_union_print_c(core->analysis->typedb, NULL, true);
 	// List all structures in the C format with newlines
-	rz_types_struct_print_c(core->analysis->typedb, NULL, true);
+	rz_core_types_struct_print_c(core->analysis->typedb, NULL, true);
 	// List all typedefs in the C format with newlines
-	rz_types_typedef_print_c(core->analysis->typedb, NULL);
+	rz_core_types_typedef_print_c(core->analysis->typedb, NULL);
 	// List all enums in the C format with newlines
-	rz_types_enum_print_c_all(core->analysis->typedb, true);
+	rz_core_types_enum_print_c_all(core->analysis->typedb, true);
 }
 
 static void type_list_c_all_nl(RzCore *core) {
 	// List all unions in the C format without newlines
-	rz_types_union_print_c(core->analysis->typedb, NULL, false);
+	rz_core_types_union_print_c(core->analysis->typedb, NULL, false);
 	// List all structures in the C format without newlines
-	rz_types_struct_print_c(core->analysis->typedb, NULL, false);
+	rz_core_types_struct_print_c(core->analysis->typedb, NULL, false);
 	// List all typedefs in the C format without newlines
-	rz_types_typedef_print_c(core->analysis->typedb, NULL);
+	rz_core_types_typedef_print_c(core->analysis->typedb, NULL);
 	// List all enums in the C format without newlines
-	rz_types_enum_print_c_all(core->analysis->typedb, false);
+	rz_core_types_enum_print_c_all(core->analysis->typedb, false);
 }
 
 static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 address) {
@@ -354,18 +354,18 @@ RZ_IPI RzCmdStatus rz_type_enum_bitfield_handler(RzCore *core, int argc, const c
 
 RZ_IPI RzCmdStatus rz_type_enum_c_handler(RzCore *core, int argc, const char **argv) {
 	if (argc > 1) {
-		rz_types_enum_print_c(core->analysis->typedb, argv[1], true);
+		rz_core_types_enum_print_c(core->analysis->typedb, argv[1], true);
 	} else {
-		rz_types_enum_print_c_all(core->analysis->typedb, true);
+		rz_core_types_enum_print_c_all(core->analysis->typedb, true);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char **argv) {
 	if (argc > 1) {
-		rz_types_enum_print_c(core->analysis->typedb, argv[1], false);
+		rz_core_types_enum_print_c(core->analysis->typedb, argv[1], false);
 	} else {
-		rz_types_enum_print_c_all(core->analysis->typedb, false);
+		rz_core_types_enum_print_c_all(core->analysis->typedb, false);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -509,77 +509,85 @@ RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const 
 	} else {
 		if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			rz_core_types_struct_print_format_all(core);
-		} else if (mode == RZ_OUTPUT_MODE_JSON) {
-			rz_types_struct_print_json(core->analysis->typedb);
 		} else {
-			rz_types_struct_print_sdb(core->analysis->typedb);
+			rz_core_types_struct_print_all(core, mode);
 		}
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_structure_c_handler(RzCore *core, int argc, const char **argv) {
-	const char *typename = argc > 1 ? argv[1] : NULL;
-	rz_types_struct_print_c(core->analysis->typedb, typename, true);
+	if (argc > 1) {
+		rz_core_types_struct_print_c(core->analysis->typedb, argv[1], true);
+	} else {
+		rz_core_types_struct_print_c_all(core->analysis->typedb, true);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_structure_c_nl_handler(RzCore *core, int argc, const char **argv) {
-	const char *typename = argc > 1 ? argv[1] : NULL;
-	rz_types_struct_print_c(core->analysis->typedb, typename, false);
+	if (argc > 1) {
+		rz_core_types_struct_print_c(core->analysis->typedb, argv[1], false);
+	} else {
+		rz_core_types_struct_print_c_all(core->analysis->typedb, false);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_list_typedef_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *typename = argc > 1 ? argv[1] : NULL;
 	if (typename) {
-		if (!rz_core_types_typedef_info(core, typename)) {
-			eprintf("Can't find typedef");
-			return RZ_CMD_STATUS_ERROR;
+		PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
+		rz_core_types_typedef_print(core, typename, mode, pj);
+		if (mode == RZ_OUTPUT_MODE_JSON) {
+			rz_cons_println(pj_string(pj));
+			pj_free(pj);
 		}
 	} else {
-		rz_core_list_loaded_typedefs(core, mode);
+		rz_core_types_typedef_print_all(core, mode);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_typedef_c_handler(RzCore *core, int argc, const char **argv) {
-	const char *typename = argc > 1 ? argv[1] : NULL;
 	RzTypeDB *typedb = core->analysis->typedb;
-	if (!typename) {
-		rz_types_typedef_print_c(typedb, NULL);
-		return RZ_CMD_STATUS_OK;
+	if (argc > 1) {
+		rz_core_types_typedef_print_c(typedb, argv[1]);
+	} else {
+		rz_core_types_typedef_print_c_all(typedb);
 	}
-	rz_types_typedef_print_c(typedb, typename);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_list_union_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *typename = argc > 1 ? argv[1] : NULL;
-	RzTypeDB *typedb = core->analysis->typedb;
 	if (typename) {
 		rz_core_types_show_format(core, typename, mode);
 	} else {
 		if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			rz_core_types_union_print_format_all(core);
-		} else if (mode == RZ_OUTPUT_MODE_JSON) {
-			rz_types_union_print_json(typedb);
 		} else {
-			rz_types_union_print_sdb(typedb);
+			rz_core_types_union_print_all(core, mode);
 		}
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_union_c_handler(RzCore *core, int argc, const char **argv) {
-	const char *typename = argc > 1 ? argv[1] : NULL;
-	rz_types_union_print_c(core->analysis->typedb, typename, true);
+	if (argc > 1) {
+		rz_core_types_union_print_c(core->analysis->typedb, argv[1], true);
+	} else {
+		rz_core_types_union_print_c_all(core->analysis->typedb, true);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_union_c_nl_handler(RzCore *core, int argc, const char **argv) {
-	const char *typename = argc > 1 ? argv[1] : NULL;
-	rz_types_union_print_c(core->analysis->typedb, typename, false);
+	if (argc > 1) {
+		rz_core_types_union_print_c(core->analysis->typedb, argv[1], false);
+	} else {
+		rz_core_types_union_print_c_all(core->analysis->typedb, false);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
