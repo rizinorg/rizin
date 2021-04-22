@@ -20,7 +20,7 @@ CMDDESCS_C_TEMPLATE = """// SPDX-FileCopyrightText: 2020 RizinOrg <info@rizin.re
 {helps_declarations}
 
 {helps}
-RZ_IPI void newshell_cmddescs_init(RzCore *core) {{
+RZ_IPI void rzshell_cmddescs_init(RzCore *core) {{
 \tRzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 \trz_cmd_batch_start(core->rcmd);
 {init_code}
@@ -42,7 +42,7 @@ CMDDESCS_H_TEMPLATE = """// SPDX-License-Identifier: LGPL-3.0-only
 {handlers_declarations}
 
 // Main function that initialize the entire commands tree
-RZ_IPI void newshell_cmddescs_init(RzCore *core);
+RZ_IPI void rzshell_cmddescs_init(RzCore *core);
 """
 
 DESC_HELP_DETAIL_ENTRY_TEMPLATE = (

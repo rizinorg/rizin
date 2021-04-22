@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=& + grep
-ARGS=-e cfg.newshell=true
+ARGS=-e cfg.oldshell=false
 FILE==
 CMDS=<<EOF
 & "?e Hello\nfrom\na task!~task"

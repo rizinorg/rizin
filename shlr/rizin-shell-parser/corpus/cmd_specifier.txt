@@ -6,8 +6,8 @@ afbt:c1/sort/inc
 
 ---
 
-(commands
-  (arged_command
+(statements
+  (arged_stmt
     command: (cmd_identifier
       extra: (specifiers
                (arg_identifier)))))
@@ -20,8 +20,8 @@ afbt:*/page/1/10
 
 ---
 
-(commands
-  (arged_command
+(statements
+  (arged_stmt
     command: (cmd_identifier
       extra: (specifiers
                (arg_identifier)))))
@@ -34,8 +34,8 @@ afbt:c1/sort/inc:json
 
 ---
 
-(commands
-  (arged_command
+(statements
+  (arged_stmt
     command: (cmd_identifier
       extra: (specifiers
                (arg_identifier)

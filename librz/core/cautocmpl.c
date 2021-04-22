@@ -14,7 +14,7 @@
 enum autocmplt_type_t {
 	AUTOCMPLT_UNKNOWN = 0, ///< Unknown, nothing will be autocompleted
 	AUTOCMPLT_CMD_ID, ///< A command identifier (aka command name) needs to be autocompleted
-	AUTOCMPLT_CMD_ARG, ///< The argument of an arged_command (see grammar.js) needs to be autocompleted
+	AUTOCMPLT_CMD_ARG, ///< The argument of an arged_stmt (see grammar.js) needs to be autocompleted
 };
 
 /**
@@ -432,7 +432,7 @@ static RzCmdDesc *get_cd_from_arg(RzCore *core, const char *data, TSNode arg) {
 		parent_type = ts_node_type(parent);
 	} while (is_arg_type(parent_type));
 
-	if (strcmp(parent_type, "arged_command")) {
+	if (strcmp(parent_type, "arged_stmt")) {
 		return NULL;
 	}
 
@@ -611,7 +611,7 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
 	RZ_LOG_DEBUG("lstart = %d, lend = %d, type = %s\n", lstart, lend, root_type);
 	if (!strcmp(root_type, "cmd_identifier") && buf->data[lend - 1] != ' ') {
 		res = fill_autocmplt_data_cmdid(ad, lstart, lend);
-	} else if (!strcmp(root_type, "commands") && ts_node_named_child_count(root) == 0) {
+	} else if (!strcmp(root_type, "statements") && ts_node_named_child_count(root) == 0) {
 		res = fill_autocmplt_data_cmdid(ad, lend, lend);
 	} else if (!strcmp(root_type, "arg_identifier")) {
 		res = fill_autocmplt_data_cmdarg(ad, lstart, lend, buf->data, root, core);
@@ -650,7 +650,7 @@ static bool find_autocmplt_type(struct autocmplt_data_t *ad, RzCore *core, TSNod
  * Returns a \p RzLineNSCompletionResult structure containing all the info to
  * autocomplete what is currently in \p buf.
  */
-RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type) {
+RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type) {
 	RzLineNSCompletionResult *res = NULL;
 	if (prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		res = rz_line_ns_completion_result_new(0, buf->length, NULL);
