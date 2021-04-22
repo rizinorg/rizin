@@ -66,6 +66,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *s = RZ_NEW0(RzBinSection);
+	if (!s) {
+		return NULL;
+	}
 	ut64 sz = rz_buf_size(bf->buf);
 	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		free(s);

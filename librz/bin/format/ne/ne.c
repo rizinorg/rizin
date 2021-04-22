@@ -76,6 +76,9 @@ RzList *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 		return NULL;
 	}
 	RzList *segments = rz_list_newf((RzListFree)rz_bin_section_free);
+	if (!segments) {
+		return NULL;
+	}
 	for (i = 0; i < bin->ne_header->SegCount; i++) {
 		RzBinSection *bs = RZ_NEW0(RzBinSection);
 		NE_image_segment_entry *se = &bin->segment_entries[i];

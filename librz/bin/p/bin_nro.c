@@ -110,7 +110,7 @@ static RzList *maps(RzBinFile *bf) {
 		map->perm = RZ_PERM_R;
 		rz_list_append(ret, map);
 	} else {
-		eprintf("Invalid SIG0 address\n");
+		RZ_LOG_ERROR("Invalid SIG0 address\n");
 	}
 
 	// add text segment
@@ -185,7 +185,7 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->perm = RZ_PERM_R; // rw-
 		rz_list_append(ret, ptr);
 	} else {
-		eprintf("Invalid MOD0 address\n");
+		RZ_LOG_ERROR("Invalid MOD0 address\n");
 	}
 
 	RzList *mappies = maps(bf);

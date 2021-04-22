@@ -1390,7 +1390,7 @@ RZ_API RzList *rz_bin_maps_of_file_sections(RzBinFile *binfile) {
 	}
 	RzList *r = rz_list_newf((RzListFree)rz_bin_map_free);
 	if (!r) {
-		return NULL;
+		goto hcf;
 	}
 	RzBinSection *sec;
 	RzListIter *it;
