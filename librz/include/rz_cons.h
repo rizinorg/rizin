@@ -931,6 +931,7 @@ RZ_API void rz_cons_log_stub(const char *output, const char *funcname, const cha
 /* input */
 RZ_API int rz_cons_controlz(int ch);
 RZ_API int rz_cons_readchar(void);
+RZ_API bool rz_cons_readbuffer_readchar(char *ch);
 RZ_API bool rz_cons_readpush(const char *str, int len);
 RZ_API void rz_cons_readflush(void);
 RZ_API void rz_cons_switchbuf(bool active);
