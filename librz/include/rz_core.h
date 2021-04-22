@@ -699,6 +699,7 @@ RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);
 
 RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);
+RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_main(RzCore *r, RzBinFile *binfile, bool va);
 RZ_API bool rz_core_bin_apply_dwarf(RzCore *core, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va);
@@ -771,7 +772,8 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 #define RZ_CORE_BIN_ACC_HASHES           0x10000000
 #define RZ_CORE_BIN_ACC_TRYCATCH         0x20000000
 #define RZ_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
-#define RZ_CORE_BIN_ACC_ALL              0x504FFF
+#define RZ_CORE_BIN_ACC_MAPS             0x80000000
+#define RZ_CORE_BIN_ACC_ALL              0x80504FFF
 
 #define RZ_CORE_PRJ_FLAGS           0x0001
 #define RZ_CORE_PRJ_EVAL            0x0002

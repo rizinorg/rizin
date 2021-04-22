@@ -281,7 +281,6 @@ static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RzBinSection
 			s->vsize = data_size;
 			s->paddr = offset;
 			s->vaddr = vaddr;
-			s->add = true;
 			vaddr += data_size;
 			tot_size += data_size;
 			rz_list_append(l, s);
@@ -305,7 +304,6 @@ static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RzBinSection
 		s->perm = sec->perm;
 		s->vsize = h->pagesize - tot_size;
 		s->vaddr = vaddr;
-		s->add = true;
 		rz_list_append(l, s);
 	}
 }
@@ -332,7 +330,6 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 		sec->name = rz_str_newf("obj.%d", i + 1);
 		sec->vsize = entry->virtual_size;
 		sec->vaddr = entry->reloc_base_addr;
-		sec->add = true;
 		if (entry->flags & O_READABLE) {
 			sec->perm |= RZ_PERM_R;
 		}
@@ -396,7 +393,6 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 			s->vaddr = sec->vaddr + page_size_sum;
 			s->perm = sec->perm;
 			s->size = page.size;
-			s->add = true;
 			s->bits = sec->bits;
 			rz_list_append(l, s);
 			page_size_sum += s->vsize;

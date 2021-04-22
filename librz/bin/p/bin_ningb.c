@@ -77,7 +77,6 @@ static RzList *sections(RzBinFile *bf) {
 		section->vaddr = i ? (i * 0x10000 - 0xc000) : 0;
 		section->size = section->vsize = 0x4000;
 		section->perm = rz_str_rwx("rx");
-		section->add = true;
 		rz_list_append(ret, section);
 	}
 	return ret;
@@ -257,6 +256,7 @@ RzBinPlugin rz_bin_plugin_ningb = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,

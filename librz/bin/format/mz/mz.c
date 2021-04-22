@@ -142,7 +142,6 @@ RzList *rz_bin_mz_get_segments(const struct rz_bin_mz_obj_t *bin) {
 		section->vsize = section->size;
 		section->paddr = rz_bin_mz_la_to_pa(bin, section->vaddr);
 		section->perm = rz_str_rwx("rwx");
-		section->add = true;
 		section_number++;
 	}
 	section = rz_list_get_top(seg_list);

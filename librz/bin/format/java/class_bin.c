@@ -1520,7 +1520,6 @@ static RzBinSection *new_section(const char *name, ut64 start, ut64 end, ut32 pe
 	section->size = end - start;
 	section->vsize = section->size;
 	section->perm = perm;
-	section->add = true;
 	return section;
 }
 

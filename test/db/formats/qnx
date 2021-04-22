@@ -14,7 +14,6 @@ vaddr=0x0000021c paddr=0x0000021c haddr=-1 type=program
 EOF
 RUN
 
-
 NAME=sections of qnx
 FILE=bins/qnx/test.x
 CMDS=iS
@@ -26,6 +25,16 @@ nth paddr        size vaddr       vsize perm name
 0   0x00000044   0xf6 0x00000044   0xf6 ---- LMF_LOAD
 1   0x00000152  0x6c3 0x00000152  0x6c3 ---- LMF_LOAD
 
+EOF
+RUN
+
+NAME=maps of qnx
+FILE=bins/qnx/test.x
+CMDS=om
+EXPECT=<<EOF
+ 3 fd: 3 +0x00000000 0x00000000 - 0x00001481 r-x 
+ 2 fd: 3 +0x00000044 0x00000044 - 0x00000139 --- fmap.LMF_LOAD
+ 1 fd: 3 +0x00000152 0x00000152 - 0x00000814 --- fmap.LMF_LOAD
 EOF
 RUN
 

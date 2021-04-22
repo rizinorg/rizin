@@ -95,7 +95,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr;
 		ptr->perm = 0;
-		ptr->add = true;
 		if (RZ_BIN_TE_SCN_IS_EXECUTABLE(sections[i].flags)) {
 			ptr->perm |= RZ_PERM_X;
 		}
@@ -161,6 +160,7 @@ RzBinPlugin rz_bin_plugin_te = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 	.minstrlen = 4,

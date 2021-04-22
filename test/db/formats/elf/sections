@@ -75,3 +75,21 @@ EXPECT=<<EOF
 ffffffffffffffffffff
 EOF
 RUN
+
+NAME=also map ehdr if ET_REL
+FILE=bins/elf/pngrutil_o
+CMDS=om
+EXPECT=<<EOF
+11 fd: 3 +0x00000034 0x08000034 - 0x080055c7 r-x fmap..text
+10 fd: 3 +0x00007328 0x08007328 - 0x0800852f --x fmap..rel.text
+ 9 fd: 3 +0x000055c8 0x080055c8 - 0x0800642b r-- fmap..rodata
+ 8 fd: 3 +0x00008530 0x08008530 - 0x0800858f --- fmap..rel.rodata
+ 7 fd: 3 +0x0000642c 0x0800642c - 0x08006461 --- fmap..comment
+ 6 fd: 3 +0x00006464 0x08006464 - 0x080068cb r-- fmap..eh_frame
+ 5 fd: 3 +0x00008590 0x08008590 - 0x0800869f --- fmap..rel.eh_frame
+ 4 fd: 3 +0x000086a0 0x080086a0 - 0x08008702 --- fmap..shstrtab
+ 3 fd: 3 +0x000068cc 0x080068cc - 0x08006e5b --- fmap..symtab
+ 2 fd: 3 +0x00006e5c 0x08006e5c - 0x08007325 --- fmap..strtab
+ 1 fd: 3 +0x00000000 0x08000000 - 0x08000033 r-- fmap.ehdr
+EOF
+RUN

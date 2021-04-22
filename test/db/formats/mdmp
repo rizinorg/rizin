@@ -50,41 +50,32 @@ EXPECT=<<EOF
 
 nth paddr           size vaddr             vsize perm name
 ----------------------------------------------------------
-0   0x000043ac     0x648 0x0398f9b8        0x648 -r-- Memory_Section
-1   0x000049f4     0x100 0x77639dea        0x100 -r-- Memory_Section_1
-2   0x00004af4     0x9c8 0x032cf638        0x9c8 -r-- Memory_Section_2
-3   0x000054bc     0x798 0x0367f868        0x798 -r-- Memory_Section_3
-4   0x00005c54    0x2f28 0x000bd0d8       0x2f28 -r-- Memory_Section_4
-5   0x00008b7c      0xf8 0x03a7ff08         0xf8 -r-- Memory_Section_5
-6   0x00008c74     0x100 0x7776ad90        0x100 -r-- Memory_Section_6
-7   0x00008d74     0x100 0x7776bafa        0x100 -r-- Memory_Section_7
-8   0x00008e74     0x100 0x7776c06a        0x100 -r-- Memory_Section_8
-9   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- C:_Windows_System32_calc.exe
-10  0x00000000  0x1aa000 0x77720000     0x1aa000 ---- C:_Windows_System32__tdll.dll
-11  0x00000000  0x11f000 0x77500000     0x11f000 ---- C:_Windows_System32_kernel32.dll
-12  0x00000000   0x6a000 0x7fefd4a0000   0x6a000 ---- C:_Windows_System32_KERNELBASE.dll
-13  0x00000000  0xd8a000 0x7fefeca0000  0xd8a000 ---- C:_Windows_System32_shell32.dll
-14  0x00000000   0x9f000 0x7fefdab0000   0x9f000 ---- C:_Windows_System32_msvcrt.dll
-15  0x00000000   0x71000 0x7fefd890000   0x71000 ---- C:_Windows_System32_shlwapi.dll
-16  0x00000000   0x67000 0x7fefdb50000   0x67000 ---- C:_Windows_System32_gdi32.dll
-17  0x00000000   0xfa000 0x77620000      0xfa000 ---- C:_Windows_System32_user32.dll
-18  0x00000000    0xe000 0x7fefdbc0000    0xe000 ---- C:_Windows_System32_lpk.dll
-19  0x00000000   0xca000 0x7fefe450000   0xca000 ---- C:_Windows_System32_usp10.dll
-20  0x00000000  0x203000 0x7fefea90000  0x203000 ---- C:_Windows_System32_ole32.dll
-21  0x00000000  0x12d000 0x7fefe8d0000  0x12d000 ---- C:_Windows_System32__pcrt4.dll
-22  0x00000000   0xdb000 0x7fefd9d0000   0xdb000 ---- C:_Windows_System32__dvapi32.dll
-23  0x00000000   0x1f000 0x7fefdff0000   0x1f000 ---- C:_Windows_System32_sechost.dll
-24  0x00000000   0xda000 0x7fefe520000   0xda000 ---- C:_Windows_System32_oleaut32.dll
-25  0x00000000   0x56000 0x7fefbb40000   0x56000 ---- C:_Windows_System32_uxtheme.dll
-26  0x00000000   0x3b000 0x7fefa140000   0x3b000 ---- C:_Windows_System32_winmm.dll
-27  0x00000000    0xc000 0x7fefc330000    0xc000 ---- C:_Windows_System32__ersion.dll
-28  0x00000000   0x2e000 0x7fefea00000   0x2e000 ---- C:_Windows_System32_imm32.dll
-29  0x00000000  0x109000 0x7fefe340000  0x109000 ---- C:_Windows_System32_msctf.dll
-30  0x00000000  0x161000 0x7fefb560000  0x161000 ---- C:_Windows_System32_WindowsCodecs.dll
-31  0x00000000   0x18000 0x7fefb710000   0x18000 ---- C:_Windows_System32_dwmapi.dll
-32  0x00000000    0xf000 0x7fefd2b0000    0xf000 ---- C:_Windows_System32_CRYPTBASE.dll
-33  0x00000000   0x99000 0x7fefddb0000   0x99000 ---- C:_Windows_System32_clbcatq.dll
-34  0x00000000   0x54000 0x7fef62b0000   0x54000 ---- C:_Windows_System32_oleacc.dll
+0   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- C:_Windows_System32_calc.exe
+1   0x00000000  0x1aa000 0x77720000     0x1aa000 ---- C:_Windows_System32__tdll.dll
+2   0x00000000  0x11f000 0x77500000     0x11f000 ---- C:_Windows_System32_kernel32.dll
+3   0x00000000   0x6a000 0x7fefd4a0000   0x6a000 ---- C:_Windows_System32_KERNELBASE.dll
+4   0x00000000  0xd8a000 0x7fefeca0000  0xd8a000 ---- C:_Windows_System32_shell32.dll
+5   0x00000000   0x9f000 0x7fefdab0000   0x9f000 ---- C:_Windows_System32_msvcrt.dll
+6   0x00000000   0x71000 0x7fefd890000   0x71000 ---- C:_Windows_System32_shlwapi.dll
+7   0x00000000   0x67000 0x7fefdb50000   0x67000 ---- C:_Windows_System32_gdi32.dll
+8   0x00000000   0xfa000 0x77620000      0xfa000 ---- C:_Windows_System32_user32.dll
+9   0x00000000    0xe000 0x7fefdbc0000    0xe000 ---- C:_Windows_System32_lpk.dll
+10  0x00000000   0xca000 0x7fefe450000   0xca000 ---- C:_Windows_System32_usp10.dll
+11  0x00000000  0x203000 0x7fefea90000  0x203000 ---- C:_Windows_System32_ole32.dll
+12  0x00000000  0x12d000 0x7fefe8d0000  0x12d000 ---- C:_Windows_System32__pcrt4.dll
+13  0x00000000   0xdb000 0x7fefd9d0000   0xdb000 ---- C:_Windows_System32__dvapi32.dll
+14  0x00000000   0x1f000 0x7fefdff0000   0x1f000 ---- C:_Windows_System32_sechost.dll
+15  0x00000000   0xda000 0x7fefe520000   0xda000 ---- C:_Windows_System32_oleaut32.dll
+16  0x00000000   0x56000 0x7fefbb40000   0x56000 ---- C:_Windows_System32_uxtheme.dll
+17  0x00000000   0x3b000 0x7fefa140000   0x3b000 ---- C:_Windows_System32_winmm.dll
+18  0x00000000    0xc000 0x7fefc330000    0xc000 ---- C:_Windows_System32__ersion.dll
+19  0x00000000   0x2e000 0x7fefea00000   0x2e000 ---- C:_Windows_System32_imm32.dll
+20  0x00000000  0x109000 0x7fefe340000  0x109000 ---- C:_Windows_System32_msctf.dll
+21  0x00000000  0x161000 0x7fefb560000  0x161000 ---- C:_Windows_System32_WindowsCodecs.dll
+22  0x00000000   0x18000 0x7fefb710000   0x18000 ---- C:_Windows_System32_dwmapi.dll
+23  0x00000000    0xf000 0x7fefd2b0000    0xf000 ---- C:_Windows_System32_CRYPTBASE.dll
+24  0x00000000   0x99000 0x7fefddb0000   0x99000 ---- C:_Windows_System32_clbcatq.dll
+25  0x00000000   0x54000 0x7fef62b0000   0x54000 ---- C:_Windows_System32_oleacc.dll
 
 EOF
 RUN
@@ -93,15 +84,15 @@ NAME=mdmp maps
 FILE=bins/mdmp/calc.dmp
 CMDS=om
 EXPECT=<<EOF
- 9 fd: 3 +0x000043ac 0x0398f9b8 - 0x0398ffff r-- fmap.Memory_Section
- 8 fd: 3 +0x000049f4 0x77639dea - 0x77639ee9 r-- fmap.Memory_Section_1
- 7 fd: 3 +0x00004af4 0x032cf638 - 0x032cffff r-- fmap.Memory_Section_2
- 6 fd: 3 +0x000054bc 0x0367f868 - 0x0367ffff r-- fmap.Memory_Section_3
- 5 fd: 3 +0x00005c54 0x000bd0d8 - 0x000bffff r-- fmap.Memory_Section_4
- 4 fd: 3 +0x00008b7c 0x03a7ff08 - 0x03a7ffff r-- fmap.Memory_Section_5
- 3 fd: 3 +0x00008c74 0x7776ad90 - 0x7776ae8f r-- fmap.Memory_Section_6
- 2 fd: 3 +0x00008d74 0x7776bafa - 0x7776bbf9 r-- fmap.Memory_Section_7
- 1 fd: 3 +0x00008e74 0x7776c06a - 0x7776c169 r-- fmap.Memory_Section_8
+ 9 fd: 3 +0x000043ac 0x0398f9b8 - 0x0398ffff r-- fmap.memory.0x398f9b8
+ 8 fd: 3 +0x000049f4 0x77639dea - 0x77639ee9 r-- fmap.memory.0x77639dea
+ 7 fd: 3 +0x00004af4 0x032cf638 - 0x032cffff r-- fmap.memory.0x32cf638
+ 6 fd: 3 +0x000054bc 0x0367f868 - 0x0367ffff r-- fmap.memory.0x367f868
+ 5 fd: 3 +0x00005c54 0x000bd0d8 - 0x000bffff r-- fmap.memory.0xbd0d8
+ 4 fd: 3 +0x00008b7c 0x03a7ff08 - 0x03a7ffff r-- fmap.memory.0x3a7ff08
+ 3 fd: 3 +0x00008c74 0x7776ad90 - 0x7776ae8f r-- fmap.memory.0x7776ad90
+ 2 fd: 3 +0x00008d74 0x7776bafa - 0x7776bbf9 r-- fmap.memory.0x7776bafa
+ 1 fd: 3 +0x00008e74 0x7776c06a - 0x7776c169 r-- fmap.memory.0x7776c06a
 EOF
 RUN
 
@@ -109,59 +100,59 @@ NAME=mdmp memory64 maps
 FILE=bins/mdmp/hello64.dmp
 CMDS=om
 EXPECT=<<EOF
-53 fd: 3 +0x00002c8f 0x00010000 - 0x0001ffff r-- fmap.Memory_Section
-52 fd: 3 +0x00012c8f 0x00020000 - 0x0002ffff r-- fmap.Memory_Section_1
-51 fd: 3 +0x00022c8f 0x0022d000 - 0x0022ffff r-- fmap.Memory_Section_2
-50 fd: 3 +0x00025c8f 0x00230000 - 0x00233fff r-- fmap.Memory_Section_3
-49 fd: 3 +0x00029c8f 0x00240000 - 0x00240fff r-- fmap.Memory_Section_4
-48 fd: 3 +0x0002ac8f 0x00250000 - 0x00250fff r-- fmap.Memory_Section_5
-47 fd: 3 +0x0002bc8f 0x00260000 - 0x002c6fff r-- fmap.Memory_Section_6
-46 fd: 3 +0x00092c8f 0x00400000 - 0x00400fff r-- fmap.Memory_Section_7
-45 fd: 3 +0x00093c8f 0x00401000 - 0x00402fff r-x fmap.Memory_Section_8
-44 fd: 3 +0x00095c8f 0x00403000 - 0x00403fff r-- fmap.Memory_Section_9
-43 fd: 3 +0x00096c8f 0x00404000 - 0x00406fff r-- fmap.Memory_Section_10
-42 fd: 3 +0x00099c8f 0x00407000 - 0x00408fff r-- fmap.Memory_Section_11
-41 fd: 3 +0x0009bc8f 0x00409000 - 0x0040bfff --- fmap.Memory_Section_12
-40 fd: 3 +0x0009ec8f 0x0040c000 - 0x00424fff r-- fmap.Memory_Section_13
-39 fd: 3 +0x000b7c8f 0x00580000 - 0x00584fff r-- fmap.Memory_Section_14
-38 fd: 3 +0x000bcc8f 0x005e0000 - 0x005e6fff r-- fmap.Memory_Section_15
-37 fd: 3 +0x000c3c8f 0x77500000 - 0x77500fff r-- fmap.Memory_Section_16
-36 fd: 3 +0x000c4c8f 0x77501000 - 0x7759bfff r-x fmap.Memory_Section_17
-35 fd: 3 +0x0015fc8f 0x7759c000 - 0x77609fff r-- fmap.Memory_Section_18
-34 fd: 3 +0x001cdc8f 0x7760a000 - 0x7760bfff r-- fmap.Memory_Section_19
-33 fd: 3 +0x001cfc8f 0x7760c000 - 0x7761efff r-- fmap.Memory_Section_20
-32 fd: 3 +0x001e2c8f 0x77720000 - 0x77720fff r-- fmap.Memory_Section_21
-31 fd: 3 +0x001e3c8f 0x77721000 - 0x7781dfff r-x fmap.Memory_Section_22
-30 fd: 3 +0x002e0c8f 0x7781e000 - 0x7784cfff r-- fmap.Memory_Section_23
-29 fd: 3 +0x0030fc8f 0x7784d000 - 0x7784dfff r-- fmap.Memory_Section_24
-28 fd: 3 +0x00310c8f 0x7784e000 - 0x7784efff --- fmap.Memory_Section_25
-27 fd: 3 +0x00311c8f 0x7784f000 - 0x7784ffff r-- fmap.Memory_Section_26
-26 fd: 3 +0x00312c8f 0x77850000 - 0x77851fff --- fmap.Memory_Section_27
-25 fd: 3 +0x00314c8f 0x77852000 - 0x77852fff r-- fmap.Memory_Section_28
-24 fd: 3 +0x00315c8f 0x77853000 - 0x77855fff --- fmap.Memory_Section_29
-23 fd: 3 +0x00318c8f 0x77856000 - 0x77857fff r-- fmap.Memory_Section_30
-22 fd: 3 +0x0031ac8f 0x77858000 - 0x77858fff --- fmap.Memory_Section_31
-21 fd: 3 +0x0031bc8f 0x77859000 - 0x7785afff r-- fmap.Memory_Section_32
-20 fd: 3 +0x0031dc8f 0x7785b000 - 0x778c9fff r-- fmap.Memory_Section_33
-19 fd: 3 +0x0038cc8f 0x7efe0000 - 0x7efe4fff r-- fmap.Memory_Section_34
-18 fd: 3 +0x00391c8f 0x7ffe0000 - 0x7ffe0fff r-- fmap.Memory_Section_35
-17 fd: 3 +0x00392c8f 0x7fefd4a0000 - 0x7fefd4a0fff r-- fmap.Memory_Section_36
-16 fd: 3 +0x00393c8f 0x7fefd4a1000 - 0x7fefd4e9fff r-x fmap.Memory_Section_37
-15 fd: 3 +0x003dcc8f 0x7fefd4ea000 - 0x7fefd4fefff r-- fmap.Memory_Section_38
-14 fd: 3 +0x003f1c8f 0x7fefd4ff000 - 0x7fefd500fff r-- fmap.Memory_Section_39
-13 fd: 3 +0x003f3c8f 0x7fefd501000 - 0x7fefd509fff r-- fmap.Memory_Section_40
-12 fd: 3 +0x003fcc8f 0x7fefdab0000 - 0x7fefdab0fff r-- fmap.Memory_Section_41
-11 fd: 3 +0x003fdc8f 0x7fefdab1000 - 0x7fefdb29fff r-x fmap.Memory_Section_42
-10 fd: 3 +0x00476c8f 0x7fefdb2a000 - 0x7fefdb40fff r-- fmap.Memory_Section_43
- 9 fd: 3 +0x0048dc8f 0x7fefdb41000 - 0x7fefdb42fff r-- fmap.Memory_Section_44
- 8 fd: 3 +0x0048fc8f 0x7fefdb43000 - 0x7fefdb43fff --- fmap.Memory_Section_45
- 7 fd: 3 +0x00490c8f 0x7fefdb44000 - 0x7fefdb44fff r-- fmap.Memory_Section_46
- 6 fd: 3 +0x00491c8f 0x7fefdb45000 - 0x7fefdb46fff --- fmap.Memory_Section_47
- 5 fd: 3 +0x00493c8f 0x7fefdb47000 - 0x7fefdb4efff r-- fmap.Memory_Section_48
- 4 fd: 3 +0x0049bc8f 0x7feffa40000 - 0x7feffa40fff r-- fmap.Memory_Section_49
- 3 fd: 3 +0x0049cc8f 0x7fffffb0000 - 0x7fffffd2fff r-- fmap.Memory_Section_50
- 2 fd: 3 +0x004bfc8f 0x7fffffd7000 - 0x7fffffd7fff r-- fmap.Memory_Section_51
- 1 fd: 3 +0x004c0c8f 0x7fffffde000 - 0x7fffffdffff r-- fmap.Memory_Section_52
+53 fd: 3 +0x00002c8f 0x00010000 - 0x0001ffff r-- fmap.memory64.0x10000
+52 fd: 3 +0x00012c8f 0x00020000 - 0x0002ffff r-- fmap.memory64.0x20000
+51 fd: 3 +0x00022c8f 0x0022d000 - 0x0022ffff r-- fmap.memory64.0x22d000
+50 fd: 3 +0x00025c8f 0x00230000 - 0x00233fff r-- fmap.memory64.0x230000
+49 fd: 3 +0x00029c8f 0x00240000 - 0x00240fff r-- fmap.memory64.0x240000
+48 fd: 3 +0x0002ac8f 0x00250000 - 0x00250fff r-- fmap.memory64.0x250000
+47 fd: 3 +0x0002bc8f 0x00260000 - 0x002c6fff r-- fmap.memory64.0x260000
+46 fd: 3 +0x00092c8f 0x00400000 - 0x00400fff r-- fmap.memory64.0x400000
+45 fd: 3 +0x00093c8f 0x00401000 - 0x00402fff r-x fmap.memory64.0x401000
+44 fd: 3 +0x00095c8f 0x00403000 - 0x00403fff r-- fmap.memory64.0x403000
+43 fd: 3 +0x00096c8f 0x00404000 - 0x00406fff r-- fmap.memory64.0x404000
+42 fd: 3 +0x00099c8f 0x00407000 - 0x00408fff r-- fmap.memory64.0x407000
+41 fd: 3 +0x0009bc8f 0x00409000 - 0x0040bfff --- fmap.memory64.0x409000
+40 fd: 3 +0x0009ec8f 0x0040c000 - 0x00424fff r-- fmap.memory64.0x40c000
+39 fd: 3 +0x000b7c8f 0x00580000 - 0x00584fff r-- fmap.memory64.0x580000
+38 fd: 3 +0x000bcc8f 0x005e0000 - 0x005e6fff r-- fmap.memory64.0x5e0000
+37 fd: 3 +0x000c3c8f 0x77500000 - 0x77500fff r-- fmap.memory64.0x77500000
+36 fd: 3 +0x000c4c8f 0x77501000 - 0x7759bfff r-x fmap.memory64.0x77501000
+35 fd: 3 +0x0015fc8f 0x7759c000 - 0x77609fff r-- fmap.memory64.0x7759c000
+34 fd: 3 +0x001cdc8f 0x7760a000 - 0x7760bfff r-- fmap.memory64.0x7760a000
+33 fd: 3 +0x001cfc8f 0x7760c000 - 0x7761efff r-- fmap.memory64.0x7760c000
+32 fd: 3 +0x001e2c8f 0x77720000 - 0x77720fff r-- fmap.memory64.0x77720000
+31 fd: 3 +0x001e3c8f 0x77721000 - 0x7781dfff r-x fmap.memory64.0x77721000
+30 fd: 3 +0x002e0c8f 0x7781e000 - 0x7784cfff r-- fmap.memory64.0x7781e000
+29 fd: 3 +0x0030fc8f 0x7784d000 - 0x7784dfff r-- fmap.memory64.0x7784d000
+28 fd: 3 +0x00310c8f 0x7784e000 - 0x7784efff --- fmap.memory64.0x7784e000
+27 fd: 3 +0x00311c8f 0x7784f000 - 0x7784ffff r-- fmap.memory64.0x7784f000
+26 fd: 3 +0x00312c8f 0x77850000 - 0x77851fff --- fmap.memory64.0x77850000
+25 fd: 3 +0x00314c8f 0x77852000 - 0x77852fff r-- fmap.memory64.0x77852000
+24 fd: 3 +0x00315c8f 0x77853000 - 0x77855fff --- fmap.memory64.0x77853000
+23 fd: 3 +0x00318c8f 0x77856000 - 0x77857fff r-- fmap.memory64.0x77856000
+22 fd: 3 +0x0031ac8f 0x77858000 - 0x77858fff --- fmap.memory64.0x77858000
+21 fd: 3 +0x0031bc8f 0x77859000 - 0x7785afff r-- fmap.memory64.0x77859000
+20 fd: 3 +0x0031dc8f 0x7785b000 - 0x778c9fff r-- fmap.memory64.0x7785b000
+19 fd: 3 +0x0038cc8f 0x7efe0000 - 0x7efe4fff r-- fmap.memory64.0x7efe0000
+18 fd: 3 +0x00391c8f 0x7ffe0000 - 0x7ffe0fff r-- fmap.memory64.0x7ffe0000
+17 fd: 3 +0x00392c8f 0x7fefd4a0000 - 0x7fefd4a0fff r-- fmap.memory64.0x7fefd4a0000
+16 fd: 3 +0x00393c8f 0x7fefd4a1000 - 0x7fefd4e9fff r-x fmap.memory64.0x7fefd4a1000
+15 fd: 3 +0x003dcc8f 0x7fefd4ea000 - 0x7fefd4fefff r-- fmap.memory64.0x7fefd4ea000
+14 fd: 3 +0x003f1c8f 0x7fefd4ff000 - 0x7fefd500fff r-- fmap.memory64.0x7fefd4ff000
+13 fd: 3 +0x003f3c8f 0x7fefd501000 - 0x7fefd509fff r-- fmap.memory64.0x7fefd501000
+12 fd: 3 +0x003fcc8f 0x7fefdab0000 - 0x7fefdab0fff r-- fmap.memory64.0x7fefdab0000
+11 fd: 3 +0x003fdc8f 0x7fefdab1000 - 0x7fefdb29fff r-x fmap.memory64.0x7fefdab1000
+10 fd: 3 +0x00476c8f 0x7fefdb2a000 - 0x7fefdb40fff r-- fmap.memory64.0x7fefdb2a000
+ 9 fd: 3 +0x0048dc8f 0x7fefdb41000 - 0x7fefdb42fff r-- fmap.memory64.0x7fefdb41000
+ 8 fd: 3 +0x0048fc8f 0x7fefdb43000 - 0x7fefdb43fff --- fmap.memory64.0x7fefdb43000
+ 7 fd: 3 +0x00490c8f 0x7fefdb44000 - 0x7fefdb44fff r-- fmap.memory64.0x7fefdb44000
+ 6 fd: 3 +0x00491c8f 0x7fefdb45000 - 0x7fefdb46fff --- fmap.memory64.0x7fefdb45000
+ 5 fd: 3 +0x00493c8f 0x7fefdb47000 - 0x7fefdb4efff r-- fmap.memory64.0x7fefdb47000
+ 4 fd: 3 +0x0049bc8f 0x7feffa40000 - 0x7feffa40fff r-- fmap.memory64.0x7feffa40000
+ 3 fd: 3 +0x0049cc8f 0x7fffffb0000 - 0x7fffffd2fff r-- fmap.memory64.0x7fffffb0000
+ 2 fd: 3 +0x004bfc8f 0x7fffffd7000 - 0x7fffffd7fff r-- fmap.memory64.0x7fffffd7000
+ 1 fd: 3 +0x004c0c8f 0x7fffffde000 - 0x7fffffdffff r-- fmap.memory64.0x7fffffde000
 EOF
 RUN
 

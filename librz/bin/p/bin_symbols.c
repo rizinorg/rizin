@@ -132,7 +132,6 @@ static RzBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect
 	s->vsize = s->size;
 	s->paddr = sect->paddr;
 	s->vaddr = sect->vaddr;
-	s->add = true;
 	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = false;
 	return s;
@@ -151,7 +150,6 @@ static RzBinSection *bin_section_from_segment(RzCoreSymCacheElementSegment *seg)
 	s->vsize = seg->vsize;
 	s->paddr = seg->paddr;
 	s->vaddr = seg->vaddr;
-	s->add = true;
 	s->perm = strstr(s->name, "TEXT") ? 5 : 4;
 	s->is_segment = true;
 	return s;
@@ -465,6 +463,7 @@ RzBinPlugin rz_bin_plugin_symbols = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.symbols = &symbols,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.size = &size,
 	.baddr = &baddr,

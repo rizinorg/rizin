@@ -154,6 +154,7 @@ RzBinPlugin rz_bin_plugin_le = {
 	.destroy = &destroy,
 	.info = &info,
 	.header = &header,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.entries = &entries,
 	.symbols = &symbols,

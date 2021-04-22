@@ -1,14 +1,28 @@
-NAME=DOL: sqrxz4 - open
-FILE=bins/psx/HITPSX.EXE
-CMDS=q!
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=DOL: sqrxz4 - iI
+NAME=psx: sqrxz4 - iI
 FILE=bins/psx/HITPSX.EXE
 CMDS=iI~?psx
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=psx: sqrxz4 - sections
+FILE=bins/psx/HITPSX.EXE
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr           size vaddr          vsize perm name
+-------------------------------------------------------
+0   0x00000800  0x180000 0x80010000  0x180000 -r-x TEXT
+
+EOF
+RUN
+
+NAME=psx: sqrxz4 - maps
+FILE=bins/psx/HITPSX.EXE
+CMDS=om
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000800 0x80010000 - 0x8018ffff r-x fmap.TEXT
 EOF
 RUN

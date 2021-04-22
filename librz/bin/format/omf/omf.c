@@ -765,7 +765,6 @@ int rz_bin_omf_send_sections(RzList *list, OMF_segment *section, rz_bin_omf_obj 
 		new->paddr = data->paddr;
 		new->vaddr = section->vaddr + data->offset + OMF_BASE_ADDR;
 		new->perm = RZ_PERM_RWX;
-		new->add = true;
 		rz_list_append(list, new);
 		data = data->next;
 	}

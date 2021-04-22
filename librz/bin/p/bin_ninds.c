@@ -44,7 +44,7 @@ static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr9 = NULL, *ptr7 = NULL;
 
-	if (!(ret = rz_list_new())) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	if (!(ptr9 = RZ_NEW0(RzBinSection))) {
@@ -63,7 +63,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr9->paddr = loaded_header.arm9_rom_offset;
 	ptr9->vaddr = loaded_header.arm9_ram_address;
 	ptr9->perm = rz_str_rwx("rwx");
-	ptr9->add = true;
 	rz_list_append(ret, ptr9);
 
 	ptr7->name = strdup("arm7");
@@ -72,7 +71,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr7->paddr = loaded_header.arm7_rom_offset;
 	ptr7->vaddr = loaded_header.arm7_ram_address;
 	ptr7->perm = rz_str_rwx("rwx");
-	ptr7->add = true;
 	rz_list_append(ret, ptr7);
 
 	return ret;
@@ -136,6 +134,7 @@ RzBinPlugin rz_bin_plugin_ninds = {
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 };

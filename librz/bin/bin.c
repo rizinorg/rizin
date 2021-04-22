@@ -1363,6 +1363,90 @@ RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
+RZ_API void rz_bin_map_free(RzBinMap *map) {
+	if (!map) {
+		return;
+	}
+	free(map->name);
+	free(map);
+}
+
+/**
+ * \brief Create a list of RzBinMap from RzBinSections queried from the given file
+ *
+ * Some binary formats have a 1:1 correspondence of mapping and
+ * their RzBinSections. This is not always the case (e.g. ELF)
+ * but if it is, plugins can use this function as their maps callback,
+ * which will generate mappings for sections.
+ * */
+RZ_API RzList *rz_bin_maps_of_file_sections(RzBinFile *binfile) {
+	rz_return_val_if_fail(binfile, NULL);
+	if (!binfile->o || !binfile->o->plugin || !binfile->o->plugin->sections) {
+		return NULL;
+	}
+	RzList *sections = binfile->o->plugin->sections(binfile);
+	if (!sections) {
+		return NULL;
+	}
+	RzList *r = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!r) {
+		goto hcf;
+	}
+	RzBinSection *sec;
+	RzListIter *it;
+	rz_list_foreach (sections, it, sec) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			goto hcf;
+		}
+		map->name = sec->name ? strdup(sec->name) : NULL;
+		map->paddr = sec->paddr;
+		map->psize = sec->size;
+		map->vaddr = sec->vaddr;
+		map->vsize = sec->vsize;
+		map->perm = sec->perm;
+		rz_list_push(r, map);
+	}
+hcf:
+	rz_list_free(sections);
+	return r;
+}
+
+/**
+ * \brief Create a list of RzBinSection from RzBinMaps
+ *
+ * Some binary formats have a 1:1 correspondence of mapping and
+ * some of their RzBinSections, but also want to add some unmapped sections.
+ * In this case, they can implement their mapped sections in their maps callback,
+ * then in their sections callback use this function to create sections from them
+ * and add some additional ones.
+ * See also rz_bin_maps_of_file_sections() for the inverse, when no additional
+ * sections should be added.
+ * */
+RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps) {
+	rz_return_val_if_fail(maps, NULL);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
+	if (!ret) {
+		return NULL;
+	}
+	RzListIter *it;
+	RzBinMap *map;
+	rz_list_foreach (maps, it, map) {
+		RzBinSection *sec = RZ_NEW0(RzBinSection);
+		if (!sec) {
+			break;
+		}
+		sec->name = map->name ? strdup(map->name) : NULL;
+		sec->paddr = map->paddr;
+		sec->size = map->psize;
+		sec->vaddr = map->vaddr;
+		sec->vsize = map->vsize;
+		sec->perm = map->perm;
+		rz_list_append(ret, sec);
+	}
+	return ret;
+}
+
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name) {
 	RzBinSection *s = RZ_NEW0(RzBinSection);
 	if (s) {
@@ -1375,7 +1459,6 @@ RZ_IPI void rz_bin_section_free(RzBinSection *bs) {
 	if (bs) {
 		free(bs->name);
 		free(bs->format);
-		free(bs->map_name);
 		free(bs);
 	}
 }

@@ -5,3 +5,24 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=z64: sections
+FILE=bins/z64/demo.z64
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr           size vaddr          vsize perm name
+-------------------------------------------------------
+0   0x00001000  0x13f000 0x80001000  0x13f000 -r-x text
+
+EOF
+RUN
+
+NAME=z64: maps
+FILE=bins/z64/demo.z64
+CMDS=om
+EXPECT=<<EOF
+ 1 fd: 3 +0x00001000 0x80001000 - 0x8013ffff r-x fmap.text
+EOF
+RUN

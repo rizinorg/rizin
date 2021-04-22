@@ -36,6 +36,7 @@ static bool check_buffer(RzBuffer *buf) {
 static void destroy(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	rz_list_free(qo->sections);
+	rz_list_free(qo->maps);
 	rz_list_free(qo->fixups);
 	bf->o->bin_obj = NULL;
 	free(qo);
@@ -53,8 +54,9 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	}
 
 	RzList *sections = rz_list_newf((RzListFree)rz_bin_section_free);
+	RzList *maps = rz_list_newf((RzListFree)rz_bin_map_free);
 	RzList *fixups = rz_list_newf(free);
-	if (!sections || !fixups) {
+	if (!sections || !maps || !fixups) {
 		goto beach;
 	}
 	qo->kv = sdb_new0();
@@ -78,19 +80,28 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 		if (lrec.rec_type == LMF_IMAGE_END_REC) {
 			break;
 		} else if (lrec.rec_type == LMF_RESOURCE_REC) {
-			RzBinSection *ptr = RZ_NEW0(RzBinSection);
-			if (!ptr) {
+			if (rz_buf_fread_at(bf->buf, offset, (ut8 *)&lres, "ssss", 1) < sizeof(lmf_resource)) {
 				goto beach;
 			}
-			if (rz_buf_fread_at(bf->buf, offset, (ut8 *)&lres, "ssss", 1) < sizeof(lmf_resource)) {
+			RzBinSection *ptr = RZ_NEW0(RzBinSection);
+			if (!ptr) {
 				goto beach;
 			}
 			ptr->name = strdup("LMF_RESOURCE");
 			ptr->paddr = offset;
 			ptr->vsize = lrec.data_nbytes - sizeof(lmf_resource);
 			ptr->size = ptr->vsize;
-			ptr->add = true;
 			rz_list_append(sections, ptr);
+
+			RzBinMap *map = RZ_NEW0(RzBinMap);
+			if (!map) {
+				goto beach;
+			}
+			map->name = ptr->name ? strdup(ptr->name) : NULL;
+			map->paddr = ptr->paddr;
+			map->psize = ptr->size;
+			map->vsize = ptr->vsize;
+			rz_list_append(maps, map);
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
 			RzBinSection *ptr = RZ_NEW0(RzBinSection);
 			if (rz_buf_fread_at(bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof(lmf_data)) {
@@ -104,8 +115,17 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 			ptr->vaddr = ldata.offset;
 			ptr->vsize = lrec.data_nbytes - sizeof(lmf_data);
 			ptr->size = ptr->vsize;
-			ptr->add = true;
 			rz_list_append(sections, ptr);
+
+			RzBinMap *map = RZ_NEW0(RzBinMap);
+			if (!map) {
+				goto beach;
+			}
+			map->name = ptr->name ? strdup(ptr->name) : NULL;
+			map->paddr = ptr->paddr;
+			map->psize = ptr->size;
+			map->vsize = ptr->vsize;
+			rz_list_append(maps, map);
 		} else if (lrec.rec_type == LMF_FIXUP_REC) {
 			RzBinReloc *ptr = RZ_NEW0(RzBinReloc);
 			if (!ptr || rz_buf_fread_at(bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof(lmf_data)) {
@@ -129,12 +149,14 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	}
 	sdb_ns_set(sdb, "info", qo->kv);
 	qo->sections = sections;
+	qo->maps = maps;
 	qo->fixups = fixups;
 	*bin_obj = qo;
 	return true;
 beach:
 	free(qo);
 	rz_list_free(fixups);
+	rz_list_free(maps);
 	rz_list_free(sections);
 	return false;
 }
@@ -195,6 +217,12 @@ static void header(RzBinFile *bf) {
  */
 static RzList *symbols(RzBinFile *bf) {
 	return NULL;
+}
+
+static RzList *maps(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, NULL);
+	QnxObj *qo = bf->o->bin_obj;
+	return rz_list_clone(qo->maps);
 }
 
 // Returns the sections
@@ -289,6 +317,7 @@ RzBinPlugin rz_bin_plugin_qnx = {
 	.header = &header,
 	.get_sdb = &get_sdb,
 	.entries = &entries,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.signature = &signature,
