@@ -63,7 +63,7 @@ Question mark statements
 ???
 ?t cmd
 ?x hello
-e? cfg.rzshell
+e? cfg.oldshell
 
 ---
 

@@ -301,7 +301,7 @@ static bool test_autocmplt_eval(void) {
 	mu_assert_notnull(core, "core should be created");
 	RzLineBuffer *buf = &core->cons->line->buffer;
 
-	const char *s = "xd 1 2 3 4 cfg.rzsh";
+	const char *s = "xd 1 2 3 4 cfg.oldsh";
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
@@ -310,9 +310,9 @@ static bool test_autocmplt_eval(void) {
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("xd 1 2 3 4 "), "should autocomplete the last arg");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
-	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 config evals starting with cfg.newsh");
-	mu_assert_streq(rz_pvector_at(&r->options, 0), "cfg.rzshell", "cfg.rzshell found");
-	mu_assert_streq(rz_pvector_at(&r->options, 1), "cfg.rzshell.autocompletion", "cfg.rzshell found");
+	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 config evals starting with cfg.oldsh");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "cfg.oldshell", "cfg.oldshell found");
+	mu_assert_streq(rz_pvector_at(&r->options, 1), "cfg.oldshell.autocompletion", "cfg.oldshell.autocompletion found");
 	rz_line_ns_completion_result_free(r);
 
 	s = "xd 1 2 3 4 search.in=io.maps.r";

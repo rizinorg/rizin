@@ -30,7 +30,7 @@ EOF
 RUN
 
 NAME="/e /t\wst\d\d\d\s\w\w/i" - oldshell
-ARGS=-ecfg.rzshell=false
+ARGS=-ecfg.oldshell=true
 FILE=malloc://1024
 CMDS=<<EOF
 w "test123 ab"
@@ -48,7 +48,7 @@ EOF
 RUN
 
 NAME="/e /t\wst\d\d\d\s\w\w/i" - rzshell
-ARGS=-ecfg.rzshell=true
+ARGS=-ecfg.oldshell=false
 FILE=malloc://1024
 CMDS=<<EOF
 w '"test123 ab"'

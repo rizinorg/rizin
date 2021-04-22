@@ -706,7 +706,7 @@ EOF
 RUN
 
 NAME=af ; af ; zfs libc-v7.sig - rzshell
-ARGS=-ecfg.rzshell=true
+ARGS=-ecfg.oldshell=false
 FILE=bins/elf/analysis/pid_stripped
 CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v7.sig ; afl ~4e2420
 EXPECT=<<EOF
@@ -749,7 +749,7 @@ EOF
 RUN
 
 NAME=af ; af ; zfs libc-v10.sig - rzshell
-ARGS=-ecfg.rzshell=true
+ARGS=-ecfg.oldshell=false
 FILE=bins/elf/analysis/pid_stripped
 CMDS=s 0x4e2420 ; af ; s 0x4e25c7 ; af ; zfs bins/other/sigs/libc-v10.sig ; afl ~4e2420
 EXPECT=<<EOF

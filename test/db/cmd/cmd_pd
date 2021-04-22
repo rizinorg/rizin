@@ -1388,7 +1388,7 @@ EOF
 RUN
 
 NAME=pdJ string - oldshell
-ARGS=-ecfg.rzshell=false
+ARGS=-ecfg.oldshell=true
 FILE=malloc://128
 CMDS=<<EOF
 w Snoo"ping as" usual,
@@ -1401,7 +1401,7 @@ EOF
 RUN
 
 NAME=pdJ string - rzshell
-ARGS=-ecfg.rzshell=true
+ARGS=-ecfg.oldshell=false
 FILE=malloc://128
 CMDS=<<EOF
 w "Snoo\"ping as\" usual,"

@@ -42,7 +42,7 @@ $foo
 $foo
 ?e --
 $-*
-e cfg.rzshell=true
+e cfg.oldshell=false
 $foo=\#!pipe echo hello
 $foo
 ?e --

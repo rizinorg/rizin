@@ -1,5 +1,5 @@
 NAME=Double quotes - rzshell
-ARGS=-e cfg.rzshell=true
+ARGS=-e cfg.oldshell=false
 FILE==
 CMDS=<<EOF
 w "Hello World"
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=Single quotes - rzshell
-ARGS=-e cfg.rzshell=true
+ARGS=-e cfg.oldshell=false
 FILE==
 CMDS=<<EOF
 w 'Hello World'
@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=Quotes and substitution - rzshell
-ARGS=-e cfg.rzshell=true
+ARGS=-e cfg.oldshell=false
 FILE==
 CMDS=<<EOF
 w "Hello $(?e World)"
