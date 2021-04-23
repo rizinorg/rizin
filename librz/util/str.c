@@ -3701,7 +3701,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 	int curline = -1;
 	char *linetext = (char *)rz_str_pad(' ', w);
 	for (i = 0; i < h; i++) {
-		int zoomedline = i * ((float)rows / h);
+		int zoomedline = i * (int)((float)rows / h);
 		const char *srcline = rz_list_get_n(lines, zoomedline);
 		int cols = strlen(srcline);
 		for (j = 0; j < w; j++) {

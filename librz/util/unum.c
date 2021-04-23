@@ -105,7 +105,7 @@ RZ_API char *rz_num_units(char *buf, size_t len, ut64 num) {
 			return NULL;
 		}
 	}
-	fnum = num;
+	fnum = (long double)num;
 	if (num >= EB) {
 		unit = 'E';
 		fnum /= EB;
