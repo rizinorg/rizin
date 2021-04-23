@@ -340,9 +340,9 @@ static char *parse_value(RzJson *parent, const char *key, char *p) {
 			}
 		} else {
 			if (*p == '-') {
-				js->num.dbl_value = js->num.s_value;
+				js->num.dbl_value = (double)js->num.s_value;
 			} else {
-				js->num.dbl_value = js->num.u_value;
+				js->num.dbl_value = (double)js->num.u_value;
 			}
 		}
 		return pe;

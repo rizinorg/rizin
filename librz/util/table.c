@@ -571,7 +571,7 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 		}
 	}
 	if (op == 'p') {
-		sscanf(un, "%ld/%ld", &page, &page_items);
+		sscanf(un, "%zd/%zd", &page, &page_items);
 		if (page < 1) {
 			page = 1;
 		}
