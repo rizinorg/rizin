@@ -19,6 +19,10 @@ static bool punycode_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+	if (len < 1 || !buf) {
+		return false;
+	}
+
 	char *obuf;
 	int olen;
 	if (cry->dir == RZ_CRYPTO_DIR_DECRYPT) {
