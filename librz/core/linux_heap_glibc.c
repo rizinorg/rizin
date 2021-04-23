@@ -1003,9 +1003,9 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 		int count = GH(tcache_get_count)(tcache, i);
 		GHT entry = GH(tcache_get_entry)(tcache, i);
 		if (count > 0) {
-			PRINT_GA("bin :");
-			PRINTF_BA("%2zu", i);
-			PRINT_GA(", items :");
+			PRINT_GA("Tcachebin[");
+			PRINTF_BA("%02zu", i);
+			PRINT_GA("], Items :");
 			PRINTF_BA("%2d", count);
 			rz_cons_newline();
 			rz_cons_printf(" -> ");
@@ -1619,8 +1619,9 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	} else if (bin_num >= NSMALLBINS && bin_num <= NBINS - 2) {
 		rz_cons_printf("Large");
 	}
-	rz_cons_printf("_bin[%d]: ", bin_num);
-	rz_cons_printf("fd=");
+	rz_cons_printf("_bin[");
+	PRINTF_BA("%d", bin_num);
+	rz_cons_printf("]: fd=");
 	PRINTF_YA("0x%" PFMT64x, fw);
 	rz_cons_printf(", bk=");
 	PRINTF_YA("0x%" PFMT64x, bk);
