@@ -594,9 +594,13 @@ commands:
           - text: "<col>/cols[/<col2>[/<colN>...]"
             comment: Show only specified columns in the table.
           - text: "<col>/gt/<val>"
-            comment: Grep rows where column <col> is greather than <val>.
+            comment: Grep rows where column <col> is greater than <val>.
+          - text: "<col>/ge/<val>"
+            comment: Grep rows where column <col> is greater than or equal to <val>.
           - text: "<col>/lt/<val>"
             comment: Grep rows where column <col> is less than <val>.
+          - text: "<col>/le/<val>"
+            comment: Grep rows where column <col> is less than or equal to <val>.
           - text: "<col>/eq/<val>"
             comment: Grep rows where column <col> is equal to <val>.
           - text: "<col>/ne/<val>"
