@@ -62,7 +62,6 @@ RZ_API bool rz_crypto_set_iv(RzCrypto *cry, const ut8 *iv, int ivlen);
 RZ_API int rz_crypto_update(RzCrypto *cry, const ut8 *buf, int len);
 RZ_API int rz_crypto_final(RzCrypto *cry, const ut8 *buf, int len);
 RZ_API int rz_crypto_append(RzCrypto *cry, const ut8 *buf, int len);
-RZ_API bool rz_crypto_alloc_output(RzCrypto *cry);
 RZ_API const ut8 *rz_crypto_get_output(RzCrypto *cry, int *size);
 RZ_API const char *rz_crypto_name(const RzCryptoSelector bit);
 RZ_API const char *rz_crypto_codec_name(const RzCryptoSelector bit);
