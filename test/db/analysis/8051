@@ -202,3 +202,165 @@ EXPECT=<<EOF
 jump: 0x00001216
 EOF
 RUN
+
+NAME=8051: [ACALL addr11] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx f123 ; pi 1 ; ao 1~jump
+EXPECT=<<EOF
+acall 0x11723
+jump: 0x00011723
+EOF
+RUN
+
+NAME=8051: [AJMP addr11] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx e123 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+ajmp 0x11723
+jump: 0x00011723
+EOF
+RUN
+
+NAME=8051: [CJNE a,imm,offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx b4ab13 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+cjne a, #0xab, 0x11216
+jump: 0x00011216
+EOF
+RUN
+
+NAME=8051: [CJNE a,dir,offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx b56018 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+cjne a, 0x60, 0x1121b
+jump: 0x0001121b
+EOF
+RUN
+
+NAME=8051: [CJNE @r1,imm,offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx b72432 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+cjne @r1, #0x24, 0x11235
+jump: 0x00011235
+EOF
+RUN
+
+NAME=8051: [CJNE r7,imm,offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx bf0205 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+cjne r7, #0x02, 0x11208
+jump: 0x00011208
+EOF
+RUN
+
+NAME=8051: [DJNZ dir,offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx d54088 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+djnz 0x40, 0x1118b
+jump: 0x0001118b
+EOF
+RUN
+
+NAME=8051: [DJNZ r0,offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx d8fc ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+djnz r0, 0x111fe
+jump: 0x000111fe
+EOF
+RUN
+
+NAME=8051: [JB bit,offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 207d03 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+jb 0x2f.5, 0x11206
+jump: 0x00011206
+EOF
+RUN
+
+NAME=8051: [JBC bit,offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 101508 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+jbc 0x22.5, 0x1120b
+jump: 0x0001120b
+EOF
+RUN
+
+NAME=8051: [JC offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 4003 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+jc 0x11205
+jump: 0x00011205
+EOF
+RUN
+
+NAME=8051: [JNB bit,offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 305108 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+jnb 0x2a.1, 0x1120b
+jump: 0x0001120b
+EOF
+RUN
+
+NAME=8051: [JNC offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 5007 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+jnc 0x11209
+jump: 0x00011209
+EOF
+RUN
+
+NAME=8051: [JNZ offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 7013 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+jnz 0x11215
+jump: 0x00011215
+EOF
+RUN
+
+NAME=8051: [JZ offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 6015 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+jz 0x11217
+jump: 0x00011217
+EOF
+RUN
+
+NAME=8051: [LCALL add16] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 12b6cf ; pi 1 ; ao 1~jump
+EXPECT=<<EOF
+lcall 0x1b6cf
+jump: 0x0001b6cf
+EOF
+RUN
+
+NAME=8051: [LJMP addr16] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 022c0d ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+ljmp 0x12c0d
+jump: 0x00012c0d
+EOF
+RUN
+
+NAME=8051: [SJMP offs] - bank jump check
+FILE=malloc://0x20000
+CMDS=e asm.arch=8051 ; s 0x11200 ; wx 8014 ; pi 1 ; ao 1~^jump
+EXPECT=<<EOF
+sjmp 0x11216
+jump: 0x00011216
+EOF
+RUN
