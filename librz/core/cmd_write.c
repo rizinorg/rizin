@@ -203,13 +203,12 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 			rz_crypto_final(cry, NULL, 0);
 
 			int result_size = 0;
-			ut8 *result = rz_crypto_get_output(cry, &result_size);
+			const ut8 *result = rz_crypto_get_output(cry, &result_size);
 			if (result) {
 				if (!rz_core_write_at(core, core->offset, result, result_size)) {
 					eprintf("rz_core_write_at failed at 0x%08" PFMT64x "\n", core->offset);
 				}
 				eprintf("Written %d byte(s)\n", result_size);
-				free(result);
 			}
 		} else {
 			eprintf("Invalid key\n");

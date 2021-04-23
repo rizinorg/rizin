@@ -5,10 +5,8 @@
 #include <rz_lib.h>
 #include <rz_crypto.h>
 
-static int flag = 0;
-
 static bool punycode_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
+	cry->dir = direction;
 	return true;
 }
 
@@ -23,7 +21,7 @@ static bool punycode_use(const char *algo) {
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	char *obuf;
 	int olen;
-	if (flag) {
+	if (cry->dir == RZ_CRYPTO_DIR_DECRYPT) {
 		obuf = rz_punycode_decode((const char *)buf, len, &olen);
 	} else {
 		obuf = rz_punycode_encode(buf, len, &olen);

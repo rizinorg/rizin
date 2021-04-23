@@ -197,9 +197,9 @@ struct rz_hash_t {
 };
 
 typedef struct rz_hash_seed_t {
-	int prefix;
+	bool as_prefix;
 	ut8 *buf;
-	int len;
+	size_t len;
 } RzHashSeed;
 
 #define RZ_HASH_SIZE_CRC8_SMBUS 1
@@ -537,6 +537,7 @@ RZ_API int rz_hash_pcprint(const ut8 *buffer, ut64 len);
 
 /* lifecycle */
 RZ_API void rz_hash_do_begin(RzHash *ctx, ut64 flags);
+RZ_API void rz_hash_do_update(RzHash *ctx, ut64 flags, const ut8 *data, ut64 len);
 RZ_API void rz_hash_do_end(RzHash *ctx, ut64 flags);
 RZ_API void rz_hash_do_spice(RzHash *ctx, ut64 algo, int loops, RzHashSeed *seed);
 #endif

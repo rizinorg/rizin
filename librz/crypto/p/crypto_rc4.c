@@ -3,6 +3,7 @@
 
 #include <rz_lib.h>
 #include <rz_crypto.h>
+#include <rz_util.h>
 
 struct rc4_state {
 	ut8 perm[256];
@@ -24,7 +25,7 @@ static __inline void swap_bytes(ut8 *a, ut8 *b) {
  * which can have arbitrary length.
  */
 
-static bool rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) {
+static bool rc4_init_state(struct rc4_state *const state, const ut8 *key, int keylen) {
 	ut8 j;
 	int i;
 
@@ -72,14 +73,18 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 
 ///////////////////////////////////////////////////////////
 
-static struct rc4_state st;
-
 static bool rc4_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	return rc4_init(&st, key, keylen);
+	rz_return_val_if_fail(cry->user && key, false);
+	struct rc4_state *st = (struct rc4_state *)cry->user;
+
+	return rc4_init_state(st, key, keylen);
 }
 
 static int rc4_get_key_size(RzCrypto *cry) {
-	return st.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	struct rc4_state *st = (struct rc4_state *)cry->user;
+
+	return st->key_size;
 }
 
 static bool rc4_use(const char *algo) {
@@ -87,11 +92,14 @@ static bool rc4_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+	rz_return_val_if_fail(cry->user, false);
+	struct rc4_state *st = (struct rc4_state *)cry->user;
+
 	ut8 *obuf = calloc(1, len);
 	if (!obuf) {
 		return false;
 	}
-	rc4_crypt(&st, buf, obuf, len);
+	rc4_crypt(st, buf, obuf, len);
 	rz_crypto_append(cry, obuf, len);
 	free(obuf);
 	return false;
@@ -101,13 +109,29 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 	return update(cry, buf, len);
 }
 
+static bool rc4_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEW0(struct rc4_state);
+	return cry->user != NULL;
+}
+
+static bool rc4_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_rc4 = {
 	.name = "rc4",
 	.set_key = rc4_set_key,
 	.get_key_size = rc4_get_key_size,
 	.use = rc4_use,
 	.update = update,
-	.final = final
+	.final = final,
+	.init = rc4_init,
+	.fini = rc4_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

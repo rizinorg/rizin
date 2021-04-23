@@ -27,9 +27,6 @@ static const struct {
 	{ "hamdist", RZ_HASH_HAMDIST },
 	{ "pcprint", RZ_HASH_PCPRINT },
 	{ "mod255", RZ_HASH_MOD255 },
-	// {"base64", RZ_HASH_BASE64},
-	// {"base91", RZ_HASH_BASE91},
-	// {"punycode", RZ_HASH_PUNYCODE},
 	{ "luhn", RZ_HASH_LUHN },
 
 	{ "fletcher8", RZ_HASH_FLETCHER8 },
@@ -327,7 +324,7 @@ RZ_API void rz_hash_do_spice(RzHash *ctx, ut64 algo, int loops, RzHashSeed *seed
 	int i, len, hlen = rz_hash_size(algo);
 	for (i = 0; i < loops; i++) {
 		if (seed) {
-			if (seed->prefix) {
+			if (seed->as_prefix) {
 				memcpy(buf, seed->buf, seed->len);
 				memcpy(buf + seed->len, ctx->digest, hlen);
 			} else {

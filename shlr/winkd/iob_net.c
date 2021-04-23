@@ -193,13 +193,12 @@ static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 	// Overwrite the buffer with encrypted data
 	int sz;
-	ut8 *encbuf = rz_crypto_get_output(cry, &sz);
+	const ut8 *encbuf = rz_crypto_get_output(cry, &sz);
 	if (!encbuf) {
 		goto end;
 	}
 	memcpy(buf, encbuf, size - KDNET_HMAC_SIZE);
 
-	free(encbuf);
 	ret = true;
 end:
 	rz_crypto_free(cry);
@@ -301,14 +300,13 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 	// Overwrite it with decrypted data
 	int sz;
-	ut8 *decbuf = rz_crypto_get_output(cry, &sz);
+	const ut8 *decbuf = rz_crypto_get_output(cry, &sz);
 	if (!decbuf) {
 		goto end;
 	}
 	memcpy(buf, decbuf, size - KDNET_HMAC_SIZE);
 	ret = true;
 
-	free(decbuf);
 end:
 	rz_crypto_free(cry);
 	return ret;
