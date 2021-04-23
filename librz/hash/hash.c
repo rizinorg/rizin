@@ -285,7 +285,7 @@ RZ_API int rz_hash_size(ut64 algo) {
 /* Converts a comma separated list of names to the respective bit combination */
 RZ_API ut64 rz_hash_name_to_bits(const char *name) {
 	char tmp[128];
-	int i;
+	size_t i;
 	const char *ptr = name;
 	ut64 ret = 0;
 
@@ -302,7 +302,7 @@ RZ_API ut64 rz_hash_name_to_bits(const char *name) {
 		/* Safety net */
 		tmp[i] = '\0';
 
-		for (i = 0; hash_name_bytes[i].name; i++) {
+		for (i = 0; i < RZ_ARRAY_SIZE(hash_name_bytes); i++) {
 			if (!strcmp(tmp, hash_name_bytes[i].name)) {
 				ret |= hash_name_bytes[i].bit;
 				break;
