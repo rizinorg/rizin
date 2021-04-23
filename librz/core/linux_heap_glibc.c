@@ -1005,7 +1005,7 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 		if (count > 0) {
 			PRINT_GA("Tcachebin[");
 			PRINTF_BA("%02zu", i);
-			PRINT_GA("], Items :");
+			PRINT_GA("] Items:");
 			PRINTF_BA("%2d", count);
 			rz_cons_newline();
 			rz_cons_printf(" -> ");
