@@ -105,7 +105,6 @@ static const struct {
 	{ /* CRC-64/XZ          */ "crc64xz", RZ_HASH_CRC64_XZ },
 	{ /* CRC-64/ISO         */ "crc64iso", RZ_HASH_CRC64_ISO },
 #endif /* #if RZ_HAVE_CRC64_EXTRA */
-	{ NULL, 0 }
 };
 
 /* returns 0-100 */
@@ -174,9 +173,9 @@ RZ_API ut8 rz_hash_deviation(const ut8 *b, ut64 len) {
 }
 
 RZ_API const char *rz_hash_name(ut64 bit) {
-	int i;
-	for (i = 1; hash_name_bytes[i].bit; i++) {
-		if (bit & hash_name_bytes[i].bit) {
+	size_t i;
+	for (i = 1; i < RZ_ARRAY_SIZE(hash_name_bytes); i++) {
+		if (bit == hash_name_bytes[i].bit) {
 			return hash_name_bytes[i].name;
 		}
 	}

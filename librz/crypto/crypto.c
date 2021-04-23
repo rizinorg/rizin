@@ -27,7 +27,6 @@ static const struct {
 	{ "des-ecb", RZ_CRYPTO_DES_ECB },
 	{ "xor", RZ_CRYPTO_XOR },
 	{ "serpent-ecb", RZ_CRYPTO_SERPENT },
-	{ NULL, 0 }
 };
 
 static const struct {
@@ -38,12 +37,11 @@ static const struct {
 	{ "base64", RZ_CODEC_B64 },
 	{ "base91", RZ_CODEC_B91 },
 	{ "punycode", RZ_CODEC_PUNYCODE },
-	{ NULL, 0 }
 };
 
 RZ_API const char *rz_crypto_name(const RzCryptoSelector bit) {
 	size_t i;
-	for (i = 1; crypto_name_bytes[i].bit; i++) {
+	for (i = 1; i < RZ_ARRAY_SIZE(crypto_name_bytes); i++) {
 		if (bit == crypto_name_bytes[i].bit) {
 			return crypto_name_bytes[i].name;
 		}
@@ -53,7 +51,7 @@ RZ_API const char *rz_crypto_name(const RzCryptoSelector bit) {
 
 RZ_API const char *rz_crypto_codec_name(const RzCryptoSelector bit) {
 	size_t i;
-	for (i = 1; codec_name_bytes[i].bit; i++) {
+	for (i = 1; i < RZ_ARRAY_SIZE(codec_name_bytes); i++) {
 		if (bit == codec_name_bytes[i].bit) {
 			return codec_name_bytes[i].name;
 		}
