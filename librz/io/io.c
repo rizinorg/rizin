@@ -515,7 +515,7 @@ RZ_API ut64 rz_io_v2p(RzIO *io, ut64 va) {
 	RzIOMap *map = rz_io_map_get(io, va);
 	if (map) {
 		st64 delta = va - map->itv.addr;
-		return map->itv.addr + map->delta + delta;
+		return map->delta + delta;
 	}
 	return UT64_MAX;
 }
