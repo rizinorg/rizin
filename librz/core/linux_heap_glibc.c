@@ -927,7 +927,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 		int global_max_fast_idx = fastbin_index(global_max_fast);
 		int fastbin_count = fastbins_max < global_max_fast_idx ? fastbins_max : global_max_fast_idx;
 		for (i = 0, j = 1, k = SZ * 4; i <= fastbin_count; i++, j++, k += SZ * 2) {
-			rz_cons_printf("Fastbin[");
+			rz_cons_printf("Fast_bin[");
 			PRINTF_BA("%02zu", j);
 			rz_cons_printf("] [size: ");
 			PRINTF_BA("0x%" PFMT64x, (ut64)k);
@@ -1005,7 +1005,7 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 		int count = GH(tcache_get_count)(tcache, i);
 		GHT entry = GH(tcache_get_entry)(tcache, i);
 		if (count > 0) {
-			PRINT_GA("Tcachebin[");
+			PRINT_GA("Tcache_bin[");
 			PRINTF_BA("%02zu", i);
 			PRINT_GA("] Items:");
 			PRINTF_BA("%2d", count);
@@ -1066,7 +1066,7 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 		return;
 	}
 
-	rz_cons_printf("Tcache in Main Arena @");
+	rz_cons_printf("Tcache bins in Main Arena @");
 	PRINTF_YA(" 0x%" PFMT64x "\n", (ut64)m_arena);
 	GH(tcache_print)
 	(core, rz_tcache, demangle);
