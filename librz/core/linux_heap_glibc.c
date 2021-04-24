@@ -922,7 +922,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 			m_arena = core->offset;
 		}
 		rz_cons_printf("Fast bins in Arena @ ");
-		PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
+		PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
 		int fastbins_max = rz_config_get_i(core->config, "dbg.glibc.fastbinmax") - 1;
 		int global_max_fast_idx = fastbin_index(global_max_fast);
 		int fastbin_count = fastbins_max < global_max_fast_idx ? fastbins_max : global_max_fast_idx;
@@ -1067,7 +1067,7 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 	}
 
 	rz_cons_printf("Tcache in Main Arena @");
-	PRINTF_BA(" 0x%" PFMT64x "\n", (ut64)m_arena);
+	PRINTF_YA(" 0x%" PFMT64x "\n", (ut64)m_arena);
 	GH(tcache_print)
 	(core, rz_tcache, demangle);
 	if (main_thread_only) {
@@ -1658,7 +1658,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 static void GH(print_unsortedbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	rz_cons_printf("Unsorted bin in Arena @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
+	PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
 	int chunk_cnt = GH(print_bin_content)(core, main_arena, 0);
 	rz_cons_printf("Found %d chunks in unsorted bin\n", chunk_cnt);
 }
@@ -1672,7 +1672,7 @@ static void GH(print_unsortedbin_description)(RzCore *core, GHT m_arena, MallocS
 static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	rz_cons_printf("Small bins in Arena @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
+	PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
 	int chunk_cnt = 0;
 	int non_empty_cnt = 0;
 	for (int bin_num = 1; bin_num < NSMALLBINS; bin_num++) {
@@ -1694,7 +1694,7 @@ static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocStat
 static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	rz_cons_printf("Large bins in Arena @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
+	PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
 	int chunk_cnt = 0;
 	int non_empty_cnt = 0;
 	for (int bin_num = NSMALLBINS; bin_num < NBINS - 2; bin_num++) {
