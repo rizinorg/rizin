@@ -927,11 +927,13 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 		int global_max_fast_idx = fastbin_index(global_max_fast);
 		int fastbin_count = fastbins_max < global_max_fast_idx ? fastbins_max : global_max_fast_idx;
 		for (i = 0, j = 1, k = SZ * 4; i <= fastbin_count; i++, j++, k += SZ * 2) {
-			PRINTF_YA("Fastbin %02zu", j);
-			PRINT_GA(" [size:");
-			PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)k);
+			rz_cons_printf("Fastbin[");
+			PRINTF_BA("%02zu", j);
+			rz_cons_printf("] [size: ");
+			PRINTF_BA("0x%" PFMT64x, (ut64)k);
+			rz_cons_printf("]");
 			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i, demangle)) {
-				PRINT_BA(" Empty bin\n");
+				PRINT_RA(" Empty bin\n");
 			}
 		}
 		break;
