@@ -8807,7 +8807,37 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	case 'i': cmd_analysis_info(core, input + 1); break; // "ai"
 	case 'r': cmd_analysis_reg(core, input + 1); break; // "ar"
 	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
-	case 'L': return rz_core_cmd0(core, "e asm.arch=??"); break;
+	case 'L': { // aL
+		RzCmdStateOutput state = { 0 };
+		switch (input[1]) {
+		case 'j': {
+			state.mode = RZ_OUTPUT_MODE_JSON;
+			state.d.pj = pj_new();
+			break;
+		}
+		case 'q': {
+			state.mode = RZ_OUTPUT_MODE_QUIET;
+			break;
+		}
+		default: {
+			state.mode = RZ_OUTPUT_MODE_STANDARD;
+			break;
+		}
+		}
+		rz_core_asm_plugins_print(core, NULL, &state);
+		switch (state.mode) {
+		case RZ_OUTPUT_MODE_JSON: {
+			rz_cons_println(pj_string(state.d.pj));
+			rz_cons_flush();
+			pj_free(state.d.pj);
+			break;
+		}
+		default: {
+			break;
+		}
+		}
+		break;
+	}
 	case 'o': cmd_analysis_opcode(core, input + 1); break; // "ao"
 	case 'O': cmd_analysis_bytes(core, input + 1); break; // "aO"
 	case 'F': // "aF"

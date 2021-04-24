@@ -809,7 +809,6 @@ RZ_API void rz_bin_bind(RzBin *b, RzBinBind *bnd);
 RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo);
 RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo);
 RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo);
-RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format);
 RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_bytes(RzBin *bin, const ut8 *bytes, ut64 sz);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf);

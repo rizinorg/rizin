@@ -579,3 +579,84 @@ RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructi
 	rz_asm_code_free(acode);
 	return -1;
 }
+
+RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput *state) {
+	char str[4];
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		str[0] = 'r';
+		str[1] = plugin->write ? 'w' : '_';
+		str[2] = plugin->isdbg ? 'd' : '_';
+		str[3] = 0;
+
+		pj_o(pj);
+		pj_ks(pj, "permissions", str);
+		pj_ks(pj, "name", plugin->name);
+		pj_ks(pj, "description", plugin->desc);
+		pj_ks(pj, "license", plugin->license);
+
+		if (plugin->uris) {
+			char *uri;
+			char *uris = strdup(plugin->uris);
+			RzList *plist = rz_str_split_list(uris, ",", 0);
+			RzListIter *piter;
+			pj_k(pj, "uris");
+			pj_a(pj);
+			rz_list_foreach (plist, piter, uri) {
+				pj_s(pj, uri);
+			}
+			pj_end(pj);
+			rz_list_free(plist);
+			free(uris);
+		}
+		if (plugin->version) {
+			pj_ks(pj, "version", plugin->version);
+		}
+		if (plugin->author) {
+			pj_ks(pj, "author", plugin->author);
+		}
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		str[0] = 'r';
+		str[1] = plugin->write ? 'w' : '_';
+		str[2] = plugin->isdbg ? 'd' : '_';
+		str[3] = 0;
+		rz_cons_printf("%s  %-8s %s (%s)",
+			str, plugin->name,
+			plugin->desc, plugin->license);
+		if (plugin->uris) {
+			rz_cons_printf(" %s", plugin->uris);
+		}
+		if (plugin->version) {
+			rz_cons_printf(" v%s", plugin->version);
+		}
+		if (plugin->author) {
+			rz_cons_printf(" %s", plugin->author);
+		}
+		rz_cons_printf("\n");
+		break;
+	}
+	default: {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
+	}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state) {
+	RzIOPlugin *plugin;
+	RzListIter *iter;
+	if (!io) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (io->plugins, iter, plugin) {
+		rz_core_io_plugin_print(plugin, state);
+	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}

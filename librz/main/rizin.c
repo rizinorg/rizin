@@ -366,6 +366,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	RzList *evals = rz_list_new();
 	RzList *files = rz_list_new();
 	RzList *prefiles = rz_list_new();
+	RzCmdStateOutput state = { 0 };
 
 #define LISTS_FREE() \
 	{ \
@@ -496,17 +497,20 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #else
 		case 'd': eprintf("Sorry. No debugger backend available.\n"); return 1;
 #endif
-		case 'D':
+		case 'D': {
 			debug = 2;
 			free(debugbackend);
 			debugbackend = strdup(opt.arg);
+			RzCmdStateOutput state = { 0 };
+			state.mode = RZ_OUTPUT_MODE_QUIET;
 			if (!strcmp(opt.arg, "?")) {
-				rz_debug_plugin_list(r->dbg, 'q');
+				rz_core_debug_plugins_print(r, &state);
 				rz_cons_flush();
 				LISTS_FREE();
 				return 0;
 			}
 			break;
+		}
 		case 'e':
 			if (!strcmp(opt.arg, "q")) {
 				rz_core_cmd0(r, "eq");
@@ -718,7 +722,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (quietLeak) {
 			exit(0);
 		}
-		rz_io_plugin_list(r->io);
+		state.mode = RZ_OUTPUT_MODE_STANDARD;
+		rz_core_io_plugins_print(r->io, &state);
 		rz_cons_flush();
 		LISTS_FREE();
 		free(pfile);

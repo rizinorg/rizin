@@ -237,9 +237,8 @@ commands:
     summary: Make directories and move files
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: L
-    cname: cmd_plugins
     summary: List, unload, load rizin plugins
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_plugins
   - name: o
     cname: cmd_open
     summary: Open file at optional address

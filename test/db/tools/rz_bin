@@ -986,7 +986,7 @@ RUN
 
 NAME=rz-bin -Lj any
 FILE==
-CMDS=!rz-bin -Lj Dummy | grep -c Dummy
+CMDS=!rz-bin -Lj any | grep -c Dummy
 EXPECT=<<EOF
 1
 EOF

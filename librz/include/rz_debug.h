@@ -482,7 +482,6 @@ RZ_API int rz_debug_kill_setup(RzDebug *dbg, int sig, int action);
 /* handle.c */
 RZ_API void rz_debug_plugin_init(RzDebug *dbg);
 RZ_API int rz_debug_plugin_set(RzDebug *dbg, const char *str);
-RZ_API int rz_debug_plugin_list(RzDebug *dbg, int mode);
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo);
 RZ_API bool rz_debug_plugin_set_reg_profile(RzDebug *dbg, const char *str);
 

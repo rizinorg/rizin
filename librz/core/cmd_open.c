@@ -3,6 +3,7 @@
 
 #include <rz_bin.h>
 #include <rz_debug.h>
+#include <rz_core.h>
 
 static const char *help_msg_o[] = {
 	"Usage: o", "[com- ] [file] ([offset])", "",
@@ -173,10 +174,12 @@ static const char *help_msg_oonn[] = {
 static void cmd_open_bin(RzCore *core, const char *input) {
 	const char *value = NULL;
 	ut32 binfile_num = -1;
+	RzCmdStateOutput state = { 0 };
 
 	switch (input[1]) {
 	case 'L': // "obL"
-		rz_core_cmd0(core, "iL");
+		state.mode = RZ_OUTPUT_MODE_STANDARD;
+		rz_core_bin_plugins_print(core->bin, &state);
 		break;
 	case '\0': // "ob"
 	case 'q': // "obj"
@@ -1318,19 +1321,33 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		core->print->cb_printf("%s\n", pj_string(pj));
 		pj_free(pj);
 		break;
-	case 'L': // "oL"
+	case 'L': { // "oL"
+		RzCmdStateOutput state = { 0 };
 		if (input[1] == ' ') {
 			if (rz_lib_open(core->lib, input + 2) == -1) {
 				eprintf("Oops\n");
 			}
+			break;
+		}
+		if (input[1] == 'j') {
+			state.mode = RZ_OUTPUT_MODE_JSON;
+			state.d.pj = pj_new();
 		} else {
-			if ('j' == input[1]) {
-				rz_io_plugin_list_json(core->io);
-			} else {
-				rz_io_plugin_list(core->io);
-			}
+			state.mode = RZ_OUTPUT_MODE_STANDARD;
+		}
+		rz_core_io_plugins_print(core->io, &state);
+		switch (state.mode) {
+		case RZ_OUTPUT_MODE_JSON: {
+			rz_cons_println(pj_string(state.d.pj));
+			pj_free(state.d.pj);
+			break;
+		}
+		default: {
+			break;
+		}
 		}
 		break;
+	}
 	case 'i': // "oi"
 		switch (input[1]) {
 		case ' ': // "oi "

@@ -4885,26 +4885,48 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'p': // "dp"
 		cmd_debug_pid(core, input);
 		break;
-	case 'L': // "dL"
+	case 'L': { // "dL"
+		RzCmdStateOutput state = { 0 };
 		switch (input[1]) {
-		case 'q':
-		case 'j':
-			rz_debug_plugin_list(core->dbg, input[1]);
-			break;
-		case '?':
-			rz_core_cmd_help(core, help_msg_dL);
-			break;
-		case ' ': {
-			char *str = rz_str_trim_dup(input + 2);
-			rz_config_set(core->config, "dbg.backend", str);
-			// implicit by config.set rz_debug_use (core->dbg, str);
-			free(str);
-		} break;
-		default:
-			rz_debug_plugin_list(core->dbg, 0);
+		case 'q': {
+			state.mode = RZ_OUTPUT_MODE_QUIET;
 			break;
 		}
+		case 'j': {
+			state.mode = RZ_OUTPUT_MODE_JSON;
+			state.d.pj = pj_new();
+			break;
+		}
+		case ' ': {
+			char *backend = rz_str_trim_dup(input + 2);
+			rz_config_set(core->config, "dbg.backend", backend);
+			// implicit by config.set rz_debug_use (core->dbg, str);
+			free(backend);
+			break;
+		}
+		case '?': {
+			rz_core_cmd_help(core, help_msg_dL);
+			break;
+		}
+		default: {
+			state.mode = RZ_OUTPUT_MODE_STANDARD;
+			break;
+		}
+		}
+		rz_core_debug_plugins_print(core, &state);
+		switch (state.mode) {
+		case RZ_OUTPUT_MODE_JSON: {
+			rz_cons_println(pj_string(state.d.pj));
+			rz_cons_flush();
+			pj_free(state.d.pj);
+			break;
+		}
+		default: {
+			break;
+		}
+		}
 		break;
+	}
 	case 'i': // "di"
 	{
 		RzDebugInfo *rdi = rz_debug_info(core->dbg, input + 2);

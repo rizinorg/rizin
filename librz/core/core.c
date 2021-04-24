@@ -3456,3 +3456,50 @@ RZ_API PJ *rz_core_pj_new(RzCore *core) {
 	PJEncodingNum number_encoding = pj_encoding_num_of_string(config_number_encoding);
 	return pj_new_with_encoding(string_encoding, number_encoding);
 }
+
+RZ_API RzCmdStatus rz_core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *state, const char *license) {
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_o(pj);
+		pj_ks(pj, "name", cp->name);
+		pj_ks(pj, "description", cp->desc);
+		pj_ks(pj, "author", cp->author);
+		pj_ks(pj, "version", cp->version);
+		pj_ks(pj, "license", license);
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		rz_cons_printf("%s: %s (Made by %s, v%s, %s)\n",
+			cp->name, cp->desc, cp->author, cp->version, license);
+		break;
+	}
+	default: {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
+	}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state) {
+	RzListIter *iter;
+	RzCorePlugin *cp;
+	RzCmdStatus status;
+	if (!core) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (core->plugins, iter, cp) {
+		const char *license = cp->license
+			? cp->license
+			: "???";
+		status = rz_core_core_plugin_print(cp, state, license);
+		if (status != RZ_CMD_STATUS_OK) {
+			return status;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}

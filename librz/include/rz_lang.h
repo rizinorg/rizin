@@ -3,6 +3,7 @@
 
 #include <rz_types.h>
 #include <rz_list.h>
+#include <rz_cmd.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +51,6 @@ RZ_API RzLang *rz_lang_new(void);
 RZ_API void rz_lang_free(RzLang *lang);
 RZ_API bool rz_lang_setup(RzLang *lang);
 RZ_API bool rz_lang_add(RzLang *lang, RzLangPlugin *foo);
-RZ_API bool rz_lang_list(RzLang *lang);
 RZ_API bool rz_lang_use(RzLang *lang, const char *name);
 RZ_API int rz_lang_run(RzLang *lang, const char *code, int len);
 RZ_API int rz_lang_run_string(RzLang *lang, const char *code);

@@ -583,3 +583,59 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->h && !core->dbg->h->canstep));
 	rz_core_cmdf(core, "R! \"pid %d\"", core->dbg->pid);
 }
+
+RZ_API RzCmdStatus rz_core_debug_plugin_print(RzDebug *dbg, RzDebugPlugin *plugin, RzCmdStateOutput *state, int count, char *spaces) {
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET: {
+		rz_cons_printf("%s\n", plugin->name);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_o(pj);
+		pj_ks(pj, "arch", plugin->arch);
+		pj_ks(pj, "name", plugin->name);
+		pj_ks(pj, "license", plugin->license);
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		rz_cons_printf("%d  %s  %s %s%s\n",
+			count, (plugin == dbg->h) ? "dbg" : "---",
+			plugin->name, spaces, plugin->license);
+		break;
+	}
+	default: {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
+	}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *state) {
+	int count = 0;
+	char spaces[16];
+	memset(spaces, ' ', 15);
+	spaces[15] = 0;
+	RzDebug *dbg = core->dbg;
+	RzListIter *iter;
+	RzDebugPlugin *plugin;
+	RzCmdStatus status;
+	if (!dbg) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (dbg->plugins, iter, plugin) {
+		int sp = 8 - strlen(plugin->name);
+		spaces[sp] = 0;
+		status = rz_core_debug_plugin_print(dbg, plugin, state, count, spaces);
+		if (status != RZ_CMD_STATUS_OK) {
+			return status;
+		}
+		spaces[sp] = ' ';
+		count++;
+	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}
