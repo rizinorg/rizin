@@ -219,6 +219,7 @@ RUN
 NAME=rz-hash -L
 FILE==
 CMDS=!rz-hash -L
+BROKEN=1
 EXPECT=<<EOF
 h  md5
 h  sha1
