@@ -943,11 +943,13 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 			eprintf("Error: 0 < bin <= %d\n", NFASTBINS);
 			break;
 		}
-		PRINTF_YA("Fastbin %02zu", (size_t)(num_bin + 1));
-		PRINT_GA(" [size:");
-		PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)FASTBIN_IDX_TO_SIZE(num_bin + 1));
+		rz_cons_printf("Fast_bin[");
+		PRINTF_BA("%02zu", (size_t)(num_bin + 1));
+		rz_cons_printf("] [size: ");
+		PRINTF_BA("0x%" PFMT64x, (ut64)FASTBIN_IDX_TO_SIZE(num_bin + 1));
+		rz_cons_printf("]");
 		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, demangle)) {
-			PRINT_BA(" Empty bin\n");
+			PRINT_RA(" Empty bin\n");
 		}
 		break;
 	}
