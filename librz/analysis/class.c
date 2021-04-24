@@ -558,6 +558,9 @@ RZ_API bool rz_analysis_class_method_exists(RzAnalysis *analysis, const char *cl
 
 RZ_API bool rz_analysis_class_method_exists_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr) {
 	RzVector *vec = rz_analysis_class_method_get_all(analysis, class_name);
+	if (!vec) {
+		return false;
+	}
 	RzAnalysisMethod *meth;
 	rz_vector_foreach(vec, meth) {
 		if (meth->addr == addr) {
@@ -571,6 +574,9 @@ RZ_API bool rz_analysis_class_method_exists_by_addr(RzAnalysis *analysis, const 
 
 RZ_API RzAnalysisClassErr rz_analysis_class_method_get_by_addr(RzAnalysis *analysis, const char *class_name, ut64 addr, RzAnalysisMethod *method) {
 	RzVector *vec = rz_analysis_class_method_get_all(analysis, class_name);
+	if (!vec) {
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
+	}
 	RzAnalysisMethod *meth;
 	rz_vector_foreach(vec, meth) {
 		if (meth->addr == addr) {
