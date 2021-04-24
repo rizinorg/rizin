@@ -186,7 +186,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 		}
 	} break;
 	case 0: // "CC"
-		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, 0);
+		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_STANDARD);
 		break;
 	case 'f': // "CCf"
 		switch (input[2]) {
@@ -213,10 +213,10 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_JSON, core->offset);
 			break;
 		case '*': // "CCf*"
-			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, 1, core->offset);
+			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_RIZIN, core->offset);
 			break;
 		default:
-			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, 0, core->offset);
+			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_STANDARD, core->offset);
 			break;
 		}
 		break;
@@ -258,7 +258,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 		free(nc);
 	} break;
 	case '*': // "CC*"
-		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, 1);
+		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case '-': // "CC-"
 		if (input[2] == '*') { // "CC-*"
@@ -351,7 +351,7 @@ static int cmd_meta_vartype_comment(RzCore *core, const char *input) {
 		rz_core_cmd_help(core, help_msg_Ct);
 		break;
 	case 0: // "Ct"
-		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_VARTYPE, 0);
+		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_VARTYPE, RZ_OUTPUT_MODE_STANDARD);
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
 	{
@@ -520,7 +520,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 	case 'a':
 	case '8':
 		if (type != 'z' && !input[1] && !core->tmpseek) {
-			rz_meta_print_list_all(core->analysis, type, 0);
+			rz_meta_print_list_all(core->analysis, type, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		}
 		if (type == 'z') {
@@ -815,7 +815,7 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 		break;
 	}
 	case '.': { // "C."
-		rz_meta_print_list_at(core->analysis, core->offset, 0);
+		rz_meta_print_list_at(core->analysis, core->offset, RZ_OUTPUT_MODE_STANDARD);
 		break;
 	}
 	case 'C': // "CC"

@@ -412,11 +412,11 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 			rz_str_argv_free(argv);
 			return false;
 		case '.':
-			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, core->offset);
+			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_HIGHLIGHT, RZ_OUTPUT_MODE_STANDARD, core->offset);
 			rz_str_argv_free(argv);
 			return false;
 		case '\0':
-			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, 0);
+			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_HIGHLIGHT, RZ_OUTPUT_MODE_STANDARD);
 			rz_str_argv_free(argv);
 			return false;
 		case 'j':
