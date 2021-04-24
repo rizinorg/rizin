@@ -145,15 +145,15 @@ RZ_API void *rz_vector_flush(RzVector *vec);
  * }
  */
 #define rz_vector_foreach(vec, it) \
-	if (!rz_vector_empty(vec)) \
+	if (vec && !rz_vector_empty(vec)) \
 		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
 
 #define rz_vector_foreach_prev(vec, it) \
-	if (!rz_vector_empty(vec)) \
+	if (vec && !rz_vector_empty(vec)) \
 		for (it = (void *)((char *)(vec)->a + (((vec)->len - 1) * (vec)->elem_size)); (char *)it != (char *)(vec)->a - (vec)->elem_size; it = (void *)((char *)it - (vec)->elem_size))
 
 #define rz_vector_enumerate(vec, it, i) \
-	if (!rz_vector_empty(vec)) \
+	if (vec && !rz_vector_empty(vec)) \
 		for (it = (void *)(vec)->a, i = 0; i < (vec)->len; it = (void *)((char *)it + (vec)->elem_size), i++)
 
 /*
