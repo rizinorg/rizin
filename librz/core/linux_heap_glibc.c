@@ -916,6 +916,10 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 		offset = 16;
 	}
 
+	int fastbins_max = rz_config_get_i(core->config, "dbg.glibc.fastbinmax") - 1;
+	int global_max_fast_idx = fastbin_index(global_max_fast);
+	int fastbin_count = fastbins_max < global_max_fast_idx ? fastbins_max : global_max_fast_idx;
+
 	switch (input[0]) {
 	case '\0': // dmhf
 		if (!main_arena_only && core->offset != core->prompt_offset) {
@@ -923,9 +927,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 		}
 		rz_cons_printf("Fast bins in Arena @ ");
 		PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
-		int fastbins_max = rz_config_get_i(core->config, "dbg.glibc.fastbinmax") - 1;
-		int global_max_fast_idx = fastbin_index(global_max_fast);
-		int fastbin_count = fastbins_max < global_max_fast_idx ? fastbins_max : global_max_fast_idx;
+
 		for (i = 0, j = 1, k = SZ * 4; i <= fastbin_count; i++, j++, k += SZ * 2) {
 			rz_cons_printf("Fast_bin[");
 			PRINTF_BA("%02zu", j);
@@ -939,8 +941,8 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 		break;
 	case ' ': // dmhf [bin_num]
 		num_bin = rz_num_get(NULL, input) - 1;
-		if (num_bin >= NFASTBINS) {
-			eprintf("Error: 0 < bin <= %d\n", NFASTBINS);
+		if (num_bin >= fastbin_count + 1) {
+			eprintf("Error: 0 < bin <= %d\n", fastbin_count + 1);
 			break;
 		}
 		rz_cons_printf("Fast_bin[");
