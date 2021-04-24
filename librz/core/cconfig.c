@@ -117,104 +117,6 @@ fail:
 	return false;
 }
 
-static const char *has_esil(RzCore *core, const char *name) {
-	RzListIter *iter;
-	RzAnalysisPlugin *h;
-	rz_return_val_if_fail(core && core->analysis && name, NULL);
-	rz_list_foreach (core->analysis->plugins, iter, h) {
-		if (h->name && !strcmp(name, h->name)) {
-			return h->esil ? "Ae" : "A_";
-		}
-	}
-	return "__";
-}
-
-// copypasta from binrz/rz_asm/rz_asm.c
-static void rz_asm_list(RzCore *core, const char *arch, int fmt) {
-	int i;
-	const char *feat2, *feat;
-	RzAsm *a = core->rasm;
-	char bits[32];
-	RzAsmPlugin *h;
-	RzListIter *iter;
-	PJ *pj = NULL;
-	if (fmt == 'j') {
-		pj = pj_new();
-		if (!pj) {
-			return;
-		}
-		pj_o(pj);
-	}
-	rz_list_foreach (a->plugins, iter, h) {
-		if (arch && *arch) {
-			if (h->cpus && !strcmp(arch, h->name)) {
-				char *c = strdup(h->cpus);
-				int n = rz_str_split(c, ',');
-				for (i = 0; i < n; i++) {
-					rz_cons_println(rz_str_word_get0(c, i));
-				}
-				free(c);
-				break;
-			}
-		} else {
-			bits[0] = 0;
-			/* The underscore makes it easier to distinguish the
-			 * columns */
-			if (h->bits & 8) {
-				strcat(bits, "_8");
-			}
-			if (h->bits & 16) {
-				strcat(bits, "_16");
-			}
-			if (h->bits & 32) {
-				strcat(bits, "_32");
-			}
-			if (h->bits & 64) {
-				strcat(bits, "_64");
-			}
-			if (!*bits) {
-				strcat(bits, "_0");
-			}
-			feat = "__";
-			if (h->assemble && h->disassemble) {
-				feat = "ad";
-			}
-			if (h->assemble && !h->disassemble) {
-				feat = "a_";
-			}
-			if (!h->assemble && h->disassemble) {
-				feat = "_d";
-			}
-			feat2 = has_esil(core, h->name);
-			if (fmt == 'q') {
-				rz_cons_println(h->name);
-			} else if (fmt == 'j') {
-				const char *license = "GPL";
-				pj_k(pj, h->name);
-				pj_o(pj);
-				pj_k(pj, "bits");
-				pj_a(pj);
-				pj_i(pj, 32);
-				pj_i(pj, 64);
-				pj_end(pj);
-				pj_ks(pj, "license", license);
-				pj_ks(pj, "description", h->desc);
-				pj_ks(pj, "features", feat);
-				pj_end(pj);
-			} else {
-				rz_cons_printf("%s%s  %-9s  %-11s %-7s %s\n",
-					feat, feat2, bits, h->name,
-					h->license ? h->license : "unknown", h->desc);
-			}
-		}
-	}
-	if (fmt == 'j') {
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	}
-}
-
 static inline void __setsegoff(RzConfig *cfg, const char *asmarch, int asmbits) {
 	int autoseg = (!strncmp(asmarch, "x86", 3) && asmbits == 16);
 	rz_config_set(cfg, "asm.segoff", rz_str_bool(autoseg));
@@ -523,7 +425,9 @@ static bool cb_asmcpu(void *user, void *data) {
 	if (*node->value == '?') {
 		update_asmcpu_options(core, node);
 		/* print verbose help instead of plain option listing */
-		rz_asm_list(core, rz_config_get(core->config, "asm.arch"), node->value[1]);
+		RzCmdStateOutput state = { 0 };
+		state.mode = RZ_OUTPUT_MODE_STANDARD;
+		rz_core_asm_plugins_print(core, rz_config_get(core->config, "asm.arch"), &state);
 		return 0;
 	}
 	rz_asm_set_cpu(core->rasm, node->value);
@@ -581,7 +485,9 @@ static bool cb_asmarch(void *user, void *data) {
 		update_asmarch_options(core, node);
 		if (strlen(node->value) > 1 && node->value[1] == '?') {
 			/* print more verbose help instead of plain option values */
-			rz_asm_list(core, NULL, node->value[1]);
+			RzCmdStateOutput state = { 0 };
+			state.mode = RZ_OUTPUT_MODE_STANDARD;
+			rz_core_asm_plugins_print(core, NULL, &state);
 			return false;
 		} else {
 			print_node_options(node);
@@ -1536,8 +1442,10 @@ static bool cb_dbgstatus(void *user, void *data) {
 static bool cb_dbgbackend(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
+	RzCmdStateOutput state = { 0 };
+	state.mode = RZ_OUTPUT_MODE_QUIET;
 	if (!strcmp(node->value, "?")) {
-		rz_debug_plugin_list(core->dbg, 'q');
+		rz_core_debug_plugins_print(core, &state);
 		return false;
 	}
 	if (!strcmp(node->value, "bf")) {

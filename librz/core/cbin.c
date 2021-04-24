@@ -4614,3 +4614,123 @@ RZ_OWN RZ_API RzCoreString *rz_core_string_information(RzCore *core, const char 
 	cstring->length = cstring->size;
 	return cstring;
 }
+
+RZ_API RzCmdStatus rz_core_bin_plugin_print(RzBinPlugin *bp, RzCmdStateOutput *state) {
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET: {
+		rz_cons_printf("%s\n", bp->name);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_o(pj);
+		pj_ks(pj, "name", bp->name);
+		pj_ks(pj, "description", bp->desc);
+		pj_ks(pj, "license", bp->license ? bp->license : "???");
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		rz_cons_printf("bin  %-11s %s (%s) %s %s\n",
+			bp->name, bp->desc, bp->license ? bp->license : "???",
+			bp->version ? bp->version : "",
+			bp->author ? bp->author : "");
+		break;
+	}
+	default: {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
+	}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_binxtr_plugin_print(RzBinXtrPlugin *bx, RzCmdStateOutput *state) {
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET: {
+		rz_cons_printf("%s\n", bx->name);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_o(pj);
+		pj_ks(pj, "name", bx->name);
+		pj_ks(pj, "description", bx->desc);
+		pj_ks(pj, "license", bx->license ? bx->license : "???");
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		const char *name = strncmp(bx->name, "xtr.", 4) ? bx->name : bx->name + 3;
+		rz_cons_printf("xtr  %-11s %s (%s)\n", name,
+			bx->desc, bx->license ? bx->license : "???");
+		break;
+	}
+	default: {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
+	}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_binldr_plugin_print(RzBinLdrPlugin *ld, RzCmdStateOutput *state) {
+	PJ *pj = state->d.pj;
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_QUIET: {
+		rz_cons_printf("%s\n", ld->name);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		pj_o(pj);
+		pj_ks(pj, "name", ld->name);
+		pj_ks(pj, "description", ld->desc);
+		pj_ks(pj, "license", ld->license ? ld->license : "???");
+		pj_end(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD: {
+		const char *name = strncmp(ld->name, "ldr.", 4) ? ld->name : ld->name + 3;
+		rz_cons_printf("ldr  %-11s %s (%s)\n", name,
+			ld->desc, ld->license ? ld->license : "???");
+		break;
+	}
+	default: {
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
+	}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state) {
+	RzBinPlugin *bp;
+	RzBinXtrPlugin *bx;
+	RzBinLdrPlugin *ld;
+	RzListIter *iter;
+	RzCmdStatus status;
+	if (!bin) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (bin->plugins, iter, bp) {
+		status = rz_core_bin_plugin_print(bp, state);
+		if (status != RZ_CMD_STATUS_OK) {
+			return status;
+		}
+	}
+	rz_list_foreach (bin->binxtrs, iter, bx) {
+		status = rz_core_binxtr_plugin_print(bx, state);
+		if (status != RZ_CMD_STATUS_OK) {
+			return status;
+		}
+	}
+	rz_list_foreach (bin->binldrs, iter, ld) {
+		status = rz_core_binldr_plugin_print(ld, state);
+		if (status != RZ_CMD_STATUS_OK) {
+			return status;
+		}
+	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
+}

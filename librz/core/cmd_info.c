@@ -760,17 +760,42 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			break;
 		}
 		case 'L': { // "iL"
+			RzCmdStateOutput state = { 0 };
 			char *ptr = strchr(input, ' ');
-			int json = input[1] == 'j' ? 'j' : 0;
-
+			switch (input[1]) {
+			case 'j': {
+				state.mode = RZ_OUTPUT_MODE_JSON;
+				state.d.pj = pj_new();
+				break;
+			}
+			case 'q': {
+				state.mode = RZ_OUTPUT_MODE_QUIET;
+				break;
+			}
+			default: {
+				state.mode = RZ_OUTPUT_MODE_STANDARD;
+				break;
+			}
+			}
 			if (ptr && ptr[1]) {
 				const char *plugin_name = ptr + 1;
 				if (is_array) {
 					pj_k(pj, "plugin");
 				}
-				rz_bin_list_plugin(core->bin, plugin_name, pj, json);
+				rz_bin_list_plugin(core->bin, plugin_name, pj, 0);
 			} else {
-				rz_bin_list(core->bin, pj, json);
+				rz_core_bin_plugins_print(core->bin, &state);
+				switch (state.mode) {
+				case RZ_OUTPUT_MODE_JSON: {
+					rz_cons_print(pj_string(state.d.pj));
+					rz_cons_flush();
+					pj_free(state.d.pj);
+					break;
+				}
+				default: {
+					break;
+				}
+				}
 			}
 			newline = false;
 			goto done;

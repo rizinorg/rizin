@@ -102,6 +102,10 @@ static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg env_args[3];
 static const RzCmdDescArg ls_args[2];
+static const RzCmdDescArg plugins_load_args[2];
+static const RzCmdDescArg plugins_unload_args[2];
+static const RzCmdDescArg plugins_debug_print_args[2];
+static const RzCmdDescArg plugins_io_print_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -1804,8 +1808,112 @@ static const RzCmdDescHelp cmd_m_help = {
 	.summary = "Make directories and move files",
 };
 
-static const RzCmdDescHelp cmd_plugins_help = {
+static const RzCmdDescHelp L_help = {
 	.summary = "List, unload, load rizin plugins",
+};
+static const RzCmdDescArg plugins_load_args[] = {
+	{
+		.name = "plugin_file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_load_help = {
+	.summary = "Load a plugin from file",
+	.args = plugins_load_args,
+};
+
+static const RzCmdDescArg plugins_unload_args[] = {
+	{
+		.name = "plugin_name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_unload_help = {
+	.summary = "Unload core plugin by name",
+	.args = plugins_unload_args,
+};
+
+static const RzCmdDescArg plugins_lang_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_lang_print_help = {
+	.summary = "Print the lang plugins",
+	.args = plugins_lang_print_args,
+};
+
+static const RzCmdDescArg plugins_asm_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_asm_print_help = {
+	.summary = "Print the asm/analysis plugins",
+	.args = plugins_asm_print_args,
+};
+
+static const RzCmdDescArg plugins_core_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_core_print_help = {
+	.summary = "Print the core plugins",
+	.args = plugins_core_print_args,
+};
+
+static const RzCmdDescArg plugins_debug_print_args[] = {
+	{
+		.name = "handler",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_debug_print_help = {
+	.summary = "Print the debug plugins",
+	.args = plugins_debug_print_args,
+};
+
+static const RzCmdDescArg plugins_hash_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_hash_print_help = {
+	.summary = "Print the hash plugins",
+	.args = plugins_hash_print_args,
+};
+
+static const RzCmdDescArg plugins_bin_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_bin_print_help = {
+	.summary = "Print the bin plugins",
+	.args = plugins_bin_print_args,
+};
+
+static const RzCmdDescArg plugins_io_print_args[] = {
+	{
+		.name = "plugin",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_io_print_help = {
+	.summary = "Print the io plugins",
+	.args = plugins_io_print_args,
+};
+
+static const RzCmdDescArg plugins_parser_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp plugins_parser_print_help = {
+	.summary = "Print the parser plugins",
+	.args = plugins_parser_print_args,
 };
 
 static const RzCmdDescHelp cmd_open_help = {
@@ -4352,8 +4460,34 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_m_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "m", rz_cmd_m, &cmd_m_help);
 	rz_warn_if_fail(cmd_m_cd);
 
-	RzCmdDesc *cmd_plugins_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "L", rz_cmd_plugins, &cmd_plugins_help);
-	rz_warn_if_fail(cmd_plugins_cd);
+	RzCmdDesc *L_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "L", rz_plugins_load_handler, &plugins_load_help, &L_help);
+	rz_warn_if_fail(L_cd);
+	RzCmdDesc *plugins_unload_cd = rz_cmd_desc_argv_new(core->rcmd, L_cd, "L-", rz_plugins_unload_handler, &plugins_unload_help);
+	rz_warn_if_fail(plugins_unload_cd);
+
+	RzCmdDesc *plugins_lang_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Ll", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_lang_print_handler, &plugins_lang_print_help);
+	rz_warn_if_fail(plugins_lang_print_cd);
+
+	RzCmdDesc *plugins_asm_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "La", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_asm_print_handler, &plugins_asm_print_help);
+	rz_warn_if_fail(plugins_asm_print_cd);
+
+	RzCmdDesc *plugins_core_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_core_print_handler, &plugins_core_print_help);
+	rz_warn_if_fail(plugins_core_print_cd);
+
+	RzCmdDesc *plugins_debug_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Ld", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_debug_print_handler, &plugins_debug_print_help);
+	rz_warn_if_fail(plugins_debug_print_cd);
+
+	RzCmdDesc *plugins_hash_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lh", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_hash_print_handler, &plugins_hash_print_help);
+	rz_warn_if_fail(plugins_hash_print_cd);
+
+	RzCmdDesc *plugins_bin_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Li", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_bin_print_handler, &plugins_bin_print_help);
+	rz_warn_if_fail(plugins_bin_print_cd);
+
+	RzCmdDesc *plugins_io_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lo", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_io_print_handler, &plugins_io_print_help);
+	rz_warn_if_fail(plugins_io_print_cd);
+
+	RzCmdDesc *plugins_parser_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, L_cd, "Lp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_plugins_parser_print_handler, &plugins_parser_print_help);
+	rz_warn_if_fail(plugins_parser_print_cd);
 
 	RzCmdDesc *cmd_open_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "o", rz_cmd_open, &cmd_open_help);
 	rz_warn_if_fail(cmd_open_cd);

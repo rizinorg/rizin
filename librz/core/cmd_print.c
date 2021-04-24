@@ -3075,38 +3075,21 @@ restore_conf:
 	rz_config_set_i(core->config, "emu.str", emu_str);
 }
 
-static void msg_digest_algorithms(bool complete) {
-	const RzMsgDigestPlugin *plugin = NULL;
-
-	if (complete) {
-		rz_cons_println("algorithm      license    author");
-	}
-	for (size_t j = 0; (plugin = rz_msg_digest_plugin_by_index(j)); ++j) {
-		if (complete) {
-			rz_cons_printf("%-14s %-10s %s\n", plugin->name, plugin->license, plugin->author);
-		} else {
-			rz_cons_printf("%s ", plugin->name);
-		}
-	}
-	if (!complete) {
-		rz_cons_newline();
-	}
-}
-
 static bool cmd_print_ph(RzCore *core, const char *input) {
 	char algo[128];
 	ut32 osize = 0, len = core->blocksize;
 	const char *ptr;
 	bool handled_cmd = false;
 	const RzMsgDigestPlugin *plugin = NULL;
-
+	RzCmdStateOutput state = { 0 };
 	if (!*input || *input == '?') {
-		msg_digest_algorithms(1);
-		return true;
+		state.mode = RZ_OUTPUT_MODE_QUIET;
 	}
 	if (*input == '=') {
-		msg_digest_algorithms(0);
-		return true;
+		state.mode = RZ_OUTPUT_MODE_STANDARD;
+	}
+	if (state.mode) {
+		return rz_core_hash_plugins_print(&state) ? true : false;
 	}
 	input = rz_str_trim_head_ro(input);
 	ptr = strchr(input, ' ');

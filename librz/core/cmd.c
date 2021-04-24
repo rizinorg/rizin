@@ -6642,7 +6642,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "k", "perform sdb query", rz_cmd_kuery },
 		{ "ls", "list files and directories", rz_cmd_ls },
 		{ "m", "make directory and move files", rz_cmd_m },
-		{ "L", "manage dynamically loaded plugins", rz_cmd_plugins },
 		{ "o", "open or map file", rz_cmd_open },
 		{ "p", "print current block", rz_cmd_print },
 		{ "q", "exit program session", rz_cmd_quit },

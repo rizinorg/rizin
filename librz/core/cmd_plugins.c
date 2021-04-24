@@ -2,102 +2,50 @@
 // SPDX-FileCopyrightText: 2020 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <string.h>
-#include "rz_config.h"
-#include "rz_cons.h"
-#include "rz_core.h"
+#include <rz_core.h>
 
-// TODO #7967 help refactor: move to another place
-static const char *help_msg_L[] = {
-	"Usage:", "L[acio]", "[-name][ file]",
-	"L", "", "show this help",
-	"L", " blah." RZ_LIB_EXT, "load plugin file",
-	"L-", "duk", "unload core plugin by name",
-	"Ll", "", "list lang plugins (same as #!)",
-	"La", "", "list asm/analysis plugins (aL, e asm.arch="
-		  "??"
-		  ")",
-	"Lc", "", "list core plugins",
-	"Ld", "", "list debug plugins (same as dL)",
-	"LD", "", "list supported decompilers",
-	"Lm", "", "list fs plugins (same as mL)",
-	"Lh", "", "list hash plugins (same as ph)",
-	"Li", "", "list bin plugins (same as iL)",
-	"Lo", "", "list io plugins (same as oL)",
-	"Lp", "", "list parser plugins (e asm.parser=?)",
-	NULL
-};
+RZ_IPI RzCmdStatus rz_plugins_load_handler(RzCore *core, int argc, const char **argv) {
+	return rz_lib_open(core->lib, rz_str_trim_head_ro(argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
 
-RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	switch (input[0]) {
-	case 0:
-		rz_core_cmd_help(core, help_msg_L);
-		// return rz_core_cmd0 (core, "Lc");
-		break;
-	case '-':
-		rz_lib_close(core->lib, rz_str_trim_head_ro(input + 1));
-		break;
-	case ' ':
-		rz_lib_open(core->lib, rz_str_trim_head_ro(input + 1));
-		break;
-	case '?':
-		rz_core_cmd_help(core, help_msg_L);
-		break;
-	case 'm': // "Lm"
-		rz_core_cmdf(core, "mL%s", input + 1);
-		break;
-	case 'd': // "Ld"
-		rz_core_cmdf(core, "dL%s", input + 1);
-		break;
-	case 'h': // "Lh"
-		rz_core_cmd0(core, "ph"); // rz-hash -L is more verbose
-		break;
-	case 'a': // "La"
-		rz_core_cmd0(core, "e asm.arch=??");
-		break;
-	case 'p': // "Lp"
-		rz_core_cmd0(core, "e asm.parser=?");
-		break;
-	case 'l': // "Ll"
-		rz_core_cmd0(core, "#!");
-		break;
-	case 'o': // "Lo"
-	case 'i': // "Li"
-		rz_core_cmdf(core, "%cL", input[0]);
-		break;
-	case 'c': { // "Lc"
-		RzListIter *iter;
-		RzCorePlugin *cp;
-		switch (input[1]) {
-		case 'j': {
-			PJ *pj = pj_new();
-			if (!pj) {
-				break;
-			}
-			pj_a(pj);
-			rz_list_foreach (core->plugins, iter, cp) {
-				pj_o(pj);
-				pj_ks(pj, "Name", cp->name);
-				pj_ks(pj, "Description", cp->desc);
-				pj_end(pj);
-			}
-			pj_end(pj);
-			rz_cons_println(pj_string(pj));
-			pj_free(pj);
-			break;
-		}
-		case 0:
-			rz_lib_list(core->lib);
-			rz_list_foreach (core->plugins, iter, cp) {
-				rz_cons_printf("%s: %s\n", cp->name, cp->desc);
-			}
-			break;
-		default:
-			eprintf("oops\n");
-			break;
-		}
-	} break;
+RZ_IPI RzCmdStatus rz_plugins_unload_handler(RzCore *core, int argc, const char **argv) {
+	return rz_lib_close(core->lib, rz_str_trim_head_ro(argv[1])) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_plugins_lang_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_lang_plugins_print(core->lang, state);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_asm_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_asm_plugins_print(core, NULL, state);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_core_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_core_plugins_print(core, state);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_debug_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (argc > 1) {
+		return rz_config_set(core->config, "dbg.backend", argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 	}
-	return 0;
+	return rz_core_debug_plugins_print(core, state);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_hash_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_hash_plugins_print(state);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_bin_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_bin_plugins_print(core->bin, state);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (argc > 1) {
+		return rz_lib_open(core->lib, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	}
+	return rz_core_io_plugins_print(core->io, state);
+}
+
+RZ_IPI RzCmdStatus rz_plugins_parser_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return rz_core_parser_plugins_print(core->parser, state);
 }
