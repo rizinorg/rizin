@@ -780,6 +780,38 @@ static bool listOpDescriptions(void *_core, const char *k, const char *v) {
 	return true;
 }
 
+RZ_API RzOutputMode setMode(char input) {
+	RzOutputMode mode;
+	switch (input) {
+	case 'j':
+		mode = RZ_OUTPUT_MODE_JSON;
+		break;
+	case '*':
+	case 'r':
+		mode = RZ_OUTPUT_MODE_RIZIN;
+		break;
+	case 'q':
+		mode = RZ_OUTPUT_MODE_QUIET;
+		break;
+	case 'l':
+		mode = RZ_OUTPUT_MODE_LONG;
+		break;
+	case 'J':
+		mode = RZ_OUTPUT_MODE_LONG_JSON;
+		break;
+	case 'k':
+		mode = RZ_OUTPUT_MODE_SDB;
+		break;
+	case 't':
+		mode = RZ_OUTPUT_MODE_TABLE;
+		break;
+	default:
+		rz_warn_if_reached();
+		mode = input;
+	}
+	return mode;
+}
+
 static void type_cmd(RzCore *core, const char *input) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 	if (!fcn && *input != '?') {
@@ -8205,10 +8237,11 @@ static void cmd_analysis_rtti(RzCore *core, const char *input) {
 	case 'j': // "avrj"
 		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, RZ_OUTPUT_MODE_JSON);
 		break;
-	case 'a': // "avra"
+	case 'a': { // "avra"
 		RzOutputMode mode = setMode(input[1]);
 		rz_analysis_rtti_print_all(core->analysis, mode);
 		break;
+	}
 	case 'r': // "avrr"
 		rz_analysis_rtti_recover_all(core->analysis);
 		break;
@@ -8397,38 +8430,6 @@ static void cmd_analysis_class_base(RzCore *core, const char *input) {
 	if (err == RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS) {
 		eprintf("Class does not exist.\n");
 	}
-}
-
-RZ_API RzOutputMode setMode(char input){
-	RzOutputMode mode;
-	switch (input) {
-	case 'j':
-		mode = RZ_OUTPUT_MODE_JSON;
-		break;
-	case '*':
-	case 'r':
-		mode = RZ_OUTPUT_MODE_RIZIN;
-		break;
-	case 'q':
-		mode = RZ_OUTPUT_MODE_QUIET;
-		break;
-	case 'l':
-		mode = RZ_OUTPUT_MODE_LONG;
-		break;
-	case 'J':
-		mode = RZ_OUTPUT_MODE_LONG_JSON;
-		break;
-	case 'k':
-		mode = RZ_OUTPUT_MODE_SDB;
-		break;
-	case 't':
-		mode = RZ_OUTPUT_MODE_TABLE;
-		break;
-	default:
-		rz_warn_if_reached();
-		mode = input;
-	}
-	return mode;
 }
 
 static void cmd_analysis_class_vtable(RzCore *core, const char *input) {
