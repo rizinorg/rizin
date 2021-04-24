@@ -27,9 +27,9 @@ dc
 dmhd~?Chunk
 dmhd fast~?size=0x20
 dc
-dmhd tcache~?items : 6
+dmhd tcache~?Items: 6
 dc 
-dmhd tcache~?items : 5
+dmhd tcache~?Items: 5
 EOF
 EXPECT=<<EOF
 15
