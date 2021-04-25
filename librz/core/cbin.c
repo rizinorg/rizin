@@ -2916,9 +2916,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		if (plugin_flags_support && !print_segments) {
 			rz_table_set_columnsf(table, "s", "flags");
 		}
-		if (print_segments) {
-			rz_table_set_columnsf(table, "x", "align");
-		}
+		rz_table_set_columnsf(table, "x", "align");
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
 	}
@@ -3029,11 +3027,11 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				}
 				rz_list_free(flags);
 			}
-			if (print_segments) {
-				pj_kN(pj, "align", section->align);
-			}
 			pj_kN(pj, "paddr", section->paddr);
 			pj_kN(pj, "vaddr", addr);
+			if (section->align) {
+				pj_kN(pj, "align", section->align);
+			}
 			pj_end(pj);
 		} else {
 			char *hashstr = NULL, str[128];
@@ -3092,10 +3090,8 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				rz_list_free(section_flags);
 			}
 
-			if (print_segments) {
-				if (section->align) {
-					rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, section->align));
-				}
+			if (section->align) {
+				rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, section->align));
 			}
 
 			rz_table_add_row_list(table, row_list);
