@@ -1689,11 +1689,9 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			if (rz_str_endswith(_input, ".h")) {
 				char *error_msg = NULL;
 				const char *dir = rz_config_get(core->config, "dir.types");
-				char *out = rz_type_parse_c_file(core->analysis->typedb, path, dir, &error_msg);
-				if (out) {
-					rz_type_db_save_parsed_type(core->analysis->typedb, out);
+				int result = rz_type_parse_c_file(core->analysis->typedb, path, dir, &error_msg);
+				if (!result) {
 					rz_core_cmd0(core, ".ts*");
-					free(out);
 				} else {
 					eprintf("Parse error: %s\n", error_msg);
 				}

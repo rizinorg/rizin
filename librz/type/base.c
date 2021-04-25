@@ -28,7 +28,7 @@ RZ_API void rz_type_base_union_member_free(void *e, void *user) {
 }
 
 // returns NULL if name is not found or any failure happened
-RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 
 	bool found = false;
@@ -72,7 +72,7 @@ static bool base_type_kind_collect_cb(void *user, const void *k, const void *v) 
  * \param typedb Types Database instance
  * \param kind Kind of the types to list
  */
-RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(RzTypeDB *typedb, RzBaseTypeKind kind) {
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_list_new();
 	struct list_kind lk = { types, kind };
@@ -92,7 +92,7 @@ static bool base_type_collect_cb(void *user, const void *k, const void *v) {
  *
  * \param typedb Types Database instance
  */
-RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(RzTypeDB *typedb) {
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(const RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
 	RzList *types = rz_list_new();
 	ht_pp_foreach(typedb->types, base_type_collect_cb, types);

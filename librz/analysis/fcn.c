@@ -1787,10 +1787,7 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *funct
 RZ_API int rz_analysis_str_to_fcn(RzAnalysis *a, RzAnalysisFunction *f, const char *sig) {
 	rz_return_val_if_fail(a || f || sig, false);
 	char *error_msg = NULL;
-	const char *out = rz_type_parse_c_string(a->typedb, sig, &error_msg);
-	if (out) {
-		rz_type_db_save_parsed_type(a->typedb, out);
-	}
+	int result = rz_type_parse_c_string(a->typedb, sig, &error_msg);
 	if (error_msg) {
 		eprintf("%s", error_msg);
 		free(error_msg);
