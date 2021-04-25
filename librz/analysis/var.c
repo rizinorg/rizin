@@ -62,12 +62,10 @@ static void shadow_var_struct_members(RzAnalysisVar *var) {
 	}
 
 	if (btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
-		rz_type_base_type_free(btype);
 		return;
 	}
 
 	if (rz_vector_empty(&btype->struct_data.members)) {
-		rz_type_base_type_free(btype);
 		return;
 	}
 	RzTypeStructMember *member;
@@ -79,7 +77,6 @@ static void shadow_var_struct_members(RzAnalysisVar *var) {
 			}
 		}
 	}
-	rz_type_base_type_free(btype);
 }
 
 RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_NULLABLE RzType *type, int size, bool isarg, RZ_NONNULL const char *name) {

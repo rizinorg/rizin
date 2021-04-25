@@ -103,38 +103,6 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	return true;
 }
 
-RZ_API void rz_type_db_remove_parsed_type(RzTypeDB *typedb, const char *name) {
-	rz_return_if_fail(typedb && name);
-	rz_type_db_del(typedb, name);
-	// TODO: Delete all references to this BaseType too?
-}
-
-RZ_API void rz_type_db_save_parsed_type(RzTypeDB *typedb, const char *parsed) {
-	rz_return_if_fail(typedb && parsed);
-
-	// First, if any parsed types exist, let's remove them.
-	char *type = strdup(parsed);
-	if (type) {
-		char *cur = type;
-		while (1) {
-			cur = is_ctype(cur);
-			if (!cur) {
-				break;
-			}
-			char *name = cur++;
-			*name = 0;
-			while (name > type && *(name - 1) != '\n') {
-				name--;
-			}
-			rz_type_db_remove_parsed_type(typedb, name);
-		}
-		free(type);
-	}
-
-	// Now add the type to sdb.
-	sdb_query_lines(typedb->sdb_types, parsed);
-}
-
 RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char *arch, int bits, const char *os) {
 	rz_return_if_fail(typedb && typedb->types && typedb->formats);
 

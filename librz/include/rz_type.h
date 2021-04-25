@@ -175,12 +175,12 @@ RZ_API void rz_type_base_enum_case_free(void *e, void *user);
 RZ_API void rz_type_base_struct_member_free(void *e, void *user);
 RZ_API void rz_type_base_union_member_free(void *e, void *user);
 
-RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type);
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
 
-RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(RzTypeDB *typedb, RzBaseTypeKind kind);
-RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(RzTypeDB *typedb);
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind);
+RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(const RzTypeDB *typedb);
 
 RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
 
@@ -193,12 +193,9 @@ RZ_API RZ_OWN char *rz_type_as_string(RzTypeDB *typedb, RZ_NONNULL const RzType 
 RZ_API void rz_type_free(RzType *type);
 
 /* c */
-RZ_API char *rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **error_msg);
-RZ_API char *rz_type_parse_c_file(RzTypeDB *typedb, const char *path, const char *dir, char **error_msg);
+RZ_API int rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **error_msg);
+RZ_API int rz_type_parse_c_file(RzTypeDB *typedb, const char *path, const char *dir, char **error_msg);
 RZ_API void rz_type_parse_c_reset(RzTypeDB *typedb);
-
-RZ_API void rz_type_db_remove_parsed_type(RzTypeDB *typedb, const char *name);
-RZ_API void rz_type_db_save_parsed_type(RzTypeDB *typedb, const char *parsed);
 
 RZ_API bool rz_type_atomic_eq(RzTypeDB *typedb, RzType *typ1, RzType *typ2);
 RZ_API bool rz_type_atomic_str_eq(RzTypeDB *typedb, RzType *typ1, RZ_NONNULL const char *name);
