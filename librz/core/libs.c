@@ -37,6 +37,7 @@ CB(lang, lang)
 CB(analysis, analysis)
 CB(asm, rasm)
 CB(parse, parser)
+#define rz_bin_add rz_bin_plugin_add
 CB(bin, bin)
 CB(egg, egg)
 

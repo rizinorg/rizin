@@ -403,8 +403,7 @@ static void rz_bin_plugin_free(RzBinPlugin *p) {
 	RZ_FREE(p);
 }
 
-// rename to rz_bin_plugin_add like the rest
-RZ_API bool rz_bin_add(RzBin *bin, RzBinPlugin *foo) {
+RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo) {
 	RzListIter *it;
 	RzBinPlugin *plugin;
 
@@ -841,7 +840,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	/* bin parsers */
 	bin->binfiles = rz_list_newf((RzListFree)rz_bin_file_free);
 	for (i = 0; bin_static_plugins[i]; i++) {
-		rz_bin_add(bin, bin_static_plugins[i]);
+		rz_bin_plugin_add(bin, bin_static_plugins[i]);
 	}
 	/* extractors */
 	bin->binxtrs = rz_list_new();
