@@ -553,7 +553,20 @@ bool test_analysis_var_save() {
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
 
 	RzRegItem *rax = rz_reg_get(analysis->reg, "rax", -1);
-	RzAnalysisVar *v = rz_analysis_function_set_var(f, rax->index, RZ_ANALYSIS_VAR_KIND_REG, "int64_t", 0, true, "arg_rax");
+
+	RzType *t_int64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "int64_t");
+	mu_assert_notnull(t_int64_t, "has int64_t type");
+	RzType *t_uint64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "uint64_t");
+	mu_assert_notnull(t_uint64_t, "has uint64_t type");
+	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", true);
+	mu_assert_notnull(t_const_char_ptr, "has const char* type");
+	RzBaseType *bt_struct_something = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
+	mu_assert_notnull(bt_struct_something, "create struct something base type");
+	bt_struct_something->name = "something";
+	RzType *t_struct_something = rz_type_identifier_of_base_type(analysis->typedb, bt_struct_something);
+	mu_assert_notnull(bt_struct_something, "create struct something type");
+
+	RzAnalysisVar *v = rz_analysis_function_set_var(f, rax->index, RZ_ANALYSIS_VAR_KIND_REG, t_int64_t, 0, true, "arg_rax");
 	rz_analysis_var_set_access(v, "rax", 1340, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 42);
 	rz_analysis_var_set_access(v, "rbx", 1350, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ | RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 13);
 	rz_analysis_var_set_access(v, "rcx", 1360, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 123);
@@ -569,11 +582,11 @@ bool test_analysis_var_save() {
 		rz_analysis_var_add_constraint(v, &constr);
 	}
 
-	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_SPV, "const char *", 0, false, "var_sp");
+	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_SPV, t_const_char_ptr, 0, false, "var_sp");
 	rz_analysis_var_set_access(v, "rsp", 1340, RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE, 321);
 
-	rz_analysis_function_set_var(f, -0x10, RZ_ANALYSIS_VAR_KIND_BPV, "struct something", 0, false, "var_bp");
-	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_BPV, "uint64_t", 0, true, "arg_bp");
+	rz_analysis_function_set_var(f, -0x10, RZ_ANALYSIS_VAR_KIND_BPV, t_struct_something, 0, false, "var_bp");
+	v = rz_analysis_function_set_var(f, 0x10, RZ_ANALYSIS_VAR_KIND_BPV, t_uint64_t, 0, true, "arg_bp");
 	v->comment = strdup("I have no idea what this var does");
 
 	Sdb *db = sdb_new0();
@@ -602,12 +615,19 @@ bool test_analysis_var_load() {
 
 	mu_assert_eq(rz_pvector_len(&f->vars), 4, "vars count");
 
+	RzType *t_int64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "int64_t");
+	mu_assert_notnull(t_int64_t, "has int64_t type");
+	RzType *t_uint64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "uint64_t");
+	mu_assert_notnull(t_uint64_t, "has uint64_t type");
+	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", true);
+	mu_assert_notnull(t_const_char_ptr, "has const char* type");
+
 	RzRegItem *rax = rz_reg_get(analysis->reg, "rax", -1);
 	RzAnalysisVar *v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_REG, rax->index);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->regname, "rax", "var regname");
 	mu_assert_streq(v->name, "arg_rax", "var name");
-	mu_assert_streq(v->type, "int64_t", "var type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type, "int64_t"), "var type");
 	mu_assert("var arg", v->isarg);
 
 	mu_assert_eq(v->accesses.len, 3, "accesses count");
@@ -639,7 +659,9 @@ bool test_analysis_var_load() {
 	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_SPV, 0x10);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "var_sp", "var name");
-	mu_assert_streq(v->type, "const char *", "var type");
+	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_POINTER, "var type");
+	mu_assert_true(v->type->pointer.is_const, "var type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type->pointer.type, "char"), "var type");
 	mu_assert("var arg", !v->isarg);
 	mu_assert_eq(v->accesses.len, 1, "accesses count");
 	acc = rz_vector_index_ptr(&v->accesses, 0);
@@ -652,14 +674,16 @@ bool test_analysis_var_load() {
 	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_BPV, -0x10);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "var_bp", "var name");
-	mu_assert_streq(v->type, "struct something", "var type");
+	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
+	mu_assert_eq(v->type->identifier.kind, RZ_TYPE_IDENTIFIER_KIND_STRUCT, "var type");
+	mu_assert_streq(v->type->identifier.name, "something", "var type");
 	mu_assert("var arg", !v->isarg);
 	mu_assert_eq(v->accesses.len, 0, "accesses count");
 
 	v = rz_analysis_function_get_var(f, RZ_ANALYSIS_VAR_KIND_BPV, 0x10);
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "arg_bp", "var name");
-	mu_assert_streq(v->type, "uint64_t", "var type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type, "uint64_t"), "var type");
 	mu_assert("var arg", v->isarg);
 	mu_assert_eq(v->accesses.len, 0, "accesses count");
 	mu_assert_streq(v->comment, "I have no idea what this var does", "var comment");
@@ -1661,7 +1685,7 @@ bool test_analysis_load() {
 	mu_assert_notnull(type, "get type");
 	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ATOMIC, "type kind");
 	mu_assert_eq(type->size, 16, "atomic type size");
-	mu_assert_streq(type->type, "c", "atomic type");
+	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, type->type, "c"), "atomic type");
 	rz_type_base_type_free(type);
 
 	rz_spaces_set(&analysis->zign_spaces, "koridai");
