@@ -1026,6 +1026,10 @@ do_decl:
 				// UNNAMED
 				fprintf(stderr, "anonymous enums are ignored\n");
 			}
+			RzBaseType *enum_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
+			if (!enum_type) {
+				return;
+			}
 			while (tcc_nerr() == 0) {
 				v = tok;
 				if (v < TOK_UIDENT) {
@@ -1039,10 +1043,17 @@ do_decl:
 				// TODO: use is_typedef here
 				if (strcmp(name, "{")) {
 					char *varstr = get_tok_str(v, NULL);
-					tcc_appendf("%s=enum\n", name);
-					tcc_appendf("[+]enum.%s=%s\n", name, varstr);
-					tcc_appendf("enum.%s.%s=0x%" PFMT64x "\n", name, varstr, c);
-					tcc_appendf("enum.%s.0x%" PFMT64x "=%s\n", name, c, varstr);
+					if (!enum_type.name) {
+						enum_type->name = name;
+					}
+					RzTypeEnumCase cas = {
+						.name = strdup(varstr);
+						.val = atoi(c);
+					}
+					void *element = rz_vector_push(&enum_type->cases, &cas);
+					if (!element) {
+						goto error;
+					}
 					// TODO: if token already defined throw an error
 					// if (varstr isInside (arrayOfvars)) { erprintf ("ERROR: DUP VAR IN ENUM\n"); }
 				}
@@ -1062,6 +1073,7 @@ do_decl:
 					break;
 				}
 			}
+			rz_type_db_save_base_type(typedb, enum_type);
 			skip('}');
 		} else {
 			maxalign = 1;
@@ -1071,10 +1083,12 @@ do_decl:
 			offset = 0;
 
 			const char *ctype = (a == TOK_UNION) ? "union" : "struct";
+			char *btype_name = NULL;
+			char *btype_ctype = NULL;
 			if (!is_typedef || !autonamed) {
-				tcc_appendf("%s=%s\n", name, ctype);
+				btype_name = name;
+				btype_ctype = ctype;
 			}
-
 			while (tok != '}') {
 				if (!parse_btype(&btype, &ad)) {
 					expect("bracket");
@@ -1213,12 +1227,15 @@ do_decl:
 #endif
 							// (%s) field (%s) offset=%d array=%d", name, b, get_tok_str(v, NULL), offset, arraysize);
 							arraysize = 0;
+							// FIXME: Ignore for now
+							/*
 							if (type1.t & VT_BITFIELD) {
 								tcc_appendf("%s.%s.%s.bitfield.pos=%d\n",
 									ctype, name, varstr, (type1.t >> VT_STRUCT_SHIFT) & 0x3f);
 								tcc_appendf("%s.%s.%s.bitfield.size=%d\n",
 									ctype, name, varstr, (type1.t >> (VT_STRUCT_SHIFT + 6)) & 0x3f);
 							}
+							*/
 							// printf("\n");
 						}
 #endif
@@ -3193,8 +3210,17 @@ static int decl0(int l, int is_for_loop_init) {
 					char buf[500];
 					alias = get_tok_str(v, NULL);
 					type_to_str(buf, sizeof(buf), &sym->type, NULL);
-					tcc_appendf("%s=typedef\n", alias);
-					tcc_appendf("typedef.%s=%s\n", alias, buf);
+					RzBaseType *typedef_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+					if (!typedef_type) {
+						return;
+					}
+					typedef_type->name = alias;
+					RzType *talias = RZ_NEW0(RzType);
+					talias->kind = RZ_TYPE_KIND_IDENTIFIER;
+					talias->identifier.is_const = false;
+					talias->identifier.name = buf;
+					talias->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+					typedef_type->alias = talias;
 					tcc_typedef_alias_fields(alias);
 				} else {
 					r = 0;

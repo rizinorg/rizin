@@ -30,47 +30,32 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 	if (!p) {
 		return false;
 	}
-	int btype = 0;
 	RzTypeDB *typedb = (RzTypeDB *)p;
-	//rz_cons_printf ("tk %s=%s\n", k, v);
-	// TODO: Add unions support
-	if (!strncmp(v, "struct", 6) && strncmp(k, "struct.", 7)) {
+	RzBaseType *basetype = (RzBaseType *)v;
+	int btype = 0;
+	if (basetype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
 		// structure
 		btype = VT_STRUCT;
 		const char *typename = k;
-		int typesize = 0;
-		// TODO: Add typesize here
-		char *query = sdb_fmt("struct.%s", k);
-		char *members = sdb_get(typedb->sdb_types, query, 0);
-		char *next, *ptr = members;
-		if (members) {
-			do {
-				char *name = sdb_anext(ptr, &next);
-				if (!name) {
-					break;
-				}
-				query = sdb_fmt("struct.%s.%s", k, name);
-				char *subtype = sdb_get(typedb->sdb_types, query, 0);
-				if (!subtype) {
-					break;
-				}
-				char *tmp = strchr(subtype, ',');
-				if (tmp) {
-					*tmp++ = 0;
-					tmp = strchr(tmp, ',');
-					if (tmp) {
-						*tmp++ = 0;
-					}
-					char *subname = tmp;
-					// TODO: Go recurse here
-					query = sdb_fmt("struct.%s.%s.meta", subtype, subname);
-					btype = sdb_num_get(typedb->sdb_types, query, 0);
-					tcc_sym_push(subtype, 0, btype);
-				}
-				free(subtype);
-				ptr = next;
-			} while (next);
-			free(members);
+		int typesize = btype->size;
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&basetype->struct_data.members, memb) {
+			const char *subtype = rz_type_as_string(typedb, memb->type);
+			tcc_sym_push(subtype, 0, btype);
+			// FIXME: Support nested types
+		}
+		tcc_sym_push((char *)typename, typesize, btype);
+	}
+	if (basetype->kind == RZ_BASE_TYPE_KIND_UNION) {
+		// union
+		btype = VT_UNION;
+		const char *typename = k;
+		int typesize = btype->size;
+		RzTypeUnionMember *memb;
+		rz_vector_foreach(&basetype->union_data.members, memb) {
+			const char *subtype = rz_type_as_string(typedb, memb->type);
+			tcc_sym_push(subtype, 0, btype);
+			// FIXME: Support nested types
 		}
 		tcc_sym_push((char *)typename, typesize, btype);
 	}
@@ -102,7 +87,7 @@ RZ_API char *rz_type_parse_c_file(RzTypeDB *typedb, const char *path, const char
 	}
 	tcc_set_callback(T, &__appendString, &str);
 	tcc_set_error_func(T, (void *)error_msg, __errorFunc);
-	sdb_foreach(typedb->sdb_types, __typeLoad, typedb);
+	ht_pp_foreach(typedb->types, __typeLoad, typedb);
 	if (tcc_add_file(T, path, dir) == -1) {
 		free(str);
 		str = NULL;
@@ -119,7 +104,7 @@ RZ_API char *rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **e
 	}
 	tcc_set_callback(T, &__appendString, &str);
 	tcc_set_error_func(T, (void *)error_msg, __errorFunc);
-	sdb_foreach(typedb->sdb_types, __typeLoad, NULL);
+	ht_pp_foreach(typedb->sdb_types, __typeLoad, typedb);
 	if (tcc_compile_string(T, code) != 0) {
 		free(str);
 		str = NULL;
