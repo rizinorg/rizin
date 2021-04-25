@@ -749,13 +749,13 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 		ret = true;
 	} else if (rz_file_is_c(file)) {
 		const char *dir = rz_config_get(core->config, "dir.types");
-		char *out = rz_type_parse_c_file(core->analysis->typedb, file, dir, NULL);
-		if (out) {
-			rz_cons_strcat(out);
-			rz_type_db_save_parsed_type(core->analysis->typedb, out);
-			free(out);
+		char *error_msg = NULL;
+		int result = rz_type_parse_c_file(core->analysis->typedb, file, dir, &error_msg);
+		if (error_msg) {
+			eprintf("%s", error_msg);
+			free(error_msg);
 		}
-		ret = out != NULL;
+		ret = result != 0;
 	} else {
 		p = rz_lang_get_by_extension(core->lang, file);
 		if (p) {
