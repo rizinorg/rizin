@@ -1,16 +1,27 @@
 rz_type_sources = [
   'base.c',
-  'code.c',
   'ctype.c',
   'format.c',
   'function.c',
   'helpers.c',
   'serialize_types.c',
   'type.c',
+  'parser/c_cpp_parser.c',
+  'parser/types_parser.c',
+  'parser/types_storage.c',
 ]
+
+r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter-c')
+if r.returncode() == 1 and get_option('subprojects_check')
+  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
+endif
+
+tree_sitter_c_proj = subproject('tree-sitter-c', default_options: ['default_library=static'])
+tree_sitter_c_dep = tree_sitter_c_proj.get_variable('tree_sitter_c_dep')
 
 rz_type_inc = [
   platform_inc,
+  'parser',
 ]
 
 rz_type = library('rz_type', rz_type_sources,
@@ -18,8 +29,8 @@ rz_type = library('rz_type', rz_type_sources,
   c_args: library_cflags,
   dependencies: [
     rz_util_dep,
-    tcc_dep,
-    mpc_dep
+    tree_sitter_dep,
+    tree_sitter_c_dep,
   ],
   install: true,
   implicit_include_directories: false,
