@@ -84,8 +84,8 @@ CMDS=<<EOF
 iS~stub
 EOF
 EXPECT=<<EOF
-1   0x00000f4e   0x1e 0x100000f4e   0x1e -r-x 1.__TEXT.__stubs         SYMBOL_STUBS             PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
-2   0x00000f6c   0x42 0x100000f6c   0x42 -r-x 2.__TEXT.__stub_helper   REGULAR                  PURE_INSTRUCTIONS,SOME_INSTRUCTIONS
+1   0x00000f4e   0x1e 0x100000f4e   0x1e -r-x 1.__TEXT.__stubs         SYMBOL_STUBS             PURE_INSTRUCTIONS,SOME_INSTRUCTIONS 0x2
+2   0x00000f6c   0x42 0x100000f6c   0x42 -r-x 2.__TEXT.__stub_helper   REGULAR                  PURE_INSTRUCTIONS,SOME_INSTRUCTIONS 0x4
 EOF
 RUN
 
