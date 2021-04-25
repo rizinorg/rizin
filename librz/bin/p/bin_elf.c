@@ -145,6 +145,7 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.minstrlen = 4,

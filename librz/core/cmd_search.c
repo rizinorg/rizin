@@ -634,7 +634,8 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 			int rwx = m ? m->perm : part->map->perm;
 #else
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			ut64 from = rz_itv_begin(map->itv);
 			ut64 to = rz_itv_end(map->itv);
@@ -666,7 +667,8 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 		// bool only = (bool)(size_t)strstr (mode, ".only");
 
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			ut64 from = rz_itv_begin(map->itv);
 			//ut64 to = rz_itv_end (map->itv);
@@ -754,7 +756,8 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 			if (from == UT64_MAX) {
 				int mask = 1;
 				void **it;
-				rz_pvector_foreach (&core->io->maps, it) {
+				RzPVector *maps = rz_io_maps(core->io);
+				rz_pvector_foreach (maps, it) {
 					RzIOMap *map = *it;
 					ut64 from = rz_itv_begin(map->itv);
 					ut64 size = rz_itv_size(map->itv);

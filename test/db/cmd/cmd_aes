@@ -1,5 +1,5 @@
 NAME=aes help changing seek
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 55
 e asm.arch=x86
@@ -14,7 +14,7 @@ EOF
 RUN
 
 NAME=cmd.esil.intr unset
-FILE=-
+FILE==
 CMDS=<<EOF
 wx b8010000000f34b801000000cd80ebfe
 10aes
@@ -24,7 +24,7 @@ EOF
 RUN
 
 NAME=aes without initialize
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32

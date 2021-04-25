@@ -1,5 +1,5 @@
 NAME=rz-diff -c
-FILE=-
+FILE==
 CMDS=!rz-diff -c bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
 EXPECT=<<EOF
 1
@@ -7,7 +7,7 @@ EOF
 RUN
 
 NAME=rz-diff -a -O x86
-FILE=-
+FILE==
 CMDS=!rz-diff -a x86 -O bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
 EXPECT=<<EOF
 0x00000000 91 => 90 0x00000000
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=rz-diff -g
-FILE=-
+FILE==
 CMDS=!!rz-diff -g main -m d bins/other/rz-diff/false bins/other/rz-diff/true~digrap
 EXPECT=<<EOF
 digraph code {
@@ -23,7 +23,7 @@ EOF
 RUN
 
 NAME=rz-diff -v~commit?"
-FILE=-
+FILE==
 CMDS=!!rz-diff -v~commit?
 EXPECT=<<EOF
 1
@@ -31,7 +31,7 @@ EOF
 RUN
 
 NAME=rz-diff -h~Usage?"
-FILE=-
+FILE==
 CMDS=!!rz-diff -h~Usage?
 EXPECT=<<EOF
 1
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=rz-diff string comparison
-FILE=-
+FILE==
 CMDS=!!rz-diff -z bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 0x00000000 48656c6c => 41414141 0x00000000
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=rz-diff unified string comparison
-FILE=-
+FILE==
 CMDS=!!rz-diff -quz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 -0x00000000:48 65 6c 6c 
@@ -56,7 +56,7 @@ EOF
 RUN
 
 NAME=rz-diff gnu unified string comparison
-FILE=-
+FILE==
 BROKEN=1
 CMDS=!!rz-diff -Uz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 | tail -n 2
 EXPECT=<<EOF
@@ -66,7 +66,7 @@ EOF
 RUN
 
 NAME=rz-diff -AC (elf files)
-FILE=-
+FILE==
 CMDS=!!rz-diff -AC bins/other/rz-diff/true bins/other/rz-diff/false~?\(1.000000\)
 EXPECT=<<EOF
 54
@@ -74,7 +74,7 @@ EOF
 RUN
 
 NAME=rz-diff -AC (mach0 fat files)
-FILE=-
+FILE==
 CMDS=!!rz-diff -AC bins/other/rz-diff/hellocxx-osx-fat-intel_1 bins/other/rz-diff/hellocxx-osx-fat-intel_2~?\(1.000000\)
 EXPECT=<<EOF
 17
@@ -82,7 +82,7 @@ EOF
 RUN
 
 NAME=rz-diff -B (GDIFF support) #1
-FILE=-
+FILE==
 CMDS=!!rz-diff -B bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2 | rz-ax -S
 EXPECT=<<EOF
 d1ffd1ff04019000
@@ -90,7 +90,7 @@ EOF
 RUN
 
 NAME=rz-diff empty first file
-FILE=-
+FILE==
 CMDS=!rz-diff "" bins/other/rz-diff/rz-diff_c_2
 EXPECT_ERR=<<EOF
 Cannot open empty path
@@ -98,7 +98,7 @@ EOF
 RUN
 
 NAME=rz-diff empty second file
-FILE=-
+FILE==
 CMDS=!rz-diff bins/other/rz-diff/rz-diff_c_1 ""
 EXPECT_ERR=<<EOF
 Cannot open empty path

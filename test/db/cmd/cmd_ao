@@ -1,5 +1,5 @@
 NAME=a8
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=aof
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -26,7 +26,7 @@ EOF
 RUN
 
 NAME=ao_aoj
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

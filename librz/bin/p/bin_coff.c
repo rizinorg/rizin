@@ -167,53 +167,40 @@ static RzList *entries(RzBinFile *bf) {
 }
 
 static RzList *sections(RzBinFile *bf) {
-	char *tmp = NULL;
-	size_t i;
-	RzBinSection *ptr = NULL;
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj *)bf->o->bin_obj;
-
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
-	if (obj && obj->scn_hdrs) {
-		for (i = 0; i < obj->hdr.f_nscns; i++) {
-			tmp = rz_coff_symbol_name(obj, &obj->scn_hdrs[i]);
-			if (!tmp) {
-				rz_list_free(ret);
-				return NULL;
-			}
-			//IO does not like sections with the same name append idx
-			//since it will update it
-			ptr = RZ_NEW0(RzBinSection);
-			if (!ptr) {
-				free(tmp);
-				return ret;
-			}
-			ptr->name = rz_str_newf("%s-%zu", tmp, i);
-			free(tmp);
-			if (strstr(ptr->name, "data")) {
-				ptr->is_data = true;
-			}
-			ptr->size = obj->scn_hdrs[i].s_size;
-			ptr->vsize = obj->scn_hdrs[i].s_size;
-			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
-			if (obj->scn_va) {
-				ptr->vaddr = obj->scn_va[i];
-			}
-			ptr->add = true;
-			ptr->perm = 0;
-			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
-				ptr->perm |= RZ_PERM_R;
-			}
-			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_WRITE) {
-				ptr->perm |= RZ_PERM_W;
-			}
-			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
-				ptr->perm |= RZ_PERM_X;
-			}
-			rz_list_append(ret, ptr);
+	if (!obj || !obj->scn_hdrs) {
+		return ret;
+	}
+	for (size_t i = 0; i < obj->hdr.f_nscns; i++) {
+		RzBinSection *ptr = RZ_NEW0(RzBinSection);
+		if (!ptr) {
+			return ret;
 		}
+		ptr->name = rz_coff_symbol_name(obj, &obj->scn_hdrs[i]);
+		if (ptr->name && strstr(ptr->name, "data")) {
+			ptr->is_data = true;
+		}
+		ptr->size = obj->scn_hdrs[i].s_size;
+		ptr->vsize = obj->scn_hdrs[i].s_size;
+		ptr->paddr = obj->scn_hdrs[i].s_scnptr;
+		if (obj->scn_va) {
+			ptr->vaddr = obj->scn_va[i];
+		}
+		ptr->perm = 0;
+		if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
+			ptr->perm |= RZ_PERM_R;
+		}
+		if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_WRITE) {
+			ptr->perm |= RZ_PERM_W;
+		}
+		if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
+			ptr->perm |= RZ_PERM_X;
+		}
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
@@ -490,7 +477,8 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	if (nimports) {
 		void **it;
 		ut64 offset = 0;
-		rz_pvector_foreach (&io->maps, it) {
+		RzPVector *maps = rz_io_maps(io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if ((map->itv.addr + map->itv.size) > offset) {
 				offset = map->itv.addr + map->itv.size;
@@ -635,6 +623,7 @@ RzBinPlugin rz_bin_plugin_coff = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

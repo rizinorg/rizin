@@ -77,6 +77,10 @@ static ut64 baddr(RzBinFile *bf) {
 	return MACH0_(get_baddr)(bin);
 }
 
+static RzList *maps(RzBinFile *bf) {
+	return MACH0_(get_maps)(bf);
+}
+
 static RzList *sections(RzBinFile *bf) {
 	return MACH0_(get_segments)(bf);
 }
@@ -624,7 +628,8 @@ static RzList *patch_relocs(RzBinFile *bf) {
 
 	ut64 offset = 0;
 	void **vit;
-	rz_pvector_foreach (&io->maps, vit) {
+	RzPVector *maps = rz_io_maps(io);
+	rz_pvector_foreach (maps, vit) {
 		RzIOMap *map = *vit;
 		if (map->itv.addr > offset) {
 			offset = map->itv.addr;
@@ -1158,6 +1163,7 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.signature = &entitlements,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

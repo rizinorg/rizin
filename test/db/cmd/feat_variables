@@ -55,7 +55,7 @@ EOF
 RUN
 
 NAME=$$$ (malloc)
-FILE=-
+FILE==
 CMDS=<<EOF
 ?v $$ @ 0x300
 ?v $$$ @ 0x300
@@ -90,7 +90,7 @@ EOF
 RUN
 
 NAME=nested $$
-FILE=-
+FILE==
 CMDS=<<EOF
 (nested_seek; ?v $$)
 .(nested_seek) @ 0x500
@@ -226,7 +226,7 @@ EOF
 RUN
 
 NAME=$e (malloc)
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32

@@ -215,7 +215,7 @@ EOF
 RUN
 
 NAME="base help"
-FILE=-
+FILE==
 CMDS=<<EOF
 ?~+print?
 EOF
@@ -225,7 +225,7 @@ EOF
 RUN
 
 NAME="help help"
-FILE=-
+FILE==
 CMDS=<<EOF
 ???~Usage
 EOF
@@ -235,7 +235,7 @@ EOF
 RUN
 
 NAME=expr with parentheses
-FILE=-
+FILE==
 CMDS=<<EOF
 ?v (0x10000192c + 4294965314) & 0xffffffff
 EOF
@@ -245,7 +245,7 @@ EOF
 RUN
 
 NAME=recursive help
-FILE=-
+FILE==
 CMDS=<<EOF
 ?* zi
 EOF
@@ -259,7 +259,7 @@ EOF
 RUN
 
 NAME=recursive help (json)
-FILE=-
+FILE==
 CMDS=<<EOF
 ?*j zi
 EOF
@@ -270,7 +270,7 @@ RUN
 
 
 NAME=old recursive help
-FILE=-
+FILE==
 CMDS=<<EOF
 zi?*
 EOF
@@ -284,7 +284,7 @@ EOF
 RUN
 
 NAME=old recursive help (json)
-FILE=-
+FILE==
 CMDS=<<EOF
 zi?*j
 EOF

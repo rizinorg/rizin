@@ -1,8 +1,21 @@
-NAME=GBA: 3D - S
+NAME=GBA: 3D - Maps
 FILE=bins/gba/3D.gba
 CMDS=om
 EXPECT=<<EOF
  2 fd: 3 +0x00000000 0x08000000 - 0x080105cb r-x fmap.ROM
  1 fd: 4 +0x00000000 0x080105cc - 0x09ffffff r-x mmap.ROM
+EOF
+RUN
+
+NAME=GBA: 3D - Sections
+FILE=bins/gba/3D.gba
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr          size vaddr           vsize perm name
+-------------------------------------------------------
+0   0x00000000  0x105cc 0x08000000  0x2000000 -r-x ROM
+
 EOF
 RUN

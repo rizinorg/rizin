@@ -67,8 +67,8 @@ static const char *help_msg_exclamation[] = {
 	"!", "echo $RZ_SIZE", "display file size",
 	"!-", "", "clear history in current session",
 	"!-*", "", "clear and save empty history log",
-	"!=!", "", "enable remotecmd mode",
-	"=!=", "", "disable remotecmd mode",
+	"R=!", "", "enable remotecmd mode",
+	"R!=", "", "disable remotecmd mode",
 	NULL
 };
 
@@ -1000,30 +1000,27 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		}
 		break;
 	}
-	case 'P': // "?P"
+	case 'P': // "?P" physical to virtual address conversion
 		if (core->io->va) {
-			ut64 o, n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
-			RzIOMap *map = rz_io_map_get_paddr(core->io, n);
-			if (map) {
-				o = n + map->itv.addr - map->delta;
-				rz_cons_printf("0x%08" PFMT64x "\n", o);
-			} else {
+			ut64 n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
+			ut64 vaddr = rz_io_p2v(core->io, n);
+			if (vaddr == UT64_MAX) {
 				rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
+			} else {
+				rz_cons_printf("0x%08" PFMT64x "\n", vaddr);
 			}
 		} else {
 			rz_cons_printf("0x%08" PFMT64x "\n", core->offset);
 		}
 		break;
-	case 'p': // "?p"
+	case 'p': // "?p" virtual to physical address conversion
 		if (core->io->va) {
-			// physical address
-			ut64 o, n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
-			RzIOMap *map = rz_io_map_get(core->io, n);
-			if (map) {
-				o = n - map->itv.addr + map->delta;
-				rz_cons_printf("0x%08" PFMT64x "\n", o);
-			} else {
+			ut64 n = (input[0] && input[1]) ? rz_num_math(core->num, input + 2) : core->offset;
+			ut64 paddr = rz_io_v2p(core->io, n);
+			if (paddr == UT64_MAX) {
 				rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
+			} else {
+				rz_cons_printf("0x%08" PFMT64x "\n", paddr);
 			}
 		} else {
 			rz_cons_printf("0x%08" PFMT64x "\n", core->offset);

@@ -92,7 +92,7 @@ EOF
 RUN
 
 NAME=assembler
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=mips.gnu
 e asm.bits=32
@@ -114,7 +114,7 @@ EOF
 RUN
 
 NAME=with-spaces
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=mips.gnu
 e asm.bits=32

@@ -302,7 +302,8 @@ RZ_API ut64 rz_core_analysis_address(RzCore *core, ut64 addr) {
 		if (core->io) {
 			// sections
 			void **it;
-			rz_pvector_foreach (&core->io->maps, it) {
+			RzPVector *maps = rz_io_maps(core->io);
+			rz_pvector_foreach (maps, it) {
 				RzIOMap *s = *it;
 				if (addr >= s->itv.addr && addr < (s->itv.addr + s->itv.size)) {
 					// sections overlap, so we want to get the one with lower perms
@@ -543,58 +544,29 @@ static int bb_cmp(const void *a, const void *b) {
 	return ba->addr - bb->addr;
 }
 
-RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzOutputMode mode) {
+RZ_IPI void rz_core_analysis_bbs_info_print(RzCore *core, RzAnalysisFunction *fcn, RzCmdStateOutput *state) {
+	rz_return_if_fail(core && fcn && state);
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
-	PJ *pj = NULL;
-	RzTable *t = NULL;
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = rz_core_pj_new(core);
-		pj_a(pj);
-	} else if (mode == RZ_OUTPUT_MODE_TABLE) {
-		t = rz_table_new();
-		rz_table_set_columnsf(t, "xdxx", "addr", "size", "jump", "fail");
-	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
+	rz_cmd_state_output_array_start(state);
+	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
+	if (state->mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_cons_printf("fs blocks\n");
 	}
 
 	rz_list_sort(fcn->bbs, bb_cmp);
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		bb_info_print(core, fcn, bb, bb->addr, mode, pj, t);
+		bb_info_print(core, fcn, bb, bb->addr, state->mode, state->d.pj, state->d.t);
 	}
 
-	if (mode == RZ_OUTPUT_MODE_TABLE) {
-		char *ts = rz_table_tofancystring(t);
-		rz_cons_printf("%s", ts);
-		free(ts);
-		rz_table_free(t);
-	} else if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(pj);
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	}
+	rz_cmd_state_output_array_end(state);
 }
 
-RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzOutputMode mode) {
-	PJ *pj = NULL;
-	RzTable *t = NULL;
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = rz_core_pj_new(core);
-	} else if (mode == RZ_OUTPUT_MODE_TABLE) {
-		t = rz_table_new();
-		rz_table_set_columnsf(t, "xdxx", "addr", "size", "jump", "fail");
-	}
+RZ_IPI void rz_core_analysis_bb_info_print(RzCore *core, RzAnalysisBlock *bb, ut64 addr, RzCmdStateOutput *state) {
+	rz_return_if_fail(core && bb && state);
+	rz_cmd_state_output_set_columnsf(state, "xdxx", "addr", "size", "jump", "fail");
 	RzAnalysisFunction *fcn = rz_list_first(bb->fcns);
-	bb_info_print(core, fcn, bb, addr, mode, pj, t);
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		rz_cons_println(pj_string(pj));
-		pj_free(pj);
-	} else if (mode == RZ_OUTPUT_MODE_TABLE) {
-		char *ts = rz_table_tofancystring(t);
-		rz_cons_printf("%s", ts);
-		free(ts);
-		rz_table_free(t);
-	}
+	bb_info_print(core, fcn, bb, addr, state->mode, state->d.pj, state->d.t);
 }
 
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val) {
@@ -3853,10 +3825,7 @@ static int fcn_list_table(RzCore *core, const char *q, int fmt) {
 		rz_table_add_row(t, fcnAddr, fcnSize, fcn->name, nbbs, xref, callstr, ccstr, noret, NULL);
 	}
 	if (rz_table_query(t, q)) {
-		char *s = (fmt == 'j')
-			? rz_table_tojson(t)
-			: rz_table_tofancystring(t);
-		// char *s = rz_table_tostring (t);
+		char *s = rz_table_tostring(t);
 		rz_cons_printf("%s\n", s);
 		free(s);
 	}

@@ -3,21 +3,21 @@
 
 #include "class_attribute.h"
 
-static ut8 *copy_buffer(RzBuffer *buf, st64 size, bool null_terminator) {
+static ut8 *make_string(RzBuffer *buf, st64 size) {
 	ut8 *buffer;
-	if (null_terminator) {
-		buffer = (ut8 *)malloc(size + 1);
-	} else {
-		buffer = (ut8 *)malloc(size);
+	st64 buffer_size = rz_buf_size(buf);
+	if (size < 1 || size >= buffer_size) {
+		return NULL;
 	}
+
+	buffer = (ut8 *)malloc(size + 1);
 	if (!buffer || rz_buf_read(buf, buffer, size) < (size - 1)) {
 		rz_warn_if_reached();
 		free(buffer);
 		return NULL;
 	}
-	if (null_terminator) {
-		buffer[size] = 0;
-	}
+	buffer[size] = 0;
+
 	return buffer;
 }
 
@@ -35,7 +35,7 @@ bool java_attribute_set_unknown(Attribute *attr, RzBuffer *buf) {
 		return true;
 	}
 	st64 size = (st64)attr->attribute_length;
-	attr->info = copy_buffer(buf, size, false);
+	rz_buf_seek(buf, size, RZ_BUF_CUR);
 	return true;
 }
 
@@ -62,17 +62,11 @@ bool java_attribute_set_code(ConstPool **pool, ut32 poolsize, Attribute *attr, R
 	ac->max_locals = is_oak ? rz_buf_read8(buf) : rz_buf_read_be16(buf);
 	ac->code_length = is_oak ? rz_buf_read_be16(buf) : rz_buf_read_be32(buf);
 	ac->code_offset = attr->offset + (is_oak ? 10 : 14); // 6 bytes for attribute + 8 as code
-	ac->code = copy_buffer(buf, ac->code_length, false);
-	if (!ac->code) {
-		free(ac);
-		rz_warn_if_reached();
-		return false;
-	}
+	rz_buf_seek(buf, ac->code_length, RZ_BUF_CUR);
 	ac->exceptions_count = rz_buf_read_be16(buf);
 	if (ac->exceptions_count > 0) {
 		ac->exceptions = RZ_NEWS0(ExceptionTable, ac->exceptions_count);
 		if (!ac->exceptions) {
-			free(ac->code);
 			free(ac);
 			rz_warn_if_reached();
 			return false;
@@ -90,10 +84,9 @@ bool java_attribute_set_code(ConstPool **pool, ut32 poolsize, Attribute *attr, R
 		ac->attributes = RZ_NEWS0(Attribute *, ac->attributes_count);
 		if (!ac->attributes) {
 			free(ac->exceptions);
-			free(ac->code);
 			free(ac);
 			rz_warn_if_reached();
-			return NULL;
+			return false;
 		}
 
 		for (ut32 i = 0; i < ac->attributes_count; ++i) {
@@ -131,7 +124,11 @@ bool java_attribute_set_sourcedebugextension(Attribute *attr, RzBuffer *buf) {
 		return true;
 	}
 	st64 size = (st64)attr->attribute_length;
-	attr->info = copy_buffer(buf, size, true);
+	/*
+	 The debug_extension array holds a string, which must be in UTF-8 format. There is no terminating zero byte.
+	 The string in the debug_extension item will be interpreted as extended debugging information.
+	*/
+	attr->info = make_string(buf, size);
 	if (!attr->info) {
 		rz_warn_if_reached();
 		return false;
@@ -442,7 +439,6 @@ void java_attribute_free(Attribute *attr) {
 	}
 	if (attr->type == ATTRIBUTE_TYPE_CODE) {
 		AttributeCode *ac = (AttributeCode *)attr->info;
-		free(ac->code);
 		free(ac->exceptions);
 		if (ac->attributes) {
 			for (ut32 i = 0; i < ac->attributes_count; ++i) {

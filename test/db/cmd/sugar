@@ -1,5 +1,5 @@
 NAME=t/sugar
-FILE=-
+FILE==
 CMDS=<<EOF
 ph md5@s:hello
 ph md5 @s:hello

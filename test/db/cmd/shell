@@ -1,5 +1,5 @@
 NAME=stdin eof
-FILE=-
+FILE==
 CMDS=<<EOF
 
 EOF

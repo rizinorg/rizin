@@ -1,5 +1,5 @@
 NAME=b
-FILE=-
+FILE==
 CMDS=<<EOF
 b 100
 b
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=bj
-FILE=-
+FILE==
 CMDS=<<EOF
 b 100
 bj

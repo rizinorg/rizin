@@ -1,5 +1,5 @@
 ======================
-Pointer type commands
+Pointer type statements
 ======================
 
 *entry0
@@ -8,15 +8,15 @@ Pointer type commands
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier)))))
@@ -34,26 +34,26 @@ Environment variable command
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier)))))
 
 
 ===============
-Macro commands
+Macro statements
 ===============
 
 (_foo x y; p8 $0 @ $1)
@@ -66,31 +66,31 @@ Macro commands
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (macro_args
       (macro_content
         (arg (arg_identifier))
 	(args
 	  (arg (arg_identifier))
 	  (arg (arg_identifier)))
-        (tmp_seek_command
-	  (arged_command (cmd_identifier)
+        (tmp_seek_stmt
+	  (arged_stmt (cmd_identifier)
 	    (args (arg (arg_identifier))))
 	  (args (arg (arg_identifier)))))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (macro_args
       (macro_content
         (arg (arg_identifier)))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (macro_args
       (macro_content
         (arg (arg_identifier))
 	(args
 	  (arg (arg_identifier))
 	  (arg (arg_identifier)))
-        (tmp_seek_command
-	  (arged_command (cmd_identifier)
+        (tmp_seek_stmt
+	  (arged_stmt (cmd_identifier)
 	    (args (arg (arg_identifier))))
 	  (args (arg (arg_identifier)))))
       (macro_call_full_content
@@ -98,42 +98,42 @@ Macro commands
 	  (args
 	    (arg (arg_identifier))
 	    (arg (arg_identifier)))))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (macro_args
       (macro_content
         (arg (arg_identifier))
 	(args (arg (arg_identifier)))
-        (arged_command (cmd_identifier)
+        (arged_stmt (cmd_identifier)
 	  (args (arg (arg_identifier))))
-	(arged_command (cmd_identifier)
+	(arged_stmt (cmd_identifier)
 	  (macro_call_content
 	    (args
 	      (arg (arg_identifier))
 	      (arg (arg_identifier)))))
-	(arged_command (cmd_identifier)
+	(arged_stmt (cmd_identifier)
 	  (macro_call_content
 	    (args
 	      (arg (arg_identifier))
 	      (arg (arg_identifier)))))
-	(arged_command (cmd_identifier)
+	(arged_stmt (cmd_identifier)
 	  (macro_call_content
 	    (args
 	      (arg (arg_identifier))
 	      (arg (arg_identifier))))))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (macro_args
       (macro_content
         (arg (arg_identifier))
-	(grep_command
-	  (arged_command (cmd_identifier)
+	(grep_stmt
+	  (arged_stmt (cmd_identifier)
 	    (args (arg (arg_identifier))))
 	  (grep_specifier (grep_specifier_identifier))))))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)))
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)))
 
 
 ===============
-System commands
+System statements
 ===============
 
 !
@@ -144,14 +144,14 @@ System commands
 
 ---
 
-(commands
-  (arged_command (system_identifier))
-  (arged_command (system_identifier)
+(statements
+  (arged_stmt (system_identifier))
+  (arged_stmt (system_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (system_identifier))
-  (arged_command (system_identifier)
+  (arged_stmt (system_identifier))
+  (arged_stmt (system_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (system_identifier)
+  (arged_stmt (system_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))
@@ -160,7 +160,7 @@ System commands
 
 
 ===================
-Interpret r2 commands
+Interpret r2 statements
 ===================
 
 .cmd a1
@@ -174,24 +174,24 @@ pd 10 |.
 
 ---
 
-(commands
-  (arged_command
+(statements
+  (arged_stmt
     command: (cmd_identifier)
-    args: (arged_command command: (cmd_identifier)
+    args: (arged_stmt command: (cmd_identifier)
             args: (args (arg (arg_identifier)))))
-  (arged_command
+  (arged_stmt
     command: (cmd_identifier)
     args: (args (arg (arg_identifier))))
-  (arged_command
+  (arged_stmt
     command: (cmd_identifier)
     args: (args (arg (arg_identifier))))
-  (arged_command
+  (arged_stmt
     command: (cmd_identifier)
     args: (args (arg (arg_identifier))))
-  (arged_command
+  (arged_stmt
     command: (cmd_identifier)
     args: (interpret_arg))
-  (arged_command
+  (arged_stmt
     command: (cmd_identifier)
     args: (macro_call_content
             (args
@@ -199,11 +199,11 @@ pd 10 |.
 	      (arg (arg_identifier))
 	      (arg (arg_identifier))
 	      (arg (arg_identifier)))))
-  (arged_command
+  (arged_stmt
     command: (cmd_identifier)
     args: (args (arg (arg_identifier))))
-  (arged_command
-    args: (arged_command command: (cmd_identifier)
+  (arged_stmt
+    args: (arged_stmt command: (cmd_identifier)
             args: (args (arg (arg_identifier)))))
   )
 
@@ -217,53 +217,53 @@ Last cmd
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)))
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)))
 
 ===================
-Interpreter commands
+Interpreter statements
 ===================
 
 #!
-#!python arg0
+#!python arg1
 #!rust
 #!?
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))))
-  (help_command (cmd_identifier)))
+  (help_stmt (cmd_identifier)))
 
 
 =======================================
-Pointer type commands with substitution
+Pointer type statements with substitution
 =======================================
 
 *entr$(?e y0)=$(?v $$)
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args
       (arg
         (concatenation
           (arg_identifier)
           (cmd_substitution_arg
-            (arged_command (cmd_identifier)
+            (arged_stmt (cmd_identifier)
               (args (arg (arg_identifier)))))))
       (arg
         (cmd_substitution_arg
-          (arged_command (cmd_identifier)
+          (arged_stmt (cmd_identifier)
             (args (arg (arg_identifier)))))))))
 
 ========
@@ -274,8 +274,8 @@ editor -
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)))
+(statements
+  (arged_stmt (cmd_identifier)))
 
 =========
 \ command
@@ -285,53 +285,53 @@ editor -
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)))
+(statements
+  (arged_stmt (cmd_identifier)))
 
 
 ==============
-equal commands
+R statements
 ==============
 
-=
-=<
-= 3 cmd
-=! cmd
-=+ http://host:3000
-=- 3
-== 3
-=!=
-!=!
-=: host:3000 cmd
-=&: 3000
+R
+R<
+R 3 cmd
+R! cmd
+R+ http://host:3000
+R- 3
+R= 3
+R!=
+R=!
+Rr host:3000 cmd
+R&r 3000
 
 ---
 
-(commands
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier))
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args
       (arg (arg_identifier)))))

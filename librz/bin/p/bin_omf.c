@@ -165,6 +165,7 @@ RzBinPlugin rz_bin_plugin_omf = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,

@@ -139,9 +139,15 @@ RZ_API void rz_table_add_row_list(RzTable *t, RzList *items) {
 	t->totalCols = RZ_MAX(t->totalCols, rz_list_length(items));
 }
 
-RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
+/**
+ * \brief Specify the types and names of the referenced table.
+ *
+ * \param t Referenced \p RzTable
+ * \param fmt String containing the numer and types of the columns
+ * \param ap Variable number of strings that specify the names of the columns.
+ *           There should be enough string as characters in \p fmt .
+ */
+RZ_API void rz_table_set_vcolumnsf(RzTable *t, const char *fmt, va_list ap) {
 	RzTableColumnType *typeString = rz_table_type("string");
 	RzTableColumnType *typeNumber = rz_table_type("number");
 	RzTableColumnType *typeBool = rz_table_type("bool");
@@ -172,6 +178,20 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 			break;
 		}
 	}
+}
+
+/**
+ * \brief Specify the types and names of the referenced table.
+ *
+ * \param t Referenced \p RzTable
+ * \param fmt String containing the numer and types of the columns
+ * \param ... Variable number of strings that specify the names of the columns.
+ *            There should be enough string as characters in \p fmt .
+ */
+RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+	rz_table_set_vcolumnsf(t, fmt, ap);
 	va_end(ap);
 }
 
@@ -551,7 +571,7 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 		}
 	}
 	if (op == 'p') {
-		sscanf(un, "%ld/%ld", &page, &page_items);
+		sscanf(un, "%zd/%zd", &page, &page_items);
 		if (page < 1) {
 			page = 1;
 		}
@@ -593,8 +613,16 @@ RZ_API void rz_table_filter(RzTable *t, int nth, int op, const char *un) {
 		case '>':
 			match = (nv > uv);
 			break;
+		case ')':
+			// ">="
+			match = (nv >= uv);
+			break;
 		case '<':
 			match = (nv < uv);
+			break;
+		case '(':
+			// "<="
+			match = (nv <= uv);
 			break;
 		case '=':
 			if (nv == 0) {
@@ -772,8 +800,14 @@ static int __resolveOperation(const char *op) {
 	if (!strcmp(op, "gt")) {
 		return '>';
 	}
+	if (!strcmp(op, "ge")) {
+		return ')';
+	}
 	if (!strcmp(op, "lt")) {
 		return '<';
+	}
+	if (!strcmp(op, "le")) {
+		return '(';
 	}
 	if (!strcmp(op, "eq")) {
 		return '=';
@@ -901,20 +935,17 @@ RZ_API void rz_table_filter_columns(RzTable *t, RzList *list) {
 	}
 }
 
-static bool __table_special(RzTable *t, const char *columnName) {
-	if (*columnName != ':') {
-		return false;
-	}
-	if (!strcmp(columnName, ":quiet")) {
+static bool set_table_format(RzTable *t, const char *q) {
+	if (!strcmp(q, "quiet")) {
 		t->showHeader = false;
 		t->showFancy = false;
-	} else if (!strcmp(columnName, ":fancy")) {
+	} else if (!strcmp(q, "fancy")) {
 		t->showFancy = true;
-	} else if (!strcmp(columnName, ":simple")) {
+	} else if (!strcmp(q, "simple")) {
 		t->showFancy = false;
-	} else if (!strcmp(columnName, ":csv")) {
+	} else if (!strcmp(q, "csv")) {
 		t->showCSV = true;
-	} else if (!strcmp(columnName, ":json")) {
+	} else if (!strcmp(q, "json")) {
 		t->showJSON = true;
 	} else {
 		return false;
@@ -939,7 +970,9 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		eprintf(" c/cols/c1/c2      only show selected columns\n");
 		eprintf(" c                 only show column c\n");
 		eprintf(" c/gt/0x800        grep rows matching col0 > 0x800\n");
+		eprintf(" c/ge/0x800        grep rows matching col0 >= 0x800\n");
 		eprintf(" c/lt/0x800        grep rows matching col0 < 0x800\n");
+		eprintf(" c/le/0x800        grep rows matching col0 <= 0x800\n");
 		eprintf(" c/eq/0x800        grep rows matching col0 == 0x800\n");
 		eprintf(" c/ne/0x800        grep rows matching col0 != 0x800\n");
 		eprintf(" */uniq            get the first row of each that col0 is unique\n");
@@ -961,10 +994,16 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 
 	RzListIter *iter;
 	char *qq = strdup(q);
-	RzList *queries = rz_str_split_list(qq, ",", 0);
+	RzList *queries = rz_str_split_list(qq, ":", 0);
 	char *query;
 	rz_list_foreach (queries, iter, query) {
+		set_table_format(t, query);
+
 		RzList *q = rz_str_split_list(query, "/", 2);
+		if (rz_list_length(q) < 2) {
+			continue;
+		}
+
 		const char *columnName = rz_list_get_n(q, 0);
 		if (!columnName) {
 			eprintf("Column name is NULL for (%s)\n", query);
@@ -973,9 +1012,7 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 		}
 		const char *operation = rz_list_get_n(q, 1);
 		const char *operand = rz_list_get_n(q, 2);
-		if (__table_special(t, columnName)) {
-			continue;
-		}
+
 		int col = rz_table_column_nth(t, columnName);
 		if (col == -1) {
 			if (*columnName == '[') {

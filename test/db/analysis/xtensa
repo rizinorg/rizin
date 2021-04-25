@@ -1,5 +1,5 @@
 NAME=xtensa blt
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32

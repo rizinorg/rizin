@@ -1,7 +1,7 @@
 NAME=tables sum
 FILE=bins/elf/analysis/elf-virtualtable
 CMDS=<<EOF
-f, size/sum
+f,:size/sum
 EOF
 EXPECT=<<EOF
 size
@@ -14,7 +14,7 @@ RUN
 NAME=tables sort
 FILE=bins/elf/analysis/elf-virtualtable
 CMDS=<<EOF
-f, size/cols,size/sort,size/uniq
+f,:size/cols:size/sort:size/uniq
 EOF
 EXPECT=<<EOF
 size
@@ -76,10 +76,10 @@ RUN
 NAME=tables csv
 FILE=bins/elf/analysis/elf-virtualtable
 CMDS=<<EOF
-f, size/ne/0,addr/ne/0x00000000,/head/10,:csv~:..20
-f, space/eq/relocs,addr/cols/name,/head/3,:json~{}
-f, /head/10,/tail/4,space/cols/name
-f, /page/2/10,sort/cols/space/size/name,size/sort/inc,:fancy
+f,:size/ne/0:addr/ne/0x00000000:/head/10,:csv~:..20
+f,:space/eq/relocs:addr/cols/name:/head/3:json~{}
+f,:/head/10:/tail/4:space/cols/name
+f,:/page/2/10:sort/cols/space/size/name:size/sort/inc:fancy
 EOF
 EXPECT=<<EOF
 addr,size,space,name
@@ -133,5 +133,92 @@ imports          loc.imp._ITM_deregisterTMCloneTable
 | segments  | 4132  | segment.LOAD0                                                                  |
 `----------------------------------------------------------------------------------------------------'
 
+EOF
+RUN
+
+NAME=afl table
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+s main
+af
+aflt:simple
+EOF
+EXPECT=<<EOF
+addr       size name           nbbs xref calls cc noreturn
+----------------------------------------------------------
+0x000007aa 157  main           3    9    6     2  
+0x00000660 6    sym.imp.strlen 1    1    0     1  
+0x00000670 6    sym.imp.malloc 1    1    0     1  
+0x00000640 6    sym.imp.strcpy 1    1    0     1  
+0x00000680 6    sym.imp.strcat 1    1    0     1  
+0x00000650 6    sym.imp.puts   1    1    0     1  
+0x00000630 6    sym.imp.free   1    1    0     1  
+
+EOF
+RUN
+
+NAME=tables sum
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+s main
+af
+afbt
+afbt:fancy
+afbt:size/sort/inc:simple
+EOF
+EXPECT=<<EOF
+addr  size jump  fail
+---------------------
+0x7aa 92   0x844 0x806
+0x806 62   0x844 -1
+0x844 3    -1    -1
+.----------------------------------.
+| addr   | size  | jump   | fail   |
+)----------------------------------(
+| 0x7aa  | 92    | 0x844  | 0x806  |
+| 0x806  | 62    | 0x844  | -1     |
+| 0x844  | 3     | -1     | -1     |
+`----------------------------------'
+addr  size jump  fail
+---------------------
+0x844 3    -1    -1
+0x806 62   0x844 -1
+0x7aa 92   0x844 0x806
+EOF
+RUN
+
+NAME=tables gt/ge/lt/le
+FILE=bins/elf/ls
+CMDS=<<EOF
+omt:size/ge/0x3480:size/cols
+?e
+omt:size/gt/0x3480:size/cols
+?e
+omt:size/le/0x3480:size/cols:quiet
+?e
+omt:size/lt/0x3480:size/cols:quiet
+EOF
+EXPECT=<<EOF
+.----------.
+| size     |
+)----------(
+| 0x87c0   |
+| 0x12791  |
+| 0x3480   |
+`----------'
+
+.----------.
+| size     |
+)----------(
+| 0x87c0   |
+| 0x12791  |
+`----------'
+
+0x12f0
+0x1218
+0x3480
+
+0x12f0
+0x1218
 EOF
 RUN

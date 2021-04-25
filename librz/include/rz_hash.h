@@ -14,7 +14,7 @@ RZ_LIB_VERSION_HEADER(rz_hash);
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 typedef MD5_CTX RZ_MD5_CTX;
-typedef SHA_CTX RZ_SHA_CTX;
+typedef SHA_CTX RZ_SHA1_CTX;
 typedef SHA256_CTX RZ_SHA256_CTX;
 typedef SHA512_CTX RZ_SHA384_CTX;
 typedef SHA512_CTX RZ_SHA512_CTX;
@@ -22,21 +22,34 @@ typedef SHA512_CTX RZ_SHA512_CTX;
 #define SHA384_BLOCK_LENGTH SHA384_CBLOCK
 #define SHA512_BLOCK_LENGTH SHA512_CBLOCK
 #else
-#define MD5_CTX RZ_MD5_CTX
+#define MD5_CTX                  RZ_MD5_CTX
 
 /* hashing */
+#define RZ_HASH_MD4_DIGEST_SIZE  0x10
+#define RZ_HASH_MD4_BLOCK_LENGTH 0x40
+typedef struct {
+	ut32 digest[4];
+	ut8 block[RZ_HASH_MD4_BLOCK_LENGTH];
+	ut64 index;
+	ut64 len_high;
+	ut64 len_low;
+} RZ_MD4_CTX;
+
 typedef struct {
 	ut32 state[4];
 	ut32 count[2];
 	ut8 buffer[64];
 } RZ_MD5_CTX;
 
-typedef struct {
-	ut32 H[5];
-	ut32 W[80];
-	int lenW;
-	ut32 sizeHi, sizeLo;
-} RZ_SHA_CTX;
+#define RZ_HASH_SHA1_DIGEST_SIZE  0x14
+#define RZ_HASH_SHA1_BLOCK_LENGTH 0x40
+typedef struct sha1_context_t {
+	ut32 digest[5];
+	ut8 block[RZ_HASH_SHA1_BLOCK_LENGTH];
+	ut64 index;
+	ut64 len_high;
+	ut64 len_low;
+} RZ_SHA1_CTX;
 
 #define SHA256_BLOCK_LENGTH 64
 typedef struct _SHA256_CTX {
@@ -172,8 +185,9 @@ enum CRC_PRESETS {
 #define RzHash struct rz_hash_t
 
 struct rz_hash_t {
+	RZ_MD4_CTX md4;
 	RZ_MD5_CTX md5;
-	RZ_SHA_CTX sha1;
+	RZ_SHA1_CTX sha1;
 	RZ_SHA256_CTX sha256;
 	RZ_SHA384_CTX sha384;
 	RZ_SHA512_CTX sha512;

@@ -1,5 +1,5 @@
 NAME=avr[rbs]- without function
-FILE=-
+FILE==
 CMDS=<<EOF
 afvr-*
 afvb-42

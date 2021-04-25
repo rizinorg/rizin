@@ -122,7 +122,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = sb.paddr + 40;
 	ptr->vaddr = sb.vaddr;
 	ptr->perm = RZ_PERM_RX; // r-x
-	ptr->add = true;
 	ptr->has_strings = true;
 	rz_list_append(ret, ptr);
 
@@ -136,7 +135,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->vaddr = sb.sign_va;
 	ptr->perm = RZ_PERM_R; // r--
 	ptr->has_strings = true;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (sb.cert_sz && sb.cert_va > sb.vaddr) {
@@ -150,7 +148,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->vaddr = sb.cert_va;
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->has_strings = true;
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 	return ret;
@@ -194,6 +191,7 @@ RzBinPlugin rz_bin_plugin_mbn = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 };

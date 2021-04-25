@@ -1,5 +1,5 @@
 NAME=et
-FILE=-
+FILE==
 CMDS=<<EOF
 et asm.slow
 et asm.bits
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=e-dot
-FILE=-
+FILE==
 CMDS=e zoom.
 EXPECT=<<EOF
 zoom.byte = h
@@ -66,7 +66,7 @@ EOF
 RUN
 
 NAME=e asm.syntax
-FILE=-
+FILE==
 CMDS=<<EOF
 wx eb0e
 e asm.arch=x86
@@ -79,7 +79,7 @@ EOF
 RUN
 
 NAME=multiple assignments
-FILE=-
+FILE==
 CMDS=<<EOF
 "e  scr.highlight= scr.highlight.grep  =scr.rainbow =true "
 e scr.highlight
@@ -94,6 +94,7 @@ EOF
 RUN
 
 NAME=multiple assignments with quotes
+FILE==
 CMDS=<<EOF
 e cmd.prompt='scr.highlight = "e cmd.prompt =  "e scr.highlight = cmd.prompt ="e scr.rainbow = true """'
 e cmd.prompt

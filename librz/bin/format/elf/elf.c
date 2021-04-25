@@ -63,7 +63,7 @@
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
 	((rel->rva - pltgot_addr - n_initial_unused_entries * RZ_BIN_ELF_WORDSIZE) / RZ_BIN_ELF_WORDSIZE)
 
-#define GROWTH_FACTOR (1.5)
+#define GROWTH_FACTOR 2
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
 

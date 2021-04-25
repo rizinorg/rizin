@@ -1,5 +1,5 @@
 NAME=t/md5sha1
-FILE=-
+FILE==
 CMDS=<<EOF
 b 100
 ph md5 64
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=ph crc32
-FILE=-
+FILE==
 CMDS=<<EOF
 b 12
 w hello world
@@ -39,7 +39,7 @@ EOF
 RUN
 
 NAME=crca 'hello world'
-FILE=-
+FILE==
 CMDS=<<EOF
 b 12
 w hello world

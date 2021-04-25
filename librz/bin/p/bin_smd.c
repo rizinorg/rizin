@@ -265,7 +265,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
 	ptr->perm = RZ_PERM_R;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -275,7 +274,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof(SMD_Header);
 	ptr->perm = RZ_PERM_R;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -291,7 +289,6 @@ static RzList *sections(RzBinFile *bf) {
 	}
 	ptr->size = ptr->vsize = rz_buf_size(bf->buf) - ptr->paddr;
 	ptr->perm = RZ_PERM_RX;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 	return ret;
 }
@@ -326,6 +323,7 @@ RzBinPlugin rz_bin_plugin_smd = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,

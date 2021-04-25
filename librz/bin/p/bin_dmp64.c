@@ -86,31 +86,28 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RzBinFile *bf) {
+static RzList *maps(RzBinFile *bf) {
 	dmp_page_desc *page;
 	RzList *ret;
 	RzListIter *it;
-	RzBinSection *ptr;
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf(free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_map_free))) {
 		return NULL;
 	}
 
 	rz_list_foreach (obj->pages, it, page) {
-		if (!(ptr = RZ_NEW0(RzBinSection))) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
 			return ret;
 		}
-
-		ptr->name = strdup("Memory_Section");
-		ptr->paddr = page->file_offset;
-		ptr->size = DMP_PAGE_SIZE;
-		ptr->vaddr = page->start;
-		ptr->vsize = DMP_PAGE_SIZE;
-		ptr->add = true;
-		ptr->perm = RZ_PERM_R;
-
-		rz_list_append(ret, ptr);
+		map->name = rz_str_newf("page.0x%" PFMT64x, page->start);
+		map->paddr = page->file_offset;
+		map->psize = DMP_PAGE_SIZE;
+		map->vaddr = page->start;
+		map->vsize = DMP_PAGE_SIZE;
+		map->perm = RZ_PERM_R;
+		rz_list_append(ret, map);
 	}
 	return ret;
 }
@@ -144,7 +141,7 @@ RzBinPlugin rz_bin_plugin_dmp64 = {
 	.info = &info,
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
-	.sections = &sections
+	.maps = &maps
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -964,7 +964,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 					rz_config_set_i(r->config, "io.va", 0);
 				}
 				//workaround to map correctly malloc:// and raw binaries
-				if (rz_io_desc_is_dbg(desc) || (!obj->sections || !va)) {
+				if (rz_io_desc_is_dbg(desc) || (!obj->maps || !va)) {
 					rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 				}
 				RzBinInfo *info = obj->info;
@@ -1103,7 +1103,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	const bool openmany = rz_config_get_i(r->config, "file.openmany");
 	RzCoreFile *fh = NULL;
 
-	if (!strcmp(file, "-")) {
+	if (!strcmp(file, "=")) {
 		file = "malloc://512";
 	}
 	//if not flags was passed open it with -r--
@@ -1186,7 +1186,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	if (loadaddr != UT64_MAX) {
 		rz_config_set_i(r->config, "bin.laddr", loadaddr);
 	}
-	rz_core_cmd0(r, "=!");
+	rz_core_cmd0(r, "R!");
 beach:
 	r->times->file_open_time = rz_time_now_mono() - prev;
 	return fh;
@@ -1566,7 +1566,8 @@ RZ_IPI void rz_core_io_file_open(RzCore *core, int fd) {
 RZ_IPI void rz_core_io_file_reopen(RzCore *core, int fd, int perms) {
 	if (rz_io_reopen(core->io, fd, perms, 644)) {
 		void **it;
-		rz_pvector_foreach_prev(&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach_prev(maps, it) {
 			RzIOMap *map = *it;
 			if (map->fd == fd) {
 				map->perm |= RZ_PERM_WX;

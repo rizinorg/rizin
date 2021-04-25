@@ -1,5 +1,5 @@
 NAME=asm.describe alignment with memory access
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e analysis.arch=x86
@@ -15,7 +15,7 @@ EOF
 RUN
 
 NAME=asm.describe alignment
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true

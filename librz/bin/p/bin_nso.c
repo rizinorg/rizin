@@ -135,7 +135,7 @@ fail:
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && buf, NULL);
+	rz_return_val_if_fail(bf && buf, false);
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
 	const ut8 *bytes = rz_buf_data(buf, &sz);
@@ -174,19 +174,59 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return kv;
 }
 
+static RzList *maps(RzBinFile *bf) {
+	RzBuffer *b = bf->buf;
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+
+	ut64 ba = baddr(bf);
+
+	RzBinMap *map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		return ret;
+	}
+	map->name = strdup("text");
+	map->paddr = rz_buf_read_le32_at(b, NSO_OFF(text_memoffset));
+	map->vsize = map->psize = rz_buf_read_le32_at(b, NSO_OFF(text_size));
+	map->vaddr = rz_buf_read_le32_at(b, NSO_OFF(text_loc)) + ba;
+	map->perm = RZ_PERM_RX;
+	rz_list_append(ret, map);
+
+	// add ro segment
+	map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		return ret;
+	}
+	map->name = strdup("ro");
+	map->paddr = rz_buf_read_le32_at(b, NSO_OFF(ro_memoffset));
+	map->vsize = map->psize = rz_buf_read_le32_at(b, NSO_OFF(ro_size));
+	map->vaddr = rz_buf_read_le32_at(b, NSO_OFF(ro_loc)) + ba;
+	map->perm = RZ_PERM_R;
+	rz_list_append(ret, map);
+
+	// add data segment
+	map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		return ret;
+	}
+	map->name = strdup("data");
+	map->vsize = map->psize = rz_buf_read_le32_at(b, NSO_OFF(data_size));
+	map->paddr = rz_buf_read_le32_at(b, NSO_OFF(data_memoffset));
+	map->vaddr = rz_buf_read_le32_at(b, NSO_OFF(data_loc)) + ba;
+	map->perm = RZ_PERM_RW;
+	rz_list_append(ret, map);
+	return ret;
+}
+
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
 	RzBuffer *b = bf->buf;
-	if (!bf->o->info) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
 	}
-	if (!(ret = rz_list_new())) {
-		return NULL;
-	}
-	ret->free = free;
-
-	ut64 ba = baddr(bf);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
@@ -197,48 +237,17 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R;
-	ptr->add = false;
 	rz_list_append(ret, ptr);
 
-	// add text segment
-	if (!(ptr = RZ_NEW0(RzBinSection))) {
-		return ret;
+	RzList *mappies = maps(bf);
+	if (mappies) {
+		RzList *msecs = rz_bin_sections_of_maps(mappies);
+		if (msecs) {
+			rz_list_join(ret, msecs);
+			rz_list_free(msecs);
+		}
+		rz_list_free(mappies);
 	}
-	ptr->name = strdup("text");
-	ptr->vsize = rz_buf_read_le32_at(b, NSO_OFF(text_size));
-	ptr->size = ptr->vsize;
-	ptr->paddr = rz_buf_read_le32_at(b, NSO_OFF(text_memoffset));
-	ptr->vaddr = rz_buf_read_le32_at(b, NSO_OFF(text_loc)) + ba;
-	ptr->perm = RZ_PERM_RX; // r-x
-	ptr->add = true;
-	rz_list_append(ret, ptr);
-
-	// add ro segment
-	if (!(ptr = RZ_NEW0(RzBinSection))) {
-		return ret;
-	}
-	ptr->name = strdup("ro");
-	ptr->vsize = rz_buf_read_le32_at(b, NSO_OFF(ro_size));
-	ptr->size = ptr->vsize;
-	ptr->paddr = rz_buf_read_le32_at(b, NSO_OFF(ro_memoffset));
-	ptr->vaddr = rz_buf_read_le32_at(b, NSO_OFF(ro_loc)) + ba;
-	ptr->perm = RZ_PERM_R; // r--
-	ptr->add = true;
-	rz_list_append(ret, ptr);
-
-	// add data segment
-	if (!(ptr = RZ_NEW0(RzBinSection))) {
-		return ret;
-	}
-	ptr->name = strdup("data");
-	ptr->vsize = rz_buf_read_le32_at(b, NSO_OFF(data_size));
-	ptr->size = ptr->vsize;
-	ptr->paddr = rz_buf_read_le32_at(b, NSO_OFF(data_memoffset));
-	ptr->vaddr = rz_buf_read_le32_at(b, NSO_OFF(data_loc)) + ba;
-	ptr->perm = RZ_PERM_RW;
-	ptr->add = true;
-	eprintf("BSS Size 0x%08" PFMT64x "\n", (ut64)rz_buf_read_le32_at(bf->buf, NSO_OFF(bss_size)));
-	rz_list_append(ret, ptr);
 	return ret;
 }
 
@@ -283,6 +292,7 @@ RzBinPlugin rz_bin_plugin_nso = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &maps,
 	.sections = &sections,
 	.get_sdb = &get_sdb,
 	.info = &info,

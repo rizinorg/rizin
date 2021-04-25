@@ -38,21 +38,20 @@ RUN
 
 NAME=avr DISasm: negative baddr
 FILE=bins/elf/analysis/bugurtos-avr.elf
-BROKEN=1
 CMDS=<<EOF
 s 0x506
-pd 2~!1
+pi 1
 sd +2
-pd 1
+pi 1
 EOF
 EXPECT=<<EOF
-call 0x18CE
-call 0x18CE
+call sym.proc_stop_no_resched
+add r6, r7
 EOF
 RUN
 
 NAME=avr DISasm: opcode size
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=avr
 wx 0e941122
@@ -176,10 +175,10 @@ EXPECT=<<EOF
 0x2 -4090,pc,=
 0x4 -3838,pc,=
 0x6 -3834,pc,=
-rjmp 0xfffff002
-rjmp 0xfffff006
-rjmp 0xfffff102
-rjmp 0xfffff106
+rjmp 0xfffffffffffff002
+rjmp 0xfffffffffffff006
+rjmp 0xfffffffffffff102
+rjmp 0xfffffffffffff106
 EOF
 RUN
 
@@ -365,7 +364,7 @@ EOF
 RUN
 
 NAME=avr functions 2
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=avr
 wx 1895

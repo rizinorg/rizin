@@ -838,8 +838,8 @@ static const char *rizin_argv[] = {
 	"*?", "*", "$",
 	"(", "(*", "(-", "()", ".?", ".", "..", "...", ".:", ".--", ".-", ".!", ".(", "./", ".*",
 	"_?", "_",
-	"=?", "=", "=<", "=!", "=+", "=-", "==", "=!=", "!=!", "=:", "=&:",
-	"=g?", "=g", "=g!", "=h?", "=h", "=h-", "=h--", "=h*", "=h&", "=H?", "=H", "=H&",
+	"R?", "R", "R<", "R!", "R+", "R-", "R=", "R!=", "R=!", "R:", "R&:",
+	"Rg?", "Rg", "Rg!", "Rh?", "Rh", "Rh-", "Rh--", "Rh*", "Rh&", "RH?", "RH", "RH&",
 	"<",
 	"/?", "/", "/j", "/j!", "/j!x", "/+", "//", "/a", "/a1", "/ab", "/ad", "/aa", "/as", "/asl", "/at", "/atl", "/af", "/afl", "/ae", "/aej", "/ai", "/aij",
 	"/c", "/ca", "/car", "/d", "/e", "/E", "/Ej", "/f", "/F", "/g", "/gg", "/h", "/ht", "/i", "/m", "/mb", "/mm",
@@ -1697,8 +1697,8 @@ static int autocomplete(RzLineCompletion *completion, RzLineBuffer *buf, RzLineP
 	return true;
 }
 
-static RzLineNSCompletionResult *newshell_autocomplete(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
-	return rz_core_autocomplete_newshell((RzCore *)user, buf, prompt_type);
+static RzLineNSCompletionResult *rzshell_autocomplete(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
+	return rz_core_autocomplete_rzshell((RzCore *)user, buf, prompt_type);
 }
 
 RZ_API int rz_core_fgets(char *buf, int len, void *user) {
@@ -1708,8 +1708,8 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
 	if (prompt) {
-		if (core->use_newshell_autocompletion) {
-			rzli->ns_completion.run = newshell_autocomplete;
+		if (core->use_rzshell_autocompletion) {
+			rzli->ns_completion.run = rzshell_autocomplete;
 			rzli->ns_completion.run_user = core;
 			rzli->completion.run = NULL;
 		} else {
@@ -2367,7 +2367,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->config = NULL;
 	core->http_up = false;
 	core->use_tree_sitter_rzcmd = false;
-	core->use_newshell_autocompletion = false;
+	core->use_rzshell_autocompletion = false;
 	ZERO_FILL(core->root_cmd_descriptor);
 	core->print = rz_print_new();
 	core->ropchain = rz_list_newf((RzListFree)free);
@@ -2733,7 +2733,7 @@ static void set_prompt(RzCore *r) {
 		char *s = rz_core_cmd_str(r, "s");
 		r->offset = rz_num_math(NULL, s);
 		free(s);
-		remote = "=!";
+		remote = "R!";
 	}
 
 	if (rz_config_get_i(r->config, "scr.color")) {

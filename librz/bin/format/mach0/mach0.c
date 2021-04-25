@@ -2215,12 +2215,38 @@ static bool __isDataSection(RzBinSection *sect) {
 	return false;
 }
 
+RzList *MACH0_(get_maps)(RzBinFile *bf) {
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+	for (size_t i = 0; i < bin->nsegs; i++) {
+		struct MACH0_(segment_command) *seg = &bin->segs[i];
+		if (!seg->initprot) {
+			continue;
+		}
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			break;
+		}
+		map->paddr = seg->fileoff + bf->o->boffset;
+		map->psize = seg->vmsize;
+		map->vaddr = seg->vmaddr;
+		map->vsize = seg->vmsize;
+		map->name = rz_str_ndup(seg->segname, 16);
+		rz_str_filter(map->name, -1);
+		map->perm = prot2perm(seg->initprot);
+		rz_list_append(ret, map);
+	}
+	return ret;
+}
+
 RzList *MACH0_(get_segments)(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	RzList *list = rz_list_newf((RzListFree)rz_bin_section_free);
 	size_t i, j;
 
-	/* for core files */
 	if (bin->nsegs > 0) {
 		struct MACH0_(segment_command) * seg;
 		for (i = 0; i < bin->nsegs; i++) {
@@ -2242,7 +2268,6 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			s->is_segment = true;
 			rz_str_filter(s->name, -1);
 			s->perm = prot2perm(seg->initprot);
-			s->add = true;
 			rz_list_append(list, s);
 		}
 	}

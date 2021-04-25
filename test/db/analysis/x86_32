@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=analysis.pushret
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -200,7 +200,7 @@ EOF
 RUN
 
 NAME=adf bug #16215
-FILE=-
+FILE==
 CMDS=adf
 EXPECT=<<EOF
 EOF
@@ -411,7 +411,7 @@ EOF
 RUN
 
 NAME=af- bug
-FILE=-
+FILE==
 CMDS=af+ $$ foo; af- $$;afl~?
 EXPECT=<<EOF
 0
@@ -1174,7 +1174,7 @@ EOF
 RUN
 
 NAME=sar on x86-32
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1204,7 +1204,7 @@ EOF
 RUN
 
 NAME=int 0x80 doesn t terminate a function
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1219,7 +1219,7 @@ EOF
 RUN
 
 NAME=mnemonic - repe/cmpsb
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -1231,7 +1231,7 @@ EOF
 RUN
 
 NAME=ao 4~bytes
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1247,7 +1247,7 @@ EOF
 RUN
 
 NAME=af fwd-jmp
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1273,7 +1273,7 @@ EOF
 RUN
 
 NAME=./x86_32_cs
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1291,7 +1291,7 @@ EOF
 RUN
 
 NAME=./x86_32_cs2
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -1308,7 +1308,7 @@ EOF
 RUN
 
 NAME=./x86_32_cs3
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -2980,7 +2980,7 @@ EOF
 RUN
 
 NAME=ao cjmp
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -2996,7 +2996,7 @@ EOF
 RUN
 
 NAME=aoj 31c0
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -3051,7 +3051,7 @@ EOF
 RUN
 
 NAME=aoj pushf
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
@@ -3442,8 +3442,8 @@ NAME=tiny1 aae non-start-bb first
 FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
 e io.cache=true
-$orig_end=?e `omtq va_end`
-omr 1 `omtq size`+2
+$orig_end=?e `omt va_end/cols:quiet`
+omr 1 `omt size/cols:quiet`+2
 s `$orig_end`
 wa jmp entry0
 aF

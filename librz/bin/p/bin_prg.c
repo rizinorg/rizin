@@ -52,7 +52,6 @@ static RzList *sections(RzBinFile *bf) {
 	section->vaddr = baddr(bf);
 	section->vsize = sz - 2;
 	section->perm = RZ_PERM_RWX;
-	section->add = true;
 	rz_list_append(ret, section);
 	return ret;
 }
@@ -80,6 +79,7 @@ RzBinPlugin rz_bin_plugin_prg = {
 	.baddr = baddr,
 	.check_buffer = check_buffer,
 	.entries = entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.info = info,
 };

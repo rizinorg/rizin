@@ -1,5 +1,5 @@
 NAME=pvj JSON indent - crash
-FILE=-
+FILE==
 CMDS=pvj ~{
 EXPECT=<<EOF
 [{"value":0,"string":""}]

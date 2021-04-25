@@ -1,5 +1,5 @@
 NAME=rcall
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
@@ -126,7 +126,7 @@ EOF
 RUN
 
 NAME=ao mte big endian
-FILE=-
+FILE==
 ARGS=-a arm -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
 wx 91a0090c918201099ac813e8
@@ -191,7 +191,7 @@ EOF
 RUN
 
 NAME=Variable analysis with stp/preindexed str
-FILE=-
+FILE==
 ARGS=-a arm -b 64
 CMDS=<<EOF
 e analysis.vars.stackname=true

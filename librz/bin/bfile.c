@@ -966,6 +966,7 @@ RZ_IPI void rz_bin_class_free(RzBinClass *k) {
 		free(k->super);
 		rz_list_free(k->methods);
 		rz_list_free(k->fields);
+		free(k->visibility_str);
 		free(k);
 	}
 }

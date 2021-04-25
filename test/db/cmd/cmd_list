@@ -1,5 +1,5 @@
 NAME=List Parser Plugins Lp
-FILE=-
+FILE==
 CMDS=<<EOF
 Lp~$
 EOF
@@ -24,7 +24,7 @@ EOF
 RUN
 
 NAME=List core plugins
-FILE=-
+FILE==
 CMDS=Lc
 EXPECT=<<EOF
 java: Suite of java commands, type `java` for more info
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=List core plugins in JSON
-FILE=-
+FILE==
 CMDS=Lcj
 EXPECT=<<EOF
 [{"Name":"java","Description":"Suite of java commands, type `java` for more info"}]

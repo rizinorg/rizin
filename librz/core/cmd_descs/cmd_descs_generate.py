@@ -20,7 +20,7 @@ CMDDESCS_C_TEMPLATE = """// SPDX-FileCopyrightText: 2020 RizinOrg <info@rizin.re
 {helps_declarations}
 
 {helps}
-RZ_IPI void newshell_cmddescs_init(RzCore *core) {{
+RZ_IPI void rzshell_cmddescs_init(RzCore *core) {{
 \tRzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 \trz_cmd_batch_start(core->rcmd);
 {init_code}
@@ -42,7 +42,7 @@ CMDDESCS_H_TEMPLATE = """// SPDX-License-Identifier: LGPL-3.0-only
 {handlers_declarations}
 
 // Main function that initialize the entire commands tree
-RZ_IPI void newshell_cmddescs_init(RzCore *core);
+RZ_IPI void rzshell_cmddescs_init(RzCore *core);
 """
 
 DESC_HELP_DETAIL_ENTRY_TEMPLATE = (
@@ -97,11 +97,17 @@ DEFINE_ARGV_TEMPLATE = """
 DEFINE_ARGV_MODES_TEMPLATE = """
 \tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_modes_new(core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, &{help_cname});
 \trz_warn_if_fail({cname}_cd);"""
+DEFINE_ARGV_STATE_TEMPLATE = """
+\tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_state_new(core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, &{help_cname});
+\trz_warn_if_fail({cname}_cd);"""
 DEFINE_GROUP_TEMPLATE = """
 \tRzCmdDesc *{cname}_cd = rz_cmd_desc_group_new(core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, {help_cname_ref}, &{group_help_cname});
 \trz_warn_if_fail({cname}_cd);"""
 DEFINE_GROUP_MODES_TEMPLATE = """
 \tRzCmdDesc *{cname}_cd = rz_cmd_desc_group_modes_new(core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, {help_cname_ref}, &{group_help_cname});
+\trz_warn_if_fail({cname}_cd);"""
+DEFINE_GROUP_STATE_TEMPLATE = """
+\tRzCmdDesc *{cname}_cd = rz_cmd_desc_group_state_new(core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, {help_cname_ref}, &{group_help_cname});
 \trz_warn_if_fail({cname}_cd);"""
 DEFINE_INNER_TEMPLATE = """
 \tRzCmdDesc *{cname}_cd = rz_cmd_desc_inner_new(core->rcmd, {parent_cname}_cd, {name}, &{help_cname});
@@ -114,6 +120,7 @@ CD_TYPE_OLDINPUT = "RZ_CMD_DESC_TYPE_OLDINPUT"
 CD_TYPE_GROUP = "RZ_CMD_DESC_TYPE_GROUP"
 CD_TYPE_ARGV = "RZ_CMD_DESC_TYPE_ARGV"
 CD_TYPE_ARGV_MODES = "RZ_CMD_DESC_TYPE_ARGV_MODES"
+CD_TYPE_ARGV_STATE = "RZ_CMD_DESC_TYPE_ARGV_STATE"
 CD_TYPE_FAKE = "RZ_CMD_DESC_TYPE_FAKE"
 CD_TYPE_INNER = "RZ_CMD_DESC_TYPE_INNER"
 
@@ -122,6 +129,7 @@ CD_VALID_TYPES = [
     CD_TYPE_GROUP,
     CD_TYPE_ARGV,
     CD_TYPE_ARGV_MODES,
+    CD_TYPE_ARGV_STATE,
     CD_TYPE_FAKE,
     CD_TYPE_INNER,
 ]
@@ -167,6 +175,8 @@ def compute_cname(name):
                 "!": "_escl_",
                 "#": "_hash_",
                 " ": "_space_",
+                "(": "_oparen_",
+                ")": "_cparen_",
             }
         )
     )
@@ -457,7 +467,8 @@ class CmdDesc:
             sys.exit(1)
 
         if (
-            self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_OLDINPUT]
+            self.type
+            in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE, CD_TYPE_OLDINPUT]
             and not self.cname
         ):
             print("Command %s does not have cname field" % (self.name,))
@@ -488,7 +499,7 @@ class CmdDesc:
             sys.exit(1)
 
         if (
-            self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES]
+            self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE]
             and self.args is None
             and self.args_alias is None
         ):
@@ -496,7 +507,7 @@ class CmdDesc:
             sys.exit(1)
 
     def get_handler_cname(self):
-        if self.type == CD_TYPE_ARGV or self.type == CD_TYPE_ARGV_MODES:
+        if self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_ARGV_STATE]:
             return "rz_" + (self.handler or self.cname) + "_handler"
 
         if self.type == CD_TYPE_OLDINPUT:
@@ -629,6 +640,15 @@ def createcd(cd):
             handler_cname=cd.get_handler_cname(),
             help_cname=cd.get_help_cname(),
         )
+    elif cd.type == CD_TYPE_ARGV_STATE:
+        formatted_string = DEFINE_ARGV_STATE_TEMPLATE.format(
+            cname=cd.cname,
+            parent_cname=cd.parent.cname,
+            name=strornull(cd.name),
+            modes=" | ".join(cd.modes),
+            handler_cname=cd.get_handler_cname(),
+            help_cname=cd.get_help_cname(),
+        )
     elif cd.type == CD_TYPE_FAKE:
         formatted_string = DEFINE_FAKE_TEMPLATE.format(
             cname=cd.cname,
@@ -663,6 +683,23 @@ def createcd(cd):
         and cd.exec_cd.type == CD_TYPE_ARGV_MODES
     ):
         formatted_string = DEFINE_GROUP_MODES_TEMPLATE.format(
+            cname=cd.cname,
+            parent_cname=cd.parent.cname,
+            name=strornull(cd.name),
+            modes=" | ".join(cd.exec_cd.modes),
+            handler_cname=cd.exec_cd.get_handler_cname(),
+            help_cname_ref="&" + cd.exec_cd.get_help_cname(),
+            group_help_cname=cd.get_help_cname(),
+        )
+        formatted_string += "\n".join(
+            [createcd(child) for child in cd.subcommands[1:] or []]
+        )
+    elif (
+        cd.type == CD_TYPE_GROUP
+        and cd.exec_cd
+        and cd.exec_cd.type == CD_TYPE_ARGV_STATE
+    ):
+        formatted_string = DEFINE_GROUP_STATE_TEMPLATE.format(
             cname=cd.cname,
             parent_cname=cd.parent.cname,
             name=strornull(cd.name),
@@ -713,6 +750,11 @@ def handler2decl(cd_type, handler_name):
     if cd_type == CD_TYPE_ARGV_MODES:
         return (
             "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzOutputMode mode);"
+            % (handler_name,)
+        )
+    if cd_type == CD_TYPE_ARGV_STATE:
+        return (
+            "RZ_IPI RzCmdStatus %s(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);"
             % (handler_name,)
         )
     if cd_type == CD_TYPE_OLDINPUT:

@@ -14,7 +14,7 @@
 #include "sha2.h"
 #endif
 
-#define CHKFLAG(x) if (!flags || flags & (x))
+#define if_has_flag(x) if (!flags || flags & (x))
 
 RZ_API RzHash *rz_hash_new(bool rst, ut64 flags) {
 	RzHash *ctx = RZ_NEW0(RzHash);
@@ -26,30 +26,46 @@ RZ_API RzHash *rz_hash_new(bool rst, ut64 flags) {
 }
 
 RZ_API void rz_hash_do_begin(RzHash *ctx, ut64 flags) {
-	CHKFLAG(RZ_HASH_MD5)
-	rz_hash_do_md5(ctx, NULL, -1);
-	CHKFLAG(RZ_HASH_SHA1)
-	SHA1_Init(&ctx->sha1);
-	CHKFLAG(RZ_HASH_SHA256)
-	SHA256_Init(&ctx->sha256);
-	CHKFLAG(RZ_HASH_SHA384)
-	SHA384_Init(&ctx->sha384);
-	CHKFLAG(RZ_HASH_SHA512)
-	SHA512_Init(&ctx->sha512);
+	if_has_flag(RZ_HASH_MD4) {
+		rz_md4_init(&ctx->md4);
+	}
+	if_has_flag(RZ_HASH_MD5) {
+		rz_hash_do_md5(ctx, NULL, -1);
+	}
+	if_has_flag(RZ_HASH_SHA1) {
+		rz_sha1_init(&ctx->sha1);
+	}
+	if_has_flag(RZ_HASH_SHA256) {
+		SHA256_Init(&ctx->sha256);
+	}
+	if_has_flag(RZ_HASH_SHA384) {
+		SHA384_Init(&ctx->sha384);
+	}
+	if_has_flag(RZ_HASH_SHA512) {
+		SHA512_Init(&ctx->sha512);
+	}
 	ctx->rst = false;
 }
 
 RZ_API void rz_hash_do_end(RzHash *ctx, ut64 flags) {
-	CHKFLAG(RZ_HASH_MD5)
-	rz_hash_do_md5(ctx, NULL, -2);
-	CHKFLAG(RZ_HASH_SHA1)
-	SHA1_Final(ctx->digest, &ctx->sha1);
-	CHKFLAG(RZ_HASH_SHA256)
-	SHA256_Final(ctx->digest, &ctx->sha256);
-	CHKFLAG(RZ_HASH_SHA384)
-	SHA384_Final(ctx->digest, &ctx->sha384);
-	CHKFLAG(RZ_HASH_SHA512)
-	SHA512_Final(ctx->digest, &ctx->sha512);
+	if_has_flag(RZ_HASH_MD4) {
+		rz_md4_fini(ctx->digest, &ctx->md4);
+	}
+	if_has_flag(RZ_HASH_MD5) {
+		rz_hash_do_md5(ctx, NULL, -2);
+	}
+	if_has_flag(RZ_HASH_SHA1) {
+		rz_sha1_fini(ctx->digest, &ctx->sha1);
+	}
+	if_has_flag(RZ_HASH_SHA256) {
+		SHA256_Final(ctx->digest, &ctx->sha256);
+	}
+	if_has_flag(RZ_HASH_SHA384) {
+		SHA384_Final(ctx->digest, &ctx->sha384);
+	}
+	if_has_flag(RZ_HASH_SHA512) {
+		SHA512_Final(ctx->digest, &ctx->sha512);
+	}
 	ctx->rst = true;
 }
 
@@ -62,11 +78,11 @@ RZ_API ut8 *rz_hash_do_sha1(RzHash *ctx, const ut8 *input, int len) {
 		return NULL;
 	}
 	if (ctx->rst) {
-		SHA1_Init(&ctx->sha1);
+		rz_sha1_init(&ctx->sha1);
 	}
-	SHA1_Update(&ctx->sha1, input, len);
+	rz_sha1_update(&ctx->sha1, input, len);
 	if (ctx->rst || len == 0) {
-		SHA1_Final(ctx->digest, &ctx->sha1);
+		rz_sha1_fini(ctx->digest, &ctx->sha1);
 	}
 	return ctx->digest;
 }
@@ -137,11 +153,17 @@ RZ_API ut8 *rz_hash_do_md5(RzHash *ctx, const ut8 *input, int len) {
 }
 
 RZ_API ut8 *rz_hash_do_md4(RzHash *ctx, const ut8 *input, int len) {
-	if (len >= 0) {
-		MD4(input, len, ctx->digest);
-		return ctx->digest;
+	if (len < 0) {
+		return NULL;
 	}
-	return NULL;
+	if (ctx->rst) {
+		rz_md4_init(&ctx->md4);
+	}
+	rz_md4_update(&ctx->md4, input, len);
+	if (ctx->rst || len == 0) {
+		rz_md4_fini(ctx->digest, &ctx->md4);
+	}
+	return ctx->digest;
 }
 
 RZ_API ut8 *rz_hash_do_hmac_sha256(RzHash *ctx, const ut8 *input, int len, const ut8 *key, int klen) {

@@ -152,7 +152,7 @@ typedef struct rz_io_map_t {
 	ut32 id;
 	RzInterval itv;
 	ut64 delta; // paddr = itv.addr + delta
-	char *name;
+	RZ_NULLABLE char *name;
 } RzIOMap;
 
 typedef struct rz_io_cache_t {
@@ -272,6 +272,7 @@ RZ_API void rz_io_map_set_name(RzIOMap *map, const char *name);
 RZ_API void rz_io_map_del_name(RzIOMap *map);
 RZ_API RzList *rz_io_map_get_for_fd(RzIO *io, int fd);
 RZ_API bool rz_io_map_resize(RzIO *io, ut32 id, ut64 newsize);
+RZ_API RZ_BORROW RzPVector *rz_io_maps(RzIO *io);
 
 // next free address to place a map.. maybe just unify
 RZ_API ut64 rz_io_map_next_available(RzIO *io, ut64 addr, ut64 size, ut64 load_align);

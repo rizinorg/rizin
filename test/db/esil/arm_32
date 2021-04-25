@@ -1,5 +1,5 @@
 NAME=ands (opcode) triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=ands (opcode) triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=ands triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -50,7 +50,7 @@ EOF
 RUN
 
 NAME=ands triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -67,7 +67,7 @@ EOF
 RUN
 
 NAME=and (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -84,7 +84,7 @@ EOF
 RUN
 
 NAME=and (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -101,7 +101,7 @@ EOF
 RUN
 
 NAME=orrs triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -118,7 +118,7 @@ EOF
 RUN
 
 NAME=orrs triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -135,7 +135,7 @@ EOF
 RUN
 
 NAME=orrs (opcode) triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -152,7 +152,7 @@ EOF
 RUN
 
 NAME=orrs (opcode) triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -169,7 +169,7 @@ EOF
 RUN
 
 NAME=orr (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -186,7 +186,7 @@ EOF
 RUN
 
 NAME=orr (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -203,7 +203,7 @@ EOF
 RUN
 
 NAME=adds triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -220,7 +220,7 @@ EOF
 RUN
 
 NAME=adds triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -238,7 +238,7 @@ EOF
 RUN
 
 NAME=add (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -255,7 +255,7 @@ EOF
 RUN
 
 NAME=add (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -273,7 +273,7 @@ EOF
 RUN
 
 NAME=eors (opcode) triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -290,7 +290,7 @@ EOF
 RUN
 
 NAME=eors (opcode) triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -308,7 +308,7 @@ EOF
 RUN
 
 NAME=eors triggers zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -325,7 +325,7 @@ EOF
 RUN
 
 NAME=eors triggers zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -343,7 +343,7 @@ EOF
 RUN
 
 NAME=eor (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -360,7 +360,7 @@ EOF
 RUN
 
 NAME=eor (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -378,7 +378,7 @@ EOF
 RUN
 
 NAME=subs triggers zf and cf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -395,7 +395,7 @@ EOF
 RUN
 
 NAME=subs triggers cf and zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -412,7 +412,7 @@ EOF
 RUN
 
 NAME=sub (no s flag) does not trigger zf
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -429,7 +429,7 @@ EOF
 RUN
 
 NAME=sub (no s flag) does not trigger zf off
-FILE=-
+FILE==
 CMDS=<<EOF
 e esil.debug=true
 e asm.arch=arm
@@ -526,7 +526,7 @@ EOF
 RUN
 
 NAME=tst nz
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=arm
@@ -2447,7 +2447,7 @@ EOF
 RUN
 
 NAME=stmib no writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2466,7 +2466,7 @@ EOF
 RUN
 
 NAME=stmda writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2485,7 +2485,7 @@ EOF
 RUN
 
 NAME=stmdb no writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2571,7 +2571,7 @@ EOF
 RUN
 
 NAME=ldmda no writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2592,7 +2592,7 @@ EOF
 RUN
 
 NAME=ldmdb writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2613,7 +2613,7 @@ EOF
 RUN
 
 NAME=ldm no writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
@@ -2634,7 +2634,7 @@ EOF
 RUN
 
 NAME=ldmib writeback
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32

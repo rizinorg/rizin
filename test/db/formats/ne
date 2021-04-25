@@ -79,3 +79,20 @@ vaddr      paddr      type   name
 0x00000f5e 0x00000f5e SET_32 USER.SETTIMER
 EOF
 RUN
+
+NAME=NE Code
+FILE=bins/ne/anim8.exe
+CMDS=pi 10 @ sym.WNDPROC
+EXPECT=<<EOF
+mov ax, ds
+nop
+inc bp
+push bp
+mov bp, sp
+push ds
+mov ds, ax
+mov ax, 0x5c
+call 0x4d35
+push si
+EOF
+RUN

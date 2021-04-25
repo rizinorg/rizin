@@ -41,7 +41,7 @@ static char *java_class_constant_pool_stringify_at(RzBinJavaClass *bin, ut32 ind
 	return java_constant_pool_stringify(cpool);
 }
 
-static ut32 sanitize_size(st64 buffer_size, ut32 count, ut32 min_struct_size) {
+static ut32 sanitize_size(st64 buffer_size, ut64 count, ut32 min_struct_size) {
 	ut64 memory_size = count * min_struct_size;
 	return memory_size <= buffer_size ? count : 0;
 }
@@ -713,10 +713,15 @@ RZ_API void rz_bin_java_class_as_source_code(RzBinJavaClass *bin, RzStrBuf *sb) 
 					rz_str_replace_char(tmp, '/', '.');
 
 					char *ptr = strchr(dem, '(');
-					*(ptr - 1) = 0;
-					rz_strbuf_append(sb, dem);
-					rz_strbuf_appendf(sb, "%s", tmp);
-					rz_strbuf_append(sb, ptr);
+					if (ptr) {
+						*(ptr - 1) = 0;
+						rz_strbuf_append(sb, dem);
+						rz_strbuf_append(sb, tmp);
+						rz_strbuf_append(sb, ptr);
+					} else {
+						rz_strbuf_append(sb, dem);
+						rz_strbuf_append(sb, tmp);
+					}
 					free(tmp);
 				}
 			}
@@ -904,6 +909,24 @@ RZ_API RzList *rz_bin_java_class_strings(RzBinJavaClass *bin) {
 			bstr->length = cpool->size;
 			bstr->size = cpool->size;
 			bstr->string = string;
+			bstr->type = RZ_STRING_TYPE_UTF8;
+			rz_list_append(list, bstr);
+		}
+	}
+
+	for (ut32 i = 0; i < bin->attributes_count; ++i) {
+		Attribute *attr = bin->attributes[i];
+		if (attr && attr->type == ATTRIBUTE_TYPE_SOURCEDEBUGEXTENSION) {
+			RzBinString *bstr = RZ_NEW0(RzBinString);
+			if (!bstr) {
+				rz_warn_if_reached();
+				continue;
+			}
+			bstr->paddr = attr->offset;
+			bstr->ordinal = i;
+			bstr->length = attr->attribute_length;
+			bstr->size = attr->attribute_length;
+			bstr->string = strdup(attr->info);
 			bstr->type = RZ_STRING_TYPE_UTF8;
 			rz_list_append(list, bstr);
 		}
@@ -1390,6 +1413,7 @@ RZ_API RzList *rz_bin_java_class_const_pool_as_imports(RzBinJavaClass *bin) {
 			const ConstPool *cpool = java_class_constant_pool_at(bin, bin->interfaces[i]->index);
 			if (!cpool || java_constant_pool_resolve(cpool, &class_index, NULL) != 1) {
 				RZ_LOG_ERROR("java bin: can't resolve interface with constant pool index %u\n", i);
+				rz_bin_import_free(import);
 				continue;
 			}
 
@@ -1496,7 +1520,6 @@ static RzBinSection *new_section(const char *name, ut64 start, ut64 end, ut32 pe
 	section->size = end - start;
 	section->vsize = section->size;
 	section->perm = perm;
-	section->add = true;
 	return section;
 }
 

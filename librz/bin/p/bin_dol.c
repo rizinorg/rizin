@@ -105,7 +105,6 @@ static RzList *sections(RzBinFile *bf) {
 		s->size = dol->text_size[i];
 		s->vsize = s->size;
 		s->perm = rz_str_rwx("r-x");
-		s->add = true;
 		rz_list_append(ret, s);
 	}
 	/* data sections */
@@ -120,7 +119,6 @@ static RzList *sections(RzBinFile *bf) {
 		s->size = dol->data_size[i];
 		s->vsize = s->size;
 		s->perm = rz_str_rwx("r--");
-		s->add = true;
 		rz_list_append(ret, s);
 	}
 	/* bss section */
@@ -131,7 +129,6 @@ static RzList *sections(RzBinFile *bf) {
 	s->size = dol->bss_size;
 	s->vsize = s->size;
 	s->perm = rz_str_rwx("rw-");
-	s->add = true;
 	rz_list_append(ret, s);
 
 	return ret;
@@ -178,6 +175,7 @@ RzBinPlugin rz_bin_plugin_dol = {
 	.baddr = &baddr,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 };

@@ -1,5 +1,5 @@
 NAME=ahi s + endian
-FILE=-
+FILE==
 CMDS=<<EOF
 wx b8410d4300
 e asm.arch=x86
@@ -16,7 +16,7 @@ EOF
 RUN
 
 NAME=ahi s + endian 2
-FILE=-
+FILE==
 CMDS=<<EOF
 wx b841424300
 e asm.arch=x86
@@ -33,7 +33,7 @@ EOF
 RUN
 
 NAME=1: ahi none
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -46,7 +46,7 @@ EOF
 RUN
 
 NAME=ahi with colors
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.bytes=true
@@ -64,7 +64,7 @@ EOF
 RUN
 
 NAME=ahi 0x41 -> 'A'
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=ahi 0xe -> 1
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -98,7 +98,7 @@ EOF
 RUN
 
 NAME=ahi 4 -> 1
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -115,7 +115,7 @@ EOF
 RUN
 
 NAME=2: ahi none
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.bytes=true
@@ -129,7 +129,7 @@ EOF
 RUN
 
 NAME=3: ahi none
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.bytes=true
@@ -144,7 +144,7 @@ EOF
 RUN
 
 NAME=1: ahi 10
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.bytes=true
@@ -159,7 +159,7 @@ EOF
 RUN
 
 NAME=ahi 8
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.bytes=true
@@ -174,7 +174,7 @@ EOF
 RUN
 
 NAME=1: ahi 2
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.bytes=true
@@ -189,7 +189,7 @@ EOF
 RUN
 
 NAME=ahi 2 - pi
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -271,7 +271,7 @@ EOF
 RUN
 
 NAME=64bit ahi 10
-FILE=-
+FILE==
 ARGS=-m 0x100001000
 CMDS=<<EOF
 e io.va
@@ -295,7 +295,7 @@ EOF
 RUN
 
 NAME=2: ahi s
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
@@ -311,7 +311,7 @@ EOF
 RUN
 
 NAME=ahi s 2
-FILE=-
+FILE==
 CMDS=<<EOF
 wx b868584d56
 e asm.arch=x86
@@ -325,7 +325,7 @@ EOF
 RUN
 
 NAME=ahi s - pd with colors
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
@@ -345,7 +345,7 @@ EOF
 RUN
 
 NAME=ahi nword
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -367,7 +367,7 @@ RUN
 
 NAME=ahi 10 and 10u imm (x86_32)
 ARGS=-a x86 -b 32
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=false
 "wa cmp eax, -1"
@@ -386,7 +386,7 @@ RUN
 
 NAME=ahi 10 and 10u imm (x86_64)
 ARGS=-a x86 -b 64
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=false
 "wa cmp eax, -1"
