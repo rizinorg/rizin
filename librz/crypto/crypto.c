@@ -77,27 +77,23 @@ RZ_API int rz_crypto_del(RzCrypto *cry, RzCryptoPlugin *h) {
 RZ_API RzCrypto *rz_crypto_new(void) {
 	RzCrypto *cry = RZ_NEW0(RzCrypto);
 	if (!cry) {
-		rz_warn_if_reached();
 		goto rz_crypto_new_bad;
 	}
 
 	cry->output_size = RZ_CRYPTO_OUTPUT_SIZE;
 	cry->output = malloc(RZ_CRYPTO_OUTPUT_SIZE);
 	if (!cry->output) {
-		rz_warn_if_reached();
 		goto rz_crypto_new_bad;
 	}
 
 	cry->plugins = rz_list_newf((RzListFree)free);
 	if (!cry->plugins) {
-		rz_warn_if_reached();
 		goto rz_crypto_new_bad;
 	}
 
 	for (ut32 i = 0; crypto_static_plugins[i]; i++) {
 		RzCryptoPlugin *p = RZ_NEW0(RzCryptoPlugin);
 		if (!p) {
-			rz_warn_if_reached();
 			goto rz_crypto_new_bad;
 		}
 		memcpy(p, crypto_static_plugins[i], sizeof(RzCryptoPlugin));
