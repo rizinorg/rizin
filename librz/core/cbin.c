@@ -2850,7 +2850,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	bool plugin_flags_support = plugin && plugin->section_flag_to_rzlist;
 	bool is_elf = info->rclass && !strcmp(info->rclass, "elf");
 	bool is_mach0 = info->rclass && !strcmp(info->rclass, "mach0");
-
+	bool print_align = (is_elf && print_segment) || (is_mach0 && !print_segment);
 	if (!dup_chk_ht) {
 		return false;
 	}
@@ -2918,10 +2918,7 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		if (plugin_flags_support && !print_segments) {
 			rz_table_set_columnsf(table, "s", "flags");
 		}
-		if (is_elf && print_segments) {
-			rz_table_set_columnsf(table, "x", "align");
-		}
-		if (is_mach0 && !print_segments) {
+		if (print_align) {
 			rz_table_set_columnsf(table, "x", "align");
 		}
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
