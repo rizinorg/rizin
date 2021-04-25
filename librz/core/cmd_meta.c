@@ -520,7 +520,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 	case 'a':
 	case '8':
 		if (type != 'z' && !input[1] && !core->tmpseek) {
-			rz_meta_print_list_all(core->analysis, type, 0);
+			rz_meta_print_list_all(core->analysis, type, RZ_OUTPUT_MODE_STANDARD);
 			break;
 		}
 		if (type == 'z') {

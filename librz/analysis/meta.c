@@ -238,7 +238,7 @@ RZ_API const char *rz_meta_type_to_string(int type) {
 }
 
 RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, RzOutputMode mode, PJ *pj, bool show_full) {
-	rz_return_if_fail(!(mode == RZ_OUTPUT_MODE_JSON && !pj)); // rad == RZ_OUTPUT_MODE_JSON => pj != NULL
+	rz_return_if_fail(!(mode == RZ_OUTPUT_MODE_JSON && !pj));
 	char *pstr, *base64_str;
 	RzCore *core = a->coreb.core;
 	bool esc_bslash = core ? core->print->esc_bslash : false;
@@ -345,7 +345,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				if (!s) {
 					s = strdup(pstr);
 				}
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
+				if (mode != RZ_OUTPUT_MODE_STANDARD) {
 					if (!strcmp(type, "CCu")) {
 						a->cb_printf("%s base64:%s @ 0x%08" PFMT64x "\n",
 							type, s, start);
@@ -367,7 +367,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				free(s);
 			} break;
 			case RZ_META_TYPE_STRING:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
+				if (mode != RZ_OUTPUT_MODE_STANDARD) {
 					char cmd[] = "Cs#";
 					switch (d->subtype) {
 					case 'a':
@@ -399,7 +399,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				break;
 			case RZ_META_TYPE_HIDE:
 			case RZ_META_TYPE_DATA:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
+				if (mode != RZ_OUTPUT_MODE_STANDARD) {
 					a->cb_printf("%s %" PFMT64u " @ 0x%08" PFMT64x "\n",
 						rz_meta_type_to_string(d->type),
 						size, start);
@@ -416,7 +416,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				break;
 			case RZ_META_TYPE_MAGIC:
 			case RZ_META_TYPE_FORMAT:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
+				if (mode != RZ_OUTPUT_MODE_STANDARD) {
 					a->cb_printf("%s %" PFMT64u " %s @ 0x%08" PFMT64x "\n",
 						rz_meta_type_to_string(d->type),
 						size, pstr, start);
@@ -431,7 +431,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				}
 				break;
 			case RZ_META_TYPE_VARTYPE:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
+				if (mode != RZ_OUTPUT_MODE_STANDARD) {
 					a->cb_printf("%s %s @ 0x%08" PFMT64x "\n",
 						rz_meta_type_to_string(d->type), pstr, start);
 				} else {
@@ -447,7 +447,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				// TODO: d->size
 			} break;
 			default:
-				if (mode == RZ_OUTPUT_MODE_RIZIN) {
+				if (mode != RZ_OUTPUT_MODE_STANDARD) {
 					a->cb_printf("%s %" PFMT64u " 0x%08" PFMT64x " # %s\n",
 						rz_meta_type_to_string(d->type),
 						size, start, pstr);
