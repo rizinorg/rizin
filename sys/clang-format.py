@@ -21,7 +21,6 @@ dirlist = [
     "shlr/ptrace-wrap",
     "shlr/qnx",
     "shlr/rar",
-    "shlr/tcc",
     "shlr/w32dbg_wrap",
     "shlr/winkd",
     "test/unit",

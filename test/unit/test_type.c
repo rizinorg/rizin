@@ -90,12 +90,12 @@ static bool test_types_get_base_type_struct(void) {
 
 	member = rz_vector_index_ptr(&base->struct_data.members, 0);
 	mu_assert_eq(member->offset, 0, "Incorrect offset for struct member");
-	mu_assert_streq(member->type, "int32_t", "Incorrect type for struct member");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "bar", "Incorrect name for struct member");
 
 	member = rz_vector_index_ptr(&base->struct_data.members, 1);
 	mu_assert_eq(member->offset, 4, "Incorrect offset for struct member");
-	mu_assert_streq(member->type, "int32_t", "Incorrect type for struct member");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
 
 	rz_type_base_type_free(base);
@@ -122,11 +122,11 @@ static bool test_types_get_base_type_union(void) {
 	RzTypeUnionMember *member;
 
 	member = rz_vector_index_ptr(&base->union_data.members, 0);
-	mu_assert_streq(member->type, "int32_t", "Incorrect type for union member");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "bar", "Incorrect name for union member");
 
 	member = rz_vector_index_ptr(&base->union_data.members, 1);
-	mu_assert_streq(member->type, "int32_t", "Incorrect type for union member");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for union member");
 
 	rz_type_base_type_free(base);
@@ -178,7 +178,9 @@ static bool test_types_get_base_type_typedef(void) {
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_TYPEDEF, base->kind, "Wrong base type");
 	mu_assert_streq(base->name, "string", "type name");
-	mu_assert_streq(base->type, "char *", "typedefd type");
+	mu_assert_eq(base->type->kind, RZ_TYPE_KIND_POINTER, "typedefd type");
+	mu_assert_false(base->type->pointer.is_const, "typedefd type");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, base->type->pointer.type, "char"), "typedefd type");
 
 	rz_type_base_type_free(base);
 	rz_type_db_free(typedb);
@@ -200,7 +202,7 @@ static bool test_types_get_base_type_atomic(void) {
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_ATOMIC, base->kind, "Wrong base type");
 	mu_assert_streq(base->name, "char", "type name");
-	mu_assert_streq(base->type, "c", "atomic type type");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, base->type, "c"), "atomic type type");
 	mu_assert_eq(base->size, 8, "atomic type size");
 
 	rz_type_base_type_free(base);
