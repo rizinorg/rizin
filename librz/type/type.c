@@ -11,6 +11,10 @@
 
 #include "type_internal.h"
 
+static void types_ht_free(HtUPKv *kv) {
+	rz_type_base_type_free(kv->value);
+}
+
 RZ_API RzTypeDB *rz_type_db_new() {
 	RzTypeDB *typedb = RZ_NEW0(RzTypeDB);
 	if (!typedb) {
@@ -21,7 +25,10 @@ RZ_API RzTypeDB *rz_type_db_new() {
 		free(typedb);
 		return NULL;
 	}
-	typedb->sdb_types = sdb_new0();
+	typedb->types = ht_pp_new(NULL, types_ht_free, NULL);
+	if (!typedb->types) {
+		return NULL;
+	}
 	typedb->formats = sdb_new0();
 	typedb->parser = rz_ast_parser_new();
 	rz_io_bind_init(typedb->iob);
@@ -30,28 +37,15 @@ RZ_API RzTypeDB *rz_type_db_new() {
 
 RZ_API void rz_type_db_free(RzTypeDB *typedb) {
 	rz_ast_parser_free(typedb->parser);
-	sdb_free(typedb->sdb_types);
+	ht_pp_free(typedb->types);
 	sdb_free(typedb->formats);
 	free(typedb->target);
 	free(typedb);
 }
 
-// copypasta from core/cbin.c
-static void sdb_concat_by_path(Sdb *s, const char *path) {
-	Sdb *db = sdb_new(0, path, 0);
-	sdb_merge(s, db);
-	sdb_close(db);
-	sdb_free(db);
-}
-
-RZ_API void rz_type_db_load_sdb(RzTypeDB *typedb, const char *path) {
-	if (rz_file_exists(path)) {
-		sdb_concat_by_path(typedb->sdb_types, path);
-	}
-}
-
 RZ_API void rz_type_db_purge(RzTypeDB *typedb) {
-	sdb_reset(typedb->sdb_types);
+	ht_pp_free(typedb->types);
+	typedb->types = ht_pp_new(NULL, types_ht_free, NULL);
 }
 
 RZ_API void rz_type_db_set_bits(RzTypeDB *typedb, int bits) {
@@ -78,34 +72,16 @@ RZ_API ut8 rz_type_db_pointer_size(RzTypeDB *typedb) {
 
 RZ_API char *rz_type_db_kuery(RzTypeDB *typedb, const char *query) {
 	char *output = NULL;
-	if (query) {
-		output = sdb_querys(typedb->sdb_types, NULL, -1, query);
-	} else {
-		output = sdb_querys(typedb->sdb_types, NULL, -1, "*");
-	}
 	return output;
-}
-
-static char *is_ctype(char *type) {
-	char *name = NULL;
-	if ((name = strstr(type, "=type")) ||
-		(name = strstr(type, "=struct")) ||
-		(name = strstr(type, "=union")) ||
-		(name = strstr(type, "=enum")) ||
-		(name = strstr(type, "=typedef")) ||
-		(name = strstr(type, "=func"))) {
-		return name;
-	}
-	return NULL;
 }
 
 RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
-	Sdb *TDB = typedb->sdb_types;
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype) {
 		// TODO: Extract this to the separate type RzCallable:
 		// see https://github.com/rizinorg/rizin/issues/373
+		Sdb *TDB = typedb->sdb_types;
 		const char *kind = sdb_const_get(TDB, name, 0);
 		if (!strcmp(kind, "func")) {
 			int i, n = sdb_num_get(TDB, sdb_fmt("func.%s.args", name), 0);
@@ -124,33 +100,13 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 		return false;
 	}
 	rz_type_db_delete_base_type(typedb, btype);
-	rz_type_base_type_free(btype);
 	return true;
 }
 
 RZ_API void rz_type_db_remove_parsed_type(RzTypeDB *typedb, const char *name) {
 	rz_return_if_fail(typedb && name);
-	Sdb *TDB = typedb->sdb_types;
-	SdbKv *kv;
-	SdbListIter *iter;
-	const char *type = sdb_const_get(TDB, name, 0);
-	if (!type) {
-		return;
-	}
-	int tmp_len = strlen(name) + strlen(type);
-	char *tmp = malloc(tmp_len + 1);
 	rz_type_db_del(typedb, name);
-	if (tmp) {
-		snprintf(tmp, tmp_len + 1, "%s.%s.", type, name);
-		SdbList *l = sdb_foreach_list(TDB, true);
-		ls_foreach (l, iter, kv) {
-			if (!strncmp(sdbkv_key(kv), tmp, tmp_len)) {
-				rz_type_db_del(typedb, sdbkv_key(kv));
-			}
-		}
-		ls_free(l);
-		free(tmp);
-	}
+	// TODO: Delete all references to this BaseType too?
 }
 
 RZ_API void rz_type_db_save_parsed_type(RzTypeDB *typedb, const char *parsed) {
@@ -180,51 +136,33 @@ RZ_API void rz_type_db_save_parsed_type(RzTypeDB *typedb, const char *parsed) {
 }
 
 RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char *arch, int bits, const char *os) {
-	rz_return_if_fail(typedb);
-	Sdb *TDB = typedb->sdb_types;
+	rz_return_if_fail(typedb && typedb->types && typedb->formats);
 
-	// make sure they are empty this is initializing
-	sdb_reset(TDB);
+	// TODO: make sure they are empty this is initializing
 
 	const char *dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types.sdb"), dir_prefix);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(TDB, dbpath);
-	}
+	rz_type_db_load_sdb(typedb, dbpath);
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, arch);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(TDB, dbpath);
-	}
+	rz_type_db_load_sdb(typedb, dbpath);
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, os);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(TDB, dbpath);
-	}
+	rz_type_db_load_sdb(typedb, dbpath);
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%d.sdb"),
 		dir_prefix, bits);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(TDB, dbpath);
-	}
+	rz_type_db_load_sdb(typedb, dbpath);
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%d.sdb"),
 		dir_prefix, os, bits);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(TDB, dbpath);
-	}
+	rz_type_db_load_sdb(typedb, dbpath);
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%d.sdb"),
 		dir_prefix, arch, bits);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(TDB, dbpath);
-	}
+	rz_type_db_load_sdb(typedb, dbpath);
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%s.sdb"),
 		dir_prefix, arch, os);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(TDB, dbpath);
-	}
+	rz_type_db_load_sdb(typedb, dbpath);
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
 		dir_prefix, arch, os, bits);
-	if (rz_file_exists(dbpath)) {
-		sdb_concat_by_path(TDB, dbpath);
-	}
+	rz_type_db_load_sdb(typedb, dbpath);
 }
 
 // Listing all available types by category
