@@ -28,7 +28,8 @@ typedef struct rz_ast_parser_t RzASTParser;
 
 typedef struct rz_type_db_t {
 	void *user;
-	Sdb *sdb_types;
+	HtPP *types; // A hashtable of RzBaseType
+	Sdb *sdb_types; // for function signatures
 	Sdb *formats; // for `pf` formats
 	RzTypeTarget *target;
 	RzASTParser *parser;
@@ -174,7 +175,7 @@ RZ_API void rz_type_base_enum_case_free(void *e, void *user);
 RZ_API void rz_type_base_struct_member_free(void *e, void *user);
 RZ_API void rz_type_base_union_member_free(void *e, void *user);
 
-RZ_API RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, const char *name);
+RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type);
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
 
