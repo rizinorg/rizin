@@ -19,8 +19,9 @@ bool test_v1_noreturn() {
 	mu_assert_true(rz_analysis_noreturn_at_addr(core->analysis, 0x1337), "noreturn");
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x12345), "nono");
 
-	const char *del = sdb_const_get(core->analysis->typedb->sdb_types, "addr.4242.noreturn", 0);
-	mu_assert_true(!del, "deleted from types db");
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, 0x4242);
+	mu_assert_notnull(fcn, "has the function");
+	mu_assert_true(!fcn->is_noreturn, "deleted from analysis/types db");
 
 	rz_serialize_result_info_free(res);
 
@@ -41,8 +42,9 @@ bool test_v1_noreturn_empty() {
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x1337), "nono");
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x12345), "nono");
 
-	const char *del = sdb_const_get(core->analysis->typedb->sdb_types, "addr.4242.noreturn", 0);
-	mu_assert_true(!del, "nono in types db");
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, 0x4242);
+	mu_assert_notnull(fcn, "has the function");
+	mu_assert_true(!fcn->is_noreturn, "nono in analysis function db");
 
 	rz_serialize_result_info_free(res);
 
