@@ -773,7 +773,7 @@ RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr);
 
 // plugins/bind functions
 RZ_API void rz_bin_bind(RzBin *b, RzBinBind *bnd);
-RZ_API bool rz_bin_add(RzBin *bin, RzBinPlugin *foo);
+RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo);
 RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo);
 RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo);
 RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format);

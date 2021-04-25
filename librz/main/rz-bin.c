@@ -469,8 +469,7 @@ static int rabin_show_srcline(RzBin *bin, ut64 at) {
 static int __lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_plugin_t *hand = (struct rz_bin_plugin_t *)data;
 	RzBin *bin = user;
-	//printf(" * Added (dis)assembly plugin\n");
-	rz_bin_add(bin, hand);
+	rz_bin_plugin_add(bin, hand);
 	return true;
 }
 
