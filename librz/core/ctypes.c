@@ -960,15 +960,10 @@ RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr) {
 
 // Everything
 
-static bool sdb_if_type_cb(void *p, const char *k, const char *v) {
-	return !strncmp(v, "type", strlen("type") + 1);
-}
-
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
-	SdbListIter *it;
-	SdbKv *kv;
-	Sdb *TDB = core->analysis->typedb->sdb_types;
-	SdbList *l = sdb_foreach_list_filter(TDB, sdb_if_type_cb, true);
+	RzListIter *it;
+	RzBaseType *btype;
+	RzList *types = rz_type_db_get_base_types(core->analysis->typedb);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		PJ *pj = pj_new();
@@ -976,22 +971,12 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 			return;
 		}
 		pj_a(pj);
-		// TODO: Make it more efficient
-		ls_foreach (l, it, kv) {
+		rz_list_foreach (types, it, btype) {
 			pj_o(pj);
-			const char *k = sdbkv_key(kv);
-			char *sizecmd = rz_str_newf("type.%s.size", k);
-			char *size_s = sdb_querys(TDB, NULL, -1, sizecmd);
-			char *formatcmd = rz_str_newf("type.%s", k);
-			char *format_s = sdb_querys(TDB, NULL, -1, formatcmd);
-			rz_str_trim(format_s);
-			pj_ks(pj, "type", k);
-			pj_ki(pj, "size", size_s ? atoi(size_s) : -1);
-			pj_ks(pj, "format", format_s);
-			free(size_s);
-			free(format_s);
-			free(sizecmd);
-			free(formatcmd);
+			//rz_str_trim(format_s);
+			pj_ks(pj, "type", btype->name);
+			pj_ki(pj, "size", btype->size);
+			//pj_ks(pj, "format", format_s);
 			pj_end(pj);
 		}
 		pj_end(pj);
@@ -1000,23 +985,15 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
-		ls_foreach (l, it, kv) {
-			rz_cons_println(sdbkv_key(kv));
-		}
-		break;
-	case RZ_OUTPUT_MODE_RIZIN:
-		// This is a special case, we don't filter anything
-		ls_free(l);
-		l = sdb_foreach_list(TDB, true);
-		ls_foreach (l, it, kv) {
-			rz_cons_printf("tk %s=%s\n", sdbkv_key(kv), sdbkv_value(kv));
+		rz_list_foreach (types, it, btype) {
+			rz_cons_println(btype->name);
 		}
 		break;
 	default:
 		rz_warn_if_reached();
 		break;
 	}
-	ls_free(l);
+	rz_list_free(types);
 }
 
 RZ_IPI void rz_types_define(RzCore *core, const char *type) {
