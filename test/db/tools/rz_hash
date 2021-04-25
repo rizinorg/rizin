@@ -119,36 +119,6 @@ RUN
 NAME=rz-hash -a md5 -x "61646d696e" -s "admin"
 FILE==
 CMDS=!rz-hash -a md5 -x "61646d696e" -s "admin"
-EXPECT=<<EOF
-Usage: rz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...
- -v          Shows version
- -h          Shows this help page
- -           Input read from stdin instead from a file
- -a algo     Hash algorithm to use and you can specify multiple ones by
-             appending a comma (example: sha1,md4,md5,sha256)
- -B          Outputs the calculated value for each block
- -b size     Sets the block size
- -c value    Compare calculated value with a given one (hexadecimal)
- -e endian   Sets the endianness (default: 'big' accepted: 'big' or 'little')
- -D algo     Decrypt the given input; use -S to set key and -I to set IV (if needed)
- -E algo     Encrypt the given input; use -S to set key and -I to set IV (if needed)
- -f from     Starts the calculation at given offset
- -t to       Stops the calculation at given offset
- -I iv       Sets the initialization vector (IV)
- -i times    Repeat the calculation N times
- -j          Outputs the result as a JSON structure
- -k          Outputs the calculated value using openssh's randomkey algorithm
- -L          List all algorithms
- -q          Sets quiet mode (use -qq to get only the calculated value)
- -S seed/key Sets the seed for -a and the key for -E/-D, use '^' to append it before
-             the input, use '@' prefix to load it from a file and '-' from read it
-             from stdin (you can combine them)
- -s string   Input read from a zero-terminated string instead from a file
- -x hex      Input read from a hexadecimal value instead from a file
-
-             All the inputs (besides -s/-x/-c) can be hexadecimal or strings
-             if 's:' prefix is specified
-EOF
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, invalid combination of arguments for '-s'
 EOF
@@ -165,36 +135,6 @@ RUN
 NAME=rz-hash -a md4 -x "61646d696e" -s "admin"
 FILE==
 CMDS=!rz-hash -a md4 -x "61646d696e" -s "admin"
-EXPECT=<<EOF
-Usage: rz-hash [-vhBkjLq] [-b S] [-a A] [-c H] [-E A] [-D A] [-s S] [-x S] [-f O] [-t O] [files|-] ...
- -v          Shows version
- -h          Shows this help page
- -           Input read from stdin instead from a file
- -a algo     Hash algorithm to use and you can specify multiple ones by
-             appending a comma (example: sha1,md4,md5,sha256)
- -B          Outputs the calculated value for each block
- -b size     Sets the block size
- -c value    Compare calculated value with a given one (hexadecimal)
- -e endian   Sets the endianness (default: 'big' accepted: 'big' or 'little')
- -D algo     Decrypt the given input; use -S to set key and -I to set IV (if needed)
- -E algo     Encrypt the given input; use -S to set key and -I to set IV (if needed)
- -f from     Starts the calculation at given offset
- -t to       Stops the calculation at given offset
- -I iv       Sets the initialization vector (IV)
- -i times    Repeat the calculation N times
- -j          Outputs the result as a JSON structure
- -k          Outputs the calculated value using openssh's randomkey algorithm
- -L          List all algorithms
- -q          Sets quiet mode (use -qq to get only the calculated value)
- -S seed/key Sets the seed for -a and the key for -E/-D, use '^' to append it before
-             the input, use '@' prefix to load it from a file and '-' from read it
-             from stdin (you can combine them)
- -s string   Input read from a zero-terminated string instead from a file
- -x hex      Input read from a hexadecimal value instead from a file
-
-             All the inputs (besides -s/-x/-c) can be hexadecimal or strings
-             if 's:' prefix is specified
-EOF
 EXPECT_ERR=<<EOF
 ERROR: rz-hash: error, invalid combination of arguments for '-s'
 EOF
