@@ -3,6 +3,7 @@
 
 #include <rz_analysis.h>
 #include <rz_bin.h>
+#include <rz_type.h>
 #include "minunit.h"
 
 #define check_kv(k, v) \
@@ -10,6 +11,48 @@
 		value = sdb_get(sdb, k, NULL); \
 		mu_assert_nullable_streq(value, v, "Wrong key - value pair"); \
 	} while (0)
+
+static bool has_enum_val(RzBaseType *btype, const char *name, int val) {
+	int result = -1;
+	RzTypeEnumCase *cas;
+	rz_vector_foreach(&btype->enum_data.cases, cas) {
+		if (!strcmp(cas->name, name)) {
+			result = cas->val;
+			break;
+		}
+	}
+	return result != -1 && result == val;
+}
+
+static bool has_enum_case(RzBaseType *btype, const char *name) {
+	RzTypeEnumCase *cas;
+	rz_vector_foreach(&btype->enum_data.cases, cas) {
+		if (!strcmp(cas->name, name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool has_struct_member(RzBaseType *btype, const char *name) {
+	RzTypeStructMember *memb;
+	rz_vector_foreach(&btype->struct_data.members, memb) {
+		if (!strcmp(memb->name, name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool has_union_member(RzBaseType *btype, const char *name) {
+	RzTypeUnionMember *memb;
+	rz_vector_foreach(&btype->union_data.members, memb) {
+		if (!strcmp(memb->name, name)) {
+			return true;
+		}
+	}
+	return false;
+}
 
 static bool test_parse_dwarf_types(void) {
 	RzBin *bin = rz_bin_new();
@@ -38,36 +81,76 @@ static bool test_parse_dwarf_types(void) {
 	};
 	rz_analysis_dwarf_process_info(analysis, &ctx);
 
-	char *value = NULL;
-	Sdb *sdb = analysis->typedb->sdb_types;
-	check_kv("_cairo_status", "enum");
-	check_kv("enum._cairo_status.0x0", "CAIRO_STATUS_SUCCESS");
-	check_kv("enum._cairo_status.CAIRO_STATUS_SUCCESS", "0x0");
-	check_kv("enum._cairo_status.0x9", "CAIRO_STATUS_INVALID_PATH_DATA");
-	check_kv("enum._cairo_status.CAIRO_STATUS_INVALID_PATH_DATA", "0x9");
-	check_kv("enum._cairo_status.0x1f", "CAIRO_STATUS_INVALID_WEIGHT");
-	check_kv("enum._cairo_status.CAIRO_STATUS_INVALID_WEIGHT", "0x1f");
-	check_kv("enum._cairo_status.0x20", NULL);
-	check_kv("enum._cairo_status", "CAIRO_STATUS_SUCCESS,CAIRO_STATUS_NO_MEMORY"
-				       ",CAIRO_STATUS_INVALID_RESTORE,CAIRO_STATUS_INVALID_POP_GROUP,CAIRO_STATUS_NO_CURRENT_POINT"
-				       ",CAIRO_STATUS_INVALID_MATRIX,CAIRO_STATUS_INVALID_STATUS,CAIRO_STATUS_NULL_POINTER,"
-				       "CAIRO_STATUS_INVALID_STRING,CAIRO_STATUS_INVALID_PATH_DATA,CAIRO_STATUS_READ_ERROR,"
-				       "CAIRO_STATUS_WRITE_ERROR,CAIRO_STATUS_SURFACE_FINISHED,CAIRO_STATUS_SURFACE_TYPE_MISMATCH,"
-				       "CAIRO_STATUS_PATTERN_TYPE_MISMATCH,CAIRO_STATUS_INVALID_CONTENT,CAIRO_STATUS_INVALID_FORMAT,"
-				       "CAIRO_STATUS_INVALID_VISUAL,CAIRO_STATUS_FILE_NOT_FOUND,CAIRO_STATUS_INVALID_DASH,"
-				       "CAIRO_STATUS_INVALID_DSC_COMMENT,CAIRO_STATUS_INVALID_INDEX,CAIRO_STATUS_CLIP_NOT_REPRESENTABLE,"
-				       "CAIRO_STATUS_TEMP_FILE_ERROR,CAIRO_STATUS_INVALID_STRIDE,"
-				       "CAIRO_STATUS_FONT_TYPE_MISMATCH,CAIRO_STATUS_USER_FONT_IMMUTABLE,CAIRO_STATUS_USER_FONT_ERROR,"
-				       "CAIRO_STATUS_NEGATIVE_COUNT,CAIRO_STATUS_INVALID_CLUSTERS,"
-				       "CAIRO_STATUS_INVALID_SLANT,CAIRO_STATUS_INVALID_WEIGHT");
-	check_kv("_MARGINS", "struct");
-	// TODO evaluate member_location operations in DWARF to get offset and test it
-	check_kv("struct._MARGINS", "cxLeftWidth,cxRightWidth,cyTopHeight,cyBottomHeight");
+	// Check the enum presence and validity
+	RzBaseType *cairo = rz_type_db_get_base_type(analysis->typedb, "_cairo_status");
+	mu_assert_eq(cairo->kind, RZ_BASE_TYPE_KIND_ENUM, "_cairo_status is enum");
+	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_SUCCESS", 0), "CAIRO_STATUS_SUCCESS = 0x0");
+	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_INVALID_PATH_DATA", 0x9), "CAIRO_STATUS_INVALID_PATH_DATA = 0x9");
+	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_INVALID_WEIGHT", 0x1f), "CAIRO_STATUS_INVALID_WEIGHT = 0x1f");
+	mu_assert_null(rz_type_db_enum_member_by_val(analysis->typedb, "_cairo_status", 0x20), "no 0x20 member");
 
-	check_kv("unaligned", "union");
-	check_kv("union.unaligned", "ptr,u2,u4,u8,s2,s4,s8");
-	check_kv("union.unaligned.u2", "short unsigned int,0,0");
-	check_kv("union.unaligned.s8", "long long int,0,0");
+	RzBaseType *cairo1 = rz_type_db_get_enum(analysis->typedb, "_cairo_status");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_SUCCESS"), "CAIRO_STATUS_SUCCESS");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_NO_MEMORY"), "CAIRO_STATUS_NO_MEMORY");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_RESTORE"), "CAIRO_STATUS_INVALID_RESTORE");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_POP_GROUP"), "CAIRO_STATUS_INVALID_POP_GROUP");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_NO_CURRENT_POINT"), "CAIRO_STATUS_NO_CURRENT_POINT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_MATRIX"), "CAIRO_STATUS_INVALID_MATRIX");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_STATUS"), "CAIRO_STATUS_INVALID_STATUS");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_NULL_POINTER"), "CAIRO_STATUS_NULL_POINTER");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_STRING"), "CAIRO_STATUS_INVALID_STRING");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_PATH_DATA"), "CAIRO_STATUS_INVALID_PATH_DATA");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_READ_ERROR"), "CAIRO_STATUS_READ_ERROR");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_WRITE_ERROR"), "CAIRO_STATUS_WRITE_ERROR");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_SURFACE_FINISHED"), "CAIRO_STATUS_SURFACE_FINISHED");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_SURFACE_TYPE_MISMATCH"), "CAIRO_STATUS_SURFACE_TYPE_MISMATCH");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_PATTERN_TYPE_MISMATCH"), "CAIRO_STATUS_PATTERN_TYPE_MISMATCH");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_CONTENT"), "CAIRO_STATUS_INVALID_CONTENT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_FORMAT"), "CAIRO_STATUS_INVALID_FORMAT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_VISUAL"), "CAIRO_STATUS_INVALID_VISUAL");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_FILE_NOT_FOUND"), "CAIRO_STATUS_FILE_NOT_FOUND");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_DASH"), "CAIRO_STATUS_INVALID_DASH");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_DSC_COMMENT"), "CAIRO_STATUS_INVALID_DSC_COMMENT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_INDEX"), "CAIRO_STATUS_INVALID_INDEX");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_CLIP_NOT_REPRESENTABLE"), "CAIRO_STATUS_CLIP_NOT_REPRESENTABLE");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_TEMP_FILE_ERROR"), "CAIRO_STATUS_TEMP_FILE_ERROR");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_STRIDE"), "CAIRO_STATUS_INVALID_STRIDE");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_FONT_TYPE_MISMATCH"), "CAIRO_STATUS_FONT_TYPE_MISMATCH");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_USER_FONT_IMMUTABLE"), "CAIRO_STATUS_USER_FONT_IMMUTABLE");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_USER_FONT_ERROR"), "CAIRO_STATUS_USER_FONT_ERROR");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_NEGATIVE_COUNT"), "CAIRO_STATUS_NEGATIVE_COUNT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_CLUSTERS"), "CAIRO_STATUS_INVALID_CLUSTERS");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_SLANT"), "CAIRO_STATUS_INVALID_SLANT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_WEIGHT"), "CAIRO_STATUS_INVALID_WEIGHT");
+
+	mu_assert_false(has_enum_case(cairo1, "CAIRO_NO_SUCH_CASE"), "no such enum case");
+
+	// Check the structure presence and validity
+	RzBaseType *margins = rz_type_db_get_base_type(analysis->typedb, "_MARGINS");
+	mu_assert_eq(margins->kind, RZ_BASE_TYPE_KIND_STRUCT, "_MARGINS is struct");
+	mu_assert_true(has_struct_member(margins, "cxLeftWidth"), "cxLeftWidth");
+	mu_assert_true(has_struct_member(margins, "cxRightWidth"), "cxRightWidth");
+	mu_assert_true(has_struct_member(margins, "cyTopHeight"), "cyTopHeight");
+	mu_assert_true(has_struct_member(margins, "cyBottomHeight"), "cyBottomHeight");
+
+	mu_assert_false(has_struct_member(margins, "noSuchMember"), "no such struct member");
+
+	// Check the union presence and validity
+	RzBaseType *unaligned = rz_type_db_get_base_type(analysis->typedb, "unaligned");
+	mu_assert_eq(unaligned->kind, RZ_BASE_TYPE_KIND_UNION, "unaligned is union");
+	mu_assert_true(has_union_member(unaligned, "ptr"), "ptr");
+	mu_assert_true(has_union_member(unaligned, "u2"), "u2");
+	mu_assert_true(has_union_member(unaligned, "u4"), "u4");
+	mu_assert_true(has_union_member(unaligned, "u8"), "u8");
+	mu_assert_true(has_union_member(unaligned, "s2"), "s2");
+	mu_assert_true(has_union_member(unaligned, "s4"), "s4");
+	mu_assert_true(has_union_member(unaligned, "s8"), "s8");
+
+	mu_assert_false(has_union_member(unaligned, "noSuchMember"), "no such union member");
+	// TODO: Check also the exact types of the members
+	//check_kv("union.unaligned.u2", "short unsigned int,0,0");
+	//check_kv("union.unaligned.s8", "long long int,0,0");
+
 	rz_bin_dwarf_debug_info_free(info);
 	rz_bin_dwarf_debug_abbrev_free(abbrevs);
 	rz_analysis_free(analysis);
