@@ -213,7 +213,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_JSON, core->offset);
 			break;
 		case '*': // "CCf*"
-			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, 1, core->offset);
+			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_RIZIN, core->offset);
 			break;
 		default:
 			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, 0, core->offset);
@@ -258,7 +258,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 		free(nc);
 	} break;
 	case '*': // "CC*"
-		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, 1);
+		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case '-': // "CC-"
 		if (input[2] == '*') { // "CC-*"
