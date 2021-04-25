@@ -2833,7 +2833,7 @@ static RzList *section_flag_to_rzlist(RzBin *bin, ut64 flag) {
 
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	RzBinSection *section;
-	RzBinInfo *info = rz_bin_get_info(r->bin);
+	RzBinInfo *info = NULL;
 	RzListIter *iter;
 	RzTable *table = rz_core_table(r);
 	RzBinFile *bf = r->bin->cur;
@@ -2848,9 +2848,13 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	const char *type = print_segments ? "segment" : "section";
 	bool plugin_type_support = plugin && plugin->section_type_to_string;
 	bool plugin_flags_support = plugin && plugin->section_flag_to_rzlist;
-	bool is_elf = info->rclass && !strcmp(info->rclass, "elf");
-	bool is_mach0 = info->rclass && !strcmp(info->rclass, "mach0");
-	bool print_align = (is_elf && print_segment) || (is_mach0 && !print_segment);
+	bool print_align = false;
+	rz_list_foreach (sections, iter, section) {
+		if (section->align && section->is_segment == print_segments) {
+			print_align = true;
+			break;
+		}
+	}
 	if (!dup_chk_ht) {
 		return false;
 	}
