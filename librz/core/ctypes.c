@@ -628,9 +628,9 @@ RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mod
 // Type formatting
 
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode) {
-	char *fmt = rz_type_format(core->analysis->typedb, name);
+	const char *fmt = rz_type_format(core->analysis->typedb, name);
 	if (fmt) {
-		rz_str_trim(fmt);
+		fmt = rz_str_trim_head_ro(fmt);
 		switch (mode) {
 		case RZ_OUTPUT_MODE_JSON: {
 			PJ *pj = pj_new();
@@ -655,7 +655,6 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		default:
 			break;
 		}
-		free(fmt);
 	} else {
 		eprintf("Cannot find '%s' type\n", name);
 	}
@@ -895,7 +894,7 @@ RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, 
 		rz_cons_printf("tl %s 0x%" PFMT64x "\n", type, addr);
 		break;
 	case RZ_OUTPUT_MODE_LONG: {
-		char *fmt = rz_type_format(core->analysis->typedb, type);
+		const char *fmt = rz_type_format(core->analysis->typedb, type);
 		if (!fmt) {
 			eprintf("Can't fint type %s", type);
 		}
