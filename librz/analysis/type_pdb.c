@@ -56,8 +56,10 @@ static RzTypeStructMember *parse_member(const RzTypeDB *typedb, STypeInfo *type_
 		goto cleanup;
 	}
 	char *sname = rz_str_sanitize_sdb_key(name);
-	RzType *mtype = rz_type_parse(typedb->parser, type, NULL);
-	if (!mtype) {
+	char *error_msg = NULL;
+	RzType *mtype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
+	if (!mtype || error_msg) {
+		eprintf("Error parsing \"%s\" type:\n%s\n", type, error_msg);
 		goto cleanup;
 	}
 	member->name = sname;
@@ -147,8 +149,10 @@ static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
 		}
 	}
 	char *sname = rz_str_sanitize_sdb_key(name);
-	RzType *btype = rz_type_parse(typedb->parser, type_name, NULL);
-	if (!btype) {
+	char *error_msg = NULL;
+	RzType *btype = rz_type_parse_string_single(typedb->parser, type_name, &error_msg);
+	if (!btype || error_msg) {
+		eprintf("Error parsing \"%s\" type:\n%s\n", type_name, error_msg);
 		goto cleanup;
 	}
 	base_type->name = sname;

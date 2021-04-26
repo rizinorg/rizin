@@ -30,7 +30,7 @@ RZ_API RzType *rz_type_func_ret(RzTypeDB *typedb, const char *func_name) {
 	Sdb *TDB = typedb->sdb_types;
 	const char *query = sdb_fmt("func.%s.ret", func_name);
 	const char *typestr = sdb_const_get(TDB, query, 0);
-	return rz_type_parse(typedb->parser, typestr, NULL);
+	return rz_type_parse_string_single(typedb->parser, typestr, NULL);
 }
 
 RZ_API const char *rz_type_func_cc(RzTypeDB *typedb, const char *func_name) {
@@ -64,7 +64,7 @@ RZ_API RZ_OWN RzType *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const 
 	if (!typestr) {
 		return NULL;
 	}
-	RzType *type = rz_type_parse(typedb->parser, typestr, NULL);
+	RzType *type = rz_type_parse_string_single(typedb->parser, typestr, NULL);
 	free(typestr);
 	return type;
 }

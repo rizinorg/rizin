@@ -1614,7 +1614,6 @@ bool test_analysis_save() {
 	RzBaseType *type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
 	type->name = strdup("badchar");
 	type->size = 16;
-	type->type = strdup("c");
 	rz_type_db_save_base_type(analysis->typedb, type);
 	rz_type_base_type_free(type);
 

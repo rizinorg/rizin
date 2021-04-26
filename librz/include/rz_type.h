@@ -24,7 +24,7 @@ typedef struct rz_type_target_t {
 	bool big_endian;
 } RzTypeTarget;
 
-typedef struct rz_ast_parser_t RzASTParser;
+typedef struct rz_type_parser_t RzTypeParser;
 
 typedef struct rz_type_db_t {
 	void *user;
@@ -32,7 +32,7 @@ typedef struct rz_type_db_t {
 	HtPP *formats; // A hashtable of `pf` formats
 	Sdb *sdb_types; // for function signatures
 	RzTypeTarget *target;
-	RzASTParser *parser;
+	RzTypeParser *parser;
 	RNum *num;
 	RzIOBind iob; // for RzIO in formats
 } RzTypeDB;
@@ -184,25 +184,30 @@ RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(const RzTypeDB 
 
 RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
 
-// AST types
+// Compound types
 
-RZ_API RzASTParser *rz_ast_parser_new(void);
-RZ_API void rz_ast_parser_free(RzASTParser *parser);
-RZ_API RzType *rz_type_parse(RzASTParser *parser, const char *str, char **error);
 RZ_API RZ_OWN char *rz_type_as_string(RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API void rz_type_free(RzType *type);
-
-/* c */
-RZ_API int rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **error_msg);
-RZ_API int rz_type_parse_c_file(RzTypeDB *typedb, const char *path, const char *dir, char **error_msg);
-RZ_API void rz_type_parse_c_reset(RzTypeDB *typedb);
-
-RZ_API bool rz_type_atomic_eq(RzTypeDB *typedb, RzType *typ1, RzType *typ2);
-RZ_API bool rz_type_atomic_str_eq(RzTypeDB *typedb, RzType *typ1, RZ_NONNULL const char *name);
-
-// Type-specific APIs
 RZ_API bool rz_type_exists(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
+
+// Type parser low-level API
+
+RZ_API RzTypeParser *rz_type_parser_new(void);
+RZ_API void rz_type_parser_free(RzTypeParser *parser);
+RZ_API void rz_type_parser_free_purge(RzTypeParser *parser);
+
+RZ_API int rz_type_parse_string_stateless(RzTypeParser *parser, const char *code, char **error_msg);
+RZ_API int rz_type_parse_file_stateless(RzTypeParser *parser, const char *path, const char *dir, char **error_msg);
+RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const char *code, char **error_msg);
+
+// Type parser high-level API
+
+RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error_msg);
+RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *dir, char **error_msg);
+RZ_API void rz_type_parse_reset(RzTypeDB *typedb);
+
+// Type-specific APIs
 
 RZ_API RzBaseType *rz_type_db_get_enum(RzTypeDB *typedb, const char *name);
 RZ_API RzBaseType *rz_type_db_get_union(RzTypeDB *typedb, const char *name);
@@ -225,6 +230,8 @@ RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL RzType *type);
 RZ_API RzList *rz_type_db_get_by_offset(RzTypeDB *typedb, ut64 offset);
 
 // Various type helpers
+RZ_API bool rz_type_atomic_eq(RzTypeDB *typedb, RzType *typ1, RzType *typ2);
+RZ_API bool rz_type_atomic_str_eq(RzTypeDB *typedb, RzType *typ1, RZ_NONNULL const char *name);
 RZ_API bool rz_type_atomic_is_void(RzTypeDB *typedb, RzType *type);
 RZ_API bool rz_type_atomic_is_signed(RzTypeDB *typedb, RzType *type);
 RZ_API bool rz_type_atomic_is_const(RzTypeDB *typedb, RzType *type);

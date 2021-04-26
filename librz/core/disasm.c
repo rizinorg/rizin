@@ -5311,7 +5311,7 @@ toro:
 			if (fmt) {
 				rz_cons_printf("(%s)\n", link_type);
 				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
-				RzType *ltype = rz_type_parse(core->analysis->typedb->parser, link_type, NULL);
+				RzType *ltype = rz_type_parse_string_single(core->analysis->typedb->parser, link_type, NULL);
 				if (!ltype) {
 					continue;
 				}

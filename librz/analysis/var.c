@@ -98,7 +98,12 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 		if (!typestr) {
 			typestr = "int32_t";
 		}
-		type = rz_type_parse(fcn->analysis->typedb->parser, typestr, NULL);
+		char *error_msg = NULL;
+		type = rz_type_parse_string_single(fcn->analysis->typedb->parser, typestr, &error_msg);
+		if (!type || error_msg) {
+			eprintf("Invalid var type: %s\n%s", typestr, error_msg);
+			return NULL;
+		}
 	}
 	switch (kind) {
 	case RZ_ANALYSIS_VAR_KIND_BPV: // base pointer var/args

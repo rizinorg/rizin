@@ -1,6 +1,5 @@
 rz_type_sources = [
   'base.c',
-  'ctype.c',
   'format.c',
   'function.c',
   'helpers.c',

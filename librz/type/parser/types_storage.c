@@ -18,13 +18,13 @@ RZ_OWN ParserTypePair *c_parser_new_structure(CParserState *state, const char *n
 	RzType *type = RZ_NEW0(RzType);
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false; // FIXME: Does it make sense for enums?
-	type->identifier.name = name;
+	type->identifier.name = strdup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->name = name;
+	base_type->name = strdup(name);
 	base_type->type = type;
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
 	tpair->btype = base_type;
@@ -41,13 +41,13 @@ RZ_OWN ParserTypePair *c_parser_new_union(CParserState *state, const char *name,
 	RzType *type = RZ_NEW0(RzType);
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false; // FIXME: Does it make sense for enums?
-	type->identifier.name = name;
+	type->identifier.name = strdup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->name = name;
+	base_type->name = strdup(name);
 	base_type->type = type;
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
 	tpair->btype = base_type;
@@ -64,13 +64,13 @@ RZ_OWN ParserTypePair *c_parser_new_enum(CParserState *state, const char *name, 
 	RzType *type = RZ_NEW0(RzType);
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false; // FIXME: Does it make sense for enums?
-	type->identifier.name = name;
+	type->identifier.name = strdup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->name = name;
+	base_type->name = strdup(name);
 	base_type->type = type;
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
 	tpair->btype = base_type;
@@ -87,13 +87,13 @@ RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, const char *nam
 	RzType *type = RZ_NEW0(RzType);
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false;
-	type->identifier.name = name;
+	type->identifier.name = strdup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		return NULL;
 	}
-	base_type->name = name;
+	base_type->name = strdup(name);
 	base_type->type = type;
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
 	tpair->btype = base_type;

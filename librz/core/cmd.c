@@ -750,7 +750,7 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 	} else if (rz_file_is_c(file)) {
 		const char *dir = rz_config_get(core->config, "dir.types");
 		char *error_msg = NULL;
-		int result = rz_type_parse_c_file(core->analysis->typedb, file, dir, &error_msg);
+		int result = rz_type_parse_file(core->analysis->typedb, file, dir, &error_msg);
 		if (error_msg) {
 			eprintf("%s", error_msg);
 			free(error_msg);

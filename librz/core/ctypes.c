@@ -1004,7 +1004,7 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 		return;
 	}
 	char *error_msg = NULL;
-	int result = rz_type_parse_c_string(core->analysis->typedb, tmp, &error_msg);
+	int result = rz_type_parse_string(core->analysis->typedb, tmp, &error_msg);
 	if (result && error_msg) {
 		eprintf("%s", error_msg);
 		free(error_msg);
@@ -1025,7 +1025,7 @@ RZ_IPI void rz_types_open_file(RzCore *core, const char *path) {
 		char *tmp = rz_core_editor(core, "*.h", "");
 		if (tmp) {
 			char *error_msg = NULL;
-			int result = rz_type_parse_c_string(core->analysis->typedb, tmp, &error_msg);
+			int result = rz_type_parse_string(core->analysis->typedb, tmp, &error_msg);
 			if (result && error_msg) {
 				eprintf("%s", error_msg);
 				free(error_msg);
@@ -1034,7 +1034,7 @@ RZ_IPI void rz_types_open_file(RzCore *core, const char *path) {
 		}
 	} else {
 		char *error_msg = NULL;
-		int result = rz_type_parse_c_file(typedb, path, dir, &error_msg);
+		int result = rz_type_parse_file(typedb, path, dir, &error_msg);
 		if (result && error_msg) {
 			eprintf("%s", error_msg);
 			free(error_msg);
@@ -1049,7 +1049,7 @@ RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename) {
 	char *tmp = rz_core_editor(core, "*.h", str);
 	if (tmp) {
 		char *error_msg = NULL;
-		int result = rz_type_parse_c_string(typedb, tmp, &error_msg);
+		int result = rz_type_parse_string(typedb, tmp, &error_msg);
 		if (result) {
 			// TODO: remove previous types and save new edited types
 			//rz_type_db_purge(typedb);

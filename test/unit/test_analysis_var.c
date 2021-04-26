@@ -49,7 +49,7 @@ static bool sanitize(RzAnalysisFunction *fcn) {
 	} while (0);
 
 static RzAnalysisVar *set_var_str(RzAnalysisFunction *fcn, int delta, char kind, const char *type, int size, bool isarg, const char *name) {
-	RzType *ttype = rz_type_parse(fcn->analysis->typedb->parser, type, NULL);
+	RzType *ttype = rz_type_parse_string_single(fcn->analysis->typedb->parser, type, NULL);
 	if (!ttype) {
 		return NULL;
 	}

@@ -451,7 +451,10 @@ static RzTypeStructMember *parse_struct_member(Context *ctx, ut64 idx, RzTypeStr
 	}
 
 	result->name = name;
-	result->type = rz_type_parse(ctx->analysis->typedb->parser, type, NULL);
+	result->type = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, NULL);
+	if (!result->type) {
+		goto cleanup;
+	}
 	result->offset = offset;
 	result->size = size;
 	return result;
@@ -610,7 +613,10 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		rz_strbuf_init(&strbuf);
 		parse_type_outer(ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
 		const char *type = rz_strbuf_drain_nofree(&strbuf);
-		base_type->type = rz_type_parse(ctx->analysis->typedb->parser, type, NULL);
+		base_type->type = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, NULL);
+		if (!base_type->type) {
+			goto cleanup;
+		}
 	}
 
 	RzTypeEnumCase cas;
@@ -694,7 +700,10 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 		goto cleanup;
 	}
 	base_type->name = name;
-	base_type->type = rz_type_parse(ctx->analysis->typedb->parser, type, NULL);
+	base_type->type = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, NULL);
+	if (!base_type->type) {
+		goto cleanup;
+	}
 	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
 	rz_type_base_type_free(base_type);
 	rz_strbuf_fini(&strbuf);
@@ -1666,7 +1675,7 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 			char *kind = sdb_anext(var_data, &extra);
 			char *type = NULL;
 			extra = sdb_anext(extra, &type);
-			RzType *ttype = rz_type_parse(analysis->typedb->parser, type, NULL);
+			RzType *ttype = rz_type_parse_string_single(analysis->typedb->parser, type, NULL);
 			if (!ttype) {
 				goto loop_end;
 			}
