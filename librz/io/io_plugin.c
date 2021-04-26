@@ -11,16 +11,27 @@ static RzIOPlugin *io_static_plugins[] = {
 	RZ_IO_STATIC_PLUGINS
 };
 
-RZ_API bool rz_io_plugin_add(RzIO *io, RzIOPlugin *plugin) {
+RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin) {
 	if (!io || !io->plugins || !plugin || !plugin->name) {
 		return false;
 	}
-	rz_list_append(io->plugins, plugin);
+	RzListIter *it;
+	RzIOPlugin *nplugin;
+	rz_list_foreach (io->plugins, it, nplugin) {
+		if (!strcmp(nplugin->name, plugin->name)) {
+			return false;
+		}
+	}
+	nplugin = RZ_NEW0(RzIOPlugin);
+	if (!nplugin) {
+		return false;
+	}
+	memcpy(nplugin, plugin, sizeof(RzIOPlugin));
+	rz_list_append(io->plugins, nplugin);
 	return true;
 }
 
 RZ_API bool rz_io_plugin_init(RzIO *io) {
-	RzIOPlugin *static_plugin;
 	int i;
 	if (!io) {
 		return false;
@@ -30,12 +41,7 @@ RZ_API bool rz_io_plugin_init(RzIO *io) {
 		if (!io_static_plugins[i]->name) {
 			continue;
 		}
-		static_plugin = RZ_NEW0(RzIOPlugin);
-		if (!static_plugin) {
-			return false;
-		}
-		memcpy(static_plugin, io_static_plugins[i], sizeof(RzIOPlugin));
-		rz_io_plugin_add(io, static_plugin);
+		rz_io_plugin_add(io, io_static_plugins[i]);
 	}
 	return true;
 }
