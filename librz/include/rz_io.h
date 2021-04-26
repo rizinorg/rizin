@@ -321,7 +321,7 @@ RZ_API bool rz_io_plugin_init(RzIO *io);
 RZ_API int rz_io_plugin_open(RzIO *io, int fd, RzIOPlugin *plugin);
 RZ_API int rz_io_plugin_close(RzIO *io, int fd, RzIOPlugin *plugin);
 RZ_API int rz_io_plugin_generate(RzIO *io);
-RZ_API bool rz_io_plugin_add(RzIO *io, RzIOPlugin *plugin);
+RZ_API bool rz_io_plugin_add(RzIO *io, RZ_BORROW RzIOPlugin *plugin);
 RZ_API int rz_io_plugin_list(RzIO *io);
 RZ_API int rz_io_plugin_list_json(RzIO *io);
 RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, int len);
