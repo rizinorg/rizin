@@ -2751,16 +2751,16 @@ CMDS=iSS
 EXPECT=<<EOF
 [Segments]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
-0   0x00000034  0x100 0x08048034  0x100 -r-x PHDR
-1   0x00000134   0x13 0x08048134   0x13 -r-- INTERP
-2   0x00000000  0x59c 0x08048000  0x59c -r-x LOAD0
-3   0x0000059c  0x118 0x0804959c  0x11c -rw- LOAD1
-4   0x000005a8   0xe8 0x080495a8   0xe8 -rw- DYNAMIC
-5   0x00000148   0x44 0x08048148   0x44 -r-- NOTE
-6   0x000004c0   0x2c 0x080484c0   0x2c -r-- GNU_EH_FRAME
-7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK
+nth paddr        size vaddr       vsize perm name         align
+---------------------------------------------------------------
+0   0x00000034  0x100 0x08048034  0x100 -r-x PHDR         0x4
+1   0x00000134   0x13 0x08048134   0x13 -r-- INTERP       0x1
+2   0x00000000  0x59c 0x08048000  0x59c -r-x LOAD0        0x1000
+3   0x0000059c  0x118 0x0804959c  0x11c -rw- LOAD1        0x1000
+4   0x000005a8   0xe8 0x080495a8   0xe8 -rw- DYNAMIC      0x4
+5   0x00000148   0x44 0x08048148   0x44 -r-- NOTE         0x4
+6   0x000004c0   0x2c 0x080484c0   0x2c -r-- GNU_EH_FRAME 0x4
+7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK    0x4
 8   0x00000000   0x34 0x08048000   0x34 -rw- ehdr
 
 EOF
@@ -2778,7 +2778,7 @@ NAME=iSSj
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iSSj
 EXPECT=<<EOF
-[{"name":"PHDR","size":256,"vsize":256,"perm":"-r-x","paddr":52,"vaddr":134512692},{"name":"INTERP","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948},{"name":"LOAD0","size":1436,"vsize":1436,"perm":"-r-x","paddr":0,"vaddr":134512640},{"name":"LOAD1","size":280,"vsize":284,"perm":"-rw-","paddr":1436,"vaddr":134518172},{"name":"DYNAMIC","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184},{"name":"NOTE","size":68,"vsize":68,"perm":"-r--","paddr":328,"vaddr":134512968},{"name":"GNU_EH_FRAME","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856},{"name":"GNU_STACK","size":0,"vsize":0,"perm":"-rw-","paddr":0,"vaddr":0},{"name":"ehdr","size":52,"vsize":52,"perm":"-rw-","paddr":0,"vaddr":134512640}]
+[{"name":"PHDR","size":256,"vsize":256,"perm":"-r-x","paddr":52,"vaddr":134512692,"align":4},{"name":"INTERP","size":19,"vsize":19,"perm":"-r--","paddr":308,"vaddr":134512948,"align":1},{"name":"LOAD0","size":1436,"vsize":1436,"perm":"-r-x","paddr":0,"vaddr":134512640,"align":4096},{"name":"LOAD1","size":280,"vsize":284,"perm":"-rw-","paddr":1436,"vaddr":134518172,"align":4096},{"name":"DYNAMIC","size":232,"vsize":232,"perm":"-rw-","paddr":1448,"vaddr":134518184,"align":4},{"name":"NOTE","size":68,"vsize":68,"perm":"-r--","paddr":328,"vaddr":134512968,"align":4},{"name":"GNU_EH_FRAME","size":44,"vsize":44,"perm":"-r--","paddr":1216,"vaddr":134513856,"align":4},{"name":"GNU_STACK","size":0,"vsize":0,"perm":"-rw-","paddr":0,"vaddr":0,"align":4},{"name":"ehdr","size":52,"vsize":52,"perm":"-rw-","paddr":0,"vaddr":134512640}]
 EOF
 RUN
 
@@ -3307,16 +3307,16 @@ CMDS=iSS
 EXPECT=<<EOF
 [Segments]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
-0   0x00000040  0x1c0 0x00400040  0x1c0 -r-x PHDR
-1   0x00000200   0x1a 0x00400200   0x1a -r-- INTERP
-2   0x00000000  0x6dc 0x00400000  0x6dc -r-x LOAD0
-3   0x000006e0  0x230 0x006006e0  0x238 -rw- LOAD1
-4   0x000006f8  0x1d0 0x006006f8  0x1d0 -rw- DYNAMIC
-5   0x0000021c   0x44 0x0040021c   0x44 -r-- NOTE
-6   0x000005d0   0x34 0x004005d0   0x34 -r-- GNU_EH_FRAME
-7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK
+nth paddr        size vaddr       vsize perm name         align
+---------------------------------------------------------------
+0   0x00000040  0x1c0 0x00400040  0x1c0 -r-x PHDR         0x8
+1   0x00000200   0x1a 0x00400200   0x1a -r-- INTERP       0x1
+2   0x00000000  0x6dc 0x00400000  0x6dc -r-x LOAD0        0x200000
+3   0x000006e0  0x230 0x006006e0  0x238 -rw- LOAD1        0x200000
+4   0x000006f8  0x1d0 0x006006f8  0x1d0 -rw- DYNAMIC      0x8
+5   0x0000021c   0x44 0x0040021c   0x44 -r-- NOTE         0x4
+6   0x000005d0   0x34 0x004005d0   0x34 -r-- GNU_EH_FRAME 0x4
+7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK    0x8
 8   0x00000000   0x40 0x00400000   0x40 -rw- ehdr
 
 EOF
@@ -4045,17 +4045,17 @@ nth paddr        size vaddr       vsize perm entropy    name           type     
 
 [Segments]
 
-nth paddr        size vaddr       vsize perm entropy    name
-------------------------------------------------------------
-0   0x00000034  0x120 0x08048034  0x120 -r-x 2.77947373 PHDR
-1   0x00000154   0x13 0x08048154   0x13 -r-- 3.68188080 INTERP
-2   0x00000000  0x6bc 0x08048000  0x6bc -r-x 5.13144413 LOAD0
-3   0x00000f0c  0x118 0x08049f0c  0x11c -rw- 2.96573278 LOAD1
-4   0x00000f20   0xd0 0x08049f20   0xd0 -rw- 2.82161069 DYNAMIC
-5   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 NOTE
-6   0x00000000    0x0 0x00000000    0x0 -rw- 0.00000000 GNU_STACK
-7   0x00000f0c   0xf4 0x08049f0c   0xf4 -r-- 2.71815661 GNU_RELRO
-8   0x00000000    0x0 0x00000000    0x0 ---- 0.00000000 NONE
+nth paddr        size vaddr       vsize perm entropy    name      align
+-----------------------------------------------------------------------
+0   0x00000034  0x120 0x08048034  0x120 -r-x 2.77947373 PHDR      0x4
+1   0x00000154   0x13 0x08048154   0x13 -r-- 3.68188080 INTERP    0x1
+2   0x00000000  0x6bc 0x08048000  0x6bc -r-x 5.13144413 LOAD0     0x1000
+3   0x00000f0c  0x118 0x08049f0c  0x11c -rw- 2.96573278 LOAD1     0x1000
+4   0x00000f20   0xd0 0x08049f20   0xd0 -rw- 2.82161069 DYNAMIC   0x4
+5   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 NOTE      0x4
+6   0x00000000    0x0 0x00000000    0x0 -rw- 0.00000000 GNU_STACK 0x4
+7   0x00000f0c   0xf4 0x08049f0c   0xf4 -r-- 2.71815661 GNU_RELRO 0x1
+8   0x00000000    0x0 0x00000000    0x0 ---- 0.00000000 NONE      0x4
 9   0x00000000   0x34 0x08048000   0x34 -rw- 2.79887339 ehdr
 
 EOF

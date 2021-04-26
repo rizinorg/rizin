@@ -2848,7 +2848,13 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 	const char *type = print_segments ? "segment" : "section";
 	bool plugin_type_support = plugin && plugin->section_type_to_string;
 	bool plugin_flags_support = plugin && plugin->section_flag_to_rzlist;
-
+	bool print_align = false;
+	rz_list_foreach (sections, iter, section) {
+		if (section->align && section->is_segment == print_segments) {
+			print_align = true;
+			break;
+		}
+	}
 	if (!dup_chk_ht) {
 		return false;
 	}
@@ -2915,6 +2921,9 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 		}
 		if (plugin_flags_support && !print_segments) {
 			rz_table_set_columnsf(table, "s", "flags");
+		}
+		if (print_align) {
+			rz_table_set_columnsf(table, "x", "align");
 		}
 		rz_table_align(table, 2, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_align(table, 4, RZ_TABLE_ALIGN_RIGHT);
@@ -3028,6 +3037,9 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			}
 			pj_kN(pj, "paddr", section->paddr);
 			pj_kN(pj, "vaddr", addr);
+			if (section->align) {
+				pj_kN(pj, "align", section->align);
+			}
 			pj_end(pj);
 		} else {
 			char *hashstr = NULL, str[128];
@@ -3084,6 +3096,10 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				char *section_flags_str = rz_str_list_join(section_flags, ",");
 				rz_list_append(row_list, section_flags_str);
 				rz_list_free(section_flags);
+			}
+
+			if (section->align) {
+				rz_list_append(row_list, rz_str_newf("0x%" PFMT64x, section->align));
 			}
 
 			rz_table_add_row_list(table, row_list);

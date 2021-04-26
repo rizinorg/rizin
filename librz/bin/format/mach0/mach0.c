@@ -2280,6 +2280,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			}
 			s->vaddr = (ut64)bin->sects[i].addr;
 			s->vsize = (ut64)bin->sects[i].size;
+			s->align = (ut64)(1 << bin->sects[i].align);
 			s->is_segment = false;
 			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
 			// The bottom byte of flags is the section type
