@@ -5307,20 +5307,18 @@ toro:
 		// TRY adding here
 		char *link_type = rz_analysis_type_link_at(core->analysis, ds->addr + idx);
 		if (link_type) {
-			char *fmt = rz_type_format(core->analysis->typedb, link_type);
+			const char *fmt = rz_type_format(core->analysis->typedb, link_type);
 			if (fmt) {
 				rz_cons_printf("(%s)\n", link_type);
 				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
 				RzType *ltype = rz_type_parse(core->analysis->typedb->parser, link_type, NULL);
 				if (!ltype) {
-					free(fmt);
 					continue;
 				}
 				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, ltype);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
-				free(fmt);
 				free(link_type);
 				rz_analysis_op_fini(&ds->analop);
 				continue;

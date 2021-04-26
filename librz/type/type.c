@@ -15,6 +15,10 @@ static void types_ht_free(HtUPKv *kv) {
 	rz_type_base_type_free(kv->value);
 }
 
+static void formats_ht_free(HtUPKv *kv) {
+	free(kv->value);
+}
+
 RZ_API RzTypeDB *rz_type_db_new() {
 	RzTypeDB *typedb = RZ_NEW0(RzTypeDB);
 	if (!typedb) {
@@ -29,7 +33,10 @@ RZ_API RzTypeDB *rz_type_db_new() {
 	if (!typedb->types) {
 		return NULL;
 	}
-	typedb->formats = sdb_new0();
+	typedb->formats = ht_pp_new(NULL, formats_ht_free, NULL);
+	if (!typedb->formats) {
+		return NULL;
+	}
 	typedb->parser = rz_ast_parser_new();
 	rz_io_bind_init(typedb->iob);
 	return typedb;
@@ -38,7 +45,7 @@ RZ_API RzTypeDB *rz_type_db_new() {
 RZ_API void rz_type_db_free(RzTypeDB *typedb) {
 	rz_ast_parser_free(typedb->parser);
 	ht_pp_free(typedb->types);
-	sdb_free(typedb->formats);
+	ht_pp_free(typedb->formats);
 	free(typedb->target);
 	free(typedb);
 }
@@ -46,6 +53,11 @@ RZ_API void rz_type_db_free(RzTypeDB *typedb) {
 RZ_API void rz_type_db_purge(RzTypeDB *typedb) {
 	ht_pp_free(typedb->types);
 	typedb->types = ht_pp_new(NULL, types_ht_free, NULL);
+}
+
+RZ_API void rz_type_db_format_purge(RzTypeDB *typedb) {
+	ht_pp_free(typedb->formats);
+	typedb->formats = ht_pp_new(NULL, formats_ht_free, NULL);
 }
 
 RZ_API void rz_type_db_set_bits(RzTypeDB *typedb, int bits) {
@@ -109,28 +121,44 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 	// TODO: make sure they are empty this is initializing
 
 	const char *dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types.sdb"), dir_prefix);
-	rz_type_db_load_sdb(typedb, dbpath);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, arch);
-	rz_type_db_load_sdb(typedb, dbpath);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, os);
-	rz_type_db_load_sdb(typedb, dbpath);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%d.sdb"),
 		dir_prefix, bits);
-	rz_type_db_load_sdb(typedb, dbpath);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%d.sdb"),
 		dir_prefix, os, bits);
-	rz_type_db_load_sdb(typedb, dbpath);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%d.sdb"),
 		dir_prefix, arch, bits);
-	rz_type_db_load_sdb(typedb, dbpath);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%s.sdb"),
 		dir_prefix, arch, os);
-	rz_type_db_load_sdb(typedb, dbpath);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
 		dir_prefix, arch, os, bits);
-	rz_type_db_load_sdb(typedb, dbpath);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
 }
 
 // Listing all available types by category

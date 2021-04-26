@@ -1516,119 +1516,6 @@ static void rz_type_format_num(RzStrBuf *outbuf, int endian, int mode, const cha
 	}
 }
 
-RZ_API const char *rz_type_db_format_byname(RzTypeDB *typedb, const char *name) {
-	return sdb_const_get(typedb->formats, name, NULL);
-}
-
-static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
-	// assumes var list is sorted by offset.. should do more checks here
-	char *p = NULL, *vars = NULL, var2[132], *fmt = NULL;
-	size_t n;
-	char *fields = rz_str_newf("%s.fields", var);
-	char *nfields = (is_typedef) ? fields : var;
-	for (n = 0; (p = sdb_array_get(TDB, nfields, n, NULL)); n++) {
-		char *struct_name;
-		const char *tfmt = NULL;
-		bool isStruct = false;
-		bool isEnum = false;
-		bool isfp = false;
-		snprintf(var2, sizeof(var2), "%s.%s", var, p);
-		size_t alen = sdb_array_size(TDB, var2);
-		int elements = sdb_array_get_num(TDB, var2, alen - 1, NULL);
-		char *type = sdb_array_get(TDB, var2, 0, NULL);
-		if (type) {
-			char var3[128] = { 0 };
-			// Handle general pointers except for char *
-			if ((strstr(type, "*(") || strstr(type, " *")) && strncmp(type, "char *", 7)) {
-				isfp = true;
-			} else if (rz_str_startswith(type, "struct ")) {
-				struct_name = type + 7;
-				// TODO: iterate over all the struct fields, and format the format and vars
-				snprintf(var3, sizeof(var3), "struct.%s", struct_name);
-				tfmt = sdb_const_get(TDB, var3, NULL);
-				isStruct = true;
-			} else {
-				// special case for char[]. Use char* format type without *
-				if (!strcmp(type, "char") && elements > 0) {
-					tfmt = sdb_const_get(TDB, "type.char *", NULL);
-					if (tfmt && *tfmt == '*') {
-						tfmt++;
-					}
-				} else {
-					if (rz_str_startswith(type, "enum ")) {
-						snprintf(var3, sizeof(var3), "%s", type + 5);
-						isEnum = true;
-					} else {
-						snprintf(var3, sizeof(var3), "type.%s", type);
-					}
-					tfmt = sdb_const_get(TDB, var3, NULL);
-				}
-			}
-			if (isfp) {
-				// consider function pointer as void * for printing
-				fmt = rz_str_append(fmt, "p");
-				vars = rz_str_append(vars, p);
-				vars = rz_str_append(vars, " ");
-			} else if (tfmt) {
-				(void)rz_str_replace_ch(type, ' ', '_', true);
-				if (elements > 0) {
-					fmt = rz_str_appendf(fmt, "[%d]", elements);
-				}
-				if (isStruct) {
-					fmt = rz_str_append(fmt, "?");
-					vars = rz_str_appendf(vars, "(%s)%s", struct_name, p);
-					vars = rz_str_append(vars, " ");
-				} else if (isEnum) {
-					fmt = rz_str_append(fmt, "E");
-					vars = rz_str_appendf(vars, "(%s)%s", type + 5, p);
-					vars = rz_str_append(vars, " ");
-				} else {
-					fmt = rz_str_append(fmt, tfmt);
-					vars = rz_str_append(vars, p);
-					vars = rz_str_append(vars, " ");
-				}
-			} else {
-				eprintf("Cannot resolve type '%s'\n", var3);
-			}
-			free(type);
-		}
-		free(p);
-	}
-	free(fields);
-	fmt = rz_str_append(fmt, " ");
-	fmt = rz_str_append(fmt, vars);
-	free(vars);
-	return fmt;
-}
-
-RZ_API char *rz_type_format(RzTypeDB *typedb, const char *t) {
-	char var[130], var2[132];
-	Sdb *TDB = typedb->sdb_types;
-	const char *kind = sdb_const_get(TDB, t, NULL);
-	if (!kind) {
-		return NULL;
-	}
-	// only supports struct atm
-	snprintf(var, sizeof(var), "%s.%s", kind, t);
-	if (!strcmp(kind, "type")) {
-		const char *fmt = sdb_const_get(TDB, var, NULL);
-		if (fmt) {
-			return strdup(fmt);
-		}
-	} else if (!strcmp(kind, "struct") || !strcmp(kind, "union")) {
-		return fmt_struct_union(TDB, var, false);
-	}
-	if (!strcmp(kind, "typedef")) {
-		snprintf(var2, sizeof(var2), "typedef.%s", t);
-		const char *type = sdb_const_get(TDB, var2, NULL);
-		// only supports struct atm
-		if (type && !strcmp(type, "struct")) {
-			return fmt_struct_union(TDB, var, true);
-		}
-	}
-	return NULL;
-}
-
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
 RZ_API int rz_type_format_struct_size(RzTypeDB *typedb, const char *f, int mode, int n) {
 	char *end, *args, *fmt;
@@ -1640,7 +1527,7 @@ RZ_API int rz_type_format_struct_size(RzTypeDB *typedb, const char *f, int mode,
 	if (n >= 5) { // This is the nesting level, is this not a bit arbitrary?!
 		return 0;
 	}
-	const char *fmt2 = sdb_get(typedb->formats, f, NULL);
+	const char *fmt2 = rz_type_db_format_get(typedb, f);
 	if (!fmt2) {
 		fmt2 = f;
 	}
@@ -1782,7 +1669,7 @@ RZ_API int rz_type_format_struct_size(RzTypeDB *typedb, const char *f, int mode,
 					tmp = *format;
 				}
 			} else {
-				format = sdb_get(typedb->formats, structname + 1, NULL);
+				format = rz_type_db_format_get(typedb, structname + 1);
 				if (format && !strncmp(format, f, strlen(format) - 1)) { // Avoid recursion here
 					free(o);
 					free(structname);
@@ -1900,7 +1787,7 @@ static int rz_type_format_struct(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf,
 	if (anon) {
 		fmt = name;
 	} else {
-		fmt = sdb_get(typedb->formats, name, NULL);
+		fmt = rz_type_db_format_get(typedb, name);
 		if (!fmt) { // Fetch struct info from types DB
 			fmt = rz_type_format(typedb, name);
 		}
@@ -2008,32 +1895,39 @@ static char *get_format_type(const char fmt, const char arg) {
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg + 1) == '?'))
 
 RZ_API const char *rz_type_db_format_get(RzTypeDB *typedb, const char *name) {
-	return sdb_get(typedb->formats, name, NULL);
+	rz_return_val_if_fail(typedb && name, NULL);
+	bool found = false;
+	const char *result = ht_pp_find(typedb->formats, name, &found);
+	if (!found || !result) {
+		eprintf("Cannot find format \"%s\"\n", name);
+		return NULL;
+	}
+	return result;
 }
 
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
-	sdb_set(typedb->formats, name, fmt, 0);
+	rz_return_if_fail(typedb && name && fmt);
+	ht_pp_insert(typedb->formats, name, strdup(fmt));
+}
+
+static bool format_collect_cb(void *user, const void *k, const void *v) {
+	rz_return_val_if_fail(user && k && v, false);
+	RzList *l = user;
+	char *fmt = rz_str_newf("%s %s", (const char *)k, (const char *)v);
+	rz_list_append(l, fmt);
+	return true;
 }
 
 RZ_API RZ_OWN RzList *rz_type_db_format_all(RzTypeDB *typedb) {
-	SdbListIter *iter;
-	SdbKv *kv;
-	RzList *fmtl = rz_list_newf(free);
-	SdbList *sdbls = sdb_foreach_list(typedb->formats, true);
-	ls_foreach (sdbls, iter, kv) {
-		char *fmt = rz_str_newf("%s %s", sdbkv_key(kv), sdbkv_value(kv));
-		rz_list_append(fmtl, fmt);
-	}
-	return fmtl;
+	rz_return_val_if_fail(typedb, NULL);
+	RzList *formats = rz_list_newf(free);
+	ht_pp_foreach(typedb->formats, format_collect_cb, formats);
+	return formats;
 }
 
 RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name) {
-	sdb_unset(typedb->formats, name, 0);
-}
-
-RZ_API void rz_type_db_format_purge(RzTypeDB *typedb) {
-	sdb_free(typedb->formats);
-	typedb->formats = sdb_new0();
+	rz_return_if_fail(typedb && name);
+	ht_pp_delete(typedb->formats, name);
 }
 
 static int rz_type_format_data_internal(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
@@ -2055,7 +1949,7 @@ static int rz_type_format_data_internal(RzTypeDB *typedb, RzPrint *p, RzStrBuf *
 	if (!formatname) {
 		return 0;
 	}
-	fmt = sdb_get(typedb->formats, formatname, NULL);
+	fmt = rz_type_db_format_get(typedb, formatname);
 	if (!fmt) {
 		fmt = formatname;
 	}
@@ -2855,11 +2749,107 @@ RZ_API char *rz_type_format_data(RzTypeDB *typedb, RzPrint *p, ut64 seek, const 
 	return outstr;
 }
 
+/* Every format string essentially contains two parts:
+ * 1. The format (`pf` string) itself
+ * 2. The field name and types, "(field_type)field_name"
+ * Both parts are separated from each other by space
+ *
+ * Example:
+ * "[2]Ewtxxw[2]B (pe_machine)machine NumberOfSections TimeDateStamp PointerToSymbolTable NumberOfSymbols SizeOfOptionalHeader (pe_characteristics)Characteristics"
+ * Here "[2]Ewtxxw[2]B" is the `pf` string while the rest are field names and types.
+ * E.g. "(pe_machine)" is the field type, previously defined enum called "pe_machine"
+ * "machine" here is the field name. The corresponding construction in C is:
+ * struct {
+ *     pe_machine machine;
+ *     ut16 NumberOfSections;
+ *     datetime_t TimeDateStamp;
+ *     ut32 PointerToSymbolTable;
+ *     ut32 NumberOfSymbols;
+ *     ut16 SizeOfOptionalHeader;
+ *     pe_characteristics characteristics; // (bitfield enum)
+ *     };
+*/
+
+static const char *type_to_identifier(RzTypeDB *typedb, RzType *type) {
+	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
+		return type->identifier.name;
+	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
+		return type_to_identifier(typedb, type->array.type);
+	} else if (type->kind == RZ_TYPE_KIND_POINTER) {
+		return type_to_identifier(typedb, type->pointer.type);
+	}
+	rz_warn_if_reached();
+	return NULL;
+}
+
+RZ_API const char *rz_base_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
+	rz_return_val_if_fail(typedb && type && type->name, NULL);
+
+	RzStrBuf *format = rz_strbuf_new("");
+	RzStrBuf *fields = rz_strbuf_new("");
+	switch (type->kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT: {
+		rz_strbuf_append(format, "?");
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&type->struct_data.members, memb) {
+			const char *membfmt = rz_type_as_format(typedb, type->type);
+			const char *membtype = type_to_identifier(typedb, type->type);
+			rz_strbuf_append(format, membfmt);
+			rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+		}
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_ENUM: {
+		rz_strbuf_append(format, "E");
+		rz_strbuf_append(fields, " ");
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_UNION: {
+		// In `pf` unions defined like structs but all have 0 offset,
+		// which is why it uses `0` character as a marker
+		rz_strbuf_append(format, "0");
+		RzTypeUnionMember *memb;
+		rz_vector_foreach(&type->union_data.members, memb) {
+			const char *membfmt = rz_type_as_format(typedb, type->type);
+			const char *membtype = type_to_identifier(typedb, type->type);
+			rz_strbuf_append(format, membfmt);
+			rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+		}
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_TYPEDEF: {
+		// It might go recursively to find all types behind the alias
+		const char *typefmt = rz_type_as_format(typedb, type->type);
+		rz_strbuf_append(format, typefmt);
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_ATOMIC: {
+		const char *fmt = rz_type_db_format_get(typedb, type->name);
+		rz_strbuf_append(format, fmt);
+		rz_strbuf_append(fields, " ");
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	rz_strbuf_appendf(format, " %s", rz_strbuf_drain(fields));
+	char *bufstr = rz_strbuf_drain(format);
+	return bufstr;
+}
+
+RZ_API const char *rz_type_format(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
+	if (!btype) {
+		return NULL;
+	}
+	return rz_base_type_as_format(typedb, btype);
+}
+
 static void type_to_format(RzTypeDB *typedb, RzStrBuf *buf, RzType *type) {
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
-		Sdb *TDB = typedb->sdb_types;
-		const char *query = sdb_fmt("type.%s", type->identifier.name);
-		const char *format = sdb_const_get(TDB, query, 0);
+		const char *format = rz_type_db_format_get(typedb, type->identifier.name);
 		rz_strbuf_append(buf, format);
 	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
 		rz_strbuf_appendf(buf, "[%" PFMT64d "]", type->array.count);
@@ -2874,7 +2864,8 @@ RZ_API const char *rz_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzType *type) 
 	rz_return_val_if_fail(typedb && type, NULL);
 	if (type->kind == RZ_TYPE_KIND_CALLABLE) {
 		// We can't print anything useful for function type
-		return NULL;
+		// Thus we consider this is just a `void *` pointer
+		return "p";
 	}
 	// Special case of `void *`
 	if (rz_type_is_void_ptr(type)) {
