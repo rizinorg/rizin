@@ -114,7 +114,7 @@ static void type_list_c_all_nl(RzCore *core) {
 }
 
 static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 address) {
-	char *fmt = rz_type_format(core->analysis->typedb, type);
+	const char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
 		return RZ_CMD_STATUS_ERROR;
@@ -124,7 +124,7 @@ static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 addres
 }
 
 static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, const char *varname) {
-	char *fmt = rz_type_format(core->analysis->typedb, type);
+	const char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type \"%s\"\n", type);
 		return RZ_CMD_STATUS_ERROR;
@@ -145,7 +145,7 @@ static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, co
 }
 
 static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 val) {
-	char *fmt = rz_type_format(core->analysis->typedb, type);
+	const char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
 		return RZ_CMD_STATUS_ERROR;
@@ -155,7 +155,7 @@ static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 
 }
 
 static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, const char *hexpairs) {
-	char *fmt = rz_type_format(core->analysis->typedb, type);
+	const char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
 		return RZ_CMD_STATUS_ERROR;
