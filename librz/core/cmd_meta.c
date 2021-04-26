@@ -554,7 +554,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 					if (p) {
 						p = (char *)rz_str_trim_head_ro(p);
 						if (*p == '.') {
-							const char *realformat = rz_type_db_format_byname(core->analysis->typedb, p + 1);
+							const char *realformat = rz_type_db_format_get(core->analysis->typedb, p + 1);
 							if (realformat) {
 								p = (char *)realformat;
 							} else {

@@ -7,6 +7,11 @@
 #include <rz_type.h>
 #include <sdb.h>
 
+typedef struct {
+	RzBaseType *type;
+	const char *format;
+} TypeFormatPair;
+
 static char *get_type_data(Sdb *sdb, const char *type, const char *sname) {
 	rz_return_val_if_fail(sdb && RZ_STR_ISNOTEMPTY(type) && RZ_STR_ISNOTEMPTY(sname), NULL);
 	char *key = rz_str_newf("%s.%s", type, sname);
@@ -18,7 +23,7 @@ static char *get_type_data(Sdb *sdb, const char *type, const char *sname) {
 	return members;
 }
 
-static RzBaseType *get_enum_type(Sdb *sdb, const char *sname) {
+static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 	rz_return_val_if_fail(sdb && RZ_STR_ISNOTEMPTY(sname), NULL);
 
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
@@ -61,7 +66,15 @@ static RzBaseType *get_enum_type(Sdb *sdb, const char *sname) {
 	}
 	free(members);
 
-	return base_type;
+	RzStrBuf key;
+	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	rz_strbuf_fini(&key);
+
+	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
+	tpair->type = base_type;
+	tpair->format = format;
+
+	return tpair;
 
 error:
 	free(members);
@@ -69,7 +82,7 @@ error:
 	return NULL;
 }
 
-static RzBaseType *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
+static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
 	rz_return_val_if_fail(typedb && sdb && RZ_STR_ISNOTEMPTY(sname), NULL);
 
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
@@ -126,7 +139,15 @@ static RzBaseType *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *sname
 	}
 	free(sdb_members);
 
-	return base_type;
+	RzStrBuf key;
+	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	rz_strbuf_fini(&key);
+
+	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
+	tpair->type = base_type;
+	tpair->format = format;
+
+	return tpair;
 
 error:
 	rz_type_base_type_free(base_type);
@@ -134,7 +155,7 @@ error:
 	return NULL;
 }
 
-static RzBaseType *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
+static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
 	rz_return_val_if_fail(typedb && sdb && RZ_STR_ISNOTEMPTY(sname), NULL);
 
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_UNION);
@@ -182,7 +203,15 @@ static RzBaseType *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sname)
 	}
 	free(sdb_members);
 
-	return base_type;
+	RzStrBuf key;
+	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	rz_strbuf_fini(&key);
+
+	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
+	tpair->type = base_type;
+	tpair->format = format;
+
+	return tpair;
 
 error:
 	rz_type_base_type_free(base_type);
@@ -190,7 +219,7 @@ error:
 	return NULL;
 }
 
-static RzBaseType *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
+static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
 	rz_return_val_if_fail(typedb && sdb && RZ_STR_ISNOTEMPTY(sname), NULL);
 
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
@@ -205,14 +234,23 @@ static RzBaseType *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *snam
 	if (!base_type->type) {
 		goto error;
 	}
-	return base_type;
+
+	RzStrBuf key;
+	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
+	rz_strbuf_fini(&key);
+
+	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
+	tpair->type = base_type;
+	tpair->format = format;
+
+	return tpair;
 
 error:
 	rz_type_base_type_free(base_type);
 	return NULL;
 }
 
-static RzBaseType *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
+static TypeFormatPair *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *sname) {
 	rz_return_val_if_fail(typedb && sdb && RZ_STR_ISNOTEMPTY(sname), NULL);
 
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
@@ -221,18 +259,27 @@ static RzBaseType *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *sname
 	}
 
 	char *type = get_type_data(sdb, "type", sname);
-	RzType *ttype = rz_type_parse(typedb->parser, type, NULL);
-	base_type->type = ttype;
-	if (!base_type->type) {
+	RzType *ttype = RZ_NEW0(RzType);
+	if (!ttype) {
 		goto error;
 	}
+	ttype->kind = RZ_TYPE_KIND_IDENTIFIER;
+	ttype->identifier.name = type;
+	ttype->identifier.is_const = false; // We don't preload const types by default
+	ttype->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+	base_type->type = ttype;
 
 	RzStrBuf key;
 	base_type->name = strdup(sname);
 	base_type->size = sdb_num_get(sdb, rz_strbuf_initf(&key, "type.%s.size", sname), 0);
+	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
 	rz_strbuf_fini(&key);
 
-	return base_type;
+	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
+	tpair->type = base_type;
+	tpair->format = format;
+
+	return tpair;
 
 error:
 	rz_type_base_type_free(base_type);
@@ -245,20 +292,27 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(sdb, true);
 	ls_foreach (l, iter, kv) {
-		RzBaseType *base_type = NULL;
+		TypeFormatPair *tpair = NULL;
 		if (!strcmp(sdbkv_value(kv), "struct")) {
-			base_type = get_struct_type(typedb, sdb, sdbkv_key(kv));
+			tpair = get_struct_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "enum")) {
-			base_type = get_enum_type(sdb, sdbkv_key(kv));
+			tpair = get_enum_type(sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "union")) {
-			base_type = get_union_type(typedb, sdb, sdbkv_key(kv));
+			tpair = get_union_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "typedef")) {
-			base_type = get_typedef_type(typedb, sdb, sdbkv_key(kv));
+			tpair = get_typedef_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "type")) {
-			base_type = get_atomic_type(typedb, sdb, sdbkv_key(kv));
+			tpair = get_atomic_type(typedb, sdb, sdbkv_key(kv));
 		}
-		if (base_type) {
-			ht_pp_insert(typedb->types, base_type->name, base_type);
+		if (tpair && tpair->type) {
+			ht_pp_insert(typedb->types, tpair->type->name, tpair->type);
+			// If the SDB provided the preferred type format then we store it
+			char *format = tpair->format ? tpair->format : NULL;
+			// Format is not always defined, e.g. for types like "void" or anonymous types
+			if (format) {
+				ht_pp_insert(typedb->formats, tpair->type->name, format);
+				RZ_LOG_DEBUG("inserting the \"%s\" type & format: \"%s\"\n", tpair->type->name, format);
+			}
 		}
 	}
 	return true;
@@ -523,17 +577,19 @@ static bool types_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb) {
 	return true;
 }
 
-static void sdb_load_by_path(RZ_NONNULL RzTypeDB *typedb, const char *path) {
+static bool sdb_load_by_path(RZ_NONNULL RzTypeDB *typedb, const char *path) {
 	Sdb *db = sdb_new(0, path, 0);
-	types_load_sdb(db, typedb);
+	bool result = types_load_sdb(db, typedb);
 	sdb_close(db);
 	sdb_free(db);
+	return result;
 }
 
-RZ_API void rz_type_db_load_sdb(RzTypeDB *typedb, const char *path) {
-	if (rz_file_exists(path)) {
-		sdb_load_by_path(typedb, path);
+RZ_API bool rz_type_db_load_sdb(RzTypeDB *typedb, const char *path) {
+	if (!rz_file_exists(path)) {
+		return false;
 	}
+	return sdb_load_by_path(typedb, path);
 }
 
 RZ_API void rz_serialize_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb) {
