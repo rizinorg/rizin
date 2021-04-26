@@ -27,9 +27,6 @@ static const struct {
 	{ "hamdist", RZ_HASH_HAMDIST },
 	{ "pcprint", RZ_HASH_PCPRINT },
 	{ "mod255", RZ_HASH_MOD255 },
-	// {"base64", RZ_HASH_BASE64},
-	// {"base91", RZ_HASH_BASE91},
-	// {"punycode", RZ_HASH_PUNYCODE},
 	{ "luhn", RZ_HASH_LUHN },
 
 	{ "fletcher8", RZ_HASH_FLETCHER8 },
@@ -108,7 +105,6 @@ static const struct {
 	{ /* CRC-64/XZ          */ "crc64xz", RZ_HASH_CRC64_XZ },
 	{ /* CRC-64/ISO         */ "crc64iso", RZ_HASH_CRC64_ISO },
 #endif /* #if RZ_HAVE_CRC64_EXTRA */
-	{ NULL, 0 }
 };
 
 /* returns 0-100 */
@@ -177,9 +173,9 @@ RZ_API ut8 rz_hash_deviation(const ut8 *b, ut64 len) {
 }
 
 RZ_API const char *rz_hash_name(ut64 bit) {
-	int i;
-	for (i = 1; hash_name_bytes[i].bit; i++) {
-		if (bit & hash_name_bytes[i].bit) {
+	size_t i;
+	for (i = 1; i < RZ_ARRAY_SIZE(hash_name_bytes); i++) {
+		if (bit == hash_name_bytes[i].bit) {
 			return hash_name_bytes[i].name;
 		}
 	}
@@ -289,7 +285,7 @@ RZ_API int rz_hash_size(ut64 algo) {
 /* Converts a comma separated list of names to the respective bit combination */
 RZ_API ut64 rz_hash_name_to_bits(const char *name) {
 	char tmp[128];
-	int i;
+	size_t i;
 	const char *ptr = name;
 	ut64 ret = 0;
 
@@ -306,7 +302,7 @@ RZ_API ut64 rz_hash_name_to_bits(const char *name) {
 		/* Safety net */
 		tmp[i] = '\0';
 
-		for (i = 0; hash_name_bytes[i].name; i++) {
+		for (i = 0; i < RZ_ARRAY_SIZE(hash_name_bytes); i++) {
 			if (!strcmp(tmp, hash_name_bytes[i].name)) {
 				ret |= hash_name_bytes[i].bit;
 				break;
@@ -327,7 +323,7 @@ RZ_API void rz_hash_do_spice(RzHash *ctx, ut64 algo, int loops, RzHashSeed *seed
 	int i, len, hlen = rz_hash_size(algo);
 	for (i = 0; i < loops; i++) {
 		if (seed) {
-			if (seed->prefix) {
+			if (seed->as_prefix) {
 				memcpy(buf, seed->buf, seed->len);
 				memcpy(buf + seed->len, ctx->digest, hlen);
 			} else {

@@ -1,5 +1,6 @@
 #include <rz_lib.h>
 #include <rz_crypto.h>
+#include <rz_util.h>
 
 #define BITS         1024
 #define RC2_KEY_SIZE 64 // bytes
@@ -435,17 +436,19 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 
 ///////////////////////////////////////////////////////////
 
-static struct rc2_state state;
-static int flag = 0;
-
 static bool rc2_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
-	state.key_size = 1024;
-	return rc2_expandKey(&state, key, keylen);
+	rz_return_val_if_fail(cry->user && key, false);
+	struct rc2_state *state = (struct rc2_state *)cry->user;
+
+	cry->dir = direction;
+	state->key_size = 1024;
+	return rc2_expandKey(state, key, keylen);
 }
 
 static int rc2_get_key_size(RzCrypto *cry) {
-	return state.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	struct rc2_state *state = (struct rc2_state *)cry->user;
+	return state->key_size;
 }
 
 static bool rc2_use(const char *algo) {
@@ -453,14 +456,17 @@ static bool rc2_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+	rz_return_val_if_fail(cry->user, false);
+	struct rc2_state *state = (struct rc2_state *)cry->user;
+
 	ut8 *obuf = calloc(1, len);
 	if (!obuf) {
 		return false;
 	}
-	if (flag == 0) {
-		rc2_crypt(&state, buf, obuf, len);
-	} else if (flag == 1) {
-		rc2_dcrypt(&state, buf, obuf, len);
+	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
+		rc2_crypt(state, buf, obuf, len);
+	} else {
+		rc2_dcrypt(state, buf, obuf, len);
 	}
 	rz_crypto_append(cry, obuf, len);
 	free(obuf);
@@ -471,13 +477,29 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 	return update(cry, buf, len);
 }
 
+static bool rc2_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEW0(struct rc2_state);
+	return cry->user != NULL;
+}
+
+static bool rc2_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_rc2 = {
 	.name = "rc2",
 	.set_key = rc2_set_key,
 	.get_key_size = rc2_get_key_size,
 	.use = rc2_use,
 	.update = update,
-	.final = final
+	.final = final,
+	.init = rc2_init,
+	.fini = rc2_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

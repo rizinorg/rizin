@@ -6,6 +6,7 @@
 #include <rz_lib.h>
 #include <rz_crypto.h>
 #include <memory.h>
+#include <rz_util.h>
 
 #define BLOCK_SIZE 8
 
@@ -240,7 +241,7 @@ static void blowfish_decrypt(struct blowfish_state *const state, const ut8 *inbu
 	}
 }
 
-static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, int keylen) {
+static bool blowfish_init_state(struct blowfish_state *const state, const ut8 *key, int keylen) {
 	if (!state || !key || keylen > 56) {
 		return false;
 	}
@@ -280,15 +281,19 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	return true;
 }
 
-static struct blowfish_state st = { { 0 } };
-
 static bool blowfish_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	rz_return_val_if_fail(cry->user && key, false);
+	struct blowfish_state *st = (struct blowfish_state *)cry->user;
+
 	cry->dir = direction;
-	return blowfish_init(&st, key, keylen);
+	return blowfish_init_state(st, key, keylen);
 }
 
 static int blowfish_get_key_size(RzCrypto *cry) {
-	return st.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	struct blowfish_state *st = (struct blowfish_state *)cry->user;
+
+	return st->key_size;
 }
 
 static bool blowfish_use(const char *algo) {
@@ -296,17 +301,20 @@ static bool blowfish_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
-	if (!cry || !buf) {
+	rz_return_val_if_fail(cry->user, false);
+	struct blowfish_state *st = (struct blowfish_state *)cry->user;
+
+	if (!buf || len < 1) {
 		return false;
 	}
 	ut8 *obuf = calloc(1, len);
 	if (!obuf) {
 		return false;
 	}
-	if (cry->dir == 0) {
-		blowfish_crypt(&st, buf, obuf, len);
-	} else if (cry->dir == 1) {
-		blowfish_decrypt(&st, buf, obuf, len);
+	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
+		blowfish_crypt(st, buf, obuf, len);
+	} else {
+		blowfish_decrypt(st, buf, obuf, len);
 	}
 	rz_crypto_append(cry, obuf, len);
 	free(obuf);
@@ -317,6 +325,20 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 	return update(cry, buf, len);
 }
 
+static bool blowfish_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEW0(struct blowfish_state);
+	return cry->user != NULL;
+}
+
+static bool blowfish_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_blowfish = {
 	.name = "blowfish",
 	.license = "LGPL3",
@@ -324,7 +346,9 @@ RzCryptoPlugin rz_crypto_plugin_blowfish = {
 	.get_key_size = blowfish_get_key_size,
 	.use = blowfish_use,
 	.update = update,
-	.final = final
+	.final = final,
+	.init = blowfish_init,
+	.fini = blowfish_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

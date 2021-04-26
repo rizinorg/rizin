@@ -5,23 +5,26 @@
 #include <rz_crypto.h>
 #include "crypto_aes_algo.h"
 
-// TODO: avoid globals
-static struct aes_state st = { { 0 } };
-
 static bool aes_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	rz_return_val_if_fail(cry->user && key, false);
+	aes_state_t *st = (aes_state_t *)cry->user;
+
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
-	st.key_size = keylen;
-	st.rounds = 6 + (int)(keylen / 4);
-	st.columns = (int)(keylen / 4);
-	memcpy(st.key, key, keylen);
+	st->key_size = keylen;
+	st->rounds = 6 + (int)(keylen / 4);
+	st->columns = (int)(keylen / 4);
+	memcpy(st->key, key, keylen);
 	cry->dir = direction;
 	return true;
 }
 
 static int aes_get_key_size(RzCrypto *cry) {
-	return st.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	aes_state_t *st = (aes_state_t *)cry->user;
+
+	return st->key_size;
 }
 
 static bool aes_use(const char *algo) {
@@ -31,6 +34,13 @@ static bool aes_use(const char *algo) {
 #define BLOCK_SIZE 16
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+	rz_return_val_if_fail(cry->user, 0);
+	aes_state_t *st = (aes_state_t *)cry->user;
+
+	if (len < 1) {
+		return false;
+	}
+
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
@@ -54,15 +64,15 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 		ibuf[len] = 8; //0b1000;
 	}
 
-	if (cry->dir == 0) {
+	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
 		for (i = 0; i < blocks; i++) {
 			const int delta = BLOCK_SIZE * i;
-			aes_encrypt(&st, ibuf + delta, obuf + delta);
+			aes_encrypt(st, ibuf + delta, obuf + delta);
 		}
-	} else if (cry->dir > 0) {
+	} else {
 		for (i = 0; i < blocks; i++) {
 			const int delta = BLOCK_SIZE * i;
-			aes_decrypt(&st, ibuf + delta, obuf + delta);
+			aes_decrypt(st, ibuf + delta, obuf + delta);
 		}
 	}
 
@@ -78,13 +88,29 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 	return update(cry, buf, len);
 }
 
+static bool aes_ecb_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEW0(aes_state_t);
+	return cry->user != NULL;
+}
+
+static bool aes_ecb_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_aes = {
 	.name = "aes-ecb",
 	.set_key = aes_set_key,
 	.get_key_size = aes_get_key_size,
 	.use = aes_use,
 	.update = update,
-	.final = final
+	.final = final,
+	.init = aes_ecb_init,
+	.fini = aes_ecb_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

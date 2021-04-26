@@ -31,9 +31,9 @@ ph crc16 11
 ph crc32 11
 EOF
 EXPECT=<<EOF
+string: crc16: 39c1
 39c1
-39c1
-0d4a1185
+string: crc32: 0d4a1185
 0d4a1185
 EOF
 RUN
@@ -43,7 +43,7 @@ FILE==
 CMDS=<<EOF
 b 12
 w hello world
-!rz-hash -qa rz-hash -a crc8smbus,crc15can,crc16hdlc,crc16usb,crc16citt,crc24,crc32c,crc32ecma267 -s "hello world"
+!rz-hash -qa crc8smbus,crc15can,crc16hdlc,crc16usb,crc16citt,crc24,crc32c,crc32ecma267 -s "hello world"
 ph crc8smbus 11
 ph crc15can 11
 ph crc16hdlc 11
@@ -54,14 +54,14 @@ ph crc32c 11
 ph crc32ecma267 11
 EOF
 EXPECT=<<EOF
-a8
-727a
-ae06
-2238
-efeb
-b03cb7
-c99465aa
-ac86f845
+string: crc8smbus: a8
+string: crc15can: 727a
+string: crc16hdlc: ae06
+string: crc16usb: 2238
+string: crc16citt: efeb
+string: crc24: b03cb7
+string: crc32c: c99465aa
+string: crc32ecma267: ac86f845
 a8
 727a
 ae06
