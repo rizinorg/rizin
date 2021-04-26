@@ -157,7 +157,6 @@ addr       size name           nbbs xref calls cc noreturn
 EOF
 RUN
 
-
 NAME=tables sum
 FILE=bins/elf/hello_world
 CMDS=<<EOF
@@ -185,5 +184,41 @@ addr  size jump  fail
 0x844 3    -1    -1
 0x806 62   0x844 -1
 0x7aa 92   0x844 0x806
+EOF
+RUN
+
+NAME=tables gt/ge/lt/le
+FILE=bins/elf/ls
+CMDS=<<EOF
+omt:size/ge/0x3480:size/cols
+?e
+omt:size/gt/0x3480:size/cols
+?e
+omt:size/le/0x3480:size/cols:quiet
+?e
+omt:size/lt/0x3480:size/cols:quiet
+EOF
+EXPECT=<<EOF
+.----------.
+| size     |
+)----------(
+| 0x87c0   |
+| 0x12791  |
+| 0x3480   |
+`----------'
+
+.----------.
+| size     |
+)----------(
+| 0x87c0   |
+| 0x12791  |
+`----------'
+
+0x12f0
+0x1218
+0x3480
+
+0x12f0
+0x1218
 EOF
 RUN

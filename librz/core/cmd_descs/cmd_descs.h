@@ -273,4 +273,4 @@ RZ_IPI RzCmdStatus rz_zign_info_handler(RzCore *core, int argc, const char **arg
 RZ_IPI RzCmdStatus rz_zign_info_range_handler(RzCore *core, int argc, const char **argv);
 
 // Main function that initialize the entire commands tree
-RZ_IPI void newshell_cmddescs_init(RzCore *core);
+RZ_IPI void rzshell_cmddescs_init(RzCore *core);

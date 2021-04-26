@@ -152,7 +152,7 @@ typedef struct rz_io_map_t {
 	ut32 id;
 	RzInterval itv;
 	ut64 delta; // paddr = itv.addr + delta
-	char *name;
+	RZ_NULLABLE char *name;
 } RzIOMap;
 
 typedef struct rz_io_cache_t {

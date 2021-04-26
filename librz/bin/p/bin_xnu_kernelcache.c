@@ -1019,11 +1019,50 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
+static RzList *maps(RzBinFile *bf) {
+	RzBinObject *obj = bf ? bf->o : NULL;
+	if (!obj || !obj->bin_obj) {
+		return NULL;
+	}
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+
+	RKernelCacheObj *kobj = (RKernelCacheObj *)obj->bin_obj;
+	ensure_kexts_initialized(kobj);
+
+	int nsegs = RZ_MIN(kobj->mach0->nsegs, 128);
+	int i;
+	for (i = 0; i < nsegs; i++) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			break;
+		}
+		char segname[17];
+		struct MACH0_(segment_command) *seg = &kobj->mach0->segs[i];
+		rz_str_ncpy(segname, seg->segname, 17);
+		rz_str_filter(segname, -1);
+		map->name = rz_str_newf("%d.%s", i, segname);
+		map->paddr = seg->fileoff + bf->o->boffset;
+		map->psize = seg->vmsize;
+		map->vsize = seg->vmsize;
+		map->vaddr = seg->vmaddr;
+		if (!map->vaddr) {
+			map->vaddr = map->paddr;
+		}
+		map->perm = prot2perm(seg->initprot);
+		rz_list_append(ret, map);
+	}
+
+	return ret;
+}
+
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinObject *obj = bf ? bf->o : NULL;
 
-	if (!obj || !obj->bin_obj || !(ret = rz_list_newf((RzListFree)free))) {
+	if (!obj || !obj->bin_obj || !(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -1068,7 +1107,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->vsize = seg->vmsize;
 		ptr->paddr = seg->fileoff + bf->o->boffset;
 		ptr->vaddr = seg->vmaddr;
-		ptr->add = true;
 		ptr->is_segment = true;
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
@@ -2229,6 +2267,7 @@ RzBinPlugin rz_bin_plugin_xnu_kernelcache = {
 	.load_buffer = &load_buffer,
 	.entries = &entries,
 	.baddr = &baddr,
+	.maps = &maps,
 	.symbols = &symbols,
 	.sections = &sections,
 	.check_buffer = &check_buffer,

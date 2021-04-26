@@ -12,7 +12,7 @@
 
 enum TokenType {
 	CMD_IDENTIFIER,
-	HELP_COMMAND,
+	HELP_STMT,
 	FILE_DESCRIPTOR,
 	EQ_SEP_CONCAT,
 	CONCAT,
@@ -156,7 +156,7 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 		lexer->result_symbol = EQ_SEP_CONCAT;
 		return true;
 	}
-	if (valid_symbols[CMD_IDENTIFIER] || valid_symbols[HELP_COMMAND]) {
+	if (valid_symbols[CMD_IDENTIFIER] || valid_symbols[HELP_STMT]) {
 		char res[CMD_IDENTIFIER_MAX_LENGTH + 1];
 		int i_res = 0;
 
@@ -188,7 +188,7 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 			if (i_res == 1) {
 				return false;
 			}
-			lexer->result_symbol = HELP_COMMAND;
+			lexer->result_symbol = HELP_STMT;
 		} else {
 			if ((is_special_start(res[0]) && strcmp(res, "R=!")) || is_pf_cmd(res) || is_env_cmd(res) || is_at_cmd(res) || !valid_symbols[CMD_IDENTIFIER]) {
 				return false;

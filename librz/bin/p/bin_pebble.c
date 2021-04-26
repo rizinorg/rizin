@@ -108,7 +108,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof(ut32);
 	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
 	ptr->perm = RZ_PERM_RW;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 	if (ptr->vaddr < textsize) {
 		textsize = ptr->vaddr;
@@ -122,7 +121,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
 	ptr->perm = RZ_PERM_R;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 	if (ptr->vaddr < textsize) {
 		textsize = ptr->vaddr;
@@ -135,7 +133,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
 	ptr->perm = RZ_PERM_RWX;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	if (!(ptr = RZ_NEW0(RzBinSection))) {
@@ -145,7 +142,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->vsize = ptr->size = sizeof(PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
 	ptr->perm = RZ_PERM_R;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 
 	return ret;
@@ -194,6 +190,7 @@ RzBinPlugin rz_bin_plugin_pebble = {
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.entries = entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.strings = &strings,
 	.info = &info,

@@ -24,6 +24,17 @@ nth paddr          size vaddr         vsize perm name
 EOF
 RUN
 
+NAME=nso maps
+FILE=bins/nso/application.nso
+ARGS=-e io.cache=true
+CMDS=om
+EXPECT=<<EOF
+ 3 fd: 3 +0x00000100 0x08000000 - 0x08020e17 r-x fmap.text
+ 2 fd: 3 +0x0001718f 0x08021000 - 0x0802eb0b r-- fmap.ro
+ 1 fd: 3 +0x0001f856 0x0802f000 - 0x08033217 r-- fmap.data
+EOF
+RUN
+
 NAME=nso entry
 FILE=bins/nso/application.nso
 ARGS=-e io.cache=true

@@ -494,6 +494,7 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

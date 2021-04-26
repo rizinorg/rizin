@@ -5567,40 +5567,15 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				if (!f) {
 					f = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
 				}
-				RzListIter *locs_it = NULL;
 				if (f && input[2] == 'j') { // "pdfj"
-					RzAnalysisBlock *b;
-					ut32 fcn_size = rz_analysis_function_realsize(f);
-					const char *orig_bb_middle = rz_config_get(core->config, "asm.bb.middle");
-					rz_config_set_i(core->config, "asm.bb.middle", false);
 					pj = pj_new();
 					if (!pj) {
 						break;
 					}
-					pj_o(pj);
-					pj_ks(pj, "name", f->name);
-					pj_kn(pj, "size", fcn_size);
-					pj_kn(pj, "addr", f->addr);
-					pj_k(pj, "ops");
-					pj_a(pj);
-					rz_list_sort(f->bbs, bb_cmpaddr);
-					rz_list_foreach (f->bbs, locs_it, b) {
-
-						ut8 *buf = malloc(b->size);
-						if (buf) {
-							rz_io_read_at(core->io, b->addr, buf, b->size);
-							rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, pj);
-							free(buf);
-						} else {
-							eprintf("cannot allocate %" PFMT64u " byte(s)\n", b->size);
-						}
-					}
-					pj_end(pj);
-					pj_end(pj);
+					rz_core_print_function_disasm_json(core, f, pj);
 					rz_cons_printf("%s\n", pj_string(pj));
 					pj_free(pj);
 					pd_result = 0;
-					rz_config_set(core->config, "asm.bb.middle", orig_bb_middle);
 				} else if (f) {
 					ut64 linearsz = rz_analysis_function_linear_size(f);
 					ut64 realsz = rz_analysis_function_realsize(f);

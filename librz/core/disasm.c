@@ -6709,3 +6709,34 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 	rz_config_hold_free(chold);
 	return i;
 }
+
+RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
+	RzAnalysisBlock *b;
+	RzListIter *locs_it = NULL;
+	ut32 fcn_size = rz_analysis_function_realsize(fcn);
+	const char *orig_bb_middle = rz_config_get(core->config, "asm.bb.middle");
+	rz_config_set_i(core->config, "asm.bb.middle", false);
+	pj_o(pj);
+	pj_ks(pj, "name", fcn->name);
+	pj_kn(pj, "size", fcn_size);
+	pj_kn(pj, "addr", fcn->addr);
+	pj_k(pj, "ops");
+	pj_a(pj);
+	rz_list_sort(fcn->bbs, bb_cmpaddr);
+	rz_list_foreach (fcn->bbs, locs_it, b) {
+
+		ut8 *buf = malloc(b->size);
+		if (buf) {
+			rz_io_read_at(core->io, b->addr, buf, b->size);
+			rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, pj);
+			free(buf);
+		} else {
+			eprintf("cannot allocate %" PFMT64u " byte(s)\n", b->size);
+			return false;
+		}
+	}
+	pj_end(pj);
+	pj_end(pj);
+	rz_config_set(core->config, "asm.bb.middle", orig_bb_middle);
+	return true;
+}

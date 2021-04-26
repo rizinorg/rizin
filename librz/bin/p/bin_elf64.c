@@ -139,6 +139,7 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

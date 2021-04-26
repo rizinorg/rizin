@@ -5,3 +5,28 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=Plan9: maps
+FILE=bins/plan9/bin
+CMDS=om
+EXPECT=<<EOF
+ 4 fd: 3 +0x00000020 0x00000020 - 0x364a0720 r-x fmap.text
+ 3 fd: 5 +0x00000000 0x364a0721 - 0x364a0e21 r-x mmap.text
+ 2 fd: 3 +0x364a0721 0x364a0721 - 0x76d40c20 r-- fmap.data
+ 1 fd: 4 +0x00000000 0x76d40c21 - 0x76d41120 rw- mmap.data
+EOF
+RUN
+
+NAME=Plan9: sections
+FILE=bins/plan9/bin
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr             size vaddr            vsize perm name
+-----------------------------------------------------------
+0   0x00000020  0x364a0701 0x00000020  0x364a0e02 -r-x text
+1   0x364a0721  0x408a0500 0x364a0721  0x408a0a00 -rw- data
+
+EOF
+RUN

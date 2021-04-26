@@ -77,6 +77,10 @@ static ut64 baddr(RzBinFile *bf) {
 	return MACH0_(get_baddr)(bin);
 }
 
+static RzList *maps(RzBinFile *bf) {
+	return MACH0_(get_maps)(bf);
+}
+
 static RzList *sections(RzBinFile *bf) {
 	return MACH0_(get_segments)(bf);
 }
@@ -1159,6 +1163,7 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.signature = &entitlements,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

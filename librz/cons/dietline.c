@@ -34,10 +34,7 @@ static inline bool is_word_break_char(char ch, bool mode) {
 	if (mode == MAJOR_BREAK) {
 		return ch == ' ';
 	}
-	int len =
-		sizeof(word_break_characters) /
-		sizeof(word_break_characters[0]);
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(word_break_characters); i++) {
 		if (ch == word_break_characters[i]) {
 			return true;
 		}
@@ -46,98 +43,49 @@ static inline bool is_word_break_char(char ch, bool mode) {
 }
 
 /* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
-static void backward_kill_word(void) {
+static void backward_kill_word(BreakMode mode) {
 	int i, len;
-	if (I.buffer.index > 0) {
-		for (i = I.buffer.index; i > 0 && is_word_break_char(I.buffer.data[i], MINOR_BREAK); i--) {
-			/* Move the cursor index back until we hit a non-word-break-character */
-		}
-		for (; i > 0 && !is_word_break_char(I.buffer.data[i], MINOR_BREAK); i--) {
-			/* Move the cursor index back until we hit a word-break-character */
-		}
-		if (i > 0) {
-			i++;
-		} else if (i < 0) {
-			i = 0;
-		}
-		if (I.buffer.index > I.buffer.length) {
-			I.buffer.length = I.buffer.index;
-		}
-		len = I.buffer.index - i + 1;
-		free(I.clipboard);
-		I.clipboard = rz_str_ndup(I.buffer.data + i, len);
-		rz_line_clipboard_push(I.clipboard);
-		memmove(I.buffer.data + i, I.buffer.data + I.buffer.index,
-			I.buffer.length - I.buffer.index + 1);
-		I.buffer.length = strlen(I.buffer.data);
-		I.buffer.index = i;
+	if (I.buffer.index <= 0) {
+		return;
 	}
-}
-
-static void backward_kill_Word(void) {
-	int i, len;
-	if (I.buffer.index > 0) {
-		for (i = I.buffer.index; i > 0 && is_word_break_char(I.buffer.data[i], MAJOR_BREAK); i--) {
-			/* Move the cursor index back until we hit a non-word-break-character */
-		}
-		for (; i > 0 && !is_word_break_char(I.buffer.data[i], MAJOR_BREAK); i--) {
-			/* Move the cursor index back until we hit a word-break-character */
-		}
-		if (i > 0) {
-			i++;
-		} else if (i < 0) {
-			i = 0;
-		}
-		if (I.buffer.index > I.buffer.length) {
-			I.buffer.length = I.buffer.index;
-		}
-		len = I.buffer.index - i + 1;
-		free(I.clipboard);
-		I.clipboard = rz_str_ndup(I.buffer.data + i, len);
-		rz_line_clipboard_push(I.clipboard);
-		memmove(I.buffer.data + i, I.buffer.data + I.buffer.index,
-			I.buffer.length - I.buffer.index + 1);
-		I.buffer.length = strlen(I.buffer.data);
-		I.buffer.index = i;
+	for (i = I.buffer.index; i > 0 && is_word_break_char(I.buffer.data[i], mode); i--) {
+		/* Move the cursor index back until we hit a non-word-break-character */
 	}
-}
-
-static void kill_word(void) {
-	int i, len;
-	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char(I.buffer.data[i], MINOR_BREAK); i++) {
-		/* Move the cursor index forward until we hit a non-word-break-character */
+	for (; i > 0 && !is_word_break_char(I.buffer.data[i], mode); i--) {
+		/* Move the cursor index back until we hit a word-break-character */
 	}
-	for (; i < I.buffer.length && !is_word_break_char(I.buffer.data[i], MINOR_BREAK); i++) {
-		/* Move the cursor index forward we hit a word-break-character */
+	if (i > 0) {
+		i++;
+	} else if (i < 0) {
+		i = 0;
 	}
-	if (I.buffer.index >= I.buffer.length) {
+	if (I.buffer.index > I.buffer.length) {
 		I.buffer.length = I.buffer.index;
 	}
-	len = i - I.buffer.index + 1;
+	len = I.buffer.index - i;
+	free(I.clipboard);
+	I.clipboard = rz_str_ndup(I.buffer.data + i, len);
+	rz_line_clipboard_push(I.clipboard);
+	memmove(I.buffer.data + i, I.buffer.data + I.buffer.index,
+		I.buffer.length - I.buffer.index + 1);
+	I.buffer.length = strlen(I.buffer.data);
+	I.buffer.index = i;
+}
+
+static void kill_word(BreakMode mode) {
+	int i, len;
+	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char(I.buffer.data[i], mode); i++) {
+		/* Move the cursor index forward until we hit a non-word-break-character */
+	}
+	for (; i < I.buffer.length && !is_word_break_char(I.buffer.data[i], mode); i++) {
+		/* Move the cursor index forward until we hit a word-break-character */
+	}
+	len = i - I.buffer.index;
 	free(I.clipboard);
 	I.clipboard = rz_str_ndup(I.buffer.data + I.buffer.index, len);
 	rz_line_clipboard_push(I.clipboard);
-	memmove(I.buffer.data + I.buffer.index, I.buffer.data + i, len);
-	I.buffer.length = strlen(I.buffer.data);
-}
-
-static void kill_Word(void) {
-	int i, len;
-	for (i = I.buffer.index; i < I.buffer.length && is_word_break_char(I.buffer.data[i], MAJOR_BREAK); i++) {
-		/* Move the cursor index forward until we hit a non-word-break-character */
-	}
-	for (; i < I.buffer.length && !is_word_break_char(I.buffer.data[i], MAJOR_BREAK); i++) {
-		/* Move the cursor index forward we hit a word-break-character */
-	}
-	if (I.buffer.index >= I.buffer.length) {
-		I.buffer.length = I.buffer.index;
-	}
-	len = i - I.buffer.index + 1;
-	free(I.clipboard);
-	I.clipboard = rz_str_ndup(I.buffer.data + I.buffer.index, len);
-	rz_line_clipboard_push(I.clipboard);
-	memmove(I.buffer.data + I.buffer.index, I.buffer.data + i, len);
-	I.buffer.length = strlen(I.buffer.data);
+	memmove(I.buffer.data + I.buffer.index, I.buffer.data + i, I.buffer.length - i + 1);
+	I.buffer.length -= len;
 }
 
 static void paste(void) {
@@ -259,6 +207,15 @@ static int rz_line_readchar_utf8(ut8 *s, int slen) {
 
 #if __WINDOWS__
 static int rz_line_readchar_win(ut8 *s, int slen) { // this function handle the input in console mode
+	if (slen > 0 && rz_cons_readbuffer_readchar(s)) {
+		if (s[0] == '\x1b' && rz_cons_readbuffer_readchar(s + 1)) {
+			if (s[1] == '\x31' && rz_cons_readbuffer_readchar(s + 2)) {
+				return 3;
+			}
+			return 2;
+		}
+		return 1;
+	}
 	INPUT_RECORD irInBuf = { { 0 } };
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
@@ -1218,27 +1175,27 @@ static void __vi_mode(void) {
 				case 'i': {
 					char t = rz_cons_readchar();
 					if (t == 'w') { // diw
-						kill_word();
-						backward_kill_word();
+						kill_word(MINOR_BREAK);
+						backward_kill_word(MINOR_BREAK);
 					} else if (t == 'W') { // diW
-						kill_Word();
-						backward_kill_word();
+						kill_word(MAJOR_BREAK);
+						backward_kill_word(MINOR_BREAK);
 					}
 					if (I.hud) {
 						I.hud->vi = false;
 					}
 				} break;
 				case 'W':
-					kill_Word();
+					kill_word(MAJOR_BREAK);
 					break;
 				case 'w':
-					kill_word();
+					kill_word(MINOR_BREAK);
 					break;
 				case 'B':
-					backward_kill_Word();
+					backward_kill_word(MAJOR_BREAK);
 					break;
 				case 'b':
-					backward_kill_word();
+					backward_kill_word(MINOR_BREAK);
 					break;
 				case 'h':
 					__delete_prev_char();
@@ -1616,10 +1573,10 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 			yank_flag = enable_yank_pop ? 1 : 0;
 			break;
 		case 20: // ^t Kill from point to the end of the current word,
-			kill_word();
+			kill_word(MINOR_BREAK);
 			break;
 		case 15: // ^o kill backward
-			backward_kill_word();
+			backward_kill_word(MINOR_BREAK);
 			break;
 		case 14: // ^n
 			if (I.hud) {
@@ -1668,7 +1625,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 #endif
 			switch (buf[0]) {
 			case 127: // alt+bkspace
-				backward_kill_word();
+				backward_kill_word(MINOR_BREAK);
 				break;
 			case -1: // escape key, goto vi mode
 				if (I.enable_vi_mode) {
@@ -1701,7 +1658,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				break;
 			case 'D':
 			case 'd':
-				kill_word();
+				kill_word(MINOR_BREAK);
 				break;
 			case 'F':
 			case 'f':

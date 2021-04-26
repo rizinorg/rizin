@@ -1,5 +1,5 @@
-NAME=Double quotes - newshell
-ARGS=-e cfg.newshell=true
+NAME=Double quotes - rzshell
+ARGS=-e cfg.oldshell=false
 FILE==
 CMDS=<<EOF
 w "Hello World"
@@ -22,8 +22,8 @@ Hello@World
 EOF
 RUN
 
-NAME=Single quotes - newshell
-ARGS=-e cfg.newshell=true
+NAME=Single quotes - rzshell
+ARGS=-e cfg.oldshell=false
 FILE==
 CMDS=<<EOF
 w 'Hello World'
@@ -50,8 +50,8 @@ Hello@World
 EOF
 RUN
 
-NAME=Quotes and substitution - newshell
-ARGS=-e cfg.newshell=true
+NAME=Quotes and substitution - rzshell
+ARGS=-e cfg.oldshell=false
 FILE==
 CMDS=<<EOF
 w "Hello $(?e World)"

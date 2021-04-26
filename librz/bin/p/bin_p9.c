@@ -71,7 +71,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->paddr = 8 * 4;
 	ptr->vaddr = ptr->paddr;
 	ptr->perm = RZ_PERM_RX; // r-x
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 	// add data segment
 	datasize = rz_buf_read_le32_at(bf->buf, 8);
@@ -85,7 +84,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_RW;
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 	// ignore bss or what
@@ -101,7 +99,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_R; // r--
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 	// add spsz segment
@@ -116,7 +113,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_R; // r--
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 	// add pcsz segment
@@ -131,7 +127,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->paddr = spszsize + symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_R; // r--
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 	return ret;
@@ -230,6 +225,7 @@ RzBinPlugin rz_bin_plugin_p9 = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

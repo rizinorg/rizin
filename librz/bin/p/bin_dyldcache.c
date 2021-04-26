@@ -1678,41 +1678,47 @@ static void sections_from_bin(RzList *ret, RzBinFile *bf, RDyldBinImage *bin) {
 	(mach0);
 }
 
+static RzList *maps(RzBinFile *bf) {
+	RDyldCache *cache = (RDyldCache *)bf->o->bin_obj;
+	if (!cache) {
+		return NULL;
+	}
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+	ut64 slide = rebase_infos_get_slide(cache);
+	for (ut32 i = 0; i < cache->hdr->mappingCount; i++) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			rz_list_free(ret);
+			return NULL;
+		}
+		map->name = rz_str_newf("cache_map.%d", i);
+		map->paddr = cache->maps[i].fileOffset;
+		map->psize = cache->maps[i].size;
+		map->vsize = map->psize;
+		map->vaddr = cache->maps[i].address + slide;
+		map->perm = prot2perm(cache->maps[i].initProt);
+		rz_list_append(ret, map);
+	}
+	return ret;
+}
+
 static RzList *sections(RzBinFile *bf) {
 	RDyldCache *cache = (RDyldCache *)bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
 	}
-
-	RzList *ret = rz_list_newf(free);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
-
 	RzListIter *iter;
 	RDyldBinImage *bin;
 	rz_list_foreach (cache->bins, iter, bin) {
 		sections_from_bin(ret, bf, bin);
 	}
-
-	RzBinSection *ptr = NULL;
-	int i;
-	for (i = 0; i < cache->hdr->mappingCount; i++) {
-		if (!(ptr = RZ_NEW0(RzBinSection))) {
-			rz_list_free(ret);
-			return NULL;
-		}
-		ptr->name = rz_str_newf("cache_map.%d", i);
-		ptr->size = cache->maps[i].size;
-		ptr->vsize = ptr->size;
-		ptr->paddr = cache->maps[i].fileOffset;
-		ptr->vaddr = cache->maps[i].address;
-		ptr->add = true;
-		ptr->is_segment = true;
-		ptr->perm = prot2perm(cache->maps[i].initProt);
-		rz_list_append(ret, ptr);
-	}
-
 	ut64 slide = rebase_infos_get_slide(cache);
 	if (slide) {
 		RzBinSection *section;
@@ -1720,7 +1726,6 @@ static RzList *sections(RzBinFile *bf) {
 			section->vaddr += slide;
 		}
 	}
-
 	return ret;
 }
 
@@ -2042,6 +2047,7 @@ RzBinPlugin rz_bin_plugin_dyldcache = {
 	.entries = &entries,
 	.baddr = &baddr,
 	.symbols = &symbols,
+	.maps = &maps,
 	.sections = &sections,
 	.check_buffer = &check_buffer,
 	.destroy = &destroy,

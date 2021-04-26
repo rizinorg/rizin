@@ -322,7 +322,7 @@ EOF
 RUN
 
 NAME=w_escape
-ARGS=-ecfg.newshell=true
+ARGS=-ecfg.oldshell=false
 FILE==
 CMDS=<<EOF
 wv8\@10

@@ -40,6 +40,15 @@ nth paddr       size vaddr       vsize perm name
 EOF
 RUN
 
+NAME=maps 16 bits omf
+FILE=bins/omf/hello_world
+CMDS=om
+EXPECT=<<EOF
+ 2 fd: 3 +0x00000073 0x00001000 - 0x00001012 r-x fmap.text_1
+ 1 fd: 3 +0x00000095 0x00001013 - 0x00001020 r-x fmap.data_1
+EOF
+RUN
+
 NAME=sections 16 bits omf - content
 FILE=bins/omf/hello_world
 CMDS=px 16 @ section.text_1; px 16 @ section.data_1
@@ -98,6 +107,15 @@ nth paddr       size vaddr       vsize perm name
 0   0x00000074  0x1d 0x00001000   0x1d -rwx .text_1
 1   0x000000a3   0xe 0x0000101d    0xe -rwx .data_1
 
+EOF
+RUN
+
+NAME=maps 32 bits omf
+FILE=bins/omf/hello_world32
+CMDS=om
+EXPECT=<<EOF
+ 2 fd: 3 +0x00000074 0x00001000 - 0x0000101c r-x fmap..text_1
+ 1 fd: 3 +0x000000a3 0x0000101d - 0x0000102a r-x fmap..data_1
 EOF
 RUN
 

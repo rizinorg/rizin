@@ -6,9 +6,9 @@ p8 @@.file
 
 ---
 
-(commands
-  (iter_file_lines_command
-    (arged_command (cmd_identifier))
+(statements
+  (iter_file_lines_stmt
+    (arged_stmt (cmd_identifier))
     (arg (arg_identifier))))
 
 
@@ -20,9 +20,9 @@ p8 @@=off1 off2
 
 ---
 
-(commands
-  (iter_offsets_command
-    (arged_command (cmd_identifier))
+(statements
+  (iter_offsets_stmt
+    (arged_stmt (cmd_identifier))
     (args
       (arg (arg_identifier))
       (arg (arg_identifier)))))
@@ -36,9 +36,9 @@ p8 @@@=off1 sz1 off2 sz2
 
 ---
 
-(commands
-  (iter_offsetssizes_command
-    (arged_command (cmd_identifier))
+(statements
+  (iter_offsetssizes_stmt
+    (arged_stmt (cmd_identifier))
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))
@@ -54,10 +54,10 @@ p8 @@/x 9090
 
 ---
 
-(commands
-  (iter_hit_command
-    (arged_command (cmd_identifier))
-    (arged_command (cmd_identifier)
+(statements
+  (iter_hit_stmt
+    (arged_stmt (cmd_identifier))
+    (arged_stmt (cmd_identifier)
       (args
         (arg (arg_identifier))))))
 
@@ -70,10 +70,10 @@ p8 @@c:?e hello
 
 ---
 
-(commands
-  (iter_interpret_command
-    (arged_command (cmd_identifier))
-    (arged_command (cmd_identifier)
+(statements
+  (iter_interpret_stmt
+    (arged_stmt (cmd_identifier))
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))))
 
 
@@ -85,10 +85,10 @@ p8 @@@c:?e hello 10
 
 ---
 
-(commands
-  (iter_interpret_offsetssizes_command
-    (arged_command (cmd_identifier))
-    (arged_command (cmd_identifier)
+(statements
+  (iter_interpret_offsetssizes_stmt
+    (arged_stmt (cmd_identifier))
+    (arged_stmt (cmd_identifier)
       (args
         (arg (arg_identifier))
         (arg (arg_identifier))))))
@@ -103,11 +103,11 @@ pd @@C:mycomm*
 
 ---
 
-(commands
-  (iter_comment_command
-    (arged_command (cmd_identifier)))
-  (iter_comment_command
-    (arged_command (cmd_identifier))
+(statements
+  (iter_comment_stmt
+    (arged_stmt (cmd_identifier)))
+  (iter_comment_stmt
+    (arged_stmt (cmd_identifier))
     (arg (arg_identifier))))
 
 
@@ -122,18 +122,18 @@ p8 4 @@dbts
 
 ---
 
-(commands
-  (iter_dbta_command
-    (arged_command (cmd_identifier)
+(statements
+  (iter_dbta_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier)))))
-  (iter_dbta_command
-    (arged_command (cmd_identifier)
+  (iter_dbta_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier)))))
-  (iter_dbtb_command
-    (arged_command (cmd_identifier)
+  (iter_dbtb_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier)))))
-  (iter_dbts_command
-    (arged_command (cmd_identifier)
+  (iter_dbts_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))))
 
 
@@ -145,9 +145,9 @@ p8 @@t
 
 ---
 
-(commands
-  (iter_threads_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_threads_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ===============
@@ -158,9 +158,9 @@ p8 @@b
 
 ---
 
-(commands
-  (iter_bbs_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_bbs_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ===============
@@ -171,9 +171,9 @@ p8 @@i
 
 ---
 
-(commands
-  (iter_instrs_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_instrs_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ===============
@@ -184,9 +184,9 @@ p8 @@ii
 
 ---
 
-(commands
-  (iter_import_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_import_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ===============
@@ -197,9 +197,9 @@ p8 @@iS
 
 ---
 
-(commands
-  (iter_sections_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_sections_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ===============
@@ -210,9 +210,9 @@ p8 @@iSS
 
 ---
 
-(commands
-  (iter_segments_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_segments_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ===============
@@ -223,9 +223,9 @@ p8 @@is
 
 ---
 
-(commands
-  (iter_symbol_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_symbol_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ===============
@@ -236,9 +236,9 @@ p8 @@iz
 
 ---
 
-(commands
-  (iter_string_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_string_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ============
@@ -250,12 +250,12 @@ p8 4 @@f:sym.*
 
 ---
 
-(commands
-  (iter_flags_command
-    (arged_command (cmd_identifier)
+(statements
+  (iter_flags_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier)))))
-  (iter_flags_command
-    (arged_command (cmd_identifier)
+  (iter_flags_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (arg (arg_identifier))))
 
@@ -269,11 +269,11 @@ p8 @@F:lib*
 
 ---
 
-(commands
-  (iter_function_command
-    (arged_command (cmd_identifier)))
-  (iter_function_command
-    (arged_command (cmd_identifier))
+(statements
+  (iter_function_stmt
+    (arged_stmt (cmd_identifier)))
+  (iter_function_stmt
+    (arged_stmt (cmd_identifier))
     (arg (arg_identifier))))
 
 
@@ -285,9 +285,9 @@ pd @@om
 
 ---
 
-(commands
-  (iter_iomap_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_iomap_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ==========
@@ -298,9 +298,9 @@ pd @@dm
 
 ---
 
-(commands
-  (iter_dbgmap_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_dbgmap_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 =============
@@ -311,9 +311,9 @@ pd @@r
 
 ---
 
-(commands
-  (iter_register_command
-    (arged_command (cmd_identifier))))
+(statements
+  (iter_register_stmt
+    (arged_stmt (cmd_identifier))))
 
 
 ===============
@@ -324,9 +324,9 @@ p8 @@s:0xd000 0xe000 0x100
 
 ---
 
-(commands
-  (iter_step_command
-    (arged_command (cmd_identifier))
+(statements
+  (iter_step_stmt
+    (arged_stmt (cmd_identifier))
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))

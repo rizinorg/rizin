@@ -107,7 +107,7 @@ rules to make the git history more readable and consistent:
 * ##refactor - improve code quality
 * ##remote   - rizin over tcp, http, rap, serial .. including collaboration
 * ##search   - rz-find, / command, ..
-* ##shell    - commandline, newshell, ..
+* ##shell    - commandline, rzshell, ..
 * ##signatures-searching/generating them
 * ##test     - testing infrastructure fixes/changes
 * ##tools    - rz-pm, rz-run, rz-ax ... that don't fit in other categories

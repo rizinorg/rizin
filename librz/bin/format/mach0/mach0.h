@@ -183,9 +183,9 @@ struct MACH0_(obj_t) * MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) * op
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) * bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) * bin);
 char *MACH0_(section_type_to_string)(ut64 type);
-//RzList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin);
 RzList *MACH0_(section_flag_to_rzlist)(ut64 flag);
-RzList *MACH0_(get_segments)(RzBinFile *bf); // struct MACH0_(obj_t) *bin);
+RzList *MACH0_(get_maps)(RzBinFile *bf);
+RzList *MACH0_(get_segments)(RzBinFile *bf);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin);
 const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) * bin);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) * mo, RzBinSymbolCallback cb, void *user);

@@ -92,7 +92,6 @@ static void addrom(RzList *ret, const char *name, int i, ut64 paddr, ut64 vaddr,
 	ptr->vaddr = vaddr;
 	ptr->size = ptr->vsize = size;
 	ptr->perm = RZ_PERM_RX;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 }
 
@@ -280,6 +279,7 @@ RzBinPlugin rz_bin_plugin_sfc = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.symbols = &symbols,
 	.info = &info,

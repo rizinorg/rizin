@@ -6,8 +6,8 @@ Simple search
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (double_quoted_arg)))))
 
 
@@ -20,10 +20,10 @@ Not matching
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))
 
 
@@ -35,8 +35,8 @@ Reg exp
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))
 
 
@@ -48,6 +48,6 @@ Search with nibbles
 
 ---
 
-(commands
-  (arged_command (cmd_identifier)
+(statements
+  (arged_stmt (cmd_identifier)
     (args (arg (arg_identifier)))))

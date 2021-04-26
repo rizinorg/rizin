@@ -112,7 +112,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->vsize = sec->payload_len;
 		ptr->vaddr = sec->offset;
 		ptr->paddr = sec->offset;
-		ptr->add = true;
 		// TODO permissions
 		ptr->perm = 0;
 		rz_list_append(ret, ptr);
@@ -336,6 +335,7 @@ RzBinPlugin rz_bin_plugin_wasm = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

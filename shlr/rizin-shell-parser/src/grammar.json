@@ -1,7 +1,7 @@
 {
   "name": "rzcmd",
   "rules": {
-    "commands": {
+    "statements": {
       "type": "CHOICE",
       "members": [
         {
@@ -15,7 +15,7 @@
               "type": "REPEAT",
               "content": {
                 "type": "SYMBOL",
-                "name": "cmd_delimiter"
+                "name": "stmt_delimiter"
               }
             }
           ]
@@ -27,12 +27,12 @@
               "type": "REPEAT",
               "content": {
                 "type": "SYMBOL",
-                "name": "cmd_delimiter"
+                "name": "stmt_delimiter"
               }
             },
             {
               "type": "SYMBOL",
-              "name": "_command"
+              "name": "_statement"
             },
             {
               "type": "REPEAT",
@@ -41,14 +41,14 @@
                 "members": [
                   {
                     "type": "SYMBOL",
-                    "name": "cmd_delimiter"
+                    "name": "stmt_delimiter"
                   },
                   {
                     "type": "CHOICE",
                     "members": [
                       {
                         "type": "SYMBOL",
-                        "name": "_command"
+                        "name": "_statement"
                       },
                       {
                         "type": "BLANK"
@@ -62,7 +62,7 @@
         }
       ]
     },
-    "_commands_singleline": {
+    "_statements_singleline": {
       "type": "PREC",
       "value": 1,
       "content": {
@@ -72,12 +72,12 @@
             "type": "REPEAT",
             "content": {
               "type": "SYMBOL",
-              "name": "cmd_delimiter_singleline"
+              "name": "stmt_delimiter_singleline"
             }
           },
           {
             "type": "SYMBOL",
-            "name": "_command"
+            "name": "_statement"
           },
           {
             "type": "REPEAT",
@@ -86,14 +86,14 @@
               "members": [
                 {
                   "type": "SYMBOL",
-                  "name": "cmd_delimiter_singleline"
+                  "name": "stmt_delimiter_singleline"
                 },
                 {
                   "type": "CHOICE",
                   "members": [
                     {
                       "type": "SYMBOL",
-                      "name": "_command"
+                      "name": "_statement"
                     },
                     {
                       "type": "BLANK"
@@ -106,20 +106,20 @@
         ]
       }
     },
-    "_command": {
+    "_statement": {
       "type": "CHOICE",
       "members": [
         {
           "type": "SYMBOL",
-          "name": "redirect_command"
+          "name": "redirect_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_simple_command"
+          "name": "_simple_stmt"
         }
       ]
     },
-    "legacy_quoted_command": {
+    "legacy_quoted_stmt": {
       "type": "SEQ",
       "members": [
         {
@@ -147,239 +147,239 @@
         }
       ]
     },
-    "_simple_command": {
+    "_simple_stmt": {
       "type": "CHOICE",
       "members": [
         {
           "type": "SYMBOL",
-          "name": "help_command"
+          "name": "help_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "repeat_command"
+          "name": "repeat_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "arged_command"
+          "name": "arged_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "number_command"
+          "name": "number_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_tmp_command"
+          "name": "_tmp_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_iter_command"
+          "name": "_iter_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_pipe_command"
+          "name": "_pipe_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "grep_command"
+          "name": "grep_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "legacy_quoted_command"
+          "name": "legacy_quoted_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_pf_commands"
+          "name": "_pf_stmts"
         }
       ]
     },
-    "_tmp_command": {
+    "_tmp_stmt": {
       "type": "CHOICE",
       "members": [
         {
           "type": "SYMBOL",
-          "name": "tmp_seek_command"
+          "name": "tmp_seek_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_blksz_command"
+          "name": "tmp_blksz_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_fromto_command"
+          "name": "tmp_fromto_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_arch_command"
+          "name": "tmp_arch_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_bits_command"
+          "name": "tmp_bits_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_nthi_command"
+          "name": "tmp_nthi_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_eval_command"
+          "name": "tmp_eval_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_fs_command"
+          "name": "tmp_fs_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_reli_command"
+          "name": "tmp_reli_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_kuery_command"
+          "name": "tmp_kuery_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_fd_command"
+          "name": "tmp_fd_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_reg_command"
+          "name": "tmp_reg_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_file_command"
+          "name": "tmp_file_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_string_command"
+          "name": "tmp_string_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_value_command"
+          "name": "tmp_value_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "tmp_hex_command"
+          "name": "tmp_hex_stmt"
         }
       ]
     },
-    "_iter_command": {
+    "_iter_stmt": {
       "type": "CHOICE",
       "members": [
         {
           "type": "SYMBOL",
-          "name": "iter_file_lines_command"
+          "name": "iter_file_lines_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_offsets_command"
+          "name": "iter_offsets_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_offsetssizes_command"
+          "name": "iter_offsetssizes_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_hit_command"
+          "name": "iter_hit_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_interpret_command"
+          "name": "iter_interpret_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_interpret_offsetssizes_command"
+          "name": "iter_interpret_offsetssizes_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_comment_command"
+          "name": "iter_comment_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_dbta_command"
+          "name": "iter_dbta_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_dbtb_command"
+          "name": "iter_dbtb_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_dbts_command"
+          "name": "iter_dbts_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_threads_command"
+          "name": "iter_threads_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_bbs_command"
+          "name": "iter_bbs_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_instrs_command"
+          "name": "iter_instrs_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_import_command"
+          "name": "iter_import_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_sections_command"
+          "name": "iter_sections_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_segments_command"
+          "name": "iter_segments_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_symbol_command"
+          "name": "iter_symbol_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_string_command"
+          "name": "iter_string_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_flags_command"
+          "name": "iter_flags_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_function_command"
+          "name": "iter_function_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_iomap_command"
+          "name": "iter_iomap_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_dbgmap_command"
+          "name": "iter_dbgmap_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_register_command"
+          "name": "iter_register_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "iter_step_command"
+          "name": "iter_step_stmt"
         }
       ]
     },
-    "_pipe_command": {
+    "_pipe_stmt": {
       "type": "CHOICE",
       "members": [
         {
           "type": "SYMBOL",
-          "name": "html_disable_command"
+          "name": "html_disable_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "html_enable_command"
+          "name": "html_enable_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "pipe_command"
+          "name": "pipe_stmt"
         }
       ]
     },
-    "grep_command": {
+    "grep_stmt": {
       "type": "SEQ",
       "members": [
         {
@@ -387,7 +387,7 @@
           "name": "command",
           "content": {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           }
         },
         {
@@ -488,7 +488,7 @@
         ]
       }
     },
-    "html_disable_command": {
+    "html_disable_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -499,7 +499,7 @@
             "name": "command",
             "content": {
               "type": "SYMBOL",
-              "name": "_simple_command"
+              "name": "_simple_stmt"
             }
           },
           {
@@ -509,7 +509,7 @@
         ]
       }
     },
-    "html_enable_command": {
+    "html_enable_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -520,7 +520,7 @@
             "name": "command",
             "content": {
               "type": "SYMBOL",
-              "name": "_simple_command"
+              "name": "_simple_stmt"
             }
           },
           {
@@ -530,12 +530,12 @@
         ]
       }
     },
-    "pipe_command": {
+    "pipe_stmt": {
       "type": "SEQ",
       "members": [
         {
           "type": "SYMBOL",
-          "name": "_simple_command"
+          "name": "_simple_stmt"
         },
         {
           "type": "STRING",
@@ -543,15 +543,15 @@
         },
         {
           "type": "SYMBOL",
-          "name": "pipe_second_command"
+          "name": "pipe_second_stmt"
         }
       ]
     },
-    "pipe_second_command": {
+    "pipe_second_stmt": {
       "type": "PATTERN",
       "value": "[^|\\r\\n;]+"
     },
-    "iter_file_lines_command": {
+    "iter_file_lines_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -559,7 +559,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -572,7 +572,7 @@
         ]
       }
     },
-    "iter_offsets_command": {
+    "iter_offsets_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -580,7 +580,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -601,7 +601,7 @@
         ]
       }
     },
-    "iter_offsetssizes_command": {
+    "iter_offsetssizes_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -609,7 +609,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -630,7 +630,7 @@
         ]
       }
     },
-    "iter_hit_command": {
+    "iter_hit_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -638,7 +638,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -652,15 +652,15 @@
             "type": "ALIAS",
             "content": {
               "type": "SYMBOL",
-              "name": "_search_command"
+              "name": "_search_stmt"
             },
             "named": true,
-            "value": "arged_command"
+            "value": "arged_stmt"
           }
         ]
       }
     },
-    "iter_interpret_command": {
+    "iter_interpret_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -668,7 +668,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -676,12 +676,12 @@
           },
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           }
         ]
       }
     },
-    "iter_interpret_offsetssizes_command": {
+    "iter_interpret_offsetssizes_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -689,7 +689,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -697,12 +697,12 @@
           },
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           }
         ]
       }
     },
-    "iter_comment_command": {
+    "iter_comment_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -710,7 +710,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -740,7 +740,7 @@
         ]
       }
     },
-    "iter_dbta_command": {
+    "iter_dbta_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -748,7 +748,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "CHOICE",
@@ -766,7 +766,7 @@
         ]
       }
     },
-    "iter_dbtb_command": {
+    "iter_dbtb_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -774,7 +774,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -783,7 +783,7 @@
         ]
       }
     },
-    "iter_dbts_command": {
+    "iter_dbts_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -791,7 +791,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -800,7 +800,7 @@
         ]
       }
     },
-    "iter_threads_command": {
+    "iter_threads_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -808,7 +808,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -817,7 +817,7 @@
         ]
       }
     },
-    "iter_bbs_command": {
+    "iter_bbs_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -825,7 +825,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -834,7 +834,7 @@
         ]
       }
     },
-    "iter_instrs_command": {
+    "iter_instrs_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -842,7 +842,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -851,7 +851,7 @@
         ]
       }
     },
-    "iter_import_command": {
+    "iter_import_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -859,7 +859,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -868,7 +868,7 @@
         ]
       }
     },
-    "iter_sections_command": {
+    "iter_sections_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -876,7 +876,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -885,7 +885,7 @@
         ]
       }
     },
-    "iter_segments_command": {
+    "iter_segments_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -893,7 +893,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -902,7 +902,7 @@
         ]
       }
     },
-    "iter_symbol_command": {
+    "iter_symbol_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -910,7 +910,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -919,7 +919,7 @@
         ]
       }
     },
-    "iter_string_command": {
+    "iter_string_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -927,7 +927,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -936,7 +936,7 @@
         ]
       }
     },
-    "iter_flags_command": {
+    "iter_flags_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -944,7 +944,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -974,7 +974,7 @@
         ]
       }
     },
-    "iter_function_command": {
+    "iter_function_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -982,7 +982,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1012,7 +1012,7 @@
         ]
       }
     },
-    "iter_iomap_command": {
+    "iter_iomap_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1020,7 +1020,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1029,7 +1029,7 @@
         ]
       }
     },
-    "iter_dbgmap_command": {
+    "iter_dbgmap_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1037,7 +1037,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1046,7 +1046,7 @@
         ]
       }
     },
-    "iter_register_command": {
+    "iter_register_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1054,7 +1054,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1063,7 +1063,7 @@
         ]
       }
     },
-    "iter_step_command": {
+    "iter_step_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1071,7 +1071,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1084,7 +1084,7 @@
         ]
       }
     },
-    "tmp_seek_command": {
+    "tmp_seek_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1092,7 +1092,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1105,7 +1105,7 @@
         ]
       }
     },
-    "tmp_blksz_command": {
+    "tmp_blksz_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1113,7 +1113,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1126,7 +1126,7 @@
         ]
       }
     },
-    "tmp_fromto_command": {
+    "tmp_fromto_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1134,7 +1134,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1151,7 +1151,7 @@
         ]
       }
     },
-    "tmp_arch_command": {
+    "tmp_arch_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1159,7 +1159,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1172,7 +1172,7 @@
         ]
       }
     },
-    "tmp_bits_command": {
+    "tmp_bits_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1180,7 +1180,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1193,7 +1193,7 @@
         ]
       }
     },
-    "tmp_nthi_command": {
+    "tmp_nthi_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1201,7 +1201,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1214,7 +1214,7 @@
         ]
       }
     },
-    "tmp_eval_command": {
+    "tmp_eval_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1222,7 +1222,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1235,7 +1235,7 @@
         ]
       }
     },
-    "tmp_fs_command": {
+    "tmp_fs_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1243,7 +1243,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1256,7 +1256,7 @@
         ]
       }
     },
-    "tmp_reli_command": {
+    "tmp_reli_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1264,7 +1264,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1277,7 +1277,7 @@
         ]
       }
     },
-    "tmp_kuery_command": {
+    "tmp_kuery_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1285,7 +1285,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1298,7 +1298,7 @@
         ]
       }
     },
-    "tmp_fd_command": {
+    "tmp_fd_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1306,7 +1306,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1319,7 +1319,7 @@
         ]
       }
     },
-    "tmp_reg_command": {
+    "tmp_reg_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1327,7 +1327,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1340,7 +1340,7 @@
         ]
       }
     },
-    "tmp_file_command": {
+    "tmp_file_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1348,7 +1348,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1361,7 +1361,7 @@
         ]
       }
     },
-    "tmp_string_command": {
+    "tmp_string_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1369,7 +1369,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1382,7 +1382,7 @@
         ]
       }
     },
-    "tmp_value_command": {
+    "tmp_value_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1390,7 +1390,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1403,7 +1403,7 @@
         ]
       }
     },
-    "tmp_hex_command": {
+    "tmp_hex_stmt": {
       "type": "PREC_RIGHT",
       "value": 1,
       "content": {
@@ -1411,7 +1411,7 @@
         "members": [
           {
             "type": "SYMBOL",
-            "name": "_simple_command"
+            "name": "_simple_stmt"
           },
           {
             "type": "STRING",
@@ -1424,7 +1424,7 @@
         ]
       }
     },
-    "number_command": {
+    "number_stmt": {
       "type": "CHOICE",
       "members": [
         {
@@ -1441,7 +1441,7 @@
         }
       ]
     },
-    "help_command": {
+    "help_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1467,7 +1467,7 @@
               "type": "ALIAS",
               "content": {
                 "type": "SYMBOL",
-                "name": "_help_command"
+                "name": "_help_stmt"
               },
               "named": true,
               "value": "cmd_identifier"
@@ -1476,52 +1476,52 @@
         ]
       }
     },
-    "arged_command": {
+    "arged_stmt": {
       "type": "CHOICE",
       "members": [
         {
           "type": "SYMBOL",
-          "name": "_simple_arged_command"
+          "name": "_simple_arged_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_math_arged_command"
+          "name": "_math_arged_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_pointer_arged_command"
+          "name": "_pointer_arged_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_macro_arged_command"
+          "name": "_macro_arged_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_system_command"
+          "name": "_system_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_interpret_command"
+          "name": "_interpret_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_env_command"
+          "name": "_env_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_pf_arged_command"
+          "name": "_pf_arged_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_last_command"
+          "name": "_last_stmt"
         },
         {
           "type": "SYMBOL",
-          "name": "_simple_arged_command_question"
+          "name": "_simple_arged_stmt_question"
         }
       ]
     },
-    "_simple_arged_command_question": {
+    "_simple_arged_stmt_question": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1534,7 +1534,7 @@
               "type": "ALIAS",
               "content": {
                 "type": "SYMBOL",
-                "name": "_help_command"
+                "name": "_help_stmt"
               },
               "named": true,
               "value": "cmd_identifier"
@@ -1551,7 +1551,7 @@
         ]
       }
     },
-    "_simple_arged_command": {
+    "_simple_arged_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1584,7 +1584,7 @@
         ]
       }
     },
-    "_search_command": {
+    "_search_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1622,7 +1622,7 @@
         ]
       }
     },
-    "_math_arged_command": {
+    "_math_arged_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1652,7 +1652,7 @@
         ]
       }
     },
-    "_pointer_arged_command": {
+    "_pointer_arged_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1687,7 +1687,7 @@
         ]
       }
     },
-    "_macro_arged_command": {
+    "_macro_arged_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1725,7 +1725,7 @@
         ]
       }
     },
-    "_system_command": {
+    "_system_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1758,7 +1758,7 @@
         ]
       }
     },
-    "_interpret_command": {
+    "_interpret_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1785,7 +1785,7 @@
                 "name": "args",
                 "content": {
                   "type": "SYMBOL",
-                  "name": "_simple_command"
+                  "name": "_simple_stmt"
                 }
               }
             ]
@@ -1951,7 +1951,7 @@
                   "name": "args",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "_simple_command"
+                    "name": "_simple_stmt"
                   }
                 },
                 {
@@ -1977,7 +1977,7 @@
         }
       ]
     },
-    "_pf_arged_command": {
+    "_pf_arged_stmt": {
       "type": "CHOICE",
       "members": [
         {
@@ -2026,7 +2026,7 @@
         }
       ]
     },
-    "_pf_commands": {
+    "_pf_stmts": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -2039,7 +2039,7 @@
               "name": "pf_cmd"
             },
             "named": true,
-            "value": "arged_command"
+            "value": "arged_stmt"
           },
           {
             "type": "ALIAS",
@@ -2048,7 +2048,7 @@
               "name": "pf_dot_cmd"
             },
             "named": true,
-            "value": "arged_command"
+            "value": "arged_stmt"
           },
           {
             "type": "ALIAS",
@@ -2057,7 +2057,7 @@
               "name": "pf_new_cmd"
             },
             "named": true,
-            "value": "arged_command"
+            "value": "arged_stmt"
           },
           {
             "type": "ALIAS",
@@ -2066,7 +2066,7 @@
               "name": "Cf_cmd"
             },
             "named": true,
-            "value": "arged_command"
+            "value": "arged_stmt"
           }
         ]
       }
@@ -2603,7 +2603,7 @@
         ]
       }
     },
-    "_env_command": {
+    "_env_stmt": {
       "type": "PREC_LEFT",
       "value": 0,
       "content": {
@@ -2616,7 +2616,7 @@
               "type": "ALIAS",
               "content": {
                 "type": "SYMBOL",
-                "name": "_env_command_identifier"
+                "name": "_env_stmt_identifier"
               },
               "named": true,
               "value": "cmd_identifier"
@@ -2646,7 +2646,7 @@
         ]
       }
     },
-    "_env_command_identifier": {
+    "_env_stmt_identifier": {
       "type": "CHOICE",
       "members": [
         {
@@ -2659,7 +2659,7 @@
         }
       ]
     },
-    "_last_command": {
+    "_last_stmt": {
       "type": "SEQ",
       "members": [
         {
@@ -2669,7 +2669,7 @@
             "type": "ALIAS",
             "content": {
               "type": "SYMBOL",
-              "name": "last_command_identifier"
+              "name": "last_stmt_identifier"
             },
             "named": true,
             "value": "cmd_identifier"
@@ -2677,7 +2677,7 @@
         }
       ]
     },
-    "last_command_identifier": {
+    "last_stmt_identifier": {
       "type": "CHOICE",
       "members": [
         {
@@ -2692,7 +2692,7 @@
     },
     "interpret_arg": {
       "type": "SYMBOL",
-      "name": "_any_command"
+      "name": "_any_stmt"
     },
     "system_identifier": {
       "type": "PATTERN",
@@ -2702,7 +2702,7 @@
       "type": "STRING",
       "value": "?"
     },
-    "repeat_command": {
+    "repeat_stmt": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -2726,7 +2726,7 @@
             "name": "command",
             "content": {
               "type": "SYMBOL",
-              "name": "_simple_command"
+              "name": "_simple_stmt"
             }
           }
         ]
@@ -2856,7 +2856,7 @@
                   },
                   {
                     "type": "SYMBOL",
-                    "name": "_command"
+                    "name": "_statement"
                   },
                   {
                     "type": "REPEAT",
@@ -2869,7 +2869,7 @@
                         },
                         {
                           "type": "SYMBOL",
-                          "name": "_command"
+                          "name": "_statement"
                         }
                       ]
                     }
@@ -2922,7 +2922,7 @@
         }
       ]
     },
-    "redirect_command": {
+    "redirect_stmt": {
       "type": "PREC_RIGHT",
       "value": 2,
       "content": {
@@ -2933,7 +2933,7 @@
             "name": "command",
             "content": {
               "type": "SYMBOL",
-              "name": "_simple_command"
+              "name": "_simple_stmt"
             }
           },
           {
@@ -3302,7 +3302,7 @@
         }
       ]
     },
-    "_any_command": {
+    "_any_stmt": {
       "type": "PATTERN",
       "value": "[^\\r\\n;~|]+"
     },
@@ -3492,7 +3492,7 @@
             },
             {
               "type": "SYMBOL",
-              "name": "_commands_singleline"
+              "name": "_statements_singleline"
             },
             {
               "type": "STRING",
@@ -3512,7 +3512,7 @@
               },
               {
                 "type": "SYMBOL",
-                "name": "_commands_singleline"
+                "name": "_statements_singleline"
               },
               {
                 "type": "STRING",
@@ -3581,7 +3581,7 @@
         ]
       }
     },
-    "cmd_delimiter": {
+    "stmt_delimiter": {
       "type": "CHOICE",
       "members": [
         {
@@ -3594,11 +3594,11 @@
         },
         {
           "type": "SYMBOL",
-          "name": "cmd_delimiter_singleline"
+          "name": "stmt_delimiter_singleline"
         }
       ]
     },
-    "cmd_delimiter_singleline": {
+    "stmt_delimiter_singleline": {
       "type": "CHOICE",
       "members": [
         {
@@ -3681,7 +3681,7 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_help_command"
+      "name": "_help_stmt"
     },
     {
       "type": "SYMBOL",
@@ -3705,8 +3705,8 @@
     }
   ],
   "inline": [
-    "cmd_delimiter",
-    "cmd_delimiter_singleline",
+    "stmt_delimiter",
+    "stmt_delimiter_singleline",
     "_comment"
   ],
   "supertypes": []

@@ -8,19 +8,19 @@ afl~$
 
 ---
 
-(commands
-  (grep_command
-    command: (arged_command
+(statements
+  (grep_stmt
+    command: (arged_stmt
     	       command: (cmd_identifier)
 	       args: (args (arg (arg_identifier))))
     specifier: (grep_specifier (grep_specifier_identifier)))
-  (grep_command
-    command: (arged_command
+  (grep_stmt
+    command: (arged_stmt
     	       command: (cmd_identifier)
 	       args: (args (arg (arg_identifier))))
     specifier: (grep_specifier (grep_specifier_identifier)))
-  (grep_command
-    command: (arged_command command: (cmd_identifier))
+  (grep_stmt
+    command: (arged_stmt command: (cmd_identifier))
     specifier: (grep_specifier (grep_specifier_identifier))))
 
 
@@ -34,27 +34,27 @@ pd 10~mo$(?e v)
 
 ---
 
-(commands
-  (grep_command
-    (arged_command (cmd_identifier)
+(statements
+  (grep_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (grep_specifier
       (cmd_substitution_arg
-        (arged_command (cmd_identifier)
+        (arged_stmt (cmd_identifier)
 	  (args (arg (arg_identifier)))))))
-  (grep_command
-    (arged_command (cmd_identifier)
+  (grep_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (grep_specifier
       (grep_specifier_identifier)
       (cmd_substitution_arg
-        (arged_command (cmd_identifier)
+        (arged_stmt (cmd_identifier)
 	  (args (arg (arg_identifier)))))))
-  (grep_command
-    (arged_command (cmd_identifier)
+  (grep_stmt
+    (arged_stmt (cmd_identifier)
       (args (arg (arg_identifier))))
     (grep_specifier
       (grep_specifier_identifier)
       (cmd_substitution_arg
-        (arged_command (cmd_identifier)
+        (arged_stmt (cmd_identifier)
 	  (args (arg (arg_identifier))))))))
