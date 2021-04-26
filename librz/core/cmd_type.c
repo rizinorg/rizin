@@ -266,7 +266,7 @@ RZ_IPI RzCmdStatus rz_type_del_handler(RzCore *core, int argc, const char **argv
 
 RZ_IPI RzCmdStatus rz_type_del_all_handler(RzCore *core, int argc, const char **argv) {
 	rz_type_db_purge(core->analysis->typedb);
-	rz_type_parse_c_reset(core->analysis->typedb);
+	rz_type_parse_reset(core->analysis->typedb);
 	return RZ_CMD_STATUS_OK;
 }
 
