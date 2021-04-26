@@ -45,34 +45,37 @@ void c_parser_state_free_keep_ht(CParserState *state) {
 	return;
 }
 
-RZ_API int rz_type_parse_c_file(RzTypeDB *typedb, const char *path, const char *dir, char **error_msg) {
-	size_t read_bytes = 0;
-	const char *source_code = rz_file_slurp(path, &read_bytes);
-	if (!source_code || !read_bytes) {
-		return -1;
+struct rz_type_parser_t {
+	CParserState *state;
+};
+
+RZ_API RZ_OWN RzTypeParser *rz_type_parser_new() {
+	RzTypeParser *parser = RZ_NEW0(RzTypeParser);
+	if (!parser) {
+		return NULL;
 	}
-	ut64 file_size = rz_file_size(path);
-	printf("File size is %" PFMT64d " bytes, read %zu bytes\n", file_size, read_bytes);
-	return rz_type_parse_c_string(typedb, source_code, NULL);
+	parser->state = c_parser_state_new(NULL);
+	return parser;
 }
 
-RZ_API int rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **error_msg) {
-	bool verbose = true;
+RZ_API void rz_type_parser_free(RZ_NONNULL RzTypeParser *parser) {
+	// We do not destroy HT by default since it might be used after
+	c_parser_state_free_keep_ht(parser->state);
+	free(parser);
+}
+
+RZ_API void rz_type_parser_free_purge(RZ_NONNULL RzTypeParser *parser) {
+	c_parser_state_free(parser->state);
+	free(parser);
+}
+
+static int type_parse_string(CParserState *state, const char *code, char **error_msg) {
 	// Create a parser.
 	TSParser *parser = ts_parser_new();
 	// Set the parser's language (C in this case)
 	ts_parser_set_language(parser, tree_sitter_c());
 
 	TSTree *tree = ts_parser_parse_string(parser, NULL, code, strlen(code));
-
-	// Create new C parser state
-	CParserState *state = c_parser_state_new(typedb->types);
-	if (!state) {
-		eprintf("CParserState initialization error!\n");
-		ts_tree_delete(tree);
-		return -1;
-	}
-	state->verbose = verbose;
 
 	// Get the root node of the syntax tree.
 	TSNode root_node = ts_tree_root_node(tree);
@@ -85,7 +88,7 @@ RZ_API int rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **err
 	}
 
 	// Some debugging
-	if (verbose) {
+	if (state->verbose) {
 		parser_debug(state, "root_node (%d children): %s\n", root_node_child_count, ts_node_type(root_node));
 		// Print the syntax tree as an S-expression.
 		char *string = ts_node_string(root_node);
@@ -108,7 +111,7 @@ RZ_API int rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **err
 	for (i = 0; i < root_node_child_count; i++) {
 		parser_debug(state, "Processing %d child...\n", i);
 		TSNode child = ts_node_named_child(root_node, i);
-		result += filter_type_nodes(state, child, code);
+		result += parse_type_nodes_save(state, child, code);
 	}
 
 	// If there were errors during the parser then the result is different from 0
@@ -121,7 +124,7 @@ RZ_API int rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **err
 		eprintf(warning_msgs);
 		*error_msg = strdup(error_msgs);
 	}
-	if (verbose) {
+	if (state->verbose) {
 		const char *debug_msgs = rz_strbuf_drain_nofree(state->debug);
 		eprintf(debug_msgs);
 	}
@@ -133,6 +136,127 @@ RZ_API int rz_type_parse_c_string(RzTypeDB *typedb, const char *code, char **err
 	return result;
 }
 
-RZ_API void rz_type_parse_c_reset(RzTypeDB *typedb) {
-	/* nothing */
+RZ_API int rz_type_parse_string_stateless(RzTypeParser *parser, const char *code, char **error_msg) {
+	return type_parse_string(parser->state, code, error_msg);
+}
+
+RZ_API int rz_type_parse_file_stateless(RzTypeParser *parser, const char *path, const char *dir, char **error_msg) {
+	size_t read_bytes = 0;
+	const char *source_code = rz_file_slurp(path, &read_bytes);
+	if (!source_code || !read_bytes) {
+		return -1;
+	}
+	ut64 file_size = rz_file_size(path);
+	RZ_LOG_DEBUG("File size is %" PFMT64d " bytes, read %zu bytes\n", file_size, read_bytes);
+	return rz_type_parse_string_stateless(parser, source_code, error_msg);
+}
+
+RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *dir, char **error_msg) {
+	size_t read_bytes = 0;
+	const char *source_code = rz_file_slurp(path, &read_bytes);
+	if (!source_code || !read_bytes) {
+		return -1;
+	}
+	ut64 file_size = rz_file_size(path);
+	RZ_LOG_DEBUG("File size is %" PFMT64d " bytes, read %zu bytes\n", file_size, read_bytes);
+	return rz_type_parse_string(typedb, source_code, error_msg);
+}
+
+RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error_msg) {
+	bool verbose = true;
+	// Create new C parser state
+	CParserState *state = c_parser_state_new(typedb->types);
+	if (!state) {
+		eprintf("CParserState initialization error!\n");
+		return -1;
+	}
+	state->verbose = verbose;
+	return type_parse_string(state, code, error_msg);
+}
+
+RZ_API void rz_type_parse_reset(RzTypeDB *typedb) {
+	rz_type_parser_free(typedb->parser);
+	typedb->parser = rz_type_parser_new();
+}
+
+// Parses only single statement (the first one) and ignores everything else
+RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const char *code, char **error_msg) {
+	// Create a parser.
+	TSParser *tsparser = ts_parser_new();
+	// Set the parser's language (C in this case)
+	ts_parser_set_language(tsparser, tree_sitter_c());
+
+	// Note, that the original C grammar doesn't have support for alternate roots,
+	// see:
+	// - https://github.com/tree-sitter/tree-sitter-c/issues/65
+	// - https://github.com/tree-sitter/tree-sitter/issues/1105
+	// Thus, we use our own patched C grammar that has an additional rule
+	// for type descriptor, but we use the `__TYPE_EXPRESSION` prefix for every
+	// such type descriptor expression.
+	char *patched_code = rz_str_newf("__TYPE_EXPRESSION %s", code);
+
+	TSTree *tree = ts_parser_parse_string(tsparser, NULL, patched_code, strlen(patched_code));
+
+	// Get the root node of the syntax tree.
+	TSNode root_node = ts_tree_root_node(tree);
+	int root_node_child_count = ts_node_named_child_count(root_node);
+	if (!root_node_child_count) {
+		parser_warning(parser->state, "Root node is empty!\n");
+		ts_tree_delete(tree);
+		ts_parser_delete(tsparser);
+		free(patched_code);
+		return NULL;
+	}
+
+	// Some debugging
+	if (parser->state->verbose) {
+		parser_debug(parser->state, "root_node (%d children): %s\n", root_node_child_count, ts_node_type(root_node));
+		// Print the syntax tree as an S-expression.
+		char *string = ts_node_string(root_node);
+		parser_debug(parser->state, "Syntax tree: %s\n", string);
+		free(string);
+	}
+
+	// At first step we should handle defines
+	// #define
+	// #if / #ifdef
+	// #else
+	// #endif
+	// After that, we should process include files and #error/#warning/#pragma
+	// Temporarily we could just run preprocessing step using tccpp code
+	//
+	// And only after that - run the normal C/C++ syntax parsing
+
+	// Filter types function prototypes and start parsing
+	int i = 0, result = 0;
+	ParserTypePair *tpair = NULL;
+	for (i = 0; i < root_node_child_count; i++) {
+		parser_debug(parser->state, "Processing %d child...\n", i);
+		TSNode child = ts_node_named_child(root_node, i);
+		if (!parse_type_node_single(parser->state, child, code, &tpair)) {
+			break;
+		}
+	}
+
+	// If there were errors during the parser then the result is different from 0
+	if (result || tpair) {
+		const char *error_msgs = rz_strbuf_drain_nofree(parser->state->errors);
+		eprintf("Errors:\n");
+		eprintf(error_msgs);
+		const char *warning_msgs = rz_strbuf_drain_nofree(parser->state->warnings);
+		eprintf("Warnings:\n");
+		eprintf(warning_msgs);
+		*error_msg = strdup(error_msgs);
+	}
+	if (parser->state->verbose) {
+		const char *debug_msgs = rz_strbuf_drain_nofree(parser->state->debug);
+		eprintf(debug_msgs);
+	}
+
+	// After everything parsed, we should preserve the base type database
+	c_parser_state_free_keep_ht(parser->state);
+	ts_tree_delete(tree);
+	ts_parser_delete(tsparser);
+	free(patched_code);
+	return tpair ? tpair->type : NULL;
 }

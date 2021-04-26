@@ -120,7 +120,13 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 			goto error;
 		}
 		// Parse type as a C string
-		RzType *ttype = rz_type_parse(typedb->parser, type, NULL);
+		char *error_msg = NULL;
+		RzType *ttype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
+		if (!ttype || error_msg) {
+			free(values);
+			goto error;
+		}
+
 		offset = sdb_anext(offset, NULL);
 		RzTypeStructMember cas = {
 			.name = strdup(cur),
@@ -187,7 +193,13 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 			goto error;
 		}
 		char *value = sdb_anext(values, NULL);
-		RzType *ttype = rz_type_parse(typedb->parser, value, NULL);
+		char *error_msg = NULL;
+		RzType *ttype = rz_type_parse_string_single(typedb->parser, value, &error_msg);
+		if (!ttype || error_msg) {
+			free(values);
+			goto error;
+		}
+
 		RzTypeUnionMember cas = {
 			.name = strdup(cur),
 			.type = ttype
@@ -229,7 +241,12 @@ static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *
 
 	base_type->name = strdup(sname);
 	char *type = get_type_data(sdb, "typedef", sname);
-	RzType *ttype = rz_type_parse(typedb->parser, type, NULL);
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
+	if (!ttype || error_msg) {
+		goto error;
+	}
+
 	base_type->type = ttype;
 	if (!base_type->type) {
 		goto error;
