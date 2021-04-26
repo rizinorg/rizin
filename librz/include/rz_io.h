@@ -74,7 +74,7 @@ typedef struct rz_io_t {
 	RzSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
-	SdbList *plugins;
+	RzList *plugins;
 	char *runprofile;
 	char *envprofile;
 #if USE_PTRACE_WRAP
