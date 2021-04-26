@@ -226,7 +226,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			} else if (IS_MODE_SET(mode)) {
 				char *code = rz_str_newf("%s;", v);
 				char *error_msg = NULL;
-				int result = rz_type_parse_c_string(core->analysis->typedb, code, &error_msg);
+				int result = rz_type_parse_string(core->analysis->typedb, code, &error_msg);
 				if (result && error_msg) {
 					eprintf("%s", error_msg);
 					free(error_msg);

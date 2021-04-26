@@ -190,7 +190,8 @@ int parse_identifier_node(CParserState *state, TSNode identnode, const char *tex
 // - typedef (type_definition)
 // - atomic type
 
-int parse_struct_node(CParserState *state, TSNode structnode, const char *text) {
+int parse_struct_node(CParserState *state, TSNode structnode, const char *text, ParserTypePair **tpair) {
+	rz_return_val_if_fail(state && text && tpair, -1);
 	rz_return_val_if_fail(!ts_node_is_null(structnode), -1);
 	rz_return_val_if_fail(ts_node_is_named(structnode), -1);
 	int struct_node_child_count = ts_node_named_child_count(structnode);
@@ -370,12 +371,13 @@ int parse_struct_node(CParserState *state, TSNode structnode, const char *text) 
 			}
 		}
 	}
-	// Now we store all types in the hashtable
-	return c_parser_store_type(state, realname, struct_pair);
+	*tpair = struct_pair;
+	return 0;
 }
 
 // Union is almost exact copy of struct but size computation is different
-int parse_union_node(CParserState *state, TSNode unionnode, const char *text) {
+int parse_union_node(CParserState *state, TSNode unionnode, const char *text, ParserTypePair **tpair) {
+	rz_return_val_if_fail(state && text && tpair, -1);
 	rz_return_val_if_fail(!ts_node_is_null(unionnode), -1);
 	rz_return_val_if_fail(ts_node_is_named(unionnode), -1);
 	int union_node_child_count = ts_node_named_child_count(unionnode);
@@ -556,11 +558,13 @@ int parse_union_node(CParserState *state, TSNode unionnode, const char *text) {
 			}
 		}
 	}
+	*tpair = union_pair;
 	return 0;
 }
 
 // Parsing enum
-int parse_enum_node(CParserState *state, TSNode enumnode, const char *text) {
+int parse_enum_node(CParserState *state, TSNode enumnode, const char *text, ParserTypePair **tpair) {
+	rz_return_val_if_fail(state && text && tpair, -1);
 	rz_return_val_if_fail(!ts_node_is_null(enumnode), -1);
 	rz_return_val_if_fail(ts_node_is_named(enumnode), -1);
 	int enum_node_child_count = ts_node_named_child_count(enumnode);
@@ -684,12 +688,13 @@ int parse_enum_node(CParserState *state, TSNode enumnode, const char *text) {
 			}
 		}
 	}
-	// Now we store all types in the hashtable
-	return c_parser_store_type(state, realname, enum_pair);
+	*tpair = enum_pair;
+	return 0;
 }
 
 // Parsing typedefs
-int parse_typedef_node(CParserState *state, TSNode typedefnode, const char *text) {
+int parse_typedef_node(CParserState *state, TSNode typedefnode, const char *text, ParserTypePair **tpair) {
+	rz_return_val_if_fail(state && text && tpair, -1);
 	rz_return_val_if_fail(!ts_node_is_null(typedefnode), -1);
 	rz_return_val_if_fail(ts_node_is_named(typedefnode), -1);
 	int typedef_node_child_count = ts_node_named_child_count(typedefnode);
@@ -741,14 +746,8 @@ int parse_typedef_node(CParserState *state, TSNode typedefnode, const char *text
 		const char *real_type = ts_node_sub_string(typedef_type, text);
 		parser_debug(state, "complex typedef type: %s alias: %s\n", real_type, aliasname);
 	}
-	return 0;
-}
-
-int parse_type_tree(CParserState *state, TSNode typenode, const char *text) {
-	rz_return_val_if_fail(!ts_node_is_null(typenode), -1);
-	rz_return_val_if_fail(ts_node_is_named(typenode), -1);
-	const char *node_type = ts_node_type(typenode);
-	parser_debug(state, "Node type is %s\n", node_type);
+	// FIXME
+	*tpair = NULL;
 	return 0;
 }
 
@@ -758,7 +757,57 @@ int parse_type_tree(CParserState *state, TSNode typenode, const char *text) {
 // - enum (enum_specifier) (usually prepended by declaration)
 // - typedef (type_definition)
 // - atomic type
-int filter_type_nodes(CParserState *state, TSNode node, const char *text) {
+
+int parse_type_nodes_save(CParserState *state, TSNode node, const char *text) {
+	rz_return_val_if_fail(state && text, -1);
+	rz_return_val_if_fail(!ts_node_is_null(node), -1);
+	// We skip simple nodes (e.g. conditions and braces)
+	if (!ts_node_is_named(node)) {
+		return 0;
+	}
+	const char *node_type = ts_node_type(node);
+	int result = -1;
+	ParserTypePair *tpair = NULL;
+	if (!strcmp(node_type, "struct_specifier")) {
+		result = parse_struct_node(state, node, text, &tpair);
+		if (result || !tpair) {
+			return -1;
+		}
+		// Now we store the parsed type in the hashtable
+		result = c_parser_store_type(state, tpair->btype->name, tpair);
+	} else if (!strcmp(node_type, "union_specifier")) {
+		result = parse_union_node(state, node, text, &tpair);
+		if (result || !tpair) {
+			return -1;
+		}
+		// Now we store the parsed type in the hashtable
+		result = c_parser_store_type(state, tpair->btype->name, tpair);
+	} else if (!strcmp(node_type, "enum_specifier")) {
+		result = parse_enum_node(state, node, text, &tpair);
+		if (result || !tpair) {
+			return -1;
+		}
+		// Now we store the parsed type in the hashtable
+		result = c_parser_store_type(state, tpair->btype->name, tpair);
+	} else if (!strcmp(node_type, "type_definition")) {
+		result = parse_typedef_node(state, node, text, &tpair);
+		if (result || !tpair) {
+			return -1;
+		}
+		// Now we store the parsed type in the hashtable
+		result = c_parser_store_type(state, tpair->btype->name, tpair);
+	}
+
+	// Another case where there is a declaration clause
+	// In this case we should drop the declaration itself
+	// and parse only the corresponding type
+	// In case of anonymous type we could use identifier as a name for this type?
+	//
+	return result;
+}
+
+int parse_type_node_single(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair) {
+	rz_return_val_if_fail(state && text && tpair, -1);
 	rz_return_val_if_fail(!ts_node_is_null(node), -1);
 	// We skip simple nodes (e.g. conditions and braces)
 	if (!ts_node_is_named(node)) {
@@ -767,13 +816,25 @@ int filter_type_nodes(CParserState *state, TSNode node, const char *text) {
 	const char *node_type = ts_node_type(node);
 	int result = -1;
 	if (!strcmp(node_type, "struct_specifier")) {
-		result = parse_struct_node(state, node, text);
+		result = parse_struct_node(state, node, text, tpair);
+		if (result || !tpair) {
+			return -1;
+		}
 	} else if (!strcmp(node_type, "union_specifier")) {
-		result = parse_union_node(state, node, text);
+		result = parse_union_node(state, node, text, tpair);
+		if (result || !tpair) {
+			return -1;
+		}
 	} else if (!strcmp(node_type, "enum_specifier")) {
-		result = parse_enum_node(state, node, text);
+		result = parse_enum_node(state, node, text, tpair);
+		if (result || !tpair) {
+			return -1;
+		}
 	} else if (!strcmp(node_type, "type_definition")) {
-		result = parse_typedef_node(state, node, text);
+		result = parse_typedef_node(state, node, text, tpair);
+		if (result || !tpair) {
+			return -1;
+		}
 	}
 
 	// Another case where there is a declaration clause
