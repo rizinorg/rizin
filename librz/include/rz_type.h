@@ -29,8 +29,8 @@ typedef struct rz_ast_parser_t RzASTParser;
 typedef struct rz_type_db_t {
 	void *user;
 	HtPP *types; // A hashtable of RzBaseType
+	HtPP *formats; // A hashtable of `pf` formats
 	Sdb *sdb_types; // for function signatures
-	Sdb *formats; // for `pf` formats
 	RzTypeTarget *target;
 	RzASTParser *parser;
 	RNum *num;
@@ -151,7 +151,7 @@ struct rz_type_t {
 
 RZ_API RzTypeDB *rz_type_db_new();
 RZ_API void rz_type_db_free(RzTypeDB *typedb);
-RZ_API void rz_type_db_load_sdb(RzTypeDB *typedb, const char *dpath);
+RZ_API bool rz_type_db_load_sdb(RzTypeDB *typedb, const char *dpath);
 RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 RZ_API void rz_type_db_set_bits(RzTypeDB *typedb, int bits);
 RZ_API void rz_type_db_set_os(RzTypeDB *typedb, const char *os);
@@ -244,13 +244,13 @@ RZ_API RZ_OWN RzType *rz_type_pointer_of_type(RzTypeDB *typedb, RZ_NONNULL RzTyp
 
 // Type formats (`tp` and `pf` commands)
 RZ_API const char *rz_type_db_format_get(RzTypeDB *typedb, const char *name);
-RZ_API const char *rz_type_db_format_byname(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt);
 RZ_API RZ_OWN RzList *rz_type_db_format_all(RzTypeDB *typedb);
 RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name);
 RZ_API void rz_type_db_format_purge(RzTypeDB *typedb);
 
-RZ_API char *rz_type_format(RzTypeDB *typedb, const char *type);
+RZ_API const char *rz_base_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
+RZ_API const char *rz_type_format(RzTypeDB *typedb, const char *type);
 RZ_API int rz_type_format_struct_size(RzTypeDB *typedb, const char *f, int mode, int n);
 RZ_API char *rz_type_format_data(RzTypeDB *t, RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield);
