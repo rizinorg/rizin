@@ -1240,7 +1240,13 @@ static int var_cmd(RzCore *core, const char *str) {
 			free(ostr);
 			return false;
 		}
-		RzType *ttype = rz_type_parse(core->analysis->typedb->parser, type, NULL);
+		char *error_msg = NULL;
+		RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, type, &error_msg);
+		if (!ttype || error_msg) {
+			eprintf("Can't parse type: \"%s\"\n%s\n", type, error_msg);
+			free(ostr);
+			return false;
+		}
 		rz_analysis_var_set_type(v1, ttype);
 		free(ostr);
 		return true;
@@ -1345,7 +1351,13 @@ static int var_cmd(RzCore *core, const char *str) {
 		} else if (type == 's' && delta > fcn->maxstack) {
 			isarg = true;
 		}
-		RzType *ttype = rz_type_parse(core->analysis->typedb->parser, vartype, NULL);
+		char *error_msg = NULL;
+		RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
+		if (!ttype || error_msg) {
+			eprintf("Can't parse type: \"%s\"\n%s\n", vartype, error_msg);
+			free(ostr);
+			return false;
+		}
 		rz_analysis_function_set_var(fcn, delta, type, ttype, size, isarg, name);
 	} break;
 	}
@@ -2943,7 +2955,7 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 		case 'r': { // "afsr"
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 			if (fcn) {
-				RzType *ttype = rz_type_parse(core->analysis->typedb->parser, input + 3, NULL);
+				RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, input + 3, NULL);
 				if (ttype) {
 					rz_type_func_ret_set(core->analysis->typedb, fcn->name, ttype);
 				}
@@ -9159,9 +9171,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int
 		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzType *ret_type = rz_type_parse(core->analysis->typedb->parser, argv[1], NULL);
-	if (!ret_type) {
-		eprintf("Cannot parse type \"%s\"\n", argv[1]);
+	char *error_msg = NULL;
+	RzType *ret_type = rz_type_parse_string_single(core->analysis->typedb->parser, argv[1], &error_msg);
+	if (!ret_type || error_msg) {
+		eprintf("Cannot parse type \"%s\":\n%s\n", argv[1], error_msg);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!rz_type_func_ret_set(core->analysis->typedb, fcn->name, ret_type)) {
@@ -9485,9 +9498,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc
 		eprintf("Cannot find variable %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzType *v_type = rz_type_parse(core->analysis->typedb->parser, argv[2], NULL);
-	if (!v_type) {
-		eprintf("Cannot parse type \"%s\"\n", argv[2]);
+	char *error_msg = NULL;
+	RzType *v_type = rz_type_parse_string_single(core->analysis->typedb->parser, argv[2], &error_msg);
+	if (!v_type || error_msg) {
+		eprintf("Cannot parse type \"%s\":\n%s\n", argv[2], error_msg);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_analysis_var_set_type(v, v_type);
@@ -9613,9 +9627,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_handler(RzCore *core, int argc, 
 		const char *vartype = argc > 3 ? argv[3] : "int";
 		int delta = (int)rz_num_math(core->num, argv[1]) - fcn->bp_off;
 		bool isarg = delta > 0;
-		RzType *var_type = rz_type_parse(core->analysis->typedb->parser, vartype, NULL);
-		if (!var_type) {
-			eprintf("Cannot parse type \"%s\"\n", vartype);
+		char *error_msg = NULL;
+		RzType *var_type = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
+		if (!var_type || error_msg) {
+			eprintf("Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_BPV, var_type, 4, isarg, varname);
@@ -9660,9 +9675,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_handler(RzCore *core, int argc
 		}
 		int delta = i->index;
 		bool isarg = true;
-		RzType *var_type = rz_type_parse(core->analysis->typedb->parser, vartype, NULL);
-		if (!var_type) {
-			eprintf("Cannot parse type \"%s\"\n", vartype);
+		char *error_msg = NULL;
+		RzType *var_type = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
+		if (!var_type || error_msg) {
+			eprintf("Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, var_type, 4, isarg, varname);
@@ -9712,9 +9728,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_sp_handler(RzCore *core, int argc, 
 		const char *vartype = argc > 3 ? argv[3] : "int";
 		int delta = (int)rz_num_math(core->num, argv[1]);
 		bool isarg = delta > fcn->maxstack;
-		RzType *var_type = rz_type_parse(core->analysis->typedb->parser, vartype, NULL);
-		if (!var_type) {
-			eprintf("Cannot parse type \"%s\"\n", vartype);
+		char *error_msg = NULL;
+		RzType *var_type = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
+		if (!var_type || error_msg) {
+			eprintf("Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_SPV, var_type, 4, isarg, varname);

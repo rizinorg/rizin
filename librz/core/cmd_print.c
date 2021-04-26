@@ -1689,7 +1689,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block,
 			if (rz_str_endswith(_input, ".h")) {
 				char *error_msg = NULL;
 				const char *dir = rz_config_get(core->config, "dir.types");
-				int result = rz_type_parse_c_file(core->analysis->typedb, path, dir, &error_msg);
+				int result = rz_type_parse_file(core->analysis->typedb, path, dir, &error_msg);
 				if (!result) {
 					rz_core_cmd0(core, ".ts*");
 				} else {
