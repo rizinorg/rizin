@@ -17,7 +17,8 @@ typedef struct {
 CParserState *c_parser_state_new();
 void c_parser_state_free(CParserState *state);
 
-int filter_type_nodes(CParserState *state, TSNode node, const char *text);
+int parse_type_nodes_save(CParserState *state, TSNode node, const char *text);
+int parse_type_node_single(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair);
 
 void parser_debug(CParserState *state, const char *fmt, ...);
 void parser_error(CParserState *state, const char *fmt, ...);

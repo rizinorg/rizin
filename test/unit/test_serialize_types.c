@@ -43,14 +43,14 @@ bool test_types_save() {
 	RzTypeStructMember member;
 	member.name = strdup("gillian");
 	member.offset = 0;
-	RzType *mtype = rz_type_parse(typedb->parser, "char *", NULL);
+	RzType *mtype = rz_type_parse_string_single(typedb->parser, "char *", NULL);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
 	rz_vector_push(&type->struct_data.members, &member);
 
 	member.name = strdup("seed");
 	member.offset = 8;
-	mtype = rz_type_parse(typedb->parser, "uint64_t", NULL);
+	mtype = rz_type_parse_string_single(typedb->parser, "uint64_t", NULL);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
 	rz_vector_push(&type->struct_data.members, &member);
@@ -65,14 +65,14 @@ bool test_types_save() {
 	RzTypeUnionMember mumber;
 	mumber.name = strdup("random");
 	mumber.offset = 0;
-	mtype = rz_type_parse(typedb->parser, "int", NULL);
+	mtype = rz_type_parse_string_single(typedb->parser, "int", NULL);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
 	rz_vector_push(&type->union_data.members, &mumber);
 
 	mumber.name = strdup("hajile");
 	mumber.offset = 0;
-	mtype = rz_type_parse(typedb->parser, "uint32_t", NULL);
+	mtype = rz_type_parse_string_single(typedb->parser, "uint32_t", NULL);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
 	rz_vector_push(&type->union_data.members, &mumber);
@@ -99,7 +99,7 @@ bool test_types_save() {
 	// typedef
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
 	type->name = strdup("human");
-	mtype = rz_type_parse(typedb->parser, "union snatcher", NULL);
+	mtype = rz_type_parse_string_single(typedb->parser, "union snatcher", NULL);
 	mu_assert_notnull(mtype, "typedef type parsing");
 	type->type = mtype;
 	rz_type_db_save_base_type(typedb, type);
@@ -109,7 +109,7 @@ bool test_types_save() {
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
 	type->name = strdup("badchar");
 	type->size = 16;
-	mtype = rz_type_parse(typedb->parser, "c", NULL);
+	mtype = rz_type_parse_string_single(typedb->parser, "c", NULL);
 	mu_assert_notnull(mtype, "atomic type parsing");
 	type->type = mtype;
 	rz_type_db_save_base_type(typedb, type);
