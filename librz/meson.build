@@ -339,7 +339,7 @@ include_files =[
   'include/rz_endian.h',
   'include/rz_flag.h',
   'include/rz_flist.h',
-  'include/rz_hash.h',
+  'include/rz_msg_digest.h',
   'include/rz_heap_glibc.h',
   'include/rz_heap_jemalloc.h',
   'include/rz_io.h',
