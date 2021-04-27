@@ -731,7 +731,7 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 		if (isarg) {
 			const char *place = fcn->cc ? rz_analysis_cc_arg(analysis, fcn->cc, ST32_MAX) : NULL;
 			bool stack_rev = place ? !strcmp(place, "stack_rev") : false;
-			char *fname = rz_type_func_guess(analysis->typedb, fcn->name);
+			char *fname = rz_analysis_function_name_guess(analysis->typedb, fcn->name);
 			if (fname) {
 				ut64 sum_sz = 0;
 				size_t from, to, i;
@@ -889,7 +889,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 		RZ_LOG_DEBUG("No calling convention for function '%s' to extract register arguments\n", fcn->name);
 		return;
 	}
-	char *fname = rz_type_func_guess(analysis->typedb, fcn->name);
+	char *fname = rz_analysis_function_name_guess(analysis->typedb, fcn->name);
 	int max_count = rz_analysis_cc_max_arg(analysis, fcn->cc);
 	if (!max_count || (*count >= max_count)) {
 		free(fname);
@@ -910,7 +910,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			RzCore *core = (RzCore *)analysis->coreb.core;
 			RzFlagItem *flag = rz_flag_get_by_spaces(core->flags, offset, RZ_FLAGS_FS_IMPORTS, NULL);
 			if (flag) {
-				callee = rz_type_func_guess(analysis->typedb, flag->name);
+				callee = rz_analysis_function_name_guess(analysis->typedb, flag->name);
 				if (callee) {
 					const char *cc = rz_analysis_cc_func(analysis, callee);
 					if (cc && !strcmp(fcn->cc, cc)) {
@@ -919,7 +919,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				}
 			}
 		} else if (!f->is_variadic && !strcmp(fcn->cc, f->cc)) {
-			callee = rz_type_func_guess(analysis->typedb, f->name);
+			callee = rz_analysis_function_name_guess(analysis->typedb, f->name);
 			if (callee) {
 				callee_rargs = RZ_MIN(max_count, rz_type_func_args_count(analysis->typedb, callee));
 			}
@@ -1366,7 +1366,7 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 		return NULL;
 	}
 
-	char *type_fcn_name = rz_type_func_guess(analysis->typedb, fcn_name);
+	char *type_fcn_name = rz_analysis_function_name_guess(analysis->typedb, fcn_name);
 	if (type_fcn_name && rz_type_func_exist(analysis->typedb, type_fcn_name)) {
 		RzType *fcn_type = rz_type_func_ret(analysis->typedb, type_fcn_name);
 		if (fcn_type) {
@@ -1491,7 +1491,6 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RzAnalysisFunct
 	rz_analysis_fcn_vars_cache_init(analysis, &cache, fcn);
 	RzListIter *iter;
 	RzAnalysisVar *var;
-	int arg_count = 0;
 
 	RzList *all_vars = cache.rvars;
 	rz_list_join(all_vars, cache.bvars);
@@ -1499,12 +1498,8 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RzAnalysisFunct
 
 	rz_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
-			rz_type_func_arg_set(analysis->typedb, fcn->name, arg_count, var->name, var->type);
-			arg_count++;
+			rz_type_func_arg_add(analysis->typedb, fcn->name, var->name, var->type);
 		}
-	}
-	if (arg_count > 0) {
-		rz_type_func_arg_count_set(analysis->typedb, fcn->name, arg_count);
 	}
 	rz_analysis_fcn_vars_cache_fini(&cache);
 }

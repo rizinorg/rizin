@@ -6,6 +6,15 @@
 
 #include "test_analysis_block_invars.inl"
 
+static void setup_sdb_for_function(Sdb *res) {
+	sdb_set(res, "ExitProcess", "func", 0);
+	sdb_set(res, "ReadFile", "func", 0);
+	sdb_set(res, "memcpy", "func", 0);
+	sdb_set(res, "strchr", "func", 0);
+	sdb_set(res, "__stack_chk_fail", "func", 0);
+	sdb_set(res, "WSAStartup", "func", 0);
+}
+
 bool ht_up_count(void *user, const ut64 k, const void *v) {
 	size_t *count = user;
 	(*count)++;
@@ -137,9 +146,163 @@ bool test_rz_analysis_function_labels() {
 	mu_end;
 }
 
+bool test_dll_names(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_function(sdb);
+	rz_serialize_callables_load(sdb, typedb, NULL);
+	sdb_free(sdb);
+
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	char *s;
+
+	s = rz_analysis_function_name_guess(typedb, "sub.KERNEL32.dll_ExitProcess");
+	mu_assert_notnull(s, "dll_ should be ignored");
+	mu_assert_streq(s, "ExitProcess", "dll_ should be ignored");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "sub.dll_ExitProcess_32");
+	mu_assert_notnull(s, "number should be ignored");
+	mu_assert_streq(s, "ExitProcess", "number should be ignored");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "sym.imp.KERNEL32.dll_ReadFile");
+	mu_assert_notnull(s, "dll_ and number should be ignored case 1");
+	mu_assert_streq(s, "ReadFile", "dll_ and number should be ignored case 1");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "sub.VCRUNTIME14.dll_memcpy");
+	mu_assert_notnull(s, "dll_ and number should be ignored case 2");
+	mu_assert_streq(s, "memcpy", "dll_ and number should be ignored case 2");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "sub.KERNEL32.dll_ExitProcess_32");
+	mu_assert_notnull(s, "dll_ and number should be ignored case 3");
+	mu_assert_streq(s, "ExitProcess", "dll_ and number should be ignored case 3");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "WS2_32.dll_WSAStartup");
+	mu_assert_notnull(s, "dll_ and number should be ignored case 4");
+	mu_assert_streq(s, "WSAStartup", "dll_ and number should be ignored case 4");
+	free(s);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_ignore_prefixes(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_function(sdb);
+	rz_serialize_callables_load(sdb, typedb, NULL);
+	sdb_free(sdb);
+
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	char *s;
+
+	s = rz_analysis_function_name_guess(typedb, "fcn.KERNEL32.dll_ExitProcess_32");
+	mu_assert_null(s, "fcn. names should be ignored");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "loc.KERNEL32.dll_ExitProcess_32");
+	mu_assert_null(s, "loc. names should be ignored");
+	free(s);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_remove_rz_prefixes(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_function(sdb);
+	rz_serialize_callables_load(sdb, typedb, NULL);
+	sdb_free(sdb);
+
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	char *s;
+
+	s = rz_analysis_function_name_guess(typedb, "sym.imp.ExitProcess");
+	mu_assert_notnull(s, "sym.imp should be ignored");
+	mu_assert_streq(s, "ExitProcess", "sym.imp should be ignored");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "sym.imp.fcn.ExitProcess");
+	mu_assert_notnull(s, "sym.imp.fcn should be ignored");
+	mu_assert_streq(s, "ExitProcess", "sym.imp.fcn should be ignored");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "longprefix.ExitProcess");
+	mu_assert_null(s, "prefixes longer than 3 should not be ignored");
+	free(s);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_autonames(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_function(sdb);
+	rz_serialize_callables_load(sdb, typedb, NULL);
+	sdb_free(sdb);
+
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	char *s;
+
+	s = rz_analysis_function_name_guess(typedb, "sub.strchr_123");
+	mu_assert_null(s, "function that calls common fcns shouldn't be identified as such");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "sub.__strchr_123");
+	mu_assert_null(s, "initial _ should not confuse the api");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "sub.__stack_chk_fail_740");
+	mu_assert_null(s, "initial _ should not confuse the api");
+	free(s);
+
+	s = rz_analysis_function_name_guess(typedb, "sym.imp.strchr");
+	mu_assert_notnull(s, "sym.imp. should be ignored");
+	mu_assert_streq(s, "strchr", "strchr should be identified");
+	free(s);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+bool test_initial_underscore(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	Sdb *sdb = sdb_new0();
+	setup_sdb_for_function(sdb);
+	rz_serialize_callables_load(sdb, typedb, NULL);
+	sdb_free(sdb);
+
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	char *s;
+
+	s = rz_analysis_function_name_guess(typedb, "sym._strchr");
+	mu_assert_notnull(s, "sym._ should be ignored");
+	mu_assert_streq(s, "strchr", "strchr should be identified");
+	free(s);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
+	mu_run_test(test_ignore_prefixes);
+	mu_run_test(test_remove_rz_prefixes);
+	mu_run_test(test_dll_names);
+	mu_run_test(test_autonames);
+	mu_run_test(test_initial_underscore);
 	return tests_passed != tests_run;
 }
 
