@@ -12,11 +12,10 @@
 
 #define RZ_CRYPTO_NBITS (sizeof(RzCryptoSelector) * 8)
 
-typedef struct rz_hash_seed_t {
-	bool as_prefix;
+typedef struct {
 	ut8 *buf;
 	size_t len;
-} RzHashSeed;
+} RzHashBuffer;
 
 typedef enum {
 	RZ_HASH_MODE_STANDARD = 0,
@@ -44,21 +43,23 @@ typedef struct {
 } RzHashOffset;
 
 typedef struct rz_hash_context {
+	bool as_prefix;
 	bool little_endian;
 	bool show_blocks;
 	bool use_stdin;
 	char *algorithm;
 	char *compare;
-	char *iv;
 	char *input;
+	char *iv;
 	const char **files;
-	ut32 nfiles;
-	RzHashSeed seed;
+	RzHashBuffer key;
+	RzHashBuffer seed;
 	RzHashMode mode;
 	RzHashOffset offset;
 	RzHashOp operation;
-	ut64 iterate;
+	ut32 nfiles;
 	ut64 block_size;
+	ut64 iterate;
 	/* Output here */
 	PJ *pj;
 } RzHashContext;
@@ -90,8 +91,10 @@ static void rz_hash_show_help(bool usage_only) {
 		" -k          Outputs the calculated value using openssh's randomkey algorithm\n"
 		" -L          List all algorithms\n"
 		" -q          Sets quiet mode (use -qq to get only the calculated value)\n"
-		" -S seed/key Sets the seed for -a and the key for -E/-D, use '^' to append it before\n"
-		"             the input, use '@' prefix to load it from a file and '-' from read it\n"
+		" -S seed     Sets the seed for -a, use '^' to append it before the input, use '@'\n"
+		"             prefix to load it from a file and '-' from read it\n"
+		" -K key      Sets the hmac key for -a and the key for -E/-D, use '@' prefix to\n"
+		"             load it from a file and '-' from read it\n"
 		"             from stdin (you can combine them)\n"
 		" -s string   Input read from a zero-terminated string instead from a file\n"
 		" -x hex      Input read from a hexadecimal value instead from a file\n"
@@ -131,6 +134,11 @@ static void rz_hash_show_algorithms() {
 		"    e = encoding, d = encoding\n"
 		"    h = hash, m = hmac\n");
 }
+
+#define rz_hash_bool_error(x, o, f, ...) \
+	(x)->operation = o; \
+	RZ_LOG_ERROR("rz-hash: error, " f, ##__VA_ARGS__); \
+	return false;
 
 #define rz_hash_error(x, o, f, ...) \
 	(x)->operation = o; \
@@ -274,20 +282,49 @@ static bool rz_hash_parse_hexadecimal(const char *option, const char *hexadecima
 	return true;
 }
 
+static bool rz_hash_parse_any(RzHashContext *ctx, const char *option, const char *arg, RzHashBuffer *hb) {
+	ssize_t arglen = strlen(arg);
+	if (arglen < 1) {
+		rz_hash_bool_error(ctx, RZ_HASH_OP_ERROR, "option %s is empty.\n", option);
+	}
+	if (!strcmp(arg, "-")) {
+		int stdinlen = 0;
+		hb->buf = (ut8 *)rz_stdin_slurp(&stdinlen);
+		hb->len = stdinlen;
+	} else if (arg[0] == '@') {
+		hb->buf = (ut8 *)rz_file_slurp(arg + 1, &hb->len);
+	} else if (!strncmp(arg, "s:", 2)) {
+		if (!rz_hash_parse_string(option, arg + 2, &hb->buf, &hb->len)) {
+			ctx->operation = RZ_HASH_OP_ERROR;
+			return false;
+		}
+	} else {
+		if (!rz_hash_parse_hexadecimal(option, arg, &hb->buf, &hb->len)) {
+			ctx->operation = RZ_HASH_OP_ERROR;
+			return false;
+		}
+	}
+	if (!hb->buf) {
+		rz_hash_bool_error(ctx, RZ_HASH_OP_ERROR, "failed to allocate buffer memory for %s option.\n", option);
+	}
+	return true;
+}
+
 static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ctx) {
 	const char *seed = NULL;
-
+	const char *key = NULL;
 	memset((void *)ctx, 0, sizeof(RzHashContext));
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "jD:e:vE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
+	rz_getopt_init(&opt, argc, argv, "jD:e:vE:a:i:I:S:K:s:x:b:nBhf:t:kLqc:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'q': rz_hash_ctx_set_quiet(ctx); break;
 		case 'i': rz_hash_ctx_set_signed(ctx, iterate, opt.arg); break;
 		case 'j': rz_hash_ctx_set_mode(ctx, RZ_HASH_MODE_JSON); break;
 		case 'S': rz_hash_set_val(ctx, seed, NULL, opt.arg); break;
+		case 'K': rz_hash_set_val(ctx, key, NULL, opt.arg); break;
 		case 'I': rz_hash_ctx_set_str(ctx, iv, opt.arg); break;
 		case 'D':
 			rz_hash_ctx_set_str(ctx, algorithm, opt.arg);
@@ -354,8 +391,8 @@ static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ct
 	}
 
 	if (ctx->operation == RZ_HASH_OP_ENCRYPT || ctx->operation == RZ_HASH_OP_DECRYPT) {
-		if (!seed && strncmp("base", ctx->algorithm, 4) && strcmp("punycode", ctx->algorithm)) {
-			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -S is required for algorithm '%s'.\n", ctx->algorithm);
+		if (!key && strncmp("base", ctx->algorithm, 4) && strcmp("punycode", ctx->algorithm)) {
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -K is required for algorithm '%s'.\n", ctx->algorithm);
 		}
 		if (ctx->compare) {
 			ssize_t len = strlen(ctx->compare);
@@ -375,7 +412,7 @@ static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ct
 		}
 	} else if (ctx->operation == RZ_HASH_OP_HASH) {
 		if (ctx->iv) {
-			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -I is incompatible with -a; use -S to define a seed.\n");
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -I is incompatible with -a; use -S to define a seed or -K to define an hmac key.\n");
 		}
 		if (ctx->show_blocks && ctx->compare) {
 			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -B is incompatible with -c.\n");
@@ -398,32 +435,15 @@ static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ct
 	if (seed) {
 		if (seed[0] == '^') {
 			seed++;
-			ctx->seed.as_prefix = true;
+			ctx->as_prefix = true;
 		}
-		ssize_t seedlen = strlen(seed);
-		if (seedlen < 1) {
-			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -S is empty.\n");
+		if (!rz_hash_parse_any(ctx, "-S", seed, &ctx->seed)) {
+			return;
 		}
-		if (!strcmp(seed, "-")) {
-			int stdinlen = 0;
-			ctx->seed.buf = (ut8 *)rz_stdin_slurp(&stdinlen);
-			ctx->seed.len = stdinlen;
-		} else if (seed[0] == '@') {
-			ctx->seed.buf = (ut8 *)rz_file_slurp(seed + 1, &ctx->seed.len);
-		} else if (!strncmp(seed, "s:", 2)) {
-			if (!rz_hash_parse_string("-S", seed + 2, &ctx->seed.buf, &ctx->seed.len)) {
-				ctx->operation = RZ_HASH_OP_ERROR;
-				return;
-			}
-		} else {
-			if (!rz_hash_parse_hexadecimal("-S", seed, &ctx->seed.buf, &ctx->seed.len)) {
-				ctx->operation = RZ_HASH_OP_ERROR;
-				return;
-			}
-		}
-		if (!ctx->seed.buf) {
-			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "failed to allocate seed memory.\n");
-		}
+	}
+
+	if (key && !rz_hash_parse_any(ctx, "-K", key, &ctx->key)) {
+		return;
 	}
 
 	if (!ctx->block_size) {
@@ -671,26 +691,26 @@ static void rz_hash_print_digest(RzHashContext *ctx, RzMsgDigest *md, const char
 	}
 
 	bool has_seed = !ctx->iv && ctx->seed.len > 0;
+	const char *hmac = ctx->key.len > 0 ? "hmac-" : "";
 
 	switch (ctx->mode) {
 	case RZ_HASH_MODE_JSON:
-		if (has_seed) {
-			pj_kb(ctx->pj, "seed", true);
-		}
+		pj_kb(ctx->pj, "seed", has_seed);
+		pj_kb(ctx->pj, "hmac", ctx->key.len > 0);
 		pj_kn(ctx->pj, "from", from);
 		pj_kn(ctx->pj, "to", to);
 		pj_ks(ctx->pj, "name", hname);
 		pj_ks(ctx->pj, "value", value);
 		break;
 	case RZ_HASH_MODE_STANDARD:
-		printf("%s: 0x%08" PFMT64x "-0x%08" PFMT64x " %s: %s%s\n", filename, from, to, hname, value, has_seed ? " with seed" : "");
+		printf("%s: 0x%08" PFMT64x "-0x%08" PFMT64x " %s%s: %s%s\n", filename, from, to, hmac, hname, value, has_seed ? " with seed" : "");
 		break;
 	case RZ_HASH_MODE_RANDOMART:
 		rndart = rz_print_randomart(buffer, len, from);
-		printf("%s\n%s\n", hname, rndart);
+		printf("%s%s\n%s\n", hmac, hname, rndart);
 		break;
 	case RZ_HASH_MODE_QUIET:
-		printf("%s: %s: %s\n", filename, hname, value);
+		printf("%s: %s%s: %s\n", filename, hmac, hname, value);
 		break;
 	case RZ_HASH_MODE_VERY_QUIET:
 		puts(value);
@@ -702,9 +722,11 @@ static void rz_hash_print_digest(RzHashContext *ctx, RzMsgDigest *md, const char
 
 static void rz_hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, bool result, const char *hname, const char *filename) {
 	ut64 to = ctx->offset.to ? ctx->offset.to : filesize;
+	const char *hmac = ctx->key.len > 0 ? "hmac-" : "";
 	switch (ctx->mode) {
 	case RZ_HASH_MODE_JSON:
 		pj_kb(ctx->pj, "seed", ctx->seed.len > 0);
+		pj_kb(ctx->pj, "hmac", ctx->key.len > 0);
 		pj_kb(ctx->pj, "compare", result);
 		pj_kn(ctx->pj, "from", ctx->offset.from);
 		pj_kn(ctx->pj, "to", to);
@@ -712,10 +734,10 @@ static void rz_hash_context_compare_hashes(RzHashContext *ctx, size_t filesize, 
 		break;
 	case RZ_HASH_MODE_RANDOMART:
 	case RZ_HASH_MODE_STANDARD:
-		printf("%s: 0x%08" PFMT64x "-0x%08" PFMT64x " %s: computed hash %s the expected one\n", filename, ctx->offset.from, to, hname, result ? "matches" : "doesn't match");
+		printf("%s: 0x%08" PFMT64x "-0x%08" PFMT64x " %s%s: computed hash %s the expected one\n", filename, ctx->offset.from, to, hmac, hname, result ? "matches" : "doesn't match");
 		break;
 	case RZ_HASH_MODE_QUIET:
-		printf("%s: %s: computed hash %s the expected one\n", filename, hname, result ? "matches" : "doesn't match");
+		printf("%s: %s%s: computed hash %s the expected one\n", filename, hmac, hname, result ? "matches" : "doesn't match");
 		break;
 	case RZ_HASH_MODE_VERY_QUIET:
 		printf("%s", result ? "true" : "false");
@@ -788,6 +810,10 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 		}
 	}
 
+	if (ctx->key.len > 0 && !rz_msg_digest_hmac(md, ctx->key.buf, ctx->key.len)) {
+		goto calculate_hash_end;
+	}
+
 	if (ctx->compare) {
 		ut64 to = ctx->offset.to ? ctx->offset.to : filesize;
 		size_t cmphashlen = 0;
@@ -802,7 +828,7 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 			goto calculate_hash_end;
 		}
 
-		if (ctx->seed.as_prefix && ctx->seed.buf &&
+		if (ctx->as_prefix && ctx->seed.buf &&
 			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
@@ -814,7 +840,7 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 			}
 		}
 
-		if (!ctx->seed.as_prefix && ctx->seed.buf &&
+		if (!ctx->as_prefix && ctx->seed.buf &&
 			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
@@ -867,7 +893,7 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 			goto calculate_hash_end;
 		}
 
-		if (ctx->seed.as_prefix && ctx->seed.buf &&
+		if (ctx->as_prefix && ctx->seed.buf &&
 			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
@@ -879,7 +905,7 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 			}
 		}
 
-		if (!ctx->seed.as_prefix && ctx->seed.buf &&
+		if (!ctx->as_prefix && ctx->seed.buf &&
 			!rz_msg_digest_update(md, ctx->seed.buf, ctx->seed.len)) {
 			goto calculate_hash_end;
 		}
@@ -943,7 +969,7 @@ static bool calculate_decrypt(RzHashContext *ctx, RzIO *io, const char *filename
 		goto calculate_decrypt_end;
 	}
 
-	if (!rz_crypto_set_key(cry, ctx->seed.buf, ctx->seed.len, 0, RZ_CRYPTO_DIR_DECRYPT)) {
+	if (!rz_crypto_set_key(cry, ctx->key.buf, ctx->key.len, 0, RZ_CRYPTO_DIR_DECRYPT)) {
 		RZ_LOG_ERROR("rz-hash: error, invalid key\n");
 		goto calculate_decrypt_end;
 	}
@@ -997,7 +1023,7 @@ static bool calculate_encrypt(RzHashContext *ctx, RzIO *io, const char *filename
 	ut8 *block = NULL;
 
 	bool requires_key = !strncmp("base", ctx->algorithm, 4) || !strcmp("punycode", ctx->algorithm);
-	if (!requires_key && ctx->seed.len < 1) {
+	if (!requires_key && ctx->key.len < 1) {
 		RZ_LOG_ERROR("rz-hash: error, cannot encrypt without a key\n");
 		goto calculate_encrypt_end;
 	}
@@ -1025,7 +1051,7 @@ static bool calculate_encrypt(RzHashContext *ctx, RzIO *io, const char *filename
 		goto calculate_encrypt_end;
 	}
 
-	if (!rz_crypto_set_key(cry, ctx->seed.buf, ctx->seed.len, 0, RZ_CRYPTO_DIR_ENCRYPT)) {
+	if (!rz_crypto_set_key(cry, ctx->key.buf, ctx->key.len, 0, RZ_CRYPTO_DIR_ENCRYPT)) {
 		RZ_LOG_ERROR("rz-hash: error, invalid key\n");
 		goto calculate_encrypt_end;
 	}

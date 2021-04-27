@@ -307,13 +307,14 @@ RZ_API bool rz_msg_digest_hmac(RzMsgDigest *md, const ut8 *key, ut64 key_size) {
 			return false;
 		}
 
-		mdc->hmac_key = RZ_NEWS0(ut8, block_size);
+		mdc->hmac_key = malloc(block_size);
 		if (!mdc->hmac_key) {
 			RZ_LOG_ERROR("msg digest: cannot allocate memory for hmac key.\n");
 			return false;
 		}
 
-		if (block_size > mdc->digest_size) {
+		memset(mdc->hmac_key, 0, block_size);
+		if (block_size < key_size) {
 			if (!mdc->plugin->init(mdc->context)) {
 				RZ_LOG_ERROR("msg digest: failed to call init for hmac %s key.\n", mdc->plugin->name);
 				return false;
@@ -326,7 +327,7 @@ RZ_API bool rz_msg_digest_hmac(RzMsgDigest *md, const ut8 *key, ut64 key_size) {
 				RZ_LOG_ERROR("msg digest: failed to call final for hmac %s key.\n", mdc->plugin->name);
 				return false;
 			}
-		} else if (block_size < mdc->digest_size) {
+		} else {
 			memcpy(mdc->hmac_key, key, key_size);
 		}
 	}
