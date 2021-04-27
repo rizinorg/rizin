@@ -267,36 +267,29 @@ static void cmd_write_inc(RzCore *core, int size, st64 num) {
 }
 
 static void wo_show_algorithms(char c) {
-	char flags[7] = { 0 };
+	char flags[5] = { 0 };
 
 	eprintf("Usage: wo%c [algo] [key] [IV]\n", c);
-	eprintf(" flags  algorithm      license    author\n");
-
-	const RzMsgDigestPlugin *rmdp;
-	for (size_t i = 0; (rmdp = rz_msg_digest_plugin_by_index(i)); ++i) {
-		snprintf(flags, sizeof(flags), "____h%c", rmdp->support_hmac ? 'm' : '_');
-		eprintf(" %6s %-14s %-10s %s\n", flags, rmdp->name, rmdp->license, rmdp->author);
-	}
+	eprintf(" flags algorithm      license    author\n");
 
 	const RzCryptoPlugin *rcp;
 	for (size_t i = 0; (rcp = rz_crypto_plugin_by_index(i)); i++) {
 		if (!strncmp("base", rcp->name, 4) || !strcmp("punycode", rcp->name)) {
-			snprintf(flags, sizeof(flags), "__ed__");
+			snprintf(flags, sizeof(flags), "__ed");
 		} else if (!strcmp("rol", rcp->name)) {
-			snprintf(flags, sizeof(flags), "E_____");
+			snprintf(flags, sizeof(flags), "E___");
 		} else if (!strcmp("ror", rcp->name)) {
-			snprintf(flags, sizeof(flags), "_D____");
+			snprintf(flags, sizeof(flags), "_D__");
 		} else {
-			snprintf(flags, sizeof(flags), "ED____");
+			snprintf(flags, sizeof(flags), "ED__");
 		}
-		eprintf(" %6s %-14s %-10s %s\n", flags, rcp->name, rcp->license, rcp->author);
+		eprintf(" %-5s %-14s %-10s %s\n", flags, rcp->name, rcp->license, rcp->author);
 	}
 	eprintf(
 		"\n"
 		"flags legenda:\n"
 		"    E = encryption, D = decryption\n"
-		"    e = encoding, d = encoding\n"
-		"    h = hash, m = hmac\n");
+		"    e = encoding, d = encoding\n");
 }
 
 RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
