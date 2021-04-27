@@ -1871,19 +1871,6 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		for (i = 0; info->sum[i].type; i++) {
 			RzBinHash *h = &info->sum[i];
-			ut64 hash = rz_hash_name_to_bits(h->type);
-			RzHash *rh = rz_hash_new(true, hash);
-			ut8 *tmp = RZ_NEWS(ut8, h->to);
-			if (!tmp) {
-				return false;
-			}
-			rz_buf_read_at(bf->buf, h->from, tmp, h->to);
-			int len = rz_hash_calculate(rh, hash, tmp, h->to);
-			free(tmp);
-			if (len < 1) {
-				eprintf("Invalid checksum length\n");
-			}
-			rz_hash_free(rh);
 			if (IS_MODE_JSON(mode)) {
 				pj_ko(pj, h->type);
 				char *buf = malloc(2 * h->len + 1);
@@ -2715,7 +2702,7 @@ static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, 
 	RzListIter *iter;
 	char *hashname;
 	rz_list_foreach (hashlist, iter, hashname) {
-		chkstr = rz_hash_to_string(NULL, hashname, data, datalen);
+		chkstr = rz_msg_digest_calculate_small_block_string(hashname, data, datalen, NULL, false);
 		if (!chkstr) {
 			continue;
 		}
@@ -2745,7 +2732,7 @@ static char *filter_hash_string(const char *chksum) {
 	RzListIter *iter;
 	char *hashname;
 	rz_list_foreach (hashlist, iter, hashname) {
-		if (rz_hash_name_to_bits(hashname)) {
+		if (rz_msg_digest_plugin_by_name(hashname)) {
 			aux = rz_str_newf(isFirst ? "%s" : ", %s", hashname);
 			ret = rz_str_append(ret, aux);
 			free(aux);

@@ -3,7 +3,6 @@
 
 #include <rz_types.h>
 #include <rz_util.h>
-#include <rz_hash.h>
 #include "coresymbolication.h"
 
 #define RZ_CS_EL_OFF_SEGS     0x58

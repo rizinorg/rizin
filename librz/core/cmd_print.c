@@ -3108,20 +3108,20 @@ restore_conf:
 	rz_config_set_i(core->config, "emu.str", emu_str);
 }
 
-static void algolist(int mode) {
-	int i;
-	for (i = 0; i < RZ_HASH_NBITS; i++) {
-		ut64 bits = 1ULL << i;
-		const char *name = rz_hash_name(bits);
-		if (name && *name) {
-			if (mode) {
-				rz_cons_println(name);
-			} else {
-				rz_cons_printf("%s ", name);
-			}
+static void msg_digest_algorithms(bool complete) {
+	const RzMsgDigestPlugin *plugin = NULL;
+
+	if (complete) {
+		rz_cons_println("algorithm      license    author");
+	}
+	for (size_t j = 0; (plugin = rz_msg_digest_plugin_by_index(j)); ++j) {
+		if (complete) {
+			rz_cons_printf("%-14s %-10s %s\n", plugin->name, plugin->license, plugin->author);
+		} else {
+			rz_cons_printf("%s ", plugin->name);
 		}
 	}
-	if (!mode) {
+	if (!complete) {
 		rz_cons_newline();
 	}
 }
@@ -3130,14 +3130,15 @@ static bool cmd_print_ph(RzCore *core, const char *input) {
 	char algo[128];
 	ut32 osize = 0, len = core->blocksize;
 	const char *ptr;
-	int pos = 0, handled_cmd = false;
+	bool handled_cmd = false;
+	const RzMsgDigestPlugin *plugin = NULL;
 
 	if (!*input || *input == '?') {
-		algolist(1);
+		msg_digest_algorithms(1);
 		return true;
 	}
 	if (*input == '=') {
-		algolist(0);
+		msg_digest_algorithms(0);
 		return true;
 	}
 	input = rz_str_trim_head_ro(input);
@@ -3162,13 +3163,16 @@ static bool cmd_print_ph(RzCore *core, const char *input) {
 		osize = len;
 	}
 	/* TODO: Simplify this spaguetti monster */
-	while (osize > 0 && hash_handlers[pos].name) {
-		if (!rz_str_ccmp(hash_handlers[pos].name, input, ' ')) {
-			hash_handlers[pos].handler(core->block, len);
+	for (size_t j = 0; osize > 0 && (plugin = rz_msg_digest_plugin_by_index(j)); ++j) {
+		if (!rz_str_ccmp(plugin->name, input, ' ')) {
+			if (!strncmp(plugin->name, "entropy", 7)) {
+				handle_entropy(plugin->name, core->block, len);
+			} else {
+				handle_msg_digest(plugin->name, core->block, len);
+			}
 			handled_cmd = true;
 			break;
 		}
-		pos++;
 	}
 	if (osize) {
 		rz_core_block_size(core, osize);

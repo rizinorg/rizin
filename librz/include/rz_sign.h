@@ -15,8 +15,8 @@ RZ_LIB_VERSION_HEADER(rz_sign);
 #define RZ_SIGN_KEY_MAXSZ 1024
 #define RZ_SIGN_VAL_MAXSZ 10240
 
-#define ZIGN_HASH    "sha256"
-#define RZ_ZIGN_HASH RZ_HASH_SHA256
+#define ZIGN_HASH      "sha256"
+#define ZIGN_HASH_SIZE 32
 
 typedef enum {
 	RZ_SIGN_BYTES = 'b', // bytes pattern
