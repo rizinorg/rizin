@@ -1899,7 +1899,7 @@ RZ_API const char *rz_type_db_format_get(RzTypeDB *typedb, const char *name) {
 	bool found = false;
 	const char *result = ht_pp_find(typedb->formats, name, &found);
 	if (!found || !result) {
-		eprintf("Cannot find format \"%s\"\n", name);
+		//eprintf("Cannot find format \"%s\"\n", name);
 		return NULL;
 	}
 	return result;
@@ -2792,8 +2792,8 @@ RZ_API const char *rz_base_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzBaseTyp
 		rz_strbuf_append(format, "?");
 		RzTypeStructMember *memb;
 		rz_vector_foreach(&type->struct_data.members, memb) {
-			const char *membfmt = rz_type_as_format(typedb, type->type);
-			const char *membtype = type_to_identifier(typedb, type->type);
+			const char *membfmt = rz_type_as_format(typedb, memb->type);
+			const char *membtype = type_to_identifier(typedb, memb->type);
 			rz_strbuf_append(format, membfmt);
 			rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
 		}
@@ -2810,8 +2810,8 @@ RZ_API const char *rz_base_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzBaseTyp
 		rz_strbuf_append(format, "0");
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&type->union_data.members, memb) {
-			const char *membfmt = rz_type_as_format(typedb, type->type);
-			const char *membtype = type_to_identifier(typedb, type->type);
+			const char *membfmt = rz_type_as_format(typedb, memb->type);
+			const char *membtype = type_to_identifier(typedb, memb->type);
 			rz_strbuf_append(format, membfmt);
 			rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
 		}
@@ -2819,14 +2819,19 @@ RZ_API const char *rz_base_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzBaseTyp
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
 		// It might go recursively to find all types behind the alias
-		const char *typefmt = rz_type_as_format(typedb, type->type);
-		rz_strbuf_append(format, typefmt);
+		const char *fmt = rz_type_as_format(typedb, type->type);
+		if (fmt) {
+			rz_strbuf_append(format, fmt);
+		}
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_ATOMIC: {
+		// We simply skip fields that don't have a format
 		const char *fmt = rz_type_db_format_get(typedb, type->name);
-		rz_strbuf_append(format, fmt);
-		rz_strbuf_append(fields, " ");
+		if (fmt) {
+			rz_strbuf_append(format, fmt);
+			rz_strbuf_append(fields, " ");
+		}
 		break;
 	}
 	default:
@@ -2850,7 +2855,9 @@ RZ_API const char *rz_type_format(RzTypeDB *typedb, RZ_NONNULL const char *name)
 static void type_to_format(RzTypeDB *typedb, RzStrBuf *buf, RzType *type) {
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
 		const char *format = rz_type_db_format_get(typedb, type->identifier.name);
-		rz_strbuf_append(buf, format);
+		if (format) {
+			rz_strbuf_append(buf, format);
+		}
 	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
 		rz_strbuf_appendf(buf, "[%" PFMT64d "]", type->array.count);
 		type_to_format(typedb, buf, type->array.type);

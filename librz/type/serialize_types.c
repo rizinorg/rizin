@@ -9,7 +9,7 @@
 
 typedef struct {
 	RzBaseType *type;
-	const char *format;
+	char *format;
 } TypeFormatPair;
 
 static char *get_type_data(Sdb *sdb, const char *type, const char *sname) {
@@ -72,7 +72,7 @@ static TypeFormatPair *get_enum_type(Sdb *sdb, const char *sname) {
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format;
+	tpair->format = format ? strdup(format) : NULL;
 
 	return tpair;
 
@@ -89,61 +89,58 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 	if (!base_type) {
 		return NULL;
 	}
+	base_type->name = strdup(sname);
 
 	char *sdb_members = get_type_data(sdb, "struct", sname);
-	if (!sdb_members) {
-		goto error;
-	}
-
-	base_type->name = strdup(sname);
-	RzVector *members = &base_type->struct_data.members;
-	if (!rz_vector_reserve(members, (size_t)sdb_alen(sdb_members))) {
-		goto error;
-	}
-
-	char *cur;
-	sdb_aforeach(cur, sdb_members) {
-		char *type_key = rz_str_newf("struct.%s.%s", sname, cur);
-		if (!type_key) {
+	if (sdb_members) {
+		RzVector *members = &base_type->struct_data.members;
+		if (!rz_vector_reserve(members, (size_t)sdb_alen(sdb_members))) {
 			goto error;
 		}
-		char *values = sdb_get(sdb, type_key, NULL);
-		free(type_key);
 
-		if (!values) {
-			goto error;
-		}
-		char *offset = NULL;
-		char *type = sdb_anext(values, &offset);
-		if (!offset) { // offset is missing, malformed state
+		char *cur;
+		sdb_aforeach(cur, sdb_members) {
+			char *type_key = rz_str_newf("struct.%s.%s", sname, cur);
+			if (!type_key) {
+				goto error;
+			}
+			char *values = sdb_get(sdb, type_key, NULL);
+			free(type_key);
+
+			if (!values) {
+				goto error;
+			}
+			char *offset = NULL;
+			char *type = sdb_anext(values, &offset);
+			if (!offset) { // offset is missing, malformed state
+				free(values);
+				goto error;
+			}
+			// Parse type as a C string
+			char *error_msg = NULL;
+			RzType *ttype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
+			if (!ttype || error_msg) {
+				free(values);
+				goto error;
+			}
+
+			RzTypeStructMember memb = {
+				.name = strdup(cur),
+				.type = ttype,
+				.offset = strtol(offset, NULL, 10)
+			};
+
 			free(values);
-			goto error;
+
+			void *element = rz_vector_push(members, &memb); // returns null if no space available
+			if (!element) {
+				goto error;
+			}
+
+			sdb_aforeach_next(cur);
 		}
-		// Parse type as a C string
-		char *error_msg = NULL;
-		RzType *ttype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
-		if (!ttype || error_msg) {
-			free(values);
-			goto error;
-		}
-
-		offset = sdb_anext(offset, NULL);
-		RzTypeStructMember cas = {
-			.name = strdup(cur),
-			.type = ttype,
-			.offset = strtol(offset, NULL, 10)
-		};
-
-		free(values);
-
-		void *element = rz_vector_push(members, &cas); // returns null if no space available
-		if (!element) {
-			goto error;
-		}
-
-		sdb_aforeach_next(cur);
+		free(sdb_members);
 	}
-	free(sdb_members);
 
 	RzStrBuf key;
 	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
@@ -151,11 +148,13 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format;
+	tpair->format = format ? strdup(format) : NULL;
 
+	eprintf("success for %s\n", sname);
 	return tpair;
 
 error:
+	eprintf("some error for %s\n", sname);
 	rz_type_base_type_free(base_type);
 	free(sdb_members);
 	return NULL;
@@ -169,51 +168,50 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 		return NULL;
 	}
 
-	char *sdb_members = get_type_data(sdb, "union", sname);
-	if (!sdb_members) {
-		goto error;
-	}
-
 	base_type->name = strdup(sname);
-	RzVector *members = &base_type->union_data.members;
-	if (!rz_vector_reserve(members, (size_t)sdb_alen(sdb_members))) {
-		goto error;
-	}
 
-	char *cur;
-	sdb_aforeach(cur, sdb_members) {
-		char *type_key = rz_str_newf("union.%s.%s", sname, cur);
-		if (!type_key) {
+	char *sdb_members = get_type_data(sdb, "union", sname);
+	if (sdb_members) {
+		RzVector *members = &base_type->union_data.members;
+		if (!rz_vector_reserve(members, (size_t)sdb_alen(sdb_members))) {
 			goto error;
 		}
-		char *values = sdb_get(sdb, type_key, NULL);
-		free(type_key);
 
-		if (!values) {
-			goto error;
-		}
-		char *value = sdb_anext(values, NULL);
-		char *error_msg = NULL;
-		RzType *ttype = rz_type_parse_string_single(typedb->parser, value, &error_msg);
-		if (!ttype || error_msg) {
+		char *cur;
+		sdb_aforeach(cur, sdb_members) {
+			char *type_key = rz_str_newf("union.%s.%s", sname, cur);
+			if (!type_key) {
+				goto error;
+			}
+			char *values = sdb_get(sdb, type_key, NULL);
+			free(type_key);
+
+			if (!values) {
+				goto error;
+			}
+			char *value = sdb_anext(values, NULL);
+			char *error_msg = NULL;
+			RzType *ttype = rz_type_parse_string_single(typedb->parser, value, &error_msg);
+			if (!ttype || error_msg) {
+				free(values);
+				goto error;
+			}
+
+			RzTypeUnionMember memb = {
+				.name = strdup(cur),
+				.type = ttype
+			};
 			free(values);
-			goto error;
+
+			void *element = rz_vector_push(members, &memb); // returns null if no space available
+			if (!element) {
+				goto error;
+			}
+
+			sdb_aforeach_next(cur);
 		}
-
-		RzTypeUnionMember cas = {
-			.name = strdup(cur),
-			.type = ttype
-		};
-		free(values);
-
-		void *element = rz_vector_push(members, &cas); // returns null if no space available
-		if (!element) {
-			goto error;
-		}
-
-		sdb_aforeach_next(cur);
+		free(sdb_members);
 	}
-	free(sdb_members);
 
 	RzStrBuf key;
 	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
@@ -221,7 +219,7 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format;
+	tpair->format = format ? strdup(format) : NULL;
 
 	return tpair;
 
@@ -256,9 +254,10 @@ static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *
 	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
 	rz_strbuf_fini(&key);
 
+	eprintf("loaded typedef \"%s\" -> \"%s\"\n", sname, ttype->identifier.name);
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format;
+	tpair->format = format ? strdup(format) : NULL;
 
 	return tpair;
 
@@ -294,7 +293,7 @@ static TypeFormatPair *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
-	tpair->format = format;
+	tpair->format = format ? strdup(format) : NULL;
 
 	return tpair;
 
@@ -307,9 +306,10 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 	rz_return_val_if_fail(typedb && sdb, NULL);
 	SdbKv *kv;
 	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(sdb, true);
+	SdbList *l = sdb_foreach_list(sdb, false);
 	ls_foreach (l, iter, kv) {
 		TypeFormatPair *tpair = NULL;
+		//eprintf("parsing \"%s\" type\n", sdbkv_key(kv));
 		if (!strcmp(sdbkv_value(kv), "struct")) {
 			tpair = get_struct_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "enum")) {
@@ -576,20 +576,20 @@ RZ_IPI bool types_load_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb) {
 	return sdb_load_base_types(typedb, db);
 }
 
-struct base_type_sdb {
-	RzTypeDB *typedb;
+struct typedb_sdb {
+	const RzTypeDB *typedb;
 	Sdb *sdb;
 };
 
 static bool export_base_type_cb(void *user, const void *k, const void *v) {
-	struct base_type_sdb *s = user;
+	struct typedb_sdb *s = user;
 	RzBaseType *btype = (RzBaseType *)v;
 	sdb_save_base_type(s->typedb, s->sdb, btype);
 	return true;
 }
 
-static bool types_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb) {
-	struct base_type_sdb tdb = { typedb, db };
+static bool types_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
+	struct typedb_sdb tdb = { typedb, db };
 	ht_pp_foreach(typedb->types, export_base_type_cb, &tdb);
 	return true;
 }
@@ -609,7 +609,7 @@ RZ_API bool rz_type_db_load_sdb(RzTypeDB *typedb, const char *path) {
 	return sdb_load_by_path(typedb, path);
 }
 
-RZ_API void rz_serialize_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb) {
+RZ_API void rz_serialize_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
 	types_export_sdb(db, typedb);
 }
 
