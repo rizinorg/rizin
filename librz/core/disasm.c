@@ -4861,7 +4861,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	}
 	if (rz_type_func_exist(analysis->typedb, full_name)) {
 		name = strdup(full_name);
-	} else if (!(name = rz_type_func_guess(analysis->typedb, full_name))) {
+	} else if (!(name = rz_analysis_function_name_guess(analysis->typedb, full_name))) {
 		return;
 	}
 	ds_begin_comment(ds);

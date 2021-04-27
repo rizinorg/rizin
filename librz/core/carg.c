@@ -34,7 +34,7 @@ RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name) {
 	if (rz_type_func_exist(analysis->typedb, name)) {
 		return strdup(name);
 	}
-	return rz_type_func_guess(analysis->typedb, (char *)func_name);
+	return rz_analysis_function_name_guess(analysis->typedb, (char *)func_name);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {

@@ -381,3 +381,93 @@ RZ_API RZ_BORROW RzList *rz_analysis_function_list(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	return analysis->fcns;
 }
+
+#define MIN_MATCH_LEN 4
+
+static RZ_OWN char *function_name_try_guess(RzTypeDB *typedb, RZ_NONNULL char *name) {
+	if (strlen(name) < MIN_MATCH_LEN) {
+		return NULL;
+	}
+	if (rz_type_func_exist(typedb, name)) {
+		return strdup(name);
+	}
+	return NULL;
+}
+
+static inline bool is_auto_named(char *func_name, size_t slen) {
+	return slen > 4 && (rz_str_startswith(func_name, "fcn.") || rz_str_startswith(func_name, "loc."));
+}
+
+static inline bool has_rz_prefixes(char *func_name, int offset, size_t slen) {
+	return slen > 4 && (offset + 3 < slen) && func_name[offset + 3] == '.';
+}
+
+static char *strip_rz_prefixes(char *func_name, size_t slen) {
+	// strip rizin prefixes (sym, sym.imp, etc')
+	int offset = 0;
+	while (has_rz_prefixes(func_name, offset, slen)) {
+		offset += 4;
+	}
+	return func_name + offset;
+}
+
+static char *strip_common_prefixes_stdlib(char *func_name) {
+	// strip common prefixes from standard lib functions
+	if (rz_str_startswith(func_name, "__isoc99_")) {
+		func_name += 9;
+	} else if (rz_str_startswith(func_name, "__libc_") && !strstr(func_name, "_main")) {
+		func_name += 7;
+	} else if (rz_str_startswith(func_name, "__GI_")) {
+		func_name += 5;
+	}
+	return func_name;
+}
+
+static char *strip_dll_prefix(char *func_name) {
+	char *tmp = strstr(func_name, "dll_");
+	if (tmp) {
+		return tmp + 3;
+	}
+	return func_name;
+}
+
+static void clean_function_name(char *func_name) {
+	char *last = (char *)rz_str_lchr(func_name, '_');
+	if (!last || !rz_str_isnumber(last + 1)) {
+		return;
+	}
+	*last = '\0';
+}
+
+// TODO:
+// - symbol names are long and noisy, some of them might not be matched due
+//	 to additional information added around name
+RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *func_name) {
+	rz_return_val_if_fail(typedb && func_name, NULL);
+	char *str = func_name;
+	char *result = NULL;
+
+	size_t slen = strlen(str);
+	if (slen < MIN_MATCH_LEN || is_auto_named(str, slen)) {
+		return NULL;
+	}
+
+	str = strip_rz_prefixes(str, slen);
+	str = strip_common_prefixes_stdlib(str);
+	str = strip_dll_prefix(str);
+
+	if ((result = function_name_try_guess(typedb, str))) {
+		return result;
+	}
+
+	str = strdup(str);
+	clean_function_name(str);
+
+	if (*str == '_' && (result = function_name_try_guess(typedb, str + 1))) {
+		free(str);
+		return result;
+	}
+
+	free(str);
+	return result;
+}

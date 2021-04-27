@@ -562,7 +562,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 					if (rz_type_func_exist(typedb, full_name)) {
 						fcn_name = strdup(full_name);
 					} else {
-						fcn_name = rz_type_func_guess(typedb, full_name);
+						fcn_name = rz_analysis_function_name_guess(typedb, full_name);
 					}
 					if (!fcn_name) {
 						fcn_name = strdup(full_name);

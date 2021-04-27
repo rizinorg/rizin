@@ -474,7 +474,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 	}
 	if (rz_type_func_exist(analysis->typedb, tmp_name)) {
 		fnl_name = strdup(tmp_name);
-	} else if (!(fnl_name = rz_type_func_guess(analysis->typedb, (char *)tmp_name))) {
+	} else if (!(fnl_name = rz_analysis_function_name_guess(analysis->typedb, (char *)tmp_name))) {
 		if (addr == UT64_MAX) {
 			if (name) {
 				sdb_bool_set(NDB, K_NORET_FUNC(name), true, 0);
@@ -510,19 +510,6 @@ RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr) {
 		fcnname = expr;
 	}
 	sdb_unset(NDB, K_NORET_FUNC(fcnname), 0);
-#if 0
-	char *tmp;
-	// unnsecessary checks, imho the noreturn db should be pretty simple to allow forward and custom declarations without having to define the function prototype before
-	if (rz_type_func_exist (NDB, fcnname)) {
-		sdb_unset (NDB, K_NORET_FUNC (fcnname), 0);
-		return true;
-	} else if ((tmp = rz_type_func_guess (NDB, (char *)fcnname))) {
-		sdb_unset (NDB, K_NORET_FUNC (fcnname), 0);
-		free (tmp);
-		return true;
-	}
-	eprintf ("Can't find prototype for %s in types database", fcnname);
-#endif
 	return false;
 }
 
@@ -535,7 +522,7 @@ static bool rz_analysis_noreturn_at_name(RzAnalysis *analysis, const char *name)
 	if (rz_analysis_is_noreturn(analysis, name)) {
 		return true;
 	}
-	char *tmp = rz_type_func_guess(analysis->typedb, (char *)name);
+	char *tmp = rz_analysis_function_name_guess(analysis->typedb, (char *)name);
 	if (tmp) {
 		if (rz_analysis_is_noreturn(analysis, tmp)) {
 			free(tmp);
@@ -618,7 +605,7 @@ RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr) {
 RZ_API RzList *rz_analysis_noreturn_functions(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	// At first we read all noreturn functions from the Types DB
-	RzList *noretl = rz_type_noreturn_functions(analysis->typedb);
+	RzList *noretl = rz_type_noreturn_function_names(analysis->typedb);
 	// Then we propagate all noreturn functions that were inferred by
 	// the analysis process
 	SdbKv *kv;

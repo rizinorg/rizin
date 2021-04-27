@@ -11,12 +11,16 @@
 
 #include "type_internal.h"
 
-static void types_ht_free(HtUPKv *kv) {
+static void types_ht_free(HtPPKv *kv) {
 	rz_type_base_type_free(kv->value);
 }
 
-static void formats_ht_free(HtUPKv *kv) {
+static void formats_ht_free(HtPPKv *kv) {
 	free(kv->value);
+}
+
+static void callables_ht_free(HtPPKv *kv) {
+	rz_type_callable_free(kv->value);
 }
 
 RZ_API RzTypeDB *rz_type_db_new() {
@@ -37,7 +41,11 @@ RZ_API RzTypeDB *rz_type_db_new() {
 	if (!typedb->formats) {
 		return NULL;
 	}
-	typedb->parser = rz_type_parser_new();
+	typedb->callables = ht_pp_new(NULL, callables_ht_free, NULL);
+	if (!typedb->callables) {
+		return NULL;
+	}
+	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
 	rz_io_bind_init(typedb->iob);
 	return typedb;
 }
@@ -46,6 +54,7 @@ RZ_API void rz_type_db_free(RzTypeDB *typedb) {
 	rz_type_parser_free(typedb->parser);
 	ht_pp_free(typedb->types);
 	ht_pp_free(typedb->formats);
+	ht_pp_free(typedb->callables);
 	free(typedb->target);
 	free(typedb);
 }
@@ -91,25 +100,12 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype) {
-		// TODO: Extract this to the separate type RzCallable:
-		// see https://github.com/rizinorg/rizin/issues/373
-		Sdb *TDB = typedb->sdb_types;
-		const char *kind = sdb_const_get(TDB, name, 0);
-		if (!strcmp(kind, "func")) {
-			int i, n = sdb_num_get(TDB, sdb_fmt("func.%s.args", name), 0);
-			for (i = 0; i < n; i++) {
-				sdb_unset(TDB, sdb_fmt("func.%s.arg.%d", name, i), 0);
-			}
-			sdb_unset(TDB, sdb_fmt("func.%s.ret", name), 0);
-			sdb_unset(TDB, sdb_fmt("func.%s.cc", name), 0);
-			sdb_unset(TDB, sdb_fmt("func.%s.noreturn", name), 0);
-			sdb_unset(TDB, sdb_fmt("func.%s.args", name), 0);
-			sdb_unset(TDB, name, 0);
-			return true;
-		} else {
-			eprintf("Unrecognized type kind \"%s\"\n", kind);
+		if (!rz_type_func_exist(typedb, name)) {
+			eprintf("Unrecognized type \"%s\"\n", name);
+			return false;
 		}
-		return false;
+		rz_type_func_delete(typedb, name);
+		return true;
 	}
 	rz_type_db_delete_base_type(typedb, btype);
 	return true;
@@ -120,7 +116,14 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 
 	// TODO: make sure they are empty this is initializing
 
-	const char *dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types.sdb"), dir_prefix);
+	// At first we load the basic types
+	// Atomic types
+	const char *dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-atomic.sdb"), dir_prefix);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
+	// C runtime types
+	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-libc.sdb"), dir_prefix);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
@@ -128,6 +131,9 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 		dir_prefix, arch);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
+	if (rz_type_db_load_callables_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("callable types: loaded \"%s\"\n", dbpath);
 	}
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, os);
@@ -158,6 +164,13 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 		dir_prefix, arch, os, bits);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
+	}
+
+	// Then, after all basic types are initialized, we load function types
+	// that use loaded previously base types for return and arguments
+	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "functions-libc.sdb"), dir_prefix);
+	if (rz_type_db_load_callables_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("callable types: loaded \"%s\"\n", dbpath);
 	}
 }
 
@@ -687,7 +700,7 @@ RZ_API ut64 rz_type_db_get_bitsize(RzTypeDB *typedb, RZ_NONNULL RzType *type) {
  * \param typedb Types Database instance
  * \param type RzType type
  */
-RZ_API RZ_OWN char *rz_type_as_string(RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
+RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
 
 	RzStrBuf *buf = rz_strbuf_new("");
@@ -696,6 +709,7 @@ RZ_API RZ_OWN char *rz_type_as_string(RzTypeDB *typedb, RZ_NONNULL const RzType 
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
+			eprintf("cannot find base type \"%s\"\n", type->identifier.name);
 			return NULL;
 		}
 		const char *btypestr = rz_type_db_base_type_as_string(typedb, btype);
@@ -717,8 +731,7 @@ RZ_API RZ_OWN char *rz_type_as_string(RzTypeDB *typedb, RZ_NONNULL const RzType 
 		break;
 	}
 	case RZ_TYPE_KIND_CALLABLE:
-		// FIXME: Implement it
-		rz_warn_if_reached();
+		rz_strbuf_appendf(buf, rz_type_callable_as_string(typedb, type->callable));
 		break;
 	}
 	char *result = rz_strbuf_drain(buf);
@@ -730,7 +743,7 @@ RZ_API RZ_OWN char *rz_type_as_string(RzTypeDB *typedb, RZ_NONNULL const RzType 
  *
  * \param type RzType type
  */
-RZ_API void rz_type_free(RzType *type) {
+RZ_API void rz_type_free(RZ_NULLABLE RzType *type) {
 	if (!type) {
 		return;
 	}
@@ -745,7 +758,7 @@ RZ_API void rz_type_free(RzType *type) {
 		rz_type_free(type->array.type);
 		break;
 	case RZ_TYPE_KIND_CALLABLE:
-		rz_warn_if_reached();
+		rz_type_callable_free(type->callable);
 		break;
 	}
 	free(type);
