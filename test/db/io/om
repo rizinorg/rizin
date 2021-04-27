@@ -22,7 +22,7 @@ omt
 ?e
 omtq
 ?e
-omt:size/cols
+omt:size
 ?e
 omt:name/str/fmap.LOAD3:size/cols:quiet
 EOF

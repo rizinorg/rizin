@@ -3902,6 +3902,7 @@ static const RzCmdDescDetailEntry specifiers_Table_space_format_space_specifiers
 	{ .text = "<col>/sort/<inc|dec>", .arg_str = NULL, .comment = "Sort table by column <col> in increasing or decreasing order." },
 	{ .text = "<col>/sortlen/<inc|dec>", .arg_str = NULL, .comment = "Sort table length of column <col> in increasing or decreasing order." },
 	{ .text = "<col>/cols[/<col2>[/<colN>...]", .arg_str = NULL, .comment = "Show only specified columns in the table." },
+	{ .text = "<col>", .arg_str = NULL, .comment = "Show only column <col> (it must not have the same name as an output format specifier)." },
 	{ .text = "<col>/gt/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is greater than <val>." },
 	{ .text = "<col>/ge/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is greater than or equal to <val>." },
 	{ .text = "<col>/lt/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is less than <val>." },

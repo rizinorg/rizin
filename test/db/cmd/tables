@@ -190,11 +190,11 @@ RUN
 NAME=tables gt/ge/lt/le
 FILE=bins/elf/ls
 CMDS=<<EOF
-omt:size/ge/0x3480:size/cols
+omt:size/ge/0x3480:size
 ?e
 omt:size/gt/0x3480:size/cols
 ?e
-omt:size/le/0x3480:size/cols:quiet
+omt:size/le/0x3480:size:quiet
 ?e
 omt:size/lt/0x3480:size/cols:quiet
 EOF
