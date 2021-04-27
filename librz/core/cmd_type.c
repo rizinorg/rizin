@@ -453,7 +453,7 @@ RZ_IPI RzCmdStatus rz_type_noreturn_del_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_type_noreturn_del_all_handler(RzCore *core, int argc, const char **argv) {
-	RzList *noretl = rz_type_noreturn_functions(core->analysis->typedb);
+	RzList *noretl = rz_type_noreturn_function_names(core->analysis->typedb);
 	RzListIter *iter;
 	char *name;
 	rz_list_foreach (noretl, iter, name) {

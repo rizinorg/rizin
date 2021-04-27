@@ -18,13 +18,20 @@ TSLanguage *tree_sitter_c();
 // implemented by the `tree-sitter-cpp` library.
 //TSLanguage *tree_sitter_cpp();
 
-CParserState *c_parser_state_new(HtPP *ht) {
+CParserState *c_parser_state_new(HtPP *base_types, HtPP *callable_types) {
 	CParserState *state = RZ_NEW0(CParserState);
-	if (!ht) {
+	if (!base_types) {
 		state->types = ht_pp_new0();
 	} else {
-		state->types = ht;
+		state->types = base_types;
 	}
+	if (!callable_types) {
+		state->callables = ht_pp_new0();
+	} else {
+		state->callables = callable_types;
+	}
+	// Forward definitions require to have a special hashtable
+	state->forward = ht_pp_new0();
 	state->errors = rz_strbuf_new("");
 	state->warnings = rz_strbuf_new("");
 	state->debug = rz_strbuf_new("");
@@ -32,7 +39,9 @@ CParserState *c_parser_state_new(HtPP *ht) {
 }
 
 void c_parser_state_free(CParserState *state) {
+	ht_pp_free(state->forward);
 	ht_pp_free(state->types);
+	ht_pp_free(state->callables);
 	rz_strbuf_free(state->debug);
 	rz_strbuf_free(state->warnings);
 	rz_strbuf_free(state->errors);
@@ -41,6 +50,9 @@ void c_parser_state_free(CParserState *state) {
 }
 
 void c_parser_state_free_keep_ht(CParserState *state) {
+	rz_strbuf_free(state->debug);
+	rz_strbuf_free(state->warnings);
+	rz_strbuf_free(state->errors);
 	free(state);
 	return;
 }
@@ -54,7 +66,16 @@ RZ_API RZ_OWN RzTypeParser *rz_type_parser_new() {
 	if (!parser) {
 		return NULL;
 	}
-	parser->state = c_parser_state_new(NULL);
+	parser->state = c_parser_state_new(NULL, NULL);
+	return parser;
+}
+
+RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtPP *types, HtPP *callables) {
+	RzTypeParser *parser = RZ_NEW0(RzTypeParser);
+	if (!parser) {
+		return NULL;
+	}
+	parser->state = c_parser_state_new(types, callables);
 	return parser;
 }
 
@@ -109,8 +130,13 @@ static int type_parse_string(CParserState *state, const char *code, char **error
 	// Filter types function prototypes and start parsing
 	int i = 0, result = 0;
 	for (i = 0; i < root_node_child_count; i++) {
-		parser_debug(state, "Processing %d child...\n", i);
 		TSNode child = ts_node_named_child(root_node, i);
+		// We skip ";" or "," - empty expressions
+		const char *node_type = ts_node_type(child);
+		if (!strcmp(node_type, "expression_statement")) {
+			continue;
+		}
+		parser_debug(state, "Processing %d child...\n", i);
 		result += parse_type_nodes_save(state, child, code);
 	}
 
@@ -165,7 +191,7 @@ RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *di
 RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error_msg) {
 	bool verbose = true;
 	// Create new C parser state
-	CParserState *state = c_parser_state_new(typedb->types);
+	CParserState *state = c_parser_state_new(typedb->types, typedb->callables);
 	if (!state) {
 		eprintf("CParserState initialization error!\n");
 		return -1;
@@ -233,13 +259,13 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 	for (i = 0; i < root_node_child_count; i++) {
 		parser_debug(parser->state, "Processing %d child...\n", i);
 		TSNode child = ts_node_named_child(root_node, i);
-		if (!parse_type_node_single(parser->state, child, code, &tpair)) {
+		if (!parse_type_descriptor_single(parser->state, child, patched_code, &tpair)) {
 			break;
 		}
 	}
 
 	// If there were errors during the parser then the result is different from 0
-	if (result || tpair) {
+	if (result || !tpair) {
 		const char *error_msgs = rz_strbuf_drain_nofree(parser->state->errors);
 		eprintf("Errors:\n");
 		eprintf(error_msgs);
@@ -254,7 +280,7 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 	}
 
 	// After everything parsed, we should preserve the base type database
-	c_parser_state_free_keep_ht(parser->state);
+	//c_parser_state_free_keep_ht(parser->state);
 	ts_tree_delete(tree);
 	ts_parser_delete(tsparser);
 	free(patched_code);
