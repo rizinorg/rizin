@@ -997,10 +997,11 @@ RZ_API bool rz_table_query(RzTable *t, const char *q) {
 	RzList *queries = rz_str_split_list(qq, ":", 0);
 	char *query;
 	rz_list_foreach (queries, iter, query) {
-		set_table_format(t, query);
+		bool is_formatter = set_table_format(t, query);
 
 		RzList *q = rz_str_split_list(query, "/", 2);
-		if (rz_list_length(q) < 2) {
+		if (rz_list_length(q) < 2 && (is_formatter || !*query)) {
+			rz_list_free(q);
 			continue;
 		}
 
