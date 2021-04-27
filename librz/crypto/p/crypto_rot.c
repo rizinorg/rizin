@@ -114,6 +114,8 @@ static bool rol_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_rot = {
 	.name = "rot",
+	.author = "pancake",
+	.license = "LGPL-3",
 	.set_key = rot_set_key,
 	.get_key_size = rot_get_key_size,
 	.use = rot_use,

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016 rakholiyajenish.07 <rakholiyajenish.07@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 //Implemented AES version of RC6. keylen = 16, 23, or 32 bytes; w = 32; and r = 20.
@@ -218,6 +218,8 @@ static bool rc6_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_rc6 = {
 	.name = "rc6",
+	.author = "rakholiyajenish.07",
+	.license = "LGPL-3",
 	.set_key = rc6_set_key,
 	.get_key_size = rc6_get_key_size,
 	.use = rc6_use,

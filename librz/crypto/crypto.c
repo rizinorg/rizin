@@ -9,6 +9,10 @@
 
 RZ_LIB_VERSION(rz_crypto);
 
+static RzCryptoPlugin *crypto_static_plugins[] = {
+	RZ_CRYPTO_STATIC_PLUGINS
+};
+
 static const struct {
 	const char *name;
 	RzCryptoSelector bit;
@@ -59,9 +63,13 @@ RZ_API const char *rz_crypto_codec_name(const RzCryptoSelector bit) {
 	return "";
 }
 
-static RzCryptoPlugin *crypto_static_plugins[] = {
-	RZ_CRYPTO_STATIC_PLUGINS
-};
+RZ_API const RzCryptoPlugin *rz_crypto_plugin_by_index(size_t index) {
+	const size_t size = RZ_ARRAY_SIZE(crypto_static_plugins);
+	if (index >= size) {
+		return NULL;
+	}
+	return crypto_static_plugins[index];
+}
 
 RZ_API int rz_crypto_add(RzCrypto *cry, RzCryptoPlugin *h) {
 	// add a check ?

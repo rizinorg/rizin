@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 NicsTr <nicolas.bordes@grenoble-inp.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include "crypto_serpent_algo.h"
 #include <rz_util/rz_assert.h>
 

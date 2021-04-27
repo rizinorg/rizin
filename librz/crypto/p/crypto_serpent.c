@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 NicsTr <nicolas.bordes@grenoble-inp.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_lib.h>
 #include <rz_crypto.h>
 #include "crypto_serpent_algo.h"
@@ -118,6 +121,8 @@ static bool serpent_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_serpent = {
 	.name = "serpent-ecb",
+	.author = "NicsTr",
+	.license = "LGPL-3",
 	.set_key = serpent_set_key,
 	.get_key_size = serpent_get_key_size,
 	.use = serpent_use,

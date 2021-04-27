@@ -104,6 +104,8 @@ static bool aes_ecb_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_aes = {
 	.name = "aes-ecb",
+	.author = "Karl Malbrain",
+	.license = "MS-PL",
 	.set_key = aes_set_key,
 	.get_key_size = aes_get_key_size,
 	.use = aes_use,

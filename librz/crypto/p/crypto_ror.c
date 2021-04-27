@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_lib.h>
 #include <rz_crypto.h>
 #include <rz_util.h>
@@ -85,6 +88,8 @@ static bool ror_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_ror = {
 	.name = NAME,
+	.author = "pancake",
+	.license = "LGPL-3",
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,
 	.use = ror_use,
