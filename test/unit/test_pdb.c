@@ -52,7 +52,6 @@ static bool has_union_member(RzBaseType *btype, const char *name) {
 	return false;
 }
 
-
 // copy from cbin.c modified to get pdb back
 int pdb_info(const char *file, RzPdb *pdb) {
 	pdb->cb_printf = rz_cons_printf;
