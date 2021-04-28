@@ -115,40 +115,40 @@ typedef RZ_SHA512_CTX RZ_SHA384_CTX;
 
 void SHA256_Init(RZ_SHA256_CTX *);
 void SHA256_Update(RZ_SHA256_CTX *, const uint8_t *, size_t);
-void SHA256_Final(uint8_t*, RZ_SHA256_CTX *);
-char *SHA256_End(RZ_SHA256_CTX *, char*);
-char *SHA256_Data(const uint8_t *, size_t, char*);
+void SHA256_Final(uint8_t *, RZ_SHA256_CTX *);
+char *SHA256_End(RZ_SHA256_CTX *, char *);
+char *SHA256_Data(const uint8_t *, size_t, char *);
 
 void SHA384_Init(RZ_SHA384_CTX *);
 void SHA384_Update(RZ_SHA384_CTX *, const uint8_t *, size_t);
-void SHA384_Final(uint8_t*, RZ_SHA384_CTX *);
-char *SHA384_End(RZ_SHA384_CTX *, char*);
-char *SHA384_Data(const uint8_t *, size_t, char*);
+void SHA384_Final(uint8_t *, RZ_SHA384_CTX *);
+char *SHA384_End(RZ_SHA384_CTX *, char *);
+char *SHA384_Data(const uint8_t *, size_t, char *);
 
 void SHA512_Init(RZ_SHA512_CTX *);
 void SHA512_Update(RZ_SHA512_CTX *, const uint8_t *, size_t);
-void SHA512_Final(uint8_t*, RZ_SHA512_CTX *);
-char *SHA512_End(RZ_SHA512_CTX *, char*);
-char *SHA512_Data(const uint8_t *, size_t, char*);
+void SHA512_Final(uint8_t *, RZ_SHA512_CTX *);
+char *SHA512_End(RZ_SHA512_CTX *, char *);
+char *SHA512_Data(const uint8_t *, size_t, char *);
 
 #else /* SHA2_USE_INTTYPES_H */
 
 void SHA256_Init(RZ_SHA256_CTX *);
 void SHA256_Update(RZ_SHA256_CTX *, const u_int8_t *, size_t);
-void SHA256_Final(u_int8_t*, RZ_SHA256_CTX *);
-char *SHA256_End(RZ_SHA256_CTX *, char*);
+void SHA256_Final(u_int8_t *, RZ_SHA256_CTX *);
+char *SHA256_End(RZ_SHA256_CTX *, char *);
 char *SHA256_Data(const u_int8_t *, size_t, char[SHA256_DIGEST_STRING_LENGTH]);
 
 void SHA384_Init(RZ_SHA384_CTX *);
 void SHA384_Update(RZ_SHA384_CTX *, const u_int8_t *, size_t);
-void SHA384_Final(u_int8_t*, RZ_SHA384_CTX *);
-char *SHA384_End(RZ_SHA384_CTX *, char*);
+void SHA384_Final(u_int8_t *, RZ_SHA384_CTX *);
+char *SHA384_End(RZ_SHA384_CTX *, char *);
 char *SHA384_Data(const u_int8_t *, size_t, char[SHA384_DIGEST_STRING_LENGTH]);
 
 void SHA512_Init(RZ_SHA512_CTX *);
 void SHA512_Update(RZ_SHA512_CTX *, const u_int8_t *, size_t);
-void SHA512_Final(u_int8_t*, RZ_SHA512_CTX *);
-char *SHA512_End(RZ_SHA512_CTX *, char*);
+void SHA512_Final(u_int8_t *, RZ_SHA512_CTX *);
+char *SHA512_End(RZ_SHA512_CTX *, char *);
 char *SHA512_Data(const u_int8_t *, size_t, char[SHA512_DIGEST_STRING_LENGTH]);
 
 #endif /* SHA2_USE_INTTYPES_H */

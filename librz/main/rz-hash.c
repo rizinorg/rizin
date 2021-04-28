@@ -456,7 +456,7 @@ static void rz_hash_context_fini(RzHashContext *ctx) {
 	free(ctx->compare);
 	free(ctx->iv);
 	free(ctx->input);
-	free(ctx->files);
+	free((char **)ctx->files);
 	free(ctx->seed.buf);
 	pj_free(ctx->pj);
 }
@@ -521,7 +521,7 @@ static RzIODesc *rz_hash_context_create_desc_io_string(RzIO *io, const char *inp
 		goto rz_hash_context_create_desc_io_string_end;
 	}
 
-	uri = rz_str_newf("malloc://%lu", size);
+	uri = rz_str_newf("malloc://%" PFMTSZu, size);
 	if (!uri) {
 		rz_warn_if_reached();
 		goto rz_hash_context_create_desc_io_string_end;
@@ -529,12 +529,12 @@ static RzIODesc *rz_hash_context_create_desc_io_string(RzIO *io, const char *inp
 
 	desc = rz_io_open_nomap(io, uri, RZ_PERM_R, 0);
 	if (!desc) {
-		RZ_LOG_ERROR("rz-hash: error, cannot open malloc://%lu\n", size);
+		RZ_LOG_ERROR("rz-hash: error, cannot open malloc://%" PFMTSZu "\n", size);
 		goto rz_hash_context_create_desc_io_string_end;
 	}
 
 	if (rz_io_pwrite_at(io, 0, buffer, size) != size) {
-		RZ_LOG_ERROR("rz-hash: error, cannot write into malloc://%lu buffer\n", size);
+		RZ_LOG_ERROR("rz-hash: error, cannot write into malloc://%" PFMTSZu " buffer\n", size);
 		rz_io_desc_close(desc);
 		desc = NULL;
 		goto rz_hash_context_create_desc_io_string_end;

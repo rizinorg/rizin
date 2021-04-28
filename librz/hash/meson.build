@@ -34,7 +34,7 @@ else
     'algorithms/md4/md4.c',
     'algorithms/md5/md5.c',
     'algorithms/sha1/sha1.c',
-    'algorithms/sha2/sha2.c',
+    'algorithms/sha2/sha2.c'
   ]
 endif
 
