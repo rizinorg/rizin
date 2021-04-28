@@ -808,9 +808,9 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 	case 'j': // "Cj"
 	case '*': { // "C*"
 		if (!input[0] || input[1] == '.') {
-			rz_meta_print_list_at(core->analysis, core->offset, RZ_OUTPUT_MODE_RIZIN);
+			rz_meta_print_list_at(core->analysis, core->offset, (*input == 'j' ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_RIZIN));
 		} else {
-			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_ANY, RZ_OUTPUT_MODE_RIZIN);
+			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_ANY, (*input == 'j' ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_RIZIN));
 		}
 		break;
 	}
