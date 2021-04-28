@@ -24,7 +24,7 @@ omtq
 ?e
 omt:size
 ?e
-omt:name/str/fmap.LOAD3:size/cols:quiet
+omtq:name/str/fmap.LOAD3:size
 EOF
 EXPECT=<<EOF
 .----------------------------------------------------------------------------------------.
