@@ -225,7 +225,7 @@ static RzList *symbols(RzBinFile *bf) {
 	if (!(syms = MACH0_(get_symbols)(obj->bin_obj))) {
 		return ret;
 	}
-	Sdb *symcache = sdb_new0();
+	SetU *symcache = set_u_new();
 	bin = (struct MACH0_(obj_t) *)obj->bin_obj;
 	for (i = 0; !syms[i].last; i++) {
 		if (syms[i].name == NULL || syms[i].name[0] == '\0' || syms[i].addr < 100) {
@@ -267,7 +267,7 @@ static RzList *symbols(RzBinFile *bf) {
 		}
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp(ptr->name, "radr://", 7) ? 0 : 1;
-		sdb_set(symcache, sdb_fmt("sym0x%" PFMT64x, ptr->vaddr), "found", 0);
+		set_u_add(symcache, ptr->vaddr);
 #if 0
 		if (!strncmp (ptr->name, "__Z", 3)) {
 			lang = "c++";
@@ -282,11 +282,9 @@ static RzList *symbols(RzBinFile *bf) {
 	}
 	//functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
-		char symstr[128];
 		ut64 value = 0, address = 0;
 		const ut8 *temp = bin->func_start;
 		const ut8 *temp_end = bin->func_start + bin->func_size;
-		strcpy(symstr, "sym0x");
 		while (temp + 3 < temp_end && *temp) {
 			temp = rz_uleb128_decode(temp, NULL, &value);
 			address += value;
@@ -308,8 +306,7 @@ static RzList *symbols(RzBinFile *bf) {
 			rz_list_append(ret, ptr);
 			// if any func is not found in syms then we can consider it is stripped
 			if (!isStripped) {
-				snprintf(symstr + 5, sizeof(symstr) - 5, "%" PFMT64x, ptr->vaddr);
-				if (!sdb_const_get(symcache, symstr, 0)) {
+				if (!set_u_contains(symcache, ptr->vaddr)) {
 					isStripped = true;
 				}
 			}
@@ -325,7 +322,7 @@ static RzList *symbols(RzBinFile *bf) {
 	if (isStripped) {
 		bin->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	}
-	sdb_free(symcache);
+	set_u_free(symcache);
 	return ret;
 }
 #endif // FEATURE_SYMLIST
