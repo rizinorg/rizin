@@ -9,6 +9,7 @@
 
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
+RZ_IPI RzOutputMode rz_char_to_output_mode(char input);
 
 RZ_IPI int bb_cmpaddr(const void *_a, const void *_b);
 RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b);
