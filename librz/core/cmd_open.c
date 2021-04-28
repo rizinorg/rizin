@@ -668,7 +668,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 		case 'q': // "omtq"
 		{
 			const char *arg = rz_str_trim_head_ro(input + 3);
-			char *query = rz_str_newf("%s%s:quiet", arg, *arg ? "," : "");
+			char *query = rz_str_newf("%s%squiet", arg, *arg ? ":" : "");
 			if (query) {
 				rz_core_cmd_omt(core, query);
 			}

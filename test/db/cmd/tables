@@ -196,7 +196,7 @@ omt:size/gt/0x3480:size/cols
 ?e
 omt:size/le/0x3480:size:quiet
 ?e
-omt:size/lt/0x3480:size/cols:quiet
+omtq:size/lt/0x3480:size/cols
 EOF
 EXPECT=<<EOF
 .----------.
