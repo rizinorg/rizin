@@ -79,7 +79,7 @@ RZ_IPI int rz_output_mode_to_char(RzOutputMode mode) {
 	return -1;
 }
 
-RZ_IPI RzOutputMode rz_char_to_output_mode(char input) {
+RZ_IPI RzOutputMode rz_char_to_output_mode2(char input) {
 	RzOutputMode mode;
 	switch (input) {
 	case 'j':
@@ -287,14 +287,14 @@ RZ_API void rz_cmd_batch_end(RzCmd *cmd) {
 	sort_groups(rz_cmd_get_root(cmd));
 }
 
-static RzOutputMode suffix2mode(const char *suffix) {
+RZ_IPI RzOutputMode rz_char_to_output_mode(const char *suffix) {
 	size_t i;
 	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
 		if (!strcmp(suffix, argv_modes[i].suffix)) {
 			return argv_modes[i].mode;
 		}
 	}
-	return 0;
+	return *suffix;
 }
 
 static bool has_cd_submodes(const RzCmdDesc *cd) {
@@ -306,7 +306,10 @@ static bool is_valid_argv_modes(RzCmdDesc *cd, char last_letter) {
 		return false;
 	}
 	char suffix[] = { last_letter, '\0' };
-	return cd->d.argv_modes_data.modes & suffix2mode(suffix);
+	RzOutputMode mode = rz_char_to_output_mode(suffix);
+	if (mode == suffix[0])
+		return 0;
+	return cd->d.argv_modes_data.modes & mode;
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd) {
@@ -579,7 +582,7 @@ static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
 	if (!has_cd_submodes(cd)) {
 		return 0;
 	}
-	return suffix2mode(cmdid + strlen(cd->name));
+	return rz_char_to_output_mode(cmdid + strlen(cd->name));
 }
 
 /**

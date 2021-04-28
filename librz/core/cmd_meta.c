@@ -472,7 +472,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 			ut64 size;
 			RzAnalysisMetaItem *mi = rz_meta_get_at(core->analysis, addr, type, &size);
 			if (mi) {
-				RzOutputMode mode = rz_char_to_output_mode(input[3]);
+				RzOutputMode mode = rz_char_to_output_mode2(input[3]);
 				rz_meta_print(core->analysis, mi, addr, size, mode, NULL, false);
 			}
 			break;
