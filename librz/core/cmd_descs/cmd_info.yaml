@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_info
+commands:
+  - name: i
+    cname: info_general
+    summary: Show info of current file
+    type: RZ_CMD_DESC_TYPE_ARGV_STATE

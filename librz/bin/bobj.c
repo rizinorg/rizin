@@ -685,10 +685,189 @@ RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr) {
 	return paddr;
 }
 
-RZ_API RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym) {
+RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym) {
 	rz_return_val_if_fail(o, NULL);
 	if (sym < 0 || sym >= RZ_BIN_SPECIAL_SYMBOL_LAST) {
 		return NULL;
 	}
 	return o ? o->binsym[sym] : NULL;
+}
+
+/**
+ * \brief Get list of \p RzBinAddr representing the entry points of the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_entries(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->entries;
+}
+
+/**
+ * \brief Get list of \p RzBinField representing the fields of the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_fields(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->fields;
+}
+
+/**
+ * \brief Get list of \p RzBinImport representing the imports of the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_imports(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->imports;
+}
+
+/**
+ * \brief Get the \p RzBinInfo of the binary object.
+ */
+RZ_API const RzBinInfo *rz_bin_object_get_info(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->info;
+}
+
+/**
+ * \brief Get list of \p RzBinLib representing the libraries used by the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_libs(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->libs;
+
+}
+
+/**
+ * \brief Get list of \p RzBinSection representing both the sections and the segments of the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_sections_all(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->sections;
+}
+
+static RzList *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
+	RzList *res = rz_list_new();
+	if (!res) {
+		return NULL;
+	}
+	const RzList *all = rz_bin_object_get_sections_all(obj);
+	RzListIter *it;
+	RzBinSection *sec;
+	rz_list_foreach(all, it, sec) {
+		if (sec->is_segment == is_segment) {
+			rz_list_append(res, sec);
+		}
+	}
+	return res;
+}
+
+/**
+ * \brief Get list of \p RzBinSection representing only the sections of the binary object.
+ */
+RZ_API RzList *rz_bin_object_get_sections(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return get_sections_or_segment(obj, false);
+}
+
+/**
+ * \brief Get list of \p RzBinSection representing only the segments of the binary object.
+ */
+RZ_API RzList *rz_bin_object_get_segments(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return get_sections_or_segment(obj, true);
+}
+
+/**
+ * \brief Get list of \p RzBinClass representing the classes (e.g. C++ classes) defined in the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_classes(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->classes;
+}
+
+/**
+ * \brief Get list of \p RzBinString representing the strings identified in the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_strings(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->strings;
+}
+
+/**
+ * \brief Get list of \p RzBinMem representing the memory regions identified in the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_mem(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->mem;
+}
+
+/**
+ * \brief Get list of \p RzBinSymbol representing the symbols in the binary object.
+ */
+RZ_API const RzList *rz_bin_object_get_symbols(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->symbols;
+}
+
+/**
+ * \brief Remove all previously identified strings in the binary object and scan it again for strings.
+ */
+RZ_API const RzList *rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	if (obj->strings) {
+		rz_list_free(obj->strings);
+		obj->strings = NULL;
+	}
+	ht_up_free(obj->strings_db);
+	obj->strings_db = ht_up_new0();
+
+	bf->rawstr = bin->rawstr;
+	RzBinPlugin *plugin = obj->plugin;
+	if (plugin && plugin->strings) {
+		obj->strings = plugin->strings(bf);
+	} else {
+		obj->strings = rz_bin_file_get_strings(bf, bin->minstrlen, 0, bf->rawstr);
+	}
+	if (bin->debase64) {
+		rz_bin_object_filter_strings(obj);
+	}
+	return obj->strings;
+}
+
+/**
+ * \brief Return true if at address \p va in the binary object \p obj there is a string
+ */
+RZ_API bool rz_bin_object_is_string(RzBinObject *obj, ut64 va) {
+	rz_return_val_if_fail(obj, false);
+	RzBinString *string;
+	RzListIter *iter;
+	const RzList *list;
+	if (!(list = rz_bin_object_get_strings(obj))) {
+		return false;
+	}
+	rz_list_foreach (list, iter, string) {
+		if (string->vaddr == va) {
+			return true;
+		}
+		if (string->vaddr > va) {
+			return false;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Return true if the binary object \p obj is big endian.
+ */
+RZ_API bool rz_bin_object_is_big_endian(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, false);
+	return obj->info ? obj->info->big_endian : false;
+}
+
+/**
+ * \brief Return true if the binary object \p obj is detected as statically compiled.
+ */
+RZ_API bool rz_bin_object_is_static(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, false);
+	if (obj->libs && rz_list_length(obj->libs) > 0) {
+		return RZ_BIN_DBG_STATIC & obj->info->dbg_info;
+	}
+	return true;
 }

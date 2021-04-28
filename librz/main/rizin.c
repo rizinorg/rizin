@@ -1241,8 +1241,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (o && o->info && compute_hashes) {
 			// TODO: recall with limit=0 ?
 			ut64 limit = rz_config_get_i(r->config, "bin.hashlimit");
-			RzList *old_hashes = rz_bin_file_set_hashes(r->bin, rz_bin_file_compute_hashes(r->bin, limit));
-			rz_list_free(old_hashes);
+			RzBinFile *bf = r->bin->cur;
+			if (bf) {
+				RzList *old_hashes = rz_bin_file_set_hashes(r->bin, rz_bin_file_compute_hashes(r->bin, bf, limit));
+				rz_list_free(old_hashes);
+			}
 		}
 		if (s_seek) {
 			seek = rz_num_math(r->num, s_seek);

@@ -638,7 +638,13 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				return 0;
 			}
 
-			RzList *new_hashes = rz_bin_file_compute_hashes(core->bin, limit);
+			RzBinFile *bf = core->bin->cur;
+			if (!bf) {
+				RZ_LOG_ERROR("Cannot get current binary file\n");
+				return 0;
+			}
+
+			RzList *new_hashes = rz_bin_file_compute_hashes(core->bin, bf, limit);
 			RzList *old_hashes = rz_bin_file_set_hashes(core->bin, new_hashes);
 			bool equal = true;
 			if (!rz_list_empty(new_hashes) && !rz_list_empty(old_hashes)) {
@@ -752,6 +758,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				RZBININFO("header", RZ_CORE_BIN_ACC_HEADER, NULL);
 				break;
 			}
+			// fallthrough
 		case 'h': // "ih"
 			RZBININFO("fields", RZ_CORE_BIN_ACC_FIELDS, NULL);
 			break;

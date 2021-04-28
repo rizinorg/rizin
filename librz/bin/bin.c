@@ -595,37 +595,37 @@ RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr) {
 RZ_API RzList *rz_bin_get_entries(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->entries : NULL;
+	return o ? (RzList *)rz_bin_object_get_entries(o) : NULL;
 }
 
 RZ_API RzList *rz_bin_get_fields(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->fields : NULL;
+	return o ? (RzList *)rz_bin_object_get_fields(o) : NULL;
 }
 
 RZ_API RzList *rz_bin_get_imports(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->imports : NULL;
+	return o ? (RzList *)rz_bin_object_get_imports(o) : NULL;
 }
 
 RZ_API RzBinInfo *rz_bin_get_info(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->info : NULL;
+	return o ? (RzBinInfo *)rz_bin_object_get_info(o) : NULL;
 }
 
 RZ_API RzList *rz_bin_get_libs(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->libs : NULL;
+	return o ? (RzList *)rz_bin_object_get_libs(o) : NULL;
 }
 
 RZ_API RzList *rz_bin_get_sections(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->sections : NULL;
+	return o ? (RzList *)rz_bin_object_get_sections_all(o) : NULL;
 }
 
 RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
@@ -649,81 +649,48 @@ RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va) {
 }
 
 RZ_API RzList *rz_bin_reset_strings(RzBin *bin) {
+	rz_return_val_if_fail(bin, NULL);
 	RzBinFile *bf = rz_bin_cur(bin);
-
 	if (!bf || !bf->o) {
 		return NULL;
 	}
-	if (bf->o->strings) {
-		rz_list_free(bf->o->strings);
-		bf->o->strings = NULL;
-	}
-	ht_up_free(bf->o->strings_db);
-	bf->o->strings_db = ht_up_new0();
-
-	bf->rawstr = bin->rawstr;
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
-
-	if (plugin && plugin->strings) {
-		bf->o->strings = plugin->strings(bf);
-	} else {
-		bf->o->strings = rz_bin_file_get_strings(bf, bin->minstrlen, 0, bf->rawstr);
-	}
-	if (bin->debase64) {
-		rz_bin_object_filter_strings(bf->o);
-	}
-	return bf->o->strings;
+	return (RzList *)rz_bin_object_reset_strings(bin, bf, bf->o);
 }
 
 RZ_API RzList *rz_bin_get_strings(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->strings : NULL;
+	return o ? (RzList *)rz_bin_object_get_strings(o) : NULL;
 }
 
 RZ_API int rz_bin_is_string(RzBin *bin, ut64 va) {
-	RzBinString *string;
-	RzListIter *iter;
-	RzList *list;
-	if (!(list = rz_bin_get_strings(bin))) {
-		return false;
-	}
-	rz_list_foreach (list, iter, string) {
-		if (string->vaddr == va) {
-			return true;
-		}
-		if (string->vaddr > va) {
-			return false;
-		}
-	}
-	return false;
+	rz_return_val_if_fail(bin, false);
+	RzBinObject *o = rz_bin_cur_object(bin);
+	return o ? rz_bin_object_is_string(o, va) : false;
 }
 
 RZ_API RzList *rz_bin_get_symbols(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->symbols : NULL;
+	return o ? (RzList *)rz_bin_object_get_symbols(o) : NULL;
 }
 
 RZ_API RzList *rz_bin_get_mem(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->mem : NULL;
+	return o ? (RzList *)rz_bin_object_get_mem(o) : NULL;
 }
 
 RZ_API int rz_bin_is_big_endian(RzBin *bin) {
-	rz_return_val_if_fail(bin, -1);
+	rz_return_val_if_fail(bin, false);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return (o && o->info) ? o->info->big_endian : -1;
+	return o ? rz_bin_object_is_big_endian(o) : false;
 }
 
 RZ_API int rz_bin_is_static(RzBin *bin) {
 	rz_return_val_if_fail(bin, false);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	if (o && o->libs && rz_list_length(o->libs) > 0) {
-		return RZ_BIN_DBG_STATIC & o->info->dbg_info;
-	}
-	return true;
+	return o ? rz_bin_object_is_static(o) : false;
 }
 
 RZ_IPI void rz_bin_file_free(void /*RzBinFile*/ *_bf);
