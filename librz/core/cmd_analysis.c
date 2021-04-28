@@ -8206,7 +8206,7 @@ static void cmd_analysis_rtti(RzCore *core, const char *input) {
 		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, RZ_OUTPUT_MODE_JSON);
 		break;
 	case 'a': { // "avra"
-		RzOutputMode mode = rz_char_to_output_mode2(input[1]);
+		RzOutputMode mode = rz_char_to_output_mode(&input[1]);
 		rz_analysis_rtti_print_all(core->analysis, mode);
 		break;
 	}
@@ -8536,7 +8536,7 @@ static void cmd_analysis_classes(RzCore *core, const char *input) {
 				break;
 			}
 		}
-		RzOutputMode mode = rz_char_to_output_mode2(input[1]);
+		RzOutputMode mode = rz_char_to_output_mode(&input[1]);
 		rz_analysis_class_list(core->analysis, mode);
 		break;
 	case ' ': // "ac"
