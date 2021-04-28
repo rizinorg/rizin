@@ -1,28 +1,14 @@
-#include <rz_hash.h>
+#include <rz_msg_digest.h>
 
-void printmd5(const char *str, RzHash *h) {
-	int i;
-	printf("(%d) %s: ", h->rst, str);
-	for (i = 0; i < RZ_HASH_SIZE_MD5; i++) {
-		printf("%02x", h->digest[i]);
-	}
-	printf("\n");
+void do_md5(const char *string) {
+	char *result = rz_msg_digest_calculate_small_block_string("md5", string, strlen(string), NULL, false);
+	printf("md5: %s\n", result);
+	free(result);
 }
 
 main() {
-	int HASH = RZ_HASH_MD5;
-	RzHash *h = rz_hash_new(1, HASH);
-
-	rz_hash_do_begin(h, HASH);
-
-	rz_hash_do_md5(h, "hello", 5);
-	printmd5("hello", h);
-	rz_hash_do_md5(h, "world", 5);
-	printmd5("world", h);
-
-	rz_hash_do_end(h, HASH);
-	printmd5("FINISH", h);
-
-	rz_hash_do_md5(h, "helloworld", 10);
-	printmd5("helloworld", h);
+	do_md5("hello");
+	do_md5("world");
+	do_md5("FINISH");
+	do_md5("helloworld");
 }
