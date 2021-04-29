@@ -7,14 +7,14 @@ dc
 dmht~?0xffffffffffff
 e dbg.glibc.demangle=true
 dmht~?0xffffffffffff
-dmht~?items : 7
+dmht~?Items: 7
 dc
-dmht~?items : 6
+dmht~?Items: 6
 dc
-dmht~?items : 5
+dmht~?Items: 5
 EOF
 EXPECT=<<EOF
-1
+2
 0
 1
 1
@@ -28,11 +28,11 @@ ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
 CMDS=<<EOF
 db 0x004011fa
 dc
-dmht~?items : 7
+dmht~?Items: 7
 dc
-dmht~?items : 6
+dmht~?Items: 6
 dc
-dmht~?items : 5
+dmht~?Items: 5
 EOF
 EXPECT=<<EOF
 1
@@ -47,11 +47,11 @@ ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.27.so -d
 CMDS=<<EOF
 db 0x004011fa
 dc
-dmht~?items : 7
+dmht~?Items: 7
 dc
-dmht~?items : 6
+dmht~?Items: 6
 dc
-dmht~?items : 5
+dmht~?Items: 5
 EOF
 EXPECT=<<EOF
 1

@@ -73,6 +73,8 @@ RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 #define largebin_index(size) \
 	(SZ == 8 ? largebin_index_64(size) : largebin_index_32(size))
 
+#define fastbin_index(size) \
+	(SZ == 8 ? (size >> 4) - 2 : (size >> 3) - 2)
 /* Not works 32 bit on 64 emulation
 #define largebin_index(size) \
   (SZ == 8 ? largebin_index_64 (size)                          \
