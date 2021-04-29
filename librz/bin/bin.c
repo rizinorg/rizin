@@ -1274,10 +1274,20 @@ RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
+RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile) {
+	if (!vfile) {
+		return;
+	}
+	rz_buf_free(vfile->buf);
+	free(vfile->name);
+	free(vfile);
+}
+
 RZ_API void rz_bin_map_free(RzBinMap *map) {
 	if (!map) {
 		return;
 	}
+	free(map->vfile_name);
 	free(map->name);
 	free(map);
 }
