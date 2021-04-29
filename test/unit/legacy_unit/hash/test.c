@@ -6,9 +6,10 @@ void do_md5(const char *string) {
 	free(result);
 }
 
-main() {
+int main() {
 	do_md5("hello");
 	do_md5("world");
 	do_md5("FINISH");
 	do_md5("helloworld");
+	return 0;
 }

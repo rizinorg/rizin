@@ -140,6 +140,34 @@ ERROR: rz-hash: error, invalid combination of arguments for '-s'
 EOF
 RUN
 
+NAME=rz-hash -a luhn -s "5105105105105100"
+FILE==
+CMDS=!rz-hash -a luhn -s "5105105105105100"
+EXPECT=<<EOF
+string: 0x00000000-0x00000010 luhn: 0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=rz-hash -a luhn -s "4408041234567890"
+FILE==
+CMDS=!rz-hash -a luhn -s "4408041234567890"
+EXPECT=<<EOF
+string: 0x00000000-0x00000010 luhn: 7
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=rz-hash -a luhn -s "1567jdjaskldsa" INVALID
+FILE==
+CMDS=!rz-hash -a luhn -s "1567jdjaskldsa"
+EXPECT_ERR=<<EOF
+ERROR: rz-hash: error, input string is not a number
+EOF
+RUN
+
 NAME=rz-hash -L
 FILE==
 CMDS=!rz-hash -L
@@ -615,7 +643,7 @@ CMDS=!rz-hash -a sha256 -b 1 -B -s "admin" -c 21232f297a57a5a743894a0e4a801f
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
-ERROR: rz-hash: error, option -B is incompatible with -c.
+ERROR: rz-hash: error, option -B is incompatible with -c option.
 EOF
 RUN
 

@@ -10,7 +10,8 @@
 #include <rz_util.h>
 #include <rz_crypto.h>
 
-#define RZ_CRYPTO_NBITS (sizeof(RzCryptoSelector) * 8)
+#define RZ_CRYPTO_NBITS            (sizeof(RzCryptoSelector) * 8)
+#define RZ_HASH_DEFAULT_BLOCK_SIZE 0x1000
 
 typedef struct {
 	ut8 *buf;
@@ -35,6 +36,7 @@ typedef enum {
 	RZ_HASH_OP_HASH,
 	RZ_HASH_OP_DECRYPT,
 	RZ_HASH_OP_ENCRYPT,
+	RZ_HASH_OP_LUHN,
 } RzHashOp;
 
 typedef struct {
@@ -390,7 +392,33 @@ static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ct
 		return;
 	}
 
-	if (ctx->operation == RZ_HASH_OP_ENCRYPT || ctx->operation == RZ_HASH_OP_DECRYPT) {
+	if (strstr(ctx->algorithm, "luhn")) {
+		if (strchr(ctx->algorithm, ',')) {
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "algorithm 'luhn' is incompatible with multiple algorithms.\n");
+		}
+		if (!ctx->input || strncmp(ctx->input, "s:", 2)) {
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "algorithm 'luhn' requires -s option.\n");
+		}
+		if (ctx->mode == RZ_HASH_MODE_RANDOMART) {
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "algorithm 'luhn' is incompatible with -k option.\n");
+		}
+		if (ctx->show_blocks) {
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "algorithm 'luhn' is incompatible with -B option.\n");
+		}
+		if (ctx->block_size < strlen(ctx->algorithm + 2)) {
+			ctx->block_size = strlen(ctx->algorithm + 2);
+		}
+		if (ctx->compare) {
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "algorithm 'luhn' is incompatible with -c option.\n");
+		}
+		if (seed) {
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "algorithm 'luhn' is incompatible with -S option.\n");
+		}
+		if (key) {
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "algorithm 'luhn' is incompatible with -K option.\n");
+		}
+		ctx->operation = RZ_HASH_OP_LUHN;
+	} else if (ctx->operation == RZ_HASH_OP_ENCRYPT || ctx->operation == RZ_HASH_OP_DECRYPT) {
 		if (!key && strncmp("base", ctx->algorithm, 4) && strcmp("punycode", ctx->algorithm)) {
 			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -K is required for algorithm '%s'.\n", ctx->algorithm);
 		}
@@ -415,13 +443,13 @@ static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ct
 			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -I is incompatible with -a; use -S to define a seed or -K to define an hmac key.\n");
 		}
 		if (ctx->show_blocks && ctx->compare) {
-			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -B is incompatible with -c.\n");
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -B is incompatible with -c option.\n");
 		}
 		if (ctx->mode == RZ_HASH_MODE_RANDOMART && ctx->compare) {
-			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -c is incompatible with -k.\n");
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -c is incompatible with -k option.\n");
 		}
 		if (ctx->mode == RZ_HASH_MODE_RANDOMART && strchr(ctx->algorithm, ',')) {
-			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -a with multiple algorithms is incompatible with -k.\n");
+			rz_hash_error(ctx, RZ_HASH_OP_ERROR, "option -a with multiple algorithms is incompatible with -k option.\n");
 		}
 	}
 
@@ -447,7 +475,7 @@ static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ct
 	}
 
 	if (!ctx->block_size) {
-		ctx->block_size = 0x1000;
+		ctx->block_size = RZ_HASH_DEFAULT_BLOCK_SIZE;
 	}
 }
 
@@ -805,6 +833,9 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 	}
 
 	rz_list_foreach (algorithms, it, algorithm) {
+		if (!strcmp(ctx->algorithm, "luhn")) {
+			continue;
+		}
 		if (!rz_msg_digest_configure(md, algorithm)) {
 			goto calculate_hash_end;
 		}
@@ -1095,6 +1126,44 @@ calculate_encrypt_end:
 	return result;
 }
 
+static bool calculate_luhn(RzHashContext *ctx, RzIO *io, const char *filename) {
+	char value[128];
+	const char *input = ctx->input + 2;
+	ut64 to = ctx->offset.to ? ctx->offset.to : strlen(input);
+	ut64 from = ctx->offset.from;
+	ut64 result = 0;
+
+	if (!rz_calculate_luhn_value(input, &result)) {
+		RZ_LOG_ERROR("rz-hash: error, input string is not a number\n");
+		return false;
+	}
+
+	snprintf(value, sizeof(value), "%" PFMT64u, result);
+	switch (ctx->mode) {
+	case RZ_HASH_MODE_JSON:
+		pj_o(ctx->pj);
+		pj_kb(ctx->pj, "seed", false);
+		pj_kb(ctx->pj, "hmac", false);
+		pj_kn(ctx->pj, "from", from);
+		pj_kn(ctx->pj, "to", to);
+		pj_ks(ctx->pj, "name", ctx->algorithm);
+		pj_ks(ctx->pj, "value", value);
+		pj_end(ctx->pj);
+		break;
+	case RZ_HASH_MODE_STANDARD:
+		printf("%s: 0x%08" PFMT64x "-0x%08" PFMT64x " %s: %s\n", filename, from, to, ctx->algorithm, value);
+		break;
+	case RZ_HASH_MODE_RANDOMART:
+	case RZ_HASH_MODE_QUIET:
+		printf("%s: %s: %s\n", filename, ctx->algorithm, value);
+		break;
+	case RZ_HASH_MODE_VERY_QUIET:
+		puts(value);
+		break;
+	}
+	return true;
+}
+
 RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 	int result = 1;
 	RzHashContext ctx;
@@ -1104,6 +1173,11 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 	switch (ctx.operation) {
 	case RZ_HASH_OP_LIST_ALGO:
 		rz_hash_show_algorithms();
+		break;
+	case RZ_HASH_OP_LUHN:
+		if (!rz_hash_context_run(&ctx, calculate_luhn)) {
+			goto rz_main_rz_hash_end;
+		}
 		break;
 	case RZ_HASH_OP_HASH:
 		if (!rz_hash_context_run(&ctx, calculate_hash)) {
