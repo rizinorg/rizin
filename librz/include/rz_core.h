@@ -133,11 +133,9 @@ typedef struct rz_core_seek_undo_t {
 } RzCoreSeekItem;
 
 typedef struct rz_core_file_t {
+	struct rz_core_t *core;
 	int dbg;
 	int fd;
-	RzBinBind binb;
-	const struct rz_core_t *core;
-	ut8 alive;
 } RzCoreFile;
 
 typedef struct rz_core_times_t {
@@ -540,11 +538,10 @@ RZ_API int rz_core_file_set_by_name(RzCore *core, const char *name);
 RZ_API int rz_core_file_set_by_file(RzCore *core, RzCoreFile *cf);
 RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool attach);
 
-RZ_API void rz_core_file_free(RzCoreFile *cf);
 RZ_API RzCoreFile *rz_core_file_open(RzCore *core, const char *file, int flags, ut64 loadaddr);
 RZ_API RzCoreFile *rz_core_file_open_many(RzCore *r, const char *file, int flags, ut64 loadaddr);
 RZ_API RzCoreFile *rz_core_file_get_by_fd(RzCore *core, int fd);
-RZ_API int rz_core_file_close(RzCore *core, RzCoreFile *fh);
+RZ_API void rz_core_file_close(RzCoreFile *fh);
 RZ_API bool rz_core_file_close_fd(RzCore *core, int fd);
 RZ_API bool rz_core_file_close_all_but(RzCore *core);
 RZ_API int rz_core_file_list(RzCore *core, int mode);

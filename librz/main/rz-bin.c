@@ -1045,7 +1045,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			fd = rz_io_fd_get_current(core.io);
 			if (fd == -1) {
 				eprintf("rz_core: Cannot open file '%s'\n", file);
-				rz_core_file_free(fh);
+				rz_core_file_close(fh);
 				rz_core_fini(&core);
 				return 1;
 			}
@@ -1070,7 +1070,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf("rz-bin: Cannot open file\n");
-			rz_core_file_free(fh);
+			rz_core_file_close(fh);
 			rz_core_fini(&core);
 			return 1;
 		}
@@ -1099,7 +1099,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 				sdb_query(bin->cur->sdb, query);
 			}
 		}
-		rz_core_file_free(fh);
+		rz_core_file_close(fh);
 		rz_core_fini(&core);
 		return 0;
 	}
@@ -1198,7 +1198,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	pj_free(pj);
 	rz_cons_flush();
-	rz_core_file_free(fh);
+	rz_core_file_close(fh);
 	rz_core_fini(&core);
 
 	return result;
