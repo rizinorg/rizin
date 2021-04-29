@@ -672,20 +672,14 @@ RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name) {
 	return rz_bin_file_set_cur_binfile(bin, bf);
 }
 
-RZ_API bool rz_bin_file_deref(RzBin *bin, RzBinFile *a) {
-	rz_return_val_if_fail(bin && a, false);
-	if (!rz_bin_cur_object(bin)) {
-		return false;
-	}
-	bin->cur = NULL;
-	return true;
-}
-
 RZ_API void rz_bin_file_free(void /*RzBinFile*/ *_bf) {
 	if (!_bf) {
 		return;
 	}
 	RzBinFile *bf = _bf;
+	if (bf->rbin->cur == bf) {
+		bf->rbin->cur = NULL;
+	}
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
 	// Binary format objects are connected to the
 	// RzBinObject, so the plugin must destroy the

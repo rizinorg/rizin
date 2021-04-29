@@ -122,7 +122,7 @@ bool test_map_close(void) {
 	mu_assert_streq(bf->o->plugin->name, "mock", "binfile with mock plugin");
 
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 3, "io maps count");
-	rz_core_file_close(core, f);
+	rz_core_file_close(f);
 
 	// TODO: this is broken
 #if 0

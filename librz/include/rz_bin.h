@@ -849,7 +849,6 @@ RZ_API RzBinFile *rz_bin_file_find_by_name(RzBin *bin, const char *name);
 
 RZ_API bool rz_bin_file_set_cur_binfile(RzBin *bin, RzBinFile *bf);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
-RZ_API bool rz_bin_file_deref(RzBin *bin, RzBinFile *a);
 RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);

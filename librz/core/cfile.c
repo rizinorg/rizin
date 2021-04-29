@@ -187,7 +187,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr)
 			if (desc->plugin->isdbg) {
 				addr = rz_debug_get_baddr(core->dbg, desc->name);
 			} else {
-				addr = rz_bin_get_baddr(file->binb.bin);
+				addr = rz_bin_get_baddr(core->bin);
 			}
 		}
 		rz_core_bin_load(core, uri, addr);
@@ -357,7 +357,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 				had_rbin_info = true;
 			}
 		}
-		rz_core_file_close(core, ofile);
+		rz_core_file_close(ofile);
 		rz_core_file_set_by_file(core, file);
 		ofile = NULL;
 		odesc = NULL;
@@ -1084,11 +1084,9 @@ RZ_API RzCoreFile *rz_core_file_open_many(RzCore *r, const char *file, int perm,
 		}
 		RzCoreFile *fh = RZ_NEW0(RzCoreFile);
 		if (fh) {
-			fh->alive = 1;
 			fh->core = r;
 			fh->fd = fd->fd;
 			r->file = fh;
-			rz_bin_bind(r->bin, &(fh->binb));
 			rz_list_append(r->files, fh);
 			rz_core_bin_load(r, fd->name, loadaddr);
 		}
@@ -1143,7 +1141,6 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 		eprintf("core/file.c: rz_core_open failed to allocate RzCoreFile.\n");
 		goto beach;
 	}
-	fh->alive = 1;
 	fh->core = r;
 	fh->fd = fd->fd;
 	{
@@ -1154,12 +1151,6 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 		char *absfile = rz_file_abspath(file);
 		rz_config_set(r->config, "file.path", absfile);
 		free(absfile);
-	}
-	// check load addr to make sure its still valid
-	rz_bin_bind(r->bin, &(fh->binb));
-
-	if (!r->files) {
-		r->files = rz_list_newf((RzListFree)rz_core_file_free);
 	}
 
 	r->file = fh;
@@ -1192,80 +1183,24 @@ beach:
 	return fh;
 }
 
-RZ_API void rz_core_file_free(RzCoreFile *cf) {
-	int res = 1;
-
-	rz_return_if_fail(cf);
-
-	if (!cf->core) {
-		free(cf);
+RZ_IPI void rz_core_file_free(RzCoreFile *cf) {
+	if (!cf) {
 		return;
 	}
-	res = rz_list_delete_data(cf->core->files, cf);
-	if (res && cf->alive) {
-		// double free librz/io/io.c:70 performs free
-		RzIO *io = cf->core->io;
-		if (io) {
-			RzBin *bin = cf->binb.bin;
-			RzBinFile *bf = rz_bin_cur(bin);
-			if (bf) {
-				rz_bin_file_deref(bin, bf);
-			}
-			rz_io_fd_close(io, cf->fd);
-			free(cf);
-		}
-	}
+	free(cf);
 }
 
-RZ_API int rz_core_file_close(RzCore *r, RzCoreFile *fh) {
-	int ret;
-	RzIODesc *desc = fh && r ? rz_io_desc_get(r->io, fh->fd) : NULL;
-	RzCoreFile *prev_cf = r && r->file != fh ? r->file : NULL;
-
-	// TODO: This is not correctly done. because map and iodesc are
-	// still referenced // we need to fully clear all RZ_IO structs
-	// related to a file as well as the ones needed for RzBin.
-	//
-	// XXX -these checks are intended to *try* and catch
-	// stale objects.  Unfortunately, if the file handle
-	// (fh) is stale and freed, and there is more than 1
-	// fh in the r->files list, we are hosed. (design flaw)
-	// TODO maybe using sdb to keep track of the allocated and
-	// deallocated files might be a good solutions
-	if (!r || !desc || rz_list_empty(r->files)) {
-		return false;
-	}
-
-	if (fh == r->file) {
+RZ_API void rz_core_file_close(RzCoreFile *fh) {
+	rz_return_if_fail(fh && fh->core);
+	RzCore *r = fh->core;
+	RzListIter *fh_it = rz_list_find_ptr(r->files, fh);
+	rz_return_if_fail(fh_it);
+	RzIODesc *desc = rz_io_desc_get(r->io, fh->fd);
+	if (r->file == fh) {
 		r->file = NULL;
 	}
-
-	rz_core_file_set_by_fd(r, fh->fd);
-	rz_core_bin_set_by_fd(r, fh->fd);
-
-	/* delete filedescriptor from io descs here */
-	// rz_io_desc_del (r->io, fh->fd);
-
-	// AVOID DOUBLE FREE HERE
-	r->files->free = NULL;
-
-	ret = rz_list_delete_data(r->files, fh);
-	if (ret) {
-		if (!prev_cf && rz_list_length(r->files) > 0) {
-			prev_cf = (RzCoreFile *)rz_list_get_n(r->files, 0);
-		}
-
-		if (prev_cf) {
-			RzIODesc *desc = prev_cf && r ? rz_io_desc_get(r->io, prev_cf->fd) : NULL;
-			if (!desc) {
-				eprintf("Error: RzCoreFile's found with out a supporting RzIODesc.\n");
-			}
-			ret = rz_core_file_set_by_file(r, prev_cf);
-		}
-	}
 	rz_io_desc_close(desc);
-	rz_core_file_free(fh);
-	return ret;
+	rz_list_delete(r->files, fh_it);
 }
 
 RZ_API RzCoreFile *rz_core_file_get_by_fd(RzCore *core, int fd) {
@@ -1447,18 +1382,14 @@ RZ_API bool rz_core_file_close_fd(RzCore *core, int fd) {
 	RzCoreFile *file;
 	RzListIter *iter;
 	if (fd == -1) {
-		// FIXME: Only closes files known to the core!
-		rz_list_free(core->files);
-		core->files = NULL;
-		core->file = NULL;
+		while (!rz_list_empty(core->files)) {
+			rz_core_file_close(rz_list_first(core->files));
+		}
 		return true;
 	}
 	rz_list_foreach (core->files, iter, file) {
 		if (file->fd == fd) {
-			rz_core_file_close(core, file);
-			if (file == core->file) {
-				core->file = NULL; // deref
-			}
+			rz_core_file_close(file);
 			return true;
 		}
 	}

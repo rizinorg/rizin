@@ -2345,6 +2345,7 @@ static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 
 RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user);
 RZ_IPI void rz_core_task_break_cb(RzCoreTask *task, void *user);
+RZ_IPI void rz_core_file_free(RzCoreFile *cf);
 
 RZ_API bool rz_core_init(RzCore *core) {
 	core->blocksize = RZ_CORE_BLOCKSIZE;
