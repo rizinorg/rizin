@@ -1266,12 +1266,9 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 					RzIODesc *desc = rz_io_desc_get(core->io, fd);
 					if (desc && (desc->perm & RZ_PERM_W)) {
 						void **it;
-						RzPVector *maps = rz_io_maps(core->io);
-						rz_pvector_foreach_prev(maps, it) {
+						rz_pvector_foreach (&file->maps, it) {
 							RzIOMap *map = *it;
-							if (map->fd == fd) {
-								map->perm |= RZ_PERM_WX;
-							}
+							map->perm |= RZ_PERM_WX;
 						}
 					} else {
 						eprintf("Error: %s is not writable\n", argv0);
