@@ -10,7 +10,6 @@
 #include <rz_util.h>
 #include <rz_crypto.h>
 
-#define RZ_CRYPTO_NBITS            (sizeof(RzCryptoSelector) * 8)
 #define RZ_HASH_DEFAULT_BLOCK_SIZE 0x1000
 
 typedef struct {
