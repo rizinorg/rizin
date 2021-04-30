@@ -168,6 +168,20 @@ typedef struct rz_io_desc_cache_t {
 	ut8 cdata[RZ_IO_DESC_CACHE_SIZE];
 } RzIODescCache;
 
+typedef struct rz_event_io_write_t {
+	ut64 addr;
+	const ut8 *buf;
+	int len;
+} RzEventIOWrite;
+
+typedef struct rz_event_io_desc_close_t {
+	RzIODesc *desc;
+} RzEventIODescClose;
+
+typedef struct rz_event_io_map_del_t {
+	RzIOMap *map;
+} RzEventIOMapDel;
+
 struct rz_io_bind_t;
 
 typedef bool (*RzIODescUse)(RzIO *io, int fd);
