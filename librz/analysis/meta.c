@@ -345,7 +345,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				if (!s) {
 					s = strdup(pstr);
 				}
-				if (mode) {
+				if (mode == RZ_OUTPUT_MODE_RIZIN) {
 					if (!strcmp(type, "CCu")) {
 						a->cb_printf("%s base64:%s @ 0x%08" PFMT64x "\n",
 							type, s, start);
