@@ -294,7 +294,8 @@ RZ_IPI RzOutputMode rz_char_to_output_mode(const char *suffix) {
 			return argv_modes[i].mode;
 		}
 	}
-	return *suffix;
+	rz_warn_if_reached();
+	return RZ_OUTPUT_MODE_UNKNOWN;
 }
 
 static bool has_cd_submodes(const RzCmdDesc *cd) {
@@ -306,10 +307,7 @@ static bool is_valid_argv_modes(RzCmdDesc *cd, char last_letter) {
 		return false;
 	}
 	char suffix[] = { last_letter, '\0' };
-	RzOutputMode mode = rz_char_to_output_mode(suffix);
-	if (mode == suffix[0])
-		return 0;
-	return cd->d.argv_modes_data.modes & mode;
+	return cd->d.argv_modes_data.modes & rz_char_to_output_mode(suffix);
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd) {
