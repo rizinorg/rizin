@@ -114,6 +114,7 @@ RZ_API RzList *rz_list_of_sdblist(SdbList *sl);
 
 /* hashlike api */
 RZ_API RzListIter *rz_list_contains(const RzList *list, const void *p);
+RZ_API RzListIter *rz_list_find_ptr(RzList *list, void *ptr);
 RZ_API RzListIter *rz_list_find(const RzList *list, const void *p, RzListComparator cmp);
 
 /* rlistflist */

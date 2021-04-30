@@ -87,18 +87,13 @@ RZ_API void rz_list_free(RzList *list) {
 }
 
 RZ_API bool rz_list_delete_data(RzList *list, void *ptr) {
-	void *p;
-	RzListIter *iter;
-
 	rz_return_val_if_fail(list, false);
-
-	rz_list_foreach (list, iter, p) {
-		if (ptr == p) {
-			rz_list_delete(list, iter);
-			return true;
-		}
+	RzListIter *iter = rz_list_find_ptr(list, ptr);
+	if (!iter) {
+		return false;
 	}
-	return false;
+	rz_list_delete(list, iter);
+	return true;
 }
 
 RZ_API void rz_list_delete(RzList *list, RzListIter *iter) {
@@ -470,6 +465,28 @@ RZ_API RzListIter *rz_list_contains(const RzList *list, const void *p) {
 	return NULL;
 }
 
+/**
+ * \brief Find the first RzListIter containing exactly ptr (by pointer comparison)
+ * For searching by data contained by the pointers, such as strings, use rz_list_find() instead.
+ */
+RZ_API RzListIter *rz_list_find_ptr(RzList *list, void *ptr) {
+	rz_return_val_if_fail(list, NULL);
+	void *p;
+	RzListIter *iter;
+	rz_list_foreach (list, iter, p) {
+		if (ptr == p) {
+			return iter;
+		}
+	}
+	return NULL;
+}
+
+/**
+ * \brief Find the first RzListIter that is equal to the given data
+ * For searching by pointer comparison, rz_list_find_ptr() provides a simpler interface.
+ *
+ * \return the first RzListIter that is equall to p w.r.t. cmp.
+ */
 RZ_API RzListIter *rz_list_find(const RzList *list, const void *p, RzListComparator cmp) {
 	void *q;
 	RzListIter *iter;
