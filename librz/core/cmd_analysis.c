@@ -8023,7 +8023,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		}
 		break;
 	case '\0': // "aa"
-	case 'a': // "aa"
+	case 'a': // "aaa"
 		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
 			rz_cons_println("Usage: See aa? for more help");
 		} else {
