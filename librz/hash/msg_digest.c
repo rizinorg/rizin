@@ -326,18 +326,14 @@ RZ_API bool rz_msg_digest_hmac(RzMsgDigest *md, const ut8 *key, ut64 key_size) {
 
 		memset(mdc->hmac_key, 0, block_size);
 		if (block_size < key_size) {
-			if (!mdc->plugin->init(mdc->context)) {
+			RzMsgDigestSize tmp_size;
+			ut8 *tmp = NULL;
+			if (!mdc->plugin->small_block(key, key_size, &tmp, &tmp_size)) {
 				RZ_LOG_ERROR("msg digest: failed to call init for hmac %s key.\n", mdc->plugin->name);
 				return false;
 			}
-			if (!mdc->plugin->update(mdc->context, key, key_size)) {
-				RZ_LOG_ERROR("msg digest: failed to call update for hmac %s key.\n", mdc->plugin->name);
-				return false;
-			}
-			if (!mdc->plugin->final(mdc->context, mdc->hmac_key)) {
-				RZ_LOG_ERROR("msg digest: failed to call final for hmac %s key.\n", mdc->plugin->name);
-				return false;
-			}
+			memcpy(mdc->hmac_key, tmp, tmp_size);
+			free(tmp);
 		} else {
 			memcpy(mdc->hmac_key, key, key_size);
 		}
