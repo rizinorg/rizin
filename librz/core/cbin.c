@@ -618,40 +618,30 @@ RZ_API bool rz_core_bin_apply_entry(RzCore *core, RzBinFile *binfile, bool va) {
 	return true;
 }
 
-typedef struct {
-	const char *uri;
-	int perm;
-	RzIODesc *desc;
-} FindFile;
-
-static bool findFile(void *user, void *data, ut32 id) {
-	FindFile *res = (FindFile *)user;
-	RzIODesc *desc = (RzIODesc *)data;
-	if (desc->perm == res->perm && !strcmp(desc->uri, res->uri)) {
-		res->desc = desc;
-		return false;
+static RzIODesc *find_reusable_file(RzIO *io, RzCoreFile *cf, const char *uri, int perm) {
+	rz_return_val_if_fail(io && uri, NULL);
+	if (!cf) {
+		// valid case, but then we can't reuse anything
+		return NULL;
 	}
-	return true;
-}
-
-static RzIODesc *findReusableFile(RzIO *io, const char *uri, int perm) {
-	FindFile arg = {
-		.uri = uri,
-		.perm = perm,
-		.desc = NULL,
-	};
-	rz_id_storage_foreach(io->files, findFile, &arg);
-	return arg.desc;
+	void **it;
+	rz_pvector_foreach (&cf->extra_files, it) {
+		RzIODesc *desc = *it;
+		if (desc->perm == perm && !strcmp(desc->uri, uri)) {
+			return desc;
+		}
+	}
+	return NULL;
 }
 
 /// Create null-map for excessive vsize over psize
-static bool io_create_mem_map(RzIO *io, RzBinMap *map, ut64 at) {
+static bool io_create_mem_map(RzIO *io, RZ_NULLABLE RzCoreFile *cf, RzBinMap *map, ut64 at) {
 	rz_return_val_if_fail(io && map && map->vsize > map->psize, false);
 	bool reused = false;
 	ut64 gap = map->vsize - map->psize;
 	char *uri = rz_str_newf("null://%" PFMT64u, gap);
 	RzIOMap *iomap = NULL;
-	RzIODesc *desc = findReusableFile(io, uri, map->perm);
+	RzIODesc *desc = find_reusable_file(io, cf, uri, map->perm);
 	if (desc) {
 		iomap = rz_io_map_add_batch(io, desc->fd, desc->perm, 0LL, at, gap);
 		reused = true;
@@ -669,6 +659,12 @@ static bool io_create_mem_map(RzIO *io, RzBinMap *map, ut64 at) {
 		}
 		return false;
 	}
+	if (cf) {
+		if (!reused) {
+			rz_pvector_push(&cf->extra_files, desc);
+		}
+		rz_pvector_push(&cf->maps, iomap);
+	}
 	// update the io map's name to refer to the bin map
 	if (map->name) {
 		free(iomap->name);
@@ -677,7 +673,7 @@ static bool io_create_mem_map(RzIO *io, RzBinMap *map, ut64 at) {
 	return true;
 }
 
-static void add_map(RzCore *core, RzBinMap *map, ut64 addr, int fd) {
+static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinMap *map, ut64 addr, int fd) {
 	if (!rz_io_desc_get(core->io, fd) || UT64_ADD_OVFCHK(map->psize, map->paddr) ||
 		UT64_ADD_OVFCHK(map->vsize, addr) || !map->vsize) {
 		return;
@@ -687,7 +683,7 @@ static void add_map(RzCore *core, RzBinMap *map, ut64 addr, int fd) {
 	// if there is some part of the map that needs to be zeroed by the loader
 	// we add a null map that takes care of it
 	if (map->vsize > map->psize) {
-		if (!io_create_mem_map(core->io, map, addr + map->psize)) {
+		if (!io_create_mem_map(core->io, cf, map, addr + map->psize)) {
 			return;
 		}
 		size = map->psize;
@@ -718,6 +714,9 @@ static void add_map(RzCore *core, RzBinMap *map, ut64 addr, int fd) {
 		}
 		free(iomap->name);
 		iomap->name = map_name;
+		if (cf) {
+			rz_pvector_push(&cf->maps, iomap);
+		}
 	} else {
 		free(map_name);
 	}
@@ -736,6 +735,7 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 		return false;
 	}
 	RzList *maps = o->maps;
+	RzCoreFile *cf = rz_core_file_find_by_fd(core, binfile->fd);
 
 	RzListIter *it;
 	RzBinMap *map;
@@ -746,7 +746,7 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 			va_map = VA_NOREBASE;
 		}
 		ut64 addr = rva(o, map->paddr, map->vaddr, va_map);
-		add_map(core, map, addr, binfile->fd);
+		add_map(core, cf, map, addr, binfile->fd);
 	}
 	rz_io_update(core->io);
 	return true;

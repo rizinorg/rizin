@@ -2343,6 +2343,19 @@ static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 	}
 }
 
+RZ_IPI void rz_core_file_io_desc_closed(RzCore *core, RzIODesc *desc);
+RZ_IPI void rz_core_file_io_map_deleted(RzCore *core, RzIOMap *map);
+
+static void ev_iodescclose_cb(RzEvent *ev, int type, void *user, void *data) {
+	RzEventIODescClose *ioc = data;
+	rz_core_file_io_desc_closed(user, ioc->desc);
+}
+
+static void ev_iomapdel_cb(RzEvent *ev, int type, void *user, void *data) {
+	RzEventIOMapDel *iod = data;
+	rz_core_file_io_map_deleted(user, iod->map);
+}
+
 RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user);
 RZ_IPI void rz_core_task_break_cb(RzCoreTask *task, void *user);
 RZ_IPI void rz_core_file_free(RzCoreFile *cf);
@@ -2469,6 +2482,8 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_bin_set_user_ptr(core->bin, core);
 	core->io = rz_io_new();
 	rz_event_hook(core->io->event, RZ_EVENT_IO_WRITE, ev_iowrite_cb, core);
+	rz_event_hook(core->io->event, RZ_EVENT_IO_DESC_CLOSE, ev_iodescclose_cb, core);
+	rz_event_hook(core->io->event, RZ_EVENT_IO_MAP_DEL, ev_iomapdel_cb, core);
 	core->io->ff = 1;
 	core->search = rz_search_new(RZ_SEARCH_KEYWORD);
 	core->flags = rz_flag_new();

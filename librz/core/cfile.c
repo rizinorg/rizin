@@ -11,6 +11,27 @@
 static int rz_core_file_do_load_for_debug(RzCore *r, ut64 loadaddr, const char *filenameuri);
 static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr);
 
+static RzCoreFile *core_file_new(RzCore *core, int fd) {
+	RzCoreFile *r = RZ_NEW0(RzCoreFile);
+	if (!r) {
+		return NULL;
+	}
+	r->core = core;
+	r->fd = fd;
+	rz_pvector_init(&r->extra_files, NULL);
+	rz_pvector_init(&r->maps, NULL);
+	return r;
+}
+
+RZ_IPI void rz_core_file_free(RzCoreFile *cf) {
+	if (!cf) {
+		return;
+	}
+	rz_pvector_fini(&cf->extra_files);
+	rz_pvector_fini(&cf->maps);
+	free(cf);
+}
+
 static bool __isMips(RzAsm *a) {
 	return a && a->cur && a->cur->arch && strstr(a->cur->arch, "mips");
 }
@@ -1136,13 +1157,11 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 		goto beach;
 	}
 
-	fh = RZ_NEW0(RzCoreFile);
+	fh = core_file_new(r, fd->fd);
 	if (!fh) {
 		eprintf("core/file.c: rz_core_open failed to allocate RzCoreFile.\n");
 		goto beach;
 	}
-	fh->core = r;
-	fh->fd = fd->fd;
 	{
 		const char *cp = rz_config_get(r->config, "cmd.open");
 		if (cp && *cp) {
@@ -1183,11 +1202,22 @@ beach:
 	return fh;
 }
 
-RZ_IPI void rz_core_file_free(RzCoreFile *cf) {
-	if (!cf) {
-		return;
+RZ_IPI void rz_core_file_io_desc_closed(RzCore *core, RzIODesc *desc) {
+	// remove all references to the closed desc
+	RzListIter *it;
+	RzCoreFile *cf;
+	rz_list_foreach (core->files, it, cf) {
+		rz_pvector_remove_data(&cf->extra_files, desc);
 	}
-	free(cf);
+}
+
+RZ_IPI void rz_core_file_io_map_deleted(RzCore *core, RzIOMap *map) {
+	// remove all references to the deleted map
+	RzListIter *it;
+	RzCoreFile *cf;
+	rz_list_foreach (core->files, it, cf) {
+		rz_pvector_remove_data(&cf->maps, map);
+	}
 }
 
 RZ_API void rz_core_file_close(RzCoreFile *fh) {
@@ -1196,10 +1226,22 @@ RZ_API void rz_core_file_close(RzCoreFile *fh) {
 	RzListIter *fh_it = rz_list_find_ptr(r->files, fh);
 	rz_return_if_fail(fh_it);
 	RzIODesc *desc = rz_io_desc_get(r->io, fh->fd);
+	if (desc) {
+		rz_io_desc_close(desc);
+	}
+	while (!rz_pvector_empty(&fh->maps)) {
+		// The element will automatically be removed from the vector through events
+		// always delete the last to avoid unnecessary copies
+		RzIOMap *map = rz_pvector_at(&fh->maps, rz_pvector_len(&fh->maps) - 1);
+		rz_io_map_del(r->io, map->id);
+	}
+	while (!rz_pvector_empty(&fh->extra_files)) {
+		// same as for maps above
+		rz_io_desc_close(rz_pvector_at(&fh->extra_files, rz_pvector_len(&fh->extra_files) - 1));
+	}
 	if (r->file == fh) {
 		r->file = NULL;
 	}
-	rz_io_desc_close(desc);
 	rz_list_delete(r->files, fh_it);
 }
 
