@@ -832,9 +832,6 @@ static bool calculate_hash(RzHashContext *ctx, RzIO *io, const char *filename) {
 	}
 
 	rz_list_foreach (algorithms, it, algorithm) {
-		if (!strcmp(ctx->algorithm, "luhn")) {
-			continue;
-		}
 		if (!rz_msg_digest_configure(md, algorithm)) {
 			goto calculate_hash_end;
 		}

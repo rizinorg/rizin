@@ -259,6 +259,11 @@ RZ_API bool rz_msg_digest_configure(RzMsgDigest *md, const char *name) {
 
 	bool is_all = !strcmp(name, "all");
 
+	if (is_all && rz_list_length(md->configurations) > 0) {
+		RZ_LOG_WARN("msg digest: '%s' was already configured; skipping.\n", name);
+		return false;
+	}
+
 	MsgDigestConfig *mdc = NULL;
 	const RzMsgDigestPlugin *plugin = NULL;
 
@@ -276,8 +281,14 @@ RZ_API bool rz_msg_digest_configure(RzMsgDigest *md, const char *name) {
 				return false;
 			}
 
-			return true;
+			if (!is_all) {
+				return true;
+			}
 		}
+	}
+
+	if (is_all) {
+		return true;
 	}
 
 	RZ_LOG_ERROR("msg digest: '%s' does not exists.\n", name);
@@ -595,7 +606,7 @@ RZ_API char *rz_msg_digest_calculate_small_block_string(const char *name, const 
 	rz_return_val_if_fail(name && buffer, NULL);
 
 	ut32 pos = 0;
-	RzMsgDigestSize digest_size;
+	RzMsgDigestSize digest_size = 0;
 	ut8 *digest = NULL;
 	if (!(digest = rz_msg_digest_calculate_small_block(name, buffer, bsize, &digest_size))) {
 		return NULL;
