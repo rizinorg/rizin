@@ -1,13 +1,14 @@
+// gcc hello.c `pkg-config --cflags rz_hash rz_io` `pkg-config --libs rz_hash rz_io`
 #include <stdio.h>
 #include <stdlib.h>
 #include <rz_io.h>
 #include <rz_msg_digest.h>
 
 int main(int argc, char **argv) {
-	RzIODesc *fd = NULL;
 	ut8 *buf = NULL;
 	ut64 size = 0;
 	RzIO *io = NULL;
+	RzIODesc *desc = NULL;
 	char *digest = NULL;
 	RzMsgDigest *md = NULL;
 	int result = 1;
@@ -23,14 +24,14 @@ int main(int argc, char **argv) {
 		goto main_fail;
 	}
 
-	fd = rz_io_open_nomap(io, argv[1], RZ_IO_READ, 0);
-	if (fd == NULL) {
-		eprintf("Cannot open file\n");
+	desc = rz_io_open_nomap(io, argv[1], RZ_PERM_R, 0);
+	if (desc == NULL) {
+		eprintf("Cannot open file '%s'\n", argv[1]);
 		goto main_fail;
 	}
 
 	/* get file size */
-	size = rz_io_size(io);
+	size = rz_io_desc_size(desc);
 
 	/* read bytes */
 	buf = (ut8 *)malloc(size);
@@ -49,6 +50,7 @@ int main(int argc, char **argv) {
 	int i;
 	md = rz_msg_digest_new_with_algo2("all");
 	if (!md) {
+		printf("rz_msg_digest_new_with_algo2 failed\n");
 		goto main_fail;
 	}
 	rz_msg_digest_update(md, buf, size);
@@ -74,7 +76,7 @@ int main(int argc, char **argv) {
 
 main_fail:
 	rz_msg_digest_free(md);
-	rz_io_close(io, fd);
+	rz_io_desc_close(desc);
 	rz_io_free(io);
 	free(buf);
 	return result;

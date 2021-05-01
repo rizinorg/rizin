@@ -1,3 +1,4 @@
+// gcc test.c `pkg-config --cflags rz_hash` `pkg-config --libs rz_hash`
 #include <rz_msg_digest.h>
 
 void do_md5(const char *string) {
