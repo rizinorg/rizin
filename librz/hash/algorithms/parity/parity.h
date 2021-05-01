@@ -6,7 +6,7 @@
 
 #include <rz_types.h>
 
-#define RZ_HASH_PARITY_DIGEST_SIZE  4
+#define RZ_HASH_PARITY_DIGEST_SIZE  1
 #define RZ_HASH_PARITY_BLOCK_LENGTH 0
 
 typedef ut32 RzParity;
