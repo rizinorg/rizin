@@ -54,7 +54,6 @@ EOF
 RUN
 
 NAME=aFr on same but ihex and .rz script
-BROKEN=1
 FILE=ihex://bins/microcorruption/tutorial
 CMDS=<<EOF
 . bins/microcorruption/tutorial.rz
@@ -73,10 +72,10 @@ mov sp, r15
 call loc.check_password
 tst r15
 jnz $+0x000c
-mov 0x44c7, r15
+mov str.Invalid_password_try_again, r15
 call loc.puts
 jmp $+0x000e
-mov 0x44e4, r15
+mov str.Access_Granted, r15
 call loc.puts
 call loc.unlock_door
 clr r15
@@ -90,10 +89,9 @@ size: 62
 is-pure: true
 realsz: 62
 stackframe: 0
-call-convention: (null)
 cyclomatic-cost: 0
 cyclomatic-complexity: 1
-bits: 32
+bits: 16
 type: fcn [NEW]
 num-bbs: 5
 edges: 6
@@ -101,6 +99,7 @@ end-bbs: 0
 call-refs: 0x00004558 C 0x0000447a C 0x00004484 C 0x00004558 C 0x0000446a J 0x00004558 C 0x0000449c C 0x00004470 J
 data-refs:
 code-xrefs: 0x0000445c J 0x00004474 J
+noreturn: false
 in-degree: 2
 out-degree: 6
 data-xrefs:
