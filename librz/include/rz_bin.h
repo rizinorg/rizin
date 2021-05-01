@@ -275,7 +275,7 @@ typedef struct rz_bin_object_t {
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
 	int lang;
-	Sdb *kv;
+	RZ_DEPRECATE Sdb *kv; ///< deprecated, put info in C structures instead of this
 	HtUP *addrzklassmethod;
 	void *bin_obj; // internal pointer used by formats
 } RzBinObject;
@@ -301,8 +301,8 @@ struct rz_bin_file_t {
 	struct rz_bin_xtr_plugin_t *curxtr;
 	// struct rz_bin_plugin_t *curplugin; // use o->plugin
 	RzList *xtr_data;
-	Sdb *sdb;
-	Sdb *sdb_info;
+	RZ_DEPRECATE Sdb *sdb; ///< deprecated, put info in C structures instead of this
+	RZ_DEPRECATE Sdb *sdb_info; ///< deprecated, put info in C structures instead of this
 	struct rz_bin_t *rbin;
 }; // RzBinFile
 
@@ -317,7 +317,7 @@ typedef struct rz_bin_file_options_t {
 
 struct rz_bin_t {
 	const char *file;
-	RzBinFile *cur; // TODO: deprecate
+	RZ_DEPRECATE RzBinFile *cur; ///< never use this in new code! Get a file from the binfiles list or track it yourself.
 	int narch;
 	void *user;
 	/* preconfigured values */
@@ -326,7 +326,7 @@ struct rz_bin_t {
 	int maxstrlen; //< <= 0 means no limit
 	ut64 maxstrbuf;
 	int rawstr;
-	Sdb *sdb;
+	RZ_DEPRECATE Sdb *sdb;
 	RzIDStorage *ids;
 	RzList /*<RzBinPlugin>*/ *plugins;
 	RzList /*<RzBinXtrPlugin>*/ *binxtrs;
@@ -512,7 +512,7 @@ typedef struct rz_bin_plugin_t {
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	Sdb *(*get_sdb)(RzBinFile *obj);
+	RZ_DEPRECATE Sdb *(*get_sdb)(RzBinFile *obj); ///< deprecated, put info in C structures instead of this
 	bool (*load_buffer)(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RzBinFile *bin);
 	void (*destroy)(RzBinFile *bf);
