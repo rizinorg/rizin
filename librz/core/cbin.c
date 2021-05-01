@@ -627,7 +627,7 @@ typedef struct {
 static bool findFile(void *user, void *data, ut32 id) {
 	FindFile *res = (FindFile *)user;
 	RzIODesc *desc = (RzIODesc *)data;
-	if (desc->perm && res->perm && !strcmp(desc->uri, res->uri)) {
+	if (desc->perm == res->perm && !strcmp(desc->uri, res->uri)) {
 		res->desc = desc;
 		return false;
 	}
