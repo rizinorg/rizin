@@ -1025,10 +1025,13 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 					if (!r) {
 						break;
 					}
-					tcache_tmp = (!demangle)
-						? read_le(&tcache_tmp)
-						: PROTECT_PTR(tcache_fd, read_le(&tcache_tmp));
-
+					if (core->dbg->glibc_version < 232) {
+						tcache_tmp = (!demangle)
+							? read_le(&tcache_tmp)
+							: PROTECT_PTR(tcache_fd, read_le(&tcache_tmp));
+					} else {
+						tcache_tmp = PROTECT_PTR(tcache_fd, read_le(&tcache_tmp));
+					}
 					rz_cons_printf("\n -> ");
 					GH(print_heap_chunk_simple)
 					(core, (ut64)(tcache_tmp - TC_HDR_SZ), NULL);
