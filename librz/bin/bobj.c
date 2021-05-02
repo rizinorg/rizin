@@ -592,22 +592,6 @@ RZ_IPI RzBinObject *rz_bin_object_find_by_arch_bits(RzBinFile *bf, const char *a
 	return NULL;
 }
 
-RZ_API bool rz_bin_object_delete(RzBin *bin, ut32 bf_id) {
-	rz_return_val_if_fail(bin, false);
-
-	bool res = false;
-	RzBinFile *bf = rz_bin_file_find_by_id(bin, bf_id);
-	if (bf) {
-		if (bin->cur == bf) {
-			bin->cur = NULL;
-		}
-		if (!bf->o) {
-			rz_list_delete_data(bin->binfiles, bf);
-		}
-	}
-	return res;
-}
-
 RZ_IPI void rz_bin_object_filter_strings(RzBinObject *bo) {
 	rz_return_if_fail(bo && bo->strings);
 

@@ -341,11 +341,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			}
 			id = (*value && rz_is_valid_input_num_value(core->num, value)) ? rz_get_input_num_value(core->num, value) : UT32_MAX;
 			RzBinFile *bf = rz_bin_file_find_by_id(core->bin, id);
-			if (!bf) {
-				eprintf("Invalid binid\n");
-				break;
-			}
-			if (!rz_core_bin_delete(core, bf->id)) {
+			if (!bf || !rz_core_bin_delete(core, bf)) {
 				eprintf("Cannot find an RzBinFile associated with that id.\n");
 			}
 		}

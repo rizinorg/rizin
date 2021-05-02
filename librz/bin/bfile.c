@@ -450,6 +450,35 @@ RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, in
 	return bf;
 }
 
+RZ_IPI void rz_bin_file_free(void /*RzBinFile*/ *_bf) {
+	if (!_bf) {
+		return;
+	}
+	RzBinFile *bf = _bf;
+	if (bf->rbin->cur == bf) {
+		bf->rbin->cur = NULL;
+	}
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
+	// Binary format objects are connected to the
+	// RzBinObject, so the plugin must destroy the
+	// format data first
+	if (plugin && plugin->destroy) {
+		plugin->destroy(bf);
+	}
+	rz_buf_free(bf->buf);
+	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
+		bf->curxtr->free_xtr((void *)(bf->xtr_obj));
+	}
+	free(bf->file);
+	rz_bin_object_free(bf->o);
+	rz_list_free(bf->xtr_data);
+	if (bf->id != -1) {
+		// TODO: use rz_storage api
+		rz_id_pool_kick_id(bf->rbin->ids->pool, bf->id);
+	}
+	free(bf);
+}
+
 static RzBinPlugin *get_plugin_from_buffer(RzBin *bin, const char *pluginname, RzBuffer *buf) {
 	RzBinPlugin *plugin = bin->force ? rz_bin_get_binplugin_by_name(bin, bin->force) : NULL;
 	if (plugin) {
@@ -571,32 +600,30 @@ RZ_IPI RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bf_id) {
 }
 
 RZ_API ut64 rz_bin_file_delete_all(RzBin *bin) {
-	if (bin) {
-		ut64 counter = rz_list_length(bin->binfiles);
-		rz_list_purge(bin->binfiles);
-		bin->cur = NULL;
-		return counter;
+	rz_return_val_if_fail(bin, 0);
+	ut64 counter = rz_list_length(bin->binfiles);
+	RzListIter *it;
+	RzBinFile *bf;
+	rz_list_foreach (bin->binfiles, it, bf) {
+		RzEventBinFileDel ev = { bf };
+		rz_event_send(bin->event, RZ_EVENT_BIN_FILE_DEL, &ev);
 	}
-	return 0;
+	rz_list_purge(bin->binfiles);
+	bin->cur = NULL;
+	return counter;
 }
 
-RZ_API bool rz_bin_file_delete(RzBin *bin, ut32 bin_id) {
-	rz_return_val_if_fail(bin, false);
-
-	RzListIter *iter;
-	RzBinFile *bf, *cur = rz_bin_cur(bin);
-
-	rz_list_foreach (bin->binfiles, iter, bf) {
-		if (bf && bf->id == bin_id) {
-			if (cur && cur->id == bin_id) {
-				// avoiding UaF due to dead reference
-				bin->cur = NULL;
-			}
-			rz_list_delete(bin->binfiles, iter);
-			return true;
-		}
+RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf) {
+	rz_return_val_if_fail(bin && bf, false);
+	RzListIter *it = rz_list_find_ptr(bin->binfiles, bf);
+	rz_return_val_if_fail(it, false); // calling del on a bf not in the bin is a programming error
+	if (bin->cur == bf) {
+		bin->cur = NULL;
 	}
-	return false;
+	RzEventBinFileDel ev = { bf };
+	rz_event_send(bin->event, RZ_EVENT_BIN_FILE_DEL, &ev);
+	rz_list_delete(bin->binfiles, it);
+	return true;
 }
 
 RZ_API RzBinFile *rz_bin_file_find_by_fd(RzBin *bin, ut32 bin_fd) {
@@ -671,36 +698,6 @@ RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name) {
 	rz_return_val_if_fail(bin && name, false);
 	RzBinFile *bf = rz_bin_file_find_by_name(bin, name);
 	return rz_bin_file_set_cur_binfile(bin, bf);
-}
-
-RZ_API void rz_bin_file_free(void /*RzBinFile*/ *_bf) {
-	if (!_bf) {
-		return;
-	}
-	RzBinFile *bf = _bf;
-	if (bf->rbin->cur == bf) {
-		bf->rbin->cur = NULL;
-	}
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
-	// Binary format objects are connected to the
-	// RzBinObject, so the plugin must destroy the
-	// format data first
-	if (plugin && plugin->destroy) {
-		plugin->destroy(bf);
-	}
-	rz_buf_free(bf->buf);
-	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
-		bf->curxtr->free_xtr((void *)(bf->xtr_obj));
-	}
-	free(bf->file);
-	rz_bin_object_free(bf->o);
-	rz_list_free(bf->xtr_data);
-	if (bf->id != -1) {
-		// TODO: use rz_storage api
-		rz_id_pool_kick_id(bf->rbin->ids->pool, bf->id);
-	}
-	(void)rz_bin_object_delete(bf->rbin, bf->id);
-	free(bf);
 }
 
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {

@@ -317,7 +317,7 @@ RZ_API bool rz_core_bin_load_structs(RzCore *core, const char *file) {
 		return false;
 	}
 	rz_core_bin_export_info(core, RZ_MODE_SET);
-	rz_bin_file_delete(core->bin, bf->id);
+	rz_bin_file_delete(core->bin, bf);
 	return true;
 }
 
@@ -1676,7 +1676,7 @@ static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va) {
 		rz_buf_free(bf->buf);
 		bf->buf = NULL;
 		bf->id = -1;
-		rz_bin_file_free(bf);
+		rz_bin_file_delete(r->bin, bf);
 	}
 	return true;
 }
@@ -4325,12 +4325,9 @@ RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid) {
 	return bf && rz_core_bin_apply_all_info(core, bf) && rz_core_block_read(core);
 }
 
-RZ_API bool rz_core_bin_delete(RzCore *core, ut32 bf_id) {
-	if (bf_id == UT32_MAX) {
-		return false;
-	}
-	rz_bin_file_delete(core->bin, bf_id);
-	RzBinFile *bf = rz_bin_file_at(core->bin, core->offset);
+RZ_API bool rz_core_bin_delete(RzCore *core, RzBinFile *bf) {
+	rz_bin_file_delete(core->bin, bf);
+	bf = rz_bin_file_at(core->bin, core->offset);
 	if (bf) {
 		rz_io_use_fd(core->io, bf->fd);
 	}

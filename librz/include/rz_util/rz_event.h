@@ -41,6 +41,7 @@ typedef enum {
 	RZ_EVENT_IO_WRITE, // RzEventIOWrite
 	RZ_EVENT_IO_DESC_CLOSE, // RzEventIODescClose
 	RZ_EVENT_IO_MAP_DEL, // RzEventIOMapDel
+	RZ_EVENT_BIN_FILE_DEL, // RzEventBinFileDel
 	RZ_EVENT_MAX,
 } RzEventType;
 

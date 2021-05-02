@@ -1437,7 +1437,7 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	} else {
 		rz_core_bin_info(core, action, pj, mode, 1, filter, NULL);
 	}
-	rz_bin_file_delete(core->bin, bf->id);
+	rz_bin_file_delete(core->bin, bf);
 	rz_bin_file_set_cur_binfile(core->bin, obf);
 	rz_io_fd_close(core->io, fd);
 	return true;

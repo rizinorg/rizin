@@ -236,7 +236,7 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 	opt.filename = bf->file;
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);
-	rz_bin_file_delete(bin, bf->id);
+	rz_bin_file_delete(bin, bf);
 	return nbf;
 }
 
@@ -451,21 +451,23 @@ RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo) {
 }
 
 RZ_API void rz_bin_free(RzBin *bin) {
-	if (bin) {
-		bin->file = NULL;
-		free(bin->force);
-		free(bin->srcdir);
-		free(bin->strenc);
-		//rz_bin_free_bin_files (bin);
-		rz_list_free(bin->binfiles);
-		rz_list_free(bin->binxtrs);
-		rz_list_free(bin->plugins);
-		rz_list_free(bin->binldrs);
-		sdb_free(bin->sdb);
-		rz_id_storage_free(bin->ids);
-		rz_str_constpool_fini(&bin->constpool);
-		free(bin);
+	if (!bin) {
+		return;
 	}
+	bin->file = NULL;
+	free(bin->force);
+	free(bin->srcdir);
+	free(bin->strenc);
+	//rz_bin_free_bin_files (bin);
+	rz_list_free(bin->binfiles);
+	rz_list_free(bin->binxtrs);
+	rz_list_free(bin->plugins);
+	rz_list_free(bin->binldrs);
+	sdb_free(bin->sdb);
+	rz_id_storage_free(bin->ids);
+	rz_event_free(bin->event);
+	rz_str_constpool_fini(&bin->constpool);
+	free(bin);
 }
 
 static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, PJ *pj, int json) {
@@ -779,6 +781,8 @@ RZ_API int rz_bin_is_static(RzBin *bin) {
 	return true;
 }
 
+RZ_IPI void rz_bin_file_free(void /*RzBinFile*/ *_bf);
+
 RZ_API RzBin *rz_bin_new(void) {
 	int i;
 	RzBinXtrPlugin *static_xtr_plugin;
@@ -789,6 +793,10 @@ RZ_API RzBin *rz_bin_new(void) {
 	}
 	if (!rz_str_constpool_init(&bin->constpool)) {
 		goto trashbin;
+	}
+	bin->event = rz_event_new(bin);
+	if (!bin->event) {
+		goto trashbin_constpool;
 	}
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
@@ -840,6 +848,8 @@ trashbin_binxtrs:
 	rz_list_free(bin->binxtrs);
 	rz_list_free(bin->binfiles);
 	rz_id_storage_free(bin->ids);
+	rz_event_free(bin->event);
+trashbin_constpool:
 	rz_str_constpool_fini(&bin->constpool);
 trashbin:
 	free(bin);
