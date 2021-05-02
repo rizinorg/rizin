@@ -352,11 +352,12 @@ typedef struct {
 } CloseTracker;
 
 static void event_desc_close_cb(RzEvent *ev, int type, void *user, void *data) {
+	CloseTracker *tracker = user;
 	if (type != RZ_EVENT_IO_DESC_CLOSE) {
+		tracker->failed_unexpected = true;
 		return;
 	}
 	RzEventIODescClose *iev = data;
-	CloseTracker *tracker = user;
 	RzListIter *it = rz_list_find_ptr(tracker->expect, iev->desc);
 	if (!it) {
 		tracker->failed_unexpected = true;
@@ -420,11 +421,12 @@ bool test_rz_io_event_desc_close(void) {
 }
 
 static void event_map_del_cb(RzEvent *ev, int type, void *user, void *data) {
+	CloseTracker *tracker = user;
 	if (type != RZ_EVENT_IO_MAP_DEL) {
+		tracker->failed_unexpected = true;
 		return;
 	}
 	RzEventIOMapDel *iev = data;
-	CloseTracker *tracker = user;
 	RzListIter *it = rz_list_find_ptr(tracker->expect, iev->map);
 	if (!it) {
 		tracker->failed_unexpected = true;
