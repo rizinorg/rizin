@@ -111,14 +111,16 @@ bool test_map(void) {
 }
 
 /// test behavior after closing a single RzCoreFile
-bool test_map_close(void) {
+bool test_cfile_close(void) {
 	RzCore *core = rz_core_new();
 	rz_bin_plugin_add(core->bin, &mock_plugin);
 	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
 	mu_assert_notnull(f, "load core file");
 	mu_assert_ptreq(core->file, f, "current file");
+	mu_assert_eq(rz_list_length(core->bin->binfiles), 0, "no binfiles");
 	bool r = rz_core_bin_load(core, NULL, 0);
 	mu_assert_true(r, "core bin load");
+	mu_assert_eq(rz_list_length(core->bin->binfiles), 1, "binfile loaded");
 	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
 	mu_assert_notnull(bf, "binfile");
 	mu_assert_streq(bf->o->plugin->name, "mock", "binfile with mock plugin");
@@ -127,6 +129,7 @@ bool test_map_close(void) {
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 3, "io maps count");
 	rz_core_file_close(f);
 	mu_assert_null(core->file, "closed current file");
+	mu_assert_eq(rz_list_length(core->bin->binfiles), 0, "binfile deleted");
 
 	// all maps related to the file, including zero-mmaps, should be closed
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 0, "io maps count");
@@ -144,21 +147,26 @@ bool test_map_close(void) {
 }
 
 /// test behavior after closing an RzCoreFile when another one is present at the same time
-bool test_map_close_multiple(void) {
+bool test_cfile_close_multiple(void) {
 	RzCore *core = rz_core_new();
 	rz_bin_plugin_add(core->bin, &mock_plugin);
 
 	RzCoreFile *f0 = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
 	mu_assert_notnull(f0, "load core file");
 	mu_assert_ptreq(core->file, f0, "current file");
+	mu_assert_eq(rz_list_length(core->bin->binfiles), 0, "no binfiles");
 	bool r = rz_core_bin_load(core, NULL, 0);
 	mu_assert_true(r, "core bin load");
+	mu_assert_eq(rz_list_length(core->bin->binfiles), 1, "binfile loaded");
 
 	RzCoreFile *f1 = rz_core_file_open(core, "hex://c0ffeec0ffee", RZ_PERM_R, 0);
 	mu_assert_notnull(f1, "load another core file");
 	mu_assert_ptreq(core->file, f1, "current file");
 	r = rz_core_bin_load(core, NULL, 0);
 	mu_assert_true(r, "core bin load");
+	mu_assert_eq(rz_list_length(core->bin->binfiles), 2, "binfile loaded");
+	RzBinFile *bf1 = rz_bin_file_find_by_fd(core->bin, f1->fd);
+	mu_assert_notnull(bf1, "binfile");
 
 	mu_assert_ptreq(core->file, f1, "current file");
 	mu_assert_eq(rz_list_length(core->files), 2, "core files count");
@@ -168,6 +176,8 @@ bool test_map_close_multiple(void) {
 	rz_core_file_close(f0);
 	mu_assert_ptreq(core->file, f1, "closed non-current file");
 	mu_assert_eq(rz_pvector_len(&f1->extra_files), 1, "other file still has its extra file refs");
+	mu_assert_eq(rz_list_length(core->bin->binfiles), 1, "binfile loaded");
+	mu_assert_true(rz_list_contains(core->bin->binfiles, bf1), "other binfile still there");
 
 	// all maps related to the file, including zero-mmaps, should be closed
 	mu_assert_eq(rz_pvector_len(&core->io->maps), 3, "io maps count");
@@ -186,7 +196,7 @@ bool test_map_close_multiple(void) {
 }
 
 /// test behavior after closing an RzCoreFile when the underlying mappings have been changed manually
-bool test_map_close_manual_maps(void) {
+bool test_cfile_close_manual_maps(void) {
 	RzCore *core = rz_core_new();
 	rz_bin_plugin_add(core->bin, &mock_plugin);
 	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
@@ -262,7 +272,7 @@ bool test_map_close_manual_maps(void) {
 }
 
 /// test behavior after closing an RzCoreFile when the underlying fd has been closed manually
-bool test_map_close_manual_fd(void) {
+bool test_cfile_close_manual_fd(void) {
 	RzCore *core = rz_core_new();
 	rz_bin_plugin_add(core->bin, &mock_plugin);
 	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
@@ -301,10 +311,10 @@ bool test_map_close_manual_fd(void) {
 
 bool all_tests() {
 	mu_run_test(test_map);
-	mu_run_test(test_map_close);
-	mu_run_test(test_map_close_multiple);
-	mu_run_test(test_map_close_manual_maps);
-	mu_run_test(test_map_close_manual_fd);
+	mu_run_test(test_cfile_close);
+	mu_run_test(test_cfile_close_multiple);
+	mu_run_test(test_cfile_close_manual_maps);
+	mu_run_test(test_cfile_close_manual_fd);
 	return tests_passed != tests_run;
 }
 
