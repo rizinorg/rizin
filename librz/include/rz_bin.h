@@ -794,10 +794,10 @@ RZ_API void rz_bin_arch_options_init(RzBinArchOptions *opt, const char *arch, in
 // open/close/reload functions
 RZ_API RzBin *rz_bin_new(void);
 RZ_API void rz_bin_free(RzBin *bin);
-RZ_API bool rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt);
-RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt);
-RZ_API bool rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt);
-RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr);
+RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt);
+RZ_API RzBinFile *rz_bin_open_io(RzBin *bin, RzBinOptions *opt);
+RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt);
+RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr);
 
 // plugins/bind functions
 RZ_API void rz_bin_bind(RzBin *b, RzBinBind *bnd);

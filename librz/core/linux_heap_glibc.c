@@ -48,8 +48,8 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, -1, 0, 0, false);
-	bool res = rz_bin_open(bin, path, &opt);
-	if (!res) {
+	RzBinFile *libc_bf = rz_bin_open(bin, path, &opt);
+	if (!libc_bf) {
 		return vaddr;
 	}
 
@@ -61,8 +61,7 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 		}
 	}
 
-	RzBinFile *libc_bf = rz_bin_cur(bin);
-	rz_bin_file_delete(bin, libc_bf->id);
+	rz_bin_file_delete(bin, libc_bf);
 	rz_bin_file_set_cur_binfile(bin, current_bf);
 	return vaddr;
 }

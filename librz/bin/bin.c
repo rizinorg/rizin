@@ -213,12 +213,7 @@ RZ_API void rz_bin_string_free(void *_str) {
 	}
 }
 
-// XXX - change this to RzBinObject instead of RzBinFile
-// makes no sense to pass in a binfile and set the RzBinObject
-// kinda a clunky functions
-// XXX - this is a rather hacky way to do things, there may need to be a better
-// way.
-RZ_API bool rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
+RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 	rz_return_val_if_fail(bin && bin->iob.io && opt, false);
 
 	RzIOBind *iob = &(bin->iob);
@@ -234,27 +229,19 @@ RZ_API bool rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 	return rz_bin_open_io(bin, opt);
 }
 
-RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr) {
-	rz_return_val_if_fail(bin, false);
-
-	RzBinFile *bf = rz_bin_file_find_by_id(bin, bf_id);
-	if (!bf) {
-		eprintf("rz_bin_reload: No file to reopen\n");
-		return false;
-	}
+RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
+	rz_return_val_if_fail(bin && bf, false);
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
 	opt.filename = bf->file;
-
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
-
-	bool res = rz_bin_open_buf(bin, bf->buf, &opt);
+	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);
 	rz_bin_file_delete(bin, bf->id);
-	return res;
+	return nbf;
 }
 
-RZ_API bool rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
-	rz_return_val_if_fail(bin && opt, false);
+RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
+	rz_return_val_if_fail(bin && opt, NULL);
 
 	RzListIter *it;
 	RzBinXtrPlugin *xtr;
@@ -291,19 +278,17 @@ RZ_API bool rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
 		bf = rz_bin_file_new_from_buffer(bin, bin->file, buf, bin->rawstr,
 			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
 		if (!bf) {
-			return false;
+			return NULL;
 		}
 	}
-	if (!rz_bin_file_set_cur_binfile(bin, bf)) {
-		return false;
-	}
+	rz_bin_file_set_cur_binfile(bin, bf);
 	rz_id_storage_set(bin->ids, bin->cur, bf->id);
-	return true;
+	return bf;
 }
 
-RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
-	rz_return_val_if_fail(bin && opt && bin->iob.io, false);
-	rz_return_val_if_fail(opt->fd >= 0 && (st64)opt->sz >= 0, false);
+RZ_API RzBinFile *rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
+	rz_return_val_if_fail(bin && opt && bin->iob.io, NULL);
+	rz_return_val_if_fail(opt->fd >= 0 && (st64)opt->sz >= 0, NULL);
 
 	RzIOBind *iob = &(bin->iob);
 	RzIO *io = iob ? iob->io : NULL;
@@ -328,7 +313,7 @@ RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 		buf = rz_buf_new_with_io(&bin->iob, opt->fd);
 	}
 	if (!buf) {
-		return false;
+		return NULL;
 	}
 
 	if (!opt->sz) {
@@ -348,9 +333,9 @@ RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 	}
 
 	opt->filename = fname;
-	bool res = rz_bin_open_buf(bin, buf, opt);
+	RzBinFile *bf = rz_bin_open_buf(bin, buf, opt);
 	rz_buf_free(buf);
-	return res;
+	return bf;
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name) {

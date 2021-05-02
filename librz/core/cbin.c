@@ -307,11 +307,11 @@ RZ_API bool rz_core_bin_load_structs(RzCore *core, const char *file) {
 		return false;
 	}
 	RzBinOptions opt = { 0 };
-	if (!rz_bin_open(core->bin, file, &opt)) {
+	RzBinFile *bf = rz_bin_open(core->bin, file, &opt);
+	if (!bf) {
 		eprintf("Cannot open bin '%s'\n", file);
 		return false;
 	}
-	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!bf) {
 		eprintf("Cannot open bin '%s'\n", file);
 		return false;
