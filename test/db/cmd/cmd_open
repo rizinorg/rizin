@@ -109,7 +109,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=o -
+NAME=o =
 FILE=malloc://1024
 CMDS=<<EOF
 e file.nowarn=true
@@ -410,11 +410,21 @@ RUN
 NAME=o-*
 FILE==
 CMDS=<<EOF
-o -
+e asm.arch=x86
+e asm.bits=64
+o =
+o~?
+ob
+?e --
 o-*
 o~?
+ob
 EOF
 EXPECT=<<EOF
+2
+0 3 x86-64 ba:0x00000000 sz:512 malloc://512
+1 4 x86-64 ba:0x00000000 sz:512 malloc://512
+--
 0
 EOF
 RUN
@@ -422,24 +432,31 @@ RUN
 NAME=o-3
 FILE==
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 o =
 o-3
 o~?
+ob
 EOF
 EXPECT=<<EOF
 1
+1 4 x86-64 ba:0x00000000 sz:512 malloc://512
 EOF
 RUN
 
 NAME=oc
 FILE=bins/elf/true32
 CMDS=<<EOF
+ob~?
 i
 oc =
 ?e --
+ob~?
 i
 EOF
 EXPECT=<<EOF
+1
 fd       3
 file     bins/elf/true32
 size     0x560c
@@ -480,6 +497,7 @@ stripped true
 subsys   linux
 va       true
 --
+1
 fd       3
 file     malloc://512
 size     0x200

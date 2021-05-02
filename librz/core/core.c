@@ -2332,6 +2332,7 @@ static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 
 RZ_IPI void rz_core_file_io_desc_closed(RzCore *core, RzIODesc *desc);
 RZ_IPI void rz_core_file_io_map_deleted(RzCore *core, RzIOMap *map);
+RZ_IPI void rz_core_file_bin_file_deleted(RzCore *core, RzBinFile *bf);
 
 static void ev_iodescclose_cb(RzEvent *ev, int type, void *user, void *data) {
 	RzEventIODescClose *ioc = data;
@@ -2341,6 +2342,11 @@ static void ev_iodescclose_cb(RzEvent *ev, int type, void *user, void *data) {
 static void ev_iomapdel_cb(RzEvent *ev, int type, void *user, void *data) {
 	RzEventIOMapDel *iod = data;
 	rz_core_file_io_map_deleted(user, iod->map);
+}
+
+static void ev_binfiledel_cb(RzEvent *ev, int type, void *user, void *data) {
+	RzEventBinFileDel *bev = data;
+	rz_core_file_bin_file_deleted(user, bev->bf);
 }
 
 RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user);
@@ -2463,6 +2469,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	/// XXX shouhld be using coreb
 	rz_parse_set_user_ptr(core->parser, core);
 	core->bin = rz_bin_new();
+	rz_event_hook(core->bin->event, RZ_EVENT_BIN_FILE_DEL, ev_binfiledel_cb, core);
 	rz_cons_bind(&core->bin->consb);
 	// XXX we shuold use RzConsBind instead of this hardcoded pointer
 	core->bin->cb_printf = (PrintfCallback)rz_cons_printf;
