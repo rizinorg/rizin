@@ -18,6 +18,7 @@ static RzCoreFile *core_file_new(RzCore *core, int fd) {
 	}
 	r->core = core;
 	r->fd = fd;
+	rz_pvector_init(&r->binfiles, NULL);
 	rz_pvector_init(&r->extra_files, NULL);
 	rz_pvector_init(&r->maps, NULL);
 	return r;
@@ -27,6 +28,7 @@ RZ_IPI void rz_core_file_free(RzCoreFile *cf) {
 	if (!cf) {
 		return;
 	}
+	rz_pvector_fini(&cf->binfiles);
 	rz_pvector_fini(&cf->extra_files);
 	rz_pvector_fini(&cf->maps);
 	free(cf);
@@ -670,6 +672,10 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 		}
 	}
 
+	if (binfile && cf) {
+		rz_pvector_push(&cf->binfiles, binfile);
+	}
+
 	if (*rz_config_get(r->config, "dbg.libs")) {
 		rz_core_cmd0(r, ".dmm*");
 #if __linux__
@@ -722,6 +728,9 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 	if (!binfile) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
+	}
+	if (cf) {
+		rz_pvector_push(&cf->binfiles, binfile);
 	}
 	if (rz_core_bin_apply_all_info(r, binfile)) {
 		if (!r->analysis->sdb_cc->path) {
@@ -1219,6 +1228,15 @@ RZ_IPI void rz_core_file_io_map_deleted(RzCore *core, RzIOMap *map) {
 	}
 }
 
+RZ_IPI void rz_core_file_bin_file_deleted(RzCore *core, RzBinFile *bf) {
+	// remove all references to the deleted binfile
+	RzListIter *it;
+	RzCoreFile *cf;
+	rz_list_foreach (core->files, it, cf) {
+		rz_pvector_remove_data(&cf->binfiles, bf);
+	}
+}
+
 RZ_API void rz_core_file_close(RzCoreFile *fh) {
 	rz_return_if_fail(fh && fh->core);
 	RzCore *r = fh->core;
@@ -1237,6 +1255,10 @@ RZ_API void rz_core_file_close(RzCoreFile *fh) {
 	while (!rz_pvector_empty(&fh->extra_files)) {
 		// same as for maps above
 		rz_io_desc_close(rz_pvector_at(&fh->extra_files, rz_pvector_len(&fh->extra_files) - 1));
+	}
+	while (!rz_pvector_empty(&fh->binfiles)) {
+		// same as for maps above
+		rz_bin_file_delete(r->bin, rz_pvector_at(&fh->binfiles, rz_pvector_len(&fh->binfiles) - 1));
 	}
 	if (r->file == fh) {
 		r->file = NULL;
