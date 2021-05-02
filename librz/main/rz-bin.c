@@ -1065,15 +1065,12 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_bin_options_init(&bo, fd, baddr, laddr, rawstr);
 	bo.xtr_idx = xtr_idx;
 
-	if (!rz_bin_open(bin, file, &bo)) {
-		//if this return false means that we did not return a valid bin object
-		//but we have yet the chance that this file is a fat binary
-		if (!bin->cur || !bin->cur->xtr_data) {
-			eprintf("rz-bin: Cannot open file\n");
-			rz_core_file_close(fh);
-			rz_core_fini(&core);
-			return 1;
-		}
+	RzBinFile *bf = rz_bin_open(bin, file, &bo);
+	if (!bf) {
+		eprintf("rz-bin: Cannot open file\n");
+		rz_core_file_close(fh);
+		rz_core_fini(&core);
+		return 1;
 	}
 	/* required to automatically select a sub-bin when not specified */
 	(void)rz_core_bin_update_arch_bits(&core);
@@ -1082,11 +1079,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_bin_set_baddr(bin, baddr);
 	}
 	if (rawstr == 2) {
-		RzBinFile *bf = rz_bin_cur(core.bin);
-		if (bf) {
-			bf->strmode = rad;
-			rz_bin_dump_strings(bf, bin->minstrlen, bf->rawstr);
-		}
+		bf->strmode = rad;
+		rz_bin_dump_strings(bf, bin->minstrlen, bf->rawstr);
 	}
 	if (query) {
 		if (rad) {
@@ -1179,8 +1173,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rabin_show_srcline(bin, at);
 	}
 	if (action & RZ_BIN_REQ_EXTRACT) {
-		RzBinFile *bf = rz_bin_cur(bin);
-		if (bf && bf->xtr_data) {
+		if (bf->xtr_data) {
 			rabin_extract(bin, (!arch && !arch_name && !bits));
 		} else {
 			eprintf(

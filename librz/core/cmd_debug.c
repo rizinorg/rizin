@@ -1421,7 +1421,8 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	opt.sz = rz_io_fd_size(core->io, fd);
 	opt.baseaddr = baseaddr;
 	RzBinFile *obf = rz_bin_cur(core->bin);
-	if (!rz_bin_open_io(core->bin, &opt)) {
+	RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+	if (!bf) {
 		rz_io_fd_close(core->io, fd);
 		return false;
 	}
@@ -1436,7 +1437,6 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	} else {
 		rz_core_bin_info(core, action, pj, mode, 1, filter, NULL);
 	}
-	RzBinFile *bf = rz_bin_cur(core->bin);
 	rz_bin_file_delete(core->bin, bf->id);
 	rz_bin_file_set_cur_binfile(core->bin, obf);
 	rz_io_fd_close(core->io, fd);

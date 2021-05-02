@@ -82,8 +82,8 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
-	mu_assert("couldn't open file", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfDebugAbbrev *da = NULL;
 	// mode = 0, calls
@@ -197,8 +197,8 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/dwarf3_cpp.elf", &opt);
-	mu_assert("couldn't open file", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_cpp.elf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	// this is probably ugly, but I didn't know how to
 	// tell core  what bin to open so I did it myself
@@ -588,8 +588,8 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
-	mu_assert("couldn't open file", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfDebugAbbrev *da = NULL;
 	// mode = 0, calls
@@ -694,8 +694,8 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/pe/hello_world_not_stripped.exe", &opt);
-	mu_assert("couldn't open file", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/pe/hello_world_not_stripped.exe", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfDebugAbbrev *da = NULL;
 	// mode = 0, calls
@@ -753,8 +753,8 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
-	mu_assert("couldn't open file", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfDebugAbbrev *da = NULL;
 	// mode = 0, calls
@@ -860,8 +860,8 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
-	mu_assert("couldn't open file", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	// TODO add abbrev checks
 
@@ -960,8 +960,8 @@ bool test_dwarf4_multidir_comp_units(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/dwarf4_multidir_comp_units", &opt);
-	mu_assert("couldn't open file", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_multidir_comp_units", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(da, "abbrevs");
@@ -1003,8 +1003,8 @@ bool test_big_endian_dwarf2(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
-	mu_assert("couldn't open file", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfLineInfo *li = rz_bin_dwarf_parse_line(bin->cur, NULL, RZ_BIN_DWARF_LINE_INFO_MASK_OPS | RZ_BIN_DWARF_LINE_INFO_MASK_LINES);
 	mu_assert_notnull(li, "line info");
@@ -1502,8 +1502,8 @@ bool test_dwarf3_aranges(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
-	mu_assert("couldn't open file", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzList *aranges = rz_bin_dwarf_parse_aranges(bin->cur);
 	mu_assert_eq(rz_list_length(aranges), 2, "arange sets count");

@@ -631,7 +631,6 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri) {
 	RzCoreFile *cf = rz_core_file_cur(r);
 	RzIODesc *desc = cf ? rz_io_desc_get(r->io, cf->fd) : NULL;
-	RzBinFile *binfile = NULL;
 	RzBinPlugin *plugin;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 
@@ -658,12 +657,14 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false);
 	opt.xtr_idx = xtr_idx;
-	if (!rz_bin_open(r->bin, filenameuri, &opt)) {
+	RzBinFile *binfile = rz_bin_open(r->bin, filenameuri, &opt);
+	if (!binfile) {
 		eprintf("RzBinLoad: Cannot open %s\n", filenameuri);
 		if (rz_config_get_i(r->config, "bin.rawstr")) {
 			rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, true);
 			opt.xtr_idx = xtr_idx;
-			if (!rz_bin_open(r->bin, filenameuri, &opt)) {
+			binfile = rz_bin_open(r->bin, filenameuri, &opt);
+			if (!binfile) {
 				return false;
 			}
 		}
@@ -680,7 +681,6 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 		setbpint(r, "dbg.libs", "sym._dlclose");
 #endif
 	}
-	binfile = rz_bin_cur(r->bin);
 	rz_core_bin_apply_all_info(r, binfile);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin && !strcmp(plugin->name, "any")) {
@@ -708,7 +708,6 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RzCoreFile *cf = rz_core_file_cur(r);
 	int fd = cf ? cf->fd : -1;
-	RzBinFile *binfile = NULL;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 	RzBinPlugin *plugin;
 
@@ -719,11 +718,11 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
 	opt.xtr_idx = xtr_idx;
-	if (!rz_bin_open_io(r->bin, &opt)) {
+	RzBinFile *binfile = rz_bin_open_io(r->bin, &opt);
+	if (!binfile) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
-	binfile = rz_bin_cur(r->bin);
 	if (rz_core_bin_apply_all_info(r, binfile)) {
 		if (!r->analysis->sdb_cc->path) {
 			RZ_LOG_WARN("No calling convention defined for this file, analysis may be inaccurate.\n");

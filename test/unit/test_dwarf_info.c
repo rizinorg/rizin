@@ -57,8 +57,8 @@ bool test_dwarf3_c(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
-	mu_assert("dwarf3_c.elf binary could not be opened", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf3_c.elf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 7, "Incorrect number of abbreviation");
@@ -120,8 +120,8 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
-	mu_assert("dwarf4_many_comp_units.elf binary could not be opened", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 37, "Incorrect number of abbreviation");
@@ -330,8 +330,8 @@ bool test_dwarf2_big_endian(void) {
 	rz_io_bind(io, &bin->iob);
 
 	RzBinOptions opt = { 0 };
-	bool res = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
-	mu_assert("dwarf4_many_comp_units.elf binary could not be opened", res);
+	RzBinFile *bf = rz_bin_open(bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
+	mu_assert_notnull(bf, "couldn't open file");
 
 	RzBinDwarfDebugAbbrev *da = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_eq(da->count, 108, "Incorrect number of abbreviation");
