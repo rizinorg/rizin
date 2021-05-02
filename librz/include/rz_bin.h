@@ -320,6 +320,7 @@ struct rz_bin_t {
 	RZ_DEPRECATE RzBinFile *cur; ///< never use this in new code! Get a file from the binfiles list or track it yourself.
 	int narch;
 	void *user;
+	RzEvent *event;
 	/* preconfigured values */
 	int debase64;
 	int minstrlen;
@@ -783,6 +784,10 @@ typedef struct rz_bin_options_t {
 	const char *filename;
 } RzBinOptions;
 
+typedef struct rz_event_bin_file_del_t {
+	RzBinFile *bf;
+} RzEventBinFileDel;
+
 RZ_API RzBinImport *rz_bin_import_clone(RzBinImport *o);
 RZ_API const char *rz_bin_symbol_name(RzBinSymbol *s);
 typedef void (*RzBinSymbolCallback)(RzBinObject *obj, RzBinSymbol *symbol);
@@ -853,10 +858,6 @@ RZ_API const char *rz_bin_entry_type_string(int etype);
 
 RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, ut64 baseaddr, ut64 loadaddr, RzBinXtrData *data);
 
-// RzBinFile lifecycle
-// RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr);
-RZ_API bool rz_bin_file_close(RzBin *bin, int bd);
-RZ_API void rz_bin_file_free(void /*RzBinFile*/ *bf_);
 // RzBinFile.get
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
 RZ_API RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
@@ -879,7 +880,7 @@ RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
 RZ_API ut64 rz_bin_file_delete_all(RzBin *bin);
-RZ_API bool rz_bin_file_delete(RzBin *bin, ut32 bin_id);
+RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf);
 RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, ut64 limit);
 RZ_API RzList *rz_bin_file_set_hashes(RzBin *bin, RzList *new_hashes);
 RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *binfile);

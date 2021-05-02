@@ -374,7 +374,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		bool had_rbin_info = false;
 
 		if (ofile && bf) {
-			if (rz_bin_file_delete(core->bin, bf->id)) {
+			if (rz_bin_file_delete(core->bin, bf)) {
 				had_rbin_info = true;
 			}
 		}

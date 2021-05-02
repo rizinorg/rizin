@@ -718,7 +718,7 @@ RZ_API bool rz_core_bin_load(RzCore *core, const char *file, ut64 baseaddr);
 RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr);
 RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
 RZ_API int rz_core_bin_list(RzCore *core, int mode);
-RZ_API bool rz_core_bin_delete(RzCore *core, ut32 binfile_idx);
+RZ_API bool rz_core_bin_delete(RzCore *core, RzBinFile *bf);
 RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name);
 
 RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSourceLineSample *s, RzOutputMode mode, PJ *pj);
