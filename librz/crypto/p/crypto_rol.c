@@ -88,6 +88,8 @@ static bool rol_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_rol = {
 	.name = NAME,
+	.author = "pancake",
+	.license = "LGPL-3",
 	.set_key = rol_set_key,
 	.get_key_size = rol_get_key_size,
 	.use = rol_use,

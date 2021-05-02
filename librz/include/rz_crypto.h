@@ -40,6 +40,7 @@ typedef struct rz_crypto_t {
 typedef struct rz_crypto_plugin_t {
 	const char *name;
 	const char *license;
+	const char *author;
 	int (*get_key_size)(RzCrypto *cry);
 	bool (*set_iv)(RzCrypto *cry, const ut8 *iv, int ivlen);
 	bool (*set_key)(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
@@ -65,6 +66,7 @@ RZ_API int rz_crypto_append(RzCrypto *cry, const ut8 *buf, int len);
 RZ_API const ut8 *rz_crypto_get_output(RzCrypto *cry, int *size);
 RZ_API const char *rz_crypto_name(const RzCryptoSelector bit);
 RZ_API const char *rz_crypto_codec_name(const RzCryptoSelector bit);
+RZ_API const RzCryptoPlugin *rz_crypto_plugin_by_index(size_t index);
 #endif
 
 /* plugin pointers */

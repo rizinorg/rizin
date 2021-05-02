@@ -183,6 +183,7 @@ RZ_API void rz_debug_session_restore_reg_mem(RzDebug *dbg, ut32 cnum) {
 }
 
 RZ_API void rz_debug_session_list_memory(RzDebug *dbg) {
+	RzMsgDigestSize dsize;
 	RzListIter *iter;
 	RzDebugMap *map;
 	rz_debug_map_sync(dbg);
@@ -193,13 +194,13 @@ RZ_API void rz_debug_session_list_memory(RzDebug *dbg) {
 				return;
 			}
 
-			ut8 *hash = rz_debug_snap_get_hash(snap);
+			ut8 *hash = rz_debug_snap_get_hash(snap, &dsize);
 			if (!hash) {
 				rz_debug_snap_free(snap);
 				return;
 			}
 
-			char *hexstr = rz_hex_bin2strdup(hash, RZ_HASH_SIZE_SHA256);
+			char *hexstr = rz_hex_bin2strdup(hash, dsize);
 			if (!hexstr) {
 				free(hash);
 				rz_debug_snap_free(snap);

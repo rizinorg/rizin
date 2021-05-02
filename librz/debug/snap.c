@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
-#include <rz_hash.h>
 
 RZ_API void rz_debug_snap_free(RzDebugSnap *snap) {
 	if (snap) {
@@ -48,53 +47,21 @@ RZ_API bool rz_debug_snap_contains(RzDebugSnap *snap, ut64 addr) {
 	return (snap->addr <= addr && addr >= snap->addr_end);
 }
 
-RZ_API ut8 *rz_debug_snap_get_hash(RzDebugSnap *snap) {
-	ut64 algobit = rz_hash_name_to_bits("sha256");
-	RzHash *ctx = rz_hash_new(true, algobit);
-	if (!ctx) {
+RZ_API ut8 *rz_debug_snap_get_hash(RzDebugSnap *snap, RzMsgDigestSize *size) {
+	ut8 *digest = rz_msg_digest_calculate_small_block("sha256", snap->data, snap->size, size);
+	if (!digest) {
 		return NULL;
 	}
-
-	rz_hash_do_begin(ctx, algobit);
-	rz_hash_calculate(ctx, algobit, snap->data, snap->size);
-	rz_hash_do_end(ctx, algobit);
-
-	ut8 *ret = malloc(RZ_HASH_SIZE_SHA256);
-	if (!ret) {
-		rz_hash_free(ctx);
-		return NULL;
-	}
-	memcpy(ret, ctx->digest, RZ_HASH_SIZE_SHA256);
-
-	rz_hash_free(ctx);
-	return ret;
+	return digest;
 }
 
 RZ_API bool rz_debug_snap_is_equal(RzDebugSnap *a, RzDebugSnap *b) {
-	bool ret = false;
-	ut64 algobit = rz_hash_name_to_bits("sha256");
-	RzHash *ctx = rz_hash_new(true, algobit);
-	if (!ctx) {
-		return ret;
-	}
+	RzMsgDigestSize digest_size = 0;
+	ut8 *a_dgst = rz_debug_snap_get_hash(a, &digest_size);
+	ut8 *b_dgst = rz_debug_snap_get_hash(b, NULL);
 
-	rz_hash_do_begin(ctx, algobit);
-	rz_hash_calculate(ctx, algobit, a->data, a->size);
-	rz_hash_do_end(ctx, algobit);
-
-	ut8 *temp = malloc(RZ_HASH_SIZE_SHA256);
-	if (!temp) {
-		rz_hash_free(ctx);
-		return ret;
-	}
-	memcpy(temp, ctx->digest, RZ_HASH_SIZE_SHA256);
-
-	rz_hash_do_begin(ctx, algobit);
-	rz_hash_calculate(ctx, algobit, b->data, b->size);
-	rz_hash_do_end(ctx, algobit);
-
-	ret = memcmp(temp, ctx->digest, RZ_HASH_SIZE_SHA256) == 0;
-	free(temp);
-	rz_hash_free(ctx);
+	bool ret = a_dgst && b_dgst && !memcmp(a_dgst, b_dgst, digest_size);
+	free(a_dgst);
+	free(b_dgst);
 	return ret;
 }

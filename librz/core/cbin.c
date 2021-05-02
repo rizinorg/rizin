@@ -724,7 +724,7 @@ static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinMap *map, ut6
 }
 
 RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
-	rz_return_val_if_fail(core && binfile, NULL);
+	rz_return_val_if_fail(core && binfile, false);
 	RzIODesc *desc = rz_io_desc_get(core->io, binfile->fd);
 	if (desc && rz_io_desc_is_dbg(desc)) {
 		// In debug mode, mapping comes from the process, not the file
@@ -765,7 +765,7 @@ static void section_perms_str(char *dst, int perms) {
 }
 
 RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va) {
-	rz_return_val_if_fail(core && binfile, NULL);
+	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
 	if (!o) {
 		return false;
@@ -1061,7 +1061,7 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 }
 
 RZ_API bool rz_core_bin_apply_imports(RzCore *core, RzBinFile *binfile, bool va) {
-	rz_return_val_if_fail(core && binfile, NULL);
+	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
 	RzBinInfo *info = o ? o->info : NULL;
 	if (!info) {
@@ -1237,7 +1237,7 @@ static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
 }
 
 RZ_API bool rz_core_bin_apply_symbols(RzCore *core, RzBinFile *binfile, bool va) {
-	rz_return_val_if_fail(core && binfile, NULL);
+	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
 	if (!o || !o->info) {
 		return false;
@@ -1384,7 +1384,7 @@ RZ_API bool rz_core_bin_apply_classes(RzCore *core, RzBinFile *binfile) {
 }
 
 RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
-	rz_return_val_if_fail(core && binfile, NULL);
+	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
 	RzBinInfo *info = o ? o->info : NULL;
 	if (!info || !info->rclass) {
@@ -1871,19 +1871,6 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		for (i = 0; info->sum[i].type; i++) {
 			RzBinHash *h = &info->sum[i];
-			ut64 hash = rz_hash_name_to_bits(h->type);
-			RzHash *rh = rz_hash_new(true, hash);
-			ut8 *tmp = RZ_NEWS(ut8, h->to);
-			if (!tmp) {
-				return false;
-			}
-			rz_buf_read_at(bf->buf, h->from, tmp, h->to);
-			int len = rz_hash_calculate(rh, hash, tmp, h->to);
-			free(tmp);
-			if (len < 1) {
-				eprintf("Invalid checksum length\n");
-			}
-			rz_hash_free(rh);
 			if (IS_MODE_JSON(mode)) {
 				pj_ko(pj, h->type);
 				char *buf = malloc(2 * h->len + 1);
@@ -2715,7 +2702,7 @@ static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, 
 	RzListIter *iter;
 	char *hashname;
 	rz_list_foreach (hashlist, iter, hashname) {
-		chkstr = rz_hash_to_string(NULL, hashname, data, datalen);
+		chkstr = rz_msg_digest_calculate_small_block_string(hashname, data, datalen, NULL, false);
 		if (!chkstr) {
 			continue;
 		}
@@ -2745,7 +2732,7 @@ static char *filter_hash_string(const char *chksum) {
 	RzListIter *iter;
 	char *hashname;
 	rz_list_foreach (hashlist, iter, hashname) {
-		if (rz_hash_name_to_bits(hashname)) {
+		if (rz_msg_digest_plugin_by_name(hashname)) {
 			aux = rz_str_newf(isFirst ? "%s" : ", %s", hashname);
 			ret = rz_str_append(ret, aux);
 			free(aux);
@@ -4337,7 +4324,7 @@ RZ_API bool rz_core_bin_delete(RzCore *core, ut32 bf_id) {
 }
 
 static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, PJ *pj, int mode) {
-	rz_return_val_if_fail(core && bf && bf->o, NULL);
+	rz_return_val_if_fail(core && bf && bf->o, false);
 	const char *name = bf ? bf->file : NULL;
 	(void)rz_bin_get_info(core->bin); // XXX is this necssary for proper iniitialization
 	ut32 bin_sz = bf ? bf->size : 0;

@@ -87,6 +87,10 @@ for:
             - RUN_TESTS: true
 
     test_script:
+      - if %builder% == vs2017_64 ( call "%VSVARSALLPATH2017%" x64 )
+      - if %builder% == vs2019_64 ( call "%VSVARSALLPATH2019%" x64 )
+      - if %builder% == vs2017_64_dyn ( call "%VSVARSALLPATH2017%" x64 )
+      - if %builder% == clang_cl_64_dyn ( call "%VSVARSALLPATH2019%" x64 )
       - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\Python38-x64;C:\msys64\mingw64\bin;%PATH%
       - echo %PATH%
       - where rizin

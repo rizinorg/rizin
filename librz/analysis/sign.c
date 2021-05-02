@@ -6,6 +6,7 @@
 #include <rz_sign.h>
 #include <rz_search.h>
 #include <rz_core.h>
+#include <rz_msg_digest.h>
 
 RZ_LIB_VERSION(rz_sign);
 
@@ -779,7 +780,7 @@ RZ_API bool rz_sign_add_hash(RzAnalysis *a, const char *name, int type, const ch
 		eprintf("error: hash type unknown");
 		return false;
 	}
-	int digestsize = rz_hash_size(RZ_ZIGN_HASH) * 2;
+	int digestsize = ZIGN_HASH_SIZE * 2;
 	if (len != digestsize) {
 		eprintf("error: invalid hash size: %d (%s digest size is %d)\n", len, ZIGN_HASH, digestsize);
 		return false;
@@ -2084,30 +2085,41 @@ RZ_API char *rz_sign_calc_bbhash(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	RzListIter *iter = NULL;
 	RzAnalysisBlock *bbi = NULL;
 	char *digest_hex = NULL;
-	RzHash *ctx = rz_hash_new(true, RZ_ZIGN_HASH);
-	if (!ctx) {
+	RzMsgDigestSize digest_size = 0;
+	const ut8 *digest = NULL;
+	RzMsgDigest *md = NULL;
+	ut8 *buf = NULL;
+
+	md = rz_msg_digest_new_with_algo2(ZIGN_HASH);
+	if (!md) {
 		goto beach;
 	}
+
 	rz_list_sort(fcn->bbs, &cmpaddr);
-	rz_hash_do_begin(ctx, RZ_ZIGN_HASH);
 	rz_list_foreach (fcn->bbs, iter, bbi) {
-		ut8 *buf = malloc(bbi->size);
+		buf = malloc(bbi->size);
 		if (!buf) {
 			goto beach;
 		}
 		if (!a->iob.read_at(a->iob.io, bbi->addr, buf, bbi->size)) {
 			goto beach;
 		}
-		if (!rz_hash_do_sha256(ctx, buf, bbi->size)) {
+		if (!rz_msg_digest_update(md, buf, bbi->size)) {
 			goto beach;
 		}
-		free(buf);
+		RZ_FREE(buf);
 	}
-	rz_hash_do_end(ctx, RZ_ZIGN_HASH);
 
-	digest_hex = rz_hex_bin2strdup(ctx->digest, rz_hash_size(RZ_ZIGN_HASH));
+	if (!rz_msg_digest_final(md) ||
+		!(digest = rz_msg_digest_get_result(md, ZIGN_HASH, &digest_size))) {
+		goto beach;
+	}
+
+	digest_hex = rz_hex_bin2strdup(digest, digest_size);
+
 beach:
-	free(ctx);
+	rz_msg_digest_free(md);
+	free(buf);
 	return digest_hex;
 }
 

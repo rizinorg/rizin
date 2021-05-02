@@ -44,6 +44,7 @@ if get_option('enable_tests')
     'flags',
     'glob',
     'graph',
+    'hash',
     'hex',
     'id_storage',
     'idpool',

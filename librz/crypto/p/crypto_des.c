@@ -182,6 +182,8 @@ static bool des_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_des = {
 	.name = "des-ecb",
+	.author = "deroad",
+	.license = "LGPL-3",
 	.set_key = des_set_key,
 	.get_key_size = des_get_key_size,
 	.use = des_use,

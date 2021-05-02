@@ -41,6 +41,8 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 
 RzCryptoPlugin rz_crypto_plugin_punycode = {
 	.name = "punycode",
+	.author = "pancake",
+	.license = "LGPL-3",
 	.set_key = punycode_set_key,
 	.get_key_size = punycode_get_key_size,
 	.use = punycode_use,

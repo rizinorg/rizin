@@ -3,7 +3,6 @@
 
 #include <ht_uu.h>
 #include <rz_core.h>
-#include <rz_hash.h>
 #include "rz_io.h"
 #include "rz_list.h"
 #include "rz_types_base.h"
@@ -214,13 +213,13 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 				if (rz_cons_is_breaked()) {
 					break;
 				}
-				char *s = rz_hash_to_string(NULL, hashname, buf + i, len);
-				if (!(i % 5)) {
-					eprintf("%d\r", i);
-				}
+				char *s = rz_msg_digest_calculate_small_block_string(hashname, buf + i, len, NULL, false);
 				if (!s) {
 					eprintf("Hash fail\n");
 					break;
+				}
+				if (!(i % 5)) {
+					eprintf("%d\r", i);
 				}
 				// eprintf ("0x%08"PFMT64x" %s\n", from+i, s);
 				if (!strcmp(s, hashstr)) {
@@ -2752,7 +2751,10 @@ static void incDigitBuffer(ut8 *buf, int bufsz) {
 
 static void search_collisions(RzCore *core, const char *hashName, const ut8 *hashValue, int hashLength, int mode) {
 	ut8 RZ_ALIGNED(8) cmphash[128];
-	int i, algoType = RZ_HASH_CRC32;
+	const RzMsgDigestPlugin *crc32 = rz_msg_digest_plugin_by_name("crc32");
+	ut8 *digest = NULL;
+
+	int i = 0;
 	int bufsz = core->blocksize;
 	ut8 *buf = calloc(1, bufsz);
 	if (!buf) {
@@ -2766,19 +2768,12 @@ static void search_collisions(RzCore *core, const char *hashName, const ut8 *has
 	}
 	memcpy(cmphash, hashValue, hashLength);
 
-	ut64 hashBits = rz_hash_name_to_bits(hashName);
-	int hashSize = rz_hash_size(hashBits);
-	if (hashLength != hashSize) {
-		eprintf("Invalid hash size %d vs %d\n", hashLength, hashSize);
+	if (hashLength != 4) {
+		eprintf("Invalid hash size %d (expected 4)\n", hashLength);
 		free(buf);
 		return;
 	}
 
-	RzHash *ctx = rz_hash_new(true, algoType);
-	if (!ctx) {
-		free(buf);
-		return;
-	}
 	rz_cons_break_push(NULL, NULL);
 	ut64 prev = rz_time_now_mono();
 	ut64 inc = 0;
@@ -2823,25 +2818,23 @@ static void search_collisions(RzCore *core, const char *hashName, const ut8 *has
 			eprintf(" \"%s\"", buf);
 		}
 
-		rz_hash_do_begin(ctx, hashBits);
-		(void)rz_hash_calculate(ctx, hashBits, buf, bufsz);
-		rz_hash_do_end(ctx, hashBits);
+		crc32->small_block(buf, bufsz, &digest, NULL);
 
 		eprintf(" digest:");
 		for (i = 0; i < hashLength; i++) {
-			eprintf("%02x", ctx->digest[i]);
+			eprintf("%02x", digest[i]);
 		}
 		eprintf(" (%d h/s)  \r", mount);
-		if (!memcmp(hashValue, ctx->digest, hashLength)) {
+		if (!memcmp(hashValue, digest, hashLength)) {
 			eprintf("\nCOLLISION FOUND!\n");
 			rz_print_hexdump(core->print, core->offset, buf, bufsz, 0, 16, 0);
 			rz_cons_flush();
 		}
+		RZ_FREE(digest);
 		inc++;
 	}
 	rz_cons_break_pop();
 	free(buf);
-	rz_hash_free(ctx);
 }
 
 static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {

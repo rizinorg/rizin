@@ -25,7 +25,7 @@
 #include <rz_flag.h>
 #include <rz_config.h>
 #include <rz_bin.h>
-#include <rz_hash.h>
+#include <rz_msg_digest.h>
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 #include <rz_crypto.h>

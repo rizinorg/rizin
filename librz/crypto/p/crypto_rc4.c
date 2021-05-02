@@ -125,6 +125,8 @@ static bool rc4_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_rc4 = {
 	.name = "rc4",
+	.author = "pancake",
+	.license = "LGPL-3",
 	.set_key = rc4_set_key,
 	.get_key_size = rc4_get_key_size,
 	.use = rc4_use,
@@ -140,21 +142,4 @@ RZ_API RzLibStruct rizin_plugin = {
 	.data = &rz_crypto_plugin_rc4,
 	.version = RZ_VERSION
 };
-#endif
-
-#if 0
-int main() {
-	ut8 out[32];
-	struct rc4_state st;
-
-	/* encrypt */
-	rc4_init (&st, (const ut8*)"key", 3);
-	rc4_crypt(&st, (const ut8*)"hello world", out, sizeof (out));
-
-	/* decrypt */
-	rc4_init (&st, (const ut8*)"key", 3);
-	rc4_crypt(&st, out, out, sizeof (out));
-
-	eprintf ("%s\n", (const char *)out); // must print "hello world"
-}
 #endif

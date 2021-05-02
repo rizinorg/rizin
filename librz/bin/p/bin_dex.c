@@ -9,8 +9,15 @@
 #include <rz_bin.h>
 #include "../i/private.h"
 #include "dex/dex.h"
-#define rz_hash_adler32 __adler32
-#include "../../hash/adler32.c"
+
+static ut32 __adler32(const ut8 *data, int len) {
+	ut32 a = 1, b = 0;
+	for (int i = 0; i < len; i++) {
+		a = (a + data[i]) % 65521;
+		b = (b + a) % 65521;
+	}
+	return (b << 16) | a;
+}
 
 // globals to be removed
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_dex;

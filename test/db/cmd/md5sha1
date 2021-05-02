@@ -8,7 +8,6 @@ w hello world
 ph md5 11
 ph md5 @!11
 ph sha1 11
-ph pcprint
 EOF
 EXPECT=<<EOF
 3b5d3c7d207e37dceeedd301e35e2e58
@@ -16,7 +15,6 @@ fa8715078d45101200a6e2bf7321aa04
 5eb63bbbe01eeed093cb22bb8f5acdc3
 5eb63bbbe01eeed093cb22bb8f5acdc3
 2aae6c35c94fcfb415dbe95f408b9ce91ee846ed
-11
 EOF
 RUN
 
@@ -59,7 +57,7 @@ string: crc15can: 727a
 string: crc16hdlc: ae06
 string: crc16usb: 2238
 string: crc16citt: efeb
-string: crc24: b03cb7
+string: crc24: 00b03cb7
 string: crc32c: c99465aa
 string: crc32ecma267: ac86f845
 a8
@@ -67,7 +65,7 @@ a8
 ae06
 2238
 efeb
-b03cb7
+00b03cb7
 c99465aa
 ac86f845
 EOF

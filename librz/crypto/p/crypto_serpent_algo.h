@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 NicsTr <nicolas.bordes@grenoble-inp.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef CRYPTO_SERPENT_ALGO_H
 #define CRYPTO_SERPENT_ALGO_H
 

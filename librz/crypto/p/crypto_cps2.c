@@ -2941,6 +2941,8 @@ static bool cps2_fini(RzCrypto *cry) {
 
 RzCryptoPlugin rz_crypto_plugin_cps2 = {
 	.name = "cps2",
+	.author = "pancake,esanfelix,pof",
+	.license = "LGPL-3",
 	.set_key = set_key,
 	.get_key_size = get_key_size,
 	.use = cps2_use,
