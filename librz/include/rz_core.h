@@ -503,6 +503,7 @@ RZ_API void rz_core_visual_jump(RzCore *core, ut8 ch);
 RZ_API void rz_core_visual_disasm_up(RzCore *core, int *cols);
 RZ_API void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols);
 RZ_API RzBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size);
+RZ_API RzBinReloc *rz_core_get_reloc_to(RzCore *core, ut64 addr);
 RZ_API ut64 rz_core_get_asmqjmps(RzCore *core, const char *str);
 RZ_API void rz_core_set_asmqjmps(RzCore *core, char *str, size_t len, int i);
 RZ_API char *rz_core_add_asmqjmp(RzCore *core, ut64 addr);

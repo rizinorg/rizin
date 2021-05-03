@@ -254,7 +254,7 @@ CMDS=fs
 EXPECT=<<EOF
     0 * classes
     3 * imports
-    3 * relocs
+    4 * relocs
    30 * sections
     9 * segments
     1 * strings
@@ -273,7 +273,7 @@ EXPECT=<<EOF
     0 * classes
     0 * functions
     3 * imports
-    3 * relocs
+    4 * relocs
    30 * sections
     9 * segments
     1 * strings
@@ -290,7 +290,7 @@ EXPECT=<<EOF
     0 * classes
     1 * functions
     3 * imports
-    3 * relocs
+    4 * relocs
    30 * sections
     9 * segments
     1 * strings
@@ -416,7 +416,7 @@ NAME=flags (total)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=f~?
 EXPECT=<<EOF
-106
+107
 EOF
 RUN
 
@@ -511,12 +511,13 @@ EXPECT=<<EOF
 0x080495a8 0 sym..dynamic
 0x080495a8 0 obj._DYNAMIC
 0x08049690 4 section..got
+0x08049690 4 reloc.__gmon_start
 0x08049690 0 sym..got
 0x08049694 24 section..got.plt
 0x08049694 0 sym..got.plt
 0x08049694 0 obj._GLOBAL_OFFSET_TABLE
 0x080496a0 4 reloc.puts
-0x080496a4 4 reloc.__gmon_start
+0x080496a4 4 reloc.__gmon_start.0
 0x080496a8 4 reloc.__libc_start_main
 0x080496ac 8 section..data
 0x080496ac 0 sym..data

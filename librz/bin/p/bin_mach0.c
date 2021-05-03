@@ -677,7 +677,7 @@ static RzList *patch_relocs(RzBinFile *bf) {
 			RZ_FREE(ptr);
 			goto beach;
 		}
-		ptr->vaddr = sym_addr;
+		ptr->target_vaddr = sym_addr;
 		ptr->import = imp;
 		rz_list_append(ret, ptr);
 	}

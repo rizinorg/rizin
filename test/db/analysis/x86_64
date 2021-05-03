@@ -1415,7 +1415,7 @@ EXPECT=<<EOF
 |           0x14000b568      4533c9         xor   r9d, r9d             ; LPSECURITY_ATTRIBUTES lpSecurityAttributes
 |           0x14000b56b      4489442420     mov   dword [dwCreationDisposition], r8d ; DWORD dwCreationDisposition
 |           0x14000b570      ba00000040     mov   edx, 0x40000000      ; DWORD dwDesiredAccess
-|           0x14000b575      ff158d1c0000   call  qword [sym.imp.KERNEL32.dll_CreateFileW] ; [0x14000d208:8]=0x1579e reloc.KERNEL32.dll_CreateFileW ; HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+|           0x14000b575      ff158d1c0000   call  qword [sym.imp.KERNEL32.dll_CreateFileW] ; [sym.imp.KERNEL32.dll_CreateFileW:8]=0x1579e reloc.KERNEL32.dll_CreateFileW ; HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 |           0x14000b57b      4889057eb400.  mov   qword [0x140016a00], rax ; [0x140016a00:8]=-2
 |           0x14000b582      4883c448       add   rsp, 0x48
 \           0x14000b586      c3             ret

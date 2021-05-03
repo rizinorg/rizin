@@ -152,7 +152,7 @@ FILE=bins/coff/tif_dir.obj
 CMDS=<<EOF
 e asm.bytes=true
 af @ sym._TIFFGetField
-pd 1 @ reloc._TIFFVGetField-1
+pd 1 @ 0x8dbd
 axt @ sym._TIFFVGetField
 pd 1 @ sym._TIFFVGetField+0xe
 pd 1 @ sym.imp._TIFFFindField
@@ -160,11 +160,10 @@ EOF
 EXPECT=<<EOF
 |           0x00008dbd      e80e000000     call  sym._TIFFVGetField    ; RELOC 32 _TIFFVGetField @ 0x00008dd0
 sym._TIFFGetField 0x8dbd [CALL] call sym._TIFFVGetField
-|           0x00008dde      e8ad280000     call  _TIFFFindField
+|           0x00008dde      e8ad280000     call  sym.imp._TIFFFindField; RELOC 32 _TIFFFindField
             ; CALL XREF from sym._TIFFVGetField @ 0x8dde
-            ;-- reloc._TIFFFindField:
             ;-- _TIFFFindField:
-            0x0000b690      .dword 0x00000000                          ; RELOC 32 _TIFFFindField
+            0x0000b690      .dword 0x00000000                          ; RELOC TARGET 32 _TIFFFindField
 EOF
 RUN
 
