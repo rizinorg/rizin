@@ -27,11 +27,12 @@ typedef enum {
 	RZ_SIGN_GRAPH = 'g', // graph metrics
 	RZ_SIGN_OFFSET = 'o', // addr
 	RZ_SIGN_NAME = 'n', // real name
-	RZ_SIGN_REFS = 'r', // xrefs from
-	RZ_SIGN_XREFS = 'x', // xrefs to
+	RZ_SIGN_REFS = 'r', // references
+	RZ_SIGN_XREFS = 'x', // xrefs
 	RZ_SIGN_VARS = 'v', // variables
 	RZ_SIGN_TYPES = 't', // types
 	RZ_SIGN_BBHASH = 'h', // basic block hash
+	RZ_SIGN_END = '\x00', // used for sentenal value
 } RzSignType;
 
 typedef struct rz_sign_graph_t {
@@ -70,7 +71,7 @@ typedef struct rz_sign_item_t {
 
 typedef int (*RzSignForeachCallback)(RzSignItem *it, void *user);
 typedef int (*RzSignSearchCallback)(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *user);
-typedef int (*RzSignMatchCallback)(RzSignItem *it, RzAnalysisFunction *fcn, RzSignType type, bool seen, void *user);
+typedef int (*RzSignMatchCallback)(RzSignItem *it, RzAnalysisFunction *fcn, RzSignType *types, void *user);
 
 typedef struct rz_sign_search_met {
 	/* types is an 0 terminated array of RzSignTypes that are going to be

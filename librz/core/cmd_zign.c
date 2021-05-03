@@ -578,7 +578,12 @@ struct ctxSearchCB {
 	RzCore *core;
 	bool rad;
 	int count;
-	const char *prefix;
+	int bytes_count;
+	int graph_count;
+	int offset_count;
+	int refs_count;
+	int types_count;
+	int bbhash_count;
 };
 
 static void apply_name(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it, bool rad) {
@@ -649,48 +654,67 @@ static void apply_flag(RzCore *core, RzSignItem *it, ut64 addr, int size, int co
 	}
 }
 
-static const char *getprefix(RzSignType t) {
-	switch (t) {
-	case RZ_SIGN_BYTES:
-		return "bytes";
-	case RZ_SIGN_GRAPH:
-		return "graph";
-	case RZ_SIGN_OFFSET:
-		return "offset";
-	case RZ_SIGN_REFS:
-		return "refs";
-	case RZ_SIGN_TYPES:
-		return "types";
-	case RZ_SIGN_BBHASH:
-		return "bbhash";
-	default:
-		rz_return_val_if_reached("unkown_type");
-	}
-}
-
-static int searchHitCB(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *user) {
+static int searchBytesHitCB(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
-	apply_flag(ctx->core, it, addr, kw->keyword_length, kw->count, ctx->prefix, ctx->rad);
+	apply_flag(ctx->core, it, addr, kw->keyword_length, kw->count, "bytes", ctx->rad);
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(ctx->core->analysis, addr, 0);
 	// TODO: create fcn if it does not exist
 	if (fcn) {
 		apply_name(ctx->core, fcn, it, ctx->rad);
 		apply_types(ctx->core, fcn, it);
 	}
+	ctx->bytes_count++;
 	ctx->count++;
 	return 1;
 }
 
-static int fcnMatchCB(RzSignItem *it, RzAnalysisFunction *fcn, RzSignType type, bool seen, void *user) {
+static int fcnMatchCB(RzSignItem *it, RzAnalysisFunction *fcn, RzSignType *types, void *user) {
+	rz_return_val_if_fail(types && *types != RZ_SIGN_END, 1);
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
-	const char *prefix = getprefix(type);
 	ut64 sz = rz_analysis_function_realsize(fcn);
-	apply_flag(ctx->core, it, fcn->addr, sz, ctx->count, prefix, ctx->rad);
-	if (!seen) {
-		apply_name(ctx->core, fcn, it, ctx->rad);
-		apply_types(ctx->core, fcn, it);
-		ctx->count++;
+	RzSignType t;
+	int i = 0;
+	const char *prefix = NULL;
+	while ((t = types[i++]) != RZ_SIGN_END) {
+		switch (t) {
+		case RZ_SIGN_BYTES:
+			ctx->bytes_count++;
+			prefix = "bytes";
+			break;
+		case RZ_SIGN_GRAPH:
+			prefix = "graph";
+			ctx->graph_count++;
+			break;
+		case RZ_SIGN_OFFSET:
+			prefix = "offset";
+			ctx->offset_count++;
+			break;
+		case RZ_SIGN_REFS:
+			prefix = "refs";
+			ctx->refs_count++;
+			break;
+		case RZ_SIGN_TYPES:
+			prefix = "types";
+			ctx->types_count++;
+			break;
+		case RZ_SIGN_BBHASH:
+			prefix = "bbhash";
+			ctx->bbhash_count++;
+			break;
+		default:
+			prefix = NULL;
+			rz_warn_if_reached();
+			break;
+		}
+		if (prefix) {
+			apply_flag(ctx->core, it, fcn->addr, sz, ctx->count, prefix, ctx->rad);
+			ctx->count++;
+		}
 	}
+
+	apply_name(ctx->core, fcn, it, ctx->rad);
+	apply_types(ctx->core, fcn, it);
+	// TODO(nibble): use one counter per metric zign instead of ctx->count
 	return 1;
 }
 
@@ -706,7 +730,7 @@ static bool searchRange(RzCore *core, ut64 from, ut64 to, bool rad, struct ctxSe
 	}
 	RzSignSearch *ss = rz_sign_search_new();
 	ss->search->align = rz_config_get_i(core->config, "search.align");
-	rz_sign_search_init(core->analysis, ss, minsz, searchHitCB, ctx);
+	rz_sign_search_init(core->analysis, ss, minsz, searchBytesHitCB, ctx);
 
 	rz_cons_break_push(NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
@@ -795,23 +819,54 @@ static bool fill_search_metrics(RzSignSearchMetrics *sm, RzCore *c, void *user) 
 	return (i > 0);
 }
 
+static void print_ctx_hits(struct ctxSearchCB *ctx) {
+	int prints = 0;
+	if (ctx->bytes_count) {
+		eprintf("bytes:  %d\n", ctx->bytes_count);
+		prints++;
+	}
+	if (ctx->graph_count) {
+		eprintf("graph:  %d\n", ctx->graph_count);
+		prints++;
+	}
+	if (ctx->offset_count) {
+		eprintf("offset: %d\n", ctx->offset_count);
+		prints++;
+	}
+	if (ctx->refs_count) {
+		eprintf("refs:   %d\n", ctx->refs_count);
+		prints++;
+	}
+	if (ctx->types_count) {
+		eprintf("types:  %d\n", ctx->types_count);
+		prints++;
+	}
+	if (ctx->bbhash_count) {
+		eprintf("bbhash: %d\n", ctx->bbhash_count);
+		prints++;
+	}
+	if (prints > 1) {
+		eprintf("total:  %d\n", ctx->count);
+	}
+}
+
 static bool search(RzCore *core, bool rad, bool only_func) {
 	RzList *list;
 	RzListIter *iter;
 	RzAnalysisFunction *fcni = NULL;
 	RzIOMap *map;
 	bool retval = true;
-	int hits = 0;
 
-	struct ctxSearchCB bytes_search_ctx = { core, rad, 0, "bytes" };
+	struct ctxSearchCB ctx = { 0 };
+	ctx.rad = rad;
+	ctx.core = core;
 	const char *mode = rz_config_get(core->config, "search.in");
 	bool useBytes = rz_config_get_i(core->config, "zign.match.bytes");
 	const char *zign_prefix = rz_config_get(core->config, "zign.prefix");
 	int maxsz = rz_config_get_i(core->config, "zign.maxsz");
 
-	struct ctxSearchCB metsearch_ctx = { core, rad, 0, NULL };
 	RzSignSearchMetrics sm;
-	bool metsearch = fill_search_metrics(&sm, core, (void *)&metsearch_ctx);
+	bool metsearch = fill_search_metrics(&sm, core, (void *)&ctx);
 
 	if (rad) {
 		rz_cons_printf("fs+%s\n", zign_prefix);
@@ -830,7 +885,7 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 		}
 		rz_list_foreach (list, iter, map) {
 			eprintf("[+] searching 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
-			retval &= searchRange(core, map->itv.addr, rz_itv_end(map->itv), rad, &bytes_search_ctx);
+			retval &= searchRange(core, map->itv.addr, rz_itv_end(map->itv), rad, &ctx);
 		}
 		rz_list_free(list);
 	}
@@ -847,7 +902,7 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 			ss = rz_sign_search_new();
 			ss->search->align = rz_config_get_i(core->config, "search.align");
 			int minsz = rz_config_get_i(core->config, "zign.minsz");
-			rz_sign_search_init(core->analysis, ss, minsz, searchHitCB, &bytes_search_ctx);
+			rz_sign_search_init(core->analysis, ss, minsz, searchBytesHitCB, &ctx);
 		}
 
 		rz_list_foreach (core->analysis->fcns, iter, fcni) {
@@ -855,13 +910,13 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 				break;
 			}
 			if (useBytes && only_func) {
-				eprintf("Matching func %d / %d (hits %d)\n", count, rz_list_length(core->analysis->fcns), bytes_search_ctx.count);
+				eprintf("Matching func %d / %d (hits %d)\n", count, rz_list_length(core->analysis->fcns), ctx.count);
 				int fcnlen = rz_analysis_function_realsize(fcni);
 				int len = RZ_MIN(core->io->addrbytes * fcnlen, maxsz);
-				retval &= searchRange2(core, ss, fcni->addr, fcni->addr + len, rad, &bytes_search_ctx);
+				retval &= searchRange2(core, ss, fcni->addr, fcni->addr + len, rad, &ctx);
 			}
 			sm.fcn = fcni;
-			hits += rz_sign_fcn_match_metrics(&sm);
+			rz_sign_fcn_match_metrics(&sm);
 			sm.fcn = NULL;
 			count++;
 			// TODO: add useXRefs, useName
@@ -879,9 +934,7 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 		}
 	}
 
-	hits += bytes_search_ctx.count;
-	eprintf("hits: %d\n", hits);
-
+	print_ctx_hits(&ctx);
 	return retval;
 }
 
@@ -1139,17 +1192,17 @@ static int cmdCheck(void *data, const char *input) {
 	ut64 at = core->offset;
 	bool retval = true;
 	bool rad = input[0] == '*';
-	int hits = 0;
 
-	struct ctxSearchCB bytes_search_ctx = { core, rad, 0, "bytes" };
+	struct ctxSearchCB ctx = { 0 };
+	ctx.rad = rad;
+	ctx.core = core;
 
 	const char *zign_prefix = rz_config_get(core->config, "zign.prefix");
 	int minsz = rz_config_get_i(core->config, "zign.minsz");
 	bool useBytes = rz_config_get_i(core->config, "zign.match.bytes");
 
-	struct ctxSearchCB metsearch_ctx = { core, rad, 0, NULL };
 	RzSignSearchMetrics sm;
-	bool metsearch = fill_search_metrics(&sm, core, (void *)&metsearch_ctx);
+	bool metsearch = fill_search_metrics(&sm, core, (void *)&ctx);
 
 	if (rad) {
 		rz_cons_printf("fs+%s\n", zign_prefix);
@@ -1164,7 +1217,7 @@ static int cmdCheck(void *data, const char *input) {
 	if (useBytes) {
 		eprintf("[+] searching 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", at, at + core->blocksize);
 		ss = rz_sign_search_new();
-		rz_sign_search_init(core->analysis, ss, minsz, searchHitCB, &bytes_search_ctx);
+		rz_sign_search_init(core->analysis, ss, minsz, searchBytesHitCB, &ctx);
 		if (rz_sign_search_update(core->analysis, ss, &at, core->block, core->blocksize) == -1) {
 			eprintf("search: update read error at 0x%08" PFMT64x "\n", at);
 			retval = false;
@@ -1182,7 +1235,7 @@ static int cmdCheck(void *data, const char *input) {
 			}
 			if (fcni->addr == core->offset) {
 				sm.fcn = fcni;
-				hits += rz_sign_fcn_match_metrics(&sm);
+				rz_sign_fcn_match_metrics(&sm);
 				break;
 			}
 		}
@@ -1198,9 +1251,7 @@ static int cmdCheck(void *data, const char *input) {
 		}
 	}
 
-	hits += bytes_search_ctx.count;
-	eprintf("hits: %d\n", hits);
-
+	print_ctx_hits(&ctx);
 	return retval;
 }
 
