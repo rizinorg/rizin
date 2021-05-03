@@ -1379,7 +1379,9 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
+fs relocs
 f reloc.test @ 0x1
+fs *
 pdJ 1 @ 0x0
 EOF
 EXPECT=<<EOF

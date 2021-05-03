@@ -429,7 +429,7 @@ static RzList *_relocs_list(RzBin *rbin, struct rz_bin_coff_obj *bin, bool patch
 				if (patch && plen) {
 					rbin->iob.write_at(rbin->iob.io, reloc->vaddr, patch_buf, plen);
 					if (symbol->is_imported) {
-						reloc->vaddr = sym_vaddr;
+						reloc->target_vaddr = sym_vaddr;
 					}
 				}
 			}

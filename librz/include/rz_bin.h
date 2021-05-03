@@ -169,12 +169,12 @@ enum {
 	RZ_BIN_CLASS_PROTECTED,
 };
 
-enum {
+typedef enum {
 	RZ_BIN_RELOC_8 = 8,
 	RZ_BIN_RELOC_16 = 16,
 	RZ_BIN_RELOC_32 = 32,
 	RZ_BIN_RELOC_64 = 64
-};
+} RzBinRelocType;
 
 enum {
 	RZ_BIN_TYPE_DEFAULT = 0,
@@ -652,14 +652,15 @@ typedef struct rz_bin_import_t {
 } RzBinImport;
 
 typedef struct rz_bin_reloc_t {
-	ut8 type;
-	ut8 additive;
+	RzBinRelocType type;
 	RzBinSymbol *symbol;
 	RzBinImport *import;
 	st64 addend;
 	ut64 vaddr; ///< the vaddr where the value should be patched into
 	ut64 paddr; ///< the paddr where the value should be patched into
+	ut64 target_vaddr; ///< the target address that the patched reloc points to
 	ut32 visibility;
+	bool additive;
 	/* is_ifunc: indirect function, `addend` points to a resolver function
 	 * that returns the actual relocation value, e.g. chooses
 	 * an optimized version depending on the CPU.
@@ -668,14 +669,26 @@ typedef struct rz_bin_reloc_t {
 	bool is_ifunc;
 } RzBinReloc;
 
+RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc);
+
 /// Efficient storage of relocations to query by address
 struct rz_bin_reloc_storage_t {
 	RzBinReloc **relocs; ///< all relocs, ordered by their vaddr
 	size_t relocs_count;
+	RzBinReloc **target_relocs; ///< all relocs that have a valid target_vaddr, ordered by their target_vaddr. size is target_relocs_count!
+	size_t target_relocs_count;
 }; // RzBinRelocStorage
 
-/// Get the reloc with the lowest vaddr that starts inside the given interval
-RzBinReloc *rz_bin_reloc_storage_get_reloc_in(RzBinRelocStorage *storage, ut64 vaddr, ut64 size);
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList *relocs);
+RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage);
+RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_in(RzBinRelocStorage *storage, ut64 vaddr, ut64 size);
+
+/// return true iff there is at least one reloc in the storage with a target address
+static inline bool rz_bin_reloc_storage_targets_available(RzBinRelocStorage *storage) {
+	return storage->target_relocs_count != 0;
+}
+
+RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_to(RzBinRelocStorage *storage, ut64 vaddr);
 
 typedef struct rz_bin_string_t {
 	// TODO: rename string->name (avoid colisions)
@@ -748,6 +761,9 @@ RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RzBinImport *imp);
 RZ_API void rz_bin_symbol_free(RzBinSymbol *sym);
+static inline bool rz_bin_reloc_has_target(RzBinReloc *reloc) {
+	return reloc->target_vaddr && reloc->target_vaddr != UT64_MAX;
+}
 RZ_API void rz_bin_reloc_free(RzBinReloc *reloc);
 RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr);
 RZ_API void rz_bin_string_free(void *_str);

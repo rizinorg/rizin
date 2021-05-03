@@ -103,6 +103,15 @@ RZ_API RzBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size) {
 	return rz_bin_reloc_storage_get_reloc_in(bf->o->relocs, addr, size);
 }
 
+RZ_API RzBinReloc *rz_core_get_reloc_to(RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core, NULL);
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o || !bf->o->relocs) {
+		return NULL;
+	}
+	return rz_bin_reloc_storage_get_reloc_to(bf->o->relocs, addr);
+}
+
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
  * if there's no valid shortcut. When is_asmqjmps_letter is true, the string
  * should be of the form XYZWu, where XYZW are uppercase letters and u is a
