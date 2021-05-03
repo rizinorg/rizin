@@ -1111,7 +1111,44 @@ static bool test_pvector_lower_bound(void) {
 	mu_end;
 }
 
+static size_t lower_bound_slow(st64 *a, size_t count, st64 v) {
+	size_t i;
+	for (i = 0; i < count; i++) {
+		if (a[i] >= v) {
+			break;
+		}
+	}
+	return i;
+}
+
+static bool test_array_lower_bound_fuzz(void) {
+#define COUNT_MIN  4
+#define COUNT_MAX  256
+#define PADDING    32
+#define STEP_MIN   0
+#define STEP_MAX   8
+#define FUZZ_COUNT 512
+#define CMP(x, y)  (x - y)
+	for (size_t i = 0; i < FUZZ_COUNT; i++) {
+		size_t count = (rand() % (COUNT_MAX - COUNT_MIN)) + COUNT_MIN;
+		st64 *a = RZ_NEWS(st64, count);
+		for (size_t j = 0; j < count; j++) {
+			a[j] = (j ? a[j - 1] : rand() % PADDING) + (rand() % (STEP_MAX - STEP_MIN)) + STEP_MIN;
+		}
+		st64 v = rand() % (a[count - 1] + PADDING);
+		size_t index_expect = lower_bound_slow(a, count, v);
+		size_t index_actual;
+		rz_array_lower_bound(a, count, v, index_actual, CMP);
+		free(a);
+		mu_assert_eq(index_actual, index_expect, "lower bound");
+	}
+	mu_end;
+}
+
 static int all_tests(void) {
+	time_t seed = time(0);
+	printf("Gillian Seed: %llu\n", (unsigned long long)seed);
+	srand(seed);
 	mu_run_test(test_vector_init);
 	mu_run_test(test_vector_new);
 	mu_run_test(test_vector_fini);
@@ -1149,6 +1186,8 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_sort);
 	mu_run_test(test_pvector_foreach);
 	mu_run_test(test_pvector_lower_bound);
+
+	mu_run_test(test_array_lower_bound_fuzz);
 
 	return tests_passed != tests_run;
 }
