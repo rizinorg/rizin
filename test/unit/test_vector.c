@@ -401,8 +401,6 @@ static bool test_vector_pop(void) {
 	mu_assert_eq(e, 0, "rz_vector_pop (last) into");
 	mu_assert_eq(v.len, 0UL, "rz_vector_pop (last) => len");
 
-	rz_vector_pop(&v, &e);
-
 	rz_vector_clear(&v);
 
 	mu_end;
@@ -611,6 +609,7 @@ static bool test_vector_flush(void) {
 	for (size_t i = 0; i < 5; i++) {
 		mu_assert_eq(r[i], i, "flushed contents");
 	}
+	free(r);
 	mu_end;
 }
 
