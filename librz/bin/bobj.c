@@ -17,20 +17,73 @@ RZ_API void rz_bin_mem_free(void *data) {
 	free(mem);
 }
 
-static int reloc_cmp(const void *a, const RBNode *b, void *user) {
-	const RzBinReloc *ar = (const RzBinReloc *)a;
-	const RzBinReloc *br = container_of(b, const RzBinReloc, vrb);
-	if (ar->vaddr > br->vaddr) {
-		return 1;
-	}
-	if (ar->vaddr < br->vaddr) {
-		return -1;
-	}
+#define CMP_CHECK(member) \
+	do { \
+		if (ar->member != br->member) { \
+			return RZ_NUM_CMP(ar->member, br->member); \
+		} \
+	} while (0);
+
+static int reloc_cmp(const void *a, const void *b) {
+	const RzBinReloc *ar = a;
+	const RzBinReloc *br = b;
+	CMP_CHECK(vaddr);
+	CMP_CHECK(paddr);
+	CMP_CHECK(type);
 	return 0;
 }
 
-static void reloc_free(RBNode *rbn, void *user) {
-	free(container_of(rbn, RzBinReloc, vrb));
+#undef CMP_CHECK
+
+static RzBinRelocStorage *reloc_storage_new(RZ_OWN RzList *relocs) {
+	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
+	if (!ret) {
+		return NULL;
+	}
+	RzPVector sorter;
+	rz_pvector_init(&sorter, NULL);
+	rz_pvector_reserve(&sorter, rz_list_length(relocs));
+	RzListIter *it;
+	RzBinReloc *reloc;
+	rz_list_foreach (relocs, it, reloc) {
+		rz_pvector_push(&sorter, reloc);
+	}
+	relocs->free = NULL; // ownership of relocs transferred
+	rz_list_free(relocs);
+	rz_pvector_sort(&sorter, reloc_cmp);
+	ret->relocs_count = rz_pvector_len(&sorter);
+	ret->relocs = (RzBinReloc **)rz_pvector_flush(&sorter);
+	rz_pvector_fini(&sorter);
+	return ret;
+}
+
+static void reloc_storage_free(RzBinRelocStorage *storage) {
+	if (!storage) {
+		return;
+	}
+	for (size_t i = 0; i < storage->relocs_count; i++) {
+		rz_bin_reloc_free(storage->relocs[i]);
+	}
+	free(storage->relocs);
+	free(storage);
+}
+
+static int reloc_vaddr_cmp(ut64 ref, RzBinReloc *reloc) {
+	return RZ_NUM_CMP(ref, reloc->vaddr);
+}
+
+RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_in(RzBinRelocStorage *storage, ut64 vaddr, ut64 size) {
+	rz_return_val_if_fail(storage && size >= 1, NULL);
+	if (!storage->relocs) {
+		return NULL;
+	}
+	size_t i;
+	rz_array_lower_bound(storage->relocs, storage->relocs_count, vaddr, i, reloc_vaddr_cmp);
+	if (i >= storage->relocs_count) {
+		return NULL;
+	}
+	RzBinReloc *r = storage->relocs[i];
+	return r->vaddr >= vaddr && r->vaddr < vaddr + size ? r : NULL;
 }
 
 static void object_delete_items(RzBinObject *o) {
@@ -42,7 +95,7 @@ static void object_delete_items(RzBinObject *o) {
 	rz_list_free(o->fields);
 	rz_list_free(o->imports);
 	rz_list_free(o->libs);
-	rz_rbtree_free(o->relocs, reloc_free, NULL);
+	reloc_storage_free(o->relocs);
 	rz_list_free(o->sections);
 	rz_list_free(o->strings);
 	ht_up_free(o->strings_db);
@@ -235,17 +288,6 @@ static void filter_classes(RzBinFile *bf, RzList *list) {
 	ht_pp_free(ht);
 }
 
-static RBNode *list2rbtree(RzList *relocs) {
-	RzListIter *it;
-	RzBinReloc *reloc;
-	RBNode *res = NULL;
-
-	rz_list_foreach (relocs, it, reloc) {
-		rz_rbtree_insert(&res, reloc, &reloc->vrb, reloc_cmp, NULL);
-	}
-	return res;
-}
-
 static void rz_bin_object_rebuild_classes_ht(RzBinObject *o) {
 	ht_pp_free(o->classes_ht);
 	ht_pp_free(o->methods_ht);
@@ -368,9 +410,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			RzList *l = p->relocs(bf);
 			if (l) {
 				REBASE_PADDR(o, l, RzBinReloc);
-				o->relocs = list2rbtree(l);
-				l->free = NULL;
-				rz_list_free(l);
+				o->relocs = reloc_storage_new(l);
 			}
 		}
 	}
@@ -441,7 +481,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	return true;
 }
 
-RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
+RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
 	rz_return_val_if_fail(bf && o, NULL);
 
 	static bool first = true;
@@ -454,13 +494,11 @@ RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
 		if (!tmp) {
 			return o->relocs;
 		}
-		rz_rbtree_free(o->relocs, reloc_free, NULL);
+		reloc_storage_free(o->relocs);
 		REBASE_PADDR(o, tmp, RzBinReloc);
-		o->relocs = list2rbtree(tmp);
+		o->relocs = reloc_storage_new(tmp);
 		first = false;
 		bf->rbin->is_reloc_patched = true;
-		tmp->free = NULL;
-		rz_list_free(tmp);
 	}
 	return o->relocs;
 }
