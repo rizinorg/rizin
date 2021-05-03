@@ -1028,18 +1028,20 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 	}
 
 	int va = VA_TRUE; // XXX relocs always vaddr?
-	RBNode *relocs = rz_bin_object_patch_relocs(binfile, o);
+	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(binfile, o);
 	if (!relocs) {
 		relocs = o->relocs;
+		if (!relocs) {
+			return false;
+		}
 	}
 
 	rz_flag_space_set(core->flags, RZ_FLAGS_FS_RELOCS);
 
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
-	RBIter iter;
-	RzBinReloc *reloc = NULL;
-	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
+	for (size_t i = 0; i < relocs->relocs_count; i++) {
+		RzBinReloc *reloc = relocs->relocs[i];
 		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
 		if ((is_section_reloc(reloc) || is_file_reloc(reloc))) {
 			/*
@@ -2213,21 +2215,20 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
  * \return the number of relocs or -1 on failure
  */
 static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int va, int mode, PJ *pj, RzTable *table) {
+	rz_return_val_if_fail(r && bf && o, -1);
 	bool bin_demangle = rz_config_get_i(r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get(r->config, "bin.lang");
 
-	RBNode *relocs = rz_bin_object_patch_relocs(bf, o);
+	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, o);
 	if (!relocs) {
-		relocs = rz_bin_get_relocs(r->bin);
+		relocs = o->relocs;
 	}
 	if (!relocs) {
 		return -1;
 	}
-	int count = 0;
-	RBIter iter;
-	RzBinReloc *reloc;
-	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
+	for (size_t i = 0; i < relocs->relocs_count; i++) {
+		RzBinReloc *reloc = relocs->relocs[i];
 		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SIMPLE(mode)) {
 			rz_cons_printf("0x%08" PFMT64x "  %s\n", addr, reloc->import ? reloc->import->name : "");
@@ -2323,9 +2324,8 @@ static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int
 				bin_reloc_type_name(reloc), res);
 			free(res);
 		}
-		count++;
 	}
-	return count;
+	return relocs->relocs_count;
 }
 
 static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {

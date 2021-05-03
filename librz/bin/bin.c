@@ -201,6 +201,10 @@ RZ_API void rz_bin_symbol_free(RzBinSymbol *sym) {
 	}
 }
 
+RZ_API void rz_bin_reloc_free(RzBinReloc *reloc) {
+	free(reloc);
+}
+
 RZ_API void rz_bin_string_free(void *_str) {
 	RzBinString *str = (RzBinString *)_str;
 	if (str) {
@@ -684,30 +688,6 @@ RZ_API RzList *rz_bin_get_libs(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
 	return o ? o->libs : NULL;
-}
-
-static RzList *relocs_rbtree2list(RBNode *root) {
-	RzList *res = rz_list_new();
-	RzBinReloc *reloc;
-	RBIter it;
-
-	rz_rbtree_foreach (root, it, reloc, RzBinReloc, vrb) {
-		rz_list_append(res, reloc);
-	}
-	return res;
-}
-
-RZ_API RBNode *rz_bin_get_relocs(RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->relocs : NULL;
-}
-
-// return a list of <const RzBinReloc> that needs to be freed by the caller
-RZ_API RzList *rz_bin_get_relocs_list(RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RBNode *root = rz_bin_get_relocs(bin);
-	return root ? relocs_rbtree2list(root) : NULL;
 }
 
 RZ_API RzList *rz_bin_get_sections(RzBin *bin) {
