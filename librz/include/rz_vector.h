@@ -328,16 +328,51 @@ static inline void **rz_pvector_flush(RzPVector *vec) {
 	} while (0)
 
 /*
+ * \brief Find the index of the least element greater than the upper bound x using binary search
+ * example:
+ *
+ * st64 a[] = { 0, 2, 4, 6, 8 };
+ * size_t index;
+ * #define CMP(x, y) x - y
+ * rz_pvector_lower_bound (v, 2, index, CMP);
+ * // index == 2 (contains value 4)
+ */
+#define rz_array_upper_bound(array, len, x, i, cmp) \
+	do { \
+		size_t h = len, m; \
+		for (i = 0; i < h;) { \
+			m = i + ((h - i) >> 1); \
+			if (cmp((x), ((array)[m])) < 0) { \
+				h = m; \
+			} else { \
+				i = m + 1; \
+			} \
+		} \
+	} while (0)
+
+/*
  * example:
  *
  * RzPVector *v = ...; // contains {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
  * size_t index;
  * #define CMP(x, y) x - y
- * rz_pvector_lower_bound (v, (void *)3, index, CMP);
- * // index == 2
+ * rz_pvector_lower_bound (v, (void *)2, index, CMP);
+ * // index == 1
  */
 #define rz_pvector_lower_bound(vec, x, i, cmp) \
 	rz_array_lower_bound((void **)(vec)->v.a, (vec)->v.len, x, i, cmp)
+
+/*
+ * example:
+ *
+ * RzPVector *v = ...; // contains {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
+ * size_t index;
+ * #define CMP(x, y) x - y
+ * rz_pvector_upper_bound (v, (void *)2, index, CMP);
+ * // index == 2
+ */
+#define rz_pvector_upper_bound(vec, x, i, cmp) \
+	rz_array_upper_bound((void **)(vec)->v.a, (vec)->v.len, x, i, cmp)
 
 #ifdef __cplusplus
 }
