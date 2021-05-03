@@ -298,6 +298,17 @@ RZ_IPI RzOutputMode rz_char_to_output_mode(const char *suffix) {
 	return RZ_OUTPUT_MODE_UNKNOWN;
 }
 
+RZ_IPI RzOutputMode rz_char_to_output_mode3(const char *suffix) {
+	size_t i;
+	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+		if (suffix[0] == argv_modes[i].suffix[0]) {
+			return argv_modes[i].mode;
+		}
+	}
+	rz_warn_if_reached();
+	return RZ_OUTPUT_MODE_UNKNOWN;
+}
+
 static bool has_cd_submodes(const RzCmdDesc *cd) {
 	return cd->type == RZ_CMD_DESC_TYPE_ARGV_MODES || cd->type == RZ_CMD_DESC_TYPE_ARGV_STATE;
 }

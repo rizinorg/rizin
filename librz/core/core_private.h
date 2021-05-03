@@ -10,6 +10,7 @@
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
 RZ_IPI RzOutputMode rz_char_to_output_mode(const char *suffix);
+RZ_IPI RzOutputMode rz_char_to_output_mode3(const char *suffix);
 RZ_IPI RzOutputMode rz_char_to_output_mode2(char input);
 
 
