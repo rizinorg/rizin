@@ -1138,7 +1138,7 @@ static size_t lower_bound_slow(st64 *a, size_t count, st64 v) {
 }
 
 static size_t upper_bound_slow(st64 *a, size_t count, st64 v) {
-	size_t i;;
+	size_t i;
 	for (i = 0; i < count; i++) {
 		if (a[i] > v) {
 			break;
