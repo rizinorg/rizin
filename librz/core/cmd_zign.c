@@ -1017,7 +1017,7 @@ static bool do_bestmatch_sig(RzCore *core, int count) {
 		RzSignBytes *b = item->bytes;
 		int minsz = rz_config_get_i(core->config, "zign.minsz");
 		if (b && b->size < minsz) {
-			eprintf("Warning: Function signature is too small (%d < %d) See e zign.minsz", b->size, minsz);
+			eprintf("Warning: Function signature is too small (%d < %d) See e zign.minsz \n", b->size, minsz);
 			rz_sign_item_free(item);
 			return false;
 		}
