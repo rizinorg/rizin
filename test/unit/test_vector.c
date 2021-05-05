@@ -1179,6 +1179,42 @@ static bool test_array_bounds_fuzz(void) {
 		free(a);
 	}
 	mu_end;
+#undef COUNT_MIN
+#undef COUNT_MAX
+#undef PADDING
+#undef STEP_MIN
+#undef STEP_MAX
+#undef FUZZ_COUNT
+#undef CMP
+}
+
+static int cmp_ut64(const void *a, const void *b) {
+	ut64 va = (ut64)(size_t)a;
+	ut64 vb = (ut64)(size_t)b;
+	return RZ_NUM_CMP(va, vb);
+}
+
+static bool test_array_sort_fuzz(void) {
+#define COUNT_MIN  5000000
+#define COUNT_MAX  COUNT_MIN
+#define FUZZ_COUNT 1
+	for (size_t i = 0; i < FUZZ_COUNT; i++) {
+		size_t count = COUNT_MIN;//(rand() % (COUNT_MAX - COUNT_MIN)) + COUNT_MIN;
+		RzPVector v;
+		rz_pvector_init(&v, NULL);
+		rz_pvector_reserve(&v, count);
+		for (size_t j = 0; j < count; j++) {
+			rz_pvector_push(&v, (void *)(size_t)rand());
+		}
+		rz_pvector_sort(&v, cmp_ut64);
+		for (size_t j = 1; j < count; j++) {
+			mu_assert_true((size_t)rz_pvector_at(&v, j - 1) <= (size_t)rz_pvector_at(&v, j), "sorted");
+		}
+	}
+	mu_end;
+#undef COUNT_MIN
+#undef COUNT_MAX
+#undef FUZZ_COUNT
 }
 
 static int all_tests(void) {
@@ -1224,6 +1260,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_bounds);
 
 	mu_run_test(test_array_bounds_fuzz);
+	mu_run_test(test_array_sort_fuzz);
 
 	return tests_passed != tests_run;
 }
