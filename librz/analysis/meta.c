@@ -367,7 +367,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				free(s);
 			} break;
 			case RZ_META_TYPE_STRING:
-				if (mode == RZ_OUTPUT_MODE_RIZIN || mode == RZ_OUTPUT_MODE_STANDARD) {
+				if (mode == RZ_OUTPUT_MODE_RIZIN || mode == RZ_OUTPUT_MODE_QUIET) {
 					char cmd[] = "Cs#";
 					switch (d->subtype) {
 					case 'a':
