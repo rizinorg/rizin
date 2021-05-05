@@ -115,7 +115,10 @@ rz_crypto_new_bad:
 	return NULL;
 }
 
-RZ_API struct rz_crypto_t *rz_crypto_free(RzCrypto *cry) {
+RZ_API void rz_crypto_free(RzCrypto *cry) {
+	if (!cry) {
+		return;
+	}
 	if (cry->h && cry->h->fini && !cry->h->fini(cry)) {
 		RZ_LOG_ERROR("[!] crypto: error terminating '%s' plugin\n", cry->h->name);
 	}
@@ -124,7 +127,6 @@ RZ_API struct rz_crypto_t *rz_crypto_free(RzCrypto *cry) {
 	free(cry->key);
 	free(cry->iv);
 	free(cry);
-	return NULL;
 }
 
 RZ_API bool rz_crypto_use(RzCrypto *cry, const char *algo) {
