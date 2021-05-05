@@ -29,6 +29,22 @@ bar2:
 EOF
 RUN
 
+NAME=zs * searches all zignspaces
+FILE=bins/elf/analysis/zigs
+CMDS=<<EOF
+aaa
+zs test
+zaf main foobar
+zs *
+z/
+?v sign.bytes.foobar_0
+EOF
+EXPECT=<<EOF
+0x40055b
+EOF
+RUN
+
+
 NAME=zsr newname
 FILE==
 CMDS=<<EOF
