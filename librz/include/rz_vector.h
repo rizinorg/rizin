@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+RZ_API void rz_array_sort(void *base, size_t nel, size_t width, int (*cmp)(const void *a, const void *b, void *user), void *user);
+
 /*
  * RzVector can contain arbitrarily sized elements.
  * RzPVector uses RzVector internally and always contains void *s

@@ -320,29 +320,12 @@ RZ_API void *rz_pvector_pop_front(RzPVector *vec) {
 	return r;
 }
 
-// CLRS Quicksort. It is slow, but simple.
-static void quick_sort(void **a, size_t n, RzPVectorComparator cmp) {
-	if (n <= 1) {
-		return;
-	}
-	size_t i = rand() % n, j = 0;
-	void *t, *pivot = a[i];
-	a[i] = a[n - 1];
-	for (i = 0; i < n - 1; i++) {
-		if (cmp(a[i], pivot) < 0) {
-			t = a[i];
-			a[i] = a[j];
-			a[j] = t;
-			j++;
-		}
-	}
-	a[n - 1] = a[j];
-	a[j] = pivot;
-	quick_sort(a, j, cmp);
-	quick_sort(a + j + 1, n - j - 1, cmp);
+static int pvector_sort_cmp(const void *a, const void *b, void *user) {
+	RzPVectorComparator cmp = user;
+	return cmp(*(void **)a, *(void **)b);
 }
 
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp) {
 	rz_return_if_fail(vec && cmp);
-	quick_sort(vec->v.a, vec->v.len, cmp);
+	rz_array_sort(vec->v.a, vec->v.len, sizeof(void *), pvector_sort_cmp, cmp);
 }
