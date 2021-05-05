@@ -589,14 +589,18 @@ static bool test_vector_shrink(void) {
 	mu_assert_eq(a, v.a, "rz_vector_shrink ret");
 	mu_assert_eq(v.len, 5UL, "rz_vector_shrink => len");
 	mu_assert_eq(v.capacity, 5UL, "rz_vector_shrink => capacity");
-	rz_vector_clear(&v);
+	rz_vector_fini(&v);
 
 	init_test_vector(&v, 5, 0, NULL, NULL);
 	a = rz_vector_shrink(&v);
 	mu_assert_eq(a, v.a, "rz_vector_shrink (already minimal) ret");
 	mu_assert_eq(v.len, 5UL, "rz_vector_shrink (already minimal) => len");
 	mu_assert_eq(v.capacity, 5UL, "rz_vector_shrink (already minimal) => capacity");
-	rz_vector_clear(&v);
+	rz_vector_fini(&v);
+
+	init_test_vector(&v, 0, 8, NULL, NULL);
+	rz_vector_shrink(&v);
+	rz_vector_fini(&v);
 
 	mu_end;
 }

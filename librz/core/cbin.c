@@ -836,15 +836,22 @@ RZ_API bool rz_core_bin_apply_sections(RzCore *core, RzBinFile *binfile, bool va
 }
 
 /*
- * Decide whether a meta item should be created for the given reloc
+ * Decide whether a meta item should be created for the given reloc addr
  * and figure out what size it should have.
- * \return whether to put a meta item for the given reloc
+ * \return whether to put a meta item for the given reloc addr
  */
-static bool meta_for_reloc(RzCore *r, RzBinObject *binobj, RzBinReloc *reloc, ut64 addr, RZ_OUT ut64 *size) {
-	rz_return_val_if_fail(binobj && reloc, false);
+static bool meta_for_reloc(RzCore *r, RzBinObject *binobj, RzBinReloc *reloc, bool is_target, ut64 addr, RZ_OUT ut64 *size) {
+	rz_return_val_if_fail(binobj, false);
 	RzBinInfo *info = binobj ? binobj->info : NULL;
 
-	int cdsz = info ? (info->bits / 8) : 0;
+	int cdsz;
+	if (is_target) {
+		// target meta uses the bit size, these are the manually created ones
+		cdsz = info ? (info->bits / 8) : 0;
+	} else {
+		// source meta uses the actual size of the reloc
+		cdsz = rz_bin_reloc_size(reloc) / 8;
+	}
 	if (cdsz <= 0) {
 		return false;
 	}
@@ -931,10 +938,46 @@ static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE cons
 	return rz_strbuf_drain(buf);
 }
 
-static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
+static void reloc_set_flag(RzCore *r, RzBinReloc *reloc, const char *prefix, ut64 flag_addr) {
 	int bin_demangle = rz_config_get_i(r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get(r->config, "bin.lang");
+	char *reloc_name = construct_reloc_name(reloc, NULL);
+	if (RZ_STR_ISEMPTY(reloc_name)) {
+		free(reloc_name);
+		return;
+	}
+	char flagname[RZ_FLAG_NAME_SIZE];
+	if (r->bin->prefix) {
+		snprintf(flagname, sizeof(flagname), "%s.%s.%s", r->bin->prefix, prefix, reloc_name);
+	} else {
+		snprintf(flagname, sizeof(flagname), "%s.%s", prefix, reloc_name);
+	}
+	char *demname = NULL;
+	if (bin_demangle) {
+		demname = rz_bin_demangle(r->bin->cur, lang, flagname, flag_addr, keep_lib);
+		if (demname) {
+			snprintf(flagname, sizeof(flagname), "reloc.%s", demname);
+		}
+	}
+	rz_name_filter(flagname, 0, true);
+	RzFlagItem *existing = rz_flag_get(r->flags, flagname);
+	if (existing && existing->offset == flag_addr) {
+		// Mostly important for target flags.
+		// We don't want hundreds of reloc.target.<fcnname>.<xyz> flags at the same location
+		return;
+	}
+	RzFlagItem *fi = rz_flag_set_next(r->flags, flagname, flag_addr, bin_reloc_size(reloc));
+	if (demname) {
+		rz_flag_item_set_realname(fi, demname);
+		free(demname);
+	} else {
+		rz_flag_item_set_realname(fi, reloc_name);
+	}
+	free(reloc_name);
+}
+
+static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va, Sdb **db, char **sdb_module) {
 	bool is_pe = true;
 
 	if (is_pe && reloc->import && reloc->import->name && reloc->import->libname && rz_str_startswith(reloc->import->name, "Ordinal_")) {
@@ -987,37 +1030,11 @@ static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, ch
 		rz_meta_set(r->analysis, RZ_META_TYPE_DATA, reloc->vaddr, 4, NULL);
 	}
 
-	char flagname[RZ_FLAG_NAME_SIZE];
-	char *reloc_name = construct_reloc_name(reloc, NULL);
-	if (!reloc_name || !*reloc_name) {
-		free(reloc_name);
-		return;
+	ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
+	reloc_set_flag(r, reloc, "reloc", addr);
+	if (rz_bin_reloc_has_target(reloc)) {
+		reloc_set_flag(r, reloc, "reloc.target", reloc->target_vaddr);
 	}
-	if (r->bin->prefix) {
-		snprintf(flagname, RZ_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
-	} else {
-		snprintf(flagname, RZ_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
-	}
-	free(reloc_name);
-	char *demname = NULL;
-	if (bin_demangle) {
-		demname = rz_bin_demangle(r->bin->cur, lang, flagname, addr, keep_lib);
-		if (demname) {
-			snprintf(flagname, RZ_FLAG_NAME_SIZE, "reloc.%s", demname);
-		}
-	}
-	rz_name_filter(flagname, 0, true);
-	RzFlagItem *fi = rz_flag_set(r->flags, flagname, addr, bin_reloc_size(reloc));
-	if (demname) {
-		char *realname;
-		if (r->bin->prefix) {
-			realname = sdb_fmt("%s.reloc.%s", r->bin->prefix, demname);
-		} else {
-			realname = sdb_fmt("reloc.%s", demname);
-		}
-		rz_flag_item_set_realname(fi, realname);
-	}
-	free(demname);
 }
 
 RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_bool) {
@@ -1028,18 +1045,20 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 	}
 
 	int va = VA_TRUE; // XXX relocs always vaddr?
-	RBNode *relocs = rz_bin_object_patch_relocs(binfile, o);
+	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(binfile, o);
 	if (!relocs) {
 		relocs = o->relocs;
+		if (!relocs) {
+			return false;
+		}
 	}
 
 	rz_flag_space_set(core->flags, RZ_FLAGS_FS_RELOCS);
 
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
-	RBIter iter;
-	RzBinReloc *reloc = NULL;
-	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
+	for (size_t i = 0; i < relocs->relocs_count; i++) {
+		RzBinReloc *reloc = relocs->relocs[i];
 		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
 		if ((is_section_reloc(reloc) || is_file_reloc(reloc))) {
 			/*
@@ -1048,10 +1067,13 @@ RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_b
 			 */
 			continue;
 		}
-		set_bin_relocs(core, reloc, addr, &db, &sdb_module);
+		set_bin_relocs(core, o, reloc, va, &db, &sdb_module);
 		ut64 meta_sz;
-		if (meta_for_reloc(core, o, reloc, addr, &meta_sz)) {
+		if (meta_for_reloc(core, o, reloc, false, addr, &meta_sz)) {
 			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, addr, meta_sz, NULL);
+		}
+		if (va && rz_bin_reloc_has_target(reloc) && meta_for_reloc(core, o, reloc, true, reloc->target_vaddr, &meta_sz)) {
+			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, reloc->target_vaddr, meta_sz, NULL);
 		}
 	}
 	RZ_FREE(sdb_module);
@@ -2212,22 +2234,32 @@ static const char *bin_reloc_type_name(RzBinReloc *reloc) {
  * \brief fetch relocs for the object and print them
  * \return the number of relocs or -1 on failure
  */
-static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int va, int mode, PJ *pj, RzTable *table) {
+static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int va, int mode, PJ *pj, RzTable **table_out) {
+	rz_return_val_if_fail(r && bf && o, -1);
 	bool bin_demangle = rz_config_get_i(r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i(r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get(r->config, "bin.lang");
 
-	RBNode *relocs = rz_bin_object_patch_relocs(bf, o);
+	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, o);
 	if (!relocs) {
-		relocs = rz_bin_get_relocs(r->bin);
+		relocs = o->relocs;
+	}
+	bool have_targets = relocs ? rz_bin_reloc_storage_targets_available(relocs) : false;
+	RzTable *table = NULL;
+	if (IS_MODE_NORMAL(mode)) {
+		table = rz_core_table(r);
+		if (have_targets) {
+			rz_table_set_columnsf(table, "XXXss", "vaddr", "paddr", "target", "type", "name");
+		} else {
+			rz_table_set_columnsf(table, "XXss", "vaddr", "paddr", "type", "name");
+		}
+		*table_out = table;
 	}
 	if (!relocs) {
 		return -1;
 	}
-	int count = 0;
-	RBIter iter;
-	RzBinReloc *reloc;
-	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
+	for (size_t i = 0; i < relocs->relocs_count; i++) {
+		RzBinReloc *reloc = relocs->relocs[i];
 		ut64 addr = rva(o, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SIMPLE(mode)) {
 			rz_cons_printf("0x%08" PFMT64x "  %s\n", addr, reloc->import ? reloc->import->name : "");
@@ -2249,7 +2281,7 @@ static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int
 					r->bin->prefix ? r->bin->prefix : "reloc.",
 					r->bin->prefix ? "." : "", n, reloc_size, addr);
 				ut64 meta_sz;
-				if (meta_for_reloc(r, o, reloc, addr, &meta_sz)) {
+				if (meta_for_reloc(r, o, reloc, false, addr, &meta_sz)) {
 					rz_cons_printf("Cd %" PFMT64u " @ 0x%08" PFMT64x "\n", meta_sz, addr);
 				}
 				free(n);
@@ -2277,6 +2309,9 @@ static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int
 			pj_ks(pj, "type", bin_reloc_type_name(reloc));
 			pj_kn(pj, "vaddr", reloc->vaddr);
 			pj_kn(pj, "paddr", reloc->paddr);
+			if (rz_bin_reloc_has_target(reloc)) {
+				pj_kn(pj, "target_vaddr", reloc->target_vaddr);
+			}
 			if (reloc->symbol) {
 				pj_kn(pj, "sym_va", reloc->symbol->vaddr);
 			}
@@ -2319,43 +2354,42 @@ static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int
 				rz_strbuf_append(buf, " (ifunc)");
 			}
 			char *res = rz_strbuf_drain(buf);
-			rz_table_add_rowf(table, "XXss", addr, reloc->paddr,
-				bin_reloc_type_name(reloc), res);
+			if (have_targets) {
+				rz_table_add_rowf(table, "XXXss", addr, reloc->paddr, reloc->target_vaddr,
+					bin_reloc_type_name(reloc), res);
+			} else {
+				rz_table_add_rowf(table, "XXss", addr, reloc->paddr,
+					bin_reloc_type_name(reloc), res);
+			}
 			free(res);
 		}
-		count++;
 	}
-	return count;
+	return relocs->relocs_count;
 }
 
 static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
-	RzTable *table = rz_core_table(r);
-	rz_return_val_if_fail(table, false);
-
-	RZ_TIME_PROFILE_BEGIN;
-
 	va = VA_TRUE; // XXX relocs always vaddr?
 
 	if (IS_MODE_RZCMD(mode)) {
 		rz_cons_println("fs relocs");
 	} else if (IS_MODE_NORMAL(mode)) {
 		rz_cons_println("[Relocations]");
-		rz_table_set_columnsf(table, "XXss", "vaddr", "paddr", "type", "name");
 	} else if (IS_MODE_JSON(mode)) {
 		pj_a(pj);
 	}
 
+	RzTable *table = NULL;
 	int relocs_count = -1;
 	if (r->bin->cur && r->bin->cur->o) {
 		RzBinFile *bf = r->bin->cur;
 		RzBinObject *o = bf->o;
-		relocs_count = print_relocs_for_object(r, bf, o, va, mode, pj, table);
+		relocs_count = print_relocs_for_object(r, bf, o, va, mode, pj, &table);
 	}
 
 	if (IS_MODE_JSON(mode)) {
 		pj_end(pj);
 	}
-	if (IS_MODE_NORMAL(mode)) {
+	if (IS_MODE_NORMAL(mode) && table) {
 		if (r->table_query) {
 			rz_table_query(table, r->table_query);
 		}
@@ -2367,7 +2401,6 @@ static int bin_relocs(RzCore *r, PJ *pj, int mode, int va) {
 
 	rz_table_free(table);
 
-	RZ_TIME_PROFILE_END;
 	if (IS_MODE_JSON(mode)) {
 		return true; // ignore relocs_count here
 	}

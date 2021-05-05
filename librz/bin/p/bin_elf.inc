@@ -1095,9 +1095,9 @@ static RzList *patch_relocs(RzBinFile *bf) {
 		}
 
 		if (sym_addr) {
-			ptr->vaddr = sym_addr;
+			ptr->target_vaddr = sym_addr;
 		} else {
-			ptr->vaddr = vaddr;
+			ptr->target_vaddr = vaddr;
 			ht_uu_insert(relocs_by_sym, relcs[i].sym, vaddr);
 			vaddr += cdsz;
 		}

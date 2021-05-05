@@ -1578,7 +1578,7 @@ static int handleMidFlags(RzCore *core, RDisasmState *ds, bool print) {
 				i = 0;
 			} else if (!strncmp(fi->name, "str.", 4)) {
 				ds->midflags = RZ_MIDFLAGS_REALIGN;
-			} else if (!strncmp(fi->name, "reloc.", 6)) {
+			} else if (fi->space && !strcmp(fi->space->name, RZ_FLAGS_FS_RELOCS)) {
 				continue;
 			} else if (ds->midflags == RZ_MIDFLAGS_SYMALIGN) {
 				if (strncmp(fi->name, "sym.", 4)) {
@@ -4211,6 +4211,11 @@ static void ds_print_relocs(RDisasmState *ds) {
 	bool demangle = rz_config_get_b(core->config, "asm.demangle");
 	bool keep_lib = rz_config_get_b(core->config, "bin.demangle.libs");
 	RzBinReloc *rel = rz_core_getreloc(core, ds->at, ds->analop.size);
+	const char *rel_label = "RELOC";
+	if (!rel) {
+		rel = rz_core_get_reloc_to(core, ds->at);
+		rel_label = "RELOC TARGET";
+	}
 	if (rel) {
 		int cstrlen = 0;
 		char *ll = rz_cons_lastline(&cstrlen);
@@ -4226,12 +4231,13 @@ static void ds_print_relocs(RDisasmState *ds) {
 			if (demangle) {
 				demname = rz_bin_demangle(core->bin->cur, lang, rel->import->name, rel->vaddr, keep_lib);
 			}
-			rz_cons_printf("; RELOC %d %s", rel->type, demname ? demname : rel->import->name);
+			rz_cons_printf("; %s %d %s", rel_label, rel->type, demname ? demname : rel->import->name);
 		} else if (rel->symbol) {
 			if (demangle) {
 				demname = rz_bin_demangle(core->bin->cur, lang, rel->symbol->name, rel->symbol->vaddr, keep_lib);
 			}
-			rz_cons_printf("; RELOC %d %s @ 0x%08" PFMT64x,
+			rz_cons_printf("; %s %d %s @ 0x%08" PFMT64x,
+				rel_label,
 				rel->type, demname ? demname : rel->symbol->name,
 				rel->symbol->vaddr);
 			if (rel->addend) {
@@ -4242,7 +4248,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 				}
 			}
 		} else {
-			rz_cons_printf("; RELOC %d ", rel->type);
+			rz_cons_printf("; %s %d ", rel_label, rel->type);
 		}
 		free(demname);
 	}
@@ -5068,13 +5074,26 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		if (!set_jump_realname(ds, addr, &kw, &name)) {
 			name = fcn->name;
 		}
-	} else if (f) {
+	} else if (f && !set_jump_realname(ds, addr, &kw, &name)) {
+		RzFlagItem *flag = rz_core_flag_get_by_spaces(f, addr);
+		if (flag) {
+			if (strchr(flag->name, '.')) {
+				name = flag->name;
+				if (f->realnames && flag->realname) {
+					name = flag->realname;
+				}
+			}
+		}
+	}
+
+	if (!name) {
+		// If there are no functions and no flags, but there is a reloc, show that
 		RzBinReloc *rel = NULL;
 		if (!ds->core->bin->is_reloc_patched) {
 			rel = rz_core_getreloc(ds->core, ds->analop.addr, ds->analop.size);
 		}
 		if (!rel) {
-			rel = rz_core_getreloc(ds->core, addr, ds->analop.size);
+			rel = rz_core_get_reloc_to(ds->core, addr);
 		}
 		if (rel) {
 			if (rel && rel->import && rel->import->name) {
@@ -5082,20 +5101,9 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			} else if (rel && rel->symbol && rel->symbol->name) {
 				name = rel->symbol->name;
 			}
-		} else {
-			if (!set_jump_realname(ds, addr, &kw, &name)) {
-				RzFlagItem *flag = rz_core_flag_get_by_spaces(f, addr);
-				if (flag) {
-					if (strchr(flag->name, '.')) {
-						name = flag->name;
-						if (f->realnames && flag->realname) {
-							name = flag->realname;
-						}
-					}
-				}
-			}
 		}
 	}
+
 	if (name) {
 		char *nptr, *ptr;
 		ut64 numval;

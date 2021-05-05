@@ -23,7 +23,7 @@
 	do { \
 		size_t new_capacity = next_capacity; \
 		void **new_a = realloc(vec->a, vec->elem_size * new_capacity); \
-		if (!new_a) { \
+		if (!new_a && new_capacity) { \
 			return NULL; \
 		} \
 		vec->a = new_a; \

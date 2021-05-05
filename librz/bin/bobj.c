@@ -17,20 +17,131 @@ RZ_API void rz_bin_mem_free(void *data) {
 	free(mem);
 }
 
-static int reloc_cmp(const void *a, const RBNode *b, void *user) {
-	const RzBinReloc *ar = (const RzBinReloc *)a;
-	const RzBinReloc *br = container_of(b, const RzBinReloc, vrb);
-	if (ar->vaddr > br->vaddr) {
-		return 1;
-	}
-	if (ar->vaddr < br->vaddr) {
-		return -1;
+/// size of the reloc (where it is supposed to be patched) in bits
+RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc) {
+	switch (reloc->type) {
+	case RZ_BIN_RELOC_8:
+		return 8;
+	case RZ_BIN_RELOC_16:
+		return 16;
+	case RZ_BIN_RELOC_32:
+		return 32;
+	case RZ_BIN_RELOC_64:
+		return 64;
 	}
 	return 0;
 }
 
-static void reloc_free(RBNode *rbn, void *user) {
-	free(container_of(rbn, RzBinReloc, vrb));
+#define CMP_CHECK(member) \
+	do { \
+		if (ar->member != br->member) { \
+			return RZ_NUM_CMP(ar->member, br->member); \
+		} \
+	} while (0);
+
+static int reloc_cmp(const void *a, const void *b) {
+	const RzBinReloc *ar = a;
+	const RzBinReloc *br = b;
+	CMP_CHECK(vaddr);
+	CMP_CHECK(paddr);
+	CMP_CHECK(type);
+	CMP_CHECK(target_vaddr);
+	return 0;
+}
+
+static int reloc_target_cmp(const void *a, const void *b) {
+	const RzBinReloc *ar = a;
+	const RzBinReloc *br = b;
+	CMP_CHECK(target_vaddr);
+	CMP_CHECK(vaddr);
+	CMP_CHECK(paddr);
+	CMP_CHECK(type);
+	return 0;
+}
+
+#undef CMP_CHECK
+
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList *relocs) {
+	RzBinRelocStorage *ret = RZ_NEW0(RzBinRelocStorage);
+	if (!ret) {
+		return NULL;
+	}
+	RzPVector sorter;
+	rz_pvector_init(&sorter, NULL);
+	rz_pvector_reserve(&sorter, rz_list_length(relocs));
+	RzPVector target_sorter;
+	rz_pvector_init(&target_sorter, NULL);
+	rz_pvector_reserve(&target_sorter, rz_list_length(relocs));
+	RzListIter *it;
+	RzBinReloc *reloc;
+	rz_list_foreach (relocs, it, reloc) {
+		rz_pvector_push(&sorter, reloc);
+		if (rz_bin_reloc_has_target(reloc)) {
+			rz_pvector_push(&target_sorter, reloc);
+		}
+	}
+	relocs->free = NULL; // ownership of relocs transferred
+	rz_list_free(relocs);
+	rz_pvector_sort(&sorter, reloc_cmp);
+	ret->relocs_count = rz_pvector_len(&sorter);
+	ret->relocs = (RzBinReloc **)rz_pvector_flush(&sorter);
+	rz_pvector_fini(&sorter);
+	rz_pvector_sort(&target_sorter, reloc_target_cmp);
+	ret->target_relocs_count = rz_pvector_len(&target_sorter);
+	ret->target_relocs = (RzBinReloc **)rz_pvector_flush(&target_sorter);
+	rz_pvector_fini(&target_sorter);
+	return ret;
+}
+
+RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage) {
+	if (!storage) {
+		return;
+	}
+	for (size_t i = 0; i < storage->relocs_count; i++) {
+		rz_bin_reloc_free(storage->relocs[i]);
+	}
+	free(storage->relocs);
+	free(storage->target_relocs);
+	free(storage);
+}
+
+static int reloc_vaddr_cmp(ut64 ref, RzBinReloc *reloc) {
+	return RZ_NUM_CMP(ref, reloc->vaddr);
+}
+
+/// Get the reloc with the lowest vaddr that starts inside the given interval
+RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_in(RzBinRelocStorage *storage, ut64 vaddr, ut64 size) {
+	rz_return_val_if_fail(storage && size >= 1, NULL);
+	if (!storage->relocs) {
+		return NULL;
+	}
+	size_t i;
+	rz_array_lower_bound(storage->relocs, storage->relocs_count, vaddr, i, reloc_vaddr_cmp);
+	if (i >= storage->relocs_count) {
+		return NULL;
+	}
+	RzBinReloc *r = storage->relocs[i];
+	return r->vaddr >= vaddr && r->vaddr < vaddr + size ? r : NULL;
+}
+
+static int reloc_target_vaddr_cmp(ut64 ref, RzBinReloc *reloc) {
+	return RZ_NUM_CMP(ref, reloc->target_vaddr);
+}
+
+/// Get a reloc that points exactly to vaddr or NULL
+RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_to(RzBinRelocStorage *storage, ut64 vaddr) {
+	rz_return_val_if_fail(storage, NULL);
+	if (!storage->target_relocs) {
+		return NULL;
+	}
+	size_t i;
+	rz_array_upper_bound(storage->target_relocs, storage->target_relocs_count, vaddr, i, reloc_target_vaddr_cmp);
+	if (!i) {
+		return NULL;
+	}
+	i--;
+	RzBinReloc *r = storage->target_relocs[i];
+	return r->target_vaddr == vaddr ? r : NULL;
 }
 
 static void object_delete_items(RzBinObject *o) {
@@ -42,7 +153,7 @@ static void object_delete_items(RzBinObject *o) {
 	rz_list_free(o->fields);
 	rz_list_free(o->imports);
 	rz_list_free(o->libs);
-	rz_rbtree_free(o->relocs, reloc_free, NULL);
+	rz_bin_reloc_storage_free(o->relocs);
 	rz_list_free(o->sections);
 	rz_list_free(o->strings);
 	ht_up_free(o->strings_db);
@@ -235,17 +346,6 @@ static void filter_classes(RzBinFile *bf, RzList *list) {
 	ht_pp_free(ht);
 }
 
-static RBNode *list2rbtree(RzList *relocs) {
-	RzListIter *it;
-	RzBinReloc *reloc;
-	RBNode *res = NULL;
-
-	rz_list_foreach (relocs, it, reloc) {
-		rz_rbtree_insert(&res, reloc, &reloc->vrb, reloc_cmp, NULL);
-	}
-	return res;
-}
-
 static void rz_bin_object_rebuild_classes_ht(RzBinObject *o) {
 	ht_pp_free(o->classes_ht);
 	ht_pp_free(o->methods_ht);
@@ -368,9 +468,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			RzList *l = p->relocs(bf);
 			if (l) {
 				REBASE_PADDR(o, l, RzBinReloc);
-				o->relocs = list2rbtree(l);
-				l->free = NULL;
-				rz_list_free(l);
+				o->relocs = rz_bin_reloc_storage_new(l);
 			}
 		}
 	}
@@ -441,7 +539,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	return true;
 }
 
-RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
+RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
 	rz_return_val_if_fail(bf && o, NULL);
 
 	static bool first = true;
@@ -454,13 +552,11 @@ RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o) {
 		if (!tmp) {
 			return o->relocs;
 		}
-		rz_rbtree_free(o->relocs, reloc_free, NULL);
+		rz_bin_reloc_storage_free(o->relocs);
 		REBASE_PADDR(o, tmp, RzBinReloc);
-		o->relocs = list2rbtree(tmp);
+		o->relocs = rz_bin_reloc_storage_new(tmp);
 		first = false;
 		bf->rbin->is_reloc_patched = true;
-		tmp->free = NULL;
-		rz_list_free(tmp);
 	}
 	return o->relocs;
 }

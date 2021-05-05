@@ -67,7 +67,7 @@ e asm.lines=false
 pd 1 @ 0x0800005e
 EOF
 EXPECT=<<EOF
-0x0800005e      e878840300     call  r_spaces_set
+0x0800005e      e878840300     call  reloc.target.r_spaces_set
 EOF
 RUN
 
@@ -79,11 +79,21 @@ e asm.bytes=true
 e asm.comments=false
 e asm.lines=false
 e asm.flags=false
+e asm.flags.real=false
+pd 1 @ 0x0800007c
+pd 1 @ 0x0800008c
+pd 1 @ 0x0800009f
+?e --
+e asm.flags.real=true
 pd 1 @ 0x0800007c
 pd 1 @ 0x0800008c
 pd 1 @ 0x0800009f
 EOF
 EXPECT=<<EOF
+0x0800007c      e88e0a0000     call  reloc.target.__fentry
+0x0800008c      e8860a0000     call  reloc.target.printk
+0x0800009f      e8730a0000     call  reloc.target.printk
+--
 0x0800007c      e88e0a0000     call  __fentry__
 0x0800008c      e8860a0000     call  printk
 0x0800009f      e8730a0000     call  printk
@@ -105,5 +115,122 @@ EXPECT=<<EOF
 0x0800007c      e800000000     call  __fentry__
 0x0800008c      e800000000     call  printk
 0x0800009f      e800000000     call  printk
+EOF
+RUN
+
+NAME=ELF: reloc flags
+FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
+ARGS=-e io.cache=true
+CMDS=<<EOF
+e asm.flags.real=false
+f@F:relocs
+pd 1 @ 0x08000079
+pd 1 @ 0x080000a2
+pd 1 @ reloc.target.strcmp
+?e --
+e asm.flags.real=true
+f@F:relocs
+pd 1 @ 0x08000079
+pd 1 @ 0x080000a2
+pd 1 @ reloc.target.strcmp
+EOF
+EXPECT=<<EOF
+0x08000040 4 reloc.target..text
+0x08000073 4 reloc..rodata.str1.1
+0x0800007a 4 reloc.strcmp
+0x0800009c 4 reloc..rodata.str1.1.0
+0x080000a3 4 reloc.strcmp.0
+0x080000be 4 reloc..rodata.str1.1.1
+0x080000c5 4 reloc.strcmp.1
+0x080000f8 8 reloc..rodata.str1.1.2
+0x08000125 4 reloc.stat
+0x08000144 4 reloc.strlen
+0x08000199 4 reloc.memcpy
+0x080001be 8 reloc..rodata.str1.1.3
+0x080001e0 4 reloc.strlen.0
+0x08000231 4 reloc.memcpy.0
+0x08000267 4 reloc.memcpy.1
+0x080002a2 4 reloc.perror
+0x080002c9 4 reloc.time
+0x080003a9 4 reloc..rodata.str1.1.4
+0x080003b8 4 reloc..L.str.5
+0x0800050f 8 reloc..rodata.str1.1.5
+0x0800053e 8 reloc..rodata.str1.1.6
+0x08000555 4 reloc.exit
+0x0800057f 4 reloc.write
+0x080005be 4 reloc.utilvserver_fmt_ulong_base
+0x080005f5 4 reloc.strlen.1
+0x0800061b 8 reloc..rodata.str1.1.7
+0x08000632 4 reloc.exit.0
+0x08000636 4 reloc.target..rodata.str1.1
+0x08000689 4 reloc.target..L.str.5
+0x08000880 4 reloc..text
+0x0800089c 4 reloc..text.0
+0x080008b8 4 reloc..text.1
+0x080008d4 4 reloc..text.2
+0x080008f0 4 reloc..text.3
+0x0800090c 4 reloc..text.4
+0x08000ef3 4 reloc.target.strcmp
+0x08000efb 4 reloc.target.stat
+0x08000f03 4 reloc.target.strlen
+0x08000f0b 4 reloc.target.memcpy
+0x08000f13 4 reloc.target.perror
+0x08000f1b 4 reloc.target.time
+0x08000f23 4 reloc.target.exit
+0x08000f2b 4 reloc.target.write
+0x08000f33 4 reloc.target.utilvserver_fmt_ulong_base
+            0x08000079      call  reloc.target.strcmp                  ; RELOC 32 strcmp
+            0x080000a2      call  reloc.target.strcmp                  ; RELOC 32 strcmp
+            ;-- strcmp:
+            0x08000ef3      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
+--
+0x08000040 4 .text
+0x08000073 4 .rodata.str1.1
+0x0800007a 4 strcmp
+0x0800009c 4 .rodata.str1.1
+0x080000a3 4 strcmp
+0x080000be 4 .rodata.str1.1
+0x080000c5 4 strcmp
+0x080000f8 8 .rodata.str1.1
+0x08000125 4 stat
+0x08000144 4 strlen
+0x08000199 4 memcpy
+0x080001be 8 .rodata.str1.1
+0x080001e0 4 strlen
+0x08000231 4 memcpy
+0x08000267 4 memcpy
+0x080002a2 4 perror
+0x080002c9 4 time
+0x080003a9 4 .rodata.str1.1
+0x080003b8 4 .L.str.5
+0x0800050f 8 .rodata.str1.1
+0x0800053e 8 .rodata.str1.1
+0x08000555 4 exit
+0x0800057f 4 write
+0x080005be 4 utilvserver_fmt_ulong_base
+0x080005f5 4 strlen
+0x0800061b 8 .rodata.str1.1
+0x08000632 4 exit
+0x08000636 4 .rodata.str1.1
+0x08000689 4 .L.str.5
+0x08000880 4 .text
+0x0800089c 4 .text
+0x080008b8 4 .text
+0x080008d4 4 .text
+0x080008f0 4 .text
+0x0800090c 4 .text
+0x08000ef3 4 strcmp
+0x08000efb 4 stat
+0x08000f03 4 strlen
+0x08000f0b 4 memcpy
+0x08000f13 4 perror
+0x08000f1b 4 time
+0x08000f23 4 exit
+0x08000f2b 4 write
+0x08000f33 4 utilvserver_fmt_ulong_base
+            0x08000079      call  strcmp                               ; RELOC 32 strcmp
+            0x080000a2      call  strcmp                               ; RELOC 32 strcmp
+            ;-- strcmp:
+            0x08000ef3      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
 EOF
 RUN

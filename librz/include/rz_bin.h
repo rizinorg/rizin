@@ -10,6 +10,7 @@
 typedef struct rz_bin_t RzBin;
 typedef struct rz_bin_file_t RzBinFile;
 typedef struct rz_bin_source_line_info_t RzBinSourceLineInfo;
+typedef struct rz_bin_reloc_storage_t RzBinRelocStorage;
 
 #include <rz_bin_dwarf.h>
 #include <rz_pdb.h>
@@ -168,12 +169,12 @@ enum {
 	RZ_BIN_CLASS_PROTECTED,
 };
 
-enum {
+typedef enum {
 	RZ_BIN_RELOC_8 = 8,
 	RZ_BIN_RELOC_16 = 16,
 	RZ_BIN_RELOC_32 = 32,
 	RZ_BIN_RELOC_64 = 64
-};
+} RzBinRelocType;
 
 enum {
 	RZ_BIN_TYPE_DEFAULT = 0,
@@ -261,7 +262,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<??>*/ *entries;
 	RzList /*<??>*/ *fields;
 	RzList /*<??>*/ *libs;
-	RBNode /*<RzBinReloc>*/ *relocs;
+	RzBinRelocStorage *relocs;
 	RzList /*<??>*/ *strings;
 	RzList /*<RzBinClass>*/ *classes;
 	HtPP *classes_ht;
@@ -651,22 +652,43 @@ typedef struct rz_bin_import_t {
 } RzBinImport;
 
 typedef struct rz_bin_reloc_t {
-	ut8 type;
-	ut8 additive;
+	RzBinRelocType type;
 	RzBinSymbol *symbol;
 	RzBinImport *import;
 	st64 addend;
-	ut64 vaddr;
-	ut64 paddr;
+	ut64 vaddr; ///< the vaddr where the value should be patched into
+	ut64 paddr; ///< the paddr where the value should be patched into
+	ut64 target_vaddr; ///< the target address that the patched reloc points to
 	ut32 visibility;
+	bool additive;
 	/* is_ifunc: indirect function, `addend` points to a resolver function
 	 * that returns the actual relocation value, e.g. chooses
 	 * an optimized version depending on the CPU.
 	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
 	 */
 	bool is_ifunc;
-	RBNode vrb;
 } RzBinReloc;
+
+RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc);
+
+/// Efficient storage of relocations to query by address
+struct rz_bin_reloc_storage_t {
+	RzBinReloc **relocs; ///< all relocs, ordered by their vaddr
+	size_t relocs_count;
+	RzBinReloc **target_relocs; ///< all relocs that have a valid target_vaddr, ordered by their target_vaddr. size is target_relocs_count!
+	size_t target_relocs_count;
+}; // RzBinRelocStorage
+
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList *relocs);
+RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage);
+RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_in(RzBinRelocStorage *storage, ut64 vaddr, ut64 size);
+
+/// return true iff there is at least one reloc in the storage with a target address
+static inline bool rz_bin_reloc_storage_targets_available(RzBinRelocStorage *storage) {
+	return storage->target_relocs_count != 0;
+}
+
+RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_to(RzBinRelocStorage *storage, ut64 vaddr);
 
 typedef struct rz_bin_string_t {
 	// TODO: rename string->name (avoid colisions)
@@ -739,6 +761,10 @@ RZ_IPI void rz_bin_section_free(RzBinSection *bs);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RzBinImport *imp);
 RZ_API void rz_bin_symbol_free(RzBinSymbol *sym);
+static inline bool rz_bin_reloc_has_target(RzBinReloc *reloc) {
+	return reloc->target_vaddr && reloc->target_vaddr != UT64_MAX;
+}
+RZ_API void rz_bin_reloc_free(RzBinReloc *reloc);
 RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr);
 RZ_API void rz_bin_string_free(void *_str);
 
@@ -798,8 +824,6 @@ RZ_API RZ_DEPRECATE RzList *rz_bin_get_entries(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_fields(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_imports(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_libs(RzBin *bin);
-RZ_API RZ_DEPRECATE RBNode *rz_bin_get_relocs(RzBin *bin);
-RZ_API RZ_DEPRECATE RzList *rz_bin_get_relocs_list(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_sections(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_classes(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_strings(RzBin *bin);
@@ -865,7 +889,7 @@ RZ_API bool rz_bin_object_delete(RzBin *bin, ut32 binfile_id);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
 RZ_API RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym);
-RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
+RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImport *imp);
 RZ_API void rz_bin_mem_free(void *data);
 
