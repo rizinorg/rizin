@@ -4265,6 +4265,57 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_cmd_debug_start_trace_session_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		eprintf("Cannot start session outside of debug mode, run ood?\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (core->dbg->session) {
+		eprintf("Session already started\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	core->dbg->session = rz_debug_session_new();
+	rz_debug_add_checkpoint(core->dbg);
+
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_stop_trace_session_handler(RzCore *core, int argc, const char **argv) {
+	if (!core->dbg->session) {
+		eprintf("No session started\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_debug_session_free(core->dbg->session);
+	core->dbg->session = NULL;
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_save_trace_session_handler(RzCore *core, int argc, const char **argv) {
+	if (!core->dbg->session) {
+		eprintf("No session started\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_debug_session_save(core->dbg->session, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_load_trace_session_handler(RzCore *core, int argc, const char **argv) {
+	if (core->dbg->session) {
+		rz_debug_session_free(core->dbg->session);
+		core->dbg->session = NULL;
+	}
+	core->dbg->session = rz_debug_session_new();
+	rz_debug_session_load(core->dbg, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_list_trace_session_mmap_handler(RzCore *core, int argc, const char **argv) {
+	if (core->dbg->session) {
+		rz_debug_session_list_memory(core->dbg);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 static char *get_corefile_name(const char *raw_name, int pid) {
 	return (!*raw_name) ? rz_str_newf("core.%u", pid) : rz_str_trim_dup(raw_name);
 }

@@ -91,6 +91,8 @@ static const RzCmdDescArg cmd_debug_step_until_instr_regex_args[2];
 static const RzCmdDescArg cmd_debug_step_until_optype_args[2];
 static const RzCmdDescArg cmd_debug_step_until_esil_args[2];
 static const RzCmdDescArg cmd_debug_step_until_flag_args[2];
+static const RzCmdDescArg cmd_debug_save_trace_session_args[2];
+static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -1521,6 +1523,61 @@ static const RzCmdDescArg cmd_debug_step_until_flag_args[] = {
 static const RzCmdDescHelp cmd_debug_step_until_flag_help = {
 	.summary = "Step until pc == <flag> matching name",
 	.args = cmd_debug_step_until_flag_args,
+};
+
+static const RzCmdDescHelp dts_help = {
+	.summary = "Debug trace session commands",
+};
+static const RzCmdDescArg cmd_debug_start_trace_session_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_start_trace_session_help = {
+	.summary = "Start trace session",
+	.args = cmd_debug_start_trace_session_args,
+};
+
+static const RzCmdDescArg cmd_debug_stop_trace_session_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_stop_trace_session_help = {
+	.summary = "Stop trace session",
+	.args = cmd_debug_stop_trace_session_args,
+};
+
+static const RzCmdDescArg cmd_debug_save_trace_session_args[] = {
+	{
+		.name = "dir",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_save_trace_session_help = {
+	.summary = "Save trace sessions to disk",
+	.args = cmd_debug_save_trace_session_args,
+};
+
+static const RzCmdDescArg cmd_debug_load_trace_session_args[] = {
+	{
+		.name = "dir",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_load_trace_session_help = {
+	.summary = "Load trace sessions to disk",
+	.args = cmd_debug_load_trace_session_args,
+};
+
+static const RzCmdDescArg cmd_debug_list_trace_session_mmap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_trace_session_mmap_help = {
+	.summary = "List current memory map and hash",
+	.args = cmd_debug_list_trace_session_mmap_args,
 };
 
 static const RzCmdDescHelp e_help = {
@@ -4227,6 +4284,23 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_step_until_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsuf", rz_cmd_debug_step_until_flag_handler, &cmd_debug_step_until_flag_help);
 	rz_warn_if_fail(cmd_debug_step_until_flag_cd);
+
+	RzCmdDesc *dts_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_step_cd, "dts", NULL, NULL, &dts_help);
+	rz_warn_if_fail(dts_cd);
+	RzCmdDesc *cmd_debug_start_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dts+", rz_cmd_debug_start_trace_session_handler, &cmd_debug_start_trace_session_help);
+	rz_warn_if_fail(cmd_debug_start_trace_session_cd);
+
+	RzCmdDesc *cmd_debug_stop_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dts-", rz_cmd_debug_stop_trace_session_handler, &cmd_debug_stop_trace_session_help);
+	rz_warn_if_fail(cmd_debug_stop_trace_session_cd);
+
+	RzCmdDesc *cmd_debug_save_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtst", rz_cmd_debug_save_trace_session_handler, &cmd_debug_save_trace_session_help);
+	rz_warn_if_fail(cmd_debug_save_trace_session_cd);
+
+	RzCmdDesc *cmd_debug_load_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtsf", rz_cmd_debug_load_trace_session_handler, &cmd_debug_load_trace_session_help);
+	rz_warn_if_fail(cmd_debug_load_trace_session_cd);
+
+	RzCmdDesc *cmd_debug_list_trace_session_mmap_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtsm", rz_cmd_debug_list_trace_session_mmap_handler, &cmd_debug_list_trace_session_mmap_help);
+	rz_warn_if_fail(cmd_debug_list_trace_session_mmap_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);
