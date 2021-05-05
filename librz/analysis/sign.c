@@ -1682,59 +1682,39 @@ static void listOffset(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listVars(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
-	RzListIter *iter = NULL;
-	char *var = NULL;
-	int i = 0;
-
-	if (format == '*') {
-		a->cb_printf("za %s v ", it->name);
-	} else if (format == 'q') {
-		a->cb_printf(" vars(%d)", rz_list_length(it->vars));
-		return;
-	} else if (format == 'j') {
-		pj_ka(pj, "vars");
-	} else {
-		a->cb_printf("  vars: ");
-	}
-
-	rz_list_foreach (it->vars, iter, var) {
-		if (i > 0) {
-			if (format == '*') {
-				a->cb_printf(" ");
-			} else if (format != 'j') {
-				a->cb_printf(", ");
-			}
-		}
-		if (format == 'j') {
-			pj_s(pj, var);
-		} else {
-			a->cb_printf("%s", var);
-		}
-		i++;
-	}
-
-	if (format == 'j') {
-		pj_end(pj);
-	} else {
-		a->cb_printf("\n");
+static inline const char *sign_type_to_name(int type) {
+	switch (type) {
+	case RZ_SIGN_BYTES:
+		return "bytes";
+	case RZ_SIGN_BYTES_MASK:
+		return "mask";
+	case RZ_SIGN_BYTES_SIZE:
+		return "size";
+	case RZ_SIGN_COMMENT:
+		return "comment";
+	case RZ_SIGN_GRAPH:
+		return "graph";
+	case RZ_SIGN_OFFSET:
+		return "addr";
+	case RZ_SIGN_NAME:
+		return "name";
+	case RZ_SIGN_REFS:
+		return "xrefs_from";
+	case RZ_SIGN_XREFS:
+		return "xrefs_to";
+	case RZ_SIGN_VARS:
+		return "vars";
+	case RZ_SIGN_TYPES:
+		return "types";
+	case RZ_SIGN_BBHASH:
+		return "bbhash";
+	default:
+		rz_warn_if_reached();
+		return "unknown";
 	}
 }
 
-static void print_list_type_header(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
-	if (format == '*') {
-		a->cb_printf("za %s t ", it->name);
-	} else if (format == 'q') {
-		a->cb_printf(" types(%d)", rz_list_length(it->types));
-		return;
-	} else if (format == 'j') {
-		pj_ka(pj, "types");
-	} else {
-		a->cb_printf("  types: ");
-	}
-}
-
-static void print_function_args_json(RzAnalysis *a, PJ *pj, char *arg_type) {
+static void print_function_args_json(PJ *pj, char *arg_type) {
 	char *arg_name = strchr(arg_type, ',');
 
 	if (arg_name == NULL) {
@@ -1753,91 +1733,57 @@ static void print_function_args_json(RzAnalysis *a, PJ *pj, char *arg_type) {
 	pj_end(pj);
 }
 
-static void print_type_json(RzAnalysis *a, char *type, PJ *pj, size_t pos) {
-	if (pos == 0) {
-		return;
-	}
+static void list_types_json(RzSignItem *it, PJ *pj) {
+	pj_ka(pj, "types");
 
-	char *str_type = strchr(type, '=');
-
-	if (str_type == NULL) {
-		return;
-	}
-
-	*str_type = '\0';
-	++str_type;
-
-	print_function_args_json(a, pj, str_type);
-}
-
-static void print_list_separator(RzAnalysis *a, RzSignItem *it, PJ *pj, int format, int pos) {
-	if (pos == 0 || format == 'j') {
-		return;
-	}
-	if (format == '*') {
-		a->cb_printf(" ");
-	} else {
-		a->cb_printf(", ");
-	}
-}
-
-static void print_list_type_body(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	int i = 0;
-	char *type = NULL;
+	char *element = NULL;
 	RzListIter *iter = NULL;
 
-	rz_list_foreach (it->types, iter, type) {
-		print_list_separator(a, it, pj, format, i);
-
-		if (format == 'j') {
-			char *t = strdup(type);
-			print_type_json(a, t, pj, i);
-			free(t);
-		} else {
-			a->cb_printf("%s", type);
+	rz_list_foreach (it->types, iter, element) {
+		char *t = strdup(element);
+		char *sep = NULL;
+		if (i > 0 && (sep = strchr(t, '='))) {
+			*sep = '\0';
+			++sep;
+			print_function_args_json(pj, sep);
 		}
+		free(t);
 		i++;
 	}
+	pj_end(pj);
 }
 
-static void listTypes(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
-	print_list_type_header(a, it, pj, format);
-	print_list_type_body(a, it, pj, format);
-
-	if (format == 'j') {
-		pj_end(pj);
-	} else {
-		a->cb_printf("\n");
-	}
-}
-
-static void listXRefsTo(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
-	RzListIter *iter = NULL;
-	char *ref = NULL;
-	int i = 0;
-
-	if (format == '*') {
-		a->cb_printf("za %s x ", it->name);
-	} else if (format == 'q') {
-		a->cb_printf(" xrefs_to(%d)", rz_list_length(it->xrefs_to));
+static void list_sign_list(RzAnalysis *a, RzList *l, PJ *pj, int fmt, int type, const char *name) {
+	const char *tname = sign_type_to_name(type);
+	switch (fmt) {
+	case '*':
+		a->cb_printf("za %s %c ", name, type);
+		break;
+	case 'q':
+		a->cb_printf(" %s(%d)", tname, rz_list_length(l));
 		return;
-	} else if (format == 'j') {
-		pj_ka(pj, "xrefs_to");
-	} else {
-		if (it->xrefs_to && !rz_list_empty(it->xrefs_to)) {
-			a->cb_printf("  xrefs_to: ");
+	case 'j':
+		pj_ka(pj, tname);
+		break;
+	default:
+		if (l && !rz_list_empty(l)) {
+			a->cb_printf("  %s: ", tname);
 		}
 	}
 
-	rz_list_foreach (it->xrefs_to, iter, ref) {
+	int i = 0;
+	char *ref = NULL;
+	RzListIter *iter = NULL;
+	rz_list_foreach (l, iter, ref) {
 		if (i > 0) {
-			if (format == '*') {
+			if (fmt == '*') {
 				a->cb_printf(" ");
-			} else if (format != 'j') {
+			} else if (fmt != 'j') {
 				a->cb_printf(", ");
 			}
 		}
-		if (format == 'j') {
+		if (fmt == 'j') {
 			pj_s(pj, ref);
 		} else {
 			a->cb_printf("%s", ref);
@@ -1845,48 +1791,7 @@ static void listXRefsTo(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 		i++;
 	}
 
-	if (format == 'j') {
-		pj_end(pj);
-	} else {
-		a->cb_printf("\n");
-	}
-}
-
-static void listXRefsFrom(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
-	RzListIter *iter = NULL;
-	char *ref = NULL;
-	int i = 0;
-
-	if (format == '*') {
-		a->cb_printf("za %s r ", it->name);
-	} else if (format == 'q') {
-		a->cb_printf(" xrefs_from(%d)", rz_list_length(it->xrefs_from));
-		return;
-	} else if (format == 'j') {
-		pj_ka(pj, "xrefs_from");
-	} else {
-		if (it->xrefs_from && !rz_list_empty(it->xrefs_from)) {
-			a->cb_printf("  xrefs_from: ");
-		}
-	}
-
-	rz_list_foreach (it->xrefs_from, iter, ref) {
-		if (i > 0) {
-			if (format == '*') {
-				a->cb_printf(" ");
-			} else if (format != 'j') {
-				a->cb_printf(", ");
-			}
-		}
-		if (format == 'j') {
-			pj_s(pj, ref);
-		} else {
-			a->cb_printf("%s", ref);
-		}
-		i++;
-	}
-
-	if (format == 'j') {
+	if (fmt == 'j') {
 		pj_end(pj);
 	} else {
 		a->cb_printf("\n");
@@ -1923,20 +1828,9 @@ static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static bool listCB(void *user, const char *k, const char *v) {
+static int listCB(RzSignItem *it, void *user) {
 	struct ctxListCB *ctx = (struct ctxListCB *)user;
-	RzSignItem *it = rz_sign_item_new();
 	RzAnalysis *a = ctx->analysis;
-
-	if (!rz_sign_deserialize(a, it, k, v)) {
-		eprintf("error: cannot deserialize zign\n");
-		goto out;
-	}
-
-	RzSpace *cur = rz_spaces_current(&a->zign_spaces);
-	if (cur != it->space && cur) {
-		goto out;
-	}
 
 	// Start item
 	if (ctx->format == 'j') {
@@ -1991,32 +1885,38 @@ static bool listCB(void *user, const char *k, const char *v) {
 	if (it->realname) {
 		listRealname(a, it, ctx->pj, ctx->format);
 	}
+	// Comments
 	if (it->comment) {
 		listComment(a, it, ctx->pj, ctx->format);
 	}
-	// XReferences
+	// XReferences From
 	if (it->xrefs_from) {
-		listXRefsFrom(a, it, ctx->pj, ctx->format);
+		list_sign_list(a, it->xrefs_from, ctx->pj, ctx->format, RZ_SIGN_REFS, it->name);
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "xrefs_from");
 		pj_end(ctx->pj);
 	}
-	// XReferences
+	// XReferences To
 	if (it->xrefs_to) {
-		listXRefsTo(a, it, ctx->pj, ctx->format);
+		list_sign_list(a, it->xrefs_to, ctx->pj, ctx->format, RZ_SIGN_XREFS, it->name);
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "xrefs_to");
 		pj_end(ctx->pj);
 	}
 	// Vars
 	if (it->vars) {
-		listVars(a, it, ctx->pj, ctx->format);
+		list_sign_list(a, it->vars, ctx->pj, ctx->format, RZ_SIGN_VARS, it->name);
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "vars");
 		pj_end(ctx->pj);
 	}
+	// Types
 	if (it->types) {
-		listTypes(a, it, ctx->pj, ctx->format);
+		if (ctx->format == 'j') {
+			list_types_json(it, ctx->pj);
+		} else {
+			list_sign_list(a, it->types, ctx->pj, ctx->format, RZ_SIGN_TYPES, it->name);
+		}
 	} else if (ctx->format == 'j') {
 		pj_ka(ctx->pj, "types");
 		pj_end(ctx->pj);
@@ -2038,10 +1938,6 @@ static bool listCB(void *user, const char *k, const char *v) {
 	}
 
 	ctx->idx++;
-
-out:
-	rz_sign_item_free(it);
-
 	return true;
 }
 
@@ -2055,7 +1951,7 @@ RZ_API void rz_sign_list(RzAnalysis *a, int format) {
 	}
 
 	struct ctxListCB ctx = { a, 0, format, pj };
-	sdb_foreach(a->sdb_zigns, listCB, &ctx);
+	rz_sign_foreach(a, listCB, &ctx);
 
 	if (format == 'j') {
 		pj_end(pj);
