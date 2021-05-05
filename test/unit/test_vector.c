@@ -1179,6 +1179,47 @@ static bool test_array_bounds_fuzz(void) {
 		free(a);
 	}
 	mu_end;
+#undef COUNT_MIN
+#undef COUNT_MAX
+#undef PADDING
+#undef STEP_MIN
+#undef STEP_MAX
+#undef FUZZ_COUNT
+#undef CMP
+}
+
+static bool invalid_user;
+
+static int cmp_ut64(const void *a, const void *b, void *user) {
+	if (user != &invalid_user) {
+		invalid_user = true;
+	}
+	ut64 va = *(const ut64 *)a;
+	ut64 vb = *(const ut64 *)b;
+	return RZ_NUM_CMP(va, vb);
+}
+
+static bool test_array_sort_fuzz(void) {
+#define COUNT_MIN  300000
+#define COUNT_MAX  COUNT_MIN
+#define FUZZ_COUNT 1
+	for (size_t i = 0; i < FUZZ_COUNT; i++) {
+		size_t count = COUNT_MIN;//(rand() % (COUNT_MAX - COUNT_MIN)) + COUNT_MIN;
+		ut64 *a = RZ_NEWS(ut64, count);
+		for (size_t j = 0; j < count; j++) {
+			a[j] = rand();
+		}
+		rz_array_sort(a, count, sizeof(*a), cmp_ut64, &invalid_user);
+		mu_assert_false(invalid_user, "cmp function called with invalid user pointer");
+		for (size_t j = 1; j < count; j++) {
+			mu_assert_true(a[j - 1] <= a[j], "sorted");
+		}
+		free(a);
+	}
+	mu_end;
+#undef COUNT_MIN
+#undef COUNT_MAX
+#undef FUZZ_COUNT
 }
 
 static int all_tests(void) {
@@ -1224,6 +1265,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_bounds);
 
 	mu_run_test(test_array_bounds_fuzz);
+	mu_run_test(test_array_sort_fuzz);
 
 	return tests_passed != tests_run;
 }
