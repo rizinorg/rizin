@@ -118,6 +118,9 @@ static inline ut64 rz_num_align_delta(ut64 v, ut64 alignment) {
 	return alignment - excess;
 }
 
+/// Typical comparison (1/0/-1) for two numbers of arbitrary types, including unsigned
+#define RZ_NUM_CMP(a, b) ((a) > (b) ? 1 : ((b) > (a) ? -1 : 0))
+
 #ifdef __cplusplus
 }
 #endif
