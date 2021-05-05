@@ -4285,7 +4285,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_step_until_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsuf", rz_cmd_debug_step_until_flag_handler, &cmd_debug_step_until_flag_help);
 	rz_warn_if_fail(cmd_debug_step_until_flag_cd);
 
-	RzCmdDesc *dts_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_step_cd, "dts", NULL, NULL, &dts_help);
+	RzCmdDesc *dts_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dts", NULL, NULL, &dts_help);
 	rz_warn_if_fail(dts_cd);
 	RzCmdDesc *cmd_debug_start_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dts+", rz_cmd_debug_start_trace_session_handler, &cmd_debug_start_trace_session_help);
 	rz_warn_if_fail(cmd_debug_start_trace_session_cd);
