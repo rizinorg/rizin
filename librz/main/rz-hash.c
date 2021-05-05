@@ -714,6 +714,8 @@ static void rz_hash_print_digest(RzHashContext *ctx, RzMsgDigest *md, const char
 	buffer = rz_msg_digest_get_result(md, hname, &len);
 	value = rz_msg_digest_get_result_string(md, hname, NULL, ctx->little_endian);
 	if (!value || !buffer) {
+		free(buffer);
+		free(value);
 		return;
 	}
 
