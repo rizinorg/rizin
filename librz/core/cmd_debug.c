@@ -4276,7 +4276,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_start_trace_session_handler(RzCore *core, int ar
 	}
 	core->dbg->session = rz_debug_session_new();
 	rz_debug_add_checkpoint(core->dbg);
-
 	return RZ_CMD_STATUS_OK;
 }
 
