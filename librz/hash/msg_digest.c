@@ -434,6 +434,7 @@ RZ_API bool rz_msg_digest_final(RzMsgDigest *md) {
 
 			if (!mdc->plugin->init(mdc->context)) {
 				RZ_LOG_ERROR("msg digest: failed to call init for hmac %s opad.\n", mdc->plugin->name);
+				free(o_pad);
 				return false;
 			}
 			if (!mdc->plugin->update(mdc->context, o_pad, block_size)) {
