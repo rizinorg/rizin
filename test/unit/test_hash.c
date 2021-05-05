@@ -149,7 +149,7 @@ bool test_message_digest_configure() {
 
 bool test_message_digest_hmac_stringified() {
 	char message[256];
-	char *result;
+	char *result = NULL;
 	bool boolean;
 	RzMsgDigestSize size;
 	RzMsgDigest *md = NULL;
@@ -174,15 +174,17 @@ bool test_message_digest_hmac_stringified() {
 		mu_assert_streq(result, hd->expected, message);
 
 		free(result);
+		result = NULL;
 		rz_msg_digest_free(md);
 	}
+	free(result);
 
 	mu_end;
 }
 
 bool test_message_digest_api_stringified() {
 	char message[256];
-	char *result;
+	char *result = NULL;
 	bool boolean;
 	RzMsgDigestSize size;
 	RzMsgDigest *md = NULL;
@@ -207,15 +209,17 @@ bool test_message_digest_api_stringified() {
 		mu_assert_streq(result, hd->expected, message);
 
 		free(result);
+		result = NULL;
 		rz_msg_digest_free(md);
 	}
+	free(result);
 
 	mu_end;
 }
 
 bool test_message_digest_small_block_stringified() {
 	char message[256];
-	char *result;
+	char *result = NULL;
 	RzMsgDigestSize size;
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(hashes_to_test); ++i) {
@@ -224,7 +228,9 @@ bool test_message_digest_small_block_stringified() {
 		result = rz_msg_digest_calculate_small_block_string(hd->algo, hd->input, hd->input_size, &size, false);
 		mu_assert_streq(result, hd->expected, message);
 		free(result);
+		result = NULL;
 	}
+	free(result);
 
 	mu_end;
 }
