@@ -5,8 +5,6 @@ CMDS=<<EOF
 db 0x004011fa
 dc
 dmht~?0xffffffffffff
-e dbg.glibc.demangle=true
-dmht~?0xffffffffffff
 dmht~?Items: 7
 dc
 dmht~?Items: 6
@@ -14,7 +12,6 @@ dc
 dmht~?Items: 5
 EOF
 EXPECT=<<EOF
-2
 0
 1
 1
