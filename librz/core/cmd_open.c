@@ -220,7 +220,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 					*filename = 0;
 					ut64 addr = rz_num_math(core->num, arg);
 					RzBinOptions opt;
-					rz_bin_options_init(&opt, desc->fd, addr, 0, core->bin->rawstr);
+					rz_core_bin_options_init(core, &opt, desc->fd, addr, 0);
 					rz_bin_open_io(core->bin, &opt);
 					rz_io_desc_close(desc);
 					rz_core_cmd0(core, ".is*");
@@ -236,7 +236,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				if (desc) {
 					RzBinOptions opt;
 					opt.sz = 1024 * 1024 * 1;
-					rz_bin_options_init(&opt, desc->fd, baddr, addr, core->bin->rawstr);
+					rz_core_bin_options_init(core, &opt, desc->fd, baddr, addr);
 					rz_bin_open_io(core->bin, &opt);
 					rz_core_cmd0(core, ".is*");
 				} else {
@@ -249,7 +249,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				if (desc) {
 					RzBinOptions opt;
 					opt.sz = 1024 * 1024 * 1;
-					rz_bin_options_init(&opt, desc->fd, addr, addr, core->bin->rawstr);
+					rz_core_bin_options_init(core, &opt, desc->fd, addr, addr);
 					rz_bin_open_io(core->bin, &opt);
 					rz_core_cmd0(core, ".is*");
 				} else {
@@ -270,7 +270,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			rz_list_foreach (files, iter, _fd) {
 				int fd = (size_t)_fd;
 				RzBinOptions opt;
-				rz_bin_options_init(&opt, fd, core->offset, 0, core->bin->rawstr);
+				rz_core_bin_options_init(core, &opt, fd, core->offset, 0);
 				rz_bin_open_io(core->bin, &opt);
 				rz_core_cmd0(core, ".ies*");
 				break;

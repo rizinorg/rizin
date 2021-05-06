@@ -506,7 +506,7 @@ static bool rz_diff_file_open(DiffFile *dfile, const char *filename) {
 
 	rz_io_bind(io, &bin->iob);
 
-	rz_bin_options_init(&opt, desc->fd, 0, 0, false);
+	rz_bin_options_init(&opt, desc->fd, 0, 0, false, false);
 	opt.sz = rz_io_desc_size(desc);
 
 	file = rz_bin_open_io(bin, &opt);

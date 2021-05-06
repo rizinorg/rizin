@@ -170,6 +170,11 @@ static ut64 rva(RzBinObject *o, ut64 paddr, ut64 vaddr, int va) {
 	return paddr;
 }
 
+RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, int fd, ut64 baseaddr, ut64 loadaddr) {
+	rz_return_if_fail(core && opts);
+	rz_bin_options_init(opts, fd, baseaddr, loadaddr, rz_config_get_b(core->config, "bin.relocs"), core->bin->rawstr);
+}
+
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd) {
 	if (rz_bin_file_set_cur_by_fd(core->bin, bin_fd)) {
 		rz_core_bin_set_cur(core, rz_bin_cur(core->bin));
