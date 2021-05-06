@@ -877,7 +877,11 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 			}
 		}
 		rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-		next = (!demangle) ? cnk->fd : PROTECT_PTR(next, cnk->fd);
+		if (core->dbg->glibc_version < 232) {
+			next = (!demangle) ? cnk->fd : PROTECT_PTR(next, cnk->fd);
+		} else {
+			next = PROTECT_PTR(next, cnk->fd);
+		}
 		rz_cons_printf("%s", next ? " -> " : "");
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 			PRINTF_RA(" 0x%" PFMT64x, (ut64)next);
