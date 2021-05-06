@@ -67,7 +67,7 @@ e asm.lines=false
 pd 1 @ 0x0800005e
 EOF
 EXPECT=<<EOF
-0x0800005e      e878840300     call  reloc.target.r_spaces_set
+0x0800005e      e89d5e0600     call  reloc.target.r_spaces_set
 EOF
 RUN
 
@@ -90,13 +90,13 @@ pd 1 @ 0x0800008c
 pd 1 @ 0x0800009f
 EOF
 EXPECT=<<EOF
-0x0800007c      e88e0a0000     call  reloc.target.__fentry
-0x0800008c      e8860a0000     call  reloc.target.printk
-0x0800009f      e8730a0000     call  reloc.target.printk
+0x0800007c      e88f0a0000     call  reloc.target.__fentry
+0x0800008c      e8870a0000     call  reloc.target.printk
+0x0800009f      e8740a0000     call  reloc.target.printk
 --
-0x0800007c      e88e0a0000     call  __fentry__
-0x0800008c      e8860a0000     call  printk
-0x0800009f      e8730a0000     call  printk
+0x0800007c      e88f0a0000     call  __fentry__
+0x0800008c      e8870a0000     call  printk
+0x0800009f      e8740a0000     call  printk
 EOF
 RUN
 
@@ -122,6 +122,8 @@ NAME=ELF: reloc flags
 FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
 ARGS=-e io.cache=true
 CMDS=<<EOF
+om
+?e --
 e asm.flags.real=false
 f@F:relocs
 pd 1 @ 0x08000079
@@ -135,6 +137,17 @@ pd 1 @ 0x080000a2
 pd 1 @ reloc.target.strcmp
 EOF
 EXPECT=<<EOF
+10 fd: 4 +0x00000000 0x08000ef8 - 0x08000ff7 r-- vmap.reloc-targets
+ 9 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
+ 8 fd: 3 +0x00000040 0x08000040 - 0x08000635 r-x fmap..text
+ 7 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
+ 6 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
+ 5 fd: 3 +0x00000825 0x08000825 - 0x0800085b --- fmap..comment
+ 4 fd: 3 +0x00000860 0x08000860 - 0x0800091f r-- fmap..eh_frame
+ 3 fd: 3 +0x00000d70 0x08000d70 - 0x08000dff --- fmap..rela.eh_frame
+ 2 fd: 3 +0x00000920 0x08000920 - 0x08000aff --- fmap..symtab
+ 1 fd: 3 +0x00000000 0x08000000 - 0x0800003f r-- fmap.ehdr
+--
 0x08000040 4 reloc.target..text
 0x08000073 4 reloc..rodata.str1.1
 0x0800007a 4 reloc.strcmp
@@ -170,19 +183,19 @@ EXPECT=<<EOF
 0x080008d4 4 reloc..text.2
 0x080008f0 4 reloc..text.3
 0x0800090c 4 reloc..text.4
-0x08000ef3 4 reloc.target.strcmp
-0x08000efb 4 reloc.target.stat
-0x08000f03 4 reloc.target.strlen
-0x08000f0b 4 reloc.target.memcpy
-0x08000f13 4 reloc.target.perror
-0x08000f1b 4 reloc.target.time
-0x08000f23 4 reloc.target.exit
-0x08000f2b 4 reloc.target.write
-0x08000f33 4 reloc.target.utilvserver_fmt_ulong_base
+0x08000ef8 4 reloc.target.strcmp
+0x08000f00 4 reloc.target.stat
+0x08000f08 4 reloc.target.strlen
+0x08000f10 4 reloc.target.memcpy
+0x08000f18 4 reloc.target.perror
+0x08000f20 4 reloc.target.time
+0x08000f28 4 reloc.target.exit
+0x08000f30 4 reloc.target.write
+0x08000f38 4 reloc.target.utilvserver_fmt_ulong_base
             0x08000079      call  reloc.target.strcmp                  ; RELOC 32 strcmp
             0x080000a2      call  reloc.target.strcmp                  ; RELOC 32 strcmp
             ;-- strcmp:
-            0x08000ef3      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
+            0x08000ef8      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
 --
 0x08000040 4 .text
 0x08000073 4 .rodata.str1.1
@@ -219,19 +232,19 @@ EXPECT=<<EOF
 0x080008d4 4 .text
 0x080008f0 4 .text
 0x0800090c 4 .text
-0x08000ef3 4 strcmp
-0x08000efb 4 stat
-0x08000f03 4 strlen
-0x08000f0b 4 memcpy
-0x08000f13 4 perror
-0x08000f1b 4 time
-0x08000f23 4 exit
-0x08000f2b 4 write
-0x08000f33 4 utilvserver_fmt_ulong_base
+0x08000ef8 4 strcmp
+0x08000f00 4 stat
+0x08000f08 4 strlen
+0x08000f10 4 memcpy
+0x08000f18 4 perror
+0x08000f20 4 time
+0x08000f28 4 exit
+0x08000f30 4 write
+0x08000f38 4 utilvserver_fmt_ulong_base
             0x08000079      call  strcmp                               ; RELOC 32 strcmp
             0x080000a2      call  strcmp                               ; RELOC 32 strcmp
             ;-- strcmp:
-            0x08000ef3      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
+            0x08000ef8      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
 EOF
 RUN
 

@@ -113,6 +113,7 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
+	.virtual_files = &virtual_files,
 	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,

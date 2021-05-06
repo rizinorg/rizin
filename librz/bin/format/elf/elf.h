@@ -207,6 +207,8 @@ struct Elf_(rz_bin_elf_obj_t) {
 	RzBinElfSymbol *phdr_symbols;
 	RzBinElfSymbol *phdr_imports;
 	HtUP *rel_cache;
+	ut64 reloc_targets_map_base;
+	bool reloc_targets_map_base_calculated;
 };
 
 int Elf_(rz_bin_elf_has_va)(struct Elf_(rz_bin_elf_obj_t) * bin);
