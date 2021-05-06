@@ -104,10 +104,11 @@ RZ_API RzList *rz_bin_dump_strings(RzBinFile *bf, int min, int raw) {
 	return rz_bin_file_get_strings(bf, min, 1, raw);
 }
 
-RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
+RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, bool patch_relocs, int rawstr) {
 	memset(opt, 0, sizeof(*opt));
 	opt->obj_opts.baseaddr = baseaddr;
 	opt->obj_opts.loadaddr = loadaddr;
+	opt->obj_opts.patch_relocs = patch_relocs;
 	opt->fd = fd;
 	opt->rawstr = rawstr;
 }
@@ -231,8 +232,9 @@ RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 
 RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 	rz_return_val_if_fail(bin && bf, NULL);
+	bool patch_relocs = bf->o ? bf->o->opts.patch_relocs : false;
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
+	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, patch_relocs, bin->rawstr);
 	opt.filename = bf->file;
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);

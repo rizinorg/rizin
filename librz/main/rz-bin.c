@@ -1088,7 +1088,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_bin_load_filter(bin, action);
 
 	RzBinOptions bo;
-	rz_bin_options_init(&bo, fd, baddr, laddr, rawstr);
+	rz_bin_options_init(&bo, fd, baddr, laddr, false, rawstr);
 	bo.xtr_idx = xtr_idx;
 
 	RzBinFile *bf = rz_bin_open(bin, file, &bo);

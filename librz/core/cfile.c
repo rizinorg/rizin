@@ -657,13 +657,13 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 #endif
 	int fd = cf ? cf->fd : -1;
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false);
+	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, false);
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open(r->bin, filenameuri, &opt);
 	if (!binfile) {
 		eprintf("RzBinLoad: Cannot open %s\n", filenameuri);
 		if (rz_config_get_i(r->config, "bin.rawstr")) {
-			rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, true);
+			rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false, true);
 			opt.xtr_idx = xtr_idx;
 			binfile = rz_bin_open(r->bin, filenameuri, &opt);
 			if (!binfile) {
@@ -722,7 +722,7 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 	}
 	rz_io_use_fd(r->io, fd);
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
+	rz_core_bin_options_init(r, &opt, fd, baseaddr, loadaddr);
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open_io(r->bin, &opt);
 	if (!binfile) {

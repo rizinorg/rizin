@@ -722,6 +722,7 @@ RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 
 RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid);
 
+RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, int fd, ut64 baseaddr, ut64 loadaddr);
 RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile);
 RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va);
