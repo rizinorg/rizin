@@ -877,11 +877,7 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 			}
 		}
 		rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-		if (core->dbg->glibc_version < 232) {
-			next = (!demangle) ? cnk->fd : PROTECT_PTR(next, cnk->fd);
-		} else {
-			next = PROTECT_PTR(next, cnk->fd);
-		}
+		next = GH(get_next_pointer)(core, next, cnk->fd);
 		rz_cons_printf("%s", next ? " -> " : "");
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 			PRINTF_RA(" 0x%" PFMT64x, (ut64)next);
@@ -1029,13 +1025,7 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 					if (!r) {
 						break;
 					}
-					if (core->dbg->glibc_version < 232) {
-						tcache_tmp = (!demangle)
-							? read_le(&tcache_tmp)
-							: PROTECT_PTR(tcache_fd, read_le(&tcache_tmp));
-					} else {
-						tcache_tmp = PROTECT_PTR(tcache_fd, read_le(&tcache_tmp));
-					}
+					tcache_tmp = GH(get_next_pointer)(core, tcache_fd, read_le(&tcache_tmp));
 					rz_cons_printf("\n -> ");
 					GH(print_heap_chunk_simple)
 					(core, (ut64)(tcache_tmp - TC_HDR_SZ), NULL);
