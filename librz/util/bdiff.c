@@ -64,7 +64,7 @@ static int equatelines(struct rz_diff_line *a, int an, struct rz_diff_line *b, i
 	struct rz_pos *h = NULL;
 
 	/* build a hash table of the next highest power of 2 */
-	while (buckets < bn + 1) { /* bn: bucket number */
+	while (buckets < bn + 1) { //bn should be the bucket number
 		buckets *= 2;
 	}
 
@@ -80,15 +80,15 @@ static int equatelines(struct rz_diff_line *a, int an, struct rz_diff_line *b, i
 		return 0;
 	}
 
-	buckets = buckets * scale - 1;  
+	buckets = buckets * scale - 1;  //bucket = total capacity of all buckets together?
 
 	/* clear the hash table */
-	for (i = 0; i <= buckets; i++) {  
+	for (i = 0; i <= buckets; i++) {  //therefore buckets = total number of hashes -cleared before operation
 		h[i].pos = INT_MAX;
 		h[i].len = 0;
 	}
 	/* add lines to the hash table chains */
-	for (i = bn - 1; i >= 0; i--) { /* for i in buckets[::-1] */
+	for (i = bn - 1; i >= 0; i--) { // looks sortof like for i in buckets[::-1]
 		/* find the equivalence class */
 		for (j = b[i].hash & buckets; h[j].pos != INT_MAX; j = (j + 1) & buckets) {
 			if (!cmp (b + i, b + h[j].pos)) {
