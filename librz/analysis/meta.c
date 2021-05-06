@@ -416,7 +416,7 @@ RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64
 				break;
 			case RZ_META_TYPE_MAGIC:
 			case RZ_META_TYPE_FORMAT:
-				if (mode) {
+				if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_RIZIN) {
 					a->cb_printf("%s %" PFMT64u " %s @ 0x%08" PFMT64x "\n",
 						rz_meta_type_to_string(d->type),
 						size, pstr, start);
