@@ -2090,8 +2090,8 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 	rz_return_val_if_fail(core && file, false);
 
 	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
-	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
-		baddr = core->bin->cur->o->baddr;
+	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
+		baddr = core->bin->cur->o->opts.baseaddr;
 	} else {
 		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
 	}
@@ -4448,7 +4448,7 @@ static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, PJ *pj, int mode
 		const char *asmarch = rz_config_get(core->config, "asm.arch");
 		const char *arch = info ? info->arch ? info->arch : asmarch : "unknown";
 		rz_cons_printf("%d %d %s-%d ba:0x%08" PFMT64x " sz:%" PFMT64d " %s\n",
-			bf->id, bf->fd, arch, bits, bf->o->baddr, bf->o->size, name);
+			bf->id, bf->fd, arch, bits, bf->o->opts.baseaddr, bf->o->size, name);
 	} break;
 	}
 	return true;

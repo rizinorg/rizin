@@ -243,10 +243,14 @@ typedef struct rz_bin_info_t {
 	char *compiler;
 } RzBinInfo;
 
+typedef struct rz_bin_file_load_options_t {
+	ut64 baseaddr; // where the linker maps the binary in memory
+	ut64 loadaddr; // starting physical address to read from the target file
+} RzBinObjectLoadOptions;
+
 typedef struct rz_bin_object_t {
-	ut64 baddr;
+	RzBinObjectLoadOptions opts;
 	st64 baddr_shift;
-	ut64 loadaddr;
 	ut64 boffset;
 	ut64 size;
 	ut64 obj_size;
@@ -371,8 +375,7 @@ typedef struct rz_bin_xtr_extract_t {
 	RzBuffer *buf;
 	ut64 size;
 	ut64 offset;
-	ut64 baddr;
-	ut64 laddr;
+	RzBinObjectLoadOptions obj_opts;
 	int file_count;
 	int loaded;
 	RzBinXtrMetadata *metadata;
@@ -656,7 +659,7 @@ typedef struct rz_bin_class_t {
 		RzListIter *_it; \
 		type_t *_el; \
 		rz_list_foreach ((l), _it, _el) { \
-			_el->paddr += (o)->loadaddr; \
+			_el->paddr += (o)->opts.loadaddr; \
 		} \
 	} while (0)
 
@@ -822,8 +825,7 @@ RZ_API void rz_bin_string_free(void *_str);
 
 typedef struct rz_bin_options_t {
 	const char *pluginname;
-	ut64 baseaddr; // where the linker maps the binary in memory
-	ut64 loadaddr; // starting physical address to read from the target file
+	RzBinObjectLoadOptions obj_opts;
 	ut64 sz;
 	int xtr_idx; // load Nth binary
 	int rawstr;
@@ -902,7 +904,7 @@ RZ_API RzBuffer *rz_bin_package(RzBin *bin, const char *type, const char *file, 
 RZ_API const char *rz_bin_string_type(int type);
 RZ_API const char *rz_bin_entry_type_string(int etype);
 
-RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, ut64 baseaddr, ut64 loadaddr, RzBinXtrData *data);
+RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data);
 
 // RzBinFile.get
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);

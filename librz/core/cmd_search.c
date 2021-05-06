@@ -260,8 +260,7 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 			if (plug->size) {
 				RzBinOptions opt = {
 					.pluginname = plug->name,
-					.baseaddr = 0,
-					.loadaddr = 0,
+					.obj_opts = { 0 },
 					.sz = 4096,
 					.xtr_idx = 0,
 					.rawstr = core->bin->rawstr,

@@ -357,7 +357,7 @@ extern struct rz_bin_write_t rz_bin_write_pe64;
 
 static RzList *trycatch(RzBinFile *bf) {
 	RzIO *io = bf->rbin->iob.io;
-	ut64 baseAddr = bf->o->baddr;
+	ut64 baseAddr = bf->o->opts.baseaddr;
 	int i;
 	ut64 offset;
 	ut32 c_handler = 0;
