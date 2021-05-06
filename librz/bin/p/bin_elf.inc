@@ -206,7 +206,7 @@ static ut32 section_perms_from_flags(ut32 flags) {
 	return r;
 }
 
-static RzList *maps(RzBinFile *bf) {
+static RzList *maps_unpatched(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	RzList *ret = NULL;
 	if (!obj || !(ret = rz_list_newf((RzListFree)rz_bin_map_free))) {
@@ -295,6 +295,109 @@ static RzList *maps(RzBinFile *bf) {
 		map->vsize = ehdr_size;
 		map->perm = RZ_PERM_RW;
 		rz_list_append(ret, map);
+	}
+	return ret;
+}
+
+static ut64 reloc_target_size(RzBinFile *bf) {
+	if (!bf->o || !bf->o->info || bf->o->info->bits < 8) {
+		return 8;
+	}
+	return bf->o->info->bits / 8;
+}
+
+/// base vaddr where to map the artificial reloc target vfile
+static ut64 reloc_targets_map_base(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * obj) {
+	if (obj->reloc_targets_map_base_calculated) {
+		return obj->reloc_targets_map_base;
+	}
+	// find the lowest unmapped address, make sure this calculation is in sync with what maps() returns!
+	ut64 max = 0;
+	RzList *maps = maps_unpatched(bf);
+	if (maps) {
+		RzListIter *it;
+		RzBinMap *map;
+		rz_list_foreach (maps, it, map) {
+			ut64 addr = map->vaddr + map->vsize;
+			if (addr > max) {
+				max = addr;
+			}
+		}
+		rz_list_free(maps);
+	}
+	obj->reloc_targets_map_base_calculated = true;
+	obj->reloc_targets_map_base = max + rz_num_align_delta(max, reloc_target_size(bf));
+	return obj->reloc_targets_map_base;
+}
+
+/// size of the artificial reloc target vfile
+static ut64 reloc_targets_vfile_size(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * obj) {
+	if (!bf->o || !bf->o->opts.patch_relocs) {
+		return 0;
+	}
+
+	// TODO: remove this, it's just to make old tests green before updating them to auto-patched relocs
+	if (!bf->rbin->iob.io || !bf->rbin->iob.io->cached) {
+		return 0;
+	}
+	// TODO-end
+
+	return obj->g_reloc_num * reloc_target_size(bf);
+}
+
+static RzList *virtual_files(RzBinFile *bf) {
+	RzList *r = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	if (!r) {
+		return NULL;
+	}
+	RzBinObject *o = bf->o;
+	struct Elf_(rz_bin_elf_obj_t) *obj = o ? o->bin_obj : NULL;
+	if (!obj) {
+		return r;
+	}
+	// virtual file for reloc targets (where the relocs will point into)
+	ut64 rtmsz = reloc_targets_vfile_size(bf, obj);
+	if (rtmsz) {
+		RzBuffer *buf = rz_buf_new_empty(rtmsz);
+		if (!buf) {
+			return r;
+		}
+		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
+		vf->buf = buf;
+		vf->name = strdup("reloc-targets");
+		rz_list_push(r, vf);
+	}
+	return r;
+}
+
+static RzList *maps(RzBinFile *bf) {
+	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
+	if (!obj) {
+		return NULL;
+	}
+	RzList *ret = maps_unpatched(bf);
+	if (!ret) {
+		return NULL;
+	}
+	ut64 rtmsz = reloc_targets_vfile_size(bf, obj);
+	if (rtmsz) {
+		// virtual file for reloc targets (where the relocs will point into)
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			return ret;
+		}
+		ut64 ehdr_size = sizeof(obj->ehdr);
+		if (bf->size < ehdr_size) {
+			ehdr_size = bf->size;
+		}
+		map->name = strdup("reloc-targets");
+		map->paddr = 0;
+		map->psize = rtmsz;
+		map->vaddr = reloc_targets_map_base(bf, obj);
+		map->vsize = rtmsz;
+		map->perm = RZ_PERM_R;
+		map->vfile_name = strdup("reloc-targets");
+		rz_list_prepend(ret, map);
 	}
 	return ret;
 }
@@ -1003,11 +1106,9 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	RzBin *b = bf->rbin;
 	RzList *ret = NULL;
 	RzBinReloc *ptr = NULL;
-	RzIOMap *g = NULL;
 	HtUU *relocs_by_sym;
 	RzBinElfReloc *relcs = NULL;
 	RzBinInfo *info;
-	ut64 size, offset = 0;
 
 	RzIO *io = b->iob.io;
 	if (!io) {
@@ -1019,46 +1120,19 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	}
 	struct Elf_(rz_bin_elf_obj_t) *bin = obj->bin_obj;
 	info = obj ? obj->info : NULL;
-	size_t cdsz = info ? (info->bits == 64 ? 8 : info->bits == 32 ? 4
-					     : info->bits == 16       ? 4
-								      : 0)
-			   : 0;
 	if (bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN) {
-		return NULL;
-	}
-	size = bin->g_reloc_num * cdsz;
-	if (size == 0) {
-		return NULL;
-	}
-
-	void **it;
-	RzPVector *maps = rz_io_maps(io);
-	rz_pvector_foreach (maps, it) {
-		RzIOMap *map = *it;
-		if (map->itv.addr > offset) {
-			offset = map->itv.addr;
-			g = map;
-		}
-	}
-	if (!g) {
 		return NULL;
 	}
 	if (!io->cached) {
 		eprintf("Warning: run rizin with -e io.cache=true to fix relocations in disassembly\n");
 		return NULL;
 	}
-	ut64 n_vaddr = g->itv.addr + g->itv.size;
-	// reserve at least that space
-	size = bin->g_reloc_num * cdsz;
-	char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-	RzIOMap *gotrzmap;
-	RzIODesc *gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr, &gotrzmap);
-	free(muri);
-	if (!gotrzdesc || !gotrzmap) {
+	ut64 cdsz = reloc_target_size(bf);
+	ut64 size = reloc_targets_vfile_size(bf, bin);
+	if (!size) {
 		return NULL;
 	}
-	gotrzmap->name = strdup(".got.rz");
-
+	ut64 n_vaddr = reloc_targets_map_base(bf, bin);
 	if (!(relcs = Elf_(rz_bin_elf_get_relocs)(bin))) {
 		return NULL;
 	}
