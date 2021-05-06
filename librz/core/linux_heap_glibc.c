@@ -822,7 +822,7 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 	}
 }
 
-static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
+static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return -1;
 	}
@@ -867,7 +867,7 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 		rz_cons_newline();
 		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
 			rz_io_read_at(core->io, next_tmp, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-			next_tmp = (!demangle) ? cnk->fd : PROTECT_PTR(next_tmp, cnk->fd);
+			next_tmp = GH(get_next_pointer)(core, next_tmp, cnk->fd);
 			if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 				break;
 			}
@@ -906,7 +906,7 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 	return 0;
 }
 
-void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool demangle, bool main_arena_only) {
+void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool main_arena_only) {
 	size_t i, j, k;
 	GHT num_bin = GHT_MAX, offset = sizeof(int) * 2;
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
@@ -934,7 +934,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 			rz_cons_printf("] [size: ");
 			PRINTF_BA("0x%" PFMT64x, (ut64)k);
 			rz_cons_printf("]");
-			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i, demangle)) {
+			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i)) {
 				PRINT_RA(" Empty bin\n");
 			}
 		}
@@ -950,7 +950,7 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 		rz_cons_printf("] [size: ");
 		PRINTF_BA("0x%" PFMT64x, (ut64)FASTBIN_IDX_TO_SIZE(num_bin + 1));
 		rz_cons_printf("]");
-		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, demangle)) {
+		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin)) {
 			PRINT_RA(" Empty bin\n");
 		}
 		break;
@@ -999,7 +999,7 @@ static GHT GH(tcache_get_entry)(GH(RTcache) * tcache, int index) {
 		: tcache->RzHeapTcache.heap_tcache_pre_230->entries[index];
 }
 
-static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) {
+static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache) {
 	rz_return_if_fail(core && tcache);
 	GHT tcache_fd = GHT_MAX;
 	GHT tcache_tmp = GHT_MAX;
@@ -1037,7 +1037,7 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 	}
 }
 
-static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *main_arena, bool demangle, bool main_thread_only) {
+static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *main_arena, bool main_thread_only) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
 
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
@@ -1070,7 +1070,7 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 	rz_cons_printf("Tcache bins in Main Arena @");
 	PRINTF_YA(" 0x%" PFMT64x "\n", (ut64)m_arena);
 	GH(tcache_print)
-	(core, rz_tcache, demangle);
+	(core, rz_tcache);
 	if (main_thread_only) {
 		return;
 	}
@@ -1103,7 +1103,7 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 				GH(tcache_read)
 				(core, tcache_start, rz_tcache);
 				GH(tcache_print)
-				(core, rz_tcache, demangle);
+				(core, rz_tcache);
 			} else {
 				PRINT_GA(" free\n");
 			}
@@ -1718,11 +1718,10 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
  */
 static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, RzHeapBinType format) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
-	bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_TCACHE) {
 		bool main_thread_only = true;
 		GH(print_tcache_instance)
-		(core, m_arena, main_arena, demangle, main_thread_only);
+		(core, m_arena, main_arena, main_thread_only);
 		rz_cons_newline();
 	}
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_FAST) {
@@ -1730,7 +1729,7 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 		input[0] = '\0';
 		bool main_arena_only = true;
 		GH(print_heap_fastbin)
-		(core, m_arena, main_arena, global_max_fast, input, demangle, main_arena_only);
+		(core, m_arena, main_arena, global_max_fast, input, main_arena_only);
 		free(input);
 		rz_cons_newline();
 	}
@@ -1948,7 +1947,6 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 		break;
 	case 'f': // "dmhf"
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
 			bool main_arena_only = false;
 			char *m_state_str, *dup = strdup(input + 1);
 			if (*dup) {
@@ -1971,7 +1969,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 					break;
 				}
 				GH(print_heap_fastbin)
-				(core, m_state, main_arena, global_max_fast, dup, demangle, main_arena_only);
+				(core, m_state, main_arena, global_max_fast, dup, main_arena_only);
 			} else {
 				PRINT_RA("This address is not part of the arenas\n");
 				free(dup);
@@ -2026,10 +2024,9 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
 				break;
 			}
-			bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
 			bool main_thread_only = false;
 			GH(print_tcache_instance)
-			(core, m_arena, main_arena, demangle, main_thread_only);
+			(core, m_arena, main_arena, main_thread_only);
 		}
 		break;
 	case '?':
