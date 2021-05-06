@@ -235,8 +235,6 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				RzIODesc *desc = rz_io_desc_get(core->io, fd);
 				if (desc) {
 					RzBinOptions opt;
-					opt.baseaddr = baddr;
-					opt.loadaddr = addr;
 					opt.sz = 1024 * 1024 * 1;
 					rz_bin_options_init(&opt, desc->fd, baddr, addr, core->bin->rawstr);
 					rz_bin_open_io(core->bin, &opt);
@@ -250,8 +248,6 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				RzIODesc *desc = rz_io_desc_get(core->io, fd);
 				if (desc) {
 					RzBinOptions opt;
-					opt.baseaddr = addr;
-					opt.loadaddr = addr;
 					opt.sz = 1024 * 1024 * 1;
 					rz_bin_options_init(&opt, desc->fd, addr, addr, core->bin->rawstr);
 					rz_bin_open_io(core->bin, &opt);
@@ -360,7 +356,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 		}
 		rz_list_foreach (bin->binfiles, iter, bf) {
 			char temp[64];
-			RzInterval inter = (RzInterval){ bf->o->baddr, bf->o->size };
+			RzInterval inter = (RzInterval){ bf->o->opts.baseaddr, bf->o->size };
 			RzListInfo *info = rz_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
 			if (!info) {
 				break;
