@@ -50,17 +50,6 @@ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 EOF
 RUN
 
-NAME=psj ascii (#9064)
-FILE==
-CMDS=<<EOF
-"wz ...\"..����..."
-psj 13
-EOF
-EXPECT=<<EOF
-{"string":"...\"..\u00ef\u00bf\u00bd\u00ef\u00bf\u00bd\u00ef","offset":0,"section":"unknown","length":13,"type":"utf"}
-EOF
-RUN
-
 NAME=psx escapes newlines (#10037)
 FILE==
 CMDS=<<EOF
