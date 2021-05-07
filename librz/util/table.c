@@ -1180,6 +1180,77 @@ RZ_API void rz_table_visual_list(RzTable *table, RzList *list, ut64 seek, ut64 l
 	}
 }
 
+/**
+ * /brief Generates the transpose of RzTable.
+ *
+ * /param t Referenced \p RzTable
+ * /return t Referenced \p RzTable
+ *
+ * This function returns the transpose of the RzTable passed to the table. 
+ */
+RZ_OWN RZ_API RzTable *rz_table_transpose(RZ_NONNULL RzTable *t) {
+	rz_return_val_if_fail(t, NULL);
+	RzListIter *iter1;
+	RzListIter *iter;
+	RzListIter *trrow_iter; // transpose row iter
+	RzList *row_name = rz_list_new();
+	RzList *row_list;
+	RzTable *transpose = rz_table_new();
+	RzTableColumn *col;
+	RzTableRow *row;
+	RzTableColumnType *typeString = rz_table_type("string");
+	char *item;
+
+	// getting table column names to add to row head
+	rz_table_add_column(transpose, typeString, "Name", 0);
+
+	// adding rows to transpose table rows * (number of columns in the table)
+	for (int i = 0; i < t->rows->length; i++) {
+		rz_table_add_column(transpose, typeString, "Value", 0);
+	}
+
+	// column names to row heads
+	rz_list_foreach (t->cols, iter1, col) {
+		rz_list_append(row_name, col->name);
+	}
+
+	// adding rows with name alone
+	if (row_name && t->rows) {
+		iter = row_name->head;
+		if (iter) {
+			item = iter->data;
+			for (int i = 0; i < t->totalCols; i++) {
+				rz_table_add_row(transpose, item, NULL);
+				if (iter->n) {
+					iter = iter->n;
+					item = iter->data;
+				}
+			}
+		}
+	}
+
+	if (transpose->rows) {
+		row_list = transpose->rows;
+		trrow_iter = row_list->head;
+		RzTableRow *trans_row = trrow_iter->data;
+		rz_list_foreach (t->rows, iter, row) {
+			trrow_iter = row_list->head;
+			if (trrow_iter) {
+				trans_row = trrow_iter->data;
+				rz_list_foreach (row->items, iter1, item) {
+					if (trrow_iter && trans_row->items) {
+						trans_row = trrow_iter->data;
+						rz_list_append(trans_row->items, strdup(item));
+						trrow_iter = trrow_iter->n;
+					}
+				}
+			}
+		}
+		//free(item);
+	}
+	return transpose;
+}
+
 #if 0
 // TODO: to be implemented
 RZ_API RzTable *rz_table_clone(RzTable *t) {

@@ -466,36 +466,38 @@ format   elf
 iorw     false
 block    0x100
 type     EXEC (Executable file)
+Name     Value
+--------------
 arch     x86
 baddr    0x8048000
 binsz    20668
 bintype  elf
 bits     32
-canary   true
 class    ELF32
-crypto   false
-endian   little
-havecode true
+endian   LE
 intrp    /lib/ld-linux.so.2
 laddr    0x0
 lang     c
-linenum  false
-lsyms    false
 machine  Intel 80386
 maxopsz  16
 minopsz  1
-nx       true
 os       linux
 pcalign  0
-pic      false
-relocs   false
 relro    partial
 rpath    NONE
+subsys   linux
+stripped true
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   false
-stripped true
-subsys   linux
-va       true
+linenum  false
+lsyms    false
+canary   true
+PIE      false
+RELROCS  false
+NX       true
 --
 1
 fd       3

@@ -408,32 +408,34 @@ format   elf64
 iorw     false
 block    0x100
 type     EXEC (Executable file)
+Name     Value
+--------------
 arch     riscv
 baddr    0x10000
 binsz    643108
 bintype  elf
 bits     64
-canary   false
 class    ELF64
 compiler GCC: (GNU) 5.2.0
-crypto   false
-endian   little
-havecode true
+endian   LE
 laddr    0x0
 lang     c
-linenum  true
-lsyms    true
 machine  RISC V
-nx       false
 os       linux
-pic      false
-relocs   true
 rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   true
-stripped false
-subsys   linux
-va       true
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  true
+NX       false
 EOF
 RUN
 

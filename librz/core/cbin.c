@@ -33,34 +33,54 @@
 
 static RZ_NULLABLE RZ_BORROW const RzList *core_bin_strings(RzCore *r, RzBinFile *file);
 
-static void pair(const char *key, const char *val) {
+static void pair(const char *key, const char *val, RzList *row_list, RzTable *t) {
 	if (!val || !*val) {
 		return;
 	}
-	rz_cons_printf("%-" PAIR_WIDTH "s%s\n", key, val);
+	RzTableColumnType *typeString = rz_table_type("string");
+	rz_table_add_column(t, typeString, key, 0);
+	rz_list_append(row_list, strdup(val));
+	val = NULL;
+	key = NULL;
 }
 
-static void pair_bool(PJ *pj, const char *key, bool val) {
+static char *get_coloured(const char *flag, bool use_color) {
+	if (use_color == true) {
+		if (strncmp(flag, "true", 5) == 0) {
+			return rz_str_newf(Color_GREEN "true" Color_RESET);
+		} else {
+			return rz_str_newf(Color_RED "false" Color_RESET);
+		}
+	} else {
+		return strncmp(flag, "true", 5) == 0 ? strdup("true") : strdup("false");
+	}
+}
+
+static void pair_bool(bool use_color, RzTable *t, PJ *pj, const char *key, bool val, RzList *row_list) {
 	if (pj) {
 		pj_kb(pj, key, val);
 	} else {
-		pair(key, rz_str_bool(val));
+		RzTableColumnType *typeString = rz_table_type("bool");
+		const char *b = val || typeString ? get_coloured(rz_str_bool(val), use_color) : "";
+		pair(key, b, row_list, t);
 	}
 }
 
-static void pair_int(PJ *pj, const char *key, int val) {
+static void pair_int(RzTable *t, PJ *pj, const char *key, int val, RzList *row_list) {
 	if (pj) {
 		pj_ki(pj, key, val);
 	} else {
-		pair(key, sdb_fmt("%d", val));
+		const char *fmt = rz_str_newf("%d", val);
+		pair(key, fmt, row_list, t);
 	}
 }
 
-static void pair_ut64(PJ *pj, const char *key, ut64 val) {
+static void pair_ut64(RzTable *t, PJ *pj, const char *key, ut64 val, RzList *row_list) {
 	if (pj) {
 		pj_kn(pj, key, val);
 	} else {
-		pair(key, sdb_fmt("%" PFMT64d, val));
+		const char *fmt = rz_str_newf("%" PFMT64d, val);
+		pair(key, fmt, row_list, t);
 	}
 }
 
@@ -117,22 +137,23 @@ static char *__filterShell(const char *arg) {
 	return a;
 }
 
-static void pair_ut64x(PJ *pj, const char *key, ut64 val) {
+static void pair_ut64x(RzTable *t, PJ *pj, const char *key, ut64 val, RzList *row_list) {
 	if (pj) {
-		pair_ut64(pj, key, val);
+		pair_ut64(t, pj, key, val, row_list);
 	} else {
-		pair(key, sdb_fmt("0x%" PFMT64x, val));
+		const char *fmt = rz_str_newf("0x%" PFMT64x, val);
+		pair(key, fmt, row_list, t);
 	}
 }
 
-static void pair_str(PJ *pj, const char *key, const char *val) {
+static void pair_str(RzTable *t, PJ *pj, const char *key, const char *val, RzList *row_list) {
 	if (pj) {
 		if (!val) {
 			val = "";
 		}
 		pj_ks(pj, key, val);
 	} else {
-		pair(key, val);
+		pair(key, val, row_list, t);
 	}
 }
 
@@ -1724,6 +1745,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	int i, j, v;
 	RzBinInfo *info = rz_bin_get_info(r->bin);
 	RzBinFile *bf = rz_bin_cur(r->bin);
+	bool use_color = rz_config_get_i(r->config, "scr.color");
 	if (!bf) {
 		if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
@@ -1802,94 +1824,110 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 			}
 		}
 	} else {
-		// XXX: if type is 'fs' show something different?
 		char *tmp_buf;
+		RzTable *table = rz_core_table(r);
+		RzList *row_list = rz_list_new();
 		if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
 		}
-		pair_str(pj, "arch", info->arch);
+		pair_str(table, pj, "arch", info->arch, row_list);
 		if (info->cpu && *info->cpu) {
-			pair_str(pj, "cpu", info->cpu);
+			pair_str(table, pj, "cpu", info->cpu, row_list);
 		}
-		pair_ut64x(pj, "baddr", rz_bin_get_baddr(r->bin));
-		pair_ut64(pj, "binsz", rz_bin_get_size(r->bin));
-		pair_str(pj, "bintype", info->rclass);
-		pair_int(pj, "bits", info->bits);
-		pair_bool(pj, "canary", info->has_canary);
+		pair_ut64x(table, pj, "baddr", rz_bin_get_baddr(r->bin), row_list);
+		pair_ut64(table, pj, "binsz", rz_bin_get_size(r->bin), row_list);
+		pair_str(table, pj, "bintype", info->rclass, row_list);
+		pair_int(table, pj, "bits", info->bits, row_list);
 		if (info->has_retguard != -1) {
-			pair_bool(pj, "retguard", info->has_retguard);
+			pair_bool(use_color, table, pj, "retguard", info->has_retguard, row_list);
 		}
-		pair_str(pj, "class", info->bclass);
+		pair_str(table, pj, "class", info->bclass, row_list);
 		if (info->actual_checksum) {
 			/* computed checksum */
-			pair_str(pj, "cmp.csum", info->actual_checksum);
+			pair_str(table, pj, "cmp.csum", info->actual_checksum, row_list);
 		}
-		pair_str(pj, "compiled", compiled);
-		pair_str(pj, "compiler", info->compiler);
-		pair_bool(pj, "crypto", info->has_crypto);
-		pair_str(pj, "dbg_file", info->debug_file_name);
-		pair_str(pj, "endian", info->big_endian ? "big" : "little");
+		pair_str(table, pj, "compiled", compiled, row_list);
+		if (info->compiler) {
+			pair_str(table, pj, "compiler", rz_str_newf("%s", info->compiler), row_list);
+		}
+		pair_str(table, pj, "dbg_file", info->debug_file_name, row_list);
+		const char *endian = info->big_endian ? "BE" : "LE";
+		pair_str(table, pj, "endian", endian, row_list);
 		if (info->rclass && !strcmp(info->rclass, "mdmp")) {
 			tmp_buf = sdb_get(bf->sdb, "mdmp.flags", 0);
 			if (tmp_buf) {
-				pair_str(pj, "flags", tmp_buf);
+				pair_str(table, pj, "flags", tmp_buf, row_list);
 				free(tmp_buf);
 			}
 		}
-		pair_bool(pj, "havecode", havecode);
 		if (info->claimed_checksum) {
 			/* checksum specified in header */
-			pair_str(pj, "hdr.csum", info->claimed_checksum);
+			pair_str(table, pj, "hdr.csum", info->claimed_checksum, row_list);
 		}
-		pair_str(pj, "guid", info->guid);
-		pair_str(pj, "intrp", info->intrp);
-		pair_ut64x(pj, "laddr", laddr);
-		pair_str(pj, "lang", info->lang);
-		pair_bool(pj, "linenum", RZ_BIN_DBG_LINENUMS & info->dbg_info);
-		pair_bool(pj, "lsyms", RZ_BIN_DBG_SYMS & info->dbg_info);
-		pair_str(pj, "machine", info->machine);
-		v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		pair_str(table, pj, "guid", info->guid, row_list);
+		pair_str(table, pj, "intrp", info->intrp, row_list);
+		pair_ut64x(table, pj, "laddr", laddr, row_list);
+		pair_str(table, pj, "lang", info->lang, row_list);
+		pair_str(table, pj, "machine", info->machine, row_list);
+		st32 u = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		if (u != -1) {
+			pair_int(table, pj, "maxopsz", u, row_list);
+		}
+		st32 v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 		if (v != -1) {
-			pair_int(pj, "maxopsz", v);
+			pair_int(table, pj, "minopsz", v, row_list);
 		}
-		v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
-		if (v != -1) {
-			pair_int(pj, "minopsz", v);
-		}
-		pair_bool(pj, "nx", info->has_nx);
-		pair_str(pj, "os", info->os);
+		pair_str(table, pj, "os", info->os, row_list);
 		if (info->rclass && !strcmp(info->rclass, "pe")) {
-			pair_bool(pj, "overlay", info->pe_overlay);
+			pair_bool(use_color, table, pj, "overlay", info->pe_overlay, row_list);
 		}
-		pair_str(pj, "cc", info->default_cc);
-		v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
-		if (v != -1) {
-			pair_int(pj, "pcalign", v);
+		pair_str(table, pj, "cc", info->default_cc, row_list);
+		st32 uv = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
+		if (uv != -1) {
+			pair_int(table, pj, "pcalign", uv, row_list);
 		}
-		pair_bool(pj, "pic", info->has_pi);
-		pair_bool(pj, "relocs", RZ_BIN_DBG_RELOCS & info->dbg_info);
+
 		Sdb *sdb_info = sdb_ns(obj->kv, "info", false);
 		tmp_buf = sdb_get(sdb_info, "elf.relro", 0);
 		if (tmp_buf) {
-			pair_str(pj, "relro", tmp_buf);
+			pair_str(table, pj, "relro", tmp_buf, row_list);
 			free(tmp_buf);
 		}
-		pair_str(pj, "rpath", info->rpath);
+		pair_str(table, pj, "rpath", info->rpath, row_list);
 		if (info->rclass && !strcmp(info->rclass, "pe")) {
 			//this should be moved if added to mach0 (or others)
-			pair_bool(pj, "signed", info->signature);
+			pair_bool(use_color, table, pj, "signed", info->signature, row_list);
 		}
-		pair_bool(pj, "sanitiz", info->has_sanitizers);
-		pair_bool(pj, "static", rz_bin_is_static(r->bin));
+
 		if (info->rclass && !strcmp(info->rclass, "mdmp")) {
 			v = sdb_num_get(bf->sdb, "mdmp.streams", 0);
 			if (v != -1) {
-				pair_int(pj, "streams", v);
+				pair_int(table, pj, "streams", v, row_list);
 			}
 		}
-		pair_bool(pj, "stripped", RZ_BIN_DBG_STRIPPED & info->dbg_info);
-		pair_str(pj, "subsys", info->subsystem);
-		pair_bool(pj, "va", info->has_va);
+		pair_str(table, pj, "subsys", info->subsystem, row_list);
+		pair_bool(use_color, table, pj, "stripped", RZ_BIN_DBG_STRIPPED & info->dbg_info, row_list);
+		pair_bool(use_color, table, pj, "crypto", info->has_crypto, row_list);
+		pair_bool(use_color, table, pj, "havecode", havecode, row_list);
+		pair_bool(use_color, table, pj, "va", info->has_va, row_list);
+		pair_bool(use_color, table, pj, "sanitiz", info->has_sanitizers, row_list);
+		pair_bool(use_color, table, pj, "static", rz_bin_is_static(r->bin), row_list);
+		pair_bool(use_color, table, pj, "linenum", RZ_BIN_DBG_LINENUMS & info->dbg_info, row_list);
+		pair_bool(use_color, table, pj, "lsyms", RZ_BIN_DBG_SYMS & info->dbg_info, row_list);
+		pair_bool(use_color, table, pj, "canary", info->has_canary, row_list);
+		pair_bool(use_color, table, pj, "PIE", info->has_pi, row_list);
+		pair_bool(use_color, table, pj, "RELROCS", RZ_BIN_DBG_RELOCS & info->dbg_info, row_list);
+		pair_bool(use_color, table, pj, "NX", info->has_nx, row_list);
+
+		rz_table_add_row_list(table, row_list);
+
+		if (!IS_MODE_JSON(mode)) {
+			RzTable *transpose = rz_table_transpose(table);
+			char *t = rz_table_tostring(transpose);
+			rz_cons_print(t);
+			rz_table_free(transpose);
+			free(t);
+		}
 		if (IS_MODE_JSON(mode)) {
 			pj_ko(pj, "checksums");
 		}
@@ -1919,6 +1957,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 			pj_end(pj);
 			pj_end(pj);
 		}
+		rz_table_free(table);
 	}
 	return true;
 }
@@ -2328,9 +2367,8 @@ static int print_relocs_for_object(RzCore *r, RzBinFile *bf, RzBinObject *o, int
 		} else if (IS_MODE_NORMAL(mode)) {
 			char *name = reloc->import
 				? strdup(reloc->import->name)
-				: reloc->symbol
-				? strdup(reloc->symbol->name)
-				: NULL;
+				: reloc->symbol ? strdup(reloc->symbol->name)
+						: NULL;
 			if (bin_demangle) {
 				char *mn = rz_bin_demangle(r->bin->cur, NULL, name, addr, keep_lib);
 				if (mn && *mn) {
