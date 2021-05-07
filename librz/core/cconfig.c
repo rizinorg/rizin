@@ -2961,7 +2961,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 	SETCB("dbg.malloc", "glibc", &cb_malloc, "Choose malloc structure parser");
 #elif __WINDOWS__
-        SETCB("dbg.malloc", "windows", &cb_malloc, "Choose malloc structure parser");
+	SETCB("dbg.malloc", "windows", &cb_malloc, "Choose malloc structure parser");
 #else
 	SETCB("dbg.malloc", "jemalloc", &cb_malloc, "Choose malloc structure parser");
 #endif
