@@ -25,13 +25,22 @@ NAME=stop trace session (dts-)
 FILE=bins/elf/analysis/calls_x64
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
-db 0x0040057c
-dc
+dcu main
 dts+
+ds
+ds
+ds
+ds
 dts-
-dtst rizin
+ds
+ds
+dt
 EOF
 EXPECT=<<EOF
-No session started
+0x00400574 size=7 count=1 times=1 tag=0
+0x00400575 size=10 count=2 times=1 tag=0
+0x0040052f size=2 count=3 times=1 tag=0
+0x00400539 size=10 count=4 times=1 tag=0
+0x0040053c size=2 count=5 times=1 tag=0
 EOF
 RUN
