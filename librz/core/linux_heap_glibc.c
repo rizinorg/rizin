@@ -1516,7 +1516,7 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena)
 	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
 	if (main_arena->GH(next) != m_arena) {
 		ta->GH(next) = main_arena->GH(next);
-		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
+		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena && ta->GH(next)) {
 			PRINT_YA("thread arena @ ");
 			PRINTF_BA("0x%" PFMT64x, (ut64)ta->GH(next));
 			if (!GH(update_main_arena)(core, ta->GH(next), ta)) {
@@ -1817,13 +1817,14 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 		}
 		break;
 	case 'a': // dmha
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-				break;
-			}
-			GH(print_malloc_states)
-			(core, m_arena, main_arena);
+		if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+			break;
 		}
+		if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+			break;
+		}
+		GH(print_malloc_states)
+		(core, m_arena, main_arena);
 		break;
 	case 'i': // dmhi
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
