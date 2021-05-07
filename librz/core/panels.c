@@ -564,7 +564,6 @@ static RzList *__sorted_list(RzCore *core, char *menu[], int count);
 static char *__get_panels_config_dir_path(void);
 static char *__create_panels_config_path(const char *file);
 static void __load_config_menu(RzCore *core);
-static char *__parse_panels_config(const char *cfg, int len);
 
 /* history */
 static int __file_history_up(RzLine *line);
@@ -5299,17 +5298,19 @@ RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
 	char *config_path = __create_panels_config_path(name);
 	RzPanels *panels = core->panels;
 	PJ *pj = pj_new();
+	pj_a(pj);
 	for (i = 0; i < panels->n_panels; i++) {
 		RzPanel *panel = __get_panel(panels, i);
 		pj_o(pj);
-		pj_ks(pj, "Title", panel->model->title);
-		pj_ks(pj, "Cmd", panel->model->cmd);
+		pj_ks(pj, "title", panel->model->title);
+		pj_ks(pj, "cmd", panel->model->cmd);
 		pj_kn(pj, "x", panel->view->pos.x);
 		pj_kn(pj, "y", panel->view->pos.y);
 		pj_kn(pj, "w", panel->view->pos.w);
 		pj_kn(pj, "h", panel->view->pos.h);
 		pj_end(pj);
 	}
+	pj_end(pj);
 	FILE *fd = rz_sys_fopen(config_path, "w");
 	if (fd) {
 		char *pjs = pj_drain(pj);
@@ -5320,26 +5321,6 @@ RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
 		(void)__show_status(core, "Panels layout saved!");
 	}
 	free(config_path);
-}
-
-char *__parse_panels_config(const char *cfg, int len) {
-	if (RZ_STR_ISEMPTY(cfg) || len < 2) {
-		return NULL;
-	}
-	char *tmp = rz_str_newlen(cfg, len + 1);
-	int i = 0;
-	for (; i < len; i++) {
-		if (tmp[i] == '}') {
-			if (i + 1 < len) {
-				if (tmp[i + 1] == ',') {
-					tmp[i + 1] = '\n';
-				}
-				continue;
-			}
-			tmp[i + 1] = '\n';
-		}
-	}
-	return tmp;
 }
 
 void __load_config_menu(RzCore *core) {
@@ -5375,23 +5356,58 @@ RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
 	__panel_all_clear(panels);
 	panels->n_panels = 0;
 	__set_curnode(core, 0);
-	char *title, *cmd, *x, *y, *w, *h, *p_cfg = panels_config, *tmp_cfg;
-	int i, tmp_count;
-	tmp_cfg = __parse_panels_config(p_cfg, strlen(p_cfg));
-	tmp_count = rz_str_split(tmp_cfg, '\n');
-	for (i = 0; i < tmp_count; i++) {
-		if (RZ_STR_ISEMPTY(tmp_cfg)) {
+
+	RzJson *json = rz_json_parse(panels_config);
+	if (!json || json->type != RZ_JSON_ARRAY) {
+		free(panels_config);
+		return false;
+	}
+	RzJson *child, *baby;
+	const char *title = NULL, *cmd = NULL;
+	int x = 0, y = 0, w = 0, h = 0;
+	// Configuration stored as an array of JSON objects
+	for (child = json->children.first; child; child = child->next) {
+		if (child->type != RZ_JSON_OBJECT) {
 			break;
 		}
-		title = sdb_json_get_str(tmp_cfg, "Title");
-		cmd = sdb_json_get_str(tmp_cfg, "Cmd");
-		(void)rz_str_arg_unescape(cmd);
-		x = sdb_json_get_str(tmp_cfg, "x");
-		y = sdb_json_get_str(tmp_cfg, "y");
-		w = sdb_json_get_str(tmp_cfg, "w");
-		h = sdb_json_get_str(tmp_cfg, "h");
+		size_t params_read = 0;
+		for (baby = child->children.first; baby; baby = baby->next) {
+			if (params_read == 6) {
+				break;
+			}
+			if (baby->type != RZ_JSON_INTEGER && baby->type != RZ_JSON_STRING) {
+				continue;
+			}
+			// Get window title and executed command
+			if (strcmp(baby->key, "title") == 0) {
+				title = baby->str_value;
+				params_read++;
+			} else if (strcmp(baby->key, "cmd") == 0) {
+				cmd = baby->str_value;
+				params_read++;
+				// Parse window geometry
+			} else if (strcmp(baby->key, "x") == 0) {
+				x = baby->num.u_value;
+				params_read++;
+			} else if (strcmp(baby->key, "y") == 0) {
+				y = baby->num.u_value;
+				params_read++;
+			} else if (strcmp(baby->key, "w") == 0) {
+				w = baby->num.u_value;
+				params_read++;
+			} else if (strcmp(baby->key, "h") == 0) {
+				h = baby->num.u_value;
+				params_read++;
+			}
+		}
+		if (!title || !cmd) {
+			eprintf("Malformed Visual Panels config: %s\n", _name);
+			rz_json_free(json);
+			free(panels_config);
+			return false;
+		}
 		RzPanel *p = __get_panel(panels, panels->n_panels);
-		__set_geometry(&p->view->pos, atoi(x), atoi(y), atoi(w), atoi(h));
+		__set_geometry(&p->view->pos, x, y, w, h);
 		__init_panel_param(core, p, title, cmd);
 		if (rz_str_endswith(cmd, "Help")) {
 			p->model->title = rz_str_dup(p->model->title, "Help");
@@ -5399,15 +5415,16 @@ RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
 			RzStrBuf *rsb = rz_strbuf_new(NULL);
 			rz_core_visual_append_help(rsb, "Visual Ascii Art Panels", help_msg_panels);
 			if (!rsb) {
+				rz_json_free(json);
+				free(panels_config);
 				return false;
 			}
 			__set_read_only(core, p, rz_strbuf_drain(rsb));
 		}
-		tmp_cfg += strlen(tmp_cfg) + 1;
 	}
+	rz_json_free(json);
 	free(panels_config);
 	if (!panels->n_panels) {
-		free(tmp_cfg);
 		return false;
 	}
 	__set_refresh_all(core, true, false);
