@@ -1202,7 +1202,7 @@ static int grab_bits(RzCore *core, const char *arg, int *pcbits2) {
 	return pcbits ? pcbits : core->analysis->bits;
 }
 
-#define MAX_MAP_SIZE 1024 * 1024 * 512
+#define MAX_MAP_SIZE (1024 * 1024 * 512)
 static int dump_maps(RzCore *core, int perm, const char *filename) {
 	RzDebugMap *map;
 	RzListIter *iter;
@@ -1387,7 +1387,7 @@ static int rz_debug_heap(RzCore *core, const char *input) {
 		} else {
 			cmd_dbg_map_jemalloc_32(core, input + 1);
 		}
-	} else {
+	} else if (m && !strcmp("windows", m)) {
 #if __WINDOWS__
 		cmd_debug_map_heap_win(core, input + 1);
 #else
