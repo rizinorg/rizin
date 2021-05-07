@@ -2975,7 +2975,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("dbg.glibc.ma_offset", 0x1bb000, "Main_arena offset from his symbol");
 	SETI("dbg.glibc.fc_offset", 0x148, "First chunk offset from brk_start");
 #endif
-	SETBPREF("dbg.glibc.demangle", "false", "Demangle linked-lists pointers introduced in glibc 2.32");
 	SETI("dbg.glibc.fastbinmax", 10, "Upper bound on the number of fastbins printed");
 
 	SETBPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
