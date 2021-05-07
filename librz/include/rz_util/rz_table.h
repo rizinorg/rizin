@@ -89,11 +89,10 @@ RZ_API RzTable *rz_table_pop(RzTable *t);
 RZ_API void rz_table_fromjson(RzTable *t, const char *csv);
 RZ_API void rz_table_fromcsv(RzTable *t, const char *csv);
 RZ_API char *rz_table_tohtml(RzTable *t);
-RZ_API void rz_table_transpose(RzTable *t);
+RZ_API RzTable *rz_table_transpose(RzTable *t);
 RZ_API void rz_table_format(RzTable *t, int nth, RzTableColumnType *type);
 RZ_API ut64 rz_table_reduce(RzTable *t, int nth);
 RZ_API void rz_table_columns(RzTable *t, RzList *cols); // const char *name, ...);
-
 #ifdef __cplusplus
 }
 #endif

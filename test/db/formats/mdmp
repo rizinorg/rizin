@@ -10,35 +10,37 @@ NAME=mdmp info
 FILE=bins/mdmp/calc.dmp
 CMDS=iI
 EXPECT=<<EOF
+Name     Value
+--------------
 arch     x86
 baddr    0xffffffffffffffff
 binsz    36724
 bintype  mdmp
 bits     64
-canary   false
 retguard false
-crypto   false
-endian   little
+endian   LE
 flags    0x00040000
-havecode true
 hdr.csum 0x00000000
 laddr    0x0
-linenum  false
-lsyms    false
 machine  AMD64
 maxopsz  16
 minopsz  1
-nx       false
 os       Windows NT Workstation 6.1.7601
 pcalign  0
-pic      false
-relocs   false
 rpath    NONE
-sanitiz  false
-static   true
 streams  13
 stripped false
+crypto   false
+havecode true
 va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 EOF
 RUN
 

@@ -10,28 +10,30 @@ format   smd
 iorw     false
 block    0x100
 type     ROM
+Name     Value
+--------------
 arch     m68k
 baddr    0x0
 binsz    160504
 bits     16
-canary   false
 retguard false
 class    SEGA MEGASIS    (C)2015 James L.
-crypto   false
-endian   big
-havecode true
+endian   BE
 laddr    0x0
-linenum  false
-lsyms    false
 machine  Sega Megadrive
-nx       false
 os       smd
-pic      false
-relocs   false
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   true
-stripped false
-va       true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 EOF
 RUN
 

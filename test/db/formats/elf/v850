@@ -16,35 +16,37 @@ format   elf
 iorw     false
 block    0x100
 type     EXEC (Executable file)
+Name     Value
+--------------
 arch     v850
 baddr    0x100000
 binsz    973677
 bintype  elf
 bits     32
-canary   false
 class    ELF32
 compiler GCC: (GNU) 9.3.0
-crypto   false
-endian   little
-havecode true
+endian   LE
 laddr    0x0
 lang     c
-linenum  true
-lsyms    true
 machine  NEC V800 series
 maxopsz  8
 minopsz  2
-nx       false
 os       linux
 pcalign  2
-pic      false
-relocs   true
 rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   true
-stripped false
-subsys   linux
-va       true
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  true
+NX       false
             0x00100004      3506ffff       movea 0xffff, r21, r0
             0x00100008      0000           mov   r0, r0
             0x0010000a      23060000       movea 0x0, r3, r0
