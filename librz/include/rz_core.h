@@ -693,6 +693,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode);
+RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 reladdr, RZ_NULLABLE RzAnalysisFunction *fcn, bool color);
 RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj);
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);

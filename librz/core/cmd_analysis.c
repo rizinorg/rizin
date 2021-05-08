@@ -6129,60 +6129,6 @@ static void cmd_analysis_ucall_ref(RzCore *core, ut64 addr) {
 	}
 }
 
-static char *get_op_ireg(void *user, ut64 addr) {
-	RzCore *core = (RzCore *)user;
-	char *res = NULL;
-	RzAnalysisOp *op = rz_core_analysis_op(core, addr, 0);
-	if (op && op->ireg) {
-		res = strdup(op->ireg);
-	}
-	rz_analysis_op_free(op);
-	return res;
-}
-
-static char *get_buf_asm(RzCore *core, ut64 from, ut64 addr, RzAnalysisFunction *fcn, bool color) {
-	int has_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
-	char str[512];
-	const int size = 12;
-	ut8 buf[12];
-	RzAsmOp asmop = { 0 };
-	char *buf_asm = NULL;
-	bool asm_subvar = rz_config_get_i(core->config, "asm.sub.var");
-	core->parser->pseudo = rz_config_get_i(core->config, "asm.pseudo");
-	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
-	core->parser->localvar_only = rz_config_get_i(core->config, "asm.sub.varonly");
-
-	if (core->parser->subrel) {
-		core->parser->subrel_addr = from;
-	}
-	rz_io_read_at(core->io, addr, buf, size);
-	rz_asm_set_pc(core->rasm, addr);
-	rz_asm_disassemble(core->rasm, &asmop, buf, size);
-	int ba_len = rz_strbuf_length(&asmop.buf_asm) + 128;
-	char *ba = malloc(ba_len);
-	strcpy(ba, rz_strbuf_get(&asmop.buf_asm));
-	if (asm_subvar) {
-		core->parser->get_ptr_at = rz_analysis_function_get_var_stackptr_at;
-		core->parser->get_reg_at = rz_analysis_function_get_var_reg_at;
-		core->parser->get_op_ireg = get_op_ireg;
-		rz_parse_subvar(core->parser, fcn, addr, asmop.size,
-			ba, ba, sizeof(asmop.buf_asm));
-	}
-	RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, addr);
-	rz_parse_filter(core->parser, addr, core->flags, hint,
-		ba, str, sizeof(str), core->print->big_endian);
-	rz_analysis_hint_free(hint);
-	rz_asm_op_set_asm(&asmop, ba);
-	free(ba);
-	if (color && has_color) {
-		buf_asm = rz_print_colorize_opcode(core->print, str,
-			core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
-	} else {
-		buf_asm = rz_str_new(str);
-	}
-	return buf_asm;
-}
-
 #define var_ref_list(a, d, t) sdb_fmt("var.0x%" PFMT64x ".%d.%d.%s", \
 	a, 1, d, (t == 'R') ? "reads" : "writes");
 
@@ -6319,7 +6265,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 				pj_a(pj);
 				rz_list_foreach (list, iter, xref) {
 					fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
-					char *str = get_buf_asm(core, addr, xref->from, fcn, false);
+					char *str = rz_core_disasm_instruction(core, xref->from, addr, fcn, false);
 					pj_o(pj);
 					pj_kn(pj, "from", xref->from);
 					pj_ks(pj, "type", rz_analysis_xrefs_type_tostring(xref->type));
@@ -6392,7 +6338,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 				RzAnalysisFunction *fcn;
 				rz_list_foreach (list, iter, xref) {
 					fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
-					char *buf_asm = get_buf_asm(core, addr, xref->from, fcn, true);
+					char *buf_asm = rz_core_disasm_instruction(core, xref->from, addr, fcn, true);
 					const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, xref->from);
 					char *print_comment = NULL;
 					const char *nl = comment ? strchr(comment, '\n') : NULL;
