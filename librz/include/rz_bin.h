@@ -758,6 +758,8 @@ RZ_API RzList *rz_bin_maps_of_file_sections(RzBinFile *binfile);
 RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps);
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
+RZ_API RZ_OWN RzList *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RzBinImport *imp);
 RZ_API void rz_bin_symbol_free(RzBinSymbol *sym);
