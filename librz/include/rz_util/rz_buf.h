@@ -50,11 +50,9 @@ struct rz_buf_t {
 
 // XXX: this should not be public
 typedef struct rz_buf_cache_t {
-	ut64 from;
-	ut64 to;
-	int size;
-	ut8 *data;
-	int written;
+	ut64 from; ///< inclusive
+	ut64 to; ///< exclusive, may overlap to 0
+	ut8 *data; ///< size == to - from
 } RzBufferSparse;
 
 /* constructors */
