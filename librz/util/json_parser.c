@@ -388,14 +388,20 @@ RZ_API RzJson *rz_json_parse(char *text) {
 	return js.children.first;
 }
 
-RZ_API const RzJson *rz_json_get(const RzJson *json, const char *key) {
+// getter with explicit size parameter, since in rz_json_get_path our key is
+// not zero-terminated.
+static const RzJson *rz_json_get_len(const RzJson *json, const char *key, size_t keysize) {
 	RzJson *js;
 	for (js = json->children.first; js; js = js->next) {
-		if (js->key && !strcmp(js->key, key)) {
+		if (js->key && !strncmp(js->key, key, keysize)) {
 			return js;
 		}
 	}
 	return NULL;
+}
+
+RZ_API const RzJson *rz_json_get(const RzJson *json, const char *key) {
+	return rz_json_get_len(json, key, strlen(key));
 }
 
 RZ_API const RzJson *rz_json_item(const RzJson *json, size_t idx) {
@@ -406,4 +412,54 @@ RZ_API const RzJson *rz_json_item(const RzJson *json, size_t idx) {
 		}
 	}
 	return NULL;
+}
+
+RZ_API const RzJson *rz_json_get_path(const RzJson *json, const char *path) {
+	const RzJson *js = json;
+	const char *key;
+	size_t keysize;
+	ut64 index;
+
+	while (*path) {
+		switch (*path++) {
+		case '\0':
+			break;
+		case '[':
+			// we could check if js->type != RZ_JSON_ARRAY but rz_json_item will
+			// fail in that case anyway
+			key = path;
+			index = (ut64)strtoull(key, (char **)&path, 10);
+			if (key == path || *path != ']') {
+				RZ_JSON_REPORT_ERROR("JSON path: expected ]", path - 1);
+				return NULL;
+			}
+			++path;
+			js = rz_json_item(js, index);
+			if (!js) {
+				return NULL;
+			}
+			break;
+		case '.':
+			key = path;
+			for (keysize = 0; key[keysize]; ++keysize) {
+				if (strchr(".[", key[keysize]))
+					break;
+			}
+			if (keysize == 0) {
+				RZ_JSON_REPORT_ERROR("JSON path: expected key", path - 1);
+				return NULL;
+			}
+			js = rz_json_get_len(js, key, keysize);
+			if (!js) {
+				return NULL;
+			}
+			path = key + keysize;
+			break;
+		default:
+			RZ_JSON_REPORT_ERROR("JSON path: unexpected char", path - 1);
+			return NULL;
+		}
+	}
+	// js == json means we've not done any access at all
+	return (js == json) ? NULL : js;
 }
