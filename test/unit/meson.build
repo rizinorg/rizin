@@ -51,6 +51,7 @@ if get_option('enable_tests')
     'idstorage',
     'intervaltree',
     'io',
+    'io_ihex',
     'json',
     'list',
     'ovf',
