@@ -344,7 +344,7 @@ static bool ihex_write(RzIODesc *desc, Rihex *rih) {
 		ut16 addh0 = rbs->from >> 16;
 		ut16 addh1 = (rbs->to - 1) >> 16;
 		ut16 tsiz = 0;
-		if (rbs->size == 0) {
+		if (rbs->from == rbs->to) {
 			continue;
 		}
 
@@ -381,7 +381,7 @@ static bool ihex_write(RzIODesc *desc, Rihex *rih) {
 			}
 		}
 		//00 records (remaining data)
-		if (fwblock(out, rbs->data + tsiz, (addh1 << 16) | addl0, rbs->size - tsiz)) {
+		if (fwblock(out, rbs->data + tsiz, (addh1 << 16) | addl0, (rbs->to - rbs->from) - tsiz)) {
 			eprintf("ihex:fwblock error\n");
 			rz_list_free(nonempty);
 			fclose(out);
@@ -392,7 +392,6 @@ static bool ihex_write(RzIODesc *desc, Rihex *rih) {
 	rz_list_free(nonempty);
 	fprintf(out, ":00000001FF\n");
 	fclose(out);
-	out = NULL;
 	return true;
 }
 
