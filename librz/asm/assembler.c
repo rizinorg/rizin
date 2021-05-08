@@ -1,16 +1,33 @@
-typedef struct assembly_text_t {
-	ut32 nlines;
-	char **lines;
-	ut32 *lsizes;
-	ut8 **binary;
-	ut32 *bsizes;
-} AsmText;
+typedef struct assembly_line_t {
+	char *line;
+	ut32 size;
+} AsmLine;
+
+typedef struct assembly_bin_t {
+	ut8 *binary;
+	ut32 size;
+} AsmBin;
+
+typedef struct assembly_label_t {
+	AsmLine *al;
+	ut32 nline;
+	ut64 pc;
+} AsmLabel;
 
 typedef struct assembler_ctx_t {
-	AsmText assembly;
-	AsmText enriched;
+	ut32 nlines;
+	AsmLine *assembly;
+	AsmLine *enriched;
+	AsmBin *binary;
 	HtPP *expressions;
+	HtPP *labels;
 } AssemblerCtx;
+
+#define assembler_ctx_bin(actx,nline) (actx->binary[nline].binary)
+#define assembler_ctx_size(actx,nline) (actx->binary[nline].size)
+#define assembler_ctx_line(actx,nline) (actx->enriched[nline].line)
+#define assembler_ctx_line2(actx,nline) (actx->assembly[nline].line)
+#define assembler_ctx_length(actx,nline) (actx->enriched[nline].size)
 
 static void assembler_sanitize_line(char *line, st32 size) {
 	for (st32 i = 0; i < size; ++i) {
@@ -20,21 +37,39 @@ static void assembler_sanitize_line(char *line, st32 size) {
 	}
 }
 
-static bool assembler_text_bin(AsmText *at, ut32 idx, ut8 *binary, st32 size) {
-	if (size < 1 || !(at->binary[idx] = malloc(size))) {
+static bool assembler_bin_cpy(AsmBin *ab, ut32 idx, const ut8 *binary, st32 size) {
+	if (size < 1 || !(ab[idx].binary = malloc(size))) {
 		return false;
 	}
 
-	memcpy(at->binary[idx], binary, size);
-	at->bsizes[idx] = size;
+	memcpy(ab[idx].binary, binary, size);
+	ab[idx].size = size;
 	return true;
 }
 
-static bool assembler_text_line(AsmText *at, ut32 idx, const char *line, st32 size, bool trim) {
-	char *copy = rz_str_ndup(line, size);
-	if (size > 0 && !copy) {
+static bool assembler_bin_set(AsmBin *ab, ut32 idx, ut8 *binary, st32 size) {
+	if (!binary) {
 		return false;
 	}
+	ab[idx].binary = binary;
+	ab[idx].size = size;
+	return true;
+}
+
+static void assembler_bin_free(AsmBin *ab, ut32 nlines) {
+	for (ut32 i = 0; i < nlines; ++i) {
+		free(ab[i].binary);
+	}
+	free(ab);
+}
+
+static bool assembler_line_set(AsmLine *al, ut32 idx, const char *line, st32 size, bool trim) {
+	char *copy = rz_str_ndup(line, size);
+	if (size > 0 && !copy) {
+		rz_warn_if_reached();
+		return false;
+	}
+	assembler_sanitize_line(copy, size);
 	if (trim) {
 		rz_str_trim(copy);
 		size = strlen(copy);
@@ -43,61 +78,61 @@ static bool assembler_text_line(AsmText *at, ut32 idx, const char *line, st32 si
 			copy = NULL;
 		}
 	}
-	assembler_sanitize_line(copy, size);
-	at->lines[idx] = copy;
-	at->lsizes[idx] = size;
+	al[idx].line = copy;
+	al[idx].size = size;
 	return true;
 }
 
-static void assembler_text_fini(AsmText *at) {
-	for (ut32 i = 0; i < at->nlines; ++i) {
-		free(at->lines[i]);
+static void assembler_line_free(AsmLine *al, ut32 nlines) {
+	for (ut32 i = 0; i < nlines; ++i) {
+		free(al[i].line);
 	}
-	if (at->binary) {
-		for (ut32 i = 0; i < at->nlines; ++i) {
-			free(at->binary[i]);
-		}
-		free(at->bsizes);
-		free(at->binary);
-	}
-	free(at->lsizes);
-	free(at->lines);
+	free(al);
 }
 
-static bool assembler_text_init(AsmText *at, ut32 nlines, bool binary) {
-	if (!(at->lsizes = RZ_NEWS0(ut32, nlines))) {
-		goto assembler_text_init_fail;
+static bool assembler_line_apply_label(AsmLabel *current, const char *label, AsmLabel *al) {
+	const char *substr = strstr(current->al->line, label);
+	if (!substr) {
+		return false;
+	}
+	ut32 prefix = substr - current->al->line;
+
+	char *new = rz_str_newf("%.*s0x%" PFMT64x, prefix, current->al->line, pc);
+	if (!new) {
+		return false;
 	}
 
-	if (!(at->lines = RZ_NEWS0(char *, nlines))) {
-		goto assembler_text_init_fail;
-	}
-
-	if (binary) {
-		if (!(at->bsizes = RZ_NEWS0(ut32, nlines))) {
-			goto assembler_text_init_fail;
-		}
-
-		if (!(at->binary = RZ_NEWS0(ut8 *, nlines))) {
-			goto assembler_text_init_fail;
-		}
-	}
-
-	at->nlines = nlines;
+	free(current->al->line);
+	current->al->line = new;
 	return true;
+}
 
-assembler_text_init_fail:
-	assembler_text_fini(at);
-	return false;
+static bool assembler_line_is_label(AssemblerCtx *actx, ut32 nline) {
+	const char *p = assembler_ctx_line(actx, nline);
+	ut32 s = assembler_ctx_length(actx, nline);
+
+	if (!p || p[s - 1] != ':') {
+		return false;
+	}
+	for (st32 i = 0; i < (s - 1); ++i) {
+		if (!IS_DIGIT(p[i]) && !IS_UPPER(p[i]) &&
+			!IS_LOWER(p[i]) && p[i] != '_') {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static void assembler_ctx_free(AssemblerCtx *actx) {
 	if (!actx) {
 		return;
 	}
-	assembler_text_fini(&actx->assembly);
-	assembler_text_fini(&actx->enriched);
+	assembler_line_free(actx->assembly, actx->nlines);
+	assembler_line_free(actx->enriched, actx->nlines);
+	assembler_bin_free(actx->binary, actx->nlines);
 	ht_pp_free(actx->expressions);
+	ht_pp_free(actx->labels);
 	free(actx);
 }
 
@@ -108,7 +143,7 @@ static void assembler_ctx_free(AssemblerCtx *actx) {
 	do { \
 		RZ_LOG_ERROR("[!] assembler: line %u: " error "\n", nline + 1, ##__VA_ARGS__); \
 	} while (0)
-#define assembler_error_line(line, size, where, nline, error, ...) \
+#define assembler_error_sline(line, size, where, nline, error, ...) \
 	do { \
 		if (size > 0) { \
 			RZ_LOG_ERROR("[!] assembler: line %u: %.*s\n", nline + 1, size, line); \
@@ -120,13 +155,25 @@ static void assembler_ctx_free(AssemblerCtx *actx) {
 		} \
 		RZ_LOG_ERROR("[!] assembler: line %u: " error "\n", nline + 1, ##__VA_ARGS__); \
 	} while (0)
+#define assembler_error_line(actx, nline, where, error, ...) \
+	do { \
+		ut32 size = assembler_ctx_length(actx, nline); \
+		const char* line = assembler_ctx_line(actx, nline); \
+		if (size > 0) { \
+			RZ_LOG_ERROR("[!] assembler: line %u: %.*s\n", nline + 1, size, line); \
+			if (size < ERROR_PADDING_SIZE) { \
+				const char *spc = SPACE_PADDING; \
+				const char *pad = ERROR_PADDING; \
+				RZ_LOG_ERROR("[!] assembler: line %u: %.*s%.*s\n", nline + 1, where, spc, size - where, pad); \
+			} \
+		} \
+		RZ_LOG_ERROR("[!] assembler: line %u: " error "\n", nline + 1, ##__VA_ARGS__); \
+	} while (0)
 
-
-static void assembler_expr_free(HtPPKv *kv) {
+static void assembler_kv_free(HtPPKv *kv) {
 	free(kv->key);
 	free(kv->value);
 }
-
 
 static AssemblerCtx *assembler_ctx_new(const char *input) {
 	ut32 nlines;
@@ -151,20 +198,31 @@ static AssemblerCtx *assembler_ctx_new(const char *input) {
 		goto assembler_ctx_new_fail;
 	}
 
-	if (!assembler_text_init(&actx->assembly, nlines, false)) {
+	if (!(actx->assembly = RZ_NEWS0(AsmLine, nlines))) {
 		rz_warn_if_reached();
 		goto assembler_ctx_new_fail;
 	}
 
-	if (!assembler_text_init(&actx->enriched, nlines, true)) {
+	if (!(actx->enriched = RZ_NEWS0(AsmLine, nlines))) {
 		rz_warn_if_reached();
 		goto assembler_ctx_new_fail;
 	}
 
-	if (!(actx->expressions = ht_pp_new((HtPPDupValue)strdup, (HtPPKvFreeFunc)assembler_expr_free, NULL))) {
+	if (!(actx->binary = RZ_NEWS0(AsmBin, nlines))) {
 		rz_warn_if_reached();
 		goto assembler_ctx_new_fail;
 	}
+
+	if (!(actx->expressions = ht_pp_new((HtPPDupValue)strdup, (HtPPKvFreeFunc)assembler_kv_free, NULL))) {
+		rz_warn_if_reached();
+		goto assembler_ctx_new_fail;
+	}
+
+	if (!(actx->labels = ht_pp_new((HtPPDupValue)strdup, (HtPPKvFreeFunc)assembler_kv_free, NULL))) {
+		rz_warn_if_reached();
+		goto assembler_ctx_new_fail;
+	}
+	actx->nlines = nlines;
 
 #define ASM_IS_EOL(x)            (!(x) || (x) == '\n')
 #define ASM_IS_COMMENT(x)        ((x) == ';' || (x) == '#')
@@ -183,7 +241,7 @@ static AssemblerCtx *assembler_ctx_new(const char *input) {
 		} else if (delim && ASM_IS_EOL(input[i])) {
 			lsize = i - lastnl;
 			ut32 where = delim - lastnl;
-			assembler_error_line(input + lastnl, lsize, where, line,
+			assembler_error_sline(input + lastnl, lsize, where, line,
 				" missing string delim %c at position %u", input[delim], where);
 			goto assembler_ctx_new_fail;
 
@@ -193,7 +251,7 @@ static AssemblerCtx *assembler_ctx_new(const char *input) {
 		} else if (is_comment && ASM_IS_EOL(input[i])) {
 			is_comment = false;
 			lsize = i - lastnl;
-			if (!assembler_text_line(&actx->assembly, line, input + lastnl, lsize, false)) {
+			if (!assembler_line_set(actx->assembly, line, input + lastnl, lsize, false)) {
 				rz_warn_if_reached();
 				goto assembler_ctx_new_fail;
 			}
@@ -204,19 +262,19 @@ static AssemblerCtx *assembler_ctx_new(const char *input) {
 		} else if (!is_comment && ASM_IS_COMMENT(input[i])) {
 			is_comment = true;
 			lsize = i - lastnl;
-			if (!assembler_text_line(&actx->enriched, line, input + lastnl, lsize, true)) {
+			if (!assembler_line_set(actx->enriched, line, input + lastnl, lsize, true)) {
 				rz_warn_if_reached();
 				goto assembler_ctx_new_fail;
 			}
 
 		} else if (!is_comment && !delim && ASM_IS_EOL_OR_COMMENT(input[i])) {
 			lsize = i - lastnl;
-			if (!assembler_text_line(&actx->assembly, line, input + lastnl, lsize, false)) {
+			if (!assembler_line_set(actx->assembly, line, input + lastnl, lsize, false)) {
 				rz_warn_if_reached();
 				goto assembler_ctx_new_fail;
 			}
 
-			if (!assembler_text_line(&actx->enriched, line, input + lastnl, lsize, true)) {
+			if (!assembler_line_set(actx->enriched, line, input + lastnl, lsize, true)) {
 				rz_warn_if_reached();
 				goto assembler_ctx_new_fail;
 			}
@@ -239,75 +297,232 @@ assembler_ctx_new_fail:
 
 static void assembler_ctx_debug(AssemblerCtx *actx, bool enriched) {
 	if (enriched) {
-		for (ut32 i = 0; i < actx->enriched.nlines; ++i) {
-			const char* p = actx->enriched.lines[i];
-			eprintf("+++ %4u: %-5d '%s'\n", i + 1, actx->enriched.lsizes[i], p ? p : "");
+		for (ut32 i = 0; i < actx->nlines; ++i) {
+			const char* p = assembler_ctx_line(actx, i);
+			eprintf("+++ %4u: %-5d '%s'\n", i + 1, assembler_ctx_length(actx, i), p ? p : "");
 		}
 	} else {
-		for (ut32 i = 0; i < actx->assembly.nlines; ++i) {
-			eprintf("--- %4u: %-5d '%s'\n", i + 1, actx->assembly.lsizes[i], actx->assembly.lines[i]);
+		for (ut32 i = 0; i < actx->nlines; ++i) {
+			eprintf("--- %4u: %-5d '%s'\n", i + 1, assembler_ctx_length(actx, i), assembler_ctx_line2(actx, i));
 		}
 	}
+}
+
+static void assembler_ctx_hex(AssemblerCtx *actx, ut32 nline) {
+	const ut8 *bin = (ut8 *)assembler_ctx_bin(actx, nline);
+	ut32 size = assembler_ctx_size(actx, nline);
+	for (ut32 i = 0; i < size; i++) {
+		eprintf("%02x", bin[i]);
+	}
+	eprintf("\n");
 }
 
 #include "assembler_directives.c"
-
-static bool assembler_parse_directives_and_labels(RzAsm *a, AssemblerCtx *actx) {
-	const char *line, *directive;
-	ut32 lsize, dsize;
-	// resolve expressions
-	for (ut32 i = 0; i < actx->enriched.nlines; ++i) {
-		lsize = actx->enriched.lsizes[i];
-		line = actx->enriched.lines[i];
-		if (lsize < 1 || line[0] != '.') {
-			continue;
-		}
-
-		for (ut32 k = 0; k < RZ_ARRAY_SIZE(assembler_directives_expression); ++k) {
-			dsize = assembler_directives_expression[k].dirsize;
-			if (dsize > lsize) {
-				continue;
-			}
-			directive = assembler_directives_expression[k].directive;
-			if (!rz_str_ncasecmp(line, directive, dsize)) {
-				eprintf("exp %4u: %-5d '%s'\n", i + 1, lsize, line);
-				if (!assembler_directives_expression[k].parse(a, actx, line, lsize)) {
-					return false;
-				}
-			}
-		}
-	}
-	// resolve labels
-	for (ut32 i = 0; i < actx->enriched.nlines; ++i) {
-		if (actx->enriched.lsizes[i] < 1) {
-			continue;
-		}
-		eprintf("lab %4u: %-5d '%s'\n", i + 1, actx->enriched.lsizes[i], actx->enriched.lines[i]);
-	}
-	return true;
-}
 
 RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 	RzAsmCode *acode = NULL;
 	AssemblerCtx *actx = assembler_ctx_new(assembly);
 
 	if (!actx) {
+		rz_warn_if_reached();
 		return NULL;
 	}
 
 	if (!(acode = rz_asm_code_new())) {
+		rz_warn_if_reached();
 		goto rz_asm_massemble_fail;
 	}
 
+	//assembler_ctx_debug(actx, false);
 	//assembler_ctx_debug(actx, true);
+	char *line = NULL;
+	const char *directive = NULL;
+	const ut8 *bin = NULL;
+	int opsize = 0;
+	ut32 size = 0, dsize = 0;
+	ut64 pc = 0;
+	RzAsmOp op = { 0 };
+	bool complete = false;
+	bool inserted = false;
 
-	if (!assembler_parse_directives_and_labels(a, actx)) {
-		goto rz_asm_massemble_fail;
+	// resolve expressions
+	for (ut32 i = 0; i < actx->nlines; ++i) {
+		size = assembler_ctx_length(actx, i);
+		line = assembler_ctx_line(actx, i);
+		if (size < 1 || line[0] != '.') {
+			continue;
+		}
+
+		for (ut32 k = 0; k < RZ_ARRAY_SIZE(assembler_directives_expression); ++k) {
+			dsize = assembler_directives_expression[k].dirsize;
+			if (dsize > size) {
+				continue;
+			}
+			directive = assembler_directives_expression[k].directive;
+			if (!rz_str_ncasecmp(line, directive, dsize)) {
+				eprintf("exp  %4u: %-5d '%s'\n", i + 1, size, line);
+				if (!assembler_directives_expression[k].parse(a, actx, i, dsize + 1, pc)) {
+					goto rz_asm_massemble_fail;
+				}
+			}
+		}
 	}
 
+	// resolve data directives
+	for (ut32 i = 0; i < actx->nlines; ++i) {
+		if (assembler_ctx_length(actx, i) < 1) {
+			continue;
+		}
+		size = assembler_ctx_length(actx, i);
+		line = assembler_ctx_line(actx, i);
+		if (size < 1 || line[0] != '.') {
+			continue;
+		}
+
+		for (ut32 k = 0; k < RZ_ARRAY_SIZE(assembler_directives_data); ++k) {
+			dsize = assembler_directives_data[k].dirsize;
+			if (dsize > size) {
+				continue;
+			}
+			directive = assembler_directives_data[k].directive;
+			if (!rz_str_ncasecmp(line, directive, dsize)) {
+				eprintf("dir  %4u: %-5d '%s'\n", i + 1, size, line);
+				if (!assembler_directives_data[k].parse(a, actx, i, dsize + 1, pc)) {
+					goto rz_asm_massemble_fail;
+				}
+			}
+		}
+	}
+
+	// resolve assemble
+	pc = 0;
+	complete = true;
+	for (ut32 i = 0; i < actx->nlines; ++i) {
+		size = assembler_ctx_length(actx, i);
+		line = assembler_ctx_line(actx, i);
+		if (size < 1) {
+			continue;
+		}
+
+		if (line[0] == '.') {
+			for (ut32 k = 0; k < RZ_ARRAY_SIZE(assembler_directives_text); ++k) {
+				dsize = assembler_directives_text[k].dirsize;
+				if (dsize > size) {
+					continue;
+				}
+				directive = assembler_directives_text[k].directive;
+				if (!rz_str_ncasecmp(line, directive, dsize)) {
+					eprintf("lab0 %4u: %-5d '%s'\n", i + 1, size, line);
+					if (!assembler_directives_text[k].parse(a, actx, i, dsize + 1, pc)) {
+						goto rz_asm_massemble_fail;
+					}
+				}
+			}
+			continue;
+		}
+
+		if (assembler_line_is_label(actx, i)) {
+			AsmLabel *al = RZ_NEW0(AsmLabel);
+			if (!al) {
+				assembler_error_line(actx, i, 0, "cannot allocate label for hashmap.\n");
+				goto rz_asm_massemble_fail;
+			}
+			al->aline = &actx->enriched[i];
+			al->nline = i;
+			al->pc = pc;
+
+			line[size - 1] = 0;
+			inserted = ht_pp_insert(actx->labels, line, al);
+			line[size - 1] = ':';
+			if (!inserted) {
+				assembler_error_line(actx, i, 0, "cannot insert label in hashmap.\n");
+				goto rz_asm_massemble_fail;
+			}
+			continue;
+		}
+
+		if (!a->cur) {
+			assembler_error_line(actx, i, 0, " cannot compile without knowing the architecture\n");
+			goto rz_asm_massemble_fail;
+		}
+
+		rz_asm_op_init(&op);
+		ht_pp_foreach(actx->labels, (HtPPForeachCallback)assembler_line_apply_label, &actx->enriched[i]);
+		if ((opsize = rz_asm_assemble(a, &op, assembler_ctx_line(actx, i))) < 1) {
+			rz_asm_op_fini(&op);
+			complete = false;
+			continue;
+		}
+		const ut8 *bin = (ut8 *)rz_strbuf_get(&op.buf);
+		assembler_bin_cpy(actx->binary, i, bin, opsize);
+		eprintf("lab0 %4u: %-5u '%s' -> %d\n", i + 1, size, line, opsize);
+		rz_asm_op_fini(&op);
+		pc += opsize;
+	}
+
+	// resolve initial labels and assembly
+	if (!complete) {
+		pc = 0;
+		complete = true;
+		for (ut32 i = 0; i < actx->nlines; ++i) {
+			size = assembler_ctx_length(actx, i);
+			line = assembler_ctx_line(actx, i);
+			if (size < 1 || line[0] == '.' || assembler_ctx_bin(actx, i)) {
+				continue;
+			}
+			eprintf("lab1 %4u: %-5u '%s'\n", i + 1, size, line);
+		}
+	}
+
+	// resolve remaining labels and assembly
+	if (!complete) {
+		pc = 0;
+		complete = true;
+		for (ut32 i = 0; i < actx->nlines; ++i) {
+			size = assembler_ctx_length(actx, i);
+			line = assembler_ctx_line(actx, i);
+			if (size < 1 || line[0] == '.' || assembler_ctx_bin(actx, i)) {
+				continue;
+			}
+			eprintf("lab2 %4u: %-5u '%s'\n", i + 1, size, line);
+		}
+	}
+
+
+	// resolve calculate size and concat
+	size = 0;
+	for (ut32 i = 0; i < actx->nlines; ++i) {
+		if (!assembler_ctx_bin(actx, i)) {
+			continue;
+		}
+		size += assembler_ctx_size(actx, i);
+	}
+
+	if (!(acode->bytes = malloc(size))) {
+		rz_warn_if_reached();
+		goto rz_asm_massemble_fail;
+	}
+	acode->len = size;
+
+	for (ut64 i = 0, offset = 0; i < actx->nlines; ++i) {
+		if (!assembler_ctx_bin(actx, i)) {
+			continue;
+		}
+		size = assembler_ctx_length(actx, i);
+		line = assembler_ctx_line(actx, i);
+		eprintf("bin  %4llu: %-5u %-10s ", i + 1, size, line);
+
+		bin = (ut8 *)assembler_ctx_bin(actx, i);
+		size = assembler_ctx_size(actx, i);
+		assembler_ctx_hex(actx, i);
+
+		memcpy(acode->bytes + offset, bin, size);
+
+		offset += size;
+	}
 
 	assembler_ctx_free(actx);
-	return rz_asm_code_free(acode); //acode;
+	return acode;
 
 rz_asm_massemble_fail:
 	assembler_ctx_free(actx);

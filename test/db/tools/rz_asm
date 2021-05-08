@@ -588,3 +588,19 @@ EXPECT=<<EOF
 ff4300d1
 EOF
 RUN
+
+NAME=rz-asm simple.x86.32.S
+FILE==
+CMDS=!rz-asm -a x86 -b 32 -p -f bins/other/rz-asm/asm2/simple.x86.32.S
+EXPECT=<<EOF
+b801000000bb00000000cd80
+EOF
+RUN
+
+NAME=rz-asm simple.x86.32.S
+FILE==
+CMDS=!rz-asm -a x86 -b 32 -p -f bins/other/rz-asm/asm2/simple.x86.32.S
+EXPECT=<<EOF
+b801000000bb00000000cd80
+EOF
+RUN

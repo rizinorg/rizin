@@ -505,53 +505,6 @@ static Ase findAssembler(RzAsm *a, const char *kw) {
 	return ase;
 }
 
-static char *replace_directives_for(char *str, char *token) {
-	RzStrBuf *sb = rz_strbuf_new("");
-	char *p = NULL;
-	char *q = str;
-	bool changes = false;
-	for (;;) {
-		if (q) {
-			p = strstr(q, token);
-		}
-		if (p) {
-			char *nl = strchr(p, '\n');
-			if (nl) {
-				*nl++ = 0;
-			}
-			char _ = *p;
-			*p = 0;
-			rz_strbuf_append(sb, q);
-			*p = _;
-			rz_strbuf_appendf(sb, "<{%s}>\n", p + 1);
-			q = nl;
-			changes = true;
-		} else {
-			if (q) {
-				rz_strbuf_append(sb, q);
-			}
-			break;
-		}
-	}
-	if (changes) {
-		free(str);
-		return rz_strbuf_drain(sb);
-	}
-	rz_strbuf_free(sb);
-	return str;
-}
-
-static char *replace_directives(char *str) {
-	int i = 0;
-	char *dir = directives[i++];
-	char *o = replace_directives_for(str, dir);
-	while (dir) {
-		o = replace_directives_for(o, dir);
-		dir = directives[i++];
-	}
-	return o;
-}
-
 RZ_API void rz_asm_list_directives(void) {
 	int i = 0;
 	char *dir = directives[i++];
@@ -776,25 +729,17 @@ RZ_API int rz_asm_mnemonics_byname(RzAsm *a, const char *name) {
 
 RZ_API RzAsmCode *rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp) {
 	rz_return_val_if_fail(a && buf, NULL);
-	char *lbuf = strdup(buf);
-	if (!lbuf) {
-		return NULL;
-	}
-	RzAsmCode *acode;
-	if (use_spp) {
-		Output out;
-		out.fout = NULL;
-		out.cout = rz_strbuf_new("");
-		rz_strbuf_init(out.cout);
-		struct Proc proc;
-		spp_proc_set(&proc, "spp", 1);
-
-		lbuf = replace_directives(lbuf);
-		spp_eval(lbuf, &out);
-		free(lbuf);
-		lbuf = strdup(rz_strbuf_get(out.cout));
-	}
-	acode = rz_asm_massemble(a, lbuf);
-	free(lbuf);
-	return acode;
+	//if (use_spp) {
+	//	Output out;
+	//	out.fout = NULL;
+	//	out.cout = rz_strbuf_new("");
+	//	rz_strbuf_init(out.cout);
+	//	struct Proc proc;
+	//	spp_proc_set(&proc, "spp", 1);
+	//	lbuf = replace_directives(lbuf);
+	//	spp_eval(lbuf, &out);
+	//	free(lbuf);
+	//	lbuf = strdup(rz_strbuf_get(out.cout));
+	//}
+	return rz_asm_massemble(a, buf);
 }
