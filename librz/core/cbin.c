@@ -2833,24 +2833,6 @@ static int bin_map_sections_to_segments(RzBin *bin, PJ *pj, int mode) {
 	return true;
 }
 
-static char *section_type_to_string(RzBin *bin, int type) {
-	RzBinFile *a = rz_bin_cur(bin);
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
-	if (plugin && plugin->section_type_to_string) {
-		return plugin->section_type_to_string(type);
-	}
-	return NULL;
-}
-
-static RzList *section_flag_to_rzlist(RzBin *bin, ut64 flag) {
-	RzBinFile *a = rz_bin_cur(bin);
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
-	if (plugin && plugin->section_flag_to_rzlist) {
-		return plugin->section_flag_to_rzlist(flag);
-	}
-	return NULL;
-}
-
 static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	RzBinSection *section;
 	RzBinInfo *info = NULL;
@@ -3036,14 +3018,14 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 				free(data);
 			}
 			if (!print_segments && plugin_type_support) {
-				char *section_type = section_type_to_string(r->bin, section->type);
+				char *section_type = rz_bin_section_type_to_string(r->bin, section->type);
 				if (section_type) {
 					pj_ks(pj, "type", section_type);
 				}
 				free(section_type);
 			}
 			if (!print_segments && plugin_flags_support) {
-				RzList *flags = section_flag_to_rzlist(r->bin, section->flags);
+				RzList *flags = rz_bin_section_flag_to_list(r->bin, section->flags);
 				char *pos;
 				if (flags) {
 					pj_ka(pj, "flags");
@@ -3107,12 +3089,12 @@ static int bin_sections(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at
 			rz_list_append(row_list, strdup(section_name));
 
 			if (!print_segments && plugin_type_support) {
-				char *section_type = section_type_to_string(r->bin, section->type);
+				char *section_type = rz_bin_section_type_to_string(r->bin, section->type);
 				rz_list_append(row_list, section_type);
 			}
 
 			if (!print_segments && plugin_flags_support) {
-				RzList *section_flags = section_flag_to_rzlist(r->bin, section->flags);
+				RzList *section_flags = rz_bin_section_flag_to_list(r->bin, section->flags);
 				char *section_flags_str = rz_str_list_join(section_flags, ",");
 				rz_list_append(row_list, section_flags_str);
 				rz_list_free(section_flags);

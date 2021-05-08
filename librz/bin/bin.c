@@ -1442,6 +1442,42 @@ RZ_IPI void rz_bin_section_free(RzBinSection *bs) {
 	}
 }
 
+/**
+ * \brief Converts the RzBinSection type to the string representation
+ *
+ * Some binary formats have a function interface called "section_type_to_string"
+ * The returned string type name is different between formats
+ *
+ * \param bin RzBin instance
+ * \param type A type field of the RzBinSection (differs between formats)
+ * */
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type) {
+	RzBinFile *a = rz_bin_cur(bin);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
+	if (plugin && plugin->section_type_to_string) {
+		return plugin->section_type_to_string(type);
+	}
+	return NULL;
+}
+
+/**
+ * \brief Converts the RzBinSection flags to a list of string representations
+ *
+ * Some binary formats have a function interface called "section_flag_to_rzlist"
+ * The returned string flag names are different between formats
+ *
+ * \param bin RzBin instance
+ * \param flag A flag field of the RzBinSection (differs between formats)
+ * */
+RZ_API RZ_OWN RzList *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag) {
+	RzBinFile *a = rz_bin_cur(bin);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
+	if (plugin && plugin->section_flag_to_rzlist) {
+		return plugin->section_flag_to_rzlist(flag);
+	}
+	return NULL;
+}
+
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 at) {
 	RzListIter *it, *it2;
 	RzBinFile *bf;
