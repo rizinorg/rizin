@@ -24,6 +24,7 @@ RUN
 NAME=stop trace session (dts-)
 FILE=bins/elf/analysis/calls_x64
 ARGS=-d -e dbg.bpsysign=true
+BROKEN=1
 CMDS=<<EOF
 dcu main
 dts+
