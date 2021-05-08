@@ -1648,6 +1648,9 @@ static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va) {
 		return false;
 	}
 	if (!bf) {
+		// TODO: manually creating an RzBinFile like this is a hack and abuse of RzBin API
+		// If we don't want to use an RzBinFile for searching strings, the raw strings search
+		// should be refactored out of bin.
 		bf = RZ_NEW0(RzBinFile);
 		if (!bf) {
 			return false;
@@ -1674,9 +1677,8 @@ static bool bin_raw_strings(RzCore *r, PJ *pj, int mode, int va) {
 	rz_list_free(l);
 	if (new_bf) {
 		rz_buf_free(bf->buf);
-		bf->buf = NULL;
-		bf->id = -1;
-		rz_bin_file_delete(r->bin, bf);
+		free(bf->file);
+		free(bf);
 	}
 	return true;
 }
