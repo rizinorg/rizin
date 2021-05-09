@@ -136,6 +136,18 @@ RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into) {
 	}
 }
 
+RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, void *into) {
+	rz_return_if_fail(vec && index + count <= vec->len);
+	void *p = rz_vector_index_ptr(vec, index);
+	if (into) {
+		memcpy(into, p, count * vec->elem_size);
+	}
+	vec->len -= count;
+	if (index < vec->len) {
+		memmove(p, (char *)p + vec->elem_size * count, vec->elem_size * (vec->len - index + count));
+	}
+}
+
 RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x) {
 	rz_return_val_if_fail(vec && index <= vec->len, NULL);
 	if (vec->len >= vec->capacity) {

@@ -101,6 +101,12 @@ RZ_API void *rz_vector_assign_at(RzVector *vec, size_t index, void *elem);
 // It is the caller's responsibility to free potential resources associated with the element.
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into);
 
+/**
+ * remove all elements in the given range and write the contents to into (must be appropriately large).
+ * It is the caller's responsibility to free potential resources associated with the elements.
+ */
+RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, void *into);
+
 // insert the value of size vec->elem_size at x at the given index.
 // x is a pointer to the actual data to assign!
 RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x);
