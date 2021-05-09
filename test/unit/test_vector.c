@@ -247,6 +247,31 @@ static bool test_vector_remove_at(void) {
 	mu_end;
 }
 
+static bool test_vector_remove_range(void) {
+	RzVector v;
+	init_test_vector(&v, 5, 0, NULL, NULL);
+
+	ut32 e[3];
+	rz_vector_remove_range(&v, 2, 2, e);
+	mu_assert_eq(e[0], 2, "rz_vector_remove_at => into");
+	mu_assert_eq(e[1], 3, "rz_vector_remove_at => into");
+	mu_assert_eq(v.len, 3UL, "rz_vector_remove_at => len");
+
+	mu_assert_eq(((ut32 *)v.a)[0], 0, "rz_vector_remove_at => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[1], 1, "rz_vector_remove_at => remaining elements");
+	mu_assert_eq(((ut32 *)v.a)[2], 4, "rz_vector_remove_at => remaining elements");
+
+	rz_vector_remove_range(&v, 0, 3, e);
+	mu_assert_eq(e[0], 0, "rz_vector_remove_at (end) => into");
+	mu_assert_eq(e[1], 1, "rz_vector_remove_at (end) => into");
+	mu_assert_eq(e[2], 4, "rz_vector_remove_at (end) => into");
+	mu_assert_eq(v.len, 0UL, "rz_vector_remove_at (end) => len");
+
+	rz_vector_fini(&v);
+
+	mu_end;
+}
+
 static bool test_vector_insert(void) {
 	RzVector v;
 
@@ -1212,6 +1237,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_clone);
 	mu_run_test(test_vector_empty);
 	mu_run_test(test_vector_remove_at);
+	mu_run_test(test_vector_remove_range);
 	mu_run_test(test_vector_insert);
 	mu_run_test(test_vector_insert_range);
 	mu_run_test(test_vector_pop);
