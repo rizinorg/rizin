@@ -60,7 +60,6 @@ bool test_rz_io_ihex_write(void) {
 	io->Oxff = 0xff;
 	RzIODesc *desc = rz_io_open_nomap(io, uri, RZ_PERM_RW, 0);
 	mu_assert_notnull(desc, "open");
-	eprintf("uri: %s\n", uri);
 
 	// simple write contained entirely within one source chunk
 	bool r = rz_io_write_at(io, 0x10101, (const ut8 *)"Ulu", 3);
@@ -119,11 +118,23 @@ bool test_rz_io_ihex_write(void) {
 
 	rz_io_free(io);
 
-	// TODO: test this when it works, currently it's producing unsorted garbage with overlaps, even if reloading works
+	const char *file_expect =
+		":08FFF800303132333435363765\n"
+		":020000040001F9\n"
+		":1001000021556c750121470136007efe09d24d75df\n"
+		":100110006c75017eb7c20001ff5f16002148557261\n"
+		":040120005368616B54\n"
+		":070300004B72757368616B1D\n"
+		":020000040002F8\n"
+		":1000fe00546172726f6b4623965778239eda3f01d6\n"
+		":02010E00B2CA73\n"
+		":100110003F0156702B5E712B722B732146013421E7\n"
+		":020000040004F6\n"
+		":070000004172656369626F44\n"
+		":00000001FF\n";
 	char *res = rz_file_slurp(filename, NULL);
-	printf("\nres ===========\n");
-	printf("%s\n", res);
-	printf("===============\n");
+	rz_str_remove_char(res, '\r');
+	mu_assert_streq(res, file_expect, "written ihex file");
 	free(res);
 
 	// reopen and check reads again
@@ -170,7 +181,6 @@ bool test_rz_io_ihex_resize_bigger(void) {
 	io->ff = true;
 	io->Oxff = 0xff;
 	RzIODesc *desc = rz_io_open_nomap(io, uri, RZ_PERM_RW, 0);
-	eprintf("uri: %s\n", uri);
 	mu_assert_notnull(desc, "open");
 
 	mu_assert_eq(rz_io_desc_size(desc), 0x20120, "desc size");
@@ -193,11 +203,19 @@ bool test_rz_io_ihex_resize_bigger(void) {
 
 	rz_io_free(io);
 
-	// TODO: test this when it works, currently it's producing unsorted garbage with overlaps, even if reloading works
+	const char *file_expect =
+		":020000040001F9\n"
+		":10010000214601360121470136007EFE09D2190140\n"
+		":100110002146017EB7C20001FF5F16002148011988\n"
+		":020000040002F8\n"
+		":10010000194E79234623965778239EDA3F01B2CAC7\n"
+		":100110003F0156702B5E712B722B732146013421E7\n"
+		":07100000486F736850616B3B\n"
+		":01FFFF00FF02\n"
+		":00000001FF\n";
 	char *res = rz_file_slurp(filename, NULL);
-	printf("\nres ===========\n");
-	printf("%s\n", res);
-	printf("===============\n");
+	rz_str_remove_char(res, '\r');
+	mu_assert_streq(res, file_expect, "written ihex file");
 	free(res);
 
 	// reopen and check again
@@ -226,7 +244,6 @@ bool test_rz_io_ihex_resize_smaller(void) {
 	io->ff = true;
 	io->Oxff = 0xff;
 	RzIODesc *desc = rz_io_open_nomap(io, uri, RZ_PERM_RW, 0);
-	eprintf("uri: %s\n", uri);
 	mu_assert_notnull(desc, "open");
 
 	mu_assert_eq(rz_io_desc_size(desc), 0x20120, "desc size");
@@ -241,11 +258,16 @@ bool test_rz_io_ihex_resize_smaller(void) {
 
 	rz_io_free(io);
 
-	// TODO: test this when it works, currently it's producing unsorted garbage with overlaps, even if reloading works
+	const char *file_expect =
+		":020000040001F9\n"
+		":10010000214601360121470136007EFE09D2190140\n"
+		":100110002146017EB7C20001FF5F16002148011988\n"
+		":020000040002F8\n"
+		":08010000194E7923462396579E\n"
+		":00000001FF\n";
 	char *res = rz_file_slurp(filename, NULL);
-	printf("\nres ===========\n");
-	printf("%s\n", res);
-	printf("===============\n");
+	rz_str_remove_char(res, '\r');
+	mu_assert_streq(res, file_expect, "written ihex file");
 	free(res);
 
 	// reopen and check again

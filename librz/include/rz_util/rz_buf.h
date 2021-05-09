@@ -35,7 +35,6 @@ typedef struct rz_buffer_methods_t {
 	RzBufferSeek seek;
 	RzBufferGetWholeBuf get_whole_buf;
 	RzBufferFreeWholeBuf free_whole_buf;
-	RzBufferNonEmptyList nonempty_list;
 } RzBufferMethods;
 
 struct rz_buf_t {
@@ -47,13 +46,6 @@ struct rz_buf_t {
 	int refctr;
 	int fd;
 };
-
-// XXX: this should not be public
-typedef struct rz_buf_cache_t {
-	ut64 from; ///< inclusive
-	ut64 to; ///< exclusive, may overlap to 0
-	ut8 *data; ///< size == to - from
-} RzBufferSparse;
 
 /* constructors */
 RZ_API RzBuffer *rz_buf_new(void);
@@ -105,7 +97,6 @@ RZ_API bool rz_buf_resize(RzBuffer *b, ut64 newsize);
 RZ_API RzBuffer *rz_buf_ref(RzBuffer *b);
 RZ_API void rz_buf_free(RzBuffer *b);
 RZ_API bool rz_buf_fini(RzBuffer *b);
-RZ_API RzList *rz_buf_nonempty_list(RzBuffer *b);
 
 static inline ut16 rz_buf_read_be16(RzBuffer *b) {
 	ut8 buf[sizeof(ut16)];
@@ -208,6 +199,16 @@ static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 	rz_buf_seek(b, addr, RZ_BUF_SET);
 	return rz_buf_sleb128(b, v);
 }
+
+// sparse-specific
+
+typedef struct rz_buf_sparse_chunk_t {
+	ut64 from; ///< inclusive
+	ut64 to; ///< inclusive, there can't be chunks with size == 0
+	ut8 *data; ///< size == to - from + 1
+} RzBufferSparseChunk;
+
+RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNULL size_t *count);
 
 #ifdef __cplusplus
 }
