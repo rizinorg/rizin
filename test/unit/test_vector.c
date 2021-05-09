@@ -649,7 +649,7 @@ static bool test_vector_foreach(void) {
 	mu_end;
 }
 
-static bool test_vector_lower_bound(void) {
+static bool test_vector_bounds(void) {
 	RzVector v;
 	rz_vector_init(&v, sizeof(st64), NULL, NULL);
 	st64 a[] = { 0, 2, 4, 6, 8 };
@@ -659,14 +659,33 @@ static bool test_vector_lower_bound(void) {
 #define CMP(x, y) x - (*(st64 *)y)
 	rz_vector_lower_bound(&v, 3, l, CMP);
 	mu_assert_eq(l, 2, "lower_bound");
+	rz_vector_upper_bound(&v, 3, l, CMP);
+	mu_assert_eq(l, 2, "upper_bound");
+
+	rz_vector_lower_bound(&v, 4, l, CMP);
+	mu_assert_eq(l, 2, "lower_bound");
+	rz_vector_upper_bound(&v, 4, l, CMP);
+	mu_assert_eq(l, 3, "upper_bound");
+
 	rz_vector_lower_bound(&v, -1, l, CMP);
 	mu_assert_eq(l, 0, "lower_bound");
+	rz_vector_upper_bound(&v, -1, l, CMP);
+	mu_assert_eq(l, 0, "upper_bound");
+
 	rz_vector_lower_bound(&v, 0, l, CMP);
 	mu_assert_eq(l, 0, "lower_bound");
+	rz_vector_upper_bound(&v, 0, l, CMP);
+	mu_assert_eq(l, 1, "upper_bound");
+
 	rz_vector_lower_bound(&v, 2, l, CMP);
 	mu_assert_eq(l, 1, "lower_bound");
+	rz_vector_upper_bound(&v, 2, l, CMP);
+	mu_assert_eq(l, 2, "upper_bound");
+
 	rz_vector_lower_bound(&v, 42, l, CMP);
 	mu_assert_eq(l, 5, "lower_bound");
+	rz_vector_upper_bound(&v, 42, l, CMP);
+	mu_assert_eq(l, 5, "upper_bound");
 #undef CMP
 	rz_vector_clear(&v);
 	mu_end;
@@ -1203,7 +1222,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_shrink);
 	mu_run_test(test_vector_flush);
 	mu_run_test(test_vector_foreach);
-	mu_run_test(test_vector_lower_bound);
+	mu_run_test(test_vector_bounds);
 
 	mu_run_test(test_pvector_init);
 	mu_run_test(test_pvector_new);
