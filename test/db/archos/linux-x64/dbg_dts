@@ -20,3 +20,25 @@ EXPECT=<<EOF
 0x00400565
 EOF
 RUN
+
+NAME=stop trace session (dts-)
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d -e dbg.bpsysign=true
+CMDS=<<EOF
+dcu main
+dts+
+ds
+ds
+ds
+ds
+dts-
+ds
+s
+dsb
+s
+EOF
+EXPECT=<<EOF
+0x40052f
+0x40052f
+EOF
+RUN
