@@ -2281,7 +2281,7 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 					RzConfigHold *hc = rz_config_hold_new(core->config);
 					rz_config_hold_i(hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
 						"asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
-					RzDiff *d = rz_diff_new();
+					RzDiffOld *d = rz_diff_new();
 					rz_config_set_i(core->config, "scr.utf8", 0);
 					rz_config_set_i(core->config, "asm.offset", 0);
 					rz_config_set_i(core->config, "asm.lines", 0);
@@ -2299,9 +2299,10 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 						c->config = core->config;
 						// XXX. the bbi->addr doesnt needs to be in the same address in core2
 						char *str2 = rz_core_cmd_strf(c, "pdb @ 0x%08" PFMT64x, bbi->diff->addr);
-						char *diffstr = rz_diff_buffers_to_string(d,
-							(const ut8 *)str, strlen(str),
-							(const ut8 *)str2, strlen(str2));
+						char *diffstr = NULL;
+						//char *diffstr = rz_diff_buffers_to_string(d,
+						//	(const ut8 *)str, strlen(str),
+						//	(const ut8 *)str2, strlen(str2));
 
 						if (diffstr) {
 							char *nl = strchr(diffstr, '\n');

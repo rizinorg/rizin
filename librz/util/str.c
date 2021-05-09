@@ -904,6 +904,7 @@ RZ_API char *rz_str_append(char *ptr, const char *string) {
 }
 
 RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) {
+	rz_return_val_if_fail(ptr && fmt, NULL);
 	va_list ap, ap2;
 
 	va_start(ap, fmt);

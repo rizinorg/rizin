@@ -193,9 +193,8 @@ RZ_API int rz_print_date_w32(RzPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-RZ_API const char *rz_time_to_string(ut64 ts) {
-	time_t l;
-	l = ts >> 20;
+RZ_API char *rz_time_to_string(ut64 timestamp64) {
+	ut64 l = timestamp64 / RZ_USEC_PER_SEC;
 	return rz_time_stamp_to_str(l);
 }
 

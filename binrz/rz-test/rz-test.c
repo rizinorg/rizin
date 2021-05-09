@@ -3,6 +3,14 @@
 
 #include "rz_test.h"
 #include <assert.h>
+#include <rz_cons.h>
+
+#define Color_INSERT   Color_BGREEN
+#define Color_DELETE   Color_BRED
+#define Color_BGINSERT "\x1b[48;5;22m"
+#define Color_BGDELETE "\x1b[48;5;52m"
+#define Color_HLINSERT Color_BGINSERT Color_INSERT
+#define Color_HLDELETE Color_BGDELETE Color_DELETE
 
 #define WORKERS_DEFAULT        8
 #define RIZIN_CMD_DEFAULT      "rizin"
@@ -609,6 +617,7 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 }
 
 static void print_diff(const char *actual, const char *expected, bool diffchar, const char *regexp) {
+	/*
 	RzDiff *d = rz_diff_new();
 #ifdef __WINDOWS__
 	static const char *diff_cmd[] = {
@@ -687,6 +696,7 @@ cleanup:
 	if (regexp) {
 		RZ_FREE(output);
 	}
+	*/
 }
 
 static RzSubprocessOutput *print_runner(const char *file, const char *args[], size_t args_size,

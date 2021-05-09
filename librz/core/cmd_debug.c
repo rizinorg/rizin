@@ -4973,7 +4973,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 						if (a && b) {
 							int al = strlen((const char *)a);
 							int bl = strlen((const char *)b);
-							RzDiff *d = rz_diff_new();
+							RzDiffOld *d = rz_diff_new();
 							char *uni = rz_diff_buffers_to_string(d, a, al, b, bl);
 							rz_cons_printf("%s\n", uni);
 							rz_diff_free(d);

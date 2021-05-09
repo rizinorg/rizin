@@ -61,10 +61,9 @@ typedef struct rz_oflist_t {
 #ifndef _R_LIST_C_
 #define rz_list_push(x, y)  rz_list_append(x, y)
 #define rz_list_iterator(x) (x) ? (x)->head : NULL
-// #define rz_list_empty(x) (!x || (!(x->head) && !(x->tail)))
-#define rz_list_empty(x) (!(x) || !(x)->length)
-#define rz_list_head(x)  ((x) ? (x)->head : NULL)
-#define rz_list_tail(x)  ((x) ? (x)->tail : NULL)
+#define rz_list_empty(x)    (!(x) || !(x)->length)
+#define rz_list_head(x)     ((x) ? (x)->head : NULL)
+#define rz_list_tail(x)     ((x) ? (x)->tail : NULL)
 
 #define rz_list_iter_get(x) \
 	x->data; \
