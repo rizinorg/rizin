@@ -55,7 +55,6 @@ static RzList *sections(RzBinFile *bf) {
 			sections[i]->paddr = loaded_header.sections[i].offset;
 			sections[i]->vaddr = loaded_header.sections[i].address;
 			sections[i]->perm = rz_str_rwx("rwx");
-			sections[i]->add = true;
 		}
 	}
 
@@ -135,6 +134,7 @@ RzBinPlugin rz_bin_plugin_nin3ds = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 };

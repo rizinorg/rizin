@@ -77,6 +77,10 @@ static ut64 baddr(RzBinFile *bf) {
 	return MACH0_(get_baddr)(bin);
 }
 
+static RzList *maps(RzBinFile *bf) {
+	return MACH0_(get_maps)(bf);
+}
+
 static RzList *sections(RzBinFile *bf) {
 	return MACH0_(get_segments)(bf);
 }
@@ -221,7 +225,7 @@ static RzList *symbols(RzBinFile *bf) {
 	if (!(syms = MACH0_(get_symbols)(obj->bin_obj))) {
 		return ret;
 	}
-	Sdb *symcache = sdb_new0();
+	SetU *symcache = set_u_new();
 	bin = (struct MACH0_(obj_t) *)obj->bin_obj;
 	for (i = 0; !syms[i].last; i++) {
 		if (syms[i].name == NULL || syms[i].name[0] == '\0' || syms[i].addr < 100) {
@@ -263,7 +267,7 @@ static RzList *symbols(RzBinFile *bf) {
 		}
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp(ptr->name, "radr://", 7) ? 0 : 1;
-		sdb_set(symcache, sdb_fmt("sym0x%" PFMT64x, ptr->vaddr), "found", 0);
+		set_u_add(symcache, ptr->vaddr);
 #if 0
 		if (!strncmp (ptr->name, "__Z", 3)) {
 			lang = "c++";
@@ -278,11 +282,9 @@ static RzList *symbols(RzBinFile *bf) {
 	}
 	//functions from LC_FUNCTION_STARTS
 	if (bin->func_start) {
-		char symstr[128];
 		ut64 value = 0, address = 0;
 		const ut8 *temp = bin->func_start;
 		const ut8 *temp_end = bin->func_start + bin->func_size;
-		strcpy(symstr, "sym0x");
 		while (temp + 3 < temp_end && *temp) {
 			temp = rz_uleb128_decode(temp, NULL, &value);
 			address += value;
@@ -304,8 +306,7 @@ static RzList *symbols(RzBinFile *bf) {
 			rz_list_append(ret, ptr);
 			// if any func is not found in syms then we can consider it is stripped
 			if (!isStripped) {
-				snprintf(symstr + 5, sizeof(symstr) - 5, "%" PFMT64x, ptr->vaddr);
-				if (!sdb_const_get(symcache, symstr, 0)) {
+				if (!set_u_contains(symcache, ptr->vaddr)) {
 					isStripped = true;
 				}
 			}
@@ -321,7 +322,7 @@ static RzList *symbols(RzBinFile *bf) {
 	if (isStripped) {
 		bin->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	}
-	sdb_free(symcache);
+	set_u_free(symcache);
 	return ret;
 }
 #endif // FEATURE_SYMLIST
@@ -624,7 +625,8 @@ static RzList *patch_relocs(RzBinFile *bf) {
 
 	ut64 offset = 0;
 	void **vit;
-	rz_pvector_foreach (&io->maps, vit) {
+	RzPVector *maps = rz_io_maps(io);
+	rz_pvector_foreach (maps, vit) {
 		RzIOMap *map = *vit;
 		if (map->itv.addr > offset) {
 			offset = map->itv.addr;
@@ -637,14 +639,10 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	ut64 size = num_ext_relocs * cdsz;
 	char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-	gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr);
+	RzIOMap *gotrzmap;
+	gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr, &gotrzmap);
 	free(muri);
 	if (!gotrzdesc) {
-		goto beach;
-	}
-
-	RzIOMap *gotrzmap = b->iob.map_get(io, n_vaddr);
-	if (!gotrzmap) {
 		goto beach;
 	}
 	gotrzmap->name = strdup(".got.rz");
@@ -679,7 +677,7 @@ static RzList *patch_relocs(RzBinFile *bf) {
 			RZ_FREE(ptr);
 			goto beach;
 		}
-		ptr->vaddr = sym_addr;
+		ptr->target_vaddr = sym_addr;
 		ptr->import = imp;
 		rz_list_append(ret, ptr);
 	}
@@ -1162,6 +1160,7 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.signature = &entitlements,
+	.maps = &maps,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

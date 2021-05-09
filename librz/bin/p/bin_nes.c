@@ -101,13 +101,12 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->name = strdup("ROM");
 	ptr->paddr = INES_HDR_SIZE;
 	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
+	bool mirror = ROM_START_ADDRESS + ptr->size <= ROM_MIRROR_ADDRESS; // not a 256bit ROM, mapper 0 mirrors the complete ROM in this case
 	ptr->vaddr = ROM_START_ADDRESS;
-	ptr->vsize = ROM_SIZE;
+	ptr->vsize = mirror ? ROM_MIRROR_ADDRESS - ROM_START_ADDRESS : ROM_SIZE; // make sure the ROM zero excess does not overlap the mirror
 	ptr->perm = RZ_PERM_RX;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
-	if (ROM_START_ADDRESS + ptr->size <= ROM_MIRROR_ADDRESS) {
-		// not a 256bit ROM, mapper 0 mirrors the complete ROM in this case
+	if (mirror) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
@@ -117,7 +116,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->vaddr = ROM_MIRROR_ADDRESS;
 		ptr->vsize = ROM_MIRROR_SIZE;
 		ptr->perm = RZ_PERM_RX;
-		ptr->add = true;
 		rz_list_append(ret, ptr);
 	}
 	return ret;
@@ -230,6 +228,7 @@ RzBinPlugin rz_bin_plugin_nes = {
 	.baddr = &baddr,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = sections,
 	.symbols = &symbols,
 	.info = &info,

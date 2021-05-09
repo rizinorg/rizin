@@ -30,33 +30,63 @@ static LuaInstruction encode_instruction(ut8 opcode, const char *arg_start, ut16
 	LUA_SET_OPCODE(instruction, opcode);
 	if (has_param_flag(flag, PARAM_A)) {
 		SETARG_A(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	if (has_param_flag(flag, PARAM_B)) {
 		SETARG_B(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	if (has_param_flag(flag, PARAM_sB)) {
 		SETARG_sB(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	if (has_param_flag(flag, PARAM_C)) {
 		SETARG_C(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	if (has_param_flag(flag, PARAM_sC)) {
 		SETARG_sC(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	if (has_param_flag(flag, PARAM_Ax)) {
 		SETARG_Ax(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	if (has_param_flag(flag, PARAM_sBx)) {
 		SETARG_sBx(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	if (has_param_flag(flag, PARAM_Bx)) {
 		SETARG_Bx(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	if (has_param_flag(flag, PARAM_sJ)) {
 		SETARG_sJ(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	if (has_param_flag(flag, PARAM_k)) {
 		SETARG_k(instruction, args[cur_cnt++]);
+		if (cur_cnt >= arg_num) {
+			return instruction;
+		}
 	}
 	assert(cur_cnt == arg_num);
 

@@ -21,6 +21,10 @@ static bool base91_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+	if (len < 1) {
+		return false;
+	}
+
 	int olen = INSIZE;
 	if (!cry || !buf || len < 1) {
 		return false;
@@ -29,7 +33,7 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	if (!obuf) {
 		return false;
 	}
-	if (cry->dir == 0) {
+	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
 		olen = rz_base91_encode((char *)obuf, (const ut8 *)buf, len);
 	} else if (cry->dir == 1) {
 		olen = rz_base91_decode(obuf, (const char *)buf, len);
@@ -45,6 +49,8 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 
 RzCryptoPlugin rz_crypto_plugin_base91 = {
 	.name = "base91",
+	.author = "rakholiyajenish.07",
+	.license = "LGPL-3",
 	.set_key = base91_set_key,
 	.get_key_size = base91_get_key_size,
 	.use = base91_use,

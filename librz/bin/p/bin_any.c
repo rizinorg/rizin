@@ -44,8 +44,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->has_va = 0;
 	ret->has_nx = 0;
 	ret->dbg_info = 0;
-	ret->dbg_info = 0;
-	ret->dbg_info = 0;
 	return ret;
 }
 

@@ -1,5 +1,5 @@
 NAME=arpg
-FILE=-
+FILE==
 CMDS=<<EOF
 arpg scripts/gdb-reg-profile.txt > $a
 ?v $?

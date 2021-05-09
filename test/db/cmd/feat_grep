@@ -219,6 +219,7 @@ EOF
 RUN
 
 NAME=colgrep
+FILE==
 CMDS=<<EOF
 ?e 0x3~[0]
 ?e 0x999~[0]'
@@ -230,6 +231,7 @@ EOF
 RUN
 
 NAME=colgrep
+FILE==
 CMDS=<<EOF
 ?e hello world~[0]
 ?e hello world~[1]
@@ -241,6 +243,7 @@ EOF
 RUN
 
 NAME=colgrep
+FILE==
 CMDS=<<EOF
 ?e a\na b\na b c~[0]
 ?e a\na b\na b c~[1]
@@ -268,6 +271,7 @@ EOF
 RUN
 
 NAME=count grep
+FILE==
 CMDS=<<EOF
 wx 10203040
 b 128
@@ -290,6 +294,7 @@ EOF
 RUN
 
 NAME=sort lines
+FILE==
 CMDS=<<EOF
 ?e 3\n2\n4\n1~$
 ?e 3\n2\n4\n1~$!
@@ -307,6 +312,7 @@ EOF
 RUN
 
 NAME=escaped chars
+FILE==
 CMDS=<<EOF
 ?e Hello\x40World~Hello\@
 ?e Hello\x24World~Hello\@
@@ -319,6 +325,7 @@ EOF
 RUN
 
 NAME=escaped chars 2
+FILE==
 BROKEN=1
 CMDS=?e Hello\n\x3bWorld~\;
 EXPECT=<<EOF
@@ -327,7 +334,8 @@ EOF
 RUN
 
 NAME=multi-command single-line grep
-ARGS=-ecfg.newshell=true
+FILE==
+ARGS=-ecfg.oldshell=false
 CMDS=<<EOF
 ?e Hello World; ?e 4e2420~4e2420
 EOF

@@ -52,3 +52,30 @@ commands:
             args:
             - name: flag
               type: RZ_CMD_ARG_TYPE_FLAG
+  - name: dts
+    summary: Debug trace session commands
+    subcommands:
+    - name: dts+
+      summary: Start trace session
+      cname: cmd_debug_start_trace_session
+      args: []
+    - name: dts-
+      summary: Stop trace session
+      cname: cmd_debug_stop_trace_session
+      args: []
+    - name: dtst
+      cname: cmd_debug_save_trace_session
+      summary: Save trace sessions to disk
+      args:
+        - name: dir
+          type: RZ_CMD_ARG_TYPE_STRING
+    - name: dtsf
+      cname: cmd_debug_load_trace_session
+      summary: Load trace sessions to disk
+      args:
+        - name: dir
+          type: RZ_CMD_ARG_TYPE_STRING
+    - name: dtsm
+      cname: cmd_debug_list_trace_session_mmap
+      summary: List current memory map and hash
+      args: []

@@ -81,6 +81,7 @@ rz_util_sources = [
   'annotated_code.c',
   'serialize_spaces.c',
   'subprocess.c',
+  'luhn.c'
 ]
 
 rz_util_deps = [ldl, lrt, mth, pth, utl, sdb_dep, spp_dep, zlib_dep, platform_deps]

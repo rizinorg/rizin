@@ -184,7 +184,6 @@ RzList *PE_(rz_bin_mdmp_pe_get_sections)(struct PE_(rz_bin_mdmp_pe_bin) * pe_bin
 		}
 		ptr->paddr = sections[i].paddr + pe_bin->paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
-		ptr->add = false;
 		ptr->perm = 0;
 		if (RZ_BIN_PE_SCN_IS_EXECUTABLE(sections[i].perm)) {
 			ptr->perm |= RZ_PERM_X;

@@ -201,6 +201,10 @@ RZ_API void rz_bin_symbol_free(RzBinSymbol *sym) {
 	}
 }
 
+RZ_API void rz_bin_reloc_free(RzBinReloc *reloc) {
+	free(reloc);
+}
+
 RZ_API void rz_bin_string_free(void *_str) {
 	RzBinString *str = (RzBinString *)_str;
 	if (str) {
@@ -209,12 +213,7 @@ RZ_API void rz_bin_string_free(void *_str) {
 	}
 }
 
-// XXX - change this to RzBinObject instead of RzBinFile
-// makes no sense to pass in a binfile and set the RzBinObject
-// kinda a clunky functions
-// XXX - this is a rather hacky way to do things, there may need to be a better
-// way.
-RZ_API bool rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
+RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 	rz_return_val_if_fail(bin && bin->iob.io && opt, false);
 
 	RzIOBind *iob = &(bin->iob);
@@ -230,27 +229,19 @@ RZ_API bool rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 	return rz_bin_open_io(bin, opt);
 }
 
-RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr) {
-	rz_return_val_if_fail(bin, false);
-
-	RzBinFile *bf = rz_bin_file_find_by_id(bin, bf_id);
-	if (!bf) {
-		eprintf("rz_bin_reload: No file to reopen\n");
-		return false;
-	}
+RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
+	rz_return_val_if_fail(bin && bf, false);
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
 	opt.filename = bf->file;
-
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
-
-	bool res = rz_bin_open_buf(bin, bf->buf, &opt);
-	rz_bin_file_delete(bin, bf->id);
-	return res;
+	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);
+	rz_bin_file_delete(bin, bf);
+	return nbf;
 }
 
-RZ_API bool rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
-	rz_return_val_if_fail(bin && opt, false);
+RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
+	rz_return_val_if_fail(bin && opt, NULL);
 
 	RzListIter *it;
 	RzBinXtrPlugin *xtr;
@@ -287,19 +278,17 @@ RZ_API bool rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
 		bf = rz_bin_file_new_from_buffer(bin, bin->file, buf, bin->rawstr,
 			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
 		if (!bf) {
-			return false;
+			return NULL;
 		}
 	}
-	if (!rz_bin_file_set_cur_binfile(bin, bf)) {
-		return false;
-	}
+	rz_bin_file_set_cur_binfile(bin, bf);
 	rz_id_storage_set(bin->ids, bin->cur, bf->id);
-	return true;
+	return bf;
 }
 
-RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
-	rz_return_val_if_fail(bin && opt && bin->iob.io, false);
-	rz_return_val_if_fail(opt->fd >= 0 && (st64)opt->sz >= 0, false);
+RZ_API RzBinFile *rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
+	rz_return_val_if_fail(bin && opt && bin->iob.io, NULL);
+	rz_return_val_if_fail(opt->fd >= 0 && (st64)opt->sz >= 0, NULL);
 
 	RzIOBind *iob = &(bin->iob);
 	RzIO *io = iob ? iob->io : NULL;
@@ -324,7 +313,7 @@ RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 		buf = rz_buf_new_with_io(&bin->iob, opt->fd);
 	}
 	if (!buf) {
-		return false;
+		return NULL;
 	}
 
 	if (!opt->sz) {
@@ -344,9 +333,9 @@ RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 	}
 
 	opt->filename = fname;
-	bool res = rz_bin_open_buf(bin, buf, opt);
+	RzBinFile *bf = rz_bin_open_buf(bin, buf, opt);
 	rz_buf_free(buf);
-	return res;
+	return bf;
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name) {
@@ -403,8 +392,7 @@ static void rz_bin_plugin_free(RzBinPlugin *p) {
 	RZ_FREE(p);
 }
 
-// rename to rz_bin_plugin_add like the rest
-RZ_API bool rz_bin_add(RzBin *bin, RzBinPlugin *foo) {
+RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo) {
 	RzListIter *it;
 	RzBinPlugin *plugin;
 
@@ -463,21 +451,23 @@ RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo) {
 }
 
 RZ_API void rz_bin_free(RzBin *bin) {
-	if (bin) {
-		bin->file = NULL;
-		free(bin->force);
-		free(bin->srcdir);
-		free(bin->strenc);
-		//rz_bin_free_bin_files (bin);
-		rz_list_free(bin->binfiles);
-		rz_list_free(bin->binxtrs);
-		rz_list_free(bin->plugins);
-		rz_list_free(bin->binldrs);
-		sdb_free(bin->sdb);
-		rz_id_storage_free(bin->ids);
-		rz_str_constpool_fini(&bin->constpool);
-		free(bin);
+	if (!bin) {
+		return;
 	}
+	bin->file = NULL;
+	free(bin->force);
+	free(bin->srcdir);
+	free(bin->strenc);
+	//rz_bin_free_bin_files (bin);
+	rz_list_free(bin->binfiles);
+	rz_list_free(bin->binxtrs);
+	rz_list_free(bin->plugins);
+	rz_list_free(bin->binldrs);
+	sdb_free(bin->sdb);
+	rz_id_storage_free(bin->ids);
+	rz_event_free(bin->event);
+	rz_str_constpool_fini(&bin->constpool);
+	free(bin);
 }
 
 static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, PJ *pj, int json) {
@@ -687,30 +677,6 @@ RZ_API RzList *rz_bin_get_libs(RzBin *bin) {
 	return o ? o->libs : NULL;
 }
 
-static RzList *relocs_rbtree2list(RBNode *root) {
-	RzList *res = rz_list_new();
-	RzBinReloc *reloc;
-	RBIter it;
-
-	rz_rbtree_foreach (root, it, reloc, RzBinReloc, vrb) {
-		rz_list_append(res, reloc);
-	}
-	return res;
-}
-
-RZ_API RBNode *rz_bin_get_relocs(RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->relocs : NULL;
-}
-
-// return a list of <const RzBinReloc> that needs to be freed by the caller
-RZ_API RzList *rz_bin_get_relocs_list(RzBin *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	RBNode *root = rz_bin_get_relocs(bin);
-	return root ? relocs_rbtree2list(root) : NULL;
-}
-
 RZ_API RzList *rz_bin_get_sections(RzBin *bin) {
 	rz_return_val_if_fail(bin, NULL);
 	RzBinObject *o = rz_bin_cur_object(bin);
@@ -815,6 +781,8 @@ RZ_API int rz_bin_is_static(RzBin *bin) {
 	return true;
 }
 
+RZ_IPI void rz_bin_file_free(void /*RzBinFile*/ *_bf);
+
 RZ_API RzBin *rz_bin_new(void) {
 	int i;
 	RzBinXtrPlugin *static_xtr_plugin;
@@ -825,6 +793,10 @@ RZ_API RzBin *rz_bin_new(void) {
 	}
 	if (!rz_str_constpool_init(&bin->constpool)) {
 		goto trashbin;
+	}
+	bin->event = rz_event_new(bin);
+	if (!bin->event) {
+		goto trashbin_constpool;
 	}
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
@@ -841,7 +813,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	/* bin parsers */
 	bin->binfiles = rz_list_newf((RzListFree)rz_bin_file_free);
 	for (i = 0; bin_static_plugins[i]; i++) {
-		rz_bin_add(bin, bin_static_plugins[i]);
+		rz_bin_plugin_add(bin, bin_static_plugins[i]);
 	}
 	/* extractors */
 	bin->binxtrs = rz_list_new();
@@ -876,6 +848,8 @@ trashbin_binxtrs:
 	rz_list_free(bin->binxtrs);
 	rz_list_free(bin->binfiles);
 	rz_id_storage_free(bin->ids);
+	rz_event_free(bin->event);
+trashbin_constpool:
 	rz_str_constpool_fini(&bin->constpool);
 trashbin:
 	free(bin);
@@ -1363,6 +1337,90 @@ RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
+RZ_API void rz_bin_map_free(RzBinMap *map) {
+	if (!map) {
+		return;
+	}
+	free(map->name);
+	free(map);
+}
+
+/**
+ * \brief Create a list of RzBinMap from RzBinSections queried from the given file
+ *
+ * Some binary formats have a 1:1 correspondence of mapping and
+ * their RzBinSections. This is not always the case (e.g. ELF)
+ * but if it is, plugins can use this function as their maps callback,
+ * which will generate mappings for sections.
+ * */
+RZ_API RzList *rz_bin_maps_of_file_sections(RzBinFile *binfile) {
+	rz_return_val_if_fail(binfile, NULL);
+	if (!binfile->o || !binfile->o->plugin || !binfile->o->plugin->sections) {
+		return NULL;
+	}
+	RzList *sections = binfile->o->plugin->sections(binfile);
+	if (!sections) {
+		return NULL;
+	}
+	RzList *r = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!r) {
+		goto hcf;
+	}
+	RzBinSection *sec;
+	RzListIter *it;
+	rz_list_foreach (sections, it, sec) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			goto hcf;
+		}
+		map->name = sec->name ? strdup(sec->name) : NULL;
+		map->paddr = sec->paddr;
+		map->psize = sec->size;
+		map->vaddr = sec->vaddr;
+		map->vsize = sec->vsize;
+		map->perm = sec->perm;
+		rz_list_push(r, map);
+	}
+hcf:
+	rz_list_free(sections);
+	return r;
+}
+
+/**
+ * \brief Create a list of RzBinSection from RzBinMaps
+ *
+ * Some binary formats have a 1:1 correspondence of mapping and
+ * some of their RzBinSections, but also want to add some unmapped sections.
+ * In this case, they can implement their mapped sections in their maps callback,
+ * then in their sections callback use this function to create sections from them
+ * and add some additional ones.
+ * See also rz_bin_maps_of_file_sections() for the inverse, when no additional
+ * sections should be added.
+ * */
+RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps) {
+	rz_return_val_if_fail(maps, NULL);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_section_free);
+	if (!ret) {
+		return NULL;
+	}
+	RzListIter *it;
+	RzBinMap *map;
+	rz_list_foreach (maps, it, map) {
+		RzBinSection *sec = RZ_NEW0(RzBinSection);
+		if (!sec) {
+			break;
+		}
+		sec->name = map->name ? strdup(map->name) : NULL;
+		sec->paddr = map->paddr;
+		sec->size = map->psize;
+		sec->vaddr = map->vaddr;
+		sec->vsize = map->vsize;
+		sec->perm = map->perm;
+		rz_list_append(ret, sec);
+	}
+	return ret;
+}
+
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name) {
 	RzBinSection *s = RZ_NEW0(RzBinSection);
 	if (s) {
@@ -1375,9 +1433,44 @@ RZ_IPI void rz_bin_section_free(RzBinSection *bs) {
 	if (bs) {
 		free(bs->name);
 		free(bs->format);
-		free(bs->map_name);
 		free(bs);
 	}
+}
+
+/**
+ * \brief Converts the RzBinSection type to the string representation
+ *
+ * Some binary formats have a function interface called "section_type_to_string"
+ * The returned string type name is different between formats
+ *
+ * \param bin RzBin instance
+ * \param type A type field of the RzBinSection (differs between formats)
+ * */
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type) {
+	RzBinFile *a = rz_bin_cur(bin);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
+	if (plugin && plugin->section_type_to_string) {
+		return plugin->section_type_to_string(type);
+	}
+	return NULL;
+}
+
+/**
+ * \brief Converts the RzBinSection flags to a list of string representations
+ *
+ * Some binary formats have a function interface called "section_flag_to_rzlist"
+ * The returned string flag names are different between formats
+ *
+ * \param bin RzBin instance
+ * \param flag A flag field of the RzBinSection (differs between formats)
+ * */
+RZ_API RZ_OWN RzList *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag) {
+	RzBinFile *a = rz_bin_cur(bin);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
+	if (plugin && plugin->section_flag_to_rzlist) {
+		return plugin->section_flag_to_rzlist(flag);
+	}
+	return NULL;
 }
 
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 at) {

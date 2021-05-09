@@ -9,8 +9,15 @@
 #include <rz_bin.h>
 #include "../i/private.h"
 #include "dex/dex.h"
-#define rz_hash_adler32 __adler32
-#include "../../hash/adler32.c"
+
+static ut32 __adler32(const ut8 *data, int len) {
+	ut32 a = 1, b = 0;
+	for (int i = 0; i < len; i++) {
+		a = (a + data[i]) % 65521;
+		b = (b + a) % 65521;
+	}
+	return (b << 16) | a;
+}
 
 // globals to be removed
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_dex;
@@ -1080,7 +1087,7 @@ static void parse_dex_class_fields(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 		sym->ordinal = (*sym_count)++;
 
 		if (dexdump) {
-			const char *accessStr = createAccessFlagStr(
+			char *accessStr = createAccessFlagStr(
 				accessFlags, kAccessForField);
 			bin->cb_printf("    #%zu              : (in %s;)\n", i,
 				cls->name);
@@ -1088,6 +1095,7 @@ static void parse_dex_class_fields(RzBinFile *bf, RzBinDexClass *c, RzBinClass *
 			bin->cb_printf("      type          : '%s'\n", type_str);
 			bin->cb_printf("      access        : 0x%04x (%s)\n",
 				(ut32)accessFlags, accessStr ? accessStr : "");
+			free(accessStr);
 		}
 		rz_list_append(dex->methods_list, sym);
 
@@ -1459,8 +1467,8 @@ static void parse_class(RzBinFile *bf, RzBinDexClass *c, int class_index, int *m
 		free(cls);
 		goto beach;
 	}
-	const char *str = createAccessFlagStr(c->access_flags, kAccessForClass);
-	cls->visibility_str = strdup(str ? str : "");
+	char *str = createAccessFlagStr(c->access_flags, kAccessForClass);
+	cls->visibility_str = str ? str : strdup("");
 	rz_list_append(dex->classes_list, cls);
 	if (dexdump) {
 		rbin->cb_printf("  Class descriptor  : '%s;'\n", cls->name);
@@ -1891,21 +1899,12 @@ static RzBinSection *add_section(RzList *ret, const char *name, Section s, int p
 		ptr->paddr = ptr->vaddr = s.addr;
 		ptr->size = ptr->vsize = s.size;
 		ptr->perm = perm;
-		ptr->add = false;
 		if (format) {
 			ptr->format = format;
 		}
 		rz_list_append(ret, ptr);
 	}
 	return ptr;
-}
-
-static void add_segment(RzList *ret, const char *name, Section s, int perm) {
-	RzBinSection *bs = add_section(ret, name, s, perm, NULL);
-	if (bs) {
-		bs->is_segment = true;
-		bs->add = true;
-	}
 }
 
 static bool validate_section(const char *name, Section *pre, Section *cur, Section *nex, Section *all) {
@@ -1938,7 +1937,12 @@ static bool validate_section(const char *name, Section *pre, Section *cur, Secti
 	return cur->size > 0;
 }
 
-static void fast_code_size(RzBinFile *bf) {
+static void calculate_code_size(RzBinFile *bf) {
+	struct rz_bin_dex_obj_t *bin = bf->o->bin_obj;
+	if (bin->code_from && bin->code_to) {
+		// already done
+		return;
+	}
 	const size_t bs = rz_buf_size(bf->buf);
 	ut64 ns;
 	ut64 fsym = 0LL;
@@ -1958,21 +1962,52 @@ static void fast_code_size(RzBinFile *bf) {
 			fsymsz = ns;
 		}
 	}
-	struct rz_bin_dex_obj_t *bin = bf->o->bin_obj;
 	bin->code_from = fsym;
 	bin->code_to = fsymsz;
+}
+
+static RzList *maps(RzBinFile *bf) {
+	struct rz_bin_dex_obj_t *bin = bf->o->bin_obj;
+	const ut64 bs = rz_buf_size(bf->buf);
+	calculate_code_size(bf);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+	// map code specifically with r-x perms
+	ut64 addr = bin->code_from;
+	if (addr < bs) {
+		// don't map after file and and also not beyond file end
+		ut64 size = RZ_MIN(bs, bin->code_to) - addr;
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			return ret;
+		}
+		map->paddr = map->vaddr = addr;
+		map->psize = map->vsize = size;
+		map->perm = RZ_PERM_RX;
+		map->name = strdup("code");
+		rz_list_push(ret, map);
+	}
+	// map the entire rest of the file with r-- perms and lower prio
+	RzBinMap *map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		return ret;
+	}
+	map->psize = map->vsize = bs;
+	map->perm = RZ_PERM_R;
+	map->name = strdup("file");
+	rz_list_push(ret, map);
+	return ret;
 }
 
 static RzList *sections(RzBinFile *bf) {
 	struct rz_bin_dex_obj_t *bin = bf->o->bin_obj;
 	RzList *ret = NULL;
 
-	/* find the last method */
-	const size_t bs = rz_buf_size(bf->buf);
-	if (!bin->code_from || !bin->code_to) {
-		fast_code_size(bf);
-	}
-	if (!(ret = rz_list_newf(free))) {
+	const ut64 bs = rz_buf_size(bf->buf);
+	calculate_code_size(bf);
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
 	}
 
@@ -1998,12 +2033,6 @@ static RzList *sections(RzBinFile *bf) {
 		add_section(ret, "data", s_data, RZ_PERM_RX, NULL);
 	}
 	add_section(ret, "file", s_file, RZ_PERM_R, NULL);
-
-	/* add segments */
-	if (s_code.size > 0) {
-		add_segment(ret, "code", s_code, RZ_PERM_RX);
-	}
-	add_segment(ret, "file", s_file, RZ_PERM_R);
 	return ret;
 }
 
@@ -2167,6 +2196,7 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.baddr = baddr,
 	.entries = entries,
 	.classes = classes,
+	.maps = maps,
 	.sections = sections,
 	.symbols = methods,
 	.trycatch = trycatch,

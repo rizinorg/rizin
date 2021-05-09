@@ -74,9 +74,12 @@ i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x, AVR,
 XAP, System Z, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
 V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
-NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
-c55+, c66), Hexagon, Brainfuck, Malbolge, DCPU16, LANAI,
+NIOS II, TMS320 (c54x, c55x, c55+, c66), Hexagon, DCPU16, LANAI,
 MCORE, mcs96, RSP, SuperH-4, VAX, AMD Am29000.
+
+There is also support for the following bytecode formats:
+
+Dalvik, EBC, Java, Lua, Python, WebAssembly, Brainfuck, Malbolge
 
 ## Supported File Formats
 
@@ -101,7 +104,7 @@ development, and general topics related to the project.
 
 We also provide the following partial bridges to other messaging platforms:
 - [Telegram](https://t.me/rizinorg)
-- IRC: irc.freenode.net 
+- IRC: irc.freenode.net
   - Community - [#rizin](https://webchat.freenode.net/?channels=#rizin)
   - Developers - [#rizindev](https://webchat.freenode.net/?channels=#rizindev)
 

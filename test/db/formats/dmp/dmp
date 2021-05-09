@@ -68,11 +68,11 @@ BITMAP_DUMP:
 EOF
 RUN
 
-NAME=: DMP BMP Page sections
+NAME=: DMP BMP Page maps
 FILE=bins/dmp/bmp.dmp
-CMDS=iS~?
+CMDS=om~?
 EXPECT=<<EOF
-21582
+21579
 EOF
 RUN
 

@@ -258,7 +258,7 @@ EOF
 RUN
 
 NAME=pd bits hint
-FILE=-
+FILE==
 ARGS=-a snes
 CMDS=<<EOF
 e asm.bytes=true
@@ -1122,7 +1122,7 @@ EOF
 RUN
 
 NAME=bin.str.enc error handling
-FILE=-
+FILE==
 CMDS=<<EOF
 (test_str.enc enc; e bin.str.enc=$0; e bin.str.enc)
 .(test_str.enc UTF-32LE)
@@ -1379,7 +1379,9 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
+fs relocs
 f reloc.test @ 0x1
+fs *
 pdJ 1 @ 0x0
 EOF
 EXPECT=<<EOF
@@ -1388,7 +1390,7 @@ EOF
 RUN
 
 NAME=pdJ string - oldshell
-ARGS=-ecfg.newshell=false
+ARGS=-ecfg.oldshell=true
 FILE=malloc://128
 CMDS=<<EOF
 w Snoo"ping as" usual,
@@ -1400,8 +1402,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdJ string - newshell
-ARGS=-ecfg.newshell=true
+NAME=pdJ string - rzshell
+ARGS=-ecfg.oldshell=false
 FILE=malloc://128
 CMDS=<<EOF
 w "Snoo\"ping as\" usual,"
@@ -1495,7 +1497,7 @@ EOF
 RUN
 
 NAME=pdJ asm.xrefs.fold asm.xrefs.max
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 s 0
@@ -1524,7 +1526,7 @@ EOF
 RUN
 
 NAME=pd0~{} - crash
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.null=true
 pd0~{}
@@ -1534,7 +1536,7 @@ EOF
 RUN
 
 NAME=pI - crash
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.null=true
 pI 0x200
@@ -1544,7 +1546,7 @@ EOF
 RUN
 
 NAME=pC - crash
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.null=true
 pC 0x200
@@ -1651,7 +1653,7 @@ EOF
 RUN
 
 NAME=pd @B
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.bytes=true
 e asm.functions=false
@@ -1943,7 +1945,7 @@ EOF
 RUN
 
 NAME=pdJ with backslashes, quotation marks, str.escbslash and bin.str.enc
-FILE=-
+FILE==
 CMDS=<<EOF
 e io.cache=true
 e asm.arch=x86

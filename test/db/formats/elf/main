@@ -44,7 +44,7 @@ EOF
 RUN
 
 NAME=ELF: main rebased 3
-FILE=-
+FILE==
 ARGS=-B 0x200000
 CMDS=!rz-bin -qMB 0x200000 bins/elf/analysis/main
 EXPECT=2098438

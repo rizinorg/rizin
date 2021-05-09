@@ -464,6 +464,7 @@ RzBinPlugin rz_bin_plugin_pe = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &maps,
 	.sections = &sections,
 	.signature = &signature,
 	.symbols = &symbols,

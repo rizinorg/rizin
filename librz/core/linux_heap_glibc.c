@@ -48,8 +48,8 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, -1, 0, 0, false);
-	bool res = rz_bin_open(bin, path, &opt);
-	if (!res) {
+	RzBinFile *libc_bf = rz_bin_open(bin, path, &opt);
+	if (!libc_bf) {
 		return vaddr;
 	}
 
@@ -61,8 +61,7 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 		}
 	}
 
-	RzBinFile *libc_bf = rz_bin_cur(bin);
-	rz_bin_file_delete(bin, libc_bf->id);
+	rz_bin_file_delete(bin, libc_bf);
 	rz_bin_file_set_cur_binfile(bin, current_bf);
 	return vaddr;
 }
@@ -227,7 +226,8 @@ static void GH(get_brks)(RzCore *core, GHT *brk_start, GHT *brk_end) {
 		}
 	} else {
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if (map->name) {
 				if (strstr(map->name, "[heap]")) {
@@ -423,7 +423,8 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 		}
 	} else {
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if (map->name && strstr(map->name, "arena")) {
 				libc_addr_sta = map->itv.addr;
@@ -543,7 +544,7 @@ void GH(print_heap_chunk)(RzCore *core) {
  * \param core RzCore pointer
  * \param chunk Offset of the chunk in memory
  */
-void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
+void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk, const char *status) {
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
@@ -554,9 +555,21 @@ void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk) {
 	(void)rz_io_read_at(core->io, chunk, (ut8 *)cnk, sizeof(*cnk));
 
 	PRINT_GA("Chunk");
-	rz_cons_printf("(addr=");
+	rz_cons_printf("(");
+	if (status) {
+		rz_cons_printf("status=");
+		if (!strcmp(status, "free")) {
+			PRINTF_GA("%s", status);
+			rz_cons_printf("%-6s", ",");
+		} else {
+			rz_cons_printf("%s,", status);
+		}
+		rz_cons_printf(" ");
+	}
+	rz_cons_printf("addr=");
 	PRINTF_YA("0x%" PFMT64x, (ut64)chunk);
-	rz_cons_printf(", size=0x%" PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
+	rz_cons_printf(", size=");
+	PRINTF_BA("0x%" PFMT64x, (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
 	rz_cons_printf(", flags=");
 	bool print_comma = false;
 	if (cnk->size & NON_MAIN_ARENA) {
@@ -808,7 +821,7 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 	}
 }
 
-static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
+static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return -1;
 	}
@@ -842,18 +855,18 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 		return 0;
 	}
 
-	PRINTF_GA("  fastbin %" PFMT64d " @ ", (ut64)bin_num + 1);
-	PRINTF_GA("0x%" PFMT64x " {\n   ", (ut64)bin);
+	rz_cons_printf("\n -> ");
 
 	GHT size = main_arena->GH(top) - brk_start;
 
 	GHT next_root = next, next_tmp = next, double_free = GHT_MAX;
 	while (next && next >= brk_start && next < main_arena->GH(top)) {
 		GH(print_heap_chunk_simple)
-		(core, (ut64)next);
+		(core, (ut64)next, NULL);
+		rz_cons_newline();
 		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
 			rz_io_read_at(core->io, next_tmp, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-			next_tmp = (!demangle) ? cnk->fd : PROTECT_PTR(next_tmp, cnk->fd);
+			next_tmp = GH(get_next_pointer)(core, next_tmp, cnk->fd);
 			if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 				break;
 			}
@@ -863,12 +876,11 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 			}
 		}
 		rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-		next = (!demangle) ? cnk->fd : PROTECT_PTR(next, cnk->fd);
-		PRINTF_BA("%s", next ? " -> " : "");
+		next = GH(get_next_pointer)(core, next, cnk->fd);
+		rz_cons_printf("%s", next ? " -> " : "");
 		if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
 			PRINTF_RA(" 0x%" PFMT64x, (ut64)next);
 			PRINT_RA(" Linked list corrupted\n");
-			PRINT_GA("\n  }\n");
 			free(cnk);
 			return -1;
 		}
@@ -877,7 +889,6 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 		if (double_free == next) {
 			PRINTF_RA("0x%" PFMT64x, (ut64)next);
 			PRINT_RA(" Double free detected\n");
-			PRINT_GA("\n  }\n");
 			free(cnk);
 			return -1;
 		}
@@ -886,17 +897,15 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 	if (next && (next < brk_start || next >= main_arena->GH(top))) {
 		PRINTF_RA("0x%" PFMT64x, (ut64)next);
 		PRINT_RA(" Linked list corrupted\n");
-		PRINT_GA("\n  }\n");
 		free(cnk);
 		return -1;
 	}
 
-	PRINT_GA("\n  }\n");
 	free(cnk);
 	return 0;
 }
 
-void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool demangle, bool main_arena_only) {
+void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool main_arena_only) {
 	size_t i, j, k;
 	GHT num_bin = GHT_MAX, offset = sizeof(int) * 2;
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
@@ -906,35 +915,42 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 		offset = 16;
 	}
 
+	int fastbins_max = rz_config_get_i(core->config, "dbg.glibc.fastbinmax") - 1;
+	int global_max_fast_idx = fastbin_index(global_max_fast);
+	int fastbin_count = fastbins_max < global_max_fast_idx ? fastbins_max : global_max_fast_idx;
+
 	switch (input[0]) {
 	case '\0': // dmhf
 		if (!main_arena_only && core->offset != core->prompt_offset) {
 			m_arena = core->offset;
 		}
-		rz_cons_printf("Fast bins @ ");
-		PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
-		for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
-			if (FASTBIN_IDX_TO_SIZE(j) <= global_max_fast) {
-				PRINTF_YA("Fastbin %02zu", j);
-			} else {
-				PRINTF_RA("Fastbin %02zu", j);
-			}
-			PRINT_GA(" [size:");
-			PRINTF_BA(" == 0x%" PFMT64x "]", (ut64)k);
-			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i, demangle)) {
-				PRINT_BA("  Empty\n");
+		rz_cons_printf("Fast bins in Arena @ ");
+		PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
+
+		for (i = 0, j = 1, k = SZ * 4; i <= fastbin_count; i++, j++, k += SZ * 2) {
+			rz_cons_printf("Fast_bin[");
+			PRINTF_BA("%02zu", j);
+			rz_cons_printf("] [size: ");
+			PRINTF_BA("0x%" PFMT64x, (ut64)k);
+			rz_cons_printf("]");
+			if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, i)) {
+				PRINT_RA(" Empty bin\n");
 			}
 		}
 		break;
 	case ' ': // dmhf [bin_num]
 		num_bin = rz_num_get(NULL, input) - 1;
-		if (num_bin >= NFASTBINS) {
-			eprintf("Error: 0 < bin <= %d\n", NFASTBINS);
+		if (num_bin >= fastbin_count + 1) {
+			eprintf("Error: 0 < bin <= %d\n", fastbin_count + 1);
 			break;
 		}
-		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, demangle)) {
-			PRINT_GA(" Empty bin");
-			PRINT_BA(" 0x0\n");
+		rz_cons_printf("Fast_bin[");
+		PRINTF_BA("%02zu", (size_t)(num_bin + 1));
+		rz_cons_printf("] [size: ");
+		PRINTF_BA("0x%" PFMT64x, (ut64)FASTBIN_IDX_TO_SIZE(num_bin + 1));
+		rz_cons_printf("]");
+		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin)) {
+			PRINT_RA(" Empty bin\n");
 		}
 		break;
 	}
@@ -982,7 +998,7 @@ static GHT GH(tcache_get_entry)(GH(RTcache) * tcache, int index) {
 		: tcache->RzHeapTcache.heap_tcache_pre_230->entries[index];
 }
 
-static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) {
+static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache) {
 	rz_return_if_fail(core && tcache);
 	GHT tcache_fd = GHT_MAX;
 	GHT tcache_tmp = GHT_MAX;
@@ -992,13 +1008,14 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 		int count = GH(tcache_get_count)(tcache, i);
 		GHT entry = GH(tcache_get_entry)(tcache, i);
 		if (count > 0) {
-			PRINT_GA("bin :");
-			PRINTF_BA("%2zu", i);
-			PRINT_GA(", items :");
+			PRINT_GA("Tcache_bin[");
+			PRINTF_BA("%02zu", i);
+			PRINT_GA("] Items:");
 			PRINTF_BA("%2d", count);
+			rz_cons_newline();
 			rz_cons_printf(" -> ");
 			GH(print_heap_chunk_simple)
-			(core, (ut64)(entry - GH(HDR_SZ)));
+			(core, (ut64)(entry - GH(HDR_SZ)), NULL);
 			if (count > 1) {
 				tcache_fd = entry;
 				size_t n;
@@ -1007,12 +1024,10 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 					if (!r) {
 						break;
 					}
-					tcache_tmp = (!demangle)
-						? read_le(&tcache_tmp)
-						: PROTECT_PTR(tcache_fd, read_le(&tcache_tmp));
-					rz_cons_printf(" -> ");
+					tcache_tmp = GH(get_next_pointer)(core, tcache_fd, read_le(&tcache_tmp));
+					rz_cons_printf("\n -> ");
 					GH(print_heap_chunk_simple)
-					(core, (ut64)(tcache_tmp - TC_HDR_SZ));
+					(core, (ut64)(tcache_tmp - TC_HDR_SZ), NULL);
 					tcache_fd = tcache_tmp;
 				}
 			}
@@ -1021,7 +1036,7 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, bool demangle) 
 	}
 }
 
-static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *main_arena, bool demangle, bool main_thread_only) {
+static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *main_arena, bool main_thread_only) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
 
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
@@ -1051,10 +1066,10 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 		return;
 	}
 
-	rz_cons_printf("Tcache main arena @");
-	PRINTF_BA(" 0x%" PFMT64x "\n", (ut64)m_arena);
+	rz_cons_printf("Tcache bins in Main Arena @");
+	PRINTF_YA(" 0x%" PFMT64x "\n", (ut64)m_arena);
 	GH(tcache_print)
-	(core, rz_tcache, demangle);
+	(core, rz_tcache);
 	if (main_thread_only) {
 		return;
 	}
@@ -1070,7 +1085,7 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 		}
 		ta->GH(next) = main_arena->GH(next);
 		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
-			PRINT_YA("Tcache thread arena @ ");
+			PRINT_YA("Tcache in Thread Arena @ ");
 			PRINTF_BA(" 0x%" PFMT64x, (ut64)ta->GH(next));
 			mmap_start = ((ta->GH(next) >> 16) << 16);
 			tcache_start = mmap_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
@@ -1087,7 +1102,7 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 				GH(tcache_read)
 				(core, tcache_start, rz_tcache);
 				GH(tcache_print)
-				(core, rz_tcache, demangle);
+				(core, rz_tcache);
 			} else {
 				PRINT_GA(" free\n");
 			}
@@ -1226,8 +1241,8 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 			switch (format_out) {
 			case 'v':
 				GH(print_heap_chunk_simple)
-				(core, next_chunk);
-				PRINTF_RA("[%s]\n", status);
+				(core, next_chunk, status);
+				rz_cons_newline();
 				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
 					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 				int size = 0x10;
@@ -1245,8 +1260,8 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 				break;
 			case 'c':
 				GH(print_heap_chunk_simple)
-				(core, next_chunk);
-				PRINTF_RA("[%s]\n", status);
+				(core, next_chunk, status);
+				rz_cons_newline();
 				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
 					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 				break;
@@ -1394,13 +1409,13 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		switch (format_out) {
 		case 'c':
 			GH(print_heap_chunk_simple)
-			(core, prev_chunk_addr);
-			rz_cons_printf("[%s]\n", status);
+			(core, prev_chunk_addr, status);
+			rz_cons_newline();
 			break;
 		case 'v':
 			GH(print_heap_chunk_simple)
-			(core, prev_chunk_addr);
-			rz_cons_printf("[%s]\n", status);
+			(core, prev_chunk_addr, status);
+			rz_cons_newline();
 			int size = 0x10;
 			char *data = calloc(1, size);
 			if (data) {
@@ -1445,8 +1460,9 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	case 'v':
 	case 'c':
 		GH(print_heap_chunk_simple)
-		(core, main_arena->GH(top));
-		rz_cons_printf("[top][brk_start: ");
+		(core, main_arena->GH(top), "free");
+		PRINT_RA("[top]");
+		rz_cons_printf("[brk_start: ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)brk_start);
 		rz_cons_printf(", brk_end: ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)brk_end);
@@ -1591,6 +1607,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	if (!head) {
 		return 0;
 	}
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
 
 	size_t chunks_cnt = 0;
@@ -1604,9 +1621,12 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	} else if (bin_num >= NSMALLBINS && bin_num <= NBINS - 2) {
 		rz_cons_printf("Large");
 	}
-	rz_cons_printf("_bin[%d]: ", bin_num);
-	rz_cons_printf("fd=0x%" PFMT64x, fw);
-	rz_cons_printf(", bk=0x%" PFMT64x, bk);
+	rz_cons_printf("_bin[");
+	PRINTF_BA("%d", bin_num);
+	rz_cons_printf("]: fd=");
+	PRINTF_YA("0x%" PFMT64x, fw);
+	rz_cons_printf(", bk=");
+	PRINTF_YA("0x%" PFMT64x, bk);
 	rz_cons_newline();
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 
@@ -1618,11 +1638,11 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		rz_cons_printf(" -> ");
 		GH(print_heap_chunk_simple)
-		(core, fw);
+		(core, fw, NULL);
+		rz_cons_newline();
 		fw = cnk->fd;
 		chunks_cnt += 1;
 	}
-	rz_cons_newline();
 	free(cnk);
 	free(head);
 
@@ -1637,10 +1657,10 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
  */
 static void GH(print_unsortedbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	rz_cons_printf("Unsorted bin @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
+	rz_cons_printf("Unsorted bin in Arena @ ");
+	PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
 	int chunk_cnt = GH(print_bin_content)(core, main_arena, 0);
-	rz_cons_printf("Found %d chunks in unsorted bins \n", chunk_cnt);
+	rz_cons_printf("Found %d chunks in unsorted bin\n", chunk_cnt);
 }
 
 /**
@@ -1651,8 +1671,8 @@ static void GH(print_unsortedbin_description)(RzCore *core, GHT m_arena, MallocS
  */
 static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	rz_cons_printf("Small bins @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
+	rz_cons_printf("Small bins in Arena @ ");
+	PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
 	int chunk_cnt = 0;
 	int non_empty_cnt = 0;
 	for (int bin_num = 1; bin_num < NSMALLBINS; bin_num++) {
@@ -1662,7 +1682,7 @@ static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocStat
 		}
 		chunk_cnt += chunk_found;
 	}
-	rz_cons_printf("Found %d chunks in %d small bins \n", chunk_cnt, non_empty_cnt);
+	rz_cons_printf("Found %d chunks in %d small bins\n", chunk_cnt, non_empty_cnt);
 }
 
 /**
@@ -1673,8 +1693,8 @@ static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocStat
  */
 static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	rz_cons_printf("Large bins @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
+	rz_cons_printf("Large bins in Arena @ ");
+	PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
 	int chunk_cnt = 0;
 	int non_empty_cnt = 0;
 	for (int bin_num = NSMALLBINS; bin_num < NBINS - 2; bin_num++) {
@@ -1684,7 +1704,7 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
 		}
 		chunk_cnt += chunk_found;
 	}
-	rz_cons_printf("Found %d chunks in %d large bins \n", chunk_cnt, non_empty_cnt);
+	rz_cons_printf("Found %d chunks in %d large bins\n", chunk_cnt, non_empty_cnt);
 }
 
 /**
@@ -1697,11 +1717,10 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
  */
 static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, RzHeapBinType format) {
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
-	bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_TCACHE) {
 		bool main_thread_only = true;
 		GH(print_tcache_instance)
-		(core, m_arena, main_arena, demangle, main_thread_only);
+		(core, m_arena, main_arena, main_thread_only);
 		rz_cons_newline();
 	}
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_FAST) {
@@ -1709,7 +1728,7 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 		input[0] = '\0';
 		bool main_arena_only = true;
 		GH(print_heap_fastbin)
-		(core, m_arena, main_arena, global_max_fast, input, demangle, main_arena_only);
+		(core, m_arena, main_arena, global_max_fast, input, main_arena_only);
 		free(input);
 		rz_cons_newline();
 	}
@@ -1927,7 +1946,6 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 		break;
 	case 'f': // "dmhf"
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
 			bool main_arena_only = false;
 			char *m_state_str, *dup = strdup(input + 1);
 			if (*dup) {
@@ -1950,7 +1968,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 					break;
 				}
 				GH(print_heap_fastbin)
-				(core, m_state, main_arena, global_max_fast, dup, demangle, main_arena_only);
+				(core, m_state, main_arena, global_max_fast, dup, main_arena_only);
 			} else {
 				PRINT_RA("This address is not part of the arenas\n");
 				free(dup);
@@ -2005,10 +2023,9 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
 				break;
 			}
-			bool demangle = rz_config_get_i(core->config, "dbg.glibc.demangle");
 			bool main_thread_only = false;
 			GH(print_tcache_instance)
-			(core, m_arena, main_arena, demangle, main_thread_only);
+			(core, m_arena, main_arena, main_thread_only);
 		}
 		break;
 	case '?':

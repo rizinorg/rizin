@@ -683,24 +683,6 @@ static void dump_cols_hexii(ut8 *a, int as, ut8 *b, int bs, int w) {
 	}
 }
 
-static char *handle_sha256(const ut8 *block, int len) {
-	int i = 0;
-	char *p = malloc(128);
-	RzHash *ctx = rz_hash_new(true, RZ_HASH_SHA256);
-	const ut8 *c = rz_hash_do_sha256(ctx, block, len);
-	if (!c) {
-		rz_hash_free(ctx);
-		free(p);
-		return NULL;
-	}
-	char *r = p;
-	for (i = 0; i < RZ_HASH_SIZE_SHA256; i++) {
-		snprintf(r + (i * 2), 3, "%02x", c[i]);
-	}
-	rz_hash_free(ctx);
-	return p;
-}
-
 static ut8 *slurp(RzdiffOptions *ro, RzCore **c, const char *file, size_t *sz) {
 	RzIODesc *d;
 	RzIO *io;
@@ -935,13 +917,17 @@ static void rzdiff_options_fini(RzdiffOptions *ro) {
 }
 
 static void fileobj(RzdiffOptions *ro, const char *ro_file, const ut8 *buf, size_t sz) {
+	char *digest = rz_msg_digest_calculate_small_block_string("sha256", buf, sz, NULL, false);
+	if (!digest) {
+		return;
+	}
+
 	PJ *pj = ro->pj;
 	pj_o(pj);
 	pj_ks(pj, "filename", ro_file);
 	pj_kn(pj, "size", sz);
-	char *hasha = handle_sha256(buf, (int)sz);
-	pj_ks(pj, "sha256", hasha);
-	free(hasha);
+	pj_ks(pj, "sha256", digest);
+	free(digest);
 	pj_end(pj);
 }
 

@@ -1,5 +1,5 @@
 NAME=(msg x;?e $0)
-FILE=-
+FILE==
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg HelloWorld)
@@ -11,7 +11,7 @@ RUN
 
 NAME=(msg x;?e $0)
 
-FILE=-
+FILE==
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg HelloWorld)
@@ -23,7 +23,7 @@ RUN
 
 NAME=(msg x;?e $0)
 
-FILE=-
+FILE==
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg HelloWorld)
@@ -36,7 +36,7 @@ EOF
 RUN
 
 NAME=.(msg x y;?e $0 $1)
-FILE=-
+FILE==
 CMDS=<<EOF
 "(msg x y;?e $0 $1)"
 .(msg Hello World)
@@ -47,7 +47,7 @@ EOF
 RUN
 
 NAME=.(msg "foo bar")
-FILE=-
+FILE==
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg "Hello World")
@@ -58,7 +58,7 @@ EOF
 RUN
 
 NAME=.(msg foo\ bar)
-FILE=-
+FILE==
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg Hello\ World)
@@ -69,7 +69,7 @@ EOF
 RUN
 
 NAME=(*~?
-FILE=-
+FILE==
 CMDS=<<EOF
 (foo;bar)
 (bar;cow)
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=3(foo;p8 4;s +$0)(1)
-FILE=-
+FILE==
 CMDS=<<EOF
 wx 010203040506070809
 3(foo;p8 4;sd +$0)(1)
@@ -94,7 +94,7 @@ EOF
 RUN
 
 NAME=3(foo;?e a;?e b)()
-FILE=-
+FILE==
 CMDS=2(foo;?e a;?e b)()
 EXPECT=<<EOF
 a
@@ -105,7 +105,7 @@ EOF
 RUN
 
 NAME=?v $$ @@f:foo*
-FILE=-
+FILE==
 CMDS=<<EOF
 f foo.one = 1
 f foo.bar = 2
@@ -120,7 +120,7 @@ EOF
 RUN
 
 NAME=?v
-FILE=-
+FILE==
 CMDS=<<EOF
 f foo.one = 1
 f foo.bar = 2
@@ -135,7 +135,7 @@ EOF
 RUN
 
 NAME=multiple commands
-FILE=-
+FILE==
 CMDS=<<EOF
 (foo x y; p8 $0 @ $1; ?e Hello $0)(2 0)
 (bar x y; p8 $0 @ $1; ?e Hello $0; ?e World $1)(1 0)

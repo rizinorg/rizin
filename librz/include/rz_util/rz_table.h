@@ -65,6 +65,7 @@ RZ_API void rz_table_free(RzTable *t);
 RZ_API int rz_table_column_nth(RzTable *t, const char *name);
 RZ_API void rz_table_add_column(RzTable *t, RzTableColumnType *type, const char *name, int maxWidth);
 RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...);
+RZ_API void rz_table_set_vcolumnsf(RzTable *t, const char *fmt, va_list ap);
 RZ_API RzTableRow *rz_table_row_new(RzList *items);
 RZ_API void rz_table_add_row(RzTable *t, const char *name, ...);
 RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...);

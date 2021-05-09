@@ -581,5 +581,5 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 	}
 	rz_debug_select(core->dbg, core->dbg->pid, core->dbg->tid);
 	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->h && !core->dbg->h->canstep));
-	rz_core_cmdf(core, "=! \"pid %d\"", core->dbg->pid);
+	rz_core_cmdf(core, "R! \"pid %d\"", core->dbg->pid);
 }

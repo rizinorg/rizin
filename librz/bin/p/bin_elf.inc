@@ -192,10 +192,117 @@ static RzBinElfNoteFile *note_file_for_load_segment(struct Elf_(rz_bin_elf_obj_t
 	return NULL;
 }
 
+static ut32 section_perms_from_flags(ut32 flags) {
+	ut32 r = 0;
+	if (RZ_BIN_ELF_SCN_IS_EXECUTABLE(flags)) {
+		r |= RZ_PERM_X;
+	}
+	if (RZ_BIN_ELF_SCN_IS_WRITABLE(flags)) {
+		r |= RZ_PERM_W;
+	}
+	if (RZ_BIN_ELF_SCN_IS_READABLE(flags)) {
+		r |= RZ_PERM_R;
+	}
+	return r;
+}
+
+static RzList *maps(RzBinFile *bf) {
+	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
+	RzList *ret = NULL;
+	if (!obj || !(ret = rz_list_newf((RzListFree)rz_bin_map_free))) {
+		return NULL;
+	}
+	Elf_(Phdr) *phdr = obj->phdr;
+	if (phdr) {
+		ut64 core_sp = Elf_(rz_bin_elf_get_sp_val)(obj);
+		int n = 0;
+		for (size_t i = 0; i < obj->ehdr.e_phnum; i++) {
+			if (phdr[i].p_type != PT_LOAD) {
+				continue;
+			}
+			RzBinMap *map = RZ_NEW0(RzBinMap);
+			if (!map) {
+				break;
+			}
+			map->paddr = phdr[i].p_offset;
+			map->psize = phdr[i].p_filesz;
+			map->vsize = phdr[i].p_memsz;
+			map->vaddr = phdr[i].p_vaddr;
+			map->perm = phdr[i].p_flags | RZ_PERM_R;
+			// map names specific to core files...
+			if (core_sp != UT64_MAX && core_sp >= phdr[i].p_vaddr && core_sp < phdr[i].p_vaddr + phdr[i].p_memsz) {
+				map->name = strdup("[stack]");
+			} else {
+				RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &phdr[i]);
+				if (nf && nf->file) {
+					map->name = strdup(nf->file);
+				}
+			}
+			// generic names
+			if (!map->name) {
+				map->name = rz_str_newf("LOAD%d", n);
+			}
+			n++;
+			rz_list_append(ret, map);
+		}
+	} else {
+		// Load sections if there is no PHDR
+		struct rz_bin_elf_section_t *sections = Elf_(rz_bin_elf_get_sections)(obj);
+		if (sections) {
+			for (size_t i = 0; !sections[i].last; i++) {
+				RzBinMap *map = RZ_NEW0(RzBinMap);
+				if (!map) {
+					break;
+				}
+				map->name = strdup(sections[i].name);
+				map->paddr = sections[i].offset;
+				map->psize = sections[i].type != SHT_NOBITS ? sections[i].size : 0;
+				map->vsize = sections[i].size;
+				map->vaddr = sections[i].rva;
+				map->perm = section_perms_from_flags(sections[i].flags);
+				rz_list_append(ret, map);
+			}
+		}
+	}
+
+	if (rz_list_empty(ret)) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			return ret;
+		}
+		map->name = strdup("uphdr");
+		map->paddr = 0;
+		map->psize = bf->size;
+		map->vaddr = 0x10000;
+		map->vsize = bf->size;
+		map->perm = RZ_PERM_RWX;
+		rz_list_append(ret, map);
+	}
+
+	if (obj->ehdr.e_type == ET_REL) {
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			return ret;
+		}
+		ut64 ehdr_size = sizeof(obj->ehdr);
+		if (bf->size < ehdr_size) {
+			ehdr_size = bf->size;
+		}
+		map->name = strdup("ehdr");
+		map->paddr = 0;
+		map->psize = ehdr_size;
+		map->vaddr = obj->baddr;
+		map->vsize = ehdr_size;
+		map->perm = RZ_PERM_RW;
+		rz_list_append(ret, map);
+	}
+	return ret;
+}
+
 static RzList *sections(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	struct rz_bin_elf_section_t *section = NULL;
-	int i, num, found_load = 0;
+	int i, num;
 	Elf_(Phdr) *phdr = NULL;
 	RzBinSection *ptr = NULL;
 	RzList *ret = NULL;
@@ -227,17 +334,7 @@ static RzList *sections(RzBinFile *bf) {
 			ptr->vaddr = section[i].rva;
 			ptr->type = section[i].type;
 			ptr->flags = section[i].flags;
-			ptr->add = !obj->phdr; // Load sections if there is no PHDR
-			ptr->perm = 0;
-			if (RZ_BIN_ELF_SCN_IS_EXECUTABLE(section[i].flags)) {
-				ptr->perm |= RZ_PERM_X;
-			}
-			if (RZ_BIN_ELF_SCN_IS_WRITABLE(section[i].flags)) {
-				ptr->perm |= RZ_PERM_W;
-			}
-			if (RZ_BIN_ELF_SCN_IS_READABLE(section[i].flags)) {
-				ptr->perm |= RZ_PERM_R;
-			}
+			ptr->perm = section_perms_from_flags(section[i].flags);
 			rz_list_append(ret, ptr);
 		}
 	}
@@ -246,19 +343,18 @@ static RzList *sections(RzBinFile *bf) {
 	ut16 mach = obj->ehdr.e_machine;
 	num = obj->ehdr.e_phnum;
 	phdr = obj->phdr;
-	ut64 core_sp = Elf_(rz_bin_elf_get_sp_val)(obj);
 	if (phdr) {
 		int n = 0;
 		for (i = 0; i < num; i++) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->add = false;
 			ptr->size = phdr[i].p_filesz;
 			ptr->vsize = phdr[i].p_memsz;
 			ptr->paddr = phdr[i].p_offset;
 			ptr->vaddr = phdr[i].p_vaddr;
 			ptr->perm = phdr[i].p_flags;
+			ptr->align = phdr[i].p_align;
 			ptr->is_segment = true;
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
@@ -267,16 +363,6 @@ static RzList *sections(RzBinFile *bf) {
 			case PT_LOAD: {
 				ptr->name = rz_str_newf("LOAD%d", n++);
 				ptr->perm |= RZ_PERM_R;
-				found_load = 1;
-				ptr->add = true;
-				if (core_sp != UT64_MAX && core_sp >= phdr[i].p_vaddr && core_sp < phdr[i].p_vaddr + phdr[i].p_memsz) {
-					ptr->map_name = strdup("[stack]");
-				} else {
-					RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &phdr[i]);
-					if (nf && nf->file) {
-						ptr->map_name = strdup(nf->file);
-					}
-				}
 				break;
 			}
 			case PT_INTERP:
@@ -321,25 +407,6 @@ static RzList *sections(RzBinFile *bf) {
 		}
 	}
 
-	if (rz_list_empty(ret)) {
-		if (!bf->size) {
-			struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
-			bf->size = bin ? bin->size : 0x9999;
-		}
-		if (found_load == 0) {
-			if (!(ptr = RZ_NEW0(RzBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup("uphdr");
-			ptr->size = bf->size;
-			ptr->vsize = bf->size;
-			ptr->paddr = 0;
-			ptr->vaddr = 0x10000;
-			ptr->add = true;
-			ptr->perm = RZ_PERM_RWX;
-			rz_list_append(ret, ptr);
-		}
-	}
 	// add entry for ehdr
 	ptr = RZ_NEW0(RzBinSection);
 	if (ptr) {
@@ -352,10 +419,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->vaddr = obj->baddr;
 		ptr->size = ehdr_size;
 		ptr->vsize = ehdr_size;
-		ptr->add = false;
-		if (obj->ehdr.e_type == ET_REL) {
-			ptr->add = true;
-		}
 		ptr->perm = RZ_PERM_RW;
 		ptr->is_segment = true;
 		rz_list_append(ret, ptr);
@@ -969,7 +1032,8 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	}
 
 	void **it;
-	rz_pvector_foreach (&io->maps, it) {
+	RzPVector *maps = rz_io_maps(io);
+	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
 		if (map->itv.addr > offset) {
 			offset = map->itv.addr;
@@ -987,14 +1051,10 @@ static RzList *patch_relocs(RzBinFile *bf) {
 	// reserve at least that space
 	size = bin->g_reloc_num * cdsz;
 	char *muri = rz_str_newf("malloc://%" PFMT64u, size);
-	RzIODesc *gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr);
+	RzIOMap *gotrzmap;
+	RzIODesc *gotrzdesc = b->iob.open_at(io, muri, RZ_PERM_R, 0664, n_vaddr, &gotrzmap);
 	free(muri);
-	if (!gotrzdesc) {
-		return NULL;
-	}
-
-	RzIOMap *gotrzmap = b->iob.map_get(io, n_vaddr);
-	if (!gotrzmap) {
+	if (!gotrzdesc || !gotrzmap) {
 		return NULL;
 	}
 	gotrzmap->name = strdup(".got.rz");
@@ -1035,9 +1095,9 @@ static RzList *patch_relocs(RzBinFile *bf) {
 		}
 
 		if (sym_addr) {
-			ptr->vaddr = sym_addr;
+			ptr->target_vaddr = sym_addr;
 		} else {
-			ptr->vaddr = vaddr;
+			ptr->target_vaddr = vaddr;
 			ht_uu_insert(relocs_by_sym, relcs[i].sym, vaddr);
 			vaddr += cdsz;
 		}

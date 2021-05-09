@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
-#include <rz_hash.h>
+#include <rz_msg_digest.h>
+#include <rz_util/rz_log.h>
 #include "i/private.h"
 
 // maybe too big sometimes? 2KB of stack eaten here..
@@ -449,6 +450,35 @@ RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, in
 	return bf;
 }
 
+RZ_IPI void rz_bin_file_free(void /*RzBinFile*/ *_bf) {
+	if (!_bf) {
+		return;
+	}
+	RzBinFile *bf = _bf;
+	if (bf->rbin->cur == bf) {
+		bf->rbin->cur = NULL;
+	}
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
+	// Binary format objects are connected to the
+	// RzBinObject, so the plugin must destroy the
+	// format data first
+	if (plugin && plugin->destroy) {
+		plugin->destroy(bf);
+	}
+	rz_buf_free(bf->buf);
+	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
+		bf->curxtr->free_xtr((void *)(bf->xtr_obj));
+	}
+	free(bf->file);
+	rz_bin_object_free(bf->o);
+	rz_list_free(bf->xtr_data);
+	if (bf->id != -1) {
+		// TODO: use rz_storage api
+		rz_id_pool_kick_id(bf->rbin->ids->pool, bf->id);
+	}
+	free(bf);
+}
+
 static RzBinPlugin *get_plugin_from_buffer(RzBin *bin, const char *pluginname, RzBuffer *buf) {
 	RzBinPlugin *plugin = bin->force ? rz_bin_get_binplugin_by_name(bin, bin->force) : NULL;
 	if (plugin) {
@@ -570,32 +600,30 @@ RZ_IPI RzBinFile *rz_bin_file_find_by_id(RzBin *bin, ut32 bf_id) {
 }
 
 RZ_API ut64 rz_bin_file_delete_all(RzBin *bin) {
-	if (bin) {
-		ut64 counter = rz_list_length(bin->binfiles);
-		rz_list_purge(bin->binfiles);
-		bin->cur = NULL;
-		return counter;
+	rz_return_val_if_fail(bin, 0);
+	ut64 counter = rz_list_length(bin->binfiles);
+	RzListIter *it;
+	RzBinFile *bf;
+	rz_list_foreach (bin->binfiles, it, bf) {
+		RzEventBinFileDel ev = { bf };
+		rz_event_send(bin->event, RZ_EVENT_BIN_FILE_DEL, &ev);
 	}
-	return 0;
+	rz_list_purge(bin->binfiles);
+	bin->cur = NULL;
+	return counter;
 }
 
-RZ_API bool rz_bin_file_delete(RzBin *bin, ut32 bin_id) {
-	rz_return_val_if_fail(bin, false);
-
-	RzListIter *iter;
-	RzBinFile *bf, *cur = rz_bin_cur(bin);
-
-	rz_list_foreach (bin->binfiles, iter, bf) {
-		if (bf && bf->id == bin_id) {
-			if (cur && cur->id == bin_id) {
-				// avoiding UaF due to dead reference
-				bin->cur = NULL;
-			}
-			rz_list_delete(bin->binfiles, iter);
-			return true;
-		}
+RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf) {
+	rz_return_val_if_fail(bin && bf, false);
+	RzListIter *it = rz_list_find_ptr(bin->binfiles, bf);
+	rz_return_val_if_fail(it, false); // calling del on a bf not in the bin is a programming error
+	if (bin->cur == bf) {
+		bin->cur = NULL;
 	}
-	return false;
+	RzEventBinFileDel ev = { bf };
+	rz_event_send(bin->event, RZ_EVENT_BIN_FILE_DEL, &ev);
+	rz_list_delete(bin->binfiles, it);
+	return true;
 }
 
 RZ_API RzBinFile *rz_bin_file_find_by_fd(RzBin *bin, ut32 bin_fd) {
@@ -670,42 +698,6 @@ RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name) {
 	rz_return_val_if_fail(bin && name, false);
 	RzBinFile *bf = rz_bin_file_find_by_name(bin, name);
 	return rz_bin_file_set_cur_binfile(bin, bf);
-}
-
-RZ_API bool rz_bin_file_deref(RzBin *bin, RzBinFile *a) {
-	rz_return_val_if_fail(bin && a, false);
-	if (!rz_bin_cur_object(bin)) {
-		return false;
-	}
-	bin->cur = NULL;
-	return true;
-}
-
-RZ_API void rz_bin_file_free(void /*RzBinFile*/ *_bf) {
-	if (!_bf) {
-		return;
-	}
-	RzBinFile *bf = _bf;
-	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
-	// Binary format objects are connected to the
-	// RzBinObject, so the plugin must destroy the
-	// format data first
-	if (plugin && plugin->destroy) {
-		plugin->destroy(bf);
-	}
-	rz_buf_free(bf->buf);
-	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
-		bf->curxtr->free_xtr((void *)(bf->xtr_obj));
-	}
-	free(bf->file);
-	rz_bin_object_free(bf->o);
-	rz_list_free(bf->xtr_data);
-	if (bf->id != -1) {
-		// TODO: use rz_storage api
-		rz_id_pool_kick_id(bf->rbin->ids->pool, bf->id);
-	}
-	(void)rz_bin_object_delete(bf->rbin, bf->id);
-	free(bf);
 }
 
 RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
@@ -846,11 +838,39 @@ RZ_API bool rz_bin_file_close(RzBin *bin, int bd) {
 	return false;
 }
 
+static inline bool add_file_hash(RzMsgDigest *md, const char *name, RzList *list) {
+	char hash[128];
+	const ut8 *digest = NULL;
+	RzMsgDigestSize digest_size = 0;
+
+	digest = rz_msg_digest_get_result(md, name, &digest_size);
+	if (!digest) {
+		return false;
+	}
+
+	rz_hex_bin2str(digest, digest_size, hash);
+
+	RzBinFileHash *fh = RZ_NEW0(RzBinFileHash);
+	if (!fh) {
+		eprintf("Cannot allocate file hash\n");
+		return false;
+	}
+
+	fh->type = strdup(name);
+	fh->hex = strdup(hash);
+	rz_list_push(list, fh);
+	return true;
+}
+
 RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, ut64 limit) {
 	rz_return_val_if_fail(bin && bin->cur && bin->cur->o, NULL);
 	ut64 buf_len = 0, r = 0;
 	RzBinFile *bf = bin->cur;
 	RzBinObject *o = bf->o;
+	RzList *file_hashes = NULL;
+	ut8 *buf = NULL;
+	RzMsgDigest *md = NULL;
+	const size_t blocksize = 64000;
 
 	RzIODesc *iod = rz_io_desc_get(bin->iob.io, bf->fd);
 	if (!iod) {
@@ -865,21 +885,42 @@ RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, ut64 limit) {
 		}
 		return NULL;
 	}
-	const size_t blocksize = 64000;
-	ut8 *buf = malloc(blocksize);
+
+	buf = malloc(blocksize);
 	if (!buf) {
 		eprintf("Cannot allocate computation buffer\n");
 		return NULL;
 	}
 
-	char hash[128];
-	RzHash *ctx = rz_hash_new(false, RZ_HASH_MD5 | RZ_HASH_SHA1 | RZ_HASH_SHA256);
+	file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
+	if (!file_hashes) {
+		eprintf("Cannot allocate list\n");
+		goto rz_bin_file_compute_hashes_bad;
+	}
+
+	md = rz_msg_digest_new();
+	if (!md) {
+		goto rz_bin_file_compute_hashes_bad;
+	}
+
+	if (!rz_msg_digest_configure(md, "md5") ||
+		!rz_msg_digest_configure(md, "sha1") ||
+		!rz_msg_digest_configure(md, "sha256")) {
+		goto rz_bin_file_compute_hashes_bad;
+	}
+	if (!rz_msg_digest_init(md)) {
+		goto rz_bin_file_compute_hashes_bad;
+	}
+
 	while (r + blocksize < buf_len) {
 		rz_io_desc_seek(iod, r, RZ_IO_SEEK_SET);
 		int b = rz_io_desc_read(iod, buf, blocksize);
-		(void)rz_hash_do_md5(ctx, buf, blocksize);
-		(void)rz_hash_do_sha1(ctx, buf, blocksize);
-		(void)rz_hash_do_sha256(ctx, buf, blocksize);
+		if (b < 0) {
+			RZ_LOG_ERROR("rz_io_desc_read: can't read\n");
+			goto rz_bin_file_compute_hashes_bad;
+		} else if (!rz_msg_digest_update(md, buf, b)) {
+			goto rz_bin_file_compute_hashes_bad;
+		}
 		r += b;
 	}
 	if (r < buf_len) {
@@ -887,52 +928,38 @@ RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, ut64 limit) {
 		const size_t rem_len = buf_len - r;
 		int b = rz_io_desc_read(iod, buf, rem_len);
 		if (b < 1) {
-			eprintf("rz_io_desc_read: error\n");
-		} else {
-			(void)rz_hash_do_md5(ctx, buf, b);
-			(void)rz_hash_do_sha1(ctx, buf, b);
-			(void)rz_hash_do_sha256(ctx, buf, b);
+			RZ_LOG_ERROR("rz_io_desc_read: can't read\n");
+		} else if (!rz_msg_digest_update(md, buf, b)) {
+			goto rz_bin_file_compute_hashes_bad;
 		}
 	}
-	rz_hash_do_end(ctx, RZ_HASH_MD5);
-	rz_hex_bin2str(ctx->digest, RZ_HASH_SIZE_MD5, hash);
 
-	RzList *file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
-	RzBinFileHash *md5h = RZ_NEW0(RzBinFileHash);
-	if (md5h) {
-		md5h->type = strdup("md5");
-		md5h->hex = strdup(hash);
-		rz_list_push(file_hashes, md5h);
+	if (!rz_msg_digest_final(md)) {
+		goto rz_bin_file_compute_hashes_bad;
 	}
-	rz_hash_do_end(ctx, RZ_HASH_SHA1);
-	rz_hex_bin2str(ctx->digest, RZ_HASH_SIZE_SHA1, hash);
 
-	RzBinFileHash *sha1h = RZ_NEW0(RzBinFileHash);
-	if (sha1h) {
-		sha1h->type = strdup("sha1");
-		sha1h->hex = strdup(hash);
-		rz_list_push(file_hashes, sha1h);
-	}
-	rz_hash_do_end(ctx, RZ_HASH_SHA256);
-	rz_hex_bin2str(ctx->digest, RZ_HASH_SIZE_SHA256, hash);
-
-	RzBinFileHash *sha256h = RZ_NEW0(RzBinFileHash);
-	if (sha256h) {
-		sha256h->type = strdup("sha256");
-		sha256h->hex = strdup(hash);
-		rz_list_push(file_hashes, sha256h);
+	if (!add_file_hash(md, "md5", file_hashes) ||
+		!add_file_hash(md, "sha1", file_hashes) ||
+		!add_file_hash(md, "sha256", file_hashes)) {
+		goto rz_bin_file_compute_hashes_bad;
 	}
 
 	if (o->plugin && o->plugin->hashes) {
 		RzList *plugin_hashes = o->plugin->hashes(bf);
 		rz_list_join(file_hashes, plugin_hashes);
-		free(plugin_hashes);
+		rz_list_free(plugin_hashes);
 	}
-	// TODO: add here more rows
 
+	// TODO: add here more rows
 	free(buf);
-	rz_hash_free(ctx);
+	rz_msg_digest_free(md);
 	return file_hashes;
+
+rz_bin_file_compute_hashes_bad:
+	free(buf);
+	rz_msg_digest_free(md);
+	rz_list_free(file_hashes);
+	return NULL;
 }
 
 // Set new hashes to current RzBinInfo, caller should free the returned RzList
@@ -966,6 +993,7 @@ RZ_IPI void rz_bin_class_free(RzBinClass *k) {
 		free(k->super);
 		rz_list_free(k->methods);
 		rz_list_free(k->fields);
+		free(k->visibility_str);
 		free(k);
 	}
 }

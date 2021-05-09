@@ -13,3 +13,13 @@ EXPECT=<<EOF
 os       nes
 EOF
 RUN
+
+NAME=NES: Mapping
+FILE=bins/nes/Pong.nes
+CMDS=om
+EXPECT=<<EOF
+ 3 fd: 3 +0x00000010 0x00008000 - 0x0000bfff r-x fmap.ROM
+ 2 fd: 3 +0x00000010 0x0000c000 - 0x0000ffff r-x fmap.ROM_MIRROR
+ 1 fd: 4 +0x00000000 0x00010000 - 0x00013fff r-x mmap.ROM_MIRROR
+EOF
+RUN

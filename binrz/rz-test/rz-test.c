@@ -80,7 +80,10 @@ static bool rz_test_chdir(const char *argv0) {
 	char src_path[PATH_MAX];
 	char *rz_test_path = rz_file_path(argv0);
 	bool found = false;
-	if (readlink(rz_test_path, src_path, sizeof(src_path)) != -1) {
+
+	ssize_t linklen = readlink(rz_test_path, src_path, sizeof(src_path) - 1);
+	if (linklen != -1) {
+		src_path[linklen] = '\0';
 		char *p = strstr(src_path, RZ_SYS_DIR "binrz" RZ_SYS_DIR "rz-test" RZ_SYS_DIR "rz-test");
 		if (p) {
 			*p = 0;
@@ -94,6 +97,8 @@ static bool rz_test_chdir(const char *argv0) {
 				}
 			}
 		}
+	} else {
+		eprintf("Cannot follow the link %s\n", src_path);
 	}
 	free(rz_test_path);
 	return found;

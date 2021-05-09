@@ -1,5 +1,5 @@
 NAME=repeat-help
-FILE=-
+FILE==
 CMDS=<<EOF
 @@?~?
 EOF
@@ -9,7 +9,7 @@ EOF
 RUN
 
 NAME=repeat registers
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=repeat comments
-FILE=-
+FILE==
 CMDS=<<EOF
 CC aero@0x42
 CC pause@0x43
@@ -36,7 +36,7 @@ EOF
 RUN
 
 NAME=3p8
-FILE=-
+FILE==
 CMDS=<<EOF
 3p8 1
 ?e hi
@@ -50,7 +50,7 @@ EOF
 RUN
 
 NAME=3p8;?e hi
-FILE=-
+FILE==
 CMDS=3p8 1;?e hi
 EXPECT=<<EOF
 00
@@ -61,7 +61,7 @@ EOF
 RUN
 
 NAME=2p8 1;?e hi
-FILE=-
+FILE==
 CMDS=2p8 1;?e hi
 EXPECT=<<EOF
 00
@@ -71,7 +71,7 @@ EOF
 RUN
 
 NAME=3p8 1 && 2p8 4
-FILE=-
+FILE==
 CMDS=<<EOF
 b 4
 wx 0000ffff

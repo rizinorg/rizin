@@ -3,6 +3,7 @@
 
 #include <rz_lib.h>
 #include <rz_crypto.h>
+#include <rz_util.h>
 
 #define NAME "rol"
 
@@ -13,7 +14,7 @@ struct rol_state {
 	int key_size;
 };
 
-static bool rol_init(struct rol_state *const state, const ut8 *key, int keylen) {
+static bool rol_init_state(struct rol_state *const state, const ut8 *key, int keylen) {
 	if (!state || !key || keylen < 1 || keylen > MAX_rol_KEY_SIZE) {
 		return false;
 	}
@@ -34,16 +35,19 @@ static void rol_crypt(struct rol_state *const state, const ut8 *inbuf, ut8 *outb
 	}
 }
 
-static struct rol_state st;
-static int flag = 0;
-
 static bool rol_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
-	return rol_init(&st, key, keylen);
+	rz_return_val_if_fail(cry->user && key, false);
+	struct rol_state *st = (struct rol_state *)cry->user;
+
+	cry->dir = direction;
+	return rol_init_state(st, key, keylen);
 }
 
 static int rol_get_key_size(RzCrypto *cry) {
-	return st.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	struct rol_state *st = (struct rol_state *)cry->user;
+
+	return st->key_size;
 }
 
 static bool rol_use(const char *algo) {
@@ -51,27 +55,48 @@ static bool rol_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
-	if (flag) {
-		eprintf("Use ROR\n");
+	rz_return_val_if_fail(cry->user, false);
+	struct rol_state *st = (struct rol_state *)cry->user;
+
+	if (cry->dir) {
+		eprintf("Use ROR algorithm to decrypt\n");
 		return false;
 	}
 	ut8 *obuf = calloc(1, len);
 	if (!obuf) {
 		return false;
 	}
-	rol_crypt(&st, buf, obuf, len);
+	rol_crypt(st, buf, obuf, len);
 	rz_crypto_append(cry, obuf, len);
 	free(obuf);
 	return true;
 }
 
+static bool rol_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEW0(struct rol_state);
+	return cry->user != NULL;
+}
+
+static bool rol_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_rol = {
 	.name = NAME,
+	.author = "pancake",
+	.license = "LGPL-3",
 	.set_key = rol_set_key,
 	.get_key_size = rol_get_key_size,
 	.use = rol_use,
 	.update = update,
 	.final = update,
+	.init = rol_init,
+	.fini = rol_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

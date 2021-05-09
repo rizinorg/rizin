@@ -1094,6 +1094,10 @@ static void function_delete_var_cmd(RzCore *core, RzAnalysisFunction *fcn, RzAna
 static int var_cmd(RzCore *core, const char *str) {
 	int delta, type = *str, res = true;
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
+	if (!fcn) {
+		eprintf("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		return false;
+	}
 	RzAnalysisVar *v1;
 	if (!str[0]) {
 		// "afv"
@@ -1134,48 +1138,36 @@ static int var_cmd(RzCore *core, const char *str) {
 		function_delete_var_cmd(core, fcn, RZ_ANALYSIS_VAR_KIND_REG, str + 1);
 		return true;
 	case 'x': // "afvx"
-		if (fcn) {
-			cmd_afvx(core, fcn, str[1] == 'j');
-		} else {
-			eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
-		}
+		cmd_afvx(core, fcn, str[1] == 'j');
 		return true;
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
-	case '=': // "afv="
-		if (fcn) {
-			const char *name = strchr(ostr, ' ');
-			if (name) {
-				name = rz_str_trim_head_ro(name);
-			}
-			if (str[1] == 'j') {
-				pj = rz_core_pj_new(core);
-				if (!pj) {
-					return false;
-				}
-			}
-			list_vars(core, fcn, pj, str[0], name, IS_ARG_AND_VAR);
-			if (str[1] == 'j') {
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-				pj_free(pj);
-			}
-			return true;
-		} else {
-			eprintf("afv: Cannot find function in 0x%08" PFMT64x "\n", core->offset);
-			return false;
+	case '=': { // "afv="
+		const char *name = strchr(ostr, ' ');
+		if (name) {
+			name = rz_str_trim_head_ro(name);
 		}
-	case 'a': // "afva"
-		if (fcn) {
-			rz_analysis_function_delete_all_vars(fcn);
-			rz_core_recover_vars(core, fcn, false);
-			free(p);
-			return true;
-		} else {
-			eprintf("afv: Cannot find function in 0x%08" PFMT64x "\n", core->offset);
-			return false;
+		if (str[1] == 'j') {
+			pj = rz_core_pj_new(core);
+			if (!pj) {
+				return false;
+			}
 		}
+		list_vars(core, fcn, pj, str[0], name, IS_ARG_AND_VAR);
+		if (str[1] == 'j') {
+			pj_end(pj);
+			rz_cons_println(pj_string(pj));
+			pj_free(pj);
+		}
+		return true;
+	}
+	case 'a': { // "afva"
+		rz_analysis_function_delete_all_vars(fcn);
+		rz_core_recover_vars(core, fcn, false);
+		free(p);
+		return true;
+	}
 	case 'n': // "afvn"
 		if (str[1]) {
 			const char *new_name = rz_str_trim_head_ro(strchr(ostr, ' '));
@@ -1202,9 +1194,7 @@ static int var_cmd(RzCore *core, const char *str) {
 		}
 		return true;
 	case 'd': // "afvd"
-		if (!fcn) {
-			eprintf("Cannot find function.\n");
-		} else if (str[1]) {
+		if (str[1]) {
 			p = strchr(ostr, ' ');
 			if (!p) {
 				free(ostr);
@@ -1229,33 +1219,29 @@ static int var_cmd(RzCore *core, const char *str) {
 	case 'f': // "afvf"
 		__cmd_afvf(core, ostr);
 		break;
-	case 't': // "afvt"
-		if (fcn) {
-			p = strchr(ostr, ' ');
-			if (!p++) {
-				free(ostr);
-				return false;
-			}
-
-			char *type = strchr(p, ' ');
-			if (!type) {
-				free(ostr);
-				return false;
-			}
-			*type++ = 0;
-			v1 = rz_analysis_function_get_var_byname(fcn, p);
-			if (!v1) {
-				eprintf("Cant find get by name %s\n", p);
-				free(ostr);
-				return false;
-			}
-			rz_analysis_var_set_type(v1, type);
+	case 't': { // "afvt"
+		p = strchr(ostr, ' ');
+		if (!p++) {
 			free(ostr);
-			return true;
-		} else {
-			eprintf("Cannot find function\n");
 			return false;
 		}
+
+		char *type = strchr(p, ' ');
+		if (!type) {
+			free(ostr);
+			return false;
+		}
+		*type++ = 0;
+		v1 = rz_analysis_function_get_var_byname(fcn, p);
+		if (!v1) {
+			eprintf("Cant find get by name %s\n", p);
+			free(ostr);
+			return false;
+		}
+		rz_analysis_var_set_type(v1, type);
+		free(ostr);
+		return true;
+	}
 	}
 	switch (str[1]) { // afv[bsr]
 	case '\0': // "afv"
@@ -1275,10 +1261,6 @@ static int var_cmd(RzCore *core, const char *str) {
 		rz_analysis_var_list_show(core->analysis, fcn, core->offset, 0, NULL);
 		break;
 	case '-': // "afv[bsr]-"
-		if (!fcn) {
-			eprintf("Cannot find function\n");
-			return false;
-		}
 		function_delete_var_cmd(core, fcn, type, str + 2);
 		break;
 	case 't': // "afv[bsr]t"
@@ -1306,7 +1288,7 @@ static int var_cmd(RzCore *core, const char *str) {
 				break;
 			}
 			int rw = (str[1] == 'g') ? RZ_ANALYSIS_VAR_ACCESS_TYPE_READ : RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE;
-			int ptr = *var->type == 's' ? idx - fcn->maxstack : idx;
+			int ptr = var->kind == 's' ? idx - fcn->maxstack : idx;
 			RzAnalysisOp *op = rz_core_analysis_op(core, addr, 0);
 			const char *ireg = op ? op->ireg : NULL;
 			rz_analysis_var_set_access(var, ireg, addr, rw, ptr);
@@ -1321,10 +1303,6 @@ static int var_cmd(RzCore *core, const char *str) {
 		p = strchr(ostr, ' ');
 		if (!p) {
 			var_help(core, type);
-			break;
-		}
-		if (!fcn) {
-			eprintf("Missing function at 0x%08" PFMT64x "\n", core->offset);
 			break;
 		}
 		*p++ = 0;
@@ -3207,42 +3185,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 		case 'e': // "afbe"
 			analysis_bb_edge(core, input + 2);
 			break;
-		case 0:
-		case 'q': // "afbq"
-		case 't': // "afbt"
-		case '*': // "afb*"
-		case 'j': // "afbj"
-		case ' ': { // "afb "
-			char *sp = strchr(input + 1, ' ');
-			const char *arg = sp ? rz_str_trim_head_ro(sp) : NULL;
-			ut64 addr = arg ? rz_num_math(core->num, arg) : core->offset;
-			RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
-			if (rz_list_empty(l)) {
-				eprintf("No functions at 0x%" PFMT64x, addr);
-				break;
-			}
-			RzAnalysisFunction *fcn = rz_list_first(l);
-			RzOutputMode mode;
-			switch (input[1]) {
-			case 'q':
-				mode = RZ_OUTPUT_MODE_QUIET;
-				break;
-			case 't':
-				mode = RZ_OUTPUT_MODE_TABLE;
-				break;
-			case '*':
-				mode = RZ_OUTPUT_MODE_RIZIN;
-				break;
-			case 'j':
-				mode = RZ_OUTPUT_MODE_JSON;
-				break;
-			default:
-				mode = RZ_OUTPUT_MODE_STANDARD;
-				break;
-			}
-			rz_core_analysis_bbs_info_print(core, fcn, mode);
-			break;
-		}
 		case 'r': { // "afbr"
 			char *sp = strchr(input + 1, ' ');
 			const char *arg = sp ? rz_str_trim_head_ro(sp) : NULL;
@@ -3269,45 +3211,6 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			rz_core_analysis_bbs_asciiart(core, fcn);
 			break;
 		}
-		case 'i': // "afbi"
-			switch (input[2]) {
-			case '\0':
-			case 'j': {
-				char *sp = strchr(input + 1, ' ');
-				const char *arg = sp ? rz_str_trim_head_ro(sp) : NULL;
-				ut64 addr = arg ? rz_num_math(core->num, arg) : core->offset;
-				RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
-				if (!bb) {
-					eprintf("No basic block at 0x%" PFMT64x, core->offset);
-					break;
-				}
-				rz_core_analysis_bb_info_print(core, bb, addr, input[2] == 'j' ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_LONG);
-				break;
-			}
-			default:
-				eprintf("Usage: afbi[j] <addr>\n");
-				break;
-			}
-			break;
-		case '.': // "afb."
-			switch (input[2]) {
-			case '\0': {
-				char *sp = strchr(input + 1, ' ');
-				const char *arg = sp ? rz_str_trim_head_ro(sp) : NULL;
-				ut64 addr = arg ? rz_num_math(core->num, arg) : core->offset;
-				RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
-				if (!bb) {
-					eprintf("No basic block at 0x%" PFMT64x, addr);
-					break;
-				}
-				rz_core_analysis_bb_info_print(core, bb, addr, input[2] == 'j' ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_STANDARD);
-				break;
-			}
-			default:
-				eprintf("Usage: afb. [addr]\n");
-				break;
-			}
-			break;
 		case '+': // "afb+"
 			analysis_fcn_add_bb(core, input + 2);
 			break;
@@ -7830,7 +7733,8 @@ static int compute_coverage(RzCore *core) {
 	cov += rz_meta_get_size(core->analysis, RZ_META_TYPE_DATA);
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if (map->perm & RZ_PERM_X) {
 				ut64 section_end = map->itv.addr + map->itv.size;
@@ -7847,7 +7751,8 @@ static int compute_coverage(RzCore *core) {
 static int compute_code(RzCore *core) {
 	int code = 0;
 	void **it;
-	rz_pvector_foreach (&core->io->maps, it) {
+	RzPVector *maps = rz_io_maps(core->io);
+	rz_pvector_foreach (maps, it) {
 		RzIOMap *map = *it;
 		if (map->perm & RZ_PERM_X) {
 			code += map->itv.size;
@@ -8914,7 +8819,15 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 				eprintf("No basic block at 0x%" PFMT64x "\n", addr);
 				break;
 			}
-			rz_core_analysis_bb_info_print(core, bb, addr, RZ_OUTPUT_MODE_JSON);
+			RzCmdStateOutput state = { 0 };
+			state.mode = RZ_OUTPUT_MODE_JSON;
+			state.d.pj = rz_core_pj_new(core);
+			if (!state.d.pj) {
+				break;
+			}
+			rz_core_analysis_bb_info_print(core, bb, addr, &state);
+			rz_cons_println(pj_string(state.d.pj));
+			pj_free(state.d.pj);
 			break;
 		}
 		case 0:
@@ -8929,7 +8842,9 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 				eprintf("No basic block at 0x%" PFMT64x "\n", addr);
 				break;
 			}
-			rz_core_analysis_bb_info_print(core, bb, addr, RZ_OUTPUT_MODE_LONG);
+			RzCmdStateOutput state = { 0 };
+			state.mode = RZ_OUTPUT_MODE_LONG;
+			rz_core_analysis_bb_info_print(core, bb, addr, &state);
 			break;
 		}
 		default:
@@ -9077,7 +8992,7 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
 	RzList *l = rz_analysis_get_functions_in(core->analysis, addr);
 	if (rz_list_empty(l)) {
@@ -9085,7 +9000,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_list_handler(RzCore *core, int ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisFunction *fcn = rz_list_first(l);
-	rz_core_analysis_bbs_info_print(core, fcn, mode);
+	rz_core_analysis_bbs_info_print(core, fcn, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -9151,14 +9066,14 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_asciiart_handler(RzCore *core, in
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_function_blocks_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_analysis_function_blocks_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
 	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
 	if (!bb) {
 		eprintf("No basic block at 0x%" PFMT64x, core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_analysis_bb_info_print(core, bb, addr, mode);
+	rz_core_analysis_bb_info_print(core, bb, addr, state);
 	return RZ_CMD_STATUS_OK;
 }
 

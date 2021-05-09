@@ -39,6 +39,9 @@ typedef enum {
 	RZ_EVENT_CLASS_ATTR_RENAME, // RzEventClassAttrRename
 	RZ_EVENT_DEBUG_PROCESS_FINISHED, // RzEventDebugProcessFinished
 	RZ_EVENT_IO_WRITE, // RzEventIOWrite
+	RZ_EVENT_IO_DESC_CLOSE, // RzEventIODescClose
+	RZ_EVENT_IO_MAP_DEL, // RzEventIOMapDel
+	RZ_EVENT_BIN_FILE_DEL, // RzEventBinFileDel
 	RZ_EVENT_MAX,
 } RzEventType;
 
@@ -76,12 +79,6 @@ typedef struct rz_event_class_attr_rename_t {
 typedef struct rz_event_debug_process_finished_t {
 	int pid;
 } RzEventDebugProcessFinished;
-
-typedef struct rz_event_io_write_t {
-	ut64 addr;
-	const ut8 *buf;
-	int len;
-} RzEventIOWrite;
 
 RZ_API RzEvent *rz_event_new(void *user);
 RZ_API void rz_event_free(RzEvent *ev);

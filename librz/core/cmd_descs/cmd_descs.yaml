@@ -150,7 +150,7 @@ commands:
     cname: cmd_search
     summary: Search for bytes, regexps, patterns, ..
     type: RZ_CMD_DESC_TYPE_OLDINPUT
-  - name: "="
+  - name: "R"
     summary: Connect with other instances of rizin
     subcommands: cmd_remote
   - name: "?*"
@@ -578,3 +578,64 @@ commands:
           - text: i
             arg_str: "~0x400$"
             comment: Show lines ending with 0x400
+  - name: ":"
+    cname: specifiers
+    options: "[?]"
+    summary: Command specifiers (table-output only for now)
+    type: RZ_CMD_DESC_TYPE_FAKE
+    usage: "<command>[:<table_spec>[:<table_spec>:...]:<output_spec>]"
+    details:
+      - name: Table format specifiers (<table_spec>)
+        entries:
+          - text: "<col>/sort/<inc|dec>"
+            comment: Sort table by column <col> in increasing or decreasing order.
+          - text: "<col>/sortlen/<inc|dec>"
+            comment: Sort table length of column <col> in increasing or decreasing order.
+          - text: "<col>/cols[/<col2>[/<colN>...]"
+            comment: Show only specified columns in the table.
+          - text: "<col>"
+            comment: Show only column <col> (it must not have the same name as an output format specifier).
+          - text: "<col>/gt/<val>"
+            comment: Grep rows where column <col> is greater than <val>.
+          - text: "<col>/ge/<val>"
+            comment: Grep rows where column <col> is greater than or equal to <val>.
+          - text: "<col>/lt/<val>"
+            comment: Grep rows where column <col> is less than <val>.
+          - text: "<col>/le/<val>"
+            comment: Grep rows where column <col> is less than or equal to <val>.
+          - text: "<col>/eq/<val>"
+            comment: Grep rows where column <col> is equal to <val>.
+          - text: "<col>/ne/<val>"
+            comment: Grep rows where column <col> is not equal to <val>.
+          - text: "<col|*>/uniq"
+            comment: Only get the first row where column <col> or all columns are unique.
+          - text: "*/page/<n_page>/<page_size>"
+            comment: Show <page_size> rows starting from the page number <n_page>.
+          - text: "<col>/str/<value>"
+            comment: Grep rows where string <value> is a substring of column <col>.
+          - text: "<col>/strlen/<value>"
+            comment: Grep rows where the length of column <col> is <value>.
+          - text: "<col>/minlen/<value>"
+            comment: Grep rows where the length of column <col> is greater than <value>.
+          - text: "<col>/maxlen/<value>"
+            comment: Grep rows where the length of column <col> is less than <value>.
+          - text: "<col>/sum/<value>"
+            comment: Sum all the values of column <col>.
+      - name: Output format specifiers (<output_spec>)
+        entries:
+          - text: csv
+            comment: Print the table in CSV format.
+          - text: json
+            comment: Print the table in JSON format.
+          - text: fancy
+            comment: Print the table in a nice form with borders and headers.
+          - text: simple
+            comment: Print the table in a simple form, only with headers.
+          - text: quiet
+            comment: Print the table in a simple form, without headers.
+      - name: Examples
+        entries:
+          - text: aflt
+            arg_str: ":addr/cols/name/nbbs:nbbs/sort/dec:nbbs/gt/1:nbbs/lt/10:fancy"
+            comment: Show only the address, name and number of basic blocks of the identified functions
+              with more than 1 block but less than 10, sorted decrementally by number of blocks.

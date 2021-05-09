@@ -1,5 +1,5 @@
 NAME=ec* fgbg
-FILE=-
+FILE==
 CMDS=<<EOF
 eco sepia
 ec*
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=ansicon ecs
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.color=1
 e scr.ansicon=true
@@ -107,7 +107,7 @@ EOF
 RUN
 
 NAME=ecd and eco bright
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.color=1
 ecd
@@ -260,7 +260,7 @@ EOF
 RUN
 
 NAME=ec* and attributes
-FILE=-
+FILE==
 CMDS=<<EOF
 eco bright
 ec*~pop
@@ -280,7 +280,7 @@ EOF
 RUN
 
 NAME=ecHi
-FILE=-
+FILE==
 CMDS=ecHi xxxx
 EXPECT_ERR=<<EOF
 Unknown color xxxx

@@ -89,7 +89,7 @@ static void map_cpu_memory(RzAnalysis *analysis, int entry, ut32 addr, ut32 size
 	} else {
 		// allocate memory for address space
 		char *mstr = rz_str_newf("malloc://%d", size);
-		desc = analysis->iob.open_at(analysis->iob.io, mstr, RZ_PERM_RW, 0, addr);
+		desc = analysis->iob.open_at(analysis->iob.io, mstr, RZ_PERM_RW, 0, addr, NULL);
 		free(mstr);
 		// set 8051 address space as name of mapped memory
 		if (desc && analysis->iob.fd_get_name(analysis->iob.io, desc->fd)) {
@@ -1218,22 +1218,22 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = 2;
 		if (arg1 == A_ADDR11) {
-			op->jump = arg_addr11(addr + op->size, buf);
+			op->jump = arg_addr11(addr, addr + op->size, buf);
 			op->fail = addr + op->size;
 		} else if (arg1 == A_ADDR16) {
-			op->jump = 0x100 * buf[1] + buf[2];
+			op->jump = apply_bank(addr, 0x100 * buf[1] + buf[2]);
 			op->fail = addr + op->size;
 		}
 		break;
 	case OP_JMP:
 		if (arg1 == A_ADDR11) {
-			op->jump = arg_addr11(addr + op->size, buf);
+			op->jump = arg_addr11(addr, addr + op->size, buf);
 			op->fail = addr + op->size;
 		} else if (arg1 == A_ADDR16) {
-			op->jump = 0x100 * buf[1] + buf[2];
+			op->jump = apply_bank(addr, 0x100 * buf[1] + buf[2]);
 			op->fail = addr + op->size;
 		} else if (arg1 == A_OFFSET) {
-			op->jump = arg_offset(addr + op->size, buf[1]);
+			op->jump = arg_offset(addr, addr + op->size, buf[1]);
 			op->fail = addr + op->size;
 		}
 		break;
@@ -1246,7 +1246,7 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case OP_JB:
 	case OP_JBC:
 	case OP_JNB:
-		op->jump = arg_offset(addr + op->size, buf[op->size - 1]);
+		op->jump = arg_offset(addr, addr + op->size, buf[op->size - 1]);
 		op->fail = addr + op->size;
 	}
 

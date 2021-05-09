@@ -92,37 +92,24 @@ static void rz_core_debug_syscall_hit(RzCore *core) {
 	}
 }
 
-struct getreloc_t {
-	ut64 vaddr;
-	int size;
-};
-
-static int getreloc_tree(const void *user, const RBNode *n, void *user2) {
-	struct getreloc_t *gr = (struct getreloc_t *)user;
-	const RzBinReloc *r = container_of(n, const RzBinReloc, vrb);
-	if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
-		return 0;
-	}
-	if (gr->vaddr > r->vaddr) {
-		return 1;
-	}
-	if (gr->vaddr < r->vaddr) {
-		return -1;
-	}
-	return 0;
-}
-
 RZ_API RzBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size) {
 	if (size < 1 || addr == UT64_MAX) {
 		return NULL;
 	}
-	RBNode *relocs = rz_bin_get_relocs(core->bin);
-	if (!relocs) {
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o || !bf->o->relocs) {
 		return NULL;
 	}
-	struct getreloc_t gr = { .vaddr = addr, .size = size };
-	RBNode *res = rz_rbtree_find(relocs, &gr, getreloc_tree, NULL);
-	return res ? container_of(res, RzBinReloc, vrb) : NULL;
+	return rz_bin_reloc_storage_get_reloc_in(bf->o->relocs, addr, size);
+}
+
+RZ_API RzBinReloc *rz_core_get_reloc_to(RzCore *core, ut64 addr) {
+	rz_return_val_if_fail(core, NULL);
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o || !bf->o->relocs) {
+		return NULL;
+	}
+	return rz_bin_reloc_storage_get_reloc_to(bf->o->relocs, addr);
 }
 
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
@@ -838,8 +825,8 @@ static const char *rizin_argv[] = {
 	"*?", "*", "$",
 	"(", "(*", "(-", "()", ".?", ".", "..", "...", ".:", ".--", ".-", ".!", ".(", "./", ".*",
 	"_?", "_",
-	"=?", "=", "=<", "=!", "=+", "=-", "==", "=!=", "!=!", "=:", "=&:",
-	"=g?", "=g", "=g!", "=h?", "=h", "=h-", "=h--", "=h*", "=h&", "=H?", "=H", "=H&",
+	"R?", "R", "R<", "R!", "R+", "R-", "R=", "R!=", "R=!", "R:", "R&:",
+	"Rg?", "Rg", "Rg!", "Rh?", "Rh", "Rh-", "Rh--", "Rh*", "Rh&", "RH?", "RH", "RH&",
 	"<",
 	"/?", "/", "/j", "/j!", "/j!x", "/+", "//", "/a", "/a1", "/ab", "/ad", "/aa", "/as", "/asl", "/at", "/atl", "/af", "/afl", "/ae", "/aej", "/ai", "/aij",
 	"/c", "/ca", "/car", "/d", "/e", "/E", "/Ej", "/f", "/F", "/g", "/gg", "/h", "/ht", "/i", "/m", "/mb", "/mm",
@@ -1697,8 +1684,8 @@ static int autocomplete(RzLineCompletion *completion, RzLineBuffer *buf, RzLineP
 	return true;
 }
 
-static RzLineNSCompletionResult *newshell_autocomplete(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
-	return rz_core_autocomplete_newshell((RzCore *)user, buf, prompt_type);
+static RzLineNSCompletionResult *rzshell_autocomplete(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
+	return rz_core_autocomplete_rzshell((RzCore *)user, buf, prompt_type);
 }
 
 RZ_API int rz_core_fgets(char *buf, int len, void *user) {
@@ -1708,8 +1695,8 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
 	if (prompt) {
-		if (core->use_newshell_autocompletion) {
-			rzli->ns_completion.run = newshell_autocomplete;
+		if (core->use_rzshell_autocompletion) {
+			rzli->ns_completion.run = rzshell_autocomplete;
 			rzli->ns_completion.run_user = core;
 			rzli->completion.run = NULL;
 		} else {
@@ -2343,8 +2330,28 @@ static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 	}
 }
 
+RZ_IPI void rz_core_file_io_desc_closed(RzCore *core, RzIODesc *desc);
+RZ_IPI void rz_core_file_io_map_deleted(RzCore *core, RzIOMap *map);
+RZ_IPI void rz_core_file_bin_file_deleted(RzCore *core, RzBinFile *bf);
+
+static void ev_iodescclose_cb(RzEvent *ev, int type, void *user, void *data) {
+	RzEventIODescClose *ioc = data;
+	rz_core_file_io_desc_closed(user, ioc->desc);
+}
+
+static void ev_iomapdel_cb(RzEvent *ev, int type, void *user, void *data) {
+	RzEventIOMapDel *iod = data;
+	rz_core_file_io_map_deleted(user, iod->map);
+}
+
+static void ev_binfiledel_cb(RzEvent *ev, int type, void *user, void *data) {
+	RzEventBinFileDel *bev = data;
+	rz_core_file_bin_file_deleted(user, bev->bf);
+}
+
 RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user);
 RZ_IPI void rz_core_task_break_cb(RzCoreTask *task, void *user);
+RZ_IPI void rz_core_file_free(RzCoreFile *cf);
 
 RZ_API bool rz_core_init(RzCore *core) {
 	core->blocksize = RZ_CORE_BLOCKSIZE;
@@ -2367,7 +2374,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->config = NULL;
 	core->http_up = false;
 	core->use_tree_sitter_rzcmd = false;
-	core->use_newshell_autocompletion = false;
+	core->use_rzshell_autocompletion = false;
 	ZERO_FILL(core->root_cmd_descriptor);
 	core->print = rz_print_new();
 	core->ropchain = rz_list_newf((RzListFree)free);
@@ -2462,12 +2469,15 @@ RZ_API bool rz_core_init(RzCore *core) {
 	/// XXX shouhld be using coreb
 	rz_parse_set_user_ptr(core->parser, core);
 	core->bin = rz_bin_new();
+	rz_event_hook(core->bin->event, RZ_EVENT_BIN_FILE_DEL, ev_binfiledel_cb, core);
 	rz_cons_bind(&core->bin->consb);
 	// XXX we shuold use RzConsBind instead of this hardcoded pointer
 	core->bin->cb_printf = (PrintfCallback)rz_cons_printf;
 	rz_bin_set_user_ptr(core->bin, core);
 	core->io = rz_io_new();
 	rz_event_hook(core->io->event, RZ_EVENT_IO_WRITE, ev_iowrite_cb, core);
+	rz_event_hook(core->io->event, RZ_EVENT_IO_DESC_CLOSE, ev_iodescclose_cb, core);
+	rz_event_hook(core->io->event, RZ_EVENT_IO_MAP_DEL, ev_iomapdel_cb, core);
 	core->io->ff = 1;
 	core->search = rz_search_new(RZ_SEARCH_KEYWORD);
 	core->flags = rz_flag_new();
@@ -2733,7 +2743,7 @@ static void set_prompt(RzCore *r) {
 		char *s = rz_core_cmd_str(r, "s");
 		r->offset = rz_num_math(NULL, s);
 		free(s);
-		remote = "=!";
+		remote = "R!";
 	}
 
 	if (rz_config_get_i(r->config, "scr.color")) {

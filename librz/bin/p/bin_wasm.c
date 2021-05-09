@@ -25,7 +25,7 @@ static bool find_export(const ut32 *p, const RzBinWasmExportEntry *q) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_return_val_if_fail(bf && buf && rz_buf_size(buf) != UT64_MAX, NULL);
+	rz_return_val_if_fail(bf && buf && rz_buf_size(buf) != UT64_MAX, false);
 
 	if (check_buffer(buf)) {
 		*bin_obj = rz_bin_wasm_init(bf, buf);
@@ -112,7 +112,6 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->vsize = sec->payload_len;
 		ptr->vaddr = sec->offset;
 		ptr->paddr = sec->offset;
-		ptr->add = true;
 		// TODO permissions
 		ptr->perm = 0;
 		rz_list_append(ret, ptr);
@@ -336,6 +335,7 @@ RzBinPlugin rz_bin_plugin_wasm = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,

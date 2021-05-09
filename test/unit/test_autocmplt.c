@@ -100,7 +100,7 @@ static bool test_autocmplt_cmdid(void) {
 	strcpy(buf->data, "x");
 	buf->length = strlen("x");
 	buf->index = 1;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_eq(r->start, 0, "should autocomplete starting from 0");
 	mu_assert_eq(r->end, 1, "should autocomplete ending at 1");
@@ -112,7 +112,7 @@ static bool test_autocmplt_cmdid(void) {
 	strcpy(buf->data, "p @@c:x");
 	buf->length = strlen("p @@c:x");
 	buf->index = buf->length;
-	r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should be returned");
 	mu_assert_eq(r->start, buf->length - 1, "start is ok");
@@ -134,7 +134,7 @@ static bool test_autocmplt_newcommand(void) {
 	strcpy(buf->data, "");
 	buf->length = strlen("");
 	buf->index = 0;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should be returned");
 	mu_assert_eq(r->start, 0, "should autocomplete starting from 0");
@@ -149,7 +149,7 @@ static bool test_autocmplt_newcommand(void) {
 	strcpy(buf->data, "p @@c:");
 	buf->length = strlen("p @@c:");
 	buf->index = buf->length;
-	r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "result should be there");
 	mu_assert_eq(r->start, buf->length, "start should be ok");
@@ -174,7 +174,7 @@ static bool test_autocmplt_argid(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, 3, "should autocomplete starting from ./...");
@@ -196,7 +196,7 @@ static bool test_autocmplt_quotedarg(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, 4, "should autocomplete starting from ./...");
@@ -210,7 +210,7 @@ static bool test_autocmplt_quotedarg(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, 4, "should autocomplete starting from ./...");
@@ -240,7 +240,7 @@ static bool test_autocmplt_newarg(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, buf->length, "should autocomplete starting after space");
@@ -281,7 +281,7 @@ static bool test_autocmplt_fcn(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("unittest ./file1 "), "should autocomplete starting after space");
@@ -301,25 +301,25 @@ static bool test_autocmplt_eval(void) {
 	mu_assert_notnull(core, "core should be created");
 	RzLineBuffer *buf = &core->cons->line->buffer;
 
-	const char *s = "xd 1 2 3 4 cfg.newsh";
+	const char *s = "xd 1 2 3 4 cfg.oldsh";
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("xd 1 2 3 4 "), "should autocomplete the last arg");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
-	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 config evals starting with cfg.newsh");
-	mu_assert_streq(rz_pvector_at(&r->options, 0), "cfg.newshell", "cfg.newshell found");
-	mu_assert_streq(rz_pvector_at(&r->options, 1), "cfg.newshell.autocompletion", "cfg.newshell found");
+	mu_assert_eq(rz_pvector_len(&r->options), 2, "there are 2 config evals starting with cfg.oldsh");
+	mu_assert_streq(rz_pvector_at(&r->options, 0), "cfg.oldshell", "cfg.oldshell found");
+	mu_assert_streq(rz_pvector_at(&r->options, 1), "cfg.oldshell.autocompletion", "cfg.oldshell.autocompletion found");
 	rz_line_ns_completion_result_free(r);
 
 	s = "xd 1 2 3 4 search.in=io.maps.r";
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("xd 1 2 3 4 search.in="), "should autocomplete the last arg");
@@ -341,7 +341,7 @@ static bool test_autocmplt_seek(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	RzLineNSCompletionResult *r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	RzLineNSCompletionResult *r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("s "), "should autocomplete the last arg");
@@ -358,7 +358,7 @@ static bool test_autocmplt_seek(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("s "), "should autocomplete the last arg");
@@ -372,7 +372,7 @@ static bool test_autocmplt_seek(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("s flag1 + "), "should autocomplete the last arg");
@@ -386,7 +386,7 @@ static bool test_autocmplt_seek(void) {
 	strcpy(buf->data, s);
 	buf->length = strlen(s);
 	buf->index = buf->length;
-	r = rz_core_autocomplete_newshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
+	r = rz_core_autocomplete_rzshell(core, buf, RZ_LINE_PROMPT_DEFAULT);
 
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("s flag1+"), "should autocomplete the last arg");

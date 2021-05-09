@@ -163,14 +163,15 @@ RZ_API RzIODesc *rz_io_desc_open_plugin(RzIO *io, RzIOPlugin *plugin, const char
 }
 
 RZ_API bool rz_io_desc_close(RzIODesc *desc) {
-	RzIO *io;
 	if (!desc || !desc->io || !desc->plugin) {
 		return false;
 	}
+	RzIO *io = desc->io;
+	RzEventIODescClose ev = { desc };
+	rz_event_send(io->event, RZ_EVENT_IO_DESC_CLOSE, &ev);
 	if (desc->plugin->close && desc->plugin->close(desc)) {
 		return false;
 	}
-	io = desc->io;
 	// remove entry from idstorage and free the desc-struct
 	rz_io_desc_del(io, desc->fd);
 	// remove all dead maps
@@ -379,7 +380,7 @@ static bool desc_fini_cb(void *user, void *data, ut32 id) {
 
 //closes all descs and frees all descs and io->files
 RZ_IPI bool rz_io_desc_fini(RzIO *io) {
-	rz_return_val_if_fail(io, NULL);
+	rz_return_val_if_fail(io, false);
 	if (io->files) {
 		rz_id_storage_foreach(io->files, desc_fini_cb, io);
 		rz_id_storage_free(io->files);

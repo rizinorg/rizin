@@ -23,7 +23,6 @@ rz_core_sources = [
   #'cmd_egg.c',
   #'cmd_eval.c',
   #'cmd_flag.c',
-  #'cmd_hash.c',
   #'cmd_help.c',
   #'cmd_info.c',
   #'cmd_log.c',

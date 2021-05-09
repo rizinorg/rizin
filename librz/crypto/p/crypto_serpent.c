@@ -1,23 +1,28 @@
+// SPDX-FileCopyrightText: 2017 NicsTr <nicolas.bordes@grenoble-inp.org>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_lib.h>
 #include <rz_crypto.h>
 #include "crypto_serpent_algo.h"
 
-static struct serpent_state st = { { 0 } };
-
 static bool serpent_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	eprintf("key_size: %d\n", keylen);
+	rz_return_val_if_fail(cry->user && key, false);
+	serpent_state_t *st = (serpent_state_t *)cry->user;
+
 	if ((keylen != 128 / 8) && (keylen != 192 / 8) && (keylen != 256 / 8)) {
 		return false;
 	}
-	st.key_size = keylen * 8;
-	eprintf("key_size: %d\n", st.key_size);
-	memcpy(st.key, key, keylen);
+	st->key_size = keylen * 8;
+	memcpy(st->key, key, keylen);
 	cry->dir = direction;
 	return true;
 }
 
 static int serpent_get_key_size(RzCrypto *cry) {
-	return st.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	serpent_state_t *st = (serpent_state_t *)cry->user;
+
+	return st->key_size;
 }
 
 static bool serpent_use(const char *algo) {
@@ -27,6 +32,12 @@ static bool serpent_use(const char *algo) {
 #define BLOCK_SIZE 16
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+	rz_return_val_if_fail(cry->user, 0);
+	serpent_state_t *st = (serpent_state_t *)cry->user;
+	if (len < 1) {
+		return false;
+	}
+
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
@@ -59,17 +70,17 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 		ibuf[len / 4] = rz_read_le32(tail);
 	}
 
-	if (cry->dir == 0) {
+	if (cry->dir == RZ_CRYPTO_DIR_ENCRYPT) {
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
-			serpent_encrypt(&st, ibuf + delta, tmp + delta);
+			serpent_encrypt(st, ibuf + delta, tmp + delta);
 		}
-	} else if (cry->dir > 0) {
+	} else {
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
-			serpent_decrypt(&st, ibuf + delta, tmp + delta);
+			serpent_decrypt(st, ibuf + delta, tmp + delta);
 		}
 	}
 
@@ -94,13 +105,31 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 	return update(cry, buf, len);
 }
 
+static bool serpent_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEW0(serpent_state_t);
+	return cry->user != NULL;
+}
+
+static bool serpent_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_serpent = {
 	.name = "serpent-ecb",
+	.author = "NicsTr",
+	.license = "LGPL-3",
 	.set_key = serpent_set_key,
 	.get_key_size = serpent_get_key_size,
 	.use = serpent_use,
 	.update = update,
-	.final = final
+	.final = final,
+	.init = serpent_init,
+	.fini = serpent_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

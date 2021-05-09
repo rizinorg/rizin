@@ -24,6 +24,7 @@ static const RzCmdDescDetail iterators_details[2];
 static const RzCmdDescDetail redirection_details[2];
 static const RzCmdDescDetail pipe_details[2];
 static const RzCmdDescDetail grep_details[5];
+static const RzCmdDescDetail specifiers_details[4];
 static const RzCmdDescArg hash_bang_args[3];
 static const RzCmdDescArg tasks_args[2];
 static const RzCmdDescArg tasks_transient_args[2];
@@ -90,6 +91,8 @@ static const RzCmdDescArg cmd_debug_step_until_instr_regex_args[2];
 static const RzCmdDescArg cmd_debug_step_until_optype_args[2];
 static const RzCmdDescArg cmd_debug_step_until_esil_args[2];
 static const RzCmdDescArg cmd_debug_step_until_flag_args[2];
+static const RzCmdDescArg cmd_debug_save_trace_session_args[2];
+static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -509,7 +512,7 @@ static const RzCmdDescHelp cmd_search_help = {
 	.summary = "Search for bytes, regexps, patterns, ..",
 };
 
-static const RzCmdDescHelp equal__help = {
+static const RzCmdDescHelp R_help = {
 	.summary = "Connect with other instances of rizin",
 };
 static const RzCmdDescArg remote_args[] = {
@@ -683,7 +686,7 @@ static const RzCmdDescArg remote_rap_bg_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp remote_rap_bg_help = {
-	.summary = "Start rap server in background (same as '&_=h')",
+	.summary = "Start rap server in background (same as '& Rr')",
 	.args = remote_rap_bg_args,
 };
 
@@ -1520,6 +1523,61 @@ static const RzCmdDescArg cmd_debug_step_until_flag_args[] = {
 static const RzCmdDescHelp cmd_debug_step_until_flag_help = {
 	.summary = "Step until pc == <flag> matching name",
 	.args = cmd_debug_step_until_flag_args,
+};
+
+static const RzCmdDescHelp dts_help = {
+	.summary = "Debug trace session commands",
+};
+static const RzCmdDescArg cmd_debug_start_trace_session_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_start_trace_session_help = {
+	.summary = "Start trace session",
+	.args = cmd_debug_start_trace_session_args,
+};
+
+static const RzCmdDescArg cmd_debug_stop_trace_session_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_stop_trace_session_help = {
+	.summary = "Stop trace session",
+	.args = cmd_debug_stop_trace_session_args,
+};
+
+static const RzCmdDescArg cmd_debug_save_trace_session_args[] = {
+	{
+		.name = "dir",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_save_trace_session_help = {
+	.summary = "Save trace sessions to disk",
+	.args = cmd_debug_save_trace_session_args,
+};
+
+static const RzCmdDescArg cmd_debug_load_trace_session_args[] = {
+	{
+		.name = "dir",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_load_trace_session_help = {
+	.summary = "Load trace sessions to disk",
+	.args = cmd_debug_load_trace_session_args,
+};
+
+static const RzCmdDescArg cmd_debug_list_trace_session_mmap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_trace_session_mmap_help = {
+	.summary = "List current memory map and hash",
+	.args = cmd_debug_list_trace_session_mmap_args,
 };
 
 static const RzCmdDescHelp e_help = {
@@ -3897,7 +3955,54 @@ static const RzCmdDescHelp grep_help = {
 	.details = grep_details,
 };
 
-RZ_IPI void newshell_cmddescs_init(RzCore *core) {
+static const RzCmdDescDetailEntry specifiers_Table_space_format_space_specifiers_space__oparen__minor_table_spec_greater__cparen__detail_entries[] = {
+	{ .text = "<col>/sort/<inc|dec>", .arg_str = NULL, .comment = "Sort table by column <col> in increasing or decreasing order." },
+	{ .text = "<col>/sortlen/<inc|dec>", .arg_str = NULL, .comment = "Sort table length of column <col> in increasing or decreasing order." },
+	{ .text = "<col>/cols[/<col2>[/<colN>...]", .arg_str = NULL, .comment = "Show only specified columns in the table." },
+	{ .text = "<col>", .arg_str = NULL, .comment = "Show only column <col> (it must not have the same name as an output format specifier)." },
+	{ .text = "<col>/gt/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is greater than <val>." },
+	{ .text = "<col>/ge/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is greater than or equal to <val>." },
+	{ .text = "<col>/lt/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is less than <val>." },
+	{ .text = "<col>/le/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is less than or equal to <val>." },
+	{ .text = "<col>/eq/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is equal to <val>." },
+	{ .text = "<col>/ne/<val>", .arg_str = NULL, .comment = "Grep rows where column <col> is not equal to <val>." },
+	{ .text = "<col|*>/uniq", .arg_str = NULL, .comment = "Only get the first row where column <col> or all columns are unique." },
+	{ .text = "*/page/<n_page>/<page_size>", .arg_str = NULL, .comment = "Show <page_size> rows starting from the page number <n_page>." },
+	{ .text = "<col>/str/<value>", .arg_str = NULL, .comment = "Grep rows where string <value> is a substring of column <col>." },
+	{ .text = "<col>/strlen/<value>", .arg_str = NULL, .comment = "Grep rows where the length of column <col> is <value>." },
+	{ .text = "<col>/minlen/<value>", .arg_str = NULL, .comment = "Grep rows where the length of column <col> is greater than <value>." },
+	{ .text = "<col>/maxlen/<value>", .arg_str = NULL, .comment = "Grep rows where the length of column <col> is less than <value>." },
+	{ .text = "<col>/sum/<value>", .arg_str = NULL, .comment = "Sum all the values of column <col>." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry specifiers_Output_space_format_space_specifiers_space__oparen__minor_output_spec_greater__cparen__detail_entries[] = {
+	{ .text = "csv", .arg_str = NULL, .comment = "Print the table in CSV format." },
+	{ .text = "json", .arg_str = NULL, .comment = "Print the table in JSON format." },
+	{ .text = "fancy", .arg_str = NULL, .comment = "Print the table in a nice form with borders and headers." },
+	{ .text = "simple", .arg_str = NULL, .comment = "Print the table in a simple form, only with headers." },
+	{ .text = "quiet", .arg_str = NULL, .comment = "Print the table in a simple form, without headers." },
+	{ 0 },
+};
+
+static const RzCmdDescDetailEntry specifiers_Examples_detail_entries[] = {
+	{ .text = "aflt", .arg_str = ":addr/cols/name/nbbs:nbbs/sort/dec:nbbs/gt/1:nbbs/lt/10:fancy", .comment = "Show only the address, name and number of basic blocks of the identified functions with more than 1 block but less than 10, sorted decrementally by number of blocks." },
+	{ 0 },
+};
+static const RzCmdDescDetail specifiers_details[] = {
+	{ .name = "Table format specifiers (<table_spec>)", .entries = specifiers_Table_space_format_space_specifiers_space__oparen__minor_table_spec_greater__cparen__detail_entries },
+	{ .name = "Output format specifiers (<output_spec>)", .entries = specifiers_Output_space_format_space_specifiers_space__oparen__minor_output_spec_greater__cparen__detail_entries },
+	{ .name = "Examples", .entries = specifiers_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp specifiers_help = {
+	.summary = "Command specifiers (table-output only for now)",
+	.usage = "<command>[:<table_spec>[:<table_spec>:...]:<output_spec>]",
+	.options = "[?]",
+	.details = specifiers_details,
+};
+
+RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 	rz_cmd_batch_start(core->rcmd);
 
@@ -3971,45 +4076,45 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "/", rz_cmd_search, &cmd_search_help);
 	rz_warn_if_fail(cmd_search_cd);
 
-	RzCmdDesc *equal__cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "=", rz_remote_handler, &remote_help, &equal__help);
-	rz_warn_if_fail(equal__cd);
-	RzCmdDesc *remote_send_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=<", rz_remote_send_handler, &remote_send_help);
+	RzCmdDesc *R_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "R", rz_remote_handler, &remote_help, &R_help);
+	rz_warn_if_fail(R_cd);
+	RzCmdDesc *remote_send_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "R<", rz_remote_send_handler, &remote_send_help);
 	rz_warn_if_fail(remote_send_cd);
 
-	RzCmdDesc *io_system_run_oldhandler_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=!", rz_io_system_run_oldhandler, &io_system_run_oldhandler_help);
+	RzCmdDesc *io_system_run_oldhandler_cd = rz_cmd_desc_oldinput_new(core->rcmd, R_cd, "R!", rz_io_system_run_oldhandler, &io_system_run_oldhandler_help);
 	rz_warn_if_fail(io_system_run_oldhandler_cd);
 
-	RzCmdDesc *remote_add_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=+", rz_remote_add_handler, &remote_add_help);
+	RzCmdDesc *remote_add_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "R+", rz_remote_add_handler, &remote_add_help);
 	rz_warn_if_fail(remote_add_cd);
 
-	RzCmdDesc *remote_del_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=-", rz_remote_del_handler, &remote_del_help);
+	RzCmdDesc *remote_del_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "R-", rz_remote_del_handler, &remote_del_help);
 	rz_warn_if_fail(remote_del_cd);
 
-	RzCmdDesc *remote_open_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "==", rz_remote_open_handler, &remote_open_help);
+	RzCmdDesc *remote_open_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "R=", rz_remote_open_handler, &remote_open_help);
 	rz_warn_if_fail(remote_open_cd);
 
-	RzCmdDesc *remote_mode_enable_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=!=", rz_remote_mode_enable_handler, &remote_mode_enable_help);
+	RzCmdDesc *remote_mode_enable_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "R!=", rz_remote_mode_enable_handler, &remote_mode_enable_help);
 	rz_warn_if_fail(remote_mode_enable_cd);
 
-	RzCmdDesc *remote_mode_disable_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "!=!", rz_remote_mode_disable_handler, &remote_mode_disable_help);
+	RzCmdDesc *remote_mode_disable_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "R=!", rz_remote_mode_disable_handler, &remote_mode_disable_help);
 	rz_warn_if_fail(remote_mode_disable_cd);
 
-	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=r", rz_remote_rap_handler, &remote_rap_help);
+	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "Rr", rz_remote_rap_handler, &remote_rap_help);
 	rz_warn_if_fail(remote_rap_cd);
 
-	RzCmdDesc *equal_g_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=g", rz_equal_g_handler_old, &equal_g_handler_old_help);
+	RzCmdDesc *equal_g_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, R_cd, "Rg", rz_equal_g_handler_old, &equal_g_handler_old_help);
 	rz_warn_if_fail(equal_g_handler_old_cd);
 
-	RzCmdDesc *equal_h_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=h", rz_equal_h_handler_old, &equal_h_handler_old_help);
+	RzCmdDesc *equal_h_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, R_cd, "Rh", rz_equal_h_handler_old, &equal_h_handler_old_help);
 	rz_warn_if_fail(equal_h_handler_old_cd);
 
-	RzCmdDesc *equal_H_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, equal__cd, "=H", rz_equal_H_handler_old, &equal_H_handler_old_help);
+	RzCmdDesc *equal_H_handler_old_cd = rz_cmd_desc_oldinput_new(core->rcmd, R_cd, "RH", rz_equal_H_handler_old, &equal_H_handler_old_help);
 	rz_warn_if_fail(equal_H_handler_old_cd);
 
-	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=t", rz_remote_tcp_handler, &remote_tcp_help);
+	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "Rt", rz_remote_tcp_handler, &remote_tcp_help);
 	rz_warn_if_fail(remote_tcp_cd);
 
-	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new(core->rcmd, equal__cd, "=&r", rz_remote_rap_bg_handler, &remote_rap_bg_help);
+	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new(core->rcmd, R_cd, "R&r", rz_remote_rap_bg_handler, &remote_rap_bg_help);
 	rz_warn_if_fail(remote_rap_bg_cd);
 
 	RzCmdDesc *cmd_help_search_cd = rz_cmd_desc_argv_modes_new(core->rcmd, root_cd, "?*", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_help_search_handler, &cmd_help_search_help);
@@ -4028,7 +4133,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(cmd_analysis_cd);
 	RzCmdDesc *cmd_analysis_fcn_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_analysis_cd, "af", rz_cmd_analysis_fcn, &cmd_analysis_fcn_help);
 	rz_warn_if_fail(cmd_analysis_fcn_cd);
-	RzCmdDesc *afb_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_analysis_fcn_cd, "afb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_list_handler, &analysis_function_blocks_list_help, &afb_help);
+	RzCmdDesc *afb_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_fcn_cd, "afb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_list_handler, &analysis_function_blocks_list_help, &afb_help);
 	rz_warn_if_fail(afb_cd);
 	RzCmdDesc *analysis_function_blocks_add_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb+", rz_analysis_function_blocks_add_handler, &analysis_function_blocks_add_help);
 	rz_warn_if_fail(analysis_function_blocks_add_cd);
@@ -4048,7 +4153,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_blocks_asciiart_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb=", rz_analysis_function_blocks_asciiart_handler, &analysis_function_blocks_asciiart_help);
 	rz_warn_if_fail(analysis_function_blocks_asciiart_cd);
 
-	RzCmdDesc *analysis_function_blocks_info_cd = rz_cmd_desc_argv_modes_new(core->rcmd, afb_cd, "afbi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_info_handler, &analysis_function_blocks_info_help);
+	RzCmdDesc *analysis_function_blocks_info_cd = rz_cmd_desc_argv_state_new(core->rcmd, afb_cd, "afbi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_blocks_info_handler, &analysis_function_blocks_info_help);
 	rz_warn_if_fail(analysis_function_blocks_info_cd);
 
 	RzCmdDesc *analysis_function_blocks_color_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbc", rz_analysis_function_blocks_color_handler, &analysis_function_blocks_color_help);
@@ -4180,6 +4285,23 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_step_until_flag_cd = rz_cmd_desc_argv_new(core->rcmd, dsu_cd, "dsuf", rz_cmd_debug_step_until_flag_handler, &cmd_debug_step_until_flag_help);
 	rz_warn_if_fail(cmd_debug_step_until_flag_cd);
 
+	RzCmdDesc *dts_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dts", NULL, NULL, &dts_help);
+	rz_warn_if_fail(dts_cd);
+	RzCmdDesc *cmd_debug_start_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dts+", rz_cmd_debug_start_trace_session_handler, &cmd_debug_start_trace_session_help);
+	rz_warn_if_fail(cmd_debug_start_trace_session_cd);
+
+	RzCmdDesc *cmd_debug_stop_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dts-", rz_cmd_debug_stop_trace_session_handler, &cmd_debug_stop_trace_session_help);
+	rz_warn_if_fail(cmd_debug_stop_trace_session_cd);
+
+	RzCmdDesc *cmd_debug_save_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtst", rz_cmd_debug_save_trace_session_handler, &cmd_debug_save_trace_session_help);
+	rz_warn_if_fail(cmd_debug_save_trace_session_cd);
+
+	RzCmdDesc *cmd_debug_load_trace_session_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtsf", rz_cmd_debug_load_trace_session_handler, &cmd_debug_load_trace_session_help);
+	rz_warn_if_fail(cmd_debug_load_trace_session_cd);
+
+	RzCmdDesc *cmd_debug_list_trace_session_mmap_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtsm", rz_cmd_debug_list_trace_session_mmap_handler, &cmd_debug_list_trace_session_mmap_help);
+	rz_warn_if_fail(cmd_debug_list_trace_session_mmap_cd);
+
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);
 	RzCmdDesc *eval_list_cd = rz_cmd_desc_argv_modes_new(core->rcmd, e_cd, "el", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_LONG_JSON, rz_eval_list_handler, &eval_list_help);
@@ -4296,7 +4418,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *seek_blocksize_forward_cd = rz_cmd_desc_argv_new(core->rcmd, s_cd, "s++", rz_seek_blocksize_forward_handler, &seek_blocksize_forward_help);
 	rz_warn_if_fail(seek_blocksize_forward_cd);
 
-	RzCmdDesc *sh_cd = rz_cmd_desc_group_modes_new(core->rcmd, s_cd, "sh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_seek_history_list_handler, &seek_history_list_help, &sh_help);
+	RzCmdDesc *sh_cd = rz_cmd_desc_group_state_new(core->rcmd, s_cd, "sh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_seek_history_list_handler, &seek_history_list_help, &sh_help);
 	rz_warn_if_fail(sh_cd);
 	RzCmdDesc *seek_redo_cd = rz_cmd_desc_argv_new(core->rcmd, sh_cd, "shr", rz_seek_redo_handler, &seek_redo_help);
 	rz_warn_if_fail(seek_redo_cd);
@@ -4679,5 +4801,8 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *grep_cd = rz_cmd_desc_fake_new(core->rcmd, root_cd, "~", &grep_help);
 	rz_warn_if_fail(grep_cd);
+
+	RzCmdDesc *specifiers_cd = rz_cmd_desc_fake_new(core->rcmd, root_cd, ":", &specifiers_help);
+	rz_warn_if_fail(specifiers_cd);
 	rz_cmd_batch_end(core->rcmd);
 }

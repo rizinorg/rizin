@@ -1,9 +1,10 @@
-// SPDX-FileCopyrightText: 2016 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2016 rakholiyajenish.07 <rakholiyajenish.07@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 //Implemented AES version of RC6. keylen = 16, 23, or 32 bytes; w = 32; and r = 20.
 #include <rz_lib.h>
 #include <rz_crypto.h>
+#include <rz_util.h>
 
 #define Pw         0xb7e15163
 #define Qw         0x9e3779b9
@@ -18,33 +19,28 @@ struct rc6_state {
 	int key_size;
 };
 
-static bool flag;
-
-static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, int direction) {
+static bool rc6_init_state(struct rc6_state *const state, const ut8 *key, int keylen) {
 	if (keylen != 128 / 8 && keylen != 192 / 8 && keylen != 256 / 8) {
 		return false;
 	}
 
-	flag = (direction != 0);
-
 	int u = w / 8;
 	int c = keylen / u;
 	int t = 2 * r + 4;
-#ifdef _MSC_VER
-	ut32 *L = (ut32 *)malloc(sizeof(ut32) * c);
-#else
-	ut32 L[c];
-#endif
+
+	ut32 *L = RZ_NEWS(ut32, c);
+	if (!L) {
+		rz_warn_if_reached();
+		return false;
+	}
+
 	ut32 A = 0, B = 0, k = 0, j = 0;
 	ut32 v = 3 * t; //originally v = 2 * ((c > t) ? c : t);
 
-	int i, off;
+	int i;
 
-	for (i = 0, off = 0; i < c; i++) {
-		L[i] = ((key[off++] & 0xff));
-		L[i] |= ((key[off++] & 0xff) << 8);
-		L[i] |= ((key[off++] & 0xff) << 16);
-		L[i] |= ((key[off++] & 0xff) << 24);
+	for (i = 0; i < c; i++) {
+		L[i] = rz_read_at_le32(key, i * 4);
 	}
 
 	(state->S)[0] = Pw;
@@ -60,9 +56,8 @@ static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, 
 	}
 
 	state->key_size = keylen / 8;
-#ifdef _MSC_VER
+
 	free(L);
-#endif
 	return true;
 }
 
@@ -71,12 +66,8 @@ static void rc6_encrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *ou
 	ut32 aux;
 	ut32 data[BLOCK_SIZE / 4];
 	int i;
-	int off = 0;
 	for (i = 0; i < BLOCK_SIZE / 4; i++) {
-		data[i] = ((inbuf[off++] & 0xff));
-		data[i] |= ((inbuf[off++] & 0xff) << 8);
-		data[i] |= ((inbuf[off++] & 0xff) << 16);
-		data[i] |= ((inbuf[off++] & 0xff) << 24);
+		data[i] = rz_read_at_le32(inbuf, i * 4);
 	}
 
 	ut32 A = data[0], B = data[1], C = data[2], D = data[3];
@@ -155,14 +146,20 @@ static void rc6_decrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *ou
 	}
 }
 
-static struct rc6_state st;
-
 static bool rc6_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	return rc6_init(&st, key, keylen, direction);
+	rz_return_val_if_fail(cry->user && key, false);
+	struct rc6_state *st = (struct rc6_state *)cry->user;
+
+	cry->dir = direction;
+
+	return rc6_init_state(st, key, keylen);
 }
 
 static int rc6_get_key_size(RzCrypto *cry) {
-	return st.key_size;
+	rz_return_val_if_fail(cry->user, 0);
+	struct rc6_state *st = (struct rc6_state *)cry->user;
+
+	return st->key_size;
 }
 
 static bool rc6_use(const char *algo) {
@@ -170,6 +167,9 @@ static bool rc6_use(const char *algo) {
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
+	rz_return_val_if_fail(cry->user, false);
+	struct rc6_state *st = (struct rc6_state *)cry->user;
+
 	if (len % BLOCK_SIZE != 0) { //let user handle with with pad.
 		eprintf("Input should be multiple of 128bit.\n");
 		return false;
@@ -183,13 +183,13 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	}
 
 	int i;
-	if (flag) {
+	if (cry->dir == RZ_CRYPTO_DIR_DECRYPT) {
 		for (i = 0; i < blocks; i++) {
-			rc6_decrypt(&st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+			rc6_decrypt(st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 		}
 	} else {
 		for (i = 0; i < blocks; i++) {
-			rc6_encrypt(&st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+			rc6_encrypt(st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 		}
 	}
 
@@ -202,13 +202,31 @@ static bool final(RzCrypto *cry, const ut8 *buf, int len) {
 	return update(cry, buf, len);
 }
 
+static bool rc6_init(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	cry->user = RZ_NEW0(struct rc6_state);
+	return cry->user != NULL;
+}
+
+static bool rc6_fini(RzCrypto *cry) {
+	rz_return_val_if_fail(cry, false);
+
+	free(cry->user);
+	return true;
+}
+
 RzCryptoPlugin rz_crypto_plugin_rc6 = {
 	.name = "rc6",
+	.author = "rakholiyajenish.07",
+	.license = "LGPL-3",
 	.set_key = rc6_set_key,
 	.get_key_size = rc6_get_key_size,
 	.use = rc6_use,
 	.update = update,
-	.final = final
+	.final = final,
+	.init = rc6_init,
+	.fini = rc6_fini,
 };
 
 #ifndef RZ_PLUGIN_INCORE

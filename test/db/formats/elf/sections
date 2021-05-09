@@ -45,16 +45,16 @@ nth paddr        size vaddr       vsize perm name               type       flags
 
 [Segments]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
-0   0x00000040  0x1c0 0x00400040  0x1c0 -r-x PHDR
-1   0x00000200   0x1c 0x00400200   0x1c -r-- INTERP
-2   0x00000000  0x6dc 0x00400000  0x6dc -r-x LOAD0
-3   0x000006e0  0x230 0x006006e0  0x238 -rw- LOAD1
-4   0x000006f8  0x1d0 0x006006f8  0x1d0 -rw- DYNAMIC
-5   0x0000021c   0x44 0x0040021c   0x44 -r-- NOTE
-6   0x000005d0   0x34 0x004005d0   0x34 -r-- GNU_EH_FRAME
-7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK
+nth paddr        size vaddr       vsize perm name         align
+---------------------------------------------------------------
+0   0x00000040  0x1c0 0x00400040  0x1c0 -r-x PHDR         0x8
+1   0x00000200   0x1c 0x00400200   0x1c -r-- INTERP       0x1
+2   0x00000000  0x6dc 0x00400000  0x6dc -r-x LOAD0        0x200000
+3   0x000006e0  0x230 0x006006e0  0x238 -rw- LOAD1        0x200000
+4   0x000006f8  0x1d0 0x006006f8  0x1d0 -rw- DYNAMIC      0x8
+5   0x0000021c   0x44 0x0040021c   0x44 -r-- NOTE         0x4
+6   0x000005d0   0x34 0x004005d0   0x34 -r-- GNU_EH_FRAME 0x4
+7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK    0x10
 8   0x00000000   0x40 0x00400000   0x40 -rw- ehdr
 
 EOF
@@ -73,5 +73,23 @@ FILE=bins/elf/analysis/main_wrong_sect
 CMDS=p8 10 @ section..text
 EXPECT=<<EOF
 ffffffffffffffffffff
+EOF
+RUN
+
+NAME=also map ehdr if ET_REL
+FILE=bins/elf/pngrutil_o
+CMDS=om
+EXPECT=<<EOF
+11 fd: 3 +0x00000034 0x08000034 - 0x080055c7 r-x fmap..text
+10 fd: 3 +0x00007328 0x08007328 - 0x0800852f --x fmap..rel.text
+ 9 fd: 3 +0x000055c8 0x080055c8 - 0x0800642b r-- fmap..rodata
+ 8 fd: 3 +0x00008530 0x08008530 - 0x0800858f --- fmap..rel.rodata
+ 7 fd: 3 +0x0000642c 0x0800642c - 0x08006461 --- fmap..comment
+ 6 fd: 3 +0x00006464 0x08006464 - 0x080068cb r-- fmap..eh_frame
+ 5 fd: 3 +0x00008590 0x08008590 - 0x0800869f --- fmap..rel.eh_frame
+ 4 fd: 3 +0x000086a0 0x080086a0 - 0x08008702 --- fmap..shstrtab
+ 3 fd: 3 +0x000068cc 0x080068cc - 0x08006e5b --- fmap..symtab
+ 2 fd: 3 +0x00006e5c 0x08006e5c - 0x08007325 --- fmap..strtab
+ 1 fd: 3 +0x00000000 0x08000000 - 0x08000033 r-- fmap.ehdr
 EOF
 RUN

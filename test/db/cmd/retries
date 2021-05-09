@@ -1,5 +1,5 @@
 NAME=t/retries
-FILE=-
+FILE==
 CMDS=<<EOF
 b 10
 pd~?

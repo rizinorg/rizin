@@ -318,17 +318,21 @@ static bool is_equal_file_hashes(RzList *lfile_hashes, RzList *rfile_hashes, boo
 	return true;
 }
 
-static int __r_core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
-	int result = 0;
+static bool __r_core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
 	RzCoreFile *cf = rz_core_file_cur(r);
-	if (cf) {
-		RzBinFile *bf = rz_bin_file_find_by_fd(r->bin, cf->fd);
-		if (bf) {
-			result = rz_bin_reload(r->bin, bf->id, baseaddr);
-		}
+	if (!cf) {
+		return false;
 	}
-	rz_core_bin_apply_all_info(r, rz_bin_cur(r->bin));
-	return result;
+	RzBinFile *obf = rz_bin_file_find_by_fd(r->bin, cf->fd);
+	if (!obf) {
+		return false;
+	}
+	RzBinFile *nbf = rz_bin_reload(r->bin, obf, baseaddr);
+	if (!nbf) {
+		return false;
+	}
+	rz_core_bin_apply_all_info(r, nbf);
+	return true;
 }
 
 static bool isKnownPackage(const char *cn) {

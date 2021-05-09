@@ -42,7 +42,6 @@ static RzBufferSparse *sparse_append(RzList *l, ut64 addr, const ut8 *data, ut64
 			if (s->data) {
 				s->from = addr;
 				s->to = addr + len;
-				s->size = len;
 				memcpy(s->data, data, len);
 				return rz_list_append(l, s) ? s : NULL;
 			}
@@ -61,7 +60,8 @@ static st64 sparse_write(RzList *l, ut64 addr, const ut8 *data, ut64 len) {
 	rz_list_foreach (l, iter, s) {
 		if (addr >= s->from && addr < s->to) {
 			ut64 delta = addr - s->from;
-			ut64 reallen = s->size - delta >= len ? len : s->size - delta;
+			ut64 chunksz = s->to - s->from;
+			ut64 reallen = chunksz - delta >= len ? len : chunksz - delta;
 			memcpy(s->data + delta, data, reallen);
 			data += reallen;
 			len -= reallen;
@@ -109,22 +109,13 @@ static bool buf_sparse_resize(RzBuffer *b, ut64 newsize) {
 	rz_list_foreach_safe (priv->sparse, iter, tmp, s) {
 		if (s->from >= newsize) {
 			rz_list_delete(priv->sparse, iter);
-		} else if (s->to >= newsize) {
-			RzBufferSparse *ns = RZ_NEW(RzBufferSparse);
-			ns->from = s->from;
-			ns->to = newsize;
-			ns->size = ns->to - ns->from;
-			ut8 *tmp = realloc(s->data, s->size);
+		} else if (s->to > newsize) {
+			s->to = newsize;
+			ut8 *tmp = realloc(s->data, s->to - s->from);
 			if (!tmp) {
-				free(ns);
 				return false;
 			}
-			// otherwise it will be double-freed by rz_list_delete
-			s->data = NULL;
-			ns->data = tmp;
-			ns->written = s->written;
-			rz_list_append(priv->sparse, ns);
-			rz_list_delete(priv->sparse, iter);
+			s->data = tmp;
 		}
 	}
 	ut64 max;
@@ -155,7 +146,7 @@ static st64 buf_sparse_read(RzBuffer *b, ut8 *buf, ut64 len) {
 		}
 		if (priv->offset < c->to && c->from < priv->offset + len) {
 			if (priv->offset < c->from) {
-				ut64 l = RZ_MIN(priv->offset + len - c->from, c->size);
+				ut64 l = RZ_MIN(priv->offset + len - c->from, c->to - c->from);
 				memcpy(buf + c->from - priv->offset, c->data, l);
 			} else {
 				ut64 l = RZ_MIN(c->to - priv->offset, len);

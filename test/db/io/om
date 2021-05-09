@@ -22,9 +22,9 @@ omt
 ?e
 omtq
 ?e
-omt size
+omt:size
 ?e
-omtq name/str/fmap.LOAD3,size
+omtq:name/str/fmap.LOAD3:size
 EOF
 EXPECT=<<EOF
 .----------------------------------------------------------------------------------------.

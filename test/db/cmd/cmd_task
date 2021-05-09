@@ -1,5 +1,5 @@
 NAME=&
-FILE=-
+FILE==
 CMDS=<<EOF
 & ?e Hello\nfrom\na task!
 && 1
@@ -14,8 +14,8 @@ EOF
 RUN
 
 NAME=& + grep
-ARGS=-e cfg.newshell=true
-FILE=-
+ARGS=-e cfg.oldshell=false
+FILE==
 CMDS=<<EOF
 & "?e Hello\nfrom\na task!~task"
 && 1
@@ -28,7 +28,7 @@ EOF
 RUN
 
 NAME=&j
-FILE=-
+FILE==
 CMDS=<<EOF
 & ?e Hello\nfrom\na task!
 && 1

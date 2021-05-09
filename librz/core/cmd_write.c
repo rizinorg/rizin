@@ -203,13 +203,12 @@ static bool encrypt_or_decrypt_block(RzCore *core, const char *algo, const char 
 			rz_crypto_final(cry, NULL, 0);
 
 			int result_size = 0;
-			ut8 *result = rz_crypto_get_output(cry, &result_size);
+			const ut8 *result = rz_crypto_get_output(cry, &result_size);
 			if (result) {
 				if (!rz_core_write_at(core, core->offset, result, result_size)) {
 					eprintf("rz_core_write_at failed at 0x%08" PFMT64x "\n", core->offset);
 				}
 				eprintf("Written %d byte(s)\n", result_size);
-				free(result);
 			}
 		} else {
 			eprintf("Invalid key\n");
@@ -265,6 +264,32 @@ static void cmd_write_inc(RzCore *core, int size, st64 num) {
 	if (!rz_core_write_at(core, core->offset, core->block, size)) {
 		cmd_write_fail(core);
 	}
+}
+
+static void wo_show_algorithms(char c) {
+	char flags[5] = { 0 };
+
+	eprintf("Usage: wo%c [algo] [key] [IV]\n", c);
+	eprintf(" flags algorithm      license    author\n");
+
+	const RzCryptoPlugin *rcp;
+	for (size_t i = 0; (rcp = rz_crypto_plugin_by_index(i)); i++) {
+		if (!strncmp("base", rcp->name, 4) || !strcmp("punycode", rcp->name)) {
+			snprintf(flags, sizeof(flags), "__ed");
+		} else if (!strcmp("rol", rcp->name)) {
+			snprintf(flags, sizeof(flags), "E___");
+		} else if (!strcmp("ror", rcp->name)) {
+			snprintf(flags, sizeof(flags), "_D__");
+		} else {
+			snprintf(flags, sizeof(flags), "ED__");
+		}
+		eprintf(" %-5s %-14s %-10s %s\n", flags, rcp->name, rcp->license, rcp->author);
+	}
+	eprintf(
+		"\n"
+		"flags legenda:\n"
+		"    E = encryption, D = decryption\n"
+		"    e = encoding, d = encoding\n");
 }
 
 RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
@@ -328,35 +353,10 @@ RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
 		if (algo && *algo && key) {
 			encrypt_or_decrypt_block(core, algo, key, direction, iv);
 		} else {
-			eprintf("Usage: wo%c [algo] [key] [IV]\n", ((!direction) ? 'E' : 'D'));
-			eprintf("Currently supported hashes:\n");
-			ut64 bits;
-			int i;
-			for (i = 0;; i++) {
-				bits = ((ut64)1) << i;
-				const char *name = rz_hash_name(bits);
-				if RZ_STR_ISEMPTY (name) {
-					break;
-				}
-				printf("  %s\n", name);
-			}
-			eprintf("Available Encoders/Decoders: \n");
-			for (i = 0;; i++) {
-				bits = (1ULL) << i;
-				const char *name = rz_crypto_codec_name((const RzCryptoSelector)bits);
-				if (RZ_STR_ISEMPTY(name)) {
-					break;
-				}
-				printf("  %s\n", name);
-			}
-			eprintf("Currently supported crypto algos:\n");
-			for (i = 0;; i++) {
-				bits = (1ULL) << i;
-				const char *name = rz_crypto_name((const RzCryptoSelector)bits);
-				if RZ_STR_ISEMPTY (name) {
-					break;
-				}
-				printf("  %s\n", name);
+			if (input[1] == '?') {
+				wo_show_algorithms(input[0]);
+			} else {
+				eprintf("Usage: wo%c [algo] [key] [IV] (use wo%c? for the algorithms list)\n", input[0], input[0]);
 			}
 		}
 		free(args);

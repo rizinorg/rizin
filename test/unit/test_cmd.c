@@ -558,6 +558,57 @@ bool test_cmd_argv_modes(void) {
 	mu_end;
 }
 
+static RzCmdStatus z_state_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		return !!state->d.pj ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_ERROR;
+}
+
+bool test_cmd_argv_state(void) {
+	RzCmdDescHelp group_help = { 0 };
+	group_help.summary = "group summary";
+
+	RzCmdDescArg z_args[] = { { 0 } };
+	RzCmdDescHelp z_help = { 0 };
+	z_help.summary = "z summary";
+	z_help.args = z_args;
+
+	RzCmd *cmd = rz_cmd_new(false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	RzCmdDesc *z_cd = rz_cmd_desc_group_state_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG_JSON, z_state_handler, &z_help, &group_help);
+
+	mu_assert_ptreq(rz_cmd_get_desc(cmd, "z"), z_cd, "z is found");
+	mu_assert_ptreq(rz_cmd_get_desc(cmd, "zj"), z_cd, "zj is handled by z");
+	mu_assert_ptreq(rz_cmd_get_desc(cmd, "zq"), z_cd, "zq is handled by z");
+	mu_assert_ptreq(rz_cmd_get_desc(cmd, "zJ"), z_cd, "zJ is handled by z");
+	mu_assert_null(rz_cmd_get_desc(cmd, "z*"), "z* was not defined");
+
+	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("?");
+	char *h = rz_cmd_get_help(cmd, pa, false);
+	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
+		      "| z[jqJ] # group summary\n";
+	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the help");
+	free(h);
+	rz_cmd_parsed_args_free(pa);
+
+	pa = rz_cmd_parsed_args_newcmd("z?");
+	h = rz_cmd_get_help(cmd, pa, false);
+	exp_h = "Usage: z[jqJ]   # group summary\n"
+		"| z[jqJ] # z summary\n";
+	mu_assert_streq(h, exp_h, "zj, zJ and zq are considered in the sub help");
+	free(h);
+	rz_cmd_parsed_args_free(pa);
+
+	pa = rz_cmd_parsed_args_new("zj", 0, NULL);
+	RzCmdStatus status = rz_cmd_call_parsed_args(cmd, pa);
+	rz_cmd_parsed_args_free(pa);
+	mu_assert_eq(status, RZ_CMD_STATUS_OK, "json mode was used and pj was initialized");
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
 static RzCmdStatus zd_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
@@ -973,6 +1024,7 @@ int all_tests() {
 	mu_run_test(test_remove_cmd);
 	mu_run_test(test_cmd_args);
 	mu_run_test(test_cmd_argv_modes);
+	mu_run_test(test_cmd_argv_state);
 	mu_run_test(test_cmd_group_argv_modes);
 	mu_run_test(test_foreach_cmdname);
 	mu_run_test(test_foreach_cmdname_begin);

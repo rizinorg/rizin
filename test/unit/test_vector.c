@@ -401,8 +401,6 @@ static bool test_vector_pop(void) {
 	mu_assert_eq(e, 0, "rz_vector_pop (last) into");
 	mu_assert_eq(v.len, 0UL, "rz_vector_pop (last) => len");
 
-	rz_vector_pop(&v, &e);
-
 	rz_vector_clear(&v);
 
 	mu_end;
@@ -591,14 +589,18 @@ static bool test_vector_shrink(void) {
 	mu_assert_eq(a, v.a, "rz_vector_shrink ret");
 	mu_assert_eq(v.len, 5UL, "rz_vector_shrink => len");
 	mu_assert_eq(v.capacity, 5UL, "rz_vector_shrink => capacity");
-	rz_vector_clear(&v);
+	rz_vector_fini(&v);
 
 	init_test_vector(&v, 5, 0, NULL, NULL);
 	a = rz_vector_shrink(&v);
 	mu_assert_eq(a, v.a, "rz_vector_shrink (already minimal) ret");
 	mu_assert_eq(v.len, 5UL, "rz_vector_shrink (already minimal) => len");
 	mu_assert_eq(v.capacity, 5UL, "rz_vector_shrink (already minimal) => capacity");
-	rz_vector_clear(&v);
+	rz_vector_fini(&v);
+
+	init_test_vector(&v, 0, 8, NULL, NULL);
+	rz_vector_shrink(&v);
+	rz_vector_fini(&v);
 
 	mu_end;
 }
@@ -611,6 +613,7 @@ static bool test_vector_flush(void) {
 	for (size_t i = 0; i < 5; i++) {
 		mu_assert_eq(r[i], i, "flushed contents");
 	}
+	free(r);
 	mu_end;
 }
 
@@ -1086,7 +1089,7 @@ static bool test_pvector_foreach(void) {
 	mu_end;
 }
 
-static bool test_pvector_lower_bound(void) {
+static bool test_pvector_bounds(void) {
 	void *a[] = { (void *)0, (void *)2, (void *)4, (void *)6, (void *)8 };
 	RzPVector s;
 	rz_pvector_init(&s, NULL);
@@ -1099,12 +1102,28 @@ static bool test_pvector_lower_bound(void) {
 #define CMP(x, y) ((char *)(x) - (char *)(y))
 	rz_pvector_lower_bound(&s, 4, l, CMP);
 	mu_assert_ptreq(rz_pvector_at(&s, l), (void *)4, "lower_bound");
+	rz_pvector_upper_bound(&s, 4, l, CMP);
+	mu_assert_ptreq(rz_pvector_at(&s, l), (void *)6, "upper_bound");
+
 	rz_pvector_lower_bound(&s, 5, l, CMP);
 	mu_assert_ptreq(rz_pvector_at(&s, l), (void *)6, "lower_bound 2");
+	rz_pvector_upper_bound(&s, 5, l, CMP);
+	mu_assert_ptreq(rz_pvector_at(&s, l), (void *)6, "upper_bound 2");
+
 	rz_pvector_lower_bound(&s, 6, l, CMP);
 	mu_assert_ptreq(rz_pvector_at(&s, l), (void *)6, "lower_bound 3");
+	rz_pvector_upper_bound(&s, 6, l, CMP);
+	mu_assert_ptreq(rz_pvector_at(&s, l), (void *)8, "upper_bound 3");
+
+	rz_pvector_lower_bound(&s, 8, l, CMP);
+	mu_assert_ptreq(rz_pvector_at(&s, l), (void *)8, "lower_bound 4");
+	rz_pvector_upper_bound(&s, 8, l, CMP);
+	mu_assert_eq(l, s.v.len, "upper_bound 4");
+
 	rz_pvector_lower_bound(&s, 9, l, CMP);
-	mu_assert_eq(l, s.v.len, "lower_bound 3");
+	mu_assert_eq(l, s.v.len, "lower_bound 4");
+	rz_pvector_upper_bound(&s, 9, l, CMP);
+	mu_assert_eq(l, s.v.len, "lower_bound 4");
 #undef CMP
 
 	rz_pvector_clear(&s);
@@ -1112,7 +1131,60 @@ static bool test_pvector_lower_bound(void) {
 	mu_end;
 }
 
+static size_t lower_bound_slow(st64 *a, size_t count, st64 v) {
+	size_t i;
+	for (i = 0; i < count; i++) {
+		if (a[i] >= v) {
+			break;
+		}
+	}
+	return i;
+}
+
+static size_t upper_bound_slow(st64 *a, size_t count, st64 v) {
+	size_t i;
+	for (i = 0; i < count; i++) {
+		if (a[i] > v) {
+			break;
+		}
+	}
+	return i;
+}
+
+static bool test_array_bounds_fuzz(void) {
+#define COUNT_MIN  4
+#define COUNT_MAX  256
+#define PADDING    32
+#define STEP_MIN   0
+#define STEP_MAX   8
+#define FUZZ_COUNT 512
+#define CMP(x, y)  (x - y)
+	for (size_t i = 0; i < FUZZ_COUNT; i++) {
+		size_t count = (rand() % (COUNT_MAX - COUNT_MIN)) + COUNT_MIN;
+		st64 *a = RZ_NEWS(st64, count);
+		for (size_t j = 0; j < count; j++) {
+			a[j] = (j ? a[j - 1] : rand() % PADDING) + (rand() % (STEP_MAX - STEP_MIN)) + STEP_MIN;
+		}
+		st64 v = rand() % (a[count - 1] + PADDING);
+
+		size_t index_expect = lower_bound_slow(a, count, v);
+		size_t index_actual;
+		rz_array_lower_bound(a, count, v, index_actual, CMP);
+		mu_assert_eq(index_actual, index_expect, "lower bound");
+
+		index_expect = upper_bound_slow(a, count, v);
+		rz_array_upper_bound(a, count, v, index_actual, CMP);
+		mu_assert_eq(index_actual, index_expect, "upper bound");
+
+		free(a);
+	}
+	mu_end;
+}
+
 static int all_tests(void) {
+	time_t seed = time(0);
+	printf("Gillian Seed: %llu\n", (unsigned long long)seed);
+	srand(seed);
 	mu_run_test(test_vector_init);
 	mu_run_test(test_vector_new);
 	mu_run_test(test_vector_fini);
@@ -1149,7 +1221,9 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_push_front);
 	mu_run_test(test_pvector_sort);
 	mu_run_test(test_pvector_foreach);
-	mu_run_test(test_pvector_lower_bound);
+	mu_run_test(test_pvector_bounds);
+
+	mu_run_test(test_array_bounds_fuzz);
 
 	return tests_passed != tests_run;
 }

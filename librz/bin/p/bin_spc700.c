@@ -62,7 +62,6 @@ static RzList *sections(RzBinFile *bf) {
 	ptr->vaddr = 0x0;
 	ptr->vsize = RAM_SIZE;
 	ptr->perm = RZ_PERM_R;
-	ptr->add = true;
 	rz_list_append(ret, ptr);
 	return ret;
 }
@@ -87,6 +86,7 @@ RzBinPlugin rz_bin_plugin_spc700 = {
 	.load_buffer = &load_buffer,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info,
 };

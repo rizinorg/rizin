@@ -10,6 +10,7 @@
 typedef struct rz_bin_t RzBin;
 typedef struct rz_bin_file_t RzBinFile;
 typedef struct rz_bin_source_line_info_t RzBinSourceLineInfo;
+typedef struct rz_bin_reloc_storage_t RzBinRelocStorage;
 
 #include <rz_bin_dwarf.h>
 #include <rz_pdb.h>
@@ -168,12 +169,12 @@ enum {
 	RZ_BIN_CLASS_PROTECTED,
 };
 
-enum {
+typedef enum {
 	RZ_BIN_RELOC_8 = 8,
 	RZ_BIN_RELOC_16 = 16,
 	RZ_BIN_RELOC_32 = 32,
 	RZ_BIN_RELOC_64 = 64
-};
+} RzBinRelocType;
 
 enum {
 	RZ_BIN_TYPE_DEFAULT = 0,
@@ -249,6 +250,7 @@ typedef struct rz_bin_object_t {
 	ut64 boffset;
 	ut64 size;
 	ut64 obj_size;
+	RzList /*<RzBinMap>*/ *maps;
 	RzList /*<RzBinSection>*/ *sections;
 	RzList /*<RzBinImport>*/ *imports;
 	RzList /*<RzBinSymbol>*/ *symbols;
@@ -260,7 +262,7 @@ typedef struct rz_bin_object_t {
 	RzList /*<??>*/ *entries;
 	RzList /*<??>*/ *fields;
 	RzList /*<??>*/ *libs;
-	RBNode /*<RzBinReloc>*/ *relocs;
+	RzBinRelocStorage *relocs;
 	RzList /*<??>*/ *strings;
 	RzList /*<RzBinClass>*/ *classes;
 	HtPP *classes_ht;
@@ -273,7 +275,7 @@ typedef struct rz_bin_object_t {
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
 	int lang;
-	Sdb *kv;
+	RZ_DEPRECATE Sdb *kv; ///< deprecated, put info in C structures instead of this
 	HtUP *addrzklassmethod;
 	void *bin_obj; // internal pointer used by formats
 } RzBinObject;
@@ -282,7 +284,7 @@ typedef struct rz_bin_object_t {
 /// XX curplugin == o->plugin
 struct rz_bin_file_t {
 	char *file;
-	int fd;
+	int fd; ///< when used in combination with RzIO, this refers to the io fd.
 	int size;
 	int rawstr;
 	int strmode;
@@ -299,8 +301,8 @@ struct rz_bin_file_t {
 	struct rz_bin_xtr_plugin_t *curxtr;
 	// struct rz_bin_plugin_t *curplugin; // use o->plugin
 	RzList *xtr_data;
-	Sdb *sdb;
-	Sdb *sdb_info;
+	RZ_DEPRECATE Sdb *sdb; ///< deprecated, put info in C structures instead of this
+	RZ_DEPRECATE Sdb *sdb_info; ///< deprecated, put info in C structures instead of this
 	struct rz_bin_t *rbin;
 }; // RzBinFile
 
@@ -315,16 +317,17 @@ typedef struct rz_bin_file_options_t {
 
 struct rz_bin_t {
 	const char *file;
-	RzBinFile *cur; // TODO: deprecate
+	RZ_DEPRECATE RzBinFile *cur; ///< never use this in new code! Get a file from the binfiles list or track it yourself.
 	int narch;
 	void *user;
+	RzEvent *event;
 	/* preconfigured values */
 	int debase64;
 	int minstrlen;
 	int maxstrlen; //< <= 0 means no limit
 	ut64 maxstrbuf;
 	int rawstr;
-	Sdb *sdb;
+	RZ_DEPRECATE Sdb *sdb;
 	RzIDStorage *ids;
 	RzList /*<RzBinPlugin>*/ *plugins;
 	RzList /*<RzBinXtrPlugin>*/ *binxtrs;
@@ -510,14 +513,15 @@ typedef struct rz_bin_plugin_t {
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	Sdb *(*get_sdb)(RzBinFile *obj);
+	RZ_DEPRECATE Sdb *(*get_sdb)(RzBinFile *obj); ///< deprecated, put info in C structures instead of this
 	bool (*load_buffer)(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb);
-	ut64 (*size)(RzBinFile *bin); // return ut64 maybe? meh
+	ut64 (*size)(RzBinFile *bin);
 	void (*destroy)(RzBinFile *bf);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
 	bool (*check_buffer)(RzBuffer *buf);
 	ut64 (*baddr)(RzBinFile *bf);
 	ut64 (*boffset)(RzBinFile *bf);
+	RzList /*<RzBinMap>*/ *(*maps)(RzBinFile *bf);
 	RzBinAddr *(*binsym)(RzBinFile *bf, RzBinSpecialSymbol num);
 	RzList /*<RzBinAddr>*/ *(*entries)(RzBinFile *bf);
 	RzList /*<RzBinSection>*/ *(*sections)(RzBinFile *bf);
@@ -556,6 +560,16 @@ typedef struct rz_bin_plugin_t {
 
 typedef void (*RzBinSymbollCallback)(RzBinObject *obj, void *symbol);
 
+/// Description of a single memory mapping into virtual memory from a binary
+typedef struct rz_bin_map_t {
+	ut64 paddr; ///< address of the map inside the file
+	ut64 psize; ///< size of the data inside the file
+	ut64 vaddr; ///< address in the destination address space to map to
+	ut64 vsize; ///< size to map in the destination address space. If vsize > psize, excessive bytes are meant to be filled with 0
+	RZ_NULLABLE char *name;
+	ut32 perm;
+} RzBinMap;
+
 typedef struct rz_bin_section_t {
 	char *name;
 	ut64 size;
@@ -563,6 +577,7 @@ typedef struct rz_bin_section_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 perm;
+	ut64 align;
 	// per section platform info
 	const char *arch;
 	ut64 type;
@@ -570,10 +585,8 @@ typedef struct rz_bin_section_t {
 	char *format;
 	int bits;
 	bool has_strings;
-	bool add; // indicates when you want to add the section to io `S` command
 	bool is_data;
 	bool is_segment;
-	char *map_name; ///< name for the io map, only temporary while old RzBinMap has been removed and new does not exist yet
 } RzBinSection;
 
 typedef struct rz_bin_class_t {
@@ -640,22 +653,43 @@ typedef struct rz_bin_import_t {
 } RzBinImport;
 
 typedef struct rz_bin_reloc_t {
-	ut8 type;
-	ut8 additive;
+	RzBinRelocType type;
 	RzBinSymbol *symbol;
 	RzBinImport *import;
 	st64 addend;
-	ut64 vaddr;
-	ut64 paddr;
+	ut64 vaddr; ///< the vaddr where the value should be patched into
+	ut64 paddr; ///< the paddr where the value should be patched into
+	ut64 target_vaddr; ///< the target address that the patched reloc points to
 	ut32 visibility;
+	bool additive;
 	/* is_ifunc: indirect function, `addend` points to a resolver function
 	 * that returns the actual relocation value, e.g. chooses
 	 * an optimized version depending on the CPU.
 	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
 	 */
 	bool is_ifunc;
-	RBNode vrb;
 } RzBinReloc;
+
+RZ_API ut64 rz_bin_reloc_size(RzBinReloc *reloc);
+
+/// Efficient storage of relocations to query by address
+struct rz_bin_reloc_storage_t {
+	RzBinReloc **relocs; ///< all relocs, ordered by their vaddr
+	size_t relocs_count;
+	RzBinReloc **target_relocs; ///< all relocs that have a valid target_vaddr, ordered by their target_vaddr. size is target_relocs_count!
+	size_t target_relocs_count;
+}; // RzBinRelocStorage
+
+RZ_API RzBinRelocStorage *rz_bin_reloc_storage_new(RZ_OWN RzList *relocs);
+RZ_API void rz_bin_reloc_storage_free(RzBinRelocStorage *storage);
+RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_in(RzBinRelocStorage *storage, ut64 vaddr, ut64 size);
+
+/// return true iff there is at least one reloc in the storage with a target address
+static inline bool rz_bin_reloc_storage_targets_available(RzBinRelocStorage *storage) {
+	return storage->target_relocs_count != 0;
+}
+
+RZ_API RzBinReloc *rz_bin_reloc_storage_get_reloc_to(RzBinRelocStorage *storage, ut64 vaddr);
 
 typedef struct rz_bin_string_t {
 	// TODO: rename string->name (avoid colisions)
@@ -693,14 +727,6 @@ typedef struct rz_bin_mem_t {
 	RzList /*<RzBinMem>*/ *mirrors; //for mirror access; stuff here should only create new maps not new fds
 } RzBinMem;
 
-typedef struct rz_bin_map_t {
-	ut64 addr;
-	ut64 offset;
-	int size;
-	int perms;
-	char *file;
-} RzBinMap;
-
 typedef struct rz_bin_write_t {
 	ut64 (*scn_resize)(RzBinFile *bf, const char *name, ut64 size);
 	bool (*scn_perms)(RzBinFile *bf, const char *name, int perms);
@@ -728,11 +754,20 @@ typedef struct rz_bin_bind_t {
 	ut32 visibility;
 } RzBinBind;
 
+RZ_API void rz_bin_map_free(RzBinMap *map);
+RZ_API RzList *rz_bin_maps_of_file_sections(RzBinFile *binfile);
+RZ_API RzList *rz_bin_sections_of_maps(RzList /*<RzBinMap>*/ *maps);
 RZ_IPI RzBinSection *rz_bin_section_new(const char *name);
 RZ_IPI void rz_bin_section_free(RzBinSection *bs);
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type);
+RZ_API RZ_OWN RzList *rz_bin_section_flag_to_list(RzBin *bin, ut64 flag);
 RZ_API void rz_bin_info_free(RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RzBinImport *imp);
 RZ_API void rz_bin_symbol_free(RzBinSymbol *sym);
+static inline bool rz_bin_reloc_has_target(RzBinReloc *reloc) {
+	return reloc->target_vaddr && reloc->target_vaddr != UT64_MAX;
+}
+RZ_API void rz_bin_reloc_free(RzBinReloc *reloc);
 RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr);
 RZ_API void rz_bin_string_free(void *_str);
 
@@ -749,6 +784,10 @@ typedef struct rz_bin_options_t {
 	const char *filename;
 } RzBinOptions;
 
+typedef struct rz_event_bin_file_del_t {
+	RzBinFile *bf;
+} RzEventBinFileDel;
+
 RZ_API RzBinImport *rz_bin_import_clone(RzBinImport *o);
 RZ_API const char *rz_bin_symbol_name(RzBinSymbol *s);
 typedef void (*RzBinSymbolCallback)(RzBinObject *obj, RzBinSymbol *symbol);
@@ -760,14 +799,14 @@ RZ_API void rz_bin_arch_options_init(RzBinArchOptions *opt, const char *arch, in
 // open/close/reload functions
 RZ_API RzBin *rz_bin_new(void);
 RZ_API void rz_bin_free(RzBin *bin);
-RZ_API bool rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt);
-RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt);
-RZ_API bool rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt);
-RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr);
+RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt);
+RZ_API RzBinFile *rz_bin_open_io(RzBin *bin, RzBinOptions *opt);
+RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt);
+RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr);
 
 // plugins/bind functions
 RZ_API void rz_bin_bind(RzBin *b, RzBinBind *bnd);
-RZ_API bool rz_bin_add(RzBin *bin, RzBinPlugin *foo);
+RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo);
 RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo);
 RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo);
 RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format);
@@ -792,8 +831,6 @@ RZ_API RZ_DEPRECATE RzList *rz_bin_get_entries(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_fields(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_imports(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_libs(RzBin *bin);
-RZ_API RZ_DEPRECATE RBNode *rz_bin_get_relocs(RzBin *bin);
-RZ_API RZ_DEPRECATE RzList *rz_bin_get_relocs_list(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_sections(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_classes(RzBin *bin);
 RZ_API RZ_DEPRECATE RzList *rz_bin_get_strings(RzBin *bin);
@@ -821,10 +858,6 @@ RZ_API const char *rz_bin_entry_type_string(int etype);
 
 RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, ut64 baseaddr, ut64 loadaddr, RzBinXtrData *data);
 
-// RzBinFile lifecycle
-// RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr);
-RZ_API bool rz_bin_file_close(RzBin *bin, int bd);
-RZ_API void rz_bin_file_free(void /*RzBinFile*/ *bf_);
 // RzBinFile.get
 RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 addr);
 RZ_API RzBinFile *rz_bin_file_find_by_object_id(RzBin *bin, ut32 binobj_id);
@@ -843,12 +876,11 @@ RZ_API RzBinFile *rz_bin_file_find_by_name(RzBin *bin, const char *name);
 
 RZ_API bool rz_bin_file_set_cur_binfile(RzBin *bin, RzBinFile *bf);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
-RZ_API bool rz_bin_file_deref(RzBin *bin, RzBinFile *a);
 RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd);
 RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id);
 RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name);
 RZ_API ut64 rz_bin_file_delete_all(RzBin *bin);
-RZ_API bool rz_bin_file_delete(RzBin *bin, ut32 bin_id);
+RZ_API bool rz_bin_file_delete(RzBin *bin, RzBinFile *bf);
 RZ_API RzList *rz_bin_file_compute_hashes(RzBin *bin, ut64 limit);
 RZ_API RzList *rz_bin_file_set_hashes(RzBin *bin, RzList *new_hashes);
 RZ_API RzBinPlugin *rz_bin_file_cur_plugin(RzBinFile *binfile);
@@ -860,7 +892,7 @@ RZ_API bool rz_bin_object_delete(RzBin *bin, ut32 binfile_id);
 RZ_API ut64 rz_bin_object_addr_with_base(RzBinObject *o, ut64 addr);
 RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr);
 RZ_API RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym);
-RZ_API RBNode *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
+RZ_API RzBinRelocStorage *rz_bin_object_patch_relocs(RzBinFile *bf, RzBinObject *o);
 RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImport *imp);
 RZ_API void rz_bin_mem_free(void *data);
 

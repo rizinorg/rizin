@@ -150,7 +150,7 @@ RZ_API int rz_main_rz_agent(int argc, const char **argv) {
 					perror("malloc");
 					return 1;
 				}
-				snprintf(cmd, cmd_len, "rizin -q %s-e http.port=%d -c=h \"%s\"",
+				snprintf(cmd, cmd_len, "rizin -q %s-e http.port=%d -cRh \"%s\"",
 					listenlocal ? "" : "-e http.bind=public ",
 					session_port, escaped_filename);
 

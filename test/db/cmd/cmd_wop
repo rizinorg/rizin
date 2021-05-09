@@ -1,5 +1,5 @@
 NAME=debruijn little endian
-FILE=-
+FILE==
 CMDS=<<EOF
 e cfg.bigendian=false
 wopO 0x41574141
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=debruijn big endian
-FILE=-
+FILE==
 CMDS=<<EOF
 e cfg.bigendian=true
 wopO 0x41574141
@@ -21,7 +21,7 @@ EOF
 RUN
 
 NAME=wopD 0x10 @ 0
-FILE=-
+FILE==
 CMDS=<<EOF
 wopD 0x10 @ 0
 p8 0x10
@@ -32,7 +32,7 @@ EOF
 RUN
 
 NAME=wopD* 0x10
-FILE=-
+FILE==
 CMDS=wopD* 0x10
 EXPECT=<<EOF
 wx 41414142414143414144414145414146
@@ -40,7 +40,7 @@ EOF
 RUN
 
 NAME=wopO 0x41417641
-FILE=-
+FILE==
 CMDS=wopO 0x41417641
 EXPECT=<<EOF
 140
@@ -48,14 +48,14 @@ EOF
 RUN
 
 NAME=wopO 41417641
-FILE=-
+FILE==
 CMDS=wopO 41417641
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=woE woD rc4
-FILE=-
+FILE==
 CMDS=<<EOF
 w helloworld
 woE rc4 s:key
@@ -68,7 +68,7 @@ EOF
 RUN
 
 NAME=woE woD xor
-FILE=-
+FILE==
 CMDS=<<EOF
 w helloworld
 woE xor s:key
@@ -81,7 +81,7 @@ EOF
 RUN
 
 NAME=woE woD xor fix value
-FILE=-
+FILE==
 CMDS=<<EOF
 b 20
 woE xor s:helloworld
@@ -93,7 +93,7 @@ EOF
 RUN
 
 NAME=woE woD blowfish
-FILE=-
+FILE==
 CMDS=<<EOF
 w helloworld
 woE blowfish s:key
@@ -106,7 +106,7 @@ EOF
 RUN
 
 NAME=woE woD aes-ecb
-FILE=-
+FILE==
 CMDS=<<EOF
 w helloworld
 woE aes-ecb s:0123456789abcdef
@@ -119,7 +119,7 @@ EOF
 RUN
 
 NAME=woE aes-ecb-192
-FILE=-
+FILE==
 CMDS=<<EOF
 w0 16
 b 16

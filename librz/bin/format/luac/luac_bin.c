@@ -12,7 +12,6 @@ void luac_add_section(RzList *section_list, char *name, ut64 offset, ut32 size, 
 	bin_sec->name = rz_str_new(name);
 	bin_sec->vaddr = bin_sec->paddr = offset;
 	bin_sec->size = bin_sec->vsize = size;
-	bin_sec->add = true;
 	bin_sec->is_data = false;
 	bin_sec->bits = is_func ? sizeof(LUA_INSTRUCTION) * 8 : 8;
 	// bin_sec->has_strings = !is_func;

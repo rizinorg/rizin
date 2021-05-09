@@ -780,18 +780,18 @@ static bool is_repeatable_inst(RzCore *core, ut64 addr) {
 	return ret;
 }
 
-static int step_until_inst(RzCore *core, const char *instr, bool regex) {
+static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
+	rz_return_val_if_fail(core, false);
+	instr = rz_str_trim_head_ro(instr);
+	if (!instr || !core->dbg) {
+		eprintf("Wrong debugger state\n");
+		return false;
+	}
 	RzAsmOp asmop;
 	ut8 buf[32];
 	ut64 pc;
 	int ret;
 	bool is_x86 = rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86");
-
-	instr = rz_str_trim_head_ro(instr);
-	if (!core || !instr || !core->dbg) {
-		eprintf("Wrong state\n");
-		return false;
-	}
 	rz_cons_break_push(NULL, NULL);
 	for (;;) {
 		if (rz_cons_is_breaked()) {
@@ -1421,7 +1421,8 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	opt.sz = rz_io_fd_size(core->io, fd);
 	opt.baseaddr = baseaddr;
 	RzBinFile *obf = rz_bin_cur(core->bin);
-	if (!rz_bin_open_io(core->bin, &opt)) {
+	RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
+	if (!bf) {
 		rz_io_fd_close(core->io, fd);
 		return false;
 	}
@@ -1436,8 +1437,7 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	} else {
 		rz_core_bin_info(core, action, pj, mode, 1, filter, NULL);
 	}
-	RzBinFile *bf = rz_bin_cur(core->bin);
-	rz_bin_file_delete(core->bin, bf->id);
+	rz_bin_file_delete(core->bin, bf);
 	rz_bin_file_set_cur_binfile(core->bin, obf);
 	rz_io_fd_close(core->io, fd);
 	return true;
@@ -4230,13 +4230,17 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc, const char **argv) {
-	step_until_inst(core, argv[1], false);
+	if (!step_until_inst(core, argv[1], false)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int argc, const char **argv) {
-	step_until_inst(core, argv[1], true);
+	if (!step_until_inst(core, argv[1], true)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
@@ -4258,6 +4262,56 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_esil_handler(RzCore *core, int argc, 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, const char **argv) {
 	step_until_flag(core, argv[1]);
 	dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_start_trace_session_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		eprintf("Cannot start session outside of debug mode, run ood?\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (core->dbg->session) {
+		eprintf("Session already started\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	core->dbg->session = rz_debug_session_new();
+	rz_debug_add_checkpoint(core->dbg);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_stop_trace_session_handler(RzCore *core, int argc, const char **argv) {
+	if (!core->dbg->session) {
+		eprintf("No session started\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_debug_session_free(core->dbg->session);
+	core->dbg->session = NULL;
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_save_trace_session_handler(RzCore *core, int argc, const char **argv) {
+	if (!core->dbg->session) {
+		eprintf("No session started\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_debug_session_save(core->dbg->session, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_load_trace_session_handler(RzCore *core, int argc, const char **argv) {
+	if (core->dbg->session) {
+		rz_debug_session_free(core->dbg->session);
+		core->dbg->session = NULL;
+	}
+	core->dbg->session = rz_debug_session_new();
+	rz_debug_session_load(core->dbg, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_list_trace_session_mmap_handler(RzCore *core, int argc, const char **argv) {
+	if (core->dbg->session) {
+		rz_debug_session_list_memory(core->dbg);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

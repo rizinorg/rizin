@@ -75,7 +75,10 @@ RzList *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 	if (!bin) {
 		return NULL;
 	}
-	RzList *segments = rz_list_newf(free);
+	RzList *segments = rz_list_newf((RzListFree)rz_bin_section_free);
+	if (!segments) {
+		return NULL;
+	}
 	for (i = 0; i < bin->ne_header->SegCount; i++) {
 		RzBinSection *bs = RZ_NEW0(RzBinSection);
 		NE_image_segment_entry *se = &bin->segment_entries[i];
@@ -432,6 +435,7 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		return NULL;
 	}
 
+	ut64 bufsz = rz_buf_size(bin->buf);
 	RzListIter *it;
 	RzBinSection *seg;
 	int index = -1;
@@ -441,12 +445,15 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 			continue;
 		}
 		ut32 off, start = off = seg->paddr + seg->size;
+		if ((ut64)off + 2 > bufsz) {
+			continue;
+		}
 		ut16 length = rz_buf_read_le16_at(bin->buf, off);
 		if (!length) {
 			continue;
 		}
 		off += 2;
-		while (off < start + length * sizeof(NE_image_reloc_item)) {
+		while (off < start + length * sizeof(NE_image_reloc_item) && off + sizeof(NE_image_reloc_item) <= bufsz) {
 			RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
 			if (!reloc) {
 				return NULL;

@@ -81,7 +81,8 @@ RZ_API bool rz_io_map_remap_fd(RzIO *io, int fd, ut64 addr) {
 	return retval;
 }
 
-static void _map_free(void *p) {
+/// Free-only. Be careful to only call this after sending RZ_EVENT_IO_MAP_DEL! (map_del does this)
+static void map_free(void *p) {
 	RzIOMap *map = (RzIOMap *)p;
 	if (map) {
 		free(map->name);
@@ -89,9 +90,18 @@ static void _map_free(void *p) {
 	}
 }
 
+/// Free the map, also sending the appropriate event.
+static void map_del(RzIO *io, RzIOMap *map) {
+	rz_return_if_fail(io && map);
+	RzEventIOMapDel ev = { map };
+	rz_event_send(io->event, RZ_EVENT_IO_MAP_DEL, &ev);
+	rz_id_pool_kick_id(io->map_ids, map->id);
+	map_free(map);
+}
+
 RZ_API void rz_io_map_init(RzIO *io) {
 	rz_return_if_fail(io);
-	rz_pvector_init(&io->maps, _map_free);
+	rz_pvector_init(&io->maps, map_free);
 	if (io->map_ids) {
 		rz_id_pool_free(io->map_ids);
 	}
@@ -175,6 +185,12 @@ RZ_API bool rz_io_map_is_mapped(RzIO *io, ut64 addr) {
 }
 
 RZ_API void rz_io_map_reset(RzIO *io) {
+	void **it;
+	rz_pvector_foreach (&io->maps, it) {
+		RzIOMap *map = *it;
+		RzEventIOMapDel ev = { map };
+		rz_event_send(io->event, RZ_EVENT_IO_MAP_DEL, &ev);
+	}
 	rz_io_map_fini(io);
 	rz_io_map_init(io);
 	io_map_calculate_skyline(io);
@@ -187,8 +203,7 @@ RZ_API bool rz_io_map_del(RzIO *io, ut32 id) {
 		RzIOMap *map = rz_pvector_at(&io->maps, i);
 		if (map->id == id) {
 			rz_pvector_remove_at(&io->maps, i);
-			_map_free(map);
-			rz_id_pool_kick_id(io->map_ids, id);
+			map_del(io, map);
 			io_map_calculate_skyline(io);
 			return true;
 		}
@@ -206,10 +221,8 @@ RZ_API bool rz_io_map_del_for_fd(RzIO *io, int fd) {
 		if (!map) {
 			rz_pvector_remove_at(&io->maps, i);
 		} else if (map->fd == fd) {
-			rz_id_pool_kick_id(io->map_ids, map->id);
-			//delete iter and map
 			rz_pvector_remove_at(&io->maps, i);
-			_map_free(map);
+			map_del(io, map);
 			ret = true;
 		} else {
 			i++;
@@ -297,9 +310,8 @@ RZ_API void rz_io_map_cleanup(RzIO *io) {
 			del = true;
 		} else if (!rz_io_desc_get(io, map->fd)) {
 			//delete map and iter if no desc exists for map->fd in io->files
-			rz_id_pool_kick_id(io->map_ids, map->id);
 			map = rz_pvector_remove_at(&io->maps, i);
-			_map_free(map);
+			map_del(io, map);
 			del = true;
 		} else {
 			i++;
@@ -416,4 +428,14 @@ RZ_API ut64 rz_io_map_location(RzIO *io, ut64 size) {
 		base += 0x200000;
 	}
 	return base;
+}
+
+/**
+ * \brief Returns the pointer to vector containing maps list
+ *
+ * \param io RzIO instance
+ */
+RZ_API RZ_BORROW RzPVector *rz_io_maps(RzIO *io) {
+	rz_return_val_if_fail(io, NULL);
+	return &io->maps;
 }

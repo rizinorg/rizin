@@ -2112,17 +2112,17 @@ static bool cb_scrhtml(void *user, void *data) {
 	return true;
 }
 
-static bool cb_newshell(void *user, void *data) {
+static bool cb_oldshell(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
-	core->use_tree_sitter_rzcmd = node->i_value;
+	core->use_tree_sitter_rzcmd = !node->i_value;
 	return true;
 }
 
-static bool cb_newshell_autocompletion(void *user, void *data) {
+static bool cb_oldshell_autocompletion(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
-	core->use_newshell_autocompletion = node->i_value;
+	core->use_rzshell_autocompletion = !node->i_value;
 	return true;
 }
 
@@ -2975,7 +2975,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("dbg.glibc.ma_offset", 0x1bb000, "Main_arena offset from his symbol");
 	SETI("dbg.glibc.fc_offset", 0x148, "First chunk offset from brk_start");
 #endif
-	SETBPREF("dbg.glibc.demangle", "false", "Demangle linked-lists pointers introduced in glibc 2.32");
+	SETI("dbg.glibc.fastbinmax", 10, "Upper bound on the number of fastbins printed");
 
 	SETBPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
@@ -3220,9 +3220,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("cfg.seek.silent", "false", NULL, "When true, seek movements are not logged in seek history");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	p = rz_sys_getenv("RZ_CFG_OLDSHELL");
-	SETCB("cfg.newshell", p ? "false" : "true", &cb_newshell, "Use new commands parser");
+	SETCB("cfg.oldshell", p ? "true" : "false", &cb_oldshell, "Use old radare2 parser");
 	free(p);
-	SETCB("cfg.newshell.autocompletion", "false", &cb_newshell_autocompletion, "Use autocompletion based on newshell data");
+	SETCB("cfg.oldshell.autocompletion", "true", &cb_oldshell_autocompletion, "Use old radare2 autocompletion");
 	SETI("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */

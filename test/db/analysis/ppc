@@ -530,7 +530,7 @@ EOF
 RUN
 
 NAME=aoj f0ff2194
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=ppc
 e asm.bits=64

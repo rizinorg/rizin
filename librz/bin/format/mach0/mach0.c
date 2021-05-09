@@ -6,7 +6,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include "mach0.h"
-#include <rz_hash.h>
+#include <rz_msg_digest.h>
 
 // TODO: deprecate bprintf and use Eprintf (bin->self)
 #define bprintf \
@@ -747,44 +747,42 @@ static void parseCodeDirectory(RzBuffer *b, int offset, int datasize) {
 	free(identity);
 	free(teamId);
 
-	int hashSize = 20; // SHA1 is default
-	int algoType = RZ_HASH_SHA1;
-	const char *hashName = "sha1";
+	const char *digest_algo = "sha1";
 	switch (cscd.hashType) {
 	case 0: // SHA1 == 20 bytes
 	case 1: // SHA1 == 20 bytes
-		hashSize = 20;
-		hashName = "sha1";
-		algoType = RZ_HASH_SHA1;
+		digest_algo = "sha1";
 		break;
 	case 2: // SHA256 == 32 bytes
-		hashSize = 32;
-		algoType = RZ_HASH_SHA256;
-		hashName = "sha256";
+		digest_algo = "sha256";
 		break;
 	}
+
 	// computed cdhash
-	RzHash *ctx = rz_hash_new(true, algoType);
+	RzMsgDigestSize digest_size = 0;
+	ut8 *digest = NULL;
+
 	int fofsz = cscd.length;
 	ut8 *fofbuf = calloc(fofsz, 1);
 	if (fofbuf) {
 		int i;
 		if (rz_buf_read_at(b, off, fofbuf, fofsz) != fofsz) {
 			eprintf("Invalid cdhash offset/length values\n");
+			goto parseCodeDirectory_end;
 		}
-		rz_hash_do_begin(ctx, algoType);
-		if (algoType == RZ_HASH_SHA1) {
-			rz_hash_do_sha1(ctx, fofbuf, fofsz);
-		} else {
-			rz_hash_do_sha256(ctx, fofbuf, fofsz);
+
+		digest = rz_msg_digest_calculate_small_block(digest_algo, fofbuf, fofsz, &digest_size);
+		if (!digest) {
+			goto parseCodeDirectory_end;
 		}
-		rz_hash_do_end(ctx, algoType);
-		eprintf("ph %s @ 0x%" PFMT64x "!%d\n", hashName, off, fofsz);
+
+		eprintf("ph %s @ 0x%" PFMT64x "!%d\n", digest_algo, off, fofsz);
 		eprintf("ComputedCDHash: ");
-		for (i = 0; i < hashSize; i++) {
-			eprintf("%02x", ctx->digest[i]);
+		for (i = 0; i < digest_size; i++) {
+			eprintf("%02x", digest[i]);
 		}
 		eprintf("\n");
+		RZ_FREE(digest);
 		free(fofbuf);
 	}
 	// show and check the rest of hashes
@@ -794,33 +792,34 @@ static void parseCodeDirectory(RzBuffer *b, int offset, int datasize) {
 	eprintf("Hashed region: 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", (ut64)0, (ut64)cscd.codeLimit);
 	for (j = 0; j < cscd.nCodeSlots; j++) {
 		int fof = 4096 * j;
-		int idx = j * hashSize;
+		int idx = j * digest_size;
 		eprintf("0x%08" PFMT64x "  ", off + cscd.hashOffset + idx);
-		for (k = 0; k < hashSize; k++) {
+		for (k = 0; k < digest_size; k++) {
 			eprintf("%02x", hash[idx + k]);
 		}
 		ut8 fofbuf[4096];
 		int fofsz = RZ_MIN(sizeof(fofbuf), cscd.codeLimit - fof);
 		rz_buf_read_at(b, fof, fofbuf, sizeof(fofbuf));
-		rz_hash_do_begin(ctx, algoType);
-		if (algoType == RZ_HASH_SHA1) {
-			rz_hash_do_sha1(ctx, fofbuf, fofsz);
-		} else {
-			rz_hash_do_sha256(ctx, fofbuf, fofsz);
+
+		digest = rz_msg_digest_calculate_small_block(digest_algo, fofbuf, fofsz, &digest_size);
+		if (!digest) {
+			goto parseCodeDirectory_end;
 		}
-		rz_hash_do_end(ctx, algoType);
-		if (memcmp(hash + idx, ctx->digest, hashSize)) {
+
+		if (memcmp(hash + idx, digest, digest_size)) {
 			eprintf("  wx ");
 			int i;
-			for (i = 0; i < hashSize; i++) {
-				eprintf("%02x", ctx->digest[i]);
+			for (i = 0; i < digest_size; i++) {
+				eprintf("%02x", digest[i]);
 			}
 		} else {
 			eprintf("  OK");
 		}
 		eprintf("\n");
+		free(digest);
 	}
-	rz_hash_free(ctx);
+
+parseCodeDirectory_end:
 	free(p);
 }
 
@@ -2215,12 +2214,38 @@ static bool __isDataSection(RzBinSection *sect) {
 	return false;
 }
 
+RzList *MACH0_(get_maps)(RzBinFile *bf) {
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
+		return NULL;
+	}
+	for (size_t i = 0; i < bin->nsegs; i++) {
+		struct MACH0_(segment_command) *seg = &bin->segs[i];
+		if (!seg->initprot) {
+			continue;
+		}
+		RzBinMap *map = RZ_NEW0(RzBinMap);
+		if (!map) {
+			break;
+		}
+		map->paddr = seg->fileoff + bf->o->boffset;
+		map->psize = seg->vmsize;
+		map->vaddr = seg->vmaddr;
+		map->vsize = seg->vmsize;
+		map->name = rz_str_ndup(seg->segname, 16);
+		rz_str_filter(map->name, -1);
+		map->perm = prot2perm(seg->initprot);
+		rz_list_append(ret, map);
+	}
+	return ret;
+}
+
 RzList *MACH0_(get_segments)(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	RzList *list = rz_list_newf((RzListFree)rz_bin_section_free);
 	size_t i, j;
 
-	/* for core files */
 	if (bin->nsegs > 0) {
 		struct MACH0_(segment_command) * seg;
 		for (i = 0; i < bin->nsegs; i++) {
@@ -2242,7 +2267,6 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			s->is_segment = true;
 			rz_str_filter(s->name, -1);
 			s->perm = prot2perm(seg->initprot);
-			s->add = true;
 			rz_list_append(list, s);
 		}
 	}
@@ -2255,6 +2279,7 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 			}
 			s->vaddr = (ut64)bin->sects[i].addr;
 			s->vsize = (ut64)bin->sects[i].size;
+			s->align = (ut64)(1 << bin->sects[i].align);
 			s->is_segment = false;
 			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
 			// The bottom byte of flags is the section type

@@ -1,5 +1,5 @@
 NAME=visual_dw
-FILE=-
+FILE==
 CMDS=<<EOF
 Vc10dwq @e:scr.interactive=true > /dev/null
 pd 20~dword?
@@ -10,7 +10,7 @@ EOF
 RUN
 
 NAME=Vc+cq
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.interactive=true
 Vc+cq
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=visual hex scroll
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.interactive=true
 e asm.arch=x86
@@ -37,7 +37,7 @@ EOF
 RUN
 
 NAME=visual op scroll
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -52,7 +52,7 @@ EOF
 RUN
 
 NAME=visual hex pP scroll
-FILE=-
+FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -67,7 +67,7 @@ EOF
 RUN
 
 NAME=visual noninteractive
-FILE=-
+FILE==
 CMDS=<<EOF
 e scr.interactive=false
 V

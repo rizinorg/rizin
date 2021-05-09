@@ -1,7 +1,7 @@
 # Command parsing and command handling
 
 Rizin has moved away from the default way of parsing radare2 commands and the
-way commands were handled there. It enables by default what is called in r2
+way commands were handled there. It enables by default what is/was called in r2
 `cfg.newshell`, which enables a generated parser that parses rizin commands and
 a new way of registering and developing commands.
 
@@ -26,7 +26,7 @@ to easily register/unregister new commands at runtime (e.g. a new Core plugin
 that wants to provide a new command) or the inconsistency between commands
 actually available and commands shown to users in help messages.
 
-## cfg.newshell
+## Rizin shell
 
 Not long ago, radare2 introduced the variable `cfg.newshell` that, when enabled,
 allows you to use new features in the code. Rizin has chosen to enable this by

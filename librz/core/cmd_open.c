@@ -341,11 +341,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			}
 			id = (*value && rz_is_valid_input_num_value(core->num, value)) ? rz_get_input_num_value(core->num, value) : UT32_MAX;
 			RzBinFile *bf = rz_bin_file_find_by_id(core->bin, id);
-			if (!bf) {
-				eprintf("Invalid binid\n");
-				break;
-			}
-			if (!rz_core_bin_delete(core, bf->id)) {
+			if (!bf || !rz_core_bin_delete(core, bf)) {
 				eprintf("Cannot find an RzBinFile associated with that id.\n");
 			}
 		}
@@ -399,7 +395,8 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 	char *om_cmds = NULL;
 
 	void **it;
-	rz_pvector_foreach_prev(&io->maps, it) { //this must be prev (LIFO)
+	RzPVector *maps = rz_io_maps(io);
+	rz_pvector_foreach_prev(maps, it) { //this must be prev (LIFO)
 		RzIOMap *map = *it;
 		if (fd >= 0 && map->fd != fd) {
 			continue;
@@ -465,21 +462,22 @@ static void cmd_omfg(RzCore *core, const char *input) {
 				: rz_str_rwx(input)
 			: 7;
 		void **it;
+		RzPVector *maps = rz_io_maps(core->io);
 		switch (*input) {
 		case '+':
-			rz_pvector_foreach (&core->io->maps, it) {
+			rz_pvector_foreach (maps, it) {
 				RzIOMap *map = *it;
 				map->perm |= perm;
 			}
 			break;
 		case '-':
-			rz_pvector_foreach (&core->io->maps, it) {
+			rz_pvector_foreach (maps, it) {
 				RzIOMap *map = *it;
 				map->perm &= ~perm;
 			}
 			break;
 		default:
-			rz_pvector_foreach (&core->io->maps, it) {
+			rz_pvector_foreach (maps, it) {
 				RzIOMap *map = *it;
 				map->perm = perm;
 			}
@@ -494,13 +492,14 @@ static void cmd_omf(RzCore *core, const char *input) {
 		return;
 	}
 	char *sp = strchr(arg, ' ');
+	RzPVector *maps = rz_io_maps(core->io);
 	if (sp) {
 		// change perms of Nth map
 		*sp++ = 0;
 		int id = rz_num_math(core->num, arg);
 		int perm = (*sp) ? rz_str_rwx(sp) : RZ_PERM_RWX;
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if (map->id == id) {
 				map->perm = perm;
@@ -511,7 +510,7 @@ static void cmd_omf(RzCore *core, const char *input) {
 		// change perms of current map
 		int perm = (arg && *arg) ? rz_str_rwx(arg) : RZ_PERM_RWX;
 		void **it;
-		rz_pvector_foreach (&core->io->maps, it) {
+		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			if (rz_itv_contain(map->itv, core->offset)) {
 				map->perm = perm;
@@ -527,7 +526,8 @@ static void rz_core_cmd_omt(RzCore *core, const char *arg) {
 	rz_table_set_columnsf(t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
 	void **it;
-	rz_pvector_foreach (&core->io->maps, it) {
+	RzPVector *maps = rz_io_maps(core->io);
+	rz_pvector_foreach (maps, it) {
 		RzIOMap *m = *it;
 		ut64 va = rz_itv_begin(m->itv);
 		ut64 va_end = rz_itv_end(m->itv);
@@ -664,7 +664,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 		case 'q': // "omtq"
 		{
 			const char *arg = rz_str_trim_head_ro(input + 3);
-			char *query = rz_str_newf("%s%s:quiet", arg, *arg ? "," : "");
+			char *query = rz_str_newf("%s%squiet", arg, *arg ? ":" : "");
 			if (query) {
 				rz_core_cmd_omt(core, query);
 			}
@@ -855,7 +855,8 @@ static void cmd_open_map(RzCore *core, const char *input) {
 			return;
 		}
 		void **it;
-		rz_pvector_foreach_prev(&core->io->maps, it) {
+		RzPVector *maps = rz_io_maps(core->io);
+		rz_pvector_foreach_prev(maps, it) {
 			RzIOMap *map = *it;
 			char temp[32];
 			snprintf(temp, sizeof(temp), "%d", map->fd);
@@ -1144,7 +1145,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		if (!strcmp(ptr, "-")) {
 			ptr = "malloc://512";
 		}
-		if ((desc = rz_io_open_at(core->io, ptr, perms, 0644, addr))) {
+		if ((desc = rz_io_open_at(core->io, ptr, perms, 0644, addr, NULL))) {
 			fd = desc->fd;
 		}
 		if (fd == -1) {
@@ -1262,7 +1263,8 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 					RzIODesc *desc = rz_io_desc_get(core->io, fd);
 					if (desc && (desc->perm & RZ_PERM_W)) {
 						void **it;
-						rz_pvector_foreach_prev(&core->io->maps, it) {
+						RzPVector *maps = rz_io_maps(core->io);
+						rz_pvector_foreach_prev(maps, it) {
 							RzIOMap *map = *it;
 							if (map->fd == fd) {
 								map->perm |= RZ_PERM_WX;

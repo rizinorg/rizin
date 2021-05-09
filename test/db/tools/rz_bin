@@ -138,16 +138,16 @@ nth paddr        size vaddr       vsize perm name                        type   
 
 [Segments]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
-0   0x00000034  0x100 0x08048034  0x100 -r-x prixfixe.PHDR
-1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe.INTERP
-2   0x00000000  0x59c 0x08048000  0x59c -r-x prixfixe.LOAD0
-3   0x0000059c  0x118 0x0804959c  0x11c -rw- prixfixe.LOAD1
-4   0x000005a8   0xe8 0x080495a8   0xe8 -rw- prixfixe.DYNAMIC
-5   0x00000148   0x44 0x08048148   0x44 -r-- prixfixe.NOTE
-6   0x000004c0   0x2c 0x080484c0   0x2c -r-- prixfixe.GNU_EH_FRAME
-7   0x00000000    0x0 0x00000000    0x0 -rw- prixfixe.GNU_STACK
+nth paddr        size vaddr       vsize perm name                  align
+------------------------------------------------------------------------
+0   0x00000034  0x100 0x08048034  0x100 -r-x prixfixe.PHDR         0x4
+1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe.INTERP       0x1
+2   0x00000000  0x59c 0x08048000  0x59c -r-x prixfixe.LOAD0        0x1000
+3   0x0000059c  0x118 0x0804959c  0x11c -rw- prixfixe.LOAD1        0x1000
+4   0x000005a8   0xe8 0x080495a8   0xe8 -rw- prixfixe.DYNAMIC      0x4
+5   0x00000148   0x44 0x08048148   0x44 -r-- prixfixe.NOTE         0x4
+6   0x000004c0   0x2c 0x080484c0   0x2c -r-- prixfixe.GNU_EH_FRAME 0x4
+7   0x00000000    0x0 0x00000000    0x0 -rw- prixfixe.GNU_STACK    0x4
 8   0x00000000   0x34 0x08048000   0x34 -rw- prixfixe.ehdr
 
 EOF
@@ -512,16 +512,16 @@ nth paddr        size vaddr       vsize perm name               type       flags
 
 [Segments]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
-0   0x00000034  0x100 0x08048034  0x100 -r-x PHDR
-1   0x00000134   0x13 0x08048134   0x13 -r-- INTERP
-2   0x00000000  0x59c 0x08048000  0x59c -r-x LOAD0
-3   0x0000059c  0x118 0x0804959c  0x11c -rw- LOAD1
-4   0x000005a8   0xe8 0x080495a8   0xe8 -rw- DYNAMIC
-5   0x00000148   0x44 0x08048148   0x44 -r-- NOTE
-6   0x000004c0   0x2c 0x080484c0   0x2c -r-- GNU_EH_FRAME
-7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK
+nth paddr        size vaddr       vsize perm name         align
+---------------------------------------------------------------
+0   0x00000034  0x100 0x08048034  0x100 -r-x PHDR         0x4
+1   0x00000134   0x13 0x08048134   0x13 -r-- INTERP       0x1
+2   0x00000000  0x59c 0x08048000  0x59c -r-x LOAD0        0x1000
+3   0x0000059c  0x118 0x0804959c  0x11c -rw- LOAD1        0x1000
+4   0x000005a8   0xe8 0x080495a8   0xe8 -rw- DYNAMIC      0x4
+5   0x00000148   0x44 0x08048148   0x44 -r-- NOTE         0x4
+6   0x000004c0   0x2c 0x080484c0   0x2c -r-- GNU_EH_FRAME 0x4
+7   0x00000000    0x0 0x00000000    0x0 -rw- GNU_STACK    0x4
 8   0x00000000   0x34 0x08048000   0x34 -rw- ehdr
 
 [Entrypoints]
@@ -937,15 +937,15 @@ EOF
 RUN
 
 NAME=rz-bin -O bad op
-FILE=-
-CMDS=!rz-bin -O bad_op -
+FILE==
+CMDS=!rz-bin -O bad_op =
 EXPECT_ERR=<<EOF
 Unknown operation. use -O help
 EOF
 RUN
 
 NAME=rz-bin -v
-FILE=-
+FILE==
 CMDS=!rz-bin -v | grep -c build
 EXPECT=<<EOF
 1
@@ -953,7 +953,7 @@ EOF
 RUN
 
 NAME=rz-bin -L
-FILE=-
+FILE==
 CMDS=!rz-bin -L | grep -c any
 EXPECT=<<EOF
 1
@@ -961,7 +961,7 @@ EOF
 RUN
 
 NAME=rz-bin -Lq
-FILE=-
+FILE==
 CMDS=!rz-bin -Lq | grep -c any
 EXPECT=<<EOF
 1
@@ -969,7 +969,7 @@ EOF
 RUN
 
 NAME=rz-bin -Lj
-FILE=-
+FILE==
 CMDS=!rz-bin -Lj | grep -c any
 EXPECT=<<EOF
 1
@@ -977,7 +977,7 @@ EOF
 RUN
 
 NAME=rz-bin -Lj any
-FILE=-
+FILE==
 CMDS=!rz-bin -Lj Dummy | grep -c Dummy
 EXPECT=<<EOF
 1
@@ -1214,7 +1214,7 @@ EOF
 RUN
 
 NAME=rz-bin -S ""
-FILE=-
+FILE==
 CMDS=!rz-bin -S ""
 EXPECT_ERR=<<EOF
 Cannot open empty path
@@ -1223,7 +1223,7 @@ RUN
 
 NAME=rz-bin rust static type
 BROKEN=1
-FILE=-
+FILE==
 CMDS=!rz-bin -D rust '_ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE'
 EXPECT=<<EOF
 <Test + 'static as foo::Bar<Test>>::bar
@@ -1232,7 +1232,7 @@ RUN
 
 NAME=rz-bin rust static type with hash
 BROKEN=1
-FILE=-
+FILE==
 CMDS=!rz-bin -D rust '_ZN96_$LT$core..fmt..Write..write_fmt..Adapter$LT$$u27$a$C$$u20$T$GT$$u20$as$u20$core..fmt..Write$GT$9write_str17he4f4768a2f446facE'
 EXPECT=<<EOF
 <core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_str::he4f4768a2f446fac

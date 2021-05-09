@@ -120,7 +120,7 @@ EOF
 RUN
 
 NAME=pxq foo-bar
-FILE=-
+FILE==
 CMDS=<<EOF
 f foo=10
 f bar=2

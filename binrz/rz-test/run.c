@@ -157,7 +157,7 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 		} else {
 			files->free = NULL;
 		}
-		rz_list_push(files, "-");
+		rz_list_push(files, "=");
 	}
 	ut64 timeout_ms = test->timeout.set ? test->timeout.value * 1000 : config->timeout_ms;
 	RzSubprocessOutput *out = run_rz_test(config, timeout_ms, test->cmds.value, files, extra_args, test->load_plugins, runner, user);

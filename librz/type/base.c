@@ -184,7 +184,10 @@ static RzBaseType *get_union_type(RzTypeDB *typedb, const char *sname) {
 			goto error;
 		}
 		char *value = sdb_anext(values, NULL);
-		RzTypeUnionMember cas = { .name = strdup(cur), .type = strdup(value) };
+		RzTypeUnionMember cas = {
+			.name = strdup(cur),
+			.type = strdup(value)
+		};
 		free(values);
 
 		void *element = rz_vector_push(members, &cas); // returns null if no space available
@@ -280,6 +283,207 @@ RZ_API RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, const char *name) 
 	}
 
 	return base_type;
+}
+
+static void delete_struct(const RzTypeDB *typedb, const RzBaseType *type) {
+	rz_return_if_fail(typedb && type && type->name && type->kind == RZ_BASE_TYPE_KIND_STRUCT);
+	char *kind = "struct";
+	/*
+		C:
+		struct name {type param1; type param2; type paramN;};
+		Sdb:
+		name=struct
+		struct.name=param1,param2,paramN
+		struct.name.param1=type,0,0
+		struct.name.param2=type,4,0
+		struct.name.paramN=type,8,0
+	*/
+	char *sname = rz_str_sanitize_sdb_key(type->name);
+	// name=struct
+
+	RzStrBuf param_key;
+	RzStrBuf param_val;
+	rz_strbuf_init(&param_key);
+	rz_strbuf_init(&param_val);
+
+	RzTypeStructMember *member;
+	rz_vector_foreach(&type->struct_data.members, member) {
+		// struct.name.param=type,offset,argsize
+		char *member_sname = rz_str_sanitize_sdb_key(member->name);
+		sdb_unset(typedb->sdb_types,
+			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname), 0);
+		free(member_sname);
+	}
+	// struct.name=param1,param2,paramN
+	char *key = rz_str_newf("%s.%s", kind, sname);
+	sdb_unset(typedb->sdb_types, key, 0);
+	sdb_unset(typedb->sdb_types, sname, 0);
+	free(key);
+	free(sname);
+
+	rz_strbuf_fini(&param_key);
+	rz_strbuf_fini(&param_val);
+}
+
+static void delete_union(const RzTypeDB *typedb, const RzBaseType *type) {
+	rz_return_if_fail(typedb && type && type->name && type->kind == RZ_BASE_TYPE_KIND_UNION);
+	const char *kind = "union";
+	/*
+	C:
+	union name {type param1; type param2; type paramN;};
+	Sdb:
+	name=union
+	union.name=param1,param2,paramN
+	union.name.param1=type,0,0
+	union.name.param2=type,0,0
+	union.name.paramN=type,0,0
+	*/
+	char *sname = rz_str_sanitize_sdb_key(type->name);
+	// name=union
+	RzStrBuf param_key;
+	RzStrBuf param_val;
+	rz_strbuf_init(&param_key);
+	rz_strbuf_init(&param_val);
+
+	RzTypeStructMember *member;
+	rz_vector_foreach(&type->struct_data.members, member) {
+		// struct.name.param=type,offset,argsize
+		char *member_sname = rz_str_sanitize_sdb_key(member->name);
+		sdb_unset(typedb->sdb_types,
+			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname), 0);
+		free(member_sname);
+	}
+	// struct.name=param1,param2,paramN
+	char *key = rz_str_newf("%s.%s", kind, sname);
+	sdb_unset(typedb->sdb_types, key, 0);
+	sdb_unset(typedb->sdb_types, sname, 0);
+	free(key);
+	free(sname);
+
+	rz_strbuf_fini(&param_key);
+	rz_strbuf_fini(&param_val);
+}
+
+static void delete_enum(const RzTypeDB *typedb, const RzBaseType *type) {
+	rz_return_if_fail(typedb && type && type->name && type->kind == RZ_BASE_TYPE_KIND_ENUM);
+	/*
+		C:
+			enum name {case1 = 1, case2 = 2, caseN = 3};
+		Sdb:
+		name=enum
+		enum.name=arg1,arg2,argN
+		enum.MyEnum.0x1=arg1
+		enum.MyEnum.0x3=arg2
+		enum.MyEnum.0x63=argN
+		enum.MyEnum.arg1=0x1
+		enum.MyEnum.arg2=0x63
+		enum.MyEnum.argN=0x3
+	*/
+	char *sname = rz_str_sanitize_sdb_key(type->name);
+
+	RzStrBuf param_key;
+	rz_strbuf_init(&param_key);
+
+	RzTypeEnumCase *cas;
+	rz_vector_foreach(&type->enum_data.cases, cas) {
+		// enum.name.arg1=type,offset,???
+		char *case_sname = rz_str_sanitize_sdb_key(cas->name);
+		sdb_unset(typedb->sdb_types,
+			rz_strbuf_setf(&param_key, "enum.%s.%s", sname, case_sname), 0);
+		sdb_unset(typedb->sdb_types,
+			rz_strbuf_setf(&param_key, "enum.%s.0x%" PFMT32x "", sname, cas->val), 0);
+		free(case_sname);
+	}
+	// enum.name=arg1,arg2,argN
+	char *key = rz_str_newf("enum.%s", sname);
+	sdb_unset(typedb->sdb_types, key, 0);
+	sdb_unset(typedb->sdb_types, sname, 0);
+	free(key);
+	free(sname);
+	rz_strbuf_fini(&param_key);
+}
+
+static void delete_atomic_type(const RzTypeDB *typedb, const RzBaseType *type) {
+	rz_return_if_fail(typedb && type && type->name && type->kind == RZ_BASE_TYPE_KIND_ATOMIC);
+	/*
+		C: (cannot define a custom atomic type)
+		Sdb:
+		char=type
+		type.char=c
+		type.char.size=8
+	*/
+	char *sname = rz_str_sanitize_sdb_key(type->name);
+	sdb_set(typedb->sdb_types, sname, "type", 0);
+
+	RzStrBuf key;
+	rz_strbuf_init(&key);
+
+	sdb_unset(typedb->sdb_types,
+		rz_strbuf_setf(&key, "type.%s.size", sname), 0);
+	sdb_unset(typedb->sdb_types,
+		rz_strbuf_setf(&key, "type.%s.meta", sname), 0);
+	sdb_unset(typedb->sdb_types,
+		rz_strbuf_setf(&key, "type.%s", sname), 0);
+	sdb_unset(typedb->sdb_types, sname, 0);
+
+	free(sname);
+
+	rz_strbuf_fini(&key);
+}
+
+static void delete_typedef(const RzTypeDB *typedb, const RzBaseType *type) {
+	rz_return_if_fail(typedb && type && type->name && type->kind == RZ_BASE_TYPE_KIND_TYPEDEF);
+	/*
+		C:
+		typedef char byte;
+		Sdb:
+		byte=typedef
+		typedef.byte=char
+	*/
+	char *sname = rz_str_sanitize_sdb_key(type->name);
+
+	RzStrBuf key;
+	rz_strbuf_init(&key);
+
+	sdb_unset(typedb->sdb_types,
+		rz_strbuf_setf(&key, "typedef.%s", sname), 0);
+	sdb_unset(typedb->sdb_types, sname, 0);
+	free(sname);
+
+	rz_strbuf_fini(&key);
+}
+
+/**
+ * \brief Removes RzBaseType from the Types DB
+ *
+ * \param typedb Type Database instance
+ * \param type RzBaseType to remove
+ */
+RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
+	rz_return_val_if_fail(typedb && type && type->name, NULL);
+
+	// TODO, solve collisions, if there are 2 types with the same name and kind
+
+	switch (type->kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT:
+		delete_struct(typedb, type);
+		break;
+	case RZ_BASE_TYPE_KIND_ENUM:
+		delete_enum(typedb, type);
+		break;
+	case RZ_BASE_TYPE_KIND_UNION:
+		delete_union(typedb, type);
+		break;
+	case RZ_BASE_TYPE_KIND_TYPEDEF:
+		delete_typedef(typedb, type);
+		break;
+	case RZ_BASE_TYPE_KIND_ATOMIC:
+		delete_atomic_type(typedb, type);
+		break;
+	default:
+		break;
+	}
+	return true;
 }
 
 /**

@@ -577,6 +577,10 @@ static int __cons_readchar_w32(ut32 usec) {
 #endif
 
 RZ_API int rz_cons_readchar_timeout(ut32 usec) {
+	char ch;
+	if (rz_cons_readbuffer_readchar(&ch)) {
+		return ch;
+	}
 #if __UNIX__
 	struct timeval tv;
 	fd_set fdset, errset;
@@ -621,13 +625,20 @@ RZ_API void rz_cons_switchbuf(bool active) {
 extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
+RZ_API bool rz_cons_readbuffer_readchar(char *ch) {
+	if (readbuffer_length <= 0) {
+		return false;
+	}
+	*ch = *readbuffer;
+	readbuffer_length--;
+	memmove(readbuffer, readbuffer + 1, readbuffer_length);
+	return true;
+}
+
 RZ_API int rz_cons_readchar(void) {
-	char buf[2];
+	char buf[2], ch;
 	buf[0] = -1;
-	if (readbuffer_length > 0) {
-		int ch = *readbuffer;
-		readbuffer_length--;
-		memmove(readbuffer, readbuffer + 1, readbuffer_length);
+	if (rz_cons_readbuffer_readchar(&ch)) {
 		return ch;
 	}
 	rz_cons_set_raw(1);

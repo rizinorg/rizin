@@ -31,8 +31,8 @@ typedef struct rz_list_range_t {
 	//RzListComparator c;
 } RzListRange;
 
-// RzListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
-typedef int (*RzListComparator)(const void *a, const void *b);
+// RzListComparator should return -1, 0, 1 to indicate "value < list_data", "value == list_data", "value > list_data".
+typedef int (*RzListComparator)(const void *value, const void *list_data);
 
 #define ROFList_Parent RzList
 typedef struct rz_oflist_t {
@@ -114,6 +114,7 @@ RZ_API RzList *rz_list_of_sdblist(SdbList *sl);
 
 /* hashlike api */
 RZ_API RzListIter *rz_list_contains(const RzList *list, const void *p);
+RZ_API RzListIter *rz_list_find_ptr(RzList *list, void *ptr);
 RZ_API RzListIter *rz_list_find(const RzList *list, const void *p, RzListComparator cmp);
 
 /* rlistflist */

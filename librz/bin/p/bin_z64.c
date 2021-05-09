@@ -119,7 +119,6 @@ static RzList *sections(RzBinFile *bf) {
 	text->paddr = N64_ROM_START;
 	text->vaddr = baddr(bf);
 	text->perm = RZ_PERM_RX;
-	text->add = true;
 	rz_list_append(ret, text);
 	return ret;
 }
@@ -157,6 +156,7 @@ RzBinPlugin rz_bin_plugin_z64 = {
 	.baddr = baddr,
 	.boffset = &boffset,
 	.entries = &entries,
+	.maps = &rz_bin_maps_of_file_sections,
 	.sections = &sections,
 	.info = &info
 };
