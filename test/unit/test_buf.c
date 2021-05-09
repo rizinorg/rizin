@@ -230,7 +230,7 @@ bool test_rz_buf_io(void) {
 	mu_end;
 }
 
-bool test_rz_buf_sparse(void) {
+bool test_rz_buf_sparse_common(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -250,7 +250,440 @@ bool test_rz_buf_sparse(void) {
 	mu_end;
 }
 
-bool test_rz_buf_sparse2(void) {
+bool test_rz_buf_sparse_split(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// simple cases, just some non-overlapping writes
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Versions", 8);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+
+	rz_buf_write_at(b, 0x20, (const ut8 *)"Truth", 5);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 2, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+	mu_assert_eq(chunks[1].from, 0x20, "chunk from");
+	mu_assert_eq(chunks[1].to, 0x24, "chunk to");
+	mu_assert_memeq(chunks[1].data, (const ut8 *)"Truth", 5, "chunk data");
+
+	rz_buf_write_at(b, 0x1c, (const ut8 *)"The", 3);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 3, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+	mu_assert_eq(chunks[1].from, 0x1c, "chunk from");
+	mu_assert_eq(chunks[1].to, 0x1e, "chunk to");
+	mu_assert_memeq(chunks[1].data, (const ut8 *)"The", 3, "chunk data");
+	mu_assert_eq(chunks[2].from, 0x20, "chunk from");
+	mu_assert_eq(chunks[2].to, 0x24, "chunk to");
+	mu_assert_memeq(chunks[2].data, (const ut8 *)"Truth", 5, "chunk data");
+
+	rz_buf_write_at(b, 0x19, (const ut8 *)"Of", 2);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 4, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+	mu_assert_eq(chunks[1].from, 0x19, "chunk from");
+	mu_assert_eq(chunks[1].to, 0x1a, "chunk to");
+	mu_assert_memeq(chunks[1].data, (const ut8 *)"Of", 2, "chunk data");
+	mu_assert_eq(chunks[2].from, 0x1c, "chunk from");
+	mu_assert_eq(chunks[2].to, 0x1e, "chunk to");
+	mu_assert_memeq(chunks[2].data, (const ut8 *)"The", 3, "chunk data");
+	mu_assert_eq(chunks[3].from, 0x20, "chunk from");
+	mu_assert_eq(chunks[3].to, 0x24, "chunk to");
+	mu_assert_memeq(chunks[3].data, (const ut8 *)"Truth", 5, "chunk data");
+
+	ut8 buf[0x17];
+	st64 r = rz_buf_read_at(b, 0xf, buf, sizeof(buf));
+	mu_assert_eq(r, 0x16, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42Versions\x42Of\x42The\x42Truth\x42", sizeof(buf), "split chunks read");
+
+	r = rz_buf_read_at(b, 0x10, buf, sizeof(buf));
+	mu_assert_eq(r, 0x15, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"Versions\x42Of\x42The\x42Truth\x42\x42", sizeof(buf), "split chunks read");
+
+	r = rz_buf_read_at(b, 0xe, buf, sizeof(buf));
+	mu_assert_eq(r, sizeof(buf), "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42\x42Versions\x42Of\x42The\x42Truth", sizeof(buf), "split chunks read");
+
+	r = rz_buf_read_at(b, 0x11, buf, sizeof(buf));
+	mu_assert_eq(r, 0x14, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"ersions\x42Of\x42The\x42Truth\x42\x42\x42", sizeof(buf), "split chunks read");
+
+	r = rz_buf_read_at(b, 0xd, buf, sizeof(buf));
+	mu_assert_eq(r, sizeof(buf), "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42\x42\x42Versions\x42Of\x42The\x42Trut", sizeof(buf), "split chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_write_inside(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// write entirely contained in another chunk
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Versions", 8);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+
+	rz_buf_write_at(b, 0x11, (const ut8 *)"Truth", 5);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"VTruthns", 8, "chunk data");
+
+	ut8 buf[10];
+	st64 r = rz_buf_read_at(b, 0xf, buf, sizeof(buf));
+	mu_assert_eq(r, 9, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42VTruthns\x42", 10, "chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_write_start_exact(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// write starting exactly at another chunk
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Versions", 8);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Truth", 5);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Truthons", 8, "chunk data");
+
+	ut8 buf[10];
+	st64 r = rz_buf_read_at(b, 0xf, buf, sizeof(buf));
+	mu_assert_eq(r, 9, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42Truthons\x42", 10, "chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_write_end_exact(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// write ending exactly at another chunk's end
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Versions", 8);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+
+	rz_buf_write_at(b, 0x13, (const ut8 *)"Truth", 5);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"VerTruth", 8, "chunk data");
+
+	ut8 buf[10];
+	st64 r = rz_buf_read_at(b, 0xf, buf, sizeof(buf));
+	mu_assert_eq(r, 9, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42VerTruth\x42", 10, "chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_write_beyond(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// write starting in a chunk and going beyond its end
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Versions", 8);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+
+	rz_buf_write_at(b, 0x15, (const ut8 *)"Truth", 5);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x19, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"VersiTruth", 10, "chunk data");
+
+	ut8 buf[12];
+	st64 r = rz_buf_read_at(b, 0xf, buf, sizeof(buf));
+	mu_assert_eq(r, 11, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42VersiTruth\x42", 12, "chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_write_into(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// write starting outside a chunk and going inside of it
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Versions", 8);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+
+	rz_buf_write_at(b, 0xe, (const ut8 *)"Truth", 5);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0xe, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Truthsions", 10, "chunk data");
+
+	ut8 buf[12];
+	st64 r = rz_buf_read_at(b, 0xd, buf, sizeof(buf));
+	mu_assert_eq(r, 11, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42Truthsions\x42", 12, "chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_write_bridge(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// write starting in one chunk and ending in another, bridging them into a single one
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Versions", 8);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+
+	rz_buf_write_at(b, 0x19, (const ut8 *)"Truth", 5);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 2, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+	mu_assert_eq(chunks[1].from, 0x19, "chunk from");
+	mu_assert_eq(chunks[1].to, 0x1d, "chunk to");
+	mu_assert_memeq(chunks[1].data, (const ut8 *)"Truth", 5, "chunk data");
+
+	rz_buf_write_at(b, 0x14, (const ut8 *)"OurMire", 7);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x1d, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"VersOurMireuth", 0xe, "chunk data");
+
+	ut8 buf[0x10];
+	st64 r = rz_buf_read_at(b, 0xf, buf, sizeof(buf));
+	mu_assert_eq(r, 0xf, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42VersOurMireuth\x42", 0x10, "split chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_write_bridge_exact(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// write starting exactly at the start of one chunk and ending exactly at the end of another, bridging them into a single one
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Versions", 8);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+
+	rz_buf_write_at(b, 0x19, (const ut8 *)"Truth", 5);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 2, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+	mu_assert_eq(chunks[1].from, 0x19, "chunk from");
+	mu_assert_eq(chunks[1].to, 0x1d, "chunk to");
+	mu_assert_memeq(chunks[1].data, (const ut8 *)"Truth", 5, "chunk data");
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Try As I Might", 0xe);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x1d, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Try As I Might", 0xe, "chunk data");
+
+	ut8 buf[0x10];
+	st64 r = rz_buf_read_at(b, 0xf, buf, sizeof(buf));
+	mu_assert_eq(r, 0xf, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42Try As I Might\x42", 0x10, "split chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_write_bridge_over_outside(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// write starting before one chunk and ending after another, bridging over them into a single one
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Versions", 8);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+
+	rz_buf_write_at(b, 0x19, (const ut8 *)"Truth", 5);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 2, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x17, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Versions", 8, "chunk data");
+	mu_assert_eq(chunks[1].from, 0x19, "chunk from");
+	mu_assert_eq(chunks[1].to, 0x1d, "chunk to");
+	mu_assert_memeq(chunks[1].data, (const ut8 *)"Truth", 5, "chunk data");
+
+	rz_buf_write_at(b, 0xe, (const ut8 *)"Driving Like Maniacs", 0x14);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0xe, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x21, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Driving Like Maniacs", 0x14, "chunk data");
+
+	ut8 buf[0x16];
+	st64 r = rz_buf_read_at(b, 0xd, buf, sizeof(buf));
+	mu_assert_eq(r, 0x15, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42"
+					  "Driving Like Maniacs\x42",
+		0x16, "split chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_write_bridge_over_inside(void) {
+	RzBuffer *b;
+	b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_file failed");
+
+	// write starting in one chunk and ending in another, bridging over one in between and combining them into a single one
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Not", 3);
+	rz_buf_write_at(b, 0x14, (const ut8 *)"Naming", 6);
+	rz_buf_write_at(b, 0x1b, (const ut8 *)"Any", 3);
+	rz_buf_write_at(b, 0x1f, (const ut8 *)"Names", 5);
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 4, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x12, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"Not", 3, "chunk data");
+	mu_assert_eq(chunks[1].from, 0x14, "chunk from");
+	mu_assert_eq(chunks[1].to, 0x19, "chunk to");
+	mu_assert_memeq(chunks[1].data, (const ut8 *)"Naming", 6, "chunk data");
+	mu_assert_eq(chunks[2].from, 0x1b, "chunk from");
+	mu_assert_eq(chunks[2].to, 0x1d, "chunk to");
+	mu_assert_memeq(chunks[2].data, (const ut8 *)"Any", 3, "chunk data");
+	mu_assert_eq(chunks[3].from, 0x1f, "chunk from");
+	mu_assert_eq(chunks[3].to, 0x23, "chunk to");
+	mu_assert_memeq(chunks[3].data, (const ut8 *)"Names", 5, "chunk data");
+
+	rz_buf_write_at(b, 0x11, (const ut8 *)"o Man's Land", 0xc);
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 2, "chunks count");
+	mu_assert_notnull(chunks, "chunks");
+	mu_assert_eq(chunks[0].from, 0x10, "chunk from");
+	mu_assert_eq(chunks[0].to, 0x1d, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"No Man's Landy", 0xe, "chunk data");
+	mu_assert_eq(chunks[1].from, 0x1f, "chunk from");
+	mu_assert_eq(chunks[1].to, 0x23, "chunk to");
+	mu_assert_memeq(chunks[1].data, (const ut8 *)"Names", 5, "chunk data");
+
+	ut8 buf[0x16];
+	st64 r = rz_buf_read_at(b, 0xf, buf, sizeof(buf));
+	mu_assert_eq(r, 0x15, "read size");
+	mu_assert_memeq(buf, (const ut8 *)"\x42"
+					  "No Man's Landy\x42Names\x42",
+		0x16, "split chunks read");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
+bool test_rz_buf_sparse_resize(void) {
 	RzBuffer *b = rz_buf_new_sparse(0xff);
 	rz_buf_write(b, (ut8 *)"aaaa", 4);
 	rz_buf_write(b, (ut8 *)"bbbbb", 5);
@@ -274,14 +707,69 @@ bool test_rz_buf_sparse2(void) {
 	mu_assert_eq(r, 7, "read the initial 0xff bytes");
 	mu_assert_memeq(tmp, (ut8 *)"\xff\xff\xff\x61\x61\x61\x61", 7, "right 7 bytes");
 
+	// resize to empty area
 	res = rz_buf_resize(b, 10);
 	mu_assert("resized to 10", res);
-
 	ut64 sz = rz_buf_size(b);
 	mu_assert_eq(sz, 10, "size is 10");
+	size_t count;
+	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 2, "chunks count after resize");
+	mu_assert_eq(chunks[0].from, 3, "chunk from");
+	mu_assert_eq(chunks[0].to, 6, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"aaaa", 4, "chunk data");
+	mu_assert_eq(chunks[1].from, 9, "chunk from");
+	mu_assert_eq(chunks[1].to, 9, "chunk to");
+	mu_assert_memeq(chunks[1].data, (const ut8 *)"\xff", 1, "chunk data");
+
 	r = rz_buf_read_at(b, 0, tmp, sizeof(tmp));
 	mu_assert_eq(r, 10, "read the initial/final 0xff bytes");
 	mu_assert_memeq(tmp, (ut8 *)"\xff\xff\xff\x61\x61\x61\x61\xff\xff\xff", 10, "right 10 bytes");
+
+	// resize to exact bounds
+	res = rz_buf_resize(b, 7);
+	mu_assert("resized to 7", res);
+	sz = rz_buf_size(b);
+	mu_assert_eq(sz, 7, "size is 7");
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count after resize");
+	mu_assert_eq(chunks[0].from, 3, "chunk from");
+	mu_assert_eq(chunks[0].to, 6, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"aaaa", 4, "chunk data");
+
+	r = rz_buf_read_at(b, 0, tmp, sizeof(tmp));
+	mu_assert_eq(r, 7, "read the initial/final 0xff bytes");
+	mu_assert_memeq(tmp, (ut8 *)"\xff\xff\xff\x61\x61\x61\x61\xff\xff\xff", 7, "right 10 bytes");
+
+	// resize to same
+	res = rz_buf_resize(b, 7);
+	mu_assert("resized to 7", res);
+	sz = rz_buf_size(b);
+	mu_assert_eq(sz, 7, "size is 7");
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count after resize");
+	mu_assert_eq(chunks[0].from, 3, "chunk from");
+	mu_assert_eq(chunks[0].to, 6, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"aaaa", 4, "chunk data");
+
+	r = rz_buf_read_at(b, 0, tmp, sizeof(tmp));
+	mu_assert_eq(r, 7, "read the initial/final 0xff bytes");
+	mu_assert_memeq(tmp, (ut8 *)"\xff\xff\xff\x61\x61\x61\x61\xff\xff\xff", 7, "right 10 bytes");
+
+	// resize with chopping
+	res = rz_buf_resize(b, 4);
+	mu_assert("resized to 4", res);
+	sz = rz_buf_size(b);
+	mu_assert_eq(sz, 4, "size is 4");
+	chunks = rz_buf_sparse_get_chunks(b, &count);
+	mu_assert_eq(count, 1, "chunks count after resize");
+	mu_assert_eq(chunks[0].from, 3, "chunk from");
+	mu_assert_eq(chunks[0].to, 3, "chunk to");
+	mu_assert_memeq(chunks[0].data, (const ut8 *)"a", 1, "chunk data");
+
+	r = rz_buf_read_at(b, 0, tmp, sizeof(tmp));
+	mu_assert_eq(r, 4, "read the initial/final 0xff bytes");
+	mu_assert_memeq(tmp, (ut8 *)"\xff\xff\xff\x61\xff\xff\xff\xff\xff\xff", 7, "right 10 bytes");
 
 	r = rz_buf_write_at(b, 0x100, (ut8 *)"ABCDEF", 6);
 	mu_assert_eq(r, 6, "write 6 bytes at 0x100");
@@ -294,6 +782,57 @@ bool test_rz_buf_sparse2(void) {
 
 	rz_buf_free(b);
 	mu_end;
+}
+
+bool test_rz_buf_sparse_fuzz(void) {
+#define FUZZ_COUNT           200
+#define AREA_SIZE            0x1000
+#define FUZZ_WRITES          100
+#define FUZZ_WRITE_SIZE_MAX  0x100
+#define FUZZ_READS_PER_WRITE 10
+	for (size_t f = 0; f < FUZZ_COUNT; f++) {
+		RzBuffer *b = rz_buf_new_sparse(0xff);
+		ut8 ref[AREA_SIZE];
+		memset(ref, 0xff, sizeof(ref));
+		// do FUZZ_WRITES random writes in both the sparse buffer and reference array
+		for (size_t s = 0; s < FUZZ_WRITES; s++) {
+			ut64 write_from = rand() % (AREA_SIZE - 1);
+			ut64 write_size = rand() % (FUZZ_WRITE_SIZE_MAX - 1) + 1;
+			if (write_from + write_size > AREA_SIZE) {
+				write_size = AREA_SIZE - write_from;
+				assert(write_size);
+			}
+			ut8 write_data[FUZZ_WRITE_SIZE_MAX];
+			for (size_t i = 0; i < write_size; i++) {
+				write_data[i] = rand();
+			}
+			st64 r = rz_buf_write_at(b, write_from, write_data, write_size);
+			mu_assert_eq(r, write_size, "written size");
+			memcpy(ref + write_from, write_data, write_size);
+
+			// check the entire contents once
+			ut8 read_data[AREA_SIZE];
+			memset(read_data, 0x42, sizeof(read_data));
+			rz_buf_read_at(b, 0, read_data, AREA_SIZE);
+			mu_assert_true(!memcmp(read_data, ref, AREA_SIZE), "full read"); // faster than mu_assert_memeq
+
+			// also after each write, do FUZZ_READS_PER_WRITE random reads from the sparse buffer and check against the ref array
+			for (size_t r = 0; r < FUZZ_READS_PER_WRITE; r++) {
+				ut64 read_from = rand() % (AREA_SIZE - 1);
+				ut64 read_size = rand() % (AREA_SIZE - read_from - 1) + 1;
+				memset(read_data, 0x42, sizeof(read_data));
+				rz_buf_read_at(b, read_from, read_data, read_size);
+				mu_assert_true(!memcmp(read_data, ref + read_from, read_size), "read");
+			}
+		}
+		rz_buf_free(b);
+	}
+	mu_end;
+#undef FUZZ_COUNT
+#undef AREA_SIZE
+#undef FUZZ_WRITES
+#undef FUZZ_WRITE_SIZE_MAX
+#undef FUZZ_READS_PER_WRITE
 }
 
 bool test_rz_buf_bytes_steal(void) {
@@ -433,14 +972,28 @@ bool test_rz_buf_slice_too_big(void) {
 }
 
 int all_tests() {
+	time_t seed = time(0);
+	printf("Jamie Seed: %llu\n", (unsigned long long)seed);
+	srand(seed);
 	mu_run_test(test_rz_buf_file);
 	mu_run_test(test_rz_buf_bytes);
 	mu_run_test(test_rz_buf_mmap);
 	mu_run_test(test_rz_buf_with_buf);
 	mu_run_test(test_rz_buf_slice);
 	mu_run_test(test_rz_buf_io);
-	mu_run_test(test_rz_buf_sparse);
-	mu_run_test(test_rz_buf_sparse2);
+	mu_run_test(test_rz_buf_sparse_common);
+	mu_run_test(test_rz_buf_sparse_split);
+	mu_run_test(test_rz_buf_sparse_write_inside);
+	mu_run_test(test_rz_buf_sparse_write_start_exact);
+	mu_run_test(test_rz_buf_sparse_write_end_exact);
+	mu_run_test(test_rz_buf_sparse_write_beyond);
+	mu_run_test(test_rz_buf_sparse_write_into);
+	mu_run_test(test_rz_buf_sparse_write_bridge);
+	mu_run_test(test_rz_buf_sparse_write_bridge_exact);
+	mu_run_test(test_rz_buf_sparse_write_bridge_over_outside);
+	mu_run_test(test_rz_buf_sparse_write_bridge_over_inside);
+	mu_run_test(test_rz_buf_sparse_resize);
+	mu_run_test(test_rz_buf_sparse_fuzz);
 	mu_run_test(test_rz_buf_bytes_steal);
 	mu_run_test(test_rz_buf_format);
 	mu_run_test(test_rz_buf_get_string);

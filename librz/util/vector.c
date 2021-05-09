@@ -144,7 +144,7 @@ RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, vo
 	}
 	vec->len -= count;
 	if (index < vec->len) {
-		memmove(p, (char *)p + vec->elem_size * count, vec->elem_size * (vec->len - index + count));
+		memmove(p, (char *)p + vec->elem_size * count, vec->elem_size * (vec->len - index));
 	}
 }
 

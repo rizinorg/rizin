@@ -659,10 +659,6 @@ RZ_API RzBuffer *rz_buf_ref(RzBuffer *b) {
 	return b;
 }
 
-RZ_API RzList *rz_buf_nonempty_list(RzBuffer *b) {
-	return b->methods->nonempty_list ? b->methods->nonempty_list(b) : NULL;
-}
-
 RZ_API st64 rz_buf_uleb128(RzBuffer *b, ut64 *v) {
 	ut8 c = 0xff;
 	ut64 s = 0, sum = 0, l = 0;
