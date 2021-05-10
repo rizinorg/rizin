@@ -501,8 +501,26 @@ RZ_API void rz_cons_grepbuf(void) {
 	}
 	if (grep->json) {
 		if (grep->json_path) {
-			char *u = sdb_json_get_str(cons->context->buffer, grep->json_path);
-			if (u) {
+			RzJson *json = rz_json_parse(cons->context->buffer);
+			if (!json) {
+				RZ_FREE(grep->json_path);
+				return;
+			}
+			const RzJson *excerpt;
+			// To simplify grep syntax we omit brackets in `[0]` for JSON paths
+			if (*grep->json_path != '[' && *grep->json_path != '.') {
+				char *tmppath = rz_str_newf("[%s]", grep->json_path);
+				excerpt = rz_json_get_path(json, tmppath);
+				free(tmppath);
+			} else {
+				excerpt = rz_json_get_path(json, grep->json_path);
+			}
+			if (excerpt) {
+				char *u = rz_json_as_string(excerpt);
+				if (!u) {
+					RZ_FREE(grep->json_path);
+					return;
+				}
 				cons->context->buffer = u;
 				cons->context->buffer_len = strlen(u);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
