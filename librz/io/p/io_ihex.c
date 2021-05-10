@@ -68,14 +68,14 @@ static int fw04b(FILE *fd, ut16 eaddr) {
 
 //write contiguous block of data to file; ret 0 if ok
 //max 65535 bytes; assumes a 04 rec was written before
-static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
+static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut32 size) {
 	ut8 cks;
 	char linebuf[80];
 	ut16 last_addr;
 	int j;
 	ut32 i; //has to be bigger than size !
 
-	if (size < 1 || !fd || !b) {
+	if (size < 1 || size > 0x10000 || !fd || !b) {
 		return -1;
 	}
 
@@ -334,53 +334,52 @@ static bool ihex_write(RzIODesc *desc, Rihex *rih) {
 		eprintf("Cannot open '%s' for writing\n", pathname);
 		return false;
 	}
-	/* disk write : process each sparse chunk */
+	// disk write : process each sparse chunk
 	size_t chunks_count;
 	const RzBufferSparseChunk *chunks = rz_buf_sparse_get_chunks(rih->rbuf, &chunks_count);
 	ut64 addh_cur = 0;
 	for (size_t i = 0; i < chunks_count; i++) {
 		const RzBufferSparseChunk *rbs = &chunks[i];
-		ut16 addl0 = rbs->from & 0xffff;
-		ut16 addh0 = rbs->from >> 16;
-		ut16 addh1 = rbs->to >> 16;
-		ut16 tsiz = 0;
-
-		if (addh0 != addh1) {
-			//we cross a 64k boundary, so write in two steps
-			if (addh0 != addh_cur) {
-				addh_cur = addh0;
-				//04 record (ext address)
-				if (fw04b(out, addh0) < 0) {
+		ut64 from = rbs->from;
+		while (from >> 16 != rbs->to >> 16) {
+			// we cross a 64k boundary, so write in multiple steps
+			ut16 addl = from & 0xffff;
+			ut16 addh = from >> 16;
+			if (addh != addh_cur) {
+				addh_cur = addh;
+				// 04 record (ext address)
+				if (fw04b(out, addh) < 0) {
 					eprintf("ihex:write: file error\n");
 					fclose(out);
 					return false;
 				}
 			}
-			//00 records (data)
-			tsiz = -addl0;
-			addl0 = 0;
-			if (fwblock(out, rbs->data, rbs->from, tsiz)) {
+			// 00 records (data)
+			ut32 tsiz = (ut32)0x10000 - (ut32)addl;
+			if (fwblock(out, rbs->data + (from - rbs->from), from, tsiz)) {
 				eprintf("ihex:fwblock error\n");
 				fclose(out);
 				return false;
 			}
+			from = ((from >> 16) + 1) << 16;
 		}
-		if (addh1 != addh_cur) {
-			addh_cur = addh1;
-			//04 record (ext address)
-			if (fw04b(out, addh1) < 0) {
+		ut16 addh = from >> 16;
+		if (addh != addh_cur) {
+			addh_cur = addh;
+			// 04 record (ext address)
+			if (fw04b(out, addh) < 0) {
 				eprintf("ihex:write: file error\n");
 				fclose(out);
 				return false;
 			}
 		}
-		//00 records (remaining data)
-		if (fwblock(out, rbs->data + tsiz, (addh1 << 16) | addl0, (rbs->to - rbs->from + 1) - tsiz)) {
-			eprintf("ihex:fwblock error\n");
+		// 00 records (remaining data)
+		if (fwblock(out, rbs->data + (from - rbs->from), from, rbs->to - from + 1)) {
+			eprintf("ihex:fwblock error 2\n");
 			fclose(out);
 			return false;
 		}
-	} //list_foreach
+	}
 
 	fprintf(out, ":00000001FF\n");
 	fclose(out);
