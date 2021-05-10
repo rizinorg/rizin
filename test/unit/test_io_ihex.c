@@ -173,6 +173,50 @@ bool test_rz_io_ihex_write(void) {
 	mu_end;
 }
 
+bool test_rz_io_ihex_write_large(void) {
+	// write of a single chunk spanning more than 2 16bit pages
+
+	char *filename = create_sample_file("ihex1");
+	char *uri = rz_str_newf("ihex://%s", filename);
+
+	RzIO *io = rz_io_new();
+	io->ff = true;
+	io->Oxff = 0xff;
+	RzIODesc *desc = rz_io_open_nomap(io, uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(desc, "open");
+
+#define DATA_SIZE 0x26219 // some large size, more than 2 16bit pages
+	ut8 data[DATA_SIZE];
+	for (size_t i = 0; i < sizeof(data); i++) {
+		data[i] = rand();
+	}
+
+	bool r = rz_io_write_at(io, 0x1337, data, sizeof(data));
+	mu_assert_true(r, "write success");
+
+	ut8 tmp[DATA_SIZE];
+#undef DATA_SIZE
+	r = rz_io_read_at(io, 0x1337, tmp, sizeof(tmp));
+	mu_assert_true(r, "read success");
+	mu_assert_true(!memcmp(tmp, data, sizeof(data)), "re-read in memory"); // faster for this large size than mu_assert_memeq
+	rz_io_free(io);
+
+	// reopen and check again
+	io = rz_io_new();
+	io->ff = true;
+	io->Oxff = 0xff;
+	rz_io_open_nomap(io, uri, RZ_PERM_R, 0);
+	r = rz_io_read_at(io, 0x1337, tmp, sizeof(tmp));
+	mu_assert_true(r, "read success");
+	mu_assert_true(!memcmp(tmp, data, sizeof(data)), "re-read from file"); // faster for this large size than mu_assert_memeq
+	rz_io_free(io);
+
+	rz_file_rm(filename);
+	free(filename);
+	free(uri);
+	mu_end;
+}
+
 bool test_rz_io_ihex_resize_bigger(void) {
 	char *filename = create_sample_file("ihex2");
 	char *uri = rz_str_newf("ihex://%s", filename);
@@ -291,6 +335,7 @@ bool test_rz_io_ihex_resize_smaller(void) {
 bool all_tests(void) {
 	mu_run_test(test_rz_io_ihex_read);
 	mu_run_test(test_rz_io_ihex_write);
+	mu_run_test(test_rz_io_ihex_write_large);
 	mu_run_test(test_rz_io_ihex_resize_bigger);
 	mu_run_test(test_rz_io_ihex_resize_smaller);
 	return tests_passed != tests_run;
