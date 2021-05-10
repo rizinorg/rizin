@@ -442,8 +442,9 @@ RZ_API const RzJson *rz_json_get_path(const RzJson *json, const char *path) {
 		case '.':
 			key = path;
 			for (keysize = 0; key[keysize]; ++keysize) {
-				if (strchr(".[", key[keysize]))
+				if (strchr(".[", key[keysize])) {
 					break;
+				}
 			}
 			if (keysize == 0) {
 				RZ_JSON_REPORT_ERROR("JSON path: expected key", path - 1);
