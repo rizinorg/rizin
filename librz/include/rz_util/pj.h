@@ -33,6 +33,10 @@ typedef struct pj_t {
 	PJEncodingNum num_encoding;
 } PJ;
 
+/* encoding */
+RZ_API PJEncodingStr pj_encoding_str_of_string(RZ_NONNULL const char *encoding);
+RZ_API PJEncodingNum pj_encoding_num_of_string(RZ_NONNULL const char *encoding);
+
 /* lifecycle */
 RZ_API PJ *pj_new(void);
 RZ_API PJ *pj_new_with_encoding(PJEncodingStr str_encoding, PJEncodingNum num_encoding);
