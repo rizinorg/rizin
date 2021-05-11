@@ -6748,3 +6748,60 @@ RZ_API bool rz_core_print_function_disasm_json(RzCore *core, RzAnalysisFunction 
 	rz_config_set(core->config, "asm.bb.middle", orig_bb_middle);
 	return true;
 }
+
+/**
+ * \brief Returns a disassembly of one instruction
+ *
+ * It returns disassembly on one instruction with additional output changes:
+ * function local variables subsitution, PC-relative addressing subsitution,
+ * analysis hints affecting the disassembly output, optional colors.
+ *
+ * \param core RzCore instance
+ * \param addr An address of the instruction
+ * \param reladdr An address to substitute PC-relative expressions in disasm (`asm.sub.rel` config)
+ * \param fcn A function where the instruction located for local variables substitution (optional)
+ * \param color To toggle color escape sequences in the output
+ * */
+RZ_API RZ_OWN char *rz_core_disasm_instruction(RzCore *core, ut64 addr, ut64 reladdr, RZ_NULLABLE RzAnalysisFunction *fcn, bool color) {
+	rz_return_val_if_fail(core, NULL);
+	int has_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
+	char str[512];
+	const int size = 12;
+	ut8 buf[12];
+	RzAsmOp asmop = { 0 };
+	char *buf_asm = NULL;
+	bool asm_subvar = rz_config_get_i(core->config, "asm.sub.var");
+	core->parser->pseudo = rz_config_get_i(core->config, "asm.pseudo");
+	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
+	core->parser->localvar_only = rz_config_get_i(core->config, "asm.sub.varonly");
+
+	if (core->parser->subrel) {
+		core->parser->subrel_addr = reladdr;
+	}
+	rz_io_read_at(core->io, addr, buf, size);
+	rz_asm_set_pc(core->rasm, addr);
+	rz_asm_disassemble(core->rasm, &asmop, buf, size);
+	int ba_len = rz_strbuf_length(&asmop.buf_asm) + 128;
+	char *ba = malloc(ba_len);
+	strcpy(ba, rz_strbuf_get(&asmop.buf_asm));
+	if (asm_subvar) {
+		core->parser->get_ptr_at = rz_analysis_function_get_var_stackptr_at;
+		core->parser->get_reg_at = rz_analysis_function_get_var_reg_at;
+		core->parser->get_op_ireg = get_op_ireg;
+		rz_parse_subvar(core->parser, fcn, addr, asmop.size,
+			ba, ba, sizeof(asmop.buf_asm));
+	}
+	RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, addr);
+	rz_parse_filter(core->parser, addr, core->flags, hint,
+		ba, str, sizeof(str), core->print->big_endian);
+	rz_analysis_hint_free(hint);
+	rz_asm_op_set_asm(&asmop, ba);
+	free(ba);
+	if (color && has_color) {
+		buf_asm = rz_print_colorize_opcode(core->print, str,
+			core->cons->context->pal.reg, core->cons->context->pal.num, false, fcn ? fcn->addr : 0);
+	} else {
+		buf_asm = rz_str_new(str);
+	}
+	return buf_asm;
+}
