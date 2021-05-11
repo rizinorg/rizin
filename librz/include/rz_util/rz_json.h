@@ -6,6 +6,7 @@
 #define RZ_JSON_H
 
 #include <rz_types.h>
+#include <rz_util/pj.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +63,8 @@ RZ_API void rz_json_free(RzJson *js);
 RZ_API const RzJson *rz_json_get(const RzJson *json, const char *key); // get object's property by key
 RZ_API const RzJson *rz_json_item(const RzJson *json, size_t idx); // get array element by index
 RZ_API const RzJson *rz_json_get_path(const RzJson *json, const char *path); // reach into an object by (simple) JSON path like [0].methods[1].flags[0]
+RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json); // shows the string representation of RzJson
+RZ_API RZ_OWN char *rz_json_as_string_with_encoding(const RzJson *json, PJEncodingStr str_encoding, PJEncodingNum num_encoding); // shows the string representation of RzJson with specified encoding
 
 #ifdef __cplusplus
 }

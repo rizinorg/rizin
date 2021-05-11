@@ -22,6 +22,32 @@ static void pj_comma(PJ *j) {
 	j->is_key = false;
 }
 
+RZ_API PJEncodingStr pj_encoding_str_of_string(RZ_NONNULL const char *encoding) {
+	rz_return_val_if_fail(encoding, PJ_ENCODING_STR_DEFAULT);
+	PJEncodingStr string_encoding = PJ_ENCODING_STR_DEFAULT;
+	if (!strcmp("base64", encoding)) {
+		string_encoding = PJ_ENCODING_STR_BASE64;
+	} else if (!strcmp("hex", encoding)) {
+		string_encoding = PJ_ENCODING_STR_HEX;
+	} else if (!strcmp("array", encoding)) {
+		string_encoding = PJ_ENCODING_STR_ARRAY;
+	} else if (!strcmp("strip", encoding)) {
+		string_encoding = PJ_ENCODING_STR_STRIP;
+	}
+	return string_encoding;
+}
+
+RZ_API PJEncodingNum pj_encoding_num_of_string(RZ_NONNULL const char *encoding) {
+	rz_return_val_if_fail(encoding, PJ_ENCODING_NUM_DEFAULT);
+	PJEncodingNum number_encoding = PJ_ENCODING_NUM_DEFAULT;
+	if (!strcmp("string", encoding)) {
+		number_encoding = PJ_ENCODING_NUM_STR;
+	} else if (!strcmp("hex", encoding)) {
+		number_encoding = PJ_ENCODING_NUM_HEX;
+	}
+	return number_encoding;
+}
+
 RZ_API PJ *pj_new(void) {
 	PJ *j = RZ_NEW0(PJ);
 	if (j) {
