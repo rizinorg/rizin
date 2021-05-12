@@ -178,12 +178,23 @@ RZ_API RzBuffer *rz_buf_new_with_buf(RzBuffer *b) {
 	return rz_buf_new_with_bytes(tmp, sz);
 }
 
+/// create a new sparse RzBuffer where unpopulated bytes are filled with Oxff
 RZ_API RzBuffer *rz_buf_new_sparse(ut8 Oxff) {
 	RzBuffer *b = new_buffer(RZ_BUFFER_SPARSE, NULL);
 	if (b) {
 		b->Oxff_priv = Oxff;
 	}
 	return b;
+}
+
+/// create a new sparse RzBuffer where unpopulated bytes are taken as-is from b
+RZ_API RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode) {
+	rz_return_val_if_fail(b, NULL);
+	SparseInitConfig cfg = {
+		.base = b,
+		.write_mode = write_mode
+	};
+	return new_buffer(RZ_BUFFER_SPARSE, &cfg);
 }
 
 RZ_API RzBuffer *rz_buf_new(void) {
@@ -267,6 +278,12 @@ RZ_API bool rz_buf_set_bytes(RzBuffer *b, const ut8 *buf, ut64 length) {
 		return false;
 	}
 	return rz_buf_seek(b, 0, RZ_BUF_SET) >= 0;
+}
+
+/// Set the content that bytes read outside the buffer bounds should have
+RZ_API void rz_buf_set_overflow_byte(RzBuffer *b, ut8 Oxff) {
+	rz_return_if_fail(b);
+	b->Oxff_priv = Oxff;
 }
 
 RZ_API bool rz_buf_prepend_bytes(RzBuffer *b, const ut8 *buf, ut64 length) {
