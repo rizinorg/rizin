@@ -31,11 +31,13 @@ static RzList *virtual_files(RzBinFile *bf) {
 	RzBinVirtualFile *vfile = RZ_NEW0(RzBinVirtualFile);
 	vfile->name = strdup("vfile0");
 	vfile->buf = rz_buf_new_with_bytes((const ut8 *)"\xc0\xff\xee", 3);
+	vfile->buf_owned = true;
 	rz_list_push(ret, vfile);
 
 	vfile = RZ_NEW0(RzBinVirtualFile);
 	vfile->name = strdup("vfile1");
 	vfile->buf = rz_buf_new_with_bytes((const ut8 *)"rizin123", 8);
+	vfile->buf_owned = true;
 	rz_list_push(ret, vfile);
 
 	return ret;

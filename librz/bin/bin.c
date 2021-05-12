@@ -1283,7 +1283,9 @@ RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile) {
 	if (!vfile) {
 		return;
 	}
-	rz_buf_free(vfile->buf);
+	if (vfile->buf_owned) {
+		rz_buf_free(vfile->buf);
+	}
 	free(vfile->name);
 	free(vfile);
 }

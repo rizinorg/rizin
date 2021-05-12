@@ -151,7 +151,6 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
-	.patch_relocs = &patch_relocs,
 	.create = &create,
 	.write = &rz_bin_write_elf64,
 	.get_vaddr = &get_elf_vaddr64,

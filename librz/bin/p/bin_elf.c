@@ -157,7 +157,6 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
-	.patch_relocs = &patch_relocs,
 	.create = &create,
 	.write = &rz_bin_write_elf,
 	.file_type = &get_file_type,
