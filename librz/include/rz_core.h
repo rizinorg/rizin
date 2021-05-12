@@ -397,6 +397,7 @@ typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
 
 RZ_API void rz_core_gadget_free(RzCoreGadget *g);
+RZ_API void rz_core_gadget_print(RzCore *core);
 
 RZ_API bool rz_core_plugin_init(RzCore *core);
 RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
