@@ -320,3 +320,25 @@ RZ_API void rz_buf_sparse_set_write_mode(RzBuffer *b, RzBufferSparseWriteMode mo
 	SparsePriv *priv = get_priv_sparse(b);
 	priv->write_mode = mode;
 }
+
+/**
+ * \param from inclusive
+ * \param to inclusive
+ * \return whether the given interval contains chunks populated in the sparse buffer
+ */
+RZ_API bool rz_buf_sparse_populated_in(RzBuffer *b, ut64 from, ut64 to) {
+	rz_return_val_if_fail(b, false);
+	if (b->methods != &buffer_sparse_methods) {
+		return false;
+	}
+	SparsePriv *priv = get_priv_sparse(b);
+	size_t from_i = chunk_index_in(priv, from);
+	if (from_i) {
+		RzBufferSparseChunk *c = rz_vector_index_ptr(&priv->chunks, from_i - 1);
+		if (from <= c->to) {
+			return true;
+		}
+	}
+	size_t to_i = chunk_index_in(priv, to);
+	return to_i > from_i;
+}
