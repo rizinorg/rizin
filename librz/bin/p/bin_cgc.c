@@ -125,7 +125,6 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.create = &create,
-	.patch_relocs = &patch_relocs,
 	.write = &rz_bin_write_elf,
 	.file_type = get_file_type,
 	.regstate = regstate,

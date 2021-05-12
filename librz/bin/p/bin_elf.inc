@@ -13,7 +13,12 @@
 #include "elf/elf.h"
 #include <ht_uu.h>
 
+#define VFILE_NAME_RELOC_TARGETS "reloc-targets"
+#define VFILE_NAME_PATCHED       "patched"
+
 static RzBinInfo *info(RzBinFile *bf);
+static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin);
+static RzList *imports(RzBinFile *bf);
 
 //TODO: implement rz_bin_symbol_dup() and rz_bin_symbol_free ?
 
@@ -41,14 +46,6 @@ static char *regstate(RzBinFile *bf) {
 	char *hexregs = (regs && sz) ? rz_hex_bin2strdup(regs, sz) : NULL;
 
 	return hexregs;
-}
-
-static void setimpord(ELFOBJ *eobj, ut32 ord, RzBinImport *ptr) {
-	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
-		return;
-	}
-	rz_bin_import_free(eobj->imports_by_ord[ord]);
-	eobj->imports_by_ord[ord] = rz_bin_import_clone(ptr);
 }
 
 static char *setphname(ut16 mach, Elf_(Word) ptyp) {
@@ -208,8 +205,11 @@ static ut32 section_perms_from_flags(ut32 flags) {
 
 static RzList *maps_unpatched(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
-	RzList *ret = NULL;
-	if (!obj || !(ret = rz_list_newf((RzListFree)rz_bin_map_free))) {
+	if (!obj) {
+		return NULL;
+	}
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
+	if (!ret) {
 		return NULL;
 	}
 	Elf_(Phdr) *phdr = obj->phdr;
@@ -299,11 +299,12 @@ static RzList *maps_unpatched(RzBinFile *bf) {
 	return ret;
 }
 
-static ut64 reloc_target_size(RzBinFile *bf) {
-	if (!bf->o || !bf->o->info || bf->o->info->bits < 8) {
+static ut64 reloc_target_size(struct Elf_(rz_bin_elf_obj_t) * obj) {
+	ut64 r = Elf_(rz_bin_elf_get_bits)(obj);
+	if (!r) {
 		return 8;
 	}
-	return bf->o->info->bits / 8;
+	return r / 8;
 }
 
 /// base vaddr where to map the artificial reloc target vfile
@@ -311,7 +312,7 @@ static ut64 reloc_targets_map_base(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) 
 	if (obj->reloc_targets_map_base_calculated) {
 		return obj->reloc_targets_map_base;
 	}
-	// find the lowest unmapped address, make sure this calculation is in sync with what maps() returns!
+	// find the lowest unmapped address
 	ut64 max = 0;
 	RzList *maps = maps_unpatched(bf);
 	if (maps) {
@@ -326,7 +327,8 @@ static ut64 reloc_targets_map_base(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) 
 		rz_list_free(maps);
 	}
 	obj->reloc_targets_map_base_calculated = true;
-	obj->reloc_targets_map_base = max + rz_num_align_delta(max, reloc_target_size(bf));
+	max += 0x8; // small additional shift to not overlap with symbols like _end
+	obj->reloc_targets_map_base = max + rz_num_align_delta(max, reloc_target_size(obj));
 	return obj->reloc_targets_map_base;
 }
 
@@ -342,7 +344,363 @@ static ut64 reloc_targets_vfile_size(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t
 	}
 	// TODO-end
 
-	return obj->g_reloc_num * reloc_target_size(bf);
+	return obj->g_reloc_num * reloc_target_size(obj);
+}
+
+static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+	ut16 e_machine = obj->ehdr.e_machine;
+	ut64 val;
+	ut64 A = rel->addend, P = rel->vaddr;
+	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p_new)(obj, rel->vaddr);
+	ut8 buf[8];
+	switch (e_machine) {
+	case EM_ARM:
+		val = S + A;
+		rz_write_le32(buf, val);
+		rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+		break;
+	case EM_AARCH64:
+		val = S + A;
+		rz_write_le64(buf, val);
+		rz_buf_write_at(obj->buf_patched, patch_addr, buf, 8);
+		break;
+	case EM_PPC64: {
+		int low = 0, word = 0;
+		switch (rel->type) {
+		case RZ_PPC64_REL16_HA:
+			word = 2;
+			val = (S + A - P + 0x8000) >> 16;
+			break;
+		case RZ_PPC64_REL16_LO:
+			word = 2;
+			val = (S + A - P) & 0xffff;
+			break;
+		case RZ_PPC64_REL14:
+			low = 14;
+			val = (st64)(S + A - P) >> 2;
+			break;
+		case RZ_PPC64_REL24:
+			low = 24;
+			val = (st64)(S + A - P) >> 2;
+			break;
+		case RZ_PPC64_REL32:
+			word = 4;
+			val = S + A - P;
+			break;
+		default:
+			break;
+		}
+		if (low) {
+			// TODO big-endian
+			switch (low) {
+			case 14:
+				val &= (1 << 14) - 1;
+				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 2);
+				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 16) - (1 << 2))) | val << 2);
+				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
+				break;
+			case 24:
+				val &= (1 << 24) - 1;
+				rz_buf_read_at(obj->buf_patched, patch_addr, buf, 4);
+				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 26) - (1 << 2))) | val << 2);
+				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+				break;
+			}
+		} else if (word) {
+			// TODO big-endian
+			switch (word) {
+			case 2:
+				rz_write_le16(buf, val);
+				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
+				break;
+			case 4:
+				rz_write_le32(buf, val);
+				rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+				break;
+			}
+		}
+		break;
+	}
+	case EM_X86_64: {
+		int word = 0;
+		switch (rel->type) {
+		case RZ_X86_64_8:
+			word = 1;
+			val = S + A;
+			break;
+		case RZ_X86_64_16:
+			word = 2;
+			val = S + A;
+			break;
+		case RZ_X86_64_32:
+		case RZ_X86_64_32S:
+			word = 4;
+			val = S + A;
+			break;
+		case RZ_X86_64_64:
+			word = 8;
+			val = S + A;
+			break;
+		case RZ_X86_64_GLOB_DAT:
+		case RZ_X86_64_JUMP_SLOT:
+			word = 4;
+			val = S;
+			break;
+		case RZ_X86_64_PC8:
+			word = 1;
+			val = S + A - P;
+			break;
+		case RZ_X86_64_PC16:
+			word = 2;
+			val = S + A - P;
+			break;
+		case RZ_X86_64_PC32:
+			word = 4;
+			val = S + A - P;
+			break;
+		case RZ_X86_64_PC64:
+			word = 8;
+			val = S + A - P;
+			break;
+		case RZ_X86_64_PLT32:
+			word = 4;
+			val = L + A - P;
+			break;
+		case RZ_X86_64_RELATIVE:
+			word = 8;
+			val = B + A;
+			break;
+		default:
+			//eprintf ("relocation %d not handle at this time\n", rel->type);
+			break;
+		}
+		switch (word) {
+		case 0:
+			break;
+		case 1:
+			buf[0] = val;
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 1);
+			break;
+		case 2:
+			rz_write_le16(buf, val);
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 2);
+			break;
+		case 4:
+			rz_write_le32(buf, val);
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 4);
+			break;
+		case 8:
+			rz_write_le64(buf, val);
+			rz_buf_write_at(obj->buf_patched, patch_addr, buf, 8);
+			break;
+		}
+		break;
+	}
+	}
+}
+
+static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinElfReloc *rel, ut64 GOT) {
+	rz_return_val_if_fail(bin && rel, NULL);
+
+	ut64 B = bin->baddr;
+	ut64 P = rel->vaddr; // rva has taken baddr into account
+	RzBinReloc *r = RZ_NEW0(RzBinReloc);
+	if (!r) {
+		return NULL;
+	}
+	r->import = NULL;
+	r->symbol = NULL;
+	r->is_ifunc = false;
+	r->addend = rel->addend;
+	if (rel->sym) {
+		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym]) {
+			r->import = bin->imports_by_ord[rel->sym];
+		} else if (rel->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[rel->sym]) {
+			r->symbol = bin->symbols_by_ord[rel->sym];
+		}
+	}
+	r->vaddr = rel->vaddr;
+	r->paddr = rel->paddr;
+	r->target_vaddr = rel->target_vaddr;
+
+#define SET(T) \
+	r->type = RZ_BIN_RELOC_##T; \
+	r->additive = 0; \
+	return r
+#define ADD(T, A) \
+	r->type = RZ_BIN_RELOC_##T; \
+	r->addend += A; \
+	r->additive = rel->rel_mode == DT_RELA; \
+	return r
+
+	switch (bin->ehdr.e_machine) {
+	case EM_386:
+		switch (rel->type) {
+		case RZ_386_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case RZ_386_32: ADD(32, 0);
+		case RZ_386_PC32: ADD(32, -P);
+		case RZ_386_GLOB_DAT: SET(32);
+		case RZ_386_JMP_SLOT: SET(32);
+		case RZ_386_RELATIVE: ADD(32, B);
+		case RZ_386_GOTOFF: ADD(32, -GOT);
+		case RZ_386_GOTPC: ADD(32, GOT - P);
+		case RZ_386_16: ADD(16, 0);
+		case RZ_386_PC16: ADD(16, -P);
+		case RZ_386_8: ADD(8, 0);
+		case RZ_386_PC8: ADD(8, -P);
+		case RZ_386_COPY: ADD(32, 0); // XXX: copy symbol at runtime
+		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32);
+		default: break;
+		}
+		break;
+	case EM_X86_64:
+		switch (rel->type) {
+		case RZ_X86_64_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case RZ_X86_64_64: ADD(64, 0);
+		case RZ_X86_64_PLT32: ADD(32, -P /* +L */);
+		case RZ_X86_64_GOT32: ADD(32, GOT);
+		case RZ_X86_64_PC32: ADD(32, -P);
+		case RZ_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
+		case RZ_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
+		case RZ_X86_64_RELATIVE: ADD(64, B);
+		case RZ_X86_64_32: ADD(32, 0);
+		case RZ_X86_64_32S: ADD(32, 0);
+		case RZ_X86_64_16: ADD(16, 0);
+		case RZ_X86_64_PC16: ADD(16, -P);
+		case RZ_X86_64_8: ADD(8, 0);
+		case RZ_X86_64_PC8: ADD(8, -P);
+		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P);
+		case RZ_X86_64_COPY: ADD(64, 0); // XXX: copy symbol at runtime
+		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
+		default: break;
+		}
+		break;
+	case EM_ARM:
+		switch (rel->type) {
+		case RZ_ARM_NONE: break;
+		case RZ_ARM_ABS32: ADD(32, 0);
+		case RZ_ARM_REL32: ADD(32, -P);
+		case RZ_ARM_ABS16: ADD(16, 0);
+		case RZ_ARM_ABS8: ADD(8, 0);
+		case RZ_ARM_SBREL32: ADD(32, -B);
+		case RZ_ARM_GLOB_DAT: ADD(32, 0);
+		case RZ_ARM_JUMP_SLOT: ADD(32, 0);
+		case RZ_ARM_RELATIVE: ADD(32, B);
+		case RZ_ARM_GOTOFF: ADD(32, -GOT);
+		default: ADD(32, GOT); break; // reg relocations
+		}
+		break;
+	case EM_RISCV:
+		switch (rel->type) {
+		case RZ_RISCV_NONE: break;
+		case RZ_RISCV_JUMP_SLOT: ADD(64, 0);
+		case RZ_RISCV_RELATIVE: ADD(64, B);
+		default: ADD(64, GOT); break; // reg relocations
+		}
+		break;
+	case EM_AARCH64:
+		switch (rel->type) {
+		case RZ_AARCH64_NONE: break;
+		case RZ_AARCH64_ABS32: ADD(32, 0);
+		case RZ_AARCH64_ABS16: ADD(16, 0);
+		case RZ_AARCH64_GLOB_DAT: SET(64);
+		case RZ_AARCH64_JUMP_SLOT: SET(64);
+		case RZ_AARCH64_RELATIVE: ADD(64, B);
+		default: break; // reg relocations
+		}
+		break;
+	case EM_PPC:
+		switch (rel->type) {
+		case RZ_PPC_NONE: break;
+		case RZ_PPC_GLOB_DAT: ADD(32, 0);
+		case RZ_PPC_JMP_SLOT: ADD(32, 0);
+		default:
+			eprintf("unimplemented ELF/PPC reloc type %d\n", rel->type);
+			break;
+		}
+		break;
+	default: break;
+	}
+
+#undef SET
+#undef ADD
+
+	free(r);
+	return NULL;
+}
+
+static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin) {
+	rz_return_if_fail(bf && bin);
+	if (bin->relocs_patched) {
+		return;
+	}
+	bin->relocs_patched = true; // run this function just once (lazy relocs patching)
+	RzBinObject *obj = bf->o;
+	if (!obj || !obj->opts.patch_relocs || (bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN)) {
+		return;
+	}
+	ut64 cdsz = reloc_target_size(bin);
+	ut64 size = reloc_targets_vfile_size(bf, bin);
+	if (!size) {
+		return;
+	}
+	ut64 n_vaddr = reloc_targets_map_base(bf, bin);
+	RzBinElfReloc *relcs = relcs = Elf_(rz_bin_elf_get_relocs)(bin);
+	if (!relcs) {
+		return;
+	}
+	HtUUOptions opt = { 0 };
+	HtUU *relocs_by_sym = ht_uu_new_opt(&opt);
+	if (!relocs_by_sym) {
+		return;
+	}
+	bin->buf_patched = rz_buf_new_sparse_overlay(bf->buf, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	if (!bin->buf_patched) {
+		ht_uu_free(relocs_by_sym);
+		return;
+	}
+	Elf_(rz_bin_elf_get_imports)(bin); // Pre-populate imports and syms. Calling this multiple times is fine since it only parses once lazily.
+	ut64 vaddr = n_vaddr;
+	size_t i;
+	for (i = 0; !relcs[i].last; i++) {
+		ut64 sym_addr = 0;
+		ut64 plt_entry_addr = vaddr;
+		RzBinElfReloc *reloc = &relcs[i];
+
+		if (reloc->sym) {
+			if (reloc->sym < bin->imports_by_ord_size && bin->imports_by_ord[reloc->sym]) {
+				bool found;
+				sym_addr = ht_uu_find(relocs_by_sym, reloc->sym, &found);
+				if (found) {
+					plt_entry_addr = sym_addr;
+				}
+			} else if (reloc->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[reloc->sym]) {
+				sym_addr = bin->symbols_by_ord[reloc->sym]->vaddr;
+				plt_entry_addr = sym_addr;
+			}
+		}
+		// TODO relocation types B, L
+		patch_reloc(bin, reloc, sym_addr ? sym_addr : vaddr, 0, plt_entry_addr);
+
+		// TODO: do this in regular relocs cb
+#if 0
+		RzBinReloc *ptr = NULL;
+		if (!(ptr = reloc_convert(bin, &relcs[i], n_vaddr))) {
+			continue;
+		}
+#endif
+
+		if (sym_addr) {
+			reloc->target_vaddr = sym_addr;
+		} else {
+			reloc->target_vaddr = vaddr;
+			ht_uu_insert(relocs_by_sym, reloc->sym, vaddr);
+			vaddr += cdsz;
+		}
+	}
+	ht_uu_free(relocs_by_sym);
+	// from now on, all writes should propagate through to the actual file
+	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
 }
 
 static RzList *virtual_files(RzBinFile *bf) {
@@ -355,6 +713,7 @@ static RzList *virtual_files(RzBinFile *bf) {
 	if (!obj) {
 		return r;
 	}
+	patch_relocs(bf, obj);
 	// virtual file for reloc targets (where the relocs will point into)
 	ut64 rtmsz = reloc_targets_vfile_size(bf, obj);
 	if (rtmsz) {
@@ -363,8 +722,22 @@ static RzList *virtual_files(RzBinFile *bf) {
 			return r;
 		}
 		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
+		if (!vf) {
+			return r;
+		}
 		vf->buf = buf;
-		vf->name = strdup("reloc-targets");
+		vf->buf_owned = true;
+		vf->name = strdup(VFILE_NAME_RELOC_TARGETS);
+		rz_list_push(r, vf);
+	}
+	// virtual file mirroring the raw file, but with relocs patched
+	if (obj->buf_patched) {
+		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
+		if (!vf) {
+			return r;
+		}
+		vf->buf = obj->buf_patched;
+		vf->name = strdup(VFILE_NAME_PATCHED);
 		rz_list_push(r, vf);
 	}
 	return r;
@@ -379,6 +752,24 @@ static RzList *maps(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
+
+	// if relocs should be patched, use the patched vfile for everything from the file
+	patch_relocs(bf, obj);
+	if (obj->buf_patched) {
+		RzListIter *it;
+		RzBinMap *map;
+		rz_list_foreach (ret, it, map) {
+			if (map->vfile_name) {
+				continue;
+			}
+			if (!map->psize || !rz_buf_sparse_populated_in(obj->buf_patched, map->paddr, map->paddr + map->psize - 1)) {
+				// avoid using the patched file if there is nothing different in this range
+				continue;
+			}
+			map->vfile_name = strdup(VFILE_NAME_PATCHED);
+		}
+	}
+
 	ut64 rtmsz = reloc_targets_vfile_size(bf, obj);
 	if (rtmsz) {
 		// virtual file for reloc targets (where the relocs will point into)
@@ -396,7 +787,7 @@ static RzList *maps(RzBinFile *bf) {
 		map->vaddr = reloc_targets_map_base(bf, obj);
 		map->vsize = rtmsz;
 		map->perm = RZ_PERM_R;
-		map->vfile_name = strdup("reloc-targets");
+		map->vfile_name = strdup(VFILE_NAME_RELOC_TARGETS);
 		rz_list_prepend(ret, map);
 	}
 	return ret;
@@ -704,7 +1095,7 @@ static RzList *symbols(RzBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
-		ptr = Elf_(_r_bin_elf_convert_symbol)(bin, &symbol[i], "%s");
+		ptr = Elf_(rz_bin_elf_convert_symbol)(bin, &symbol[i], "%s");
 		if (!ptr) {
 			break;
 		}
@@ -719,7 +1110,7 @@ static RzList *symbols(RzBinFile *bf) {
 		if (!symbol[i].size) {
 			continue;
 		}
-		ptr = Elf_(_r_bin_elf_convert_symbol)(bin, &symbol[i], "%s");
+		ptr = Elf_(rz_bin_elf_convert_symbol)(bin, &symbol[i], "%s");
 		if (!ptr) {
 			break;
 		}
@@ -736,9 +1127,6 @@ static RzList *symbols(RzBinFile *bf) {
 
 static RzList *imports(RzBinFile *bf) {
 	RzBinElfSymbol *import = NULL;
-	RzBinImport *ptr = NULL;
-	int i;
-
 	rz_return_val_if_fail(bf && bf->o, NULL);
 	struct Elf_(rz_bin_elf_obj_t) *elf = bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
@@ -749,16 +1137,12 @@ static RzList *imports(RzBinFile *bf) {
 		rz_list_free(ret);
 		return NULL;
 	}
-	for (i = 0; !import[i].last; i++) {
-		if (!(ptr = RZ_NEW0(RzBinImport))) {
-			break;
+	for (size_t i = 0; !import[i].last; i++) {
+		RzBinImport *imp = Elf_(rz_bin_elf_convert_import)(elf, &import[i]);
+		if (!imp) {
+			continue;
 		}
-		ptr->name = strdup(import[i].name);
-		ptr->bind = import[i].bind;
-		ptr->type = import[i].type;
-		ptr->ordinal = import[i].ordinal;
-		setimpord(elf, ptr->ordinal, ptr);
-		rz_list_append(ret, ptr);
+		rz_list_append(ret, imp);
 	}
 	return ret;
 }
@@ -782,147 +1166,19 @@ static RzList *libs(RzBinFile *bf) {
 	return ret;
 }
 
-static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinElfReloc *rel, ut64 GOT) {
-	rz_return_val_if_fail(bin && rel, NULL);
-
-	ut64 B = bin->baddr;
-	ut64 P = rel->vaddr; // rva has taken baddr into account
-	RzBinReloc *r = RZ_NEW0(RzBinReloc);
-	if (!r) {
-		return NULL;
-	}
-	r->import = NULL;
-	r->symbol = NULL;
-	r->is_ifunc = false;
-	r->addend = rel->addend;
-	if (rel->sym) {
-		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym]) {
-			r->import = bin->imports_by_ord[rel->sym];
-		} else if (rel->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[rel->sym]) {
-			r->symbol = bin->symbols_by_ord[rel->sym];
-		}
-	}
-	r->paddr = rel->paddr;
-	r->vaddr = rel->vaddr;
-
-#define SET(T) \
-	r->type = RZ_BIN_RELOC_##T; \
-	r->additive = 0; \
-	return r
-#define ADD(T, A) \
-	r->type = RZ_BIN_RELOC_##T; \
-	r->addend += A; \
-	r->additive = rel->rel_mode == DT_RELA; \
-	return r
-
-	switch (bin->ehdr.e_machine) {
-	case EM_386:
-		switch (rel->type) {
-		case RZ_386_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_386_32: ADD(32, 0);
-		case RZ_386_PC32: ADD(32, -P);
-		case RZ_386_GLOB_DAT: SET(32);
-		case RZ_386_JMP_SLOT: SET(32);
-		case RZ_386_RELATIVE: ADD(32, B);
-		case RZ_386_GOTOFF: ADD(32, -GOT);
-		case RZ_386_GOTPC: ADD(32, GOT - P);
-		case RZ_386_16: ADD(16, 0);
-		case RZ_386_PC16: ADD(16, -P);
-		case RZ_386_8: ADD(8, 0);
-		case RZ_386_PC8: ADD(8, -P);
-		case RZ_386_COPY: ADD(32, 0); // XXX: copy symbol at runtime
-		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32);
-		default: break;
-		}
-		break;
-	case EM_X86_64:
-		switch (rel->type) {
-		case RZ_X86_64_NONE: break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case RZ_X86_64_64: ADD(64, 0);
-		case RZ_X86_64_PLT32: ADD(32, -P /* +L */);
-		case RZ_X86_64_GOT32: ADD(32, GOT);
-		case RZ_X86_64_PC32: ADD(32, -P);
-		case RZ_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
-		case RZ_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
-		case RZ_X86_64_RELATIVE: ADD(64, B);
-		case RZ_X86_64_32: ADD(32, 0);
-		case RZ_X86_64_32S: ADD(32, 0);
-		case RZ_X86_64_16: ADD(16, 0);
-		case RZ_X86_64_PC16: ADD(16, -P);
-		case RZ_X86_64_8: ADD(8, 0);
-		case RZ_X86_64_PC8: ADD(8, -P);
-		case RZ_X86_64_GOTPCREL: ADD(64, GOT - P);
-		case RZ_X86_64_COPY: ADD(64, 0); // XXX: copy symbol at runtime
-		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
-		default: break;
-		}
-		break;
-	case EM_ARM:
-		switch (rel->type) {
-		case RZ_ARM_NONE: break;
-		case RZ_ARM_ABS32: ADD(32, 0);
-		case RZ_ARM_REL32: ADD(32, -P);
-		case RZ_ARM_ABS16: ADD(16, 0);
-		case RZ_ARM_ABS8: ADD(8, 0);
-		case RZ_ARM_SBREL32: ADD(32, -B);
-		case RZ_ARM_GLOB_DAT: ADD(32, 0);
-		case RZ_ARM_JUMP_SLOT: ADD(32, 0);
-		case RZ_ARM_RELATIVE: ADD(32, B);
-		case RZ_ARM_GOTOFF: ADD(32, -GOT);
-		default: ADD(32, GOT); break; // reg relocations
-		}
-		break;
-	case EM_RISCV:
-		switch (rel->type) {
-		case RZ_RISCV_NONE: break;
-		case RZ_RISCV_JUMP_SLOT: ADD(64, 0);
-		case RZ_RISCV_RELATIVE: ADD(64, B);
-		default: ADD(64, GOT); break; // reg relocations
-		}
-		break;
-	case EM_AARCH64:
-		switch (rel->type) {
-		case RZ_AARCH64_NONE: break;
-		case RZ_AARCH64_ABS32: ADD(32, 0);
-		case RZ_AARCH64_ABS16: ADD(16, 0);
-		case RZ_AARCH64_GLOB_DAT: SET(64);
-		case RZ_AARCH64_JUMP_SLOT: SET(64);
-		case RZ_AARCH64_RELATIVE: ADD(64, B);
-		default: break; // reg relocations
-		}
-		break;
-	case EM_PPC:
-		switch (rel->type) {
-		case RZ_PPC_NONE: break;
-		case RZ_PPC_GLOB_DAT: ADD(32, 0);
-		case RZ_PPC_JMP_SLOT: ADD(32, 0);
-		default:
-			eprintf("unimplemented ELF/PPC reloc type %d\n", rel->type);
-			break;
-		}
-		break;
-	default: break;
-	}
-
-#undef SET
-#undef ADD
-
-	free(r);
-	return NULL;
-}
-
 static RzList *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	RzList *ret = NULL;
 	RzBinReloc *ptr = NULL;
 	RzBinElfReloc *relocs = NULL;
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
+	if (bin) {
+		patch_relocs(bf, bin);
+	}
+	Elf_(rz_bin_elf_get_imports)(bin); // Pre-populate imports and syms. Calling this multiple times is fine since it only parses once lazily.
 	if (!(ret = rz_list_newf(free))) {
 		return NULL;
 	}
-	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
-	 * free detected by ASan that would corrupt the relocation names */
-	rz_list_free(imports(bf));
 	ut64 got_addr = Elf_(rz_bin_elf_get_section_addr)(bin, ".got");
 	if (got_addr == UT64_MAX) {
 		got_addr = Elf_(rz_bin_elf_get_section_addr)(bin, ".got.plt");
@@ -930,11 +1186,8 @@ static RzList *relocs(RzBinFile *bf) {
 			got_addr = 0;
 		}
 	}
-	if (got_addr < 1 && bin->ehdr.e_type == ET_REL) {
-		got_addr = Elf_(rz_bin_elf_get_section_addr)(bin, ".got.rz");
-		if (got_addr == -1) {
-			got_addr = 0;
-		}
+	if (!got_addr) {
+		got_addr = reloc_targets_map_base(bf, bin);
 	}
 	if (bf->o) {
 		if (!(relocs = Elf_(rz_bin_elf_get_relocs)(bin))) {
@@ -948,236 +1201,6 @@ static RzList *relocs(RzBinFile *bf) {
 			rz_list_append(ret, ptr);
 		}
 	}
-	return ret;
-}
-
-static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
-	ut64 val;
-	ut64 A = rel->addend, P = rel->vaddr;
-	ut8 buf[8];
-	switch (e_machine) {
-	case EM_ARM:
-		val = S + A;
-		rz_write_le32(buf, val);
-		iob->write_at(iob->io, rel->vaddr, buf, 4);
-		break;
-	case EM_AARCH64:
-		val = S + A;
-		rz_write_le64(buf, val);
-		iob->write_at(iob->io, rel->vaddr, buf, 8);
-		break;
-	case EM_PPC64: {
-		int low = 0, word = 0;
-		switch (rel->type) {
-		case RZ_PPC64_REL16_HA:
-			word = 2;
-			val = (S + A - P + 0x8000) >> 16;
-			break;
-		case RZ_PPC64_REL16_LO:
-			word = 2;
-			val = (S + A - P) & 0xffff;
-			break;
-		case RZ_PPC64_REL14:
-			low = 14;
-			val = (st64)(S + A - P) >> 2;
-			break;
-		case RZ_PPC64_REL24:
-			low = 24;
-			val = (st64)(S + A - P) >> 2;
-			break;
-		case RZ_PPC64_REL32:
-			word = 4;
-			val = S + A - P;
-			break;
-		default:
-			break;
-		}
-		if (low) {
-			// TODO big-endian
-			switch (low) {
-			case 14:
-				val &= (1 << 14) - 1;
-				iob->read_at(iob->io, rel->vaddr, buf, 2);
-				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 16) - (1 << 2))) | val << 2);
-				iob->write_at(iob->io, rel->vaddr, buf, 2);
-				break;
-			case 24:
-				val &= (1 << 24) - 1;
-				iob->read_at(iob->io, rel->vaddr, buf, 4);
-				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 26) - (1 << 2))) | val << 2);
-				iob->write_at(iob->io, rel->vaddr, buf, 4);
-				break;
-			}
-		} else if (word) {
-			// TODO big-endian
-			switch (word) {
-			case 2:
-				rz_write_le16(buf, val);
-				iob->write_at(iob->io, rel->vaddr, buf, 2);
-				break;
-			case 4:
-				rz_write_le32(buf, val);
-				iob->write_at(iob->io, rel->vaddr, buf, 4);
-				break;
-			}
-		}
-		break;
-	}
-	case EM_X86_64: {
-		int word = 0;
-		switch (rel->type) {
-		case RZ_X86_64_8:
-			word = 1;
-			val = S + A;
-			break;
-		case RZ_X86_64_16:
-			word = 2;
-			val = S + A;
-			break;
-		case RZ_X86_64_32:
-		case RZ_X86_64_32S:
-			word = 4;
-			val = S + A;
-			break;
-		case RZ_X86_64_64:
-			word = 8;
-			val = S + A;
-			break;
-		case RZ_X86_64_GLOB_DAT:
-		case RZ_X86_64_JUMP_SLOT:
-			word = 4;
-			val = S;
-			break;
-		case RZ_X86_64_PC8:
-			word = 1;
-			val = S + A - P;
-			break;
-		case RZ_X86_64_PC16:
-			word = 2;
-			val = S + A - P;
-			break;
-		case RZ_X86_64_PC32:
-			word = 4;
-			val = S + A - P;
-			break;
-		case RZ_X86_64_PC64:
-			word = 8;
-			val = S + A - P;
-			break;
-		case RZ_X86_64_PLT32:
-			word = 4;
-			val = L + A - P;
-			break;
-		case RZ_X86_64_RELATIVE:
-			word = 8;
-			val = B + A;
-			break;
-		default:
-			//eprintf ("relocation %d not handle at this time\n", rel->type);
-			break;
-		}
-		switch (word) {
-		case 0:
-			break;
-		case 1:
-			buf[0] = val;
-			iob->write_at(iob->io, rel->vaddr, buf, 1);
-			break;
-		case 2:
-			rz_write_le16(buf, val);
-			iob->write_at(iob->io, rel->vaddr, buf, 2);
-			break;
-		case 4:
-			rz_write_le32(buf, val);
-			iob->write_at(iob->io, rel->vaddr, buf, 4);
-			break;
-		case 8:
-			rz_write_le64(buf, val);
-			iob->write_at(iob->io, rel->vaddr, buf, 8);
-			break;
-		}
-		break;
-	}
-	}
-}
-
-static RzList *patch_relocs(RzBinFile *bf) {
-	rz_return_val_if_fail(bf, NULL);
-	RzBin *b = bf->rbin;
-	RzList *ret = NULL;
-	RzBinReloc *ptr = NULL;
-	HtUU *relocs_by_sym;
-	RzBinElfReloc *relcs = NULL;
-	RzBinInfo *info;
-
-	RzIO *io = b->iob.io;
-	if (!io) {
-		return NULL;
-	}
-	RzBinObject *obj = bf->o;
-	if (!obj) {
-		return NULL;
-	}
-	struct Elf_(rz_bin_elf_obj_t) *bin = obj->bin_obj;
-	info = obj ? obj->info : NULL;
-	if (bin->ehdr.e_type != ET_REL && bin->ehdr.e_type != ET_DYN) {
-		return NULL;
-	}
-	if (!io->cached) {
-		eprintf("Warning: run rizin with -e io.cache=true to fix relocations in disassembly\n");
-		return NULL;
-	}
-	ut64 cdsz = reloc_target_size(bf);
-	ut64 size = reloc_targets_vfile_size(bf, bin);
-	if (!size) {
-		return NULL;
-	}
-	ut64 n_vaddr = reloc_targets_map_base(bf, bin);
-	if (!(relcs = Elf_(rz_bin_elf_get_relocs)(bin))) {
-		return NULL;
-	}
-	if (!(ret = rz_list_newf((RzListFree)free))) {
-		return NULL;
-	}
-	HtUUOptions opt = { 0 };
-	if (!(relocs_by_sym = ht_uu_new_opt(&opt))) {
-		rz_list_free(ret);
-		return NULL;
-	}
-	ut64 vaddr = n_vaddr;
-	size_t i;
-	for (i = 0; !relcs[i].last; i++) {
-		ut64 sym_addr = 0;
-		ut64 plt_entry_addr = vaddr;
-
-		if (relcs[i].sym) {
-			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
-				bool found;
-				sym_addr = ht_uu_find(relocs_by_sym, relcs[i].sym, &found);
-				if (found) {
-					plt_entry_addr = sym_addr;
-				}
-			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
-				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
-				plt_entry_addr = sym_addr;
-			}
-		}
-		// TODO relocation types B, L
-		_patch_reloc(bin->ehdr.e_machine, &b->iob, &relcs[i], sym_addr ? sym_addr : vaddr, 0, plt_entry_addr);
-		if (!(ptr = reloc_convert(bin, &relcs[i], n_vaddr))) {
-			continue;
-		}
-
-		if (sym_addr) {
-			ptr->target_vaddr = sym_addr;
-		} else {
-			ptr->target_vaddr = vaddr;
-			ht_uu_insert(relocs_by_sym, relcs[i].sym, vaddr);
-			vaddr += cdsz;
-		}
-		rz_list_append(ret, ptr);
-	}
-	ht_uu_free(relocs_by_sym);
 	return ret;
 }
 

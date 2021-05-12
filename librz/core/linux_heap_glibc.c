@@ -47,7 +47,7 @@ static GHT GH(get_va_symbol)(RzCore *core, const char *path, const char *sym_nam
 	RzBinSymbol *s;
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, -1, 0, 0, false);
+	rz_bin_options_init(&opt, -1, 0, 0, false, false);
 	RzBinFile *libc_bf = rz_bin_open(bin, path, &opt);
 	if (!libc_bf) {
 		return vaddr;

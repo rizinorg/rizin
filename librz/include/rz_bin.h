@@ -600,7 +600,8 @@ typedef void (*RzBinSymbollCallback)(RzBinObject *obj, void *symbol);
  */
 typedef struct rz_bin_virtual_file_t {
 	RZ_OWN RZ_NONNULL char *name;
-	RZ_OWN RZ_NONNULL RzBuffer *buf;
+	RZ_NONNULL RzBuffer *buf;
+	bool buf_owned; ///< whether buf is owned and freed by this RzBinVirtualFile
 } RzBinVirtualFile;
 
 /// Description of a single memory mapping into virtual memory from a binary
