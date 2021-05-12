@@ -47,6 +47,17 @@ struct rz_buf_t {
 	int fd;
 };
 
+typedef struct rz_buf_sparse_chunk_t {
+	ut64 from; ///< inclusive
+	ut64 to; ///< inclusive, there can't be chunks with size == 0
+	ut8 *data; ///< size == to - from + 1
+} RzBufferSparseChunk;
+
+typedef enum {
+	RZ_BUF_SPARSE_WRITE_MODE_SPARSE, ///< all writes are performed in the sparse overlay
+	RZ_BUF_SPARSE_WRITE_MODE_THROUGH ///< all writes are performed in the underlying base buffer
+} RzBufferSparseWriteMode;
+
 /* constructors */
 RZ_API RzBuffer *rz_buf_new(void);
 RZ_API RzBuffer *rz_buf_new_with_io(void *iob, int fd);
@@ -60,10 +71,12 @@ RZ_API RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size);
 RZ_API RzBuffer *rz_buf_new_empty(ut64 len);
 RZ_API RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode);
 RZ_API RzBuffer *rz_buf_new_sparse(ut8 Oxff);
+RZ_API RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode write_mode);
 
 /* methods */
 RZ_API bool rz_buf_dump(RzBuffer *buf, const char *file);
 RZ_API bool rz_buf_set_bytes(RzBuffer *b, const ut8 *buf, ut64 length);
+RZ_API void rz_buf_set_overflow_byte(RzBuffer *b, ut8 Oxff);
 RZ_API st64 rz_buf_append_string(RzBuffer *b, const char *str);
 RZ_API bool rz_buf_append_buf(RzBuffer *b, RzBuffer *a);
 RZ_API bool rz_buf_append_bytes(RzBuffer *b, const ut8 *buf, ut64 length);
@@ -202,13 +215,8 @@ static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 
 // sparse-specific
 
-typedef struct rz_buf_sparse_chunk_t {
-	ut64 from; ///< inclusive
-	ut64 to; ///< inclusive, there can't be chunks with size == 0
-	ut8 *data; ///< size == to - from + 1
-} RzBufferSparseChunk;
-
 RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNULL size_t *count);
+RZ_API void rz_buf_sparse_set_write_mode(RzBuffer *b, RzBufferSparseWriteMode mode);
 
 #ifdef __cplusplus
 }

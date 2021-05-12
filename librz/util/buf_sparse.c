@@ -4,9 +4,16 @@
 
 #include <rz_util.h>
 
+typedef struct sparse_init_config_t {
+	RzBuffer *base;
+	RzBufferSparseWriteMode write_mode;
+} SparseInitConfig;
+
 typedef struct buf_sparse_priv {
+	RzBuffer *base; ///< If not NULL, unpopulated bytes are taken from this, else Oxff
 	RzVector chunks; ///< of RzBufferSparseChunk, non-overlapping, ordered by from addr
 	ut64 offset;
+	RzBufferSparseWriteMode write_mode;
 } SparsePriv;
 
 static void chunk_fini(void *a, void *user) {
@@ -114,9 +121,16 @@ static inline struct buf_sparse_priv *get_priv_sparse(RzBuffer *b) {
 }
 
 static bool buf_sparse_init(RzBuffer *b, const void *user) {
-	struct buf_sparse_priv *priv = RZ_NEW0(struct buf_sparse_priv);
+	SparsePriv *priv = RZ_NEW0(struct buf_sparse_priv);
 	if (!priv) {
 		return false;
+	}
+	if (user) {
+		SparseInitConfig *cfg = (void *)user;
+		priv->base = cfg->base;
+		priv->write_mode = cfg->write_mode;
+	} else {
+		priv->write_mode = RZ_BUF_SPARSE_WRITE_MODE_SPARSE;
 	}
 	rz_vector_init(&priv->chunks, sizeof(RzBufferSparseChunk), chunk_fini, NULL);
 	priv->offset = 0;
@@ -215,19 +229,36 @@ static st64 buf_sparse_read(RzBuffer *b, ut8 *buf, ut64 len) {
 			i++;
 		}
 		if (empty_to >= priv->offset) {
-			// fill non-chunk part with 0xff
-			memset(buf, b->Oxff_priv, empty_to - priv->offset + 1);
+			// fill non-chunk part with 0xff or base file
+			if (priv->base) {
+				rz_buf_read_at(priv->base, priv->offset, buf, empty_to - priv->offset + 1);
+			} else {
+				memset(buf, b->Oxff_priv, empty_to - priv->offset + 1);
+			}
 		}
 		buf += next_off - priv->offset;
 		priv->offset = next_off;
 	}
-	return r;
+	return priv->base ? len : r; // if there is a base file, read always fills the entire buffer (to keep the 0xff of the base)
 }
 
 static st64 buf_sparse_write(RzBuffer *b, const ut8 *buf, ut64 len) {
 	SparsePriv *priv = get_priv_sparse(b);
-	st64 r = sparse_write(priv, priv->offset, buf, len);
-	priv->offset += r;
+	st64 r = -1;
+	switch (priv->write_mode) {
+	case RZ_BUF_SPARSE_WRITE_MODE_SPARSE:
+		r = sparse_write(priv, priv->offset, buf, len);
+		break;
+	case RZ_BUF_SPARSE_WRITE_MODE_THROUGH:
+		if (!priv->base) {
+			break;
+		}
+		r = rz_buf_write_at(priv->base, priv->offset, buf, len);
+		break;
+	}
+	if (r >= 0) {
+		priv->offset += r;
+	}
 	return r;
 }
 
@@ -268,9 +299,7 @@ static const RzBufferMethods buffer_sparse_methods = {
 	.seek = buf_sparse_seek
 };
 
-/**
- * Only for sparse RzBuffers, get all sparse data chunks currently populated.
- */
+/// Only for sparse RzBuffers, get all sparse data chunks currently populated.
 RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNULL size_t *count) {
 	rz_return_val_if_fail(b && count, NULL);
 	if (b->methods != &buffer_sparse_methods) {
@@ -280,4 +309,14 @@ RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNU
 	SparsePriv *priv = get_priv_sparse(b);
 	*count = rz_vector_len(&priv->chunks);
 	return rz_vector_index_ptr(&priv->chunks, 0);
+}
+
+/// Only for sparse RzBuffers
+RZ_API void rz_buf_sparse_set_write_mode(RzBuffer *b, RzBufferSparseWriteMode mode) {
+	rz_return_if_fail(b);
+	if (b->methods != &buffer_sparse_methods) {
+		return;
+	}
+	SparsePriv *priv = get_priv_sparse(b);
+	priv->write_mode = mode;
 }
