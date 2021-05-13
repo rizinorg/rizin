@@ -1389,13 +1389,13 @@ s 0x0003a4af
 pd 1
 EOF
 EXPECT=<<EOF
-            0x0003a4af      ff15f33a1800   call  qword [reloc.free]    ; [0x1bdfa8:8]=0
+            0x0003a4af      ff15f33a1800   call  qword [reloc.free]    ; [0x1bdfa8:8]=0x85f20 sym.cfree_GLIBC_2.2.5 ; " _\b"
 EOF
 RUN
 
 NAME=resolve reloc symbols 2
 FILE=bins/elf/libc.so.6
-CMDS=ir~0x[3]
+CMDS=ir~0x[4]
 EXPECT=<<EOF
 0x001bf3c0
 _res

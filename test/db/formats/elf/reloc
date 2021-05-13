@@ -59,7 +59,6 @@ RUN
 
 NAME=ELF: RZ_X86_64_PLT32 patch reloc
 FILE=bins/elf/radare2.c.obj
-ARGS=-e io.cache=true
 CMDS=<<EOF
 e asm.bytes=true
 e asm.comments=false
@@ -73,7 +72,6 @@ RUN
 
 NAME=ELF: RZ_X86_64_PLT32 patch reloc 2
 FILE=bins/elf/test.ko
-ARGS=-e io.cache=true
 CMDS=<<EOF
 e asm.bytes=true
 e asm.comments=false
@@ -100,27 +98,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: RZ_X86_64_PLT32 patch reloc 2 (no io.cache)
-FILE=bins/elf/test.ko
+NAME=ELF: no patching when bin.relocs=0
+FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
+ARGS=-e bin.relocs=false
 CMDS=<<EOF
+om
+?e --
+e asm.flags.real=false
 e asm.bytes=true
-e asm.comments=false
-e asm.lines=false
-e asm.flags=false
-pd 1 @ 0x0800007c
-pd 1 @ 0x0800008c
-pd 1 @ 0x0800009f
+f@F:relocs
+pd 1 @ 0x08000079
+pd 1 @ 0x080000a2
+pd 1 @ reloc.target.strcmp
 EOF
 EXPECT=<<EOF
-0x0800007c      e800000000     call  __fentry__
-0x0800008c      e800000000     call  printk
-0x0800009f      e800000000     call  printk
+ 9 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
+ 8 fd: 3 +0x00000040 0x08000040 - 0x08000635 r-x fmap..text
+ 7 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
+ 6 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
+ 5 fd: 3 +0x00000825 0x08000825 - 0x0800085b --- fmap..comment
+ 4 fd: 3 +0x00000860 0x08000860 - 0x0800091f r-- fmap..eh_frame
+ 3 fd: 3 +0x00000d70 0x08000d70 - 0x08000dff --- fmap..rela.eh_frame
+ 2 fd: 3 +0x00000920 0x08000920 - 0x08000aff --- fmap..symtab
+ 1 fd: 3 +0x00000000 0x08000000 - 0x0800003f r-- fmap.ehdr
+--
+            0x08000079      e800000000     call  strcmp
+            0x080000a2      e800000000     call  strcmp
 EOF
 RUN
 
 NAME=ELF: reloc flags
 FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
-ARGS=-e io.cache=true
 CMDS=<<EOF
 om
 ?e --
@@ -248,9 +256,60 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: write with relocs patched
+FILE=--
+CMDS=<<EOF
+mkdir .tmp
+cp bins/elf/analysis/filetime.c-clang-x64-O0.o .tmp/elf-reloc-patchee
+o+ .tmp/elf-reloc-patchee
+om~vmap
+?e -- original
+px 0x10 @ 0x0800006a
+px 0x10 @ 0x0800064d
+?e -- overwritten
+wx 424242424242424242424242424242 @ 0x0800006a
+w ulu-mulu @ 0x0800064d
+px 0x10 @ 0x0800006a
+px 0x10 @ 0x0800064a
+?e -- unloaded
+o--
+px 0x10 @ 0x0800006a
+px 0x10 @ 0x0800064a
+?e -- reloaded
+o+ .tmp/elf-reloc-patchee
+px 0x10 @ 0x0800006a
+px 0x10 @ 0x0800064a
+rm .tmp/elf-reloc-patchee
+EOF
+EXPECT=<<EOF
+10 fd: 5 +0x00000000 0x08000f00 - 0x08000fff rwx vmap.reloc-targets
+ 8 fd: 4 +0x00000040 0x08000040 - 0x08000635 rwx vmap..text
+ 4 fd: 4 +0x00000860 0x08000860 - 0x0800091f rwx vmap..eh_frame
+-- original
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800006a  488b 45f0 488b 7808 b936 0600 0889 cee8  H.E.H.x..6......
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800064d  6669 6c65 6e61 6d65 2073 7065 6369 6669  filename specifi
+-- overwritten
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800006a  4242 4242 4242 4242 4236 0600 0842 42e8  BBBBBBBBB6...BB.
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800064a  4e6f 2075 6c75 2d6d 756c 7520 7370 6563  No ulu-mulu spec
+-- unloaded
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800006a  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800064a  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+-- reloaded
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800006a  4242 4242 4242 4242 4236 0600 0842 42e8  BBBBBBBBB6...BB.
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800064a  4e6f 2075 6c75 2d6d 756c 7520 7370 6563  No ulu-mulu spec
+EOF
+RUN
+
 NAME=ELF: jumptable from relocs
 FILE=bins/elf/analysis/rawmem.c-gcc-x64-O3.o
-ARGS=-e io.cache=true
 CMDS=<<EOF
 s 0x08000040
 af

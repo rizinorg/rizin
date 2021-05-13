@@ -337,13 +337,6 @@ static ut64 reloc_targets_vfile_size(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t
 	if (!bf->o || !bf->o->opts.patch_relocs) {
 		return 0;
 	}
-
-	// TODO: remove this, it's just to make old tests green before updating them to auto-patched relocs
-	if (!bf->rbin->iob.io || !bf->rbin->iob.io->cached) {
-		return 0;
-	}
-	// TODO-end
-
 	return obj->g_reloc_num * reloc_target_size(obj);
 }
 
