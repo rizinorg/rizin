@@ -106,6 +106,7 @@ RUN
 
 NAME=pg command print gadgets
 FILE=bins/elf/ls
+BROKEN=1
 CMDS=<<EOF
 pg 6 6 35 35 il
 e scr.gadgets=1
