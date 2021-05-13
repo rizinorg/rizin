@@ -458,11 +458,9 @@ static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char 
 		goto rz_diff_load_file_with_core_fail;
 	}
 
-	RzList *sections = rz_bin_maps_of_file_sections(bfile);
-	if (rz_list_empty(sections)) {
+	if (rz_list_empty(bfile->o->sections)) {
 		rz_config_set_i(core->config, "io.va", false);
 	}
-	rz_list_free(sections);
 
 	if (architecture) {
 		rz_config_set(core->config, "asm.arch", architecture);
@@ -543,7 +541,7 @@ static void rz_diff_file_close(DiffFile *file) {
 	rz_io_free(file->io);
 }
 
-#define rz_diff_file_get(df,n) ((df)->file->o->n)
+#define rz_diff_file_get(df, n) ((df)->file->o->n)
 
 /**************************************** rzlists ***************************************/
 
