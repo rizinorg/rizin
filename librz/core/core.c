@@ -2809,7 +2809,7 @@ RZ_API int rz_core_prompt(RzCore *r, int sync) {
 	free(r->cmdqueue);
 	r->cmdqueue = strdup(line);
 	if (r->scr_gadgets && *line && *line != 'q') {
-		rz_core_cmd0(r, "pg");
+		rz_core_gadget_print(r);
 	}
 	r->num->value = r->rc;
 	return true;

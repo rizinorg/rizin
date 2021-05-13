@@ -3858,7 +3858,7 @@ static void visual_refresh(RzCore *core) {
 		rz_cons_reset();
 	}
 	if (core->scr_gadgets) {
-		rz_core_cmd0(core, "pg");
+		rz_core_gadget_print(core);
 		rz_cons_flush();
 	}
 	core->cons->blankline = false;

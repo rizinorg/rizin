@@ -1426,9 +1426,32 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 	}
 }
 
+/**
+ * \brief Frees a visual print gadget
+ *
+ * \param g reference to RzCoreGadget
+ */
 RZ_API void rz_core_gadget_free(RzCoreGadget *g) {
 	free(g->cmd);
 	free(g);
+}
+
+/**
+ * \brief Prints or displays the print gadgets while in
+ * visual mode
+ *
+ * \param core reference to RzCore
+ */
+RZ_API void rz_core_gadget_print(RzCore *core) {
+	RzCoreGadget *g;
+	RzListIter *iter;
+	rz_list_foreach (core->gadgets, iter, g) {
+		char *res = rz_core_cmd_str(core, g->cmd);
+		if (res) {
+			rz_cons_strcat_at(res, g->x, g->y, g->w, g->h);
+			free(res);
+		}
+	}
 }
 
 static const char *help_msg_pg[] = {
@@ -1509,15 +1532,7 @@ static void cmd_print_gadget(RzCore *core, const char *_input) {
 		rz_list_free(args);
 		free(input);
 	} else if (!*_input) { // "pg"
-		RzCoreGadget *g;
-		RzListIter *iter;
-		rz_list_foreach (core->gadgets, iter, g) {
-			char *res = rz_core_cmd_str(core, g->cmd);
-			if (res) {
-				rz_cons_strcat_at(res, g->x, g->y, g->w, g->h);
-				free(res);
-			}
-		}
+		rz_core_gadget_print(core);
 	} else {
 		rz_core_cmd_help(core, help_msg_pg);
 	}

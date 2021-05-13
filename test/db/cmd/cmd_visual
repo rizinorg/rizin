@@ -103,3 +103,25 @@ EXPECT=<<EOF
 0x00005b70  ffe0 660f 1f44 0000 c30f 1f80 0000 0000  ..f..D..........           [?25h[0m[2J[0;0H
 EOF
 RUN
+
+NAME=pg command print gadgets
+FILE=bins/elf/ls
+CMDS=<<EOF
+pg 6 6 35 35 il
+e scr.gadgets=1
+e scr.interactive=true
+e scr.columns=10
+e scr.rows=1
+< q; V
+?e
+EOF
+EXPECT=<<EOF
+[?25l[0;0H[0m[0x00005ae[0J[0m[s[6;0H[Link[7;0Hlibcap.[0m
+[8;0Hlibc.so[0m
+[9;0H[0m
+[10;0H2 libra[0m
+[11;0H[0m
+[12;0H[Linked[0m
+[0m[u[?25h[0m[2J[0;0H
+EOF
+RUN
