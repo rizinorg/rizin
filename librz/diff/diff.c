@@ -2,8 +2,9 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-/*
- * Ratcliff/Obershelp Pattern Recognition algorithm applied to generic data
+/** \file diff.c
+ * Ratcliff/Obershelp Pattern Recognition
+ * Ratcliff/Obershelp Pattern Recognition algorithm applied to generic data.
  * 
  * The code for diffing is quite simple, given 2 arrays containing
  * data, you calculate the longest sequences of data that matches
