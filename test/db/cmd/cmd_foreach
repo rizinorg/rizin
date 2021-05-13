@@ -318,6 +318,7 @@ EXPECT=<<EOF
 0x200d90
 0x0
 EOF
+BROKEN=1
 RUN
 
 NAME=iter dbgmap

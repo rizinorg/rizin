@@ -151,6 +151,7 @@ EOF
 EXPECT=<<EOF
  3 * r-x 0x00001de8 bins/elf/crackme0x05
  4 - rw- 0x00000004 null://4
+ 5 - r-x 0x0000001c vfile://0/reloc-targets
 --
 0x080483d8                   ff  invalid
 0x080483d9                   ff  invalid
@@ -186,6 +187,7 @@ EOF
 EXPECT=<<EOF
  3 * r-x 0x00001de8 bins/elf/crackme0x05
  4 - rw- 0x00000004 null://4
+ 5 - r-x 0x0000001c vfile://0/reloc-targets
 --
 0x080483d8                   ff  invalid
 0x080483d9                   ff  invalid

@@ -156,6 +156,7 @@ EXPECT=<<EOF
 Same project, different file
  3 * r-x 0x00001d4b bins/elf/ioli/crackme0x01
  4 - rw- 0x00000004 null://4
+ 5 - r-x 0x00000010 vfile://0/reloc-targets
 0x080483fe   easy:
 0x080483fe                 29c4  sub esp, eax
 0x08048400       c7042428850408  mov dword [esp], str.IOLI_Crackme_Level_0x01

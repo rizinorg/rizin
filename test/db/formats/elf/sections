@@ -80,6 +80,7 @@ NAME=also map ehdr if ET_REL
 FILE=bins/elf/pngrutil_o
 CMDS=om
 EXPECT=<<EOF
+12 fd: 4 +0x00000000 0x0800870c - 0x080090c7 r-- vmap.reloc-targets
 11 fd: 3 +0x00000034 0x08000034 - 0x080055c7 r-x fmap..text
 10 fd: 3 +0x00007328 0x08007328 - 0x0800852f --x fmap..rel.text
  9 fd: 3 +0x000055c8 0x080055c8 - 0x0800642b r-- fmap..rodata

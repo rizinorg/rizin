@@ -65,7 +65,7 @@ oom
 o~malloc?
 EOF
 EXPECT=<<EOF
-2
+4
 1
 EOF
 RUN
@@ -105,7 +105,7 @@ bins/elf/crackme0x00b
 EOF
 CMDS=oij
 EXPECT=<<EOF
-[{"raised":false,"fd":3,"uri":"bins/elf/crackme0x05","from":0,"writable":false,"size":7656},{"raised":true,"fd":5,"uri":"bins/elf/crackme0x00b","from":0,"writable":false,"size":7375}]
+[{"raised":false,"fd":3,"uri":"bins/elf/crackme0x05","from":0,"writable":false,"size":7656},{"raised":true,"fd":6,"uri":"bins/elf/crackme0x00b","from":0,"writable":false,"size":7375}]
 EOF
 RUN
 
@@ -310,11 +310,11 @@ ob 0; i~^fd
 EOF
 EXPECT=<<EOF
 0 3
-1 4
-2 6
+1 5
+2 9
 
-fd       4
-fd       6
+fd       5
+fd       9
 fd       3
 EOF
 RUN
@@ -399,10 +399,11 @@ om
 # pv1
 EOF
 EXPECT=<<EOF
+ 6 fd: 6 +0x00000000 0x00023560 - 0x00023f17 rwx vmap.reloc-targets
  5 fd: 3 +0x00000000 0x00000000 - 0x0000347f rwx fmap.LOAD0
  4 fd: 3 +0x00004000 0x00004000 - 0x00016790 rwx fmap.LOAD1
  3 fd: 3 +0x00017000 0x00017000 - 0x0001f7bf rwx fmap.LOAD2
- 2 fd: 3 +0x00020050 0x00021050 - 0x00022267 rwx fmap.LOAD3
+ 2 fd: 5 +0x00020050 0x00021050 - 0x00022267 rwx vmap.LOAD3
  1 fd: 4 +0x00000000 0x00022268 - 0x00023557 rwx mmap.LOAD3
 EOF
 RUN

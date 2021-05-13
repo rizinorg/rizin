@@ -346,7 +346,7 @@ static bool test_autocmplt_seek(void) {
 	mu_assert_notnull(r, "r should not be null");
 	mu_assert_eq(r->start, strlen("s "), "should autocomplete the last arg");
 	mu_assert_eq(r->end, buf->length, "should autocomplete ending at end of buffer");
-	mu_assert_eq(rz_pvector_len(&r->options), 162, "there are 162 rznum vars on loading");
+	mu_assert_eq(rz_pvector_len(&r->options), 173, "there are 173 rznum vars on loading");
 	rz_line_ns_completion_result_free(r);
 
 	rz_flag_set(core->flags, "flag1", 0x1000, 1);

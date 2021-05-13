@@ -32,7 +32,6 @@ push {r7, lr}
 add ip, pc, 0, 12
 push {r3, lr}
 add ip, pc, 0, 12
-str lr, [sp, -4]!
 EOF
 RUN
 
@@ -327,7 +326,7 @@ p-
 EOF
 EXPECT=<<EOF
 0x08048000 [^._______ss_s__s_sss_ssssss_ss_ss__sz_s____] 0x0804859c
-0x08048000 [^_sssssszss_____________________________sss] 0x080496b8
+0x08048000 [^_sssssszss_____________________________sss] 0x080496d0
 EOF
 RUN
 
