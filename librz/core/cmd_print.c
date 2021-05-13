@@ -1426,11 +1426,22 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 	}
 }
 
+/**
+ * \brief Frees a visual print gadget
+ *
+ * \param g reference to RzCoreGadget
+ */
 RZ_API void rz_core_gadget_free(RzCoreGadget *g) {
 	free(g->cmd);
 	free(g);
 }
 
+/**
+ * \brief Prints or displays the print gadgets while in
+ * visual mode
+ *
+ * \param core reference to RzCore
+ */
 RZ_API void rz_core_gadget_print(RzCore *core) {
 	RzCoreGadget *g;
 	RzListIter *iter;
