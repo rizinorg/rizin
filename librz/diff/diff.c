@@ -2,6 +2,60 @@
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/*
+ * Ratcliff/Obershelp Pattern Recognition algorithm applied to generic data
+ * 
+ * The code for diffing is quite simple, given 2 arrays containing
+ * data, you calculate the longest sequences of data that matches
+ * between the two inputs; to do that you need to create a map in 
+ * which you will store all the hits found within an array:
+ * - as key, each single element of one of the arrays.
+ * - as value, a list of all the locations of which each element 
+ *   appears within the array itself.
+ * 
+ * Once this map is created, you will need to find the longest
+ * subsequence that can be found in both arrays by using the hit-map.
+ * then you remove that subsequence from the area of search, and
+ * search again for the 2nd longest subsequence (excluding the area
+ * of the first subsequence).
+ * Then you keep doing this, till all areas and longest matches have
+ * been found.
+ * 
+ * Now that you know all the matching areas, you can generate a series
+ * of steps/operations which can transform the first array into the
+ * second one, by removing the non matching areas in the 1st array
+ * and inserting the missing areas from the 2nd array.
+
+ * Example:
+ *    array_a = [A,B,C,D,E,F,G,H,I]
+ *    array_b = [Y,Z,B,C,D,L,Z,N,H,I]
+ * 
+ * 1: create map of hits and their positions:
+ * 	- hit_map(array_b) = {
+ * 	  B: [2]
+ * 	  C: [3]
+ * 	  D: [4]
+ * 	  H: [8]
+ * 	  I: [9]
+ * 	  L: [5]
+ * 	  N: [7]
+ * 	  Y: [0]
+ * 	  Z: [1,6]
+ * 	}
+ * 
+ * 2: find all matching areas using the hit-map:
+ *  - match_0 = [B,C,D] from array_a[1] to array_a[3] and from array_b[3] to array_b[4]
+ *  - match_1 = [H,I]   from array_a[1] to array_a[8] and from array_b[8] to array_b[9]
+
+ * 3: create the steps to convert array_a in array_b
+ *  - remove [A] at 0
+ *  - insert [Y,Z] at 0
+ *  - keep   [B,C,D] at 1
+ *  - remove [E,F,G] at 4
+ *  - insert [L,Z,N] at 4
+ *  - keep   [H,I] at 8
+ */
+
 #include <rz_diff.h>
 #include <rz_util.h>
 /**/
@@ -718,9 +772,11 @@ rz_diff_opcodes_grouped_new_fail:
 }
 
 /**
- * \brief Calculates the difference ratio between A and B.
+ * \brief Calculates the similarity ratio between A and B.
  *
- * Calculates the difference ratio between A and B.
+ * Calculates the similarity ratio between A and B.
+ * Returns a number between 0 and 1; closer to 1 the result
+ * is more similar/identical the 2 arrays are.
  * */
 RZ_API bool rz_diff_ratio(RzDiff *diff, double *result) {
 	rz_return_val_if_fail(diff && result, false);
@@ -752,7 +808,9 @@ RZ_API bool rz_diff_ratio(RzDiff *diff, double *result) {
 /**
  * \brief Calculates the size ratio between A and B.
  *
- * Calculates the size ratio between A and B.
+ * Works like the rz_diff_ratio, but this checks only
+ * how similar are the sizes between the two arrays.
+ * Returns a number between 0 and 1, like above.
  * */
 RZ_API bool rz_diff_sizes_ratio(RzDiff *diff, double *result) {
 	rz_return_val_if_fail(diff && result, false);
