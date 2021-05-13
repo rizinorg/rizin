@@ -122,6 +122,13 @@ static inline void diff_unified_json_data(RzDiff *diff, const void *array, st32 
 	rz_strbuf_fini(&tmp);
 }
 
+/**
+ * \brief Produces a diff output with A and B inputs presented immediately adjacent to each other.
+ *
+ * Produces a diff output with A and B inputs presented immediately adjacent to each other.
+ * It begins with range information and is immediately followed with the line additions,
+ * line deletions, and any number of the contextual lines.
+ * */
 RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE const char *from, RZ_NULLABLE const char *to, bool show_time, bool color) {
 	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.stringify, NULL);
 	RzStrBuf *sb = NULL;
@@ -184,6 +191,12 @@ rz_diff_unified_text_fail:
 	return NULL;
 }
 
+/**
+ * \brief Produces a diff output to convert A in B in a JSON format.
+ *
+ * Produces a diff output with A and B inputs and contains the operations required
+ * to convert A in B and the values to remove, insert or keep.
+ * */
 RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE const char *from, RZ_NULLABLE const char *to, bool show_time) {
 	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.stringify, NULL);
 	PJ *pj = NULL;

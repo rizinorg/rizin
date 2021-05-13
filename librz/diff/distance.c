@@ -4,17 +4,21 @@
 #include <rz_diff.h>
 #include <rz_util/rz_assert.h>
 
-// Eugene W. Myers' O(ND) diff algorithm
-// Returns edit distance with costs: insertion=1, deletion=1, no substitution
+/**
+ * \brief Calculates the distance between two buffers using the Myers algorithm
+ *
+ * Calculates the distance between two buffers using the Eugene W. Myers' O(ND) diff algorithm.
+ * - distance:   is the minimum number of edits needed to transform A into B
+ * - similarity: is a number that defines how similar/identical the 2 buffers are.
+ * */
 RZ_API bool rz_diff_myers_distance(RZ_NONNULL const ut8 *a, ut32 la, RZ_NONNULL const ut8 *b, ut32 lb, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity) {
 	rz_return_val_if_fail(a && b, false);
 
 	const ut32 length = la + lb;
 	const ut8 *ea = a + la, *eb = b + lb;
-	// Strip prefix
+
 	for (; a < ea && b < eb && *a == *b; a++, b++) {
 	}
-	// Strip suffix
 	for (; a < ea && b < eb && ea[-1] == eb[-1]; ea--, eb--) {
 	}
 	la = ea - a;
@@ -45,7 +49,6 @@ RZ_API bool rz_diff_myers_distance(RZ_NONNULL const ut8 *a, ut32 la, RZ_NONNULL 
 
 out:
 	free(v0);
-	//Clean up output on loop exit (purely aesthetic)
 	if (distance) {
 		*distance = di;
 	}
@@ -55,16 +58,22 @@ out:
 	return true;
 }
 
+/**
+ * \brief Calculates the distance between two buffers using the Levenshtein algorithm
+ *
+ * Calculates the distance between two buffers using the Levenshtein distance algorithm.
+ * - distance:   is the minimum number of edits needed to transform A into B
+ * - similarity: is a number that defines how similar/identical the 2 buffers are.
+ * */
 RZ_API bool rz_diff_levenstein_distance(RZ_NONNULL const ut8 *a, ut32 la, RZ_NONNULL const ut8 *b, ut32 lb, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity) {
 	rz_return_val_if_fail(a && b, false);
 
 	const ut32 length = RZ_MAX(la, lb);
 	const ut8 *ea = a + la, *eb = b + lb, *t;
 	ut32 *d, i, j;
-	// Strip prefix
+
 	for (; a < ea && b < eb && *a == *b; a++, b++) {
 	}
-	// Strip suffix
 	for (; a < ea && b < eb && ea[-1] == eb[-1]; ea--, eb--) {
 	}
 	la = ea - a;
