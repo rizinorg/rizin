@@ -1,5 +1,7 @@
-// SPDX-FileCopyrightText: 2017 lonetech <yann-github@vernier.se>
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #include <math.h>
 #include <rz_diff.h>
 #include "minunit.h"

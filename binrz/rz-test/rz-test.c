@@ -616,87 +616,34 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 	return RZ_TH_STOP;
 }
 
-static void print_diff(const char *actual, const char *expected, bool diffchar, const char *regexp) {
-	/*
-	RzDiff *d = rz_diff_new();
-#ifdef __WINDOWS__
-	static const char *diff_cmd[] = {
-		"git", "diff", "--no-index", NULL
-	};
-	d->diff_cmd = diff_cmd;
-#endif
+static void print_diff(const char *actual, const char *expected, const char *regexp) {
+	RzDiff *d = NULL;
+	char *uni = NULL;
 	const char *output = actual;
+
 	if (regexp) {
 		RzList *matches = rz_regex_get_match_list(regexp, "e", actual);
 		output = rz_list_to_str(matches, '\0');
 		rz_list_free(matches);
 	}
 
-	if (diffchar) {
-		RzDiffChar *diff = rz_diffchar_new((const ut8 *)expected, (const ut8 *)output);
-		if (diff) {
-			rz_diff_free(d);
-			rz_diffchar_print(diff);
-			rz_diffchar_free(diff);
-			goto cleanup;
-		}
-		static const char *diff_cmd_char[] = {
-			"git", "diff", "--no-index", "--word-diff=porcelain", "--word-diff-regex=.", NULL
-		};
-		d->diff_cmd = diff_cmd_char;
+	d = rz_diff_lines_new(expected, output, NULL);
+	if (!d) {
+		goto cleanup;
 	}
-	char *uni = rz_diff_buffers_to_string(d, (const ut8 *)expected, (int)strlen(expected),
-		(const ut8 *)output, (int)strlen(output));
-	rz_diff_free(d);
 
-	RzList *lines = rz_str_split_duplist(uni, "\n", false);
-	RzListIter *it;
-	char *line;
-	bool header_found = false;
-	rz_list_foreach (lines, it, line) {
-		if (!header_found) {
-			if (rz_str_startswith(line, "+++ ")) {
-				header_found = true;
-			}
-			continue;
-		}
-		if (rz_str_startswith(line, "@@ ") && rz_str_endswith(line, " @@")) {
-			printf("%s%s%s\n", Color_CYAN, line, Color_RESET);
-			continue;
-		}
-		bool color = true;
-		char c = *line;
-		switch (c) {
-		case '+':
-			printf("%s" Color_INSERT, diffchar ? Color_BGINSERT : "");
-			break;
-		case '-':
-			printf("%s" Color_DELETE, diffchar ? Color_BGDELETE : "");
-			break;
-		case '~': // can't happen if !diffchar
-			printf("\n");
-			continue;
-		default:
-			color = false;
-			break;
-		}
-		if (diffchar) {
-			printf("%s", *line ? line + 1 : "");
-		} else {
-			printf("%s\n", line);
-		}
-		if (color) {
-			printf("%s", Color_RESET);
-		}
+	uni = rz_diff_unified_text(d, "expected", "actual", false, true);
+	if (!uni) {
+		goto cleanup;
 	}
-	rz_list_free(lines);
+	puts(uni);
 	free(uni);
-	printf("\n");
+
 cleanup:
+	rz_diff_free(d);
 	if (regexp) {
-		RZ_FREE(output);
+		free((char *)output);
 	}
-	*/
 }
 
 static RzSubprocessOutput *print_runner(const char *file, const char *args[], size_t args_size,
@@ -731,14 +678,14 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		const char *regexp_out = result->test->cmd_test->regexp_out.value;
 		if (expect && !rz_test_cmp_cmd_output(out, expect, regexp_out)) {
 			printf("-- stdout\n");
-			print_diff(out, expect, false, regexp_out);
+			print_diff(out, expect, regexp_out);
 		}
 		expect = result->test->cmd_test->expect_err.value;
 		const char *err = result->proc_out->err;
 		const char *regexp_err = result->test->cmd_test->regexp_err.value;
 		if (expect && !rz_test_cmp_cmd_output(err, expect, regexp_err)) {
 			printf("-- stderr\n");
-			print_diff(err, expect, false, regexp_err);
+			print_diff(err, expect, regexp_err);
 		} else if (*err) {
 			printf("-- stderr\n%s\n", err);
 		}
@@ -753,7 +700,7 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 			const char *actual = result->asm_out->disasm;
 			if (expect && actual && strcmp(actual, expect)) {
 				printf("-- disassembly\n");
-				print_diff(actual, expect, false, NULL);
+				print_diff(actual, expect, NULL);
 			}
 		}
 		// TODO: assembly
@@ -1144,5 +1091,5 @@ static void interact_diffchar(RzTestResultInfo *result) {
 	const char *expected = result->test->cmd_test->expect.value;
 	const char *regexp_out = result->test->cmd_test->regexp_out.value;
 	printf("-- stdout\n");
-	print_diff(actual, expected, true, regexp_out);
+	print_diff(actual, expected, regexp_out);
 }
