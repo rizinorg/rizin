@@ -314,8 +314,8 @@ static ut8 *rz_diff_slurp_file(const char *file, size_t *size) {
 	}
 
 	filesize = rz_io_desc_size(io->desc);
-	if (filesize > MEGABYTE(100)) {
-		rz_diff_error("cannot open file '%s' because its size is above 100Mb\n", file);
+	if (filesize > MEGABYTE(5)) {
+		rz_diff_error("cannot open file '%s' because its size is above 5Mb\n", file);
 		goto rz_diff_slurp_file_end;
 	}
 
