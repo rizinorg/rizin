@@ -128,8 +128,7 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 		mbb = mbb2 = NULL;
 		rz_list_foreach (fcn2->bbs, iter2, bb2) {
 			if (!bb2->diff || bb2->diff->type == RZ_ANALYSIS_DIFF_TYPE_NULL) {
-				rz_diff_buffers_distance(NULL, bb->fingerprint, bb->size,
-					bb2->fingerprint, bb2->size, NULL, &t);
+				rz_diff_levenstein_distance(bb->fingerprint, bb->size, bb2->fingerprint, bb2->size, NULL, &t);
 				if (t > analysis->diff_thbb && t > ot) {
 					ot = t;
 					mbb = bb;
@@ -191,9 +190,8 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 				if (fcn->name && fcn2->name && strcmp(fcn->name, fcn2->name)) {
 					continue;
 				}
-				rz_diff_buffers_distance(NULL, fcn->fingerprint, fcn->fingerprint_size,
-					fcn2->fingerprint, fcn2->fingerprint_size,
-					NULL, &t);
+				rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size,
+					fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
 				/* Set flag in matched functions */
 				fcn->diff->type = fcn2->diff->type = (t >= 1)
 					? RZ_ANALYSIS_DIFF_TYPE_MATCH
@@ -254,7 +252,7 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 				eprintf("Function %s type not supported\n", fcn2->name);
 				continue;
 			}
-			rz_diff_buffers_distance(NULL, fcn->fingerprint, fcn->fingerprint_size, fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
+			rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size, fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
 			fcn->diff->dist = fcn2->diff->dist = t;
 			if (t > analysis->diff_thfcn && t > ot) {
 				ot = t;

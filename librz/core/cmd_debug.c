@@ -4968,19 +4968,19 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 					char *arg2 = strchr(arg, ' ');
 					if (arg2) {
 						*arg2++ = 0;
-						ut8 *a = getFileData(core, arg);
-						ut8 *b = getFileData(core, arg2);
+						char *a = (char *)getFileData(core, arg);
+						char *b = (char *)getFileData(core, arg2);
 						if (a && b) {
-							int al = strlen((const char *)a);
-							int bl = strlen((const char *)b);
-							RzDiffOld *d = rz_diff_new();
-							char *uni = rz_diff_buffers_to_string(d, a, al, b, bl);
+							RzDiff2 *dff = rz_diff_lines_new(a, b, NULL);
+							char *uni = rz_diff_unified_text(dff, arg, arg2, false, false);
+							rz_diff_free2(dff);
 							rz_cons_printf("%s\n", uni);
-							rz_diff_free(d);
 							free(uni);
 						} else {
 							eprintf("Cannot open those alias files\n");
 						}
+						free(a);
+						free(b);
 					}
 					free(arg);
 				} else {

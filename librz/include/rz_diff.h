@@ -95,60 +95,7 @@ RZ_API PJ *rz_diff_unified_json(RzDiff2 *diff, const char *from, const char *to,
 RZ_API bool rz_diff_myers_distance(const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
 RZ_API bool rz_diff_levenstein_distance(const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
 
-/* |||||||||||||||||||||||||||||  DELETE ME ||||||||||||||||||||||||||||| */
-
-typedef struct rz_diff_op_old_t {
-	/* file A */
-	ut64 a_off;
-	const ut8 *a_buf;
-	ut32 a_len;
-
-	/* file B */
-	ut64 b_off;
-	const ut8 *b_buf;
-	ut32 b_len;
-} RzDiffOpOld;
-
-typedef struct rz_diff_old_t {
-	ut64 off_a;
-	ut64 off_b;
-	int delta;
-	void *user;
-	bool verbose;
-	int type;
-	const char **diff_cmd; // null-terminated array of cmd+args
-	int (*callback)(struct rz_diff_old_t *diff, void *user, RzDiffOpOld *op);
-} RzDiffOld;
-typedef int (*RzDiffCallback)(RzDiffOld *diff, void *user, RzDiffOpOld *op);
-
-typedef struct rz_diffchar_t {
-	const ut8 *align_a;
-	const ut8 *align_b;
-	size_t len_buf;
-	size_t start_align;
-} RzDiffChar;
-RZ_API RzDiffOld *rz_diff_new(void);
-RZ_API RzDiffOld *rz_diff_new_from(ut64 off_a, ut64 off_b);
-RZ_API void rz_diff_free(RzDiffOld *d);
-RZ_API int rz_diff_buffers_static(RzDiffOld *d, const ut8 *a, int la, const ut8 *b, int lb);
-RZ_API int rz_diff_buffers_delta(RzDiffOld *diff, const ut8 *sa, int la, const ut8 *sb, int lb);
-RZ_API int rz_diff_buffers(RzDiffOld *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb);
-RZ_API char *rz_diff_buffers_to_string(RzDiffOld *d, const ut8 *a, int la, const ut8 *b, int lb);
-RZ_API int rz_diff_set_callback(RzDiffOld *d, RzDiffCallback callback, void *user);
-RZ_API bool rz_diff_buffers_distance(RzDiffOld *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
-RZ_API bool rz_diff_buffers_distance_myers(RzDiffOld *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
-RZ_API bool rz_diff_buffers_distance_levenshtein(RzDiffOld *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
-RZ_API char *rz_diff_buffers_unified(RzDiffOld *d, const ut8 *a, int la, const ut8 *b, int lb);
-/* static method !??! */
-RZ_API int rz_diff_lines(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb);
-RZ_API int rz_diff_set_delta(RzDiffOld *d, int delta);
-RZ_API int rz_diff_gdiff(const char *file1, const char *file2, int rad, int va);
-
-RZ_API RzDiffChar *rz_diffchar_new(const ut8 *a, const ut8 *b);
-RZ_API void rz_diffchar_print(RzDiffChar *diffchar);
-RZ_API void rz_diffchar_free(RzDiffChar *diffchar);
 #endif
-/* |||||||||||||||||||||||||||||  DELETE ME ||||||||||||||||||||||||||||| */
 
 #ifdef __cplusplus
 }

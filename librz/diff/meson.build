@@ -1,7 +1,6 @@
 rz_diff_sources = [
   'diff.c',
-  'distance.c',
-  'old.c'
+  'distance.c'
 ]
 
 dependencies = [rz_util_dep]
