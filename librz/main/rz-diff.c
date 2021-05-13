@@ -386,8 +386,8 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		pj_o(pj);
-		pj_kn(pj, "similarity", similarity);
-		pj_kd(pj, "distance", distance);
+		pj_kd(pj, "similarity", similarity);
+		pj_kn(pj, "distance", distance);
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
