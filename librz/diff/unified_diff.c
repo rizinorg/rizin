@@ -56,10 +56,13 @@ static inline void diff_unified_append_data(RzDiff *diff, const void *array, st3
 		beg = 0;
 	}
 
-	rz_strbuf_appendf(sb, "%s%c", color ? DIFF_COLOR(prefix) : "", prefix);
+	const char *bcol = color ? DIFF_COLOR(prefix) : "";
+	const char *ecol = color ? (Color_RESET) : "";
+
+	rz_strbuf_appendf(sb, "%s%c", bcol, prefix);
 	for (st32 i = beg; i < end; ++i) {
 		if (newline || (is_bytes && count > 0 && !FAST_MOD64(count))) {
-			rz_strbuf_appendf(sb, "\n%c", prefix);
+			rz_strbuf_appendf(sb, "%s\n%s%c", bcol, ecol, prefix);
 			newline = false;
 		}
 		rz_strbuf_init(&tmp);
@@ -75,7 +78,7 @@ static inline void diff_unified_append_data(RzDiff *diff, const void *array, st3
 		rz_strbuf_append_n(sb, p, len);
 		rz_strbuf_fini(&tmp);
 	}
-	rz_strbuf_appendf(sb, "%s\n", color ? (Color_RESET) : "");
+	rz_strbuf_appendf(sb, "%s\n", ecol);
 }
 
 static inline void diff_unified_json_data(RzDiff *diff, const void *array, st32 beg, st32 end, PJ *pj, const char *op) {
