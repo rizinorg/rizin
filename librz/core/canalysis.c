@@ -2303,9 +2303,9 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 						snprintf(dff_from, sizeof(dff_from), "0x%08" PFMT64x, bbi->addr);
 						snprintf(dff_to, sizeof(dff_to), "0x%08" PFMT64x, bbi->diff->addr);
 
-						RzDiff2 *dff = rz_diff_lines_new(str, str2, NULL);
+						RzDiff *dff = rz_diff_lines_new(str, str2, NULL);
 						char *diffstr = rz_diff_unified_text(dff, dff_from, dff_to, false, false);
-						rz_diff_free2(dff);
+						rz_diff_free(dff);
 
 						if (diffstr) {
 							char *nl = strchr(diffstr, '\n');

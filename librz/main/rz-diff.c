@@ -539,7 +539,7 @@ static int import_compare(const RzBinImport *a, const RzBinImport *b) {
 	return 0;
 }
 
-static RzDiff2 *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
+static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -607,7 +607,7 @@ static void symbol_stringify(const RzBinSymbol *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s\n", elem->name);
 }
 
-static RzDiff2 *rz_diff_symbols_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
+static RzDiff *rz_diff_symbols_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -683,7 +683,7 @@ static void string_stringify(const RzBinString *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s\n", elem->string);
 }
 
-static RzDiff2 *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
+static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -750,7 +750,7 @@ static void class_stringify(const RzBinClass *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s %s\n", SAFE_STR(elem->super), elem->name);
 }
 
-static RzDiff2 *rz_diff_classes_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
+static RzDiff *rz_diff_classes_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -832,7 +832,7 @@ static void entry_stringify(const RzBinAddr *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "virt: 0x%016" PFMT64x " phys: 0x%016" PFMT64x " entry %s\n", elem->vaddr, elem->paddr, name);
 }
 
-static RzDiff2 *rz_diff_entries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
+static RzDiff *rz_diff_entries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -877,7 +877,7 @@ static void libs_stringify(const char *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s\n", SAFE_STR(elem));
 }
 
-static RzDiff2 *rz_diff_libraries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
+static RzDiff *rz_diff_libraries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -993,7 +993,7 @@ static void section_stringify(const RzBinSection *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "align: 0x%08" PFMT64x " %s %s\n", elem->align, perm, elem->name);
 }
 
-static RzDiff2 *rz_diff_sections_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
+static RzDiff *rz_diff_sections_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -1071,7 +1071,7 @@ static void field_stringify(const RzBinField *elem, RzStrBuf *sb) {
 	rz_strbuf_setf(sb, "%s %s\n", SAFE_STR(elem->type), elem->name);
 }
 
-static RzDiff2 *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
+static RzDiff *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool compare_addr) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -1220,7 +1220,7 @@ func_get_all_functions_fail:
 	return NULL;
 }
 
-static RzDiff2 *rz_diff_functions_new(DiffContext *ctx) {
+static RzDiff *rz_diff_functions_new(DiffContext *ctx) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
@@ -1258,7 +1258,7 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 	ut8 *b_buffer = NULL;
 	DiffFile dfile_a = { 0 };
 	DiffFile dfile_b = { 0 };
-	RzDiff2 *diff = NULL;
+	RzDiff *diff = NULL;
 
 	if (ctx->type == DIFF_TYPE_BYTES ||
 		ctx->type == DIFF_TYPE_LINES) {
@@ -1343,7 +1343,7 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 		rz_list_free((RzList *)rz_diff_get_b(diff));
 	}
 
-	rz_diff_free2(diff);
+	rz_diff_free(diff);
 	rz_diff_file_close(&dfile_a);
 	rz_diff_file_close(&dfile_b);
 	free(a_buffer);
@@ -1355,7 +1355,7 @@ rz_diff_unified_files_bad:
 		rz_list_free((RzList *)rz_diff_get_a(diff));
 		rz_list_free((RzList *)rz_diff_get_b(diff));
 	}
-	rz_diff_free2(diff);
+	rz_diff_free(diff);
 	rz_diff_file_close(&dfile_a);
 	rz_diff_file_close(&dfile_b);
 	free(a_buffer);

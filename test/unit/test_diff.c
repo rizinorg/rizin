@@ -45,7 +45,7 @@ bool test_rz_diff_distances(void) {
 }
 
 bool test_rz_diff_unified_lines(void) {
-	RzDiff2 *diff = NULL;
+	RzDiff *diff = NULL;
 	char *result = NULL;
 
 	// clang-format off
@@ -145,10 +145,9 @@ bool test_rz_diff_unified_lines(void) {
 			"+to this document.\n";
 	// clang-format on
 
-	//RzDiff2 *rz_diff_bytes_new(const ut8 *a, ut32 a_size, const ut8 *b, ut32 b_size, RzDiffIgnoreByte ignore);
 	diff = rz_diff_lines_new(a, b, NULL);
 	result = rz_diff_unified_text(diff, NULL, NULL, false, false);
-	rz_diff_free2(diff);
+	rz_diff_free(diff);
 	mu_assert_notnull(result, "rz_diff_unified result not null");
 	printf("\n\n%s\n\n", expected);
 
@@ -159,7 +158,7 @@ bool test_rz_diff_unified_lines(void) {
 }
 
 bool test_rz_diff_unified_bytes(void) {
-	RzDiff2 *diff = NULL;
+	RzDiff *diff = NULL;
 	char *result = NULL;
 
 	// clang-format off
@@ -248,7 +247,7 @@ bool test_rz_diff_unified_bytes(void) {
 
 	diff = rz_diff_bytes_new((const ut8 *)a, strlen(a), (const ut8 *)b, strlen(b), NULL);
 	result = rz_diff_unified_text(diff, NULL, NULL, false, false);
-	rz_diff_free2(diff);
+	rz_diff_free(diff);
 	mu_assert_notnull(result, "rz_diff_unified result not null");
 	mu_assert_streq(result, expected, "rz_diff_unified on bytes");
 	free(result);

@@ -41,7 +41,7 @@ static inline void diff_unified_json_ranges(RzList *opcodes, PJ *pj) {
 	pj_end(pj);
 }
 
-static inline void diff_unified_append_data(RzDiff2 *diff, const void *array, st32 beg, st32 end, RzStrBuf *sb, char prefix, bool color) {
+static inline void diff_unified_append_data(RzDiff *diff, const void *array, st32 beg, st32 end, RzStrBuf *sb, char prefix, bool color) {
 	RzDiffMethodElemAt elem_at = diff->methods.elem_at;
 	RzDiffMethodStringify stringify = diff->methods.stringify;
 	int len = 0;
@@ -78,7 +78,7 @@ static inline void diff_unified_append_data(RzDiff2 *diff, const void *array, st
 	rz_strbuf_appendf(sb, "%s\n", color ? (Color_RESET) : "");
 }
 
-static inline void diff_unified_json_data(RzDiff2 *diff, const void *array, st32 beg, st32 end, PJ *pj, const char *op) {
+static inline void diff_unified_json_data(RzDiff *diff, const void *array, st32 beg, st32 end, PJ *pj, const char *op) {
 	RzDiffMethodElemAt elem_at = diff->methods.elem_at;
 	RzDiffMethodStringify stringify = diff->methods.stringify;
 	int len = 0;
@@ -122,7 +122,7 @@ static inline void diff_unified_json_data(RzDiff2 *diff, const void *array, st32
 	rz_strbuf_fini(&tmp);
 }
 
-RZ_API char *rz_diff_unified_text(RzDiff2 *diff, const char *from, const char *to, bool show_time, bool color) {
+RZ_API char *rz_diff_unified_text(RzDiff *diff, const char *from, const char *to, bool show_time, bool color) {
 	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.stringify, NULL);
 	RzStrBuf *sb = NULL;
 	RzList *groups = NULL;
@@ -184,7 +184,7 @@ rz_diff_unified_text_fail:
 	return NULL;
 }
 
-RZ_API PJ *rz_diff_unified_json(RzDiff2 *diff, const char *from, const char *to, bool show_time) {
+RZ_API PJ *rz_diff_unified_json(RzDiff *diff, const char *from, const char *to, bool show_time) {
 	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.stringify, NULL);
 	PJ *pj = NULL;
 	RzList *groups = NULL;

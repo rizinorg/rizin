@@ -67,7 +67,7 @@ typedef struct match_p_t {
 typedef bool (*RzDiffIgnoreByte)(const ut64 byte);
 typedef bool (*RzDiffIgnoreLine)(const char *line);
 
-typedef struct rz_diff_t RzDiff2;
+typedef struct rz_diff_t RzDiff;
 
 #ifdef RZ_API
 
@@ -75,21 +75,21 @@ typedef struct rz_diff_t RzDiff2;
  * various values, xor the results before returning the final value. */
 RZ_API ut32 rz_diff_hash_data(const ut8 *buffer, ut32 size);
 
-RZ_API RZ_OWN RzDiff2 *rz_diff_bytes_new(const ut8 *a, ut32 a_size, const ut8 *b, ut32 b_size, RzDiffIgnoreByte ignore);
-RZ_API RZ_OWN RzDiff2 *rz_diff_lines_new(const char *a, const char *b, RzDiffIgnoreLine ignore);
-RZ_API RZ_OWN RzDiff2 *rz_diff_generic_new(const void *a, ut32 a_size, const void *b, ut32 b_size, RzDiffMethods *methods);
-RZ_API void rz_diff_free2(RzDiff2 *diff);
-RZ_API const void *rz_diff_get_a(RzDiff2 *diff);
-RZ_API const void *rz_diff_get_b(RzDiff2 *diff);
+RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(const ut8 *a, ut32 a_size, const ut8 *b, ut32 b_size, RzDiffIgnoreByte ignore);
+RZ_API RZ_OWN RzDiff *rz_diff_lines_new(const char *a, const char *b, RzDiffIgnoreLine ignore);
+RZ_API RZ_OWN RzDiff *rz_diff_generic_new(const void *a, ut32 a_size, const void *b, ut32 b_size, RzDiffMethods *methods);
+RZ_API void rz_diff_free(RzDiff *diff);
+RZ_API const void *rz_diff_get_a(RzDiff *diff);
+RZ_API const void *rz_diff_get_b(RzDiff *diff);
 
-RZ_API RZ_OWN RzList /*<RzDiffMatch>*/ *rz_diff_matches_new(RzDiff2 *diff);
-RZ_API RZ_OWN RzList /*<RzDiffOp>*/ *rz_diff_opcodes_new(RzDiff2 *diff);
-RZ_API RZ_OWN RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RzDiff2 *diff, ut32 n_groups);
-RZ_API bool rz_diff_ratio(RzDiff2 *diff, double *result);
-RZ_API bool rz_diff_sizes_ratio(RzDiff2 *diff, double *result);
+RZ_API RZ_OWN RzList /*<RzDiffMatch>*/ *rz_diff_matches_new(RzDiff *diff);
+RZ_API RZ_OWN RzList /*<RzDiffOp>*/ *rz_diff_opcodes_new(RzDiff *diff);
+RZ_API RZ_OWN RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RzDiff *diff, ut32 n_groups);
+RZ_API bool rz_diff_ratio(RzDiff *diff, double *result);
+RZ_API bool rz_diff_sizes_ratio(RzDiff *diff, double *result);
 
-RZ_API char *rz_diff_unified_text(RzDiff2 *diff, const char *from, const char *to, bool show_time, bool color);
-RZ_API PJ *rz_diff_unified_json(RzDiff2 *diff, const char *from, const char *to, bool show_time);
+RZ_API char *rz_diff_unified_text(RzDiff *diff, const char *from, const char *to, bool show_time, bool color);
+RZ_API PJ *rz_diff_unified_json(RzDiff *diff, const char *from, const char *to, bool show_time);
 
 /* Distances algorithms */
 RZ_API bool rz_diff_myers_distance(const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);

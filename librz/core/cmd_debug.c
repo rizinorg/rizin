@@ -4971,9 +4971,9 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 						char *a = (char *)getFileData(core, arg);
 						char *b = (char *)getFileData(core, arg2);
 						if (a && b) {
-							RzDiff2 *dff = rz_diff_lines_new(a, b, NULL);
+							RzDiff *dff = rz_diff_lines_new(a, b, NULL);
 							char *uni = rz_diff_unified_text(dff, arg, arg2, false, false);
-							rz_diff_free2(dff);
+							rz_diff_free(dff);
 							rz_cons_printf("%s\n", uni);
 							free(uni);
 						} else {

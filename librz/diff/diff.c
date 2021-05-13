@@ -63,7 +63,7 @@ static bool fake_ignore(const void *value) {
 #include "lines_diff.c"
 #include "unified_diff.c"
 
-static bool set_a(RzDiff2 *diff, const void *a, ut32 a_size) {
+static bool set_a(RzDiff *diff, const void *a, ut32 a_size) {
 	rz_return_val_if_fail(a, false);
 
 	diff->a = a;
@@ -75,7 +75,7 @@ static void free_hits(HtPPKv *kv) {
 	rz_list_free(kv->value);
 }
 
-static bool set_b(RzDiff2 *diff, const void *b, ut32 b_size) {
+static bool set_b(RzDiff *diff, const void *b, ut32 b_size) {
 	rz_return_val_if_fail(b && diff->methods.elem_at && diff->methods.elem_hash && diff->methods.compare && diff->methods.ignore, false);
 
 	diff->b = b;
@@ -118,10 +118,10 @@ static bool set_b(RzDiff2 *diff, const void *b, ut32 b_size) {
 	return true;
 }
 
-RZ_API RZ_OWN RzDiff2 *rz_diff_bytes_new(const ut8 *a, ut32 a_size, const ut8 *b, ut32 b_size, RzDiffIgnoreByte ignore) {
+RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(const ut8 *a, ut32 a_size, const ut8 *b, ut32 b_size, RzDiffIgnoreByte ignore) {
 	rz_return_val_if_fail(a && b, NULL);
 
-	RzDiff2 *diff = RZ_NEW0(RzDiff2);
+	RzDiff *diff = RZ_NEW0(RzDiff);
 	if (!diff) {
 		return NULL;
 	}
@@ -132,20 +132,20 @@ RZ_API RZ_OWN RzDiff2 *rz_diff_bytes_new(const ut8 *a, ut32 a_size, const ut8 *b
 	}
 
 	if (!set_a(diff, a, a_size)) {
-		rz_diff_free2(diff);
+		rz_diff_free(diff);
 		return NULL;
 	}
 	if (!set_b(diff, b, b_size)) {
-		rz_diff_free2(diff);
+		rz_diff_free(diff);
 		return NULL;
 	}
 	return diff;
 }
 
-RZ_API RZ_OWN RzDiff2 *rz_diff_lines_new(const char *a, const char *b, RzDiffIgnoreLine ignore) {
+RZ_API RZ_OWN RzDiff *rz_diff_lines_new(const char *a, const char *b, RzDiffIgnoreLine ignore) {
 	rz_return_val_if_fail(a && b, NULL);
 
-	RzDiff2 *diff = RZ_NEW0(RzDiff2);
+	RzDiff *diff = RZ_NEW0(RzDiff);
 	if (!diff) {
 		return NULL;
 	}
@@ -166,20 +166,20 @@ RZ_API RZ_OWN RzDiff2 *rz_diff_lines_new(const char *a, const char *b, RzDiffIgn
 	}
 
 	if (!set_a(diff, a_lines, rz_list_length(a_lines))) {
-		rz_diff_free2(diff);
+		rz_diff_free(diff);
 		return NULL;
 	}
 	if (!set_b(diff, b_lines, rz_list_length(b_lines))) {
-		rz_diff_free2(diff);
+		rz_diff_free(diff);
 		return NULL;
 	}
 	return diff;
 }
 
-RZ_API RZ_OWN RzDiff2 *rz_diff_generic_new(const void *a, ut32 a_size, const void *b, ut32 b_size, RzDiffMethods *methods) {
+RZ_API RZ_OWN RzDiff *rz_diff_generic_new(const void *a, ut32 a_size, const void *b, ut32 b_size, RzDiffMethods *methods) {
 	rz_return_val_if_fail(a && b && methods && methods->elem_at && methods->elem_hash && methods->compare && methods->stringify, NULL);
 
-	RzDiff2 *diff = RZ_NEW0(RzDiff2);
+	RzDiff *diff = RZ_NEW0(RzDiff);
 	if (!diff) {
 		return NULL;
 	}
@@ -197,17 +197,17 @@ RZ_API RZ_OWN RzDiff2 *rz_diff_generic_new(const void *a, ut32 a_size, const voi
 	}
 
 	if (!set_a(diff, a, a_size)) {
-		rz_diff_free2(diff);
+		rz_diff_free(diff);
 		return NULL;
 	}
 	if (!set_b(diff, b, b_size)) {
-		rz_diff_free2(diff);
+		rz_diff_free(diff);
 		return NULL;
 	}
 	return diff;
 }
 
-RZ_API void rz_diff_free2(RzDiff2 *diff) {
+RZ_API void rz_diff_free(RzDiff *diff) {
 	if (!diff) {
 		return;
 	}
@@ -219,12 +219,12 @@ RZ_API void rz_diff_free2(RzDiff2 *diff) {
 	free(diff);
 }
 
-RZ_API const void *rz_diff_get_a(RzDiff2 *diff) {
+RZ_API const void *rz_diff_get_a(RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	return diff->a;
 }
 
-RZ_API const void *rz_diff_get_b(RzDiff2 *diff) {
+RZ_API const void *rz_diff_get_b(RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	return diff->b;
 }
@@ -258,7 +258,7 @@ static RzDiffMatch *match_new(ut32 a, ut32 b, ut32 size) {
 	return match;
 }
 
-static RzDiffMatch *find_longest_match(RzDiff2 *diff, Block *block) {
+static RzDiffMatch *find_longest_match(RzDiff *diff, Block *block) {
 	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.compare && diff->methods.ignore, false);
 	RzList *list = NULL;
 	RzListIter *it = NULL;
@@ -399,7 +399,7 @@ static int cmp_matches(RzDiffMatch *m0, RzDiffMatch *m1) {
  * Generates a list of matching blocks that are found in both inputs.
  * If non are found it returns a match result with size of 0
  * */
-RZ_API RzList *rz_diff_matches_new(RzDiff2 *diff) {
+RZ_API RzList *rz_diff_matches_new(RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	RzList *stack = NULL;
 	RzList *matches = NULL;
@@ -533,7 +533,7 @@ static void opcode_set(RzDiffOp *op, RzDiffOpType type, st32 a_beg, st32 a_end, 
  *
  * Generates a list of opcodes that are needed to convert A to B.
  * */
-RZ_API RzList *rz_diff_opcodes_new(RzDiff2 *diff) {
+RZ_API RzList *rz_diff_opcodes_new(RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	ut32 a = 0, b = 0;
 	RzDiffOpType type = RZ_DIFF_OP_INVALID;
@@ -607,7 +607,7 @@ static void group_op_free(RzList *ops) {
 	rz_list_free(ops);
 }
 
-RZ_API RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RzDiff2 *diff, ut32 n_groups) {
+RZ_API RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RzDiff *diff, ut32 n_groups) {
 	rz_return_val_if_fail(diff && n_groups > 1, NULL);
 	RzDiffOp *op = NULL;
 	RzListIter *it = NULL;
@@ -722,7 +722,7 @@ rz_diff_opcodes_grouped_new_fail:
  *
  * Calculates the difference ratio between A and B.
  * */
-RZ_API bool rz_diff_ratio(RzDiff2 *diff, double *result) {
+RZ_API bool rz_diff_ratio(RzDiff *diff, double *result) {
 	rz_return_val_if_fail(diff && result, false);
 	RzList *matches = NULL;
 	RzDiffMatch *match = NULL;
@@ -754,7 +754,7 @@ RZ_API bool rz_diff_ratio(RzDiff2 *diff, double *result) {
  *
  * Calculates the size ratio between A and B.
  * */
-RZ_API bool rz_diff_sizes_ratio(RzDiff2 *diff, double *result) {
+RZ_API bool rz_diff_sizes_ratio(RzDiff *diff, double *result) {
 	rz_return_val_if_fail(diff && result, false);
 
 	/* simple cast to avoid math issues */
