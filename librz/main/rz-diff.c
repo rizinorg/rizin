@@ -409,9 +409,14 @@ rz_diff_calculate_distance_bad:
 	return false;
 }
 
-static RzCore *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits) {
+static inline RzBinFile *core_get_file(RzCoreFile *cfile) {
+	return rz_pvector_at(&cfile->binfiles, 0);
+}
+
+static RzCoreFile *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits) {
 	RzCore *core = NULL;
-	const RzCoreFile *cfile = NULL;
+	RzCoreFile *cfile = NULL;
+	RzBinFile *bfile = NULL;
 
 	core = rz_core_new();
 	if (!core) {
@@ -447,9 +452,17 @@ static RzCore *rz_diff_load_file_with_core(const char *filename, const char *arc
 		goto rz_diff_load_file_with_core_fail;
 	}
 
-	if (rz_list_empty(rz_bin_get_sections(core->bin))) {
+	bfile = core_get_file(cfile);
+	if (!bfile) {
+		rz_diff_error("cannot get architecture with bits\n");
+		goto rz_diff_load_file_with_core_fail;
+	}
+
+	RzList *sections = rz_bin_maps_of_file_sections(bfile);
+	if (rz_list_empty(sections)) {
 		rz_config_set_i(core->config, "io.va", false);
 	}
+	rz_list_free(sections);
 
 	if (architecture) {
 		rz_config_set(core->config, "asm.arch", architecture);
@@ -464,7 +477,7 @@ static RzCore *rz_diff_load_file_with_core(const char *filename, const char *arc
 		goto rz_diff_load_file_with_core_fail;
 	}
 
-	return core;
+	return cfile;
 
 rz_diff_load_file_with_core_fail:
 	rz_core_free(core);
@@ -530,6 +543,8 @@ static void rz_diff_file_close(DiffFile *file) {
 	rz_io_free(file->io);
 }
 
+#define rz_diff_file_get(df,n) ((df)->file->o->n)
+
 /**************************************** rzlists ***************************************/
 
 static const void *rz_diff_list_elem_at(const RzList *array, ut32 index) {
@@ -562,14 +577,13 @@ static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
-	list_a = rz_bin_get_imports(dfile_a->bin);
+	list_a = rz_diff_file_get(dfile_a, imports);
 	if (!list_a) {
 		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_a->filename);
 	}
 
-	list_b = rz_bin_get_imports(dfile_b->bin);
+	list_b = rz_diff_file_get(dfile_b, imports);
 	if (!list_b) {
-		rz_list_free(list_a);
 		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_b->filename);
 	}
 
@@ -630,14 +644,13 @@ static RzDiff *rz_diff_symbols_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
-	list_a = rz_bin_get_symbols(dfile_a->bin);
+	list_a = rz_diff_file_get(dfile_a, symbols);
 	if (!list_a) {
 		rz_diff_error_ret(NULL, "cannot get symbols from '%s'\n", dfile_a->filename);
 	}
 
-	list_b = rz_bin_get_symbols(dfile_b->bin);
+	list_b = rz_diff_file_get(dfile_b, symbols);
 	if (!list_b) {
-		rz_list_free(list_a);
 		rz_diff_error_ret(NULL, "cannot get symbols from '%s'\n", dfile_b->filename);
 	}
 
@@ -706,14 +719,13 @@ static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
-	list_a = rz_bin_get_strings(dfile_a->bin);
+	list_a = rz_diff_file_get(dfile_a, strings);
 	if (!list_a) {
 		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_a->filename);
 	}
 
-	list_b = rz_bin_get_strings(dfile_b->bin);
+	list_b = rz_diff_file_get(dfile_b, strings);
 	if (!list_b) {
-		rz_list_free(list_a);
 		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_b->filename);
 	}
 
@@ -773,14 +785,13 @@ static RzDiff *rz_diff_classes_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
-	list_a = rz_bin_get_classes(dfile_a->bin);
+	list_a = rz_diff_file_get(dfile_a, classes);
 	if (!list_a) {
 		rz_diff_error_ret(NULL, "cannot get classes from '%s'\n", dfile_a->filename);
 	}
 
-	list_b = rz_bin_get_classes(dfile_b->bin);
+	list_b = rz_diff_file_get(dfile_b, classes);
 	if (!list_b) {
-		rz_list_free(list_a);
 		rz_diff_error_ret(NULL, "cannot get classes from '%s'\n", dfile_b->filename);
 	}
 
@@ -855,14 +866,13 @@ static RzDiff *rz_diff_entries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
-	list_a = rz_bin_get_entries(dfile_a->bin);
+	list_a = rz_diff_file_get(dfile_a, entries);
 	if (!list_a) {
 		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_a->filename);
 	}
 
-	list_b = rz_bin_get_entries(dfile_b->bin);
+	list_b = rz_diff_file_get(dfile_b, entries);
 	if (!list_b) {
-		rz_list_free(list_a);
 		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_b->filename);
 	}
 
@@ -900,14 +910,13 @@ static RzDiff *rz_diff_libraries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
-	list_a = rz_bin_get_libs(dfile_a->bin);
+	list_a = rz_diff_file_get(dfile_a, libs);
 	if (!list_a) {
 		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_a->filename);
 	}
 
-	list_b = rz_bin_get_libs(dfile_b->bin);
+	list_b = rz_diff_file_get(dfile_b, libs);
 	if (!list_b) {
-		rz_list_free(list_a);
 		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_b->filename);
 	}
 
@@ -1016,14 +1025,13 @@ static RzDiff *rz_diff_sections_new(DiffFile *dfile_a, DiffFile *dfile_b, bool c
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
-	list_a = rz_bin_get_sections(dfile_a->bin);
+	list_a = rz_diff_file_get(dfile_a, sections);
 	if (!list_a) {
 		rz_diff_error_ret(NULL, "cannot get sections from '%s'\n", dfile_a->filename);
 	}
 
-	list_b = rz_bin_get_sections(dfile_b->bin);
+	list_b = rz_diff_file_get(dfile_b, sections);
 	if (!list_b) {
-		rz_list_free(list_a);
 		rz_diff_error_ret(NULL, "cannot get sections from '%s'\n", dfile_b->filename);
 	}
 
@@ -1094,14 +1102,13 @@ static RzDiff *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool com
 	RzList *list_a = NULL;
 	RzList *list_b = NULL;
 
-	list_a = rz_bin_get_fields(dfile_a->bin);
+	list_a = rz_diff_file_get(dfile_a, fields);
 	if (!list_a) {
 		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_a->filename);
 	}
 
-	list_b = rz_bin_get_fields(dfile_b->bin);
+	list_b = rz_diff_file_get(dfile_b, fields);
 	if (!list_b) {
-		rz_list_free(list_a);
 		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_b->filename);
 	}
 
@@ -1193,17 +1200,17 @@ static void func_free(DiffFunction *func) {
 static RzList *func_get_all_functions(const char *filename, const char *architecture, ut32 arch_bits) {
 	RzList *list = NULL;
 	RzList *functions = NULL;
-	RzCore *core = NULL;
+	RzCoreFile *cfile = NULL;
 	RzListIter *it = NULL;
 	RzAnalysisFunction *fcn;
 	DiffFunction *df = NULL;
 
-	core = rz_diff_load_file_with_core(filename, architecture, arch_bits);
-	if (!core) {
+	cfile = rz_diff_load_file_with_core(filename, architecture, arch_bits);
+	if (!cfile) {
 		return NULL;
 	}
 
-	functions = rz_analysis_function_list(core->analysis);
+	functions = rz_analysis_function_list(cfile->core->analysis);
 	if (!functions) {
 		rz_diff_error("cannot get function list\n");
 		goto func_get_all_functions_fail;
@@ -1231,11 +1238,13 @@ static RzList *func_get_all_functions(const char *filename, const char *architec
 		}
 	}
 
-	rz_core_free(core);
+	rz_core_free(cfile->core);
 	return list;
 
 func_get_all_functions_fail:
-	rz_core_free(core);
+	if (cfile) {
+		rz_core_free(cfile->core);
+	}
 	return NULL;
 }
 
@@ -1250,7 +1259,6 @@ static RzDiff *rz_diff_functions_new(DiffContext *ctx) {
 
 	list_b = func_get_all_functions(ctx->file_b, ctx->architecture, ctx->arch_bits);
 	if (!list_b) {
-		rz_list_free(list_a);
 		return NULL;
 	}
 
@@ -1271,13 +1279,13 @@ static RzDiff *rz_diff_functions_new(DiffContext *ctx) {
 /**************************************** commands ***************************************/
 
 static char *execute_command(const char *command, const char *filename, const char *architecture, ut32 arch_bits) {
-	RzCore *core = rz_diff_load_file_with_core(filename, architecture, arch_bits);
-	if (!core) {
+	RzCoreFile *cfile = rz_diff_load_file_with_core(filename, architecture, arch_bits);
+	if (!cfile) {
 		return NULL;
 	}
 
-	char *output = rz_core_cmd_str(core, command);
-	rz_core_free(core);
+	char *output = rz_core_cmd_str(cfile->core, command);
+	rz_core_free(cfile->core);
 	return output;
 }
 

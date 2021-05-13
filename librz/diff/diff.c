@@ -706,7 +706,8 @@ static void group_op_free(RzList *ops) {
  * \brief Generates groups of opcodes needed to go from A to B.
  *
  * Generates groups of opcodes needed to go from A to B, but
- * grouped by the total number of groups.
+ * each group will end with N common EQUAL ops (if possible).
+ * default is 3 equals ops before splitting the group.
  * */
 RZ_API RZ_OWN RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RZ_NONNULL RzDiff *diff, ut32 n_groups) {
 	rz_return_val_if_fail(diff && n_groups > 1, NULL);
