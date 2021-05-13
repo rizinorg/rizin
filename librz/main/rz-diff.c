@@ -183,10 +183,6 @@ static void rz_diff_show_help(bool usage_only) {
 }
 
 static bool rz_diff_is_file(const char *file) {
-	//const char p = NULL;
-	//if ((p = strstr(file, "://"))) {
-	//	file = p + 3;
-	//}
 	if (IS_NULLSTR(file)) {
 		rz_diff_error_ret(false, "cannot open a file without a name.\n");
 	}
