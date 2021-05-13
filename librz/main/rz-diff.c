@@ -36,6 +36,7 @@ typedef enum {
 	DIFF_TYPE_UNKNOWN = 0,
 	DIFF_TYPE_BYTES,
 	DIFF_TYPE_CLASSES,
+	DIFF_TYPE_COMMAND,
 	DIFF_TYPE_ENTRIES,
 	DIFF_TYPE_FIELDS,
 	DIFF_TYPE_FUNCTIONS,
@@ -67,6 +68,8 @@ typedef struct diff_context_t {
 	bool show_time;
 	bool colors;
 	const char *architecture;
+	const char *command_a;
+	const char *command_b;
 	const char *file_a;
 	const char *file_b;
 } DiffContext;
@@ -142,7 +145,7 @@ typedef struct diff_function_t {
 #define rz_diff_ctx_set_opt(x, o)  rz_diff_ctx_set_def(x, option, DIFF_OPT_UNKNOWN, o)
 
 static void rz_diff_show_help(bool usage_only) {
-	printf("Usage: rz-diff [options] <file1> <file2>\n");
+	printf("Usage: rz-diff [options] <file0> <file1>\n");
 	if (usage_only) {
 		return;
 	}
@@ -159,11 +162,16 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -A        compare virtual and physical addresses\n"
 		"  -C        show colors\n"
 		"  -T        show timestamp information\n"
+		"  -0 [cmd]  command to execute for file0 when option -t 'commands' is given.\n"
+		"            if -1 is not set, it will execute the same cmd for file1.\n"
+		"  -1 [cmd]  command to execute for file1 when option -t 'commands' is given.\n"
 		"  -t [type] compute the difference between two files based on its type:\n"
 		"              bytes      | compares raw bytes in the files (only for small files)\n"
 		"              lines      | compares text files\n"
 		"              functions  | compares functions found in the files\n"
 		"              classes    | compares classes found in the files\n"
+		"              command    | compares command output returned when executed in both files\n"
+		"                         | requires -0 <cmd> and -1 <cmd> is optional\n"
 		"              entries    | compares entries found in the files\n"
 		"              fields     | compares fields found in the files\n"
 		"              imports    | compares imports found in the files\n"
@@ -171,7 +179,6 @@ static void rz_diff_show_help(bool usage_only) {
 		"              sections   | compares sections found in the files\n"
 		"              strings    | compares strings found in the files\n"
 		"              symbols    | compares symbols found in the files\n"
-		//"              zignatures | compares zignatures generated from the files\n"
 		"");
 }
 
@@ -196,9 +203,11 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hjqvACTa:b:d:t:");
+	rz_getopt_init(&opt, argc, argv, "hjqvACTa:b:d:t:0:1:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
+		case '0': rz_diff_ctx_set_def(ctx, command_a, NULL, opt.arg); break;
+		case '1': rz_diff_ctx_set_def(ctx, command_b, NULL, opt.arg); break;
 		case 'A': rz_diff_ctx_set_def(ctx, compare_addresses, false, true); break;
 		case 'C': rz_diff_ctx_set_def(ctx, colors, false, true); break;
 		case 'T': rz_diff_ctx_set_def(ctx, show_time, false, true); break;
@@ -260,6 +269,14 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_FUNCTIONS);
 		} else if (!strcmp(type, "classes")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_CLASSES);
+		} else if (!strcmp(type, "command")) {
+			if (!ctx->command_a) {
+				rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -t '%s' requires -0 <command>.\n", type);
+			}
+			if (!ctx->command_b) {
+				ctx->command_b = ctx->command_a;
+			}
+			rz_diff_ctx_set_type(ctx, DIFF_TYPE_COMMAND);
 		} else if (!strcmp(type, "entries")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_ENTRIES);
 		} else if (!strcmp(type, "fields")) {
@@ -394,22 +411,24 @@ rz_diff_calculate_distance_bad:
 
 static RzCore *rz_diff_load_file_with_core(const char *filename, const char *architecture, ut32 arch_bits) {
 	RzCore *core = NULL;
-	RzCoreFile *cfile = NULL;
+	const RzCoreFile *cfile = NULL;
 
 	core = rz_core_new();
 	if (!core) {
 		rz_diff_error("cannot allocate core\n");
 		goto rz_diff_load_file_with_core_fail;
 	}
+	rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL, NULL);
 
+	rz_config_set_i(core->config, "scr.color", 0);
 	rz_config_set_b(core->config, "scr.interactive", false);
 	rz_config_set_b(core->config, "cfg.debug", false);
 	core->print->scr_prompt = false;
 
 #if __WINDOWS__
-	char *winf = rz_acp_to_utf8(filename);
-	cfile = rz_core_file_open(core, winf, 0, 0);
-	free(winf);
+	char *winpath = rz_acp_to_utf8(filename);
+	cfile = rz_core_file_open(core, winpath, 0, 0);
+	free(winpath);
 #else
 	cfile = rz_core_file_open(core, filename, 0, 0);
 #endif
@@ -441,7 +460,7 @@ static RzCore *rz_diff_load_file_with_core(const char *filename, const char *arc
 	}
 
 	if (!rz_core_analysis_everything(core, false, NULL)) {
-		rz_diff_error("cannot set analyze binary\n");
+		rz_diff_error("cannot set analyze binary '%s'\n", filename);
 		goto rz_diff_load_file_with_core_fail;
 	}
 
@@ -1249,6 +1268,40 @@ static RzDiff *rz_diff_functions_new(DiffContext *ctx) {
 	return rz_diff_generic_new(list_a, rz_list_length(list_a), list_b, rz_list_length(list_b), &methods);
 }
 
+/**************************************** commands ***************************************/
+
+static char *execute_command(const char *command, const char *filename, const char *architecture, ut32 arch_bits) {
+	RzCore *core = rz_diff_load_file_with_core(filename, architecture, arch_bits);
+	if (!core) {
+		return NULL;
+	}
+
+	char *output = rz_core_cmd_str(core, command);
+	rz_core_free(core);
+	return output;
+}
+
+static RzDiff *rz_diff_command_new(DiffContext *ctx) {
+	char *output_a = NULL;
+	char *output_b = NULL;
+
+	output_a = execute_command(ctx->command_a, ctx->file_a, ctx->architecture, ctx->arch_bits);
+	if (!output_a) {
+		rz_diff_error_ret(NULL, "cannot execute command '%s' on file '%s'\n", ctx->command_a, ctx->file_a);
+	}
+
+	output_b = execute_command(ctx->command_b, ctx->file_b, ctx->architecture, ctx->arch_bits);
+	if (!output_b) {
+		free(output_a);
+		rz_diff_error_ret(NULL, "cannot execute command '%s' on file '%s'\n", ctx->command_b, ctx->file_b);
+	}
+
+	RzDiff *diff = rz_diff_lines_new(output_a, output_b, NULL);
+	free(output_a);
+	free(output_b);
+	return diff;
+}
+
 /**************************************** rz-diff ***************************************/
 
 static bool rz_diff_unified_files(DiffContext *ctx) {
@@ -1259,6 +1312,7 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 	DiffFile dfile_a = { 0 };
 	DiffFile dfile_b = { 0 };
 	RzDiff *diff = NULL;
+	bool result = false;
 
 	if (ctx->type == DIFF_TYPE_BYTES ||
 		ctx->type == DIFF_TYPE_LINES) {
@@ -1269,7 +1323,7 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 		if (!(b_buffer = rz_diff_slurp_file(ctx->file_b, &b_size))) {
 			goto rz_diff_unified_files_bad;
 		}
-	} else {
+	} else if (ctx->type != DIFF_TYPE_FUNCTIONS && ctx->type != DIFF_TYPE_COMMAND) {
 		if (!rz_diff_file_open(&dfile_a, ctx->file_a)) {
 			goto rz_diff_unified_files_bad;
 		}
@@ -1284,6 +1338,9 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 		break;
 	case DIFF_TYPE_CLASSES:
 		diff = rz_diff_classes_new(&dfile_a, &dfile_b, ctx->compare_addresses);
+		break;
+	case DIFF_TYPE_COMMAND:
+		diff = rz_diff_command_new(ctx);
 		break;
 	case DIFF_TYPE_ENTRIES:
 		diff = rz_diff_entries_new(&dfile_a, &dfile_b);
@@ -1338,29 +1395,20 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 		free(result);
 	}
 
-	if (ctx->type == DIFF_TYPE_FUNCTIONS) {
-		rz_list_free((RzList *)rz_diff_get_a(diff));
-		rz_list_free((RzList *)rz_diff_get_b(diff));
-	}
-
-	rz_diff_free(diff);
-	rz_diff_file_close(&dfile_a);
-	rz_diff_file_close(&dfile_b);
-	free(a_buffer);
-	free(b_buffer);
-	return true;
+	result = true;
 
 rz_diff_unified_files_bad:
 	if (ctx->type == DIFF_TYPE_FUNCTIONS) {
 		rz_list_free((RzList *)rz_diff_get_a(diff));
 		rz_list_free((RzList *)rz_diff_get_b(diff));
 	}
+
 	rz_diff_free(diff);
 	rz_diff_file_close(&dfile_a);
 	rz_diff_file_close(&dfile_b);
 	free(a_buffer);
 	free(b_buffer);
-	return false;
+	return result;
 }
 
 RZ_API int rz_main_rz_diff(int argc, const char **argv) {
