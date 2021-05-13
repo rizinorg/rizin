@@ -70,9 +70,10 @@ typedef struct rz_bin_elf_reloc_t {
 	int sym;
 	int type;
 	Elf_(Xword) rel_mode;
-	st64 addend;
-	ut64 offset;
-	ut64 rva;
+	st64 addend; ///< exact addend value taken from the ELF, meaning depends on type
+	ut64 offset; ///< exact offset value taken from the ELF, meaning depends on the binary type
+	ut64 paddr; ///< absolute paddr in the file, calculated from offset, or UT64_MAX if no such addr exists
+	ut64 vaddr; ///< source vaddr of the reloc, calculated from offset
 	ut16 section;
 	int last;
 	ut64 sto;

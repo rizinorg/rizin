@@ -61,7 +61,7 @@
 
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
-	((rel->rva - pltgot_addr - n_initial_unused_entries * RZ_BIN_ELF_WORDSIZE) / RZ_BIN_ELF_WORDSIZE)
+	((rel->vaddr - pltgot_addr - n_initial_unused_entries * RZ_BIN_ELF_WORDSIZE) / RZ_BIN_ELF_WORDSIZE)
 
 #define GROWTH_FACTOR 2
 
@@ -1727,13 +1727,11 @@ char *Elf_(section_type_to_string)(ut64 type) {
 }
 
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
-	if (!rel->rva) {
+	if (rel->paddr == UT64_MAX) {
 		return UT64_MAX;
 	}
-
-	ut64 p_sym_got_addr = Elf_(rz_bin_elf_v2p_new)(bin, rel->rva);
-	ut64 addr = RZ_BIN_ELF_BREADWORD(bin->b, p_sym_got_addr);
-
+	ut64 paddr = rel->paddr;
+	ut64 addr = RZ_BIN_ELF_BREADWORD(bin->b, paddr);
 	return (!addr || addr == RZ_BIN_ELF_WORD_MAX) ? UT64_MAX : addr;
 }
 
@@ -1916,10 +1914,10 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 		plt_sym_addr = RZ_BIN_ELF_READWORD(buf, i);
 
 		//relative address
-		if ((plt_addr + 6 + Elf_(rz_bin_elf_v2p)(bin, plt_sym_addr)) == rel->rva) {
+		if ((plt_addr + 6 + Elf_(rz_bin_elf_v2p)(bin, plt_sym_addr)) == rel->vaddr) {
 			return plt_addr;
 		}
-		if (plt_sym_addr == rel->rva) {
+		if (plt_sym_addr == rel->vaddr) {
 			return plt_addr;
 		}
 		plt_addr += 8;
@@ -2921,16 +2919,17 @@ static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
 
 static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RzBinElfReloc *r, size_t pos) {
 	if (has_valid_section_header(bin, pos)) {
-		r->rva = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
-		r->rva = Elf_(rz_bin_elf_p2v)(bin, r->rva);
+		r->paddr = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
+		r->vaddr = Elf_(rz_bin_elf_p2v)(bin, r->paddr);
 	} else {
-		r->rva = r->offset;
+		r->paddr = UT64_MAX;
+		r->vaddr = r->offset;
 	}
 }
 
 static void fix_rva_and_offset_exec_file(ELFOBJ *bin, RzBinElfReloc *r) {
-	r->rva = r->offset;
-	r->offset = Elf_(rz_bin_elf_v2p)(bin, r->offset);
+	r->paddr = Elf_(rz_bin_elf_v2p)(bin, r->offset);
+	r->vaddr = r->offset;
 }
 
 static void fix_rva_and_offset(ELFOBJ *bin, RzBinElfReloc *r, size_t pos) {

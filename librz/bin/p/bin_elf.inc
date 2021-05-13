@@ -683,7 +683,7 @@ static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinElfRe
 	rz_return_val_if_fail(bin && rel, NULL);
 
 	ut64 B = bin->baddr;
-	ut64 P = rel->rva; // rva has taken baddr into account
+	ut64 P = rel->vaddr; // rva has taken baddr into account
 	RzBinReloc *r = RZ_NEW0(RzBinReloc);
 	if (!r) {
 		return NULL;
@@ -699,8 +699,8 @@ static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinElfRe
 			r->symbol = bin->symbols_by_ord[rel->sym];
 		}
 	}
-	r->vaddr = rel->rva;
-	r->paddr = rel->offset;
+	r->paddr = rel->paddr;
+	r->vaddr = rel->vaddr;
 
 #define SET(T) \
 	r->type = RZ_BIN_RELOC_##T; \
@@ -850,18 +850,18 @@ static RzList *relocs(RzBinFile *bf) {
 
 static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
 	ut64 val;
-	ut64 A = rel->addend, P = rel->rva;
+	ut64 A = rel->addend, P = rel->vaddr;
 	ut8 buf[8];
 	switch (e_machine) {
 	case EM_ARM:
 		val = S + A;
 		rz_write_le32(buf, val);
-		iob->write_at(iob->io, rel->rva, buf, 4);
+		iob->write_at(iob->io, rel->vaddr, buf, 4);
 		break;
 	case EM_AARCH64:
 		val = S + A;
 		rz_write_le64(buf, val);
-		iob->write_at(iob->io, rel->rva, buf, 8);
+		iob->write_at(iob->io, rel->vaddr, buf, 8);
 		break;
 	case EM_PPC64: {
 		int low = 0, word = 0;
@@ -894,15 +894,15 @@ static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RzBinElfReloc *rel, ut64
 			switch (low) {
 			case 14:
 				val &= (1 << 14) - 1;
-				iob->read_at(iob->io, rel->rva, buf, 2);
+				iob->read_at(iob->io, rel->vaddr, buf, 2);
 				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 16) - (1 << 2))) | val << 2);
-				iob->write_at(iob->io, rel->rva, buf, 2);
+				iob->write_at(iob->io, rel->vaddr, buf, 2);
 				break;
 			case 24:
 				val &= (1 << 24) - 1;
-				iob->read_at(iob->io, rel->rva, buf, 4);
+				iob->read_at(iob->io, rel->vaddr, buf, 4);
 				rz_write_le32(buf, (rz_read_le32(buf) & ~((1 << 26) - (1 << 2))) | val << 2);
-				iob->write_at(iob->io, rel->rva, buf, 4);
+				iob->write_at(iob->io, rel->vaddr, buf, 4);
 				break;
 			}
 		} else if (word) {
@@ -910,11 +910,11 @@ static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RzBinElfReloc *rel, ut64
 			switch (word) {
 			case 2:
 				rz_write_le16(buf, val);
-				iob->write_at(iob->io, rel->rva, buf, 2);
+				iob->write_at(iob->io, rel->vaddr, buf, 2);
 				break;
 			case 4:
 				rz_write_le32(buf, val);
-				iob->write_at(iob->io, rel->rva, buf, 4);
+				iob->write_at(iob->io, rel->vaddr, buf, 4);
 				break;
 			}
 		}
@@ -978,19 +978,19 @@ static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RzBinElfReloc *rel, ut64
 			break;
 		case 1:
 			buf[0] = val;
-			iob->write_at(iob->io, rel->rva, buf, 1);
+			iob->write_at(iob->io, rel->vaddr, buf, 1);
 			break;
 		case 2:
 			rz_write_le16(buf, val);
-			iob->write_at(iob->io, rel->rva, buf, 2);
+			iob->write_at(iob->io, rel->vaddr, buf, 2);
 			break;
 		case 4:
 			rz_write_le32(buf, val);
-			iob->write_at(iob->io, rel->rva, buf, 4);
+			iob->write_at(iob->io, rel->vaddr, buf, 4);
 			break;
 		case 8:
 			rz_write_le64(buf, val);
-			iob->write_at(iob->io, rel->rva, buf, 8);
+			iob->write_at(iob->io, rel->vaddr, buf, 8);
 			break;
 		}
 		break;
