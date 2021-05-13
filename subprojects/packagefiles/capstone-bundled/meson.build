@@ -74,10 +74,6 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_TMS320C64X',
 ]  
-warn_trunc_flag = '-Wno-error=stringop-truncation'
-if meson.get_compiler('c').has_argument(warn_trunc_flag)
-  libcapstone_c_args += warn_trunc_flag
-endif
 
 libcapstone = library('capstone', cs_files,
   c_args: libcapstone_c_args,

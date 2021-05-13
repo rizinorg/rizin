@@ -835,6 +835,65 @@ bool test_rz_buf_sparse_fuzz(void) {
 #undef FUZZ_READS_PER_WRITE
 }
 
+bool test_rz_buf_sparse_overlay(void) {
+	ut8 tmp[0x100];
+	for (size_t i = 0; i < sizeof(tmp); i++) {
+		tmp[i] = i;
+	}
+	RzBuffer *base = rz_buf_new_with_bytes(tmp, sizeof(tmp));
+	rz_buf_set_overflow_byte(base, 0x42);
+
+	RzBuffer *b = rz_buf_new_sparse_overlay(base, RZ_BUF_SPARSE_WRITE_MODE_SPARSE);
+	mu_assert_notnull(b, "rz_buf_new_sparse_overlay failed");
+	rz_buf_set_overflow_byte(b, 0x24);
+
+	rz_buf_read_at(b, 8, tmp, 0x20);
+	mu_assert_memeq(tmp,
+		(const ut8 *)"\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a"
+			     "\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27",
+		0x20, "read unpopulated");
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Not", 3);
+	rz_buf_write_at(b, 0x14, (const ut8 *)"Naming", 6);
+	rz_buf_write_at(b, 0x1b, (const ut8 *)"Any", 3);
+	rz_buf_write_at(b, 0x1f, (const ut8 *)"Names", 5);
+
+	memset(tmp, 0, sizeof(tmp));
+	rz_buf_read_at(base, 0, tmp, sizeof(tmp));
+	for (size_t i = 0; i < sizeof(tmp); i++) {
+		mu_assert_eq(tmp[i], i, "write into sparse and keep base");
+	}
+
+	rz_buf_read_at(b, 8, tmp, 0x20);
+	mu_assert_memeq(tmp,
+		(const ut8 *)"\x08\x09\x0a\x0b\x0c\x0d\x0e\x0fNot\x13Naming\x1a"
+			     "Any\x1eNames\x24\x25\x26\x27",
+		0x20, "read combined");
+
+	rz_buf_read_at(b, 0x30, tmp, 8);
+	mu_assert_memeq(tmp, (const ut8 *)"\x30\x31\x32\x33\x34\x35\x36\x37", 8, "read base");
+	rz_buf_read_at(b, 0xfe, tmp, 8);
+	mu_assert_memeq(tmp, (const ut8 *)"\xfe\xff\x42\x42\x42\x42\x42\x42", 8, "read base bounds");
+	rz_buf_read_at(b, 0x200, tmp, 8);
+	mu_assert_memeq(tmp, (const ut8 *)"\x42\x42\x42\x42\x42\x42\x42\x42", 8, "read base 0xff only");
+
+	// now test write through to the base buffer, the overlay should not change in writethrough mode
+	rz_buf_sparse_set_write_mode(b, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
+	st64 r = rz_buf_write_at(b, 0x11, (const ut8 *)"Magnolia", 8);
+	mu_assert_eq(r, 8, "write success");
+	r = rz_buf_read_at(base, 0x10, tmp, 0x10);
+	mu_assert_eq(r, 0x10, "base read success");
+	mu_assert_memeq(tmp, (const ut8 *)"\x10Magnolia\x19\x1a\x1b\x1c\x1d\x1e\x1f", 0x10, "base written");
+	rz_buf_read_at(b, 8, tmp, 0x20);
+	mu_assert_memeq(tmp,
+		(const ut8 *)"\x08\x09\x0a\x0b\x0c\x0d\x0e\x0fNotgNaming\x1a"
+			     "Any\x1eNames\x24\x25\x26\x27",
+		0x20, "overlay untouched");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
 bool test_rz_buf_bytes_steal(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
@@ -994,6 +1053,7 @@ int all_tests() {
 	mu_run_test(test_rz_buf_sparse_write_bridge_over_inside);
 	mu_run_test(test_rz_buf_sparse_resize);
 	mu_run_test(test_rz_buf_sparse_fuzz);
+	mu_run_test(test_rz_buf_sparse_overlay);
 	mu_run_test(test_rz_buf_bytes_steal);
 	mu_run_test(test_rz_buf_format);
 	mu_run_test(test_rz_buf_get_string);
