@@ -122,7 +122,7 @@ static inline void diff_unified_json_data(RzDiff *diff, const void *array, st32 
 	rz_strbuf_fini(&tmp);
 }
 
-RZ_API char *rz_diff_unified_text(RzDiff *diff, const char *from, const char *to, bool show_time, bool color) {
+RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE const char *from, RZ_NULLABLE const char *to, bool show_time, bool color) {
 	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.stringify, NULL);
 	RzStrBuf *sb = NULL;
 	RzList *groups = NULL;
@@ -184,7 +184,7 @@ rz_diff_unified_text_fail:
 	return NULL;
 }
 
-RZ_API PJ *rz_diff_unified_json(RzDiff *diff, const char *from, const char *to, bool show_time) {
+RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE const char *from, RZ_NULLABLE const char *to, bool show_time) {
 	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.stringify, NULL);
 	PJ *pj = NULL;
 	RzList *groups = NULL;

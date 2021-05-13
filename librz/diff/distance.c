@@ -6,7 +6,7 @@
 
 // Eugene W. Myers' O(ND) diff algorithm
 // Returns edit distance with costs: insertion=1, deletion=1, no substitution
-RZ_API bool rz_diff_myers_distance(const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+RZ_API bool rz_diff_myers_distance(RZ_NONNULL const ut8 *a, ut32 la, RZ_NONNULL const ut8 *b, ut32 lb, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity) {
 	rz_return_val_if_fail(a && b, false);
 
 	const ut32 length = la + lb;
@@ -55,7 +55,7 @@ out:
 	return true;
 }
 
-RZ_API bool rz_diff_levenstein_distance(const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+RZ_API bool rz_diff_levenstein_distance(RZ_NONNULL const ut8 *a, ut32 la, RZ_NONNULL const ut8 *b, ut32 lb, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity) {
 	rz_return_val_if_fail(a && b, false);
 
 	const ut32 length = RZ_MAX(la, lb);

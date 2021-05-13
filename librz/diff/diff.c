@@ -94,7 +94,12 @@ struct rz_diff_t {
 	MethodsInternal methods;
 };
 
-RZ_API ut32 rz_diff_hash_data(const ut8 *buffer, ut32 size) {
+/**
+ * \brief Calculates the hash of any given data
+ *
+ * Calculates the hash of any given data with a user defined size.
+ * */
+RZ_API ut32 rz_diff_hash_data(RZ_NULLABLE const ut8 *buffer, ut32 size) {
 	ut32 h = 5381;
 	if (!buffer || !size) {
 		return h;
@@ -172,7 +177,14 @@ static bool set_b(RzDiff *diff, const void *b, ut32 b_size) {
 	return true;
 }
 
-RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(const ut8 *a, ut32 a_size, const ut8 *b, ut32 b_size, RzDiffIgnoreByte ignore) {
+/**
+ * \brief Returns the structure needed to diff buffers of ut8
+ *
+ * Allocates the internal structure needed to diff buffers by
+ * using the methods defined in methods_bytes.
+ * Allows to define an callback function to ignore bytes.
+ * */
+RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(RZ_BORROW const ut8 *a, ut32 a_size, RZ_BORROW const ut8 *b, ut32 b_size, RZ_NULLABLE RzDiffIgnoreByte ignore) {
 	rz_return_val_if_fail(a && b, NULL);
 
 	RzDiff *diff = RZ_NEW0(RzDiff);
@@ -196,7 +208,14 @@ RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(const ut8 *a, ut32 a_size, const ut8 *b,
 	return diff;
 }
 
-RZ_API RZ_OWN RzDiff *rz_diff_lines_new(const char *a, const char *b, RzDiffIgnoreLine ignore) {
+/**
+ * \brief Returns the structure needed to diff lines
+ *
+ * Allocates the internal structure needed to diff strings with new lines
+ * using the methods defined in methods_lines.
+ * Allows to define an callback function to ignore lines.
+ * */
+RZ_API RZ_OWN RzDiff *rz_diff_lines_new(RZ_BORROW const char *a, RZ_BORROW const char *b, RZ_NULLABLE RzDiffIgnoreLine ignore) {
 	rz_return_val_if_fail(a && b, NULL);
 
 	RzDiff *diff = RZ_NEW0(RzDiff);
@@ -230,7 +249,13 @@ RZ_API RZ_OWN RzDiff *rz_diff_lines_new(const char *a, const char *b, RzDiffIgno
 	return diff;
 }
 
-RZ_API RZ_OWN RzDiff *rz_diff_generic_new(const void *a, ut32 a_size, const void *b, ut32 b_size, RzDiffMethods *methods) {
+/**
+ * \brief Returns the structure needed to diff arrays of user defined types
+ *
+ * Allocates the internal structure needed to diff any user defined array
+ * of any types by using the methods provided by the user calling this C api.
+ * */
+RZ_API RZ_OWN RzDiff *rz_diff_generic_new(RZ_BORROW const void *a, ut32 a_size, RZ_BORROW const void *b, ut32 b_size, RZ_NONNULL RzDiffMethods *methods) {
 	rz_return_val_if_fail(a && b && methods && methods->elem_at && methods->elem_hash && methods->compare && methods->stringify, NULL);
 
 	RzDiff *diff = RZ_NEW0(RzDiff);
@@ -261,7 +286,12 @@ RZ_API RZ_OWN RzDiff *rz_diff_generic_new(const void *a, ut32 a_size, const void
 	return diff;
 }
 
-RZ_API void rz_diff_free(RzDiff *diff) {
+/**
+ * \brief frees the diff structure
+ *
+ * frees any internal structure and the diff structure.
+ * */
+RZ_API void rz_diff_free(RZ_NULLABLE RzDiff *diff) {
 	if (!diff) {
 		return;
 	}
@@ -273,12 +303,22 @@ RZ_API void rz_diff_free(RzDiff *diff) {
 	free(diff);
 }
 
-RZ_API const void *rz_diff_get_a(RzDiff *diff) {
+/**
+ * \brief returns the pointer of the A array that passed to rz_diff_XXX_new()
+ *
+ * returns the pointer of the A array that passed to rz_diff_XXX_new()
+ * */
+RZ_API RZ_BORROW const void *rz_diff_get_a(RZ_NONNULL RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	return diff->a;
 }
 
-RZ_API const void *rz_diff_get_b(RzDiff *diff) {
+/**
+ * \brief returns the pointer of the B array that passed to rz_diff_XXX_new()
+ *
+ * returns the pointer of the B array that passed to rz_diff_XXX_new()
+ * */
+RZ_API RZ_BORROW const void *rz_diff_get_b(RZ_NONNULL RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	return diff->b;
 }
@@ -453,7 +493,7 @@ static int cmp_matches(RzDiffMatch *m0, RzDiffMatch *m1) {
  * Generates a list of matching blocks that are found in both inputs.
  * If non are found it returns a match result with size of 0
  * */
-RZ_API RzList *rz_diff_matches_new(RzDiff *diff) {
+RZ_API RZ_OWN RzList /*<RzDiffMatch>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	RzList *stack = NULL;
 	RzList *matches = NULL;
@@ -587,7 +627,7 @@ static void opcode_set(RzDiffOp *op, RzDiffOpType type, st32 a_beg, st32 a_end, 
  *
  * Generates a list of opcodes that are needed to convert A to B.
  * */
-RZ_API RzList *rz_diff_opcodes_new(RzDiff *diff) {
+RZ_API RZ_OWN RzList /*<RzDiffOp>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *diff) {
 	rz_return_val_if_fail(diff, NULL);
 	ut32 a = 0, b = 0;
 	RzDiffOpType type = RZ_DIFF_OP_INVALID;
@@ -661,7 +701,13 @@ static void group_op_free(RzList *ops) {
 	rz_list_free(ops);
 }
 
-RZ_API RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RzDiff *diff, ut32 n_groups) {
+/**
+ * \brief Generates groups of opcodes needed to go from A to B.
+ *
+ * Generates groups of opcodes needed to go from A to B, but
+ * grouped by the total number of groups.
+ * */
+RZ_API RZ_OWN RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RZ_NONNULL RzDiff *diff, ut32 n_groups) {
 	rz_return_val_if_fail(diff && n_groups > 1, NULL);
 	RzDiffOp *op = NULL;
 	RzListIter *it = NULL;
@@ -778,7 +824,7 @@ rz_diff_opcodes_grouped_new_fail:
  * Returns a number between 0 and 1; closer to 1 the result
  * is more similar/identical the 2 arrays are.
  * */
-RZ_API bool rz_diff_ratio(RzDiff *diff, double *result) {
+RZ_API bool rz_diff_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result) {
 	rz_return_val_if_fail(diff && result, false);
 	RzList *matches = NULL;
 	RzDiffMatch *match = NULL;
@@ -812,7 +858,7 @@ RZ_API bool rz_diff_ratio(RzDiff *diff, double *result) {
  * how similar are the sizes between the two arrays.
  * Returns a number between 0 and 1, like above.
  * */
-RZ_API bool rz_diff_sizes_ratio(RzDiff *diff, double *result) {
+RZ_API bool rz_diff_sizes_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result) {
 	rz_return_val_if_fail(diff && result, false);
 
 	/* simple cast to avoid math issues */
