@@ -147,7 +147,7 @@ static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 	}
 }
 
-RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2) {
+RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 	bool color = rz_config_get_i(c->config, "scr.color") > 0 || rz_config_get_i(c2->config, "scr.color") > 0;
 	bool bare = rz_config_get_b(c->config, "diff.bare") || rz_config_get_b(c2->config, "diff.bare");
 	bool is_new = false;
@@ -158,6 +158,16 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2) {
 	ut64 maxsize = 0;
 	int digits = 1;
 	int len;
+	PJ *pj = NULL;
+
+	if (json) {
+		pj = pj_new();
+		if (!pj) {
+			eprintf("cannot alocate json\n");
+			return;
+		}
+		pj_a(pj);
+	}
 
 	rz_list_foreach (fcns, iter, f) {
 		if (f->name && (len = strlen(f->name)) > maxnamelen) {
@@ -200,9 +210,31 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2) {
 			default:
 				is_new = true;
 			}
-			diffrow(f->addr, f->name, rz_analysis_function_linear_size(f), maxnamelen, digits,
-				f->diff->addr, f->diff->name, f->diff->size,
-				f->diff->dist, is_new, bare, color);
+			if (json) {
+				double dist = f->diff->dist;
+				pj_o(pj);
+				pj_kd(pj, "distance", f->diff->dist);
+				pj_ks(pj, "type", dist >= 1.0 ? "MATCH" : (dist >= 0.5 ? "SIMILAR" : (is_new ? "NEW" : "UNMATCH")));
+				if (f->name) {
+					pj_ko(pj, "original");
+					pj_ks(pj, "name", f->name);
+					pj_kn(pj, "addr", f->addr);
+					pj_kn(pj, "size", rz_analysis_function_linear_size(f));
+					pj_end(pj);
+				}
+				if (f->diff->name) {
+					pj_ko(pj, "modified");
+					pj_ks(pj, "name", f->diff->name);
+					pj_kn(pj, "addr", f->diff->addr);
+					pj_kn(pj, "size", f->diff->size);
+					pj_end(pj);
+				}
+				pj_end(pj);
+			} else {
+				diffrow(f->addr, f->name, rz_analysis_function_linear_size(f), maxnamelen, digits,
+					f->diff->addr, f->diff->name, f->diff->size,
+					f->diff->dist, is_new, bare, color);
+			}
 			break;
 		}
 	}
@@ -213,12 +245,39 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2) {
 		case RZ_ANALYSIS_FCN_TYPE_FCN:
 		case RZ_ANALYSIS_FCN_TYPE_SYM:
 			if (f->diff->type == RZ_ANALYSIS_DIFF_TYPE_NULL) {
-				diffrow(f->addr, f->name, rz_analysis_function_linear_size(f), maxnamelen,
-					digits, f->diff->addr, f->diff->name, f->diff->size,
-					0, true, bare, color);
+				if (json) {
+					pj_o(pj);
+					pj_kd(pj, "distance", 0.0);
+					pj_ks(pj, "type", "NEW");
+					if (f->name) {
+						pj_ko(pj, "original");
+						pj_ks(pj, "name", f->name);
+						pj_kn(pj, "addr", f->addr);
+						pj_kn(pj, "size", rz_analysis_function_linear_size(f));
+						pj_end(pj);
+					}
+					if (f->diff->name) {
+						pj_ko(pj, "modified");
+						pj_ks(pj, "name", f->diff->name);
+						pj_kn(pj, "addr", f->diff->addr);
+						pj_kn(pj, "size", f->diff->size);
+						pj_end(pj);
+					}
+					pj_end(pj);
+				} else {
+					diffrow(f->addr, f->name, rz_analysis_function_linear_size(f), maxnamelen,
+						digits, f->diff->addr, f->diff->name, f->diff->size,
+						0.0, true, bare, color);
+				}
 			}
 			break;
 		}
+	}
+
+	if (json) {
+		pj_end(pj);
+		printf("%s\n", pj_string(pj));
+		pj_free(pj);
 	}
 }
 

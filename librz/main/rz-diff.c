@@ -1265,11 +1265,6 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 	result = true;
 
 rz_diff_unified_files_bad:
-	if (ctx->type == DIFF_TYPE_FUNCTIONS) {
-		rz_list_free((RzList *)rz_diff_get_a(diff));
-		rz_list_free((RzList *)rz_diff_get_b(diff));
-	}
-
 	rz_diff_free(diff);
 	rz_diff_file_close(&dfile_a);
 	rz_diff_file_close(&dfile_b);
@@ -1337,7 +1332,7 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 			rz_diff_error("cannot diff all graphs\n");
 			goto rz_diff_graphs_files_bad;
 		}
-		rz_core_diff_show(a->core, b->core);
+		rz_core_diff_show(a->core, b->core, ctx->mode == DIFF_MODE_JSON);
 	}
 
 	success = true;
