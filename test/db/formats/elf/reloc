@@ -234,3 +234,84 @@ EXPECT=<<EOF
             0x08000ef3      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
 EOF
 RUN
+
+NAME=ELF: jumptable from relocs
+FILE=bins/elf/analysis/rawmem.c-gcc-x64-O3.o
+ARGS=-e io.cache=true
+CMDS=<<EOF
+s 0x08000040
+af
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+/ sym.owGetPageLength.constprop.0 (int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x08000040      movzx eax, byte [rdi]                      ; RELOC TARGET 32 .text @ 0x08000040 - 0x8004d08 ; arg1 [0m; [01] -r-x section size 6641 named .text
+|           0x08000043      and   eax, 0x7f                            ; 127
+|           0x08000046      sub   eax, 4
+|           0x08000049      cmp   al, 0x73                             ; 115
+|       ,=< 0x0800004b      ja    case.0x800005e.5
+|       |   0x0800004d      lea   rdx, reloc.target..rodata            ; 0x8001a34 ; "4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xffD\xe6\xff\xff4\xe6\xff\xffD\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xffD\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xffD\xe6\xff\xffD\xe6\xff\xfft\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xffT\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xffd\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff"; RELOC 32 .rodata @ 0x08001a34 - 0x8000054
+|       |   0x08000054      movzx eax, al
+|       |   0x08000057      movsxd rax, dword [rdx + rax*4]
+|       |   0x0800005b      add   rax, rdx
+|       |   ;-- switch
+|       |   0x0800005e      jmp   rax                                  ; switch table (116 cases) at 0x8001a34
+|       |   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|       |   ;-- case 5:                                                ; from 0x800005e
+|       |   ;-- case 13...14:                                          ; from 0x800005e
+|       |   ;-- case 16:                                               ; from 0x800005e
+|       |   ;-- case 17:                                               ; from 0x800005e
+|       |   ;-- case 22...23:                                          ; from 0x800005e
+|       |   ;-- case 25:                                               ; from 0x800005e
+|       |   ;-- case 27...28:                                          ; from 0x800005e
+|       |   ;-- case 30:                                               ; from 0x800005e
+|       |   ;-- case 31...32:                                          ; from 0x800005e
+|       |   ;-- case 34:                                               ; from 0x800005e
+|       |   ;-- case 36...50:                                          ; from 0x800005e
+|       |   ;-- case 52:                                               ; from 0x800005e
+|       |   ;-- case 53...54:                                          ; from 0x800005e
+|       |   ;-- case 56:                                               ; from 0x800005e
+|       |   ;-- default:                                               ; from 0x800005e
+|       `-> 0x08000060      xor   eax, eax
+|           0x08000062      ret
+..
+|           ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|           ;-- case 4:                                                ; from 0x800005e
+|           ;-- case 8:                                                ; from 0x800005e
+|           ;-- case 12:                                               ; from 0x800005e
+|           ;-- case 26:                                               ; from 0x800005e
+|           ;-- case 33:                                               ; from 0x800005e
+|           0x08000068      nop     dword [rax + rax]                  ; arg1
+|           0x0800006b      mov   edi, 1
+|       ,=< 0x08000070      jmp   reloc.target.getPageLengthNV         ; RELOC 32 getPageLengthNV
+..
+|       |   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|       |   ;-- case 9:                                                ; from 0x800005e
+|       |   ;-- case 15:                                               ; from 0x800005e
+|       |   ;-- case 19:                                               ; from 0x800005e
+|       |   0x08000078      nop     dword [rax]                        ; arg1
+|       |   0x0800007b      mov   edi, 1
+|      ,==< 0x08000080      jmp   reloc.target.getPageLengthEPROM      ; RELOC 32 getPageLengthEPROM
+..
+|      ||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|      ||   ;-- case 51:                                               ; from 0x800005e
+|      ||   0x08000088      nop     dword [rax]                        ; arg1
+|      ||   0x0800008b      mov   edi, 1
+|     ,===< 0x08000090      jmp   reloc.target.getPageLengthSHAEE      ; RELOC 32 getPageLengthSHAEE
+..
+|     |||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|     |||   ;-- case 55:                                               ; from 0x800005e
+|     |||   0x08000098      nop     dword [rax]                        ; arg1
+|     |||   0x0800009b      mov   edi, 1
+|    ,====< 0x080000a0      jmp   reloc.target.getPageLengthEE77       ; RELOC 32 getPageLengthEE77
+..
+|    ||||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|    ||||   ;-- case 20:                                               ; from 0x800005e
+|    ||||   0x080000a8      nop     dword [rax]                        ; arg1
+|    ||||   0x080000ab      mov   edi, 1
+\   ,=====< 0x080000b0      jmp   reloc.target.getPageLengthEE         ; RELOC 32 getPageLengthEE
+EOF
+RUN
