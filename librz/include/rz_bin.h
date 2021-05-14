@@ -259,11 +259,11 @@ typedef struct rz_bin_object_t {
 	 * This associates the name of every symbol where is_imported == true to the symbol itself.
 	 */
 	HtPP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
-	RzList /*<??>*/ *entries;
-	RzList /*<??>*/ *fields;
-	RzList /*<??>*/ *libs;
+	RzList /*<RzBinAddr>*/ *entries;
+	RzList /*<RzBinField>*/ *fields;
+	RzList /*<char*>*/ *libs;
 	RzBinRelocStorage *relocs;
-	RzList /*<??>*/ *strings;
+	RzList /*<RzBinString>*/ *strings;
 	RzList /*<RzBinClass>*/ *classes;
 	HtPP *classes_ht;
 	HtPP *methods_ht;

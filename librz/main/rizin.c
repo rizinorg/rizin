@@ -57,6 +57,7 @@ static int rz_main_version_verify(int show) {
 		{ "rz_search", rz_search_version },
 		{ "rz_syscall", rz_syscall_version },
 		{ "rz_util", rz_util_version },
+		{ "rz_diff", rz_diff_version },
 		/* ... */
 		{ NULL, NULL }
 	};

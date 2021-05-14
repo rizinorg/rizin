@@ -34,6 +34,7 @@ rz_main_deps = [
   rz_config_dep,
   rz_bin_dep,
   rz_core_dep,
+  rz_diff_dep,
 ]
 
 rz_main = library('rz_main', rz_main_sources,
@@ -59,6 +60,7 @@ pkgconfig_mod.generate(rz_main,
   requires: [
     'rz_core',
     'rz_asm',
+    'rz_diff',
     'rz_syscall'
   ],
   description: 'rizin foundation libraries'

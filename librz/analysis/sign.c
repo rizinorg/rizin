@@ -1173,7 +1173,7 @@ static double cmp_bytesig_to_buff(RzSignBytes *sig, ut8 *buf, int len) {
 	ut8 *sigbuf = build_combined_bytes(sig);
 	double sim = -1.0;
 	if (sigbuf) {
-		rz_diff_buffers_distance(NULL, sigbuf, sig->size, buf, len, NULL, &sim);
+		rz_diff_levenstein_distance(sigbuf, sig->size, buf, len, NULL, &sim);
 		free(sigbuf);
 	}
 	return sim;

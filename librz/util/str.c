@@ -733,6 +733,7 @@ RZ_API char *rz_str_trunc_ellipsis(const char *str, int len) {
 }
 
 RZ_API char *rz_str_newf(const char *fmt, ...) {
+	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
 	va_start(ap, fmt);
@@ -754,6 +755,7 @@ RZ_API char *rz_str_newf(const char *fmt, ...) {
 
 // Secure string copy with null terminator (like strlcpy or strscpy but ours
 RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
+	rz_return_val_if_fail(dst && src, 0);
 	size_t i;
 
 	// do not do anything if n is 0
@@ -772,6 +774,7 @@ RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n) {
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
 RZ_API bool rz_str_ccmp(const char *dst, const char *src, int ch) {
+	rz_return_val_if_fail(dst && src, NULL);
 	int i;
 	for (i = 0; src[i] && src[i] != ch; i++) {
 		if (dst[i] != src[i]) {
@@ -904,6 +907,7 @@ RZ_API char *rz_str_append(char *ptr, const char *string) {
 }
 
 RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) {
+	rz_return_val_if_fail(fmt, NULL);
 	va_list ap, ap2;
 
 	va_start(ap, fmt);

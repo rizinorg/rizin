@@ -214,7 +214,7 @@ RZ_API void rz_bin_string_free(void *_str) {
 }
 
 RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
-	rz_return_val_if_fail(bin && bin->iob.io && opt, false);
+	rz_return_val_if_fail(bin && bin->iob.io && opt, NULL);
 
 	RzIOBind *iob = &(bin->iob);
 	if (!iob->desc_get(iob->io, opt->fd)) {
@@ -222,7 +222,7 @@ RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 	}
 	if (opt->fd < 0) {
 		eprintf("Couldn't open bin for file '%s'\n", file);
-		return false;
+		return NULL;
 	}
 	opt->sz = 0;
 	opt->pluginname = NULL;
@@ -230,7 +230,7 @@ RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 }
 
 RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
-	rz_return_val_if_fail(bin && bf, false);
+	rz_return_val_if_fail(bin && bf, NULL);
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
 	opt.filename = bf->file;
