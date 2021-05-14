@@ -290,7 +290,7 @@ static const char *diff_color(RzAnalysisBlock *bbi) {
 	case RZ_ANALYSIS_DIFF_TYPE_MATCH:
 		return "lightgray";
 	case RZ_ANALYSIS_DIFF_TYPE_UNMATCH:
-		return bbi->diff->dist >= 0.5 ? "orange" : "red";
+		return bbi->diff->dist >= 0.5 ? "yellow" : "red";
 	default:
 		return "turquoise";
 	}
@@ -317,11 +317,20 @@ static void print_color_node(RzCore *core, RzAnalysisBlock *bbi) {
 }
 
 static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction *fcn, PJ *pj) {
+	char addr_a[32], addr_b[32];
+
 	RzAnalysisBlock *bbi;
 	RzListIter *iter;
 	int is_json = pj != NULL;
 	const char *font = rz_config_get(core->config, "graph.font");
 	int nodes = 0;
+
+	snprintf(addr_a, sizeof(addr_a), "0x%08" PFMT64x, fcn->addr);
+	snprintf(addr_b, sizeof(addr_b), "0x%08" PFMT64x, fcn->diff->addr);
+
+	const char *norig = fcn->name ? fcn->name : addr_a;
+	const char *nmodi = fcn->diff->name ? fcn->diff->name : addr_b;
+
 	rz_list_foreach (fcn->bbs, iter, bbi) {
 		if (is_json) {
 			RzDebugTracepoint *t = rz_debug_trace_get(core->dbg, bbi->addr);
@@ -382,26 +391,27 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 			nodes++;
 			RzConfigHold *hc = rz_config_hold_new(core->config);
 			rz_config_hold_i(hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
-				"asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
+				"asm.cmt.right", "asm.lines.fcn", "asm.bytes", "asm.comments", NULL);
 			rz_config_set_i(core->config, "scr.utf8", 0);
 			rz_config_set_i(core->config, "asm.offset", 0);
 			rz_config_set_i(core->config, "asm.lines", 0);
 			rz_config_set_i(core->config, "asm.cmt.right", 0);
 			rz_config_set_i(core->config, "asm.lines.fcn", 0);
 			rz_config_set_i(core->config, "asm.bytes", 0);
+			rz_config_set_i(core->config, "asm.comments", 0);
 			rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 
 			char *original = rz_core_cmd_strf(core, "pdb @ 0x%08" PFMT64x, bbi->addr);
 
 			if (bbi->diff && bbi->diff->type == RZ_ANALYSIS_DIFF_TYPE_UNMATCH) {
-
 				RzConfig *oc = core2->config;
 				core2->config = core->config;
 
 				char *modified = rz_core_cmd_strf(core2, "pdb @ 0x%08" PFMT64x, bbi->diff->addr);
 
+
 				RzDiff *dff = rz_diff_lines_new(original, modified, NULL);
-				char *diffstr = rz_diff_unified_text(dff, NULL, NULL, false, false);
+				char *diffstr = rz_diff_unified_text(dff, norig, nmodi, false, false);
 				rz_diff_free(dff);
 
 				rz_str_replace_char(diffstr, '"', '\'');
