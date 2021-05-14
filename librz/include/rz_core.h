@@ -745,8 +745,8 @@ RZ_API int rz_core_pseudo_code(RzCore *core, const char *input);
 /* gdiff.c */
 RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2);
 RZ_API bool rz_core_gdiff(RzCore *core1, RzCore *core2);
-RZ_API bool rz_core_gdiff_fcn(RzCore *c, ut64 addr, ut64 addr2);
-RZ_API bool rz_core_gdiff_fcn2(RzCore *core1, RzCore *core2, ut64 addr, ut64 addr2);
+RZ_API bool rz_core_gdiff_function_1_file(RzCore *c, ut64 addr, ut64 addr2);
+RZ_API bool rz_core_gdiff_function_2_files(RzCore *core1, RzCore *core2, ut64 addr, ut64 addr2);
 
 RZ_API char *rz_core_sysenv_begin(RzCore *core, const char *cmd);
 RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd);

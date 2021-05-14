@@ -765,7 +765,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		case 'f': // "cgf"
 			eprintf("TODO: agf is experimental\n");
 			rz_analysis_diff_setup(core->analysis, true, -1, -1);
-			rz_core_gdiff_fcn(core, core->offset,
+			rz_core_gdiff_function_1_file(core, core->offset,
 				rz_num_math(core->num, input + 2));
 			return false;
 		case ' ':

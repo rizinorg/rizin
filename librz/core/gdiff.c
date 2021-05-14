@@ -9,7 +9,7 @@
 #include <rz_util.h>
 #include <rz_core.h>
 
-RZ_API bool rz_core_gdiff_fcn(RzCore *c, ut64 addr, ut64 addr2) {
+RZ_API bool rz_core_gdiff_function_1_file(RzCore *c, ut64 addr, ut64 addr2) {
 	RzList *la, *lb;
 	RzAnalysisFunction *fa = rz_analysis_get_function_at(c->analysis, addr);
 	RzAnalysisFunction *fb = rz_analysis_get_function_at(c->analysis, addr2);
@@ -34,7 +34,7 @@ RZ_API bool rz_core_gdiff_fcn(RzCore *c, ut64 addr, ut64 addr2) {
 	return true;
 }
 
-RZ_API bool rz_core_gdiff_fcn2(RzCore *c, RzCore *c2, ut64 addr, ut64 addr2) {
+RZ_API bool rz_core_gdiff_function_2_files(RzCore *c, RzCore *c2, ut64 addr, ut64 addr2) {
 	RzList *la, *lb;
 	RzAnalysisFunction *fa = rz_analysis_get_function_at(c->analysis, addr);
 	RzAnalysisFunction *fb = rz_analysis_get_function_at(c2->analysis, addr2);
@@ -131,16 +131,16 @@ static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 
 	if (bare) {
 		if (addr2 == UT64_MAX || !name2) {
-			printf("0x%016" PFMT64x " | %8s (%s%f%s)\n", addr, type, prefix, dist, suffix);
+			printf("0x%016" PFMT64x " | %7s (%s%f%s)\n", addr, type, prefix, dist, suffix);
 		} else {
-			printf("0x%016" PFMT64x " | %8s (%s%f%s) | 0x%016" PFMT64x "\n", addr, type, prefix, dist, suffix, addr2);
+			printf("0x%016" PFMT64x " | %7s (%s%f%s) | 0x%016" PFMT64x "\n", addr, type, prefix, dist, suffix, addr2);
 		}
 	} else {
 		if (addr2 == UT64_MAX || !name2) {
-			printf("%*s %*d 0x%016" PFMT64x " | %8s (%s%f%s)\n",
+			printf("%*s %*d 0x%016" PFMT64x " | %7s (%s%f%s)\n",
 				maxnamelen, name, digits, size, addr, type, prefix, dist, suffix);
 		} else {
-			printf("%*s %*d 0x%016" PFMT64x " | %8s (%s%f%s) | 0x%016" PFMT64x "  %*d %s\n",
+			printf("%*s %*d 0x%016" PFMT64x " | %7s (%s%f%s) | 0x%016" PFMT64x "  %*d %s\n",
 				maxnamelen, name, digits, size, addr, type, prefix, dist, suffix, addr2,
 				digits, size2, name2);
 		}
@@ -406,7 +406,7 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 
 				rz_str_replace_char(diffstr, '"', '\'');
 				diffstr = rz_str_replace(diffstr, "\n", "\\l", 1);
-				printf(" \"0x%08" PFMT64x "\" [fillcolor=\"%s\","
+				printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","
 				       "color=\"black\", fontname=\"%s\","
 				       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
 					bbi->addr, fillcolor, font, diffstr, fcn->name,
@@ -417,13 +417,14 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 			} else {
 				rz_str_replace_char(original, '"', '\'');
 				original = rz_str_replace(original, "\n", "\\l", 1);
-				printf(" \"0x%08" PFMT64x "\" [fillcolor=\"%s\","
+				printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","
 				       "color=\"black\", fontname=\"%s\","
 				       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
 					bbi->addr, fillcolor, font, original, fcn->name, bbi->addr);
 			}
 			free(original);
 			rz_config_set_i(core->config, "scr.color", 1);
+			rz_config_hold_restore(hc);
 			rz_config_hold_free(hc);
 		}
 	}
@@ -440,14 +441,14 @@ static int graph_construct_edges(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_list_foreach (fcn->bbs, iter, bbi) {
 		if (bbi->jump != UT64_MAX) {
 			nodes++;
-			printf("        \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
+			printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
 				bbi->addr, bbi->jump,
 				bbi->fail != -1 ? pal_jump : pal_trfa);
 			print_color_node(core, bbi);
 		}
 		if (bbi->fail != -1) {
 			nodes++;
-			printf("        \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
+			printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
 				bbi->addr, bbi->fail, pal_fail);
 			print_color_node(core, bbi);
 		}
@@ -456,13 +457,13 @@ static int graph_construct_edges(RzCore *core, RzAnalysisFunction *fcn) {
 			RzListIter *iter;
 
 			if (bbi->fail != UT64_MAX) {
-				printf("        \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
+				printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
 					bbi->addr, bbi->fail, pal_fail);
 				print_color_node(core, bbi);
 			}
 			rz_list_foreach (bbi->switch_op->cases, iter, caseop) {
 				nodes++;
-				printf("        \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color2=\"%s\"];\n",
+				printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color2=\"%s\"];\n",
 					caseop->addr, caseop->jump, pal_fail);
 				print_color_node(core, bbi);
 			}
@@ -477,12 +478,6 @@ static int graph_construct_edges(RzCore *core, RzAnalysisFunction *fcn) {
 static int draw_graph_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction *fcn, PJ *pj) {
 	rz_return_val_if_fail(fcn && fcn->bbs, -1);
 	int nodes = 0;
-	char *pal_jump = cons_color_code("graph.true");
-	char *pal_fail = cons_color_code("graph.false");
-	char *pal_trfa = cons_color_code("graph.trufae");
-	char *pal_curr = cons_color_code("graph.current");
-	char *pal_traced = cons_color_code("graph.traced");
-	char *pal_box4 = cons_color_code("graph.box4");
 
 	if (pj) {
 		char *fcn_name_escaped = rz_str_escape_utf8_for_json(fcn->name, -1);
@@ -513,12 +508,6 @@ static int draw_graph_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction *fcn
 		pj_end(pj);
 		pj_end(pj);
 	}
-	free(pal_jump);
-	free(pal_fail);
-	free(pal_trfa);
-	free(pal_curr);
-	free(pal_traced);
-	free(pal_box4);
 	return nodes;
 }
 
@@ -528,39 +517,11 @@ RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr1, 
 
 	int nodes = 0;
 	PJ *pj = NULL;
-	RzConfigHold *hc;
-	RzConfigHold *hc2;
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr1);
 	if (!fcn) {
 		eprintf("cannot get functions at 0x%" PFMT64x "\n", addr1);
 		return false;
 	}
-
-	hc = rz_config_hold_new(core->config);
-	if (!hc) {
-		eprintf("rz_config_hold_new is null\n");
-		return false;
-	}
-
-	hc2 = rz_config_hold_new(core->config);
-	if (!hc2) {
-		eprintf("rz_config_hold_new is null\n");
-		rz_config_hold_restore(hc);
-		rz_config_hold_free(hc);
-		return false;
-	}
-
-	rz_config_hold_i(hc, "asm.bytes", NULL);
-	rz_config_hold_i(hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
-	rz_config_set_i(core->config, "asm.bytes", 0);
-	rz_config_set_i(core->config, "asm.dwarf", 0);
-	rz_config_set_i(core->config, "asm.lines", 0);
-
-	rz_config_hold_i(hc2, "asm.bytes", NULL);
-	rz_config_hold_i(hc2, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
-	rz_config_set_i(core2->config, "asm.bytes", 0);
-	rz_config_set_i(core2->config, "asm.dwarf", 0);
-	rz_config_set_i(core2->config, "asm.lines", 0);
 
 	if (!is_json) {
 		const char *gv_edge = rz_config_get(core->config, "graph.gv.edge");
@@ -583,10 +544,6 @@ RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr1, 
 	} else {
 		pj = pj_new();
 		if (!pj) {
-			rz_config_hold_restore(hc);
-			rz_config_hold_restore(hc2);
-			rz_config_hold_free(hc);
-			rz_config_hold_free(hc2);
 			return false;
 		}
 		pj_a(pj);
@@ -602,9 +559,5 @@ RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr1, 
 	} else {
 		printf("}\n");
 	}
-	rz_config_hold_restore(hc);
-	rz_config_hold_restore(hc2);
-	rz_config_hold_free(hc);
-	rz_config_hold_free(hc2);
 	return true;
 }

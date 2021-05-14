@@ -1322,7 +1322,7 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 			rz_diff_error("cannot convert '%s' into an offset\n", ctx->input_b);
 			goto rz_diff_graphs_files_bad;
 		}
-		if (!rz_core_gdiff_fcn2(a->core, b->core, offset_a, offset_b)) {
+		if (!rz_core_gdiff_function_2_files(a->core, b->core, offset_a, offset_b)) {
 			rz_diff_error("cannot diff graphs with inputs '%s' with '%s'\n", ctx->input_a, ctx->input_b);
 			goto rz_diff_graphs_files_bad;
 		}
