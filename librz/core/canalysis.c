@@ -4217,7 +4217,7 @@ RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n) {
 	return paths;
 }
 
-RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
+RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 	ut64 from = rz_config_get_i(core->config, "graph.from");
 	ut64 to = rz_config_get_i(core->config, "graph.to");
 	const char *font = rz_config_get(core->config, "graph.font");

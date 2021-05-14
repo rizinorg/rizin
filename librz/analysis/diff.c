@@ -51,17 +51,17 @@ RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *analysis, RzAnalysisBlock
 	int oplen, idx = 0;
 
 	if (!analysis) {
-		return false;
+		return -1;
 	}
 	if (analysis->cur && analysis->cur->fingerprint_bb) {
 		return (analysis->cur->fingerprint_bb(analysis, bb));
 	}
 	if (!(bb->fingerprint = malloc(1 + bb->size))) {
-		return false;
+		return -1;
 	}
 	if (!(buf = malloc(bb->size + 1))) {
 		free(bb->fingerprint);
-		return false;
+		return -1;
 	}
 	if (analysis->iob.read_at(analysis->iob.io, bb->addr, buf, bb->size)) {
 		memcpy(bb->fingerprint, buf, bb->size);
@@ -69,7 +69,7 @@ RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *analysis, RzAnalysisBlock
 			if (!(op = rz_analysis_op_new())) {
 				free(bb->fingerprint);
 				free(buf);
-				return false;
+				return -1;
 			}
 			while (idx < bb->size) {
 				if ((oplen = rz_analysis_op(analysis, op, 0, buf + idx, bb->size - idx, RZ_ANALYSIS_OP_MASK_BASIC)) < 1) {
@@ -156,6 +156,7 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 					fcn->diff->type = fcn2->diff->type =
 						RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 			}
+			mbb->diff->dist = mbb2->diff->dist = ot;
 			RZ_FREE(mbb->fingerprint);
 			RZ_FREE(mbb2->fingerprint);
 			mbb->diff->addr = mbb2->addr;
@@ -193,7 +194,7 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 				rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size,
 					fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
 				/* Set flag in matched functions */
-				fcn->diff->type = fcn2->diff->type = (t >= 1)
+				fcn->diff->type = fcn2->diff->type = (t >= 1.0)
 					? RZ_ANALYSIS_DIFF_TYPE_MATCH
 					: RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 				fcn->diff->dist = fcn2->diff->dist = t;
@@ -218,13 +219,6 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 	}
 	/* Compare remaining functions */
 	rz_list_foreach (fcns, iter, fcn) {
-		/*
-		if ((fcn->type != RZ_ANALYSIS_FCN_TYPE_FCN &&
-			fcn->type != RZ_ANALYSIS_FCN_TYPE_SYM) ||
-			fcn->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
-			continue;
-		}
-*/
 		if (fcn->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 			continue;
 		}
@@ -241,11 +235,9 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 				minsize = fcn_size;
 			}
 			if (maxsize * analysis->diff_thfcn > minsize) {
-				eprintf("Exceeded analysis threshold while diffing %s and %s\n", fcn->name, fcn2->name);
 				continue;
 			}
 			if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
-				eprintf("Function %s already diffed\n", fcn2->name);
 				continue;
 			}
 			if ((fcn2->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn2->type != RZ_ANALYSIS_FCN_TYPE_SYM)) {
