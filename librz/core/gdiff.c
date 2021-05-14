@@ -9,6 +9,11 @@
 #include <rz_util.h>
 #include <rz_core.h>
 
+/**
+ * \brief Calculates basic block differences of 2 functions within the same file
+ *
+ * Calculates basic block differences of 2 functions within the same file
+ * */
 RZ_API bool rz_core_gdiff_function_1_file(RzCore *c, ut64 addr, ut64 addr2) {
 	RzList *la, *lb;
 	RzAnalysisFunction *fa = rz_analysis_get_function_at(c->analysis, addr);
@@ -34,6 +39,11 @@ RZ_API bool rz_core_gdiff_function_1_file(RzCore *c, ut64 addr, ut64 addr2) {
 	return true;
 }
 
+/**
+ * \brief Calculates basic block differences of 2 functions within 2 files
+ *
+ * Calculates basic block differences of 2 functions within 2 files
+ * */
 RZ_API bool rz_core_gdiff_function_2_files(RzCore *c, RzCore *c2, ut64 addr, ut64 addr2) {
 	RzList *la, *lb;
 	RzAnalysisFunction *fa = rz_analysis_get_function_at(c->analysis, addr);
@@ -70,7 +80,11 @@ RZ_API bool rz_core_gdiff_function_2_files(RzCore *c, RzCore *c2, ut64 addr, ut6
 	return true;
 }
 
-/* Fingerprint functions and blocks, then diff. */
+/**
+ * \brief Calculates basic block differences of all functions within 2 files
+ *
+ * Calculates basic block differences of all functions within 2 files.
+ * */
 RZ_API bool rz_core_gdiff(RzCore *c, RzCore *c2) {
 	RzCore *cores[2] = { c, c2 };
 	RzAnalysisFunction *fcn;
@@ -105,7 +119,6 @@ RZ_API bool rz_core_gdiff(RzCore *c, RzCore *c2) {
 	return true;
 }
 
-/* copypasta from rz_diff */
 static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 	int digits, ut64 addr2, const char *name2, ut32 size2,
 	double dist, bool is_new, bool bare, bool color) {
@@ -408,7 +421,6 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 				core2->config = core->config;
 
 				char *modified = rz_core_cmd_strf(core2, "pdb @ 0x%08" PFMT64x, bbi->diff->addr);
-
 
 				RzDiff *dff = rz_diff_lines_new(original, modified, NULL);
 				char *diffstr = rz_diff_unified_text(dff, norig, nmodi, false, false);
