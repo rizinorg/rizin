@@ -309,24 +309,13 @@ static const char *diff_color(RzAnalysisBlock *bbi) {
 	}
 }
 
-static char *cons_color_code(const char *k) {
-	if (!rz_cons_singleton()) {
-		return NULL;
-	}
-	RzColor rcolor = rz_cons_pal_get(k);
-	return rz_cons_rgb_tostring(rcolor.r, rcolor.g, rcolor.b);
-}
-
 static void print_color_node(RzCore *core, RzAnalysisBlock *bbi) {
 	bool color_current = rz_config_get_i(core->config, "graph.gv.current");
-	char *pal_curr = cons_color_code("graph.current");
 	bool current = rz_analysis_block_contains(bbi, core->offset);
-
 	if (current && color_current) {
 		printf("\t\"0x%08" PFMT64x "\" ", bbi->addr);
-		printf("\t[fillcolor=%s style=filled shape=box];\n", pal_curr ? pal_curr : "white");
+		printf("\t[fillcolor=gray style=filled shape=box];\n");
 	}
-	free(pal_curr);
 }
 
 static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction *fcn, PJ *pj) {
@@ -456,19 +445,19 @@ static int graph_construct_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction
 static int graph_construct_edges(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bbi;
 	RzListIter *iter;
-	char *pal_jump = cons_color_code("graph.true");
-	char *pal_fail = cons_color_code("graph.false");
-	char *pal_trfa = cons_color_code("graph.trufae");
+	const char *pal_jump = "#0037da";
+	const char *pal_fail = "#c50f1f";
+	const char *pal_true = "#13a10e";
 	int nodes = 0;
 	rz_list_foreach (fcn->bbs, iter, bbi) {
 		if (bbi->jump != UT64_MAX) {
 			nodes++;
 			printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
 				bbi->addr, bbi->jump,
-				bbi->fail != -1 ? pal_jump : pal_trfa);
+				bbi->fail != UT64_MAX ? pal_true : pal_jump);
 			print_color_node(core, bbi);
 		}
-		if (bbi->fail != -1) {
+		if (bbi->fail != UT64_MAX) {
 			nodes++;
 			printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
 				bbi->addr, bbi->fail, pal_fail);
@@ -491,9 +480,6 @@ static int graph_construct_edges(RzCore *core, RzAnalysisFunction *fcn) {
 			}
 		}
 	}
-	free(pal_jump);
-	free(pal_fail);
-	free(pal_trfa);
 	return nodes;
 }
 
@@ -533,9 +519,14 @@ static int draw_graph_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction *fcn
 	return nodes;
 }
 
-RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr1, int opts) {
+/**
+ * \brief Generate a json or dot output of the graph and its data.
+ *
+ * Each node that doesn't match 100% with the other function will include
+ * a unified diff of the assembly of the same basic block.
+ * */
+RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr1, bool json) {
 	const char *font = rz_config_get(core->config, "graph.font");
-	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
 
 	int nodes = 0;
 	PJ *pj = NULL;
@@ -545,7 +536,7 @@ RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr1, 
 		return false;
 	}
 
-	if (!is_json) {
+	if (!json) {
 		const char *gv_edge = rz_config_get(core->config, "graph.gv.edge");
 		const char *gv_node = rz_config_get(core->config, "graph.gv.node");
 		const char *gv_spline = rz_config_get(core->config, "graph.gv.spline");
@@ -571,10 +562,10 @@ RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr1, 
 		pj_a(pj);
 	}
 	nodes += draw_graph_nodes(core, core2, fcn, pj);
-	if (nodes < 1 && !is_json) {
+	if (nodes < 1 && !json) {
 		printf("\t\"0x%08" PFMT64x "\";\n", addr1);
 	}
-	if (is_json) {
+	if (json) {
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);

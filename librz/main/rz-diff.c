@@ -1308,10 +1308,6 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 	if (ctx->type == DIFF_TYPE_PLOTDIFF) {
 		ut64 offset_a = 0;
 		ut64 offset_b = 0;
-		int flags = 0;
-		if (ctx->mode == DIFF_MODE_JSON) {
-			flags |= RZ_CORE_ANALYSIS_JSON;
-		}
 
 		if (!convert_offset_from_input(a->core, ctx->input_a, &offset_a)) {
 			rz_diff_error("cannot convert '%s' into an offset\n", ctx->input_a);
@@ -1326,7 +1322,7 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 			rz_diff_error("cannot diff graphs with inputs '%s' with '%s'\n", ctx->input_a, ctx->input_b);
 			goto rz_diff_graphs_files_bad;
 		}
-		rz_core_diff_show_function(a->core, b->core, offset_a, flags);
+		rz_core_diff_show_function(a->core, b->core, offset_a, ctx->mode == DIFF_MODE_JSON);
 	} else {
 		if (!rz_core_gdiff(a->core, b->core)) {
 			rz_diff_error("cannot diff all graphs\n");

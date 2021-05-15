@@ -881,7 +881,7 @@ RZ_API void rz_core_hack_help(const RzCore *core);
 RZ_API int rz_core_hack(RzCore *core, const char *op);
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append);
 RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
-RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, int opts);
+RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);
 RZ_API void rz_core_clippy(RzCore *core, const char *msg);
 
 /* watchers */
