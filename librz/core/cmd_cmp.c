@@ -809,7 +809,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 
 		rz_core_bin_load(core2, file2,
 			rz_config_get_i(core->config, "bin.baddr"));
-		rz_core_gdiff(core, core2);
+		rz_core_gdiff_2_files(core, core2);
 		rz_core_diff_show(core, core2, false);
 		/* exchange a segfault with a memleak */
 		core2->config = NULL;

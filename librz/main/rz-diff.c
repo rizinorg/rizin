@@ -1324,7 +1324,7 @@ static bool rz_diff_graphs_files(DiffContext *ctx) {
 		}
 		rz_core_diff_show_function(a->core, b->core, offset_a, ctx->mode == DIFF_MODE_JSON);
 	} else {
-		if (!rz_core_gdiff(a->core, b->core)) {
+		if (!rz_core_gdiff_2_files(a->core, b->core)) {
 			rz_diff_error("cannot diff all graphs\n");
 			goto rz_diff_graphs_files_bad;
 		}

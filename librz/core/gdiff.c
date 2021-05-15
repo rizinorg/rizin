@@ -45,6 +45,7 @@ RZ_API bool rz_core_gdiff_function_1_file(RzCore *c, ut64 addr, ut64 addr2) {
  * Calculates basic block differences of 2 functions within 2 files
  * */
 RZ_API bool rz_core_gdiff_function_2_files(RzCore *c, RzCore *c2, ut64 addr, ut64 addr2) {
+	rz_return_val_if_fail(c && c2, false);
 	RzList *la, *lb;
 	RzAnalysisFunction *fa = rz_analysis_get_function_at(c->analysis, addr);
 	RzAnalysisFunction *fb = rz_analysis_get_function_at(c2->analysis, addr2);
@@ -85,7 +86,8 @@ RZ_API bool rz_core_gdiff_function_2_files(RzCore *c, RzCore *c2, ut64 addr, ut6
  *
  * Calculates basic block differences of all functions within 2 files.
  * */
-RZ_API bool rz_core_gdiff(RzCore *c, RzCore *c2) {
+RZ_API bool rz_core_gdiff_2_files(RzCore *c, RzCore *c2) {
+	rz_return_val_if_fail(c && c2, false);
 	RzCore *cores[2] = { c, c2 };
 	RzAnalysisFunction *fcn;
 	RzAnalysisBlock *bb;
@@ -161,6 +163,7 @@ static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 }
 
 RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
+	rz_return_if_fail(c && c2);
 	bool color = rz_config_get_i(c->config, "scr.color") > 0 || rz_config_get_i(c2->config, "scr.color") > 0;
 	bool bare = rz_config_get_b(c->config, "diff.bare") || rz_config_get_b(c2->config, "diff.bare");
 	bool is_new = false;
@@ -526,6 +529,7 @@ static int draw_graph_nodes(RzCore *core, RzCore *core2, RzAnalysisFunction *fcn
  * a unified diff of the assembly of the same basic block.
  * */
 RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr1, bool json) {
+	rz_return_val_if_fail(core && core2, false);
 	const char *font = rz_config_get(core->config, "graph.font");
 
 	int nodes = 0;
