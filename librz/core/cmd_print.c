@@ -3484,7 +3484,7 @@ static bool cmd_print_blocks(RzCore *core, const char *input) {
 				if (use_color) {
 					if (s) {
 						if (s->perm & RZ_PERM_X) {
-							rz_cons_print(rz_cons_singleton()->context->pal.graph_trufae);
+							rz_cons_print(rz_cons_singleton()->context->pal.graph_ujump);
 						} else {
 							rz_cons_print(rz_cons_singleton()->context->pal.graph_true);
 						}

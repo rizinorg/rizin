@@ -61,7 +61,7 @@ ec graph.box3 rgb:c678dd
 ec graph.box4 rgb:000000
 ec graph.true rgb:98c379
 ec graph.false rgb:e06c75
-ec graph.trufae rgb:61afef
+ec graph.ujump rgb:61afef
 ec graph.current rgb:61afef
 ec graph.traced rgb:d19a66
 ec linehl rgb:5c6370

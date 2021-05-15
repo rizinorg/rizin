@@ -2060,7 +2060,7 @@ static int core_analysis_graph_construct_edges(RzCore *core, RzAnalysisFunction 
 	int is_html = rz_cons_singleton()->is_html;
 	char *pal_jump = palColorFor("graph.true");
 	char *pal_fail = palColorFor("graph.false");
-	char *pal_trfa = palColorFor("graph.trufae");
+	char *pal_trfa = palColorFor("graph.ujump");
 	int nodes = 0;
 	rz_list_foreach (fcn->bbs, iter, bbi) {
 		if (bbi->jump != UT64_MAX) {
@@ -2429,7 +2429,7 @@ static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int 
 	Sdb *DB = NULL;
 	char *pal_jump = palColorFor("graph.true");
 	char *pal_fail = palColorFor("graph.false");
-	char *pal_trfa = palColorFor("graph.trufae");
+	char *pal_trfa = palColorFor("graph.ujump");
 	char *pal_curr = palColorFor("graph.current");
 	char *pal_traced = palColorFor("graph.traced");
 	char *pal_box4 = palColorFor("graph.box4");

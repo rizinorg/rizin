@@ -263,7 +263,7 @@ typedef struct rz_cons_palette_t {
 	RzColor graph_box4;
 	RzColor graph_true;
 	RzColor graph_false;
-	RzColor graph_trufae;
+	RzColor graph_ujump;
 	RzColor graph_traced;
 	RzColor graph_current;
 	RzColor graph_diff_match;
@@ -343,7 +343,7 @@ typedef struct rz_cons_printable_palette_t {
 	char *graph_diff_new;
 	char *graph_true;
 	char *graph_false;
-	char *graph_trufae;
+	char *graph_ujump;
 	char *graph_traced;
 	char *graph_current;
 	char **rainbow; // rainbow

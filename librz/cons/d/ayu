@@ -24,7 +24,7 @@ ec graph.box4 rgb:66d9ef
 ec graph.current rgb:fff
 ec graph.false rgb:f07178       # false line on visual graph mode
 ec graph.true rgb:bae67e        # true line on visual graph mode
-ec graph.trufae rgb:55b4d4      # lines in graph that does not have true or false
+ec graph.ujump rgb:55b4d4      # lines in graph that does not have true or false
 ec help rgb:c2d94c              # color of help explanation text
 ec input rgb:888
 ec jmp rgb:c2d94c               # jmp instructions

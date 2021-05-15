@@ -70,7 +70,7 @@ static struct {
 	{ "graph.box4", rz_offsetof(RzConsPrintablePalette, graph_box4), rz_offsetof(RzConsPalette, graph_box4) },
 	{ "graph.true", rz_offsetof(RzConsPrintablePalette, graph_true), rz_offsetof(RzConsPalette, graph_true) },
 	{ "graph.false", rz_offsetof(RzConsPrintablePalette, graph_false), rz_offsetof(RzConsPalette, graph_false) },
-	{ "graph.trufae", rz_offsetof(RzConsPrintablePalette, graph_trufae), rz_offsetof(RzConsPalette, graph_trufae) },
+	{ "graph.ujump", rz_offsetof(RzConsPrintablePalette, graph_ujump), rz_offsetof(RzConsPalette, graph_ujump) },
 	{ "graph.current", rz_offsetof(RzConsPrintablePalette, graph_current), rz_offsetof(RzConsPalette, graph_current) },
 	{ "graph.traced", rz_offsetof(RzConsPrintablePalette, graph_traced), rz_offsetof(RzConsPalette, graph_traced) },
 
@@ -229,7 +229,7 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.graph_box4 = (RzColor)RzColor_GRAY;
 	ctx->cpal.graph_true = (RzColor)RzColor_GREEN;
 	ctx->cpal.graph_false = (RzColor)RzColor_RED;
-	ctx->cpal.graph_trufae = (RzColor)RzColor_BLUE; // single jump
+	ctx->cpal.graph_ujump = (RzColor)RzColor_BLUE; // single jump
 	ctx->cpal.graph_traced = (RzColor)RzColor_YELLOW;
 	ctx->cpal.graph_current = (RzColor)RzColor_BLUE;
 	ctx->cpal.graph_diff_unknown = (RzColor)RzColor_MAGENTA;

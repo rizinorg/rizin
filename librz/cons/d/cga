@@ -51,7 +51,7 @@ ec graph.box3 rgb:f0f
 ec graph.box4 rgb:f0f
 ec graph.true rgb:f0f
 ec graph.false rgb:0ff
-ec graph.trufae rgb:f0f
+ec graph.ujump rgb:f0f
 ec graph.current rgb:0ff
 ec graph.traced rgb:f0f
 

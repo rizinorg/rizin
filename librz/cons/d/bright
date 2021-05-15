@@ -70,6 +70,6 @@ ec graph.box3 rgb:ff00ff
 ec graph.box4 rgb:808080
 ec graph.true rgb:00ff00
 ec graph.false rgb:ff0000
-ec graph.trufae rgb:0000ff    # single jump
+ec graph.ujump rgb:0000ff    # single jump
 ec graph.traced rgb:ffff00
 ec graph.current rgb:0000ff

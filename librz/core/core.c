@@ -1615,7 +1615,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 			ADDARG("graph.box4")
 			ADDARG("graph.true")
 			ADDARG("graph.false")
-			ADDARG("graph.trufae")
+			ADDARG("graph.ujump")
 			ADDARG("graph.current")
 			ADDARG("graph.traced")
 			ADDARG("gui.cflow")

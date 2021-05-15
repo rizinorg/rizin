@@ -43,7 +43,7 @@ ec pop yellow
 ec linehl rgb:004
 ec graph.true green
 ec graph.false red
-ec graph.trufae blue
+ec graph.ujump blue
 ec graph.current blue
 ec graph.traced blue
 ec graph.box gray
