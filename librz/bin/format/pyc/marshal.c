@@ -1170,6 +1170,7 @@ static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *
 	if (!rz_list_append(sections, section)) {
 		goto fail;
 	}
+	section = NULL;
 	// start building symbol
 	symbol->name = strdup(prefix);
 	//symbol->bind;
