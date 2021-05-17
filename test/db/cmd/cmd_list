@@ -546,7 +546,7 @@ Ll~vala
 Ll~rust
 Ll~zig
 Ll~spp
-Ll~pipe
+Ll~^pipe
 Ll~lib
 EOF
 EXPECT=<<EOF
