@@ -322,7 +322,7 @@ NAME=Set the debug backend
 FILE==
 CMDS=<<EOF
 Ld esil
-Ld
+Ld~!windbg
 EOF
 EXPECT=<<EOF
 0  ---  bf       LGPL3
@@ -340,7 +340,7 @@ RUN
 
 NAME=Print the debug plugins
 FILE==
-CMDS=Ld
+CMDS=Ld~!windbg
 EXPECT=<<EOF
 0  ---  bf       LGPL3
 1  ---  bochs    LGPL3
@@ -357,9 +357,31 @@ RUN
 
 NAME=Print the debug plugins in JSON
 FILE==
-CMDS=Ldj
+CMDS=<<EOF
+Ldj~{[0]}
+Ldj~{[1]}
+Ldj~{[2]}
+Ldj~{[3]}
+Ldj~{[4]}
+Ldj~{[5].name}
+Ldj~{[5].license}
+Ldj~{[6]}
+Ldj~{[7]}
+Ldj~{[8]}
+Ldj~{[9]}
+EOF
 EXPECT=<<EOF
-[{"arch":"bf","name":"bf","license":"LGPL3"},{"arch":"x86","name":"bochs","license":"LGPL3"},{"arch":"any","name":"esil","license":"LGPL3"},{"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2","name":"gdb","license":"LGPL3"},{"arch":"any","name":"io","license":"MIT"},{"arch":"x86","name":"native","license":"LGPL3"},{"arch":"any","name":"null","license":"MIT"},{"arch":"x86,arm","name":"qnx","license":"LGPL3"},{"arch":"any","name":"rap","license":"LGPL3"},{"arch":"x86","name":"winkd","license":"LGPL3"}]
+{"arch":"bf","name":"bf","license":"LGPL3"}
+{"arch":"x86","name":"bochs","license":"LGPL3"}
+{"arch":"any","name":"esil","license":"LGPL3"}
+{"arch":"x86,arm,sh,mips,avr,lm32,v850,ba2","name":"gdb","license":"LGPL3"}
+{"arch":"any","name":"io","license":"MIT"}
+native
+LGPL3
+{"arch":"any","name":"null","license":"MIT"}
+{"arch":"x86,arm","name":"qnx","license":"LGPL3"}
+{"arch":"any","name":"rap","license":"LGPL3"}
+{"arch":"x86","name":"winkd","license":"LGPL3"}
 EOF
 RUN
 
@@ -519,10 +541,15 @@ RUN
 
 NAME=Print the lang plugins
 FILE==
-CMDS=Ll
+CMDS=<<EOF
+Ll~vala
+Ll~rust
+Ll~zig
+Ll~spp
+Ll~pipe
+Ll~lib
+EOF
 EXPECT=<<EOF
-c: C language extension (LGPL)
-cpipe: rzpipe scripting in C (LGPL)
 vala: Vala language extension (LGPL)
 rust: Rust language extension (MIT)
 zig: Zig language extension (MIT)
@@ -533,6 +560,7 @@ EOF
 RUN
 
 NAME=Print the lang plugins in JSON
+BROKEN=1
 FILE==
 CMDS=Llj
 EXPECT=<<EOF
