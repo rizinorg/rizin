@@ -1426,9 +1426,32 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8 *data, 
 	}
 }
 
+/**
+ * \brief Frees a visual print gadget
+ *
+ * \param g reference to RzCoreGadget
+ */
 RZ_API void rz_core_gadget_free(RzCoreGadget *g) {
 	free(g->cmd);
 	free(g);
+}
+
+/**
+ * \brief Prints or displays the print gadgets while in
+ * visual mode
+ *
+ * \param core reference to RzCore
+ */
+RZ_API void rz_core_gadget_print(RzCore *core) {
+	RzCoreGadget *g;
+	RzListIter *iter;
+	rz_list_foreach (core->gadgets, iter, g) {
+		char *res = rz_core_cmd_str(core, g->cmd);
+		if (res) {
+			rz_cons_strcat_at(res, g->x, g->y, g->w, g->h);
+			free(res);
+		}
+	}
 }
 
 static const char *help_msg_pg[] = {
@@ -1509,15 +1532,7 @@ static void cmd_print_gadget(RzCore *core, const char *_input) {
 		rz_list_free(args);
 		free(input);
 	} else if (!*_input) { // "pg"
-		RzCoreGadget *g;
-		RzListIter *iter;
-		rz_list_foreach (core->gadgets, iter, g) {
-			char *res = rz_core_cmd_str(core, g->cmd);
-			if (res) {
-				rz_cons_strcat_at(res, g->x, g->y, g->w, g->h);
-				free(res);
-			}
-		}
+		rz_core_gadget_print(core);
 	} else {
 		rz_core_cmd_help(core, help_msg_pg);
 	}
@@ -3060,38 +3075,21 @@ restore_conf:
 	rz_config_set_i(core->config, "emu.str", emu_str);
 }
 
-static void msg_digest_algorithms(bool complete) {
-	const RzMsgDigestPlugin *plugin = NULL;
-
-	if (complete) {
-		rz_cons_println("algorithm      license    author");
-	}
-	for (size_t j = 0; (plugin = rz_msg_digest_plugin_by_index(j)); ++j) {
-		if (complete) {
-			rz_cons_printf("%-14s %-10s %s\n", plugin->name, plugin->license, plugin->author);
-		} else {
-			rz_cons_printf("%s ", plugin->name);
-		}
-	}
-	if (!complete) {
-		rz_cons_newline();
-	}
-}
-
 static bool cmd_print_ph(RzCore *core, const char *input) {
 	char algo[128];
 	ut32 osize = 0, len = core->blocksize;
 	const char *ptr;
 	bool handled_cmd = false;
 	const RzMsgDigestPlugin *plugin = NULL;
-
+	RzCmdStateOutput state = { 0 };
 	if (!*input || *input == '?') {
-		msg_digest_algorithms(1);
-		return true;
+		state.mode = RZ_OUTPUT_MODE_QUIET;
 	}
 	if (*input == '=') {
-		msg_digest_algorithms(0);
-		return true;
+		state.mode = RZ_OUTPUT_MODE_STANDARD;
+	}
+	if (state.mode) {
+		return rz_core_hash_plugins_print(&state) ? true : false;
 	}
 	input = rz_str_trim_head_ro(input);
 	ptr = strchr(input, ' ');

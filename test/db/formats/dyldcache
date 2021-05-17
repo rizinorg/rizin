@@ -18,32 +18,34 @@ format   dyldcache
 iorw     false
 block    0x100
 type     library-cache
+Name     Value
+--------------
 arch     arm
 baddr    0x180000000
 binsz    212992
 bits     64
-canary   false
 retguard false
 class    dyldcache
-crypto   false
-endian   little
-havecode true
+endian   LE
 laddr    0x0
-linenum  false
-lsyms    false
 machine  arm
 maxopsz  4
 minopsz  4
-nx       false
 os       Darwin
 pcalign  4
-pic      false
-relocs   false
+subsys   xnu
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   true
-stripped false
-subsys   xnu
-va       true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 [Symbols]
 
 nth paddr      vaddr       bind   type size lib name
@@ -94,32 +96,34 @@ format   dyldcache
 iorw     false
 block    0x100
 type     library-cache
+Name     Value
+--------------
 arch     arm
 baddr    0x180000000
 binsz    212992
 bits     64
-canary   false
 retguard false
 class    dyldcache
-crypto   false
-endian   little
-havecode true
+endian   LE
 laddr    0x0
-linenum  false
-lsyms    false
 machine  arm
 maxopsz  4
 minopsz  4
-nx       false
 os       Darwin
 pcalign  4
-pic      false
-relocs   false
+subsys   xnu
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   true
-stripped false
-subsys   xnu
-va       true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 [Symbols]
 
 nth paddr      vaddr       bind   type size lib name

@@ -138,23 +138,6 @@ RZ_API bool rz_lang_add(RzLang *lang, RzLangPlugin *foo) {
 	return false;
 }
 
-/* TODO: deprecate all list methods */
-RZ_API bool rz_lang_list(RzLang *lang) {
-	RzListIter *iter;
-	RzLangPlugin *h;
-	if (!lang) {
-		return false;
-	}
-	rz_list_foreach (lang->langs, iter, h) {
-		const char *license = h->license
-			? h->license
-			: "???";
-		lang->cb_printf("%s: (%s) %s\n",
-			h->name, license, h->desc);
-	}
-	return true;
-}
-
 RZ_API RzLangPlugin *rz_lang_get_by_extension(RzLang *lang, const char *ext) {
 	RzListIter *iter;
 	RzLangPlugin *h;

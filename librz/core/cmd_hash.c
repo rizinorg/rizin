@@ -44,6 +44,8 @@ static void handle_entropy(const char *name, const ut8 *block, int len) {
 static int cmd_hash_bang(RzCore *core, const char *input) {
 	int ac;
 	char **av = rz_str_argv(input + 1, &ac);
+	RzCmdStateOutput state = { 0 };
+	state.mode = RZ_OUTPUT_MODE_STANDARD;
 	if (ac > 0) {
 		RzLangPlugin *p = rz_lang_get_by_name(core->lang, av[0]);
 		if (p) {
@@ -70,10 +72,10 @@ static int cmd_hash_bang(RzCore *core, const char *input) {
 				}
 			}
 		} else if (av[0][0] == '?' || av[0][0] == '*') {
-			rz_lang_list(core->lang);
+			rz_core_lang_plugins_print(core->lang, &state);
 		}
 	} else {
-		rz_lang_list(core->lang);
+		rz_core_lang_plugins_print(core->lang, &state);
 	}
 	rz_str_argv_free(av);
 	return true;
@@ -104,8 +106,10 @@ RZ_IPI int rz_cmd_hash(void *data, const char *input) {
 }
 
 RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv) {
+	RzCmdStateOutput state = { 0 };
+	state.mode = RZ_OUTPUT_MODE_STANDARD;
 	if (argc == 1) {
-		rz_lang_list(core->lang);
+		rz_core_lang_plugins_print(core->lang, &state);
 	} else {
 		RzLangPlugin *p = rz_lang_get_by_name(core->lang, argv[1]);
 		if (!p) {

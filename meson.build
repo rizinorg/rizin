@@ -490,6 +490,7 @@ if host_machine.system() == 'windows'
     build_root / 'librz' / 'config',
     build_root / 'librz' / 'cons',
     build_root / 'librz' / 'core',
+    build_root / 'librz' / 'diff',
     build_root / 'librz' / 'crypto',
     build_root / 'librz' / 'debug',
     build_root / 'librz' / 'egg',
@@ -516,6 +517,7 @@ subdir('librz/crypto')
 subdir('shlr')
 
 subdir('librz/cons')
+subdir('librz/diff')
 subdir('shlr/gdb')
 subdir('librz/io')
 subdir('librz/bp')
@@ -595,6 +597,7 @@ if meson.is_subproject()
       rz_socket_dep,
       rz_syscall_dep,
       rz_type_dep,
+      rz_diff_dep,
       rz_util_dep
     ],
     include_directories: include_directories('.', 'librz/include'),

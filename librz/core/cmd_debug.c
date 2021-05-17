@@ -4866,26 +4866,48 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'p': // "dp"
 		cmd_debug_pid(core, input);
 		break;
-	case 'L': // "dL"
+	case 'L': { // "dL"
+		RzCmdStateOutput state = { 0 };
 		switch (input[1]) {
-		case 'q':
-		case 'j':
-			rz_debug_plugin_list(core->dbg, input[1]);
-			break;
-		case '?':
-			rz_core_cmd_help(core, help_msg_dL);
-			break;
-		case ' ': {
-			char *str = rz_str_trim_dup(input + 2);
-			rz_config_set(core->config, "dbg.backend", str);
-			// implicit by config.set rz_debug_use (core->dbg, str);
-			free(str);
-		} break;
-		default:
-			rz_debug_plugin_list(core->dbg, 0);
+		case 'q': {
+			state.mode = RZ_OUTPUT_MODE_QUIET;
 			break;
 		}
+		case 'j': {
+			state.mode = RZ_OUTPUT_MODE_JSON;
+			state.d.pj = pj_new();
+			break;
+		}
+		case ' ': {
+			char *backend = rz_str_trim_dup(input + 2);
+			rz_config_set(core->config, "dbg.backend", backend);
+			// implicit by config.set rz_debug_use (core->dbg, str);
+			free(backend);
+			break;
+		}
+		case '?': {
+			rz_core_cmd_help(core, help_msg_dL);
+			break;
+		}
+		default: {
+			state.mode = RZ_OUTPUT_MODE_STANDARD;
+			break;
+		}
+		}
+		rz_core_debug_plugins_print(core, &state);
+		switch (state.mode) {
+		case RZ_OUTPUT_MODE_JSON: {
+			rz_cons_println(pj_string(state.d.pj));
+			rz_cons_flush();
+			pj_free(state.d.pj);
+			break;
+		}
+		default: {
+			break;
+		}
+		}
 		break;
+	}
 	case 'i': // "di"
 	{
 		RzDebugInfo *rdi = rz_debug_info(core->dbg, input + 2);
@@ -4949,19 +4971,19 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 					char *arg2 = strchr(arg, ' ');
 					if (arg2) {
 						*arg2++ = 0;
-						ut8 *a = getFileData(core, arg);
-						ut8 *b = getFileData(core, arg2);
+						char *a = (char *)getFileData(core, arg);
+						char *b = (char *)getFileData(core, arg2);
 						if (a && b) {
-							int al = strlen((const char *)a);
-							int bl = strlen((const char *)b);
-							RzDiff *d = rz_diff_new();
-							char *uni = rz_diff_buffers_to_string(d, a, al, b, bl);
+							RzDiff *dff = rz_diff_lines_new(a, b, NULL);
+							char *uni = rz_diff_unified_text(dff, arg, arg2, false, false);
+							rz_diff_free(dff);
 							rz_cons_printf("%s\n", uni);
-							rz_diff_free(d);
 							free(uni);
 						} else {
 							eprintf("Cannot open those alias files\n");
 						}
+						free(a);
+						free(b);
 					}
 					free(arg);
 				} else {

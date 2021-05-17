@@ -5,6 +5,7 @@ cmd_descs_yaml = files(
   'cmd_descs.yaml',
   'cmd_eval.yaml',
   'cmd_interpret.yaml',
+  'cmd_plugins.yaml',
   'cmd_project.yaml',
   'cmd_quit.yaml',
   'cmd_remote.yaml',

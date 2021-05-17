@@ -322,6 +322,20 @@ bool test_rz_table_columns() {
 #undef CREATE_TABLE
 }
 
+bool test_rz_table_transpose() {
+	RzTable *t = __table_test_data1();
+	rz_table_add_row(t, "d", "100", NULL);
+	char *table = rz_table_tostring(rz_table_transpose(t));
+	mu_assert_streq(table,
+		"Name  Value Value Value Value\n"
+		"-----------------------------\n"
+		"ascii a     b     c     d\n"
+		"code  97    98    99    100\n",
+		"rz_table_transpose");
+	free(table);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_table);
 	mu_run_test(test_rz_table_column_type);
@@ -330,6 +344,7 @@ bool all_tests() {
 	mu_run_test(test_rz_table_uniq);
 	mu_run_test(test_rz_table_group);
 	mu_run_test(test_rz_table_columns);
+	mu_run_test(test_rz_table_transpose);
 	return tests_passed != tests_run;
 }
 

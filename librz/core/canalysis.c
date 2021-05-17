@@ -2281,7 +2281,6 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 					RzConfigHold *hc = rz_config_hold_new(core->config);
 					rz_config_hold_i(hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
 						"asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
-					RzDiff *d = rz_diff_new();
 					rz_config_set_i(core->config, "scr.utf8", 0);
 					rz_config_set_i(core->config, "asm.offset", 0);
 					rz_config_set_i(core->config, "asm.lines", 0);
@@ -2293,15 +2292,20 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 					}
 
 					if (bbi->diff && bbi->diff->type != RZ_ANALYSIS_DIFF_TYPE_MATCH && core->c2) {
+						char dff_from[32], dff_to[32];
+
 						RzCore *c = core->c2;
 						RzConfig *oc = c->config;
 						char *str = rz_core_cmd_strf(core, "pdb @ 0x%08" PFMT64x, bbi->addr);
 						c->config = core->config;
 						// XXX. the bbi->addr doesnt needs to be in the same address in core2
 						char *str2 = rz_core_cmd_strf(c, "pdb @ 0x%08" PFMT64x, bbi->diff->addr);
-						char *diffstr = rz_diff_buffers_to_string(d,
-							(const ut8 *)str, strlen(str),
-							(const ut8 *)str2, strlen(str2));
+						snprintf(dff_from, sizeof(dff_from), "0x%08" PFMT64x, bbi->addr);
+						snprintf(dff_to, sizeof(dff_to), "0x%08" PFMT64x, bbi->diff->addr);
+
+						RzDiff *dff = rz_diff_lines_new(str, str2, NULL);
+						char *diffstr = rz_diff_unified_text(dff, dff_from, dff_to, false, false);
+						rz_diff_free(dff);
 
 						if (diffstr) {
 							char *nl = strchr(diffstr, '\n');
@@ -2319,14 +2323,12 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 						if (is_star) {
 							char *title = get_title(bbi->addr);
 							if (!title) {
-								rz_diff_free(d);
 								rz_config_hold_free(hc);
 								return false;
 							}
 							char *body_b64 = rz_base64_encode_dyn((const ut8 *)diffstr, strlen(diffstr));
 							if (!body_b64) {
 								free(title);
-								rz_diff_free(d);
 								rz_config_hold_free(hc);
 								return false;
 							}
@@ -2353,7 +2355,6 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 							if (!title || !body_b64) {
 								free(body_b64);
 								free(title);
-								rz_diff_free(d);
 								rz_config_hold_free(hc);
 								return false;
 							}
@@ -2368,7 +2369,6 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 								bbi->addr, difftype, str, font, fcn->name, bbi->addr);
 						}
 					}
-					rz_diff_free(d);
 					rz_config_set_i(core->config, "scr.color", 1);
 					rz_config_hold_free(hc);
 				}

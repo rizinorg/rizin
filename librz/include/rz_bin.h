@@ -259,11 +259,11 @@ typedef struct rz_bin_object_t {
 	 * This associates the name of every symbol where is_imported == true to the symbol itself.
 	 */
 	HtPP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
-	RzList /*<??>*/ *entries;
-	RzList /*<??>*/ *fields;
-	RzList /*<??>*/ *libs;
+	RzList /*<RzBinAddr>*/ *entries;
+	RzList /*<RzBinField>*/ *fields;
+	RzList /*<char*>*/ *libs;
 	RzBinRelocStorage *relocs;
-	RzList /*<??>*/ *strings;
+	RzList /*<RzBinString>*/ *strings;
 	RzList /*<RzBinClass>*/ *classes;
 	HtPP *classes_ht;
 	HtPP *methods_ht;
@@ -809,7 +809,6 @@ RZ_API void rz_bin_bind(RzBin *b, RzBinBind *bnd);
 RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo);
 RZ_API bool rz_bin_xtr_add(RzBin *bin, RzBinXtrPlugin *foo);
 RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo);
-RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format);
 RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_bytes(RzBin *bin, const ut8 *bytes, ut64 sz);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf);

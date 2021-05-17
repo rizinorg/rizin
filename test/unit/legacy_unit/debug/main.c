@@ -4,6 +4,7 @@
 #include <rz_util.h>
 #include <rz_debug.h>
 #include <rz_io.h>
+#include <rz_core.h>
 
 int main(int argc, char **argv) {
 	int ret, i;
@@ -11,10 +12,12 @@ int main(int argc, char **argv) {
 	int tid, pid;
 	struct rz_io_t *io;
 	struct rz_debug_t *dbg = NULL;
+	RzCmdStateOutput state = { 0 };
+	state.mode = RZ_OUTPUT_MODE_STANDARD;
 
 	io = rz_io_new();
 	printf("Supported IO pluggins:\n");
-	rz_io_plugin_list(io);
+	rz_core_io_plugins_print(io, &state);
 
 	fd = rz_io_open_nomap(io, "dbg:///bin/ls", 0, 0);
 	if (!fd) {

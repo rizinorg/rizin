@@ -217,26 +217,28 @@ mode     rwx
 format   any
 iorw     true
 block    0x100
+Name     Value
+--------------
 baddr    0x0
 binsz    1025
 bits     64
-canary   false
-crypto   false
-endian   little
-havecode false
+endian   LE
 laddr    0x0
-linenum  false
-lsyms    false
 maxopsz  16
 minopsz  1
-nx       false
 pcalign  0
-pic      false
-relocs   false
+stripped false
+crypto   false
+havecode false
+va       false
 sanitiz  false
 static   true
-stripped false
-va       false
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 [Imports]
 nth vaddr bind type lib name
 ----------------------------
@@ -301,26 +303,28 @@ e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
 e asm.pcalign=0
+Name     Value
+--------------
 baddr    0x0
 binsz    1024
 bits     64
-canary   false
-crypto   false
-endian   little
-havecode false
+endian   LE
 laddr    0x0
-linenum  false
-lsyms    false
 maxopsz  16
 minopsz  1
-nx       false
 pcalign  0
-pic      false
-relocs   false
+stripped false
+crypto   false
+havecode false
+va       false
 sanitiz  false
 static   true
-stripped false
-va       false
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
@@ -339,37 +343,39 @@ mode     r-x
 format   elf
 iorw     false
 block    0x100
+Name     Value
+--------------
 arch     x86
 baddr    0x8048000
 binsz    4899
 bintype  elf
 bits     32
-canary   false
 class    ELF32
 compiler GCC: (GNU) 4.8.2
-crypto   false
-endian   little
-havecode true
+endian   LE
 intrp    /lib/ld-linux.so.2
 laddr    0x0
 lang     c
-linenum  true
-lsyms    true
 machine  Intel 80386
 maxopsz  16
 minopsz  1
-nx       true
 os       linux
 pcalign  0
-pic      false
-relocs   true
 relro    no
 rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   false
-stripped false
-subsys   linux
-va       true
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  true
+NX       true
 EOF
 RUN
 
@@ -431,34 +437,36 @@ format   java
 iorw     true
 block    0x100
 type     JAVA CLASS
+Name     Value
+--------------
 arch     java
 baddr    0x0
 binsz    1024
 bintype  class
 bits     32
-canary   false
 retguard false
 class    Java SE 1.6
-crypto   false
-endian   big
-havecode true
+endian   BE
 laddr    0x0
 lang     java
-linenum  true
-lsyms    true
 machine  jvm
 maxopsz  16
 minopsz  1
-nx       false
 os       any
 pcalign  0
-pic      false
-relocs   false
+subsys   any
+stripped false
+crypto   false
+havecode true
+va       false
 sanitiz  false
 static   false
-stripped false
-subsys   any
-va       false
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  false
+NX       false
   ;-- entry1:
   ;-- section.class.methods.TestMultipleVariable.attr.0.code:
   ;-- sym.TestVariableSwitchUp.TestVariableSwitchUp.TestMultipleVariable:
@@ -1552,37 +1560,39 @@ NAME=iI (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iI
 EXPECT=<<EOF
+Name     Value
+--------------
 arch     x86
 baddr    0x8048000
 binsz    4899
 bintype  elf
 bits     32
-canary   false
 class    ELF32
 compiler GCC: (GNU) 4.8.2
-crypto   false
-endian   little
-havecode true
+endian   LE
 intrp    /lib/ld-linux.so.2
 laddr    0x0
 lang     c
-linenum  true
-lsyms    true
 machine  Intel 80386
 maxopsz  16
 minopsz  1
-nx       true
 os       linux
 pcalign  0
-pic      false
-relocs   true
 relro    no
 rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   false
-stripped false
-subsys   linux
-va       true
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  true
+NX       true
 EOF
 RUN
 
@@ -1596,36 +1606,36 @@ EXPECT=<<EOF
   "binsz": 4899,
   "bintype": "elf",
   "bits": 32,
-  "canary": false,
   "class": "ELF32",
   "compiled": "",
   "compiler": "GCC: (GNU) 4.8.2",
-  "crypto": false,
   "dbg_file": "",
-  "endian": "little",
-  "havecode": true,
+  "endian": "LE",
   "guid": "",
   "intrp": "/lib/ld-linux.so.2",
   "laddr": 0,
   "lang": "c",
-  "linenum": true,
-  "lsyms": true,
   "machine": "Intel 80386",
   "maxopsz": 16,
   "minopsz": 1,
-  "nx": true,
   "os": "linux",
   "cc": "",
   "pcalign": 0,
-  "pic": false,
-  "relocs": true,
   "relro": "no",
   "rpath": "NONE",
+  "subsys": "linux",
+  "stripped": false,
+  "crypto": false,
+  "havecode": true,
+  "va": true,
   "sanitiz": false,
   "static": false,
-  "stripped": false,
-  "subsys": "linux",
-  "va": true,
+  "linenum": true,
+  "lsyms": true,
+  "canary": false,
+  "PIE": false,
+  "RELROCS": true,
+  "NX": true,
   "checksums": {
     
   }
@@ -3133,37 +3143,39 @@ format   elf64
 iorw     false
 block    0x100
 type     EXEC (Executable file)
+Name     Value
+--------------
 arch     x86
 baddr    0x400000
 binsz    6710
 bintype  elf
 bits     64
-canary   false
 class    ELF64
 compiler GCC: (GNU) 4.7.2
-crypto   false
-endian   little
-havecode true
+endian   LE
 intrp    /lib/ld-linux-x86-64.so.2
 laddr    0x0
 lang     c
-linenum  true
-lsyms    true
 machine  AMD x86-64 architecture
 maxopsz  16
 minopsz  1
-nx       true
 os       linux
 pcalign  0
-pic      false
-relocs   true
 relro    no
 rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   false
-stripped false
-subsys   linux
-va       true
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  true
+NX       true
 EOF
 RUN
 
@@ -3225,37 +3237,39 @@ NAME=iI (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iI
 EXPECT=<<EOF
+Name     Value
+--------------
 arch     x86
 baddr    0x400000
 binsz    6710
 bintype  elf
 bits     64
-canary   false
 class    ELF64
 compiler GCC: (GNU) 4.7.2
-crypto   false
-endian   little
-havecode true
+endian   LE
 intrp    /lib/ld-linux-x86-64.so.2
 laddr    0x0
 lang     c
-linenum  true
-lsyms    true
 machine  AMD x86-64 architecture
 maxopsz  16
 minopsz  1
-nx       true
 os       linux
 pcalign  0
-pic      false
-relocs   true
 relro    no
 rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
 sanitiz  false
 static   false
-stripped false
-subsys   linux
-va       true
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  true
+NX       true
 EOF
 RUN
 

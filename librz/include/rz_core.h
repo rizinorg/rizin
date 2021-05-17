@@ -396,7 +396,11 @@ typedef int (*RzCoreSearchCallback)(RzCore *core, ut64 from, ut8 *buf, int len);
 #ifdef RZ_API
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);
 
+/**
+ * \brief APIs to handle Visual Gadgets
+ */
 RZ_API void rz_core_gadget_free(RzCoreGadget *g);
+RZ_API void rz_core_gadget_print(RzCore *core);
 
 RZ_API bool rz_core_plugin_init(RzCore *core);
 RZ_API bool rz_core_plugin_add(RzCore *core, RzCorePlugin *plugin);
@@ -566,6 +570,17 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode);
 RZ_API void rz_core_debug_set_register_flags(RzCore *core);
 RZ_API void rz_core_debug_clear_register_flags(RzCore *core);
 
+RZ_API RzCmdStatus rz_core_debug_plugins_print(RzCore *core, RzCmdStateOutput *state);
+
+/* chash.c */
+RZ_API RzCmdStatus rz_core_hash_plugins_print(RzCmdStateOutput *state);
+
+/* cio.c */
+RZ_API RzCmdStatus rz_core_io_plugins_print(RzIO *io, RzCmdStateOutput *state);
+
+/* cio.c */
+RZ_API RzCmdStatus rz_core_parser_plugins_print(RzParse *parser, RzCmdStateOutput *state);
+
 /* fortune */
 RZ_API void rz_core_fortune_list_types(void);
 RZ_API void rz_core_fortune_list(RzCore *core);
@@ -612,6 +627,12 @@ RZ_API char *rz_core_disassemble_bytes(RzCore *core, ut64 addr, int b);
 RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *func_name);
 RZ_API void rz_core_print_func_args(RzCore *core);
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name);
+
+/* clang.c */
+RZ_API RzCmdStatus rz_core_lang_plugins_print(RzLang *lang, RzCmdStateOutput *state);
+
+/* ccore.c */
+RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state);
 
 /* canalysis.c */
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
@@ -680,6 +701,7 @@ RZ_API RzList *rz_core_asm_hit_list_new(void);
 RZ_API void rz_core_asm_hit_free(void *_hit);
 RZ_API void rz_core_set_asm_configs(RzCore *core, char *arch, ut32 bits, int segoff);
 RZ_API char *rz_core_asm_search(RzCore *core, const char *input);
+RZ_API RzCmdStatus rz_core_asm_plugins_print(RzCore *core, const char *arch, RzCmdStateOutput *state);
 RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from, ut64 to, int maxhits, int regexp, int everyByte, int mode);
 RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len);
 RZ_API RzList *rz_core_asm_back_disassemble_instr(RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
@@ -803,6 +825,7 @@ RZ_API int rz_core_bin_update_arch_bits(RzCore *r);
 RZ_API char *rz_core_bin_method_build_flag_name(RzBinClass *cls, RzBinSymbol *meth);
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode);
 RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode);
+RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state);
 
 typedef enum {
 	RZ_CORE_STRING_KIND_UNKNOWN,

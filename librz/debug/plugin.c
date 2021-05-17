@@ -51,40 +51,6 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 	return (dbg && dbg->h);
 }
 
-RZ_API int rz_debug_plugin_list(RzDebug *dbg, int mode) {
-	char spaces[16];
-	int count = 0;
-	memset(spaces, ' ', 15);
-	spaces[15] = 0;
-	RzDebugPlugin *h;
-	RzListIter *iter;
-	if (mode == 'j') {
-		dbg->cb_printf("[");
-	}
-	rz_list_foreach (dbg->plugins, iter, h) {
-		int sp = 8 - strlen(h->name);
-		spaces[sp] = 0;
-		if (mode == 'q') {
-			dbg->cb_printf("%s\n", h->name);
-		} else if (mode == 'j') {
-			dbg->cb_printf("%s{\"name\":\"%s\",\"license\":\"%s\"}",
-				(count ? "," : ""),
-				h->name,
-				h->license);
-		} else {
-			dbg->cb_printf("%d  %s  %s %s%s\n",
-				count, (h == dbg->h) ? "dbg" : "---",
-				h->name, spaces, h->license);
-		}
-		spaces[sp] = ' ';
-		count++;
-	}
-	if (mode == 'j') {
-		dbg->cb_printf("]");
-	}
-	return false;
-}
-
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo) {
 	if (!dbg || !foo || !foo->name) {
 		return false;

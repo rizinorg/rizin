@@ -1,24 +1,16 @@
-NAME=rz-diff -c
+NAME=rz-diff empty first file
 FILE==
-CMDS=!rz-diff -c bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
-EXPECT=<<EOF
-1
+CMDS=!rz-diff -t bytes "" bins/other/rz-diff/rz-diff_c_2
+EXPECT_ERR=<<EOF
+ERROR: rz-diff: error, cannot open a file without a name.
 EOF
 RUN
 
-NAME=rz-diff -a -O x86
+NAME=rz-diff empty second file
 FILE==
-CMDS=!rz-diff -a x86 -O bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
-EXPECT=<<EOF
-0x00000000 91 => 90 0x00000000
-EOF
-RUN
-
-NAME=rz-diff -g
-FILE==
-CMDS=!!rz-diff -g main -m d bins/other/rz-diff/false bins/other/rz-diff/true~digrap
-EXPECT=<<EOF
-digraph code {
+CMDS=!rz-diff -t bytes bins/other/rz-diff/rz-diff_c_1 ""
+EXPECT_ERR=<<EOF
+ERROR: rz-diff: error, cannot open a file without a name.
 EOF
 RUN
 
@@ -38,69 +30,610 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-diff string comparison
+
+NAME=rz-diff distance comparison (leven)
 FILE==
-CMDS=!!rz-diff -z bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+CMDS=!rz-diff -d leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
-0x00000000 48656c6c => 41414141 0x00000000
+similarity: 0.637
+distance: 529
 EOF
 RUN
 
-NAME=rz-diff unified string comparison
+NAME=rz-diff distance comparison (leven) JSON
 FILE==
-CMDS=!!rz-diff -quz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+CMDS=!rz-diff -jd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
--0x00000000:48 65 6c 6c 
-+0x00000000:41 41 41 41 
+{"similarity":0.636676,"distance":529}
 EOF
 RUN
 
-NAME=rz-diff gnu unified string comparison
+NAME=rz-diff distance comparison (leven) QUIET
 FILE==
-BROKEN=1
-CMDS=!!rz-diff -Uz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 | tail -n 2
+CMDS=!rz-diff -qd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
+0.637
+529
+EOF
+RUN
+
+
+NAME=rz-diff distance comparison (myers)
+FILE==
+CMDS=!rz-diff -d myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+similarity: 0.769
+distance: 602
+EOF
+RUN
+
+NAME=rz-diff distance comparison (myers) JSON
+FILE==
+CMDS=!rz-diff -jd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+{"similarity":0.768995,"distance":602}
+EOF
+RUN
+
+NAME=rz-diff distance comparison (myers) QUIET
+FILE==
+CMDS=!rz-diff -qd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+0.769
+602
+EOF
+RUN
+
+
+NAME=rz-diff bytes comparison
+FILE==
+CMDS=!rz-diff -t bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
+EXPECT=<<EOF
+--- bins/other/rz-diff/rz-diff_c_1
++++ bins/other/rz-diff/rz-diff_c_2
+@@ -1,1 +1,1 @@
+-91
++90
+
+EOF
+RUN
+
+NAME=rz-diff bytes comparison JSON
+FILE==
+CMDS=!rz-diff -jt bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
+EXPECT=<<EOF
+{"from":"bins/other/rz-diff/rz-diff_c_1","to":"bins/other/rz-diff/rz-diff_c_2","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"91"},{"op":"insert","value":"90"}]}]}
+EOF
+RUN
+
+
+NAME=rz-diff strings comparison
+FILE==
+CMDS=!rz-diff -t strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+EXPECT=<<EOF
+--- bins/elf/elf_one_symbol_shdr
++++ bins/elf/elf_one_symbol_shdr1
+@@ -1,1 +1,1 @@
 -Hello world!
 +AAAAo world!
+
 EOF
 RUN
 
-NAME=rz-diff -AC (elf files)
+NAME=rz-diff strings comparison JSON
 FILE==
-CMDS=!!rz-diff -AC bins/other/rz-diff/true bins/other/rz-diff/false~?\(1.000000\)
+CMDS=!rz-diff -jt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
-54
+{"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"Hello world!\n"},{"op":"insert","value":"AAAAo world!\n"}]}]}
 EOF
 RUN
 
-NAME=rz-diff -AC (mach0 fat files)
+NAME=rz-diff strings comparison with addresses
 FILE==
-CMDS=!!rz-diff -AC bins/other/rz-diff/hellocxx-osx-fat-intel_1 bins/other/rz-diff/hellocxx-osx-fat-intel_2~?\(1.000000\)
+CMDS=!rz-diff -At strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
-17
+--- bins/elf/elf_one_symbol_shdr
++++ bins/elf/elf_one_symbol_shdr1
+@@ -1,1 +1,1 @@
+-virt: 0x00000000080484b0 phys: 0x00000000000004b0 Hello world!
++virt: 0x00000000080484b0 phys: 0x00000000000004b0 AAAAo world!
+
 EOF
 RUN
 
-NAME=rz-diff -B (GDIFF support) #1
+NAME=rz-diff strings comparison with addresses JSON
 FILE==
-CMDS=!!rz-diff -B bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2 | rz-ax -S
+CMDS=!rz-diff -Ajt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
-d1ffd1ff04019000
+{"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 Hello world!\n"},{"op":"insert","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 AAAAo world!\n"}]}]}
 EOF
 RUN
 
-NAME=rz-diff empty first file
+
+NAME=rz-diff functions comparison
 FILE==
-CMDS=!rz-diff "" bins/other/rz-diff/rz-diff_c_2
+CMDS=!rz-diff -t functions bins/elf/hello_world bins/elf/hello_world32
+EXPECT=<<EOF
+--- bins/elf/hello_world
++++ bins/elf/hello_world32
+@@ -1,9 +1,14 @@
+-instrs: 7    bits: 64 sym._init
+-instrs: 13   bits: 64 sym.deregister_tm_clones
+-instrs: 1    bits: 64 sym.imp.__cxa_finalize
+-instrs: 1    bits: 64 sym.imp.free
+-instrs: 1    bits: 64 sym.imp.malloc
+-instrs: 1    bits: 64 sym.imp.puts
+-instrs: 1    bits: 64 sym.imp.strcat
+-instrs: 1    bits: 64 sym.imp.strcpy
+-instrs: 1    bits: 64 sym.imp.strlen
++instrs: 1    bits: 32 fcn.000004c8
++instrs: 2    bits: 32 fcn.00000502
++instrs: 1    bits: 32 sym..plt.got
++instrs: 2    bits: 32 sym.__x86.get_pc_thunk.bx
++instrs: 2    bits: 32 sym.__x86.get_pc_thunk.dx
++instrs: 11   bits: 32 sym._init
++instrs: 18   bits: 32 sym.deregister_tm_clones
++instrs: 1    bits: 32 sym.imp.__libc_start_main
++instrs: 1    bits: 32 sym.imp.free
++instrs: 1    bits: 32 sym.imp.malloc
++instrs: 1    bits: 32 sym.imp.puts
++instrs: 1    bits: 32 sym.imp.strcat
++instrs: 1    bits: 32 sym.imp.strcpy
++instrs: 1    bits: 32 sym.imp.strlen
+
+EOF
+RUN
+
+NAME=rz-diff functions comparison JSON
+FILE==
+CMDS=!rz-diff -jt functions bins/elf/hello_world bins/elf/hello_world32
+EXPECT=<<EOF
+{"from":"bins/elf/hello_world","to":"bins/elf/hello_world32","diff":[{"from":[1,9],"to":[1,14],"ops":[{"op":"delete","value":"instrs: 7    bits: 64 sym._init\n"},{"op":"delete","value":"instrs: 13   bits: 64 sym.deregister_tm_clones\n"},{"op":"delete","value":"instrs: 1    bits: 64 sym.imp.__cxa_finalize\n"},{"op":"delete","value":"instrs: 1    bits: 64 sym.imp.free\n"},{"op":"delete","value":"instrs: 1    bits: 64 sym.imp.malloc\n"},{"op":"delete","value":"instrs: 1    bits: 64 sym.imp.puts\n"},{"op":"delete","value":"instrs: 1    bits: 64 sym.imp.strcat\n"},{"op":"delete","value":"instrs: 1    bits: 64 sym.imp.strcpy\n"},{"op":"delete","value":"instrs: 1    bits: 64 sym.imp.strlen\n"},{"op":"insert","value":"instrs: 1    bits: 32 fcn.000004c8\n"},{"op":"insert","value":"instrs: 2    bits: 32 fcn.00000502\n"},{"op":"insert","value":"instrs: 1    bits: 32 sym..plt.got\n"},{"op":"insert","value":"instrs: 2    bits: 32 sym.__x86.get_pc_thunk.bx\n"},{"op":"insert","value":"instrs: 2    bits: 32 sym.__x86.get_pc_thunk.dx\n"},{"op":"insert","value":"instrs: 11   bits: 32 sym._init\n"},{"op":"insert","value":"instrs: 18   bits: 32 sym.deregister_tm_clones\n"},{"op":"insert","value":"instrs: 1    bits: 32 sym.imp.__libc_start_main\n"},{"op":"insert","value":"instrs: 1    bits: 32 sym.imp.free\n"},{"op":"insert","value":"instrs: 1    bits: 32 sym.imp.malloc\n"},{"op":"insert","value":"instrs: 1    bits: 32 sym.imp.puts\n"},{"op":"insert","value":"instrs: 1    bits: 32 sym.imp.strcat\n"},{"op":"insert","value":"instrs: 1    bits: 32 sym.imp.strcpy\n"},{"op":"insert","value":"instrs: 1    bits: 32 sym.imp.strlen\n"}]}]}
+EOF
+RUN
+
+NAME=rz-diff functions comparison with addresses
+FILE==
+CMDS=!rz-diff -At functions bins/elf/hello_world bins/elf/hello_world32
+EXPECT=<<EOF
+--- bins/elf/hello_world
++++ bins/elf/hello_world32
+@@ -1,9 +1,14 @@
+-0x0000000000000608 instrs: 7    bits: 64 sym._init
+-0x00000000000006d0 instrs: 13   bits: 64 sym.deregister_tm_clones
+-0x0000000000000690 instrs: 1    bits: 64 sym.imp.__cxa_finalize
+-0x0000000000000630 instrs: 1    bits: 64 sym.imp.free
+-0x0000000000000670 instrs: 1    bits: 64 sym.imp.malloc
+-0x0000000000000650 instrs: 1    bits: 64 sym.imp.puts
+-0x0000000000000680 instrs: 1    bits: 64 sym.imp.strcat
+-0x0000000000000640 instrs: 1    bits: 64 sym.imp.strcpy
+-0x0000000000000660 instrs: 1    bits: 64 sym.imp.strlen
++0x00000000000004c8 instrs: 1    bits: 32 fcn.000004c8
++0x0000000000000502 instrs: 2    bits: 32 fcn.00000502
++0x00000000000004c0 instrs: 1    bits: 32 sym..plt.got
++0x0000000000000510 instrs: 2    bits: 32 sym.__x86.get_pc_thunk.bx
++0x0000000000000609 instrs: 2    bits: 32 sym.__x86.get_pc_thunk.dx
++0x000000000000041c instrs: 11   bits: 32 sym._init
++0x0000000000000520 instrs: 18   bits: 32 sym.deregister_tm_clones
++0x00000000000004b0 instrs: 1    bits: 32 sym.imp.__libc_start_main
++0x0000000000000450 instrs: 1    bits: 32 sym.imp.free
++0x0000000000000480 instrs: 1    bits: 32 sym.imp.malloc
++0x0000000000000490 instrs: 1    bits: 32 sym.imp.puts
++0x0000000000000460 instrs: 1    bits: 32 sym.imp.strcat
++0x0000000000000470 instrs: 1    bits: 32 sym.imp.strcpy
++0x00000000000004a0 instrs: 1    bits: 32 sym.imp.strlen
+
+EOF
+RUN
+
+NAME=rz-diff functions comparison with addresses JSON
+FILE==
+CMDS=!rz-diff -Ajt functions bins/elf/hello_world bins/elf/hello_world32
+EXPECT=<<EOF
+{"from":"bins/elf/hello_world","to":"bins/elf/hello_world32","diff":[{"from":[1,9],"to":[1,14],"ops":[{"op":"delete","value":"0x0000000000000608 instrs: 7    bits: 64 sym._init\n"},{"op":"delete","value":"0x00000000000006d0 instrs: 13   bits: 64 sym.deregister_tm_clones\n"},{"op":"delete","value":"0x0000000000000690 instrs: 1    bits: 64 sym.imp.__cxa_finalize\n"},{"op":"delete","value":"0x0000000000000630 instrs: 1    bits: 64 sym.imp.free\n"},{"op":"delete","value":"0x0000000000000670 instrs: 1    bits: 64 sym.imp.malloc\n"},{"op":"delete","value":"0x0000000000000650 instrs: 1    bits: 64 sym.imp.puts\n"},{"op":"delete","value":"0x0000000000000680 instrs: 1    bits: 64 sym.imp.strcat\n"},{"op":"delete","value":"0x0000000000000640 instrs: 1    bits: 64 sym.imp.strcpy\n"},{"op":"delete","value":"0x0000000000000660 instrs: 1    bits: 64 sym.imp.strlen\n"},{"op":"insert","value":"0x00000000000004c8 instrs: 1    bits: 32 fcn.000004c8\n"},{"op":"insert","value":"0x0000000000000502 instrs: 2    bits: 32 fcn.00000502\n"},{"op":"insert","value":"0x00000000000004c0 instrs: 1    bits: 32 sym..plt.got\n"},{"op":"insert","value":"0x0000000000000510 instrs: 2    bits: 32 sym.__x86.get_pc_thunk.bx\n"},{"op":"insert","value":"0x0000000000000609 instrs: 2    bits: 32 sym.__x86.get_pc_thunk.dx\n"},{"op":"insert","value":"0x000000000000041c instrs: 11   bits: 32 sym._init\n"},{"op":"insert","value":"0x0000000000000520 instrs: 18   bits: 32 sym.deregister_tm_clones\n"},{"op":"insert","value":"0x00000000000004b0 instrs: 1    bits: 32 sym.imp.__libc_start_main\n"},{"op":"insert","value":"0x0000000000000450 instrs: 1    bits: 32 sym.imp.free\n"},{"op":"insert","value":"0x0000000000000480 instrs: 1    bits: 32 sym.imp.malloc\n"},{"op":"insert","value":"0x0000000000000490 instrs: 1    bits: 32 sym.imp.puts\n"},{"op":"insert","value":"0x0000000000000460 instrs: 1    bits: 32 sym.imp.strcat\n"},{"op":"insert","value":"0x0000000000000470 instrs: 1    bits: 32 sym.imp.strcpy\n"},{"op":"insert","value":"0x00000000000004a0 instrs: 1    bits: 32 sym.imp.strlen\n"}]}]}
+EOF
+RUN
+
+
+NAME=rz-diff entries comparison
+FILE==
+CMDS=!rz-diff -t entries bins/elf/hello_world bins/elf/hello_world32
+EXPECT=<<EOF
+--- bins/elf/hello_world
++++ bins/elf/hello_world32
+@@ -1,3 +1,3 @@
+-virt: 0x00000000000007a0 phys: 0x00000000000007a0 entry init
+-virt: 0x0000000000000760 phys: 0x0000000000000760 entry fini
+-virt: 0x00000000000006a0 phys: 0x00000000000006a0 entry program
++virt: 0x0000000000000600 phys: 0x0000000000000600 entry init
++virt: 0x00000000000005b0 phys: 0x00000000000005b0 entry fini
++virt: 0x00000000000004d0 phys: 0x00000000000004d0 entry program
+
+EOF
+RUN
+
+NAME=rz-diff entries comparison JSON
+FILE==
+CMDS=!rz-diff -jt entries bins/elf/hello_world bins/elf/hello_world32
+EXPECT=<<EOF
+{"from":"bins/elf/hello_world","to":"bins/elf/hello_world32","diff":[{"from":[1,3],"to":[1,3],"ops":[{"op":"delete","value":"virt: 0x00000000000007a0 phys: 0x00000000000007a0 entry init\n"},{"op":"delete","value":"virt: 0x0000000000000760 phys: 0x0000000000000760 entry fini\n"},{"op":"delete","value":"virt: 0x00000000000006a0 phys: 0x00000000000006a0 entry program\n"},{"op":"insert","value":"virt: 0x0000000000000600 phys: 0x0000000000000600 entry init\n"},{"op":"insert","value":"virt: 0x00000000000005b0 phys: 0x00000000000005b0 entry fini\n"},{"op":"insert","value":"virt: 0x00000000000004d0 phys: 0x00000000000004d0 entry program\n"}]}]}
+EOF
+RUN
+
+
+NAME=rz-diff imports comparison
+FILE==
+CMDS=!rz-diff -t imports bins/elf/hello_world bins/other/rz-diff/true
+EXPECT=<<EOF
+--- bins/elf/hello_world
++++ bins/other/rz-diff/true
+@@ -1,11 +1,49 @@
+-WEAK    NOTYPE  _ITM_deregisterTMCloneTable
+-WEAK    NOTYPE  _ITM_registerTMCloneTable
+-WEAK    FUNC    __cxa_finalize
++GLOBAL  FUNC    __ctype_b_loc
++GLOBAL  FUNC    __ctype_get_mb_cur_max
++GLOBAL  FUNC    __cxa_atexit
++GLOBAL  FUNC    __errno_location
++GLOBAL  FUNC    __fpending
++GLOBAL  FUNC    __fprintf_chk
++GLOBAL  FUNC    __freading
+ WEAK    NOTYPE  __gmon_start__
+ GLOBAL  FUNC    __libc_start_main
++GLOBAL  FUNC    __printf_chk
++GLOBAL  FUNC    __stack_chk_fail
++GLOBAL  FUNC    __uflow
++GLOBAL  FUNC    _exit
++GLOBAL  FUNC    abort
++GLOBAL  FUNC    bindtextdomain
++GLOBAL  FUNC    calloc
++GLOBAL  FUNC    close
++GLOBAL  FUNC    dcgettext
++GLOBAL  FUNC    error
++GLOBAL  FUNC    exit
++GLOBAL  FUNC    fclose
++GLOBAL  FUNC    fdopen
++GLOBAL  FUNC    fflush
++GLOBAL  FUNC    fileno
++GLOBAL  FUNC    fputs_unlocked
+ GLOBAL  FUNC    free
++GLOBAL  FUNC    fscanf
++GLOBAL  FUNC    fseeko
++GLOBAL  FUNC    fwrite
++GLOBAL  FUNC    getenv
++GLOBAL  FUNC    iswprint
++GLOBAL  FUNC    lseek
+ GLOBAL  FUNC    malloc
+-GLOBAL  FUNC    puts
+-GLOBAL  FUNC    strcat
++GLOBAL  FUNC    mbrtowc
++GLOBAL  FUNC    mbsinit
++GLOBAL  FUNC    memcmp
++GLOBAL  FUNC    memcpy
++GLOBAL  FUNC    memset
++GLOBAL  FUNC    nl_langinfo
++GLOBAL  FUNC    open
++GLOBAL  FUNC    realloc
++GLOBAL  FUNC    setlocale
++GLOBAL  FUNC    strcmp
+ GLOBAL  FUNC    strcpy
+ GLOBAL  FUNC    strlen
++GLOBAL  FUNC    strncmp
++GLOBAL  FUNC    strrchr
++GLOBAL  FUNC    textdomain
++GLOBAL  FUNC    ungetc
+
+EOF
+RUN
+
+NAME=rz-diff imports comparison JSON
+FILE==
+CMDS=!rz-diff -jt imports bins/elf/hello_world bins/other/rz-diff/true
+EXPECT=<<EOF
+{"from":"bins/elf/hello_world","to":"bins/other/rz-diff/true","diff":[{"from":[1,11],"to":[1,49],"ops":[{"op":"delete","value":"WEAK    NOTYPE  _ITM_deregisterTMCloneTable\n"},{"op":"delete","value":"WEAK    NOTYPE  _ITM_registerTMCloneTable\n"},{"op":"delete","value":"WEAK    FUNC    __cxa_finalize\n"},{"op":"insert","value":"GLOBAL  FUNC    __ctype_b_loc\n"},{"op":"insert","value":"GLOBAL  FUNC    __ctype_get_mb_cur_max\n"},{"op":"insert","value":"GLOBAL  FUNC    __cxa_atexit\n"},{"op":"insert","value":"GLOBAL  FUNC    __errno_location\n"},{"op":"insert","value":"GLOBAL  FUNC    __fpending\n"},{"op":"insert","value":"GLOBAL  FUNC    __fprintf_chk\n"},{"op":"insert","value":"GLOBAL  FUNC    __freading\n"},{"op":"equal","value":"WEAK    NOTYPE  __gmon_start__\n"},{"op":"equal","value":"GLOBAL  FUNC    __libc_start_main\n"},{"op":"insert","value":"GLOBAL  FUNC    __printf_chk\n"},{"op":"insert","value":"GLOBAL  FUNC    __stack_chk_fail\n"},{"op":"insert","value":"GLOBAL  FUNC    __uflow\n"},{"op":"insert","value":"GLOBAL  FUNC    _exit\n"},{"op":"insert","value":"GLOBAL  FUNC    abort\n"},{"op":"insert","value":"GLOBAL  FUNC    bindtextdomain\n"},{"op":"insert","value":"GLOBAL  FUNC    calloc\n"},{"op":"insert","value":"GLOBAL  FUNC    close\n"},{"op":"insert","value":"GLOBAL  FUNC    dcgettext\n"},{"op":"insert","value":"GLOBAL  FUNC    error\n"},{"op":"insert","value":"GLOBAL  FUNC    exit\n"},{"op":"insert","value":"GLOBAL  FUNC    fclose\n"},{"op":"insert","value":"GLOBAL  FUNC    fdopen\n"},{"op":"insert","value":"GLOBAL  FUNC    fflush\n"},{"op":"insert","value":"GLOBAL  FUNC    fileno\n"},{"op":"insert","value":"GLOBAL  FUNC    fputs_unlocked\n"},{"op":"equal","value":"GLOBAL  FUNC    free\n"},{"op":"insert","value":"GLOBAL  FUNC    fscanf\n"},{"op":"insert","value":"GLOBAL  FUNC    fseeko\n"},{"op":"insert","value":"GLOBAL  FUNC    fwrite\n"},{"op":"insert","value":"GLOBAL  FUNC    getenv\n"},{"op":"insert","value":"GLOBAL  FUNC    iswprint\n"},{"op":"insert","value":"GLOBAL  FUNC    lseek\n"},{"op":"equal","value":"GLOBAL  FUNC    malloc\n"},{"op":"delete","value":"GLOBAL  FUNC    puts\n"},{"op":"delete","value":"GLOBAL  FUNC    strcat\n"},{"op":"insert","value":"GLOBAL  FUNC    mbrtowc\n"},{"op":"insert","value":"GLOBAL  FUNC    mbsinit\n"},{"op":"insert","value":"GLOBAL  FUNC    memcmp\n"},{"op":"insert","value":"GLOBAL  FUNC    memcpy\n"},{"op":"insert","value":"GLOBAL  FUNC    memset\n"},{"op":"insert","value":"GLOBAL  FUNC    nl_langinfo\n"},{"op":"insert","value":"GLOBAL  FUNC    open\n"},{"op":"insert","value":"GLOBAL  FUNC    realloc\n"},{"op":"insert","value":"GLOBAL  FUNC    setlocale\n"},{"op":"insert","value":"GLOBAL  FUNC    strcmp\n"},{"op":"equal","value":"GLOBAL  FUNC    strcpy\n"},{"op":"equal","value":"GLOBAL  FUNC    strlen\n"},{"op":"insert","value":"GLOBAL  FUNC    strncmp\n"},{"op":"insert","value":"GLOBAL  FUNC    strrchr\n"},{"op":"insert","value":"GLOBAL  FUNC    textdomain\n"},{"op":"insert","value":"GLOBAL  FUNC    ungetc\n"}]}]}
+EOF
+RUN
+
+
+NAME=rz-diff fields comparison
+FILE==
+CMDS=!rz-diff -t fields bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+--- bins/java/Main.java.11.class
++++ bins/java/Hello.class
+@@ -1,0 +1,1 @@
++Ljava/lang/String; who
+
+EOF
+RUN
+
+NAME=rz-diff fields comparison JSON
+FILE==
+CMDS=!rz-diff -jt fields bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,0],"to":[1,1],"ops":[{"op":"insert","value":"Ljava/lang/String; who\n"}]}]}
+EOF
+RUN
+
+NAME=rz-diff fields comparison with addresses
+FILE==
+CMDS=!rz-diff -At fields bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+--- bins/java/Main.java.11.class
++++ bins/java/Hello.class
+@@ -1,0 +1,1 @@
++virt: 0x000000000000020b phys: 0x000000000000020b Ljava/lang/String; who
+
+EOF
+RUN
+
+NAME=rz-diff fields comparison with addresses JSON
+FILE==
+CMDS=!rz-diff -Ajt fields bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,0],"to":[1,1],"ops":[{"op":"insert","value":"virt: 0x000000000000020b phys: 0x000000000000020b Ljava/lang/String; who\n"}]}]}
+EOF
+RUN
+
+
+NAME=rz-diff libraries comparison
+FILE==
+CMDS=!rz-diff -t libraries bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+--- bins/java/Main.java.11.class
++++ bins/java/Hello.class
+@@ -1,12 +1,5 @@
+-Main
+-[Ljava/lang/String;
+-java/io/BufferedReader
+-java/io/FileReader
++Hello
+ java/io/PrintStream
+-java/lang/Exception
+ java/lang/Object
+-java/lang/String
++java/lang/StringBuilder
+ java/lang/System
+-java/lang/invoke/MethodHandles
+-java/lang/invoke/MethodHandles$Lookup
+-java/lang/invoke/StringConcatFactory
+
+EOF
+RUN
+
+NAME=rz-diff libraries comparison JSON
+FILE==
+CMDS=!rz-diff -jt libraries bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,12],"to":[1,5],"ops":[{"op":"delete","value":"Main\n"},{"op":"delete","value":"[Ljava/lang/String;\n"},{"op":"delete","value":"java/io/BufferedReader\n"},{"op":"delete","value":"java/io/FileReader\n"},{"op":"insert","value":"Hello\n"},{"op":"equal","value":"java/io/PrintStream\n"},{"op":"delete","value":"java/lang/Exception\n"},{"op":"equal","value":"java/lang/Object\n"},{"op":"delete","value":"java/lang/String\n"},{"op":"insert","value":"java/lang/StringBuilder\n"},{"op":"equal","value":"java/lang/System\n"},{"op":"delete","value":"java/lang/invoke/MethodHandles\n"},{"op":"delete","value":"java/lang/invoke/MethodHandles$Lookup\n"},{"op":"delete","value":"java/lang/invoke/StringConcatFactory\n"}]}]}
+EOF
+RUN
+
+
+NAME=rz-diff sections comparison
+FILE==
+CMDS=!rz-diff -t sections bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+--- bins/java/Main.java.11.class
++++ bins/java/Hello.class
+@@ -0,8 +0,12 @@
+ align: 0x00000000 -r-- class.attr
+ align: 0x00000000 -r-- class.constant_pool
++align: 0x00000000 -r-- class.fields
++align: 0x00000000 -r-- class.fields.who.attr
+ align: 0x00000000 -r-- class.methods
+ align: 0x00000000 -r-- class.methods.<init>.attr
+ align: 0x00000000 -r-x class.methods.<init>.attr.0.code
+ align: 0x00000000 -r-- class.methods.main.attr
+ align: 0x00000000 -r-x class.methods.main.attr.0.code
++align: 0x00000000 -r-- class.methods.say.attr
++align: 0x00000000 -r-x class.methods.say.attr.0.code
+
+EOF
+RUN
+
+NAME=rz-diff sections comparison JSON
+FILE==
+CMDS=!rz-diff -jt sections bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[0,8],"to":[0,12],"ops":[{"op":"equal","value":"align: 0x00000000 -r-- class.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.constant_pool\n"},{"op":"insert","value":"align: 0x00000000 -r-- class.fields\n"},{"op":"insert","value":"align: 0x00000000 -r-- class.fields.who.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.methods\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.methods.<init>.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-x class.methods.<init>.attr.0.code\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.methods.main.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-x class.methods.main.attr.0.code\n"},{"op":"insert","value":"align: 0x00000000 -r-- class.methods.say.attr\n"},{"op":"insert","value":"align: 0x00000000 -r-x class.methods.say.attr.0.code\n"}]}]}
+EOF
+RUN
+
+NAME=rz-diff sections comparison with addresses
+FILE==
+CMDS=!rz-diff -At sections bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+--- bins/java/Main.java.11.class
++++ bins/java/Hello.class
+@@ -1,7 +1,11 @@
+-virt: 0x000000000000058a:0x0026 phys: 0x000000000000058a:0x0026 align: 0x00000000 -r-- class.attr
+-virt: 0x000000000000000a:0x0480 phys: 0x000000000000000a:0x0480 align: 0x00000000 -r-- class.constant_pool
+-virt: 0x000000000000048e:0x00fc phys: 0x000000000000048e:0x00fc align: 0x00000000 -r-- class.methods
+-virt: 0x000000000000048e:0x002b phys: 0x000000000000048e:0x002b align: 0x00000000 -r-- class.methods.<init>.attr
+-virt: 0x00000000000004a4:0x001d phys: 0x00000000000004a4:0x001d align: 0x00000000 -r-x class.methods.<init>.attr.0.code
+-virt: 0x00000000000004b9:0x00d1 phys: 0x00000000000004b9:0x00d1 align: 0x00000000 -r-- class.methods.main.attr
+-virt: 0x00000000000004cf:0x00c1 phys: 0x00000000000004cf:0x00c1 align: 0x00000000 -r-x class.methods.main.attr.0.code
++virt: 0x00000000000002cd:0x0008 phys: 0x00000000000002cd:0x0008 align: 0x00000000 -r-- class.attr
++virt: 0x000000000000000a:0x01ff phys: 0x000000000000000a:0x01ff align: 0x00000000 -r-- class.constant_pool
++virt: 0x000000000000020b:0x000a phys: 0x000000000000020b:0x000a align: 0x00000000 -r-- class.fields
++virt: 0x000000000000020b:0x000a phys: 0x000000000000020b:0x000a align: 0x00000000 -r-- class.fields.who.attr
++virt: 0x0000000000000215:0x00b8 phys: 0x0000000000000215:0x00b8 align: 0x00000000 -r-- class.methods
++virt: 0x0000000000000215:0x0038 phys: 0x0000000000000215:0x0038 align: 0x00000000 -r-- class.methods.<init>.attr
++virt: 0x000000000000022b:0x002a phys: 0x000000000000022b:0x002a align: 0x00000000 -r-x class.methods.<init>.attr.0.code
++virt: 0x0000000000000294:0x0039 phys: 0x0000000000000294:0x0039 align: 0x00000000 -r-- class.methods.main.attr
++virt: 0x00000000000002aa:0x0029 phys: 0x00000000000002aa:0x0029 align: 0x00000000 -r-x class.methods.main.attr.0.code
++virt: 0x000000000000024d:0x0047 phys: 0x000000000000024d:0x0047 align: 0x00000000 -r-- class.methods.say.attr
++virt: 0x0000000000000263:0x0039 phys: 0x0000000000000263:0x0039 align: 0x00000000 -r-x class.methods.say.attr.0.code
+
+EOF
+RUN
+
+NAME=rz-diff sections comparison with addresses JSON
+FILE==
+CMDS=!rz-diff -Ajt sections bins/java/Main.java.11.class bins/java/Hello.class
+EXPECT=<<EOF
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,7],"to":[1,11],"ops":[{"op":"delete","value":"virt: 0x000000000000058a:0x0026 phys: 0x000000000000058a:0x0026 align: 0x00000000 -r-- class.attr\n"},{"op":"delete","value":"virt: 0x000000000000000a:0x0480 phys: 0x000000000000000a:0x0480 align: 0x00000000 -r-- class.constant_pool\n"},{"op":"delete","value":"virt: 0x000000000000048e:0x00fc phys: 0x000000000000048e:0x00fc align: 0x00000000 -r-- class.methods\n"},{"op":"delete","value":"virt: 0x000000000000048e:0x002b phys: 0x000000000000048e:0x002b align: 0x00000000 -r-- class.methods.<init>.attr\n"},{"op":"delete","value":"virt: 0x00000000000004a4:0x001d phys: 0x00000000000004a4:0x001d align: 0x00000000 -r-x class.methods.<init>.attr.0.code\n"},{"op":"delete","value":"virt: 0x00000000000004b9:0x00d1 phys: 0x00000000000004b9:0x00d1 align: 0x00000000 -r-- class.methods.main.attr\n"},{"op":"delete","value":"virt: 0x00000000000004cf:0x00c1 phys: 0x00000000000004cf:0x00c1 align: 0x00000000 -r-x class.methods.main.attr.0.code\n"},{"op":"insert","value":"virt: 0x00000000000002cd:0x0008 phys: 0x00000000000002cd:0x0008 align: 0x00000000 -r-- class.attr\n"},{"op":"insert","value":"virt: 0x000000000000000a:0x01ff phys: 0x000000000000000a:0x01ff align: 0x00000000 -r-- class.constant_pool\n"},{"op":"insert","value":"virt: 0x000000000000020b:0x000a phys: 0x000000000000020b:0x000a align: 0x00000000 -r-- class.fields\n"},{"op":"insert","value":"virt: 0x000000000000020b:0x000a phys: 0x000000000000020b:0x000a align: 0x00000000 -r-- class.fields.who.attr\n"},{"op":"insert","value":"virt: 0x0000000000000215:0x00b8 phys: 0x0000000000000215:0x00b8 align: 0x00000000 -r-- class.methods\n"},{"op":"insert","value":"virt: 0x0000000000000215:0x0038 phys: 0x0000000000000215:0x0038 align: 0x00000000 -r-- class.methods.<init>.attr\n"},{"op":"insert","value":"virt: 0x000000000000022b:0x002a phys: 0x000000000000022b:0x002a align: 0x00000000 -r-x class.methods.<init>.attr.0.code\n"},{"op":"insert","value":"virt: 0x0000000000000294:0x0039 phys: 0x0000000000000294:0x0039 align: 0x00000000 -r-- class.methods.main.attr\n"},{"op":"insert","value":"virt: 0x00000000000002aa:0x0029 phys: 0x00000000000002aa:0x0029 align: 0x00000000 -r-x class.methods.main.attr.0.code\n"},{"op":"insert","value":"virt: 0x000000000000024d:0x0047 phys: 0x000000000000024d:0x0047 align: 0x00000000 -r-- class.methods.say.attr\n"},{"op":"insert","value":"virt: 0x0000000000000263:0x0039 phys: 0x0000000000000263:0x0039 align: 0x00000000 -r-x class.methods.say.attr.0.code\n"}]}]}
+EOF
+RUN
+
+
+NAME=rz-diff symbols comparison
+FILE==
+CMDS=!rz-diff -t symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+EXPECT=<<EOF
+--- bins/java/Main.java.11.class
++++ bins/java/Main.java.1.7.class
+@@ -8,6 +8,8 @@
+ java.io.PrintStream.println
+ java.lang.Exception.printStackTrace
+ java.lang.Object.<init>
++java.lang.StringBuilder.<init>
++java.lang.StringBuilder.append
++java.lang.StringBuilder.toString
+ java.lang.System.err
+ java.lang.System.out
+-java.lang.invoke.StringConcatFactory.makeConcatWithConstants
+
+EOF
+RUN
+
+NAME=rz-diff symbols comparison JSON
+FILE==
+CMDS=!rz-diff -jt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+EXPECT=<<EOF
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[8,6],"to":[8,8],"ops":[{"op":"equal","value":"java.io.PrintStream.println\n"},{"op":"equal","value":"java.lang.Exception.printStackTrace\n"},{"op":"equal","value":"java.lang.Object.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder.append\n"},{"op":"insert","value":"java.lang.StringBuilder.toString\n"},{"op":"equal","value":"java.lang.System.err\n"},{"op":"equal","value":"java.lang.System.out\n"},{"op":"delete","value":"java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
+EOF
+RUN
+
+NAME=rz-diff symbols comparison with addresses
+FILE==
+CMDS=!rz-diff -At symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+EXPECT=<<EOF
+--- bins/java/Main.java.11.class
++++ bins/java/Main.java.1.7.class
+@@ -1,13 +1,15 @@
+-virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main.<init>
+-virt: 0x00000000000004cf phys: 0x00000000000004cf Main.main
++virt: 0x0000000000000383 phys: 0x0000000000000383 Main.<init>
++virt: 0x00000000000003ae phys: 0x00000000000003ae Main.main
+ virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader.<init>
+-virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader.close
++virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader.close
+ virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader.readLine
+ virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader.<init>
+-virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream.format
++virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream.format
+ virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream.println
+-virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception.printStackTrace
++virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception.printStackTrace
+ virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object.<init>
+-virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System.err
++virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder.<init>
++virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder.append
++virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder.toString
++virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System.err
+ virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System.out
+-virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory.makeConcatWithConstants
+
+EOF
+RUN
+
+NAME=rz-diff symbols comparison with addresses JSON
+FILE==
+CMDS=!rz-diff -Ajt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+EXPECT=<<EOF
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[1,13],"to":[1,15],"ops":[{"op":"delete","value":"virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main.<init>\n"},{"op":"delete","value":"virt: 0x00000000000004cf phys: 0x00000000000004cf Main.main\n"},{"op":"insert","value":"virt: 0x0000000000000383 phys: 0x0000000000000383 Main.<init>\n"},{"op":"insert","value":"virt: 0x00000000000003ae phys: 0x00000000000003ae Main.main\n"},{"op":"equal","value":"virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader.close\n"},{"op":"insert","value":"virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader.close\n"},{"op":"equal","value":"virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader.readLine\n"},{"op":"equal","value":"virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader.<init>\n"},{"op":"delete","value":"virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream.format\n"},{"op":"insert","value":"virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream.format\n"},{"op":"equal","value":"virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream.println\n"},{"op":"delete","value":"virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception.printStackTrace\n"},{"op":"insert","value":"virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception.printStackTrace\n"},{"op":"equal","value":"virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System.err\n"},{"op":"insert","value":"virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder.<init>\n"},{"op":"insert","value":"virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder.append\n"},{"op":"insert","value":"virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder.toString\n"},{"op":"insert","value":"virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System.err\n"},{"op":"equal","value":"virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System.out\n"},{"op":"delete","value":"virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
+EOF
+RUN
+
+
+NAME=rz-diff command with zero argument
+FILE==
+CMDS=!rz-diff -t command bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT_ERR=<<EOF
-Cannot open empty path
+ERROR: rz-diff: error, option -t 'command' requires -0 <command>.
 EOF
 RUN
 
-NAME=rz-diff empty second file
+NAME=rz-diff command with one argument
 FILE==
-CMDS=!rz-diff bins/other/rz-diff/rz-diff_c_1 ""
-EXPECT_ERR=<<EOF
-Cannot open empty path
+CMDS=!rz-diff -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+--- bins/java/Main.java.11.class
++++ bins/java/Main.java.15.class
+@@ -1,4 +1,4 @@
+-Version: (55.0) Java SE 11
++Version: (59.0) Java SE 15
+ Flags: (0x0021) public super
+ Class: (#57) Main
+ Super: (#2) java/lang/Object
+
+EOF
+RUN
+
+NAME=rz-diff command with one argument JSON
+FILE==
+CMDS=!rz-diff -j -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
+EXPECT=<<EOF
+{"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.15.class","diff":[{"from":[1,4],"to":[1,4],"ops":[{"op":"delete","value":"Version: (55.0) Java SE 11\n"},{"op":"insert","value":"Version: (59.0) Java SE 15\n"},{"op":"equal","value":"Flags: (0x0021) public super\n"},{"op":"equal","value":"Class: (#57) Main\n"},{"op":"equal","value":"Super: (#2) java/lang/Object\n"}]}]}
+EOF
+RUN
+
+NAME=rz-diff command with two arguments
+FILE==
+CMDS=!rz-diff -0 "pi 20 @ main" -1 "pi 20 @ sym.main"  -t command bins/elf/hello_world bins/elf/hello_world32
+EXPECT=<<EOF
+--- bins/elf/hello_world
++++ bins/elf/hello_world32
+@@ -1,20 +1,20 @@
+-push rbp
+-mov rbp, rsp
+-sub rsp, 0x20
+-lea rax, str.Hello
+-mov qword [rbp - 0x18], rax
+-lea rax, str.r2_folks
+-mov qword [rbp - 0x10], rax
+-mov rax, qword [rbp - 0x18]
+-mov rdi, rax
++lea ecx, [esp + 4]
++and esp, 0xfffffff0
++push dword [ecx - 4]
++push ebp
++mov ebp, esp
++push ebx
++push ecx
++sub esp, 0x20
++call sym.__x86.get_pc_thunk.bx
++add ebx, 0x19a0
++lea eax, [ebx - 0x1874]
++mov dword [ebp - 0x1c], eax
++lea eax, [ebx - 0x186e]
++mov dword [ebp - 0x18], eax
++sub esp, 0xc
++push dword [ebp - 0x1c]
+ call sym.imp.strlen
+-mov dword [rbp - 0x20], eax
+-mov rax, qword [rbp - 0x10]
+-mov rdi, rax
+-call sym.imp.strlen
+-mov dword [rbp - 0x1c], eax
+-mov edx, dword [rbp - 0x20]
+-mov eax, dword [rbp - 0x1c]
+-add eax, edx
+-add eax, 1
+-cdqe
++add esp, 0x10
++mov dword [ebp - 0x14], eax
++sub esp, 0xc
+
+EOF
+RUN
+
+NAME=rz-diff command with two arguments JSON
+FILE==
+CMDS=!rz-diff -j -0 "pi 20 @ main" -1 "pi 20 @ sym.main"  -t command bins/elf/hello_world bins/elf/hello_world32
+EXPECT=<<EOF
+{"from":"bins/elf/hello_world","to":"bins/elf/hello_world32","diff":[{"from":[1,20],"to":[1,20],"ops":[{"op":"delete","value":"push rbp\n"},{"op":"delete","value":"mov rbp, rsp\n"},{"op":"delete","value":"sub rsp, 0x20\n"},{"op":"delete","value":"lea rax, str.Hello\n"},{"op":"delete","value":"mov qword [rbp - 0x18], rax\n"},{"op":"delete","value":"lea rax, str.r2_folks\n"},{"op":"delete","value":"mov qword [rbp - 0x10], rax\n"},{"op":"delete","value":"mov rax, qword [rbp - 0x18]\n"},{"op":"delete","value":"mov rdi, rax\n"},{"op":"insert","value":"lea ecx, [esp + 4]\n"},{"op":"insert","value":"and esp, 0xfffffff0\n"},{"op":"insert","value":"push dword [ecx - 4]\n"},{"op":"insert","value":"push ebp\n"},{"op":"insert","value":"mov ebp, esp\n"},{"op":"insert","value":"push ebx\n"},{"op":"insert","value":"push ecx\n"},{"op":"insert","value":"sub esp, 0x20\n"},{"op":"insert","value":"call sym.__x86.get_pc_thunk.bx\n"},{"op":"insert","value":"add ebx, 0x19a0\n"},{"op":"insert","value":"lea eax, [ebx - 0x1874]\n"},{"op":"insert","value":"mov dword [ebp - 0x1c], eax\n"},{"op":"insert","value":"lea eax, [ebx - 0x186e]\n"},{"op":"insert","value":"mov dword [ebp - 0x18], eax\n"},{"op":"insert","value":"sub esp, 0xc\n"},{"op":"insert","value":"push dword [ebp - 0x1c]\n"},{"op":"equal","value":"call sym.imp.strlen\n"},{"op":"delete","value":"mov dword [rbp - 0x20], eax\n"},{"op":"delete","value":"mov rax, qword [rbp - 0x10]\n"},{"op":"delete","value":"mov rdi, rax\n"},{"op":"delete","value":"call sym.imp.strlen\n"},{"op":"delete","value":"mov dword [rbp - 0x1c], eax\n"},{"op":"delete","value":"mov edx, dword [rbp - 0x20]\n"},{"op":"delete","value":"mov eax, dword [rbp - 0x1c]\n"},{"op":"delete","value":"add eax, edx\n"},{"op":"delete","value":"add eax, 1\n"},{"op":"delete","value":"cdqe\n"},{"op":"insert","value":"add esp, 0x10\n"},{"op":"insert","value":"mov dword [ebp - 0x14], eax\n"},{"op":"insert","value":"sub esp, 0xc\n"}]}]}
 EOF
 RUN

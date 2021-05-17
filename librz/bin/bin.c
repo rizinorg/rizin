@@ -214,7 +214,7 @@ RZ_API void rz_bin_string_free(void *_str) {
 }
 
 RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
-	rz_return_val_if_fail(bin && bin->iob.io && opt, false);
+	rz_return_val_if_fail(bin && bin->iob.io && opt, NULL);
 
 	RzIOBind *iob = &(bin->iob);
 	if (!iob->desc_get(iob->io, opt->fd)) {
@@ -222,7 +222,7 @@ RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 	}
 	if (opt->fd < 0) {
 		eprintf("Couldn't open bin for file '%s'\n", file);
-		return false;
+		return NULL;
 	}
 	opt->sz = 0;
 	opt->pluginname = NULL;
@@ -230,7 +230,7 @@ RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 }
 
 RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
-	rz_return_val_if_fail(bin && bf, false);
+	rz_return_val_if_fail(bin && bf, NULL);
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
 	opt.filename = bf->file;
@@ -527,13 +527,13 @@ RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json) {
 	rz_return_val_if_fail(bin && name, false);
 
 	rz_list_foreach (bin->plugins, it, bp) {
-		if (!rz_str_cmp(name, bp->name, strlen(name))) {
+		if (rz_str_cmp(name, bp->name, strlen(name))) {
 			continue;
 		}
 		return rz_bin_print_plugin_details(bin, bp, pj, json);
 	}
 	rz_list_foreach (bin->binxtrs, it, bx) {
-		if (!rz_str_cmp(name, bx->name, strlen(name))) {
+		if (rz_str_cmp(name, bx->name, strlen(name))) {
 			continue;
 		}
 		__printXtrPluginDetails(bin, bx, json);
@@ -542,69 +542,6 @@ RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, PJ *pj, int json) {
 
 	eprintf("Cannot find plugin %s\n", name);
 	return false;
-}
-
-RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format) {
-	RzListIter *it;
-	RzBinPlugin *bp;
-	RzBinXtrPlugin *bx;
-	RzBinLdrPlugin *ld;
-
-	if (format == 'q') {
-		rz_list_foreach (bin->plugins, it, bp) {
-			bin->cb_printf("%s\n", bp->name);
-		}
-		rz_list_foreach (bin->binxtrs, it, bx) {
-			bin->cb_printf("%s\n", bx->name);
-		}
-	} else if (format) {
-		pj_o(pj);
-		pj_ka(pj, "bin");
-		rz_list_foreach (bin->plugins, it, bp) {
-			pj_o(pj);
-			pj_ks(pj, "name", bp->name);
-			pj_ks(pj, "description", bp->desc);
-			pj_ks(pj, "license", bp->license ? bp->license : "???");
-			pj_end(pj);
-		}
-		pj_end(pj);
-		pj_ka(pj, "xtr");
-		rz_list_foreach (bin->binxtrs, it, bx) {
-			pj_o(pj);
-			pj_ks(pj, "name", bx->name);
-			pj_ks(pj, "description", bx->desc);
-			pj_ks(pj, "license", bx->license ? bx->license : "???");
-			pj_end(pj);
-		}
-		pj_end(pj);
-		pj_ka(pj, "ldr");
-		rz_list_foreach (bin->binxtrs, it, ld) {
-			pj_o(pj);
-			pj_ks(pj, "name", ld->name);
-			pj_ks(pj, "description", ld->desc);
-			pj_ks(pj, "license", ld->license ? ld->license : "???");
-			pj_end(pj);
-		}
-		pj_end(pj);
-		pj_end(pj);
-	} else {
-		rz_list_foreach (bin->plugins, it, bp) {
-			bin->cb_printf("bin  %-11s %s (%s) %s %s\n",
-				bp->name, bp->desc, bp->license ? bp->license : "???",
-				bp->version ? bp->version : "",
-				bp->author ? bp->author : "");
-		}
-		rz_list_foreach (bin->binxtrs, it, bx) {
-			const char *name = strncmp(bx->name, "xtr.", 4) ? bx->name : bx->name + 3;
-			bin->cb_printf("xtr  %-11s %s (%s)\n", name,
-				bx->desc, bx->license ? bx->license : "???");
-		}
-		rz_list_foreach (bin->binldrs, it, ld) {
-			const char *name = strncmp(ld->name, "ldr.", 4) ? ld->name : ld->name + 3;
-			bin->cb_printf("ldr  %-11s %s (%s)\n", name,
-				ld->desc, ld->license ? ld->license : "???");
-		}
-	}
 }
 
 /* returns the base address of bin or UT64_MAX in case of errors */

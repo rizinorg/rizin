@@ -13,7 +13,10 @@ rz_core_sources = [
   'cconfig.c',
   'cdebug.c',
   'cdwarf.c',
+  'chash.c',
   'cio.c',
+  'clang.c',
+  'cparser.c',
   'cmd.c',
   cmd_descs_c,
   #'cmd_analysis.c',
@@ -30,6 +33,7 @@ rz_core_sources = [
   #'cmd_magic.c',
   #'cmd_meta.c',
   #'cmd_open.c',
+  #'cmd_plugins.c',
   #'cmd_print.c',
   #'cmd_project.c',
   #'cmd_quit.c',
@@ -81,6 +85,7 @@ rz_core_inc = [platform_inc, include_directories(rz_core_inc)]
 
 rz_core_deps = [
   rz_util_dep,
+  rz_diff_dep,
   rz_magic_dep,
   rz_socket_dep,
   rz_flag_dep,
@@ -134,6 +139,7 @@ pkgconfig_mod.generate(
   libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'rz_util',
+    'rz_diff',
     'rz_reg',
     'rz_syscall',
     'rz_search',

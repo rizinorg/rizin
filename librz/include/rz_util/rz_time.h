@@ -21,7 +21,7 @@ RZ_API ut64 rz_time_now_mono(void);
 RZ_API char *rz_time_stamp_to_str(ut32 timeStamp);
 RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timeStamp);
 RZ_API bool rz_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp);
-RZ_API const char *rz_time_to_string(ut64 ts);
+RZ_API char *rz_time_to_string(ut64 ts);
 
 // Thread-safe cross platform wrappers
 RZ_API char *rz_asctime_r(const struct tm *tm, char *buf);

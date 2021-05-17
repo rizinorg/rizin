@@ -1,9 +1,14 @@
+// SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_DIFF_H
 #define RZ_DIFF_H
 
 #include <rz_types.h>
-#include <rz_util.h>
-#include <rz_cons.h>
+#include <rz_list.h>
+#include <rz_util/pj.h>
+#include <rz_util/rz_strbuf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,76 +16,89 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_diff);
 
-#define Color_INSERT   Color_BGREEN
-#define Color_DELETE   Color_BRED
-#define Color_BGINSERT "\x1b[48;5;22m"
-#define Color_BGDELETE "\x1b[48;5;52m"
-#define Color_HLINSERT Color_BGINSERT Color_INSERT
-#define Color_HLDELETE Color_BGDELETE Color_DELETE
+typedef enum rz_diff_op_type_t {
+	RZ_DIFF_OP_INVALID = 0,
+	RZ_DIFF_OP_DELETE,
+	RZ_DIFF_OP_EQUAL,
+	RZ_DIFF_OP_INSERT,
+	RZ_DIFF_OP_REPLACE,
+} RzDiffOpType;
+
+/**
+ * This interface allows to analyze any data using the same algorithm
+ * elem_at(array, index)   [required] must return the an element of the array at position 'index'
+ * elem_hash(elem)         [required] must return the hash value of the element (use rz_diff_hash_data)
+ * compare(a_elem, b_elem) [required] must return true if the two elements are the same
+ * stringify(elem, sb)     [required] appends into sb the stringified element of the array
+ * ignore(elem)            [optional] must return true if the element matches the user define 
+ *                                     rule (if set to NULL, it will be considered as always false)
+ */
+typedef const void *(*RzDiffMethodElemAt)(RZ_BORROW const void *array, ut32 index);
+typedef ut32 (*RzDiffMethodElemHash)(RZ_BORROW const void *elem);
+typedef int (*RzDiffMethodCompare)(RZ_BORROW const void *a_elem, RZ_BORROW const void *b_elem);
+typedef bool (*RzDiffMethodIgnore)(RZ_BORROW const void *elem);
+typedef void (*RzDiffMethodStringify)(RZ_BORROW const void *elem, RZ_BORROW RzStrBuf *sb);
+typedef struct rz_diff_methods_t {
+	RzDiffMethodElemAt elem_at; ///< can be either be an element of A or B
+	RzDiffMethodElemHash elem_hash; ///< can be either be an element of A or B
+	RzDiffMethodCompare compare; ///< elements from A and B
+	RzDiffMethodStringify stringify; ///< elements from A and B
+	RzDiffMethodIgnore ignore; ///< elements from A and B
+} RzDiffMethods;
 
 typedef struct rz_diff_op_t {
-	/* file A */
-	ut64 a_off;
-	const ut8 *a_buf;
-	ut32 a_len;
-
-	/* file B */
-	ut64 b_off;
-	const ut8 *b_buf;
-	ut32 b_len;
+	RzDiffOpType type;
+	st32 a_beg;
+	st32 a_end;
+	st32 b_beg;
+	st32 b_end;
 } RzDiffOp;
 
-//typedef struct rz_diff_t RzDiff;
+#define RZ_DIFF_OP_SIZE_A(op)    (((op)->a_end) - ((op)->a_beg))
+#define RZ_DIFF_OP_SIZE_B(op)    (((op)->b_end) - ((op)->b_beg))
+#define RZ_DIFF_DEFAULT_N_GROUPS 3
 
-typedef struct rz_diff_t {
-	ut64 off_a;
-	ut64 off_b;
-	int delta;
-	void *user;
-	bool verbose;
-	int type;
-	const char **diff_cmd; // null-terminated array of cmd+args
-	int (*callback)(struct rz_diff_t *diff, void *user, RzDiffOp *op);
-} RzDiff;
+typedef struct match_p_t {
+	ut32 a;
+	ut32 b;
+	ut32 size;
+} RzDiffMatch;
 
-typedef int (*RzDiffCallback)(RzDiff *diff, void *user, RzDiffOp *op);
+typedef bool (*RzDiffIgnoreByte)(const ut64 byte);
+typedef bool (*RzDiffIgnoreLine)(RZ_BORROW const char *line);
 
-typedef struct rz_diffchar_t {
-	const ut8 *align_a;
-	const ut8 *align_b;
-	size_t len_buf;
-	size_t start_align;
-} RzDiffChar;
+typedef struct rz_diff_t RzDiff;
 
-/* XXX: this api needs to be reviewed , constructor with offa+offb?? */
 #ifdef RZ_API
-RZ_API RzDiff *rz_diff_new(void);
-RZ_API RzDiff *rz_diff_new_from(ut64 off_a, ut64 off_b);
-RZ_API RzDiff *rz_diff_free(RzDiff *d);
 
-RZ_API int rz_diff_buffers(RzDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb);
-RZ_API int rz_diff_buffers_static(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
-RZ_API int rz_diff_buffers_radiff(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
-RZ_API int rz_diff_buffers_delta(RzDiff *diff, const ut8 *sa, int la, const ut8 *sb, int lb);
-RZ_API int rz_diff_buffers(RzDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb);
-RZ_API char *rz_diff_buffers_to_string(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
-RZ_API int rz_diff_set_callback(RzDiff *d, RzDiffCallback callback, void *user);
-RZ_API bool rz_diff_buffers_distance(RzDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
-RZ_API bool rz_diff_buffers_distance_myers(RzDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
-RZ_API bool rz_diff_buffers_distance_levenshtein(RzDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
-RZ_API char *rz_diff_buffers_unified(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
-/* static method !??! */
-RZ_API int rz_diff_lines(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb);
-RZ_API int rz_diff_set_delta(RzDiff *d, int delta);
-RZ_API int rz_diff_gdiff(const char *file1, const char *file2, int rad, int va);
+/* To calculate the hash of a complex structure made of
+ * various values, xor the results before returning the final value. */
+RZ_API ut32 rz_diff_hash_data(RZ_NULLABLE const ut8 *buffer, ut32 size);
 
-RZ_API RzDiffChar *rz_diffchar_new(const ut8 *a, const ut8 *b);
-RZ_API void rz_diffchar_print(RzDiffChar *diffchar);
-RZ_API void rz_diffchar_free(RzDiffChar *diffchar);
+RZ_API RZ_OWN RzDiff *rz_diff_bytes_new(RZ_BORROW const ut8 *a, ut32 a_size, RZ_BORROW const ut8 *b, ut32 b_size, RZ_NULLABLE RzDiffIgnoreByte ignore);
+RZ_API RZ_OWN RzDiff *rz_diff_lines_new(RZ_BORROW const char *a, RZ_BORROW const char *b, RZ_NULLABLE RzDiffIgnoreLine ignore);
+RZ_API RZ_OWN RzDiff *rz_diff_generic_new(RZ_BORROW const void *a, ut32 a_size, RZ_BORROW const void *b, ut32 b_size, RZ_NONNULL RzDiffMethods *methods);
+RZ_API void rz_diff_free(RZ_NULLABLE RzDiff *diff);
+RZ_API RZ_BORROW const void *rz_diff_get_a(RZ_NONNULL RzDiff *diff);
+RZ_API RZ_BORROW const void *rz_diff_get_b(RZ_NONNULL RzDiff *diff);
+
+RZ_API RZ_OWN RzList /*<RzDiffMatch>*/ *rz_diff_matches_new(RZ_NONNULL RzDiff *diff);
+RZ_API RZ_OWN RzList /*<RzDiffOp>*/ *rz_diff_opcodes_new(RZ_NONNULL RzDiff *diff);
+RZ_API RZ_OWN RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RZ_NONNULL RzDiff *diff, ut32 n_groups);
+RZ_API bool rz_diff_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result);
+RZ_API bool rz_diff_sizes_ratio(RZ_NONNULL RzDiff *diff, RZ_NONNULL double *result);
+
+RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE const char *from, RZ_NULLABLE const char *to, bool show_time, bool color);
+RZ_API RZ_OWN PJ *rz_diff_unified_json(RZ_NONNULL RzDiff *diff, RZ_NULLABLE const char *from, RZ_NULLABLE const char *to, bool show_time);
+
+/* Distances algorithms */
+RZ_API bool rz_diff_myers_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
+RZ_API bool rz_diff_levenstein_distance(RZ_NONNULL const ut8 *a, ut32 size_a, RZ_NONNULL const ut8 *b, ut32 size_b, RZ_NULLABLE ut32 *distance, RZ_NULLABLE double *similarity);
+
 #endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* RZ_DIFF_H */

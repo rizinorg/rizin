@@ -7,7 +7,7 @@ iI~machine
 EOF
 EXPECT=<<EOF
 arch     sh
-endian   big
+endian   BE
 machine  Hitachi SH
 EOF
 RUN

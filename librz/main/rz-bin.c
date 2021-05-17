@@ -521,13 +521,35 @@ static char *__demangleAs(RzBin *bin, int type, const char *file) {
 }
 
 static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, int rad) {
-	int format = (rad == RZ_MODE_JSON) ? 'j' : rad ? 'q'
-						       : 0;
+	int format = 0;
+	RzCmdStateOutput state = { 0 };
+	if (rad == RZ_MODE_JSON) {
+		format = 'j';
+		state.mode = RZ_OUTPUT_MODE_JSON;
+		state.d.pj = pj_new();
+	} else if (rad) {
+		format = 'q';
+		state.mode = RZ_OUTPUT_MODE_QUIET;
+	} else {
+		state.mode = RZ_OUTPUT_MODE_STANDARD;
+	}
 	bin->cb_printf = (PrintfCallback)printf;
 	if (plugin_name) {
 		rz_bin_list_plugin(bin, plugin_name, pj, format);
 	} else {
-		rz_bin_list(bin, pj, format);
+		rz_core_bin_plugins_print(bin, &state);
+		switch (state.mode) {
+		case RZ_OUTPUT_MODE_JSON: {
+			rz_cons_print(pj_string(state.d.pj));
+			rz_cons_flush();
+			pj_free(state.d.pj);
+			break;
+		}
+		default: {
+			rz_cons_flush();
+			break;
+		}
+		}
 	}
 }
 
