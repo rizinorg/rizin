@@ -84,7 +84,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
-#include <strings.h>
+#include "../../../../librz/include/rz_util.h"
 
 #define	JEMALLOC_VERSION "4.5.0-0-g04380e79f1e2428bd0ad000bbc6e3d2dfc6b66a5"
 #define	JEMALLOC_VERSION_MAJOR 4
@@ -95,11 +95,11 @@ extern "C" {
 
 #  define MALLOCX_LG_ALIGN(la)	((int)(la))
 #  if LG_SIZEOF_PTR == 2
-#    define MALLOCX_ALIGN(a)	((int)(ffs((int)(a))-1))
+#    define MALLOCX_ALIGN(a)	((int)(rz_num_ffs((int)(a))-1))
 #  else
 #    define MALLOCX_ALIGN(a)						\
-       ((int)(((size_t)(a) < (size_t)INT_MAX) ? ffs((int)(a))-1 :	\
-       ffs((int)(((size_t)(a))>>32))+31))
+       ((int)(((size_t)(a) < (size_t)INT_MAX) ? rz_num_ffs((int)(a))-1 :	\
+       rz_num_ffs((int)(((size_t)(a))>>32))+31))
 #  endif
 #  define MALLOCX_ZERO	((int)0x40)
 /*
