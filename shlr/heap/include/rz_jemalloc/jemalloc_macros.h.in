@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
-#include "../../../../librz/include/rz_util.h"
+#include "../../../../librz/include/rz_util/rz_num.h"
 
 #define	JEMALLOC_VERSION "@jemalloc_version@"
 #define	JEMALLOC_VERSION_MAJOR @jemalloc_version_major@
