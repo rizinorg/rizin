@@ -914,6 +914,10 @@ RZ_API double rz_num_sin(double a) {
 	return sin(a);
 }
 
+/**
+ * \brief Finds first set bit in the integer a
+ * \param a the input integer
+ */
 RZ_API int rz_num_ffs(int a) {
 	if (a == 0)
 		return 0;
