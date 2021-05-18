@@ -98,6 +98,7 @@ RZ_API void *rz_num_dup(ut64 n);
 RZ_API double rz_num_cos(double a);
 RZ_API double rz_num_sin(double a);
 RZ_API double rz_num_get_float(RNum *num, const char *str);
+RZ_API int rz_num_ffs(int a);
 
 static inline st64 rz_num_abs(st64 num) {
 	return num < 0 ? -num : num;
