@@ -301,7 +301,7 @@ userconf.set('LIBDIR', rizin_libdir)
 userconf.set('INCLUDEDIR', rizin_incdir)
 userconf.set('DATADIR_RZ', rizin_datdir_rz)
 is_ppc = host_machine.cpu_family() == 'ppc' or host_machine.cpu_family() == 'ppc64'
-userconf.set10('HAVE_JEMALLOC', host_machine.system() != 'windows' and (host_machine.system() != 'darwin' or not is_ppc))
+userconf.set10('HAVE_JEMALLOC', (host_machine.system() != 'darwin' or not is_ppc))
 userconf.set('DATADIR', rizin_datdir)
 userconf.set('WWWROOT', rizin_wwwroot)
 userconf.set('SDB', rizin_sdb)
