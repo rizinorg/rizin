@@ -62,7 +62,7 @@ static inline void diff_unified_append_data(RzDiff *diff, const void *array, st3
 	rz_strbuf_appendf(sb, "%s%c", bcol, prefix);
 	for (st32 i = beg; i < end; ++i) {
 		if (newline || (is_bytes && count > 0 && !FAST_MOD64(count))) {
-			rz_strbuf_appendf(sb, "%s\n%s%c", bcol, ecol, prefix);
+			rz_strbuf_appendf(sb, "%s\n%s%c", ecol, bcol, prefix);
 			newline = false;
 		}
 		rz_strbuf_init(&tmp);

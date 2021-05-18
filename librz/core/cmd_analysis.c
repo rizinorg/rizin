@@ -7510,19 +7510,19 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		switch (input[1]) {
 		case 'j': { // "agdj"
 			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_gdiff_fcn(core, addr, core->offset);
+			rz_core_gdiff_function_1_file(core, addr, core->offset);
 			rz_core_analysis_graph(core, addr, diff_opt | RZ_CORE_ANALYSIS_JSON);
 			break;
 		}
 		case 'J': { // "agdJ"
 			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_gdiff_fcn(core, addr, core->offset);
+			rz_core_gdiff_function_1_file(core, addr, core->offset);
 			rz_core_analysis_graph(core, addr, diff_opt | RZ_CORE_ANALYSIS_JSON | RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM);
 			break;
 		}
 		case '*': { // "agd*"
 			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_gdiff_fcn(core, addr, core->offset);
+			rz_core_gdiff_function_1_file(core, addr, core->offset);
 			rz_core_analysis_graph(core, addr, diff_opt | RZ_CORE_ANALYSIS_STAR);
 			break;
 		}
@@ -7539,7 +7539,7 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		}
 		case 'd': { // "agdd"
 			ut64 addr = input[2] ? rz_num_math(core->num, input + 2) : core->offset;
-			rz_core_gdiff_fcn(core, addr, core->offset);
+			rz_core_gdiff_function_1_file(core, addr, core->offset);
 			rz_core_analysis_graph(core, addr, diff_opt);
 			break;
 		}

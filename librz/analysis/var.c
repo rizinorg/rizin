@@ -47,10 +47,17 @@ RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *
 // remove all other vars that are overlapped by var and are at the offset of one of its struct members
 static void shadow_var_struct_members(RzAnalysisVar *var) {
 	RzBaseType *btype = rz_type_db_get_base_type(var->fcn->analysis->typedb, var->type);
-	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+	if (!btype) {
 		return;
 	}
+
+	if (btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
+		rz_type_base_type_free(btype);
+		return;
+	}
+
 	if (rz_vector_empty(&btype->struct_data.members)) {
+		rz_type_base_type_free(btype);
 		return;
 	}
 	RzTypeStructMember *member;
@@ -62,6 +69,7 @@ static void shadow_var_struct_members(RzAnalysisVar *var) {
 			}
 		}
 	}
+	rz_type_base_type_free(btype);
 }
 
 RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_NULLABLE const char *type, int size, bool isarg, RZ_NONNULL const char *name) {

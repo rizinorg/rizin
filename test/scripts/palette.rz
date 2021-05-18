@@ -53,7 +53,7 @@ ec graph.box3 rgb:881798
 ec graph.box4 rgb:767676
 ec graph.true rgb:13a10e
 ec graph.false rgb:c50f1f
-ec graph.trufae rgb:0037da
+ec graph.ujump rgb:0037da
 ec graph.current rgb:0037da
 ec graph.traced rgb:c19c00
 ec gui.cflow rgb:c19c00

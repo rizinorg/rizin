@@ -277,6 +277,7 @@ RZ_API RzBaseType *rz_type_db_get_base_type(RzTypeDB *typedb, const char *name) 
 	}
 
 	if (base_type) {
+		free(base_type->name);
 		base_type->name = sname;
 	} else {
 		free(sname);

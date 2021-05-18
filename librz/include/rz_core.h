@@ -669,7 +669,7 @@ RZ_API ut64 rz_core_analysis_fcn_list_size(RzCore *core);
 RZ_API int rz_core_analysis_fcn_clean(RzCore *core, ut64 addr);
 RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API int rz_core_print_bb_gml(RzCore *core, RzAnalysisFunction *fcn);
-RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
+RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts);
 RZ_API RzList *rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n);
 RZ_API int rz_core_analysis_all(RzCore *core);
 RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *dh_orig);
@@ -763,8 +763,9 @@ RZ_API int rz_core_pseudo_code(RzCore *core, const char *input);
 
 /* gdiff.c */
 RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2);
-RZ_API int rz_core_gdiff(RzCore *core1, RzCore *core2);
-RZ_API int rz_core_gdiff_fcn(RzCore *c, ut64 addr, ut64 addr2);
+RZ_API bool rz_core_gdiff_2_files(RzCore *core1, RzCore *core2);
+RZ_API bool rz_core_gdiff_function_1_file(RzCore *c, ut64 addr, ut64 addr2);
+RZ_API bool rz_core_gdiff_function_2_files(RzCore *core1, RzCore *core2, ut64 addr, ut64 addr2);
 
 RZ_API char *rz_core_sysenv_begin(RzCore *core, const char *cmd);
 RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd);
@@ -899,7 +900,8 @@ RZ_API RzList * /*<RzIOMap*>*/ rz_core_get_boundaries_prot(RzCore *core, int pro
 RZ_API void rz_core_hack_help(const RzCore *core);
 RZ_API int rz_core_hack(RzCore *core, const char *op);
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append);
-RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2);
+RZ_API void rz_core_diff_show(RzCore *core, RzCore *core2, bool json);
+RZ_API bool rz_core_diff_show_function(RzCore *core, RzCore *core2, ut64 addr, bool json);
 RZ_API void rz_core_clippy(RzCore *core, const char *msg);
 
 /* watchers */
