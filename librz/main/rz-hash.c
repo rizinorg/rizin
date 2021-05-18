@@ -367,6 +367,11 @@ static void rz_hash_parse_cmdline(int argc, const char **argv, RzHashContext *ct
 		return;
 	}
 
+	if (!ctx->algorithm) {
+		rz_hash_ctx_set_str(ctx, algorithm, "sha256");
+		rz_hash_ctx_set_op(ctx, RZ_HASH_OP_HASH);
+	}
+
 	if (!ctx->input && !strcmp(argv[argc - 1], "-")) {
 		ctx->use_stdin = true;
 	} else {
