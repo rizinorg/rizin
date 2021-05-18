@@ -46,7 +46,6 @@
 #  define offsetof(type, member)	((size_t)&(((type *)NULL)->member))
 #endif
 #include <string.h>
-#include <strings.h>
 #include <ctype.h>
 #ifdef _MSC_VER
 #  include <io.h>
