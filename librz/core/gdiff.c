@@ -189,8 +189,8 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 		if (f->name && (len = strlen(f->name)) > maxnamelen) {
 			maxnamelen = len;
 		}
-		if (rz_analysis_function_linear_size(f) > maxsize) {
-			maxsize = rz_analysis_function_linear_size(f);
+		if (rz_analysis_function_realsize(f) > maxsize) {
+			maxsize = rz_analysis_function_realsize(f);
 		}
 	}
 	fcns = rz_analysis_get_fcns(c2->analysis);
@@ -198,8 +198,8 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 		if (f->name && (len = strlen(f->name)) > maxnamelen) {
 			maxnamelen = len;
 		}
-		if (rz_analysis_function_linear_size(f) > maxsize) {
-			maxsize = rz_analysis_function_linear_size(f);
+		if (rz_analysis_function_realsize(f) > maxsize) {
+			maxsize = rz_analysis_function_realsize(f);
 		}
 	}
 	while (maxsize > 9) {
@@ -235,7 +235,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 					pj_ko(pj, "original");
 					pj_ks(pj, "name", f->name);
 					pj_kn(pj, "addr", f->addr);
-					pj_kn(pj, "size", rz_analysis_function_linear_size(f));
+					pj_kn(pj, "size", rz_analysis_function_realsize(f));
 					pj_end(pj);
 				}
 				if (f->diff->name) {
@@ -247,7 +247,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 				}
 				pj_end(pj);
 			} else {
-				diffrow(f->addr, f->name, rz_analysis_function_linear_size(f), maxnamelen, digits,
+				diffrow(f->addr, f->name, rz_analysis_function_realsize(f), maxnamelen, digits,
 					f->diff->addr, f->diff->name, f->diff->size,
 					f->diff->dist, is_new, bare, color);
 			}
@@ -269,7 +269,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 						pj_ko(pj, "original");
 						pj_ks(pj, "name", f->name);
 						pj_kn(pj, "addr", f->addr);
-						pj_kn(pj, "size", rz_analysis_function_linear_size(f));
+						pj_kn(pj, "size", rz_analysis_function_realsize(f));
 						pj_end(pj);
 					}
 					if (f->diff->name) {
@@ -281,7 +281,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 					}
 					pj_end(pj);
 				} else {
-					diffrow(f->addr, f->name, rz_analysis_function_linear_size(f), maxnamelen,
+					diffrow(f->addr, f->name, rz_analysis_function_realsize(f), maxnamelen,
 						digits, f->diff->addr, f->diff->name, f->diff->size,
 						0.0, true, bare, color);
 				}

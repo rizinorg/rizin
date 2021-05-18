@@ -202,8 +202,8 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 				RZ_FREE(fcn2->fingerprint);
 				fcn->diff->addr = fcn2->addr;
 				fcn2->diff->addr = fcn->addr;
-				fcn->diff->size = rz_analysis_function_linear_size(fcn2);
-				fcn2->diff->size = rz_analysis_function_linear_size(fcn);
+				fcn->diff->size = rz_analysis_function_realsize(fcn2);
+				fcn2->diff->size = rz_analysis_function_realsize(fcn);
 				RZ_FREE(fcn->diff->name);
 				if (fcn2->name) {
 					fcn->diff->name = strdup(fcn2->name);
@@ -225,8 +225,8 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 		ot = 0;
 		mfcn = mfcn2 = NULL;
 		rz_list_foreach (fcns2, iter2, fcn2) {
-			ut64 fcn_size = rz_analysis_function_linear_size(fcn);
-			ut64 fcn2_size = rz_analysis_function_linear_size(fcn2);
+			ut64 fcn_size = rz_analysis_function_realsize(fcn);
+			ut64 fcn2_size = rz_analysis_function_realsize(fcn2);
 			if (fcn_size > fcn2_size) {
 				maxsize = fcn_size;
 				minsize = fcn2_size;
@@ -264,8 +264,8 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 			RZ_FREE(mfcn2->fingerprint);
 			mfcn->diff->addr = mfcn2->addr;
 			mfcn2->diff->addr = mfcn->addr;
-			mfcn->diff->size = rz_analysis_function_linear_size(mfcn2);
-			mfcn2->diff->size = rz_analysis_function_linear_size(mfcn);
+			mfcn->diff->size = rz_analysis_function_realsize(mfcn2);
+			mfcn2->diff->size = rz_analysis_function_realsize(mfcn);
 			RZ_FREE(mfcn->diff->name);
 			if (mfcn2->name) {
 				mfcn->diff->name = strdup(mfcn2->name);
