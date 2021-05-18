@@ -914,12 +914,12 @@ RZ_API double rz_num_sin(double a) {
 	return sin(a);
 }
 
-RZ_API int rz_num_ffs(int a){
-        if (a == 0)
-                return 0;
+RZ_API int rz_num_ffs(int a) {
+	if (a == 0)
+		return 0;
 	int bit;
 
-        for (bit = 1; !(a & 1); bit++)
-                a >>= 1;
-        return bit;
+	for (bit = 1; !(a & 1); bit++)
+		a >>= 1;
+	return bit;
 }
