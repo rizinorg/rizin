@@ -759,6 +759,9 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 			}
 			if (grep->begin) {
 				hit = (p == in);
+				if (grep->neg) {
+					hit = !hit;
+				}
 			} else {
 				hit = !grep->neg;
 			}
