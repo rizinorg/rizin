@@ -59,7 +59,6 @@ RUN
 
 NAME=ELF: RZ_X86_64_PLT32 patch reloc
 FILE=bins/elf/radare2.c.obj
-ARGS=-e io.cache=true
 CMDS=<<EOF
 e asm.bytes=true
 e asm.comments=false
@@ -67,13 +66,12 @@ e asm.lines=false
 pd 1 @ 0x0800005e
 EOF
 EXPECT=<<EOF
-0x0800005e      e878840300     call  reloc.target.r_spaces_set
+0x0800005e      e8a55e0600     call  reloc.target.r_spaces_set
 EOF
 RUN
 
 NAME=ELF: RZ_X86_64_PLT32 patch reloc 2
 FILE=bins/elf/test.ko
-ARGS=-e io.cache=true
 CMDS=<<EOF
 e asm.bytes=true
 e asm.comments=false
@@ -90,38 +88,50 @@ pd 1 @ 0x0800008c
 pd 1 @ 0x0800009f
 EOF
 EXPECT=<<EOF
-0x0800007c      e88e0a0000     call  reloc.target.__fentry
-0x0800008c      e8860a0000     call  reloc.target.printk
-0x0800009f      e8730a0000     call  reloc.target.printk
+0x0800007c      e8970a0000     call  reloc.target.__fentry
+0x0800008c      e88f0a0000     call  reloc.target.printk
+0x0800009f      e87c0a0000     call  reloc.target.printk
 --
-0x0800007c      e88e0a0000     call  __fentry__
-0x0800008c      e8860a0000     call  printk
-0x0800009f      e8730a0000     call  printk
+0x0800007c      e8970a0000     call  __fentry__
+0x0800008c      e88f0a0000     call  printk
+0x0800009f      e87c0a0000     call  printk
 EOF
 RUN
 
-NAME=ELF: RZ_X86_64_PLT32 patch reloc 2 (no io.cache)
-FILE=bins/elf/test.ko
+NAME=ELF: no patching when bin.relocs=0
+FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
+ARGS=-e bin.relocs=false
 CMDS=<<EOF
+om
+?e --
+e asm.flags.real=false
 e asm.bytes=true
-e asm.comments=false
-e asm.lines=false
-e asm.flags=false
-pd 1 @ 0x0800007c
-pd 1 @ 0x0800008c
-pd 1 @ 0x0800009f
+f@F:relocs
+pd 1 @ 0x08000079
+pd 1 @ 0x080000a2
+pd 1 @ reloc.target.strcmp
 EOF
 EXPECT=<<EOF
-0x0800007c      e800000000     call  __fentry__
-0x0800008c      e800000000     call  printk
-0x0800009f      e800000000     call  printk
+ 9 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
+ 8 fd: 3 +0x00000040 0x08000040 - 0x08000635 r-x fmap..text
+ 7 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
+ 6 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
+ 5 fd: 3 +0x00000825 0x08000825 - 0x0800085b --- fmap..comment
+ 4 fd: 3 +0x00000860 0x08000860 - 0x0800091f r-- fmap..eh_frame
+ 3 fd: 3 +0x00000d70 0x08000d70 - 0x08000dff --- fmap..rela.eh_frame
+ 2 fd: 3 +0x00000920 0x08000920 - 0x08000aff --- fmap..symtab
+ 1 fd: 3 +0x00000000 0x08000000 - 0x0800003f r-- fmap.ehdr
+--
+            0x08000079      e800000000     call  strcmp
+            0x080000a2      e800000000     call  strcmp
 EOF
 RUN
 
 NAME=ELF: reloc flags
 FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
-ARGS=-e io.cache=true
 CMDS=<<EOF
+om
+?e --
 e asm.flags.real=false
 f@F:relocs
 pd 1 @ 0x08000079
@@ -135,6 +145,17 @@ pd 1 @ 0x080000a2
 pd 1 @ reloc.target.strcmp
 EOF
 EXPECT=<<EOF
+10 fd: 5 +0x00000000 0x08000f00 - 0x08000fff r-- vmap.reloc-targets
+ 9 fd: 3 +0x00000e00 0x08000e00 - 0x08000ef2 --- fmap..strtab
+ 8 fd: 4 +0x00000040 0x08000040 - 0x08000635 r-x vmap..text
+ 7 fd: 3 +0x00000b00 0x08000b00 - 0x08000d6f --x fmap..rela.text
+ 6 fd: 3 +0x00000636 0x08000636 - 0x08000824 r-- fmap..rodata.str1.1
+ 5 fd: 3 +0x00000825 0x08000825 - 0x0800085b --- fmap..comment
+ 4 fd: 4 +0x00000860 0x08000860 - 0x0800091f r-- vmap..eh_frame
+ 3 fd: 3 +0x00000d70 0x08000d70 - 0x08000dff --- fmap..rela.eh_frame
+ 2 fd: 3 +0x00000920 0x08000920 - 0x08000aff --- fmap..symtab
+ 1 fd: 3 +0x00000000 0x08000000 - 0x0800003f r-- fmap.ehdr
+--
 0x08000040 4 reloc.target..text
 0x08000073 4 reloc..rodata.str1.1
 0x0800007a 4 reloc.strcmp
@@ -170,19 +191,19 @@ EXPECT=<<EOF
 0x080008d4 4 reloc..text.2
 0x080008f0 4 reloc..text.3
 0x0800090c 4 reloc..text.4
-0x08000ef3 4 reloc.target.strcmp
-0x08000efb 4 reloc.target.stat
-0x08000f03 4 reloc.target.strlen
-0x08000f0b 4 reloc.target.memcpy
-0x08000f13 4 reloc.target.perror
-0x08000f1b 4 reloc.target.time
-0x08000f23 4 reloc.target.exit
-0x08000f2b 4 reloc.target.write
-0x08000f33 4 reloc.target.utilvserver_fmt_ulong_base
+0x08000f00 4 reloc.target.strcmp
+0x08000f08 4 reloc.target.stat
+0x08000f10 4 reloc.target.strlen
+0x08000f18 4 reloc.target.memcpy
+0x08000f20 4 reloc.target.perror
+0x08000f28 4 reloc.target.time
+0x08000f30 4 reloc.target.exit
+0x08000f38 4 reloc.target.write
+0x08000f40 4 reloc.target.utilvserver_fmt_ulong_base
             0x08000079      call  reloc.target.strcmp                  ; RELOC 32 strcmp
             0x080000a2      call  reloc.target.strcmp                  ; RELOC 32 strcmp
             ;-- strcmp:
-            0x08000ef3      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
+            0x08000f00      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
 --
 0x08000040 4 .text
 0x08000073 4 .rodata.str1.1
@@ -219,18 +240,150 @@ EXPECT=<<EOF
 0x080008d4 4 .text
 0x080008f0 4 .text
 0x0800090c 4 .text
-0x08000ef3 4 strcmp
-0x08000efb 4 stat
-0x08000f03 4 strlen
-0x08000f0b 4 memcpy
-0x08000f13 4 perror
-0x08000f1b 4 time
-0x08000f23 4 exit
-0x08000f2b 4 write
-0x08000f33 4 utilvserver_fmt_ulong_base
+0x08000f00 4 strcmp
+0x08000f08 4 stat
+0x08000f10 4 strlen
+0x08000f18 4 memcpy
+0x08000f20 4 perror
+0x08000f28 4 time
+0x08000f30 4 exit
+0x08000f38 4 write
+0x08000f40 4 utilvserver_fmt_ulong_base
             0x08000079      call  strcmp                               ; RELOC 32 strcmp
             0x080000a2      call  strcmp                               ; RELOC 32 strcmp
             ;-- strcmp:
-            0x08000ef3      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
+            0x08000f00      .qword 0x0000000000000000                  ; RELOC TARGET 32 strcmp
+EOF
+RUN
+
+NAME=ELF: write with relocs patched
+FILE=--
+CMDS=<<EOF
+mkdir .tmp
+cp bins/elf/analysis/filetime.c-clang-x64-O0.o .tmp/elf-reloc-patchee
+o+ .tmp/elf-reloc-patchee
+om~vmap
+?e -- original
+px 0x10 @ 0x0800006a
+px 0x10 @ 0x0800064d
+?e -- overwritten
+wx 424242424242424242424242424242 @ 0x0800006a
+w ulu-mulu @ 0x0800064d
+px 0x10 @ 0x0800006a
+px 0x10 @ 0x0800064a
+?e -- unloaded
+o--
+px 0x10 @ 0x0800006a
+px 0x10 @ 0x0800064a
+?e -- reloaded
+o+ .tmp/elf-reloc-patchee
+px 0x10 @ 0x0800006a
+px 0x10 @ 0x0800064a
+rm .tmp/elf-reloc-patchee
+EOF
+EXPECT=<<EOF
+10 fd: 5 +0x00000000 0x08000f00 - 0x08000fff rwx vmap.reloc-targets
+ 8 fd: 4 +0x00000040 0x08000040 - 0x08000635 rwx vmap..text
+ 4 fd: 4 +0x00000860 0x08000860 - 0x0800091f rwx vmap..eh_frame
+-- original
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800006a  488b 45f0 488b 7808 b936 0600 0889 cee8  H.E.H.x..6......
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800064d  6669 6c65 6e61 6d65 2073 7065 6369 6669  filename specifi
+-- overwritten
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800006a  4242 4242 4242 4242 4236 0600 0842 42e8  BBBBBBBBB6...BB.
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800064a  4e6f 2075 6c75 2d6d 756c 7520 7370 6563  No ulu-mulu spec
+-- unloaded
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800006a  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800064a  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+-- reloaded
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800006a  4242 4242 4242 4242 4236 0600 0842 42e8  BBBBBBBBB6...BB.
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800064a  4e6f 2075 6c75 2d6d 756c 7520 7370 6563  No ulu-mulu spec
+EOF
+RUN
+
+NAME=ELF: jumptable from relocs
+FILE=bins/elf/analysis/rawmem.c-gcc-x64-O3.o
+CMDS=<<EOF
+s 0x08000040
+af
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+/ sym.owGetPageLength.constprop.0 (int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x08000040      movzx eax, byte [rdi]                      ; RELOC TARGET 32 .text @ 0x08000040 - 0x8004d08 ; arg1 [0m; [01] -r-x section size 6641 named .text
+|           0x08000043      and   eax, 0x7f                            ; 127
+|           0x08000046      sub   eax, 4
+|           0x08000049      cmp   al, 0x73                             ; 115
+|       ,=< 0x0800004b      ja    case.0x800005e.5
+|       |   0x0800004d      lea   rdx, reloc.target..rodata            ; 0x8001a34 ; "4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xffD\xe6\xff\xff4\xe6\xff\xffD\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xffD\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xffD\xe6\xff\xffD\xe6\xff\xfft\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff4\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xffT\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xffd\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff,\xe6\xff\xff"; RELOC 32 .rodata @ 0x08001a34 - 0x8000054
+|       |   0x08000054      movzx eax, al
+|       |   0x08000057      movsxd rax, dword [rdx + rax*4]
+|       |   0x0800005b      add   rax, rdx
+|       |   ;-- switch
+|       |   0x0800005e      jmp   rax                                  ; switch table (116 cases) at 0x8001a34
+|       |   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|       |   ;-- case 5:                                                ; from 0x800005e
+|       |   ;-- case 13...14:                                          ; from 0x800005e
+|       |   ;-- case 16:                                               ; from 0x800005e
+|       |   ;-- case 17:                                               ; from 0x800005e
+|       |   ;-- case 22...23:                                          ; from 0x800005e
+|       |   ;-- case 25:                                               ; from 0x800005e
+|       |   ;-- case 27...28:                                          ; from 0x800005e
+|       |   ;-- case 30:                                               ; from 0x800005e
+|       |   ;-- case 31...32:                                          ; from 0x800005e
+|       |   ;-- case 34:                                               ; from 0x800005e
+|       |   ;-- case 36...50:                                          ; from 0x800005e
+|       |   ;-- case 52:                                               ; from 0x800005e
+|       |   ;-- case 53...54:                                          ; from 0x800005e
+|       |   ;-- case 56:                                               ; from 0x800005e
+|       |   ;-- default:                                               ; from 0x800005e
+|       `-> 0x08000060      xor   eax, eax
+|           0x08000062      ret
+..
+|           ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|           ;-- case 4:                                                ; from 0x800005e
+|           ;-- case 8:                                                ; from 0x800005e
+|           ;-- case 12:                                               ; from 0x800005e
+|           ;-- case 26:                                               ; from 0x800005e
+|           ;-- case 33:                                               ; from 0x800005e
+|           0x08000068      nop     dword [rax + rax]                  ; arg1
+|           0x0800006b      mov   edi, 1
+|       ,=< 0x08000070      jmp   reloc.target.getPageLengthNV         ; RELOC 32 getPageLengthNV
+..
+|       |   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|       |   ;-- case 9:                                                ; from 0x800005e
+|       |   ;-- case 15:                                               ; from 0x800005e
+|       |   ;-- case 19:                                               ; from 0x800005e
+|       |   0x08000078      nop     dword [rax]                        ; arg1
+|       |   0x0800007b      mov   edi, 1
+|      ,==< 0x08000080      jmp   reloc.target.getPageLengthEPROM      ; RELOC 32 getPageLengthEPROM
+..
+|      ||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|      ||   ;-- case 51:                                               ; from 0x800005e
+|      ||   0x08000088      nop     dword [rax]                        ; arg1
+|      ||   0x0800008b      mov   edi, 1
+|     ,===< 0x08000090      jmp   reloc.target.getPageLengthSHAEE      ; RELOC 32 getPageLengthSHAEE
+..
+|     |||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|     |||   ;-- case 55:                                               ; from 0x800005e
+|     |||   0x08000098      nop     dword [rax]                        ; arg1
+|     |||   0x0800009b      mov   edi, 1
+|    ,====< 0x080000a0      jmp   reloc.target.getPageLengthEE77       ; RELOC 32 getPageLengthEE77
+..
+|    ||||   ; CODE XREF from sym.owGetPageLength.constprop.0 @ 0x800005e
+|    ||||   ;-- case 20:                                               ; from 0x800005e
+|    ||||   0x080000a8      nop     dword [rax]                        ; arg1
+|    ||||   0x080000ab      mov   edi, 1
+\   ,=====< 0x080000b0      jmp   reloc.target.getPageLengthEE         ; RELOC 32 getPageLengthEE
 EOF
 RUN

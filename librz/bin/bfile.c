@@ -495,7 +495,7 @@ static RzBinPlugin *get_plugin_from_buffer(RzBin *bin, const char *pluginname, R
 	return rz_bin_get_binplugin_by_name(bin, "any");
 }
 
-RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, ut64 baseaddr, ut64 loadaddr, RzBinXtrData *data) {
+RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, RzBinObjectLoadOptions *opts, RzBinXtrData *data) {
 	rz_return_val_if_fail(bin && bf && data, false);
 
 	ut64 offset = data->offset;
@@ -504,7 +504,7 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, ut64
 	RzBinPlugin *plugin = get_plugin_from_buffer(bin, NULL, data->buf);
 	bf->buf = rz_buf_ref(data->buf);
 
-	RzBinObject *o = rz_bin_object_new(bf, plugin, baseaddr, loadaddr, offset, sz);
+	RzBinObject *o = rz_bin_object_new(bf, plugin, opts, offset, sz);
 	if (!o) {
 		return false;
 	}
@@ -540,7 +540,7 @@ static bool xtr_metadata_match(RzBinXtrData *xtr_data, const char *arch, int bit
 	return bits == iter_bits && !strcmp(iter_arch, arch) && !xtr_data->loaded;
 }
 
-RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname) {
+RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, int rawstr, RzBinObjectLoadOptions *opts, int fd, const char *pluginname) {
 	rz_return_val_if_fail(bin && file && buf, NULL);
 
 	RzBinFile *bf = rz_bin_file_new(bin, file, rz_buf_size(buf), rawstr, fd, pluginname, NULL, false);
@@ -548,7 +548,7 @@ RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBu
 		RzListIter *item = rz_list_append(bin->binfiles, bf);
 		bf->buf = rz_buf_ref(buf);
 		RzBinPlugin *plugin = get_plugin_from_buffer(bin, pluginname, bf->buf);
-		RzBinObject *o = rz_bin_object_new(bf, plugin, baseaddr, loadaddr, 0, rz_buf_size(bf->buf));
+		RzBinObject *o = rz_bin_object_new(bf, plugin, opts, 0, rz_buf_size(bf->buf));
 		if (!o) {
 			rz_list_delete(bin->binfiles, item);
 			return NULL;
@@ -577,8 +577,7 @@ RZ_API RzBinFile *rz_bin_file_find_by_arch_bits(RzBin *bin, const char *arch, in
 		// look for sub-bins in Xtr Data and Load if we need to
 		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
 			if (xtr_metadata_match(xtr_data, arch, bits)) {
-				if (!rz_bin_file_object_new_from_xtr_data(bin, binfile, xtr_data->baddr,
-					    xtr_data->laddr, xtr_data)) {
+				if (!rz_bin_file_object_new_from_xtr_data(bin, binfile, &xtr_data->obj_opts, xtr_data)) {
 					return NULL;
 				}
 				return binfile;
@@ -700,7 +699,7 @@ RZ_API bool rz_bin_file_set_cur_by_name(RzBin *bin, const char *name) {
 	return rz_bin_file_set_cur_binfile(bin, bf);
 }
 
-RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
+RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, RzBinObjectLoadOptions *obj_opts, int idx, int fd, int rawstr) {
 	rz_return_val_if_fail(bin && xtr && buf, NULL);
 
 	RzBinFile *bf = rz_bin_file_find_by_name(bin, filename);
@@ -730,11 +729,10 @@ RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, c
 		//populate xtr_data with baddr and laddr that will be used later on
 		//rz_bin_file_object_new_from_xtr_data
 		rz_list_foreach (bf->xtr_data, iter, x) {
-			x->baddr = baseaddr ? baseaddr : UT64_MAX;
-			x->laddr = loadaddr ? loadaddr : UT64_MAX;
+			x->obj_opts = *obj_opts;
 		}
 	}
-	bf->loadaddr = loadaddr;
+	bf->loadaddr = obj_opts->loadaddr;
 	return bf;
 }
 
@@ -821,7 +819,7 @@ RZ_IPI RzList *rz_bin_file_get_strings(RzBinFile *bf, int min, int dump, int raw
 
 RZ_API ut64 rz_bin_file_get_baddr(RzBinFile *bf) {
 	if (bf && bf->o) {
-		return bf->o->baddr;
+		return bf->o->opts.baseaddr;
 	}
 	return UT64_MAX;
 }

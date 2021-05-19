@@ -217,6 +217,7 @@ static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 
 RZ_API const RzBufferSparseChunk *rz_buf_sparse_get_chunks(RzBuffer *b, RZ_NONNULL size_t *count);
 RZ_API void rz_buf_sparse_set_write_mode(RzBuffer *b, RzBufferSparseWriteMode mode);
+RZ_API bool rz_buf_sparse_populated_in(RzBuffer *b, ut64 from, ut64 to);
 
 #ifdef __cplusplus
 }

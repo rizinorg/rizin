@@ -1615,7 +1615,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 			ADDARG("graph.box4")
 			ADDARG("graph.true")
 			ADDARG("graph.false")
-			ADDARG("graph.trufae")
+			ADDARG("graph.ujump")
 			ADDARG("graph.current")
 			ADDARG("graph.traced")
 			ADDARG("gui.cflow")
@@ -2333,6 +2333,7 @@ static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 RZ_IPI void rz_core_file_io_desc_closed(RzCore *core, RzIODesc *desc);
 RZ_IPI void rz_core_file_io_map_deleted(RzCore *core, RzIOMap *map);
 RZ_IPI void rz_core_file_bin_file_deleted(RzCore *core, RzBinFile *bf);
+RZ_IPI void rz_core_vfile_bin_file_deleted(RzCore *core, RzBinFile *bf);
 
 static void ev_iodescclose_cb(RzEvent *ev, int type, void *user, void *data) {
 	RzEventIODescClose *ioc = data;
@@ -2347,11 +2348,14 @@ static void ev_iomapdel_cb(RzEvent *ev, int type, void *user, void *data) {
 static void ev_binfiledel_cb(RzEvent *ev, int type, void *user, void *data) {
 	RzEventBinFileDel *bev = data;
 	rz_core_file_bin_file_deleted(user, bev->bf);
+	rz_core_vfile_bin_file_deleted(user, bev->bf);
 }
 
 RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user);
 RZ_IPI void rz_core_task_break_cb(RzCoreTask *task, void *user);
 RZ_IPI void rz_core_file_free(RzCoreFile *cf);
+
+RZ_IPI extern RzIOPlugin rz_core_io_plugin_vfile;
 
 RZ_API bool rz_core_init(RzCore *core) {
 	core->blocksize = RZ_CORE_BLOCKSIZE;
@@ -2475,6 +2479,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->bin->cb_printf = (PrintfCallback)rz_cons_printf;
 	rz_bin_set_user_ptr(core->bin, core);
 	core->io = rz_io_new();
+	rz_io_plugin_add(core->io, &rz_core_io_plugin_vfile);
 	rz_event_hook(core->io->event, RZ_EVENT_IO_WRITE, ev_iowrite_cb, core);
 	rz_event_hook(core->io->event, RZ_EVENT_IO_DESC_CLOSE, ev_iodescclose_cb, core);
 	rz_event_hook(core->io->event, RZ_EVENT_IO_MAP_DEL, ev_iomapdel_cb, core);

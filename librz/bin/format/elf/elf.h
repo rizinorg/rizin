@@ -70,9 +70,11 @@ typedef struct rz_bin_elf_reloc_t {
 	int sym;
 	int type;
 	Elf_(Xword) rel_mode;
-	st64 addend;
-	ut64 offset;
-	ut64 rva;
+	st64 addend; ///< exact addend value taken from the ELF, meaning depends on type
+	ut64 offset; ///< exact offset value taken from the ELF, meaning depends on the binary type
+	ut64 paddr; ///< absolute paddr in the file, calculated from offset, or UT64_MAX if no such addr exists
+	ut64 vaddr; ///< source vaddr of the reloc, calculated from offset
+	ut64 target_vaddr; ///< after patching, the target that this reloc points to
 	ut16 section;
 	int last;
 	ut64 sto;
@@ -206,6 +208,10 @@ struct Elf_(rz_bin_elf_obj_t) {
 	RzBinElfSymbol *phdr_symbols;
 	RzBinElfSymbol *phdr_imports;
 	HtUP *rel_cache;
+	ut64 reloc_targets_map_base;
+	bool reloc_targets_map_base_calculated;
+	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
+	bool relocs_patched;
 };
 
 int Elf_(rz_bin_elf_has_va)(struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -259,7 +265,6 @@ int Elf_(rz_bin_elf_has_relro)(struct Elf_(rz_bin_elf_obj_t) * bin);
 int Elf_(rz_bin_elf_has_nx)(struct Elf_(rz_bin_elf_obj_t) * bin);
 const ut8 *Elf_(rz_bin_elf_grab_regstate)(struct Elf_(rz_bin_elf_obj_t) * bin, size_t *size);
 ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin);
-RzBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(rz_bin_elf_obj_t) * bin,
-	struct rz_bin_elf_symbol_t *symbol,
-	const char *namefmt);
+RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(struct Elf_(rz_bin_elf_obj_t) * bin, struct rz_bin_elf_symbol_t *symbol, const char *namefmt);
+RzBinImport *Elf_(rz_bin_elf_convert_import)(struct Elf_(rz_bin_elf_obj_t) * bin, struct rz_bin_elf_symbol_t *sym);
 #endif

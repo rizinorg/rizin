@@ -257,10 +257,8 @@ RZ_API int rz_io_close_all(RzIO *io) { // what about undo?
 	}
 	rz_io_desc_fini(io);
 	rz_io_map_reset(io);
-	rz_list_free(io->plugins);
 	rz_io_desc_init(io);
 	rz_io_cache_fini(io);
-	rz_io_plugin_init(io);
 	return true;
 }
 

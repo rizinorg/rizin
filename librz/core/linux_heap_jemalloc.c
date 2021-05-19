@@ -40,7 +40,7 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	}
 
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, -1, 0, 0, false);
+	rz_bin_options_init(&opt, -1, 0, 0, false, false);
 	if (rz_bin_open(core->bin, path, &opt)) {
 		RzList *syms = rz_bin_get_symbols(core->bin);
 		if (!syms) {

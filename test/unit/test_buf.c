@@ -894,6 +894,48 @@ bool test_rz_buf_sparse_overlay(void) {
 	mu_end;
 }
 
+bool test_rz_buf_sparse_populated_in(void) {
+	RzBuffer *b = rz_buf_new_sparse(0x42);
+	mu_assert_notnull(b, "rz_buf_new_sparse failed");
+
+	rz_buf_write_at(b, 0x10, (const ut8 *)"Not", 3);
+	rz_buf_write_at(b, 0x14, (const ut8 *)"Naming", 6);
+	rz_buf_write_at(b, 0x1b, (const ut8 *)"Any", 3);
+	rz_buf_write_at(b, 0x1f, (const ut8 *)"Names", 5);
+
+	bool r = rz_buf_sparse_populated_in(b, 0x0, 0x0);
+	mu_assert_false(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x0, 0xf);
+	mu_assert_false(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x0, 0x10);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0xf, 0x10);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x10, 0x10);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x0, 0x10000);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x0, UT64_MAX);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x12, 0x20);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x18, 0x20);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x1a, 0x20);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x1a, 0x1a);
+	mu_assert_false(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x1f, 0x1f);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x1f, 0x20);
+	mu_assert_true(r, "populated in");
+	r = rz_buf_sparse_populated_in(b, 0x20, 0x20);
+	mu_assert_true(r, "populated in");
+
+	rz_buf_free(b);
+	mu_end;
+}
+
 bool test_rz_buf_bytes_steal(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
@@ -1054,6 +1096,7 @@ int all_tests() {
 	mu_run_test(test_rz_buf_sparse_resize);
 	mu_run_test(test_rz_buf_sparse_fuzz);
 	mu_run_test(test_rz_buf_sparse_overlay);
+	mu_run_test(test_rz_buf_sparse_populated_in);
 	mu_run_test(test_rz_buf_bytes_steal);
 	mu_run_test(test_rz_buf_format);
 	mu_run_test(test_rz_buf_get_string);

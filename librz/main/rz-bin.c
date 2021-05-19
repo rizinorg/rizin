@@ -410,7 +410,11 @@ static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 			if (cur->xtr_data) {
 				// load the first one
 				RzBinXtrData *xtr_data = rz_list_get_n(cur->xtr_data, 0);
-				if (xtr_data && !xtr_data->loaded && !rz_bin_file_object_new_from_xtr_data(bin, cur, UT64_MAX, rz_bin_get_laddr(bin), xtr_data)) {
+				RzBinObjectLoadOptions obj_opts = {
+					.baseaddr = UT64_MAX,
+					.loadaddr = rz_bin_get_laddr(bin)
+				};
+				if (xtr_data && !xtr_data->loaded && !rz_bin_file_object_new_from_xtr_data(bin, cur, &obj_opts, xtr_data)) {
 					break;
 				}
 			}
@@ -1084,7 +1088,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_bin_load_filter(bin, action);
 
 	RzBinOptions bo;
-	rz_bin_options_init(&bo, fd, baddr, laddr, rawstr);
+	rz_bin_options_init(&bo, fd, baddr, laddr, false, rawstr);
 	bo.xtr_idx = xtr_idx;
 
 	RzBinFile *bf = rz_bin_open(bin, file, &bo);

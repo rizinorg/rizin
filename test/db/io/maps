@@ -179,11 +179,13 @@ $initial_map |.
 om               # Output must be the same as initial om
 EOF
 EXPECT=<<EOF
+ 4 fd: 5 +0x00000000 0x0804a02c - 0x0804a03f r-- vmap.reloc-targets
  3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
  2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
  1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
 ----
 ----
+ 4 fd: 5 +0x00000000 0x0804a02c - 0x0804a03f r-- vmap.reloc-targets
  3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
  2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
  1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1

@@ -104,10 +104,11 @@ RZ_API RzList *rz_bin_dump_strings(RzBinFile *bf, int min, int raw) {
 	return rz_bin_file_get_strings(bf, min, 1, raw);
 }
 
-RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
+RZ_API void rz_bin_options_init(RzBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, bool patch_relocs, int rawstr) {
 	memset(opt, 0, sizeof(*opt));
-	opt->baseaddr = baseaddr;
-	opt->loadaddr = loadaddr;
+	opt->obj_opts.baseaddr = baseaddr;
+	opt->obj_opts.loadaddr = loadaddr;
+	opt->obj_opts.patch_relocs = patch_relocs;
 	opt->fd = fd;
 	opt->rawstr = rawstr;
 }
@@ -231,8 +232,9 @@ RZ_API RzBinFile *rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt) {
 
 RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 	rz_return_val_if_fail(bin && bf, NULL);
+	bool patch_relocs = bf->o ? bf->o->opts.patch_relocs : false;
 	RzBinOptions opt;
-	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
+	rz_bin_options_init(&opt, bf->fd, baseaddr, bf->loadaddr, patch_relocs, bin->rawstr);
 	opt.filename = bf->file;
 	rz_buf_seek(bf->buf, 0, RZ_BUF_SET);
 	RzBinFile *nbf = rz_bin_open_buf(bin, bf->buf, &opt);
@@ -248,8 +250,8 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 
 	bin->rawstr = opt->rawstr;
 	bin->file = opt->filename;
-	if (opt->loadaddr == UT64_MAX) {
-		opt->loadaddr = 0;
+	if (opt->obj_opts.loadaddr == UT64_MAX) {
+		opt->obj_opts.loadaddr = 0;
 	}
 
 	RzBinFile *bf = NULL;
@@ -266,7 +268,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 				if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
 					xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					bf = rz_bin_file_xtr_load_buffer(bin, xtr,
-						bin->file, buf, opt->baseaddr, opt->loadaddr,
+						bin->file, buf, &opt->obj_opts,
 						opt->xtr_idx, opt->fd, bin->rawstr);
 				}
 			}
@@ -276,7 +278,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 		// Uncomment for this speedup: 20s vs 22s
 		// RzBuffer *buf = rz_buf_new_slurp (bin->file);
 		bf = rz_bin_file_new_from_buffer(bin, bin->file, buf, bin->rawstr,
-			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
+			&opt->obj_opts, opt->fd, opt->pluginname);
 		if (!bf) {
 			return NULL;
 		}
@@ -295,8 +297,8 @@ RZ_API RzBinFile *rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 
 	bool is_debugger = iob->fd_is_dbg(io, opt->fd);
 	const char *fname = iob->fd_get_name(io, opt->fd);
-	if (opt->loadaddr == UT64_MAX) {
-		opt->loadaddr = 0;
+	if (opt->obj_opts.loadaddr == UT64_MAX) {
+		opt->obj_opts.loadaddr = 0;
 	}
 
 	// Create RzBuffer from the opened file
@@ -322,10 +324,10 @@ RZ_API RzBinFile *rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 
 	// Slice buffer if necessary
 	RzBuffer *slice = buf;
-	if (!is_debugger && (opt->loadaddr != 0 || opt->sz != rz_buf_size(buf))) {
-		slice = rz_buf_new_slice(buf, opt->loadaddr, opt->sz);
-	} else if (is_debugger && opt->baseaddr != UT64_MAX && opt->baseaddr != 0) {
-		slice = rz_buf_new_slice(buf, opt->baseaddr, opt->sz);
+	if (!is_debugger && (opt->obj_opts.loadaddr != 0 || opt->sz != rz_buf_size(buf))) {
+		slice = rz_buf_new_slice(buf, opt->obj_opts.loadaddr, opt->sz);
+	} else if (is_debugger && opt->obj_opts.baseaddr != UT64_MAX && opt->obj_opts.baseaddr != 0) {
+		slice = rz_buf_new_slice(buf, opt->obj_opts.baseaddr, opt->sz);
 	}
 	if (slice != buf) {
 		rz_buf_free(buf);
@@ -554,7 +556,7 @@ RZ_API ut64 rz_bin_get_baddr(RzBin *bin) {
 RZ_API ut64 rz_bin_get_laddr(RzBin *bin) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 	RzBinObject *o = rz_bin_cur_object(bin);
-	return o ? o->loadaddr : UT64_MAX;
+	return o ? o->opts.loadaddr : UT64_MAX;
 }
 
 // TODO: should be RzBinFile specific imho
@@ -568,11 +570,11 @@ RZ_API void rz_bin_set_baddr(RzBin *bin, ut64 baddr) {
 		}
 		ut64 file_baddr = o->plugin->baddr(bf);
 		if (baddr == UT64_MAX) {
-			o->baddr = file_baddr;
+			o->opts.baseaddr = file_baddr;
 			o->baddr_shift = 0; // o->baddr; // - file_baddr;
 		} else {
 			if (file_baddr != UT64_MAX) {
-				o->baddr = baddr;
+				o->opts.baseaddr = baddr;
 				o->baddr_shift = baddr - file_baddr;
 			}
 		}
@@ -806,8 +808,11 @@ RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *
 	if (!obj && binfile->xtr_data) {
 		RzBinXtrData *xtr_data = rz_list_get_n(binfile->xtr_data, 0);
 		if (xtr_data && !xtr_data->loaded) {
-			if (!rz_bin_file_object_new_from_xtr_data(bin, binfile,
-				    UT64_MAX, rz_bin_get_laddr(bin), xtr_data)) {
+			RzBinObjectLoadOptions obj_opts = {
+				.baseaddr = UT64_MAX,
+				.loadaddr = rz_bin_get_laddr(bin)
+			};
+			if (!rz_bin_file_object_new_from_xtr_data(bin, binfile, &obj_opts, xtr_data)) {
 				return false;
 			}
 		}
@@ -1274,10 +1279,22 @@ RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	}
 }
 
+RZ_API void rz_bin_virtual_file_free(RzBinVirtualFile *vfile) {
+	if (!vfile) {
+		return;
+	}
+	if (vfile->buf_owned) {
+		rz_buf_free(vfile->buf);
+	}
+	free(vfile->name);
+	free(vfile);
+}
+
 RZ_API void rz_bin_map_free(RzBinMap *map) {
 	if (!map) {
 		return;
 	}
+	free(map->vfile_name);
 	free(map->name);
 	free(map);
 }
@@ -1422,7 +1439,7 @@ RZ_API RzBinFile *rz_bin_file_at(RzBin *bin, ut64 at) {
 				return bf;
 			}
 		}
-		if (at >= bf->o->baddr && at < (bf->o->baddr + bf->size)) {
+		if (at >= bf->o->opts.baseaddr && at < (bf->o->opts.baseaddr + bf->size)) {
 			return bf;
 		}
 	}

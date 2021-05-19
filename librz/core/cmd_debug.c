@@ -1406,7 +1406,7 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	RzBinOptions opt = { 0 };
 	opt.fd = fd;
 	opt.sz = rz_io_fd_size(core->io, fd);
-	opt.baseaddr = baseaddr;
+	opt.obj_opts.baseaddr = baseaddr;
 	RzBinFile *obf = rz_bin_cur(core->bin);
 	RzBinFile *bf = rz_bin_open_io(core->bin, &opt);
 	if (!bf) {

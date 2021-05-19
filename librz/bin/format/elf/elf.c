@@ -61,7 +61,7 @@
 
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
-	((rel->rva - pltgot_addr - n_initial_unused_entries * RZ_BIN_ELF_WORDSIZE) / RZ_BIN_ELF_WORDSIZE)
+	((rel->vaddr - pltgot_addr - n_initial_unused_entries * RZ_BIN_ELF_WORDSIZE) / RZ_BIN_ELF_WORDSIZE)
 
 #define GROWTH_FACTOR 2
 
@@ -70,6 +70,8 @@
 #define EF_MIPS_ABI_O32 0x00001000 /* O32 ABI.  */
 #define EF_MIPS_ABI_O64 0x00002000 /* O32 extended for 64 bit.  */
 #define EF_MIPS_ABI     0x0000f000
+
+static void setimpord(ELFOBJ *eobj, RzBinElfSymbol *sym);
 
 static inline bool is_elfclass64(Elf_(Ehdr) * h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
@@ -1727,13 +1729,11 @@ char *Elf_(section_type_to_string)(ut64 type) {
 }
 
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
-	if (!rel->rva) {
+	if (rel->paddr == UT64_MAX) {
 		return UT64_MAX;
 	}
-
-	ut64 p_sym_got_addr = Elf_(rz_bin_elf_v2p_new)(bin, rel->rva);
-	ut64 addr = RZ_BIN_ELF_BREADWORD(bin->b, p_sym_got_addr);
-
+	ut64 paddr = rel->paddr;
+	ut64 addr = RZ_BIN_ELF_BREADWORD(bin->b, paddr);
 	return (!addr || addr == RZ_BIN_ELF_WORD_MAX) ? UT64_MAX : addr;
 }
 
@@ -1916,10 +1916,10 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 		plt_sym_addr = RZ_BIN_ELF_READWORD(buf, i);
 
 		//relative address
-		if ((plt_addr + 6 + Elf_(rz_bin_elf_v2p)(bin, plt_sym_addr)) == rel->rva) {
+		if ((plt_addr + 6 + Elf_(rz_bin_elf_v2p)(bin, plt_sym_addr)) == rel->vaddr) {
 			return plt_addr;
 		}
-		if (plt_sym_addr == rel->rva) {
+		if (plt_sym_addr == rel->vaddr) {
 			return plt_addr;
 		}
 		plt_addr += 8;
@@ -2921,16 +2921,17 @@ static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
 
 static void fix_rva_and_offset_relocable_file(ELFOBJ *bin, RzBinElfReloc *r, size_t pos) {
 	if (has_valid_section_header(bin, pos)) {
-		r->rva = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
-		r->rva = Elf_(rz_bin_elf_p2v)(bin, r->rva);
+		r->paddr = bin->shdr[bin->g_sections[pos].info].sh_offset + r->offset;
+		r->vaddr = Elf_(rz_bin_elf_p2v)(bin, r->paddr);
 	} else {
-		r->rva = r->offset;
+		r->paddr = UT64_MAX;
+		r->vaddr = r->offset;
 	}
 }
 
 static void fix_rva_and_offset_exec_file(ELFOBJ *bin, RzBinElfReloc *r) {
-	r->rva = r->offset;
-	r->offset = Elf_(rz_bin_elf_v2p)(bin, r->offset);
+	r->paddr = Elf_(rz_bin_elf_v2p)(bin, r->offset);
+	r->vaddr = r->offset;
 }
 
 static void fix_rva_and_offset(ELFOBJ *bin, RzBinElfReloc *r, size_t pos) {
@@ -3541,6 +3542,9 @@ done:
 		bin->imports_by_ord_size = ret_ctr + 1;
 		if (ret_ctr > 0) {
 			bin->imports_by_ord = (RzBinImport **)calloc(ret_ctr + 1, sizeof(RzBinImport *));
+			for (RzBinElfSymbol *s = ret; !s->last; s++) {
+				setimpord(bin, s);
+			}
 		} else {
 			bin->imports_by_ord = NULL;
 		}
@@ -3679,6 +3683,22 @@ static bool setsymord(ELFOBJ *eobj, ut32 ord, RzBinSymbol *ptr) {
 	return true;
 }
 
+static void setimpord(ELFOBJ *eobj, RzBinElfSymbol *sym) {
+	if (!eobj->imports_by_ord) {
+		return;
+	}
+	RzBinImport *imp = Elf_(rz_bin_elf_convert_import)(eobj, sym);
+	if (!imp) {
+		return;
+	}
+	if (imp->ordinal >= eobj->imports_by_ord_size) {
+		rz_bin_import_free(imp);
+		return;
+	}
+	rz_bin_import_free(eobj->imports_by_ord[imp->ordinal]);
+	eobj->imports_by_ord[imp->ordinal] = imp;
+}
+
 static void _set_arm_thumb_bits(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinSymbol **sym) {
 	int bin_bits = Elf_(rz_bin_elf_get_bits)(bin);
 	RzBinSymbol *ptr = *sym;
@@ -3721,7 +3741,7 @@ static void _set_arm_thumb_bits(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinSymbol
 	}
 }
 
-RzBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(rz_bin_elf_obj_t) * bin,
+RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(struct Elf_(rz_bin_elf_obj_t) * bin,
 	struct rz_bin_elf_symbol_t *symbol,
 	const char *namefmt) {
 	ut64 paddr, vaddr;
@@ -3751,6 +3771,18 @@ RzBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(rz_bin_elf_obj_t) * bin
 		_set_arm_thumb_bits(bin, &ptr);
 	}
 
+	return ptr;
+}
+
+RzBinImport *Elf_(rz_bin_elf_convert_import)(struct Elf_(rz_bin_elf_obj_t) * bin, struct rz_bin_elf_symbol_t *sym) {
+	RzBinImport *ptr = RZ_NEW0(RzBinImport);
+	if (!ptr) {
+		return NULL;
+	}
+	ptr->name = RZ_STR_DUP(sym->name);
+	ptr->bind = sym->bind;
+	ptr->type = sym->type;
+	ptr->ordinal = sym->ordinal;
 	return ptr;
 }
 
@@ -4027,7 +4059,7 @@ static RzBinElfSymbol *Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int typ
 		import_ret_ctr = 0;
 		i = -1;
 		while (!ret[++i].last) {
-			if (!(import_sym_ptr = Elf_(_r_bin_elf_convert_symbol)(bin, &ret[i], "%s"))) {
+			if (!(import_sym_ptr = Elf_(rz_bin_elf_convert_symbol)(bin, &ret[i], "%s"))) {
 				continue;
 			}
 
@@ -4036,6 +4068,7 @@ static RzBinElfSymbol *Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int typ
 			}
 
 			if (ret[i].is_imported) {
+				setimpord(bin, &ret[i]);
 				memcpy(&import_ret[import_ret_ctr], &ret[i], sizeof(RzBinElfSymbol));
 				++import_ret_ctr;
 			}
@@ -4106,7 +4139,7 @@ void Elf_(rz_bin_elf_free)(ELFOBJ *bin) {
 	size_t i;
 	if (bin->imports_by_ord) {
 		for (i = 0; i < bin->imports_by_ord_size; i++) {
-			free(bin->imports_by_ord[i]);
+			rz_bin_import_free(bin->imports_by_ord[i]);
 		}
 		free(bin->imports_by_ord);
 	}

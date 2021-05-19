@@ -150,6 +150,7 @@ static void object_delete_items(RzBinObject *o) {
 	ht_up_free(o->addrzklassmethod);
 	rz_list_free(o->entries);
 	rz_list_free(o->maps);
+	rz_list_free(o->vfiles);
 	rz_list_free(o->fields);
 	rz_list_free(o->imports);
 	rz_list_free(o->libs);
@@ -242,7 +243,7 @@ static RzList *classes_from_symbols(RzBinFile *bf) {
 }
 
 // TODO: kill offset and sz, because those should be inferred from binfile->buf
-RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
+RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz) {
 	rz_return_val_if_fail(bf && plugin, NULL);
 	ut64 bytes_sz = rz_buf_size(bf->buf);
 	Sdb *sdb = bf->sdb;
@@ -250,21 +251,24 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, ut64 b
 	if (!o) {
 		return NULL;
 	}
+	o->opts = *opts;
+	if (o->opts.loadaddr == UT64_MAX) {
+		// no loadaddr means 0 loadaddr
+		o->opts.loadaddr = 0;
+	}
 	o->obj_size = (bytes_sz >= sz + offset) ? sz : 0;
 	o->boffset = offset;
 	o->strings_db = ht_up_new0();
 	o->regstate = NULL;
 	o->kv = sdb_new0(); // XXX bf->sdb bf->o->sdb
-	o->baddr = baseaddr;
 	o->classes = rz_list_newf((RzListFree)rz_bin_class_free);
 	o->classes_ht = ht_pp_new0();
 	o->methods_ht = ht_pp_new0();
 	o->baddr_shift = 0;
 	o->plugin = plugin;
-	o->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
 
 	if (plugin && plugin->load_buffer) {
-		if (!plugin->load_buffer(bf, &o->bin_obj, bf->buf, loadaddr, sdb)) {
+		if (!plugin->load_buffer(bf, &o->bin_obj, bf->buf, o->opts.loadaddr, sdb)) {
 			if (bf->rbin->verbose) {
 				eprintf("Error in rz_bin_object_new: load_buffer failed for %s plugin\n", plugin->name);
 			}
@@ -284,7 +288,7 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, ut64 b
 	// mis-reporting when the file is loaded from impartial bytes or is
 	// extracted from a set of bytes in the file
 	rz_bin_file_set_obj(bf->rbin, bf, o);
-	rz_bin_set_baddr(bf->rbin, o->baddr);
+	rz_bin_set_baddr(bf->rbin, o->opts.baseaddr);
 	rz_bin_object_set_items(bf, o);
 
 	bf->sdb_info = o->kv;
@@ -400,13 +404,16 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 		for (i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 			o->binsym[i] = p->binsym(bf, i);
 			if (o->binsym[i]) {
-				o->binsym[i]->paddr += o->loadaddr;
+				o->binsym[i]->paddr += o->opts.loadaddr;
 			}
 		}
 	}
 	if (p->entries) {
 		o->entries = p->entries(bf);
 		REBASE_PADDR(o, o->entries, RzBinAddr);
+	}
+	if (p->virtual_files) {
+		o->vfiles = p->virtual_files(bf);
 	}
 	if (p->maps) {
 		o->maps = p->maps(bf);

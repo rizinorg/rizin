@@ -170,6 +170,11 @@ static ut64 rva(RzBinObject *o, ut64 paddr, ut64 vaddr, int va) {
 	return paddr;
 }
 
+RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, int fd, ut64 baseaddr, ut64 loadaddr) {
+	rz_return_if_fail(core && opts);
+	rz_bin_options_init(opts, fd, baseaddr, loadaddr, rz_config_get_b(core->config, "bin.relocs"), core->bin->rawstr);
+}
+
 RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd) {
 	if (rz_bin_file_set_cur_by_fd(core->bin, bin_fd)) {
 		rz_core_bin_set_cur(core, rz_bin_cur(core->bin));
@@ -694,8 +699,9 @@ static bool io_create_mem_map(RzIO *io, RZ_NULLABLE RzCoreFile *cf, RzBinMap *ma
 	return true;
 }
 
-static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinMap *map, ut64 addr, int fd) {
-	if (!rz_io_desc_get(core->io, fd) || UT64_ADD_OVFCHK(map->psize, map->paddr) ||
+static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinFile *bf, RzBinMap *map, ut64 addr, int fd) {
+	RzIODesc *io_desc = rz_io_desc_get(core->io, fd);
+	if (!io_desc || UT64_ADD_OVFCHK(map->psize, map->paddr) ||
 		UT64_ADD_OVFCHK(map->vsize, addr) || !map->vsize) {
 		return;
 	}
@@ -715,8 +721,33 @@ static void add_map(RzCore *core, RZ_NULLABLE RzCoreFile *cf, RzBinMap *map, ut6
 		return;
 	}
 
-	// then we map the part of the section that comes from the physical file
-	char *map_name = map->name ? rz_str_newf("fmap.%s", map->name) : rz_str_newf("fmap.%d", fd);
+	const char *prefix = "fmap";
+
+	// open and use a different fd for virtual files
+	if (map->vfile_name) {
+		char *uri = rz_str_newf("vfile://%" PFMT32u "/%s", bf->id, map->vfile_name);
+		if (!uri) {
+			return;
+		}
+		ut32 perm = io_desc->perm;
+		RzIODesc *desc = find_reusable_file(core->io, cf, uri, perm);
+		if (!desc) {
+			desc = rz_io_open_nomap(core->io, uri, perm, 0664);
+			if (!desc) {
+				free(uri);
+				return;
+			}
+			if (cf) {
+				rz_pvector_push(&cf->extra_files, desc);
+			}
+		}
+		free(uri);
+		fd = desc->fd;
+		prefix = "vmap";
+	}
+
+	// then we map the part of the section that comes from the physical (or virtual) file
+	char *map_name = map->name ? rz_str_newf("%s.%s", prefix, map->name) : rz_str_newf("%s.%d", prefix, fd);
 	if (!map_name) {
 		return;
 	}
@@ -767,7 +798,7 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 			va_map = VA_NOREBASE;
 		}
 		ut64 addr = rva(o, map->paddr, map->vaddr, va_map);
-		add_map(core, cf, map, addr, binfile->fd);
+		add_map(core, cf, binfile, map, addr, binfile->fd);
 	}
 	rz_io_update(core->io);
 	return true;
@@ -2064,8 +2095,8 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode) {
 	rz_return_val_if_fail(core && file, false);
 
 	ut64 baddr = rz_config_get_i(core->config, "bin.baddr");
-	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
-		baddr = core->bin->cur->o->baddr;
+	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->opts.baseaddr) {
+		baddr = core->bin->cur->o->opts.baseaddr;
 	} else {
 		eprintf("Warning: Cannot find base address, flags will probably be misplaced\n");
 	}
@@ -4422,7 +4453,7 @@ static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, PJ *pj, int mode
 		const char *asmarch = rz_config_get(core->config, "asm.arch");
 		const char *arch = info ? info->arch ? info->arch : asmarch : "unknown";
 		rz_cons_printf("%d %d %s-%d ba:0x%08" PFMT64x " sz:%" PFMT64d " %s\n",
-			bf->id, bf->fd, arch, bits, bf->o->baddr, bf->o->size, name);
+			bf->id, bf->fd, arch, bits, bf->o->opts.baseaddr, bf->o->size, name);
 	} break;
 	}
 	return true;

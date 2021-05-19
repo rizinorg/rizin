@@ -3,6 +3,10 @@
 
 #include "rz_log.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define RZ_STATIC_ASSERT(x) \
 	switch (0) { \
 	case 0: \
@@ -143,5 +147,9 @@ RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK
 	} while (0)
 
 #endif // RZ_CHECKS_LEVEL
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

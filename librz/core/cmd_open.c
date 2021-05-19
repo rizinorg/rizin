@@ -220,7 +220,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 					*filename = 0;
 					ut64 addr = rz_num_math(core->num, arg);
 					RzBinOptions opt;
-					rz_bin_options_init(&opt, desc->fd, addr, 0, core->bin->rawstr);
+					rz_core_bin_options_init(core, &opt, desc->fd, addr, 0);
 					rz_bin_open_io(core->bin, &opt);
 					rz_io_desc_close(desc);
 					rz_core_cmd0(core, ".is*");
@@ -235,10 +235,8 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				RzIODesc *desc = rz_io_desc_get(core->io, fd);
 				if (desc) {
 					RzBinOptions opt;
-					opt.baseaddr = baddr;
-					opt.loadaddr = addr;
 					opt.sz = 1024 * 1024 * 1;
-					rz_bin_options_init(&opt, desc->fd, baddr, addr, core->bin->rawstr);
+					rz_core_bin_options_init(core, &opt, desc->fd, baddr, addr);
 					rz_bin_open_io(core->bin, &opt);
 					rz_core_cmd0(core, ".is*");
 				} else {
@@ -250,10 +248,8 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				RzIODesc *desc = rz_io_desc_get(core->io, fd);
 				if (desc) {
 					RzBinOptions opt;
-					opt.baseaddr = addr;
-					opt.loadaddr = addr;
 					opt.sz = 1024 * 1024 * 1;
-					rz_bin_options_init(&opt, desc->fd, addr, addr, core->bin->rawstr);
+					rz_core_bin_options_init(core, &opt, desc->fd, addr, addr);
 					rz_bin_open_io(core->bin, &opt);
 					rz_core_cmd0(core, ".is*");
 				} else {
@@ -274,7 +270,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			rz_list_foreach (files, iter, _fd) {
 				int fd = (size_t)_fd;
 				RzBinOptions opt;
-				rz_bin_options_init(&opt, fd, core->offset, 0, core->bin->rawstr);
+				rz_core_bin_options_init(core, &opt, fd, core->offset, 0);
 				rz_bin_open_io(core->bin, &opt);
 				rz_core_cmd0(core, ".ies*");
 				break;
@@ -360,7 +356,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 		}
 		rz_list_foreach (bin->binfiles, iter, bf) {
 			char temp[64];
-			RzInterval inter = (RzInterval){ bf->o->baddr, bf->o->size };
+			RzInterval inter = (RzInterval){ bf->o->opts.baseaddr, bf->o->size };
 			RzListInfo *info = rz_listinfo_new(bf->file, inter, inter, -1, sdb_itoa(bf->fd, temp, 10));
 			if (!info) {
 				break;
@@ -1266,12 +1262,9 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 					RzIODesc *desc = rz_io_desc_get(core->io, fd);
 					if (desc && (desc->perm & RZ_PERM_W)) {
 						void **it;
-						RzPVector *maps = rz_io_maps(core->io);
-						rz_pvector_foreach_prev(maps, it) {
+						rz_pvector_foreach (&file->maps, it) {
 							RzIOMap *map = *it;
-							if (map->fd == fd) {
-								map->perm |= RZ_PERM_WX;
-							}
+							map->perm |= RZ_PERM_WX;
 						}
 					} else {
 						eprintf("Error: %s is not writable\n", argv0);

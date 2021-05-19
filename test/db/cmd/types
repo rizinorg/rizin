@@ -132,7 +132,18 @@ e asm.lines.bb=false
 aa
 s sym.Java_com_app_ndh_NDHActivity_print
 to bins/headers/jni.h
-tl JNINativeInterface 0x464c457f
+
+# TODO: Tracked in https://github.com/rizinorg/rizin/issues/1132
+# This is actually quite wrong, regarding what this function actually does :-)
+# We are manually crafting the canary value such that it looks like a pointer
+# and say that at this pointer there is a JNINativeInterface object, in order
+# to test propagation from a global variable.
+# Do not hesitate to edit this test if you find a better case for testing this.
+e io.cache=1
+wx 37133713 @ reloc.target.__stack_chk_guard
+tl JNINativeInterface 0x13371337
+tl JNINativeInterface 0x464c457f # \x7fELF, the "pointer" when dereferencing addr 0
+
 pdf~JNINativeInterface
 pdr~JNI?
 EOF
