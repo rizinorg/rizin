@@ -1463,6 +1463,60 @@ static const char *help_msg_pg[] = {
 	NULL
 };
 
+RZ_IPI RzCmdStatus rz_cmd_print_gadget_print_as_rizin_handler(RzCore *core, int argc, const char **argv) {
+	RzCoreGadget *g;
+	RzListIter *iter;
+	rz_list_foreach (core->gadgets, iter, g) {
+		rz_cons_printf("\"pg %d %d %d %d %s\"\n", g->x, g->y, g->w, g->h, g->cmd);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+RZ_IPI RzCmdStatus rz_cmd_print_gadget_remove_handler(RzCore *core, int argc, const char **argv) {
+	rz_list_free(core->gadgets);
+	core->gadgets = rz_list_newf((RzListFree)rz_core_gadget_free);
+	return RZ_CMD_STATUS_OK;
+}
+RZ_IPI RzCmdStatus rz_cmd_print_gadget_move_handler(RzCore *core, int argc, const char **argv) {
+	int n = rz_num_math(core->num, argv[1]);
+	int x = rz_num_math(core->num, argv[2]);
+	int y = rz_num_math(core->num, argv[3]);
+	int w = rz_num_math(core->num, argv[4]);
+	int h = rz_num_math(core->num, argv[5]);
+	RzCoreGadget *g = rz_list_get_n(core->gadgets, n);
+	if (x && y && w && h) {
+		g->x = x;
+		g->y = y;
+		g->w = w;
+		g->h = h;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_gadget_add_handler(RzCore *core, int argc, const char **argv) {
+	char *cmd = NULL;
+	if (argc == 1) {
+		rz_core_gadget_print(core);
+	} else {
+		int x = rz_num_math(core->num, argv[1]);
+		int y = rz_num_math(core->num, argv[2]);
+		int w = rz_num_math(core->num, argv[3]);
+		int h = rz_num_math(core->num, argv[4]);
+		if (x && y && w && h) {
+			cmd = rz_str_dup(cmd, argv[5]);
+			if (cmd) {
+				RzCoreGadget *g = RZ_NEW0(RzCoreGadget);
+				g->x = x;
+				g->y = y;
+				g->w = w;
+				g->h = h;
+				g->cmd = cmd;
+				rz_list_append(core->gadgets, g);
+			}
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 static void cmd_print_gadget(RzCore *core, const char *_input) {
 	if (*_input == '?') { // "pg?"
 		rz_core_cmd_help(core, help_msg_pg);
