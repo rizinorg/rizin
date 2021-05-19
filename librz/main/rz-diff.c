@@ -1525,7 +1525,7 @@ static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 p
 	const char *reset = colors ? Color_RESET : "";
 #define printline(fmt, ...) snprintf(line + lp, RZ_MAX(lsize - lp, 0), fmt, ##__VA_ARGS__)
 	lp = 0;
-	lp += printline(" %s0x%016" PFMT64x "%s | ", blue, offset_a + pos, reset);
+	lp += printline("  %s0x%016" PFMT64x "%s | ", blue, offset_a + pos, reset);
 	for (i = 0; i < hexlen && i < read_a; ++i) {
 		if (i < read_b) {
 			same = buffer_a[pos + i] == buffer_b[pos + i];
@@ -1606,19 +1606,31 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 	if (!line || !hview->buffer_a || !hview->buffer_b) {
 		return false;
 	}
+	DiffHexLen hlen = draw_hlen(hview);
+	const char *p = NULL;
+	const char *file_a = io_a->filename;
+	const char *file_b = io_b->filename;
+
+	p = io_a->filename;
+	while ((p = strstr(file_a, RZ_SYS_DIR))) {
+		file_a = p + 1;
+	}
+
+	p = io_b->filename;
+	while ((p = strstr(file_b, RZ_SYS_DIR))) {
+		file_b = p + 1;
+	}
 
 	read_a = rz_io_pread_at(io_a->io, hview->offset_a, hview->buffer_a, hview->size_a);
 	read_b = rz_io_pread_at(io_b->io, hview->offset_b, hview->buffer_b, hview->size_b);
 
-	snprintf(line, width, "| %s offset: 0x%-30" PFMT64x " %s offset: 0x%-16" PFMT64x "\n'- hex view ",
-		io_a->filename, hview->offset_a, io_b->filename, hview->offset_b);
+	snprintf(line, width, "| file: %-*s| file: %s", hlen - 7, file_a, file_b);
 
 	rz_cons_goto_origin_reset();
 	rz_cons_clear();
 	rz_cons_canvas_clear(canvas);
 	rz_cons_canvas_gotoxy(canvas, 0, 0);
 	rz_cons_canvas_write(canvas, line);
-	DiffHexLen hlen = draw_hlen(hview);
 	switch (hlen) {
 	case DIFF_HEX_16:
 		shift = 4;
@@ -1630,7 +1642,7 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 		shift = 2;
 		break;
 	}
-	for (ut64 h = 0, pos = 0; h < (ut64)(height - 3); ++h) {
+	for (ut64 h = 0, pos = 0; h < (ut64)(height - 2); ++h) {
 		pos = h << shift;
 		// 180
 		if (read_a < 1 && read_b < 1) {
@@ -1643,6 +1655,8 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 	}
 	rz_cons_canvas_gotoxy(canvas, 0, 0);
 	rz_cons_canvas_line_diagonal(canvas, 0, 0, width - 1, 0, &style);
+
+	rz_cons_canvas_gotoxy(canvas, 0, height);
 	rz_cons_canvas_print(canvas);
 	rz_cons_flush();
 	return true;
