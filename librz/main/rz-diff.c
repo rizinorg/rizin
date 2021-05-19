@@ -58,7 +58,13 @@ typedef enum {
 	DIFF_OPT_DISTANCE,
 	DIFF_OPT_UNIFIED,
 	DIFF_OPT_GRAPH,
+	DIFF_OPT_HEX_VISUAL,
 } DiffOption;
+
+typedef struct diff_screen_t {
+	int width;
+	int height;
+} DiffScreen;
 
 typedef struct diff_context_t {
 	DiffType type;
@@ -74,17 +80,22 @@ typedef struct diff_context_t {
 	const char *input_b;
 	const char *file_a;
 	const char *file_b;
+	DiffScreen screen;
 } DiffContext;
+
+typedef struct diff_io_t {
+	const char *filename;
+	ut64 filesize;
+	RzIO *io;
+} DiffIO;
 
 typedef struct diff_file_t {
 	/* const */
-	const char *filename;
 	RzBinFile *file;
 	RzBinPlugin *plugin;
 	/* to free */
 	RzBin *bin;
-	RzIODesc *desc;
-	RzIO *io;
+	DiffIO *dio;
 } DiffFile;
 
 typedef struct diff_function_t {
@@ -93,6 +104,21 @@ typedef struct diff_function_t {
 	ut64 address;
 	int n_instructions;
 } DiffFunction;
+
+typedef struct diff_hex_view_t {
+	bool colors;
+	char *line;
+	ut8 *buffer_a;
+	ut8 *buffer_b;
+	ut64 size_a;
+	ut64 size_b;
+	ut64 offset_a;
+	ut64 offset_b;
+	DiffIO *io_a;
+	DiffIO *io_b;
+	RzConsCanvas *canvas;
+	DiffScreen screen;
+} DiffHexView;
 
 #define rz_diff_error(f, ...) \
 	RZ_LOG_ERROR("rz-diff: error, " f, ##__VA_ARGS__)
@@ -157,6 +183,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -d [algo] compute edit distance based on the choosen algorithm:\n"
 		"              myers | Eugene W. Myers' O(ND) algorithm (no substitution)\n"
 		"              leven | Levenshtein O(N^2) algorithm (with substitution)\n"
+		"  -H        hexadecimal visual mode\n"
 		"  -h        this help message\n"
 		"  -j        json output\n"
 		"  -q        quite output\n"
@@ -164,6 +191,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -A        compare virtual and physical addresses\n"
 		"  -C        show colors\n"
 		"  -T        show timestamp information\n"
+		"  -S [WxH]  sets the width and height of the terminal for visual mode\n"
 		"  -0 [cmd]  input for file0 when option -t 'commands' is given.\n"
 		"            the same value will be set for file1, if -1 is not set.\n"
 		"  -1 [cmd]  input for file1 when option -t 'commands' is given.\n"
@@ -199,11 +227,12 @@ static bool rz_diff_is_file(const char *file) {
 static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ctx) {
 	const char *type = NULL;
 	const char *algorithm = NULL;
+	const char *screen = NULL;
 	memset((void *)ctx, 0, sizeof(DiffContext));
 
 	RzGetopt opt;
 	int c;
-	rz_getopt_init(&opt, argc, argv, "hjqvACTa:b:d:t:0:1:");
+	rz_getopt_init(&opt, argc, argv, "hHjqvACTa:b:d:t:0:1:S:");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
@@ -219,6 +248,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case 'q': rz_diff_ctx_set_mode(ctx, DIFF_MODE_QUIET); break;
 		case 't': rz_diff_set_def(type, NULL, opt.arg); break;
 		case 'v': rz_diff_ctx_set_opt(ctx, DIFF_OPT_VERSION); break;
+		case 'S': rz_diff_set_def(screen, NULL, opt.arg); break;
+		case 'H': rz_diff_ctx_set_opt(ctx, DIFF_OPT_HEX_VISUAL); break;
 
 		default:
 			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "unknown flag '%c'\n", c);
@@ -308,54 +339,105 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		} else {
 			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -t argument '%s' is not a recognized type.\n", type);
 		}
-	} else {
+	} else if (screen) {
+		const char *hp = NULL;
+		if (!(hp = strchr(screen, 'x'))) {
+			rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "invalid format for -S; example 80x40 where width=80 and height=40.\n");
+		}
+		ut64 width = strtoull(screen, NULL, 0);
+		ut64 height = strtoull(hp, NULL, 0);
+
+		if (width < 1 || width > 0xFFFF) {
+			rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "invalid format for -S; example 80x40 where width=80 and height=40.\n");
+		} else if (height < 1 || height > 0xFFFF) {
+			rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "invalid format for -S; example 80x40 where width=80 and height=40.\n");
+		}
+
+		ctx->screen.width = (int)width;
+		ctx->screen.height = (int)height;
+	} else if (ctx->option == DIFF_OPT_UNKNOWN) {
 		rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "option -t or -d is required to be specified.\n");
 	}
+}
+
+static DiffIO *rz_diff_io_open(const char *file) {
+	RzIODesc *desc = NULL;
+	RzIO *io = NULL;
+	DiffIO *dio = NULL;
+
+	dio = RZ_NEW0(DiffIO);
+	if (!dio) {
+		rz_diff_error("cannot allocate diff io\n");
+		goto rz_diff_io_open_end;
+	}
+
+	io = rz_io_new();
+	if (!io) {
+		rz_diff_error("cannot allocate io\n");
+		goto rz_diff_io_open_end;
+	}
+
+	desc = rz_io_open_nomap(io, file, RZ_PERM_R, 0);
+	if (!desc) {
+		rz_diff_error("cannot open file '%s'\n", file);
+		goto rz_diff_io_open_end;
+	}
+
+	dio->filename = file;
+	dio->filesize = rz_io_desc_size(desc);
+	dio->io = io;
+	return dio;
+
+rz_diff_io_open_end:
+	rz_io_desc_close(desc);
+	rz_io_free(io);
+	free(dio);
+	return NULL;
+}
+
+static void rz_diff_io_close(DiffIO *dio) {
+	if (!dio) {
+		return;
+	}
+	rz_io_desc_close(dio->io->desc);
+	rz_io_free(dio->io);
+	free(dio);
 }
 
 /* This is terrible because can eat a lot of memory */
 static ut8 *rz_diff_slurp_file(const char *file, size_t *size) {
 	ut8 *buffer = NULL;
 	ssize_t read = 0;
-	size_t filesize = 0;
-	RzIODesc *desc = NULL;
-	RzIO *io = rz_io_new();
-	if (!io) {
-		rz_diff_error("cannot allocate io\n");
+	DiffIO *dio = NULL;
+
+	dio = rz_diff_io_open(file);
+	if (!dio) {
 		goto rz_diff_slurp_file_end;
 	}
 
-	desc = rz_io_open_nomap(io, file, RZ_PERM_R, 0);
-	if (!desc) {
-		rz_diff_error("cannot open file '%s'\n", file);
-		goto rz_diff_slurp_file_end;
-	}
-
-	filesize = rz_io_desc_size(io->desc);
-	if (filesize > MEGABYTE(5)) {
+	if (dio->filesize > MEGABYTE(5)) {
 		rz_diff_error("cannot open file '%s' because its size is above 5Mb\n", file);
 		goto rz_diff_slurp_file_end;
 	}
 
-	buffer = malloc(filesize);
+	buffer = malloc(dio->filesize);
 	if (!buffer) {
 		rz_diff_error("cannot allocate buffer\n");
 		goto rz_diff_slurp_file_end;
 	}
 
-	read = rz_io_pread_at(io, 0, buffer, filesize);
-	if (read != filesize) {
+	read = rz_io_pread_at(dio->io, 0, buffer, dio->filesize);
+	if (read != dio->filesize) {
 		free(buffer);
 		buffer = NULL;
 		rz_diff_error("cannot read buffer correctly\n");
 		goto rz_diff_slurp_file_end;
 	}
 
-	*size = filesize;
+	*size = dio->filesize;
 
 rz_diff_slurp_file_end:
-	rz_io_desc_close(desc);
-	rz_io_free(io);
+	rz_diff_io_close(dio);
 	return buffer;
 }
 
@@ -501,18 +583,10 @@ static bool rz_diff_file_open(DiffFile *dfile, const char *filename) {
 	RzBinOptions opt = { 0 };
 	RzBinFile *file = NULL;
 	RzBin *bin = NULL;
-	RzIODesc *desc = NULL;
-	RzIO *io = NULL;
+	DiffIO *dio = NULL;
 
-	io = rz_io_new();
-	if (!io) {
-		rz_diff_error("cannot allocate io\n");
-		goto rz_diff_file_open_bad;
-	}
-
-	desc = rz_io_open_nomap(io, filename, RZ_PERM_R, 0);
-	if (!desc) {
-		rz_diff_error("cannot open file '%s'\n", filename);
+	dio = rz_diff_io_open(filename);
+	if (!dio) {
 		goto rz_diff_file_open_bad;
 	}
 
@@ -522,10 +596,10 @@ static bool rz_diff_file_open(DiffFile *dfile, const char *filename) {
 		goto rz_diff_file_open_bad;
 	}
 
-	rz_io_bind(io, &bin->iob);
+	rz_io_bind(dio->io, &bin->iob);
 
-	rz_bin_options_init(&opt, desc->fd, 0, 0, false, false);
-	opt.sz = rz_io_desc_size(desc);
+	rz_bin_options_init(&opt, dio->io->desc->fd, 0, 0, false, false);
+	opt.sz = rz_io_desc_size(dio->io->desc);
 
 	file = rz_bin_open_io(bin, &opt);
 	if (!file) {
@@ -533,26 +607,22 @@ static bool rz_diff_file_open(DiffFile *dfile, const char *filename) {
 		goto rz_diff_file_open_bad;
 	}
 
-	dfile->filename = filename;
 	dfile->plugin = rz_bin_file_cur_plugin(file);
 	dfile->file = file;
 	dfile->bin = bin;
-	dfile->desc = desc;
-	dfile->io = io;
+	dfile->dio = dio;
 	return true;
 
 rz_diff_file_open_bad:
 	rz_bin_free(bin);
-	rz_io_desc_close(desc);
-	rz_io_free(io);
+	rz_diff_io_close(dio);
 	return false;
 }
 
 static void rz_diff_file_close(DiffFile *file) {
 	// plugin and file are freed by rz_bin_free
 	rz_bin_free(file->bin);
-	rz_io_desc_close(file->desc);
-	rz_io_free(file->io);
+	rz_diff_io_close(file->dio);
 }
 
 #define rz_diff_file_get(df, n) ((df)->file->o->n)
@@ -591,12 +661,12 @@ static RzDiff *rz_diff_imports_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 
 	list_a = rz_diff_file_get(dfile_a, imports);
 	if (!list_a) {
-		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_a->filename);
+		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_a->dio->filename);
 	}
 
 	list_b = rz_diff_file_get(dfile_b, imports);
 	if (!list_b) {
-		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_b->filename);
+		rz_diff_error_ret(NULL, "cannot get imports from '%s'\n", dfile_b->dio->filename);
 	}
 
 	rz_list_sort(list_a, (RzListComparator)import_compare);
@@ -658,12 +728,12 @@ static RzDiff *rz_diff_symbols_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 
 	list_a = rz_diff_file_get(dfile_a, symbols);
 	if (!list_a) {
-		rz_diff_error_ret(NULL, "cannot get symbols from '%s'\n", dfile_a->filename);
+		rz_diff_error_ret(NULL, "cannot get symbols from '%s'\n", dfile_a->dio->filename);
 	}
 
 	list_b = rz_diff_file_get(dfile_b, symbols);
 	if (!list_b) {
-		rz_diff_error_ret(NULL, "cannot get symbols from '%s'\n", dfile_b->filename);
+		rz_diff_error_ret(NULL, "cannot get symbols from '%s'\n", dfile_b->dio->filename);
 	}
 
 	rz_list_sort(list_a, (RzListComparator)symbol_compare);
@@ -733,12 +803,12 @@ static RzDiff *rz_diff_strings_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 
 	list_a = rz_diff_file_get(dfile_a, strings);
 	if (!list_a) {
-		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_a->filename);
+		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_a->dio->filename);
 	}
 
 	list_b = rz_diff_file_get(dfile_b, strings);
 	if (!list_b) {
-		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_b->filename);
+		rz_diff_error_ret(NULL, "cannot get strings from '%s'\n", dfile_b->dio->filename);
 	}
 
 	rz_list_sort(list_a, (RzListComparator)string_compare);
@@ -799,12 +869,12 @@ static RzDiff *rz_diff_classes_new(DiffFile *dfile_a, DiffFile *dfile_b, bool co
 
 	list_a = rz_diff_file_get(dfile_a, classes);
 	if (!list_a) {
-		rz_diff_error_ret(NULL, "cannot get classes from '%s'\n", dfile_a->filename);
+		rz_diff_error_ret(NULL, "cannot get classes from '%s'\n", dfile_a->dio->filename);
 	}
 
 	list_b = rz_diff_file_get(dfile_b, classes);
 	if (!list_b) {
-		rz_diff_error_ret(NULL, "cannot get classes from '%s'\n", dfile_b->filename);
+		rz_diff_error_ret(NULL, "cannot get classes from '%s'\n", dfile_b->dio->filename);
 	}
 
 	rz_list_sort(list_a, (RzListComparator)class_compare);
@@ -880,12 +950,12 @@ static RzDiff *rz_diff_entries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 
 	list_a = rz_diff_file_get(dfile_a, entries);
 	if (!list_a) {
-		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_a->filename);
+		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_a->dio->filename);
 	}
 
 	list_b = rz_diff_file_get(dfile_b, entries);
 	if (!list_b) {
-		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_b->filename);
+		rz_diff_error_ret(NULL, "cannot get entries from '%s'\n", dfile_b->dio->filename);
 	}
 
 	rz_list_sort(list_a, (RzListComparator)entry_compare);
@@ -924,12 +994,12 @@ static RzDiff *rz_diff_libraries_new(DiffFile *dfile_a, DiffFile *dfile_b) {
 
 	list_a = rz_diff_file_get(dfile_a, libs);
 	if (!list_a) {
-		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_a->filename);
+		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_a->dio->filename);
 	}
 
 	list_b = rz_diff_file_get(dfile_b, libs);
 	if (!list_b) {
-		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_b->filename);
+		rz_diff_error_ret(NULL, "cannot get libraries from '%s'\n", dfile_b->dio->filename);
 	}
 
 	rz_list_sort(list_a, (RzListComparator)libs_compare);
@@ -1039,12 +1109,12 @@ static RzDiff *rz_diff_sections_new(DiffFile *dfile_a, DiffFile *dfile_b, bool c
 
 	list_a = rz_diff_file_get(dfile_a, sections);
 	if (!list_a) {
-		rz_diff_error_ret(NULL, "cannot get sections from '%s'\n", dfile_a->filename);
+		rz_diff_error_ret(NULL, "cannot get sections from '%s'\n", dfile_a->dio->filename);
 	}
 
 	list_b = rz_diff_file_get(dfile_b, sections);
 	if (!list_b) {
-		rz_diff_error_ret(NULL, "cannot get sections from '%s'\n", dfile_b->filename);
+		rz_diff_error_ret(NULL, "cannot get sections from '%s'\n", dfile_b->dio->filename);
 	}
 
 	rz_list_sort(list_a, (RzListComparator)section_compare);
@@ -1116,12 +1186,12 @@ static RzDiff *rz_diff_fields_new(DiffFile *dfile_a, DiffFile *dfile_b, bool com
 
 	list_a = rz_diff_file_get(dfile_a, fields);
 	if (!list_a) {
-		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_a->filename);
+		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_a->dio->filename);
 	}
 
 	list_b = rz_diff_file_get(dfile_b, fields);
 	if (!list_b) {
-		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_b->filename);
+		rz_diff_error_ret(NULL, "cannot get fields from '%s'\n", dfile_b->dio->filename);
 	}
 
 	rz_list_sort(list_a, (RzListComparator)field_compare);
@@ -1339,6 +1409,440 @@ rz_diff_graphs_files_bad:
 	return success;
 }
 
+/********************************************************************************/
+
+static void rz_diff_resize_buffer(DiffHexView *hview) {
+	int height, width = rz_cons_get_size(&height);
+
+	ut64 size_a = ((width / 2) * (height - 2));
+	ut64 size_b = ((width / 2) * (height - 2));
+
+	hview->line = realloc(hview->line, width * height);
+	hview->buffer_a = realloc(hview->buffer_a, size_a);
+	hview->buffer_b = realloc(hview->buffer_b, size_b);
+	hview->size_a = size_a;
+	hview->size_b = size_b;
+	hview->screen.width = width;
+	hview->screen.height = height;
+
+	rz_cons_canvas_free(hview->canvas);
+	hview->canvas = rz_cons_canvas_new(width, height);
+	hview->canvas->color = hview->colors;
+	hview->canvas->linemode = 1;
+}
+
+typedef enum diff_hex_len_t {
+	DIFF_HEX_8 = 58,
+	DIFF_HEX_16 = 90,
+	DIFF_HEX_32 = 154,
+} DiffHexLen;
+
+#define P(x) (IS_PRINTABLE(x) ? x : '.')
+#define hexdump_false_n(n) \
+	static inline void hexdump_##n##_false(bool colors, char *line, int lsize, ut64 offset, const ut8 *buffer, ssize_t read) { \
+		ssize_t w, p; \
+		const char *blue = colors ? Color_BLUE : ""; \
+		const char *red = colors ? Color_RED : ""; \
+		const char *reset = colors ? Color_RESET : ""; \
+		p = snprintf(line, lsize, " %s0x%016" PFMT64x "%s | %s", blue, offset, reset, red); \
+		for (w = 0; w < read && w < (n); w++) { \
+			p += snprintf(line + p, RZ_MAX(lsize - p, 0), "%02x ", buffer[w]); \
+		} \
+		if (w < (n)) { \
+			memset(line + p, ' ', ((n)-w) * 3); \
+			p += ((n)-w) * 3; \
+		} \
+		p += snprintf(line + p, RZ_MAX(lsize - p, 0), "%s | %s", reset, red); \
+		for (w = 0; w < (n); w++) { \
+			if (w < read) { \
+				*(line + p) = P(buffer[w]); \
+			} else { \
+				*(line + p) = ' '; \
+			} \
+			p++; \
+		} \
+		snprintf(line + p, RZ_MAX(lsize - p, 0), "%s |", reset); \
+	}
+
+hexdump_false_n(8);
+hexdump_false_n(16);
+hexdump_false_n(32);
+
+static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 pos, ssize_t read_a, ssize_t read_b) {
+	int width = hview->screen.width;
+	int height = hview->screen.height;
+	bool colors = hview->colors;
+	char *line = hview->line;
+	const ut8 *buffer_a = hview->buffer_a;
+	const ut8 *buffer_b = hview->buffer_b;
+	ut64 offset_a = hview->offset_a;
+	ut64 offset_b = hview->offset_b;
+	int lp = 0;
+	int lsize = width * height;
+	int hexlen = 0;
+
+	if (read_a < 1) {
+		memset(line, ' ', hlen);
+		offset_b += pos;
+		buffer_b += pos;
+		read_b -= pos;
+
+		line += hlen;
+		width -= hlen;
+		switch (hlen) {
+		case DIFF_HEX_8: hexdump_8_false(colors, line, width, offset_b, buffer_b, read_b); return;
+		case DIFF_HEX_16: hexdump_16_false(colors, line, width, offset_b, buffer_b, read_b); return;
+		case DIFF_HEX_32: hexdump_32_false(colors, line, width, offset_b, buffer_b, read_b); return;
+		}
+	} else if (read_b < 1) {
+		offset_a += pos;
+		buffer_a += pos;
+		read_a -= pos;
+		switch (hlen) {
+		case DIFF_HEX_8: hexdump_8_false(colors, line, width, offset_a, buffer_a, read_a); return;
+		case DIFF_HEX_16: hexdump_16_false(colors, line, width, offset_a, buffer_a, read_a); return;
+		case DIFF_HEX_32: hexdump_32_false(colors, line, width, offset_a, buffer_a, read_a); return;
+		}
+		return;
+	}
+
+	switch (hlen) {
+	case DIFF_HEX_16:
+		hexlen = 16;
+		break;
+	case DIFF_HEX_32:
+		hexlen = 32;
+		break;
+	default:
+		hexlen = 8;
+		break;
+	}
+	ssize_t i;
+	bool same = false;
+	const char *blue = colors ? Color_BLUE : "";
+	const char *green = colors ? Color_GREEN : "";
+	const char *red = colors ? Color_RED : "";
+	const char *reset = colors ? Color_RESET : "";
+#define printline(fmt, ...) snprintf(line + lp, RZ_MAX(lsize - lp, 0), fmt, ##__VA_ARGS__)
+	lp = 0;
+	lp += printline(" %s0x%016" PFMT64x "%s | ", blue, offset_a + pos, reset);
+	for (i = 0; i < hexlen && i < read_a; ++i) {
+		if (i < read_b) {
+			same = buffer_a[pos + i] == buffer_b[pos + i];
+			lp += printline("%s%02x%s ", same ? green : red, buffer_a[pos + i], reset);
+		}
+	}
+	if (i < hexlen) {
+		memset(line + lp, ' ', (hexlen - i) * 3);
+		lp += (hexlen - i) * 3;
+	}
+
+	lp += printline(" | ");
+	for (i = 0; i < hexlen && i < read_a; ++i) {
+		if (i < read_b) {
+			same = buffer_a[pos + i] == buffer_b[pos + i];
+			lp += printline("%s%c%s", same ? green : red, P(buffer_a[pos + i]), reset);
+		}
+	}
+	if (i < hexlen) {
+		memset(line + lp, ' ', (hexlen - i));
+		lp += (hexlen - i);
+	}
+
+	lp += printline(" | %s0x%016" PFMT64x "%s | ", blue, offset_b + pos, reset);
+	for (i = 0; i < hexlen && i < read_b; ++i) {
+		if (i < read_a) {
+			same = buffer_a[pos + i] == buffer_b[pos + i];
+			lp += printline("%s%02x%s ", same ? green : red, buffer_b[pos + i], reset);
+		}
+	}
+	if (i < hexlen) {
+		memset(line + lp, ' ', (hexlen - i) * 3);
+		lp += (hexlen - i) * 3;
+	}
+
+	lp += printline(" | ");
+	for (i = 0; i < hexlen && i < read_b; ++i) {
+		if (i < read_a) {
+			same = buffer_a[pos + i] == buffer_b[pos + i];
+			lp += printline("%s%c%s", same ? green : red, P(buffer_b[pos + i]), reset);
+		}
+	}
+	if (i < hexlen) {
+		memset(line + lp, ' ', (hexlen - i));
+		lp += (hexlen - i);
+	}
+
+	lp += printline(" |");
+#undef printline
+}
+#undef P
+
+static inline int draw_hlen(DiffHexView *hview) {
+	int width = hview->screen.width;
+	if (width >= (DIFF_HEX_32 * 2)) {
+		return DIFF_HEX_32;
+	} else if (width >= (DIFF_HEX_16 * 2)) {
+		return DIFF_HEX_16;
+	}
+	return DIFF_HEX_8;
+}
+
+static bool rz_diff_draw_buffer(DiffHexView *hview) {
+	ssize_t read_a = 0, read_b = 0;
+	char *line = hview->line;
+	int shift = 8;
+	int width = hview->screen.width;
+	int height = hview->screen.height;
+	DiffIO *io_a = hview->io_a;
+	DiffIO *io_b = hview->io_b;
+	RzConsCanvas *canvas = hview->canvas;
+	RzCanvasLineStyle style = {
+		.dot_style = DOT_STYLE_NORMAL,
+		.symbol = LINE_NOSYM_HORIZ,
+		.color = LINE_NONE,
+	};
+
+	if (!line || !hview->buffer_a || !hview->buffer_b) {
+		return false;
+	}
+
+	read_a = rz_io_pread_at(io_a->io, hview->offset_a, hview->buffer_a, hview->size_a);
+	read_b = rz_io_pread_at(io_b->io, hview->offset_b, hview->buffer_b, hview->size_b);
+
+	snprintf(line, width, "| %s offset: 0x%-30" PFMT64x " %s offset: 0x%-16" PFMT64x "\n'- hex view ",
+		io_a->filename, hview->offset_a, io_b->filename, hview->offset_b);
+
+	rz_cons_goto_origin_reset();
+	rz_cons_clear();
+	rz_cons_canvas_clear(canvas);
+	rz_cons_canvas_gotoxy(canvas, 0, 0);
+	rz_cons_canvas_write(canvas, line);
+	DiffHexLen hlen = draw_hlen(hview);
+	switch (hlen) {
+	case DIFF_HEX_16:
+		shift = 4;
+		break;
+	case DIFF_HEX_32:
+		shift = 8;
+		break;
+	default:
+		shift = 2;
+		break;
+	}
+	for (ut64 h = 0, pos = 0; h < (ut64)(height - 3); ++h) {
+		pos = h << shift;
+		// 180
+		if (read_a < 1 && read_b < 1) {
+			rz_cons_canvas_fill(canvas, 0, h + 2, width, 0, ' ');
+		} else {
+			diff_hexdump_line(hview, hlen, pos, read_a, read_b);
+			rz_cons_canvas_gotoxy(canvas, 0, h + 2);
+			rz_cons_canvas_write(canvas, line);
+		}
+	}
+	rz_cons_canvas_gotoxy(canvas, 0, 0);
+	rz_cons_canvas_line_diagonal(canvas, 0, 0, width - 1, 0, &style);
+	rz_cons_canvas_print(canvas);
+	rz_cons_flush();
+	return true;
+}
+
+static bool rz_diff_hex_visual(DiffContext *ctx) {
+	RzCons *console = NULL;
+	DiffIO *io_a = NULL;
+	DiffIO *io_b = NULL;
+	RzConsCanvas *canvas = NULL;
+	DiffHexView hview;
+	bool draw_visual = true;
+	int read, pressed;
+	int height = ctx->screen.width;
+	int width = ctx->screen.height;
+	ut64 size_a = 0;
+	ut64 size_b = 0;
+
+	hview.line = NULL;
+	hview.buffer_a = NULL;
+	hview.buffer_b = NULL;
+
+	console = rz_cons_new();
+	if (!console) {
+		rz_diff_error("cannot initialize console.\n");
+		goto rz_diff_hex_visual_fail;
+	}
+
+	rz_cons_set_interactive(true);
+
+	io_a = rz_diff_io_open(ctx->file_a);
+	if (!io_a) {
+		goto rz_diff_hex_visual_fail;
+	}
+
+	io_b = rz_diff_io_open(ctx->file_b);
+	if (!io_b) {
+		goto rz_diff_hex_visual_fail;
+	}
+
+	if (width < 1 && height < 1) {
+		width = rz_cons_get_size(&height);
+		if (width < 1 && height < 1) {
+			rz_diff_error("invalid screen size; use -S WxH to define the sizes.\n");
+			goto rz_diff_hex_visual_fail;
+		}
+	}
+
+	canvas = rz_cons_canvas_new(width, height);
+	if (!canvas) {
+		rz_diff_error("cannot allocate canvas. try to use -S WxH to define the sizes.\n");
+		goto rz_diff_hex_visual_fail;
+	}
+
+	size_a = ((width / 2) * (height - 2));
+	size_b = ((width / 2) * (height - 2));
+
+	canvas->color = ctx->colors;
+	canvas->linemode = 1;
+
+	hview.line = malloc(width * height);
+	if (!hview.line) {
+		rz_diff_error("cannot allocate line buffer.\n");
+		goto rz_diff_hex_visual_fail;
+	}
+	hview.buffer_a = malloc(size_a);
+	if (!hview.buffer_a) {
+		rz_diff_error("cannot allocate buffer for %s.\n", io_a->filename);
+		goto rz_diff_hex_visual_fail;
+	}
+	hview.buffer_b = malloc(size_b);
+	if (!hview.buffer_b) {
+		rz_diff_error("cannot allocate buffer for %s.\n", io_b->filename);
+		goto rz_diff_hex_visual_fail;
+	}
+
+	hview.size_a = size_a;
+	hview.size_b = size_b;
+	hview.io_a = io_a;
+	hview.io_b = io_b;
+	hview.canvas = canvas;
+	hview.screen.width = width;
+	hview.screen.height = height;
+	hview.offset_a = 0;
+	hview.offset_b = 0;
+	hview.colors = ctx->colors;
+
+	rz_cons_enable_mouse(false);
+
+	console->event_data = &hview;
+	console->event_resize = (RzConsEvent)rz_diff_resize_buffer;
+
+	while (draw_visual && !rz_cons_is_breaked()) {
+		if (!rz_diff_draw_buffer(&hview)) {
+			break;
+		}
+
+		read = rz_cons_readchar();
+		pressed = rz_cons_arrow_to_hjkl(read);
+
+		switch (pressed) {
+		case 'G':
+		case 'g':
+			hview.offset_a = hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
+			break;
+		case 'Z':
+		case 'z':
+			if (hview.offset_a > 0) {
+				hview.offset_a--;
+			}
+			break;
+		case 'A':
+		case 'a':
+			if (hview.offset_a < UT64_MAX) {
+				hview.offset_a++;
+			}
+			break;
+		case 'C':
+		case 'c':
+			if (hview.offset_b > 0) {
+				hview.offset_b--;
+			}
+			break;
+		case 'D':
+		case 'd':
+			if (hview.offset_b < UT64_MAX) {
+				hview.offset_b++;
+			}
+			break;
+		/* ARROWS */
+		case 'J':
+		case 'j':
+			if ((hview.offset_a - 16) < hview.offset_a) {
+				hview.offset_a -= 16;
+			} else if (hview.offset_a != hview.offset_b) {
+				hview.offset_a = RZ_MIN(hview.offset_a, hview.offset_b);
+			} else {
+				hview.offset_a = 0;
+			}
+			if ((hview.offset_b - 16) < hview.offset_b) {
+				hview.offset_b -= 16;
+			} else if (hview.offset_a != hview.offset_b) {
+				hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
+			} else {
+				hview.offset_b = 0;
+			}
+			break;
+		case 'K':
+		case 'k':
+			if ((hview.offset_a + 16) > hview.offset_a) {
+				hview.offset_a += 16;
+			}
+			if ((hview.offset_b + 16) > hview.offset_b) {
+				hview.offset_b += 16;
+			}
+			break;
+		case 'L':
+		case 'l':
+			if (hview.offset_a > 0) {
+				hview.offset_a--;
+			}
+			if (hview.offset_b > 0) {
+				hview.offset_b--;
+			}
+			break;
+		case 'H':
+		case 'h':
+			if (hview.offset_a < UT64_MAX) {
+				hview.offset_a++;
+			}
+			if (hview.offset_b < UT64_MAX) {
+				hview.offset_b++;
+			}
+			break;
+		case -1: // EOF
+		case 'Q':
+		case 'q':
+			draw_visual = false;
+		default:
+			break;
+		}
+	}
+	console->event_data = NULL;
+	console->event_resize = NULL;
+
+	rz_cons_goto_origin_reset();
+	rz_cons_clear();
+	rz_cons_flush();
+
+rz_diff_hex_visual_fail:
+	free(hview.line);
+	free(hview.buffer_a);
+	free(hview.buffer_b);
+	rz_cons_canvas_free(canvas);
+	rz_diff_io_close(io_a);
+	rz_diff_io_close(io_b);
+	rz_cons_free();
+	return true;
+}
+
 RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	bool success = false;
 	DiffContext ctx;
@@ -1354,6 +1858,9 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		break;
 	case DIFF_OPT_GRAPH:
 		success = rz_diff_graphs_files(&ctx);
+		break;
+	case DIFF_OPT_HEX_VISUAL:
+		success = rz_diff_hex_visual(&ctx);
 		break;
 	case DIFF_OPT_VERSION:
 		rz_main_version_print("rz-diff");
