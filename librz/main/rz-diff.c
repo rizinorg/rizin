@@ -1591,7 +1591,7 @@ static inline int offset_len(DiffHexView *hview) {
 	return 4;
 }
 
-static bool rz_diff_draw_buffer(DiffHexView *hview) {
+static bool rz_diff_draw_buffer(DiffHexView *hview, bool show_help) {
 	ssize_t read_a = 0, read_b = 0;
 	char *line = hview->line;
 	int shift = 8, offlen = 16, xpos = 0;
@@ -1605,6 +1605,7 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 	RzConsCanvas *canvas = hview->canvas;
 	const char *number = hview->colors.number;
 	const char *reset = hview->colors.reset;
+	const char *toolbar = NULL;
 
 	if (!line || !hview->buffer_a || !hview->buffer_b) {
 		return false;
@@ -1646,7 +1647,7 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 			rz_cons_canvas_write(canvas, line);
 		}
 	}
-	rz_cons_canvas_box(canvas, 0, 0, width, height - 1, Color_RESET);
+	rz_cons_canvas_box(canvas, 0, 0, width, height - 1, reset);
 	snprintf(line, width, " [%*" PFMT64x " | %*" PFMT64x "]( %.15s )", offlen, hview->offset_a, offlen, filesize_a, file_a);
 	rz_cons_canvas_gotoxy(canvas, xpos, 0);
 	rz_cons_canvas_write(canvas, line);
@@ -1655,7 +1656,7 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 	rz_cons_canvas_write(canvas, line);
 
 	// clang-format off
-	const char* toolbar = " "
+	toolbar = " "
 		"%s1%s PgUp | "
 		"%s2%s PgDown | "
 		"%sA%s f0 +1 | "
@@ -1666,13 +1667,70 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 		"%s/\\%s +16 | "
 		"%s\\/%s -16 | "
 		"%s<%s +1 | "
-		"%s>%s -1 | " 
+		"%s>%s -1 | "
 		"%s:%s seek";
 	// clang-format on
 	snprintf(line, width, toolbar, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset);
 
 	rz_cons_canvas_gotoxy(canvas, 0, height);
 	rz_cons_canvas_write(canvas, line);
+
+	if (show_help) {
+		rz_cons_canvas_fill(canvas, 4, 2, 48, 20, ' ');
+		rz_cons_canvas_box(canvas, 4, 2, 48, 20, number);
+
+		snprintf(line, width, "%sHelp page%s\n", number, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 3);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%s1%s  decrease the offsets by 0x%x\n", number, reset, (1 << shift) * (height - 2));
+		rz_cons_canvas_gotoxy(canvas, 6, 5);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%s2%s  increase the offsets by 0x%x\n", number, reset, (1 << shift) * (height - 2));
+		rz_cons_canvas_gotoxy(canvas, 6, 6);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%sA%s  decrease the offset of the file0 by 1\n", number, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 8);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%sZ%s  increase the offset of the file0 by 1\n", number, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 9);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%sD%s  decrease the offset of the file1 by 1\n", number, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 11);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%sC%s  increase the offset of the file1 by 1\n", number, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 12);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%sG%s  sets both offsets to a common value\n", number, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 13);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%s/\\%s increase both offsets by %u\n", number, reset, 1 << shift);
+		rz_cons_canvas_gotoxy(canvas, 6, 15);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%s\\/%s decrease both offsets by %u\n", number, reset, 1 << shift);
+		rz_cons_canvas_gotoxy(canvas, 6, 16);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%s<%s  increase both offsets by 1\n", number, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 17);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%s>%s  decrease both offsets by 1\n", number, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 18);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, width, "%s:%s  seek at offset (relative via +-)\n", number, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 19);
+		rz_cons_canvas_write(canvas, line);
+	}
 
 	rz_cons_canvas_print(canvas);
 	rz_cons_gotoxy(width, height);
@@ -1739,6 +1797,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	RzConsCanvas *canvas = NULL;
 	DiffHexView hview;
 	bool draw_visual = true;
+	bool show_help = false;
 	int read, pressed;
 	int height = ctx->screen.width;
 	int width = ctx->screen.height;
@@ -1829,15 +1888,23 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 
 	int seekmin = 0;
 	while (draw_visual && !rz_cons_is_breaked()) {
-		if (!rz_diff_draw_buffer(&hview)) {
+		if (!rz_diff_draw_buffer(&hview, show_help)) {
 			break;
 		}
-
 		seekmin = seek_min_value(&hview);
 		read = rz_cons_readchar();
 		pressed = rz_cons_arrow_to_hjkl(read);
 
+		if (show_help && (pressed == 'q' || pressed == 'Q')) {
+			// allow to close the help without closing the util
+			pressed = 0;
+		}
+
+		show_help = false;
 		switch (pressed) {
+		case '?':
+			show_help = true;
+			break;
 		case ':':
 			prompt_offset_and_seek(&hview, seekmin);
 			break;
