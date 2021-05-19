@@ -191,7 +191,8 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr)
 		eprintf("No file open?\n");
 		return;
 	}
-
+	
+	core->dbg->main_arena_resolved = false;
 	RzList *old_sections = __save_old_sections(core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
 	int bits = core->rasm->bits;
@@ -258,7 +259,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 		rz_core_io_file_open(core, core->io->desc->fd);
 		return;
 	}
-
+	core->dbg->main_arena_resolved = false;
 	RzList *old_sections = __save_old_sections(core);
 	ut64 old_base = core->bin->cur->o->baddr_shift;
 	int bits = core->rasm->bits;
