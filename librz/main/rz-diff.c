@@ -105,8 +105,14 @@ typedef struct diff_function_t {
 	int n_instructions;
 } DiffFunction;
 
+typedef struct diff_colors_t {
+	const char *number;
+	const char *match;
+	const char *unmatch;
+	const char *reset;
+} DiffColors;
+
 typedef struct diff_hex_view_t {
-	bool colors;
 	char *line;
 	ut8 *buffer_a;
 	ut8 *buffer_b;
@@ -116,6 +122,7 @@ typedef struct diff_hex_view_t {
 	ut64 offset_b;
 	DiffIO *io_a;
 	DiffIO *io_b;
+	DiffColors colors;
 	RzConsCanvas *canvas;
 	DiffScreen screen;
 } DiffHexView;
@@ -211,6 +218,11 @@ static void rz_diff_show_help(bool usage_only) {
 		"              sections   | compares sections found in the files\n"
 		"              strings    | compares strings found in the files\n"
 		"              symbols    | compares symbols found in the files\n"
+		"  palette colors can be changed by adding the following lines\n"
+		"          inside the $HOME/.rizinrc file\n"
+		"  ec graph.diff.unknown blue  | offset color\n"
+		"  ec graph.diff.match   green | match color\n"
+		"  ec graph.diff.unmatch red   | mismatch color\n"
 		"");
 }
 
@@ -358,6 +370,13 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 	} else if (ctx->option == DIFF_OPT_UNKNOWN) {
 		rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "option -t or -d is required to be specified.\n");
 	}
+}
+
+static void rz_diff_get_colors(DiffColors *dcolors, RzConsContext *ctx, bool colors) {
+	dcolors->number = colors ? ctx->pal.graph_diff_unknown : "";
+	dcolors->match = colors ? ctx->pal.graph_diff_match : "";
+	dcolors->unmatch = colors ? ctx->pal.graph_diff_unmatch : "";
+	dcolors->reset = colors ? Color_RESET : "";
 }
 
 static DiffIO *rz_diff_io_open(const char *file) {
@@ -1427,7 +1446,7 @@ static void rz_diff_resize_buffer(DiffHexView *hview) {
 
 	rz_cons_canvas_free(hview->canvas);
 	hview->canvas = rz_cons_canvas_new(width, height);
-	hview->canvas->color = hview->colors;
+	hview->canvas->color = *hview->colors.match > 0;
 	hview->canvas->linemode = 1;
 }
 
@@ -1437,41 +1456,14 @@ typedef enum diff_hex_len_t {
 	DIFF_HEX_32 = 154,
 } DiffHexLen;
 
-#define P(x) (IS_PRINTABLE(x) ? x : '.')
-#define hexdump_false_n(n) \
-	static inline void hexdump_##n##_false(bool colors, char *line, int lsize, ut64 offset, const ut8 *buffer, ssize_t read) { \
-		ssize_t w, p; \
-		const char *blue = colors ? Color_BLUE : ""; \
-		const char *red = colors ? Color_RED : ""; \
-		const char *reset = colors ? Color_RESET : ""; \
-		p = snprintf(line, lsize, " %s0x%016" PFMT64x "%s | %s", blue, offset, reset, red); \
-		for (w = 0; w < read && w < (n); w++) { \
-			p += snprintf(line + p, RZ_MAX(lsize - p, 0), "%02x ", buffer[w]); \
-		} \
-		if (w < (n)) { \
-			memset(line + p, ' ', ((n)-w) * 3); \
-			p += ((n)-w) * 3; \
-		} \
-		p += snprintf(line + p, RZ_MAX(lsize - p, 0), "%s | %s", reset, red); \
-		for (w = 0; w < (n); w++) { \
-			if (w < read) { \
-				*(line + p) = P(buffer[w]); \
-			} else { \
-				*(line + p) = ' '; \
-			} \
-			p++; \
-		} \
-		snprintf(line + p, RZ_MAX(lsize - p, 0), "%s |", reset); \
-	}
-
-hexdump_false_n(8);
-hexdump_false_n(16);
-hexdump_false_n(32);
-
 static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 pos, ssize_t read_a, ssize_t read_b) {
+	const char *number = hview->colors.number;
+	const char *match = hview->colors.match;
+	const char *unmatch = hview->colors.unmatch;
+	const char *reset = hview->colors.reset;
+
 	int width = hview->screen.width;
 	int height = hview->screen.height;
-	bool colors = hview->colors;
 	char *line = hview->line;
 	const ut8 *buffer_a = hview->buffer_a;
 	const ut8 *buffer_b = hview->buffer_b;
@@ -1480,31 +1472,6 @@ static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 p
 	int lp = 0;
 	int lsize = width * height;
 	int hexlen = 0;
-
-	if (read_a < 1) {
-		memset(line, ' ', hlen);
-		offset_b += pos;
-		buffer_b += pos;
-		read_b -= pos;
-
-		line += hlen;
-		width -= hlen;
-		switch (hlen) {
-		case DIFF_HEX_8: hexdump_8_false(colors, line, width, offset_b, buffer_b, read_b); return;
-		case DIFF_HEX_16: hexdump_16_false(colors, line, width, offset_b, buffer_b, read_b); return;
-		case DIFF_HEX_32: hexdump_32_false(colors, line, width, offset_b, buffer_b, read_b); return;
-		}
-	} else if (read_b < 1) {
-		offset_a += pos;
-		buffer_a += pos;
-		read_a -= pos;
-		switch (hlen) {
-		case DIFF_HEX_8: hexdump_8_false(colors, line, width, offset_a, buffer_a, read_a); return;
-		case DIFF_HEX_16: hexdump_16_false(colors, line, width, offset_a, buffer_a, read_a); return;
-		case DIFF_HEX_32: hexdump_32_false(colors, line, width, offset_a, buffer_a, read_a); return;
-		}
-		return;
-	}
 
 	switch (hlen) {
 	case DIFF_HEX_16:
@@ -1519,17 +1486,17 @@ static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 p
 	}
 	ssize_t i;
 	bool same = false;
-	const char *blue = colors ? Color_BLUE : "";
-	const char *green = colors ? Color_GREEN : "";
-	const char *red = colors ? Color_RED : "";
-	const char *reset = colors ? Color_RESET : "";
+
+#define P(x)                (IS_PRINTABLE(x) ? x : '.')
 #define printline(fmt, ...) snprintf(line + lp, RZ_MAX(lsize - lp, 0), fmt, ##__VA_ARGS__)
 	lp = 0;
-	lp += printline("  %s0x%016" PFMT64x "%s | ", blue, offset_a + pos, reset);
+	lp += printline("%s0x%016" PFMT64x "%s | ", number, offset_a + pos, reset);
 	for (i = 0; i < hexlen && i < read_a; ++i) {
 		if (i < read_b) {
 			same = buffer_a[pos + i] == buffer_b[pos + i];
-			lp += printline("%s%02x%s ", same ? green : red, buffer_a[pos + i], reset);
+			lp += printline("%s%02x%s ", same ? match : unmatch, buffer_a[pos + i], reset);
+		} else {
+			lp += printline("%s%02x%s ", unmatch, buffer_a[pos + i], reset);
 		}
 	}
 	if (i < hexlen) {
@@ -1541,7 +1508,9 @@ static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 p
 	for (i = 0; i < hexlen && i < read_a; ++i) {
 		if (i < read_b) {
 			same = buffer_a[pos + i] == buffer_b[pos + i];
-			lp += printline("%s%c%s", same ? green : red, P(buffer_a[pos + i]), reset);
+			lp += printline("%s%c%s", same ? match : unmatch, P(buffer_a[pos + i]), reset);
+		} else {
+			lp += printline("%s%c%s", unmatch, P(buffer_a[pos + i]), reset);
 		}
 	}
 	if (i < hexlen) {
@@ -1549,11 +1518,13 @@ static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 p
 		lp += (hexlen - i);
 	}
 
-	lp += printline(" | %s0x%016" PFMT64x "%s | ", blue, offset_b + pos, reset);
+	lp += printline(" | %s0x%016" PFMT64x "%s | ", number, offset_b + pos, reset);
 	for (i = 0; i < hexlen && i < read_b; ++i) {
 		if (i < read_a) {
 			same = buffer_a[pos + i] == buffer_b[pos + i];
-			lp += printline("%s%02x%s ", same ? green : red, buffer_b[pos + i], reset);
+			lp += printline("%s%02x%s ", same ? match : unmatch, buffer_b[pos + i], reset);
+		} else {
+			lp += printline("%s%02x%s ", unmatch, buffer_b[pos + i], reset);
 		}
 	}
 	if (i < hexlen) {
@@ -1565,7 +1536,9 @@ static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 p
 	for (i = 0; i < hexlen && i < read_b; ++i) {
 		if (i < read_a) {
 			same = buffer_a[pos + i] == buffer_b[pos + i];
-			lp += printline("%s%c%s", same ? green : red, P(buffer_b[pos + i]), reset);
+			lp += printline("%s%c%s", same ? match : unmatch, P(buffer_b[pos + i]), reset);
+		} else {
+			lp += printline("%s%c%s", unmatch, P(buffer_b[pos + i]), reset);
 		}
 	}
 	if (i < hexlen) {
@@ -1578,7 +1551,7 @@ static inline void diff_hexdump_line(DiffHexView *hview, DiffHexLen hlen, ut64 p
 }
 #undef P
 
-static inline int draw_hlen(DiffHexView *hview) {
+static inline int len_draw_hexdump(DiffHexView *hview) {
 	int width = hview->screen.width;
 	if (width >= (DIFF_HEX_32 * 2)) {
 		return DIFF_HEX_32;
@@ -1588,7 +1561,7 @@ static inline int draw_hlen(DiffHexView *hview) {
 	return DIFF_HEX_8;
 }
 
-static inline int shift_buffer(DiffHexView *hview) {
+static inline int seek_min_shift(DiffHexView *hview) {
 	int width = hview->screen.width;
 	if (width >= (DIFF_HEX_32 * 2)) {
 		return 5;
@@ -1598,7 +1571,7 @@ static inline int shift_buffer(DiffHexView *hview) {
 	return 3;
 }
 
-static inline int offset_buffer(DiffHexView *hview) {
+static inline int seek_min_value(DiffHexView *hview) {
 	int width = hview->screen.width;
 	if (width >= (DIFF_HEX_32 * 2)) {
 		return 32;
@@ -1608,25 +1581,39 @@ static inline int offset_buffer(DiffHexView *hview) {
 	return 8;
 }
 
+static inline int offset_len(DiffHexView *hview) {
+	ut64 filesize = RZ_MAX(hview->io_a->filesize, hview->io_b->filesize);
+	if (filesize > UT32_MAX) {
+		return 16;
+	} else if (filesize > UT16_MAX) {
+		return 8;
+	}
+	return 4;
+}
+
 static bool rz_diff_draw_buffer(DiffHexView *hview) {
 	ssize_t read_a = 0, read_b = 0;
 	char *line = hview->line;
-	int shift = 8;
+	int shift = 8, offlen = 16, xpos = 0;
 	int width = hview->screen.width;
 	int height = hview->screen.height;
+	DiffHexLen hlen = 0;
 	DiffIO *io_a = hview->io_a;
 	DiffIO *io_b = hview->io_b;
+	ut64 filesize_a = hview->io_a->filesize;
+	ut64 filesize_b = hview->io_b->filesize;
 	RzConsCanvas *canvas = hview->canvas;
-	RzCanvasLineStyle style = {
-		.dot_style = DOT_STYLE_NORMAL,
-		.symbol = LINE_NOSYM_HORIZ,
-		.color = LINE_NONE,
-	};
+	const char *number = hview->colors.number;
+	const char *reset = hview->colors.reset;
 
 	if (!line || !hview->buffer_a || !hview->buffer_b) {
 		return false;
 	}
-	DiffHexLen hlen = draw_hlen(hview);
+
+	offlen = offset_len(hview);
+	hlen = len_draw_hexdump(hview);
+	xpos = RZ_MAX((width / 2) - hlen, 0);
+
 	const char *p = NULL;
 	const char *file_a = io_a->filename;
 	const char *file_b = io_b->filename;
@@ -1644,32 +1631,105 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 	read_a = rz_io_pread_at(io_a->io, hview->offset_a, hview->buffer_a, hview->size_a);
 	read_b = rz_io_pread_at(io_b->io, hview->offset_b, hview->buffer_b, hview->size_b);
 
-	snprintf(line, width, "| file: %-*s| file: %s", hlen - 7, file_a, file_b);
-
 	rz_cons_goto_origin_reset();
 	rz_cons_clear();
 	rz_cons_canvas_clear(canvas);
-	rz_cons_canvas_gotoxy(canvas, 0, 0);
-	rz_cons_canvas_write(canvas, line);
-	shift = shift_buffer(hview);
+	shift = seek_min_shift(hview);
 	for (ut64 h = 0, pos = 0; h < (ut64)(height - 2); ++h) {
 		pos = h << shift;
 		// 180
 		if (pos >= read_a && pos >= read_b) {
-			rz_cons_canvas_fill(canvas, 0, h + 2, width, 0, ' ');
+			rz_cons_canvas_fill(canvas, xpos, h + 1, width, 0, ' ');
 		} else {
 			diff_hexdump_line(hview, hlen, pos, read_a, read_b);
-			rz_cons_canvas_gotoxy(canvas, 0, h + 2);
+			rz_cons_canvas_gotoxy(canvas, xpos, h + 1);
 			rz_cons_canvas_write(canvas, line);
 		}
 	}
-	rz_cons_canvas_gotoxy(canvas, 0, 0);
-	rz_cons_canvas_line_diagonal(canvas, 0, 0, width - 1, 0, &style);
+	rz_cons_canvas_box(canvas, 0, 0, width, height - 1, Color_RESET);
+	snprintf(line, width, " [%*" PFMT64x " | %*" PFMT64x "]( %.15s )", offlen, hview->offset_a, offlen, filesize_a, file_a);
+	rz_cons_canvas_gotoxy(canvas, xpos, 0);
+	rz_cons_canvas_write(canvas, line);
+	snprintf(line, width, " [%*" PFMT64x " | %*" PFMT64x "]( %.15s )", offlen, hview->offset_b, offlen, filesize_b, file_b);
+	rz_cons_canvas_gotoxy(canvas, xpos + hlen, 0);
+	rz_cons_canvas_write(canvas, line);
+
+	// clang-format off
+	const char* toolbar = " "
+		"%s1%s PgUp | "
+		"%s2%s PgDown | "
+		"%sA%s f0 +1 | "
+		"%sZ%s f0 -1 | "
+		"%sD%s f1 +1 | "
+		"%sC%s f1 -1 | "
+		"%sG%s reset | "
+		"%s/\\%s +16 | "
+		"%s\\/%s -16 | "
+		"%s<%s +1 | "
+		"%s>%s -1 | " 
+		"%s:%s seek";
+	// clang-format on
+	snprintf(line, width, toolbar, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset, number, reset);
 
 	rz_cons_canvas_gotoxy(canvas, 0, height);
+	rz_cons_canvas_write(canvas, line);
+
 	rz_cons_canvas_print(canvas);
+	rz_cons_gotoxy(width, height);
 	rz_cons_flush();
 	return true;
+}
+
+static char *visual_prompt(DiffHexView *hview, const char *prompt) {
+	char buf[1024];
+	rz_cons_gotoxy(0, hview->screen.height);
+	rz_cons_clear_line(0);
+	rz_cons_printf("%s%s ", hview->colors.reset, prompt);
+	rz_line_set_prompt(":> ");
+	rz_cons_flush();
+	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
+	if (*buf) {
+		return strdup(buf);
+	}
+	return NULL;
+}
+
+static void prompt_offset_and_seek(DiffHexView *hview, ut64 minseek) {
+	char *value = visual_prompt(hview, " you can input an absolute offset or a relative offset by adding the prefix + or -\n offset");
+	if (value) {
+		const char *p = rz_str_trim_head_ro(value);
+		if (!IS_DIGIT(*p) && *p != '-' && *p != '+') {
+			return;
+		}
+		st64 number = strtoll((*p == '+') ? p + 1 : p, NULL, 0);
+		if (*p == '-') {
+			if ((hview->offset_a - number) < hview->offset_a) {
+				hview->offset_a -= number;
+			} else if (hview->offset_a != hview->offset_b) {
+				hview->offset_a = RZ_MIN(hview->offset_a, hview->offset_b);
+			} else {
+				hview->offset_a = 0;
+			}
+			if ((hview->offset_b - number) < hview->offset_b) {
+				hview->offset_b -= number;
+			} else if (hview->offset_a != hview->offset_b) {
+				hview->offset_b = RZ_MIN(hview->offset_a, hview->offset_b);
+			} else {
+				hview->offset_b = 0;
+			}
+		} else if (*p == '+') {
+			if ((hview->offset_a + number) < hview->io_a->filesize) {
+				hview->offset_a += number;
+			}
+			if ((hview->offset_b + number) < hview->io_b->filesize) {
+				hview->offset_b += number;
+			}
+		} else {
+			hview->offset_a = RZ_MIN(number, hview->io_a->filesize - minseek);
+			hview->offset_b = RZ_MIN(number, hview->io_b->filesize - minseek);
+		}
+	}
+	free(value);
 }
 
 static bool rz_diff_hex_visual(DiffContext *ctx) {
@@ -1689,9 +1749,17 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	hview.buffer_a = NULL;
 	hview.buffer_b = NULL;
 
-	console = rz_cons_new();
+	RzCore *core = rz_core_new();
+	if (!core) {
+		rz_diff_error("cannot allocate core\n");
+		goto rz_diff_hex_visual_fail;
+	}
+
+	rz_core_parse_rizinrc(core);
+
+	console = rz_cons_singleton();
 	if (!console) {
-		rz_diff_error("cannot initialize console.\n");
+		rz_diff_error("cannot get console.\n");
 		goto rz_diff_hex_visual_fail;
 	}
 
@@ -1752,24 +1820,27 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	hview.screen.height = height;
 	hview.offset_a = 0;
 	hview.offset_b = 0;
-	hview.colors = ctx->colors;
+	rz_diff_get_colors(&hview.colors, console->context, ctx->colors);
 
 	rz_cons_enable_mouse(false);
 
 	console->event_data = &hview;
 	console->event_resize = (RzConsEvent)rz_diff_resize_buffer;
 
-	int offset = 0;
+	int seekmin = 0;
 	while (draw_visual && !rz_cons_is_breaked()) {
 		if (!rz_diff_draw_buffer(&hview)) {
 			break;
 		}
-		offset = offset_buffer(&hview);
 
+		seekmin = seek_min_value(&hview);
 		read = rz_cons_readchar();
 		pressed = rz_cons_arrow_to_hjkl(read);
 
 		switch (pressed) {
+		case ':':
+			prompt_offset_and_seek(&hview, seekmin);
+			break;
 		case 'G':
 		case 'g':
 			hview.offset_a = hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
@@ -1782,8 +1853,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case 'A':
 		case 'a':
-			if (hview.offset_a < UT64_MAX &&
-				(hview.offset_a + 1) < hview.io_a->filesize) {
+			if ((hview.offset_a + 1) < hview.io_a->filesize) {
 				hview.offset_a++;
 			}
 			break;
@@ -1795,38 +1865,63 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case 'D':
 		case 'd':
-			if (hview.offset_b < UT64_MAX &&
-				(hview.offset_b + 1) < hview.io_b->filesize) {
+			if ((hview.offset_b + 1) < hview.io_b->filesize) {
 				hview.offset_b++;
 			}
 			break;
 		/* ARROWS */
-		case 'J':
-		case 'j':
-			if ((hview.offset_a - offset) < hview.offset_a) {
-				hview.offset_a -= offset;
+		case '1':
+			if ((hview.offset_a - (seekmin * (height - 2))) < hview.offset_a) {
+				hview.offset_a -= (seekmin * (height - 2));
 			} else if (hview.offset_a != hview.offset_b) {
 				hview.offset_a = RZ_MIN(hview.offset_a, hview.offset_b);
 			} else {
 				hview.offset_a = 0;
 			}
-			if ((hview.offset_b - offset) < hview.offset_b) {
-				hview.offset_b -= offset;
+			if ((hview.offset_b - (seekmin * (height - 2))) < hview.offset_b) {
+				hview.offset_b -= (seekmin * (height - 2));
 			} else if (hview.offset_a != hview.offset_b) {
 				hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
 			} else {
 				hview.offset_b = 0;
 			}
 			break;
+		case '2':
+			if ((hview.offset_a + (seekmin * (height - 2))) > hview.offset_a &&
+				(hview.offset_a + (seekmin * (height - 2))) < hview.io_a->filesize) {
+				hview.offset_a += (seekmin * (height - 2));
+			}
+			if ((hview.offset_b + (seekmin * (height - 2))) > hview.offset_b &&
+				(hview.offset_b + (seekmin * (height - 2))) < hview.io_b->filesize) {
+				hview.offset_b += (seekmin * (height - 2));
+			}
+			break;
 		case 'K':
 		case 'k':
-			if ((hview.offset_a + offset) > hview.offset_a &&
-				(hview.offset_a + offset) < hview.io_a->filesize) {
-				hview.offset_a += offset;
+			if ((hview.offset_a - seekmin) < hview.offset_a) {
+				hview.offset_a -= seekmin;
+			} else if (hview.offset_a != hview.offset_b) {
+				hview.offset_a = RZ_MIN(hview.offset_a, hview.offset_b);
+			} else {
+				hview.offset_a = 0;
 			}
-			if ((hview.offset_b + offset) > hview.offset_b &&
-				(hview.offset_b + offset) < hview.io_b->filesize) {
-				hview.offset_b += offset;
+			if ((hview.offset_b - seekmin) < hview.offset_b) {
+				hview.offset_b -= seekmin;
+			} else if (hview.offset_a != hview.offset_b) {
+				hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
+			} else {
+				hview.offset_b = 0;
+			}
+			break;
+		case 'J':
+		case 'j':
+			if ((hview.offset_a + seekmin) > hview.offset_a &&
+				(hview.offset_a + seekmin) < hview.io_a->filesize) {
+				hview.offset_a += seekmin;
+			}
+			if ((hview.offset_b + seekmin) > hview.offset_b &&
+				(hview.offset_b + seekmin) < hview.io_b->filesize) {
+				hview.offset_b += seekmin;
 			}
 			break;
 		case 'L':
@@ -1871,6 +1966,7 @@ rz_diff_hex_visual_fail:
 	rz_cons_canvas_free(canvas);
 	rz_diff_io_close(io_a);
 	rz_diff_io_close(io_b);
+	rz_core_free(core);
 	rz_cons_free();
 	return true;
 }
