@@ -47,6 +47,15 @@
 #endif
 #include <string.h>
 #include <ctype.h>
+int rz_num_ffs(int a) {
+        if (a == 0)
+                return 0;
+        int bit;
+
+        for (bit = 1; !(a & 1); bit++)
+                a >>= 1;
+        return bit;
+}
 #ifdef _MSC_VER
 #  include <io.h>
 typedef intptr_t ssize_t;
