@@ -1645,7 +1645,7 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 	for (ut64 h = 0, pos = 0; h < (ut64)(height - 2); ++h) {
 		pos = h << shift;
 		// 180
-		if (read_a < 1 && read_b < 1) {
+		if (pos >= read_a && pos >= read_b) {
 			rz_cons_canvas_fill(canvas, 0, h + 2, width, 0, ' ');
 		} else {
 			diff_hexdump_line(hview, hlen, pos, read_a, read_b);
@@ -1770,7 +1770,8 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case 'A':
 		case 'a':
-			if (hview.offset_a < UT64_MAX) {
+			if (hview.offset_a < UT64_MAX &&
+				(hview.offset_a + 1) < hview.io_a->filesize) {
 				hview.offset_a++;
 			}
 			break;
@@ -1782,7 +1783,8 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case 'D':
 		case 'd':
-			if (hview.offset_b < UT64_MAX) {
+			if (hview.offset_b < UT64_MAX &&
+				(hview.offset_b + 1) < hview.io_b->filesize) {
 				hview.offset_b++;
 			}
 			break;
@@ -1806,10 +1808,12 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case 'K':
 		case 'k':
-			if ((hview.offset_a + 16) > hview.offset_a) {
+			if ((hview.offset_a + 16) > hview.offset_a &&
+				(hview.offset_a + 16) < hview.io_a->filesize) {
 				hview.offset_a += 16;
 			}
-			if ((hview.offset_b + 16) > hview.offset_b) {
+			if ((hview.offset_b + 16) > hview.offset_b &&
+				(hview.offset_b + 16) < hview.io_b->filesize) {
 				hview.offset_b += 16;
 			}
 			break;
@@ -1824,10 +1828,12 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case 'H':
 		case 'h':
-			if (hview.offset_a < UT64_MAX) {
+			if (hview.offset_a < UT64_MAX &&
+				(hview.offset_a + 1) < hview.io_a->filesize) {
 				hview.offset_a++;
 			}
-			if (hview.offset_b < UT64_MAX) {
+			if (hview.offset_b < UT64_MAX &&
+				(hview.offset_b + 1) < hview.io_b->filesize) {
 				hview.offset_b++;
 			}
 			break;
