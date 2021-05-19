@@ -1588,6 +1588,26 @@ static inline int draw_hlen(DiffHexView *hview) {
 	return DIFF_HEX_8;
 }
 
+static inline int shift_buffer(DiffHexView *hview) {
+	int width = hview->screen.width;
+	if (width >= (DIFF_HEX_32 * 2)) {
+		return 5;
+	} else if (width >= (DIFF_HEX_16 * 2)) {
+		return 4;
+	}
+	return 3;
+}
+
+static inline int offset_buffer(DiffHexView *hview) {
+	int width = hview->screen.width;
+	if (width >= (DIFF_HEX_32 * 2)) {
+		return 32;
+	} else if (width >= (DIFF_HEX_16 * 2)) {
+		return 16;
+	}
+	return 8;
+}
+
 static bool rz_diff_draw_buffer(DiffHexView *hview) {
 	ssize_t read_a = 0, read_b = 0;
 	char *line = hview->line;
@@ -1631,17 +1651,7 @@ static bool rz_diff_draw_buffer(DiffHexView *hview) {
 	rz_cons_canvas_clear(canvas);
 	rz_cons_canvas_gotoxy(canvas, 0, 0);
 	rz_cons_canvas_write(canvas, line);
-	switch (hlen) {
-	case DIFF_HEX_16:
-		shift = 4;
-		break;
-	case DIFF_HEX_32:
-		shift = 8;
-		break;
-	default:
-		shift = 2;
-		break;
-	}
+	shift = shift_buffer(hview);
 	for (ut64 h = 0, pos = 0; h < (ut64)(height - 2); ++h) {
 		pos = h << shift;
 		// 180
@@ -1749,10 +1759,12 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	console->event_data = &hview;
 	console->event_resize = (RzConsEvent)rz_diff_resize_buffer;
 
+	int offset = 0;
 	while (draw_visual && !rz_cons_is_breaked()) {
 		if (!rz_diff_draw_buffer(&hview)) {
 			break;
 		}
+		offset = offset_buffer(&hview);
 
 		read = rz_cons_readchar();
 		pressed = rz_cons_arrow_to_hjkl(read);
@@ -1791,15 +1803,15 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 		/* ARROWS */
 		case 'J':
 		case 'j':
-			if ((hview.offset_a - 16) < hview.offset_a) {
-				hview.offset_a -= 16;
+			if ((hview.offset_a - offset) < hview.offset_a) {
+				hview.offset_a -= offset;
 			} else if (hview.offset_a != hview.offset_b) {
 				hview.offset_a = RZ_MIN(hview.offset_a, hview.offset_b);
 			} else {
 				hview.offset_a = 0;
 			}
-			if ((hview.offset_b - 16) < hview.offset_b) {
-				hview.offset_b -= 16;
+			if ((hview.offset_b - offset) < hview.offset_b) {
+				hview.offset_b -= offset;
 			} else if (hview.offset_a != hview.offset_b) {
 				hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
 			} else {
@@ -1808,13 +1820,13 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		case 'K':
 		case 'k':
-			if ((hview.offset_a + 16) > hview.offset_a &&
-				(hview.offset_a + 16) < hview.io_a->filesize) {
-				hview.offset_a += 16;
+			if ((hview.offset_a + offset) > hview.offset_a &&
+				(hview.offset_a + offset) < hview.io_a->filesize) {
+				hview.offset_a += offset;
 			}
-			if ((hview.offset_b + 16) > hview.offset_b &&
-				(hview.offset_b + 16) < hview.io_b->filesize) {
-				hview.offset_b += 16;
+			if ((hview.offset_b + offset) > hview.offset_b &&
+				(hview.offset_b + offset) < hview.io_b->filesize) {
+				hview.offset_b += offset;
 			}
 			break;
 		case 'L':
