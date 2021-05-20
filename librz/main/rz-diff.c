@@ -1647,7 +1647,7 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 		if (pos >= read_a && pos >= read_b) {
 			rz_cons_canvas_fill(canvas, xpos, h + 1, width, 0, ' ');
 		} else {
-			diff_hexdump_line(hview, hlen, pos, read_a, read_b);
+			diff_hexdump_line(hview, hlen, pos, read_a - pos, read_b - pos);
 			rz_cons_canvas_gotoxy(canvas, xpos, h + 1);
 			rz_cons_canvas_write(canvas, line);
 		}
