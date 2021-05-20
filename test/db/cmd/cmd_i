@@ -4927,3 +4927,32 @@ EXPECT=<<EOF
 [{"file":"new","line":57,"column":5,"addr":593924},{"file":"new","line":57,"column":25,"addr":593924},{"file":"exception.h","line":63,"column":5,"addr":593924},{"file":"exception.h","line":63,"column":5,"addr":593924}]
 EOF
 RUN
+
+NAME=flat bin bits
+FILE=bins/flat/=.bin
+CMDS=<<EOF
+(pI_all; e asm.bits; iI~^bits; iIq~^bits; iI*~asm.bits; iIj~{bits})
+. bins/flat/=.bin.rz
+.(pI_all)
+?e
+?e ------
+?e
+e asm.bits=64
+.(pI_all)
+EOF
+EXPECT=<<EOF
+32
+bits     64
+bits 64
+e asm.bits=64
+64
+
+------
+
+64
+bits     64
+bits 64
+e asm.bits=64
+64
+EOF
+RUN
