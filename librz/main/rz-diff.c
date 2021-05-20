@@ -1777,6 +1777,10 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 
 	rz_cons_canvas_print(canvas);
 	rz_cons_flush();
+
+	// allow to refresh the terminal
+	// before printing again the ui
+	rz_sys_usleep(200);
 	return true;
 }
 
