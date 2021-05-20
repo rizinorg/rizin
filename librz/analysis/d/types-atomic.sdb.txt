@@ -1,0 +1,119 @@
+void=type
+type.void=
+type.void.size=0
+
+bool=type
+type.bool=b
+type.bool.size=8
+
+char=type
+type.char=c
+type.char.size=8
+
+short=type
+type.short=w
+type.short.size=16
+
+int=type
+type.int=d
+type.int.size=32
+
+long=type
+type.long=x
+type.long.size=64
+
+float=type
+type.float=f
+type.float.size=32
+
+double=type
+type.double=F
+type.double.size=64
+
+unsigned int=type
+type.unsigned int=i
+type.unsigned int.size=32
+
+unsigned char=type
+type.unsigned char=b
+type.unsigned char.size=8
+
+unsigned short=type
+type.unsigned short=w
+type.unsigned short.size=16
+
+unsigned long=type
+type.unsigned long=d
+type.unsigned long.size=32
+
+unsigned long long=type
+type.unsigned long long=q
+type.unsigned long long.size=64
+
+long int=type
+type.long int=x
+type.long int.size=64
+
+long double=type
+type.long double=F
+type.long double.size=64
+
+long long=type
+type.long long=q
+type.long long.size=64
+
+long long int=type
+type.long long int=q
+type.long long int.size=64
+
+char8_t=type
+type.char8_t=c
+type.char8_t.size=8
+
+char16_t=type
+type.char16_t=c
+type.char16_t.size=16
+
+char32_t=type
+type.char32_t=c
+type.char32_t.size=32
+
+uint8_t=type
+type.uint8_t=b
+type.uint8_t.size=8
+
+uint16_t=type
+type.uint16_t=w
+type.uint16_t.size=16
+
+uint32_t=type
+type.uint32_t=d
+type.uint32_t.size=32
+
+uint64_t=type
+type.uint64_t=q
+type.uint64_t.size=64
+
+int8_t=type
+type.int8_t=b
+type.int8_t.size=8
+
+int16_t=type
+type.int16_t=w
+type.int16_t.size=16
+
+int32_t=type
+type.int32_t=d
+type.int32_t.size=32
+
+int64_t=type
+type.int64_t=q
+type.int64_t.size=64
+
+intmax_t=type
+type.intmax_t=q
+type.intmax_t.size=64
+
+uintmax_t=type
+type.uintmax_t=q
+type.uintmax_t.size=64
