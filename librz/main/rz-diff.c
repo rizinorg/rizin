@@ -1433,26 +1433,6 @@ rz_diff_graphs_files_bad:
 
 /********************************************************************************/
 
-static void rz_diff_resize_buffer(DiffHexView *hview) {
-	int height, width = rz_cons_get_size(&height);
-
-	ut64 size_a = ((width / 2) * (height - 2));
-	ut64 size_b = ((width / 2) * (height - 2));
-
-	hview->line = realloc(hview->line, width * height);
-	hview->buffer_a = realloc(hview->buffer_a, size_a);
-	hview->buffer_b = realloc(hview->buffer_b, size_b);
-	hview->size_a = size_a;
-	hview->size_b = size_b;
-	hview->screen.width = width;
-	hview->screen.height = height;
-
-	rz_cons_canvas_free(hview->canvas);
-	hview->canvas = rz_cons_canvas_new(width, height);
-	hview->canvas->color = true;
-	hview->canvas->linemode = 1;
-}
-
 typedef enum diff_hex_len_t {
 	DIFF_HEX_8 = 58,
 	DIFF_HEX_16 = 90,
@@ -1916,6 +1896,28 @@ static void find_prev_diff(DiffHexView *hview, ut64 seek) {
 	} while (1);
 	hview->offset_a = RZ_MAX(offset_a, 0);
 	hview->offset_b = RZ_MAX(offset_b, 0);
+}
+
+static void rz_diff_resize_buffer(DiffHexView *hview) {
+	int height, width = rz_cons_get_size(&height);
+
+	ut64 size_a = ((width / 2) * (height - 2));
+	ut64 size_b = ((width / 2) * (height - 2));
+
+	hview->line = realloc(hview->line, width * height);
+	hview->buffer_a = realloc(hview->buffer_a, size_a);
+	hview->buffer_b = realloc(hview->buffer_b, size_b);
+	hview->size_a = size_a;
+	hview->size_b = size_b;
+	hview->screen.width = width;
+	hview->screen.height = height;
+
+	rz_cons_canvas_free(hview->canvas);
+	hview->canvas = rz_cons_canvas_new(width, height);
+	hview->canvas->color = true;
+	hview->canvas->linemode = 1;
+
+	rz_diff_draw_tui(hview, false);
 }
 
 static bool rz_diff_hex_visual(DiffContext *ctx) {
