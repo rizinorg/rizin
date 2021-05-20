@@ -11,6 +11,7 @@
 #include <rz_util.h>
 #include "elf.h"
 
+#include "rz_bin_elf_has_relro.inc"
 #include "rz_bin_elf_is_executable.inc"
 
 #define MIPS_PLT_OFFSET  0x20
@@ -24,10 +25,6 @@
 
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
 #define ELF_PAGE_SIZE 12
-
-#define RZ_ELF_NO_RELRO   0
-#define RZ_ELF_PART_RELRO 1
-#define RZ_ELF_FULL_RELRO 2
 
 #define bprintf \
 	if (bin->verbose) \
@@ -554,10 +551,10 @@ static Elf_(Phdr) * get_dynamic_segment(ELFOBJ *bin) {
 static void init_dynamic_section_sdb(ELFOBJ *bin, Elf_(Addr) strtabaddr, size_t strsize) {
 	int r = Elf_(rz_bin_elf_has_relro)(bin);
 	switch (r) {
-	case RZ_ELF_FULL_RELRO:
+	case RZ_BIN_ELF_FULL_RELRO:
 		sdb_set(bin->kv, "elf.relro", "full", 0);
 		break;
-	case RZ_ELF_PART_RELRO:
+	case RZ_BIN_ELF_PART_RELRO:
 		sdb_set(bin->kv, "elf.relro", "partial", 0);
 		break;
 	default:
@@ -1887,7 +1884,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 	//XXX HACK ALERT!!!! full relro?? try to fix it
 	//will there always be .plt.got, what would happen if is .got.plt?
 	RzBinElfSection *s = get_section_by_name(bin, ".plt.got");
-	if (Elf_(rz_bin_elf_has_relro)(bin) < RZ_ELF_PART_RELRO || !s) {
+	if (Elf_(rz_bin_elf_has_relro)(bin) < RZ_BIN_ELF_PART_RELRO || !s) {
 		return UT64_MAX;
 	}
 
@@ -1999,35 +1996,6 @@ int Elf_(rz_bin_elf_has_nx)(ELFOBJ *bin) {
 		}
 	}
 	return 0;
-}
-
-int Elf_(rz_bin_elf_has_relro)(ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, RZ_ELF_NO_RELRO);
-	bool haveBindNow = false;
-	bool haveGnuRelro = false;
-
-	if (bin->dyn_info.dt_bind_now) {
-		haveBindNow = true;
-	} else if (bin->dyn_info.dt_flags != RZ_BIN_ELF_XWORD_MAX && bin->dyn_info.dt_flags != RZ_BIN_ELF_XWORD_MAX) {
-		haveBindNow = bin->dyn_info.dt_flags_1 & DF_1_NOW;
-	}
-
-	if (bin->phdr) {
-		size_t i;
-		for (i = 0; i < bin->ehdr.e_phnum; i++) {
-			if (bin->phdr[i].p_type == PT_GNU_RELRO) {
-				haveGnuRelro = true;
-				break;
-			}
-		}
-	}
-	if (haveGnuRelro) {
-		if (haveBindNow) {
-			return RZ_ELF_FULL_RELRO;
-		}
-		return RZ_ELF_PART_RELRO;
-	}
-	return RZ_ELF_NO_RELRO;
 }
 
 /*
