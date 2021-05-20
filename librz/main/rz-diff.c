@@ -1654,10 +1654,10 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 		}
 	}
 	rz_cons_canvas_box(canvas, 0, 0, width, height - 1, reset);
-	snprintf(line, lsize, " [%*" PFMT64x " | %*" PFMT64x "]( %.15s )", offlen, hview->offset_a, offlen, filesize_a, file_a);
+	snprintf(line, lsize, " [%*" PFMT64x " | %*" PFMT64x "]( %.42s )", offlen, hview->offset_a, offlen, filesize_a, file_a);
 	rz_cons_canvas_gotoxy(canvas, xpos, 0);
 	rz_cons_canvas_write(canvas, line);
-	snprintf(line, lsize, " [%*" PFMT64x " | %*" PFMT64x "]( %.15s )", offlen, hview->offset_b, offlen, filesize_b, file_b);
+	snprintf(line, lsize, " [%*" PFMT64x " | %*" PFMT64x "]( %.42s )", offlen, hview->offset_b, offlen, filesize_b, file_b);
 	rz_cons_canvas_gotoxy(canvas, xpos + hlen, 0);
 	rz_cons_canvas_write(canvas, line);
 
