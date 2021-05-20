@@ -2060,20 +2060,19 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		break;
 	case DIFF_OPT_VERSION:
 		rz_main_version_print("rz-diff");
+		success = true;
 		break;
 	case DIFF_OPT_USAGE:
 		rz_diff_show_help(true);
-		goto rz_main_rz_diff_end;
+		break;
 	case DIFF_OPT_ERROR:
-		goto rz_main_rz_diff_end;
+		break;
 	case DIFF_OPT_HELP:
 		success = true;
 	default:
 		rz_diff_show_help(false);
-		goto rz_main_rz_diff_end;
+		break;
 	}
-
-	success = true;
 
 rz_main_rz_diff_end:
 	return success ? 0 : 1;
