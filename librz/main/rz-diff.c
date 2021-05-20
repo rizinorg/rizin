@@ -1757,6 +1757,7 @@ static void prompt_offset_and_seek(DiffHexView *hview, ut64 minseek) {
 	if (value) {
 		const char *p = rz_str_trim_head_ro(value);
 		if (!IS_DIGIT(*p) && *p != '-' && *p != '+') {
+			free(value);
 			return;
 		}
 		st64 number = strtoll((*p == '+') ? p + 1 : p, NULL, 0);
