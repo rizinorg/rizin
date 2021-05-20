@@ -109,6 +109,7 @@ typedef struct diff_colors_t {
 	const char *number;
 	const char *match;
 	const char *unmatch;
+	const char *legenda;
 	const char *reset;
 } DiffColors;
 
@@ -376,8 +377,9 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 static void rz_diff_get_colors(DiffColors *dcolors, RzConsContext *ctx, bool colors) {
 	dcolors->number = colors ? ctx->pal.graph_diff_unknown : "";
 	dcolors->match = colors ? ctx->pal.graph_diff_match : "";
-	dcolors->unmatch = colors ? ctx->pal.graph_diff_unmatch : "";
-	dcolors->reset = colors ? Color_RESET : "";
+	dcolors->unmatch = colors ? ctx->pal.graph_diff_unmatch : Color_INVERT;
+	dcolors->legenda = colors ? ctx->pal.comment : "";
+	dcolors->reset = Color_RESET;
 }
 
 static DiffIO *rz_diff_io_open(const char *file) {
@@ -1447,7 +1449,7 @@ static void rz_diff_resize_buffer(DiffHexView *hview) {
 
 	rz_cons_canvas_free(hview->canvas);
 	hview->canvas = rz_cons_canvas_new(width, height);
-	hview->canvas->color = *hview->colors.match > 0;
+	hview->canvas->color = true;
 	hview->canvas->linemode = 1;
 }
 
@@ -1605,8 +1607,8 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	ut64 filesize_a = hview->io_a->filesize;
 	ut64 filesize_b = hview->io_b->filesize;
 	RzConsCanvas *canvas = hview->canvas;
-	const char *number = hview->colors.number;
 	const char *reset = hview->colors.reset;
+	const char *legenda = hview->colors.legenda;
 	const char *toolbar = NULL;
 	bool utf8 = rz_cons_singleton()->use_utf8;
 	const char *arrow_up = utf8 ? RUNE_ARROW_UP " " : "/\\";
@@ -1679,20 +1681,20 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 		"%s%s%s -1 | "
 		"%s:%s seek";
 	snprintf(line, lsize, toolbar
-			, number, reset, (1 << shift) * (height - 2)
-			, number, reset, (1 << shift) * (height - 2)
-			, number, reset
-			, number, reset
-			, number, reset
-			, number, reset
-			, number, reset
-			, number, reset
-			, number, reset
-			, number, arrow_up, reset, 1 << shift
-			, number, arrow_down, reset, 1 << shift
-			, number, arrow_left, reset
-			, number, arrow_right, reset
-			, number, reset);
+			, legenda, reset, (1 << shift) * (height - 2)
+			, legenda, reset, (1 << shift) * (height - 2)
+			, legenda, reset
+			, legenda, reset
+			, legenda, reset
+			, legenda, reset
+			, legenda, reset
+			, legenda, reset
+			, legenda, reset
+			, legenda, arrow_up, reset, 1 << shift
+			, legenda, arrow_down, reset, 1 << shift
+			, legenda, arrow_left, reset
+			, legenda, arrow_right, reset
+			, legenda, reset);
 	// clang-format on
 
 	rz_cons_canvas_gotoxy(canvas, 0, height);
@@ -1700,65 +1702,65 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 
 	if (show_help) {
 		rz_cons_canvas_fill(canvas, 4, 2, 48, 23, ' ');
-		rz_cons_canvas_box(canvas, 4, 2, 48, 23, number);
+		rz_cons_canvas_box(canvas, 4, 2, 48, 23, legenda);
 
-		snprintf(line, lsize, "%sHelp page%s\n", number, reset);
+		snprintf(line, lsize, "%sHelp page%s\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 3);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s1%s  decrease the offsets by 0x%x\n", number, reset, (1 << shift) * (height - 2));
+		snprintf(line, lsize, "%s1%s  decrease the offsets by 0x%x\n", legenda, reset, (1 << shift) * (height - 2));
 		rz_cons_canvas_gotoxy(canvas, 6, 5);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s2%s  increase the offsets by 0x%x\n", number, reset, (1 << shift) * (height - 2));
+		snprintf(line, lsize, "%s2%s  increase the offsets by 0x%x\n", legenda, reset, (1 << shift) * (height - 2));
 		rz_cons_canvas_gotoxy(canvas, 6, 6);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sZ%s  increase the offset of the file0 by 1\n", number, reset);
+		snprintf(line, lsize, "%sZ%s  increase the offset of the file0 by 1\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 8);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sA%s  decrease the offset of the file0 by 1\n", number, reset);
+		snprintf(line, lsize, "%sA%s  decrease the offset of the file0 by 1\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 9);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sC%s  increase the offset of the file1 by 1\n", number, reset);
+		snprintf(line, lsize, "%sC%s  increase the offset of the file1 by 1\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 11);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sD%s  decrease the offset of the file1 by 1\n", number, reset);
+		snprintf(line, lsize, "%sD%s  decrease the offset of the file1 by 1\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 12);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sM%s  next difference\n", number, reset);
+		snprintf(line, lsize, "%sM%s  next difference\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 14);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sN%s  previous difference\n", number, reset);
+		snprintf(line, lsize, "%sN%s  previous difference\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 15);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sG%s  sets both offsets to a common value\n", number, reset);
+		snprintf(line, lsize, "%sG%s  sets both offsets to a common value\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 16);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s%s%s decrease both offsets by %u\n", number, arrow_up, reset, 1 << shift);
+		snprintf(line, lsize, "%s%s%s decrease both offsets by %u\n", legenda, arrow_up, reset, 1 << shift);
 		rz_cons_canvas_gotoxy(canvas, 6, 18);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s%s%s increase both offsets by %u\n", number, arrow_down, reset, 1 << shift);
+		snprintf(line, lsize, "%s%s%s increase both offsets by %u\n", legenda, arrow_down, reset, 1 << shift);
 		rz_cons_canvas_gotoxy(canvas, 6, 19);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s%s%s increase both offsets by 1\n", number, arrow_left, reset);
+		snprintf(line, lsize, "%s%s%s increase both offsets by 1\n", legenda, arrow_left, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 20);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s%s%s decrease both offsets by 1\n", number, arrow_right, reset);
+		snprintf(line, lsize, "%s%s%s decrease both offsets by 1\n", legenda, arrow_right, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 21);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s:%s  seek at offset (relative via +-)\n", number, reset);
+		snprintf(line, lsize, "%s:%s  seek at offset (relative via +-)\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 22);
 		rz_cons_canvas_write(canvas, line);
 	}
@@ -1977,7 +1979,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	size_a = ((width / 2) * (height - 2));
 	size_b = ((width / 2) * (height - 2));
 
-	canvas->color = ctx->colors;
+	canvas->color = true;
 	canvas->linemode = 1;
 
 	hview.line = malloc(width * height);
