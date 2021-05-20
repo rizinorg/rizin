@@ -1,189 +1,53 @@
-__assert_fail=func
-func.__assert_fail.args=4
-func.__assert_fail.arg.0=const char *,assertion
-func.__assert_fail.arg.1=const char *,file
-func.__assert_fail.arg.2=unsigned int,line
-func.__assert_fail.arg.3=const char *,function
-func.__assert_fail.noreturn=true
-func.__assert_fail.ret=void
+fd_mask=typedef
+typedef.fd_mask=long int
 
-err=func
-func.err.args=1
-func.err.arg.0=int,eval
-func.err.arg.1=const char *,fmt
-func.err.noreturn=true
-func.err.ret=void
+__idtype=enum
+enum.__idtype=P_ALL,P_GID,P_PGID
+enum.__idtype.P_ALL=0x0
+enum.__idtype.P_GID=0x1
+enum.__idtype.P_PGID=0x2
 
-errc=func
-func.errc.args=1
-func.errc.arg.0=int,eval
-func.errc.arg.1=int,code
-func.errc.arg.2=const char *,fmt
-func.errc.noreturn=true
-func.errc.ret=void
+idtype_t=typedef
+typedef.idtype_t=enum __idtype
 
-errx=func
-func.errx.args=1
-func.errx.arg.0=int,eval
-func.errx.arg.1=const char *,fmt
-func.errx.noreturn=true
-func.errx.ret=void
+_fd_set=struct
+struct._fd_set=fds_bits
+struct._fd_set.fds_bits=fd_mask,0,32
 
-_exit=func
-func._exit.args=1
-func._exit.arg.0=int,status
-func._exit.noreturn=true
-func._exit.ret=void
+fd_set=typedef
+typedef.fd_set=struct _fd_set
 
-_Exit=func
-func._Exit.args=1
-func._Exit.arg.0=int,status
-func._Exit.noreturn=true
-func._Exit.ret=void
+sigval=union
+union.sigval=sival_int,sival_ptr
+union.sigval.sival_int=int,0,0
+union.sigval.sival_ptr=void*,0,0
 
-__libc_init=func
-func.__libc_init.args=3
-func.__libc_init.arg.0=int,argc
-func.__libc_init.arg.1=char **,argv
-func.__libc_init.arg.2=char **,envp
-func.__libc_init.noreturn=true
-func.__libc_init.ret=void
+__siginfo_t=struct
+struct.__siginfo_t=si_signo,si_code,si_value,si_errno,si_pid,si_uid,si_addr,si_status,si_band
+struct.__siginfo_t.si_signo=int,0,0
+struct.__siginfo_t.si_code=int,4,0
+struct.__siginfo_t.si_value=union sigval,8,0
+struct.__siginfo_t.si_errno=int,16,0
+struct.__siginfo_t.si_pid=pid_t,20,0
+struct.__siginfo_t.si_uid=uid_t,24,0
+struct.__siginfo_t.si_addr=void*,28,0
+struct.__siginfo_t.si_status=int,32,0
+struct.__siginfo_t.si_band=int,36,0
 
-__libc_init_array=func
-func.__libc_init_array.args=0
-func.__libc_init_array.ret=void
+siginfo_t=typedef
+typedef.siginfo_t=struct __siginfo_t
 
-__libc_start_main=func
-func.__libc_start_main.args=7
-func.__libc_start_main.arg.0=func,main
-func.__libc_start_main.arg.1=int,argc
-func.__libc_start_main.arg.2=char **,ubp_av
-func.__libc_start_main.arg.3=func,init
-func.__libc_start_main.arg.4=func,fini
-func.__libc_start_main.arg.5=func,rtld_fini
-func.__libc_start_main.arg.6=void *,stack_end
-func.__libc_start_main.noreturn=true
-func.__libc_start_main.ret=int
+__sigset_t=struct
+struct.__sigset_t=sig
+struct.__sigset_t.sig=unsigned long,0,2
 
-__uClibc_main=func
-func.__uClibc_main.args=7
-func.__uClibc_main.arg.0=func,main
-func.__uClibc_main.arg.1=int,argc
-func.__uClibc_main.arg.2=char **,argv
-func.__uClibc_main.arg.3=func,app_init
-func.__uClibc_main.arg.4=func,app_fini
-func.__uClibc_main.arg.5=func,rtld_fini
-func.__uClibc_main.arg.6=void *,stack_end
-func.__uClibc_main.noreturn=true
-func.__uClibc_main.ret=int
+sigset_t=typedef
+typedef.sigset_t=struct __sigset_t
 
-abort=func
-func.abort.args=0
-func.abort.noreturn=true
-func.abort.ret=void
+sigaction=struct
+struct.sigaction=sa_handler,sa_flags,sa_restorer,sa_mask
+struct.sigaction.sa_handler=void*,0,0
+struct.sigaction.sa_flags=unsigned long,8,0
+struct.sigaction.sa_restorer=void*,12,0
+struct.sigaction.sa_mask=sigset_t,20,0
 
-atexit=func
-func.atexit.args=1
-func.atexit.arg.0=func,function
-func.atexit.ret=int
-
-exit=func
-func.exit.args=1
-func.exit.arg.0=int,status
-func.exit.noreturn=true
-func.exit.ret=void
-
-access=func
-func.access.args=2
-func.access.arg.0=const char *,path
-func.access.arg.1=int,mode
-func.access.ret=int
-
-prctl=func
-func.prctl.args=5
-func.prctl.arg.0=int,option
-func.prctl.arg.1=unsigned long,v2
-func.prctl.arg.2=unsigned long,v3
-func.prctl.arg.3=unsigned long,v4
-func.prctl.arg.4=unsigned long,v5
-func.prctl.ret=int
-
-sigaction=func
-func.sigaction.args=3
-func.sigaction.arg.0=int,signum
-func.sigaction.arg.1=const struct sigaction *,act
-func.sigaction.arg.2=struct sigaction *,oldact
-func.sigaction.ret=int
-
-select=func
-func.select.args=5
-func.select.arg.0=int,nfds
-func.select.arg.1=fd_set *,readfds
-func.select.arg.2=fd_set *,writefds
-func.select.arg.3=fd_set *,exceptfds
-func.select.arg.4=struct timeval *,timeout
-func.select.ret=int
-
-nanosleep=func
-func.nanosleep.args=2
-func.nanosleep.arg.0=const struct timespec *,req
-func.nanosleep.arg.1=struct timespec *,rem
-func.nanosleep.ret=int
-
-getsockname=func
-func.getsockname.args=3
-func.getsockname.arg.0=int,sockfd
-func.getsockname.arg.1=struct sockaddr *,addr
-func.getsockname.arg.2=socklen_t *,addrlen
-func.getsockname.ret=int
-
-getsockopt=func
-func.getsockopt.args=5
-func.getsockopt.arg.0=int,sockfd
-func.getsockopt.arg.1=int,level
-func.getsockopt.arg.2=int,optname
-func.getsockopt.arg.3=void *,optval
-func.getsockopt.arg.4=socklen_t *,optlen
-func.getsockopt.ret=int
-
-setsockopt=func
-func.setsockopt.args=5
-func.setsockopt.arg.0=int,sockfd
-func.setsockopt.arg.1=int,level
-func.setsockopt.arg.2=int,optname
-func.setsockopt.arg.3=void *,optval
-func.setsockopt.arg.4=socklen_t,optlen
-func.setsockopt.ret=int
-
-waitpid=func
-func.waitpid.args=3
-func.waitpid.arg.0=pid_t,pid
-func.waitpid.arg.1=int *,wstatus
-func.waitpid.arg.2=int,options
-func.waitpid.ret=pid_t
-
-wait=func
-func.wait.args=1
-func.wait.arg.0=int *,wstatus
-func.wait.ret=pid_t
-
-waitid=func
-func.waitid.args=4
-func.waitid.arg.0=idtype_t,idtype
-func.waitid.arg.1=id_t,id
-func.waitid.arg.2=siginfo_t *,infop
-func.waitid.arg.3=int,options
-func.waitid.ret=int
-
-__stack_chk_fail=func
-func.__stack_chk_fail.args=0
-func.__stack_chk_fail.noreturn=true
-func.__stack_chk_fail.ret=void
-
-__cxa_throw=func
-func.__cxa_throw.args=3
-func.__cxa_throw.arg.0=void *,thrown_exception
-func.__cxa_throw.arg.1=struct std::type_info *,tinfo
-func.__cxa_throw.arg.2=void *,dest
-func.__cxa_throw.noreturn=true
-func.__cxa_throw.ret=void
