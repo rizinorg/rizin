@@ -260,7 +260,7 @@ bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms);
 bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr);
 bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf);
 
-bool Elf_(rz_bin_elf_is_executable)(ELFOBJ *bin);
+bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(struct Elf_(rz_bin_elf_obj_t) * bin);
 int Elf_(rz_bin_elf_has_nx)(struct Elf_(rz_bin_elf_obj_t) * bin);
 const ut8 *Elf_(rz_bin_elf_grab_regstate)(struct Elf_(rz_bin_elf_obj_t) * bin, size_t *size);
