@@ -1776,7 +1776,6 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	}
 
 	rz_cons_canvas_print(canvas);
-	rz_cons_gotoxy(width, height);
 	rz_cons_flush();
 	return true;
 }
@@ -2042,6 +2041,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	hview.column_descr = true;
 	rz_diff_get_colors(&hview.colors, console->context, ctx->colors);
 
+	rz_cons_show_cursor(false);
 	rz_cons_enable_mouse(false);
 
 	console->event_data = &hview;
