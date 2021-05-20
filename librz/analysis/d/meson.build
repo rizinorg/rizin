@@ -24,13 +24,19 @@ sdb_files = [
   'types-arm-ios-32',
   'types-arm-ios-64',
   'types-android',
+  'types-atomic',
   'types-darwin',
+  'types-libc',
   'types-linux',
-  'types',
   'types-windows',
   'types-x86-macos-64',
   'types-x86-windows-32',
-  'types-x86-windows-64'
+  'types-x86-windows-64',
+  'functions-android',
+  'functions-darwin',
+  'functions-libc',
+  'functions-linux',
+  'functions-windows'
 ]
 
 win_types_extra = [
