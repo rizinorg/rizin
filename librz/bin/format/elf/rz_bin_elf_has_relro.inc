@@ -5,7 +5,15 @@
 
 #include "elf.h"
 
-int Elf_(rz_bin_elf_has_relro)(ELFOBJ *bin) {
+/**
+ * \brief Analyse if the elf binary has relro or partial relro
+ * \param elf binary
+ * \return RZ_BIN_ELF_NO_RELRO, RZ_BIN_ELF_PART_RELRO or RZ_BIN_ELF_FULL_RELRO
+ *
+ * Check if the elf has bind now enable and with PT_GNU_RELRO can deduct the
+ * relro type
+ */
+int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, RZ_BIN_ELF_NO_RELRO);
 
 	bool haveBindNow = false;
