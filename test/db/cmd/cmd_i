@@ -4942,10 +4942,10 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 32
-bits     64
-bits 64
-e asm.bits=64
-64
+bits     32
+bits 32
+e asm.bits=32
+32
 
 ------
 

@@ -1776,6 +1776,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	int i, j, v;
 	RzBinInfo *info = rz_bin_get_info(r->bin);
 	RzBinFile *bf = rz_bin_cur(r->bin);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
 	bool use_color = rz_config_get_i(r->config, "scr.color");
 	if (!bf) {
 		if (IS_MODE_JSON(mode)) {
@@ -1787,6 +1788,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	RzBinObject *obj = bf->o;
 	const char *compiled = NULL;
 	bool havecode;
+	int bits;
 
 	if (!info || !obj) {
 		if (IS_MODE_JSON(mode)) {
@@ -1798,13 +1800,14 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 	}
 	havecode = is_executable(obj) | (obj->entries != NULL);
 	compiled = get_compile_time(bf->sdb);
+	bits = (plugin && !strcmp(plugin->name, "any")) ? rz_config_get_i(r->config, "asm.bits") : info->bits;
 
 	if (IS_MODE_SIMPLE(mode)) {
 		rz_cons_printf("arch %s\n", info->arch);
 		if (info->cpu && *info->cpu) {
 			rz_cons_printf("cpu %s\n", info->cpu);
 		}
-		rz_cons_printf("bits %d\n", info->bits);
+		rz_cons_printf("bits %d\n", bits);
 		rz_cons_printf("os %s\n", info->os);
 		rz_cons_printf("endian %s\n", info->big_endian ? "big" : "little");
 		v = rz_analysis_archinfo(r->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
@@ -1828,7 +1831,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 				       "e asm.bits=%i\n"
 				       "e asm.dwarf=%s\n",
 				rz_str_bool(info->big_endian),
-				info->bits,
+				bits,
 				rz_str_bool(RZ_BIN_DBG_STRIPPED & info->dbg_info));
 			if (info->lang && *info->lang) {
 				rz_cons_printf("e bin.lang=%s\n", info->lang);
@@ -1868,7 +1871,7 @@ static int bin_info(RzCore *r, PJ *pj, int mode, ut64 laddr) {
 		pair_ut64x(table, pj, "baddr", rz_bin_get_baddr(r->bin), row_list);
 		pair_ut64(table, pj, "binsz", rz_bin_get_size(r->bin), row_list);
 		pair_str(table, pj, "bintype", info->rclass, row_list);
-		pair_int(table, pj, "bits", info->bits, row_list);
+		pair_int(table, pj, "bits", bits, row_list);
 		if (info->has_retguard != -1) {
 			pair_bool(use_color, table, pj, "retguard", info->has_retguard, row_list);
 		}
