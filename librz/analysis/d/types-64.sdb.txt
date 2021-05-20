@@ -1,18 +1,43 @@
+void *=type
+type.void *=p
 type.void *.size=64
+
+char *=type
+type.char *=z
 type.char *.size=64
 
+intptr_t=type
+type.intptr_t=q
+type.intptr_t.size=64
+
+uintptr_t=type
+type.uintptr_t=q
+type.uintptr_t.size=64
+
+ptrdiff_t=type
+type.ptrdiff_t=q
+type.ptrdiff_t.size=64
+
 size_t=type
-type.size_t=x
+type.size_t=q
 type.size_t.size=64
 
+ssize_t=type
+type.ssize_t=q
+type.ssize_t.size=64
+
 pid_t=type
-type.pid_t=d
-type.pid_t.pid=64
+type.pid_t=q
+type.pid_t.size=64
 
 uid_t=type
-type.uid_t=d
-type.uid_t.uid=64
+type.uid_t=q
+type.uid_t.size=64
 
 gid_t=type
-type.gid_t=d
-type.gid_t.uid=64
+type.gid_t=q
+type.gid_t.size=64
+
+id_t=type
+type.id_t=q
+type.id_t.size=64

@@ -5,19 +5,30 @@ struct.l_timeval=tv_sec,tv_usec
 struct.l_timeval.tv_sec=LONG,0,0
 struct.l_timeval.tv_usec=LONG,4,0
 
-
-
 LDAP_TIMEVAL=typedef
-typedef.LDAP_TIMEVAL=l_timeval
+typedef.LDAP_TIMEVAL=struct l_timeval
 
+ldap=struct
+struct.ldap=Reserved,ld_host,ld_version,ld_lberoptions,ld_deref,ld_timelimit,ld_sizelimit,ld_errno,ld_matched,ld_error
+struct.ldap.Reserved=char,0,76
+struct.ldap.ld_host=PCHAR,76,0
+struct.ldap.ld_version=ULONG,80,0
+struct.ldap.ld_lberoptions=UCHAR,88,0
+struct.ldap.ld_deref=int,92,0
+struct.ldap.ld_timelimit=int,96,0
+struct.ldap.ld_sizelimit=int,100,0
+struct.ldap.ld_errno=int,104,0
+struct.ldap.ld_matched=PCHAR,108,0
+struct.ldap.ld_error=PCHAR,112,0
 
+LDAP=typedef
+typedef.LDAP=struct ldap
 
-PLDAP=type
-type.PLDAP=p
+PLDAP=typedef
+typedef.PLDAP=struct ldap*
 
-PLDAP_TIMEVAL=type
-type.PLDAP_TIMEVAL=p
-type.PLDAP_TIMEVAL.pointto=LDAP_TIMEVAL
+PLDAP_TIMEVAL=typedef
+typedef.PLDAP_TIMEVAL=LDAP_TIMEVAL*
 
 PLDAPControlA=type
 type.PLDAPControlA=p

@@ -127,14 +127,13 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
+	// Architecture-specific types
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, arch);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("types: loaded \"%s\"\n", dbpath);
 	}
-	if (rz_type_db_load_callables_sdb(typedb, dbpath)) {
-		RZ_LOG_DEBUG("callable types: loaded \"%s\"\n", dbpath);
-	}
+	// OS-specific types
 	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, os);
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
@@ -172,6 +171,13 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char
 	if (rz_type_db_load_callables_sdb(typedb, dbpath)) {
 		RZ_LOG_DEBUG("callable types: loaded \"%s\"\n", dbpath);
 	}
+	// OS-specific function types
+	dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "functions-%s.sdb"),
+		dir_prefix, os);
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("callable types: loaded \"%s\"\n", dbpath);
+	}
+
 }
 
 // Listing all available types by category
