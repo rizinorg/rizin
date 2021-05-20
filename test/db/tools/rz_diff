@@ -1,6 +1,6 @@
 NAME=rz-diff empty first file
 FILE==
-CMDS=!rz-diff -t bytes "" bins/other/rz-diff/rz-diff_c_2
+CMDS=!rz-diff -C -t bytes "" bins/other/rz-diff/rz-diff_c_2
 EXPECT_ERR=<<EOF
 ERROR: rz-diff: error, cannot open a file without a name.
 EOF
@@ -8,7 +8,7 @@ RUN
 
 NAME=rz-diff empty second file
 FILE==
-CMDS=!rz-diff -t bytes bins/other/rz-diff/rz-diff_c_1 ""
+CMDS=!rz-diff -C -t bytes bins/other/rz-diff/rz-diff_c_1 ""
 EXPECT_ERR=<<EOF
 ERROR: rz-diff: error, cannot open a file without a name.
 EOF
@@ -16,7 +16,7 @@ RUN
 
 NAME=rz-diff -v~commit?"
 FILE==
-CMDS=!!rz-diff -v~commit?
+CMDS=!!rz-diff -C -v~commit?
 EXPECT=<<EOF
 1
 EOF
@@ -24,7 +24,7 @@ RUN
 
 NAME=rz-diff -h~Usage?"
 FILE==
-CMDS=!!rz-diff -h~Usage?
+CMDS=!!rz-diff -C -h~Usage?
 EXPECT=<<EOF
 1
 EOF
@@ -33,7 +33,7 @@ RUN
 
 NAME=rz-diff distance comparison (leven)
 FILE==
-CMDS=!rz-diff -d leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+CMDS=!rz-diff -C -d leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 similarity: 0.637
 distance: 529
@@ -42,7 +42,7 @@ RUN
 
 NAME=rz-diff distance comparison (leven) JSON
 FILE==
-CMDS=!rz-diff -jd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+CMDS=!rz-diff -C -jd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 {"similarity":0.636676,"distance":529}
 EOF
@@ -50,7 +50,7 @@ RUN
 
 NAME=rz-diff distance comparison (leven) QUIET
 FILE==
-CMDS=!rz-diff -qd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+CMDS=!rz-diff -C -qd leven bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 0.637
 529
@@ -60,7 +60,7 @@ RUN
 
 NAME=rz-diff distance comparison (myers)
 FILE==
-CMDS=!rz-diff -d myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+CMDS=!rz-diff -C -d myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 similarity: 0.769
 distance: 602
@@ -69,7 +69,7 @@ RUN
 
 NAME=rz-diff distance comparison (myers) JSON
 FILE==
-CMDS=!rz-diff -jd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+CMDS=!rz-diff -C -jd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 {"similarity":0.768995,"distance":602}
 EOF
@@ -77,7 +77,7 @@ RUN
 
 NAME=rz-diff distance comparison (myers) QUIET
 FILE==
-CMDS=!rz-diff -qd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
+CMDS=!rz-diff -C -qd myers bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 0.769
 602
@@ -87,7 +87,7 @@ RUN
 
 NAME=rz-diff bytes comparison
 FILE==
-CMDS=!rz-diff -t bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
+CMDS=!rz-diff -C -t bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
 EXPECT=<<EOF
 --- bins/other/rz-diff/rz-diff_c_1
 +++ bins/other/rz-diff/rz-diff_c_2
@@ -100,7 +100,7 @@ RUN
 
 NAME=rz-diff bytes comparison JSON
 FILE==
-CMDS=!rz-diff -jt bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
+CMDS=!rz-diff -C -jt bytes bins/other/rz-diff/rz-diff_c_1 bins/other/rz-diff/rz-diff_c_2
 EXPECT=<<EOF
 {"from":"bins/other/rz-diff/rz-diff_c_1","to":"bins/other/rz-diff/rz-diff_c_2","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"91"},{"op":"insert","value":"90"}]}]}
 EOF
@@ -109,7 +109,7 @@ RUN
 
 NAME=rz-diff strings comparison
 FILE==
-CMDS=!rz-diff -t strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+CMDS=!rz-diff -C -t strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 --- bins/elf/elf_one_symbol_shdr
 +++ bins/elf/elf_one_symbol_shdr1
@@ -122,7 +122,7 @@ RUN
 
 NAME=rz-diff strings comparison JSON
 FILE==
-CMDS=!rz-diff -jt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+CMDS=!rz-diff -C -jt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 {"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"Hello world!\n"},{"op":"insert","value":"AAAAo world!\n"}]}]}
 EOF
@@ -130,7 +130,7 @@ RUN
 
 NAME=rz-diff strings comparison with addresses
 FILE==
-CMDS=!rz-diff -At strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+CMDS=!rz-diff -C -At strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 --- bins/elf/elf_one_symbol_shdr
 +++ bins/elf/elf_one_symbol_shdr1
@@ -143,7 +143,7 @@ RUN
 
 NAME=rz-diff strings comparison with addresses JSON
 FILE==
-CMDS=!rz-diff -Ajt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
+CMDS=!rz-diff -C -Ajt strings bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1
 EXPECT=<<EOF
 {"from":"bins/elf/elf_one_symbol_shdr","to":"bins/elf/elf_one_symbol_shdr1","diff":[{"from":[1,1],"to":[1,1],"ops":[{"op":"delete","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 Hello world!\n"},{"op":"insert","value":"virt: 0x00000000080484b0 phys: 0x00000000000004b0 AAAAo world!\n"}]}]}
 EOF
@@ -152,7 +152,7 @@ RUN
 
 NAME=rz-diff functions comparison
 FILE==
-CMDS=!rz-diff -t functions bins/other/rz-diff/true bins/other/rz-diff/false
+CMDS=!rz-diff -C -t functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
                   fcn.00401050   26 0x0000000000401050 | MATCH   (1.000000) | 0x0000000000401050    26 fcn.00401050
                sym.imp.__uflow    6 0x0000000000401080 | MATCH   (1.000000) | 0x0000000000401080     6 sym.imp.__uflow
@@ -229,7 +229,7 @@ RUN
 
 NAME=rz-diff functions comparison JSON
 FILE==
-CMDS=!rz-diff -jt functions bins/other/rz-diff/true bins/other/rz-diff/false
+CMDS=!rz-diff -C -jt functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 [{"distance":1.000000,"type":"MATCH","original":{"name":"fcn.00401050","addr":4198480,"size":26},"modified":{"name":"fcn.00401050","addr":4198480,"size":26}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__uflow","addr":4198528,"size":6},"modified":{"name":"sym.imp.__uflow","addr":4198528,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.getenv","addr":4198544,"size":6},"modified":{"name":"sym.imp.getenv","addr":4198544,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.free","addr":4198560,"size":6},"modified":{"name":"sym.imp.free","addr":4198560,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.abort","addr":4198576,"size":6},"modified":{"name":"sym.imp.abort","addr":4198576,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__errno_location","addr":4198592,"size":6},"modified":{"name":"sym.imp.__errno_location","addr":4198592,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.strncmp","addr":4198608,"size":6},"modified":{"name":"sym.imp.strncmp","addr":4198608,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp._exit","addr":4198624,"size":6},"modified":{"name":"sym.imp._exit","addr":4198624,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.strcpy","addr":4198640,"size":6},"modified":{"name":"sym.imp.strcpy","addr":4198640,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__fpending","addr":4198656,"size":6},"modified":{"name":"sym.imp.__fpending","addr":4198656,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.textdomain","addr":4198672,"size":6},"modified":{"name":"sym.imp.textdomain","addr":4198672,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.bindtextdomain","addr":4198704,"size":6},"modified":{"name":"sym.imp.bindtextdomain","addr":4198704,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.dcgettext","addr":4198720,"size":6},"modified":{"name":"sym.imp.dcgettext","addr":4198720,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__ctype_get_mb_cur_max","addr":4198736,"size":6},"modified":{"name":"sym.imp.__ctype_get_mb_cur_max","addr":4198736,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.strlen","addr":4198752,"size":6},"modified":{"name":"sym.imp.strlen","addr":4198752,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__stack_chk_fail","addr":4198768,"size":6},"modified":{"name":"sym.imp.__stack_chk_fail","addr":4198768,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.strrchr","addr":4198800,"size":6},"modified":{"name":"sym.imp.strrchr","addr":4198800,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.lseek","addr":4198816,"size":6},"modified":{"name":"sym.imp.lseek","addr":4198816,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.memset","addr":4198832,"size":6},"modified":{"name":"sym.imp.memset","addr":4198832,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.fscanf","addr":4198848,"size":6},"modified":{"name":"sym.imp.fscanf","addr":4198848,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.close","addr":4198864,"size":6},"modified":{"name":"sym.imp.close","addr":4198864,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__libc_start_main","addr":4198880,"size":6},"modified":{"name":"sym.imp.__libc_start_main","addr":4198880,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.memcmp","addr":4198896,"size":6},"modified":{"name":"sym.imp.memcmp","addr":4198896,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.fputs_unlocked","addr":4198912,"size":6},"modified":{"name":"sym.imp.fputs_unlocked","addr":4198912,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.calloc","addr":4198928,"size":6},"modified":{"name":"sym.imp.calloc","addr":4198928,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.strcmp","addr":4198944,"size":6},"modified":{"name":"sym.imp.strcmp","addr":4198944,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"loc.imp.__gmon_start","addr":4198960,"size":6},"modified":{"name":"loc.imp.__gmon_start","addr":4198960,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.memcpy","addr":4198976,"size":6},"modified":{"name":"sym.imp.memcpy","addr":4198976,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.fileno","addr":4198992,"size":6},"modified":{"name":"sym.imp.fileno","addr":4198992,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.malloc","addr":4199008,"size":6},"modified":{"name":"sym.imp.malloc","addr":4199008,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.nl_langinfo","addr":4199040,"size":6},"modified":{"name":"sym.imp.nl_langinfo","addr":4199040,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.ungetc","addr":4199056,"size":6},"modified":{"name":"sym.imp.ungetc","addr":4199056,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__freading","addr":4199072,"size":6},"modified":{"name":"sym.imp.__freading","addr":4199072,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.realloc","addr":4199088,"size":6},"modified":{"name":"sym.imp.realloc","addr":4199088,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.fdopen","addr":4199104,"size":6},"modified":{"name":"sym.imp.fdopen","addr":4199104,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.setlocale","addr":4199120,"size":6},"modified":{"name":"sym.imp.setlocale","addr":4199120,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__printf_chk","addr":4199136,"size":6},"modified":{"name":"sym.imp.__printf_chk","addr":4199136,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.error","addr":4199152,"size":6},"modified":{"name":"sym.imp.error","addr":4199152,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.open","addr":4199168,"size":6},"modified":{"name":"sym.imp.open","addr":4199168,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.exit","addr":4199216,"size":6},"modified":{"name":"sym.imp.exit","addr":4199216,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.fwrite","addr":4199232,"size":6},"modified":{"name":"sym.imp.fwrite","addr":4199232,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__fprintf_chk","addr":4199248,"size":6},"modified":{"name":"sym.imp.__fprintf_chk","addr":4199248,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.mbsinit","addr":4199264,"size":6},"modified":{"name":"sym.imp.mbsinit","addr":4199264,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.iswprint","addr":4199280,"size":6},"modified":{"name":"sym.imp.iswprint","addr":4199280,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"sym.imp.__ctype_b_loc","addr":4199296,"size":6},"modified":{"name":"sym.imp.__ctype_b_loc","addr":4199296,"size":6}},{"distance":1.000000,"type":"MATCH","original":{"name":"fcn.00401460","addr":4199520,"size":41},"modified":{"name":"fcn.00401470","addr":4199536,"size":41}},{"distance":0.198093,"type":"UNMATCH","original":{"name":"fcn.00401530","addr":4199728,"size":745},"modified":{"name":"fcn.00401540","addr":4199744,"size":745}},{"distance":0.122449,"type":"UNMATCH","original":{"name":"fcn.004018f0","addr":4200688,"size":147},"modified":{"name":"fcn.00401900","addr":4200704,"size":147}},{"distance":0.102190,"type":"UNMATCH","original":{"name":"fcn.00401990","addr":4200848,"size":137},"modified":{"name":"fcn.004019a0","addr":4200864,"size":137}},{"distance":1.000000,"type":"MATCH","original":{"name":"fcn.00401a20","addr":4200992,"size":162},"modified":{"name":"fcn.00401a30","addr":4201008,"size":162}},{"distance":0.964912,"type":"SIMILAR","original":{"name":"fcn.00401ae0","addr":4201184,"size":228},"modified":{"name":"fcn.00401af0","addr":4201200,"size":228}},{"distance":0.991569,"type":"SIMILAR","original":{"name":"fcn.00401be0","addr":4201440,"size":2728},"modified":{"name":"fcn.00401bf0","addr":4201456,"size":2728}},{"distance":0.971765,"type":"SIMILAR","original":{"name":"fcn.00402730","addr":4204336,"size":425},"modified":{"name":"fcn.00402740","addr":4204352,"size":425}},{"distance":0.153846,"type":"UNMATCH","original":{"name":"fcn.004029a0","addr":4204960,"size":50},"modified":{"name":"fcn.004029b0","addr":4204976,"size":50}},{"distance":0.118421,"type":"UNMATCH","original":{"name":"fcn.00402e20","addr":4206112,"size":204},"modified":{"name":"fcn.00402e30","addr":4206128,"size":204}},{"distance":0.952331,"type":"SIMILAR","original":{"name":"fcn.00402fc0","addr":4206528,"size":944},"modified":{"name":"fcn.00402fd0","addr":4206544,"size":944}},{"distance":0.129771,"type":"UNMATCH","original":{"name":"fcn.004033d0","addr":4207568,"size":131},"modified":{"name":"fcn.004033e0","addr":4207584,"size":131}},{"distance":0.125749,"type":"UNMATCH","original":{"name":"fcn.00403460","addr":4207712,"size":167},"modified":{"name":"fcn.00403470","addr":4207728,"size":167}},{"distance":0.961538,"type":"SIMILAR","original":{"name":"fcn.00403590","addr":4208016,"size":26},"modified":{"name":"fcn.004035a0","addr":4208032,"size":26}},{"distance":0.200000,"type":"UNMATCH","original":{"name":"fcn.004035e0","addr":4208096,"size":48},"modified":{"name":"fcn.004035f0","addr":4208112,"size":48}},{"distance":0.142857,"type":"UNMATCH","original":{"name":"fcn.00403750","addr":4208464,"size":40},"modified":{"name":"fcn.00403760","addr":4208480,"size":40}},{"distance":0.184615,"type":"UNMATCH","original":{"name":"fcn.004037a0","addr":4208544,"size":49},"modified":{"name":"fcn.004037b0","addr":4208560,"size":49}},{"distance":0.163265,"type":"UNMATCH","original":{"name":"fcn.004037e0","addr":4208608,"size":41},"modified":{"name":"fcn.004037f0","addr":4208624,"size":41}},{"distance":1.000000,"type":"MATCH","original":{"name":"fcn.00403810","addr":4208656,"size":67},"modified":{"name":"fcn.00403820","addr":4208672,"size":67}},{"distance":0.120370,"type":"UNMATCH","original":{"name":"fcn.00403860","addr":4208736,"size":108},"modified":{"name":"fcn.00403870","addr":4208752,"size":108}},{"distance":0.127094,"type":"UNMATCH","original":{"name":"fcn.004038e0","addr":4208864,"size":1015},"modified":{"name":"fcn.004038f0","addr":4208880,"size":1015}},{"distance":0.217742,"type":"UNMATCH","original":{"name":"fcn.00403cf0","addr":4209904,"size":124},"modified":{"name":"fcn.00403d00","addr":4209920,"size":124}},{"distance":0.217391,"type":"UNMATCH","original":{"name":"fcn.00403d70","addr":4210032,"size":65},"modified":{"name":"fcn.00403d80","addr":4210048,"size":65}},{"distance":0.967391,"type":"SIMILAR","original":{"name":"fcn.00403db0","addr":4210096,"size":92},"modified":{"name":"fcn.00403dc0","addr":4210112,"size":92}},{"distance":0.050000,"type":"UNMATCH","original":{"name":"fcn.00403e90","addr":4210320,"size":32},"modified":{"name":"fcn.00403ea0","addr":4210336,"size":32}}]
 EOF
@@ -237,7 +237,7 @@ RUN
 
 NAME=rz-diff graphs comparison with addresses
 FILE==
-CMDS=!rz-diff -t graphs -0 fcn.00401ae0 -1 fcn.00401af0 bins/other/rz-diff/true bins/other/rz-diff/false
+CMDS=!rz-diff -C -t graphs -0 fcn.00401ae0 -1 fcn.00401af0 bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 digraph code {
 	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
@@ -298,7 +298,7 @@ RUN
 
 NAME=rz-diff graphs comparison with addresses JSON
 FILE==
-CMDS=!rz-diff -j -t graphs -0 fcn.00401ae0 -1 fcn.00401af0 bins/other/rz-diff/true bins/other/rz-diff/false
+CMDS=!rz-diff -C -j -t graphs -0 fcn.00401ae0 -1 fcn.00401af0 bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
 [{"name":"fcn.00401ae0","offset":4201184,"ninstr":73,"nargs":2,"nlocals":0,"size":242,"stack":24,"type":"fcn","blocks":[{"offset":4201184,"size":33,"jump":4201232,"fail":4201217,"colorize":0,"ops":[{"offset":4201184,"esil":"r12,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"push r12","disasm":"push r12","bytes":"4154","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["fcn.00401ae0"],"xrefs_to":[{"addr":4203282,"type":"CALL"},{"addr":4203299,"type":"CALL"}]},{"offset":4201186,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":4201184,"fcn_last":4201425,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0},{"offset":4201187,"esil":"esi,r12,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"mov r12d, esi","disasm":"mov r12d, esi","bytes":"4189f4","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201190,"esil":"rbx,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":4201184,"fcn_last":4201425,"size":1,"opcode":"push rbx","disasm":"push rbx","bytes":"53","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0},{"offset":4201191,"esil":"rdi,rbp,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"mov rbp, rdi","disasm":"mov rbp, rdi","bytes":"4889fd","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201194,"esil":"rdi,rsi,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"mov rsi, rdi","disasm":"mov rsi, rdi","bytes":"4889fe","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201197,"val":5,"esil":"5,rdx,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"mov edx, 5","disasm":"mov edx, 5","bytes":"ba05000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201202,"esil":"edi,rdi,^,0xffffffff,&,rdi,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"xor edi, edi","disasm":"xor edi, edi","bytes":"31ff","family":"cpu","type":"xor","reloc":false,"type_num":28,"type2_num":0},{"offset":4201204,"esil":"4198720,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"call 0x401140","disasm":"call sym.imp.dcgettext","bytes":"e847f6ffff","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":4198720,"fail":4201209,"xrefs_from":[{"addr":4198720,"type":"CALL"}]},{"offset":4201209,"esil":"rbp,rax,==,$z,zf,:=,64,$b,cf,:=,$p,pf,:=,63,$s,sf,:=,rbp,0x8000000000000000,-,!,63,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"cmp rax, rbp","disasm":"cmp rax, rbp","bytes":"4839e8","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201212,"esil":"rax,rbx,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"mov rbx, rax","disasm":"mov rbx, rax","bytes":"4889c3","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201215,"esil":"zf,?{,4201232,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"je 0x401b10","disasm":"je 0x401b10","bytes":"740f","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201232,"fail":4201217,"xrefs_from":[{"addr":4201232,"type":"CODE"}]}]},{"offset":4201217,"size":8,"colorize":0,"ops":[{"offset":4201217,"esil":"rbx,rax,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"mov rax, rbx","disasm":"mov rax, rbx","bytes":"4889d8","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0,"xrefs_to":[{"addr":4201307,"type":"CODE"},{"addr":4201330,"type":"CODE"},{"addr":4201421,"type":"CODE"}]},{"offset":4201220,"esil":"rsp,[8],rbx,=,8,rsp,+=","refptr":false,"fcn_addr":4201184,"fcn_last":4201425,"size":1,"opcode":"pop rbx","disasm":"pop rbx","bytes":"5b","family":"cpu","type":"pop","reloc":false,"type_num":14,"type2_num":0},{"offset":4201221,"esil":"rsp,[8],rbp,=,8,rsp,+=","refptr":false,"fcn_addr":4201184,"fcn_last":4201425,"size":1,"opcode":"pop rbp","disasm":"pop rbp","bytes":"5d","family":"cpu","type":"pop","reloc":false,"type_num":14,"type2_num":0},{"offset":4201222,"esil":"rsp,[8],r12,=,8,rsp,+=","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"pop r12","disasm":"pop r12","bytes":"415c","family":"cpu","type":"pop","reloc":false,"type_num":14,"type2_num":0},{"offset":4201224,"esil":"rsp,[8],rip,=,8,rsp,+=","refptr":false,"fcn_addr":4201184,"fcn_last":4201425,"size":1,"opcode":"ret","disasm":"ret","bytes":"c3","family":"cpu","type":"ret","reloc":false,"type_num":5,"type2_num":0}]},{"offset":4201232,"size":16,"jump":4201336,"fail":4201248,"colorize":0,"ops":[{"offset":4201232,"esil":"4208864,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"call 0x4038e0","disasm":"call fcn.004038e0","bytes":"e8cb1d0000","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":4208864,"fail":4201237,"xrefs_from":[{"addr":4208864,"type":"CALL"}],"xrefs_to":[{"addr":4201215,"type":"CODE"}]},{"offset":4201237,"esil":"rax,[1],rdx,=","refptr":true,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"movzx edx, byte [rax]","disasm":"movzx edx, byte [rax]","bytes":"0fb610","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201240,"ptr":4294967263,"val":4294967263,"esil":"4294967263,rdx,&,0xffffffff,&,rdx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"and edx, 0xffffffdf","disasm":"and edx, 0xffffffdf","bytes":"83e2df","family":"cpu","type":"and","reloc":false,"type_num":27,"type2_num":0},{"offset":4201243,"ptr":85,"val":85,"esil":"85,dl,==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,85,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"cmp dl, 0x55","disasm":"cmp dl, 0x55","bytes":"80fa55","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201246,"esil":"zf,!,?{,4201336,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b78","disasm":"jne 0x401b78","bytes":"7558","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201336,"fail":4201248,"xrefs_from":[{"addr":4201336,"type":"CODE"}]}]},{"offset":4201248,"size":12,"jump":4201312,"fail":4201260,"colorize":0,"ops":[{"offset":4201248,"esil":"0x1,rax,+,[1],rdx,=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"movzx edx, byte [rax + 1]","disasm":"movzx edx, byte [rax + 1]","bytes":"0fb65001","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201252,"ptr":4294967263,"val":4294967263,"esil":"4294967263,rdx,&,0xffffffff,&,rdx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"and edx, 0xffffffdf","disasm":"and edx, 0xffffffdf","bytes":"83e2df","family":"cpu","type":"and","reloc":false,"type_num":27,"type2_num":0},{"offset":4201255,"ptr":84,"val":84,"esil":"84,dl,==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,84,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"cmp dl, 0x54","disasm":"cmp dl, 0x54","bytes":"80fa54","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201258,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"7534","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201260,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201260,"size":12,"jump":4201312,"fail":4201272,"colorize":0,"ops":[{"offset":4201260,"esil":"0x2,rax,+,[1],rdx,=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"movzx edx, byte [rax + 2]","disasm":"movzx edx, byte [rax + 2]","bytes":"0fb65002","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201264,"ptr":4294967263,"val":4294967263,"esil":"4294967263,rdx,&,0xffffffff,&,rdx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"and edx, 0xffffffdf","disasm":"and edx, 0xffffffdf","bytes":"83e2df","family":"cpu","type":"and","reloc":false,"type_num":27,"type2_num":0},{"offset":4201267,"ptr":70,"val":70,"esil":"70,dl,==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,70,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"cmp dl, 0x46","disasm":"cmp dl, 0x46","bytes":"80fa46","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201270,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"7528","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201272,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201272,"size":6,"jump":4201312,"fail":4201278,"colorize":0,"ops":[{"offset":4201272,"val":45,"esil":"45,0x3,rax,+,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,45,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmp byte [rax + 3], 0x2d","disasm":"cmp byte [rax + 3], 0x2d","bytes":"8078032d","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201276,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"7522","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201278,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201278,"size":6,"jump":4201312,"fail":4201284,"colorize":0,"ops":[{"offset":4201278,"val":56,"esil":"56,0x4,rax,+,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,56,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmp byte [rax + 4], 0x38","disasm":"cmp byte [rax + 4], 0x38","bytes":"80780438","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201282,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"751c","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201284,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201284,"size":6,"jump":4201312,"fail":4201290,"colorize":0,"ops":[{"offset":4201284,"val":0,"esil":"0,0x5,rax,+,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,0,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmp byte [rax + 5], 0","disasm":"cmp byte [rax + 5], 0","bytes":"80780500","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201288,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"7516","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201290,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201290,"size":19,"jump":4201217,"colorize":0,"ops":[{"offset":4201290,"val":96,"esil":"96,rbx,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,96,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"cmp byte [rbx], 0x60","disasm":"cmp byte [rbx], 0x60","bytes":"803b60","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201293,"ptr":4211283,"val":4211283,"esil":"4211283,rax,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"mov eax, 0x404253","disasm":"mov eax, 0x404253","bytes":"b853424000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0,"xrefs_from":[{"addr":4211283,"type":"DATA"}]},{"offset":4201298,"ptr":4211271,"val":4211271,"esil":"4211271,rbx,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"mov ebx, 0x404247","disasm":"mov ebx, 0x404247","bytes":"bb47424000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0,"xrefs_from":[{"addr":4211271,"type":"DATA"}]},{"offset":4201303,"esil":"zf,?{,rax,rbx,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmove rbx, rax","disasm":"cmove rbx, rax","bytes":"480f44d8","family":"cpu","type":"cmov","reloc":false,"type_num":2147483657,"type2_num":0},{"offset":4201307,"esil":"0x401b01,rip,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jmp 0x401b01","disasm":"jmp 0x401b01","bytes":"eba4","family":"cpu","type":"jmp","reloc":false,"type_num":1,"type2_num":0,"jump":4201217,"xrefs_from":[{"addr":4201217,"type":"CODE"}]}]},{"offset":4201312,"size":20,"jump":4201217,"colorize":0,"ops":[{"offset":4201312,"ptr":7,"val":7,"esil":"7,r12d,==,$z,zf,:=,32,$b,cf,:=,$p,pf,:=,31,$s,sf,:=,7,0x80000000,-,!,31,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmp r12d, 7","disasm":"cmp r12d, 7","bytes":"4183fc07","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0,"xrefs_to":[{"addr":4201258,"type":"CODE"},{"addr":4201270,"type":"CODE"},{"addr":4201276,"type":"CODE"},{"addr":4201282,"type":"CODE"},{"addr":4201288,"type":"CODE"},{"addr":4201339,"type":"CODE"},{"addr":4201351,"type":"CODE"},{"addr":4201357,"type":"CODE"},{"addr":4201363,"type":"CODE"},{"addr":4201369,"type":"CODE"},{"addr":4201375,"type":"CODE"},{"addr":4201402,"type":"CODE"}]},{"offset":4201316,"ptr":4211275,"val":4211275,"esil":"4211275,rbx,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"mov ebx, 0x40424b","disasm":"mov ebx, 0x40424b","bytes":"bb4b424000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0,"xrefs_from":[{"addr":4211275,"type":"DATA"}]},{"offset":4201321,"ptr":4211277,"val":4211277,"esil":"4211277,rax,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"mov eax, 0x40424d","disasm":"mov eax, 0x40424d","bytes":"b84d424000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0,"xrefs_from":[{"addr":4211277,"type":"DATA"}]},{"offset":4201326,"esil":"zf,?{,rax,rbx,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmove rbx, rax","disasm":"cmove rbx, rax","bytes":"480f44d8","family":"cpu","type":"cmov","reloc":false,"type_num":2147483657,"type2_num":0},{"offset":4201330,"esil":"0x401b01,rip,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jmp 0x401b01","disasm":"jmp 0x401b01","bytes":"eb8d","family":"cpu","type":"jmp","reloc":false,"type_num":1,"type2_num":0,"jump":4201217,"xrefs_from":[{"addr":4201217,"type":"CODE"}]}]},{"offset":4201336,"size":5,"jump":4201312,"fail":4201341,"colorize":0,"ops":[{"offset":4201336,"ptr":71,"val":71,"esil":"71,dl,==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,71,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"cmp dl, 0x47","disasm":"cmp dl, 0x47","bytes":"80fa47","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0,"xrefs_to":[{"addr":4201246,"type":"CODE"}]},{"offset":4201339,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"75e3","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201341,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201341,"size":12,"jump":4201312,"fail":4201353,"colorize":0,"ops":[{"offset":4201341,"esil":"0x1,rax,+,[1],rdx,=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"movzx edx, byte [rax + 1]","disasm":"movzx edx, byte [rax + 1]","bytes":"0fb65001","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201345,"ptr":4294967263,"val":4294967263,"esil":"4294967263,rdx,&,0xffffffff,&,rdx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"and edx, 0xffffffdf","disasm":"and edx, 0xffffffdf","bytes":"83e2df","family":"cpu","type":"and","reloc":false,"type_num":27,"type2_num":0},{"offset":4201348,"ptr":66,"val":66,"esil":"66,dl,==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,66,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"cmp dl, 0x42","disasm":"cmp dl, 0x42","bytes":"80fa42","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201351,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"75d7","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201353,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201353,"size":6,"jump":4201312,"fail":4201359,"colorize":0,"ops":[{"offset":4201353,"val":49,"esil":"49,0x2,rax,+,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,49,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmp byte [rax + 2], 0x31","disasm":"cmp byte [rax + 2], 0x31","bytes":"80780231","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201357,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"75d1","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201359,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201359,"size":6,"jump":4201312,"fail":4201365,"colorize":0,"ops":[{"offset":4201359,"val":56,"esil":"56,0x3,rax,+,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,56,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmp byte [rax + 3], 0x38","disasm":"cmp byte [rax + 3], 0x38","bytes":"80780338","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201363,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"75cb","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201365,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201365,"size":6,"jump":4201312,"fail":4201371,"colorize":0,"ops":[{"offset":4201365,"val":48,"esil":"48,0x4,rax,+,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,48,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmp byte [rax + 4], 0x30","disasm":"cmp byte [rax + 4], 0x30","bytes":"80780430","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201369,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"75c5","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201371,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201371,"size":6,"jump":4201312,"fail":4201377,"colorize":0,"ops":[{"offset":4201371,"val":51,"esil":"51,0x5,rax,+,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,51,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmp byte [rax + 5], 0x33","disasm":"cmp byte [rax + 5], 0x33","bytes":"80780533","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201375,"esil":"zf,!,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"jne 0x401b60","disasm":"jne 0x401b60","bytes":"75bf","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201377,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201377,"size":27,"jump":4201312,"fail":4201404,"colorize":0,"ops":[{"offset":4201377,"esil":"r8d,r8,^,0xffffffff,&,r8,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"xor r8d, r8d","disasm":"xor r8d, r8d","bytes":"4531c0","family":"cpu","type":"xor","reloc":false,"type_num":28,"type2_num":0},{"offset":4201380,"esil":"ecx,rcx,^,0xffffffff,&,rcx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"xor ecx, ecx","disasm":"xor ecx, ecx","bytes":"31c9","family":"cpu","type":"xor","reloc":false,"type_num":28,"type2_num":0},{"offset":4201382,"ptr":48,"val":48,"esil":"48,rdx,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"mov edx, 0x30","disasm":"mov edx, 0x30","bytes":"ba30000000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201387,"ptr":4211287,"val":4211287,"esil":"4211287,rsi,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"mov esi, 0x404257","disasm":"mov esi, str.GB18030","bytes":"be57424000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0,"xrefs_from":[{"addr":4211287,"type":"DATA"}]},{"offset":4201392,"esil":"rax,rdi,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"mov rdi, rax","disasm":"mov rdi, rax","bytes":"4889c7","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4201395,"esil":"4200992,rip,8,rsp,-=,rsp,=[],rip,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"call 0x401a20","disasm":"call fcn.00401a20","bytes":"e868feffff","family":"cpu","type":"call","reloc":false,"type_num":3,"type2_num":0,"jump":4200992,"fail":4201400,"xrefs_from":[{"addr":4200992,"type":"CALL"}]},{"offset":4201400,"esil":"0,eax,eax,&,==,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"test eax, eax","disasm":"test eax, eax","bytes":"85c0","family":"cpu","type":"acmp","reloc":false,"type_num":16,"type2_num":0},{"offset":4201402,"esil":"zf,?{,4201312,rip,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201424,"size":2,"opcode":"je 0x401b60","disasm":"je 0x401b60","bytes":"74a4","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":4201312,"fail":4201404,"xrefs_from":[{"addr":4201312,"type":"CODE"}]}]},{"offset":4201404,"size":22,"jump":4201217,"colorize":0,"ops":[{"offset":4201404,"val":96,"esil":"96,rbx,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,96,0x80,-,!,7,$o,^,of,:=,3,$b,af,:=","refptr":true,"fcn_addr":4201184,"fcn_last":4201423,"size":3,"opcode":"cmp byte [rbx], 0x60","disasm":"cmp byte [rbx], 0x60","bytes":"803b60","family":"cpu","type":"cmp","reloc":false,"type_num":15,"type2_num":0},{"offset":4201407,"ptr":4211279,"val":4211279,"esil":"4211279,rax,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"mov eax, 0x40424f","disasm":"mov eax, 0x40424f","bytes":"b84f424000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0,"xrefs_from":[{"addr":4211279,"type":"DATA"}]},{"offset":4201412,"ptr":4211268,"val":4211268,"esil":"4211268,rbx,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"mov ebx, 0x404244","disasm":"mov ebx, 0x404244","bytes":"bb44424000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0,"xrefs_from":[{"addr":4211268,"type":"DATA"}]},{"offset":4201417,"esil":"zf,?{,rax,rbx,=,}","refptr":false,"fcn_addr":4201184,"fcn_last":4201422,"size":4,"opcode":"cmove rbx, rax","disasm":"cmove rbx, rax","bytes":"480f44d8","family":"cpu","type":"cmov","reloc":false,"type_num":2147483657,"type2_num":0},{"offset":4201421,"esil":"0x401b01,rip,=","refptr":false,"fcn_addr":4201184,"fcn_last":4201421,"size":5,"opcode":"jmp 0x401b01","disasm":"jmp 0x401b01","bytes":"e92fffffff","family":"cpu","type":"jmp","reloc":false,"type_num":1,"type2_num":0,"jump":4201217,"xrefs_from":[{"addr":4201217,"type":"CODE"}]}]}]}]
 EOF
@@ -307,7 +307,7 @@ RUN
 
 NAME=rz-diff entries comparison
 FILE==
-CMDS=!rz-diff -t entries bins/elf/hello_world bins/elf/hello_world32
+CMDS=!rz-diff -C -t entries bins/elf/hello_world bins/elf/hello_world32
 EXPECT=<<EOF
 --- bins/elf/hello_world
 +++ bins/elf/hello_world32
@@ -324,7 +324,7 @@ RUN
 
 NAME=rz-diff entries comparison JSON
 FILE==
-CMDS=!rz-diff -jt entries bins/elf/hello_world bins/elf/hello_world32
+CMDS=!rz-diff -C -jt entries bins/elf/hello_world bins/elf/hello_world32
 EXPECT=<<EOF
 {"from":"bins/elf/hello_world","to":"bins/elf/hello_world32","diff":[{"from":[1,3],"to":[1,3],"ops":[{"op":"delete","value":"virt: 0x00000000000007a0 phys: 0x00000000000007a0 entry init\n"},{"op":"delete","value":"virt: 0x0000000000000760 phys: 0x0000000000000760 entry fini\n"},{"op":"delete","value":"virt: 0x00000000000006a0 phys: 0x00000000000006a0 entry program\n"},{"op":"insert","value":"virt: 0x0000000000000600 phys: 0x0000000000000600 entry init\n"},{"op":"insert","value":"virt: 0x00000000000005b0 phys: 0x00000000000005b0 entry fini\n"},{"op":"insert","value":"virt: 0x00000000000004d0 phys: 0x00000000000004d0 entry program\n"}]}]}
 EOF
@@ -333,7 +333,7 @@ RUN
 
 NAME=rz-diff imports comparison
 FILE==
-CMDS=!rz-diff -t imports bins/elf/hello_world bins/other/rz-diff/true
+CMDS=!rz-diff -C -t imports bins/elf/hello_world bins/other/rz-diff/true
 EXPECT=<<EOF
 --- bins/elf/hello_world
 +++ bins/other/rz-diff/true
@@ -398,7 +398,7 @@ RUN
 
 NAME=rz-diff imports comparison JSON
 FILE==
-CMDS=!rz-diff -jt imports bins/elf/hello_world bins/other/rz-diff/true
+CMDS=!rz-diff -C -jt imports bins/elf/hello_world bins/other/rz-diff/true
 EXPECT=<<EOF
 {"from":"bins/elf/hello_world","to":"bins/other/rz-diff/true","diff":[{"from":[1,11],"to":[1,49],"ops":[{"op":"delete","value":"WEAK    NOTYPE  _ITM_deregisterTMCloneTable\n"},{"op":"delete","value":"WEAK    NOTYPE  _ITM_registerTMCloneTable\n"},{"op":"delete","value":"WEAK    FUNC    __cxa_finalize\n"},{"op":"insert","value":"GLOBAL  FUNC    __ctype_b_loc\n"},{"op":"insert","value":"GLOBAL  FUNC    __ctype_get_mb_cur_max\n"},{"op":"insert","value":"GLOBAL  FUNC    __cxa_atexit\n"},{"op":"insert","value":"GLOBAL  FUNC    __errno_location\n"},{"op":"insert","value":"GLOBAL  FUNC    __fpending\n"},{"op":"insert","value":"GLOBAL  FUNC    __fprintf_chk\n"},{"op":"insert","value":"GLOBAL  FUNC    __freading\n"},{"op":"equal","value":"WEAK    NOTYPE  __gmon_start__\n"},{"op":"equal","value":"GLOBAL  FUNC    __libc_start_main\n"},{"op":"insert","value":"GLOBAL  FUNC    __printf_chk\n"},{"op":"insert","value":"GLOBAL  FUNC    __stack_chk_fail\n"},{"op":"insert","value":"GLOBAL  FUNC    __uflow\n"},{"op":"insert","value":"GLOBAL  FUNC    _exit\n"},{"op":"insert","value":"GLOBAL  FUNC    abort\n"},{"op":"insert","value":"GLOBAL  FUNC    bindtextdomain\n"},{"op":"insert","value":"GLOBAL  FUNC    calloc\n"},{"op":"insert","value":"GLOBAL  FUNC    close\n"},{"op":"insert","value":"GLOBAL  FUNC    dcgettext\n"},{"op":"insert","value":"GLOBAL  FUNC    error\n"},{"op":"insert","value":"GLOBAL  FUNC    exit\n"},{"op":"insert","value":"GLOBAL  FUNC    fclose\n"},{"op":"insert","value":"GLOBAL  FUNC    fdopen\n"},{"op":"insert","value":"GLOBAL  FUNC    fflush\n"},{"op":"insert","value":"GLOBAL  FUNC    fileno\n"},{"op":"insert","value":"GLOBAL  FUNC    fputs_unlocked\n"},{"op":"equal","value":"GLOBAL  FUNC    free\n"},{"op":"insert","value":"GLOBAL  FUNC    fscanf\n"},{"op":"insert","value":"GLOBAL  FUNC    fseeko\n"},{"op":"insert","value":"GLOBAL  FUNC    fwrite\n"},{"op":"insert","value":"GLOBAL  FUNC    getenv\n"},{"op":"insert","value":"GLOBAL  FUNC    iswprint\n"},{"op":"insert","value":"GLOBAL  FUNC    lseek\n"},{"op":"equal","value":"GLOBAL  FUNC    malloc\n"},{"op":"delete","value":"GLOBAL  FUNC    puts\n"},{"op":"delete","value":"GLOBAL  FUNC    strcat\n"},{"op":"insert","value":"GLOBAL  FUNC    mbrtowc\n"},{"op":"insert","value":"GLOBAL  FUNC    mbsinit\n"},{"op":"insert","value":"GLOBAL  FUNC    memcmp\n"},{"op":"insert","value":"GLOBAL  FUNC    memcpy\n"},{"op":"insert","value":"GLOBAL  FUNC    memset\n"},{"op":"insert","value":"GLOBAL  FUNC    nl_langinfo\n"},{"op":"insert","value":"GLOBAL  FUNC    open\n"},{"op":"insert","value":"GLOBAL  FUNC    realloc\n"},{"op":"insert","value":"GLOBAL  FUNC    setlocale\n"},{"op":"insert","value":"GLOBAL  FUNC    strcmp\n"},{"op":"equal","value":"GLOBAL  FUNC    strcpy\n"},{"op":"equal","value":"GLOBAL  FUNC    strlen\n"},{"op":"insert","value":"GLOBAL  FUNC    strncmp\n"},{"op":"insert","value":"GLOBAL  FUNC    strrchr\n"},{"op":"insert","value":"GLOBAL  FUNC    textdomain\n"},{"op":"insert","value":"GLOBAL  FUNC    ungetc\n"}]}]}
 EOF
@@ -407,7 +407,7 @@ RUN
 
 NAME=rz-diff fields comparison
 FILE==
-CMDS=!rz-diff -t fields bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -t fields bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Hello.class
@@ -419,7 +419,7 @@ RUN
 
 NAME=rz-diff fields comparison JSON
 FILE==
-CMDS=!rz-diff -jt fields bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -jt fields bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,0],"to":[1,1],"ops":[{"op":"insert","value":"Ljava/lang/String; who\n"}]}]}
 EOF
@@ -427,7 +427,7 @@ RUN
 
 NAME=rz-diff fields comparison with addresses
 FILE==
-CMDS=!rz-diff -At fields bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -At fields bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Hello.class
@@ -439,7 +439,7 @@ RUN
 
 NAME=rz-diff fields comparison with addresses JSON
 FILE==
-CMDS=!rz-diff -Ajt fields bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -Ajt fields bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,0],"to":[1,1],"ops":[{"op":"insert","value":"virt: 0x000000000000020b phys: 0x000000000000020b Ljava/lang/String; who\n"}]}]}
 EOF
@@ -448,7 +448,7 @@ RUN
 
 NAME=rz-diff libraries comparison
 FILE==
-CMDS=!rz-diff -t libraries bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -t libraries bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Hello.class
@@ -473,7 +473,7 @@ RUN
 
 NAME=rz-diff libraries comparison JSON
 FILE==
-CMDS=!rz-diff -jt libraries bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -jt libraries bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,12],"to":[1,5],"ops":[{"op":"delete","value":"Main\n"},{"op":"delete","value":"[Ljava/lang/String;\n"},{"op":"delete","value":"java/io/BufferedReader\n"},{"op":"delete","value":"java/io/FileReader\n"},{"op":"insert","value":"Hello\n"},{"op":"equal","value":"java/io/PrintStream\n"},{"op":"delete","value":"java/lang/Exception\n"},{"op":"equal","value":"java/lang/Object\n"},{"op":"delete","value":"java/lang/String\n"},{"op":"insert","value":"java/lang/StringBuilder\n"},{"op":"equal","value":"java/lang/System\n"},{"op":"delete","value":"java/lang/invoke/MethodHandles\n"},{"op":"delete","value":"java/lang/invoke/MethodHandles$Lookup\n"},{"op":"delete","value":"java/lang/invoke/StringConcatFactory\n"}]}]}
 EOF
@@ -482,7 +482,7 @@ RUN
 
 NAME=rz-diff sections comparison
 FILE==
-CMDS=!rz-diff -t sections bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -t sections bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Hello.class
@@ -504,7 +504,7 @@ RUN
 
 NAME=rz-diff sections comparison JSON
 FILE==
-CMDS=!rz-diff -jt sections bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -jt sections bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[0,8],"to":[0,12],"ops":[{"op":"equal","value":"align: 0x00000000 -r-- class.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.constant_pool\n"},{"op":"insert","value":"align: 0x00000000 -r-- class.fields\n"},{"op":"insert","value":"align: 0x00000000 -r-- class.fields.who.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.methods\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.methods.<init>.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-x class.methods.<init>.attr.0.code\n"},{"op":"equal","value":"align: 0x00000000 -r-- class.methods.main.attr\n"},{"op":"equal","value":"align: 0x00000000 -r-x class.methods.main.attr.0.code\n"},{"op":"insert","value":"align: 0x00000000 -r-- class.methods.say.attr\n"},{"op":"insert","value":"align: 0x00000000 -r-x class.methods.say.attr.0.code\n"}]}]}
 EOF
@@ -512,7 +512,7 @@ RUN
 
 NAME=rz-diff sections comparison with addresses
 FILE==
-CMDS=!rz-diff -At sections bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -At sections bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Hello.class
@@ -541,7 +541,7 @@ RUN
 
 NAME=rz-diff sections comparison with addresses JSON
 FILE==
-CMDS=!rz-diff -Ajt sections bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -Ajt sections bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Hello.class","diff":[{"from":[1,7],"to":[1,11],"ops":[{"op":"delete","value":"virt: 0x000000000000058a:0x0026 phys: 0x000000000000058a:0x0026 align: 0x00000000 -r-- class.attr\n"},{"op":"delete","value":"virt: 0x000000000000000a:0x0480 phys: 0x000000000000000a:0x0480 align: 0x00000000 -r-- class.constant_pool\n"},{"op":"delete","value":"virt: 0x000000000000048e:0x00fc phys: 0x000000000000048e:0x00fc align: 0x00000000 -r-- class.methods\n"},{"op":"delete","value":"virt: 0x000000000000048e:0x002b phys: 0x000000000000048e:0x002b align: 0x00000000 -r-- class.methods.<init>.attr\n"},{"op":"delete","value":"virt: 0x00000000000004a4:0x001d phys: 0x00000000000004a4:0x001d align: 0x00000000 -r-x class.methods.<init>.attr.0.code\n"},{"op":"delete","value":"virt: 0x00000000000004b9:0x00d1 phys: 0x00000000000004b9:0x00d1 align: 0x00000000 -r-- class.methods.main.attr\n"},{"op":"delete","value":"virt: 0x00000000000004cf:0x00c1 phys: 0x00000000000004cf:0x00c1 align: 0x00000000 -r-x class.methods.main.attr.0.code\n"},{"op":"insert","value":"virt: 0x00000000000002cd:0x0008 phys: 0x00000000000002cd:0x0008 align: 0x00000000 -r-- class.attr\n"},{"op":"insert","value":"virt: 0x000000000000000a:0x01ff phys: 0x000000000000000a:0x01ff align: 0x00000000 -r-- class.constant_pool\n"},{"op":"insert","value":"virt: 0x000000000000020b:0x000a phys: 0x000000000000020b:0x000a align: 0x00000000 -r-- class.fields\n"},{"op":"insert","value":"virt: 0x000000000000020b:0x000a phys: 0x000000000000020b:0x000a align: 0x00000000 -r-- class.fields.who.attr\n"},{"op":"insert","value":"virt: 0x0000000000000215:0x00b8 phys: 0x0000000000000215:0x00b8 align: 0x00000000 -r-- class.methods\n"},{"op":"insert","value":"virt: 0x0000000000000215:0x0038 phys: 0x0000000000000215:0x0038 align: 0x00000000 -r-- class.methods.<init>.attr\n"},{"op":"insert","value":"virt: 0x000000000000022b:0x002a phys: 0x000000000000022b:0x002a align: 0x00000000 -r-x class.methods.<init>.attr.0.code\n"},{"op":"insert","value":"virt: 0x0000000000000294:0x0039 phys: 0x0000000000000294:0x0039 align: 0x00000000 -r-- class.methods.main.attr\n"},{"op":"insert","value":"virt: 0x00000000000002aa:0x0029 phys: 0x00000000000002aa:0x0029 align: 0x00000000 -r-x class.methods.main.attr.0.code\n"},{"op":"insert","value":"virt: 0x000000000000024d:0x0047 phys: 0x000000000000024d:0x0047 align: 0x00000000 -r-- class.methods.say.attr\n"},{"op":"insert","value":"virt: 0x0000000000000263:0x0039 phys: 0x0000000000000263:0x0039 align: 0x00000000 -r-x class.methods.say.attr.0.code\n"}]}]}
 EOF
@@ -550,7 +550,7 @@ RUN
 
 NAME=rz-diff symbols comparison
 FILE==
-CMDS=!rz-diff -t symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+CMDS=!rz-diff -C -t symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.1.7.class
@@ -570,7 +570,7 @@ RUN
 
 NAME=rz-diff symbols comparison JSON
 FILE==
-CMDS=!rz-diff -jt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+CMDS=!rz-diff -C -jt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[8,6],"to":[8,8],"ops":[{"op":"equal","value":"java.io.PrintStream.println\n"},{"op":"equal","value":"java.lang.Exception.printStackTrace\n"},{"op":"equal","value":"java.lang.Object.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder.<init>\n"},{"op":"insert","value":"java.lang.StringBuilder.append\n"},{"op":"insert","value":"java.lang.StringBuilder.toString\n"},{"op":"equal","value":"java.lang.System.err\n"},{"op":"equal","value":"java.lang.System.out\n"},{"op":"delete","value":"java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
 EOF
@@ -578,7 +578,7 @@ RUN
 
 NAME=rz-diff symbols comparison with addresses
 FILE==
-CMDS=!rz-diff -At symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+CMDS=!rz-diff -C -At symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.1.7.class
@@ -611,7 +611,7 @@ RUN
 
 NAME=rz-diff symbols comparison with addresses JSON
 FILE==
-CMDS=!rz-diff -Ajt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
+CMDS=!rz-diff -C -Ajt symbols bins/java/Main.java.11.class bins/java/Main.java.1.7.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.1.7.class","diff":[{"from":[1,13],"to":[1,15],"ops":[{"op":"delete","value":"virt: 0x00000000000004a4 phys: 0x00000000000004a4 Main.<init>\n"},{"op":"delete","value":"virt: 0x00000000000004cf phys: 0x00000000000004cf Main.main\n"},{"op":"insert","value":"virt: 0x0000000000000383 phys: 0x0000000000000383 Main.<init>\n"},{"op":"insert","value":"virt: 0x00000000000003ae phys: 0x00000000000003ae Main.main\n"},{"op":"equal","value":"virt: 0x000000000000011e phys: 0x000000000000011e java.io.BufferedReader.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001b7 phys: 0x00000000000001b7 java.io.BufferedReader.close\n"},{"op":"insert","value":"virt: 0x00000000000001f0 phys: 0x00000000000001f0 java.io.BufferedReader.close\n"},{"op":"equal","value":"virt: 0x000000000000013e phys: 0x000000000000013e java.io.BufferedReader.readLine\n"},{"op":"equal","value":"virt: 0x0000000000000114 phys: 0x0000000000000114 java.io.FileReader.<init>\n"},{"op":"delete","value":"virt: 0x000000000000021f phys: 0x000000000000021f java.io.PrintStream.format\n"},{"op":"insert","value":"virt: 0x0000000000000258 phys: 0x0000000000000258 java.io.PrintStream.format\n"},{"op":"equal","value":"virt: 0x0000000000000088 phys: 0x0000000000000088 java.io.PrintStream.println\n"},{"op":"delete","value":"virt: 0x0000000000000271 phys: 0x0000000000000271 java.lang.Exception.printStackTrace\n"},{"op":"insert","value":"virt: 0x00000000000002aa phys: 0x00000000000002aa java.lang.Exception.printStackTrace\n"},{"op":"equal","value":"virt: 0x000000000000000a phys: 0x000000000000000a java.lang.Object.<init>\n"},{"op":"delete","value":"virt: 0x00000000000001e2 phys: 0x00000000000001e2 java.lang.System.err\n"},{"op":"insert","value":"virt: 0x0000000000000187 phys: 0x0000000000000187 java.lang.StringBuilder.<init>\n"},{"op":"insert","value":"virt: 0x0000000000000198 phys: 0x0000000000000198 java.lang.StringBuilder.append\n"},{"op":"insert","value":"virt: 0x00000000000001db phys: 0x00000000000001db java.lang.StringBuilder.toString\n"},{"op":"insert","value":"virt: 0x000000000000021b phys: 0x000000000000021b java.lang.System.err\n"},{"op":"equal","value":"virt: 0x0000000000000039 phys: 0x0000000000000039 java.lang.System.out\n"},{"op":"delete","value":"virt: 0x000000000000033f phys: 0x000000000000033f java.lang.invoke.StringConcatFactory.makeConcatWithConstants\n"}]}]}
 EOF
@@ -620,7 +620,7 @@ RUN
 
 NAME=rz-diff command with zero argument
 FILE==
-CMDS=!rz-diff -t command bins/java/Main.java.11.class bins/java/Hello.class
+CMDS=!rz-diff -C -t command bins/java/Main.java.11.class bins/java/Hello.class
 EXPECT_ERR=<<EOF
 ERROR: rz-diff: error, option -t 'command' requires -0 <command>.
 EOF
@@ -628,7 +628,7 @@ RUN
 
 NAME=rz-diff command with one argument
 FILE==
-CMDS=!rz-diff -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
+CMDS=!rz-diff -C -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 --- bins/java/Main.java.11.class
 +++ bins/java/Main.java.15.class
@@ -644,7 +644,7 @@ RUN
 
 NAME=rz-diff command with one argument JSON
 FILE==
-CMDS=!rz-diff -j -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
+CMDS=!rz-diff -C -j -0 javac -t command bins/java/Main.java.11.class bins/java/Main.java.15.class
 EXPECT=<<EOF
 {"from":"bins/java/Main.java.11.class","to":"bins/java/Main.java.15.class","diff":[{"from":[1,4],"to":[1,4],"ops":[{"op":"delete","value":"Version: (55.0) Java SE 11\n"},{"op":"insert","value":"Version: (59.0) Java SE 15\n"},{"op":"equal","value":"Flags: (0x0021) public super\n"},{"op":"equal","value":"Class: (#57) Main\n"},{"op":"equal","value":"Super: (#2) java/lang/Object\n"}]}]}
 EOF
@@ -652,7 +652,7 @@ RUN
 
 NAME=rz-diff command with two arguments
 FILE==
-CMDS=!rz-diff -0 "pi 20 @ main" -1 "pi 20 @ sym.main"  -t command bins/elf/hello_world bins/elf/hello_world32
+CMDS=!rz-diff -C -0 "pi 20 @ main" -1 "pi 20 @ sym.main"  -t command bins/elf/hello_world bins/elf/hello_world32
 EXPECT=<<EOF
 --- bins/elf/hello_world
 +++ bins/elf/hello_world32
@@ -702,7 +702,7 @@ RUN
 
 NAME=rz-diff command with two arguments JSON
 FILE==
-CMDS=!rz-diff -j -0 "pi 20 @ main" -1 "pi 20 @ sym.main"  -t command bins/elf/hello_world bins/elf/hello_world32
+CMDS=!rz-diff -C -j -0 "pi 20 @ main" -1 "pi 20 @ sym.main"  -t command bins/elf/hello_world bins/elf/hello_world32
 EXPECT=<<EOF
 {"from":"bins/elf/hello_world","to":"bins/elf/hello_world32","diff":[{"from":[1,20],"to":[1,20],"ops":[{"op":"delete","value":"push rbp\n"},{"op":"delete","value":"mov rbp, rsp\n"},{"op":"delete","value":"sub rsp, 0x20\n"},{"op":"delete","value":"lea rax, str.Hello\n"},{"op":"delete","value":"mov qword [rbp - 0x18], rax\n"},{"op":"delete","value":"lea rax, str.r2_folks\n"},{"op":"delete","value":"mov qword [rbp - 0x10], rax\n"},{"op":"delete","value":"mov rax, qword [rbp - 0x18]\n"},{"op":"delete","value":"mov rdi, rax\n"},{"op":"insert","value":"lea ecx, [esp + 4]\n"},{"op":"insert","value":"and esp, 0xfffffff0\n"},{"op":"insert","value":"push dword [ecx - 4]\n"},{"op":"insert","value":"push ebp\n"},{"op":"insert","value":"mov ebp, esp\n"},{"op":"insert","value":"push ebx\n"},{"op":"insert","value":"push ecx\n"},{"op":"insert","value":"sub esp, 0x20\n"},{"op":"insert","value":"call sym.__x86.get_pc_thunk.bx\n"},{"op":"insert","value":"add ebx, 0x19a0\n"},{"op":"insert","value":"lea eax, [ebx - 0x1874]\n"},{"op":"insert","value":"mov dword [ebp - 0x1c], eax\n"},{"op":"insert","value":"lea eax, [ebx - 0x186e]\n"},{"op":"insert","value":"mov dword [ebp - 0x18], eax\n"},{"op":"insert","value":"sub esp, 0xc\n"},{"op":"insert","value":"push dword [ebp - 0x1c]\n"},{"op":"equal","value":"call sym.imp.strlen\n"},{"op":"delete","value":"mov dword [rbp - 0x20], eax\n"},{"op":"delete","value":"mov rax, qword [rbp - 0x10]\n"},{"op":"delete","value":"mov rdi, rax\n"},{"op":"delete","value":"call sym.imp.strlen\n"},{"op":"delete","value":"mov dword [rbp - 0x1c], eax\n"},{"op":"delete","value":"mov edx, dword [rbp - 0x20]\n"},{"op":"delete","value":"mov eax, dword [rbp - 0x1c]\n"},{"op":"delete","value":"add eax, edx\n"},{"op":"delete","value":"add eax, 1\n"},{"op":"delete","value":"cdqe\n"},{"op":"insert","value":"add esp, 0x10\n"},{"op":"insert","value":"mov dword [ebp - 0x14], eax\n"},{"op":"insert","value":"sub esp, 0xc\n"}]}]}
 EOF

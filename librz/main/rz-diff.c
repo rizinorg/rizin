@@ -196,7 +196,7 @@ static void rz_diff_show_help(bool usage_only) {
 		"  -q        quite output\n"
 		"  -v        show version information\n"
 		"  -A        compare virtual and physical addresses\n"
-		"  -C        show colors\n"
+		"  -C        disable colors\n"
 		"  -T        show timestamp information\n"
 		"  -S [WxH]  sets the width and height of the terminal for visual mode\n"
 		"  -0 [cmd]  input for file0 when option -t 'commands' is given.\n"
@@ -241,6 +241,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 	const char *algorithm = NULL;
 	const char *screen = NULL;
 	memset((void *)ctx, 0, sizeof(DiffContext));
+	ctx->colors = true;
 
 	RzGetopt opt;
 	int c;
@@ -250,7 +251,7 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 		case '0': rz_diff_ctx_set_def(ctx, input_a, NULL, opt.arg); break;
 		case '1': rz_diff_ctx_set_def(ctx, input_b, NULL, opt.arg); break;
 		case 'A': rz_diff_ctx_set_def(ctx, compare_addresses, false, true); break;
-		case 'C': rz_diff_ctx_set_def(ctx, colors, false, true); break;
+		case 'C': rz_diff_ctx_set_def(ctx, colors, true, false); break;
 		case 'T': rz_diff_ctx_set_def(ctx, show_time, false, true); break;
 		case 'a': rz_diff_ctx_set_def(ctx, architecture, NULL, opt.arg); break;
 		case 'b': rz_diff_ctx_set_unsigned(ctx, arch_bits, opt.arg); break;
