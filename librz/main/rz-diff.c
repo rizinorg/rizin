@@ -123,6 +123,7 @@ typedef struct diff_hex_view_t {
 	ut64 offset_b;
 	DiffIO *io_a;
 	DiffIO *io_b;
+	bool column_descr;
 	DiffColors colors;
 	RzConsCanvas *canvas;
 	DiffScreen screen;
@@ -1586,6 +1587,7 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	DiffIO *io_b = hview->io_b;
 	ut64 filesize_a = hview->io_a->filesize;
 	ut64 filesize_b = hview->io_b->filesize;
+	ut64 max_rows = height - 2;
 	RzConsCanvas *canvas = hview->canvas;
 	const char *reset = hview->colors.reset;
 	const char *legenda = hview->colors.legenda;
@@ -1618,6 +1620,10 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 		file_b = p + 1;
 	}
 
+	if (hview->column_descr) {
+		max_rows--;
+	}
+
 	read_a = rz_io_pread_at(io_a->io, hview->offset_a, hview->buffer_a, hview->size_a);
 	read_b = rz_io_pread_at(io_b->io, hview->offset_b, hview->buffer_b, hview->size_b);
 
@@ -1625,23 +1631,43 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	rz_cons_clear();
 	rz_cons_canvas_clear(canvas);
 	shift = seek_min_shift(hview);
-	for (ut64 h = 0, pos = 0; h < (ut64)(height - 2); ++h) {
+	for (ut64 h = 0, pos = 0; h < max_rows; ++h) {
 		pos = h << shift;
 		// 180
 		if (pos >= read_a && pos >= read_b) {
 			rz_cons_canvas_fill(canvas, xpos, h + 1, width, 0, ' ');
 		} else {
 			diff_hexdump_line(hview, hlen, pos, read_a - pos, read_b - pos);
-			rz_cons_canvas_gotoxy(canvas, xpos, h + 1);
+			rz_cons_canvas_gotoxy(canvas, xpos, h + (hview->column_descr ? 2 : 1));
 			rz_cons_canvas_write(canvas, line);
 		}
 	}
+
+	switch (len_draw_hexdump(hview)) {
+	case DIFF_HEX_32: toolbar = " 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F"; break;
+	case DIFF_HEX_16: toolbar = " 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F"; break;
+	default: toolbar = " 0  1  2  3  4  5  6  7"; break;
+	}
+
 	rz_cons_canvas_box(canvas, 0, 0, width, height - 1, reset);
+	if (hview->column_descr) {
+		rz_cons_canvas_gotoxy(canvas, xpos + 21, 1);
+		rz_cons_canvas_write(canvas, toolbar);
+		rz_cons_canvas_gotoxy(canvas, xpos, 0);
+	} else {
+		rz_cons_canvas_gotoxy(canvas, xpos, 0);
+	}
 	snprintf(line, lsize, " [%*" PFMT64x " | %*" PFMT64x "]( %.42s )", offlen, hview->offset_a, offlen, filesize_a, file_a);
-	rz_cons_canvas_gotoxy(canvas, xpos, 0);
 	rz_cons_canvas_write(canvas, line);
+
+	if (hview->column_descr) {
+		rz_cons_canvas_gotoxy(canvas, xpos + hlen + 22, 1);
+		rz_cons_canvas_write(canvas, toolbar);
+		rz_cons_canvas_gotoxy(canvas, xpos + hlen, 0);
+	} else {
+		rz_cons_canvas_gotoxy(canvas, xpos + hlen, 0);
+	}
 	snprintf(line, lsize, " [%*" PFMT64x " | %*" PFMT64x "]( %.42s )", offlen, hview->offset_b, offlen, filesize_b, file_b);
-	rz_cons_canvas_gotoxy(canvas, xpos + hlen, 0);
 	rz_cons_canvas_write(canvas, line);
 
 	// clang-format off
@@ -1661,8 +1687,8 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 		"%s%s%s -1 | "
 		"%s:%s seek";
 	snprintf(line, lsize, toolbar
-			, legenda, reset, (1 << shift) * (height - 2)
-			, legenda, reset, (1 << shift) * (height - 2)
+			, legenda, reset, (1 << shift) * max_rows
+			, legenda, reset, (1 << shift) * max_rows
 			, legenda, reset
 			, legenda, reset
 			, legenda, reset
@@ -1688,12 +1714,16 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 		rz_cons_canvas_gotoxy(canvas, 6, 3);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s1%s  decrease the offsets by 0x%x\n", legenda, reset, (1 << shift) * (height - 2));
+		snprintf(line, lsize, "%s0%s  shows/hides the column legenda\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 5);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s2%s  increase the offsets by 0x%x\n", legenda, reset, (1 << shift) * (height - 2));
+		snprintf(line, lsize, "%s1%s  decrease the offsets by 0x%x\n", legenda, reset, (1 << shift) * (height - 2));
 		rz_cons_canvas_gotoxy(canvas, 6, 6);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, lsize, "%s2%s  increase the offsets by 0x%x\n", legenda, reset, (1 << shift) * (height - 2));
+		rz_cons_canvas_gotoxy(canvas, 6, 7);
 		rz_cons_canvas_write(canvas, line);
 
 		snprintf(line, lsize, "%sZ%s  increase the offset of the file0 by 1\n", legenda, reset);
@@ -1952,7 +1982,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 		goto rz_diff_hex_visual_fail;
 	}
 
-	rz_cons_set_interactive(true);
+	rz_cons_set_interactive(false);
 
 	io_a = rz_diff_io_open(ctx->file_a);
 	if (!io_a) {
@@ -2009,6 +2039,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	hview.screen.height = height;
 	hview.offset_a = 0;
 	hview.offset_b = 0;
+	hview.column_descr = true;
 	rz_diff_get_colors(&hview.colors, console->context, ctx->colors);
 
 	rz_cons_enable_mouse(false);
@@ -2032,6 +2063,9 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 
 		show_help = false;
 		switch (pressed) {
+		case '0':
+			hview.column_descr = !hview.column_descr;
+			break;
 		case '?':
 			show_help = true;
 			break;
