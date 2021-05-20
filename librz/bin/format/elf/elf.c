@@ -11,6 +11,8 @@
 #include <rz_util.h>
 #include "elf.h"
 
+#include "rz_bin_elf_is_executable.inc"
+
 #define MIPS_PLT_OFFSET  0x20
 #define RISCV_PLT_OFFSET 0x20
 
@@ -4307,9 +4309,4 @@ char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin) {
 	char *res = rz_str_escape(buf);
 	free(buf);
 	return res;
-}
-
-bool Elf_(rz_bin_elf_is_executable)(ELFOBJ *bin) {
-	const int t = bin->ehdr.e_type;
-	return t == ET_EXEC || t == ET_DYN;
 }
