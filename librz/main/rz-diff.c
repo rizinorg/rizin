@@ -2074,6 +2074,5 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		break;
 	}
 
-rz_main_rz_diff_end:
 	return success ? 0 : 1;
 }
