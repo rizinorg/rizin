@@ -12,6 +12,7 @@
 #include "elf.h"
 
 #include "rz_bin_elf_convert_symbol.inc"
+#include "rz_bin_elf_get_section.inc"
 #include "rz_bin_elf_has_nx.inc"
 #include "rz_bin_elf_has_relro.inc"
 #include "rz_bin_elf_is_executable.inc"
@@ -944,18 +945,6 @@ static bool init_notes(ELFOBJ *bin) {
 	return true;
 }
 
-static RzBinElfSection *get_section_by_name(ELFOBJ *bin, const char *section_name) {
-	if (bin->g_sections) {
-		size_t i;
-		for (i = 0; !bin->g_sections[i].last; i++) {
-			if (!strncmp(bin->g_sections[i].name, section_name, ELF_STRING_LENGTH - 1)) {
-				return &bin->g_sections[i];
-			}
-		}
-	}
-	return NULL;
-}
-
 static char *get_ver_flags(ut32 flags) {
 	static char buff[32];
 	buff[0] = 0;
@@ -1603,17 +1592,17 @@ static bool elf_init(ELFOBJ *bin) {
 }
 
 ut64 Elf_(rz_bin_elf_get_section_offset)(ELFOBJ *bin, const char *section_name) {
-	RzBinElfSection *section = get_section_by_name(bin, section_name);
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, section_name);
 	return section ? section->offset : UT64_MAX;
 }
 
 ut64 Elf_(rz_bin_elf_get_section_addr)(ELFOBJ *bin, const char *section_name) {
-	RzBinElfSection *section = get_section_by_name(bin, section_name);
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, section_name);
 	return section ? section->rva : UT64_MAX;
 }
 
 ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name) {
-	RzBinElfSection *section = get_section_by_name(bin, section_name);
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, section_name);
 	return section ? section->rva + section->size : UT64_MAX;
 }
 
@@ -1885,7 +1874,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 
 	//XXX HACK ALERT!!!! full relro?? try to fix it
 	//will there always be .plt.got, what would happen if is .got.plt?
-	RzBinElfSection *s = get_section_by_name(bin, ".plt.got");
+	RzBinElfSection *s = Elf_(rz_bin_elf_get_section)(bin, ".plt.got");
 	if (Elf_(rz_bin_elf_has_relro)(bin) < RZ_BIN_ELF_PART_RELRO || !s) {
 		return UT64_MAX;
 	}
@@ -1935,7 +1924,7 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return get_import_addr_x86_manual(bin, rel);
 	}
 
-	RzBinElfSection *pltsec_section = get_section_by_name(bin, ".plt.sec");
+	RzBinElfSection *pltsec_section = Elf_(rz_bin_elf_get_section)(bin, ".plt.sec");
 
 	if (pltsec_section) {
 		ut64 got_addr = bin->dyn_info.dt_pltgot;
@@ -4163,7 +4152,7 @@ ut64 Elf_(rz_bin_elf_v2p_new)(ELFOBJ *bin, ut64 vaddr) {
 }
 
 char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin) {
-	RzBinElfSection *section = get_section_by_name(bin, ".comment");
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, ".comment");
 	if (!section) {
 		return NULL;
 	}
