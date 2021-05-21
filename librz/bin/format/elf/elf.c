@@ -12,6 +12,7 @@
 #include "elf.h"
 
 #include "rz_bin_elf_convert_symbol.inc"
+#include "rz_bin_elf_has_nx.inc"
 #include "rz_bin_elf_has_relro.inc"
 #include "rz_bin_elf_is_executable.inc"
 
@@ -1984,19 +1985,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-int Elf_(rz_bin_elf_has_nx)(ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, 0);
-	int i;
-	if (bin && bin->phdr) {
-		for (i = 0; i < bin->ehdr.e_phnum; i++) {
-			if (bin->phdr[i].p_type == PT_GNU_STACK) {
-				return (!(bin->phdr[i].p_flags & 1)) ? 1 : 0;
-			}
-		}
-	}
-	return 0;
 }
 
 /*
