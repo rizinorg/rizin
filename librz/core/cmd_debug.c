@@ -12,12 +12,12 @@
 #include "rz_heap_glibc.h"
 #include "rz_heap_jemalloc.h"
 #include "linux_heap_jemalloc.c"
+
+#include "linux_heap_glibc.c"
+#include "core_private.h"
 #if __WINDOWS__
 #include "windows_heap.c"
 #endif
-#include "linux_heap_glibc.c"
-#include "core_private.h"
-
 void cmd_analysis_reg(RzCore *core, const char *str);
 
 static const char *help_msg_d[] = {
