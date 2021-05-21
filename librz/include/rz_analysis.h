@@ -1411,7 +1411,8 @@ RZ_API bool rz_analysis_function_contains(RzAnalysisFunction *fcn, ut64 addr);
 // returns true if function bytes were modified
 RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn);
 
-RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *func_name);
+RZ_API bool rz_analysis_function_is_autonamed(RZ_NONNULL char *name);
+RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *name);
 
 /* analysis.c */
 RZ_API RzAnalysis *rz_analysis_new(void);
@@ -1565,7 +1566,7 @@ RZ_API RzList *rz_analysis_get_fcns(RzAnalysis *analysis);
 
 /* var.c */
 RZ_API RZ_OWN char *rz_analysis_function_autoname_var(RzAnalysisFunction *fcn, char kind, const char *pfx, int ptr);
-RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_NULLABLE RzType *type, int size, bool isarg, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_BORROW RZ_NULLABLE const RzType *type, int size, bool isarg, RZ_NONNULL const char *name);
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var(RzAnalysisFunction *fcn, char kind, int delta);
 RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_var_byname(RzAnalysisFunction *fcn, const char *name);
 RZ_API void rz_analysis_function_delete_vars_by_kind(RzAnalysisFunction *fcn, RzAnalysisVarKind kind);
@@ -1614,7 +1615,7 @@ RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache);
 RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE char *fcn_name,
 	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post);
 
-RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RzAnalysisFunction *fcn);
+RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn);
 
 // Maintaining type links
 RZ_API bool rz_analysis_type_link_exists(RzAnalysis *analysis, ut64 addr);

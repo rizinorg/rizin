@@ -1708,7 +1708,7 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	if (!ret_type) {
 		return NULL;
 	}
-	const char *ret_type_str = rz_type_as_string(a->typedb, ret_type);
+	char *ret_type_str = rz_type_as_string(a->typedb, ret_type);
 	int argc = rz_type_func_args_count(a->typedb, function->name);
 
 	pj_o(pj);
@@ -1725,7 +1725,7 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 		pj_o(pj);
 		const char *arg_name = rz_type_func_args_name(a->typedb, function->name, i);
 		RzType *arg_type = rz_type_func_args_type(a->typedb, function->name, i);
-		const char *arg_type_str = rz_type_as_string(a->typedb, arg_type);
+		char *arg_type_str = rz_type_as_string(a->typedb, arg_type);
 		pj_ks(pj, "name", arg_name);
 		pj_ks(pj, "type", arg_type_str);
 		const char *cc_arg = rz_reg_get_name(a->reg, rz_reg_get_name_idx(sdb_fmt("A%d", i)));
@@ -1733,9 +1733,11 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 			pj_ks(pj, "cc", cc_arg);
 		}
 		pj_end(pj);
+		free(arg_type_str);
 	}
 	pj_end(pj);
 	pj_end(pj);
+	free(ret_type_str);
 	return pj_drain(pj);
 }
 
@@ -1760,14 +1762,14 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *funct
 	if (!ret_type) {
 		return NULL;
 	}
-	const char *ret_type_str = rz_type_as_string(a->typedb, ret_type);
+	char *ret_type_str = rz_type_as_string(a->typedb, ret_type);
 	int argc = rz_type_func_args_count(a->typedb, realname);
 
 	char *args = strdup("");
 	for (i = 0; i < argc; i++) {
 		const char *arg_name = rz_type_func_args_name(a->typedb, realname, i);
 		RzType *arg_type = rz_type_func_args_type(a->typedb, realname, i);
-		const char *arg_type_str = rz_type_as_string(a->typedb, arg_type);
+		char *arg_type_str = rz_type_as_string(a->typedb, arg_type);
 		// Here we check if the type is a pointer, in this case we don't put
 		// the space between type and name for the style reasons
 		// "char *var" looks much better than "char * var"
@@ -1776,10 +1778,12 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *funct
 			? rz_str_newf("%s%s%s%s", args, arg_type_str, maybe_space, arg_name)
 			: rz_str_newf("%s%s%s%s, ", args, arg_type_str, maybe_space, arg_name);
 		free(args);
+		free(arg_type_str);
 		args = new_args;
 	}
 	char *signature = rz_str_newf("%s %s (%s);", ret_type_str ? ret_type_str : "void", realname, args);
 	free(args);
+	free(ret_type_str);
 	return signature;
 }
 
@@ -2234,7 +2238,7 @@ static int typecmp(const void *a, const void *b) {
 	return strcmp(a, b);
 }
 
-RZ_API RZ_OWN RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
+RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzAnalysisVar *var;
 	RzList *list = rz_analysis_var_all_list(analysis, fcn);

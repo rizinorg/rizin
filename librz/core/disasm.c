@@ -1688,7 +1688,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RzAnalysisFunction *fcn, 
 	int delta = var->kind == 'b' ? RZ_ABS(var->delta + fcn->bp_off) : RZ_ABS(var->delta);
 	const char *pfx = is_var ? "var" : "arg";
 	char *constr = rz_analysis_var_get_constraints_readable(var);
-	const char *vartype = rz_type_as_string(ds->core->analysis->typedb, var->type);
+	char *vartype = rz_type_as_string(ds->core->analysis->typedb, var->type);
 	rz_cons_printf("%s%s %s%s%s%s %s%s%s%s@ %s%c0x%x", COLOR_ARG(ds, color_func_var), pfx,
 		COLOR_ARG(ds, color_func_var_type), vartype,
 		rz_str_endswith(vartype, "*") ? "" : " ",
@@ -1705,6 +1705,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RzAnalysisFunction *fcn, 
 			free(val);
 		}
 	}
+	free(vartype);
 	free(constr);
 }
 
@@ -1973,7 +1974,7 @@ static void ds_show_functions(RDisasmState *ds) {
 						eprintf("Register not found");
 						break;
 					}
-					const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+					char *vartype = rz_type_as_string(analysis->typedb, var->type);
 					rz_cons_printf("%sarg %s%s%s%s %s@ %s", COLOR_ARG(ds, color_func_var),
 						COLOR_ARG(ds, color_func_var_type),
 						vartype, rz_str_endswith(vartype, "*") ? "" : " ",
@@ -1986,6 +1987,7 @@ static void ds_show_functions(RDisasmState *ds) {
 							free(val);
 						}
 					}
+					free(vartype);
 				} break;
 				case RZ_ANALYSIS_VAR_KIND_SPV: {
 					bool is_var = !var->isarg;
@@ -4568,8 +4570,9 @@ static void print_fcn_arg(RzCore *core, RzType *type, const char *name,
 	const char *fmt, const ut64 addr,
 	const int on_stack, int asm_types) {
 	if (on_stack == 1 && asm_types > 1) {
-		const char *typestr = rz_type_as_string(core->analysis->typedb, type);
+		char *typestr = rz_type_as_string(core->analysis->typedb, type);
 		rz_cons_printf("%s", typestr);
+		free(typestr);
 	}
 	if (addr != UT32_MAX && addr != UT64_MAX && addr != 0) {
 		char *res = rz_core_cmd_strf(core, "pf%s %s%s %s @ 0x%08" PFMT64x,
@@ -4747,10 +4750,11 @@ static void ds_print_esil_analysis(RDisasmState *ds) {
 			// ds_comment_start (ds, "");
 			ds_comment_esil(ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 			if (fcn_type) {
-				const char *fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
+				char *fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
 				const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 				ds_comment_middle(ds, "; %s%s%s(", rz_str_get_null(fcn_type_str), sp,
 					rz_str_get_null(key));
+				free(fcn_type_str);
 				if (!nargs) {
 					ds_comment_end(ds, "void)");
 					break;
@@ -4870,7 +4874,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 		free(name);
 		return;
 	}
-	const char *fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
+	char *fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
 	const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 	char *cmt = rz_str_newf("; %s%s%s(", fcn_type_str, sp, name);
 	int i, arg_max = rz_type_func_args_count(analysis->typedb, name);
@@ -4878,22 +4882,23 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 		cmt = rz_str_append(cmt, "void)");
 	} else {
 		for (i = 0; i < arg_max; i++) {
-			RzType *type = rz_type_func_args_type(analysis->typedb, name, i);
+			RzType *arg_type = rz_type_func_args_type(analysis->typedb, name, i);
 			const char *tname = rz_type_func_args_name(analysis->typedb, name, i);
-			if (type) {
-				const char *type_str = rz_type_as_string(analysis->typedb, type);
-				const char *sp = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-				cmt = rz_str_appendf(cmt, "%s%s%s%s%s", i == 0 ? "" : " ", type_str, sp,
+			if (arg_type) {
+				char *arg_type_str = rz_type_as_string(analysis->typedb, arg_type);
+				const char *sp = arg_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+				cmt = rz_str_appendf(cmt, "%s%s%s%s%s", i == 0 ? "" : " ", arg_type_str, sp,
 					tname, i == arg_max - 1 ? ")" : ",");
+				free(arg_type_str);
 			} else if (tname && !strcmp(tname, "...")) {
 				cmt = rz_str_appendf(cmt, "%s%s%s", i == 0 ? "" : " ",
 					tname, i == arg_max - 1 ? ")" : ",");
 			}
-			free(type);
 		}
 	}
 	ds_comment(ds, true, "%s", cmt);
 	ds_print_color_reset(ds);
+	free(fcn_type_str);
 	free(cmt);
 	free(name);
 }
