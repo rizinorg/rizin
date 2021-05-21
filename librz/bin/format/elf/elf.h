@@ -249,7 +249,6 @@ char *Elf_(rz_bin_elf_get_osabi_name)(struct Elf_(rz_bin_elf_obj_t) * bin);
 int Elf_(rz_bin_elf_is_big_endian)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfLib *Elf_(rz_bin_elf_get_libs)(struct Elf_(rz_bin_elf_obj_t) * bin);
-RzBinElfSection *Elf_(rz_bin_elf_get_sections)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(struct Elf_(rz_bin_elf_obj_t) * bin);
 struct rz_bin_elf_field_t *Elf_(rz_bin_elf_get_fields)(struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -270,6 +269,7 @@ RzBinImport *Elf_(rz_bin_elf_convert_import)(struct Elf_(rz_bin_elf_obj_t) * bin
 
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
+RzBinElfSection *Elf_(rz_bin_elf_get_sections)(struct Elf_(rz_bin_elf_obj_t) * bin);
 bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
