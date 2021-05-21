@@ -273,5 +273,6 @@ RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, 
 bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
 
 #endif

@@ -16,6 +16,7 @@
 #include "rz_bin_elf_has_nx.inc"
 #include "rz_bin_elf_has_relro.inc"
 #include "rz_bin_elf_is_executable.inc"
+#include "rz_bin_elf_is_relocatable.inc"
 
 #define MIPS_PLT_OFFSET  0x20
 #define RISCV_PLT_OFFSET 0x20
@@ -162,10 +163,6 @@ static inline int __strnlen(const char *str, int len) {
 		l++;
 	}
 	return l + 1;
-}
-
-static bool is_bin_etrel(ELFOBJ *bin) {
-	return bin->ehdr.e_type == ET_REL;
 }
 
 static bool __is_valid_ident(ELFOBJ *bin) {
@@ -1556,7 +1553,7 @@ static bool elf_init(ELFOBJ *bin) {
 	if (!init_ehdr(bin)) {
 		return false;
 	}
-	if (!init_phdr(bin) && !is_bin_etrel(bin)) {
+	if (!init_phdr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
 		bprintf("Cannot initialize program headers\n");
 	}
 	if (bin->ehdr.e_type == ET_CORE) {
@@ -1570,11 +1567,11 @@ static bool elf_init(ELFOBJ *bin) {
 		if (!init_strtab(bin)) {
 			bprintf("Cannot initialize strings table\n");
 		}
-		if (!init_dynstr(bin) && !is_bin_etrel(bin)) {
+		if (!init_dynstr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
 			bprintf("Cannot initialize dynamic strings\n");
 		}
 		bin->baddr = Elf_(rz_bin_elf_get_baddr)(bin);
-		if (!init_dynamic_section(bin) && !Elf_(rz_bin_elf_is_static)(bin) && !is_bin_etrel(bin)) {
+		if (!init_dynamic_section(bin) && !Elf_(rz_bin_elf_is_static)(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
 			bprintf("Cannot initialize dynamic section\n");
 		}
 	}
@@ -2001,7 +1998,7 @@ ut64 Elf_(rz_bin_elf_get_baddr)(ELFOBJ *bin) {
 			}
 		}
 	}
-	if (base == UT64_MAX && is_bin_etrel(bin)) {
+	if (base == UT64_MAX && Elf_(rz_bin_elf_is_relocatable)(bin)) {
 		//we return our own base address for ET_REL type
 		//we act as a loader for ELF
 		return 0x08000000;
@@ -2883,7 +2880,7 @@ static void fix_rva_and_offset_exec_file(ELFOBJ *bin, RzBinElfReloc *r) {
 }
 
 static void fix_rva_and_offset(ELFOBJ *bin, RzBinElfReloc *r, size_t pos) {
-	if (is_bin_etrel(bin)) {
+	if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 		fix_rva_and_offset_relocable_file(bin, r, pos);
 	} else {
 		fix_rva_and_offset_exec_file(bin, r);
@@ -3228,7 +3225,7 @@ RzBinElfSection *Elf_(rz_bin_elf_get_sections)(ELFOBJ *bin) {
 		ret[i].link = bin->shdr[i].sh_link;
 		ret[i].info = bin->shdr[i].sh_info;
 		ret[i].type = bin->shdr[i].sh_type;
-		if (is_bin_etrel(bin)) {
+		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 			ret[i].rva = bin->baddr + bin->shdr[i].sh_offset;
 		} else {
 			ret[i].rva = bin->shdr[i].sh_addr;
@@ -3838,7 +3835,7 @@ static RzBinElfSymbol *Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int typ
 					toffset = (ut64)sym[k].st_value;
 					is_sht_null = sym[k].st_shndx == SHT_NULL;
 				}
-				if (is_bin_etrel(bin)) {
+				if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 					if (sym[k].st_shndx < bin->ehdr.e_shnum) {
 						ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
 					}
@@ -4067,7 +4064,7 @@ ut64 Elf_(rz_bin_elf_p2v)(ELFOBJ *bin, ut64 paddr) {
 
 	rz_return_val_if_fail(bin, 0);
 	if (!bin->phdr) {
-		if (is_bin_etrel(bin)) {
+		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 			return bin->baddr + paddr;
 		}
 		return paddr;
@@ -4089,7 +4086,7 @@ ut64 Elf_(rz_bin_elf_p2v)(ELFOBJ *bin, ut64 paddr) {
 ut64 Elf_(rz_bin_elf_v2p)(ELFOBJ *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, 0);
 	if (!bin->phdr) {
-		if (is_bin_etrel(bin)) {
+		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 			return vaddr - bin->baddr;
 		}
 		return vaddr;
@@ -4115,7 +4112,7 @@ ut64 Elf_(rz_bin_elf_p2v_new)(ELFOBJ *bin, ut64 paddr) {
 
 	rz_return_val_if_fail(bin, UT64_MAX);
 	if (!bin->phdr) {
-		if (is_bin_etrel(bin)) {
+		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 			return bin->baddr + paddr;
 		}
 		return UT64_MAX;
@@ -4137,7 +4134,7 @@ ut64 Elf_(rz_bin_elf_v2p_new)(ELFOBJ *bin, ut64 vaddr) {
 
 	rz_return_val_if_fail(bin, UT64_MAX);
 	if (!bin->phdr) {
-		if (is_bin_etrel(bin)) {
+		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 			return vaddr - bin->baddr;
 		}
 		return UT64_MAX;
