@@ -13,14 +13,17 @@
  * Check p_flags from the segment PT_GNU_STACK
  */
 bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, 0);
-	int i;
-	if (bin && bin->phdr) {
-		for (i = 0; i < bin->ehdr.e_phnum; i++) {
-			if (bin->phdr[i].p_type == PT_GNU_STACK) {
-				return (!(bin->phdr[i].p_flags & 1)) ? 1 : 0;
-			}
+	rz_return_val_if_fail(bin, false);
+
+	if (!bin->phdr) {
+		return false;
+	}
+
+	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
+		if (bin->phdr[i].p_type == PT_GNU_STACK) {
+			return !(bin->phdr[i].p_flags & PF_X);
 		}
 	}
-	return 0;
+
+	return false;
 }
