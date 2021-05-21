@@ -266,10 +266,10 @@ typedef struct rz_cons_palette_t {
 	RzColor graph_ujump;
 	RzColor graph_traced;
 	RzColor graph_current;
-	RzColor graph_diff_match;
-	RzColor graph_diff_unmatch;
-	RzColor graph_diff_unknown;
-	RzColor graph_diff_new;
+	RzColor diff_match;
+	RzColor diff_unmatch;
+	RzColor diff_unknown;
+	RzColor diff_new;
 } RzConsPalette;
 
 typedef struct rz_cons_printable_palette_t {
@@ -337,10 +337,10 @@ typedef struct rz_cons_printable_palette_t {
 	char *graph_box2;
 	char *graph_box3;
 	char *graph_box4;
-	char *graph_diff_match;
-	char *graph_diff_unmatch;
-	char *graph_diff_unknown;
-	char *graph_diff_new;
+	char *diff_match;
+	char *diff_unmatch;
+	char *diff_unknown;
+	char *diff_new;
 	char *graph_true;
 	char *graph_false;
 	char *graph_ujump;

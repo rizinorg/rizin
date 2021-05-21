@@ -222,9 +222,9 @@ static void rz_diff_show_help(bool usage_only) {
 		"              symbols    | compares symbols found in the files\n"
 		"  palette colors can be changed by adding the following lines\n"
 		"          inside the $HOME/.rizinrc file\n"
-		"  ec graph.diff.unknown blue  | offset color\n"
-		"  ec graph.diff.match   green | match color\n"
-		"  ec graph.diff.unmatch red   | mismatch color\n"
+		"  ec diff.unknown blue   | offset color\n"
+		"  ec diff.match   green  | match color\n"
+		"  ec diff.unmatch red    | mismatch color\n"
 		"");
 }
 
@@ -376,9 +376,9 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 }
 
 static void rz_diff_get_colors(DiffColors *dcolors, RzConsContext *ctx, bool colors) {
-	dcolors->number = colors ? ctx->pal.graph_diff_unknown : "";
-	dcolors->match = colors ? ctx->pal.graph_diff_match : "";
-	dcolors->unmatch = colors ? ctx->pal.graph_diff_unmatch : Color_INVERT;
+	dcolors->number = colors ? ctx->pal.diff_unknown : "";
+	dcolors->match = colors ? ctx->pal.diff_match : "";
+	dcolors->unmatch = colors ? ctx->pal.diff_unmatch : Color_INVERT;
 	dcolors->legenda = colors ? ctx->pal.comment : "";
 	dcolors->reset = Color_RESET;
 }
