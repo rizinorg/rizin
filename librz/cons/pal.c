@@ -74,10 +74,10 @@ static struct {
 	{ "graph.current", rz_offsetof(RzConsPrintablePalette, graph_current), rz_offsetof(RzConsPalette, graph_current) },
 	{ "graph.traced", rz_offsetof(RzConsPrintablePalette, graph_traced), rz_offsetof(RzConsPalette, graph_traced) },
 
-	{ "graph.diff.unknown", rz_offsetof(RzConsPrintablePalette, graph_diff_unknown), rz_offsetof(RzConsPalette, graph_diff_unknown) },
-	{ "graph.diff.new", rz_offsetof(RzConsPrintablePalette, graph_diff_new), rz_offsetof(RzConsPalette, graph_diff_new) },
-	{ "graph.diff.match", rz_offsetof(RzConsPrintablePalette, graph_diff_match), rz_offsetof(RzConsPalette, graph_diff_match) },
-	{ "graph.diff.unmatch", rz_offsetof(RzConsPrintablePalette, graph_diff_unmatch), rz_offsetof(RzConsPalette, graph_diff_unmatch) },
+	{ "diff.unknown", rz_offsetof(RzConsPrintablePalette, diff_unknown), rz_offsetof(RzConsPalette, diff_unknown) },
+	{ "diff.new", rz_offsetof(RzConsPrintablePalette, diff_new), rz_offsetof(RzConsPalette, diff_new) },
+	{ "diff.match", rz_offsetof(RzConsPrintablePalette, diff_match), rz_offsetof(RzConsPalette, diff_match) },
+	{ "diff.unmatch", rz_offsetof(RzConsPrintablePalette, diff_unmatch), rz_offsetof(RzConsPalette, diff_unmatch) },
 
 	{ "gui.cflow", rz_offsetof(RzConsPrintablePalette, gui_cflow), rz_offsetof(RzConsPalette, gui_cflow) },
 	{ "gui.dataoffset", rz_offsetof(RzConsPrintablePalette, gui_dataoffset), rz_offsetof(RzConsPalette, gui_dataoffset) },
@@ -232,10 +232,10 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.graph_ujump = (RzColor)RzColor_BLUE; // single jump
 	ctx->cpal.graph_traced = (RzColor)RzColor_YELLOW;
 	ctx->cpal.graph_current = (RzColor)RzColor_BLUE;
-	ctx->cpal.graph_diff_unknown = (RzColor)RzColor_MAGENTA;
-	ctx->cpal.graph_diff_new = (RzColor)RzColor_RED;
-	ctx->cpal.graph_diff_match = (RzColor)RzColor_GRAY;
-	ctx->cpal.graph_diff_unmatch = (RzColor)RzColor_YELLOW;
+	ctx->cpal.diff_unknown = (RzColor)RzColor_MAGENTA;
+	ctx->cpal.diff_new = (RzColor)RzColor_RED;
+	ctx->cpal.diff_match = (RzColor)RzColor_GRAY;
+	ctx->cpal.diff_unmatch = (RzColor)RzColor_YELLOW;
 
 	rz_cons_pal_free(ctx);
 	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok

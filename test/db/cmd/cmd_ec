@@ -63,10 +63,10 @@ ec graph.false rgb:403010
 ec graph.ujump rgb:f0d090
 ec graph.current rgb:0000ff
 ec graph.traced rgb:0000ff
-ec graph.diff.unknown rgb:881798
-ec graph.diff.new rgb:c50f1f
-ec graph.diff.match rgb:767676
-ec graph.diff.unmatch rgb:c19c00
+ec diff.unknown rgb:881798
+ec diff.new rgb:c50f1f
+ec diff.match rgb:767676
+ec diff.unmatch rgb:c19c00
 ec gui.cflow rgb:ffff00
 ec gui.dataoffset rgb:ffff00
 ec gui.background rgb:000000
@@ -175,10 +175,10 @@ EXPECT=<<EOF
  [34m##[0m  graph.ujump
  [34m##[0m  graph.current
  [33m##[0m  graph.traced
- [35m##[0m  graph.diff.unknown
- [31m##[0m  graph.diff.new
- [90m##[0m  graph.diff.match
- [33m##[0m  graph.diff.unmatch
+ [35m##[0m  diff.unknown
+ [31m##[0m  diff.new
+ [90m##[0m  diff.match
+ [33m##[0m  diff.unmatch
  [33m##[0m  gui.cflow
  [33m##[0m  gui.dataoffset
  [30m##[0m  gui.background
@@ -245,10 +245,10 @@ EXPECT=<<EOF
  [94m##[0m  graph.ujump
  [94m##[0m  graph.current
  [93m##[0m  graph.traced
- [35m##[0m  graph.diff.unknown
- [31m##[0m  graph.diff.new
- [90m##[0m  graph.diff.match
- [33m##[0m  graph.diff.unmatch
+ [35m##[0m  diff.unknown
+ [31m##[0m  diff.new
+ [90m##[0m  diff.match
+ [33m##[0m  diff.unmatch
  [93m##[0m  gui.cflow
  [93m##[0m  gui.dataoffset
  [30m##[0m  gui.background
