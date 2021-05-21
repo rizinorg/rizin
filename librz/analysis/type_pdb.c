@@ -59,7 +59,7 @@ static RzTypeStructMember *parse_member(const RzTypeDB *typedb, STypeInfo *type_
 	char *error_msg = NULL;
 	RzType *mtype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
 	if (!mtype || error_msg) {
-		eprintf("Error parsing \"%s\" type:\n%s\n", type, error_msg);
+		eprintf("Error parsing complex type member \"%s\" type:\n%s\n", type, error_msg);
 		goto cleanup;
 	}
 	member->name = sname;
@@ -145,6 +145,7 @@ static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
 		}
 		void *element = rz_vector_push(&base_type->struct_data.members, enum_case);
 		if (!element) {
+			rz_type_base_type_free(base_type);
 			goto cleanup;
 		}
 	}
@@ -152,7 +153,8 @@ static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
 	char *error_msg = NULL;
 	RzType *btype = rz_type_parse_string_single(typedb->parser, type_name, &error_msg);
 	if (!btype || error_msg) {
-		eprintf("Error parsing \"%s\" type:\n%s\n", type_name, error_msg);
+		eprintf("Error parsing enum \"%s\" type:\n%s\n", type_name, error_msg);
+		rz_type_base_type_free(base_type);
 		goto cleanup;
 	}
 	base_type->name = sname;
@@ -164,7 +166,6 @@ cleanup:
 	if (to_free_name) {
 		RZ_FREE(name);
 	}
-	rz_type_base_type_free(base_type);
 	return;
 }
 
@@ -211,6 +212,7 @@ static void parse_structure(const RzTypeDB *typedb, SType *type, RzList *types) 
 		}
 		void *element = rz_vector_push(&base_type->struct_data.members, struct_member);
 		if (!element) {
+			rz_type_base_type_free(base_type);
 			goto cleanup;
 		}
 	}
@@ -227,7 +229,6 @@ cleanup:
 	if (to_free_name) {
 		RZ_FREE(name);
 	}
-	rz_type_base_type_free(base_type);
 	return;
 }
 

@@ -1067,8 +1067,9 @@ static void __cmd_afvf(RzCore *core, const char *input) {
 			continue;
 		}
 		const char *pad = rz_str_pad(' ', 10 - strlen(p->name));
-		const char *ptype = rz_type_as_string(core->analysis->typedb, p->type);
+		char *ptype = rz_type_as_string(core->analysis->typedb, p->type);
 		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", (ut64)-p->delta, p->name, pad, ptype);
+		free(ptype);
 	}
 	rz_list_sort(list, delta_cmp);
 	rz_list_foreach (list, iter, p) {
@@ -1077,9 +1078,10 @@ static void __cmd_afvf(RzCore *core, const char *input) {
 		}
 		// TODO: only stack vars if (p->kind == 's') { }
 		const char *pad = rz_str_pad(' ', 10 - strlen(p->name));
-		const char *ptype = rz_type_as_string(core->analysis->typedb, p->type);
+		char *ptype = rz_type_as_string(core->analysis->typedb, p->type);
 		// XXX this 0x6a is a hack
 		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", ((ut64)p->delta) - 0x6a, p->name, pad, ptype);
+		free(ptype);
 	}
 	rz_list_free(list);
 }
@@ -1358,6 +1360,7 @@ static int var_cmd(RzCore *core, const char *str) {
 			return false;
 		}
 		rz_analysis_function_set_var(fcn, delta, type, ttype, size, isarg, name);
+		rz_type_free(ttype);
 	} break;
 	}
 	free(ostr);
@@ -8540,13 +8543,14 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 			// remove other comments
 			if (fcn_type) {
-				const char *fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
+				char *fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
 				const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 				rz_strbuf_appendf(sb, "%s%s%s(", rz_str_get_null(fcn_type_str), sp,
 					rz_str_get_null(key));
 				if (!nargs) {
 					rz_strbuf_appendf(sb, "void)\n");
 				}
+				free(fcn_type_str);
 			} else {
 				eprintf("Cannot find any function type..lets just use some standards?\n");
 			}
@@ -9538,6 +9542,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_handler(RzCore *core, int argc, 
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_BPV, var_type, 4, isarg, varname);
+		rz_type_free(var_type);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -9586,6 +9591,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_handler(RzCore *core, int argc
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, var_type, 4, isarg, varname);
+		rz_type_free(var_type);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -9639,6 +9645,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_sp_handler(RzCore *core, int argc, 
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_SPV, var_type, 4, isarg, varname);
+		rz_type_free(var_type);
 	}
 	return RZ_CMD_STATUS_OK;
 }
