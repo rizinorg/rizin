@@ -71,7 +71,7 @@ static inline GHT GH(align_address_to_size)(ut64 addr, ut64 align) {
 }
 
 static inline GHT GH(get_next_pointer)(RzCore *core, GHT pos, GHT next) {
-	return (core->dbg->glibc_version < 232) ? next : PROTECT_PTR(pos, next);
+	return (core->dbg->glibc_version < 232) ? next : (GHT)((pos >> 12) ^ next);
 }
 
 static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
