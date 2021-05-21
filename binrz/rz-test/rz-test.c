@@ -48,7 +48,6 @@ static void interact(RzTestState *state);
 static void interact_fix(RzTestResultInfo *result, RzPVector *fixup_results);
 static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results);
 static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results);
-static void interact_diffchar(RzTestResultInfo *result);
 
 static int help(bool verbose) {
 	printf("Usage: rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
@@ -832,7 +831,6 @@ static void interact(RzTestState *state) {
 		       "(i)gnore " UTF8_SEE_NO_EVIL_MONKEY "    "
 		       "(b)roken " UTF8_SKULL_AND_CROSSBONES UTF8_VS16 UTF8_VS16 UTF8_VS16 "    "
 		       "(c)ommands " UTF8_KEYBOARD UTF8_VS16 "    "
-		       "(d)iffchar " UTF8_LEFT_POINTING_MAGNIFYING_GLASS "    "
 		       "(q)uit " UTF8_DOOR "\n");
 		printf("> ");
 		char buf[0x30];
@@ -858,9 +856,6 @@ static void interact(RzTestState *state) {
 		case 'c':
 			interact_commands(result, &failed_results);
 			break;
-		case 'd':
-			interact_diffchar(result);
-			goto menu;
 		case 'q':
 			goto beach;
 		default:
@@ -1084,12 +1079,4 @@ static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results
 	replace_cmd_kv_file(result->test->path, test->cmds.line_begin, test->cmds.line_end, "CMDS", newcmds, fixup_results);
 	free(name);
 	free(newcmds);
-}
-
-static void interact_diffchar(RzTestResultInfo *result) {
-	const char *actual = result->proc_out->out;
-	const char *expected = result->test->cmd_test->expect.value;
-	const char *regexp_out = result->test->cmd_test->regexp_out.value;
-	printf("-- stdout\n");
-	print_diff(actual, expected, regexp_out);
 }
