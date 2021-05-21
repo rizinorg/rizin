@@ -43,7 +43,6 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 			// Autoname unnamed arguments
 			argument_name = rz_str_newf("arg%d", i);
 		}
-		//eprintf("parsing \"%s\" func arg type\n", argument_type);
 		char *error_msg = NULL;
 		RzType *ttype = rz_type_parse_string_single(typedb->parser, argument_type, &error_msg);
 		if (!ttype || error_msg) {
@@ -208,4 +207,3 @@ RZ_API bool rz_serialize_callables_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB 
 	sdb_load_callables(typedb, db);
 	return true;
 }
-

@@ -85,7 +85,7 @@ static void var_type_set_sign(RzAnalysis *analysis, RzAnalysisVar *var, bool sig
 }
 
 // TODO: Handle also non-atomic types here
-static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RzType *type, bool ref) {
+static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzType *type, bool ref) {
 	rz_return_if_fail(analysis && var && type);
 	RzTypeDB *typedb = analysis->typedb;
 	// removing this return makes 64bit vars become 32bit
@@ -98,14 +98,21 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RzType *type,
 		// except for "void *", since "void *" => "char *" is possible
 		return;
 	}
+	// Since the type could be used by something else we should clone it
+	RzType *cloned = rz_type_clone(type);
+	if (!cloned) {
+		eprintf("Cannot clone the type for the variable \"%s.%s\n", var->fcn->name, var->name);
+		return;
+	}
 	// Make a pointer of the existing type
 	if (ref) {
-		RzType *ptrtype = rz_type_pointer_of_type(typedb, var->type, false);
+		// By default we create non-const pointers
+		RzType *ptrtype = rz_type_pointer_of_type(typedb, cloned, false);
 		rz_analysis_var_set_type(var, ptrtype);
 		return;
 	}
 
-	rz_analysis_var_set_type(var, type);
+	rz_analysis_var_set_type(var, cloned);
 }
 
 static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const char *type, bool ref) {
@@ -117,6 +124,8 @@ static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const cha
 		return;
 	}
 	var_type_set(analysis, var, realtype, ref);
+	// Since we clone the type here, free it
+	rz_type_free(realtype);
 }
 
 static void get_src_regname(RzCore *core, ut64 addr, char *regname, int size) {
@@ -211,7 +220,7 @@ static RzList *parse_format(RzCore *core, char *fmt) {
 	return ret;
 }
 
-static void retype_callee_arg(RzAnalysis *analysis, const char *callee_name, bool in_stack, const char *place, int size, RzType *type) {
+static void retype_callee_arg(RzAnalysis *analysis, const char *callee_name, bool in_stack, const char *place, int size, RZ_BORROW RzType *type) {
 	RzAnalysisFunction *fcn = rz_analysis_get_function_byname(analysis, callee_name);
 	if (!fcn) {
 		return;
@@ -352,7 +361,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			// Match type from function param to instr
 			if (type_pos_hit(analysis, trace, in_stack, j, size, place)) {
 				if (!cmt_set && type && name) {
-					const char *typestr = rz_type_as_string(analysis->typedb, type);
+					char *typestr = rz_type_as_string(analysis->typedb, type);
 					const char *maybe_space = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 					rz_meta_set_string(analysis, RZ_META_TYPE_VARTYPE, instr_addr,
 						sdb_fmt("%s%s%s", typestr, maybe_space, name));
@@ -371,6 +380,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 							}
 						}
 					}
+					free(typestr);
 				}
 				if (var) {
 					if (!userfnc) {
@@ -426,7 +436,6 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			}
 		}
 		size += analysis->bits / 8;
-		free(type);
 	}
 	rz_list_free(types);
 	rz_cons_break_pop();
@@ -573,7 +582,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 						char *cc = strdup(Cc);
 						type_match(core, fcn_name, addr, bb->addr, cc, prev_idx, userfnc, callee_addr, op_cache);
 						prev_idx = cur_idx;
-						RZ_FREE(ret_type);
+						// Here we clone the type
 						RzType *rt = rz_type_func_ret(typedb, fcn_name);
 						if (rt) {
 							ret_type = rt;
@@ -666,7 +675,8 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 					if (str_flag && match) {
 						var_type_set_str(analysis, var, "const char *", false);
 					}
-					if (prop && match && prev_var) {
+					if (prop && match && prev_var && prev_type) {
+						// Here we clone the type
 						var_type_set(analysis, var, prev_type, false);
 					}
 				}
@@ -734,7 +744,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 			addr += aop->size;
 		}
 	}
-	// Type propgation for register based args
+	// Type propagation for register based args
 	RzList *list = rz_analysis_var_list(analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG);
 	RzAnalysisVar *rvar;
 	RzListIter *iter;
@@ -755,7 +765,6 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 out_function:
 	ht_up_free(op_cache);
 	free(ret_reg);
-	rz_type_free(ret_type);
 	rz_cons_break_pop();
 	analysis_emul_restore(core, hc, dt, et);
 }

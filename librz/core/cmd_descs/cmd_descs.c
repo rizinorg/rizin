@@ -150,7 +150,6 @@ static const RzCmdDescArg type_enum_c_args[2];
 static const RzCmdDescArg type_enum_c_nl_args[2];
 static const RzCmdDescArg type_enum_find_args[2];
 static const RzCmdDescArg type_list_function_args[2];
-static const RzCmdDescArg type_kuery_args[2];
 static const RzCmdDescArg type_link_args[3];
 static const RzCmdDescArg type_link_show_args[2];
 static const RzCmdDescArg type_link_del_args[2];
@@ -2957,21 +2956,6 @@ static const RzCmdDescHelp type_list_function_help = {
 	.args = type_list_function_args,
 };
 
-static const RzCmdDescArg type_kuery_args[] = {
-	{
-		.name = "type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = true,
-
-	},
-	{ 0 },
-};
-static const RzCmdDescHelp type_kuery_help = {
-	.summary = "Perform SDB query on types database",
-	.args = type_kuery_args,
-};
-
 static const RzCmdDescHelp tl_help = {
 	.summary = "Manage type links to the address",
 };
@@ -5150,9 +5134,6 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *tf_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_type_list_function_handler, &type_list_function_help, &tf_help);
 	rz_warn_if_fail(tf_cd);
-
-	RzCmdDesc *type_kuery_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "tk", rz_type_kuery_handler, &type_kuery_help);
-	rz_warn_if_fail(type_kuery_cd);
 
 	RzCmdDesc *tl_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB | RZ_OUTPUT_MODE_LONG, rz_type_link_handler, &type_link_help, &tl_help);
 	rz_warn_if_fail(tl_cd);
