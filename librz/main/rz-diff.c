@@ -1672,34 +1672,22 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 
 	// clang-format off
 	toolbar = " "
-		"%s1%s -0x%x | "
-		"%s2%s +0x%x | "
-		"%sZ%s f0 +1 | "
-		"%sA%s f0 -1 | "
-		"%sC%s f1 +1 | "
-		"%sD%s f1 -1 | "
-		"%sG%s reset | "
-		"%sM%s next | "
-		"%sN%s prev | "
-		"%s%s%s -%u | "
-		"%s%s%s +%u | "
-		"%s%s%s +1 | "
-		"%s%s%s -1 | "
+		"%s1 2%s -/+0x%x | "
+		"%sZ A%s file0 +/-1 | "
+		"%sC D%s file1 +/-1 | "
+		"%sG B%s end/begin | "
+		"%sN M%s next/prev | "
+		"%s%s%s%s +/-%u | "
+		"%s%s%s%s +/-1 | "
 		"%s:%s seek";
 	snprintf(line, lsize, toolbar
 			, legenda, reset, (1 << shift) * max_rows
-			, legenda, reset, (1 << shift) * max_rows
 			, legenda, reset
 			, legenda, reset
 			, legenda, reset
 			, legenda, reset
-			, legenda, reset
-			, legenda, reset
-			, legenda, reset
-			, legenda, arrow_up, reset, 1 << shift
-			, legenda, arrow_down, reset, 1 << shift
-			, legenda, arrow_left, reset
-			, legenda, arrow_right, reset
+			, legenda, arrow_down, arrow_up, reset, 1 << shift
+			, legenda, arrow_left, arrow_right, reset
 			, legenda, reset);
 	// clang-format on
 
@@ -1707,71 +1695,51 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	rz_cons_canvas_write(canvas, line);
 
 	if (show_help) {
-		rz_cons_canvas_fill(canvas, 4, 2, 48, 23, ' ');
-		rz_cons_canvas_box(canvas, 4, 2, 48, 23, legenda);
+		rz_cons_canvas_fill(canvas, 4, 2, 56, 14, ' ');
+		rz_cons_canvas_box(canvas, 4, 2, 56, 14, legenda);
 
 		snprintf(line, lsize, "%sHelp page%s\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 3);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s0%s  shows/hides the column legenda\n", legenda, reset);
+		snprintf(line, lsize, "%s1 2%s   increase/decrease the offsets by 0x%x\n", legenda, reset, (1 << shift) * (height - 2));
 		rz_cons_canvas_gotoxy(canvas, 6, 5);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s1%s  decrease the offsets by 0x%x\n", legenda, reset, (1 << shift) * (height - 2));
+		snprintf(line, lsize, "%sZ A%s   increase/decrease the offset of the file0 by 1\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 6);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%s2%s  increase the offsets by 0x%x\n", legenda, reset, (1 << shift) * (height - 2));
+		snprintf(line, lsize, "%sC D%s   increase/decrease the offset of the file1 by 1\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 7);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sZ%s  increase the offset of the file0 by 1\n", legenda, reset);
+		snprintf(line, lsize, "%sN M%s   next/previous difference\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 8);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sA%s  decrease the offset of the file0 by 1\n", legenda, reset);
+		snprintf(line, lsize, "%sG B%s   seek to end/begin\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 9);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sC%s  increase the offset of the file1 by 1\n", legenda, reset);
+		snprintf(line, lsize, "%s9%s     sets both offsets to a common value\n", legenda, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 10);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, lsize, "%s0%s     shows/hides the column legenda\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 11);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sD%s  decrease the offset of the file1 by 1\n", legenda, reset);
+		snprintf(line, lsize, "%s%s %s%s increase/decrease both offsets by %u\n", legenda, arrow_down, arrow_up, reset, 1 << shift);
 		rz_cons_canvas_gotoxy(canvas, 6, 12);
 		rz_cons_canvas_write(canvas, line);
 
-		snprintf(line, lsize, "%sM%s  next difference\n", legenda, reset);
+		snprintf(line, lsize, "%s%s %s%s increase/decrease both offsets by 1\n", legenda, arrow_left, arrow_right, reset);
+		rz_cons_canvas_gotoxy(canvas, 6, 13);
+		rz_cons_canvas_write(canvas, line);
+
+		snprintf(line, lsize, "%s:%s     seek at offset (relative via +-)\n", legenda, reset);
 		rz_cons_canvas_gotoxy(canvas, 6, 14);
-		rz_cons_canvas_write(canvas, line);
-
-		snprintf(line, lsize, "%sN%s  previous difference\n", legenda, reset);
-		rz_cons_canvas_gotoxy(canvas, 6, 15);
-		rz_cons_canvas_write(canvas, line);
-
-		snprintf(line, lsize, "%sG%s  sets both offsets to a common value\n", legenda, reset);
-		rz_cons_canvas_gotoxy(canvas, 6, 16);
-		rz_cons_canvas_write(canvas, line);
-
-		snprintf(line, lsize, "%s%s%s decrease both offsets by %u\n", legenda, arrow_up, reset, 1 << shift);
-		rz_cons_canvas_gotoxy(canvas, 6, 18);
-		rz_cons_canvas_write(canvas, line);
-
-		snprintf(line, lsize, "%s%s%s increase both offsets by %u\n", legenda, arrow_down, reset, 1 << shift);
-		rz_cons_canvas_gotoxy(canvas, 6, 19);
-		rz_cons_canvas_write(canvas, line);
-
-		snprintf(line, lsize, "%s%s%s increase both offsets by 1\n", legenda, arrow_left, reset);
-		rz_cons_canvas_gotoxy(canvas, 6, 20);
-		rz_cons_canvas_write(canvas, line);
-
-		snprintf(line, lsize, "%s%s%s decrease both offsets by 1\n", legenda, arrow_right, reset);
-		rz_cons_canvas_gotoxy(canvas, 6, 21);
-		rz_cons_canvas_write(canvas, line);
-
-		snprintf(line, lsize, "%s:%s  seek at offset (relative via +-)\n", legenda, reset);
-		rz_cons_canvas_gotoxy(canvas, 6, 22);
 		rz_cons_canvas_write(canvas, line);
 	}
 
@@ -2076,9 +2044,18 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 		case ':':
 			prompt_offset_and_seek(&hview, seekmin);
 			break;
+		case '9':
+			hview.offset_a = hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
+			break;
 		case 'G':
 		case 'g':
-			hview.offset_a = hview.offset_b = RZ_MIN(hview.offset_a, hview.offset_b);
+			hview.offset_a = io_a->filesize > seekmin ? io_a->filesize - seekmin : 0;
+			hview.offset_b = io_b->filesize > seekmin ? io_b->filesize - seekmin : 0;
+			break;
+		case 'B':
+		case 'b':
+			hview.offset_a = 0;
+			hview.offset_b = 0;
 			break;
 		case 'A':
 		case 'a':
@@ -2086,12 +2063,12 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 				hview.offset_a--;
 			}
 			break;
-		case 'M':
-		case 'm':
-			find_next_diff(&hview, seekmin);
-			break;
 		case 'N':
 		case 'n':
+			find_next_diff(&hview, seekmin);
+			break;
+		case 'M':
+		case 'm':
 			find_prev_diff(&hview, seekmin);
 			break;
 		case 'Z':
@@ -2198,6 +2175,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	console->event_data = NULL;
 	console->event_resize = NULL;
 
+	rz_cons_show_cursor(true);
 	rz_cons_goto_origin_reset();
 	rz_cons_clear();
 	rz_cons_flush();
