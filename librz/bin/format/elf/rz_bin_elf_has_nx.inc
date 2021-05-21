@@ -5,7 +5,14 @@
 
 #include "elf.h"
 
-int Elf_(rz_bin_elf_has_nx)(ELFOBJ *bin) {
+/**
+ * \brief Check if the stack is not executable
+ * \param elf binary
+ * \return true, false
+ *
+ * Check p_flags from the segment PT_GNU_STACK
+ */
+bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, 0);
 	int i;
 	if (bin && bin->phdr) {
