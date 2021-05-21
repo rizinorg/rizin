@@ -47,9 +47,19 @@ static void _set_arm_thumb_bits(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinSymbol
 	}
 }
 
-RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(struct Elf_(rz_bin_elf_obj_t) * bin,
-	struct rz_bin_elf_symbol_t *symbol,
+/**
+ * \brief Convert a RzBinElfSymbol to RzBinSymbol
+ * \param elf binary
+ * \param bin symbol
+ * \param name format
+ * \return a ptr to a new allocated RzBinSymbol
+ *
+ * Convert a RzElfBinSymbol to RzBinSymbol, the name can be formatted.
+ */
+RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol,
 	const char *namefmt) {
+    rz_return_val_if_fail(bin && symbol, NULL);
+
 	ut64 paddr, vaddr;
 	RzBinSymbol *ptr = NULL;
 	if (symbol->is_vaddr) {
