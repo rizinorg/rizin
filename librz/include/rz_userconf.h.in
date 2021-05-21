@@ -51,7 +51,7 @@
 #define RZ_FLAGS     "@FLAGS@"
 #define RZ_HUD       "@HUD@"
 
-#define RZ_SDB_FCNSIGN RZ_JOIN_2_PATHS(RZ_SDB, "fcnsign")
+#define RZ_SDB_TYPES   RZ_JOIN_2_PATHS(RZ_SDB, "types")
 #define RZ_SDB_OPCODES RZ_JOIN_2_PATHS(RZ_SDB, "opcodes")
 #define RZ_SDB_MAGIC   RZ_JOIN_2_PATHS(RZ_SDB, "magic")
 #define RZ_SDB_FORMAT  RZ_JOIN_2_PATHS(RZ_SDB, "format")
@@ -66,7 +66,7 @@
 #define RZ_HOME_PDB         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "pdb")
 #define RZ_HOME_PROJECTS    RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "projects")
 #define RZ_HOME_WWWROOT     RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "www")
-#define RZ_HOME_SDB_FCNSIGN RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "fcnsign")
+#define RZ_HOME_SDB_TYPES   RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "types")
 #define RZ_HOME_SDB_FORMAT  RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "format")
 #define RZ_HOME_HUD         RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "hud")
 #define RZ_HOME_BINRC       RZ_JOIN_2_PATHS(RZ_HOME_DATADIR, "rc.d")

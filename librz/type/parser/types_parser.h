@@ -51,7 +51,7 @@ bool c_parser_callable_type_exists(CParserState *state, RZ_NONNULL const char *n
 bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *name, RzType *type);
 
 RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, RZ_NONNULL const char *name, bool is_const);
-RZ_OWN ParserTypePair *c_parser_get_primitive_type(CParserState *state, RZ_NONNULL const char *name);
+RZ_OWN ParserTypePair *c_parser_get_primitive_type(CParserState *state, RZ_NONNULL const char *name, bool is_const);
 
 RZ_OWN ParserTypePair *c_parser_new_structure_naked_type(CParserState *state, RZ_NONNULL const char *name);
 RZ_OWN ParserTypePair *c_parser_new_structure_type(CParserState *state, RZ_NONNULL const char *name, size_t members_count);
@@ -72,6 +72,7 @@ RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL cons
 RZ_OWN ParserTypePair *c_parser_get_typedef(CParserState *state, RZ_NONNULL const char *name);
 
 RZ_OWN RzType *c_parser_new_callable(CParserState *state, RZ_NONNULL const char *name);
+bool c_parser_new_callable_argument(CParserState *state, RZ_NONNULL RzCallable *callable, RZ_NONNULL const char *name, RZ_OWN RZ_NONNULL RzType *type);
 
 // ParserTypePair wrapper helpers
 RZ_OWN ParserTypePair *c_parser_type_wrap_to_pointer(CParserState *state, ParserTypePair *tpair, bool is_const);

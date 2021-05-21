@@ -190,7 +190,7 @@ static void rz_bin_mdmp_init_parsing(struct rz_bin_mdmp_obj *obj) {
 		0);
 
 	sdb_set(obj->kv, "mdmp_callback_type.cparse",
-		"enum mdmp_type { ModuleCallback=0,"
+		"enum mdmp_callback_type { ModuleCallback=0,"
 		"ThreadCallback=1, ThreadExCallback=2, "
 		"IncludeThreadCallback=3, IncludeModuleCallback=4, "
 		"MemoryCallback=5, CancelCallback=6, "

@@ -35,7 +35,7 @@ static void setup_sdb_for_enum(Sdb *res) {
 }
 
 static void setup_sdb_for_typedef(Sdb *res) {
-	// td typedef char *string;
+	// td "typedef char *string;"
 	sdb_set(res, "string", "typedef", 0);
 	sdb_set(res, "typedef.string", "char *", 0);
 }
@@ -89,7 +89,6 @@ static bool test_types_get_base_type_struct(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for struct member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for struct member");
 
-	rz_type_base_type_free(base);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -120,7 +119,6 @@ static bool test_types_get_base_type_union(void) {
 	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int32_t"), "Incorrect type for union member");
 	mu_assert_streq(member->name, "cow", "Incorrect name for union member");
 
-	rz_type_base_type_free(base);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -149,7 +147,6 @@ static bool test_types_get_base_type_enum(void) {
 	mu_assert_eq(cas->val, 2, "Incorrect value for enum case");
 	mu_assert_streq(cas->name, "secondCase", "Incorrect name for enum case");
 
-	rz_type_base_type_free(base);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -173,7 +170,6 @@ static bool test_types_get_base_type_typedef(void) {
 	mu_assert_false(base->type->pointer.is_const, "typedefd type");
 	mu_assert_true(rz_type_atomic_str_eq(typedb, base->type->pointer.type, "char"), "typedefd type");
 
-	rz_type_base_type_free(base);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -193,10 +189,8 @@ static bool test_types_get_base_type_atomic(void) {
 
 	mu_assert_eq(RZ_BASE_TYPE_KIND_ATOMIC, base->kind, "Wrong base type");
 	mu_assert_streq(base->name, "char", "type name");
-	mu_assert_true(rz_type_atomic_str_eq(typedb, base->type, "c"), "atomic type type");
 	mu_assert_eq(base->size, 8, "atomic type size");
 
-	rz_type_base_type_free(base);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -263,22 +257,22 @@ static void setup_sdb_for_base_types_all(Sdb *res) {
 	sdb_set(res, "enum.bla.0x100", "minusFirstCase", 0);
 	sdb_set(res, "enum.bla.0xf000", "minusSecondCase", 0);
 	// td typedef char *string;
-	sdb_set(res, "string", "typedef", 0);
-	sdb_set(res, "typedef.string", "char *", 0);
 	sdb_set(res, "char", "type", 0);
 	sdb_set(res, "type.char.size", "8", 0);
 	sdb_set(res, "type.char", "c", 0);
+	sdb_set(res, "string", "typedef", 0);
+	sdb_set(res, "typedef.string", "char *", 0);
 }
 
 // RzBaseType name comparator
 static int basetypenamecmp(const void *a, const void *b) {
 	const char *name = (const char *)a;
 	const RzBaseType *btype = (const RzBaseType *)b;
-	return btype->name && strcmp(name, btype->name);
+	return !(btype->name && !strcmp(name, btype->name));
 }
 
 static bool typelist_has(RzList *types, const char *name) {
-	return rz_list_find(types, name, basetypenamecmp);
+	return (rz_list_find(types, name, basetypenamecmp) != NULL);
 }
 
 static bool test_types_get_base_types(void) {
@@ -286,8 +280,6 @@ static bool test_types_get_base_types(void) {
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 
-	// We remove first all preloaded types
-	rz_type_db_purge(typedb);
 	Sdb *sdb = sdb_new0();
 	setup_sdb_for_base_types_all(sdb);
 	rz_serialize_types_load(sdb, typedb, NULL);
@@ -295,16 +287,17 @@ static bool test_types_get_base_types(void) {
 
 	RzList *types = rz_type_db_get_base_types(typedb);
 	mu_assert_notnull(types, "Couldn't get list of all base types");
-	// One additional is `char` as a target for `string` typedef
-	mu_assert_eq(rz_list_length(types), 8, "get all base types");
+	// Additional are `char`, `int32_t`, `int` as a target for `string` typedef
+	mu_assert_eq(rz_list_length(types), 12, "get all base types");
 	mu_assert_true(typelist_has(types, "kappa"), "has kappa");
-	mu_assert_false(typelist_has(types, "dsgdfg"), "has sdfsfd");
 	mu_assert_true(typelist_has(types, "theta"), "has theta");
 	mu_assert_true(typelist_has(types, "omega"), "has omega");
 	mu_assert_true(typelist_has(types, "omicron"), "has omicron");
 	mu_assert_true(typelist_has(types, "foo"), "has foo");
 	mu_assert_true(typelist_has(types, "bla"), "has bla");
 	mu_assert_true(typelist_has(types, "string"), "has string");
+
+	mu_assert_false(typelist_has(types, "dsgdfg"), "has dsgdfg");
 
 	rz_list_free(types);
 	rz_type_db_free(typedb);
@@ -316,7 +309,6 @@ static bool test_types_get_base_types_of_kind(void) {
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
 
-	rz_type_db_purge(typedb);
 	Sdb *sdb = sdb_new0();
 	setup_sdb_for_base_types_all(sdb);
 	rz_serialize_types_load(sdb, typedb, NULL);
