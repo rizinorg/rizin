@@ -533,7 +533,8 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 
 	base_type->name = get_die_name(die);
 	if (!base_type->name) {
-		goto cleanup;
+		rz_type_base_type_free(base_type);
+		return;
 	}
 
 	// if it is definition of previous declaration (TODO Fix, big ugly hotfix addition)
@@ -541,7 +542,8 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 	if (spec_attr_idx != -1) {
 		RzBinDwarfDie *decl_die = ht_up_find(ctx->die_map, die->attr_values[spec_attr_idx].reference, NULL);
 		if (!decl_die) {
-			goto cleanup;
+			rz_type_base_type_free(base_type);
+			return;
 		}
 		st32 name_attr_idx = find_attr_idx(decl_die, DW_AT_name);
 		if (name_attr_idx != -1) {
@@ -565,11 +567,13 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 			if (child_depth == 1 && child_die->tag == DW_TAG_member) {
 				RzTypeStructMember *result = parse_struct_member(ctx, j, &member);
 				if (!result) {
-					goto cleanup;
+					rz_type_base_type_free(base_type);
+					return;
 				} else {
 					void *element = rz_vector_push(&base_type->struct_data.members, &member);
 					if (!element) {
-						goto cleanup;
+						rz_type_base_type_free(base_type);
+						return;
 					}
 				}
 			}
@@ -582,8 +586,6 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 		}
 	}
 	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
-cleanup:
-	rz_type_base_type_free(base_type);
 }
 
 /**
@@ -603,7 +605,8 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 
 	base_type->name = get_die_name(die);
 	if (!base_type->name) {
-		goto cleanup;
+		rz_type_base_type_free(base_type);
+		return;
 	}
 	base_type->size = get_die_size(die);
 
@@ -615,7 +618,8 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		const char *type = rz_strbuf_drain_nofree(&strbuf);
 		base_type->type = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, NULL);
 		if (!base_type->type) {
-			goto cleanup;
+			rz_type_base_type_free(base_type);
+			return;
 		}
 	}
 
@@ -630,12 +634,14 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 			if (child_depth == 1 && child_die->tag == DW_TAG_enumerator) {
 				RzTypeEnumCase *result = parse_enumerator(ctx, j, &cas);
 				if (!result) {
-					goto cleanup;
+					rz_type_base_type_free(base_type);
+					return;
 				} else {
 					void *element = rz_vector_push(&base_type->enum_data.cases, &cas);
 					if (!element) {
 						rz_type_base_enum_case_free(result, NULL);
-						goto cleanup;
+						rz_type_base_type_free(base_type);
+						return;
 					}
 				}
 			}
@@ -649,8 +655,6 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		}
 	}
 	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
-cleanup:
-	rz_type_base_type_free(base_type);
 }
 
 /**
@@ -702,14 +706,13 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	base_type->name = name;
 	base_type->type = rz_type_parse_string_single(ctx->analysis->typedb->parser, type, NULL);
 	if (!base_type->type) {
+		rz_type_base_type_free(base_type);
 		goto cleanup;
 	}
 	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
-	rz_type_base_type_free(base_type);
 	rz_strbuf_fini(&strbuf);
 	return;
 cleanup:
-	free(name);
 	free(type);
 	rz_strbuf_fini(&strbuf);
 }
@@ -759,7 +762,6 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	base_type->name = name;
 	base_type->size = size;
 	rz_type_db_save_base_type(ctx->analysis->typedb, base_type);
-	rz_type_base_type_free(base_type);
 }
 
 static const char *get_specification_die_name(const RzBinDwarfDie *die) {
@@ -970,7 +972,7 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
 
 /* returns string literal register name!
    TODO add more arches                 */
-static const char *get_dwarf_reg_name(char *arch, int reg_num, VariableLocationKind *kind, int bits) {
+static const char *get_dwarf_reg_name(RZ_NONNULL char *arch, int reg_num, VariableLocationKind *kind, int bits) {
 	if (!strcmp(arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg(reg_num, kind);
@@ -1699,6 +1701,7 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 			} else if (fcn) { /* kind == 'b' */
 				rz_analysis_function_set_var(fcn, offset - fcn->bp_off, *kind, ttype, 4, false, var_name);
 			}
+			rz_type_free(ttype);
 			free(var_key);
 			free(var_data);
 		loop_end:

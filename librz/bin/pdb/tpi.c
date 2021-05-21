@@ -22,8 +22,8 @@ static bool is_simple_type(int idx) {
 
 /**
  * @brief Parses simple type if the idx represents one
- * 
- * @param idx 
+ *
+ * @param idx
  * @return STypeInfo, leaf_type = 0 -> error
  *  This can be made smarter by using the masks
  *  and splitting it on 2 parts, 1 mode, 1 type
@@ -1748,13 +1748,13 @@ static void get_modifier_print_type(void *type, char **name) {
 
 static void get_procedure_print_type(void *type, char **name) {
 	// TODO
-	const int name_len = strlen("proc ");
+	const int name_len = strlen("void ");
 	*name = (char *)malloc(name_len + 1);
 	if (!(*name)) {
 		return;
 	}
 	// name[name_len] = '\0';
-	strcpy(*name, "proc ");
+	strcpy(*name, "void ");
 }
 
 static void get_bitfield_print_type(void *type, char **name) {
@@ -1780,7 +1780,7 @@ static void get_bitfield_print_type(void *type, char **name) {
 		name_len += strlen(tmp_name);
 	}
 	name_len += 4;
-	*name = (char *)malloc(name_len + 1 + 1);
+	*name = (char *)malloc(name_len + 6);
 	if (!(*name)) {
 		if (need_to_free) {
 			free(tmp_name);
@@ -1790,9 +1790,11 @@ static void get_bitfield_print_type(void *type, char **name) {
 
 	// name[name_len] = '\0';
 	if (tmp_name) {
-		sprintf(*name, "%s %s : %d", "bitfield", tmp_name, (int)bitfeild_info->length);
+		//sprintf(*name, "%s %s : %d", "bitfield", tmp_name, (int)bitfeild_info->length);
+		sprintf(*name, "%s /*%s:%d*/", tmp_name, "bitfield", (int)bitfeild_info->length);
 	} else {
-		sprintf(*name, "%s : %d", "bitfield", (int)bitfeild_info->length);
+		//sprintf(*name, "%s : %d", "bitfield", (int)bitfeild_info->length);
+		sprintf(*name, "%s /*:%d*/", "bitfield", (int)bitfeild_info->length);
 	}
 
 	if (need_to_free) {

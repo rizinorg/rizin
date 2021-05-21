@@ -4,8 +4,6 @@
 
 #include <rz_analysis.h>
 
-#define D if (analysis->verbose)
-
 static bool get_functions_block_cb(RzAnalysisBlock *block, void *user) {
 	RzList *list = user;
 	RzListIter *iter;
@@ -439,12 +437,17 @@ static void clean_function_name(char *func_name) {
 	*last = '\0';
 }
 
+RZ_API bool rz_analysis_function_is_autonamed(RZ_NONNULL char *name) {
+	size_t len = strlen(name);
+	return (len >= MIN_MATCH_LEN) && (is_auto_named(name, len) || has_rz_prefixes(name, 0, len));
+}
+
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
-RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *func_name) {
-	rz_return_val_if_fail(typedb && func_name, NULL);
-	char *str = func_name;
+RZ_API RZ_OWN char *rz_analysis_function_name_guess(RzTypeDB *typedb, RZ_NONNULL char *name) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	char *str = name;
 	char *result = NULL;
 
 	size_t slen = strlen(str);
