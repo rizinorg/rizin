@@ -2178,6 +2178,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	rz_cons_show_cursor(true);
 	rz_cons_goto_origin_reset();
 	rz_cons_clear();
+	rz_cons_print(Color_RESET_TERMINAL);
 	rz_cons_flush();
 
 rz_diff_hex_visual_fail:
