@@ -5,45 +5,89 @@
 
 #include "elf.h"
 
-static void _set_arm_thumb_bits(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinSymbol **sym) {
-	int bin_bits = Elf_(rz_bin_elf_get_bits)(bin);
-	RzBinSymbol *ptr = *sym;
-	int len = strlen(ptr->name);
-	if (ptr->name[0] == '$' && (len >= 2 && !ptr->name[2])) {
-		switch (ptr->name[1]) {
-		case 'a': //arm
-			ptr->bits = 32;
-			break;
-		case 't': //thumb
-			ptr->bits = 16;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-			}
-			break;
-		case 'd': //data
-			break;
-		default:
-			goto arm_symbol;
-		}
+static void set_addr_parameter(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol) {
+	if (elf_symbol->is_vaddr) {
+		symbol->paddr = UT64_MAX;
+		symbol->vaddr = elf_symbol->offset;
 	} else {
-	arm_symbol:
-		ptr->bits = bin_bits;
-		if (bin_bits != 64) {
-			ptr->bits = 32;
-			if (ptr->paddr != UT64_MAX) {
-				if (ptr->vaddr & 1) {
-					ptr->vaddr--;
-					ptr->bits = 16;
-				}
-				if (ptr->paddr & 1) {
-					ptr->paddr--;
-					ptr->bits = 16;
-				}
+		symbol->paddr = elf_symbol->offset;
+		symbol->vaddr = Elf_(rz_bin_elf_p2v_new)(bin, symbol->paddr);
+	}
+}
+
+static char *get_symbol_name(RzBinElfSymbol *elf_symbol, const char *namefmt) {
+	return elf_symbol->name[0] ? rz_str_newf(namefmt, &elf_symbol->name[0]) : strdup("");
+}
+
+static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol, const char *namefmt) {
+	char *symbol_name = get_symbol_name(elf_symbol, namefmt);
+
+	symbol->name = symbol_name;
+	symbol->forwarder = "NONE";
+	symbol->bind = elf_symbol->bind;
+	symbol->type = elf_symbol->type;
+	symbol->is_imported = elf_symbol->is_imported;
+	symbol->size = elf_symbol->size;
+	symbol->ordinal = elf_symbol->ordinal;
+}
+
+static bool is_arm_symbol(ELFOBJ *bin, RzBinElfSymbol *elf_symbol) {
+	return bin->ehdr.e_machine == EM_ARM && *elf_symbol->name;
+}
+
+static void fix_thumb_symbol(RzBinSymbol *symbol) {
+	symbol->bits = 16;
+
+	if (symbol->vaddr & 1) {
+		symbol->vaddr--;
+	}
+
+	if (symbol->paddr & 1) {
+		symbol->paddr--;
+	}
+}
+
+static bool start_a_sequence_of_instruction(const char *name) {
+	return strlen(name) > 3 && rz_str_startswith(name, "$a.");
+}
+
+static bool start_a_sequence_of_thumb_instruction(const char *name) {
+	return strlen(name) > 3 && rz_str_startswith(name, "$t.");
+}
+
+static bool start_a_sequence_of_data(const char *name) {
+	return strlen(name) > 3 && rz_str_startswith(name, "$d.");
+}
+
+static void set_arm_basic_symbol_bits(ELFOBJ *bin, RzBinSymbol *symbol) {
+	int bin_bits = Elf_(rz_bin_elf_get_bits)(bin);
+	symbol->bits = bin_bits;
+
+	if (bin_bits != 64) {
+		symbol->bits = 32;
+
+		if (symbol->paddr != UT64_MAX) {
+			if (symbol->vaddr & 1) {
+				symbol->vaddr--;
+				symbol->bits = 16;
+			}
+			if (symbol->paddr & 1) {
+				symbol->paddr--;
+				symbol->bits = 16;
 			}
 		}
+	}
+}
+
+static void set_arm_symbol_bits(ELFOBJ *bin, RzBinSymbol *symbol) {
+	const char *name = symbol->name;
+
+	if (start_a_sequence_of_instruction(name)) {
+		symbol->bits = 32;
+	} else if (start_a_sequence_of_thumb_instruction(name)) {
+		fix_thumb_symbol(symbol);
+	} else if (!start_a_sequence_of_data(name)) {
+		set_arm_basic_symbol_bits(bin, symbol);
 	}
 }
 
@@ -56,36 +100,22 @@ static void _set_arm_thumb_bits(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinSymbol
  *
  * Convert a RzElfBinSymbol to RzBinSymbol, the name can be formatted.
  */
-RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol,
+RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin,
+	RZ_NONNULL RzBinElfSymbol *elf_symbol,
 	const char *namefmt) {
-    rz_return_val_if_fail(bin && symbol, NULL);
+	rz_return_val_if_fail(bin && elf_symbol, NULL);
 
-	ut64 paddr, vaddr;
-	RzBinSymbol *ptr = NULL;
-	if (symbol->is_vaddr) {
-		paddr = UT64_MAX;
-		vaddr = symbol->offset;
-	} else {
-		paddr = symbol->offset;
-		vaddr = Elf_(rz_bin_elf_p2v_new)(bin, paddr);
-	}
-
-	if (!(ptr = RZ_NEW0(RzBinSymbol))) {
+	RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
+	if (!symbol) {
 		return NULL;
 	}
-	ptr->name = symbol->name[0] ? rz_str_newf(namefmt, &symbol->name[0]) : strdup("");
-	ptr->forwarder = "NONE";
-	ptr->bind = symbol->bind;
-	ptr->type = symbol->type;
-	ptr->is_imported = symbol->is_imported;
-	ptr->paddr = paddr;
-	ptr->vaddr = vaddr;
-	ptr->size = symbol->size;
-	ptr->ordinal = symbol->ordinal;
-	// detect thumb
-	if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
-		_set_arm_thumb_bits(bin, &ptr);
+
+	set_addr_parameter(bin, elf_symbol, symbol);
+	set_common_parameter(elf_symbol, symbol, namefmt);
+
+	if (is_arm_symbol(bin, elf_symbol)) {
+		set_arm_symbol_bits(bin, symbol);
 	}
 
-	return ptr;
+	return symbol;
 }
