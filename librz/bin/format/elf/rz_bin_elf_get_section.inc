@@ -16,12 +16,13 @@
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name) {
 	rz_return_val_if_fail(bin && section_name, NULL);
 
-	if (bin->g_sections) {
-		size_t i;
-		for (i = 0; !bin->g_sections[i].last; i++) {
-			if (!strncmp(bin->g_sections[i].name, section_name, ELF_STRING_LENGTH - 1)) {
-				return &bin->g_sections[i];
-			}
+	if (!bin->g_sections) {
+		return NULL;
+	}
+
+	for (size_t i = 0; !bin->g_sections[i].last; i++) {
+		if (!strcmp(bin->g_sections[i].name, section_name)) {
+			return bin->g_sections + i;
 		}
 	}
 
