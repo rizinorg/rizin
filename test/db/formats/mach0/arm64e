@@ -1,0 +1,91 @@
+NAME=macOS arm64
+FILE=bins/mach0/hello-macos-arm64
+CMDS=<<EOF
+om
+?e --
+?e regular got
+pxQ 0x28 @ 0x100008000
+?e --
+?e cstring
+px 0x18 @ 0x100004008
+?e --
+?e local fcn ptr (auth, !bind)
+pxr 0x18 @ sym._fcns
+?e --
+?e global (!auth, bind)
+px 8 @ reloc._objc_empty_cache
+EOF
+EXPECT=<<EOF
+ 4 fd: 3 +0x00000000 0x100000000 - 0x100003fff r-x fmap.__TEXT
+ 3 fd: 3 +0x00004000 0x100004000 - 0x100007fff r-- fmap.__DATA_CONST
+ 2 fd: 3 +0x00008000 0x100008000 - 0x10000bfff r-- fmap.__DATA
+ 1 fd: 3 +0x0000c000 0x10000c000 - 0x10000ffff r-- fmap.__LINKEDIT
+--
+regular got
+0x100008000 0x0000000100003dcc section.2.__TEXT.__stub_helper+24
+0x100008008 0x0000000100003dd8 section.2.__TEXT.__stub_helper+36
+0x100008010 0x0000000100003de4 section.2.__TEXT.__stub_helper+48
+0x100008018 0x0000000100003df0 section.2.__TEXT.__stub_helper+60
+0x100008020 0x0000000100003dfc section.2.__TEXT.__stub_helper+72
+--
+cstring
+- offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x100004008  0000 0000 0000 0000 c807 0000 0000 0000  ................
+0x100004018  643e 0000 0100 0000                      d>......
+--
+local fcn ptr (auth, !bind)
+0x100008180 ..[ null bytes ]..   00000000 sym._fcns
+0x100008188 0x0000000100003b9c   .;...... 4294982556 0.__TEXT.__text _something_else,func.100003b9c R X 'sub sp, sp, 0x20'
+0x100008190 0x0000000100003b9c   .;...... 4294982556 0.__TEXT.__text _something_else,func.100003b9c R X 'sub sp, sp, 0x20'
+--
+global (!auth, bind)
+- offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x100008130  0000 0000 0000 0000                      ........
+EOF
+RUN
+
+NAME=macOS arm64e with BIND_OPCODE_THREADED
+FILE=bins/mach0/hello-macos-arm64e
+CMDS=<<EOF
+om
+?e --
+?e __auth_got (auth, bind)
+pxQ 0x28 @ 0x100004000
+?e --
+?e cstring (!auth, !bind)
+px 0x18 @ 0x100004028
+?e --
+?e local fcn ptr (auth, !bind)
+pxr 0x18 @ sym._fcns
+?e --
+?e global (!auth, bind)
+px 8 @ reloc._objc_empty_cache
+EOF
+EXPECT=<<EOF
+ 4 fd: 3 +0x00000000 0x100000000 - 0x100003fff r-x fmap.__TEXT
+ 3 fd: 3 +0x00004000 0x100004000 - 0x100007fff r-- fmap.__DATA_CONST
+ 2 fd: 3 +0x00008000 0x100008000 - 0x10000bfff r-- fmap.__DATA
+ 1 fd: 3 +0x0000c000 0x10000c000 - 0x10000ffff r-- fmap.__LINKEDIT
+--
+__auth_got (auth, bind)
+0x100004000 0xc009000000000000 
+0x100004008 0xc009000000000005 
+0x100004010 0xc009000000000006 
+0x100004018 0xc009000000000007 
+0x100004020 0xc009000000000008 
+--
+cstring (!auth, !bind)
+- offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x100004028  0100 0000 e16a 15c0 c807 0000 0000 0000  .....j..........
+0x100004038  643e 0000 0100 0000                      d>......
+--
+local fcn ptr (auth, !bind)
+0x100008150 ..[ null bytes ]..   00000000 sym._fcns
+0x100008158 0x0000000100003bd0   .;...... 4294982608 0.__TEXT.__text _something_else,func.100003bd0 R X 'sub sp, sp, 0x20'
+0x100008160 0x0000000100003bd0   .;...... 4294982608 0.__TEXT.__text _something_else,func.100003bd0 R X 'sub sp, sp, 0x20'
+--
+global (!auth, bind)
+- offset -    0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x100008108  0400 0000 0000 1040                      .......@
+EOF
+RUN
