@@ -32,6 +32,7 @@ CParserState *c_parser_state_new(HtPP *base_types, HtPP *callable_types) {
 	}
 	// Forward definitions require to have a special hashtable
 	state->forward = ht_pp_new0();
+	// Initializing error/warning/debug messages buffers
 	state->errors = rz_strbuf_new("");
 	state->warnings = rz_strbuf_new("");
 	state->debug = rz_strbuf_new("");
@@ -57,10 +58,27 @@ void c_parser_state_free_keep_ht(CParserState *state) {
 	return;
 }
 
+void c_parser_state_reset_keep_ht(CParserState *state) {
+	rz_strbuf_free(state->debug);
+	rz_strbuf_free(state->warnings);
+	rz_strbuf_free(state->errors);
+	// Initializing error/warning/debug messages buffers
+	state->errors = rz_strbuf_new("");
+	state->warnings = rz_strbuf_new("");
+	state->debug = rz_strbuf_new("");
+	return;
+}
+
 struct rz_type_parser_t {
 	CParserState *state;
 };
 
+/**
+ * \brief Creates a new instance of the C type parser
+ *
+ * Creates the new instance of the C types parser with empty
+ * hashtables for RzBaseTypes and RzCallable types.
+ */
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_new() {
 	RzTypeParser *parser = RZ_NEW0(RzTypeParser);
 	if (!parser) {
@@ -70,6 +88,16 @@ RZ_API RZ_OWN RzTypeParser *rz_type_parser_new() {
 	return parser;
 }
 
+/**
+ * \brief Creates a new instance of the C type parser
+ *
+ * Creates the new instance of the C types parser preloaded
+ * hashtables for RzBaseTypes and RzCallable types. It will
+ * use provided hashtables for storing the parsed types as well.
+ *
+ * \param type RzBaseTypes hashtable to preload into the parser state
+ * \param type RzCallable hashtable to preload into the parser state
+ */
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtPP *types, HtPP *callables) {
 	RzTypeParser *parser = RZ_NEW0(RzTypeParser);
 	if (!parser) {
@@ -79,12 +107,18 @@ RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtPP *types, HtPP *callables) {
 	return parser;
 }
 
+/**
+ * \brief Frees the instance of the C type parser without destroying hashtables
+ */
 RZ_API void rz_type_parser_free(RZ_NONNULL RzTypeParser *parser) {
 	// We do not destroy HT by default since it might be used after
 	c_parser_state_free_keep_ht(parser->state);
 	free(parser);
 }
 
+/**
+ * \brief Frees the instance of the C type parser and destroy the hashtables
+ */
 RZ_API void rz_type_parser_free_purge(RZ_NONNULL RzTypeParser *parser) {
 	c_parser_state_free(parser->state);
 	free(parser);
@@ -144,15 +178,17 @@ static int type_parse_string(CParserState *state, const char *code, char **error
 	if (result) {
 		const char *error_msgs = rz_strbuf_drain_nofree(state->errors);
 		eprintf("Errors:\n");
-		eprintf(error_msgs);
+		eprintf("%s", error_msgs);
 		const char *warning_msgs = rz_strbuf_drain_nofree(state->warnings);
 		eprintf("Warnings:\n");
-		eprintf(warning_msgs);
-		*error_msg = strdup(error_msgs);
+		eprintf("%s", warning_msgs);
+		if (error_msg) {
+			*error_msg = strdup(error_msgs);
+		}
 	}
 	if (state->verbose) {
 		const char *debug_msgs = rz_strbuf_drain_nofree(state->debug);
-		eprintf(debug_msgs);
+		eprintf("%s", debug_msgs);
 	}
 
 	// After everything parsed, we should preserve the base type database
@@ -162,10 +198,25 @@ static int type_parse_string(CParserState *state, const char *code, char **error
 	return result;
 }
 
+/**
+ * \brief Parses the C type string reusing the existing parser state
+ *
+ * \param parser RzTypeParser instance
+ * \param code The C type itself
+ * \param error_msg A pointer where all error messages will be stored
+ */
 RZ_API int rz_type_parse_string_stateless(RzTypeParser *parser, const char *code, char **error_msg) {
 	return type_parse_string(parser->state, code, error_msg);
 }
 
+/**
+ * \brief Parses the C types file reusing the existing parser state
+ *
+ * \param parser RzTypeParser instance
+ * \param path The path to the C file to parse
+ * \param dir The directory where the C file is located
+ * \param error_msg A pointer where all error messages will be stored
+ */
 RZ_API int rz_type_parse_file_stateless(RzTypeParser *parser, const char *path, const char *dir, char **error_msg) {
 	size_t read_bytes = 0;
 	const char *source_code = rz_file_slurp(path, &read_bytes);
@@ -177,6 +228,14 @@ RZ_API int rz_type_parse_file_stateless(RzTypeParser *parser, const char *path, 
 	return rz_type_parse_string_stateless(parser, source_code, error_msg);
 }
 
+/**
+ * \brief Parses the C types file creating the new parser state
+ *
+ * \param typedb RzTypeDB instance
+ * \param path The path to the C file to parse
+ * \param dir The directory where the C file is located
+ * \param error_msg A pointer where all error messages will be stored
+ */
 RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *dir, char **error_msg) {
 	size_t read_bytes = 0;
 	const char *source_code = rz_file_slurp(path, &read_bytes);
@@ -188,6 +247,13 @@ RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *di
 	return rz_type_parse_string(typedb, source_code, error_msg);
 }
 
+/**
+* \brief Parses the C type string creating the new parser state
+*
+* \param typedb RzTypeDB instance
+* \param code The C type itself
+* \param error_msg A pointer where all error messages will be stored
+*/
 RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error_msg) {
 	bool verbose = true;
 	// Create new C parser state
@@ -200,12 +266,23 @@ RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error
 	return type_parse_string(state, code, error_msg);
 }
 
+/**
+* \brief Reset the C parser state
+*
+* \param typedb RzTypeDB instance
+*/
 RZ_API void rz_type_parse_reset(RzTypeDB *typedb) {
 	rz_type_parser_free(typedb->parser);
 	typedb->parser = rz_type_parser_new();
 }
 
-// Parses only single statement (the first one) and ignores everything else
+/**
+* \brief Parses the single C type definition
+*
+* \param parser RzTypeParser parser instance
+* \param code The C type itself
+* \param error_msg A pointer where all error messages will be stored
+*/
 RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const char *code, char **error_msg) {
 	// Create a parser.
 	TSParser *tsparser = ts_parser_new();
@@ -236,6 +313,7 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 
 	// Some debugging
 	if (parser->state->verbose) {
+		parser_debug(parser->state, "code: \"%s\"\n", code);
 		parser_debug(parser->state, "root_node (%d children): %s\n", root_node_child_count, ts_node_type(root_node));
 		// Print the syntax tree as an S-expression.
 		char *string = ts_node_string(root_node);
@@ -268,19 +346,22 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 	if (result || !tpair) {
 		const char *error_msgs = rz_strbuf_drain_nofree(parser->state->errors);
 		eprintf("Errors:\n");
-		eprintf(error_msgs);
+		eprintf("%s", error_msgs);
 		const char *warning_msgs = rz_strbuf_drain_nofree(parser->state->warnings);
 		eprintf("Warnings:\n");
-		eprintf(warning_msgs);
-		*error_msg = strdup(error_msgs);
+		eprintf("%s", warning_msgs);
+		if (error_msg) {
+			*error_msg = strdup(error_msgs);
+		}
 	}
 	if (parser->state->verbose) {
 		const char *debug_msgs = rz_strbuf_drain_nofree(parser->state->debug);
-		eprintf(debug_msgs);
+		eprintf("%s", debug_msgs);
 	}
 
 	// After everything parsed, we should preserve the base type database
-	//c_parser_state_free_keep_ht(parser->state);
+	// Also we don't free the parser state, just reset the buffers for new use
+	c_parser_state_reset_keep_ht(parser->state);
 	ts_tree_delete(tree);
 	ts_parser_delete(tsparser);
 	free(patched_code);
