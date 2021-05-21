@@ -5,7 +5,17 @@
 
 #include "elf.h"
 
-RzBinElfSection *Elf_(rz_bin_elf_get_section)(ELFOBJ *bin, const char *section_name) {
+/**
+ * \brief Return the section with the specified name
+ * \param elf binary
+ * \param section name
+ * \return a ptr to the section with the specified name
+ *
+ * Search a specific section in the g_sections structure
+ */
+RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name) {
+	rz_return_val_if_fail(bin && section_name, NULL);
+
 	if (bin->g_sections) {
 		size_t i;
 		for (i = 0; !bin->g_sections[i].last; i++) {
@@ -14,5 +24,6 @@ RzBinElfSection *Elf_(rz_bin_elf_get_section)(ELFOBJ *bin, const char *section_n
 			}
 		}
 	}
+
 	return NULL;
 }
