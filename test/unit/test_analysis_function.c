@@ -6,13 +6,35 @@
 
 #include "test_analysis_block_invars.inl"
 
+static void setup_types_db(RzTypeDB *typedb) {
+	RzBaseType *b_int_t = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
+	if (!b_int_t) {
+		return;
+	}
+	b_int_t->name = strdup("int");
+	b_int_t->size = 32;
+	rz_type_db_save_base_type(typedb, b_int_t);
+}
+
 static void setup_sdb_for_function(Sdb *res) {
 	sdb_set(res, "ExitProcess", "func", 0);
+	sdb_num_set(res, "func.ExitProcess.args", 0, 0);
+	sdb_set(res, "func.ExitProcess.ret", "void", 0);
 	sdb_set(res, "ReadFile", "func", 0);
+	sdb_num_set(res, "func.ReadFile.args", 0, 0);
+	sdb_set(res, "func.ReadFile.ret", "void", 0);
 	sdb_set(res, "memcpy", "func", 0);
+	sdb_num_set(res, "func.memcpy.args", 0, 0);
+	sdb_set(res, "func.memcpy.ret", "void", 0);
 	sdb_set(res, "strchr", "func", 0);
+	sdb_num_set(res, "func.strchr.args", 0, 0);
+	sdb_set(res, "func.strchr.ret", "void", 0);
 	sdb_set(res, "__stack_chk_fail", "func", 0);
+	sdb_num_set(res, "func.__stack_chk_fail.args", 0, 0);
+	sdb_set(res, "func.__stack_chk_fail.ret", "void", 0);
 	sdb_set(res, "WSAStartup", "func", 0);
+	sdb_num_set(res, "func.WSAStartup.args", 0, 0);
+	sdb_set(res, "func.WSAStartup.ret", "void", 0);
 }
 
 bool ht_up_count(void *user, const ut64 k, const void *v) {
@@ -148,12 +170,13 @@ bool test_rz_analysis_function_labels() {
 
 bool test_dll_names(void) {
 	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	setup_types_db(typedb);
 	Sdb *sdb = sdb_new0();
 	setup_sdb_for_function(sdb);
 	rz_serialize_callables_load(sdb, typedb, NULL);
 	sdb_free(sdb);
-
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 
 	char *s;
 
@@ -193,12 +216,13 @@ bool test_dll_names(void) {
 
 bool test_ignore_prefixes(void) {
 	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	setup_types_db(typedb);
 	Sdb *sdb = sdb_new0();
 	setup_sdb_for_function(sdb);
 	rz_serialize_callables_load(sdb, typedb, NULL);
 	sdb_free(sdb);
-
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 
 	char *s;
 
@@ -216,12 +240,13 @@ bool test_ignore_prefixes(void) {
 
 bool test_remove_rz_prefixes(void) {
 	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	setup_types_db(typedb);
 	Sdb *sdb = sdb_new0();
 	setup_sdb_for_function(sdb);
 	rz_serialize_callables_load(sdb, typedb, NULL);
 	sdb_free(sdb);
-
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 
 	char *s;
 
@@ -245,12 +270,13 @@ bool test_remove_rz_prefixes(void) {
 
 bool test_autonames(void) {
 	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	setup_types_db(typedb);
 	Sdb *sdb = sdb_new0();
 	setup_sdb_for_function(sdb);
 	rz_serialize_callables_load(sdb, typedb, NULL);
 	sdb_free(sdb);
-
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 
 	char *s;
 
@@ -277,12 +303,13 @@ bool test_autonames(void) {
 
 bool test_initial_underscore(void) {
 	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+
+	setup_types_db(typedb);
 	Sdb *sdb = sdb_new0();
 	setup_sdb_for_function(sdb);
 	rz_serialize_callables_load(sdb, typedb, NULL);
 	sdb_free(sdb);
-
-	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 
 	char *s;
 

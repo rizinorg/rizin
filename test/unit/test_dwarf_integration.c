@@ -63,12 +63,17 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
 	rz_io_bind(io, &bin->iob);
 	analysis->binb.demangle = rz_bin_demangle;
+
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	rz_analysis_set_cpu(analysis, "x86");
+	rz_analysis_set_bits(analysis, 32);
+
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/pe/vista-glass.exe", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
-	analysis->cpu = strdup("x86");
-	analysis->bits = 32;
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 32);
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
@@ -169,12 +174,16 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	rz_io_bind(io, &bin->iob);
 	analysis->binb.demangle = rz_bin_demangle;
 
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	rz_analysis_set_cpu(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
-	analysis->cpu = strdup("x86");
-	analysis->bits = 64;
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
@@ -224,12 +233,16 @@ static bool test_dwarf_function_parsing_go(void) {
 	rz_io_bind(io, &bin->iob);
 	analysis->binb.demangle = rz_bin_demangle;
 
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	rz_analysis_set_cpu(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf_go_tree", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
-	analysis->cpu = strdup("x86");
-	analysis->bits = 64;
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
@@ -277,12 +290,16 @@ static bool test_dwarf_function_parsing_rust(void) {
 	rz_io_bind(io, &bin->iob);
 	analysis->binb.demangle = rz_bin_demangle;
 
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	rz_analysis_set_cpu(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf_rust_bubble", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
-	analysis->cpu = strdup("x86");
-	analysis->bits = 64;
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);

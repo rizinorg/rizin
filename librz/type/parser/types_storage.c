@@ -95,7 +95,7 @@ bool c_parser_callable_type_exists(CParserState *state, RZ_NONNULL const char *n
 	return c_parser_callable_type_find(state, name) != NULL;
 }
 
-bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *name, RzType *type) {
+bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *name, RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(state && name && type, -1);
 	rz_return_val_if_fail(type->kind == RZ_TYPE_KIND_CALLABLE, -1);
 	rz_return_val_if_fail(type->callable, -1);
@@ -107,7 +107,8 @@ bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *na
 	}
 
 	ht_pp_insert(state->callables, name, type->callable);
-	return 0;
+	parser_debug(state, "Stored \"%s\" callable type\n", name);
+	return true;
 }
 
 /**
@@ -162,8 +163,9 @@ RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, const ch
  *
  * \param state The parser state
  * \param name Name of the primitive type to fetch
+ * \param is_const If the primitive type is const
  */
-RZ_OWN ParserTypePair *c_parser_get_primitive_type(CParserState *state, RZ_NONNULL const char *name) {
+RZ_OWN ParserTypePair *c_parser_get_primitive_type(CParserState *state, RZ_NONNULL const char *name, bool is_const) {
 	rz_return_val_if_fail(state && name, NULL);
 
 	RzBaseType *base_type = c_parser_base_type_find(state, name);
@@ -176,7 +178,7 @@ RZ_OWN ParserTypePair *c_parser_get_primitive_type(CParserState *state, RZ_NONNU
 		return NULL;
 	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
-	type->identifier.is_const = false;
+	type->identifier.is_const = is_const;
 	type->identifier.name = strdup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 
@@ -315,7 +317,6 @@ RZ_OWN ParserTypePair *c_parser_new_structure_forward_definition(CParserState *s
 
 	return tpair;
 }
-
 
 /**
  * \brief Creates new union naked type (without base type) based on the name
@@ -594,6 +595,8 @@ RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL cons
 	type->identifier.name = strdup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 
+	parser_debug(state, "typedef \"%s\" -> \"%s\"\n", name, base);
+
 	// We check if there is already a typedef in the hashtable with the same name
 	bool found = false;
 	RzBaseType *alias_type = ht_pp_find(state->types, name, &found);
@@ -601,7 +604,7 @@ RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL cons
 		// At first we try to search if the base type is available in our context already
 		RzBaseType *base_type = ht_pp_find(state->types, base, &found);
 		if (!found || !base_type) {
-			parser_debug(state, "Missing base type for aliasing: \"%s\"\n", base);
+			parser_warning(state, "Missing base type for aliasing: \"%s\"\n", base);
 			// If not found - we still should create an alias
 			// This scenario is oftenly used for "forward definitions" both in C and our databases
 			// Thus we store the name in the "forward" hashtable so it could be set later
@@ -692,16 +695,45 @@ RZ_OWN RzType *c_parser_new_callable(CParserState *state, RZ_NONNULL const char 
 	RzCallable *callable = ht_pp_find(state->callables, name, &found);
 	if (!found || !callable) {
 		// If not found - create a new one
-		RzCallable *callable = RZ_NEW0(RzCallable);
+		callable = RZ_NEW0(RzCallable);
 		if (!callable) {
 			return NULL;
 		}
 		callable->name = strdup(name);
-		callable->args = rz_pvector_new((RzPVectorFree)rz_type_func_arg_free);
+		callable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	}
 	type->kind = RZ_TYPE_KIND_CALLABLE;
 	type->callable = callable;
 	return type;
+}
+
+/**
+ * \brief Adds a new argument to the callable
+ *
+ * \param state The parser state
+ * \param callable Callable type
+ * \param name Name of the argument
+ * \param type Type of the argument
+ */
+bool c_parser_new_callable_argument(CParserState *state, RZ_NONNULL RzCallable *callable, RZ_NONNULL const char *name, RZ_OWN RZ_NONNULL RzType *type) {
+	rz_return_val_if_fail(state && callable && name && type, false);
+	// At first we check if there is an argument with the same name already - error if yes
+	void **it;
+	rz_pvector_foreach (callable->args, it) {
+		RzCallableArg *arg = *it;
+		if (!strcmp(arg->name, name)) {
+			return false;
+		}
+	}
+	// And only if there is no argument with the same name - proceed to insert it
+	RzCallableArg *arg = RZ_NEW0(RzCallableArg);
+	if (!arg) {
+		return false;
+	}
+	arg->name = strdup(name);
+	arg->type = type;
+	rz_pvector_push(callable->args, arg);
+	return true;
 }
 
 // Helpers to wrap the ParserTypePair into the pointer or the array complex types
@@ -769,4 +801,3 @@ RZ_OWN char *c_parser_new_anonymous_callable_name(CParserState *state) {
 	state->anon.enums++;
 	return name;
 }
-

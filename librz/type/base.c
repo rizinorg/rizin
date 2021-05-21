@@ -16,18 +16,23 @@ RZ_API void rz_type_base_enum_case_free(void *e, void *user) {
 RZ_API void rz_type_base_struct_member_free(void *e, void *user) {
 	(void)user;
 	RzTypeStructMember *member = e;
+	rz_type_free(member->type);
 	free((char *)member->name);
-	free((char *)member->type);
 }
 
 RZ_API void rz_type_base_union_member_free(void *e, void *user) {
 	(void)user;
 	RzTypeUnionMember *member = e;
+	rz_type_free(member->type);
 	free((char *)member->name);
-	free((char *)member->type);
 }
 
-// returns NULL if name is not found or any failure happened
+/**
+ * \brief Searches for the RzBaseType in the types database given the name
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the RzBaseType
+ */
 RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 
@@ -83,7 +88,7 @@ RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types_of_kind(const R
 static bool base_type_collect_cb(void *user, const void *k, const void *v) {
 	rz_return_val_if_fail(user && k && v, false);
 	RzList *l = user;
-	rz_list_append(l, v);
+	rz_list_append(l, (void *)v);
 	return true;
 }
 
@@ -99,10 +104,16 @@ RZ_API RZ_OWN RzList /* RzBaseType */ *rz_type_db_get_base_types(const RzTypeDB 
 	return types;
 }
 
+/**
+ * \brief Frees the RzBaseType instance and all of its members
+ *
+ * \param type RzBaseType pointer
+ */
 RZ_API void rz_type_base_type_free(RzBaseType *type) {
 	rz_return_if_fail(type);
 	RZ_FREE(type->name);
-	RZ_FREE(type->type);
+	rz_type_free(type->type);
+	type->type = NULL;
 
 	switch (type->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT:
@@ -123,7 +134,12 @@ RZ_API void rz_type_base_type_free(RzBaseType *type) {
 	RZ_FREE(type);
 }
 
-RZ_API RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
+/**
+ * \brief Allocates a new instance of RzBaseType given the kind
+ *
+ * \param kind Kind of RzBaseType to create
+ */
+RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
 	RzBaseType *type = RZ_NEW0(RzBaseType);
 	if (!type) {
 		return NULL;
@@ -154,7 +170,7 @@ RZ_API RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
  */
 RZ_API void rz_type_db_save_base_type(const RzTypeDB *typedb, const RzBaseType *type) {
 	rz_return_if_fail(typedb && type && type->name);
-	ht_pp_insert(typedb->types, type->name, type);
+	ht_pp_insert(typedb->types, type->name, (void *)type);
 }
 
 /**
@@ -172,8 +188,9 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		rz_strbuf_appendf(buf, "struct %s { ", type->name);
 		RzTypeStructMember *memb;
 		rz_vector_foreach(&type->struct_data.members, memb) {
-			const char *membtype = rz_type_as_string(typedb, memb->type);
+			char *membtype = rz_type_as_string(typedb, memb->type);
 			rz_strbuf_appendf(buf, "%s %s; ", membtype, memb->name);
+			free(membtype);
 		}
 		rz_strbuf_append(buf, " };");
 		break;
@@ -191,15 +208,17 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		rz_strbuf_appendf(buf, "union %s { ", type->name);
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&type->union_data.members, memb) {
-			const char *membtype = rz_type_as_string(typedb, memb->type);
+			char *membtype = rz_type_as_string(typedb, memb->type);
 			rz_strbuf_appendf(buf, "%s %s; ", membtype, memb->name);
+			free(membtype);
 		}
 		rz_strbuf_append(buf, " };");
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
-		const char *ttype = rz_type_as_string(typedb, type->type);
+		char *ttype = rz_type_as_string(typedb, type->type);
 		rz_strbuf_appendf(buf, "typedef %s %s;", ttype, type->name);
+		free(ttype);
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_ATOMIC:

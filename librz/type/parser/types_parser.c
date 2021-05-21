@@ -74,12 +74,18 @@ static bool is_declarator(const char *declarator) {
 		!strcmp(declarator, "field_identifier");
 }
 
+static bool is_function_declarator(const char *declarator) {
+	return !strcmp(declarator, "parenthesized_declarator") ||
+		!strcmp(declarator, "identifier");
+}
+
 // Parses primitive type - like "int", "char", "size_t"
 int parse_primitive_type(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair, bool is_const) {
 	rz_return_val_if_fail(state && text && tpair, -1);
 	rz_return_val_if_fail(!ts_node_is_null(node), -1);
 	rz_return_val_if_fail(ts_node_is_named(node), -1);
 
+	parser_debug(state, "parse_primitive_type(): %s\n", is_const ? "const" : "not const");
 	if (strcmp(ts_node_type(node), "primitive_type")) {
 		node_malformed_error(state, node, text, "not primitive type");
 		return -1;
@@ -91,7 +97,7 @@ int parse_primitive_type(CParserState *state, TSNode node, const char *text, Par
 		return -1;
 	}
 	// At first we search if the type is already presented in the state
-	if ((*tpair = c_parser_get_primitive_type(state, real_type))) {
+	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched primitive type: \"%s\"\n", real_type);
 		return 0;
 	}
@@ -123,7 +129,7 @@ int parse_sized_primitive_type(CParserState *state, TSNode node, const char *tex
 		return -1;
 	}
 	// At first we search if the type is already presented in the state
-	if ((*tpair = c_parser_get_primitive_type(state, real_type))) {
+	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched primitive type: \"%s\"\n", real_type);
 		return 0;
 	}
@@ -138,7 +144,6 @@ int parse_sized_primitive_type(CParserState *state, TSNode node, const char *tex
 	return 0;
 }
 
-
 // Parses primitive type or type alias mention - like "socklen_t", etc
 int parse_sole_type_name(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair, bool is_const) {
 	rz_return_val_if_fail(state && text && tpair, -1);
@@ -151,7 +156,7 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 	}
 	const char *real_type = ts_node_sub_string(node, text);
 	// At first we search if the type is already presented in the state and is a primitive one
-	if ((*tpair = c_parser_get_primitive_type(state, real_type))) {
+	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched type: \"%s\"\n", real_type);
 		return 0;
 	}
@@ -166,7 +171,7 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 
 // Parses parameter declarations - they are part of the parameter list, e.g.
 // in the function definition/type as arguments
-int parse_parameter_declaration_node(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair) {
+int parse_parameter_declaration_node(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair, char **identifier) {
 	rz_return_val_if_fail(state && text && tpair, -1);
 	rz_return_val_if_fail(!ts_node_is_null(node), -1);
 	rz_return_val_if_fail(ts_node_is_named(node), -1);
@@ -229,8 +234,7 @@ int parse_parameter_declaration_node(CParserState *state, TSNode node, const cha
 	if (is_abstract_declarator(declarator_type)) {
 		return parse_type_abstract_declarator_node(state, parameter_declarator, text, tpair);
 	} else if (is_declarator(declarator_type)) {
-		char *identifier = NULL;
-		return parse_type_declarator_node(state, parameter_declarator, text, tpair, &identifier);
+		return parse_type_declarator_node(state, parameter_declarator, text, tpair, identifier);
 	}
 	node_malformed_error(state, parameter_declarator, text, "parameter declarator");
 	return -1;
@@ -249,7 +253,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 	rz_return_val_if_fail(!ts_node_is_null(node), -1);
 	rz_return_val_if_fail(ts_node_is_named(node), -1);
 
-	parser_debug(state, "parse_struct_node()\n");
+	parser_error(state, "parse_struct_node()\n");
 
 	int struct_node_child_count = ts_node_named_child_count(node);
 	if (struct_node_child_count < 1 || struct_node_child_count > 2) {
@@ -400,14 +404,14 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			parser_debug(state, "field type: %s field_identifier: %s bits: %d\n", real_type, real_identifier, bits);
 			ParserTypePair *membtpair = NULL;
 			if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
-				parser_error(state, "ERROR: parsing struct member identifier\n");
+				parser_error(state, "ERROR: parsing bitfield struct member identifier\n");
 				node_malformed_error(state, child, text, "struct field");
 				return -1;
 			}
 			// Then we augment resulting type field with the data from parsed declarator
 			char *membname = NULL;
 			if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
-				parser_error(state, "ERROR: parsing struct member declarator\n");
+				parser_error(state, "ERROR: parsing bitfield struct member declarator\n");
 				node_malformed_error(state, child, text, "struct field");
 				return -1;
 			}
@@ -421,7 +425,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			};
 			void *element = rz_vector_push(members, &memb); // returns null if no space available
 			if (!element) {
-				parser_error(state, "Error appending struct member to the base type\n");
+				parser_error(state, "Error appending bitfield struct member to the base type\n");
 				return -1;
 			}
 		} else {
@@ -468,6 +472,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				parser_error(state, "Error appending struct member to the base type\n");
 				return -1;
 			}
+			parser_debug(state, "Appended member \"%s\" into struct \"%s\"\n", membname, name);
 		}
 	}
 	// If parsing successfull completed - we store the state
@@ -723,62 +728,60 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 }
 
 // Parsing enum definitions - concrete and abstract ones
-int parse_enum_node(CParserState *state, TSNode enumnode, const char *text, ParserTypePair **tpair, bool is_const) {
+int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair, bool is_const) {
 	rz_return_val_if_fail(state && text && tpair, -1);
-	rz_return_val_if_fail(!ts_node_is_null(enumnode), -1);
-	rz_return_val_if_fail(ts_node_is_named(enumnode), -1);
+	rz_return_val_if_fail(!ts_node_is_null(node), -1);
+	rz_return_val_if_fail(ts_node_is_named(node), -1);
 
 	parser_debug(state, "parse_enum_node()\n");
 
-	int enum_node_child_count = ts_node_named_child_count(enumnode);
+	int enum_node_child_count = ts_node_named_child_count(node);
 	if (enum_node_child_count < 1 || enum_node_child_count > 2) {
-		node_malformed_error(state, enumnode, text, "enum");
+		node_malformed_error(state, node, text, "enum");
 		return -1;
 	}
-	if (enum_node_child_count < 2) {
-		// Anonymous or forward declaration enum
-		TSNode child = ts_node_child(enumnode, 1);
-		if (!ts_node_is_null(child) && ts_node_is_named(child)) {
-			const char *node_type = ts_node_type(child);
-			if (!node_type) {
-				node_malformed_error(state, enumnode, text, "enum");
-				return -1;
-			}
-			// "enum bla;"
-			if (!strcmp(node_type, "type_identifier")) {
-				// We really skip such declarations since they don't
-				// make sense for our goal
-				// Anonymous enum, "enum { A = 1, B = 2 };"
-			} else if (!strcmp(node_type, "enumerator_list")) {
-				// FIXME: Handle anonymous enums
-				parser_error(state, "Anonymous enums aren't supported yet!\n");
-				return -1;
-			} else {
-				node_malformed_error(state, enumnode, text, "enum");
-				return -1;
-			}
-		} else {
-			node_malformed_error(state, enumnode, text, "enum");
+	// Name is optional, in abstract definitions or as the member of nested types
+	const char *name = NULL;
+	TSNode enum_name = ts_node_child_by_field_name(node, "name", 4);
+	if (ts_node_is_null(enum_name)) {
+		parser_debug(state, "Anonymous enum\n");
+		name = c_parser_new_anonymous_enum_name(state);
+	} else {
+		name = ts_node_sub_string(enum_name, text);
+		if (!name) {
+			parser_error(state, "ERROR: Enum name should not be NULL!\n");
+			node_malformed_error(state, node, text, "enum");
 			return -1;
 		}
+		parser_debug(state, "enum name: %s\n", name);
 	}
-	TSNode enum_name = ts_node_named_child(enumnode, 0);
-	TSNode enum_body = ts_node_named_child(enumnode, 1);
-	if (ts_node_is_null(enum_name) || ts_node_is_null(enum_body)) {
-		parser_error(state, "ERROR: Enum name and body nodes should not be NULL!\n");
-		node_malformed_error(state, enumnode, text, "enum");
-		return -1;
+
+	// Parsing the enum body
+	// If the enum doesn't have body but has a name
+	// it means that it uses the type predefined before
+	// e.g. "const enum FOO a;"
+	TSNode enum_body = ts_node_child_by_field_name(node, "body", 4);
+	if (ts_node_is_null(enum_body) && !ts_node_is_null(enum_name)) {
+		parser_debug(state, "Fetching predefined enum: \"%s\"\n", name);
+		if (!(*tpair = c_parser_get_enum_type(state, name))) {
+			parser_error(state, "Cannot find \"%s\" enum in the context\n", name);
+			// We still could create the "forward looking enum declaration"
+			// The parser then can augment the definition
+			if (!(*tpair = c_parser_new_enum_forward_definition(state, name))) {
+				parser_error(state, "Cannot create \"%s\" forward enum definition in the context\n", name);
+				return -1;
+			}
+			return 0;
+		} else {
+			return 0;
+		}
 	}
+
+	parser_debug(state, "enum name: %s\n", name);
+
 	int body_child_count = ts_node_named_child_count(enum_body);
-	const char *realname = ts_node_sub_string(enum_name, text);
-	if (!realname || !body_child_count) {
-		parser_error(state, "ERROR: Enum name should not be NULL!\n");
-		node_malformed_error(state, enumnode, text, "enum");
-		return -1;
-	}
-	parser_debug(state, "enum name: %s\n", realname);
 	// Now we form both RzType and RzBaseType to store in the Types database
-	ParserTypePair *enum_pair = c_parser_new_enum_type(state, realname, body_child_count);
+	ParserTypePair *enum_pair = c_parser_new_enum_type(state, name, body_child_count);
 	if (!enum_pair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of enum\n");
 		return -1;
@@ -817,21 +820,21 @@ int parse_enum_node(CParserState *state, TSNode enumnode, const char *text, Pars
 		}
 		if (member_child_count == 1) {
 			// It's an empty field, like just "A,"
-			TSNode member_identifier = ts_node_named_child(child, 0);
+			TSNode member_identifier = ts_node_child_by_field_name(child, "name", 4);
 			if (ts_node_is_null(member_identifier)) {
-				parser_error(state, "ERROR: Enum member identifier should not be NULL!\n");
-				node_malformed_error(state, child, text, "struct field");
+				parser_error(state, "ERROR: Enum case identifier should not be NULL!\n");
+				node_malformed_error(state, child, text, "enum case");
 				return -1;
 			}
 			const char *real_identifier = ts_node_sub_string(member_identifier, text);
 			parser_debug(state, "enum member: %s\n", real_identifier);
 		} else {
 			// It's a proper field, like "A = 1,"
-			TSNode member_identifier = ts_node_named_child(child, 0);
-			TSNode member_value = ts_node_named_child(child, 1);
+			TSNode member_identifier = ts_node_child_by_field_name(child, "name", 4);
+			TSNode member_value = ts_node_child_by_field_name(child, "value", 5);
 			if (ts_node_is_null(member_identifier) || ts_node_is_null(member_value)) {
-				parser_error(state, "ERROR: Enum member identifier and value should not be NULL!\n");
-				node_malformed_error(state, child, text, "struct field");
+				parser_error(state, "ERROR: Enum case identifier and value should not be NULL!\n");
+				node_malformed_error(state, child, text, "enum case");
 				return -1;
 			}
 			const char *real_identifier = ts_node_sub_string(member_identifier, text);
@@ -849,6 +852,14 @@ int parse_enum_node(CParserState *state, TSNode enumnode, const char *text, Pars
 				parser_error(state, "Error appending enum case to the base type\n");
 				return -1;
 			}
+		}
+	}
+	// If parsing successfull completed - we store the state
+	if (enum_pair) {
+		c_parser_base_type_store(state, name, enum_pair);
+		// If it was a forward definition previously - remove it
+		if (c_parser_base_type_is_forward_definition(state, name)) {
+			c_parser_forward_definition_remove(state, name);
 		}
 	}
 	*tpair = enum_pair;
@@ -876,12 +887,6 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		node_malformed_error(state, node, text, "typedef");
 		return -1;
 	}
-	const char *aliasname = ts_node_sub_string(typedef_declarator, text);
-	if (!aliasname) {
-		parser_error(state, "ERROR: Typedef alias name should not be NULL!\n");
-		node_malformed_error(state, node, text, "typedef");
-		return -1;
-	}
 	// Every typedef type can be:
 	// - atomic: "int", "uint64_t", etc
 	// - some type name - any identificator
@@ -895,31 +900,33 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		}
 		free(nodeast);
 	}
-	const char *real_type = NULL;
-	int type_child_count = ts_node_named_child_count(typedef_type);
-	if (!type_child_count) {
-		const char *node_type = ts_node_type(typedef_type);
-		if (!strcmp(node_type, "primitive_type")) {
-			real_type = ts_node_sub_string(typedef_type, text);
-			parser_debug(state, "typedef type: %s alias: %s\n", real_type, aliasname);
-		} else if (!strcmp(node_type, "type_identifier")) {
-			real_type = ts_node_sub_string(typedef_type, text);
-			parser_debug(state, "typedef type: %s alias: %s\n", real_type, aliasname);
-		} else {
-			parser_error(state, "ERROR: Typedef type AST should contain (primitive_type) or (identifier) node!\n");
-			node_malformed_error(state, typedef_type, text, "typedef type");
-			return -1;
-		}
-	} else {
-		real_type = ts_node_sub_string(typedef_type, text);
-		parser_debug(state, "complex typedef type: %s alias: %s\n", real_type, aliasname);
+	ParserTypePair *type_pair = NULL;
+	if (parse_type_node_single(state, typedef_type, text, &type_pair, is_const)) {
+		parser_error(state, "ERROR: parsing typedef type identifier\n");
+		node_malformed_error(state, typedef_type, text, "typedef type");
+		return -1;
+	}
+	// Then we augment resulting type field with the data from parsed declarator
+	char *typedef_name = NULL;
+	if (parse_type_declarator_node(state, typedef_declarator, text, &type_pair, &typedef_name)) {
+		parser_error(state, "ERROR: parsing typedef declarator\n");
+		node_malformed_error(state, typedef_declarator, text, "typedef declarator");
+		return -1;
 	}
 
 	// Now we form both RzType and RzBaseType to store in the Types database
-	ParserTypePair *typedef_pair = c_parser_new_typedef(state, aliasname, real_type);
+	char *base_type_name = type_pair->btype->name;
+	parser_debug(state, "typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
+	ParserTypePair *typedef_pair = c_parser_new_typedef(state, typedef_name, base_type_name);
 	if (!typedef_pair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of typedef\n");
 		return -1;
+	}
+	// If parsing successfull completed - we store the state
+	if (typedef_pair) {
+		typedef_pair->btype->type = type_pair->type;
+		parser_debug(state, "storing typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
+		c_parser_base_type_store(state, typedef_name, typedef_pair);
 	}
 
 	*tpair = typedef_pair;
@@ -993,10 +1000,13 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 		return 0;
 	}
 
+	if ((*tpair)->type->kind != RZ_TYPE_KIND_CALLABLE) {
+		parser_error(state, "ERROR: Parameter description only acceptable as part of function definition!\n");
+		return -1;
+	}
 	parser_debug(state, "parse_parameter_list()\n");
 
 	const char *node_type = ts_node_type(paramlist);
-	int result = -1;
 	if (strcmp(node_type, "parameter_list")) {
 		node_malformed_error(state, paramlist, text, "parameter_list");
 		return -1;
@@ -1017,35 +1027,28 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 			node_malformed_error(state, child, text, "parameter_declaration");
 			return -1;
 		}
-		// Every field node should have at least 2 children!
-		int field_child_count = ts_node_named_child_count(child);
-		if (field_child_count != 2) {
-			parser_error(state, "ERROR: Parameter declaration field AST cannot contain other than 2 items");
-			node_malformed_error(state, child, text, "parameter declaration field");
+		char *identifier = NULL;
+		// Create new TypePair here
+		ParserTypePair *argtpair = NULL;
+		if (parse_parameter_declaration_node(state, child, text, &argtpair, &identifier)) {
+			parser_error(state, "ERROR: Parsing parameter declarator!\n");
 			return -1;
 		}
-		TSNode field_type = ts_node_named_child(child, 0);
-		TSNode field_declarator = ts_node_named_child(child, 1);
-		if (ts_node_is_null(field_type) || ts_node_is_null(field_declarator)) {
-			parser_error(state, "ERROR: Parameter fields should not be NULL!\n");
-			node_malformed_error(state, child, text, "parameter declaration");
+		if (!argtpair || !argtpair->type) {
 			return -1;
 		}
-		// Every declarator can be either concrete or abstract
-		const char *declarator_type = ts_node_type(field_declarator);
-		if (!declarator_type) {
-			node_malformed_error(state, field_declarator, text, "declarator");
-			return -1;
+		// Store the parameters if available
+		// If the name is not available just name it as "argN" where N is argument index
+		if (!identifier) {
+			identifier = rz_str_newf("arg%d", i);
 		}
-		if (is_abstract_declarator(declarator_type)) {
-			return parse_type_abstract_declarator_node(state, field_declarator, text, tpair);
-		} else if (is_declarator(declarator_type)) {
-			char *identifier = NULL;
-			return parse_type_declarator_node(state, field_declarator, text, tpair, &identifier);
+		parser_debug(state, "Adding \"%s\" parameter\n", identifier);
+		if (!c_parser_new_callable_argument(state, (*tpair)->type->callable, identifier, argtpair->type)) {
+			parser_error(state, "ERROR: Cannot add the parameter to the function!\n");
+			return -1;
 		}
 	}
-
-	return result;
+	return 0;
 }
 
 // Parses abstract declarator node - i.e. the type without the identifier
@@ -1059,6 +1062,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 	// Parse the type qualifier first (if present)
 	// FIXME: There could be multiple different type qualifiers in one declaration
 	bool is_const = false;
+	bool has_qualifiers = false;
 
 	int node_child_count = ts_node_named_child_count(node);
 	if (node_child_count > 0) {
@@ -1077,6 +1081,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 			if (!strcmp(qualifier, "const")) {
 				is_const = true;
 			}
+			has_qualifiers = true;
 		}
 	}
 
@@ -1094,33 +1099,38 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 		type->kind = RZ_TYPE_KIND_POINTER;
 		type->pointer.is_const = is_const;
 		type->pointer.type = (*tpair)->type;
+		(*tpair)->type = type;
 
 		// It can contain additional children as:
 		// - "abstract_array_declarator"
 		// - "abstract_pointer_declarator"
 		// - "abstract_function_declarator"
+		// - Or multiple "type qualifiers"
 		int pointer_node_child_count = ts_node_named_child_count(node);
 		if (pointer_node_child_count > 0) {
 			TSNode pointer_declarator = ts_node_child_by_field_name(node, "declarator", 10);
-			if (ts_node_is_null(pointer_declarator)) {
+			if (ts_node_is_null(pointer_declarator) && !has_qualifiers) {
 				parser_error(state, "ERROR: Abstract pointer declarator AST should contain at least one node!\n");
 				node_malformed_error(state, node, text, "pointer declarator");
 				free(type);
 				return -1;
 			}
-			const char *declarator_type = ts_node_type(pointer_declarator);
-			if (!declarator_type) {
-				node_malformed_error(state, pointer_declarator, text, "pointer declarator");
-				free(type);
-				return -1;
-			}
-			if (is_abstract_declarator(declarator_type)) {
-				result = parse_type_abstract_declarator_node(state, pointer_declarator, text, tpair);
+			if (!ts_node_is_null(pointer_declarator)) {
+				const char *declarator_type = ts_node_type(pointer_declarator);
+				if (!declarator_type) {
+					node_malformed_error(state, pointer_declarator, text, "pointer declarator");
+					free(type);
+					return -1;
+				}
+				if (is_abstract_declarator(declarator_type)) {
+					result = parse_type_abstract_declarator_node(state, pointer_declarator, text, tpair);
+				} else {
+					result = 0;
+				}
 			} else {
 				result = 0;
 			}
 		}
-		(*tpair)->type = type;
 
 	} else if (!strcmp(node_type, "abstract_array_declarator")) {
 		// It can have two states - with and without number literal
@@ -1139,13 +1149,17 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 		type->kind = RZ_TYPE_KIND_ARRAY;
 		// Optional number_literal node
 		TSNode array_size = ts_node_child_by_field_name(node, "size", 4);
-		const char *real_array_size = ts_node_sub_string(array_size, text);
-		if (!real_array_size) {
-			node_malformed_error(state, array_size, text, "abstract array size");
-			return -1;
+		if (ts_node_is_null(array_size)) {
+			type->array.count = 0;
+		} else {
+			const char *real_array_size = ts_node_sub_string(array_size, text);
+			if (!real_array_size) {
+				node_malformed_error(state, array_size, text, "abstract array size");
+				return -1;
+			}
+			int array_sz = rz_num_get(NULL, real_array_size);
+			type->array.count = array_sz;
 		}
-		int array_sz = rz_num_get(NULL, real_array_size);
-		type->array.count = array_sz;
 		type->array.type = (*tpair)->type;
 		(*tpair)->type = type;
 
@@ -1176,7 +1190,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 			node_malformed_error(state, node, text, "abstract_function_declarator");
 			return -1;
 		}
-		TSNode parenthesized_declarator = ts_node_named_child(node, 0);
+		TSNode parenthesized_declarator = ts_node_child_by_field_name(node, "declarator", 10);
 		if (ts_node_is_null(parenthesized_declarator) || !ts_node_is_named(parenthesized_declarator)) {
 			node_malformed_error(state, parenthesized_declarator, text, "parenthesized_declarator");
 			return -1;
@@ -1186,7 +1200,8 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 			node_malformed_error(state, parenthesized_declarator, text, "parenthesized_declarator");
 			return -1;
 		}
-		TSNode parameter_list = ts_node_named_child(node, 1);
+		// Parsing parameters list
+		TSNode parameter_list = ts_node_child_by_field_name(node, "parameters", 10);
 		if (ts_node_is_null(parameter_list) || !ts_node_is_named(parameter_list)) {
 			node_malformed_error(state, parameter_list, text, "parameter_list");
 			return -1;
@@ -1198,13 +1213,30 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 		}
 		// Generate a sequential function type name if it's not specified
 		const char *name = c_parser_new_anonymous_callable_name(state);
+		RzType *parent_type = (*tpair)->type;
 		(*tpair)->type = c_parser_new_callable(state, name);
+		if (!(*tpair)->type) {
+			parser_error(state, "ERROR: creating new callable type: \"%s\"\n", name);
+			return -1;
+		}
+
 		result = parse_parameter_list(state, parameter_list, text, tpair);
+		if (result) {
+			parser_error(state, "ERROR: parsing parameters for callable type: \"%s\"\n", name);
+			return -1;
+		}
+		// The previously fetched type in this case is the callable return type
+		(*tpair)->type->callable->ret = parent_type;
 		if (!c_parser_callable_type_store(state, name, (*tpair)->type)) {
+			parser_error(state, "ERROR: storing the new callable type: \"%s\"\n", name);
 			return -1;
 		}
 	}
 	return result;
+}
+
+static bool is_identifier(const char *type) {
+	return (!strcmp(type, "identifier") || !strcmp(type, "field_identifier") || !strcmp(type, "type_identifier"));
 }
 
 // Parses the concrete type declarator - i.e. type with the identifier
@@ -1240,10 +1272,10 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 	const char *node_type = ts_node_type(node);
 	int result = -1;
 
-	if (!strcmp(node_type, "identifier") || !strcmp(node_type, "field_identifier")) {
-		// Simple identifier, usually the last leaf of the AST tree
+	if (is_identifier(node_type)) {
+		// Identifier, usually the last leaf of the AST tree
 		const char *real_ident = ts_node_sub_string(node, text);
-		parser_debug(state, "simple identifier: %s\n", real_ident);
+		parser_debug(state, "identifier: %s\n", real_ident);
 		*identifier = strdup(real_ident);
 		result = 0;
 	} else if (!strcmp(node_type, "pointer_declarator")) {
@@ -1278,7 +1310,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		type->pointer.type = (*tpair)->type;
 		(*tpair)->type = type;
 
-		if (is_declarator(declarator_type)) {
+		if (is_declarator(declarator_type) || is_identifier(declarator_type)) {
 			result = parse_type_declarator_node(state, pointer_declarator, text, tpair, identifier);
 		} else {
 			result = 0;
@@ -1309,7 +1341,9 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			return -1;
 		}
 		type->kind = RZ_TYPE_KIND_ARRAY;
-		if (!ts_node_is_null(array_size)) {
+		if (ts_node_is_null(array_size)) {
+			type->array.count = 0;
+		} else {
 			// number_literal node
 			const char *real_array_size = ts_node_sub_string(array_size, text);
 			if (!real_array_size) {
@@ -1323,7 +1357,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		(*tpair)->type = type;
 
 		parser_debug(state, "array declarator type: %s\n", declarator_type);
-		if (is_declarator(declarator_type)) {
+		if (is_declarator(declarator_type) || is_identifier(declarator_type)) {
 			result = parse_type_declarator_node(state, array_declarator, text, tpair, identifier);
 		} else {
 			return 0;
@@ -1332,28 +1366,57 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		const char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "function declarator: %s\n", real_ident);
 		// It can only contain two nodes:
-		// - abstract_parenthesized_declarator (usually empty)
+		// - declarator
 		// - parameter_list
 		int function_node_child_count = ts_node_named_child_count(node);
-		if (function_node_child_count != 1) {
+		if (function_node_child_count > 2) {
 			node_malformed_error(state, node, text, "function_declarator");
 			return -1;
 		}
-		TSNode parenthesized_declarator = ts_node_named_child(node, 0);
-		if (ts_node_is_null(parenthesized_declarator) || !ts_node_is_named(parenthesized_declarator)) {
-			node_malformed_error(state, parenthesized_declarator, text, "parenthesized_declarator");
+		TSNode declarator = ts_node_child_by_field_name(node, "declarator", 10);
+		if (ts_node_is_null(declarator) || !ts_node_is_named(declarator)) {
+			node_malformed_error(state, declarator, text, "declarator");
 			return -1;
 		}
-		const char *declarator_type = ts_node_type(parenthesized_declarator);
-		if (strcmp(declarator_type, "parenthesized_declarator")) {
-			node_malformed_error(state, parenthesized_declarator, text, "parenthesized_declarator");
+		const char *declarator_type = ts_node_type(declarator);
+		// Declarator could be either parenthesized_declarator or identifier
+		if (!is_function_declarator(declarator_type)) {
+			node_malformed_error(state, declarator, text, "function declarator or identifier");
 			return -1;
 		}
-		// Parenthesized declarator can contain either "identifier" directly
-		// Or the pointer_declarator instead
-		// FIXME: Add name extraction
-		const char *name = "bla";
-		TSNode parameter_list = ts_node_named_child(node, 1);
+		// Declarator can be either "identifier" directly or have children
+		if (is_identifier(declarator_type)) {
+			parser_debug(state, "function declarator: simple identifier\n");
+			if (parse_type_declarator_node(state, declarator, text, tpair, identifier)) {
+				parser_error(state, "ERROR: parsing function declarator\n");
+				node_malformed_error(state, declarator, text, "function identifier");
+				return -1;
+			}
+		} else {
+			TSNode function_declarator = ts_node_named_child(declarator, 0);
+			const char *function_declarator_type = ts_node_type(function_declarator);
+			if (!function_declarator_type) {
+				node_malformed_error(state, function_declarator, text, "function declarator");
+				return -1;
+			}
+
+			// Declarator can contain either "identifier" directly
+			// Or the pointer_declarator instead
+			if (is_declarator(function_declarator_type) || is_identifier(function_declarator_type)) {
+				if (parse_type_declarator_node(state, function_declarator, text, tpair, identifier)) {
+					parser_error(state, "ERROR: parsing function declarator\n");
+					node_malformed_error(state, function_declarator, text, "function declarator");
+					return -1;
+				}
+			} else {
+				parser_error(state, "ERROR: missing function declarator\n");
+				node_malformed_error(state, function_declarator, text, "function declarator");
+				return -1;
+			}
+		}
+
+		// Parsing parameters list
+		TSNode parameter_list = ts_node_child_by_field_name(node, "parameters", 10);
 		if (ts_node_is_null(parameter_list) || !ts_node_is_named(parameter_list)) {
 			node_malformed_error(state, parameter_list, text, "parameter_list");
 			return -1;
@@ -1363,9 +1426,21 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			node_malformed_error(state, parameter_list, text, "parameter_list");
 			return -1;
 		}
-		(*tpair)->type = c_parser_new_callable(state, name);
+		RzType *parent_type = (*tpair)->type;
+		(*tpair)->type = c_parser_new_callable(state, *identifier);
+		if (!(*tpair)->type) {
+			parser_error(state, "ERROR: creating new callable type: \"%s\"\n", *identifier);
+			return -1;
+		}
 		result = parse_parameter_list(state, parameter_list, text, tpair);
-		if (!c_parser_callable_type_store(state, name, (*tpair)->type)) {
+		if (result) {
+			parser_error(state, "ERROR: parsing parameters for callable type: \"%s\"\n", *identifier);
+			return -1;
+		}
+		// The previously fetched type in this case is the callable return type
+		(*tpair)->type->callable->ret = parent_type;
+		if (!c_parser_callable_type_store(state, *identifier, (*tpair)->type)) {
+			parser_error(state, "ERROR: storing the new callable type: \"%s\"\n", *identifier);
 			return -1;
 		}
 	}
@@ -1410,8 +1485,9 @@ int parse_type_descriptor_single(CParserState *state, TSNode node, const char *t
 	const char *leaf_type = ts_node_type(first_leaf);
 	if (!strcmp(leaf_type, "type_qualifier")) {
 		const char *qualifier = ts_node_sub_string(first_leaf, text);
-		parser_debug(state, "has qualifier %s\n", qualifier);
+		parser_debug(state, "has qualifier \"%s\"\n", qualifier);
 		if (!strcmp(qualifier, "const")) {
+			parser_debug(state, "set const\n");
 			is_const = true;
 		}
 	}
@@ -1441,12 +1517,82 @@ int parse_type_descriptor_single(CParserState *state, TSNode node, const char *t
 	return result;
 }
 
+// Parses the declaration node
+int parse_declaration_node(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair) {
+	rz_return_val_if_fail(state && text && tpair, -1);
+	rz_return_val_if_fail(!ts_node_is_null(node), -1);
+	// We skip simple nodes (e.g. conditions and braces)
+	if (!ts_node_is_named(node)) {
+		return 0;
+	}
+	const char *node_type = ts_node_type(node);
+	int result = -1;
+	if (strcmp(node_type, "declaration")) {
+		return -1;
+	}
+	parser_debug(state, "parse_type_declaration_node()\n");
+
+	int declaration_node_child_count = ts_node_named_child_count(node);
+	if (declaration_node_child_count < 1) {
+		node_malformed_error(state, node, text, "declaration");
+		return -1;
+	}
+	// Type declaration has three fields:
+	// 0. type qualifier (optional)
+	// 1. type itself
+	// 2. declarator field (optional)
+
+	// Parse the type qualifier first
+	// FIXME: There could be multiple different type qualifiers in one declaration
+	bool is_const = false;
+	TSNode first_leaf = ts_node_named_child(node, 0);
+	if (ts_node_is_null(first_leaf)) {
+		node_malformed_error(state, node, text, "declaration");
+		return -1;
+	}
+	const char *leaf_type = ts_node_type(first_leaf);
+	if (!strcmp(leaf_type, "type_qualifier")) {
+		const char *qualifier = ts_node_sub_string(first_leaf, text);
+		parser_debug(state, "has qualifier \"%s\"\n", qualifier);
+		if (!strcmp(qualifier, "const")) {
+			parser_debug(state, "set const\n");
+			is_const = true;
+		}
+	}
+
+	TSNode type_node = ts_node_child_by_field_name(node, "type", 4);
+	if (ts_node_is_null(type_node)) {
+		node_malformed_error(state, node, text, "declaration");
+		parser_error(state, "declaration's type field cannot be NULL\n");
+		return -1;
+	}
+	if (parse_type_node_single(state, type_node, text, tpair, is_const)) {
+		node_malformed_error(state, node, text, "declaration");
+		parser_error(state, "Cannot parse declaration's type field\n");
+		return -1;
+	}
+	if (!*tpair) {
+		parser_error(state, "Failed to parse declaration's type field\n");
+		return -1;
+	}
+	// 2. Optional declarator field
+	TSNode type_declarator = ts_node_child_by_field_name(node, "declarator", 10);
+	if (!ts_node_is_null(type_declarator)) {
+		char *identifier = NULL;
+		return parse_type_declarator_node(state, type_declarator, text, tpair, &identifier);
+	} else {
+		result = 0;
+	}
+	return result;
+}
+
 // Types can be
 // - struct (struct_specifier)
 // - union (union_specifier)
 // - enum (enum_specifier) (usually prepended by declaration)
 // - typedef (type_definition)
 // - atomic type (primitive_type)
+// - declaration ()
 
 // Parses the node and saves the resulting RzBaseTypes in the state hashtables
 int parse_type_nodes_save(CParserState *state, TSNode node, const char *text) {
@@ -1483,9 +1629,14 @@ int parse_type_nodes_save(CParserState *state, TSNode node, const char *text) {
 
 	// Another case where there is a declaration clause
 	// In this case we should drop the declaration itself
-	// and parse only the corresponding type
+	// and parse only the corresponding type. An exception for this
+	// rule is the function declaration.
+	if (!strcmp(node_type, "declaration")) {
+		result = parse_declaration_node(state, node, text, &tpair);
+		if (result || !tpair) {
+			return -1;
+		}
+	}
 	// In case of anonymous type we could use identifier as a name for this type?
-	//
 	return result;
 }
-

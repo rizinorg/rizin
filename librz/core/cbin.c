@@ -522,7 +522,7 @@ RZ_API bool rz_core_bin_apply_config(RzCore *r, RzBinFile *binfile) {
 		rz_config_set(r->config, "analysis.cc", info->default_cc);
 	}
 	const char *dir_prefix = rz_config_get(r->config, "dir.prefix");
-	char *spath = rz_str_newf("%s/" RZ_SDB_FCNSIGN "/spec.sdb", dir_prefix);
+	char *spath = rz_str_newf("%s/" RZ_SDB_TYPES "/spec.sdb", dir_prefix);
 	if (spath && rz_file_exists(spath)) {
 		sdb_concat_by_path(r->analysis->sdb_fmts, spath);
 	}

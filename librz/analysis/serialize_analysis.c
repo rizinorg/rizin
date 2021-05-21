@@ -558,10 +558,15 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 }
 
 RZ_API void rz_serialize_analysis_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisVar *var) {
+	rz_return_if_fail(j && var);
+	char *vartype = rz_type_as_string(var->fcn->analysis->typedb, var->type);
+	if (!vartype) {
+		eprintf("Variable \"%s\" has undefined type\n", var->name);
+		return;
+	}
 	pj_o(j);
 	pj_ks(j, "name", var->name);
 	// FIXME: Save it properly?
-	char *vartype = rz_type_as_string(var->fcn->analysis->typedb, var->type);
 	pj_ks(j, "type", vartype);
 	switch (var->kind) {
 	case RZ_ANALYSIS_VAR_KIND_REG:
@@ -833,8 +838,10 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_analysis_var_load(RZ_NONNULL RzAn
 	RzType *vartype = rz_type_parse_string_single(fcn->analysis->typedb->parser, type, &error_msg);
 	if (error_msg) {
 		eprintf("Fail to parse the function variable (\"%s\") type: %s\n", name, type);
+		goto beach;
 	}
 	ret = rz_analysis_function_set_var(fcn, delta, kind, vartype, 0, arg, name);
+	rz_type_free(vartype);
 	if (!ret) {
 		goto beach;
 	}

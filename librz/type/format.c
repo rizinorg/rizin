@@ -449,7 +449,7 @@ static void rz_type_format_decchar(RzStrBuf *outbuf, int endian, int mode,
 	}
 }
 
-static int rz_type_format_string(RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, ut64 addr64, ut64 addr, int is64, int mode) {
+static int rz_type_format_string(const RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, ut64 addr64, ut64 addr, int is64, int mode) {
 	ut8 buffer[255];
 	buffer[0] = 0;
 	const ut64 at = (is64 == 1) ? addr64 : (ut64)addr;
@@ -898,7 +898,7 @@ static void rz_type_format_hexflag(RzStrBuf *outbuf, int endian, int mode,
 	}
 }
 
-static int rz_type_format_10bytes(RzTypeDB *typedb, RzStrBuf *outbuf, int mode, const char *setval,
+static int rz_type_format_10bytes(const RzTypeDB *typedb, RzStrBuf *outbuf, int mode, const char *setval,
 	ut64 seeki, ut64 addr, ut8 *buf) {
 	ut8 buffer[255];
 	int j;
@@ -1203,7 +1203,7 @@ static void rz_type_byte_escape(const RzPrint *p, const char *src, char **dst, i
 	rz_str_byte_escape(src, dst, dot_nl, !strcmp(p->strconv_mode, "asciidot"), p->esc_bslash);
 }
 
-static void rz_type_format_nulltermstring(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, int len, int endian, int mode,
+static void rz_type_format_nulltermstring(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, int len, int endian, int mode,
 	const char *setval, ut64 seeki, ut8 *buf, int i, int size) {
 	if (!typedb->iob.is_valid_offset(typedb->iob.io, seeki, 1)) {
 		ut8 ch = 0xff;
@@ -1340,7 +1340,7 @@ static void rz_type_format_nulltermwidestring(RzPrint *p, RzStrBuf *outbuf, cons
 	}
 }
 
-static void rz_type_format_bitfield(RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
+static void rz_type_format_bitfield(const RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
 	char *fieldname, ut64 addr, int mode, int size) {
 	char *bitfield = NULL;
 	addr &= (1ULL << (size * 8)) - 1;
@@ -1365,7 +1365,7 @@ static void rz_type_format_bitfield(RzTypeDB *typedb, RzStrBuf *outbuf, ut64 see
 	free(bitfield);
 }
 
-static void rz_type_format_enum(RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
+static void rz_type_format_enum(const RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, char *fmtname,
 	char *fieldname, ut64 addr, int mode, int size) {
 	char *enumvalue = NULL;
 	addr &= (1ULL << (size * 8)) - 1;
@@ -1393,7 +1393,6 @@ static void rz_type_format_enum(RzTypeDB *typedb, RzStrBuf *outbuf, ut64 seeki, 
 				fieldname, fmtname, addr); //enumvalue); //fmtname, addr);
 		}
 	}
-	free(enumvalue);
 }
 
 static void rz_print_format_register(RzStrBuf *outbuf, const RzPrint *p, int mode,
@@ -1517,7 +1516,7 @@ static void rz_type_format_num(RzStrBuf *outbuf, int endian, int mode, const cha
 }
 
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-RZ_API int rz_type_format_struct_size(RzTypeDB *typedb, const char *f, int mode, int n) {
+RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
@@ -1772,10 +1771,10 @@ RZ_API int rz_type_format_struct_size(RzTypeDB *typedb, const char *f, int mode,
 	return (mode & RZ_PRINT_UNIONMODE) ? biggest : size;
 }
 
-static int rz_type_format_data_internal(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
+static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield);
 
-static int rz_type_format_struct(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, int len, const char *name,
+static int rz_type_format_struct(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, int len, const char *name,
 	int slide, int mode, const char *setval, char *field, int anon) {
 	const char *fmt;
 	char namefmt[128];
@@ -1894,7 +1893,7 @@ static char *get_format_type(const char fmt, const char arg) {
 #define MINUSONE ((void *)(size_t)-1)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg + 1) == '?'))
 
-RZ_API const char *rz_type_db_format_get(RzTypeDB *typedb, const char *name) {
+RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	bool found = false;
 	const char *result = ht_pp_find(typedb->formats, name, &found);
@@ -1930,7 +1929,7 @@ RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name) {
 	ht_pp_delete(typedb->formats, name);
 }
 
-static int rz_type_format_data_internal(RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
+static int rz_type_format_data_internal(const RzTypeDB *typedb, RzPrint *p, RzStrBuf *outbuf, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const int old_bits = typedb->target->bits;
@@ -2741,7 +2740,7 @@ beach:
 	return i;
 }
 
-RZ_API char *rz_type_format_data(RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
+RZ_API char *rz_type_format_data(const RzTypeDB *typedb, RzPrint *p, ut64 seek, const ut8 *b, const int len,
 	const char *formatname, int mode, const char *setval, char *ofield) {
 	RzStrBuf *outbuf = rz_strbuf_new("");
 	rz_type_format_data_internal(typedb, p, outbuf, seek, b, len, formatname, mode, setval, ofield);
@@ -2770,7 +2769,7 @@ RZ_API char *rz_type_format_data(RzTypeDB *typedb, RzPrint *p, ut64 seek, const 
  *     };
 */
 
-static const char *type_to_identifier(RzTypeDB *typedb, RzType *type) {
+static const char *type_to_identifier(const RzTypeDB *typedb, RzType *type) {
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
 		return type->identifier.name;
 	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
@@ -2782,7 +2781,7 @@ static const char *type_to_identifier(RzTypeDB *typedb, RzType *type) {
 	return NULL;
 }
 
-RZ_API const char *rz_base_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
+RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
 	rz_return_val_if_fail(typedb && type && type->name, NULL);
 
 	RzStrBuf *format = rz_strbuf_new("");
@@ -2843,7 +2842,7 @@ RZ_API const char *rz_base_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzBaseTyp
 	return bufstr;
 }
 
-RZ_API const char *rz_type_format(RzTypeDB *typedb, RZ_NONNULL const char *name) {
+RZ_API RZ_OWN char *rz_type_format(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype) {
@@ -2852,7 +2851,7 @@ RZ_API const char *rz_type_format(RzTypeDB *typedb, RZ_NONNULL const char *name)
 	return rz_base_type_as_format(typedb, btype);
 }
 
-static void type_to_format(RzTypeDB *typedb, RzStrBuf *buf, RzType *type) {
+static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) {
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
 		const char *format = rz_type_db_format_get(typedb, type->identifier.name);
 		if (format) {
@@ -2867,7 +2866,7 @@ static void type_to_format(RzTypeDB *typedb, RzStrBuf *buf, RzType *type) {
 	}
 }
 
-RZ_API const char *rz_type_as_format(RzTypeDB *typedb, RZ_NONNULL RzType *type) {
+RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
 	if (type->kind == RZ_TYPE_KIND_CALLABLE) {
 		// We can't print anything useful for function type

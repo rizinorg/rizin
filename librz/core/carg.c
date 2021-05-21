@@ -207,7 +207,6 @@ static void rz_analysis_fcn_arg_free(RzAnalysisFuncArg *arg) {
 	if (!arg) {
 		return;
 	}
-	rz_type_free(arg->orig_c_type);
 	free(arg);
 }
 

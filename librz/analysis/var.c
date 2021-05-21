@@ -20,6 +20,26 @@ static const char *__int_type_from_size(int size) {
 	}
 }
 
+static RZ_OWN RzType *var_type_clone_or_default_type(RzAnalysis *analysis, RZ_BORROW RZ_NULLABLE const RzType *type, int size) {
+	if (type) {
+		return rz_type_clone(type);
+	}
+	const char *typestr = __int_type_from_size(size);
+	if (!typestr) {
+		typestr = __int_type_from_size(analysis->bits);
+	}
+	if (!typestr) {
+		typestr = "int32_t";
+	}
+	char *error_msg = NULL;
+	RzType *result = rz_type_parse_string_single(analysis->typedb->parser, typestr, &error_msg);
+	if (!result || error_msg) {
+		eprintf("Invalid var type: %s\n%s", typestr, error_msg);
+		return NULL;
+	}
+	return result;
+}
+
 RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail(a && fcn, false);
 	RzListIter *it;
@@ -43,43 +63,31 @@ RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *
 	return true;
 }
 
-// If the type of var is a struct,
-// remove all other vars that are overlapped by var and are at the offset of one of its struct members
-static void shadow_var_struct_members(RzAnalysisVar *var) {
-	if (var->type->kind == RZ_TYPE_KIND_POINTER || var->type->kind == RZ_TYPE_KIND_CALLABLE) {
-		// Pointers don't shadow anything
+// Search for all variables that are located at the offset
+// overlapped by var and remove them
+static void resolve_var_overlaps(RzAnalysisVar *var) {
+	if (!var->type) {
 		return;
 	}
-	if (var->type->kind == RZ_TYPE_KIND_ARRAY) {
-		// TODO: support arrays
+	ut64 varsize = rz_type_db_get_bitsize(var->fcn->analysis->typedb, var->type) / 8;
+	if (!varsize) {
 		return;
 	}
-	// In other cases we check the type by name
-	const char *tname = var->type->identifier.name;
-	RzBaseType *btype = rz_type_db_get_base_type(var->fcn->analysis->typedb, tname);
-	if (!btype) {
-		return;
-	}
-
-	if (btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
-		return;
-	}
-
-	if (rz_vector_empty(&btype->struct_data.members)) {
-		return;
-	}
-	RzTypeStructMember *member;
-	rz_vector_foreach(&btype->struct_data.members, member) {
-		if (member->offset != 0) { // delete variables which are overlaid by structure
-			RzAnalysisVar *other = rz_analysis_function_get_var(var->fcn, var->kind, var->delta + member->offset);
-			if (other && other != var) {
-				rz_analysis_var_delete(other);
-			}
+	// delete variables which are overlaid by the variable type
+	RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&var->fcn->vars);
+	void **it;
+	rz_pvector_foreach (cloned_vars, it) {
+		RzAnalysisVar *other = *it;
+		if (!other) {
+			continue;
+		}
+		if (strcmp(var->name, other->name) && other->kind == var->kind && other->delta > var->delta && other->delta < var->delta + varsize) {
+			rz_analysis_var_delete(other);
 		}
 	}
 }
 
-RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_NULLABLE RzType *type, int size, bool isarg, RZ_NONNULL const char *name) {
+RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int delta, char kind, RZ_BORROW RZ_NULLABLE const RzType *type, int size, bool isarg, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(fcn && name, NULL);
 	RzAnalysisVar *existing = rz_analysis_function_get_var_byname(fcn, name);
 	if (existing && (existing->kind != kind || existing->delta != delta)) {
@@ -89,21 +97,6 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 	RzRegItem *reg = NULL;
 	if (!kind) {
 		kind = RZ_ANALYSIS_VAR_KIND_BPV;
-	}
-	if (!type) {
-		const char *typestr = __int_type_from_size(size);
-		if (!typestr) {
-			typestr = __int_type_from_size(fcn->analysis->bits);
-		}
-		if (!typestr) {
-			typestr = "int32_t";
-		}
-		char *error_msg = NULL;
-		type = rz_type_parse_string_single(fcn->analysis->typedb->parser, typestr, &error_msg);
-		if (!type || error_msg) {
-			eprintf("Invalid var type: %s\n%s", typestr, error_msg);
-			return NULL;
-		}
 	}
 	switch (kind) {
 	case RZ_ANALYSIS_VAR_KIND_BPV: // base pointer var/args
@@ -134,32 +127,35 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 	} else {
 		free(var->name);
 		free(var->regname);
-		free(var->type);
+		rz_type_free(var->type);
+		var->type = NULL;
 	}
 	var->name = strdup(name);
 	var->regname = reg ? strdup(reg->name) : NULL; // TODO: no strdup here? pool? or not keep regname at all?
-	var->type = type;
+	var->type = var_type_clone_or_default_type(fcn->analysis, type, size);
 	var->kind = kind;
 	var->isarg = isarg;
 	var->delta = delta;
-	shadow_var_struct_members(var);
+	resolve_var_overlaps(var);
 	return var;
 }
 
 RZ_API void rz_analysis_var_set_type(RzAnalysisVar *var, RZ_OWN RzType *type) {
+	// We do not free the old type here because the new type can contain
+	// the old one, for example it can wrap the old type as a pointer or an array
 	var->type = type;
-	shadow_var_struct_members(var);
+	resolve_var_overlaps(var);
 }
 
 static void var_free(RzAnalysisVar *var) {
 	if (!var) {
 		return;
 	}
+	rz_type_free(var->type);
 	rz_analysis_var_clear_accesses(var);
 	rz_vector_fini(&var->constraints);
 	free(var->name);
 	free(var->regname);
-	free(var->type);
 	free(var->comment);
 	free(var);
 }
@@ -757,7 +753,6 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 					ut64 bit_sz = rz_type_db_get_bitsize(analysis->typedb, tp);
 					sum_sz += bit_sz ? bit_sz / 8 : bytes;
 					sum_sz = RZ_ROUND(sum_sz, bytes);
-					rz_type_free(tp);
 				}
 				free(fname);
 			}
@@ -776,7 +771,6 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 			}
 			free(varname);
 		}
-		rz_type_free(vartype);
 	} else {
 		st64 frame_off = -(ptr + fcn->bp_off);
 		RzAnalysisVar *var = get_stack_var(fcn, frame_off);
@@ -1036,7 +1030,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			if (ri) {
 				delta = ri->index;
 			}
-			RzAnalysisVar *newvar = rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, 0, size, true, vname);
+			RzAnalysisVar *newvar = rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, NULL, size, true, vname);
 			if (newvar) {
 				rz_analysis_var_set_access(newvar, newvar->regname, op->addr, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 0);
 			}
@@ -1060,7 +1054,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			if (ri) {
 				delta = ri->index;
 			}
-			RzAnalysisVar *newvar = rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, 0, size, true, vname);
+			RzAnalysisVar *newvar = rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, NULL, size, true, vname);
 			if (newvar) {
 				rz_analysis_var_set_access(newvar, newvar->regname, op->addr, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 0);
 			}
@@ -1201,7 +1195,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 		switch (mode) {
 		case '*': {
 			// we can't express all type info here :(
-			const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+			char *vartype = rz_type_as_string(analysis->typedb, var->type);
 			if (kind == RZ_ANALYSIS_VAR_KIND_REG) { // registers
 				RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
 				if (!i) {
@@ -1218,12 +1212,13 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 					kind, delta, var->name, vartype,
 					fcn->addr);
 			}
+			free(vartype);
 			break;
 		}
 		case 'j':
 			switch (var->kind) {
 			case RZ_ANALYSIS_VAR_KIND_BPV: {
-				const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+				char *vartype = rz_type_as_string(analysis->typedb, var->type);
 				st64 delta = (st64)var->delta + fcn->bp_off;
 				pj_o(pj);
 				pj_ks(pj, "name", var->name);
@@ -1239,6 +1234,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 				pj_kN(pj, "offset", delta);
 				pj_end(pj);
 				pj_end(pj);
+				free(vartype);
 			} break;
 			case RZ_ANALYSIS_VAR_KIND_REG: {
 				RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
@@ -1246,13 +1242,14 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 					eprintf("Register not found");
 					break;
 				}
-				const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+				char *vartype = rz_type_as_string(analysis->typedb, var->type);
 				pj_o(pj);
 				pj_ks(pj, "name", var->name);
 				pj_ks(pj, "kind", "reg");
 				pj_ks(pj, "type", vartype);
 				pj_ks(pj, "ref", i->name);
 				pj_end(pj);
+				free(vartype);
 			} break;
 			case RZ_ANALYSIS_VAR_KIND_SPV: {
 				st64 delta = (st64)var->delta + fcn->maxstack;
@@ -1263,7 +1260,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 				} else {
 					pj_ks(pj, "kind", "var");
 				}
-				const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+				char *vartype = rz_type_as_string(analysis->typedb, var->type);
 				pj_ks(pj, "type", vartype);
 				pj_k(pj, "ref");
 				pj_o(pj);
@@ -1271,6 +1268,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 				pj_kN(pj, "offset", delta);
 				pj_end(pj);
 				pj_end(pj);
+				free(vartype);
 			} break;
 			}
 			break;
@@ -1278,7 +1276,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 			switch (kind) {
 			case RZ_ANALYSIS_VAR_KIND_BPV: {
 				int delta = var->delta + fcn->bp_off;
-				const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+				char *vartype = rz_type_as_string(analysis->typedb, var->type);
 				if (var->isarg) {
 					analysis->cb_printf("arg %s %s @ %s+0x%x\n",
 						vartype, var->name,
@@ -1291,6 +1289,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 						analysis->reg->name[RZ_REG_NAME_BP],
 						sign, RZ_ABS(delta));
 				}
+				free(vartype);
 			} break;
 			case RZ_ANALYSIS_VAR_KIND_REG: {
 				RzRegItem *i = rz_reg_index_get(analysis->reg, var->delta);
@@ -1298,13 +1297,14 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 					eprintf("Register not found");
 					break;
 				}
-				const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+				char *vartype = rz_type_as_string(analysis->typedb, var->type);
 				analysis->cb_printf("arg %s %s @ %s\n",
 					vartype, var->name, i->name);
+				free(vartype);
 			} break;
 			case RZ_ANALYSIS_VAR_KIND_SPV: {
 				int delta = fcn->maxstack + var->delta;
-				const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+				char *vartype = rz_type_as_string(analysis->typedb, var->type);
 				if (!var->isarg) {
 					char sign = (-var->delta <= fcn->maxstack) ? '+' : '-';
 					analysis->cb_printf("var %s %s @ %s%c0x%x\n",
@@ -1317,6 +1317,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 						analysis->reg->name[RZ_REG_NAME_SP],
 						delta);
 				}
+				free(vartype);
 			} break;
 			}
 		}
@@ -1370,9 +1371,10 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	if (type_fcn_name && rz_type_func_exist(analysis->typedb, type_fcn_name)) {
 		RzType *fcn_type = rz_type_func_ret(analysis->typedb, type_fcn_name);
 		if (fcn_type) {
-			const char *fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
+			char *fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
 			const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 			rz_strbuf_appendf(buf, "%s%s", fcn_type_str, sp);
+			free(fcn_type_str);
 		}
 	}
 
@@ -1397,13 +1399,13 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 				eprintf("Missing type for %s\n", type_fcn_name);
 				goto beach;
 			}
-			const char *type_str = rz_type_as_string(analysis->typedb, type);
+			char *type_str = rz_type_as_string(analysis->typedb, type);
 			if (i == argc - 1) {
 				comma = false;
 			}
 			const char *sp = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 			rz_strbuf_appendf(buf, "%s%s%s%s", type_str, sp, name, comma ? ", " : "");
-			free(type);
+			free(type_str);
 		}
 		goto beach;
 	}
@@ -1431,11 +1433,12 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 			rz_strbuf_slice(buf, 0, rz_strbuf_length(buf) - 2);
 			break;
 		}
-		const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+		char *vartype = rz_type_as_string(analysis->typedb, var->type);
 		tmp_len = strlen(vartype);
 		rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
 			tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
 			var->name, iter->n ? ", " : "");
+		free(vartype);
 	}
 
 	rz_list_foreach (cache->bvars, iter, var) {
@@ -1445,11 +1448,12 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 				comma = false;
 			}
 			arg_bp = true;
-			const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+			char *vartype = rz_type_as_string(analysis->typedb, var->type);
 			tmp_len = strlen(vartype);
 			rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
 				tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
 				var->name, iter->n ? ", " : "");
+			free(vartype);
 		}
 	}
 
@@ -1461,7 +1465,7 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 				comma = false;
 				rz_strbuf_append(buf, ", ");
 			}
-			const char *vartype = rz_type_as_string(analysis->typedb, var->type);
+			char *vartype = rz_type_as_string(analysis->typedb, var->type);
 			tmp_len = strlen(vartype);
 			if (iter->n && ((RzAnalysisVar *)iter->n->data)->isarg) {
 				maybe_comma = ", ";
@@ -1471,6 +1475,7 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 			rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
 				tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
 				var->name, maybe_comma);
+			free(vartype);
 		}
 	}
 
@@ -1485,8 +1490,29 @@ beach:
 	return rz_strbuf_drain(buf);
 }
 
-// function argument types and names into analysis/types
-RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
+/**
+ * \brief Updates the types database for function arguments
+ *
+ * Searches if the types database has the function with the same name.
+ * if there is a match - updates the RzCallable type of the function
+ * by adding the new function arguments' types.
+ *
+ * \param analysis RzAnalysis instance
+ * \param fcn Function which arguments we should save into the types database
+ */
+RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_if_fail(analysis && fcn && fcn->name);
+
+	// Do not syncronize types if the function already exist in the types database
+	if (rz_type_func_exist(analysis->typedb, fcn->name)) {
+		return;
+	}
+
+	// Avoid saving the autonamed functions into the types database
+	if (rz_analysis_function_is_autonamed(fcn->name)) {
+		return;
+	}
+
 	RzAnalysisFcnVarsCache cache;
 	rz_analysis_fcn_vars_cache_init(analysis, &cache, fcn);
 	RzListIter *iter;
@@ -1496,10 +1522,21 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RzAnalysisFunct
 	rz_list_join(all_vars, cache.bvars);
 	rz_list_join(all_vars, cache.svars);
 
+	// TODO: Save also the return type
+	RzCallable *callable = rz_type_func_new(analysis->typedb, fcn->name, NULL);
+
 	rz_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
-			rz_type_func_arg_add(analysis->typedb, fcn->name, var->name, var->type);
+			// Since we create a new argument type we should clone it here
+			RzType *cloned = rz_type_clone(var->type);
+			RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, cloned);
+			if (arg) {
+				rz_type_callable_arg_add(callable, arg);
+			} else {
+				rz_type_free(cloned);
+			}
 		}
 	}
+	rz_type_func_save(analysis->typedb, callable);
 	rz_analysis_fcn_vars_cache_fini(&cache);
 }

@@ -150,11 +150,9 @@ static TypeFormatPair *get_struct_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 	tpair->type = base_type;
 	tpair->format = format ? strdup(format) : NULL;
 
-	eprintf("success for %s\n", sname);
 	return tpair;
 
 error:
-	eprintf("some error for %s\n", sname);
 	rz_type_base_type_free(base_type);
 	free(sdb_members);
 	return NULL;
@@ -254,7 +252,6 @@ static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *
 	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
 	rz_strbuf_fini(&key);
 
-	eprintf("loaded typedef \"%s\" -> \"%s\"\n", sname, ttype->identifier.name);
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
 	tpair->format = format ? strdup(format) : NULL;
@@ -274,13 +271,12 @@ static TypeFormatPair *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 		return NULL;
 	}
 
-	char *type = get_type_data(sdb, "type", sname);
 	RzType *ttype = RZ_NEW0(RzType);
 	if (!ttype) {
 		goto error;
 	}
 	ttype->kind = RZ_TYPE_KIND_IDENTIFIER;
-	ttype->identifier.name = type;
+	ttype->identifier.name = strdup(sname);
 	ttype->identifier.is_const = false; // We don't preload const types by default
 	ttype->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 	base_type->type = ttype;
@@ -309,7 +305,6 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 	SdbList *l = sdb_foreach_list(sdb, false);
 	ls_foreach (l, iter, kv) {
 		TypeFormatPair *tpair = NULL;
-		//eprintf("parsing \"%s\" type\n", sdbkv_key(kv));
 		if (!strcmp(sdbkv_value(kv), "struct")) {
 			tpair = get_struct_type(typedb, sdb, sdbkv_key(kv));
 		} else if (!strcmp(sdbkv_value(kv), "enum")) {
@@ -337,7 +332,7 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 
 static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) {
 	rz_return_if_fail(typedb && sdb && type && type->name && type->kind == RZ_BASE_TYPE_KIND_STRUCT);
-	char *kind = "struct";
+	const char *kind = "struct";
 	/*
 		C:
 		struct name {type param1; type param2; type paramN;};
@@ -364,7 +359,9 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 	rz_vector_foreach(&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
+		eprintf("serializing \"%s.%s\" struct member\n", sname, member_sname);
 		char *member_type = rz_type_as_string(typedb, member->type);
+		eprintf("serialized \"%s.%s\" = \"%s\"\n", sname, member_sname, member_type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
 			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0), 0ULL);
@@ -414,10 +411,13 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 	rz_vector_foreach(&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
-		char *mtype = rz_type_as_string(typedb, member->type);
+		eprintf("serializing \"%s.%s\" union member\n", sname, member_sname);
+		char *member_type = rz_type_as_string(typedb, member->type);
+		eprintf("serialized \"%s.%s\" = \"%s\"\n", sname, member_sname, member_type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf(&param_val, "%s,%zu,%u", mtype, member->offset, 0), 0ULL);
+			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0), 0ULL);
+		free(member_type);
 		free(member_sname);
 
 		rz_strbuf_appendf(&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -508,10 +508,10 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 		rz_strbuf_setf(&key, "type.%s.size", sname),
 		rz_strbuf_setf(&val, "%" PFMT64u "", type->size), 0);
 
-	char *atype = rz_type_as_string(typedb, type->type);
+	const char *typefmt = rz_type_format(typedb, sname);
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s", sname),
-		atype, 0);
+		typefmt, 0);
 
 	free(sname);
 
@@ -553,18 +553,28 @@ void sdb_save_base_type(const RzTypeDB *typedb, RZ_NONNULL Sdb *sdb, const RzBas
 
 	switch (type->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT:
+		eprintf("Serializing struct \"%s\"\n", type->name);
+		RZ_LOG_DEBUG("Serializing struct \"%s\"\n", type->name);
 		save_struct(typedb, sdb, type);
 		break;
 	case RZ_BASE_TYPE_KIND_ENUM:
+		eprintf("Serializing enum \"%s\"\n", type->name);
+		RZ_LOG_DEBUG("Serializing enum \"%s\"\n", type->name);
 		save_enum(typedb, sdb, type);
 		break;
 	case RZ_BASE_TYPE_KIND_UNION:
+		eprintf("Serializing union \"%s\"\n", type->name);
+		RZ_LOG_DEBUG("Serializing union \"%s\"\n", type->name);
 		save_union(typedb, sdb, type);
 		break;
 	case RZ_BASE_TYPE_KIND_TYPEDEF:
+		eprintf("Serializing type alias \"%s\"\n", type->name);
+		RZ_LOG_DEBUG("Serializing type alias \"%s\"\n", type->name);
 		save_typedef(typedb, sdb, type);
 		break;
 	case RZ_BASE_TYPE_KIND_ATOMIC:
+		eprintf("Serializing atomic type \"%s\"\n", type->name);
+		RZ_LOG_DEBUG("Serializing atomic type \"%s\"\n", type->name);
 		save_atomic_type(typedb, sdb, type);
 		break;
 	default:

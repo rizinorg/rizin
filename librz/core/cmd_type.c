@@ -114,17 +114,18 @@ static void type_list_c_all_nl(RzCore *core) {
 }
 
 static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 address) {
-	const char *fmt = rz_type_format(core->analysis->typedb, type);
+	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, address);
+	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, const char *varname) {
-	const char *fmt = rz_type_format(core->analysis->typedb, type);
+	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type \"%s\"\n", type);
 		return RZ_CMD_STATUS_ERROR;
@@ -132,46 +133,52 @@ static RzCmdStatus type_format_print_variable(RzCore *core, const char *type, co
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 	if (!fcn) {
 		eprintf("Cannot find function at the current offset\n");
+		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, varname);
 	if (!var) {
 		eprintf("Cannot find variable \"%s\" in the current function\n", varname);
+		free(fmt);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 addr = rz_analysis_var_addr(var);
 	rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus type_format_print_value(RzCore *core, const char *type, ut64 val) {
-	const char *fmt = rz_type_format(core->analysis->typedb, type);
+	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_cmdf(core, "pf %s @v:0x%08" PFMT64x "\n", fmt, val);
+	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, const char *hexpairs) {
-	const char *fmt = rz_type_format(core->analysis->typedb, type);
+	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_cmdf(core, "pf %s @x:%s", fmt, hexpairs);
+	free(fmt);
 	return RZ_CMD_STATUS_OK;
 }
 
 static void types_xrefs(RzCore *core, const char *type) {
-	char *type2;
+	RzType *type2;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 		rz_list_foreach (uniq, iter2, type2) {
-			if (!strcmp(type2, type)) {
+			const char *ident = rz_type_identifier(core->analysis->typedb, type2);
+			if (!strcmp(ident, type)) {
 				rz_cons_printf("%s\n", fcn->name);
 				break;
 			}
@@ -180,7 +187,7 @@ static void types_xrefs(RzCore *core, const char *type) {
 }
 
 static void types_xrefs_summary(RzCore *core) {
-	char *type;
+	RzType *type;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
@@ -189,13 +196,13 @@ static void types_xrefs_summary(RzCore *core) {
 			rz_cons_printf("%s: ", fcn->name);
 		}
 		rz_list_foreach (uniq, iter2, type) {
-			rz_cons_printf("%s%s", type, iter2->n ? "," : "\n");
+			rz_cons_printf("%s%s", rz_type_as_string(core->analysis->typedb, type), iter2->n ? "," : "\n");
 		}
 	}
 }
 
 static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
-	char *type;
+	RzType *type;
 	RzListIter *iter;
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
 	if (!fcn) {
@@ -204,14 +211,14 @@ static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
 	}
 	RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 	rz_list_foreach (uniq, iter, type) {
-		rz_cons_println(type);
+		rz_cons_println(rz_type_as_string(core->analysis->typedb, type));
 	}
 	rz_list_free(uniq);
 	return RZ_CMD_STATUS_OK;
 }
 
 static void types_xrefs_graph(RzCore *core) {
-	char *type;
+	RzType *type;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
@@ -220,33 +227,37 @@ static void types_xrefs_graph(RzCore *core) {
 			rz_cons_printf("agn %s\n", fcn->name);
 		}
 		rz_list_foreach (uniq, iter2, type) {
-			char *myType = strdup(type);
-			rz_str_replace_ch(myType, ' ', '_', true);
-			rz_cons_printf("agn %s\n", myType);
-			rz_cons_printf("age %s %s\n", myType, fcn->name);
-			free(myType);
+			char *typestr = rz_type_as_string(core->analysis->typedb, type);
+			rz_str_replace_ch(typestr, ' ', '_', true);
+			rz_cons_printf("agn %s\n", typestr);
+			rz_cons_printf("age %s %s\n", typestr, fcn->name);
+			free(typestr);
 		}
 	}
 }
 
 static void types_xrefs_all(RzCore *core) {
-	char *type;
+	RzType *type;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
-	RzList *uniqList = rz_list_newf(free);
+	RzList *types_list = rz_list_newf(free);
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
-		rz_list_foreach (uniq, iter2, type) {
-			if (!rz_list_find(uniqList, type, (RzListComparator)strcmp)) {
-				rz_list_push(uniqList, strdup(type));
+		RzList *types = rz_analysis_types_from_fcn(core->analysis, fcn);
+		rz_list_foreach (types, iter2, type) {
+			const char *ident = rz_type_identifier(core->analysis->typedb, type);
+			if (ident) {
+				rz_list_push(types_list, strdup(ident));
 			}
 		}
 	}
-	rz_list_sort(uniqList, (RzListComparator)strcmp);
-	rz_list_foreach (uniqList, iter, type) {
-		rz_cons_printf("%s\n", type);
+	RzList *uniq_types = rz_list_uniq(types_list, (RzListComparator)strcmp);
+	rz_list_free(types_list);
+	rz_list_sort(uniq_types, (RzListComparator)strcmp);
+	char *typestr;
+	rz_list_foreach (uniq_types, iter, typestr) {
+		rz_cons_printf("%s\n", typestr);
 	}
-	rz_list_free(uniqList);
+	rz_list_free(uniq_types);
 }
 
 RZ_IPI RzCmdStatus rz_type_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -387,18 +398,6 @@ RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const c
 	} else {
 		rz_core_types_function_print_all(core, mode);
 	}
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_type_kuery_handler(RzCore *core, int argc, const char **argv) {
-	const char *query = argc > 1 ? argv[1] : NULL;
-	char *output = rz_type_db_kuery(core->analysis->typedb, query);
-	if (!output) {
-		eprintf("Cannot find anything matching your query");
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_cons_print(output);
-	free(output);
 	return RZ_CMD_STATUS_OK;
 }
 

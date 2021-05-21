@@ -90,6 +90,6 @@ foreach file : sdb_files
     depends: sdb_exe,
     build_by_default: true,
     install: true,
-    install_dir: join_paths(rizin_sdb, 'fcnsign')
+    install_dir: join_paths(rizin_sdb, 'types')
   )
 endforeach

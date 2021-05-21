@@ -21,9 +21,6 @@ Sdb *types_ref_db() {
 	sdb_set(db, "union.snatcher", "random,hajile", 0);
 	sdb_set(db, "struct.junker", "gillian,seed", 0);
 	sdb_set(db, "union.snatcher.hajile", "uint32_t,0,0", 0);
-	sdb_set(db, "badchar", "type", 0);
-	sdb_set(db, "type.badchar.size", "16", 0);
-	sdb_set(db, "type.badchar", "c", 0);
 	sdb_set(db, "enum.mika", "ELIJAH,MODNAR", 0);
 	sdb_set(db, "enum.mika.MODNAR", "0x539", 0);
 	sdb_set(db, "enum.mika.ELIJAH", "0x2a", 0);
@@ -35,6 +32,8 @@ Sdb *types_ref_db() {
 
 bool test_types_save() {
 	RzTypeDB *typedb = rz_type_db_new();
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
 
 	// struct
 	RzBaseType *type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
@@ -56,7 +55,6 @@ bool test_types_save() {
 	rz_vector_push(&type->struct_data.members, &member);
 
 	rz_type_db_save_base_type(typedb, type);
-	rz_type_base_type_free(type);
 
 	// union
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_UNION);
@@ -78,7 +76,6 @@ bool test_types_save() {
 	rz_vector_push(&type->union_data.members, &mumber);
 
 	rz_type_db_save_base_type(typedb, type);
-	rz_type_base_type_free(type);
 
 	// enum
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
@@ -94,7 +91,6 @@ bool test_types_save() {
 	rz_vector_push(&type->enum_data.cases, &cas);
 
 	rz_type_db_save_base_type(typedb, type);
-	rz_type_base_type_free(type);
 
 	// typedef
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
@@ -103,17 +99,6 @@ bool test_types_save() {
 	mu_assert_notnull(mtype, "typedef type parsing");
 	type->type = mtype;
 	rz_type_db_save_base_type(typedb, type);
-	rz_type_base_type_free(type);
-
-	// atomic
-	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
-	type->name = strdup("badchar");
-	type->size = 16;
-	mtype = rz_type_parse_string_single(typedb->parser, "c", NULL);
-	mu_assert_notnull(mtype, "atomic type parsing");
-	type->type = mtype;
-	rz_type_db_save_base_type(typedb, type);
-	rz_type_base_type_free(type);
 
 	Sdb *db = sdb_new0();
 	rz_serialize_types_save(db, typedb);
@@ -128,6 +113,9 @@ bool test_types_save() {
 
 bool test_types_load() {
 	RzTypeDB *typedb = rz_type_db_new();
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
 	Sdb *db = types_ref_db();
 	bool succ = rz_serialize_types_load(db, typedb, NULL);
 	sdb_free(db);
@@ -151,8 +139,6 @@ bool test_types_load() {
 	mu_assert_eq(member->type->kind, RZ_TYPE_KIND_IDENTIFIER, "member type");
 	mu_assert_streq(member->type->identifier.name, "uint64_t", "member type");
 
-	rz_type_base_type_free(type);
-
 	// union
 	type = rz_type_db_get_base_type(typedb, "snatcher");
 	mu_assert_notnull(type, "get type");
@@ -169,8 +155,6 @@ bool test_types_load() {
 	mu_assert_eq(mumber->type->kind, RZ_TYPE_KIND_IDENTIFIER, "member type");
 	mu_assert_streq(mumber->type->identifier.name, "uint32_t", "member type");
 
-	rz_type_base_type_free(type);
-
 	// enum
 	type = rz_type_db_get_base_type(typedb, "mika");
 	mu_assert_notnull(type, "get type");
@@ -185,8 +169,6 @@ bool test_types_load() {
 	mu_assert_streq(cas->name, "MODNAR", "case name");
 	mu_assert_eq(cas->val, 1337, "case value");
 
-	rz_type_base_type_free(type);
-
 	// typedef
 	type = rz_type_db_get_base_type(typedb, "human");
 	mu_assert_notnull(type, "get type");
@@ -195,15 +177,6 @@ bool test_types_load() {
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, type->type->identifier.name);
 	mu_assert_notnull(btype, "get union type");
 	mu_assert_eq(btype->kind, RZ_BASE_TYPE_KIND_UNION, "union type kind");
-	rz_type_base_type_free(btype);
-	rz_type_base_type_free(type);
-
-	// atomic
-	type = rz_type_db_get_base_type(typedb, "badchar");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ATOMIC, "type kind");
-	mu_assert_eq(type->size, 16, "atomic type size");
-	rz_type_base_type_free(type);
 
 	rz_type_db_free(typedb);
 	mu_end;

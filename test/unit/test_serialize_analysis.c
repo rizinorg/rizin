@@ -546,9 +546,11 @@ Sdb *vars_ref_db() {
 }
 
 bool test_analysis_var_save() {
+	const char *dir_prefix = rz_sys_prefix(NULL);
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
 
 	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "hirsch", 1337, RZ_ANALYSIS_FCN_TYPE_NULL, NULL);
 
@@ -562,9 +564,11 @@ bool test_analysis_var_save() {
 	mu_assert_notnull(t_const_char_ptr, "has const char* type");
 	RzBaseType *bt_struct_something = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
 	mu_assert_notnull(bt_struct_something, "create struct something base type");
-	bt_struct_something->name = "something";
+	bt_struct_something->name = strdup("something");
+	rz_type_db_save_base_type(analysis->typedb, bt_struct_something);
 	RzType *t_struct_something = rz_type_identifier_of_base_type(analysis->typedb, bt_struct_something);
-	mu_assert_notnull(bt_struct_something, "create struct something type");
+	mu_assert_notnull(t_struct_something, "create struct something type");
+	t_struct_something->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
 
 	RzAnalysisVar *v = rz_analysis_function_set_var(f, rax->index, RZ_ANALYSIS_VAR_KIND_REG, t_int64_t, 0, true, "arg_rax");
 	rz_analysis_var_set_access(v, "rax", 1340, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 42);
@@ -601,9 +605,11 @@ bool test_analysis_var_save() {
 }
 
 bool test_analysis_var_load() {
+	const char *dir_prefix = rz_sys_prefix(NULL);
 	RzAnalysis *analysis = rz_analysis_new();
 	rz_analysis_use(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
 
 	Sdb *db = vars_ref_db();
 	RzSerializeAnalDiffParser diff_parser = rz_serialize_analysis_diff_parser_new();
@@ -1543,11 +1549,6 @@ Sdb *analysis_ref_db() {
 	sdb_set(class_attrs, "attr.Aeropause.method", "some_meth", 0);
 	sdb_set(class_attrs, "attr.Aeropause.method.some_meth", "4919,42,0,some_meth", 0);
 
-	Sdb *types = sdb_ns(db, "types", true);
-	sdb_set(types, "badchar", "type", 0);
-	sdb_set(types, "type.badchar.size", "16", 0);
-	sdb_set(types, "type.badchar", "c", 0);
-
 	Sdb *zigns = sdb_ns(db, "zigns", true);
 	Sdb *zign_spaces = sdb_ns(zigns, "spaces", true);
 	sdb_set(zign_spaces, "spacestack", "[\"koridai\"]", 0);
@@ -1611,12 +1612,6 @@ bool test_analysis_save() {
 	rz_analysis_class_method_set(analysis, "Aeropause", &crystal);
 	rz_analysis_class_method_fini(&crystal);
 
-	RzBaseType *type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
-	type->name = strdup("badchar");
-	type->size = 16;
-	rz_type_db_save_base_type(analysis->typedb, type);
-	rz_type_base_type_free(type);
-
 	rz_spaces_set(&analysis->zign_spaces, "koridai");
 	rz_sign_add_comment(analysis, "sym.boring", "gee it sure is boring around here");
 
@@ -1642,6 +1637,9 @@ bool test_analysis_save() {
 
 bool test_analysis_load() {
 	RzAnalysis *analysis = rz_analysis_new();
+
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
 
 	Sdb *db = analysis_ref_db();
 	bool succ = rz_serialize_analysis_load(db, analysis, NULL);
@@ -1679,13 +1677,6 @@ bool test_analysis_load() {
 	RzAnalysisMethod *meth = rz_vector_index_ptr(vals, 0);
 	mu_assert_streq(meth->name, "some_meth", "method name");
 	rz_vector_free(vals);
-
-	RzBaseType *type = rz_type_db_get_base_type(analysis->typedb, "badchar");
-	mu_assert_notnull(type, "get type");
-	mu_assert_eq(type->kind, RZ_BASE_TYPE_KIND_ATOMIC, "type kind");
-	mu_assert_eq(type->size, 16, "atomic type size");
-	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, type->type, "c"), "atomic type");
-	rz_type_base_type_free(type);
 
 	rz_spaces_set(&analysis->zign_spaces, "koridai");
 	RzSignItem *item = rz_sign_get_item(analysis, "sym.boring");
