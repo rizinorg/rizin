@@ -1849,10 +1849,10 @@ static RzList *classes(RzBinFile *bf) {
 				bf->buf = cache->buf;
 				if (is_classlist) {
 					MACH0_(get_class_t)
-					((ut64)pointer_to_class, bf, klass, false, NULL);
+					((ut64)pointer_to_class, bf, bf->buf, klass, false, NULL);
 				} else {
 					MACH0_(get_category_t)
-					((ut64)pointer_to_class, bf, klass, NULL);
+					((ut64)pointer_to_class, bf, bf->buf, klass, NULL);
 				}
 				bf->o->bin_obj = cache;
 				bf->buf = orig_buf;

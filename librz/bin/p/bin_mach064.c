@@ -298,6 +298,7 @@ RzBinPlugin rz_bin_plugin_mach064 = {
 	.baddr = &baddr,
 	.binsym = binsym,
 	.entries = &entries,
+	.virtual_files = &virtual_files,
 	.maps = &maps,
 	.sections = &sections,
 	.signature = &entitlements,
