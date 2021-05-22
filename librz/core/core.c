@@ -2415,7 +2415,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->stkcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
-	core->yank_buf = rz_buf_new();
+	core->yank_buf = rz_buf_new_with_bytes(NULL, 0);
 	core->num = rz_num_new(&num_callback, &str_callback, core);
 	core->egg = rz_egg_new();
 	rz_egg_setup(core->egg, RZ_SYS_ARCH, RZ_SYS_BITS, 0, RZ_SYS_OS);

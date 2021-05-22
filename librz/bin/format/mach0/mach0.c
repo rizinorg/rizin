@@ -2147,7 +2147,7 @@ struct MACH0_(obj_t) * MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t)
 	if (!buf) {
 		return MACH0_(mach0_free)(bin);
 	}
-	bin->b = rz_buf_new();
+	bin->b = rz_buf_new_with_bytes(NULL, 0);
 	if (!rz_buf_set_bytes(bin->b, buf, bin->size)) {
 		free(buf);
 		return MACH0_(mach0_free)(bin);

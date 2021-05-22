@@ -36,7 +36,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	ut64 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut64 baddr = 0x100001000LL;
 	// TODO: baddr must be overriden with -b
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 
 #define B(x, y)    rz_buf_append_bytes(buf, (const ut8 *)(x), y)
 #define D(x)       rz_buf_append_ut32(buf, x)

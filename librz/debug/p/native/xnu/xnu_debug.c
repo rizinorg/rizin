@@ -924,7 +924,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 	coredump_thread_state_flavor_t flavors[MAX_TSTATE_FLAVORS];
 	tir_t tir;
 
-	mem_maps_buffer = rz_buf_new();
+	mem_maps_buffer = rz_buf_new_with_bytes(NULL, 0);
 
 	get_mach_header_sizes(&mach_header_sz, &segment_command_sz);
 	(void)task_suspend(task);

@@ -142,7 +142,7 @@ static unsigned char x86_w32_tcp4444[] =
 	"\x7e\xe5\x98\xec\xac\x45\x1b\x13";
 
 static RzBuffer *build(RzEgg *egg) {
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 *sc = NULL;
 	int cd = 0;
 	char *port = rz_egg_option_get(egg, "port");
