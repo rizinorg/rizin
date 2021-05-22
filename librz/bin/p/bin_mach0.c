@@ -857,7 +857,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, 
 	rz_return_val_if_fail(bin && opt, NULL);
 
 	bool is_arm = strstr(opt->arch, "arm");
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 #ifndef RZ_BIN_MACH064
 	if (opt->bits == 64) {
 		eprintf("TODO: Please use mach064 instead of mach0\n");

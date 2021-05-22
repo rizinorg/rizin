@@ -59,9 +59,8 @@ typedef enum {
 } RzBufferSparseWriteMode;
 
 /* constructors */
-RZ_API RzBuffer *rz_buf_new(void);
 RZ_API RzBuffer *rz_buf_new_with_io(void *iob, int fd);
-RZ_API RzBuffer *rz_buf_new_with_bytes(const ut8 *bytes, ut64 len);
+RZ_API RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE const ut8 *bytes, ut64 len);
 RZ_API RzBuffer *rz_buf_new_with_string(const char *msg);
 RZ_API RzBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal);
 RZ_API RzBuffer *rz_buf_new_file(const char *file, int perm, int mode);

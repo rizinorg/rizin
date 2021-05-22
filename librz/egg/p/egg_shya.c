@@ -13,7 +13,7 @@
 */
 
 static RzBuffer *build(RzEgg *egg) {
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 	char *key = rz_egg_option_get(egg, "key");
 	char *seed = rz_egg_option_get(egg, "seed");
 	eprintf("TODO: shoorisu yagana shellcode encoder\n");

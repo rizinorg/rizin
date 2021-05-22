@@ -953,7 +953,7 @@ bool test_rz_buf_bytes_steal(void) {
 }
 
 bool test_rz_buf_format(void) {
-	RzBuffer *b = rz_buf_new();
+	RzBuffer *b = rz_buf_new_with_bytes(NULL, 0);
 	uint16_t a[] = { 0xdead, 0xbeef, 0xcafe, 0xbabe };
 	ut8 buf[4 * sizeof(uint16_t)];
 

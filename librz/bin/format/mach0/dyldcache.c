@@ -113,7 +113,7 @@ struct rz_bin_dyldcache_lib_t *rz_bin_dyldcache_extract(struct rz_bin_dyldcache_
 	}
 	addend = mh.magic == MH_MAGIC ? sizeof(struct mach_header) : sizeof(struct mach_header_64);
 	/* Write mach-o hdr */
-	if (!(dbuf = rz_buf_new())) {
+	if (!(dbuf = rz_buf_new_with_bytes(NULL, 0))) {
 		eprintf("new (dbuf)\n");
 		goto ret_err;
 	}
@@ -263,7 +263,7 @@ struct rz_bin_dyldcache_obj_t *rz_bin_dyldcache_new(const char *file) {
 	if (!buf) {
 		return rz_bin_dyldcache_free(bin);
 	}
-	bin->b = rz_buf_new();
+	bin->b = rz_buf_new_with_bytes(NULL, 0);
 	if (!rz_buf_set_bytes(bin->b, buf, bin->size)) {
 		free(buf);
 		return rz_bin_dyldcache_free(bin);
@@ -283,7 +283,7 @@ struct rz_bin_dyldcache_obj_t *rz_bin_dyldcache_from_bytes_new(const ut8 *buf, u
 	if (!buf) {
 		return rz_bin_dyldcache_free(bin);
 	}
-	bin->b = rz_buf_new();
+	bin->b = rz_buf_new_with_bytes(NULL, 0);
 	if (!bin->b || !rz_buf_set_bytes(bin->b, buf, size)) {
 		return rz_bin_dyldcache_free(bin);
 	}

@@ -153,7 +153,8 @@ RZ_API RzBuffer *rz_buf_new_empty(ut64 len) {
 	return res;
 }
 
-RZ_API RzBuffer *rz_buf_new_with_bytes(const ut8 *bytes, ut64 len) {
+RZ_API RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE const ut8 *bytes, ut64 len) {
+	rz_return_val_if_fail(bytes || !len, NULL); // if bytes == NULL, then len must be 0
 	struct buf_bytes_user u = { 0 };
 	u.data = bytes;
 	u.length = len;
@@ -195,13 +196,6 @@ RZ_API RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode 
 		.write_mode = write_mode
 	};
 	return new_buffer(RZ_BUFFER_SPARSE, &cfg);
-}
-
-RZ_API RzBuffer *rz_buf_new(void) {
-	struct buf_bytes_user u = { 0 };
-	u.data = NULL;
-	u.length = 0;
-	return new_buffer(RZ_BUFFER_BYTES, &u);
 }
 
 RZ_DEPRECATE RZ_API const ut8 *rz_buf_data(RzBuffer *b, ut64 *size) {
