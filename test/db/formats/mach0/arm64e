@@ -63,8 +63,8 @@ px 8 @ reloc._objc_empty_cache
 EOF
 EXPECT=<<EOF
  4 fd: 3 +0x00000000 0x100000000 - 0x100003fff r-x fmap.__TEXT
- 3 fd: 3 +0x00004000 0x100004000 - 0x100007fff r-- fmap.__DATA_CONST
- 2 fd: 3 +0x00008000 0x100008000 - 0x10000bfff r-- fmap.__DATA
+ 3 fd: 4 +0x00004000 0x100004000 - 0x100007fff r-- vmap.__DATA_CONST
+ 2 fd: 4 +0x00008000 0x100008000 - 0x10000bfff r-- vmap.__DATA
  1 fd: 3 +0x0000c000 0x10000c000 - 0x10000ffff r-- fmap.__LINKEDIT
 --
 __auth_got (auth, bind)
