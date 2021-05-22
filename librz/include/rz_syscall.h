@@ -24,11 +24,6 @@ typedef struct rz_syscall_item_t {
 	char *sargs;
 } RzSyscallItem;
 
-typedef struct rz_syscall_port_t {
-	int port;
-	const char *name;
-} RzSyscallPort;
-
 typedef struct rz_syscall_t {
 	FILE *fd;
 	// memoization
@@ -38,7 +33,6 @@ typedef struct rz_syscall_t {
 	char *cpu;
 	// database
 	RzSyscallItem *sysptr;
-	RzSyscallPort *sysport;
 	Sdb *db;
 	Sdb *srdb;
 	int refs;
@@ -94,12 +88,10 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *ctx, int num, int swi);
 RZ_API int rz_syscall_get_num(RzSyscall *ctx, const char *str);
 RZ_API const char *rz_syscall_get_i(RzSyscall *ctx, int num, int swi);
-RZ_API const char *rz_syscall_sysreg(RzSyscall *s, const char *type, ut64 num);
 RZ_API RzList *rz_syscall_list(RzSyscall *ctx);
 RZ_API int rz_syscall_get_swi(RzSyscall *s);
 
-/* io */
-RZ_API const char *rz_syscall_get_io(RzSyscall *s, int ioport);
+RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 num);
 #endif
 
 #ifdef __cplusplus

@@ -9,10 +9,6 @@
 
 RZ_LIB_VERSION(rz_syscall);
 
-// TODO: now we use sdb
-extern RzSyscallPort sysport_x86[];
-extern RzSyscallPort sysport_avr[];
-
 RZ_API RzSyscall *rz_syscall_ref(RzSyscall *sc) {
 	sc->refs++;
 	return sc;
@@ -21,7 +17,6 @@ RZ_API RzSyscall *rz_syscall_ref(RzSyscall *sc) {
 RZ_API RzSyscall *rz_syscall_new(void) {
 	RzSyscall *rs = RZ_NEW0(RzSyscall);
 	if (rs) {
-		rs->sysport = sysport_x86;
 		rs->srdb = sdb_new0(); // sysregs database
 		rs->db = sdb_new0();
 	}
@@ -113,13 +108,8 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 
 	if (!strcmp(os, "any")) { // ignored
 		return true;
-	}
-	if (!strcmp(arch, "avr")) {
-		s->sysport = sysport_avr;
 	} else if (!strcmp(os, "darwin") || !strcmp(os, "osx") || !strcmp(os, "macos")) {
 		os = "darwin";
-	} else if (!strcmp(arch, "x86")) {
-		s->sysport = sysport_x86;
 	}
 
 	if (syscall_changed) {
@@ -135,8 +125,8 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 	}
 
 	if (sysregs_changed) {
-		char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("sysregs", "%s-%d-%s"),
-			arch, bits, cpu);
+		char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("reg", "%s-%s-%d"),
+			arch, cpu, bits);
 		if (dbName) {
 			if (!load_sdb(&s->srdb, dbName)) {
 				sdb_free(s->srdb);
@@ -287,27 +277,20 @@ RZ_API RzList *rz_syscall_list(RzSyscall *s) {
 	return list;
 }
 
-/* io and sysregs */
-RZ_API const char *rz_syscall_get_io(RzSyscall *s, int ioport) {
+/**
+ * \brief Searches the sysregs SDB database inside librz/reg/d for the type (mmio/reg) and
+ * 		  returns its value as a string
+ *
+ * \param s reference to RzSyscall
+ * \param type reference to the type of key: mmio/reg
+ * \param port reference to the io port
+ */
+RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 port) {
 	rz_return_val_if_fail(s, NULL);
-	int i;
-	const char *name = rz_syscall_sysreg(s, "io", ioport);
-	if (name) {
-		return name;
-	}
-	for (i = 0; s->sysport[i].name; i++) {
-		if (ioport == s->sysport[i].port) {
-			return s->sysport[i].name;
-		}
-	}
-	return NULL;
-}
-
-RZ_API const char *rz_syscall_sysreg(RzSyscall *s, const char *type, ut64 num) {
-	rz_return_val_if_fail(s, NULL);
-	if (!s->db) {
+	if (!s->srdb) {
+		eprintf("Coudn't load the sysreg SDB file");
 		return NULL;
 	}
-	const char *key = sdb_fmt("%s,%" PFMT64d, type, num);
-	return sdb_const_get(s->db, key, 0);
+	const char *key = sdb_fmt("%s.0x%llx", type, port);
+	return sdb_const_get(s->srdb, key, 0);
 }
