@@ -114,6 +114,11 @@ static void type_list_c_all_nl(RzCore *core) {
 }
 
 static RzCmdStatus type_format_print(RzCore *core, const char *type, ut64 address) {
+	RzBaseType *base_type = rz_type_db_get_base_type(core->analysis->typedb, type);
+	if (base_type->size > core->blocksize) {
+		rz_cons_printf(" -- Type '%s' is of greater size than blocksize. "
+				"It is suggested to set the blocksize to %llu.\n", type, base_type->size/sizeof(size_t));
+	}
 	char *fmt = rz_type_format(core->analysis->typedb, type);
 	if (RZ_STR_ISEMPTY(fmt)) {
 		eprintf("Cannot find type %s\n", type);

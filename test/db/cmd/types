@@ -636,6 +636,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tp with bad blocksize
+FILE==
+CMDS=<<EOF
+b 10
+"td struct foobar{uint32_t a; uint32_t b; uint32_t c; uint32_t d;}"
+tp foobar
+EOF
+EXPECT=<<EOF
+-- Type 'foobar' is of greater size than blocksize. It is suggested to set the blocksize to 16.
+ a : 0x00000000 = -1
+ b : 0x00000004 = -1
+ c : 0x00000008 = 65535
+ d : 0x0000000c = 0
+EOF
+RUN
+
 NAME=tp
 FILE==
 CMDS=<<EOF

@@ -81,6 +81,8 @@ static RzBaseType *get_enum_type(RzTypeDB *typedb, const char *sname) {
 	}
 	free(members);
 
+	base_type->size = base_type->enum_data.cases.len * base_type->enum_data.cases.elem_size;
+
 	return base_type;
 
 error:
@@ -144,6 +146,8 @@ static RzBaseType *get_struct_type(RzTypeDB *typedb, const char *sname) {
 	}
 	free(sdb_members);
 
+	base_type->size = base_type->struct_data.members.len * base_type->struct_data.members.elem_size;
+
 	return base_type;
 
 error:
@@ -198,6 +202,8 @@ static RzBaseType *get_union_type(RzTypeDB *typedb, const char *sname) {
 		sdb_aforeach_next(cur);
 	}
 	free(sdb_members);
+
+	base_type->size = base_type->union_data.members.len * base_type->union_data.members.elem_size;
 
 	return base_type;
 
