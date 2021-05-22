@@ -1072,6 +1072,71 @@ bool test_rz_buf_slice_too_big(void) {
 	mu_end;
 }
 
+typedef struct {
+	ut64 offset;
+	int init_count;
+	int fini_count;
+	bool offset_fail;
+} CustomCtx;
+
+static bool custom_init(RzBuffer *b, const void *user) {
+	CustomCtx *ctx = (void *)user;
+	ctx->init_count++;
+	b->priv = ctx;
+	return true;
+}
+
+static bool custom_fini(RzBuffer *b) {
+	CustomCtx *ctx = b->priv;
+	ctx->fini_count++;
+	return true;
+}
+
+static st64 custom_seek(RzBuffer *b, st64 addr, int whence) {
+	CustomCtx *ctx = b->priv;
+	ctx->offset = rz_seek_offset(ctx->offset, 0x200, addr, whence);
+	return ctx->offset;
+}
+
+static st64 custom_read(RzBuffer *b, ut8 *buf, ut64 len) {
+	CustomCtx *ctx = b->priv;
+	if (ctx->offset != 0x100) {
+		ctx->offset_fail = true;
+	}
+	memset(buf, 0x42, len);
+	return len;
+}
+
+const RzBufferMethods custom_methods = {
+	.init = custom_init,
+	.fini = custom_fini,
+	.read = custom_read,
+	.seek = custom_seek
+};
+
+bool test_rz_buf_with_methods(void) {
+	CustomCtx ctx = { 0 };
+	RzBuffer *buf = rz_buf_new_with_methods(&custom_methods, &ctx);
+	mu_assert_notnull(buf, "buf");
+	mu_assert_eq(ctx.init_count, 1, "init count");
+	mu_assert_eq(ctx.fini_count, 0, "fini count");
+	mu_assert_false(ctx.offset_fail, "offset fail");
+
+	ut8 tmp[4] = { 0 };
+	st64 r = rz_buf_read_at(buf, 0x100, tmp, sizeof(tmp));
+	mu_assert_eq(r, sizeof(tmp), "read ret");
+	mu_assert_eq(ctx.init_count, 1, "init count");
+	mu_assert_eq(ctx.fini_count, 0, "fini count");
+	mu_assert_false(ctx.offset_fail, "offset fail");
+	mu_assert_memeq(tmp, (const ut8 *)"\x42\x42\x42\x42", sizeof(tmp), "read result");
+
+	rz_buf_free(buf);
+	mu_assert_eq(ctx.init_count, 1, "init count");
+	mu_assert_eq(ctx.fini_count, 1, "fini count");
+	mu_assert_false(ctx.offset_fail, "offset fail");
+	mu_end;
+}
+
 int all_tests() {
 	time_t seed = time(0);
 	printf("Jamie Seed: %llu\n", (unsigned long long)seed);
@@ -1102,6 +1167,7 @@ int all_tests() {
 	mu_run_test(test_rz_buf_get_string);
 	mu_run_test(test_rz_buf_get_string_nothing);
 	mu_run_test(test_rz_buf_slice_too_big);
+	mu_run_test(test_rz_buf_with_methods);
 	return tests_passed != tests_run;
 }
 
