@@ -71,15 +71,24 @@ static RzBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 	return ret;
 }
 
-RzBinElfSection *Elf_(rz_bin_elf_get_sections)(ELFOBJ *bin) {
+/**
+ * \brief Return the list of rizin sections
+ * \param elf binary
+ * \return a ptr to an array terminated with an item with .last set to 1
+ *
+ * Generate the elf section from the section header(shdr) or the segment header(phdr)
+ */
+RZ_OWN RzBinElfSection *Elf_(rz_bin_elf_get_sections)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzBinElfSection *ret = NULL;
 	char unknown_s[32], invalid_s[32];
 	int i, nidx, unknown_c = 0, invalid_c = 0;
 
 	rz_return_val_if_fail(bin, NULL);
-	if (bin->g_sections) {
-		return bin->g_sections;
-	}
+	//	if (bin->g_sections) {
+	//		return bin->g_sections;
+	//	}
 	if (!bin->shdr) {
 		//we don't give up search in phdr section
 		return get_sections_from_phdr(bin);
