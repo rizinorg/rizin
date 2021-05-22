@@ -5,68 +5,47 @@
 
 #include "elf.h"
 
-static void create_section_from_phdr(ELFOBJ *bin, RzBinElfSection *ret, size_t *i, const char *name, ut64 addr, ut64 sz) {
-	if (!addr) {
+static void create_section_from_phdr(ELFOBJ *bin, RzBinElfSection *section, size_t *pos, const char *name, ut64 addr, ut64 sz) {
+	if (!addr || addr == RZ_BIN_ELF_ADDR_MAX) {
 		return;
 	}
 
-	ret[*i].offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
-	ret[*i].rva = addr;
-	ret[*i].size = sz;
-	strncpy(ret[*i].name, name, RZ_ARRAY_SIZE(ret[*i].name) - 1);
-	ret[*i].name[RZ_ARRAY_SIZE(ret[*i].name) - 1] = '\0';
-	ret[*i].last = 0;
-	*i = *i + 1;
+	(*pos)++;
+	section->offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	section->rva = addr;
+	section->size = sz;
+	rz_str_ncpy(section->name, name, ELF_STRING_LENGTH);
+	section->last = 0;
 }
 
-static RzBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
-	RzBinElfSection *ret;
-	size_t num_sections = 0;
-	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
-	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
-	rz_return_val_if_fail(bin && bin->phdr, NULL);
-
-	if (!bin->ehdr.e_phnum) {
-		return NULL;
+static const char *get_plt_name(ELFOBJ *bin) {
+	if (bin->dyn_info.dt_pltrel == DT_REL) {
+		return ".rel.plt";
 	}
 
-	if (bin->dyn_info.dt_rel != RZ_BIN_ELF_ADDR_MAX) {
-		reldyn = bin->dyn_info.dt_rel;
-		num_sections++;
-	}
-	if (bin->dyn_info.dt_rela != RZ_BIN_ELF_ADDR_MAX) {
-		relva = bin->dyn_info.dt_rela;
-		num_sections++;
-	}
-	if (bin->dyn_info.dt_relsz) {
-		reldynsz = bin->dyn_info.dt_relsz;
-	}
-	if (bin->dyn_info.dt_relasz) {
-		relasz = bin->dyn_info.dt_relasz;
-	}
-	if (bin->dyn_info.dt_pltgot != RZ_BIN_ELF_ADDR_MAX) {
-		pltgotva = bin->dyn_info.dt_pltgot;
-		num_sections++;
-	}
-	if (bin->dyn_info.dt_pltrelsz) {
-		pltgotsz = bin->dyn_info.dt_pltrelsz;
-	}
-	if (bin->dyn_info.dt_jmprel != RZ_BIN_ELF_ADDR_MAX) {
-		relava = bin->dyn_info.dt_jmprel;
-		num_sections++;
-	}
+	return ".rela.plt";
+}
 
-	ret = calloc(num_sections + 1, sizeof(RzBinElfSection));
+static void create_section_plt(ELFOBJ *bin, RzBinElfSection *section, size_t *pos) {
+	const char *plt_name = get_plt_name(bin);
+	create_section_from_phdr(bin, section, pos, plt_name, bin->dyn_info.dt_jmprel, bin->dyn_info.dt_pltrelsz);
+}
+
+static RzBinElfSection *get_sections_from_dt_dynamic(ELFOBJ *bin) {
+	size_t pos = 0;
+
+	RzBinElfSection *ret = RZ_NEWS(RzBinElfSection, 5);
 	if (!ret) {
 		return NULL;
 	}
 
-	size_t i = 0;
-	create_section_from_phdr(bin, ret, &i, ".rel.dyn", reldyn, reldynsz);
-	create_section_from_phdr(bin, ret, &i, ".rela.plt", relava, pltgotsz);
-	create_section_from_phdr(bin, ret, &i, ".rel.plt", relva, relasz);
-	create_section_from_phdr(bin, ret, &i, ".got.plt", pltgotva, pltgotsz);
-	ret[i].last = 1;
+	// There is no info about the got size
+	create_section_from_phdr(bin, ret + pos, &pos, ".got.plt", bin->dyn_info.dt_pltgot, 0);
+	create_section_from_phdr(bin, ret + pos, &pos, ".rel.dyn", bin->dyn_info.dt_rel, bin->dyn_info.dt_relsz);
+	create_section_from_phdr(bin, ret + pos, &pos, ".rela.dyn", bin->dyn_info.dt_rela, bin->dyn_info.dt_relasz);
+	create_section_plt(bin, ret + pos, &pos);
+
+	ret[pos].last = 1;
 
 	return ret;
 }
@@ -159,5 +138,9 @@ RZ_OWN RzBinElfSection *Elf_(rz_bin_elf_get_sections)(RZ_NONNULL ELFOBJ *bin) {
 		return get_sections_from_shdr(bin);
 	}
 
-	return get_sections_from_phdr(bin);
+	if (bin->phdr) {
+		return get_sections_from_dt_dynamic(bin);
+	}
+
+	return NULL;
 }

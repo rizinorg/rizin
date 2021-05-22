@@ -4122,7 +4122,7 @@ vaddr      paddr      target     type   name
 0x00000154 19 segment.INTERP
 0x00000168 68 segment.NOTE
 0x00000364 72 section..rel.dyn
-0x000003ac 16 section..rela.plt
+0x000003ac 16 section..rel.plt
 0x000003f0 16 sym.imp.puts
 0x00000400 16 sym.imp.__libc_start_main
 0x00000420 1 entry0
@@ -4138,7 +4138,7 @@ vaddr      paddr      target     type   name
 0x00001ff0 4 reloc.__gmon_start
 0x00001ff8 4 reloc._Jv_RegisterClasses
 0x00001ffc 4 reloc._ITM_registerTMCloneTable
-0x00002000 16 section..got.plt
+0x00002000 0 section..got.plt
 0x0000200c 4 reloc.puts
 0x00002010 4 reloc.__libc_start_main
 0x00002028 4 reloc.target.puts
