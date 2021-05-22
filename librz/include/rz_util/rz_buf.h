@@ -58,7 +58,25 @@ typedef enum {
 	RZ_BUF_SPARSE_WRITE_MODE_THROUGH ///< all writes are performed in the underlying base buffer
 } RzBufferSparseWriteMode;
 
+/* utils */
+
+/// change cur according to addr and whence (RZ_BUF_SET/RZ_BUF_CUR/RZ_BUF_END)
+static inline ut64 rz_seek_offset(ut64 cur, ut64 length, st64 addr, int whence) {
+	switch (whence) {
+	case RZ_BUF_CUR:
+		return cur + (ut64)addr;
+	case RZ_BUF_SET:
+		return addr;
+	case RZ_BUF_END:
+		return length + (ut64)addr;
+	default:
+		rz_warn_if_reached();
+		return cur;
+	}
+}
+
 /* constructors */
+RZ_API RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user);
 RZ_API RzBuffer *rz_buf_new_with_io(void *iob, int fd);
 RZ_API RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE const ut8 *bytes, ut64 len);
 RZ_API RzBuffer *rz_buf_new_with_string(const char *msg);
