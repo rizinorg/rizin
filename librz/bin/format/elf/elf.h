@@ -274,6 +274,6 @@ int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzList *Elf_(section_flag_to_rzlist)(ut64 flag);
-char *Elf_(section_type_to_string)(ut64 type);
+RZ_OWN char *Elf_(section_type_to_string)(ut64 type);
 
 #endif
