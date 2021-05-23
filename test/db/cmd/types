@@ -644,10 +644,10 @@ b 10
 tp foobar
 EOF
 EXPECT=<<EOF
--- Type 'foobar' is of greater size than blocksize. It is suggested to set the blocksize to 16.
- a : 0x00000000 = -1
- b : 0x00000004 = -1
- c : 0x00000008 = 65535
+ -- Type 'foobar' is of greater size than blocksize. It is suggested to set the blocksize to 16.
+ a : 0x00000000 = 0
+ b : 0x00000004 = 0
+ c : 0x00000008 = 0
  d : 0x0000000c = 0
 EOF
 RUN
