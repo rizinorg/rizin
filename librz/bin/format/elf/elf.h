@@ -220,7 +220,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 int Elf_(rz_bin_elf_has_va)(struct Elf_(rz_bin_elf_obj_t) * bin);
 ut64 Elf_(rz_bin_elf_get_section_addr)(struct Elf_(rz_bin_elf_obj_t) * bin, const char *section_name);
-ut64 Elf_(rz_bin_elf_get_section_offset)(struct Elf_(rz_bin_elf_obj_t) * bin, const char *section_name);
 char *Elf_(section_type_to_string)(ut64 type);
 ut64 Elf_(rz_bin_elf_get_baddr)(struct Elf_(rz_bin_elf_obj_t) * bin);
 ut64 Elf_(rz_bin_elf_p2v)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
@@ -269,6 +268,7 @@ RzBinImport *Elf_(rz_bin_elf_convert_import)(struct Elf_(rz_bin_elf_obj_t) * bin
 
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
+ut64 Elf_(rz_bin_elf_get_section_offset)(struct Elf_(rz_bin_elf_obj_t) * bin, const char *section_name);
 RZ_OWN RzBinElfSection *Elf_(rz_bin_elf_get_sections)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
