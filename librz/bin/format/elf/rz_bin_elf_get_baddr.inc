@@ -5,6 +5,18 @@
 
 #include "elf.h"
 
+static ut64 compute_baddr_from_phdr(ELFOBJ *bin) {
+	ut64 base = UT64_MAX;
+
+	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
+		if (bin->phdr[i].p_type == PT_LOAD) {
+			base = RZ_MIN(base, bin->phdr[i].p_vaddr);
+		}
+	}
+
+	return base == UT64_MAX ? 0 : base;
+}
+
 /**
  * \brief Compute the base address of the binary
  * \param elf binary
@@ -12,30 +24,18 @@
  *
  * To compute the base address, one determines the memory
  * address associated with the lowest p_vaddr value for a
- * PT_LOAD segment. One then obtains the base address by
- * truncating the memory address to the nearest multiple
- * of the maximum page size
+ * PT_LOAD segment.
  */
 ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, 0);
 
-	ut64 tmp, base = UT64_MAX;
-	if (bin->phdr) {
-		size_t i;
-		for (i = 0; i < bin->ehdr.e_phnum; i++) {
-			if (bin->phdr[i].p_type == PT_LOAD) {
-				tmp = (ut64)bin->phdr[i].p_vaddr & ELF_PAGE_MASK;
-				tmp = tmp - (tmp % (1 << ELF_PAGE_SIZE));
-				if (tmp < base) {
-					base = tmp;
-				}
-			}
-		}
-	}
-	if (base == UT64_MAX && Elf_(rz_bin_elf_is_relocatable)(bin)) {
-		//we return our own base address for ET_REL type
-		//we act as a loader for ELF
+	if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 		return 0x08000000;
 	}
-	return base == UT64_MAX ? 0 : base;
+
+	if (bin->phdr) {
+		return compute_baddr_from_phdr(bin);
+	}
+
+	return 0;
 }
