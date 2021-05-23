@@ -5,6 +5,26 @@
 
 #include "elf.h"
 
+struct flag_translation {
+	ut64 flag;
+	char *name;
+};
+
+static const struct flag_translation flag_translation_table[] = {
+	{ SHF_WRITE, "write" },
+	{ SHF_ALLOC, "alloc" },
+	{ SHF_EXECINSTR, "execute" },
+	{ SHF_MERGE, "merge" },
+	{ SHF_STRINGS, "strings" },
+	{ SHF_INFO_LINK, "info" },
+	{ SHF_LINK_ORDER, "link_order" },
+	{ SHF_OS_NONCONFORMING, "extra_os_processing_reqd" },
+	{ SHF_GROUP, "group" },
+	{ SHF_TLS, "TLS" },
+	{ SHF_EXCLUDE, "exclude" },
+	{ SHF_COMPRESSED, "compressed" }
+};
+
 /**
  * \brief Return a list of string representing flag options
  * \param elf flag
@@ -14,41 +34,15 @@
  */
 RZ_OWN RzList *Elf_(section_flag_to_rzlist)(ut64 flag) {
 	RzList *flag_list = rz_list_new();
-	if (flag & SHF_WRITE) {
-		rz_list_append(flag_list, "write");
+	if (!flag_list) {
+		return NULL;
 	}
-	if (flag & SHF_ALLOC) {
-		rz_list_append(flag_list, "alloc");
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(flag_translation_table); i++) {
+		if (flag & flag_translation_table[i].flag) {
+			rz_list_append(flag_list, flag_translation_table[i].name);
+		}
 	}
-	if (flag & SHF_EXECINSTR) {
-		rz_list_append(flag_list, "execute");
-	}
-	if (flag & SHF_MERGE) {
-		rz_list_append(flag_list, "merge");
-	}
-	if (flag & SHF_STRINGS) {
-		rz_list_append(flag_list, "strings");
-	}
-	if (flag & SHF_INFO_LINK) {
-		rz_list_append(flag_list, "info");
-	}
-	if (flag & SHF_LINK_ORDER) {
-		rz_list_append(flag_list, "link_order");
-	}
-	if (flag & SHF_OS_NONCONFORMING) {
-		rz_list_append(flag_list, "extra_os_processing_reqd");
-	}
-	if (flag & SHF_GROUP) {
-		rz_list_append(flag_list, "group");
-	}
-	if (flag & SHF_TLS) {
-		rz_list_append(flag_list, "TLS");
-	}
-	if (flag & SHF_EXCLUDE) {
-		rz_list_append(flag_list, "exclude");
-	}
-	if (flag & SHF_COMPRESSED) {
-		rz_list_append(flag_list, "compressed");
-	}
+
 	return flag_list;
 }
