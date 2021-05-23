@@ -5,7 +5,17 @@
 
 #include "elf.h"
 
-ut64 Elf_(rz_bin_elf_get_section_offset)(ELFOBJ *bin, const char *section_name) {
+/**
+ * \brief Return the section offset with the specified name
+ * \param elf binary
+ * \param section name
+ * \return section offset
+ *
+ * Search a specific section in the g_sections structure and return the section offset
+ */
+ut64 Elf_(rz_bin_elf_get_section_offset)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name) {
+	rz_return_val_if_fail(bin && section_name, UT64_MAX);
+
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, section_name);
 	return section ? section->offset : UT64_MAX;
 }
