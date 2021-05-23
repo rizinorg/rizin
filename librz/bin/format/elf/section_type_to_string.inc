@@ -5,7 +5,14 @@
 
 #include "elf.h"
 
-char *Elf_(section_type_to_string)(ut64 type) {
+/**
+ * \brief Return a string representing the elf type
+ * \param elf type
+ * \return allocated string
+ *
+ * Compare the type SHT_NULL, SHT_PROGBITS, etc and return the string representation
+ */
+RZ_OWN char *Elf_(section_type_to_string)(ut64 type) {
 	switch (type) {
 	case SHT_NULL:
 		return rz_str_new("NULL");
