@@ -12,6 +12,7 @@
 #include "elf.h"
 
 #include "rz_bin_elf_convert_symbol.inc"
+#include "rz_bin_elf_get_baddr.inc"
 #include "rz_bin_elf_get_section.inc"
 #include "rz_bin_elf_get_section_addr.inc"
 #include "rz_bin_elf_get_section_addr_end.inc"
@@ -32,9 +33,6 @@
 
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
 #define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR   -0x6
-
-#define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
-#define ELF_PAGE_SIZE 12
 
 #define bprintf \
 	if (bin->verbose) \
@@ -1850,39 +1848,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-/*
-To compute the base address, one determines the memory
-address associated with the lowest p_vaddr value for a
-PT_LOAD segment. One then obtains the base address by
-truncating the memory address to the nearest multiple
-of the maximum page size
-*/
-
-ut64 Elf_(rz_bin_elf_get_baddr)(ELFOBJ *bin) {
-	ut64 tmp, base = UT64_MAX;
-	if (!bin) {
-		return 0;
-	}
-	if (bin->phdr) {
-		size_t i;
-		for (i = 0; i < bin->ehdr.e_phnum; i++) {
-			if (bin->phdr[i].p_type == PT_LOAD) {
-				tmp = (ut64)bin->phdr[i].p_vaddr & ELF_PAGE_MASK;
-				tmp = tmp - (tmp % (1 << ELF_PAGE_SIZE));
-				if (tmp < base) {
-					base = tmp;
-				}
-			}
-		}
-	}
-	if (base == UT64_MAX && Elf_(rz_bin_elf_is_relocatable)(bin)) {
-		//we return our own base address for ET_REL type
-		//we act as a loader for ELF
-		return 0x08000000;
-	}
-	return base == UT64_MAX ? 0 : base;
 }
 
 ut64 Elf_(rz_bin_elf_get_boffset)(ELFOBJ *bin) {
