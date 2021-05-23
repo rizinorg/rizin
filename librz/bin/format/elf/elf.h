@@ -12,6 +12,9 @@
 #ifndef _INCLUDE_ELF_H_
 #define _INCLUDE_ELF_H_
 
+#define ELF_PAGE_SIZE 12
+#define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
+
 #define RZ_BIN_ELF_SCN_IS_EXECUTABLE(x) x &SHF_EXECINSTR
 #define RZ_BIN_ELF_SCN_IS_READABLE(x)   x &SHF_ALLOC
 #define RZ_BIN_ELF_SCN_IS_WRITABLE(x)   x &SHF_WRITE
@@ -219,7 +222,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 };
 
 int Elf_(rz_bin_elf_has_va)(struct Elf_(rz_bin_elf_obj_t) * bin);
-ut64 Elf_(rz_bin_elf_get_baddr)(struct Elf_(rz_bin_elf_obj_t) * bin);
 ut64 Elf_(rz_bin_elf_p2v)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
 ut64 Elf_(rz_bin_elf_p2v_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
@@ -264,6 +266,7 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinImport *Elf_(rz_bin_elf_convert_import)(struct Elf_(rz_bin_elf_obj_t) * bin, struct rz_bin_elf_symbol_t *sym);
 
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
+ut64 Elf_(rz_bin_elf_get_baddr)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
 ut64 Elf_(rz_bin_elf_get_section_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
 ut64 Elf_(rz_bin_elf_get_section_addr_end)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
