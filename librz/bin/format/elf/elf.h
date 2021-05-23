@@ -219,7 +219,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 };
 
 int Elf_(rz_bin_elf_has_va)(struct Elf_(rz_bin_elf_obj_t) * bin);
-char *Elf_(section_type_to_string)(ut64 type);
 ut64 Elf_(rz_bin_elf_get_baddr)(struct Elf_(rz_bin_elf_obj_t) * bin);
 ut64 Elf_(rz_bin_elf_p2v)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
@@ -275,5 +274,6 @@ int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzList *Elf_(section_flag_to_rzlist)(ut64 flag);
+char *Elf_(section_type_to_string)(ut64 type);
 
 #endif
