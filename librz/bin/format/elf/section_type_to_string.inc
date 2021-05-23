@@ -5,6 +5,43 @@
 
 #include "elf.h"
 
+struct type_translation {
+	ut64 type;
+	const char *name;
+};
+
+static const struct type_translation type_translation_table[] = {
+	{ SHT_NULL, "NULL" },
+	{ SHT_PROGBITS, "PROGBITS" },
+	{ SHT_SYMTAB, "SYMTAB" },
+	{ SHT_STRTAB, "STRTAB" },
+	{ SHT_RELA, "RELA" },
+	{ SHT_HASH, "HASH" },
+	{ SHT_DYNAMIC, "DYNAMIC" },
+	{ SHT_NOTE, "NOTE" },
+	{ SHT_NOBITS, "NOBITS" },
+	{ SHT_REL, "REL" },
+	{ SHT_SHLIB, "SHLIB" },
+	{ SHT_DYNSYM, "DYNSYM" },
+	{ SHT_INIT_ARRAY, "INIT_ARRAY" },
+	{ SHT_FINI_ARRAY, "FINI_ARRAY" },
+	{ SHT_PREINIT_ARRAY, "PREINIT_ARRAY" },
+	{ SHT_GROUP, "GROUP" },
+	{ SHT_SYMTAB_SHNDX, "SYMTAB_SHNDX" },
+	{ SHT_NUM, "NUM" },
+	{ SHT_LOOS, "LOOS" },
+	{ SHT_GNU_ATTRIBUTES, "GNU_ATTRIBUTES" },
+	{ SHT_GNU_HASH, "GNU_HASH" },
+	{ SHT_GNU_LIBLIST, "GNU_LIBLIST" },
+	{ SHT_CHECKSUM, "CHECKSUM" },
+	{ SHT_SUNW_move, "MOVE" },
+	{ SHT_SUNW_COMDAT, "COMDAT" },
+	{ SHT_SUNW_syminfo, "SYMINFO" },
+	{ SHT_GNU_verdef, "VERDEF" },
+	{ SHT_GNU_verneed, "VERNEED" },
+	{ SHT_GNU_versym, "VERSYM" }
+};
+
 /**
  * \brief Return a string representing the elf type
  * \param elf type
@@ -13,72 +50,20 @@
  * Compare the type SHT_NULL, SHT_PROGBITS, etc and return the string representation
  */
 RZ_OWN char *Elf_(section_type_to_string)(ut64 type) {
-	switch (type) {
-	case SHT_NULL:
-		return rz_str_new("NULL");
-	case SHT_PROGBITS:
-		return rz_str_new("PROGBITS");
-	case SHT_SYMTAB:
-		return rz_str_new("SYMTAB");
-	case SHT_STRTAB:
-		return rz_str_new("STRTAB");
-	case SHT_RELA:
-		return rz_str_new("RELA");
-	case SHT_HASH:
-		return rz_str_new("HASH");
-	case SHT_DYNAMIC:
-		return rz_str_new("DYNAMIC");
-	case SHT_NOTE:
-		return rz_str_new("NOTE");
-	case SHT_NOBITS:
-		return rz_str_new("NOBITS");
-	case SHT_REL:
-		return rz_str_new("REL");
-	case SHT_SHLIB:
-		return rz_str_new("SHLIB");
-	case SHT_DYNSYM:
-		return rz_str_new("DYNSYM");
-	case SHT_INIT_ARRAY:
-		return rz_str_new("INIT_ARRAY");
-	case SHT_FINI_ARRAY:
-		return rz_str_new("FINI_ARRAY");
-	case SHT_PREINIT_ARRAY:
-		return rz_str_new("PREINIT_ARRAY");
-	case SHT_GROUP:
-		return rz_str_new("GROUP");
-	case SHT_SYMTAB_SHNDX:
-		return rz_str_new("SYMTAB_SHNDX");
-	case SHT_NUM:
-		return rz_str_new("NUM");
-	case SHT_LOOS:
-		return rz_str_new("LOOS");
-	case SHT_GNU_ATTRIBUTES:
-		return rz_str_new("GNU_ATTRIBUTES");
-	case SHT_GNU_HASH:
-		return rz_str_new("GNU_HASH");
-	case SHT_GNU_LIBLIST:
-		return rz_str_new("GNU_LIBLIST");
-	case SHT_CHECKSUM:
-		return rz_str_new("CHECKSUM");
-	case SHT_SUNW_move:
-		return rz_str_new("MOVE");
-	case SHT_SUNW_COMDAT:
-		return rz_str_new("COMDAT");
-	case SHT_SUNW_syminfo:
-		return rz_str_new("SYMINFO");
-	case SHT_GNU_verdef:
-		return rz_str_new("VERDEF");
-	case SHT_GNU_verneed:
-		return rz_str_new("VERNEED");
-	case SHT_GNU_versym:
-		return rz_str_new("VERSYM");
-	default:
-		if (type >= SHT_LOPROC && type <= SHT_HIPROC) {
-			return rz_str_newf("LOPROC+0x%08" PFMT64x, type - SHT_LOPROC);
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(type_translation_table); i++) {
+		if (type == type_translation_table[i].type) {
+			return rz_str_new(type_translation_table[i].name);
 		}
-		if (type >= SHT_LOUSER && type <= SHT_HIUSER) {
-			return rz_str_newf("LOUSER+0x%08" PFMT64x, type - SHT_LOUSER);
-		}
-		return rz_str_newf("0x%" PFMT64x, type);
 	}
+
+	if (type >= SHT_LOPROC && type <= SHT_HIPROC) {
+		return rz_str_newf("LOPROC+0x%08" PFMT64x, type - SHT_LOPROC);
+	}
+
+	if (type >= SHT_LOUSER && type <= SHT_HIUSER) {
+		return rz_str_newf("LOUSER+0x%08" PFMT64x, type - SHT_LOUSER);
+	}
+
+	return rz_str_newf("0x%" PFMT64x, type);
 }
