@@ -291,5 +291,8 @@ RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 port) {
 		return NULL;
 	}
 	const char *key = sdb_fmt("%s.0x%llx", type, port);
-	return sdb_const_get(s->srdb, key, 0);
+	const char *value = sdb_const_get(s->srdb, key, 0);
+	if (value)
+		return value;
+	return NULL;
 }
