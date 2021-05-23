@@ -5,19 +5,21 @@
 
 #include "elf.h"
 
-/*
-To compute the base address, one determines the memory
-address associated with the lowest p_vaddr value for a
-PT_LOAD segment. One then obtains the base address by
-truncating the memory address to the nearest multiple
-of the maximum page size
-*/
+/**
+ * \brief Compute the base address of the binary
+ * \param elf binary
+ * \return the base address
+ *
+ * To compute the base address, one determines the memory
+ * address associated with the lowest p_vaddr value for a
+ * PT_LOAD segment. One then obtains the base address by
+ * truncating the memory address to the nearest multiple
+ * of the maximum page size
+ */
+ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, 0);
 
-ut64 Elf_(rz_bin_elf_get_baddr)(ELFOBJ *bin) {
 	ut64 tmp, base = UT64_MAX;
-	if (!bin) {
-		return 0;
-	}
 	if (bin->phdr) {
 		size_t i;
 		for (i = 0; i < bin->ehdr.e_phnum; i++) {
