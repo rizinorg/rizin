@@ -288,7 +288,6 @@ RZ_API RzList *rz_syscall_list(RzSyscall *s) {
 RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 port) {
 	rz_return_val_if_fail(s, NULL);
 	if (!s->srdb) {
-		eprintf("Coudn't load the sysreg SDB file");
 		return NULL;
 	}
 	const char *key = sdb_fmt("%s.0x%llx", type, port);
