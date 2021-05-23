@@ -5,7 +5,14 @@
 
 #include "elf.h"
 
-RzList *Elf_(section_flag_to_rzlist)(ut64 flag) {
+/**
+ * \brief Return a list of string representing flag options
+ * \param elf flag
+ * \return RzList of string representing flag options
+ *
+ * Compare the flag to common option such as SHF_WRITE, SHF_ALLOC, ect
+ */
+RZ_OWN RzList *Elf_(section_flag_to_rzlist)(ut64 flag) {
 	RzList *flag_list = rz_list_new();
 	if (flag & SHF_WRITE) {
 		rz_list_append(flag_list, "write");
