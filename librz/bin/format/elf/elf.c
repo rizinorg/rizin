@@ -14,6 +14,7 @@
 #include "rz_bin_elf_convert_symbol.inc"
 #include "rz_bin_elf_get_section.inc"
 #include "rz_bin_elf_get_section_addr.inc"
+#include "rz_bin_elf_get_section_addr_end.inc"
 #include "rz_bin_elf_get_section_offset.inc"
 #include "rz_bin_elf_get_sections.inc"
 #include "rz_bin_elf_has_nx.inc"
@@ -1589,11 +1590,6 @@ static bool elf_init(ELFOBJ *bin) {
 	bin->rel_cache = rel_cache_new(bin->g_relocs, bin->g_reloc_num);
 	sdb_ns_set(bin->kv, "versioninfo", store_versioninfo(bin));
 	return true;
-}
-
-ut64 Elf_(rz_bin_elf_get_section_addr_end)(ELFOBJ *bin, const char *section_name) {
-	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, section_name);
-	return section ? section->rva + section->size : UT64_MAX;
 }
 
 RzList *Elf_(section_flag_to_rzlist)(ut64 flag) {
