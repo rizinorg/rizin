@@ -251,7 +251,6 @@ RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(struct Elf_(rz_bin_elf_obj_t) * bin
 RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(struct Elf_(rz_bin_elf_obj_t) * bin);
 struct rz_bin_elf_field_t *Elf_(rz_bin_elf_get_fields)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_get_rpath)(struct Elf_(rz_bin_elf_obj_t) * bin);
-RzList *Elf_(section_flag_to_rzlist)(ut64 flag);
 struct Elf_(rz_bin_elf_obj_t) * Elf_(rz_bin_elf_new)(const char *file, bool verbose);
 struct Elf_(rz_bin_elf_obj_t) * Elf_(rz_bin_elf_new_buf)(RzBuffer *buf, bool verbose);
 void Elf_(rz_bin_elf_free)(struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -275,5 +274,6 @@ bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
+RzList *Elf_(section_flag_to_rzlist)(ut64 flag);
 
 #endif

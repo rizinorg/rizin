@@ -21,6 +21,7 @@
 #include "rz_bin_elf_has_relro.inc"
 #include "rz_bin_elf_is_executable.inc"
 #include "rz_bin_elf_is_relocatable.inc"
+#include "section_flag_to_rzlist.inc"
 
 #define MIPS_PLT_OFFSET  0x20
 #define RISCV_PLT_OFFSET 0x20
@@ -1590,47 +1591,6 @@ static bool elf_init(ELFOBJ *bin) {
 	bin->rel_cache = rel_cache_new(bin->g_relocs, bin->g_reloc_num);
 	sdb_ns_set(bin->kv, "versioninfo", store_versioninfo(bin));
 	return true;
-}
-
-RzList *Elf_(section_flag_to_rzlist)(ut64 flag) {
-	RzList *flag_list = rz_list_new();
-	if (flag & SHF_WRITE) {
-		rz_list_append(flag_list, "write");
-	}
-	if (flag & SHF_ALLOC) {
-		rz_list_append(flag_list, "alloc");
-	}
-	if (flag & SHF_EXECINSTR) {
-		rz_list_append(flag_list, "execute");
-	}
-	if (flag & SHF_MERGE) {
-		rz_list_append(flag_list, "merge");
-	}
-	if (flag & SHF_STRINGS) {
-		rz_list_append(flag_list, "strings");
-	}
-	if (flag & SHF_INFO_LINK) {
-		rz_list_append(flag_list, "info");
-	}
-	if (flag & SHF_LINK_ORDER) {
-		rz_list_append(flag_list, "link_order");
-	}
-	if (flag & SHF_OS_NONCONFORMING) {
-		rz_list_append(flag_list, "extra_os_processing_reqd");
-	}
-	if (flag & SHF_GROUP) {
-		rz_list_append(flag_list, "group");
-	}
-	if (flag & SHF_TLS) {
-		rz_list_append(flag_list, "TLS");
-	}
-	if (flag & SHF_EXCLUDE) {
-		rz_list_append(flag_list, "exclude");
-	}
-	if (flag & SHF_COMPRESSED) {
-		rz_list_append(flag_list, "compressed");
-	}
-	return flag_list;
 }
 
 char *Elf_(section_type_to_string)(ut64 type) {
