@@ -5,7 +5,14 @@
 
 #include "elf.h"
 
-ut64 Elf_(rz_bin_elf_get_fini_offset)(ELFOBJ *bin) {
+/**
+ * \brief Compute the fini offset of the binary
+ * \param elf binary
+ * \return the init offset
+ *
+ * ...
+ */
+ut64 Elf_(rz_bin_elf_get_fini_offset)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 	ut64 entry = Elf_(rz_bin_elf_get_entry_offset)(bin);
 	if (entry == UT64_MAX) {
