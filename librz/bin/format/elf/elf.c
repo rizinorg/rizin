@@ -14,8 +14,9 @@
 #include "rz_bin_elf_convert_symbol.inc"
 #include "rz_bin_elf_get_baddr.inc"
 #include "rz_bin_elf_get_boffset.inc"
-#include "rz_bin_elf_get_init_offset.inc"
+#include "rz_bin_elf_get_entry_offset.inc"
 #include "rz_bin_elf_get_fini_offset.inc"
+#include "rz_bin_elf_get_init_offset.inc"
 #include "rz_bin_elf_get_section.inc"
 #include "rz_bin_elf_get_section_addr.inc"
 #include "rz_bin_elf_get_section_addr_end.inc"
@@ -1857,26 +1858,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-ut64 Elf_(rz_bin_elf_get_entry_offset)(ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, UT64_MAX);
-	ut64 entry = bin->ehdr.e_entry;
-	if (!entry) {
-		if (!Elf_(rz_bin_elf_is_executable)(bin)) {
-			return UT64_MAX;
-		}
-		entry = Elf_(rz_bin_elf_get_section_offset)(bin, ".init.text");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		entry = Elf_(rz_bin_elf_get_section_offset)(bin, ".text");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		return Elf_(rz_bin_elf_get_section_offset)(bin, ".init");
-	}
-	return Elf_(rz_bin_elf_v2p)(bin, entry);
 }
 
 static ut64 getmainsymbol(ELFOBJ *bin) {
