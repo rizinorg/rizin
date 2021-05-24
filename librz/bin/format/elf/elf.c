@@ -15,6 +15,7 @@
 #include "rz_bin_elf_get_baddr.inc"
 #include "rz_bin_elf_get_boffset.inc"
 #include "rz_bin_elf_get_init_offset.inc"
+#include "rz_bin_elf_get_fini_offset.inc"
 #include "rz_bin_elf_get_section.inc"
 #include "rz_bin_elf_get_section_addr.inc"
 #include "rz_bin_elf_get_section_addr_end.inc"
@@ -1853,25 +1854,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-ut64 Elf_(rz_bin_elf_get_fini_offset)(ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, UT64_MAX);
-	ut64 entry = Elf_(rz_bin_elf_get_entry_offset)(bin);
-	if (entry == UT64_MAX) {
-		return UT64_MAX;
-	}
-	ut8 buf[512];
-	if (rz_buf_read_at(bin->b, entry + 11, buf, sizeof(buf)) == -1) {
-		bprintf("read (get_fini)\n");
-		return 0;
-	}
-	if (*buf == 0x68) { // push // x86/32 only
-		memmove(buf, buf + 1, 4);
-		ut64 addr = (ut64)rz_read_le32(buf);
-		return Elf_(rz_bin_elf_v2p)(bin, addr);
-	}
-	return 0;
 }
 
 ut64 Elf_(rz_bin_elf_get_entry_offset)(ELFOBJ *bin) {

@@ -10,7 +10,7 @@
  * \param elf binary
  * \return the init offset
  *
- * ...
+ * Get the offset from the vaddr store in the dynamic section (dt_init)
  */
 ut64 Elf_(rz_bin_elf_get_init_offset)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, 0);
