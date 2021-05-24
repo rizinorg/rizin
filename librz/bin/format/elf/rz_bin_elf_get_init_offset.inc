@@ -5,7 +5,16 @@
 
 #include "elf.h"
 
-ut64 Elf_(rz_bin_elf_get_init_offset)(ELFOBJ *bin) {
+/**
+ * \brief Compute the init offset of the binary
+ * \param elf binary
+ * \return the init offset
+ *
+ * ...
+ */
+ut64 Elf_(rz_bin_elf_get_init_offset)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, 0);
+
 	ut64 entry = Elf_(rz_bin_elf_get_entry_offset)(bin);
 	ut8 buf[128];
 	if (!bin || entry == UT64_MAX) {
