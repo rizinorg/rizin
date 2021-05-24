@@ -5,7 +5,14 @@
 
 #include "elf.h"
 
-char *Elf_(rz_bin_elf_intrp)(ELFOBJ *bin) {
+/**
+ * \brief Get the program interpreter
+ * \param elf binary
+ * \return an allocated string
+ *
+ * Get the program interpreter from the phdr
+ */
+RZ_OWN char *Elf_(rz_bin_elf_intrp)(RZ_NONNULL ELFOBJ *bin) {
 	int i;
 	if (!bin || !bin->phdr) {
 		return NULL;
