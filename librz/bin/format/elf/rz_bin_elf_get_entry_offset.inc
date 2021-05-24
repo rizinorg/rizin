@@ -5,6 +5,20 @@
 
 #include "elf.h"
 
+static ut64 get_entry_offset_from_shdr(ELFOBJ *bin) {
+	ut64 entry = Elf_(rz_bin_elf_get_section_offset)(bin, ".init.text");
+	if (entry != UT64_MAX) {
+		return entry;
+	}
+
+	entry = Elf_(rz_bin_elf_get_section_offset)(bin, ".text");
+	if (entry != UT64_MAX) {
+		return entry;
+	}
+
+	return Elf_(rz_bin_elf_get_section_offset)(bin, ".init");
+}
+
 /**
  * \brief Get the entry offset
  * \param elf binary
@@ -13,22 +27,17 @@
  * Get the entry offset from the elf header (e_entry), and if the information
  * isn't defined section header will be used.
  */
-ut64 Elf_(rz_bin_elf_get_entry_offset)(ELFOBJ *bin) {
+ut64 Elf_(rz_bin_elf_get_entry_offset)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, UT64_MAX);
-	ut64 entry = bin->ehdr.e_entry;
-	if (!entry) {
-		if (!Elf_(rz_bin_elf_is_executable)(bin)) {
-			return UT64_MAX;
-		}
-		entry = Elf_(rz_bin_elf_get_section_offset)(bin, ".init.text");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		entry = Elf_(rz_bin_elf_get_section_offset)(bin, ".text");
-		if (entry != UT64_MAX) {
-			return entry;
-		}
-		return Elf_(rz_bin_elf_get_section_offset)(bin, ".init");
+
+	if (!Elf_(rz_bin_elf_is_executable)(bin)) {
+		return UT64_MAX;
 	}
-	return Elf_(rz_bin_elf_v2p)(bin, entry);
+
+	ut64 entry = bin->ehdr.e_entry;
+	if (entry) {
+		return Elf_(rz_bin_elf_v2p)(bin, entry);
+	}
+
+	return get_entry_offset_from_shdr(bin);
 }
