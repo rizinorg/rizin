@@ -574,6 +574,7 @@ static void init_dynamic_section_sdb(ELFOBJ *bin, Elf_(Addr) strtabaddr, size_t 
 
 static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_init = 0;
+	bin->dyn_info.dt_fini = 0;
 	bin->dyn_info.dt_pltrelsz = 0;
 	bin->dyn_info.dt_pltgot = RZ_BIN_ELF_ADDR_MAX;
 	bin->dyn_info.dt_hash = RZ_BIN_ELF_ADDR_MAX;
@@ -701,6 +702,8 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 			bin->dyn_info.dt_init = d.d_un.d_ptr;
 			break;
 		case DT_FINI:
+			bin->dyn_info.dt_fini = d.d_un.d_ptr;
+			break;
 		case DT_DEBUG:
 		case DT_INIT_ARRAY:
 		case DT_FINI_ARRAY:
