@@ -99,6 +99,7 @@ typedef struct rz_bin_elf_string_t {
 } RzBinElfString;
 
 typedef struct Elf_(rz_bin_elf_dynamic_info) {
+	Elf_(Addr) dt_init;
 	Elf_(Xword) dt_pltrelsz;
 	Elf_(Addr) dt_pltgot;
 	Elf_(Addr) dt_hash;
