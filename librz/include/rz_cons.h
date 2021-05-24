@@ -266,10 +266,10 @@ typedef struct rz_cons_palette_t {
 	RzColor graph_ujump;
 	RzColor graph_traced;
 	RzColor graph_current;
-	RzColor graph_diff_match;
-	RzColor graph_diff_unmatch;
-	RzColor graph_diff_unknown;
-	RzColor graph_diff_new;
+	RzColor diff_match;
+	RzColor diff_unmatch;
+	RzColor diff_unknown;
+	RzColor diff_new;
 } RzConsPalette;
 
 typedef struct rz_cons_printable_palette_t {
@@ -337,10 +337,10 @@ typedef struct rz_cons_printable_palette_t {
 	char *graph_box2;
 	char *graph_box3;
 	char *graph_box4;
-	char *graph_diff_match;
-	char *graph_diff_unmatch;
-	char *graph_diff_unknown;
-	char *graph_diff_new;
+	char *diff_match;
+	char *diff_unmatch;
+	char *diff_unknown;
+	char *diff_new;
 	char *graph_true;
 	char *graph_false;
 	char *graph_ujump;
@@ -413,8 +413,10 @@ typedef struct rz_cons_canvas_t {
 #define RUNE_CORNER_BL       "└"
 #define RUNE_CORNER_TL       "┌"
 #define RUNE_CORNER_TR       "┐"
-#define RUNE_ARROW_RIGHT     ">"
-#define RUNE_ARROW_LEFT      "<"
+#define RUNE_ARROW_RIGHT     "ᐳ"
+#define RUNE_ARROW_LEFT      "ᐸ"
+#define RUNE_ARROW_UP        "ᐱ"
+#define RUNE_ARROW_DOWN      "ᐯ"
 #define RUNE_CURVE_CORNER_TL "╭"
 #define RUNE_CURVE_CORNER_TR "╮"
 #define RUNE_CURVE_CORNER_BR "╯"
