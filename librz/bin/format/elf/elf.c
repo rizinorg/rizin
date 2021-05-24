@@ -17,7 +17,7 @@
 #include "rz_bin_elf_get_entry_offset.inc"
 #include "rz_bin_elf_get_fini_offset.inc"
 #include "rz_bin_elf_get_init_offset.inc"
-#include "rz_bin_elf_get_main_offset.inc"I
+#include "rz_bin_elf_get_main_offset.inc"
 #include "rz_bin_elf_get_section.inc"
 #include "rz_bin_elf_get_section_addr.inc"
 #include "rz_bin_elf_get_section_addr_end.inc"
@@ -1859,19 +1859,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-static ut64 getmainsymbol(ELFOBJ *bin) {
-	struct rz_bin_elf_symbol_t *symbol = Elf_(rz_bin_elf_get_symbols)(bin);
-	if (symbol) {
-		size_t i;
-		for (i = 0; !symbol[i].last; i++) {
-			if (!strcmp(symbol[i].name, "main")) {
-				return symbol[i].offset;
-			}
-		}
-	}
-	return UT64_MAX;
 }
 
 bool Elf_(rz_bin_elf_get_stripped)(ELFOBJ *bin) {
