@@ -5,7 +5,18 @@
 
 #include "elf.h"
 
-ut64 Elf_(rz_bin_elf_get_boffset)(ELFOBJ *bin) {
+/**
+ * \brief Compute the base offset of the binary
+ * \param elf binary
+ * \return the base offset
+ *
+ * To compute the base address, one determines the memory
+ * address associated with the lowest p_offset value for a
+ * PT_LOAD segment.
+ */
+ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, 0);
+
 	ut64 tmp, base = UT64_MAX;
 	rz_return_val_if_fail(bin, 0);
 
