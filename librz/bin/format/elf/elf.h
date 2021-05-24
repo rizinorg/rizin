@@ -226,7 +226,6 @@ ut64 Elf_(rz_bin_elf_p2v_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
 char *Elf_(rz_bin_elf_intrp)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin);
-bool Elf_(rz_bin_elf_get_stripped)(struct Elf_(rz_bin_elf_obj_t) * bin);
 bool Elf_(rz_bin_elf_is_static)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_get_data_encoding)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_get_arch)(struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -270,6 +269,7 @@ ut64 Elf_(rz_bin_elf_get_section_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const 
 ut64 Elf_(rz_bin_elf_get_section_addr_end)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
 ut64 Elf_(rz_bin_elf_get_section_offset)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
 RZ_OWN RzBinElfSection *Elf_(rz_bin_elf_get_sections)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_get_stripped)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);

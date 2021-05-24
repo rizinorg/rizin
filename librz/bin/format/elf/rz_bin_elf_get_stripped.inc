@@ -5,7 +5,15 @@
 
 #include "elf.h"
 
-bool Elf_(rz_bin_elf_get_stripped)(ELFOBJ *bin) {
+/**
+ * \brief Check if the binary is stripped
+ * \param elf binary
+ * \param is_stripped ?
+ * \return a ptr to a new allocated RzBinSymbol
+ *
+ * Use the shdr to check if the binary is stripped
+ */
+bool Elf_(rz_bin_elf_get_stripped)(RZ_NONNULL ELFOBJ *bin) {
 	if (!bin->shdr) {
 		return false;
 	}
