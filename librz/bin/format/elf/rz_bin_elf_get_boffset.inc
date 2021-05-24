@@ -5,6 +5,18 @@
 
 #include "elf.h"
 
+static ut64 compute_boffset_from_phdr(ELFOBJ *bin) {
+	ut64 base = UT64_MAX;
+
+	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
+		if (bin->phdr[i].p_type == PT_LOAD) {
+			base = RZ_MIN(base, bin->phdr[i].p_offset);
+		}
+	}
+
+	return base == UT64_MAX ? 0 : base;
+}
+
 /**
  * \brief Compute the base offset of the binary
  * \param elf binary
@@ -17,22 +29,9 @@
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, 0);
 
-	ut64 tmp, base = UT64_MAX;
-	rz_return_val_if_fail(bin, 0);
-
-	if (!bin->phdr) {
-		return 0;
+	if (bin->phdr) {
+		return compute_boffset_from_phdr(bin);
 	}
 
-	size_t i;
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_LOAD) {
-			tmp = (ut64)bin->phdr[i].p_offset & ELF_PAGE_MASK;
-			tmp = tmp - (tmp % (1 << ELF_PAGE_SIZE));
-			if (tmp < base) {
-				base = tmp;
-			}
-		}
-	}
-	return base == UT64_MAX ? 0 : base;
+	return 0;
 }
