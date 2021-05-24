@@ -226,7 +226,6 @@ ut64 Elf_(rz_bin_elf_p2v_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
 ut64 Elf_(rz_bin_elf_get_entry_offset)(struct Elf_(rz_bin_elf_obj_t) * bin);
 ut64 Elf_(rz_bin_elf_get_main_offset)(struct Elf_(rz_bin_elf_obj_t) * bin);
-ut64 Elf_(rz_bin_elf_get_fini_offset)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_intrp)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin);
 bool Elf_(rz_bin_elf_get_stripped)(struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -265,6 +264,7 @@ RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_N
 ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_init_offset)(RZ_NONNULL ELFOBJ *bin);
+ut64 Elf_(rz_bin_elf_get_fini_offset)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
 ut64 Elf_(rz_bin_elf_get_section_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
 ut64 Elf_(rz_bin_elf_get_section_addr_end)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
