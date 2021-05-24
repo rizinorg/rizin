@@ -23,6 +23,7 @@
 #include "rz_bin_elf_get_section_addr_end.inc"
 #include "rz_bin_elf_get_section_offset.inc"
 #include "rz_bin_elf_get_sections.inc"
+#include "rz_bin_elf_get_stripped.inc"
 #include "rz_bin_elf_has_nx.inc"
 #include "rz_bin_elf_has_relro.inc"
 #include "rz_bin_elf_is_executable.inc"
@@ -1859,19 +1860,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-bool Elf_(rz_bin_elf_get_stripped)(ELFOBJ *bin) {
-	if (!bin->shdr) {
-		return false;
-	}
-	size_t i;
-	for (i = 0; i < bin->ehdr.e_shnum; i++) {
-		if (bin->shdr[i].sh_type == SHT_SYMTAB) {
-			return false;
-		}
-	}
-	return true;
 }
 
 char *Elf_(rz_bin_elf_intrp)(ELFOBJ *bin) {
