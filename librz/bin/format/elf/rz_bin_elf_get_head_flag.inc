@@ -5,7 +5,15 @@
 
 #include "elf.h"
 
-char *Elf_(rz_bin_elf_get_head_flag)(ELFOBJ *bin) {
+/**
+ * \brief Return the head flag
+ * \return allocated string
+ *
+ * ...
+ */
+RZ_OWN char *Elf_(rz_bin_elf_get_head_flag)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	char *head_flag = NULL;
 	char *str = Elf_(rz_bin_elf_get_cpu)(bin);
 	if (str) {
