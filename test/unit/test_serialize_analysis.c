@@ -560,13 +560,15 @@ bool test_analysis_var_save() {
 	mu_assert_notnull(t_int64_t, "has int64_t type");
 	RzType *t_uint64_t = rz_type_identifier_of_base_type_str(analysis->typedb, "uint64_t");
 	mu_assert_notnull(t_uint64_t, "has uint64_t type");
-	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", true);
-	mu_assert_notnull(t_const_char_ptr, "has const char* type");
+	RzType *t_const_char_ptr = rz_type_pointer_of_base_type_str(analysis->typedb, "char", false);
+	mu_assert_notnull(t_const_char_ptr, "has char* type");
+	t_const_char_ptr->pointer.type->identifier.is_const = true;
+	eprintf("type is \"%s\"\n", rz_type_as_string(analysis->typedb, t_const_char_ptr));
 	RzBaseType *bt_struct_something = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
 	mu_assert_notnull(bt_struct_something, "create struct something base type");
 	bt_struct_something->name = strdup("something");
 	rz_type_db_save_base_type(analysis->typedb, bt_struct_something);
-	RzType *t_struct_something = rz_type_identifier_of_base_type(analysis->typedb, bt_struct_something);
+	RzType *t_struct_something = rz_type_identifier_of_base_type(analysis->typedb, bt_struct_something, false);
 	mu_assert_notnull(t_struct_something, "create struct something type");
 	t_struct_something->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
 
@@ -666,7 +668,10 @@ bool test_analysis_var_load() {
 	mu_assert_notnull(v, "var");
 	mu_assert_streq(v->name, "var_sp", "var name");
 	mu_assert_eq(v->type->kind, RZ_TYPE_KIND_POINTER, "var type");
-	mu_assert_true(v->type->pointer.is_const, "var type");
+	mu_assert_notnull(v->type->pointer.type, "var type");
+	mu_assert_eq(v->type->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "var type");
+	eprintf("var type is \"%s\"\n", rz_type_as_string(analysis->typedb, v->type));
+	mu_assert_true(v->type->pointer.type->identifier.is_const, "var type");
 	mu_assert_true(rz_type_atomic_str_eq(analysis->typedb, v->type->pointer.type, "char"), "var type");
 	mu_assert("var arg", !v->isarg);
 	mu_assert_eq(v->accesses.len, 1, "accesses count");
@@ -1573,6 +1578,8 @@ Sdb *analysis_ref_db() {
 	sdb_set(cc, "cc.sectarian.argn", "stack", 0);
 	sdb_set(cc, "sectarian", "cc", 0);
 
+	sdb_ns(db, "types", true);
+
 	return db;
 }
 
@@ -1626,6 +1633,10 @@ bool test_analysis_save() {
 
 	Sdb *db = sdb_new0();
 	rz_serialize_analysis_save(db, analysis);
+
+	// Remove `types` namespace first
+	sdb_ns_unset(db, "types", NULL);
+	sdb_ns(db, "types", true);
 
 	Sdb *expected = analysis_ref_db();
 	assert_sdb_eq(db, expected, "analysis save");

@@ -51,15 +51,8 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 48656c6c341248656c6c6f00000000000000000048656c6c6f0000000000000000009090
-tk WORD=type
-tk type.WORD=w
-tk type.WORD.size=16
-tk VbHeader=struct
-tk struct.VbHeader=szVbMagic,wRuntimeBuild,szLangDll,szSecLangDll
-tk struct.VbHeader.szVbMagic=char,0,4
-tk struct.VbHeader.wRuntimeBuild=WORD,4,0
-tk struct.VbHeader.szLangDll=char,6,14
-tk struct.VbHeader.szSecLangDll=char,20,14
+td "typedef uint32_t WORD;"
+td "typedef struct _VbHeader { char szVbMagic[4]; WORD wRuntimeBuild; char szLangDll[14]; char szSecLangDll[14];} VbHeader;"
 tl VbHeader @ 0x00
 pd 3
 EOF
@@ -239,18 +232,21 @@ NAME=t- union
 FILE==
 CMDS=<<EOF
 td "union xoo{int x; int y; int z;}"
-tk *~union
+tu xoo
+tuc xoo
 t- xoo
+tu xoo
+tuc xoo
 EOF
 EXPECT=<<EOF
-union.xoo=x,y,z
-union.xoo.x=int32_t,0,0
-union.xoo.x.meta=0
-union.xoo.y=int32_t,0,0
-union.xoo.y.meta=0
-union.xoo.z=int32_t,0,0
-union.xoo.z.meta=0
-xoo=union
+x: int
+y: int
+z: int
+union xoo {
+    int x;
+    int y;
+    int z
+};
 EOF
 RUN
 
@@ -263,6 +259,17 @@ t~?Abracadabra
 EOF
 EXPECT=<<EOF
 0
+EOF
+RUN
+
+NAME=typedef const char***
+FILE==
+CMDS=<<EOF
+td "typedef const char*** foo_t"
+tt foo_t
+EOF
+EXPECT=<<EOF
+foo_t = const char***
 EOF
 RUN
 
@@ -326,28 +333,20 @@ td "enum FOO { A=1, B=0x100, C=0xFF, D=4, E=5 };"
 td "enum BAR { G=0x800, Z=0xEE, P=4, E=5 };"
 tej FOO
 tej BAR
-tej
 EOF
 EXPECT=<<EOF
 {"name":"FOO","values":{"A":1,"B":256,"C":255,"D":4,"E":5}}
 {"name":"BAR","values":{"G":2048,"Z":238,"P":4,"E":5}}
-[{"name":"BAR","values":{"G":2048,"Z":238,"P":4,"E":5}},{"name":"FOO","values":{"A":1,"B":256,"C":255,"D":4,"E":5}}]
 EOF
 RUN
 
-NAME=tf and tfk
+NAME=tf
 FILE==
 CMDS=<<EOF
 tf write
-tfk write
 EOF
 EXPECT=<<EOF
-ssize_t write (int fd, const char * ptr, size_t nbytes);
-func.write.arg.0=int,fd
-func.write.arg.1=const char *,ptr
-func.write.arg.2=size_t,nbytes
-func.write.args=3
-func.write.ret=ssize_t
+ssize_t write(int fd, const char * ptr, size_t nbytes);
 EOF
 RUN
 
@@ -360,15 +359,14 @@ td "typedef bool FLAG;"
 tt FLAG
 EOF
 EXPECT=<<EOF
-char
-bool
+FILE_NAME = char
+FLAG = bool
 EOF
 RUN
 
 NAME=td struct
 FILE==
 CMDS=<<EOF
-t-*
 td "struct test_struct{int x;int y;};"
 ts~?test_struct
 EOF
@@ -382,15 +380,21 @@ FILE==
 CMDS=<<EOF
 td "enum v { t=0x123, p=0x321 };"
 te~?
-tk v
-tk enum.v.t
-tk enum.v.p
+tec v
+te v
+te v 0x123
+te v 0x321
 EOF
 EXPECT=<<EOF
 1
-enum
-0x123
-0x321
+enum v {
+    t = 291,
+    p = 801
+};
+t = 0x123
+p = 0x321
+t
+p
 EOF
 RUN
 
@@ -399,13 +403,12 @@ FILE==
 CMDS=<<EOF
 td "enum v { t=0x8000000000000001, p=0x8000000000000008 };"
 te~?
-tk enum.v.t
-tk enum.v.p
+te v
 EOF
 EXPECT=<<EOF
 1
-0x8000000000000001
-0x8000000000000008
+t = 0x8000000000000001
+p = 0x8000000000000008
 EOF
 RUN
 
@@ -499,18 +502,6 @@ pf [127]z[40]zd street city zip
 EOF
 RUN
 
-NAME=t*
-FILE==
-CMDS=<<EOF
-t-*
-tk a=b
-t*
-EOF
-EXPECT=<<EOF
-tk a=b
-EOF
-RUN
-
 NAME=unions
 FILE==
 CMDS=<<EOF
@@ -518,25 +509,8 @@ td "union x{float a;int b;}"
 tu
 EOF
 EXPECT=<<EOF
-x
-EOF
-RUN
-
-NAME=Types not reloaded when arch is the same
-FILE==
-CMDS=<<EOF
-e asm.archx86
-e analysis.arch=x86
-e analysis.bits=32
-t-*
-tk a=b
-e asm.arch=x68
-e analysis.arch=x86
-e analysis.bits=32
-tk a
-EOF
-EXPECT=<<EOF
-b
+a: float
+b: int
 EOF
 RUN
 
@@ -545,16 +519,14 @@ FILE==
 CMDS=<<EOF
 td "int foo(int bar);"
 td "int foo(int bar);"
-tk~foo
+tf~foo
 EOF
 EXPECT_ERR=<<EOF
+ERROR: Cannot add the parameter to the function!
+ERROR: parsing parameters for callable type: "foo"
 EOF
 EXPECT=<<EOF
-foo=func
-func.foo.arg.0=int32_t,bar
-func.foo.args=1
-func.foo.cc=cdecl
-func.foo.ret=int32_t
+int foo(int bar);
 EOF
 RUN
 
@@ -658,11 +630,11 @@ RUN
 NAME=tpv
 FILE==
 CMDS=<<EOF
+e asm.bits=16
 td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
 td "struct s16iu { int16_t a_i; uint16_t b_u; int16_t c_i; uint16_t d_u;}"
 td "struct s32ui { uint32_t e_u; int16_t f_i;}"
 td "struct s32iu { int32_t e_i; uint16_t f_u;}"
-e asm.bits=16
 e cfg.bigendian=true
 tpv s16ui 0xcafebabecafebabe
 tpv s16iu 0xcafebabecafebabe
@@ -674,6 +646,10 @@ tpv s16iu 0xcafebabecafebabe
 tpv s32ui 0xcafebabecafebabe
 tpv s32iu 0xcafebabecafebabe
 e asm.bits=32
+td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
+td "struct s16iu { int16_t a_i; uint16_t b_u; int16_t c_i; uint16_t d_u;}"
+td "struct s32ui { uint32_t e_u; int16_t f_i;}"
+td "struct s32iu { int32_t e_i; uint16_t f_u;}"
 e cfg.bigendian=true
 tpv s16ui 0xcafebabecafebabe
 tpv s16iu 0xcafebabecafebabe
@@ -685,6 +661,10 @@ tpv s16iu 0xcafebabecafebabe
 tpv s32ui 0xcafebabecafebabe
 tpv s32iu 0xcafebabecafebabe
 e asm.bits=64
+td "struct s16ui { uint16_t a_u; int16_t b_i; uint16_t c_u; int16_t d_i;}"
+td "struct s16iu { int16_t a_i; uint16_t b_u; int16_t c_i; uint16_t d_u;}"
+td "struct s32ui { uint32_t e_u; int16_t f_i;}"
+td "struct s32iu { int32_t e_i; uint16_t f_u;}"
 e cfg.bigendian=true
 tpv s16ui 0xcafebabecafebabe
 tpv s16iu 0xcafebabecafebabe
@@ -901,7 +881,7 @@ e asm.bits=64
 e asm.comments=false
 td "struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
-tl bar 0x1958
+tl "struct bar" 0x1958
 af
 aat @ fcn.00000000
 ?e
@@ -927,8 +907,8 @@ e asm.flags=false
 td "struct bar {int x; int y; int z;};"
 td "struct foo {int a; int b; int c;};"
 wx 48C7C000010000488B5008488B480448C7C000020000488B5008488B48049090C3
-tl bar 0x200
-tl foo 0x100
+tl "struct bar" 0x200
+tl "struct foo" 0x100
 af
 aat
 pdf
@@ -979,7 +959,7 @@ aa
 td "struct Test { int a; int  b; char *c;};"
 s main
 ahr 0x00000597 @ 0x00000592
-tl Test 0x00002020
+tl "struct Test" 0x00002020
 s 0x000005a8
 ?e
 pd 3
@@ -1001,7 +981,7 @@ td "union Books {char  title[50];char  author[50]; char  subject[100];};"
 tu
 tu Books
 s main
-tl Books 0x00177f88
+tl "union Books" 0x00177f88
 afv~Books
 s 0x000006d2
 pd 1
@@ -1051,7 +1031,7 @@ tsc three_elements
 EOF
 EXPECT=<<EOF
 struct three_elements {
-	int32_t x;
+	int x;
 	char y;
 	float z;
 };
@@ -1106,9 +1086,9 @@ tuc x
 EOF
 EXPECT=<<EOF
 union x {
-	int32_t x;
-	int32_t y;
-	int32_t z;
+	int x;
+	int y;
+	int z;
 };
 EOF
 RUN
@@ -1147,30 +1127,36 @@ FILE==
 CMDS=<<EOF
 to bins/headers/12272.h
 ts A
-ts B
-ts O  # Broken but shouldn't hang
+ts "anonymous struct 0"
+ts "anonymous struct 1"
+tsc A
+tsc "anonymous struct 0"
+tsc "anonymous struct 1"
+tsc O
 ?e ----
-tk~typedef.A=,typedef.B=,typedef.O=,struct.A,struct.B,struct.O
-?e
-ts~A,B,O
+tt A
+tt B
+tt O
 EOF
 EXPECT=<<EOF
-pf dF num num2
-pf c ch
+pf ?f (float)num
+pf ?dF (int)num (double)num2
+pf ?c (char)ch
 ----
-struct.A=num
-struct.A.num=float,0,0
-struct.A.num.meta=9
-struct.O=ptr
-struct.O.ptr=char *,0,0
-struct.O.ptr.meta=4
-typedef.A=struct
-typedef.B=struct
-typedef.O=struct O
-
-A
-B
-O
+struct A {
+	float num;
+};
+struct anonymous struct 0 {
+	int num;
+	double num2;
+};
+struct anonymous struct 1 {
+	char ch;
+};
+struct O {
+	char *ptr;
+};
+B = struct anonymous struct 1
 EOF
 RUN
 
@@ -1426,13 +1412,13 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var int64_t var_34h @ rbp-0x34
-var signed int64_t var_30h @ rbp-0x30
-var uint32_t var_2ch @ rbp-0x2c
+var int va_args @ rbp-0x34
+var int64_t var_30h @ rbp-0x30
+var int64_t var_2ch @ rbp-0x2c
 var FILE * stream @ rbp-0x28
-var char * s @ rbp-0x20
-var char * var_18h @ rbp-0x18
-var char * var_10h @ rbp-0x10
+var const char * s @ rbp-0x20
+var const char * var_18h @ rbp-0x18
+var const char * var_10h @ rbp-0x10
 var int64_t canary @ rbp-0x8
 EOF
 RUN
@@ -1608,10 +1594,10 @@ s sym.range_or
 pd 1~4h
 EOF
 EXPECT=<<EOF
-|           ; var signed int64_t var_4h  { > 0xa} @ rbp-0x4
-|           ; var signed int64_t var_14h  { > 0x0 && <= 0x9} @ rbp-0x14
-|           ; var signed int64_t var_4h  { > 0x64 && <= 0xc7} @ rbp-0x4
-|           ; var signed int64_t var_4h  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd} @ rbp-0x4
+|           ; var int64_t var_4h  { > 0xa} @ rbp-0x4
+|           ; var int64_t var_14h  { > 0x0 && <= 0x9} @ rbp-0x14
+|           ; var int64_t var_4h  { > 0x64 && <= 0xc7} @ rbp-0x4
+|           ; var int64_t var_4h  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd} @ rbp-0x4
 EOF
 RUN
 
@@ -1624,7 +1610,7 @@ s main
 afv~var_28h
 EOF
 EXPECT=<<EOF
-var char * var_28h @ esp+0x4
+var const char * var_28h @ esp+0x4
 EOF
 RUN
 
@@ -1662,14 +1648,10 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 s main
 af
-tk~func.main
+tf main
 EOF
 EXPECT=<<EOF
-func.main.arg.0=int,argc
-func.main.arg.1=char **,argv
-func.main.arg.2=char **,envp
-func.main.args=3
-func.main.ret=int
+int main(int argc, char ** argv, char ** envp);
 EOF
 RUN
 
@@ -1679,13 +1661,10 @@ CMDS=<<EOF
 s main
 af
 "afs int main(int argc);"
-tk~func.main
+tf main
 EOF
 EXPECT=<<EOF
-func.main.arg.0=int32_t,argc
-func.main.args=1
-func.main.cc=cdecl
-func.main.ret=int32_t
+int main(int argc);
 EOF
 RUN
 
@@ -1696,14 +1675,14 @@ e analysis.vars.stackname=true
 s 0x4e2420
 af
 afs
-"afs no_type(int a, char **b);"
+"afs void no_type(int a, char **b);"
 afs
 "afs char type(int a, char **b);"
 afs
 EOF
 EXPECT=<<EOF
 void fcn.004e2420 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
-int32_t no_type (int32_t a, char **b);
+void no_type (int32_t a, char **b);
 char type (int32_t a, char **b);
 EOF
 RUN
@@ -1775,22 +1754,16 @@ NAME=td union
 FILE==
 CMDS=<<EOF
 td "union foo {int a;char b;}"
-tu*~foo
-ts*~foo
-t*~foo
-t foo
 tu* foo
+t* foo
+tu foo
+t foo
 EOF
 EXPECT=<<EOF
-pf.foo dc a b
-tk foo=union
-tk union.foo=a,b
-tk union.foo.a=int32_t,0,0
-tk union.foo.a.meta=0
-tk union.foo.b=char,0,0
-tk union.foo.b.meta=2
-pf dc a b
-pf.foo dc a b
+pf.foo 0dc (int)a (char)b
+pf.foo 0dc (int)a (char)b
+pf 0dc (int)a (char)b
+pf 0dc (int)a (char)b
 EOF
 RUN
 
@@ -1801,7 +1774,7 @@ wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8
 td "struct foo {int a; int b; uint64_t c;};"
-tl foo @ 0x0
+tl "struct foo" @ 0x0
 pd 1
 EOF
 EXPECT=<<EOF
@@ -1819,7 +1792,7 @@ wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8
 td "struct foo {};"
-tl foo @ 0x0
+tl "struct foo" @ 0x0
 pd 1
 EOF
 EXPECT=<<EOF

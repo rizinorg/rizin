@@ -242,7 +242,7 @@ struct NSString {
 EOF
 RUN
 
-NAME=tc typedef
+NAME=ttc typedef
 FILE==
 CMDS=<<EOF
 td "typedef char *string;"
@@ -256,16 +256,15 @@ RUN
 NAME=ttj typedef
 FILE==
 CMDS=<<EOF
-t-*
 td "typedef char *string;"
-ttj
+ttj string
 EOF
 EXPECT=<<EOF
-{"string":"char *"}
+{"name":"string","type":"char *"}
 EOF
 RUN
 
-NAME=test cmd tsc 
+NAME=test cmd tsc
 FILE=bins/mach0/objc-employee
 CMDS=<<EOF
 .ic*
@@ -293,8 +292,7 @@ tf main
 tf entry0
 EOF
 EXPECT=<<EOF
-int main (int argc, char ** argv, char ** envp);
-void entry0 ();
+int main(int argc, char ** argv, char ** envp);
 EOF
 RUN
 
@@ -302,7 +300,7 @@ NAME=test cmd tec
 FILE==
 CMDS=<<EOF
 td "enum foo {bar = 1, cow = 3};"
-tec
+tec foo
 EOF
 EXPECT=<<EOF
 enum foo {
@@ -315,13 +313,13 @@ RUN
 NAME=test cmd tuc
 FILE==
 CMDS=<<EOF
-td "union Data {int i,j;};"
-tuc
+td "union Data {int i; int j;};"
+tuc Data
 EOF
 EXPECT=<<EOF
 union Data {
-	int32_t i;
-	int32_t j;
+	int i;
+	int j;
 };
 EOF
 RUN

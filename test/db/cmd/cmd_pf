@@ -22,9 +22,9 @@ NAME=pf.-x
 FILE==
 CMDS=<<EOF
 pf.foo xxd
-pf.
+pf.~foo
 pf.-foo
-pf.
+pf.~foo
 EOF
 EXPECT=<<EOF
 pf.foo xxd
@@ -35,9 +35,9 @@ NAME=pf.-*
 FILE==
 CMDS=<<EOF
 pf.foo xxd
-pf.
+pf.~foo
 pf.-*
-pf.
+pf.~foo
 EOF
 EXPECT=<<EOF
 pf.foo xxd
@@ -682,7 +682,6 @@ NAME=PE test
 FILE=bins/pe/ch22.exe
 ARGS=-nn
 CMDS=<<EOF
-e asm.bits=32
 s 0x80
 pf.pe_nt_image_headers32
 EOF
