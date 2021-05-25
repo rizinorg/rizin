@@ -27,6 +27,7 @@
 #include "rz_bin_elf_get_stripped.inc"
 #include "rz_bin_elf_has_nx.inc"
 #include "rz_bin_elf_has_relro.inc"
+#include "rz_bin_elf_has_va.inc"
 #include "rz_bin_elf_intrp.inc"
 #include "rz_bin_elf_is_executable.inc"
 #include "rz_bin_elf_is_relocatable.inc"
@@ -1863,10 +1864,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-int Elf_(rz_bin_elf_has_va)(ELFOBJ *bin) {
-	return true;
 }
 
 char *Elf_(rz_bin_elf_get_arch)(ELFOBJ *bin) {
