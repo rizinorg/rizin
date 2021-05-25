@@ -5,6 +5,17 @@
 
 #include "elf.h"
 
+struct class_translation {
+	unsigned char class;
+	const char *name;
+};
+
+static const struct class_translation class_translation_table[] = {
+	{ ELFCLASSNONE, "none" },
+	{ ELFCLASS32, "ELF32" },
+	{ ELFCLASS64, "ELF64" }
+};
+
 /**
  * \brief Return a string representing the elf class
  * \param elf binary
@@ -15,10 +26,11 @@
 RZ_OWN char *Elf_(rz_bin_elf_get_elf_class)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	switch (bin->ehdr.e_ident[EI_CLASS]) {
-	case ELFCLASSNONE: return strdup("none");
-	case ELFCLASS32: return strdup("ELF32");
-	case ELFCLASS64: return strdup("ELF64");
-	default: return rz_str_newf("<unknown: %x>", bin->ehdr.e_ident[EI_CLASS]);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(class_translation_table); i++) {
+		if (bin->ehdr.e_ident[EI_CLASS] == class_translation_table[i].class) {
+			return strdup(class_translation_table[i].name);
+		}
 	}
+
+	return rz_str_newf("<unknown: %x>", bin->ehdr.e_ident[EI_CLASS]);
 }
