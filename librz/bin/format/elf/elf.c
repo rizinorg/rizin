@@ -14,6 +14,7 @@
 #include "rz_bin_elf_convert_symbol.inc"
 #include "rz_bin_elf_get_baddr.inc"
 #include "rz_bin_elf_get_boffset.inc"
+#include "rz_bin_elf_get_data_encoding.inc"
 #include "rz_bin_elf_get_entry_offset.inc"
 #include "rz_bin_elf_get_fini_offset.inc"
 #include "rz_bin_elf_get_init_offset.inc"
@@ -1861,15 +1862,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		eprintf("Unsupported relocs type %" PFMT64u " for arch %d\n",
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
-	}
-}
-
-char *Elf_(rz_bin_elf_get_data_encoding)(ELFOBJ *bin) {
-	switch (bin->ehdr.e_ident[EI_DATA]) {
-	case ELFDATANONE: return strdup("none");
-	case ELFDATA2LSB: return strdup("2's complement, little endian");
-	case ELFDATA2MSB: return strdup("2's complement, big endian");
-	default: return rz_str_newf("<unknown: %x>", bin->ehdr.e_ident[EI_DATA]);
 	}
 }
 
