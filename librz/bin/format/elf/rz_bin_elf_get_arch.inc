@@ -5,7 +5,16 @@
 
 #include "elf.h"
 
-char *Elf_(rz_bin_elf_get_arch)(ELFOBJ *bin) {
+/**
+ * \brief Get the elf binary architecture
+ * \param elf binary
+ * \return an allocated string
+ *
+ * With the elf header (e_machine) deduce the elf architecture
+ */
+RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	switch (bin->ehdr.e_machine) {
 	case EM_ARC:
 	case EM_ARC_A5:
