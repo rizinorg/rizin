@@ -20,6 +20,7 @@
 #include "rz_bin_elf_get_data_encoding.inc"
 #include "rz_bin_elf_get_entry_offset.inc"
 #include "rz_bin_elf_get_fini_offset.inc"
+#include "rz_bin_elf_get_head_flag.inc"
 #include "rz_bin_elf_get_init_offset.inc"
 #include "rz_bin_elf_get_main_offset.inc"
 #include "rz_bin_elf_get_section.inc"
@@ -1834,24 +1835,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-char *Elf_(rz_bin_elf_get_head_flag)(ELFOBJ *bin) {
-	char *head_flag = NULL;
-	char *str = Elf_(rz_bin_elf_get_cpu)(bin);
-	if (str) {
-		head_flag = rz_str_append(head_flag, str);
-		free(str);
-	}
-	str = Elf_(rz_bin_elf_get_abi)(bin);
-	if (str) {
-		head_flag = rz_str_appendf(head_flag, " %s", str);
-		free(str);
-	}
-	if (RZ_STR_ISEMPTY(head_flag)) {
-		head_flag = rz_str_append(head_flag, "unknown_flag");
-	}
-	return head_flag;
 }
 
 // http://www.sco.com/developers/gabi/latest/ch4.eheader.html
