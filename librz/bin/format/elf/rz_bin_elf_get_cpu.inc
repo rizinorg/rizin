@@ -5,7 +5,16 @@
 
 #include "elf.h"
 
-char *Elf_(rz_bin_elf_get_cpu)(ELFOBJ *bin) {
+/**
+ * \brief Return a string representing the cpu
+ * \param elf type
+ * \return allocated string
+ *
+ * Only work on mips right now. Use the elf header to deduce the cpu
+ */
+RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	if (bin->phdr && bin->ehdr.e_machine == EM_MIPS) {
 		const ut32 mipsType = bin->ehdr.e_flags & EF_MIPS_ARCH;
 		switch (mipsType) {
