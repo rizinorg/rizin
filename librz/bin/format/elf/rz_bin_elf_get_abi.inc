@@ -38,7 +38,17 @@ static bool is_mips_n32(Elf_(Ehdr) * h) {
 	return true;
 }
 
-char *Elf_(rz_bin_elf_get_abi)(ELFOBJ *bin) {
+/**
+ * \brief Return a string representing the application binary interface
+ * \param elf type
+ * \return allocated string
+ *
+ * Only work on mips right now. Use the elf header to deduce the application
+ * binary interface
+ */
+RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	Elf_(Ehdr) *ehdr = (Elf_(Ehdr) *)&bin->ehdr;
 
 	if (ehdr->e_machine == EM_MIPS) {
