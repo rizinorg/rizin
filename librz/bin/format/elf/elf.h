@@ -273,7 +273,7 @@ int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_intrp)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
-bool Elf_(rz_bin_elf_is_static)(struct Elf_(rz_bin_elf_obj_t) * bin);
+bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzList *Elf_(section_flag_to_rzlist)(ut64 flag);
 RZ_OWN char *Elf_(section_type_to_string)(ut64 type);
 
