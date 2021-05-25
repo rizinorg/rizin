@@ -226,7 +226,6 @@ ut64 Elf_(rz_bin_elf_v2p_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
 char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin);
 char *Elf_(rz_bin_elf_get_machine_name)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_get_head_flag)(ELFOBJ *bin); //yin
-char *Elf_(rz_bin_elf_get_cpu)(ELFOBJ *bin);
 char *Elf_(rz_bin_elf_get_file_type)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_get_elf_class)(struct Elf_(rz_bin_elf_obj_t) * bin);
 int Elf_(rz_bin_elf_get_bits)(struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -256,6 +255,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin);
+char *Elf_(rz_bin_elf_get_cpu)(ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_data_encoding)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_entry_offset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_fini_offset)(RZ_NONNULL ELFOBJ *bin);
