@@ -5,7 +5,16 @@
 
 #include "elf.h"
 
-bool Elf_(rz_bin_elf_is_static)(ELFOBJ *bin) {
+/**
+ * \brief Check if the binary is statically-linked library
+ * \param elf binary
+ * \return is_static ?
+ *
+ * Check the presence of PT_INTERP or PT_DYNAMIC in the program header
+ */
+bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, false);
+
 	size_t i;
 	if (!bin->phdr) {
 		return false;
