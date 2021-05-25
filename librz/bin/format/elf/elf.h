@@ -225,7 +225,6 @@ ut64 Elf_(rz_bin_elf_v2p)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
 ut64 Elf_(rz_bin_elf_p2v_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
 char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin);
-bool Elf_(rz_bin_elf_is_static)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_get_data_encoding)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_get_arch)(struct Elf_(rz_bin_elf_obj_t) * bin);
 char *Elf_(rz_bin_elf_get_machine_name)(struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -274,6 +273,7 @@ int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_intrp)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_is_static)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RZ_OWN RzList *Elf_(section_flag_to_rzlist)(ut64 flag);
 RZ_OWN char *Elf_(section_type_to_string)(ut64 type);
 
