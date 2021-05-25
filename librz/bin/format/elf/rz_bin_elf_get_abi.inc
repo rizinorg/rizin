@@ -1,0 +1,56 @@
+// SPDX-FileCopyrightText: 2008-2020 nibble <nibble.ds@gmail.com>
+// SPDX-FileCopyrightText: 2008-2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2008-2020 alvaro_fe <alvaro.felipe91@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#include "elf.h"
+
+#define EF_MIPS_ABI_O32 0x00001000 /* O32 ABI.  */
+#define EF_MIPS_ABI_O64 0x00002000 /* O32 extended for 64 bit.  */
+#define EF_MIPS_ABI     0x0000f000
+
+static bool is_elfclass64(Elf_(Ehdr) * h) {
+	return h->e_ident[EI_CLASS] == ELFCLASS64;
+}
+
+static bool is_mips_o32(Elf_(Ehdr) * h) {
+	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
+		return false;
+	}
+	if ((h->e_flags & EF_MIPS_ABI2) != 0) {
+		return false;
+	}
+	if (((h->e_flags & EF_MIPS_ABI) != 0) &&
+		((h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32)) {
+		return false;
+	}
+	return true;
+}
+
+static bool is_mips_n32(Elf_(Ehdr) * h) {
+	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
+		return false;
+	}
+	if (((h->e_flags & EF_MIPS_ABI2) == 0) ||
+		((h->e_flags & EF_MIPS_ABI) != 0)) {
+		return false;
+	}
+	return true;
+}
+
+char *Elf_(rz_bin_elf_get_abi)(ELFOBJ *bin) {
+	Elf_(Ehdr) *ehdr = (Elf_(Ehdr) *)&bin->ehdr;
+
+	if (ehdr->e_machine == EM_MIPS) {
+		if (is_elfclass64(ehdr)) {
+			return strdup("n64");
+		}
+		if (is_mips_n32(ehdr)) {
+			return strdup("n32");
+		}
+		if (is_mips_o32(ehdr)) {
+			return strdup("o32");
+		}
+	}
+	return NULL;
+}

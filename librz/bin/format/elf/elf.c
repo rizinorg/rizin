@@ -12,6 +12,7 @@
 #include "elf.h"
 
 #include "rz_bin_elf_convert_symbol.inc"
+#include "rz_bin_elf_get_abi.inc"
 #include "rz_bin_elf_get_arch.inc"
 #include "rz_bin_elf_get_baddr.inc"
 #include "rz_bin_elf_get_boffset.inc"
@@ -85,40 +86,7 @@
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
 
-#define EF_MIPS_ABI_O32 0x00001000 /* O32 ABI.  */
-#define EF_MIPS_ABI_O64 0x00002000 /* O32 extended for 64 bit.  */
-#define EF_MIPS_ABI     0x0000f000
-
 static void setimpord(ELFOBJ *eobj, RzBinElfSymbol *sym);
-
-static inline bool is_elfclass64(Elf_(Ehdr) * h) {
-	return h->e_ident[EI_CLASS] == ELFCLASS64;
-}
-
-static bool is_mips_o32(Elf_(Ehdr) * h) {
-	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
-		return false;
-	}
-	if ((h->e_flags & EF_MIPS_ABI2) != 0) {
-		return false;
-	}
-	if (((h->e_flags & EF_MIPS_ABI) != 0) &&
-		((h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32)) {
-		return false;
-	}
-	return true;
-}
-
-static bool is_mips_n32(Elf_(Ehdr) * h) {
-	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
-		return false;
-	}
-	if (((h->e_flags & EF_MIPS_ABI2) == 0) ||
-		((h->e_flags & EF_MIPS_ABI) != 0)) {
-		return false;
-	}
-	return true;
-}
 
 enum {
 	X86,
@@ -1865,23 +1833,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-char *Elf_(rz_bin_elf_get_abi)(ELFOBJ *bin) {
-	Elf_(Ehdr) *ehdr = (Elf_(Ehdr) *)&bin->ehdr;
-
-	if (ehdr->e_machine == EM_MIPS) {
-		if (is_elfclass64(ehdr)) {
-			return strdup("n64");
-		}
-		if (is_mips_n32(ehdr)) {
-			return strdup("n32");
-		}
-		if (is_mips_o32(ehdr)) {
-			return strdup("o32");
-		}
-	}
-	return NULL;
 }
 
 char *Elf_(rz_bin_elf_get_cpu)(ELFOBJ *bin) {
