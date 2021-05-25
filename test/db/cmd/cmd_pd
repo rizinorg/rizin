@@ -2301,7 +2301,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-sym.parell (char *s);
+sym.parell (const char *s);
 EOF
 RUN
 
@@ -2315,7 +2315,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-parell (char *s);
+parell (const char *s);
 EOF
 RUN
 

@@ -345,6 +345,146 @@ static bool test_types_get_base_types_of_kind(void) {
 	mu_end;
 }
 
+static bool test_const_types(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	// Const identifier but not pointer
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "const char*", &error_msg);
+	mu_assert_notnull(ttype, "\"const char*\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_POINTER, "is pointer");
+	mu_assert_false(ttype->pointer.is_const, "pointer not const");
+	mu_assert_notnull(ttype->pointer.type, "pointer type is not null");
+	mu_assert_true(ttype->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
+	mu_assert_true(ttype->pointer.type->identifier.is_const, "identifer is const");
+	rz_type_free(ttype);
+
+	// Const pointer but not identifier
+	ttype = rz_type_parse_string_single(typedb->parser, "char* const", &error_msg);
+	mu_assert_notnull(ttype, "\"const char*\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_POINTER, "is pointer");
+	mu_assert_true(ttype->pointer.is_const, "pointer is const");
+	mu_assert_notnull(ttype->pointer.type, "pointer type is not null");
+	mu_assert_true(ttype->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
+	mu_assert_false(ttype->pointer.type->identifier.is_const, "identifier is not const");
+	rz_type_free(ttype);
+
+	// Const pointer and identifier
+	ttype = rz_type_parse_string_single(typedb->parser, "const char* const", &error_msg);
+	mu_assert_notnull(ttype, "\"const char*\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_POINTER, "is pointer");
+	mu_assert_true(ttype->pointer.is_const, "pointer is const");
+	mu_assert_notnull(ttype->pointer.type, "pointer type is not null");
+	mu_assert_true(ttype->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
+	mu_assert_true(ttype->pointer.type->identifier.is_const, "identifier is const");
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+static bool test_array_types(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	// Zero-sized array
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, "int32_t arr[]", &error_msg);
+	mu_assert_notnull(ttype, "\"int32 arr[]\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+	mu_assert_eq(ttype->array.count, 0, "zero-sized array");
+	mu_assert_notnull(ttype->array.type, "array type is not null");
+	mu_assert_true(ttype->array.type->kind == RZ_TYPE_KIND_IDENTIFIER, "array type is identifier");
+	mu_assert_streq("int32_t", ttype->array.type->identifier.name, "identifer is \"int32_t\"");
+	rz_type_free(ttype);
+
+	// Real-sized array of arrays
+	ttype = rz_type_parse_string_single(typedb->parser, "unsigned short [6][7]", &error_msg);
+	mu_assert_notnull(ttype, "\"unsigned short arr[6][7]\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+	mu_assert_eq(ttype->array.count, 6, "6-sized array");
+	mu_assert_notnull(ttype->array.type, "array type is not null");
+	mu_assert_true(ttype->array.type->kind == RZ_TYPE_KIND_ARRAY, "array type is array");
+	mu_assert_eq(ttype->array.type->array.count, 7, "7-sized array");
+	mu_assert_notnull(ttype->array.type->array.type, "array's array type is not null");
+	mu_assert_true(ttype->array.type->array.type->kind == RZ_TYPE_KIND_IDENTIFIER, "array's array type is identifier");
+	mu_assert_streq("unsigned short", ttype->array.type->array.type->identifier.name, "identifer is \"unsigned short\"");
+	rz_type_free(ttype);
+
+	// Real-sized array of pointers
+	ttype = rz_type_parse_string_single(typedb->parser, "float * arr[5]", &error_msg);
+	mu_assert_notnull(ttype, "\"float * arr[5]\" type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_ARRAY, "is array");
+	mu_assert_eq(ttype->array.count, 5, "real-sized array");
+	mu_assert_notnull(ttype->array.type, "array type is not null");
+	mu_assert_true(ttype->array.type->kind == RZ_TYPE_KIND_POINTER, "array type is pointer");
+	mu_assert_false(ttype->array.type->pointer.is_const, "pointer is not const");
+	mu_assert_notnull(ttype->array.type->pointer.type, "pointer type is not null");
+	mu_assert_true(ttype->array.type->pointer.type->kind == RZ_TYPE_KIND_IDENTIFIER, "pointer type is identifier");
+	mu_assert_false(ttype->array.type->pointer.type->identifier.is_const, "identifer is not const");
+
+	mu_assert_streq("float", ttype->array.type->pointer.type->identifier.name, "identifer is \"float\"");
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
+static char *func_ptr_struct = "struct bla { int a; wchar_t (*func)(int a, const char *b); }";
+
+static bool test_struct_func_types(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	char *error_msg = NULL;
+	RzType *ttype = rz_type_parse_string_single(typedb->parser, func_ptr_struct, &error_msg);
+	mu_assert_notnull(ttype, "type parse successfull");
+	mu_assert_true(ttype->kind == RZ_TYPE_KIND_IDENTIFIER, "is identifier");
+	mu_assert_false(ttype->identifier.is_const, "identifier not const");
+	mu_assert_streq(ttype->identifier.name, "bla", "bla struct");
+
+	// Base type
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "bla");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_STRUCT, base->kind, "not struct");
+	mu_assert_streq(base->name, "bla", "type name");
+
+	RzTypeStructMember *member;
+
+	member = rz_vector_index_ptr(&base->struct_data.members, 0);
+	mu_assert_true(rz_type_atomic_str_eq(typedb, member->type, "int"), "Incorrect type for struct member");
+	mu_assert_streq(member->name, "a", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->kind, "not struct");
+
+	member = rz_vector_index_ptr(&base->struct_data.members, 1);
+	mu_assert_streq(member->name, "func", "Incorrect name for struct member");
+	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->kind, "not struct");
+	mu_assert_streq(rz_type_as_string(typedb, member->type->callable->ret), "wchar_t *", "function return type");
+
+	RzCallableArg *arg;
+	arg = *rz_pvector_index_ptr(member->type->callable->args, 0);
+	mu_assert_streq(arg->name, "a", "argument \"a\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
+
+	arg = *rz_pvector_index_ptr(member->type->callable->args, 1);
+	mu_assert_streq(arg->name, "b", "argument \"b\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
+
+	rz_type_free(ttype);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 /* references */
 typedef struct {
 	const char *name;
@@ -390,6 +530,9 @@ int all_tests() {
 	mu_run_test(test_types_get_base_type_not_found);
 	mu_run_test(test_types_get_base_types);
 	mu_run_test(test_types_get_base_types_of_kind);
+	mu_run_test(test_const_types);
+	mu_run_test(test_array_types);
+	mu_run_test(test_struct_func_types);
 	mu_run_test(test_references);
 	return tests_passed != tests_run;
 }
