@@ -5,8 +5,16 @@
 
 #include "elf.h"
 
-char *Elf_(rz_bin_elf_get_file_type)(ELFOBJ *bin) {
+/**
+ * \brief Return a string representing the file type
+ * \param elf binary
+ * \return allocated string
+ *
+ * Use the elf header (e_type) to deduce the file type
+ */
+RZ_OWN char *Elf_(rz_bin_elf_get_file_type)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
+
 	ut32 e_type = (ut32)bin->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
 	switch (e_type) {
 	case ET_NONE: return strdup("NONE (None)");
