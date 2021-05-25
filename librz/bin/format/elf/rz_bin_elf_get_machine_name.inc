@@ -5,8 +5,17 @@
 
 #include "elf.h"
 
-// http://www.sco.com/developers/gabi/latest/ch4.eheader.html
-char *Elf_(rz_bin_elf_get_machine_name)(ELFOBJ *bin) {
+/**
+ * \brief Return a string representing the machine name
+ * \param elf type
+ * \return allocated string
+ *
+ * Use http://www.sco.com/developers/gabi/latest/ch4.eheader.html and the elf
+ * header (e_machine)
+ */
+RZ_OWN char *Elf_(rz_bin_elf_get_machine_name)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	switch (bin->ehdr.e_machine) {
 	case EM_NONE: return strdup("No machine");
 	case EM_M32: return strdup("AT&T WE 32100");
