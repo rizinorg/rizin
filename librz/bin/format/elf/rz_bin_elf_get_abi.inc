@@ -9,33 +9,52 @@
 #define EF_MIPS_ABI_O64 0x00002000 /* O32 extended for 64 bit.  */
 #define EF_MIPS_ABI     0x0000f000
 
-static bool is_elfclass64(Elf_(Ehdr) * h) {
-	return h->e_ident[EI_CLASS] == ELFCLASS64;
+static bool is_elf_class64(ELFOBJ *bin) {
+	return bin->ehdr.e_ident[EI_CLASS] == ELFCLASS64;
 }
 
-static bool is_mips_o32(Elf_(Ehdr) * h) {
-	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
+static bool is_mips_o32(ELFOBJ *bin) {
+	if (bin->ehdr.e_ident[EI_CLASS] != ELFCLASS32) {
 		return false;
 	}
-	if ((h->e_flags & EF_MIPS_ABI2) != 0) {
+
+	if ((bin->ehdr.e_flags & EF_MIPS_ABI2) != 0) {
 		return false;
 	}
-	if (((h->e_flags & EF_MIPS_ABI) != 0) &&
-		((h->e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32)) {
+
+	if ((bin->ehdr.e_flags & EF_MIPS_ABI) != 0 && (bin->ehdr.e_flags & EF_MIPS_ABI) != EF_MIPS_ABI_O32) {
 		return false;
 	}
+
 	return true;
 }
 
-static bool is_mips_n32(Elf_(Ehdr) * h) {
-	if (h->e_ident[EI_CLASS] != ELFCLASS32) {
+static bool is_mips_n32(ELFOBJ *bin) {
+	if (bin->ehdr.e_ident[EI_CLASS] != ELFCLASS32) {
 		return false;
 	}
-	if (((h->e_flags & EF_MIPS_ABI2) == 0) ||
-		((h->e_flags & EF_MIPS_ABI) != 0)) {
+
+	if ((bin->ehdr.e_flags & EF_MIPS_ABI2) == 0 || (bin->ehdr.e_flags & EF_MIPS_ABI) != 0) {
 		return false;
 	}
+
 	return true;
+}
+
+static char *get_abi_mips(ELFOBJ *bin) {
+	if (is_elf_class64(bin)) {
+		return strdup("n64");
+	}
+
+	if (is_mips_n32(bin)) {
+		return strdup("n32");
+	}
+
+	if (is_mips_o32(bin)) {
+		return strdup("o32");
+	}
+
+	return NULL;
 }
 
 /**
@@ -49,18 +68,9 @@ static bool is_mips_n32(Elf_(Ehdr) * h) {
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	Elf_(Ehdr) *ehdr = (Elf_(Ehdr) *)&bin->ehdr;
-
-	if (ehdr->e_machine == EM_MIPS) {
-		if (is_elfclass64(ehdr)) {
-			return strdup("n64");
-		}
-		if (is_mips_n32(ehdr)) {
-			return strdup("n32");
-		}
-		if (is_mips_o32(ehdr)) {
-			return strdup("o32");
-		}
+	if (bin->ehdr.e_machine == EM_MIPS) {
+		return get_abi_mips(bin);
 	}
+
 	return NULL;
 }
