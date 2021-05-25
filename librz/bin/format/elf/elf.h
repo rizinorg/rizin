@@ -249,7 +249,7 @@ RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_N
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin);
-int Elf_(rz_bin_elf_get_bits)(struct Elf_(rz_bin_elf_obj_t) * bin);
+int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_data_encoding)(RZ_NONNULL ELFOBJ *bin);
