@@ -343,7 +343,7 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 		struct.name.param2=type,4,0
 		struct.name.paramN=type,8,0
 	*/
-	char *sname = rz_str_sanitize_sdb_key(type->name);
+	char *sname = type->name;
 	// name=struct
 	sdb_set(sdb, sname, kind, 0);
 
@@ -375,8 +375,6 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 	sdb_set(sdb, key, rz_strbuf_get(&arglist), 0);
 	free(key);
 
-	free(sname);
-
 	rz_strbuf_fini(&arglist);
 	rz_strbuf_fini(&param_key);
 	rz_strbuf_fini(&param_val);
@@ -395,7 +393,7 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 	union.name.param2=type,0,0
 	union.name.paramN=type,0,0
 	*/
-	char *sname = rz_str_sanitize_sdb_key(type->name);
+	char *sname = type->name;
 	// name=union
 	sdb_set(sdb, sname, kind, 0);
 
@@ -427,8 +425,6 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 	sdb_set(sdb, key, rz_strbuf_get(&arglist), 0);
 	free(key);
 
-	free(sname);
-
 	rz_strbuf_fini(&arglist);
 	rz_strbuf_fini(&param_key);
 	rz_strbuf_fini(&param_val);
@@ -449,7 +445,7 @@ static void save_enum(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) 
 		enum.MyEnum.arg2=0x63
 		enum.MyEnum.argN=0x3
 	*/
-	char *sname = rz_str_sanitize_sdb_key(type->name);
+	char *sname = type->name;
 	sdb_set(sdb, sname, "enum", 0);
 
 	RzStrBuf arglist;
@@ -480,8 +476,6 @@ static void save_enum(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type) 
 	sdb_set(sdb, key, rz_strbuf_get(&arglist), 0);
 	free(key);
 
-	free(sname);
-
 	rz_strbuf_fini(&arglist);
 	rz_strbuf_fini(&param_key);
 	rz_strbuf_fini(&param_val);
@@ -496,7 +490,7 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 		type.char=c
 		type.char.size=8
 	*/
-	char *sname = rz_str_sanitize_sdb_key(type->name);
+	char *sname = type->name;
 	sdb_set(sdb, sname, "type", 0);
 
 	RzStrBuf key;
@@ -513,8 +507,6 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 		rz_strbuf_setf(&key, "type.%s", sname),
 		typefmt, 0);
 
-	free(sname);
-
 	rz_strbuf_fini(&key);
 	rz_strbuf_fini(&val);
 }
@@ -528,7 +520,7 @@ static void save_typedef(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *typ
 		byte=typedef
 		typedef.byte=char
 	*/
-	char *sname = rz_str_sanitize_sdb_key(type->name);
+	char *sname = type->name;
 	sdb_set(sdb, sname, "typedef", 0);
 
 	RzStrBuf key;
@@ -541,7 +533,6 @@ static void save_typedef(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *typ
 		rz_strbuf_setf(&key, "typedef.%s", sname),
 		rz_strbuf_setf(&val, "%s", ttype), 0);
 
-	free(sname);
 	free(ttype);
 
 	rz_strbuf_fini(&key);
