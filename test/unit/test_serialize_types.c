@@ -11,68 +11,90 @@
 
 Sdb *types_ref_db() {
 	Sdb *db = sdb_new0();
-	sdb_set(db, "snatcher", "union", 0);
-	sdb_set(db, "struct.junker.gillian", "char *,0,0", 0);
 	sdb_set(db, "junker", "struct", 0);
-	sdb_set(db, "typedef.human", "union snatcher", 0);
-	sdb_set(db, "union.snatcher.random", "int,0,0", 0);
-	sdb_set(db, "human", "typedef", 0);
-	sdb_set(db, "struct.junker.seed", "uint64_t,8,0", 0);
-	sdb_set(db, "union.snatcher", "random,hajile", 0);
 	sdb_set(db, "struct.junker", "gillian,seed", 0);
+	sdb_set(db, "struct.junker.gillian", "char *,0,0", 0);
+	sdb_set(db, "struct.junker.seed", "uint64_t,8,0", 0);
+	sdb_set(db, "snatcher", "union", 0);
+	sdb_set(db, "union.snatcher", "random,hajile", 0);
+	sdb_set(db, "union.snatcher.random", "int,0,0", 0);
 	sdb_set(db, "union.snatcher.hajile", "uint32_t,0,0", 0);
+	sdb_set(db, "human", "typedef", 0);
+	sdb_set(db, "typedef.human", "union snatcher", 0);
+	sdb_set(db, "mika", "enum", 0);
 	sdb_set(db, "enum.mika", "ELIJAH,MODNAR", 0);
 	sdb_set(db, "enum.mika.MODNAR", "0x539", 0);
 	sdb_set(db, "enum.mika.ELIJAH", "0x2a", 0);
 	sdb_set(db, "enum.mika.0x2a", "ELIJAH", 0);
-	sdb_set(db, "mika", "enum", 0);
 	sdb_set(db, "enum.mika.0x539", "MODNAR", 0);
 	return db;
 }
 
+bool sdb_has_record(Sdb *db, const char *key, const char *value) {
+	const char *result = sdb_get(db, key, 0);
+	if (!result) {
+		return false;
+	}
+	return !strcmp(result, value);
+}
+
 bool test_types_save() {
+	char *error_msg;
 	RzTypeDB *typedb = rz_type_db_new();
 	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_set_cpu(typedb, "x86");
+	rz_type_db_set_bits(typedb, 64);
+	rz_type_db_set_os(typedb, "linux");
+	// Load predefined types
 	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
 
-	// struct
+	// struct.junker
 	RzBaseType *type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_STRUCT);
 	type->name = strdup("junker");
 
+	// struct.junker.gillian
 	RzTypeStructMember member;
 	member.name = strdup("gillian");
 	member.offset = 0;
-	RzType *mtype = rz_type_parse_string_single(typedb->parser, "char *", NULL);
+	RzType *mtype = rz_type_parse_string_single(typedb->parser, "char *", &error_msg);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
+	member.size = rz_type_db_get_bitsize(typedb, mtype);
+	mu_assert_eq(member.size, 64, "member type size");
 	rz_vector_push(&type->struct_data.members, &member);
 
+	// struct.junker.seed
 	member.name = strdup("seed");
-	member.offset = 8;
-	mtype = rz_type_parse_string_single(typedb->parser, "uint64_t", NULL);
+	member.offset = member.size / 8; // size of the previous member
+	mtype = rz_type_parse_string_single(typedb->parser, "uint64_t", &error_msg);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
+	mu_assert_eq(member.size, 64, "member type size");
 	rz_vector_push(&type->struct_data.members, &member);
 
 	rz_type_db_save_base_type(typedb, type);
 
-	// union
+	// union.snatcher
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_UNION);
 	type->name = strdup("snatcher");
 
+	// union.snatcher.random
 	RzTypeUnionMember mumber;
 	mumber.name = strdup("random");
 	mumber.offset = 0;
-	mtype = rz_type_parse_string_single(typedb->parser, "int", NULL);
-	mu_assert_notnull(mtype, "member type parsing");
-	member.type = mtype;
+	mtype = rz_type_parse_string_single(typedb->parser, "int", &error_msg);
+	mu_assert_notnull(mtype, "\"random\" member type parsing");
+	mumber.type = mtype;
+	mumber.size = rz_type_db_get_bitsize(typedb, mtype);
 	rz_vector_push(&type->union_data.members, &mumber);
 
+	// union.snatcher.hajile
 	mumber.name = strdup("hajile");
 	mumber.offset = 0;
-	mtype = rz_type_parse_string_single(typedb->parser, "uint32_t", NULL);
-	mu_assert_notnull(mtype, "member type parsing");
-	member.type = mtype;
+	mtype = rz_type_parse_string_single(typedb->parser, "uint32_t", &error_msg);
+	mu_assert_notnull(mtype, "\"hajile\" member type parsing");
+	mumber.type = mtype;
+	mumber.size = rz_type_db_get_bitsize(typedb, mtype);
 	rz_vector_push(&type->union_data.members, &mumber);
 
 	rz_type_db_save_base_type(typedb, type);
@@ -95,7 +117,7 @@ bool test_types_save() {
 	// typedef
 	type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
 	type->name = strdup("human");
-	mtype = rz_type_parse_string_single(typedb->parser, "union snatcher", NULL);
+	mtype = rz_type_parse_string_single(typedb->parser, "union snatcher", &error_msg);
 	mu_assert_notnull(mtype, "typedef type parsing");
 	type->type = mtype;
 	rz_type_db_save_base_type(typedb, type);
@@ -103,10 +125,24 @@ bool test_types_save() {
 	Sdb *db = sdb_new0();
 	rz_serialize_types_save(db, typedb);
 
-	Sdb *expected = types_ref_db();
-	assert_sdb_eq(db, expected, "types save");
+	mu_assert_true(sdb_has_record(db, "snatcher", "union"), "snatcher union");
+	mu_assert_true(sdb_has_record(db, "junker", "struct"), "junker struct");
+	mu_assert_true(sdb_has_record(db, "struct.junker.gillian", "char *,0,0"), "junker.gillian");
+	mu_assert_true(sdb_has_record(db, "typedef.human", "union snatcher"), "typedef human");
+	mu_assert_true(sdb_has_record(db, "union.snatcher.random", "int,0,0"), "snatcher.random");
+	mu_assert_true(sdb_has_record(db, "human", "typedef"), "human typedef");
+	mu_assert_true(sdb_has_record(db, "struct.junker.seed", "uint64_t,8,0"), "junker.seed");
+	mu_assert_true(sdb_has_record(db, "union.snatcher", "random,hajile"), "random,hajile");
+	mu_assert_true(sdb_has_record(db, "struct.junker", "gillian,seed"), "gillian,seed");
+	mu_assert_true(sdb_has_record(db, "union.snatcher.hajile", "uint32_t,0,0"), "snatcher.hajile");
+	mu_assert_true(sdb_has_record(db, "mika", "enum"), "mika enum");
+	mu_assert_true(sdb_has_record(db, "enum.mika", "ELIJAH,MODNAR"), "enum.mika");
+	mu_assert_true(sdb_has_record(db, "enum.mika.MODNAR", "0x539"), "mika.MODNAR");
+	mu_assert_true(sdb_has_record(db, "enum.mika.ELIJAH", "0x2a"), "mika.ELIJAH");
+	mu_assert_true(sdb_has_record(db, "enum.mika.0x2a", "ELIJAH"), "mika.0x2a");
+	mu_assert_true(sdb_has_record(db, "enum.mika.0x539", "MODNAR"), "mika.0x539");
+
 	sdb_free(db);
-	sdb_free(expected);
 	rz_type_db_free(typedb);
 	mu_end;
 }
@@ -114,6 +150,10 @@ bool test_types_save() {
 bool test_types_load() {
 	RzTypeDB *typedb = rz_type_db_new();
 	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_set_cpu(typedb, "x86");
+	rz_type_db_set_bits(typedb, 64);
+	rz_type_db_set_os(typedb, "linux");
+	// Load predefined types
 	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
 
 	Sdb *db = types_ref_db();
@@ -131,7 +171,8 @@ bool test_types_load() {
 	mu_assert_streq(member->name, "gillian", "member name");
 	mu_assert_eq(member->offset, 0, "member offset");
 	mu_assert_eq(member->type->kind, RZ_TYPE_KIND_POINTER, "member type pointer");
-	mu_assert_streq(member->type->identifier.name, "char", "member type");
+	mu_assert_eq(member->type->pointer.type->kind, RZ_TYPE_KIND_IDENTIFIER, "member type pointer kind");
+	mu_assert_streq(member->type->pointer.type->identifier.name, "char", "member type");
 
 	member = rz_vector_index_ptr(&type->struct_data.members, 1);
 	mu_assert_streq(member->name, "seed", "member name");

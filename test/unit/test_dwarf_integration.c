@@ -5,54 +5,13 @@
 #include <rz_bin.h>
 #include <rz_type.h>
 #include "minunit.h"
+#include "test_types.h"
 
 #define check_kv(k, v) \
 	do { \
 		value = sdb_get(sdb, k, NULL); \
 		mu_assert_nullable_streq(value, v, "Wrong key - value pair"); \
 	} while (0)
-
-static bool has_enum_val(RzBaseType *btype, const char *name, int val) {
-	int result = -1;
-	RzTypeEnumCase *cas;
-	rz_vector_foreach(&btype->enum_data.cases, cas) {
-		if (!strcmp(cas->name, name)) {
-			result = cas->val;
-			break;
-		}
-	}
-	return result != -1 && result == val;
-}
-
-static bool has_enum_case(RzBaseType *btype, const char *name) {
-	RzTypeEnumCase *cas;
-	rz_vector_foreach(&btype->enum_data.cases, cas) {
-		if (!strcmp(cas->name, name)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool has_struct_member(RzBaseType *btype, const char *name) {
-	RzTypeStructMember *memb;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
-		if (!strcmp(memb->name, name)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool has_union_member(RzBaseType *btype, const char *name) {
-	RzTypeUnionMember *memb;
-	rz_vector_foreach(&btype->union_data.members, memb) {
-		if (!strcmp(memb->name, name)) {
-			return true;
-		}
-	}
-	return false;
-}
 
 static bool test_parse_dwarf_types(void) {
 	RzBin *bin = rz_bin_new();
@@ -67,6 +26,8 @@ static bool test_parse_dwarf_types(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 32);
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 32, "linux");
 
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/pe/vista-glass.exe", &opt);
@@ -80,6 +41,8 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 4);
+	mu_assert_notnull(loc_table, "Couldn't parse loc section");
+
 	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
@@ -177,6 +140,8 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
 
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
@@ -216,7 +181,9 @@ static bool test_dwarf_function_parsing_cpp(void) {
 
 	rz_bin_dwarf_debug_info_free(info);
 	rz_bin_dwarf_debug_abbrev_free(abbrevs);
-	rz_bin_dwarf_loc_free(loc_table);
+	if (loc_table) {
+		rz_bin_dwarf_loc_free(loc_table);
+	}
 	rz_analysis_free(analysis);
 	rz_bin_free(bin);
 	rz_io_free(io);
@@ -248,6 +215,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
+	mu_assert_notnull(loc_table, "Couldn't parse loc section");
 
 	RzAnalysisDwarfContext ctx = {
 		.info = info,
@@ -293,6 +261,8 @@ static bool test_dwarf_function_parsing_rust(void) {
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	rz_analysis_set_cpu(analysis, "x86");
 	rz_analysis_set_bits(analysis, 64);
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
 
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf_rust_bubble", &opt);
@@ -305,6 +275,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
+	mu_assert_notnull(loc_table, "Couldn't parse loc section");
 
 	RzAnalysisDwarfContext ctx = {
 		.info = info,

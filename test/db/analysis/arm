@@ -677,7 +677,7 @@ afva@main
 pdf@main
 EOF
 EXPECT=<<EOF
-/ int main (int argc, char **argv);
+/ int main (int argc, char **argv, char **envp);
 |           ; var int32_t var_ch @ fp-0xc
 |           ; var int32_t var_8h @ fp-0x8
 |           ; arg int argc @ r0

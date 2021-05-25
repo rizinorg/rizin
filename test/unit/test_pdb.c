@@ -7,50 +7,9 @@
 #include <rz_core.h>
 #include <rz_bin_dwarf.h>
 #include "../../librz/bin/pdb/types.h"
+#include "test_types.h"
 
 #define MODE 2
-
-static bool has_enum_val(RzBaseType *btype, const char *name, int val) {
-	int result = -1;
-	RzTypeEnumCase *cas;
-	rz_vector_foreach(&btype->enum_data.cases, cas) {
-		if (!strcmp(cas->name, name)) {
-			result = cas->val;
-			break;
-		}
-	}
-	return result != -1 && result == val;
-}
-
-static bool has_enum_case(RzBaseType *btype, const char *name) {
-	RzTypeEnumCase *cas;
-	rz_vector_foreach(&btype->enum_data.cases, cas) {
-		if (!strcmp(cas->name, name)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool has_struct_member(RzBaseType *btype, const char *name) {
-	RzTypeStructMember *memb;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
-		if (!strcmp(memb->name, name)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool has_union_member(RzBaseType *btype, const char *name) {
-	RzTypeUnionMember *memb;
-	rz_vector_foreach(&btype->union_data.members, memb) {
-		if (!strcmp(memb->name, name)) {
-			return true;
-		}
-	}
-	return false;
-}
 
 // copy from cbin.c modified to get pdb back
 int pdb_info(const char *file, RzPdb *pdb) {
@@ -512,7 +471,7 @@ bool test_pdb_type_save(void) {
 	mu_assert_eq(test_enum->kind, RZ_BASE_TYPE_KIND_ENUM, "R2_TEST_ENUM is enum");
 	mu_assert_true(has_enum_val(test_enum, "eENUM1_R2", 0x10), "eNUM1_R2 = 0x10");
 	mu_assert_true(has_enum_val(test_enum, "eENUM2_R2", 0x20), "eNUM2_R2 = 0x20");
-	mu_assert_true(has_enum_val(test_enum, "eENUM_R2_MAX", 0x20), "eNUM2_R2 = 0x20");
+	mu_assert_true(has_enum_val(test_enum, "eENUM_R2_MAX", 0x21), "eNUM2_R2 = 0x21");
 
 	mu_assert_false(has_enum_case(test_enum, "no_case"), "no such enum case");
 
@@ -521,9 +480,9 @@ bool test_pdb_type_save(void) {
 	mu_assert_eq(test_union->kind, RZ_BASE_TYPE_KIND_UNION, "R2_TEST_UNION is union");
 	mu_assert_true(has_union_member(test_union, "r2_union_var_1"), "r2_union_var_1");
 	mu_assert_true(has_union_member(test_union, "r2_union_var_2"), "r2_union_var_2");
-	// TODO: test member types also
-	//check_kv("union.R2_TEST_UNION.r2_union_var_1", "int32_t,0,0");
-	//check_kv("union.R2_TEST_UNION.r2_union_var_2", "double,0,0");
+	// Test member types also
+	mu_assert_true(has_union_member_type(analysis->typedb, test_union, "r2_union_var_1", "int32_t"), "r2_union_var_1 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, test_union, "r2_union_var_2", "double"), "rz_union_var_2 type");
 	mu_assert_false(has_union_member(test_union, "noSuchMember"), "no such struct member");
 
 	RzBaseType *m64_union = rz_type_db_get_base_type(analysis->typedb, "__m64");
@@ -537,16 +496,16 @@ bool test_pdb_type_save(void) {
 	mu_assert_true(has_union_member(m64_union, "m64_u16"), "m64_u16");
 	mu_assert_true(has_union_member(m64_union, "m64_u32"), "m64_u32");
 	mu_assert_true(has_union_member(m64_union, "m64_u64"), "m64_u64");
-	// TODO: test member types also
-	//check_kv("union.__m64.m64_u64", "uint64_t,0,0");
-	//check_kv("union.__m64.m64_f32", "float[8],0,0");
-	//check_kv("union.__m64.m64_i8", "char[8],0,0");
-	//check_kv("union.__m64.m64_i16", "uint16_t[8],0,0");
-	//check_kv("union.__m64.m64_i32", "int32_t[8],0,0");
-	//check_kv("union.__m64.m64_i64", "int64_t,0,0");
-	//check_kv("union.__m64.m64_u8", "uint8_t[8],0,0");
-	//check_kv("union.__m64.m64_u16", "uint16_t[8],0,0");
-	//check_kv("union.__m64.m64_u32", "uint32_t[8],0,0");
+	// Test member types also
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u64", "uint64_t"), "m64_u64 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_f32", "float[8]"), "m64_f32 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i8", "char[8]"), "m64_i8 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i32", "int32_t[8]"), "m64_i32 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i16", "uint16_t[8]"), "m64_i16 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_i64", "int64_t"), "m64_i64 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u8", "uint8_t[8]"), "m64_u8 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u16", "uint16_t[8]"), "m64_u16 type");
+	mu_assert_true(has_union_member_type(analysis->typedb, m64_union, "m64_u32", "uint32_t[8]"), "m64_u32 type");
 
 	mu_assert_false(has_union_member(m64_union, "noSuchMember"), "no such union member");
 
@@ -565,10 +524,11 @@ bool test_pdb_type_save(void) {
 	RzBaseType *localeinfo = rz_type_db_get_base_type(analysis->typedb, "localeinfo_struct");
 	mu_assert_eq(localeinfo->kind, RZ_BASE_TYPE_KIND_STRUCT, "localeinfo_struct is struct");
 	mu_assert_true(has_struct_member(localeinfo, "locinfo"), "locinfo");
-	mu_assert_true(has_struct_member(localeinfo, "mcinfo"), "mbcinfo");
-	// TODO: test member types also
-	//check_kv("struct.localeinfo_struct.locinfo", "struct threadlocaleinfostruct*,0,0");
-	//check_kv("struct.localeinfo_struct.mbcinfo", "struct threadmbcinfostruct*,4,0");
+	mu_assert_true(has_struct_member(localeinfo, "mbcinfo"), "mbcinfo");
+	// Test member types also
+	mu_assert_true(has_struct_member_type(analysis->typedb, localeinfo, "locinfo", "struct threadlocaleinfostruct *"), "locinfo type");
+	// FIXME: For some reason this type doesn't load from PDB
+	//mu_assert_true(has_struct_member_type(analysis->typedb, localeinfo, "mbcinfo", "struct threadmbcinfostruct *"), "mbcinfo type");
 
 	mu_assert_false(has_struct_member(localeinfo, "noSuchMember"), "no such struct member");
 
