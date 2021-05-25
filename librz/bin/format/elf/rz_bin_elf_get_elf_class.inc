@@ -5,7 +5,16 @@
 
 #include "elf.h"
 
-char *Elf_(rz_bin_elf_get_elf_class)(ELFOBJ *bin) {
+/**
+ * \brief Return a string representing the elf class
+ * \param elf binary
+ * \return allocated string
+ *
+ * Check the elf header (e_ident) to deduce the elf class
+ */
+RZ_OWN char *Elf_(rz_bin_elf_get_elf_class)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
 	case ELFCLASSNONE: return strdup("none");
 	case ELFCLASS32: return strdup("ELF32");
