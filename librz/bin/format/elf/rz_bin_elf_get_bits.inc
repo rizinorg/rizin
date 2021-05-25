@@ -5,7 +5,16 @@
 
 #include "elf.h"
 
-int Elf_(rz_bin_elf_get_bits)(ELFOBJ *bin) {
+/**
+ * \brief Return the elf bits
+ * \param elf binary
+ * \return the number of bits
+ *
+ * ...
+ */
+int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, 0);
+
 	/* Hack for ARCompact */
 	if (bin->ehdr.e_machine == EM_ARC_A5) {
 		return 16;
