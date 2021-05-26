@@ -30,7 +30,16 @@ static RzBinElfNotePrStatus *get_prstatus(ELFOBJ *bin) {
 	return NULL;
 }
 
-const ut8 *Elf_(rz_bin_elf_grab_regstate)(ELFOBJ *bin, RZ_NONNULL size_t *size) {
+/**
+ * \brief Return register state
+ * \param elf type
+ * \return a borrowed array of ut8
+ *
+ * ...
+ */
+RZ_BORROW const ut8 *Elf_(rz_bin_elf_grab_regstate)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL size_t *size) {
+	rz_return_val_if_fail(bin && size, NULL);
+
 	RzBinElfNotePrStatus *prs = get_prstatus(bin);
 	if (!prs) {
 		return NULL;
