@@ -5,6 +5,18 @@
 
 #include "elf.h"
 
+static Elf_(Xword) get_dt_rpath(ELFOBJ *bin) {
+	if (bin->dyn_info.dt_rpath != RZ_BIN_ELF_XWORD_MAX) {
+		return bin->dyn_info.dt_rpath;
+	} else {
+		return bin->dyn_info.dt_runpath;
+	}
+}
+
+static bool has_dt_rpath_entry(ELFOBJ *bin) {
+	return bin->dyn_info.dt_rpath == RZ_BIN_ELF_XWORD_MAX || bin->dyn_info.dt_runpath == RZ_BIN_ELF_XWORD_MAX;
+}
+
 /**
  * \brief Get the rpath
  * \param elf binary
@@ -15,30 +27,14 @@
 RZ_OWN char *Elf_(rz_bin_elf_get_rpath)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	char *ret;
-	Elf_(Xword) val;
-
-	if (!bin->phdr || !bin->strtab) {
+	if (!bin->phdr || !bin->strtab || !has_dt_rpath_entry(bin)) {
 		return NULL;
 	}
 
-	if (bin->dyn_info.dt_rpath != RZ_BIN_ELF_XWORD_MAX) {
-		val = bin->dyn_info.dt_rpath;
-	} else if (bin->dyn_info.dt_runpath != RZ_BIN_ELF_XWORD_MAX) {
-		val = bin->dyn_info.dt_runpath;
-	} else {
-		return NULL;
-	}
-
+	Elf_(Xword) val = get_dt_rpath(bin);
 	if (val > bin->strtab_size) {
 		return NULL;
 	}
 
-	if (!(ret = calloc(1, ELF_STRING_LENGTH))) {
-		return NULL;
-	}
-
-	rz_str_ncpy(ret, bin->strtab + val, ELF_STRING_LENGTH);
-
-	return ret;
+	return rz_str_ndup(bin->strtab + val, ELF_STRING_LENGTH);
 }
