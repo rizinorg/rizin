@@ -11,6 +11,7 @@
 #include <rz_util.h>
 #include "elf.h"
 
+#include "rz_bin_elf_convert_import.inc"
 #include "rz_bin_elf_convert_symbol.inc"
 #include "rz_bin_elf_get_abi.inc"
 #include "rz_bin_elf_get_arch.inc"
@@ -2476,18 +2477,6 @@ static void setimpord(ELFOBJ *eobj, RzBinElfSymbol *sym) {
 	}
 	rz_bin_import_free(eobj->imports_by_ord[imp->ordinal]);
 	eobj->imports_by_ord[imp->ordinal] = imp;
-}
-
-RzBinImport *Elf_(rz_bin_elf_convert_import)(struct Elf_(rz_bin_elf_obj_t) * bin, struct rz_bin_elf_symbol_t *sym) {
-	RzBinImport *ptr = RZ_NEW0(RzBinImport);
-	if (!ptr) {
-		return NULL;
-	}
-	ptr->name = RZ_STR_DUP(sym->name);
-	ptr->bind = sym->bind;
-	ptr->type = sym->type;
-	ptr->ordinal = sym->ordinal;
-	return ptr;
 }
 
 static ut32 hashRzBinElfSymbol(const void *obj) {
