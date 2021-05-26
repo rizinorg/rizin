@@ -5,9 +5,16 @@
 
 #include "elf.h"
 
-/* XXX Init dt_strtab? */
-char *Elf_(rz_bin_elf_get_rpath)(ELFOBJ *bin) {
+/**
+ * \brief Get the rpath
+ * \param elf binary
+ * \return allocated string
+ *
+ * Use DT_RPATH or DT_RUNPATH to return the string
+ */
+RZ_OWN char *Elf_(rz_bin_elf_get_rpath)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
+
 	char *ret;
 	Elf_(Xword) val;
 
