@@ -5,7 +5,16 @@
 
 #include "elf.h"
 
-RzBinElfField *Elf_(rz_bin_elf_get_fields)(ELFOBJ *bin) {
+/**
+ * \brief Return the list of elf fields
+ * \param elf binary
+ * \return a ptr to an array terminated with an item with .last set to 1
+ *
+ * Generate the elf fields from phdr
+ */
+RZ_OWN RzBinElfField *Elf_(rz_bin_elf_get_fields)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzBinElfField *ret = NULL;
 	int i = 0, j;
 	if (!bin || !(ret = calloc((bin->ehdr.e_phnum + 3 + 1), sizeof(RzBinElfField)))) {
