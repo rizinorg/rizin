@@ -5,7 +5,16 @@
 
 #include "elf.h"
 
-RzBinElfLib *Elf_(rz_bin_elf_get_libs)(ELFOBJ *bin) {
+/**
+ * \brief List all imported lib
+ * \param elf binary
+ * \return a an allocated array of RzBinElfLib
+ *
+ * Use dynamic information (dt_needed) to generate the list of imported lib
+ */
+RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzBinElfLib *ret = NULL;
 	Elf_(Off) *it = NULL;
 	size_t k = 0;
