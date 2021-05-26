@@ -5,10 +5,15 @@
 
 #include "elf.h"
 
-void Elf_(rz_bin_elf_free)(ELFOBJ *bin) {
-	if (!bin) {
-		return;
-	}
+/**
+ * \brief Free the elf binary
+ * \param elf binary
+ *
+ * ...
+ */
+void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_if_fail(bin)
+
 	free(bin->phdr);
 	free(bin->shdr);
 	free(bin->strtab);
