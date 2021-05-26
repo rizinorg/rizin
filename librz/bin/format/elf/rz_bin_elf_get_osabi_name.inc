@@ -26,8 +26,16 @@ static inline int needle(ELFOBJ *bin, const char *s) {
 	return 0;
 }
 
-// TODO: must return const char * all those strings must be const char os[LINUX] or so
-char *Elf_(rz_bin_elf_get_osabi_name)(ELFOBJ *bin) {
+/**
+ * \brief Return the os application binary interface name
+ * \param elf binary
+ * \return an allocated string
+ *
+ * ...
+ */
+RZ_OWN char *Elf_(rz_bin_elf_get_osabi_name)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	size_t i;
 	size_t num = bin->ehdr.e_shnum;
 	const char *section_name = NULL;
