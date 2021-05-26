@@ -229,7 +229,6 @@ RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(struct Elf_(rz_bin_elf_obj_t) * bin
 RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(struct Elf_(rz_bin_elf_obj_t) * bin);
 struct Elf_(rz_bin_elf_obj_t) * Elf_(rz_bin_elf_new)(const char *file, bool verbose);
 struct Elf_(rz_bin_elf_obj_t) * Elf_(rz_bin_elf_new_buf)(RzBuffer *buf, bool verbose);
-void Elf_(rz_bin_elf_free)(struct Elf_(rz_bin_elf_obj_t) * bin);
 
 ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size);
 bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms);
@@ -240,6 +239,7 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin);
 
 RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
+void Elf_(rz_bin_elf_free)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin);
