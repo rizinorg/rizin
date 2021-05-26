@@ -28,6 +28,7 @@
 #include "rz_bin_elf_get_machine_name.inc"
 #include "rz_bin_elf_get_main_offset.inc"
 #include "rz_bin_elf_get_osabi_name.inc"
+#include "rz_bin_elf_get_rpath.inc"
 #include "rz_bin_elf_get_section.inc"
 #include "rz_bin_elf_get_section_addr.inc"
 #include "rz_bin_elf_get_section_addr_end.inc"
@@ -1852,37 +1853,6 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin) {
 		return UT64_MAX;
 	}
 	return rz_read_ble(prs->regstate + layout->sp_offset, bin->endian, layout->sp_size);
-}
-
-/* XXX Init dt_strtab? */
-char *Elf_(rz_bin_elf_get_rpath)(ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	char *ret;
-	Elf_(Xword) val;
-
-	if (!bin->phdr || !bin->strtab) {
-		return NULL;
-	}
-
-	if (bin->dyn_info.dt_rpath != RZ_BIN_ELF_XWORD_MAX) {
-		val = bin->dyn_info.dt_rpath;
-	} else if (bin->dyn_info.dt_runpath != RZ_BIN_ELF_XWORD_MAX) {
-		val = bin->dyn_info.dt_runpath;
-	} else {
-		return NULL;
-	}
-
-	if (val > bin->strtab_size) {
-		return NULL;
-	}
-
-	if (!(ret = calloc(1, ELF_STRING_LENGTH))) {
-		return NULL;
-	}
-
-	rz_str_ncpy(ret, bin->strtab + val, ELF_STRING_LENGTH);
-
-	return ret;
 }
 
 static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
