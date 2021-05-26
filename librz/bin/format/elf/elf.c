@@ -39,6 +39,7 @@
 #include "rz_bin_elf_has_relro.inc"
 #include "rz_bin_elf_has_va.inc"
 #include "rz_bin_elf_intrp.inc"
+#include "rz_bin_elf_is_big_endian.inc"
 #include "rz_bin_elf_is_executable.inc"
 #include "rz_bin_elf_is_relocatable.inc"
 #include "rz_bin_elf_is_static.inc"
@@ -1851,10 +1852,6 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin) {
 		return UT64_MAX;
 	}
 	return rz_read_ble(prs->regstate + layout->sp_offset, bin->endian, layout->sp_size);
-}
-
-int Elf_(rz_bin_elf_is_big_endian)(ELFOBJ *bin) {
-	return (bin->ehdr.e_ident[EI_DATA] == ELFDATA2MSB);
 }
 
 /* XXX Init dt_strtab? */
