@@ -5,25 +5,65 @@
 
 #include "elf.h"
 
-static inline int noodle(ELFOBJ *bin, const char *s) {
-	if (rz_buf_size(bin->b) <= 64) {
-		return 0;
-	}
-	ut8 tmp[64];
-	rz_buf_read_at(bin->b, rz_buf_size(bin->b) - 64, tmp, 64);
-	return rz_mem_mem(tmp, 64, (const ut8 *)s, strlen(s)) != NULL;
+struct section_note_osabi_translation {
+	const char *note_name;
+	const char *os_name;
+};
+
+static const struct section_note_osabi_translation section_note_osabi_translation_table[] = {
+	{ ".note.openbsd.ident", "openbsd" },
+	{ ".note.minix.ident", "minix" },
+	{ ".note.netbsd.ident", "netbsd" },
+	{ ".note.android.ident", "android" }
+};
+
+static bool is_valid_section_note(ELFOBJ *bin, Elf_(Shdr) * section) {
+	return section->sh_type == SHT_NOTE && section->sh_name < bin->shstrtab_size;
 }
 
-static inline int needle(ELFOBJ *bin, const char *s) {
-	if (bin->shstrtab) {
-		ut32 len = bin->shstrtab_size;
-		if (len > 4096) {
-			len = 4096; // avoid slow loading .. can be buggy?
-		}
-		return rz_mem_mem((const ut8 *)bin->shstrtab, len,
-			       (const ut8 *)s, strlen(s)) != NULL;
+static char *get_osabi_name_from_section_note(ELFOBJ *bin, Elf_(Shdr) * section) {
+	if (!is_valid_section_note(bin, section)) {
+		return NULL;
 	}
-	return 0;
+
+	const char *section_name = bin->shstrtab + section->sh_name;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(section_note_osabi_translation_table); i++) {
+		if (!strcmp(section_name, section_note_osabi_translation_table[i].note_name)) {
+			return strdup(section_note_osabi_translation_table[i].os_name);
+		}
+	}
+
+	return NULL;
+}
+
+static char *get_osabi_name_from_shdr(ELFOBJ *bin) {
+	if (!bin->shdr || !bin->shstrtab) {
+		return NULL;
+	}
+
+	for (size_t i = 0; i < bin->ehdr.e_shnum; i++) {
+		char *tmp = get_osabi_name_from_section_note(bin, bin->shdr + i);
+		if (tmp) {
+			return tmp;
+		}
+	}
+
+	return NULL;
+}
+
+static char *get_osabi_name_from_ehdr(ELFOBJ *bin) {
+	switch (bin->ehdr.e_ident[EI_OSABI]) {
+	case ELFOSABI_LINUX:
+		return strdup("linux");
+	case ELFOSABI_SOLARIS:
+		return strdup("solaris");
+	case ELFOSABI_FREEBSD:
+		return strdup("freebsd");
+	case ELFOSABI_HPUX:
+		return strdup("hpux");
+	}
+
+	return NULL;
 }
 
 /**
@@ -31,49 +71,20 @@ static inline int needle(ELFOBJ *bin, const char *s) {
  * \param elf binary
  * \return an allocated string
  *
- * ...
+ * Check the ehdr or the shdr to get the os name
  */
 RZ_OWN char *Elf_(rz_bin_elf_get_osabi_name)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	size_t i;
-	size_t num = bin->ehdr.e_shnum;
-	const char *section_name = NULL;
-	switch (bin->ehdr.e_ident[EI_OSABI]) {
-	case ELFOSABI_LINUX: return strdup("linux");
-	case ELFOSABI_SOLARIS: return strdup("solaris");
-	case ELFOSABI_FREEBSD: return strdup("freebsd");
-	case ELFOSABI_HPUX: return strdup("hpux");
+	char *name = get_osabi_name_from_ehdr(bin);
+	if (name) {
+		return name;
 	}
 
-	if (bin->shdr && bin->shstrtab) {
-		for (i = 0; i < num; i++) {
-			if (bin->shdr[i].sh_type == SHT_NOTE && bin->shdr[i].sh_name < bin->shstrtab_size) {
-				section_name = &bin->shstrtab[bin->shdr[i].sh_name];
-				if (!strcmp(section_name, ".note.openbsd.ident")) {
-					return strdup("openbsd");
-				}
-				if (!strcmp(section_name, ".note.minix.ident")) {
-					return strdup("minix");
-				}
-				if (!strcmp(section_name, ".note.netbsd.ident")) {
-					return strdup("netbsd");
-				}
-				if (!strcmp(section_name, ".note.android.ident")) {
-					return strdup("android");
-				}
-			}
-		}
+	name = get_osabi_name_from_shdr(bin);
+	if (name) {
+		return name;
 	}
-	/* Hack to identify OS */
-	if (needle(bin, "freebsd")) {
-		return strdup("freebsd");
-	}
-	if (noodle(bin, "BEOS:APP_VERSION")) {
-		return strdup("beos");
-	}
-	if (needle(bin, "GNU")) {
-		return strdup("linux");
-	}
+
 	return strdup("linux");
 }
