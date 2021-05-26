@@ -5,6 +5,24 @@
 
 #include "elf.h"
 
+static size_t add_fields(RzBinElfField *fields, size_t pos, const char *name, Elf_(Off) offset) {
+	rz_str_ncpy(fields[pos].name, name, ELF_STRING_LENGTH);
+	fields[pos].offset = offset;
+	fields[pos].last = 0;
+
+	return pos + 1;
+}
+
+static size_t add_basic_fields(ELFOBJ *bin, RzBinElfField *fields) {
+	size_t i = 0;
+
+	i = add_fields(fields, i, "ehdr", 0);
+	i = add_fields(fields, i, "shoff", bin->ehdr.e_shoff);
+	i = add_fields(fields, i, "phoff", bin->ehdr.e_phoff);
+
+	return i;
+}
+
 /**
  * \brief Return the list of elf fields
  * \param elf binary
@@ -15,25 +33,19 @@
 RZ_OWN RzBinElfField *Elf_(rz_bin_elf_get_fields)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzBinElfField *ret = NULL;
-	int i = 0, j;
-	if (!bin || !(ret = calloc((bin->ehdr.e_phnum + 3 + 1), sizeof(RzBinElfField)))) {
+	RzBinElfField *ret = RZ_NEWS(RzBinElfField, bin->ehdr.e_phnum + 3 + 1);
+	if (!ret) {
 		return NULL;
 	}
-	strncpy(ret[i].name, "ehdr", ELF_STRING_LENGTH);
-	ret[i].offset = 0;
-	ret[i++].last = 0;
-	strncpy(ret[i].name, "shoff", ELF_STRING_LENGTH);
-	ret[i].offset = bin->ehdr.e_shoff;
-	ret[i++].last = 0;
-	strncpy(ret[i].name, "phoff", ELF_STRING_LENGTH);
-	ret[i].offset = bin->ehdr.e_phoff;
-	ret[i++].last = 0;
-	for (j = 0; bin->phdr && j < bin->ehdr.e_phnum; i++, j++) {
-		snprintf(ret[i].name, ELF_STRING_LENGTH, "phdr_%i", j);
+
+	size_t i = add_basic_fields(bin, ret);
+
+	for (size_t j = 0; bin->phdr && j < bin->ehdr.e_phnum; i++, j++) {
+		snprintf(ret[i].name, ELF_STRING_LENGTH, "phdr_%zu", j);
 		ret[i].offset = bin->phdr[j].p_offset;
 		ret[i].last = 0;
 	}
+
 	ret[i].last = 1;
 	return ret;
 }
