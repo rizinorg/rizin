@@ -77,3 +77,85 @@ EXPECT=<<EOF
 0xffff0010  0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
 EOF
 RUN
+
+
+NAME=arm1.bin.srec
+FILE=srec://bins/srec/arm1.bin.srec
+TIMEOUT=1320
+CMDS=<<EOF
+iI
+iS
+EOF
+EXPECT=<<EOF
+Name     Value
+--------------
+arch     arm
+baddr    0x8000
+binsz    571848
+bintype  elf
+bits     32
+class    ELF32
+compiler GCC: (Ubuntu 4.3.2-2ubuntu9) 4.3.3 20081217 (prerelease)
+endian   LE
+laddr    0x0
+lang     c
+machine  ARM
+maxopsz  4
+minopsz  4
+os       linux
+pcalign  4
+rpath    NONE
+subsys   linux
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  true
+lsyms    true
+canary   false
+PIE      false
+RELROCS  true
+NX       true
+[Sections]
+
+nth paddr          size vaddr         vsize perm name              type              flags
+------------------------------------------------------------------------------------------
+0   0x00000000      0x0 0x00000000      0x0 ----                   NULL              
+1   0x00000114     0x20 0x00008114     0x20 -r-- .note.ABI-tag     NOTE              alloc
+2   0x00000134     0x14 0x00008134     0x14 -r-x .init             PROGBITS          alloc,execute
+3   0x00000150  0x5d3a8 0x00008150  0x5d3a8 -r-x .text             PROGBITS          alloc,execute
+4   0x0005d4f8    0xcac 0x000654f8    0xcac -r-x libc_freeres_fn   PROGBITS          alloc,execute
+5   0x0005e1a4     0x10 0x000661a4     0x10 -r-x .fini             PROGBITS          alloc,execute
+6   0x0005e1b8  0x144e0 0x000661b8  0x144e0 -r-- .rodata           PROGBITS          alloc
+7   0x00072698      0x4 0x0007a698      0x4 -r-- libc_atexit       PROGBITS          alloc
+8   0x0007269c     0x2c 0x0007a69c     0x2c -r-- libc_subfreeres   PROGBITS          alloc
+9   0x000726c8    0x30c 0x0007a6c8    0x30c -r-- .ARM.extab        PROGBITS          alloc
+10  0x000729d4    0x768 0x0007a9d4    0x768 -r-- .ARM.exidx        LOPROC+0x00000001 alloc,link_order
+11  0x0007313c     0x80 0x0007b13c     0x80 -r-- .eh_frame         PROGBITS          alloc
+12  0x00073fb4     0x10 0x00083fb4     0x10 -rw- .tdata            PROGBITS          write,alloc,TLS
+13  0x00073fc4      0x0 0x00083fc4     0x18 -rw- .tbss             NOBITS            write,alloc,TLS
+14  0x00073fc4      0x4 0x00083fc4      0x4 -rw- .init_array       INIT_ARRAY        write,alloc
+15  0x00073fc8      0x8 0x00083fc8      0x8 -rw- .fini_array       FINI_ARRAY        write,alloc
+16  0x00073fd0      0x4 0x00083fd0      0x4 -rw- .jcr              PROGBITS          write,alloc
+17  0x00073fd4     0x2c 0x00083fd4     0x2c -rw- .data.rel.ro      PROGBITS          write,alloc
+18  0x00074000     0x6c 0x00084000     0x6c -rw- .got              PROGBITS          write,alloc
+19  0x00074070    0x6e4 0x00084070    0x6e4 -rw- .data             PROGBITS          write,alloc
+20  0x00074754      0x0 0x00084758   0x1880 -rw- .bss              NOBITS            write,alloc
+21  0x00074754      0x0 0x00085fd8     0x14 -rw- libc_freeres_ptrs NOBITS            write,alloc
+22  0x00074754   0x4472 0x00000000   0x4472 ---- .comment          PROGBITS          
+23  0x00078bc8     0x58 0x00000000     0x58 ---- .debug_aranges    PROGBITS          
+24  0x00078c20     0x25 0x00000000     0x25 ---- .debug_pubnames   PROGBITS          
+25  0x00078c45    0x17b 0x00000000    0x17b ---- .debug_info       PROGBITS          
+26  0x00078dc0     0x6f 0x00000000     0x6f ---- .debug_abbrev     PROGBITS          
+27  0x00078e2f    0x130 0x00000000    0x130 ---- .debug_line       PROGBITS          
+28  0x00078f5f     0xa4 0x00000000     0xa4 ---- .debug_str        PROGBITS          merge,strings
+29  0x00079008     0x48 0x00000000     0x48 ---- .debug_ranges     PROGBITS          
+30  0x00079050     0x2d 0x00000000     0x2d ---- .ARM.attributes   LOPROC+0x00000003 
+31  0x0007907d    0x167 0x00000000    0x167 ---- .shstrtab         STRTAB            
+32  0x00079734   0xbf00 0x00000000   0xbf00 ---- .symtab           SYMTAB            
+33  0x00085634   0x6394 0x00000000   0x6394 ---- .strtab           STRTAB            
+
+EOF
+RUN
