@@ -7,124 +7,6 @@
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
 
-static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
-	bool phdr_found = false;
-	int i;
-#if RZ_BIN_ELF64
-	const bool is_elf64 = true;
-#else
-	const bool is_elf64 = false;
-#endif
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		ut8 phdr[sizeof(Elf_(Phdr))] = { 0 };
-		int j = 0;
-		const size_t rsize = bin->ehdr.e_phoff + i * sizeof(Elf_(Phdr));
-		int len = rz_buf_read_at(bin->b, rsize, phdr, sizeof(Elf_(Phdr)));
-		if (len < 1) {
-			bprintf("read (phdr)\n");
-			RZ_FREE(bin->phdr);
-			return false;
-		}
-		bin->phdr[i].p_type = READ32(phdr, j);
-		if (bin->phdr[i].p_type == PT_PHDR) {
-			phdr_found = true;
-		}
-
-		if (is_elf64) {
-			bin->phdr[i].p_flags = READ32(phdr, j);
-		}
-		bin->phdr[i].p_offset = RZ_BIN_ELF_READWORD(phdr, j);
-		bin->phdr[i].p_vaddr = RZ_BIN_ELF_READWORD(phdr, j);
-		bin->phdr[i].p_paddr = RZ_BIN_ELF_READWORD(phdr, j);
-		bin->phdr[i].p_filesz = RZ_BIN_ELF_READWORD(phdr, j);
-		bin->phdr[i].p_memsz = RZ_BIN_ELF_READWORD(phdr, j);
-		if (!is_elf64) {
-			bin->phdr[i].p_flags = READ32(phdr, j);
-			//	bin->phdr[i].p_flags |= 1; tiny.elf needs this somehow :? LOAD0 is always +x for linux?
-		}
-		bin->phdr[i].p_align = RZ_BIN_ELF_READWORD(phdr, j);
-	}
-	/* Here is the where all the fun starts.
-	 * Linux kernel since 2005 calculates phdr offset wrongly
-	 * adding it to the load address (va of the LOAD0).
-	 * See `fs/binfmt_elf.c` file this line:
-	 *    NEW_AUX_ENT(AT_PHDR, load_addr + exec->e_phoff);
-	 * So after the first read, we fix the address and read it again
-	 */
-	if (linux_kernel_hack && phdr_found) {
-		ut64 load_addr = Elf_(rz_bin_elf_get_baddr)(bin);
-		bin->ehdr.e_phoff = Elf_(rz_bin_elf_v2p)(bin, load_addr + bin->ehdr.e_phoff);
-		return read_phdr(bin, false);
-	}
-	return true;
-}
-
-static int init_phdr(ELFOBJ *bin) {
-	ut32 phdr_size;
-
-	rz_return_val_if_fail(!bin->phdr, false);
-
-	if (!bin->ehdr.e_phnum) {
-		return false;
-	}
-	if (!UT32_MUL(&phdr_size, (ut32)bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
-		return false;
-	}
-	if (!phdr_size) {
-		return false;
-	}
-	if (phdr_size > bin->size) {
-		return false;
-	}
-	if (phdr_size > (ut32)bin->size) {
-		return false;
-	}
-	if (bin->ehdr.e_phoff > bin->size) {
-		return false;
-	}
-	if (bin->ehdr.e_phoff + phdr_size > bin->size) {
-		return false;
-	}
-	if (!(bin->phdr = RZ_NEWS0(Elf_(Phdr), bin->ehdr.e_phnum))) {
-		perror("malloc (phdr)");
-		return false;
-	}
-
-	bool linux_kern_hack = false;
-	/* Enable this hack only for the X86 64bit ELFs */
-	const int _128K = 1024 * 128;
-	if (rz_buf_size(bin->b) > _128K && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386)) {
-		linux_kern_hack = true;
-	}
-	if (!read_phdr(bin, linux_kern_hack)) {
-		return false;
-	}
-
-	sdb_num_set(bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
-	sdb_num_set(bin->kv, "elf_phdr.size", sizeof(Elf_(Phdr)), 0);
-	sdb_set(bin->kv, "elf_p_type.cparse", "enum elf_p_type {PT_NULL=0,PT_LOAD=1,PT_DYNAMIC=2,"
-					      "PT_INTERP=3,PT_NOTE=4,PT_SHLIB=5,PT_PHDR=6,PT_LOOS=0x60000000,"
-					      "PT_HIOS=0x6fffffff,PT_LOPROC=0x70000000,PT_HIPROC=0x7fffffff};",
-		0);
-	sdb_set(bin->kv, "elf_p_flags.cparse", "enum elf_p_flags {PF_None=0,PF_Exec=1,"
-					       "PF_Write=2,PF_Write_Exec=3,PF_Read=4,PF_Read_Exec=5,PF_Read_Write=6,"
-					       "PF_Read_Write_Exec=7};",
-		0);
-#if RZ_BIN_ELF64
-	sdb_set(bin->kv, "elf_phdr.format", "[4]E[4]Eqqqqqq (elf_p_type)type (elf_p_flags)flags"
-					    " offset vaddr paddr filesz memsz align",
-		0);
-#else
-	sdb_set(bin->kv, "elf_phdr.format", "[4]Exxxxx[4]Ex (elf_p_type)type offset vaddr paddr"
-					    " filesz memsz (elf_p_flags)flags align",
-		0);
-#endif
-	return true;
-	// Usage example:
-	// > td `k bin/cur/info/elf_p_type.cparse`; td `k bin/cur/info/elf_p_flags.cparse`
-	// > pf `k bin/cur/info/elf_phdr.format` @ `k bin/cur/info/elf_phdr.offset`
-}
-
 /// Parse NT_PRSTATUS note
 static void parse_note_prstatus(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, ut64 offset) {
 	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
@@ -1268,7 +1150,7 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 	if (!Elf_(rz_bin_elf_init_ehdr)(bin)) {
 		return false;
 	}
-	if (!init_phdr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
+	if (!Elf_(rz_bin_elf_init_phdr)(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
 		bprintf("Cannot initialize program headers\n");
 	}
 	if (bin->ehdr.e_type == ET_CORE) {
