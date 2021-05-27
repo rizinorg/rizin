@@ -32,6 +32,8 @@
 #include "rz_bin_elf_get_machine_name.inc"
 #include "rz_bin_elf_get_main_offset.inc"
 #include "rz_bin_elf_get_osabi_name.inc"
+#include "rz_bin_elf_get_prstatus.inc"
+#include "rz_bin_elf_get_prstatus_layout.inc"
 #include "rz_bin_elf_get_rpath.inc"
 #include "rz_bin_elf_get_section.inc"
 #include "rz_bin_elf_get_section_addr.inc"
@@ -101,54 +103,6 @@
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
 
 static void setimpord(ELFOBJ *eobj, RzBinElfSymbol *sym);
-
-enum {
-	X86,
-	X86_64,
-	ARM,
-	AARCH64,
-	ARCH_LEN
-};
-
-/// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
-typedef struct prstatus_layout_t {
-	ut64 regsize;
-
-	/**
-	 * This delta is the offset into the actual data of an NT_PRSTATUS note
-	 * where the regstate of size regsize lies.
-	 * That is, it is the offset after the Elf_(Nhdr) and the variable-length string + optional padding
-	 * have already been skipped.
-	 *
-	 * see size_t ELFLinuxPrStatus::GetSize(const lldb_private::ArchSpec &arch) in lldb source or similar
-	 * to determine values for this.
-	 */
-	ut64 regdelta;
-
-	/// Size of the stack pointer register in bits
-	ut8 sp_size;
-
-	/**
-	 * Offset of the stack pointer register inside the regstate
-	 * To determine the layout of the regstate, see lldb source, for example:
-	 *   RegisterContextSP ThreadElfCore::CreateRegisterContextForFrame(StackFrame *frame) decides what to use for the file
-	 *   RegisterContextLinux_x86_64 leads to...
-	 *   g_register_infos_x86_64 which is eventually filled with info using...
-	 *   GPR_OFFSET which takes its info from...
-	 *   the offsets into the GPR struct in RegisterContextLinux_x86_64.cpp
-	 */
-	ut64 sp_offset;
-
-	// These NT_PRSTATUS notes hold much more than this, but it's not needed for us yet.
-	// If necessary, new members can be introduced here.
-} PrStatusLayout;
-
-static PrStatusLayout prstatus_layouts[ARCH_LEN] = {
-	[X86] = { 160, 0x48, 32, 0x3c },
-	[X86_64] = { 216, 0x70, 64, 0x98 },
-	[ARM] = { 72, 0x48, 32, 0x34 },
-	[AARCH64] = { 272, 0x70, 64, 0xf8 }
-};
 
 static inline int __strnlen(const char *str, int len) {
 	int l = 0;
@@ -845,24 +799,9 @@ static void parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, 
 	rz_vector_fini(&files);
 }
 
-static PrStatusLayout *get_prstatus_layout(ELFOBJ *bin) {
-	switch (bin->ehdr.e_machine) {
-	case EM_AARCH64:
-		return &prstatus_layouts[AARCH64];
-	case EM_ARM:
-		return &prstatus_layouts[ARM];
-	case EM_386:
-		return &prstatus_layouts[X86];
-	case EM_X86_64:
-		return &prstatus_layouts[X86_64];
-	default:
-		return NULL;
-	}
-}
-
 /// Parse NT_PRSTATUS note
 static void parse_note_prstatus(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, ut64 offset) {
-	PrStatusLayout *layout = get_prstatus_layout(bin);
+	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
 	if (!layout) {
 		eprintf("Fetching registers from core file not supported for this architecture.\n");
 		return;
@@ -1851,8 +1790,8 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 
 /// Get the value of the stackpointer register in a core file
 ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin) {
-	PrStatusLayout *layout = get_prstatus_layout(bin);
-	RzBinElfNotePrStatus *prs = get_prstatus(bin);
+	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
+	RzBinElfNotePrStatus *prs = Elf_(rz_bin_elf_get_prstatus)(bin);
 	if (!layout || !prs || layout->sp_offset + layout->sp_size / 8 > prs->regstate_size || !prs->regstate) {
 		return UT64_MAX;
 	}
