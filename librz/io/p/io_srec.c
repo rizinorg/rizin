@@ -110,8 +110,9 @@ static st32 __read(RzIO *io, RzIODesc *fd, ut8 *buf, st32 count) {
 	if (r >= 0) {
 		rz_buf_seek(srec->buf, r, RZ_BUF_CUR);
 	}
-
-	return r;
+	// sparse read return >= 0 but < count still means everything was read successfully,
+	// just maybe not entirely populated by chunks:
+	return r < 0 ? -1 : count;
 }
 
 static st32 __close(RzIODesc *fd) {
