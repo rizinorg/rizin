@@ -12,6 +12,36 @@
 #ifndef _INCLUDE_ELF_H_
 #define _INCLUDE_ELF_H_
 
+#define bprintf \
+	if (bin->verbose) \
+	RZ_LOG_WARN
+
+#define READ8(x, i) \
+	rz_read_ble8((x) + (i)); \
+	(i) += 1
+#define READ16(x, i) \
+	rz_read_ble16((x) + (i), bin->endian); \
+	(i) += 2
+#define READ32(x, i) \
+	rz_read_ble32((x) + (i), bin->endian); \
+	(i) += 4
+#define READ64(x, i) \
+	rz_read_ble64((x) + (i), bin->endian); \
+	(i) += 8
+
+#define BREAD8(x, i) \
+	rz_buf_read_ble8_at(x, i); \
+	(i) += 1
+#define BREAD16(x, i) \
+	rz_buf_read_ble16_at(x, i, bin->endian); \
+	(i) += 2
+#define BREAD32(x, i) \
+	rz_buf_read_ble32_at(x, i, bin->endian); \
+	(i) += 4
+#define BREAD64(x, i) \
+	rz_buf_read_ble64_at(x, i, bin->endian); \
+	(i) += 8
+
 #define RZ_BIN_ELF_SCN_IS_EXECUTABLE(x) x &SHF_EXECINSTR
 #define RZ_BIN_ELF_SCN_IS_READABLE(x)   x &SHF_ALLOC
 #define RZ_BIN_ELF_SCN_IS_WRITABLE(x)   x &SHF_WRITE
@@ -261,7 +291,6 @@ RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(struct Elf_(rz_bin_elf_obj_t) * bin);
 struct Elf_(rz_bin_elf_obj_t) * Elf_(rz_bin_elf_new)(const char *file, bool verbose);
-struct Elf_(rz_bin_elf_obj_t) * Elf_(rz_bin_elf_new_buf)(RzBuffer *buf, bool verbose);
 
 ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size);
 bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms);
@@ -311,6 +340,7 @@ int Elf_(rz_bin_elf_is_big_endian)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, bool verbose);
 RZ_OWN RzList *Elf_(section_flag_to_rzlist)(ut64 flag);
 RZ_OWN char *Elf_(section_type_to_string)(ut64 type);
 
