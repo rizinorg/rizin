@@ -94,7 +94,7 @@ static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, st32 count) {
 	}
 
 	// termination
-	fprintf(out, "S9030000FC\n");
+	fprintf(out, "S70500000000FA\n");
 	fclose(out);
 	out = NULL;
 	return 0;
