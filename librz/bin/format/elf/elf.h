@@ -303,6 +303,7 @@ RZ_IPI RZ_BORROW RzBinElfNotePrStatus *Elf_(rz_bin_elf_get_prstatus)(RZ_NONNULL 
 RZ_IPI RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_ehdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_phdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
+RZ_IPI bool Elf_(rz_bin_elf_init_shdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_is_sh_index_valid)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index);
 
 RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
