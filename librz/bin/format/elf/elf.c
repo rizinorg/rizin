@@ -49,6 +49,7 @@
 #include "rz_bin_elf_is_big_endian.inc"
 #include "rz_bin_elf_is_executable.inc"
 #include "rz_bin_elf_is_relocatable.inc"
+#include "rz_bin_elf_is_sh_index_valid.inc"
 #include "rz_bin_elf_is_static.inc"
 #include "section_flag_to_rzlist.inc"
 #include "section_type_to_string.inc"
@@ -425,10 +426,6 @@ static int init_shdr(ELFOBJ *bin) {
 	// > pf `k bin/cur/info/elf_shdr.format` @ `k bin/cur/info/elf_shdr.offset`
 }
 
-static bool is_shidx_valid(ELFOBJ *bin, Elf_(Half) value) {
-	return value < bin->ehdr.e_shnum && !RZ_BETWEEN(SHN_LORESERVE, value, SHN_HIRESERVE);
-}
-
 static int init_strtab(ELFOBJ *bin) {
 	rz_return_val_if_fail(!bin->strtab, false);
 
@@ -437,7 +434,7 @@ static int init_strtab(ELFOBJ *bin) {
 	}
 
 	Elf_(Half) shstrndx = bin->ehdr.e_shstrndx;
-	if (shstrndx != SHN_UNDEF && !is_shidx_valid(bin, shstrndx)) {
+	if (shstrndx != SHN_UNDEF && !Elf_(rz_bin_elf_is_sh_index_valid)(bin, shstrndx)) {
 		return false;
 	}
 
@@ -2388,7 +2385,7 @@ static bool is_section_local_sym(ELFOBJ *bin, Elf_(Sym) * sym) {
 	if (ELF_ST_BIND(sym->st_info) != STB_LOCAL) {
 		return false;
 	}
-	if (!is_shidx_valid(bin, sym->st_shndx)) {
+	if (!Elf_(rz_bin_elf_is_sh_index_valid)(bin, sym->st_shndx)) {
 		return false;
 	}
 	Elf_(Word) sh_name = bin->shdr[sym->st_shndx].sh_name;
