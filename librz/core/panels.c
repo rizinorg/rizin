@@ -3133,7 +3133,12 @@ int __load_layout_default_cb(void *user) {
 
 int __close_file_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmd0(core, "o-*");
+	rz_core_file_close_fd(core, -1);
+	rz_io_close_all(core->io);
+	rz_bin_file_delete_all(core->bin);
+	if (core->files) {
+		rz_list_purge(core->files);
+	}
 	return 0;
 }
 
@@ -3524,7 +3529,11 @@ int __symbols_cb(void *user) {
 
 int __program_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmdf(core, "aaa");
+	char *dh_orig = core->dbg->h
+		? strdup(core->dbg->h->name)
+		: strdup("esil");
+	rz_core_analysis_all(core);
+	rz_core_analysis_everything(core, false, dh_orig);
 	return 0;
 }
 
@@ -3589,10 +3598,9 @@ int __license_cb(void *user) {
 }
 
 int __version_cb(void *user) {
-	RzCore *core = (RzCore *)user;
-	char *s = rz_core_cmd_str(core, "?V");
-	rz_cons_message(s);
-	free(s);
+	char *v = rz_str_version(NULL);
+	rz_cons_message(v);
+	free(v);
 	return 0;
 }
 

@@ -2172,6 +2172,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 			break;
 		}
 	}
+	canvas = hview.canvas;
 	console->event_data = NULL;
 	console->event_resize = NULL;
 

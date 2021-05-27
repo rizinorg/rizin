@@ -118,9 +118,6 @@ bool test_message_digest_configure() {
 	boolean = rz_msg_digest_configure(md, "");
 	mu_assert_false(boolean, "rz_msg_digest_configure ''");
 
-	boolean = rz_msg_digest_configure(md, NULL);
-	mu_assert_false(boolean, "rz_msg_digest_configure NULL");
-
 	boolean = rz_msg_digest_configure(md, "md5");
 	mu_assert_true(boolean, "rz_msg_digest_configure 'md5'");
 
@@ -140,9 +137,6 @@ bool test_message_digest_configure() {
 
 	md = rz_msg_digest_new_with_algo2("");
 	mu_assert_null(md, "rz_msg_digest_new_with_algo2 with '' algo");
-
-	md = rz_msg_digest_new_with_algo2(NULL);
-	mu_assert_null(md, "rz_msg_digest_new_with_algo2 with NULL algo");
 
 	mu_end;
 }
