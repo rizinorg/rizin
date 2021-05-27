@@ -47,6 +47,7 @@
 #include "rz_bin_elf_has_va.inc"
 #include "rz_bin_elf_init_ehdr.inc"
 #include "rz_bin_elf_init_phdr.inc"
+#include "rz_bin_elf_init_shdr.inc"
 #include "rz_bin_elf_intrp.inc"
 #include "rz_bin_elf_is_big_endian.inc"
 #include "rz_bin_elf_is_executable.inc"
