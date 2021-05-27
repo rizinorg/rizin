@@ -42,6 +42,39 @@
 #define RZ_BIN_ELF_XWORD_MAX       UT64_MAX
 #endif
 
+/// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
+typedef struct prstatus_layout_t {
+	ut64 regsize;
+
+	/**
+	 * This delta is the offset into the actual data of an NT_PRSTATUS note
+	 * where the regstate of size regsize lies.
+	 * That is, it is the offset after the Elf_(Nhdr) and the variable-length string + optional padding
+	 * have already been skipped.
+	 *
+	 * see size_t ELFLinuxPrStatus::GetSize(const lldb_private::ArchSpec &arch) in lldb source or similar
+	 * to determine values for this.
+	 */
+	ut64 regdelta;
+
+	/// Size of the stack pointer register in bits
+	ut8 sp_size;
+
+	/**
+	 * Offset of the stack pointer register inside the regstate
+	 * To determine the layout of the regstate, see lldb source, for example:
+	 *   RegisterContextSP ThreadElfCore::CreateRegisterContextForFrame(StackFrame *frame) decides what to use for the file
+	 *   RegisterContextLinux_x86_64 leads to...
+	 *   g_register_infos_x86_64 which is eventually filled with info using...
+	 *   GPR_OFFSET which takes its info from...
+	 *   the offsets into the GPR struct in RegisterContextLinux_x86_64.cpp
+	 */
+	ut64 sp_offset;
+
+	// These NT_PRSTATUS notes hold much more than this, but it's not needed for us yet.
+	// If necessary, new members can be introduced here.
+} RzBinElfPrStatusLayout;
+
 typedef struct rz_bin_elf_section_t {
 	ut64 offset;
 	ut64 rva;
@@ -236,6 +269,9 @@ bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr);
 bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf);
 
 ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin);
+
+RZ_IPI RZ_BORROW RzBinElfNotePrStatus *Elf_(rz_bin_elf_get_prstatus)(RZ_NONNULL ELFOBJ *bin);
+RZ_IPI RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
 
 RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
