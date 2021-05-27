@@ -604,6 +604,7 @@ static bool cb_asmarch(void *user, void *data) {
 	// set endian of RzAnalysis to match binary
 	rz_analysis_set_big_endian(core->analysis, bigbin);
 	rz_core_analysis_cc_init(core);
+	rz_sysreg_set_arch(core->analysis->syscall, node->value);
 
 	return true;
 }

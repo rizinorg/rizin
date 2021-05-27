@@ -79,6 +79,27 @@ static inline bool sysregs_reload_needed(RzSyscall *s, const char *arch, int bit
 	return !s->cpu || strcmp(s->cpu, cpu);
 }
 
+/**
+ * \brief Sets the architecture for sysregs during analysis and
+ * 		  loads up the sysregs SDB database
+ *
+ * \param s reference to RzSyscall
+ * \param arch reference to value of asm.arch
+ */
+RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch) {
+	char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("reg", "%s-%s-%d"),
+		arch, s->cpu, s->bits);
+	if (dbName) {
+		if (!load_sdb(&s->db, dbName)) {
+			sdb_free(s->db);
+			s->db = NULL;
+			return false;
+		}
+		free(dbName);
+	}
+	return true;
+}
+
 // TODO: should be renamed to rz_syscall_use();
 RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const char *cpu, const char *os) {
 	bool syscall_changed, sysregs_changed;

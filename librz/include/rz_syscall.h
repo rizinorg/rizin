@@ -92,6 +92,7 @@ RZ_API RzList *rz_syscall_list(RzSyscall *ctx);
 RZ_API int rz_syscall_get_swi(RzSyscall *s);
 
 RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 num);
+RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch);
 #endif
 
 #ifdef __cplusplus
