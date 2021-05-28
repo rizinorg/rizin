@@ -17,6 +17,7 @@
 #include "rz_bin_elf_init_dynamic_section.inc"
 #include "rz_bin_elf_init_dynstr.inc"
 #include "rz_bin_elf_init_ehdr.inc"
+#include "rz_bin_elf_init_notes.inc"
 #include "rz_bin_elf_init_phdr.inc"
 #include "rz_bin_elf_init_shdr.inc"
 #include "rz_bin_elf_init_shstrtab.inc"
