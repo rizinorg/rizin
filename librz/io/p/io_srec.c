@@ -26,8 +26,9 @@ typedef struct srec_t {
 } SRecord;
 
 static void write_S3_record(FILE *fd, ut32 address, const ut8 *buffer, ut16 size) {
-	ut8 record_size = 4 + size + 1;
+	rz_return_if_fail(fd && buffer);
 
+	ut8 record_size = 4 + size + 1;
 	ut8 checksum = record_size;
 	checksum += address & 0xff;
 	checksum += (address >> 8) & 0xff;
@@ -45,6 +46,8 @@ static void write_S3_record(FILE *fd, ut32 address, const ut8 *buffer, ut16 size
 }
 
 static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, st32 count) {
+	rz_return_val_if_fail(fd && fd->data && fd->perm & RZ_PERM_W && count > 0, -1);
+
 	const char *pathname = NULL;
 	FILE *out = NULL;
 	SRecord *srec = NULL;
@@ -54,21 +57,17 @@ static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, st32 count) {
 	const RzBufferSparseChunk *chunks = NULL;
 	const RzBufferSparseChunk *sparse = NULL;
 
-	if (!fd || !fd->data || (fd->perm & RZ_PERM_W) == 0 || count <= 0) {
-		return -1;
-	}
-
 	srec = (SRecord *)fd->data;
 	pathname = fd->name + strlen(SREC_PATH_PREFIX);
 	out = rz_sys_fopen(pathname, "w");
-
-	// starting record, contains "rizin-srec\0"
-	fprintf(out, "S00E000072697A696E2D7372656300EB\n");
 
 	if (!out) {
 		RZ_LOG_ERROR("srec:write(): cannot open '%s' for writing\n", pathname);
 		return -1;
 	}
+
+	// starting record, contains "rizin-srec\0"
+	fprintf(out, "S00E000072697A696E2D7372656300EB\n");
 
 	/* mem write */
 	if (rz_buf_write_at(srec->buf, io->off, buf, count) != count) {
@@ -101,9 +100,8 @@ static st32 __write(RzIO *io, RzIODesc *fd, const ut8 *buf, st32 count) {
 }
 
 static st32 __read(RzIO *io, RzIODesc *fd, ut8 *buf, st32 count) {
-	if (!fd || !fd->data || (count <= 0)) {
-		return -1;
-	}
+	rz_return_val_if_fail(io && fd && fd->data && buf && count > 0, -1);
+
 	SRecord *srec = (SRecord *)fd->data;
 	memset(buf, io->Oxff, count);
 	st32 r = rz_buf_read_at(srec->buf, io->off, buf, count);
@@ -116,9 +114,8 @@ static st32 __read(RzIO *io, RzIODesc *fd, ut8 *buf, st32 count) {
 }
 
 static st32 __close(RzIODesc *fd) {
-	if (!fd || !fd->data) {
-		return -1;
-	}
+	rz_return_val_if_fail(fd && fd->data, -1);
+
 	SRecord *srec = (SRecord *)fd->data;
 	rz_buf_free(srec->buf);
 	free(srec);
@@ -127,11 +124,8 @@ static st32 __close(RzIODesc *fd) {
 }
 
 static ut64 __lseek(struct rz_io_t *io, RzIODesc *fd, ut64 offset, st32 whence) {
-	SRecord *srec;
-	if (!fd || !fd->data) {
-		return -1;
-	}
-	srec = (SRecord *)fd->data;
+	rz_return_val_if_fail(fd && fd->data, 0);
+	SRecord *srec = (SRecord *)fd->data;
 	io->off = rz_buf_seek(srec->buf, offset, whence);
 	return io->off;
 }
@@ -509,6 +503,8 @@ fail:
 }
 
 static RzIODesc *__open(RzIO *io, const char *pathname, st32 rw, st32 mode) {
+	rz_return_val_if_fail(io && pathname, NULL);
+
 	SRecord *mal = NULL;
 	char *str = NULL;
 	if (__plugin_open(io, pathname, 0)) {
@@ -541,9 +537,8 @@ static RzIODesc *__open(RzIO *io, const char *pathname, st32 rw, st32 mode) {
 }
 
 static bool __resize(RzIO *io, RzIODesc *fd, ut64 size) {
-	if (!fd) {
-		return false;
-	}
+	rz_return_val_if_fail(fd && fd->data, false);
+
 	SRecord *srec = (SRecord *)fd->data;
 	if (srec) {
 		return rz_buf_resize(srec->buf, size);
