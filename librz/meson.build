@@ -255,6 +255,7 @@ io_plugins = [
   'gzip',
   'http',
   'ihex',
+  'srec',
   'mach',
   'malloc',
   'null',

@@ -455,6 +455,7 @@ extern RzIOPlugin rz_io_plugin_w32;
 extern RzIOPlugin rz_io_plugin_zip;
 extern RzIOPlugin rz_io_plugin_default;
 extern RzIOPlugin rz_io_plugin_ihex;
+extern RzIOPlugin rz_io_plugin_srec;
 extern RzIOPlugin rz_io_plugin_self;
 extern RzIOPlugin rz_io_plugin_gzip;
 extern RzIOPlugin rz_io_plugin_winkd;
