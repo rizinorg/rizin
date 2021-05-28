@@ -304,6 +304,7 @@ RZ_IPI RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ
 RZ_IPI bool Elf_(rz_bin_elf_init_dynamic_section)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_dynstr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_ehdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
+RZ_IPI bool Elf_(rz_bin_elf_init_notes)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_phdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_shdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_shstrtab)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);

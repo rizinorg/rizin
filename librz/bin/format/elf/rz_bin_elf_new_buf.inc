@@ -5,158 +5,6 @@
 
 #include "elf.h"
 
-#define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
-
-/// Parse NT_PRSTATUS note
-static void parse_note_prstatus(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, ut64 offset) {
-	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
-	if (!layout) {
-		eprintf("Fetching registers from core file not supported for this architecture.\n");
-		return;
-	}
-	ut8 *buf = malloc(layout->regsize);
-	if (!buf) {
-		return;
-	}
-	if (rz_buf_read_at(bin->b, offset + layout->regdelta, buf, layout->regsize) != layout->regsize) {
-		free(buf);
-		bprintf("Cannot read register state from CORE file\n");
-		return;
-	}
-	note->prstatus.regstate_size = layout->regsize;
-	note->prstatus.regstate = buf;
-}
-
-/// Parse NT_FILE note
-static void parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * nhdr, ELFOBJ *bin, ut64 offset) {
-	if (nhdr->n_descsz < RZ_BIN_ELF_WORDSIZE * 2) {
-		return;
-	}
-	ut64 n_maps = RZ_BIN_ELF_BREADWORD(bin->b, offset);
-	if (n_maps > (ut64)SIZE_MAX) {
-		return;
-	}
-	RzVector files;
-	rz_vector_init(&files, sizeof(RzBinElfNoteFile), NULL, NULL);
-	rz_vector_reserve(&files, n_maps);
-	(void)RZ_BIN_ELF_BREADWORD(bin->b, offset); // skip page size
-	ut64 offset_begin = offset;
-	ut64 strings_begin = ((RZ_BIN_ELF_WORDSIZE * 3) * n_maps); // offset after the addr-array
-	ut64 len_str = 0;
-	while (n_maps-- && strings_begin + len_str < nhdr->n_descsz) {
-		char str[512] = { 0 };
-		st64 r = rz_buf_read_at(bin->b, offset_begin + strings_begin + len_str, (ut8 *)str, sizeof(str) - 1);
-		if (r < 0) {
-			break;
-		}
-		str[r] = 0;
-		len_str += strlen(str) + 1;
-		RzBinElfNoteFile *f = rz_vector_push(&files, NULL);
-		if (!f) {
-			break;
-		}
-		f->start_vaddr = RZ_BIN_ELF_BREADWORD(bin->b, offset);
-		f->end_vaddr = RZ_BIN_ELF_BREADWORD(bin->b, offset);
-		f->file_off = RZ_BIN_ELF_BREADWORD(bin->b, offset);
-		f->file = strdup(str);
-	}
-	note->file.files_count = rz_vector_len(&files);
-	note->file.files = rz_vector_flush(&files);
-	rz_vector_fini(&files);
-}
-
-static void note_fini(RzBinElfNote *note) {
-	switch (note->type) {
-	case NT_FILE:
-		for (size_t i = 0; i < note->file.files_count; i++) {
-			free(note->file.files[i].file);
-		}
-		free(note->file.files);
-		break;
-	case NT_PRSTATUS:
-		free(note->prstatus.regstate);
-		break;
-	}
-}
-
-static void note_segment_free(RzBinElfNoteSegment *seg) {
-	if (!seg) {
-		return;
-	}
-	if (seg->notes) {
-		for (size_t i = 0; i < seg->notes_count; i++) {
-			note_fini(&seg->notes[i]);
-		}
-		free(seg->notes);
-	}
-	free(seg);
-}
-
-/// Parse PT_NOTE segments, which are used in core files for cpu state, etc.
-static bool init_notes(ELFOBJ *bin) {
-	bin->note_segments = rz_list_newf((RzListFree)note_segment_free);
-	if (!bin->note_segments) {
-		return false;
-	}
-	ut16 ph, ph_num = bin->ehdr.e_phnum;
-	for (ph = 0; ph < ph_num; ph++) {
-		Elf_(Phdr) *p = &bin->phdr[ph];
-		if (p->p_type != PT_NOTE || p->p_filesz < 9) {
-			// not a note with at least size for one header
-			continue;
-		}
-		if (p->p_offset + p->p_filesz < p->p_offset) {
-			// don't overflow
-			return false;
-		}
-		RzBinElfNoteSegment *seg = RZ_NEW0(RzBinElfNoteSegment);
-		if (!seg) {
-			return false;
-		}
-		RzVector notes;
-		rz_vector_init(&notes, sizeof(RzBinElfNote), NULL, NULL);
-
-		ut64 offset = p->p_offset;
-		ut64 buf_sz = rz_buf_size(bin->b);
-		while (offset + 9 < RZ_MIN(p->p_offset + p->p_filesz, buf_sz)) {
-			Elf_(Nhdr) nhdr;
-			nhdr.n_namesz = BREAD32(bin->b, offset);
-			nhdr.n_descsz = BREAD32(bin->b, offset);
-			nhdr.n_type = BREAD32(bin->b, offset);
-
-			if (p->p_filesz < offset - p->p_offset + round_up(nhdr.n_namesz) + round_up(nhdr.n_descsz)) {
-				// segment too small
-				break;
-			}
-
-			// skip name, not needed for us
-			offset += round_up(nhdr.n_namesz);
-
-			RzBinElfNote *note = rz_vector_push(&notes, NULL);
-			memset(note, 0, sizeof(*note));
-			note->type = nhdr.n_type;
-
-			// there are many more note types but for now we only need these:
-			switch (nhdr.n_type) {
-			case NT_FILE:
-				parse_note_file(note, &nhdr, bin, offset);
-				break;
-			case NT_PRSTATUS:
-				parse_note_prstatus(note, &nhdr, bin, offset);
-				break;
-			}
-
-			offset += round_up(nhdr.n_descsz);
-		}
-
-		seg->notes_count = rz_vector_len(&notes);
-		seg->notes = rz_vector_flush(&notes);
-		rz_vector_fini(&notes);
-		rz_list_push(bin->note_segments, seg);
-	}
-	return true;
-}
-
 static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) * shdr, int sz) {
 	size_t i;
 	const ut64 num_entries = sz / sizeof(Elf_(Versym));
@@ -731,7 +579,7 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 		bprintf("Cannot initialize program headers\n");
 	}
 	if (bin->ehdr.e_type == ET_CORE) {
-		if (!init_notes(bin)) {
+		if (!Elf_(rz_bin_elf_init_notes)(bin)) {
 			bprintf("Cannot parse PT_NOTE segments\n");
 		}
 	} else {
@@ -756,15 +604,20 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 		}
 	}
 
+	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
+
 	bin->imports_by_ord_size = 0;
 	bin->imports_by_ord = NULL;
 	bin->symbols_by_ord_size = 0;
 	bin->symbols_by_ord = NULL;
+
 	bin->g_sections = Elf_(rz_bin_elf_get_sections)(bin);
-	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
 	bin->g_relocs = Elf_(rz_bin_elf_get_relocs)(bin);
+
 	bin->rel_cache = rel_cache_new(bin->g_relocs, bin->g_reloc_num);
+
 	sdb_ns_set(bin->kv, "versioninfo", store_versioninfo(bin));
+
 	return true;
 }
 
