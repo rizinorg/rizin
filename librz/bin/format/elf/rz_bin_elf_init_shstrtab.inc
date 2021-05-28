@@ -5,7 +5,7 @@
 
 #include "elf.h"
 
-static void init_strtab_sdb(ELFOBJ *bin) {
+static void init_shstrtab_sdb(ELFOBJ *bin) {
 	sdb_num_set(bin->kv, "elf_shstrtab.offset", bin->shstrtab_section->sh_offset, 0);
 	sdb_num_set(bin->kv, "elf_shstrtab.size", bin->shstrtab_section->sh_size, 0);
 }
@@ -52,7 +52,7 @@ RZ_IPI bool Elf_(rz_bin_elf_init_shstrtab)(RZ_NONNULL RZ_INOUT ELFOBJ *bin) {
 	bin->shstrtab_section = bin->strtab_section = bin->shdr + shstrtab_index;
 	bin->shstrtab_size = bin->shstrtab_section->sh_size;
 
-	init_strtab_sdb(bin);
+	init_shstrtab_sdb(bin);
 
 	if (!check_shstrtab(bin)) {
 		return false;
