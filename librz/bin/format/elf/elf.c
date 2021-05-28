@@ -11,6 +11,16 @@
 #include <rz_util.h>
 #include "elf.h"
 
+// RZ_IPI
+#include "rz_bin_elf_get_prstatus.inc"
+#include "rz_bin_elf_get_prstatus_layout.inc"
+#include "rz_bin_elf_init_ehdr.inc"
+#include "rz_bin_elf_init_phdr.inc"
+#include "rz_bin_elf_init_shdr.inc"
+#include "rz_bin_elf_init_shstrtab.inc"
+#include "rz_bin_elf_is_sh_index_valid.inc"
+
+// RZ_API
 #include "rz_bin_elf_convert_import.inc"
 #include "rz_bin_elf_convert_symbol.inc"
 #include "rz_bin_elf_free.inc"
@@ -32,8 +42,6 @@
 #include "rz_bin_elf_get_machine_name.inc"
 #include "rz_bin_elf_get_main_offset.inc"
 #include "rz_bin_elf_get_osabi_name.inc"
-#include "rz_bin_elf_get_prstatus.inc"
-#include "rz_bin_elf_get_prstatus_layout.inc"
 #include "rz_bin_elf_get_rpath.inc"
 #include "rz_bin_elf_get_section.inc"
 #include "rz_bin_elf_get_section_addr.inc"
@@ -45,14 +53,10 @@
 #include "rz_bin_elf_has_nx.inc"
 #include "rz_bin_elf_has_relro.inc"
 #include "rz_bin_elf_has_va.inc"
-#include "rz_bin_elf_init_ehdr.inc"
-#include "rz_bin_elf_init_phdr.inc"
-#include "rz_bin_elf_init_shdr.inc"
 #include "rz_bin_elf_intrp.inc"
 #include "rz_bin_elf_is_big_endian.inc"
 #include "rz_bin_elf_is_executable.inc"
 #include "rz_bin_elf_is_relocatable.inc"
-#include "rz_bin_elf_is_sh_index_valid.inc"
 #include "rz_bin_elf_is_static.inc"
 #include "rz_bin_elf_new_buf.inc"
 #include "section_flag_to_rzlist.inc"
