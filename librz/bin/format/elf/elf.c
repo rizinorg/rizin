@@ -14,6 +14,9 @@
 // RZ_IPI
 #include "rz_bin_elf_get_prstatus.inc"
 #include "rz_bin_elf_get_prstatus_layout.inc"
+#include "rz_bin_elf_get_ver_flags.inc"
+#include "rz_bin_elf_get_version_info.inc"
+#include "rz_bin_elf_get_version_info_gnu_verneed.inc"
 #include "rz_bin_elf_init_dynamic_section.inc"
 #include "rz_bin_elf_init_dynstr.inc"
 #include "rz_bin_elf_init_ehdr.inc"
