@@ -754,7 +754,6 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 				bprintf("Cannot initialize dynamic section\n");
 			}
 		}
-
 	}
 
 	bin->imports_by_ord_size = 0;
