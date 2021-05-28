@@ -3988,27 +3988,20 @@ static void bin_elf_versioninfo(RzCore *r, PJ *pj, int mode) {
 		if (!(sdb = sdb_ns_path(r->sdb, verneed_path, 0))) {
 			break;
 		}
-		const char *const section_name = sdb_const_get(sdb, "section_name", 0);
 		const ut64 address = sdb_num_get(sdb, "addr", 0);
 		const ut64 offset = sdb_num_get(sdb, "offset", 0);
-		const ut64 link = sdb_num_get(sdb, "link", 0);
-		const char *const link_section_name = sdb_const_get(sdb, "link_section_name", 0);
 		if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
-			pj_ks(pj, "section_name", section_name);
 			pj_kn(pj, "address", address);
 			pj_kn(pj, "offset", offset);
-			pj_kn(pj, "link", link);
-			pj_ks(pj, "link_section_name", link_section_name);
 			pj_ka(pj, "entries");
 		} else {
-			rz_cons_printf("Version need section '%s' contains %d entries:\n",
-				section_name, (int)sdb_num_get(sdb, "num_entries", 0));
+			rz_cons_printf("Version need contains %d entries:\n",
+				(int)sdb_num_get(sdb, "num_entries", 0));
 
 			rz_cons_printf(" Addr: 0x%08" PFMT64x, address);
 
-			rz_cons_printf("  Offset: 0x%08" PFMT64x "  Link to section: %" PFMT64d " (%s)\n",
-				offset, link, link_section_name);
+			rz_cons_printf("  Offset: 0x%08" PFMT64x "\n", offset);
 		}
 		for (num_version = 0;; num_version++) {
 			const char *filename = NULL;

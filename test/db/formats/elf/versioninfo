@@ -18,11 +18,11 @@ Version symbols section '.gnu.version' contains 11 entries:
   0x0000000a: 0 (*local*)
 
 
-Version need section '.gnu.version_r' contains 1 entries:
- Addr: 0x00400458  Offset: 0x00000458  Link to section: 6 (.dynstr)
-  0x00000000: Version: 1  File: libc.so.6  Cnt: 2
-  0x00000010:   Name: GLIBC_2.4  Flags: none Version: 3
-  0x00000020:   Name: GLIBC_2.2.5  Flags: none Version: 2
+Version need contains 1 entries:
+ Addr: 0x00400458  Offset: 0x00000458
+  0x00000458: Version: 1  File: libc.so.6  Cnt: 2
+  0x00000468:   Name: GLIBC_2.4  Flags: none Version: 3
+  0x00000478:   Name: GLIBC_2.2.5  Flags: none Version: 2
 EOF
 RUN
 
@@ -37,9 +37,9 @@ Version symbols section '.gnu.version' contains 4 entries:
   0x00000003: 0 (*local*)
 
 
-Version need section '.gnu.version_r' contains 1 entries:
- Addr: 0x00400328  Offset: 0x00000328  Link to section: 6 (.dynstr)
-  0x00000000: Version: 1  File: libc.so.6  Cnt: 1
-  0x00000010:   Name: GLIBC_2.2.5  Flags: none Version: 2
+Version need contains 1 entries:
+ Addr: 0x00400328  Offset: 0x00000328
+  0x00000328: Version: 1  File: libc.so.6  Cnt: 1
+  0x00000338:   Name: GLIBC_2.2.5  Flags: none Version: 2
 EOF
 RUN
