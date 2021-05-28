@@ -14,6 +14,7 @@
 // RZ_IPI
 #include "rz_bin_elf_get_prstatus.inc"
 #include "rz_bin_elf_get_prstatus_layout.inc"
+#include "rz_bin_elf_init_dynstr.inc"
 #include "rz_bin_elf_init_ehdr.inc"
 #include "rz_bin_elf_init_phdr.inc"
 #include "rz_bin_elf_init_shdr.inc"
