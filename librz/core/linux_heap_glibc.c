@@ -1673,6 +1673,10 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		rz_cons_printf(", bk=");
 		PRINTF_YA("0x%" PFMT64x, bk);
 		rz_cons_newline();
+	} else {
+		pj_kn(pj, "fd", fw);
+		pj_kn(pj, "bk", bk);
+		pj_ka(pj, "chunks");
 	}
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 
@@ -1695,7 +1699,9 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	}
 	free(cnk);
 	free(head);
-
+	if (pj) {
+		pj_end(pj);
+	}
 	return chunks_cnt;
 }
 
@@ -1715,13 +1721,11 @@ static void GH(print_unsortedbin_description)(RzCore *core, GHT m_arena, MallocS
 		pj_o(pj);
 		pj_kn(pj, "bin_num", 0);
 		pj_ks(pj, "bin_type", "unsorted");
-		pj_ka(pj, "chunks");
 	}
 	int chunk_cnt = GH(print_bin_content)(core, main_arena, 0, pj);
 	if (!pj) {
 		rz_cons_printf("Found %d chunks in unsorted bin\n", chunk_cnt);
 	} else {
-		pj_end(pj);
 		pj_end(pj);
 	}
 }
@@ -1745,11 +1749,9 @@ static void GH(print_smallbin_description)(RzCore *core, GHT m_arena, MallocStat
 			pj_o(pj);
 			pj_kn(pj, "bin_num", bin_num);
 			pj_ks(pj, "bin_type", "small");
-			pj_ka(pj, "chunks");
 		}
 		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num, pj);
 		if (pj) {
-			pj_end(pj);
 			pj_end(pj);
 		}
 		if (chunk_found > 0) {
@@ -1781,11 +1783,9 @@ static void GH(print_largebin_description)(RzCore *core, GHT m_arena, MallocStat
 			pj_o(pj);
 			pj_kn(pj, "bin_num", bin_num);
 			pj_ks(pj, "bin_type", "large");
-			pj_ka(pj, "chunks");
 		}
 		int chunk_found = GH(print_bin_content)(core, main_arena, bin_num, pj);
 		if (pj) {
-			pj_end(pj);
 			pj_end(pj);
 		}
 		if (chunk_found > 0) {
