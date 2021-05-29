@@ -71,7 +71,7 @@ static inline GHT GH(align_address_to_size)(ut64 addr, ut64 align) {
 }
 
 static inline GHT GH(get_next_pointer)(RzCore *core, GHT pos, GHT next) {
-	return (core->dbg->glibc_version < 232) ? next : PROTECT_PTR(pos, next);
+	return (core->dbg->glibc_version < 232) ? next : (GHT)((pos >> 12) ^ next);
 }
 
 static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
@@ -761,16 +761,12 @@ static int GH(print_double_linked_list_bin)(RzCore *core, MallocState *main_aren
 		initial_brk = (brk_start >> 12) << 12;
 	}
 
-	switch (num_bin) {
-	case 0:
+	if (num_bin == 0) {
 		PRINT_GA("  double linked list unsorted bin {\n");
-		break;
-	case 1 ... NSMALLBINS - 1:
+	} else if (num_bin >= 1 && num_bin <= NSMALLBINS - 1) {
 		PRINT_GA("  double linked list small bin {\n");
-		break;
-	case NSMALLBINS ... NBINS - 2:
+	} else if (num_bin >= NSMALLBINS && num_bin <= NBINS - 2) {
 		PRINT_GA("  double linked list large bin {\n");
-		break;
 	}
 
 	if (!graph || graph == 1) {
