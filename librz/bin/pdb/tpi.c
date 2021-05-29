@@ -815,8 +815,7 @@ static int get_array_element_type(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -841,8 +840,7 @@ static int get_array_index_type(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -868,8 +866,7 @@ static int get_bitfield_base_type(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -882,8 +879,7 @@ static int get_class_struct_derived(void *type, void **ret_type) {
 	int curr_idx = lf->derived;
 
 	if (curr_idx) {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	} else {
 		*ret_type = NULL;
 	}
@@ -897,8 +893,7 @@ static int get_class_struct_derived_19(void *type, void **ret_type) {
 	int curr_idx = lf->derived;
 
 	if (curr_idx) {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	} else {
 		*ret_type = NULL;
 	}
@@ -912,8 +907,7 @@ static int get_class_struct_vshape(void *type, void **ret_type) {
 	int curr_idx = lf->vshape;
 
 	if (curr_idx) {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	} else {
 		*ret_type = NULL;
 	}
@@ -927,8 +921,7 @@ static int get_class_struct_vshape_19(void *type, void **ret_type) {
 	int curr_idx = lf->vshape;
 
 	if (curr_idx) {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	} else {
 		*ret_type = NULL;
 	}
@@ -954,8 +947,7 @@ static int get_mfunction_return_type(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -967,8 +959,7 @@ static int get_mfunction_class_type(void *type, void **ret_type) {
 	int curr_idx = lf->class_type;
 
 	if (curr_idx) {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	} else {
 		*ret_type = NULL;
 	}
@@ -982,8 +973,7 @@ static int get_mfunction_this_type(void *type, void **ret_type) {
 	int curr_idx = lf->this_type;
 
 	if (curr_idx) {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	} else {
 		*ret_type = NULL;
 	}
@@ -998,8 +988,7 @@ static int get_mfunction_arglist(void *type, void **ret_type) {
 	int curr_idx = lf->arglist;
 
 	if (curr_idx) {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	} else {
 		*ret_type = NULL;
 	}
@@ -1026,8 +1015,7 @@ static int get_modifier_modified_type(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -1052,8 +1040,7 @@ static int get_pointer_utype(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -1077,8 +1064,7 @@ static int get_procedure_return_type(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -1102,8 +1088,7 @@ static int get_procedure_arglist(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -1127,8 +1112,7 @@ static int get_member_index(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -1152,8 +1136,7 @@ static int get_nesttype_index(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -1177,8 +1160,7 @@ static int get_onemethod_index(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -1202,8 +1184,7 @@ static int get_method_mlist(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -1227,8 +1208,7 @@ static int get_enum_utype(void *type, void **ret_type) {
 		*ret_type = base_ret_type;
 		return true; // check what are the return values used for
 	} else {
-		curr_idx -= base_idx;
-		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
 	}
 
 	return curr_idx;
@@ -1244,14 +1224,12 @@ static void get_fieldlist_members(void *type, RzList **l) {
 static void get_union_members(void *type, RzList **l) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_UNION *lf_union = (SLF_UNION *)t->type_info;
-	unsigned int indx = 0;
 
 	if (lf_union->field_list == 0) {
 		*l = 0;
 	} else {
 		SType *tmp = 0;
-		indx = lf_union->field_list - base_idx;
-		tmp = (SType *)rz_list_get_n(p_types_list, indx);
+		tmp = (SType *)get_stype_by_idx(p_types_list, lf_union->field_list);
 		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
@@ -1259,14 +1237,12 @@ static void get_union_members(void *type, RzList **l) {
 static void get_struct_class_members(void *type, RzList **l) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_info;
-	unsigned int indx = 0;
 
 	if (lf->field_list == 0) {
 		*l = 0;
 	} else {
 		SType *tmp = 0;
-		indx = lf->field_list - base_idx;
-		tmp = (SType *)rz_list_get_n(p_types_list, indx);
+		tmp = (SType *)get_stype_by_idx(p_types_list, lf->field_list);
 		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
@@ -1274,14 +1250,12 @@ static void get_struct_class_members(void *type, RzList **l) {
 static void get_struct_class_members_19(void *type, RzList **l) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
-	unsigned int indx = 0;
 
 	if (lf->field_list == 0) {
 		*l = 0;
 	} else {
 		SType *tmp = 0;
-		indx = lf->field_list - base_idx;
-		tmp = (SType *)rz_list_get_n(p_types_list, indx);
+		tmp = (SType *)get_stype_by_idx(p_types_list, lf->field_list);
 		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
@@ -1289,14 +1263,12 @@ static void get_struct_class_members_19(void *type, RzList **l) {
 static void get_enum_members(void *type, RzList **l) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ENUM *lf = (SLF_ENUM *)t->type_info;
-	unsigned int indx = 0;
 
 	if (lf->field_list == 0) {
 		*l = 0;
 	} else {
 		SType *tmp = 0;
-		indx = lf->field_list - base_idx;
-		tmp = (SType *)rz_list_get_n(p_types_list, indx);
+		tmp = (SType *)get_stype_by_idx(p_types_list, lf->field_list);
 		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
 	}
 }
@@ -3081,6 +3053,17 @@ int parse_tpi_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream) {
 		rz_list_append(tpi_stream->types, type);
 	}
 	return 1;
+}
+
+SType *get_stype_by_idx(RzList *list, ut64 idx) {
+	RzListIter *it;
+	SType *tp;
+	rz_list_foreach (list, it, tp) {
+		if (idx == tp->tpi_idx) {
+			return tp;
+		}
+	}
+	return NULL;
 }
 
 void init_tpi_stream(STpiStream *tpi_stream) {

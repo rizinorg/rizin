@@ -16,4 +16,6 @@ int parse_sctring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_b
 // use rizin types here (ut16 instead of unsigned short, ut32 for unsigned int ..)
 ///////////////////////////////////////////////////////////////////////////////
 void init_scstring(SCString *cstr, unsigned int size, char *name);
+// Get SType data by type_info->type_index
+SType *get_stype_by_idx(RzList *list, ut64 idx);
 #endif // TPI_H
