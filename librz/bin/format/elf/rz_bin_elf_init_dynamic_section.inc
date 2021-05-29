@@ -11,6 +11,7 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_pltrelsz = 0;
 	bin->dyn_info.dt_pltgot = RZ_BIN_ELF_ADDR_MAX;
 	bin->dyn_info.dt_hash = RZ_BIN_ELF_ADDR_MAX;
+	bin->dyn_info.dt_gnu_hash = RZ_BIN_ELF_ADDR_MAX;
 	bin->dyn_info.dt_strtab = RZ_BIN_ELF_ADDR_MAX;
 	bin->dyn_info.dt_symtab = RZ_BIN_ELF_ADDR_MAX;
 	bin->dyn_info.dt_rela = RZ_BIN_ELF_ADDR_MAX;
@@ -100,6 +101,9 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 		case DT_HASH:
 			bin->dyn_info.dt_hash = d.d_un.d_ptr;
 			break;
+		case DT_GNU_HASH:
+			bin->dyn_info.dt_gnu_hash = d.d_un.d_ptr;
+			break;
 		case DT_STRTAB:
 			bin->dyn_info.dt_strtab = d.d_un.d_ptr;
 			break;
@@ -171,7 +175,6 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 		case DT_PREINIT_ARRAY:
 		case DT_PREINIT_ARRAYSZ:
 		case DT_SONAME:
-		case DT_GNU_HASH:
 			// common dynamic entries in ELF, but we don't need to
 			// do anything with them.
 			break;

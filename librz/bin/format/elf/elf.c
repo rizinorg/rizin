@@ -12,6 +12,7 @@
 #include "elf.h"
 
 // RZ_IPI
+#include "rz_bin_elf_get_number_of_dynamic_symbols.inc"
 #include "rz_bin_elf_get_prstatus.inc"
 #include "rz_bin_elf_get_prstatus_layout.inc"
 #include "rz_bin_elf_get_ver_flags.inc"
