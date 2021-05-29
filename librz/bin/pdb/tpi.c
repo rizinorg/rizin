@@ -789,6 +789,13 @@ static void is_struct_class_fwdref(void *type, int *is_fwdref) {
 	*is_fwdref = lf->prop.bits.fwdref;
 }
 
+static void is_struct_class_fwdref_19(void *type, int *is_fwdref) {
+	STypeInfo *t = (STypeInfo *)type;
+	// SLF_STRUCTURE and SLF_CLASS refer to the same struct so this is fine
+	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
+	*is_fwdref = lf->prop.bits.fwdref;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 static int get_array_element_type(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *)type;
@@ -884,9 +891,39 @@ static int get_class_struct_derived(void *type, void **ret_type) {
 	return curr_idx;
 }
 
+static int get_class_struct_derived_19(void *type, void **ret_type) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
+	int curr_idx = lf->derived;
+
+	if (curr_idx) {
+		curr_idx -= base_idx;
+		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+	} else {
+		*ret_type = NULL;
+	}
+
+	return curr_idx;
+}
+
 static int get_class_struct_vshape(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_info;
+	int curr_idx = lf->vshape;
+
+	if (curr_idx) {
+		curr_idx -= base_idx;
+		*ret_type = rz_list_get_n(p_types_list, curr_idx);
+	} else {
+		*ret_type = NULL;
+	}
+
+	return curr_idx;
+}
+
+static int get_class_struct_vshape_19(void *type, void **ret_type) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
 	int curr_idx = lf->vshape;
 
 	if (curr_idx) {
@@ -1234,6 +1271,21 @@ static void get_struct_class_members(void *type, RzList **l) {
 	}
 }
 
+static void get_struct_class_members_19(void *type, RzList **l) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
+	unsigned int indx = 0;
+
+	if (lf->field_list == 0) {
+		*l = 0;
+	} else {
+		SType *tmp = 0;
+		indx = lf->field_list - base_idx;
+		tmp = (SType *)rz_list_get_n(p_types_list, indx);
+		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
+	}
+}
+
 static void get_enum_members(void *type, RzList **l) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ENUM *lf = (SLF_ENUM *)t->type_info;
@@ -1335,6 +1387,13 @@ static void get_class_struct_name_len(void *type, int *res_len) {
 	get_sval_name_len(&lf->size, res_len);
 }
 
+static void get_class_struct_name_len_19(void *type, int *res_len) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
+
+	get_sval_name_len(&lf->size, res_len);
+}
+
 static void get_array_name_len(void *type, int *res_len) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ARRAY *lf_array = (SLF_ARRAY *)t->type_info;
@@ -1426,6 +1485,13 @@ static void get_class_struct_name(void *type, char **name) {
 	get_sval_name(&lf->size, name);
 }
 
+static void get_class_struct_name_19(void *type, char **name) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
+
+	get_sval_name(&lf->size, name);
+}
+
 static void get_array_name(void *type, char **name) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ARRAY *lf_array = (SLF_ARRAY *)t->type_info;
@@ -1462,6 +1528,12 @@ static void get_enumerate_val(void *type, int *res) {
 static void get_class_struct_val(void *type, int *res) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_info;
+	get_sval_val(&lf->size, res);
+}
+
+static void get_class_struct_val_19(void *type, int *res) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
 	get_sval_val(&lf->size, res);
 }
 
@@ -1575,6 +1647,13 @@ static void free_lf_fieldlist(void *type) {
 static void free_lf_class(void *type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_CLASS *lf_class = (SLF_CLASS *)t->type_info;
+
+	free_sval(&lf_class->size);
+}
+
+static void free_lf_class_19(void *type) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_CLASS_19 *lf_class = (SLF_CLASS_19 *)t->type_info;
 
 	free_sval(&lf_class->size);
 }
@@ -2415,6 +2494,17 @@ static void init_stype_info(STypeInfo *type_info) {
 		type_info->free_ = free_lf_class;
 		type_info->get_print_type = get_class_struct_print_type;
 		break;
+	case eLF_CLASS_19:
+	case eLF_STRUCTURE_19:
+		type_info->get_name = get_class_struct_name_19;
+		type_info->get_val = get_class_struct_val_19; // for structure this is size
+		type_info->get_name_len = get_class_struct_name_len_19;
+		type_info->get_members = get_struct_class_members_19;
+		type_info->get_derived = get_class_struct_derived_19;
+		type_info->get_vshape = get_class_struct_vshape_19;
+		type_info->is_fwdref = is_struct_class_fwdref_19;
+		type_info->free_ = free_lf_class_19;
+		type_info->get_print_type = get_class_struct_print_type;
 	case eLF_POINTER:
 		type_info->get_utype = get_pointer_utype;
 		type_info->get_print_type = get_pointer_print_type;
@@ -2631,6 +2721,30 @@ static int parse_lf_class(SLF_CLASS *lf_class, uint8_t *leaf_data, unsigned int 
 	return *read_bytes - tmp_before_read_bytes;
 }
 
+static int parse_lf_class_19(SLF_CLASS_19 *lf_class, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	unsigned int tmp_before_read_bytes = *read_bytes;
+	unsigned int before_read_bytes = 0;
+
+	lf_class->size.name_or_val = 0;
+
+	READ2(*read_bytes, len, lf_class->prop.cv_property, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_class->unknown, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_class->field_list, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_class->derived, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_class->vshape, leaf_data, ut32);
+	READ2(*read_bytes, len, lf_class->unknown1, leaf_data, st16);
+
+	before_read_bytes = *read_bytes;
+	parse_sval(&lf_class->size, leaf_data, read_bytes, len);
+	before_read_bytes = *read_bytes - before_read_bytes;
+	leaf_data = (uint8_t *)leaf_data + before_read_bytes;
+
+	PEEK_READ1(*read_bytes, len, lf_class->pad, leaf_data, ut8);
+	PAD_ALIGN(lf_class->pad, *read_bytes, leaf_data, len);
+
+	return *read_bytes - tmp_before_read_bytes;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_structure(SLF_STRUCTURE *lf_structure, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	//	SLF_STRUCTURE lf_structure;
@@ -2643,6 +2757,31 @@ static int parse_lf_structure(SLF_STRUCTURE *lf_structure, uint8_t *leaf_data, u
 	READ4(*read_bytes, len, lf_structure->field_list, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_structure->derived, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_structure->vshape, leaf_data, ut32);
+	// Why flipping ?? Works just right without it
+	// lf_structure->prop.cv_property = SWAP_UINT16(lf_structure->prop.cv_property);
+
+	before_read_bytes = *read_bytes;
+	parse_sval(&lf_structure->size, leaf_data, read_bytes, len);
+	leaf_data += (*read_bytes - before_read_bytes);
+
+	PEEK_READ1(*read_bytes, len, lf_structure->pad, leaf_data, ut8);
+	PAD_ALIGN(lf_structure->pad, *read_bytes, leaf_data, len);
+
+	return *read_bytes - tmp_before_read_bytes;
+}
+
+static int parse_lf_structure_19(SLF_STRUCTURE_19 *lf_structure, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	//	SLF_STRUCTURE lf_structure;
+	unsigned int tmp_before_read_bytes = *read_bytes;
+	unsigned int before_read_bytes = 0;
+
+	lf_structure->size.name_or_val = 0;
+	READ2(*read_bytes, len, lf_structure->prop.cv_property, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_structure->unknown, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_structure->field_list, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_structure->derived, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_structure->vshape, leaf_data, ut32);
+	READ2(*read_bytes, len, lf_structure->unknown1, leaf_data, st16);
 	// Why flipping ?? Works just right without it
 	// lf_structure->prop.cv_property = SWAP_UINT16(lf_structure->prop.cv_property);
 
@@ -2859,8 +2998,14 @@ static int parse_tpi_stypes(RZ_STREAM_FILE *stream, SType *type) {
 	case eLF_CLASS:
 		PARSE_LF(SLF_CLASS, lf_class);
 		break;
+	case eLF_CLASS_19:
+		PARSE_LF(SLF_CLASS_19, lf_class_19);
+		break;
 	case eLF_STRUCTURE:
 		PARSE_LF(SLF_STRUCTURE, lf_structure);
+		break;
+	case eLF_STRUCTURE_19:
+		PARSE_LF(SLF_STRUCTURE_19, lf_structure_19);
 		break;
 	case eLF_POINTER: {
 		SLF_POINTER *lf = (SLF_POINTER *)malloc(sizeof(SLF_POINTER));

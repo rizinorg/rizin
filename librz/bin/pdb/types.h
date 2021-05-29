@@ -862,6 +862,20 @@ SLF_STRUCTURE,
 
 RZ_PACKED(
 	typedef struct {
+		UCV_PROPERTY prop; // // property attribute field
+		ut16 unknown;
+		ut32 field_list; // type index of LF_FIELD descriptor list
+		ut32 derived; // type index of derived from list if not zero
+		ut32 vshape; // type index of vshape table for this class
+		st16 unknown1;
+		SVal size;
+		ut8 pad;
+	})
+SLF_STRUCTURE_19,
+	SLF_CLASS_19;
+
+RZ_PACKED(
+	typedef struct {
 		ut16 count;
 		UCV_PROPERTY prop;
 		ut32 field_list;
@@ -1103,6 +1117,15 @@ typedef enum {
 	eLF_MEMBERMODIFY = 0x00001513, // type record for modifications to members
 	eLF_MANAGED = 0x00001514,
 	eLF_TYPESERVER2 = 0x00001515, // type record describing using of a type server with v7 (GUID) signatures
+	eLF_FUNCTION_ID = 0x00001601,
+	eLF_MEMBER_FUNCTION_ID = 0x00001602,
+	eLF_BUILD_INFO = 0x00001603,
+	eLF_SUBSTRING_LIST = 0x00001604,
+	eLF_STRING_ID = 0x00001605,
+	eLF_USER_DEFINED_TYPE_SOURCE_AND_LINE = 0x00001606,
+	eLF_USER_DEFINED_TYPE_MODULE_SOURCE_AND_LINE = 0x00001607,
+	eLF_CLASS_19 = 0x00001608,
+	eLF_STRUCTURE_19 = 0x00001609,
 
 	/**     the following are numeric leaves.  They are used to indicate the
 	*      size of the following variable length data.  When the numeric
