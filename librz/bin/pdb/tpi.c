@@ -2192,7 +2192,7 @@ void deinit_scstring(SCString *cstr) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int parse_sctring(SCString *sctr, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+int parse_scstring(SCString *sctr, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int c = 0;
 	sctr->name = NULL;
 	sctr->size = 0;
@@ -2220,14 +2220,14 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 		if (!sctr) {
 			return 0;
 		}
-		parse_sctring(sctr, leaf_data, read_bytes, len);
+		parse_scstring(sctr, leaf_data, read_bytes, len);
 		val->name_or_val = sctr;
 	} else {
 		switch (val->value_or_type) {
 		case eLF_UQUADWORD: {
 			SVal_LF_UQUADWORD lf_uqword;
 			READ8(*read_bytes, len, lf_uqword.value, leaf_data, st64);
-			parse_sctring(&lf_uqword.name, leaf_data, read_bytes, len);
+			parse_scstring(&lf_uqword.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc(sizeof(SVal_LF_UQUADWORD));
 			if (!val->name_or_val) {
 				break;
@@ -2238,7 +2238,7 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 		case eLF_QUADWORD: {
 			SVal_LF_QUADWORD lf_qword;
 			READ8(*read_bytes, len, lf_qword.value, leaf_data, st64);
-			parse_sctring(&lf_qword.name, leaf_data, read_bytes, len);
+			parse_scstring(&lf_qword.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc(sizeof(SVal_LF_QUADWORD));
 			if (!val->name_or_val) {
 				break;
@@ -2249,7 +2249,7 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 		case eLF_CHAR: {
 			SVal_LF_CHAR lf_char;
 			READ1(*read_bytes, len, lf_char.value, leaf_data, st8);
-			parse_sctring(&lf_char.name, leaf_data, read_bytes, len);
+			parse_scstring(&lf_char.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc(sizeof(SVal_LF_CHAR));
 			if (!val->name_or_val) {
 				break;
@@ -2264,7 +2264,7 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 			// so here is using int instead of long when
 			// reading long value
 			READ4(*read_bytes, len, lf_long.value, leaf_data, st32);
-			parse_sctring(&lf_long.name, leaf_data, read_bytes, len);
+			parse_scstring(&lf_long.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc(sizeof(SVal_LF_LONG));
 			if (!val->name_or_val) {
 				break;
@@ -2279,7 +2279,7 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 			// so here is using unsigned int instead of unsigned long when
 			// reading ulong value
 			READ4(*read_bytes, len, lf_ulong.value, leaf_data, ut32);
-			parse_sctring(&lf_ulong.name, leaf_data, read_bytes, len);
+			parse_scstring(&lf_ulong.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc(sizeof(SVal_LF_ULONG));
 			if (!val->name_or_val) {
 				break;
@@ -2290,7 +2290,7 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 		case eLF_SHORT: {
 			SVal_LF_SHORT lf_short;
 			READ2(*read_bytes, len, lf_short.value, leaf_data, st16);
-			parse_sctring(&lf_short.name, leaf_data, read_bytes, len);
+			parse_scstring(&lf_short.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc(sizeof(SVal_LF_SHORT));
 			if (!val->name_or_val) {
 				break;
@@ -2301,7 +2301,7 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 		case eLF_USHORT: {
 			SVal_LF_USHORT lf_ushort;
 			READ2(*read_bytes, len, lf_ushort.value, leaf_data, ut16);
-			parse_sctring(&lf_ushort.name, leaf_data, read_bytes, len);
+			parse_scstring(&lf_ushort.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc(sizeof(SVal_LF_USHORT));
 			if (!val->name_or_val) {
 				break;
@@ -2346,7 +2346,7 @@ static int parse_lf_nesttype(SLF_NESTTYPE *lf_nesttype, uint8_t *leaf_data, unsi
 	READ2(*read_bytes, len, lf_nesttype->pad, leaf_data, ut16);
 	READ4(*read_bytes, len, lf_nesttype->index, leaf_data, ut16);
 
-	parse_sctring(&lf_nesttype->name, leaf_data, read_bytes, len);
+	parse_scstring(&lf_nesttype->name, leaf_data, read_bytes, len);
 
 	return *read_bytes - read_bytes_before;
 }
@@ -2361,7 +2361,7 @@ static int parse_lf_method(SLF_METHOD *lf_method, uint8_t *leaf_data, unsigned i
 	READ4(*read_bytes, len, lf_method->mlist, leaf_data, ut32);
 
 	tmp_read_bytes_before = *read_bytes;
-	parse_sctring(&lf_method->name, leaf_data, read_bytes, len);
+	parse_scstring(&lf_method->name, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
 	PEEK_READ1(*read_bytes, len, lf_method->pad, leaf_data, ut8);
@@ -2407,7 +2407,7 @@ static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, uint8_t *leaf_data, u
 	}
 
 	tmp_before_read_bytes = *read_bytes;
-	parse_sctring(&(lf_onemethod->val.str_data), leaf_data, read_bytes, len);
+	parse_scstring(&(lf_onemethod->val.str_data), leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_before_read_bytes);
 
 	PEEK_READ1(*read_bytes, len, lf_onemethod->pad, leaf_data, ut8);
@@ -2660,7 +2660,7 @@ static int parse_lf_enum(SLF_ENUM *lf_enum, uint8_t *leaf_data, unsigned int *re
 
 	// lf_enum->prop.cv_property = SWAP_UINT16(lf_enum->prop.cv_property);
 	before_read_bytes = *read_bytes;
-	parse_sctring(&lf_enum->name, leaf_data, read_bytes, len);
+	parse_scstring(&lf_enum->name, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
 
 	PEEK_READ1(*read_bytes, len, lf_enum->pad, leaf_data, ut8);
