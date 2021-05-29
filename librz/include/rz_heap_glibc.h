@@ -49,7 +49,6 @@ RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 
 // Introduced with glibc 2.32
 
-
 #define largebin_index_32(size) \
 	(((((ut32)(size)) >> 6) <= 38) ? 56 + (((ut32)(size)) >> 6) : ((((ut32)(size)) >> 9) <= 20) ? 91 + (((ut32)(size)) >> 9) \
 			: ((((ut32)(size)) >> 12) <= 10)                                            ? 110 + (((ut32)(size)) >> 12) \

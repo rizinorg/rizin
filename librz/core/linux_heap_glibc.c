@@ -592,11 +592,14 @@ void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk, const char *status, PJ
 		rz_cons_printf(")");
 	} else {
 		pj_o(pj);
+		pj_kn(pj, "prev_size", cnk->prev_size);
 		pj_kn(pj, "addr", chunk);
 		pj_kn(pj, "size", (ut64)cnk->size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE));
 		pj_kn(pj, "non_main_arena", cnk->size & NON_MAIN_ARENA);
 		pj_kn(pj, "mmapped", cnk->size & IS_MMAPPED);
 		pj_kn(pj, "prev_inuse", cnk->size & PREV_INUSE);
+		pj_kn(pj, "fd", cnk->fd);
+		pj_kn(pj, "bk", cnk->bk);
 		pj_end(pj);
 	}
 	free(cnk);
