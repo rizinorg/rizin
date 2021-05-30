@@ -2025,9 +2025,19 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 		if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
 			break;
 		}
-		if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+		if (core->offset != core->prompt_offset) {
+			m_state = core->offset;
+		} else {
+			m_state = m_arena;
+		}
+		if (!GH(is_arena)(core, m_arena, m_state)) {
+			PRINT_RA("This address is not part of the arenas\n");
 			break;
 		}
+		if (!GH(update_main_arena)(core, m_state, main_arena)) {
+			break;
+		}
+
 		input += 1;
 		bool json = false;
 		if (input[0] == 'j') { // dmhdj
@@ -2051,9 +2061,8 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 				break;
 			}
 		}
-
 		GH(print_main_arena_bins)
-		(core, m_arena, main_arena, global_max_fast, bin_format, json);
+		(core, m_state, main_arena, global_max_fast, bin_format, json);
 		break;
 	case 'f': // "dmhf"
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
