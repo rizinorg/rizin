@@ -439,9 +439,9 @@ static bool pdb7_parse(RzPdb *pdb) {
 	void *p_tmp;
 	int i = 0;
 
-	bytes_read = rz_buf_read(pdb->buf, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
-	if (bytes_read != PDB7_SIGNATURE_LEN) {
-		//eprintf ("Error while reading PDB7_SIGNATURE.\n");
+	bytes_read = rz_buf_read(pdb->buf, (ut8 *)signature, PDB7_SIGNATURE_LEN);
+	if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN) != 0) {
+		eprintf("Invalid signature for PDB7 format.\n");
 		goto error;
 	}
 	if (!read_int_var("page_size", &page_size, pdb)) {
@@ -457,10 +457,6 @@ static bool pdb7_parse(RzPdb *pdb) {
 		goto error;
 	}
 	if (!read_int_var("reserved", &reserved, pdb)) {
-		goto error;
-	}
-	if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN) != 0) {
-		eprintf("Invalid signature for PDB7 format.\n");
 		goto error;
 	}
 
