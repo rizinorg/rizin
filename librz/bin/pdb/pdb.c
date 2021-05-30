@@ -919,7 +919,9 @@ static inline bool is_printable_type(ELeafType type) {
 	return (type == eLF_STRUCTURE ||
 		type == eLF_UNION ||
 		type == eLF_ENUM ||
-		type == eLF_CLASS);
+		type == eLF_CLASS ||
+		type == eLF_CLASS_19 ||
+		type == eLF_STRUCTURE_19);
 }
 
 /**
@@ -1077,6 +1079,8 @@ static void print_types_regular(const RzPdb *pdb, const RzList *types) {
 		}
 
 		switch (type_info->leaf_type) {
+		case eLF_CLASS_19:
+		case eLF_STRUCTURE_19:
 		case eLF_CLASS:
 		case eLF_STRUCTURE:
 			print_struct(name, size, members, pdb->cb_printf);
