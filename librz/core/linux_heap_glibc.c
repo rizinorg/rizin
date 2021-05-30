@@ -1578,7 +1578,7 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 		pj_kn(pj, "last_rem", main_arena->GH(last_remainder));
 		pj_kn(pj, "top", main_arena->GH(top));
 		pj_kn(pj, "next", main_arena->GH(next));
-                pj_ks(pj, "type", "main");
+		pj_ks(pj, "type", "main");
 		pj_ks(pj, "state", "used");
 		pj_end(pj);
 	}
@@ -1611,11 +1611,11 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 				pj_kn(pj, "top", ta->GH(top));
 				pj_kn(pj, "next", ta->GH(next));
 				pj_ks(pj, "type", "thread");
-                                if (ta->attached_threads) {
-                                        pj_ks(pj, "state", "used");
-                                } else {
-                                        pj_ks(pj, "state", "free");
-                                }
+				if (ta->attached_threads) {
+					pj_ks(pj, "state", "used");
+				} else {
+					pj_ks(pj, "state", "free");
+				}
 				pj_end(pj);
 			}
 		}
