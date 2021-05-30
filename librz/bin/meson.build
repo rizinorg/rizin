@@ -87,6 +87,8 @@ rz_bin_sources = [
   'format/java/class_bin.c',
   'format/java/class_field.c',
   'format/java/class_method.c',
+  'format/mach0/dyldcache.c',
+  'format/mach0/dyldcache_rebase.c',
   'format/mach0/coresymbolication.c',
   'format/mach0/fatmach0.c',
   'format/mach0/mach0.c',
