@@ -12,7 +12,9 @@ static bool is_parsable_type(const ELeafType type) {
 	return (type == eLF_STRUCTURE ||
 		type == eLF_UNION ||
 		type == eLF_ENUM ||
-		type == eLF_CLASS);
+		type == eLF_CLASS ||
+		type == eLF_CLASS_19 ||
+		type == eLF_STRUCTURE_19);
 }
 
 /**
@@ -253,7 +255,9 @@ static void parse_type(const RzTypeDB *typedb, SType *type, RzList *types) {
 	}
 	switch (type->type_data.leaf_type) {
 	case eLF_CLASS:
+	case eLF_CLASS_19:
 	case eLF_STRUCTURE:
+	case eLF_STRUCTURE_19:
 	case eLF_UNION:
 		parse_structure(typedb, type, types);
 		break;
