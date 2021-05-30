@@ -857,8 +857,10 @@ static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf 
 		member_format = tmp_format;
 		rz_strbuf_append(names, name);
 	} break;
+	case eLF_CLASS_19:
 	case eLF_CLASS:
 	case eLF_UNION:
+	case eLF_STRUCTURE_19:
 	case eLF_STRUCTURE: {
 		member_format = "?";
 		char *field_name = NULL;
@@ -1269,6 +1271,8 @@ static void print_types_format(const RzPdb *pdb, const RzList *types) {
 		while (rz_list_iter_next(member_iter)) {
 			STypeInfo *member_info = rz_list_iter_get(member_iter);
 			switch (type_info->leaf_type) {
+			case eLF_STRUCTURE_19:
+			case eLF_CLASS_19:
 			case eLF_STRUCTURE:
 			case eLF_CLASS:
 			case eLF_UNION:
