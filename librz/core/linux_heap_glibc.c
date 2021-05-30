@@ -1552,30 +1552,79 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	free(cnk_next);
 }
 
-void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena) {
+void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena, bool json) {
 	MallocState *ta = RZ_NEW0(MallocState);
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	if (!ta) {
 		return;
 	}
-	PRINT_YA("main_arena @ ");
-	PRINTF_BA("0x%" PFMT64x "\n", (ut64)m_arena);
+	PJ *pj = pj_new();
+	if (!json) {
+		rz_cons_printf("Main arena  (addr=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)m_arena);
+		rz_cons_printf(", lastRemainder=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->GH(last_remainder));
+		rz_cons_printf(", top=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->GH(top));
+		rz_cons_printf(", next=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->GH(next));
+		rz_cons_printf(")\n");
+	} else {
+		pj_o(pj);
+		pj_ka(pj, "arenas");
+		pj_o(pj);
+		pj_kn(pj, "addr", m_arena);
+		pj_kn(pj, "last_rem", main_arena->GH(last_remainder));
+		pj_kn(pj, "top", main_arena->GH(top));
+		pj_kn(pj, "next", main_arena->GH(next));
+                pj_ks(pj, "type", "main");
+		pj_ks(pj, "state", "used");
+		pj_end(pj);
+	}
 	if (main_arena->GH(next) != m_arena) {
 		ta->GH(next) = main_arena->GH(next);
 		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
-			PRINT_YA("thread arena @ ");
-			PRINTF_BA("0x%" PFMT64x, (ut64)ta->GH(next));
+			ut64 ta_addr = ta->GH(next);
 			if (!GH(update_main_arena)(core, ta->GH(next), ta)) {
 				free(ta);
 				return;
 			}
-			if (ta->attached_threads) {
-				PRINT_BA("\n");
+			if (!json) {
+				rz_cons_printf("Thread arena(addr=");
+				PRINTF_YA("0x%" PFMT64x, ta_addr);
+				rz_cons_printf(", lastRemainder=");
+				PRINTF_YA("0x%" PFMT64x, (ut64)ta->GH(last_remainder));
+				rz_cons_printf(", top=");
+				PRINTF_YA("0x%" PFMT64x, (ut64)ta->GH(top));
+				rz_cons_printf(", next=");
+				PRINTF_YA("0x%" PFMT64x, (ut64)ta->GH(next));
+				if (ta->attached_threads) {
+					rz_cons_printf(")\n");
+				} else {
+					rz_cons_printf(" free)\n");
+				}
 			} else {
-				PRINT_GA(" free\n");
+				pj_o(pj);
+				pj_kn(pj, "addr", (ut64)ta_addr);
+				pj_kn(pj, "last_rem", ta->GH(last_remainder));
+				pj_kn(pj, "top", ta->GH(top));
+				pj_kn(pj, "next", ta->GH(next));
+				pj_ks(pj, "type", "thread");
+                                if (ta->attached_threads) {
+                                        pj_ks(pj, "state", "used");
+                                } else {
+                                        pj_ks(pj, "state", "free");
+                                }
+				pj_end(pj);
 			}
 		}
+	}
+	if (json) {
+		pj_end(pj);
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
 	}
 	free(ta);
 }
@@ -1894,7 +1943,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 
 	int format = 'c';
 	bool get_state = false;
-
+	bool json = false;
 	switch (input[0]) {
 	case ' ': // dmh [malloc_state]
 		m_state = rz_num_get(NULL, input);
@@ -1923,13 +1972,18 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 		}
 		break;
 	case 'a': // dmha
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-				break;
-			}
-			GH(print_malloc_states)
-			(core, m_arena, main_arena);
+		if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+			break;
 		}
+		if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+			break;
+		}
+		json = false;
+		if (input[1] == 'j') {
+			json = true;
+		}
+		GH(print_malloc_states)
+		(core, m_arena, main_arena, json);
 		break;
 	case 'i': // dmhi
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
@@ -2039,7 +2093,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 		}
 
 		input += 1;
-		bool json = false;
+		json = false;
 		if (input[0] == 'j') { // dmhdj
 			json = true;
 			input += 1;
