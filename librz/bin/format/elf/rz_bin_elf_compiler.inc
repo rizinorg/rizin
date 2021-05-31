@@ -19,28 +19,34 @@ RZ_OWN char *Elf_(rz_bin_elf_compiler)(RZ_NONNULL ELFOBJ *bin) {
 	if (!section) {
 		return NULL;
 	}
-	ut64 off = section->offset;
-	ut32 sz = RZ_MIN(section->size, 128);
-	if (sz < 1) {
+
+	ut64 offset = section->offset;
+	ut64 size = RZ_MIN(section->size, 128);
+	if (size < 1) {
 		return NULL;
 	}
-	char *buf = malloc(sz + 1);
-	if (!buf) {
+
+	char *result = malloc(size + 1);
+	if (!result) {
 		return NULL;
 	}
-	if (rz_buf_read_at(bin->b, off, (ut8 *)buf, sz) < 1) {
-		free(buf);
+
+	if (rz_buf_read_at(bin->b, offset, (ut8 *)result, size) < 1) {
+		free(result);
 		return NULL;
 	}
-	buf[sz] = 0;
-	const size_t buflen = strlen(buf);
-	char *nullbyte = buf + buflen;
-	if (buflen != sz && nullbyte[1] && buflen < sz) {
-		nullbyte[0] = ' ';
+	result[size] = 0;
+
+	size_t result_len = strlen(result);
+	char *end = result + result_len;
+
+	if (result_len != size && end[1]) {
+		end[0] = ' ';
 	}
-	buf[sz] = 0;
-	rz_str_trim(buf);
-	char *res = rz_str_escape(buf);
-	free(buf);
+
+	rz_str_trim(result);
+	char *res = rz_str_escape(result);
+
+	free(result);
 	return res;
 }
