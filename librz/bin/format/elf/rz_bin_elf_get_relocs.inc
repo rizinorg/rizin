@@ -498,13 +498,20 @@ static RzBinElfReloc *populate_relocs_record(ELFOBJ *bin) {
 	return relocs;
 }
 
-RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(ELFOBJ *bin) {
-	if (!bin) {
-		return NULL;
-	}
+/**
+ * \brief Get the list of relocations
+ * \param elf binary
+ * \return a borrowed array of relocations
+ *
+ * Get a list of relocations from the binary object or compute the list of
+ * relocations.
+ */
+RZ_BORROW RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
 
 	if (!bin->g_relocs) {
 		bin->g_relocs = populate_relocs_record(bin);
 	}
+
 	return bin->g_relocs;
 }
