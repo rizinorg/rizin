@@ -384,11 +384,9 @@ RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE co
 			}
 			if (op->type == RZ_DIFF_OP_DELETE) {
 				diff_unified_append_data(diff, diff->a, op->a_beg, op->a_end, sb, '-', color);
-			}
-			if (op->type == RZ_DIFF_OP_INSERT) {
+			} else if (op->type == RZ_DIFF_OP_INSERT) {
 				diff_unified_append_data(diff, diff->b, op->b_beg, op->b_end, sb, '+', color);
-			}
-			if (op->type == RZ_DIFF_OP_REPLACE) {
+			} else if (op->type == RZ_DIFF_OP_REPLACE) {
 				if (!color || !DIFF_IS_LINES_METHOD(diff->methods) ||
 					count_newlines(diff, diff->a, op->a_beg, op->a_end) !=
 						count_newlines(diff, diff->b, op->b_beg, op->b_end)) {
