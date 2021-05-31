@@ -17,8 +17,14 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin) {
 
 	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
 	RzBinElfNotePrStatus *prs = Elf_(rz_bin_elf_get_prstatus)(bin);
-	if (!layout || !prs || layout->sp_offset + layout->sp_size / 8 > prs->regstate_size || !prs->regstate) {
+
+	if (!layout || !prs) {
 		return UT64_MAX;
 	}
+
+	if (layout->sp_offset + layout->sp_size / 8 > prs->regstate_size || !prs->regstate) {
+		return UT64_MAX;
+	}
+
 	return rz_read_ble(prs->regstate + layout->sp_offset, bin->endian, layout->sp_size);
 }
