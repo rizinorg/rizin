@@ -710,10 +710,10 @@ RUN
 
 NAME=rz-diff text lines comparison
 FILE=--
-CMDS=!rz-diff -Ct lines db/tools/incorrect_cmd_i.txt db/tools/correct_cmd_i.txt
+CMDS=!rz-diff -Ct lines bins/other/rz-diff/incorrect_cmd_i.txt bins/other/rz-diff/correct_cmd_i.txt
 EXPECT=<<EOF
---- db/tools/incorrect_cmd_i.txt
-+++ db/tools/correct_cmd_i.txt
+--- bins/other/rz-diff/incorrect_cmd_i.txt
++++ bins/other/rz-diff/correct_cmd_i.txt
 @@ -3,40 +3,39 @@
  vaddr      name
  ---------------
@@ -779,10 +779,10 @@ RUN
 
 NAME=rz-diff text lines comparison COLOR
 FILE=--
-CMDS=!rz-diff -t lines db/tools/incorrect_cmd_i.txt db/tools/correct_cmd_i.txt
+CMDS=!rz-diff -t lines bins/other/rz-diff/incorrect_cmd_i.txt bins/other/rz-diff/correct_cmd_i.txt
 EXPECT=<<EOF
---- db/tools/incorrect_cmd_i.txt
-+++ db/tools/correct_cmd_i.txt
+--- bins/other/rz-diff/incorrect_cmd_i.txt
++++ bins/other/rz-diff/correct_cmd_i.txt
 [94m@@ -3,40 +3,39 @@[0m
  vaddr      name[0m
  ---------------[0m
