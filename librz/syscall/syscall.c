@@ -14,28 +14,76 @@ RZ_API RzSyscall *rz_syscall_ref(RzSyscall *sc) {
 	return sc;
 }
 
+/**
+ * \brief Creates a new RzSysregItem type
+ *
+ * \param name Name of the callable type
+ */
+RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name) {
+	RzSysregItem *sysregitem = RZ_NEW0(RzSysregItem);
+	if (!sysregitem) {
+		return NULL;
+	}
+	sysregitem->comment = NULL;
+	sysregitem->type = NULL;
+	sysregitem->name = name ? strdup(name) : NULL;
+	sysregitem->address = 0;
+	return sysregitem;
+}
+
+/**
+ * \brief Creates a new RzSysregDB type
+ */
+RZ_API RzSysregsDB *rz_sysregs_db_new() {
+	RzSysregsDB *sysregdb = RZ_NEW0(RzSysregsDB);
+	if (!sysregdb) {
+		return NULL;
+	}
+	sysregdb->port = ht_up_new0();
+	if (!sysregdb->port) {
+		return NULL;
+	}
+	return sysregdb;
+}
+
+/**
+ * \brief Creates a new RzSyscall type
+ */
 RZ_API RzSyscall *rz_syscall_new(void) {
 	RzSyscall *rs = RZ_NEW0(RzSyscall);
 	if (rs) {
-		rs->srdb = sdb_new0(); // sysregs database
+		rs->srdb = rz_sysregs_db_new(); // sysregs database
 		rs->db = sdb_new0();
 	}
 	return rs;
 }
 
+/**
+ * \brief Frees an RzSyscall type
+ */
 RZ_API void rz_syscall_free(RzSyscall *s) {
 	if (s) {
 		if (s->refs > 0) {
 			s->refs--;
 			return;
 		}
-		sdb_free(s->srdb);
+		//	sdb_free(s->srdb);
 		sdb_free(s->db);
 		free(s->os);
 		free(s->cpu);
 		free(s->arch);
 		free(s);
 	}
+}
+
+/**
+ * \brief Frees an RzSysregItem type
+ */
+RZ_API void rz_sysreg_item_free(RZ_NONNULL RzSysregItem *s) {
+	free(s->comment);
+	free(s->name);
+	free(s->type);
+	free(s);
 }
 
 static bool load_sdb(Sdb **db, const char *name) {
@@ -79,23 +127,89 @@ static inline bool sysregs_reload_needed(RzSyscall *s, const char *arch, int bit
 	return !s->cpu || strcmp(s->cpu, cpu);
 }
 
+static RzSysregItem *get_sysreg_type(Sdb *sdb, const char *name) {
+	rz_return_val_if_fail(sdb && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzSysregItem *sysregitem = rz_sysreg_item_new(name);
+
+	char *argument_key = rz_str_newf("%s.address", name);
+	if (!argument_key) {
+		return NULL;
+	}
+	ut64 address = sdb_num_get(sdb, argument_key, NULL);
+	if (!address) {
+		goto error;
+	}
+
+	argument_key = rz_str_newf("%s.comment", name);
+	char *comment = sdb_get(sdb, argument_key, NULL);
+
+	sysregitem->name = strdup(name);
+	sysregitem->comment = strdup(comment);
+	sysregitem->address = address;
+
+	return sysregitem;
+
+error:
+	rz_sysreg_item_free(sysregitem);
+	return NULL;
+}
+
+static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
+	rz_return_val_if_fail(sysregdb && sdb, NULL);
+	RzSysregItem *sysregitem;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list(sdb, false);
+	ls_foreach (l, iter, kv) {
+		if (!strcmp(sdbkv_value(kv), "mmio") || !strcmp(sdbkv_value(kv), "reg")) {
+			sysregitem = get_sysreg_type(sdb, sdbkv_key(kv));
+			sysregitem->type = sdbkv_value(kv);
+			ht_up_insert(sysregdb->port, sysregitem->address, sysregitem);
+		}
+	}
+	return true;
+}
+
+static bool sdb_load_by_path(RZ_NONNULL RzSysregsDB *sysregdb, const char *path) {
+	Sdb *db = sdb_new(0, path, 0);
+	bool result = sdb_load_sysregs(sysregdb, db);
+	sdb_close(db);
+	sdb_free(db);
+	return result;
+}
+
+/**
+ * \brief Loads the RzSysregDB from the path to the hashtable
+ *
+ * \param s reference to RzSysregDB
+ * \param path reference to path of the SDB file
+ */
+RZ_API bool rz_type_db_load_sysregs_sdb(RzSysregsDB *sysregdb, const char *path) {
+	if (!rz_file_exists(path)) {
+		return false;
+	}
+	return sdb_load_by_path(sysregdb, path);
+}
+
 /**
  * \brief Sets the architecture for sysregs during analysis and
  * 		  loads up the sysregs SDB database
  *
  * \param s reference to RzSyscall
  * \param arch reference to value of asm.arch
+ * \param dir_prefix reference to value of directory prefix or the value of dir.prefix
  */
-RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch) {
-	char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("reg", "%s-%s-%d"),
+RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *dir_prefix) {
+	char *path = sdb_fmt(RZ_JOIN_4_PATHS("%s", RZ_SDB, "reg", "%s-%s-%d.sdb"), dir_prefix,
 		arch, s->cpu, s->bits);
-	if (dbName) {
-		if (!load_sdb(&s->db, dbName)) {
-			sdb_free(s->db);
-			s->db = NULL;
+
+	s->srdb = rz_sysregs_db_new();
+	if (path) {
+		if (!rz_type_db_load_sysregs_sdb(s->srdb, path)) {
+			s->srdb = NULL;
 			return false;
 		}
-		free(dbName);
 	}
 	return true;
 }
@@ -149,8 +263,8 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 		char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("reg", "%s-%s-%d"),
 			arch, cpu, bits);
 		if (dbName) {
-			if (!load_sdb(&s->srdb, dbName)) {
-				sdb_free(s->srdb);
+			if (!rz_type_db_load_sysregs_sdb(s->srdb, dbName)) {
+				//sdb_free(s->srdb);
 				s->srdb = NULL;
 			}
 			free(dbName);
@@ -311,9 +425,8 @@ RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 port) {
 	if (!s->srdb) {
 		return NULL;
 	}
-	const char *key = sdb_fmt("%s.0x%llx", type, port);
-	const char *value = sdb_const_get(s->srdb, key, 0);
-	if (value)
-		return value;
+	RzSysregItem *item = ht_up_find(s->srdb->port, port, NULL);
+	if (item)
+		return item->comment;
 	return NULL;
 }
