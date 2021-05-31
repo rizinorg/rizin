@@ -28,7 +28,6 @@ typedef struct rz_sysreg_item_t {
 	char *type;
 	char *name;
 	char *comment;
-	ut64 address;
 } RzSysregItem;
 
 typedef struct rz_type_db_sysreg {

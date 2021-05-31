@@ -27,7 +27,6 @@ RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name) {
 	sysregitem->comment = NULL;
 	sysregitem->type = NULL;
 	sysregitem->name = name ? strdup(name) : NULL;
-	sysregitem->address = 0;
 	return sysregitem;
 }
 
@@ -67,7 +66,6 @@ RZ_API void rz_syscall_free(RzSyscall *s) {
 			s->refs--;
 			return;
 		}
-		//	sdb_free(s->srdb);
 		sdb_free(s->db);
 		free(s->os);
 		free(s->cpu);
@@ -127,45 +125,35 @@ static inline bool sysregs_reload_needed(RzSyscall *s, const char *arch, int bit
 	return !s->cpu || strcmp(s->cpu, cpu);
 }
 
-static RzSysregItem *get_sysreg_type(Sdb *sdb, const char *name) {
-	rz_return_val_if_fail(sdb && RZ_STR_ISNOTEMPTY(name), NULL);
-
-	RzSysregItem *sysregitem = rz_sysreg_item_new(name);
-
-	char *argument_key = rz_str_newf("%s.address", name);
-	if (!argument_key) {
-		return NULL;
-	}
-	ut64 address = sdb_num_get(sdb, argument_key, NULL);
-	if (!address) {
-		goto error;
-	}
-
-	argument_key = rz_str_newf("%s.comment", name);
-	char *comment = sdb_get(sdb, argument_key, NULL);
-
-	sysregitem->name = strdup(name);
-	sysregitem->comment = strdup(comment);
-	sysregitem->address = address;
-
-	return sysregitem;
-
-error:
-	rz_sysreg_item_free(sysregitem);
-	return NULL;
-}
-
 static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 	rz_return_val_if_fail(sysregdb && sdb, NULL);
 	RzSysregItem *sysregitem;
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(sdb, false);
+	char *argument_key, *comment, *name;
 	ls_foreach (l, iter, kv) {
 		if (!strcmp(sdbkv_value(kv), "mmio") || !strcmp(sdbkv_value(kv), "reg")) {
-			sysregitem = get_sysreg_type(sdb, sdbkv_key(kv));
+			name = sdbkv_key(kv);
+			sysregitem = rz_sysreg_item_new(name);
+			argument_key = rz_str_newf("%s.address", name);
+
+			if (!argument_key) {
+				return NULL;
+			}
+			ut64 address = sdb_num_get(sdb, argument_key, NULL);
+			if (!address) {
+				rz_sysreg_item_free(sysregitem);
+				return NULL;
+			}
+
+			argument_key = rz_str_newf("%s.comment", name);
+			comment = sdb_get(sdb, argument_key, NULL);
 			sysregitem->type = sdbkv_value(kv);
-			ht_up_insert(sysregdb->port, sysregitem->address, sysregitem);
+			sysregitem->name = strdup(name);
+			sysregitem->comment = strdup(comment);
+
+			ht_up_insert(sysregdb->port, address, sysregitem);
 		}
 	}
 	return true;
@@ -264,7 +252,6 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 			arch, cpu, bits);
 		if (dbName) {
 			if (!rz_type_db_load_sysregs_sdb(s->srdb, dbName)) {
-				//sdb_free(s->srdb);
 				s->srdb = NULL;
 			}
 			free(dbName);
