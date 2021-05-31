@@ -62,6 +62,7 @@
 #include "rz_bin_elf_get_section_addr_end.inc"
 #include "rz_bin_elf_get_section_offset.inc"
 #include "rz_bin_elf_get_sections.inc"
+#include "rz_bin_elf_get_sp_val.inc"
 #include "rz_bin_elf_get_stripped.inc"
 #include "rz_bin_elf_grab_regstate.inc"
 #include "rz_bin_elf_has_nx.inc"
@@ -363,16 +364,6 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			(ut64)rel->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
-}
-
-/// Get the value of the stackpointer register in a core file
-ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin) {
-	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
-	RzBinElfNotePrStatus *prs = Elf_(rz_bin_elf_get_prstatus)(bin);
-	if (!layout || !prs || layout->sp_offset + layout->sp_size / 8 > prs->regstate_size || !prs->regstate) {
-		return UT64_MAX;
-	}
-	return rz_read_ble(prs->regstate + layout->sp_offset, bin->endian, layout->sp_size);
 }
 
 static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
