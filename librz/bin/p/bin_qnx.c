@@ -292,7 +292,7 @@ static char *signature(RzBinFile *bf, bool json) {
 		pj_n(pj, qo->rwend.signature);
 		return pj_drain(pj);
 	} else {
-		return rz_str_dup(NULL, sdb_itoa(qo->rwend.signature, buf, 10));
+		return rz_str_new(NULL, sdb_itoa(qo->rwend.signature, buf, 10));
 	}
 }
 

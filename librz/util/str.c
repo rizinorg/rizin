@@ -699,7 +699,6 @@ RZ_API const char *rz_str_nstr(const char *s, const char *find, int slen) {
 }
 
 // Returns a new heap-allocated copy of str.
-// XXX what's the diff with rz_str_dup ?
 RZ_API char *rz_str_new(const char *str) {
 	return str ? strdup(str) : NULL;
 }
@@ -845,12 +844,6 @@ RZ_API char *rz_str_ndup(const char *ptr, int len) {
 	return out;
 }
 
-// TODO: deprecate?
-RZ_API char *rz_str_dup(char *ptr, const char *string) {
-	char *str = rz_str_new(string);
-	free(ptr); // in case ptr == string
-	return str;
-}
 
 RZ_API char *rz_str_prepend(char *ptr, const char *string) {
 	int slen, plen;

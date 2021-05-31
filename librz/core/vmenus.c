@@ -1305,7 +1305,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 		char *wlist = rz_str_widget_list(core, rops, rows, cur, print_rop);
 		rz_cons_printf("%s", wlist);
 		free(wlist);
-		char *curline = rz_str_dup(NULL, rz_str_trim_head_ro(rz_str_widget_list(core, rops, rows, cur, print_rop)));
+		char *curline = rz_str_new(NULL, rz_str_trim_head_ro(rz_str_widget_list(core, rops, rows, cur, print_rop)));
 		if (curline) {
 			char *sp = strchr(curline, ' ');
 			if (sp) {
@@ -1973,7 +1973,7 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 		// XXX: must use config_set () to run callbacks!
 		if (editor) {
 			char *buf = rz_core_editor(core, NULL, node->value);
-			node->value = rz_str_dup(node->value, buf);
+			node->value = rz_str_new(node->value, buf);
 			free(buf);
 		} else {
 			// FGETS AND SO
@@ -1986,7 +1986,7 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 			rz_cons_set_raw(1);
 			rz_cons_show_cursor(false);
 			rz_config_set(core->config, name, buf);
-			//node->value = rz_str_dup (node->value, buf);
+			//node->value = rz_str_new (node->value, buf);
 		}
 	}
 }

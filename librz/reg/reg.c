@@ -132,7 +132,7 @@ RZ_API int rz_reg_get_name_idx(const char *type) {
 RZ_API bool rz_reg_set_name(RzReg *reg, int role, const char *name) {
 	rz_return_val_if_fail(reg && name, false);
 	if (role >= 0 && role < RZ_REG_NAME_LAST) {
-		reg->name[role] = rz_str_dup(reg->name[role], name);
+		reg->name[role] = rz_str_new(reg->name[role], name);
 		return true;
 	}
 	return false;

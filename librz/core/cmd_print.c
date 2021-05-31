@@ -1502,7 +1502,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_gadget_add_handler(RzCore *core, int argc, const
 		int w = rz_num_math(core->num, argv[3]);
 		int h = rz_num_math(core->num, argv[4]);
 		if (x && y && w && h) {
-			cmd = rz_str_dup(cmd, argv[5]);
+			cmd = rz_str_new(cmd, argv[5]);
 			if (cmd) {
 				RzCoreGadget *g = RZ_NEW0(RzCoreGadget);
 				g->x = x;

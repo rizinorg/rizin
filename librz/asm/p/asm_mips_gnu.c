@@ -70,7 +70,7 @@ static int disassemble(struct rz_asm_t *a, struct rz_asm_op_t *op, const ut8 *bu
 		} else if (!rz_str_casecmp(a->cpu, "mips32")) {
 			disasm_obj.mach = bfd_mach_mipsisa32;
 		}
-		pre_cpu = rz_str_dup(pre_cpu, a->cpu);
+		pre_cpu = rz_str_new(pre_cpu, a->cpu);
 	}
 
 	if (a->features && (!pre_features || !strcmp(a->features, pre_features))) {
@@ -82,7 +82,7 @@ static int disassemble(struct rz_asm_t *a, struct rz_asm_op_t *op, const ut8 *bu
 		} else if (strstr(a->features, "o32")) {
 			disasm_obj.disassembler_options = rz_str_new("abi=o32");
 		}
-		pre_features = rz_str_dup(pre_features, a->features);
+		pre_features = rz_str_new(pre_features, a->features);
 	}
 
 	mips_mode = a->bits;

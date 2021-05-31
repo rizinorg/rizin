@@ -154,7 +154,7 @@ static inline const char *rz_str_get_null(const char *str) {
 	return str ? str : "(null)";
 }
 RZ_API char *rz_str_ndup(const char *ptr, int len);
-RZ_API char *rz_str_dup(char *ptr, const char *string);
+RZ_API char *rz_str_new(char *ptr, const char *string);
 RZ_API int rz_str_inject(char *begin, char *end, char *str, int maxlen);
 RZ_API int rz_str_delta(char *p, char a, char b);
 RZ_API void rz_str_filter(char *str, int len);

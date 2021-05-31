@@ -2825,8 +2825,8 @@ void __replace_cmd(RzCore *core, const char *title, const char *cmd) {
 	RzPanel *cur = __get_cur_panel(panels);
 	__free_panel_model(cur);
 	cur->model = RZ_NEW0(RzPanelModel);
-	cur->model->title = rz_str_dup(cur->model->title, title);
-	cur->model->cmd = rz_str_dup(cur->model->cmd, cmd);
+	cur->model->title = rz_str_new(cur->model->title, title);
+	cur->model->cmd = rz_str_new(cur->model->cmd, cmd);
 	__set_cmd_str_cache(core, cur, NULL);
 	__set_panel_addr(core, cur, core->offset);
 	cur->model->type = PANEL_TYPE_DEFAULT;
@@ -2886,7 +2886,7 @@ bool __check_func_diff(RzCore *core, RzPanel *p) {
 		return true;
 	}
 	if (!p->model->funcName || strcmp(p->model->funcName, func->name)) {
-		p->model->funcName = rz_str_dup(p->model->funcName, func->name);
+		p->model->funcName = rz_str_new(p->model->funcName, func->name);
 		return true;
 	}
 	return false;
@@ -2979,18 +2979,18 @@ void __init_panel_param(RzCore *core, RzPanel *p, const char *title, const char 
 	v->refresh = true;
 	v->edge = 0;
 	if (title) {
-		m->title = rz_str_dup(m->title, title);
+		m->title = rz_str_new(m->title, title);
 		if (cmd) {
-			m->cmd = rz_str_dup(m->cmd, cmd);
+			m->cmd = rz_str_new(m->cmd, cmd);
 		} else {
-			m->cmd = rz_str_dup(m->cmd, "");
+			m->cmd = rz_str_new(m->cmd, "");
 		}
 	} else if (cmd) {
-		m->title = rz_str_dup(m->title, cmd);
-		m->cmd = rz_str_dup(m->cmd, cmd);
+		m->title = rz_str_new(m->title, cmd);
+		m->cmd = rz_str_new(m->cmd, cmd);
 	} else {
-		m->title = rz_str_dup(m->title, "");
-		m->cmd = rz_str_dup(m->cmd, "");
+		m->title = rz_str_new(m->title, "");
+		m->cmd = rz_str_new(m->cmd, "");
 	}
 	__set_pcb(p);
 	if (RZ_STR_ISNOTEMPTY(m->cmd)) {
@@ -3494,8 +3494,8 @@ void __update_help(RzCore *core, RzPanels *ps) {
 				msg = help_msg_panels;
 				break;
 			}
-			p->model->title = rz_str_dup(p->model->title, cmd);
-			p->model->cmd = rz_str_dup(p->model->cmd, cmd);
+			p->model->title = rz_str_new(p->model->title, cmd);
+			p->model->cmd = rz_str_new(p->model->cmd, cmd);
 			rz_core_visual_append_help(rsb, title, msg);
 			if (!rsb) {
 				return;
@@ -5418,8 +5418,8 @@ RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
 		__set_geometry(&p->view->pos, x, y, w, h);
 		__init_panel_param(core, p, title, cmd);
 		if (rz_str_endswith(cmd, "Help")) {
-			p->model->title = rz_str_dup(p->model->title, "Help");
-			p->model->cmd = rz_str_dup(p->model->cmd, "Help");
+			p->model->title = rz_str_new(p->model->title, "Help");
+			p->model->cmd = rz_str_new(p->model->cmd, "Help");
 			RzStrBuf *rsb = rz_strbuf_new(NULL);
 			rz_core_visual_append_help(rsb, "Visual Ascii Art Panels", help_msg_panels);
 			if (!rsb) {
@@ -5878,7 +5878,7 @@ void __rotate_panel_cmds(RzCore *core, const char **cmds, const int cmdslen, con
 		snprintf(replace, sizeof(replace), "%s%s", prefix, between);
 		p->model->cmd = rz_str_replace(p->model->cmd, replace, tmp, 1);
 	} else {
-		p->model->cmd = rz_str_dup(p->model->cmd, tmp);
+		p->model->cmd = rz_str_new(p->model->cmd, tmp);
 	}
 	__set_cmd_str_cache(core, p, NULL);
 	p->view->refresh = true;

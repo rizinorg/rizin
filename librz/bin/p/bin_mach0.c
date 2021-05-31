@@ -37,7 +37,7 @@ static char *entitlements(RzBinFile *bf, bool json) {
 		pj_s(pj, (const char *)bin->signature);
 		return pj_drain(pj);
 	} else {
-		return rz_str_dup(NULL, (const char *)bin->signature);
+		return rz_str_new(NULL, (const char *)bin->signature);
 	}
 }
 
@@ -505,8 +505,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 		ret->dbg_info = bin->dbg_info;
 		ret->lang = bin->lang;
 	}
-	ret->intrp = rz_str_dup(NULL, MACH0_(get_intrp)(bf->o->bin_obj));
-	ret->compiler = rz_str_dup(NULL, "");
+	ret->intrp = rz_str_new(NULL, MACH0_(get_intrp)(bf->o->bin_obj));
+	ret->compiler = rz_str_new(NULL, "");
 	ret->rclass = strdup("mach0");
 	ret->os = strdup(MACH0_(get_os)(bf->o->bin_obj));
 	ret->subsystem = strdup("darwin");

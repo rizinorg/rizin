@@ -459,7 +459,7 @@ RZ_API char *rz_syscmd_cat(const char *file) {
 RZ_API char *rz_syscmd_mkdir(const char *dir) {
 	const char *suffix = rz_str_trim_head_ro(strchr(dir, ' '));
 	if (!suffix || !strncmp(suffix, "-p", 3)) {
-		return rz_str_dup(NULL, "Usage: mkdir [-p] [directory]\n");
+		return rz_str_new(NULL, "Usage: mkdir [-p] [directory]\n");
 	}
 	int ret;
 	char *dirname = (!strncmp(suffix, "-p ", 3))

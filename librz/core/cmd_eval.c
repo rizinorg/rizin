@@ -122,7 +122,7 @@ static bool nextpal_item(RzCore *core, int mode, const char *file, int ctr) {
 		break;
 	case 'n': // next
 		if (getNext) {
-			curtheme = rz_str_dup(curtheme, fn);
+			curtheme = rz_str_new(curtheme, fn);
 			getNext = false;
 			return false;
 		} else if (curtheme) {
@@ -130,7 +130,7 @@ static bool nextpal_item(RzCore *core, int mode, const char *file, int ctr) {
 				getNext = true;
 			}
 		} else {
-			curtheme = rz_str_dup(curtheme, fn);
+			curtheme = rz_str_new(curtheme, fn);
 			return false;
 		}
 		break;
@@ -160,10 +160,10 @@ RZ_IPI bool rz_core_load_theme(RzCore *core, const char *name) {
 
 	if (!load_theme(core, home)) {
 		if (load_theme(core, path)) {
-			curtheme = rz_str_dup(curtheme, name);
+			curtheme = rz_str_new(curtheme, name);
 		} else {
 			if (load_theme(core, name)) {
-				curtheme = rz_str_dup(curtheme, name);
+				curtheme = rz_str_new(curtheme, name);
 			} else {
 				eprintf("eco: cannot open colorscheme profile (%s)\n", name);
 				failed = true;
