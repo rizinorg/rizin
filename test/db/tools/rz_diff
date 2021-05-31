@@ -707,3 +707,141 @@ EXPECT=<<EOF
 {"from":"bins/elf/hello_world","to":"bins/elf/hello_world32","diff":[{"from":[1,20],"to":[1,20],"ops":[{"op":"delete","value":"push rbp\n"},{"op":"delete","value":"mov rbp, rsp\n"},{"op":"delete","value":"sub rsp, 0x20\n"},{"op":"delete","value":"lea rax, str.Hello\n"},{"op":"delete","value":"mov qword [rbp - 0x18], rax\n"},{"op":"delete","value":"lea rax, str.r2_folks\n"},{"op":"delete","value":"mov qword [rbp - 0x10], rax\n"},{"op":"delete","value":"mov rax, qword [rbp - 0x18]\n"},{"op":"delete","value":"mov rdi, rax\n"},{"op":"insert","value":"lea ecx, [esp + 4]\n"},{"op":"insert","value":"and esp, 0xfffffff0\n"},{"op":"insert","value":"push dword [ecx - 4]\n"},{"op":"insert","value":"push ebp\n"},{"op":"insert","value":"mov ebp, esp\n"},{"op":"insert","value":"push ebx\n"},{"op":"insert","value":"push ecx\n"},{"op":"insert","value":"sub esp, 0x20\n"},{"op":"insert","value":"call sym.__x86.get_pc_thunk.bx\n"},{"op":"insert","value":"add ebx, 0x19a0\n"},{"op":"insert","value":"lea eax, [ebx - 0x1874]\n"},{"op":"insert","value":"mov dword [ebp - 0x1c], eax\n"},{"op":"insert","value":"lea eax, [ebx - 0x186e]\n"},{"op":"insert","value":"mov dword [ebp - 0x18], eax\n"},{"op":"insert","value":"sub esp, 0xc\n"},{"op":"insert","value":"push dword [ebp - 0x1c]\n"},{"op":"equal","value":"call sym.imp.strlen\n"},{"op":"delete","value":"mov dword [rbp - 0x20], eax\n"},{"op":"delete","value":"mov rax, qword [rbp - 0x10]\n"},{"op":"delete","value":"mov rdi, rax\n"},{"op":"delete","value":"call sym.imp.strlen\n"},{"op":"delete","value":"mov dword [rbp - 0x1c], eax\n"},{"op":"delete","value":"mov edx, dword [rbp - 0x20]\n"},{"op":"delete","value":"mov eax, dword [rbp - 0x1c]\n"},{"op":"delete","value":"add eax, edx\n"},{"op":"delete","value":"add eax, 1\n"},{"op":"delete","value":"cdqe\n"},{"op":"insert","value":"add esp, 0x10\n"},{"op":"insert","value":"mov dword [ebp - 0x14], eax\n"},{"op":"insert","value":"sub esp, 0xc\n"}]}]}
 EOF
 RUN
+
+NAME=rz-diff text lines comparison
+FILE=--
+CMDS=!rz-diff -Ct lines db/tools/incorrect_cmd_i.txt db/tools/correct_cmd_i.txt
+EXPECT=<<EOF
+--- db/tools/incorrect_cmd_i.txt
++++ db/tools/correct_cmd_i.txt
+@@ -3,40 +3,39 @@
+ vaddr      name
+ ---------------
+ 0x00000000 
++0x00600910 .bss
+ 0x006006e0 .init_array
+-ax006006e8 .fini_arrar
+-0x006006f0 .jct
+-ax006008c8 .got
++0x006006e8 .fini_array
++0x006006f0 .jcr
++0x006008c8 .got
+ 0x0040031e .gnu.version
+ 0x004005b4 .fini
+-0x00600910 .bss
+-000600900 .data
+-004005c0 .rodata
++0x00600900 .data
++0x004005c0 .rodata
+ 0x00400348 .rela.dyn
+-0x004003a8 .ini
+-x00400260 .gnu.hash
+-0x00400200 .interpj
+-10x0040021c .note.ABI-tag
++0x004003a8 .init
++0x00400260 .gnu.hash
++0x00400200 .interp
++0x0040021c .note.ABI-tag
+ 0x00400328 .gnu.version_r
+ 0x00000000 .comment
+ 0x0040023c .note.gnu.build-id
+ 0x006008d0 .got.plt
+-0abc4005d0 .eh_frame_hdr
+-004002e0 .dynstr
+-0d004003d0 .plt
++0x004005d0 .eh_frame_hdr
++0x004002e0 .dynstr
++0x004003d0 .plt
+ 0x00400360 .rela.plt
+ 0x00400280 .dynsym
+ 0x00000000 .debug_abbrev
+ 0x00000000 .debug_ranges
+ 0x00000000 .debug_str
+-0x00600910 .bss
+ 0x00000000 .debug_aranges
+ 0x00400608 .eh_frame
+-0x000000000 .debug_line
+-0x00000000000 .shstrtab
+-000000000 .debug_info
++0x00000000 .debug_line
++0x00000000 .shstrtab
++0x00000000 .debug_info
+ 0x00400410 .text
+ 0x006006f8 .dynamic
+-0x00000 .strtab
+-0x0000000 .symtab
++0x00000000 .strtab
++0x00000000 .symtab
+ 
+
+EOF
+RUN
+
+NAME=rz-diff text lines comparison COLOR
+FILE=--
+CMDS=!rz-diff -t lines db/tools/incorrect_cmd_i.txt db/tools/correct_cmd_i.txt
+EXPECT=<<EOF
+--- db/tools/incorrect_cmd_i.txt
++++ db/tools/correct_cmd_i.txt
+[94m@@ -3,40 +3,39 @@[0m
+ vaddr      name[0m
+ ---------------[0m
+ 0x00000000 [0m
+[92m+0x00600910 .bss[0m
+ 0x006006e0 .init_array[0m
+[91m-ax006006e8 .fini_arrar[0m
+[91m-0x006006f0 .jc[48;5;52mt[49m[0m
+[91m-[48;5;52ma[49mx006008c8 .got[0m
+[92m+0x006006e8 .fini_array[0m
+[92m+0x006006f0 .jc[48;5;22mr[49m[0m
+[92m+[48;5;22m0[49mx006008c8 .got[0m
+ 0x0040031e .gnu.version[0m
+ 0x004005b4 .fini[0m
+[91m-0x00600910 .bss[0m
+[91m-000600900 .data[0m
+[91m-004005c0 .rodata[0m
+[92m+0x00600900 .data[0m
+[92m+0x004005c0 .rodata[0m
+ 0x00400348 .rela.dyn[0m
+[91m-0x004003a8 .ini[48;5;52m[49m[0m
+[91m-[48;5;52m[49mx00400260 .gnu.hash[0m
+[91m-0x00400200 .interp[48;5;52mj[49m[0m
+[91m-[48;5;52m1[49m0x0040021c .note.ABI-tag[0m
+[92m+0x004003a8 .ini[48;5;22mt[49m[0m
+[92m+[48;5;22m0[49mx00400260 .gnu.hash[0m
+[92m+0x00400200 .interp[48;5;22m[49m[0m
+[92m+[48;5;22m[49m0x0040021c .note.ABI-tag[0m
+ 0x00400328 .gnu.version_r[0m
+ 0x00000000 .comment[0m
+ 0x0040023c .note.gnu.build-id[0m
+ 0x006008d0 .got.plt[0m
+[91m-0[48;5;52mabc[49m4005d0 .eh_frame_hdr[0m
+[91m-0[48;5;52m[49m04002e0 .dynstr[0m
+[91m-0[48;5;52md[49m004003d0 .plt[0m
+[92m+0[48;5;22mx00[49m4005d0 .eh_frame_hdr[0m
+[92m+0[48;5;22mx0[49m04002e0 .dynstr[0m
+[92m+0[48;5;22mx[49m004003d0 .plt[0m
+ 0x00400360 .rela.plt[0m
+ 0x00400280 .dynsym[0m
+ 0x00000000 .debug_abbrev[0m
+ 0x00000000 .debug_ranges[0m
+ 0x00000000 .debug_str[0m
+[91m-0x00600910 .bss[0m
+ 0x00000000 .debug_aranges[0m
+ 0x00400608 .eh_frame[0m
+[91m-0x00000000[48;5;52m0[49m .debug_line[0m
+[91m-0x00000000[48;5;52m000[49m .shstrtab[0m
+[91m-0[48;5;52m[49m00000000 .debug_info[0m
+[92m+0x00000000[48;5;22m[49m .debug_line[0m
+[92m+0x00000000[48;5;22m[49m .shstrtab[0m
+[92m+0[48;5;22mx[49m00000000 .debug_info[0m
+ 0x00400410 .text[0m
+ 0x006006f8 .dynamic[0m
+[91m-0x00000[48;5;52m[49m .strtab[0m
+[91m-0x0000000[48;5;52m[49m .symtab[0m
+[92m+0x00000[48;5;22m000[49m .strtab[0m
+[92m+0x0000000[48;5;22m0[49m .symtab[0m
+ [0m
+
+EOF
+RUN

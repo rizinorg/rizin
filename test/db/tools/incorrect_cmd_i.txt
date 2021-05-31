@@ -1,0 +1,42 @@
+[Sections]
+
+vaddr      name
+---------------
+0x00000000 
+0x006006e0 .init_array
+ax006006e8 .fini_arrar
+0x006006f0 .jct
+ax006008c8 .got
+0x0040031e .gnu.version
+0x004005b4 .fini
+0x00600910 .bss
+000600900 .data
+004005c0 .rodata
+0x00400348 .rela.dyn
+0x004003a8 .ini
+x00400260 .gnu.hash
+0x00400200 .interpj
+10x0040021c .note.ABI-tag
+0x00400328 .gnu.version_r
+0x00000000 .comment
+0x0040023c .note.gnu.build-id
+0x006008d0 .got.plt
+0abc4005d0 .eh_frame_hdr
+004002e0 .dynstr
+0d004003d0 .plt
+0x00400360 .rela.plt
+0x00400280 .dynsym
+0x00000000 .debug_abbrev
+0x00000000 .debug_ranges
+0x00000000 .debug_str
+0x00600910 .bss
+0x00000000 .debug_aranges
+0x00400608 .eh_frame
+0x000000000 .debug_line
+0x00000000000 .shstrtab
+000000000 .debug_info
+0x00400410 .text
+0x006006f8 .dynamic
+0x00000 .strtab
+0x0000000 .symtab
+
