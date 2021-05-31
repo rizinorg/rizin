@@ -13,6 +13,7 @@
 
 // Deprecated
 #include "rz_bin_elf_get_p2v_new.inc"
+#include "rz_bin_elf_get_v2p_new.inc"
 
 // RZ_IPI
 #include "rz_bin_elf_get_number_of_dynamic_symbols.inc"
@@ -1303,54 +1304,6 @@ RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(ELFOBJ *bin) {
 		bin->g_imports = Elf_(_r_bin_elf_get_symbols_imports)(bin, RZ_BIN_ELF_IMPORT_SYMBOLS);
 	}
 	return bin->g_imports;
-}
-
-static int is_in_vphdr(Elf_(Phdr) * p, ut64 addr) {
-	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_filesz;
-}
-
-/* Deprecated temporarily. Use rz_bin_elf_v2p_new in new code for now. */
-ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
-	rz_return_val_if_fail(bin, 0);
-	if (!bin->phdr) {
-		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
-			return vaddr - bin->baddr;
-		}
-		return vaddr;
-	}
-
-	size_t i;
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &bin->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_vphdr(p, vaddr)) {
-			if (!p->p_offset && !p->p_vaddr) {
-				continue;
-			}
-			return p->p_offset + vaddr - p->p_vaddr;
-		}
-	}
-	return vaddr;
-}
-
-/* converts a virtual address to the relative physical address, looking
- * at the program headers in the binary bin */
-ut64 Elf_(rz_bin_elf_v2p_new)(ELFOBJ *bin, ut64 vaddr) {
-	size_t i;
-
-	rz_return_val_if_fail(bin, UT64_MAX);
-	if (!bin->phdr) {
-		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
-			return vaddr - bin->baddr;
-		}
-		return UT64_MAX;
-	}
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &bin->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_vphdr(p, vaddr)) {
-			return p->p_offset + vaddr - p->p_vaddr;
-		}
-	}
-	return UT64_MAX;
 }
 
 char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin) {
