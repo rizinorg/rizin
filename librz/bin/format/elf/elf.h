@@ -283,7 +283,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 	bool relocs_patched;
 };
 
-char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin);
 RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -321,6 +320,7 @@ RZ_IPI bool Elf_(rz_bin_elf_init_shstrtab)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_strtab)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_is_sh_index_valid)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index);
 
+char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin);
 RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
 void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin);
