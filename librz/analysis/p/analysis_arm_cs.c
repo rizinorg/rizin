@@ -30,6 +30,7 @@
 #define HASMEMINDEX(x)   (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
 #define MEMINDEX64(x)    rz_str_get_null(cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) (insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
+#define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
 #define MEMDISP(x)       insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x)     (ut64) insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x)         (insn->detail->arm.operands[x].type == ARM_OP_IMM)
@@ -55,11 +56,12 @@
 #define SHIFTTYPE(x)  insn->detail->arm.operands[x].shift.type
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
+#define ISWRITEBACK32() insn->detail->arm.writeback
+#define ISPREINDEX32()  (((OPCOUNT() == 2) && (ISMEM(1)) && (ISWRITEBACK32())) || ((OPCOUNT() == 3) && (ISMEM(2)) && (ISWRITEBACK32())))
+#define ISPOSTINDEX32() (((OPCOUNT() == 3) && (ISIMM(2) || ISREG(2)) && (ISWRITEBACK32())) || ((OPCOUNT() == 4) && (ISIMM(3) || ISREG(3)) && (ISWRITEBACK32())))
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
-#define ISPREINDEX32()  ((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64()))
-#define ISPOSTINDEX32() ((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64()))
-#define ISPREINDEX64()  ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64()))
-#define ISPOSTINDEX64() ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64()))
+#define ISPREINDEX64()  (((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64())))
+#define ISPOSTINDEX64() (((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64())))
 
 typedef struct arm_cs_context_t {
 	HtUU *ht_itblock;
@@ -1281,13 +1283,13 @@ static int analop64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
-				if (ISPREINDEX32()) {
+				if (ISPREINDEX64()) {
 					rz_strbuf_appendf(&op->esil, ",tmp,%s,=", REG64(1));
 				}
 
 				rz_strbuf_appendf(&op->esil, ",[%d],%s,=", size, REG64(0));
 
-				if (ISPOSTINDEX32()) {
+				if (ISPOSTINDEX64()) {
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						rz_strbuf_appendf(&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
 					} else {
@@ -1373,13 +1375,13 @@ static int analop64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
-				if (ISPREINDEX32()) {
+				if (ISPREINDEX64()) {
 					rz_strbuf_appendf(&op->esil, ",tmp,%s,=", REG64(1));
 				}
 
 				rz_strbuf_appendf(&op->esil, ",[%d],~,%s,=", size, REG64(0));
 
-				if (ISPOSTINDEX32()) {
+				if (ISPOSTINDEX64()) {
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						rz_strbuf_appendf(&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
 					} else {
@@ -1501,13 +1503,13 @@ static int analop64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
-				if (ISPREINDEX32()) {
+				if (ISPREINDEX64()) {
 					rz_strbuf_appendf(&op->esil, ",tmp,%s,=", REG64(1));
 				}
 
 				rz_strbuf_appendf(&op->esil, ",=[%d]", size);
 
-				if (ISPOSTINDEX32()) {
+				if (ISPOSTINDEX64()) {
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						rz_strbuf_appendf(&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
 					} else {
@@ -2341,6 +2343,71 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		rz_strbuf_appendf(&op->esil, "0,%s,%s,&,==", ARG(1), ARG(0));
 		break;
 	case ARM_INS_LDRD:
+		addr &= ~3LL;
+		if (MEMDISP(2) < 0) {
+			const char *pc = "$$";
+			if (REGBASE(2) == ARM_REG_PC) {
+				op->refptr = 4;
+				op->ptr = addr + pcdelta + MEMDISP(2);
+				rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",2,2,%s,%d,+,>>,<<,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+					(ut64)MEMDISP(2), pc, pcdelta, REG(0), REG(1));
+			} else {
+				int disp = MEMDISP(2);
+				// not refptr, because we can't grab the reg value statically op->refptr = 4;
+				if (disp < 0) {
+					rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,-,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						(ut64)-disp, MEMBASE(2), REG(0), REG(1));
+				} else {
+					rz_strbuf_appendf(&op->esil, "0x%" PFMT64x ",%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						(ut64)disp, MEMBASE(2), REG(0), REG(1));
+				}
+			}
+		} else {
+			if (REGBASE(2) == ARM_REG_PC) {
+				const char *pc = "$$";
+				op->refptr = 4;
+				op->ptr = addr + pcdelta + MEMDISP(2);
+				if (HASMEMINDEX(2) || ISREG(2)) {
+					const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
+					rz_strbuf_appendf(&op->esil, "%s,2,2,%d,%s,+,>>,<<,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						MEMINDEX(2), pcdelta, pc, op_index, REG(0), REG(1));
+				} else {
+					rz_strbuf_appendf(&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						pcdelta, pc, MEMDISP(2), REG(0), REG(1));
+				}
+			} else {
+				if (HASMEMINDEX(2)) { // e.g. `ldrd r2, r3 [r4, r1]`
+					const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
+					rz_strbuf_appendf(&op->esil, "%s,%s,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						MEMINDEX(2), MEMBASE(2), op_index, REG(0), REG(1));
+				} else {
+					rz_strbuf_appendf(&op->esil, "%d,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						MEMDISP(2), MEMBASE(2), REG(0), REG(1));
+				}
+				if (insn->detail->arm.writeback) {
+					if (ISPOSTINDEX32()) {
+						if (ISIMM(3)) {
+							rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
+								MEMBASE(2), IMM(3), MEMBASE(2));
+						} else {
+							const char op_index = ISMEMINDEXSUB(3) ? '-' : '+';
+							rz_strbuf_appendf(&op->esil, ",%s,%s,%c,%s,=",
+								REG(3), MEMBASE(2), op_index, MEMBASE(2));
+						}
+					} else if (ISPREINDEX32()) {
+						if (HASMEMINDEX(2)) {
+							const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
+							rz_strbuf_appendf(&op->esil, ",%s,%s,%c,%s,=",
+								MEMINDEX(2), MEMBASE(2), op_index, MEMBASE(2));
+						} else {
+							rz_strbuf_appendf(&op->esil, ",%s,%d,+,%s,=",
+								MEMBASE(2), MEMDISP(2), MEMBASE(2));
+						}
+					}
+				}
+			}
+		}
+		break;
 	case ARM_INS_LDRB:
 		if (ISMEM(1) && LSHIFT2(1)) {
 			rz_strbuf_appendf(&op->esil, "%s,%d,%s,<<,+,0xffffffff,&,[1],0x%x,&,%s,=",
@@ -2930,10 +2997,10 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		} else if (ISPOSTINDEX64() && REGID64(2) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -IMM64(3);
-		} else if (ISPREINDEX32() && REGBASE64(1) == ARM64_REG_SP) {
+		} else if (ISPREINDEX64() && REGBASE64(1) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -MEMDISP64(1);
-		} else if (ISPOSTINDEX32() && REGID64(1) == ARM64_REG_SP) {
+		} else if (ISPOSTINDEX64() && REGID64(1) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -IMM64(2);
 		}
@@ -2956,10 +3023,10 @@ static void anop64(ArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		} else if (ISPOSTINDEX64() && REGID64(2) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -IMM64(3);
-		} else if (ISPREINDEX32() && REGBASE64(1) == ARM64_REG_SP) {
+		} else if (ISPREINDEX64() && REGBASE64(1) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -MEMDISP64(1);
-		} else if (ISPOSTINDEX32() && REGID64(1) == ARM64_REG_SP) {
+		} else if (ISPOSTINDEX64() && REGID64(1) == ARM64_REG_SP) {
 			op->stackop = RZ_ANALYSIS_STACK_INC;
 			op->stackptr = -IMM64(2);
 		}
