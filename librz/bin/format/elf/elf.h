@@ -304,9 +304,14 @@ RZ_IPI size_t Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *
 RZ_IPI RZ_BORROW RzBinElfNotePrStatus *Elf_(rz_bin_elf_get_prstatus)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI RZ_OWN char *Elf_(rz_bin_elf_get_ver_flags)(ut32 flags);
+RZ_IPI Elf_(Verdaux) Elf_(rz_bin_elf_get_verdaux_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
+RZ_IPI Elf_(Verdef) Elf_(rz_bin_elf_get_verdef_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
+RZ_IPI Elf_(Vernaux) Elf_(rz_bin_elf_get_vernaux_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
+RZ_IPI Elf_(Verneed) Elf_(rz_bin_elf_get_verneed_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
 RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_verdef)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_verneed)(RZ_NONNULL ELFOBJ *bin);
+RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_versym)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_dynamic_section)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_dynstr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_ehdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);

@@ -3915,163 +3915,173 @@ static void bin_pe_versioninfo(RzCore *r, PJ *pj, int mode) {
 	}
 }
 
-static void bin_elf_versioninfo(RzCore *r, PJ *pj, int mode) {
-	const char *format = "bin/cur/info/versioninfo/%s%d";
-	int num_versym;
-	int num_verneed = 0;
-	int num_version = 0;
-	Sdb *sdb = NULL;
-	const char *oValue = NULL;
+static void bin_elf_versioninfo_versym(RzCore *r, PJ *pj, int mode) {
 	if (IS_MODE_JSON(mode)) {
 		pj_o(pj);
 		pj_ka(pj, "versym");
 	}
-	for (num_versym = 0;; num_versym++) {
-		const char *versym_path = sdb_fmt(format, "versym", num_versym);
-		if (!(sdb = sdb_ns_path(r->sdb, versym_path, 0))) {
-			break;
+
+	Sdb *sdb = sdb_ns_path(r->sdb, "bin/cur/info/versioninfo/versym", 0);
+	if (!sdb) {
+		return;
+	}
+
+	const ut64 addr = sdb_num_get(sdb, "addr", 0);
+	const ut64 offset = sdb_num_get(sdb, "offset", 0);
+	const ut64 num_entries = sdb_num_get(sdb, "num_entries", 0);
+
+	if (IS_MODE_JSON(mode)) {
+		pj_o(pj);
+		pj_kn(pj, "address", addr);
+		pj_kn(pj, "offset", offset);
+		pj_ka(pj, "entries");
+	} else {
+		rz_cons_printf("Version symbols has %" PFMT64u " entries:\n", num_entries);
+		rz_cons_printf(" Addr: 0x%08" PFMT64x "  Offset: 0x%08" PFMT64x "\n",
+			(ut64)addr, (ut64)offset);
+	}
+
+	for (size_t i = 0; i < num_entries; i++) {
+		const char *const key = sdb_fmt("entry%zu", i);
+		const char *const value = sdb_const_get(sdb, key, 0);
+
+		if (!value) {
+			continue;
 		}
-		const ut64 addr = sdb_num_get(sdb, "addr", 0);
-		const ut64 offset = sdb_num_get(sdb, "offset", 0);
-		const ut64 link = sdb_num_get(sdb, "link", 0);
-		const ut64 num_entries = sdb_num_get(sdb, "num_entries", 0);
-		const char *const section_name = sdb_const_get(sdb, "section_name", 0);
-		const char *const link_section_name = sdb_const_get(sdb, "link_section_name", 0);
 
 		if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
-			pj_ks(pj, "section_name", section_name);
-			pj_kn(pj, "address", addr);
-			pj_kn(pj, "offset", offset);
-			pj_kn(pj, "link", link);
-			pj_ks(pj, "link_section_name", link_section_name);
-			pj_ka(pj, "entries");
-		} else {
-			rz_cons_printf("Version symbols section '%s' contains %" PFMT64u " entries:\n", section_name, num_entries);
-			rz_cons_printf(" Addr: 0x%08" PFMT64x "  Offset: 0x%08" PFMT64x "  Link: %x (%s)\n",
-				(ut64)addr, (ut64)offset, (ut32)link, link_section_name);
-		}
-		int i;
-		for (i = 0; i < num_entries; i++) {
-			const char *const key = sdb_fmt("entry%d", i);
-			const char *const value = sdb_const_get(sdb, key, 0);
-			if (value) {
-				if (oValue && !strcmp(value, oValue)) {
-					continue;
-				}
-				if (IS_MODE_JSON(mode)) {
-					pj_o(pj);
-					pj_kn(pj, "idx", (ut64)i);
-					pj_ks(pj, "value", value);
-					pj_end(pj);
-				} else {
-					rz_cons_printf("  0x%08" PFMT64x ": ", (ut64)i);
-					rz_cons_printf("%s\n", value);
-				}
-				oValue = value;
-			}
-		}
-		if (IS_MODE_JSON(mode)) {
-			pj_end(pj);
+			pj_kn(pj, "idx", (ut64)i);
+			pj_ks(pj, "value", value);
 			pj_end(pj);
 		} else {
-			rz_cons_printf("\n\n");
+			rz_cons_printf("  0x%08" PFMT64x ": ", (ut64)i);
+			rz_cons_printf("%s\n", value);
 		}
 	}
+
+	if (IS_MODE_JSON(mode)) {
+		pj_end(pj);
+		pj_end(pj);
+	} else {
+		rz_cons_printf("\n\n");
+	}
+}
+
+static void bin_elf_versioninfo_verneed(RzCore *r, PJ *pj, int mode) {
 	if (IS_MODE_JSON(mode)) {
 		pj_end(pj);
 		pj_ka(pj, "verneed");
 	}
 
-	do {
-		char *verneed_path = rz_str_newf(format, "verneed", num_verneed++);
-		if (!(sdb = sdb_ns_path(r->sdb, verneed_path, 0))) {
+	Sdb *sdb = sdb_ns_path(r->sdb, "bin/cur/info/versioninfo/verneed", 0);
+	if (!sdb) {
+		return;
+	}
+
+	const ut64 address = sdb_num_get(sdb, "addr", 0);
+	const ut64 offset = sdb_num_get(sdb, "offset", 0);
+
+	if (IS_MODE_JSON(mode)) {
+		pj_o(pj);
+		pj_kn(pj, "address", address);
+		pj_kn(pj, "offset", offset);
+		pj_ka(pj, "entries");
+	} else {
+		rz_cons_printf("Version need has %d entries:\n",
+			(int)sdb_num_get(sdb, "num_entries", 0));
+
+		rz_cons_printf(" Addr: 0x%08" PFMT64x, address);
+
+		rz_cons_printf("  Offset: 0x%08" PFMT64x "\n", offset);
+	}
+
+	for (size_t num_version = 0;; num_version++) {
+		const char *filename = NULL;
+		int num_vernaux = 0;
+
+		char *path_version = sdb_fmt("bin/cur/info/versioninfo/verneed/version%zu", num_version);
+		sdb = sdb_ns_path(r->sdb, path_version, 0);
+
+		if (!sdb) {
 			break;
 		}
-		const ut64 address = sdb_num_get(sdb, "addr", 0);
-		const ut64 offset = sdb_num_get(sdb, "offset", 0);
+
 		if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
-			pj_kn(pj, "address", address);
-			pj_kn(pj, "offset", offset);
-			pj_ka(pj, "entries");
+			pj_kn(pj, "idx", sdb_num_get(sdb, "idx", 0));
+			pj_ki(pj, "vn_version", (int)sdb_num_get(sdb, "vn_version", 0));
 		} else {
-			rz_cons_printf("Version need contains %d entries:\n",
-				(int)sdb_num_get(sdb, "num_entries", 0));
-
-			rz_cons_printf(" Addr: 0x%08" PFMT64x, address);
-
-			rz_cons_printf("  Offset: 0x%08" PFMT64x "\n", offset);
+			rz_cons_printf("  0x%08" PFMT64x ": Version: %d",
+				sdb_num_get(sdb, "idx", 0), (int)sdb_num_get(sdb, "vn_version", 0));
 		}
-		for (num_version = 0;; num_version++) {
-			const char *filename = NULL;
-			int num_vernaux = 0;
 
-			char *path_version = sdb_fmt("%s/version%d", verneed_path, num_version);
-			if (!(sdb = sdb_ns_path(r->sdb, path_version, 0))) {
+		if ((filename = sdb_const_get(sdb, "file_name", 0))) {
+			if (IS_MODE_JSON(mode)) {
+				pj_ks(pj, "file_name", filename);
+			} else {
+				rz_cons_printf("  File: %s", filename);
+			}
+		}
+
+		const int cnt = (int)sdb_num_get(sdb, "cnt", 0);
+
+		if (IS_MODE_JSON(mode)) {
+			pj_ki(pj, "cnt", cnt);
+		} else {
+			rz_cons_printf("  Cnt: %d\n", cnt);
+		}
+
+		if (IS_MODE_JSON(mode)) {
+			pj_ka(pj, "vernaux");
+		}
+
+		do {
+			const char *const path_vernaux = sdb_fmt("%s/vernaux%d", path_version, num_vernaux++);
+
+			sdb = sdb_ns_path(r->sdb, path_vernaux, 0);
+			if (!sdb) {
 				break;
 			}
+
+			const ut64 idx = sdb_num_get(sdb, "idx", 0);
+			const char *const name = sdb_const_get(sdb, "name", 0);
+			const char *const flags = sdb_const_get(sdb, "flags", 0);
+			const int version = (int)sdb_num_get(sdb, "version", 0);
+
 			if (IS_MODE_JSON(mode)) {
 				pj_o(pj);
-				pj_kn(pj, "idx", sdb_num_get(sdb, "idx", 0));
-				pj_ki(pj, "vn_version", (int)sdb_num_get(sdb, "vn_version", 0));
+				pj_kn(pj, "idx", idx);
+				pj_ks(pj, "name", name);
+				pj_ks(pj, "flags", flags);
+				pj_ki(pj, "version", version);
+				pj_end(pj);
 			} else {
-				rz_cons_printf("  0x%08" PFMT64x ": Version: %d",
-					sdb_num_get(sdb, "idx", 0), (int)sdb_num_get(sdb, "vn_version", 0));
+				rz_cons_printf("  0x%08" PFMT64x ":   Name: %s", idx, name);
+				rz_cons_printf("  Flags: %s Version: %d\n", flags, version);
 			}
+		} while (sdb);
 
-			if ((filename = sdb_const_get(sdb, "file_name", 0))) {
-				if (IS_MODE_JSON(mode)) {
-					pj_ks(pj, "file_name", filename);
-				} else {
-					rz_cons_printf("  File: %s", filename);
-				}
-			}
-			const int cnt = (int)sdb_num_get(sdb, "cnt", 0);
-			if (IS_MODE_JSON(mode)) {
-				pj_ki(pj, "cnt", cnt);
-			} else {
-				rz_cons_printf("  Cnt: %d\n", cnt);
-			}
-			if (IS_MODE_JSON(mode)) {
-				pj_ka(pj, "vernaux");
-			}
-			do {
-				const char *const path_vernaux = sdb_fmt("%s/vernaux%d", path_version, num_vernaux++);
-				if (!(sdb = sdb_ns_path(r->sdb, path_vernaux, 0))) {
-					break;
-				}
-				const ut64 idx = sdb_num_get(sdb, "idx", 0);
-				const char *const name = sdb_const_get(sdb, "name", 0);
-				const char *const flags = sdb_const_get(sdb, "flags", 0);
-				const int version = (int)sdb_num_get(sdb, "version", 0);
-				if (IS_MODE_JSON(mode)) {
-					pj_o(pj);
-					pj_kn(pj, "idx", idx);
-					pj_ks(pj, "name", name);
-					pj_ks(pj, "flags", flags);
-					pj_ki(pj, "version", version);
-					pj_end(pj);
-				} else {
-					rz_cons_printf("  0x%08" PFMT64x ":   Name: %s", idx, name);
-					rz_cons_printf("  Flags: %s Version: %d\n", flags, version);
-				}
-			} while (sdb);
-			if (IS_MODE_JSON(mode)) {
-				pj_end(pj);
-				pj_end(pj);
-			}
-		}
 		if (IS_MODE_JSON(mode)) {
 			pj_end(pj);
 			pj_end(pj);
 		}
-		free(verneed_path);
-	} while (sdb);
+	}
+
 	if (IS_MODE_JSON(mode)) {
 		pj_end(pj);
 		pj_end(pj);
 	}
+
+	if (IS_MODE_JSON(mode)) {
+		pj_end(pj);
+		pj_end(pj);
+	}
+}
+
+static void bin_elf_versioninfo(RzCore *r, PJ *pj, int mode) {
+	bin_elf_versioninfo_versym(r, pj, mode);
+	bin_elf_versioninfo_verneed(r, pj, mode);
 }
 
 static void bin_mach0_versioninfo(RzCore *r) {
