@@ -678,8 +678,8 @@ vaddr      paddr      type   name
 
 4 relocations
 4899
-Version symbols section '.gnu.version' contains 5 entries:
- Addr: 0x08048246  Offset: 0x00000246  Link: 5 (.dynsym)
+Version symbols has 5 entries:
+ Addr: 0x08048246  Offset: 0x00000246
   0x00000000: 0 (*local*)
   0x00000001: 2 (GLIBC_2.0)
   0x00000002: 0 (*local*)
@@ -687,7 +687,7 @@ Version symbols section '.gnu.version' contains 5 entries:
   0x00000004: 1 (*global*)
 
 
-Version need contains 1 entries:
+Version need has 1 entries:
  Addr: 0x08048250  Offset: 0x00000250
   0x00000250: Version: 1  File: libc.so.6  Cnt: 1
   0x00000260:   Name: GLIBC_2.0  Flags: none Version: 2

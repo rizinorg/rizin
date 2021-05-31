@@ -7,54 +7,7 @@
 
 #define VERSYM_VERSION 0x7fff
 
-static Elf_(Verneed) get_verneed_entry(ELFOBJ *bin, ut64 offset) {
-	Elf_(Verneed) verneed_entry;
-
-	verneed_entry.vn_version = BREAD16(bin->b, offset);
-	verneed_entry.vn_cnt = BREAD16(bin->b, offset);
-	verneed_entry.vn_file = BREAD32(bin->b, offset);
-	verneed_entry.vn_aux = BREAD32(bin->b, offset);
-	verneed_entry.vn_next = BREAD32(bin->b, offset);
-
-	return verneed_entry;
-}
-
-static Elf_(Verdef) get_verdef_entry(ELFOBJ *bin, ut64 offset) {
-	Elf_(Verdef) verdef_entry;
-
-	verdef_entry.vd_version = BREAD16(bin->b, offset);
-	verdef_entry.vd_flags = BREAD16(bin->b, offset);
-	verdef_entry.vd_ndx = BREAD16(bin->b, offset);
-	verdef_entry.vd_cnt = BREAD16(bin->b, offset);
-	verdef_entry.vd_hash = BREAD32(bin->b, offset);
-	verdef_entry.vd_aux = BREAD32(bin->b, offset);
-	verdef_entry.vd_next = BREAD32(bin->b, offset);
-
-	return verdef_entry;
-}
-
-static Elf_(Vernaux) get_vernaux_entry(ELFOBJ *bin, ut64 offset) {
-	Elf_(Vernaux) vernaux_entry;
-
-	vernaux_entry.vna_hash = BREAD32(bin->b, offset);
-	vernaux_entry.vna_flags = BREAD16(bin->b, offset);
-	vernaux_entry.vna_other = BREAD16(bin->b, offset);
-	vernaux_entry.vna_name = BREAD32(bin->b, offset);
-	vernaux_entry.vna_next = BREAD32(bin->b, offset);
-
-	return vernaux_entry;
-}
-
-static Elf_(Verdaux) get_verdaux_entry(ELFOBJ *bin, ut64 offset) {
-	Elf_(Verdaux) verdaux_entry;
-
-	verdaux_entry.vda_name = BREAD32(bin->b, offset);
-	verdaux_entry.vda_next = BREAD32(bin->b, offset);
-
-	return verdaux_entry;
-}
-
-static bool set_verneed_entry_versym(ELFOBJ *bin, Sdb *sdb, const char *key, Elf_(Versym) versym) {
+static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char *key, Elf_(Versym) versym) {
 	ut64 verneed_addr = bin->version_info[DT_VERSIONTAGIDX(DT_VERNEED)];
 	ut64 verneed_num = bin->version_info[DT_VERSIONTAGIDX(DT_VERNEEDNUM)];
 
@@ -71,12 +24,12 @@ static bool set_verneed_entry_versym(ELFOBJ *bin, Sdb *sdb, const char *key, Elf
 	ut64 verneed_entry_offset = verneed_offset;
 
 	for (size_t i = 0; i < verneed_num; i++) {
-		Elf_(Verneed) verneed_entry = get_verneed_entry(bin, verneed_entry_offset);
+		Elf_(Verneed) verneed_entry = Elf_(rz_bin_elf_get_verneed_entry)(bin, verneed_entry_offset);
 
 		ut64 vernaux_entry_offset = verneed_entry_offset + verneed_entry.vn_aux;
 
 		for (size_t i = 0; i < verneed_entry.vn_cnt; i++) {
-			Elf_(Vernaux) vernaux_entry = get_vernaux_entry(bin, vernaux_entry_offset);
+			Elf_(Vernaux) vernaux_entry = Elf_(rz_bin_elf_get_vernaux_entry)(bin, vernaux_entry_offset);
 
 			if (vernaux_entry.vna_other != versym) {
 				vernaux_entry_offset += vernaux_entry.vna_next;
@@ -98,7 +51,7 @@ static bool set_verneed_entry_versym(ELFOBJ *bin, Sdb *sdb, const char *key, Elf
 	return false;
 }
 
-static bool set_verdef_entry_versym(ELFOBJ *bin, Sdb *sdb, const char *key, Elf_(Versym) versym) {
+static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *key, Elf_(Versym) versym) {
 	ut64 verdef_addr = bin->version_info[DT_VERSIONTAGIDX(DT_VERDEF)];
 	ut64 verdef_num = bin->version_info[DT_VERSIONTAGIDX(DT_VERDEFNUM)];
 
@@ -115,7 +68,7 @@ static bool set_verdef_entry_versym(ELFOBJ *bin, Sdb *sdb, const char *key, Elf_
 	ut64 verdef_entry_offset = verdef_offset;
 
 	for (size_t i = 0; i < verdef_num; i++) {
-		Elf_(Verdef) verdef_entry = get_verdef_entry(bin, verdef_entry_offset);
+		Elf_(Verdef) verdef_entry = Elf_(rz_bin_elf_get_verdef_entry)(bin, verdef_entry_offset);
 
 		if (!verdef_entry.vd_cnt || verdef_entry.vd_ndx != (versym & VERSYM_VERSION)) {
 			verdef_entry_offset += verdef_entry.vd_next;
@@ -123,7 +76,7 @@ static bool set_verdef_entry_versym(ELFOBJ *bin, Sdb *sdb, const char *key, Elf_
 		}
 
 		ut64 verdaux_entry_offset = verdef_entry_offset + verdef_entry.vd_aux;
-		Elf_(Verdaux) verdaux_entry = get_verdaux_entry(bin, verdaux_entry_offset);
+		Elf_(Verdaux) verdaux_entry = Elf_(rz_bin_elf_get_verdaux_entry)(bin, verdaux_entry_offset);
 
 		if (verdaux_entry.vda_name > bin->strtab_size) {
 			return false;
@@ -174,19 +127,19 @@ RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_versym)(RZ_NONNULL ELFOB
 		const char *key = sdb_fmt("entry%zu", i);
 		Elf_(Versym) versym_entry = BREAD16(bin->b, versym_entry_offset);
 
-		switch(versym_entry) {
-			case VER_NDX_LOCAL:
-				sdb_set(sdb, key, "0 (*local*)", 0);
+		switch (versym_entry) {
+		case VER_NDX_LOCAL:
+			sdb_set(sdb, key, "0 (*local*)", 0);
+			break;
+		case VER_NDX_GLOBAL:
+			sdb_set(sdb, key, "1 (*global*)", 0);
+			break;
+		default:
+			if (get_versym_entry_sdb_from_verneed(bin, sdb, key, versym_entry)) {
 				break;
-			case VER_NDX_GLOBAL:
-				sdb_set(sdb, key, "1 (*global*)", 0);
-				break;
-			default:
-				if (set_verneed_entry_versym(bin, sdb, key, versym_entry)) {
-					break;
-				}
+			}
 
-				set_verdef_entry_versym(bin, sdb, key, versym_entry);
+			get_versym_entry_sdb_from_verdef(bin, sdb, key, versym_entry);
 		}
 	}
 

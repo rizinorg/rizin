@@ -5,7 +5,7 @@
 
 #include "elf.h"
 
-static Sdb *set_verdaux_entry_sdb(ELFOBJ *bin, Elf_(Verdaux) *verdaux_entry, size_t index) {
+static Sdb *get_verdaux_entry_sdb(ELFOBJ *bin, Elf_(Verdaux) * verdaux_entry, size_t index) {
 	if (verdaux_entry->vda_name > bin->dynstr_size) {
 		return NULL;
 	}
@@ -21,16 +21,7 @@ static Sdb *set_verdaux_entry_sdb(ELFOBJ *bin, Elf_(Verdaux) *verdaux_entry, siz
 	return sdb_verdaux;
 }
 
-static Sdb *set_verdaux_entry(ELFOBJ *bin, Elf_(Verdaux) *verdaux_entry, size_t offset) {
-	size_t pos = offset;
-
-	verdaux_entry->vda_name = BREAD32(bin->b, pos);
-	verdaux_entry->vda_next = BREAD32(bin->b, pos);
-
-	return set_verdaux_entry_sdb(bin, verdaux_entry, offset);
-}
-
-static Sdb *set_verdef_entry_sdb(ELFOBJ *bin, Elf_(Verdef) *verdef_entry, size_t index) {
+static Sdb *get_verdef_entry_sdb_aux(ELFOBJ *bin, Elf_(Verdef) * verdef_entry, size_t index) {
 	Sdb *sdb_verdef = sdb_new0();
 	if (!sdb_verdef) {
 		return NULL;
@@ -47,18 +38,8 @@ static Sdb *set_verdef_entry_sdb(ELFOBJ *bin, Elf_(Verdef) *verdef_entry, size_t
 	return sdb_verdef;
 }
 
-static Sdb *set_verdef_entry(ELFOBJ *bin, Elf_(Verdef) *verdef_entry, size_t offset) {
-	size_t pos = offset;
-
-	verdef_entry->vd_version = BREAD16(bin->b, pos);
-	verdef_entry->vd_flags = BREAD16(bin->b, pos);
-	verdef_entry->vd_ndx = BREAD16(bin->b, pos);
-	verdef_entry->vd_cnt = BREAD16(bin->b, pos);
-	verdef_entry->vd_hash = BREAD32(bin->b, pos);
-	verdef_entry->vd_aux = BREAD32(bin->b, pos);
-	verdef_entry->vd_next = BREAD32(bin->b, pos);
-
-	Sdb *sdb_verdef = set_verdef_entry_sdb(bin, verdef_entry, offset);
+static Sdb *get_verdef_entry_sdb(ELFOBJ *bin, Elf_(Verdef) * verdef_entry, size_t offset) {
+	Sdb *sdb_verdef = get_verdef_entry_sdb_aux(bin, verdef_entry, offset);
 	if (!sdb_verdef) {
 		return NULL;
 	}
@@ -66,9 +47,9 @@ static Sdb *set_verdef_entry(ELFOBJ *bin, Elf_(Verdef) *verdef_entry, size_t off
 	ut64 verdaux_entry_offset = offset + verdef_entry->vd_aux;
 
 	for (size_t j = 0; j < verdef_entry->vd_cnt; j++) {
-		Elf_(Verdaux) verdaux_entry = { 0 };
+		Elf_(Verdaux) verdaux_entry = Elf_(rz_bin_elf_get_verdaux_entry)(bin, verdaux_entry_offset);
 
-		Sdb *sdb_verdaux = set_verdaux_entry(bin, &verdaux_entry, verdaux_entry_offset);
+		Sdb *sdb_verdaux = get_verdaux_entry_sdb(bin, &verdaux_entry, verdaux_entry_offset);
 		if (!sdb_verdaux) {
 			sdb_free(sdb_verdef);
 			return NULL;
@@ -109,9 +90,9 @@ RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_verdef)(RZ_NONNULL ELFOB
 	sdb_num_set(sdb, "offset", verdef_offset, 0);
 
 	for (size_t i = 0; i < verdef_num; i++) {
-		Elf_(Verdef) verdef_entry = { 0 };
+		Elf_(Verdef) verdef_entry = Elf_(rz_bin_elf_get_verdef_entry)(bin, verdef_offset);
 
-		Sdb *sdb_verdef = set_verdef_entry(bin, &verdef_entry, verdef_offset);
+		Sdb *sdb_verdef = get_verdef_entry_sdb(bin, &verdef_entry, verdef_offset);
 		if (!sdb_verdef) {
 			sdb_free(sdb);
 			return NULL;

@@ -5,8 +5,8 @@
 
 #include "elf.h"
 
-static Sdb *set_vernaux_entry_sdb(ELFOBJ *bin, Elf_(Vernaux) *vernaux_entry, size_t index) {
-	if (vernaux_entry->vna_name > bin->dynstr_size) {
+static Sdb *get_vernaux_entry_sdb(ELFOBJ *bin, Elf_(Vernaux) vernaux_entry, size_t index) {
+	if (vernaux_entry.vna_name > bin->dynstr_size) {
 		return NULL;
 	}
 
@@ -15,31 +15,19 @@ static Sdb *set_vernaux_entry_sdb(ELFOBJ *bin, Elf_(Vernaux) *vernaux_entry, siz
 		return NULL;
 	}
 
-	char *flags = Elf_(rz_bin_elf_get_ver_flags)(vernaux_entry->vna_flags);
+	char *flags = Elf_(rz_bin_elf_get_ver_flags)(vernaux_entry.vna_flags);
 	sdb_set(sdb_vernaux, "flags", flags, 0);
 	free(flags);
 
 	sdb_num_set(sdb_vernaux, "idx", index, 0);
-	sdb_num_set(sdb_vernaux, "version", vernaux_entry->vna_other, 0);
-	sdb_set(sdb_vernaux, "name", bin->dynstr + vernaux_entry->vna_name, 0);
+	sdb_num_set(sdb_vernaux, "version", vernaux_entry.vna_other, 0);
+	sdb_set(sdb_vernaux, "name", bin->dynstr + vernaux_entry.vna_name, 0);
 
 	return sdb_vernaux;
 }
 
-static Sdb *set_vernaux_entry(ELFOBJ *bin, Elf_(Vernaux) *vernaux_entry, size_t offset) {
-	size_t pos = offset;
-
-	vernaux_entry->vna_hash = BREAD32(bin->b, pos);
-	vernaux_entry->vna_flags = BREAD16(bin->b, pos);
-	vernaux_entry->vna_other = BREAD16(bin->b, pos);
-	vernaux_entry->vna_name = BREAD32(bin->b, pos);
-	vernaux_entry->vna_next = BREAD32(bin->b, pos);
-
-	return set_vernaux_entry_sdb(bin, vernaux_entry, offset);
-}
-
-static Sdb *set_verneed_entry_sdb(ELFOBJ *bin, Elf_(Verneed) *verneed_entry, size_t index) {
-	if (verneed_entry->vn_file > bin->dynstr_size) {
+static Sdb *get_verneed_entry_sdb_aux(ELFOBJ *bin, Elf_(Verneed) verneed_entry, size_t index) {
+	if (verneed_entry.vn_file > bin->dynstr_size) {
 		return NULL;
 	}
 
@@ -48,34 +36,26 @@ static Sdb *set_verneed_entry_sdb(ELFOBJ *bin, Elf_(Verneed) *verneed_entry, siz
 		return NULL;
 	}
 
-	sdb_num_set(sdb_version, "cnt", verneed_entry->vn_cnt, 0);
+	sdb_num_set(sdb_version, "cnt", verneed_entry.vn_cnt, 0);
 	sdb_num_set(sdb_version, "idx", index, 0);
-	sdb_num_set(sdb_version, "vn_version", verneed_entry->vn_version, 0);
-	sdb_set(sdb_version, "file_name", bin->dynstr + verneed_entry->vn_file, 0);
+	sdb_num_set(sdb_version, "vn_version", verneed_entry.vn_version, 0);
+	sdb_set(sdb_version, "file_name", bin->dynstr + verneed_entry.vn_file, 0);
 
 	return sdb_version;
 }
 
-static Sdb *set_verneed_entry(ELFOBJ *bin, Elf_(Verneed) *verneed_entry, size_t offset) {
-	size_t pos = offset;
-
-	verneed_entry->vn_version = BREAD16(bin->b, pos);
-	verneed_entry->vn_cnt = BREAD16(bin->b, pos);
-	verneed_entry->vn_file = BREAD32(bin->b, pos);
-	verneed_entry->vn_aux = BREAD32(bin->b, pos);
-	verneed_entry->vn_next = BREAD32(bin->b, pos);
-
-	Sdb *sdb_version = set_verneed_entry_sdb(bin, verneed_entry, offset);
+static Sdb *get_verneed_entry_sdb(ELFOBJ *bin, Elf_(Verneed) verneed_entry, size_t offset) {
+	Sdb *sdb_version = get_verneed_entry_sdb_aux(bin, verneed_entry, offset);
 	if (!sdb_version) {
 		return NULL;
 	}
 
-	ut64 vernaux_entry_offset = offset + verneed_entry->vn_aux;
+	ut64 vernaux_entry_offset = offset + verneed_entry.vn_aux;
 
-	for (size_t i = 0; i < verneed_entry->vn_cnt; i++) {
-		Elf_(Vernaux) vernaux_entry = { 0 };
+	for (size_t i = 0; i < verneed_entry.vn_cnt; i++) {
+		Elf_(Vernaux) vernaux_entry = Elf_(rz_bin_elf_get_vernaux_entry)(bin, vernaux_entry_offset);
 
-		Sdb *sdb_vernaux = set_vernaux_entry(bin, &vernaux_entry, vernaux_entry_offset);
+		Sdb *sdb_vernaux = get_vernaux_entry_sdb(bin, vernaux_entry, vernaux_entry_offset);
 		if (!sdb_vernaux) {
 			sdb_free(sdb_version);
 			return NULL;
@@ -116,9 +96,9 @@ RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_verneed)(RZ_NONNULL ELFO
 	sdb_num_set(sdb, "offset", verneed_offset, 0);
 
 	for (size_t i = 0; i < verneed_num; i++) {
-		Elf_(Verneed) verneed_entry = { 0 };
+		Elf_(Verneed) verneed_entry = Elf_(rz_bin_elf_get_verneed_entry)(bin, verneed_offset);
 
-		Sdb *sdb_version = set_verneed_entry(bin, &verneed_entry, verneed_offset);
+		Sdb *sdb_version = get_verneed_entry_sdb(bin, verneed_entry, verneed_offset);
 		if (!sdb_version) {
 			sdb_free(sdb);
 			return NULL;
