@@ -5,7 +5,16 @@
 
 #include "elf.h"
 
-char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin) {
+/**
+ * \brief Get the compiler info from the .comment section
+ * \param elf binary
+ * \return a ptr to an allocated string
+ *
+ * ...
+ */
+RZ_OWN char *Elf_(rz_bin_elf_compiler)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, ".comment");
 	if (!section) {
 		return NULL;
