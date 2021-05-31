@@ -347,7 +347,7 @@ ut64 Elf_(rz_bin_elf_get_section_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const 
 ut64 Elf_(rz_bin_elf_get_section_addr_end)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
 ut64 Elf_(rz_bin_elf_get_section_offset)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
 RZ_OWN RzBinElfSection *Elf_(rz_bin_elf_get_sections)(RZ_NONNULL ELFOBJ *bin);
-ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin);
+ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_get_stripped)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW const ut8 *Elf_(rz_bin_elf_grab_regstate)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL size_t *size);
 bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin);
