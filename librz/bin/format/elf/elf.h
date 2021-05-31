@@ -283,10 +283,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 	bool relocs_patched;
 };
 
-ut64 Elf_(rz_bin_elf_p2v)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
-ut64 Elf_(rz_bin_elf_v2p)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
-ut64 Elf_(rz_bin_elf_p2v_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 paddr);
-ut64 Elf_(rz_bin_elf_v2p_new)(struct Elf_(rz_bin_elf_obj_t) * bin, ut64 vaddr);
 char *Elf_(rz_bin_elf_compiler)(ELFOBJ *bin);
 RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(struct Elf_(rz_bin_elf_obj_t) * bin);
@@ -297,6 +293,11 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms);
 bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr);
 bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf);
+
+ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
+ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
+ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
+ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 
 RZ_IPI size_t Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI RZ_BORROW RzBinElfNotePrStatus *Elf_(rz_bin_elf_get_prstatus)(RZ_NONNULL ELFOBJ *bin);

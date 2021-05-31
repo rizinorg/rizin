@@ -11,6 +11,9 @@
 #include <rz_util.h>
 #include "elf.h"
 
+// Deprecated
+#include "rz_bin_elf_get_p2v_new.inc"
+
 // RZ_IPI
 #include "rz_bin_elf_get_number_of_dynamic_symbols.inc"
 #include "rz_bin_elf_get_prstatus.inc"
@@ -1302,40 +1305,12 @@ RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(ELFOBJ *bin) {
 	return bin->g_imports;
 }
 
-static int is_in_pphdr(Elf_(Phdr) * p, ut64 addr) {
-	return addr >= p->p_offset && addr < p->p_offset + p->p_filesz;
-}
-
 static int is_in_vphdr(Elf_(Phdr) * p, ut64 addr) {
 	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_filesz;
 }
 
-/* Deprecated temporarily. Use rz_bin_elf_p2v_new in new code for now. */
-ut64 Elf_(rz_bin_elf_p2v)(ELFOBJ *bin, ut64 paddr) {
-	size_t i;
-
-	rz_return_val_if_fail(bin, 0);
-	if (!bin->phdr) {
-		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
-			return bin->baddr + paddr;
-		}
-		return paddr;
-	}
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &bin->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_pphdr(p, paddr)) {
-			if (!p->p_vaddr && !p->p_offset) {
-				continue;
-			}
-			return p->p_vaddr + paddr - p->p_offset;
-		}
-	}
-
-	return paddr;
-}
-
 /* Deprecated temporarily. Use rz_bin_elf_v2p_new in new code for now. */
-ut64 Elf_(rz_bin_elf_v2p)(ELFOBJ *bin, ut64 vaddr) {
+ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, 0);
 	if (!bin->phdr) {
 		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
@@ -1355,28 +1330,6 @@ ut64 Elf_(rz_bin_elf_v2p)(ELFOBJ *bin, ut64 vaddr) {
 		}
 	}
 	return vaddr;
-}
-
-/* converts a physical address to the virtual address, looking
- * at the program headers in the binary bin */
-ut64 Elf_(rz_bin_elf_p2v_new)(ELFOBJ *bin, ut64 paddr) {
-	size_t i;
-
-	rz_return_val_if_fail(bin, UT64_MAX);
-	if (!bin->phdr) {
-		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
-			return bin->baddr + paddr;
-		}
-		return UT64_MAX;
-	}
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &bin->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_pphdr(p, paddr)) {
-			return p->p_vaddr + paddr - p->p_offset;
-		}
-	}
-
-	return UT64_MAX;
 }
 
 /* converts a virtual address to the relative physical address, looking
