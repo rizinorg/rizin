@@ -57,7 +57,7 @@ if get_option('enable_tests')
     'ovf',
     'pdb',
     'pj',
-    'project_migrate',
+#    'project_migrate',
     'queue',
     'rbtree',
     'reg',
