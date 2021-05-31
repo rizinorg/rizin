@@ -5,8 +5,16 @@
 
 #include "elf.h"
 
-/// Get the value of the stackpointer register in a core file
-ut64 Elf_(rz_bin_elf_get_sp_val)(struct Elf_(rz_bin_elf_obj_t) * bin) {
+/**
+ * \brief Get the stack pointer value
+ * \param elf binary
+ * \return allocated string
+ *
+ * Get the value of the stack pointer register in a core file from NT_PRSTATUS
+ */
+ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, UT64_MAX);
+
 	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
 	RzBinElfNotePrStatus *prs = Elf_(rz_bin_elf_get_prstatus)(bin);
 	if (!layout || !prs || layout->sp_offset + layout->sp_size / 8 > prs->regstate_size || !prs->regstate) {
