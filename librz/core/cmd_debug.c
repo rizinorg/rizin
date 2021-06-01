@@ -223,33 +223,33 @@ static const char *help_msg_dko[] = {
 	NULL
 };
 
-static const char *help_msg_dm[] = {
-	"Usage:", "dm", " # Memory maps commands",
-	"dm", "", "List memory maps of target process",
-	"dm", " address size", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
-	"dm=", "", "List memory maps of target process (ascii-art bars)",
-	"dm.", "", "Show map name of current address",
-	"dm*", "", "List memmaps in rizin commands",
-	"dm-", " address", "Deallocate memory map of <address>",
-	"dmd", "[a] [file]", "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
-	"dmh", "[?]", "Show map of heap",
-	"dmi", " [addr|libname] [symname]", "List symbols of target lib",
-	"dmi*", " [addr|libname] [symname]", "List symbols of target lib in rizin commands",
-	"dmi.", "", "List closest symbol to the current address",
-	"dmiv", "", "Show address of given symbol for given lib",
-	"dmj", "", "List memmaps in JSON format",
-	"dml", " <file>", "Load contents of file into the current map region",
-	"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
-	"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (perm)",
-	"dms", "[?] <id> <mapaddr>", "Take memory snapshot",
-	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
-	"dmS", " [addr|libname] [sectname]", "List sections of target lib",
-	"dmS*", " [addr|libname] [sectname]", "List sections of target lib in rizin commands",
-	"dmL", " address size", "Allocate <size> bytes at <address> and promote to huge page",
-	//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
-	"TODO:", "", "map files in process memory. (dmf file @ [addr])",
-	NULL
-};
+//static const char *help_msg_dm[] = {
+//	"Usage:", "dm", " # Memory maps commands",
+//	"dm", "", "List memory maps of target process",
+//	"dm", " address size", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
+//	"dm=", "", "List memory maps of target process (ascii-art bars)",
+//	"dm.", "", "Show map name of current address",
+//	"dm*", "", "List memmaps in rizin commands",
+//	"dm-", " address", "Deallocate memory map of <address>",
+//	"dmd", "[a] [file]", "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
+//	"dmh", "[?]", "Show map of heap",
+//	"dmi", " [addr|libname] [symname]", "List symbols of target lib",
+//	"dmi*", " [addr|libname] [symname]", "List symbols of target lib in rizin commands",
+//	"dmi.", "", "List closest symbol to the current address",
+//	"dmiv", "", "Show address of given symbol for given lib",
+//	"dmj", "", "List memmaps in JSON format",
+//	"dml", " <file>", "Load contents of file into the current map region",
+//	"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
+//	"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (perm)",
+//	"dms", "[?] <id> <mapaddr>", "Take memory snapshot",
+//	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
+//	"dmS", " [addr|libname] [sectname]", "List sections of target lib",
+//	"dmS*", " [addr|libname] [sectname]", "List sections of target lib in rizin commands",
+//	"dmL", " address size", "Allocate <size> bytes at <address> and promote to huge page",
+//	//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
+//	"TODO:", "", "map files in process memory. (dmf file @ [addr])",
+//	NULL
+//};
 
 static const char *help_msg_dmi[] = {
 	"Usage: dmi", "", " # List/Load Symbols",
@@ -1467,11 +1467,21 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const 
 
 // dmm
 RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
+	if (!strcmp(input[0] + 3, ".*")) {
+		cmd_debug_modules(core, ':');
+	} else {
+		cmd_debug_modules(core, input[0][3]);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmm.
 RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **input) {
+        if (!strcmp(input[0] + 3, ".*")) {
+                cmd_debug_modules(core, ':');
+        } else {
+                cmd_debug_modules(core, input[0][3]);
+        }
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1573,15 +1583,15 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		//	case '.': // "dm."
 		//		rz_debug_map_list(core->dbg, addr, input);
 		//		break;
-	case 'm': // "dmm"
-		if (!strcmp(input + 1, ".*")) {
-			cmd_debug_modules(core, ':');
-		} else
-			cmd_debug_modules(core, input[1]);
-		break;
-		//	case '?': // "dm?"
-		//		rz_core_cmd_help(core, help_msg_dm);
+		//	case 'm': // "dmm"
+		//		if (!strcmp(input + 1, ".*")) {
+		//			cmd_debug_modules(core, ':');
+		//		} else
+		//			cmd_debug_modules(core, input[1]);
 		//		break;
+		//		//	case '?': // "dm?"
+		//		//		rz_core_cmd_help(core, help_msg_dm);
+		//		//		break;
 	case 'p': // "dmp"
 		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_dmp);
