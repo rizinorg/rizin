@@ -313,6 +313,7 @@ RZ_IPI Elf_(Vernaux) Elf_(rz_bin_elf_get_vernaux_entry)(RZ_NONNULL ELFOBJ *bin, 
 RZ_IPI Elf_(Verneed) Elf_(rz_bin_elf_get_verneed_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
 RZ_IPI RZ_BORROW RzBinElfNotePrStatus *Elf_(rz_bin_elf_get_prstatus)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
+RZ_IPI RZ_BORROW const char *Elf_(rz_bin_elf_symbol_bind_to_str)(RZ_NONNULL Elf_(Sym) * sym);
 RZ_IPI RZ_BORROW const char *Elf_(rz_bin_elf_symbol_type_to_str)(ELFOBJ *bin, RzBinElfSymbol *ret, RZ_NONNULL Elf_(Sym) * sym);
 RZ_IPI RZ_OWN RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols_with_type_from_phdr)(RZ_NONNULL ELFOBJ *bin, int type);
 RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info)(RZ_NONNULL ELFOBJ *bin);
