@@ -50,6 +50,19 @@
 #define RZ_BIN_ELF_PART_RELRO 1
 #define RZ_BIN_ELF_FULL_RELRO 2
 
+#define MIPS_PLT_OFFSET  0x20
+#define RISCV_PLT_OFFSET 0x20
+
+#define RISCV_PLT_ENTRY_SIZE 0x10
+#define X86_PLT_ENTRY_SIZE   0x10
+
+#define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
+#define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR   -0x6
+
+#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
+#define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
+	((rel->vaddr - pltgot_addr - n_initial_unused_entries * RZ_BIN_ELF_WORDSIZE) / RZ_BIN_ELF_WORDSIZE)
+
 #define RZ_BIN_ELF_SYMTAB_SYMBOLS 1 << 0
 #define RZ_BIN_ELF_DYNSYM_SYMBOLS 1 << 1
 #define RZ_BIN_ELF_IMPORT_SYMBOLS (1 << 2 | (bin->ehdr.e_type == ET_REL ? RZ_BIN_ELF_SYMTAB_SYMBOLS : RZ_BIN_ELF_DYNSYM_SYMBOLS))
@@ -305,6 +318,7 @@ RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_verdef)(RZ_NONNULL ELFOB
 RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_verneed)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_versym)(RZ_NONNULL ELFOBJ *bin);
 RZ_IPI RZ_OWN char *Elf_(rz_bin_elf_get_ver_flags)(ut32 flags);
+RZ_IPI RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols_with_type)(ELFOBJ *bin, int type);
 RZ_IPI bool Elf_(rz_bin_elf_init_dynamic_section)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_dynstr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_ehdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
@@ -315,6 +329,8 @@ RZ_IPI bool Elf_(rz_bin_elf_init_shstrtab)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_init_strtab)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
 RZ_IPI bool Elf_(rz_bin_elf_is_sh_index_valid)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index);
 RZ_IPI size_t Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin);
+RZ_IPI ut64 Elf_(rz_bin_elf_get_import_addr)(RZ_NONNULL ELFOBJ *bin, int symbol);
+RZ_IPI void Elf_(rz_bin_elf_set_import_by_ord)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
 
 RZ_BORROW RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
