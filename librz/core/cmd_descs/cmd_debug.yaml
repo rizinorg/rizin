@@ -19,66 +19,66 @@ commands:
             cname: cmd_debug_step_until
             summary: Step until <addr>
             args:
-            - name: addr
-              type: RZ_CMD_ARG_TYPE_RZNUM
+              - name: addr
+                type: RZ_CMD_ARG_TYPE_RZNUM
           - name: dsui
             cname: cmd_debug_step_until_instr
             summary: Step until an instruction that matches <instr>
             args:
-            - name: instr
-              type: RZ_CMD_ARG_TYPE_STRING
+              - name: instr
+                type: RZ_CMD_ARG_TYPE_STRING
           - name: dsuir
             cname: cmd_debug_step_until_instr_regex
             summary: Step until an instruction that matches <regex>
             args:
-            - name: regex
-              type: RZ_CMD_ARG_TYPE_STRING
+              - name: regex
+                type: RZ_CMD_ARG_TYPE_STRING
           - name: dsuo
             cname: cmd_debug_step_until_optype
             summary: Step until an instruction matches one of the <optype>s
             args:
-            - name: optype
-              type: RZ_CMD_ARG_TYPE_STRING
-              flags: RZ_CMD_ARG_FLAG_ARRAY
+              - name: optype
+                type: RZ_CMD_ARG_TYPE_STRING
+                flags: RZ_CMD_ARG_FLAG_ARRAY
           - name: dsue
             cname: cmd_debug_step_until_esil
             summary: Step until <esil> expression matches
             args:
-            - name: esil
-              type: RZ_CMD_ARG_TYPE_STRING
+              - name: esil
+                type: RZ_CMD_ARG_TYPE_STRING
           - name: dsuf
             cname: cmd_debug_step_until_flag
             summary: Step until pc == <flag> matching name
             args:
-            - name: flag
-              type: RZ_CMD_ARG_TYPE_FLAG
+              - name: flag
+                type: RZ_CMD_ARG_TYPE_FLAG
   - name: dts
     summary: Debug trace session commands
     subcommands:
-    - name: dts+
-      summary: Start trace session
-      cname: cmd_debug_start_trace_session
-      args: []
-    - name: dts-
-      summary: Stop trace session
-      cname: cmd_debug_stop_trace_session
-      args: []
-    - name: dtst
-      cname: cmd_debug_save_trace_session
-      summary: Save trace sessions to disk
-      args:
-        - name: dir
-          type: RZ_CMD_ARG_TYPE_FILE
-    - name: dtsf
-      cname: cmd_debug_load_trace_session
-      summary: Load trace sessions to disk
-      args:
-        - name: dir
-          type: RZ_CMD_ARG_TYPE_FILE
-    - name: dtsm
-      cname: cmd_debug_list_trace_session_mmap
-      summary: List current memory map and hash
-      args: []
+      - name: dts+
+        summary: Start trace session
+        cname: cmd_debug_start_trace_session
+        args: [ ]
+      - name: dts-
+        summary: Stop trace session
+        cname: cmd_debug_stop_trace_session
+        args: [ ]
+      - name: dtst
+        cname: cmd_debug_save_trace_session
+        summary: Save trace sessions to disk
+        args:
+          - name: dir
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: dtsf
+        cname: cmd_debug_load_trace_session
+        summary: Load trace sessions to disk
+        args:
+          - name: dir
+            type: RZ_CMD_ARG_TYPE_FILE
+      - name: dtsm
+        cname: cmd_debug_list_trace_session_mmap
+        summary: List current memory map and hash
+        args: [ ]
   - name: dm
     summary: Memory map commands
     subcommands:
@@ -99,11 +99,11 @@ commands:
       - name: dm=
         cname: cmd_debug_list_maps_ascii
         summary: List memory maps of current process with ASCII art bars
-        args: []
+        args: [ ]
       - name: dm.
         cname: cmd_debug_map_current
         summary: Show map name of current address
-        args: []
+        args: [ ]
       - name: dmm
         summary: Module memory map commands
         subcommands:
@@ -114,11 +114,11 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
-            args: []
+            args: [ ]
           - name: dmm.
             cname: cmd_debug_current_modules
             summary: List memory map of current module
-            args: []
+            args: [ ]
       - name: dm-
         summary: Deallocate memory map of <address>
         cname: cmd_debug_deallocate_map
@@ -139,16 +139,16 @@ commands:
           - name: dmda
             cname: cmd_debug_dump_maps_all
             summary: Dump all debug maps
-            args: []
+            args: [ ]
           - name: dmdw
             cname: cmd_debug_dump_maps_writable
             summary: Dump writable debug maps
-            args: []
+            args: [ ]
       - name: dmh
         summary: Show map of heap
         cname: cmd_debug_heap
         type: RZ_CMD_DESC_TYPE_OLDINPUT
-        args: []
+        args: [ ]
       - name: dmi
         summary: List/Load symbols
         cname: cmd_debug_dmi
@@ -173,3 +173,13 @@ commands:
           - name: perms
             type: RZ_CMD_ARG_TYPE_STRING
             optional: false
+      - name: dmL
+        summary: Allocate <size> bytes at <address> and promote to huge page
+        cname: cmd_debug_dmL
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: size
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true

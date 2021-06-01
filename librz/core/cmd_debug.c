@@ -1444,20 +1444,20 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 }
 
 // dm
-RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 1) {
 		char str[5] = "";
 		if (argc == 1) {
-			strcpy(str, input[0] + 2);
+			strcpy(str, argv[0] + 2);
 		}
 		rz_debug_map_sync(core->dbg); // update process memory maps
 		rz_debug_map_list(core->dbg, core->offset, str);
 	} else if (argc == 3) {
 		int size;
 		ut64 addr;
-		addr = rz_num_math(core->num, input[1]);
+		addr = rz_num_math(core->num, argv[1]);
 		// TODO conversion from ut64 to int
-		size = rz_num_math(core->num, input[2]);
+		size = rz_num_math(core->num, argv[2]);
 		rz_debug_map_alloc(core->dbg, addr, size, false);
 	} else {
 		return RZ_CMD_STATUS_WRONG_ARGS;
@@ -1466,30 +1466,30 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const 
 }
 
 // dmm
-RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
-	if (!strcmp(input[0] + 3, ".*")) {
+RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (!strcmp(argv[0] + 3, ".*")) {
 		cmd_debug_modules(core, ':');
 	} else {
-		cmd_debug_modules(core, input[0][3]);
+		cmd_debug_modules(core, argv[0][3]);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmm.
-RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **input) {
-	if (!strcmp(input[0] + 3, ".*")) {
+RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **argv) {
+	if (!strcmp(argv[0] + 3, ".*")) {
 		cmd_debug_modules(core, ':');
 	} else {
-		cmd_debug_modules(core, input[0][3]);
+		cmd_debug_modules(core, argv[0][3]);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 // dm-
-RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, const char **input) {
+RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, const char **argv) {
 	RzListIter *iter;
 	RzDebugMap *map;
-	ut64 addr = rz_num_math(core->num, input[1]);
+	ut64 addr = rz_num_math(core->num, argv[1]);
 	rz_list_foreach (core->dbg->maps, iter, map) {
 		if (addr >= map->addr && addr < map->addr_end) {
 			rz_debug_map_dealloc(core->dbg, map);
@@ -1502,24 +1502,24 @@ RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, c
 }
 
 // dm=
-RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, const char **input) {
+RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, const char **argv) {
 	rz_debug_map_sync(core->dbg);
-	rz_debug_map_list_visual(core->dbg, core->offset, input[0] + 2,
+	rz_debug_map_list_visual(core->dbg, core->offset, argv[0] + 2,
 		rz_config_get_i(core->config, "scr.color"));
 	return RZ_CMD_STATUS_OK;
 }
 
 // dm.
-RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, const char **input) {
+RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = core->offset;
 	rz_debug_map_list(core->dbg, addr, ".");
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmd
-RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const char **input) {
+RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 2) {
-		dump_maps(core, -1, input[1]);
+		dump_maps(core, -1, argv[1]);
 	} else if (argc == 1) {
 		dump_maps(core, -1, NULL);
 	}
@@ -1527,13 +1527,13 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const 
 }
 
 // dmda
-RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_all_handler(RzCore *core, int argc, const char **input) {
+RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_all_handler(RzCore *core, int argc, const char **argv) {
 	dump_maps(core, 0, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmdw
-RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int argc, const char **input) {
+RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int argc, const char **argv) {
 	dump_maps(core, RZ_PERM_RW, NULL);
 	return RZ_CMD_STATUS_OK;
 }
@@ -1696,12 +1696,12 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 }
 
 // dmp
-RZ_IPI RzCmdStatus rz_cmd_debug_dmp_handler(RzCore *core, int argc, const char **input) {
+RZ_IPI RzCmdStatus rz_cmd_debug_dmp_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
 // dml
-RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char **input) {
+RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char **argv) {
 	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr = core->offset;
@@ -1709,7 +1709,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char *
 	rz_list_foreach (core->dbg->maps, iter, map) {
 		if (addr >= map->addr && addr < map->addr_end) {
 			size_t sz;
-			char *buf = rz_file_slurp(input[1], &sz);
+			char *buf = rz_file_slurp(argv[1], &sz);
 			//TODO: use mmap here. we need a portable implementation
 			if (!buf) {
 				eprintf("Cannot allocate 0x%08" PFMT64x " byte(s)\n", map->size);
@@ -1727,6 +1727,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char *
 	}
 	eprintf("No debug region found here\n");
 	return RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char **argv) {
+        return RZ_CMD_STATUS_OK;
 }
 
 static int cmd_debug_map(RzCore *core, const char *input) {
@@ -1920,20 +1924,20 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		//		}
 		//		eprintf("The address doesn't match with any map.\n");
 		//		break;
-		//	case 'L': // "dmL"
-		//	{
-		//		int size;
-		//		char *p = strchr(input + 2, ' ');
-		//		if (p) {
-		//			*p++ = 0;
-		//			addr = rz_num_math(core->num, input + 1);
-		//			size = rz_num_math(core->num, p);
-		//			rz_debug_map_alloc(core->dbg, addr, size, true);
-		//		} else {
-		//			eprintf("Usage: dmL addr size\n");
-		//			return false;
-		//		}
-		//	} break;
+	case 'L': // "dmL"
+	{
+		int size;
+		char *p = strchr(input + 2, ' ');
+		if (p) {
+			*p++ = 0;
+			addr = rz_num_math(core->num, input + 1);
+			size = rz_num_math(core->num, p);
+			rz_debug_map_alloc(core->dbg, addr, size, true);
+		} else {
+			eprintf("Usage: dmL addr size\n");
+			return false;
+		}
+	} break;
 		//	case '\0': // "dm"
 		//	case '*': // "dm*"
 		//	case 'j': // "dmj"
