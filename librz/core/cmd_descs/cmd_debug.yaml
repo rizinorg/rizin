@@ -79,3 +79,128 @@ commands:
       cname: cmd_debug_list_trace_session_mmap
       summary: List current memory map and hash
       args: []
+  - name: dm
+    summary: Memory map commands
+    subcommands:
+      - name: dm
+        cname: cmd_debug_list_maps
+        summary: List memory maps / Allocate <size> bytes at <address> (anywhere if address is -1) in child process
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: size
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dm=
+        cname: cmd_debug_list_maps_ascii
+        summary: List memory maps of current process with ASCII art bars
+        args: []
+      - name: dm.
+        cname: cmd_debug_map_current
+        summary: Show map name of current address
+        args: []
+      - name: dmm
+        summary: Module memory map commands
+        subcommands:
+          - name: dmm
+            summary: List modules of target process
+            cname: cmd_debug_modules
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+            args: []
+          - name: dmm.
+            cname: cmd_debug_current_modules
+            summary: List memory map of current module
+            args: []
+      - name: dm-
+        summary: Deallocate memory map of <address>
+        cname: cmd_debug_deallocate_map
+        args:
+          - name: address
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: false
+      - name: dmd
+        summary: Dump current (all) debug map region to a file (from-to.dmp) (see Sd)
+        subcommands:
+          - name: dmd
+            summary: Dump debug maps
+            cname: cmd_debug_dump_maps
+            args:
+              - name: filename
+                type: RZ_CMD_ARG_TYPE_FILE
+                optional: true
+          - name: dmda
+            cname: cmd_debug_dump_maps_all
+            summary: Dump all debug maps
+            args: []
+          - name: dmdw
+            cname: cmd_debug_dump_maps_writable
+            summary: Dump writable debug maps
+            args: []
+      - name: dmh
+        summary: Show map of heap
+        cname: cmd_debug_heap
+        args: []
+      - name: dmi
+        summary: List/Load symbols
+        subcommands:
+          - name: dmi
+            summary: List symbols of target lib
+            cname: cmd_debug_list_symbols
+            modes:
+             - RZ_OUTPUT_MODE_STANDARD
+             - RZ_OUTPUT_MODE_RIZIN
+             - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: libname
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+              - name: symname
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: dmia
+            summary: List all info of target lib
+            cname: cmd_debug_list_all_info
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
+              - RZ_OUTPUT_MODE_JSON
+            args:
+              - name: libname
+                type: RZ_CMD_ARG_TYPE_STRING
+                optional: true
+          - name: dmi.
+            summary: List closest symbol to current address
+            cname: cmd_debug_list_closest_symbol
+            args: []
+          - name: dmiv
+            summary: Show address of given symbol for given lib
+            cname: cmd_debug_dmiv
+            args: []
+      - name: dml
+        summary: Load contents of file into current map region
+        cname: cmd_debug_dml
+        args:
+          - name: file
+            type: RZ_CMD_ARG_TYPE_FILE
+            optional: false
+      - name: dmp
+        summary: Change page at <address> with <size>, protection <perms> (perm) / Change dbg.map permissions
+        cname: cmd_debug_dmp
+        args:
+          - name: addr
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: size
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: perms
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false

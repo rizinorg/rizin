@@ -1443,6 +1443,86 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 	return true;
 }
 
+// dm
+RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
+	return RZ_CMD_STATUS_OK;
+}
+
+// dmm
+RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
+	return RZ_CMD_STATUS_OK;
+}
+
+// dmm.
+RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dm-
+RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dm=
+RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dm.
+RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dmd
+RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dmda
+RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_all_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dmdw
+RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dmh
+RZ_IPI RzCmdStatus rz_cmd_debug_heap_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dmi
+RZ_IPI RzCmdStatus rz_cmd_debug_list_symbols_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dmia
+RZ_IPI RzCmdStatus rz_cmd_debug_list_all_info_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dmi.
+RZ_IPI RzCmdStatus rz_cmd_debug_list_closest_symbol_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dmiv
+RZ_IPI RzCmdStatus rz_cmd_debug_dmiv_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dmp
+RZ_IPI RzCmdStatus rz_cmd_debug_dmp_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
+// dml
+RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char **input) {
+        return RZ_CMD_STATUS_OK;
+}
+
 static int cmd_debug_map(RzCore *core, const char *input) {
 	RzListIter *iter;
 	RzDebugMap *map;

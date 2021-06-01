@@ -93,6 +93,13 @@ static const RzCmdDescArg cmd_debug_step_until_esil_args[2];
 static const RzCmdDescArg cmd_debug_step_until_flag_args[2];
 static const RzCmdDescArg cmd_debug_save_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
+static const RzCmdDescArg cmd_debug_list_maps_args[3];
+static const RzCmdDescArg cmd_debug_deallocate_map_args[2];
+static const RzCmdDescArg cmd_debug_dump_maps_args[2];
+static const RzCmdDescArg cmd_debug_list_symbols_args[3];
+static const RzCmdDescArg cmd_debug_list_all_info_args[2];
+static const RzCmdDescArg cmd_debug_dml_args[2];
+static const RzCmdDescArg cmd_debug_dmp_args[4];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -1582,6 +1589,217 @@ static const RzCmdDescArg cmd_debug_list_trace_session_mmap_args[] = {
 static const RzCmdDescHelp cmd_debug_list_trace_session_mmap_help = {
 	.summary = "List current memory map and hash",
 	.args = cmd_debug_list_trace_session_mmap_args,
+};
+
+static const RzCmdDescHelp dm_help = {
+	.summary = "Memory map commands",
+};
+static const RzCmdDescArg cmd_debug_list_maps_args[] = {
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_maps_help = {
+	.summary = "List memory maps / Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
+	.args = cmd_debug_list_maps_args,
+};
+
+static const RzCmdDescArg cmd_debug_list_maps_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_maps_ascii_help = {
+	.summary = "List memory maps of current process with ASCII art bars",
+	.args = cmd_debug_list_maps_ascii_args,
+};
+
+static const RzCmdDescArg cmd_debug_map_current_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_map_current_help = {
+	.summary = "Show map name of current address",
+	.args = cmd_debug_map_current_args,
+};
+
+static const RzCmdDescHelp dmm_help = {
+	.summary = "Module memory map commands",
+};
+static const RzCmdDescArg cmd_debug_modules_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_modules_help = {
+	.summary = "List modules of target process",
+	.args = cmd_debug_modules_args,
+};
+
+static const RzCmdDescArg cmd_debug_current_modules_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_current_modules_help = {
+	.summary = "List memory map of current module",
+	.args = cmd_debug_current_modules_args,
+};
+
+static const RzCmdDescArg cmd_debug_deallocate_map_args[] = {
+	{
+		.name = "address",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_deallocate_map_help = {
+	.summary = "Deallocate memory map of <address>",
+	.args = cmd_debug_deallocate_map_args,
+};
+
+static const RzCmdDescHelp dmd_help = {
+	.summary = "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
+};
+static const RzCmdDescArg cmd_debug_dump_maps_args[] = {
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dump_maps_help = {
+	.summary = "Dump debug maps",
+	.args = cmd_debug_dump_maps_args,
+};
+
+static const RzCmdDescArg cmd_debug_dump_maps_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dump_maps_all_help = {
+	.summary = "Dump all debug maps",
+	.args = cmd_debug_dump_maps_all_args,
+};
+
+static const RzCmdDescArg cmd_debug_dump_maps_writable_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dump_maps_writable_help = {
+	.summary = "Dump writable debug maps",
+	.args = cmd_debug_dump_maps_writable_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_help = {
+	.summary = "Show map of heap",
+	.args = cmd_debug_heap_args,
+};
+
+static const RzCmdDescHelp dmi_help = {
+	.summary = "List/Load symbols",
+};
+static const RzCmdDescArg cmd_debug_list_symbols_args[] = {
+	{
+		.name = "libname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{
+		.name = "symname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_symbols_help = {
+	.summary = "List symbols of target lib",
+	.args = cmd_debug_list_symbols_args,
+};
+
+static const RzCmdDescArg cmd_debug_list_all_info_args[] = {
+	{
+		.name = "libname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_all_info_help = {
+	.summary = "List all info of target lib",
+	.args = cmd_debug_list_all_info_args,
+};
+
+static const RzCmdDescArg cmd_debug_list_closest_symbol_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_closest_symbol_help = {
+	.summary = "List closest symbol to current address",
+	.args = cmd_debug_list_closest_symbol_args,
+};
+
+static const RzCmdDescArg cmd_debug_dmiv_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dmiv_help = {
+	.summary = "Show address of given symbol for given lib",
+	.args = cmd_debug_dmiv_args,
+};
+
+static const RzCmdDescArg cmd_debug_dml_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dml_help = {
+	.summary = "Load contents of file into current map region",
+	.args = cmd_debug_dml_args,
+};
+
+static const RzCmdDescArg cmd_debug_dmp_args[] = {
+	{
+		.name = "addr",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "perms",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dmp_help = {
+	.summary = "Change page at <address> with <size>, protection <perms> (perm) / Change dbg.map permissions",
+	.args = cmd_debug_dmp_args,
 };
 
 static const RzCmdDescHelp e_help = {
@@ -4499,6 +4717,50 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_list_trace_session_mmap_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtsm", rz_cmd_debug_list_trace_session_mmap_handler, &cmd_debug_list_trace_session_mmap_help);
 	rz_warn_if_fail(cmd_debug_list_trace_session_mmap_cd);
+
+	RzCmdDesc *dm_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_debug_cd, "dm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_list_maps_handler, &cmd_debug_list_maps_help, &dm_help);
+	rz_warn_if_fail(dm_cd);
+	RzCmdDesc *cmd_debug_list_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm=", rz_cmd_debug_list_maps_ascii_handler, &cmd_debug_list_maps_ascii_help);
+	rz_warn_if_fail(cmd_debug_list_maps_ascii_cd);
+
+	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm.", rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
+	rz_warn_if_fail(cmd_debug_map_current_cd);
+
+	RzCmdDesc *dmm_cd = rz_cmd_desc_group_modes_new(core->rcmd, dm_cd, "dmm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_modules_handler, &cmd_debug_modules_help, &dmm_help);
+	rz_warn_if_fail(dmm_cd);
+	RzCmdDesc *cmd_debug_current_modules_cd = rz_cmd_desc_argv_new(core->rcmd, dmm_cd, "dmm.", rz_cmd_debug_current_modules_handler, &cmd_debug_current_modules_help);
+	rz_warn_if_fail(cmd_debug_current_modules_cd);
+
+	RzCmdDesc *cmd_debug_deallocate_map_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm-", rz_cmd_debug_deallocate_map_handler, &cmd_debug_deallocate_map_help);
+	rz_warn_if_fail(cmd_debug_deallocate_map_cd);
+
+	RzCmdDesc *dmd_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmd", rz_cmd_debug_dump_maps_handler, &cmd_debug_dump_maps_help, &dmd_help);
+	rz_warn_if_fail(dmd_cd);
+	RzCmdDesc *cmd_debug_dump_maps_all_cd = rz_cmd_desc_argv_new(core->rcmd, dmd_cd, "dmda", rz_cmd_debug_dump_maps_all_handler, &cmd_debug_dump_maps_all_help);
+	rz_warn_if_fail(cmd_debug_dump_maps_all_cd);
+
+	RzCmdDesc *cmd_debug_dump_maps_writable_cd = rz_cmd_desc_argv_new(core->rcmd, dmd_cd, "dmdw", rz_cmd_debug_dump_maps_writable_handler, &cmd_debug_dump_maps_writable_help);
+	rz_warn_if_fail(cmd_debug_dump_maps_writable_cd);
+
+	RzCmdDesc *cmd_debug_heap_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmh", rz_cmd_debug_heap_handler, &cmd_debug_heap_help);
+	rz_warn_if_fail(cmd_debug_heap_cd);
+
+	RzCmdDesc *dmi_cd = rz_cmd_desc_group_modes_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_list_symbols_handler, &cmd_debug_list_symbols_help, &dmi_help);
+	rz_warn_if_fail(dmi_cd);
+	RzCmdDesc *cmd_debug_list_all_info_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmi_cd, "dmia", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_list_all_info_handler, &cmd_debug_list_all_info_help);
+	rz_warn_if_fail(cmd_debug_list_all_info_cd);
+
+	RzCmdDesc *cmd_debug_list_closest_symbol_cd = rz_cmd_desc_argv_new(core->rcmd, dmi_cd, "dmi.", rz_cmd_debug_list_closest_symbol_handler, &cmd_debug_list_closest_symbol_help);
+	rz_warn_if_fail(cmd_debug_list_closest_symbol_cd);
+
+	RzCmdDesc *cmd_debug_dmiv_cd = rz_cmd_desc_argv_new(core->rcmd, dmi_cd, "dmiv", rz_cmd_debug_dmiv_handler, &cmd_debug_dmiv_help);
+	rz_warn_if_fail(cmd_debug_dmiv_cd);
+
+	RzCmdDesc *cmd_debug_dml_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dml", rz_cmd_debug_dml_handler, &cmd_debug_dml_help);
+	rz_warn_if_fail(cmd_debug_dml_cd);
+
+	RzCmdDesc *cmd_debug_dmp_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmp", rz_cmd_debug_dmp_handler, &cmd_debug_dmp_help);
+	rz_warn_if_fail(cmd_debug_dmp_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);
