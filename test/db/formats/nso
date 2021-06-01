@@ -1,6 +1,5 @@
 NAME=nso detection
 FILE=bins/nso/application.nso
-ARGS=-e io.cache=true
 CMDS=iI~?switch
 EXPECT=<<EOF
 1
@@ -9,7 +8,6 @@ RUN
 
 NAME=nso sections
 FILE=bins/nso/application.nso
-ARGS=-e io.cache=true
 CMDS=iS
 EXPECT=<<EOF
 [Sections]
@@ -26,7 +24,6 @@ RUN
 
 NAME=nso maps
 FILE=bins/nso/application.nso
-ARGS=-e io.cache=true
 CMDS=om
 EXPECT=<<EOF
  3 fd: 4 +0x00000000 0x08000000 - 0x08020e17 r-x vmap.text
@@ -37,7 +34,6 @@ RUN
 
 NAME=nso entry
 FILE=bins/nso/application.nso
-ARGS=-e io.cache=true
 CMDS=ie
 EXPECT=<<EOF
 [Entrypoints]
@@ -49,7 +45,6 @@ RUN
 
 NAME=nso data
 FILE=bins/nso/application.nso
-ARGS=-e io.cache=true
 CMDS=<<EOF
 ?e text
 p8 0x30 @ 0x08000080
