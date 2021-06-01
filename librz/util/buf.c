@@ -80,39 +80,45 @@ static ut8 *get_whole_buf(RzBuffer *b, ut64 *sz) {
 	return b->whole_buf;
 }
 
-static RzBuffer *new_buffer(RzBufferType type, const void *user) {
+RZ_API RzBuffer *rz_buf_new_with_methods(RZ_NONNULL const RzBufferMethods *methods, void *init_user) {
 	RzBuffer *b = RZ_NEW0(RzBuffer);
 	if (!b) {
 		return NULL;
 	}
-	switch (type) {
-	case RZ_BUFFER_BYTES:
-		b->methods = &buffer_bytes_methods;
-		break;
-	case RZ_BUFFER_MMAP:
-		b->methods = &buffer_mmap_methods;
-		break;
-	case RZ_BUFFER_SPARSE:
-		b->methods = &buffer_sparse_methods;
-		break;
-	case RZ_BUFFER_FILE:
-		b->methods = &buffer_file_methods;
-		break;
-	case RZ_BUFFER_IO:
-		b->methods = &buffer_io_methods;
-		break;
-	case RZ_BUFFER_REF:
-		b->methods = &buffer_ref_methods;
-		break;
-	default:
-		rz_warn_if_reached();
-		break;
-	}
-	if (!buf_init(b, user)) {
+	b->methods = methods;
+	if (!buf_init(b, init_user)) {
 		free(b);
 		return NULL;
 	}
 	return b;
+}
+
+static RzBuffer *new_buffer(RzBufferType type, void *user) {
+	const RzBufferMethods *methods = NULL;
+	switch (type) {
+	case RZ_BUFFER_BYTES:
+		methods = &buffer_bytes_methods;
+		break;
+	case RZ_BUFFER_MMAP:
+		methods = &buffer_mmap_methods;
+		break;
+	case RZ_BUFFER_SPARSE:
+		methods = &buffer_sparse_methods;
+		break;
+	case RZ_BUFFER_FILE:
+		methods = &buffer_file_methods;
+		break;
+	case RZ_BUFFER_IO:
+		methods = &buffer_io_methods;
+		break;
+	case RZ_BUFFER_REF:
+		methods = &buffer_ref_methods;
+		break;
+	default:
+		rz_warn_if_reached();
+		return NULL;
+	}
+	return rz_buf_new_with_methods(methods, user);
 }
 
 // TODO: Optimize to use memcpy when buffers are not in range..
@@ -153,7 +159,8 @@ RZ_API RzBuffer *rz_buf_new_empty(ut64 len) {
 	return res;
 }
 
-RZ_API RzBuffer *rz_buf_new_with_bytes(const ut8 *bytes, ut64 len) {
+RZ_API RzBuffer *rz_buf_new_with_bytes(RZ_NULLABLE const ut8 *bytes, ut64 len) {
+	rz_return_val_if_fail(bytes || !len, NULL); // if bytes == NULL, then len must be 0
 	struct buf_bytes_user u = { 0 };
 	u.data = bytes;
 	u.length = len;
@@ -195,13 +202,6 @@ RZ_API RzBuffer *rz_buf_new_sparse_overlay(RzBuffer *b, RzBufferSparseWriteMode 
 		.write_mode = write_mode
 	};
 	return new_buffer(RZ_BUFFER_SPARSE, &cfg);
-}
-
-RZ_API RzBuffer *rz_buf_new(void) {
-	struct buf_bytes_user u = { 0 };
-	u.data = NULL;
-	u.length = 0;
-	return new_buffer(RZ_BUFFER_BYTES, &u);
 }
 
 RZ_DEPRECATE RZ_API const ut8 *rz_buf_data(RzBuffer *b, ut64 *size) {

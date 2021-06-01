@@ -712,8 +712,8 @@ static int gprobe_send_request_sp(struct gport *port, RzBuffer *request) {
 }
 
 static int gprobe_read(struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
-	RzBuffer *request = rz_buf_new();
-	RzBuffer *reply = rz_buf_new();
+	RzBuffer *request = rz_buf_new_with_bytes(NULL, 0);
+	RzBuffer *reply = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 cmd = GPROBE_RAM_READ_2;
 	ut8 addr_be[4];
 	ut8 count_be[4];
@@ -758,8 +758,8 @@ fail:
 }
 
 static int gprobe_write(struct gport *port, ut32 addr, const ut8 *buf, ut32 count) {
-	RzBuffer *request = rz_buf_new();
-	RzBuffer *reply = rz_buf_new();
+	RzBuffer *request = rz_buf_new_with_bytes(NULL, 0);
+	RzBuffer *reply = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 cmd = GPROBE_RAM_WRITE_2;
 	ut8 addr_be[4];
 	ut8 count_be[4];
@@ -804,8 +804,8 @@ static int gprobe_reset(struct gport *port, ut8 code) {
 	if (!port) {
 		return -1;
 	}
-	RzBuffer *request = rz_buf_new();
-	RzBuffer *reply = rz_buf_new();
+	RzBuffer *request = rz_buf_new_with_bytes(NULL, 0);
+	RzBuffer *reply = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 cmd = GPROBE_RESET;
 
 	if (!request || !reply) {
@@ -842,8 +842,8 @@ static int gprobe_debugon(struct gport *port) {
 	if (!port) {
 		return -1;
 	}
-	RzBuffer *request = rz_buf_new();
-	RzBuffer *reply = rz_buf_new();
+	RzBuffer *request = rz_buf_new_with_bytes(NULL, 0);
+	RzBuffer *reply = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 cmd = GPROBE_DEBUGON;
 
 	if (!request || !reply) {
@@ -873,8 +873,8 @@ fail:
 }
 
 static int gprobe_debugoff(struct gport *port) {
-	RzBuffer *request = rz_buf_new();
-	RzBuffer *reply = rz_buf_new();
+	RzBuffer *request = rz_buf_new_with_bytes(NULL, 0);
+	RzBuffer *reply = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 cmd = GPROBE_DEBUGOFF;
 
 	if (!request || !reply) {
@@ -901,8 +901,8 @@ static int gprobe_runcode(struct gport *port, ut32 addr) {
 	if (!port) {
 		return -1;
 	}
-	RzBuffer *request = rz_buf_new();
-	RzBuffer *reply = rz_buf_new();
+	RzBuffer *request = rz_buf_new_with_bytes(NULL, 0);
+	RzBuffer *reply = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 cmd = GPROBE_RUN_CODE_2;
 	ut8 addr_be[4];
 
@@ -940,8 +940,8 @@ static int gprobe_getdeviceid(struct gport *port, ut8 index) {
 	if (!port) {
 		return -1;
 	}
-	RzBuffer *request = rz_buf_new();
-	RzBuffer *reply = rz_buf_new();
+	RzBuffer *request = rz_buf_new_with_bytes(NULL, 0);
+	RzBuffer *reply = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 cmd = GPROBE_GET_DEVICE_ID;
 
 	if (!request || !reply) {
@@ -982,8 +982,8 @@ static int gprobe_getinformation(struct gport *port) {
 	if (!port) {
 		return -1;
 	}
-	RzBuffer *request = rz_buf_new();
-	RzBuffer *reply = rz_buf_new();
+	RzBuffer *request = rz_buf_new_with_bytes(NULL, 0);
+	RzBuffer *reply = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 cmd = GPROBE_GET_INFORMATION;
 	const ut8 index = 0;
 

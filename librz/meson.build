@@ -187,7 +187,6 @@ bin_ldr_plugins = [
 ]
 
 bin_xtr_plugins = [
-  'xtr_dyldcache',
   'xtr_fatmach0',
   'xtr_sep64',
 ]
@@ -255,6 +254,7 @@ io_plugins = [
   'gzip',
   'http',
   'ihex',
+  'srec',
   'mach',
   'malloc',
   'null',

@@ -50,7 +50,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	ut64 filesize, code_va, code_pa, phoff;
 	ut16 ehdrsz, phdrsz;
 	ut64 baddr = 0x400000LL;
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 
 #define B(x, y)    rz_buf_append_bytes(buf, (const ut8 *)(x), y)
 #define Q(x)       rz_buf_append_ut64(buf, x)

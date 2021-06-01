@@ -93,10 +93,12 @@ const static RzMsgDigestPlugin *msg_digest_plugins[] = {
 };
 
 RZ_API ut32 rz_hash_xxhash(const ut8 *input, size_t size) {
+	rz_return_val_if_fail(input, 0);
 	return XXH32(input, size, 0);
 }
 
 RZ_API double rz_hash_entropy(const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
 	const RzMsgDigestPlugin *plugin = &rz_msg_digest_plugin_entropy;
 	ut8 *digest = NULL;
 	if (!plugin->small_block(data, len, &digest, NULL)) {
@@ -109,6 +111,7 @@ RZ_API double rz_hash_entropy(const ut8 *data, ut64 len) {
 }
 
 RZ_API double rz_hash_entropy_fraction(const ut8 *data, ut64 len) {
+	rz_return_val_if_fail(data, 0.0);
 	const RzMsgDigestPlugin *plugin = &rz_msg_digest_plugin_entropy_fract;
 	ut8 *digest = NULL;
 	if (!plugin->small_block(data, len, &digest, NULL)) {

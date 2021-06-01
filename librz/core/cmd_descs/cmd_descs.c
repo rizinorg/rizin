@@ -106,6 +106,8 @@ static const RzCmdDescArg plugins_load_args[2];
 static const RzCmdDescArg plugins_unload_args[2];
 static const RzCmdDescArg plugins_debug_print_args[2];
 static const RzCmdDescArg plugins_io_print_args[2];
+static const RzCmdDescArg cmd_print_gadget_add_args[6];
+static const RzCmdDescArg cmd_print_gadget_move_args[6];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -1551,8 +1553,7 @@ static const RzCmdDescHelp cmd_debug_stop_trace_session_help = {
 static const RzCmdDescArg cmd_debug_save_trace_session_args[] = {
 	{
 		.name = "dir",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_FILE,
 
 	},
 	{ 0 },
@@ -1565,8 +1566,7 @@ static const RzCmdDescHelp cmd_debug_save_trace_session_help = {
 static const RzCmdDescArg cmd_debug_load_trace_session_args[] = {
 	{
 		.name = "dir",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_FILE,
 
 	},
 	{ 0 },
@@ -1922,6 +1922,96 @@ static const RzCmdDescHelp cmd_open_help = {
 
 static const RzCmdDescHelp cmd_print_help = {
 	.summary = "Print commands",
+};
+static const RzCmdDescHelp cmd_print_gadget_help = {
+	.summary = "Print gadgets",
+};
+static const RzCmdDescArg cmd_print_gadget_add_args[] = {
+	{
+		.name = "x",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "y",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "w",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "h",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+		.optional = true,
+
+	},
+	{
+		.name = "cmd",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_gadget_add_help = {
+	.summary = "Add a new gadget / Print all existing gadgets",
+	.args = cmd_print_gadget_add_args,
+};
+
+static const RzCmdDescArg cmd_print_gadget_print_as_rizin_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_gadget_print_as_rizin_help = {
+	.summary = "Print all gadgets as Rizin commands",
+	.args = cmd_print_gadget_print_as_rizin_args,
+};
+
+static const RzCmdDescArg cmd_print_gadget_remove_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_gadget_remove_help = {
+	.summary = "Remove all gadgets",
+	.args = cmd_print_gadget_remove_args,
+};
+
+static const RzCmdDescArg cmd_print_gadget_move_args[] = {
+	{
+		.name = "n",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "x",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "y",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "w",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{
+		.name = "h",
+		.type = RZ_CMD_ARG_TYPE_NUM,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_gadget_move_help = {
+	.summary = "Move the position of the n-th gadget",
+	.args = cmd_print_gadget_move_args,
 };
 
 static const RzCmdDescHelp P_help = {
@@ -4494,6 +4584,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail(cmd_print_cd);
+	RzCmdDesc *cmd_print_gadget_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pg", rz_cmd_print_gadget_add_handler, &cmd_print_gadget_add_help, &cmd_print_gadget_help);
+	rz_warn_if_fail(cmd_print_gadget_cd);
+	RzCmdDesc *cmd_print_gadget_print_as_rizin_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pg*", rz_cmd_print_gadget_print_as_rizin_handler, &cmd_print_gadget_print_as_rizin_help);
+	rz_warn_if_fail(cmd_print_gadget_print_as_rizin_cd);
+
+	RzCmdDesc *cmd_print_gadget_remove_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pg-*", rz_cmd_print_gadget_remove_handler, &cmd_print_gadget_remove_help);
+	rz_warn_if_fail(cmd_print_gadget_remove_cd);
+
+	RzCmdDesc *cmd_print_gadget_move_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pgm", rz_cmd_print_gadget_move_handler, &cmd_print_gadget_move_help);
+	rz_warn_if_fail(cmd_print_gadget_move_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);
