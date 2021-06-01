@@ -792,57 +792,18 @@ SNoVal;
 
 RZ_PACKED(
 	typedef struct {
-		char value;
-		SCString name;
+		ut16 type_index;
+		void *data;
+		bool is_integer;
 	})
-SVal_LF_CHAR;
-
-RZ_PACKED(
-	typedef struct {
-		st16 value;
-		SCString name;
-	})
-SVal_LF_SHORT;
-
-RZ_PACKED(
-	typedef struct {
-		ut16 value;
-		SCString name;
-	})
-SVal_LF_USHORT;
-
-typedef struct {
-	st32 value;
-	SCString name;
-} SVal_LF_LONG;
-
-typedef struct {
-	ut32 value;
-	SCString name;
-} SVal_LF_ULONG;
-
-typedef struct {
-	st64 value;
-	SCString name;
-} SVal_LF_QUADWORD;
-
-typedef struct {
-	ut64 value;
-	SCString name;
-} SVal_LF_UQUADWORD;
-
-RZ_PACKED(
-	typedef struct {
-		ut16 value_or_type;
-		void *name_or_val;
-	})
-SVal;
+SNumeric;
 
 RZ_PACKED(
 	typedef struct {
 		ut32 element_type;
 		ut32 index_type;
-		SVal size;
+		SNumeric size;
+		SCString name;
 		ut8 pad;
 	})
 SLF_ARRAY;
@@ -854,7 +815,8 @@ RZ_PACKED(
 		ut32 field_list; // type index of LF_FIELD descriptor list
 		ut32 derived; // type index of derived from list if not zero
 		ut32 vshape; // type index of vshape table for this class
-		SVal size;
+		SNumeric size;
+		SCString name;
 		ut8 pad;
 	})
 SLF_STRUCTURE,
@@ -868,7 +830,8 @@ RZ_PACKED(
 		ut32 derived; // type index of derived from list if not zero
 		ut32 vshape; // type index of vshape table for this class
 		st16 unknown1;
-		SVal size;
+		SNumeric size;
+		SCString name;
 		ut8 pad;
 	})
 SLF_STRUCTURE_19,
@@ -879,7 +842,8 @@ RZ_PACKED(
 		ut16 count;
 		UCV_PROPERTY prop;
 		ut32 field_list;
-		SVal size;
+		SNumeric size;
+		SCString name;
 		ut32 pad;
 	})
 SLF_UNION;
@@ -915,7 +879,8 @@ SLF_ENUM;
 RZ_PACKED(
 	typedef struct {
 		UCV_fldattr fldattr;
-		SVal enum_value;
+		SNumeric enum_value;
+		SCString name;
 		ut8 pad;
 
 		free_func free_;
@@ -947,7 +912,8 @@ RZ_PACKED(
 	typedef struct {
 		UCV_fldattr fldattr;
 		ut32 index;
-		SVal offset;
+		SNumeric offset;
+		SCString name;
 		ut8 pad;
 
 		// TODO: remove free_
@@ -970,6 +936,15 @@ RZ_PACKED(
 		ut8 pad;
 	})
 SLF_ONEMETHOD;
+
+RZ_PACKED(
+	typedef struct {
+		UCV_fldattr fldattr;
+		ut32 index;
+		ut16 offset;
+		ut8 pad;
+	})
+SLF_BCLASS;
 
 typedef struct {
 	//	ELeafType leaf_type;
