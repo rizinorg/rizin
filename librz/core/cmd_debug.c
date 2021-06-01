@@ -270,12 +270,12 @@ static const char *help_msg_dmm[] = {
 	NULL
 };
 
-static const char *help_msg_dmp[] = {
-	"Usage:", "dmp", " Change page permissions",
-	"dmp", " [addr] [size] [perms]", "Change permissions",
-	"dmp", " [perms]", "Change dbg.map permissions",
-	NULL
-};
+//static const char *help_msg_dmp[] = {
+//	"Usage:", "dmp", " Change page permissions",
+//	"dmp", " [addr] [size] [perms]", "Change permissions",
+//	"dmp", " [perms]", "Change dbg.map permissions",
+//	NULL
+//};
 
 static const char *help_msg_do[] = {
 	"Usage:", "do", " # Debug (re)open commands",
@@ -1696,9 +1696,105 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 
 // dmp
 RZ_IPI RzCmdStatus rz_cmd_debug_dmp_handler(RzCore *core, int argc, const char **argv) {
-	return RZ_CMD_STATUS_OK;
+	RzListIter *iter;
+	RzDebugMap *map;
+	ut64 addr = 0, size = 0;
+	int perms;
+	if (argc == 4) { // dmp <addr> <size> <perms>
+		addr = rz_num_math(core->num, argv[1]);
+		size = rz_num_math(core->num, argv[2]);
+		perms = rz_str_rwx(argv[3]);
+		//	eprintf ("(%s)(%s)(%s)\n", input + 2, p, q);
+		//	eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
+		rz_debug_map_protect(core->dbg, addr, (int)size, perms);
+		return RZ_CMD_STATUS_OK;
+	} else if (argc == 2) { // dmp <perms>
+		addr = UT64_MAX;
+		rz_list_foreach (core->dbg->maps, iter, map) {
+			if (core->offset >= map->addr && core->offset < map->addr_end) {
+				addr = map->addr;
+				size = map->size;
+				break;
+			}
+		}
+		perms = rz_str_rwx(argv[1]);
+		if (addr != UT64_MAX && perms >= 0) {
+			rz_debug_map_protect(core->dbg, addr, (int)size, perms);
+			return RZ_CMD_STATUS_OK;
+		} else {
+			return RZ_CMD_STATUS_WRONG_ARGS;
+		}
+	} else {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
 }
 
+RZ_IPI int rz_cmd_debug_dmS(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	RzListIter *iter;
+	RzDebugMap *map;
+	ut64 addr;
+	const char *libname = NULL, *sectname = NULL, *mode = "";
+	ut64 baddr = 0LL;
+	char *ptr;
+	int i;
+
+	if (input[0] == '*') {
+		ptr = strdup(rz_str_trim_head_ro((char *)input + 1));
+		mode = "-r ";
+	} else {
+		ptr = strdup(rz_str_trim_head_ro((char *)input));
+	}
+	i = rz_str_word_set0(ptr);
+
+	addr = UT64_MAX;
+	switch (i) {
+	case 2: // get section name
+		sectname = rz_str_word_get0(ptr, 1);
+		/* fallthrou */
+	case 1: // get addr|libname
+		if (IS_DIGIT(*ptr)) {
+			const char *a0 = rz_str_word_get0(ptr, 0);
+			addr = rz_num_math(core->num, a0);
+		} else {
+			addr = UT64_MAX;
+		}
+		if (!addr || addr == UT64_MAX) {
+			libname = rz_str_word_get0(ptr, 0);
+		}
+		break;
+	}
+	rz_debug_map_sync(core->dbg); // update process memory maps
+	RzList *list = rz_debug_modules_list(core->dbg);
+	rz_list_foreach (list, iter, map) {
+		if ((!libname ||
+			    (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) ||
+			    (libname != NULL && (strstr(map->name, libname))))) {
+			baddr = map->addr;
+			char *res;
+			const char *file = map->file ? map->file : map->name;
+			char *name = rz_str_escape((char *)rz_file_basename(file));
+			char *filesc = rz_str_escape(file);
+			/* TODO: do not spawn. use RzBin API */
+			if (sectname) {
+				char *sect = rz_str_escape(sectname);
+				res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect);
+				free(sect);
+			} else {
+				res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\"", name, mode, baddr, filesc);
+			}
+			free(filesc);
+			rz_cons_println(res);
+			free(name);
+			free(res);
+			if (libname || addr != UT64_MAX) { //only single match requested
+				break;
+			}
+		}
+	}
+	free(ptr);
+	return RZ_CMD_STATUS_OK;
+}
 // dml
 RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char **argv) {
 	RzListIter *iter;
@@ -1739,9 +1835,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 }
 
 static int cmd_debug_map(RzCore *core, const char *input) {
-	RzListIter *iter;
-	RzDebugMap *map;
-	ut64 addr = core->offset;
+	//	RzListIter *iter;
+	//	RzDebugMap *map;
+	//	ut64 addr = core->offset;
 
 	switch (input[0]) {
 		//	case '.': // "dm."
@@ -1756,48 +1852,48 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		//		//	case '?': // "dm?"
 		//		//		rz_core_cmd_help(core, help_msg_dm);
 		//		//		break;
-	case 'p': // "dmp"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_dmp);
-		} else if (input[1] == ' ') {
-			int perms;
-			char *p, *q;
-			ut64 size = 0, addr;
-			p = strchr(input + 2, ' ');
-			if (p) {
-				*p++ = 0;
-				q = strchr(p, ' ');
-				if (q) {
-					*q++ = 0;
-					addr = rz_num_math(core->num, input + 2);
-					size = rz_num_math(core->num, p);
-					perms = rz_str_rwx(q);
-					//	eprintf ("(%s)(%s)(%s)\n", input + 2, p, q);
-					//	eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
-					rz_debug_map_protect(core->dbg, addr, size, perms);
-				} else
-					eprintf("See dmp?\n");
-			} else {
-				rz_debug_map_sync(core->dbg); // update process memory maps
-				addr = UT64_MAX;
-				rz_list_foreach (core->dbg->maps, iter, map) {
-					if (core->offset >= map->addr && core->offset < map->addr_end) {
-						addr = map->addr;
-						size = map->size;
-						break;
-					}
-				}
-				perms = rz_str_rwx(input + 2);
-				if (addr != UT64_MAX && perms >= 0) {
-					rz_debug_map_protect(core->dbg, addr, size, perms);
-				} else {
-					eprintf("See dmp?\n");
-				}
-			}
-		} else {
-			eprintf("See dmp?\n");
-		}
-		break;
+		//	case 'p': // "dmp"
+		//		if (input[1] == '?') {
+		//			rz_core_cmd_help(core, help_msg_dmp);
+		//		} else if (input[1] == ' ') {
+		//			int perms;
+		//			char *p, *q;
+		//			ut64 size = 0, addr;
+		//			p = strchr(input + 2, ' ');
+		//			if (p) {
+		//				*p++ = 0;
+		//				q = strchr(p, ' ');
+		//				if (q) {
+		//					*q++ = 0;
+		//					addr = rz_num_math(core->num, input + 2);
+		//					size = rz_num_math(core->num, p);
+		//					perms = rz_str_rwx(q);
+		//					//	eprintf ("(%s)(%s)(%s)\n", input + 2, p, q);
+		//					//	eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
+		//					rz_debug_map_protect(core->dbg, addr, size, perms);
+		//				} else
+		//					eprintf("See dmp?\n");
+		//			} else {
+		//				rz_debug_map_sync(core->dbg); // update process memory maps
+		//				addr = UT64_MAX;
+		//				rz_list_foreach (core->dbg->maps, iter, map) {
+		//					if (core->offset >= map->addr && core->offset < map->addr_end) {
+		//						addr = map->addr;
+		//						size = map->size;
+		//						break;
+		//					}
+		//				}
+		//				perms = rz_str_rwx(input + 2);
+		//				if (addr != UT64_MAX && perms >= 0) {
+		//					rz_debug_map_protect(core->dbg, addr, size, perms);
+		//				} else {
+		//					eprintf("See dmp?\n");
+		//				}
+		//			}
+		//		} else {
+		//			eprintf("See dmp?\n");
+		//		}
+		//		break;
 		//	case 'd': // "dmd"
 		//		switch (input[1]) {
 		//		case 'a': return dump_maps(core, 0, NULL);
@@ -1838,68 +1934,68 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		//		eprintf("No debug region found here\n");
 		//		return false;
 		//	case 'i': // "dmi"
-	case 'S': // "dmS"
-	{ // Move to a separate function
-		const char *libname = NULL, *sectname = NULL, *mode = "";
-		ut64 baddr = 0LL;
-		char *ptr;
-		int i;
-
-		if (input[1] == '*') {
-			ptr = strdup(rz_str_trim_head_ro((char *)input + 2));
-			mode = "-r ";
-		} else {
-			ptr = strdup(rz_str_trim_head_ro((char *)input + 1));
-		}
-		i = rz_str_word_set0(ptr);
-
-		addr = UT64_MAX;
-		switch (i) {
-		case 2: // get section name
-			sectname = rz_str_word_get0(ptr, 1);
-			/* fallthrou */
-		case 1: // get addr|libname
-			if (IS_DIGIT(*ptr)) {
-				const char *a0 = rz_str_word_get0(ptr, 0);
-				addr = rz_num_math(core->num, a0);
-			} else {
-				addr = UT64_MAX;
-			}
-			if (!addr || addr == UT64_MAX) {
-				libname = rz_str_word_get0(ptr, 0);
-			}
-			break;
-		}
-		rz_debug_map_sync(core->dbg); // update process memory maps
-		RzList *list = rz_debug_modules_list(core->dbg);
-		rz_list_foreach (list, iter, map) {
-			if ((!libname ||
-				    (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) ||
-				    (libname != NULL && (strstr(map->name, libname))))) {
-				baddr = map->addr;
-				char *res;
-				const char *file = map->file ? map->file : map->name;
-				char *name = rz_str_escape((char *)rz_file_basename(file));
-				char *filesc = rz_str_escape(file);
-				/* TODO: do not spawn. use RzBin API */
-				if (sectname) {
-					char *sect = rz_str_escape(sectname);
-					res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect);
-					free(sect);
-				} else {
-					res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\"", name, mode, baddr, filesc);
-				}
-				free(filesc);
-				rz_cons_println(res);
-				free(name);
-				free(res);
-				if (libname || addr != UT64_MAX) { //only single match requested
-					break;
-				}
-			}
-		}
-		free(ptr);
-	} break;
+		//	case 'S': // "dmS"
+		//	{ // Move to a separate function
+		//		const char *libname = NULL, *sectname = NULL, *mode = "";
+		//		ut64 baddr = 0LL;
+		//		char *ptr;
+		//		int i;
+		//
+		//		if (input[1] == '*') {
+		//			ptr = strdup(rz_str_trim_head_ro((char *)input + 2));
+		//			mode = "-r ";
+		//		} else {
+		//			ptr = strdup(rz_str_trim_head_ro((char *)input + 1));
+		//		}
+		//		i = rz_str_word_set0(ptr);
+		//
+		//		addr = UT64_MAX;
+		//		switch (i) {
+		//		case 2: // get section name
+		//			sectname = rz_str_word_get0(ptr, 1);
+		//			/* fallthrou */
+		//		case 1: // get addr|libname
+		//			if (IS_DIGIT(*ptr)) {
+		//				const char *a0 = rz_str_word_get0(ptr, 0);
+		//				addr = rz_num_math(core->num, a0);
+		//			} else {
+		//				addr = UT64_MAX;
+		//			}
+		//			if (!addr || addr == UT64_MAX) {
+		//				libname = rz_str_word_get0(ptr, 0);
+		//			}
+		//			break;
+		//		}
+		//		rz_debug_map_sync(core->dbg); // update process memory maps
+		//		RzList *list = rz_debug_modules_list(core->dbg);
+		//		rz_list_foreach (list, iter, map) {
+		//			if ((!libname ||
+		//				    (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) ||
+		//				    (libname != NULL && (strstr(map->name, libname))))) {
+		//				baddr = map->addr;
+		//				char *res;
+		//				const char *file = map->file ? map->file : map->name;
+		//				char *name = rz_str_escape((char *)rz_file_basename(file));
+		//				char *filesc = rz_str_escape(file);
+		//				/* TODO: do not spawn. use RzBin API */
+		//				if (sectname) {
+		//					char *sect = rz_str_escape(sectname);
+		//					res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect);
+		//					free(sect);
+		//				} else {
+		//					res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\"", name, mode, baddr, filesc);
+		//				}
+		//				free(filesc);
+		//				rz_cons_println(res);
+		//				free(name);
+		//				free(res);
+		//				if (libname || addr != UT64_MAX) { //only single match requested
+		//					break;
+		//				}
+		//			}
+		//		}
+		//		free(ptr);
+		//	} break;
 		//	case ' ': // "dm "
 		//	{
 		//		int size;

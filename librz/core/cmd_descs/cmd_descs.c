@@ -99,6 +99,7 @@ static const RzCmdDescArg cmd_debug_dump_maps_args[2];
 static const RzCmdDescArg cmd_debug_dml_args[2];
 static const RzCmdDescArg cmd_debug_dmp_args[4];
 static const RzCmdDescArg cmd_debug_dmL_args[3];
+static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -1766,6 +1767,27 @@ static const RzCmdDescArg cmd_debug_dmL_args[] = {
 static const RzCmdDescHelp cmd_debug_dmL_help = {
 	.summary = "Allocate <size> bytes at <address> and promote to huge page",
 	.args = cmd_debug_dmL_args,
+};
+
+static const RzCmdDescArg cmd_debug_dmS_args[] = {
+	{
+		.name = "addr|libname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{
+		.name = "sectname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dmS_help = {
+	.summary = "List sections of target lib",
+	.args = cmd_debug_dmS_args,
 };
 
 static const RzCmdDescHelp e_help = {
@@ -4722,6 +4744,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_dmL_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmL", rz_cmd_debug_dmL_handler, &cmd_debug_dmL_help);
 	rz_warn_if_fail(cmd_debug_dmL_cd);
+
+	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmS", rz_cmd_debug_dmS, &cmd_debug_dmS_help);
+	rz_warn_if_fail(cmd_debug_dmS_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);

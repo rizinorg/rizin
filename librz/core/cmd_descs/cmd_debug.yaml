@@ -181,3 +181,14 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
           - name: size
             type: RZ_CMD_ARG_TYPE_NUM
+      - name: dmS
+        summary: List sections of target lib
+        cname: cmd_debug_dmS
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        args:
+          - name: addr|libname
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+          - name: sectname
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
