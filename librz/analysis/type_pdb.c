@@ -48,7 +48,7 @@ static RzTypeStructMember *parse_member(const RzTypeDB *typedb, STypeInfo *type_
 		NULL);
 	char *name = NULL;
 	char *type = NULL;
-	int offset = 0;
+	ut64 offset = 0;
 
 	type_info->get_val(type_info, &offset); // gets offset
 	type_info->get_name(type_info, &name);
@@ -84,7 +84,7 @@ static RzTypeEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) {
 	rz_return_val_if_fail(type_info->get_val && type_info->get_name, NULL);
 
 	char *name = NULL;
-	int value = 0;
+	ut64 value = 0;
 	// sometimes, the type doesn't have get_val for some reason
 	type_info->get_val(type_info, &value);
 	type_info->get_name(type_info, &name);
@@ -200,7 +200,7 @@ static void parse_structure(const RzTypeDB *typedb, SType *type, RzList *types) 
 		name = create_type_name_from_offset(type->tpi_idx);
 		to_free_name = true;
 	}
-	int size;
+	ut64 size;
 	type_info->get_val(type_info, &size); // gets size
 
 	RzList *members;
@@ -246,7 +246,7 @@ cleanup:
 static void parse_type(const RzTypeDB *typedb, SType *type, RzList *types) {
 	rz_return_if_fail(typedb && type && types);
 
-	int is_forward_decl;
+	ut64 is_forward_decl;
 	if (type->type_data.is_fwdref) {
 		type->type_data.is_fwdref(&type->type_data, &is_forward_decl);
 		if (is_forward_decl) { // we skip those, atleast for now

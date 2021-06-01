@@ -79,7 +79,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_streq(type, "struct _RTC_framedesc*", "Wrong pointer print type");
 		} else if (type->tpi_idx == 0x1004) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
-			int forward_ref = 0;
+			ut64 forward_ref = 0;
 			type->type_data.is_fwdref(type_info, &forward_ref);
 			mu_assert_eq(forward_ref, 1, "Wrong fwdref");
 		} else if (type->tpi_idx == 0x113F) {
@@ -95,7 +95,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_streq(simple_type->type, "uint32_t", "Incorrect return type");
 			type_info->get_element_type(type_info, (void **)&dump);
 			mu_assert_eq(dump->tpi_idx, 0x113E, "Wrong element type index");
-			int size;
+			ut64 size;
 			type_info->get_val(type_info, &size);
 			mu_assert_eq(size, 20, "Wrong array size");
 		} else if (type->tpi_idx == 0x145A) {
@@ -183,7 +183,7 @@ bool test_pdb_tpi_cpp(void) {
 					char *name = NULL;
 					type_info->get_name(type_info, &name);
 					mu_assert_streq(name, "CV_ALLREG_ERR", "Wrong enum name");
-					int value = 0;
+					ut64 value = 0;
 					type_info->get_val(type_info, &value);
 					mu_assert_eq(value, 30000, "Wrong enumerate value");
 				}
@@ -191,7 +191,7 @@ bool test_pdb_tpi_cpp(void) {
 					char *name = NULL;
 					type_info->get_name(type_info, &name);
 					mu_assert_streq(name, "CV_AMD64_YMM15D3", "Wrong enum name");
-					int value = 0;
+					ut64 value = 0;
 					type_info->get_val(type_info, &value);
 					mu_assert_eq(value, 687, "Wrong enumerate value");
 				}
@@ -202,7 +202,7 @@ bool test_pdb_tpi_cpp(void) {
 		} else if (type->tpi_idx == 0x101A) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
 			char *name;
-			int is_forward_ref;
+			ut64 is_forward_ref;
 			type_info->get_name(&type->type_data, &name);
 			mu_assert_streq(name, "threadlocaleinfostruct", "Wrong name");
 			type_info->is_fwdref(&type->type_data, &is_forward_ref);
@@ -288,7 +288,7 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_streq(type, "struct core::fmt::Void*", "Wrong pointer print type");
 		} else if (type->tpi_idx == 0x1005) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
-			int forward_ref = 0;
+			ut64 forward_ref = 0;
 			type->type_data.is_fwdref(type_info, &forward_ref);
 			mu_assert_eq(forward_ref, 1, "Wrong fwdref");
 		} else if (type->tpi_idx == 0x114A) {
@@ -309,7 +309,7 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_eq(simple_type->size, 1, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "uint8_t", "Incorrect return type");
 
-			int size;
+			ut64 size;
 			type_info->get_val(type_info, &size);
 			mu_assert_eq(size, 16, "Wrong array size");
 		} else if (type->tpi_idx == 0x1FB4) {
@@ -421,11 +421,11 @@ bool test_pdb_tpi_rust(void) {
 			type_info->get_name(&type->type_data, &name);
 			mu_assert_streq(name, "std::thread::local::fast::Key<core::cell::Cell<core::option::Option<core::ptr::non_null::NonNull<core::task::wake::Context>>>>", "Wrong name");
 
-			int is_forward_ref;
+			ut64 is_forward_ref;
 			type_info->is_fwdref(&type->type_data, &is_forward_ref);
 			mu_assert_eq(is_forward_ref, false, "Wrong is_fwdref");
 
-			int size = 0;
+			ut64 size = 0;
 			type_info->get_val(type_info, &size);
 			mu_assert_eq(size, 24, "Wrong struct size");
 

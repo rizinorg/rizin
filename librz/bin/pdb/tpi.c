@@ -693,8 +693,40 @@ static STypeInfo parse_simple_type(ut32 idx) {
 	return type;
 }
 
+static void get_numeric_val(SNumeric *numeric, ut64 *dst) {
+	switch (numeric->type_index) {
+	case eLF_CHAR:
+		*dst = *(st8 *)(numeric->data);
+		break;
+	case eLF_SHORT:
+		*dst = *(st16 *)(numeric->data);
+		break;
+	case eLF_USHORT:
+		*dst = *(ut16 *)(numeric->data);
+		break;
+	case eLF_LONG:
+		*dst = *(st32 *)(numeric->data);
+		break;
+	case eLF_ULONG:
+		*dst = *(ut32 *)(numeric->data);
+		break;
+	case eLF_QUADWORD:
+		*dst = *(st64 *)(numeric->data);
+		break;
+	case eLF_UQUADWORD:
+		*dst = *(ut64 *)(numeric->data);
+		break;
+	default:
+		if (numeric->type_index >= 0x8000) {
+			*dst = 0;
+			break;
+		}
+		*dst = *(ut16 *)(numeric->data);
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
-static void is_union_fwdref(void *type, int *is_fwdref) {
+static void is_union_fwdref(void *type, ut64 *is_fwdref) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_UNION *lf = (SLF_UNION *)t->type_info;
 
@@ -703,14 +735,14 @@ static void is_union_fwdref(void *type, int *is_fwdref) {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-static void is_struct_class_fwdref(void *type, int *is_fwdref) {
+static void is_struct_class_fwdref(void *type, ut64 *is_fwdref) {
 	STypeInfo *t = (STypeInfo *)type;
 	// SLF_STRUCTURE and SLF_CLASS refer to the same struct so this is fine
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_info;
 	*is_fwdref = lf->prop.bits.fwdref;
 }
 
-static void is_struct_class_fwdref_19(void *type, int *is_fwdref) {
+static void is_struct_class_fwdref_19(void *type, ut64 *is_fwdref) {
 	STypeInfo *t = (STypeInfo *)type;
 	// SLF_STRUCTURE and SLF_CLASS refer to the same struct so this is fine
 	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
@@ -1343,47 +1375,47 @@ static void get_union_name(void *type, char **name) {
 	*name = lf_union->name.name;
 }
 
-static void get_onemethod_val(void *type, int *res) {
+static void get_onemethod_val(void *type, ut64 *res) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ONEMETHOD *lf = (SLF_ONEMETHOD *)t->type_info;
 
 	*res = lf->val.val;
 }
 
-static void get_member_val(void *type, int *res) {
+static void get_member_val(void *type, ut64 *res) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_MEMBER *lf = (SLF_MEMBER *)t->type_info;
-	*res = *(int *)(lf->offset.data);
+	get_numeric_val(&lf->offset, res);
 }
 
-static void get_enumerate_val(void *type, int *res) {
+static void get_enumerate_val(void *type, ut64 *res) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ENUMERATE *lf = (SLF_ENUMERATE *)t->type_info;
-	*res = *(int *)(lf->enum_value.data);
+	get_numeric_val(&lf->enum_value, res);
 }
 
-static void get_class_struct_val(void *type, int *res) {
+static void get_class_struct_val(void *type, ut64 *res) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_info;
-	*res = *(int *)(lf->size.data);
+	get_numeric_val(&lf->size, res);
 }
 
-static void get_class_struct_val_19(void *type, int *res) {
+static void get_class_struct_val_19(void *type, ut64 *res) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
-	*res = *(int *)(lf->size.data);
+	get_numeric_val(&lf->size, res);
 }
 
-static void get_array_val(void *type, int *res) {
+static void get_array_val(void *type, ut64 *res) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ARRAY *lf_array = (SLF_ARRAY *)t->type_info;
-	*res = *(int *)(lf_array->size.data);
+	get_numeric_val(&lf_array->size, res);
 }
 
-static void get_union_val(void *type, int *res) {
+static void get_union_val(void *type, ut64 *res) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_UNION *lf_union = (SLF_UNION *)t->type_info;
-	*res = *(int *)(lf_union->size.data);
+	get_numeric_val(&lf_union->size, res);
 }
 
 static void free_snumeric(SNumeric *numeric) {
@@ -1562,7 +1594,7 @@ static void get_array_print_type(void *type, char **name) {
 		ti = &t->type_data;
 		ti->get_print_type(ti, &tmp_name);
 	}
-	int size = 0;
+	ut64 size = 0;
 	if (ti->get_val) {
 		ti->get_val(ti, &size);
 	}
@@ -1571,7 +1603,7 @@ static void get_array_print_type(void *type, char **name) {
 	if (tmp_name) {
 		rz_strbuf_append(&buff, tmp_name);
 	}
-	rz_strbuf_appendf(&buff, "[%d]", size);
+	rz_strbuf_appendf(&buff, "[%" PFMT64u "]", size);
 	*name = rz_strbuf_drain_nofree(&buff);
 	rz_strbuf_fini(&buff);
 	if (need_to_free) {
