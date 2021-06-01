@@ -1678,7 +1678,7 @@ static const RzCmdDescArg cmd_debug_dump_maps_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_dump_maps_help = {
-	.summary = "Dump debug maps",
+	.summary = "Dump debug maps to <filename>",
 	.args = cmd_debug_dump_maps_args,
 };
 
@@ -4742,7 +4742,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dump_maps_writable_cd = rz_cmd_desc_argv_new(core->rcmd, dmd_cd, "dmdw", rz_cmd_debug_dump_maps_writable_handler, &cmd_debug_dump_maps_writable_help);
 	rz_warn_if_fail(cmd_debug_dump_maps_writable_cd);
 
-	RzCmdDesc *cmd_debug_heap_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmh", rz_cmd_debug_heap_handler, &cmd_debug_heap_help);
+	RzCmdDesc *cmd_debug_heap_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmh", rz_cmd_debug_heap, &cmd_debug_heap_help);
 	rz_warn_if_fail(cmd_debug_heap_cd);
 
 	RzCmdDesc *dmi_cd = rz_cmd_desc_group_modes_new(core->rcmd, dm_cd, "dmi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_list_symbols_handler, &cmd_debug_list_symbols_help, &dmi_help);

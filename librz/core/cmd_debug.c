@@ -1920,11 +1920,11 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		//		rz_debug_map_sync(core->dbg); // update process memory maps
 		//		rz_debug_map_list(core->dbg, core->offset, input);
 		//		break;
-	case '=': // "dm="
-		rz_debug_map_sync(core->dbg);
-		rz_debug_map_list_visual(core->dbg, core->offset, input,
-			rz_config_get_i(core->config, "scr.color"));
-		break;
+		//	case '=': // "dm="
+		//		rz_debug_map_sync(core->dbg);
+		//		rz_debug_map_list_visual(core->dbg, core->offset, input,
+		//			rz_config_get_i(core->config, "scr.color"));
+		//		break;
 		//	case 'h': // "dmh"
 		//		break;
 	}
