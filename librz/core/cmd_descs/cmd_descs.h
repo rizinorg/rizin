@@ -121,10 +121,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_all_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_debug_heap(void *data, const char *input);
-RZ_IPI RzCmdStatus rz_cmd_debug_list_symbols_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
-RZ_IPI RzCmdStatus rz_cmd_debug_list_all_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
-RZ_IPI RzCmdStatus rz_cmd_debug_list_closest_symbol_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_cmd_debug_dmiv_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_cmd_debug_dmp_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_debug(void *data, const char *input);

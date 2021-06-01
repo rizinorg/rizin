@@ -1477,11 +1477,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const ch
 
 // dmm.
 RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **input) {
-        if (!strcmp(input[0] + 3, ".*")) {
-                cmd_debug_modules(core, ':');
-        } else {
-                cmd_debug_modules(core, input[0][3]);
-        }
+	if (!strcmp(input[0] + 3, ".*")) {
+		cmd_debug_modules(core, ':');
+	} else {
+		cmd_debug_modules(core, input[0][3]);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1545,22 +1545,153 @@ RZ_IPI int rz_cmd_debug_heap(void *core, const char *input) {
 }
 
 // dmi
-RZ_IPI RzCmdStatus rz_cmd_debug_list_symbols_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
-	return RZ_CMD_STATUS_OK;
-}
+RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	RzListIter *iter;
+	RzDebugMap *map;
+	ut64 addr = core->offset;
+	switch (input[0]) {
+	case '\0': // "dmi" alias of "dmm"
+		rz_core_cmd(core, "dmm", 0);
+		break;
+	case ' ': // "dmi "
+	case '*': // "dmi*"
+	case 'v': // "dmiv"
+	case 'j': // "dmij"
+	case 'q': // "dmiq"
+	case 'a': // "dmia"
+	{
+		const char *libname = NULL, *symname = NULL, *a0;
+		int mode;
+		ut64 baddr = 0LL;
+		char *ptr;
+		int i = 1;
+		bool symbols_only = true;
+		if (input[0] == 'a') {
+			symbols_only = false;
+			input++;
+		}
+		PJ *pj = NULL;
+		switch (input[0]) {
+		case 's':
+			mode = RZ_MODE_SET;
+			break;
+		case '*':
+			mode = RZ_MODE_RIZINCMD;
+			break;
+		case 'j':
+			mode = RZ_MODE_JSON;
+			pj = rz_core_pj_new(core);
+			if (!pj) {
+				return false;
+			}
+			break;
+		case 'q':
+			mode = input[1] == 'q' ? input++, RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE;
+			break;
+		default:
+			mode = RZ_MODE_PRINT;
+			break;
+		}
+		ptr = strdup(rz_str_trim_head_ro(input + 1));
+		if (!ptr || !*ptr) {
+			rz_core_cmd(core, "dmm", 0);
+			free(ptr);
+			break;
+		}
+		if (symbols_only) {
+			i = rz_str_word_set0(ptr);
+		}
+		switch (i) {
+		case 2:
+			symname = rz_str_word_get0(ptr, 1);
+			// fall through
+		case 1:
+			a0 = rz_str_word_get0(ptr, 0);
+			addr = rz_num_get(core->num, a0);
+			if (!addr || addr == UT64_MAX) {
+				libname = rz_str_word_get0(ptr, 0);
+			}
+			break;
+		}
+		if (libname && !addr) {
+			addr = addroflib(core, rz_file_basename(libname));
+			if (addr == UT64_MAX) {
+				eprintf("Unknown library, or not found in dm\n");
+			}
+		}
+		map = get_closest_map(core, addr);
+		if (map) {
+			RzCoreBinFilter filter;
+			filter.offset = 0LL;
+			filter.name = (char *)symname;
+			baddr = map->addr;
 
-// dmia
-RZ_IPI RzCmdStatus rz_cmd_debug_list_all_info_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
-	return RZ_CMD_STATUS_OK;
-}
+			if (libname) {
+				const char *file = map->file ? map->file : map->name;
+				char *newfile = NULL;
+				if (!rz_file_exists(file)) {
+					newfile = rz_file_temp("memlib");
+					if (newfile) {
+						file = newfile;
+						rz_core_cmdf(core, "wtf %s 0x%" PFMT64x " @ 0x%" PFMT64x " 2> %s",
+							file, map->size, baddr, RZ_SYS_DEVNULL);
+					}
+				}
+				get_bin_info(core, file, baddr, pj, mode, symbols_only, &filter);
+				if (newfile) {
+					if (!rz_file_rm(newfile)) {
+						eprintf("Error when removing %s\n", newfile);
+					}
+					free(newfile);
+				}
+			} else {
+				rz_bin_set_baddr(core->bin, map->addr);
+				rz_core_bin_info(core, RZ_CORE_BIN_ACC_SYMBOLS, pj, (input[0] == '*'), true, &filter, NULL);
+				rz_bin_set_baddr(core->bin, baddr);
+			}
+		}
+		if (mode == RZ_MODE_JSON) {
+			rz_cons_println(pj_string(pj));
+			pj_free(pj);
+		}
+		free(ptr);
+	} break;
+	case '.': // "dmi."
+	{
+		map = get_closest_map(core, addr);
+		if (map) {
+			ut64 closest_addr = UT64_MAX;
+			RzList *symbols = rz_bin_get_symbols(core->bin);
+			RzBinSymbol *symbol, *closest_symbol = NULL;
 
-// dmi.
-RZ_IPI RzCmdStatus rz_cmd_debug_list_closest_symbol_handler(RzCore *core, int argc, const char **input) {
-	return RZ_CMD_STATUS_OK;
-}
+			rz_list_foreach (symbols, iter, symbol) {
+				if (symbol->vaddr > addr) {
+					if (symbol->vaddr - addr < closest_addr) {
+						closest_addr = symbol->vaddr - addr;
+						closest_symbol = symbol;
+					}
+				} else {
+					if (addr - symbol->vaddr < closest_addr) {
+						closest_addr = addr - symbol->vaddr;
+						closest_symbol = symbol;
+					}
+				}
+			}
+			if (closest_symbol) {
+				RzCoreBinFilter filter;
+				filter.offset = 0LL;
+				filter.name = (char *)closest_symbol->name;
 
-// dmiv
-RZ_IPI RzCmdStatus rz_cmd_debug_dmiv_handler(RzCore *core, int argc, const char **input) {
+				rz_bin_set_baddr(core->bin, map->addr);
+				rz_core_bin_info(core, RZ_CORE_BIN_ACC_SYMBOLS, NULL, false, true, &filter, NULL);
+			}
+		}
+	} break;
+	default:
+		rz_core_cmd_help(core, help_msg_dmi);
+		break;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1674,149 +1805,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		eprintf("No debug region found here\n");
 		return false;
 	case 'i': // "dmi"
-		switch (input[1]) {
-		case '\0': // "dmi" alias of "dmm"
-			rz_core_cmd(core, "dmm", 0);
-			break;
-		case ' ': // "dmi "
-		case '*': // "dmi*"
-		case 'v': // "dmiv"
-		case 'j': // "dmij"
-		case 'q': // "dmiq"
-		case 'a': // "dmia"
-		{
-			const char *libname = NULL, *symname = NULL, *a0;
-			int mode;
-			ut64 baddr = 0LL;
-			char *ptr;
-			int i = 1;
-			bool symbols_only = true;
-			if (input[1] == 'a') {
-				symbols_only = false;
-				input++;
-			}
-			PJ *pj = NULL;
-			switch (input[1]) {
-			case 's':
-				mode = RZ_MODE_SET;
-				break;
-			case '*':
-				mode = RZ_MODE_RIZINCMD;
-				break;
-			case 'j':
-				mode = RZ_MODE_JSON;
-				pj = pj_new();
-				if (!pj) {
-					return false;
-				}
-				break;
-			case 'q':
-				mode = input[2] == 'q' ? input++, RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE;
-				break;
-			default:
-				mode = RZ_MODE_PRINT;
-				break;
-			}
-			ptr = strdup(rz_str_trim_head_ro(input + 2));
-			if (!ptr || !*ptr) {
-				rz_core_cmd(core, "dmm", 0);
-				free(ptr);
-				break;
-			}
-			if (symbols_only) {
-				i = rz_str_word_set0(ptr);
-			}
-			switch (i) {
-			case 2:
-				symname = rz_str_word_get0(ptr, 1);
-				// fall through
-			case 1:
-				a0 = rz_str_word_get0(ptr, 0);
-				addr = rz_num_get(core->num, a0);
-				if (!addr || addr == UT64_MAX) {
-					libname = rz_str_word_get0(ptr, 0);
-				}
-				break;
-			}
-			if (libname && !addr) {
-				addr = addroflib(core, rz_file_basename(libname));
-				if (addr == UT64_MAX) {
-					eprintf("Unknown library, or not found in dm\n");
-				}
-			}
-			map = get_closest_map(core, addr);
-			if (map) {
-				RzCoreBinFilter filter;
-				filter.offset = 0LL;
-				filter.name = (char *)symname;
-				baddr = map->addr;
 
-				if (libname) {
-					const char *file = map->file ? map->file : map->name;
-					char *newfile = NULL;
-					if (!rz_file_exists(file)) {
-						newfile = rz_file_temp("memlib");
-						if (newfile) {
-							file = newfile;
-							rz_core_cmdf(core, "wtf %s 0x%" PFMT64x " @ 0x%" PFMT64x " 2> %s",
-								file, map->size, baddr, RZ_SYS_DEVNULL);
-						}
-					}
-					get_bin_info(core, file, baddr, pj, mode, symbols_only, &filter);
-					if (newfile) {
-						if (!rz_file_rm(newfile)) {
-							eprintf("Error when removing %s\n", newfile);
-						}
-						free(newfile);
-					}
-				} else {
-					rz_bin_set_baddr(core->bin, map->addr);
-					rz_core_bin_info(core, RZ_CORE_BIN_ACC_SYMBOLS, pj, (input[1] == '*'), true, &filter, NULL);
-					rz_bin_set_baddr(core->bin, baddr);
-				}
-			}
-			if (mode == RZ_MODE_JSON) {
-				rz_cons_println(pj_string(pj));
-				pj_free(pj);
-			}
-			free(ptr);
-		} break;
-		case '.': // "dmi."
-		{
-			map = get_closest_map(core, addr);
-			if (map) {
-				ut64 closest_addr = UT64_MAX;
-				RzList *symbols = rz_bin_get_symbols(core->bin);
-				RzBinSymbol *symbol, *closest_symbol = NULL;
-
-				rz_list_foreach (symbols, iter, symbol) {
-					if (symbol->vaddr > addr) {
-						if (symbol->vaddr - addr < closest_addr) {
-							closest_addr = symbol->vaddr - addr;
-							closest_symbol = symbol;
-						}
-					} else {
-						if (addr - symbol->vaddr < closest_addr) {
-							closest_addr = addr - symbol->vaddr;
-							closest_symbol = symbol;
-						}
-					}
-				}
-				if (closest_symbol) {
-					RzCoreBinFilter filter;
-					filter.offset = 0LL;
-					filter.name = (char *)closest_symbol->name;
-
-					rz_bin_set_baddr(core->bin, map->addr);
-					rz_core_bin_info(core, RZ_CORE_BIN_ACC_SYMBOLS, NULL, false, true, &filter, NULL);
-				}
-			}
-		} break;
-		default:
-			rz_core_cmd_help(core, help_msg_dmi);
-			break;
-		}
-		break;
 	case 'S': // "dmS"
 	{ // Move to a separate function
 		const char *libname = NULL, *sectname = NULL, *mode = "";

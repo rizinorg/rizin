@@ -151,40 +151,8 @@ commands:
         args: []
       - name: dmi
         summary: List/Load symbols
-        subcommands:
-          - name: dmi
-            summary: List symbols of target lib
-            cname: cmd_debug_list_symbols
-            modes:
-             - RZ_OUTPUT_MODE_STANDARD
-             - RZ_OUTPUT_MODE_RIZIN
-             - RZ_OUTPUT_MODE_JSON
-            args:
-              - name: libname
-                type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
-              - name: symname
-                type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
-          - name: dmia
-            summary: List all info of target lib
-            cname: cmd_debug_list_all_info
-            modes:
-              - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_RIZIN
-              - RZ_OUTPUT_MODE_JSON
-            args:
-              - name: libname
-                type: RZ_CMD_ARG_TYPE_STRING
-                optional: true
-          - name: dmi.
-            summary: List closest symbol to current address
-            cname: cmd_debug_list_closest_symbol
-            args: []
-          - name: dmiv
-            summary: Show address of given symbol for given lib
-            cname: cmd_debug_dmiv
-            args: []
+        cname: cmd_debug_dmi
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
       - name: dml
         summary: Load contents of file into current map region
         cname: cmd_debug_dml
