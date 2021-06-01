@@ -1702,7 +1702,31 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmp_handler(RzCore *core, int argc, const char *
 
 // dml
 RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char **input) {
-	return RZ_CMD_STATUS_OK;
+	RzListIter *iter;
+	RzDebugMap *map;
+	ut64 addr = core->offset;
+	rz_debug_map_sync(core->dbg); // update process memory maps
+	rz_list_foreach (core->dbg->maps, iter, map) {
+		if (addr >= map->addr && addr < map->addr_end) {
+			size_t sz;
+			char *buf = rz_file_slurp(input[1], &sz);
+			//TODO: use mmap here. we need a portable implementation
+			if (!buf) {
+				eprintf("Cannot allocate 0x%08" PFMT64x " byte(s)\n", map->size);
+				return RZ_CMD_STATUS_ERROR;
+			}
+			rz_io_write_at(core->io, map->addr, (const ut8 *)buf, sz);
+			if (sz != map->size)
+				eprintf("File size differs from region size (%" PFMT64u " vs %" PFMT64d ")\n",
+					(ut64)sz, map->size);
+			eprintf("Loaded %" PFMT64u " byte(s) into the map region at 0x%08" PFMT64x "\n",
+				(ut64)sz, map->addr);
+			free(buf);
+			return RZ_CMD_STATUS_OK;
+		}
+	}
+	eprintf("No debug region found here\n");
+	return RZ_CMD_STATUS_ERROR;
 }
 
 static int cmd_debug_map(RzCore *core, const char *input) {
@@ -1777,35 +1801,34 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		//			break;
 		//		}
 		//		break;
-	case 'l': // "dml"
-		if (input[1] != ' ') {
-			eprintf("Usage: dml [file]\n");
-			return false;
-		}
-		rz_debug_map_sync(core->dbg); // update process memory maps
-		rz_list_foreach (core->dbg->maps, iter, map) {
-			if (addr >= map->addr && addr < map->addr_end) {
-				size_t sz;
-				char *buf = rz_file_slurp(input + 2, &sz);
-				//TODO: use mmap here. we need a portable implementation
-				if (!buf) {
-					eprintf("Cannot allocate 0x%08" PFMT64x " byte(s)\n", map->size);
-					return false;
-				}
-				rz_io_write_at(core->io, map->addr, (const ut8 *)buf, sz);
-				if (sz != map->size)
-					eprintf("File size differs from region size (%" PFMT64u " vs %" PFMT64d ")\n",
-						(ut64)sz, map->size);
-				eprintf("Loaded %" PFMT64u " byte(s) into the map region at 0x%08" PFMT64x "\n",
-					(ut64)sz, map->addr);
-				free(buf);
-				return true;
-			}
-		}
-		eprintf("No debug region found here\n");
-		return false;
-	case 'i': // "dmi"
-
+		//	case 'l': // "dml"
+		//		if (input[1] != ' ') {
+		//			eprintf("Usage: dml [file]\n");
+		//			return false;
+		//		}
+		//		rz_debug_map_sync(core->dbg); // update process memory maps
+		//		rz_list_foreach (core->dbg->maps, iter, map) {
+		//			if (addr >= map->addr && addr < map->addr_end) {
+		//				size_t sz;
+		//				char *buf = rz_file_slurp(input + 2, &sz);
+		//				//TODO: use mmap here. we need a portable implementation
+		//				if (!buf) {
+		//					eprintf("Cannot allocate 0x%08" PFMT64x " byte(s)\n", map->size);
+		//					return false;
+		//				}
+		//				rz_io_write_at(core->io, map->addr, (const ut8 *)buf, sz);
+		//				if (sz != map->size)
+		//					eprintf("File size differs from region size (%" PFMT64u " vs %" PFMT64d ")\n",
+		//						(ut64)sz, map->size);
+		//				eprintf("Loaded %" PFMT64u " byte(s) into the map region at 0x%08" PFMT64x "\n",
+		//					(ut64)sz, map->addr);
+		//				free(buf);
+		//				return true;
+		//			}
+		//		}
+		//		eprintf("No debug region found here\n");
+		//		return false;
+		//	case 'i': // "dmi"
 	case 'S': // "dmS"
 	{ // Move to a separate function
 		const char *libname = NULL, *sectname = NULL, *mode = "";
@@ -1897,20 +1920,20 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		//		}
 		//		eprintf("The address doesn't match with any map.\n");
 		//		break;
-	case 'L': // "dmL"
-	{
-		int size;
-		char *p = strchr(input + 2, ' ');
-		if (p) {
-			*p++ = 0;
-			addr = rz_num_math(core->num, input + 1);
-			size = rz_num_math(core->num, p);
-			rz_debug_map_alloc(core->dbg, addr, size, true);
-		} else {
-			eprintf("Usage: dmL addr size\n");
-			return false;
-		}
-	} break;
+		//	case 'L': // "dmL"
+		//	{
+		//		int size;
+		//		char *p = strchr(input + 2, ' ');
+		//		if (p) {
+		//			*p++ = 0;
+		//			addr = rz_num_math(core->num, input + 1);
+		//			size = rz_num_math(core->num, p);
+		//			rz_debug_map_alloc(core->dbg, addr, size, true);
+		//		} else {
+		//			eprintf("Usage: dmL addr size\n");
+		//			return false;
+		//		}
+		//	} break;
 		//	case '\0': // "dm"
 		//	case '*': // "dm*"
 		//	case 'j': // "dmj"
