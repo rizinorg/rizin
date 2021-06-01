@@ -1445,6 +1445,23 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 
 // dm
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **input, RzOutputMode mode) {
+	if (argc == 1) {
+		char str[5] = "";
+		if (argc == 1) {
+			strcpy(str, input[0] + 2);
+		}
+		rz_debug_map_sync(core->dbg); // update process memory maps
+		rz_debug_map_list(core->dbg, core->offset, str);
+	} else if (argc == 3) {
+		int size;
+		ut64 addr;
+		addr = rz_num_math(core->num, input[1]);
+		// TODO conversion from ut64 to int
+		size = rz_num_math(core->num, input[2]);
+		rz_debug_map_alloc(core->dbg, addr, size, false);
+	} else {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1476,7 +1493,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, c
 
 // dm=
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, const char **input) {
-
+	rz_debug_map_sync(core->dbg);
+	rz_debug_map_list_visual(core->dbg, core->offset, input[0] + 2,
+		rz_config_get_i(core->config, "scr.color"));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1850,20 +1869,20 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		}
 		free(ptr);
 	} break;
-	case ' ': // "dm "
-	{
-		int size;
-		char *p = strchr(input + 2, ' ');
-		if (p) {
-			*p++ = 0;
-			addr = rz_num_math(core->num, input + 1);
-			size = rz_num_math(core->num, p);
-			rz_debug_map_alloc(core->dbg, addr, size, false);
-		} else {
-			eprintf("Usage: dm addr size\n");
-			return false;
-		}
-	} break;
+		//	case ' ': // "dm "
+		//	{
+		//		int size;
+		//		char *p = strchr(input + 2, ' ');
+		//		if (p) {
+		//			*p++ = 0;
+		//			addr = rz_num_math(core->num, input + 1);
+		//			size = rz_num_math(core->num, p);
+		//			rz_debug_map_alloc(core->dbg, addr, size, false);
+		//		} else {
+		//			eprintf("Usage: dm addr size\n");
+		//			return false;
+		//		}
+		//	} break;
 		//	case '-': // "dm-"
 		//		if (input[1] != ' ') {
 		//			eprintf("|ERROR| Usage: dm- [addr]\n");
@@ -1893,13 +1912,14 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 			return false;
 		}
 	} break;
-	case '\0': // "dm"
-	case '*': // "dm*"
-	case 'j': // "dmj"
-	case 'q': // "dmq"
-		rz_debug_map_sync(core->dbg); // update process memory maps
-		rz_debug_map_list(core->dbg, core->offset, input);
-		break;
+		//	case '\0': // "dm"
+		//	case '*': // "dm*"
+		//	case 'j': // "dmj"
+		// TODO dmq command
+		//	case 'q': // "dmq"
+		//		rz_debug_map_sync(core->dbg); // update process memory maps
+		//		rz_debug_map_list(core->dbg, core->offset, input);
+		//		break;
 	case '=': // "dm="
 		rz_debug_map_sync(core->dbg);
 		rz_debug_map_list_visual(core->dbg, core->offset, input,
