@@ -605,6 +605,9 @@ static bool cb_asmarch(void *user, void *data) {
 	rz_analysis_set_big_endian(core->analysis, bigbin);
 	rz_core_analysis_cc_init(core);
 
+	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
+	rz_sysreg_set_arch(core->analysis->syscall, node->value, dir_prefix);
+
 	return true;
 }
 
