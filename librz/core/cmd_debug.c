@@ -1460,11 +1460,23 @@ RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, 
 
 // dm-
 RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, const char **input) {
-	return RZ_CMD_STATUS_OK;
+	RzListIter *iter;
+	RzDebugMap *map;
+	ut64 addr = rz_num_math(core->num, input[1]);
+	rz_list_foreach (core->dbg->maps, iter, map) {
+		if (addr >= map->addr && addr < map->addr_end) {
+			rz_debug_map_dealloc(core->dbg, map);
+			rz_debug_map_sync(core->dbg);
+			return RZ_CMD_STATUS_OK;
+		}
+	}
+	eprintf("The address doesn't match with any map.\n");
+	return RZ_CMD_STATUS_ERROR;
 }
 
 // dm=
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, const char **input) {
+
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1480,7 +1492,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const 
 	if (argc == 2) {
 		dump_maps(core, -1, input[1]);
 	} else if (argc == 1) {
-                dump_maps(core, -1, NULL);
+		dump_maps(core, -1, NULL);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -1592,18 +1604,18 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 			eprintf("See dmp?\n");
 		}
 		break;
-//	case 'd': // "dmd"
-//		switch (input[1]) {
-//		case 'a': return dump_maps(core, 0, NULL);
-//		case 'w': return dump_maps(core, RZ_PERM_RW, NULL);
-//		case ' ': return dump_maps(core, -1, input + 2);
-//		case 0: return dump_maps(core, -1, NULL);
-//		case '?':
-//		default:
-//			eprintf("Usage: dmd[aw]  - dump (all-or-writable) debug maps\n");
-//			break;
-//		}
-//		break;
+		//	case 'd': // "dmd"
+		//		switch (input[1]) {
+		//		case 'a': return dump_maps(core, 0, NULL);
+		//		case 'w': return dump_maps(core, RZ_PERM_RW, NULL);
+		//		case ' ': return dump_maps(core, -1, input + 2);
+		//		case 0: return dump_maps(core, -1, NULL);
+		//		case '?':
+		//		default:
+		//			eprintf("Usage: dmd[aw]  - dump (all-or-writable) debug maps\n");
+		//			break;
+		//		}
+		//		break;
 	case 'l': // "dml"
 		if (input[1] != ' ') {
 			eprintf("Usage: dml [file]\n");
@@ -1851,21 +1863,21 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 			return false;
 		}
 	} break;
-	case '-': // "dm-"
-		if (input[1] != ' ') {
-			eprintf("|ERROR| Usage: dm- [addr]\n");
-			break;
-		}
-		addr = rz_num_math(core->num, input + 2);
-		rz_list_foreach (core->dbg->maps, iter, map) {
-			if (addr >= map->addr && addr < map->addr_end) {
-				rz_debug_map_dealloc(core->dbg, map);
-				rz_debug_map_sync(core->dbg);
-				return true;
-			}
-		}
-		eprintf("The address doesn't match with any map.\n");
-		break;
+//	case '-': // "dm-"
+//		if (input[1] != ' ') {
+//			eprintf("|ERROR| Usage: dm- [addr]\n");
+//			break;
+//		}
+//		addr = rz_num_math(core->num, input + 2);
+//		rz_list_foreach (core->dbg->maps, iter, map) {
+//			if (addr >= map->addr && addr < map->addr_end) {
+//				rz_debug_map_dealloc(core->dbg, map);
+//				rz_debug_map_sync(core->dbg);
+//				return true;
+//			}
+//		}
+//		eprintf("The address doesn't match with any map.\n");
+//		break;
 	case 'L': // "dmL"
 	{
 		int size;
