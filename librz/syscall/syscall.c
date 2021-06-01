@@ -77,7 +77,7 @@ RZ_API void rz_syscall_free(RzSyscall *s) {
 /**
  * \brief Frees an RzSysregItem type
  */
-RZ_API void rz_sysreg_item_free(RZ_NONNULL RzSysregItem *s) {
+RZ_API void rz_sysreg_item_free(RzSysregItem *s) {
 	free(s->comment);
 	free(s->name);
 	free(s->type);

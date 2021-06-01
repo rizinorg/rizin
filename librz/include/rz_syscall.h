@@ -106,7 +106,7 @@ RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *dir_p
 RZ_API bool rz_type_db_load_sysregs_sdb(RzSysregsDB *sysregdb, const char *path);
 RZ_API RzSysregsDB *rz_sysregs_db_new();
 RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name);
-RZ_API void rz_sysreg_item_free(RZ_NONNULL RzSysregItem *sysregitem);
+RZ_API void rz_sysreg_item_free(RzSysregItem *sysregitem);
 #endif
 
 #ifdef __cplusplus
