@@ -11,9 +11,10 @@
 #include <rz_util.h>
 #include "elf.h"
 
-// Deprecated
+// Contain deprecated function
 #include "rz_bin_elf_get_p2v_new.inc"
 #include "rz_bin_elf_get_v2p_new.inc"
+#include "rz_bin_elf_deprecated.inc"
 
 // RZ_IPI
 #include "rz_bin_elf_get_number_of_dynamic_symbols.inc"

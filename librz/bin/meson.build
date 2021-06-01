@@ -79,8 +79,6 @@ rz_bin_sources = [
   'format/dmp/dmp64.c',
   'format/elf/elf.c',
   'format/elf/elf64.c',
-  'format/elf/elf64_write.c',
-  'format/elf/elf_write.c',
   'format/java/class_attribute.c',
   'format/java/class_const_pool.c',
   'format/java/class_interface.c',

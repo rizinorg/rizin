@@ -9,6 +9,7 @@
 #include <rz_util.h>
 #include "elf.h"
 
+// DEPRECATED FUNCTION
 // XXX UGLY CODE
 /* TODO: Take care of endianness */
 /* TODO: Real error handling */
@@ -188,6 +189,7 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 	return delta;
 }
 
+// DEPRECATED FUNCTION
 /* XXX Endianness? */
 bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
@@ -235,6 +237,7 @@ bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf) {
 	return true;
 }
 
+// DEPRECATED FUNCTION
 bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms) {
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
@@ -271,6 +274,7 @@ bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms) 
 	return false;
 }
 
+// DEPRECATED FUNCTION
 bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr) {
 	const int patchoff = 0x18;
 #if RZ_BIN_ELF64
