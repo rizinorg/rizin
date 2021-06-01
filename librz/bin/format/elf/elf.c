@@ -22,6 +22,7 @@
 #include "rz_bin_elf_get_prstatus.inc"
 #include "rz_bin_elf_get_prstatus_layout.inc"
 #include "rz_bin_elf_get_symbols_with_type.inc"
+#include "rz_bin_elf_get_symbols_with_type_from_phdr.inc"
 #include "rz_bin_elf_get_ver_flags.inc"
 #include "rz_bin_elf_get_verdaux_entry.inc"
 #include "rz_bin_elf_get_verdef_entry.inc"
@@ -41,6 +42,7 @@
 #include "rz_bin_elf_init_strtab.inc"
 #include "rz_bin_elf_is_sh_index_valid.inc"
 #include "rz_bin_elf_set_import_by_ord.inc"
+#include "rz_bin_elf_symbol_type_to_str.inc"
 
 // RZ_API
 #include "rz_bin_elf_compiler.inc"
