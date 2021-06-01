@@ -24,36 +24,11 @@ static void fill_symbol_bind_and_type(ELFOBJ *bin, struct rz_bin_elf_symbol_t *r
 	ret->type = Elf_(rz_bin_elf_symbol_type_to_str)(bin, ret, sym);
 }
 
-static RzBinElfSymbol *Elf_(rz_bin_elf_get_phdr_symbols)(ELFOBJ *bin) {
-	if (!bin) {
-		return NULL;
-	}
-	if (bin->phdr_symbols) {
-		return bin->phdr_symbols;
-	}
-	bin->phdr_symbols = Elf_(rz_bin_elf_get_symbols_with_type_from_phdr)(bin, RZ_BIN_ELF_ALL_SYMBOLS);
-	return bin->phdr_symbols;
-}
-
-static RzBinElfSymbol *Elf_(rz_bin_elf_get_phdr_imports)(ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, NULL);
-	if (!bin->phdr_imports) {
-		bin->phdr_imports = Elf_(rz_bin_elf_get_symbols_with_type_from_phdr)(bin, RZ_BIN_ELF_IMPORT_SYMBOLS);
-	}
-	return bin->phdr_imports;
-}
-
-static RzBinElfSymbol *Elf_(get_phdr_symbols)(ELFOBJ *bin, int type) {
-	return (type != RZ_BIN_ELF_IMPORT_SYMBOLS)
-		? Elf_(rz_bin_elf_get_phdr_symbols)(bin)
-		: Elf_(rz_bin_elf_get_phdr_imports)(bin);
-}
-
 static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RzBinElfSymbol **sym) {
 	int count = 0;
 	int result = -1;
 	RzBinElfSymbol *ret = *sym;
-	RzBinElfSymbol *phdr_symbols = Elf_(get_phdr_symbols)(bin, type);
+	RzBinElfSymbol *phdr_symbols = Elf_(rz_bin_elf_get_symbols_from_phdr)(bin, type);
 	RzBinElfSymbol *tmp, *p;
 	HtUP *phd_offset_map = ht_up_new0();
 	HtUP *phd_ordinal_map = ht_up_new0();
@@ -189,7 +164,7 @@ RZ_IPI RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols_with_type)(ELFOBJ *bin, int t
 	};
 
 	if (!bin || !bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
-		return Elf_(get_phdr_symbols)(bin, type);
+		return Elf_(rz_bin_elf_get_symbols_from_phdr)(bin, type);
 	}
 	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof(Elf_(Shdr)))) {
 		return false;
@@ -378,7 +353,7 @@ RZ_IPI RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols_with_type)(ELFOBJ *bin, int t
 		}
 	}
 	if (!ret) {
-		return Elf_(get_phdr_symbols)(bin, type);
+		return Elf_(rz_bin_elf_get_symbols_from_phdr)(bin, type);
 	}
 	ret[ret_ctr].last = 1; // ugly dirty hack :D
 	int max = -1;
