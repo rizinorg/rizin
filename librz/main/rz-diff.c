@@ -357,17 +357,16 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 	} else if (screen) {
 		const char *hp = NULL;
 		if (!(hp = strchr(screen, 'x'))) {
-			rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "invalid format for -S; example 80x40 where width=80 and height=40.\n");
+			rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "invalid format for -S; example 120x20 where width=120 and height=20.\n");
 		}
-		ut64 width = strtoull(screen, NULL, 0);
-		ut64 height = strtoull(hp, NULL, 0);
-
-		if (width < 1 || width > 0xFFFF) {
-			rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "invalid format for -S; example 80x40 where width=80 and height=40.\n");
-		} else if (height < 1 || height > 0xFFFF) {
-			rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "invalid format for -S; example 80x40 where width=80 and height=40.\n");
+		ut64 height = strtoull(screen, NULL, 0);
+		ut64 width = strtoull(hp+1, NULL, 0);
+		if (width < 1 || width > 0xFFFF || height < 1 || height > 0xFFFF) {
+			rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "invalid format for -S; example 120x20 where width=120 and height=20.\n");
 		}
-
+		else if ( width < 20 || height < 120){
+			rz_diff_error_opt(ctx, DIFF_OPT_USAGE, "Min width=120, Min height=20.\n");
+		}
 		ctx->screen.width = (int)width;
 		ctx->screen.height = (int)height;
 	} else if (ctx->option == DIFF_OPT_UNKNOWN) {
