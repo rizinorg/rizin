@@ -130,7 +130,7 @@ commands:
         summary: Dump current (all) debug map region to a file (from-to.dmp) (see Sd)
         subcommands:
           - name: dmd
-            summary: Dump debug maps
+            summary: Dump debug maps to <filename>
             cname: cmd_debug_dump_maps
             args:
               - name: filename
