@@ -1456,8 +1456,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const 
 		int size;
 		ut64 addr;
 		addr = rz_num_math(core->num, argv[1]);
-		// TODO conversion from ut64 to int
-		size = rz_num_math(core->num, argv[2]);
+		size = (int)rz_num_math(core->num, argv[2]);
 		rz_debug_map_alloc(core->dbg, addr, size, false);
 	} else {
 		return RZ_CMD_STATUS_WRONG_ARGS;
@@ -1729,8 +1728,14 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_ERROR;
 }
 
+// dmL
 RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char **argv) {
-        return RZ_CMD_STATUS_OK;
+	int size;
+	ut64 addr;
+	addr = rz_num_math(core->num, argv[1]);
+	size = (int)rz_num_math(core->num, argv[2]);
+	rz_debug_map_alloc(core->dbg, addr, size, true);
+	return RZ_CMD_STATUS_OK;
 }
 
 static int cmd_debug_map(RzCore *core, const char *input) {
@@ -1924,20 +1929,20 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		//		}
 		//		eprintf("The address doesn't match with any map.\n");
 		//		break;
-	case 'L': // "dmL"
-	{
-		int size;
-		char *p = strchr(input + 2, ' ');
-		if (p) {
-			*p++ = 0;
-			addr = rz_num_math(core->num, input + 1);
-			size = rz_num_math(core->num, p);
-			rz_debug_map_alloc(core->dbg, addr, size, true);
-		} else {
-			eprintf("Usage: dmL addr size\n");
-			return false;
-		}
-	} break;
+		//	case 'L': // "dmL"
+		//	{
+		//		int size;
+		//		char *p = strchr(input + 2, ' ');
+		//		if (p) {
+		//			*p++ = 0;
+		//			addr = rz_num_math(core->num, input + 1);
+		//			size = rz_num_math(core->num, p);
+		//			rz_debug_map_alloc(core->dbg, addr, size, true);
+		//		} else {
+		//			eprintf("Usage: dmL addr size\n");
+		//			return false;
+		//		}
+		//	} break;
 		//	case '\0': // "dm"
 		//	case '*': // "dm*"
 		//	case 'j': // "dmj"

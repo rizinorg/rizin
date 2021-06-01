@@ -1754,13 +1754,11 @@ static const RzCmdDescArg cmd_debug_dmL_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
 
 	},
 	{
 		.name = "size",
 		.type = RZ_CMD_ARG_TYPE_NUM,
-		.optional = true,
 
 	},
 	{ 0 },
