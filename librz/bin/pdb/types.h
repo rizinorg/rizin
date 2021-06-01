@@ -941,10 +941,21 @@ RZ_PACKED(
 	typedef struct {
 		UCV_fldattr fldattr;
 		ut32 index;
-		ut16 offset;
+		SNumeric offset;
 		ut8 pad;
 	})
 SLF_BCLASS;
+
+RZ_PACKED(
+	typedef struct {
+		UCV_fldattr fldattr;
+		ut32 direct_vbclass_idx;
+		ut32 vb_pointer_idx;
+		SNumeric vb_pointer_offset;
+		SNumeric vb_offset_from_vbtable;
+	})
+SLF_VBCLASS,
+	SLF_IVBCLASS;
 
 typedef struct {
 	//	ELeafType leaf_type;

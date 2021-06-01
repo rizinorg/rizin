@@ -1481,6 +1481,19 @@ static void free_lf_onemethod(void *type) {
 	free(lf_onemethod->val.str_data.name);
 }
 
+static void free_lf_bclass(void *type) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_BCLASS *lf_bclass = (SLF_BCLASS *)t->type_info;
+	free_snumeric(&lf_bclass->offset);
+}
+
+static void free_lf_vbclass_ivbclass(void *type) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_VBCLASS *lf_vbclass = (SLF_VBCLASS *)t->type_info;
+	free_snumeric(&lf_vbclass->vb_pointer_offset);
+	free_snumeric(&lf_vbclass->vb_offset_from_vbtable);
+}
+
 static void free_lf_enum(void *type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ENUM *lf_enum = (SLF_ENUM *)t->type_info;
@@ -2202,6 +2215,50 @@ static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, uint8_t *leaf_data, u
 	return (*read_bytes - read_bytes_before);
 }
 
+static int parse_lf_bclass(SLF_BCLASS *lf_bclass, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	int read_bytes_before = *read_bytes, tmp_before_read_bytes = 0;
+
+	READ2(*read_bytes, len, lf_bclass->fldattr.fldattr, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_bclass->index, leaf_data, ut32);
+
+	tmp_before_read_bytes = *read_bytes;
+	parse_numeric(&lf_bclass->offset, leaf_data, read_bytes, len);
+	if (!lf_bclass->offset.is_integer) {
+		eprintf("Integer expected!\n");
+		free_snumeric(&lf_bclass->offset);
+		return 0;
+	}
+	leaf_data += (*read_bytes - tmp_before_read_bytes);
+	leaf_data += skip_padding(leaf_data, read_bytes, len);
+
+	return (*read_bytes - read_bytes_before);
+}
+
+static int parse_lf_vbclass(SLF_VBCLASS *lf_vbclass, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	int read_bytes_before = *read_bytes, tmp_before_read_bytes = 0;
+
+	READ2(*read_bytes, len, lf_vbclass->fldattr.fldattr, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_vbclass->direct_vbclass_idx, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_vbclass->vb_pointer_idx, leaf_data, ut32);
+
+	tmp_before_read_bytes = *read_bytes;
+	parse_numeric(&lf_vbclass->vb_pointer_offset, leaf_data, read_bytes, len);
+	if (!lf_vbclass->vb_pointer_offset.is_integer) {
+		eprintf("Integer expected!\n");
+		free_snumeric(&lf_vbclass->vb_pointer_offset);
+		return 0;
+	}
+	parse_numeric(&lf_vbclass->vb_offset_from_vbtable, leaf_data, read_bytes, len);
+	if (!lf_vbclass->vb_offset_from_vbtable.is_integer) {
+		eprintf("Integer expected!\n");
+		free_snumeric(&lf_vbclass->vb_offset_from_vbtable);
+		return 0;
+	}
+	leaf_data += (*read_bytes - tmp_before_read_bytes);
+
+	return (*read_bytes - read_bytes_before);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 static void init_stype_info(STypeInfo *type_info) {
 	type_info->free_ = 0;
@@ -2352,6 +2409,12 @@ static void init_stype_info(STypeInfo *type_info) {
 		type_info->free_ = free_lf_onemethod;
 		type_info->get_print_type = get_onemethod_print_type;
 		break;
+	case eLF_BCLASS:
+		type_info->free_ = free_lf_bclass;
+		break;
+	case eLF_VBCLASS:
+	case eLF_IVBCLASS:
+		type_info->free_ = free_lf_vbclass_ivbclass;
 	default:
 		type_info->get_name = 0;
 		type_info->get_val = 0;
@@ -2417,6 +2480,13 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist, uint8_t *leaf_data, u
 			break;
 		case eLF_ONEMETHOD:
 			PARSE_LF2(SLF_ONEMETHOD, lf_onemethod, eLF_ONEMETHOD);
+			break;
+		case eLF_BCLASS:
+			PARSE_LF2(SLF_BCLASS, lf_bclass, eLF_BCLASS);
+			break;
+		case eLF_VBCLASS:
+		case eLF_IVBCLASS:
+			PARSE_LF2(SLF_VBCLASS, lf_vbclass, eLF_VBCLASS);
 			break;
 		default:
 			//			printf("unsupported leaf type in parse_lf_fieldlist()\n");

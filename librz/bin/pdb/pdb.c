@@ -959,20 +959,29 @@ static void print_struct(const char *name, const int size, const RzList *members
 	RzListIter *member_iter = rz_list_iterator(members);
 	while (rz_list_iter_next(member_iter)) {
 		STypeInfo *type_info = rz_list_iter_get(member_iter);
-		char *member_name = NULL;
-		if (type_info->get_name) {
-			type_info->get_name(type_info, &member_name);
+		switch (type_info->leaf_type) {
+		case eLF_MEMBER:
+		case eLF_NESTTYPE:
+		case eLF_METHOD:
+		case eLF_ONEMETHOD: {
+			char *member_name = NULL;
+			if (type_info->get_name) {
+				type_info->get_name(type_info, &member_name);
+			}
+			int offset = 0;
+			if (type_info->get_val) {
+				type_info->get_val(type_info, &offset);
+			}
+			char *type_name = NULL;
+			if (type_info->get_print_type) {
+				type_info->get_print_type(type_info, &type_name);
+			}
+			printf("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
+			RZ_FREE(type_name);
 		}
-		int offset = 0;
-		if (type_info->get_val) {
-			type_info->get_val(type_info, &offset);
+		default:
+			break;
 		}
-		char *type_name = NULL;
-		if (type_info->get_print_type) {
-			type_info->get_print_type(type_info, &type_name);
-		}
-		printf("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
-		RZ_FREE(type_name);
 	}
 	printf("};\n");
 }
