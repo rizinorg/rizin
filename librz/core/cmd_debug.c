@@ -1385,9 +1385,9 @@ static int rz_debug_heap(RzCore *core, const char *input) {
 	if (m && !strcmp("glibc", m)) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 		if (core->rasm->bits == 64) {
-			cmd_dbg_map_heap_glibc_64(core, input + 1);
+			cmd_dbg_map_heap_glibc_64(core, input);
 		} else {
-			cmd_dbg_map_heap_glibc_32(core, input + 1);
+			cmd_dbg_map_heap_glibc_32(core, input);
 		}
 #else
 		eprintf("glibc not supported for this platform\n");
@@ -1395,14 +1395,14 @@ static int rz_debug_heap(RzCore *core, const char *input) {
 #if HAVE_JEMALLOC
 	} else if (m && !strcmp("jemalloc", m)) {
 		if (core->rasm->bits == 64) {
-			cmd_dbg_map_jemalloc_64(core, input + 1);
+			cmd_dbg_map_jemalloc_64(core, input);
 		} else {
-			cmd_dbg_map_jemalloc_32(core, input + 1);
+			cmd_dbg_map_jemalloc_32(core, input);
 		}
 #endif
 	} else {
 #if __WINDOWS__
-		cmd_debug_map_heap_win(core, input + 1);
+		cmd_debug_map_heap_win(core, input);
 #else
 		eprintf("MALLOC algorithm not supported\n");
 		return false;
@@ -1510,7 +1510,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int arg
 }
 
 // dmh
-RZ_IPI RzCmdStatus rz_cmd_debug_heap_handler(RzCore *core, int argc, const char **input) {
+RZ_IPI int rz_cmd_debug_heap(void *core, const char *input) {
+	rz_debug_heap(core, input);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1863,21 +1864,21 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 			return false;
 		}
 	} break;
-//	case '-': // "dm-"
-//		if (input[1] != ' ') {
-//			eprintf("|ERROR| Usage: dm- [addr]\n");
-//			break;
-//		}
-//		addr = rz_num_math(core->num, input + 2);
-//		rz_list_foreach (core->dbg->maps, iter, map) {
-//			if (addr >= map->addr && addr < map->addr_end) {
-//				rz_debug_map_dealloc(core->dbg, map);
-//				rz_debug_map_sync(core->dbg);
-//				return true;
-//			}
-//		}
-//		eprintf("The address doesn't match with any map.\n");
-//		break;
+		//	case '-': // "dm-"
+		//		if (input[1] != ' ') {
+		//			eprintf("|ERROR| Usage: dm- [addr]\n");
+		//			break;
+		//		}
+		//		addr = rz_num_math(core->num, input + 2);
+		//		rz_list_foreach (core->dbg->maps, iter, map) {
+		//			if (addr >= map->addr && addr < map->addr_end) {
+		//				rz_debug_map_dealloc(core->dbg, map);
+		//				rz_debug_map_sync(core->dbg);
+		//				return true;
+		//			}
+		//		}
+		//		eprintf("The address doesn't match with any map.\n");
+		//		break;
 	case 'L': // "dmL"
 	{
 		int size;
@@ -1904,9 +1905,8 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 		rz_debug_map_list_visual(core->dbg, core->offset, input,
 			rz_config_get_i(core->config, "scr.color"));
 		break;
-	case 'h': // "dmh"
-		(void)rz_debug_heap(core, input);
-		break;
+		//	case 'h': // "dmh"
+		//		break;
 	}
 	return true;
 }

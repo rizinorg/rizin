@@ -147,6 +147,7 @@ commands:
       - name: dmh
         summary: Show map of heap
         cname: cmd_debug_heap
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
         args: []
       - name: dmi
         summary: List/Load symbols
