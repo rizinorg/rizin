@@ -42,6 +42,7 @@
 #include "rz_bin_elf_init_strtab.inc"
 #include "rz_bin_elf_is_sh_index_valid.inc"
 #include "rz_bin_elf_set_import_by_ord.inc"
+#include "rz_bin_elf_symbol_bind_to_str.inc"
 #include "rz_bin_elf_symbol_type_to_str.inc"
 
 // RZ_API

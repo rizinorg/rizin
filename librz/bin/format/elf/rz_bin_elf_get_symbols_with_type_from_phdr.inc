@@ -111,7 +111,7 @@ RZ_IPI RZ_OWN RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols_with_type_from_phdr)(R
 		}
 		// since we don't know the size of the sym table in this case,
 		// let's stop at the first invalid entry
-		if (!strcmp(bind2str(&sym[i]), RZ_BIN_BIND_UNKNOWN_STR) ||
+		if (!strcmp(Elf_(rz_bin_elf_symbol_bind_to_str)(&sym[i]), RZ_BIN_BIND_UNKNOWN_STR) ||
 			!strcmp(Elf_(rz_bin_elf_symbol_type_to_str)(NULL, NULL, &sym[i]), RZ_BIN_TYPE_UNKNOWN_STR)) {
 			goto done;
 		}

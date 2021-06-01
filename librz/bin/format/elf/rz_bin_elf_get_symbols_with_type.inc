@@ -19,22 +19,8 @@ static inline int __strnlen(const char *str, int len) {
 	return l + 1;
 }
 
-static const char *bind2str(Elf_(Sym) * sym) {
-	switch (ELF_ST_BIND(sym->st_info)) {
-	case STB_LOCAL: return RZ_BIN_BIND_LOCAL_STR;
-	case STB_GLOBAL: return RZ_BIN_BIND_GLOBAL_STR;
-	case STB_WEAK: return RZ_BIN_BIND_WEAK_STR;
-	case STB_NUM: return RZ_BIN_BIND_NUM_STR;
-	case STB_LOOS: return RZ_BIN_BIND_LOOS_STR;
-	case STB_HIOS: return RZ_BIN_BIND_HIOS_STR;
-	case STB_LOPROC: return RZ_BIN_BIND_LOPROC_STR;
-	case STB_HIPROC: return RZ_BIN_BIND_HIPROC_STR;
-	default: return RZ_BIN_BIND_UNKNOWN_STR;
-	}
-}
-
 static void fill_symbol_bind_and_type(ELFOBJ *bin, struct rz_bin_elf_symbol_t *ret, Elf_(Sym) * sym) {
-	ret->bind = bind2str(sym);
+	ret->bind = Elf_(rz_bin_elf_symbol_bind_to_str)(sym);
 	ret->type = Elf_(rz_bin_elf_symbol_type_to_str)(bin, ret, sym);
 }
 
