@@ -17,13 +17,15 @@
 #include "rz_bin_elf_deprecated.inc"
 
 // RZ_IPI
+#include "rz_bin_elf_compute_symbols_from_phdr.inc"
+#include "rz_bin_elf_compute_symbols_from_segment.inc"
 #include "rz_bin_elf_get_import_addr.inc"
 #include "rz_bin_elf_get_number_of_dynamic_symbols.inc"
 #include "rz_bin_elf_get_prstatus.inc"
 #include "rz_bin_elf_get_prstatus_layout.inc"
 #include "rz_bin_elf_get_symbol_entry.inc"
+#include "rz_bin_elf_get_symbols_from_phdr.inc"
 #include "rz_bin_elf_get_symbols_with_type.inc"
-#include "rz_bin_elf_get_symbols_with_type_from_phdr.inc"
 #include "rz_bin_elf_get_ver_flags.inc"
 #include "rz_bin_elf_get_verdaux_entry.inc"
 #include "rz_bin_elf_get_verdef_entry.inc"
