@@ -10,7 +10,7 @@ static bool is_in_vphdr(Elf_(Phdr) * p, ut64 addr) {
 }
 
 /* Deprecated temporarily. Use rz_bin_elf_v2p_new in new code for now. */
-ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
+RZ_DEPRECATE ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, 0);
 	if (!bin->phdr) {
 		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {

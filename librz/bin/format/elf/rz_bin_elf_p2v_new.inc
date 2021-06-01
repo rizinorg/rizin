@@ -10,7 +10,7 @@ static bool is_in_pphdr(Elf_(Phdr) * p, ut64 addr) {
 }
 
 /* Deprecated temporarily. Use rz_bin_elf_p2v_new in new code for now. */
-ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
+RZ_DEPRECATE ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
 	size_t i;
 
 	rz_return_val_if_fail(bin, 0);

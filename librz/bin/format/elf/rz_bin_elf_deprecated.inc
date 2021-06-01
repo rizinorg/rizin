@@ -14,7 +14,7 @@
 /* TODO: Real error handling */
 /* TODO: Resize sections before .init */
 // ut64 Elf_(rz_bin_elf_resize_section)(struct Elf_(rz_bin_elf_obj_t) *bin, const char *name, ut64 size) {
-ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size) {
+RZ_DEPRECATE ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size) {
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj; // , const char *name, ut64 size) {
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Phdr) *phdr = bin->phdr, *phdrp;
@@ -189,7 +189,7 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 }
 
 /* XXX Endianness? */
-bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf) {
+RZ_DEPRECATE bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
 	Elf_(Dyn) *dyn = NULL;
 	ut64 stroff = 0LL;
@@ -235,7 +235,7 @@ bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf) {
 	return true;
 }
 
-bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms) {
+RZ_DEPRECATE bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms) {
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
@@ -271,7 +271,7 @@ bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms) 
 	return false;
 }
 
-bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr) {
+RZ_DEPRECATE bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr) {
 	const int patchoff = 0x18;
 #if RZ_BIN_ELF64
 	printf("wv8 0x%" PFMT64x " @ 0x%x\n", addr, patchoff);
