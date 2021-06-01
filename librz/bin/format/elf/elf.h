@@ -30,7 +30,7 @@
 	(i) += 8
 
 #define BREAD8(x, i) \
-	rz_buf_read_ble8_at(x, i); \
+	rz_buf_read8_at(x, i); \
 	(i) += 1
 #define BREAD16(x, i) \
 	rz_buf_read_ble16_at(x, i, bin->endian); \
@@ -307,6 +307,7 @@ ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(struct Elf_(rz_bin_elf_obj_t) * bin);
 RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(struct Elf_(rz_bin_elf_obj_t) * bin);
 
+RZ_IPI Elf_(Sym) Elf_(rz_bin_elf_get_symbol_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
 RZ_IPI Elf_(Verdaux) Elf_(rz_bin_elf_get_verdaux_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
 RZ_IPI Elf_(Verdef) Elf_(rz_bin_elf_get_verdef_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
 RZ_IPI Elf_(Vernaux) Elf_(rz_bin_elf_get_vernaux_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
