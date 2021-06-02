@@ -188,7 +188,9 @@ commands:
       - name: dmS
         summary: List sections of target lib
         cname: cmd_debug_dmS
-        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_RIZIN
         args:
           - name: addr|libname
             type: RZ_CMD_ARG_TYPE_STRING

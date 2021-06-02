@@ -4745,7 +4745,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dmL_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmL", rz_cmd_debug_dmL_handler, &cmd_debug_dmL_help);
 	rz_warn_if_fail(cmd_debug_dmL_cd);
 
-	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmS", rz_cmd_debug_dmS, &cmd_debug_dmS_help);
+	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dm_cd, "dmS", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_dmS_handler, &cmd_debug_dmS_help);
 	rz_warn_if_fail(cmd_debug_dmS_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);

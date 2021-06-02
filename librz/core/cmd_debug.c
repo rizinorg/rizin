@@ -1725,40 +1725,29 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmp_handler(RzCore *core, int argc, const char *
 	}
 }
 
-RZ_IPI int rz_cmd_debug_dmS(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char **argv, RzOutputMode m) {
 	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr;
 	const char *libname = NULL, *sectname = NULL, *mode = "";
 	ut64 baddr = 0LL;
-	char *ptr;
-	int i;
-
-	if (input[0] == '*') {
-		ptr = strdup(rz_str_trim_head_ro((char *)input + 1));
+	if (m == RZ_OUTPUT_MODE_RIZIN) {
 		mode = "-r ";
-	} else {
-		ptr = strdup(rz_str_trim_head_ro((char *)input));
 	}
-	i = rz_str_word_set0(ptr);
-
 	addr = UT64_MAX;
-	switch (i) {
-	case 2: // get section name
-		sectname = rz_str_word_get0(ptr, 1);
-		/* fallthrou */
-	case 1: // get addr|libname
-		if (IS_DIGIT(*ptr)) {
-			const char *a0 = rz_str_word_get0(ptr, 0);
+	if (argc == 3) {
+		sectname = argv[2];
+	}
+	if (argc >= 2) {
+		if (IS_DIGIT(*argv[1])) {
+			const char *a0 = argv[1];
 			addr = rz_num_math(core->num, a0);
 		} else {
 			addr = UT64_MAX;
 		}
 		if (!addr || addr == UT64_MAX) {
-			libname = rz_str_word_get0(ptr, 0);
+			libname = argv[1];
 		}
-		break;
 	}
 	rz_debug_map_sync(core->dbg); // update process memory maps
 	RzList *list = rz_debug_modules_list(core->dbg);
@@ -1788,7 +1777,6 @@ RZ_IPI int rz_cmd_debug_dmS(void *data, const char *input) {
 			}
 		}
 	}
-	free(ptr);
 	return RZ_CMD_STATUS_OK;
 }
 // dml
