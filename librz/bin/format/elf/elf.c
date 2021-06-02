@@ -66,6 +66,7 @@
 #include "rz_bin_elf_get_file_type.inc"
 #include "rz_bin_elf_get_fini_offset.inc"
 #include "rz_bin_elf_get_head_flag.inc"
+#include "rz_bin_elf_get_imports.inc"
 #include "rz_bin_elf_get_init_offset.inc"
 #include "rz_bin_elf_get_libs.inc"
 #include "rz_bin_elf_get_machine_name.inc"
@@ -93,12 +94,3 @@
 #include "rz_bin_elf_new_buf.inc"
 #include "section_flag_to_rzlist.inc"
 #include "section_type_to_string.inc"
-
-#define MAX_REL_RELA_SZ (sizeof(Elf_(Rel)) > sizeof(Elf_(Rela)) ? sizeof(Elf_(Rel)) : sizeof(Elf_(Rela)))
-
-RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(ELFOBJ *bin) {
-	if (!bin->g_imports) {
-		bin->g_imports = Elf_(rz_bin_elf_get_symbols_with_type)(bin, RZ_BIN_ELF_IMPORT_SYMBOLS);
-	}
-	return bin->g_imports;
-}
