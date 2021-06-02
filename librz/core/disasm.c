@@ -3385,9 +3385,8 @@ static void ds_print_sysregs(RDisasmState *ds) {
 	// Syscalls first
 	case RZ_ANALYSIS_OP_TYPE_IO: {
 		const int imm = (int)ds->analop.val;
-		RzSyscall *sc = core->analysis->syscall;
-		const char *ioname = rz_syscall_get_io(sc, imm);
-		if (ioname && *ioname) {
+		const char *ioname = rz_sysreg_get(core->analysis->syscall, "mmio", imm);
+		if (ioname) {
 			CMT_ALIGN;
 			ds_comment(ds, true, "; IO %s", ioname);
 			ds->has_description = true;
@@ -3399,7 +3398,7 @@ static void ds_print_sysregs(RDisasmState *ds) {
 	case RZ_ANALYSIS_OP_TYPE_LOAD:
 	case RZ_ANALYSIS_OP_TYPE_STORE: {
 		const int imm = (int)ds->analop.ptr;
-		const char *sr = rz_syscall_sysreg(core->analysis->syscall, "reg", imm);
+		const char *sr = rz_sysreg_get(core->analysis->syscall, "reg", imm);
 		if (sr) {
 			CMT_ALIGN;
 			ds_comment(ds, true, "; REG %s - %s", sr, "");
