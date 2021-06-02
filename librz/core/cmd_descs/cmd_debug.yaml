@@ -98,6 +98,14 @@ commands:
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: dmq
+        cname: cmd_debug_dmq
+        summary: List debug map line
+        args: []
+      - name: dmq.
+        cname: cmd_debug_dmq_current
+        summary: List debug map current line
+        args: []
       - name: dm=
         cname: cmd_debug_list_maps_ascii
         summary: List memory maps of current process with ASCII art bars

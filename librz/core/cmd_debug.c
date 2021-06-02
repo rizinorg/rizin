@@ -1460,6 +1460,20 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const 
 	return RZ_CMD_STATUS_OK;
 }
 
+// dmq
+RZ_IPI RzCmdStatus rz_cmd_debug_dmq_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_map_sync(core->dbg);
+	rz_debug_map_list(core->dbg, core->offset, argv[0] + 2);
+	return RZ_CMD_STATUS_OK;
+}
+
+//dmq.
+RZ_IPI RzCmdStatus rz_cmd_debug_dmq_current_handler(RzCore *core, int argc, const char **argv) {
+	rz_debug_map_sync(core->dbg);
+	rz_debug_map_list(core->dbg, core->offset, argv[0] + 2);
+	return RZ_CMD_STATUS_OK;
+}
+
 // dmm
 RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (!strcmp(argv[0] + 3, ".*")) {
