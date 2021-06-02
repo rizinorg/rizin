@@ -80,6 +80,7 @@
 #include "rz_bin_elf_get_sections.inc"
 #include "rz_bin_elf_get_sp_val.inc"
 #include "rz_bin_elf_get_stripped.inc"
+#include "rz_bin_elf_get_symbols.inc"
 #include "rz_bin_elf_grab_regstate.inc"
 #include "rz_bin_elf_has_nx.inc"
 #include "rz_bin_elf_has_relro.inc"
@@ -94,13 +95,6 @@
 #include "section_type_to_string.inc"
 
 #define MAX_REL_RELA_SZ (sizeof(Elf_(Rel)) > sizeof(Elf_(Rela)) ? sizeof(Elf_(Rel)) : sizeof(Elf_(Rela)))
-
-RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(ELFOBJ *bin) {
-	if (!bin->g_symbols) {
-		bin->g_symbols = Elf_(rz_bin_elf_get_symbols_with_type)(bin, RZ_BIN_ELF_ALL_SYMBOLS);
-	}
-	return bin->g_symbols;
-}
 
 RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(ELFOBJ *bin) {
 	if (!bin->g_imports) {
