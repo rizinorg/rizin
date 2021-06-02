@@ -58,11 +58,11 @@ commands:
       - name: dts+
         summary: Start trace session
         cname: cmd_debug_start_trace_session
-        args: [ ]
+        args: []
       - name: dts-
         summary: Stop trace session
         cname: cmd_debug_stop_trace_session
-        args: [ ]
+        args: []
       - name: dtst
         cname: cmd_debug_save_trace_session
         summary: Save trace sessions to disk
@@ -78,13 +78,15 @@ commands:
       - name: dtsm
         cname: cmd_debug_list_trace_session_mmap
         summary: List current memory map and hash
-        args: [ ]
+        args: []
   - name: dm
     summary: Memory map commands
     subcommands:
       - name: dm
         cname: cmd_debug_list_maps
-        summary: List memory maps / Allocate <size> bytes at <address> (anywhere if address is -1) in child process
+        summary: >
+          List memory maps / Allocate <size> bytes at <address>
+          (anywhere if address is -1)
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
@@ -99,11 +101,11 @@ commands:
       - name: dm=
         cname: cmd_debug_list_maps_ascii
         summary: List memory maps of current process with ASCII art bars
-        args: [ ]
+        args: []
       - name: dm.
         cname: cmd_debug_map_current
         summary: Show map name of current address
-        args: [ ]
+        args: []
       - name: dmm
         summary: Module memory map commands
         subcommands:
@@ -114,11 +116,11 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN
               - RZ_OUTPUT_MODE_JSON
-            args: [ ]
+            args: []
           - name: dmm.
             cname: cmd_debug_current_modules
             summary: List memory map of current module
-            args: [ ]
+            args: []
       - name: dm-
         summary: Deallocate memory map of <address>
         cname: cmd_debug_deallocate_map
@@ -127,7 +129,7 @@ commands:
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: false
       - name: dmd
-        summary: Dump current (all) debug map region to a file (from-to.dmp) (see Sd)
+        summary: Dump debug map regions to a file (from-to.dmp)
         subcommands:
           - name: dmd
             summary: Dump debug maps to <filename>
@@ -139,16 +141,16 @@ commands:
           - name: dmda
             cname: cmd_debug_dump_maps_all
             summary: Dump all debug maps
-            args: [ ]
+            args: []
           - name: dmdw
             cname: cmd_debug_dump_maps_writable
             summary: Dump writable debug maps
-            args: [ ]
+            args: []
       - name: dmh
         summary: Show map of heap
         cname: cmd_debug_heap
         type: RZ_CMD_DESC_TYPE_OLDINPUT
-        args: [ ]
+        args: []
       - name: dmi
         summary: List/Load symbols
         cname: cmd_debug_dmi
@@ -161,7 +163,9 @@ commands:
             type: RZ_CMD_ARG_TYPE_FILE
             optional: false
       - name: dmp
-        summary: Change page at <address> with <size>, protection <perms> (perm) / Change dbg.map permissions
+        summary: >
+          Change page at <address> with <size>, protection <perms>
+          / Change dbg.map permissions to <perm>
         cname: cmd_debug_dmp
         args:
           - name: addr

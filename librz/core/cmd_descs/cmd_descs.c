@@ -1611,7 +1611,7 @@ static const RzCmdDescArg cmd_debug_list_maps_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_list_maps_help = {
-	.summary = "List memory maps / Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
+	.summary = "List memory maps / Allocate <size> bytes at <address> (anywhere if address is -1)",
 	.args = cmd_debug_list_maps_args,
 };
 
@@ -1666,7 +1666,7 @@ static const RzCmdDescHelp cmd_debug_deallocate_map_help = {
 };
 
 static const RzCmdDescHelp dmd_help = {
-	.summary = "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
+	.summary = "Dump debug map regions to a file (from-to.dmp)",
 };
 static const RzCmdDescArg cmd_debug_dump_maps_args[] = {
 	{
@@ -1747,7 +1747,7 @@ static const RzCmdDescArg cmd_debug_dmp_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_dmp_help = {
-	.summary = "Change page at <address> with <size>, protection <perms> (perm) / Change dbg.map permissions",
+	.summary = "Change page at <address> with <size>, protection <perms> / Change dbg.map permissions to <perm>",
 	.args = cmd_debug_dmp_args,
 };
 

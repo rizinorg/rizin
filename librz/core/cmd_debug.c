@@ -1446,12 +1446,8 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 // dm
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 1) {
-		char str[5] = "";
-		if (argc == 1) {
-			strcpy(str, argv[0] + 2);
-		}
 		rz_debug_map_sync(core->dbg); // update process memory maps
-		rz_debug_map_list(core->dbg, core->offset, str);
+		rz_debug_map_list(core->dbg, core->offset, argv[0] + 2);
 	} else if (argc == 3) {
 		int size;
 		ut64 addr;
