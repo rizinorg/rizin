@@ -1447,7 +1447,7 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 1) {
 		rz_debug_map_sync(core->dbg); // update process memory maps
-		rz_debug_map_list(core->dbg, core->offset, argv[0] + 2);
+		rz_debug_map_print(core->dbg, core->offset, mode);
 	} else if (argc == 3) {
 		int size;
 		ut64 addr;
@@ -1457,20 +1457,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const 
 	} else {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-	return RZ_CMD_STATUS_OK;
-}
-
-// dmq
-RZ_IPI RzCmdStatus rz_cmd_debug_dmq_handler(RzCore *core, int argc, const char **argv) {
-	rz_debug_map_sync(core->dbg);
-	rz_debug_map_list(core->dbg, core->offset, argv[0] + 2);
-	return RZ_CMD_STATUS_OK;
-}
-
-//dmq.
-RZ_IPI RzCmdStatus rz_cmd_debug_dmq_current_handler(RzCore *core, int argc, const char **argv) {
-	rz_debug_map_sync(core->dbg);
-	rz_debug_map_list(core->dbg, core->offset, argv[0] + 2);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1521,7 +1507,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, 
 // dm.
 RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, const char **argv) {
 	ut64 addr = core->offset;
-	rz_debug_map_list(core->dbg, addr, ".");
+	// RZ_OUTPUT_MODE_LONG is workaround for '.'
+	rz_debug_map_print(core->dbg, addr, RZ_OUTPUT_MODE_LONG);
 	return RZ_CMD_STATUS_OK;
 }
 

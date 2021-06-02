@@ -1615,22 +1615,6 @@ static const RzCmdDescHelp cmd_debug_list_maps_help = {
 	.args = cmd_debug_list_maps_args,
 };
 
-static const RzCmdDescArg cmd_debug_dmq_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_dmq_help = {
-	.summary = "List debug map line",
-	.args = cmd_debug_dmq_args,
-};
-
-static const RzCmdDescArg cmd_debug_dmq_current_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_debug_dmq_current_help = {
-	.summary = "List debug map current line",
-	.args = cmd_debug_dmq_current_args,
-};
-
 static const RzCmdDescArg cmd_debug_list_maps_ascii_args[] = {
 	{ 0 },
 };
@@ -4722,14 +4706,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_list_trace_session_mmap_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtsm", rz_cmd_debug_list_trace_session_mmap_handler, &cmd_debug_list_trace_session_mmap_help);
 	rz_warn_if_fail(cmd_debug_list_trace_session_mmap_cd);
 
-	RzCmdDesc *dm_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_debug_cd, "dm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_list_maps_handler, &cmd_debug_list_maps_help, &dm_help);
+	RzCmdDesc *dm_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_debug_cd, "dm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_maps_handler, &cmd_debug_list_maps_help, &dm_help);
 	rz_warn_if_fail(dm_cd);
-	RzCmdDesc *cmd_debug_dmq_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmq", rz_cmd_debug_dmq_handler, &cmd_debug_dmq_help);
-	rz_warn_if_fail(cmd_debug_dmq_cd);
-
-	RzCmdDesc *cmd_debug_dmq_current_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmq.", rz_cmd_debug_dmq_current_handler, &cmd_debug_dmq_current_help);
-	rz_warn_if_fail(cmd_debug_dmq_current_cd);
-
 	RzCmdDesc *cmd_debug_list_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm=", rz_cmd_debug_list_maps_ascii_handler, &cmd_debug_list_maps_ascii_help);
 	rz_warn_if_fail(cmd_debug_list_maps_ascii_cd);
 
