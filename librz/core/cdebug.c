@@ -733,7 +733,7 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode) {
 
 	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
 		RzList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
-		rz_list_foreach (maps, iter, map){
+		rz_list_foreach (maps, iter, map) {
 			switch (mode) {
 			case RZ_OUTPUT_MODE_JSON: // "dmj"
 				print_debug_map_json(map, pj);
@@ -749,12 +749,12 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode) {
 				free(name);
 			} break;
 			case RZ_OUTPUT_MODE_QUIET: // "dmq"
-//				if (input[1] == '.') { // "dmq."
-//					if (addr >= map->addr && addr < map->addr_end) {
-//						print_debug_map_line(dbg, map, addr, input);
-//					}
-//					break;
-//				}
+				//				if (input[1] == '.') { // "dmq."
+				//					if (addr >= map->addr && addr < map->addr_end) {
+				//						print_debug_map_line(dbg, map, addr, input);
+				//					}
+				//					break;
+				//				}
 				print_debug_map_line(dbg, map, addr, mode);
 				break;
 			case RZ_OUTPUT_MODE_LONG: // workaround for '.'
