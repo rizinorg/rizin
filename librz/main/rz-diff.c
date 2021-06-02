@@ -443,11 +443,12 @@ static ut8 *rz_diff_slurp_file(const char *file, size_t *size) {
 		goto rz_diff_slurp_file_end;
 	}
 
-	buffer = malloc(dio->filesize);
+	buffer = malloc(dio->filesize + 1);
 	if (!buffer) {
 		rz_diff_error("cannot allocate buffer\n");
 		goto rz_diff_slurp_file_end;
 	}
+	buffer[dio->filesize] = 0;
 
 	read = rz_io_pread_at(dio->io, 0, buffer, dio->filesize);
 	if (read != dio->filesize) {
