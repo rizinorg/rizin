@@ -4,8 +4,6 @@
 #include <rz_debug.h>
 #include <rz_list.h>
 
-
-
 RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	RzDebugMap *map;
 	/* range could be 0k on OpenBSD, it's a honeypot */
