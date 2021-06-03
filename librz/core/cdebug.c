@@ -732,7 +732,7 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode) {
 	}
 
 	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
-		RzList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
+		RzList *maps = rz_debug_map_list(dbg, (bool)i);
 		rz_list_foreach (maps, iter, map) {
 			switch (mode) {
 			case RZ_OUTPUT_MODE_JSON: // "dmj"
@@ -811,7 +811,7 @@ static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width) {
 			*max = map->addr_end;
 		}
 	}
-	return (*max - *min) / width;
+	return (int)(*max - *min) / width;
 }
 
 static void print_debug_maps_ascii_art(RzDebug *dbg, RzList *maps, ut64 addr, int colors) {
@@ -885,24 +885,31 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList *maps, ut64 addr, in
 }
 
 RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input, int colors) {
-	if (dbg) {
-		int i;
-		for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
-			RzList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
-			if (maps) {
-				RzListIter *iter;
-				RzDebugMap *map;
-				if (input[1] == '.') { // "dm=." Only show map overlapping current offset
-					dbg->cb_printf("TODO:\n");
-					rz_list_foreach (maps, iter, map) {
-						if (addr >= map->addr && addr < map->addr_end) {
-							// print_debug_map_ascii_art (dbg, map);
-						}
-					}
-				} else { // "dm=" Show all maps with a graph
-					print_debug_maps_ascii_art(dbg, maps, addr, colors);
+	if (!dbg) {
+		return;
+	}
+	int i;
+	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
+		//		RzList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
+		RzList *maps = rz_debug_map_list(dbg, (bool)i);
+		if (!maps) {
+			continue;
+		}
+		RzListIter *iter;
+		RzDebugMap *map;
+		if (input[1] == '.') { // "dm=." Only show map overlapping current offset
+			dbg->cb_printf("TODO:\n");
+			rz_list_foreach (maps, iter, map) {
+				if (addr >= map->addr && addr < map->addr_end) {
+					// print_debug_map_ascii_art (dbg, map);
 				}
 			}
+		} else { // "dm=" Show all maps with a graph
+			print_debug_maps_ascii_art(dbg, maps, addr, colors);
 		}
 	}
+}
+
+RZ_API RzList *rz_debug_map_list(RzDebug *dbg, bool user_map) {
+	return user_map ? dbg->maps_user : dbg->maps;
 }

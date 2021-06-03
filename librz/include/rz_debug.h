@@ -496,6 +496,7 @@ RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int pe
 RZ_API void rz_debug_map_free(RzDebugMap *map);
 RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode);
 RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input, int colors);
+RZ_API RzList *rz_debug_map_list(RzDebug *dbg, bool user_map);
 
 /* descriptors */
 RZ_API RzDebugDesc *rz_debug_desc_new(int fd, char *path, int perm, int type, int off);
