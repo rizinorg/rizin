@@ -75,6 +75,7 @@ rz_bin_sources = [
 
   'format/bflt/bflt.c',
   'format/coff/coff.c',
+  'format/coff/coff_reloc.c',
   'format/dex/dex.c',
   'format/dmp/dmp64.c',
   'format/elf/elf.c',
