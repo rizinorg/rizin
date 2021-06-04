@@ -117,8 +117,8 @@ RUN
 
 NAME=wc
 FILE==
-ARGS=-e io.cache=true
 CMDS=<<EOF
+e io.cache=true
 wx 010203
 wc
 wx 555555 @ 2

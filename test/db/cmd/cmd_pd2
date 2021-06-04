@@ -333,9 +333,9 @@ NAME=esil func cmt refline
 FILE=bins/elf/ls
 CMDS=<<EOF
 e asm.bytes=true
-e io.cache=true
 e asm.emu=true
 e asm.types=0
+e io.cache=true
 wx 7d0a7f08eb00 @ 0x5b02
 pd 4 @ 0x5b02
 EOF
@@ -353,7 +353,6 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
-e io.cache=true
 wx 488b4608
 td "struct ms { char b[8]; int member1; int member2; };"
 aht ms.member1
