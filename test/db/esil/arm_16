@@ -1,9 +1,9 @@
 NAME=adr emulation
 FILE=malloc://0x200
 CMDS=<<EOF
-e io.cache=true
 e asm.arch=arm
 e asm.bits=16
+e io.cache=true
 s 0x0008735c
 wx 30a1
 w rizin_emulation\x00 @ 0x87420
@@ -21,7 +21,6 @@ RUN
 NAME=clz
 FILE=malloc://0x200
 CMDS=<<EOF
-e io.cache=true
 e asm.arch=arm
 e asm.bits=16
 wa clz r0, r1
@@ -46,10 +45,10 @@ RUN
 NAME=addw emulation
 FILE=malloc://0x200
 CMDS=<<EOF
-e io.cache=true
 e asm.arch=arm
 e asm.bits=16
-s 0x00088a1c 
+e io.cache=true
+s 0x00088a1c
 wx 0ff26c71
 w addw_emulation\x00 @ 0x8918c
 aei
