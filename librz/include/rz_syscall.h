@@ -24,10 +24,15 @@ typedef struct rz_syscall_item_t {
 	char *sargs;
 } RzSyscallItem;
 
-typedef struct rz_syscall_port_t {
-	int port;
-	const char *name;
-} RzSyscallPort;
+typedef struct rz_sysreg_item_t {
+	char *type;
+	char *name;
+	char *comment;
+} RzSysregItem;
+
+typedef struct rz_type_db_sysreg {
+	HtUP /* <ut64 , RzSysregItem> */ *port;
+} RzSysregsDB;
 
 typedef struct rz_syscall_t {
 	FILE *fd;
@@ -38,9 +43,8 @@ typedef struct rz_syscall_t {
 	char *cpu;
 	// database
 	RzSyscallItem *sysptr;
-	RzSyscallPort *sysport;
 	Sdb *db;
-	Sdb *srdb;
+	RzSysregsDB *srdb;
 	int refs;
 } RzSyscall;
 
@@ -94,12 +98,15 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 RZ_API RzSyscallItem *rz_syscall_get(RzSyscall *ctx, int num, int swi);
 RZ_API int rz_syscall_get_num(RzSyscall *ctx, const char *str);
 RZ_API const char *rz_syscall_get_i(RzSyscall *ctx, int num, int swi);
-RZ_API const char *rz_syscall_sysreg(RzSyscall *s, const char *type, ut64 num);
 RZ_API RzList *rz_syscall_list(RzSyscall *ctx);
 RZ_API int rz_syscall_get_swi(RzSyscall *s);
 
-/* io */
-RZ_API const char *rz_syscall_get_io(RzSyscall *s, int ioport);
+RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 num);
+RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *dir_prefix);
+RZ_API bool rz_type_db_load_sysregs_sdb(RzSysregsDB *sysregdb, const char *path);
+RZ_API RzSysregsDB *rz_sysregs_db_new();
+RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name);
+RZ_API void rz_sysreg_item_free(RzSysregItem *sysregitem);
 #endif
 
 #ifdef __cplusplus

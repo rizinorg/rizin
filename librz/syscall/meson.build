@@ -1,6 +1,5 @@
 rz_syscall_sources = [
   'syscall.c',
-  'ioports.c'
 ]
 
 rz_syscall = library('rz_syscall', rz_syscall_sources,

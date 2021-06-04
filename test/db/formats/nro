@@ -8,7 +8,6 @@ RUN
 
 NAME=nro sections
 FILE=bins/nro/appstore.nro
-ARGS=-e io.cache=true
 CMDS=iS
 EXPECT=<<EOF
 [Sections]
@@ -26,7 +25,6 @@ RUN
 
 NAME=nro maps
 FILE=bins/nro/appstore.nro
-ARGS=-e io.cache=true
 CMDS=om
 EXPECT=<<EOF
  3 fd: 3 +0x00000000 0x00000000 - 0x001b3fff r-x fmap.text
@@ -37,7 +35,6 @@ RUN
 
 NAME=nro entry
 FILE=bins/nro/appstore.nro
-ARGS=-e io.cache=true
 CMDS=ie
 EXPECT=<<EOF
 [Entrypoints]
@@ -49,7 +46,6 @@ RUN
 
 NAME=nro data
 FILE=bins/nro/appstore.nro
-ARGS=-e io.cache=true
 CMDS=p8 0x30 @ 0x80
 EXPECT=<<EOF
 fb031eaa01000094dc2302d1f90300aafa0301aae0100090c11100d00000199121e02191210000cb211c009121f07d92

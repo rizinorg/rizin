@@ -64,9 +64,21 @@ RUN
 
 NAME=avr DISasm: IO-Ports
 FILE=bins/firmware/arduino_avr.bin
-CMDS=pd 1 @ 0x00000170~?IO
+CMDS=pd 13 @ 0x00000282
 EXPECT=<<EOF
-1
+            0x00000282      in    r24, 0x12                            ; IO Output pins/pullups address for port D
+            0x00000284      subi  r24, 0x80
+            0x00000286      out   0x12, r24                            ; IO Output pins/pullups address for port D
+            0x00000288      ret
+            0x0000028a      ldi   r22, 0x7d
+            0x0000028c      ldi   r23, 0x01
+            0x0000028e      ldi   r24, 0x2f
+            0x00000290      ldi   r25, 0x02
+            0x00000292      call  0x8e6
+            0x00000296      in    r24, 0x18                            ; IO Output pins/pullups address for port B
+            0x00000298      subi  r24, 0x80
+            0x0000029a      out   0x18, r24                            ; IO Output pins/pullups address for port B
+            0x0000029c      ret
 EOF
 RUN
 

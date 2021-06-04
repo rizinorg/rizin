@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* Helpers for handling lines */
+#define DIFF_IS_LINES_METHOD(x) (x.elem_at == methods_lines.elem_at)
 
 static RzList *tokenize_lines(const char *string) {
 	RzList *lines = NULL;
