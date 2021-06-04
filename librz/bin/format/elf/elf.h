@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
 // SPDX-FileCopyrightText: 2009 Nibble <nibble.ds@gmail.com>
 // SPDX-FileCopyrightText: 2009 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
@@ -18,29 +19,29 @@
 
 #define READ8(x, i) \
 	rz_read_ble8((x) + (i)); \
-	(i) += 1
+	(i) += sizeof(ut8)
 #define READ16(x, i) \
 	rz_read_ble16((x) + (i), bin->endian); \
-	(i) += 2
+	(i) += sizeof(ut16)
 #define READ32(x, i) \
 	rz_read_ble32((x) + (i), bin->endian); \
-	(i) += 4
+	(i) += sizeof(ut32)
 #define READ64(x, i) \
 	rz_read_ble64((x) + (i), bin->endian); \
-	(i) += 8
+	(i) += sizeof(ut64)
 
 #define BREAD8(x, i) \
 	rz_buf_read8_at(x, i); \
-	(i) += 1
+	(i) += sizeof(ut8)
 #define BREAD16(x, i) \
 	rz_buf_read_ble16_at(x, i, bin->endian); \
-	(i) += 2
+	(i) += sizeof(ut16)
 #define BREAD32(x, i) \
 	rz_buf_read_ble32_at(x, i, bin->endian); \
-	(i) += 4
+	(i) += sizeof(ut32)
 #define BREAD64(x, i) \
 	rz_buf_read_ble64_at(x, i, bin->endian); \
-	(i) += 8
+	(i) += sizeof(ut64)
 
 #define RZ_BIN_ELF_SCN_IS_EXECUTABLE(x) x &SHF_EXECINSTR
 #define RZ_BIN_ELF_SCN_IS_READABLE(x)   x &SHF_ALLOC
@@ -50,35 +51,16 @@
 #define RZ_BIN_ELF_PART_RELRO 1
 #define RZ_BIN_ELF_FULL_RELRO 2
 
-#define MIPS_PLT_OFFSET  0x20
-#define RISCV_PLT_OFFSET 0x20
-
-#define RISCV_PLT_ENTRY_SIZE 0x10
-#define X86_PLT_ENTRY_SIZE   0x10
-
-#define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
-#define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR   -0x6
-
-#define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize) + (entrysize)-1) / (entrysize))
-#define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
-	((rel->vaddr - pltgot_addr - n_initial_unused_entries * RZ_BIN_ELF_WORDSIZE) / RZ_BIN_ELF_WORDSIZE)
-
-#define RZ_BIN_ELF_SYMTAB_SYMBOLS 1 << 0
-#define RZ_BIN_ELF_DYNSYM_SYMBOLS 1 << 1
-#define RZ_BIN_ELF_IMPORT_SYMBOLS (1 << 2 | (bin->ehdr.e_type == ET_REL ? RZ_BIN_ELF_SYMTAB_SYMBOLS : RZ_BIN_ELF_DYNSYM_SYMBOLS))
-#define RZ_BIN_ELF_ALL_SYMBOLS    (RZ_BIN_ELF_SYMTAB_SYMBOLS | RZ_BIN_ELF_DYNSYM_SYMBOLS)
-#define ELFOBJ                    struct Elf_(rz_bin_elf_obj_t)
+#define ELFOBJ struct Elf_(rz_bin_elf_obj_t)
 
 #if RZ_BIN_ELF64
 #define RZ_BIN_ELF_WORDSIZE        0x8
-#define RZ_BIN_ELF_WORD_MAX        UT64_MAX
 #define RZ_BIN_ELF_READWORD(x, i)  READ64(x, i)
 #define RZ_BIN_ELF_BREADWORD(x, i) BREAD64(x, i)
 #define RZ_BIN_ELF_ADDR_MAX        UT64_MAX
 #define RZ_BIN_ELF_XWORD_MAX       UT64_MAX
 #else
 #define RZ_BIN_ELF_WORDSIZE        0x4
-#define RZ_BIN_ELF_WORD_MAX        UT32_MAX
 #define RZ_BIN_ELF_READWORD(x, i)  READ32(x, i)
 #define RZ_BIN_ELF_BREADWORD(x, i) BREAD32(x, i)
 #define RZ_BIN_ELF_ADDR_MAX        UT32_MAX
@@ -296,90 +278,82 @@ struct Elf_(rz_bin_elf_obj_t) {
 	bool relocs_patched;
 };
 
-RZ_DEPRECATE bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf);
-RZ_DEPRECATE bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr);
-RZ_DEPRECATE bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms);
-RZ_DEPRECATE ut64 Elf_(rz_bin_elf_p2v)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
-RZ_DEPRECATE ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size);
-RZ_DEPRECATE ut64 Elf_(rz_bin_elf_v2p)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
+// elf.c
 
-RZ_IPI Elf_(Sym) Elf_(rz_bin_elf_get_symbol_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
-RZ_IPI Elf_(Verdaux) Elf_(rz_bin_elf_get_verdaux_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
-RZ_IPI Elf_(Verdef) Elf_(rz_bin_elf_get_verdef_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
-RZ_IPI Elf_(Vernaux) Elf_(rz_bin_elf_get_vernaux_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
-RZ_IPI Elf_(Verneed) Elf_(rz_bin_elf_get_verneed_entry)(RZ_NONNULL ELFOBJ *bin, ut64 offset);
-RZ_IPI RZ_BORROW RzBinElfNotePrStatus *Elf_(rz_bin_elf_get_prstatus)(RZ_NONNULL ELFOBJ *bin);
-RZ_IPI RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
-RZ_IPI RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols_from_phdr)(RZ_NONNULL ELFOBJ *bin, int type);
-RZ_IPI RZ_BORROW const char *Elf_(rz_bin_elf_symbol_bind_to_str)(RZ_NONNULL Elf_(Sym) * sym);
-RZ_IPI RZ_BORROW const char *Elf_(rz_bin_elf_symbol_type_to_str)(ELFOBJ *bin, RzBinElfSymbol *ret, RZ_NONNULL Elf_(Sym) * sym);
-RZ_IPI RZ_OWN RzBinElfSymbol *Elf_(rz_bin_elf_compute_symbols_from_phdr)(RZ_NONNULL ELFOBJ *bin, int type);
-RZ_IPI RZ_OWN RzVector *Elf_(rz_bin_elf_compute_symbols_from_segment)(RZ_NONNULL ELFOBJ *bin, int type, ut64 offset, size_t num, ut64 entry_size);
-RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info)(RZ_NONNULL ELFOBJ *bin);
-RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_verdef)(RZ_NONNULL ELFOBJ *bin);
-RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_verneed)(RZ_NONNULL ELFOBJ *bin);
-RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info_gnu_versym)(RZ_NONNULL ELFOBJ *bin);
-RZ_IPI RZ_OWN char *Elf_(rz_bin_elf_get_ver_flags)(ut32 flags);
-RZ_IPI RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols_with_type)(ELFOBJ *bin, int type);
-RZ_IPI bool Elf_(rz_bin_elf_init_dynamic_section)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
-RZ_IPI bool Elf_(rz_bin_elf_init_dynstr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
-RZ_IPI bool Elf_(rz_bin_elf_init_ehdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
-RZ_IPI bool Elf_(rz_bin_elf_init_notes)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
-RZ_IPI bool Elf_(rz_bin_elf_init_phdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
-RZ_IPI bool Elf_(rz_bin_elf_init_shdr)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
-RZ_IPI bool Elf_(rz_bin_elf_init_shstrtab)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
-RZ_IPI bool Elf_(rz_bin_elf_init_strtab)(RZ_NONNULL RZ_INOUT ELFOBJ *bin);
-RZ_IPI bool Elf_(rz_bin_elf_is_sh_index_valid)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index);
-RZ_IPI size_t Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin);
-RZ_IPI ut64 Elf_(rz_bin_elf_get_import_addr)(RZ_NONNULL ELFOBJ *bin, int symbol);
-RZ_IPI void Elf_(rz_bin_elf_set_import_by_ord)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
-
-RZ_BORROW RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(RZ_NONNULL ELFOBJ *bin);
-RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
-RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin);
-RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin);
-RZ_BORROW const ut8 *Elf_(rz_bin_elf_grab_regstate)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL size_t *size);
 RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, bool verbose);
-RZ_OWN RzBinElfField *Elf_(rz_bin_elf_get_fields)(RZ_NONNULL ELFOBJ *bin);
+void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin);
+ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
+ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
+
+// elf_corefile.c
+
+RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW const ut8 *Elf_(rz_bin_elf_grab_regstate)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL size_t *size);
+ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_info.c
+
 RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN RzBinElfSection *Elf_(rz_bin_elf_get_sections)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
-RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
-RZ_OWN RzList *Elf_(section_flag_to_rzlist)(ut64 flag);
-RZ_OWN char *Elf_(rz_bin_elf_compiler)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_compiler)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN char *Elf_(rz_bin_elf_get_data_encoding)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_elf_class)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_file_type)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_head_flag)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN char *Elf_(rz_bin_elf_get_intrp)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_machine_name)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_osabi_name)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_rpath)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN char *Elf_(rz_bin_elf_intrp)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN char *Elf_(section_type_to_string)(ut64 type);
-bool Elf_(rz_bin_elf_get_stripped)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_va)(ELFOBJ *bin);
+bool Elf_(rz_bin_elf_is_big_endian)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_has_relro)(RZ_NONNULL ELFOBJ *bin);
-int Elf_(rz_bin_elf_is_big_endian)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_entry_offset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_fini_offset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_init_offset)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_notes.c
+
+bool Elf_(rz_bin_elf_init_notes)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_relocs.c
+
+RZ_BORROW RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(RZ_NONNULL ELFOBJ *bin);
+ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_sections.c
+
+RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
+RZ_OWN RzBinElfSection *Elf_(rz_bin_elf_get_sections)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzList *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag);
+RZ_OWN char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type);
+bool Elf_(rz_bin_elf_is_sh_index_valid)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index);
 ut64 Elf_(rz_bin_elf_get_section_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
-ut64 Elf_(rz_bin_elf_get_section_addr_end)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
 ut64 Elf_(rz_bin_elf_get_section_offset)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
-ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin);
-ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
-ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
-void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_symbols.c
+
+RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
+RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
+size_t Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_write.c
+
+bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf);
+bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr);
+bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms);
+ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size);
 
 #endif

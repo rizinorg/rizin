@@ -128,6 +128,6 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.write = &rz_bin_write_elf,
 	.file_type = get_file_type,
 	.regstate = regstate,
-	.section_type_to_string = &Elf_(section_type_to_string),
-	.section_flag_to_rzlist = &Elf_(section_flag_to_rzlist),
+	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
+	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
 };

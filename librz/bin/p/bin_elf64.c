@@ -156,8 +156,8 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.get_vaddr = &get_elf_vaddr64,
 	.file_type = &get_file_type,
 	.regstate = &regstate,
-	.section_type_to_string = &Elf_(section_type_to_string),
-	.section_flag_to_rzlist = &Elf_(section_flag_to_rzlist),
+	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
+	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
 };
 
 #ifndef RZ_PLUGIN_INCORE
