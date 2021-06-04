@@ -34,7 +34,9 @@ RZ_API ut64 rz_coff_import_index_addr(struct rz_bin_coff_obj *obj, ut64 imp_inde
 typedef void (*RelocsForeachCb)(RZ_BORROW RzBinReloc *reloc, ut8 *patch_buf, size_t patch_buf_sz, void *user);
 
 static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void *user) {
-	struct coff_reloc *rel;
+	if (!bin->scn_hdrs) {
+		return;
+	}
 	for (size_t i = 0; i < bin->hdr.f_nscns; i++) {
 		if (!bin->scn_hdrs[i].s_nreloc) {
 			continue;
@@ -43,7 +45,7 @@ static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void
 		if (size < 0) {
 			break;
 		}
-		rel = calloc(1, size + sizeof(struct coff_reloc));
+		struct coff_reloc *rel = calloc(1, size + sizeof(struct coff_reloc));
 		if (!rel) {
 			break;
 		}
@@ -179,7 +181,7 @@ void get_relocs_list_cb(RZ_BORROW RzBinReloc *reloc, ut8 *patch_buf, size_t patc
 }
 
 RZ_API RzList *rz_coff_get_relocs(struct rz_bin_coff_obj *bin) {
-	rz_return_val_if_fail(bin && bin->scn_hdrs, NULL);
+	rz_return_val_if_fail(bin, NULL);
 	RzList *r = rz_list_newf(free);
 	if (!r) {
 		return NULL;
