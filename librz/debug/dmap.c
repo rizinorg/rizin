@@ -88,3 +88,13 @@ RZ_API RzList *rz_debug_map_list_new(void) {
 	list->free = (RzListFree)rz_debug_map_free;
 	return list;
 }
+
+/**
+ * @brief Get RzList* of memory maps for the process currently being debugged
+ * @param dbg RzDebug pointer
+ * @param user_map Boolean value, if true return memory maps belonging to user space else return memory maps belonging to kernel space
+ * @return
+ */
+RZ_API RzList *rz_debug_map_list(RzDebug *dbg, bool user_map) {
+	return user_map ? dbg->maps_user : dbg->maps;
+}

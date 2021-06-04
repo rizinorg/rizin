@@ -909,7 +909,3 @@ RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input,
 		}
 	}
 }
-
-RZ_API RzList *rz_debug_map_list(RzDebug *dbg, bool user_map) {
-	return user_map ? dbg->maps_user : dbg->maps;
-}
