@@ -5074,7 +5074,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		rz_core_debug_esil(core, input + 1);
 		break;
 	case 'g': // "dg"
-		if (core->dbg->h && core->dbg->h->gcore) {
+		if (core->dbg->cur && core->dbg->cur->gcore) {
 			if (core->dbg->pid == -1) {
 				eprintf("Not debugging, can't write core.\n");
 				break;
@@ -5084,7 +5084,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			rz_file_rm(corefile);
 			RzBuffer *dst = rz_buf_new_file(corefile, O_RDWR | O_CREAT, 0644);
 			if (dst) {
-				if (!core->dbg->h->gcore(core->dbg, dst)) {
+				if (!core->dbg->cur->gcore(core->dbg, dst)) {
 					eprintf("dg: coredump failed\n");
 				}
 				rz_buf_free(dst);
@@ -5149,8 +5149,8 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				core->dbg->session = NULL;
 			}
 			// Kill debugee and all child processes
-			if (core->dbg && core->dbg->h && core->dbg->h->pids && core->dbg->pid != -1) {
-				list = core->dbg->h->pids(core->dbg, core->dbg->pid);
+			if (core->dbg && core->dbg->cur && core->dbg->cur->pids && core->dbg->pid != -1) {
+				list = core->dbg->cur->pids(core->dbg, core->dbg->pid);
 				if (list) {
 					rz_list_foreach (list, iter, p) {
 						rz_debug_kill(core->dbg, p->pid, p->pid, SIGKILL);

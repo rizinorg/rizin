@@ -6786,8 +6786,8 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			RzListIter *iter;
 			RzDebugPid *pid;
 			const char *arg = strchr(input, ' ');
-			RzList *pids = (core->dbg->h && core->dbg->h->pids)
-				? core->dbg->h->pids(core->dbg, 0)
+			RzList *pids = (core->dbg->cur && core->dbg->cur->pids)
+				? core->dbg->cur->pids(core->dbg, 0)
 				: NULL;
 			if (arg && *++arg) {
 				rz_list_foreach (pids, iter, pid) {

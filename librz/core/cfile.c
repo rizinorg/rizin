@@ -1187,7 +1187,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	rz_list_append(r->files, fh);
 	if (rz_config_get_b(r->config, "cfg.debug")) {
 		bool swstep = true;
-		if (r->dbg->h && r->dbg->h->canstep) {
+		if (r->dbg->cur && r->dbg->cur->canstep) {
 			swstep = false;
 		}
 		rz_config_set_i(r->config, "dbg.swstep", swstep);

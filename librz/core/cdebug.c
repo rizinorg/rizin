@@ -580,7 +580,7 @@ RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
 		}
 	}
 	rz_debug_select(core->dbg, core->dbg->pid, core->dbg->tid);
-	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->h && !core->dbg->h->canstep));
+	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->cur && !core->dbg->cur->canstep));
 	rz_core_cmdf(core, "R! \"pid %d\"", core->dbg->pid);
 }
 
@@ -601,7 +601,7 @@ RZ_API RzCmdStatus rz_core_debug_plugin_print(RzDebug *dbg, RzDebugPlugin *plugi
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
 		rz_cons_printf("%d  %s  %s %s%s\n",
-			count, (plugin == dbg->h) ? "dbg" : "---",
+			count, (plugin == dbg->cur) ? "dbg" : "---",
 			plugin->name, spaces, plugin->license);
 		break;
 	}

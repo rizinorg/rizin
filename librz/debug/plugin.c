@@ -17,38 +17,55 @@ RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
 }
 
 RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
-	if (dbg && str) {
+	rz_return_val_if_fail(dbg, false);
+	RzDebugPlugin *new_plugin = NULL;
+	if (str) {
 		RzDebugPlugin *h;
 		RzListIter *iter;
 		rz_list_foreach (dbg->plugins, iter, h) {
 			if (h->name && !strcmp(str, h->name)) {
-				dbg->h = h;
-				if (dbg->analysis && dbg->analysis->cur) {
-					rz_debug_set_arch(dbg, dbg->analysis->cur->arch, dbg->bits);
-				}
-				dbg->bp->breakpoint = dbg->h->breakpoint;
-				dbg->bp->user = dbg;
+				new_plugin = h;
+				break;
 			}
 		}
+		if (!new_plugin) {
+			return false;
+		}
 	}
-	if (dbg && dbg->h && dbg->h->reg_profile) {
-		char *p = dbg->h->reg_profile(dbg);
+	if (new_plugin == dbg->cur) {
+		return true;
+	}
+	if (dbg->cur && dbg->cur->fini) {
+		dbg->cur->fini(dbg, dbg->plugin_data);
+	}
+	dbg->cur = new_plugin;
+	dbg->plugin_data = NULL;
+	if (!dbg->cur) {
+		return true;
+	}
+	if (dbg->analysis && dbg->analysis->cur) {
+		rz_debug_set_arch(dbg, dbg->analysis->cur->arch, dbg->bits);
+	}
+	dbg->bp->breakpoint = dbg->cur->breakpoint;
+	dbg->bp->user = dbg;
+	if (dbg->cur->init) {
+		dbg->cur->init(dbg, &dbg->plugin_data);
+	}
+	if (dbg->cur->reg_profile) {
+		char *p = dbg->cur->reg_profile(dbg);
 		if (p) {
 			rz_reg_set_profile_string(dbg->reg, p);
 			if (dbg->analysis && dbg->reg != dbg->analysis->reg) {
 				rz_reg_free(dbg->analysis->reg);
 				dbg->analysis->reg = dbg->reg;
 			}
-			if (dbg->h->init) {
-				dbg->h->init(dbg);
-			}
 			rz_reg_set_profile_string(dbg->reg, p);
 			free(p);
 		} else {
-			eprintf("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->h->name);
+			eprintf("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->cur->name);
 		}
 	}
-	return (dbg && dbg->h);
+	return true;
 }
 
 RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo) {
@@ -67,8 +84,8 @@ RZ_API bool rz_debug_plugin_set_reg_profile(RzDebug *dbg, const char *profile) {
 		eprintf("rz_debug_plugin_set_reg_profile: Cannot find '%s'\n", profile);
 		return false;
 	}
-	if (dbg && dbg->h && dbg->h->set_reg_profile) {
-		return dbg->h->set_reg_profile(str);
+	if (dbg && dbg->cur && dbg->cur->set_reg_profile) {
+		return dbg->cur->set_reg_profile(dbg, str);
 	}
 	free(str);
 	return false;

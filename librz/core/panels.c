@@ -3529,8 +3529,8 @@ int __symbols_cb(void *user) {
 
 int __program_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	char *dh_orig = core->dbg->h
-		? strdup(core->dbg->h->name)
+	char *dh_orig = core->dbg->cur
+		? strdup(core->dbg->cur->name)
 		: strdup("esil");
 	rz_core_analysis_all(core);
 	rz_core_analysis_everything(core, false, dh_orig);

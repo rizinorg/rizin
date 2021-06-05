@@ -141,7 +141,7 @@ static int rz_debug_winkd_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool
 	return winkd_bkpt(wctx, b->addr, set, b->hw, tag);
 }
 
-static int rz_debug_winkd_init(RzDebug *dbg) {
+static bool rz_debug_winkd_init(RzDebug *dbg, void **user) {
 	return true;
 }
 
