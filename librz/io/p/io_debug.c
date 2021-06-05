@@ -460,11 +460,11 @@ static bool __plugin_open(RzIO *io, const char *file, bool many) {
 #include <rz_core.h>
 static int get_pid_of(RzIO *io, const char *procname) {
 	RzCore *c = io->corebind.core;
-	if (c && c->dbg && c->dbg->h) {
+	if (c && c->dbg && c->dbg->cur) {
 		RzListIter *iter;
 		RzDebugPid *proc;
 		RzDebug *d = c->dbg;
-		RzList *pids = d->h->pids(d, 0);
+		RzList *pids = d->cur->pids(d, 0);
 		rz_list_foreach (pids, iter, proc) {
 			if (strstr(proc->path, procname)) {
 				eprintf("Matching PID %d %s\n", proc->pid, proc->path);

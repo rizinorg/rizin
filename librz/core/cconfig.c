@@ -679,7 +679,7 @@ static bool cb_asmbits(void *user, void *data) {
 		rz_debug_set_arch(core->dbg, core->analysis->cur->arch, bits);
 		bool load_from_debug = rz_config_get_b(core->config, "cfg.debug");
 		if (load_from_debug) {
-			if (core->dbg->h && core->dbg->h->reg_profile) {
+			if (core->dbg->cur && core->dbg->cur->reg_profile) {
 // XXX. that should depend on the plugin, not the host os
 #if __WINDOWS__
 #if !defined(_WIN64)
@@ -688,7 +688,7 @@ static bool cb_asmbits(void *user, void *data) {
 				core->dbg->bits = RZ_SYS_BITS_64;
 #endif
 #endif
-				char *rp = core->dbg->h->reg_profile(core->dbg);
+				char *rp = core->dbg->cur->reg_profile(core->dbg);
 				rz_reg_set_profile_string(core->dbg->reg, rp);
 				rz_reg_set_profile_string(core->analysis->reg, rp);
 				free(rp);

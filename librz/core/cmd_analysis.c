@@ -7991,8 +7991,8 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_core_task_yield(&core->tasks);
 			// Run pending analysis immediately after analysis
 			// Usefull when running commands with ";" or via rizin -c,-i
-			dh_orig = core->dbg->h
-				? strdup(core->dbg->h->name)
+			dh_orig = core->dbg->cur
+				? strdup(core->dbg->cur->name)
 				: strdup("esil");
 			if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
 				//use dh_origin if we are debugging
