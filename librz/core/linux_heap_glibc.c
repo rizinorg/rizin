@@ -1904,30 +1904,6 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 	}
 }
 
-static const char *GH(help_msg)[] = {
-	"Usage:", " dmh", " # Memory map heap",
-	"dmh", "", "List the chunks inside the heap segment",
-	"dmh", " @[malloc_state]", "List heap chunks of a particular arena",
-	"dmha", "", "List all malloc_state instances in application",
-	"dmhb", " @[malloc_state]", "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
-	"dmhb", " [bin_num|bin_num:malloc_state]", "Display parsed double linked list of bins instance from a particular arena",
-	"dmhbg", " [bin_num]", "Display double linked list graph of main_arena's bin [Under development]",
-	"dmhc", " @[chunk_addr]", "Display malloc_chunk struct for a given malloc chunk",
-	"dmhd", " [tcache|unsorted|fast|small|large]", "Display description of bins in the main_arena",
-	"dmhf", " @[malloc_state]", "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
-	"dmhf", " [fastbin_num|fastbin_num:malloc_state]", "Display parsed single linked list in fastbinY instance from a particular arena",
-	"dmhg", "", "Display heap graph of heap segment",
-	"dmhg", " [malloc_state]", "Display heap graph of a particular arena",
-	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
-	"dmhj", "", "List the chunks inside the heap segment in JSON format",
-	"dmhm", "", "List all elements of struct malloc_state of main thread (main_arena)",
-	"dmhm", " @[malloc_state]", "List all malloc_state instance of a particular arena",
-	"dmht", "", "Display all parsed thread cache bins of all arena's tcache instance",
-	"dmhv", " @[malloc_state]", "List heap chunks of a particular arena along with hexdump of first 0x10 bytes",
-	"dmh?", "", "Show map heap help",
-	NULL
-};
-
 static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
@@ -2202,10 +2178,278 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			(core, m_arena, main_arena, main_thread_only, NULL);
 		}
 		break;
-	case '?':
-		rz_core_cmd_help(core, GH(help_msg));
-		break;
+		//	case '?':
+		//		rz_core_cmd_help(core, GH(help_msg));
+		//		break;
 	}
 	free(main_arena);
 	return true;
 }
+
+RZ_API RzList *GH(get_heap_chunks_list)(RzCore *core, MallocState *main_arena,
+	GHT m_arena, GHT m_state, GHT global_max_fast) {
+	RzList *chunks = rz_list_newf(free);
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return chunks;
+	}
+
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, min_size = SZ * 4;
+	GHT tcache_fd = GHT_MAX, tcache_tmp = GHT_MAX;
+	GHT initial_brk = GHT_MAX, tcache_initial_brk = GHT_MAX;
+
+	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
+	const int offset = rz_config_get_i(core->config, "dbg.glibc.fc_offset");
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	int glibc_version = core->dbg->glibc_version;
+
+	if (m_arena == m_state) {
+		GH(get_brks)
+		(core, &brk_start, &brk_end);
+		if (tcache) {
+			initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
+			if (rz_config_get_b(core->config, "cfg.debug")) {
+				tcache_initial_brk = initial_brk;
+			}
+			initial_brk += (glibc_version < 230)
+				? sizeof(GH(RzHeapTcachePre230))
+				: sizeof(GH(RzHeapTcache));
+		} else {
+			initial_brk = (brk_start >> 12) << 12;
+		}
+	} else {
+		brk_start = ((m_state >> 16) << 16);
+		brk_end = brk_start + main_arena->GH(system_mem);
+		if (tcache) {
+			tcache_initial_brk = brk_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
+			initial_brk = tcache_initial_brk + offset;
+		} else {
+			initial_brk = brk_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState)) + MMAP_OFFSET;
+		}
+	}
+
+	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
+		eprintf("No Heap section\n");
+		return chunks;
+	}
+
+	GHT next_chunk = initial_brk, prev_chunk = next_chunk;
+	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
+	if (!cnk) {
+		return chunks;
+	}
+	GH(RzHeapChunk) *cnk_next = RZ_NEW0(GH(RzHeapChunk));
+	if (!cnk_next) {
+		free(cnk);
+		return chunks;
+	}
+
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	if (!hc) {
+		free(cnk);
+		free(cnk_next);
+		return chunks;
+	}
+
+	(void)rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+	size_tmp = (cnk->size >> 3) << 3;
+	ut64 prev_chunk_addr;
+
+	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
+		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
+			RzHeapChunkListItem *block = malloc(sizeof(RzHeapChunkListItem));
+			block->addr = next_chunk;
+			block->status = "corrupted";
+			rz_list_append(chunks, block);
+			break;
+		}
+
+		prev_chunk_addr = (ut64)prev_chunk;
+
+		bool fastbin = size_tmp >= SZ * 4 && size_tmp <= global_max_fast;
+		bool is_free = false, double_free = false;
+
+		if (fastbin) {
+			int i = (size_tmp / (SZ * 2)) - 2;
+			GHT idx = (GHT)main_arena->GH(fastbinsY)[i];
+			(void)rz_io_read_at(core->io, idx, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+			GHT next = GH(get_next_pointer)(core, idx, cnk->fd);
+			if (prev_chunk == idx && idx && !next) {
+				is_free = true;
+			}
+			while (next && next >= brk_start && next < main_arena->GH(top)) {
+				if (prev_chunk == idx || prev_chunk == next || idx == next) {
+					is_free = true;
+					if (idx == next) {
+						double_free = true;
+						break;
+					}
+					(void)rz_io_read_at(core->io, next, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
+					GHT next_node = GH(get_next_pointer)(core, next, cnk_next->fd);
+					// avoid triple while?
+					while (next_node && next_node >= brk_start && next_node < main_arena->GH(top)) {
+						if (prev_chunk == next_node) {
+							double_free = true;
+							break;
+						}
+						(void)rz_io_read_at(core->io, next_node, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
+						next_node = GH(get_next_pointer)(core, next_node, cnk_next->fd);
+					}
+					if (double_free) {
+						break;
+					}
+				}
+				(void)rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+				next = GH(get_next_pointer)(core, next, cnk->fd);
+			}
+			if (double_free) {
+				PRINT_RA(" Double free in simple-linked list detected ");
+				break;
+			}
+		}
+
+		if (tcache) {
+			GH(RTcache) *tcache_heap = GH(tcache_new)(core);
+			if (!tcache_heap) {
+				rz_config_hold_restore(hc);
+				rz_config_hold_free(hc);
+				free(cnk);
+				free(cnk_next);
+				return chunks;
+			}
+			GH(tcache_read)
+			(core, tcache_initial_brk, tcache_heap);
+			size_t i;
+			for (i = 0; i < TCACHE_MAX_BINS; i++) {
+				int count = GH(tcache_get_count)(tcache_heap, i);
+				GHT entry = GH(tcache_get_entry)(tcache_heap, i);
+				if (count > 0) {
+					if (entry - SZ * 2 == prev_chunk) {
+						is_free = true;
+						break;
+					}
+					if (count > 1) {
+						tcache_fd = entry;
+						int n;
+						for (n = 1; n < count; n++) {
+							bool r = rz_io_read_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
+							if (!r) {
+								break;
+							}
+							tcache_tmp = GH(get_next_pointer)(core, tcache_fd, read_le(&tcache_tmp));
+							if (tcache_tmp - SZ * 2 == prev_chunk) {
+								is_free = true;
+								break;
+							}
+							tcache_fd = (ut64)tcache_tmp;
+						}
+					}
+				}
+			}
+			GH(tcache_free)
+			(tcache_heap);
+		}
+
+		next_chunk += size_tmp;
+		prev_chunk = next_chunk;
+		rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+		size_tmp = (cnk->size >> 3) << 3;
+
+		char *status = "allocated";
+		if (fastbin) {
+			if (is_free) {
+				status = "free";
+			}
+		}
+		if (!(cnk->size & 1)) {
+			status = "free";
+		}
+		if (tcache) {
+			if (is_free) {
+				status = "free";
+			}
+		}
+
+		RzHeapChunkListItem *block = malloc(sizeof(RzHeapChunkListItem));
+		block->addr = prev_chunk_addr;
+		block->status = status;
+		rz_list_append(chunks, block);
+	}
+	free(cnk);
+	free(cnk_next);
+	return chunks;
+}
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	GHT global_max_fast = (64 * SZ / 4);
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return false;
+	}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	// TODO work for other arenas
+	m_state = m_arena;
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+		PRINT_RA("This address is not part of the arenas\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	GHT brk_start, brk_end;
+	if (m_arena == m_state) {
+		GH(get_brks)
+		(core, &brk_start, &brk_end);
+
+	} else {
+		brk_start = ((m_state >> 16) << 16);
+		brk_end = brk_start + main_arena->GH(system_mem);
+	}
+	RzList *chunks = GH(get_heap_chunks_list)(core, main_arena, m_arena, m_state, global_max_fast);
+	RzListIter *iter;
+	RzHeapChunkListItem *pos;
+	rz_cons_printf("Arena @ ");
+	PRINTF_YA("0x%" PFMT64x, (ut64)m_state);
+	rz_cons_newline();
+	rz_list_foreach (chunks, iter, pos) {
+		GH(print_heap_chunk_simple)
+		(core, pos->addr, pos->status, NULL);
+		rz_cons_newline();
+		if (mode == RZ_OUTPUT_MODE_LONG) {
+			int size = 0x10;
+			char *data = calloc(1, size);
+			if (data) {
+				rz_io_nread_at(core->io, (ut64)(pos->addr + SZ * 2), (ut8 *)data, size);
+				core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
+				core->print->pairs = false;
+				rz_cons_printf("   ");
+				rz_print_hexdump(core->print, (ut64)(pos->addr + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
+				core->print->flags |= RZ_PRINT_FLAGS_HEADER;
+				core->print->pairs = true;
+				free(data);
+			}
+		}
+	}
+	GH(print_heap_chunk_simple)
+	(core, main_arena->GH(top), "free", NULL);
+	PRINT_RA("[top]");
+	rz_cons_printf("[brk_start: ");
+	PRINTF_YA("0x%" PFMT64x, (ut64)brk_start);
+	rz_cons_printf(", brk_end: ");
+	PRINTF_YA("0x%" PFMT64x, (ut64)brk_end);
+	rz_cons_printf("]\n");
+	rz_list_free(chunks);
+	return RZ_CMD_STATUS_OK;
+}
+
+#ifndef HEAP32
+RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (core->rasm->bits == 64) {
+		return rz_cmd_heap_chunks_print_handler_64(core, argc, argv, mode);
+	} else {
+		return rz_cmd_heap_chunks_print_handler_32(core, argc, argv, mode);
+	}
+}
+#endif

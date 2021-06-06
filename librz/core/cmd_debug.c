@@ -10,9 +10,7 @@
 #define SIGKILL 9
 #endif
 
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #include "rz_heap_glibc.h"
-#endif
 
 #if HAVE_JEMALLOC
 #include "rz_heap_jemalloc.h"
@@ -2043,9 +2041,8 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 	return true;
 }
 
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #include "linux_heap_glibc.c"
-#elif __WINDOWS__
+#if __WINDOWS__
 #include "windows_heap.c"
 #endif
 
@@ -5517,14 +5514,4 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		dbg_follow_seek_register(core);
 	}
 	return 0;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("executing dmh\n");
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_heap_arena_print_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("executing dmha\n");
-	return RZ_CMD_STATUS_OK;
 }

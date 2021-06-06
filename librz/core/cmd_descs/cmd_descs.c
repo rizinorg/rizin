@@ -96,6 +96,7 @@ static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_list_maps_args[3];
 static const RzCmdDescArg cmd_debug_deallocate_map_args[2];
 static const RzCmdDescArg cmd_debug_dump_maps_args[2];
+static const RzCmdDescArg cmd_heap_chunks_print_args[2];
 static const RzCmdDescArg cmd_debug_dml_args[2];
 static const RzCmdDescArg cmd_debug_dmp_args[4];
 static const RzCmdDescArg cmd_debug_dmL_args[3];
@@ -1702,19 +1703,18 @@ static const RzCmdDescHelp dmh_help = {
 	.summary = "Glibc heap commands",
 };
 static const RzCmdDescArg cmd_heap_chunks_print_args[] = {
+	{
+		.name = "malloc_state",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_heap_chunks_print_help = {
-	.summary = "print heap chunks",
+	.summary = "List heap chunks of an arena",
 	.args = cmd_heap_chunks_print_args,
-};
-
-static const RzCmdDescArg cmd_heap_arena_print_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp cmd_heap_arena_print_help = {
-	.summary = "print arenas",
-	.args = cmd_heap_arena_print_args,
 };
 
 static const RzCmdDescHelp cmd_debug_dmi_help = {
@@ -4741,10 +4741,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dump_maps_writable_cd = rz_cmd_desc_argv_new(core->rcmd, dmd_cd, "dmdw", rz_cmd_debug_dump_maps_writable_handler, &cmd_debug_dump_maps_writable_help);
 	rz_warn_if_fail(cmd_debug_dump_maps_writable_cd);
 
-	RzCmdDesc *dmh_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmh", rz_cmd_heap_chunks_print_handler, &cmd_heap_chunks_print_help, &dmh_help);
+	RzCmdDesc *dmh_cd = rz_cmd_desc_group_modes_new(core->rcmd, dm_cd, "dmh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_cmd_heap_chunks_print_handler, &cmd_heap_chunks_print_help, &dmh_help);
 	rz_warn_if_fail(dmh_cd);
-	RzCmdDesc *cmd_heap_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmha", rz_cmd_heap_arena_print_handler, &cmd_heap_arena_print_help);
-	rz_warn_if_fail(cmd_heap_arena_print_cd);
 
 	RzCmdDesc *cmd_debug_dmi_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmi", rz_cmd_debug_dmi, &cmd_debug_dmi_help);
 	rz_warn_if_fail(cmd_debug_dmi_cd);

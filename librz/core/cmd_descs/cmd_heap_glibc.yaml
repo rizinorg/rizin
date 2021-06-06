@@ -2,10 +2,14 @@
 name: cmd_heap_glibc
 commands:
   - name: dmh
-    cname:  cmd_heap_chunks_print
-    summary: print heap chunks
-    args: []
-  - name: dmha
-    cname: cmd_heap_arena_print
-    summary: print arenas
-    args: []
+    cname: cmd_heap_chunks_print
+    summary: List heap chunks of an arena
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+      - RZ_OUTPUT_MODE_LONG
+    args:
+      - name: malloc_state
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
+

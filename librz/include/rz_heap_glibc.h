@@ -276,6 +276,10 @@ typedef enum rz_heap_bin_type {
 	RZ_HEAP_BIN_LARGE
 } RzHeapBinType;
 
+typedef struct rz_heap_chunk_list_item {
+	ut64 addr;
+	char *status;
+} RzHeapChunkListItem;
 #ifdef __cplusplus
 }
 #endif
