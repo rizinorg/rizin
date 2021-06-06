@@ -416,7 +416,8 @@ RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 port) {
 		return NULL;
 	}
 	RzSysregItem *item = ht_up_find(s->srdb->port, port, NULL);
-	if (item)
+	if (item && !strcmp(item->type, type)) {
 		return item->comment;
+	}
 	return NULL;
 }

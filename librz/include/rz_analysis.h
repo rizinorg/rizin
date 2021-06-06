@@ -22,7 +22,6 @@
 #include <rz_flag.h>
 #include <rz_bin.h>
 #include <rz_type.h>
-#include <rz_arch.h>
 
 #define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
 

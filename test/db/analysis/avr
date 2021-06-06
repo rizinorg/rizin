@@ -82,6 +82,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=avr ATTiny RzArchProfile display
+FILE=bins/firmware/arduino_avr.bin
+ARGS=-e asm.cpu=ATTiny48
+CMDS=<<EOF
+aa
+pd 5 @ 0x0
+fs~reg
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000  ~   jmp   entry0
+        |   ;-- PINB:
+        |   0x00000003      unaligned
+        |   ;-- DDRB:
+       ,==< 0x00000004  ~   jmp   0x1b6
+       ||   ;-- PORTB:
+       ||   0x00000005      unaligned
+       ||   ;-- PINC:
+       ||   0x00000006  ~   invalid
+   37 * registers.extended
+   41 * registers.mmio
+EOF
+RUN
+
 NAME=avr br - forward branch
 FILE=malloc://1024
 CMDS=<<EOF

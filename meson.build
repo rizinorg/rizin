@@ -539,6 +539,7 @@ subdir('librz/core')
 
 subdir('librz/analysis/d')
 subdir('librz/asm/d')
+subdir('librz/asm/cpus')
 subdir('librz/bin/d')
 subdir('librz/syscall/d')
 subdir('librz/reg/d')
