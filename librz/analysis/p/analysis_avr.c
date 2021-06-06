@@ -1665,7 +1665,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		offset += (1 << analysis->profile->PC);
 		rz_analysis_esil_reg_write(analysis->esil, "_io", offset);
 
-		offset += analysis->profile->SRAM_START; 
+		offset += analysis->profile->SRAM_START;
 		rz_analysis_esil_reg_write(analysis->esil, "_sram", offset);
 
 		offset += analysis->profile->SRAM_SIZE;
