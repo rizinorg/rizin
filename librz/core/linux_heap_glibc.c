@@ -1916,11 +1916,11 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 
 	rz_config_set_i(core->config, "dbg.glibc.tcache", GH(is_tcache)(core));
 
-	int format = 'c';
-	bool get_state = false;
+//	int format = 'c';
+//	bool get_state = false;
 	bool json = false;
 	switch (input[0]) {
-/*	case ' ': // dmh [malloc_state]
+		/*	case ' ': // dmh [malloc_state]
 		m_state = rz_num_get(NULL, input);
 		get_state = true;
 	case '\0': // dmh
@@ -1977,7 +1977,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			(core, m_arena, m_state);
 		}
 		break;
-/*			case 'm': // "dmhm"
+		/*			case 'm': // "dmhm"
 				if (GH(rz_resolve_main_arena)(core, &m_arena)) {
 
 					switch (input[1]) {
@@ -2044,7 +2044,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			free(dup);
 		}
 		break;
-/*			case 'c': // "dmhc"
+		/*			case 'c': // "dmhc"
 				if (GH(rz_resolve_main_arena)(core, &m_arena)) {
 					GH(print_heap_chunk)
 					(core);
@@ -2126,7 +2126,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			free(dup);
 		}
 		break;
-/*	case 'v':
+		/*	case 'v':
 		if (input[0] == 'v') {
 			format = 'v';
 		}
@@ -2654,6 +2654,33 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunk_print_handler)(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, const char **argv) {
+	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (argc == 1) {
+		m_state = m_arena;
+	} else if (argc == 2) {
+		m_state = rz_num_get(NULL, argv[1]);
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		PRINT_RA("This address is not a valid arena\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	GH(print_malloc_info)
+	(core, m_arena, m_state);
+	return RZ_CMD_STATUS_OK;
+}
+
 #ifndef HEAP32
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (core->rasm->bits == 64) {
@@ -2692,6 +2719,15 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_graph_handler(RzCore *core, int argc, cons
 		return rz_cmd_heap_chunks_print_handler_64(core, argc, argv, RZ_OUTPUT_MODE_LONG_JSON);
 	} else {
 		return rz_cmd_heap_chunks_print_handler_32(core, argc, argv, RZ_OUTPUT_MODE_LONG_JSON);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const char **argv) {
+	// RZ_OUTPUT_MODE_LONG_JSON mode workaround for graph
+	if (core->rasm->bits == 64) {
+		return rz_cmd_heap_info_print_handler_64(core, argc, argv);
+	} else {
+		return rz_cmd_heap_info_print_handler_32(core, argc, argv);
 	}
 }
 #endif

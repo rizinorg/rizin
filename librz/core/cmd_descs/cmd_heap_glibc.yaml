@@ -30,6 +30,13 @@ commands:
       - name: malloc_state
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
+  - name: dmhi
+    cname: cmd_heap_info_print
+    summary: Display heap_info structure/structures for a given arena
+    args:
+      - name: malloc_state
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: dmhm
     cname: cmd_main_arena_print
     summary: List all elements of struct malloc_state of main thread (main_arena)
