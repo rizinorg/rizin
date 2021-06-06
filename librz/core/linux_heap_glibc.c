@@ -1158,7 +1158,7 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 	}
 }
 
-static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
+/*static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	GHT m_arena, GHT m_state, GHT global_max_fast, int format_out) {
 
 	if (!core || !core->dbg || !core->dbg->maps) {
@@ -1549,7 +1549,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	free(top_title);
 	free(cnk);
 	free(cnk_next);
-}
+}*/
 
 void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena, bool json) {
 	MallocState *ta = RZ_NEW0(MallocState);
@@ -1920,7 +1920,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 	bool get_state = false;
 	bool json = false;
 	switch (input[0]) {
-	case ' ': // dmh [malloc_state]
+/*	case ' ': // dmh [malloc_state]
 		m_state = rz_num_get(NULL, input);
 		get_state = true;
 	case '\0': // dmh
@@ -1959,7 +1959,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 		}
 		GH(print_malloc_states)
 		(core, m_arena, main_arena, json);
-		break;
+		break;*/
 	case 'i': // dmhi
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
 			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
@@ -1977,41 +1977,41 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			(core, m_arena, m_state);
 		}
 		break;
-		//	case 'm': // "dmhm"
-		//		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-		//
-		//			switch (input[1]) {
-		//			case '*':
-		//				format = '*';
-		//				input += 1;
-		//				break;
-		//			case 'j':
-		//				format = 'j';
-		//				input += 1;
-		//				break;
-		//			}
-		//			input += 1;
-		//			if (!strcmp(input, "\0")) {
-		//				if (core->offset != core->prompt_offset) {
-		//					m_arena = core->offset;
-		//					if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-		//						break;
-		//					}
-		//				} else {
-		//					if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-		//						break;
-		//					}
-		//				}
-		//			} else {
-		//				m_arena = rz_num_get(NULL, input);
-		//				if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-		//					break;
-		//				}
-		//			}
-		//			GH(print_arena_stats)
-		//			(core, m_arena, main_arena, global_max_fast, format);
-		//		}
-		//		break;
+/*			case 'm': // "dmhm"
+				if (GH(rz_resolve_main_arena)(core, &m_arena)) {
+
+					switch (input[1]) {
+					case '*':
+						format = '*';
+						input += 1;
+						break;
+					case 'j':
+						format = 'j';
+						input += 1;
+						break;
+					}
+					input += 1;
+					if (!strcmp(input, "\0")) {
+						if (core->offset != core->prompt_offset) {
+							m_arena = core->offset;
+							if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+								break;
+							}
+						} else {
+							if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+								break;
+							}
+						}
+					} else {
+						m_arena = rz_num_get(NULL, input);
+						if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+							break;
+						}
+					}
+					GH(print_arena_stats)
+					(core, m_arena, main_arena, global_max_fast, format);
+				}
+				break;*/
 	case 'b': // "dmhb"
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
 			char *m_state_str, *dup = strdup(input + 1);
@@ -2044,12 +2044,12 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			free(dup);
 		}
 		break;
-		//	case 'c': // "dmhc"
-		//		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-		//			GH(print_heap_chunk)
-		//			(core);
-		//		}
-		//		break;
+/*			case 'c': // "dmhc"
+				if (GH(rz_resolve_main_arena)(core, &m_arena)) {
+					GH(print_heap_chunk)
+					(core);
+				}
+				break;*/
 	case 'd': // "dmhd"
 		if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
 			break;
@@ -2126,7 +2126,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			free(dup);
 		}
 		break;
-	case 'v':
+/*	case 'v':
 		if (input[0] == 'v') {
 			format = 'v';
 		}
@@ -2166,7 +2166,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 				PRINT_RA("This address is not part of the arenas\n");
 			}
 		}
-		break;
+		break;*/
 	case 't':
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
 			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
@@ -2484,6 +2484,30 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	RzListIter *iter;
 	RzHeapChunkListItem *pos;
 	PJ *pj = NULL;
+	int w, h;
+	RzConfigHold *hc = rz_config_hold_new(core->config);
+	if (!hc) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	w = rz_cons_get_size(&h);
+	RzConsCanvas *can = rz_cons_canvas_new(w, h);
+	if (!can) {
+		rz_config_hold_free(hc);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	RzAGraph *g = rz_agraph_new(can);
+	if (!g) {
+		rz_cons_canvas_free(can);
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzANode *top = RZ_EMPTY, *chunk_node = RZ_EMPTY, *prev_node = RZ_EMPTY;
+	char *top_title, *top_data, *node_title, *node_data;
+	bool first_node = true;
+	top_data = rz_str_new("");
+	top_title = rz_str_new("");
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = rz_core_pj_new(core);
 		if (!pj) {
@@ -2495,6 +2519,13 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		rz_cons_printf("Arena @ ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)m_state);
 		rz_cons_newline();
+	} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
+		can->linemode = rz_config_get_i(core->config, "graph.linemode");
+		can->color = rz_config_get_i(core->config, "scr.color");
+		core->cons->use_utf8 = rz_config_get_i(core->config, "scr.utf8");
+		g->layout = rz_config_get_i(core->config, "graph.layout");
+		rz_agraph_set_title(g, "Heap Layout");
+		top_title = rz_str_newf("Top chunk @ 0x%" PFMT64x "\n", (ut64)main_arena->GH(top));
 	}
 	rz_list_foreach (chunks, iter, pos) {
 		if (mode == RZ_OUTPUT_MODE_STANDARD) {
@@ -2526,6 +2557,16 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 			char *name = rz_str_newf("chunk.%06" PFMT64x, ((pos->addr >> 4) & 0xffffULL));
 			rz_cons_printf("f %s %d 0x%" PFMT64x "\n", name, (int)pos->size, (ut64)pos->addr);
 			free(name);
+		} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) { // graph
+			node_title = rz_str_newf("  Malloc chunk @ 0x%" PFMT64x " ", (ut64)pos->addr);
+			node_data = rz_str_newf("size: 0x%" PFMT64x " status: %s\n", (ut64)pos->size, pos->status);
+			chunk_node = rz_agraph_add_node(g, node_title, node_data);
+			if (first_node) {
+				first_node = false;
+			} else {
+				rz_agraph_add_edge(g, prev_node, chunk_node);
+			}
+			prev_node = chunk_node;
 		}
 	}
 	if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
@@ -2550,8 +2591,22 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		rz_cons_printf("f heap.top = 0x%08" PFMT64x "\n", (ut64)main_arena->GH(top));
 		rz_cons_printf("f heap.brk = 0x%08" PFMT64x "\n", (ut64)brk_start);
 		rz_cons_printf("f heap.end = 0x%08" PFMT64x "\n", (ut64)brk_end);
+	} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
+		top = rz_agraph_add_node(g, top_title, top_data);
+		if (!first_node) {
+			rz_agraph_add_edge(g, prev_node, top);
+			free(node_data);
+			free(node_title);
+		}
+		rz_agraph_print(g);
+		rz_cons_canvas_free(can);
+		rz_config_hold_restore(hc);
+		rz_config_hold_free(hc);
 	}
 	rz_cons_newline();
+	free(g);
+	free(top_data);
+	free(top_title);
 	rz_list_free(chunks);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2628,6 +2683,15 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunk_print_handler(RzCore *core, int argc, const
 		return rz_cmd_heap_chunk_print_handler_64(core, argc, argv);
 	} else {
 		return rz_cmd_heap_chunk_print_handler_32(core, argc, argv);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_heap_chunks_graph_handler(RzCore *core, int argc, const char **argv) {
+	// RZ_OUTPUT_MODE_LONG_JSON mode workaround for graph
+	if (core->rasm->bits == 64) {
+		return rz_cmd_heap_chunks_print_handler_64(core, argc, argv, RZ_OUTPUT_MODE_LONG_JSON);
+	} else {
+		return rz_cmd_heap_chunks_print_handler_32(core, argc, argv, RZ_OUTPUT_MODE_LONG_JSON);
 	}
 }
 #endif

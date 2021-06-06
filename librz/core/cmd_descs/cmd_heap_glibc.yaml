@@ -23,6 +23,13 @@ commands:
     args:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: dmhg
+    cname: cmd_heap_chunks_graph
+    summary: Display heap graph of a particular arena
+    args:
+      - name: malloc_state
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: dmhm
     cname: cmd_main_arena_print
     summary: List all elements of struct malloc_state of main thread (main_arena)
