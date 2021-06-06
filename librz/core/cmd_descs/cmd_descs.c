@@ -1698,12 +1698,23 @@ static const RzCmdDescHelp cmd_debug_dump_maps_writable_help = {
 	.args = cmd_debug_dump_maps_writable_args,
 };
 
-static const RzCmdDescArg cmd_debug_heap_args[] = {
+static const RzCmdDescHelp dmh_help = {
+	.summary = "Glibc heap commands",
+};
+static const RzCmdDescArg cmd_heap_chunks_print_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_debug_heap_help = {
-	.summary = "Show map of heap",
-	.args = cmd_debug_heap_args,
+static const RzCmdDescHelp cmd_heap_chunks_print_help = {
+	.summary = "print heap chunks",
+	.args = cmd_heap_chunks_print_args,
+};
+
+static const RzCmdDescArg cmd_heap_arena_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_arena_print_help = {
+	.summary = "print arenas",
+	.args = cmd_heap_arena_print_args,
 };
 
 static const RzCmdDescHelp cmd_debug_dmi_help = {
@@ -4730,8 +4741,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dump_maps_writable_cd = rz_cmd_desc_argv_new(core->rcmd, dmd_cd, "dmdw", rz_cmd_debug_dump_maps_writable_handler, &cmd_debug_dump_maps_writable_help);
 	rz_warn_if_fail(cmd_debug_dump_maps_writable_cd);
 
-	RzCmdDesc *cmd_debug_heap_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmh", rz_cmd_debug_heap, &cmd_debug_heap_help);
-	rz_warn_if_fail(cmd_debug_heap_cd);
+	RzCmdDesc *dmh_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmh", rz_cmd_heap_chunks_print_handler, &cmd_heap_chunks_print_help, &dmh_help);
+	rz_warn_if_fail(dmh_cd);
+	RzCmdDesc *cmd_heap_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmha", rz_cmd_heap_arena_print_handler, &cmd_heap_arena_print_help);
+	rz_warn_if_fail(cmd_heap_arena_print_cd);
 
 	RzCmdDesc *cmd_debug_dmi_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmi", rz_cmd_debug_dmi, &cmd_debug_dmi_help);
 	rz_warn_if_fail(cmd_debug_dmi_cd);

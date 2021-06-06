@@ -5518,3 +5518,13 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	}
 	return 0;
 }
+
+RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_printf("executing dmh\n");
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_heap_arena_print_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_printf("executing dmha\n");
+	return RZ_CMD_STATUS_OK;
+}
