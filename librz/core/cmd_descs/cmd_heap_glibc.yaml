@@ -8,6 +8,7 @@ commands:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_JSON
       - RZ_OUTPUT_MODE_LONG
+      - RZ_OUTPUT_MODE_RIZIN
     args:
       - name: malloc_state
         type: RZ_CMD_ARG_TYPE_RZNUM
@@ -16,6 +17,12 @@ commands:
     cname: cmd_arena_print
     summary: List all the arenas
     args: []
+  - name: dmhc
+    cname: cmd_heap_chunk_print
+    summary: Get info about heap chunk at <addr>
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
   - name: dmhm
     cname: cmd_main_arena_print
     summary: List all elements of struct malloc_state of main thread (main_arena)
@@ -26,9 +33,4 @@ commands:
       - name: malloc_state
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
-  - name: dmhc
-    cname: cmd_heap_chunk_print
-    summary: Get info about heap chunk at <addr>
-    args:
-      - name: addr
-        type: RZ_CMD_ARG_TYPE_RZNUM
+
