@@ -1,0 +1,11 @@
+---
+name: cmd_heap_glibc
+commands:
+  - name: dmh
+    cname:  cmd_heap_chunks_print
+    summary: print heap chunks
+    args: []
+  - name: dmha
+    cname: cmd_heap_arena_print
+    summary: print arenas
+    args: []
