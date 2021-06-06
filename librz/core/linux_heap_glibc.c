@@ -251,7 +251,7 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 	}
 
 	GHT apart[NSMALLBINS + 1] = { 0LL };
-	if (format == '*') {
+	if (format == RZ_OUTPUT_MODE_RIZIN) {
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
 			GHT addr = m_arena + align + SZ * i - SZ * 2;
 			GHT bina = main_arena->GH(bins)[i];
@@ -2514,6 +2514,34 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	GHT global_max_fast = (64 * SZ / 4);
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (argc == 1) {
+		m_state = m_arena;
+	} else if (argc == 2) {
+		m_state = rz_num_get(NULL, argv[1]);
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		PRINT_RA("This address is not a valid arena\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	GH(print_arena_stats)
+	(core, m_state, main_arena, global_max_fast, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
 #ifndef HEAP32
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (core->rasm->bits == 64) {
@@ -2527,6 +2555,14 @@ RZ_IPI RzCmdStatus rz_cmd_arena_print_handler(RzCore *core, int argc, const char
 		return rz_cmd_arena_print_handler_64(core, argc, argv);
 	} else {
 		return rz_cmd_arena_print_handler_32(core, argc, argv);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (core->rasm->bits == 64) {
+		return rz_cmd_main_arena_print_handler_64(core, argc, argv, mode);
+	} else {
+		return rz_cmd_main_arena_print_handler_32(core, argc, argv, mode);
 	}
 }
 #endif

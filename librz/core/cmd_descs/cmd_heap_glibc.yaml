@@ -16,3 +16,13 @@ commands:
     cname: cmd_arena_print
     summary: List all the arenas
     args: []
+  - name: dmhm
+    cname: cmd_main_arena_print
+    summary: List all elements of struct malloc_state of main thread (main_arena)
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_RIZIN
+    args:
+      - name: malloc_state
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true

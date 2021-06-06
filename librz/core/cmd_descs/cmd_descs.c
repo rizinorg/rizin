@@ -97,6 +97,7 @@ static const RzCmdDescArg cmd_debug_list_maps_args[3];
 static const RzCmdDescArg cmd_debug_deallocate_map_args[2];
 static const RzCmdDescArg cmd_debug_dump_maps_args[2];
 static const RzCmdDescArg cmd_heap_chunks_print_args[2];
+static const RzCmdDescArg cmd_main_arena_print_args[2];
 static const RzCmdDescArg cmd_debug_dml_args[2];
 static const RzCmdDescArg cmd_debug_dmp_args[4];
 static const RzCmdDescArg cmd_debug_dmL_args[3];
@@ -1723,6 +1724,21 @@ static const RzCmdDescArg cmd_arena_print_args[] = {
 static const RzCmdDescHelp cmd_arena_print_help = {
 	.summary = "List all the arenas",
 	.args = cmd_arena_print_args,
+};
+
+static const RzCmdDescArg cmd_main_arena_print_args[] = {
+	{
+		.name = "malloc_state",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_main_arena_print_help = {
+	.summary = "List all elements of struct malloc_state of main thread (main_arena)",
+	.args = cmd_main_arena_print_args,
 };
 
 static const RzCmdDescHelp cmd_debug_dmi_help = {
@@ -4753,6 +4769,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(dmh_cd);
 	RzCmdDesc *cmd_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmha", rz_cmd_arena_print_handler, &cmd_arena_print_help);
 	rz_warn_if_fail(cmd_arena_print_cd);
+
+	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
+	rz_warn_if_fail(cmd_main_arena_print_cd);
 
 	RzCmdDesc *cmd_debug_dmi_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmi", rz_cmd_debug_dmi, &cmd_debug_dmi_help);
 	rz_warn_if_fail(cmd_debug_dmi_cd);
