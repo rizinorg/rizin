@@ -485,9 +485,8 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	return false;
 }
 
-void GH(print_heap_chunk)(RzCore *core) {
+void GH(print_heap_chunk)(RzCore *core, GHT chunk) {
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
-	GHT chunk = core->offset;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 
 	if (!cnk) {
@@ -1978,41 +1977,41 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			(core, m_arena, m_state);
 		}
 		break;
-	case 'm': // "dmhm"
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-
-			switch (input[1]) {
-			case '*':
-				format = '*';
-				input += 1;
-				break;
-			case 'j':
-				format = 'j';
-				input += 1;
-				break;
-			}
-			input += 1;
-			if (!strcmp(input, "\0")) {
-				if (core->offset != core->prompt_offset) {
-					m_arena = core->offset;
-					if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-						break;
-					}
-				} else {
-					if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-						break;
-					}
-				}
-			} else {
-				m_arena = rz_num_get(NULL, input);
-				if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-					break;
-				}
-			}
-			GH(print_arena_stats)
-			(core, m_arena, main_arena, global_max_fast, format);
-		}
-		break;
+		//	case 'm': // "dmhm"
+		//		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
+		//
+		//			switch (input[1]) {
+		//			case '*':
+		//				format = '*';
+		//				input += 1;
+		//				break;
+		//			case 'j':
+		//				format = 'j';
+		//				input += 1;
+		//				break;
+		//			}
+		//			input += 1;
+		//			if (!strcmp(input, "\0")) {
+		//				if (core->offset != core->prompt_offset) {
+		//					m_arena = core->offset;
+		//					if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+		//						break;
+		//					}
+		//				} else {
+		//					if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+		//						break;
+		//					}
+		//				}
+		//			} else {
+		//				m_arena = rz_num_get(NULL, input);
+		//				if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+		//					break;
+		//				}
+		//			}
+		//			GH(print_arena_stats)
+		//			(core, m_arena, main_arena, global_max_fast, format);
+		//		}
+		//		break;
 	case 'b': // "dmhb"
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
 			char *m_state_str, *dup = strdup(input + 1);
@@ -2045,12 +2044,12 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			free(dup);
 		}
 		break;
-	case 'c': // "dmhc"
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			GH(print_heap_chunk)
-			(core);
-		}
-		break;
+		//	case 'c': // "dmhc"
+		//		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
+		//			GH(print_heap_chunk)
+		//			(core);
+		//		}
+		//		break;
 	case 'd': // "dmhd"
 		if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
 			break;
@@ -2542,6 +2541,21 @@ RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunk_print_handler)(RzCore *core, int argc, const char **argv) {
+	static GHT m_arena = GHT_MAX;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 addr = rz_num_get(NULL, argv[1]);
+	GH(print_heap_chunk)
+	(core, addr);
+	return RZ_CMD_STATUS_OK;
+}
+
 #ifndef HEAP32
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (core->rasm->bits == 64) {
@@ -2563,6 +2577,14 @@ RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const
 		return rz_cmd_main_arena_print_handler_64(core, argc, argv, mode);
 	} else {
 		return rz_cmd_main_arena_print_handler_32(core, argc, argv, mode);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_heap_chunk_print_handler(RzCore *core, int argc, const char **argv) {
+	if (core->rasm->bits == 64) {
+		return rz_cmd_heap_chunk_print_handler_64(core, argc, argv);
+	} else {
+		return rz_cmd_heap_chunk_print_handler_32(core, argc, argv);
 	}
 }
 #endif

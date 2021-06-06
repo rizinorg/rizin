@@ -26,3 +26,9 @@ commands:
       - name: malloc_state
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
+  - name: dmhc
+    cname: cmd_heap_chunk_print
+    summary: Get info about heap chunk at <addr>
+    args:
+      - name: addr
+        type: RZ_CMD_ARG_TYPE_RZNUM
