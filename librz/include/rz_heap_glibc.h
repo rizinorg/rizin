@@ -280,6 +280,12 @@ typedef struct rz_heap_chunk_list_item {
 	ut64 addr;
 	char *status;
 } RzHeapChunkListItem;
+
+typedef struct rz_arena_list_item {
+	ut64 addr;
+	char *type;
+	MallocState *arena;
+} RzArenaListItem;
 #ifdef __cplusplus
 }
 #endif

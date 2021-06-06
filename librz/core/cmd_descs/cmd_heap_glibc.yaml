@@ -12,4 +12,7 @@ commands:
       - name: malloc_state
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
-
+  - name: dmha
+    cname: cmd_arena_print
+    summary: List all the arenas
+    args: []

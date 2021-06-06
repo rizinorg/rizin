@@ -394,9 +394,9 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	rz_return_val_if_fail(core && core->dbg && core->dbg->maps, false);
 
-	if (core->dbg->main_arena_resolved) {
-		return true;
-	}
+	//	if (core->dbg->main_arena_resolved) {
+	//		return true;
+	//	}
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
@@ -2186,6 +2186,73 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 	return true;
 }
 
+RZ_API RzList *GH(get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_arena) {
+	RzList *arena_list = rz_list_newf(free);
+	MallocState *ta = RZ_NEW0(MallocState);
+	if (!ta) {
+		return arena_list;
+	}
+	// main arena
+	GH(update_main_arena)
+	(core, m_arena, ta);
+	rz_list_append(arena_list, ta);
+	if (main_arena->GH(next) != m_arena) {
+		ta->GH(next) = main_arena->GH(next);
+		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
+			ut64 ta_addr = ta->GH(next);
+			ta = RZ_NEW0(MallocState);
+			if (!GH(update_main_arena)(core, ta_addr, ta)) {
+				return arena_list;
+			}
+			// thread arenas
+			rz_list_append(arena_list, ta);
+		}
+	}
+	return arena_list;
+}
+
+RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const char **argv) {
+	static GHT m_arena = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzList *arenas_list = GH(get_arenas_list)(core, m_arena, main_arena);
+	RzListIter *iter, *iter2;
+	MallocState *pos;
+	ut64 addr;
+	rz_list_foreach (arenas_list, iter2, pos) {
+		addr = pos->GH(next);
+	}
+	bool flag = 0;
+	rz_list_foreach (arenas_list, iter, pos) {
+		if (!flag) {
+			flag = true;
+			rz_cons_printf("Main arena  (addr=");
+
+		} else {
+			rz_cons_printf("Thread arena(addr=");
+		}
+		PRINTF_YA("0x%" PFMT64x, (ut64)addr);
+		rz_cons_printf(", lastRemainder=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(last_remainder));
+		rz_cons_printf(", top=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(top));
+		rz_cons_printf(", next=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(next));
+		rz_cons_printf(")\n");
+		addr = (ut64)pos->GH(next);
+	}
+	rz_list_free(arenas_list);
+	return RZ_CMD_STATUS_OK;
+}
 RZ_API RzList *GH(get_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	GHT m_arena, GHT m_state, GHT global_max_fast) {
 	RzList *chunks = rz_list_newf(free);
@@ -2384,18 +2451,21 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	GHT global_max_fast = (64 * SZ / 4);
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
-		return false;
+		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	// TODO work for other arenas
-	m_state = m_arena;
+	if (argc == 1) {
+		m_state = m_arena;
+	} else if (argc == 2) {
+		m_state = rz_num_get(NULL, argv[1]);
+	}
 	if (!GH(is_arena)(core, m_arena, m_state)) {
+		PRINT_RA("This address is not a valid arena\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(update_main_arena)(core, m_state, main_arena)) {
-		PRINT_RA("This address is not part of the arenas\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	GHT brk_start, brk_end;
@@ -2450,6 +2520,13 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 		return rz_cmd_heap_chunks_print_handler_64(core, argc, argv, mode);
 	} else {
 		return rz_cmd_heap_chunks_print_handler_32(core, argc, argv, mode);
+	}
+}
+RZ_IPI RzCmdStatus rz_cmd_arena_print_handler(RzCore *core, int argc, const char **argv) {
+	if (core->rasm->bits == 64) {
+		return rz_cmd_arena_print_handler_64(core, argc, argv);
+	} else {
+		return rz_cmd_arena_print_handler_32(core, argc, argv);
 	}
 }
 #endif
