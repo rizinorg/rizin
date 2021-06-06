@@ -1,7 +1,7 @@
 sdb_files = [
   'avr-ATmega1280',
   'avr-ATmega1281',
-  'avr-ATmega128a4u',
+  'avr-ATxmega128a4u',
   'avr-ATmega2560',
   'avr-ATmega2561',
   'avr-ATmega640',

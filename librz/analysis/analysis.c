@@ -124,6 +124,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->diff_thbb = RZ_ANALYSIS_THRESHOLDBB;
 	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
 	analysis->syscall = rz_syscall_new();
+	analysis->profile = rz_arch_profile_new();
 	rz_io_bind_init(analysis->iob);
 	rz_flag_bind_init(analysis->flb);
 	analysis->reg = rz_reg_new();

@@ -6448,6 +6448,29 @@ RZ_API void rz_core_analysis_flag_every_function(RzCore *core) {
 	rz_flag_space_pop(core->flags);
 }
 
+static bool add_mmio_flag_cb(void *user, const ut64 addr, const void *v) {
+	const char *name = v;
+	RzCore *core = user;
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_MMIO_REGISTERS);
+	rz_flag_set(core->flags, name, addr, 1);
+	rz_flag_space_pop(core->flags);
+	return true;
+}
+
+static bool add_mmio_extended_flag_cb(void *user, const ut64 addr, const void *v) {
+	const char *name = v;
+	RzCore *core = user;
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED);
+	rz_flag_set(core->flags, name, addr, 1);
+	rz_flag_space_pop(core->flags);
+	return true;
+}
+
+RZ_API void rz_arch_profile_add_flag_every_io(RzCore *core) {
+	ht_up_foreach(core->analysis->profile->registers_mmio, add_mmio_flag_cb, core);
+	ht_up_foreach(core->analysis->profile->registers_extended, add_mmio_extended_flag_cb, core);
+}
+
 /* TODO: move into rz_analysis_function_rename (); */
 RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name) {
 	rz_return_val_if_fail(core && _name, false);

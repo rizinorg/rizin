@@ -3382,7 +3382,6 @@ static void ds_print_sysregs(RDisasmState *ds) {
 		return;
 	}
 	switch (ds->analop.type) {
-	// Syscalls first
 	case RZ_ANALYSIS_OP_TYPE_IO: {
 		const int imm = (int)ds->analop.val;
 		const char *ioname = rz_sysreg_get(core->analysis->syscall, "mmio", imm);

@@ -13,8 +13,8 @@ RZ_API void rz_arch_profile_free(RzArchProfile *p) {
 	}
 	free(p->arch);
 	free(p->cpu);
-	ht_up_free(p->io_registers);
-	ht_up_free(p->extended_io_registers);
+	ht_up_free(p->registers_mmio);
+	ht_up_free(p->registers_extended);
 }
 
 RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
@@ -26,8 +26,8 @@ RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
 	cpu->arch = NULL;
 	cpu->cpu = NULL;
 
-	cpu->io_registers = ht_up_new0();
-	cpu->extended_io_registers = ht_up_new0();
+	cpu->registers_mmio = ht_up_new0();
+	cpu->registers_extended = ht_up_new0();
 	return cpu;
 }
 
@@ -58,21 +58,20 @@ static bool sdb_load_arch_profile(RzArchProfile *c, Sdb *sdb) {
 			c->PAGE_SIZE = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "ROM_SIZE")) {
 			c->ROM_SIZE = rz_num_math(NULL, sdbkv_value(kv));
-		} else 	if (!strcmp(sdbkv_key(kv), "RAM_SIZE")) {
-			eprintf("ram size %s \n", sdbkv_value(kv));
+		} else if (!strcmp(sdbkv_key(kv), "RAM_SIZE")) {
 			c->RAM_SIZE = rz_num_math(NULL, sdbkv_value(kv));
 		}
 		if (!strcmp(sdbkv_value(kv), "io")) {
 			char *io_name = sdbkv_key(kv);
 			char *argument_key = rz_str_newf("%s.address", io_name);
 			ut64 io_address = sdb_num_get(sdb, argument_key, NULL);
-			ht_up_insert(c->io_registers, io_address, io_name);
+			ht_up_insert(c->registers_mmio, io_address, io_name);
 		}
 		if (!strcmp(sdbkv_value(kv), "ext_io")) {
 			char *ext_io_name = sdbkv_key(kv);
 			char *argument_key = rz_str_newf("%s.address", ext_io_name);
 			ut64 ext_io_address = sdb_num_get(sdb, argument_key, NULL);
-			ht_up_insert(c->extended_io_registers, ext_io_address, ext_io_name);
+			ht_up_insert(c->registers_extended, ext_io_address, ext_io_name);
 		}
 	}
 	return true;
@@ -94,35 +93,8 @@ RZ_API bool rz_type_db_load_arch_profile_sdb(RzArchProfile *c, const char *path)
 }
 
 RZ_API bool rz_arch_profiles_init(RzArchProfile *c, const char *cpu, const char *arch, const char *dir_prefix) {
-	/* bool cpu_changed;
-
-	if (!arch) {
-		arch = RZ_SYS_ARCH;
-	}
-	if (!cpu) {
-		cpu = arch;
-	}
-
-	cpu_changed = cpu_reload_needed(c, cpu, arch);
-
-	free(c->cpu);
-	c->cpu = strdup(cpu);
-
-	free(c->arch);
-	c->arch = strdup(arch);
-
-	//cpu_changed = true; */
-
-	// change path for DB
-
-	// 	char *path = sdb_fmt(RZ_JOIN_4_PATHS("%s", RZ_SDB, "reg", "%s-%s-%d.sdb"), dir_prefix,
-	//	arch, s->cpu, s->bits);
-	//  bool cpu_changed = cpu_reload_needed(c, cpu, arch);
-	//	bool cpu_changed = true;
-	//if (cpu_changed) {
 	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "%s-%s.sdb"),
 		dir_prefix, arch, cpu);
-	eprintf("%s \n", path);
 	if (path) {
 		if (!rz_type_db_load_arch_profile_sdb(c, path)) {
 			sdb_free(c->db);
@@ -130,6 +102,5 @@ RZ_API bool rz_arch_profiles_init(RzArchProfile *c, const char *cpu, const char 
 		}
 		free(path);
 	}
-	//}
 	return true;
 }
