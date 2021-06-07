@@ -7,6 +7,12 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * \brief Frees an RzArchProfile type
+ *
+ * 	Frees the hashtables used for MMIO and extended
+ * 	registers
+ */
 RZ_API void rz_arch_profile_free(RzArchProfile *p) {
 	if (!p) {
 		return;
@@ -15,11 +21,11 @@ RZ_API void rz_arch_profile_free(RzArchProfile *p) {
 	ht_up_free(p->registers_extended);
 }
 
+/**
+ * \brief Creates a new RzArchProfile type
+ */
 RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
 	RzArchProfile *profile = RZ_NEW0(RzArchProfile);
-	if (!profile) {
-		return NULL;
-	}
 	profile->rom_size = 0;
 	profile->ram_size = 0;
 	profile->eeprom_size = 0;
@@ -35,6 +41,9 @@ RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
 	return profile;
 }
 
+/**
+ * \brief Creates a new RzArchTarget type
+ */
 RZ_API RZ_OWN RzArchTarget *rz_arch_target_new() {
 	RzArchTarget *profile = RZ_NEW0(RzArchTarget);
 	profile->db = sdb_new0();
@@ -42,6 +51,11 @@ RZ_API RZ_OWN RzArchTarget *rz_arch_target_new() {
 	return profile;
 }
 
+/**
+ * \brief Frees an RzArchTarget type
+ *
+ *	Frees the pointer to the SDB and the RzArchProfile
+ */
 RZ_API void rz_arch_target_free(RzArchTarget *t) {
 	if (!t) {
 		return;
@@ -106,6 +120,12 @@ static bool sdb_load_arch_profile_by_path(RZ_NONNULL RzArchTarget *t, const char
 	return result;
 }
 
+/**
+ * \brief Loads the contents of the CPU Profile to the RzArchProfile
+ *
+ * \param t reference to RzArchTarget
+ * \param path reference to path of the SDB file
+ */
 RZ_API bool rz_type_db_load_arch_profile_sdb(RzArchTarget *t, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;
@@ -113,21 +133,27 @@ RZ_API bool rz_type_db_load_arch_profile_sdb(RzArchTarget *t, const char *path) 
 	return sdb_load_arch_profile_by_path(t, path);
 }
 
+/**
+ * \brief Initializes RzArchProfile by loading the path to the SDB file
+ * 		  of the CPU profile
+ *
+ * \param t reference to RzArchTarget
+ * \param cpu reference to the selected CPU (value of `asm.cpu`)
+ * \param arch reference to the seletec architecture (value of `asm.arch`)
+ * \param dir_prefix reference to the directory prefix or the value of dir.prefix
+ */
 RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *arch, const char *dir_prefix) {
-	bool cpu_changed;
-
-	cpu_changed = cpu_reload_needed(t, cpu, arch);
-
-	if (cpu_changed) {
-		char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "%s-%s.sdb"),
-			dir_prefix, arch, cpu);
-		if (path) {
-			if (!rz_type_db_load_arch_profile_sdb(t, path)) {
-				sdb_free(t->db);
-				t->db = NULL;
-			}
-			free(path);
+	if (!cpu_reload_needed(t, cpu, arch)) {
+		return false;
+	}
+	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "%s-%s.sdb"),
+		dir_prefix, arch, cpu);
+	if (path) {
+		if (!rz_type_db_load_arch_profile_sdb(t, path)) {
+			sdb_free(t->db);
+			t->db = NULL;
 		}
+		free(path);
 	}
 	return true;
 }

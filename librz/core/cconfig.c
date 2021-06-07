@@ -434,7 +434,7 @@ static bool cb_asmcpu(void *user, void *data) {
 	rz_config_set(core->config, "analysis.cpu", node->value);
 
 	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
-	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), dir_prefix);		
+	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), dir_prefix);
 
 	return true;
 }
@@ -568,7 +568,7 @@ static bool cb_asmarch(void *user, void *data) {
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
-		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, dir_prefix);		
+		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, dir_prefix);
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");

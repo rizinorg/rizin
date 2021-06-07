@@ -17,7 +17,7 @@ RZ_API RzSyscall *rz_syscall_ref(RzSyscall *sc) {
 /**
  * \brief Creates a new RzSysregItem type
  *
- * \param name Name of the callable type
+ * \param name Name of the SysregItem (sysregitem->name)
  */
 RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name) {
 	RzSysregItem *sysregitem = RZ_NEW0(RzSysregItem);
