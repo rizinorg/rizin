@@ -19,11 +19,11 @@ commands:
     args: []
   - name: dmhb
     cname: cmd_heap_bins_list_print
-    summary: List all the arenas
+    summary: Display all parsed Double linked list of main_arena's or a particular arena bins instance
     type: RZ_CMD_DESC_TYPE_OLDINPUT
     args:
       - name: bin_num|bin_num:malloc_state
-        type: RZ_CMD_ARG_TYPE_RZNUM
+        type: RZ_CMD_ARG_TYPE_STRING
         optional: true
   - name: dmhc
     cname: cmd_heap_chunk_print
@@ -31,6 +31,14 @@ commands:
     args:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: dmhf
+    cname: cmd_heap_fastbins_print
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Display all parsed fastbins of main_arena's or a particular arena fastbinY instance
+    args:
+      - name: fastbin_num|fastbin_num:malloc_state
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
   - name: dmhg
     cname: cmd_heap_chunks_graph
     summary: Display heap graph of a particular arena

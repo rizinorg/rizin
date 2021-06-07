@@ -99,6 +99,7 @@ static const RzCmdDescArg cmd_debug_dump_maps_args[2];
 static const RzCmdDescArg cmd_heap_chunks_print_args[2];
 static const RzCmdDescArg cmd_heap_bins_list_print_args[2];
 static const RzCmdDescArg cmd_heap_chunk_print_args[2];
+static const RzCmdDescArg cmd_heap_fastbins_print_args[2];
 static const RzCmdDescArg cmd_heap_chunks_graph_args[2];
 static const RzCmdDescArg cmd_heap_info_print_args[2];
 static const RzCmdDescArg cmd_main_arena_print_args[2];
@@ -1733,7 +1734,7 @@ static const RzCmdDescHelp cmd_arena_print_help = {
 static const RzCmdDescArg cmd_heap_bins_list_print_args[] = {
 	{
 		.name = "bin_num|bin_num:malloc_state",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
@@ -1741,7 +1742,7 @@ static const RzCmdDescArg cmd_heap_bins_list_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_heap_bins_list_print_help = {
-	.summary = "List all the arenas",
+	.summary = "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
 	.args = cmd_heap_bins_list_print_args,
 };
 
@@ -1757,6 +1758,21 @@ static const RzCmdDescArg cmd_heap_chunk_print_args[] = {
 static const RzCmdDescHelp cmd_heap_chunk_print_help = {
 	.summary = "Get info about heap chunk at <addr>",
 	.args = cmd_heap_chunk_print_args,
+};
+
+static const RzCmdDescArg cmd_heap_fastbins_print_args[] = {
+	{
+		.name = "fastbin_num|fastbin_num:malloc_state",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_fastbins_print_help = {
+	.summary = "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
+	.args = cmd_heap_fastbins_print_args,
 };
 
 static const RzCmdDescArg cmd_heap_chunks_graph_args[] = {
@@ -4846,6 +4862,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);
 	rz_warn_if_fail(cmd_heap_chunk_print_cd);
+
+	RzCmdDesc *cmd_heap_fastbins_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, dmh_cd, "dmhf", rz_cmd_heap_fastbins_print, &cmd_heap_fastbins_print_help);
+	rz_warn_if_fail(cmd_heap_fastbins_print_cd);
 
 	RzCmdDesc *cmd_heap_chunks_graph_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhg", rz_cmd_heap_chunks_graph_handler, &cmd_heap_chunks_graph_help);
 	rz_warn_if_fail(cmd_heap_chunks_graph_cd);
