@@ -1688,6 +1688,43 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 }
 
 /**
+ * @brief Get list of chunks of <bin_num> bin from NBINS array of an arena.
+ * @param core RzCore pointer
+ * @param main_arena MallocState struct of arena
+ * @param bin_num bin number of bin whose chunk list you want
+ * @return RzList of RzHeapChunkListItem for the bin
+ */
+RZ_API RzList *GH(get_bin_content_list)(RzCore *core, MallocState *main_arena, int bin_num) {
+	int idx = 2 * bin_num;
+	ut64 fw = main_arena->GH(bins)[idx];
+	ut64 bk = main_arena->GH(bins)[idx + 1];
+	RzList *chunks = rz_list_newf(free);
+	GH(RzHeapChunk) *head = RZ_NEW0(GH(RzHeapChunk));
+	if (!head) {
+		return chunks;
+	}
+
+	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
+
+	if (head->fd == fw) {
+		return chunks;
+	}
+	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
+	if (!cnk) {
+		return 0;
+	}
+	while (fw != head->fd) {
+		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+		RzHeapChunkListItem *chunk = malloc(sizeof(RzHeapChunkListItem));
+		chunk->addr = fw;
+		rz_list_append(chunks, chunk);
+		fw = cnk->fd;
+	}
+	free(cnk);
+	free(head);
+	return chunks;
+}
+/**
  * \brief Prints the heap chunks in a bin with double linked list (small|large|unsorted)
  * \param core RzCore pointer
  * \param main_arena MallocState struct for the arena in which bins are
@@ -1698,18 +1735,15 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	int idx = 2 * bin_num;
 	ut64 fw = main_arena->GH(bins)[idx];
 	ut64 bk = main_arena->GH(bins)[idx + 1];
-
-	GH(RzHeapChunk) *head = RZ_NEW0(GH(RzHeapChunk));
-	if (!head) {
+	RzListIter *iter;
+	RzHeapChunkListItem *pos;
+	RzList *chunks = GH(get_bin_content_list)(core, main_arena, bin_num);
+	if (chunks->length == 0) {
+		rz_list_free(chunks);
 		return 0;
 	}
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
-
 	int chunks_cnt = 0;
-	if (head->fd == fw) {
-		return chunks_cnt;
-	}
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	if (!pj) {
 		if (bin_num == 0) {
 			rz_cons_printf("Unsorted");
@@ -1730,27 +1764,19 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		pj_kn(pj, "bk", bk);
 		pj_ka(pj, "chunks");
 	}
-	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 
-	if (!cnk) {
-		return 0;
-	}
-
-	while (fw != head->fd) {
-		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
+	rz_list_foreach (chunks, iter, pos) {
 		if (!pj) {
 			rz_cons_printf(" -> ");
 		}
 		GH(print_heap_chunk_simple)
-		(core, fw, NULL, pj);
+		(core, pos->addr, NULL, pj);
 		if (!pj) {
 			rz_cons_newline();
 		}
-		fw = cnk->fd;
 		chunks_cnt += 1;
 	}
-	free(cnk);
-	free(head);
+	rz_list_free(chunks);
 	if (pj) {
 		pj_end(pj);
 	}
@@ -1905,7 +1931,7 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 }
 
 /**
- * Get a list of MallocState structs for all the arenas
+ * @brief Get a list of MallocState structs for all the arenas
  * @param core RzCore pointer
  * @param m_arena Base address of MallocState struct of main arena
  * @param main_arena MallocState struct of main arena
@@ -1937,7 +1963,7 @@ RZ_API RzList *GH(get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_
 }
 
 /**
- * Get a list of all the heap chunks in an arena. The chunks are in form of a struct RzHeapChunkListItem
+ * @brief Get a list of all the heap chunks in an arena. The chunks are in form of a struct RzHeapChunkListItem
  * @param core RzCore pointer
  * @param main_arena MallocState struct of main arena
  * @param m_arena Base address of malloc state of main arena
