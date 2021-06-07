@@ -1974,6 +1974,15 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
 	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }
+/**
+ * Get a list of all the heap chunks in an arena. The chunks are in form of a struct RzHeapChunkListItem
+ * @param core RzCore pointer
+ * @param main_arena MallocState struct of main arena
+ * @param m_arena Base address of malloc state of main arena
+ * @param m_state Base address of malloc state of the arena whose chunks are required
+ * @param global_max_fast Max size of fastbin
+ * @return
+ */
 RZ_API RzList *GH(get_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	GHT m_arena, GHT m_state, GHT global_max_fast) {
 	RzList *chunks = rz_list_newf(free);

@@ -277,9 +277,9 @@ typedef enum rz_heap_bin_type {
 } RzHeapBinType;
 
 typedef struct rz_heap_chunk_list_item {
-	ut64 addr;
-	ut64 size;
-	char *status;
+	ut64 addr; /* Base addr of the chunk */
+	ut64 size; /* Size of the chunk */
+	char *status; /* Status of the chunk, allocated/free/corrupted */
 } RzHeapChunkListItem;
 
 typedef struct rz_arena_list_item {
