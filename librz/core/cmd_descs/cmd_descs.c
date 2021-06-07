@@ -99,6 +99,7 @@ static const RzCmdDescArg cmd_debug_dump_maps_args[2];
 static const RzCmdDescArg cmd_heap_chunks_print_args[2];
 static const RzCmdDescArg cmd_heap_bins_list_print_args[2];
 static const RzCmdDescArg cmd_heap_chunk_print_args[2];
+static const RzCmdDescArg cmd_heap_arena_bins_print_args[2];
 static const RzCmdDescArg cmd_heap_fastbins_print_args[2];
 static const RzCmdDescArg cmd_heap_chunks_graph_args[2];
 static const RzCmdDescArg cmd_heap_info_print_args[2];
@@ -1742,7 +1743,7 @@ static const RzCmdDescArg cmd_heap_bins_list_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_heap_bins_list_print_help = {
-	.summary = "Display all parsed Double linked list of main_arena's or a particular arena bins instance",
+	.summary = "Display all parsed Double linked list of main_arena's or a particular arena bins instance. Use dmhbg command to get a graph of the linked list",
 	.args = cmd_heap_bins_list_print_args,
 };
 
@@ -1758,6 +1759,21 @@ static const RzCmdDescArg cmd_heap_chunk_print_args[] = {
 static const RzCmdDescHelp cmd_heap_chunk_print_help = {
 	.summary = "Get info about heap chunk at <addr>",
 	.args = cmd_heap_chunk_print_args,
+};
+
+static const RzCmdDescArg cmd_heap_arena_bins_print_args[] = {
+	{
+		.name = "bin_type",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_arena_bins_print_help = {
+	.summary = "Display state of bins in an arena. <bin_type> can be tcache/fast/unsorted/small/large",
+	.args = cmd_heap_arena_bins_print_args,
 };
 
 static const RzCmdDescArg cmd_heap_fastbins_print_args[] = {
@@ -1816,7 +1832,7 @@ static const RzCmdDescArg cmd_main_arena_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_main_arena_print_help = {
-	.summary = "List all elements of struct malloc_state of main thread (main_arena)",
+	.summary = "List all elements of struct malloc_state",
 	.args = cmd_main_arena_print_args,
 };
 
@@ -4862,6 +4878,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);
 	rz_warn_if_fail(cmd_heap_chunk_print_cd);
+
+	RzCmdDesc *cmd_heap_arena_bins_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_heap_arena_bins_print_handler, &cmd_heap_arena_bins_print_help);
+	rz_warn_if_fail(cmd_heap_arena_bins_print_cd);
 
 	RzCmdDesc *cmd_heap_fastbins_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, dmh_cd, "dmhf", rz_cmd_heap_fastbins_print, &cmd_heap_fastbins_print_help);
 	rz_warn_if_fail(cmd_heap_fastbins_print_cd);

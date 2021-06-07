@@ -19,7 +19,7 @@ commands:
     args: []
   - name: dmhb
     cname: cmd_heap_bins_list_print
-    summary: Display all parsed Double linked list of main_arena's or a particular arena bins instance
+    summary: Display all parsed Double linked list of main_arena's or a particular arena bins instance. Use dmhbg command to get a graph of the linked list
     type: RZ_CMD_DESC_TYPE_OLDINPUT
     args:
       - name: bin_num|bin_num:malloc_state
@@ -31,6 +31,16 @@ commands:
     args:
       - name: addr
         type: RZ_CMD_ARG_TYPE_RZNUM
+  - name: dmhd
+    cname: cmd_heap_arena_bins_print
+    summary: Display state of bins in an arena. <bin_type> can be tcache/fast/unsorted/small/large
+    modes:
+      - RZ_OUTPUT_MODE_STANDARD
+      - RZ_OUTPUT_MODE_JSON
+    args:
+      - name: bin_type
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
   - name: dmhf
     cname: cmd_heap_fastbins_print
     type: RZ_CMD_DESC_TYPE_OLDINPUT
@@ -55,7 +65,7 @@ commands:
         optional: true
   - name: dmhm
     cname: cmd_main_arena_print
-    summary: List all elements of struct malloc_state of main thread (main_arena)
+    summary: List all elements of struct malloc_state
     modes:
       - RZ_OUTPUT_MODE_STANDARD
       - RZ_OUTPUT_MODE_RIZIN

@@ -1903,288 +1903,6 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 	}
 }
 
-static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
-	GHT global_max_fast = (64 * SZ / 4);
-
-	MallocState *main_arena = RZ_NEW0(MallocState);
-	if (!main_arena) {
-		return false;
-	}
-
-	rz_config_set_i(core->config, "dbg.glibc.tcache", GH(is_tcache)(core));
-
-	//	int format = 'c';
-	//	bool get_state = false;
-	bool json = false;
-	switch (input[0]) {
-		/*	case ' ': // dmh [malloc_state]
-		m_state = rz_num_get(NULL, input);
-		get_state = true;
-	case '\0': // dmh
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-
-			if (core->offset != core->prompt_offset) {
-				m_state = core->offset;
-			} else {
-				if (!get_state) {
-					m_state = m_arena;
-				}
-			}
-			if (GH(is_arena)(core, m_arena, m_state)) {
-				if (!GH(update_main_arena)(core, m_state, main_arena)) {
-					break;
-				}
-				GH(print_heap_segment)
-				(core, main_arena, m_arena, m_state, global_max_fast, format);
-				break;
-			} else {
-				PRINT_RA("This address is not part of the arenas\n");
-				break;
-			}
-		}
-		break;
-	case 'a': // dmha
-		if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
-			break;
-		}
-		if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-			break;
-		}
-		json = false;
-		if (input[1] == 'j') {
-			json = true;
-		}
-		GH(print_malloc_states)
-		(core, m_arena, main_arena, json);
-		break;*/
-		/*	case 'i': // dmhi
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-				break;
-			}
-			input += 1;
-			if (!strcmp(input, "\0")) {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-				}
-			} else {
-				m_state = rz_num_get(NULL, input);
-			}
-			GH(print_malloc_info)
-			(core, m_arena, m_state);
-		}
-		break;*/
-		/*			case 'm': // "dmhm"
-				if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-
-					switch (input[1]) {
-					case '*':
-						format = '*';
-						input += 1;
-						break;
-					case 'j':
-						format = 'j';
-						input += 1;
-						break;
-					}
-					input += 1;
-					if (!strcmp(input, "\0")) {
-						if (core->offset != core->prompt_offset) {
-							m_arena = core->offset;
-							if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-								break;
-							}
-						} else {
-							if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-								break;
-							}
-						}
-					} else {
-						m_arena = rz_num_get(NULL, input);
-						if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-							break;
-						}
-					}
-					GH(print_arena_stats)
-					(core, m_arena, main_arena, global_max_fast, format);
-				}
-				break;*/
-		/*	case 'b': // "dmhb"
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			char *m_state_str, *dup = strdup(input + 1);
-			if (*dup) {
-				strtok(dup, ":");
-				m_state_str = strtok(NULL, ":");
-				m_state = rz_num_get(NULL, m_state_str);
-				if (!m_state) {
-					m_state = m_arena;
-				}
-			} else {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-				} else {
-					m_state = m_arena;
-				}
-			}
-			if (GH(is_arena)(core, m_arena, m_state)) {
-				if (!GH(update_main_arena)(core, m_state, main_arena)) {
-					free(dup);
-					break;
-				}
-				GH(print_heap_bin)
-				(core, m_state, main_arena, dup);
-			} else {
-				PRINT_RA("This address is not part of the arenas\n");
-				free(dup);
-				break;
-			}
-			free(dup);
-		}
-		break;*/
-		/*			case 'c': // "dmhc"
-				if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-					GH(print_heap_chunk)
-					(core);
-				}
-				break;*/
-	case 'd': // "dmhd"
-		if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
-			break;
-		}
-		if (core->offset != core->prompt_offset) {
-			m_state = core->offset;
-		} else {
-			m_state = m_arena;
-		}
-		if (!GH(is_arena)(core, m_arena, m_state)) {
-			PRINT_RA("This address is not part of the arenas\n");
-			break;
-		}
-		if (!GH(update_main_arena)(core, m_state, main_arena)) {
-			break;
-		}
-
-		input += 1;
-		json = false;
-		if (input[0] == 'j') { // dmhdj
-			json = true;
-			input += 1;
-		}
-		RzHeapBinType bin_format = RZ_HEAP_BIN_ANY;
-		if (input[0] == ' ') {
-			input += 1;
-			if (!strcmp(input, "tcache")) {
-				bin_format = RZ_HEAP_BIN_TCACHE;
-			} else if (!strcmp(input, "fast")) {
-				bin_format = RZ_HEAP_BIN_FAST;
-			} else if (!strcmp(input, "unsorted")) {
-				bin_format = RZ_HEAP_BIN_UNSORTED;
-			} else if (!strcmp(input, "small")) {
-				bin_format = RZ_HEAP_BIN_SMALL;
-			} else if (!strcmp(input, "large")) {
-				bin_format = RZ_HEAP_BIN_LARGE;
-			} else {
-				break;
-			}
-		}
-		GH(print_main_arena_bins)
-		(core, m_state, main_arena, global_max_fast, bin_format, json);
-		break;
-	case 'f': // "dmhf"
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			bool main_arena_only = false;
-			char *m_state_str, *dup = strdup(input + 1);
-			if (*dup) {
-				strtok(dup, ":");
-				m_state_str = strtok(NULL, ":");
-				m_state = rz_num_get(NULL, m_state_str);
-				if (!m_state) {
-					m_state = m_arena;
-				}
-			} else {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-				} else {
-					m_state = m_arena;
-				}
-			}
-			if (GH(is_arena)(core, m_arena, m_state)) {
-				if (!GH(update_main_arena)(core, m_state, main_arena)) {
-					free(dup);
-					break;
-				}
-				GH(print_heap_fastbin)
-				(core, m_state, main_arena, global_max_fast, dup, main_arena_only, NULL);
-			} else {
-				PRINT_RA("This address is not part of the arenas\n");
-				free(dup);
-				break;
-			}
-			free(dup);
-		}
-		break;
-		/*	case 'v':
-		if (input[0] == 'v') {
-			format = 'v';
-		}
-	case 'g': //dmhg
-		if (input[0] == 'g') {
-			format = 'g';
-		}
-	case '*': //dmh*
-		if (input[0] == '*') {
-			format = '*';
-		}
-	case 'j': // "dmhj"
-		if (input[0] == 'j') {
-			format = 'j';
-		}
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			input += 1;
-			if (!strcmp(input, "\0")) {
-				if (core->offset != core->prompt_offset) {
-					m_state = core->offset;
-					get_state = true;
-				}
-			} else {
-				m_state = rz_num_get(NULL, input);
-				get_state = true;
-			}
-			if (!get_state) {
-				m_state = m_arena;
-			}
-			if (GH(is_arena)(core, m_arena, m_state)) {
-				if (!GH(update_main_arena)(core, m_state, main_arena)) {
-					break;
-				}
-				GH(print_heap_segment)
-				(core, main_arena, m_arena, m_state, global_max_fast, format);
-			} else {
-				PRINT_RA("This address is not part of the arenas\n");
-			}
-		}
-		break;*/
-		/*	case 't':
-		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-				break;
-			}
-			bool main_thread_only = false;
-			GH(print_tcache_instance)
-			(core, m_arena, main_arena, main_thread_only, NULL);
-		}
-		break;*/
-		//	case '?':
-		//		rz_core_cmd_help(core, GH(help_msg));
-		//		break;
-	}
-	free(main_arena);
-	return true;
-}
-
 RZ_API RzList *GH(get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzList *arena_list = rz_list_newf(free);
 	MallocState *ta = RZ_NEW0(MallocState);
@@ -2215,7 +1933,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
-		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
@@ -2458,7 +2175,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	GHT global_max_fast = (64 * SZ / 4);
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
-		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
@@ -2630,7 +2346,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, c
 	GHT global_max_fast = (64 * SZ / 4);
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
-		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
@@ -2661,7 +2376,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunk_print_handler)(RzCore *core, int argc, c
 	static GHT m_arena = GHT_MAX;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
-		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
@@ -2680,7 +2394,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
-		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
@@ -2711,7 +2424,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 	static GHT m_arena = GHT_MAX;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
-		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
@@ -2812,6 +2524,58 @@ RZ_IPI int GH(rz_cmd_heap_fastbins_print)(void *data, const char *input) {
 	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_arena_bins_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	GHT global_max_fast = (64 * SZ / 4);
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (core->offset != core->prompt_offset) {
+		m_state = core->offset;
+	} else {
+		m_state = m_arena;
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		PRINT_RA("This address is not part of the arenas\n");
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	bool json = false;
+	if (mode == RZ_OUTPUT_MODE_JSON) { // dmhdj
+		json = true;
+	}
+	RzHeapBinType bin_format = RZ_HEAP_BIN_ANY;
+	if (argc == 2) {
+		const char *input = argv[1];
+		if (!strcmp(input, "tcache")) {
+			bin_format = RZ_HEAP_BIN_TCACHE;
+		} else if (!strcmp(input, "fast")) {
+			bin_format = RZ_HEAP_BIN_FAST;
+		} else if (!strcmp(input, "unsorted")) {
+			bin_format = RZ_HEAP_BIN_UNSORTED;
+		} else if (!strcmp(input, "small")) {
+			bin_format = RZ_HEAP_BIN_SMALL;
+		} else if (!strcmp(input, "large")) {
+			bin_format = RZ_HEAP_BIN_LARGE;
+		}
+	}
+	GH(print_main_arena_bins)
+	(core, m_state, main_arena, global_max_fast, bin_format, json);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
 #ifndef HEAP32
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (core->rasm->bits == 64) {
@@ -2884,6 +2648,14 @@ RZ_IPI int rz_cmd_heap_fastbins_print(void *data, const char *input) {
 		return rz_cmd_heap_fastbins_print_64(data, input);
 	} else {
 		return rz_cmd_heap_fastbins_print_32(data, input);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_heap_arena_bins_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (core->rasm->bits == 64) {
+		return rz_cmd_heap_arena_bins_print_handler_64(core, argc, argv, mode);
+	} else {
+		return rz_cmd_heap_arena_bins_print_handler_32(core, argc, argv, mode);
 	}
 }
 #endif
