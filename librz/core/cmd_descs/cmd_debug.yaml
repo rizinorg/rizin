@@ -197,3 +197,13 @@ commands:
           - name: sectname
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+      - name: dmw
+        summary: Windows heap commands
+        cname: cmd_debug_heap_windows
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        args: []
+      - name: dmx
+        summary: Jemalloc heap commands
+        cname: cmd_debug_heap_jemalloc
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+        args: [ ]

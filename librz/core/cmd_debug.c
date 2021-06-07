@@ -1812,228 +1812,28 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-static int cmd_debug_map(RzCore *core, const char *input) {
-	//	RzListIter *iter;
-	//	RzDebugMap *map;
-	//	ut64 addr = core->offset;
+// dmw
+RZ_IPI int rz_cmd_debug_heap_windows(void *data, const char *input) {
+#if __WINDOWS__
+	RzCore *core = (RzCore *)data;
+	cmd_debug_map_heap_win(core, input);
+	return RZ_CMD_STATUS_OK;
+#else
+	eprintf("MALLOC algorithm not supported\n");
+	return RZ_CMD_STATUS_ERROR;
+#endif
+}
 
-	switch (input[0]) {
-		//	case '.': // "dm."
-		//		rz_debug_map_list(core->dbg, addr, input);
-		//		break;
-		//	case 'm': // "dmm"
-		//		if (!strcmp(input + 1, ".*")) {
-		//			cmd_debug_modules(core, ':');
-		//		} else
-		//			cmd_debug_modules(core, input[1]);
-		//		break;
-		//		//	case '?': // "dm?"
-		//		//		rz_core_cmd_help(core, help_msg_dm);
-		//		//		break;
-		//	case 'p': // "dmp"
-		//		if (input[1] == '?') {
-		//			rz_core_cmd_help(core, help_msg_dmp);
-		//		} else if (input[1] == ' ') {
-		//			int perms;
-		//			char *p, *q;
-		//			ut64 size = 0, addr;
-		//			p = strchr(input + 2, ' ');
-		//			if (p) {
-		//				*p++ = 0;
-		//				q = strchr(p, ' ');
-		//				if (q) {
-		//					*q++ = 0;
-		//					addr = rz_num_math(core->num, input + 2);
-		//					size = rz_num_math(core->num, p);
-		//					perms = rz_str_rwx(q);
-		//					//	eprintf ("(%s)(%s)(%s)\n", input + 2, p, q);
-		//					//	eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
-		//					rz_debug_map_protect(core->dbg, addr, size, perms);
-		//				} else
-		//					eprintf("See dmp?\n");
-		//			} else {
-		//				rz_debug_map_sync(core->dbg); // update process memory maps
-		//				addr = UT64_MAX;
-		//				rz_list_foreach (core->dbg->maps, iter, map) {
-		//					if (core->offset >= map->addr && core->offset < map->addr_end) {
-		//						addr = map->addr;
-		//						size = map->size;
-		//						break;
-		//					}
-		//				}
-		//				perms = rz_str_rwx(input + 2);
-		//				if (addr != UT64_MAX && perms >= 0) {
-		//					rz_debug_map_protect(core->dbg, addr, size, perms);
-		//				} else {
-		//					eprintf("See dmp?\n");
-		//				}
-		//			}
-		//		} else {
-		//			eprintf("See dmp?\n");
-		//		}
-		//		break;
-		//	case 'd': // "dmd"
-		//		switch (input[1]) {
-		//		case 'a': return dump_maps(core, 0, NULL);
-		//		case 'w': return dump_maps(core, RZ_PERM_RW, NULL);
-		//		case ' ': return dump_maps(core, -1, input + 2);
-		//		case 0: return dump_maps(core, -1, NULL);
-		//		case '?':
-		//		default:
-		//			eprintf("Usage: dmd[aw]  - dump (all-or-writable) debug maps\n");
-		//			break;
-		//		}
-		//		break;
-		//	case 'l': // "dml"
-		//		if (input[1] != ' ') {
-		//			eprintf("Usage: dml [file]\n");
-		//			return false;
-		//		}
-		//		rz_debug_map_sync(core->dbg); // update process memory maps
-		//		rz_list_foreach (core->dbg->maps, iter, map) {
-		//			if (addr >= map->addr && addr < map->addr_end) {
-		//				size_t sz;
-		//				char *buf = rz_file_slurp(input + 2, &sz);
-		//				//TODO: use mmap here. we need a portable implementation
-		//				if (!buf) {
-		//					eprintf("Cannot allocate 0x%08" PFMT64x " byte(s)\n", map->size);
-		//					return false;
-		//				}
-		//				rz_io_write_at(core->io, map->addr, (const ut8 *)buf, sz);
-		//				if (sz != map->size)
-		//					eprintf("File size differs from region size (%" PFMT64u " vs %" PFMT64d ")\n",
-		//						(ut64)sz, map->size);
-		//				eprintf("Loaded %" PFMT64u " byte(s) into the map region at 0x%08" PFMT64x "\n",
-		//					(ut64)sz, map->addr);
-		//				free(buf);
-		//				return true;
-		//			}
-		//		}
-		//		eprintf("No debug region found here\n");
-		//		return false;
-		//	case 'i': // "dmi"
-		//	case 'S': // "dmS"
-		//	{ // Move to a separate function
-		//		const char *libname = NULL, *sectname = NULL, *mode = "";
-		//		ut64 baddr = 0LL;
-		//		char *ptr;
-		//		int i;
-		//
-		//		if (input[1] == '*') {
-		//			ptr = strdup(rz_str_trim_head_ro((char *)input + 2));
-		//			mode = "-r ";
-		//		} else {
-		//			ptr = strdup(rz_str_trim_head_ro((char *)input + 1));
-		//		}
-		//		i = rz_str_word_set0(ptr);
-		//
-		//		addr = UT64_MAX;
-		//		switch (i) {
-		//		case 2: // get section name
-		//			sectname = rz_str_word_get0(ptr, 1);
-		//			/* fallthrou */
-		//		case 1: // get addr|libname
-		//			if (IS_DIGIT(*ptr)) {
-		//				const char *a0 = rz_str_word_get0(ptr, 0);
-		//				addr = rz_num_math(core->num, a0);
-		//			} else {
-		//				addr = UT64_MAX;
-		//			}
-		//			if (!addr || addr == UT64_MAX) {
-		//				libname = rz_str_word_get0(ptr, 0);
-		//			}
-		//			break;
-		//		}
-		//		rz_debug_map_sync(core->dbg); // update process memory maps
-		//		RzList *list = rz_debug_modules_list(core->dbg);
-		//		rz_list_foreach (list, iter, map) {
-		//			if ((!libname ||
-		//				    (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) ||
-		//				    (libname != NULL && (strstr(map->name, libname))))) {
-		//				baddr = map->addr;
-		//				char *res;
-		//				const char *file = map->file ? map->file : map->name;
-		//				char *name = rz_str_escape((char *)rz_file_basename(file));
-		//				char *filesc = rz_str_escape(file);
-		//				/* TODO: do not spawn. use RzBin API */
-		//				if (sectname) {
-		//					char *sect = rz_str_escape(sectname);
-		//					res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect);
-		//					free(sect);
-		//				} else {
-		//					res = rz_sys_cmd_strf("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08" PFMT64x " -S \"%s\"", name, mode, baddr, filesc);
-		//				}
-		//				free(filesc);
-		//				rz_cons_println(res);
-		//				free(name);
-		//				free(res);
-		//				if (libname || addr != UT64_MAX) { //only single match requested
-		//					break;
-		//				}
-		//			}
-		//		}
-		//		free(ptr);
-		//	} break;
-		//	case ' ': // "dm "
-		//	{
-		//		int size;
-		//		char *p = strchr(input + 2, ' ');
-		//		if (p) {
-		//			*p++ = 0;
-		//			addr = rz_num_math(core->num, input + 1);
-		//			size = rz_num_math(core->num, p);
-		//			rz_debug_map_alloc(core->dbg, addr, size, false);
-		//		} else {
-		//			eprintf("Usage: dm addr size\n");
-		//			return false;
-		//		}
-		//	} break;
-		//	case '-': // "dm-"
-		//		if (input[1] != ' ') {
-		//			eprintf("|ERROR| Usage: dm- [addr]\n");
-		//			break;
-		//		}
-		//		addr = rz_num_math(core->num, input + 2);
-		//		rz_list_foreach (core->dbg->maps, iter, map) {
-		//			if (addr >= map->addr && addr < map->addr_end) {
-		//				rz_debug_map_dealloc(core->dbg, map);
-		//				rz_debug_map_sync(core->dbg);
-		//				return true;
-		//			}
-		//		}
-		//		eprintf("The address doesn't match with any map.\n");
-		//		break;
-		//	case 'L': // "dmL"
-		//	{
-		//		int size;
-		//		char *p = strchr(input + 2, ' ');
-		//		if (p) {
-		//			*p++ = 0;
-		//			addr = rz_num_math(core->num, input + 1);
-		//			size = rz_num_math(core->num, p);
-		//			rz_debug_map_alloc(core->dbg, addr, size, true);
-		//		} else {
-		//			eprintf("Usage: dmL addr size\n");
-		//			return false;
-		//		}
-		//	} break;
-		//	case '\0': // "dm"
-		//	case '*': // "dm*"
-		//	case 'j': // "dmj"
-		// TODO dmq command
-		//	case 'q': // "dmq"
-		//		rz_debug_map_sync(core->dbg); // update process memory maps
-		//		rz_debug_map_list(core->dbg, core->offset, input);
-		//		break;
-		//	case '=': // "dm="
-		//		rz_debug_map_sync(core->dbg);
-		//		rz_debug_map_list_visual(core->dbg, core->offset, input,
-		//			rz_config_get_i(core->config, "scr.color"));
-		//		break;
-		//	case 'h': // "dmh"
-		//		break;
+// dmx
+RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
+#if HAVE_JEMALLOC
+	RzCore *core = (RzCore *)data;
+	if (core->rasm->bits == 64) {
+		return cmd_dbg_map_jemalloc_64(core, input);
+	} else {
+		return cmd_dbg_map_jemalloc_32(core, input);
 	}
-	return true;
+#endif
 }
 
 #include "linux_heap_glibc.c"
@@ -5095,9 +4895,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		break;
 	case 'c': // "dc"
 		(void)rz_debug_continue_oldhandler(core, input + 1);
-		break;
-	case 'm': // "dm"
-		cmd_debug_map(core, input + 1);
 		break;
 	case 'r': // "dr"
 		if (core->bin->is_debugger || input[1] == '?') {

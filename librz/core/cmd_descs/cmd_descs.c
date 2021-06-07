@@ -1928,6 +1928,22 @@ static const RzCmdDescHelp cmd_debug_dmS_help = {
 	.args = cmd_debug_dmS_args,
 };
 
+static const RzCmdDescArg cmd_debug_heap_windows_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_windows_help = {
+	.summary = "Windows heap commands",
+	.args = cmd_debug_heap_windows_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_help = {
+	.summary = "Jemalloc heap commands",
+	.args = cmd_debug_heap_jemalloc_args,
+};
+
 static const RzCmdDescHelp e_help = {
 	.summary = "List/get/set config evaluable vars",
 };
@@ -4911,6 +4927,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dm_cd, "dmS", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_dmS_handler, &cmd_debug_dmS_help);
 	rz_warn_if_fail(cmd_debug_dmS_cd);
+
+	RzCmdDesc *cmd_debug_heap_windows_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmw", rz_cmd_debug_heap_windows, &cmd_debug_heap_windows_help);
+	rz_warn_if_fail(cmd_debug_heap_windows_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmx", rz_cmd_debug_heap_jemalloc, &cmd_debug_heap_jemalloc_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);
