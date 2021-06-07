@@ -1904,6 +1904,13 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 	}
 }
 
+/**
+ * Get a list of MallocState structs for all the arenas
+ * @param core RzCore pointer
+ * @param m_arena Base address of MallocState struct of main arena
+ * @param main_arena MallocState struct of main arena
+ * @return RzList pointer for list of MallocState structs of all the arenas
+ */
 RZ_API RzList *GH(get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzList *arena_list = rz_list_newf(free);
 	MallocState *ta = RZ_NEW0(MallocState);
