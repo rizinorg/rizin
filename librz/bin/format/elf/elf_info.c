@@ -953,7 +953,7 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 
 		ut64 vernaux_entry_offset = verneed_entry_offset + verneed_entry.vn_aux;
 
-		for (size_t i = 0; i < verneed_entry.vn_cnt; i++) {
+		for (size_t j = 0; j < verneed_entry.vn_cnt; j++) {
 			Elf_(Vernaux) vernaux_entry = get_vernaux_entry(bin, vernaux_entry_offset);
 
 			if (vernaux_entry.vna_other != versym) {
@@ -967,6 +967,7 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 
 			const char *value = sdb_fmt("%u (%s)", versym & VERSYM_VERSION, bin->strtab + vernaux_entry.vna_name);
 			sdb_set(sdb, key, value, 0);
+
 			return true;
 		}
 

@@ -708,6 +708,10 @@ static void init_dynamic_section_sdb(ELFOBJ *bin) {
 }
 
 static bool rz_bin_elf_init_dynamic_section(ELFOBJ *bin) {
+	if (!bin->phdr) {
+		return false;
+	}
+
 	set_default_value_dynamic_info(bin);
 
 	Elf_(Phdr) *dynamic = get_dynamic_segment(bin);

@@ -167,24 +167,31 @@ static size_t get_number_of_symbols_from_hash(ELFOBJ *bin) {
 	return result == UT32_MAX ? 0 : result;
 }
 
-static ut64 get_index_from_buckets(ELFOBJ *bin, ut64 *bucket_offset, ut64 number_of_bucket) {
-	ut64 index = 0;
+static ut32 get_index_from_buckets(ELFOBJ *bin, ut32 *bucket_offset, ut32 number_of_bucket) {
+	ut32 index = 0;
 
 	for (size_t i = 0; i < number_of_bucket; i++) {
-		ut64 tmp = BREAD32(bin->b, *bucket_offset);
+		ut32 tmp = BREAD32(bin->b, *bucket_offset);
+		if (tmp == UT32_MAX) {
+			return 0;
+		}
+
 		index = RZ_MAX(index, tmp);
 	}
 
 	return index;
 }
 
-static ut64 get_index_from_chain(ELFOBJ *bin, ut64 bucket_offset, ut64 symbol_base, ut64 index) {
-	ut64 chain_index = index - symbol_base;
-	ut64 chain_offset = bucket_offset + chain_index * 4;
+static ut32 get_index_from_chain(ELFOBJ *bin, ut32 bucket_offset, ut32 symbol_base, ut32 index) {
+	ut32 chain_index = index - symbol_base;
+	ut32 chain_offset = bucket_offset + chain_index * 4;
 
 	while (1) {
 		index++;
-		size_t tmp = BREAD32(bin->b, chain_offset);
+		ut32 tmp = BREAD32(bin->b, chain_offset);
+		if (tmp == UT32_MAX) {
+			return 0;
+		}
 
 		if (tmp & 1) {
 			break;
@@ -206,12 +213,12 @@ static size_t get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
 
 	size_t pos = hash_offset;
 
-	ut64 number_of_bucket = BREAD32(bin->b, pos);
-	ut64 symbol_base = BREAD32(bin->b, pos);
-	ut64 bitmask_nwords = BREAD32(bin->b, pos);
-	ut64 bucket_offset = hash_offset + 16 + bitmask_nwords * RZ_BIN_ELF_WORDSIZE;
+	ut32 number_of_bucket = BREAD32(bin->b, pos);
+	ut32 symbol_base = BREAD32(bin->b, pos);
+	ut32 bitmask_nwords = BREAD32(bin->b, pos);
+	ut32 bucket_offset = hash_offset + 16 + bitmask_nwords * RZ_BIN_ELF_WORDSIZE;
 
-	ut64 index = get_index_from_buckets(bin, &bucket_offset, number_of_bucket);
+	ut32 index = get_index_from_buckets(bin, &bucket_offset, number_of_bucket);
 
 	if (!index) {
 		return 0;
