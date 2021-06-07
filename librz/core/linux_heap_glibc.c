@@ -1936,51 +1936,6 @@ RZ_API RzList *GH(get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_
 	return arena_list;
 }
 
-RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const char **argv) {
-	static GHT m_arena = GHT_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	MallocState *main_arena = RZ_NEW0(MallocState);
-	if (!main_arena) {
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
-		free(main_arena);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
-		free(main_arena);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	RzList *arenas_list = GH(get_arenas_list)(core, m_arena, main_arena);
-	RzListIter *iter, *iter2;
-	MallocState *pos;
-	ut64 addr;
-	rz_list_foreach (arenas_list, iter2, pos) {
-		addr = pos->GH(next);
-	}
-	bool flag = 0;
-	rz_list_foreach (arenas_list, iter, pos) {
-		if (!flag) {
-			flag = true;
-			rz_cons_printf("Main arena  (addr=");
-
-		} else {
-			rz_cons_printf("Thread arena(addr=");
-		}
-		PRINTF_YA("0x%" PFMT64x, (ut64)addr);
-		rz_cons_printf(", lastRemainder=");
-		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(last_remainder));
-		rz_cons_printf(", top=");
-		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(top));
-		rz_cons_printf(", next=");
-		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(next));
-		rz_cons_printf(")\n");
-		addr = (ut64)pos->GH(next);
-	}
-	rz_list_free(arenas_list);
-	free(main_arena);
-	return RZ_CMD_STATUS_OK;
-}
 /**
  * Get a list of all the heap chunks in an arena. The chunks are in form of a struct RzHeapChunkListItem
  * @param core RzCore pointer
@@ -1988,7 +1943,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
  * @param m_arena Base address of malloc state of main arena
  * @param m_state Base address of malloc state of the arena whose chunks are required
  * @param global_max_fast Max size of fastbin
- * @return
+ * @return RzList pointer for list of all chunks in a given arena
  */
 RZ_API RzList *GH(get_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	GHT m_arena, GHT m_state, GHT global_max_fast) {
@@ -2186,6 +2141,53 @@ RZ_API RzList *GH(get_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	free(cnk_next);
 	return chunks;
 }
+
+RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const char **argv) {
+	static GHT m_arena = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzList *arenas_list = GH(get_arenas_list)(core, m_arena, main_arena);
+	RzListIter *iter, *iter2;
+	MallocState *pos;
+	ut64 addr;
+	rz_list_foreach (arenas_list, iter2, pos) {
+		addr = pos->GH(next);
+	}
+	bool flag = 0;
+	rz_list_foreach (arenas_list, iter, pos) {
+		if (!flag) {
+			flag = true;
+			rz_cons_printf("Main arena  (addr=");
+
+		} else {
+			rz_cons_printf("Thread arena(addr=");
+		}
+		PRINTF_YA("0x%" PFMT64x, (ut64)addr);
+		rz_cons_printf(", lastRemainder=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(last_remainder));
+		rz_cons_printf(", top=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(top));
+		rz_cons_printf(", next=");
+		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(next));
+		rz_cons_printf(")\n");
+		addr = (ut64)pos->GH(next);
+	}
+	rz_list_free(arenas_list);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
