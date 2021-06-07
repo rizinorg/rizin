@@ -2167,7 +2167,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			}
 		}
 		break;*/
-	case 't':
+		/*	case 't':
 		if (GH(rz_resolve_main_arena)(core, &m_arena)) {
 			if (!GH(update_main_arena)(core, m_arena, main_arena)) {
 				break;
@@ -2176,7 +2176,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			GH(print_tcache_instance)
 			(core, m_arena, main_arena, main_thread_only, NULL);
 		}
-		break;
+		break;*/
 		//	case '?':
 		//		rz_core_cmd_help(core, GH(help_msg));
 		//		break;
@@ -2215,12 +2215,15 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzList *arenas_list = GH(get_arenas_list)(core, m_arena, main_arena);
@@ -2455,9 +2458,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	GHT global_max_fast = (64 * SZ / 4);
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc == 1) {
@@ -2466,10 +2471,12 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		m_state = rz_num_get(NULL, argv[1]);
 	}
 	if (!GH(is_arena)(core, m_arena, m_state)) {
+                free(main_arena);
 		PRINT_RA("This address is not a valid arena\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	GHT brk_start, brk_end;
@@ -2488,17 +2495,20 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	int w, h;
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 	if (!hc) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	w = rz_cons_get_size(&h);
 	RzConsCanvas *can = rz_cons_canvas_new(w, h);
 	if (!can) {
+                free(main_arena);
 		rz_config_hold_free(hc);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
 	RzAGraph *g = rz_agraph_new(can);
 	if (!g) {
+                free(main_arena);
 		rz_cons_canvas_free(can);
 		rz_config_hold_restore(hc);
 		rz_config_hold_free(hc);
@@ -2512,6 +2522,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = rz_core_pj_new(core);
 		if (!pj) {
+                        free(main_arena);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		pj_o(pj);
@@ -2619,9 +2630,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, c
 	GHT global_max_fast = (64 * SZ / 4);
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc == 1) {
@@ -2631,9 +2644,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, c
 	}
 	if (!GH(is_arena)(core, m_arena, m_state)) {
 		PRINT_RA("This address is not a valid arena\n");
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	GH(print_arena_stats)
@@ -2646,9 +2661,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunk_print_handler)(RzCore *core, int argc, c
 	static GHT m_arena = GHT_MAX;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut64 addr = rz_num_get(NULL, argv[1]);
@@ -2663,9 +2680,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc == 1) {
@@ -2675,9 +2694,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 	}
 	if (!GH(is_arena)(core, m_arena, m_state)) {
 		PRINT_RA("This address is not a valid arena\n");
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	GH(print_malloc_info)
@@ -2690,17 +2711,62 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 	static GHT m_arena = GHT_MAX;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+                free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	bool main_thread_only = false;
 	GH(print_tcache_instance)
 	(core, m_arena, main_arena, main_thread_only, NULL);
+	free(main_arena);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI int GH(rz_cmd_heap_bins_list_print)(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (GH(rz_resolve_main_arena)(core, &m_arena)) {
+		char *m_state_str, *dup = strdup(input);
+		if (*dup) {
+			strtok(dup, ":");
+			m_state_str = strtok(NULL, ":");
+			m_state = rz_num_get(NULL, m_state_str);
+			if (!m_state) {
+				m_state = m_arena;
+			}
+		} else {
+			if (core->offset != core->prompt_offset) {
+				m_state = core->offset;
+			} else {
+				m_state = m_arena;
+			}
+		}
+		if (GH(is_arena)(core, m_arena, m_state)) {
+			if (!GH(update_main_arena)(core, m_state, main_arena)) {
+                                free(main_arena);
+				free(dup);
+				return RZ_CMD_STATUS_ERROR;
+			}
+			GH(print_heap_bin)
+			(core, m_state, main_arena, dup);
+		} else {
+			PRINT_RA("This address is not part of the arenas\n");
+                        free(main_arena);
+			free(dup);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		free(dup);
+	}
+	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }
 #ifndef HEAP32
@@ -2745,7 +2811,6 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_graph_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const char **argv) {
-	// RZ_OUTPUT_MODE_LONG_JSON mode workaround for graph
 	if (core->rasm->bits == 64) {
 		return rz_cmd_heap_info_print_handler_64(core, argc, argv);
 	} else {
@@ -2754,11 +2819,19 @@ RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, const char **argv) {
-	// RZ_OUTPUT_MODE_LONG_JSON mode workaround for graph
 	if (core->rasm->bits == 64) {
 		return rz_cmd_heap_tcache_print_handler_64(core, argc, argv);
 	} else {
 		return rz_cmd_heap_tcache_print_handler_32(core, argc, argv);
+	}
+}
+
+RZ_IPI int rz_cmd_heap_bins_list_print(void *data, const char *input) {
+	RzCore *core = (RzCore*) data;
+	if (core->rasm->bits == 64) {
+		return rz_cmd_heap_bins_list_print_64(data, input);
+	} else {
+		return rz_cmd_heap_bins_list_print_32(data, input);
 	}
 }
 #endif

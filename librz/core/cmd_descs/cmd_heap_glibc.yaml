@@ -17,6 +17,14 @@ commands:
     cname: cmd_arena_print
     summary: List all the arenas
     args: []
+  - name: dmhb
+    cname: cmd_heap_bins_list_print
+    summary: List all the arenas
+    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    args:
+      - name: bin_num|bin_num:malloc_state
+        type: RZ_CMD_ARG_TYPE_RZNUM
+        optional: true
   - name: dmhc
     cname: cmd_heap_chunk_print
     summary: Get info about heap chunk at <addr>
