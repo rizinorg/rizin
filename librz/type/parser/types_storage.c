@@ -573,63 +573,109 @@ RZ_OWN ParserTypePair *c_parser_new_enum_forward_definition(CParserState *state,
 }
 
 /**
- * \brief Creates new type alias based on the name
- *
- * If the name matches with the name of one of the base types
- * that are in the hashtable of the existing types in the parser
- * state, then it creates new RzType with the found RzBaseType as a base.
- * Then it wraps boths in the "type pair"
- *
- * In case of the base type found in the hashtable the ownership transfer
- * doesn't happen. If not - it does.
+ * \brief Creates new type alias naked type (without base type) based on the name
  *
  * \param state The parser state
- * \param name Name of the type alias to create
- * \param name Name of the base type for the alias
+ * \param name Name of the typedef C type to create
  */
-RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL const char *name, RZ_NONNULL const char *base) {
+RZ_OWN ParserTypePair *c_parser_new_typedef_naked_type(CParserState *state, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(state && name, NULL);
+
 	RzType *type = RZ_NEW0(RzType);
+	if (!type) {
+		return NULL;
+	}
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = false;
 	type->identifier.name = strdup(name);
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 
-	parser_debug(state, "typedef \"%s\" -> \"%s\"\n", name, base);
+	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
+	if (!tpair) {
+		rz_type_free(type);
+		return NULL;
+	}
+	tpair->btype = NULL;
+	tpair->type = type;
+	return tpair;
+}
 
-	// We check if there is already a typedef in the hashtable with the same name
-	bool found = false;
-	RzBaseType *alias_type = ht_pp_find(state->types, name, &found);
-	if (!found || !alias_type) {
-		// At first we try to search if the base type is available in our context already
-		RzBaseType *base_type = ht_pp_find(state->types, base, &found);
-		if (!found || !base_type) {
-			parser_warning(state, "Missing base type for aliasing: \"%s\"\n", base);
-			// If not found - we still should create an alias
-			// This scenario is oftenly used for "forward definitions" both in C and our databases
-			// Thus we store the name in the "forward" hashtable so it could be set later
-			if (!c_parser_forward_definition_store(state, base)) {
-				parser_error(state, "Cannot create forward definition for aliasing: \"%s\"\n", base);
-				rz_type_free(type);
-				return NULL;
-			}
-		}
-		// If not found in the context - create a new one
-		alias_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
-		if (!alias_type) {
-			rz_type_free(type);
-			return NULL;
-		}
-		alias_type->name = strdup(name);
-		// Here we don't set the alias type itself since it will
-		// happen later in the parser, once the complete declarator is parsed
-		// It is important for type aliases to pointers, arrays, etc
-		alias_type->type = NULL;
+/**
+ * \brief Creates new type alias forward definition
+ *
+ * \param state The parser state
+ * \param name Name of the typedef C type to create
+ */
+RZ_OWN ParserTypePair *c_parser_new_typedef_forward_definition(CParserState *state, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(state && name, NULL);
+
+	if (c_parser_base_type_exists(state, name)) {
+		// We don't create the typedef if it exists already in the parser
+		// state with the same name
+		return NULL;
 	}
 
-	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
-	tpair->btype = alias_type;
-	tpair->type = type;
+	if (c_parser_base_type_is_forward_definition(state, name)) {
+		// We don't create the typedef if it exists already in the forward
+		// definitions table with the same name
+		return NULL;
+	}
+
+	ParserTypePair *tpair = c_parser_new_typedef_naked_type(state, name);
+	if (!tpair) {
+		return NULL;
+	}
+
+	return tpair;
+}
+
+/**
+ * \brief Creates new type alias based on the name
+ *
+ * \param state The parser state
+ * \param name Name of the primitive C type to create
+ * \param cases_count The count of the enum cases
+ */
+RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL const char *name, RZ_NONNULL const char *base) {
+	rz_return_val_if_fail(state && name, NULL);
+
+	if (c_parser_base_type_exists(state, name)) {
+		// We don't create the type alias if it exists already in the parser
+		// state with the same name
+		return NULL;
+	}
+
+	ParserTypePair *tpair = c_parser_new_typedef_naked_type(state, name);
+	if (!tpair) {
+		return NULL;
+	}
+
+	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
+	if (!base_type) {
+		rz_type_free(tpair->type);
+		free(tpair);
+		return NULL;
+	}
+	base_type->name = strdup(name);
+
+	if (!c_parser_base_type_exists(state, base)) {
+		// If it not exists already in the parser
+		// we create a forward type
+		base_type->type = NULL;
+		c_parser_forward_definition_store(state, base);
+	} else {
+		RzType *type = RZ_NEW0(RzType);
+		if (!type) {
+			free(tpair);
+			return NULL;
+		}
+		type->kind = RZ_TYPE_KIND_IDENTIFIER;
+		type->identifier.name = strdup(base);
+		type->identifier.is_const = false;
+		base_type->type = type;
+	}
+
+	tpair->btype = base_type;
 	return tpair;
 }
 
