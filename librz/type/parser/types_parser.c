@@ -165,7 +165,18 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 		parser_debug(state, "Fetched type: \"%s\"\n", real_type);
 		return 0;
 	}
-	parser_error(state, "Cannot find type \"%s\" in the state\n", real_type);
+	// If not - we form both RzType and RzBaseType to store in the Types database
+	// as a forward-looking definition
+	*tpair = c_parser_new_primitive_type(state, real_type, is_const);
+	if (!*tpair) {
+		parser_error(state, "Error forming RzType and RzBaseType pair out of simple forward-looking type\n");
+		return -1;
+	}
+	// Do allow forward-looking definitions we just add the type into the forward hashtable
+	if (c_parser_forward_definition_store(state, real_type)) {
+		parser_debug(state, "Added forward definition of type: \"%s\"\n", real_type);
+		return 0;
+	}
 	return -1;
 }
 
@@ -927,6 +938,10 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		typedef_pair->btype->type = type_pair->type;
 		parser_debug(state, "storing typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
 		c_parser_base_type_store(state, typedef_name, typedef_pair);
+		// If it was a forward definition previously - remove it
+		if (c_parser_base_type_is_forward_definition(state, typedef_name)) {
+			c_parser_forward_definition_remove(state, typedef_name);
+		}
 	}
 
 	*tpair = typedef_pair;
