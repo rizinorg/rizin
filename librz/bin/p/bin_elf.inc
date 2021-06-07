@@ -134,7 +134,10 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol sym) {
 		struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
 		bool is_arm = bin->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
-		ret->vaddr = Elf_(rz_bin_elf_p2v)(obj, addr);
+		ret->vaddr = Elf_(rz_bin_elf_p2v_new)(obj, addr);
+		if (ret->vaddr == UT64_MAX) {
+			ret->vaddr = addr;
+		}
 		if (is_arm && addr & 1) {
 			ret->bits = 16;
 			ret->vaddr--;
@@ -919,7 +922,7 @@ static RzBinAddr *newEntry(RzBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, 
 	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 	if (ptr) {
-		ptr->paddr = Elf_(rz_bin_elf_v2p)(obj, vaddr);
+		ptr->paddr = Elf_(rz_bin_elf_v2p_new)(obj, vaddr);
 		ptr->vaddr = vaddr;
 		ptr->hpaddr = hpaddr;
 		ptr->hvaddr = hvaddr;
@@ -997,7 +1000,7 @@ static RzList *entries(RzBinFile *bf) {
 			return ret;
 		}
 		ptr->paddr = pa;
-		ptr->vaddr = Elf_(rz_bin_elf_p2v)(obj, ptr->paddr);
+		ptr->vaddr = Elf_(rz_bin_elf_p2v_new)(obj, ptr->paddr);
 		ptr->hpaddr = 0x18; // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX;
 
@@ -1015,10 +1018,6 @@ static RzList *entries(RzBinFile *bf) {
 				}
 			}
 		}
-		if (ptr->hvaddr == UT64_MAX) {
-			Elf_(rz_bin_elf_p2v_new)(obj, ptr->hpaddr);
-		}
-
 		if (obj->ehdr.e_machine == EM_ARM) {
 			int bin_bits = Elf_(rz_bin_elf_get_bits)(obj);
 			if (bin_bits != 64) {
@@ -1048,7 +1047,7 @@ static RzList *entries(RzBinFile *bf) {
 					return ret;
 				}
 				ptr->paddr = symbol[i].offset;
-				ptr->vaddr = Elf_(rz_bin_elf_p2v)(obj, ptr->paddr);
+				ptr->vaddr = Elf_(rz_bin_elf_p2v_new)(obj, ptr->paddr);
 				ptr->hpaddr = UT64_MAX;
 				ptr->type = RZ_BIN_ENTRY_TYPE_INIT;
 				rz_list_append(ret, ptr);
@@ -1336,10 +1335,10 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->big_endian = Elf_(rz_bin_elf_is_big_endian)(obj);
 	ret->has_va = Elf_(rz_bin_elf_has_va)(obj);
 	ret->has_nx = Elf_(rz_bin_elf_has_nx)(obj);
-	ret->intrp = Elf_(rz_bin_elf_intrp)(obj);
-	ret->compiler = Elf_(rz_bin_elf_compiler)(obj);
+	ret->intrp = Elf_(rz_bin_elf_get_intrp)(obj);
+	ret->compiler = Elf_(rz_bin_elf_get_compiler)(obj);
 	ret->dbg_info = 0;
-	if (!Elf_(rz_bin_elf_get_stripped)(obj)) {
+	if (!Elf_(rz_bin_elf_is_stripped)(obj)) {
 		ret->dbg_info |= RZ_BIN_DBG_LINENUMS | RZ_BIN_DBG_SYMS | RZ_BIN_DBG_RELOCS;
 	} else {
 		ret->dbg_info |= RZ_BIN_DBG_STRIPPED;
