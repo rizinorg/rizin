@@ -404,6 +404,7 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	GHT main_arena_sym = GHT_MAX;
 	bool is_debugged = rz_config_get_b(core->config, "cfg.debug");
 	bool first_libc = true;
+	rz_config_set_i(core->config, "dbg.glibc.tcache", GH(is_tcache)(core));
 
 	if (is_debugged) {
 		RzListIter *iter;
@@ -2256,7 +2257,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		top_title = rz_str_newf("Top chunk @ 0x%" PFMT64x "\n", (ut64)main_arena->GH(top));
 	}
 	rz_list_foreach (chunks, iter, pos) {
-		if (mode == RZ_OUTPUT_MODE_STANDARD) {
+		if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
 			GH(print_heap_chunk_simple)
 			(core, pos->addr, pos->status, NULL);
 			rz_cons_newline();
@@ -2423,7 +2424,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, const char **argv) {
 	static GHT m_arena = GHT_MAX;
 	MallocState *main_arena = RZ_NEW0(MallocState);
-	rz_config_set_i(core->config, "dbg.glibc.tcache", GH(is_tcache)(core));
 	if (!main_arena) {
 		return RZ_CMD_STATUS_ERROR;
 	}
