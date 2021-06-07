@@ -1706,7 +1706,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
 
-	size_t chunks_cnt = 0;
+	int chunks_cnt = 0;
 	if (head->fd == fw) {
 		return chunks_cnt;
 	}
@@ -2465,38 +2465,40 @@ RZ_IPI int GH(rz_cmd_heap_bins_list_print)(void *data, const char *input) {
 	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
-	if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-		char *m_state_str, *dup = strdup(input);
-		if (*dup) {
-			strtok(dup, ":");
-			m_state_str = strtok(NULL, ":");
-			m_state = rz_num_get(NULL, m_state_str);
-			if (!m_state) {
-				m_state = m_arena;
-			}
-		} else {
-			if (core->offset != core->prompt_offset) {
-				m_state = core->offset;
-			} else {
-				m_state = m_arena;
-			}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *m_state_str, *dup = strdup(input);
+	if (*dup) {
+		strtok(dup, ":");
+		m_state_str = strtok(NULL, ":");
+		m_state = rz_num_get(NULL, m_state_str);
+		if (!m_state) {
+			m_state = m_arena;
 		}
-		if (GH(is_arena)(core, m_arena, m_state)) {
-			if (!GH(update_main_arena)(core, m_state, main_arena)) {
-				free(main_arena);
-				free(dup);
-				return RZ_CMD_STATUS_ERROR;
-			}
-			GH(print_heap_bin)
-			(core, m_state, main_arena, dup);
+	} else {
+		if (core->offset != core->prompt_offset) {
+			m_state = core->offset;
 		} else {
-			PRINT_RA("This address is not part of the arenas\n");
+			m_state = m_arena;
+		}
+	}
+	if (GH(is_arena)(core, m_arena, m_state)) {
+		if (!GH(update_main_arena)(core, m_state, main_arena)) {
 			free(main_arena);
 			free(dup);
 			return RZ_CMD_STATUS_ERROR;
 		}
+		GH(print_heap_bin)
+		(core, m_state, main_arena, dup);
+	} else {
+		PRINT_RA("This address is not part of the arenas\n");
+		free(main_arena);
 		free(dup);
+		return RZ_CMD_STATUS_ERROR;
 	}
+	free(dup);
 	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }
@@ -2507,39 +2509,41 @@ RZ_IPI int GH(rz_cmd_heap_fastbins_print)(void *data, const char *input) {
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	GHT global_max_fast = (64 * SZ / 4);
-	if (GH(rz_resolve_main_arena)(core, &m_arena)) {
-		bool main_arena_only = false;
-		char *m_state_str, *dup = strdup(input);
-		if (*dup) {
-			strtok(dup, ":");
-			m_state_str = strtok(NULL, ":");
-			m_state = rz_num_get(NULL, m_state_str);
-			if (!m_state) {
-				m_state = m_arena;
-			}
-		} else {
-			if (core->offset != core->prompt_offset) {
-				m_state = core->offset;
-			} else {
-				m_state = m_arena;
-			}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool main_arena_only = false;
+	char *m_state_str, *dup = strdup(input);
+	if (*dup) {
+		strtok(dup, ":");
+		m_state_str = strtok(NULL, ":");
+		m_state = rz_num_get(NULL, m_state_str);
+		if (!m_state) {
+			m_state = m_arena;
 		}
-		if (GH(is_arena)(core, m_arena, m_state)) {
-			if (!GH(update_main_arena)(core, m_state, main_arena)) {
-				free(dup);
-				free(main_arena);
-				return RZ_CMD_STATUS_ERROR;
-			}
-			GH(print_heap_fastbin)
-			(core, m_state, main_arena, global_max_fast, dup, main_arena_only, NULL);
+	} else {
+		if (core->offset != core->prompt_offset) {
+			m_state = core->offset;
 		} else {
-			PRINT_RA("This address is not part of the arenas\n");
+			m_state = m_arena;
+		}
+	}
+	if (GH(is_arena)(core, m_arena, m_state)) {
+		if (!GH(update_main_arena)(core, m_state, main_arena)) {
 			free(dup);
 			free(main_arena);
 			return RZ_CMD_STATUS_ERROR;
 		}
+		GH(print_heap_fastbin)
+		(core, m_state, main_arena, global_max_fast, dup, main_arena_only, NULL);
+	} else {
+		PRINT_RA("This address is not part of the arenas\n");
 		free(dup);
+		free(main_arena);
+		return RZ_CMD_STATUS_ERROR;
 	}
+	free(dup);
 	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }
