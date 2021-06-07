@@ -47,4 +47,8 @@ commands:
       - name: malloc_state
         type: RZ_CMD_ARG_TYPE_RZNUM
         optional: true
+  - name: dmht
+    cname: cmd_heap_tcache_print
+    summary: Display all parsed thread cache bins of all arena's tcache instance
+    args: []
 

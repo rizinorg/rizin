@@ -1788,6 +1788,14 @@ static const RzCmdDescHelp cmd_main_arena_print_help = {
 	.args = cmd_main_arena_print_args,
 };
 
+static const RzCmdDescArg cmd_heap_tcache_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_tcache_print_help = {
+	.summary = "Display all parsed thread cache bins of all arena's tcache instance",
+	.args = cmd_heap_tcache_print_args,
+};
+
 static const RzCmdDescHelp cmd_debug_dmi_help = {
 	.summary = "List/Load symbols",
 };
@@ -4828,6 +4836,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
 	rz_warn_if_fail(cmd_main_arena_print_cd);
+
+	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmht", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
+	rz_warn_if_fail(cmd_heap_tcache_print_cd);
 
 	RzCmdDesc *cmd_debug_dmi_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmi", rz_cmd_debug_dmi, &cmd_debug_dmi_help);
 	rz_warn_if_fail(cmd_debug_dmi_cd);

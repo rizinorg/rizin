@@ -1034,9 +1034,9 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, PJ *pj) {
 		GHT entry = GH(tcache_get_entry)(tcache, i);
 		if (count > 0) {
 			if (!pj) {
-				PRINT_GA("Tcache_bin[");
+				rz_cons_printf("Tcache_bin[");
 				PRINTF_BA("%02zu", i);
-				PRINT_GA("] Items:");
+				rz_cons_printf("] Items:");
 				PRINTF_BA("%2d", count);
 				rz_cons_newline();
 				rz_cons_printf(" -> ");
@@ -1126,8 +1126,8 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 		ta->GH(next) = main_arena->GH(next);
 		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
 			if (!pj) {
-				PRINT_YA("Tcache in Thread Arena @ ");
-				PRINTF_BA(" 0x%" PFMT64x, (ut64)ta->GH(next));
+				rz_cons_printf("Tcache in Thread Arena @ ");
+				PRINTF_YA(" 0x%" PFMT64x, (ut64)ta->GH(next));
 			}
 			mmap_start = ((ta->GH(next) >> 16) << 16);
 			tcache_start = mmap_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
@@ -2686,6 +2686,23 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, const char **argv) {
+	static GHT m_arena = GHT_MAX;
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	bool main_thread_only = false;
+	GH(print_tcache_instance)
+	(core, m_arena, main_arena, main_thread_only, NULL);
+	return RZ_CMD_STATUS_OK;
+}
 #ifndef HEAP32
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (core->rasm->bits == 64) {
@@ -2733,6 +2750,15 @@ RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const 
 		return rz_cmd_heap_info_print_handler_64(core, argc, argv);
 	} else {
 		return rz_cmd_heap_info_print_handler_32(core, argc, argv);
+	}
+}
+
+RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, const char **argv) {
+	// RZ_OUTPUT_MODE_LONG_JSON mode workaround for graph
+	if (core->rasm->bits == 64) {
+		return rz_cmd_heap_tcache_print_handler_64(core, argc, argv);
+	} else {
+		return rz_cmd_heap_tcache_print_handler_32(core, argc, argv);
 	}
 }
 #endif
