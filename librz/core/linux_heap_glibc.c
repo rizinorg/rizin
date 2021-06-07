@@ -2180,7 +2180,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
 		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(top));
 		rz_cons_printf(", next=");
 		PRINTF_YA("0x%" PFMT64x, (ut64)pos->GH(next));
-		rz_cons_printf(")\n");
+		if (pos->attached_threads) {
+			rz_cons_printf(")\n");
+		} else {
+			rz_cons_printf(", free)\n");
+		}
 		addr = (ut64)pos->GH(next);
 	}
 	rz_list_free(arenas_list);
