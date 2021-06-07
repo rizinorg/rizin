@@ -2423,6 +2423,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, const char **argv) {
 	static GHT m_arena = GHT_MAX;
 	MallocState *main_arena = RZ_NEW0(MallocState);
+	rz_config_set_i(core->config, "dbg.glibc.tcache", GH(is_tcache)(core));
 	if (!main_arena) {
 		return RZ_CMD_STATUS_ERROR;
 	}

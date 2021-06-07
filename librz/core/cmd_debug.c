@@ -1328,11 +1328,6 @@ beach:
 	rz_list_free(list);
 }
 
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-
-static int cmd_dbg_map_heap_glibc_32(RzCore *core, const char *input);
-static int cmd_dbg_map_heap_glibc_64(RzCore *core, const char *input);
-#endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #if __WINDOWS__
 static int cmd_debug_map_heap_win(RzCore *core, const char *input);
 #endif // __WINDOWS__
@@ -1381,15 +1376,15 @@ static RzDebugMap *get_closest_map(RzCore *core, ut64 addr) {
 static int rz_debug_heap(RzCore *core, const char *input) {
 	const char *m = rz_config_get(core->config, "dbg.malloc");
 	if (m && !strcmp("glibc", m)) {
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		if (core->rasm->bits == 64) {
-			cmd_dbg_map_heap_glibc_64(core, input);
-		} else {
-			cmd_dbg_map_heap_glibc_32(core, input);
-		}
-#else
-		eprintf("glibc not supported for this platform\n");
-#endif
+//#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+//		if (core->rasm->bits == 64) {
+//			cmd_dbg_map_heap_glibc_64(core, input);
+//		} else {
+//			cmd_dbg_map_heap_glibc_32(core, input);
+//		}
+//#else
+//		eprintf("glibc not supported for this platform\n");
+//#endif
 #if HAVE_JEMALLOC
 	} else if (m && !strcmp("jemalloc", m)) {
 		if (core->rasm->bits == 64) {
