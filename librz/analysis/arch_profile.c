@@ -11,38 +11,58 @@ RZ_API void rz_arch_profile_free(RzArchProfile *p) {
 	if (!p) {
 		return;
 	}
-	free(p->arch);
-	free(p->cpu);
 	ht_up_free(p->registers_mmio);
 	ht_up_free(p->registers_extended);
 }
 
 RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
-	RzArchProfile *cpu = RZ_NEW0(RzArchProfile);
-	if (!cpu) {
+	RzArchProfile *profile = RZ_NEW0(RzArchProfile);
+	if (!profile) {
 		return NULL;
 	}
-	cpu->db = sdb_new0();
-	cpu->arch = NULL;
-	cpu->cpu = NULL;
+	profile->ROM_SIZE = 0;
+	profile->RAM_SIZE = 0;
+	profile->EEPROM_SIZE = 0;
+	profile->IO_SIZE = 0;
+	profile->SRAM_START = 0;
+	profile->SRAM_SIZE = 0;
+	profile->PC = 0;
+	profile->PAGE_SIZE = 0;
+	profile->INTERRUPT_VECTOR_SIZE = 0;
 
-	cpu->registers_mmio = ht_up_new0();
-	cpu->registers_extended = ht_up_new0();
-	return cpu;
+	profile->registers_mmio = ht_up_new0();
+	profile->registers_extended = ht_up_new0();
+	return profile;
 }
 
-static inline bool cpu_reload_needed(RzArchProfile *c, const char *cpu, const char *arch) {
+RZ_API RZ_OWN RzArchTarget *rz_arch_target_new() {
+	RzArchTarget *profile = RZ_NEW0(RzArchTarget);
+	profile->db = sdb_new0();
+	profile->profile = rz_arch_profile_new();
+	return profile;
+}
+
+RZ_API void rz_arch_target_free(RzArchTarget *t) {
+	if (!t) {
+		return;
+	}
+	sdb_free(t->db);
+	rz_arch_profile_free(t->profile);
+}
+
+static inline bool cpu_reload_needed(RzArchTarget *c, const char *cpu, const char *arch) {
 	if (!c->arch || strcmp(c->arch, arch)) {
 		return true;
 	}
 	return !c->cpu || strcmp(c->cpu, cpu);
 }
 
-static bool sdb_load_arch_profile(RzArchProfile *c, Sdb *sdb) {
-	rz_return_val_if_fail(c && sdb, NULL);
+static bool sdb_load_arch_profile(RzArchTarget *t, Sdb *sdb) {
+	rz_return_val_if_fail(t && sdb, NULL);
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list(sdb, false);
+	RzArchProfile *c = rz_arch_profile_new();
 	ls_foreach (l, iter, kv) {
 		if (!strcmp(sdbkv_key(kv), "PC")) {
 			c->PC = rz_num_math(NULL, sdbkv_value(kv));
@@ -74,33 +94,40 @@ static bool sdb_load_arch_profile(RzArchProfile *c, Sdb *sdb) {
 			ht_up_insert(c->registers_extended, ext_io_address, ext_io_name);
 		}
 	}
+	t->profile = c;
 	return true;
 }
 
-static bool sdb_load_arch_profile_by_path(RZ_NONNULL RzArchProfile *c, const char *path) {
+static bool sdb_load_arch_profile_by_path(RZ_NONNULL RzArchTarget *t, const char *path) {
 	Sdb *db = sdb_new(0, path, 0);
-	bool result = sdb_load_arch_profile(c, db);
+	bool result = sdb_load_arch_profile(t, db);
 	sdb_close(db);
 	sdb_free(db);
 	return result;
 }
 
-RZ_API bool rz_type_db_load_arch_profile_sdb(RzArchProfile *c, const char *path) {
+RZ_API bool rz_type_db_load_arch_profile_sdb(RzArchTarget *t, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;
 	}
-	return sdb_load_arch_profile_by_path(c, path);
+	return sdb_load_arch_profile_by_path(t, path);
 }
 
-RZ_API bool rz_arch_profiles_init(RzArchProfile *c, const char *cpu, const char *arch, const char *dir_prefix) {
-	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "%s-%s.sdb"),
-		dir_prefix, arch, cpu);
-	if (path) {
-		if (!rz_type_db_load_arch_profile_sdb(c, path)) {
-			sdb_free(c->db);
-			c->db = NULL;
+RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *arch, const char *dir_prefix) {
+	bool cpu_changed;
+
+	cpu_changed = cpu_reload_needed(t, cpu, arch);
+
+	if (cpu_changed) {
+		char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "%s-%s.sdb"),
+			dir_prefix, arch, cpu);
+		if (path) {
+			if (!rz_type_db_load_arch_profile_sdb(t, path)) {
+				sdb_free(t->db);
+				t->db = NULL;
+			}
+			free(path);
 		}
-		free(path);
 	}
 	return true;
 }

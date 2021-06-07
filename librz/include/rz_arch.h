@@ -15,9 +15,6 @@ extern "C" {
 typedef struct rz_core_t RzCore;
 
 typedef struct rz_arch_profile_t {
-	Sdb *db;
-	char *cpu;
-	char *arch;
 	ut64 ROM_SIZE;
 	ut64 RAM_SIZE;
 	ut64 EEPROM_SIZE;
@@ -31,9 +28,18 @@ typedef struct rz_arch_profile_t {
 	HtUP /* <ut64 , char *> */ *registers_extended;
 } RzArchProfile;
 
+typedef struct rz_arch_target_t {
+	Sdb *db;
+	char *cpu;
+	char *arch;
+	RzArchProfile *profile;
+} RzArchTarget;
+
 RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new();
-RZ_API void rz_arch_profile_free(RzArchProfile *s);
-RZ_API bool rz_arch_profiles_init(RzArchProfile *c, const char *cpu, const char *arch, const char *dir_prefix);
+RZ_API RZ_OWN RzArchTarget *rz_arch_target_new();
+RZ_API void rz_arch_profile_free(RzArchProfile *profile);
+RZ_API void rz_arch_target_free(RzArchTarget *target);
+RZ_API bool rz_arch_profiles_init(RzArchTarget *c, const char *cpu, const char *arch, const char *dir_prefix);
 RZ_API void rz_arch_profile_add_flag_every_io(RzCore *core);
 
 #ifdef __cplusplus
