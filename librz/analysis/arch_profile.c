@@ -20,15 +20,15 @@ RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
 	if (!profile) {
 		return NULL;
 	}
-	profile->ROM_SIZE = 0;
-	profile->RAM_SIZE = 0;
-	profile->EEPROM_SIZE = 0;
-	profile->IO_SIZE = 0;
-	profile->SRAM_START = 0;
-	profile->SRAM_SIZE = 0;
-	profile->PC = 0;
-	profile->PAGE_SIZE = 0;
-	profile->INTERRUPT_VECTOR_SIZE = 0;
+	profile->rom_size = 0;
+	profile->ram_size = 0;
+	profile->eeprom_size = 0;
+	profile->io_size = 0;
+	profile->sram_start = 0;
+	profile->sram_size = 0;
+	profile->pc = 0;
+	profile->page_size = 0;
+	profile->interrupt_vector_size = 0;
 
 	profile->registers_mmio = ht_up_new0();
 	profile->registers_extended = ht_up_new0();
@@ -65,21 +65,21 @@ static bool sdb_load_arch_profile(RzArchTarget *t, Sdb *sdb) {
 	RzArchProfile *c = rz_arch_profile_new();
 	ls_foreach (l, iter, kv) {
 		if (!strcmp(sdbkv_key(kv), "PC")) {
-			c->PC = rz_num_math(NULL, sdbkv_value(kv));
+			c->pc = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "EEPROM_SIZE")) {
-			c->EEPROM_SIZE = rz_num_math(NULL, sdbkv_value(kv));
+			c->eeprom_size = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "IO_SIZE")) {
-			c->IO_SIZE = rz_num_math(NULL, sdbkv_value(kv));
+			c->io_size = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "SRAM_START")) {
-			c->SRAM_START = rz_num_math(NULL, sdbkv_value(kv));
+			c->sram_start = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "SRAM_SIZE")) {
-			c->SRAM_SIZE = rz_num_math(NULL, sdbkv_value(kv));
+			c->sram_size = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "PAGE_SIZE")) {
-			c->PAGE_SIZE = rz_num_math(NULL, sdbkv_value(kv));
+			c->page_size = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "ROM_SIZE")) {
-			c->ROM_SIZE = rz_num_math(NULL, sdbkv_value(kv));
+			c->rom_size = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "RAM_SIZE")) {
-			c->RAM_SIZE = rz_num_math(NULL, sdbkv_value(kv));
+			c->ram_size = rz_num_math(NULL, sdbkv_value(kv));
 		}
 		if (!strcmp(sdbkv_value(kv), "io")) {
 			char *io_name = sdbkv_key(kv);

@@ -1662,16 +1662,16 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		offset = 0;
 		rz_analysis_esil_reg_write(analysis->esil, "_prog", offset);
 
-		offset += (1 << analysis->arch_target->profile->PC);
+		offset += (1 << analysis->arch_target->profile->pc);
 		rz_analysis_esil_reg_write(analysis->esil, "_io", offset);
 
-		offset += analysis->arch_target->profile->SRAM_START;
+		offset += analysis->arch_target->profile->sram_start;
 		rz_analysis_esil_reg_write(analysis->esil, "_sram", offset);
 
-		offset += analysis->arch_target->profile->SRAM_SIZE;
+		offset += analysis->arch_target->profile->sram_size;
 		rz_analysis_esil_reg_write(analysis->esil, "_eeprom", offset);
 
-		offset += analysis->arch_target->profile->EEPROM_SIZE;
+		offset += analysis->arch_target->profile->eeprom_size;
 		rz_analysis_esil_reg_write(analysis->esil, "_page", offset);
 	}
 	// process opcode

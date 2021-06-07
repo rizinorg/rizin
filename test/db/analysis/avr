@@ -105,6 +105,39 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=test changing CPUs and loading new profiles 
+FILE=bins/firmware/arduino_avr.bin
+CMDS=<<EOF
+e asm.cpu=ATTiny48
+aa
+pd 5 @ 0x15
+e asm.cpu=ATmega16
+aa
+pd 5 @ 0x15
+EOF
+EXPECT=<<EOF
+            ;-- TIFR0:
+            0x00000015      unaligned
+            ;-- TIFR1:
+            0x00000016      invalid
+        ,=< 0x00000018  ~   jmp   0x1b6
+        |   ;-- PCIFR:
+        |   0x0000001b      unaligned
+        |   ;-- EIFR:
+       ,==< 0x0000001c  ~   jmp   0x1b6
+            ;-- PORTC:
+            0x00000015      unaligned
+            ;-- PINB:
+            0x00000016  ~   invalid
+            ;-- DDRB:
+            0x00000017      unaligned
+            ;-- PORTB:
+        ,=< 0x00000018  ~   jmp   0x1b6
+        |   ;-- PINA:
+        |   0x00000019      unaligned
+EOF
+RUN
+
 NAME=avr br - forward branch
 FILE=malloc://1024
 CMDS=<<EOF

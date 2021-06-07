@@ -6467,6 +6467,8 @@ static bool add_mmio_extended_flag_cb(void *user, const ut64 addr, const void *v
 }
 
 RZ_API void rz_arch_profile_add_flag_every_io(RzCore *core) {
+	rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_MMIO_REGISTERS);
+	rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED);
 	ht_up_foreach(core->analysis->arch_target->profile->registers_mmio, add_mmio_flag_cb, core);
 	ht_up_foreach(core->analysis->arch_target->profile->registers_extended, add_mmio_extended_flag_cb, core);
 }

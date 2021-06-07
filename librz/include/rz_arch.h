@@ -15,15 +15,15 @@ extern "C" {
 typedef struct rz_core_t RzCore;
 
 typedef struct rz_arch_profile_t {
-	ut64 ROM_SIZE;
-	ut64 RAM_SIZE;
-	ut64 EEPROM_SIZE;
-	ut64 IO_SIZE;
-	ut64 SRAM_START;
-	ut64 SRAM_SIZE;
-	ut64 PC;
-	ut64 PAGE_SIZE;
-	ut64 INTERRUPT_VECTOR_SIZE;
+	ut64 rom_size;
+	ut64 ram_size;
+	ut64 eeprom_size;
+	ut64 io_size;
+	ut64 sram_start;
+	ut64 sram_size;
+	ut64 pc;
+	ut64 page_size;
+	ut64 interrupt_vector_size;
 	HtUP /* <ut64 , char *> */ *registers_mmio;
 	HtUP /* <ut64 , char *> */ *registers_extended;
 } RzArchProfile;
