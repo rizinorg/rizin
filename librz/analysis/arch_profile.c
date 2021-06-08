@@ -26,16 +26,6 @@ RZ_API void rz_arch_profile_free(RzArchProfile *p) {
  */
 RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
 	RzArchProfile *profile = RZ_NEW0(RzArchProfile);
-	profile->rom_size = 0;
-	profile->ram_size = 0;
-	profile->eeprom_size = 0;
-	profile->io_size = 0;
-	profile->sram_start = 0;
-	profile->sram_size = 0;
-	profile->pc = 0;
-	profile->page_size = 0;
-	profile->interrupt_vector_size = 0;
-
 	profile->registers_mmio = ht_up_new0();
 	profile->registers_extended = ht_up_new0();
 	return profile;
@@ -148,12 +138,13 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 	}
 	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "%s-%s.sdb"),
 		dir_prefix, arch, cpu);
-	if (path) {
-		if (!rz_type_db_load_arch_profile_sdb(t, path)) {
-			sdb_free(t->db);
-			t->db = NULL;
-		}
-		free(path);
+	if (!path) {
+		return false;
 	}
+	if (!rz_type_db_load_arch_profile_sdb(t, path)) {
+		sdb_free(t->db);
+		t->db = NULL;
+	}
+	free(path);
 	return true;
 }
