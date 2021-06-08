@@ -1372,9 +1372,11 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 		RzType *fcn_type = rz_type_func_ret(analysis->typedb, type_fcn_name);
 		if (fcn_type) {
 			char *fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
-			const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-			rz_strbuf_appendf(buf, "%s%s", fcn_type_str, sp);
-			free(fcn_type_str);
+			if (fcn_type_str) {
+				const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+				rz_strbuf_appendf(buf, "%s%s", fcn_type_str, sp);
+				free(fcn_type_str);
+			}
 		}
 	}
 

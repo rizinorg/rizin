@@ -4749,16 +4749,18 @@ static void ds_print_esil_analysis(RDisasmState *ds) {
 			delete_last_comment(ds);
 			// ds_comment_start (ds, "");
 			ds_comment_esil(ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
+			char *fcn_type_str = NULL;
 			if (fcn_type) {
-				char *fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
-				const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-				ds_comment_middle(ds, "; %s%s%s(", rz_str_get_null(fcn_type_str), sp,
-					rz_str_get_null(key));
-				free(fcn_type_str);
-				if (!nargs) {
-					ds_comment_end(ds, "void)");
-					break;
-				}
+				fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
+			}
+			const char *sp = fcn_type && fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+			ds_comment_middle(ds, "; %s%s%s(",
+				fcn_type_str ? fcn_type_str : "", sp,
+				rz_str_get_null(key));
+			free(fcn_type_str);
+			if (!nargs) {
+				ds_comment_end(ds, "void)");
+				break;
 			}
 		}
 		ut64 s_width = (core->analysis->bits == 64) ? 8 : 4;
@@ -4870,13 +4872,12 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	}
 	ds_begin_comment(ds);
 	RzType *fcn_type = rz_type_func_ret(analysis->typedb, name);
-	if (!fcn_type) {
-		free(name);
-		return;
+	char *fcn_type_str = NULL;
+	if (fcn_type) {
+		fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
 	}
-	char *fcn_type_str = rz_type_as_string(analysis->typedb, fcn_type);
-	const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-	char *cmt = rz_str_newf("; %s%s%s(", fcn_type_str, sp, name);
+	const char *sp = fcn_type && fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+	char *cmt = rz_str_newf("; %s%s%s(", fcn_type_str ? fcn_type_str : "", sp, name);
 	int i, arg_max = rz_type_func_args_count(analysis->typedb, name);
 	if (!arg_max) {
 		cmt = rz_str_append(cmt, "void)");

@@ -162,10 +162,12 @@ static void save_callable(const RzTypeDB *typedb, Sdb *sdb, const RzCallable *ca
 	rz_strbuf_fini(&param_val);
 
 	// func.name.ret=type
-	key = rz_str_newf("func.%s.ret", cname);
-	char *ret_type = rz_type_as_string(typedb, callable->ret);
-	sdb_set(sdb, key, ret_type, 0);
-	free(key);
+	if (callable->ret) {
+		key = rz_str_newf("func.%s.ret", cname);
+		char *ret_type = rz_type_as_string(typedb, callable->ret);
+		sdb_set(sdb, key, ret_type, 0);
+		free(key);
+	}
 
 	// Optional "noreturn" attribute
 	if (callable->noret) {

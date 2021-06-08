@@ -494,7 +494,7 @@ RZ_IPI void rz_types_function_print(RzTypeDB *typedb, const char *function, RzOu
 	if (!callable) {
 		return;
 	}
-	char *ret = rz_type_as_string(typedb, callable->ret);
+	char *ret = callable->ret ? rz_type_as_string(typedb, callable->ret) : NULL;
 	void **it;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
