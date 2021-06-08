@@ -188,7 +188,14 @@ static void GH(update_arena_without_tc)(GH(RzHeap_MallocState) * cmain_arena, Ma
 	main_arena->GH(max_system_mem) = cmain_arena->max_system_mem;
 }
 
-static bool GH(update_main_arena)(RzCore *core, GHT m_arena, MallocState *main_arena) {
+/**
+ * @brief Store the MallocState struct of an arena with base address m_arena in main_arena
+ * @param core RzCore pointer
+ * @param m_arena The base address of malloc state struct of the arena
+ * @param main_arena The MallocState struct in which the data is stored
+ * @return True if the main_arena struct was successfully updated else False
+ */
+RZ_API bool GH(rz_update_main_arena)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (tcache) {
 		GH(RzHeap_MallocState_tcache) *cmain_arena = RZ_NEW0(GH(RzHeap_MallocState_tcache));
@@ -391,7 +398,13 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 	PRINT_GA("}\n\n");
 }
 
-static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
+/**
+ * @brief Store the base address of main arena at m_arena
+ * @param core RzCore pointer
+ * @param m_arena Store the location of main arena at this integer pointer
+ * @return True if a main arena was found else False
+ */
+RZ_API bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	rz_return_val_if_fail(core && core->dbg && core->dbg->maps, false);
 
 	//	if (core->dbg->main_arena_resolved) {
@@ -459,7 +472,7 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	}
 
 	if (main_arena_sym != GHT_MAX) {
-		GH(update_main_arena)
+		GH(rz_update_main_arena)
 		(core, main_arena_sym, ta);
 		*m_arena = main_arena_sym;
 		core->dbg->main_arena_resolved = true;
@@ -467,7 +480,7 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 		return true;
 	}
 	while (addr_srch < libc_addr_end) {
-		GH(update_main_arena)
+		GH(rz_update_main_arena)
 		(core, addr_srch, ta);
 		if (ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
 			ta->GH(system_mem) == heap_sz) {
@@ -545,7 +558,7 @@ void GH(print_heap_chunk)(RzCore *core, GHT chunk) {
  * @param addr Base address of the chunk
  * @return RzHeapChunk struct pointer of the chunk
  */
-RZ_API GH(RzHeapChunk) * GH(get_heap_chunk_at_addr)(RzCore *core, GHT addr) {
+RZ_API GH(RzHeapChunk) * GH(rz_get_heap_chunk_at_addr)(RzCore *core, ut64 addr) {
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk) {
 		return NULL;
@@ -560,7 +573,7 @@ RZ_API GH(RzHeapChunk) * GH(get_heap_chunk_at_addr)(RzCore *core, GHT addr) {
  * \param chunk Offset of the chunk in memory
  */
 void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk, const char *status, PJ *pj) {
-	GH(RzHeapChunk) *cnk = GH(get_heap_chunk_at_addr)(core, chunk);
+	GH(RzHeapChunk) *cnk = GH(rz_get_heap_chunk_at_addr)(core, chunk);
 	if (!cnk) {
 		return;
 	}
@@ -625,7 +638,7 @@ static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state) {
 	if (!ta) {
 		return false;
 	}
-	if (!GH(update_main_arena)(core, m_arena, ta)) {
+	if (!GH(rz_update_main_arena)(core, m_arena, ta)) {
 		free(ta);
 		return false;
 	}
@@ -634,7 +647,7 @@ static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state) {
 		return true;
 	}
 	while (ta->GH(next) != GHT_MAX && ta->GH(next) != m_arena) {
-		if (!GH(update_main_arena)(core, ta->GH(next), ta)) {
+		if (!GH(rz_update_main_arena)(core, ta->GH(next), ta)) {
 			free(ta);
 			return false;
 		}
@@ -853,7 +866,7 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 		return 0;
 	}
 
-	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+	if (!GH(rz_update_main_arena)(core, m_arena, main_arena)) {
 		free(cnk);
 		return 0;
 	}
@@ -1145,7 +1158,7 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 			mmap_start = ((ta->GH(next) >> 16) << 16);
 			tcache_start = mmap_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
 
-			if (!GH(update_main_arena)(core, ta->GH(next), ta)) {
+			if (!GH(rz_update_main_arena)(core, ta->GH(next), ta)) {
 				free(ta);
 				GH(tcache_free)
 				(rz_tcache);
@@ -1205,7 +1218,7 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 		ta->GH(next) = main_arena->GH(next);
 		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
 			ut64 ta_addr = ta->GH(next);
-			if (!GH(update_main_arena)(core, ta->GH(next), ta)) {
+			if (!GH(rz_update_main_arena)(core, ta->GH(next), ta)) {
 				free(ta);
 				return;
 			}
@@ -1287,7 +1300,7 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 		}
 
 		while (heap_info->prev != 0x0 && heap_info->prev != GHT_MAX) {
-			if (!GH(update_main_arena)(core, malloc_state, ms)) {
+			if (!GH(rz_update_main_arena)(core, malloc_state, ms)) {
 				free(ms);
 				free(heap_info);
 				return;
@@ -1313,7 +1326,7 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
  * @param bin_num bin number of bin whose chunk list you want
  * @return RzList of RzHeapChunkListItem for the bin
  */
-RZ_API RzList *GH(get_bin_content_list)(RzCore *core, MallocState *main_arena, int bin_num) {
+RZ_API RzList *GH(rz_get_bin_content_list)(RzCore *core, MallocState *main_arena, int bin_num) {
 	int idx = 2 * bin_num;
 	ut64 fw = main_arena->GH(bins)[idx];
 	ut64 bk = main_arena->GH(bins)[idx + 1];
@@ -1356,7 +1369,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	ut64 bk = main_arena->GH(bins)[idx + 1];
 	RzListIter *iter;
 	RzHeapChunkListItem *pos;
-	RzList *chunks = GH(get_bin_content_list)(core, main_arena, bin_num);
+	RzList *chunks = GH(rz_get_bin_content_list)(core, main_arena, bin_num);
 	if (rz_list_length(chunks) == 0) {
 		rz_list_free(chunks);
 		return 0;
@@ -1556,14 +1569,14 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
  * @param main_arena MallocState struct of main arena
  * @return RzList pointer for list of MallocState structs of all the arenas
  */
-RZ_API RzList *GH(get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_arena) {
+RZ_API RzList *GH(rz_get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzList *arena_list = rz_list_newf(free);
 	MallocState *ta = RZ_NEW0(MallocState);
 	if (!ta) {
 		return arena_list;
 	}
 	// main arena
-	GH(update_main_arena)
+	GH(rz_update_main_arena)
 	(core, m_arena, ta);
 	rz_list_append(arena_list, ta);
 	if (main_arena->GH(next) != m_arena) {
@@ -1571,7 +1584,7 @@ RZ_API RzList *GH(get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_
 		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
 			ut64 ta_addr = ta->GH(next);
 			ta = RZ_NEW0(MallocState);
-			if (!GH(update_main_arena)(core, ta_addr, ta)) {
+			if (!GH(rz_update_main_arena)(core, ta_addr, ta)) {
 				return arena_list;
 			}
 			// thread arenas
@@ -1590,13 +1603,13 @@ RZ_API RzList *GH(get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_
  * @param global_max_fast Max size of fastbin
  * @return RzList pointer for list of all chunks in a given arena
  */
-RZ_API RzList *GH(get_heap_chunks_list)(RzCore *core, MallocState *main_arena,
-	GHT m_arena, GHT m_state, GHT global_max_fast) {
+RZ_API RzList *GH(rz_get_heap_chunks_list)(RzCore *core, MallocState *main_arena,
+	GHT m_arena, GHT m_state) {
 	RzList *chunks = rz_list_newf(free);
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return chunks;
 	}
-
+	GHT global_max_fast = (64 * SZ / 4);
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, min_size = SZ * 4;
 	GHT tcache_fd = GHT_MAX, tcache_tmp = GHT_MAX;
 	GHT initial_brk = GHT_MAX, tcache_initial_brk = GHT_MAX;
@@ -1798,11 +1811,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+	if (!GH(rz_update_main_arena)(core, m_arena, main_arena)) {
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzList *arenas_list = GH(get_arenas_list)(core, m_arena, main_arena);
+	RzList *arenas_list = GH(rz_get_arenas_list)(core, m_arena, main_arena);
 	RzListIter *iter, *iter2;
 	MallocState *pos;
 	ut64 addr;
@@ -1840,7 +1853,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	GHT global_max_fast = (64 * SZ / 4);
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
 		return RZ_CMD_STATUS_ERROR;
@@ -1859,7 +1871,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		PRINT_RA("This address is not a valid arena\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+	if (!GH(rz_update_main_arena)(core, m_state, main_arena)) {
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -1872,7 +1884,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		brk_start = ((m_state >> 16) << 16);
 		brk_end = brk_start + main_arena->GH(system_mem);
 	}
-	RzList *chunks = GH(get_heap_chunks_list)(core, main_arena, m_arena, m_state, global_max_fast);
+	RzList *chunks = GH(rz_get_heap_chunks_list)(core, main_arena, m_arena, m_state);
 	RzListIter *iter;
 	RzHeapChunkListItem *pos;
 	PJ *pj = NULL;
@@ -2030,7 +2042,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, c
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+	if (!GH(rz_update_main_arena)(core, m_state, main_arena)) {
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -2078,7 +2090,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+	if (!GH(rz_update_main_arena)(core, m_state, main_arena)) {
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -2098,7 +2110,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!GH(update_main_arena)(core, m_arena, main_arena)) {
+	if (!GH(rz_update_main_arena)(core, m_arena, main_arena)) {
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -2134,7 +2146,7 @@ RZ_IPI int GH(rz_cmd_heap_bins_list_print)(void *data, const char *input) {
 		}
 	}
 	if (GH(is_arena)(core, m_arena, m_state)) {
-		if (!GH(update_main_arena)(core, m_state, main_arena)) {
+		if (!GH(rz_update_main_arena)(core, m_state, main_arena)) {
 			free(main_arena);
 			free(dup);
 			return RZ_CMD_STATUS_ERROR;
@@ -2179,7 +2191,7 @@ RZ_IPI int GH(rz_cmd_heap_fastbins_print)(void *data, const char *input) {
 		}
 	}
 	if (GH(is_arena)(core, m_arena, m_state)) {
-		if (!GH(update_main_arena)(core, m_state, main_arena)) {
+		if (!GH(rz_update_main_arena)(core, m_state, main_arena)) {
 			free(dup);
 			free(main_arena);
 			return RZ_CMD_STATUS_ERROR;
@@ -2219,7 +2231,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_arena_bins_print_handler)(RzCore *core, int ar
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!GH(update_main_arena)(core, m_state, main_arena)) {
+	if (!GH(rz_update_main_arena)(core, m_state, main_arena)) {
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
