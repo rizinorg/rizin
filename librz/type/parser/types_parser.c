@@ -25,11 +25,11 @@ static char *ts_node_sub_string(TSNode node, const char *cstr) {
 }
 
 void node_malformed_error(CParserState *state, TSNode node, const char *text, const char *nodetype) {
-	rz_return_if_fail(nodetype && !ts_node_is_null(node));
-	char *string = ts_node_string(node);
-	char *piece = ts_node_sub_string(node, text);
-	rz_strbuf_appendf(state->errors, "Wrongly formed \"(%s)\": \"%s\"\n", nodetype, string);
-	rz_strbuf_appendf(state->errors, "\"(%s)\": \"%s\"\n", nodetype, piece);
+	rz_return_if_fail(nodetype);
+	char *string = ts_node_is_null(node) ? NULL : ts_node_string(node);
+	char *piece = ts_node_is_null(node) ? NULL : ts_node_sub_string(node, text);
+	rz_strbuf_appendf(state->errors, "Wrongly formed \"(%s)\": \"%s\"\n", nodetype, rz_str_get_null(string));
+	rz_strbuf_appendf(state->errors, "\"(%s)\": \"%s\"\n", nodetype, rz_str_get_null(piece));
 	free(piece);
 	free(string);
 }
