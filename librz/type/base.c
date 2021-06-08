@@ -5,8 +5,6 @@
 #include <rz_type.h>
 #include <string.h>
 
-#include "type_internal.h"
-
 RZ_API void rz_type_base_enum_case_free(void *e, void *user) {
 	(void)user;
 	RzTypeEnumCase *cas = e;

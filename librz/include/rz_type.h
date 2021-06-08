@@ -149,6 +149,11 @@ struct rz_type_t {
 	};
 };
 
+typedef struct rz_type_path_t {
+	RzType *typ;
+	char *path;
+} RzTypePath;
+
 #ifdef RZ_API
 
 RZ_API RzTypeDB *rz_type_db_new();
@@ -196,6 +201,14 @@ RZ_API void rz_type_free(RzType *type);
 RZ_API bool rz_type_exists(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
 
+// Type paths
+RZ_API RZ_OWN RzTypePath *rz_type_path_new(RZ_BORROW RZ_NONNULL RzType *type, RZ_OWN RZ_NONNULL char *path);
+RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath);
+RZ_API st64 rz_type_offset_by_path(const RzTypeDB *typedb, RZ_NONNULL const char *path);
+RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset);
+RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset);
+RZ_API ut64 rz_type_db_struct_member_offset(const RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *member);
+
 // Type parser low-level API
 
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_new(void);
@@ -224,7 +237,6 @@ RZ_API int rz_type_db_enum_member_by_name(const RzTypeDB *typedb, const char *na
 RZ_API RZ_BORROW char *rz_type_db_enum_member_by_val(const RzTypeDB *typedb, const char *name, ut64 val);
 RZ_API RZ_OWN RzList *rz_type_db_find_enums_by_val(const RzTypeDB *typedb, ut64 val);
 RZ_API char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, const char *name, ut64 val);
-RZ_OWN RZ_API char *rz_type_db_get_struct_member(const RzTypeDB *typedb, RZ_NONNULL const char *name, int offset);
 
 // Type size calculation
 RZ_API ut64 rz_type_db_atomic_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
@@ -233,8 +245,6 @@ RZ_API ut64 rz_type_db_struct_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseT
 RZ_API ut64 rz_type_db_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
 RZ_API ut64 rz_type_db_typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
 RZ_API ut64 rz_type_db_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzType *type);
-
-RZ_API RzList *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset);
 
 // Various type helpers
 RZ_API bool rz_type_atomic_eq(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ1, RZ_NONNULL const RzType *typ2);
