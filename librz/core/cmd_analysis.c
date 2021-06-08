@@ -8638,18 +8638,18 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 			RzType *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
 			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 			// remove other comments
+			char *fcn_type_str = NULL;
 			if (fcn_type) {
-				char *fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
-				const char *sp = fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-				rz_strbuf_appendf(sb, "%s%s%s(", rz_str_get_null(fcn_type_str), sp,
-					rz_str_get_null(key));
-				if (!nargs) {
-					rz_strbuf_appendf(sb, "void)\n");
-				}
-				free(fcn_type_str);
-			} else {
-				eprintf("Cannot find any function type..lets just use some standards?\n");
+				fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
 			}
+			const char *sp = fcn_type && fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+			rz_strbuf_appendf(sb, "%s%s%s(",
+				fcn_type_str ? fcn_type_str : "", sp,
+				rz_str_get_null(key));
+			if (!nargs) {
+				rz_strbuf_appendf(sb, "void)\n");
+			}
+			free(fcn_type_str);
 		} else {
 			if (is_aCer) {
 				show_reg_args(core, -1, sb);

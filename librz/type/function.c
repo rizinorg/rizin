@@ -36,7 +36,7 @@ RZ_API RZ_OWN RzCallable *rz_type_callable_clone(RZ_BORROW RZ_NONNULL const RzCa
 	if (!newcallable) {
 		return NULL;
 	}
-	newcallable->ret = rz_type_clone(callable->ret);
+	newcallable->ret = callable->ret ? rz_type_clone(callable->ret) : NULL;
 	newcallable->name = callable->name ? strdup(callable->name) : NULL;
 	newcallable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	void **it;
@@ -133,14 +133,7 @@ RZ_API RZ_OWN RzCallable *rz_type_func_new(RzTypeDB *typedb, RZ_NONNULL const ch
 	if (!callable) {
 		return NULL;
 	}
-	if (!type) {
-		callable->ret = rz_type_new_default(typedb);
-		if (!callable->ret) {
-			return NULL;
-		}
-	} else {
-		callable->ret = type;
-	}
+	callable->ret = type;
 	return callable;
 }
 
@@ -357,7 +350,8 @@ RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNUL
 	if (callable->noret) {
 		rz_strbuf_append(buf, "__attribute__((noreturn)) ");
 	}
-	rz_strbuf_appendf(buf, "%s %s(", rz_type_as_string(typedb, callable->ret), rz_str_get(callable->name));
+	char *ret_str = callable->ret ? rz_type_as_string(typedb, callable->ret) : NULL;
+	rz_strbuf_appendf(buf, "%s %s(", ret_str ? ret_str : "void", rz_str_get(callable->name));
 	void **it;
 	bool first = true;
 	rz_pvector_foreach (callable->args, it) {
