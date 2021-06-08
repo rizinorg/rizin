@@ -1757,7 +1757,6 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *funct
 		realname = function->name;
 	}
 
-	unsigned int i;
 	RzType *ret_type = rz_type_func_ret(a->typedb, realname);
 	char *ret_type_str = NULL;
 	if (ret_type) {
@@ -1766,17 +1765,17 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *funct
 	int argc = rz_type_func_args_count(a->typedb, realname);
 
 	char *args = strdup("");
-	for (i = 0; i < argc; i++) {
+	for (int i = 0; i < argc; i++) {
 		const char *arg_name = rz_type_func_args_name(a->typedb, realname, i);
 		RzType *arg_type = rz_type_func_args_type(a->typedb, realname, i);
-		char *arg_type_str = rz_type_as_string(a->typedb, arg_type);
+		char *arg_type_str = arg_type ? rz_type_as_string(a->typedb, arg_type) : NULL;
 		// Here we check if the type is a pointer, in this case we don't put
 		// the space between type and name for the style reasons
 		// "char *var" looks much better than "char * var"
-		const char *maybe_space = arg_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+		const char *maybe_space = arg_type && arg_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 		char *new_args = (i + 1 == argc)
-			? rz_str_newf("%s%s%s%s", args, arg_type_str, maybe_space, arg_name)
-			: rz_str_newf("%s%s%s%s, ", args, arg_type_str, maybe_space, arg_name);
+			? rz_str_newf("%s%s%s%s", args, arg_type_str ? arg_type_str : "", maybe_space, arg_name)
+			: rz_str_newf("%s%s%s%s, ", args, arg_type_str ? arg_type_str : "", maybe_space, arg_name);
 		free(args);
 		free(arg_type_str);
 		args = new_args;
