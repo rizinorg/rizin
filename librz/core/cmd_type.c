@@ -401,6 +401,16 @@ RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_type_function_del_handler(RzCore *core, int argc, const char **argv) {
+	rz_type_func_delete(core->analysis->typedb, argv[1]);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_type_function_del_all_handler(RzCore *core, int argc, const char **argv) {
+	rz_type_func_delete_all(core->analysis->typedb);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_type_link_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *name = argc > 1 ? argv[1] : NULL;
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
