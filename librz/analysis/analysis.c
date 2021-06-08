@@ -111,7 +111,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_analysis_hint_storage_init(analysis);
 	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
 	analysis->typedb = rz_type_db_new();
-	analysis->type_links = sdb_ns(analysis->sdb, "links", 1);
+	analysis->type_links = ht_up_new0();
 	analysis->sdb_fmts = sdb_ns(analysis->sdb, "spec", 1);
 	analysis->sdb_cc = sdb_ns(analysis->sdb, "cc", 1);
 	analysis->sdb_zigns = sdb_ns(analysis->sdb, "zigns", 1);
@@ -417,7 +417,8 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_interval_tree_fini(&analysis->meta);
 	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
 	rz_type_db_purge(analysis->typedb);
-	sdb_reset(analysis->type_links);
+	ht_up_free(analysis->type_links);
+	analysis->type_links = ht_up_new0();
 	sdb_reset(analysis->sdb_zigns);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);
