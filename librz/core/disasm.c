@@ -5310,21 +5310,18 @@ toro:
 		f = ds->fcn = fcnIn(ds, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 		ds_show_comments_right(ds);
 		// TRY adding here
-		char *link_type = rz_analysis_type_link_at(core->analysis, ds->addr + idx);
+		RzType *link_type = rz_analysis_type_link_at(core->analysis, ds->addr + idx);
 		if (link_type) {
-			const char *fmt = rz_type_format(core->analysis->typedb, link_type);
-			if (fmt) {
-				rz_cons_printf("(%s)\n", link_type);
+			char *fmt = rz_type_as_format(core->analysis->typedb, link_type);
+			const char *typename = rz_type_identifier(core->analysis->typedb, link_type);
+			if (fmt && typename) {
+				rz_cons_printf("(%s)\n", typename);
 				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
-				RzType *ltype = rz_type_parse_string_single(core->analysis->typedb->parser, link_type, NULL);
-				if (!ltype) {
-					continue;
-				}
-				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, ltype);
+				const ut32 type_bitsize = rz_type_db_get_bitsize(core->analysis->typedb, link_type);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
-				free(link_type);
+				free(fmt);
 				rz_analysis_op_fini(&ds->analop);
 				continue;
 			}

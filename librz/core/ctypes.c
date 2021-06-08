@@ -665,18 +665,42 @@ beach:
 	return;
 }
 
-static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut64 laddr, ut64 at, int offimm) {
-	char *res = rz_type_db_get_struct_member(core->analysis->typedb, type, offimm);
-	const char *cmt = ((offimm == 0) && res) ? res : type;
-	if (offimm > 0) {
-		// set hint only if link is present
-		if (rz_analysis_type_link_exists(core->analysis, laddr)) {
-			const char *link = rz_analysis_type_link_at(core->analysis, laddr);
-			rz_analysis_hint_set_offset(core->analysis, at, link);
-		}
-	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
-		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
+static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzType *type, ut64 laddr, ut64 at, int offimm) {
+	rz_return_if_fail(core && op && type);
+	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
+		return;
 	}
+	RzBaseType *btype = rz_type_db_get_base_type(core->analysis->typedb, type->identifier.name);
+	if (!btype) {
+		return;
+	}
+	char *typestr = rz_type_as_string(core->analysis->typedb, type);
+	if (!typestr) {
+		return;
+	}
+	RzList *typepaths = rz_type_path_by_offset(core->analysis->typedb, btype, offimm);
+	if (!typepaths) {
+		return;
+	}
+	RzListIter *iter;
+	RzTypePath *tpath;
+	rz_list_foreach (typepaths, iter, tpath) {
+		const char *cmt = (offimm == 0) ? tpath->path : typestr;
+		if (offimm > 0) {
+			// set hint only if link is present
+			if (rz_analysis_type_link_exists(core->analysis, laddr)) {
+				// FIXME: To set only the type path as the analysis hint
+				// only and only if the types are the exact match between
+				// possible member offset and the type linked to the laddr
+				//RzType *link = rz_analysis_type_link_at(core->analysis, laddr);
+				rz_analysis_hint_set_offset(core->analysis, at, tpath->path);
+			}
+		} else if (cmt && rz_analysis_op_ismemref(op->type)) {
+			rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
+		}
+	}
+	rz_list_free(typepaths);
+	free(typestr);
 }
 
 RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
@@ -783,21 +807,24 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 				rz_analysis_op_fini(&aop);
 				continue;
 			}
-			char *slink = rz_analysis_type_link_at(core->analysis, src_addr);
-			char *vlink = rz_analysis_type_link_at(core->analysis, src_addr + src_imm);
-			char *dlink = rz_analysis_type_link_at(core->analysis, dst_addr);
+			RzType *slink = rz_analysis_type_link_at(core->analysis, src_addr);
+			RzType *vlink = rz_analysis_type_link_at(core->analysis, src_addr + src_imm);
+			RzType *dlink = rz_analysis_type_link_at(core->analysis, dst_addr);
 			//TODO: Handle register based arg for struct offset propgation
 			if (vlink && var && var->kind != 'r') {
-				RzBaseType *varbtype = rz_type_db_get_base_type(typedb, vlink);
-				if (varbtype) {
-					// if a var addr matches with struct , change it's type and name
-					// var int local_e0h --> var struct foo
-					if (strcmp(var->name, vlink) && !resolved) {
-						// TODO: Handle type pointers and arrays too
-						RzType *vartype = rz_type_identifier_of_base_type(typedb, varbtype, false);
-						resolved = true;
-						rz_analysis_var_set_type(var, vartype);
-						rz_analysis_var_rename(var, vlink, false);
+				// FIXME: For now we only propagate simple type identifiers,
+				// no pointers or arrays
+				if (vlink->kind == RZ_TYPE_KIND_IDENTIFIER) {
+					RzBaseType *varbtype = rz_type_db_get_base_type(typedb, vlink->identifier.name);
+					if (varbtype) {
+						// if a var addr matches with struct , change it's type and name
+						// var int local_e0h --> var struct foo
+						//if (strcmp(var->name, vlink) && !resolved) {
+						if (!resolved) {
+							resolved = true;
+							rz_analysis_var_set_type(var, vlink);
+							rz_analysis_var_rename(var, vlink->identifier.name, false);
+						}
 					}
 				}
 			} else if (slink) {
@@ -811,9 +838,6 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 			} else {
 				rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			}
-			free(dlink);
-			free(vlink);
-			free(slink);
 			rz_analysis_op_fini(&aop);
 		}
 	}
@@ -832,30 +856,34 @@ beach:
 	free(buf);
 }
 
-RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, RzOutputMode mode, PJ *pj) {
+RZ_IPI void rz_core_types_link_print(RzCore *core, RzType *type, ut64 addr, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(type);
+	char *typestr = rz_type_as_string(core->analysis->typedb, type);
+	if (!typestr) {
+		return;
+	}
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		rz_return_if_fail(pj);
 		pj_o(pj);
 		char *saddr = rz_str_newf("0x%08" PFMT64x, addr);
-		pj_ks(pj, saddr, type);
+		pj_ks(pj, saddr, typestr);
 		pj_end(pj);
 		free(saddr);
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("0x%08" PFMT64x " = %s\n", addr, type);
+		rz_cons_printf("0x%08" PFMT64x " = %s\n", addr, typestr);
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_cons_printf("tl %s 0x%" PFMT64x "\n", type, addr);
+		rz_cons_printf("tl \"%s\" 0x%" PFMT64x "\n", typestr, addr);
 		break;
 	case RZ_OUTPUT_MODE_LONG: {
-		const char *fmt = rz_type_format(core->analysis->typedb, type);
+		const char *fmt = rz_type_as_format(core->analysis->typedb, type);
 		if (!fmt) {
-			eprintf("Can't fint type %s", type);
+			eprintf("Can't fint type %s", typestr);
 		}
-		rz_cons_printf("(%s)\n", type);
+		rz_cons_printf("(%s)\n", typestr);
 		rz_core_cmdf(core, "pf %s @ 0x%" PFMT64x "\n", fmt, addr);
 		break;
 	}
@@ -863,27 +891,29 @@ RZ_IPI void rz_core_types_link_print(RzCore *core, const char *type, ut64 addr, 
 		rz_warn_if_reached();
 		break;
 	}
+	free(typestr);
+}
+
+struct coremodepj {
+	RzCore *core;
+	RzOutputMode mode;
+	PJ *pj;
+};
+
+static bool typelink_print_cb(void *user, ut64 k, const void *v) {
+	rz_return_val_if_fail(user && v, false);
+	struct coremodepj *c = user;
+	rz_core_types_link_print(c->core, (RzType *)v, k, c->mode, c->pj);
+	return true;
 }
 
 RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
-	Sdb *TDB = core->analysis->type_links;
-	SdbKv *kv;
-	SdbListIter *iter;
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
-	SdbList *l = sdb_foreach_list(TDB, true);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
-	ls_foreach (l, iter, kv) {
-		if (!strncmp(sdbkv_key(kv), "link.", strlen("link."))) {
-			const char *name = sdbkv_value(kv);
-			char *saddr = rz_str_newf("0x%s", sdbkv_key(kv) + strlen("link."));
-			ut64 addr = rz_num_math(core->num, saddr);
-			rz_core_types_link_print(core, name, addr, mode, pj);
-			free(saddr);
-		}
-	}
-	ls_free(l);
+	struct coremodepj c = { core, mode, pj };
+	ht_up_foreach(core->analysis->type_links, typelink_print_cb, &c);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
@@ -891,9 +921,13 @@ RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
 	}
 }
 
-RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr) {
-	if (!rz_type_exists(core->analysis->typedb, type)) {
-		eprintf("unknown type %s\n", type);
+RZ_IPI void rz_core_types_link(RzCore *core, const char *typestr, ut64 addr) {
+	char *error_msg;
+	RzType *type = rz_type_parse_string_single(core->analysis->typedb->parser, typestr, &error_msg);
+	if (!type || error_msg) {
+		if (error_msg) {
+			eprintf("%s", error_msg);
+		}
 		return;
 	}
 	rz_analysis_type_set_link(core->analysis, type, addr);
@@ -908,7 +942,7 @@ RZ_IPI void rz_core_types_link(RzCore *core, const char *type, ut64 addr) {
 }
 
 RZ_IPI void rz_core_types_link_show(RzCore *core, ut64 addr) {
-	const char *link = rz_analysis_type_link_at(core->analysis, addr);
+	RzType *link = rz_analysis_type_link_at(core->analysis, addr);
 	if (link) {
 		rz_core_types_link_print(core, link, addr, RZ_OUTPUT_MODE_LONG, NULL);
 	}

@@ -9,8 +9,6 @@
 #include <string.h>
 #include <sdb.h>
 
-#include "type_internal.h"
-
 static void types_ht_free(HtPPKv *kv) {
 	rz_type_base_type_free(kv->value);
 }
@@ -430,109 +428,6 @@ RZ_API int rz_type_kind(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	return btype->kind;
 }
 
-// TODO: Handle arrays
-static bool structured_member_walker(const RzTypeDB *typedb, RzList /* RzBaseType */ *list, RzType *type, char *path, ut64 offset) {
-	rz_return_val_if_fail(list && type, false);
-	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
-		return false;
-	}
-	bool result = true;
-	if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_STRUCT) {
-		// Get the base type
-		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-		if (!btype) {
-			return false;
-		}
-		RzTypeStructMember *memb;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
-			if (memb->offset == offset) {
-				rz_list_append(list, rz_str_newf("%s.%s.%s", path, btype->name, memb->name));
-			}
-			char *newpath = rz_str_newf("%s.%s", path, memb->name);
-			result &= structured_member_walker(typedb, list, memb->type, newpath, memb->offset + offset);
-			free(newpath);
-		}
-	} else if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNION) {
-		// Get the base type
-		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
-		if (!btype) {
-			return false;
-		}
-		RzTypeUnionMember *memb;
-		rz_vector_foreach(&btype->union_data.members, memb) {
-			char *newpath = rz_str_newf("%s.%s", path, memb->name);
-			result &= structured_member_walker(typedb, list, memb->type, path, offset);
-			free(newpath);
-		}
-	}
-	return result;
-}
-
-/**
- * \brief Returns the list of all structure/union members matching the offset
- *
- * \param typedb Types Database instance
- * \param btype The base type of the structure or union
- * \param offset The offset of the member to match against
- */
-RZ_API RZ_OWN RzList *rz_type_structured_member_by_offset(const RzTypeDB *typedb, RzBaseType *btype, ut64 offset) {
-	// TODO: Return the whole RzBaseType instead of the string
-	bool nofail = true;
-	RzList *list = rz_list_newf(free);
-	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
-		RzTypeStructMember *memb;
-		rz_vector_foreach(&btype->struct_data.members, memb) {
-			if (memb->offset == offset) {
-				rz_list_append(list, rz_str_newf("%s.%s", btype->name, memb->name));
-			}
-			// We go into the nested structures/unions if they are members of the structure
-			char *path = rz_str_newf("%s.%s", btype->name, memb->name);
-			nofail &= structured_member_walker(typedb, list, memb->type, path, memb->offset + offset);
-			free(path);
-		}
-	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION) {
-		// This function makes sense only for structures since union
-		// members have exact same offset
-		// But if the union has compound members, e.g. structures, their
-		// internal offsets can be different
-		RzTypeUnionMember *memb;
-		rz_vector_foreach(&btype->union_data.members, memb) {
-			char *path = rz_str_newf("%s.%s", btype->name, memb->name);
-			nofail &= structured_member_walker(typedb, list, memb->type, path, offset);
-			free(path);
-		}
-	} else {
-		rz_warn_if_reached();
-	}
-	return list;
-}
-
-/**
- * \brief Returns the list of all structured types that have members matching the offset
- *
- * \param typedb Types Database instance
- * \param offset The offset of the member to match against
- */
-RZ_API RZ_OWN RzList *rz_type_db_get_by_offset(const RzTypeDB *typedb, ut64 offset) {
-	rz_return_val_if_fail(typedb, NULL);
-	RzList *types = rz_type_db_get_base_types(typedb);
-	// TODO: Return the whole RzBaseType instead of the string
-	//RzList *list = rz_list_new();
-	RzList *result = rz_list_newf(free);
-	RzListIter *iter;
-	RzBaseType *t;
-	rz_list_foreach (types, iter, t) {
-		if (t->kind == RZ_BASE_TYPE_KIND_STRUCT || t->kind == RZ_BASE_TYPE_KIND_UNION) {
-			RzList *list = rz_type_structured_member_by_offset(typedb, t, offset);
-			if (list) {
-				rz_list_join(result, list);
-			}
-		}
-	}
-	rz_list_free(types);
-	return result;
-}
-
 /**
  * \brief Returns the enum base type matching the specified name
  *
@@ -708,32 +603,6 @@ RZ_API RzBaseType *rz_type_db_get_struct(const RzTypeDB *typedb, RZ_NONNULL cons
 		return NULL;
 	}
 	return btype;
-}
-
-/**
- * \brief Search for the structure member that has matching offset
- *
- * \param typedb Types Database instance
- * \param name The structure type name
- * \param offset The offset to search for
- */
-RZ_OWN RZ_API char *rz_type_db_get_struct_member(const RzTypeDB *typedb, RZ_NONNULL const char *name, int offset) {
-	rz_return_val_if_fail(typedb && name, NULL);
-	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
-	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
-		return NULL;
-	}
-	RzTypeStructMember *memb;
-	char *result = NULL;
-	rz_vector_foreach(&btype->struct_data.members, memb) {
-		if (memb->offset == offset) {
-			result = rz_str_newf("%s.%s", btype->name, memb->name);
-			break;
-		}
-		// FIXME: Support nested
-		// nofail &= structured_member_walker(list, NULL, offset);
-	}
-	return result;
 }
 
 /**
