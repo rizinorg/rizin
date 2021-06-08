@@ -1704,11 +1704,11 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	RzAnalysis *a = function->analysis;
 	PJ *pj = pj_new();
 	unsigned int i;
+	char *ret_type_str = NULL;
 	RzType *ret_type = rz_type_func_ret(a->typedb, function->name);
-	if (!ret_type) {
-		return NULL;
+	if (ret_type) {
+		ret_type_str = rz_type_as_string(a->typedb, ret_type);
 	}
-	char *ret_type_str = rz_type_as_string(a->typedb, ret_type);
 	int argc = rz_type_func_args_count(a->typedb, function->name);
 
 	pj_o(pj);
@@ -1759,10 +1759,10 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *funct
 
 	unsigned int i;
 	RzType *ret_type = rz_type_func_ret(a->typedb, realname);
-	if (!ret_type) {
-		return NULL;
+	char *ret_type_str = NULL;
+	if (ret_type) {
+		ret_type_str = rz_type_as_string(a->typedb, ret_type);
 	}
-	char *ret_type_str = rz_type_as_string(a->typedb, ret_type);
 	int argc = rz_type_func_args_count(a->typedb, realname);
 
 	char *args = strdup("");
