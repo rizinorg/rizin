@@ -615,7 +615,7 @@ typedef struct rz_analysis_t {
 	RzIntervalTree meta;
 	RzSpaces meta_spaces;
 	RzTypeDB *typedb; // Types management
-	Sdb *type_links; // Type links to the memory address or register
+	HtUP *type_links; // Type links to the memory address or register
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
@@ -1619,12 +1619,12 @@ RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAn
 
 // Maintaining type links
 RZ_API bool rz_analysis_type_link_exists(RzAnalysis *analysis, ut64 addr);
-RZ_API char *rz_analysis_type_link_at(RzAnalysis *analysis, ut64 addr);
-RZ_API bool rz_analysis_type_set_link(RzAnalysis *analysis, const char *val, ut64 addr);
+RZ_API RZ_BORROW RzType *rz_analysis_type_link_at(RzAnalysis *analysis, ut64 addr);
+RZ_API bool rz_analysis_type_set_link(RzAnalysis *analysis, RZ_BORROW RzType *type, ut64 addr);
 RZ_API bool rz_analysis_type_unlink(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_type_unlink_all(RzAnalysis *analysis);
-RZ_API bool rz_analysis_type_link_offset(RzAnalysis *analysis, const char *val, ut64 addr);
-RZ_API RzList *rz_analysis_type_links(RzAnalysis *analysis);
+RZ_API bool rz_analysis_type_link_offset(RzAnalysis *analysis, RZ_BORROW RzType *type, ut64 addr);
+RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_type_links(RzAnalysis *analysis);
 
 /* project */
 RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis);

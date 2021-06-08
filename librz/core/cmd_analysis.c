@@ -6747,9 +6747,10 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 			if (toff) {
 				RzList *typeoffs = rz_type_db_get_by_offset(core->analysis->typedb, toff);
 				RzListIter *iter;
-				char *ty;
+				RzTypePath *ty;
+				// We only print type paths here
 				rz_list_foreach (typeoffs, iter, ty) {
-					rz_cons_printf("%s\n", ty);
+					rz_cons_printf("%s\n", ty->path);
 				}
 				rz_list_free(typeoffs);
 			}
@@ -6816,18 +6817,17 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 					// TODO: Allow to select from multiple choices
 					RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
 					RzListIter *iter;
-					char *otype = NULL;
-					rz_list_foreach (otypes, iter, otype) {
-						// TODO: I don't think we should silently error, it is confusing
-						if (!strcmp(type, otype)) {
-							//eprintf ("Adding type offset %s\n", type);
-							rz_analysis_type_link_offset(core->analysis, type, addr);
-							rz_analysis_hint_set_offset(core->analysis, addr, otype);
-							break;
+					RzTypePath *tpath;
+					rz_list_foreach (otypes, iter, tpath) {
+						// TODO: Support also arrays and pointers
+						if (tpath->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
+							if (!strcmp(type, tpath->typ->identifier.name)) {
+								//eprintf ("Adding type offset %s\n", type);
+								rz_analysis_type_link_offset(core->analysis, tpath->typ, addr);
+								rz_analysis_hint_set_offset(core->analysis, addr, tpath->path);
+								break;
+							}
 						}
-					}
-					if (!otype) {
-						eprintf("wrong type for opcode offset\n");
 					}
 					rz_list_free(otypes);
 				}
