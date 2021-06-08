@@ -540,19 +540,31 @@ void GH(print_heap_chunk)(RzCore *core, GHT chunk) {
 }
 
 /**
+ * @brief Get a heap chunk with base address <addr>
+ * @param core RzCore pointer
+ * @param addr Base address of the chunk
+ * @return RzHeapChunk struct pointer of the chunk
+ */
+RZ_API GH(RzHeapChunk) * GH(get_heap_chunk_at_addr)(RzCore *core, GHT addr) {
+	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
+	if (!cnk) {
+		return NULL;
+	}
+	(void)rz_io_nread_at(core->io, addr, (ut8 *)cnk, sizeof(*cnk));
+	return cnk;
+}
+
+/**
  * \brief Prints compact representation of a heap chunk. Format: Chunk(addr=, size=, flags=)
  * \param core RzCore pointer
  * \param chunk Offset of the chunk in memory
  */
 void GH(print_heap_chunk_simple)(RzCore *core, GHT chunk, const char *status, PJ *pj) {
-	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
+	GH(RzHeapChunk) *cnk = GH(get_heap_chunk_at_addr)(core, chunk);
 	if (!cnk) {
 		return;
 	}
-
-	(void)rz_io_read_at(core->io, chunk, (ut8 *)cnk, sizeof(*cnk));
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	if (pj == NULL) {
 		PRINT_GA("Chunk");
 		rz_cons_printf("(");
@@ -1159,399 +1171,6 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 	}
 }
 
-/*static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
-	GHT m_arena, GHT m_state, GHT global_max_fast, int format_out) {
-
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return;
-	}
-
-	int w, h;
-	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, min_size = SZ * 4;
-	GHT tcache_fd = GHT_MAX, tcache_tmp = GHT_MAX;
-	GHT initial_brk = GHT_MAX, tcache_initial_brk = GHT_MAX;
-
-	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
-	const int offset = rz_config_get_i(core->config, "dbg.glibc.fc_offset");
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	int glibc_version = core->dbg->glibc_version;
-
-	if (m_arena == m_state) {
-		GH(get_brks)
-		(core, &brk_start, &brk_end);
-		if (tcache) {
-			initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
-			if (rz_config_get_b(core->config, "cfg.debug")) {
-				tcache_initial_brk = initial_brk;
-			}
-			initial_brk += (glibc_version < 230)
-				? sizeof(GH(RzHeapTcachePre230))
-				: sizeof(GH(RzHeapTcache));
-		} else {
-			initial_brk = (brk_start >> 12) << 12;
-		}
-	} else {
-		brk_start = ((m_state >> 16) << 16);
-		brk_end = brk_start + main_arena->GH(system_mem);
-		if (tcache) {
-			tcache_initial_brk = brk_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
-			initial_brk = tcache_initial_brk + offset;
-		} else {
-			initial_brk = brk_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState)) + MMAP_OFFSET;
-		}
-	}
-
-	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
-		eprintf("No Heap section\n");
-		return;
-	}
-
-	GHT next_chunk = initial_brk, prev_chunk = next_chunk;
-	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
-	if (!cnk) {
-		return;
-	}
-	GH(RzHeapChunk) *cnk_next = RZ_NEW0(GH(RzHeapChunk));
-	if (!cnk_next) {
-		free(cnk);
-		return;
-	}
-
-	RzConfigHold *hc = rz_config_hold_new(core->config);
-	if (!hc) {
-		free(cnk);
-		free(cnk_next);
-		return;
-	}
-
-	w = rz_cons_get_size(&h);
-	RzConsCanvas *can = rz_cons_canvas_new(w, h);
-	if (!can) {
-		free(cnk);
-		free(cnk_next);
-		rz_config_hold_free(hc);
-		return;
-	}
-
-	RzAGraph *g = rz_agraph_new(can);
-	if (!g) {
-		free(cnk);
-		free(cnk_next);
-		rz_cons_canvas_free(can);
-		rz_config_hold_restore(hc);
-		rz_config_hold_free(hc);
-		return;
-	}
-
-	RzANode *top = RZ_EMPTY, *chunk_node = RZ_EMPTY, *prev_node = RZ_EMPTY;
-	char *top_title, *top_data, *node_title, *node_data;
-	bool first_node = true;
-
-	top_data = rz_str_new("");
-	top_title = rz_str_new("");
-
-	(void)rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-	size_tmp = (cnk->size >> 3) << 3;
-	ut64 prev_chunk_addr;
-	ut64 prev_chunk_size;
-	PJ *pj = NULL;
-
-	switch (format_out) {
-	case 'j':
-		pj = pj_new();
-		if (!pj) {
-			return;
-		}
-		pj_o(pj);
-		pj_ka(pj, "chunks");
-		break;
-	case '*':
-		rz_cons_printf("fs+heap.allocated\n");
-		break;
-	case 'g':
-		can->linemode = rz_config_get_i(core->config, "graph.linemode");
-		can->color = rz_config_get_i(core->config, "scr.color");
-		core->cons->use_utf8 = rz_config_get_i(core->config, "scr.utf8");
-		g->layout = rz_config_get_i(core->config, "graph.layout");
-		rz_agraph_set_title(g, "Heap Layout");
-		top_title = rz_str_newf("Top chunk @ 0x%" PFMT64x "\n", (ut64)main_arena->GH(top));
-	case 'c':
-	case 'v':
-		rz_cons_printf("Arena @ ");
-		PRINTF_YA("0x%" PFMT64x, (ut64)m_state);
-		rz_cons_newline();
-	}
-
-	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
-		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
-			const char *status = "corrupted";
-			switch (format_out) {
-			case 'v':
-				GH(print_heap_chunk_simple)
-				(core, next_chunk, status, NULL);
-				rz_cons_newline();
-				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
-					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
-				int size = 0x10;
-				char *data = calloc(1, size);
-				if (data) {
-					rz_io_nread_at(core->io, (ut64)(next_chunk + SZ * 2), (ut8 *)data, size);
-					core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
-					core->print->pairs = false;
-					PRINT_GA("  ");
-					rz_print_hexdump(core->print, (ut64)(next_chunk + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
-					core->print->flags |= RZ_PRINT_FLAGS_HEADER;
-					core->print->pairs = true;
-					free(data);
-				}
-				break;
-			case 'c':
-				GH(print_heap_chunk_simple)
-				(core, next_chunk, status, NULL);
-				rz_cons_newline();
-				PRINTF_RA("   size: 0x%" PFMT64x "\n   fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x "\n",
-					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
-				break;
-			case 'j':
-				pj_o(pj);
-				pj_kn(pj, "addr", next_chunk);
-				pj_kn(pj, "size", cnk->size);
-				pj_ks(pj, "status", status);
-				pj_kN(pj, "fd", cnk->fd);
-				pj_kN(pj, "bk", cnk->bk);
-				pj_end(pj);
-				break;
-			case '*':
-				rz_cons_printf("fs heap.corrupted\n");
-				char *name = rz_str_newf("chunk.corrupted.%06" PFMT64x, ((prev_chunk >> 4) & 0xffffULL));
-				rz_cons_printf("f %s %d 0x%" PFMT64x "\n", name, (int)cnk->size, (ut64)prev_chunk);
-				free(name);
-				break;
-			case 'g':
-				node_title = rz_str_newf("  Malloc chunk @ 0x%" PFMT64x " ", (ut64)prev_chunk);
-				node_data = rz_str_newf("[corrupted] size: 0x%" PFMT64x "\n fd: 0x%" PFMT64x ", bk: 0x%" PFMT64x
-							"\nHeap graph could not be recovered\n",
-					(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
-				rz_agraph_add_node(g, node_title, node_data);
-				if (first_node) {
-					first_node = false;
-				}
-				break;
-			}
-			break;
-		}
-
-		prev_chunk_addr = (ut64)prev_chunk;
-		prev_chunk_size = (((ut64)cnk->size) >> 3) << 3;
-
-		bool fastbin = size_tmp >= SZ * 4 && size_tmp <= global_max_fast;
-		bool is_free = false, double_free = false;
-
-		if (fastbin) {
-			int i = (size_tmp / (SZ * 2)) - 2;
-			GHT idx = (GHT)main_arena->GH(fastbinsY)[i];
-			(void)rz_io_read_at(core->io, idx, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-			GHT next = GH(get_next_pointer)(core, idx, cnk->fd);
-			if (prev_chunk == idx && idx && !next) {
-				is_free = true;
-			}
-			while (next && next >= brk_start && next < main_arena->GH(top)) {
-				if (prev_chunk == idx || prev_chunk == next || idx == next) {
-					is_free = true;
-					if (idx == next) {
-						double_free = true;
-						break;
-					}
-					(void)rz_io_read_at(core->io, next, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
-					GHT next_node = GH(get_next_pointer)(core, next, cnk_next->fd);
-					// avoid triple while?
-					while (next_node && next_node >= brk_start && next_node < main_arena->GH(top)) {
-						if (prev_chunk == next_node) {
-							double_free = true;
-							break;
-						}
-						(void)rz_io_read_at(core->io, next_node, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
-						next_node = GH(get_next_pointer)(core, next_node, cnk_next->fd);
-					}
-					if (double_free) {
-						break;
-					}
-				}
-				(void)rz_io_read_at(core->io, next, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-				next = GH(get_next_pointer)(core, next, cnk->fd);
-			}
-			if (double_free) {
-				PRINT_RA(" Double free in simple-linked list detected ");
-				break;
-			}
-			prev_chunk_size = ((i + 1) * GH(HDR_SZ)) + GH(HDR_SZ);
-		}
-
-		if (tcache) {
-			GH(RTcache) *tcache_heap = GH(tcache_new)(core);
-			if (!tcache_heap) {
-				rz_cons_canvas_free(can);
-				rz_config_hold_restore(hc);
-				rz_config_hold_free(hc);
-				free(g);
-				free(cnk);
-				free(cnk_next);
-				return;
-			}
-			GH(tcache_read)
-			(core, tcache_initial_brk, tcache_heap);
-			size_t i;
-			for (i = 0; i < TCACHE_MAX_BINS; i++) {
-				int count = GH(tcache_get_count)(tcache_heap, i);
-				GHT entry = GH(tcache_get_entry)(tcache_heap, i);
-				if (count > 0) {
-					if (entry - SZ * 2 == prev_chunk) {
-						is_free = true;
-						prev_chunk_size = ((i + 1) * TC_HDR_SZ + GH(TC_SZ));
-						break;
-					}
-					if (count > 1) {
-						tcache_fd = entry;
-						int n;
-						for (n = 1; n < count; n++) {
-							bool r = rz_io_read_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
-							if (!r) {
-								break;
-							}
-							tcache_tmp = GH(get_next_pointer)(core, tcache_fd, read_le(&tcache_tmp));
-							if (tcache_tmp - SZ * 2 == prev_chunk) {
-								is_free = true;
-								prev_chunk_size = ((i + 1) * TC_HDR_SZ + GH(TC_SZ));
-								break;
-							}
-							tcache_fd = (ut64)tcache_tmp;
-						}
-					}
-				}
-			}
-			GH(tcache_free)
-			(tcache_heap);
-		}
-
-		next_chunk += size_tmp;
-		prev_chunk = next_chunk;
-		rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-		size_tmp = (cnk->size >> 3) << 3;
-
-		const char *status = "allocated";
-		if (fastbin) {
-			if (is_free) {
-				status = "free";
-			}
-		}
-		if (!(cnk->size & 1)) {
-			status = "free";
-		}
-		if (tcache) {
-			if (is_free) {
-				status = "free";
-			}
-		}
-
-		switch (format_out) {
-		case 'c':
-			GH(print_heap_chunk_simple)
-			(core, prev_chunk_addr, status, NULL);
-			rz_cons_newline();
-			break;
-		case 'v':
-			GH(print_heap_chunk_simple)
-			(core, prev_chunk_addr, status, NULL);
-			rz_cons_newline();
-			int size = 0x10;
-			char *data = calloc(1, size);
-			if (data) {
-				rz_io_nread_at(core->io, (ut64)(prev_chunk_addr + SZ * 2), (ut8 *)data, size);
-				core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
-				core->print->pairs = false;
-				rz_cons_printf("   ");
-				rz_print_hexdump(core->print, (ut64)(prev_chunk_addr + SZ * 2), (ut8 *)data, size, SZ * 2, 1, 1);
-				core->print->flags |= RZ_PRINT_FLAGS_HEADER;
-				core->print->pairs = true;
-				free(data);
-			}
-			break;
-		case 'j':
-			pj_o(pj);
-			pj_kn(pj, "addr", prev_chunk_addr);
-			pj_kn(pj, "size", prev_chunk_size);
-			pj_ks(pj, "status", status);
-			pj_end(pj);
-			break;
-		case '*':
-			rz_cons_printf("fs heap.%s\n", status);
-			char *name = rz_str_newf("chunk.%06" PFMT64x, ((prev_chunk_addr >> 4) & 0xffffULL));
-			rz_cons_printf("f %s %d 0x%" PFMT64x "\n", name, (int)prev_chunk_size, (ut64)prev_chunk_addr);
-			free(name);
-			break;
-		case 'g':
-			node_title = rz_str_newf("  Malloc chunk @ 0x%" PFMT64x " ", (ut64)prev_chunk_addr);
-			node_data = rz_str_newf("size: 0x%" PFMT64x " status: %s\n", (ut64)prev_chunk_size, status);
-			chunk_node = rz_agraph_add_node(g, node_title, node_data);
-			if (first_node) {
-				first_node = false;
-			} else {
-				rz_agraph_add_edge(g, prev_node, chunk_node);
-			}
-			prev_node = chunk_node;
-			break;
-		}
-	}
-
-	switch (format_out) {
-	case 'v':
-	case 'c':
-		GH(print_heap_chunk_simple)
-		(core, main_arena->GH(top), "free", NULL);
-		PRINT_RA("[top]");
-		rz_cons_printf("[brk_start: ");
-		PRINTF_YA("0x%" PFMT64x, (ut64)brk_start);
-		rz_cons_printf(", brk_end: ");
-		PRINTF_YA("0x%" PFMT64x, (ut64)brk_end);
-		rz_cons_printf("]\n");
-		break;
-	case 'j':
-		pj_end(pj);
-		pj_kn(pj, "top", main_arena->GH(top));
-		pj_kn(pj, "brk", brk_start);
-		pj_kn(pj, "end", brk_end);
-		pj_end(pj);
-		rz_cons_print(pj_string(pj));
-		pj_free(pj);
-		break;
-	case '*':
-		rz_cons_printf("fs-\n");
-		rz_cons_printf("f heap.top = 0x%08" PFMT64x "\n", (ut64)main_arena->GH(top));
-		rz_cons_printf("f heap.brk = 0x%08" PFMT64x "\n", (ut64)brk_start);
-		rz_cons_printf("f heap.end = 0x%08" PFMT64x "\n", (ut64)brk_end);
-		break;
-	case 'g':
-		top = rz_agraph_add_node(g, top_title, top_data);
-		if (!first_node) {
-			rz_agraph_add_edge(g, prev_node, top);
-			free(node_data);
-			free(node_title);
-		}
-		rz_agraph_print(g);
-		rz_cons_canvas_free(can);
-		rz_config_hold_restore(hc);
-		rz_config_hold_free(hc);
-		break;
-	}
-
-	rz_cons_printf("\n");
-	free(g);
-	free(top_data);
-	free(top_title);
-	free(cnk);
-	free(cnk_next);
-}*/
-
 void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena, bool json) {
 	MallocState *ta = RZ_NEW0(MallocState);
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
@@ -1738,7 +1357,7 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	RzListIter *iter;
 	RzHeapChunkListItem *pos;
 	RzList *chunks = GH(get_bin_content_list)(core, main_arena, bin_num);
-	if (chunks->length == 0) {
+	if (rz_list_length(chunks) == 0) {
 		rz_list_free(chunks);
 		return 0;
 	}
