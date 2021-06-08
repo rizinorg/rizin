@@ -1178,8 +1178,14 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 	rz_return_if_fail(core && core->dbg && core->dbg->maps);
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	RzList *tcache_list = GH(rz_get_tcache_list)(core, m_arena, main_arena, main_thread_only);
+	if (rz_list_length(tcache_list) == 0) {
+		rz_list_free(tcache_list);
+		return;
+	}
 	RzList *arenas_list = GH(rz_get_arenas_list)(core, m_arena, main_arena);
 	if (rz_list_length(tcache_list) > rz_list_length(arenas_list)) {
+		rz_list_free(tcache_list);
+		rz_list_free(arenas_list);
 		return;
 	}
 	RzListIter *iter;
