@@ -134,11 +134,21 @@ RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, const ch
 	type->kind = RZ_TYPE_KIND_IDENTIFIER;
 	type->identifier.is_const = is_const;
 	type->identifier.name = strdup(name);
+	if (!type->identifier.name) {
+		free(type);
+		return NULL;
+	}
 	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		rz_type_free(type);
+		return NULL;
+	}
+	base_type->name = strdup(name);
+	if (!base_type->name) {
+		rz_type_free(type);
+		rz_type_base_type_free(base_type);
 		return NULL;
 	}
 
