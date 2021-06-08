@@ -123,7 +123,7 @@ typedef struct rz_callable_arg_t {
 
 typedef struct rz_callable_at {
 	RZ_NULLABLE const char *name; // optional
-	RzType *ret;
+	RZ_NULLABLE RzType *ret; /// optional for the time being
 	RzPVector /* RzCallableArg */ *args;
 	RZ_NULLABLE const char *cc; // optional
 	bool noret; // Does not return
