@@ -498,11 +498,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 				char *cc = strdup(Cc);
 				type_match(core, fcn_name, aop->addr, bb->addr, cc, prev_idx, userfnc, callee_addr, op_cache);
 				prev_idx = cur_idx;
-				// Here we clone the type
-				RzType *rt = rz_type_func_ret(core->analysis->typedb, fcn_name);
-				if (rt) {
-					ret_type = rt;
-				}
+				ret_type = rz_type_func_ret(core->analysis->typedb, fcn_name);
 				RZ_FREE(ret_reg);
 				const char *rr = rz_analysis_cc_ret(core->analysis, cc);
 				if (rr) {

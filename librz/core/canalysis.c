@@ -6659,33 +6659,33 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 
 		if (key) {
 			RzType *ret_type = rz_type_func_ret(core->analysis->typedb, key);
-			if (!ret_type) {
-				return NULL;
+			char *ret_type_str = NULL;
+			if (ret_type) {
+				ret_type_str = rz_type_as_string(core->analysis->typedb, ret_type);
 			}
-			char *ret_type_str = rz_type_as_string(core->analysis->typedb, ret_type);
 			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
+			pj_o(j);
+			pj_ks(j, "name", rz_str_get_null(key));
 			if (ret_type_str) {
-				pj_o(j);
-				pj_ks(j, "name", rz_str_get_null(key));
-				pj_ks(j, "return", rz_str_get_null(ret_type_str));
-				pj_k(j, "args");
-				pj_a(j);
-				if (nargs) {
-					RzList *list = rz_core_get_func_args(core, fcn_name);
-					rz_list_foreach (list, iter, arg) {
-						char *type = rz_type_as_string(core->analysis->typedb, arg->orig_c_type);
-						pj_o(j);
-						pj_ks(j, "name", arg->name);
-						pj_ks(j, "type", type);
-						pj_end(j);
-						free(type);
-					}
-					rz_list_free(list);
-				}
-				pj_end(j);
-				pj_ki(j, "count", nargs);
-				pj_end(j);
+				pj_ks(j, "return", ret_type_str);
 			}
+			pj_k(j, "args");
+			pj_a(j);
+			if (nargs) {
+				RzList *list = rz_core_get_func_args(core, fcn_name);
+				rz_list_foreach (list, iter, arg) {
+					char *type = rz_type_as_string(core->analysis->typedb, arg->orig_c_type);
+					pj_o(j);
+					pj_ks(j, "name", arg->name);
+					pj_ks(j, "type", type);
+					pj_end(j);
+					free(type);
+				}
+				rz_list_free(list);
+			}
+			pj_end(j);
+			pj_ki(j, "count", nargs);
+			pj_end(j);
 			free(ret_type_str);
 			free(key);
 		} else {
