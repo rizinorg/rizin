@@ -131,6 +131,16 @@ commands:
           - name: type
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
+      - name: tf-
+        cname: type_function_del
+        summary: Remove the function type by name
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+      - name: tf-*
+        cname: type_function_del_all
+        summary: Remove all function types
+        args: []
   - name: tl
     summary: Manage type links to the address
     subcommands:

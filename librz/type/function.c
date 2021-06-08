@@ -188,6 +188,18 @@ RZ_API bool rz_type_func_delete(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	return true;
 }
 
+static void callables_ht_free(HtPPKv *kv) {
+	rz_type_callable_free(kv->value);
+}
+
+/**
+ * \brief Removes all RzCallable types
+ */
+RZ_API void rz_type_func_delete_all(RzTypeDB *typedb) {
+	ht_pp_free(typedb->callables);
+	typedb->callables = ht_pp_new(NULL, callables_ht_free, NULL);
+}
+
 /**
  * \brief Checks if the RzCallable type exists in the database given the name
  *
