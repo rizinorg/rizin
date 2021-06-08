@@ -1020,7 +1020,7 @@ static GH(RTcache) * GH(tcache_new)(RzCore *core) {
 	return tcache;
 }
 
-static void GH(tcache_free)(GH(RTcache) * tcache) {
+RZ_API void GH(tcache_free)(GH(RTcache) * tcache) {
 	rz_return_if_fail(tcache);
 	tcache->type == NEW
 		? free(tcache->RzHeapTcache.heap_tcache)
@@ -1101,45 +1101,47 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, PJ *pj) {
 	}
 }
 
-static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *main_arena, bool main_thread_only, PJ *pj) {
-	rz_return_if_fail(core && core->dbg && core->dbg->maps);
+/**
+ * @brief Get a list of RzTcache objects which contain information about tcache.
+ * First object in the returned list is the tcache info for main arena and then subsequent are for thread arena with order conserved
+ * @param core RzCore pointer
+ * @param m_arena Base address of main arena
+ * @param main_arena MallocState struct of main arena
+ * @param main_thread_only Only get tcache information for main thread
+ * @return RzList of RzTcache objects
+ */
+RZ_API RzList *GH(rz_get_tcache_list)(RzCore *core, GHT m_arena, MallocState *main_arena, bool main_thread_only) {
+	RzList *tcache_list = rz_list_newf((RzListFree)GH(tcache_free));
+	rz_return_val_if_fail(core && core->dbg && core->dbg->maps, tcache_list);
 
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (!tcache) {
 		rz_cons_printf("No Tcache in this libc version\n");
-		return;
+		return tcache_list;
 	}
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
 	GH(get_brks)
 	(core, &brk_start, &brk_end);
 	GHT tcache_start = GHT_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
 	tcache_start = brk_start + 0x10;
 	GHT fc_offset = GH(tcache_chunk_size)(core, brk_start);
 	initial_brk = brk_start + fc_offset;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
 		eprintf("No heap section\n");
-		return;
+		return tcache_list;
 	}
 
 	GH(RTcache) *rz_tcache = GH(tcache_new)(core);
 	if (!rz_tcache) {
-		return;
+		return tcache_list;
 	}
 	if (!GH(tcache_read)(core, tcache_start, rz_tcache)) {
-		return;
+		return tcache_list;
 	}
-	if (!pj) {
-		rz_cons_printf("Tcache bins in Main Arena @");
-		PRINTF_YA(" 0x%" PFMT64x "\n", (ut64)m_arena);
-	}
-	GH(tcache_print)
-	(core, rz_tcache, pj);
+	rz_list_append(tcache_list, rz_tcache);
 	if (main_thread_only) {
-		return;
+		return tcache_list;
 	}
-
 	if (main_arena->GH(next) != m_arena) {
 		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
 		MallocState *ta = RZ_NEW0(MallocState);
@@ -1147,14 +1149,10 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 			free(ta);
 			GH(tcache_free)
 			(rz_tcache);
-			return;
+			return tcache_list;
 		}
 		ta->GH(next) = main_arena->GH(next);
 		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
-			if (!pj) {
-				rz_cons_printf("Tcache in Thread Arena @ ");
-				PRINTF_YA(" 0x%" PFMT64x, (ut64)ta->GH(next));
-			}
 			mmap_start = ((ta->GH(next) >> 16) << 16);
 			tcache_start = mmap_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
 
@@ -1162,22 +1160,52 @@ static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *ma
 				free(ta);
 				GH(tcache_free)
 				(rz_tcache);
-				return;
+				return tcache_list;
 			}
 
 			if (ta->attached_threads) {
-				PRINT_BA("\n");
+				rz_tcache = GH(tcache_new)(core);
 				GH(tcache_read)
 				(core, tcache_start, rz_tcache);
-				GH(tcache_print)
-				(core, rz_tcache, pj);
-			} else {
-				PRINT_GA(" free\n");
+				rz_list_append(tcache_list, rz_tcache);
 			}
 		}
 	}
-	GH(tcache_free)
-	(rz_tcache);
+	return tcache_list;
+}
+
+static void GH(print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *main_arena, bool main_thread_only, PJ *pj) {
+	rz_return_if_fail(core && core->dbg && core->dbg->maps);
+	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzList *tcache_list = GH(rz_get_tcache_list)(core, m_arena, main_arena, main_thread_only);
+	RzList *arenas_list = GH(rz_get_arenas_list)(core, m_arena, main_arena);
+	if (rz_list_length(tcache_list) > rz_list_length(arenas_list)) {
+		return;
+	}
+	RzListIter *iter;
+	GH(RTcache) * rz_tcache;
+	int count = 0;
+	rz_list_foreach (tcache_list, iter, rz_tcache) {
+		MallocState *prev_arena;
+		if (count == 0) {
+			prev_arena = arenas_list->tail->data;
+			rz_cons_printf("Tcache in Main Arena @ ");
+		} else {
+			prev_arena = rz_list_get_n(arenas_list, count - 1);
+			rz_cons_printf("Tcache in Thread Arena @ ");
+		}
+		PRINTF_YA(" 0x%" PFMT64x, (ut64)prev_arena->GH(next));
+		rz_cons_newline();
+		GH(tcache_print)
+		(core, rz_tcache, pj);
+		count += 1;
+		if (count > 0 && main_thread_only) {
+			break;
+		}
+	}
+	rz_cons_newline();
+	rz_list_free(tcache_list);
+	rz_list_free(arenas_list);
 	if (pj) {
 		pj_end(pj);
 		pj_end(pj);
