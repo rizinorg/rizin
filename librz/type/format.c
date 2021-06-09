@@ -2791,10 +2791,13 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 		rz_strbuf_append(format, "?");
 		RzTypeStructMember *memb;
 		rz_vector_foreach(&type->struct_data.members, memb) {
-			const char *membfmt = rz_type_as_format(typedb, memb->type);
 			const char *membtype = type_to_identifier(typedb, memb->type);
-			rz_strbuf_append(format, membfmt);
-			rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+			// Avoid infinite recursion in case of self-referential structures
+			if (strcmp(membtype, type->name)) {
+				const char *membfmt = rz_type_as_format(typedb, memb->type);
+				rz_strbuf_append(format, membfmt);
+				rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+			}
 		}
 		break;
 	}
@@ -2809,10 +2812,13 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 		rz_strbuf_append(format, "0");
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&type->union_data.members, memb) {
-			const char *membfmt = rz_type_as_format(typedb, memb->type);
 			const char *membtype = type_to_identifier(typedb, memb->type);
-			rz_strbuf_append(format, membfmt);
-			rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+			// Avoid infinite recursion in case of self-referential unions
+			if (strcmp(membtype, type->name)) {
+				const char *membfmt = rz_type_as_format(typedb, memb->type);
+				rz_strbuf_append(format, membfmt);
+				rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+			}
 		}
 		break;
 	}
