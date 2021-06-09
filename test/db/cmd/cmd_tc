@@ -1,6 +1,10 @@
 NAME=tc
 FILE=bins/mach0/objc-employee
-CMDS=.ic*;ts
+CMDS=<<EOF
+.ic*
+ts~Employee
+ts~NSString
+EOF
 EXPECT=<<EOF
 Employee
 NSString
@@ -57,7 +61,11 @@ RUN
 
 NAME=tc4
 FILE=bins/mach0/objc-employee
-CMDS=.ic*;tc
+CMDS=<<EOF
+.ic*
+tc "struct Employee"
+tc "struct NSString"
+EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
@@ -81,7 +89,11 @@ RUN
 
 NAME=tc iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=.ic*;ts
+CMDS=<<EOF
+.ic*
+ts Employee
+ts NSString
+EOF
 EXPECT=<<EOF
 Employee
 NSString
@@ -139,7 +151,11 @@ RUN
 
 NAME=tc4 iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
-CMDS=.ic*;tc
+CMDS=<<EOF
+.ic*
+tc "struct Employee"
+tc "struct NSString"
+EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
@@ -163,7 +179,11 @@ RUN
 
 NAME=tc iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=.ic*;ts
+CMDS=<<EOF
+.ic*
+ts Employee
+ts NSString
+EOF
 EXPECT=<<EOF
 Employee
 NSString
@@ -220,7 +240,11 @@ RUN
 
 NAME=tc4 iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
-CMDS=.ic*;tc
+CMDS=<<EOF
+.ic*
+tc "struct Employee"
+tc "struct NSString"
+EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
