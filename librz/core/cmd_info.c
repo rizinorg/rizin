@@ -476,7 +476,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 	}
 #define INIT_PJ() \
 	if (!pj) { \
-		pj = rz_core_pj_new(core); \
+		pj = pj_new(); \
 		if (!pj) { \
 			return 1; \
 		} \

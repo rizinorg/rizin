@@ -2041,7 +2041,7 @@ RZ_API void rz_sign_list(RzAnalysis *a, int format) {
 	PJ *pj = NULL;
 
 	if (format == 'j') {
-		pj = a->coreb.pjWithEncoding(a->coreb.core);
+		pj = pj_new();
 		pj_a(pj);
 	}
 

@@ -1112,7 +1112,7 @@ static int var_cmd(RzCore *core, const char *str) {
 	}
 	PJ *pj = NULL;
 	if (str[0] == 'j') { // "afvj"
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return false;
 		}
@@ -1149,7 +1149,7 @@ static int var_cmd(RzCore *core, const char *str) {
 			name = rz_str_trim_head_ro(name);
 		}
 		if (str[1] == 'j') {
-			pj = rz_core_pj_new(core);
+			pj = pj_new();
 			if (!pj) {
 				return false;
 			}
@@ -1249,7 +1249,7 @@ static int var_cmd(RzCore *core, const char *str) {
 		rz_analysis_var_list_show(core->analysis, fcn, type, str[1], NULL);
 		break;
 	case 'j': // "afv[bsr]j"
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return false;
 		}
@@ -1522,7 +1522,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 		color = core->cons->context->pal.label;
 	}
 	if (fmt == 'j') {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return;
 		}
@@ -2668,7 +2668,7 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 		}
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, addr, 0);
 		if (input[1] == 'j') { // afdj
-			PJ *pj = rz_core_pj_new(core);
+			PJ *pj = pj_new();
 			if (!pj) {
 				return false;
 			}
@@ -2760,7 +2760,7 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 		case 'j': // "afoj"
 		{
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-			PJ *pj = rz_core_pj_new(core);
+			PJ *pj = pj_new();
 			if (!pj) {
 				return false;
 			}
@@ -3075,7 +3075,7 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 			PJ *pj = NULL;
 			bool json = input[2] == 'j';
 			if (json) {
-				pj = rz_core_pj_new(core);
+				pj = pj_new();
 				if (!pj) {
 					return false;
 				}
@@ -3414,7 +3414,7 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 		rz_core_debug_ri(core, core->analysis->reg, 0);
 		return;
 	} else if (mode == 'j') {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return;
 		}
@@ -7581,7 +7581,7 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 		rad = *input;
 		input++;
 		if (rad == 'j') {
-			pj = rz_core_pj_new(core);
+			pj = pj_new();
 			if (!pj) {
 				return 0;
 			}
@@ -8767,7 +8767,7 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 			}
 			RzCmdStateOutput state = { 0 };
 			state.mode = RZ_OUTPUT_MODE_JSON;
-			state.d.pj = rz_core_pj_new(core);
+			state.d.pj = pj_new();
 			if (!state.d.pj) {
 				break;
 			}
@@ -9168,7 +9168,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_xrefs_handler(RzCore *core, int argc, co
 
 	PJ *pj = NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		pj_a(pj);
 	}
 
@@ -9248,7 +9248,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_address_handler(RzCore *core, int argc, 
 		rz_cons_printf("0x%08" PFMT64x "\n", fcn->addr);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -9304,7 +9304,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_handler(RzCore *core, int argc, con
 		}
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -9532,7 +9532,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_xrefs_vars_handler(RzCore *core, in
 static RzCmdStatus analysis_function_vars_kind_list(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarKind kind, RzOutputMode mode) {
 	PJ *pj = NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return RZ_CMD_STATUS_ERROR;
 		}
