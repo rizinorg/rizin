@@ -51,3 +51,21 @@ struct.sigaction.sa_flags=unsigned long,8,0
 struct.sigaction.sa_restorer=void*,12,0
 struct.sigaction.sa_mask=sigset_t,20,0
 
+time_t=typedef
+typedef.time_t=long
+
+suseconds_t=typedef
+typedef.suseconds_t=long
+
+timeval=struct
+struct.timeval=tv_sec,tv_usec
+struct.timeval.tv_sec=time_t,0,0
+struct.timeval.tv_usec=suseconds_t,8,0
+
+timespec=struct
+struct.timespec=tv_sec,tv_nsec
+struct.timespec.tv_sec=time_t,0,0
+struct.timespec.tv_nsec=long,8,0
+
+std__type_info=struct
+struct.std__type_info=
