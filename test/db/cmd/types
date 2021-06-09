@@ -1121,8 +1121,8 @@ td "struct three_elements{int x; char y; float z;}"
 tcd
 EOF
 EXPECT=<<EOF
-union x {int32_t x; int32_t y; int32_t z;};
-struct three_elements {int32_t x; char y; float z;};
+union x {int x; int y; int z;};
+struct three_elements {int x; char y; float z;};
 typedef char FILE_NAME;
 enum Foo {COW = 1, BAR = 2};
 EOF
@@ -1135,6 +1135,7 @@ to bins/headers/12272.h
 ts A
 ts "anonymous struct 0"
 ts "anonymous struct 1"
+?e ----
 tsc A
 tsc "anonymous struct 0"
 tsc "anonymous struct 1"
@@ -1162,6 +1163,7 @@ struct anonymous struct 1 {
 struct O {
 	char *ptr;
 };
+----
 B = struct anonymous struct 1
 EOF
 RUN
