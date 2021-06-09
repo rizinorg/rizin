@@ -63,6 +63,14 @@ RZ_API bool rz_analysis_function_rebase_vars(RzAnalysis *a, RzAnalysisFunction *
 	return true;
 }
 
+static inline bool var_same_kind(RzAnalysisVar *a, RzAnalysisVar *b) {
+	return a->kind == b->kind && a->isarg == b->isarg;
+}
+
+static inline bool var_overlap(RzAnalysisVar *a, RzAnalysisVar *b, ut64 a_size) {
+	return var_same_kind(a, b) && b->delta > a->delta && b->delta < a->delta + a_size;
+}
+
 // Search for all variables that are located at the offset
 // overlapped by var and remove them
 static void resolve_var_overlaps(RzAnalysisVar *var) {
@@ -81,7 +89,7 @@ static void resolve_var_overlaps(RzAnalysisVar *var) {
 		if (!other) {
 			continue;
 		}
-		if (strcmp(var->name, other->name) && other->kind == var->kind && other->delta > var->delta && other->delta < var->delta + varsize) {
+		if (strcmp(var->name, other->name) && var_overlap(var, other, varsize)) {
 			rz_analysis_var_delete(other);
 		}
 	}
