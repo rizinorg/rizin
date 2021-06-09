@@ -2,12 +2,12 @@ NAME=tc
 FILE=bins/mach0/objc-employee
 CMDS=<<EOF
 .ic*
-ts~Employee
-ts~NSString
+ts Employee
+ts NSString
 EOF
 EXPECT=<<EOF
-Employee
-NSString
+pf ?*?*cxxxp** pp (char)name (long)version (long)info (long)instance_size (void)ivars (void)methodLists (void)cache (void)protocols w*?pd*cd (void)p0 (size_t)p1 (char)str (int)len *?pd*cd (void)p0 (size_t)p1 (char)str (int)len qpppp (objc_class)isa (short)_shortWord (NSString)_username (NSString)_firstName (uint64_t)_wideWord (void)username (void)first Name (void)shortWord (void)wideWord
+pf ?pd*cd (void)p0 (size_t)p1 (char)str (int)len
 EOF
 RUN
 
@@ -69,7 +69,7 @@ EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -159,7 +159,7 @@ EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
@@ -248,7 +248,7 @@ EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
