@@ -3,4 +3,4 @@
 
 #define RIZIN_BUILD_PATH @RIZIN_BUILD_PATH@
 
-#endif _TEST_CONFIG_H_
+#endif /* _TEST_CONFIG_H_ */
