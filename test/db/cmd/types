@@ -243,9 +243,9 @@ x: int
 y: int
 z: int
 union xoo {
-    int x;
-    int y;
-    int z
+	int x;
+	int y;
+	int z
 };
 EOF
 RUN
@@ -319,10 +319,10 @@ EOF
 EXPECT=<<EOF
 BAR.G
 FOO.B
-BAR.P
 FOO.D
-BAR.E
+BAR.P
 FOO.E
+BAR.E
 EOF
 RUN
 
@@ -379,17 +379,15 @@ NAME=enum32
 FILE==
 CMDS=<<EOF
 td "enum v { t=0x123, p=0x321 };"
-te~?
 tec v
 te v
 te v 0x123
 te v 0x321
 EOF
 EXPECT=<<EOF
-1
 enum v {
-    t = 291,
-    p = 801
+	t = 291,
+	p = 801
 };
 t = 0x123
 p = 0x321
@@ -402,18 +400,26 @@ NAME=enum64
 FILE==
 CMDS=<<EOF
 td "enum v { t=0x8000000000000001, p=0x8000000000000008 };"
-te~?
+tec v
 te v
+te v 0x8000000000000001
+te v 0x8000000000000008
 EOF
 EXPECT=<<EOF
-1
+enum v {
+	t = 9223372036854775809,
+	p = 9223372036854775816
+};
 t = 0x8000000000000001
 p = 0x8000000000000008
+t
+p
 EOF
 RUN
 
 NAME=to error.h
 FILE==
+BROKEN=1
 CMDS=<<EOF
 to bins/other/error.h
 t~char,double,float,int,long,short,size,uid,void # basic universal types
