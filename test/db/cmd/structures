@@ -11,13 +11,13 @@ afvb*
 EOF
 EXPECT=<<EOF
 afvb -288 var_120h char ** @ 0x4004a6
-afvb -276 var_114h int64_t @ 0x4004a6
+afvb -276 var_114h int @ 0x4004a6
 afvb -272 var_110h int64_t @ 0x4004a6
 afvb -268 var_10ch int64_t @ 0x4004a6
 afvb -264 var_108h int64_t @ 0x4004a6
 afvb -4 var_4h int64_t @ 0x4004a6
 afvb -288 var_120h char ** @ 0x4004a6
-afvb -276 var_114h int64_t @ 0x4004a6
+afvb -276 var_114h int @ 0x4004a6
 afvb -272 s1 struct S1 @ 0x4004a6
 EOF
 RUN
