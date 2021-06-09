@@ -156,34 +156,7 @@ typedef struct rz_bin_elf_string_t {
 	int last;
 } RzBinElfString;
 
-typedef struct Elf_(rz_bin_elf_dynamic_info) {
-	Elf_(Addr) dt_init;
-	Elf_(Addr) dt_fini;
-	Elf_(Xword) dt_pltrelsz;
-	Elf_(Addr) dt_pltgot;
-	Elf_(Addr) dt_hash;
-	Elf_(Addr) dt_gnu_hash;
-	Elf_(Addr) dt_strtab;
-	Elf_(Addr) dt_symtab;
-	Elf_(Addr) dt_rela;
-	Elf_(Xword) dt_relasz;
-	Elf_(Xword) dt_relaent;
-	Elf_(Xword) dt_strsz;
-	Elf_(Xword) dt_syment;
-	Elf_(Addr) dt_rel;
-	Elf_(Xword) dt_relsz;
-	Elf_(Xword) dt_relent;
-	Elf_(Xword) dt_pltrel;
-	Elf_(Addr) dt_jmprel;
-	Elf_(Addr) dt_mips_pltgot;
-	bool dt_bind_now;
-	Elf_(Xword) dt_flags;
-	Elf_(Xword) dt_flags_1;
-	Elf_(Xword) dt_rpath;
-	Elf_(Xword) dt_runpath;
-	RzVector dt_needed;
-}
-RzBinElfDynamicInfo;
+typedef struct rz_bin_elf_dt_dynamic RzBinElfDtDynamic; // elf_dynamic.h
 
 typedef struct rz_bin_elf_lib_t {
 	char name[ELF_STRING_LENGTH];
@@ -240,11 +213,9 @@ struct Elf_(rz_bin_elf_obj_t) {
 	ut64 shstrtab_size;
 	char *shstrtab;
 
-	RzBinElfDynamicInfo dyn_info;
+	RzBinElfDtDynamic *dt_dynamic;
 
 	RzList /*<RzBinElfNoteSegment>*/ *note_segments;
-
-	ut64 version_info[DT_VERSIONTAGNUM];
 
 	char *dynstr;
 	ut32 dynstr_size;
@@ -290,6 +261,13 @@ ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW const ut8 *Elf_(rz_bin_elf_grab_regstate)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL size_t *size);
 ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_dynamic.c
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_dt_needed)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_new_dt_dynamic)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_get_dt_info)(RZ_NONNULL ELFOBJ *bin, ut64 key, RZ_OUT ut64 *info);
+bool Elf_(rz_bin_elf_has_dt_dynamic)(RZ_NONNULL ELFOBJ *bin);
+void Elf_(rz_bin_elf_free_dt_dynamic)(RzBinElfDtDynamic *ptr);
 
 // elf_info.c
 

@@ -152,16 +152,18 @@ static void set_arm_symbol_bits(ELFOBJ *bin, RzBinSymbol *symbol) {
 }
 
 static size_t get_number_of_symbols_from_hash(ELFOBJ *bin) {
-	if (bin->dyn_info.dt_hash == RZ_BIN_ELF_ADDR_MAX) {
+	ut64 addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_HASH, &addr)) {
 		return 0;
 	}
 
-	ut64 hash_offset = Elf_(rz_bin_elf_v2p_new)(bin, bin->dyn_info.dt_hash);
-	if (hash_offset == UT64_MAX) {
+	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	if (offset == UT64_MAX) {
 		return 0;
 	}
 
-	ut64 nchain_offset = HASH_NCHAIN_OFFSET(hash_offset);
+	ut64 nchain_offset = HASH_NCHAIN_OFFSET(offset);
 	ut64 result = BREAD32(bin->b, nchain_offset);
 
 	return result == UT32_MAX ? 0 : result;
@@ -202,11 +204,13 @@ static ut32 get_index_from_chain(ELFOBJ *bin, ut32 bucket_offset, ut32 symbol_ba
 }
 
 static size_t get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
-	if (bin->dyn_info.dt_gnu_hash == RZ_BIN_ELF_ADDR_MAX) {
+	ut64 hash_addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_GNU_HASH, &hash_addr)) {
 		return 0;
 	}
 
-	ut64 hash_offset = Elf_(rz_bin_elf_v2p_new)(bin, bin->dyn_info.dt_gnu_hash);
+	ut64 hash_offset = Elf_(rz_bin_elf_v2p_new)(bin, hash_addr);
 	if (hash_offset == UT64_MAX) {
 		return 0;
 	}
@@ -233,12 +237,15 @@ static size_t get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
 }
 
 static size_t get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
-	if (bin->dyn_info.dt_symtab == RZ_BIN_ELF_ADDR_MAX && bin->dyn_info.dt_strtab == RZ_BIN_ELF_ADDR_MAX) {
+	ut64 symtab_addr;
+	ut64 strtab_addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_SYMTAB, &symtab_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &strtab_addr)) {
 		return 0;
 	}
 
-	ut64 symtab_offset = Elf_(rz_bin_elf_v2p_new)(bin, bin->dyn_info.dt_symtab);
-	ut64 strtab_offset = Elf_(rz_bin_elf_v2p_new)(bin, bin->dyn_info.dt_strtab);
+	ut64 symtab_offset = Elf_(rz_bin_elf_v2p_new)(bin, symtab_addr);
+	ut64 strtab_offset = Elf_(rz_bin_elf_v2p_new)(bin, strtab_addr);
 	if (symtab_offset == UT64_MAX || strtab_offset == UT64_MAX) {
 		return 0;
 	}
@@ -265,8 +272,9 @@ static bool is_thumb_symbol(ut64 plt_addr) {
 }
 
 static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr == RZ_BIN_ELF_ADDR_MAX) {
+	ut64 got_addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
 		return UT64_MAX;
 	}
 
@@ -303,17 +311,18 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_mips(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 jmprel_addr = bin->dyn_info.dt_jmprel;
-	ut64 got_addr = bin->dyn_info.dt_mips_pltgot;
+	ut64 jmprel_addr;
+	ut64 got_addr;
+	ut64 dt_pltrelsz;
 
-	if (jmprel_addr == RZ_BIN_ELF_ADDR_MAX || got_addr == RZ_BIN_ELF_ADDR_MAX) {
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_JMPREL, &jmprel_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_MIPS_PLTGOT, &got_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTRELSZ, &dt_pltrelsz)) {
 		return UT64_MAX;
 	}
 
 	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
 
 	ut8 buf[1024];
-	ut64 plt_addr = jmprel_addr + bin->dyn_info.dt_pltrelsz;
+	ut64 plt_addr = jmprel_addr + dt_pltrelsz;
 	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p_new)(bin, plt_addr);
 	int res = rz_buf_read_at(bin->b, p_plt_addr, buf, sizeof(buf));
 	if (res != sizeof(buf)) {
@@ -328,8 +337,9 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_riscv(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr == RZ_BIN_ELF_ADDR_MAX) {
+	ut64 got_addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
 		return UT64_MAX;
 	}
 
@@ -353,10 +363,12 @@ static ut64 get_import_addr_sparc(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 plt_addr = bin->dyn_info.dt_pltgot;
-	if (plt_addr == RZ_BIN_ELF_ADDR_MAX) {
+	ut64 plt_addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &plt_addr)) {
 		return UT64_MAX;
 	}
+
 	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p_new)(bin, plt_addr);
 	if (p_plt_addr == UT64_MAX) {
 		return UT64_MAX;
@@ -382,8 +394,9 @@ static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr = bin->dyn_info.dt_pltgot;
-	if (got_addr == RZ_BIN_ELF_ADDR_MAX) {
+	ut64 got_addr;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
 		return UT64_MAX;
 	}
 
@@ -452,7 +465,12 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
 	RzBinElfSection *pltsec_section = Elf_(rz_bin_elf_get_section)(bin, ".plt.sec");
 
 	if (pltsec_section) {
-		ut64 got_addr = bin->dyn_info.dt_pltgot;
+		ut64 got_addr;
+
+		if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
+			return UT64_MAX;
+		}
+
 		ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
 		return pltsec_section->rva + pos * X86_PLT_ENTRY_SIZE;
 	}
@@ -714,12 +732,18 @@ static void set_by_ord(ELFOBJ *bin, RzBinElfSymbol *symbols, size_t pos, int typ
 }
 
 static RzBinElfSymbol *compute_symbols_from_phdr(ELFOBJ *bin, int type) {
-	ut64 entry_size = bin->dyn_info.dt_syment;
-	if (bin->dyn_info.dt_symtab == RZ_BIN_ELF_ADDR_MAX || !entry_size) {
+	ut64 addr;
+	ut64 entry_size;
+
+	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
 		return NULL;
 	}
 
-	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, bin->dyn_info.dt_symtab);
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_SYMTAB, &addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_SYMENT, &entry_size)) {
+		return NULL;
+	}
+
+	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
 	if (offset == UT64_MAX) {
 		return NULL;
 	}
