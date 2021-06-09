@@ -657,8 +657,7 @@ RZ_API ut64 rz_type_db_struct_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseT
 	RzTypeStructMember *memb;
 	ut64 size = 0;
 	rz_vector_foreach(&btype->struct_data.members, memb) {
-		size += memb->size;
-		// FIXME: Support nested
+		size += rz_type_db_get_bitsize(typedb, memb->type);
 	}
 	return size;
 }
@@ -675,8 +674,7 @@ RZ_API ut64 rz_type_db_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseTy
 	ut64 size = 0;
 	// Union has the size of the maximum size of its elements
 	rz_vector_foreach(&btype->union_data.members, memb) {
-		size = RZ_MAX(memb->size, size);
-		// FIXME: Support nested
+		size = RZ_MAX(rz_type_db_get_bitsize(typedb, memb->type), size);
 	}
 	return size;
 }
