@@ -19,6 +19,7 @@ RZ_API void rz_arch_profile_free(RzArchProfile *p) {
 	}
 	ht_up_free(p->registers_mmio);
 	ht_up_free(p->registers_extended);
+	free(p);
 }
 
 /**
@@ -26,8 +27,17 @@ RZ_API void rz_arch_profile_free(RzArchProfile *p) {
  */
 RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
 	RzArchProfile *profile = RZ_NEW0(RzArchProfile);
+	if (!profile) {
+		return NULL;
+	}
 	profile->registers_mmio = ht_up_new0();
+	if (!profile->registers_mmio) {
+		return NULL;
+	}
 	profile->registers_extended = ht_up_new0();
+	if (!profile->registers_extended) {
+		return NULL;
+	}
 	return profile;
 }
 
@@ -36,8 +46,17 @@ RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
  */
 RZ_API RZ_OWN RzArchTarget *rz_arch_target_new() {
 	RzArchTarget *profile = RZ_NEW0(RzArchTarget);
+	if (!profile) {
+		return NULL;
+	}
 	profile->db = sdb_new0();
+	if (!profile->db) {
+		return NULL;
+	}
 	profile->profile = rz_arch_profile_new();
+	if (!profile->profile) {
+		return NULL;
+	}
 	return profile;
 }
 
@@ -52,6 +71,7 @@ RZ_API void rz_arch_target_free(RzArchTarget *t) {
 	}
 	sdb_free(t->db);
 	rz_arch_profile_free(t->profile);
+	free(t);
 }
 
 static inline bool cpu_reload_needed(RzArchTarget *c, const char *cpu, const char *arch) {
