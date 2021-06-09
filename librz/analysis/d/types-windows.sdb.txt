@@ -2123,4 +2123,12 @@ type.PCOMPRESSOR_HANDLE=p
 COMPRESS_INFORMATION_CLASS=typedef
 typedef.COMPRESS_INFORMATION_CLASS=int
 
+timeval=struct
+struct.timeval=tv_sec,tv_usec
+struct.timeval.tv_sec=long,0,0
+struct.timeval.tv_usec=long,8,0
 
+timespec=struct
+struct.timespec=tv_sec,tv_nsec
+struct.timespec.tv_sec=long,0,0
+struct.timespec.tv_nsec=long,8,0
