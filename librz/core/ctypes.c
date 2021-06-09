@@ -254,12 +254,15 @@ static void core_types_union_print_c(RzTypeDB *typedb, RzBaseType *btype, bool m
 			if (memb->type->kind == RZ_TYPE_KIND_ARRAY) {
 				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
 					memb->name, memb->type->array.count);
+			} else if (memb->type->kind == RZ_TYPE_KIND_POINTER) {
+				rz_cons_printf("%s%s%s", separator, membtype, memb->name);
 			} else {
 				rz_cons_printf("%s%s %s", separator, membtype, memb->name);
 			}
 			free(membtype);
 			separator = multiline ? ";\n\t" : "; ";
 		}
+		rz_cons_print(";");
 		rz_cons_println(multiline ? "\n};" : "};");
 	} else {
 		rz_cons_printf("union %s {};\n", btype->name);
@@ -371,12 +374,15 @@ static void core_types_struct_print_c(RzTypeDB *typedb, RzBaseType *btype, bool 
 			if (memb->type->kind == RZ_TYPE_KIND_ARRAY) {
 				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
 					memb->name, memb->type->array.count);
+			} else if (memb->type->kind == RZ_TYPE_KIND_POINTER) {
+				rz_cons_printf("%s%s%s", separator, membtype, memb->name);
 			} else {
 				rz_cons_printf("%s%s %s", separator, membtype, memb->name);
 			}
 			free(membtype);
 			separator = multiline ? ";\n\t" : "; ";
 		}
+		rz_cons_print(";");
 		rz_cons_println(multiline ? "\n};" : "};");
 	} else {
 		rz_cons_printf("struct %s {};\n", btype->name);
@@ -464,7 +470,7 @@ static void core_types_typedef_print_c(RzTypeDB *typedb, RzBaseType *btype) {
 	rz_return_if_fail(btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF);
 	char *typestr = rz_type_as_string(typedb, btype->type);
-	rz_cons_printf("typedef %s %s;", typestr, btype->name);
+	rz_cons_printf("typedef %s %s;\n", typestr, btype->name);
 	free(typestr);
 }
 
