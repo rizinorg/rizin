@@ -70,21 +70,21 @@ static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_val
 	return RZ_CMD_STATUS_OK;
 }
 
-static bool print_type_c(RzCore *core, const char *ctype) {
+static bool print_type_c(RzCore *core, const char *ctype, bool multiline) {
 	const char *type = rz_str_trim_head_ro(ctype);
-	const char *name = type ? strchr(type, '.') : NULL;
+	const char *name = type ? strchr(type, ' ') : NULL;
 	if (name && type) {
-		name++; // skip the '.'
+		name++; // skip the ' ' (space)
 		if (rz_str_startswith(type, "struct")) {
-			rz_core_types_struct_print_c(core->analysis->typedb, name, true);
+			rz_core_types_struct_print_c(core->analysis->typedb, name, multiline);
 		} else if (rz_str_startswith(type, "union")) {
-			rz_core_types_union_print_c(core->analysis->typedb, name, true);
+			rz_core_types_union_print_c(core->analysis->typedb, name, multiline);
 		} else if (rz_str_startswith(type, "enum")) {
-			rz_core_types_enum_print_c(core->analysis->typedb, name, true);
-		} else if (rz_str_startswith(type, "typedef")) {
-			rz_core_types_typedef_print_c(core->analysis->typedb, name);
+			rz_core_types_enum_print_c(core->analysis->typedb, name, multiline);
 		} else if (rz_str_startswith(type, "func")) {
 			rz_types_function_print(core->analysis->typedb, name, RZ_OUTPUT_MODE_STANDARD, NULL);
+		} else {
+			rz_core_types_typedef_print_c(core->analysis->typedb, name);
 		}
 		return true;
 	}
@@ -93,22 +93,22 @@ static bool print_type_c(RzCore *core, const char *ctype) {
 
 static void type_list_c_all(RzCore *core) {
 	// List all unions in the C format with newlines
-	rz_core_types_union_print_c(core->analysis->typedb, NULL, true);
+	rz_core_types_union_print_c_all(core->analysis->typedb, true);
 	// List all structures in the C format with newlines
-	rz_core_types_struct_print_c(core->analysis->typedb, NULL, true);
+	rz_core_types_struct_print_c_all(core->analysis->typedb, true);
 	// List all typedefs in the C format with newlines
-	rz_core_types_typedef_print_c(core->analysis->typedb, NULL);
+	rz_core_types_typedef_print_c_all(core->analysis->typedb);
 	// List all enums in the C format with newlines
 	rz_core_types_enum_print_c_all(core->analysis->typedb, true);
 }
 
 static void type_list_c_all_nl(RzCore *core) {
 	// List all unions in the C format without newlines
-	rz_core_types_union_print_c(core->analysis->typedb, NULL, false);
+	rz_core_types_union_print_c_all(core->analysis->typedb, false);
 	// List all structures in the C format without newlines
-	rz_core_types_struct_print_c(core->analysis->typedb, NULL, false);
+	rz_core_types_struct_print_c_all(core->analysis->typedb, false);
 	// List all typedefs in the C format without newlines
-	rz_core_types_typedef_print_c(core->analysis->typedb, NULL);
+	rz_core_types_typedef_print_c_all(core->analysis->typedb);
 	// List all enums in the C format without newlines
 	rz_core_types_enum_print_c_all(core->analysis->typedb, false);
 }
@@ -303,20 +303,26 @@ RZ_IPI RzCmdStatus rz_type_cc_del_all_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_type_list_c_handler(RzCore *core, int argc, const char **argv) {
-	const char *ctype = argc > 1 ? argv[1] : NULL;
-	if (!ctype) {
+	if (argc > 1) {
+		if (!print_type_c(core, argv[1], true)) {
+			printf("Wrong type syntax");
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
 		type_list_c_all(core);
-		return RZ_CMD_STATUS_OK;
-	}
-	if (!print_type_c(core, ctype)) {
-		eprintf("Wrong type syntax");
-		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_list_c_nl_handler(RzCore *core, int argc, const char **argv) {
-	type_list_c_all_nl(core);
+	if (argc > 1) {
+		if (!print_type_c(core, argv[1], false)) {
+			eprintf("Wrong type syntax");
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		type_list_c_all_nl(core);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
