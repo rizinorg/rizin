@@ -216,6 +216,11 @@ static size_t get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
 	ut32 number_of_bucket = BREAD32(bin->b, pos);
 	ut32 symbol_base = BREAD32(bin->b, pos);
 	ut32 bitmask_nwords = BREAD32(bin->b, pos);
+
+	if (number_of_bucket == UT32_MAX || symbol_base == UT32_MAX || bitmask_nwords == UT32_MAX) {
+		return 0;
+	}
+
 	ut32 bucket_offset = hash_offset + 16 + bitmask_nwords * RZ_BIN_ELF_WORDSIZE;
 
 	ut32 index = get_index_from_buckets(bin, &bucket_offset, number_of_bucket);
@@ -704,12 +709,7 @@ static void set_by_ord(ELFOBJ *bin, RzBinElfSymbol *symbols, size_t pos, int typ
 		}
 	} else if (type == RZ_BIN_ELF_ALL_SYMBOLS && !bin->symbols_by_ord_size && pos) {
 		bin->symbols_by_ord_size = pos;
-
-		if (pos > 0) {
-			bin->symbols_by_ord = RZ_NEWS0(RzBinSymbol *, pos);
-		} else {
-			bin->symbols_by_ord = NULL;
-		}
+		bin->symbols_by_ord = RZ_NEWS0(RzBinSymbol *, pos);
 	}
 }
 
@@ -930,7 +930,10 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 		.elem_size = sizeof(HtPPKv),
 	};
 
-	if (!bin || !bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
+	if (!bin) {
+		return NULL;
+	}
+	if (!bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
 		return get_symbols_from_phdr(bin, type);
 	}
 	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof(Elf_(Shdr)))) {

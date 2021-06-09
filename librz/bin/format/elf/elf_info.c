@@ -1462,6 +1462,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_head_flag)(RZ_NONNULL ELFOBJ *bin) {
 	char *head_flag = get_head_flag(bin);
 
 	if (RZ_STR_ISEMPTY(head_flag)) {
+		free(head_flag);
 		return strdup("unknown_flag");
 	}
 
