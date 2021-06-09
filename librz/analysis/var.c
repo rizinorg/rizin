@@ -74,7 +74,7 @@ static inline bool var_overlap(RzAnalysisVar *a, RzAnalysisVar *b, ut64 a_size) 
 // Search for all variables that are located at the offset
 // overlapped by var and remove them
 static void resolve_var_overlaps(RzAnalysisVar *var) {
-	if (!var->type) {
+	if (!var->type || var->kind == RZ_ANALYSIS_VAR_KIND_REG) {
 		return;
 	}
 	ut64 varsize = rz_type_db_get_bitsize(var->fcn->analysis->typedb, var->type) / 8;
@@ -135,12 +135,18 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 	} else {
 		free(var->name);
 		free(var->regname);
-		rz_type_free(var->type);
-		var->type = NULL;
+		if (var->type != type) {
+			// only free if not assigning the own type to itself
+			rz_type_free(var->type);
+			var->type = NULL;
+		}
 	}
 	var->name = strdup(name);
 	var->regname = reg ? strdup(reg->name) : NULL; // TODO: no strdup here? pool? or not keep regname at all?
-	var->type = var_type_clone_or_default_type(fcn->analysis, type, size);
+	if (!var->type || var->type != type) {
+		// only clone if we don't already own this type (and didn't free it above)
+		var->type = var_type_clone_or_default_type(fcn->analysis, type, size);
+	}
 	var->kind = kind;
 	var->isarg = isarg;
 	var->delta = delta;
