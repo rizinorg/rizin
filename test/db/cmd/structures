@@ -25,7 +25,7 @@ RUN
 NAME=structure offset in disassembly
 FILE=bins/elf/analysis/main_structure
 CMDS=<<EOF
-e asm.bytes=true
+e asm.bytes=false
 aaa
 s main
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
