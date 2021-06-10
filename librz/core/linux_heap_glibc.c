@@ -1967,7 +1967,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	top_data = rz_str_new("");
 	top_title = rz_str_new("");
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			free(main_arena);
 			return RZ_CMD_STATUS_ERROR;

@@ -1570,7 +1570,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 			break;
 		case 'j':
 			mode = RZ_MODE_JSON;
-			pj = rz_core_pj_new(core);
+			pj = pj_new();
 			if (!pj) {
 				return false;
 			}
