@@ -32,10 +32,13 @@ RZ_API RZ_OWN RzArchProfile *rz_arch_profile_new() {
 	}
 	profile->registers_mmio = ht_up_new0();
 	if (!profile->registers_mmio) {
+		free(profile);
 		return NULL;
 	}
 	profile->registers_extended = ht_up_new0();
 	if (!profile->registers_extended) {
+		ht_up_free(profile->registers_mmio);
+		free(profile);
 		return NULL;
 	}
 	return profile;
@@ -51,10 +54,13 @@ RZ_API RZ_OWN RzArchTarget *rz_arch_target_new() {
 	}
 	profile->db = sdb_new0();
 	if (!profile->db) {
+		free(profile);
 		return NULL;
 	}
 	profile->profile = rz_arch_profile_new();
 	if (!profile->profile) {
+		free(profile);
+		sdb_free(profile->db);
 		return NULL;
 	}
 	return profile;

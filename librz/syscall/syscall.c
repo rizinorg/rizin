@@ -40,6 +40,7 @@ RZ_API RzSysregsDB *rz_sysregs_db_new() {
 	}
 	sysregdb->port = ht_up_new0();
 	if (!sysregdb->port) {
+		free(sysregdb);
 		return NULL;
 	}
 	return sysregdb;
