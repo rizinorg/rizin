@@ -177,7 +177,7 @@ static void types_xrefs(RzCore *core, const char *type) {
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 		rz_list_foreach (uniq, iter2, type2) {
-			const char *ident = rz_type_identifier(core->analysis->typedb, type2);
+			const char *ident = rz_type_identifier(type2);
 			if (!strcmp(ident, type)) {
 				rz_cons_printf("%s\n", fcn->name);
 				break;
@@ -244,7 +244,7 @@ static void types_xrefs_all(RzCore *core) {
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		RzList *types = rz_analysis_types_from_fcn(core->analysis, fcn);
 		rz_list_foreach (types, iter2, type) {
-			const char *ident = rz_type_identifier(core->analysis->typedb, type);
+			const char *ident = rz_type_identifier(type);
 			if (ident) {
 				rz_list_push(types_list, strdup(ident));
 			}

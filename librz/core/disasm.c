@@ -5314,7 +5314,7 @@ toro:
 		RzType *link_type = rz_analysis_type_link_at(core->analysis, ds->addr + idx);
 		if (link_type) {
 			char *fmt = rz_type_as_format(core->analysis->typedb, link_type);
-			const char *typename = rz_type_identifier(core->analysis->typedb, link_type);
+			const char *typename = rz_type_identifier(link_type);
 			if (fmt && typename) {
 				rz_cons_printf("(%s)\n", typename);
 				rz_core_cmdf(core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + idx);
