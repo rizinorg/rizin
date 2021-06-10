@@ -97,7 +97,7 @@ RZ_API RZ_OWN RzType *rz_type_pointer_of_type(const RzTypeDB *typedb, RZ_NONNULL
 	newtype->kind = RZ_TYPE_KIND_POINTER;
 	newtype->pointer.type = type;
 	newtype->pointer.is_const = is_const;
-	return NULL;
+	return newtype;
 }
 
 /**

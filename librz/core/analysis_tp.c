@@ -101,13 +101,17 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 	// Since the type could be used by something else we should clone it
 	RzType *cloned = rz_type_clone(type);
 	if (!cloned) {
-		eprintf("Cannot clone the type for the variable \"%s.%s\n", var->fcn->name, var->name);
+		eprintf("Cannot clone the type for the variable \"%s.%s\"\n", var->fcn->name, var->name);
 		return;
 	}
 	// Make a pointer of the existing type
 	if (ref) {
 		// By default we create non-const pointers
 		RzType *ptrtype = rz_type_pointer_of_type(typedb, cloned, false);
+		if (!ptrtype) {
+			eprintf("Cannot convert the type for the variable \"%s.%s\" into pointer\n", var->fcn->name, var->name);
+			return;
+		}
 		rz_analysis_var_set_type(var, ptrtype);
 		return;
 	}
