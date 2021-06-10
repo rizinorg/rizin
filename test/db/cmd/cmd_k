@@ -34,7 +34,6 @@ EXPECT=<<EOF
 {
   "analysis": {
     "cur_cmd": [
-      "links",
       "spec",
       "gcc=spec",
       "spec.gcc.c=char",

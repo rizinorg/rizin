@@ -91,12 +91,27 @@ NAME=tc iOS14 arm64
 FILE=bins/mach0/objc-employee-ios14-arm64
 CMDS=<<EOF
 .ic*
-ts Employee
-ts NSString
+tsc Employee
+tsc NSString
 EOF
 EXPECT=<<EOF
-Employee
-NSString
+struct Employee {
+	struct objc_class *isa;
+	short _shortWord;
+	struct NSString *_username;
+	struct NSString *_firstName;
+	uint64_t _wideWord;
+	void *username;
+	void *firstName;
+	void *shortWord;
+	void *wideWord;
+};
+struct NSString {
+	void *p0;
+	size_t p1;
+	char *str;
+	int len;
+};
 EOF
 RUN
 
@@ -181,12 +196,27 @@ NAME=tc iOS14 arm64e
 FILE=bins/mach0/objc-employee-ios14-arm64e
 CMDS=<<EOF
 .ic*
-ts Employee
-ts NSString
+tsc Employee
+tsc NSString
 EOF
 EXPECT=<<EOF
-Employee
-NSString
+struct Employee {
+	struct objc_class *isa;
+	short _shortWord;
+	struct NSString *_username;
+	struct NSString *_firstName;
+	uint64_t _wideWord;
+	void *username;
+	void *firstName;
+	void *shortWord;
+	void *wideWord;
+};
+struct NSString {
+	void *p0;
+	size_t p1;
+	char *str;
+	int len;
+};
 EOF
 RUN
 
@@ -297,7 +327,7 @@ EOF
 EXPECT=<<EOF
 struct Employee {
 	struct objc_class *isa;
-	int16_t _shortWord;
+	short _shortWord;
 	struct NSString *_username;
 	struct NSString *_firstName;
 	uint64_t _wideWord;
