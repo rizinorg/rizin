@@ -192,7 +192,7 @@ static int type_parse_string(CParserState *state, const char *code, char **error
 	}
 
 	// After everything parsed, we should preserve the base type database
-	c_parser_state_free_keep_ht(state);
+	// And the state of the parser - anonymous structs, forward declarations, etc
 	ts_tree_delete(tree);
 	ts_parser_delete(parser);
 	return result;
