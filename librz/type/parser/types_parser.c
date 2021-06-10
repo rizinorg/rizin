@@ -926,7 +926,9 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 	}
 
 	// Now we form both RzType and RzBaseType to store in the Types database
-	char *base_type_name = type_pair->btype->name;
+	// Note, that if base type is NULL then it's forward definition and we should
+	// use the RzType identifier instead;
+	const char *base_type_name = rz_type_identifier(type_pair->type);
 	parser_debug(state, "typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
 	ParserTypePair *typedef_pair = c_parser_new_typedef(state, typedef_name, base_type_name);
 	if (!typedef_pair) {

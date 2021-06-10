@@ -859,11 +859,10 @@ RZ_API RZ_OWN char *rz_type_declaration_as_string(const RzTypeDB *typedb, RZ_NON
  * For example, for "char **ptr" it will return "ptr",
  * for "const int **arr[56][76]" it will return "arr"
  *
- * \param typedb Types Database instance
  * \param type RzType type
  */
-RZ_API RZ_BORROW const char *rz_type_identifier(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
-	rz_return_val_if_fail(typedb && type, NULL);
+RZ_API RZ_BORROW const char *rz_type_identifier(RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, NULL);
 
 	switch (type->kind) {
 	case RZ_TYPE_KIND_IDENTIFIER: {
@@ -871,10 +870,10 @@ RZ_API RZ_BORROW const char *rz_type_identifier(const RzTypeDB *typedb, RZ_NONNU
 		return type->identifier.name;
 	}
 	case RZ_TYPE_KIND_POINTER: {
-		return rz_type_identifier(typedb, type->pointer.type);
+		return rz_type_identifier(type->pointer.type);
 	}
 	case RZ_TYPE_KIND_ARRAY: {
-		return rz_type_identifier(typedb, type->array.type);
+		return rz_type_identifier(type->array.type);
 		break;
 	}
 	case RZ_TYPE_KIND_CALLABLE:
