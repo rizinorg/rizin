@@ -53,7 +53,7 @@ e asm.bits=64
 wx 48656c6c341248656c6c6f00000000000000000048656c6c6f0000000000000000009090
 td "typedef uint32_t WORD;"
 td "typedef struct _VbHeader { char szVbMagic[4]; WORD wRuntimeBuild; char szLangDll[14]; char szSecLangDll[14];} VbHeader;"
-tl VbHeader @ 0x00
+tl VbHeader 0x00
 pd 3
 EOF
 EXPECT=<<EOF
@@ -865,7 +865,7 @@ e asm.comments=false
 td "struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
 af
-tl bar 0x1958
+tl "struct bar" 0x1958
 ?e
 pdf~bar.
 EOF
@@ -940,7 +940,7 @@ e asm.bytes=true
 aa
 s main
 td "struct Books {char  title[50];char  author[50]; char  subject[100];};"
-tl Books 0x00177f18
+tl "struct Books" 0x00177f18
 ?e
 pdf~Books
 EOF
@@ -1784,7 +1784,7 @@ wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8
 td "struct foo {int a; int b; uint64_t c;};"
-tl "struct foo" @ 0x0
+tl "struct foo" 0x0
 pd 1
 EOF
 EXPECT=<<EOF
@@ -1802,7 +1802,7 @@ wx 0xa00f
 wx 0x401f @ 0x4
 wx 0800000000000080 @ 0x8
 td "struct foo {};"
-tl "struct foo" @ 0x0
+tl "struct foo" 0x0
 pd 1
 EOF
 EXPECT=<<EOF
