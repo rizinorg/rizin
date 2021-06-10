@@ -774,7 +774,7 @@ RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd);
 
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool argonly);
 
-/* linux_heap_glibc */
+/* linux_heap_glibc.c */
 RZ_API RzHeapChunk_64 *rz_get_heap_chunk_at_addr_64(RzCore *core, ut64 addr);
 RZ_API RzList *rz_get_bin_content_list_64(RzCore *core, MallocState *main_arena, int bin_num);
 RZ_API RzList *rz_get_arenas_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
@@ -782,7 +782,13 @@ RZ_API RzList *rz_get_heap_chunks_list_64(RzCore *core, MallocState *main_arena,
 RZ_API bool rz_resolve_main_arena_64(RzCore *core, ut64 *m_arena);
 RZ_API bool rz_update_main_arena_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
 RZ_API RzList *rz_get_tcache_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena, bool main_thread_only);
+RZ_API RzHeapChunk_32 *rz_get_heap_chunk_at_addr_32(RzCore *core, ut32 addr);
+RZ_API RzList *rz_get_bin_content_list_32(RzCore *core, MallocState *main_arena, int bin_num);
 RZ_API RzList *rz_get_arenas_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
+RZ_API RzList *rz_get_heap_chunks_list_32(RzCore *core, MallocState *main_arena, ut32 m_arena, ut32 m_state);
+RZ_API bool rz_resolve_main_arena_32(RzCore *core, ut32 *m_arena);
+RZ_API bool rz_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
+RZ_API RzList *rz_get_tcache_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena, bool main_thread_only);
 // XXX dupe from rz_bin.h
 /* bin.c */
 #define RZ_CORE_BIN_ACC_STRINGS          0x001

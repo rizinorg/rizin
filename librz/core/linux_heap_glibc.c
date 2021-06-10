@@ -558,7 +558,7 @@ void GH(print_heap_chunk)(RzCore *core, GHT chunk) {
  * @param addr Base address of the chunk
  * @return RzHeapChunk struct pointer of the chunk
  */
-RZ_API GH(RzHeapChunk) * GH(rz_get_heap_chunk_at_addr)(RzCore *core, ut64 addr) {
+RZ_API GH(RzHeapChunk) * GH(rz_get_heap_chunk_at_addr)(RzCore *core, GHT addr) {
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk) {
 		return NULL;
@@ -1377,9 +1377,26 @@ RZ_API RzList *GH(rz_get_bin_content_list)(RzCore *core, MallocState *main_arena
 	}
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk) {
-		return 0;
+		return chunks;
+	}
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
+	GH(get_brks)
+	(core, &brk_start, &brk_end);
+	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
+		eprintf("No Heap section\n");
+		return chunks;
+	}
+	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
+	if (tcache) {
+		const int fc_offset = rz_config_get_i(core->config, "dbg.glibc.fc_offset");
+		initial_brk = ((brk_start >> 12) << 12) + fc_offset;
+	} else {
+		initial_brk = (brk_start >> 12) << 12;
 	}
 	while (fw != head->fd) {
+		if (fw > main_arena->GH(top) || fw < initial_brk) {
+			break;
+		}
 		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		RzHeapChunkListItem *chunk = malloc(sizeof(RzHeapChunkListItem));
 		chunk->addr = fw;
