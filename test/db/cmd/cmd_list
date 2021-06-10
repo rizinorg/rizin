@@ -540,18 +540,10 @@ RUN
 NAME=Print the lang plugins
 FILE==
 CMDS=<<EOF
-Ll~vala
-Ll~rust
-Ll~zig
-Ll~spp
 Ll~^pipe
 Ll~lib
 EOF
 EXPECT=<<EOF
-vala: Vala language extension (LGPL)
-rust: Rust language extension (MIT)
-zig: Zig language extension (MIT)
-spp: SPP template programs (MIT)
 pipe: Use #!pipe node script.js (LGPL)
 lib: Load libs directly into rizin (LGPL)
 EOF
