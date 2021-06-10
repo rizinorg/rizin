@@ -35,19 +35,15 @@ FILE==
 CMDS=<<EOF
 to bins/headers/s3.h
 t S1
-tk S1
-tk struct.S1
-tk struct.S1.x
-tk struct.S1.y
-tk struct.S1.z
+tsc S1
 EOF
 EXPECT=<<EOF
 pf [3]d[4]dd x y z
-struct
-x,y,z
-int32_t,0,3
-int32_t,12,4
-int32_t,28,0
+struct S1 {
+	int x[3];
+	int y[4];
+	int z;
+};
 EOF
 RUN
 
@@ -55,20 +51,27 @@ NAME=to typedefs
 FILE==
 CMDS=<<EOF
 to bins/headers/t1.h
-tk~easy,humans,days,tokyo,dangerous
+tt easy_prey
+ttc easy_prey
+tt humans
+ttc humans
+tt days
+ttc days
+tt tokyo
+ttc tokyo
+tsc dangerous
 EOF
 EXPECT=<<EOF
-dangerous=struct
-days=typedef
-easy_prey=typedef
-humans=typedef
-struct.dangerous=neo
-struct.dangerous.neo=uint64_t,0,0
-struct.dangerous.neo.meta=13
-tokyo=typedef
-typedef.days=struct dangerous
-typedef.easy_prey=uint32_t
-typedef.humans=uint32_t
-typedef.tokyo=struct dangerous
+easy_prey = uint32_t
+typedef uint32_t easy_prey;
+humans = easy_prey
+typedef easy_prey humans;
+days = struct dangerous
+typedef struct dangerous days;
+tokyo = struct dangerous
+typedef struct dangerous tokyo;
+struct dangerous {
+	uint64_t neo;
+};
 EOF
 RUN
