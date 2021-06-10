@@ -5,10 +5,6 @@ rz_lang_sources = [
   #'p/cpipe.c',
   #'p/lib.c',
   #'p/pipe.c',
-  #'p/rust.c',
-  #'p/vala.c'
-  #'p/zig.c',
-  #'p/spp.c',
 ]
 
 rz_lang = library('rz_lang', rz_lang_sources,
