@@ -77,7 +77,13 @@ static void create_section_from_phdr(ELFOBJ *bin, RzBinElfSection *section, size
 }
 
 static const char *get_plt_name(ELFOBJ *bin) {
-	if (bin->dyn_info.dt_pltrel == DT_REL) {
+	ut64 dt_pltrel;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTREL, &dt_pltrel)) {
+		return NULL;
+	}
+
+	if (dt_pltrel == DT_REL) {
 		return ".rel.plt";
 	}
 
@@ -85,12 +91,27 @@ static const char *get_plt_name(ELFOBJ *bin) {
 }
 
 static void create_section_plt(ELFOBJ *bin, RzBinElfSection *section, size_t *pos) {
+	ut64 addr;
+	ut64 size;
+
 	const char *plt_name = get_plt_name(bin);
-	create_section_from_phdr(bin, section, pos, plt_name, bin->dyn_info.dt_jmprel, bin->dyn_info.dt_pltrelsz);
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_JMPREL, &addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTRELSZ, &size)) {
+		return;
+	}
+
+	create_section_from_phdr(bin, section, pos, plt_name, addr, size);
 }
 
 static RzBinElfSection *get_sections_from_dt_dynamic(ELFOBJ *bin) {
+	ut64 addr;
+	ut64 size;
+
 	size_t pos = 0;
+
+	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
+		return NULL;
+	}
 
 	RzBinElfSection *ret = RZ_NEWS(RzBinElfSection, 5);
 	if (!ret) {
@@ -98,9 +119,18 @@ static RzBinElfSection *get_sections_from_dt_dynamic(ELFOBJ *bin) {
 	}
 
 	// There is no info about the got size
-	create_section_from_phdr(bin, ret + pos, &pos, ".got.plt", bin->dyn_info.dt_pltgot, 0);
-	create_section_from_phdr(bin, ret + pos, &pos, ".rel.dyn", bin->dyn_info.dt_rel, bin->dyn_info.dt_relsz);
-	create_section_from_phdr(bin, ret + pos, &pos, ".rela.dyn", bin->dyn_info.dt_rela, bin->dyn_info.dt_relasz);
+	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &addr)) {
+		create_section_from_phdr(bin, ret + pos, &pos, ".got.plt", addr, 0);
+	}
+
+	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_REL, &addr) && Elf_(rz_bin_elf_get_dt_info)(bin, DT_RELSZ, &size)) {
+		create_section_from_phdr(bin, ret + pos, &pos, ".rel.dyn", addr, size);
+	}
+
+	if (Elf_(rz_bin_elf_get_dt_info)(bin, DT_RELA, &addr) && Elf_(rz_bin_elf_get_dt_info)(bin, DT_RELASZ, &size)) {
+		create_section_from_phdr(bin, ret + pos, &pos, ".rela.dyn", addr, size);
+	}
+
 	create_section_plt(bin, ret + pos, &pos);
 
 	ret[pos].last = 1;

@@ -4477,7 +4477,7 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	}
 	PJ *pj = NULL;
 	if (mode == 'j') {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return 0;
 		}

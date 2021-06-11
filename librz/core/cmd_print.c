@@ -3281,7 +3281,7 @@ static void cmd_print_pv(RzCore *core, const char *input, bool useBytes) {
 		break;
 	}
 	case 'j': { // "pvj"
-		PJ *pj = rz_core_pj_new(core);
+		PJ *pj = pj_new();
 		if (!pj) {
 			return;
 		}
@@ -4634,7 +4634,7 @@ static void print_json_string(RzCore *core, const char *block, ut32 len, RzCoreS
 		kindstr = "unknown";
 		break;
 	}
-	PJ *pj = rz_core_pj_new(core);
+	PJ *pj = pj_new();
 	if (!pj) {
 		return;
 	}
@@ -6022,7 +6022,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 														    "| /m           # search for magic signatures\n");
 		} else if (input[1] == 'j') { // "pmj"
 			const char *filename = rz_str_trim_head_ro(input + 2);
-			PJ *pj = rz_core_pj_new(core);
+			PJ *pj = pj_new();
 			rz_core_magic(core, filename, true, pj);
 			rz_cons_println(pj_string(pj));
 			pj_free(pj);

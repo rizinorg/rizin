@@ -24,7 +24,7 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 		char *result = rz_analysis_cc_get(core->analysis, ccname);
 		if (result) {
 			if (mode == RZ_OUTPUT_MODE_JSON) {
-				PJ *pj = rz_core_pj_new(core);
+				PJ *pj = pj_new();
 				pj_a(pj);
 				pj_ks(pj, "cc", result);
 				pj_end(pj);
@@ -682,7 +682,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				if (member_value) {
 					types_enum_member_find(core, name, member_value);
 				} else {
-					PJ *pj = rz_core_pj_new(core);
+					PJ *pj = pj_new();
 					rz_core_types_enum_print(core, name, RZ_OUTPUT_MODE_JSON, pj);
 					pj_end(pj);
 					rz_cons_println(pj_string(pj));
@@ -945,7 +945,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 		case 'j': // "tfj"
 			if (input[2] == ' ') {
 				const char *name = rz_str_trim_head_ro(input + 2);
-				PJ *pj = rz_core_pj_new(core);
+				PJ *pj = pj_new();
 				rz_types_function_print(typedb, name, RZ_OUTPUT_MODE_JSON, pj);
 				pj_end(pj);
 				rz_cons_println(pj_string(pj));
@@ -1071,7 +1071,7 @@ RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char 
 		if (member_value) {
 			return types_enum_member_find(core, enum_name, member_value);
 		} else {
-			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
+			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 			rz_core_types_enum_print(core, enum_name, mode, pj);
 			if (mode == RZ_OUTPUT_MODE_JSON) {
 				rz_cons_println(pj_string(pj));
@@ -1126,7 +1126,7 @@ RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *function = argc > 1 ? argv[1] : NULL;
 	if (function) {
-		PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
+		PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 		rz_types_function_print(core->analysis->typedb, function, mode, pj);
 		if (mode == RZ_OUTPUT_MODE_JSON) {
 			rz_cons_println(pj_string(pj));

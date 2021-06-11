@@ -36,8 +36,11 @@ static char *regstate(RzBinFile *bf) {
 		obj->ehdr.e_machine != EM_ARM &&
 		obj->ehdr.e_machine != EM_386 &&
 		obj->ehdr.e_machine != EM_X86_64) {
-		eprintf("Cannot retrieve regstate on: %s (not yet supported)\n",
-			Elf_(rz_bin_elf_get_machine_name)(obj));
+
+		char *machine_name = Elf_(rz_bin_elf_get_machine_name)(obj);
+		eprintf("Cannot retrieve regstate on: %s (not yet supported)\n", machine_name);
+		free(machine_name);
+
 		return NULL;
 	}
 

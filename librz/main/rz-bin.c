@@ -862,7 +862,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	PJ *pj = NULL;
 	if (rad == RZ_MODE_JSON) {
-		pj = rz_core_pj_new(&core);
+		pj = pj_new();
 		if (!pj) {
 			return 1;
 		}

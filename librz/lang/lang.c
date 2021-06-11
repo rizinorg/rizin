@@ -7,10 +7,6 @@
 RZ_LIB_VERSION(rz_lang);
 
 #include "p/pipe.c" // hardcoded
-#include "p/vala.c" // hardcoded
-#include "p/rust.c" // hardcoded
-#include "p/zig.c" // hardcoded
-#include "p/spp.c" // hardcoded
 #include "p/c.c" // hardcoded
 #include "p/lib.c"
 #if __UNIX__
@@ -48,10 +44,6 @@ RZ_API RzLang *rz_lang_new(void) {
 	rz_lang_add(lang, &rz_lang_plugin_c);
 	rz_lang_add(lang, &rz_lang_plugin_cpipe);
 #endif
-	rz_lang_add(lang, &rz_lang_plugin_vala);
-	rz_lang_add(lang, &rz_lang_plugin_rust);
-	rz_lang_add(lang, &rz_lang_plugin_zig);
-	rz_lang_add(lang, &rz_lang_plugin_spp);
 	rz_lang_add(lang, &rz_lang_plugin_pipe);
 	rz_lang_add(lang, &rz_lang_plugin_lib);
 
