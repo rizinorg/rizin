@@ -75,12 +75,22 @@ win_types_extra = [
   'ws2spi',
 ]
 
+fs = import('fs')
+
 foreach file : sdb_files
   outfile = '@0@.sdb'.format(file)
   infiles = ['@0@.sdb.txt'.format(file)]
   if file == 'types-windows'
     foreach f : win_types_extra
-      infiles += 'types-windows_@0@.sdb.txt'.format(f)
+      win_file = 'types-windows_@0@.sdb.txt'.format(f)
+      if fs.exists(win_file)
+          infiles += win_file
+      endif
+    endforeach
+  endif
+  if file == 'functions-windows'
+    foreach f : win_types_extra
+      infiles += 'functions-windows_@0@.sdb.txt'.format(f)
     endforeach
   endif
   custom_target(outfile,
