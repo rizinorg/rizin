@@ -109,6 +109,10 @@ static RzBinElfSection *get_sections_from_dt_dynamic(ELFOBJ *bin) {
 
 	size_t pos = 0;
 
+	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
+		return NULL;
+	}
+
 	RzBinElfSection *ret = RZ_NEWS(RzBinElfSection, 5);
 	if (!ret) {
 		return NULL;
