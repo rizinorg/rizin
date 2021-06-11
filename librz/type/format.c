@@ -2845,6 +2845,7 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 	}
 	rz_strbuf_appendf(format, " %s", rz_strbuf_drain(fields));
 	char *bufstr = rz_strbuf_drain(format);
+	rz_str_trim_tail(bufstr);
 	return bufstr;
 }
 
