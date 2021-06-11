@@ -149,6 +149,47 @@ RZ_API bool rz_type_db_load_arch_profile_sdb(RzArchTarget *t, const char *path) 
 	return sdb_load_arch_profile_by_path(t, path);
 }
 
+static bool is_cpu_valid(char *cpu_dir, const char *cpu) {
+	RzList *files = rz_sys_dir(cpu_dir);
+	if (!files) {
+		return false;
+	}
+	RzListIter *it;
+	char *filename = NULL;
+	char *cpu_name = NULL;
+	char *arch_cpu = NULL;
+	RzPVector *cpus = rz_pvector_new(NULL);
+	if (!cpus) {
+		rz_list_free(files);
+		return NULL;
+	}
+	rz_pvector_init(cpus, NULL);
+
+	rz_list_foreach (files, it, filename) {
+		if (!strcmp(filename, "..") || !strcmp(filename, "..")) {
+			continue;
+		}
+		arch_cpu = rz_str_ndup(filename, strlen(filename) - 4);
+		if (!arch_cpu)
+			continue;
+		cpu_name = strchr(arch_cpu, '-');
+		rz_str_remove_char(cpu_name, '-');
+		rz_pvector_push(cpus, cpu_name);
+	}
+	rz_list_free(files);
+	free(arch_cpu);
+
+	void **ita;
+	rz_pvector_foreach (cpus, ita) {
+		if (!strcmp(*ita, cpu)) {
+			rz_pvector_free(cpus);
+			return true;
+		}
+	}
+	rz_pvector_free(cpus);
+	return false;
+}
+
 /**
  * \brief Initializes RzArchProfile by loading the path to the SDB file
  * 		  of the CPU profile
@@ -167,10 +208,19 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 	if (!path) {
 		return false;
 	}
+	char *cpu_dir = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB, "asm/cpus"), dir_prefix);
+	if (!is_cpu_valid(cpu_dir, cpu)) {
+		if (arch) {
+			if (!strcmp(arch, "avr")) {
+				path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "avr-ATmega8.sdb"), dir_prefix);
+			}
+		}
+	}
 	if (!rz_type_db_load_arch_profile_sdb(t, path)) {
 		sdb_free(t->db);
 		t->db = NULL;
 	}
 	free(path);
+	free(cpu_dir);
 	return true;
 }

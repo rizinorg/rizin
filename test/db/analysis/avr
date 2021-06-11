@@ -138,6 +138,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=test adding fake CPUs and loading new profiles
+FILE=bins/firmware/arduino_avr.bin
+CMDS=<<EOF
+e asm.cpu=ATTiny4_fake_cpu
+aa
+pd 5 @ 0x03c
+EOF
+EXPECT=<<EOF
+        ,=< 0x0000003c  ~   jmp   0x1b6
+        |   ;-- SPL:
+        |   0x0000003d      unaligned
+        |   ;-- SPH:
+        |   0x0000003e  ~   invalid
+        |   ;-- SREG:
+        |   0x0000003f      unaligned
+       ,==< 0x00000040      jmp   0x3f8
+EOF
+RUN
+
 NAME=avr br - forward branch
 FILE=malloc://1024
 CMDS=<<EOF
