@@ -264,7 +264,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 	rz_return_val_if_fail(!ts_node_is_null(node), -1);
 	rz_return_val_if_fail(ts_node_is_named(node), -1);
 
-	parser_error(state, "parse_struct_node()\n");
+	parser_debug(state, "parse_struct_node()\n");
 
 	int struct_node_child_count = ts_node_named_child_count(node);
 	if (struct_node_child_count < 1 || struct_node_child_count > 2) {
@@ -886,7 +886,7 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 	parser_debug(state, "parse_typedef_node()\n");
 
 	int typedef_node_child_count = ts_node_named_child_count(node);
-	if (typedef_node_child_count != 2) {
+	if (typedef_node_child_count < 2) {
 		node_malformed_error(state, node, text, "typedef");
 		return -1;
 	}
