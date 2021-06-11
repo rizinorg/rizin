@@ -13,14 +13,14 @@ typedef.u_long=unsigned long
 __int64=typedef
 typedef.__int64=int64_t
 
-unsigned __int64=typedef
-typedef.unsigned __int64=uint64_t
+__uint64=typedef
+typedef.__uint64=uint64_t
 
 __int32=typedef
 typedef.__int32=int32_t
 
-unsigned __int32=typedef
-typedef.unsigned __int32=uint32_t
+__uint32=typedef
+typedef.__uint32=uint32_t
 
 ATOM=typedef
 typedef.ATOM=int32_t
@@ -667,12 +667,14 @@ type.LPCSTR=s
 LPCWSTR=type
 type.LPCWSTR=z
 
-HCERTSTORE=type
-type.HCERTSTORE=p
+HCERTSTORE=typedef
+typedef.HCERTSTORE=HANDLE
 
+IUnknown=typedef
+typedef.IUnknown=void
 
-HCRYPTMSG=type
-type.HCRYPTMSG=p
+HCRYPTMSG=typedef
+typedef.HCRYPTMSG=HANDLE
 
 HCERT_SERVER_OCSP_RESPONSE=type
 type.HCERT_SERVER_OCSP_RESPONSE=p
@@ -2122,6 +2124,23 @@ type.PCOMPRESSOR_HANDLE=p
 
 COMPRESS_INFORMATION_CLASS=typedef
 typedef.COMPRESS_INFORMATION_CLASS=int
+
+tagDEC=struct
+struct.tagDEC=wReserved,scale,sign,Hi32,Lo64
+struct.tagDEC.wReserved=USHORT,0,0
+struct.tagDEC.scale=BYTE,2,0
+struct.tagDEC.sign=BYTE,3,0
+struct.tagDEC.Hi32=ULONG,4,0
+struct.tagDEC.Lo64=ULONGLONG,8,0
+
+DECIMAL=typedef
+typedef.DECIMAL=struct tagDEC
+
+PDECIMAL=typedef
+typedef.PDECIMAL=struct tagDEC*
+
+LPDECIMAL=typedef
+typedef.LPDECIMAL=struct tagDEC*
 
 timeval=struct
 struct.timeval=tv_sec,tv_usec
