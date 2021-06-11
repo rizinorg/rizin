@@ -98,7 +98,6 @@ static const RzCmdDescArg cmd_debug_deallocate_map_args[2];
 static const RzCmdDescArg cmd_debug_dump_maps_args[2];
 static const RzCmdDescArg cmd_heap_chunks_print_args[2];
 static const RzCmdDescArg cmd_heap_bins_list_print_args[2];
-static const RzCmdDescArg cmd_heap_chunk_print_args[2];
 static const RzCmdDescArg cmd_heap_arena_bins_print_args[2];
 static const RzCmdDescArg cmd_heap_fastbins_print_args[2];
 static const RzCmdDescArg cmd_heap_chunks_graph_args[2];
@@ -1748,16 +1747,10 @@ static const RzCmdDescHelp cmd_heap_bins_list_print_help = {
 };
 
 static const RzCmdDescArg cmd_heap_chunk_print_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_RZNUM,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
-
-	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_heap_chunk_print_help = {
-	.summary = "Get info about heap chunk at <addr>",
+	.summary = "Get info about heap chunk at offset",
 	.args = cmd_heap_chunk_print_args,
 };
 

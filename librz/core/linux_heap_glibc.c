@@ -2113,7 +2113,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunk_print_handler)(RzCore *core, int argc, c
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	ut64 addr = rz_num_get(NULL, argv[1]);
+	ut64 addr = core->offset;
 	GH(print_heap_chunk)
 	(core, addr);
 	free(main_arena);
@@ -2172,8 +2172,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int GH(rz_cmd_heap_bins_list_print)(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
+RZ_IPI int GH(rz_cmd_heap_bins_list_print)(RzCore *core, const char *input) {
 	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
