@@ -17,7 +17,7 @@ RZ_API RzSyscall *rz_syscall_ref(RzSyscall *sc) {
 /**
  * \brief Creates a new RzSysregItem type
  *
- * \param name Name of the callable type
+ * \param name Name of the SysregItem (sysregitem->name)
  */
 RZ_API RZ_OWN RzSysregItem *rz_sysreg_item_new(RZ_NULLABLE const char *name) {
 	RzSysregItem *sysregitem = RZ_NEW0(RzSysregItem);
@@ -40,6 +40,7 @@ RZ_API RzSysregsDB *rz_sysregs_db_new() {
 	}
 	sysregdb->port = ht_up_new0();
 	if (!sysregdb->port) {
+		free(sysregdb);
 		return NULL;
 	}
 	return sysregdb;
@@ -416,7 +417,8 @@ RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 port) {
 		return NULL;
 	}
 	RzSysregItem *item = ht_up_find(s->srdb->port, port, NULL);
-	if (item)
+	if (item && !strcmp(item->type, type)) {
 		return item->comment;
+	}
 	return NULL;
 }

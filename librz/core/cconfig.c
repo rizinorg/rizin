@@ -432,6 +432,10 @@ static bool cb_asmcpu(void *user, void *data) {
 	}
 	rz_asm_set_cpu(core->rasm, node->value);
 	rz_config_set(core->config, "analysis.cpu", node->value);
+
+	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
+	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), dir_prefix);
+
 	return true;
 }
 
@@ -558,11 +562,13 @@ static bool cb_asmarch(void *user, void *data) {
 	// set pcalign
 	if (core->analysis) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
+		const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 		if (!rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
+		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, dir_prefix);
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");
@@ -607,6 +613,7 @@ static bool cb_asmarch(void *user, void *data) {
 
 	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	rz_sysreg_set_arch(core->analysis->syscall, node->value, dir_prefix);
+	rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, rz_config_get(core->config, "asm.arch"), dir_prefix);
 
 	return true;
 }
