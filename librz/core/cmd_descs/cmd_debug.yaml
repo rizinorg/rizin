@@ -165,7 +165,7 @@ commands:
         summary: >
           Change page at <address> with <size>, protection <perms>
           / Change dbg.map permissions to <perm>
-        cname: cmd_debug_dmp
+        cname: debug_memory_permission
         args:
           - name: addr
             type: RZ_CMD_ARG_TYPE_NUM

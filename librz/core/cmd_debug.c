@@ -221,34 +221,6 @@ static const char *help_msg_dko[] = {
 	NULL
 };
 
-//static const char *help_msg_dm[] = {
-//	"Usage:", "dm", " # Memory maps commands",
-//	"dm", "", "List memory maps of target process",
-//	"dm", " address size", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
-//	"dm=", "", "List memory maps of target process (ascii-art bars)",
-//	"dm.", "", "Show map name of current address",
-//	"dm*", "", "List memmaps in rizin commands",
-//	"dm-", " address", "Deallocate memory map of <address>",
-//	"dmd", "[a] [file]", "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
-//	"dmh", "[?]", "Show map of heap",
-//	"dmi", " [addr|libname] [symname]", "List symbols of target lib",
-//	"dmi*", " [addr|libname] [symname]", "List symbols of target lib in rizin commands",
-//	"dmi.", "", "List closest symbol to the current address",
-//	"dmiv", "", "Show address of given symbol for given lib",
-//	"dmj", "", "List memmaps in JSON format",
-//	"dml", " <file>", "Load contents of file into the current map region",
-//	"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
-//	"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (perm)",
-//	"dms", "[?] <id> <mapaddr>", "Take memory snapshot",
-//	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
-//	"dmS", " [addr|libname] [sectname]", "List sections of target lib",
-//	"dmS*", " [addr|libname] [sectname]", "List sections of target lib in rizin commands",
-//	"dmL", " address size", "Allocate <size> bytes at <address> and promote to huge page",
-//	//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
-//	"TODO:", "", "map files in process memory. (dmf file @ [addr])",
-//	NULL
-//};
-
 static const char *help_msg_dmi[] = {
 	"Usage: dmi", "", " # List/Load Symbols",
 	"dmi", "[j|q|*] [libname] [symname]", "List symbols of target lib",
@@ -1685,7 +1657,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 }
 
 // dmp
-RZ_IPI RzCmdStatus rz_cmd_debug_dmp_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_debug_memory_permission_handler(RzCore *core, int argc, const char **argv) {
 	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr = 0, size = 0;

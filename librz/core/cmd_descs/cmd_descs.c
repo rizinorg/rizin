@@ -105,7 +105,7 @@ static const RzCmdDescArg cmd_heap_chunks_graph_args[2];
 static const RzCmdDescArg cmd_heap_info_print_args[2];
 static const RzCmdDescArg cmd_main_arena_print_args[2];
 static const RzCmdDescArg cmd_debug_dml_args[2];
-static const RzCmdDescArg cmd_debug_dmp_args[4];
+static const RzCmdDescArg debug_memory_permission_args[4];
 static const RzCmdDescArg cmd_debug_dmL_args[3];
 static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg eval_getset_args[2];
@@ -1862,7 +1862,7 @@ static const RzCmdDescHelp cmd_debug_dml_help = {
 	.args = cmd_debug_dml_args,
 };
 
-static const RzCmdDescArg cmd_debug_dmp_args[] = {
+static const RzCmdDescArg debug_memory_permission_args[] = {
 	{
 		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_NUM,
@@ -1884,9 +1884,9 @@ static const RzCmdDescArg cmd_debug_dmp_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp cmd_debug_dmp_help = {
+static const RzCmdDescHelp debug_memory_permission_help = {
 	.summary = "Change page at <address> with <size>, protection <perms> / Change dbg.map permissions to <perm>",
-	.args = cmd_debug_dmp_args,
+	.args = debug_memory_permission_args,
 };
 
 static const RzCmdDescArg cmd_debug_dmL_args[] = {
@@ -4919,8 +4919,8 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_dml_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dml", rz_cmd_debug_dml_handler, &cmd_debug_dml_help);
 	rz_warn_if_fail(cmd_debug_dml_cd);
 
-	RzCmdDesc *cmd_debug_dmp_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmp", rz_cmd_debug_dmp_handler, &cmd_debug_dmp_help);
-	rz_warn_if_fail(cmd_debug_dmp_cd);
+	RzCmdDesc *debug_memory_permission_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmp", rz_debug_memory_permission_handler, &debug_memory_permission_help);
+	rz_warn_if_fail(debug_memory_permission_cd);
 
 	RzCmdDesc *cmd_debug_dmL_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmL", rz_cmd_debug_dmL_handler, &cmd_debug_dmL_help);
 	rz_warn_if_fail(cmd_debug_dmL_cd);
