@@ -85,7 +85,7 @@ commands:
       - name: dm
         cname: cmd_debug_list_maps
         summary: >
-          List memory maps / Allocate <size> bytes at <address>
+          List memory maps / Allocate <size> bytes at <addr>
           (anywhere if address is -1)
         modes:
           - RZ_OUTPUT_MODE_STANDARD
@@ -93,7 +93,7 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args:
-          - name: address
+          - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
           - name: size
@@ -123,12 +123,12 @@ commands:
             summary: List memory map of current module
             args: []
       - name: dm-
-        summary: Deallocate memory map of <address>
+        summary: Deallocate memory map of <addr>
         cname: cmd_debug_deallocate_map
         args:
-          - name: address
+          - name: addr
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: false
+            optional: true
       - name: dmd
         summary: Dump debug map regions to a file (from-to.dmp)
         subcommands:
@@ -163,7 +163,7 @@ commands:
             optional: false
       - name: dmp
         summary: >
-          Change page at <address> with <size>, protection <perms>
+          Change page at <addr> with <size>, protection <perms>
           / Change dbg.map permissions to <perm>
         cname: debug_memory_permission
         args:
@@ -177,11 +177,9 @@ commands:
             type: RZ_CMD_ARG_TYPE_STRING
             optional: false
       - name: dmL
-        summary: Allocate <size> bytes at <address> and promote to huge page
+        summary: Allocate <size> bytes at <offset> and promote to huge page
         cname: cmd_debug_dmL
         args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_NUM
           - name: size
             type: RZ_CMD_ARG_TYPE_NUM
       - name: dmS

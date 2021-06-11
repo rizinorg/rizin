@@ -1449,7 +1449,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, 
 RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, const char **argv) {
 	RzListIter *iter;
 	RzDebugMap *map;
-	ut64 addr = rz_num_math(core->num, argv[1]);
+	ut64 addr = INT64_MAX;
+	if (argc == 0) {
+		addr = core->offset;
+	} else if (argc == 1) {
+		addr = rz_num_math(core->num, argv[1]);
+	}
 	rz_list_foreach (core->dbg->maps, iter, map) {
 		if (addr >= map->addr && addr < map->addr_end) {
 			rz_debug_map_dealloc(core->dbg, map);
@@ -1778,8 +1783,8 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char **argv) {
 	int size;
 	ut64 addr;
-	addr = rz_num_math(core->num, argv[1]);
-	size = (int)rz_num_math(core->num, argv[2]);
+	addr = core->offset;
+	size = (int)rz_num_math(core->num, argv[1]);
 	rz_debug_map_alloc(core->dbg, addr, size, true);
 	return RZ_CMD_STATUS_OK;
 }
