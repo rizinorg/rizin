@@ -159,30 +159,49 @@ RUN
 
 NAME=t
 FILE==
-CMDS=t~char,double,float,int,long,short,size,uid,void # basic universal types
+CMDS=<<EOF
+t char
+t double
+t "long double"
+t float
+t int
+t short
+t long
+t "long long"
+t size_t
+t uid_t
+t void
+t int8_t
+t uint8_t
+t int16_t
+t uint16_t
+t int32_t
+t uint32_t
+t int64_t
+t uint64_t
+t char16_t
+EOF
 EXPECT=<<EOF
-char
-char *
-double
-float
-int
-int16_t
-int32_t
-int64_t
-int8_t
-long
-long long
-short
-size_t
-uid_t
-uint16_t
-uint32_t
-uint64_t
-uint8_t
-unsigned char
-unsigned int
-unsigned short
-void *
+pf c
+pf F
+pf F
+pf F
+pf d
+pf w
+pf x
+pf q
+pf d
+pf d
+pf
+pf b
+pf b
+pf w
+pf w
+pf d
+pf d
+pf q
+pf q
+pf c
 EOF
 RUN
 
@@ -197,6 +216,7 @@ EXPECT=<<EOF
 pf d
 EOF
 EXPECT_ERR=<<EOF
+Cannot find type "int"
 Cannot find 'int' type
 EOF
 RUN
@@ -239,14 +259,17 @@ tu xoo
 tuc xoo
 EOF
 EXPECT=<<EOF
-x: int
-y: int
-z: int
+pf 0ddd (int)x (int)y (int)z
 union xoo {
 	int x;
 	int y;
-	int z
+	int z;
 };
+EOF
+EXPECT_ERR=<<EOF
+Cannot find type "xoo"
+Cannot find 'xoo' type
+Cannot find type "xoo"
 EOF
 RUN
 
@@ -368,10 +391,12 @@ NAME=td struct
 FILE==
 CMDS=<<EOF
 td "struct test_struct{int x;int y;};"
-ts~?test_struct
+ts test_struct
+tsd test_struct
 EOF
 EXPECT=<<EOF
-1
+pf ?dd (int)x (int)y
+struct test_struct {int x; int y;};
 EOF
 RUN
 
@@ -469,42 +494,62 @@ NAME=to test.h
 FILE==
 CMDS=<<EOF
 to bins/other/test.h
-t~char,double,float,int,long,short,size,uid,void # basic universal types
-ts~addr,date,dox,name
-t addr
+ts name
+tsd name
+tsc name
+ts date
+tsd date
+tsc date
+ts addr
+tsd addr
+tsc addr
+tsd dox
+tsc dox
+tt name_t
+ttc name_t
+tt date_t
+ttc date_t
+tt addr_t
+ttc addr_t
+tt dox_t
+ttc dox_t
 EOF
 EXPECT=<<EOF
-char
-char *
-double
-float
-int
-int16_t
-int32_t
-int64_t
-int8_t
-long
-long long
-short
-size_t
-uid_t
-uint16_t
-uint32_t
-uint64_t
-uint8_t
-unsigned char
-unsigned int
-unsigned short
-void *
-addr
-addr_t
-date
-date_t
-dox
-dox_t
-name
-name_t
-pf [127]z[40]zd street city zip
+pf ?[40]c[40]c[40]c (char)first (char)middle (char)last
+struct name {char first[40]; char middle[40]; char last[40];};
+struct name {
+	char first[40];
+	char middle[40];
+	char last[40];
+};
+pf ?bbw (uint8_t)day (uint8_t)month (uint16_t)year
+struct date {uint8_t day; uint8_t month; uint16_t year;};
+struct date {
+	uint8_t day;
+	uint8_t month;
+	uint16_t year;
+};
+pf ?[127]c[40]cd (char)street (char)city (uint32_t)zip
+struct addr {char street[127]; char city[40]; uint32_t zip;};
+struct addr {
+	char street[127];
+	char city[40];
+	uint32_t zip;
+};
+struct dox {addr_t address; name_t name; date_t bday;};
+struct dox {
+	addr_t address;
+	name_t name;
+	date_t bday;
+};
+name_t = struct name
+typedef struct name name_t;
+date_t = struct date
+typedef struct date date_t;
+addr_t = struct addr
+typedef struct addr addr_t;
+dox_t = struct dox
+typedef struct dox dox_t;
 EOF
 RUN
 
@@ -512,11 +557,15 @@ NAME=unions
 FILE==
 CMDS=<<EOF
 td "union x{float a;int b;}"
-tu
+tu x
+tuc x
 EOF
 EXPECT=<<EOF
-a: float
-b: int
+pf 0fd (float)a (int)b
+union x {
+	float a;
+	int b;
+};
 EOF
 RUN
 
