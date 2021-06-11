@@ -636,7 +636,7 @@ static bool is_section_local_symbol(ELFOBJ *bin, Elf_(Sym) * symbol) {
 }
 
 static void set_elf_symbol_name(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol) {
-	if (is_section_local_symbol(bin, symbol) && bin->shstrtab && symbol->st_name < bin->shstrtab_size) {
+	if (bin->shdr && is_section_local_symbol(bin, symbol) && bin->shstrtab && symbol->st_name < bin->shstrtab_size) {
 		const char *name = bin->shstrtab + bin->shdr[symbol->st_shndx].sh_name;
 		rz_str_ncpy(elf_symbol->name, name, ELF_STRING_LENGTH);
 	} else if (bin->strtab && symbol->st_name < bin->strtab_size) {
