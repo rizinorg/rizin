@@ -1345,37 +1345,6 @@ static RzDebugMap *get_closest_map(RzCore *core, ut64 addr) {
 	return NULL;
 }
 
-static int rz_debug_heap(RzCore *core, const char *input) {
-	const char *m = rz_config_get(core->config, "dbg.malloc");
-	if (m && !strcmp("glibc", m)) {
-//#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-//		if (core->rasm->bits == 64) {
-//			cmd_dbg_map_heap_glibc_64(core, input);
-//		} else {
-//			cmd_dbg_map_heap_glibc_32(core, input);
-//		}
-//#else
-//		eprintf("glibc not supported for this platform\n");
-//#endif
-#if HAVE_JEMALLOC
-	} else if (m && !strcmp("jemalloc", m)) {
-		if (core->rasm->bits == 64) {
-			cmd_dbg_map_jemalloc_64(core, input);
-		} else {
-			cmd_dbg_map_jemalloc_32(core, input);
-		}
-#endif
-	} else {
-#if __WINDOWS__
-		cmd_debug_map_heap_win(core, input);
-#else
-		eprintf("MALLOC algorithm not supported\n");
-		return false;
-#endif
-	}
-	return true;
-}
-
 static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, int mode, bool symbols_only, RzCoreBinFilter *filter) {
 	int fd;
 	if ((fd = rz_io_fd_open(core->io, file, RZ_PERM_R, 0)) == -1) {
@@ -1465,12 +1434,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, c
 	}
 	RzListIter *iter;
 	RzDebugMap *map;
-	ut64 addr = INT64_MAX;
-	if (argc == 0) {
-		addr = core->offset;
-	} else if (argc == 1) {
-		addr = rz_num_math(core->num, argv[1]);
-	}
+	ut64 addr = core->offset;
 	rz_list_foreach (core->dbg->maps, iter, map) {
 		if (addr >= map->addr && addr < map->addr_end) {
 			rz_debug_map_dealloc(core->dbg, map);
@@ -1705,14 +1669,11 @@ RZ_IPI RzCmdStatus rz_debug_memory_permission_handler(RzCore *core, int argc, co
 	RzDebugMap *map;
 	ut64 addr = 0, size = 0;
 	int perms;
-	if (argc == 4) { // dmp <addr> <size> <perms>
-		addr = rz_num_math(core->num, argv[1]);
-		size = rz_num_math(core->num, argv[2]);
-		perms = rz_str_rwx(argv[3]);
-		//	eprintf ("(%s)(%s)(%s)\n", input + 2, p, q);
-		//	eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
+	if (argc == 3) { // dmp <size> <perms> @ <addr>
+		addr = core->offset;
+		size = rz_num_math(core->num, argv[1]);
+		perms = rz_str_rwx(argv[2]);
 		rz_debug_map_protect(core->dbg, addr, (int)size, perms);
-		return RZ_CMD_STATUS_OK;
 	} else if (argc == 2) { // dmp <perms>
 		addr = UT64_MAX;
 		rz_list_foreach (core->dbg->maps, iter, map) {
@@ -1725,13 +1686,13 @@ RZ_IPI RzCmdStatus rz_debug_memory_permission_handler(RzCore *core, int argc, co
 		perms = rz_str_rwx(argv[1]);
 		if (addr != UT64_MAX && perms >= 0) {
 			rz_debug_map_protect(core->dbg, addr, (int)size, perms);
-			return RZ_CMD_STATUS_OK;
 		} else {
 			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
 	} else {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char **argv, RzOutputMode m) {

@@ -123,12 +123,9 @@ commands:
             summary: List memory map of current module
             args: []
       - name: dm-
-        summary: Deallocate memory map of <addr>
+        summary: Deallocate memory map at <offset>
         cname: cmd_debug_deallocate_map
-        args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
+        args: []
       - name: dmd
         summary: Dump debug map regions to a file (from-to.dmp)
         subcommands:
@@ -163,19 +160,16 @@ commands:
             optional: false
       - name: dmp
         summary: >
-          Change page at <addr> with <size>, protection <perms>
-          / Change dbg.map permissions to <perm>
+          Change page at <offset> with <size>, protection <perms>
+          / Change dbg.map permissions to <perms>
         cname: debug_memory_permission
         args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
-          - name: size
-            type: RZ_CMD_ARG_TYPE_NUM
-            optional: true
           - name: perms
             type: RZ_CMD_ARG_TYPE_STRING
             optional: false
+          - name: size
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
       - name: dmL
         summary: Allocate <size> bytes at <offset> and promote to huge page
         cname: cmd_debug_dmL
@@ -204,4 +198,4 @@ commands:
         summary: Jemalloc heap commands
         cname: cmd_debug_heap_jemalloc
         type: RZ_CMD_DESC_TYPE_OLDINPUT
-        args: [ ]
+        args: []
