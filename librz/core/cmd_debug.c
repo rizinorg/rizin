@@ -1383,18 +1383,20 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const 
 		rz_cons_println("Debugging is not enabled. Run ood?");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (argc == 1) {
-		rz_debug_map_sync(core->dbg); // update process memory maps
-		rz_debug_map_print(core->dbg, core->offset, mode);
-	} else if (argc == 3) {
-		int size;
-		ut64 addr;
-		addr = rz_num_math(core->num, argv[1]);
-		size = (int)rz_num_math(core->num, argv[2]);
-		rz_debug_map_alloc(core->dbg, addr, size, false);
-	} else {
-		return RZ_CMD_STATUS_WRONG_ARGS;
+	rz_debug_map_sync(core->dbg); // update process memory maps
+	rz_debug_map_print(core->dbg, core->offset, mode);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dma
+RZ_IPI RzCmdStatus rz_cmd_debug_allocate_maps_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
 	}
+	ut64 addr = core->offset;
+	int size = (int)rz_num_math(core->num, argv[1]);
+	rz_debug_map_alloc(core->dbg, addr, size, false);
 	return RZ_CMD_STATUS_OK;
 }
 

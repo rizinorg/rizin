@@ -85,20 +85,22 @@ commands:
       - name: dm
         cname: cmd_debug_list_maps
         summary: >
-          List memory maps / Allocate <size> bytes at <addr>
-          (anywhere if address is -1)
+          List memory maps
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
+        args: []
+      - name: dma
+        cname: cmd_debug_allocate_maps
+        summary: >
+          Allocate <size> bytes at <offset>
+          (anywhere if offset is -1)
         args:
-          - name: addr
-            type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: true
+            optional: false
       - name: dm=
         cname: cmd_debug_list_maps_ascii
         summary: List memory maps of current process with ASCII art bars
