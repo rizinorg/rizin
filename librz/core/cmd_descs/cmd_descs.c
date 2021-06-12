@@ -105,7 +105,7 @@ static const RzCmdDescArg cmd_heap_info_print_args[2];
 static const RzCmdDescArg cmd_main_arena_print_args[2];
 static const RzCmdDescArg cmd_debug_dml_args[2];
 static const RzCmdDescArg debug_memory_permission_args[4];
-static const RzCmdDescArg cmd_debug_dmL_args[3];
+static const RzCmdDescArg cmd_debug_dmL_args[2];
 static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
@@ -1603,7 +1603,7 @@ static const RzCmdDescHelp dm_help = {
 };
 static const RzCmdDescArg cmd_debug_list_maps_args[] = {
 	{
-		.name = "address",
+		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.optional = true,
 
@@ -1618,7 +1618,7 @@ static const RzCmdDescArg cmd_debug_list_maps_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_list_maps_help = {
-	.summary = "List memory maps / Allocate <size> bytes at <address> (anywhere if address is -1)",
+	.summary = "List memory maps / Allocate <size> bytes at <addr> (anywhere if address is -1)",
 	.args = cmd_debug_list_maps_args,
 };
 
@@ -1659,16 +1659,16 @@ static const RzCmdDescHelp cmd_debug_current_modules_help = {
 
 static const RzCmdDescArg cmd_debug_deallocate_map_args[] = {
 	{
-		.name = "address",
+		.name = "addr",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = false,
+		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_deallocate_map_help = {
-	.summary = "Deallocate memory map of <address>",
+	.summary = "Deallocate memory map of <addr>",
 	.args = cmd_debug_deallocate_map_args,
 };
 
@@ -1878,16 +1878,11 @@ static const RzCmdDescArg debug_memory_permission_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp debug_memory_permission_help = {
-	.summary = "Change page at <address> with <size>, protection <perms> / Change dbg.map permissions to <perm>",
+	.summary = "Change page at <addr> with <size>, protection <perms> / Change dbg.map permissions to <perm>",
 	.args = debug_memory_permission_args,
 };
 
 static const RzCmdDescArg cmd_debug_dmL_args[] = {
-	{
-		.name = "addr",
-		.type = RZ_CMD_ARG_TYPE_NUM,
-
-	},
 	{
 		.name = "size",
 		.type = RZ_CMD_ARG_TYPE_NUM,
@@ -1896,7 +1891,7 @@ static const RzCmdDescArg cmd_debug_dmL_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_dmL_help = {
-	.summary = "Allocate <size> bytes at <address> and promote to huge page",
+	.summary = "Allocate <size> bytes at <offset> and promote to huge page",
 	.args = cmd_debug_dmL_args,
 };
 

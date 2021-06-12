@@ -1410,6 +1410,10 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 
 // dm
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	if (argc == 1) {
 		rz_debug_map_sync(core->dbg); // update process memory maps
 		rz_debug_map_print(core->dbg, core->offset, mode);
@@ -1427,6 +1431,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const 
 
 // dmm
 RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	if (!strcmp(argv[0] + 3, ".*")) {
 		cmd_debug_modules(core, ':');
 	} else {
@@ -1437,6 +1445,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const ch
 
 // dmm.
 RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	if (!strcmp(argv[0] + 3, ".*")) {
 		cmd_debug_modules(core, ':');
 	} else {
@@ -1447,6 +1459,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, 
 
 // dm-
 RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr = INT64_MAX;
@@ -1468,6 +1484,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_deallocate_map_handler(RzCore *core, int argc, c
 
 // dm=
 RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_debug_map_sync(core->dbg);
 	rz_debug_map_list_visual(core->dbg, core->offset, argv[0] + 2,
 		rz_config_get_i(core->config, "scr.color"));
@@ -1476,6 +1496,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_ascii_handler(RzCore *core, int argc, 
 
 // dm.
 RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	ut64 addr = core->offset;
 	// RZ_OUTPUT_MODE_LONG is workaround for '.'
 	rz_debug_map_print(core->dbg, addr, RZ_OUTPUT_MODE_LONG);
@@ -1484,6 +1508,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, cons
 
 // dmd
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	if (argc == 2) {
 		dump_maps(core, -1, argv[1]);
 	} else if (argc == 1) {
@@ -1494,25 +1522,31 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_handler(RzCore *core, int argc, const 
 
 // dmda
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_all_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	dump_maps(core, 0, NULL);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmdw
 RZ_IPI RzCmdStatus rz_cmd_debug_dump_maps_writable_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	dump_maps(core, RZ_PERM_RW, NULL);
-	return RZ_CMD_STATUS_OK;
-}
-
-// dmh
-RZ_IPI int rz_cmd_debug_heap(void *core, const char *input) {
-	rz_debug_heap(core, input);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmi
 RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr = core->offset;
@@ -1663,6 +1697,10 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 
 // dmp
 RZ_IPI RzCmdStatus rz_debug_memory_permission_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr = 0, size = 0;
@@ -1697,6 +1735,10 @@ RZ_IPI RzCmdStatus rz_debug_memory_permission_handler(RzCore *core, int argc, co
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char **argv, RzOutputMode m) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr;
@@ -1752,6 +1794,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 }
 // dml
 RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzListIter *iter;
 	RzDebugMap *map;
 	ut64 addr = core->offset;
@@ -1781,6 +1827,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dml_handler(RzCore *core, int argc, const char *
 
 // dmL
 RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	int size;
 	ut64 addr;
 	addr = core->offset;
@@ -1791,8 +1841,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 
 // dmw
 RZ_IPI int rz_cmd_debug_heap_windows(void *data, const char *input) {
-#if __WINDOWS__
 	RzCore *core = (RzCore *)data;
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
+#if __WINDOWS__
 	cmd_debug_map_heap_win(core, input);
 	return RZ_CMD_STATUS_OK;
 #else
@@ -1803,8 +1857,12 @@ RZ_IPI int rz_cmd_debug_heap_windows(void *data, const char *input) {
 
 // dmx
 RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
-#if HAVE_JEMALLOC
 	RzCore *core = (RzCore *)data;
+	if (rz_debug_is_dead(core->dbg)) {
+		rz_cons_println("Debugging is not enabled. Run ood?");
+		return RZ_CMD_STATUS_ERROR;
+	}
+#if HAVE_JEMALLOC
 	if (core->rasm->bits == 64) {
 		return cmd_dbg_map_jemalloc_64(core, input);
 	} else {
