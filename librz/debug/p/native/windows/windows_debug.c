@@ -35,11 +35,9 @@ bool setup_debug_privileges(bool b) {
 }
 
 int w32_init(RzDebug *dbg) {
-	W32DbgWInst *wrap = dbg->user;
-	if (!wrap) {
-		if (dbg->iob.io->w32dbg_wrap) {
-			dbg->user = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
-		} else {
+	if (!dbg->user) {
+		dbg->user = dbg->iob.get_w32dbg_wrap(dbg->iob.io);
+		if (!dbg->user) {
 			return 0;
 		}
 	}

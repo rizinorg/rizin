@@ -137,11 +137,12 @@ err_first_th:
 }
 
 static int __open_proc(RzIO *io, int pid, bool attach) {
+	W32DbgWInst *wrap = (W32DbgWInst *)rz_io_get_w32dbg_wrap(io);
+	if (!wrap) {
+		return -1;
+	}
 	DEBUG_EVENT de;
 	int ret = -1;
-	if (!io->w32dbg_wrap) {
-		io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new();
-	}
 
 	HANDLE h_proc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 
@@ -149,7 +150,6 @@ static int __open_proc(RzIO *io, int pid, bool attach) {
 		rz_sys_perror("__open_proc/OpenProcess");
 		goto att_exit;
 	}
-	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
 	wrap->pi.dwProcessId = pid;
 	if (attach) {
 		/* Attach to the process */
@@ -190,10 +190,13 @@ att_exit:
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open(io, file, 0)) {
 		RzIODesc *ret;
+		W32DbgWInst *wrap = (W32DbgWInst *)rz_io_get_w32dbg_wrap(io);
+		if (!wrap) {
+			return NULL;
+		}
 		if (__open_proc(io, atoi(file + 9), !strncmp(file, "attach://", 9)) == -1) {
 			return NULL;
 		}
-		W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
 		if (!wrap->pi.dwThreadId) {
 			wrap->pi.dwThreadId = __w32_first_thread(wrap->pi.dwProcessId);
 		}

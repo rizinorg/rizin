@@ -55,7 +55,10 @@ W32DbgWInst *w32dbg_wrap_new(void) {
 	return inst;
 }
 
-void w32dbg_wrap_fini(W32DbgWInst *inst) {
+void w32dbg_wrap_free(W32DbgWInst *inst) {
+	if (!inst) {
+		return;
+	}
 	inst->params.type = W32_STOP;
 	ReleaseSemaphore(inst->request_sem, 1, NULL);
 	CloseHandle(inst->request_sem);

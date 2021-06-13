@@ -8,6 +8,10 @@
 #include <config.h>
 #include "io_private.h"
 
+#if __WINDOWS__
+#include <w32dbg_wrap.h>
+#endif
+
 RZ_LIB_VERSION(rz_io);
 
 static int fd_read_at_wrap(RzIO *io, int fd, ut64 addr, ut8 *buf, int len, RzIOMap *map, void *user) {
@@ -555,6 +559,9 @@ RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd) {
 	bnd->ptrace = rz_io_ptrace;
 	bnd->ptrace_func = rz_io_ptrace_func;
 #endif
+#if __WINDOWS__
+	bnd->get_w32dbg_wrap = rz_io_get_w32dbg_wrap;
+#endif
 }
 
 /* moves bytes up (+) or down (-) within the specified range */
@@ -675,6 +682,16 @@ RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user) {
 }
 #endif
 
+#if __WINDOWS__
+/// Lazily initializing getter for the w32dbg_wrap instance. Only use this and don't access io->w32dbg_wrap directly.
+RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io) {
+	if (!io->priv_w32dbg_wrap) {
+		io->priv_w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new();
+	}
+	return io->priv_w32dbg_wrap;
+}
+#endif
+
 //remove all descs and maps
 RZ_API int rz_io_fini(RzIO *io) {
 	if (!io) {
@@ -695,6 +712,9 @@ RZ_API int rz_io_fini(RzIO *io) {
 		ptrace_wrap_instance_stop(io->ptrace_wrap);
 		free(io->ptrace_wrap);
 	}
+#endif
+#if __WINDOWS__
+	w32dbg_wrap_free((W32DbgWInst *)io->priv_w32dbg_wrap);
 #endif
 	return true;
 }
