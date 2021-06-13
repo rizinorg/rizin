@@ -158,12 +158,6 @@ static bool is_cpu_valid(char *cpu_dir, const char *cpu) {
 	char *filename = NULL;
 	char *cpu_name = NULL;
 	char *arch_cpu = NULL;
-	RzPVector *cpus = rz_pvector_new(NULL);
-	if (!cpus) {
-		rz_list_free(files);
-		return NULL;
-	}
-	rz_pvector_init(cpus, NULL);
 
 	rz_list_foreach (files, it, filename) {
 		if (!strcmp(filename, "..") || !strcmp(filename, "..")) {
@@ -173,20 +167,15 @@ static bool is_cpu_valid(char *cpu_dir, const char *cpu) {
 		if (!arch_cpu)
 			continue;
 		cpu_name = strchr(arch_cpu, '-');
-		rz_str_remove_char(cpu_name, '-');
-		rz_pvector_push(cpus, cpu_name);
-	}
-	rz_list_free(files);
-	free(arch_cpu);
-
-	void **ita;
-	rz_pvector_foreach (cpus, ita) {
-		if (!strcmp(*ita, cpu)) {
-			rz_pvector_free(cpus);
+		cpu_name[0] = '\0';
+		if (!strcmp(cpu_name + 1, cpu)) {
+			rz_list_free(files);
+			free(arch_cpu);
 			return true;
 		}
 	}
-	rz_pvector_free(cpus);
+	rz_list_free(files);
+	free(arch_cpu);
 	return false;
 }
 
