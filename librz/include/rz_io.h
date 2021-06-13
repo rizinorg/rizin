@@ -29,6 +29,10 @@
 #endif
 #endif
 
+#if __WINDOWS__
+#include <w32dbg_wrap.h>
+#endif
+
 #if (defined(__GLIBC__) && defined(__linux__))
 typedef enum __ptrace_request rz_ptrace_request_t;
 typedef void *rz_ptrace_data_t;
@@ -81,7 +85,7 @@ typedef struct rz_io_t {
 	struct ptrace_wrap_instance_t *ptrace_wrap;
 #endif
 #if __WINDOWS__
-	struct w32dbg_wrap_instance_t *w32dbg_wrap;
+	struct w32dbg_wrap_instance_t *priv_w32dbg_wrap; ///< Do not access this directly, use rz_io_get_w32dbg_wrap() instead!
 #endif
 	char *args;
 	RzEvent *event;
@@ -217,6 +221,9 @@ typedef RzIOMap *(*RzIOMapAdd)(RzIO *io, int fd, int flags, ut64 delta, ut64 add
 typedef long (*RzIOPtraceFn)(RzIO *io, rz_ptrace_request_t request, pid_t pid, void *addr, rz_ptrace_data_t data);
 typedef void *(*RzIOPtraceFuncFn)(RzIO *io, void *(*func)(void *), void *user);
 #endif
+#if __WINDOWS__
+typedef struct w32dbg_wrap_instance_t *(*RzIOGetW32DbgWrap)(RzIO *io);
+#endif
 
 typedef struct rz_io_bind_t {
 	int init;
@@ -253,6 +260,9 @@ typedef struct rz_io_bind_t {
 #if HAVE_PTRACE
 	RzIOPtraceFn ptrace;
 	RzIOPtraceFuncFn ptrace_func;
+#endif
+#if __WINDOWS__
+	RzIOGetW32DbgWrap get_w32dbg_wrap;
 #endif
 } RzIOBind;
 
@@ -436,6 +446,10 @@ RZ_API bool rz_io_write_i(RzIO *io, ut64 addr, ut64 *val, int size, bool endian)
 RZ_API long rz_io_ptrace(RzIO *io, rz_ptrace_request_t request, pid_t pid, void *addr, rz_ptrace_data_t data);
 RZ_API pid_t rz_io_ptrace_fork(RzIO *io, void (*child_callback)(void *), void *child_callback_user);
 RZ_API void *rz_io_ptrace_func(RzIO *io, void *(*func)(void *), void *user);
+#endif
+
+#if __WINDOWS__
+RZ_API struct w32dbg_wrap_instance_t *rz_io_get_w32dbg_wrap(RzIO *io);
 #endif
 
 extern RzIOPlugin rz_io_plugin_procpid;

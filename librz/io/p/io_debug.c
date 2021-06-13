@@ -121,9 +121,6 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 		return -1;
 	}
 	setup_tokens();
-	if (!io->w32dbg_wrap) {
-		io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new();
-	}
 	char *_cmd = io->args ? rz_str_appendf(strdup(cmd), " %s", io->args) : strdup(cmd);
 	char **argv = rz_str_argv(_cmd, NULL);
 	char *cmdline = NULL;
@@ -141,7 +138,7 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 	flags |= core->dbg->create_new_console ? CREATE_NEW_CONSOLE : 0;
 	free(cmdline);
 	struct __createprocess_params p = { appname_, cmdline_, &pi, flags };
-	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
+	W32DbgWInst *wrap = (W32DbgWInst *)rz_io_get_w32dbg_wrap(io);
 	wrap->params.type = W32_CALL_FUNC;
 	wrap->params.func.func = __createprocess_wrap;
 	wrap->params.func.user = &p;
@@ -187,8 +184,6 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 err_fork:
 	eprintf("ERRFORK\n");
 	TerminateProcess(pi.hProcess, 1);
-	w32dbg_wrap_fini((W32DbgWInst *)io->w32dbg_wrap);
-	io->w32dbg_wrap = NULL;
 	CloseHandle(pi.hThread);
 	CloseHandle(pi.hProcess);
 	return -1;
