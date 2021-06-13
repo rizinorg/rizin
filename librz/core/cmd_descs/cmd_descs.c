@@ -1646,7 +1646,7 @@ static const RzCmdDescArg cmd_debug_modules_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_modules_help = {
-	.summary = "List modules of target process",
+	.summary = "List modules (libraries, binaries loaded in memory)",
 	.args = cmd_debug_modules_args,
 };
 
@@ -4837,7 +4837,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *dm_cd = rz_cmd_desc_group_modes_new(core->rcmd, cmd_debug_cd, "dm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_maps_handler, &cmd_debug_list_maps_help, &dm_help);
 	rz_warn_if_fail(dm_cd);
-	RzCmdDesc *cmd_debug_allocate_maps_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dma", rz_cmd_debug_allocate_maps_handler, &cmd_debug_allocate_maps_help);
+	RzCmdDesc *cmd_debug_allocate_maps_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm+", rz_cmd_debug_allocate_maps_handler, &cmd_debug_allocate_maps_help);
 	rz_warn_if_fail(cmd_debug_allocate_maps_cd);
 
 	RzCmdDesc *cmd_debug_list_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm=", rz_cmd_debug_list_maps_ascii_handler, &cmd_debug_list_maps_ascii_help);

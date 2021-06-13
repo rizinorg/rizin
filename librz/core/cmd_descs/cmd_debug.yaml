@@ -92,7 +92,7 @@ commands:
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_QUIET
         args: []
-      - name: dma
+      - name: dm+
         cname: cmd_debug_allocate_maps
         summary: >
           Allocate <size> bytes at <offset>
@@ -113,7 +113,7 @@ commands:
         summary: Module memory map commands
         subcommands:
           - name: dmm
-            summary: List modules of target process
+            summary: List modules (libraries, binaries loaded in memory)
             cname: cmd_debug_modules
             modes:
               - RZ_OUTPUT_MODE_STANDARD
