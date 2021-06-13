@@ -22,6 +22,15 @@ static const RzCmdDescHelp example_usage = {
 	.summary = "Example core plugin",
 };
 
+RZ_IPI RzCmdStatus rz_cmd_example_handler(RzCore *core, int argc,
+	const char **argv) {
+	if (argc < 2) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	eprintf("This example was called!\n")
+	return RZ_CMD_STATUS_OK;
+}
+
 static bool rz_cmd_example_init(RzCore *core) {
 	RzCmd *rcmd = core->rcmd;
 	RzCmdDesc *root_cd = rz_cmd_get_root(rcmd);
@@ -49,15 +58,6 @@ static bool rz_cmd_example_fini(RzCore *core) {
 	 * end sockets, etc..) */
 	eprintf("This fini was called!\n");
 	return true;
-}
-
-RZ_IPI RzCmdStatus rz_cmd_example_handler(RzCore *core, int argc,
-	const char **argv) {
-	if (argc < 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-	eprintf("This example was called!\n")
-	return RZ_CMD_STATUS_OK;
 }
 
 RzCorePlugin rz_core_plugin_example = {
