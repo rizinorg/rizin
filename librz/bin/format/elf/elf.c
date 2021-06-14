@@ -134,35 +134,32 @@ static HtUP *rel_cache_new(RzBinElfReloc *relocs, ut32 reloc_num) {
 	return rel_cache;
 }
 
-static void set_phdr_entry(ELFOBJ *bin, size_t phdr_entry_index, ut8 *entry) {
-	size_t pos = 0;
-
-	bin->phdr[phdr_entry_index].p_type = READ32(entry, pos);
+static bool set_phdr_entry(ELFOBJ *bin, Elf_(Phdr) * segment, ut64 offset) {
+	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &segment->p_type) ||
 #if RZ_BIN_ELF64
-	bin->phdr[phdr_entry_index].p_flags = READ32(entry, pos);
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &segment->p_flags) ||
 #endif
-	bin->phdr[phdr_entry_index].p_offset = RZ_BIN_ELF_READWORD(entry, pos);
-	bin->phdr[phdr_entry_index].p_vaddr = RZ_BIN_ELF_READWORD(entry, pos);
-	bin->phdr[phdr_entry_index].p_paddr = RZ_BIN_ELF_READWORD(entry, pos);
-	bin->phdr[phdr_entry_index].p_filesz = RZ_BIN_ELF_READWORD(entry, pos);
-	bin->phdr[phdr_entry_index].p_memsz = RZ_BIN_ELF_READWORD(entry, pos);
+		!Elf_(rz_bin_elf_read_off)(bin, &offset, &segment->p_offset) ||
+		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &segment->p_vaddr) ||
+		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &segment->p_paddr) ||
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &segment->p_filesz) ||
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &segment->p_memsz) ||
 #ifndef RZ_BIN_ELF64
-	bin->phdr[phdr_entry_index].p_flags = READ32(entry, pos);
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &segment->p_flags) ||
 #endif
-	bin->phdr[phdr_entry_index].p_align = RZ_BIN_ELF_READWORD(entry, pos);
-}
-
-static bool read_phdr_entry(ELFOBJ *bin, size_t phdr_entry_index) {
-	const size_t offset = bin->ehdr.e_phoff + phdr_entry_index * sizeof(Elf_(Phdr));
-	ut8 phdr[sizeof(Elf_(Phdr))] = { 0 };
-
-	if (rz_buf_read_at(bin->b, offset, phdr, sizeof(Elf_(Phdr))) < 0) {
-		bprintf("read (phdr)\n");
-		RZ_FREE(bin->phdr);
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &segment->p_align)) {
 		return false;
 	}
 
-	set_phdr_entry(bin, phdr_entry_index, phdr);
+	return true;
+}
+
+static bool read_phdr_entry(ELFOBJ *bin, size_t phdr_entry_index) {
+	ut64 offset = bin->ehdr.e_phoff + phdr_entry_index * sizeof(Elf_(Phdr));
+
+	if (!set_phdr_entry(bin, bin->phdr + phdr_entry_index, offset)) {
+		return false;
+	}
 
 	return true;
 }
@@ -249,32 +246,29 @@ static void init_shdr_sdb(ELFOBJ *bin) {
 	sdb_set(bin->kv, "elf_shdr.format", sdb_elf_shdr_format, 0);
 }
 
-static void set_shdr_entry(ELFOBJ *bin, size_t shdr_entry_index, ut8 *entry) {
-	size_t pos = 0;
-
-	bin->shdr[shdr_entry_index].sh_name = READ32(entry, pos);
-	bin->shdr[shdr_entry_index].sh_type = READ32(entry, pos);
-	bin->shdr[shdr_entry_index].sh_flags = RZ_BIN_ELF_READWORD(entry, pos);
-	bin->shdr[shdr_entry_index].sh_addr = RZ_BIN_ELF_READWORD(entry, pos);
-	bin->shdr[shdr_entry_index].sh_offset = RZ_BIN_ELF_READWORD(entry, pos);
-	bin->shdr[shdr_entry_index].sh_size = RZ_BIN_ELF_READWORD(entry, pos);
-	bin->shdr[shdr_entry_index].sh_link = READ32(entry, pos);
-	bin->shdr[shdr_entry_index].sh_info = READ32(entry, pos);
-	bin->shdr[shdr_entry_index].sh_addralign = RZ_BIN_ELF_READWORD(entry, pos);
-	bin->shdr[shdr_entry_index].sh_entsize = RZ_BIN_ELF_READWORD(entry, pos);
-}
-
-static bool read_shdr_entry(ELFOBJ *bin, size_t shdr_entry_index) {
-	const size_t offset = bin->ehdr.e_shoff + shdr_entry_index * sizeof(Elf_(Shdr));
-	ut8 shdr[sizeof(Elf_(Shdr))] = { 0 };
-
-	if (rz_buf_read_at(bin->b, offset, shdr, sizeof(Elf_(Shdr))) < 0) {
-		bprintf("read (shdr) at 0x%" PFMT64x "\n", (ut64)bin->ehdr.e_shoff);
-		RZ_FREE(bin->shdr);
+static bool set_shdr_entry(ELFOBJ *bin, Elf_(Shdr) * section, ut64 offset) {
+	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_name) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_type) ||
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_flags) ||
+		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &section->sh_addr) ||
+		!Elf_(rz_bin_elf_read_off)(bin, &offset, &section->sh_offset) ||
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_size) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_link) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_info) ||
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_addralign) ||
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_entsize)) {
 		return false;
 	}
 
-	set_shdr_entry(bin, shdr_entry_index, shdr);
+	return true;
+}
+
+static bool read_shdr_entry(ELFOBJ *bin, size_t shdr_entry_index) {
+	ut64 offset = bin->ehdr.e_shoff + shdr_entry_index * sizeof(Elf_(Shdr));
+
+	if (!set_shdr_entry(bin, bin->shdr + shdr_entry_index, offset)) {
+		return false;
+	}
 
 	return true;
 }
@@ -403,6 +397,8 @@ static bool is_valid_elf_ident(ut8 *e_ident) {
 }
 
 static bool init_ehdr_ident(ELFOBJ *bin) {
+	memset(&bin->ehdr, 0, sizeof(Elf_(Ehdr)));
+
 	if (rz_buf_read_at(bin->b, 0, bin->ehdr.e_ident, EI_NIDENT) == -1) {
 		bprintf("read (magic)\n");
 		return false;
@@ -417,29 +413,44 @@ static bool init_ehdr_ident(ELFOBJ *bin) {
 	return true;
 }
 
-static bool init_ehdr_other(ELFOBJ *bin) {
-	size_t i = EI_NIDENT;
-	ut8 ehdr[sizeof(Elf_(Ehdr))] = { 0 };
-	rz_buf_read_at(bin->b, 0, ehdr, sizeof(ehdr));
+static bool is_tiny_elf(ELFOBJ *bin) {
+	return bin->size == 45;
+}
 
-	if (bin->size < 32) { // tinyelf != sizeof (Elf_(Ehdr)))
-		bprintf("read (ehdr)\n");
+static Elf_(Half) get_tiny_elf_phnum(ELFOBJ *bin) {
+	ut8 tmp;
+	ut64 offset = 44;
+
+	if (Elf_(rz_bin_elf_read_char)(bin, &offset, &tmp)) {
+		return tmp;
+	}
+
+	return 0;
+}
+
+static bool init_ehdr_other(ELFOBJ *bin) {
+	ut64 offset = EI_NIDENT;
+
+	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_type) ||
+		!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_machine) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &bin->ehdr.e_version) ||
+		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &bin->ehdr.e_entry) ||
+		!Elf_(rz_bin_elf_read_off)(bin, &offset, &bin->ehdr.e_phoff)) {
 		return false;
 	}
 
-	bin->ehdr.e_type = READ16(ehdr, i);
-	bin->ehdr.e_machine = READ16(ehdr, i);
-	bin->ehdr.e_version = READ32(ehdr, i);
-	bin->ehdr.e_entry = RZ_BIN_ELF_READWORD(ehdr, i);
-	bin->ehdr.e_phoff = RZ_BIN_ELF_READWORD(ehdr, i);
-	bin->ehdr.e_shoff = RZ_BIN_ELF_READWORD(ehdr, i);
-	bin->ehdr.e_flags = READ32(ehdr, i);
-	bin->ehdr.e_ehsize = READ16(ehdr, i);
-	bin->ehdr.e_phentsize = READ16(ehdr, i);
-	bin->ehdr.e_phnum = READ16(ehdr, i);
-	bin->ehdr.e_shentsize = READ16(ehdr, i);
-	bin->ehdr.e_shnum = READ16(ehdr, i);
-	bin->ehdr.e_shstrndx = READ16(ehdr, i);
+	Elf_(rz_bin_elf_read_off)(bin, &offset, &bin->ehdr.e_shoff);
+	Elf_(rz_bin_elf_read_word)(bin, &offset, &bin->ehdr.e_flags);
+	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_ehsize);
+	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_phentsize);
+	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_phnum);
+	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shentsize);
+	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shnum);
+	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shstrndx);
+
+	if (is_tiny_elf(bin)) {
+		bin->ehdr.e_phnum = get_tiny_elf_phnum(bin);
+	}
 
 	return true;
 }
