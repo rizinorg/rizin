@@ -27,7 +27,7 @@ RZ_IPI RzCmdStatus rz_cmd_example_handler(RzCore *core, int argc,
 	if (argc < 2) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-	eprintf("This example was called!\n")
+	eprintf("This example was called!\n");
 	return RZ_CMD_STATUS_OK;
 }
 
