@@ -20,9 +20,8 @@ commands:
   - name: dmhb
     cname: cmd_heap_bins_list_print
     summary: >
-      Display all parsed Double linked list
-      of main_arena's or a particular arena bins instance.
-      Use dmhbg command to get a graph of the linked list
+      Display double linked list for bins in an arena.
+      Use dmhbg command for graphical representation.
     type: RZ_CMD_DESC_TYPE_OLDINPUT
     args:
       - name: bin_num|bin_num:malloc_state
@@ -30,7 +29,7 @@ commands:
         optional: true
   - name: dmhc
     cname: cmd_heap_chunk_print
-    summary: Get info about heap chunk at offset
+    summary: Get info about heap chunk at current offset
     args: []
   - name: dmhd
     cname: cmd_heap_arena_bins_print
@@ -42,8 +41,9 @@ commands:
       - RZ_OUTPUT_MODE_JSON
     args:
       - name: bin_type
-        type: RZ_CMD_ARG_TYPE_STRING
+        type: RZ_CMD_ARG_TYPE_CHOICES
         optional: true
+        choices: ["small", "large", "fastbin", "unsorted", "tcache"]
   - name: dmhf
     cname: cmd_heap_fastbins_print
     type: RZ_CMD_DESC_TYPE_OLDINPUT

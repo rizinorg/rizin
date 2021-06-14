@@ -95,12 +95,11 @@ commands:
       - name: dm+
         cname: cmd_debug_allocate_maps
         summary: >
-          Allocate <size> bytes at <offset>
+          Allocate <size> bytes at current offset
           (anywhere if offset is -1)
         args:
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
-            optional: false
       - name: dm=
         cname: cmd_debug_list_maps_ascii
         summary: List memory maps of current process with ASCII art bars
@@ -125,7 +124,7 @@ commands:
             summary: List memory map of current module
             args: []
       - name: dm-
-        summary: Deallocate memory map at <offset>
+        summary: Deallocate memory map at current offset
         cname: cmd_debug_deallocate_map
         args: []
       - name: dmd
@@ -159,25 +158,24 @@ commands:
         args:
           - name: file
             type: RZ_CMD_ARG_TYPE_FILE
-            optional: false
       - name: dmp
         summary: >
-          Change page at <offset> with <size>, protection <perms>
+          Change page at current offset with <size>, protection <perms>
           / Change dbg.map permissions to <perms>
         cname: debug_memory_permission
         args:
           - name: perms
             type: RZ_CMD_ARG_TYPE_STRING
-            optional: false
           - name: size
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
       - name: dmL
-        summary: Allocate <size> bytes at <offset> and promote to huge page
+        summary: >
+          Allocate <size> bytes at current offset and promote to huge page
         cname: cmd_debug_dmL
         args:
           - name: size
-            type: RZ_CMD_ARG_TYPE_NUM
+            type: RZ_CMD_ARG_TYPE_RZNUM
       - name: dmS
         summary: List sections of target lib
         cname: cmd_debug_dmS

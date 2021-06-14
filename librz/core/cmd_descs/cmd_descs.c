@@ -1613,13 +1613,12 @@ static const RzCmdDescArg cmd_debug_allocate_maps_args[] = {
 		.name = "size",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
-		.optional = false,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_allocate_maps_help = {
-	.summary = "Allocate <size> bytes at <offset> (anywhere if offset is -1)",
+	.summary = "Allocate <size> bytes at current offset (anywhere if offset is -1)",
 	.args = cmd_debug_allocate_maps_args,
 };
 
@@ -1662,7 +1661,7 @@ static const RzCmdDescArg cmd_debug_deallocate_map_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_deallocate_map_help = {
-	.summary = "Deallocate memory map at <offset>",
+	.summary = "Deallocate memory map at current offset",
 	.args = cmd_debug_deallocate_map_args,
 };
 
@@ -1736,7 +1735,7 @@ static const RzCmdDescArg cmd_heap_bins_list_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_heap_bins_list_print_help = {
-	.summary = "Display all parsed Double linked list of main_arena's or a particular arena bins instance. Use dmhbg command to get a graph of the linked list",
+	.summary = "Display double linked list for bins in an arena. Use dmhbg command for graphical representation.",
 	.args = cmd_heap_bins_list_print_args,
 };
 
@@ -1744,16 +1743,17 @@ static const RzCmdDescArg cmd_heap_chunk_print_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_heap_chunk_print_help = {
-	.summary = "Get info about heap chunk at offset",
+	.summary = "Get info about heap chunk at current offset",
 	.args = cmd_heap_chunk_print_args,
 };
 
+static const char *cmd_heap_arena_bins_print_bin_type_choices[] = { "small", "large", "fastbin", "unsorted", "tcache", NULL };
 static const RzCmdDescArg cmd_heap_arena_bins_print_args[] = {
 	{
 		.name = "bin_type",
-		.type = RZ_CMD_ARG_TYPE_STRING,
-		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
 		.optional = true,
+		.choices = cmd_heap_arena_bins_print_bin_type_choices,
 
 	},
 	{ 0 },
@@ -1839,7 +1839,6 @@ static const RzCmdDescArg cmd_debug_dml_args[] = {
 	{
 		.name = "file",
 		.type = RZ_CMD_ARG_TYPE_FILE,
-		.optional = false,
 
 	},
 	{ 0 },
@@ -1853,32 +1852,33 @@ static const RzCmdDescArg debug_memory_permission_args[] = {
 	{
 		.name = "perms",
 		.type = RZ_CMD_ARG_TYPE_STRING,
-		.optional = false,
 
 	},
 	{
 		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp debug_memory_permission_help = {
-	.summary = "Change page at <offset> with <size>, protection <perms> / Change dbg.map permissions to <perms>",
+	.summary = "Change page at current offset with <size>, protection <perms> / Change dbg.map permissions to <perms>",
 	.args = debug_memory_permission_args,
 };
 
 static const RzCmdDescArg cmd_debug_dmL_args[] = {
 	{
 		.name = "size",
-		.type = RZ_CMD_ARG_TYPE_NUM,
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
 
 	},
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_dmL_help = {
-	.summary = "Allocate <size> bytes at <offset> and promote to huge page",
+	.summary = "Allocate <size> bytes at current offset and promote to huge page",
 	.args = cmd_debug_dmL_args,
 };
 
