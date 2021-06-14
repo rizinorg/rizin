@@ -236,7 +236,7 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, int format) {
 				rz_cons_newline();
 				break;
 			case 'j': {
-				PJ *pj = rz_core_pj_new(core);
+				PJ *pj = pj_new();
 				if (!pj) {
 					break;
 				}

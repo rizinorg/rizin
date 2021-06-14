@@ -2975,7 +2975,7 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 		param.outmode = RZ_MODE_JSON;
 		param_offset++;
 	}
-	param.pj = rz_core_pj_new(core);
+	param.pj = pj_new();
 
 reread:
 	switch (*input) {

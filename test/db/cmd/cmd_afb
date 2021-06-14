@@ -16,7 +16,6 @@ RUN
 NAME=ab opaddr
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
-e cfg.json.num=hex
 af
 ab
 sd +1
@@ -42,10 +41,10 @@ traced: false
 opaddr: 0x1000011e9
 opaddr: 0x1000011e9
 {
-  "jump": "0x100001216",
-  "fail": "0x100001211",
-  "opaddr": "0x1000011e9",
-  "addr": "0x1000011e8",
+  "jump": 4294971926,
+  "fail": 4294971921,
+  "opaddr": 4294971881,
+  "addr": 4294971880,
   "size": 41,
   "inputs": 0,
   "outputs": 2,

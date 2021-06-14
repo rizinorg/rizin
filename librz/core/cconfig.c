@@ -432,6 +432,10 @@ static bool cb_asmcpu(void *user, void *data) {
 	}
 	rz_asm_set_cpu(core->rasm, node->value);
 	rz_config_set(core->config, "analysis.cpu", node->value);
+
+	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
+	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), dir_prefix);
+
 	return true;
 }
 
@@ -558,11 +562,13 @@ static bool cb_asmarch(void *user, void *data) {
 	// set pcalign
 	if (core->analysis) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
+		const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 		if (!rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
+		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, dir_prefix);
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	rz_config_set (core->config, "dbg.backend", "bf");
@@ -607,6 +613,7 @@ static bool cb_asmarch(void *user, void *data) {
 
 	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	rz_sysreg_set_arch(core->analysis->syscall, node->value, dir_prefix);
+	rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, rz_config_get(core->config, "asm.arch"), dir_prefix);
 
 	return true;
 }
@@ -777,40 +784,6 @@ static bool cb_emuskip(void *user, void *data) {
 				       "'d': data\n'c': code\n's': string\n'f': format\n'm': magic\n"
 				       "'h': hide\n'C': comment\n'r': run\n"
 				       "(default is 'ds' to skip data and strings)\n");
-		} else {
-			print_node_options(node);
-		}
-		return false;
-	}
-	return true;
-}
-
-static bool cb_jsonencoding(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		if (node->value[1] && node->value[1] == '?') {
-			rz_cons_printf("choose either: \n"
-				       "none (default)\n"
-				       "base64 - encode the json string values as base64\n"
-				       "hex - convert the string to a string of hexpairs\n"
-				       "array - convert the string to an array of chars\n"
-				       "strip - strip non-printable characters\n");
-		} else {
-			print_node_options(node);
-		}
-		return false;
-	}
-	return true;
-}
-
-static bool cb_jsonencoding_numbers(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (*node->value == '?') {
-		if (node->value[1] && node->value[1] == '?') {
-			rz_cons_printf("choose either: \n"
-				       "none (default)\n"
-				       "string - encode the json number values as strings\n"
-				       "hex - encode the number values as hex, then as a string\n");
 		} else {
 			print_node_options(node);
 		}
@@ -3420,15 +3393,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("esil.stats", "false", "Statistics from ESIL emulation stored in sdb");
 	SETBPREF("esil.nonull", "false", "Prevent memory read, memory write at null pointer");
 	SETCB("esil.mdev.range", "", &cb_mdevrange, "Specify a range of memory to be handled by cmd.esil.mdev");
-
-	/* json encodings */
-	n = NODECB("cfg.json.str", "none", &cb_jsonencoding);
-	SETDESC(n, "Encode strings from json outputs using the specified option");
-	SETOPTIONS(n, "none", "base64", "strip", "hex", "array", NULL);
-
-	n = NODECB("cfg.json.num", "none", &cb_jsonencoding_numbers);
-	SETDESC(n, "Encode numbers from json outputs using the specified option");
-	SETOPTIONS(n, "none", "string", "hex", NULL);
 
 	/* scr */
 #if __EMSCRIPTEN__

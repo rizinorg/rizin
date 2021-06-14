@@ -39,28 +39,26 @@ C 0x44 add byte [rax], al
 EOF
 RUN
 
-NAME=axjstrencoding
+NAME=axj
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
 aa
-e cfg.json.str=base64
 s sym.imp.wprintf
 axj~{[1].name}
 EOF
 EXPECT=<<EOF
-c2VjdGlvbi4uaW5pdCsxNg==
+section..init+16
 EOF
 RUN
 
-NAME=axjnumencoding
+NAME=axj
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
 aa
-e cfg.json.num=hex
 s sym.imp.wprintf
 axj~{[0].to}
 EOF
 EXPECT=<<EOF
-0x600ff8
+6295544
 EOF
 RUN

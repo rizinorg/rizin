@@ -3382,7 +3382,6 @@ static void ds_print_sysregs(RDisasmState *ds) {
 		return;
 	}
 	switch (ds->analop.type) {
-	// Syscalls first
 	case RZ_ANALYSIS_OP_TYPE_IO: {
 		const int imm = (int)ds->analop.val;
 		const char *ioname = rz_sysreg_get(core->analysis->syscall, "mmio", imm);
@@ -5168,7 +5167,7 @@ RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, i
 	ds->pdf = pdf;
 
 	if (json) {
-		ds->pj = pj ? pj : rz_core_pj_new(core);
+		ds->pj = pj ? pj : pj_new();
 		if (!ds->pj) {
 			ds_free(ds);
 			return 0;
@@ -6191,7 +6190,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 	}
 	PJ *pj = NULL;
 	if (mode == 'j') {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return 0;
 		}
@@ -6566,7 +6565,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 	}
 	PJ *pj = NULL;
 	if (mode == RZ_MODE_JSON) {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return -1;
 		}

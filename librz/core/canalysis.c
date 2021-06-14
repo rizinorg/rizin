@@ -972,7 +972,7 @@ static char *analysis_fcn_autoname(RzCore *core, RzAnalysisFunction *fcn, int du
 	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
 	if (mode == 'j') {
 		// start a new JSON object
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		pj_a(pj);
 	}
 	if (xrefs) {
@@ -3396,7 +3396,7 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 	PJ *pj = NULL;
 
 	if (mode == 'j') {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		pj_a(pj);
 	}
 
@@ -3589,7 +3589,7 @@ static int fcn_print_json(RzCore *core, RzAnalysisFunction *fcn, PJ *pj) {
 static int fcn_list_json(RzCore *core, RzList *fcns, bool quiet) {
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
-	PJ *pj = rz_core_pj_new(core);
+	PJ *pj = pj_new();
 	if (!pj) {
 		return -1;
 	}
@@ -3850,7 +3850,7 @@ RZ_DEPRECATE RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *inpu
 	RzList *fcnlist = rz_analysis_function_list(core->analysis);
 	if (rz_list_empty(fcnlist)) {
 		if (*rad == 'j') {
-			PJ *pj = rz_core_pj_new(core);
+			PJ *pj = pj_new();
 			if (!pj) {
 				return -1;
 			}
@@ -4271,7 +4271,7 @@ RZ_API bool rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 			font, gv_spline, gv_node, gv_edge);
 	}
 	if (is_json) {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			rz_config_hold_restore(hc);
 			rz_config_hold_free(hc);
@@ -6384,7 +6384,7 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 
 	// Initialize a PJ object for json mode
 	if (is_json) {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		pj_a(pj);
 	}
 
@@ -6446,6 +6446,31 @@ RZ_API void rz_core_analysis_flag_every_function(RzCore *core) {
 			fcn->addr, rz_analysis_function_size_from_entry(fcn));
 	}
 	rz_flag_space_pop(core->flags);
+}
+
+static bool add_mmio_flag_cb(void *user, const ut64 addr, const void *v) {
+	const char *name = v;
+	RzCore *core = user;
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_MMIO_REGISTERS);
+	rz_flag_set(core->flags, name, addr, 1);
+	rz_flag_space_pop(core->flags);
+	return true;
+}
+
+static bool add_mmio_extended_flag_cb(void *user, const ut64 addr, const void *v) {
+	const char *name = v;
+	RzCore *core = user;
+	rz_flag_space_push(core->flags, RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED);
+	rz_flag_set(core->flags, name, addr, 1);
+	rz_flag_space_pop(core->flags);
+	return true;
+}
+
+RZ_API void rz_arch_profile_add_flag_every_io(RzCore *core) {
+	rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_MMIO_REGISTERS);
+	rz_flag_unset_all_in_space(core->flags, RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED);
+	ht_up_foreach(core->analysis->arch_target->profile->registers_mmio, add_mmio_flag_cb, core);
+	ht_up_foreach(core->analysis->arch_target->profile->registers_extended, add_mmio_extended_flag_cb, core);
 }
 
 /* TODO: move into rz_analysis_function_rename (); */

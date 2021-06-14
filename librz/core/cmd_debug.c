@@ -1271,7 +1271,7 @@ static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
 	}
 	PJ *pj = NULL;
 	if (mode == 'j') {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return;
 		}
@@ -1574,7 +1574,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 				break;
 			case 'j':
 				mode = RZ_MODE_JSON;
-				pj = rz_core_pj_new(core);
+				pj = pj_new();
 				if (!pj) {
 					return false;
 				}
@@ -2033,7 +2033,7 @@ static void cmd_reg_profile(RzCore *core, char from, const char *str) { // "arp"
 		RzListIter *iter;
 		RzRegItem *r;
 		int i;
-		PJ *pj = rz_core_pj_new(core);
+		PJ *pj = pj_new();
 		if (!pj) {
 			return;
 		}
@@ -2203,7 +2203,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			r = rz_reg_get(core->dbg->reg, name, -1);
 			if (r) {
 				if (json_out) {
-					PJ *pj = rz_core_pj_new(core);
+					PJ *pj = pj_new();
 					if (!pj) {
 						return;
 					}
@@ -2278,7 +2278,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			i = 0;
 			PJ *pj = NULL;
 			if (json_out) {
-				pj = rz_core_pj_new(core);
+				pj = pj_new();
 				if (!pj) {
 					return;
 				}
@@ -2678,7 +2678,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			rad = str[1];
 			str++;
 			if (rad == 'j' && !str[1]) {
-				PJ *pj = rz_core_pj_new(core);
+				PJ *pj = pj_new();
 				if (!pj) {
 					break;
 				}
@@ -2818,7 +2818,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 				}
 			}
 			if (str[0] == 'j') {
-				PJ *pj = rz_core_pj_new(core);
+				PJ *pj = pj_new();
 				if (!pj) {
 					return;
 				}
@@ -3325,7 +3325,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 			}
 			break;
 		case 'j': { // "dbtj"
-			PJ *pj = rz_core_pj_new(core);
+			PJ *pj = pj_new();
 			if (!pj) {
 				return;
 			}

@@ -1247,7 +1247,7 @@ static bool rz_analysis_class_list_json_cb(void *user, const char *k, const char
 }
 
 static void rz_analysis_class_list_json(RzAnalysis *analysis) {
-	PJ *j = analysis->coreb.pjWithEncoding(analysis->coreb.core);
+	PJ *j = pj_new();
 	if (!j) {
 		return;
 	}
