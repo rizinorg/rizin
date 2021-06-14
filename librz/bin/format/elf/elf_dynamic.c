@@ -5,15 +5,11 @@
 #include "elf_dynamic.h"
 
 static bool get_dynamic_entry(ELFOBJ *bin, ut64 offset, Elf_(Dyn) * entry) {
-	size_t pos = offset;
-
-	entry->d_tag = RZ_BIN_ELF_BREADWORD(bin->b, pos);
-	if (entry->d_tag == RZ_BIN_ELF_ADDR_MAX) {
+	if (!Elf_(rz_bin_elf_read_sword_sxword)(bin, &offset, &entry->d_tag)) {
 		return false;
 	}
 
-	entry->d_un.d_ptr = RZ_BIN_ELF_BREADWORD(bin->b, pos);
-	if (entry->d_un.d_ptr == RZ_BIN_ELF_ADDR_MAX) {
+	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &entry->d_un.d_ptr)) {
 		return false;
 	}
 

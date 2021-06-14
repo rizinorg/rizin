@@ -48,22 +48,20 @@ static bool read_reloc(ELFOBJ *bin, RzBinElfReloc *r, Elf_(Xword) rel_mode, ut64
 		return false;
 	}
 
-	size_t size_struct = get_size_rel_mode(rel_mode);
-
-	ut8 buf[sizeof(Elf_(Rela))] = { 0 };
-	int res = rz_buf_read_at(bin->b, offset, buf, size_struct);
-	if (res != size_struct) {
+	Elf_(Rela) reloc_info;
+	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &reloc_info.rz_offset)) {
 		return false;
 	}
 
-	size_t i = 0;
-	Elf_(Rela) reloc_info;
-
-	reloc_info.rz_offset = RZ_BIN_ELF_READWORD(buf, i);
-	reloc_info.rz_info = RZ_BIN_ELF_READWORD(buf, i);
+	if (!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &reloc_info.rz_info)) {
+		return false;
+	}
 
 	if (rel_mode == DT_RELA) {
-		reloc_info.rz_addend = RZ_BIN_ELF_READWORD(buf, i);
+		if (!Elf_(rz_bin_elf_read_sword_sxword)(bin, &offset, &reloc_info.rz_addend)) {
+			return false;
+		}
+
 		r->addend = reloc_info.rz_addend;
 	}
 
