@@ -813,7 +813,11 @@ RUN
 
 NAME=Infinite Recursion segfault 1
 FILE=malloc://1024
-CMDS=pf._NT_TIB ? (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
+CMDS=<<EOF
+pf._NT_TIB ? (_NT_TIB)Self
+pf._NT_TIB > /dev/null
+pf.~NT_TIB
+EOF
 EXPECT=<<EOF
 pf._NT_TIB ? (_NT_TIB)Self
 EOF
@@ -821,9 +825,13 @@ RUN
 
 NAME=Infinite Recursion segfault 2
 FILE=malloc://1024
-CMDS=pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self ; pf._NT_TIB > /dev/null ; pf.
+CMDS=<<EOF
+pf._NT_TIB pppppip? ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
+pf._NT_TIB > /dev/null
+pf.~NT_TIB
+EOF
 EXPECT=<<EOF
-pf._NT_TIB ?ppppip? (_EXCEPTION_REGISTRATION_RECORD)ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
+pf._NT_TIB pppppip? ExceptionList StackBase StackLimit SubSystemTib FiberData Version ArbitraryUserPointer (_NT_TIB)Self
 EOF
 RUN
 

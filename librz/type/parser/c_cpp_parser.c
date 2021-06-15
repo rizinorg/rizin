@@ -36,6 +36,7 @@ CParserState *c_parser_state_new(HtPP *base_types, HtPP *callable_types) {
 	state->errors = rz_strbuf_new("");
 	state->warnings = rz_strbuf_new("");
 	state->debug = rz_strbuf_new("");
+	state->verbose = false;
 	return state;
 }
 

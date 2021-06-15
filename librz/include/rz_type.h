@@ -258,6 +258,8 @@ RZ_API bool rz_type_atomic_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzTyp
 RZ_API bool rz_type_atomic_set_sign(RzTypeDB *typedb, RzType *type, bool sign);
 
 RZ_API bool rz_type_is_void_ptr(RZ_NONNULL const RzType *type);
+RZ_API bool rz_type_is_char_ptr(RZ_NONNULL const RzType *type);
+RZ_API bool rz_type_is_identifier(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_default(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN RzType *rz_type_new_default(const RzTypeDB *typedb);
@@ -270,6 +272,8 @@ RZ_API RZ_OWN RzType *rz_type_pointer_of_type(const RzTypeDB *typedb, RZ_NONNULL
 RZ_API RZ_OWN RzType *rz_type_array_of_base_type(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, size_t count);
 RZ_API RZ_OWN RzType *rz_type_array_of_base_type_str(const RzTypeDB *typedb, RZ_NONNULL const char *name, size_t count);
 RZ_API RZ_OWN RzType *rz_type_array_of_type(const RzTypeDB *typedb, RZ_NONNULL RzType *type, size_t count);
+
+RZ_API RZ_BORROW RzBaseType *rz_type_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 
 // Type formats (`tp` and `pf` commands)
 RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name);
