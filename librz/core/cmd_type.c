@@ -417,6 +417,23 @@ RZ_IPI RzCmdStatus rz_type_function_del_all_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_type_function_cc_handler(RzCore *core, int argc, const char **argv) {
+	if (argc > 2) {
+		if (!rz_type_func_cc_set(core->analysis->typedb, argv[1], argv[2])) {
+			eprintf("Cannot set function \"%s\" calling convention \"%s\"\n", argv[1], argv[2]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else {
+		const char *cc = rz_type_func_cc(core->analysis->typedb, argv[1]);
+		if (!cc) {
+			eprintf("Cannot find function \"%s\" in types database\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_cons_println(cc);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_type_link_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *name = argc > 1 ? argv[1] : NULL;
 	ut64 addr = argc > 2 ? rz_num_math(core->num, argv[2]) : core->offset;
