@@ -2760,13 +2760,13 @@ RZ_API char *rz_type_format_data(const RzTypeDB *typedb, RzPrint *p, ut64 seek, 
  * "machine" here is the field name. The corresponding construction in C is:
  * struct {
  *     pe_machine machine;
- *     ut16 NumberOfSections;
+ *     uint16_t NumberOfSections;
  *     datetime_t TimeDateStamp;
- *     ut32 PointerToSymbolTable;
- *     ut32 NumberOfSymbols;
- *     ut16 SizeOfOptionalHeader;
+ *     uint32_t PointerToSymbolTable;
+ *     uint32_t NumberOfSymbols;
+ *     uint16_t SizeOfOptionalHeader;
  *     pe_characteristics characteristics; // (bitfield enum)
- *     };
+ * };
 */
 
 static const char *type_to_identifier(const RzTypeDB *typedb, RzType *type) {
@@ -2783,53 +2783,32 @@ static const char *type_to_identifier(const RzTypeDB *typedb, RzType *type) {
 	return NULL;
 }
 
-RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
-	rz_return_val_if_fail(typedb && type && type->name, NULL);
-
-	RzStrBuf *format = rz_strbuf_new("");
-	RzStrBuf *fields = rz_strbuf_new("");
+// This logic applies only to the structure/union members, not the toplevel types
+static void base_type_to_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type, RZ_NONNULL const char *identifier, RzStrBuf *format, RzStrBuf *fields) {
+	rz_return_if_fail(typedb && type && identifier && format && fields);
 	switch (type->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT: {
 		rz_strbuf_append(format, "?");
-		RzTypeStructMember *memb;
-		rz_vector_foreach(&type->struct_data.members, memb) {
-			const char *membtype = type_to_identifier(typedb, memb->type);
-			// Avoid infinite recursion in case of self-referential structures
-			if (strcmp(membtype, type->name)) {
-				const char *membfmt = rz_type_as_format(typedb, memb->type);
-				rz_strbuf_append(format, membfmt);
-				if (!rz_type_is_atomic(typedb, memb->type)) {
-					rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
-				} else {
-					rz_strbuf_appendf(fields, "%s ", memb->name);
-				}
-			}
-		}
-		break;
-	}
-	case RZ_BASE_TYPE_KIND_ENUM: {
-		rz_strbuf_append(format, "E");
-		rz_strbuf_append(fields, " ");
+		rz_strbuf_appendf(fields, "(%s)%s ", type->name, identifier);
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_UNION: {
 		// In `pf` unions defined like structs but all have 0 offset,
 		// which is why it uses `0` character as a marker
 		rz_strbuf_append(format, "0");
-		RzTypeUnionMember *memb;
-		rz_vector_foreach(&type->union_data.members, memb) {
-			const char *membtype = type_to_identifier(typedb, memb->type);
-			// Avoid infinite recursion in case of self-referential unions
-			if (strcmp(membtype, type->name)) {
-				const char *membfmt = rz_type_as_format(typedb, memb->type);
-				rz_strbuf_append(format, membfmt);
-				if (!rz_type_is_atomic(typedb, memb->type)) {
-					rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
-				} else {
-					rz_strbuf_appendf(fields, "%s ", memb->name);
-				}
-			}
+		rz_strbuf_appendf(fields, "(%s)%s ", type->name, identifier);
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_ENUM: {
+		// Some enums defined as bitfields in the database, so we search if
+		// it's stored as the `pf` format in the database
+		const char *fmt = rz_type_db_format_get(typedb, type->name);
+		if (fmt) {
+			rz_strbuf_append(format, "B");
+		} else {
+			rz_strbuf_append(format, "E");
 		}
+		rz_strbuf_appendf(fields, "(%s)%s ", type->name, identifier);
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
@@ -2845,8 +2824,88 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 		const char *fmt = rz_type_db_format_get(typedb, type->name);
 		if (fmt) {
 			rz_strbuf_append(format, fmt);
-			rz_strbuf_append(fields, " ");
+			rz_strbuf_appendf(fields, "%s ", identifier);
 		}
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+}
+
+/**
+ * \brief Represents the RzBaseType as a `pf` format string
+ *
+ * Produces the pair of of <format> <fields>. If the type
+ * is atomic it searches if the type database has predefined
+ * format assigned to it and uses it.
+ *
+ * \param typedb Types Database instance
+ * \param type RzBaseType type
+ */
+RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
+	rz_return_val_if_fail(typedb && type && type->name, NULL);
+
+	RzStrBuf *format = rz_strbuf_new("");
+	RzStrBuf *fields = rz_strbuf_new("");
+	switch (type->kind) {
+	case RZ_BASE_TYPE_KIND_STRUCT: {
+		RzTypeStructMember *memb;
+		rz_vector_foreach(&type->struct_data.members, memb) {
+			const char *membtype = type_to_identifier(typedb, memb->type);
+			// Avoid infinite recursion in case of self-referential structures
+			if (strcmp(membtype, type->name)) {
+				if (rz_type_is_identifier(memb->type)) {
+					// Search the base type of the same name and generate the format from it
+					RzBaseType *btyp = rz_type_get_base_type(typedb, memb->type);
+					if (btyp) {
+						base_type_to_format(typedb, btyp, memb->name, format, fields);
+					}
+				} else {
+					const char *membfmt = rz_type_as_format(typedb, memb->type);
+					rz_strbuf_append(format, membfmt);
+					if (!rz_type_is_atomic(typedb, memb->type)) {
+						rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+					} else {
+						rz_strbuf_appendf(fields, "%s ", memb->name);
+					}
+				}
+			}
+		}
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_UNION: {
+		// In `pf` unions defined like structs but all have 0 offset,
+		// which is why it uses `0` character as a marker
+		RzTypeUnionMember *memb;
+		rz_vector_foreach(&type->union_data.members, memb) {
+			const char *membtype = type_to_identifier(typedb, memb->type);
+			// Avoid infinite recursion in case of self-referential unions
+			if (strcmp(membtype, type->name)) {
+				if (rz_type_is_identifier(memb->type)) {
+					// Search the base type of the same name and generate the format from it
+					RzBaseType *btyp = rz_type_get_base_type(typedb, memb->type);
+					if (btyp) {
+						base_type_to_format(typedb, btyp, memb->name, format, fields);
+					}
+				} else {
+					const char *membfmt = rz_type_as_format(typedb, memb->type);
+					rz_strbuf_append(format, membfmt);
+					if (!rz_type_is_atomic(typedb, memb->type)) {
+						rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+					} else {
+						rz_strbuf_appendf(fields, "%s ", memb->name);
+					}
+				}
+			}
+		}
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_ENUM:
+	case RZ_BASE_TYPE_KIND_TYPEDEF:
+	case RZ_BASE_TYPE_KIND_ATOMIC: {
+		base_type_to_format(typedb, type, type->name, format, fields);
 		break;
 	}
 	default:
@@ -2859,6 +2918,16 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 	return bufstr;
 }
 
+/**
+ * \brief Represents the RzBaseType as a `pf` format string
+ *
+ * Produces the pair of of <format> <fields>. If the type
+ * is atomic it searches if the type database has predefined
+ * format assigned to it and uses it.
+ *
+ * \param typedb Types Database instance
+ * \param name RzBaseType type name
+ */
 RZ_API RZ_OWN char *rz_type_format(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
@@ -2873,12 +2942,6 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
 		const char *format = rz_type_db_format_get(typedb, type->identifier.name);
 		if (format) {
 			rz_strbuf_append(buf, format);
-		} else {
-			char *bfmt = rz_type_format(typedb, type->identifier.name);
-			if (bfmt) {
-				rz_strbuf_append(buf, bfmt);
-			}
-			free(bfmt);
 		}
 	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
 		rz_strbuf_appendf(buf, "[%" PFMT64d "]", type->array.count);
@@ -2889,6 +2952,16 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
 	}
 }
 
+/**
+ * \brief Represents the RzType as a `pf` format string
+ *
+ * Different from the similar function for the RzBaseType,
+ * since the latter shows the pair of <format> <fields>,
+ * while this implementation produces only the <format> part.
+ *
+ * \param typedb Types Database instance
+ * \param type RzType type
+ */
 RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(typedb && type, NULL);
 	if (type->kind == RZ_TYPE_KIND_CALLABLE) {
@@ -2901,8 +2974,8 @@ RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType 
 		return "p";
 	}
 	// Special case of `char *`
-	if (rz_type_is_void_ptr(type)) {
-		return "zp";
+	if (rz_type_is_char_ptr(type)) {
+		return "z";
 	}
 	RzStrBuf *buf = rz_strbuf_new("");
 	type_to_format(typedb, buf, type);
