@@ -284,6 +284,17 @@ RZ_API bool rz_type_pointer_is_const(const RzTypeDB *typedb, RZ_NONNULL const Rz
 	return type->pointer.is_const;
 }
 
+static bool type_is_atomic_ptr(RZ_NONNULL const RzType *type, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(type && name, false);
+	if (type->kind != RZ_TYPE_KIND_POINTER) {
+		return false;
+	}
+	// There should not exist pointers to the empty types
+	RzType *ptr = type->pointer.type;
+	rz_return_val_if_fail(ptr, false);
+	return ptr->kind == RZ_TYPE_KIND_IDENTIFIER && ptr->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED && !strcmp(ptr->identifier.name, name);
+}
+
 /**
  * \brief Checks if the pointer RzType is abstract pointer ("void *")
  *
@@ -291,13 +302,27 @@ RZ_API bool rz_type_pointer_is_const(const RzTypeDB *typedb, RZ_NONNULL const Rz
  */
 RZ_API bool rz_type_is_void_ptr(RZ_NONNULL const RzType *type) {
 	rz_return_val_if_fail(type, false);
-	if (type->kind != RZ_TYPE_KIND_POINTER) {
-		return false;
-	}
-	// There should not exist pointers to the empty types
-	RzType *ptr = type->pointer.type;
-	rz_return_val_if_fail(ptr, false);
-	return ptr->kind == RZ_TYPE_KIND_IDENTIFIER && ptr->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED && !strcmp(ptr->identifier.name, "void");
+	return type_is_atomic_ptr(type, "void");
+}
+
+/**
+ * \brief Checks if the pointer RzType is a string ("char *" or "const char *")
+ *
+ * \param type RzType type pointer
+ */
+RZ_API bool rz_type_is_char_ptr(RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, false);
+	return type_is_atomic_ptr(type, "char");
+}
+
+/**
+ * \brief Checks if the RzType is identifier
+ *
+ * \param type RzType type pointer
+ */
+RZ_API bool rz_type_is_identifier(RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, false);
+	return type->kind == RZ_TYPE_KIND_IDENTIFIER;
 }
 
 /**

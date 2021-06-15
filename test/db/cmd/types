@@ -11,7 +11,7 @@ EXPECT=<<EOF
 Bar
 Foo
 pf d a
-pf zd hello world
+pf z[0]d hello world
 EOF
 RUN
 
@@ -259,7 +259,7 @@ tu xoo
 tuc xoo
 EOF
 EXPECT=<<EOF
-pf 0ddd (int)x (int)y (int)z
+pf ddd x y z
 union xoo {
 	int x;
 	int y;
@@ -395,7 +395,7 @@ ts test_struct
 tsd test_struct
 EOF
 EXPECT=<<EOF
-pf ?dd x y
+pf dd x y
 struct test_struct {int x; int y;};
 EOF
 RUN
@@ -515,21 +515,21 @@ tt dox_t
 ttc dox_t
 EOF
 EXPECT=<<EOF
-pf ?[40]c[40]c[40]c first middle last
+pf [40]c[40]c[40]c first middle last
 struct name {char first[40]; char middle[40]; char last[40];};
 struct name {
 	char first[40];
 	char middle[40];
 	char last[40];
 };
-pf ?bbw day month year
+pf bbw day month year
 struct date {uint8_t day; uint8_t month; uint16_t year;};
 struct date {
 	uint8_t day;
 	uint8_t month;
 	uint16_t year;
 };
-pf ?[127]c[40]cd street city zip
+pf [127]c[40]cd street city zip
 struct addr {char street[127]; char city[40]; uint32_t zip;};
 struct addr {
 	char street[127];
@@ -561,7 +561,7 @@ tu x
 tuc x
 EOF
 EXPECT=<<EOF
-pf 0fd a b
+pf fd a b
 union x {
 	float a;
 	int b;
@@ -1690,7 +1690,7 @@ td "struct s1 { int a; int size; int b; };"
 ts s1
 EOF
 EXPECT=<<EOF
-pf ?ddd a size b
+pf ddd a size b
 EOF
 RUN
 
@@ -1811,10 +1811,10 @@ tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pf.foo 0dc a b
-pf.foo 0dc a b
-pf 0dc a b
-pf 0dc a b
+pf.foo dc a b
+pf.foo dc a b
+pf dc a b
+pf dc a b
 EOF
 RUN
 
