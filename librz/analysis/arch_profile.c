@@ -156,17 +156,21 @@ static bool is_cpu_valid(char *cpu_dir, const char *cpu) {
 	}
 	RzListIter *it;
 	char *filename = NULL;
-	char *cpu_name = NULL;
 	char *arch_cpu = NULL;
 
 	rz_list_foreach (files, it, filename) {
+		char *cpu_name = NULL;
 		if (!strcmp(filename, "..") || !strcmp(filename, "..")) {
 			continue;
 		}
 		arch_cpu = rz_str_ndup(filename, strlen(filename) - 4);
-		if (!arch_cpu)
+		if (!arch_cpu) {
 			continue;
+		}
 		cpu_name = strchr(arch_cpu, '-');
+		if (!cpu_name) {
+			continue;
+		}
 		cpu_name[0] = '\0';
 		if (!strcmp(cpu_name + 1, cpu)) {
 			rz_list_free(files);
@@ -201,6 +205,7 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 	if (!is_cpu_valid(cpu_dir, cpu)) {
 		if (arch) {
 			if (!strcmp(arch, "avr")) {
+				free(path);
 				path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "avr-ATmega8.sdb"), dir_prefix);
 			}
 		}
