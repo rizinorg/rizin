@@ -815,8 +815,10 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 		break;
 	}
 	case RZ_TYPE_KIND_ARRAY: {
+		// Here we don't append the array count since it's done on the
+		// identifier side
 		char *typestr = type_as_string_decl(typedb, type->array.type, false);
-		rz_strbuf_appendf(buf, "%s[%" PFMT64d "]", typestr, type->array.count);
+		rz_strbuf_append(buf, typestr);
 		free(typestr);
 		break;
 	}
