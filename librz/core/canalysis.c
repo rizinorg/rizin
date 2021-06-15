@@ -6450,7 +6450,7 @@ RZ_API void rz_core_analysis_flag_every_function(RzCore *core) {
 
 static bool add_mmio_flag_cb(void *user, const ut64 addr, const void *v) {
 	const char *name = v;
-	RzFlag *flags = user;
+	RzFlag *flags = (RzFlag *)user;
 	rz_flag_space_push(flags, RZ_FLAGS_FS_MMIO_REGISTERS);
 	rz_flag_set(flags, name, addr, 1);
 	rz_flag_space_pop(flags);
@@ -6459,7 +6459,7 @@ static bool add_mmio_flag_cb(void *user, const ut64 addr, const void *v) {
 
 static bool add_mmio_extended_flag_cb(void *user, const ut64 addr, const void *v) {
 	const char *name = v;
-	RzFlag *flags = user;
+	RzFlag *flags = (RzFlag *)user;
 	rz_flag_space_push(flags, RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED);
 	rz_flag_set(flags, name, addr, 1);
 	rz_flag_space_pop(flags);
