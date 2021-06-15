@@ -151,6 +151,7 @@ static const RzCmdDescArg type_enum_c_nl_args[2];
 static const RzCmdDescArg type_enum_find_args[2];
 static const RzCmdDescArg type_list_function_args[2];
 static const RzCmdDescArg type_function_del_args[2];
+static const RzCmdDescArg type_function_cc_args[3];
 static const RzCmdDescArg type_link_args[3];
 static const RzCmdDescArg type_link_show_args[2];
 static const RzCmdDescArg type_link_del_args[2];
@@ -2979,6 +2980,26 @@ static const RzCmdDescHelp type_function_del_all_help = {
 	.args = type_function_del_all_args,
 };
 
+static const RzCmdDescArg type_function_cc_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "cc",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_function_cc_help = {
+	.summary = "Show or set function calling convention",
+	.args = type_function_cc_args,
+};
+
 static const RzCmdDescHelp tl_help = {
 	.summary = "Manage type links to the address",
 };
@@ -5162,6 +5183,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *type_function_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tf_cd, "tf-*", rz_type_function_del_all_handler, &type_function_del_all_help);
 	rz_warn_if_fail(type_function_del_all_cd);
+
+	RzCmdDesc *type_function_cc_cd = rz_cmd_desc_argv_new(core->rcmd, tf_cd, "tfc", rz_type_function_cc_handler, &type_function_cc_help);
+	rz_warn_if_fail(type_function_cc_cd);
 
 	RzCmdDesc *tl_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB | RZ_OUTPUT_MODE_LONG, rz_type_link_handler, &type_link_help, &tl_help);
 	rz_warn_if_fail(tl_cd);
