@@ -2776,6 +2776,8 @@ static const char *type_to_identifier(const RzTypeDB *typedb, RzType *type) {
 		return type_to_identifier(typedb, type->array.type);
 	} else if (type->kind == RZ_TYPE_KIND_POINTER) {
 		return type_to_identifier(typedb, type->pointer.type);
+	} else if (type->kind == RZ_TYPE_KIND_CALLABLE) {
+		return type->callable->name;
 	}
 	rz_warn_if_reached();
 	return NULL;
@@ -2796,7 +2798,11 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 			if (strcmp(membtype, type->name)) {
 				const char *membfmt = rz_type_as_format(typedb, memb->type);
 				rz_strbuf_append(format, membfmt);
-				rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+				if (!rz_type_is_atomic(typedb, memb->type)) {
+					rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+				} else {
+					rz_strbuf_appendf(fields, "%s ", memb->name);
+				}
 			}
 		}
 		break;
@@ -2817,7 +2823,11 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 			if (strcmp(membtype, type->name)) {
 				const char *membfmt = rz_type_as_format(typedb, memb->type);
 				rz_strbuf_append(format, membfmt);
-				rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+				if (!rz_type_is_atomic(typedb, memb->type)) {
+					rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
+				} else {
+					rz_strbuf_appendf(fields, "%s ", memb->name);
+				}
 			}
 		}
 		break;
@@ -2889,6 +2899,10 @@ RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType 
 	// Special case of `void *`
 	if (rz_type_is_void_ptr(type)) {
 		return "p";
+	}
+	// Special case of `char *`
+	if (rz_type_is_void_ptr(type)) {
+		return "zp";
 	}
 	RzStrBuf *buf = rz_strbuf_new("");
 	type_to_format(typedb, buf, type);

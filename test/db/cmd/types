@@ -395,7 +395,7 @@ ts test_struct
 tsd test_struct
 EOF
 EXPECT=<<EOF
-pf ?dd (int)x (int)y
+pf ?dd x y
 struct test_struct {int x; int y;};
 EOF
 RUN
@@ -515,21 +515,21 @@ tt dox_t
 ttc dox_t
 EOF
 EXPECT=<<EOF
-pf ?[40]c[40]c[40]c (char)first (char)middle (char)last
+pf ?[40]c[40]c[40]c first middle last
 struct name {char first[40]; char middle[40]; char last[40];};
 struct name {
 	char first[40];
 	char middle[40];
 	char last[40];
 };
-pf ?bbw (uint8_t)day (uint8_t)month (uint16_t)year
+pf ?bbw day month year
 struct date {uint8_t day; uint8_t month; uint16_t year;};
 struct date {
 	uint8_t day;
 	uint8_t month;
 	uint16_t year;
 };
-pf ?[127]c[40]cd (char)street (char)city (uint32_t)zip
+pf ?[127]c[40]cd street city zip
 struct addr {char street[127]; char city[40]; uint32_t zip;};
 struct addr {
 	char street[127];
@@ -561,7 +561,7 @@ tu x
 tuc x
 EOF
 EXPECT=<<EOF
-pf 0fd (float)a (int)b
+pf 0fd a b
 union x {
 	float a;
 	int b;
@@ -631,7 +631,7 @@ NAME=te <enum>
 FILE==
 CMDS=<<EOF
 td "enum Foo {COW=1,BAR=2};"
-te
+te~Foo
 te Foo
 EOF
 EXPECT=<<EOF
@@ -1033,7 +1033,6 @@ CMDS=<<EOF
 e asm.bytes=true
 aa
 td "union Books {char  title[50];char  author[50]; char  subject[100];};"
-tu
 tu Books
 s main
 tl "union Books" 0x00177f88
@@ -1042,7 +1041,6 @@ s 0x000006d2
 pd 1
 EOF
 EXPECT=<<EOF
-Books
 pf [50]z[50]z[100]z title author subject
 var union Books @ rbp-0x70
 |           0x000006d2      488d4590       lea   rax, [Books]
@@ -1101,7 +1099,7 @@ tsc with_array
 EOF
 EXPECT=<<EOF
 struct with_array {
-	int32_t x;
+	int x;
 	char y[50];
 	float z;
 };
@@ -1195,9 +1193,9 @@ tt B
 tt O
 EOF
 EXPECT=<<EOF
-pf ?f (float)num
-pf ?dF (int)num (double)num2
-pf ?c (char)ch
+pf ?f num
+pf ?dF num num2
+pf ?c ch
 ----
 struct A {
 	float num;
@@ -1230,15 +1228,15 @@ tsc "anonymous struct 0"
 tsc "anonymous struct 1"
 EOF
 EXPECT=<<EOF
-pf ?f (float)num
-pf ?c (char)ch
+pf ?f num
+pf ?c ch
 typedef struct anonymous struct 0 A;
 typedef struct anonymous struct 1 B;
 struct anonymous struct 0 {
-        float num;
+	float num;
 };
 struct anonymous struct 1 {
-        char ch;
+	char ch;
 };
 EOF
 RUN
@@ -1689,16 +1687,10 @@ NAME=types size
 FILE==
 CMDS=<<EOF
 td "struct s1 { int a; int size; int b; };"
-tk~struct.s1
+ts s1
 EOF
 EXPECT=<<EOF
-struct.s1=a,size,b
-struct.s1.a=int32_t,0,0
-struct.s1.a.meta=0
-struct.s1.b=int32_t,8,0
-struct.s1.b.meta=0
-struct.s1.size=int32_t,4,0
-struct.s1.size.meta=0
+pf ?ddd a size b
 EOF
 RUN
 
@@ -1742,7 +1734,7 @@ EOF
 EXPECT=<<EOF
 void fcn.004e2420 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
 void no_type (int a, char **b);
-char type (intt a, char **b);
+char type (int a, char **b);
 EOF
 RUN
 
@@ -1819,10 +1811,10 @@ tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pf.foo 0dc (int)a (char)b
-pf.foo 0dc (int)a (char)b
-pf 0dc (int)a (char)b
-pf 0dc (int)a (char)b
+pf.foo 0dc a b
+pf.foo 0dc a b
+pf 0dc a b
+pf 0dc a b
 EOF
 RUN
 

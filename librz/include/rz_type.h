@@ -256,6 +256,7 @@ RZ_API bool rz_type_atomic_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzTyp
 RZ_API bool rz_type_atomic_set_sign(RzTypeDB *typedb, RzType *type, bool sign);
 
 RZ_API bool rz_type_is_void_ptr(RZ_NONNULL const RzType *type);
+RZ_API bool rz_type_is_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_default(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN RzType *rz_type_new_default(const RzTypeDB *typedb);
 
