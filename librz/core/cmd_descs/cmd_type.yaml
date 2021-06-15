@@ -141,6 +141,15 @@ commands:
         cname: type_function_del_all
         summary: Remove all function types
         args: []
+      - name: tfc
+        cname: type_function_cc
+        summary: Show or set function calling convention
+        args:
+          - name: name
+            type: RZ_CMD_ARG_TYPE_STRING
+          - name: cc
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
   - name: tl
     summary: Manage type links to the address
     subcommands:

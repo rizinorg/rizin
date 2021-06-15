@@ -1429,8 +1429,8 @@ aa
 s sym._main
 aei
 aeim
-td int strcmp(char *s1, char *s2);
-tk func.strcmp.cc=stdcall
+td "int strcmp(char *s1, char *s2);"
+tfc strcmp stdcall
 aft
 s 0x00401370
 pd 1~char *s1?
@@ -1460,11 +1460,8 @@ FILE=bins/pe/crackme0x00.exe
 CMDS=<<EOF
 s entry0
 af
-tk CRTStartup=func
-tk func.CRTStartup.args=1
-tk func.CRTStartup.arg0= int,who_cares
-tk func.CRTStartup.cc=THE_CC_THAT_NEVER_EXISTED
-tk func.CRTStartup.ret=eax
+td "int CRTStartup(int who_cares);"
+tfc CRTStartup THE_CC_THAT_NEVER_EXISTED
 aei
 aeim
 aftm

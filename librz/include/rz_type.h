@@ -306,6 +306,7 @@ RZ_API RZ_BORROW RzType *rz_type_func_ret(RzTypeDB *typedb, RZ_NONNULL const cha
 RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *func_name, RZ_OWN RZ_NONNULL RzType *type);
 
 RZ_API RZ_BORROW const char *rz_type_func_cc(RzTypeDB *typedb, RZ_NONNULL const char *func_name);
+RZ_API bool rz_type_func_cc_set(RzTypeDB *typedb, const char *name, const char *cc);
 
 RZ_API int rz_type_func_args_count(RzTypeDB *typedb, RZ_NONNULL const char *func_name);
 RZ_API RZ_BORROW RzType *rz_type_func_args_type(RzTypeDB *typedb, RZ_NONNULL const char *func_name, int i);
