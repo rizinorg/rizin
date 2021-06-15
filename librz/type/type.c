@@ -921,6 +921,25 @@ RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
 }
 
 /**
+ * \brief Returns the RzBaseType for the chosen RzType
+ *
+ * \param typedb Type Database instance
+ * \param type RzType type pointer
+ */
+RZ_API RZ_BORROW RzBaseType *rz_type_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, false);
+	const char *identifier = rz_type_identifier(type);
+	if (!identifier) {
+		return NULL;
+	}
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, identifier);
+	if (!btype) {
+		return NULL;
+	}
+	return btype;
+}
+
+/**
  * \brief Frees the RzType
  *
  * Doesn't free the underlying RzBaseType, only the RzType wrapper.
