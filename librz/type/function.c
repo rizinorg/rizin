@@ -236,6 +236,23 @@ RZ_API RZ_BORROW const char *rz_type_func_cc(RzTypeDB *typedb, const char *name)
 }
 
 /**
+ * \brief Searches for the RzCallable type in types database and set the calling convention
+ *
+ * \param typedb Type Database instance
+ * \param name Name of the callable to search
+ * \param name Name of the calling convention to set
+ */
+RZ_API bool rz_type_func_cc_set(RzTypeDB *typedb, const char *name, const char *cc) {
+	rz_return_val_if_fail(typedb && name, NULL);
+	RzCallable *callable = rz_type_func_get(typedb, name);
+	if (!callable) {
+		return false;
+	}
+	callable->cc = strdup(cc);
+	return true;
+}
+
+/**
  * \brief Searches for the RzCallable type in types database and returns arguments' count
  *
  * \param typedb Type Database instance
