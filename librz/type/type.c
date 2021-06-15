@@ -795,7 +795,7 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 			eprintf("cannot find base type \"%s\"\n", type->identifier.name);
 			return NULL;
 		}
-		const char *btypestr = rz_type_db_base_type_as_string(typedb, btype);
+		const char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? btype->name : rz_type_db_base_type_as_string(typedb, btype);
 		if (type->identifier.is_const) {
 			rz_strbuf_appendf(buf, "const %s%s", btypestr, separator);
 		} else {
