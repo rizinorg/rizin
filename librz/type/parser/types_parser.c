@@ -1384,7 +1384,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		parser_debug(state, "function declarator: %s\n", real_ident);
 		// It can only contain two nodes:
 		// - declarator
-		// - parameter_list
+		// - parameters
 		int function_node_child_count = ts_node_named_child_count(node);
 		if (function_node_child_count > 2) {
 			node_malformed_error(state, node, text, "function_declarator");
