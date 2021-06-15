@@ -177,7 +177,7 @@ static bool sdb_load_by_path(RZ_NONNULL RzSysregsDB *sysregdb, const char *path)
  * \param s reference to RzSysregDB
  * \param path reference to path of the SDB file
  */
-RZ_API bool rz_type_db_load_sysregs_sdb(RzSysregsDB *sysregdb, const char *path) {
+RZ_API bool rz_sysreg_load_sdb(RzSysregsDB *sysregdb, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;
 	}
@@ -198,7 +198,7 @@ RZ_API bool rz_sysreg_set_arch(RzSyscall *s, const char *arch, const char *dir_p
 
 	s->srdb = rz_sysregs_db_new();
 	if (path) {
-		if (!rz_type_db_load_sysregs_sdb(s->srdb, path)) {
+		if (!rz_sysreg_load_sdb(s->srdb, path)) {
 			s->srdb = NULL;
 			return false;
 		}
@@ -255,7 +255,7 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 		char *dbName = rz_str_newf(RZ_JOIN_2_PATHS("reg", "%s-%s-%d"),
 			arch, cpu, bits);
 		if (dbName) {
-			if (!rz_type_db_load_sysregs_sdb(s->srdb, dbName)) {
+			if (!rz_sysreg_load_sdb(s->srdb, dbName)) {
 				s->srdb = NULL;
 			}
 			free(dbName);

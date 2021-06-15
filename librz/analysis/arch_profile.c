@@ -142,7 +142,7 @@ static bool sdb_load_arch_profile_by_path(RZ_NONNULL RzArchTarget *t, const char
  * \param t reference to RzArchTarget
  * \param path reference to path of the SDB file
  */
-RZ_API bool rz_type_db_load_arch_profile_sdb(RzArchTarget *t, const char *path) {
+RZ_API bool rz_arch_load_profile_sdb(RzArchTarget *t, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;
 	}
@@ -208,7 +208,7 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 			path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "avr-ATmega8.sdb"), dir_prefix);
 		}
 	}
-	if (!rz_type_db_load_arch_profile_sdb(t, path)) {
+	if (!rz_arch_load_profile_sdb(t, path)) {
 		sdb_free(t->db);
 		t->db = NULL;
 	}
