@@ -192,17 +192,19 @@ static void core_types_union_print(RzCore *core, RzBaseType *btype, RzOutputMode
 		pj_end(pj);
 		break;
 	}
-	case RZ_OUTPUT_MODE_STANDARD: {
+	case RZ_OUTPUT_MODE_LONG: {
+		rz_cons_printf("union %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeUnionMember *memb;
 			rz_vector_foreach(&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
-				rz_cons_printf("%s: %s\n", memb->name, mtype);
+				rz_cons_printf("\n%s: %s\n", memb->name, mtype);
 				free(mtype);
 			}
 		}
 		break;
 	}
+	case RZ_OUTPUT_MODE_STANDARD:
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_println(btype->name);
 		break;
@@ -311,17 +313,19 @@ static void core_types_struct_print(RzCore *core, RzBaseType *btype, RzOutputMod
 		pj_end(pj);
 		break;
 	}
-	case RZ_OUTPUT_MODE_STANDARD: {
+	case RZ_OUTPUT_MODE_LONG: {
+		rz_cons_printf("struct %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeStructMember *memb;
 			rz_vector_foreach(&btype->struct_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
-				rz_cons_printf("%s: %s\n", memb->name, mtype);
+				rz_cons_printf("\t%s: %s\n", memb->name, mtype);
 				free(mtype);
 			}
 		}
 		break;
 	}
+	case RZ_OUTPUT_MODE_STANDARD:
 	case RZ_OUTPUT_MODE_QUIET:
 		rz_cons_println(btype->name);
 		break;

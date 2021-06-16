@@ -1803,20 +1803,22 @@ RUN
 NAME=afvb idx... & afvn
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
+td "typedef void * EFI_HANDLE;"
 af
-afvb 8 ImageHandle blah @ 0x10002d8d
+afvb 8 ImageHandle EFI_HANDLE @ 0x10002d8d
 afvb*~ImageHandle
 EOF
 EXPECT=<<EOF
-afvb 8 ImageHandle blah @ 0x10002d8d
+afvb 8 ImageHandle EFI_HANDLE @ 0x10002d8d
 EOF
 RUN
 
 NAME=afvbj
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
+td "typedef void * EFI_HANDLE;"
 af
-afvb 8 ImageHandle blah @ 0x10002d8d
+afvb 8 ImageHandle EFI_HANDLE @ 0x10002d8d
 afvbj~?ImageHandle
 EOF
 EXPECT=<<EOF
@@ -1827,6 +1829,7 @@ RUN
 NAME=afvb-ArgName
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
+td "typedef void * EFI_HANDLE;"
 af
 afvb 8 ImageHandle blah @ 0x10002d8d
 afvb-ImageHandle

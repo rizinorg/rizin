@@ -6,8 +6,8 @@ ts Employee
 ts NSString
 EOF
 EXPECT=<<EOF
-pf ?*?*cxxxp** pp name version info instance_size ivars methodLists cache protocols w*?pd*cd p0 p1 str len *?pd*cd p0 p1 str len qpppp (objc_class)isa _shortWord (NSString)_username (NSString)_firstName _wideWord username first Name shortWord wideWord
-pf ?pd*cd p0 p1 str len
+pf *?w*?*?qpppp (objc_class)isa _shortWord (NSString)_username (NSString)_firstName _wideWord username firstName shortWor
+pf pdzd p0 p1 str len
 EOF
 RUN
 
