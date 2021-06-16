@@ -136,15 +136,17 @@ static bool structured_member_walker(const RzTypeDB *typedb, RzList /* RzTypePat
 			return false;
 		}
 		RzTypeStructMember *memb;
+		ut64 memb_offset = 0;
 		rz_vector_foreach(&btype->struct_data.members, memb) {
-			if (memb->offset == offset) {
+			if (memb_offset == offset) {
 				RzTypePath *tpath = rz_type_path_new(parent, rz_str_newf("%s.%s.%s", path, btype->name, memb->name));
 				if (tpath) {
 					rz_list_append(list, tpath);
 				}
 			}
 			char *newpath = rz_str_newf("%s.%s", path, memb->name);
-			result &= structured_member_walker(typedb, list, parent, memb->type, newpath, memb->offset + offset);
+			result &= structured_member_walker(typedb, list, parent, memb->type, newpath, memb_offset + offset);
+			memb_offset += rz_type_db_get_bitsize(typedb, memb->type) / 8;
 			free(newpath);
 		}
 	} else if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNION) {
@@ -176,8 +178,9 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *ty
 	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
 		RzType *t = rz_type_identifier_of_base_type(typedb, btype, false);
 		RzTypeStructMember *memb;
+		ut64 memb_offset = 0;
 		rz_vector_foreach(&btype->struct_data.members, memb) {
-			if (memb->offset == offset) {
+			if (memb_offset == offset) {
 				RzType *t = rz_type_identifier_of_base_type(typedb, btype, false);
 				RzTypePath *tpath = rz_type_path_new(t, rz_str_newf("%s.%s", btype->name, memb->name));
 				if (tpath) {
@@ -186,7 +189,8 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *ty
 			}
 			// We go into the nested structures/unions if they are members of the structure
 			char *path = rz_str_newf("%s.%s", btype->name, memb->name);
-			nofail &= structured_member_walker(typedb, list, t, memb->type, path, memb->offset + offset);
+			nofail &= structured_member_walker(typedb, list, t, memb->type, path, memb_offset + offset);
+			memb_offset += rz_type_db_get_bitsize(typedb, memb->type) / 8;
 			free(path);
 		}
 	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION) {
