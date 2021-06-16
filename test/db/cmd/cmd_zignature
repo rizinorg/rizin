@@ -431,7 +431,7 @@ zigs:main:
   realname: main
   xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -454,7 +454,7 @@ zigs:main:
   realname: main
   xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -475,7 +475,7 @@ main:
   addr: 0x0040055b
   xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -498,7 +498,7 @@ foobar:
   realname: main
   xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -520,7 +520,7 @@ foobar:
   realname: main
   xrefs_from: sym.print
   vars: b-12, b-24, r82, r78
-  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv", func.main.arg.2="char **,envp"
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
