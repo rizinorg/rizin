@@ -5222,7 +5222,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_print_hexstring_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpx", rz_type_print_hexstring_handler, &type_print_hexstring_help);
 	rz_warn_if_fail(type_print_hexstring_cd);
 
-	RzCmdDesc *ts_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "ts", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_type_list_structure_handler, &type_list_structure_help, &ts_help);
+	RzCmdDesc *ts_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "ts", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_list_structure_handler, &type_list_structure_help, &ts_help);
 	rz_warn_if_fail(ts_cd);
 	RzCmdDesc *type_structure_c_cd = rz_cmd_desc_argv_new(core->rcmd, ts_cd, "tsc", rz_type_structure_c_handler, &type_structure_c_help);
 	rz_warn_if_fail(type_structure_c_cd);
@@ -5235,7 +5235,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_typedef_c_cd = rz_cmd_desc_argv_new(core->rcmd, tt_cd, "ttc", rz_type_typedef_c_handler, &type_typedef_c_help);
 	rz_warn_if_fail(type_typedef_c_cd);
 
-	RzCmdDesc *tu_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_type_list_union_handler, &type_list_union_help, &tu_help);
+	RzCmdDesc *tu_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_list_union_handler, &type_list_union_help, &tu_help);
 	rz_warn_if_fail(tu_cd);
 	RzCmdDesc *type_union_c_cd = rz_cmd_desc_argv_new(core->rcmd, tu_cd, "tuc", rz_type_union_c_handler, &type_union_c_help);
 	rz_warn_if_fail(type_union_c_cd);

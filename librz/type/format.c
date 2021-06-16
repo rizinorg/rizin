@@ -2942,6 +2942,12 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
 		const char *format = rz_type_db_format_get(typedb, type->identifier.name);
 		if (format) {
 			rz_strbuf_append(buf, format);
+		} else {
+			if (type->identifier.kind == RZ_BASE_TYPE_KIND_STRUCT) {
+				rz_strbuf_append(buf, "?");
+			} else if (type->identifier.kind == RZ_BASE_TYPE_KIND_ENUM) {
+				rz_strbuf_append(buf, "E");
+			}
 		}
 	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
 		rz_strbuf_appendf(buf, "[%" PFMT64d "]", type->array.count);
