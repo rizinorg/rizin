@@ -7,8 +7,8 @@
 			return fun##_32(core, ##__VA_ARGS__); \
 		} \
 	}
-RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	call_handler(rz_cmd_heap_chunks_print_handler, argc, argv, mode);
+RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	call_handler(rz_cmd_heap_chunks_print_handler, argc, argv, state);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_arena_print_handler(RzCore *core, int argc, const char **argv) {
@@ -25,8 +25,9 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunk_print_handler(RzCore *core, int argc, const
 
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_graph_handler(RzCore *core, int argc, const char **argv) {
 	// RZ_OUTPUT_MODE_LONG_JSON mode workaround for graph
-	RzOutputMode mode = RZ_OUTPUT_MODE_LONG_JSON;
-	call_handler(rz_cmd_heap_chunks_print_handler, argc, argv, mode);
+	RzCmdStateOutput state = { 0 };
+	state.mode = RZ_OUTPUT_MODE_LONG_JSON;
+	call_handler(rz_cmd_heap_chunks_print_handler, argc, argv, &state);
 }
 
 RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const char **argv) {

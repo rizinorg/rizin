@@ -1897,10 +1897,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
+	RzOutputMode mode = state->mode;
 	if (!main_arena) {
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -1934,7 +1935,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	RzList *chunks = GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state);
 	RzListIter *iter;
 	RzHeapChunkListItem *pos;
-	PJ *pj = NULL;
+	PJ *pj = state->d.pj;
 	int w, h;
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 	if (!hc) {
@@ -1963,7 +1964,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	top_data = rz_str_new("");
 	top_title = rz_str_new("");
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
 		if (!pj) {
 			free(main_arena);
 			return RZ_CMD_STATUS_ERROR;
@@ -2039,8 +2039,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		pj_kn(pj, "brk", brk_start);
 		pj_kn(pj, "end", brk_end);
 		pj_end(pj);
-		rz_cons_print(pj_string(pj));
-		pj_free(pj);
 	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_cons_printf("fs-\n");
 		rz_cons_printf("f heap.top = 0x%08" PFMT64x "\n", (ut64)main_arena->GH(top));
