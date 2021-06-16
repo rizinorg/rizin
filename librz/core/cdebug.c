@@ -749,12 +749,6 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode) {
 				free(name);
 			} break;
 			case RZ_OUTPUT_MODE_QUIET: // "dmq"
-				//				if (input[1] == '.') { // "dmq."
-				//					if (addr >= map->addr && addr < map->addr_end) {
-				//						print_debug_map_line(dbg, map, addr, input);
-				//					}
-				//					break;
-				//				}
 				print_debug_map_line(dbg, map, addr, mode);
 				break;
 			case RZ_OUTPUT_MODE_LONG: // workaround for '.'
@@ -890,7 +884,6 @@ RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input,
 	}
 	int i;
 	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
-		//		RzList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
 		RzList *maps = rz_debug_map_list(dbg, (bool)i);
 		if (!maps) {
 			continue;

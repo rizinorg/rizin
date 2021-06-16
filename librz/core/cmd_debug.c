@@ -240,13 +240,6 @@ static const char *help_msg_dmm[] = {
 	NULL
 };
 
-//static const char *help_msg_dmp[] = {
-//	"Usage:", "dmp", " Change page permissions",
-//	"dmp", " [addr] [size] [perms]", "Change permissions",
-//	"dmp", " [perms]", "Change dbg.map permissions",
-//	NULL
-//};
-
 static const char *help_msg_do[] = {
 	"Usage:", "do", " # Debug (re)open commands",
 	"do", "", "Open process (reload, alias for 'oo')",
