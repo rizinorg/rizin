@@ -537,7 +537,16 @@ RZ_IPI RzCmdStatus rz_type_print_hexstring_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_type_list_structure_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *typename = argc > 1 ? argv[1] : NULL;
 	if (typename) {
-		rz_core_types_show_format(core, typename, mode);
+		if (mode == RZ_OUTPUT_MODE_STANDARD) {
+			rz_core_types_show_format(core, typename, mode);
+		} else {
+			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
+			rz_core_types_struct_print(core, typename, mode, pj);
+			if (mode == RZ_OUTPUT_MODE_JSON) {
+				rz_cons_println(pj_string(pj));
+				pj_free(pj);
+			}
+		}
 	} else {
 		if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			rz_core_types_struct_print_format_all(core);
@@ -594,7 +603,16 @@ RZ_IPI RzCmdStatus rz_type_typedef_c_handler(RzCore *core, int argc, const char 
 RZ_IPI RzCmdStatus rz_type_list_union_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *typename = argc > 1 ? argv[1] : NULL;
 	if (typename) {
-		rz_core_types_show_format(core, typename, mode);
+		if (mode == RZ_OUTPUT_MODE_STANDARD) {
+			rz_core_types_show_format(core, typename, mode);
+		} else {
+			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
+			rz_core_types_union_print(core, typename, mode, pj);
+			if (mode == RZ_OUTPUT_MODE_JSON) {
+				rz_cons_println(pj_string(pj));
+				pj_free(pj);
+			}
+		}
 	} else {
 		if (mode == RZ_OUTPUT_MODE_RIZIN) {
 			rz_core_types_union_print_format_all(core);
