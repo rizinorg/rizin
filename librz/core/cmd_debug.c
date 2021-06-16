@@ -231,15 +231,6 @@ static const char *help_msg_dmi[] = {
 	NULL
 };
 
-static const char *help_msg_dmm[] = {
-	"Usage:", "dmm", " # Module memory maps commands",
-	"dmm", "", "List modules of target process",
-	"dmm*", "", "List modules of target process (rizin commands)",
-	"dmm.", "", "List memory map of current module",
-	"dmmj", "", "List modules of target process (JSON)",
-	NULL
-};
-
 static const char *help_msg_do[] = {
 	"Usage:", "do", " # Debug (re)open commands",
 	"do", "", "Open process (reload, alias for 'oo')",
@@ -1220,40 +1211,50 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 	return ret;
 }
 
-static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
+static void cmd_debug_current_modules(RzCore *core, RzOutputMode mode) { // "dmm"
 	ut64 addr = core->offset;
 	RzDebugMap *map;
 	RzList *list;
 	RzListIter *iter;
-
-	/* avoid processing the list if the user only wants help */
-	if (mode == '?') {
-	show_help:
-		rz_core_cmd_help(core, help_msg_dmm);
-		return;
+	list = rz_debug_modules_list(core->dbg);
+	rz_list_foreach (list, iter, map) {
+		if (!(addr >= map->addr && addr < map->addr_end)) {
+			continue;
+		}
+		if (mode == RZ_OUTPUT_MODE_STANDARD) {
+			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x "  %s\n", map->addr, map->addr_end, map->file);
+		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
+			/* Escape backslashes (e.g. for Windows). */
+			char *escaped_path = rz_str_escape(map->file);
+			char *filtered_name = strdup(map->name);
+			rz_name_filter(filtered_name, 0, true);
+			rz_cons_printf("f mod.%s = 0x%08" PFMT64x "\n",
+				filtered_name, map->addr);
+			rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
+			free(escaped_path);
+			free(filtered_name);
+		}
 	}
+	rz_list_free(list);
+}
+
+static void cmd_debug_modules(RzCore *core, RzOutputMode mode) { // "dmm"
+	RzDebugMap *map;
+	RzList *list;
+	RzListIter *iter;
 	PJ *pj = NULL;
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
 		if (!pj) {
 			return;
 		}
 		pj_a(pj);
 	}
-	// TODO: honor mode
 	list = rz_debug_modules_list(core->dbg);
 	rz_list_foreach (list, iter, map) {
-		switch (mode) {
-		case 0:
+		if (mode == RZ_OUTPUT_MODE_STANDARD) {
 			rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x "  %s\n", map->addr, map->addr_end, map->file);
-			break;
-		case '.':
-			if (addr >= map->addr && addr < map->addr_end) {
-				rz_cons_printf("0x%08" PFMT64x " 0x%08" PFMT64x "  %s\n", map->addr, map->addr_end, map->file);
-				goto beach;
-			}
-			break;
-		case 'j': {
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
 			/* Escape backslashes (e.g. for Windows). */
 			pj_o(pj);
 			pj_kn(pj, "addr", map->addr);
@@ -1261,31 +1262,19 @@ static void cmd_debug_modules(RzCore *core, int mode) { // "dmm"
 			pj_ks(pj, "file", map->file);
 			pj_ks(pj, "name", map->name);
 			pj_end(pj);
-		} break;
-		case ':':
-		case '*':
-			if (mode == '*' || (mode == ':' && addr >= map->addr && addr < map->addr_end)) {
-				/* Escape backslashes (e.g. for Windows). */
-				char *escaped_path = rz_str_escape(map->file);
-				char *filtered_name = strdup(map->name);
-				rz_name_filter(filtered_name, 0, true);
-				rz_cons_printf("f mod.%s = 0x%08" PFMT64x "\n",
-					filtered_name, map->addr);
-				rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
-				// rz_cons_printf (".!rz-bin -rsB 0x%08"PFMT64x" \"%s\"\n", map->addr, escaped_path);
-				free(escaped_path);
-				free(filtered_name);
-			}
-			break;
-		default:
-			pj_free(pj);
-			rz_list_free(list);
-			goto show_help;
-			/* not reached */
+		} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
+			/* Escape backslashes (e.g. for Windows). */
+			char *escaped_path = rz_str_escape(map->file);
+			char *filtered_name = strdup(map->name);
+			rz_name_filter(filtered_name, 0, true);
+			rz_cons_printf("f mod.%s = 0x%08" PFMT64x "\n",
+				filtered_name, map->addr);
+			rz_cons_printf("oba 0x%08" PFMT64x " %s\n", map->addr, escaped_path);
+			free(escaped_path);
+			free(filtered_name);
 		}
 	}
-beach:
-	if (mode == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 	}
@@ -1399,25 +1388,17 @@ RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const ch
 		rz_cons_println("Debugging is not enabled. Run ood?");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!strcmp(argv[0] + 3, ".*")) {
-		cmd_debug_modules(core, ':');
-	} else {
-		cmd_debug_modules(core, argv[0][3]);
-	}
+	cmd_debug_modules(core, mode);
 	return RZ_CMD_STATUS_OK;
 }
 
 // dmm.
-RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_cmd_debug_current_modules_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (rz_debug_is_dead(core->dbg)) {
 		rz_cons_println("Debugging is not enabled. Run ood?");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!strcmp(argv[0] + 3, ".*")) {
-		cmd_debug_modules(core, ':');
-	} else {
-		cmd_debug_modules(core, argv[0][3]);
-	}
+	cmd_debug_current_modules(core, mode);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1511,7 +1492,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[0]) {
 	case '\0': // "dmi" alias of "dmm"
-                cmd_debug_modules(core, 0);
+		cmd_debug_modules(core, 0);
 		break;
 	case ' ': // "dmi "
 	case '*': // "dmi*"

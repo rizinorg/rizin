@@ -121,8 +121,11 @@ commands:
             args: []
           - name: dmm.
             cname: cmd_debug_current_modules
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_RIZIN
             summary: List memory map of current module
-            args: []
+            args: [ ]
       - name: dm-
         summary: Deallocate memory map at current offset
         cname: cmd_debug_deallocate_map
