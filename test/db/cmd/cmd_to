@@ -14,19 +14,40 @@ pf ddd x test z
 EOF
 RUN
 
-NAME=to
+NAME=to same struct redefinition
 FILE==
-CMDS=to bins/headers/s1.h; to bins/headers/s2.h; t S1
+CMDS=<<EOF
+to bins/headers/s1.h
+to bins/headers/s2.h
+t S1
+t- S1
+to bins/headers/s2.h
+t S1
+t- S1
+EOF
 EXPECT=<<EOF
+pf ddd x y z
 pf ddd x test z
 EOF
 RUN
 
 NAME=to perturbated
 FILE==
-CMDS=to bins/headers/s1.h; to bins/headers/s4.h; t S1
+CMDS=<<EOF
+to bins/headers/s1.h
+to bins/headers/s4.h
+t S1
+t Perturbator
+t- S1
+to bins/headers/s4.h
+t S1
+t Perturbator
+EOF
 EXPECT=<<EOF
+pf ddd x y z
+pf d a
 pf ddd x test z
+pf d a
 EOF
 RUN
 
