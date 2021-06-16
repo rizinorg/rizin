@@ -323,7 +323,7 @@ static void core_types_struct_print(RzCore *core, RzBaseType *btype, RzOutputMod
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
 				rz_cons_printf("\t%s: %s (size = %" PFMT64d ", offset = %" PFMT64d ")\n",
-						memb->name, mtype, size, offset);
+					memb->name, mtype, size, offset);
 				offset += size;
 				free(mtype);
 			}
