@@ -878,7 +878,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 }
 
 // Parsing typedefs - these are ALWAYS concrete due to the syntax specifics
-int parse_typedef_node(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair, bool is_const) {
+int parse_typedef_node(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair) {
 	rz_return_val_if_fail(state && text && tpair, -1);
 	rz_return_val_if_fail(!ts_node_is_null(node), -1);
 	rz_return_val_if_fail(ts_node_is_named(node), -1);
@@ -889,6 +889,23 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 	if (typedef_node_child_count < 2) {
 		node_malformed_error(state, node, text, "typedef");
 		return -1;
+	}
+	// Parse the type qualifier first
+	// FIXME: There could be multiple different type qualifiers in one declaration
+	bool is_const = false;
+
+	TSNode first_leaf = ts_node_named_child(node, 0);
+	if (ts_node_is_null(first_leaf)) {
+		node_malformed_error(state, node, text, "typedef");
+		return -1;
+	}
+	const char *leaf_type = ts_node_type(first_leaf);
+	if (!strcmp(leaf_type, "type_qualifier")) {
+		const char *qualifier = ts_node_sub_string(first_leaf, text);
+		parser_debug(state, "has qualifier %s\n", qualifier);
+		if (!strcmp(qualifier, "const")) {
+			is_const = true;
+		}
 	}
 
 	TSNode typedef_type = ts_node_child_by_field_name(node, "type", 4);
@@ -980,7 +997,7 @@ int parse_type_node_single(CParserState *state, TSNode node, const char *text, P
 			return -1;
 		}
 	} else if (!strcmp(node_type, "type_definition")) {
-		result = parse_typedef_node(state, node, text, tpair, is_const);
+		result = parse_typedef_node(state, node, text, tpair);
 		if (result || !*tpair) {
 			return -1;
 		}
@@ -1638,7 +1655,7 @@ int parse_type_nodes_save(CParserState *state, TSNode node, const char *text) {
 			return -1;
 		}
 	} else if (!strcmp(node_type, "type_definition")) {
-		result = parse_typedef_node(state, node, text, &tpair, false);
+		result = parse_typedef_node(state, node, text, &tpair);
 		if (result || !tpair) {
 			return -1;
 		}
