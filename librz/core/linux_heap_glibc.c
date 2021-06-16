@@ -407,10 +407,6 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 RZ_API bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	rz_return_val_if_fail(core && core->dbg && core->dbg->maps, false);
 
-	//	if (core->dbg->main_arena_resolved) {
-	//		return true;
-	//	}
-
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
@@ -1852,7 +1848,7 @@ RZ_API RzList *GH(rz_get_heap_chunks_list)(RzCore *core, MallocState *main_arena
 }
 
 RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const char **argv) {
-	static GHT m_arena = GHT_MAX;
+	GHT m_arena = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
@@ -1902,7 +1898,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
@@ -2072,7 +2068,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 }
 
 RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	GHT global_max_fast = (64 * SZ / 4);
 	MallocState *main_arena = RZ_NEW0(MallocState);
@@ -2104,7 +2100,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_main_arena_print_handler)(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunk_print_handler)(RzCore *core, int argc, const char **argv) {
-	static GHT m_arena = GHT_MAX;
+	GHT m_arena = GHT_MAX;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2121,7 +2117,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunk_print_handler)(RzCore *core, int argc, c
 }
 
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, const char **argv) {
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
@@ -2152,7 +2148,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_info_print_handler)(RzCore *core, int argc, co
 }
 
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, const char **argv) {
-	static GHT m_arena = GHT_MAX;
+	GHT m_arena = GHT_MAX;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!main_arena) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2173,7 +2169,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 }
 
 RZ_IPI int GH(rz_cmd_heap_bins_list_print)(RzCore *core, const char *input) {
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	if (!GH(rz_resolve_main_arena)(core, &m_arena)) {
@@ -2216,7 +2212,7 @@ RZ_IPI int GH(rz_cmd_heap_bins_list_print)(RzCore *core, const char *input) {
 
 RZ_IPI int GH(rz_cmd_heap_fastbins_print)(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	MallocState *main_arena = RZ_NEW0(MallocState);
 	GHT global_max_fast = (64 * SZ / 4);
@@ -2260,7 +2256,7 @@ RZ_IPI int GH(rz_cmd_heap_fastbins_print)(void *data, const char *input) {
 }
 
 RZ_IPI RzCmdStatus GH(rz_cmd_heap_arena_bins_print_handler)(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+	GHT m_arena = GHT_MAX, m_state = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	GHT global_max_fast = (64 * SZ / 4);
 	MallocState *main_arena = RZ_NEW0(MallocState);
