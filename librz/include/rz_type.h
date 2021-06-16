@@ -198,6 +198,7 @@ RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type);
 RZ_API RZ_BORROW const char *rz_type_identifier(RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API RZ_OWN char *rz_type_identifier_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier);
 
 RZ_API void rz_type_free(RzType *type);
 RZ_API bool rz_type_exists(RzTypeDB *typedb, RZ_NONNULL const char *name);
