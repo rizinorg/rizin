@@ -297,7 +297,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int
 		return false;
 	}
 	if (rad == 1 || rad == '*') {
-		dbg->cb_printf("fs+%s\n", RZ_FLAGS_FS_REGISTERS);
+		rz_cons_printf("fs+%s\n", RZ_FLAGS_FS_REGISTERS);
 	}
 	rz_list_foreach (head, iter, item) {
 		ut64 value;
@@ -442,7 +442,7 @@ RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int
 		n++;
 	}
 	if (rad == 1 || rad == '*') {
-		dbg->cb_printf("fs-\n");
+		rz_cons_printf("fs-\n");
 	}
 beach:
 	if (isJson) {
@@ -656,11 +656,6 @@ static void print_debug_map_json(RzDebugMap *map, PJ *pj) {
 	pj_end(pj);
 }
 
-/* Write the memory map header describing the line columns */
-static void print_debug_map_line_header(RzDebug *dbg) {
-	// TODO: Write header to console based on which command is being ran
-}
-
 /* Write a single memory map line to the console */
 static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, RzOutputMode mode) {
 	char humansz[8];
@@ -670,7 +665,7 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, RzOut
 			: rz_str_newf("%08" PFMT64x ".%s", map->addr, rz_str_rwx_i(map->perm));
 		rz_name_filter(name, 0, true);
 		rz_num_units(humansz, sizeof(humansz), map->addr_end - map->addr);
-		dbg->cb_printf("0x%016" PFMT64x " - 0x%016" PFMT64x " %6s %5s %s\n",
+		rz_cons_printf("0x%016" PFMT64x " - 0x%016" PFMT64x " %6s %5s %s\n",
 			map->addr,
 			map->addr_end,
 			humansz,
@@ -697,7 +692,7 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, RzOut
 			free(filtered_name);
 		}
 		rz_num_units(humansz, sizeof(humansz), map->size);
-		dbg->cb_printf(fmtstr,
+		rz_cons_printf(fmtstr,
 			map->addr,
 			map->addr_end,
 			(addr >= map->addr && addr < map->addr_end) ? '*' : '-',
@@ -727,8 +722,6 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode) {
 			return;
 		}
 		pj_a(pj);
-	} else if (mode == RZ_OUTPUT_MODE_STANDARD) {
-		print_debug_map_line_header(dbg);
 	}
 
 	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
@@ -744,7 +737,7 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode) {
 					? rz_str_newf("%s.%s", map->name, rz_str_rwx_i(map->perm))
 					: rz_str_newf("%08" PFMT64x ".%s", map->addr, rz_str_rwx_i(map->perm));
 				rz_name_filter(name, 0, true);
-				dbg->cb_printf("f map.%s 0x%08" PFMT64x " 0x%08" PFMT64x "\n",
+				rz_cons_printf("f map.%s 0x%08" PFMT64x " 0x%08" PFMT64x "\n",
 					name, map->addr_end - map->addr + 1, map->addr);
 				free(name);
 			} break;
@@ -765,7 +758,7 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode) {
 
 	if (pj) { // "dmj" add JSON closing array brace
 		pj_end(pj);
-		dbg->cb_printf("%s\n", pj_string(pj));
+		rz_cons_printf("%s\n", pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -852,7 +845,7 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList *maps, ut64 addr, in
 			fmtstr = dbg->bits & RZ_SYS_BITS_64 // Prefix formatting string (before bar)
 				? "map %4.8s %c %s0x%016" PFMT64x "%s |"
 				: "map %4.8s %c %s0x%08" PFMT64x "%s |";
-			dbg->cb_printf(fmtstr, humansz,
+			rz_cons_printf(fmtstr, humansz,
 				(addr >= map->addr &&
 					addr < map->addr_end)
 					? '*'
@@ -863,15 +856,15 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList *maps, ut64 addr, in
 				ut64 pos = min + (col * mul); // Current address space to check
 				ut64 npos = min + ((col + 1) * mul); // Next address space to check
 				if (map->addr < npos && map->addr_end > pos) {
-					dbg->cb_printf("#"); // TODO: Comment what a # represents
+					rz_cons_printf("#"); // TODO: Comment what a # represents
 				} else {
-					dbg->cb_printf("-");
+					rz_cons_printf("-");
 				}
 			}
 			fmtstr = dbg->bits & RZ_SYS_BITS_64 ? // Suffix formatting string (after bar)
 				"| %s0x%016" PFMT64x "%s %s %s\n"
 							    : "| %s0x%08" PFMT64x "%s %s %s\n";
-			dbg->cb_printf(fmtstr, color_prefix, map->addr_end, color_suffix,
+			rz_cons_printf(fmtstr, color_prefix, map->addr_end, color_suffix,
 				rz_str_rwx_i(map->perm), map->name);
 			last = map->addr;
 		}
