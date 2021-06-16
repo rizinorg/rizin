@@ -186,9 +186,9 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		rz_strbuf_appendf(buf, "struct %s { ", type->name);
 		RzTypeStructMember *memb;
 		rz_vector_foreach(&type->struct_data.members, memb) {
-			char *membtype = rz_type_declaration_as_string(typedb, memb->type);
-			rz_strbuf_appendf(buf, "%s %s; ", membtype, memb->name);
-			free(membtype);
+			char *declaration = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
+			rz_strbuf_appendf(buf, "%s; ", declaration);
+			free(declaration);
 		}
 		rz_strbuf_append(buf, " }");
 		break;
@@ -206,9 +206,9 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 		rz_strbuf_appendf(buf, "union %s { ", type->name);
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&type->union_data.members, memb) {
-			char *membtype = rz_type_declaration_as_string(typedb, memb->type);
-			rz_strbuf_appendf(buf, "%s %s; ", membtype, memb->name);
-			free(membtype);
+			char *declaration = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
+			rz_strbuf_appendf(buf, "%s; ", declaration);
+			free(declaration);
 		}
 		rz_strbuf_append(buf, " }");
 		break;
