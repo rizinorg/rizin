@@ -613,7 +613,9 @@ static bool cb_asmarch(void *user, void *data) {
 
 	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	rz_sysreg_set_arch(core->analysis->syscall, node->value, dir_prefix);
-	rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, rz_config_get(core->config, "asm.arch"), dir_prefix);
+	if (asmcpu) {
+		rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, dir_prefix);
+	}
 
 	return true;
 }
