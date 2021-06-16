@@ -830,6 +830,73 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 	return result;
 }
 
+static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier, bool prev_ptr) {
+	rz_return_val_if_fail(typedb && type && identifier, NULL);
+
+	RzStrBuf *buf = rz_strbuf_new("");
+	switch (type->kind) {
+	case RZ_TYPE_KIND_IDENTIFIER: {
+		const char *separator = prev_ptr ? " " : "";
+		// Here it can be any of the RzBaseType
+		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
+		if (!btype) {
+			eprintf("cannot find base type \"%s\"\n", type->identifier.name);
+			return NULL;
+		}
+		// If the structure/union is anonymous, then we put declaration inline,
+		// if not - just the name
+		if (!strncmp(type->identifier.name, "anonymous ", 10)) {
+			const char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? btype->name : rz_type_db_base_type_as_string(typedb, btype);
+			if (type->identifier.is_const) {
+				rz_strbuf_appendf(buf, "const %s%s", btypestr, separator);
+			} else {
+				rz_strbuf_append(buf, btypestr);
+				rz_strbuf_append(buf, separator);
+			}
+		} else {
+			if (type->identifier.is_const) {
+				rz_strbuf_append(buf, "const ");
+			}
+			switch (btype->kind) {
+			case RZ_BASE_TYPE_KIND_UNION:
+				rz_strbuf_append(buf, "union ");
+				break;
+			case RZ_BASE_TYPE_KIND_STRUCT:
+				rz_strbuf_append(buf, "struct ");
+				break;
+			default:
+				break;
+			}
+			rz_strbuf_appendf(buf, "%s%s", btype->name, separator);
+		}
+		break;
+	}
+	case RZ_TYPE_KIND_POINTER: {
+		char *typestr = type_as_string_identifier_decl(typedb, type->pointer.type, identifier, true);
+		if (type->pointer.is_const) {
+			rz_strbuf_appendf(buf, "%s* const", typestr);
+		} else {
+			rz_strbuf_appendf(buf, "%s*", typestr);
+		}
+		free(typestr);
+		break;
+	}
+	case RZ_TYPE_KIND_ARRAY: {
+		// Here we don't append the array count since it's done on the
+		// identifier side
+		char *typestr = type_as_string_identifier_decl(typedb, type->array.type, identifier, false);
+		rz_strbuf_append(buf, typestr);
+		free(typestr);
+		break;
+	}
+	case RZ_TYPE_KIND_CALLABLE:
+		rz_strbuf_append(buf, rz_type_callable_as_string(typedb, type->callable));
+		break;
+	}
+	char *result = rz_strbuf_drain(buf);
+	return result;
+}
+
 /**
  * \brief Returns the type C representation
  *
@@ -852,6 +919,18 @@ RZ_API RZ_OWN char *rz_type_declaration_as_string(const RzTypeDB *typedb, RZ_NON
 	rz_return_val_if_fail(typedb && type, NULL);
 	bool is_ptr = type->kind == RZ_TYPE_KIND_POINTER;
 	return type_as_string_decl(typedb, type, is_ptr);
+}
+
+/**
+ * \brief Returns the type C representation with identifier
+ *
+ * \param typedb Types Database instance
+ * \param type RzType type
+ */
+RZ_API RZ_OWN char *rz_type_identifier_declaration_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, RZ_NONNULL const char *identifier) {
+	rz_return_val_if_fail(typedb && type, NULL);
+	bool is_ptr = type->kind == RZ_TYPE_KIND_POINTER;
+	return type_as_string_identifier_decl(typedb, type, identifier, is_ptr);
 }
 
 /**
