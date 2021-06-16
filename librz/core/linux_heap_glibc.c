@@ -189,11 +189,11 @@ static void GH(update_arena_without_tc)(GH(RzHeap_MallocState) * cmain_arena, Ma
 }
 
 /**
- * @brief Store the MallocState struct of an arena with base address m_arena in main_arena
- * @param core RzCore pointer
- * @param m_arena The base address of malloc state struct of the arena
- * @param main_arena The MallocState struct in which the data is stored
- * @return True if the main_arena struct was successfully updated else False
+ * \brief Store the MallocState struct of an arena with base address m_arena in main_arena
+ * \param core RzCore pointer
+ * \param m_arena The base address of malloc state struct of the arena
+ * \param main_arena The MallocState struct in which the data is stored
+ * \return True if the main_arena struct was successfully updated else False
  */
 RZ_API bool GH(rz_update_main_arena)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
@@ -399,10 +399,10 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 }
 
 /**
- * @brief Store the base address of main arena at m_arena
- * @param core RzCore pointer
- * @param m_arena Store the location of main arena at this integer pointer
- * @return True if a main arena was found else False
+ * \brief Store the base address of main arena at m_arena
+ * \param core RzCore pointer
+ * \param m_arena Store the location of main arena at this integer pointer
+ * \return True if a main arena was found else False
  */
 RZ_API bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	rz_return_val_if_fail(core && core->dbg && core->dbg->maps, false);
@@ -553,10 +553,10 @@ void GH(print_heap_chunk)(RzCore *core, GHT chunk) {
 }
 
 /**
- * @brief Get a heap chunk with base address <addr>
- * @param core RzCore pointer
- * @param addr Base address of the chunk
- * @return RzHeapChunk struct pointer of the chunk
+ * \brief Get a heap chunk with base address <addr>
+ * \param core RzCore pointer
+ * \param addr Base address of the chunk
+ * \return RzHeapChunk struct pointer of the chunk
  */
 RZ_API GH(RzHeapChunk) * GH(rz_get_heap_chunk_at_addr)(RzCore *core, GHT addr) {
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
@@ -1102,13 +1102,13 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, PJ *pj) {
 }
 
 /**
- * @brief Get a list of RzTcache objects which contain information about tcache.
+ * \brief Get a list of RzTcache objects which contain information about tcache.
  * First object in the returned list is the tcache info for main arena and then subsequent are for thread arena with order conserved
- * @param core RzCore pointer
- * @param m_arena Base address of main arena
- * @param main_arena MallocState struct of main arena
- * @param main_thread_only Only get tcache information for main thread
- * @return RzList of RzTcache objects
+ * \param core RzCore pointer
+ * \param m_arena Base address of main arena
+ * \param main_arena MallocState struct of main arena
+ * \param main_thread_only Only get tcache information for main thread
+ * \return RzList of RzTcache objects
  */
 RZ_API RzList *GH(rz_get_tcache_list)(RzCore *core, GHT m_arena, MallocState *main_arena, bool main_thread_only) {
 	RzList *tcache_list = rz_list_newf((RzListFree)GH(tcache_free));
@@ -1354,11 +1354,11 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 }
 
 /**
- * @brief Get list of chunks of <bin_num> bin from NBINS array of an arena.
- * @param core RzCore pointer
- * @param main_arena MallocState struct of arena
- * @param bin_num bin number of bin whose chunk list you want
- * @return RzList of RzHeapChunkListItem for the bin
+ * \brief Get list of chunks of <bin_num> bin from NBINS array of an arena.
+ * \param core RzCore pointer
+ * \param main_arena MallocState struct of arena
+ * \param bin_num bin number of bin whose chunk list you want
+ * \return RzList of RzHeapChunkListItem for the bin
  */
 RZ_API RzList *GH(rz_get_bin_content_list)(RzCore *core, MallocState *main_arena, int bin_num) {
 	int idx = 2 * bin_num;
