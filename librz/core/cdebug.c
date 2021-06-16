@@ -888,17 +888,6 @@ RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input,
 		if (!maps) {
 			continue;
 		}
-		RzListIter *iter;
-		RzDebugMap *map;
-		if (input[1] == '.') { // "dm=." Only show map overlapping current offset
-			dbg->cb_printf("TODO:\n");
-			rz_list_foreach (maps, iter, map) {
-				if (addr >= map->addr && addr < map->addr_end) {
-					// print_debug_map_ascii_art (dbg, map);
-				}
-			}
-		} else { // "dm=" Show all maps with a graph
-			print_debug_maps_ascii_art(dbg, maps, addr, colors);
-		}
+		print_debug_maps_ascii_art(dbg, maps, addr, colors);
 	}
 }
