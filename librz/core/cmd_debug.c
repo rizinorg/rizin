@@ -1492,7 +1492,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[0]) {
 	case '\0': // "dmi" alias of "dmm"
-		cmd_debug_modules(core, 0);
+		cmd_debug_modules(core, RZ_OUTPUT_MODE_STANDARD);
 		break;
 	case ' ': // "dmi "
 	case '*': // "dmi*"
