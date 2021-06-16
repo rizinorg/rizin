@@ -43,7 +43,7 @@ commands:
       - name: bin_type
         type: RZ_CMD_ARG_TYPE_CHOICES
         optional: true
-        choices: ["small", "large", "fastbin", "unsorted", "tcache"]
+        choices: ["small", "large", "fast", "unsorted", "tcache"]
   - name: dmhf
     cname: cmd_heap_fastbins_print
     type: RZ_CMD_DESC_TYPE_OLDINPUT

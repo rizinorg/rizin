@@ -97,7 +97,6 @@ commands:
         cname: cmd_debug_allocate_maps
         summary: >
           Allocate <size> bytes at current offset
-          (anywhere if offset is -1)
         args:
           - name: size
             type: RZ_CMD_ARG_TYPE_RZNUM
@@ -115,6 +114,7 @@ commands:
           - name: dmm
             summary: List modules (libraries, binaries loaded in memory)
             cname: cmd_debug_modules
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_RIZIN

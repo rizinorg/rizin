@@ -1618,7 +1618,7 @@ static const RzCmdDescArg cmd_debug_allocate_maps_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_debug_allocate_maps_help = {
-	.summary = "Allocate <size> bytes at current offset (anywhere if offset is -1)",
+	.summary = "Allocate <size> bytes at current offset",
 	.args = cmd_debug_allocate_maps_args,
 };
 
@@ -1747,7 +1747,7 @@ static const RzCmdDescHelp cmd_heap_chunk_print_help = {
 	.args = cmd_heap_chunk_print_args,
 };
 
-static const char *cmd_heap_arena_bins_print_bin_type_choices[] = { "small", "large", "fastbin", "unsorted", "tcache", NULL };
+static const char *cmd_heap_arena_bins_print_bin_type_choices[] = { "small", "large", "fast", "unsorted", "tcache", NULL };
 static const RzCmdDescArg cmd_heap_arena_bins_print_args[] = {
 	{
 		.name = "bin_type",
@@ -4846,7 +4846,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm.", rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
 	rz_warn_if_fail(cmd_debug_map_current_cd);
 
-	RzCmdDesc *dmm_cd = rz_cmd_desc_group_modes_new(core->rcmd, dm_cd, "dmm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_modules_handler, &cmd_debug_modules_help, &dmm_help);
+	RzCmdDesc *dmm_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_modules_handler, &cmd_debug_modules_help, &dmm_help);
 	rz_warn_if_fail(dmm_cd);
 	RzCmdDesc *cmd_debug_current_modules_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmm_cd, "dmm.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_current_modules_handler, &cmd_debug_current_modules_help);
 	rz_warn_if_fail(cmd_debug_current_modules_cd);

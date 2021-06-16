@@ -1238,13 +1238,13 @@ static void cmd_debug_current_modules(RzCore *core, RzOutputMode mode) { // "dmm
 	rz_list_free(list);
 }
 
-static void cmd_debug_modules(RzCore *core, RzOutputMode mode) { // "dmm"
+static void cmd_debug_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 	RzDebugMap *map;
 	RzList *list;
 	RzListIter *iter;
-	PJ *pj = NULL;
+	PJ *pj = state->d.pj;
+	RzOutputMode mode = state->mode;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
 		if (!pj) {
 			return;
 		}
@@ -1276,9 +1276,7 @@ static void cmd_debug_modules(RzCore *core, RzOutputMode mode) { // "dmm"
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
 	}
-	pj_free(pj);
 	rz_list_free(list);
 }
 
@@ -1383,12 +1381,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_allocate_maps_handler(RzCore *core, int argc, co
 }
 
 // dmm
-RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_modules_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (rz_debug_is_dead(core->dbg)) {
 		rz_cons_println("Debugging is not enabled. Run ood?");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	cmd_debug_modules(core, mode);
+	cmd_debug_modules(core, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1442,7 +1440,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, cons
 	}
 	ut64 addr = core->offset;
 	// RZ_OUTPUT_MODE_LONG is workaround for '.'
-	RzCmdStateOutput state;
+	RzCmdStateOutput state = { 0 };
 	state.mode = RZ_OUTPUT_MODE_LONG;
 	rz_debug_map_print(core->dbg, addr, &state);
 	return RZ_CMD_STATUS_OK;
@@ -1494,8 +1492,12 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[0]) {
 	case '\0': // "dmi" alias of "dmm"
-		cmd_debug_modules(core, RZ_OUTPUT_MODE_STANDARD);
+	{
+		RzCmdStateOutput state = { 0 };
+		state.mode = RZ_OUTPUT_MODE_STANDARD;
+		cmd_debug_modules(core, &state);
 		break;
+	}
 	case ' ': // "dmi "
 	case '*': // "dmi*"
 	case 'v': // "dmiv"
