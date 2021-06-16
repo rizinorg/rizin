@@ -1610,11 +1610,11 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 }
 
 /**
- * @brief Get a list of MallocState structs for all the arenas
- * @param core RzCore pointer
- * @param m_arena Base address of MallocState struct of main arena
- * @param main_arena MallocState struct of main arena
- * @return RzList pointer for list of MallocState structs of all the arenas
+ * \brief Get a list of MallocState structs for all the arenas
+ * \param core RzCore pointer
+ * \param m_arena Base address of MallocState struct of main arena
+ * \param main_arena MallocState struct of main arena
+ * \return RzList pointer for list of MallocState structs of all the arenas
  */
 RZ_API RzList *GH(rz_get_arenas_list)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	RzList *arena_list = rz_list_newf(free);
@@ -1642,13 +1642,13 @@ RZ_API RzList *GH(rz_get_arenas_list)(RzCore *core, GHT m_arena, MallocState *ma
 }
 
 /**
- * @brief Get a list of all the heap chunks in an arena. The chunks are in form of a struct RzHeapChunkListItem
- * @param core RzCore pointer
- * @param main_arena MallocState struct of main arena
- * @param m_arena Base address of malloc state of main arena
- * @param m_state Base address of malloc state of the arena whose chunks are required
- * @param global_max_fast Max size of fastbin
- * @return RzList pointer for list of all chunks in a given arena
+ * \brief Get a list of all the heap chunks in an arena. The chunks are in form of a struct RzHeapChunkListItem
+ * \param core RzCore pointer
+ * \param main_arena MallocState struct of main arena
+ * \param m_arena Base address of malloc state of main arena
+ * \param m_state Base address of malloc state of the arena whose chunks are required
+ * \param global_max_fast Max size of fastbin
+ * \return RzList pointer for list of all chunks in a given arena
  */
 RZ_API RzList *GH(rz_get_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	GHT m_arena, GHT m_state) {
