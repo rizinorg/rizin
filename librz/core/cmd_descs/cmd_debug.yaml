@@ -84,6 +84,7 @@ commands:
     subcommands:
       - name: dm
         cname: cmd_debug_list_maps
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         summary: >
           List memory maps
         modes:

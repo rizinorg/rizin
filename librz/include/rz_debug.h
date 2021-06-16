@@ -11,6 +11,7 @@
 #include <rz_io.h>
 #include <rz_msg_digest.h>
 #include <rz_syscall.h>
+#include <rz_cmd.h>
 
 #include <rz_config.h>
 #include "rz_bind.h"
@@ -494,7 +495,7 @@ RZ_API RzList *rz_debug_map_list_new(void);
 RZ_API RzDebugMap *rz_debug_map_get(RzDebug *dbg, ut64 addr);
 RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user);
 RZ_API void rz_debug_map_free(RzDebugMap *map);
-RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode);
+RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzCmdStateOutput *state);
 RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input, int colors);
 RZ_API RzList *rz_debug_map_list(RzDebug *dbg, bool user_map);
 

@@ -1360,13 +1360,13 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, 
 }
 
 // dm
-RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_debug_list_maps_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (rz_debug_is_dead(core->dbg)) {
 		rz_cons_println("Debugging is not enabled. Run ood?");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_debug_map_sync(core->dbg); // update process memory maps
-	rz_debug_map_print(core->dbg, core->offset, mode);
+	rz_debug_map_print(core->dbg, core->offset, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1442,7 +1442,9 @@ RZ_IPI RzCmdStatus rz_cmd_debug_map_current_handler(RzCore *core, int argc, cons
 	}
 	ut64 addr = core->offset;
 	// RZ_OUTPUT_MODE_LONG is workaround for '.'
-	rz_debug_map_print(core->dbg, addr, RZ_OUTPUT_MODE_LONG);
+	RzCmdStateOutput state;
+	state.mode = RZ_OUTPUT_MODE_LONG;
+	rz_debug_map_print(core->dbg, addr, &state);
 	return RZ_CMD_STATUS_OK;
 }
 

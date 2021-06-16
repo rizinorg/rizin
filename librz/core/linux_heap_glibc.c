@@ -2291,7 +2291,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_arena_bins_print_handler)(RzCore *core, int ar
 		const char *input = argv[1];
 		if (!strcmp(input, "tcache")) {
 			bin_format = RZ_HEAP_BIN_TCACHE;
-		} else if (!strcmp(input, "fast")) {
+		} else if (!strcmp(input, "fast") || !strcmp(input, "fastbin")) {
 			bin_format = RZ_HEAP_BIN_FAST;
 		} else if (!strcmp(input, "unsorted")) {
 			bin_format = RZ_HEAP_BIN_UNSORTED;

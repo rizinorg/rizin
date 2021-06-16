@@ -707,17 +707,16 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, RzOut
 	}
 }
 
-RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode) {
+RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzCmdStateOutput *state) {
 	int i;
 	RzListIter *iter;
 	RzDebugMap *map;
-	PJ *pj = NULL;
+	PJ *pj = state->d.pj;
 	if (!dbg) {
 		return;
 	}
-
+	RzOutputMode mode = state->mode;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = pj_new();
 		if (!pj) {
 			return;
 		}
@@ -758,8 +757,6 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzOutputMode mode) {
 
 	if (pj) { // "dmj" add JSON closing array brace
 		pj_end(pj);
-		rz_cons_printf("%s\n", pj_string(pj));
-		pj_free(pj);
 	}
 }
 
