@@ -199,13 +199,14 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "%s-%s.sdb"),
 		dir_prefix, arch, cpu);
 	if (!path || !arch) {
+		free(path);
 		return false;
 	}
 	char *cpu_dir = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB, "asm/cpus"), dir_prefix);
 	if (!is_cpu_valid(cpu_dir, cpu)) {
 		if (!strcmp(arch, "avr")) {
 			free(path);
-			path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "avr-ATmega8.sdb"), dir_prefix);
+			path = rz_str_newf("%s" RZ_SYS_DIR RZ_SDB RZ_SYS_DIR "asm" RZ_SYS_DIR "cpus" RZ_SYS_DIR "avr-ATmega8.sdb", dir_prefix);
 		}
 	}
 	if (!rz_arch_load_profile_sdb(t, path)) {
