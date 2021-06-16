@@ -250,7 +250,7 @@ static void core_types_union_print_c(RzTypeDB *typedb, RzBaseType *btype, bool m
 		separator = multiline ? "\t" : "";
 		RzTypeUnionMember *memb;
 		rz_vector_foreach(&btype->union_data.members, memb) {
-			char *membtype = rz_type_declaration_as_string(typedb, memb->type);
+			char *membtype = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
 			if (memb->type->kind == RZ_TYPE_KIND_ARRAY) {
 				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
 					memb->name, memb->type->array.count);
@@ -370,7 +370,7 @@ static void core_types_struct_print_c(RzTypeDB *typedb, RzBaseType *btype, bool 
 		RzTypeStructMember *memb;
 		rz_vector_foreach(&btype->struct_data.members, memb) {
 			rz_return_if_fail(memb->type);
-			char *membtype = rz_type_declaration_as_string(typedb, memb->type);
+			char *membtype = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
 			if (memb->type->kind == RZ_TYPE_KIND_ARRAY) {
 				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
 					memb->name, memb->type->array.count);
