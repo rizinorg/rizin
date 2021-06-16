@@ -1511,7 +1511,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[0]) {
 	case '\0': // "dmi" alias of "dmm"
-		rz_core_cmd(core, "dmm", 0);
+                cmd_debug_modules(core, 0);
 		break;
 	case ' ': // "dmi "
 	case '*': // "dmi*"
@@ -1593,8 +1593,7 @@ RZ_IPI int rz_cmd_debug_dmi(void *data, const char *input) {
 					newfile = rz_file_temp("memlib");
 					if (newfile) {
 						file = newfile;
-						rz_core_cmdf(core, "wtf %s 0x%" PFMT64x " @ 0x%" PFMT64x " 2> %s",
-							file, map->size, baddr, RZ_SYS_DEVNULL);
+						rz_core_dump(core, file, baddr, map->size, false);
 					}
 				}
 				get_bin_info(core, file, baddr, pj, mode, symbols_only, &filter);
