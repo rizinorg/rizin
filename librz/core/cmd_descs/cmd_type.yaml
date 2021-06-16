@@ -126,7 +126,6 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_SDB
         args:
           - name: type
             type: RZ_CMD_ARG_TYPE_STRING
@@ -160,7 +159,6 @@ commands:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
-          - RZ_OUTPUT_MODE_SDB
           - RZ_OUTPUT_MODE_LONG
         args:
           - name: typename
@@ -268,7 +266,6 @@ commands:
         summary: List loaded structures / Show pf format string for given structure
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_LONG
         args:
@@ -317,7 +314,6 @@ commands:
         summary: List loaded unions / Show pf format string for given union
         modes:
           - RZ_OUTPUT_MODE_STANDARD
-          - RZ_OUTPUT_MODE_RIZIN
           - RZ_OUTPUT_MODE_JSON
           - RZ_OUTPUT_MODE_LONG
         args:

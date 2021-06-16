@@ -22,18 +22,18 @@ RZ_API RZ_OWN RzType *rz_type_identifier_of_base_type(const RzTypeDB *typedb, RZ
 	type->identifier.name = strdup(btype->name);
 	type->identifier.is_const = is_const;
 	switch (btype->kind) {
-		case RZ_BASE_TYPE_KIND_STRUCT:
-			type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
-			break;
-		case RZ_BASE_TYPE_KIND_UNION:
-			type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
-			break;
-		case RZ_BASE_TYPE_KIND_ENUM:
-			type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
-			break;
-		default:
-			type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
-			break;
+	case RZ_BASE_TYPE_KIND_STRUCT:
+		type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_STRUCT;
+		break;
+	case RZ_BASE_TYPE_KIND_UNION:
+		type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNION;
+		break;
+	case RZ_BASE_TYPE_KIND_ENUM:
+		type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_ENUM;
+		break;
+	default:
+		type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+		break;
 	}
 	return type;
 }

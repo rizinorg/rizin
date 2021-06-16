@@ -1806,13 +1806,11 @@ NAME=td union
 FILE==
 CMDS=<<EOF
 td "union foo {int a;char b;}"
-tu* foo
 t* foo
 tu foo
 t foo
 EOF
 EXPECT=<<EOF
-pf.foo dc a b
 pf.foo dc a b
 pf dc a b
 pf dc a b
