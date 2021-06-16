@@ -198,7 +198,8 @@ static void core_types_union_print(RzCore *core, RzBaseType *btype, RzOutputMode
 			RzTypeUnionMember *memb;
 			rz_vector_foreach(&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
-				rz_cons_printf("\n%s: %s\n", memb->name, mtype);
+				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
+				rz_cons_printf("\t%s: %s (size = %" PFMT64d ")\n", memb->name, mtype, size);
 				free(mtype);
 			}
 		}
@@ -317,9 +318,13 @@ static void core_types_struct_print(RzCore *core, RzBaseType *btype, RzOutputMod
 		rz_cons_printf("struct %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeStructMember *memb;
+			ut64 offset = 0;
 			rz_vector_foreach(&btype->struct_data.members, memb) {
 				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
-				rz_cons_printf("\t%s: %s\n", memb->name, mtype);
+				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
+				rz_cons_printf("\t%s: %s (size = %" PFMT64d ", offset = %" PFMT64d ")\n",
+						memb->name, mtype, size, offset);
+				offset += size;
 				free(mtype);
 			}
 		}
