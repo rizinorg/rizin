@@ -104,9 +104,9 @@ development, and general topics related to the project.
 
 We also provide the following partial bridges to other messaging platforms:
 - [Telegram](https://t.me/rizinorg)
-- IRC: irc.freenode.net
-  - Community - [#rizin](https://webchat.freenode.net/?channels=#rizin)
-  - Developers - [#rizindev](https://webchat.freenode.net/?channels=#rizindev)
+- IRC: web.libera.chat
+  - Community - [#rizin](https://web.libera.chat/#rizin)
+  - Developers - [#rizindev](https://web.libera.chat/#rizindev)
 
 [CONTRIBUTING.md]: https://github.com/rizinorg/rizin/blob/dev/CONTRIBUTING.md
 [test/README.md]: https://github.com/rizinorg/rizin/blob/dev/test/README.md
