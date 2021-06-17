@@ -1221,7 +1221,8 @@ FILE==
 CMDS=<<EOF
 to bins/headers/hdr1.h
 to bins/headers/hdr2.h
-ts A
+ts "anonymous struct 0"
+ts "anonymous struct 1"
 ts B
 ttc A
 ttc B
@@ -1242,7 +1243,7 @@ struct anonymous struct 1 {
 EOF
 RUN
 
-NAME=Backward param type propgation
+NAME=Backward param type propagation
 FILE=bins/elf/back1
 CMDS=<<EOF
 aa
@@ -1257,7 +1258,7 @@ var char * src @ rbp-0x8
 EOF
 RUN
 
-NAME=Forward param type propgation
+NAME=Forward param type propagation
 FILE=bins/elf/forward1
 CMDS=<<EOF
 aa
@@ -1272,7 +1273,7 @@ var char * src @ rbp-0x8
 EOF
 RUN
 
-NAME=Propgation via value
+NAME=Propagation via value
 FILE=bins/elf/follow_ptr
 CMDS=<<EOF
 aa
@@ -1288,7 +1289,7 @@ var char * var_8h @ rbp-0x8
 EOF
 RUN
 
-NAME=General type propgation
+NAME=General type propagation
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aa
@@ -1305,7 +1306,7 @@ var char * dest @ rbp-0x8
 EOF
 RUN
 
-NAME=32-bit bin type propgation
+NAME=32-bit bin type propagation
 FILE=bins/elf/hello_world32
 CMDS=<<EOF
 aa
@@ -1339,7 +1340,7 @@ arg int64_t arg1 @ rdi
 EOF
 RUN
 
-NAME=Type propgation for reg based arg
+NAME=Type propagation for reg based arg
 FILE=bins/elf/arg
 CMDS=<<EOF
 aa
@@ -1355,7 +1356,7 @@ arg char * arg1 @ rdi
 EOF
 RUN
 
-NAME=Caller to callee propgation (64 bits)
+NAME=Caller to callee propagation (64 bits)
 FILE=bins/elf/arg_down_prop
 CMDS=<<EOF
 e asm.lines=false
@@ -1376,7 +1377,7 @@ sym.funcarg (char *arg1, uint32_t arg2);
 EOF
 RUN
 
-NAME=Caller to caller propgation (32 bits)
+NAME=Caller to caller propagation (32 bits)
 FILE=bins/elf/arg_down_32
 CMDS=<<EOF
 e asm.lines=false
@@ -1782,23 +1783,27 @@ NAME=tn common
 FILE=bins/pe/pe.exe
 CMDS=<<EOF
 tn
+?e ---
 tn- FatalExit
 tn
+?e ---
 tn-*
 tn
 EOF
 EXPECT=<<EOF
-ExitProcess
-ExitThread
+FreeLibraryAndExitThread
 FatalExit
-FreeLibraryAndExitThread
-RaiseException
-RtlRaiseException
 ExitProcess
 ExitThread
-FreeLibraryAndExitThread
-RaiseException
 RtlRaiseException
+RaiseException
+---
+FreeLibraryAndExitThread
+ExitProcess
+ExitThread
+RtlRaiseException
+RaiseException
+---
 EOF
 RUN
 
@@ -1889,6 +1894,7 @@ RUN
 
 NAME=aht aligned
 FILE==
+BROKEN=1
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
