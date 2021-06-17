@@ -36,28 +36,14 @@ static void fill_dt_dynamic(ELFOBJ *bin, RzBinElfDtDynamic *ptr, ut64 offset, ut
 	}
 }
 
-static Elf_(Phdr) * get_dt_dynamic_segment(ELFOBJ *bin) {
-	if (!bin->phdr) {
-		return NULL;
-	}
-
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			return bin->phdr + i;
-		}
-	}
-
-	return NULL;
-}
-
 static bool init_dt_dynamic(ELFOBJ *bin, RzBinElfDtDynamic *ptr) {
-	Elf_(Phdr) *segment = get_dt_dynamic_segment(bin);
+	RzBinElfSegment *segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_DYNAMIC);
 	if (!segment) {
 		return false;
 	}
 
-	ut64 size = segment->p_filesz;
-	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, segment->p_vaddr);
+	ut64 size = segment->data.p_filesz;
+	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, segment->data.p_vaddr);
 	if (offset == UT64_MAX || !size || offset + size > bin->size) {
 		return false;
 	}
