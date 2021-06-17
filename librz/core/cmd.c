@@ -6553,6 +6553,7 @@ RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
 	rz_cons_push();
 	if (rz_core_cmd(core, cmd, 0) == -1) {
 		//eprintf ("Invalid command: %s\n", cmd);
+		rz_cons_pop();
 		return NULL;
 	}
 	rz_cons_filter();
