@@ -30,9 +30,9 @@ aaa
 s main
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
-pd 4 @ 0x004004be~[2-4]
+pi 4 @ 0x004004be
 afvt s1 "struct S1"
-pd 4 @ 0x004004be~[2-4]
+pi 4 @ 0x004004be
 EOF
 EXPECT=<<EOF
 mov dword [s1]
@@ -55,10 +55,10 @@ s main
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
 afvt s1 S1
-pd 4 @ 0x004004be~[2-4]
+pi 4 @ 0x004004be
 t- "struct S1"
 td "struct S1 { int x; int y; int c; char d[256]; short e; }"
-pd 4 @ 0x004004be~[2-4]
+pi 4 @ 0x004004be
 EOF
 EXPECT=<<EOF
 mov dword [s1.a]

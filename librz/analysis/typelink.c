@@ -39,11 +39,6 @@ RZ_API bool rz_analysis_type_set_link(RzAnalysis *analysis, RZ_BORROW RzType *ty
 	return true;
 }
 
-RZ_API bool rz_analysis_type_link_offset(RzAnalysis *analysis, RZ_BORROW RzType *type, ut64 addr) {
-	rz_return_val_if_fail(analysis && type, false);
-	return false;
-}
-
 RZ_API bool rz_analysis_type_unlink(RzAnalysis *analysis, ut64 addr) {
 	rz_return_val_if_fail(analysis, false);
 	ht_up_delete(analysis->type_links, addr);
