@@ -586,13 +586,15 @@ static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, R
 		return false;
 	}
 	RzTypeStructMember *member;
+	ut64 member_offset = 0;
 	rz_vector_foreach(&btype->struct_data.members, member) {
 		char *new_name = rz_str_newf("%s.%s", av->name, member->name);
 		RzAnalysisVarField *field = RZ_NEW0(RzAnalysisVarField);
 		field->name = new_name;
-		field->delta = av->delta + member->offset;
+		field->delta = av->delta + member_offset;
 		field->field = true;
 		rz_list_append(list, field);
+		member_offset += rz_type_db_get_bitsize(a->typedb, member->type) / 8;
 	}
 	return false;
 }
