@@ -3993,7 +3993,6 @@ static const RzCmdDescHelp zign_info_range_help = {
 
 static const RzCmdDescDetailEntry tmp_modifiers_empty_detail_entries[] = {
 	{ .text = "<cmd> @", .arg_str = " <addr>", .comment = "Temporary seek to <addr>" },
-	{ .text = "<cmd> @", .arg_str = " <addr>!<blocksize>", .comment = "Temporary seek to <addr> and set blocksize to <blocksize>" },
 	{ .text = "<cmd> @..", .arg_str = "<addr>", .comment = "Temporary partial address seek (see s..)" },
 	{ .text = "<cmd> @!", .arg_str = "<blocksize>", .comment = "Temporary change the block size" },
 	{ .text = "<cmd> @(", .arg_str = "<from> <to>)", .comment = "Temporary set from and to for commands supporting ranges" },
