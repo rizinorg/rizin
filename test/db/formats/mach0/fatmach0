@@ -237,7 +237,7 @@ nth paddr      vaddr      bind   type size lib name
 EOF
 RUN
 
-NAME=fatmach0 objc
+NAME=fatmach0 arm64e objc classes
 FILE=bins/mach0/modernobjc-noarm64
 ARGS=-a arm
 CMDS=ic
@@ -258,5 +258,16 @@ EXPECT=<<EOF
 0x100002424 method 6      window
 0x100002450 method 7      setWindow:
 0x100002494 method 8      .cxx_destruct
+EOF
+RUN
+
+NAME=fatmach0 arm64e rebasing and stripping
+FILE=bins/mach0/modernobjc-noarm64
+ARGS=-a arm
+CMDS=pxr 0x18 @ 0x100004080
+EXPECT=<<EOF
+0x100004080 0x0000000100009270   p....... @ section.10.__DATA_CONST.__objc_classlist 4295004784 18.__DATA.__objc_data section.18.__DATA.__objc_data,class ViewController R 0x100009298
+0x100004088 0x00000001000092e8   ........ 4295004904 18.__DATA.__objc_data class AppDelegate R 0x1000092c0
+0x100004090 0x0000000100009338   8....... 4295004984 18.__DATA.__objc_data class SceneDelegate R 0x100009310
 EOF
 RUN

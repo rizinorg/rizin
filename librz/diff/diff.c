@@ -790,11 +790,13 @@ RZ_API RZ_OWN RzList /*<RzList<RzDiffOp>>*/ *rz_diff_opcodes_grouped_new(RZ_NONN
 
 		op = opcode_new(op->type, a_beg, op->a_end, b_beg, op->b_end);
 		if (!op) {
+			rz_list_free(group);
 			RZ_LOG_ERROR("rz_diff_opcodes_grouped_new: cannot allocate op for group\n");
 			goto rz_diff_opcodes_grouped_new_fail;
 		} else if (!rz_list_append(group, op)) {
 			RZ_LOG_ERROR("rz_diff_opcodes_grouped_new: cannot append op into group\n");
 			free(op);
+			rz_list_free(group);
 			goto rz_diff_opcodes_grouped_new_fail;
 		}
 	}

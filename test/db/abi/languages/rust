@@ -12,7 +12,6 @@ RUN
 NAME=LANGUAGES : rust disasembly
 FILE=bins/abi_bins/elf/languages/rust/tree_traversal
 CMDS=<<EOF
-e io.cache=true
 pi 10
 EOF
 EXPECT=<<EOF

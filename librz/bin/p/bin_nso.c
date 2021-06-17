@@ -1,17 +1,15 @@
+// SPDX-FileCopyrightText: 2021 Florian Märkl <info@florianmaerkl.de>
 // SPDX-FileCopyrightText: 2017-2018 rkx1209 <rkx1209dev@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_types.h>
-#include <rz_util.h>
-#include <rz_lib.h>
 #include <rz_bin.h>
-#include <rz_io.h>
-#include <rz_cons.h>
 #include "nxo/nxo.h"
 #include <lz4.h>
 
 #define NSO_OFF(x)           rz_offsetof(NSOHeader, x)
 #define NSO_OFFSET_MODMEMOFF rz_offsetof(NXOStart, mod_memoffset)
+
+#define VFILE_NAME_DECOMPRESSED "decompressed"
 
 // starting at 0
 typedef struct {
@@ -33,13 +31,6 @@ typedef struct {
 	ut32 bss_size; // 60
 } NSOHeader;
 
-static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t usize) {
-	if (csize < 0 || usize < 0 || !cbuf || !obuf) {
-		return -1;
-	}
-	return LZ4_decompress_safe((const char *)cbuf, (char *)obuf, (uint32_t)csize, (uint32_t)usize);
-}
-
 static ut64 baddr(RzBinFile *bf) {
 	return 0x8000000;
 }
@@ -55,91 +46,128 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static RzBinNXOObj *nso_new(void) {
+static NSOHeader *parse_header(RzBuffer *buf) {
+	RZ_STATIC_ASSERT(sizeof(NSOHeader) == 64);
+	if (rz_buf_size(buf) < sizeof(NSOHeader)) {
+		return NULL;
+	}
+	NSOHeader *r = RZ_NEW0(NSOHeader);
+	if (!r) {
+		return NULL;
+	}
+	r->magic = rz_buf_read_le32_at(buf, NSO_OFF(magic));
+	r->pad0 = rz_buf_read_le32_at(buf, NSO_OFF(pad0));
+	r->pad1 = rz_buf_read_le32_at(buf, NSO_OFF(pad1));
+	r->pad2 = rz_buf_read_le32_at(buf, NSO_OFF(pad2));
+	r->text_memoffset = rz_buf_read_le32_at(buf, NSO_OFF(text_memoffset));
+	r->text_loc = rz_buf_read_le32_at(buf, NSO_OFF(text_loc));
+	r->text_size = rz_buf_read_le32_at(buf, NSO_OFF(text_size));
+	r->pad3 = rz_buf_read_le32_at(buf, NSO_OFF(pad3));
+	r->ro_memoffset = rz_buf_read_le32_at(buf, NSO_OFF(ro_memoffset));
+	r->ro_loc = rz_buf_read_le32_at(buf, NSO_OFF(ro_loc));
+	r->ro_size = rz_buf_read_le32_at(buf, NSO_OFF(ro_size));
+	r->pad4 = rz_buf_read_le32_at(buf, NSO_OFF(pad4));
+	r->data_memoffset = rz_buf_read_le32_at(buf, NSO_OFF(data_memoffset));
+	r->data_loc = rz_buf_read_le32_at(buf, NSO_OFF(data_loc));
+	r->data_size = rz_buf_read_le32_at(buf, NSO_OFF(data_size));
+	r->bss_size = rz_buf_read_le32_at(buf, NSO_OFF(bss_size));
+	return r;
+}
+
+static RzBinNXOObj *nso_new(RzBuffer *buf) {
 	RzBinNXOObj *bin = RZ_NEW0(RzBinNXOObj);
-	if (bin) {
-		bin->methods_list = rz_list_newf((RzListFree)free);
-		bin->imports_list = rz_list_newf((RzListFree)free);
-		bin->classes_list = rz_list_newf((RzListFree)free);
+	if (!bin) {
+		return NULL;
+	}
+	bin->header = parse_header(buf);
+	if (!bin->header) {
+		free(bin);
+		return NULL;
 	}
 	return bin;
 }
 
-static bool load_bytes(RzBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	eprintf("load_bytes in bin.nso must die\n");
-	RzBin *rbin = bf->rbin;
-	ut32 toff = rz_buf_read_le32_at(bf->buf, NSO_OFF(text_memoffset));
-	ut32 tsize = rz_buf_read_le32_at(bf->buf, NSO_OFF(text_size));
-	ut32 rooff = rz_buf_read_le32_at(bf->buf, NSO_OFF(ro_memoffset));
-	ut32 rosize = rz_buf_read_le32_at(bf->buf, NSO_OFF(ro_size));
-	ut32 doff = rz_buf_read_le32_at(bf->buf, NSO_OFF(data_memoffset));
-	ut32 dsize = rz_buf_read_le32_at(bf->buf, NSO_OFF(data_size));
-	ut64 total_size = tsize + rosize + dsize;
-	RzBuffer *newbuf = rz_buf_new_empty(total_size);
-	ut64 ba = baddr(bf);
-	ut8 *tmp = NULL;
-
-	if (rbin->iob.io && !(rbin->iob.io->cached & RZ_PERM_W)) {
-		eprintf("Please add \'-e io.cache=true\' option to rz command. This is required to decompress the code.\n");
-		goto fail;
+static void nso_free(RzBinNXOObj *bin) {
+	if (!bin) {
+		return;
 	}
-	/* Decompress each sections */
-	tmp = RZ_NEWS(ut8, tsize);
+	rz_buf_free(bin->decompressed);
+	free(bin->header);
+	free(bin);
+}
+
+static bool decompress(RzBuffer *source_buf, ut64 source_offset, ut64 source_size, ut8 *dst_buf, ut64 decompressed_size) {
+	if (!source_size || decompressed_size > (ut64)SIZE_MAX || source_size > (ut64)INT_MAX || decompressed_size > (ut64)INT_MAX) {
+		return false;
+	}
+	ut8 *tmp = RZ_NEWS0(ut8, source_size);
 	if (!tmp) {
-		goto fail;
+		return false;
 	}
-	if (decompress(buf + toff, tmp, rooff - toff, tsize) != tsize) {
-		eprintf("decompression failure\n");
-		goto fail;
+	if (rz_buf_read_at(source_buf, source_offset, tmp, source_size) != source_size) {
+		free(tmp);
+		return false;
 	}
-	rz_buf_write_at(newbuf, 0, tmp, tsize);
-	RZ_FREE(tmp);
-
-	tmp = RZ_NEWS(ut8, rosize);
-	if (!tmp) {
-		goto fail;
-	}
-	if (decompress(buf + rooff, tmp, doff - rooff, rosize) != rosize) {
-		eprintf("decompression2 failure\n");
-		goto fail;
-	}
-	rz_buf_write_at(newbuf, tsize, tmp, rosize);
-	RZ_FREE(tmp);
-
-	tmp = RZ_NEWS(ut8, dsize);
-	if (!tmp) {
-		goto fail;
-	}
-	if (decompress(buf + doff, tmp, rz_buf_size(bf->buf) - doff, dsize) != dsize) {
-		eprintf("decompression3 failure\n");
-		goto fail;
-	}
-	rz_buf_write_at(newbuf, tsize + rosize, tmp, dsize);
-	RZ_FREE(tmp);
-
-	/* Load unpacked binary */
-	const ut8 *tmpbuf = rz_buf_data(newbuf, &total_size);
-	rz_io_write_at(rbin->iob.io, ba, tmpbuf, total_size);
-	ut32 modoff = rz_buf_read_le32_at(newbuf, NSO_OFFSET_MODMEMOFF);
-	RzBinNXOObj *bin = nso_new();
-	eprintf("MOD Offset = 0x%" PFMT64x "\n", (ut64)modoff);
-	parseMod(newbuf, bin, modoff, ba);
-	rz_buf_free(newbuf);
-	*bin_obj = bin;
-	return true;
-fail:
+	int r = LZ4_decompress_safe((const char *)tmp, (char *)dst_buf, source_size, decompressed_size);
 	free(tmp);
-	rz_buf_free(newbuf);
-	*bin_obj = NULL;
-	return false;
+	return r == decompressed_size;
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail(bf && buf, false);
-	const ut64 la = bf->loadaddr;
-	ut64 sz = 0;
-	const ut8 *bytes = rz_buf_data(buf, &sz);
-	return load_bytes(bf, bin_obj, bytes, sz, la, bf->sdb);
+	RzBinNXOObj *bin = nso_new(buf);
+	if (!bin) {
+		return false;
+	}
+	ut8 *tmp = NULL;
+	NSOHeader *hdr = bin->header;
+	if (hdr->ro_memoffset >= rz_buf_size(buf)) {
+		RZ_LOG_ERROR("NSO file smaller than ro section offset\n");
+		goto another_castle;
+	}
+	ut64 total_size = hdr->text_size + hdr->ro_size + hdr->data_size;
+	tmp = RZ_NEWS0(ut8, total_size);
+	if (!tmp) {
+		goto another_castle;
+	}
+	ut64 ba = baddr(bf);
+
+	/* Decompress each section */
+	if (!decompress(buf, hdr->text_memoffset, hdr->ro_memoffset - hdr->text_memoffset, tmp, hdr->text_size)) {
+		RZ_LOG_ERROR("Failed to decompress NSO text section\n");
+		goto another_castle;
+	}
+	if (!decompress(buf, hdr->ro_memoffset, hdr->data_memoffset - hdr->ro_memoffset, tmp + hdr->text_size, hdr->ro_size)) {
+		RZ_LOG_ERROR("Failed to decompress NSO ro section\n");
+		goto another_castle;
+	}
+	if (!decompress(buf, hdr->data_memoffset, rz_buf_size(buf) - hdr->data_memoffset, tmp + hdr->text_size + hdr->ro_size, hdr->data_size)) {
+		RZ_LOG_ERROR("Failed to decompress NSO data section\n");
+		goto another_castle;
+	}
+	bin->decompressed = rz_buf_new_with_pointers(tmp, total_size, true);
+	if (!bin->decompressed) {
+		goto another_castle;
+	}
+
+	/* Load unpacked binary */
+	ut32 modoff = rz_buf_read_le32_at(bin->decompressed, NSO_OFFSET_MODMEMOFF);
+	eprintf("MOD Offset = 0x%" PFMT64x "\n", (ut64)modoff);
+	parseMod(bin->decompressed, bin, modoff, ba);
+	*bin_obj = bin;
+	return true;
+another_castle:
+	nso_free(bin);
+	free(tmp);
+	*bin_obj = NULL;
+	return false;
+}
+
+static void destroy(RzBinFile *bf) {
+	if (!bf->o) {
+		return;
+	}
+	nso_free(bf->o->bin_obj);
 }
 
 static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
@@ -174,13 +202,33 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return kv;
 }
 
+static RzList *virtual_files(RzBinFile *bf) {
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	if (!ret) {
+		return NULL;
+	}
+	RzBinNXOObj *bin = bf->o->bin_obj;
+	if (bin->decompressed) {
+		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
+		if (!vf) {
+			return ret;
+		}
+		vf->buf = bin->decompressed;
+		vf->buf_owned = false;
+		vf->name = strdup(VFILE_NAME_DECOMPRESSED);
+		rz_list_push(ret, vf);
+	}
+	return ret;
+}
+
 static RzList *maps(RzBinFile *bf) {
-	RzBuffer *b = bf->buf;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
 	if (!ret) {
 		return NULL;
 	}
 
+	RzBinNXOObj *bin = bf->o->bin_obj;
+	NSOHeader *hdr = bin->header;
 	ut64 ba = baddr(bf);
 
 	RzBinMap *map = RZ_NEW0(RzBinMap);
@@ -188,10 +236,11 @@ static RzList *maps(RzBinFile *bf) {
 		return ret;
 	}
 	map->name = strdup("text");
-	map->paddr = rz_buf_read_le32_at(b, NSO_OFF(text_memoffset));
-	map->vsize = map->psize = rz_buf_read_le32_at(b, NSO_OFF(text_size));
-	map->vaddr = rz_buf_read_le32_at(b, NSO_OFF(text_loc)) + ba;
+	map->paddr = bin->decompressed ? 0 : hdr->text_memoffset;
+	map->vsize = map->psize = hdr->text_size;
+	map->vaddr = hdr->text_loc + ba;
 	map->perm = RZ_PERM_RX;
+	map->vfile_name = bin->decompressed ? strdup(VFILE_NAME_DECOMPRESSED) : NULL;
 	rz_list_append(ret, map);
 
 	// add ro segment
@@ -200,10 +249,11 @@ static RzList *maps(RzBinFile *bf) {
 		return ret;
 	}
 	map->name = strdup("ro");
-	map->paddr = rz_buf_read_le32_at(b, NSO_OFF(ro_memoffset));
-	map->vsize = map->psize = rz_buf_read_le32_at(b, NSO_OFF(ro_size));
-	map->vaddr = rz_buf_read_le32_at(b, NSO_OFF(ro_loc)) + ba;
+	map->paddr = bin->decompressed ? hdr->text_size : hdr->ro_memoffset;
+	map->vsize = map->psize = hdr->ro_size;
+	map->vaddr = hdr->ro_loc + ba;
 	map->perm = RZ_PERM_R;
+	map->vfile_name = bin->decompressed ? strdup(VFILE_NAME_DECOMPRESSED) : NULL;
 	rz_list_append(ret, map);
 
 	// add data segment
@@ -212,10 +262,11 @@ static RzList *maps(RzBinFile *bf) {
 		return ret;
 	}
 	map->name = strdup("data");
-	map->vsize = map->psize = rz_buf_read_le32_at(b, NSO_OFF(data_size));
-	map->paddr = rz_buf_read_le32_at(b, NSO_OFF(data_memoffset));
-	map->vaddr = rz_buf_read_le32_at(b, NSO_OFF(data_loc)) + ba;
+	map->paddr = bin->decompressed ? hdr->text_size + hdr->ro_size : hdr->data_memoffset;
+	map->vsize = map->psize = hdr->data_size;
+	map->vaddr = hdr->data_loc + ba;
 	map->perm = RZ_PERM_RW;
+	map->vfile_name = bin->decompressed ? strdup(VFILE_NAME_DECOMPRESSED) : NULL;
 	rz_list_append(ret, map);
 	return ret;
 }
@@ -288,10 +339,12 @@ RzBinPlugin rz_bin_plugin_nso = {
 	.desc = "Nintendo Switch NSO0 binaries",
 	.license = "MIT",
 	.load_buffer = &load_buffer,
+	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.virtual_files = &virtual_files,
 	.maps = &maps,
 	.sections = &sections,
 	.get_sdb = &get_sdb,

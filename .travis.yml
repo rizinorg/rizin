@@ -1,15 +1,6 @@
 language: generic
 conditions: v1
 
-branches:
-  only:
-  - stable
-  - dev
-  - /^release-.*$/
-  - /^prerelease-.*$/
-  - /^travis-.*$/
-  - /^import-.*$/
-
 services:
   - docker
 

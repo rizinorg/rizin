@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_print
+commands:
+  - name: pg
+    summary: Print gadgets
+    cname: cmd_print_gadget
+    subcommands:
+      - name: pg
+        summary: Add a new gadget / Print all existing gadgets
+        cname: cmd_print_gadget_add
+        args:
+          - name: x
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: y
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: w
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: h
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+          - name: cmd
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
+      - name: pg*
+        summary: Print all gadgets as Rizin commands
+        cname: cmd_print_gadget_print_as_rizin
+        args: []
+      - name: pg-*
+        summary: Remove all gadgets
+        cname: cmd_print_gadget_remove
+        args: []
+      - name: pgm
+        summary: Move the position of the n-th gadget
+        cname: cmd_print_gadget_move
+        args:
+          - name: n
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: x
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: y
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: w
+            type: RZ_CMD_ARG_TYPE_NUM
+          - name: h
+            type: RZ_CMD_ARG_TYPE_NUM

@@ -49,7 +49,6 @@ rz_core_sources = [
   'cvfile.c',
   'fortune.c',
   'gdiff.c',
-  'zdiff.c',
   'agraph.c',
   'hack.c',
   'libs.c',

@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2011-2017 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
-/* vala extension for librz (rizin) */
-// TODO: add cache directory (~/.r2/cache)
+
+/** \file
+ * A plugin allowing to run "scripts" written in C language
+ */
 
 #include "rz_lib.h"
 #include "rz_core.h"
@@ -93,7 +95,7 @@ static int lang_c_file(RzLang *lang, const char *file) {
 }
 
 static int lang_c_init(void *user) {
-	// TODO: check if "valac" is found in path
+	// TODO: check if C compiler is found in path
 	return true;
 }
 

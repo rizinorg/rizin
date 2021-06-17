@@ -3,6 +3,7 @@ if get_option('enable_tests')
 
   tests = [
     'open_analyse_save_load_project',
+    'bin_vfiles'
   ]
 
   unit_test_env = environment()

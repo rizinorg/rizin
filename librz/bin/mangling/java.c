@@ -20,7 +20,7 @@ RZ_API char *rz_bin_demangle_java(const char *str) {
 	if (!ptr) {
 		return NULL;
 	}
-	buf = rz_buf_new();
+	buf = rz_buf_new_with_bytes(NULL, 0);
 	if (!buf) {
 		return NULL;
 	}

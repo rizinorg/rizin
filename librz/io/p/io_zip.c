@@ -138,7 +138,7 @@ static int rz_io_zip_slurp_file(RzIOZipFileObj *zfo) {
 			return false;
 		}
 		if (!zfo->b) {
-			zfo->b = rz_buf_new();
+			zfo->b = rz_buf_new_with_bytes(NULL, 0);
 		}
 		zip_stat_init(&sb);
 		if (zfo->b && !zip_stat_index(zipArch, zfo->entry, 0, &sb)) {
@@ -233,7 +233,7 @@ static void rz_io_zip_free_zipfileobj(RzIOZipFileObj *zfo) {
 RzIOZipFileObj *rz_io_zip_create_new_file(const char *archivename, const char *filename, struct zip_stat *sb, ut32 perm, int mode, int rw) {
 	RzIOZipFileObj *zfo = RZ_NEW0(RzIOZipFileObj);
 	if (zfo) {
-		zfo->b = rz_buf_new();
+		zfo->b = rz_buf_new_with_bytes(NULL, 0);
 		zfo->archivename = strdup(archivename);
 		zfo->name = strdup(sb ? sb->name : filename);
 		zfo->entry = !sb ? -1 : sb->index;

@@ -1,0 +1,28 @@
+NAME=test pg* and pg-* print gadgets
+FILE=--
+CMDS=<<EOF
+pg 10 10 10 10 s
+pg 2 2 2 2 iE
+pg*
+pg-*
+pg*
+EOF
+EXPECT=<<EOF
+"pg 10 10 10 10 s"
+"pg 2 2 2 2 iE"
+EOF
+RUN
+
+NAME=test pgm move gadgets
+FILE=--
+CMDS=<<EOF
+pg 10 10 10 10 s
+pg*
+pgm 0 5 5 5 5
+pg*
+EOF
+EXPECT=<<EOF
+"pg 10 10 10 10 s"
+"pg 5 5 5 5 s"
+EOF
+RUN

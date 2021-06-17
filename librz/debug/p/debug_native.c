@@ -1210,8 +1210,8 @@ static bool rz_debug_native_kill(RzDebug *dbg, int pid, int tid, int sig) {
 }
 
 struct rz_debug_desc_plugin_t rz_debug_desc_plugin_native;
-static int rz_debug_native_init(RzDebug *dbg) {
-	dbg->h->desc = rz_debug_desc_plugin_native;
+static bool rz_debug_native_init(RzDebug *dbg, void **user) {
+	dbg->cur->desc = rz_debug_desc_plugin_native;
 #if __WINDOWS__
 	return w32_init(dbg);
 #else

@@ -338,9 +338,9 @@ static char *get_node_color(int color, int cur) {
 		return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
 	}
 	return color ? (
-			       color == RZ_ANALYSIS_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match : color == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? cons->context->pal.graph_diff_unmatch
-																		   : cons->context->pal.graph_diff_new)
-		     : cons->context->pal.graph_diff_unknown;
+			       color == RZ_ANALYSIS_DIFF_TYPE_MATCH ? cons->context->pal.diff_match : color == RZ_ANALYSIS_DIFF_TYPE_UNMATCH ? cons->context->pal.diff_unmatch
+																	     : cons->context->pal.diff_new)
+		     : cons->context->pal.diff_unknown;
 }
 
 static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {

@@ -9,7 +9,7 @@ ec b0x00 rgb:738699             # 00 bytes
 ec b0x7f rgb:677
 ec b0xff rgb:abb0b6             # ff bytes
 ec btext rgb:5de             # text section opcode? first byte of opcode
-ec comment rgb:95e6cb           # r2 renerated comments
+ec comment rgb:95e6cb           # rizin renerated comments
 ec creg rgb:ff7733              # modified registries
 ec flag rgb:5ccfe6              # flags. usually apprears above the current seek
 ec fline rgb:55b4d4             # function line. the boundary of a function
@@ -24,7 +24,7 @@ ec graph.box4 rgb:66d9ef
 ec graph.current rgb:fff
 ec graph.false rgb:f07178       # false line on visual graph mode
 ec graph.true rgb:bae67e        # true line on visual graph mode
-ec graph.ujump rgb:55b4d4      # lines in graph that does not have true or false
+ec graph.ujump rgb:55b4d4       # lines in graph that does not have true or false
 ec help rgb:c2d94c              # color of help explanation text
 ec input rgb:888
 ec jmp rgb:c2d94c               # jmp instructions
@@ -35,7 +35,7 @@ ec nop rgb:a37acc               # nop instructions
 ec num rgb:f28779               # numbers
 ec offset rgb:ed9366            # offset in visual mode
 ec other rgb:888
-ec prompt rgb:5de               # color for main r2 prompt
+ec prompt rgb:5de               # color for main rizin prompt
 ec call rgb:ff7733              # push instructions
 ec reg rgb:e6e1cf               # register names
 ec ret rgb:d66                  # ret opcode
@@ -49,7 +49,7 @@ ec pop rgb:5de
 ec cjmp rgb:c2d94c              # je, jg, etc
 ec ucall rgb:5ccfe6
 ec ujmp rgb:c2d94c
-ec usrcmt rgb:fa6e32           # user comment
+ec usrcmt rgb:fa6e32            # user comment
 
 ec func_var rgb:95e6cb
 ec func_var_type rgb:ffd580

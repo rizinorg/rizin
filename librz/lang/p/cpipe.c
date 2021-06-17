@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2011-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
-/* vala extension for librz (rizin) */
-// TODO: add cache directory (~/.r2/cache)
+
+/** \file
+ * A plugin allowing to run rz-pipe "scripts" written in C language
+ */
 
 #include "rz_lib.h"
 #include "rz_core.h"
@@ -72,7 +74,7 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 }
 
 static int lang_cpipe_init(void *user) {
-	// TODO: check if "valac" is found in path
+	// TODO: check if C compiler is found in path
 	return true;
 }
 
@@ -83,9 +85,9 @@ static int lang_cpipe_run(RzLang *lang, const char *code, int len) {
 		return false;
 	}
 	fputs("#include <rz_socket.h>\n\n"
-	      "#define RZP(x,y...) rzpipe_cmdf(r2p,x,##y)\n"
+	      "#define RZP(x,y...) rzpipe_cmdf(rzp,x,##y)\n"
 	      "int main() {\n"
-	      "  RzPipe *r2p = rzpipe_open(NULL);",
+	      "  RzPipe *rzp = rzpipe_open(NULL);",
 		fd);
 	fputs(code, fd);
 	fputs("\n}\n", fd);

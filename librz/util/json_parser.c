@@ -561,12 +561,3 @@ RZ_API RZ_OWN char *rz_json_as_string(const RzJson *json) {
 	char *str = pj_drain(pj);
 	return str;
 }
-
-RZ_API RZ_OWN char *rz_json_as_string_with_encoding(const RzJson *json, PJEncodingStr str_encoding, PJEncodingNum num_encoding) {
-	rz_return_val_if_fail(json, NULL);
-	rz_return_val_if_fail(json->type != RZ_JSON_NULL, NULL);
-	PJ *pj = pj_new_with_encoding(str_encoding, num_encoding);
-	json_pj_handler(json, pj);
-	char *str = pj_drain(pj);
-	return str;
-}

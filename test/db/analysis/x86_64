@@ -2473,7 +2473,6 @@ e asm.arch=x86
 e asm.bytes=true
 e asm.bits=64
 e analysis.jmp.mid=false
-e io.cache=true
 wx b8210000c1ebfdbb2c000000000
 af
 afi
@@ -2536,7 +2535,6 @@ e asm.bits=64
 e analysis.nopskip=false
 e asm.bb.middle=true
 e analysis.jmp.mid=true
-e io.cache=true
 "(show_fcn bin; wx $0; af-*; af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; e asm.bb.middle=true; pdf; ?e; e asm.bb.middle=false; pdf)"
 .(show_fcn b8210000c1ebfdbb2c000000cc)
 ?e
@@ -2904,7 +2902,6 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
 e asm.bits=64
-e io.cache=true
 wx b821c10010ebf9
 s 3
 af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; pdf
@@ -3001,7 +2998,6 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
 e asm.bits=64
-e io.cache=true
 wx b821c10010ebf9
 s 0
 af; af-*
@@ -3058,7 +3054,6 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e analysis.jmp.mid=true
-e io.cache=true
 e analysis.nopskip=false
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
@@ -3150,7 +3145,6 @@ e emu.write=true
 e asm.bytes=0
 e asm.cmt.col=20
 e asm.lines.bb=false
-e io.cache=true
 aeim
 s 0x00402aee
 pd 10~?int LoadStringA

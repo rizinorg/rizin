@@ -21,7 +21,7 @@ static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *dat
 	ut16 ehdrsz, phdrsz;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 baddr = 0x8048000;
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 
 #define B(x, y)    rz_buf_append_bytes(buf, (const ut8 *)(x), y)
 #define D(x)       rz_buf_append_ut32(buf, x)
@@ -128,6 +128,6 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.write = &rz_bin_write_elf,
 	.file_type = get_file_type,
 	.regstate = regstate,
-	.section_type_to_string = &Elf_(section_type_to_string),
-	.section_flag_to_rzlist = &Elf_(section_flag_to_rzlist),
+	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
+	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
 };

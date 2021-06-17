@@ -187,7 +187,6 @@ bin_ldr_plugins = [
 ]
 
 bin_xtr_plugins = [
-  'xtr_dyldcache',
   'xtr_fatmach0',
   'xtr_sep64',
 ]
@@ -255,6 +254,7 @@ io_plugins = [
   'gzip',
   'http',
   'ihex',
+  'srec',
   'mach',
   'malloc',
   'null',
@@ -320,6 +320,7 @@ include_files =[
   'include/rznaked.h',
   'include/rz_agraph.h',
   'include/rz_analysis.h',
+  'include/rz_arch.h',
   'include/rz_asm.h',
   'include/rz_bind.h',
   'include/rz_getopt.h',

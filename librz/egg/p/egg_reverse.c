@@ -27,7 +27,7 @@ unsigned char x86_freebsd_reverse[] =
 	"\x43\x7f\x00\x00\x01\x2f\x62\x69\x6e\x2f\x73\x68";
 
 static RzBuffer *build(RzEgg *egg) {
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 	const ut8 *sc = NULL;
 	int cd = 0;
 	char *port = rz_egg_option_get(egg, "port");

@@ -104,22 +104,7 @@ static st64 buf_bytes_seek(RzBuffer *b, st64 addr, int whence) {
 	if (addr < 0 && (-addr) > (st64)priv->offset) {
 		return -1;
 	}
-
-	switch (whence) {
-	case RZ_BUF_CUR:
-		priv->offset += addr;
-		break;
-	case RZ_BUF_SET:
-		priv->offset = addr;
-		break;
-	case RZ_BUF_END:
-		priv->offset = priv->length + addr;
-		break;
-	default:
-		rz_warn_if_reached();
-		return -1;
-	}
-	return priv->offset;
+	return priv->offset = rz_seek_offset(priv->offset, priv->length, addr, whence);
 }
 
 static ut8 *buf_bytes_get_whole_buf(RzBuffer *b, ut64 *sz) {

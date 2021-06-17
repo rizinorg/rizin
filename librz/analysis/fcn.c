@@ -1702,7 +1702,7 @@ RZ_API int rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
 // tfj and afsj call this function
 RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	RzAnalysis *a = function->analysis;
-	PJ *pj = a->coreb.pjWithEncoding(a->coreb.core);
+	PJ *pj = pj_new();
 	unsigned int i;
 	const char *ret_type = rz_type_func_ret(a->typedb, function->name);
 	int argc = rz_type_func_args_count(a->typedb, function->name);

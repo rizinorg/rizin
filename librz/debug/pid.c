@@ -24,8 +24,8 @@ RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid) {
 }
 
 RZ_API RzList *rz_debug_pids(RzDebug *dbg, int pid) {
-	if (dbg && dbg->h && dbg->h->pids) {
-		return dbg->h->pids(dbg, pid);
+	if (dbg && dbg->cur && dbg->cur->pids) {
+		return dbg->cur->pids(dbg, pid);
 	}
 	return NULL;
 }
@@ -35,8 +35,8 @@ RZ_API int rz_debug_pid_list(RzDebug *dbg, int pid, char fmt) {
 	RzList *list;
 	RzListIter *iter;
 	RzDebugPid *p;
-	if (dbg && dbg->h && dbg->h->pids) {
-		list = dbg->h->pids(dbg, RZ_MAX(0, pid));
+	if (dbg && dbg->cur && dbg->cur->pids) {
+		list = dbg->cur->pids(dbg, RZ_MAX(0, pid));
 		if (!list) {
 			return false;
 		}
@@ -81,8 +81,8 @@ RZ_API int rz_debug_thread_list(RzDebug *dbg, int pid, char fmt) {
 	if (pid == -1) {
 		return false;
 	}
-	if (dbg && dbg->h && dbg->h->threads) {
-		list = dbg->h->threads(dbg, pid);
+	if (dbg && dbg->cur && dbg->cur->threads) {
+		list = dbg->cur->threads(dbg, pid);
 		if (!list) {
 			return false;
 		}

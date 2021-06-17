@@ -1033,8 +1033,8 @@ static int *get_unique_thread_id(RzDebug *dbg, int n_threads) {
 	int i = 0;
 	bool found = false;
 
-	if (dbg->h) {
-		list = dbg->h->threads(dbg, dbg->pid);
+	if (dbg->cur) {
+		list = dbg->cur->threads(dbg, dbg->pid);
 		if (!list) {
 			return NULL;
 		}

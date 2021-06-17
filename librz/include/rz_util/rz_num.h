@@ -118,6 +118,21 @@ static inline ut64 rz_num_align_delta(ut64 v, ut64 alignment) {
 	return alignment - excess;
 }
 
+#define CONVERT_TO_TWO_COMPLEMENT(x) \
+	static inline st##x convert_to_two_complement_##x(ut##x value) { \
+		if (value <= ST##x##_MAX) { \
+			return (st##x)value; \
+		} \
+\
+		value = ~value + 1; \
+		return -(st##x)value; \
+	}
+
+CONVERT_TO_TWO_COMPLEMENT(8)
+CONVERT_TO_TWO_COMPLEMENT(16)
+CONVERT_TO_TWO_COMPLEMENT(32)
+CONVERT_TO_TWO_COMPLEMENT(64)
+
 /// Typical comparison (1/0/-1) for two numbers of arbitrary types, including unsigned
 #define RZ_NUM_CMP(a, b) ((a) > (b) ? 1 : ((b) > (a) ? -1 : 0))
 

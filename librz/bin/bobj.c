@@ -580,6 +580,21 @@ RZ_API RzBinSymbol *rz_bin_object_get_symbol_of_import(RzBinObject *o, RzBinImpo
 	return ht_pp_find(o->import_name_symbols, imp->name, NULL);
 }
 
+RZ_API RzBinVirtualFile *rz_bin_object_get_virtual_file(RzBinObject *o, const char *name) {
+	rz_return_val_if_fail(o && name, NULL);
+	if (!o->vfiles) {
+		return NULL;
+	}
+	RzListIter *it;
+	RzBinVirtualFile *vf;
+	rz_list_foreach (o->vfiles, it, vf) {
+		if (!strcmp(vf->name, name)) {
+			return vf;
+		}
+	}
+	return NULL;
+}
+
 RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin) {
 	rz_return_val_if_fail(bin && bin->cur, NULL);
 	return bin->cur->o;

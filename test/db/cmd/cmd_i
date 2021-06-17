@@ -4122,7 +4122,7 @@ vaddr      paddr      target     type   name
 0x00000154 19 segment.INTERP
 0x00000168 68 segment.NOTE
 0x00000364 72 section..rel.dyn
-0x000003ac 16 section..rela.plt
+0x000003ac 16 section..rel.plt
 0x000003f0 16 sym.imp.puts
 0x00000400 16 sym.imp.__libc_start_main
 0x00000420 1 entry0
@@ -4138,7 +4138,7 @@ vaddr      paddr      target     type   name
 0x00001ff0 4 reloc.__gmon_start
 0x00001ff8 4 reloc._Jv_RegisterClasses
 0x00001ffc 4 reloc._ITM_registerTMCloneTable
-0x00002000 16 section..got.plt
+0x00002000 0 section..got.plt
 0x0000200c 4 reloc.puts
 0x00002010 4 reloc.__libc_start_main
 0x00002028 4 reloc.target.puts
@@ -4761,36 +4761,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=izjencoding
+NAME=izj section
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
-e cfg.json.str=base64
 izj~{[0].section}
 EOF
 EXPECT=<<EOF
-LnJvZGF0YQ==
-EOF
-RUN
-
-NAME=izjencodinghex
-FILE=bins/elf/analysis/hello-utf-16
-CMDS=<<EOF
-e cfg.json.str=hex
-izj~{[0].string}
-EOF
-EXPECT=<<EOF
-48656C6C6F20576F726C64
-EOF
-RUN
-
-NAME=izjencodingarray
-FILE=bins/elf/analysis/hello-utf-16
-CMDS=<<EOF
-e cfg.json.str=array
-izj~{[0].type}
-EOF
-EXPECT=<<EOF
-[117,116,102,049,054,108,101]
+.rodata
 EOF
 RUN
 
@@ -4925,5 +4902,34 @@ EXPECT=<<EOF
 0x00091004	/build/gcc/src/gcc-build/x86_64-pc-linux-gnu/libstdc++-v3/include/bits/exception.h	63
 --
 [{"file":"new","line":57,"column":5,"addr":593924},{"file":"new","line":57,"column":25,"addr":593924},{"file":"exception.h","line":63,"column":5,"addr":593924},{"file":"exception.h","line":63,"column":5,"addr":593924}]
+EOF
+RUN
+
+NAME=flat bin bits
+FILE=bins/flat/=.bin
+CMDS=<<EOF
+(pI_all; e asm.bits; iI~^bits; iIq~^bits; iI*~asm.bits; iIj~{bits})
+. bins/flat/=.bin.rz
+.(pI_all)
+?e
+?e ------
+?e
+e asm.bits=64
+.(pI_all)
+EOF
+EXPECT=<<EOF
+32
+bits     32
+bits 32
+e asm.bits=32
+32
+
+------
+
+64
+bits     64
+bits 64
+e asm.bits=64
+64
 EOF
 RUN

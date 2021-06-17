@@ -861,7 +861,9 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKin
 static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
 	switch (reg_num) {
-	case 0: return "eax";
+	case 0:
+	case 8:
+		return "eax";
 	case 1: return "edx";
 	case 2: return "ecx";
 	case 3: return "ebx";
@@ -873,6 +875,15 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *
 		return "ebp";
 	case 6: return "esi";
 	case 7: return "edi";
+	case 9: return "EFLAGS";
+	case 11: return "st0";
+	case 12: return "st1";
+	case 13: return "st2";
+	case 14: return "st3";
+	case 15: return "st4";
+	case 16: return "st5";
+	case 17: return "st6";
+	case 18: return "st7";
 	case 21: return "xmm0";
 	case 22: return "xmm1";
 	case 23: return "xmm2";
@@ -881,6 +892,20 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *
 	case 26: return "xmm5";
 	case 27: return "xmm6";
 	case 28: return "xmm7";
+	case 29: return "mm0";
+	case 30: return "mm1";
+	case 31: return "mm2";
+	case 32: return "mm3";
+	case 33: return "mm4";
+	case 34: return "mm5";
+	case 35: return "mm6";
+	case 36: return "mm7";
+	case 40: return "es";
+	case 41: return "cs";
+	case 42: return "ss";
+	case 43: return "ds";
+	case 44: return "fs";
+	case 45: return "gs";
 	default:
 		rz_warn_if_reached();
 		*kind = LOCATION_UNKNOWN;

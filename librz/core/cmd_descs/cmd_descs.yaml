@@ -247,6 +247,7 @@ commands:
     cname: cmd_print
     summary: Print commands
     type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_print
   - name: P
     summary: Project management
     subcommands: cmd_project

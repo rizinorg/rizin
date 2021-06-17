@@ -119,7 +119,6 @@ ARGS=-a mips
 CMDS=<<EOF
 e cfg.bigendian=false
 aeim
-e io.cache=true
 "ae 0x69686766,0x00100000,=[4]"
 psz @0x00100000
 EOF
@@ -134,7 +133,6 @@ ARGS=-a mips
 CMDS=<<EOF
 e cfg.bigendian=true
 aeim
-e io.cache=true
 "ae 0x69686766,0x00100000,=[4]"
 psz @0x00100000
 EOF
@@ -149,7 +147,6 @@ BROKEN=1
 CMDS=<<EOF
 e cfg.bigendian=true
 aeim
-e io.cache=true
 "ae 0x69686766,0x00100000,=[4]"
 psz @0x00100000
 EOF
@@ -164,7 +161,6 @@ ARGS=-a arm -b 32
 CMDS=<<EOF
 e cfg.bigendian=true
 aeim
-e io.cache=true
 ar r0=0x00100000
 ar r1=0x69686766
 "ae r1,1,r0,=[*]"
@@ -181,7 +177,6 @@ ARGS=-a arm -b 64
 CMDS=<<EOF
 e cfg.bigendian=true
 aeim
-e io.cache=true
 ar x0=0x00100000
 ar x1=0x69686766
 "ae x1,1,x0,=[*]"
@@ -198,7 +193,6 @@ ARGS=-a arm -b 32
 CMDS=<<EOF
 e cfg.bigendian=false
 aeim
-e io.cache=true
 ar r0=0x00100000
 ar r1=0x69686766
 "ae r1,1,r0,=[*]"
@@ -215,7 +209,6 @@ ARGS=-a arm -b 64
 CMDS=<<EOF
 e cfg.bigendian=false
 aeim
-e io.cache=true
 ar x0=0x00100000
 ar x1=0x69686766
 "ae x1,1,x0,=[*]"
@@ -232,7 +225,6 @@ ARGS=-a arm -b 64
 CMDS=<<EOF
 e cfg.bigendian=false
 aeim
-e io.cache=true
 ar x0=0x00100000
 ar x1=0x69686766
 "ae x1,0xffffffff,x0,=[*]"
@@ -292,7 +284,7 @@ RUN
 NAME=rep stosq
 FILE=bins/elf/analysis/x64-rep-stosq
 CMDS=<<EOF
-e io.cache=1
+e io.cache=true
 aei
 aeip
 3aes
@@ -314,7 +306,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=signext 8 32 64 
+NAME=signext 8 32 64
 FILE==
 CMDS="ae 8,0x80,~,8,0x70,~,32,0x80000000,~,64,0x80000000,~"
 EXPECT=<<EOF

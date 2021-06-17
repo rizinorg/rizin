@@ -1,19 +1,14 @@
+// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
 // SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2010-2019 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <rz_types.h>
-#include <rz_util.h>
 #include "elf.h"
 
 // XXX UGLY CODE
 /* TODO: Take care of endianness */
 /* TODO: Real error handling */
 /* TODO: Resize sections before .init */
-// ut64 Elf_(rz_bin_elf_resize_section)(struct Elf_(rz_bin_elf_obj_t) *bin, const char *name, ut64 size) {
 ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size) {
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj; // , const char *name, ut64 size) {
 	Elf_(Ehdr) *ehdr = &bin->ehdr;

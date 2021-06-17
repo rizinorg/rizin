@@ -1211,7 +1211,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 
 	switch (format_out) {
 	case 'j':
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return;
 		}

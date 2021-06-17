@@ -313,10 +313,10 @@ NAME=super mario block (#8788)
 FILE=bins/elf/analysis/hello-android-mips
 CMDS=<<EOF
 e emu.str=true
+e io.cache=true
 s 0x0008049c
 af+ 0x0008049c super_mario_fix
 afb+ 0x0008049c 0x0008049c 8
-e io.cache=true
 wx c2a2c2a2c2a2 @ 0x80510
 e bin.str.enc=utf8
 agf

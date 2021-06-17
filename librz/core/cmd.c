@@ -3548,7 +3548,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		}
 	} break;
 	case 'M':
-		if (dbg && dbg->h && dbg->maps) {
+		if (dbg && dbg->cur && dbg->maps) {
 			RzDebugMap *map;
 			rz_list_foreach (dbg->maps, iter, map) {
 				rz_core_seek(core, map->addr, true);
@@ -3559,10 +3559,10 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		break;
 	case 't':
 		// iterate over all threads
-		if (dbg && dbg->h && dbg->h->threads) {
+		if (dbg && dbg->cur && dbg->cur->threads) {
 			int origpid = dbg->pid;
 			RzDebugPid *p;
-			list = dbg->h->threads(dbg, dbg->pid);
+			list = dbg->cur->threads(dbg, dbg->pid);
 			if (!list) {
 				return false;
 			}
@@ -3977,8 +3977,8 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 	{
 		RzDebugPid *p;
 		int pid = core->dbg->pid;
-		if (core->dbg->h && core->dbg->h->pids) {
-			RzList *list = core->dbg->h->pids(core->dbg, RZ_MAX(0, pid));
+		if (core->dbg->cur && core->dbg->cur->pids) {
+			RzList *list = core->dbg->cur->pids(core->dbg, RZ_MAX(0, pid));
 			rz_list_foreach (list, iter, p) {
 				rz_cons_printf("# PID %d\n", p->pid);
 				rz_debug_select(core->dbg, p->pid, p->pid);
@@ -5886,7 +5886,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_dbgmap_stmt) {
 	TSNode command = ts_node_named_child(node, 0);
 	RzDebug *dbg = core->dbg;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	if (dbg && dbg->h && dbg->maps) {
+	if (dbg && dbg->cur && dbg->maps) {
 		RzDebugMap *map;
 		RzListIter *iter;
 		rz_list_foreach (dbg->maps, iter, map) {
@@ -5938,10 +5938,10 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_threads_stmt) {
 	TSNode command = ts_node_named_child(node, 0);
 	RzDebug *dbg = core->dbg;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	if (dbg && dbg->h && dbg->h->threads) {
+	if (dbg && dbg->cur && dbg->cur->threads) {
 		int origtid = dbg->tid;
 		RzDebugPid *p;
-		RzList *list = dbg->h->threads(dbg, dbg->pid);
+		RzList *list = dbg->cur->threads(dbg, dbg->pid);
 		if (!list) {
 			return RZ_CMD_STATUS_INVALID;
 		}

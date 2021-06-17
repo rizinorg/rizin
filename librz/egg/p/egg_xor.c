@@ -48,8 +48,8 @@ static RzBuffer *build(RzEgg *egg) {
 			return NULL;
 		}
 	}
-	buf = rz_buf_new();
-	sc = rz_buf_new();
+	buf = rz_buf_new_with_bytes(NULL, 0);
+	sc = rz_buf_new_with_bytes(NULL, 0);
 
 	// TODO: alphanumeric? :D
 	// This is the x86-32/64 xor encoder

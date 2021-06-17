@@ -2098,7 +2098,7 @@ RZ_API void rz_print_hex_from_bin(RzPrint *p, char *bin_str) {
 	}
 	index--;
 	p->cb_printf("0x");
-	while (buf[index] == 0 && index > 0) {
+	while (index > 0 && !buf[index]) {
 		index--;
 	}
 	p->cb_printf("%" PFMT64x, buf[index]);

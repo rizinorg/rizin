@@ -162,8 +162,8 @@ RZ_API int rz_debug_signal_set(RzDebug *dbg, int num, ut64 addr) {
 
 /* TODO rename to _kill_ -> _signal_ */
 RZ_API RzList *rz_debug_kill_list(RzDebug *dbg) {
-	if (dbg->h->kill_list) {
-		return dbg->h->kill_list(dbg);
+	if (dbg->cur->kill_list) {
+		return dbg->cur->kill_list(dbg);
 	}
 	return NULL;
 }
@@ -172,8 +172,8 @@ RZ_API int rz_debug_kill_setup(RzDebug *dbg, int sig, int action) {
 	eprintf("TODO: set signal handlers of child\n");
 	// TODO: must inject code to call signal()
 #if 0
-	if (dbg->h->kill_setup)
-		return dbg->h->kill_setup (dbg, sig, action);
+	if (dbg->cur->kill_setup)
+		return dbg->cur->kill_setup (dbg, sig, action);
 #endif
 	// TODO: implement rz_debug_kill_setup
 	return false;

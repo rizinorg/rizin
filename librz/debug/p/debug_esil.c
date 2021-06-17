@@ -45,7 +45,7 @@ static int __esil_step(RzDebug *dbg) {
 	return true;
 }
 
-static int __esil_init(RzDebug *dbg) {
+static bool __esil_init(RzDebug *dbg, void **user) {
 	dbg->tid = dbg->pid = 1;
 	// aeim
 	// aei

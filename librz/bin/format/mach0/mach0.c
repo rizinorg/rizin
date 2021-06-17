@@ -2147,7 +2147,7 @@ struct MACH0_(obj_t) * MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t)
 	if (!buf) {
 		return MACH0_(mach0_free)(bin);
 	}
-	bin->b = rz_buf_new();
+	bin->b = rz_buf_new_with_bytes(NULL, 0);
 	if (!rz_buf_set_bytes(bin->b, buf, bin->size)) {
 		free(buf);
 		return MACH0_(mach0_free)(bin);
@@ -2214,7 +2214,28 @@ static bool __isDataSection(RzBinSection *sect) {
 	return false;
 }
 
+RzList *MACH0_(get_virtual_files)(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
+	RzList *ret = rz_list_newf((RzListFree)rz_bin_virtual_file_free);
+	if (!ret) {
+		return NULL;
+	}
+	struct MACH0_(obj_t) *obj = bf->o->bin_obj;
+	if (MACH0_(needs_rebasing_and_stripping)(obj)) {
+		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
+		if (!vf) {
+			return ret;
+		}
+		vf->buf = MACH0_(new_rebasing_and_stripping_buf)(obj);
+		vf->buf_owned = true;
+		vf->name = strdup(MACH0_VFILE_NAME_REBASED_STRIPPED);
+		rz_list_push(ret, vf);
+	}
+	return ret;
+}
+
 RzList *MACH0_(get_maps)(RzBinFile *bf) {
+	rz_return_val_if_fail(bf, NULL);
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_map_free);
 	if (!ret) {
@@ -2229,13 +2250,20 @@ RzList *MACH0_(get_maps)(RzBinFile *bf) {
 		if (!map) {
 			break;
 		}
-		map->paddr = seg->fileoff + bf->o->boffset;
 		map->psize = seg->vmsize;
 		map->vaddr = seg->vmaddr;
 		map->vsize = seg->vmsize;
 		map->name = rz_str_ndup(seg->segname, 16);
 		rz_str_filter(map->name, -1);
 		map->perm = prot2perm(seg->initprot);
+		if (MACH0_(segment_needs_rebasing_and_stripping)(bin, i)) {
+			map->vfile_name = strdup(MACH0_VFILE_NAME_REBASED_STRIPPED);
+			map->paddr = seg->fileoff;
+		} else {
+			// boffset is relevant for fatmach0 where the mach0 is located boffset into the whole file
+			// the rebasing vfile above however is based at the mach0 already
+			map->paddr = seg->fileoff + bf->o->boffset;
+		}
 		rz_list_append(ret, map);
 	}
 	return ret;
@@ -3389,11 +3417,9 @@ RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) * bin) {
 							while (addr < segment_end_addr) {
 								ut8 tmp[8];
 								ut64 paddr = addr - bin->segs[cur_seg_idx].vmaddr + bin->segs[cur_seg_idx].fileoff;
-								bin->rebasing_buffer = true;
 								if (rz_buf_read_at(bin->b, paddr, tmp, 8) != 8) {
 									break;
 								}
-								bin->rebasing_buffer = false;
 								ut64 raw_ptr = rz_read_le64(tmp);
 								bool is_auth = (raw_ptr & (1ULL << 63)) != 0;
 								bool is_bind = (raw_ptr & (1ULL << 62)) != 0;

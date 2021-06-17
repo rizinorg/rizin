@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
 // SPDX-FileCopyrightText: 2008-2010 nibble <nibble.ds@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 

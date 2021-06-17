@@ -45,28 +45,28 @@ typedef struct rz_msg_digest_t {
 
 #ifdef RZ_API
 
-RZ_API ut32 rz_hash_xxhash(const ut8 *input, size_t size);
-RZ_API double rz_hash_entropy(const ut8 *data, ut64 len);
-RZ_API double rz_hash_entropy_fraction(const ut8 *data, ut64 len);
+RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size);
+RZ_API double rz_hash_entropy(RZ_NONNULL const ut8 *data, ut64 len);
+RZ_API double rz_hash_entropy_fraction(RZ_NONNULL const ut8 *data, ut64 len);
 
-RZ_API const RzMsgDigestPlugin *rz_msg_digest_plugin_by_index(size_t index);
-RZ_API const RzMsgDigestPlugin *rz_msg_digest_plugin_by_name(const char *name);
-RZ_API RzMsgDigest *rz_msg_digest_new();
-RZ_API RzMsgDigest *rz_msg_digest_new_with_algo(const char *name, const ut8 *key, ut64 key_size);
+RZ_API RZ_BORROW const RzMsgDigestPlugin *rz_msg_digest_plugin_by_index(size_t index);
+RZ_API RZ_BORROW const RzMsgDigestPlugin *rz_msg_digest_plugin_by_name(RZ_NONNULL const char *name);
+RZ_API RZ_OWN RzMsgDigest *rz_msg_digest_new();
+RZ_API RZ_OWN RzMsgDigest *rz_msg_digest_new_with_algo(RZ_NONNULL const char *name, RZ_NULLABLE const ut8 *key, ut64 key_size);
 #define rz_msg_digest_new_with_algo2(name) rz_msg_digest_new_with_algo(name, NULL, 0);
-RZ_API void rz_msg_digest_free(RzMsgDigest *md);
-RZ_API bool rz_msg_digest_configure(RzMsgDigest *md, const char *name);
-RZ_API bool rz_msg_digest_hmac(RzMsgDigest *md, const ut8 *key, ut64 key_size);
+RZ_API void rz_msg_digest_free(RZ_NULLABLE RzMsgDigest *md);
+RZ_API bool rz_msg_digest_configure(RZ_NONNULL RzMsgDigest *md, RZ_NONNULL const char *name);
+RZ_API bool rz_msg_digest_hmac(RZ_NONNULL RzMsgDigest *md, RZ_NONNULL const ut8 *key, ut64 key_size);
 
-RZ_API bool rz_msg_digest_init(RzMsgDigest *md);
-RZ_API bool rz_msg_digest_update(RzMsgDigest *md, const ut8 *data, ut64 size);
-RZ_API bool rz_msg_digest_final(RzMsgDigest *md);
-RZ_API bool rz_msg_digest_iterate(RzMsgDigest *md, size_t iterate);
-RZ_API const ut8 *rz_msg_digest_get_result(RzMsgDigest *md, const char *name, RzMsgDigestSize *size);
-RZ_API char *rz_msg_digest_get_result_string(RzMsgDigest *md, const char *name, ut32 *size, bool invert);
-RZ_API RzMsgDigestSize rz_msg_digest_size(RzMsgDigest *md, const char *name);
-RZ_API ut8 *rz_msg_digest_calculate_small_block(const char *name, const ut8 *buffer, ut64 bsize, RzMsgDigestSize *osize);
-RZ_API char *rz_msg_digest_calculate_small_block_string(const char *name, const ut8 *buffer, ut64 bsize, ut32 *size, bool invert);
+RZ_API bool rz_msg_digest_init(RZ_NONNULL RzMsgDigest *md);
+RZ_API bool rz_msg_digest_update(RZ_NONNULL RzMsgDigest *md, RZ_NONNULL const ut8 *data, ut64 size);
+RZ_API bool rz_msg_digest_final(RZ_NONNULL RzMsgDigest *md);
+RZ_API bool rz_msg_digest_iterate(RZ_NONNULL RzMsgDigest *md, size_t iterate);
+RZ_API RZ_BORROW const ut8 *rz_msg_digest_get_result(RZ_NONNULL RzMsgDigest *md, RZ_NONNULL const char *name, RZ_NONNULL RzMsgDigestSize *size);
+RZ_API RZ_OWN char *rz_msg_digest_get_result_string(RZ_NONNULL RzMsgDigest *md, RZ_NONNULL const char *name, RZ_NULLABLE ut32 *size, bool invert);
+RZ_API RzMsgDigestSize rz_msg_digest_size(RZ_NONNULL RzMsgDigest *md, RZ_NONNULL const char *name);
+RZ_API RZ_OWN ut8 *rz_msg_digest_calculate_small_block(RZ_NONNULL const char *name, RZ_NONNULL const ut8 *buffer, ut64 bsize, RZ_NONNULL RzMsgDigestSize *osize);
+RZ_API RZ_OWN char *rz_msg_digest_calculate_small_block_string(RZ_NONNULL const char *name, RZ_NONNULL const ut8 *buffer, ut64 bsize, RZ_NULLABLE ut32 *size, bool invert);
 
 #endif
 

@@ -23,7 +23,6 @@ typedef void (*RzCoreSeekArchBits)(void *core, ut64 addr);
 typedef int (*RzCoreConfigGetI)(void *core, const char *key);
 typedef const char *(*RzCoreConfigGet)(void *core, const char *key);
 typedef ut64 (*RzCoreNumGet)(void *core, const char *str);
-typedef void *(*RzCorePJWithEncoding)(void *core);
 
 typedef struct rz_core_bind_t {
 	void *core;
@@ -43,7 +42,6 @@ typedef struct rz_core_bind_t {
 	RzCoreNumGet numGet;
 	RzCoreIsMapped isMapped;
 	RzCoreDebugMapsSync syncDebugMaps;
-	RzCorePJWithEncoding pjWithEncoding;
 } RzCoreBind;
 
 #endif

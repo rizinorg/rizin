@@ -196,7 +196,7 @@ static ut64 size(RzBinFile *bf) {
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 #define B(x, y) rz_buf_append_bytes(buf, (const ut8 *)(x), y)
 #define D(x)    rz_buf_append_ut32(buf, x)
 	D(I_MAGIC); // i386 only atm

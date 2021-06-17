@@ -644,7 +644,7 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		state.mode = mode;
 		switch (mode) {
 		case RZ_OUTPUT_MODE_JSON:
-			state.d.pj = cmd->data ? rz_core_pj_new((RzCore *)cmd->data) : pj_new();
+			state.d.pj = pj_new();
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
 			state.d.t = rz_table_new();

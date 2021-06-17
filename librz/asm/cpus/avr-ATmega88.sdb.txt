@@ -1,0 +1,17 @@
+PC=8
+
+SPL=io
+SPL.address=0x3d
+SPH=io
+SPH.address=0x3e
+SREG=io
+SREG.address=0x3f
+SPMCSR=io
+SPMCSR.address=0x37
+
+EEPROM_SIZE=512
+IO_SIZE=0x30
+SRAM_START=0x60
+SRAM_SIZE=1024
+
+PAGE_SIZE=5

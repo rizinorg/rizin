@@ -47,6 +47,6 @@ typedef struct {
 
 W32DbgWInst *w32dbg_wrap_new(void);
 int w32dbg_wrap_wait_ret(W32DbgWInst *inst);
-void w32dbg_wrap_fini(W32DbgWInst *inst);
+void w32dbg_wrap_free(W32DbgWInst *inst);
 
 #endif

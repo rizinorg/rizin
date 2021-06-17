@@ -235,7 +235,7 @@ jobs:
       env:
         ASAN_OPTIONS: ${{ matrix.asan_options }}
     - name: Upload test results
-      if: matrix.run_tests && matrix.enabled
+      if: always() && matrix.run_tests && matrix.enabled
       uses: actions/upload-artifact@v2
       with:
         name: test-results-${{ matrix.name }}
@@ -385,6 +385,7 @@ jobs:
         rz-test -L -o results.json || true
       working-directory: rizin
     - name: Upload test results
+      if: always()
       uses: actions/upload-artifact@v2
       with:
         name: test-results-static

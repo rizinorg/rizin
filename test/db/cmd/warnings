@@ -1,0 +1,9 @@
+NAME=warning1 #missing regs for dwarf reg mapping in x86. issue #883
+FILE=bins/elf/find_x86-sok_gcc_m32_O2
+CMDS=<<EOF
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN

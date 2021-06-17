@@ -1322,8 +1322,7 @@ void dotnet_parse_tilde(
 	// Default index sizes are 2. Will be bumped to 4 if necessary.
 	memset(&index_sizes, 2, sizeof(index_sizes));
 
-	tilde_header = (PTILDE_HEADER)(
-		pe->data +
+	tilde_header = (PTILDE_HEADER)(pe->data +
 		metadata_root +
 		streams->tilde->Offset);
 

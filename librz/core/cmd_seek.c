@@ -334,7 +334,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 		RzCoreSeekItem *undo;
 		PJ *pj = NULL;
 		if (mode == 'j') {
-			pj = rz_core_pj_new(core);
+			pj = pj_new();
 			pj_a(pj);
 		}
 		bool current_met = false;

@@ -40,7 +40,7 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 		}
 	} break;
 	case RZ_OUTPUT_MODE_JSON: {
-		PJ *pj = rz_core_pj_new(core);
+		PJ *pj = pj_new();
 		pj_a(pj);
 		rz_list_foreach (list, iter, cc) {
 			char *ccexpr = rz_analysis_cc_get(core->analysis, cc);
@@ -129,7 +129,7 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const char *enum_name, RzOutp
 RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
 	RzList *enumlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzListIter *it;
-	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
+	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
@@ -363,7 +363,7 @@ RZ_IPI void rz_core_list_loaded_typedefs(RzCore *core, RzOutputMode mode) {
 	PJ *pj = NULL;
 	Sdb *TDB = core->analysis->typedb->sdb_types;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj = rz_core_pj_new(core);
+		pj = pj_new();
 		if (!pj) {
 			return;
 		}
@@ -497,7 +497,7 @@ RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode) {
 	Sdb *TDB = core->analysis->typedb->sdb_types;
 	SdbKv *kv;
 	SdbListIter *iter;
-	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
+	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	SdbList *l = sdb_foreach_list(TDB, true);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
@@ -545,7 +545,7 @@ static bool nonreturn_print(RzCore *core, RzList *noretl) {
 static bool nonreturn_print_json(RzCore *core, RzList *noretl) {
 	RzListIter *it;
 	char *s;
-	PJ *pj = rz_core_pj_new(core);
+	PJ *pj = pj_new();
 	pj_a(pj);
 	rz_list_foreach (noretl, it, s) {
 		pj_k(pj, s);
@@ -582,7 +582,7 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		rz_str_trim(fmt);
 		switch (mode) {
 		case RZ_OUTPUT_MODE_JSON: {
-			PJ *pj = rz_core_pj_new(core);
+			PJ *pj = pj_new();
 			if (!pj) {
 				return;
 			}
@@ -863,7 +863,7 @@ RZ_IPI void rz_core_types_link_print_all(RzCore *core, RzOutputMode mode) {
 	Sdb *TDB = core->analysis->typedb->sdb_types;
 	SdbKv *kv;
 	SdbListIter *iter;
-	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? rz_core_pj_new(core) : NULL;
+	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	SdbList *l = sdb_foreach_list(TDB, true);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
@@ -927,7 +927,7 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	SdbList *l = sdb_foreach_list_filter(TDB, sdb_if_type_cb, true);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
-		PJ *pj = rz_core_pj_new(core);
+		PJ *pj = pj_new();
 		if (!pj) {
 			return;
 		}

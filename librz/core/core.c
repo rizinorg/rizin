@@ -316,7 +316,6 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->numGet = (RzCoreNumGet)numget;
 	bnd->isMapped = (RzCoreIsMapped)__isMapped;
 	bnd->syncDebugMaps = (RzCoreDebugMapsSync)__syncDebugMaps;
-	bnd->pjWithEncoding = (RzCorePJWithEncoding)rz_core_pj_new;
 	return true;
 }
 
@@ -2415,7 +2414,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->stkcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
-	core->yank_buf = rz_buf_new();
+	core->yank_buf = rz_buf_new_with_bytes(NULL, 0);
 	core->num = rz_num_new(&num_callback, &str_callback, core);
 	core->egg = rz_egg_new();
 	rz_egg_setup(core->egg, RZ_SYS_ARCH, RZ_SYS_BITS, 0, RZ_SYS_OS);
@@ -3451,15 +3450,6 @@ RZ_API RzTable *rz_core_table(RzCore *core) {
 		table->cons = core->cons;
 	}
 	return table;
-}
-
-/* Config helper function for PJ json encodings */
-RZ_API PJ *rz_core_pj_new(RzCore *core) {
-	const char *config_string_encoding = rz_config_get(core->config, "cfg.json.str");
-	const char *config_number_encoding = rz_config_get(core->config, "cfg.json.num");
-	PJEncodingStr string_encoding = pj_encoding_str_of_string(config_string_encoding);
-	PJEncodingNum number_encoding = pj_encoding_num_of_string(config_number_encoding);
-	return pj_new_with_encoding(string_encoding, number_encoding);
 }
 
 RZ_API RzCmdStatus rz_core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *state, const char *license) {

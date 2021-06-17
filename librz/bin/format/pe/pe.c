@@ -1095,7 +1095,7 @@ const char *PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t) * bin) 
 	PE_DWord security_dir_offset = data_dir_security->VirtualAddress;
 	ut32 security_dir_size = data_dir_security->Size;
 
-	RzBuffer *buf = rz_buf_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(NULL, 0);
 	rz_buf_append_buf_slice(buf, bin->b, 0, checksum_paddr);
 	rz_buf_append_buf_slice(buf, bin->b,
 		checksum_paddr + 4,
@@ -4530,7 +4530,7 @@ struct PE_(rz_bin_pe_obj_t) * PE_(rz_bin_pe_new)(const char *file, bool verbose)
 	if (!buf) {
 		return PE_(rz_bin_pe_free)(bin);
 	}
-	bin->b = rz_buf_new();
+	bin->b = rz_buf_new_with_bytes(NULL, 0);
 	if (!rz_buf_set_bytes(bin->b, buf, bin->size)) {
 		free(buf);
 		return PE_(rz_bin_pe_free)(bin);

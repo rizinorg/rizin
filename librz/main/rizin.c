@@ -628,11 +628,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (quiet) {
 				printf("%s\n", RZ_VERSION);
 				LISTS_FREE();
+				RZ_FREE(debugbackend);
 				free(customRarunProfile);
 				return 0;
 			} else {
 				rz_main_version_verify(0);
 				LISTS_FREE();
+				RZ_FREE(debugbackend);
 				free(customRarunProfile);
 				return rz_main_version_print("rizin");
 			}

@@ -299,13 +299,13 @@ RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int pe
 }
 
 RZ_API RzList *rz_debug_modules_list(RzDebug *dbg) {
-	return (dbg && dbg->h && dbg->h->modules_get) ? dbg->h->modules_get(dbg) : NULL;
+	return (dbg && dbg->cur && dbg->cur->modules_get) ? dbg->cur->modules_get(dbg) : NULL;
 }
 
 RZ_API bool rz_debug_map_sync(RzDebug *dbg) {
 	bool ret = false;
-	if (dbg && dbg->h && dbg->h->map_get) {
-		RzList *newmaps = dbg->h->map_get(dbg);
+	if (dbg && dbg->cur && dbg->cur->map_get) {
+		RzList *newmaps = dbg->cur->map_get(dbg);
 		if (newmaps) {
 			rz_list_free(dbg->maps);
 			dbg->maps = newmaps;
@@ -317,8 +317,8 @@ RZ_API bool rz_debug_map_sync(RzDebug *dbg) {
 
 RZ_API RzDebugMap *rz_debug_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp) {
 	RzDebugMap *map = NULL;
-	if (dbg && dbg->h && dbg->h->map_alloc) {
-		map = dbg->h->map_alloc(dbg, addr, size, thp);
+	if (dbg && dbg->cur && dbg->cur->map_alloc) {
+		map = dbg->cur->map_alloc(dbg, addr, size, thp);
 	}
 	return map;
 }
@@ -326,8 +326,8 @@ RZ_API RzDebugMap *rz_debug_map_alloc(RzDebug *dbg, ut64 addr, int size, bool th
 RZ_API int rz_debug_map_dealloc(RzDebug *dbg, RzDebugMap *map) {
 	bool ret = false;
 	ut64 addr = map->addr;
-	if (dbg && dbg->h && dbg->h->map_dealloc) {
-		if (dbg->h->map_dealloc(dbg, addr, map->size)) {
+	if (dbg && dbg->cur && dbg->cur->map_dealloc) {
+		if (dbg->cur->map_dealloc(dbg, addr, map->size)) {
 			ret = true;
 		}
 	}

@@ -206,7 +206,7 @@ RZ_API void rz_analysis_xrefs_list(RzAnalysis *analysis, int rad) {
 	listxrefs(analysis->ht_xrefs_from, UT64_MAX, list);
 	sortxrefs(list);
 	if (rad == 'j') {
-		pj = analysis->coreb.pjWithEncoding(analysis->coreb.core);
+		pj = pj_new();
 		if (!pj) {
 			return;
 		}

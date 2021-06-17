@@ -1205,7 +1205,6 @@ FILE=bins/other/tmctf_re100
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-e io.cache=true
 s 0x278
 aei
 aeim
@@ -2337,7 +2336,6 @@ FILE==
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e io.cache=true
 wx 0fab0424
 pdj 1~{}
 EOF

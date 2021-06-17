@@ -8,7 +8,7 @@
 
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	int i, n, size;
-	if (!dbg || !dbg->reg || !dbg->h) {
+	if (!dbg || !dbg->reg || !dbg->cur) {
 		return false;
 	}
 	// There's no point in syncing a dead target
@@ -16,10 +16,10 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 		return false;
 	}
 	// Check if the functions needed are available
-	if (write && !dbg->h->reg_write) {
+	if (write && !dbg->cur->reg_write) {
 		return false;
 	}
-	if (!write && !dbg->h->reg_read) {
+	if (!write && !dbg->cur->reg_read) {
 		return false;
 	}
 	// Sync all the types sequentially if asked
@@ -46,7 +46,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	do {
 		if (write) {
 			ut8 *buf = rz_reg_get_bytes(dbg->reg, i, &size);
-			if (!buf || !dbg->h->reg_write(dbg, i, buf, size)) {
+			if (!buf || !dbg->cur->reg_write(dbg, i, buf, size)) {
 				if (i == RZ_REG_TYPE_GPR) {
 					eprintf("rz_debug_reg: error writing "
 						"registers %d to %d\n",
@@ -68,7 +68,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 					return false;
 				}
 				//we have already checked dbg->h and dbg->h->reg_read above
-				size = dbg->h->reg_read(dbg, i, buf, bufsize);
+				size = dbg->cur->reg_read(dbg, i, buf, bufsize);
 				// we need to check against zero because reg_read can return false
 				if (size > 0) {
 					rz_reg_set_bytes(dbg->reg, i, buf, size); //RZ_MIN (size, bufsize));

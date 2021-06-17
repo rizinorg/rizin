@@ -129,7 +129,7 @@ peda-session-*
 /.vs
 .cache/
 test/.tmp/*
-subprojects/capstone-bundled/
+subprojects/capstone-*/
 subprojects/libuv-*/
 subprojects/libzip-*/
 subprojects/lz4-*/

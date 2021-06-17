@@ -68,13 +68,13 @@ commands:
       summary: Save trace sessions to disk
       args:
         - name: dir
-          type: RZ_CMD_ARG_TYPE_STRING
+          type: RZ_CMD_ARG_TYPE_FILE
     - name: dtsf
       cname: cmd_debug_load_trace_session
       summary: Load trace sessions to disk
       args:
         - name: dir
-          type: RZ_CMD_ARG_TYPE_STRING
+          type: RZ_CMD_ARG_TYPE_FILE
     - name: dtsm
       cname: cmd_debug_list_trace_session_mmap
       summary: List current memory map and hash

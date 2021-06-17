@@ -293,7 +293,7 @@ struct rz_bin_mz_obj_t *rz_bin_mz_new(const char *file) {
 	if (!buf) {
 		return rz_bin_mz_free(bin);
 	}
-	bin->b = rz_buf_new();
+	bin->b = rz_buf_new_with_bytes(NULL, 0);
 	if (!rz_buf_set_bytes(bin->b, buf, bin->size)) {
 		free((void *)buf);
 		return rz_bin_mz_free(bin);

@@ -371,8 +371,8 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 			rz_list_add_sorted(lvls, (void *)ref, (RzListComparator)cmp_by_ref_lvl);
 		}
 	}
-	b = rz_buf_new();
-	c = rz_buf_new();
+	b = rz_buf_new_with_bytes(NULL, 0);
+	c = rz_buf_new_with_bytes(NULL, 0);
 	rz_buf_append_string(c, " ");
 	rz_buf_append_string(b, " ");
 	rz_list_foreach (lvls, iter, ref) {

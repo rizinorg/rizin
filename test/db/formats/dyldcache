@@ -64,9 +64,9 @@ nth paddr       size vaddr        vsize perm name
 4   0x00008fb8  0x48 0x180008fb8   0x48 -r-x lib_libb-1.0.dylib.1.__TEXT.__unwind_info
 
 {"header":{"magic":"dyld_v1   arm64","mappingOffset":320,"mappingCount":3,"imagesOffset":656,"imagesCount":2,"dyldBaseAddress":0,"codeSignatureOffset":196608,"codeSignatureSize":16384,"slideInfoOffset":0,"slideInfoSize":0,"localSymbolsOffset":0,"localSymbolsSize":0,"uuid":"857bce1a017e34649909d58ee21cf8dc","cacheType":"production","branchPoolsOffset":0,"branchPoolsCount":0,"accelerateInfoAddr":0,"accelerateInfoSize":0,"imagesTextOffset":720,"imagesTextCount":2},"slideInfo":[{"start":98304,"end":114688,"version":2,"slide":0,"page_starts_count":4,"page_extras_count":0,"delta_mask":72056494526300160,"value_mask":18374687579183251455,"value_add":0,"delta_shift":38,"page_size":4096}],"images":[{"uuid":"ccbf29d455693a1592314e14d41a542a","address":6442455040,"textSegmentSize":16384,"path":"/usr/lib/liba-1.0.dylib","name":"liba-1.0.dylib"},{"uuid":"60d2f3d644a2391087503a56a3d8ff07","address":6442471424,"textSegmentSize":16384,"path":"/usr/lib/libb-1.0.dylib","name":"libb-1.0.dylib"}]}
- 3 fd: 3 +0x00000000 0x180000000 - 0x180017fff r-x fmap.cache_map.0
- 2 fd: 3 +0x00018000 0x182018000 - 0x18201bfff r-- fmap.cache_map.1
- 1 fd: 3 +0x0001c000 0x18401c000 - 0x18402ffff r-- fmap.cache_map.2
+ 3 fd: 4 +0x00000000 0x180000000 - 0x180017fff r-x vmap.cache_map.0
+ 2 fd: 4 +0x00018000 0x182018000 - 0x18201bfff r-- vmap.cache_map.1
+ 1 fd: 4 +0x0001c000 0x18401c000 - 0x18402ffff r-- vmap.cache_map.2
 adrp x0, 0x180004000
 add x0, x0, 0xfa8
 ret
@@ -139,12 +139,346 @@ nth paddr       size vaddr        vsize perm name
 2   0x00004fb0  0x50 0x180004fb0   0x50 -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info
 
 {"header":{"magic":"dyld_v1   arm64","mappingOffset":320,"mappingCount":3,"imagesOffset":656,"imagesCount":2,"dyldBaseAddress":0,"codeSignatureOffset":196608,"codeSignatureSize":16384,"slideInfoOffset":0,"slideInfoSize":0,"localSymbolsOffset":0,"localSymbolsSize":0,"uuid":"857bce1a017e34649909d58ee21cf8dc","cacheType":"production","branchPoolsOffset":0,"branchPoolsCount":0,"accelerateInfoAddr":0,"accelerateInfoSize":0,"imagesTextOffset":720,"imagesTextCount":2},"slideInfo":[{"start":98304,"end":114688,"version":2,"slide":0,"page_starts_count":4,"page_extras_count":0,"delta_mask":72056494526300160,"value_mask":18374687579183251455,"value_add":0,"delta_shift":38,"page_size":4096}],"images":[{"uuid":"ccbf29d455693a1592314e14d41a542a","address":6442455040,"textSegmentSize":16384,"path":"/usr/lib/liba-1.0.dylib","name":"liba-1.0.dylib"},{"uuid":"60d2f3d644a2391087503a56a3d8ff07","address":6442471424,"textSegmentSize":16384,"path":"/usr/lib/libb-1.0.dylib","name":"libb-1.0.dylib"}]}
- 3 fd: 3 +0x00000000 0x180000000 - 0x180017fff r-x fmap.cache_map.0
- 2 fd: 3 +0x00018000 0x182018000 - 0x18201bfff r-- fmap.cache_map.1
- 1 fd: 3 +0x0001c000 0x18401c000 - 0x18402ffff r-- fmap.cache_map.2
+ 3 fd: 4 +0x00000000 0x180000000 - 0x180017fff r-x vmap.cache_map.0
+ 2 fd: 4 +0x00018000 0x182018000 - 0x18201bfff r-- vmap.cache_map.1
+ 1 fd: 4 +0x0001c000 0x18401c000 - 0x18402ffff r-- vmap.cache_map.2
 adrp x0, 0x180004000
 add x0, x0, 0xfa8
 ret
 ldpsw x18, x26, [x11, -0x30]
+EOF
+RUN
+
+NAME=dyldcache arm64 with objc
+FILE=bins/dyldcache/dyld_shared_cache_arm64-macOS-objc
+CMDS=<<EOF
+i
+?e --
+ic
+?e --
+pxr 8 @ section.lib_libhello_1.0.dylib.11.__DATA_CONST.__objc_classlist
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/dyldcache/dyld_shared_cache_arm64-macOS-objc
+size     0x98000
+humansz  608K
+mode     r-x
+format   dyldcache
+iorw     false
+block    0x100
+type     library-cache
+Name     Value
+--------------
+arch     arm
+baddr    0x180000000
+binsz    622592
+bits     64
+retguard false
+class    dyldcache
+endian   LE
+laddr    0x0
+machine  arm
+maxopsz  4
+minopsz  4
+os       Darwin
+pcalign  4
+subsys   xnu
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+--
+0x182068040 [0x1800189f8 - 0x180018b90]    408 class 0 Test :: NSObject
+0x1800189f8 method 0      init
+0x180018a58 method 1      methodWithoutArgs
+0x180018ab0 method 2      methodWithOneArg:
+0x180018b0c method 3      methodWithTwoArgs:secondArg:
+0x180018b90 method 4      methodWithReturn
+0x180018a1c method 5 c    someStaticMethod
+0x18206a028 [0x18003aa78 - 0x18003aa94]     28 class 0 Object :: Object
+0x18003aa78 method 0      retain
+0x18003aa7c method 1      release
+0x18003aa80 method 2      autorelease
+0x18003aa84 method 3 c    initialize
+0x18003aa8c method 4 c    retain
+0x18003aa90 method 5 c    release
+0x18003aa88 method 6 c    class
+0x18003aa94 method 7 c    autorelease
+0x18206a050 [0x18206a050 - 0x18206a050]      0 class 0 __IncompleteProtocol :: NSObject
+0x18206a0a0 [0x18003aa98 - 0x18003ab98]    256 class 0 Protocol :: NSObject
+0x18003aa98 method 0      conformsTo:
+0x18003aaa0 method 1      descriptionForInstanceMethod:
+0x18003aac0 method 2      descriptionForClassMethod:
+0x18003aae0 method 3      name
+0x18003aaf4 method 4      isEqual:
+0x18003ab98 method 5      hash
+0x18206a140 [0x18003e8dc - 0x18003e8e4]      8 class 0 __NSUnrecognizedTaggedPointer :: NSObject
+0x18003e8dc method 0      retain
+0x18003e8e0 method 1      release
+0x18003e8e4 method 2      autorelease
+0x18206a0f0 [0x18003cfc4 - 0x18003d788]   1988 class 0 NSObject :: NSObject
+0x18003d768 method 0      init
+0x18003d700 method 1      retain
+0x18003d75c method 2      release
+0x18003d708 method 3      _isDeallocating
+0x18003d764 method 4      retainCount
+0x18003d730 method 5      allowsWeakReference
+0x18003d750 method 6      retainWeakReference
+0x18003d3b0 method 7      self
+0x18003d3b4 method 8      class
+0x18003d454 method 9      isKindOfClass:
+0x18003d498 method 10      respondsToSelector:
+0x18003d760 method 11      autorelease
+0x18003d704 method 12      _tryRetain
+0x18003d52c method 13      isEqual:
+0x18003d528 method 14      hash
+0x18003d778 method 15      copy
+0x18003d404 method 16      superclass
+0x18003d6ec method 17      description
+0x18003d6f4 method 18      debugDescription
+0x18003d5b4 method 19      performSelector:
+0x18003d5f0 method 20      performSelector:withObject:
+0x18003d63c method 21      performSelector:withObject:withObject:
+0x18003d540 method 22      isProxy
+0x18003d424 method 23      isMemberOfClass:
+0x18003d4d0 method 24      conformsToProtocol:
+0x18003d774 method 25      zone
+0x18003d538 method 26      isFault
+0x18003d548 method 27      methodForSelector:
+0x18003d574 method 28      doesNotRecognizeSelector:
+0x18003d690 method 29      methodSignatureForSelector:
+0x18003d6a4 method 30      forwardInvocation:
+0x18003d6e4 method 31      forwardingTargetForSelector:
+0x18003d76c method 32      dealloc
+0x18003d788 method 33      mutableCopy
+0x18003d770 method 34      finalize
+0x18003d390 method 35 c    init
+0x18003cfc4 method 36 c    initialize
+0x18003d354 method 37 c    retain
+0x18003d378 method 38 c    release
+0x18003d360 method 39 c    _isDeallocating
+0x18003d380 method 40 c    retainCount
+0x18003d368 method 41 c    allowsWeakReference
+0x18003d370 method 42 c    retainWeakReference
+0x18003d318 method 43 c    new
+0x18003cfc8 method 44 c    self
+0x18003cfcc method 45 c    class
+0x18003cfec method 46 c    isKindOfClass:
+0x18003d090 method 47 c    respondsToSelector:
+0x18003d170 method 48 c    resolveInstanceMethod:
+0x18003d168 method 49 c    resolveClassMethod:
+0x18003d388 method 50 c    alloc
+0x18003d38c method 51 c    allocWithZone:
+0x18003d37c method 52 c    autorelease
+0x18003d358 method 53 c    _tryRetain
+0x18003d0f4 method 54 c    isEqual:
+0x18003d0f0 method 55 c    hash
+0x18003d3a0 method 56 c    copyWithZone:
+0x18003d3a8 method 57 c    mutableCopyWithZone:
+0x18003d39c method 58 c    copy
+0x18003cfd0 method 59 c    superclass
+0x18003d304 method 60 c    description
+0x18003d30c method 61 c    debugDescription
+0x18003d1b8 method 62 c    performSelector:
+0x18003d1f4 method 63 c    performSelector:withObject:
+0x18003d240 method 64 c    performSelector:withObject:withObject:
+0x18003d108 method 65 c    isProxy
+0x18003cfd8 method 66 c    isMemberOfClass:
+0x18003d0a0 method 67 c    conformsToProtocol:
+0x18003d398 method 68 c    zone
+0x18003d018 method 69 c    isSubclassOfClass:
+0x18003d038 method 70 c    isAncestorOfObject:
+0x18003d080 method 71 c    instancesRespondToSelector:
+0x18003d100 method 72 c    isFault
+0x18003d110 method 73 c    instanceMethodForSelector:
+0x18003d13c method 74 c    methodForSelector:
+0x18003d178 method 75 c    doesNotRecognizeSelector:
+0x18003d294 method 76 c    instanceMethodSignatureForSelector:
+0x18003d2a8 method 77 c    methodSignatureForSelector:
+0x18003d2bc method 78 c    forwardInvocation:
+0x18003d2fc method 79 c    forwardingTargetForSelector:
+0x18003d394 method 80 c    dealloc
+0x18003d3a4 method 81 c    mutableCopy
+0x00000000 [0x180014f94 - 0x180014f98]      4 class 6 std
+0x180014f94 method 0      set_terminate(void (*)())
+0x180014f98 method 1      terminate()
+--
+0x182064028 0x0000000182068068   h....... @ section.lib_libhello_1.0.dylib.11.__DATA_CONST.__objc_classlist 6476431464 lib_libhello-1.0.dylib.17.__DATA.__objc_data _OBJC_CLASS_$_Test R 0x182068040
+EOF
+RUN
+
+NAME=dyldcache arm64e with objc
+FILE=bins/dyldcache/dyld_shared_cache_arm64e-macOS-objc
+CMDS=<<EOF
+i
+?e --
+ic
+?e --
+pxr 8 @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/dyldcache/dyld_shared_cache_arm64e-macOS-objc
+size     0xa8000
+humansz  672K
+mode     r-x
+format   dyldcache
+iorw     false
+block    0x100
+type     library-cache
+Name     Value
+--------------
+arch     arm
+baddr    0x180000000
+binsz    688128
+bits     64
+retguard false
+class    dyldcache
+endian   LE
+laddr    0x0
+machine  arm
+maxopsz  4
+minopsz  4
+os       Darwin
+pcalign  4
+subsys   xnu
+stripped false
+crypto   false
+havecode true
+va       true
+sanitiz  false
+static   true
+linenum  false
+lsyms    false
+canary   false
+PIE      false
+RELROCS  false
+NX       false
+--
+0x184078000 [0x180018a14 - 0x180018bbc]    424 class 0 Test :: NSObject
+0x180018a14 method 0      init
+0x180018a78 method 1      methodWithoutArgs
+0x180018ad4 method 2      methodWithOneArg:
+0x180018b34 method 3      methodWithTwoArgs:secondArg:
+0x180018bbc method 4      methodWithReturn
+0x180018a38 method 5 c    someStaticMethod
+0x184079098 [0x18003e224 - 0x18003e240]     28 class 0 Object :: Object
+0x18003e22c method 0      retain
+0x18003e228 method 1      release
+0x18003e224 method 2      autorelease
+0x18003e240 method 3 c    initialize
+0x18003e238 method 4 c    retain
+0x18003e234 method 5 c    release
+0x18003e230 method 6 c    autorelease
+0x18003e23c method 7 c    class
+0x1840790c0 [0x1840790c0 - 0x1840790c0]      0 class 0 __IncompleteProtocol :: NSObject
+0x184079110 [0x18003e244 - 0x18003e3b4]    368 class 0 Protocol :: NSObject
+0x18003e3b4 method 0      conformsTo:
+0x18003e380 method 1      descriptionForInstanceMethod:
+0x18003e34c method 2      descriptionForClassMethod:
+0x18003e338 method 3      name
+0x18003e24c method 4      isEqual:
+0x18003e244 method 5      hash
+0x1840791b0 [0x180042ac8 - 0x180042ad0]      8 class 0 __NSUnrecognizedTaggedPointer :: NSObject
+0x180042ad0 method 0      retain
+0x180042acc method 1      release
+0x180042ac8 method 2      autorelease
+0x184079160 [0x180040eb8 - 0x180042ac4]   7180 class 0 NSObject :: NSObject
+0x18004144c method 0      init
+0x180042658 method 1      retain
+0x180041adc method 2      release
+0x1800415d4 method 3      autorelease
+0x18004233c method 4      _tryRetain
+0x180042280 method 5      _isDeallocating
+0x180041450 method 6      retainCount
+0x18004225c method 7      allowsWeakReference
+0x180042250 method 8      retainWeakReference
+0x180042ac4 method 9      self
+0x180042a74 method 10      class
+0x180042974 method 11      isKindOfClass:
+0x180042928 method 12      respondsToSelector:
+0x180042894 method 13      isEqual:
+0x1800428a0 method 14      hash
+0x18004142c method 15      copy
+0x180042a20 method 16      superclass
+0x180042670 method 17      description
+0x180042664 method 18      debugDescription
+0x1800427b4 method 19      performSelector:
+0x180042754 method 20      performSelector:withObject:
+0x1800426ec method 21      performSelector:withObject:withObject:
+0x180042884 method 22      isProxy
+0x1800429ec method 23      isMemberOfClass:
+0x1800428a4 method 24      conformsToProtocol:
+0x18004143c method 25      zone
+0x18004288c method 26      isFault
+0x180042848 method 27      methodForSelector:
+0x180042804 method 28      doesNotRecognizeSelector:
+0x1800426d4 method 29      methodSignatureForSelector:
+0x180042680 method 30      forwardInvocation:
+0x180042678 method 31      forwardingTargetForSelector:
+0x180041444 method 32      dealloc
+0x18004141c method 33      mutableCopy
+0x180041440 method 34      finalize
+0x180040ed0 method 35 c    init
+0x180041418 method 36 c    initialize
+0x180040f10 method 37 c    retain
+0x180040eec method 38 c    release
+0x180040ee8 method 39 c    autorelease
+0x180040f08 method 40 c    _tryRetain
+0x180040f00 method 41 c    _isDeallocating
+0x180040ee0 method 42 c    retainCount
+0x180040ef8 method 43 c    allowsWeakReference
+0x180040ef0 method 44 c    retainWeakReference
+0x180040f14 method 45 c    new
+0x180041414 method 46 c    self
+0x180041410 method 47 c    class
+0x180041370 method 48 c    isKindOfClass:
+0x180041284 method 49 c    respondsToSelector:
+0x180041160 method 50 c    resolveInstanceMethod:
+0x180041168 method 51 c    resolveClassMethod:
+0x180040ed8 method 52 c    alloc
+0x180040ed4 method 53 c    allocWithZone:
+0x1800411f8 method 54 c    isEqual:
+0x180041204 method 55 c    hash
+0x180040ec0 method 56 c    copyWithZone:
+0x180040eb8 method 57 c    mutableCopyWithZone:
+0x180040ec4 method 58 c    copy
+0x1800413d8 method 59 c    superclass
+0x180040f70 method 60 c    description
+0x180040f64 method 61 c    debugDescription
+0x1800410cc method 62 c    performSelector:
+0x18004106c method 63 c    performSelector:withObject:
+0x180041004 method 64 c    performSelector:withObject:withObject:
+0x1800411e8 method 65 c    isProxy
+0x1800413c4 method 66 c    isMemberOfClass:
+0x180041208 method 67 c    conformsToProtocol:
+0x180040ec8 method 68 c    zone
+0x180041320 method 69 c    isSubclassOfClass:
+0x1800412a4 method 70 c    isAncestorOfObject:
+0x180041294 method 71 c    instancesRespondToSelector:
+0x1800411f0 method 72 c    isFault
+0x1800411ac method 73 c    instanceMethodForSelector:
+0x180041170 method 74 c    methodForSelector:
+0x18004111c method 75 c    doesNotRecognizeSelector:
+0x180040fec method 76 c    instanceMethodSignatureForSelector:
+0x180040fd4 method 77 c    methodSignatureForSelector:
+0x180040f80 method 78 c    forwardInvocation:
+0x180040f78 method 79 c    forwardingTargetForSelector:
+0x180040ecc method 80 c    dealloc
+0x180040ebc method 81 c    mutableCopy
+0x00000000 [0x180014f94 - 0x180014f98]      4 class 6 std
+0x180014f94 method 0      set_terminate(void (*)())
+0x180014f98 method 1      terminate()
+--
+0x182068000 0x0000000184078028   (....... @ section.lib_libhello_1.0.dylib.8.__DATA_CONST.__objc_classlist 6510051368 lib_libhello-1.0.dylib.18.__AUTH.__objc_data _OBJC_CLASS_$_Test R 0x184078000
 EOF
 RUN

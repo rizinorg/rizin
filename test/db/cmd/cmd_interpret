@@ -18,19 +18,6 @@ hello world
 EOF
 RUN
 
-NAME=.spp
-FILE==
-CMDS=<<EOF
-. scripts/rztest.spp
-EOF
-EXPECT=<<EOF
-Test
-hello world
-Eron
-
-EOF
-RUN
-
 NAME=$foo=#!pipe
 FILE==
 CMDS=<<EOF
