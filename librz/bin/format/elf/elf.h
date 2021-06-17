@@ -116,7 +116,7 @@ typedef struct rz_bin_elf_string_t {
 	int last;
 } RzBinElfString;
 
-typedef struct rz_bin_elf_dt_dynamic RzBinElfDtDynamic; // elf_dynamic.h
+typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
 
 typedef struct rz_bin_elf_lib_t {
 	char name[ELF_STRING_LENGTH];

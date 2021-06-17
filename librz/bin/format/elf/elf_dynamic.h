@@ -8,7 +8,7 @@
 #ifndef _INCLUDE_ELF_DYNAMIC_H_
 #define _INCLUDE_ELF_DYNAMIC_H_
 
-struct rz_bin_elf_dt_dynamic {
+struct rz_bin_elf_dt_dynamic_t {
 	HtUU *info;
 	RzVector *dt_needed;
 };
