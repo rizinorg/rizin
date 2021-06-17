@@ -104,7 +104,7 @@ development, and general topics related to the project.
 
 We also provide the following partial bridges to other messaging platforms:
 - [Telegram](https://t.me/rizinorg)
-- IRC: [irc.libera.chat:6697 (TLS)](ircs://irc.libera.chat:6697)
+- IRC: [irc.libera.chat:6697 with TLS support](ircs://irc.libera.chat:6697)
   - Community - [#rizin](https://web.libera.chat/#rizin)
   - Developers - [#rizindev](https://web.libera.chat/#rizindev)
 
