@@ -6822,7 +6822,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 						// TODO: Support also arrays and pointers
 						if (tpath->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
 							if (!strcmp(type, tpath->path)) {
-								rz_analysis_type_link_offset(core->analysis, tpath->typ, addr);
+								rz_analysis_type_set_link(core->analysis, tpath->typ, addr);
 								rz_analysis_hint_set_offset(core->analysis, addr, tpath->path);
 								break;
 							}
