@@ -1073,7 +1073,7 @@ td "struct pointer {char *y;struct normal *obj;};"
 ts pointer
 EOF
 EXPECT=<<EOF
-pf zp y obj
+pf z*? y (normal)obj
 EOF
 RUN
 
@@ -1194,9 +1194,9 @@ tt B
 tt O
 EOF
 EXPECT=<<EOF
-pf ?f num
-pf ?dF num num2
-pf ?c ch
+pf f num
+pf dF num num2
+pf c ch
 ----
 struct A {
 	float num;
