@@ -164,37 +164,14 @@ static bool read_phdr_entry(ELFOBJ *bin, size_t phdr_entry_index) {
 	return true;
 }
 
-static bool read_phdr(ELFOBJ *bin, bool need_linux_kernel_hack) {
-	bool phdr_found = false;
-
+static bool read_phdr(ELFOBJ *bin) {
 	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
 		if (!read_phdr_entry(bin, i)) {
 			return false;
 		}
-
-		if (need_linux_kernel_hack && bin->phdr[i].p_type == PT_PHDR) {
-			phdr_found = true;
-		}
-	}
-
-	if (need_linux_kernel_hack && phdr_found) {
-		ut64 load_addr = Elf_(rz_bin_elf_get_baddr)(bin);
-		bin->ehdr.e_phoff = Elf_(rz_bin_elf_v2p_new)(bin, load_addr + bin->ehdr.e_phoff);
-		return read_phdr(bin, false);
 	}
 
 	return true;
-}
-
-/* Here is the where all the fun starts.
- * Linux kernel since 2005 calculates phdr offset wrongly
- * adding it to the load address (va of the LOAD0).
- * See `fs/binfmt_elf.c` file this line:
- *    NEW_AUX_ENT(AT_PHDR, load_addr + exec->e_phoff);
- * So after the first read, we fix the address and read it again
- */
-static bool need_linux_kernel_hack(ELFOBJ *bin) {
-	return bin->size > 128 * 1024 && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386);
 }
 
 static bool init_phdr_header(ELFOBJ *bin) {
@@ -204,7 +181,7 @@ static bool init_phdr_header(ELFOBJ *bin) {
 		return false;
 	}
 
-	if (!read_phdr(bin, need_linux_kernel_hack(bin))) {
+	if (!read_phdr(bin)) {
 		return false;
 	}
 
