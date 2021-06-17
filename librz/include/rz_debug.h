@@ -51,6 +51,13 @@ RZ_LIB_VERSION_HEADER(rz_debug);
 #define PTRACE_SYSCALL    PT_STEP
 #endif
 
+#define CMD_CHECK_DEBUG_DEAD(core) \
+	do { \
+		if (rz_debug_is_dead(core->dbg)) { \
+			rz_cons_println("Debugging is not enabled. Run ood?"); \
+			return RZ_CMD_STATUS_ERROR; \
+		} \
+	} while (0)
 #define SNAP_PAGE_SIZE    4096
 #define CHECK_POINT_LIMIT 0x100000 //TODO: take the benchmark
 /*
