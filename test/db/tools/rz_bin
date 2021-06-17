@@ -1101,17 +1101,17 @@ EXPECT=<<EOF
         "size": 1,
         "members": [
           {
-            "member_type": "bitfield uint8_t : 1",
+            "member_type": "uint8_t /*bitfield:1*/",
             "member_name": "a",
             "offset": 0
           },
           {
-            "member_type": "bitfield uint8_t : 2",
+            "member_type": "uint8_t /*bitfield:2*/",
             "member_name": "b",
             "offset": 0
           },
           {
-            "member_type": "bitfield uint8_t : 3",
+            "member_type": "uint8_t /*bitfield:3*/",
             "member_name": "c",
             "offset": 0
           }
