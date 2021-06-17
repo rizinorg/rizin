@@ -12,7 +12,6 @@
 ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size) {
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj; // , const char *name, ut64 size) {
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
-	Elf_(Phdr) *phdr = bin->phdr, *phdrp;
 	Elf_(Shdr) *shdr = bin->shdr, *shdrp;
 	const char *strtab = bin->shstrtab;
 	ut8 *buf;
@@ -123,31 +122,25 @@ ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size)
 		printf("-> elf section (%s)\n", &strtab[shdrp->sh_name]);
 	}
 
-	/* rewrite program headers */
-	for (i = 0, phdrp = phdr; i < ehdr->e_phnum; i++, phdrp++) {
-#if 0 
-		if (phdrp->p_offset < rsz_offset && phdrp->p_offset + phdrp->p_filesz > rsz_offset) {
-			phdrp->p_filesz += delta;
-			phdrp->p_memsz += delta;
-		}
-#endif
-		if (phdrp->p_offset >= rsz_offset + rsz_osize) {
-			phdrp->p_offset += delta;
-			if (phdrp->p_vaddr) {
-				phdrp->p_vaddr += delta;
+	RzBinElfSegment *segment;
+	rz_bin_elf_foreach_segments(bin, segment) {
+		if (segment->data.p_offset >= rsz_offset + rsz_osize) {
+			segment->data.p_offset += delta;
+			if (segment->data.p_vaddr) {
+				segment->data.p_vaddr += delta;
 			}
-			if (phdrp->p_paddr) {
-				phdrp->p_paddr += delta;
+			if (segment->data.p_paddr) {
+				segment->data.p_paddr += delta;
 			}
-		} else if (phdrp->p_offset + phdrp->p_filesz >= rsz_offset + rsz_osize) {
-			phdrp->p_filesz += delta;
-			phdrp->p_memsz += delta;
+		} else if (segment->data.p_offset + segment->data.p_filesz >= rsz_offset + rsz_osize) {
+			segment->data.p_filesz += delta;
+			segment->data.p_memsz += delta;
 		}
 		off = ehdr->e_phoff + i * sizeof(Elf_(Phdr));
-		if (rz_buf_write_at(bin->b, off, (ut8 *)phdrp, sizeof(Elf_(Phdr))) == -1) {
+		if (rz_buf_write_at(bin->b, off, (ut8 *)&segment->data, sizeof(Elf_(Phdr))) == -1) {
 			perror("write (phdr)");
 		}
-		printf("-> program header (0x%08" PFMT64x ")\n", (ut64)phdrp->p_offset);
+		printf("-> program header (0x%08" PFMT64x ")\n", (ut64)segment->data.p_offset);
 	}
 
 	/* rewrite other elf pointers (entrypoint, phoff, shoff) */
@@ -188,45 +181,46 @@ bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
 	Elf_(Dyn) *dyn = NULL;
 	ut64 stroff = 0LL;
-	int ndyn, i, j;
+	int ndyn, j;
 
-	if (!bin->phdr) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
 		return false;
 	}
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type != PT_DYNAMIC) {
-			continue;
-		}
-		if (!(dyn = malloc(bin->phdr[i].p_filesz + 1))) {
-			perror("malloc (dyn)");
-			return false;
-		}
-		if (rz_buf_read_at(bin->b, bin->phdr[i].p_offset, (ut8 *)dyn, bin->phdr[i].p_filesz) == -1) {
-			eprintf("Error: read (dyn)\n");
-			free(dyn);
-			return false;
-		}
-		if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)))) > 0) {
-			for (j = 0; j < ndyn; j++) {
-				if (dyn[j].d_tag == DT_STRTAB) {
-					stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);
-					break;
-				}
-			}
-			for (j = 0; j < ndyn; j++) {
-				if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
-					if (rz_buf_write_at(bin->b, stroff + dyn[j].d_un.d_val,
-						    (ut8 *)"", 1) == -1) {
-						eprintf("Error: write (rpath)\n");
-						free(dyn);
-						return false;
-					}
-				}
-			}
-		}
-		free(dyn);
-		break;
+
+	RzBinElfSegment *segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_DYNAMIC);
+	if (!segment) {
+		return false;
 	}
+
+	if (!(dyn = malloc(segment->data.p_filesz + 1))) {
+		perror("malloc (dyn)");
+		return false;
+	}
+	if (rz_buf_read_at(bin->b, segment->data.p_offset, (ut8 *)dyn, segment->data.p_filesz) == -1) {
+		eprintf("Error: read (dyn)\n");
+		free(dyn);
+		return false;
+	}
+	if ((ndyn = (int)(segment->data.p_filesz / sizeof(Elf_(Dyn)))) > 0) {
+		for (j = 0; j < ndyn; j++) {
+			if (dyn[j].d_tag == DT_STRTAB) {
+				stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);
+				break;
+			}
+		}
+		for (j = 0; j < ndyn; j++) {
+			if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
+				if (rz_buf_write_at(bin->b, stroff + dyn[j].d_un.d_val,
+					    (ut8 *)"", 1) == -1) {
+					eprintf("Error: write (rpath)\n");
+					free(dyn);
+					return false;
+				}
+			}
+		}
+	}
+	free(dyn);
+
 	return true;
 }
 

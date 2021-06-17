@@ -94,6 +94,8 @@ rz_bin_sources = [
   'format/elf/elf64_relocs.c',
   'format/elf/elf_sections.c',
   'format/elf/elf64_sections.c',
+  'format/elf/elf_segments.c',
+  'format/elf/elf64_segments.c',
   'format/elf/elf_symbols.c',
   'format/elf/elf64_symbols.c',
   'format/elf/elf_write.c',

@@ -544,7 +544,7 @@ static const char *symbol_bind_to_str(Elf_(Sym) * sym) {
 }
 
 static ut64 get_import_addr(ELFOBJ *bin, int symbol) {
-	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
+	if ((!bin->shdr || !bin->strtab) && !Elf_(rz_bin_elf_has_segments)(bin)) {
 		return UT64_MAX;
 	}
 
