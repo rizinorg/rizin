@@ -1244,12 +1244,7 @@ static void cmd_debug_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 	RzListIter *iter;
 	PJ *pj = state->d.pj;
 	RzOutputMode mode = state->mode;
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		if (!pj) {
-			return;
-		}
-		pj_a(pj);
-	}
+	rz_cmd_state_output_array_start(state);
 	list = rz_debug_modules_list(core->dbg);
 	rz_list_foreach (list, iter, map) {
 		if (mode == RZ_OUTPUT_MODE_STANDARD) {
@@ -1274,9 +1269,7 @@ static void cmd_debug_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 			free(filtered_name);
 		}
 	}
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_end(pj);
-	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(list);
 }
 

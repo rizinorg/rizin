@@ -716,13 +716,7 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzCmdStateOutput *state)
 		return;
 	}
 	RzOutputMode mode = state->mode;
-	if (mode == RZ_OUTPUT_MODE_JSON) {
-		if (!pj) {
-			return;
-		}
-		pj_a(pj);
-	}
-
+	rz_cmd_state_output_array_start(state);
 	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
 		RzList *maps = rz_debug_map_list(dbg, (bool)i);
 		rz_list_foreach (maps, iter, map) {
@@ -754,10 +748,7 @@ RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzCmdStateOutput *state)
 			}
 		}
 	}
-
-	if (pj) { // "dmj" add JSON closing array brace
-		pj_end(pj);
-	}
+	rz_cmd_state_output_array_end(state);
 }
 
 static int cmp(const void *a, const void *b) {
