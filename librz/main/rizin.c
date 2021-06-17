@@ -444,11 +444,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
-
 			eprintf("%c: invalid combinations of argument flags - %s\n", opt.opt, opt.argv[2]);
 			ret = 1;
 			goto beach;
-
 			break;
 		case '=':
 			RZ_FREE(r->cmdremote);
@@ -911,7 +909,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			LISTS_FREE();
 			return 1;
 		}
-	} else if ((argc >= 2 && strcmp(argv[opt.ind - 1], "--")) || ((!strcmp(argv[opt.ind - 1], "--") && argv[opt.ind]))) {
+	} else if ((argc >= 2 && argv[opt.ind] && strcmp(argv[opt.ind], "--")) || ((!strcmp(argv[opt.ind - 1], "--") && argv[opt.ind]))) {
 		if (debug) {
 			if (asmbits) {
 				rz_config_set(r->config, "asm.bits", asmbits);
@@ -1285,6 +1283,20 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 	} else {
 		rz_core_block_read(r);
+
+		rz_list_foreach (evals, iter, cmdn) {
+			rz_config_eval(r->config, cmdn, false);
+			rz_cons_flush();
+		}
+		if (asmarch) {
+			rz_config_set(r->config, "asm.arch", asmarch);
+		}
+		if (asmbits) {
+			rz_config_set(r->config, "asm.bits", asmbits);
+		}
+		if (asmos) {
+			rz_config_set(r->config, "asm.os", asmos);
+		}
 	}
 	{
 		char *global_rc = rz_str_rz_prefix(RZ_GLOBAL_RC);
