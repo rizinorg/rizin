@@ -2783,8 +2783,10 @@ static const char *type_to_identifier(const RzTypeDB *typedb, RzType *type) {
 	return NULL;
 }
 
+static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrBuf *fields, RZ_NULLABLE const char *identifier, RZ_NONNULL RzType *type);
+
 // This logic applies only to the structure/union members, not the toplevel types
-static void base_type_to_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type, RZ_NONNULL const char *identifier, RzStrBuf *format, RzStrBuf *fields) {
+static void base_type_to_format_no_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type, RZ_NONNULL const char *identifier, RzStrBuf *format, RzStrBuf *fields) {
 	rz_return_if_fail(typedb && type && identifier && format && fields);
 	switch (type->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT: {
@@ -2816,6 +2818,9 @@ static void base_type_to_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *t
 		const char *fmt = rz_type_as_format(typedb, type->type);
 		if (fmt) {
 			rz_strbuf_append(format, fmt);
+			rz_strbuf_appendf(fields, "%s ", identifier);
+		} else {
+			type_to_format_pair(typedb, format, fields, identifier, type->type);
 		}
 		break;
 	}
@@ -2834,21 +2839,9 @@ static void base_type_to_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *t
 	}
 }
 
-/**
- * \brief Represents the RzBaseType as a `pf` format string
- *
- * Produces the pair of of <format> <fields>. If the type
- * is atomic it searches if the type database has predefined
- * format assigned to it and uses it.
- *
- * \param typedb Types Database instance
- * \param type RzBaseType type
- */
-RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
-	rz_return_val_if_fail(typedb && type && type->name, NULL);
-
-	RzStrBuf *format = rz_strbuf_new("");
-	RzStrBuf *fields = rz_strbuf_new("");
+// This logic applies to the toplevel types and unfolds the structure/union types
+static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type, RzStrBuf *format, RzStrBuf *fields, RZ_NULLABLE const char *identifier) {
+	rz_return_if_fail(typedb && type && format && fields);
 	switch (type->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT: {
 		RzTypeStructMember *memb;
@@ -2860,7 +2853,7 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 					// Search the base type of the same name and generate the format from it
 					RzBaseType *btyp = rz_type_get_base_type(typedb, memb->type);
 					if (btyp) {
-						base_type_to_format(typedb, btyp, memb->name, format, fields);
+						base_type_to_format_no_unfold(typedb, btyp, memb->name, format, fields);
 					}
 				} else {
 					const char *membfmt = rz_type_as_format(typedb, memb->type);
@@ -2887,7 +2880,7 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 					// Search the base type of the same name and generate the format from it
 					RzBaseType *btyp = rz_type_get_base_type(typedb, memb->type);
 					if (btyp) {
-						base_type_to_format(typedb, btyp, memb->name, format, fields);
+						base_type_to_format_no_unfold(typedb, btyp, memb->name, format, fields);
 					}
 				} else {
 					const char *membfmt = rz_type_as_format(typedb, memb->type);
@@ -2903,15 +2896,36 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_ENUM:
-	case RZ_BASE_TYPE_KIND_TYPEDEF:
 	case RZ_BASE_TYPE_KIND_ATOMIC: {
-		base_type_to_format(typedb, type, type->name, format, fields);
+		base_type_to_format_no_unfold(typedb, type, type->name, format, fields);
+		break;
+	}
+	case RZ_BASE_TYPE_KIND_TYPEDEF: {
+		type_to_format_pair(typedb, format, fields, identifier, type->type);
 		break;
 	}
 	default:
 		rz_warn_if_reached();
 		break;
 	}
+}
+
+/**
+ * \brief Represents the RzBaseType as a `pf` format string
+ *
+ * Produces the pair of of <format> <fields>. If the type
+ * is atomic it searches if the type database has predefined
+ * format assigned to it and uses it.
+ *
+ * \param typedb Types Database instance
+ * \param type RzBaseType type
+ */
+RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
+	rz_return_val_if_fail(typedb && type && type->name, NULL);
+
+	RzStrBuf *format = rz_strbuf_new("");
+	RzStrBuf *fields = rz_strbuf_new("");
+	base_type_to_format_unfold(typedb, type, format, fields, NULL);
 	rz_strbuf_appendf(format, " %s", rz_strbuf_drain(fields));
 	char *bufstr = rz_strbuf_drain(format);
 	rz_str_trim_tail(bufstr);
@@ -2986,4 +3000,52 @@ RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType 
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	type_to_format(typedb, buf, type);
 	return rz_strbuf_drain(buf);
+}
+
+static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrBuf *fields, RZ_NULLABLE const char *identifier, RZ_NONNULL RzType *type) {
+	rz_return_val_if_fail(typedb && format && fields && type, false);
+	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
+		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
+		if (!btype) {
+			return false;
+		}
+		base_type_to_format_unfold(typedb, btype, format, fields, identifier);
+	} else if (type->kind == RZ_TYPE_KIND_ARRAY) {
+		rz_strbuf_appendf(format, "[%" PFMT64d "]", type->array.count);
+		return type_to_format_pair(typedb, format, fields, identifier, type->array.type);
+	} else if (type->kind == RZ_TYPE_KIND_POINTER) {
+		rz_strbuf_append(format, "*");
+		return type_to_format_pair(typedb, format, fields, identifier, type->pointer.type);
+	} else if (type->kind == RZ_TYPE_KIND_CALLABLE) {
+		// We can't print anything useful for function type
+		// Thus we consider this is just a `void *` pointer
+		rz_strbuf_append(format, "p");
+		rz_strbuf_appendf(fields, "%s ", type->callable->name);
+	}
+	return true;
+}
+
+/**
+ * \brief Represents the RzType as a `pf` format string pair
+ *
+ * Different from the similar `rz_type_as_format` and similar
+ * to the `rz_base_type_as_format` since the latter shows
+ * the pair of <format> <fields>.
+ *
+ * \param typedb Types Database instance
+ * \param type RzType type
+ */
+RZ_API RZ_OWN char *rz_type_as_format_pair(const RzTypeDB *typedb, RZ_NONNULL RzType *type) {
+	rz_return_val_if_fail(typedb && type, NULL);
+	RzStrBuf *format = rz_strbuf_new("");
+	RzStrBuf *fields = rz_strbuf_new("");
+	if (!type_to_format_pair(typedb, format, fields, NULL, type)) {
+		rz_strbuf_free(format);
+		rz_strbuf_free(fields);
+		return NULL;
+	}
+	rz_strbuf_appendf(format, " %s", rz_strbuf_drain(fields));
+	char *bufstr = rz_strbuf_drain(format);
+	rz_str_trim_tail(bufstr);
+	return bufstr;
 }
