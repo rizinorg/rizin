@@ -1017,7 +1017,7 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 	}
 }
 
-RZ_IPI void rz_types_open_file(RzCore *core, const char *path) {
+RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 	const char *dir = rz_config_get(core->config, "dir.types");
 	char *homefile = NULL;
 	RzTypeDB *typedb = core->analysis->typedb;
@@ -1039,6 +1039,11 @@ RZ_IPI void rz_types_open_file(RzCore *core, const char *path) {
 			free(tmp);
 		}
 	} else {
+		if (!rz_file_exists(path)) {
+			eprintf("File \"%s\" does not exist\n", path);
+			free(homefile);
+			return false;
+		}
 		char *error_msg = NULL;
 		int result = rz_type_parse_file_stateless(typedb->parser, path, dir, &error_msg);
 		if (result && error_msg) {
@@ -1047,6 +1052,7 @@ RZ_IPI void rz_types_open_file(RzCore *core, const char *path) {
 		}
 	}
 	free(homefile);
+	return true;
 }
 
 RZ_IPI void rz_types_open_editor(RzCore *core, const char *typename) {
