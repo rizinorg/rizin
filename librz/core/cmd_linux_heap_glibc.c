@@ -51,3 +51,13 @@ RZ_IPI int rz_cmd_heap_fastbins_print(void *data, const char *input) {
 RZ_IPI RzCmdStatus rz_cmd_heap_arena_bins_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	call_handler(rz_cmd_heap_arena_bins_print_handler, argc, argv, mode);
 }
+
+/* API functions for Heap Viewer in Cutter */
+
+RZ_API RzList *rz_heap_arenas_list(RzCore *core) {
+	call_handler(rz_heap_arena_list_wrapper);
+}
+
+RZ_API RzList *rz_heap_chunks_list(RzCore *core, ut64 m_arena) {
+	call_handler(rz_heap_chunks_list_wrapper, m_arena);
+}

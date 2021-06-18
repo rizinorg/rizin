@@ -281,6 +281,12 @@ typedef struct rz_heap_chunk_list_item {
 	char *status; /* Status of the chunk, allocated/free/corrupted */
 } RzHeapChunkListItem;
 
+typedef struct rz_arena_list_item {
+	ut64 addr; /* Base addr of the arena */
+	char *type; /* Type of arena, main/thread */
+	MallocState *arena; /* The MallocState for the arena */
+} RzArenaListItem;
+
 #ifdef __cplusplus
 }
 #endif
