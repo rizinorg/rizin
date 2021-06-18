@@ -39,15 +39,15 @@ bool test_rz_bin(void) {
 	bool has_import_names[sizeof(import_names)] = { 0 };
 	RzBinImport *import;
 	RzListIter *it;
-	rz_list_foreach(imports, it, import) {
-		for(int i = 0; i < RZ_ARRAY_SIZE(import_names); ++i) {
+	rz_list_foreach (imports, it, import) {
+		for (int i = 0; i < RZ_ARRAY_SIZE(import_names); ++i) {
 			if (!strcmp(import->name, import_names[i])) {
 				has_import_names[i] = true;
 				break;
 			}
 		}
 	}
-	for(int i = 0; i < RZ_ARRAY_SIZE(import_names); ++i) {
+	for (int i = 0; i < RZ_ARRAY_SIZE(import_names); ++i) {
 		mu_assert_true(has_import_names[i], "Import name was not found");
 	}
 
@@ -63,7 +63,7 @@ bool test_rz_bin(void) {
 	};
 	RzBinString *s;
 	int i = 0;
-	rz_list_foreach(strings, it, s) {
+	rz_list_foreach (strings, it, s) {
 		mu_assert_streq(s->string, exp_strings[i], "String not found");
 		mu_assert_true(rz_bin_object_is_string(obj, s->vaddr), "is_string should be true");
 		i++;
@@ -71,11 +71,11 @@ bool test_rz_bin(void) {
 
 	const RzList *hashes = rz_bin_file_compute_hashes(bin, bf, UT64_MAX);
 	mu_assert_eq(rz_list_length(hashes), 3, "rz_bin_file_get_hashes");
-	const char *hash_names[] = {"md5", "sha1", "sha256"};
-	const char *hash_hexes[] = {"99327411dd72a11d7198b54298648adf", "f2bf1c7758c7b1e22bdea1d7681882783b658705", "3aed9a3821134a2ab1d69cb455e5e9d80bb651a1c97af04cdba4f3bb0adaa37b"};
+	const char *hash_names[] = { "md5", "sha1", "sha256" };
+	const char *hash_hexes[] = { "99327411dd72a11d7198b54298648adf", "f2bf1c7758c7b1e22bdea1d7681882783b658705", "3aed9a3821134a2ab1d69cb455e5e9d80bb651a1c97af04cdba4f3bb0adaa37b" };
 	RzBinFileHash *hash;
 	i = 0;
-	rz_list_foreach(hashes, it, hash) {
+	rz_list_foreach (hashes, it, hash) {
 		mu_assert_streq(hash->type, hash_names[i], "hash name is wrong");
 		mu_assert_streq(hash->hex, hash_hexes[i], "hash digest is wrong");
 		i++;

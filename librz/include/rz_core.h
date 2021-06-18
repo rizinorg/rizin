@@ -852,6 +852,7 @@ RZ_API RZ_OWN char *rz_core_bin_field_build_flag_name(RZ_NONNULL RzBinClass *cls
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode);
 RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode);
 RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state);
+RZ_API void rz_core_bin_archs_print(RzBin *bin, RzCmdStateOutput *state);
 
 typedef enum {
 	RZ_CORE_STRING_KIND_UNKNOWN,

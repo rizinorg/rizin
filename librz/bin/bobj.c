@@ -731,7 +731,6 @@ RZ_API const RzBinInfo *rz_bin_object_get_info(RzBinObject *obj) {
 RZ_API const RzList *rz_bin_object_get_libs(RzBinObject *obj) {
 	rz_return_val_if_fail(obj, NULL);
 	return obj->libs;
-
 }
 
 /**
@@ -750,7 +749,7 @@ static RzList *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
 	const RzList *all = rz_bin_object_get_sections_all(obj);
 	RzListIter *it;
 	RzBinSection *sec;
-	rz_list_foreach(all, it, sec) {
+	rz_list_foreach (all, it, sec) {
 		if (sec->is_segment == is_segment) {
 			rz_list_append(res, sec);
 		}
@@ -810,7 +809,7 @@ RZ_API const RzList *rz_bin_object_get_symbols(RzBinObject *obj) {
  * \brief Remove all previously identified strings in the binary object and scan it again for strings.
  */
 RZ_API const RzList *rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
-	rz_return_val_if_fail(obj, NULL);
+	rz_return_val_if_fail(bin && bf && obj, NULL);
 	if (obj->strings) {
 		rz_list_free(obj->strings);
 		obj->strings = NULL;

@@ -98,6 +98,38 @@ RZ_IPI void rz_core_agraph_print_json(RzCore *core);
 RZ_IPI void rz_core_agraph_print_gml(RzCore *core);
 RZ_IPI void rz_core_agraph_print_write(RzCore *core, const char *filename);
 
+/* cbin.c */
+RZ_IPI void rz_core_bin_entries_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_initfini_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_exports_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_symbols_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_cur_symbol_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_imports_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_libs_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_main_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_relocs_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_sections_print(RzCore *core, RzCmdStateOutput *state, RzList *hashes);
+RZ_IPI void rz_core_bin_cur_section_print(RzCore *core, RzCmdStateOutput *state, RzList *hashes);
+RZ_IPI void rz_core_bin_segments_print(RzCore *core, RzCmdStateOutput *state, RzList *hashes);
+RZ_IPI void rz_core_bin_strings_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_whole_strings_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_file_info_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_info_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_classes_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_signatures_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_fields_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_headers_print(RzCore *core);
+RZ_IPI void rz_core_bin_dwarf_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI char *rz_core_bin_pdb_get_filename(RzCore *core);
+RZ_IPI void rz_core_bin_memory_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_resources_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_versions_print(RzCore *core, RzCmdStateOutput *state);
+RZ_IPI void rz_core_bin_trycatch_print(RzCore *core, RzCmdStateOutput *state);
+
+RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_core_binldr_plugin_print(const RzBinLdrPlugin *ld, RzCmdStateOutput *state);
+
 /* cdebug.c */
 RZ_IPI bool rz_core_debug_reg_set(RzCore *core, const char *regname, ut64 val, const char *strval);
 RZ_IPI bool rz_core_debug_reg_list(RzCore *core, int type, int size, PJ *pj, int rad, const char *use_color);
