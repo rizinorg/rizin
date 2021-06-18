@@ -319,7 +319,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 	// Now we form both RzType and RzBaseType to store in the Types database
 	ParserTypePair *struct_pair = c_parser_new_structure_type(state, name, body_child_count);
 	if (!struct_pair) {
-		parser_error(state, "Error forming RzType and RzBaseType pair out of struct\n");
+		parser_error(state, "Error forming RzType and RzBaseType pair out of struct: \"%s\"\n", name);
 		return -1;
 	}
 	int i;
