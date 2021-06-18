@@ -1388,7 +1388,7 @@ RZ_API RzList *GH(rz_heap_bin_content_list)(RzCore *core, MallocState *main_aren
 	GH(get_brks)
 	(core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf("No Heap section\n");
+		free(cnk);
 		return chunks;
 	}
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
@@ -1632,8 +1632,10 @@ RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *m
 		return arena_list;
 	}
 	// main arena
-	GH(rz_heap_update_main_arena)
-	(core, m_arena, ta);
+	if (!GH(rz_heap_update_main_arena)(core, m_arena, ta)) {
+		free(ta);
+		return arena_list;
+	}
 	rz_list_append(arena_list, ta);
 	if (main_arena->GH(next) != m_arena) {
 		ta->GH(next) = main_arena->GH(next);
@@ -1717,13 +1719,6 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		return chunks;
 	}
 
-	RzConfigHold *hc = rz_config_hold_new(core->config);
-	if (!hc) {
-		free(cnk);
-		free(cnk_next);
-		return chunks;
-	}
-
 	(void)rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 	size_tmp = (cnk->size >> 3) << 3;
 	ut64 prev_chunk_addr;
@@ -1785,8 +1780,6 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		if (tcache) {
 			GH(RTcache) *tcache_heap = GH(tcache_new)(core);
 			if (!tcache_heap) {
-				rz_config_hold_restore(hc);
-				rz_config_hold_free(hc);
 				free(cnk);
 				free(cnk_next);
 				return chunks;
@@ -1973,8 +1966,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	top_data = rz_str_new("");
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		if (!pj) {
+			rz_cons_newline();
+			free(g);
 			free(top_data);
 			free(main_arena);
+			rz_cons_canvas_free(can);
 			rz_config_hold_restore(hc);
 			rz_config_hold_free(hc);
 			return RZ_CMD_STATUS_ERROR;
@@ -2025,6 +2021,9 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 			rz_cons_printf("f %s %d 0x%" PFMT64x "\n", name, (int)pos->size, (ut64)pos->addr);
 			free(name);
 		} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) { // graph
+			if (node_title) {
+				free(node_title);
+			}
 			node_title = rz_str_newf("  Malloc chunk @ 0x%" PFMT64x " ", (ut64)pos->addr);
 			if (node_data) {
 				free(node_data);
@@ -2067,9 +2066,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 			free(node_title);
 		}
 		rz_agraph_print(g);
-		rz_cons_canvas_free(can);
-		rz_config_hold_restore(hc);
-		rz_config_hold_free(hc);
 	}
 	rz_cons_newline();
 	free(g);
@@ -2077,6 +2073,9 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	free(top_title);
 	rz_list_free(chunks);
 	free(main_arena);
+        rz_cons_canvas_free(can);
+        rz_config_hold_restore(hc);
+        rz_config_hold_free(hc);
 	return RZ_CMD_STATUS_OK;
 }
 
