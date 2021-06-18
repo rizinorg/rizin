@@ -1165,6 +1165,53 @@ bool test_state_output_concat_json(void) {
 	mu_end;
 }
 
+static RzCmdStatus x_default_mode_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	mu_assert_eq(state->mode, RZ_OUTPUT_MODE_JSON, "x handler should be called with JSON mode");
+	mu_assert_notnull(state->d.pj, "x handler should be called with pj nonnull");
+	return RZ_CMD_STATUS_OK;
+}
+
+bool test_default_mode(void) {
+	RzCmdDescArg z_args[] = { { 0 } };
+	RzCmdDescHelp z_help = { 0 };
+	z_help.summary = "z summary";
+	z_help.args = z_args;
+
+	RzCmdDescArg x_args[] = { { 0 } };
+	RzCmdDescHelp x_help = { 0 };
+	x_help.summary = "x summary";
+	x_help.args = x_args;
+
+	RzCmd *cmd = rz_cmd_new(false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	RzCmdDesc *z_cd = rz_cmd_desc_argv_modes_new(cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG_JSON, z_modes_handler, &z_help);
+	RzCmdDesc *x_cd = rz_cmd_desc_argv_state_new(cmd, root, "x", RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG_JSON, x_default_mode_handler, &x_help);
+
+	bool changed = rz_cmd_desc_set_default_mode(z_cd, RZ_OUTPUT_MODE_JSON);
+	mu_assert_false(changed, "default_mode was not changed because _STANDARD is already defined for z_cd");
+	mu_assert_eq(z_cd->d.argv_modes_data.default_mode, RZ_OUTPUT_MODE_STANDARD, "default_mode is still _STANDARD for z_cd");
+
+	changed = rz_cmd_desc_set_default_mode(x_cd, RZ_OUTPUT_MODE_JSON);
+	mu_assert_true(changed, "default_mode was changed for x_cd");
+	mu_assert_eq(x_cd->d.argv_state_data.default_mode, RZ_OUTPUT_MODE_JSON, "default_mode is now _JSON for x_cd");
+
+	RzCmdParsedArgs *pa = rz_cmd_parsed_args_new("x", 0, NULL);
+	RzCmdStatus status = rz_cmd_call_parsed_args(cmd, pa);
+	mu_assert_eq(status, RZ_CMD_STATUS_OK, "x handler should be correctly executed");
+	rz_cmd_parsed_args_free(pa);
+
+	pa = rz_cmd_parsed_args_new("x?", 0, NULL);
+	char *h = rz_cmd_get_help(cmd, pa, false);
+	mu_assert_strcontains(h, "x[jqJ]   # x summary (JSON mode)", "x help should contain the default=json mode");
+	mu_assert_strcontains(h, "xj      # x summary (JSON mode)", "x help should contain the json mode");
+	mu_assert_strcontains(h, "xq      # x summary (quiet mode)", "x help should contain the quiet mode");
+	free(h);
+	rz_cmd_parsed_args_free(pa);
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_parsed_args_noargs);
 	mu_run_test(test_parsed_args_onearg);
@@ -1201,6 +1248,7 @@ int all_tests() {
 	mu_run_test(test_state_output_concat_table);
 	mu_run_test(test_state_output_concat_mix);
 	mu_run_test(test_state_output_concat_json);
+	mu_run_test(test_default_mode);
 	return tests_passed != tests_run;
 }
 
