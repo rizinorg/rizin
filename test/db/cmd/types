@@ -851,11 +851,14 @@ wx 082090e5040081e5
 td "struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
 aht foo.b @ 0x00000004
-?e
+pi 2
+?e ---
 pd 2
 EOF
 EXPECT=<<EOF
-
+ldr r2, [r0, foo.c]
+str r0, [r1, foo.b]
+---
             0x00000000      082090e5       ldr   r2, [r0, foo.c]
             0x00000004      040081e5       str   r0, [r1, foo.b]
 EOF
@@ -871,11 +874,15 @@ td "struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
 aht foo.c @ 0x00000008
 aht foo.b @ 0x00000004
-?e
+pi 3
+?e ---
 pd 3
 EOF
 EXPECT=<<EOF
-
+sw ra, foo.c(v1)
+lb s3, foo.b(v0)
+lw s3, foo.c(v0)
+---
             0x00000000      08007fac       sw    ra, foo.c(v1)
             0x00000004      04005380       lb    s3, foo.b(v0)
             0x00000008      0800538c       lw    s3, foo.c(v0)
@@ -890,15 +897,20 @@ e asm.arch=x86
 e asm.bits=32
 td "struct foo {int a; int b ; int c;}"
 wx 8b40048951048d500883780800
-?e
 aht foo.b @ 0x00000000
 aht foo.b @ 0x00000003
 aht foo.c @ 0x00000006
 aht foo.c @ 0x00000009
+pi 4
+?e ---
 pd 4
 EOF
 EXPECT=<<EOF
-
+mov eax, dword [eax + foo.b]
+mov dword [ecx + foo.b], edx
+lea edx, [eax + foo.c]
+cmp dword [eax + foo.c], 0
+---
             0x00000000      8b4004         mov   eax, dword [eax + foo.b]
             0x00000003      895104         mov   dword [ecx + foo.b], edx
             0x00000006      8d5008         lea   edx, [eax + foo.c]
