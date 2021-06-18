@@ -31,7 +31,6 @@ RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 #define FASTBIN_IDX_TO_SIZE(i) ((SZ * 4) + (SZ * 2) * (i - 1))
 #define BITSPERMAP             (1U << BINMAPSHIFT)
 #define BINMAPSIZE             (NBINS / BITSPERMAP)
-#define MAX(a, b)              (((a) > (b)) ? (a) : (b))
 #define NPAD                   -6
 #define TCACHE_MAX_BINS        64
 #define TCACHE_FILL_COUNT      7
