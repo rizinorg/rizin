@@ -2943,9 +2943,9 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
 		if (format) {
 			rz_strbuf_append(buf, format);
 		} else {
-			if (type->identifier.kind == RZ_BASE_TYPE_KIND_STRUCT) {
+			if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_STRUCT) {
 				rz_strbuf_append(buf, "?");
-			} else if (type->identifier.kind == RZ_BASE_TYPE_KIND_ENUM) {
+			} else if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_ENUM) {
 				rz_strbuf_append(buf, "E");
 			}
 		}
@@ -2983,7 +2983,7 @@ RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType 
 	if (rz_type_is_char_ptr(type)) {
 		return "z";
 	}
-	RzStrBuf *buf = rz_strbuf_new("");
+	RzStrBuf *buf = rz_strbuf_new(NULL);
 	type_to_format(typedb, buf, type);
 	return rz_strbuf_drain(buf);
 }

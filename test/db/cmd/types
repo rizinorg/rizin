@@ -1070,9 +1070,11 @@ FILE==
 CMDS=<<EOF
 td "struct normal {int a;char b;};"
 td "struct pointer {char *y;struct normal *obj;};"
+ts normal
 ts pointer
 EOF
 EXPECT=<<EOF
+pf dc a b
 pf z*? y (normal)obj
 EOF
 RUN
@@ -1230,8 +1232,8 @@ tsc "anonymous struct 0"
 tsc "anonymous struct 1"
 EOF
 EXPECT=<<EOF
-pf ?f num
-pf ?c ch
+pf f num
+pf c ch
 typedef struct anonymous struct 0 A;
 typedef struct anonymous struct 1 B;
 struct anonymous struct 0 {

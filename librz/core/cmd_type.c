@@ -495,7 +495,9 @@ RZ_IPI RzCmdStatus rz_type_noreturn_del_all_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_type_open_file_handler(RzCore *core, int argc, const char **argv) {
-	rz_types_open_file(core, argv[1]);
+	if (!rz_types_open_file(core, argv[1])) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
