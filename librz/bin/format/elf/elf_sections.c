@@ -64,7 +64,7 @@ static const struct flag_translation flag_translation_table[] = {
 };
 
 static void create_section_from_phdr(ELFOBJ *bin, RzBinElfSection *section, size_t *pos, const char *name, ut64 addr, ut64 sz) {
-	if (!addr || addr == RZ_BIN_ELF_ADDR_MAX) {
+	if (!addr) {
 		return;
 	}
 

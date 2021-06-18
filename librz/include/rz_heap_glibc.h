@@ -48,8 +48,6 @@ RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 #define TC_SZ_64  0x10
 
 // Introduced with glibc 2.32
-#define PROTECT_PTR(pos, ptr) \
-	((__typeof(ptr))((((size_t)pos) >> 12) ^ ((size_t)ptr)))
 
 #define largebin_index_32(size) \
 	(((((ut32)(size)) >> 6) <= 38) ? 56 + (((ut32)(size)) >> 6) : ((((ut32)(size)) >> 9) <= 20) ? 91 + (((ut32)(size)) >> 9) \
@@ -277,6 +275,12 @@ typedef enum rz_heap_bin_type {
 	RZ_HEAP_BIN_SMALL,
 	RZ_HEAP_BIN_LARGE
 } RzHeapBinType;
+
+typedef struct rz_heap_chunk_list_item {
+	ut64 addr; /* Base addr of the chunk */
+	ut64 size; /* Size of the chunk */
+	char *status; /* Status of the chunk, allocated/free/corrupted */
+} RzHeapChunkListItem;
 
 #ifdef __cplusplus
 }

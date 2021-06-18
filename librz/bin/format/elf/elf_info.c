@@ -905,51 +905,51 @@ RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	return get_libs_from_dt_dynamic(bin, ret);
 }
 
-static Elf_(Verdaux) get_verdaux_entry(ELFOBJ *bin, ut64 offset) {
-	Elf_(Verdaux) verdaux_entry;
+static bool get_verdaux_entry(ELFOBJ *bin, ut64 offset, Elf_(Verdaux) * entry) {
+	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vda_name) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vda_next)) {
+		return false;
+	}
 
-	verdaux_entry.vda_name = BREAD32(bin->b, offset);
-	verdaux_entry.vda_next = BREAD32(bin->b, offset);
-
-	return verdaux_entry;
+	return true;
 }
 
-static Elf_(Verdef) get_verdef_entry(ELFOBJ *bin, ut64 offset) {
-	Elf_(Verdef) verdef_entry;
+static bool get_verdef_entry(ELFOBJ *bin, ut64 offset, Elf_(Verdef) * entry) {
+	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vd_version) ||
+		!Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vd_flags) ||
+		!Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vd_ndx) ||
+		!Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vd_cnt) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vd_hash) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vd_aux) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vd_next)) {
+		return false;
+	}
 
-	verdef_entry.vd_version = BREAD16(bin->b, offset);
-	verdef_entry.vd_flags = BREAD16(bin->b, offset);
-	verdef_entry.vd_ndx = BREAD16(bin->b, offset);
-	verdef_entry.vd_cnt = BREAD16(bin->b, offset);
-	verdef_entry.vd_hash = BREAD32(bin->b, offset);
-	verdef_entry.vd_aux = BREAD32(bin->b, offset);
-	verdef_entry.vd_next = BREAD32(bin->b, offset);
-
-	return verdef_entry;
+	return true;
 }
 
-static Elf_(Vernaux) get_vernaux_entry(ELFOBJ *bin, ut64 offset) {
-	Elf_(Vernaux) vernaux_entry;
+static bool get_vernaux_entry(ELFOBJ *bin, ut64 offset, Elf_(Vernaux) * entry) {
+	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vna_hash) ||
+		!Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vna_flags) ||
+		!Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vna_other) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vna_name) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vna_next)) {
+		return false;
+	}
 
-	vernaux_entry.vna_hash = BREAD32(bin->b, offset);
-	vernaux_entry.vna_flags = BREAD16(bin->b, offset);
-	vernaux_entry.vna_other = BREAD16(bin->b, offset);
-	vernaux_entry.vna_name = BREAD32(bin->b, offset);
-	vernaux_entry.vna_next = BREAD32(bin->b, offset);
-
-	return vernaux_entry;
+	return true;
 }
 
-static Elf_(Verneed) get_verneed_entry(ELFOBJ *bin, ut64 offset) {
-	Elf_(Verneed) verneed_entry;
+static bool get_verneed_entry(ELFOBJ *bin, ut64 offset, Elf_(Verneed) * entry) {
+	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vn_version) ||
+		!Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vn_cnt) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vn_file) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vn_aux) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &entry->vn_next)) {
+		return false;
+	}
 
-	verneed_entry.vn_version = BREAD16(bin->b, offset);
-	verneed_entry.vn_cnt = BREAD16(bin->b, offset);
-	verneed_entry.vn_file = BREAD32(bin->b, offset);
-	verneed_entry.vn_aux = BREAD32(bin->b, offset);
-	verneed_entry.vn_next = BREAD32(bin->b, offset);
-
-	return verneed_entry;
+	return true;
 }
 
 static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char *key, Elf_(Versym) versym) {
@@ -969,12 +969,18 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 	ut64 verneed_entry_offset = verneed_offset;
 
 	for (size_t i = 0; i < verneed_num; i++) {
-		Elf_(Verneed) verneed_entry = get_verneed_entry(bin, verneed_entry_offset);
+		Elf_(Verneed) verneed_entry;
+		if (!get_verneed_entry(bin, verneed_entry_offset, &verneed_entry)) {
+			return false;
+		}
 
 		ut64 vernaux_entry_offset = verneed_entry_offset + verneed_entry.vn_aux;
 
 		for (size_t j = 0; j < verneed_entry.vn_cnt; j++) {
-			Elf_(Vernaux) vernaux_entry = get_vernaux_entry(bin, vernaux_entry_offset);
+			Elf_(Vernaux) vernaux_entry;
+			if (!get_vernaux_entry(bin, vernaux_entry_offset, &vernaux_entry)) {
+				return false;
+			}
 
 			if (vernaux_entry.vna_other != versym) {
 				vernaux_entry_offset += vernaux_entry.vna_next;
@@ -1014,7 +1020,10 @@ static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *
 	ut64 verdef_entry_offset = verdef_offset;
 
 	for (size_t i = 0; i < verdef_num; i++) {
-		Elf_(Verdef) verdef_entry = get_verdef_entry(bin, verdef_entry_offset);
+		Elf_(Verdef) verdef_entry;
+		if (!get_verdef_entry(bin, verdef_entry_offset, &verdef_entry)) {
+			return false;
+		}
 
 		if (!verdef_entry.vd_cnt || verdef_entry.vd_ndx != (versym & VERSYM_VERSION)) {
 			verdef_entry_offset += verdef_entry.vd_next;
@@ -1022,7 +1031,11 @@ static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *
 		}
 
 		ut64 verdaux_entry_offset = verdef_entry_offset + verdef_entry.vd_aux;
-		Elf_(Verdaux) verdaux_entry = get_verdaux_entry(bin, verdaux_entry_offset);
+
+		Elf_(Verdaux) verdaux_entry;
+		if (!get_verdaux_entry(bin, verdaux_entry_offset, &verdaux_entry)) {
+			return false;
+		}
 
 		if (verdaux_entry.vda_name > bin->strtab_size) {
 			return false;
@@ -1069,7 +1082,11 @@ static Sdb *get_version_info_gnu_versym(ELFOBJ *bin) {
 
 	for (size_t i = 0; i < number_of_symbols; i++) {
 		const char *key = sdb_fmt("entry%zu", i);
-		Elf_(Versym) versym_entry = BREAD16(bin->b, versym_entry_offset);
+
+		Elf_(Versym) versym_entry;
+		if (!Elf_(rz_bin_elf_read_versym)(bin, &versym_entry_offset, &versym_entry)) {
+			return false;
+		}
 
 		switch (versym_entry) {
 		case VER_NDX_LOCAL:
@@ -1132,7 +1149,11 @@ static Sdb *get_verdef_entry_sdb(ELFOBJ *bin, Elf_(Verdef) * verdef_entry, size_
 	ut64 verdaux_entry_offset = offset + verdef_entry->vd_aux;
 
 	for (size_t j = 0; j < verdef_entry->vd_cnt; j++) {
-		Elf_(Verdaux) verdaux_entry = get_verdaux_entry(bin, verdaux_entry_offset);
+		Elf_(Verdaux) verdaux_entry;
+		if (!get_verdaux_entry(bin, verdaux_entry_offset, &verdaux_entry)) {
+			sdb_free(sdb_verdef);
+			return NULL;
+		}
 
 		Sdb *sdb_verdaux = get_verdaux_entry_sdb(bin, &verdaux_entry, verdaux_entry_offset);
 		if (!sdb_verdaux) {
@@ -1175,7 +1196,11 @@ static Sdb *get_version_info_gnu_verdef(ELFOBJ *bin) {
 	sdb_num_set(sdb, "offset", verdef_offset, 0);
 
 	for (size_t i = 0; i < verdef_num; i++) {
-		Elf_(Verdef) verdef_entry = get_verdef_entry(bin, verdef_offset);
+		Elf_(Verdef) verdef_entry;
+		if (!get_verdef_entry(bin, verdef_offset, &verdef_entry)) {
+			sdb_free(sdb);
+			return NULL;
+		}
 
 		Sdb *sdb_verdef = get_verdef_entry_sdb(bin, &verdef_entry, verdef_offset);
 		if (!sdb_verdef) {
@@ -1240,7 +1265,11 @@ static Sdb *get_verneed_entry_sdb(ELFOBJ *bin, Elf_(Verneed) verneed_entry, size
 	ut64 vernaux_entry_offset = offset + verneed_entry.vn_aux;
 
 	for (size_t i = 0; i < verneed_entry.vn_cnt; i++) {
-		Elf_(Vernaux) vernaux_entry = get_vernaux_entry(bin, vernaux_entry_offset);
+		Elf_(Vernaux) vernaux_entry;
+		if (!get_vernaux_entry(bin, vernaux_entry_offset, &vernaux_entry)) {
+			sdb_free(sdb_version);
+			return NULL;
+		}
 
 		Sdb *sdb_vernaux = get_vernaux_entry_sdb(bin, vernaux_entry, vernaux_entry_offset);
 		if (!sdb_vernaux) {
@@ -1281,7 +1310,11 @@ static Sdb *get_version_info_gnu_verneed(ELFOBJ *bin) {
 	sdb_num_set(sdb, "offset", verneed_offset, 0);
 
 	for (size_t i = 0; i < verneed_num; i++) {
-		Elf_(Verneed) verneed_entry = get_verneed_entry(bin, verneed_offset);
+		Elf_(Verneed) verneed_entry;
+		if (!get_verneed_entry(bin, verneed_offset, &verneed_entry)) {
+			sdb_free(sdb);
+			return NULL;
+		}
 
 		Sdb *sdb_version = get_verneed_entry_sdb(bin, verneed_entry, verneed_offset);
 		if (!sdb_version) {

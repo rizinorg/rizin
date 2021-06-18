@@ -4,15 +4,12 @@
 #ifndef RZ_ARCH_H
 #define RZ_ARCH_H
 
-#include <rz_types.h>
-#include <rz_util.h>
+#include <rz_flag.h>
 #include <sdb.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct rz_core_t;
 
 typedef struct rz_arch_profile_t {
 	ut64 rom_size;
@@ -40,7 +37,8 @@ RZ_API RZ_OWN RzArchTarget *rz_arch_target_new();
 RZ_API void rz_arch_profile_free(RzArchProfile *profile);
 RZ_API void rz_arch_target_free(RzArchTarget *target);
 RZ_API bool rz_arch_profiles_init(RzArchTarget *c, const char *cpu, const char *arch, const char *dir_prefix);
-RZ_API void rz_arch_profile_add_flag_every_io(struct rz_core_t *core);
+RZ_API void rz_arch_profile_add_flag_every_io(RzArchProfile *profile, RzFlag *flags);
+RZ_API bool rz_arch_load_profile_sdb(RzArchTarget *t, const char *path);
 
 #ifdef __cplusplus
 }

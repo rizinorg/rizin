@@ -1315,17 +1315,17 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 }
 
 static const char *help_msg[] = {
-	"Usage:", " dmh[?|b][f|j]", " # Memory map heap",
-	"dmh[j]", "", "List process heaps",
-	"dmhb[?] [addr]", "", "List process heap blocks",
+	"Usage:", " dmh[?|b][f|j]", " # Windows heap parsing commands",
+	"dmw[j]", "", "List process heaps",
+	"dmwb[?] [addr]", "", "List process heap blocks",
 	NULL
 };
 
 static const char *help_msg_block[] = {
-	"Usage:", " dmhb[f|j]", " # Memory map heap",
-	"dmhb [addr]", "", "List allocated heap blocks",
-	"dmhbf", "", "Create flags for each allocated block",
-	"dmhbj [addr]", "", "Print output in JSON format",
+	"Usage:", " dmhb[f|j]", " # Windows heap parsing commands",
+	"dmwb [addr]", "", "List allocated heap blocks",
+	"dmwbf", "", "Create flags for each allocated block",
+	"dmwbj [addr]", "", "Print output in JSON format",
 	NULL
 };
 

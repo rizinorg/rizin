@@ -32,27 +32,42 @@ static void parse_note_prstatus(ELFOBJ *bin, RzBinElfNote *note, Elf_(Nhdr) * no
 	note->prstatus.regstate = buf;
 }
 
-static void set_note_file(ELFOBJ *bin, RzBinElfNoteFile *file, ut64 *offset, const char *file_name) {
-	file->start_vaddr = RZ_BIN_ELF_BREADWORD(bin->b, *offset);
-	file->end_vaddr = RZ_BIN_ELF_BREADWORD(bin->b, *offset);
-	file->file_off = RZ_BIN_ELF_BREADWORD(bin->b, *offset);
+static bool set_note_file(ELFOBJ *bin, RzBinElfNoteFile *file, ut64 *offset, const char *file_name) {
+	if (!Elf_(rz_bin_elf_read_addr)(bin, offset, &file->start_vaddr)) {
+		return false;
+	}
+
+	if (!Elf_(rz_bin_elf_read_addr)(bin, offset, &file->end_vaddr)) {
+		return false;
+	}
+
+	if (!Elf_(rz_bin_elf_read_off)(bin, offset, &file->file_off)) {
+		return false;
+	}
+
 	file->file = strdup(file_name);
+	if (!file->file) {
+		return false;
+	}
+
+	return true;
 }
 
-static void parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * note_segment_header, ELFOBJ *bin, ut64 offset) {
-	ut64 n_maps = RZ_BIN_ELF_BREADWORD(bin->b, offset);
-	if (n_maps > (ut64)SIZE_MAX) {
-		return;
+static bool parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * note_segment_header, ELFOBJ *bin, ut64 offset) {
+	Elf_(Addr) n_maps;
+
+	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &n_maps)) {
+		return false;
 	}
 
 	RzVector files;
 	rz_vector_init(&files, sizeof(RzBinElfNoteFile), NULL, NULL);
 	rz_vector_reserve(&files, n_maps);
 
-	offset += RZ_BIN_ELF_WORDSIZE; // skip page size
+	offset += sizeof(Elf_(Addr)); // skip page size always 1
 
 	ut64 offset_begin = offset;
-	ut64 strings_begin = ((RZ_BIN_ELF_WORDSIZE * 3) * n_maps); // offset after the addr-array
+	ut64 strings_begin = ((sizeof(Elf_(Addr)) * 3) * n_maps); // offset after the addr-array
 	ut64 len_str = 0;
 
 	while (n_maps-- && strings_begin + len_str < note_segment_header->n_descsz) {
@@ -62,34 +77,41 @@ static void parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * note_segment_header
 		if (r < 0) {
 			break;
 		}
+
 		tmp[r] = 0;
 
 		len_str += strlen(tmp) + 1;
 
 		RzBinElfNoteFile *file = rz_vector_push(&files, NULL);
-		if (file) {
-			set_note_file(bin, file, &offset, tmp);
+		if (file && !set_note_file(bin, file, &offset, tmp)) {
+			return false;
 		}
 	}
 
 	note->file.files_count = rz_vector_len(&files);
 	note->file.files = rz_vector_flush(&files);
 	rz_vector_fini(&files);
+
+	return true;
 }
 
-static void set_note(ELFOBJ *bin, RzBinElfNote *note, Elf_(Nhdr) * note_segment_header, ut64 offset) {
+static bool set_note(ELFOBJ *bin, RzBinElfNote *note, Elf_(Nhdr) * note_segment_header, ut64 offset) {
 	memset(note, 0, sizeof(*note));
 	note->type = note_segment_header->n_type;
 
 	// there are many more note types but for now we only need these:
 	switch (note_segment_header->n_type) {
 	case NT_FILE:
-		parse_note_file(note, note_segment_header, bin, offset);
+		if (!parse_note_file(note, note_segment_header, bin, offset)) {
+			return false;
+		}
 		break;
 	case NT_PRSTATUS:
 		parse_note_prstatus(bin, note, note_segment_header, offset);
 		break;
 	}
+
+	return true;
 }
 
 static void note_fini(RzBinElfNote *note) {
@@ -127,28 +149,38 @@ static bool is_note_segment(ELFOBJ *bin, Elf_(Phdr) * segment) {
 	return segment->p_type == PT_NOTE && segment->p_filesz >= 9;
 }
 
-static Elf_(Nhdr) read_note_segment_header(ELFOBJ *bin, ut64 *offset) {
-	Elf_(Nhdr) note_segment_header;
+static bool read_note_segment_header(ELFOBJ *bin, ut64 *offset, Elf_(Nhdr) * note_segment_header) {
+	if (!Elf_(rz_bin_elf_read_word)(bin, offset, &note_segment_header->n_namesz)) {
+		return false;
+	}
 
-	note_segment_header.n_namesz = BREAD32(bin->b, *offset);
-	note_segment_header.n_descsz = BREAD32(bin->b, *offset);
-	note_segment_header.n_type = BREAD32(bin->b, *offset);
+	if (!Elf_(rz_bin_elf_read_word)(bin, offset, &note_segment_header->n_descsz)) {
+		return false;
+	}
 
-	return note_segment_header;
+	if (!Elf_(rz_bin_elf_read_word)(bin, offset, &note_segment_header->n_type)) {
+		return false;
+	}
+
+	return true;
 }
 
 static bool check_note_segment(Elf_(Phdr) * segment, Elf_(Nhdr) * note_segment_header, ut64 offset) {
 	return segment->p_filesz >= offset - segment->p_offset + round_up(note_segment_header->n_namesz) + round_up(note_segment_header->n_descsz);
 }
 
-static void set_note_segment(ELFOBJ *bin, Elf_(Phdr) * segment, RzBinElfNoteSegment *note_segment) {
+static bool set_note_segment(ELFOBJ *bin, Elf_(Phdr) * segment, RzBinElfNoteSegment *note_segment) {
 	RzVector notes;
 	rz_vector_init(&notes, sizeof(RzBinElfNote), NULL, NULL);
 
 	ut64 offset = segment->p_offset;
 
 	while (offset + 9 < RZ_MIN(offset + segment->p_filesz, bin->size)) {
-		Elf_(Nhdr) note_segment_header = read_note_segment_header(bin, &offset);
+		Elf_(Nhdr) note_segment_header;
+
+		if (!read_note_segment_header(bin, &offset, &note_segment_header)) {
+			return false;
+		}
 
 		if (!check_note_segment(segment, &note_segment_header, offset)) {
 			break;
@@ -158,7 +190,9 @@ static void set_note_segment(ELFOBJ *bin, Elf_(Phdr) * segment, RzBinElfNoteSegm
 		offset += round_up(note_segment_header.n_namesz);
 
 		RzBinElfNote *note = rz_vector_push(&notes, NULL);
-		set_note(bin, note, &note_segment_header, offset);
+		if (!set_note(bin, note, &note_segment_header, offset)) {
+			return false;
+		}
 
 		offset += round_up(note_segment_header.n_descsz);
 	}
@@ -166,6 +200,8 @@ static void set_note_segment(ELFOBJ *bin, Elf_(Phdr) * segment, RzBinElfNoteSegm
 	note_segment->notes_count = rz_vector_len(&notes);
 	note_segment->notes = rz_vector_flush(&notes);
 	rz_vector_fini(&notes);
+
+	return true;
 }
 
 bool Elf_(rz_bin_elf_init_notes)(RZ_NONNULL ELFOBJ *bin) {
@@ -187,7 +223,9 @@ bool Elf_(rz_bin_elf_init_notes)(RZ_NONNULL ELFOBJ *bin) {
 			return false;
 		}
 
-		set_note_segment(bin, segment, note_segment);
+		if (!set_note_segment(bin, segment, note_segment)) {
+			return false;
+		}
 
 		rz_list_push(bin->note_segments, note_segment);
 	}

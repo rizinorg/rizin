@@ -19,7 +19,7 @@
 #define X86_PLT_ENTRY_SIZE                   0x10
 
 #define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
-	((rel->vaddr - pltgot_addr - n_initial_unused_entries * RZ_BIN_ELF_WORDSIZE) / RZ_BIN_ELF_WORDSIZE)
+	((rel->vaddr - pltgot_addr - n_initial_unused_entries * sizeof(Elf_(Addr))) / sizeof(Elf_(Addr)))
 
 #define HASH_NCHAIN_OFFSET(x) ((x) + 4)
 
@@ -151,8 +151,9 @@ static void set_arm_symbol_bits(ELFOBJ *bin, RzBinSymbol *symbol) {
 	}
 }
 
-static size_t get_number_of_symbols_from_hash(ELFOBJ *bin) {
+static Elf_(Word) get_number_of_symbols_from_hash(ELFOBJ *bin) {
 	ut64 addr;
+	Elf_(Word) result;
 
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_HASH, &addr)) {
 		return 0;
@@ -164,17 +165,20 @@ static size_t get_number_of_symbols_from_hash(ELFOBJ *bin) {
 	}
 
 	ut64 nchain_offset = HASH_NCHAIN_OFFSET(offset);
-	ut64 result = BREAD32(bin->b, nchain_offset);
 
-	return result == UT32_MAX ? 0 : result;
+	if (!Elf_(rz_bin_elf_read_word)(bin, &nchain_offset, &result)) {
+		return 0;
+	}
+
+	return result;
 }
 
-static ut32 get_index_from_buckets(ELFOBJ *bin, ut32 *bucket_offset, ut32 number_of_bucket) {
-	ut32 index = 0;
+static Elf_(Word) get_index_from_buckets(ELFOBJ *bin, ut64 *bucket_offset, Elf_(Word) number_of_bucket) {
+	Elf_(Word) tmp;
+	Elf_(Word) index = 0;
 
-	for (size_t i = 0; i < number_of_bucket; i++) {
-		ut32 tmp = BREAD32(bin->b, *bucket_offset);
-		if (tmp == UT32_MAX) {
+	for (Elf_(Word) i = 0; i < number_of_bucket; i++) {
+		if (!Elf_(rz_bin_elf_read_word)(bin, bucket_offset, &tmp)) {
 			return 0;
 		}
 
@@ -184,14 +188,19 @@ static ut32 get_index_from_buckets(ELFOBJ *bin, ut32 *bucket_offset, ut32 number
 	return index;
 }
 
-static ut32 get_index_from_chain(ELFOBJ *bin, ut32 bucket_offset, ut32 symbol_base, ut32 index) {
-	ut32 chain_index = index - symbol_base;
-	ut32 chain_offset = bucket_offset + chain_index * 4;
+static Elf_(Word) get_index_from_chain(ELFOBJ *bin, ut64 bucket_offset, Elf_(Word) symbol_base, Elf_(Word) index) {
+	Elf_(Word) tmp;
+
+	if (index <= symbol_base) {
+		return 0;
+	}
+
+	Elf_(Word) chain_index = index - symbol_base;
+	ut64 chain_offset = bucket_offset + chain_index * 4;
 
 	while (1) {
 		index++;
-		ut32 tmp = BREAD32(bin->b, chain_offset);
-		if (tmp == UT32_MAX) {
+		if (!Elf_(rz_bin_elf_read_word)(bin, &chain_offset, &tmp)) {
 			return 0;
 		}
 
@@ -203,8 +212,11 @@ static ut32 get_index_from_chain(ELFOBJ *bin, ut32 bucket_offset, ut32 symbol_ba
 	return index;
 }
 
-static size_t get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
+static Elf_(Word) get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
 	ut64 hash_addr;
+	Elf_(Word) number_of_bucket;
+	Elf_(Word) symbol_base;
+	Elf_(Word) bitmask_nwords;
 
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_GNU_HASH, &hash_addr)) {
 		return 0;
@@ -215,23 +227,23 @@ static size_t get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
 		return 0;
 	}
 
-	size_t pos = hash_offset;
+	ut64 pos = hash_offset;
 
-	ut32 number_of_bucket = BREAD32(bin->b, pos);
-	ut32 symbol_base = BREAD32(bin->b, pos);
-	ut32 bitmask_nwords = BREAD32(bin->b, pos);
-
-	if (number_of_bucket == UT32_MAX || symbol_base == UT32_MAX || bitmask_nwords == UT32_MAX) {
+	if (!Elf_(rz_bin_elf_read_word)(bin, &pos, &number_of_bucket)) {
 		return 0;
 	}
 
-	ut32 bucket_offset = hash_offset + 16 + bitmask_nwords * RZ_BIN_ELF_WORDSIZE;
-
-	ut32 index = get_index_from_buckets(bin, &bucket_offset, number_of_bucket);
-
-	if (!index) {
+	if (!Elf_(rz_bin_elf_read_word)(bin, &pos, &symbol_base)) {
 		return 0;
 	}
+
+	if (!Elf_(rz_bin_elf_read_word)(bin, &pos, &bitmask_nwords)) {
+		return 0;
+	}
+
+	ut64 bucket_offset = hash_offset + 16 + bitmask_nwords * sizeof(Elf_(Addr));
+
+	Elf_(Word) index = get_index_from_buckets(bin, &bucket_offset, number_of_bucket);
 
 	return get_index_from_chain(bin, bucket_offset, symbol_base, index);
 }
@@ -259,12 +271,18 @@ static size_t get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
 }
 
 static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
+	Elf_(Addr) addr;
+
 	if (rel->paddr == UT64_MAX) {
 		return UT64_MAX;
 	}
+
 	ut64 paddr = rel->paddr;
-	ut64 addr = RZ_BIN_ELF_BREADWORD(bin->b, paddr);
-	return (!addr || addr == RZ_BIN_ELF_WORD_MAX) ? UT64_MAX : addr;
+	if (!Elf_(rz_bin_elf_read_addr)(bin, &paddr, &addr) || !addr) {
+		return UT64_MAX;
+	}
+
+	return addr;
 }
 
 static bool is_thumb_symbol(ut64 plt_addr) {
@@ -412,10 +430,8 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut8 buf[sizeof(Elf_(Addr))] = { 0 };
-
 	ut64 plt_addr = s->offset;
-	ut64 plt_sym_addr;
+	Elf_(Word) plt_sym_addr;
 
 	while (plt_addr + 2 + 4 < s->offset + s->size) {
 		/*we try to locate the plt entry that correspond with the relocation
@@ -430,13 +446,11 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 		  return plt_addr, that will be our sym addr
 		  perhaps this hack doesn't work on 32 bits
 		  */
-		int res = rz_buf_read_at(bin->b, plt_addr + 2, buf, sizeof(ut32));
-		if (res < 0) {
+		ut64 pos = plt_addr + 2;
+
+		if (!Elf_(rz_bin_elf_read_word)(bin, &pos, &plt_sym_addr)) {
 			return UT64_MAX;
 		}
-
-		size_t i = 0;
-		plt_sym_addr = RZ_BIN_ELF_READWORD(buf, i);
 
 		ut64 tmp = Elf_(rz_bin_elf_v2p_new)(bin, plt_sym_addr);
 		if (tmp == UT64_MAX) {
@@ -447,9 +461,11 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
 		if ((plt_addr + 6 + tmp) == rel->vaddr) {
 			return plt_addr;
 		}
+
 		if (plt_sym_addr == rel->vaddr) {
 			return plt_addr;
 		}
+
 		plt_addr += 8;
 	}
 
@@ -587,26 +603,28 @@ static void Elf_(rz_bin_elf_set_import_by_ord)(ELFOBJ *bin, RzBinElfSymbol *symb
 	bin->imports_by_ord[import->ordinal] = import;
 }
 
-static Elf_(Sym) get_symbol_entry(ELFOBJ *bin, ut64 offset) {
-	Elf_(Sym) symbol;
-
+static bool get_symbol_entry(ELFOBJ *bin, ut64 offset, Elf_(Sym) * result) {
 #if RZ_BIN_ELF64
-	symbol.st_name = BREAD32(bin->b, offset);
-	symbol.st_info = BREAD8(bin->b, offset);
-	symbol.st_other = BREAD8(bin->b, offset);
-	symbol.st_shndx = BREAD16(bin->b, offset);
-	symbol.st_value = BREAD64(bin->b, offset);
-	symbol.st_size = BREAD64(bin->b, offset);
+	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_name) ||
+		!Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_info) ||
+		!Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_other) ||
+		!Elf_(rz_bin_elf_read_section)(bin, &offset, &result->st_shndx) ||
+		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &result->st_value) ||
+		!Elf_(rz_bin_elf_read_xword)(bin, &offset, &result->st_size)) {
+		return false;
+	}
 #else
-	symbol.st_name = BREAD32(bin->b, offset);
-	symbol.st_value = BREAD32(bin->b, offset);
-	symbol.st_size = BREAD32(bin->b, offset);
-	symbol.st_info = BREAD8(bin->b, offset);
-	symbol.st_other = BREAD8(bin->b, offset);
-	symbol.st_shndx = BREAD16(bin->b, offset);
+	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_name) ||
+		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &result->st_value) ||
+		!Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_size) ||
+		!Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_info) ||
+		!Elf_(rz_bin_elf_read_char)(bin, &offset, &result->st_other) ||
+		!Elf_(rz_bin_elf_read_section)(bin, &offset, &result->st_shndx)) {
+		return false;
+	}
 #endif
 
-	return symbol;
+	return true;
 }
 
 static ut64 get_value_symbol(ELFOBJ *bin, Elf_(Sym) * symbol, size_t pos) {
@@ -685,7 +703,12 @@ static RzVector *compute_symbols_from_segment(ELFOBJ *bin, int type, ut64 offset
 	offset += entry_size;
 
 	for (size_t i = 1; i < num; i++) {
-		Elf_(Sym) symbol = get_symbol_entry(bin, offset);
+		Elf_(Sym) symbol;
+
+		if (!get_symbol_entry(bin, offset, &symbol)) {
+			return false;
+		}
+
 		if ((type != RZ_BIN_ELF_IMPORT_SYMBOLS || symbol.st_shndx != SHT_NULL) && type != RZ_BIN_ELF_ALL_SYMBOLS) {
 			offset += entry_size;
 			continue;
@@ -933,7 +956,7 @@ static int cmp_RzBinElfSymbol(const RzBinElfSymbol *a, const RzBinElfSymbol *b) 
 // TODO: return RzList<RzBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
 static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
-	int tsize, nsym, ret_ctr = 0, i, j, r, k, newsize;
+	int tsize, nsym, ret_ctr = 0, i, j, k, newsize;
 	ut64 toffset;
 	ut32 size = 0;
 	RzBinElfSymbol *ret = NULL, *import_ret = NULL;
@@ -941,7 +964,6 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 	size_t ret_size = 0, prev_ret_size = 0, import_ret_ctr = 0;
 	Elf_(Shdr) *strtab_section = NULL;
 	Elf_(Sym) *sym = NULL;
-	ut8 s[sizeof(Elf_(Sym))] = { 0 };
 	char *strtab = NULL;
 	HtPP *symbol_map = NULL;
 	HtPPOptions symbol_map_options = {
@@ -1038,27 +1060,12 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 				goto beach;
 			}
 			for (j = 0; j < nsym; j++) {
-				int k = 0;
-				r = rz_buf_read_at(bin->b, bin->shdr[i].sh_offset + j * sizeof(Elf_(Sym)), s, sizeof(Elf_(Sym)));
-				if (r < 1) {
+				ut64 offset = bin->shdr[i].sh_offset + j * sizeof(Elf_(Sym));
+
+				if (!get_symbol_entry(bin, offset, sym + j)) {
 					bprintf("read (sym)\n");
 					goto beach;
 				}
-#if RZ_BIN_ELF64
-				sym[j].st_name = READ32(s, k);
-				sym[j].st_info = READ8(s, k);
-				sym[j].st_other = READ8(s, k);
-				sym[j].st_shndx = READ16(s, k);
-				sym[j].st_value = READ64(s, k);
-				sym[j].st_size = READ64(s, k);
-#else
-				sym[j].st_name = READ32(s, k);
-				sym[j].st_value = READ32(s, k);
-				sym[j].st_size = READ32(s, k);
-				sym[j].st_info = READ8(s, k);
-				sym[j].st_other = READ8(s, k);
-				sym[j].st_shndx = READ16(s, k);
-#endif
 			}
 			ret = realloc(ret, (ret_size + nsym) * sizeof(RzBinElfSymbol));
 			if (!ret) {
@@ -1285,10 +1292,10 @@ RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin,
 	return symbol;
 }
 
-size_t Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin) {
+Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, 0);
 
-	size_t result = get_number_of_symbols_from_hash(bin);
+	Elf_(Word) result = get_number_of_symbols_from_hash(bin);
 	if (result) {
 		return result;
 	}

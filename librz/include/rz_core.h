@@ -31,6 +31,7 @@
 #include <rz_crypto.h>
 #include <rz_bind.h>
 #include <rz_util/rz_annotated_code.h>
+#include "rz_heap_glibc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -772,6 +773,22 @@ RZ_API char *rz_core_sysenv_begin(RzCore *core, const char *cmd);
 RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd);
 
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool argonly);
+
+/* linux_heap_glibc.c */
+RZ_API RzHeapChunk_64 *rz_heap_get_chunk_at_addr_64(RzCore *core, ut64 addr);
+RZ_API RzList *rz_heap_bin_content_list_64(RzCore *core, MallocState *main_arena, int bin_num);
+RZ_API RzList *rz_heap_arenas_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
+RZ_API RzList *rz_heap_chunks_list_64(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 m_state);
+RZ_API bool rz_heap_resolve_main_arena_64(RzCore *core, ut64 *m_arena);
+RZ_API bool rz_heap_update_main_arena_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
+RZ_API RzList *rz_heap_tcache_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena, bool main_thread_only);
+RZ_API RzHeapChunk_32 *rz_heap_get_chunk_at_addr_32(RzCore *core, ut32 addr);
+RZ_API RzList *rz_heap_bin_content_list_32(RzCore *core, MallocState *main_arena, int bin_num);
+RZ_API RzList *rz_heap_arenas_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
+RZ_API RzList *rz_heap_heap_chunks_list_32(RzCore *core, MallocState *main_arena, ut32 m_arena, ut32 m_state);
+RZ_API bool rz_heap_resolve_main_arena_32(RzCore *core, ut32 *m_arena);
+RZ_API bool rz_heap_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
+RZ_API RzList *rz_heap_tcache_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena, bool main_thread_only);
 // XXX dupe from rz_bin.h
 /* bin.c */
 #define RZ_CORE_BIN_ACC_STRINGS          0x001
