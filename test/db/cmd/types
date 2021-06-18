@@ -34,11 +34,11 @@ EOF
 EXPECT=<<EOF
             0x00000000      4157           push  r15
 (short)
-0x00000002 = 0x5641
+ short : 0x00000002 = 0x5641
             0x00000004      4155           push  r13
             0x00000006      4154           push  r12
 (int)
-0x00000008 = 1442089289
+ int : 0x00000008 = 1442089289
             0x0000000c      53             push  rbx
             0x0000000d      89fd           mov   ebp, edi
             0x0000000f      4881eca80300.  sub   rsp, 0x3a8
@@ -52,17 +52,17 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 48656c6c341248656c6c6f00000000000000000048656c6c6f0000000000000000009090
-td "typedef uint32_t WORD;"
+td "typedef uint16_t WORD;"
 td "typedef struct _VbHeader { char szVbMagic[4]; WORD wRuntimeBuild; char szLangDll[14]; char szSecLangDll[14];} VbHeader;"
 tl VbHeader 0x00
 pd 3
 EOF
 EXPECT=<<EOF
 (VbHeader)
-     szVbMagic : 0x00000000 = "Hell"
+     szVbMagic : 0x00000000 = [ 'H', 'e', 'l', 'l' ]
  wRuntimeBuild : 0x00000004 = 0x1234
-     szLangDll : 0x00000006 = "Hello"
-  szSecLangDll : 0x00000014 = "Hello"
+     szLangDll : 0x00000006 = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
+  szSecLangDll : 0x00000014 = [ 'H', 'e', 'l', 'l', 'o', '.', '.', '.', '.', '.', '.', '.', '.', '.' ]
             0x00000022      90             nop
             0x00000023      90             nop
 EOF
@@ -1164,17 +1164,19 @@ RUN
 NAME=tcd test
 FILE==
 CMDS=<<EOF
-t-*
 td "typedef char FILE_NAME;"
-td "union x{int x; int y; int z;}"
+td "union xxx{int x; int y; int z;}"
 td "enum Foo {COW=1,BAR=2};"
 td "struct three_elements{int x; char y; float z;}"
-tcd
+tcd~FILE_NAME
+tcd~xxx
+tcd~three_elements
+tcd~Foo
 EOF
 EXPECT=<<EOF
-union x {int x; int y; int z;};
-struct three_elements {int x; char y; float z;};
 typedef char FILE_NAME;
+union xxx {int x; int y; int z;};
+struct three_elements {int x; char y; float z;};
 enum Foo {COW = 1, BAR = 2};
 EOF
 RUN
@@ -1226,6 +1228,7 @@ to bins/headers/hdr1.h
 to bins/headers/hdr2.h
 ts "anonymous struct 0"
 ts "anonymous struct 1"
+ts A
 ts B
 ttc A
 ttc B
@@ -1234,6 +1237,8 @@ tsc "anonymous struct 1"
 EOF
 EXPECT=<<EOF
 pf f num
+pf f num
+pf c ch
 pf c ch
 typedef struct anonymous struct 0 A;
 typedef struct anonymous struct 1 B;
