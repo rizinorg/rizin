@@ -93,6 +93,19 @@ static const RzCmdDescArg cmd_debug_step_until_esil_args[2];
 static const RzCmdDescArg cmd_debug_step_until_flag_args[2];
 static const RzCmdDescArg cmd_debug_save_trace_session_args[2];
 static const RzCmdDescArg cmd_debug_load_trace_session_args[2];
+static const RzCmdDescArg cmd_debug_allocate_maps_args[2];
+static const RzCmdDescArg cmd_debug_dump_maps_args[2];
+static const RzCmdDescArg cmd_heap_chunks_print_args[2];
+static const RzCmdDescArg cmd_heap_bins_list_print_args[2];
+static const RzCmdDescArg cmd_heap_arena_bins_print_args[2];
+static const RzCmdDescArg cmd_heap_fastbins_print_args[2];
+static const RzCmdDescArg cmd_heap_chunks_graph_args[2];
+static const RzCmdDescArg cmd_heap_info_print_args[2];
+static const RzCmdDescArg cmd_main_arena_print_args[2];
+static const RzCmdDescArg cmd_debug_dml_args[2];
+static const RzCmdDescArg debug_memory_permission_args[3];
+static const RzCmdDescArg cmd_debug_dmL_args[2];
+static const RzCmdDescArg cmd_debug_dmS_args[3];
 static const RzCmdDescArg eval_getset_args[2];
 static const RzCmdDescArg eval_list_args[2];
 static const RzCmdDescArg eval_bool_invert_args[2];
@@ -1582,6 +1595,328 @@ static const RzCmdDescArg cmd_debug_list_trace_session_mmap_args[] = {
 static const RzCmdDescHelp cmd_debug_list_trace_session_mmap_help = {
 	.summary = "List current memory map and hash",
 	.args = cmd_debug_list_trace_session_mmap_args,
+};
+
+static const RzCmdDescHelp dm_help = {
+	.summary = "Memory map commands",
+};
+static const RzCmdDescArg cmd_debug_list_maps_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_maps_help = {
+	.summary = "List memory maps",
+	.args = cmd_debug_list_maps_args,
+};
+
+static const RzCmdDescArg cmd_debug_allocate_maps_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_allocate_maps_help = {
+	.summary = "Allocate <size> bytes at current offset",
+	.args = cmd_debug_allocate_maps_args,
+};
+
+static const RzCmdDescArg cmd_debug_list_maps_ascii_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_list_maps_ascii_help = {
+	.summary = "List memory maps of current process with ASCII art bars",
+	.args = cmd_debug_list_maps_ascii_args,
+};
+
+static const RzCmdDescArg cmd_debug_map_current_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_map_current_help = {
+	.summary = "Show map name of current address",
+	.args = cmd_debug_map_current_args,
+};
+
+static const RzCmdDescHelp dmm_help = {
+	.summary = "Module memory map commands",
+};
+static const RzCmdDescArg cmd_debug_modules_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_modules_help = {
+	.summary = "List modules (libraries, binaries loaded in memory)",
+	.args = cmd_debug_modules_args,
+};
+
+static const RzCmdDescArg cmd_debug_current_modules_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_current_modules_help = {
+	.summary = "List memory map of current module",
+	.args = cmd_debug_current_modules_args,
+};
+
+static const RzCmdDescArg cmd_debug_deallocate_map_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_deallocate_map_help = {
+	.summary = "Deallocate memory map at current offset",
+	.args = cmd_debug_deallocate_map_args,
+};
+
+static const RzCmdDescHelp dmd_help = {
+	.summary = "Dump debug map regions to a file (from-to.dmp)",
+};
+static const RzCmdDescArg cmd_debug_dump_maps_args[] = {
+	{
+		.name = "filename",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dump_maps_help = {
+	.summary = "Dump debug maps to <filename>",
+	.args = cmd_debug_dump_maps_args,
+};
+
+static const RzCmdDescArg cmd_debug_dump_maps_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dump_maps_all_help = {
+	.summary = "Dump all debug maps",
+	.args = cmd_debug_dump_maps_all_args,
+};
+
+static const RzCmdDescArg cmd_debug_dump_maps_writable_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dump_maps_writable_help = {
+	.summary = "Dump writable debug maps",
+	.args = cmd_debug_dump_maps_writable_args,
+};
+
+static const RzCmdDescHelp dmh_help = {
+	.summary = "Glibc heap commands",
+};
+static const RzCmdDescArg cmd_heap_chunks_print_args[] = {
+	{
+		.name = "malloc_state",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_chunks_print_help = {
+	.summary = "List heap chunks of an arena",
+	.args = cmd_heap_chunks_print_args,
+};
+
+static const RzCmdDescArg cmd_arena_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_arena_print_help = {
+	.summary = "List all the arenas",
+	.args = cmd_arena_print_args,
+};
+
+static const RzCmdDescArg cmd_heap_bins_list_print_args[] = {
+	{
+		.name = "bin_num|bin_num:malloc_state",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_bins_list_print_help = {
+	.summary = "Display double linked list for bins in an arena. Use dmhbg command for graphical representation.",
+	.args = cmd_heap_bins_list_print_args,
+};
+
+static const RzCmdDescArg cmd_heap_chunk_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_chunk_print_help = {
+	.summary = "Get info about heap chunk at current offset",
+	.args = cmd_heap_chunk_print_args,
+};
+
+static const char *cmd_heap_arena_bins_print_bin_type_choices[] = { "small", "large", "fast", "unsorted", "tcache", NULL };
+static const RzCmdDescArg cmd_heap_arena_bins_print_args[] = {
+	{
+		.name = "bin_type",
+		.type = RZ_CMD_ARG_TYPE_CHOICES,
+		.optional = true,
+		.choices = cmd_heap_arena_bins_print_bin_type_choices,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_arena_bins_print_help = {
+	.summary = "Display state of bins in an arena. <bin_type> can be tcache/fast/unsorted/small/large",
+	.args = cmd_heap_arena_bins_print_args,
+};
+
+static const RzCmdDescArg cmd_heap_fastbins_print_args[] = {
+	{
+		.name = "fastbin_num|fastbin_num:malloc_state",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_fastbins_print_help = {
+	.summary = "Display all parsed fastbins of main_arena's or a particular arena fastbinY instance",
+	.args = cmd_heap_fastbins_print_args,
+};
+
+static const RzCmdDescArg cmd_heap_chunks_graph_args[] = {
+	{
+		.name = "malloc_state",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_chunks_graph_help = {
+	.summary = "Display heap graph of a particular arena",
+	.args = cmd_heap_chunks_graph_args,
+};
+
+static const RzCmdDescArg cmd_heap_info_print_args[] = {
+	{
+		.name = "malloc_state",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_info_print_help = {
+	.summary = "Display heap_info structure/structures for a given arena",
+	.args = cmd_heap_info_print_args,
+};
+
+static const RzCmdDescArg cmd_main_arena_print_args[] = {
+	{
+		.name = "malloc_state",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_main_arena_print_help = {
+	.summary = "List all elements of struct malloc_state",
+	.args = cmd_main_arena_print_args,
+};
+
+static const RzCmdDescArg cmd_heap_tcache_print_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_heap_tcache_print_help = {
+	.summary = "Display all parsed thread cache bins of all arena's tcache instance",
+	.args = cmd_heap_tcache_print_args,
+};
+
+static const RzCmdDescHelp cmd_debug_dmi_help = {
+	.summary = "List/Load symbols",
+};
+
+static const RzCmdDescArg cmd_debug_dml_args[] = {
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dml_help = {
+	.summary = "Load contents of file into current map region",
+	.args = cmd_debug_dml_args,
+};
+
+static const RzCmdDescArg debug_memory_permission_args[] = {
+	{
+		.name = "perms",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp debug_memory_permission_help = {
+	.summary = "Change page at current offset with <size>, protection <perms> / Change dbg.map permissions to <perms>",
+	.args = debug_memory_permission_args,
+};
+
+static const RzCmdDescArg cmd_debug_dmL_args[] = {
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dmL_help = {
+	.summary = "Allocate <size> bytes at current offset and promote to huge page",
+	.args = cmd_debug_dmL_args,
+};
+
+static const RzCmdDescArg cmd_debug_dmS_args[] = {
+	{
+		.name = "addr|libname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.optional = true,
+
+	},
+	{
+		.name = "sectname",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_dmS_help = {
+	.summary = "List sections of target lib",
+	.args = cmd_debug_dmS_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_windows_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_windows_help = {
+	.summary = "Windows heap commands",
+	.args = cmd_debug_heap_windows_args,
+};
+
+static const RzCmdDescArg cmd_debug_heap_jemalloc_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_heap_jemalloc_help = {
+	.summary = "Jemalloc heap commands",
+	.args = cmd_debug_heap_jemalloc_args,
 };
 
 static const RzCmdDescHelp e_help = {
@@ -3993,7 +4328,6 @@ static const RzCmdDescHelp zign_info_range_help = {
 
 static const RzCmdDescDetailEntry tmp_modifiers_empty_detail_entries[] = {
 	{ .text = "<cmd> @", .arg_str = " <addr>", .comment = "Temporary seek to <addr>" },
-	{ .text = "<cmd> @", .arg_str = " <addr>!<blocksize>", .comment = "Temporary seek to <addr> and set blocksize to <blocksize>" },
 	{ .text = "<cmd> @..", .arg_str = "<addr>", .comment = "Temporary partial address seek (see s..)" },
 	{ .text = "<cmd> @!", .arg_str = "<blocksize>", .comment = "Temporary change the block size" },
 	{ .text = "<cmd> @(", .arg_str = "<from> <to>)", .comment = "Temporary set from and to for commands supporting ranges" },
@@ -4499,6 +4833,83 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_list_trace_session_mmap_cd = rz_cmd_desc_argv_new(core->rcmd, dts_cd, "dtsm", rz_cmd_debug_list_trace_session_mmap_handler, &cmd_debug_list_trace_session_mmap_help);
 	rz_warn_if_fail(cmd_debug_list_trace_session_mmap_cd);
+
+	RzCmdDesc *dm_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_debug_cd, "dm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_debug_list_maps_handler, &cmd_debug_list_maps_help, &dm_help);
+	rz_warn_if_fail(dm_cd);
+	RzCmdDesc *cmd_debug_allocate_maps_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm+", rz_cmd_debug_allocate_maps_handler, &cmd_debug_allocate_maps_help);
+	rz_warn_if_fail(cmd_debug_allocate_maps_cd);
+
+	RzCmdDesc *cmd_debug_list_maps_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm=", rz_cmd_debug_list_maps_ascii_handler, &cmd_debug_list_maps_ascii_help);
+	rz_warn_if_fail(cmd_debug_list_maps_ascii_cd);
+
+	RzCmdDesc *cmd_debug_map_current_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm.", rz_cmd_debug_map_current_handler, &cmd_debug_map_current_help);
+	rz_warn_if_fail(cmd_debug_map_current_cd);
+
+	RzCmdDesc *dmm_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_modules_handler, &cmd_debug_modules_help, &dmm_help);
+	rz_warn_if_fail(dmm_cd);
+	RzCmdDesc *cmd_debug_current_modules_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmm_cd, "dmm.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_current_modules_handler, &cmd_debug_current_modules_help);
+	rz_warn_if_fail(cmd_debug_current_modules_cd);
+
+	RzCmdDesc *cmd_debug_deallocate_map_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dm-", rz_cmd_debug_deallocate_map_handler, &cmd_debug_deallocate_map_help);
+	rz_warn_if_fail(cmd_debug_deallocate_map_cd);
+
+	RzCmdDesc *dmd_cd = rz_cmd_desc_group_new(core->rcmd, dm_cd, "dmd", rz_cmd_debug_dump_maps_handler, &cmd_debug_dump_maps_help, &dmd_help);
+	rz_warn_if_fail(dmd_cd);
+	RzCmdDesc *cmd_debug_dump_maps_all_cd = rz_cmd_desc_argv_new(core->rcmd, dmd_cd, "dmda", rz_cmd_debug_dump_maps_all_handler, &cmd_debug_dump_maps_all_help);
+	rz_warn_if_fail(cmd_debug_dump_maps_all_cd);
+
+	RzCmdDesc *cmd_debug_dump_maps_writable_cd = rz_cmd_desc_argv_new(core->rcmd, dmd_cd, "dmdw", rz_cmd_debug_dump_maps_writable_handler, &cmd_debug_dump_maps_writable_help);
+	rz_warn_if_fail(cmd_debug_dump_maps_writable_cd);
+
+	RzCmdDesc *dmh_cd = rz_cmd_desc_group_state_new(core->rcmd, dm_cd, "dmh", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_RIZIN, rz_cmd_heap_chunks_print_handler, &cmd_heap_chunks_print_help, &dmh_help);
+	rz_warn_if_fail(dmh_cd);
+	RzCmdDesc *cmd_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmha", rz_cmd_arena_print_handler, &cmd_arena_print_help);
+	rz_warn_if_fail(cmd_arena_print_cd);
+
+	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, dmh_cd, "dmhb", rz_cmd_heap_bins_list_print, &cmd_heap_bins_list_print_help);
+	rz_warn_if_fail(cmd_heap_bins_list_print_cd);
+
+	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);
+	rz_warn_if_fail(cmd_heap_chunk_print_cd);
+
+	RzCmdDesc *cmd_heap_arena_bins_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_heap_arena_bins_print_handler, &cmd_heap_arena_bins_print_help);
+	rz_warn_if_fail(cmd_heap_arena_bins_print_cd);
+
+	RzCmdDesc *cmd_heap_fastbins_print_cd = rz_cmd_desc_oldinput_new(core->rcmd, dmh_cd, "dmhf", rz_cmd_heap_fastbins_print, &cmd_heap_fastbins_print_help);
+	rz_warn_if_fail(cmd_heap_fastbins_print_cd);
+
+	RzCmdDesc *cmd_heap_chunks_graph_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhg", rz_cmd_heap_chunks_graph_handler, &cmd_heap_chunks_graph_help);
+	rz_warn_if_fail(cmd_heap_chunks_graph_cd);
+
+	RzCmdDesc *cmd_heap_info_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmhi", rz_cmd_heap_info_print_handler, &cmd_heap_info_print_help);
+	rz_warn_if_fail(cmd_heap_info_print_cd);
+
+	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmh_cd, "dmhm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
+	rz_warn_if_fail(cmd_main_arena_print_cd);
+
+	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmh_cd, "dmht", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
+	rz_warn_if_fail(cmd_heap_tcache_print_cd);
+
+	RzCmdDesc *cmd_debug_dmi_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmi", rz_cmd_debug_dmi, &cmd_debug_dmi_help);
+	rz_warn_if_fail(cmd_debug_dmi_cd);
+
+	RzCmdDesc *cmd_debug_dml_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dml", rz_cmd_debug_dml_handler, &cmd_debug_dml_help);
+	rz_warn_if_fail(cmd_debug_dml_cd);
+
+	RzCmdDesc *debug_memory_permission_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmp", rz_debug_memory_permission_handler, &debug_memory_permission_help);
+	rz_warn_if_fail(debug_memory_permission_cd);
+
+	RzCmdDesc *cmd_debug_dmL_cd = rz_cmd_desc_argv_new(core->rcmd, dm_cd, "dmL", rz_cmd_debug_dmL_handler, &cmd_debug_dmL_help);
+	rz_warn_if_fail(cmd_debug_dmL_cd);
+
+	RzCmdDesc *cmd_debug_dmS_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dm_cd, "dmS", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_cmd_debug_dmS_handler, &cmd_debug_dmS_help);
+	rz_warn_if_fail(cmd_debug_dmS_cd);
+
+	RzCmdDesc *cmd_debug_heap_windows_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmw", rz_cmd_debug_heap_windows, &cmd_debug_heap_windows_help);
+	rz_warn_if_fail(cmd_debug_heap_windows_cd);
+
+	RzCmdDesc *cmd_debug_heap_jemalloc_cd = rz_cmd_desc_oldinput_new(core->rcmd, dm_cd, "dmx", rz_cmd_debug_heap_jemalloc, &cmd_debug_heap_jemalloc_help);
+	rz_warn_if_fail(cmd_debug_heap_jemalloc_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);

@@ -17,32 +17,6 @@
 	if (bin->verbose) \
 	RZ_LOG_WARN
 
-#define READ8(x, i) \
-	rz_read_ble8((x) + (i)); \
-	(i) += sizeof(ut8)
-#define READ16(x, i) \
-	rz_read_ble16((x) + (i), bin->endian); \
-	(i) += sizeof(ut16)
-#define READ32(x, i) \
-	rz_read_ble32((x) + (i), bin->endian); \
-	(i) += sizeof(ut32)
-#define READ64(x, i) \
-	rz_read_ble64((x) + (i), bin->endian); \
-	(i) += sizeof(ut64)
-
-#define BREAD8(x, i) \
-	rz_buf_read8_at(x, i); \
-	(i) += sizeof(ut8)
-#define BREAD16(x, i) \
-	rz_buf_read_ble16_at(x, i, bin->endian); \
-	(i) += sizeof(ut16)
-#define BREAD32(x, i) \
-	rz_buf_read_ble32_at(x, i, bin->endian); \
-	(i) += sizeof(ut32)
-#define BREAD64(x, i) \
-	rz_buf_read_ble64_at(x, i, bin->endian); \
-	(i) += sizeof(ut64)
-
 #define RZ_BIN_ELF_SCN_IS_EXECUTABLE(x) x &SHF_EXECINSTR
 #define RZ_BIN_ELF_SCN_IS_READABLE(x)   x &SHF_ALLOC
 #define RZ_BIN_ELF_SCN_IS_WRITABLE(x)   x &SHF_WRITE
@@ -52,20 +26,6 @@
 #define RZ_BIN_ELF_FULL_RELRO 2
 
 #define ELFOBJ struct Elf_(rz_bin_elf_obj_t)
-
-#if RZ_BIN_ELF64
-#define RZ_BIN_ELF_WORDSIZE        0x8
-#define RZ_BIN_ELF_READWORD(x, i)  READ64(x, i)
-#define RZ_BIN_ELF_BREADWORD(x, i) BREAD64(x, i)
-#define RZ_BIN_ELF_ADDR_MAX        UT64_MAX
-#define RZ_BIN_ELF_XWORD_MAX       UT64_MAX
-#else
-#define RZ_BIN_ELF_WORDSIZE        0x4
-#define RZ_BIN_ELF_READWORD(x, i)  READ32(x, i)
-#define RZ_BIN_ELF_BREADWORD(x, i) BREAD32(x, i)
-#define RZ_BIN_ELF_ADDR_MAX        UT32_MAX
-#define RZ_BIN_ELF_XWORD_MAX       UT64_MAX
-#endif
 
 /// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
 typedef struct prstatus_layout_t {
@@ -304,6 +264,26 @@ ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin);
 
 bool Elf_(rz_bin_elf_init_notes)(RZ_NONNULL ELFOBJ *bin);
 
+// elf_misc.c
+
+bool Elf_(rz_bin_elf_read_char)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut8 *result);
+bool Elf_(rz_bin_elf_read_half)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Half) * result);
+bool Elf_(rz_bin_elf_read_word)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Word) * result);
+bool Elf_(rz_bin_elf_read_sword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Sword) * result);
+bool Elf_(rz_bin_elf_read_xword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Xword) * result);
+bool Elf_(rz_bin_elf_read_sxword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Sxword) * result);
+bool Elf_(rz_bin_elf_read_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Addr) * result);
+bool Elf_(rz_bin_elf_read_off)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Off) * result);
+bool Elf_(rz_bin_elf_read_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Section) * result);
+bool Elf_(rz_bin_elf_read_versym)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Versym) * result);
+#if RZ_BIN_ELF64
+bool Elf_(rz_bin_elf_read_word_xword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Xword) * result);
+bool Elf_(rz_bin_elf_read_sword_sxword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Sxword) * result);
+#else
+bool Elf_(rz_bin_elf_read_word_xword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Word) * result);
+bool Elf_(rz_bin_elf_read_sword_sxword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Sword) * result);
+#endif
+
 // elf_relocs.c
 
 RZ_BORROW RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(RZ_NONNULL ELFOBJ *bin);
@@ -325,7 +305,7 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
-size_t Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin);
+Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_write.c
 

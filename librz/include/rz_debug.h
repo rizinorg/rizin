@@ -11,6 +11,7 @@
 #include <rz_io.h>
 #include <rz_msg_digest.h>
 #include <rz_syscall.h>
+#include <rz_cmd.h>
 
 #include <rz_config.h>
 #include "rz_bind.h"
@@ -50,6 +51,13 @@ RZ_LIB_VERSION_HEADER(rz_debug);
 #define PTRACE_SYSCALL    PT_STEP
 #endif
 
+#define CMD_CHECK_DEBUG_DEAD(core) \
+	do { \
+		if (rz_debug_is_dead(core->dbg)) { \
+			rz_cons_println("Debugging is not enabled. Run ood?"); \
+			return RZ_CMD_STATUS_ERROR; \
+		} \
+	} while (0)
 #define SNAP_PAGE_SIZE    4096
 #define CHECK_POINT_LIMIT 0x100000 //TODO: take the benchmark
 /*
@@ -494,8 +502,9 @@ RZ_API RzList *rz_debug_map_list_new(void);
 RZ_API RzDebugMap *rz_debug_map_get(RzDebug *dbg, ut64 addr);
 RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user);
 RZ_API void rz_debug_map_free(RzDebugMap *map);
-RZ_API void rz_debug_map_list(RzDebug *dbg, ut64 addr, const char *input);
+RZ_API void rz_debug_map_print(RzDebug *dbg, ut64 addr, RzCmdStateOutput *state);
 RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input, int colors);
+RZ_API RzList *rz_debug_map_list(RzDebug *dbg, bool user_map);
 
 /* descriptors */
 RZ_API RzDebugDesc *rz_debug_desc_new(int fd, char *path, int perm, int type, int off);
