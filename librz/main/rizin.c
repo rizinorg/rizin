@@ -325,6 +325,10 @@ static void set_color_default(RzCore *r) {
 	free(tmp);
 }
 
+static bool has_file_arg(int argc, const char **argv, RzGetopt *opt) {
+	return (argc >= 2 && argv[opt->ind] && strcmp(argv[opt->ind], "--")) || ((!strcmp(argv[opt->ind - 1], "--") && argv[opt->ind]));
+}
+
 RZ_API int rz_main_rizin(int argc, const char **argv) {
 	RzCore *r;
 	bool forcequit = false;
@@ -909,7 +913,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			LISTS_FREE();
 			return 1;
 		}
-	} else if ((argc >= 2 && argv[opt.ind] && strcmp(argv[opt.ind], "--")) || ((!strcmp(argv[opt.ind - 1], "--") && argv[opt.ind]))) {
+	} else if (has_file_arg(argc, argv, &opt)) {
 		if (debug) {
 			if (asmbits) {
 				rz_config_set(r->config, "asm.bits", asmbits);
