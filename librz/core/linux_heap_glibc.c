@@ -2073,9 +2073,9 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	free(top_title);
 	rz_list_free(chunks);
 	free(main_arena);
-        rz_cons_canvas_free(can);
-        rz_config_hold_restore(hc);
-        rz_config_hold_free(hc);
+	rz_cons_canvas_free(can);
+	rz_config_hold_restore(hc);
+	rz_config_hold_free(hc);
 	return RZ_CMD_STATUS_OK;
 }
 
