@@ -417,7 +417,7 @@ RZ_OWN ParserTypePair *c_parser_get_union_type(CParserState *state, RZ_NONNULL c
 		return NULL;
 	}
 
-	ParserTypePair *tpair = c_parser_new_structure_naked_type(state, name);
+	ParserTypePair *tpair = c_parser_new_union_naked_type(state, name);
 	if (!tpair) {
 		return NULL;
 	}
@@ -499,7 +499,7 @@ RZ_OWN ParserTypePair *c_parser_new_enum_type(CParserState *state, RZ_NONNULL co
 		return NULL;
 	}
 
-	ParserTypePair *tpair = c_parser_new_union_naked_type(state, name);
+	ParserTypePair *tpair = c_parser_new_enum_naked_type(state, name);
 	if (!tpair) {
 		return NULL;
 	}
@@ -544,7 +544,7 @@ RZ_OWN ParserTypePair *c_parser_get_enum_type(CParserState *state, RZ_NONNULL co
 		return NULL;
 	}
 
-	ParserTypePair *tpair = c_parser_new_structure_naked_type(state, name);
+	ParserTypePair *tpair = c_parser_new_enum_naked_type(state, name);
 	if (!tpair) {
 		return NULL;
 	}

@@ -5313,7 +5313,7 @@ toro:
 		// TRY adding here
 		RzType *link_type = rz_analysis_type_link_at(core->analysis, ds->addr + idx);
 		if (link_type) {
-			char *fmt = rz_type_as_format(core->analysis->typedb, link_type);
+			char *fmt = rz_type_as_format_pair(core->analysis->typedb, link_type);
 			const char *typename = rz_type_identifier(link_type);
 			if (fmt && typename) {
 				rz_cons_printf("(%s)\n", typename);
