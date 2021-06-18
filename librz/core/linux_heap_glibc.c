@@ -1132,6 +1132,7 @@ RZ_API RzList *GH(rz_heap_tcache_list)(RzCore *core, GHT m_arena, MallocState *m
 		return tcache_list;
 	}
 	if (!GH(tcache_read)(core, tcache_start, rz_tcache)) {
+		free(rz_tcache);
 		return tcache_list;
 	}
 	rz_list_append(tcache_list, rz_tcache);
@@ -1166,6 +1167,7 @@ RZ_API RzList *GH(rz_heap_tcache_list)(RzCore *core, GHT m_arena, MallocState *m
 				rz_list_append(tcache_list, rz_tcache);
 			}
 		}
+		free(ta);
 	}
 	return tcache_list;
 }
@@ -1221,7 +1223,7 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 	if (!ta) {
 		return;
 	}
-	PJ *pj = pj_new();
+	PJ *pj = NULL;
 	if (!json) {
 		rz_cons_printf("Main arena  (addr=");
 		PRINTF_YA("0x%" PFMT64x, (ut64)m_arena);
@@ -1233,6 +1235,7 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->GH(next));
 		rz_cons_printf(")\n");
 	} else {
+		pj = pj_new();
 		pj_o(pj);
 		pj_ka(pj, "arenas");
 		pj_o(pj);
@@ -1249,6 +1252,12 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
 			ut64 ta_addr = ta->GH(next);
 			if (!GH(rz_heap_update_main_arena)(core, ta->GH(next), ta)) {
+				if (json) {
+					pj_end(pj);
+					pj_end(pj);
+					rz_cons_println(pj_string(pj));
+					pj_free(pj);
+				}
 				free(ta);
 				return;
 			}
@@ -1632,6 +1641,7 @@ RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *m
 			ut64 ta_addr = ta->GH(next);
 			ta = RZ_NEW0(MallocState);
 			if (!GH(rz_heap_update_main_arena)(core, ta_addr, ta)) {
+				free(ta);
 				return arena_list;
 			}
 			// thread arenas
@@ -1932,7 +1942,6 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		brk_start = ((m_state >> 16) << 16);
 		brk_end = brk_start + main_arena->GH(system_mem);
 	}
-	RzList *chunks = GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state);
 	RzListIter *iter;
 	RzHeapChunkListItem *pos;
 	PJ *pj = state->d.pj;
@@ -1959,13 +1968,15 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzANode *top = RZ_EMPTY, *chunk_node = RZ_EMPTY, *prev_node = RZ_EMPTY;
-	char *top_title, *top_data, *node_title, *node_data;
+	char *top_title = NULL, *top_data = NULL, *node_title = NULL, *node_data = NULL;
 	bool first_node = true;
 	top_data = rz_str_new("");
-	top_title = rz_str_new("");
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		if (!pj) {
+			free(top_data);
 			free(main_arena);
+			rz_config_hold_restore(hc);
+			rz_config_hold_free(hc);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		pj_o(pj);
@@ -1982,6 +1993,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		rz_agraph_set_title(g, "Heap Layout");
 		top_title = rz_str_newf("Top chunk @ 0x%" PFMT64x "\n", (ut64)main_arena->GH(top));
 	}
+	RzList *chunks = GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state);
 	rz_list_foreach (chunks, iter, pos) {
 		if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
 			GH(print_heap_chunk_simple)
@@ -2014,6 +2026,9 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 			free(name);
 		} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) { // graph
 			node_title = rz_str_newf("  Malloc chunk @ 0x%" PFMT64x " ", (ut64)pos->addr);
+			if (node_data) {
+				free(node_data);
+			}
 			node_data = rz_str_newf("size: 0x%" PFMT64x " status: %s\n", (ut64)pos->size, pos->status);
 			chunk_node = rz_agraph_add_node(g, node_title, node_data);
 			if (first_node) {
