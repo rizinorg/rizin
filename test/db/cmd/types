@@ -1,15 +1,16 @@
 NAME=td anonymous struct in typedef
-FILE=--
+FILE==
 CMDS=<<EOF
 td "typedef struct {int a;} Foo;"
 td "typedef struct { char *hello; int world[]; } Bar;"
 ts~Foo,Bar
-ts Foo
-ts Bar
+tt~Foo,Bar
+ts "anonymous struct 0"
+ts "anonymous struct 1"
 EOF
 EXPECT=<<EOF
-Bar
-Foo
+Foo = struct anonymous struct 0
+Bar = struct anonymous struct 1
 pf d a
 pf z[0]d hello world
 EOF

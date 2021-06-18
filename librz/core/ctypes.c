@@ -1010,7 +1010,8 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 		return;
 	}
 	char *error_msg = NULL;
-	int result = rz_type_parse_string(core->analysis->typedb, tmp, &error_msg);
+	RzTypeDB *typedb = core->analysis->typedb;
+	int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
 	if (result && error_msg) {
 		eprintf("%s", error_msg);
 		free(error_msg);
