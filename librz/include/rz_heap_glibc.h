@@ -287,6 +287,28 @@ typedef struct rz_arena_list_item {
 	MallocState *arena; /* The MallocState for the arena */
 } RzArenaListItem;
 
+/* linux_heap_glibc.c */
+RZ_API RzHeapChunk_64 *rz_heap_get_chunk_at_addr_64(RzCore *core, ut64 addr);
+RZ_API RzHeapChunk_32 *rz_heap_get_chunk_at_addr_32(RzCore *core, ut32 addr);
+
+RZ_API RzList *rz_heap_bin_content_list_64(RzCore *core, MallocState *main_arena, int bin_num);
+RZ_API RzList *rz_heap_bin_content_list_32(RzCore *core, MallocState *main_arena, int bin_num);
+
+RZ_API RzList *rz_heap_arenas_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
+RZ_API RzList *rz_heap_arenas_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
+
+RZ_API RzList *rz_heap_chunks_list_64(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 m_state, bool top_chunk);
+RZ_API RzList *rz_heap_chunks_list_32(RzCore *core, MallocState *main_arena, ut32 m_arena, ut32 m_state, bool top_chunk);
+
+RZ_API bool rz_heap_resolve_main_arena_64(RzCore *core, ut64 *m_arena);
+RZ_API bool rz_heap_resolve_main_arena_32(RzCore *core, ut32 *m_arena);
+
+RZ_API bool rz_heap_update_main_arena_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
+RZ_API bool rz_heap_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState *main_arena);
+
+RZ_API RzList *rz_heap_tcache_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena, bool main_thread_only);
+RZ_API RzList *rz_heap_tcache_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena, bool main_thread_only);
+
 #ifdef __cplusplus
 }
 #endif

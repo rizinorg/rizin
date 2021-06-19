@@ -1668,11 +1668,11 @@ void GH(rz_chunk_list_free)(RzHeapChunkListItem *item) {
  * \param main_arena MallocState struct of main arena
  * \param m_arena Base address of malloc state of main arena
  * \param m_state Base address of malloc state of the arena whose chunks are required
- * \param global_max_fast Max size of fastbin
+ * \param top_chunk Boolean value to return the top chunk in the list or not
  * \return RzList pointer for list of all chunks in a given arena
  */
 RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
-	GHT m_arena, GHT m_state) {
+	GHT m_arena, GHT m_state, bool top_chunk) {
 	RzList *chunks = rz_list_newf((RzListFree)GH(rz_chunk_list_free));
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return chunks;
@@ -1737,6 +1737,7 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 			RzHeapChunkListItem *block = malloc(sizeof(RzHeapChunkListItem));
 			block->addr = next_chunk;
 			block->status = "corrupted";
+			block->size = size_tmp;
 			rz_list_append(chunks, block);
 			break;
 		}
@@ -1853,6 +1854,13 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		block->size = prev_chunk_size;
 		rz_list_append(chunks, block);
 	}
+	if (top_chunk) {
+		RzHeapChunkListItem *block = malloc(sizeof(RzHeapChunkListItem));
+		block->addr = main_arena->GH(top);
+		block->status = rz_str_new("free");
+		block->size = size_tmp;
+		rz_list_append(chunks, block);
+	}
 	free(cnk);
 	free(cnk_next);
 	return chunks;
@@ -1967,7 +1975,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	char *top_title = NULL, *top_data = NULL, *node_title = NULL, *node_data = NULL;
 	bool first_node = true;
 	top_data = rz_str_new("");
-	RzList *chunks = GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state);
+	RzList *chunks = GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state, false);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		if (!pj) {
 			goto end;
@@ -2344,5 +2352,5 @@ RZ_API RzList *GH(rz_heap_chunks_list_wrapper)(RzCore *core, ut64 m_state) {
 		free(main_arena);
 		return rz_list_newf(free);
 	}
-	return GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state);
+	return GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state, true);
 }
