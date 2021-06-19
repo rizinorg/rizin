@@ -19,7 +19,7 @@ tasks:
     - build: |
         cd rizin
         # Workaround to avoid test/unit/test_file.c fail due to the insufficient memory
-        sed -i '/\'file\',/d' test/unit/meson.build
+        sed -i "/'file',/d" test/unit/meson.build
         meson --prefix=${HOME} build
         ninja -C build
     - install: |
