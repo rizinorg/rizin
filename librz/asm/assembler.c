@@ -92,7 +92,7 @@ static void assembler_line_free(AsmLine *al, ut32 nlines) {
 static bool assembler_line_apply_label(AssemblerCtx *actx, const char *label, AsmLabel *current) {
 	char* p = NULL;
 	char number[32] = {0};
-	ut64 pc = 0;
+	ut32 pc = 0;
 	ut32 index = current->index;
 	ut32 nlines = actx->nlines;
 	if (!current->aline->line || !label) {
@@ -128,14 +128,14 @@ static bool assembler_line_apply_label(AssemblerCtx *actx, const char *label, As
 						continue;
 					}
 					ut32 size = actx->binary[j].size;
-					eprintf("%d/%d PC: %llx '%s': bytes: %u\n", j, index, pc, actx->enriched[j].line, size);
+					eprintf("%d/%d PC: %x '%s': bytes: %u\n", j, index, pc, actx->enriched[j].line, size);
 					if (!size) {
 						eprintf("invalid size '%s'\n", actx->enriched[j].line);
 						return false;
 					}
 					pc += size;
 				}
-				snprintf(number, sizeof(number), "0x%" PFMT64x, pc);
+				snprintf(number, sizeof(number), "0x%x", pc);
 			} else {
 				eprintf("index < i %s\n", line);
 				for (ut32 j = index + 1; j < i && j < nlines; ++j) {
@@ -143,14 +143,15 @@ static bool assembler_line_apply_label(AssemblerCtx *actx, const char *label, As
 						continue;
 					}
 					ut32 size = actx->binary[j].size;
-					eprintf("PC: %llx '%s': bytes: %u\n", pc, actx->enriched[j].line, size);
+					eprintf("PC: %x '%s': bytes: %u\n", pc, actx->enriched[j].line, size);
 					if (!size) {
 						eprintf("invalid size '%s'\n", actx->enriched[j].line);
 						return false;
 					}
 					pc += size;
 				}
-				snprintf(number, sizeof(number), "-0x%" PFMT64x, pc);
+				pc = 0 - pc;
+				snprintf(number, sizeof(number), "0x%x", pc);
 			}
 			actx->enriched[i].line = rz_str_replace(line, label, number, 0);
 		}
@@ -505,7 +506,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 		}
 		const ut8 *bin = (ut8 *)rz_strbuf_get(&op.buf);
 		assembler_bin_cpy(actx->binary, i, bin, opsize);
-		eprintf("lab0 %4u: %-5u '%s' -> opsize: %d\n", i + 1, size, line, opsize);
+		eprintf("lab0 %4u: %-5u '%s' -> opsize: %d\n", i + 1, size, assembler_ctx_line(actx, i), opsize);
 		rz_asm_op_fini(&op);
 		pc += opsize;
 	}

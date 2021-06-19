@@ -202,6 +202,7 @@ static AssemblerDir assembler_directives_data[] = {
 	{ DS(".glob"), assembler_dir_glob },
 	{ DS(".hex"), assembler_dir_hex },
 	{ DS(".int8"), assembler_dir_int8 },
+	{ DS(".db"), assembler_dir_int8 },
 	{ DS(".byte"), assembler_dir_int8 },
 	{ DS(".int16"), assembler_dir_int16 },
 	{ DS(".short"), assembler_dir_int16 },
