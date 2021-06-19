@@ -269,7 +269,7 @@ static AssemblerCtx *assembler_ctx_new(const char *input) {
 		goto assembler_ctx_new_fail;
 	}
 
-	if (!(actx->labels = ht_pp_new((HtPPDupValue)strdup, (HtPPKvFreeFunc)assembler_kv_free, NULL))) {
+	if (!(actx->labels = ht_pp_new(NULL, (HtPPKvFreeFunc)assembler_kv_free, NULL))) {
 		rz_warn_if_reached();
 		goto assembler_ctx_new_fail;
 	}
