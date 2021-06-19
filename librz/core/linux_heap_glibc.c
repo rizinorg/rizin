@@ -1736,7 +1736,7 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			RzHeapChunkListItem *block = malloc(sizeof(RzHeapChunkListItem));
 			block->addr = next_chunk;
-			block->status = "corrupted";
+			block->status = rz_str_new("corrupted");
 			block->size = size_tmp;
 			rz_list_append(chunks, block);
 			break;
@@ -1834,7 +1834,7 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
 
-		char *status = rz_str_newlen("allocated", 10);
+		char *status = rz_str_new("allocated");
 		if (fastbin) {
 			if (is_free) {
 				strcpy(status, "free");
