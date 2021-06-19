@@ -1078,3 +1078,14 @@ EXPECT=<<EOF
 size: 20
 EOF
 RUN
+
+NAME=aaef xrefs without pcache
+FILE=bins/arm/elf/hello_world
+CMDS=<<EOF
+aaa
+axt @ str.Hello_world
+EOF
+EXPECT=<<EOF
+main 0x512 [DATA] add r3, pc
+EOF
+RUN
