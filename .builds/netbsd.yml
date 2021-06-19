@@ -16,6 +16,7 @@ tasks:
     - rzpipe: |
         python3.8 -m ensurepip --user
         python3.8 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+        ln -s /usr/pkg/bin/python3.8 /usr/pkg/bin/python3
     - build: |
         cd rizin
         # Workaround to avoid test/unit/test_file.c fail due to the insufficient memory
