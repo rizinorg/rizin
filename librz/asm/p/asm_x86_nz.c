@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 
-static ut64 getnum(RzAsm *a, const char *s);
-
 #define ENCODING_SHIFT 0
 #define OPTYPE_SHIFT   6
 #define REGMASK_SHIFT  16
@@ -194,6 +192,21 @@ typedef struct Opcode_t {
 	Operand operands[MAX_OPERANDS];
 	bool has_bnd;
 } Opcode;
+
+static bool getnum(RzAsm *a, const char *s, ut64 *value) {
+	if (!s) {
+		return 0;
+	}
+	if (*s == '$') {
+		s++;
+	}
+	s = rz_str_trim_head_ro(s);
+	if (!rz_is_valid_input_num_value(a->num, s)) {
+		return false;
+	}
+	*value = rz_num_math(a->num, s);
+	return true;
+}
 
 static inline bool is_debug_or_control(Operand op) {
 	return (op.type & OT_REGTYPE) & (OT_CONTROLREG | OT_DEBUGREG);
@@ -4819,7 +4832,7 @@ static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 	}
 	// Now read number, possibly with parentheses
 	if (*type & (OT_FPUREG | OT_MMXREG | OT_XMMREG) & ~OT_REGALL) {
-		Register reg = X86R_UNDEFINED;
+		st64 reg = X86R_UNDEFINED;
 		// pass by '(',if there is one
 		if (getToken(token, pos, &nextpos) == TT_SPECIAL && token[*pos] == '(') {
 			*pos = nextpos;
@@ -4830,7 +4843,10 @@ static Register parseReg(RzAsm *a, const char *str, size_t *pos, ut32 *type) {
 			eprintf("Expected register number '%s'\n", str + *pos);
 			return X86R_UNDEFINED;
 		}
-		reg = getnum(a, token + *pos);
+		if (!getnum(a, token + *pos, (ut64 *)&reg)) {
+			eprintf("invalid register number!\n");
+			return X86R_UNDEFINED;
+		}
 		// st and mm go up to 7, xmm up to 15
 		if ((reg > 15) || ((*type & (OT_FPUREG | OT_MMXREG) & ~OT_REGALL) && reg > 7)) {
 			eprintf("Too large register index!\n");
@@ -4868,7 +4884,10 @@ static void parse_segment_offset(RzAsm *a, const char *str, size_t *pos,
 			op->offset_sign = -1;
 			nextpos++;
 		}
-		op->scale[reg_index] = getnum(a, str + nextpos);
+		if (!getnum(a, str + nextpos, (ut64 *)&op->scale[reg_index])) {
+			eprintf("invalid scale number!\n");
+			return;
+		}
 		op->offset = op->scale[reg_index];
 	}
 }
@@ -5030,7 +5049,10 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 				tmp = malloc(strlen(str + pos) + 1);
 				strcpy(tmp, str + pos);
 				strtok(tmp, "+-");
-				st64 read = getnum(a, tmp);
+				st64 read = 0;
+				if (!getnum(a, tmp,(ut64 *)&read)) {
+					return -1;
+				}
 				free(tmp);
 				temp *= read;
 			}
@@ -5058,9 +5080,6 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 		}
 		if (op->reg == X86R_UNDEFINED) {
 			op->is_good_flag = false;
-			if (a->num && a->num->value == 0) {
-				return nextpos;
-			}
 			op->type = OT_CONSTANT;
 			RzCore *core = a->num ? (RzCore *)(a->num->userptr) : NULL;
 			if (core && rz_flag_get(core->flags, str)) {
@@ -5072,7 +5091,9 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 				op->sign = -1;
 				str = ++p;
 			}
-			op->immediate = getnum(a, str);
+			if (!getnum(a, str, &op->immediate)) {
+				return -1;
+			}
 		} else if (op->reg < X86R_UNDEFINED) {
 			strncpy(op->rep_op, str, MAX_REPOP_LENGTH - 1);
 			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
@@ -5086,13 +5107,15 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 			op->sign = -1;
 			str = ++p;
 		}
-		op->immediate = getnum(a, str);
+		if (!getnum(a, str, &op->immediate)) {
+			return -1;
+		}
 	}
 
 	return nextpos;
 }
 
-static int parseOpcode(RzAsm *a, const char *op, Opcode *out) {
+static bool parseOpcode(RzAsm *a, const char *op, Opcode *out) {
 	out->has_bnd = false;
 	bool isrepop = false;
 	if (!strncmp(op, "bnd ", 4)) {
@@ -5113,7 +5136,7 @@ static int parseOpcode(RzAsm *a, const char *op, Opcode *out) {
 	if (args) {
 		args++;
 	} else {
-		return 1;
+		return true;
 	}
 	if (!rz_str_ncasecmp(args, "short", 5)) {
 		out->is_short = true;
@@ -5122,7 +5145,9 @@ static int parseOpcode(RzAsm *a, const char *op, Opcode *out) {
 	if (!strncmp(out->mnemonic, "rep", 3)) {
 		isrepop = true;
 	}
-	parseOperand(a, args, &(out->operands[0]), isrepop);
+	if (parseOperand(a, args, &(out->operands[0]), isrepop) < 0) {
+		return false;
+	}
 	out->operands_count = 1;
 	while (out->operands_count < MAX_OPERANDS) {
 		args = strchr(args, ',');
@@ -5130,20 +5155,12 @@ static int parseOpcode(RzAsm *a, const char *op, Opcode *out) {
 			break;
 		}
 		args++;
-		parseOperand(a, args, &(out->operands[out->operands_count]), isrepop);
+		if (parseOperand(a, args, &(out->operands[out->operands_count]), isrepop) < 0) {
+			return false;
+		}
 		out->operands_count++;
 	}
-	return 0;
-}
-
-static ut64 getnum(RzAsm *a, const char *s) {
-	if (!s) {
-		return 0;
-	}
-	if (*s == '$') {
-		s++;
-	}
-	return rz_num_math(a->num, s);
+	return true;
 }
 
 static int oprep(RzAsm *a, ut8 *data, const Opcode *op) {
@@ -5159,7 +5176,9 @@ static int oprep(RzAsm *a, ut8 *data, const Opcode *op) {
 		data[l++] = 0xf2;
 	}
 	Opcode instr = { 0 };
-	parseOpcode(a, op->operands[0].rep_op, &instr);
+	if (!parseOpcode(a, op->operands[0].rep_op, &instr)) {
+		return -1;
+	}
 
 	for (lt_ptr = oplookup; strcmp(lt_ptr->mnemonic, "null"); lt_ptr++) {
 		if (!rz_str_casecmp(instr.mnemonic, lt_ptr->mnemonic)) {
@@ -5209,7 +5228,9 @@ static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
 
 	strncpy(op, str, sizeof(op) - 1);
 	op[sizeof(op) - 1] = '\0';
-	parseOpcode(a, op, &instr);
+	if (!parseOpcode(a, op, &instr)) {
+		return -1;
+	}
 	for (lt_ptr = oplookup; strcmp(lt_ptr->mnemonic, "null"); lt_ptr++) {
 		if (!rz_str_casecmp(instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {

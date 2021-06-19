@@ -9,9 +9,8 @@ typedef struct assembly_bin_t {
 } AsmBin;
 
 typedef struct assembly_label_t {
-	AsmLine *al;
-	ut32 nline;
-	ut64 pc;
+	AsmLine *aline;
+	ut32 index;
 } AsmLabel;
 
 typedef struct assembler_ctx_t {
@@ -90,20 +89,72 @@ static void assembler_line_free(AsmLine *al, ut32 nlines) {
 	free(al);
 }
 
-static bool assembler_line_apply_label(AsmLabel *current, const char *label, AsmLabel *al) {
-	const char *substr = strstr(current->al->line, label);
+static bool assembler_line_apply_label(AssemblerCtx *actx, const char *label, AsmLabel *current) {
+	char* p = NULL;
+	char number[32] = {0};
+	ut64 pc = 0;
+	ut32 index = current->index;
+	ut32 nlines = actx->nlines;
+	if (!current->aline->line || !label) {
+		return false;
+	}
+
+	const char *substr = strstr(current->aline->line, label);
 	if (!substr) {
 		return false;
 	}
-	ut32 prefix = substr - current->al->line;
+	ut32 prefix = substr - current->aline->line;
+	for (ut32 i = 0; i < nlines; ++i) {
+		if (index == i) {
+			continue;
+		}
+		char *line = actx->enriched[i].line;
+		if (line && (p = strstr(line, label))) {
+			// verify that is not a mnemonic or in the middle of a word.
+			if (line == p || !IS_WHITECHAR(p[-1])) {
+				continue;
+			}
+			p += strlen(label);
+			// verify that ends with \0 or space
+			if (RZ_STR_ISNOTEMPTY(p) && !IS_WHITECHAR(p[0])) {
+				continue;
+			}
 
-	char *new = rz_str_newf("%.*s0x%" PFMT64x, prefix, current->al->line, pc);
-	if (!new) {
-		return false;
+			pc = 0;
+			if (i < index) {
+				eprintf("i < index %s\n", line);
+				for (ut32 j = i + 1; j < index && j < nlines; ++j) {
+					if (RZ_STR_ISEMPTY(actx->enriched[j].line)) {
+						continue;
+					}
+					ut32 size = actx->binary[j].size;
+					eprintf("%d/%d PC: %llx '%s': bytes: %u\n", j, index, pc, actx->enriched[j].line, size);
+					if (!size) {
+						eprintf("invalid size '%s'\n", actx->enriched[j].line);
+						return false;
+					}
+					pc += size;
+				}
+				snprintf(number, sizeof(number), "0x%" PFMT64x, pc);
+			} else {
+				eprintf("index < i %s\n", line);
+				for (ut32 j = index + 1; j < i && j < nlines; ++j) {
+					if (RZ_STR_ISEMPTY(actx->enriched[j].line)) {
+						continue;
+					}
+					ut32 size = actx->binary[j].size;
+					eprintf("PC: %llx '%s': bytes: %u\n", pc, actx->enriched[j].line, size);
+					if (!size) {
+						eprintf("invalid size '%s'\n", actx->enriched[j].line);
+						return false;
+					}
+					pc += size;
+				}
+				snprintf(number, sizeof(number), "-0x%" PFMT64x, pc);
+			}
+			actx->enriched[i].line = rz_str_replace(line, label, number, 0);
+		}
 	}
-
-	free(current->al->line);
-	current->al->line = new;
 	return true;
 }
 
@@ -334,7 +385,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 	}
 
 	//assembler_ctx_debug(actx, false);
-	//assembler_ctx_debug(actx, true);
+	assembler_ctx_debug(actx, true);
 	char *line = NULL;
 	const char *directive = NULL;
 	const ut8 *bin = NULL;
@@ -412,7 +463,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				}
 				directive = assembler_directives_text[k].directive;
 				if (!rz_str_ncasecmp(line, directive, dsize)) {
-					eprintf("lab0 %4u: %-5d '%s'\n", i + 1, size, line);
+					eprintf("txt0 %4u: %-5d '%s'\n", i + 1, size, line);
 					if (!assembler_directives_text[k].parse(a, actx, i, dsize + 1, pc)) {
 						goto rz_asm_massemble_fail;
 					}
@@ -428,8 +479,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				goto rz_asm_massemble_fail;
 			}
 			al->aline = &actx->enriched[i];
-			al->nline = i;
-			al->pc = pc;
+			al->index = i;
 
 			line[size - 1] = 0;
 			inserted = ht_pp_insert(actx->labels, line, al);
@@ -447,7 +497,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 		}
 
 		rz_asm_op_init(&op);
-		ht_pp_foreach(actx->labels, (HtPPForeachCallback)assembler_line_apply_label, &actx->enriched[i]);
+		ht_pp_foreach(actx->labels, (HtPPForeachCallback)assembler_line_apply_label, actx);
 		if ((opsize = rz_asm_assemble(a, &op, assembler_ctx_line(actx, i))) < 1) {
 			rz_asm_op_fini(&op);
 			complete = false;
@@ -455,7 +505,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 		}
 		const ut8 *bin = (ut8 *)rz_strbuf_get(&op.buf);
 		assembler_bin_cpy(actx->binary, i, bin, opsize);
-		eprintf("lab0 %4u: %-5u '%s' -> %d\n", i + 1, size, line, opsize);
+		eprintf("lab0 %4u: %-5u '%s' -> opsize: %d\n", i + 1, size, line, opsize);
 		rz_asm_op_fini(&op);
 		pc += opsize;
 	}
@@ -471,6 +521,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				continue;
 			}
 			eprintf("lab1 %4u: %-5u '%s'\n", i + 1, size, line);
+			ht_pp_foreach(actx->labels, (HtPPForeachCallback)assembler_line_apply_label, actx);
 		}
 	}
 
@@ -485,6 +536,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				continue;
 			}
 			eprintf("lab2 %4u: %-5u '%s'\n", i + 1, size, line);
+			ht_pp_foreach(actx->labels, (HtPPForeachCallback)assembler_line_apply_label, actx);
 		}
 	}
 
