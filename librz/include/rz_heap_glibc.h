@@ -287,7 +287,19 @@ typedef struct rz_arena_list_item {
 	MallocState *arena; /* The MallocState for the arena */
 } RzArenaListItem;
 
-/* linux_heap_glibc.c */
+typedef struct rz_heap_chunk_simple {
+	ut64 addr; /* Base addr of the chunk*/
+	ut64 prev_size; /* size of prev_chunk*/
+	ut64 size; /* size of chunk */
+	bool NMA; /* flag for NON_MAIN_ARENA */
+	bool PI; /* flag for PREV_INUSE*/
+	bool IM; /* flag for IS_MMAPPED*/
+	ut64 fd; /* fd pointer, only if free */
+	ut64 bk; /* bk pointer, only if free */
+	ut64 fd_nextsize; /* fd nextsize pointer, only if free */
+	ut64 bk_nextsize; /* bk nextsize pointer, only if free */
+} RzHeapChunkSimple;
+
 RZ_API RzHeapChunk_64 *rz_heap_get_chunk_at_addr_64(RzCore *core, ut64 addr);
 RZ_API RzHeapChunk_32 *rz_heap_get_chunk_at_addr_32(RzCore *core, ut32 addr);
 

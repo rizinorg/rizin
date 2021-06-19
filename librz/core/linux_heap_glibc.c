@@ -2354,3 +2354,28 @@ RZ_API RzList *GH(rz_heap_chunks_list_wrapper)(RzCore *core, ut64 m_state) {
 	}
 	return GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state, true);
 }
+
+RZ_API RzHeapChunkSimple *GH(rz_heap_chunk_wrapper)(RzCore *core, GHT addr) {
+	GH(RzHeapChunk) *heap_chunk = GH(rz_heap_get_chunk_at_addr)(core, addr);
+	if (!heap_chunk) {
+		return NULL;
+	}
+	RzHeapChunkSimple *simple_chunk = RZ_NEW0(RzHeapChunkSimple);
+	if (!simple_chunk) {
+		free(heap_chunk);
+		return NULL;
+	}
+	ut64 size = heap_chunk->size;
+	simple_chunk->addr = addr;
+	simple_chunk->size = size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE);
+	simple_chunk->NMA = (bool)((size & NON_MAIN_ARENA) >> 2);
+	simple_chunk->IM = (bool)((size & IS_MMAPPED) >> 1);
+	simple_chunk->PI = (bool)(size & PREV_INUSE);
+	simple_chunk->prev_size = heap_chunk->prev_size;
+	simple_chunk->bk = heap_chunk->bk;
+	simple_chunk->fd = heap_chunk->fd;
+	simple_chunk->fd_nextsize = heap_chunk->fd_nextsize;
+	simple_chunk->bk_nextsize = heap_chunk->bk_nextsize;
+	free(heap_chunk);
+	return simple_chunk;
+}

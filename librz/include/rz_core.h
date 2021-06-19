@@ -777,6 +777,7 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 /* cmd_linux_heap_glibc.c */
 RZ_API RzList *rz_heap_chunks_list(RzCore *core, ut64 m_arena);
 RZ_API RzList *rz_heap_arenas_list(RzCore *core);
+RZ_API RzHeapChunkSimple *rz_heap_chunk(RzCore *core, ut64 addr);
 // XXX dupe from rz_bin.h
 /* bin.c */
 #define RZ_CORE_BIN_ACC_STRINGS          0x001

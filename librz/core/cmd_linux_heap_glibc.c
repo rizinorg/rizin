@@ -61,3 +61,7 @@ RZ_API RzList *rz_heap_arenas_list(RzCore *core) {
 RZ_API RzList *rz_heap_chunks_list(RzCore *core, ut64 m_arena) {
 	call_handler(rz_heap_chunks_list_wrapper, m_arena);
 }
+
+RZ_API RzHeapChunkSimple *rz_heap_chunk(RzCore *core, ut64 addr) {
+	call_handler(rz_heap_chunk_wrapper, addr);
+}
