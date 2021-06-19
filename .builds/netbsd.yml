@@ -20,7 +20,7 @@ tasks:
         cd rizin
         # Workaround to avoid test/unit/test_file.c fail due to the insufficient memory
         sed -i "/'file',/d" test/unit/meson.build
-        # Workaround to avoid running rz-pipe test
+        # Workaround to avoid running rz-pipe test since there is no python3 symlink but a python3.8 binary available.
         rm -f test/db/cmd/cmd_pipe
         meson --prefix=${HOME} build
         ninja -C build
