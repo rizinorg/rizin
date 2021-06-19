@@ -525,7 +525,7 @@ dotherax:
 
 		return true;
 	} else if (flags & (1 << 19)) { // -L
-		rz_print_hex_from_bin(NULL, str);
+		rz_print_hex_from_base2(NULL, str);
 		return true;
 	} else if (flags & (1 << 21)) { // -i
 		static const char start[] = "unsigned char buf[] = {";

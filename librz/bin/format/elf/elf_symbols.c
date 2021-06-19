@@ -544,7 +544,7 @@ static const char *symbol_bind_to_str(Elf_(Sym) * sym) {
 }
 
 static ut64 get_import_addr(ELFOBJ *bin, int symbol) {
-	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
+	if ((!bin->shdr || !bin->strtab) && !Elf_(rz_bin_elf_has_segments)(bin)) {
 		return UT64_MAX;
 	}
 
@@ -819,18 +819,6 @@ static RzBinElfSymbol *get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	}
 
 	return get_phdr_symbols(bin);
-}
-
-static inline int __strnlen(const char *str, int len) {
-	int l = 0;
-	while (IS_PRINTABLE(*str) && --len) {
-		if (((ut8)*str) == 0xff) {
-			break;
-		}
-		str++;
-		l++;
-	}
-	return l + 1;
 }
 
 static void fill_symbol_bind_and_type(ELFOBJ *bin, struct rz_bin_elf_symbol_t *ret, Elf_(Sym) * sym) {

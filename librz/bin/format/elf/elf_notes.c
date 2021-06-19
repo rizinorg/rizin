@@ -145,8 +145,8 @@ static void note_segment_free(RzBinElfNoteSegment *segment) {
 	free(segment);
 }
 
-static bool is_note_segment(ELFOBJ *bin, Elf_(Phdr) * segment) {
-	return segment->p_type == PT_NOTE && segment->p_filesz >= 9;
+static bool is_note_segment(ELFOBJ *bin, RzBinElfSegment *segment) {
+	return segment->data.p_type == PT_NOTE && segment->data.p_filesz >= 9;
 }
 
 static bool read_note_segment_header(ELFOBJ *bin, ut64 *offset, Elf_(Nhdr) * note_segment_header) {
@@ -169,20 +169,20 @@ static bool check_note_segment(Elf_(Phdr) * segment, Elf_(Nhdr) * note_segment_h
 	return segment->p_filesz >= offset - segment->p_offset + round_up(note_segment_header->n_namesz) + round_up(note_segment_header->n_descsz);
 }
 
-static bool set_note_segment(ELFOBJ *bin, Elf_(Phdr) * segment, RzBinElfNoteSegment *note_segment) {
+static bool set_note_segment(ELFOBJ *bin, RzBinElfSegment *segment, RzBinElfNoteSegment *note_segment) {
 	RzVector notes;
 	rz_vector_init(&notes, sizeof(RzBinElfNote), NULL, NULL);
 
-	ut64 offset = segment->p_offset;
+	ut64 offset = segment->data.p_offset;
 
-	while (offset + 9 < RZ_MIN(offset + segment->p_filesz, bin->size)) {
+	while (offset + 9 < RZ_MIN(offset + segment->data.p_filesz, bin->size)) {
 		Elf_(Nhdr) note_segment_header;
 
 		if (!read_note_segment_header(bin, &offset, &note_segment_header)) {
 			return false;
 		}
 
-		if (!check_note_segment(segment, &note_segment_header, offset)) {
+		if (!check_note_segment(&segment->data, &note_segment_header, offset)) {
 			break;
 		}
 
@@ -208,13 +208,13 @@ bool Elf_(rz_bin_elf_init_notes)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
 	bin->note_segments = rz_list_newf((RzListFree)note_segment_free);
-	if (!bin->note_segments) {
+	if (!bin->note_segments || !Elf_(rz_bin_elf_has_segments)(bin)) {
 		return false;
 	}
 
-	for (size_t segment_index = 0; segment_index < bin->ehdr.e_phnum; segment_index++) {
-		Elf_(Phdr) *segment = bin->phdr + segment_index;
-		if (!is_note_segment(bin, segment)) {
+	RzBinElfSegment *segment;
+	rz_bin_elf_foreach_segments(bin, segment) {
+		if (!segment->is_valid || !is_note_segment(bin, segment)) {
 			continue;
 		}
 
@@ -224,6 +224,7 @@ bool Elf_(rz_bin_elf_init_notes)(RZ_NONNULL ELFOBJ *bin) {
 		}
 
 		if (!set_note_segment(bin, segment, note_segment)) {
+			free(note_segment);
 			return false;
 		}
 

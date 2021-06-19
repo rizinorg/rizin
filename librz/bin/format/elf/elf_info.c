@@ -395,7 +395,7 @@ static ut64 get_main_offset_x86_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 			}
 			maddr = (ut64)rz_read_le32(&n32s[0]);
 			baddr = (bin->ehdr.e_entry >> 16) << 16;
-			if (bin->phdr) {
+			if (Elf_(rz_bin_elf_has_segments)(bin)) {
 				baddr = Elf_(rz_bin_elf_get_baddr)(bin);
 			}
 			maddr += baddr;
@@ -534,9 +534,10 @@ static ut64 get_entry_offset_from_shdr(ELFOBJ *bin) {
 static ut64 compute_boffset_from_phdr(ELFOBJ *bin) {
 	ut64 base = UT64_MAX;
 
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_LOAD) {
-			base = RZ_MIN(base, bin->phdr[i].p_offset);
+	RzBinElfSegment *iter;
+	rz_bin_elf_foreach_segments(bin, iter) {
+		if (iter->data.p_type == PT_LOAD) {
+			base = RZ_MIN(base, iter->data.p_offset);
 		}
 	}
 
@@ -546,9 +547,10 @@ static ut64 compute_boffset_from_phdr(ELFOBJ *bin) {
 static ut64 compute_baddr_from_phdr(ELFOBJ *bin) {
 	ut64 base = UT64_MAX;
 
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_LOAD) {
-			base = RZ_MIN(base, bin->phdr[i].p_vaddr);
+	RzBinElfSegment *iter;
+	rz_bin_elf_foreach_segments(bin, iter) {
+		if (iter->data.p_type == PT_LOAD) {
+			base = RZ_MIN(base, iter->data.p_vaddr);
 		}
 	}
 
@@ -570,17 +572,12 @@ static bool elf_is_bind_now(ELFOBJ *bin) {
 }
 
 static bool elf_has_gnu_relro(ELFOBJ *bin) {
-	if (!bin->phdr) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
 		return false;
 	}
 
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_GNU_RELRO) {
-			return true;
-		}
-	}
-
-	return false;
+	RzBinElfSegment *segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_GNU_RELRO);
+	return segment && segment->is_valid;
 }
 
 static int get_bits_common(ELFOBJ *bin) {
@@ -640,7 +637,7 @@ static int get_bits_mips(ELFOBJ *bin) {
 }
 
 static bool arch_is_mips(ELFOBJ *bin) {
-	return bin->phdr && bin->ehdr.e_machine == EM_MIPS;
+	return Elf_(rz_bin_elf_has_segments)(bin) && bin->ehdr.e_machine == EM_MIPS;
 }
 
 static bool arch_is_arcompact(ELFOBJ *bin) {
@@ -663,9 +660,9 @@ static char *read_elf_intrp(ELFOBJ *bin, ut64 addr, size_t size) {
 	return str;
 }
 
-static char *get_elf_intrp(ELFOBJ *bin, size_t i) {
-	ut64 addr = bin->phdr[i].p_offset;
-	size_t size = bin->phdr[i].p_filesz;
+static char *get_elf_intrp(ELFOBJ *bin, RzBinElfSegment *segment) {
+	ut64 addr = segment->data.p_offset;
+	size_t size = segment->data.p_filesz;
 
 	sdb_num_set(bin->kv, "elf_header.intrp_addr", addr, 0);
 	sdb_num_set(bin->kv, "elf_header.intrp_size", size, 0);
@@ -888,7 +885,7 @@ static char *get_abi_mips(ELFOBJ *bin) {
 RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!bin || !bin->phdr || !bin->strtab || bin->strtab[1] == '\0') {
+	if (!bin || !Elf_(rz_bin_elf_has_segments)(bin) || !bin->strtab || bin->strtab[1] == '\0') {
 		return NULL;
 	}
 
@@ -1451,7 +1448,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin) {
 RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!bin->phdr) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
 		return NULL;
 	}
 
@@ -1579,7 +1576,7 @@ RZ_OWN char *Elf_(rz_bin_elf_get_osabi_name)(RZ_NONNULL ELFOBJ *bin) {
 RZ_OWN char *Elf_(rz_bin_elf_get_rpath)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!bin->phdr || !bin->strtab || !has_dt_rpath_entry(bin)) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin) || !bin->strtab || !has_dt_rpath_entry(bin)) {
 		return NULL;
 	}
 
@@ -1601,17 +1598,16 @@ RZ_OWN char *Elf_(rz_bin_elf_get_rpath)(RZ_NONNULL ELFOBJ *bin) {
 RZ_OWN char *Elf_(rz_bin_elf_get_intrp)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!bin->phdr) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
 		return NULL;
 	}
 
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_INTERP) {
-			return get_elf_intrp(bin, i);
-		}
+	RzBinElfSegment *segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_INTERP);
+	if (!segment || !segment->is_valid) {
+		return NULL;
 	}
 
-	return NULL;
+	return get_elf_intrp(bin, segment);
 }
 
 /**
@@ -1648,17 +1644,16 @@ bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin) {
 bool Elf_(rz_bin_elf_has_nx)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
-	if (!bin->phdr) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
 		return false;
 	}
 
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_GNU_STACK) {
-			return !(bin->phdr[i].p_flags & PF_X);
-		}
+	RzBinElfSegment *segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_GNU_STACK);
+	if (!segment || !segment->is_valid) {
+		return false;
 	}
 
-	return false;
+	return !(segment->data.p_flags & PF_X);
 }
 
 /**
@@ -1708,14 +1703,18 @@ bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin) {
 bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
-	if (!bin->phdr) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
 		return false;
 	}
 
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (bin->phdr[i].p_type == PT_INTERP || bin->phdr[i].p_type == PT_DYNAMIC) {
-			return false;
-		}
+	RzBinElfSegment *segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_INTERP);
+	if (segment && segment->is_valid) {
+		return false;
+	}
+
+	segment = Elf_(rz_bin_elf_get_segment_with_type)(bin, PT_DYNAMIC);
+	if (segment && segment->is_valid) {
+		return false;
 	}
 
 	return true;
@@ -1809,7 +1808,7 @@ ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin) {
 		return 0x08000000;
 	}
 
-	if (bin->phdr) {
+	if (Elf_(rz_bin_elf_has_segments)(bin)) {
 		return compute_baddr_from_phdr(bin);
 	}
 
@@ -1828,7 +1827,7 @@ ut64 Elf_(rz_bin_elf_get_baddr)(RZ_NONNULL ELFOBJ *bin) {
 ut64 Elf_(rz_bin_elf_get_boffset)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, 0);
 
-	if (bin->phdr) {
+	if (Elf_(rz_bin_elf_has_segments)(bin)) {
 		return compute_boffset_from_phdr(bin);
 	}
 

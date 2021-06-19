@@ -102,12 +102,12 @@ static const char *sdb_elf_header_format = "?[2]E[2]E[4]ExxxxN2N2N2N2N2N2"
 					   " entry phoff shoff flags ehsize phentsize phnum shentsize shnum shstrndx";
 #endif
 
-static bool in_virtual_phdr(Elf_(Phdr) * segment, ut64 addr) {
-	return addr >= segment->p_vaddr && addr < segment->p_vaddr + segment->p_filesz;
+static bool in_virtual_phdr(RzBinElfSegment *segment, ut64 addr) {
+	return addr >= segment->data.p_vaddr && addr < segment->data.p_vaddr + segment->data.p_filesz;
 }
 
-static bool in_physical_phdr(Elf_(Phdr) * segment, ut64 addr) {
-	return addr >= segment->p_offset && addr < segment->p_offset + segment->p_filesz;
+static bool in_physical_phdr(RzBinElfSegment *segment, ut64 addr) {
+	return addr >= segment->data.p_offset && addr < segment->data.p_offset + segment->data.p_filesz;
 }
 
 static void init_phdr_sdb(ELFOBJ *bin) {
@@ -134,104 +134,14 @@ static HtUP *rel_cache_new(RzBinElfReloc *relocs, ut32 reloc_num) {
 	return rel_cache;
 }
 
-static bool set_phdr_entry(ELFOBJ *bin, Elf_(Phdr) * segment, ut64 offset) {
-	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &segment->p_type) ||
-#if RZ_BIN_ELF64
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &segment->p_flags) ||
-#endif
-		!Elf_(rz_bin_elf_read_off)(bin, &offset, &segment->p_offset) ||
-		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &segment->p_vaddr) ||
-		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &segment->p_paddr) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &segment->p_filesz) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &segment->p_memsz) ||
-#ifndef RZ_BIN_ELF64
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &segment->p_flags) ||
-#endif
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &segment->p_align)) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool read_phdr_entry(ELFOBJ *bin, size_t phdr_entry_index) {
-	ut64 offset = bin->ehdr.e_phoff + phdr_entry_index * sizeof(Elf_(Phdr));
-
-	if (!set_phdr_entry(bin, bin->phdr + phdr_entry_index, offset)) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool read_phdr(ELFOBJ *bin, bool need_linux_kernel_hack) {
-	bool phdr_found = false;
-
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		if (!read_phdr_entry(bin, i)) {
-			return false;
-		}
-
-		if (need_linux_kernel_hack && bin->phdr[i].p_type == PT_PHDR) {
-			phdr_found = true;
-		}
-	}
-
-	if (need_linux_kernel_hack && phdr_found) {
-		ut64 load_addr = Elf_(rz_bin_elf_get_baddr)(bin);
-		bin->ehdr.e_phoff = Elf_(rz_bin_elf_v2p_new)(bin, load_addr + bin->ehdr.e_phoff);
-		return read_phdr(bin, false);
-	}
-
-	return true;
-}
-
-/* Here is the where all the fun starts.
- * Linux kernel since 2005 calculates phdr offset wrongly
- * adding it to the load address (va of the LOAD0).
- * See `fs/binfmt_elf.c` file this line:
- *    NEW_AUX_ENT(AT_PHDR, load_addr + exec->e_phoff);
- * So after the first read, we fix the address and read it again
- */
-static bool need_linux_kernel_hack(ELFOBJ *bin) {
-	return bin->size > 128 * 1024 && (bin->ehdr.e_machine == EM_X86_64 || bin->ehdr.e_machine == EM_386);
-}
-
-static bool init_phdr_header(ELFOBJ *bin) {
-	bin->phdr = RZ_NEWS0(Elf_(Phdr), bin->ehdr.e_phnum);
-	if (!bin->phdr) {
-		perror("malloc (phdr)");
-		return false;
-	}
-
-	if (!read_phdr(bin, need_linux_kernel_hack(bin))) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool check_phdr_size(ELFOBJ *bin) {
-	ut32 phdr_size;
-
-	if (!UT32_MUL(&phdr_size, (ut32)bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
-		return false;
-	}
-
-	if (!phdr_size || bin->ehdr.e_phoff + phdr_size > bin->size) {
-		return false;
-	}
-
-	return true;
-}
-
 static bool rz_bin_elf_init_phdr(ELFOBJ *bin) {
-	if (!bin->ehdr.e_phnum || !check_phdr_size(bin)) {
+	bin->segments = Elf_(rz_bin_elf_new_segments)(bin);
+	if (!bin->segments) {
 		return false;
 	}
 
 	init_phdr_sdb(bin);
-	return init_phdr_header(bin);
+	return true;
 }
 
 static void init_shdr_sdb(ELFOBJ *bin) {
@@ -663,7 +573,7 @@ RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, bool verbose) 
 void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_if_fail(bin);
 
-	free(bin->phdr);
+	rz_vector_free(bin->segments);
 	free(bin->shdr);
 	free(bin->strtab);
 	free(bin->shstrtab);
@@ -716,7 +626,7 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 
-	if (!bin->phdr) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
 		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 			return bin->baddr + paddr;
 		}
@@ -724,11 +634,10 @@ ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
 		return UT64_MAX;
 	}
 
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *segment = bin->phdr + i;
-
-		if (segment->p_type == PT_LOAD && in_physical_phdr(segment, paddr)) {
-			return segment->p_vaddr + paddr - segment->p_offset;
+	RzBinElfSegment *segment;
+	rz_bin_elf_foreach_segments(bin, segment) {
+		if (segment->data.p_type == PT_LOAD && in_physical_phdr(segment, paddr)) {
+			return segment->data.p_vaddr + paddr - segment->data.p_offset;
 		}
 	}
 
@@ -746,7 +655,7 @@ ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr) {
 ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 
-	if (!bin->phdr) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
 		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 			return vaddr - bin->baddr;
 		}
@@ -754,11 +663,10 @@ ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
 		return UT64_MAX;
 	}
 
-	for (size_t i = 0; i < bin->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *segment = bin->phdr + i;
-
-		if (segment->p_type == PT_LOAD && in_virtual_phdr(segment, vaddr)) {
-			return segment->p_offset + vaddr - segment->p_vaddr;
+	RzBinElfSegment *segment;
+	rz_bin_elf_foreach_segments(bin, segment) {
+		if (segment->data.p_type == PT_LOAD && in_virtual_phdr(segment, vaddr)) {
+			return segment->data.p_offset + vaddr - segment->data.p_vaddr;
 		}
 	}
 

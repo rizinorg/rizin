@@ -27,6 +27,8 @@
 
 #define ELFOBJ struct Elf_(rz_bin_elf_obj_t)
 
+#define rz_bin_elf_foreach_segments(bin, segment) rz_vector_foreach((bin)->segments, segment)
+
 /// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
 typedef struct prstatus_layout_t {
 	ut64 regsize;
@@ -73,6 +75,12 @@ typedef struct rz_bin_elf_section_t {
 	int type;
 } RzBinElfSection;
 
+typedef struct Elf_(rz_bin_elf_segment_t) {
+	Elf_(Phdr) data;
+	bool is_valid;
+}
+RzBinElfSegment;
+
 typedef struct rz_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
@@ -116,7 +124,7 @@ typedef struct rz_bin_elf_string_t {
 	int last;
 } RzBinElfString;
 
-typedef struct rz_bin_elf_dt_dynamic RzBinElfDtDynamic; // elf_dynamic.h
+typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
 
 typedef struct rz_bin_elf_lib_t {
 	char name[ELF_STRING_LENGTH];
@@ -162,7 +170,7 @@ RzBinElfNoteSegment;
 
 struct Elf_(rz_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
-	Elf_(Phdr) * phdr;
+	RzVector *segments; // should be use with elf_segments.c
 	Elf_(Shdr) * shdr;
 
 	Elf_(Shdr) * strtab_section;
@@ -283,11 +291,18 @@ bool Elf_(rz_bin_elf_read_sword_sxword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_IN
 bool Elf_(rz_bin_elf_read_word_xword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Word) * result);
 bool Elf_(rz_bin_elf_read_sword_sxword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT Elf_(Sword) * result);
 #endif
+bool Elf_(rz_bin_elf_add_addr)(Elf_(Addr) * result, Elf_(Addr) addr, Elf_(Addr) value);
+bool Elf_(rz_bin_elf_add_off)(Elf_(Off) * result, Elf_(Off) addr, Elf_(Off) value);
 
 // elf_relocs.c
 
 RZ_BORROW RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_segments.c
+RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type);
+RZ_OWN RzVector *Elf_(rz_bin_elf_new_segments)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_has_segments)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_sections.c
 
