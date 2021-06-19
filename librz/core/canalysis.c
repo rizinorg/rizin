@@ -864,8 +864,8 @@ RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
  */
 RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_addr, int off) {
 	RzAnalysisEsil *esil = core->analysis->esil;
-	int i, j = 0;
-	ut8 *buf;
+	int i = 0, j = 0;
+	ut8 *buf = NULL;
 	RzAnalysisOp aop = { 0 };
 	int ret, bsize = RZ_MAX(4096, core->blocksize);
 	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
@@ -885,7 +885,6 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	buf = malloc(bsize);
 	if (!buf) {
 		eprintf("Cannot allocate %d byte(s)\n", bsize);
-		free(buf);
 		return;
 	}
 	if (addr == -1) {
@@ -936,6 +935,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	}
 	rz_core_seek(core, oldoff, true);
 	rz_reg_setv(core->dbg->reg, "SP", cursp);
+	free(buf);
 }
 
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
@@ -2348,6 +2348,10 @@ static int core_analysis_graph_construct_nodes(RzCore *core, RzAnalysisFunction 
 					} else {
 						if (is_star) {
 							char *title = get_title(bbi->addr);
+							if (!title) {
+								rz_config_hold_free(hc);
+								return false;
+							}
 							char *body_b64 = rz_base64_encode_dyn((const ut8 *)str, strlen(title));
 							int color = (bbi && bbi->diff) ? bbi->diff->type : 0;
 							if (!title || !body_b64) {

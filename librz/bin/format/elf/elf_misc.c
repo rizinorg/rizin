@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2021 08A <08A@riseup.net>
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
-// SPDX-License-Identifier: LPGL-3.0-only
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
 
@@ -161,3 +161,19 @@ bool Elf_(rz_bin_elf_read_sword_sxword)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_IN
 	return Elf_(rz_bin_elf_read_sword)(bin, offset, result);
 }
 #endif
+
+bool Elf_(rz_bin_elf_add_addr)(Elf_(Addr) * result, Elf_(Addr) addr, Elf_(Addr) value) {
+#if RZ_BIN_ELF64
+	return UT64_ADD((ut64 *)result, addr, value);
+#else
+	return UT32_ADD((ut32 *)result, addr, value);
+#endif
+}
+
+bool Elf_(rz_bin_elf_add_off)(Elf_(Off) * result, Elf_(Off) addr, Elf_(Off) value) {
+#if RZ_BIN_ELF64
+	return UT64_ADD((ut64 *)result, addr, value);
+#else
+	return UT32_ADD((ut32 *)result, addr, value);
+#endif
+}

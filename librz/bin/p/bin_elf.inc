@@ -218,28 +218,33 @@ static RzList *maps_unpatched(RzBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	Elf_(Phdr) *phdr = obj->phdr;
-	if (phdr) {
+
+	if (Elf_(rz_bin_elf_has_segments)(obj)) {
 		ut64 core_sp = Elf_(rz_bin_elf_get_sp_val)(obj);
 		int n = 0;
-		for (size_t i = 0; i < obj->ehdr.e_phnum; i++) {
-			if (phdr[i].p_type != PT_LOAD) {
+
+		RzBinElfSegment *iter;
+		rz_bin_elf_foreach_segments(obj, iter) {
+			if (iter->data.p_type != PT_LOAD) {
 				continue;
 			}
+
 			RzBinMap *map = RZ_NEW0(RzBinMap);
 			if (!map) {
 				break;
 			}
-			map->paddr = phdr[i].p_offset;
-			map->psize = phdr[i].p_filesz;
-			map->vsize = phdr[i].p_memsz;
-			map->vaddr = phdr[i].p_vaddr;
-			map->perm = phdr[i].p_flags | RZ_PERM_R;
+
+			map->paddr = iter->data.p_offset;
+			map->psize = iter->data.p_filesz;
+			map->vsize = iter->data.p_memsz;
+			map->vaddr = iter->data.p_vaddr;
+			map->perm = iter->data.p_flags | RZ_PERM_R;
+
 			// map names specific to core files...
-			if (core_sp != UT64_MAX && core_sp >= phdr[i].p_vaddr && core_sp < phdr[i].p_vaddr + phdr[i].p_memsz) {
+			if (core_sp != UT64_MAX && core_sp >= iter->data.p_vaddr && core_sp < iter->data.p_vaddr + iter->data.p_memsz) {
 				map->name = strdup("[stack]");
 			} else {
-				RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &phdr[i]);
+				RzBinElfNoteFile *nf = note_file_for_load_segment(obj, &iter->data);
 				if (nf && nf->file) {
 					map->name = strdup(nf->file);
 				}
@@ -795,8 +800,6 @@ static RzList *maps(RzBinFile *bf) {
 static RzList *sections(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = (bf && bf->o) ? bf->o->bin_obj : NULL;
 	struct rz_bin_elf_section_t *section = NULL;
-	int i, num;
-	Elf_(Phdr) *phdr = NULL;
 	RzBinSection *ptr = NULL;
 	RzList *ret = NULL;
 
@@ -807,7 +810,7 @@ static RzList *sections(RzBinFile *bf) {
 	//there is not leak in section since they are cached by elf.c
 	//and freed within Elf_(rz_bin_elf_free)
 	if ((section = Elf_(rz_bin_elf_get_sections)(obj))) {
-		for (i = 0; !section[i].last; i++) {
+		for (size_t i = 0; !section[i].last; i++) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				break;
 			}
@@ -833,27 +836,29 @@ static RzList *sections(RzBinFile *bf) {
 
 	// program headers is another section
 	ut16 mach = obj->ehdr.e_machine;
-	num = obj->ehdr.e_phnum;
-	phdr = obj->phdr;
-	if (phdr) {
-		int n = 0;
-		for (i = 0; i < num; i++) {
+
+	if (Elf_(rz_bin_elf_has_segments)(obj)) {
+		size_t n = 0;
+		RzBinElfSegment *iter;
+		rz_bin_elf_foreach_segments(obj, iter) {
 			if (!(ptr = RZ_NEW0(RzBinSection))) {
 				return ret;
 			}
-			ptr->size = phdr[i].p_filesz;
-			ptr->vsize = phdr[i].p_memsz;
-			ptr->paddr = phdr[i].p_offset;
-			ptr->vaddr = phdr[i].p_vaddr;
-			ptr->perm = phdr[i].p_flags;
-			ptr->align = phdr[i].p_align;
+
+			ptr->size = iter->data.p_filesz;
+			ptr->vsize = iter->data.p_memsz;
+			ptr->paddr = iter->data.p_offset;
+			ptr->vaddr = iter->data.p_vaddr;
+			ptr->perm = iter->data.p_flags;
+			ptr->align = iter->data.p_align;
 			ptr->is_segment = true;
-			switch (phdr[i].p_type) {
+
+			switch (iter->data.p_type) {
 			case PT_DYNAMIC:
 				ptr->name = strdup("DYNAMIC");
 				break;
 			case PT_LOAD: {
-				ptr->name = rz_str_newf("LOAD%d", n++);
+				ptr->name = rz_str_newf("LOAD%zu", n++);
 				ptr->perm |= RZ_PERM_R;
 				break;
 			}
@@ -891,7 +896,7 @@ static RzList *sections(RzBinFile *bf) {
 				if (ptr->size == 0 && ptr->vsize == 0) {
 					ptr->name = strdup("NONE");
 				} else {
-					ptr->name = setphname(mach, phdr[i].p_type);
+					ptr->name = setphname(mach, iter->data.p_type);
 				}
 				break;
 			}
@@ -915,6 +920,7 @@ static RzList *sections(RzBinFile *bf) {
 		ptr->is_segment = true;
 		rz_list_append(ret, ptr);
 	}
+
 	return ret;
 }
 

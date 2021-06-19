@@ -1901,10 +1901,12 @@ static void find_prev_diff(DiffHexView *hview, ut64 seek) {
 static void rz_diff_resize_buffer(DiffHexView *hview) {
 	int height, width = rz_cons_get_size(&height);
 
-	ut64 size_a = ((width / 2) * (height - 2));
-	ut64 size_b = ((width / 2) * (height - 2));
+	ut64 size_a = ((st64)(width / 2) * (height - 2));
+	ut64 size_b = ((st64)(width / 2) * (height - 2));
+	st64 video_size = width;
+	video_size *= height;
 
-	hview->line = realloc(hview->line, width * height);
+	hview->line = realloc(hview->line, video_size);
 	hview->buffer_a = realloc(hview->buffer_a, size_a);
 	hview->buffer_b = realloc(hview->buffer_b, size_b);
 	hview->size_a = size_a;
@@ -1984,7 +1986,9 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	canvas->color = true;
 	canvas->linemode = 1;
 
-	hview.line = malloc(width * height);
+	st64 video_size = width;
+	video_size *= height;
+	hview.line = malloc(video_size);
 	if (!hview.line) {
 		rz_diff_error("cannot allocate line buffer.\n");
 		goto rz_diff_hex_visual_fail;

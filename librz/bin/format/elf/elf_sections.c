@@ -250,7 +250,7 @@ RZ_OWN RzBinElfSection *Elf_(rz_bin_elf_get_sections)(RZ_NONNULL ELFOBJ *bin) {
 		return get_sections_from_shdr(bin);
 	}
 
-	if (bin->phdr) {
+	if (Elf_(rz_bin_elf_has_segments)(bin)) {
 		return get_sections_from_dt_dynamic(bin);
 	}
 
