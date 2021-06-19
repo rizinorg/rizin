@@ -742,7 +742,7 @@ RZ_IPI void rz_core_analysis_esil_init_mem(RzCore *core, const char *name, ut64 
 	v = sdb_itoa(esil->stack_fd, val, 10);
 	sdb_set(core->sdb, "aeim.fd", v, 0);
 
-	rz_config_set_i(core->config, "io.va", true);
+	rz_config_set_b(core->config, "io.va", true);
 	if (pattern && *pattern) {
 		switch (*pattern) {
 		case '0':
@@ -7089,13 +7089,13 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
 		rz_core_analysis_value_pointers(core, RZ_OUTPUT_MODE_STANDARD);
 		rz_core_task_yield(&core->tasks);
-		bool ioCache = rz_config_get_i(core->config, "io.pcache");
-		rz_config_set_i(core->config, "io.pcache", 1);
+		bool pcache = rz_config_get_b(core->config, "io.pcache");
+		rz_config_set_b(core->config, "io.pcache", false);
 		oldstr = rz_print_rowlog(core->print, "Emulate functions to find computed references (aaef)");
 		rz_core_analysis_esil_references_all_functions(core);
 		rz_print_rowlog_done(core->print, oldstr);
 		rz_core_task_yield(&core->tasks);
-		rz_config_set_i(core->config, "io.pcache", ioCache);
+		rz_config_set_b(core->config, "io.pcache", pcache);
 		if (rz_cons_is_breaked()) {
 			return false;
 		}
@@ -7269,13 +7269,12 @@ RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {
 		eprintf("TOFIX: aaft can't run in debugger mode.\n");
 		return false;
 	}
-	const char *io_cache_key = "io.pcache.write";
 	RzConfigHold *hold = rz_config_hold_new(core->config);
-	rz_config_hold_i(hold, "io.va", io_cache_key, NULL);
-	bool io_cache = rz_config_get_i(core->config, io_cache_key);
+	rz_config_hold_i(hold, "io.va", "io.pcache.write", NULL);
+	bool io_cache = rz_config_get_b(core->config, "io.pcache.write");
 	if (!io_cache) {
 		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
-		rz_config_set_i(core->config, io_cache_key, true);
+		rz_config_set_b(core->config, "io.pcache.write", true);
 	}
 	const bool delete_regs = !rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
 	seek = core->offset;
