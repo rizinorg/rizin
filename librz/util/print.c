@@ -1337,6 +1337,7 @@ RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const 
 }
 
 RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt) {
+	rz_return_if_fail(fmt);
 	int i;
 	if (p) {
 		for (i = 0; i < len; i++) {
