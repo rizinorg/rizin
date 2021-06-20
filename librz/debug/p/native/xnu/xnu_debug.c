@@ -23,6 +23,8 @@
 #include <mach/thread_status.h>
 #include <mach/vm_statistics.h>
 
+#include <TargetConditionals.h>
+
 static task_t task_dbg = 0;
 #include "xnu_debug.h"
 #include "xnu_threads.c"
@@ -695,7 +697,7 @@ static cpu_subtype_t xnu_get_cpu_subtype(void) {
 
 static void xnu_build_corefile_header(vm_offset_t header,
 	int segment_count, int thread_count, int command_size, pid_t pid) {
-#if __ppc64__ || __x86_64__
+#if __ppc64__ || __x86_64__ || (defined(TARGET_OS_MAC) && defined(__aarch64__))
 	struct mach_header_64 *mh64;
 	mh64 = (struct mach_header_64 *)header;
 	mh64->magic = MH_MAGIC_64;
@@ -753,7 +755,7 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 	ssize_t rc = 0;
 
 #define CAST_DOWN(type, addr) (((type)((uintptr_t)(addr))))
-#if __ppc64__ || __x86_64__
+#if __ppc64__ || __x86_64__ || (defined(TARGET_OS_MAC) && defined(__aarch64__))
 	struct segment_command_64 *sc64;
 #elif __i386__ || __ppc__ || __POWERPC__
 	struct segment_command *sc;
@@ -763,7 +765,7 @@ static int xnu_write_mem_maps_to_buffer(RzBuffer *buffer, RzList *mem_maps, int 
 			curr_map->addr, curr_map->addr_end, curr_map->size);
 
 		vm_map_offset_t vmoffset = curr_map->addr;
-#if __ppc64__ || __x86_64__
+#if __ppc64__ || __x86_64__ || (defined(TARGET_OS_MAC) && defined(__aarch64__))
 		sc64 = (struct segment_command_64 *)(header + hoffset);
 		sc64->cmd = LC_SEGMENT_64;
 		sc64->cmdsize = sizeof(struct segment_command_64);
