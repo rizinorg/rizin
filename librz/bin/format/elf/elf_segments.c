@@ -56,7 +56,7 @@ static bool get_elf_segment(ELFOBJ *bin, RzBinElfSegment *segment, ut64 offset, 
 
 	segment->is_valid = verify_phdr_entry(bin, &segment->data);
 	if (!segment->is_valid) {
-		rz_assert_log(RZ_LOGLVL_WARN, "Invalid segment %zu at 0x%" PFMT64x "\n", pos, offset);
+		RZ_LOG_INFO("Invalid segment %zu at 0x%" PFMT64x "\n", pos, offset);
 	}
 
 	return true;
@@ -107,7 +107,11 @@ static bool check_phdr_size(ELFOBJ *bin) {
 }
 
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type) {
-	rz_return_val_if_fail(bin && bin->segments, NULL);
+	rz_return_val_if_fail(bin, NULL);
+	if (!bin->segments) {
+		return NULL;
+	}
+
 	RzBinElfSegment *iter;
 
 	rz_bin_elf_foreach_segments(bin, iter) {
