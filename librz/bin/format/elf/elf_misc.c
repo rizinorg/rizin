@@ -177,3 +177,19 @@ bool Elf_(rz_bin_elf_add_off)(Elf_(Off) * result, Elf_(Off) addr, Elf_(Off) valu
 	return UT32_ADD((ut32 *)result, addr, value);
 #endif
 }
+
+bool Elf_(rz_bin_elf_mul_addr)(Elf_(Addr) * result, Elf_(Addr) addr, Elf_(Addr) value) {
+#if RZ_BIN_ELF64
+	return UT64_MUL((ut64 *)result, addr, value);
+#else
+	return UT32_MUL((ut32 *)result, addr, value);
+#endif
+}
+
+bool Elf_(rz_bin_elf_mul_off)(Elf_(Off) * result, Elf_(Off) addr, Elf_(Off) value) {
+#if RZ_BIN_ELF64
+	return UT64_MUL((ut64 *)result, addr, value);
+#else
+	return UT32_MUL((ut32 *)result, addr, value);
+#endif
+}
