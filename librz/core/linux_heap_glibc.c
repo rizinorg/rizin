@@ -1006,6 +1006,9 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 static GH(RTcache) * GH(tcache_new)(RzCore *core) {
 	rz_return_val_if_fail(core, NULL);
 	GH(RTcache) *tcache = RZ_NEW0(GH(RTcache));
+	if (!tcache) {
+		return NULL;
+	}
 	if (core->dbg->glibc_version >= TCACHE_NEW_VERSION) {
 		tcache->type = NEW;
 		tcache->RzHeapTcache.heap_tcache = RZ_NEW0(GH(RzHeapTcache));
@@ -1234,6 +1237,10 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 		rz_cons_printf(")\n");
 	} else {
 		pj = pj_new();
+		if (!pj) {
+			free(ta);
+			return;
+		}
 		pj_o(pj);
 		pj_ka(pj, "arenas");
 		pj_o(pj);
@@ -1395,7 +1402,10 @@ RZ_API RzList *GH(rz_heap_bin_content_list)(RzCore *core, MallocState *main_aren
 			break;
 		}
 		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
-		RzHeapChunkListItem *chunk = malloc(sizeof(RzHeapChunkListItem));
+		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
+		if (!chunk) {
+			break;
+		}
 		chunk->addr = fw;
 		rz_list_append(chunks, chunk);
 		fw = cnk->fd;
@@ -1569,6 +1579,9 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 	PJ *pj = NULL;
 	if (json) {
 		pj = pj_new();
+		if (!pj) {
+			return;
+		}
 		pj_o(pj);
 		pj_ka(pj, "bins");
 	}
@@ -1579,8 +1592,7 @@ static void GH(print_main_arena_bins)(RzCore *core, GHT m_arena, MallocState *ma
 		rz_cons_newline();
 	}
 	if (format == RZ_HEAP_BIN_ANY || format == RZ_HEAP_BIN_FAST) {
-		char *input = malloc(sizeof(char) * 1);
-		input[0] = '\0';
+		char *input = rz_str_newlen("", 1);
 		bool main_arena_only = true;
 		GH(print_heap_fastbin)
 		(core, m_arena, main_arena, global_max_fast, input, main_arena_only, pj);
@@ -1634,6 +1646,10 @@ RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *m
 		return arena_list;
 	}
 	RzArenaListItem *item = RZ_NEW0(RzArenaListItem);
+	if (!item) {
+		free(ta);
+		return arena_list;
+	}
 	item->addr = m_arena;
 	item->type = rz_str_new("Main");
 	item->arena = ta;
@@ -1649,6 +1665,9 @@ RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *m
 			}
 			// thread arenas
 			item = RZ_NEW0(RzArenaListItem);
+			if (!item) {
+				break;
+			}
 			item->addr = ta_addr;
 			item->type = rz_str_new("Thread");
 			item->arena = ta;
@@ -1736,7 +1755,10 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
 		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			corrupted = true;
-			RzHeapChunkListItem *block = malloc(sizeof(RzHeapChunkListItem));
+			RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
+			if (!block) {
+				break;
+			}
 			block->addr = next_chunk;
 			block->status = rz_str_new("corrupted");
 			block->size = size_tmp;
@@ -1850,18 +1872,23 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 				strcpy(status, "free");
 			}
 		}
-		RzHeapChunkListItem *block = malloc(sizeof(RzHeapChunkListItem));
+		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
+		if (!block) {
+			break;
+		}
 		block->addr = prev_chunk_addr;
 		block->status = status;
 		block->size = prev_chunk_size;
 		rz_list_append(chunks, block);
 	}
 	if (top_chunk && !corrupted) {
-		RzHeapChunkListItem *block = malloc(sizeof(RzHeapChunkListItem));
-		block->addr = main_arena->GH(top);
-		block->status = rz_str_new("free");
-		block->size = size_tmp;
-		rz_list_append(chunks, block);
+		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
+		if (block) {
+			block->addr = main_arena->GH(top);
+			block->status = rz_str_new("free");
+			block->size = size_tmp;
+			rz_list_append(chunks, block);
+		}
 	}
 	free(cnk);
 	free(cnk_next);
