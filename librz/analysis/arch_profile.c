@@ -108,6 +108,8 @@ static bool sdb_load_arch_profile(RzArchTarget *t, Sdb *sdb) {
 			c->page_size = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "ROM_SIZE")) {
 			c->rom_size = rz_num_math(NULL, sdbkv_value(kv));
+		} else if (!strcmp(sdbkv_key(kv), "ROM_ADDRESS")) {
+			c->rom_address = rz_num_math(NULL, sdbkv_value(kv));
 		} else if (!strcmp(sdbkv_key(kv), "RAM_SIZE")) {
 			c->ram_size = rz_num_math(NULL, sdbkv_value(kv));
 		}
