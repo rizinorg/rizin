@@ -36,7 +36,9 @@ RZ_API ut64 rz_time_now_mono(void) {
 #elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
 	ut64 ticks = mach_absolute_time();
 	static mach_timebase_info_data_t tb;
-	mach_timebase_info(&tb);
+	if (tb.denom == 0) {
+		mach_timebase_info(&tb);
+	}
 	return ((ticks * tb.numer) / tb.denom) / RZ_NSEC_PER_USEC;
 #else
 	struct timespec now;
