@@ -234,7 +234,7 @@ static RzList *rz_debug_gdb_map_get(RzDebug *dbg) { //TODO
 			snprintf(name, sizeof(name), "unk%d", unk++);
 		}
 		perm = 0;
-		for (i = 0; perms[i] && i < 5; i++) {
+		for (i = 0; i < 5 && perms[i]; i++) {
 			switch (perms[i]) {
 			case 'r': perm |= RZ_PERM_R; break;
 			case 'w': perm |= RZ_PERM_W; break;
