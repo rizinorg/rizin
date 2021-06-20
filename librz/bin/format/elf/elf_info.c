@@ -518,17 +518,22 @@ static ut64 get_main_offset_arm64(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 }
 
 static ut64 get_entry_offset_from_shdr(ELFOBJ *bin) {
-	ut64 entry = Elf_(rz_bin_elf_get_section_offset)(bin, ".init.text");
-	if (entry != UT64_MAX) {
-		return entry;
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".init.text");
+	if (section) {
+		return section->offset;
 	}
 
-	entry = Elf_(rz_bin_elf_get_section_offset)(bin, ".text");
-	if (entry != UT64_MAX) {
-		return entry;
+	section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".text");
+	if (section) {
+		return section->offset;
 	}
 
-	return Elf_(rz_bin_elf_get_section_offset)(bin, ".init");
+	section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".init");
+	if (section) {
+		return section->offset;
+	}
+
+	return UT64_MAX;
 }
 
 static ut64 compute_boffset_from_phdr(ELFOBJ *bin) {
@@ -711,18 +716,13 @@ static bool has_dt_rpath_entry(ELFOBJ *bin) {
 	return Elf_(rz_bin_elf_get_dt_info)(bin, DT_RPATH, NULL) || Elf_(rz_bin_elf_get_dt_info)(bin, DT_RUNPATH, NULL);
 }
 
-static bool is_valid_section_note(ELFOBJ *bin, Elf_(Shdr) * section) {
-	return section->sh_type == SHT_NOTE && section->sh_name < bin->shstrtab_size;
-}
-
-static char *get_osabi_name_from_section_note(ELFOBJ *bin, Elf_(Shdr) * section) {
-	if (!is_valid_section_note(bin, section)) {
+static char *get_osabi_name_from_section_note(ELFOBJ *bin, RzBinElfSection *section) {
+	if (section->type != SHT_NOTE) {
 		return NULL;
 	}
 
-	const char *section_name = bin->shstrtab + section->sh_name;
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(section_note_osabi_translation_table); i++) {
-		if (!strcmp(section_name, section_note_osabi_translation_table[i].note_name)) {
+		if (!strcmp(section->name, section_note_osabi_translation_table[i].note_name)) {
 			return strdup(section_note_osabi_translation_table[i].os_name);
 		}
 	}
@@ -731,12 +731,17 @@ static char *get_osabi_name_from_section_note(ELFOBJ *bin, Elf_(Shdr) * section)
 }
 
 static char *get_osabi_name_from_shdr(ELFOBJ *bin) {
-	if (!bin->shdr || !bin->shstrtab) {
+	if (!Elf_(rz_bin_elf_has_sections)(bin) || !bin->shstrtab) {
 		return NULL;
 	}
 
-	for (size_t i = 0; i < bin->ehdr.e_shnum; i++) {
-		char *tmp = get_osabi_name_from_section_note(bin, bin->shdr + i);
+	RzBinElfSection *section;
+	rz_bin_elf_foreach_sections(bin, section) {
+		if (!section->is_valid) {
+			continue;
+		}
+
+		char *tmp = get_osabi_name_from_section_note(bin, section);
 		if (tmp) {
 			return tmp;
 		}
@@ -1365,7 +1370,11 @@ RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info)(RZ_NONNULL ELFOBJ *bin) {
 RZ_OWN char *Elf_(rz_bin_elf_get_compiler)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, ".comment");
+	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
+		return NULL;
+	}
+
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".comment");
 	if (!section) {
 		return NULL;
 	}
@@ -1621,12 +1630,13 @@ RZ_OWN char *Elf_(rz_bin_elf_get_intrp)(RZ_NONNULL ELFOBJ *bin) {
 bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
-	if (!bin->shdr) {
+	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
 		return false;
 	}
 
-	for (size_t i = 0; i < bin->ehdr.e_shnum; i++) {
-		if (bin->shdr[i].sh_type == SHT_SYMTAB) {
+	RzBinElfSection *section;
+	rz_bin_elf_foreach_sections(bin, section) {
+		if (section->type == SHT_SYMTAB) {
 			return false;
 		}
 	}

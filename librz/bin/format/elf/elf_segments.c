@@ -56,7 +56,7 @@ static bool get_elf_segment(ELFOBJ *bin, RzBinElfSegment *segment, ut64 offset, 
 
 	segment->is_valid = verify_phdr_entry(bin, &segment->data);
 	if (!segment->is_valid) {
-		RZ_LOG_INFO("Invalid segment %zu at 0x%" PFMT64x "\n", pos, offset);
+		RZ_LOG_WARN("Invalid segment %zu at 0x%" PFMT64x "\n", pos, offset);
 	}
 
 	return true;
@@ -89,8 +89,8 @@ static RzVector *get_segments_from_phdr(ELFOBJ *bin) {
 }
 
 static bool check_phdr_size(ELFOBJ *bin) {
-	ut32 phdr_size;
-	if (!UT32_MUL(&phdr_size, (ut32)bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
+	Elf_(Off) phdr_size;
+	if (!Elf_(rz_bin_elf_add_off)(&phdr_size, (ut32)bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
 		return false;
 	}
 

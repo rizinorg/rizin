@@ -27,7 +27,9 @@
 
 #define ELFOBJ struct Elf_(rz_bin_elf_obj_t)
 
-#define rz_bin_elf_foreach_segments(bin, segment) rz_vector_foreach((bin)->segments, segment)
+#define rz_bin_elf_foreach_segments(bin, segment)      rz_vector_foreach((bin)->segments, segment)
+#define rz_bin_elf_foreach_sections(bin, section)      rz_vector_foreach((bin)->sections, section)
+#define rz_bin_elf_enumerate_sections(bin, section, i) rz_vector_enumerate((bin)->sections, section, i)
 
 /// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
 typedef struct prstatus_layout_t {
@@ -63,16 +65,16 @@ typedef struct prstatus_layout_t {
 } RzBinElfPrStatusLayout;
 
 typedef struct rz_bin_elf_section_t {
+	ut32 flags;
+	ut32 info;
+	ut32 link;
+	ut32 type;
+	ut64 align;
 	ut64 offset;
 	ut64 rva;
 	ut64 size;
-	ut64 align;
-	ut32 flags;
-	ut32 link;
-	ut32 info;
 	char name[ELF_STRING_LENGTH];
-	int last;
-	int type;
+	bool is_valid;
 } RzBinElfSection;
 
 typedef struct Elf_(rz_bin_elf_segment_t) {
@@ -171,13 +173,11 @@ RzBinElfNoteSegment;
 struct Elf_(rz_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
 	RzVector *segments; // should be use with elf_segments.c
-	Elf_(Shdr) * shdr;
+	RzVector *sections; // should be use with elf_sections.c
 
-	Elf_(Shdr) * strtab_section;
 	ut64 strtab_size;
 	char *strtab;
 
-	Elf_(Shdr) * shstrtab_section;
 	ut64 shstrtab_size;
 	char *shstrtab;
 
@@ -202,8 +202,8 @@ struct Elf_(rz_bin_elf_obj_t) {
 	const char *file;
 	RzBuffer *b;
 	Sdb *kv;
+
 	/*cache purpose*/
-	RzBinElfSection *g_sections;
 	RzBinElfSymbol *g_symbols;
 	RzBinElfSymbol *g_imports;
 	RzBinElfReloc *g_relocs;
@@ -302,19 +302,20 @@ RZ_BORROW RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_segments.c
+
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type);
 RZ_OWN RzVector *Elf_(rz_bin_elf_new_segments)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_segments)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_sections.c
 
-RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
-RZ_OWN RzBinElfSection *Elf_(rz_bin_elf_get_sections)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index);
+RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section_with_name)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *name);
 RZ_OWN RzList *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag);
+RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RzVector *sections);
+RZ_OWN RzVector *Elf_(rz_bin_elf_new_sections)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type);
-bool Elf_(rz_bin_elf_is_sh_index_valid)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index);
-ut64 Elf_(rz_bin_elf_get_section_addr)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
-ut64 Elf_(rz_bin_elf_get_section_offset)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *section_name);
+bool Elf_(rz_bin_elf_has_sections)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_symbols.c
 
