@@ -1271,6 +1271,7 @@ za sym.deregister_tm_clones b e8e400000081c26b2f00008d8a180000008d821800000039c8
 za sym.deregister_tm_clones g cc=4 nbbs=4 edges=4 ebbs=2 bbsum=52
 za sym.deregister_tm_clones o 0x00001090
 za sym.deregister_tm_clones r sym.__x86.get_pc_thunk.dx
+za sym.deregister_tm_clones t func.sym.deregister_tm_clones.args=0
 za sym.deregister_tm_clones h 903d0936e77ecc1f2e91f7b2eb2476fdc06d7f2ba9501b1436468dbda5d7caaa
 EOF
 RUN

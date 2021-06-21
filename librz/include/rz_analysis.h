@@ -2000,6 +2000,8 @@ RZ_API void rz_analysis_class_list_vtables(RzAnalysis *analysis, const char *cla
 RZ_API void rz_analysis_class_list_vtable_offset_functions(RzAnalysis *analysis, const char *class_name, ut64 offset);
 RZ_API RzGraph /*<RzGraphNodeInfo>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
 
+RZ_API size_t rz_analysis_function_arg_count(RzAnalysis *a, RzAnalysisFunction *fcn);
+RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f);
 
