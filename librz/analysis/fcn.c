@@ -1757,33 +1757,12 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *funct
 		realname = function->name;
 	}
 
-	RzType *ret_type = rz_type_func_ret(a->typedb, realname);
-	char *ret_type_str = NULL;
-	if (ret_type) {
-		ret_type_str = rz_type_as_string(a->typedb, ret_type);
+	// TODO: Better naming
+	RzCallable *callable = rz_analysis_function_derive_type(a, function);
+	if (!callable) {
+		return NULL;
 	}
-	int argc = rz_type_func_args_count(a->typedb, realname);
-
-	char *args = strdup("");
-	for (int i = 0; i < argc; i++) {
-		const char *arg_name = rz_type_func_args_name(a->typedb, realname, i);
-		RzType *arg_type = rz_type_func_args_type(a->typedb, realname, i);
-		char *arg_type_str = arg_type ? rz_type_as_string(a->typedb, arg_type) : NULL;
-		// Here we check if the type is a pointer, in this case we don't put
-		// the space between type and name for the style reasons
-		// "char *var" looks much better than "char * var"
-		const char *maybe_space = arg_type && arg_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-		char *new_args = (i + 1 == argc)
-			? rz_str_newf("%s%s%s%s", args, arg_type_str ? arg_type_str : "", maybe_space, arg_name)
-			: rz_str_newf("%s%s%s%s, ", args, arg_type_str ? arg_type_str : "", maybe_space, arg_name);
-		free(args);
-		free(arg_type_str);
-		args = new_args;
-	}
-	char *signature = rz_str_newf("%s %s (%s);", ret_type_str ? ret_type_str : "void", realname, args);
-	free(args);
-	free(ret_type_str);
-	return signature;
+	return rz_type_callable_as_string(a->typedb, callable);
 }
 
 /**
@@ -2310,6 +2289,59 @@ RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
 	rz_list_free(fcns);
 }
 
+/**
+ * \brief Returns the argument count of a function
+ *
+ * \param a RzAnalysis instance
+ * \param f Function
+ */
+RZ_API size_t rz_analysis_function_arg_count(RzAnalysis *a, RzAnalysisFunction *fcn) {
+	if (!a || !fcn) {
+		return 0;
+	}
+	void **it;
+	size_t count = 0;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
+		if (var->isarg) {
+			count++;
+		}
+	}
+	return count;
+}
+
+/**
+ * \brief Returns vector of all function arguments
+ *
+ * \param a RzAnalysis instance
+ * \param f Function
+ */
+RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunction *fcn) {
+	if (!a || !fcn) {
+		return NULL;
+	}
+	size_t args_count = rz_analysis_function_arg_count(a, fcn);
+	if (!args_count) {
+		return NULL;
+	}
+	eprintf("%s : %zu arguments total\n", fcn->name, args_count);
+	RzPVector *args = rz_pvector_new_with_len(NULL, args_count);
+	void **it;
+	rz_pvector_foreach (&fcn->vars, it) {
+		RzAnalysisVar *var = *it;
+		if (var->isarg) {
+			int argnum = rz_analysis_var_get_argnum(var);
+			if (argnum < 0) {
+				eprintf("%s : arg \"%s\" has wrong position: %d\n", fcn->name, var->name, argnum);
+				continue;
+			}
+			eprintf("%s : inserting arg \"%s\" at %d position\n", fcn->name, var->name, argnum);
+			rz_pvector_insert(args, argnum, var);
+		}
+	}
+	return args;
+}
+
 static int typecmp(const void *a, const void *b) {
 	return strcmp(a, b);
 }
@@ -2354,26 +2386,27 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 		free(shortname);
 		return callable;
 	}
+	free(shortname);
 	// If there is no match - create a new one.
 	// TODO: Figure out if we should use shortname or a fullname here
 	callable = rz_type_func_new(analysis->typedb, f->name, NULL);
 	if (!callable) {
-		free(shortname);
 		return NULL;
 	}
+	RzPVector *args = rz_analysis_function_args(analysis, f);
+	if (!args || rz_pvector_empty(args)) {
+		return callable;
+	}
 	void **it;
-	rz_pvector_foreach (&f->vars, it) {
+	rz_pvector_foreach (args, it) {
 		RzAnalysisVar *var = *it;
-		if (!var->isarg) {
-			continue;
-		}
 		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, var->type);
 		if (!arg) {
-			free(shortname);
+			rz_pvector_free(args);
 			return NULL;
 		}
 		rz_type_callable_arg_add(callable, arg);
 	}
-	free(shortname);
+	rz_pvector_free(args);
 	return callable;
 }
