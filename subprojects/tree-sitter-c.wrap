@@ -1,5 +1,5 @@
 [wrap-git]
-url = https://github.com/XVilka/tree-sitter-c
-revision = f41292e32bf08d8e7d76e6eece6569a2d7e84121
+url = https://github.com/rizinorg/tree-sitter-c
+revision = 3dd21d9440ca39d8c201335b2f3a393db41aab36
 patch_directory = tree-sitter-c
 directory = tree-sitter-c
