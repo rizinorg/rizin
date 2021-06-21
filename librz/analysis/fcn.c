@@ -2342,16 +2342,23 @@ RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_types_from_fcn(RzAnalysis *analys
 RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
 	rz_return_val_if_fail(analysis && f, NULL);
 	// Check first if there is a match with some pre-existing RzCallable type in the database
-	RzCallable *callable = rz_type_func_get(analysis->typedb, f->name);
+	char *shortname = rz_analysis_function_name_guess(analysis->typedb, f->name);
+	if (!shortname) {
+		shortname = strdup(f->name);
+	}
+	RzCallable *callable = rz_type_func_get(analysis->typedb, shortname);
 	if (callable) {
 		// TODO: Decide what to do if there is a mismatch between type
 		// stored in the RzTypeDB database and the actual type of the
 		// RzAnalysisFunction
+		free(shortname);
 		return callable;
 	}
 	// If there is no match - create a new one.
+	// TODO: Figure out if we should use shortname or a fullname here
 	callable = rz_type_func_new(analysis->typedb, f->name, NULL);
 	if (!callable) {
+		free(shortname);
 		return NULL;
 	}
 	void **it;
@@ -2362,9 +2369,11 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 		}
 		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, var->type);
 		if (!arg) {
+			free(shortname);
 			return NULL;
 		}
 		rz_type_callable_arg_add(callable, arg);
 	}
+	free(shortname);
 	return callable;
 }
