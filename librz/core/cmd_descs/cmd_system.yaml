@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_system3
+commands:
+  - name: "!"
+    cname: system_list_history
+    summary: Run given commands as in system(3) or lists all rizin commands history
+    args:
+      - name: command
+        type: RZ_CMD_ARG_TYPE_STRING
+        optional: true
+        no_space: true
+      - name: args
+        type: RZ_CMD_ARG_TYPE_STRING
+        flags: RZ_CMD_ARG_FLAG_ARRAY
+        optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "!"
+            arg_str: ""
+            comment: "Shows the command history of rizin"
+          - text: "!"
+            arg_str: "ls"
+            comment: "executes the 'ls' command via system(3)"
+          - text: "!"
+            arg_str: "echo $RZ_SIZE"
+            comment: "executes the 'echo' command via system(3) and shows the display file size"
+  - name: "!-"
+    cname: clear_history
+    summary: Clears the history in current session
+    args: []
+  - name: "!-*"
+    cname: clear_history_save
+    summary: Clears the history in current session and saves an empty history log
+    args: []

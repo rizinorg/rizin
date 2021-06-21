@@ -100,6 +100,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_help.c"
 #include "cmd_remote.c"
 #include "cmd_tasks.c"
+#include "cmd_system.c"
 #include "cmd_linux_heap_glibc.c"
 
 static const char *help_msg_dollar[] = {
@@ -682,7 +683,7 @@ RZ_IPI int rz_cmd_yank(void *data, const char *input) {
 }
 
 static int lang_run_file(RzCore *core, RzLang *lang, const char *file) {
-	rz_core_sysenv_begin(core, NULL);
+	rz_core_sysenv_begin(core);
 	return rz_lang_run_file(core->lang, file);
 }
 
@@ -1905,16 +1906,13 @@ RZ_IPI int rz_cmd_system(void *data, const char *input) {
 			if (input[1]) {
 				int olen;
 				char *out = NULL;
-				char *cmd = rz_core_sysenv_begin(core, input);
-				if (cmd) {
-					void *bed = rz_cons_sleep_begin();
-					ret = rz_sys_cmd_str_full(cmd + 1, NULL, &out, &olen, NULL);
-					rz_cons_sleep_end(bed);
-					rz_core_sysenv_end(core, input);
-					rz_cons_memcat(out, olen);
-					free(out);
-					free(cmd);
-				} //else eprintf ("Error setting up system environment\n");
+				rz_core_sysenv_begin(core);
+				void *bed = rz_cons_sleep_begin();
+				ret = rz_sys_cmd_str_full(input + 1, NULL, &out, &olen, NULL);
+				rz_cons_sleep_end(bed);
+				rz_core_sysenv_end(core);
+				rz_cons_memcat(out, olen);
+				free(out);
 			} else {
 				eprintf("History saved to " RZ_HOME_HISTORY "\n");
 				rz_line_hist_save(RZ_HOME_HISTORY);
@@ -1949,7 +1947,7 @@ RZ_IPI int rz_cmd_system(void *data, const char *input) {
 		} else {
 			rz_core_sysenv_begin(core);
 			void *bed = rz_cons_sleep_begin();
-			ret = rz_sys_system(cmd);
+			ret = rz_sys_system(input);
 			rz_cons_sleep_end(bed);
 			rz_core_sysenv_end(core);
 		}
@@ -6416,14 +6414,13 @@ RZ_API int rz_core_cmd_file(RzCore *core, const char *file) {
 RZ_API int rz_core_cmd_command(RzCore *core, const char *command) {
 	int ret, len;
 	char *buf, *rcmd;
-	char *cmd = rz_core_sysenv_begin(core, command);
-	rcmd = buf = rz_sys_cmd_str(cmd, 0, &len);
+	rz_core_sysenv_begin(core);
+	rcmd = buf = rz_sys_cmd_str(command, 0, &len);
 	if (!buf) {
-		free(cmd);
 		return -1;
 	}
 	ret = rz_core_cmd(core, rcmd, 0);
-	rz_core_sysenv_end(core, command);
+	rz_core_sysenv_end(core);
 	free(buf);
 	return ret;
 }

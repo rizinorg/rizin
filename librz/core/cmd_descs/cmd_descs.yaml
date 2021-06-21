@@ -62,9 +62,8 @@
 name: root
 commands:
   - name: "!"
-    cname: cmd_system
-    summary: Run given commands as in system(3)
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    summary: Run given commands as in system(3) or shows command history
+    subcommands: cmd_system3
   - name: _
     cname: last_output
     summary: Print last output
