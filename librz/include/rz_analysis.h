@@ -2026,6 +2026,7 @@ RZ_API RzAnalysisEsilDFG *rz_analysis_esil_dfg_expr(RzAnalysis *analysis, RzAnal
 RZ_API RzStrBuf *rz_analysis_esil_dfg_filter(RzAnalysisEsilDFG *dfg, const char *reg);
 RZ_API RzStrBuf *rz_analysis_esil_dfg_filter_expr(RzAnalysis *analysis, const char *expr, const char *reg);
 RZ_API RZ_OWN RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
+RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f);
 
 /* PDB */
 RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb);
