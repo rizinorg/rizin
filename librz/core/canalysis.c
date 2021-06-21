@@ -7269,8 +7269,8 @@ RZ_API bool rz_analysis_add_io_registers_map(RzIO *io, RzAnalysis *analysis, ut6
 	if (!map) {
 		return false;
 	}
-	if (file_offset) {
-		eprintf("Warning: Not mapping the ROM section due to the mapping at 0x%llx \n", file_offset);
+	if (file_offset >= rom_address && file_offset < (rom_address + rom_size)) {
+		RZ_LOG_WARN("Cannot map the ROM section at %" PFMT64x " with a size of %" PFMT64x " due file being mapped at 0x%" PFMT64x "\n", rom_address, rom_size, file_offset);
 		return false;
 	}
 	RzIOMap *rom_map = rz_io_map_add(io, io->desc->fd, RZ_PERM_RX, 0LL, rom_address, rom_size);

@@ -62,6 +62,59 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=test adding ROM maps if file_offset > rom address
+FILE=bins/firmware/arduino_avr.bin
+ARGS=-e asm.cpu=ATmega16 -m 8191
+CMDS=<<EOF
+aaa
+om
+EOF
+EXPECT_ERR=<<EOF
+Warning: using oba to load the syminfo from different mapaddress.
+[ ] Analyze all flags starting with sym. and entry0 (aa)
+[
+[x] Analyze all flags starting with sym. and entry0 (aa)
+[2K
+WARNING: Cannot map the ROM section at 1fff with a size of 4000 due file being mapped at 0x1fff
+[ ] Analyze function calls (aac)
+[
+[x] Analyze function calls (aac)
+[ ] find and analyze function preludes (aap)
+[
+[x] find and analyze function preludes (aap)
+[ ] Analyze len bytes of instructions for references (aar)
+[
+[x] Analyze len bytes of instructions for references (aar)
+[ ] Check for classes
+[
+[x] Check for classes
+[ ] Finding xrefs in noncode section with analysis.in=io.maps
+[
+[x] Finding xrefs in noncode section with analysis.in=io.maps
+[ ] Analyze value pointers (aav)
+[
+[x] Analyze value pointers (aav)
+[ ] Value from 0x00000000 to 0x00003722 (aav)
+[
+[x] Value from 0x00000000 to 0x00003722 (aav)
+[ ] 0x00000000-0x00003722 in 0x0-0x3722 (aav)
+[
+[x] 0x00000000-0x00003722 in 0x0-0x3722 (aav)
+[ ] Emulate functions to find computed references (aaef)
+[
+[x] Emulate functions to find computed references (aaef)
+[ ] Type matching analysis for all functions (aaft)
+[
+[x] Type matching analysis for all functions (aaft)
+[ ] Propagate noreturn information
+[
+[x] Propagate noreturn information
+[ ] Use -AA or aaaa to perform additional experimental analysis.
+[
+[x] Use -AA or aaaa to perform additional experimental analysis.
+EOF
+RUN
+
 NAME=avr DISasm: IO-Ports
 FILE=bins/firmware/arduino_avr.bin
 CMDS=pd 13 @ 0x00000282
