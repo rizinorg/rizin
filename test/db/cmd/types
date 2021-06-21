@@ -1737,7 +1737,7 @@ af
 tf main
 EOF
 EXPECT=<<EOF
-int main(int argc);
+int main (int argc);
 EOF
 RUN
 
