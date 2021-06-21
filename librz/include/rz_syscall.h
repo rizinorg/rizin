@@ -92,6 +92,7 @@ RZ_API RzSyscallItem *rz_syscall_item_new_from_string(const char *name, const ch
 RZ_API void rz_syscall_item_free(RzSyscallItem *si);
 
 RZ_API RzSyscall *rz_syscall_new(void);
+RZ_API void rz_sysregs_db_free(RzSysregsDB *sysregdb);
 RZ_API void rz_syscall_free(RzSyscall *ctx);
 RZ_API RzSyscall *rz_syscall_ref(RzSyscall *sc);
 RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const char *cpu, const char *os);
