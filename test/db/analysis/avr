@@ -75,7 +75,6 @@ Warning: using oba to load the syminfo from different mapaddress.
 [
 [x] Analyze all flags starting with sym. and entry0 (aa)
 [2K
-WARNING: Cannot map the ROM section at 1fff with a size of 4000 due file being mapped at 0x1fff
 [ ] Analyze function calls (aac)
 [
 [x] Analyze function calls (aac)
@@ -112,6 +111,7 @@ WARNING: Cannot map the ROM section at 1fff with a size of 4000 due file being m
 [ ] Use -AA or aaaa to perform additional experimental analysis.
 [
 [x] Use -AA or aaaa to perform additional experimental analysis.
+WARNING: Cannot map the ROM section at 1fff with a size of 4000 due file being mapped at 0x1fff
 EOF
 RUN
 

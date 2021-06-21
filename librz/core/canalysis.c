@@ -7171,6 +7171,8 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_config_set(core->config, "dbg.backend", dh_orig);
 		rz_core_task_yield(&core->tasks);
 	}
+	ut64 file_offset = rz_config_get_i(core->config, "file.offset");
+	rz_analysis_add_io_registers_map(core->io, core->analysis, file_offset);
 	return true;
 }
 
