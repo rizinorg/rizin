@@ -74,7 +74,7 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	// Get number of function args
 	// Get type,name pairs
 	// Put everything in RzList following the next format:
-	// types: main.ret=%type%, main.args=%num%, main.arg.0="int,argc", ...
+	// types: main.ret="%type%", main.args=%num%, main.arg.0="int,argc", ...
 
 	rz_return_val_if_fail(a && fcn, NULL);
 
@@ -83,24 +83,27 @@ RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 		return NULL;
 	}
 
-	int fcnargs = rz_type_func_args_count(a->typedb, fcn->name);
-	RzType *ret_type = rz_type_func_ret(a->typedb, fcn->name);
-
-	if (ret_type) {
-		char *ret_type_str = rz_type_as_string(a->typedb, ret_type);
-		rz_list_append(ret, rz_str_newf("func.%s.ret=%s", fcn->name, ret_type_str));
+	RzCallable *callable = rz_analysis_function_derive_type(a, fcn);
+	if (!callable) {
+		return NULL;
+	}
+	if (callable->ret) {
+		char *ret_type_str = rz_type_as_string(a->typedb, callable->ret);
+		rz_list_append(ret, rz_str_newf("func.%s.ret=\"%s\"", fcn->name, ret_type_str));
 		free(ret_type_str);
 	}
-	if (fcnargs) {
-		rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, fcnargs));
-		int i;
-		for (i = 0; i < fcnargs; i++) {
-			const char *arg_name = rz_type_func_args_name(a->typedb, fcn->name, i);
-			RzType *arg_type = rz_type_func_args_type(a->typedb, fcn->name, i);
-			char *arg_type_str = rz_type_as_string(a->typedb, arg_type);
-			rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s,%s\"", fcn->name, i, arg_type_str, arg_name));
-			free(arg_type_str);
-		}
+	if (!callable->args || rz_pvector_empty(callable->args)) {
+		rz_list_append(ret, rz_str_newf("func.%s.args=0", fcn->name));
+		return ret;
+	}
+	int fcnargs = rz_pvector_len(callable->args);
+	rz_list_append(ret, rz_str_newf("func.%s.args=%d", fcn->name, fcnargs));
+	int i;
+	for (i = 0; i < fcnargs; i++) {
+		RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, i);
+		char *arg_type_str = rz_type_as_string(a->typedb, arg->type);
+		rz_list_append(ret, rz_str_newf("func.%s.arg.%d=\"%s,%s\"", fcn->name, i, arg_type_str, arg->name));
+		free(arg_type_str);
 	}
 
 	return ret;
