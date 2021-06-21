@@ -7171,8 +7171,6 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_config_set(core->config, "dbg.backend", dh_orig);
 		rz_core_task_yield(&core->tasks);
 	}
-	ut64 file_offset = rz_config_get_i(core->config, "file.offset");
-	rz_analysis_add_io_registers_map(core->io, core->analysis, file_offset);
 	return true;
 }
 
@@ -7267,7 +7265,8 @@ RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction 
 RZ_API bool rz_analysis_add_io_registers_map(RzIO *io, RzAnalysis *analysis, ut64 file_offset) {
 	ut64 rom_size = analysis->arch_target->profile->rom_size;
 	ut64 rom_address = analysis->arch_target->profile->rom_address;
-	if (rz_io_map_is_mapped(io, rom_address)) {
+	RzIOMap *map = rz_io_map_get(io, rom_address);
+	if (!map) {
 		return false;
 	}
 	if (file_offset) {

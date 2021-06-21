@@ -8004,6 +8004,8 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_cons_clear_line(1);
 			if (*input == 'a') { // "aaa"
 				bool experimental = input[1] == 'a';
+				ut64 file_offset = rz_config_get_i(core->config, "file.offset");
+				rz_analysis_add_io_registers_map(core->io, core->analysis, file_offset);
 				if (!rz_core_analysis_everything(core, experimental, dh_orig)) {
 					goto jacuzzi;
 				}

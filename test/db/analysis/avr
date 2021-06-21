@@ -157,6 +157,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=test adding ROM maps from Arch Profiles
+FILE=bins/firmware/arduino_avr.bin
+ARGS=-e asm.cpu=ATmega16
+CMDS=<<EOF
+aaa
+om
+EOF
+EXPECT=<<EOF
+ 3 fd: 4 +0x00000000 0x00100000 - 0x001effff rw- mem.0x100000_0xf0000
+ 2 fd: 3 +0x00000000 0x00001fff - 0x000024d0 r-x ROM
+ 1 fd: 3 +0x00000000 0x00000000 - 0x00003721 r-x
+EOF
+RUN
+
 NAME=avr br - forward branch
 FILE=malloc://1024
 CMDS=<<EOF
