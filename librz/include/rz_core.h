@@ -775,25 +775,8 @@ RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd);
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool argonly);
 
 /* cmd_linux_heap_glibc.c */
-/**
- * \brief Returns RzList* for a list of chunks from the arena. Each chunk is represented by RzHeapChunkListItem struct
- * \param core RzCore pointer
- * \param m_arena Base Address of the arena
- * \return RzList of heap chunks
- */
 RZ_API RzList *rz_heap_chunks_list(RzCore *core, ut64 m_arena);
-/**
- * \brief Returns RzList* for a list of arenas. Each arena is represented by RzArenaListItem struct
- * \param core RzCore pointer
- * \return RzList of arenas
- */
 RZ_API RzList *rz_heap_arenas_list(RzCore *core);
-/**
- * \brief Returns detailed information about a heap chunk. The chunk is represented by RzHeapChunkSimple struct
- * \param core RzCore pointer
- * \param addr Base address of the heap chunk
- * \return RzHeapChunkSimple struct pointer for the chunk
- */
 RZ_API RzHeapChunkSimple *rz_heap_chunk(RzCore *core, ut64 addr);
 // XXX dupe from rz_bin.h
 /* bin.c */
