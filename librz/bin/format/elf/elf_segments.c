@@ -88,24 +88,6 @@ static RzVector *get_segments_from_phdr(ELFOBJ *bin) {
 	return result;
 }
 
-static bool check_phdr_size(ELFOBJ *bin) {
-	Elf_(Off) phdr_size;
-	if (!Elf_(rz_bin_elf_add_off)(&phdr_size, (ut32)bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
-		return false;
-	}
-
-	Elf_(Off) end_off;
-	if (!Elf_(rz_bin_elf_add_off)(&end_off, bin->ehdr.e_phoff, phdr_size)) {
-		return false;
-	}
-
-	if (!phdr_size || end_off > bin->size) {
-		return false;
-	}
-
-	return true;
-}
-
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type) {
 	rz_return_val_if_fail(bin, NULL);
 	if (!bin->segments) {
@@ -124,7 +106,7 @@ RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELF
 }
 
 RZ_OWN RzVector *Elf_(rz_bin_elf_new_segments)(RZ_NONNULL ELFOBJ *bin) {
-	if (!check_phdr_size(bin)) {
+	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_phoff, bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
 		return NULL;
 	}
 

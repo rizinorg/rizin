@@ -136,24 +136,6 @@ static RzVector *get_sections_from_dt_dynamic(ELFOBJ *bin) {
 	return result;
 }
 
-static bool check_shdr_size(ELFOBJ *bin) {
-	Elf_(Off) shdr_size;
-	if (!Elf_(rz_bin_elf_mul_off)(&shdr_size, bin->ehdr.e_shnum, sizeof(Elf_(Shdr)))) {
-		return false;
-	}
-
-	Elf_(Off) end_off;
-	if (!Elf_(rz_bin_elf_add_off)(&end_off, bin->ehdr.e_shoff, shdr_size)) {
-		return false;
-	}
-
-	if (!shdr_size || end_off > bin->size) {
-		return false;
-	}
-
-	return true;
-}
-
 static bool set_shdr_entry(ELFOBJ *bin, Elf_(Shdr) * section, ut64 offset) {
 	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_name) ||
 		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_type) ||
@@ -338,7 +320,7 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RzVec
 RZ_OWN RzVector *Elf_(rz_bin_elf_new_sections)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!bin->ehdr.e_shnum || !check_shdr_size(bin)) {
+	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_shoff, bin->ehdr.e_shnum, sizeof(Elf_(Phdr)))) {
 		return NULL;
 	}
 
