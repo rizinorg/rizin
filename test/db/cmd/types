@@ -1748,15 +1748,15 @@ e analysis.vars.stackname=true
 s 0x4e2420
 af
 afs
-"afs void no_type(int a, char **b);"
+"afs void no_type(int a, char ** b);"
 afs
-"afs char type(int a, char **b);"
+"afs char type(int a, char ** b);"
 afs
 EOF
 EXPECT=<<EOF
-void fcn.004e2420 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
-void no_type (int a, char **b);
-char type (int a, char **b);
+void fcn.004e2420(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
+void no_type(int a, char **b);
+char type(int a, char **b);
 EOF
 RUN
 
@@ -1765,15 +1765,15 @@ FILE=bins/elf/hello_world
 CMDS=<<EOF
 af
 afs
-"afs foo.bar();"
+"afs void foo.bar();"
 afs
 "afs char foo.bar(int a, ...);"
 afs
 EOF
 EXPECT=<<EOF
-void entry0 (int64_t arg3);
-int32_t foo.bar ();
-char foo.bar (int32_t a);
+void entry0(int64_t arg3);
+void foo.bar();
+char foo.bar(int a);
 EOF
 RUN
 
@@ -1785,7 +1785,7 @@ af
 afs
 EOF
 EXPECT=<<EOF
-size_t strlen (const char *s);
+size_t strlen(const char * s);
 EOF
 RUN
 

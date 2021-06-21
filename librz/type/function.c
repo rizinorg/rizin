@@ -113,7 +113,7 @@ RZ_API void rz_type_callable_arg_free(RzCallableArg *arg) {
  * \param arg Argument to add
  */
 RZ_API bool rz_type_callable_arg_add(RZ_NONNULL RzCallable *callable, RZ_OWN RZ_NONNULL RzCallableArg *arg) {
-	rz_return_val_if_fail(callable && arg, NULL);
+	rz_return_val_if_fail(callable && arg, false);
 	rz_pvector_push(callable->args, arg);
 	return true;
 }
