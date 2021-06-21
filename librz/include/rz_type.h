@@ -222,6 +222,7 @@ RZ_API void rz_type_parser_free_purge(RzTypeParser *parser);
 RZ_API int rz_type_parse_string_stateless(RzTypeParser *parser, const char *code, char **error_msg);
 RZ_API int rz_type_parse_file_stateless(RzTypeParser *parser, const char *path, const char *dir, char **error_msg);
 RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const char *code, char **error_msg);
+RZ_API RZ_OWN RzType *rz_type_parse_string_declaration_single(RzTypeParser *parser, const char *code, char **error_msg);
 
 // Type parser high-level API
 
