@@ -1947,16 +1947,11 @@ RZ_IPI int rz_cmd_system(void *data, const char *input) {
 			}
 			//else eprintf ("Error setting up system environment\n");
 		} else {
-			char *cmd = rz_core_sysenv_begin(core, input);
-			if (cmd) {
-				void *bed = rz_cons_sleep_begin();
-				ret = rz_sys_system(cmd);
-				rz_cons_sleep_end(bed);
-				rz_core_sysenv_end(core, input);
-				free(cmd);
-			} else {
-				eprintf("Error setting up system environment\n");
-			}
+			rz_core_sysenv_begin(core);
+			void *bed = rz_cons_sleep_begin();
+			ret = rz_sys_system(cmd);
+			rz_cons_sleep_end(bed);
+			rz_core_sysenv_end(core);
 		}
 		break;
 	}
