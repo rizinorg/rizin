@@ -318,6 +318,7 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 	// Some debugging
 	if (parser->state->verbose) {
 		parser_debug(parser->state, "code: \"%s\"\n", code);
+		parser_debug(parser->state, "patched code: \"%s\"\n", patched_code);
 		parser_debug(parser->state, "root_node (%d children): %s\n", root_node_child_count, ts_node_type(root_node));
 		// Print the syntax tree as an S-expression.
 		char *string = ts_node_string(root_node);
@@ -369,5 +370,89 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
 	ts_tree_delete(tree);
 	ts_parser_delete(tsparser);
 	free(patched_code);
+	return tpair ? tpair->type : NULL;
+}
+
+/**
+* \brief Parses the single C type declaration
+*
+* \param parser RzTypeParser parser instance
+* \param code The C type itself
+* \param error_msg A pointer where all error messages will be stored
+*/
+RZ_API RZ_OWN RzType *rz_type_parse_string_declaration_single(RzTypeParser *parser, const char *code, char **error_msg) {
+	if (error_msg) {
+		*error_msg = NULL;
+	}
+	// Create a parser.
+	TSParser *tsparser = ts_parser_new();
+	// Set the parser's language (C in this case)
+	ts_parser_set_language(tsparser, tree_sitter_c());
+
+	TSTree *tree = ts_parser_parse_string(tsparser, NULL, code, strlen(code));
+
+	// Get the root node of the syntax tree.
+	TSNode root_node = ts_tree_root_node(tree);
+	int root_node_child_count = ts_node_named_child_count(root_node);
+	if (!root_node_child_count) {
+		parser_warning(parser->state, "Root node is empty!\n");
+		ts_tree_delete(tree);
+		ts_parser_delete(tsparser);
+		return NULL;
+	}
+
+	// Some debugging
+	if (parser->state->verbose) {
+		parser_debug(parser->state, "code: \"%s\"\n", code);
+		parser_debug(parser->state, "root_node (%d children): %s\n", root_node_child_count, ts_node_type(root_node));
+		// Print the syntax tree as an S-expression.
+		char *string = ts_node_string(root_node);
+		parser_debug(parser->state, "Syntax tree: %s\n", string);
+		free(string);
+	}
+
+	// At first step we should handle defines
+	// #define
+	// #if / #ifdef
+	// #else
+	// #endif
+	// After that, we should process include files and #error/#warning/#pragma
+	// Temporarily we could just run preprocessing step using tccpp code
+	//
+	// And only after that - run the normal C/C++ syntax parsing
+
+	// Filter types function prototypes and start parsing
+	int i = 0, result = 0;
+	ParserTypePair *tpair = NULL;
+	for (i = 0; i < root_node_child_count; i++) {
+		parser_debug(parser->state, "Processing %d child...\n", i);
+		TSNode child = ts_node_named_child(root_node, i);
+		if (!parse_declaration_node(parser->state, child, code, &tpair)) {
+			break;
+		}
+	}
+
+	// If there were errors during the parser then the result is different from 0
+	if (result || !tpair) {
+		const char *error_msgs = rz_strbuf_drain_nofree(parser->state->errors);
+		RZ_LOG_DEBUG("Errors:\n");
+		RZ_LOG_DEBUG("%s", error_msgs);
+		const char *warning_msgs = rz_strbuf_drain_nofree(parser->state->warnings);
+		RZ_LOG_DEBUG("Warnings:\n");
+		RZ_LOG_DEBUG("%s", warning_msgs);
+		if (error_msg) {
+			*error_msg = strdup(error_msgs);
+		}
+	}
+	if (parser->state->verbose) {
+		const char *debug_msgs = rz_strbuf_drain_nofree(parser->state->debug);
+		RZ_LOG_DEBUG("%s", debug_msgs);
+	}
+
+	// After everything parsed, we should preserve the base type database
+	// Also we don't free the parser state, just reset the buffers for new use
+	c_parser_state_reset_keep_ht(parser->state);
+	ts_tree_delete(tree);
+	ts_parser_delete(tsparser);
 	return tpair ? tpair->type : NULL;
 }
