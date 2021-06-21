@@ -39,7 +39,7 @@ RZ_IPI RzCmdStatus rz_system_list_history_handler(RzCore *core, int argc, const 
 	rz_core_sysenv_begin(core);
 	void *bed = rz_cons_sleep_begin();
 	int ret = system_exec(argc - 1, &argv[1]);
-	
+
 	rz_cons_sleep_end(bed);
 	rz_core_sysenv_end(core);
 
@@ -55,15 +55,11 @@ RZ_IPI RzCmdStatus rz_clear_history_handler(RzCore *core, int argc, const char *
 	return RZ_CMD_STATUS_OK;
 }
 
-
-RZ_IPI RzCmdStatus rz_clear_history_save_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_history_save_handler(RzCore *core, int argc, const char **argv) {
 	if (argc != 1) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 
-	rz_line_hist_free();
 	rz_line_hist_save(RZ_HOME_HISTORY);
 	return RZ_CMD_STATUS_OK;
 }
-
-

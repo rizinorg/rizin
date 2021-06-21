@@ -31,7 +31,7 @@ commands:
     cname: clear_history
     summary: Clears the history in current session
     args: []
-  - name: "!-*"
-    cname: clear_history_save
-    summary: Clears the history in current session and saves an empty history log
+  - name: "!+"
+    cname: history_save
+    summary: Saves the history of the current session
     args: []
