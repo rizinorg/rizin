@@ -2320,12 +2320,7 @@ RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunc
 	if (!a || !fcn) {
 		return NULL;
 	}
-	size_t args_count = rz_analysis_function_arg_count(a, fcn);
-	if (!args_count) {
-		return NULL;
-	}
-	eprintf("%s : %zu arguments total\n", fcn->name, args_count);
-	RzPVector *args = rz_pvector_new_with_len(NULL, args_count);
+	RzPVector *args = rz_pvector_new(NULL);
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
@@ -2335,8 +2330,17 @@ RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunc
 				eprintf("%s : arg \"%s\" has wrong position: %d\n", fcn->name, var->name, argnum);
 				continue;
 			}
-			eprintf("%s : inserting arg \"%s\" at %d position\n", fcn->name, var->name, argnum);
-			rz_pvector_insert(args, argnum, var);
+			// pvector api is a bit ugly here, essentially we make a (possibly sparse) array
+			// where each var is assigned at its argnum
+			if (argnum >= rz_pvector_len(args)) {
+				if (!rz_pvector_reserve(args, argnum + 1)) {
+					return args;
+				}
+				while (argnum >= rz_pvector_len(args)) {
+					rz_pvector_push(args, NULL);
+				}
+			}
+			rz_pvector_set(args, argnum, var);
 		}
 	}
 	return args;
@@ -2400,6 +2404,11 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 	void **it;
 	rz_pvector_foreach (args, it) {
 		RzAnalysisVar *var = *it;
+		if (!var) {
+			eprintf("missing arg var\n");
+			// TODO: maybe create a stub void arg here?
+			continue;
+		}
 		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, var->type);
 		if (!arg) {
 			rz_pvector_free(args);
