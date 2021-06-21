@@ -140,7 +140,6 @@ NAME=rizin empty -R
 FILE==
 CMDS=!rizin -R ""
 EXPECT_ERR=<<EOF
-Missing file to open
 EOF
 RUN
 
