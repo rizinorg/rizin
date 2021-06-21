@@ -1786,17 +1786,94 @@ RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *funct
 	return signature;
 }
 
-/* set function signature from string */
-RZ_API int rz_analysis_str_to_fcn(RzAnalysis *a, RzAnalysisFunction *f, const char *sig) {
-	rz_return_val_if_fail(a || f || sig, false);
+/**
+ * \brief Sets the RzCallable type for the given function
+ *
+ * Checks if the type is defined already for this function, if yes -
+ * it removes the existing one and sets the one defined by the RzCallable.
+ * If there is a mismatch between existing arguments - it overwrites
+ * their types and names, removes arguments if necessary.
+ *
+ * \param a RzAnalysis instance
+ * \param f Function to update
+ * \param callable A function type
+ */
+RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL RzCallable *callable) {
+	rz_return_val_if_fail(a && f && callable, false);
+	// At first, we check if the arguments match, and rename/retype them
+	void **it;
+	size_t index = 0;
+	if (rz_pvector_empty(callable->args)) {
+		rz_analysis_function_delete_all_vars(f);
+	}
+	size_t args_count = rz_pvector_len(callable->args);
+	RzPVector *cloned_vars = (RzPVector *)rz_vector_clone((RzVector *)&f->vars);
+	rz_pvector_foreach (cloned_vars, it) {
+		RzAnalysisVar *var = *it;
+		if (!var->isarg) {
+			continue;
+		}
+		if (index < args_count) {
+			RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, index);
+			if (arg) {
+				free(var->name);
+				if (arg->name) {
+					var->name = strdup(arg->name);
+				}
+				rz_type_free(var->type);
+				var->type = rz_type_clone(arg->type);
+			}
+		} else {
+			// There is no match for this argument in the RzCallable type,
+			// thus we remove it from the function
+			rz_analysis_function_delete_var(f, var);
+		}
+		index++;
+	}
+	rz_pvector_free(cloned_vars);
+	return true;
+}
+
+/**
+ * \brief Parses the function type and sets it for the given function
+ *
+ * Checks if the type is defined already for this function, if yes -
+ * it removes the existing one and parses the one defined in the signature.
+ * The function type should be valid C syntax supplied with name, like
+ * int *func(char arg0, const int *arg1, float foo[]);
+ *
+ * \param a RzAnalysis instance
+ * \param f Function to update
+ * \param sig A function type ("signature" or "prototype")
+ */
+RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL const char *sig) {
+	rz_return_val_if_fail(a && f && sig, false);
 	char *error_msg = NULL;
-	int result = rz_type_parse_string(a->typedb, sig, &error_msg);
-	if (result && error_msg) {
-		eprintf("%s", error_msg);
-		free(error_msg);
+	// At first we should check if the type is already presented in the types database
+	// and remove it if exists
+	if (rz_type_func_exist(a->typedb, f->name)) {
+		rz_type_func_delete(a->typedb, f->name);
+	}
+	// Then we create a new one by parsing the string
+	RzType *result = rz_type_parse_string_declaration_single(a->typedb->parser, sig, &error_msg);
+	if (!result) {
+		if (error_msg) {
+			eprintf("%s", error_msg);
+			free(error_msg);
+		}
+		eprintf("Cannot parse callable type\n");
 		return false;
 	}
-	return true;
+	// Parsed result should be RzCallable
+	if (result->kind != RZ_TYPE_KIND_CALLABLE) {
+		eprintf("Parsed function signature should be RzCallable\n");
+		return false;
+	}
+	if (!result->callable) {
+		eprintf("Parsed function signature should not be NULL\n");
+		return false;
+	}
+	return rz_analysis_function_set_type(a, f, result->callable);
 }
 
 RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr) {
@@ -2249,4 +2326,45 @@ RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_types_from_fcn(RzAnalysis *analys
 	rz_list_free(type_used);
 	rz_list_free(list);
 	return uniq;
+}
+
+/**
+ * \brief Derives the RzCallable type for the given function
+ *
+ * Checks if the type is defined already for this function, if yes -
+ * it returns pointer to the one stored in the types database.
+ * If not - it creates a new RzCallable instance based on the function name,
+ * its arguments' names and types.
+ *
+ * \param a RzAnalysis instance
+ * \param f Function to update
+ */
+RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
+	rz_return_val_if_fail(analysis && f, NULL);
+	// Check first if there is a match with some pre-existing RzCallable type in the database
+	RzCallable *callable = rz_type_func_get(analysis->typedb, f->name);
+	if (callable) {
+		// TODO: Decide what to do if there is a mismatch between type
+		// stored in the RzTypeDB database and the actual type of the
+		// RzAnalysisFunction
+		return callable;
+	}
+	// If there is no match - create a new one.
+	callable = rz_type_func_new(analysis->typedb, f->name, NULL);
+	if (!callable) {
+		return NULL;
+	}
+	void **it;
+	rz_pvector_foreach (&f->vars, it) {
+		RzAnalysisVar *var = *it;
+		if (!var->isarg) {
+			continue;
+		}
+		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, var->type);
+		if (!arg) {
+			return NULL;
+		}
+		rz_type_callable_arg_add(callable, arg);
+	}
+	return callable;
 }

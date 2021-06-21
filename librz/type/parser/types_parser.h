@@ -29,6 +29,7 @@ void c_parser_state_free(CParserState *state);
 
 int parse_type_nodes_save(CParserState *state, TSNode node, const char *text);
 int parse_type_node_single(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair, bool is_const);
+int parse_declaration_node(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair);
 int parse_type_descriptor_single(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair);
 int parse_type_declarator_node(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair, char **identifier);
 int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const char *text, ParserTypePair **tpair);

@@ -7414,12 +7414,12 @@ RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunc
 	if (!fcnname) {
 		goto err;
 	}
-	// TODO: move this into rz_analysis_str_to_fcn()
+	// TODO: move this into rz_analysis_function_set_type_str()
 	if (strcmp(fcn->name, fcnname)) {
 		(void)rz_core_analysis_function_rename(core, fcn->addr, fcnname);
 		fcn = rz_analysis_get_fcn_in(core->analysis, fcn->addr, -1);
 	}
-	rz_analysis_str_to_fcn(core->analysis, fcn, fcnstr);
+	rz_analysis_function_set_type_str(core->analysis, fcn, fcnstr);
 	res = true;
 err:
 	free(fcnname);
