@@ -1900,7 +1900,7 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
 		if (block) {
 			block->addr = main_arena->GH(top);
-			block->status = rz_str_new("free");
+			block->status = rz_str_new("free (top)");
 			block->size = size_tmp;
 			rz_list_append(chunks, block);
 		}
