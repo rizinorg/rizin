@@ -291,9 +291,9 @@ typedef struct rz_heap_chunk_simple {
 	ut64 addr; /* Base addr of the chunk*/
 	ut64 prev_size; /* size of prev_chunk*/
 	ut64 size; /* size of chunk */
-	bool NMA; /* flag for NON_MAIN_ARENA */
-	bool PI; /* flag for PREV_INUSE*/
-	bool IM; /* flag for IS_MMAPPED*/
+	bool non_main_arena; /* flag for NON_MAIN_ARENA */
+	bool prev_inuse; /* flag for PREV_INUSE*/
+	bool is_mmapped; /* flag for IS_MMAPPED*/
 	ut64 fd; /* fd pointer, only if free */
 	ut64 bk; /* bk pointer, only if free */
 	ut64 fd_nextsize; /* fd nextsize pointer, only if free */

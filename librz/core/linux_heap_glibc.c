@@ -2415,9 +2415,9 @@ RZ_API RzHeapChunkSimple *GH(rz_heap_chunk_wrapper)(RzCore *core, GHT addr) {
 	ut64 size = heap_chunk->size;
 	simple_chunk->addr = addr;
 	simple_chunk->size = size & ~(NON_MAIN_ARENA | IS_MMAPPED | PREV_INUSE);
-	simple_chunk->NMA = (bool)((size & NON_MAIN_ARENA) >> 2);
-	simple_chunk->IM = (bool)((size & IS_MMAPPED) >> 1);
-	simple_chunk->PI = (bool)(size & PREV_INUSE);
+	simple_chunk->non_main_arena = (bool)((size & NON_MAIN_ARENA) >> 2);
+	simple_chunk->is_mmapped = (bool)((size & IS_MMAPPED) >> 1);
+	simple_chunk->prev_inuse = (bool)(size & PREV_INUSE);
 	simple_chunk->prev_size = heap_chunk->prev_size;
 	simple_chunk->bk = heap_chunk->bk;
 	simple_chunk->fd = heap_chunk->fd;
