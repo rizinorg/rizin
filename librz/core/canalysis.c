@@ -7267,6 +7267,8 @@ RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction 
 RZ_API bool rz_analysis_add_io_registers_map(RzIO *io, RzAnalysis *analysis, ut64 file_offset) {
 	ut64 rom_size = analysis->arch_target->profile->rom_size;
 	ut64 rom_address = analysis->arch_target->profile->rom_address;
+	if (rom_address == 0 || rom_size == 0)
+		return false;
 	RzIOMap *map = rz_io_map_get(io, rom_address);
 	if (!map) {
 		return false;
