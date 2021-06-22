@@ -10,9 +10,10 @@
 #include <rz_util.h>
 
 // Command handlers, manually defined somewhere else
-RZ_IPI RzCmdStatus rz_system_list_history_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_system_or_list_history_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_clear_history_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_clear_history_save_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_history_save_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_alias(void *data, const char *input);

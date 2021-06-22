@@ -1,12 +1,12 @@
 //RZ_IPI int rz_cmd_system(void *data, const char *input)
-static int system_exec(int argc, const char **argv) {
+static char *system_cmd_new(int argc, const char **argv) {
 	if (argc == 1) {
-		return rz_sys_system(argv[0]);
+		return strdup(argv[0]);
 	}
 
 	RzStrBuf *sb = rz_strbuf_new(argv[0]);
 	if (!sb) {
-		return 1;
+		return NULL;
 	}
 
 	for (int i = 1; i < argc; ++i) {
@@ -26,22 +26,57 @@ static int system_exec(int argc, const char **argv) {
 		rz_strbuf_appendf(sb, "%s\"", arg);
 	}
 
-	int ret = rz_sys_system(rz_strbuf_get(sb));
-	rz_strbuf_free(sb);
-	return ret;
+	return rz_strbuf_drain(sb);
 }
 
-RZ_IPI RzCmdStatus rz_system_list_history_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_system_or_list_history_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_line_hist_list();
 		return RZ_CMD_STATUS_OK;
 	}
+
+	char *cmd = system_cmd_new(argc - 1, &argv[1]);
+	if (!cmd) {
+		RZ_LOG_ERROR("Cannot allocate memory to command line buffer.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	rz_core_sysenv_begin(core);
 	void *bed = rz_cons_sleep_begin();
-	int ret = system_exec(argc - 1, &argv[1]);
+
+	int ret = rz_sys_system(cmd);
+	free(cmd);
 
 	rz_cons_sleep_end(bed);
 	rz_core_sysenv_end(core);
+
+	return !ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_API RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 2) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	int olen, ret;
+	char *out = NULL;
+	char *cmd = system_cmd_new(argc - 1, &argv[1]);
+	if (!cmd) {
+		RZ_LOG_ERROR("Cannot allocate memory to command line buffer.\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_core_sysenv_begin(core);
+	void *bed = rz_cons_sleep_begin();
+
+	ret = rz_sys_cmd_str_full(cmd, NULL, &out, &olen, NULL);
+
+	rz_cons_sleep_end(bed);
+	rz_core_sysenv_end(core);
+
+	rz_cons_memcat(out, olen);
+	free(out);
+	free(cmd);
 
 	return !ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
