@@ -446,8 +446,7 @@ RZ_API int rz_line_hist_list(void) {
 	}
 	if (I.history.data) {
 		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
-			const char *pad = rz_str_pad(' ', 32 - strlen(I.history.data[i]));
-			rz_cons_printf("%s %s # !%d\n", I.history.data[i], pad, i);
+			rz_cons_printf("%5d  %s\n", i, I.history.data[i]);
 		}
 	}
 	return i;

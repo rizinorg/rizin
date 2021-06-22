@@ -4,8 +4,8 @@
 name: cmd_system3
 commands:
   - name: "!"
-    cname: system_or_list_history
-    summary: Runs given commands in system(3) or lists all rizin commands history
+    cname: system3
+    summary: Runs given commands in system(3)
     args:
       - name: command
         type: RZ_CMD_ARG_TYPE_STRING
@@ -19,16 +19,13 @@ commands:
       - name: Examples
         entries:
           - text: "!"
-            arg_str: ""
-            comment: "Shows the command history of rizin"
-          - text: "!"
             arg_str: "ls"
             comment: "executes the 'ls' command via system(3)"
           - text: "!"
             arg_str: "echo $RZ_SIZE"
             comment: "executes the 'echo' command via system(3) and shows the display file size"
   - name: "!!"
-    cname: system_to_cons
+    cname: system3_to_cons
     summary: Runs a given commands in system(3) and pipes stdout to rizin
     args:
       - name: command
@@ -44,11 +41,31 @@ commands:
           - text: "!!"
             arg_str: "ls~txt"
             comment: "executes the 'ls' command via system(3) and grep for 'txt'"
-  - name: "!-"
-    cname: clear_history
-    summary: Clears the history in current session
-    args: []
-  - name: "!+"
-    cname: history_save
-    summary: Saves the history of the current session
-    args: []
+  # These commands should me moved from ! to somewhere else.
+  - name: "!="
+    summary: Rizin history commands.
+    subcommands:
+      - name: "!="
+        cname: list_or_exec_history
+        summary: Shows the history in current session or executes an history command via its index.
+        args:
+          - name: index
+            type: RZ_CMD_ARG_TYPE_NUM
+            optional: true
+        details:
+          - name: Examples
+            entries:
+              - text: "!="
+                arg_str: ""
+                comment: "Shows the current session history"
+              - text: "!="
+                arg_str: "12"
+                comment: "Executes a history command with index value of 12"
+      - name: "!=-"
+        cname: clear_history
+        summary: Clears the history in current session
+        args: []
+      - name: "!=+"
+        cname: history_save
+        summary: Saves the history of the current session
+        args: []

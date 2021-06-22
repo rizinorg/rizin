@@ -1,4 +1,3 @@
-//RZ_IPI int rz_cmd_system(void *data, const char *input)
 static char *system_cmd_new(int argc, const char **argv) {
 	if (argc == 1) {
 		return strdup(argv[0]);
@@ -29,7 +28,7 @@ static char *system_cmd_new(int argc, const char **argv) {
 	return rz_strbuf_drain(sb);
 }
 
-RZ_IPI RzCmdStatus rz_system_or_list_history_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_system3_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_line_hist_list();
 		return RZ_CMD_STATUS_OK;
@@ -53,7 +52,7 @@ RZ_IPI RzCmdStatus rz_system_or_list_history_handler(RzCore *core, int argc, con
 	return !ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-RZ_API RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_system3_to_cons_handler(RzCore *core, int argc, const char **argv) {
 	if (argc < 2) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
@@ -78,6 +77,30 @@ RZ_API RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char 
 	free(out);
 	free(cmd);
 
+	return !ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_list_or_exec_history_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 1) {
+		rz_line_hist_list();
+		return RZ_CMD_STATUS_OK;
+	} else if (argc > 2) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	int index = atoi(argv[1]);
+	if (index < 1) {
+		RZ_LOG_ERROR("index must be a positive number.\n");
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	const char *cmd = rz_line_hist_get(index);
+	if (!cmd) {
+		RZ_LOG_ERROR("cannot find command with index %d.\n", index);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	int ret = rz_core_cmd0(core, cmd);
 	return !ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
