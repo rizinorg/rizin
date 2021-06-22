@@ -1741,21 +1741,9 @@ RZ_API char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
 	return pj_drain(pj);
 }
 
-RZ_API RZ_OWN char *rz_analysis_function_get_signature(RzAnalysisFunction *function) {
+RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunction *function) {
+	rz_return_val_if_fail(function, NULL);
 	RzAnalysis *a = function->analysis;
-	const char *realname = NULL, *import_substring = NULL;
-
-	RzFlagItem *flag = a->flag_get(a->flb.f, function->addr);
-	// Can't access RZ_FLAGS_FS_IMPORTS, since it is defined in rz_core.h
-	if (flag && flag->space && !strcmp(flag->space->name, "imports")) {
-		// Get substring after last dot
-		import_substring = rz_str_rchr(function->name, NULL, '.');
-		if (import_substring) {
-			realname = import_substring + 1;
-		}
-	} else {
-		realname = function->name;
-	}
 
 	// TODO: Better naming
 	RzCallable *callable = rz_analysis_function_derive_type(a, function);
