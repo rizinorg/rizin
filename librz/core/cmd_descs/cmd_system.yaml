@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 # SPDX-License-Identifier: LGPL-3.0-only
 ---
-name: cmd_system3
+name: cmd_system
 commands:
   - name: "!"
-    cname: system3
+    cname: system
     summary: Runs given commands in system(3)
     args:
       - name: command
@@ -25,7 +25,7 @@ commands:
             arg_str: "echo $RZ_SIZE"
             comment: "executes the 'echo' command via system(3) and shows the display file size"
   - name: "!!"
-    cname: system3_to_cons
+    cname: system_to_cons
     summary: Runs a given commands in system(3) and pipes stdout to rizin
     args:
       - name: command

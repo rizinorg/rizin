@@ -63,7 +63,7 @@ name: root
 commands:
   - name: "!"
     summary: Run given commands as in system(3) or shows command history
-    subcommands: cmd_system3
+    subcommands: cmd_system
   - name: _
     cname: last_output
     summary: Print last output

@@ -28,7 +28,7 @@ static char *system_cmd_new(int argc, const char **argv) {
 	return rz_strbuf_drain(sb);
 }
 
-RZ_IPI RzCmdStatus rz_system3_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_system_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_line_hist_list();
 		return RZ_CMD_STATUS_OK;
@@ -52,7 +52,7 @@ RZ_IPI RzCmdStatus rz_system3_handler(RzCore *core, int argc, const char **argv)
 	return !ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-RZ_API RzCmdStatus rz_system3_to_cons_handler(RzCore *core, int argc, const char **argv) {
+RZ_API RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char **argv) {
 	if (argc < 2) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
