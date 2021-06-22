@@ -1135,7 +1135,8 @@ RZ_API RzList *GH(rz_heap_tcache_list)(RzCore *core, GHT m_arena, MallocState *m
 		return tcache_list;
 	}
 	if (!GH(tcache_read)(core, tcache_start, rz_tcache)) {
-		free(rz_tcache);
+		GH(tcache_free)
+		(rz_tcache);
 		return tcache_list;
 	}
 	rz_list_append(tcache_list, rz_tcache);
