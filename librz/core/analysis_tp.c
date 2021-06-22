@@ -454,18 +454,94 @@ void free_op_cache_kv(HtUPKv *kv) {
 	rz_analysis_op_free(kv->value);
 }
 
-void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *trace, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, int cur_idx) {
+void handle_stack_canary(RzCore *core, Sdb *trace, RzAnalysisOp *aop, int cur_idx) {
+	const char *query = sdb_fmt("%d.addr", cur_idx - 1);
+	ut64 mov_addr = sdb_num_get(trace, query, 0);
+	RzAnalysisOp *mop = rz_core_analysis_op(core, mov_addr, RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_BASIC);
+	if (mop) {
+		RzAnalysisVar *mopvar = rz_analysis_get_used_function_var(core->analysis, mop->addr);
+		ut32 type = mop->type & RZ_ANALYSIS_OP_TYPE_MASK;
+		if (type == RZ_ANALYSIS_OP_TYPE_MOV) {
+			var_rename(core->analysis, mopvar, "canary", aop->addr);
+		}
+	}
+	rz_analysis_op_free(mop);
+}
+
+struct ReturnTypeAnalysisCtx {
+	bool resolved;
+	RzType *ret_type;
+	char *ret_reg;
+};
+
+static inline bool return_type_analysis_context_unresolved(struct ReturnTypeAnalysisCtx *ctx) {
+	return !ctx->resolved && ctx->ret_type && ctx->ret_reg;
+}
+
+// Progate return type passed using pointer
+static void propagate_return_type_pointer(RzCore *core, RzAnalysisOp *aop, RzPVector *used_vars, ut64 addr, struct ReturnTypeAnalysisCtx *ctx) {
+	// int *ret; *ret = strlen(s);
+	// TODO: memref check , dest and next src match
+	char nsrc[REGNAME_SIZE] = { 0 };
+	void **uvit;
+	get_src_regname(core, addr, nsrc, sizeof(nsrc));
+	if (ctx->ret_reg && *nsrc && strstr(ctx->ret_reg, nsrc) && aop->direction == RZ_ANALYSIS_OP_DIR_READ) {
+		if (used_vars && !rz_pvector_empty(used_vars)) {
+			rz_pvector_foreach (used_vars, uvit) {
+				RzAnalysisVar *var = *uvit;
+				var_type_set(core->analysis, var, ctx->ret_type, true);
+			}
+		}
+	}
+}
+
+// Forward propagation of function return type
+static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp *next_op, Sdb *trace, struct ReturnTypeAnalysisCtx *ctx, int cur_idx, RzPVector *used_vars) {
+	char src[REGNAME_SIZE] = { 0 };
+	void **uvit;
+	const char *query = sdb_fmt("%d.reg.write", cur_idx);
+	const char *cur_dest = sdb_const_get(trace, query, 0);
+	get_src_regname(core, aop->addr, src, sizeof(src));
+	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
+	if (ctx->ret_reg && *src && strstr(ctx->ret_reg, src)) {
+		if (used_vars && !rz_pvector_empty(used_vars) && aop->direction == RZ_ANALYSIS_OP_DIR_WRITE) {
+			rz_pvector_foreach (used_vars, uvit) {
+				RzAnalysisVar *var = *uvit;
+				var_type_set(core->analysis, var, ctx->ret_type, false);
+			}
+			ctx->resolved = true;
+		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV) {
+			RZ_FREE(ctx->ret_reg);
+			if (cur_dest) {
+				ctx->ret_reg = strdup(cur_dest);
+			}
+		}
+	} else if (cur_dest) {
+		char *foo = strdup(cur_dest);
+		char *tmp = strchr(foo, ',');
+		if (tmp) {
+			*tmp++ = '\0';
+		}
+		if (ctx->ret_reg && (strstr(ctx->ret_reg, foo) || (tmp && strstr(ctx->ret_reg, tmp)))) {
+			ctx->resolved = true;
+		} else if (type == RZ_ANALYSIS_OP_TYPE_MOV &&
+			(next_op && next_op->type == RZ_ANALYSIS_OP_TYPE_MOV)) {
+			// Progate return type passed using pointer
+			propagate_return_type_pointer(core, aop, used_vars, next_op->addr, ctx);
+		}
+		free(foo);
+	}
+}
+
+void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *trace, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, int cur_idx, struct ReturnTypeAnalysisCtx *retctx) {
 	RzPVector *used_vars = rz_analysis_function_get_vars_used_at(fcn, aop->addr);
 	bool chk_constraint = rz_config_get_b(core->config, "analysis.types.constraint");
 	RzAnalysisOp *next_op = op_cache_get(op_cache, core, aop->addr + aop->size);
 	void **uvit;
-	RzType *ret_type = NULL;
 	RzType *prev_type = NULL;
 	int prev_idx = 0;
 	bool prev_var = false;
-	bool resolved = false;
 	char *fcn_name = NULL;
-	char *ret_reg = NULL;
 	bool userfnc = false;
 	bool str_flag = false;
 	bool prop = false;
@@ -487,6 +563,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 				callee_addr = aop->ptr;
 			}
 		}
+		// TODO: Apart from checking the types database, we should also derive the information
+		// from the RzAnalysisFunction if nothing was found in the RzTypeDB
 		if (full_name) {
 			if (rz_type_func_exist(core->analysis->typedb, full_name)) {
 				fcn_name = strdup(full_name);
@@ -502,75 +580,23 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 				char *cc = strdup(Cc);
 				type_match(core, fcn_name, aop->addr, bb->addr, cc, prev_idx, userfnc, callee_addr, op_cache);
 				prev_idx = cur_idx;
-				ret_type = rz_type_func_ret(core->analysis->typedb, fcn_name);
-				RZ_FREE(ret_reg);
+				retctx->ret_type = rz_type_func_ret(core->analysis->typedb, fcn_name);
+				RZ_FREE(retctx->ret_reg);
 				const char *rr = rz_analysis_cc_ret(core->analysis, cc);
 				if (rr) {
-					ret_reg = strdup(rr);
+					retctx->ret_reg = strdup(rr);
 				}
-				resolved = false;
+				retctx->resolved = false;
 				free(cc);
 			}
 			if (!strcmp(fcn_name, "__stack_chk_fail")) {
-				const char *query = sdb_fmt("%d.addr", cur_idx - 1);
-				ut64 mov_addr = sdb_num_get(trace, query, 0);
-				RzAnalysisOp *mop = rz_core_analysis_op(core, mov_addr, RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_BASIC);
-				if (mop) {
-					RzAnalysisVar *mopvar = rz_analysis_get_used_function_var(core->analysis, mop->addr);
-					ut32 type = mop->type & RZ_ANALYSIS_OP_TYPE_MASK;
-					if (type == RZ_ANALYSIS_OP_TYPE_MOV) {
-						var_rename(core->analysis, mopvar, "canary", aop->addr);
-					}
-				}
-				rz_analysis_op_free(mop);
+				handle_stack_canary(core, trace, aop, cur_idx);
 			}
 			free(fcn_name);
 		}
-	} else if (!resolved && ret_type && ret_reg) {
+	} else if (return_type_analysis_context_unresolved(retctx)) {
 		// Forward propagation of function return type
-		char src[REGNAME_SIZE] = { 0 };
-		const char *query = sdb_fmt("%d.reg.write", cur_idx);
-		const char *cur_dest = sdb_const_get(trace, query, 0);
-		get_src_regname(core, aop->addr, src, sizeof(src));
-		if (ret_reg && *src && strstr(ret_reg, src)) {
-			if (used_vars && !rz_pvector_empty(used_vars) && aop->direction == RZ_ANALYSIS_OP_DIR_WRITE) {
-				rz_pvector_foreach (used_vars, uvit) {
-					RzAnalysisVar *var = *uvit;
-					var_type_set(core->analysis, var, ret_type, false);
-				}
-				resolved = true;
-			} else if (type == RZ_ANALYSIS_OP_TYPE_MOV) {
-				RZ_FREE(ret_reg);
-				if (cur_dest) {
-					ret_reg = strdup(cur_dest);
-				}
-			}
-		} else if (cur_dest) {
-			char *foo = strdup(cur_dest);
-			char *tmp = strchr(foo, ',');
-			if (tmp) {
-				*tmp++ = '\0';
-			}
-			if (ret_reg && (strstr(ret_reg, foo) || (tmp && strstr(ret_reg, tmp)))) {
-				resolved = true;
-			} else if (type == RZ_ANALYSIS_OP_TYPE_MOV &&
-				(next_op && next_op->type == RZ_ANALYSIS_OP_TYPE_MOV)) {
-				// Progate return type passed using pointer
-				// int *ret; *ret = strlen(s);
-				// TODO: memref check , dest and next src match
-				char nsrc[REGNAME_SIZE] = { 0 };
-				get_src_regname(core, next_op->addr, nsrc, sizeof(nsrc));
-				if (ret_reg && *nsrc && strstr(ret_reg, nsrc) && aop->direction == RZ_ANALYSIS_OP_DIR_READ) {
-					if (used_vars && !rz_pvector_empty(used_vars)) {
-						rz_pvector_foreach (used_vars, uvit) {
-							RzAnalysisVar *var = *uvit;
-							var_type_set(core->analysis, var, ret_type, true);
-						}
-					}
-				}
-			}
-			free(foo);
-		}
+		propagate_return_type(core, aop, next_op, trace, retctx, cur_idx, used_vars);
 	}
 	// Type propagation using instruction access pattern
 	if (used_vars && !rz_pvector_empty(used_vars)) {
@@ -671,7 +697,6 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 			}
 		}
 	}
-	free(ret_reg);
 }
 
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
@@ -724,6 +749,12 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_list_sort(fcn->bbs, bb_cmpaddr);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	RzAnalysisBlock *bb;
+	// Create a new context to store the return type propagation state
+	struct ReturnTypeAnalysisCtx retctx = {
+		.resolved = false,
+		.ret_type = NULL,
+		.ret_reg = NULL
+	};
 	rz_list_foreach (fcn->bbs, it, bb) {
 		ut64 addr = bb->addr;
 		rz_reg_set_value(core->dbg->reg, r, addr);
@@ -767,7 +798,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 			RzListIter *it;
 			RzAnalysisFunction *fcn;
 			rz_list_foreach (fcns, it, fcn) {
-				propagate_types_among_used_variables(core, op_cache, trace, fcn, bb, aop, cur_idx);
+				propagate_types_among_used_variables(core, op_cache, trace, fcn, bb, aop, cur_idx, &retctx);
 			}
 			addr += aop->size;
 		}
