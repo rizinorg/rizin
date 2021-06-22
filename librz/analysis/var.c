@@ -74,7 +74,9 @@ static inline bool var_overlap(RzAnalysisVar *a, RzAnalysisVar *b, ut64 a_size) 
 // Search for all variables that are located at the offset
 // overlapped by var and remove them
 static void resolve_var_overlaps(RzAnalysisVar *var) {
-	if (!var->type || var->kind == RZ_ANALYSIS_VAR_KIND_REG) {
+	// We do not touch variables stored in registers
+	// or arguments
+	if (!var->type || var->isarg || var->kind == RZ_ANALYSIS_VAR_KIND_REG) {
 		return;
 	}
 	ut64 varsize = rz_type_db_get_bitsize(var->fcn->analysis->typedb, var->type) / 8;

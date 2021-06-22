@@ -4,6 +4,7 @@ CMDS=<<EOF
 aaa
 s main
 afvb*
+?e ---
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
 afvt s1 "struct S1"
@@ -16,6 +17,7 @@ afvb -272 var_110h int64_t @ 0x4004a6
 afvb -268 var_10ch int64_t @ 0x4004a6
 afvb -264 var_108h int64_t @ 0x4004a6
 afvb -4 var_4h int64_t @ 0x4004a6
+---
 afvb -288 var_120h char ** @ 0x4004a6
 afvb -276 var_114h int @ 0x4004a6
 afvb -272 s1 struct S1 @ 0x4004a6
@@ -31,6 +33,7 @@ s main
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
 pi 4 @ 0x004004be
+?e ---
 afvt s1 "struct S1"
 pi 4 @ 0x004004be
 EOF
@@ -39,6 +42,7 @@ mov dword [s1], 1
 mov dword [var_10ch], 2
 mov dword [var_108h], 3
 lea rax, [s1]
+---
 mov dword [s1.a], 1
 mov dword [s1.b], 2
 mov dword [s1.c], 3
