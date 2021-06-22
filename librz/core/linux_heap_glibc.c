@@ -2440,22 +2440,3 @@ RZ_API RzHeapChunkSimple *GH(rz_heap_chunk_wrapper)(RzCore *core, GHT addr) {
 	free(heap_chunk);
 	return simple_chunk;
 }
-
-RZ_API RzHeapBin *GH(rz_heap_bin_content_wrapper)(RzCore *core, ut64 m_state, int bin_num) {
-	GHT m_arena;
-	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
-		return NULL;
-	}
-	if (!GH(is_arena)(core, m_arena, m_state)) {
-		return NULL;
-	}
-	MallocState *main_arena = RZ_NEW0(MallocState);
-	if (!main_arena) {
-		return NULL;
-	}
-	if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
-		free(main_arena);
-		return NULL;
-	}
-	return GH(rz_heap_bin_content)(core, main_arena, bin_num);
-}
