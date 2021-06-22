@@ -700,7 +700,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 		case 'O': // "iO"
 			switch (input[1]) {
 			case ' ':
-				rz_sys_cmdf("rz-bin -O \"%s\" \"%s\"", rz_str_trim_head_ro(input + 1), desc->name);
+				rz_sys_cmdf("rz-bin -O \"%s\" \"%s\"", rz_str_trim_head_ro(input + 1), desc ? desc->name : "");
 				break;
 			default:
 				rz_sys_cmdf("rz-bin -O help");
