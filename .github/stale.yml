@@ -1,7 +1,7 @@
 # Configuration for probot-stale - https://github.com/probot/stale
 
 # Number of days of inactivity before an Issue or Pull Request becomes stale
-daysUntilStale: 700
+daysUntilStale: 186
 
 # Number of days of inactivity before an Issue or Pull Request with the stale label is closed.
 # Set to false to disable. If disabled, issues still need to be closed manually, but will remain marked as stale.
@@ -12,10 +12,10 @@ onlyLabels: []
 
 # Issues or Pull Requests with these labels will never be considered stale. Set to `[]` to disable
 exemptLabels:
-  - architectures-enhancements
   - enhancement
-  - New Architecture
-  - New File-Format
+  - high-priority
+  - documentation
+  - infrastructure
 
 # Set to true to ignore issues in a project (defaults to false)
 exemptProjects: false
@@ -32,9 +32,9 @@ staleLabel: stale
 # Comment to post when marking as stale. Set to `false` to disable
 markComment: >
   This issue has been automatically marked as stale because it has not had
-  recent activity. Considering a lot has changed since its creation, we kindly
-  ask you to check again if the issue you reported is still relevant in the
-  current version of rizin. If it is, update this issue with a comment,
+  recent activity. Considering a lot has probably changed since its creation,
+  we kindly ask you to check again if the issue you reported is still relevant
+  in the current version of rizin. If it is, update this issue with a comment,
   otherwise it will be automatically closed if no further activity occurs.
   Thank you for your contributions.
 
@@ -52,7 +52,7 @@ closeComment: >
 limitPerRun: 30
 
 # Limit to only `issues` or `pulls`
-only: issues
+# only: issues
 
 # Optionally, specify configuration settings that are specific to just 'issues' or 'pulls':
 # pulls:
