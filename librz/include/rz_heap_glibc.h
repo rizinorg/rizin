@@ -300,11 +300,18 @@ typedef struct rz_heap_chunk_simple {
 	ut64 bk_nextsize; /* bk nextsize pointer, only if free */
 } RzHeapChunkSimple;
 
+typedef struct rz_heap_bin {
+	ut64 addr;
+	ut64 size;
+	ut64 fd;
+	ut64 bk;
+	int bin_num;
+	char *type;
+	RzList *chunks;
+} RzHeapBin;
+
 RZ_API RzHeapChunk_64 *rz_heap_get_chunk_at_addr_64(RzCore *core, ut64 addr);
 RZ_API RzHeapChunk_32 *rz_heap_get_chunk_at_addr_32(RzCore *core, ut32 addr);
-
-RZ_API RzList *rz_heap_bin_content_list_64(RzCore *core, MallocState *main_arena, int bin_num);
-RZ_API RzList *rz_heap_bin_content_list_32(RzCore *core, MallocState *main_arena, int bin_num);
 
 RZ_API RzList *rz_heap_arenas_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena);
 RZ_API RzList *rz_heap_arenas_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena);

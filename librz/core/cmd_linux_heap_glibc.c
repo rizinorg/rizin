@@ -79,3 +79,7 @@ RZ_API RzList *rz_heap_chunks_list(RzCore *core, ut64 m_arena) {
 RZ_API RzHeapChunkSimple *rz_heap_chunk(RzCore *core, ut64 addr) {
 	call_handler(rz_heap_chunk_wrapper, addr);
 }
+
+RZ_API RzHeapBin *rz_heap_bin_content(RzCore *core, ut64 m_arena, int bin_num) {
+	call_handler(rz_heap_bin_content_wrapper, m_arena, bin_num);
+}

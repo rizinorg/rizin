@@ -1358,6 +1358,16 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 	}
 }
 
+char *GH(rz_bin_num_to_type)(int bin_num) {
+	if (bin_num == 0) {
+		return rz_str_new("Unsorted");
+	} else if (bin_num >= 1 && bin_num <= NSMALLBINS - 1) {
+		return rz_str_new("Small");
+	} else if (bin_num >= NSMALLBINS && bin_num <= NBINS - 2) {
+		return rz_str_new("Large");
+	}
+	return NULL;
+}
 /**
  * \brief Get list of chunks of <bin_num> bin from NBINS array of an arena.
  * \param core RzCore pointer
@@ -1365,31 +1375,39 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
  * \param bin_num bin number of bin whose chunk list you want
  * \return RzList of RzHeapChunkListItem for the bin
  */
-RZ_API RzList *GH(rz_heap_bin_content_list)(RzCore *core, MallocState *main_arena, int bin_num) {
+RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena, int bin_num) {
 	int idx = 2 * bin_num;
 	ut64 fw = main_arena->GH(bins)[idx];
 	ut64 bk = main_arena->GH(bins)[idx + 1];
-	RzList *chunks = rz_list_newf(free);
+	RzHeapBin *bin = RZ_NEW0(RzHeapBin);
+	if (!bin) {
+		return NULL;
+	}
+	bin->fd = fw;
+	bin->bk = bk;
+	bin->bin_num = bin_num;
+	bin->type = GH(rz_bin_num_to_type)(bin_num);
+	bin->chunks = rz_list_newf(free);
 	GH(RzHeapChunk) *head = RZ_NEW0(GH(RzHeapChunk));
 	if (!head) {
-		return chunks;
+		return bin;
 	}
 
 	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
 
 	if (head->fd == fw) {
-		return chunks;
+		return bin;
 	}
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk) {
-		return chunks;
+		return bin;
 	}
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
 	GH(get_brks)
 	(core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		free(cnk);
-		return chunks;
+		return bin;
 	}
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (tcache) {
@@ -1408,12 +1426,12 @@ RZ_API RzList *GH(rz_heap_bin_content_list)(RzCore *core, MallocState *main_aren
 			break;
 		}
 		chunk->addr = fw;
-		rz_list_append(chunks, chunk);
+		rz_list_append(bin->chunks, chunk);
 		fw = cnk->fd;
 	}
 	free(cnk);
 	free(head);
-	return chunks;
+	return bin;
 }
 /**
  * \brief Prints the heap chunks in a bin with double linked list (small|large|unsorted)
@@ -1423,36 +1441,30 @@ RZ_API RzList *GH(rz_heap_bin_content_list)(RzCore *core, MallocState *main_aren
  * \return number of chunks found in the bin
  */
 static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_num, PJ *pj) {
-	int idx = 2 * bin_num;
-	ut64 fw = main_arena->GH(bins)[idx];
-	ut64 bk = main_arena->GH(bins)[idx + 1];
 	RzListIter *iter;
 	RzHeapChunkListItem *pos;
-	RzList *chunks = GH(rz_heap_bin_content_list)(core, main_arena, bin_num);
+	RzHeapBin *bin = GH(rz_heap_bin_content)(core, main_arena, bin_num);
+	RzList *chunks = bin->chunks;
 	if (rz_list_length(chunks) == 0) {
 		rz_list_free(chunks);
+		free(bin->type);
+		free(bin);
 		return 0;
 	}
 	int chunks_cnt = 0;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	if (!pj) {
-		if (bin_num == 0) {
-			rz_cons_printf("Unsorted");
-		} else if (bin_num >= 1 && bin_num <= NSMALLBINS - 1) {
-			rz_cons_printf("Small");
-		} else if (bin_num >= NSMALLBINS && bin_num <= NBINS - 2) {
-			rz_cons_printf("Large");
-		}
+		rz_cons_printf("%s", bin->type);
 		rz_cons_printf("_bin[");
-		PRINTF_BA("%d", bin_num);
+		PRINTF_BA("%d", bin->bin_num);
 		rz_cons_printf("]: fd=");
-		PRINTF_YA("0x%" PFMT64x, fw);
+		PRINTF_YA("0x%" PFMT64x, bin->fd);
 		rz_cons_printf(", bk=");
-		PRINTF_YA("0x%" PFMT64x, bk);
+		PRINTF_YA("0x%" PFMT64x, bin->bk);
 		rz_cons_newline();
 	} else {
-		pj_kn(pj, "fd", fw);
-		pj_kn(pj, "bk", bk);
+		pj_kn(pj, "fd", bin->fd);
+		pj_kn(pj, "bk", bin->bk);
 		pj_ka(pj, "chunks");
 	}
 
@@ -1468,6 +1480,8 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		chunks_cnt += 1;
 	}
 	rz_list_free(chunks);
+	free(bin->type);
+	free(bin);
 	if (pj) {
 		pj_end(pj);
 	}
@@ -2425,4 +2439,23 @@ RZ_API RzHeapChunkSimple *GH(rz_heap_chunk_wrapper)(RzCore *core, GHT addr) {
 	simple_chunk->bk_nextsize = heap_chunk->bk_nextsize;
 	free(heap_chunk);
 	return simple_chunk;
+}
+
+RZ_API RzHeapBin *GH(rz_heap_bin_content_wrapper)(RzCore *core, ut64 m_state, int bin_num) {
+	GHT m_arena;
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		return NULL;
+	}
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		return NULL;
+	}
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return NULL;
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+		free(main_arena);
+		return NULL;
+	}
+	return GH(rz_heap_bin_content)(core, main_arena, bin_num);
 }
