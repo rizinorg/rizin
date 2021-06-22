@@ -2348,6 +2348,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_arena_bins_print_handler)(RzCore *core, int ar
 	free(main_arena);
 	return RZ_CMD_STATUS_OK;
 }
+
 /**
  * \brief A wrapper around GH(rz_heap_arenas_list) which handles finding main_arena
  * \param core RzCore pointer
@@ -2368,6 +2369,7 @@ RZ_API RzList *GH(rz_heap_arena_list_wrapper)(RzCore *core) {
 	}
 	return GH(rz_heap_arenas_list)(core, m_arena, main_arena);
 }
+
 /**
  * \brief A wrapper around GH(rz_heap_chunks_list) which handles finding the main arena
  * \param core RzCore pointer
@@ -2392,6 +2394,7 @@ RZ_API RzList *GH(rz_heap_chunks_list_wrapper)(RzCore *core, ut64 m_state) {
 	}
 	return GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state, true);
 }
+
 /**
  * \brief Get info about a heap chunk as RzHeapChunkSimple
  * \param core RzCore pointer
