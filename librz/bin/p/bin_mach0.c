@@ -13,8 +13,6 @@
 
 // wip settings
 
-extern RzBinWrite rz_bin_write_mach0;
-
 static RzBinInfo *info(RzBinFile *bf);
 
 static Sdb *get_sdb(RzBinFile *bf) {
@@ -1038,7 +1036,6 @@ RzBinPlugin rz_bin_plugin_mach0 = {
 	.patch_relocs = &patch_relocs,
 	.create = &create,
 	.classes = &MACH0_(parse_classes),
-	.write = &rz_bin_write_mach0,
 	.section_type_to_string = &MACH0_(section_type_to_string),
 	.section_flag_to_rzlist = &MACH0_(section_flag_to_rzlist),
 };

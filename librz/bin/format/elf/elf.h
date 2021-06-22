@@ -322,11 +322,4 @@ RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NO
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
 Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin);
 
-// elf_write.c
-
-bool Elf_(rz_bin_elf_del_rpath)(RzBinFile *bf);
-bool Elf_(rz_bin_elf_entry_write)(RzBinFile *bf, ut64 addr);
-bool Elf_(rz_bin_elf_section_perms)(RzBinFile *bf, const char *name, int perms);
-ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size);
-
 #endif

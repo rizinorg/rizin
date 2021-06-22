@@ -354,12 +354,6 @@ static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 	}
 
 	switch (arg[0]) {
-	case 'e':
-		rc = rz_bin_wr_entry(bin, rz_num_math(NULL, ptr));
-		if (rc) {
-			rc = rz_bin_wr_output(bin, output);
-		}
-		break;
 	case 'd':
 		if (!ptr) {
 			goto _rabin_do_operation_error;
@@ -382,25 +376,6 @@ static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 		default:
 			goto _rabin_do_operation_error;
 		}
-		break;
-	case 'a':
-		if (!ptr) {
-			goto _rabin_do_operation_error;
-		}
-		switch (*ptr) {
-		case 'l':
-			if (!ptr2 || !rz_bin_wr_addlib(bin, ptr2)) {
-				goto error;
-			}
-			rc = rz_bin_wr_output(bin, output);
-			break;
-		default:
-			goto _rabin_do_operation_error;
-		}
-		break;
-	case 'R':
-		rz_bin_wr_rpath_del(bin);
-		rc = rz_bin_wr_output(bin, output);
 		break;
 	case 'C': {
 		RzBinFile *cur = rz_bin_cur(bin);
@@ -431,18 +406,6 @@ static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 				free(sign);
 			}
 		}
-	} break;
-	case 'r':
-		rz_bin_wr_scn_resize(bin, ptr, rz_num_math(NULL, ptr2));
-		rc = rz_bin_wr_output(bin, output);
-		break;
-	case 'p': {
-		int perms = (int)rz_num_math(NULL, ptr2);
-		if (!perms) {
-			perms = rz_str_rwx(ptr2);
-		}
-		rz_bin_wr_scn_perms(bin, ptr, perms);
-		rc = rz_bin_wr_output(bin, output);
 	} break;
 	default:
 	_rabin_do_operation_error:
@@ -799,13 +762,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 			if (isBinopHelp(op)) {
 				printf("Usage: iO [expression]:\n"
-				       " e/0x8048000       change entrypoint\n"
 				       " d/s/1024          dump symbols\n"
 				       " d/S/.text         dump section\n"
-				       " r/.data/1024      resize section\n"
-				       " R                 remove RPATH\n"
-				       " a/l/libfoo.dylib  add library\n"
-				       " p/.data/rwx       change section permissions\n"
 				       " c                 show Codesign data\n"
 				       " C                 show LDID entitlements\n");
 				rz_core_fini(&core);

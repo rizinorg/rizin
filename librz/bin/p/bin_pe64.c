@@ -353,8 +353,6 @@ static void header(RzBinFile *bf) {
 	}
 }
 
-extern struct rz_bin_write_t rz_bin_write_pe64;
-
 static RzList *trycatch(RzBinFile *bf) {
 	RzIO *io = bf->rbin->iob.io;
 	ut64 baseAddr = bf->o->opts.baseaddr;
@@ -505,7 +503,6 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.relocs = &relocs,
 	.get_vaddr = &get_vaddr,
 	.trycatch = &trycatch,
-	.write = &rz_bin_write_pe64,
 	.hashes = &compute_hashes,
 	.section_flag_to_rzlist = &PE_(section_flag_to_rzlist),
 };

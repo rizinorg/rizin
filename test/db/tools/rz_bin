@@ -386,50 +386,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-bin -qOp/.data/rwx on PE32
-FILE=bins/pe/test.exe
-CMDS=<<EOF
-mkdir .tmp
-rm .tmp/rz-bintestpe1.exe
-!rz-bin -qOp/.data/rwx -o.tmp/rz-bintestpe1.exe ${RZ_FILE}
-!rz-bin -S .tmp/rz-bintestpe1.exe
-rm .tmp/rz-bintestpe1.exe
-EOF
-EXPECT=<<EOF
-wx e0000040 @ 0x244
-[Sections]
-
-nth paddr         size vaddr        vsize perm name   flags
------------------------------------------------------------
-0   0x00000400  0x8a00 0x00401000  0x9000 -r-x .text  CNT_CODE
-1   0x00008e00  0x2400 0x0040a000  0x3000 -r-- .rdata CNT_INITIALIZED_DATA
-2   0x0000b200  0x1000 0x0040d000  0x3000 -rwx .data  CNT_INITIALIZED_DATA
-3   0x0000c200   0x200 0x00410000  0x1000 -r-- .rsrc  CNT_INITIALIZED_DATA
-4   0x0000c400   0xe00 0x00411000  0x1000 -r-- .reloc CNT_INITIALIZED_DATA,IMAGE_SCN_MEM_DISCARDABLE
-
-EOF
-RUN
-
-NAME=rz-bin -qOp//8 on PE32+
-FILE=bins/pe/normal64.exe
-CMDS=<<EOF
-mkdir .tmp
-rm .tmp/rz-bintestpe2.exe
-!rz-bin -qOp//8 -o.tmp/rz-bintestpe2.exe ${RZ_FILE}
-!rz-bin -S .tmp/rz-bintestpe2.exe
-rm .tmp/rz-bintestpe2.exe
-EOF
-EXPECT=<<EOF
-wx 10000000 @ 0x16c
-[Sections]
-
-nth paddr        size vaddr        vsize perm name   flags
-----------------------------------------------------------
-0   0x00000200  0x200 0x00401000  0x1000 s--- sect_0 
-
-EOF
-RUN
-
 NAME=rz-bin -ee -j
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=!!rz-bin -ee -j ${RZ_FILE}~{}
