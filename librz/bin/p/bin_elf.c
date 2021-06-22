@@ -30,7 +30,6 @@ static bool check_buffer(RzBuffer *buf) {
 }
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
-extern struct rz_bin_write_t rz_bin_write_elf;
 
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	rz_return_val_if_fail(bin && opt && opt->arch, NULL);
@@ -158,7 +157,6 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.create = &create,
-	.write = &rz_bin_write_elf,
 	.file_type = &get_file_type,
 	.regstate = &regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),

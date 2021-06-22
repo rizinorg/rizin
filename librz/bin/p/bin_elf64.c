@@ -17,7 +17,6 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf64;
-extern struct rz_bin_write_t rz_bin_write_elf64;
 
 static ut64 get_elf_vaddr64(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
@@ -152,7 +151,6 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.create = &create,
-	.write = &rz_bin_write_elf64,
 	.get_vaddr = &get_elf_vaddr64,
 	.file_type = &get_file_type,
 	.regstate = &regstate,

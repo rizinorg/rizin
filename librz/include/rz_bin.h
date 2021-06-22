@@ -547,7 +547,6 @@ typedef struct rz_bin_plugin_t {
 	void (*header)(RzBinFile *bf);
 	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
-	struct rz_bin_write_t *write;
 	char *(*enrich_asm)(RzBinFile *bf, const char *asm_str, int asm_len);
 	int (*get_offset)(RzBinFile *bf, int type, int idx);
 	char *(*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
@@ -778,14 +777,6 @@ typedef struct rz_bin_mem_t {
 	RzList /*<RzBinMem>*/ *mirrors; //for mirror access; stuff here should only create new maps not new fds
 } RzBinMem;
 
-typedef struct rz_bin_write_t {
-	ut64 (*scn_resize)(RzBinFile *bf, const char *name, ut64 size);
-	bool (*scn_perms)(RzBinFile *bf, const char *name, int perms);
-	int (*rpath_del)(RzBinFile *bf);
-	bool (*entry)(RzBinFile *bf, ut64 addr);
-	bool (*addlib)(RzBinFile *bf, const char *lib);
-} RzBinWrite;
-
 // TODO: deprecate rz_bin_is_big_endian
 // TODO: has_dbg_syms... maybe flags?
 
@@ -966,14 +957,6 @@ RZ_API RzBinSection *rz_bin_get_section_at(RzBinObject *o, ut64 off, int va);
 /* dbginfo.c */
 RZ_DEPRECATE RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line);
 RZ_DEPRECATE RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin);
-
-/* bin_write.c */
-RZ_API bool rz_bin_wr_addlib(RzBin *bin, const char *lib);
-RZ_API ut64 rz_bin_wr_scn_resize(RzBin *bin, const char *name, ut64 size);
-RZ_API bool rz_bin_wr_scn_perms(RzBin *bin, const char *name, int perms);
-RZ_API bool rz_bin_wr_rpath_del(RzBin *bin);
-RZ_API bool rz_bin_wr_entry(RzBin *bin, ut64 addr);
-RZ_API bool rz_bin_wr_output(RzBin *bin, const char *filename);
 
 RZ_API RzList *rz_bin_get_mem(RzBin *bin);
 
