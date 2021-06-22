@@ -13,10 +13,6 @@
 #ifndef _INCLUDE_ELF_H_
 #define _INCLUDE_ELF_H_
 
-#define bprintf \
-	if (bin->verbose) \
-	RZ_LOG_WARN
-
 #define RZ_BIN_ELF_SCN_IS_EXECUTABLE(x) x &SHF_EXECINSTR
 #define RZ_BIN_ELF_SCN_IS_READABLE(x)   x &SHF_ALLOC
 #define RZ_BIN_ELF_SCN_IS_WRITABLE(x)   x &SHF_WRITE
@@ -198,7 +194,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 	ut64 baddr;
 	ut64 boffset;
 	int endian;
-	bool verbose;
 	const char *file;
 	RzBuffer *b;
 	Sdb *kv;
@@ -219,7 +214,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 // elf.c
 
-RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, bool verbose);
+RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf);
 void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_p2v_new)(RZ_NONNULL ELFOBJ *bin, ut64 paddr);
 ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);

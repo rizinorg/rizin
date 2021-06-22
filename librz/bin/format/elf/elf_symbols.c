@@ -311,7 +311,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 		}
 		return plt_addr;
 	case RZ_AARCH64_RELATIVE:
-		eprintf("Unsupported relocation type for imports %d\n", rel->type);
+		RZ_LOG_WARN("Unsupported relocation type for imports %d\n", rel->type);
 		return UT64_MAX;
 	case RZ_AARCH64_IRELATIVE:
 		if (rel->addend > plt_addr) { // start
@@ -322,7 +322,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 	case RZ_AARCH64_JUMP_SLOT:
 		return plt_addr + pos * 16 + 32;
 	default:
-		bprintf("Unsupported relocation type for imports %d\n", rel->type);
+		RZ_LOG_WARN("Unsupported relocation type for imports %d\n", rel->type);
 		return UT64_MAX;
 	}
 	return UT64_MAX;
@@ -372,7 +372,7 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RzBinElfReloc *rel) {
 
 static ut64 get_import_addr_sparc(ELFOBJ *bin, RzBinElfReloc *rel) {
 	if (rel->type != RZ_SPARC_JMP_SLOT) {
-		bprintf("Unknown sparc reloc type %d\n", rel->type);
+		RZ_LOG_WARN("Unknown sparc reloc type %d\n", rel->type);
 		return UT64_MAX;
 	}
 	ut64 tmp = get_got_entry(bin, rel);
@@ -995,19 +995,17 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 
 			if (!strtab) {
 				if (!(strtab = (char *)calloc(1, 8 + strtab_section->size))) {
-					bprintf("malloc (syms strtab)");
 					goto beach;
 				}
 
 				if (rz_buf_read_at(bin->b, strtab_section->offset, (ut8 *)strtab, strtab_section->size) == -1) {
-					bprintf("read (syms strtab)\n");
 					goto beach;
 				}
 			}
 
 			newsize = section->size + 1;
 			if (newsize < 0 || newsize > bin->size) {
-				bprintf("invalid shdr %zu size\n", i);
+				RZ_LOG_WARN("invalid shdr %zu size\n", i);
 				goto beach;
 			}
 			nsym = (int)(section->size / sizeof(Elf_(Sym)));
@@ -1026,7 +1024,6 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 				}
 			}
 			if (!(sym = (Elf_(Sym) *)calloc(nsym, sizeof(Elf_(Sym))))) {
-				bprintf("calloc (syms)");
 				goto beach;
 			}
 			if (!UT32_MUL(&size, nsym, sizeof(Elf_(Sym)))) {
@@ -1045,13 +1042,12 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 				ut64 offset = section->offset + j * sizeof(Elf_(Sym));
 
 				if (!get_symbol_entry(bin, offset, sym + j)) {
-					bprintf("read (sym)\n");
 					goto beach;
 				}
 			}
 			ret = realloc(ret, (ret_size + nsym) * sizeof(RzBinElfSymbol));
 			if (!ret) {
-				bprintf("Cannot allocate %d symbols\n", nsym);
+				RZ_LOG_WARN("Cannot allocate %d symbols\n", nsym);
 				goto beach;
 			}
 			memset(ret + ret_size, 0, nsym * sizeof(RzBinElfSymbol));
@@ -1096,7 +1092,6 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 				}
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name + 1 > strtab_section->size) {
-					bprintf("index out of strtab range\n");
 					continue;
 				}
 				{
@@ -1170,7 +1165,6 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 		bin->symbols_by_ord = (RzBinSymbol **)calloc(RZ_MAX(1, nsym + 1), sizeof(RzBinSymbol *));
 		import_ret = calloc(import_ret_ctr + 1, sizeof(RzBinElfSymbol));
 		if (!import_ret) {
-			bprintf("Cannot allocate %d symbols\n", nsym);
 			goto beach;
 		}
 		import_ret_ctr = 0;

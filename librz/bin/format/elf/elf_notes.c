@@ -13,7 +13,7 @@ static void parse_note_prstatus(ELFOBJ *bin, RzBinElfNote *note, Elf_(Nhdr) * no
 	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
 
 	if (!layout) {
-		eprintf("Fetching registers from core file not supported for this architecture.\n");
+		RZ_LOG_WARN("Fetching registers from core file not supported for this architecture.\n");
 		return;
 	}
 
@@ -24,7 +24,7 @@ static void parse_note_prstatus(ELFOBJ *bin, RzBinElfNote *note, Elf_(Nhdr) * no
 
 	if (rz_buf_read_at(bin->b, offset + layout->regdelta, buf, layout->regsize) != layout->regsize) {
 		free(buf);
-		bprintf("Cannot read register state from CORE file\n");
+		RZ_LOG_WARN("Cannot read register state from CORE file\n");
 		return;
 	}
 

@@ -78,12 +78,12 @@ static Sdb *get_sdb(RzBinFile *bf) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	struct Elf_(rz_bin_elf_obj_t) *res = Elf_(rz_bin_elf_new_buf)(buf, bf->rbin->verbose);
+	ELFOBJ *res = Elf_(rz_bin_elf_new_buf)(buf);
 	if (res) {
-		//	sdb_ns_set (sdb, "info", res->kv);
 		*bin_obj = res;
 		return true;
 	}
+
 	return false;
 }
 
