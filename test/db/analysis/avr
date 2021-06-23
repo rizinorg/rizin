@@ -62,19 +62,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=test adding ROM maps if file_offset > rom address
-FILE=bins/firmware/arduino_avr.bin
-ARGS=-e asm.cpu=ATmega16 -m 8191
-CMDS=<<EOF
-e scr.prompt=false
-aaa
-EOF
-EXPECT_ERR=<<EOF
-Warning: using oba to load the syminfo from different mapaddress.
-[2KWARNING: Cannot map the ROM section at 1fff with a size of 4000 due file being mapped at 0x1fff
-EOF
-RUN
-
 NAME=avr DISasm: IO-Ports
 FILE=bins/firmware/arduino_avr.bin
 CMDS=pd 13 @ 0x00000282
@@ -171,16 +158,14 @@ EOF
 RUN
 
 NAME=test adding ROM maps from Arch Profiles
-FILE=bins/firmware/arduino_avr.bin
+FILE=bins/elf/analysis/bugurtos-avr.elf
 ARGS=-e asm.cpu=ATmega16
 CMDS=<<EOF
 aaa
-om
+iS~.rom
 EOF
 EXPECT=<<EOF
- 3 fd: 3 +0x00000000 0x00001fff - 0x00005ffe r-x ROM
- 2 fd: 4 +0x00000000 0x00100000 - 0x001effff rw- mem.0x100000_0xf0000
- 1 fd: 3 +0x00000000 0x00000000 - 0x00003721 r-x 
+8   0x00001fff  0x4000 0x00001fff  0x4000 -r-x .rom      NULL     
 EOF
 RUN
 

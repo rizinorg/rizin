@@ -7171,8 +7171,7 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_config_set(core->config, "dbg.backend", dh_orig);
 		rz_core_task_yield(&core->tasks);
 	}
-	ut64 file_offset = rz_config_get_i(core->config, "file.offset");
-	rz_analysis_add_io_registers_map(core->io, core->analysis, file_offset);
+	rz_analysis_add_io_registers_map(core->bin->cur->o, core->analysis);
 	return true;
 }
 
@@ -7264,21 +7263,35 @@ RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction 
 	return rz_strbuf_drain(sb);
 }
 
-RZ_API bool rz_analysis_add_io_registers_map(RzIO *io, RzAnalysis *analysis, ut64 file_offset) {
+static int check_rom_exists(const void *value, const void *data) {
+	const char *name = (const char *)value;
+	const RzBinSection *sections = (const RzBinSection *)data;
+	return strcmp(name, sections->name);
+}
+
+RZ_API bool rz_analysis_add_io_registers_map(RzBinObject *o, RzAnalysis *analysis) {
 	ut64 rom_size = analysis->arch_target->profile->rom_size;
 	ut64 rom_address = analysis->arch_target->profile->rom_address;
-	if (rom_address == 0 || rom_size == 0)
-		return false;
-	RzIOMap *map = rz_io_map_get(io, rom_address);
-	if (!map) {
+	if (rom_address == 0 || rom_size == 0) {
 		return false;
 	}
-	if (file_offset >= rom_address && file_offset < (rom_address + rom_size)) {
-		RZ_LOG_WARN("Cannot map the ROM section at %" PFMT64x " with a size of %" PFMT64x " due file being mapped at 0x%" PFMT64x "\n", rom_address, rom_size, file_offset);
+	if (!o->sections) {
 		return false;
 	}
-	RzIOMap *rom_map = rz_io_map_add(io, io->desc->fd, RZ_PERM_RX, 0LL, rom_address, rom_size);
-	rz_io_map_set_name(rom_map, "ROM");
+	if (rz_list_find(o->sections, ".rom", check_rom_exists)) {
+		return false;
+	}
+	RzBinSection *s = RZ_NEW0(RzBinSection);
+	if (!s) {
+		return false;
+	}
+	s->name = strdup(".rom");
+	s->vaddr = rom_address;
+	s->vsize = rom_size;
+	s->size = rom_size;
+	s->paddr = rom_address;
+	s->perm = RZ_PERM_RX;
+	rz_list_append(o->sections, s);
 	return true;
 }
 
