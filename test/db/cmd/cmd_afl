@@ -161,7 +161,7 @@ aaa
 aflj~{main}
 EOF
 EXPECT=<<EOF
-{"offset":23264,"name":"entry0","size":46,"is-pure":"false","realsz":46,"noreturn":false,"stackframe":8,"calltype":"amd64","cost":15,"cc":1,"bits":64,"type":"fcn","nbbs":1,"edges":0,"ebbs":1,"signature":"entry0 (void *rtld_fini);","minbound":23264,"maxbound":23310,"callrefs":[{"from":23304,"to":138776,"type":"CALL"}],"datarefs":[68710,92000,68591,91888,16496,115466],"indegree":0,"outdegree":1,"nlocals":0,"nargs":1,"bpvars":[],"spvars":[],"regvars":[{"name":"rtld_fini","kind":"reg","type":"func","ref":"rdx"}],"difftype":"new"}
+{"offset":23264,"name":"entry0","size":46,"is-pure":"false","realsz":46,"noreturn":false,"stackframe":8,"calltype":"amd64","cost":15,"cc":1,"bits":64,"type":"fcn","nbbs":1,"edges":0,"ebbs":1,"signature":"entry0 (void *rtld_fini);","minbound":23264,"maxbound":23310,"callrefs":[{"from":23304,"to":138776,"type":"CALL"}],"datarefs":[68710,92000,68591,91888,16496,115466],"indegree":0,"outdegree":1,"nlocals":0,"nargs":1,"bpvars":[],"spvars":[],"regvars":[{"name":"rtld_fini","kind":"reg","type":"void *","ref":"rdx"}],"difftype":"new"}
 EOF
 RUN
 
