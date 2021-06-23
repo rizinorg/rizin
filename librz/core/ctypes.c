@@ -680,42 +680,66 @@ beach:
 	return;
 }
 
-static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzType *type, ut64 laddr, ut64 at, int offimm) {
-	rz_return_if_fail(core && op && type);
-	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
+static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath *tpath, ut64 laddr, ut64 at, int offimm) {
+	rz_return_if_fail(core && op && tpath);
+	if (tpath->typ->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	RzBaseType *btype = rz_type_db_get_base_type(core->analysis->typedb, type->identifier.name);
-	if (!btype) {
-		return;
-	}
-	char *typestr = rz_type_as_string(core->analysis->typedb, type);
-	if (!typestr) {
-		return;
-	}
-	RzList *typepaths = rz_type_path_by_offset(core->analysis->typedb, btype, offimm);
-	if (!typepaths) {
-		return;
-	}
-	RzListIter *iter;
-	RzTypePath *tpath;
-	rz_list_foreach (typepaths, iter, tpath) {
-		const char *cmt = (offimm == 0) ? tpath->path : typestr;
-		if (offimm > 0) {
-			// set hint only if link is present
-			if (rz_analysis_type_link_exists(core->analysis, laddr)) {
-				// FIXME: To set only the type path as the analysis hint
-				// only and only if the types are the exact match between
-				// possible member offset and the type linked to the laddr
-				//RzType *link = rz_analysis_type_link_at(core->analysis, laddr);
-				rz_analysis_hint_set_offset(core->analysis, at, tpath->path);
-			}
-		} else if (cmt && rz_analysis_op_ismemref(op->type)) {
-			rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
+	const char *cmt = (offimm == 0) ? tpath->path : rz_type_as_string(core->analysis->typedb, tpath->typ);
+	if (offimm > 0) {
+		// Set only the type path as the analysis hint
+		// only and only if the types are the exact match between
+		// possible member offset and the type linked to the laddr
+		RzList *paths = rz_analysis_type_paths_by_address(core->analysis, laddr + offimm);
+		if (paths && rz_list_length(paths)) {
+			RzTypePath *link = rz_list_get_top(paths);
+			rz_analysis_hint_set_offset(core->analysis, at, link->path);
 		}
+	} else if (cmt && rz_analysis_op_ismemref(op->type)) {
+		rz_meta_set_string(core->analysis, RZ_META_TYPE_VARTYPE, at, cmt);
 	}
-	rz_list_free(typepaths);
-	free(typestr);
+}
+
+struct TLAnalysisContext {
+	RzAnalysisOp *aop;
+	RzAnalysisVar *var;
+	ut64 src_addr;
+	ut64 dst_addr;
+	ut64 src_imm;
+	ut64 dst_imm;
+};
+
+// TODO: Handle multiple matches for every address and resolve conflicts between them
+static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *ctx, int ret, bool *resolved) {
+	// At first we check if there are links to the corresponding addresses
+	RzList *slinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr);
+	RzList *dlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->dst_addr);
+	RzList *vlinks = rz_analysis_type_paths_by_address(core->analysis, ctx->src_addr + ctx->src_imm);
+	//TODO: Handle register based arg for struct offset propgation
+	if (vlinks && rz_list_length(vlinks) && ctx->var && ctx->var->kind != 'r') {
+		RzTypePath *vlink = rz_list_get_top(vlinks);
+		// FIXME: For now we only propagate simple type identifiers,
+		// no pointers or arrays
+		if (vlink->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
+			RzBaseType *varbtype = rz_type_db_get_base_type(core->analysis->typedb, vlink->typ->identifier.name);
+			if (varbtype) {
+				// if a var addr matches with struct , change it's type and name
+				// var int local_e0h --> var struct foo
+				//if (strcmp(var->name, vlink) && !*resolved) {
+				if (!*resolved) {
+					*resolved = true;
+					rz_analysis_var_set_type(ctx->var, vlink->typ);
+					rz_analysis_var_rename(ctx->var, vlink->typ->identifier.name, false);
+				}
+			}
+		}
+	} else if (slinks && rz_list_length(slinks)) {
+		RzTypePath *slink = rz_list_get_top(slinks);
+		set_offset_hint(core, ctx->aop, slink, ctx->src_addr, at - ret, ctx->src_imm);
+	} else if (dlinks && rz_list_length(dlinks)) {
+		RzTypePath *dlink = rz_list_get_top(dlinks);
+		set_offset_hint(core, ctx->aop, dlink, ctx->dst_addr, at - ret, ctx->dst_imm);
+	}
 }
 
 RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
@@ -727,7 +751,6 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 	bool stack_set = false;
 	bool resolved = false;
 	int dbg_follow = rz_config_get_i(core->config, "dbg.follow");
-	RzTypeDB *typedb = core->analysis->typedb;
 	RzAnalysisEsil *esil;
 	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
 	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
@@ -822,31 +845,15 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 				rz_analysis_op_fini(&aop);
 				continue;
 			}
-			RzType *slink = rz_analysis_type_link_at(core->analysis, src_addr);
-			RzType *vlink = rz_analysis_type_link_at(core->analysis, src_addr + src_imm);
-			RzType *dlink = rz_analysis_type_link_at(core->analysis, dst_addr);
-			//TODO: Handle register based arg for struct offset propgation
-			if (vlink && var && var->kind != 'r') {
-				// FIXME: For now we only propagate simple type identifiers,
-				// no pointers or arrays
-				if (vlink->kind == RZ_TYPE_KIND_IDENTIFIER) {
-					RzBaseType *varbtype = rz_type_db_get_base_type(typedb, vlink->identifier.name);
-					if (varbtype) {
-						// if a var addr matches with struct , change it's type and name
-						// var int local_e0h --> var struct foo
-						//if (strcmp(var->name, vlink) && !resolved) {
-						if (!resolved) {
-							resolved = true;
-							rz_analysis_var_set_type(var, vlink);
-							rz_analysis_var_rename(var, vlink->identifier.name, false);
-						}
-					}
-				}
-			} else if (slink) {
-				set_offset_hint(core, &aop, slink, src_addr, at - ret, src_imm);
-			} else if (dlink) {
-				set_offset_hint(core, &aop, dlink, dst_addr, at - ret, dst_imm);
-			}
+			struct TLAnalysisContext ctx = {
+				.aop = &aop,
+				.var = var,
+				.src_addr = src_addr,
+				.dst_addr = dst_addr,
+				.src_imm = src_imm,
+				.dst_imm = dst_imm
+			};
+			resolve_type_links(core, at, &ctx, ret, &resolved);
 			if (rz_analysis_op_nonlinear(aop.type)) {
 				rz_reg_set_value(esil->analysis->reg, pc, at);
 				set_retval(core, at - ret);
