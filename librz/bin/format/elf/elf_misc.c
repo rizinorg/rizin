@@ -76,6 +76,26 @@ static bool buffer_read_64_signed(ELFOBJ *bin, ut64 *offset, st64 *result) {
 	return true;
 }
 
+bool Elf_(rz_bin_elf_check_array)(RZ_NONNULL ELFOBJ *bin, Elf_(Off) offset, Elf_(Off) length, Elf_(Off) entry_size) {
+	rz_return_val_if_fail(bin, false);
+
+	Elf_(Off) array_size;
+	if (!Elf_(rz_bin_elf_mul_off)(&array_size, length, entry_size)) {
+		return false;
+	}
+
+	Elf_(Off) end_off;
+	if (!Elf_(rz_bin_elf_add_off)(&end_off, offset, array_size)) {
+		return false;
+	}
+
+	if (!array_size || end_off > bin->size) {
+		return false;
+	}
+
+	return true;
+}
+
 bool Elf_(rz_bin_elf_read_char)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RZ_INOUT ut64 *offset, RZ_NONNULL RZ_OUT ut8 *result) {
 	rz_return_val_if_fail(bin && offset && result, false);
 	return buffer_read_8(bin, offset, result);
@@ -175,5 +195,21 @@ bool Elf_(rz_bin_elf_add_off)(Elf_(Off) * result, Elf_(Off) addr, Elf_(Off) valu
 	return UT64_ADD((ut64 *)result, addr, value);
 #else
 	return UT32_ADD((ut32 *)result, addr, value);
+#endif
+}
+
+bool Elf_(rz_bin_elf_mul_addr)(Elf_(Addr) * result, Elf_(Addr) addr, Elf_(Addr) value) {
+#if RZ_BIN_ELF64
+	return UT64_MUL((ut64 *)result, addr, value);
+#else
+	return UT32_MUL((ut32 *)result, addr, value);
+#endif
+}
+
+bool Elf_(rz_bin_elf_mul_off)(Elf_(Off) * result, Elf_(Off) addr, Elf_(Off) value) {
+#if RZ_BIN_ELF64
+	return UT64_MUL((ut64 *)result, addr, value);
+#else
+	return UT32_MUL((ut32 *)result, addr, value);
 #endif
 }

@@ -156,133 +156,63 @@ static void init_shdr_sdb(ELFOBJ *bin) {
 	sdb_set(bin->kv, "elf_shdr.format", sdb_elf_shdr_format, 0);
 }
 
-static bool set_shdr_entry(ELFOBJ *bin, Elf_(Shdr) * section, ut64 offset) {
-	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_name) ||
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_type) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_flags) ||
-		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &section->sh_addr) ||
-		!Elf_(rz_bin_elf_read_off)(bin, &offset, &section->sh_offset) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_size) ||
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_link) ||
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &section->sh_info) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_addralign) ||
-		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &section->sh_entsize)) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool read_shdr_entry(ELFOBJ *bin, size_t shdr_entry_index) {
-	ut64 offset = bin->ehdr.e_shoff + shdr_entry_index * sizeof(Elf_(Shdr));
-
-	if (!set_shdr_entry(bin, bin->shdr + shdr_entry_index, offset)) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool read_shdr(ELFOBJ *bin) {
-	for (size_t i = 0; i < bin->ehdr.e_shnum; i++) {
-		if (!read_shdr_entry(bin, i)) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-static bool init_shdr_header(ELFOBJ *bin) {
-	bin->shdr = RZ_NEWS0(Elf_(Shdr), bin->ehdr.e_shnum);
-	if (!bin->shdr) {
-		perror("malloc (shdr)");
-		return false;
-	}
-
-	if (!read_shdr(bin)) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool check_shdr_size(ELFOBJ *bin) {
-	ut32 shdr_size;
-
-	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof(Elf_(Shdr)))) {
-		return false;
-	}
-
-	if (!shdr_size || bin->ehdr.e_shoff + shdr_size > bin->size) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool rz_bin_elf_init_shdr(ELFOBJ *bin) {
-	if (!bin->ehdr.e_shnum || !check_shdr_size(bin)) {
+static bool rz_bin_elf_init_shdr(ELFOBJ *bin, RzVector *sections) {
+	bin->sections = Elf_(rz_bin_elf_convert_sections)(bin, sections);
+	if (!bin->sections) {
 		return false;
 	}
 
 	init_shdr_sdb(bin);
 
-	return init_shdr_header(bin);
+	return true;
 }
 
-static void init_shstrtab_sdb(ELFOBJ *bin) {
-	sdb_num_set(bin->kv, "elf_shstrtab.offset", bin->shstrtab_section->sh_offset, 0);
-	sdb_num_set(bin->kv, "elf_shstrtab.size", bin->shstrtab_section->sh_size, 0);
+static void init_shstrtab_sdb(ELFOBJ *bin, ut64 offset, ut64 size) {
+	sdb_num_set(bin->kv, "elf_shstrtab.offset", offset, 0);
+	sdb_num_set(bin->kv, "elf_shstrtab.size", size, 0);
 }
 
-static bool check_shstrtab(ELFOBJ *bin) {
-	return bin->shstrtab_section->sh_offset + bin->shstrtab_section->sh_size < bin->size;
-}
-
-static bool check_shstrtab_index(ELFOBJ *bin, Elf_(Half) shstrtab_index) {
-	return shstrtab_index != SHN_UNDEF && Elf_(rz_bin_elf_is_sh_index_valid)(bin, shstrtab_index);
-}
-
-static bool set_shstrtab(ELFOBJ *bin) {
-	bin->shstrtab = calloc(1, bin->shstrtab_size + 1);
+static bool set_shstrtab(ELFOBJ *bin, Elf_(Off) offset) {
+	bin->shstrtab = RZ_NEWS(char, bin->shstrtab_size + 1);
 	if (!bin->shstrtab) {
-		perror("malloc");
 		return false;
 	}
 
-	int res = rz_buf_read_at(bin->b, bin->shstrtab_section->sh_offset, (ut8 *)bin->shstrtab, bin->shstrtab_section->sh_size);
+	int res = rz_buf_read_at(bin->b, offset, (ut8 *)bin->shstrtab, bin->shstrtab_size);
 	if (res < 0) {
-		bprintf("read (shstrtab) at 0x%" PFMT64x "\n", (ut64)bin->shstrtab_section->sh_offset);
+		RZ_LOG_WARN("read (shstrtab) at 0x%" PFMT64x "\n", (ut64)offset);
 		RZ_FREE(bin->shstrtab);
 		return false;
 	}
 
-	bin->shstrtab[bin->shstrtab_section->sh_size] = '\0';
+	bin->shstrtab[bin->shstrtab_size] = '\0';
 
 	return true;
 }
 
-static bool rz_bin_elf_init_shstrtab(ELFOBJ *bin) {
-	if (!bin->shdr) {
+static bool rz_bin_elf_init_shstrtab(ELFOBJ *bin, RzVector *sections) {
+	if (!sections) {
 		return false;
 	}
 
-	Elf_(Half) shstrtab_index = bin->ehdr.e_shstrndx;
-	if (!check_shstrtab_index(bin, shstrtab_index) || !bin->shdr[shstrtab_index].sh_size) {
+	Elf_(Shdr) *section = rz_vector_index_ptr(sections, bin->ehdr.e_shstrndx);
+	if (!section) {
 		return false;
 	}
 
-	bin->shstrtab_section = bin->strtab_section = bin->shdr + shstrtab_index;
-	bin->shstrtab_size = bin->shstrtab_section->sh_size;
-
-	init_shstrtab_sdb(bin);
-
-	if (!check_shstrtab(bin)) {
+	if (!section->sh_size) {
 		return false;
 	}
 
-	if (!set_shstrtab(bin)) {
+	bin->shstrtab_size = section->sh_size;
+
+	init_shstrtab_sdb(bin, section->sh_offset, section->sh_size);
+
+	if (!Elf_(rz_bin_elf_check_array)(bin, section->sh_offset, section->sh_size, sizeof(char))) {
+		return false;
+	}
+
+	if (!set_shstrtab(bin, section->sh_offset)) {
 		return true;
 	}
 
@@ -310,7 +240,6 @@ static bool init_ehdr_ident(ELFOBJ *bin) {
 	memset(&bin->ehdr, 0, sizeof(Elf_(Ehdr)));
 
 	if (rz_buf_read_at(bin->b, 0, bin->ehdr.e_ident, EI_NIDENT) == -1) {
-		bprintf("read (magic)\n");
 		return false;
 	}
 
@@ -379,21 +308,13 @@ static bool rz_bin_elf_init_ehdr(ELFOBJ *bin) {
 	return true;
 }
 
-static bool check_dynstr_size(ELFOBJ *bin, size_t shdr_entry_index) {
-	return bin->shdr[shdr_entry_index].sh_offset + bin->shdr[shdr_entry_index].sh_size < bin->size;
-}
+static bool set_dynstr(ELFOBJ *bin, RzBinElfSection *section) {
+	Elf_(Off) offset = section->offset;
 
-static bool set_dynstr(ELFOBJ *bin, size_t shdr_entry_index) {
-	Elf_(Off) offset = bin->shdr[shdr_entry_index].sh_offset;
-	bin->dynstr = RZ_NEWS0(char, bin->shdr[shdr_entry_index].sh_size + 1);
-	bin->dynstr_size = bin->shdr[shdr_entry_index].sh_size;
+	bin->dynstr_size = section->size;
+	bin->dynstr = RZ_NEWS0(char, bin->dynstr_size + 1);
 
 	if (!bin->dynstr) {
-		bprintf("Cannot allocate memory for dynamic strings\n");
-		return false;
-	}
-
-	if (!check_dynstr_size(bin, shdr_entry_index)) {
 		return false;
 	}
 
@@ -407,23 +328,16 @@ static bool set_dynstr(ELFOBJ *bin, size_t shdr_entry_index) {
 }
 
 static bool rz_bin_elf_init_dynstr(ELFOBJ *bin) {
-	if (!bin->shdr || !bin->shstrtab) {
+	if (!Elf_(rz_bin_elf_has_sections)(bin) || !bin->shstrtab) {
 		return false;
 	}
 
-	for (size_t i = 0; i < bin->ehdr.e_shnum; i++) {
-		if (bin->shdr[i].sh_name > bin->shstrtab_size) {
-			return false;
-		}
-
-		const char *section_name = bin->shstrtab + bin->shdr[i].sh_name;
-
-		if (bin->shdr[i].sh_type == SHT_STRTAB && !strcmp(section_name, ".dynstr")) {
-			return set_dynstr(bin, i);
-		}
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynstr");
+	if (!section || section->type != SHT_STRTAB) {
+		return false;
 	}
 
-	return false;
+	return set_dynstr(bin, section);
 }
 
 static void init_dynamic_section_sdb(ELFOBJ *bin) {
@@ -477,7 +391,7 @@ static bool rz_bin_elf_init_strtab(ELFOBJ *bin) {
 	ut64 strtab_size;
 
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &strtab_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRSZ, &strtab_size)) {
-		bprintf("DT_STRTAB not found or invalid\n");
+		RZ_LOG_WARN("DT_STRTAB not found or invalid\n");
 		return false;
 	}
 
@@ -498,31 +412,35 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 		return false;
 	}
 	if (!rz_bin_elf_init_phdr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
-		bprintf("Cannot initialize program headers\n");
+		RZ_LOG_WARN("Cannot initialize program headers\n");
 	}
 	if (bin->ehdr.e_type == ET_CORE) {
 		if (!Elf_(rz_bin_elf_init_notes)(bin)) {
-			bprintf("Cannot parse PT_NOTE segments\n");
+			RZ_LOG_WARN("Cannot parse PT_NOTE segments\n");
 		}
 	} else {
-		if (!rz_bin_elf_init_shdr(bin)) {
-			bprintf("Cannot initialize section headers\n");
+		RzVector *sections = Elf_(rz_bin_elf_new_sections)(bin);
+
+		if (!rz_bin_elf_init_shstrtab(bin, sections)) {
+			RZ_LOG_WARN("Cannot initialize strings table\n");
 		}
 
-		if (!rz_bin_elf_init_shstrtab(bin)) {
-			bprintf("Cannot initialize strings table\n");
-		}
-
-		if (!rz_bin_elf_init_dynstr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
-			bprintf("Cannot initialize dynamic strings\n");
+		if (!Elf_(rz_bin_elf_is_relocatable)(bin) && !Elf_(rz_bin_elf_is_static)(bin)) {
+			if (!rz_bin_elf_init_dynamic_section(bin) || !rz_bin_elf_init_strtab(bin)) {
+				RZ_LOG_WARN("Cannot initialize dynamic section\n");
+			}
 		}
 
 		bin->baddr = Elf_(rz_bin_elf_get_baddr)(bin);
 
-		if (!Elf_(rz_bin_elf_is_relocatable)(bin) && !Elf_(rz_bin_elf_is_static)(bin)) {
-			if (!rz_bin_elf_init_dynamic_section(bin) || !rz_bin_elf_init_strtab(bin)) {
-				bprintf("Cannot initialize dynamic section\n");
-			}
+		if (!rz_bin_elf_init_shdr(bin, sections)) {
+			RZ_LOG_WARN("Cannot initialize section headers\n");
+		}
+
+		rz_vector_free(sections);
+
+		if (!rz_bin_elf_init_dynstr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
+			RZ_LOG_WARN("Cannot initialize dynamic strings\n");
 		}
 	}
 
@@ -533,7 +451,6 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 	bin->symbols_by_ord_size = 0;
 	bin->symbols_by_ord = NULL;
 
-	bin->g_sections = Elf_(rz_bin_elf_get_sections)(bin);
 	bin->g_relocs = Elf_(rz_bin_elf_get_relocs)(bin);
 
 	bin->rel_cache = rel_cache_new(bin->g_relocs, bin->g_reloc_num);
@@ -543,7 +460,7 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 	return true;
 }
 
-RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, bool verbose) {
+RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf) {
 	rz_return_val_if_fail(buf, NULL);
 
 	ELFOBJ *bin = RZ_NEW0(ELFOBJ);
@@ -554,7 +471,6 @@ RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf, bool verbose) 
 	bin->b = rz_buf_ref(buf);
 	bin->size = rz_buf_size(buf);
 	bin->kv = sdb_new0();
-	bin->verbose = verbose;
 
 	if (rz_bin_elf_init(bin)) {
 		return bin;
@@ -574,12 +490,11 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_if_fail(bin);
 
 	rz_vector_free(bin->segments);
-	free(bin->shdr);
+	rz_vector_free(bin->sections);
 	free(bin->strtab);
 	free(bin->shstrtab);
 	free(bin->dynstr);
 
-	free(bin->g_sections);
 	free(bin->g_symbols);
 	free(bin->g_imports);
 	free(bin->g_relocs);

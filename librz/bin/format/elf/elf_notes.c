@@ -13,7 +13,7 @@ static void parse_note_prstatus(ELFOBJ *bin, RzBinElfNote *note, Elf_(Nhdr) * no
 	RzBinElfPrStatusLayout *layout = Elf_(rz_bin_elf_get_prstatus_layout)(bin);
 
 	if (!layout) {
-		eprintf("Fetching registers from core file not supported for this architecture.\n");
+		RZ_LOG_WARN("Fetching registers from core file not supported for this architecture.\n");
 		return;
 	}
 
@@ -24,7 +24,7 @@ static void parse_note_prstatus(ELFOBJ *bin, RzBinElfNote *note, Elf_(Nhdr) * no
 
 	if (rz_buf_read_at(bin->b, offset + layout->regdelta, buf, layout->regsize) != layout->regsize) {
 		free(buf);
-		bprintf("Cannot read register state from CORE file\n");
+		RZ_LOG_WARN("Cannot read register state from CORE file\n");
 		return;
 	}
 
@@ -60,32 +60,37 @@ static bool parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * note_segment_header
 		return false;
 	}
 
+	offset += sizeof(Elf_(Addr)); // skip page size always 1
+
+	Elf_(Addr) strings_offset; // offset after the addr-array
+	if (!Elf_(rz_bin_elf_mul_addr)(&strings_offset, n_maps, sizeof(Elf_(Addr)) * 3)) {
+		return false;
+	}
+
 	RzVector files;
 	rz_vector_init(&files, sizeof(RzBinElfNoteFile), NULL, NULL);
 	rz_vector_reserve(&files, n_maps);
 
-	offset += sizeof(Elf_(Addr)); // skip page size always 1
-
-	ut64 offset_begin = offset;
-	ut64 strings_begin = ((sizeof(Elf_(Addr)) * 3) * n_maps); // offset after the addr-array
-	ut64 len_str = 0;
-
-	while (n_maps-- && strings_begin + len_str < note_segment_header->n_descsz) {
-		char tmp[512] = { 0 };
-
-		int r = rz_buf_read_at(bin->b, offset_begin + strings_begin + len_str, (ut8 *)tmp, sizeof(tmp) - 1);
-		if (r < 0) {
+	ut64 strings_array_len = 0;
+	ut64 entry_offset = offset;
+	for (Elf_(Addr) i = 0; i < n_maps; i++) {
+		if (strings_offset + strings_array_len >= note_segment_header->n_descsz) {
 			break;
 		}
 
-		tmp[r] = 0;
-
-		len_str += strlen(tmp) + 1;
+		char tmp[ELF_STRING_LENGTH] = { 0 };
+		ut64 string_offset = offset + strings_offset + strings_array_len;
+		if (rz_buf_read_at(bin->b, string_offset, (ut8 *)tmp, ELF_STRING_LENGTH - 1) < 0) {
+			break;
+		}
 
 		RzBinElfNoteFile *file = rz_vector_push(&files, NULL);
-		if (file && !set_note_file(bin, file, &offset, tmp)) {
+		if (file && !set_note_file(bin, file, &entry_offset, tmp)) {
+			rz_vector_fini(&files);
 			return false;
 		}
+
+		strings_array_len += strlen(tmp) + 1;
 	}
 
 	note->file.files_count = rz_vector_len(&files);
