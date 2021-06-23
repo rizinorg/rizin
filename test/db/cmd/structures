@@ -58,9 +58,9 @@ aaa
 s main
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
-afvt s1 S1
+afvt s1 "struct S1"
 pi 4 @ 0x004004be
-t- "struct S1"
+t- S1
 td "struct S1 { int x; int y; int c; char d[256]; short e; }"
 pi 4 @ 0x004004be
 EOF
