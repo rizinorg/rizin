@@ -23,9 +23,15 @@
 
 #define ELFOBJ struct Elf_(rz_bin_elf_obj_t)
 
-#define rz_bin_elf_foreach_segments(bin, segment)      rz_vector_foreach((bin)->segments, segment)
-#define rz_bin_elf_foreach_sections(bin, section)      rz_vector_foreach((bin)->sections, section)
-#define rz_bin_elf_enumerate_sections(bin, section, i) rz_vector_enumerate((bin)->sections, section, i)
+#define rz_bin_elf_foreach_segments(bin, segment) \
+	if (Elf_(rz_bin_elf_has_segments)(bin)) \
+	rz_vector_foreach((bin)->segments, segment)
+#define rz_bin_elf_foreach_sections(bin, section) \
+	if (Elf_(rz_bin_elf_has_sections)(bin)) \
+	rz_vector_foreach((bin)->sections, section)
+#define rz_bin_elf_enumerate_sections(bin, section, i) \
+	if (Elf_(rz_bin_elf_has_sections)(bin)) \
+	rz_vector_enumerate((bin)->sections, section, i)
 
 /// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
 typedef struct prstatus_layout_t {

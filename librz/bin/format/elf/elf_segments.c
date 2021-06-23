@@ -90,12 +90,8 @@ static RzVector *get_segments_from_phdr(ELFOBJ *bin) {
 
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type) {
 	rz_return_val_if_fail(bin, NULL);
-	if (!bin->segments) {
-		return NULL;
-	}
 
 	RzBinElfSegment *iter;
-
 	rz_bin_elf_foreach_segments(bin, iter) {
 		if (iter->data.p_type == type) {
 			return iter;

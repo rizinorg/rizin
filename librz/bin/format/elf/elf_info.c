@@ -731,7 +731,7 @@ static char *get_osabi_name_from_section_note(ELFOBJ *bin, RzBinElfSection *sect
 }
 
 static char *get_osabi_name_from_shdr(ELFOBJ *bin) {
-	if (!Elf_(rz_bin_elf_has_sections)(bin) || !bin->shstrtab) {
+	if (!bin->shstrtab) {
 		return NULL;
 	}
 

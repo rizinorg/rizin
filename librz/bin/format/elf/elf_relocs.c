@@ -114,10 +114,6 @@ static size_t get_num_relocs_sections(ELFOBJ *bin) {
 	size_t size, ret = 0;
 	Elf_(Xword) rel_mode;
 
-	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
-		return 0;
-	}
-
 	RzBinElfSection *section;
 	rz_bin_elf_foreach_sections(bin, section) {
 		if (!section->is_valid) {
@@ -207,10 +203,6 @@ static size_t get_next_not_analysed_offset(ELFOBJ *bin, size_t section_vaddr, si
 
 static size_t populate_relocs_record_from_section(ELFOBJ *bin, RzBinElfReloc *relocs, size_t pos, size_t num_relocs) {
 	Elf_(Xword) rel_mode;
-
-	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
-		return pos;
-	}
 
 	RzBinElfSection *section;
 	rz_bin_elf_foreach_sections(bin, section) {
