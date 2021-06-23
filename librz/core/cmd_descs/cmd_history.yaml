@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+---
+name: cmd_history
+commands:
+  - name: "H"
+    cname: list_or_exec_history
+    summary: Shows the history in current session or executes an history command via its index.
+    args:
+      - name: index
+        type: RZ_CMD_ARG_TYPE_NUM
+        optional: true
+    details:
+      - name: Examples
+        entries:
+          - text: "H"
+            arg_str: ""
+            comment: "Shows the current session history"
+          - text: "H"
+            arg_str: " 12"
+            comment: "Executes a history command with index value of 12"
+  - name: "H-"
+    cname: clear_history
+    summary: Clears the history in current session
+    args: []
+  - name: "H+"
+    cname: save_history
+    summary: Saves the history of the current session
+    args: []

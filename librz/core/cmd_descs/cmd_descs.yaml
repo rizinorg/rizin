@@ -215,6 +215,9 @@ commands:
     cname: cmd_egg
     summary: Generate shellcodes with rz_egg
     type: RZ_CMD_DESC_TYPE_OLDINPUT
+  - name: H
+    summary: Rizin history commands.
+    subcommands: cmd_history
   - name: i
     cname: cmd_info
     summary: Get info about opened binary file

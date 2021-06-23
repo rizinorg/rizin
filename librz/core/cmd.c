@@ -101,6 +101,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_remote.c"
 #include "cmd_tasks.c"
 #include "cmd_system.c"
+#include "cmd_history.c"
 #include "cmd_linux_heap_glibc.c"
 
 static const char *help_msg_dollar[] = {
