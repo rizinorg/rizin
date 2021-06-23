@@ -9,7 +9,6 @@ commands:
     args:
       - name: command
         type: RZ_CMD_ARG_TYPE_STRING
-        optional: true
         no_space: true
       - name: args
         type: RZ_CMD_ARG_TYPE_STRING

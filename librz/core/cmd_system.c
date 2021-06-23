@@ -29,11 +29,6 @@ static char *system_cmd_new(int argc, const char **argv) {
 }
 
 RZ_IPI RzCmdStatus rz_system_handler(RzCore *core, int argc, const char **argv) {
-	if (argc == 1) {
-		rz_line_hist_list();
-		return RZ_CMD_STATUS_OK;
-	}
-
 	char *cmd = system_cmd_new(argc - 1, &argv[1]);
 	if (!cmd) {
 		RZ_LOG_ERROR("Cannot allocate memory to command line buffer.\n");
@@ -53,10 +48,6 @@ RZ_IPI RzCmdStatus rz_system_handler(RzCore *core, int argc, const char **argv) 
 }
 
 RZ_API RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char **argv) {
-	if (argc < 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	int olen, ret;
 	char *out = NULL;
 	char *cmd = system_cmd_new(argc - 1, &argv[1]);
@@ -84,8 +75,6 @@ RZ_IPI RzCmdStatus rz_list_or_exec_history_handler(RzCore *core, int argc, const
 	if (argc == 1) {
 		rz_line_hist_list();
 		return RZ_CMD_STATUS_OK;
-	} else if (argc > 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 
 	int index = atoi(argv[1]);
@@ -105,19 +94,11 @@ RZ_IPI RzCmdStatus rz_list_or_exec_history_handler(RzCore *core, int argc, const
 }
 
 RZ_IPI RzCmdStatus rz_clear_history_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	rz_line_hist_free();
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_history_save_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	rz_line_hist_save(RZ_HOME_HISTORY);
 	return RZ_CMD_STATUS_OK;
 }
