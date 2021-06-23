@@ -1,23 +1,31 @@
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
-#if 0
-gcc -o core_plugin_example.so -O3 -std=c99 -Wall -fPIC `pkg-config --cflags --libs rz_core` core_plugin_example.c -shared
-mkdir -p ~/.local/share/rizin/plugins/
-$ rizin -H | grep RZ_USER_PLUGINS
-RZ_USER_PLUGINS=/home/username/.local/share/rizin/plugins
-mv core_plugin_example.so ~/.local/share/rizin/plugins/
-$ rizin =
-This init was called!
-[0x00000000]> example?
-Usage: example <number>   # example summary that contains some description
-[0x00000000]> example 1777
-WARNING: the parsed number is 1777
-[0x00000000]> example -777
-ERROR: only positive numbers are accepted -777
-Error while executing command: example -777
-[0x00000000]> q
-This fini was called!
-#endif
+
+/** \file core_plugin_example.c
+ * This file is an example on how to write core plugins for rizin.
+ * 
+ * Compilation:
+ * - gcc -o core_plugin_example.so -O3 -std=c99 -Wall -fPIC `pkg-config --cflags --libs rz_core` core_plugin_example.c -shared
+
+ * Installation via the RZ_USER_PLUGINS folder:
+ * - mkdir -p ~/.local/share/rizin/plugins/
+ * - rizin -H | grep RZ_USER_PLUGINS
+ * - RZ_USER_PLUGINS=/home/username/.local/share/rizin/plugins
+ * - mv core_plugin_example.so ~/.local/share/rizin/plugins/
+
+ * Example of usage
+ * - rizin =
+ *   This init was called!
+ * - [0x00000000]> example?
+ *   Usage: example <number>   # example summary that contains some description
+ * - [0x00000000]> example 1777
+ *   WARNING: the parsed number is 1777
+ * - [0x00000000]> example -777
+ *   ERROR: only positive numbers are accepted -777
+ *   Error while executing command: example -777
+ * - [0x00000000]> q
+ *   This fini was called!
+ */
 
 #include <rz_types.h>
 #include <rz_lib.h>
