@@ -1626,6 +1626,8 @@ RZ_API bool rz_analysis_type_unlink(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_type_unlink_all(RzAnalysis *analysis);
 RZ_API bool rz_analysis_type_link_offset(RzAnalysis *analysis, RZ_BORROW RzType *type, ut64 addr);
 RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_type_links(RzAnalysis *analysis);
+RZ_API RZ_OWN RzList /* RzTypePath */ *rz_analysis_type_links_by_offset(RzAnalysis *analysis, ut64 offset);
+RZ_API RZ_OWN RzList /* RzTypePath */ *rz_analysis_type_paths_by_address(RzAnalysis *analysis, ut64 addr);
 
 /* project */
 RZ_API bool rz_analysis_xrefs_init(RzAnalysis *analysis);
