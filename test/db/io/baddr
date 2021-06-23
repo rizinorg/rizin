@@ -17,7 +17,7 @@ RUN
 
 NAME=3: io.baddr
 FILE=bins/elf/analysis/pie
-CMDS=!rz-bin -B 0xf00000 -re ${RZ_FILE} | grep 0x
+CMDS=!!rz-bin -B 0xf00000 -re ${RZ_FILE} | grep 0x
 EXPECT=<<EOF
 "f entry0 1 0x00f00450"
 "f entry0_haddr 1 0x00000018"

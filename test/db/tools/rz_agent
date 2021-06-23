@@ -1,6 +1,6 @@
 NAME=rz-agent -v
 FILE==
-CMDS=!rz-agent -v | grep -c build
+CMDS=!!rz-agent -v | grep -c build
 EXPECT=<<EOF
 1
 EOF

@@ -2081,7 +2081,7 @@ err_r_w32_cmd_pipe:
 #undef __CLOSE_DUPPED_PIPES
 #endif
 
-RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
+RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 #if __UNIX__
 	int stdout_fd, fds[2];
 	int child;
@@ -2155,6 +2155,59 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 	}
 	rz_config_set_i(core->config, "scr.interactive", si);
 	return ret;
+}
+
+static char *system_exec_stdin(int argc, char **argv, const char *input) {
+	char *output = NULL;
+	if (!rz_subprocess_init()) {
+		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
+		return NULL;
+	}
+
+	RzSubprocessOpt opt = {
+		.file = argv[0],
+		.args = (const char **)&argv[1],
+		.args_size = argc - 1,
+		.envvars = NULL,
+		.envvals = NULL,
+		.env_size = 0,
+		.stdin_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stdout_pipe = RZ_SUBPROCESS_PIPE_CREATE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_STDOUT,
+	};
+
+	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
+	if (!proc) {
+		RZ_LOG_ERROR("Cannot start subprocess.\n");
+		rz_subprocess_fini();
+		return NULL;
+	}
+
+	size_t input_len = strlen(input);
+	rz_subprocess_stdin_write(proc, (const ut8 *)input, input_len);
+	rz_subprocess_wait(proc, UT64_MAX);
+
+	output = rz_subprocess_out(proc);
+	rz_subprocess_free(proc);
+	rz_subprocess_fini();
+
+	return output;
+}
+
+RZ_API RzCmdStatus rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, int argc, char **argv) {
+	char *str = rz_core_cmd_str(core, rizin_cmd);
+	if (!str) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	char *out = system_exec_stdin(argc, argv, str);
+	if (out) {
+		rz_cons_print(out);
+	}
+
+	free(str);
+	free(out);
+	return RZ_CMD_STATUS_OK;
 }
 
 static char *parse_tmp_evals(RzCore *core, const char *str) {
@@ -2544,7 +2597,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 			line = rz_str_replace(line, "\\\"", "\"", true);
 			if (p && *p && p[1] == '|') {
 				str = (char *)rz_str_trim_head_ro(p + 2);
-				rz_core_cmd_pipe(core, cmd, str);
+				rz_core_cmd_pipe_old(core, cmd, str);
 			} else {
 				rz_cmd_call(core->rcmd, line);
 			}
@@ -2658,7 +2711,7 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				} else if (ptr[1]) { // "| grep .."
 					int value = core->num->value;
 					if (*cmd) {
-						rz_core_cmd_pipe(core, cmd, ptr + 1);
+						rz_core_cmd_pipe_old(core, cmd, ptr + 1);
 					} else {
 						char *res = rz_io_system(core->io, ptr + 1);
 						if (res) {
@@ -6000,18 +6053,69 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(html_enable_stmt) {
 	return res;
 }
 
+static char *ts_node_sub_string_as_external(TSNode node, const char *cstr) {
+	ut32 start, end;
+	TS_START_END(node, start, end);
+	return rz_str_newf("!%.*s", end - start, cstr + start);
+}
+
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_stmt) {
-	TSNode first_cmd = ts_node_named_child(node, 0);
-	rz_return_val_if_fail(!ts_node_is_null(first_cmd), false);
-	TSNode second_cmd = ts_node_named_child(node, 1);
-	rz_return_val_if_fail(!ts_node_is_null(second_cmd), false);
-	char *first_str = ts_node_sub_string(first_cmd, state->input);
-	char *second_str = ts_node_sub_string(second_cmd, state->input);
-	int value = state->core->num->value;
-	RzCmdStatus res = rz_cmd_int2status(rz_core_cmd_pipe(state->core, first_str, second_str));
-	state->core->num->value = value;
-	free(first_str);
-	free(second_str);
+	TSNode command_rizin = ts_node_named_child(node, 0);
+	TSNode command_pipe = ts_node_named_child(node, 1);
+
+	char *rz_cmd = ts_node_sub_string(command_rizin, state->input);
+	if (!rz_cmd) {
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	char *cmd_pipe = ts_node_sub_string_as_external(command_pipe, state->input);
+	if (!cmd_pipe) {
+		free(rz_cmd);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	struct tsr2cmd_state state2;
+	TSParser *parser = ts_parser_new();
+	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)state->core->rcmd->language);
+	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
+
+	TSTree *tree = ts_parser_parse_string(parser, NULL, cmd_pipe, strlen(cmd_pipe));
+	if (!tree) {
+		rz_warn_if_reached();
+		free(rz_cmd);
+		free(cmd_pipe);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	state2.parser = parser;
+	state2.core = state->core;
+	state2.input = cmd_pipe;
+	state2.tree = tree;
+	state2.log = state->log;
+	state2.split_lines = state->split_lines;
+
+	TSNode root = ts_tree_root_node(tree);
+	TSNode command = ts_node_named_child(root, 0);
+
+	if (!(is_ts_statements(root) && !ts_node_has_error(root))) {
+		free(rz_cmd);
+		free(cmd_pipe);
+		ts_tree_delete(tree);
+		ts_parser_delete(parser);
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(&state2, root, command, 1, true);
+	if (a && a->argc > 1) {
+		res = rz_core_cmd_pipe(state->core, rz_cmd, a->argc - 1, a->argv + 1);
+	}
+
+	rz_cmd_parsed_args_free(a);
+	free(rz_cmd);
+	free(cmd_pipe);
+	ts_tree_delete(tree);
+	ts_parser_delete(parser);
 	return res;
 }
 

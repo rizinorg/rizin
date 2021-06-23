@@ -632,7 +632,7 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 	for (size_t i = 0; i < size; i++) {
 		new_env[i] = strdup(environ[i]);
 	}
-	for (size_t i = 0; i <= env_size; i++) {
+	for (size_t i = 0; i <= new_env_size; i++) {
 		new_env[size + i] = NULL;
 	}
 

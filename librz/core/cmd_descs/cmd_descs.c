@@ -2122,8 +2122,7 @@ static const RzCmdDescDetailEntry env_Examples_detail_entries[] = {
 
 static const RzCmdDescDetailEntry env_Environment_detail_entries[] = {
 	{ .text = "RZ_FILE", .arg_str = NULL, .comment = "currently opened file name" },
-	{ .text = "RZ_OFFSET", .arg_str = NULL, .comment = "10base offset 64bit value" },
-	{ .text = "RZ_XOFFSET", .arg_str = NULL, .comment = "same as above, but in 16 base" },
+	{ .text = "RZ_OFFSET", .arg_str = NULL, .comment = "current offset (64bit value)" },
 	{ .text = "RZ_BSIZE", .arg_str = NULL, .comment = "block size" },
 	{ .text = "RZ_ENDIAN", .arg_str = NULL, .comment = "'big' or 'little'" },
 	{ .text = "RZ_IOVA", .arg_str = NULL, .comment = "is io.va true? virtual addressing (1,0)" },

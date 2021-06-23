@@ -363,7 +363,7 @@ RUN
 
 NAME=printf "admin" | rz-hash -qqa md5 -s -
 FILE==
-CMDS=!printf "admin" | rz-hash -qqa md5 -s -
+CMDS=!!printf "admin" | rz-hash -qqa md5 -s -
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
 EOF
@@ -371,7 +371,7 @@ RUN
 
 NAME=printf "aadmina" | rz-hash -f0x1 -t0x6 -qq -a md5 -s -
 FILE==
-CMDS=!printf "aadmina" | rz-hash -f0x1 -t0x6 -qq -a md5 -s -
+CMDS=!!printf "aadmina" | rz-hash -f0x1 -t0x6 -qq -a md5 -s -
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
 EOF
@@ -379,7 +379,7 @@ RUN
 
 NAME=printf "aa61646d696eaa" | rz-hash -f0x1 -t0x6 -qq -a md5 -x -
 FILE==
-CMDS=!printf "aa61646d696eaa" | rz-hash -f0x1 -t0x6 -qq -a md5 -x -
+CMDS=!!printf "aa61646d696eaa" | rz-hash -f0x1 -t0x6 -qq -a md5 -x -
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
 EOF
@@ -747,7 +747,7 @@ RUN
 
 NAME=rz-hash -qqE RC4
 FILE==
-CMDS=!rz-hash -K s:key -qqE rc4 -s hello" world\n" | rz-hash -K s:key -qqE rc4 -
+CMDS=!!rz-hash -K s:key -qqE rc4 -s hello" world\n" | rz-hash -K s:key -qqE rc4 -
 EXPECT=<<EOF
 hello world
 EOF
@@ -755,7 +755,7 @@ RUN
 
 NAME=rz-hash -qqE xor
 FILE==
-CMDS=!rz-hash -K s:key -qqE xor -s hello" world\n" | rz-hash -K s:key -qqE xor -
+CMDS=!!rz-hash -K s:key -qqE xor -s hello" world\n" | rz-hash -K s:key -qqE xor -
 EXPECT=<<EOF
 hello world
 EOF
@@ -763,7 +763,7 @@ RUN
 
 NAME=rz-hash -qqE blowfish
 FILE==
-CMDS=!rz-hash -K s:key -qqE blowfish -s hello" world 123\n" | rz-ax -S
+CMDS=!!rz-hash -K s:key -qqE blowfish -s hello" world 123\n" | rz-ax -S
 EXPECT=<<EOF
 6ceced43fb2a72c9aa9447d193b00763
 EOF
@@ -771,7 +771,7 @@ RUN
 
 NAME=rz-hash -qqD blowfish
 FILE==
-CMDS=!rz-hash -K s:key -qqE blowfish -s hello" world 123\n" | rz-hash -K s:key -D blowfish -
+CMDS=!!rz-hash -K s:key -qqE blowfish -s hello" world 123\n" | rz-hash -K s:key -D blowfish -
 EXPECT=<<EOF
 0x00000000-0x00000010 blowfish: hello world 123
 
@@ -787,13 +787,13 @@ RUN
 
 NAME=rz-hash -qqD aes-ecb 128 bit
 FILE==
-CMDS=!rz-hash -qqE aes-ecb -K "11111111111111111111111111111111" -s "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" | rz-hash -qqD aes-ecb -K "11111111111111111111111111111111" -s -
+CMDS=!!rz-hash -qqE aes-ecb -K "11111111111111111111111111111111" -s "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" | rz-hash -qqD aes-ecb -K "11111111111111111111111111111111" -s -
 EXPECT=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 RUN
 
 NAME=rz-hash -qqE aes-ecb 192 bit
 FILE==
-CMDS=!rz-hash -qqE aes-ecb -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" | rz-ax -S
+CMDS=!!rz-hash -qqE aes-ecb -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" | rz-ax -S
 EXPECT=<<EOF
 bd334f1d6e45f25ff712a214571fa5cc
 EOF
@@ -801,7 +801,7 @@ RUN
 
 NAME=rz-hash -qqD aes-ecb 192 bit
 FILE==
-CMDS=!rz-hash -qqE aes-ecb -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" | rz-hash -qqD aes-ecb -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -s - | rz-ax -S
+CMDS=!!rz-hash -qqE aes-ecb -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" | rz-hash -qqD aes-ecb -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -s - | rz-ax -S
 EXPECT=<<EOF
 6bc1bee22e409f96e93d7e117393172a
 EOF
@@ -809,7 +809,7 @@ RUN
 
 NAME=rz-hash -qqE aes-ecb 256 bit
 FILE==
-CMDS=!rz-hash -qqE aes-ecb -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "6bc1bee22e409f96e93d7e117393172a" | rz-ax -S
+CMDS=!!rz-hash -qqE aes-ecb -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "6bc1bee22e409f96e93d7e117393172a" | rz-ax -S
 EXPECT=<<EOF
 f3eed1bdb5d2a03c064b5a7e3db181f8
 EOF
@@ -817,7 +817,7 @@ RUN
 
 NAME=rz-hash -qqD aes-ecb 256 bit
 FILE==
-CMDS=!rz-hash -qqE aes-ecb -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "6bc1bee22e409f96e93d7e117393172a" | rz-hash -qqD aes-ecb -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -s - | rz-ax -S
+CMDS=!!rz-hash -qqE aes-ecb -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "6bc1bee22e409f96e93d7e117393172a" | rz-hash -qqD aes-ecb -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -s - | rz-ax -S
 EXPECT=<<EOF
 6bc1bee22e409f96e93d7e117393172a
 EOF
@@ -825,7 +825,7 @@ RUN
 
 NAME=rz-hash -qqE aes-cbc 128 bit
 FILE==
-CMDS=!rz-hash -qqE aes-cbc -K "2b7e151628aed2a6abf7158809cf4f3c" -I "7649ABAC8119B246CEE98E9B12E9197D"  -x "ae2d8a571e03ac9c9eb76fac45af8e51" | rz-ax -S
+CMDS=!!rz-hash -qqE aes-cbc -K "2b7e151628aed2a6abf7158809cf4f3c" -I "7649ABAC8119B246CEE98E9B12E9197D"  -x "ae2d8a571e03ac9c9eb76fac45af8e51" | rz-ax -S
 EXPECT=<<EOF
 5086cb9b507219ee95db113a917678b2
 EOF
@@ -833,7 +833,7 @@ RUN
 
 NAME=rz-hash -qqD aes-cbc 128 bit
 FILE==
-CMDS=!rz-hash -qqE aes-cbc -K "2b7e151628aed2a6abf7158809cf4f3c" -I "7649ABAC8119B246CEE98E9B12E9197D"  -x "ae2d8a571e03ac9c9eb76fac45af8e51" | rz-hash -qqD aes-cbc -K "2b7e151628aed2a6abf7158809cf4f3c" -I "7649ABAC8119B246CEE98E9B12E9197D" -s - | rz-ax -S
+CMDS=!!rz-hash -qqE aes-cbc -K "2b7e151628aed2a6abf7158809cf4f3c" -I "7649ABAC8119B246CEE98E9B12E9197D"  -x "ae2d8a571e03ac9c9eb76fac45af8e51" | rz-hash -qqD aes-cbc -K "2b7e151628aed2a6abf7158809cf4f3c" -I "7649ABAC8119B246CEE98E9B12E9197D" -s - | rz-ax -S
 EXPECT=<<EOF
 ae2d8a571e03ac9c9eb76fac45af8e51
 EOF
@@ -841,7 +841,7 @@ RUN
 
 NAME=rz-hash -qqE aes-cbc 192 bit
 FILE==
-CMDS=!rz-hash -qqE aes-cbc -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" -I "000102030405060708090A0B0C0D0E0F" | rz-ax -S
+CMDS=!!rz-hash -qqE aes-cbc -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" -I "000102030405060708090A0B0C0D0E0F" | rz-ax -S
 EXPECT=<<EOF
 4f021db243bc633d7178183a9fa071e8
 EOF
@@ -849,7 +849,7 @@ RUN
 
 NAME=rz-hash -qqD aes-cbc 192 bit
 FILE==
-CMDS=!rz-hash -qqE aes-cbc -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" -I "000102030405060708090A0B0C0D0E0F" | rz-hash -qqD aes-cbc -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -I "000102030405060708090A0B0C0D0E0F" -s - | rz-ax -S
+CMDS=!!rz-hash -qqE aes-cbc -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -x "6bc1bee22e409f96e93d7e117393172a" -I "000102030405060708090A0B0C0D0E0F" | rz-hash -qqD aes-cbc -K 8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b -I "000102030405060708090A0B0C0D0E0F" -s - | rz-ax -S
 EXPECT=<<EOF
 6bc1bee22e409f96e93d7e117393172a
 EOF
@@ -857,7 +857,7 @@ RUN
 
 NAME=rz-hash -qqE aes-cbc 256 bit
 FILE==
-CMDS=!rz-hash -qqE aes-cbc -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "f69f2445df4f9b17ad2b417be66c3710" -I "39F23369A9D9BACFA530E26304231461" | rz-ax -S
+CMDS=!!rz-hash -qqE aes-cbc -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "f69f2445df4f9b17ad2b417be66c3710" -I "39F23369A9D9BACFA530E26304231461" | rz-ax -S
 EXPECT=<<EOF
 b2eb05e2c39be9fcda6c19078c6a9d1b
 EOF
@@ -865,7 +865,7 @@ RUN
 
 NAME=rz-hash -qqD aes-cbc 256 bit
 FILE==
-CMDS=!rz-hash -qqE aes-cbc -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "f69f2445df4f9b17ad2b417be66c3710" -I "39F23369A9D9BACFA530E26304231461" | rz-hash -qqD aes-cbc -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -I "39F23369A9D9BACFA530E26304231461" -s - | rz-ax -S
+CMDS=!!rz-hash -qqE aes-cbc -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -x "f69f2445df4f9b17ad2b417be66c3710" -I "39F23369A9D9BACFA530E26304231461" | rz-hash -qqD aes-cbc -K 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 -I "39F23369A9D9BACFA530E26304231461" -s - | rz-ax -S
 EXPECT=<<EOF
 f69f2445df4f9b17ad2b417be66c3710
 EOF
@@ -881,7 +881,7 @@ RUN
 
 NAME=rz-hash -qqE rot negative key
 FILE==
-CMDS=!rz-hash -qqE rot -K s:14 -s hello" world\n" | rz-hash -qqE rot -K s:-14 -s -
+CMDS=!!rz-hash -qqE rot -K s:14 -s hello" world\n" | rz-hash -qqE rot -K s:-14 -s -
 EXPECT=<<EOF
 hello world
 EOF
@@ -889,7 +889,7 @@ RUN
 
 NAME=rz-hash -qqE rol
 FILE==
-CMDS=!rz-hash -qqE rol -K 03 -x "31ed4989" | rz-ax -S
+CMDS=!!rz-hash -qqE rol -K 03 -x "31ed4989" | rz-ax -S
 EXPECT=<<EOF
 896f4a4c
 EOF
@@ -897,7 +897,7 @@ RUN
 
 NAME=rz-hash -qqE ror
 FILE==
-CMDS=!rz-hash -qqE ror -K 04 -x "62da9212" | rz-ax -S
+CMDS=!!rz-hash -qqE ror -K 04 -x "62da9212" | rz-ax -S
 EXPECT=<<EOF
 26ad2921
 EOF
@@ -911,13 +911,13 @@ RUN
 
 NAME=rz-hash -qqD base91
 FILE==
-CMDS=!rz-hash -qqE base91 -s "hello world" | rz-hash -qqD base91 -s -
+CMDS=!!rz-hash -qqE base91 -s "hello world" | rz-hash -qqD base91 -s -
 EXPECT=hello world
 RUN
 
 NAME=rz-hash -qqE rc2
 FILE==
-CMDS=!rz-hash -qqE rc2 -K s:key -s "helloworld123456" | rz-ax -S 
+CMDS=!!rz-hash -qqE rc2 -K s:key -s "helloworld123456" | rz-ax -S 
 EXPECT=<<EOF
 a9c85c7650456d8f5f369704ad1e339f
 EOF
@@ -925,7 +925,7 @@ RUN
 
 NAME=rz-hash -qqD rc2
 FILE==
-CMDS=!rz-hash -qqE rc2 -K s:key -s "helloworld123456" | rz-hash -qqD rc2 -K s:key -
+CMDS=!!rz-hash -qqE rc2 -K s:key -s "helloworld123456" | rz-hash -qqD rc2 -K s:key -
 EXPECT=helloworld123456
 RUN
 
@@ -937,7 +937,7 @@ RUN
 
 NAME=rz-hash -qqD punycode
 FILE==
-CMDS=!rz-hash -qqD punycode -s "Willst du die Blthe des frhen, die Frchte des spteren Jahres-x9e96lkal" | rz-ax -S
+CMDS=!!rz-hash -qqD punycode -s "Willst du die Blthe des frhen, die Frchte des spteren Jahres-x9e96lkal" | rz-ax -S
 EXPECT=<<EOF
 57696c6c73742064752064696520426cc3bc74686520646573206672c3bc68656e2c20646965204672c3bc6368746520646573207370c3a4746572656e204a6168726573
 EOF
@@ -951,7 +951,7 @@ RUN
 
 NAME=rz-hash -qqD punycode[1]
 FILE==
-CMDS=!rz-hash -qqD punycode -s yp8h | rz-ax -S
+CMDS=!!rz-hash -qqD punycode -s yp8h | rz-ax -S
 EXPECT=<<EOF
 f09f918d
 EOF
@@ -959,7 +959,7 @@ RUN
 
 NAME=rz-hash -qqE rc6 128 bit
 FILE==
-CMDS=!rz-hash -qqE rc6 -K 0123456789abcdef0112233445566778 -x 02132435465768798a9bacbdcedfe0f1 | rz-ax -S
+CMDS=!!rz-hash -qqE rc6 -K 0123456789abcdef0112233445566778 -x 02132435465768798a9bacbdcedfe0f1 | rz-ax -S
 EXPECT=<<EOF
 524e192f4715c6231f51f6367ea43f18
 EOF
@@ -967,7 +967,7 @@ RUN
 
 NAME=rz-hash -qqD rc6 128 bit
 FILE==
-CMDS=!rz-hash -qqD rc6 -K 0123456789abcdef0112233445566778 -x 524e192f4715c6231f51f6367ea43f18 | rz-ax -S
+CMDS=!!rz-hash -qqD rc6 -K 0123456789abcdef0112233445566778 -x 524e192f4715c6231f51f6367ea43f18 | rz-ax -S
 EXPECT=<<EOF
 02132435465768798a9bacbdcedfe0f1
 EOF
@@ -975,7 +975,7 @@ RUN
 
 NAME=rz-hash -qqE rc6 192 bit
 FILE==
-CMDS=!rz-hash -qqE rc6 -K 0123456789abcdef0112233445566778899aabbccddeeff0 -x 02132435465768798a9bacbdcedfe0f1 | rz-ax -S
+CMDS=!!rz-hash -qqE rc6 -K 0123456789abcdef0112233445566778899aabbccddeeff0 -x 02132435465768798a9bacbdcedfe0f1 | rz-ax -S
 EXPECT=<<EOF
 688329d019e505041e52e92af95291d4
 EOF
@@ -983,7 +983,7 @@ RUN
 
 NAME=rz-hash -qqD rc6 192 bit
 FILE==
-CMDS=!rz-hash -qqD rc6 -K 0123456789abcdef0112233445566778899aabbccddeeff0 -x 688329d019e505041e52e92af95291d4 | rz-ax -S
+CMDS=!!rz-hash -qqD rc6 -K 0123456789abcdef0112233445566778899aabbccddeeff0 -x 688329d019e505041e52e92af95291d4 | rz-ax -S
 EXPECT=<<EOF
 02132435465768798a9bacbdcedfe0f1
 EOF
@@ -991,7 +991,7 @@ RUN
 
 NAME=rz-hash -qqE rc6 256 bit
 FILE==
-CMDS=!rz-hash -qqE rc6 -K 0123456789abcdef0112233445566778899aabbccddeeff01032547698badcfe -x 02132435465768798a9bacbdcedfe0f1 | rz-ax -S
+CMDS=!!rz-hash -qqE rc6 -K 0123456789abcdef0112233445566778899aabbccddeeff01032547698badcfe -x 02132435465768798a9bacbdcedfe0f1 | rz-ax -S
 EXPECT=<<EOF
 c8241816f0d7e48920ad16a1674e5d48
 EOF
@@ -999,7 +999,7 @@ RUN
 
 NAME=rz-hash -qqD rc6 256 bit
 FILE==
-CMDS=!rz-hash -qqD rc6 -K 0123456789abcdef0112233445566778899aabbccddeeff01032547698badcfe -x c8241816f0d7e48920ad16a1674e5d48 | rz-ax -S
+CMDS=!!rz-hash -qqD rc6 -K 0123456789abcdef0112233445566778899aabbccddeeff01032547698badcfe -x c8241816f0d7e48920ad16a1674e5d48 | rz-ax -S
 EXPECT=<<EOF
 02132435465768798a9bacbdcedfe0f1
 EOF
@@ -1007,7 +1007,7 @@ RUN
 
 NAME=rz-hash -qqE cps2
 FILE==
-CMDS=!rz-hash -qqE cps2 -K "942a570205ac140e" -x 000000000000033244d31b9deba90ac1 | rz-ax -S
+CMDS=!!rz-hash -qqE cps2 -K "942a570205ac140e" -x 000000000000033244d31b9deba90ac1 | rz-ax -S
 EXPECT=<<EOF
 d5642832bc24ac560000fe020000fe02
 EOF
@@ -1015,7 +1015,7 @@ RUN
 
 NAME=rz-hash -qqD cps2
 FILE==
-CMDS=!rz-hash -qqD cps2 -K "942a570205ac140e" -x d5642832bc24ac560000fe020000fe02 | rz-ax -S
+CMDS=!!rz-hash -qqD cps2 -K "942a570205ac140e" -x d5642832bc24ac560000fe020000fe02 | rz-ax -S
 EXPECT=<<EOF
 000000000000033244d31b9deba90ac1
 EOF
@@ -1023,7 +1023,7 @@ RUN
 
 NAME=rz-hash -qqE des-ecb
 FILE==
-CMDS=!rz-hash -qqE "des-ecb" -K "4545454545454545" -x "CC3368EE3DD10A86" | rz-ax -S
+CMDS=!!rz-hash -qqE "des-ecb" -K "4545454545454545" -x "CC3368EE3DD10A86" | rz-ax -S
 EXPECT=<<EOF
 4545454545454545
 EOF
@@ -1031,7 +1031,7 @@ RUN
 
 NAME=rz-hash -qqD des-ecb
 FILE==
-CMDS=!rz-hash -qqD "des-ecb" -K "0101010101010101" -x "41AD068548809D02994D4DC157B96C52" | rz-ax -S
+CMDS=!!rz-hash -qqD "des-ecb" -K "0101010101010101" -x "41AD068548809D02994D4DC157B96C52" | rz-ax -S
 EXPECT=<<EOF
 b01c29502b59ff4a0101010101010101
 EOF
@@ -1039,7 +1039,7 @@ RUN
 
 NAME=rz-hash -qqE des-ecb STRING
 FILE==
-CMDS=!rz-hash -qqE "des-ecb" -K s:"doom bin" -s "A password storms below a laid singer." | rz-ax -S
+CMDS=!!rz-hash -qqE "des-ecb" -K s:"doom bin" -s "A password storms below a laid singer." | rz-ax -S
 EXPECT=<<EOF
 8d244873a8e0de1287f65d712419cb937ff318a5352682e0c31d3e7a72c7e35f40c06d63fb5f2e5f
 EOF
@@ -1053,7 +1053,7 @@ RUN
 
 NAME=rz-hash -qqE serpent-ecb 128 bit
 FILE==
-CMDS=!rz-hash -qqE serpent-ecb -K "BFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBF" -x "BFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBF" | rz-ax -S
+CMDS=!!rz-hash -qqE serpent-ecb -K "BFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBF" -x "BFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBF" | rz-ax -S
 EXPECT=<<EOF
 af39614e747b9331c38b797f527ebea6
 EOF
@@ -1061,7 +1061,7 @@ RUN
 
 NAME=rz-hash -qqD serpent-ecb 128 bit
 FILE==
-CMDS=!rz-hash -qqD serpent-ecb -K "2BD6459F82C5B300952C49104881FF48" -x "EA024714AD5C4D84EA024714AD5C4D84" | rz-ax -S
+CMDS=!!rz-hash -qqD serpent-ecb -K "2BD6459F82C5B300952C49104881FF48" -x "EA024714AD5C4D84EA024714AD5C4D84" | rz-ax -S
 EXPECT=<<EOF
 beb6c069393822d3be73ff30525ec43e
 EOF
@@ -1069,7 +1069,7 @@ RUN
 
 NAME=rz-hash -qqE serpent-ecb 192 bit
 FILE==
-CMDS=!rz-hash -qqE serpent-ecb -K "C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C7" -x "C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C7" | rz-ax -S
+CMDS=!!rz-hash -qqE serpent-ecb -K "C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C7" -x "C6C6C6C6C6C6C6C6C6C6C6C6C6C6C6C7" | rz-ax -S
 EXPECT=<<EOF
 844a4ef08b4354c52593d3e907a163f7
 EOF
@@ -1077,7 +1077,7 @@ RUN
 
 NAME=rz-hash -qqD serpent-ecb 192 bit
 FILE==
-CMDS=!rz-hash -qqD serpent-ecb -K "2BD6459F82C5B300952C49104881FF482BD6459F82C5B300" -x "EA024714AD5C4D84EA024714AD5C4D84" | rz-ax -S
+CMDS=!!rz-hash -qqD serpent-ecb -K "2BD6459F82C5B300952C49104881FF482BD6459F82C5B300" -x "EA024714AD5C4D84EA024714AD5C4D84" | rz-ax -S
 EXPECT=<<EOF
 e0208be278e21420c4b1b9747788a954
 EOF
@@ -1085,7 +1085,7 @@ RUN
 
 NAME=rz-hash -qqE serpent-ecb 256 bit
 FILE==
-CMDS=!rz-hash -qqE serpent-ecb -K "5757575757575757575757575757575757575757575757575757575757575756" -x "57575757575757575757575757575756" | rz-ax -S
+CMDS=!!rz-hash -qqE serpent-ecb -K "5757575757575757575757575757575757575757575757575757575757575756" -x "57575757575757575757575757575756" | rz-ax -S
 EXPECT=<<EOF
 d35588cf3d2e74f2a0df437ffa0073b3
 EOF
@@ -1093,7 +1093,7 @@ RUN
 
 NAME=rz-hash -qqD serpent-ecb 256 bit
 FILE==
-CMDS=!rz-hash -qqD serpent-ecb -K "2BD6459F82C5B300952C49104881FF482BD6459F82C5B300952C49104881FF48" -x "EA024714AD5C4D84EA024714AD5C4D84" | rz-ax -S
+CMDS=!!rz-hash -qqD serpent-ecb -K "2BD6459F82C5B300952C49104881FF482BD6459F82C5B300952C49104881FF48" -x "EA024714AD5C4D84EA024714AD5C4D84" | rz-ax -S
 EXPECT=<<EOF
 677c8dfaa08071743fd2b415d1b28af2
 EOF
@@ -1101,7 +1101,7 @@ RUN
 
 NAME=rz-hash -qqE serpent-ecb zero padding
 FILE==
-CMDS=!rz-hash -qqE serpent-ecb -K "1032547698badcfe1032547698badcfe1032547698badcfe1032547698badcfe" -x "101231" | rz-ax -S
+CMDS=!!rz-hash -qqE serpent-ecb -K "1032547698badcfe1032547698badcfe1032547698badcfe1032547698badcfe" -x "101231" | rz-ax -S
 EXPECT=<<EOF
 417dfc518e8146ea81b089731b56fefa
 EOF

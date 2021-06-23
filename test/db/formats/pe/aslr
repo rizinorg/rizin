@@ -1,7 +1,7 @@
 NAME=PE: corkami dll.dll - DYNAMIC_BASE/ASLR disabled
 FILE=bins/pe/dll.dll
 ARGS=-n
-CMDS=!rz-bin -I bins/pe/dll.dll | grep "PIE      false" 
+CMDS=!!rz-bin -I bins/pe/dll.dll | grep "PIE      false" 
 EXPECT=<<EOF
 PIE      false
 EOF
@@ -10,7 +10,7 @@ RUN
 NAME=PE: corkami aslr.dll - DYNAMIC_BASE/ASLR enabled
 FILE=bins/pe/aslr.dll
 ARGS=-n
-CMDS=!rz-bin -I bins/pe/aslr.dll | grep PIE | grep true
+CMDS=!!rz-bin -I bins/pe/aslr.dll | grep PIE | grep true
 EXPECT=<<EOF
 PIE      true
 EOF

@@ -16,14 +16,14 @@ RUN
 
 NAME=!| grep
 FILE==
-CMDS=!echo magic|grep bob
+CMDS=!!echo magic|grep bob
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=!| sed
 FILE==
-CMDS=!echo magic|sed -e s,magic,yeah,
+CMDS=!!echo magic|sed -e s,magic,yeah,
 EXPECT=<<EOF
 yeah
 EOF

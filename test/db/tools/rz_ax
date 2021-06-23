@@ -32,19 +32,19 @@ RUN
 
 NAME=rz-ax -E | rz-ax -D
 FILE==
-CMDS=!rz-ax -E hello |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -D
+CMDS=!!rz-ax -E hello |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -D
 EXPECT=hello
 RUN
 
 NAME=rz-ax -E | rz-ax -D 2
 FILE==
-CMDS=!rz-ax -E hello |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -Dl
+CMDS=!!rz-ax -E hello |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -Dl
 EXPECT=hello
 RUN
 
 NAME=rz-ax -E | rz-ax -D 3
 FILE==
-CMDS=!echo hello | rz-ax -E |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -D
+CMDS=!!echo hello | rz-ax -E |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -D
 EXPECT=<<EOF
 hello
 EOF
@@ -52,13 +52,13 @@ RUN
 
 NAME=rz-ax -S hello | rz-ax -s
 FILE==
-CMDS=!rz-ax -S hello | rz-ax -s
+CMDS=!!rz-ax -S hello | rz-ax -s
 EXPECT=hello
 RUN
 
 NAME=rz-ax -S hello | rz-ax -s 2
 FILE==
-CMDS=!echo hello | rz-ax -S | rz-ax -s
+CMDS=!!echo hello | rz-ax -S | rz-ax -s
 EXPECT=<<EOF
 hello
 EOF
@@ -66,7 +66,7 @@ RUN
 
 NAME=rz-ax -S hello | rz-ax -s (2)
 FILE==
-CMDS=!echo hello | rz-ax -S | rz-ax -s | rz-ax -S | rz-ax -s
+CMDS=!!echo hello | rz-ax -S | rz-ax -s | rz-ax -S | rz-ax -s
 EXPECT=<<EOF
 hello
 EOF
@@ -74,7 +74,7 @@ RUN
 
 NAME=rz-ax -E | rz-ax -D -E
 FILE==
-CMDS=!echo hello | rz-ax -E |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -D
+CMDS=!!echo hello | rz-ax -E |rz-ax -D |rz-ax -E | rz-ax -D  |rz-ax -E|rz-ax -D |rz-ax -E | rz-ax -D
 EXPECT=<<EOF
 hello
 EOF
@@ -214,7 +214,7 @@ RUN
 
 NAME=cat bins/other/admin.txt | rz-ax -S
 FILE==
-CMDS=!cat bins/other/admin.txt | rz-ax -S
+CMDS=!!cat bins/other/admin.txt | rz-ax -S
 EXPECT=<<EOF
 6161646d696e61
 EOF
@@ -222,7 +222,7 @@ RUN
 
 NAME=echo "414141" | rz-ax -s
 FILE==
-CMDS=!printf 414141 | rz-ax -s
+CMDS=!!printf 414141 | rz-ax -s
 EXPECT=AAA
 RUN
 
@@ -298,7 +298,7 @@ RUN
 
 NAME=cat bins/other/shellcode.c | rz-ax sF
 FILE==
-CMDS=!cat bins/other/shellcode.c | rz-ax -F
+CMDS=!!cat bins/other/shellcode.c | rz-ax -F
 EXPECT=<<EOF
 31c050686e2f7368682f2f626989e35089e25389e1b00bcd80
 EOF
@@ -322,7 +322,7 @@ RUN
 
 NAME=cat bins/other/shellcode.py | rz-ax sF
 FILE==
-CMDS=!cat bins/other/shellcode.py | rz-ax -F
+CMDS=!!cat bins/other/shellcode.py | rz-ax -F
 EXPECT=<<EOF
 31c050686e2f7368682f2f626989e35089e25389e1b00bcd80
 EOF
@@ -374,7 +374,7 @@ RUN
 
 NAME=rz-ax -t "1234567890 GMT-1"
 FILE==
-CMDS=!rz-ax -t "1234567890 GMT-1" | cut -d " " -f 1,2
+CMDS=!!rz-ax -t "1234567890 GMT-1" | cut -d " " -f 1,2
 EXPECT=<<EOF
 Fri Feb
 EOF
@@ -480,7 +480,7 @@ RUN
 
 NAME=rz-ax -a
 FILE==
-CMDS=!rz-ax -a | grep -c ASCII
+CMDS=!!rz-ax -a | grep -c ASCII
 EXPECT=<<EOF
 1
 EOF
@@ -497,7 +497,7 @@ RUN
 
 NAME=rz-ax -K
 FILE==
-CMDS=!printf 1 | rz-ax -K | grep -c 0x00000001
+CMDS=!!printf 1 | rz-ax -K | grep -c 0x00000001
 EXPECT=<<EOF
 1
 EOF
@@ -505,7 +505,7 @@ RUN
 
 NAME=rz-ax -i
 FILE==
-CMDS=!printf A | rz-ax -i
+CMDS=!!printf A | rz-ax -i
 EXPECT=<<EOF
 unsigned char buf[] = {
   0x41
@@ -522,7 +522,7 @@ RUN
 
 NAME=rz-ax -r 0x1234
 FILE==
-CMDS=!rz-ax -r 0x1234 | grep -c octal
+CMDS=!!rz-ax -r 0x1234 | grep -c octal
 EXPECT=<<EOF
 1
 EOF
@@ -530,7 +530,7 @@ RUN
 
 NAME=rz-ax -v
 FILE==
-CMDS=!rz-ax -v | grep -c build
+CMDS=!!rz-ax -v | grep -c build
 EXPECT=<<EOF
 1
 EOF

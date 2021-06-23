@@ -108,7 +108,7 @@ RUN
 NAME=rz-ggc bins/other/rz-gg/hi.c
 BROKEN=1
 FILE==
-CMDS=!rz-gg bins/other/rz-gg/hi.c | grep e9
+CMDS=!!rz-gg bins/other/rz-gg/hi.c | grep e9
 EXPECT=<<EOF
 e90800000048656c6c6f210a00bf01000000488d35ecffffffba07000000b8010000000f05b83c0000004030ff0f05c3
 EOF
@@ -116,7 +116,7 @@ RUN
 
 NAME=rz-gg -v
 FILE==
-CMDS=!rz-gg -v | grep -c build
+CMDS=!!rz-gg -v | grep -c build
 EXPECT=<<EOF
 1
 EOF
@@ -124,7 +124,7 @@ RUN
 
 NAME=rz-gg -h
 FILE==
-CMDS=!rz-gg -h | grep -c Usage
+CMDS=!!rz-gg -h | grep -c Usage
 EXPECT=<<EOF
 1
 EOF
@@ -132,7 +132,7 @@ RUN
 
 NAME=rz-gg -L
 FILE==
-CMDS=!rz-gg -L | grep -c encoders
+CMDS=!!rz-gg -L | grep -c encoders
 EXPECT=<<EOF
 1
 EOF
