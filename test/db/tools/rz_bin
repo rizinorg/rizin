@@ -63,8 +63,8 @@ CMDS=!rz-bin -K md5 -S ${RZ_FILE}
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr        vsize perm md5                              name   flags
--------------------------------------------------------------------------------------------
+nth paddr        size vaddr        vsize perm md5                              name   flags                                       
+----------------------------------------------------------------------------------------------------------------------------------
 0   0x00000400  0xa00 0x00401000  0x1000 -r-x 3d6a5b8dc5e41b09659638ad5735e5b5 .text  CNT_CODE,CNT_INITIALIZED_DATA,ALIGN_16BYTES
 1   0x00000e00  0x200 0x00402000  0x1000 -rw- b3c542ba67f2d1a949fa1a25ce22f7e3 .data  CNT_INITIALIZED_DATA,ALIGN_4BYTES
 2   0x00001000  0x200 0x00403000  0x1000 -r-- c9a877a4e945b087b8323830442c88d6 .rdata CNT_INITIALIZED_DATA,ALIGN_4BYTES
@@ -103,8 +103,8 @@ EXPECT=<<EOF
 14
 [Sections]
 
-nth paddr        size vaddr       vsize perm name                        type       flags
------------------------------------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name                        type       flags         
+--------------------------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- prixfixe.                   NULL       
 1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe..interp            PROGBITS   alloc
 2   0x00000148   0x20 0x08048148   0x20 -r-- prixfixe..note.ABI-tag      NOTE       alloc
@@ -138,8 +138,8 @@ nth paddr        size vaddr       vsize perm name                        type   
 
 [Segments]
 
-nth paddr        size vaddr       vsize perm name                  align
-------------------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name                  align  
+--------------------------------------------------------------------------
 0   0x00000034  0x100 0x08048034  0x100 -r-x prixfixe.PHDR         0x4
 1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe.INTERP       0x1
 2   0x00000000  0x59c 0x08048000  0x59c -r-x prixfixe.LOAD0        0x1000
@@ -323,8 +323,8 @@ FILE=bins/mach0/fatmach0-3true
 CMDS=!rz-bin -a x86 -b 32 -i ${RZ_FILE}
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib name
----------------------------------
+nth vaddr      bind type lib name             
+----------------------------------------------
 0   0x00001f94 NONE FUNC     exit
 1   ---------- NONE FUNC     dyld_stub_binder
 
@@ -336,8 +336,8 @@ FILE=bins/mach0/fatmach0-3true
 CMDS=!rz-bin -G 0x5000 -i ${RZ_FILE}
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib name
----------------------------------
+nth vaddr      bind type lib name             
+----------------------------------------------
 0   0x00001f94 NONE FUNC     exit
 1   ---------- NONE FUNC     dyld_stub_binder
 
@@ -433,8 +433,8 @@ CMDS=!rz-bin -g ${RZ_FILE}
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name               type       flags
---------------------------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name               type       flags         
+-----------------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ----                    NULL       
 1   0x00000134   0x13 0x08048134   0x13 -r-- .interp            PROGBITS   alloc
 2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI-tag      NOTE       alloc
@@ -468,8 +468,8 @@ nth paddr        size vaddr       vsize perm name               type       flags
 
 [Segments]
 
-nth paddr        size vaddr       vsize perm name         align
----------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name         align  
+-----------------------------------------------------------------
 0   0x00000034  0x100 0x08048034  0x100 -r-x PHDR         0x4
 1   0x00000134   0x13 0x08048134   0x13 -r-- INTERP       0x1
 2   0x00000000  0x59c 0x08048000  0x59c -r-x LOAD0        0x1000
@@ -492,16 +492,16 @@ vaddr=0x080483b0 paddr=0x000003b0 hvaddr=0x080495a0 hpaddr=0x000005a0 type=fini
 [Main]
 vaddr=0x08048400 paddr=0x00000400
 [Imports]
-nth vaddr      bind   type   lib name
--------------------------------------
+nth vaddr      bind   type   lib name              
+---------------------------------------------------
 1   0x080482d0 GLOBAL FUNC       puts
 2   0x080482e0 WEAK   NOTYPE     __gmon_start__
 3   0x080482f0 GLOBAL FUNC       __libc_start_main
 
 [Symbols]
 
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                                   
+----------------------------------------------------------------------------------------
 4   0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
 1   0x00000134 0x08048134 LOCAL  SECT   0        .interp
 2   0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
@@ -568,11 +568,11 @@ nth paddr      vaddr      bind   type   size lib name
 2   0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
 3   0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
 [Strings]
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
+nth paddr      vaddr      len size section type  string       
+--------------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
-Name     Value
---------------
+Name     Value              
+----------------------------
 arch     x86
 baddr    0x8048000
 binsz    4899
@@ -624,8 +624,8 @@ libc.so.6
 1 library
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name              
+-----------------------------------------------
 0x08049690 0x00000690 SET_32 __gmon_start__
 0x080496a0 0x000006a0 SET_32 puts
 0x080496a4 0x000006a4 SET_32 __gmon_start__
@@ -648,8 +648,8 @@ Version need has 1 entries:
   0x00000250: Version: 1  File: libc.so.6  Cnt: 1
   0x00000260:   Name: GLIBC_2.0  Flags: none Version: 2
 Section to Segment mapping:
-Segment      Section
---------------------
+Segment      Section                                                                                                                                                                  
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 PHDR         
 INTERP       .interp 
 LOAD0        .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
@@ -681,8 +681,8 @@ NAME=rz-bin -I elf_cpp
 FILE=bins/elf/analysis/a.out.cpp
 CMDS=!rz-bin -I ${RZ_FILE}
 EXPECT=<<EOF
-Name     Value
---------------
+Name     Value                               
+---------------------------------------------
 arch     x86
 baddr    0x0
 binsz    7051
@@ -721,8 +721,8 @@ NAME=rz-bin -I asan
 FILE=bins/elf/analysis/a.out.asan
 CMDS=!rz-bin -I ${RZ_FILE}
 EXPECT=<<EOF
-Name     Value
---------------
+Name     Value                                                                      
+------------------------------------------------------------------------------------
 arch     x86
 baddr    0x400000
 binsz    1603255
@@ -761,8 +761,8 @@ NAME=rz-bin -I apple-blocks-ext
 FILE=bins/mach0/mach0-blocks-ext
 CMDS=!rz-bin -I ${RZ_FILE}
 EXPECT=<<EOF
-Name     Value
---------------
+Name     Value           
+-------------------------
 arch     x86
 baddr    0x100000000
 binsz    9828
@@ -962,8 +962,8 @@ CMDS=!rz-bin -E ${RZ_FILE}
 EXPECT=<<EOF
 [Exports]
 
-nth paddr      vaddr      bind   type size lib     name
--------------------------------------------------------
+nth paddr      vaddr      bind   type size lib     name   
+----------------------------------------------------------
 0   0x00000224 0x01001024 GLOBAL FUNC 0    dll.dll export
 EOF
 RUN

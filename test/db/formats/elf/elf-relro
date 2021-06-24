@@ -12,8 +12,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      target     type   name
---------------------------------------------
+vaddr      paddr      target     type   name                                    
+--------------------------------------------------------------------------------
 0x0000e210 0x0000e210 0x0000f740 SET_64 __cxa_finalize
 0x0000e218 0x0000e218 0x0000f748 SET_64 __stack_chk_fail
 0x0000e220 0x0000e220 0x0000f750 SET_64 dlopen
@@ -42,8 +42,8 @@ FILE=bins/elf/librsjni_androix.so
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type lib name
------------------------------------
+nth vaddr      bind   type lib name                       
+----------------------------------------------------------
 1   0x0000b7c0 GLOBAL FUNC     __cxa_finalize
 2   0x0000b880 GLOBAL FUNC     AndroidBitmap_getInfo
 3   0x0000b870 GLOBAL FUNC     AndroidBitmap_lockPixels
@@ -89,8 +89,8 @@ EOF
 EXPECT=<<EOF
 info/elf.relro=full
 [Imports]
-nth vaddr      bind   type   lib name
--------------------------------------
+nth vaddr      bind   type   lib name                        
+-------------------------------------------------------------
 2   0x00051f60 GLOBAL FUNC       __ctype_toupper_loc
 3   0x00051f68 GLOBAL FUNC       __strcat_chk
 4   0x00051f70 GLOBAL FUNC       getenv

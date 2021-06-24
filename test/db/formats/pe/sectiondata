@@ -12,8 +12,8 @@ CMDS=!rz-bin -S bins/pe/cm01.exe
 EXPECT=<<EOF
 [Sections]
 
-nth paddr         size vaddr        vsize perm name   flags
------------------------------------------------------------
+nth paddr         size vaddr        vsize perm name   flags                
+---------------------------------------------------------------------------
 0   0x00000600   0x600 0x00401000  0x1000 -r-x CODE   CNT_CODE
 1   0x00000c00   0x200 0x00402000  0x1000 -rw- DATA   CNT_INITIALIZED_DATA
 2   0x00000e00   0x800 0x00403000  0x1000 -rw- .idata CNT_INITIALIZED_DATA

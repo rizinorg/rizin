@@ -191,8 +191,8 @@ format   java
 iorw     true
 block    0x100
 type     JAVA CLASS
-Name     Value
---------------
+Name     Value       
+---------------------
 arch     java
 baddr    0x0
 binsz    1024

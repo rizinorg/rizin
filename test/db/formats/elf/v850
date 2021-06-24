@@ -16,8 +16,8 @@ format   elf
 iorw     false
 block    0x100
 type     EXEC (Executable file)
-Name     Value
---------------
+Name     Value            
+--------------------------
 arch     v850
 baddr    0x100000
 binsz    973677

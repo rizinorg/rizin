@@ -4,8 +4,8 @@ CMDS=<<EOF
 f,:size/sum
 EOF
 EXPECT=<<EOF
-size
-----
+size  
+------
 16.8K
 
 EOF
@@ -17,8 +17,8 @@ CMDS=<<EOF
 f,:size/cols:size/sort:size/uniq
 EOF
 EXPECT=<<EOF
-size
-----
+size 
+-----
 0
 1
 2
@@ -109,8 +109,8 @@ addr,size,space,name
   }
 ]
 
-space            name
----------------------
+space            name                                
+-----------------------------------------------------
 segments         segment.GNU_STACK
 symbols.sections sym..comment
 imports          loc.imp.__gmon_start
@@ -144,8 +144,8 @@ af
 aflt:simple
 EOF
 EXPECT=<<EOF
-addr       size name           nbbs xref calls cc noreturn
-----------------------------------------------------------
+addr       size name           nbbs xref calls cc noreturn 
+-----------------------------------------------------------
 0x000007aa 157  main           3    9    6     2  
 0x00000660 6    sym.imp.strlen 1    1    0     1  
 0x00000670 6    sym.imp.malloc 1    1    0     1  
@@ -167,8 +167,8 @@ afbt:fancy
 afbt:size/sort/inc:simple
 EOF
 EXPECT=<<EOF
-addr  size jump  fail
----------------------
+addr  size jump  fail  
+-----------------------
 0x7aa 92   0x844 0x806
 0x806 62   0x844 -1
 0x844 3    -1    -1
@@ -179,8 +179,8 @@ addr  size jump  fail
 | 0x806  | 62    | 0x844  | -1     |
 | 0x844  | 3     | -1     | -1     |
 `----------------------------------'
-addr  size jump  fail
----------------------
+addr  size jump  fail  
+-----------------------
 0x844 3    -1    -1
 0x806 62   0x844 -1
 0x7aa 92   0x844 0x806

@@ -32,8 +32,8 @@ is
 EOF
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib                               name
----------------------------------------------------------------
+nth vaddr      bind type lib                               name                                       
+------------------------------------------------------------------------------------------------------
 1   0x00403054 NONE FUNC VCRUNTIME140.dll                  __current_exception_context
 2   0x00403058 NONE FUNC VCRUNTIME140.dll                  __current_exception
 3   0x0040305c NONE FUNC VCRUNTIME140.dll                  memset
@@ -92,8 +92,8 @@ nth vaddr      bind type lib                               name
 
 [Symbols]
 
-nth paddr      vaddr      bind type size lib                               name
--------------------------------------------------------------------------------
+nth paddr      vaddr      bind type size lib                               name                                           
+--------------------------------------------------------------------------------------------------------------------------
 1   0x00001854 0x00403054 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception_context
 2   0x00001858 0x00403058 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception
 3   0x0000185c 0x0040305c NONE FUNC 0    VCRUNTIME140.dll                  imp.memset
@@ -160,8 +160,8 @@ is
 EOF
 EXPECT=<<EOF
 [Imports]
-nth vaddr       bind type lib                               name
-----------------------------------------------------------------
+nth vaddr       bind type lib                               name                                       
+-------------------------------------------------------------------------------------------------------
 1   0x1400030c0 NONE FUNC VCRUNTIME140.dll                  __current_exception
 2   0x1400030c8 NONE FUNC VCRUNTIME140.dll                  __current_exception_context
 3   0x1400030d0 NONE FUNC VCRUNTIME140.dll                  memset
@@ -222,8 +222,8 @@ nth vaddr       bind type lib                               name
 
 [Symbols]
 
-nth paddr      vaddr       bind type size lib                               name
---------------------------------------------------------------------------------
+nth paddr      vaddr       bind type size lib                               name                                           
+---------------------------------------------------------------------------------------------------------------------------
 1   0x00001ac0 0x1400030c0 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception
 2   0x00001ac8 0x1400030c8 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception_context
 3   0x00001ad0 0x1400030d0 NONE FUNC 0    VCRUNTIME140.dll                  imp.memset
