@@ -180,18 +180,19 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 		}
 		runes = 0;
 		str_start = needle;
+		RzStrEnc enc = rz_utf_bom_encoding(buf + needle - from, to - needle);
 
 		/* Eat a whole C string */
 		for (i = 0; i < sizeof(tmp) - 4 && needle < to; i += rc) {
 			RzRune r = { 0 };
 
 			if (str_type == RZ_STRING_TYPE_WIDE32) {
-				rc = rz_utf32le_decode(buf + needle - from, to - needle, &r);
+				rc = rz_utf32_decode(buf + needle - from, to - needle, &r, enc == RZ_STRING_ENC_UTF32BE);
 				if (rc) {
 					rc = 4;
 				}
 			} else if (str_type == RZ_STRING_TYPE_WIDE) {
-				rc = rz_utf16le_decode(buf + needle - from, to - needle, &r);
+				rc = rz_utf16_decode(buf + needle - from, to - needle, &r, enc == RZ_STRING_ENC_UTF16BE);
 				if (rc == 1) {
 					rc = 2;
 				}
