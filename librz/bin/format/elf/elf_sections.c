@@ -153,29 +153,10 @@ static bool set_shdr_entry(ELFOBJ *bin, Elf_(Shdr) * section, ut64 offset) {
 	return true;
 }
 
-static bool is_invalid_strtab_section(ELFOBJ *bin, Elf_(Word) sh_name) {
-	return !bin->shstrtab || !bin->shstrtab_size || sh_name > bin->shstrtab_size;
-}
-
-static bool is_valid_sh_name(ELFOBJ *bin, Elf_(Word) sh_name, Elf_(Word) sh_size) {
-	return bin->shstrtab && sh_name < sh_size;
-}
-
-static size_t max_sh_name_size(Elf_(Word) sh_name, Elf_(Word) sh_size) {
-	size_t size = sh_size - sh_name;
-	return RZ_MIN(size, ELF_STRING_LENGTH);
-}
-
 static bool set_elf_section_name(ELFOBJ *bin, RzBinElfSection *section, Elf_(Shdr) * shdr, size_t id) {
-	if (is_invalid_strtab_section(bin, shdr->sh_name)) { // TODO add test
+	if (!bin->shstrtab || !Elf_(rz_bin_elf_strtab_has_index)(bin->shstrtab, shdr->sh_name)) {
 		snprintf(section->name, ELF_STRING_LENGTH, "invalid%zu", id);
 		return false;
-	}
-
-	if (is_valid_sh_name(bin, shdr->sh_name, bin->shstrtab_size)) {
-		size_t max = max_sh_name_size(shdr->sh_name, bin->shstrtab_size);
-		rz_str_ncpy(section->name, bin->shstrtab + shdr->sh_name, max);
-		return true;
 	}
 
 	if (shdr->sh_type == SHT_NULL) {
@@ -183,8 +164,12 @@ static bool set_elf_section_name(ELFOBJ *bin, RzBinElfSection *section, Elf_(Shd
 		return true;
 	}
 
-	snprintf(section->name, ELF_STRING_LENGTH, "unknown%zu", id); // TODO add test
-	return false;
+	if (!Elf_(rz_bin_elf_strtab_cpy)(bin->shstrtab, section->name, shdr->sh_name)) {
+		section->name[0] = '\0';
+		return false;
+	}
+
+	return true;
 }
 
 static bool set_elf_section(ELFOBJ *bin, RzBinElfSection *section, Elf_(Shdr) * shdr, size_t id) {

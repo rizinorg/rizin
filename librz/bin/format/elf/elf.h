@@ -172,23 +172,20 @@ typedef struct Elf_(rz_bin_elf_note_segment_t) {
 }
 RzBinElfNoteSegment;
 
+typedef struct rz_bin_elf_strtab RzBinElfStrtab;
+
 struct Elf_(rz_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
 	RzVector *segments; // should be use with elf_segments.c
 	RzVector *sections; // should be use with elf_sections.c
 
-	ut64 strtab_size;
-	char *strtab;
-
-	ut64 shstrtab_size;
-	char *shstrtab;
-
 	RzBinElfDtDynamic *dt_dynamic;
 
-	RzList /*<RzBinElfNoteSegment>*/ *note_segments;
+	RzBinElfStrtab *dynstr;
+	RzBinElfStrtab *strtab;
+	RzBinElfStrtab *shstrtab;
 
-	char *dynstr;
-	ut32 dynstr_size;
+	RzList /*<RzBinElfNoteSegment>*/ *note_segments;
 
 	RzBinImport **imports_by_ord;
 	size_t imports_by_ord_size;
@@ -318,6 +315,14 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RzVec
 RZ_OWN RzVector *Elf_(rz_bin_elf_new_sections)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type);
 bool Elf_(rz_bin_elf_has_sections)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_strtab
+
+RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_new_strtab)(RZ_NONNULL ELFOBJ *bin, ut64 offset, ut64 size);
+RZ_OWN char *Elf_(rz_bin_elf_strtab_dup)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);
+bool Elf_(rz_bin_elf_strtab_cpy)(RZ_NONNULL RzBinElfStrtab *strtab, char *dst, ut64 index);
+bool Elf_(rz_bin_elf_strtab_has_index)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);
+void Elf_(rz_bin_elf_free_strtab)(RzBinElfStrtab *ptr);
 
 // elf_symbols.c
 
