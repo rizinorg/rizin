@@ -87,3 +87,7 @@ RZ_API RzHeapBin *rz_heap_bin_content(RzCore *core, MallocState *arena, int bin_
 RZ_API RzHeapBin *rz_heap_fastbin_content(RzCore *core, MallocState *arena, int bin_num) {
 	call_handler(rz_heap_fastbin_content, arena, bin_num);
 }
+
+RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state) {
+        call_handler(rz_heap_get_arena, m_state);
+}

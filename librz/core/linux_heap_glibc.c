@@ -860,7 +860,6 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 		return NULL;
 	}
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
 	RzHeapBin *heap_bin = RZ_NEW0(RzHeapBin);
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk || !heap_bin) {
@@ -2443,4 +2442,33 @@ RZ_API RzHeapChunkSimple *GH(rz_heap_chunk_wrapper)(RzCore *core, GHT addr) {
 	simple_chunk->bk_nextsize = heap_chunk->bk_nextsize;
 	free(heap_chunk);
 	return simple_chunk;
+}
+
+/**
+ * \brief Get MallocState struct for arena with given base address
+ * if base address is 0 then return MallocState for main arena
+ * \param core RzCore pointer
+ * \param addr Base address of the arena
+ * \return MallocState struct pointer for the arena
+ */
+RZ_API MallocState *GH(rz_heap_get_arena)(RzCore *core, GHT m_state) {
+	GHT m_arena;
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		return NULL;
+	}
+        if (m_state == 0) {
+                m_state = m_arena;
+        }
+	if (!GH(is_arena)(core, m_arena, m_state)) {
+		return NULL;
+	}
+	MallocState *main_arena = RZ_NEW0(MallocState);
+	if (!main_arena) {
+		return NULL;
+	}
+	if (!GH(rz_heap_update_main_arena)(core, m_state, main_arena)) {
+		free(main_arena);
+		return NULL;
+	}
+	return main_arena;
 }
