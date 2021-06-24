@@ -172,49 +172,22 @@ static void init_shstrtab_sdb(ELFOBJ *bin, ut64 offset, ut64 size) {
 	sdb_num_set(bin->kv, "elf_shstrtab.size", size, 0);
 }
 
-static bool set_shstrtab(ELFOBJ *bin, Elf_(Off) offset) {
-	bin->shstrtab = RZ_NEWS(char, bin->shstrtab_size + 1);
-	if (!bin->shstrtab) {
-		return false;
-	}
-
-	int res = rz_buf_read_at(bin->b, offset, (ut8 *)bin->shstrtab, bin->shstrtab_size);
-	if (res < 0) {
-		RZ_LOG_WARN("read (shstrtab) at 0x%" PFMT64x "\n", (ut64)offset);
-		RZ_FREE(bin->shstrtab);
-		return false;
-	}
-
-	bin->shstrtab[bin->shstrtab_size] = '\0';
-
-	return true;
-}
-
 static bool rz_bin_elf_init_shstrtab(ELFOBJ *bin, RzVector *sections) {
 	if (!sections) {
 		return false;
 	}
 
 	Elf_(Shdr) *section = rz_vector_index_ptr(sections, bin->ehdr.e_shstrndx);
-	if (!section) {
+	if (!section || !section->sh_size) {
 		return false;
 	}
 
-	if (!section->sh_size) {
+	bin->shstrtab = Elf_(rz_bin_elf_new_strtab)(bin, section->sh_offset, section->sh_size);
+	if (!bin->shstrtab) {
 		return false;
 	}
-
-	bin->shstrtab_size = section->sh_size;
 
 	init_shstrtab_sdb(bin, section->sh_offset, section->sh_size);
-
-	if (!Elf_(rz_bin_elf_check_array)(bin, section->sh_offset, section->sh_size, sizeof(char))) {
-		return false;
-	}
-
-	if (!set_shstrtab(bin, section->sh_offset)) {
-		return true;
-	}
 
 	return true;
 }
@@ -308,25 +281,6 @@ static bool rz_bin_elf_init_ehdr(ELFOBJ *bin) {
 	return true;
 }
 
-static bool set_dynstr(ELFOBJ *bin, RzBinElfSection *section) {
-	Elf_(Off) offset = section->offset;
-
-	bin->dynstr_size = section->size;
-	bin->dynstr = RZ_NEWS0(char, bin->dynstr_size + 1);
-
-	if (!bin->dynstr) {
-		return false;
-	}
-
-	if (rz_buf_read_at(bin->b, offset, (ut8 *)bin->dynstr, bin->dynstr_size) < 0) {
-		RZ_FREE(bin->dynstr);
-		bin->dynstr_size = 0;
-		return false;
-	}
-
-	return true;
-}
-
 static bool rz_bin_elf_init_dynstr(ELFOBJ *bin) {
 	if (!Elf_(rz_bin_elf_has_sections)(bin) || !bin->shstrtab) {
 		return false;
@@ -337,7 +291,9 @@ static bool rz_bin_elf_init_dynstr(ELFOBJ *bin) {
 		return false;
 	}
 
-	return set_dynstr(bin, section);
+	bin->dynstr = Elf_(rz_bin_elf_new_strtab)(bin, section->offset, section->size);
+
+	return bin->dynstr;
 }
 
 static void init_dynamic_section_sdb(ELFOBJ *bin) {
@@ -371,39 +327,27 @@ static void init_strtab_sdb(ELFOBJ *bin, ut64 strtab_addr, Elf_(Xword) strtab_si
 	sdb_num_set(bin->kv, "elf_strtab.size", strtab_size, 0);
 }
 
-static bool read_strtab(ELFOBJ *bin, ut64 strtab_addr, Elf_(Xword) strtab_size) {
-	bin->strtab_size = strtab_size;
-	bin->strtab = RZ_NEWS0(char, strtab_size + 1);
+static bool rz_bin_elf_init_strtab(ELFOBJ *bin) {
+	ut64 addr;
+	ut64 size;
+
+	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRSZ, &size)) {
+		RZ_LOG_WARN(".strtab not found or invalid\n");
+		return false;
+	}
+
+	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	if (offset == UT64_MAX) {
+		return false;
+	}
+
+	bin->strtab = Elf_(rz_bin_elf_new_strtab)(bin, offset, size);
 	if (!bin->strtab) {
 		return false;
 	}
 
-	if (rz_buf_read_at(bin->b, strtab_addr, (ut8 *)bin->strtab, strtab_size) < 0) {
-		free(bin->strtab);
-		return false;
-	}
-
+	init_strtab_sdb(bin, offset, size);
 	return true;
-}
-
-static bool rz_bin_elf_init_strtab(ELFOBJ *bin) {
-	ut64 strtab_addr;
-	ut64 strtab_size;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &strtab_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRSZ, &strtab_size)) {
-		RZ_LOG_WARN("DT_STRTAB not found or invalid\n");
-		return false;
-	}
-
-	ut64 strtab_offset = Elf_(rz_bin_elf_v2p_new)(bin, strtab_addr);
-
-	init_strtab_sdb(bin, strtab_offset, strtab_size);
-
-	if (strtab_offset + strtab_size > bin->size) {
-		return false;
-	}
-
-	return read_strtab(bin, strtab_offset, strtab_size);
 }
 
 static bool rz_bin_elf_init(ELFOBJ *bin) {
@@ -422,7 +366,7 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 		RzVector *sections = Elf_(rz_bin_elf_new_sections)(bin);
 
 		if (!rz_bin_elf_init_shstrtab(bin, sections)) {
-			RZ_LOG_WARN("Cannot initialize strings table\n");
+			RZ_LOG_WARN("Cannot initialize section strings table\n");
 		}
 
 		if (!Elf_(rz_bin_elf_is_relocatable)(bin) && !Elf_(rz_bin_elf_is_static)(bin)) {
@@ -440,7 +384,7 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 		rz_vector_free(sections);
 
 		if (!rz_bin_elf_init_dynstr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
-			RZ_LOG_WARN("Cannot initialize dynamic strings\n");
+			RZ_LOG_WARN("Cannot initialize dynamic strings (dynstr)\n");
 		}
 	}
 
@@ -491,9 +435,12 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 
 	rz_vector_free(bin->segments);
 	rz_vector_free(bin->sections);
-	free(bin->strtab);
-	free(bin->shstrtab);
-	free(bin->dynstr);
+
+	Elf_(rz_bin_elf_free_dt_dynamic)(bin->dt_dynamic);
+
+	Elf_(rz_bin_elf_free_strtab)(bin->strtab);
+	Elf_(rz_bin_elf_free_strtab)(bin->shstrtab);
+	Elf_(rz_bin_elf_free_strtab)(bin->dynstr);
 
 	free(bin->g_symbols);
 	free(bin->g_imports);
@@ -509,7 +456,6 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 
 	ht_up_free(bin->rel_cache);
 
-	Elf_(rz_bin_elf_free_dt_dynamic)(bin->dt_dynamic);
 	rz_list_free(bin->note_segments);
 
 	if (bin->imports_by_ord) {
