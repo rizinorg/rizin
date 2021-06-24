@@ -307,7 +307,8 @@ typedef struct rz_heap_bin {
 	ut64 bk;
 	int bin_num;
 	char *type;
-	RzList *chunks;
+	RzList *chunks; /* list of chunks in the bins */
+	char *message; /* indicating the list is corrupted or double free*/
 } RzHeapBin;
 
 RZ_API RzHeapChunk_64 *rz_heap_get_chunk_at_addr_64(RzCore *core, ut64 addr);

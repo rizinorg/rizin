@@ -1368,6 +1368,13 @@ char *GH(rz_bin_num_to_type)(int bin_num) {
 	}
 	return NULL;
 }
+
+void GH(rz_heap_bin_free)(RzHeapBin *bin) {
+	free(bin->type);
+	free(bin->message);
+	rz_list_free(bin->chunks);
+	free(bin);
+}
 /**
  * \brief Get list of chunks of <bin_num> bin from NBINS array of an arena.
  * \param core RzCore pointer
@@ -1418,6 +1425,7 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	}
 	while (fw != head->fd) {
 		if (fw > main_arena->GH(top) || fw < initial_brk) {
+			bin->message = rz_str_new("Corrupted list");
 			break;
 		}
 		rz_io_read_at(core->io, fw, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
@@ -1446,9 +1454,8 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 	RzHeapBin *bin = GH(rz_heap_bin_content)(core, main_arena, bin_num);
 	RzList *chunks = bin->chunks;
 	if (rz_list_length(chunks) == 0) {
-		rz_list_free(chunks);
-		free(bin->type);
-		free(bin);
+		GH(rz_heap_bin_free)
+		(bin);
 		return 0;
 	}
 	int chunks_cnt = 0;
@@ -1467,7 +1474,6 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		pj_kn(pj, "bk", bin->bk);
 		pj_ka(pj, "chunks");
 	}
-
 	rz_list_foreach (chunks, iter, pos) {
 		if (!pj) {
 			rz_cons_printf(" -> ");
@@ -1479,9 +1485,11 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		}
 		chunks_cnt += 1;
 	}
-	rz_list_free(chunks);
-	free(bin->type);
-	free(bin);
+	if (bin->message) {
+		PRINTF_RA("%s\n", bin->message);
+	}
+	GH(rz_heap_bin_free)
+	(bin);
 	if (pj) {
 		pj_end(pj);
 	}
