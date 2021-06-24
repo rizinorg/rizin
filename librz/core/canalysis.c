@@ -7171,7 +7171,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_config_set(core->config, "dbg.backend", dh_orig);
 		rz_core_task_yield(&core->tasks);
 	}
-	rz_analysis_add_io_registers_map(core->bin->cur->o, core->analysis);
+	if (!is_unknown_file(core)) {
+		rz_analysis_add_io_registers_map(core->bin->cur->o, core->analysis);
+	}
 	return true;
 }
 
