@@ -79,6 +79,15 @@ static void resolve_var_overlaps(RzAnalysisVar *var) {
 	if (!var->type || var->isarg || var->kind == RZ_ANALYSIS_VAR_KIND_REG) {
 		return;
 	}
+	// We ignore overlaps between atomic types because current
+	// detection of the variable default type is suboptimal.
+	// The default type is `intXX_t` where XX is the bitness of the platform
+	// But some binaries can use variables of the smaller size by default
+	// and Rizin doesn't detect bitwidth perfectly. Thus, we skip ATOMIC
+	// types in the overlap detection.
+	if (rz_type_is_atomic(var->fcn->analysis->typedb, var->type)) {
+		return;
+	}
 	ut64 varsize = rz_type_db_get_bitsize(var->fcn->analysis->typedb, var->type) / 8;
 	if (!varsize) {
 		return;
