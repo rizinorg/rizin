@@ -329,6 +329,9 @@ RZ_API bool rz_heap_update_main_arena_32(RzCore *core, ut32 m_arena, MallocState
 RZ_API RzList *rz_heap_tcache_list_64(RzCore *core, ut64 m_arena, MallocState *main_arena, bool main_thread_only);
 RZ_API RzList *rz_heap_tcache_list_32(RzCore *core, ut32 m_arena, MallocState *main_arena, bool main_thread_only);
 
+RZ_API void rz_heap_bin_free_64(RzHeapBin *bin);
+RZ_API void rz_heap_bin_free_32(RzHeapBin *bin);
+
 #ifdef __cplusplus
 }
 #endif
