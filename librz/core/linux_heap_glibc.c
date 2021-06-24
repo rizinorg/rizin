@@ -869,6 +869,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 	heap_bin->chunks = rz_list_newf((RzListFree)GH(rz_chunk_list_free));
 	heap_bin->bin_num = bin_num + 1;
 	heap_bin->size = FASTBIN_IDX_TO_SIZE(bin_num + 1);
+	heap_bin->type = rz_str_new("Fastbin");
 	GHT next = main_arena->GH(fastbinsY)[bin_num];
 	if (!next) {
 		free(cnk);
@@ -922,8 +923,9 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 		}
 	}
 	if (next && (next < brk_start || next >= main_arena->GH(top))) {
-		PRINTF_RA("0x%" PFMT64x, (ut64)next);
-		PRINT_RA(" Linked list corrupted\n");
+		char message[50];
+		rz_snprintf(message, 50, "Linked list corrupted @ 0x%" PFMT64x, (ut64)next);
+		heap_bin->message = rz_str_new(message);
 		free(cnk);
 		return heap_bin;
 	}
