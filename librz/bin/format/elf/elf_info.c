@@ -287,7 +287,7 @@ static const struct ver_flags_translation ver_flags_translation_table[] = {
 };
 
 static RzBinElfLib *get_libs_from_dt_dynamic(ELFOBJ *bin, RzBinElfLib *libs) {
-	if (!bin->strtab) {
+	if (!bin->dynstr) {
 		return NULL;
 	}
 
@@ -299,7 +299,7 @@ static RzBinElfLib *get_libs_from_dt_dynamic(ELFOBJ *bin, RzBinElfLib *libs) {
 	size_t i = 0;
 	Elf_(Word) *iter = NULL;
 	rz_vector_enumerate(dt_needed, iter, i) {
-		if (!Elf_(rz_bin_elf_strtab_cpy)(bin->strtab, libs[i].name, *iter)) {
+		if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, libs[i].name, *iter)) {
 			free(libs);
 			return NULL;
 		}
@@ -991,7 +991,7 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 			}
 
 			char tmp[ELF_STRING_LENGTH];
-			if (!Elf_(rz_bin_elf_strtab_cpy)(bin->strtab, tmp, vernaux_entry.vna_name)) {
+			if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, vernaux_entry.vna_name)) {
 				return false;
 			}
 			const char *value = sdb_fmt("%u (%s)", versym & VERSYM_VERSION, tmp);
@@ -1041,7 +1041,7 @@ static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *
 		}
 
 		char tmp[ELF_STRING_LENGTH];
-		if (!Elf_(rz_bin_elf_strtab_cpy)(bin->strtab, tmp, verdaux_entry.vda_name)) {
+		if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, verdaux_entry.vda_name)) {
 			return false;
 		}
 		const char *value = sdb_fmt("%u (%s)", versym & VERSYM_VERSION, tmp);
@@ -1111,7 +1111,7 @@ static Sdb *get_version_info_gnu_versym(ELFOBJ *bin) {
 
 static Sdb *get_verdaux_entry_sdb(ELFOBJ *bin, Elf_(Verdaux) * verdaux_entry, size_t index) {
 	char tmp[ELF_STRING_LENGTH];
-	if (!Elf_(rz_bin_elf_strtab_cpy)(bin->dynstr, tmp, verdaux_entry->vda_name)) {
+	if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, verdaux_entry->vda_name)) {
 		return NULL;
 	}
 
@@ -1222,7 +1222,7 @@ static Sdb *get_version_info_gnu_verdef(ELFOBJ *bin) {
 
 static Sdb *get_vernaux_entry_sdb(ELFOBJ *bin, Elf_(Vernaux) vernaux_entry, size_t index) {
 	char tmp[ELF_STRING_LENGTH];
-	if (!Elf_(rz_bin_elf_strtab_cpy)(bin->dynstr, tmp, vernaux_entry.vna_name)) {
+	if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, vernaux_entry.vna_name)) {
 		return NULL;
 	}
 
@@ -1244,7 +1244,7 @@ static Sdb *get_vernaux_entry_sdb(ELFOBJ *bin, Elf_(Vernaux) vernaux_entry, size
 
 static Sdb *get_verneed_entry_sdb_aux(ELFOBJ *bin, Elf_(Verneed) verneed_entry, size_t index) {
 	char tmp[ELF_STRING_LENGTH];
-	if (!Elf_(rz_bin_elf_strtab_cpy)(bin->dynstr, tmp, verneed_entry.vn_file)) {
+	if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, verneed_entry.vn_file)) {
 		return NULL;
 	}
 
@@ -1588,12 +1588,12 @@ RZ_OWN char *Elf_(rz_bin_elf_get_osabi_name)(RZ_NONNULL ELFOBJ *bin) {
 RZ_OWN char *Elf_(rz_bin_elf_get_rpath)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!Elf_(rz_bin_elf_has_segments)(bin) || !bin->strtab || !has_dt_rpath_entry(bin)) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin) || !bin->dynstr || !has_dt_rpath_entry(bin)) {
 		return NULL;
 	}
 
 	Elf_(Xword) val = get_dt_rpath(bin);
-	return Elf_(rz_bin_elf_strtab_dup)(bin->strtab, val);
+	return Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, val);
 }
 
 /**

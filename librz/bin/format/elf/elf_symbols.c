@@ -544,7 +544,7 @@ static const char *symbol_bind_to_str(Elf_(Sym) * sym) {
 }
 
 static ut64 get_import_addr(ELFOBJ *bin, int symbol) {
-	if ((!Elf_(rz_bin_elf_has_sections)(bin) || !bin->strtab) && !Elf_(rz_bin_elf_has_segments)(bin)) {
+	if ((!Elf_(rz_bin_elf_has_sections)(bin) || !bin->dynstr) && !Elf_(rz_bin_elf_has_segments)(bin)) {
 		return UT64_MAX;
 	}
 
@@ -659,7 +659,7 @@ static void set_elf_symbol_name(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sy
 		return;
 	}
 
-	if (!bin->strtab || !Elf_(rz_bin_elf_strtab_cpy)(bin->strtab, elf_symbol->name, symbol->st_name)) {
+	if (!bin->dynstr || !Elf_(rz_bin_elf_strtab_get)(bin->dynstr, elf_symbol->name, symbol->st_name)) {
 		elf_symbol->name[0] = '\0';
 	}
 }

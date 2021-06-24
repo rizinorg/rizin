@@ -101,7 +101,7 @@ RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELF
 	return NULL;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_new_segments)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin) {
 	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_phoff, bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
 		return NULL;
 	}

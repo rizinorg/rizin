@@ -176,13 +176,13 @@ typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 
 struct Elf_(rz_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
+
 	RzVector *segments; // should be use with elf_segments.c
 	RzVector *sections; // should be use with elf_sections.c
 
 	RzBinElfDtDynamic *dt_dynamic;
 
 	RzBinElfStrtab *dynstr;
-	RzBinElfStrtab *strtab;
 	RzBinElfStrtab *shstrtab;
 
 	RzList /*<RzBinElfNoteSegment>*/ *note_segments;
@@ -230,10 +230,10 @@ ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_dynamic.c
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_dt_needed)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_new_dt_dynamic)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_dt_dynamic_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_get_dt_info)(RZ_NONNULL ELFOBJ *bin, ut64 key, RZ_OUT ut64 *info);
 bool Elf_(rz_bin_elf_has_dt_dynamic)(RZ_NONNULL ELFOBJ *bin);
-void Elf_(rz_bin_elf_free_dt_dynamic)(RzBinElfDtDynamic *ptr);
+void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr);
 
 // elf_info.c
 
@@ -303,7 +303,7 @@ ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
 // elf_segments.c
 
 RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELFOBJ *bin, Elf_(Word) type);
-RZ_OWN RzVector *Elf_(rz_bin_elf_new_segments)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_segments)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_sections.c
@@ -312,17 +312,17 @@ RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, 
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section_with_name)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL const char *name);
 RZ_OWN RzList *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag);
 RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RzVector *sections);
-RZ_OWN RzVector *Elf_(rz_bin_elf_new_sections)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzVector *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type);
 bool Elf_(rz_bin_elf_has_sections)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_strtab
 
-RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_new_strtab)(RZ_NONNULL ELFOBJ *bin, ut64 offset, ut64 size);
-RZ_OWN char *Elf_(rz_bin_elf_strtab_dup)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);
-bool Elf_(rz_bin_elf_strtab_cpy)(RZ_NONNULL RzBinElfStrtab *strtab, char *dst, ut64 index);
+RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_strtab_new)(RZ_NONNULL ELFOBJ *bin, ut64 offset, ut64 size);
+RZ_OWN char *Elf_(rz_bin_elf_strtab_get_dup)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);
+bool Elf_(rz_bin_elf_strtab_get)(RZ_NONNULL RzBinElfStrtab *strtab, RZ_NONNULL RZ_OUT char *dst, ut64 index);
 bool Elf_(rz_bin_elf_strtab_has_index)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);
-void Elf_(rz_bin_elf_free_strtab)(RzBinElfStrtab *ptr);
+void Elf_(rz_bin_elf_strtab_free)(RzBinElfStrtab *ptr);
 
 // elf_symbols.c
 

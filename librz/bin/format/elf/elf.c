@@ -135,7 +135,7 @@ static HtUP *rel_cache_new(RzBinElfReloc *relocs, ut32 reloc_num) {
 }
 
 static bool rz_bin_elf_init_phdr(ELFOBJ *bin) {
-	bin->segments = Elf_(rz_bin_elf_new_segments)(bin);
+	bin->segments = Elf_(rz_bin_elf_segments_new)(bin);
 	if (!bin->segments) {
 		return false;
 	}
@@ -182,7 +182,7 @@ static bool rz_bin_elf_init_shstrtab(ELFOBJ *bin, RzVector *sections) {
 		return false;
 	}
 
-	bin->shstrtab = Elf_(rz_bin_elf_new_strtab)(bin, section->sh_offset, section->sh_size);
+	bin->shstrtab = Elf_(rz_bin_elf_strtab_new)(bin, section->sh_offset, section->sh_size);
 	if (!bin->shstrtab) {
 		return false;
 	}
@@ -281,21 +281,6 @@ static bool rz_bin_elf_init_ehdr(ELFOBJ *bin) {
 	return true;
 }
 
-static bool rz_bin_elf_init_dynstr(ELFOBJ *bin) {
-	if (!Elf_(rz_bin_elf_has_sections)(bin) || !bin->shstrtab) {
-		return false;
-	}
-
-	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynstr");
-	if (!section || section->type != SHT_STRTAB) {
-		return false;
-	}
-
-	bin->dynstr = Elf_(rz_bin_elf_new_strtab)(bin, section->offset, section->size);
-
-	return bin->dynstr;
-}
-
 static void init_dynamic_section_sdb(ELFOBJ *bin) {
 	switch (Elf_(rz_bin_elf_has_relro)(bin)) {
 	case RZ_BIN_ELF_FULL_RELRO:
@@ -311,7 +296,7 @@ static void init_dynamic_section_sdb(ELFOBJ *bin) {
 }
 
 static bool rz_bin_elf_init_dynamic_section(ELFOBJ *bin) {
-	bin->dt_dynamic = Elf_(rz_bin_elf_new_dt_dynamic)(bin);
+	bin->dt_dynamic = Elf_(rz_bin_elf_dt_dynamic_new)(bin);
 
 	if (!bin->dt_dynamic) {
 		return false;
@@ -322,17 +307,17 @@ static bool rz_bin_elf_init_dynamic_section(ELFOBJ *bin) {
 	return bin->dt_dynamic;
 }
 
-static void init_strtab_sdb(ELFOBJ *bin, ut64 strtab_addr, Elf_(Xword) strtab_size) {
-	sdb_num_set(bin->kv, "elf_strtab.offset", strtab_addr, 0);
-	sdb_num_set(bin->kv, "elf_strtab.size", strtab_size, 0);
+static void init_dynstr_sdb(ELFOBJ *bin, ut64 strtab_addr, Elf_(Xword) strtab_size) {
+	sdb_num_set(bin->kv, "elf_dynstr.offset", strtab_addr, 0);
+	sdb_num_set(bin->kv, "elf_dynstr.size", strtab_size, 0);
 }
 
-static bool rz_bin_elf_init_strtab(ELFOBJ *bin) {
+static bool rz_bin_elf_init_dynstr(ELFOBJ *bin) {
 	ut64 addr;
 	ut64 size;
 
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRSZ, &size)) {
-		RZ_LOG_WARN(".strtab not found or invalid\n");
+		RZ_LOG_WARN(".dynstr not found or invalid\n");
 		return false;
 	}
 
@@ -341,12 +326,12 @@ static bool rz_bin_elf_init_strtab(ELFOBJ *bin) {
 		return false;
 	}
 
-	bin->strtab = Elf_(rz_bin_elf_new_strtab)(bin, offset, size);
-	if (!bin->strtab) {
+	bin->dynstr = Elf_(rz_bin_elf_strtab_new)(bin, offset, size);
+	if (!bin->dynstr) {
 		return false;
 	}
 
-	init_strtab_sdb(bin, offset, size);
+	init_dynstr_sdb(bin, offset, size);
 	return true;
 }
 
@@ -363,14 +348,14 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 			RZ_LOG_WARN("Cannot parse PT_NOTE segments\n");
 		}
 	} else {
-		RzVector *sections = Elf_(rz_bin_elf_new_sections)(bin);
+		RzVector *sections = Elf_(rz_bin_elf_sections_new)(bin);
 
 		if (!rz_bin_elf_init_shstrtab(bin, sections)) {
 			RZ_LOG_WARN("Cannot initialize section strings table\n");
 		}
 
 		if (!Elf_(rz_bin_elf_is_relocatable)(bin) && !Elf_(rz_bin_elf_is_static)(bin)) {
-			if (!rz_bin_elf_init_dynamic_section(bin) || !rz_bin_elf_init_strtab(bin)) {
+			if (!rz_bin_elf_init_dynamic_section(bin) || !rz_bin_elf_init_dynstr(bin)) {
 				RZ_LOG_WARN("Cannot initialize dynamic section\n");
 			}
 		}
@@ -382,10 +367,6 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 		}
 
 		rz_vector_free(sections);
-
-		if (!rz_bin_elf_init_dynstr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
-			RZ_LOG_WARN("Cannot initialize dynamic strings (dynstr)\n");
-		}
 	}
 
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
@@ -436,11 +417,10 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 	rz_vector_free(bin->segments);
 	rz_vector_free(bin->sections);
 
-	Elf_(rz_bin_elf_free_dt_dynamic)(bin->dt_dynamic);
+	Elf_(rz_bin_elf_dt_dynamic_free)(bin->dt_dynamic);
 
-	Elf_(rz_bin_elf_free_strtab)(bin->strtab);
-	Elf_(rz_bin_elf_free_strtab)(bin->shstrtab);
-	Elf_(rz_bin_elf_free_strtab)(bin->dynstr);
+	Elf_(rz_bin_elf_strtab_free)(bin->shstrtab);
+	Elf_(rz_bin_elf_strtab_free)(bin->dynstr);
 
 	free(bin->g_symbols);
 	free(bin->g_imports);

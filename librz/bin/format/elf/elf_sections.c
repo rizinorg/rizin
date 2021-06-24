@@ -164,7 +164,7 @@ static bool set_elf_section_name(ELFOBJ *bin, RzBinElfSection *section, Elf_(Shd
 		return true;
 	}
 
-	if (!Elf_(rz_bin_elf_strtab_cpy)(bin->shstrtab, section->name, shdr->sh_name)) {
+	if (!Elf_(rz_bin_elf_strtab_get)(bin->shstrtab, section->name, shdr->sh_name)) {
 		section->name[0] = '\0';
 		return false;
 	}
@@ -302,7 +302,7 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RzVec
 	return NULL;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_new_sections)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzVector *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
 	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_shoff, bin->ehdr.e_shnum, sizeof(Elf_(Phdr)))) {
