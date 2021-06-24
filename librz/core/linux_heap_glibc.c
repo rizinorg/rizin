@@ -955,6 +955,9 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 			continue;
 		}
 		RzHeapBin *bin = GH(rz_heap_fastbin_content)(core, main_arena, i);
+		if (!bin) {
+			continue;
+		}
 		if (!pj) {
 			rz_cons_printf("Fast_bin[");
 			PRINTF_BA("%02zu", (size_t)bin->bin_num);
@@ -967,11 +970,10 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 			pj_kn(pj, "bin_num", bin->bin_num);
 			pj_ka(pj, "chunks");
 		}
-		if (!bin || !bin->chunks || !rz_list_length(bin->chunks)) {
+		if (!bin->chunks || !rz_list_length(bin->chunks)) {
 			if (!pj) {
 				PRINT_RA(" Empty bin\n");
 			}
-			continue;
 		} else {
 			RzListIter *iter;
 			RzHeapChunkListItem *pos;
