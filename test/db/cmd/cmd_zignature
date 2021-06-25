@@ -1781,7 +1781,7 @@ afs
 afn
 EOF
 EXPECT=<<EOF
-int sym.new_function_name (int NEWARGC, char **NEWARGV);
+int sym.new_function_name(int NEWARGC, char ** NEWARGV);
 sym.new_function_name
 EOF
 RUN
