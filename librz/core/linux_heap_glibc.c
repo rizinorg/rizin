@@ -30,7 +30,7 @@
 
 /**
  * \brief Find the address of a given symbol
- * \param core RzCore Pointer to the r2's core
+ * \param core RzCore Pointer to the Rizin's core
  * \param path Pointer to the binary path in which to look for the symbol
  * \param sym_name Pointer to the symbol's name to search for
  * \return address
@@ -850,7 +850,10 @@ static void GH(print_heap_bin)(RzCore *core, GHT m_arena, MallocState *main_aren
 	}
 }
 
-void GH(rz_chunk_list_free)(RzHeapChunkListItem *item) {
+void GH(rz_heap_chunk_free)(RzHeapChunkListItem *item) {
+	if (!item) {
+		return;
+	}
 	free(item->status);
 	free(item);
 }
@@ -865,7 +868,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 	if (!cnk || !heap_bin) {
 		return NULL;
 	}
-	heap_bin->chunks = rz_list_newf((RzListFree)GH(rz_chunk_list_free));
+	heap_bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
 	heap_bin->bin_num = bin_num + 1;
 	heap_bin->size = FASTBIN_IDX_TO_SIZE(bin_num + 1);
 	heap_bin->type = rz_str_new("Fastbin");
@@ -1318,7 +1321,6 @@ void GH(print_inst_minfo)(GH(RzHeapInfo) * heap_info, GHT hinfo) {
 void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 	GHT h_info;
 	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-
 	if (malloc_state == m_state) {
 		PRINT_RA("main_arena does not have an instance of malloc_info\n");
 	} else if (GH(is_arena)(core, malloc_state, m_state)) {
@@ -1369,17 +1371,20 @@ char *GH(rz_bin_num_to_type)(int bin_num) {
 }
 
 void GH(rz_heap_bin_free)(RzHeapBin *bin) {
+	if (!bin) {
+		return;
+	}
 	free(bin->type);
 	free(bin->message);
 	rz_list_free(bin->chunks);
 	free(bin);
 }
 /**
- * \brief Get list of chunks of <bin_num> bin from NBINS array of an arena.
+ * \brief Get information about <bin_num> bin from NBINS array of an arena.
  * \param core RzCore pointer
  * \param main_arena MallocState struct of arena
  * \param bin_num bin number of bin whose chunk list you want
- * \return RzList of RzHeapChunkListItem for the bin
+ * \return RzHeapBin struct for the bin
  */
 RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena, int bin_num) {
 	int idx = 2 * bin_num;
@@ -1710,7 +1715,7 @@ RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *m
  */
 RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	GHT m_arena, GHT m_state, bool top_chunk) {
-	RzList *chunks = rz_list_newf((RzListFree)GH(rz_chunk_list_free));
+	RzList *chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return chunks;
 	}
@@ -2456,9 +2461,9 @@ RZ_API MallocState *GH(rz_heap_get_arena)(RzCore *core, GHT m_state) {
 	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
 		return NULL;
 	}
-        if (m_state == 0) {
-                m_state = m_arena;
-        }
+	if (!m_state) {
+		m_state = m_arena;
+	}
 	if (!GH(is_arena)(core, m_arena, m_state)) {
 		return NULL;
 	}
