@@ -866,6 +866,8 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 	RzHeapBin *heap_bin = RZ_NEW0(RzHeapBin);
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk || !heap_bin) {
+		free(heap_bin);
+		free(cnk);
 		return NULL;
 	}
 	heap_bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
@@ -1880,7 +1882,10 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		prev_chunk = next_chunk;
 		rz_io_read_at(core->io, next_chunk, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
-
+		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
+		if (!block) {
+			break;
+		}
 		char *status = rz_str_new("allocated");
 		if (fastbin) {
 			if (is_free) {
@@ -1894,10 +1899,6 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 			if (is_free) {
 				strcpy(status, "free");
 			}
-		}
-		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
-		if (!block) {
-			break;
 		}
 		block->addr = prev_chunk_addr;
 		block->status = status;
@@ -2390,7 +2391,9 @@ RZ_API RzList *GH(rz_heap_arena_list_wrapper)(RzCore *core) {
 		free(main_arena);
 		return rz_list_newf(free);
 	}
-	return GH(rz_heap_arenas_list)(core, m_arena, main_arena);
+	RzList *arenas_list = GH(rz_heap_arenas_list)(core, m_arena, main_arena);
+	free(main_arena);
+	return arenas_list;
 }
 
 /**
@@ -2415,7 +2418,9 @@ RZ_API RzList *GH(rz_heap_chunks_list_wrapper)(RzCore *core, ut64 m_state) {
 		free(main_arena);
 		return rz_list_newf(free);
 	}
-	return GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state, true);
+	RzList *chunks = GH(rz_heap_chunks_list)(core, main_arena, m_arena, m_state, true);
+	free(main_arena);
+	return chunks;
 }
 
 /**
