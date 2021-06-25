@@ -158,8 +158,10 @@ typedef struct rz_type_path_t {
 
 RZ_API RzTypeDB *rz_type_db_new();
 RZ_API void rz_type_db_free(RzTypeDB *typedb);
-RZ_API bool rz_type_db_load_sdb(RzTypeDB *typedb, const char *path);
-RZ_API bool rz_type_db_load_callables_sdb(RzTypeDB *typedb, const char *path);
+RZ_API bool rz_type_db_load_sdb(RzTypeDB *typedb, RZ_NONNULL const char *path);
+RZ_API bool rz_type_db_load_sdb_str(RzTypeDB *typedb, RZ_NONNULL const char *str);
+RZ_API bool rz_type_db_load_callables_sdb(RzTypeDB *typedb, RZ_NONNULL const char *path);
+RZ_API bool rz_type_db_load_callables_sdb_str(RzTypeDB *typedb, RZ_NONNULL const char *str);
 RZ_API void rz_type_db_set_bits(RzTypeDB *typedb, int bits);
 RZ_API void rz_type_db_set_os(RzTypeDB *typedb, const char *os);
 RZ_API void rz_type_db_set_cpu(RzTypeDB *typedb, const char *cpu);
