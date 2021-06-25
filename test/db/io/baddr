@@ -68,7 +68,7 @@ NAME=4: io.baddr
 FILE=bins/elf/analysis/pie
 ARGS=-B 0xf00000
 CMDS=<<EOF
-!rz-bin -B 0xf00000 -re ${RZ_FILE} | grep 0x
+!!rz-bin -B 0xf00000 -re ${RZ_FILE} | grep 0x
 p8 10 @ 0x00f00450
 EOF
 EXPECT=<<EOF

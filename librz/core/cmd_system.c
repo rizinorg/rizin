@@ -189,7 +189,7 @@ RZ_IPI RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char 
 	bool ret = system_exec(core, argc - 1, &argv[1], &out);
 	rz_cons_sleep_end(bed);
 
-	rz_cons_println(out);
+	rz_cons_print(out);
 	free(out);
 
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;

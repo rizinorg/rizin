@@ -64,14 +64,3 @@ test
 test
 EOF
 RUN
-
-NAME=%ENV=33 !echo "${ENV}"
-FILE==
-CMDS=<<EOF
-%ENV=World
-!echo ${ENV}
-EOF
-EXPECT=<<EOF
-World
-EOF
-RUN
