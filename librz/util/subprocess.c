@@ -1048,38 +1048,20 @@ RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
 }
 
 RZ_API char *rz_subprocess_out(RzSubprocess *proc, int *length) {
-	if (!length) {
-		return rz_strbuf_drain_nofree(&proc->out);
-	}
 	int bin_len = 0;
 	const ut8 *bin = rz_strbuf_getbin(&proc->out, &bin_len);
-	if (!bin) {
-		return NULL;
-	}
-	char *buf = malloc(bin_len);
-	if (buf) {
-		memcpy(buf, bin, bin_len);
-	}
+	char *buf = rz_str_newlen((const char *)bin, bin_len);
 	if (length) {
 		*length = bin_len;
 	}
-	rz_strbuf_fini(&proc->err);
+	rz_strbuf_fini(&proc->out);
 	return buf;
 }
 
 RZ_API char *rz_subprocess_err(RzSubprocess *proc, int *length) {
-	if (!length) {
-		return rz_strbuf_drain_nofree(&proc->err);
-	}
 	int bin_len = 0;
 	const ut8 *bin = rz_strbuf_getbin(&proc->err, &bin_len);
-	if (!bin) {
-		return NULL;
-	}
-	char *buf = malloc(bin_len);
-	if (buf) {
-		memcpy(buf, bin, bin_len);
-	}
+	char *buf = rz_str_newlen((const char *)bin, bin_len);
 	if (length) {
 		*length = bin_len;
 	}
