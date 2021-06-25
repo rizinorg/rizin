@@ -7272,12 +7272,14 @@ static int check_rom_exists(const void *value, const void *data) {
 }
 
 /**
- * \brief Gets the ROM_ADDRESS and ROM_SIZE from the corresponding CPU Profile
- *	and adds it as a section (RzBinSection) named ".rom" which will appear
- * 	when you run `iS`.
+ * \brief Maps the device peripherals as sections
  *
- *  \param o reference to RzBinObject
- * 	\param analysis reference to RzAnalysis
+ * Gets the ROM_ADDRESS and ROM_SIZE from the corresponding CPU Profile
+ * and adds it as a section (RzBinSection) named ".rom" which will appear
+ * when you run `iS`.
+ *
+ * \param o reference to RzBinObject
+ * \param analysis reference to RzAnalysis
  */
 RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis) {
 	rz_return_val_if_fail(o && analysis, false);
