@@ -595,7 +595,11 @@ static bool types_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *type
 	return true;
 }
 
-static bool sdb_load_by_path(RZ_NONNULL RzTypeDB *typedb, const char *path) {
+static bool sdb_load_by_path(RZ_NONNULL RzTypeDB *typedb, RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(typedb && path, false);
+	if (RZ_STR_ISEMPTY(path)) {
+		return false;
+	}
 	Sdb *db = sdb_new(0, path, 0);
 	bool result = types_load_sdb(db, typedb);
 	sdb_close(db);
@@ -603,18 +607,66 @@ static bool sdb_load_by_path(RZ_NONNULL RzTypeDB *typedb, const char *path) {
 	return result;
 }
 
-RZ_API bool rz_type_db_load_sdb(RzTypeDB *typedb, const char *path) {
+static bool sdb_load_from_string(RZ_NONNULL RzTypeDB *typedb, RZ_NONNULL const char *string) {
+	rz_return_val_if_fail(typedb && string, false);
+	if (RZ_STR_ISEMPTY(string)) {
+		return false;
+	}
+	Sdb *db = sdb_new0();
+	sdb_query_lines(db, string);
+	bool result = types_load_sdb(db, typedb);
+	sdb_close(db);
+	sdb_free(db);
+	return result;
+}
+
+/**
+ * \brief Loads the types from compiled SDB specified by path
+ *
+ * \param typedb RzTypeDB instance
+ * \param path A path to the compiled SDB containing serialized types
+ */
+RZ_API bool rz_type_db_load_sdb(RzTypeDB *typedb, RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(typedb && path, false);
 	if (!rz_file_exists(path)) {
 		return false;
 	}
 	return sdb_load_by_path(typedb, path);
 }
 
+/**
+ * \brief Loads the types from SDB KV string
+ *
+ * \param typedb RzTypeDB instance
+ * \param str A string in Key-Value format as for non-compiled SDB
+ */
+RZ_API bool rz_type_db_load_sdb_str(RzTypeDB *typedb, RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(typedb && str, false);
+	if (RZ_STR_ISEMPTY(str)) {
+		return false;
+	}
+	return sdb_load_from_string(typedb, str);
+}
+
+/**
+ * \brief Saves the types into SDB
+ *
+ * \param db A SDB database object
+ * \param typedb RzTypeDB instance
+ */
 RZ_API void rz_serialize_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
+	rz_return_if_fail(db && typedb);
 	types_export_sdb(db, typedb);
 }
 
+/**
+ * \brief Loads the types from SDB
+ *
+ * \param db A SDB database object
+ * \param typedb RzTypeDB instance
+ * \param res A structure where the result is stored
+ */
 RZ_API bool rz_serialize_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb, RZ_NULLABLE RzSerializeResultInfo *res) {
-	types_load_sdb(db, typedb);
-	return true;
+	rz_return_val_if_fail(db && typedb, false);
+	return types_load_sdb(db, typedb);
 }

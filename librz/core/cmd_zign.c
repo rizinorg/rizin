@@ -627,8 +627,7 @@ static void apply_types(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it) {
 		}
 	}
 	rz_str_remove_char(alltypes, '"');
-	// FIXME: It should use the RzType routines instead? Or types deserialization?
-	//rz_type_db_save_parsed_type(core->analysis->typedb, alltypes);
+	rz_type_db_load_callables_sdb_str(core->analysis->typedb, alltypes);
 	free(start);
 	free(alltypes);
 }
