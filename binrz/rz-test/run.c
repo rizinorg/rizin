@@ -289,7 +289,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto rip;
 		}
-		char *hex = rz_subprocess_out(proc);
+		char *hex = rz_subprocess_out(proc, NULL);
 		size_t hexlen = strlen(hex);
 		if (!hexlen) {
 			goto rip;
@@ -323,7 +323,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto ship;
 		}
-		char *disasm = rz_subprocess_out(proc);
+		char *disasm = rz_subprocess_out(proc, NULL);
 		rz_str_trim(disasm);
 		out->disasm = disasm;
 	ship:

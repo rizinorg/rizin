@@ -2157,7 +2157,7 @@ RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd) 
 	return ret;
 }
 
-static char *system_exec_stdin(int argc, char **argv, const char *input) {
+static char *system_exec_stdin(int argc, char **argv, const ut8 *input, int input_len, int *length) {
 	char *output = NULL;
 	if (!rz_subprocess_init()) {
 		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
@@ -2183,11 +2183,10 @@ static char *system_exec_stdin(int argc, char **argv, const char *input) {
 		return NULL;
 	}
 
-	size_t input_len = strlen(input);
-	rz_subprocess_stdin_write(proc, (const ut8 *)input, input_len);
+	rz_subprocess_stdin_write(proc, input, input_len);
 	rz_subprocess_wait(proc, UT64_MAX);
 
-	output = rz_subprocess_out(proc);
+	output = rz_subprocess_out(proc, length);
 	rz_subprocess_free(proc);
 	rz_subprocess_fini();
 
@@ -2195,14 +2194,15 @@ static char *system_exec_stdin(int argc, char **argv, const char *input) {
 }
 
 RZ_API RzCmdStatus rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, int argc, char **argv) {
-	char *str = rz_core_cmd_str(core, rizin_cmd);
+	int length = 0;
+	ut8 *str = rz_core_cmd_raw(core, rizin_cmd, &length);
 	if (!str) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	char *out = system_exec_stdin(argc, argv, str);
+	char *out = system_exec_stdin(argc, argv, str, length, &length);
 	if (out) {
-		rz_cons_print(out);
+		rz_cons_memcat(out, length);
 	}
 
 	free(str);
@@ -6053,12 +6053,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(html_enable_stmt) {
 	return res;
 }
 
-static char *ts_node_sub_string_as_external(TSNode node, const char *cstr) {
-	ut32 start, end;
-	TS_START_END(node, start, end);
-	return rz_str_newf("!%.*s", end - start, cstr + start);
-}
-
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_stmt) {
 	TSNode command_rizin = ts_node_named_child(node, 0);
 	TSNode command_pipe = ts_node_named_child(node, 1);
@@ -6068,54 +6062,14 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_stmt) {
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	char *cmd_pipe = ts_node_sub_string_as_external(command_pipe, state->input);
-	if (!cmd_pipe) {
-		free(rz_cmd);
-		return RZ_CMD_STATUS_INVALID;
-	}
-
-	struct tsr2cmd_state state2;
-	TSParser *parser = ts_parser_new();
-	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)state->core->rcmd->language);
-	rz_return_val_if_fail(language_ok, RZ_CMD_STATUS_INVALID);
-
-	TSTree *tree = ts_parser_parse_string(parser, NULL, cmd_pipe, strlen(cmd_pipe));
-	if (!tree) {
-		rz_warn_if_reached();
-		free(rz_cmd);
-		free(cmd_pipe);
-		return RZ_CMD_STATUS_INVALID;
-	}
-
-	state2.parser = parser;
-	state2.core = state->core;
-	state2.input = cmd_pipe;
-	state2.tree = tree;
-	state2.log = state->log;
-	state2.split_lines = state->split_lines;
-
-	TSNode root = ts_tree_root_node(tree);
-	TSNode command = ts_node_named_child(root, 0);
-
-	if (!(is_ts_statements(root) && !ts_node_has_error(root))) {
-		free(rz_cmd);
-		free(cmd_pipe);
-		ts_tree_delete(tree);
-		ts_parser_delete(parser);
-		return RZ_CMD_STATUS_INVALID;
-	}
-
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
-	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(&state2, root, command, 1, true);
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs(state, node, command_pipe, 1, true);
 	if (a && a->argc > 1) {
 		res = rz_core_cmd_pipe(state->core, rz_cmd, a->argc - 1, a->argv + 1);
 	}
 
 	rz_cmd_parsed_args_free(a);
 	free(rz_cmd);
-	free(cmd_pipe);
-	ts_tree_delete(tree);
-	ts_parser_delete(parser);
 	return res;
 }
 
@@ -6656,6 +6610,27 @@ RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
 	rz_cons_filter();
 	static_str = rz_cons_get_buffer();
 	retstr = strdup(static_str ? static_str : "");
+	rz_cons_pop();
+	rz_cons_echo(NULL);
+	return retstr;
+}
+
+RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
+	const char *static_str;
+	ut8 *retstr = NULL;
+	rz_cons_push();
+	if (rz_core_cmd(core, cmd, 0) == -1) {
+		//eprintf ("Invalid command: %s\n", cmd);
+		return NULL;
+	}
+	rz_cons_filter();
+	static_str = rz_cons_get_buffer();
+	int len = rz_cons_get_buffer_len();
+	retstr = (ut8 *)rz_str_newlen(static_str, len);
+	if (length) {
+		*length = len;
+	}
+
 	rz_cons_pop();
 	rz_cons_echo(NULL);
 	return retstr;

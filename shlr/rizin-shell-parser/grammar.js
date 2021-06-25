@@ -162,7 +162,7 @@ module.exports = grammar({
 
     html_disable_stmt: ($) => prec.right(1, seq(field("command", $._simple_stmt), "|")),
     html_enable_stmt: ($) => prec.right(1, seq(field("command", $._simple_stmt), "|H")),
-    pipe_stmt: ($) => seq($._simple_stmt, "|", $.pipe_second_stmt),
+    pipe_stmt: $ => seq($._simple_stmt, '|', $.args),
     pipe_second_stmt: ($) => /[^|\r\n;]+/,
 
     iter_file_lines_stmt: ($) => prec.right(1, seq($._simple_stmt, "@@.", $.arg)),

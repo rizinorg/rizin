@@ -311,7 +311,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 
 	RzVector handles;
 	rz_vector_init(&handles, sizeof(HANDLE), NULL, NULL);
-	while (!bytes_enabled || n_bytes) {
+	while ((!bytes_enabled || n_bytes) && !child_dead) {
 		rz_vector_clear(&handles);
 		size_t stdout_index = 0;
 		size_t stderr_index = 0;
@@ -467,18 +467,6 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	}
 	CloseHandle(proc->proc);
 	free(proc);
-}
-
-RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
-	return proc->ret;
-}
-
-RZ_API char *rz_subprocess_out(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree(&proc->out);
-}
-
-RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree(&proc->err);
 }
 #else // __WINDOWS__
 
@@ -1053,19 +1041,45 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	}
 	free(proc);
 }
+#endif
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
 	return proc->ret;
 }
 
-RZ_API char *rz_subprocess_out(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree(&proc->out);
+RZ_API char *rz_subprocess_out(RzSubprocess *proc, int *length) {
+	int bin_len = 0;
+	const ut8 *bin = rz_strbuf_getbin(&proc->out, &bin_len);
+	if (!bin) {
+		return NULL;
+	}
+	char *buf = malloc(bin_len);
+	if (buf) {
+		memcpy(buf, bin, bin_len);
+	}
+	if (length) {
+		*length = bin_len;
+	}
+	rz_strbuf_fini(&proc->err);
+	return buf;
 }
 
-RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
-	return rz_strbuf_drain_nofree(&proc->err);
+RZ_API char *rz_subprocess_err(RzSubprocess *proc, int *length) {
+	int bin_len = 0;
+	const ut8 *bin = rz_strbuf_getbin(&proc->err, &bin_len);
+	if (!bin) {
+		return NULL;
+	}
+	char *buf = malloc(bin_len);
+	if (buf) {
+		memcpy(buf, bin, bin_len);
+	}
+	if (length) {
+		*length = bin_len;
+	}
+	rz_strbuf_fini(&proc->err);
+	return buf;
 }
-#endif
 
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out) {
 	if (!out) {

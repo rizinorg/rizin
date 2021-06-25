@@ -44,7 +44,7 @@ static const char *system_apply_env_var(const char *env, const char *value, cons
 	return string;
 }
 
-static bool system_exec(RzCore *core, int argc, const char **argv, char **output) {
+static bool system_exec(RzCore *core, int argc, const char **argv, char **output, int *length) {
 	char file_size[32];
 	char core_offset[32];
 	char block_size[32];
@@ -145,7 +145,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 		.env_size = RZ_ARRAY_SIZE(envvars),
 		.stdin_pipe = RZ_SUBPROCESS_PIPE_NONE,
 		.stdout_pipe = output ? RZ_SUBPROCESS_PIPE_CREATE : RZ_SUBPROCESS_PIPE_NONE,
-		.stderr_pipe = output ? RZ_SUBPROCESS_PIPE_STDOUT : RZ_SUBPROCESS_PIPE_NONE,
+		.stderr_pipe = RZ_SUBPROCESS_PIPE_NONE,
 	};
 
 	RzSubprocess *proc = rz_subprocess_start_opt(&opt);
@@ -162,7 +162,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	int ret = rz_subprocess_ret(proc);
 
 	if (output) {
-		*output = rz_subprocess_out(proc);
+		*output = rz_subprocess_out(proc, length);
 	}
 
 	rz_subprocess_free(proc);
@@ -176,7 +176,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 
 RZ_IPI RzCmdStatus rz_system_handler(RzCore *core, int argc, const char **argv) {
 	void *bed = rz_cons_sleep_begin();
-	bool ret = system_exec(core, argc - 1, &argv[1], NULL);
+	bool ret = system_exec(core, argc - 1, &argv[1], NULL, NULL);
 	rz_cons_sleep_end(bed);
 
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
@@ -184,12 +184,11 @@ RZ_IPI RzCmdStatus rz_system_handler(RzCore *core, int argc, const char **argv) 
 
 RZ_IPI RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char **argv) {
 	char *out = NULL;
-
+	int length = 0;
 	void *bed = rz_cons_sleep_begin();
-	bool ret = system_exec(core, argc - 1, &argv[1], &out);
+	bool ret = system_exec(core, argc - 1, &argv[1], &out, &length);
 	rz_cons_sleep_end(bed);
-
-	rz_cons_print(out);
+	rz_cons_memcat(out, length);
 	free(out);
 
 	return ret ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
