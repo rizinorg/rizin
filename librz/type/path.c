@@ -92,7 +92,7 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 				if (parent->kind != RZ_TYPE_KIND_IDENTIFIER) {
 					return -1;
 				}
-				if (parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_STRUCT || parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNION) {
+				if (parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_STRUCT && parent->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNION) {
 					return -1;
 				}
 			}
