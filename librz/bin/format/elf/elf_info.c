@@ -286,32 +286,6 @@ static const struct ver_flags_translation ver_flags_translation_table[] = {
 	{ ~(VER_FLG_BASE | VER_FLG_WEAK), "| <unknown>" }
 };
 
-static RzBinElfLib *get_libs_from_dt_dynamic(ELFOBJ *bin, RzBinElfLib *libs) {
-	if (!bin->dynstr) {
-		return NULL;
-	}
-
-	RzVector *dt_needed = Elf_(rz_bin_elf_get_dt_needed)(bin);
-	if (!dt_needed) {
-		return NULL;
-	}
-
-	size_t i = 0;
-	Elf_(Word) *iter = NULL;
-	rz_vector_enumerate(dt_needed, iter, i) {
-		if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, libs[i].name, *iter)) {
-			free(libs);
-			return NULL;
-		}
-
-		libs[i].last = 0;
-	}
-
-	libs[i].last = 1;
-
-	return libs;
-}
-
 static ut64 get_main_offset_from_symbol(ELFOBJ *bin) {
 	RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbols)(bin);
 
@@ -891,7 +865,7 @@ static char *get_abi_mips(ELFOBJ *bin) {
 RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!bin || !Elf_(rz_bin_elf_has_segments)(bin)) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin) || !Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !bin->dynstr) {
 		return NULL;
 	}
 
@@ -905,7 +879,20 @@ RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	return get_libs_from_dt_dynamic(bin, ret);
+	size_t i = 0;
+	Elf_(Word) *iter = NULL;
+	rz_vector_enumerate(dt_needed, iter, i) {
+		if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, ret[i].name, *iter)) {
+			free(ret);
+			return NULL;
+		}
+
+		ret[i].last = 0;
+	}
+
+	ret[i].last = 1;
+
+	return ret;
 }
 
 static bool get_verdaux_entry(ELFOBJ *bin, ut64 offset, Elf_(Verdaux) * entry) {
