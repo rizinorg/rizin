@@ -654,7 +654,7 @@ static bool is_section_local_symbol(ELFOBJ *bin, Elf_(Sym) * symbol) {
 }
 
 static void set_elf_symbol_name(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, RzBinElfSection *section) {
-	if (section && section->name && is_section_local_symbol(bin, symbol)) {
+	if (section && section->name[0] != '\0' && is_section_local_symbol(bin, symbol)) {
 		rz_str_ncpy(elf_symbol->name, section->name, ELF_STRING_LENGTH);
 		return;
 	}
