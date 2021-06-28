@@ -286,31 +286,6 @@ static const struct ver_flags_translation ver_flags_translation_table[] = {
 	{ ~(VER_FLG_BASE | VER_FLG_WEAK), "| <unknown>" }
 };
 
-static RzBinElfLib *get_libs_from_dt_dynamic(ELFOBJ *bin, RzBinElfLib *libs) {
-	size_t i = 0;
-
-	Elf_(Word) *iter = NULL;
-
-	RzVector *dt_needed = Elf_(rz_bin_elf_get_dt_needed)(bin);
-	if (!dt_needed) {
-		return NULL;
-	}
-
-	rz_vector_enumerate(dt_needed, iter, i) {
-		if (*iter > bin->strtab_size) {
-			free(libs);
-			return NULL;
-		}
-
-		rz_str_ncpy(libs[i].name, bin->strtab + *iter, ELF_STRING_LENGTH);
-		libs[i].last = 0;
-	}
-
-	libs[i].last = 1;
-
-	return libs;
-}
-
 static ut64 get_main_offset_from_symbol(ELFOBJ *bin) {
 	RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbols)(bin);
 
@@ -890,7 +865,7 @@ static char *get_abi_mips(ELFOBJ *bin) {
 RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!bin || !Elf_(rz_bin_elf_has_segments)(bin) || !bin->strtab || bin->strtab[1] == '\0') {
+	if (!Elf_(rz_bin_elf_has_segments)(bin) || !Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !bin->dynstr) {
 		return NULL;
 	}
 
@@ -904,7 +879,20 @@ RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	return get_libs_from_dt_dynamic(bin, ret);
+	size_t i = 0;
+	Elf_(Word) *iter = NULL;
+	rz_vector_enumerate(dt_needed, iter, i) {
+		if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, ret[i].name, *iter)) {
+			free(ret);
+			return NULL;
+		}
+
+		ret[i].last = 0;
+	}
+
+	ret[i].last = 1;
+
+	return ret;
 }
 
 static bool get_verdaux_entry(ELFOBJ *bin, ut64 offset, Elf_(Verdaux) * entry) {
@@ -989,11 +977,11 @@ static bool get_versym_entry_sdb_from_verneed(ELFOBJ *bin, Sdb *sdb, const char 
 				continue;
 			}
 
-			if (vernaux_entry.vna_name > bin->strtab_size) {
+			char tmp[ELF_STRING_LENGTH];
+			if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, vernaux_entry.vna_name)) {
 				return false;
 			}
-
-			const char *value = sdb_fmt("%u (%s)", versym & VERSYM_VERSION, bin->strtab + vernaux_entry.vna_name);
+			const char *value = sdb_fmt("%u (%s)", versym & VERSYM_VERSION, tmp);
 			sdb_set(sdb, key, value, 0);
 
 			return true;
@@ -1039,12 +1027,11 @@ static bool get_versym_entry_sdb_from_verdef(ELFOBJ *bin, Sdb *sdb, const char *
 			return false;
 		}
 
-		if (verdaux_entry.vda_name > bin->strtab_size) {
+		char tmp[ELF_STRING_LENGTH];
+		if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, verdaux_entry.vda_name)) {
 			return false;
 		}
-
-		const char *name = bin->strtab + verdaux_entry.vda_name;
-		const char *value = sdb_fmt("%u (%s%-*s)", versym & VERSYM_VERSION, name, (int)(12 - strlen(name)), ")");
+		const char *value = sdb_fmt("%u (%s)", versym & VERSYM_VERSION, tmp);
 		sdb_set(sdb, key, value, 0);
 
 		return true;
@@ -1110,7 +1097,8 @@ static Sdb *get_version_info_gnu_versym(ELFOBJ *bin) {
 }
 
 static Sdb *get_verdaux_entry_sdb(ELFOBJ *bin, Elf_(Verdaux) * verdaux_entry, size_t index) {
-	if (verdaux_entry->vda_name > bin->dynstr_size) {
+	char tmp[ELF_STRING_LENGTH];
+	if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, verdaux_entry->vda_name)) {
 		return NULL;
 	}
 
@@ -1120,7 +1108,7 @@ static Sdb *get_verdaux_entry_sdb(ELFOBJ *bin, Elf_(Verdaux) * verdaux_entry, si
 	}
 
 	sdb_num_set(sdb_verdaux, "idx", index, 0);
-	sdb_set(sdb_verdaux, "vda_name", bin->dynstr + verdaux_entry->vda_name, 0);
+	sdb_set(sdb_verdaux, "vda_name", tmp, 0);
 
 	return sdb_verdaux;
 }
@@ -1220,7 +1208,8 @@ static Sdb *get_version_info_gnu_verdef(ELFOBJ *bin) {
 }
 
 static Sdb *get_vernaux_entry_sdb(ELFOBJ *bin, Elf_(Vernaux) vernaux_entry, size_t index) {
-	if (vernaux_entry.vna_name > bin->dynstr_size) {
+	char tmp[ELF_STRING_LENGTH];
+	if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, vernaux_entry.vna_name)) {
 		return NULL;
 	}
 
@@ -1235,13 +1224,14 @@ static Sdb *get_vernaux_entry_sdb(ELFOBJ *bin, Elf_(Vernaux) vernaux_entry, size
 
 	sdb_num_set(sdb_vernaux, "idx", index, 0);
 	sdb_num_set(sdb_vernaux, "version", vernaux_entry.vna_other, 0);
-	sdb_set(sdb_vernaux, "name", bin->dynstr + vernaux_entry.vna_name, 0);
+	sdb_set(sdb_vernaux, "name", tmp, 0);
 
 	return sdb_vernaux;
 }
 
 static Sdb *get_verneed_entry_sdb_aux(ELFOBJ *bin, Elf_(Verneed) verneed_entry, size_t index) {
-	if (verneed_entry.vn_file > bin->dynstr_size) {
+	char tmp[ELF_STRING_LENGTH];
+	if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, tmp, verneed_entry.vn_file)) {
 		return NULL;
 	}
 
@@ -1253,7 +1243,7 @@ static Sdb *get_verneed_entry_sdb_aux(ELFOBJ *bin, Elf_(Verneed) verneed_entry, 
 	sdb_num_set(sdb_version, "cnt", verneed_entry.vn_cnt, 0);
 	sdb_num_set(sdb_version, "idx", index, 0);
 	sdb_num_set(sdb_version, "vn_version", verneed_entry.vn_version, 0);
-	sdb_set(sdb_version, "file_name", bin->dynstr + verneed_entry.vn_file, 0);
+	sdb_set(sdb_version, "file_name", tmp, 0);
 
 	return sdb_version;
 }
@@ -1336,7 +1326,7 @@ static Sdb *get_version_info_gnu_verneed(ELFOBJ *bin) {
 RZ_IPI RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
-	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
+	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !bin->dynstr) {
 		return NULL;
 	}
 
@@ -1585,16 +1575,12 @@ RZ_OWN char *Elf_(rz_bin_elf_get_osabi_name)(RZ_NONNULL ELFOBJ *bin) {
 RZ_OWN char *Elf_(rz_bin_elf_get_rpath)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!Elf_(rz_bin_elf_has_segments)(bin) || !bin->strtab || !has_dt_rpath_entry(bin)) {
+	if (!Elf_(rz_bin_elf_has_segments)(bin) || !bin->dynstr || !has_dt_rpath_entry(bin)) {
 		return NULL;
 	}
 
 	Elf_(Xword) val = get_dt_rpath(bin);
-	if (!val || val > bin->strtab_size) {
-		return NULL;
-	}
-
-	return rz_str_ndup(bin->strtab + val, ELF_STRING_LENGTH);
+	return Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, val);
 }
 
 /**
