@@ -20,8 +20,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr         size vaddr        vsize perm name
----------------------------------------------------
+nth paddr         size vaddr        vsize perm name          
+-------------------------------------------------------------
 0   0x0000d200  0x1000 0x00010000  0x1000 -r-x obj.1.page.0
 1   0x0000e200  0x1000 0x00011000  0x1000 -r-x obj.1.page.1
 2   0x0000f200  0x1000 0x00012000  0x1000 -r-x obj.1.page.2
@@ -248,8 +248,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr         size vaddr           vsize perm name
-------------------------------------------------------
+nth paddr         size vaddr           vsize perm name          
+----------------------------------------------------------------
 0   0x00001000  0x1000 0x00010000     0x1000 -r-x obj.1.page.0
 1   0x00002000  0x1000 0x00011000     0x1000 -r-x obj.1.page.1
 2   0x00003000  0x1000 0x00012000     0x1000 -r-x obj.1.page.2
@@ -278,8 +278,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name         
+------------------------------------------
 0x00010006 0x00001006 SET_32 emx.1
 0x0001000d 0x0000100d SET_32 emx.2
 0x0001d210 0x0000e210 SET_32 doscalls.273
@@ -331,8 +331,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name     
+--------------------------------------------------------
 1   0x00000000 0x00010ddc GLOBAL FUNC 0        grepmain
 EOF
 RUN
@@ -343,8 +343,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr         size vaddr        vsize perm name
----------------------------------------------------
+nth paddr         size vaddr        vsize perm name         
+------------------------------------------------------------
 0   0x00001600  0x1000 0x00010000  0x1000 -r-x obj.1.page.0
 1   0x00002600  0x1000 0x00011000  0x1000 -r-x obj.1.page.1
 2   0x00003600  0x1000 0x00012000  0x1000 -r-x obj.1.page.2

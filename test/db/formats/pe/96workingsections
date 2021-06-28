@@ -29,8 +29,8 @@ CMDS=!rz-bin -S bins/pe/96workingsections.exe
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr        vsize perm name    flags
------------------------------------------------------------
+nth paddr        size vaddr        vsize perm name    flags 
+------------------------------------------------------------
 0   0x00001200  0x200 0x00402000  0x1000 -rwx sect_0  
 1   0x00001400  0x200 0x00403000  0x1000 -rwx sect_1  
 2   0x00001600  0x200 0x00404000  0x1000 -rwx sect_2  
@@ -138,8 +138,8 @@ CMDS=!rz-bin -uS bins/pe/96workingsections.exe
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr        vsize perm name    flags
------------------------------------------------------------
+nth paddr        size vaddr        vsize perm name    flags 
+------------------------------------------------------------
 0   0x00001200  0x200 0x00402000  0x1000 -rwx sect_0  
 1   0x00001400  0x200 0x00403000  0x1000 -rwx sect_1  
 2   0x00001600  0x200 0x00404000  0x1000 -rwx sect_2  
