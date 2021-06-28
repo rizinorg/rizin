@@ -1390,8 +1390,8 @@ EOF
 EXPECT=<<EOF
 sym.funcarg (char *arg1, uint32_t arg2);
 ; var uint32_t var_ch @ rbp-0xc
-; var char *var_8h @ rbp-0x8
-; arg char *arg1 @ rdi
+; var const char *var_8h @ rbp-0x8
+; arg const char *arg1 @ rdi
 ; arg uint32_t arg2 @ rsi
 0x0000068a      55             push  rbp
 EOF
@@ -1409,9 +1409,9 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg (char *arg_8h, uint32_t arg_ch);
+sym.funcarg (const char *arg_8h, uint32_t arg_ch);
 ; var int32_t var_4h @ ebp-0x4
-; arg char *arg_8h @ ebp+0x8
+; arg const char *arg_8h @ ebp+0x8
 ; arg uint32_t arg_ch @ ebp+0xc
 0x0000054d      55             push  ebp
 EOF

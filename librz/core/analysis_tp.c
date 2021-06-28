@@ -307,7 +307,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 	if (verbose && !strncmp(fcn_name, "sym.imp.", 8)) {
 		eprintf("%s missing function definition\n", fcn_name + 8);
 	}
-	if (!max) {
+	if (!max || max == -1) {
 		if (!in_stack) {
 			max = rz_analysis_cc_max_arg(analysis, cc);
 		} else {
