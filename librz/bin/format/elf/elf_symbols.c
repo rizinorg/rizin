@@ -544,7 +544,7 @@ static const char *symbol_bind_to_str(Elf_(Sym) * sym) {
 }
 
 static ut64 get_import_addr(ELFOBJ *bin, int symbol) {
-	if ((!Elf_(rz_bin_elf_has_sections)(bin) || !bin->strtab) && !Elf_(rz_bin_elf_has_segments)(bin)) {
+	if ((!Elf_(rz_bin_elf_has_sections)(bin) || !bin->dynstr) && !Elf_(rz_bin_elf_has_segments)(bin)) {
 		return UT64_MAX;
 	}
 
@@ -654,11 +654,12 @@ static bool is_section_local_symbol(ELFOBJ *bin, Elf_(Sym) * symbol) {
 }
 
 static void set_elf_symbol_name(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, RzBinElfSection *section) {
-	if (section && is_section_local_symbol(bin, symbol) && bin->shstrtab && symbol->st_name < bin->shstrtab_size) {
+	if (section && section->name && is_section_local_symbol(bin, symbol)) {
 		rz_str_ncpy(elf_symbol->name, section->name, ELF_STRING_LENGTH);
-	} else if (bin->strtab && symbol->st_name < bin->strtab_size) {
-		rz_str_ncpy(elf_symbol->name, bin->strtab + symbol->st_name, ELF_STRING_LENGTH);
-	} else {
+		return;
+	}
+
+	if (!bin->dynstr || !Elf_(rz_bin_elf_strtab_get)(bin->dynstr, elf_symbol->name, symbol->st_name)) {
 		elf_symbol->name[0] = '\0';
 	}
 }

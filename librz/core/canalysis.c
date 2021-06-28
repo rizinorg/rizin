@@ -7171,6 +7171,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_config_set(core->config, "dbg.backend", dh_orig);
 		rz_core_task_yield(&core->tasks);
 	}
+	if (!is_unknown_file(core)) {
+		rz_analysis_add_device_peripheral_map(core->bin->cur->o, core->analysis);
+	}
 	return true;
 }
 
@@ -7260,6 +7263,52 @@ RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction 
 	}
 	rz_list_free(list);
 	return rz_strbuf_drain(sb);
+}
+
+static int check_rom_exists(const void *value, const void *data) {
+	const char *name = (const char *)value;
+	const RzBinSection *sections = (const RzBinSection *)data;
+	return strcmp(name, sections->name);
+}
+
+/**
+ * \brief Maps the device peripherals as sections
+ *
+ * Gets the ROM_ADDRESS and ROM_SIZE from the corresponding CPU Profile
+ * and adds it as a section (RzBinSection) named ".rom" which will appear
+ * when you run `iS`.
+ *
+ * \param o reference to RzBinObject
+ * \param analysis reference to RzAnalysis
+ */
+RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis) {
+	rz_return_val_if_fail(o && analysis, false);
+	if (!o || !analysis) {
+		return false;
+	}
+	ut64 rom_size = analysis->arch_target->profile->rom_size;
+	ut64 rom_address = analysis->arch_target->profile->rom_address;
+	if (rom_address == 0 || rom_size == 0) {
+		return false;
+	}
+	if (!o->sections) {
+		return false;
+	}
+	if (rz_list_find(o->sections, ".rom", check_rom_exists)) {
+		return false;
+	}
+	RzBinSection *s = RZ_NEW0(RzBinSection);
+	if (!s) {
+		return false;
+	}
+	s->name = strdup(".rom");
+	s->vaddr = rom_address;
+	s->vsize = rom_size;
+	s->size = rom_size;
+	s->paddr = rom_address;
+	s->perm = RZ_PERM_RX;
+	rz_list_append(o->sections, s);
+	return true;
 }
 
 RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core) {

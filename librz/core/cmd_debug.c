@@ -312,7 +312,6 @@ static const char *help_msg_drp[] = {
 	"drpi", "", "Show internal representation of the register profile",
 	"drp.", "", "Show the current fake size",
 	"drpj", "", "Show the current register profile (JSON)",
-	"drps", " [new fake size]", "Set the fake size",
 	NULL
 };
 
@@ -1913,11 +1912,11 @@ static void cmd_reg_profile(RzCore *core, char from, const char *str) { // "arp"
 	case 'g': // "drpg" "arpg"
 		ptr = rz_str_trim_head_ro(str + 2);
 		if (!RZ_STR_ISEMPTY(ptr)) {
-			char *r2profile = rz_reg_parse_gdb_profile(ptr);
-			if (r2profile) {
-				rz_cons_println(r2profile);
+			char *rz_profile = rz_reg_parse_gdb_profile(ptr);
+			if (rz_profile) {
+				rz_cons_println(rz_profile);
 				core->num->value = 0;
-				free(r2profile);
+				free(rz_profile);
 			} else {
 				core->num->value = 1;
 				eprintf("Warning: Cannot parse gdb profile.\n");
@@ -1939,35 +1938,6 @@ static void cmd_reg_profile(RzCore *core, char from, const char *str) { // "arp"
 	} break;
 	case 'i': // "drpi" "arpi"
 		show_drpi(core);
-		break;
-	case 's': // "drps" "arps"
-		if (str[2] == ' ') {
-			ut64 n = rz_num_math(core->num, str + 2);
-			// TODO: move this thing into the rz_reg API
-			RzRegSet *rs = rz_reg_regset_get(core->dbg->reg, RZ_REG_TYPE_GPR);
-			if (rs && n > 0) {
-				RzListIter *iter;
-				RzRegArena *arena;
-				rz_list_foreach (rs->pool, iter, arena) {
-					ut8 *newbytes = calloc(1, n);
-					if (newbytes) {
-						free(arena->bytes);
-						arena->bytes = newbytes;
-						arena->size = n;
-					} else {
-						eprintf("Cannot allocate %d\n", (int)n);
-					}
-				}
-			} else {
-				eprintf("Invalid arena size\n");
-			}
-		} else {
-			RzRegSet *rs = rz_reg_regset_get(core->dbg->reg, RZ_REG_TYPE_GPR);
-			if (rs) {
-				rz_cons_printf("%d\n", rs->arena->size);
-			} else
-				eprintf("Cannot find GPR register arena.\n");
-		}
 		break;
 	case 'j': // "drpj" "arpj"
 	{
@@ -2012,7 +1982,7 @@ static void cmd_reg_profile(RzCore *core, char from, const char *str) { // "arp"
 	} break;
 	case '?': // "drp?" "arp?"
 	default: {
-		const char *from_a[] = { "arp", "arpi", "arpg", "arp.", "arpj", "arps" };
+		const char *from_a[] = { "arp", "arpi", "arpg", "arp.", "arpj" };
 		// TODO #7967 help refactor
 		const char **help_msg = help_msg_drp;
 		if (from == 'a') {

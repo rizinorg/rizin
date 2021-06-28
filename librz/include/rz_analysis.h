@@ -1494,6 +1494,8 @@ RZ_API void rz_analysis_pin_unset(RzAnalysis *a, ut64 addr);
 RZ_API const char *rz_analysis_pin_call(RzAnalysis *a, ut64 addr);
 RZ_API void rz_analysis_pin_list(RzAnalysis *a);
 
+RZ_API bool rz_analysis_add_device_peripheral_map(RzBinObject *o, RzAnalysis *analysis);
+
 /* fcn.c */
 RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn);
 RZ_API int rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NULLABLE int *ebbs);

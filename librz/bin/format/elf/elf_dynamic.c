@@ -59,7 +59,7 @@ RZ_BORROW RzVector *Elf_(rz_bin_elf_get_dt_needed)(RZ_NONNULL ELFOBJ *bin) {
 	return bin->dt_dynamic->dt_needed;
 }
 
-RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_new_dt_dynamic)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzBinElfDtDynamic *Elf_(rz_bin_elf_dt_dynamic_new)(RZ_NONNULL ELFOBJ *bin) {
 	RzBinElfDtDynamic *result = RZ_NEW(RzBinElfDtDynamic);
 	if (!result) {
 		return NULL;
@@ -111,7 +111,7 @@ bool Elf_(rz_bin_elf_has_dt_dynamic)(RZ_NONNULL ELFOBJ *bin) {
 	return bin->dt_dynamic && bin->dt_dynamic->info && bin->dt_dynamic->dt_needed;
 }
 
-void Elf_(rz_bin_elf_free_dt_dynamic)(RzBinElfDtDynamic *ptr) {
+void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr) {
 	if (!ptr) {
 		return;
 	}
