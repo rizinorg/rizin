@@ -873,7 +873,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 	heap_bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
 	heap_bin->bin_num = bin_num + 1;
 	heap_bin->size = FASTBIN_IDX_TO_SIZE(bin_num + 1);
-	heap_bin->type = rz_str_new("Fastbin");
+	heap_bin->type = rz_str_new("Fast");
 	GHT next = main_arena->GH(fastbinsY)[bin_num];
 	if (!next) {
 		free(cnk);
@@ -881,6 +881,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 	}
 	GH(get_brks)
 	(core, &brk_start, &brk_end);
+	heap_bin->fd = next;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		free(cnk);
 		return heap_bin;
