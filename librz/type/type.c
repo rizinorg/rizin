@@ -217,7 +217,10 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char *arch, int bits, const char *os) {
 	rz_return_if_fail(typedb && typedb->types && typedb->formats);
 
-	// TODO: make sure they are empty this is initializing
+	// A workaround to fix loading incorrectly detected MacOS binaries
+	if (os && RZ_STR_ISNOTEMPTY(os) && !strcmp(os, "darwin")) {
+		os = "macos";
+	}
 
 	// At first we load the basic types
 	// Atomic types
