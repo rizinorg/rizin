@@ -336,6 +336,24 @@ bool test_rz_table_transpose() {
 	mu_end;
 }
 
+bool test_rz_table_add_row_columnsf() {
+	RzTable *t = __table_test_data1();
+	rz_table_add_rowf(t, "s", "e");
+	rz_table_add_row_columnsf(t, "d", 10);
+
+	char *table = rz_table_tostring(t);
+	mu_assert_streq(table,
+		"ascii code \n"
+		"-----------\n"
+		"a     97\n"
+		"b     98\n"
+		"c     99\n"
+		"e     10\n",
+		"rz_table_transpose");
+	free(table);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_table);
 	mu_run_test(test_rz_table_column_type);
@@ -345,6 +363,7 @@ bool all_tests() {
 	mu_run_test(test_rz_table_group);
 	mu_run_test(test_rz_table_columns);
 	mu_run_test(test_rz_table_transpose);
+	mu_run_test(test_rz_table_add_row_columnsf);
 	return tests_passed != tests_run;
 }
 
