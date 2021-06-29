@@ -110,6 +110,7 @@ typedef struct rz_asm_t {
 	RzSyscall *syscall;
 	RNum *num;
 	char *features;
+	char *platforms;
 	int invhex; // invalid instructions displayed in hex
 	int pcalign;
 	int dataalign;
@@ -139,6 +140,7 @@ typedef struct rz_asm_plugin_t {
 	RzAsmModifyCallback modify;
 	char *(*mnemonics)(RzAsm *a, int id, bool json);
 	const char *features;
+	const char *platforms;
 } RzAsmPlugin;
 
 #ifdef RZ_API

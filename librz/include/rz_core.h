@@ -68,6 +68,7 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_SYSCALLS                "syscalls"
 #define RZ_FLAGS_FS_MMIO_REGISTERS          "registers.mmio"
 #define RZ_FLAGS_FS_MMIO_REGISTERS_EXTENDED "registers.extended"
+#define RZ_FLAGS_FS_PLATFORM_PORTS          "platform.ports"
 
 #define RZ_GRAPH_FORMAT_NO     0
 #define RZ_GRAPH_FORMAT_GMLFCN 1
@@ -1096,6 +1097,8 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
  * \brief Load a project and print info and errors
  */
 RZ_API bool rz_core_project_load_for_cli(RzCore *core, const char *file, bool load_bin_io);
+
+RZ_API bool rz_arch_platform_add_flags_comments(RzCore *core);
 
 #endif
 

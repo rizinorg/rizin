@@ -635,6 +635,7 @@ typedef struct rz_analysis_t {
 	RzStrConstPool constpool;
 	RzList *leaddrs;
 	RzArchTarget *arch_target;
+	RzArchPlatformTarget *platform_target;
 } RzAnalysis;
 
 typedef enum rz_analysis_addr_hint_type_t {
