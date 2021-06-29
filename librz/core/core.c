@@ -2179,74 +2179,6 @@ static void rz_core_sleep_end(RzCore *core, void *user) {
 	}
 }
 
-static void __foreach(RzCore *core, const char **cmds, int type) {
-	int i;
-	for (i = 0; cmds[i]; i++) {
-		rz_core_autocomplete_add(core->autocomplete, cmds[i], type, true);
-	}
-}
-
-static void __init_autocomplete_default(RzCore *core) {
-	const char *fcns[] = {
-		"afi", "afcf", "afn", NULL
-	};
-	const char *seeks[] = {
-		"s", NULL
-	};
-	const char *flags[] = {
-		"*", "s", "s+", "b", "f", "fg", "?", "?v", "ad", "bf", "c1", "db", "dbw",
-		"f-", "fr", "tf", "/a", "/v", "/r", "/re", "aav", "aep", "aef", "afb",
-		"afc", "axg", "axt", "axf", "dcu", "ag", "agfl", "aecu", "aesu", "aeim", NULL
-	};
-	const char *evals[] = {
-		"e", "ee", "et", "e?", "e!", "ev", "evj", NULL
-	};
-	const char *breaks[] = {
-		"db-", "dbc", "dbC", "dbd", "dbe", "dbs", "dbi", "dbte", "dbtd", "dbts", NULL
-	};
-	const char *files[] = {
-		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
-		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
-		"idp", "idpi", "L", "obf", "o+", "oc",
-		"rizin", "rz-agent", "rz-asm", "rz-ax", "rz-bin", "rz-diff", "rz-find", "rz-gg", "rz-hash", "rz-pm", "rz-run", "rz-sign",
-		"cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
-		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
-		"less", "head", "Ps", "Pl", NULL
-	};
-	__foreach(core, flags, RZ_CORE_AUTOCMPLT_FLAG);
-	__foreach(core, seeks, RZ_CORE_AUTOCMPLT_SEEK);
-	__foreach(core, fcns, RZ_CORE_AUTOCMPLT_FCN);
-	__foreach(core, evals, RZ_CORE_AUTOCMPLT_EVAL);
-	__foreach(core, breaks, RZ_CORE_AUTOCMPLT_BRKP);
-	__foreach(core, files, RZ_CORE_AUTOCMPLT_FILE);
-
-	rz_core_autocomplete_add(core->autocomplete, "-", RZ_CORE_AUTOCMPLT_MINS, true);
-	rz_core_autocomplete_add(core->autocomplete, "zs", RZ_CORE_AUTOCMPLT_ZIGN, true);
-	rz_core_autocomplete_add(core->autocomplete, "fs", RZ_CORE_AUTOCMPLT_FLSP, true);
-	rz_core_autocomplete_add(
-		rz_core_autocomplete_add(core->autocomplete, "ls", RZ_CORE_AUTOCMPLT_DFLT, true),
-		"-l", RZ_CORE_AUTOCMPLT_FILE, true);
-	rz_core_autocomplete_add(core->autocomplete, "eco", RZ_CORE_AUTOCMPLT_THME, true);
-	rz_core_autocomplete_add(core->autocomplete, "k", RZ_CORE_AUTOCMPLT_SDB, true);
-	/* macros */
-	rz_core_autocomplete_add(core->autocomplete, ".(", RZ_CORE_AUTOCMPLT_MACR, true);
-	rz_core_autocomplete_add(core->autocomplete, "(-", RZ_CORE_AUTOCMPLT_MACR, true);
-	/* just for hints */
-	int i;
-	for (i = 0; i < rizin_argc && rizin_argv[i]; i++) {
-		if (!rz_core_autocomplete_find(core->autocomplete, rizin_argv[i], true)) {
-			rz_core_autocomplete_add(core->autocomplete, rizin_argv[i], RZ_CORE_AUTOCMPLT_DFLT, true);
-		}
-	}
-}
-
-static void __init_autocomplete(RzCore *core) {
-	core->autocomplete = RZ_NEW0(RzCoreAutocomplete);
-	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
-		__init_autocomplete_default(core);
-	}
-}
-
 static const char *colorfor_cb(void *user, ut64 addr, bool verbose) {
 	return rz_core_analysis_optype_colorfor((RzCore *)user, addr, verbose);
 }
@@ -2282,12 +2214,6 @@ static RzFlagItem *core_flg_fcn_set(RzFlag *f, const char *name, ut64 addr, ut32
 	RzFlagItem *res = rz_flag_set(f, name, addr, size);
 	rz_flag_space_pop(f);
 	return res;
-}
-
-RZ_API void rz_core_autocomplete_reload(RzCore *core) {
-	rz_return_if_fail(core);
-	rz_core_autocomplete_free(core->autocomplete);
-	__init_autocomplete(core);
 }
 
 RZ_API RzFlagItem *rz_core_flag_get_by_spaces(RzFlag *f, ut64 off) {
@@ -3359,89 +3285,6 @@ RZ_API RzBuffer *rz_core_syscall(RzCore *core, const char *name, const char *arg
 #endif
 	}
 	return b;
-}
-
-RZ_API RzCoreAutocomplete *rz_core_autocomplete_add(RzCoreAutocomplete *parent, const char *cmd, int type, bool lock) {
-	if (!parent || !cmd || type < 0 || type >= RZ_CORE_AUTOCMPLT_END) {
-		return NULL;
-	}
-	RzCoreAutocomplete *autocmpl = RZ_NEW0(RzCoreAutocomplete);
-	if (!autocmpl) {
-		return NULL;
-	}
-	RzCoreAutocomplete **updated = realloc(parent->subcmds, (parent->n_subcmds + 1) * sizeof(RzCoreAutocomplete *));
-	if (!updated) {
-		free(autocmpl);
-		return NULL;
-	}
-	parent->subcmds = updated;
-	parent->subcmds[parent->n_subcmds] = autocmpl;
-	parent->n_subcmds++;
-	autocmpl->cmd = strdup(cmd);
-	autocmpl->locked = lock;
-	autocmpl->type = type;
-	autocmpl->length = strlen(cmd);
-	return autocmpl;
-}
-
-RZ_API void rz_core_autocomplete_free(RzCoreAutocomplete *obj) {
-	if (!obj) {
-		return;
-	}
-	int i;
-	for (i = 0; i < obj->n_subcmds; i++) {
-		rz_core_autocomplete_free(obj->subcmds[i]);
-		obj->subcmds[i] = NULL;
-	}
-	free(obj->subcmds);
-	free((char *)obj->cmd);
-	free(obj);
-}
-
-RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent, const char *cmd, bool exact) {
-	if (!parent || !cmd) {
-		return false;
-	}
-	int len = strlen(cmd);
-	int i;
-	for (i = 0; i < parent->n_subcmds; i++) {
-		if (exact && len == parent->subcmds[i]->length && !strncmp(cmd, parent->subcmds[i]->cmd, len)) {
-			return parent->subcmds[i];
-		} else if (!exact && !strncmp(cmd, parent->subcmds[i]->cmd, len)) {
-			return parent->subcmds[i];
-		}
-	}
-	return NULL;
-}
-
-RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd) {
-	if (!parent || !cmd) {
-		return false;
-	}
-	int i, j;
-	for (i = 0; i < parent->n_subcmds; i++) {
-		RzCoreAutocomplete *ac = parent->subcmds[i];
-		if (ac->locked) {
-			continue;
-		}
-		// if (!strncmp (parent->subcmds[i]->cmd, cmd, parent->subcmds[i]->length)) {
-		if (rz_str_glob(ac->cmd, cmd)) {
-			for (j = i + 1; j < parent->n_subcmds; j++) {
-				parent->subcmds[j - 1] = parent->subcmds[j];
-				parent->subcmds[j] = NULL;
-			}
-			rz_core_autocomplete_free(ac);
-			RzCoreAutocomplete **updated = realloc(parent->subcmds, (parent->n_subcmds - 1) * sizeof(RzCoreAutocomplete *));
-			if (!updated && (parent->n_subcmds - 1) > 0) {
-				eprintf("Something really bad has happen.. this should never ever happen..\n");
-				return false;
-			}
-			parent->subcmds = updated;
-			parent->n_subcmds--;
-			i--;
-		}
-	}
-	return false;
 }
 
 RZ_API RzTable *rz_core_table(RzCore *core) {
