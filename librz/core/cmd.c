@@ -257,18 +257,6 @@ static const char *help_msg_y[] = {
 	NULL
 };
 
-static const char *help_msg_triple_exclamation[] = {
-	"Usage:", "!!![-*][cmd] [arg|$type...]", " # user-defined autocompletion for commands",
-	"!!!", "", "list all autocompletions",
-	"!!!?", "", "show this help",
-	"!!!", "-*", "remove all user-defined autocompletions",
-	"!!!", "-\\*", "remove autocompletions matching this glob expression",
-	"!!!", "-foo", "remove autocompletion named 'foo'",
-	"!!!", "foo", "add 'foo' for autocompletion",
-	"!!!", "bar $flag", "add 'bar' for autocompletion with $flag as argument",
-	NULL
-};
-
 static const char *help_msg_vertical_bar[] = {
 	"Usage:", "[cmd] | [program|H|T|.|]", "",
 	"", "[cmd] |?", "show this help",
