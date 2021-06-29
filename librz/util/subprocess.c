@@ -136,18 +136,6 @@ error:
 	return ret;
 }
 
-static void remove_cr(char *str) {
-	char *start = str;
-	while (*str) {
-		if (str[0] == '\r' &&
-			!(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
-			memmove(str, str + 1, strlen(str + 1) + 1);
-			continue;
-		}
-		str++;
-	}
-}
-
 RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	RzSubprocess *proc = NULL;
 	HANDLE stdin_read = GetStdHandle(STD_INPUT_HANDLE);
@@ -378,8 +366,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 				continue;
 			}
 			stdout_buf[r] = '\0';
-			remove_cr(stdout_buf);
-			rz_strbuf_append(&proc->out, (const char *)stdout_buf);
+			rz_strbuf_append_n(&proc->out, (const char *)stdout_buf, r);
 			ResetEvent(stdout_overlapped.hEvent);
 			if (r >= 0 && n_bytes) {
 				n_bytes -= r;
@@ -398,8 +385,7 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 				continue;
 			}
 			stderr_buf[r] = '\0';
-			remove_cr(stderr_buf);
-			rz_strbuf_append(&proc->err, (const char *)stderr_buf);
+			rz_strbuf_append_n(&proc->err, (const char *)stderr_buf, r);
 			if (r >= 0 && n_bytes) {
 				n_bytes -= r;
 				if (n_bytes <= 0) {
