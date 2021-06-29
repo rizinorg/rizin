@@ -3901,3 +3901,81 @@ EXPECT=<<EOF
 |           0x0000004a      488d45f8       rax = var_8h
 EOF
 RUN
+
+NAME=xref graph
+FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
+CMDS=<<EOF
+aa
+aac
+axg 0x1004aa5e
+axgj 0x1004aa5e~{}
+EOF
+EXPECT=<<EOF
+- 0x1004aa5e fcn 0x1004aa5e fcn.1004aa5e
+  - 0x1004ab07 fcn 0x1004aaff fcn.1004aaff
+  - 0x1004aaff fcn 0x1004aaff fcn.1004aaff
+    - 0x1004ab94 ???
+    - 0x1004aba0 ???
+    - 0x1004d380 ???
+    - 0x1004d3cf ???
+{
+  "268741214": {
+    "type": "fcn",
+    "fcn_addr": 268741214,
+    "name": "fcn.1004aa5e",
+    "refs": [
+      {
+        "268741383": {
+          "type": "fcn",
+          "fcn_addr": 268741375,
+          "name": "fcn.1004aaff",
+          "refs": [
+            {
+              "268741375": {
+                "type": "fcn",
+                "fcn_addr": 268741375,
+                "name": "fcn.1004aaff",
+                "refs": [
+                  {
+                    "268741524": {
+                      "type": "???",
+                      "refs": [
+                        
+                      ]
+                    }
+                  },
+                  {
+                    "268741536": {
+                      "type": "???",
+                      "refs": [
+                        
+                      ]
+                    }
+                  },
+                  {
+                    "268751744": {
+                      "type": "???",
+                      "refs": [
+                        
+                      ]
+                    }
+                  },
+                  {
+                    "268751823": {
+                      "type": "???",
+                      "refs": [
+                        
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+EOF
+RUN
