@@ -2110,19 +2110,26 @@ static char *system_exec_stdin(int argc, char **argv, const ut8 *input, int inpu
 	return output;
 }
 
+/**
+ * \brief Executes a rizin command and pipes the result to the stdin when calling execvp
+ *
+ * Executes a rizin command and the raw bytes of the stdout is returned.
+ * The output is then used as stdin for execvp.
+ * The output of the execvp is then sent into RzCons.
+ * */
 RZ_API RzCmdStatus rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, int argc, char **argv) {
 	int length = 0;
-	ut8 *str = rz_core_cmd_raw(core, rizin_cmd, &length);
-	if (!str) {
+	ut8 *bytes = rz_core_cmd_raw(core, rizin_cmd, &length);
+	if (!bytes) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	char *out = system_exec_stdin(argc, argv, str, length, &length);
+	char *out = system_exec_stdin(argc, argv, bytes, length, &length);
 	if (out) {
 		rz_cons_memcat(out, length);
 	}
 
-	free(str);
+	free(bytes);
 	free(out);
 	return RZ_CMD_STATUS_OK;
 }
@@ -6532,6 +6539,11 @@ RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
 	return retstr;
 }
 
+/**
+ * \brief Executes a rizin command and returns the raw stdout and its length
+ *
+ * Executes a rizin command and returns the raw stdout and its length.
+ * */
 RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	const char *static_str;
 	ut8 *retstr = NULL;
