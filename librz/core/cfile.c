@@ -493,6 +493,7 @@ RZ_API bool rz_core_file_resize_delta(RzCore *core, st64 delta) {
 }
 
 RZ_API void rz_core_sysenv_end(RzCore *core) {
+	// This will be deprecated when moving the . commands to newshell
 	rz_sys_setenv("RZ_FILE", NULL);
 	rz_sys_setenv("RZ_OFFSET", NULL);
 
@@ -506,6 +507,7 @@ RZ_API void rz_core_sysenv_end(RzCore *core) {
 }
 
 RZ_API void rz_core_sysenv_begin(RzCore *core) {
+	// This will be deprecated when moving the . commands to newshell
 	RzIODesc *desc = core->file ? rz_io_desc_get(core->io, core->file->fd) : NULL;
 	rz_sys_setenv("RZ_BIN_PDBSERVER", rz_config_get(core->config, "pdb.server"));
 	if (desc && desc->name) {
@@ -532,10 +534,10 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	rz_sys_setenv("RZ_BIN_LANG", rz_config_get(core->config, "bin.lang"));
 	rz_sys_setenv("RZ_BIN_DEMANGLE", rz_config_get(core->config, "bin.demangle"));
 	rz_sys_setenv("RZ_ARCH", rz_config_get(core->config, "asm.arch"));
-	rz_sys_setenv("RZ_BITS", sdb_fmt("%" PFMT64u, rz_config_get_i(core->config, "asm.bits")));
-	rz_sys_setenv("RZ_COLOR", sdb_fmt("%" PFMT64u, rz_config_get_i(core->config, "scr.color")));
-	rz_sys_setenv("RZ_DEBUG", rz_config_get_b(core->config, "cfg.debug") ? "true" : "false");
-	rz_sys_setenv("RZ_IOVA", rz_config_get_b(core->config, "io.va") ? "true" : "false");
+	rz_sys_setenv("RZ_BITS", rz_config_get(core->config, "asm.bits"));
+	rz_sys_setenv("RZ_COLOR", rz_config_get(core->config, "scr.color"));
+	rz_sys_setenv("RZ_DEBUG", rz_config_get(core->config, "cfg.debug"));
+	rz_sys_setenv("RZ_IOVA", rz_config_get(core->config, "io.va"));
 	free(config_sdb_path);
 }
 
