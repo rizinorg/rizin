@@ -1,10 +1,7 @@
 // SPDX-FileCopyrightText: 2021 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_types.h>
-#include <rz_util.h>
 #include <rz_arch.h>
-#include <stdio.h>
 #include <string.h>
 
 /**
@@ -52,15 +49,9 @@ RZ_API RZ_OWN RzArchTarget *rz_arch_target_new() {
 	if (!profile) {
 		return NULL;
 	}
-	profile->db = sdb_new0();
-	if (!profile->db) {
-		free(profile);
-		return NULL;
-	}
 	profile->profile = rz_arch_profile_new();
 	if (!profile->profile) {
 		free(profile);
-		sdb_free(profile->db);
 		return NULL;
 	}
 	return profile;
@@ -75,7 +66,6 @@ RZ_API void rz_arch_target_free(RzArchTarget *t) {
 	if (!t) {
 		return;
 	}
-	sdb_free(t->db);
 	rz_arch_profile_free(t->profile);
 	free(t);
 }
@@ -191,7 +181,7 @@ static bool is_cpu_valid(char *cpu_dir, const char *cpu) {
  *
  * \param t reference to RzArchTarget
  * \param cpu reference to the selected CPU (value of `asm.cpu`)
- * \param arch reference to the seletec architecture (value of `asm.arch`)
+ * \param arch reference to the selected architecture (value of `asm.arch`)
  * \param dir_prefix reference to the directory prefix or the value of dir.prefix
  */
 RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *arch, const char *dir_prefix) {
@@ -211,10 +201,7 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 			path = rz_str_newf("%s" RZ_SYS_DIR RZ_SDB RZ_SYS_DIR "asm" RZ_SYS_DIR "cpus" RZ_SYS_DIR "avr-ATmega8.sdb", dir_prefix);
 		}
 	}
-	if (!rz_arch_load_profile_sdb(t, path)) {
-		sdb_free(t->db);
-		t->db = NULL;
-	}
+	rz_arch_load_profile_sdb(t, path);
 	free(path);
 	free(cpu_dir);
 	return true;
