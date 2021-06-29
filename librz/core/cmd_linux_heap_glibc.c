@@ -91,8 +91,8 @@ RZ_API RzHeapChunkSimple *rz_heap_chunk(RzCore *core, ut64 addr) {
  * \param bin_num Bin number from NBINS array
  * \return RzHeapBin struct for the bin
  */
-RZ_API RzHeapBin *rz_heap_bin_content(RzCore *core, MallocState *arena, int bin_num) {
-	call_handler(rz_heap_bin_content, arena, bin_num);
+RZ_API RzHeapBin *rz_heap_bin_content(RzCore *core, MallocState *arena, int bin_num, ut64 m_arena) {
+	call_handler(rz_heap_bin_content, arena, bin_num, m_arena);
 }
 
 /**

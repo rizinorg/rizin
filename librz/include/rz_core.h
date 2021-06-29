@@ -778,7 +778,7 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 RZ_API RzList *rz_heap_chunks_list(RzCore *core, ut64 m_arena);
 RZ_API RzList *rz_heap_arenas_list(RzCore *core);
 RZ_API RzHeapChunkSimple *rz_heap_chunk(RzCore *core, ut64 addr);
-RZ_API RzHeapBin *rz_heap_bin_content(RzCore *core, MallocState *arena, int bin_num);
+RZ_API RzHeapBin *rz_heap_bin_content(RzCore *core, MallocState *arena, int bin_num, ut64 m_arena);
 RZ_API RzHeapBin *rz_heap_fastbin_content(RzCore *core, MallocState *arena, int bin_num);
 RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state);
 
