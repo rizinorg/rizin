@@ -1,6 +1,7 @@
 rz_analysis_sources = [
   'analysis.c',
   'arch_profile.c',
+  'arch_platform.c',
   'block.c',
   'function.c',
   'jmptbl.c',
