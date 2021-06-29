@@ -365,7 +365,6 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 				stdout_eof = true;
 				continue;
 			}
-			stdout_buf[r] = '\0';
 			rz_strbuf_append_n(&proc->out, (const char *)stdout_buf, r);
 			ResetEvent(stdout_overlapped.hEvent);
 			if (r >= 0 && n_bytes) {
@@ -384,7 +383,6 @@ static RzSubprocessWaitReason subprocess_wait(RzSubprocess *proc, ut64 timeout_m
 				stderr_eof = true;
 				continue;
 			}
-			stderr_buf[r] = '\0';
 			rz_strbuf_append_n(&proc->err, (const char *)stderr_buf, r);
 			if (r >= 0 && n_bytes) {
 				n_bytes -= r;
