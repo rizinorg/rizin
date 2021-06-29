@@ -183,26 +183,26 @@ t uint64_t
 t char16_t
 EOF
 EXPECT=<<EOF
-pf c
-pf F
-pf F
-pf F
-pf d
-pf w
-pf x
-pf q
-pf d
-pf d
-pf
-pf b
-pf b
-pf w
-pf w
-pf d
-pf d
-pf q
-pf q
-pf c
+pf c char
+pf F double
+pf F long double
+pf f float
+pf d int
+pf w short
+pf x long
+pf q long long
+pf d size_t
+pf d uid_t
+pf 
+pf b int8_t
+pf b uint8_t
+pf w int16_t
+pf w uint16_t
+pf d int32_t
+pf d uint32_t
+pf q int64_t
+pf q uint64_t
+pf c char16_t
 EOF
 RUN
 
@@ -214,7 +214,7 @@ t-*
 t int
 EOF
 EXPECT=<<EOF
-pf d
+pf d int
 EOF
 EXPECT_ERR=<<EOF
 Cannot find type "int"
@@ -1388,7 +1388,7 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg (char *arg1, uint32_t arg2);
+sym.funcarg (const char *arg1, uint32_t arg2);
 ; var uint32_t var_ch @ rbp-0xc
 ; var const char *var_8h @ rbp-0x8
 ; arg const char *arg1 @ rdi
