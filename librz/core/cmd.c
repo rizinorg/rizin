@@ -1874,89 +1874,6 @@ RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI int rz_cmd_system(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	ut64 n;
-	int ret = 0;
-	switch (*input) {
-	case '-': //!-
-		if (input[1]) {
-			rz_line_hist_free();
-			rz_line_hist_save(RZ_HOME_HISTORY);
-		} else {
-			rz_line_hist_free();
-		}
-		break;
-	case '=': //!=
-		if (input[1] == '?') {
-			rz_cons_printf("Usage: !=[!]  - enable/disable remote commands\n");
-		} else {
-			RZ_FREE(core->cmdremote);
-		}
-		break;
-	case '!': //!!
-		if (input[1] == '!') { // !!! & !!!-
-			cmd_autocomplete(core, input + 2);
-		} else if (input[1] == '?') {
-			cmd_help_exclamation(core);
-		} else if (input[1] == '*') {
-			char *cmd = rz_str_trim_dup(input + 1);
-			(void)rz_core_cmdf(core, "\"#!pipe %s\"", cmd);
-			free(cmd);
-		} else {
-			if (input[1]) {
-				int olen;
-				char *out = NULL;
-				rz_core_sysenv_begin(core);
-				void *bed = rz_cons_sleep_begin();
-				ret = rz_sys_cmd_str_full(input + 1, NULL, &out, &olen, NULL);
-				rz_cons_sleep_end(bed);
-				rz_core_sysenv_end(core);
-				rz_cons_memcat(out, olen);
-				free(out);
-			} else {
-				eprintf("History saved to " RZ_HOME_HISTORY "\n");
-				rz_line_hist_save(RZ_HOME_HISTORY);
-			}
-		}
-		break;
-	case '\0':
-		rz_line_hist_list();
-		break;
-	case '?': //!?
-		cmd_help_exclamation(core);
-		break;
-	case '*':
-		// TODO: use the api
-		{
-			char *cmd = rz_str_trim_dup(input + 1);
-			cmd = rz_str_replace(cmd, " ", "\\ ", true);
-			cmd = rz_str_replace(cmd, "\\ ", " ", false);
-			cmd = rz_str_replace(cmd, "\"", "'", false);
-			ret = rz_core_cmdf(core, "\"#!pipe %s\"", cmd);
-			free(cmd);
-		}
-		break;
-	default:
-		n = atoi(input);
-		if (*input == '0' || n > 0) {
-			const char *cmd = rz_line_hist_get(n);
-			if (cmd) {
-				rz_core_cmd0(core, cmd);
-			}
-			//else eprintf ("Error setting up system environment\n");
-		} else {
-			rz_core_sysenv_begin(core);
-			void *bed = rz_cons_sleep_begin();
-			ret = rz_sys_system(input);
-			rz_cons_sleep_end(bed);
-			rz_core_sysenv_end(core);
-		}
-		break;
-	}
-	return ret;
-}
-
 #if __WINDOWS__
 #include <tchar.h>
 #define __CLOSE_DUPPED_PIPES() \
@@ -6689,7 +6606,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		const char *description;
 		RzCmdCb cb;
 	} cmds[] = {
-		{ "!", "run system command", rz_cmd_system },
 		{ "_", "print last output", rz_cmd_last },
 		{ "#", "calculate hash", rz_cmd_hash },
 		{ "$", "alias", rz_cmd_alias },

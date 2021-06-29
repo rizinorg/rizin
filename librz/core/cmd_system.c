@@ -99,6 +99,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	RzList *alloc = rz_list_newf(free);
 	if (!alloc) {
 		RZ_LOG_ERROR("Cannot allocate list of allocated strings.\n");
+		rz_file_rm(cfg_path);
 		free(cfg_path);
 		return false;
 	}
@@ -107,6 +108,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	if (!args) {
 		RZ_LOG_ERROR("Cannot allocate list of args.\n");
 		rz_list_free(alloc);
+		rz_file_rm(cfg_path);
 		free(cfg_path);
 		return false;
 	}
@@ -114,6 +116,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	if (!rz_subprocess_init()) {
 		RZ_LOG_ERROR("Cannot initialize subprocess.\n");
 		rz_list_free(alloc);
+		rz_file_rm(cfg_path);
 		free(cfg_path);
 		free(args);
 		return false;
@@ -152,6 +155,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	if (!proc) {
 		RZ_LOG_ERROR("Cannot start subprocess.\n");
 		rz_subprocess_fini();
+		rz_file_rm(cfg_path);
 		free(cfg_path);
 		rz_list_free(alloc);
 		free(args);
@@ -168,6 +172,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	rz_subprocess_free(proc);
 	rz_subprocess_fini();
 	rz_list_free(alloc);
+	rz_file_rm(cfg_path);
 	free(cfg_path);
 	free(args);
 
