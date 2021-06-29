@@ -123,6 +123,22 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 	}
 
 	for (int i = 0; i < argc; ++i) {
+#if __WINDOWS__
+		args[i] = system_apply_env_var("%RZ_FILE%" /*         */, file_path /*   */, argv[i], alloc);
+		args[i] = system_apply_env_var("%RZ_SIZE%" /*         */, file_size /*   */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_ARCH%" /*         */, asm_arch /*    */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_BITS%" /*         */, asm_bits /*    */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_OFFSET%" /*       */, core_offset /* */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_ENDIAN%" /*       */, endian /*      */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_BIN_DEMANGLE%" /* */, bin_demangle /**/, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_BIN_LANG%" /*     */, bin_lang /*    */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_BIN_PDBSERVER%" /**/, pdb_server /*  */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_IOVA%" /*         */, io_va /*       */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_COLOR%" /*        */, scr_color /*   */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_BSIZE%" /*        */, block_size /*  */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_DEBUG%" /*        */, cfg_debug /*   */, args[i], alloc);
+		args[i] = system_apply_env_var("%RZ_CONFIG%" /*       */, cfg_path /*    */, args[i], alloc);
+#else // __WINDOWS__
 		args[i] = system_apply_env_var("${RZ_FILE}" /*         */, file_path /*   */, argv[i], alloc);
 		args[i] = system_apply_env_var("${RZ_SIZE}" /*         */, file_size /*   */, args[i], alloc);
 		args[i] = system_apply_env_var("${RZ_ARCH}" /*         */, asm_arch /*    */, args[i], alloc);
@@ -137,6 +153,7 @@ static bool system_exec(RzCore *core, int argc, const char **argv, char **output
 		args[i] = system_apply_env_var("${RZ_BSIZE}" /*        */, block_size /*  */, args[i], alloc);
 		args[i] = system_apply_env_var("${RZ_DEBUG}" /*        */, cfg_debug /*   */, args[i], alloc);
 		args[i] = system_apply_env_var("${RZ_CONFIG}" /*       */, cfg_path /*    */, args[i], alloc);
+#endif
 	}
 
 	RzSubprocessOpt opt = {
