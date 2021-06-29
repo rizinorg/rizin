@@ -13,7 +13,7 @@ static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail env_details[3];
-static const RzCmdDescDetail list_or_exec_history_details[2];
+static const RzCmdDescDetail history_list_or_exec_details[2];
 static const RzCmdDescDetail wB_details[2];
 static const RzCmdDescDetail wv_details[2];
 static const RzCmdDescDetail w1_details[2];
@@ -119,7 +119,7 @@ static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg env_args[3];
-static const RzCmdDescArg list_or_exec_history_args[2];
+static const RzCmdDescArg history_list_or_exec_args[2];
 static const RzCmdDescArg ls_args[2];
 static const RzCmdDescArg plugins_load_args[2];
 static const RzCmdDescArg plugins_unload_args[2];
@@ -2182,16 +2182,16 @@ static const RzCmdDescHelp cmd_egg_help = {
 static const RzCmdDescHelp H_help = {
 	.summary = "Rizin history commands.",
 };
-static const RzCmdDescDetailEntry list_or_exec_history_Examples_detail_entries[] = {
+static const RzCmdDescDetailEntry history_list_or_exec_Examples_detail_entries[] = {
 	{ .text = "H", .arg_str = "", .comment = "Shows the current session history" },
 	{ .text = "H", .arg_str = " 12", .comment = "Executes a history command with index value of 12" },
 	{ 0 },
 };
-static const RzCmdDescDetail list_or_exec_history_details[] = {
-	{ .name = "Examples", .entries = list_or_exec_history_Examples_detail_entries },
+static const RzCmdDescDetail history_list_or_exec_details[] = {
+	{ .name = "Examples", .entries = history_list_or_exec_Examples_detail_entries },
 	{ 0 },
 };
-static const RzCmdDescArg list_or_exec_history_args[] = {
+static const RzCmdDescArg history_list_or_exec_args[] = {
 	{
 		.name = "index",
 		.type = RZ_CMD_ARG_TYPE_NUM,
@@ -2200,26 +2200,26 @@ static const RzCmdDescArg list_or_exec_history_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp list_or_exec_history_help = {
+static const RzCmdDescHelp history_list_or_exec_help = {
 	.summary = "Shows the history in current session or executes an history command via its index.",
-	.details = list_or_exec_history_details,
-	.args = list_or_exec_history_args,
+	.details = history_list_or_exec_details,
+	.args = history_list_or_exec_args,
 };
 
-static const RzCmdDescArg clear_history_args[] = {
+static const RzCmdDescArg history_clear_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp clear_history_help = {
+static const RzCmdDescHelp history_clear_help = {
 	.summary = "Clears the history in current session",
-	.args = clear_history_args,
+	.args = history_clear_args,
 };
 
-static const RzCmdDescArg save_history_args[] = {
+static const RzCmdDescArg history_save_args[] = {
 	{ 0 },
 };
-static const RzCmdDescHelp save_history_help = {
+static const RzCmdDescHelp history_save_help = {
 	.summary = "Saves the history of the current session",
-	.args = save_history_args,
+	.args = history_save_args,
 };
 
 static const RzCmdDescHelp cmd_info_help = {
@@ -5057,13 +5057,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_egg_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "g", rz_cmd_egg, &cmd_egg_help);
 	rz_warn_if_fail(cmd_egg_cd);
 
-	RzCmdDesc *H_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "H", rz_list_or_exec_history_handler, &list_or_exec_history_help, &H_help);
+	RzCmdDesc *H_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "H", rz_history_list_or_exec_handler, &history_list_or_exec_help, &H_help);
 	rz_warn_if_fail(H_cd);
-	RzCmdDesc *clear_history_cd = rz_cmd_desc_argv_new(core->rcmd, H_cd, "H-", rz_clear_history_handler, &clear_history_help);
-	rz_warn_if_fail(clear_history_cd);
+	RzCmdDesc *history_clear_cd = rz_cmd_desc_argv_new(core->rcmd, H_cd, "H-", rz_history_clear_handler, &history_clear_help);
+	rz_warn_if_fail(history_clear_cd);
 
-	RzCmdDesc *save_history_cd = rz_cmd_desc_argv_new(core->rcmd, H_cd, "H+", rz_save_history_handler, &save_history_help);
-	rz_warn_if_fail(save_history_cd);
+	RzCmdDesc *history_save_cd = rz_cmd_desc_argv_new(core->rcmd, H_cd, "H+", rz_history_save_handler, &history_save_help);
+	rz_warn_if_fail(history_save_cd);
 
 	RzCmdDesc *cmd_info_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "i", rz_cmd_info, &cmd_info_help);
 	rz_warn_if_fail(cmd_info_cd);

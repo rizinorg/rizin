@@ -4,7 +4,7 @@
 name: cmd_history
 commands:
   - name: "H"
-    cname: list_or_exec_history
+    cname: history_list_or_exec
     summary: Shows the history in current session or executes an history command via its index.
     args:
       - name: index
@@ -20,10 +20,10 @@ commands:
             arg_str: " 12"
             comment: "Executes a history command with index value of 12"
   - name: "H-"
-    cname: clear_history
+    cname: history_clear
     summary: Clears the history in current session
     args: []
   - name: "H+"
-    cname: save_history
+    cname: history_save
     summary: Saves the history of the current session
     args: []
