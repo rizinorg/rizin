@@ -10,8 +10,8 @@ NAME=mdmp info
 FILE=bins/mdmp/calc.dmp
 CMDS=iI
 EXPECT=<<EOF
-Name     Value
---------------
+Name     Value                           
+-----------------------------------------
 arch     x86
 baddr    0xffffffffffffffff
 binsz    36724
@@ -50,8 +50,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr           size vaddr             vsize perm name
-----------------------------------------------------------
+nth paddr           size vaddr             vsize perm name                                  
+--------------------------------------------------------------------------------------------
 0   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- C:_Windows_System32_calc.exe
 1   0x00000000  0x1aa000 0x77720000     0x1aa000 ---- C:_Windows_System32__tdll.dll
 2   0x00000000  0x11f000 0x77500000     0x11f000 ---- C:_Windows_System32_kernel32.dll

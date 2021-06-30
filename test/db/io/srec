@@ -87,8 +87,8 @@ iI
 iS
 EOF
 EXPECT=<<EOF
-Name     Value
---------------
+Name     Value                                                    
+------------------------------------------------------------------
 arch     arm
 baddr    0x8000
 binsz    571848
@@ -120,8 +120,8 @@ RELROCS  true
 NX       true
 [Sections]
 
-nth paddr          size vaddr         vsize perm name              type              flags
-------------------------------------------------------------------------------------------
+nth paddr          size vaddr         vsize perm name              type              flags            
+------------------------------------------------------------------------------------------------------
 0   0x00000000      0x0 0x00000000      0x0 ----                   NULL              
 1   0x00000114     0x20 0x00008114     0x20 -r-- .note.ABI-tag     NOTE              alloc
 2   0x00000134     0x14 0x00008134     0x14 -r-x .init             PROGBITS          alloc,execute

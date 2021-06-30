@@ -19,9 +19,11 @@ import sys
 
 
 def execute(cmd):
-    popen = subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True)
-    for stderr_line in iter(popen.stderr.readline, ""):
-        yield stderr_line
+    with subprocess.Popen(
+        cmd, stderr=subprocess.PIPE, universal_newlines=True
+    ) as popen:
+        for stderr_line in iter(popen.stderr.readline, ""):
+            yield stderr_line
 
 
 def main():

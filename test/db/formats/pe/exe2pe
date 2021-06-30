@@ -4,8 +4,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr paddr type name
----------------------
+vaddr paddr type name 
+----------------------
 
 
 0 relocations

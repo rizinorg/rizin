@@ -442,8 +442,7 @@ RZ_API char *rz_table_tosimplestring(RzTable *t) {
 	int maxlen = 0;
 	if (t->showHeader) {
 		rz_list_foreach (t->cols, iter, col) {
-			bool nopad = !iter->n;
-			int ll = __strbuf_append_col_aligned(sb, col, col->name, nopad);
+			int ll = __strbuf_append_col_aligned(sb, col, col->name, false);
 			maxlen = RZ_MAX(maxlen, ll);
 		}
 		int len = rz_str_len_utf8_ansi(rz_strbuf_get(sb));

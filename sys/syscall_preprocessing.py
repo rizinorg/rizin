@@ -8,12 +8,10 @@
 import re
 import sys
 
-inf = open(sys.argv[1])
-outf = open(sys.argv[2], "w")
-for line in inf:
-    if not line.startswith("_") and "=" in line:
-        arr = re.split("=|,", line)
-        print("%s.%s=%s" % (arr[1], arr[2], arr[0]), file=outf)
-    print(line, file=outf, end="")
-inf.close()
-outf.close()
+with open(sys.argv[1]) as inf:
+    with open(sys.argv[2], "w") as outf:
+        for line in inf:
+            if not line.startswith("_") and "=" in line:
+                arr = re.split("=|,", line)
+                print("%s.%s=%s" % (arr[1], arr[2], arr[0]), file=outf)
+            print(line, file=outf, end="")

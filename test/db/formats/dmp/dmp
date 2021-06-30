@@ -10,8 +10,8 @@ NAME=: DMP64 Info
 FILE=bins/dmp/bmp.dmp
 CMDS=iI
 EXPECT=<<EOF
-Name     Value
---------------
+Name     Value              
+----------------------------
 arch     x86
 baddr    0xffffffffffffffff
 binsz    88428600

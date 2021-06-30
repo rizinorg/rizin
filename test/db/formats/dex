@@ -201,8 +201,8 @@ FILE=bins/dex/HelloWorld.dex
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib name
----------------------------------
+nth vaddr      bind type lib name                                                                                
+-----------------------------------------------------------------------------------------------------------------
 0   0x000001b0 NONE FUNC     Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
 1   0x000001b8 NONE FUNC     Ljava/lang/Integer.method.<init>(I)V
 2   0x000001c0 NONE FUNC     Ljava/lang/Integer.method.toString()Ljava/lang/String;
@@ -220,8 +220,8 @@ CMDS=iE
 EXPECT=<<EOF
 [Exports]
 
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name                                     
+----------------------------------------------------------------------------------------
 2   0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
 3   0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
 4   0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V

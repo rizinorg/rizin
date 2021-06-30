@@ -18,8 +18,8 @@ format   dyldcache
 iorw     false
 block    0x100
 type     library-cache
-Name     Value
---------------
+Name     Value       
+---------------------
 arch     arm
 baddr    0x180000000
 binsz    212992
@@ -48,15 +48,15 @@ RELROCS  false
 NX       false
 [Symbols]
 
-nth paddr      vaddr       bind   type size lib name
-----------------------------------------------------
+nth paddr      vaddr       bind   type size lib name          
+--------------------------------------------------------------
 0   0x00004f60 0x180004f60 GLOBAL FUNC 0        _func_in_liba
 1   0x00004f9c 0x180004f9c GLOBAL FUNC 0        _what_is_cool
 0   0x00008fa0 0x180008fa0 GLOBAL FUNC 0        _func_in_libb
 [Sections]
 
-nth paddr       size vaddr        vsize perm name
--------------------------------------------------
+nth paddr       size vaddr        vsize perm name                                      
+---------------------------------------------------------------------------------------
 0   0x00004f60  0x48 0x180004f60   0x48 -r-x lib_liba-1.0.dylib.0.__TEXT.__text
 1   0x00004fa8   0x6 0x180004fa8    0x6 -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring
 2   0x00004fb0  0x50 0x180004fb0   0x50 -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info
@@ -96,8 +96,8 @@ format   dyldcache
 iorw     false
 block    0x100
 type     library-cache
-Name     Value
---------------
+Name     Value       
+---------------------
 arch     arm
 baddr    0x180000000
 binsz    212992
@@ -126,14 +126,14 @@ RELROCS  false
 NX       false
 [Symbols]
 
-nth paddr      vaddr       bind   type size lib name
-----------------------------------------------------
+nth paddr      vaddr       bind   type size lib name          
+--------------------------------------------------------------
 0   0x00004f60 0x180004f60 GLOBAL FUNC 0        _func_in_liba
 1   0x00004f9c 0x180004f9c GLOBAL FUNC 0        _what_is_cool
 [Sections]
 
-nth paddr       size vaddr        vsize perm name
--------------------------------------------------
+nth paddr       size vaddr        vsize perm name                                      
+---------------------------------------------------------------------------------------
 0   0x00004f60  0x48 0x180004f60   0x48 -r-x lib_liba-1.0.dylib.0.__TEXT.__text
 1   0x00004fa8   0x6 0x180004fa8    0x6 -r-x lib_liba-1.0.dylib.1.__TEXT.__cstring
 2   0x00004fb0  0x50 0x180004fb0   0x50 -r-x lib_liba-1.0.dylib.2.__TEXT.__unwind_info
@@ -168,8 +168,8 @@ format   dyldcache
 iorw     false
 block    0x100
 type     library-cache
-Name     Value
---------------
+Name     Value       
+---------------------
 arch     arm
 baddr    0x180000000
 binsz    622592
@@ -335,8 +335,8 @@ format   dyldcache
 iorw     false
 block    0x100
 type     library-cache
-Name     Value
---------------
+Name     Value       
+---------------------
 arch     arm
 baddr    0x180000000
 binsz    688128

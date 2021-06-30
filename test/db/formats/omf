@@ -20,8 +20,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind type size lib name
--------------------------------------------------
+nth paddr      vaddr      bind type size lib name   
+----------------------------------------------------
 1   0x00000073 0x00001000 NONE NONE 0        _start
 EOF
 RUN
@@ -32,8 +32,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
+nth paddr       size vaddr       vsize perm name   
+---------------------------------------------------
 0   0x00000073  0x13 0x00001000   0x13 -rwx text_1
 1   0x00000095   0xe 0x00001013    0xe -rwx data_1
 
@@ -90,8 +90,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind type size lib name
--------------------------------------------------
+nth paddr      vaddr      bind type size lib name   
+----------------------------------------------------
 1   0x00000074 0x00001000 NONE NONE 0        _start
 EOF
 RUN
@@ -102,8 +102,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
+nth paddr       size vaddr       vsize perm name    
+----------------------------------------------------
 0   0x00000074  0x1d 0x00001000   0x1d -rwx .text_1
 1   0x000000a3   0xe 0x0000101d    0xe -rwx .data_1
 
@@ -133,8 +133,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind type size lib name
--------------------------------------------------
+nth paddr      vaddr      bind type size lib name          
+-----------------------------------------------------------
 1   0x00000084 0x00001000 NONE NONE 0        _start
 2   0x00000097 0x00001013 NONE NONE 0        second_symbol
 EOF
@@ -146,8 +146,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind type size lib name
--------------------------------------------------
+nth paddr      vaddr      bind type size lib name   
+----------------------------------------------------
 1   0x00000073 0x00001000 NONE NONE 0        _start
 EOF
 RUN

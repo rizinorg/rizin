@@ -5964,6 +5964,18 @@ static void cmd_analysis_syscall(RzCore *core, const char *input) {
 	}
 }
 
+static void axg_fcn_start_json(PJ *pj, RzAnalysisFunction *fcn, ut64 addr) {
+	char taddr[64];
+	pj_o(pj);
+	pj_k(pj, rz_strf(taddr, "%" PFMT64u, addr));
+	pj_o(pj);
+	pj_ks(pj, "type", "fcn");
+	pj_kn(pj, "fcn_addr", fcn->addr);
+	pj_ks(pj, "name", fcn->name);
+	pj_k(pj, "refs");
+	pj_a(pj);
+}
+
 static void analysis_axg(RzCore *core, const char *input, int level, Sdb *db, int opts, PJ *pj) {
 	char arg[32], pre[128];
 	RzListIter *iter;
@@ -5977,7 +5989,6 @@ static void analysis_axg(RzCore *core, const char *input, int level, Sdb *db, in
 	if (input && *input) {
 		addr = rz_num_math(core->num, input);
 	}
-	// eprintf ("Path between 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", core->offset, addr);
 	int spaces = (level + 1) * 2;
 	if (spaces > sizeof(pre) - 4) {
 		spaces = sizeof(pre) - 4;
@@ -5993,21 +6004,11 @@ static void analysis_axg(RzCore *core, const char *input, int level, Sdb *db, in
 			if (is_rz) {
 				rz_cons_printf("agn 0x%08" PFMT64x " %s\n", fcn->addr, fcn->name);
 			} else if (is_json) {
-				char taddr[64];
-				pj_o(pj);
-				pj_k(pj, sdb_itoa(addr, taddr, 10));
-				pj_o(pj);
-				pj_ks(pj, "type", "fcn");
-				pj_kn(pj, "fcn_addr", fcn->addr);
-				pj_ks(pj, "name", fcn->name);
-				pj_k(pj, "refs");
-				pj_a(pj);
+				axg_fcn_start_json(pj, fcn, addr);
 				open_object = true;
 			} else {
-				//if (sdb_add (db, fcn->name, "1", 0)) {
 				rz_cons_printf("%s0x%08" PFMT64x " fcn 0x%08" PFMT64x " %s\n",
 					pre + 2, addr, fcn->addr, fcn->name);
-				//}
 			}
 		} else {
 			if (is_rz) {
@@ -6021,10 +6022,7 @@ static void analysis_axg(RzCore *core, const char *input, int level, Sdb *db, in
 				pj_a(pj);
 				open_object = true;
 			} else {
-				//snprintf (arg, sizeof (arg), "0x%08"PFMT64x, addr);
-				//if (sdb_add (db, arg, "1", 0)) {
 				rz_cons_printf("%s0x%08" PFMT64x "\n", pre + 2, addr);
-				//}
 			}
 		}
 	}
@@ -6035,44 +6033,18 @@ static void analysis_axg(RzCore *core, const char *input, int level, Sdb *db, in
 				rz_cons_printf("agn 0x%08" PFMT64x " %s\n", fcn->addr, fcn->name);
 				rz_cons_printf("age 0x%08" PFMT64x " 0x%08" PFMT64x "\n", fcn->addr, addr);
 			} else if (is_json) {
-				if (level == 0) {
-					char taddr[64];
-					pj_o(pj);
-					pj_k(pj, sdb_itoa(xref->from, taddr, 10));
-					pj_o(pj);
-					pj_ks(pj, "type", "fcn");
-					pj_kn(pj, "fcn_addr", fcn->addr);
-					pj_ks(pj, "name", fcn->name);
-					pj_k(pj, "refs");
-					pj_a(pj);
-					open_object = true;
-				} else {
-					char taddr[64];
-					pj_end(pj);
-					pj_end(pj);
-					pj_end(pj);
-					pj_o(pj);
-					pj_k(pj, sdb_itoa(xref->from, taddr, 10));
-					pj_o(pj);
-					pj_ks(pj, "type", "fcn");
-					pj_kn(pj, "fcn_addr", fcn->addr);
-					pj_ks(pj, "refs", fcn->name);
-					pj_k(pj, "refs");
-					pj_a(pj);
-				}
+				axg_fcn_start_json(pj, fcn, xref->from);
 			} else {
 				rz_cons_printf("%s0x%08" PFMT64x " fcn 0x%08" PFMT64x " %s\n", pre, xref->from, fcn->addr, fcn->name);
 			}
 			if (sdb_add(db, fcn->name, "1", 0)) {
 				snprintf(arg, sizeof(arg), "0x%08" PFMT64x, fcn->addr);
 				analysis_axg(core, arg, level + 1, db, opts, pj);
-			} else {
-				if (is_json) {
-					pj_end(pj);
-					pj_end(pj);
-					pj_end(pj);
-					open_object = false;
-				}
+			}
+			if (is_json) {
+				pj_end(pj);
+				pj_end(pj);
+				pj_end(pj);
 			}
 		} else {
 			if (is_rz) {
@@ -6086,20 +6058,17 @@ static void analysis_axg(RzCore *core, const char *input, int level, Sdb *db, in
 				pj_ks(pj, "type", "???");
 				pj_k(pj, "refs");
 				pj_a(pj);
-				open_object = true;
 			} else {
 				rz_cons_printf("%s0x%08" PFMT64x " ???\n", pre, xref->from);
 			}
 			snprintf(arg, sizeof(arg), "0x%08" PFMT64x, xref->from);
 			if (sdb_add(db, arg, "1", 0)) {
 				analysis_axg(core, arg, level + 1, db, opts, pj);
-			} else {
-				if (is_json) {
-					pj_end(pj);
-					pj_end(pj);
-					pj_end(pj);
-					open_object = false;
-				}
+			}
+			if (is_json) {
+				pj_end(pj);
+				pj_end(pj);
+				pj_end(pj);
 			}
 		}
 	}
@@ -6108,13 +6077,6 @@ static void analysis_axg(RzCore *core, const char *input, int level, Sdb *db, in
 			pj_end(pj);
 			pj_end(pj);
 			pj_end(pj);
-		}
-		if (level == 0) {
-			if (open_object) {
-				pj_end(pj);
-				pj_end(pj);
-				pj_end(pj);
-			}
 		}
 	}
 	rz_list_free(xrefs);

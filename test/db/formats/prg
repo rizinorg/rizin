@@ -6,8 +6,8 @@ iI
 p8 0x30 @ 0x0801
 EOF
 EXPECT=<<EOF
-Name     Value
---------------
+Name     Value        
+----------------------
 arch     6502
 baddr    0x801
 binsz    38
