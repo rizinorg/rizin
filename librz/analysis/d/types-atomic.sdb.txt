@@ -9,111 +9,139 @@ type.bool.size=8
 char=type
 type.char=c
 type.char.size=8
+type.char.typeclass=Signed Integral
 
 short=type
 type.short=w
 type.short.size=16
+type.short.typeclass=Signed Integral
 
 int=type
 type.int=d
 type.int.size=32
+type.int.typeclass=Signed Integral
 
 long=type
 type.long=x
 type.long.size=64
+type.long.typeclass=Signed Integral
 
 float=type
 type.float=f
 type.float.size=32
+type.float.typeclass=Floating
 
 double=type
 type.double=F
 type.double.size=64
+type.double.typeclass=Floating
 
 unsigned int=type
 type.unsigned int=i
 type.unsigned int.size=32
+type.unsigned int.typeclass=Unsigned Integral
 
 unsigned char=type
 type.unsigned char=b
 type.unsigned char.size=8
+type.unsigned char.typeclass=Unsigned Integral
 
 unsigned short=type
 type.unsigned short=w
 type.unsigned short.size=16
+type.unsigned short.typeclass=Unsigned Integral
 
 unsigned long=type
 type.unsigned long=d
 type.unsigned long.size=32
+type.unsigned long.typeclass=Unsigned Integral
 
 unsigned long long=type
 type.unsigned long long=q
 type.unsigned long long.size=64
+type.unsigned long long.typeclass=Unsigned Integral
 
 long int=type
 type.long int=x
 type.long int.size=64
+type.long int.typeclass=Signed Integral
 
 long double=type
 type.long double=F
 type.long double.size=64
+type.long double.typeclass=Floating
 
 long long=type
 type.long long=q
 type.long long.size=64
+type.long long.typeclass=Signed Integral
 
 long long int=type
 type.long long int=q
 type.long long int.size=64
+type.long long int.typeclass=Signed Integral
 
 char8_t=type
 type.char8_t=c
 type.char8_t.size=8
+type.char8_t.typeclass=Signed Integral
 
 char16_t=type
 type.char16_t=c
 type.char16_t.size=16
+type.char16_t.typeclass=Signed Integral
 
 char32_t=type
 type.char32_t=c
 type.char32_t.size=32
+type.char32_t.typeclass=Signed Integral
 
 uint8_t=type
 type.uint8_t=b
 type.uint8_t.size=8
+type.uint8_t.typeclass=Unsigned Integral
 
 uint16_t=type
 type.uint16_t=w
 type.uint16_t.size=16
+type.uint16_t.typeclass=Unsigned Integral
 
 uint32_t=type
 type.uint32_t=d
 type.uint32_t.size=32
+type.uint32_t.typeclass=Unsigned Integral
 
 uint64_t=type
 type.uint64_t=q
 type.uint64_t.size=64
+type.uint64_t.typeclass=Unsigned Integral
 
 int8_t=type
 type.int8_t=b
 type.int8_t.size=8
+type.int8_t.typeclass=Signed Integral
 
 int16_t=type
 type.int16_t=w
 type.int16_t.size=16
+type.int16_t.typeclass=Signed Integral
 
 int32_t=type
 type.int32_t=d
 type.int32_t.size=32
+type.int32_t.typeclass=Signed Integral
 
 int64_t=type
 type.int64_t=q
 type.int64_t.size=64
+type.int64_t.typeclass=Signed Integral
 
 intmax_t=type
 type.intmax_t=q
 type.intmax_t.size=64
+type.intmax_t.typeclass=Signed Integral
 
 uintmax_t=type
 type.uintmax_t=q
 type.uintmax_t.size=64
+type.uintmax_t.typeclass=Unsigned Integral

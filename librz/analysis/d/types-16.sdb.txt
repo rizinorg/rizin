@@ -9,35 +9,44 @@ type.char *.size=16
 intptr_t=type
 type.intptr_t=w
 type.intptr_t.size=16
+type.intptr_t.typeclass=Signed Integral
 
 uintptr_t=type
 type.uintptr_t=w
 type.uintptr_t.size=16
+type.uintptr_t.typeclass=Unsigned Integral
 
 ptrdiff_t=type
 type.ptrdiff_t=w
 type.ptrdiff_t.size=16
+type.ptrdiff_t.typeclass=Integral
 
 size_t=type
 type.size_t=w
 type.size_t.size=16
+type.size_t.typeclass=Unsigned Integral
 
 ssize_t=type
 type.ssize_t=w
 type.ssize_t.size=16
+type.ssize_t.typeclass=Signed Integral
 
 pid_t=type
 type.pid_t=w
 type.pid_t.size=16
+type.pid_t.typeclass=Integral
 
 uid_t=type
 type.uid_t=w
 type.uid_t.size=16
+type.uid_t.typeclass=Integral
 
 gid_t=type
 type.gid_t=w
 type.gid_t.size=16
+type.gid_t.typeclass=Integral
 
 id_t=type
 type.id_t=w
 type.id_t.size=16
+type.id_t.typeclass=Integral

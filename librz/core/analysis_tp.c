@@ -78,9 +78,9 @@ static void var_rename(RzAnalysis *analysis, RzAnalysisVar *v, const char *name,
 
 static void var_type_set_sign(RzAnalysis *analysis, RzAnalysisVar *var, bool sign) {
 	rz_return_if_fail(analysis && var);
-	// Check if it's number first
-	if (rz_type_atomic_is_num(analysis->typedb, var->type)) {
-		rz_type_atomic_set_sign(analysis->typedb, var->type, sign);
+	// Check if it's integral number first
+	if (rz_type_is_integral(analysis->typedb, var->type)) {
+		rz_type_integral_set_sign(analysis->typedb, &var->type, sign);
 	}
 }
 

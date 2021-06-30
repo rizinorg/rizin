@@ -1473,13 +1473,14 @@ CMDS=<<EOF
 aa
 aaft
 s main
-afv~sign
-afv~uint
+afv~var_34h
+afv~var_30h
+afv~var_28h
 EOF
 EXPECT=<<EOF
-var signed int64_t var_34h @ rbp-0x34
-var signed int64_t var_30h @ rbp-0x30
-var uint32_t var_28h @ rbp-0x28
+var int var_34h @ rbp-0x34
+var int64_t var_30h @ rbp-0x30
+var uint64_t var_28h @ rbp-0x28
 EOF
 RUN
 
@@ -1532,7 +1533,7 @@ var int var_14d4h @ rbp-0x14d4
 var int * wstatus @ rbp-0x14cc
 var int * options @ rbp-0x14c8
 var int64_t var_14c4h @ rbp-0x14c4
-var signed int64_t var_14c0h @ rbp-0x14c0
+var int64_t var_14c0h @ rbp-0x14c0
 var int64_t var_14bch @ rbp-0x14bc
 var pid_t pid @ rbp-0x14b8
 var uint32_t var_14b4h @ rbp-0x14b4

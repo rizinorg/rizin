@@ -48,6 +48,26 @@ typedef struct rz_type_t RzType;
 
 // Base types
 
+typedef ut64 RzTypeAttribute;
+
+typedef enum {
+	// A first group - typeclasses
+	RZ_TYPE_ATTRIBUTE_TYPECLASS_MASK = 0xF, //< to store typeclasses
+	// The rest are reserved
+} RzTypeAttributeMask;
+
+// Typeclasses for atomic types
+typedef enum {
+	RZ_TYPE_TYPECLASS_NONE, //< most generic types
+	RZ_TYPE_TYPECLASS_NUM, //< all numbers
+	RZ_TYPE_TYPECLASS_INTEGRAL, //< all integer numbers
+	RZ_TYPE_TYPECLASS_FLOATING, //< all floating point numbers
+	RZ_TYPE_TYPECLASS_ADDRESS, //< integer types to work with pointers
+	RZ_TYPE_TYPECLASS_INTEGRAL_SIGNED, //< all signed integral types (subclass of Integral)
+	RZ_TYPE_TYPECLASS_INTEGRAL_UNSIGNED, //< all unsigned integral types (subclass of Integral)
+	RZ_TYPE_TYPECLASS_INVALID
+} RzTypeTypeclass;
+
 typedef enum {
 	RZ_BASE_TYPE_KIND_STRUCT,
 	RZ_BASE_TYPE_KIND_UNION,
@@ -92,6 +112,7 @@ typedef struct rz_base_type_t {
 	RzType *type; // Used by typedef, atomic type, enum
 	ut64 size; // size of the whole type in bits
 	RzBaseTypeKind kind;
+	RzTypeAttribute attrs;
 	union {
 		RzBaseTypeStruct struct_data;
 		RzBaseTypeEnum enum_data;
@@ -206,6 +227,25 @@ RZ_API void rz_type_free(RzType *type);
 RZ_API bool rz_type_exists(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API int rz_type_kind(RzTypeDB *typedb, const char *name);
 
+// Type classes
+RZ_API RZ_BORROW const char *rz_type_typeclass_as_string(RzTypeTypeclass typeclass);
+RZ_API RzTypeTypeclass rz_type_typeclass_from_string(RZ_NONNULL const char *typeclass);
+RZ_API RzTypeTypeclass rz_base_type_typeclass(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API RzTypeTypeclass rz_type_typeclass(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API bool rz_base_type_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API bool rz_type_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API bool rz_base_type_is_integral(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API bool rz_type_is_integral(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API bool rz_base_type_is_floating(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API bool rz_type_is_floating(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API bool rz_base_type_is_integral_signed(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API bool rz_type_is_integral_signed(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API bool rz_base_type_is_integral_unsigned(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API bool rz_type_is_integral_unsigned(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
+RZ_API RZ_OWN RzList *rz_type_typeclass_get_all(const RzTypeDB *typedb, RzTypeTypeclass typeclass);
+RZ_API RZ_OWN RzList *rz_type_typeclass_get_all_sized(const RzTypeDB *typedb, RzTypeTypeclass typeclass, size_t size);
+RZ_API RZ_OWN RzBaseType *rz_type_typeclass_get_default_sized(const RzTypeDB *typedb, RzTypeTypeclass typeclass, size_t size);
+
 // Type paths
 RZ_API RZ_OWN RzTypePath *rz_type_path_new(RZ_BORROW RZ_NONNULL RzType *type, RZ_OWN RZ_NONNULL char *path);
 RZ_API void rz_type_path_free(RZ_NULLABLE RzTypePath *tpath);
@@ -250,16 +290,15 @@ RZ_API ut64 rz_type_db_enum_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseTyp
 RZ_API ut64 rz_type_db_struct_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
 RZ_API ut64 rz_type_db_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
 RZ_API ut64 rz_type_db_typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
+RZ_API ut64 rz_type_db_base_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype);
 RZ_API ut64 rz_type_db_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzType *type);
 
 // Various type helpers
 RZ_API bool rz_type_atomic_eq(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ1, RZ_NONNULL const RzType *typ2);
 RZ_API bool rz_type_atomic_str_eq(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ1, RZ_NONNULL const char *name);
 RZ_API bool rz_type_atomic_is_void(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
-RZ_API bool rz_type_atomic_is_signed(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_atomic_is_const(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
-RZ_API bool rz_type_atomic_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
-RZ_API bool rz_type_atomic_set_sign(RzTypeDB *typedb, RzType *type, bool sign);
+RZ_API bool rz_type_integral_set_sign(const RzTypeDB *typedb, RZ_NONNULL RzType **type, bool sign);
 
 RZ_API bool rz_type_is_void_ptr(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_char_ptr(RZ_NONNULL const RzType *type);

@@ -235,24 +235,6 @@ RZ_API bool rz_type_atomic_is_void(const RzTypeDB *typedb, RZ_NONNULL const RzTy
 }
 
 /**
- * \brief Checks if the RzType is signed
- *
- * \param typedb Type Database instance
- * \param type RzType type pointer
- */
-RZ_API bool rz_type_atomic_is_signed(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
-	rz_return_val_if_fail(type, false);
-	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
-		return false;
-	}
-	RzType *t = rz_type_identifier_of_base_type_str(typedb, type->identifier.name);
-	if (!t) {
-		return false;
-	}
-	return false;
-}
-
-/**
  * \brief Checks if the atomic RzType is "const"
  *
  * \param typedb Type Database instance
@@ -264,24 +246,6 @@ RZ_API bool rz_type_atomic_is_const(const RzTypeDB *typedb, RZ_NONNULL const RzT
 		return false;
 	}
 	return type->identifier.is_const;
-}
-
-/**
- * \brief Checks if the atomic RzType is number
- *
- * \param typedb Type Database instance
- * \param type RzType type pointer
- */
-RZ_API bool rz_type_atomic_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
-	rz_return_val_if_fail(type, false);
-	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
-		return false;
-	}
-	RzType *t = rz_type_identifier_of_base_type_str(typedb, type->identifier.name);
-	if (!t) {
-		return false;
-	}
-	return false;
 }
 
 /**
@@ -403,10 +367,37 @@ RZ_API RZ_OWN RzType *rz_type_new_default(const RzTypeDB *typedb) {
  * \param typedb Type Database instance
  * \param type RzType type pointer
  */
-RZ_API bool rz_type_atomic_set_sign(RzTypeDB *typedb, RzType *type, bool sign) {
-	rz_return_val_if_fail(type, false);
-	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
+RZ_API bool rz_type_integral_set_sign(const RzTypeDB *typedb, RZ_NONNULL RzType **type, bool sign) {
+	rz_return_val_if_fail(type && *type, false);
+	RzType *t = *type;
+	if (t->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return false;
+	}
+	if (rz_type_is_integral(typedb, t)) {
+		const char *identifier = rz_type_identifier(t);
+		if (!identifier) {
+			return false;
+		}
+		RzBaseType *btype = rz_type_db_get_base_type(typedb, identifier);
+		if (!btype) {
+			return false;
+		}
+		RzTypeTypeclass typesubclass = sign ? RZ_TYPE_TYPECLASS_INTEGRAL_SIGNED : RZ_TYPE_TYPECLASS_INTEGRAL_UNSIGNED;
+		// We only change typesubclass if it's different from the current one
+		if (rz_base_type_typeclass(typedb, btype) == typesubclass) {
+			return true;
+		}
+		size_t typesize = rz_type_db_base_get_bitsize(typedb, btype);
+		RzBaseType *signedbtype = rz_type_typeclass_get_default_sized(typedb, typesubclass, typesize);
+		if (!signedbtype) {
+			return false;
+		}
+		RzType *signedtype = rz_type_identifier_of_base_type(typedb, signedbtype, false);
+		if (!signedtype) {
+			return false;
+		}
+		rz_type_free(t);
+		*type = signedtype;
 	}
 	return false;
 }
