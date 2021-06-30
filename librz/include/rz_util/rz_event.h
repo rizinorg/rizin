@@ -16,6 +16,7 @@ typedef struct rz_event_t {
 	bool incall;
 	HtUP *callbacks;
 	RzVector all_callbacks;
+	RzVector /*<RzEventCallbackHandle>*/ pending_unhook; ///< while inside of a call and a handle is unhooked, the unhook is deferred and saved here
 	int next_handle;
 } RzEvent;
 
