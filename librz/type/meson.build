@@ -7,6 +7,7 @@ rz_type_sources = [
   'serialize_functions.c',
   'serialize_types.c',
   'type.c',
+  'typeclass.c',
   'parser/c_cpp_parser.c',
   'parser/types_parser.c',
   'parser/types_storage.c',

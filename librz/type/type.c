@@ -695,10 +695,34 @@ RZ_API ut64 rz_type_db_typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBase
 }
 
 /**
- * \brief Returns the type size in bits (target dependent)
+ * \brief Returns the base type size in bits (target dependent)
  *
  * \param typedb Types Database instance
  * \param btype The base type
+ */
+RZ_API ut64 rz_type_db_base_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
+	rz_return_val_if_fail(typedb && btype, 0);
+	if (btype->kind == RZ_BASE_TYPE_KIND_ENUM) {
+		return rz_type_db_enum_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT) {
+		return rz_type_db_struct_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_UNION) {
+		return rz_type_db_union_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_ATOMIC) {
+		return rz_type_db_atomic_bitsize(typedb, btype);
+	} else if (btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF) {
+		return rz_type_db_typedef_bitsize(typedb, btype);
+	}
+	// Should not happen
+	rz_warn_if_reached();
+	return 0;
+}
+
+/**
+ * \brief Returns the type size in bits (target dependent)
+ *
+ * \param typedb Types Database instance
+ * \param type The type
  */
 RZ_API ut64 rz_type_db_get_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(typedb && type, 0);
