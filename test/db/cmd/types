@@ -1049,15 +1049,16 @@ aa
 td "union Books {char  title[50];char  author[50]; char  subject[100];};"
 tu Books
 s main
-tl "union Books" 0x00177f88
+afvt var_70h "union Books"
+afvn books var_70h
 afv~Books
 s 0x000006d2
 pd 1
 EOF
 EXPECT=<<EOF
 pf [50]c[50]c[100]c title author subject
-var union Books @ rbp-0x70
-|           0x000006d2      488d4590       lea   rax, [Books]
+var union Books books @ rbp-0x70
+|           0x000006d2      488d4590       lea   rax, [books]
 EOF
 RUN
 
