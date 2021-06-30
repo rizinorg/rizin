@@ -68,8 +68,57 @@ bool test_rz_event(void) {
 	mu_end;
 }
 
+static void callback_inc(RzEvent *ev, int type, void *user, void *data) {
+	(*(int *)user)++;
+}
+
+typedef struct {
+	RzEventCallbackHandle handle;
+	int counter;
+} SelfUnhookCtx;
+
+static void callback_inc_self_unhook(RzEvent *ev, int type, void *user, void *data) {
+	SelfUnhookCtx *ctx = user;
+	ctx->counter++;
+	rz_event_unhook(ev, ctx->handle);
+}
+
+bool test_rz_event_self_unhook(int hook_type, int send_type) {
+	// hook some counter-increasing callbacks and one in between that unhooks itself
+	int counters[4] = { 0 };
+	SelfUnhookCtx ctx = { 0 };
+	RzEvent *ev = rz_event_new(NULL);
+	rz_event_hook(ev, hook_type, callback_inc, &counters[0]);
+	rz_event_hook(ev, hook_type, callback_inc, &counters[1]);
+	ctx.handle = rz_event_hook(ev, hook_type, callback_inc_self_unhook, &ctx);
+	rz_event_hook(ev, hook_type, callback_inc, &counters[2]);
+	rz_event_hook(ev, hook_type, callback_inc, &counters[3]);
+
+	rz_event_send(ev, send_type, NULL);
+	// after the first event, all callbacks should have been triggered once
+	mu_assert_eq(counters[0], 1, "persistently hooked counter 0");
+	mu_assert_eq(counters[1], 1, "persistently hooked counter 1");
+	mu_assert_eq(counters[2], 1, "persistently hooked counter 2");
+	mu_assert_eq(counters[3], 1, "persistently hooked counter 3");
+	mu_assert_eq(ctx.counter, 1, "now unhooked counter increased on first event");
+
+	// at this point the self-unhooking should be unhooked already
+	// but the others should still be there.
+	rz_event_send(ev, send_type, NULL);
+	mu_assert_eq(counters[0], 2, "persistently hooked counter 0");
+	mu_assert_eq(counters[1], 2, "persistently hooked counter 1");
+	mu_assert_eq(counters[2], 2, "persistently hooked counter 2");
+	mu_assert_eq(counters[3], 2, "persistently hooked counter 3");
+	mu_assert_eq(ctx.counter, 1, "unhooked counter is unhooked");
+
+	rz_event_free(ev);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_event);
+	mu_run_test(test_rz_event_self_unhook, RZ_EVENT_ALL, RZ_EVENT_META_SET);
+	mu_run_test(test_rz_event_self_unhook, RZ_EVENT_META_SET, RZ_EVENT_META_SET);
 	return tests_passed != tests_run;
 }
 
