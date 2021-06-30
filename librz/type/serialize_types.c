@@ -12,6 +12,16 @@ typedef struct {
 	char *format;
 } TypeFormatPair;
 
+inline static RzTypeTypeclass get_base_type_typeclass(RZ_NONNULL const RzBaseType *type) {
+	rz_return_val_if_fail(type, RZ_TYPE_TYPECLASS_INVALID);
+	return type->attrs & RZ_TYPE_ATTRIBUTE_TYPECLASS_MASK;
+}
+
+inline static void set_base_type_typeclass(RZ_NONNULL RzBaseType *type, RzTypeTypeclass typeclass) {
+	rz_return_if_fail(type && typeclass < RZ_TYPE_TYPECLASS_INVALID);
+	type->attrs = typeclass;
+}
+
 static char *get_type_data(Sdb *sdb, const char *type, const char *sname) {
 	rz_return_val_if_fail(sdb && RZ_STR_ISNOTEMPTY(type) && RZ_STR_ISNOTEMPTY(sname), NULL);
 	char *key = rz_str_newf("%s.%s", type, sname);
@@ -284,6 +294,12 @@ static TypeFormatPair *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 	RzStrBuf key;
 	base_type->name = strdup(sname);
 	base_type->size = sdb_num_get(sdb, rz_strbuf_initf(&key, "type.%s.size", sname), 0);
+	RzTypeTypeclass typeclass = RZ_TYPE_TYPECLASS_NONE;
+	const char *tclass = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s.typeclass", sname), 0);
+	if (tclass) {
+		typeclass = rz_type_typeclass_from_string(tclass);
+	}
+	set_base_type_typeclass(base_type, typeclass);
 	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
 	rz_strbuf_fini(&key);
 
@@ -489,6 +505,7 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 		char=type
 		type.char=c
 		type.char.size=8
+		type.char.typeclass=Signed Integral
 	*/
 	char *sname = type->name;
 	sdb_set(sdb, sname, "type", 0);
@@ -501,6 +518,9 @@ static void save_atomic_type(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType 
 	sdb_set(sdb,
 		rz_strbuf_setf(&key, "type.%s.size", sname),
 		rz_strbuf_setf(&val, "%" PFMT64u "", type->size), 0);
+	sdb_set(sdb,
+		rz_strbuf_setf(&key, "type.%s.typeclass", sname),
+		rz_type_typeclass_as_string(get_base_type_typeclass(type)), 0);
 
 	const char *typefmt = rz_type_format(typedb, sname);
 	sdb_set(sdb,
