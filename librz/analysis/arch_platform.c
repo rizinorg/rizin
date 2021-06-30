@@ -52,6 +52,7 @@ RZ_API void rz_arch_platform_item_free(RzArchPlatformItem *item) {
 	}
 	free(item->name);
 	free(item->comment);
+	free(item);
 }
 
 static bool sdb_load_platform_profile(RzArchPlatformTarget *t, Sdb *sdb) {
@@ -61,22 +62,22 @@ static bool sdb_load_platform_profile(RzArchPlatformTarget *t, Sdb *sdb) {
 	SdbList *l = sdb_foreach_list(sdb, false);
 	char *argument_key, *comment, *name;
 	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "name"))  {
+		if (!strcmp(sdbkv_value(kv), "name")) {
 			name = sdbkv_key(kv);
 
 			RzArchPlatformItem *item = rz_arch_platform_item_new(name);
-			
+
 			argument_key = rz_str_newf("%s.address", item->name);
 			if (!argument_key) {
-				rz_arch_platform_item_free(item);				
+				rz_arch_platform_item_free(item);
 				return NULL;
-			} 
+			}
 			ut64 address = sdb_num_get(sdb, argument_key, NULL);
 			if (!address) {
 				rz_arch_platform_item_free(item);
 				return NULL;
 			}
-			
+
 			argument_key = rz_str_newf("%s.comment", item->name);
 			comment = sdb_get(sdb, argument_key, NULL);
 			if (comment) {
@@ -86,10 +87,16 @@ static bool sdb_load_platform_profile(RzArchPlatformTarget *t, Sdb *sdb) {
 		}
 	}
 	return true;
-}	
+}
 
-static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, const char *path) {
+static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
+	if (!path) {
+		return false;
+	}
 	Sdb *db = sdb_new(0, path, 0);
+	if (!db) {
+		return false;
+	}
 	bool result = sdb_load_platform_profile(t, db);
 	sdb_close(db);
 	sdb_free(db);
@@ -102,7 +109,10 @@ static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, c
  * \param t reference to RzArchPlatformTarget
  * \param path reference to path of the SDB file
  */
-RZ_API bool rz_arch_load_platform_sdb(RzArchPlatformTarget *t, const char *path) {
+RZ_API bool rz_arch_load_platform_sdb(RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
+	if (!path) {
+		return false;
+	}
 	if (!rz_file_exists(path)) {
 		return false;
 	}
@@ -118,6 +128,7 @@ RZ_API bool rz_arch_load_platform_sdb(RzArchPlatformTarget *t, const char *path)
  * \param dir_prefix reference to the directory prefix or the value of dir.prefix
  */
 RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, const char *arch, const char *cpu, const char *platform, const char *dir_prefix) {
+	rz_return_val_if_fail(arch && cpu && platform && dir_prefix, NULL);
 	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/platforms", "%s-%s-%s.sdb"),
 		dir_prefix, arch, cpu, platform);
 	if (!path) {

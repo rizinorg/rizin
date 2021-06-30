@@ -792,6 +792,9 @@ static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
 static bool cb_asmplatform(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
+	if (!core) {
+		return false;
+	}
 	if (*node->value == '?') {
 		update_asmplatforms_options(core, node);
 		print_node_options(node);

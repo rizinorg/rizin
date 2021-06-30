@@ -6480,6 +6480,9 @@ RZ_API void rz_arch_profile_add_flag_every_io(RzArchProfile *profile, RzFlag *fl
 }
 
 static bool add_arch_platform_flag_comment_cb(void *user, const ut64 addr, const void *v) {
+	if (!v) {
+		return false;
+	}
 	RzArchPlatformItem *item = (RzArchPlatformItem *)v;
 	RzCore *core = (RzCore *)user;
 	rz_flag_space_push(core->flags, RZ_FLAGS_FS_PLATFORM_PORTS);
