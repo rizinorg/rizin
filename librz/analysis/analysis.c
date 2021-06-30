@@ -231,7 +231,7 @@ RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis) {
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis) {
 	bool ret = false;
 	if (analysis && analysis->cur && analysis->cur->set_reg_profile) {
-		ret = analysis->cur->set_reg_profile(analysis);
+		//ret = analysis->cur->set_reg_profile(analysis);
 	} else {
 		char *p = rz_analysis_get_reg_profile(analysis);
 		if (p && *p) {
@@ -285,7 +285,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 		if (analysis->bits != bits) {
 			analysis->bits = bits;
 			rz_type_db_set_bits(analysis->typedb, bits);
-			rz_analysis_set_reg_profile(analysis);
+			//rz_analysis_set_reg_profile(analysis);
 		}
 		return true;
 	}

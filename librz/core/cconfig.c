@@ -691,8 +691,8 @@ static bool cb_asmbits(void *user, void *data) {
 #endif
 #endif
 				char *rp = core->dbg->cur->reg_profile(core->dbg);
-				rz_reg_set_profile_string(core->dbg->reg, rp);
-				rz_reg_set_profile_string(core->analysis->reg, rp);
+				//rz_reg_set_profile_string(core->dbg->reg, rp);
+				//rz_reg_set_profile_string(core->analysis->reg, rp);
 				free(rp);
 			}
 		} else {

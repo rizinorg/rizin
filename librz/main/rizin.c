@@ -1382,7 +1382,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		debug = rz_config_get_i(r->config, "cfg.debug");
 		if (ret != -1 && rz_cons_is_interactive()) {
 			char *question;
-			bool no_question_debug = ret & 1;
+			bool no_question_debug = true; //ret & 1;
 			bool no_question_save = (ret & 2) >> 1;
 			bool y_kill_debug = (ret & 4) >> 2;
 			bool y_save_project = (ret & 8) >> 3;
