@@ -1401,6 +1401,12 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	bin->bk = bk;
 	bin->bin_num = bin_num;
 	bin->type = GH(rz_bin_num_to_type)(bin_num);
+
+	// small bins hold chunks of a fixed size
+	if (!strcmp(bin->type, "Small")) {
+		bin->size = 4 * SZ + (bin_num - 1) * 2 * SZ;
+	}
+
 	bin->chunks = rz_list_newf(free);
 	GH(RzHeapChunk) *head = RZ_NEW0(GH(RzHeapChunk));
 	if (!head) {
@@ -1484,10 +1490,15 @@ static int GH(print_bin_content)(RzCore *core, MallocState *main_arena, int bin_
 		PRINTF_YA("0x%" PFMT64x, bin->bk);
 		rz_cons_printf(", base=");
 		PRINTF_YA("0x%" PFMT64x, bin->addr);
+		if (!strcmp(bin->type, "Small")) {
+			rz_cons_printf(", size=");
+			PRINTF_BA("0x%" PFMT64x, bin->size);
+		}
 		rz_cons_newline();
 	} else {
 		pj_kn(pj, "fd", bin->fd);
 		pj_kn(pj, "bk", bin->bk);
+		pj_kn(pj, "base", bin->addr);
 		pj_ka(pj, "chunks");
 	}
 	rz_list_foreach (chunks, iter, pos) {
