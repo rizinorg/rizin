@@ -90,6 +90,7 @@ static bool sdb_load_platform_profile(RzArchPlatformTarget *t, Sdb *sdb) {
 }
 
 static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(t && path, NULL);
 	if (!path) {
 		return false;
 	}
@@ -110,6 +111,7 @@ static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, R
  * \param path reference to path of the SDB file
  */
 RZ_API bool rz_arch_load_platform_sdb(RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
+	rz_return_val_if_fail(t && path, NULL);
 	if (!path) {
 		return false;
 	}
@@ -127,7 +129,9 @@ RZ_API bool rz_arch_load_platform_sdb(RzArchPlatformTarget *t, RZ_NONNULL const 
  * \param platform reference to the selected platform (value of `asm.platform`)
  * \param dir_prefix reference to the directory prefix or the value of dir.prefix
  */
-RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, const char *arch, const char *cpu, const char *platform, const char *dir_prefix) {
+RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
+	RZ_NONNULL const char *platform, RZ_NONNULL const char *dir_prefix) {
+
 	rz_return_val_if_fail(arch && cpu && platform && dir_prefix, NULL);
 	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/platforms", "%s-%s-%s.sdb"),
 		dir_prefix, arch, cpu, platform);

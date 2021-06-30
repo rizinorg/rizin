@@ -54,7 +54,8 @@ RZ_API RZ_OWN RzArchPlatformTarget *rz_arch_platform_target_new();
 RZ_API void rz_arch_platform_target_free(RzArchPlatformTarget *target);
 RZ_API void rz_arch_platform_item_free(RzArchPlatformItem *item);
 RZ_API bool rz_arch_load_platform_sdb(RzArchPlatformTarget *t, RZ_NONNULL const char *path);
-RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, const char *arch, const char *cpu, const char *platform, const char *dir_prefix);
+RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
+	RZ_NONNULL const char *platform, RZ_NONNULL const char *dir_prefix);
 
 #ifdef __cplusplus
 }
