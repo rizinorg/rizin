@@ -1389,11 +1389,11 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg (const char *arg1, uint32_t arg2);
+sym.funcarg (const char *arg1, uint64_t arg2);
 ; var uint32_t var_ch @ rbp-0xc
 ; var const char *var_8h @ rbp-0x8
 ; arg const char *arg1 @ rdi
-; arg uint32_t arg2 @ rsi
+; arg uint64_t arg2 @ rsi
 0x0000068a      55             push  rbp
 EOF
 RUN
@@ -1410,10 +1410,10 @@ s sym.funcarg
 pd 1
 EOF
 EXPECT=<<EOF
-sym.funcarg (const char *arg_8h, uint32_t arg_ch);
+sym.funcarg (const char *arg_8h, unsigned long arg_ch);
 ; var int32_t var_4h @ ebp-0x4
 ; arg const char *arg_8h @ ebp+0x8
-; arg uint32_t arg_ch @ ebp+0xc
+; arg unsigned long arg_ch @ ebp+0xc
 0x0000054d      55             push  ebp
 EOF
 RUN
@@ -1543,7 +1543,7 @@ var const char * var_14a8h @ rbp-0x14a8
 var const char * s @ rbp-0x14a0
 var char * var_1498h @ rbp-0x1498
 var char * src @ rbp-0x1490
-var char * v2 @ rbp-0x1488
+var unsigned long v2 @ rbp-0x1488
 var const char * var_1480h @ rbp-0x1480
 var void * var_1478h @ rbp-0x1478
 var char * dest @ rbp-0x1470
@@ -1553,9 +1553,9 @@ var int64_t var_18h @ rbp-0x18
 arg char ** argv @ rsi
 arg int argc @ rdi
 var char * str @ rbp-0xb0
-var signed int var_a4h @ rbp-0xa4
-var signed int64_t var_a0h @ rbp-0xa0
-var uint32_t var_9ch @ rbp-0x9c
+var int64_t var_a4h @ rbp-0xa4
+var int64_t var_a0h @ rbp-0xa0
+var uint64_t var_9ch @ rbp-0x9c
 var int var_98h @ rbp-0x98
 var int var_94h @ rbp-0x94
 var int var_90h @ rbp-0x90
@@ -1606,7 +1606,7 @@ var int32_t var_38h @ fp-0x40
 var int32_t var_34h @ fp-0x3c
 var int32_t var_30h @ fp-0x38
 var pid_t pid @ fp-0x34
-var char * v2 @ fp-0x30
+var unsigned long v2 @ fp-0x30
 var int32_t var_24h @ fp-0x2c
 var const char * src @ fp-0x28
 var int32_t var_1ch @ fp-0x24
@@ -1615,7 +1615,7 @@ var const char * s @ fp-0x1c
 var const char * var_10h @ fp-0x18
 var int32_t var_ch @ fp-0x14
 var int32_t var_8h @ fp-0x10
-var char * option @ fp-0xc
+var int option @ fp-0xc
 arg int argc @ r0
 arg char ** argv @ r1
 EOF
@@ -1634,7 +1634,7 @@ var int64_t var_25h @ rbp-0x25
 var int64_t var_24h @ rbp-0x24
 var unsigned int var_20h @ rbp-0x20
 var int64_t var_1ch @ rbp-0x1c
-var const char * var_18h @ rbp-0x18
+var uint64_t var_18h @ rbp-0x18
 var long int var_10h @ rbp-0x10
 var const char * var_8h @ rbp-0x8
 EOF
