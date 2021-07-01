@@ -55,7 +55,7 @@ RZ_API void rz_arch_platform_item_free(RzArchPlatformItem *item) {
 	free(item);
 }
 
-static bool sdb_load_platform_profile(RzArchPlatformTarget *t, Sdb *sdb) {
+static bool sdb_load_platform_profile(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL Sdb *sdb) {
 	rz_return_val_if_fail(t && sdb, NULL);
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -110,7 +110,7 @@ static bool sdb_load_arch_platform_by_path(RZ_NONNULL RzArchPlatformTarget *t, R
  * \param t reference to RzArchPlatformTarget
  * \param path reference to path of the SDB file
  */
-RZ_API bool rz_arch_load_platform_sdb(RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
+RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NONNULL const char *path) {
 	rz_return_val_if_fail(t && path, NULL);
 	if (!path) {
 		return false;
