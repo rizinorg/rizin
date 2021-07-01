@@ -130,9 +130,12 @@ RZ_API bool rz_arch_load_platform_sdb(RZ_NONNULL RzArchPlatformTarget *t, RZ_NON
  * \param dir_prefix reference to the directory prefix or the value of dir.prefix
  */
 RZ_API bool rz_arch_platform_init(RzArchPlatformTarget *t, RZ_NONNULL const char *arch, RZ_NONNULL const char *cpu,
-	RZ_NONNULL const char *platform, RZ_NONNULL const char *dir_prefix) {
+	const char *platform, RZ_NONNULL const char *dir_prefix) {
 
-	rz_return_val_if_fail(arch && cpu && platform && dir_prefix, NULL);
+	if (!platform) {
+		return false;
+	}
+	rz_return_val_if_fail(arch && cpu && dir_prefix, NULL);
 	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/platforms", "%s-%s-%s.sdb"),
 		dir_prefix, arch, cpu, platform);
 	if (!path) {

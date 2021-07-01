@@ -19,6 +19,7 @@ EXPECT=<<EOF
     0 * classes
   110 * functions
    38 * imports
+    0 * platform.ports
     0 * registers
     0 * registers.extended
     0 * registers.mmio
@@ -61,6 +62,7 @@ EXPECT=<<EOF
     0 * classes
    85 * functions
    38 * imports
+    0 * platform.ports
     0 * registers
     0 * registers.extended
     0 * registers.mmio
