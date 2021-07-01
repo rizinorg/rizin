@@ -5,7 +5,7 @@ aap
 aflc
 EOF
 EXPECT=<<EOF
-440
+445
 EOF
 RUN
 
@@ -650,7 +650,7 @@ aac
 afl~?
 EOF
 EXPECT=<<EOF
-1268
+1270
 EOF
 RUN
 

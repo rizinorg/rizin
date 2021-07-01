@@ -887,6 +887,13 @@ typedef struct rz_analysis_bb_t {
 #undef RzAnalysisBlock
 } RzAnalysisBlock;
 
+typedef struct rz_analysis_task_item {
+	RzAnalysisFunction *fcn; // current function
+	RzAnalysisBlock *block; // block being analyzed
+	st64 stack; // stack pointer value for variable analysis
+	ut64 start_address; // if block = NULL, creates block at address, else continues analysis from here
+} RzAnalysisTaskItem;
+
 typedef enum {
 	RZ_ANALYSIS_REF_TYPE_NULL = 0,
 	RZ_ANALYSIS_REF_TYPE_CODE = 'c', // code ref
@@ -1426,7 +1433,6 @@ RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int boolean);
 RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
 RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr);
 RZ_API const char *rz_analysis_fcntype_tostring(int type);
-RZ_API int rz_analysis_fcn_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, int depth);
 RZ_API void rz_analysis_bind(RzAnalysis *b, RzAnalysisBind *bnd);
 RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, const char *os, const char *arch, int bits);
 RZ_API void rz_analysis_add_import(RzAnalysis *analysis, const char *imp);
@@ -1519,6 +1525,9 @@ RZ_API void rz_analysis_fcn_invalidate_read_ahead_cache(void);
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, int size);
 RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn);
+
+RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address);
+RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector *tasks);
 
 #define RZ_ANALYSIS_FCN_VARKIND_LOCAL 'v'
 

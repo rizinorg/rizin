@@ -52,7 +52,7 @@ RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, Rz
 
 static inline void analyze_new_case(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 ip, ut64 jmpptr, int depth) {
 	const ut64 block_size = block->size;
-	(void)rz_analysis_fcn_bb(analysis, fcn, jmpptr, depth - 1);
+	(void)rz_analysis_task_new_local(analysis, fcn, NULL, jmpptr, depth - 1);
 	if (block->size != block_size) {
 		// block was be split during analysis and does not contain the
 		// jmp instruction anymore, so we need to search for it and get it again

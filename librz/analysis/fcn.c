@@ -521,12 +521,31 @@ static inline bool does_arch_destroys_dst(const char *arch) {
 	return arch && (!strncmp(arch, "arm", 3) || !strcmp(arch, "riscv") || !strcmp(arch, "ppc"));
 }
 
-static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, ut64 len, int depth) {
+static int analyze_function_locally(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 address) {
+	rz_return_val_if_fail(analysis && fcn, RZ_ANALYSIS_RET_ERROR);
+	RzVector tasks;
+	rz_vector_init(&tasks, sizeof(RzAnalysisTaskItem), NULL, NULL);
+	RzAnalysisTaskItem item = { fcn, NULL, fcn->stack, address };
+	rz_vector_push(&tasks, &item);
+	int saved_stack = fcn->stack; // TODO: DO NOT use fcn->stack to keep track of stack during analysis
+	int ret = rz_analysis_run_tasks(&tasks);
+	rz_vector_fini(&tasks);
+	fcn->stack = saved_stack;
+	return ret;
+}
+
+static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
+	rz_return_val_if_fail(item && tasks, RZ_ANALYSIS_RET_ERROR);
+	RzAnalysis *analysis = item->fcn->analysis;
+	RzAnalysisFunction *fcn = item->fcn;
+	fcn->stack = item->stack;
+	ut64 addr = item->start_address;
+	ut64 len = analysis->opt.bb_max_size;
 	const int continue_after_jump = analysis->opt.afterjmp;
 	const int addrbytes = analysis->iob.io ? analysis->iob.io->addrbytes : 1;
 	char *last_reg_mov_lea_name = NULL;
 	char *movbasereg = NULL;
-	RzAnalysisBlock *bb = NULL;
+	RzAnalysisBlock *bb = item->block;
 	RzAnalysisBlock *bbg = NULL;
 	int ret = RZ_ANALYSIS_RET_END, skip_ret = 0;
 	bool overlapped = false;
@@ -558,17 +577,11 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 	bool has_variadic_reg = !!variadic_reg;
 
 	if (rz_cons_is_breaked()) {
+		rz_analysis_task_item_new(analysis, tasks, fcn, bb, addr);
 		return RZ_ANALYSIS_RET_END;
 	}
 	if (analysis->sleep) {
 		rz_sys_usleep(analysis->sleep);
-	}
-
-	if (depth < 1) {
-		if (analysis->verbose) {
-			eprintf("Analysis went too deep at address 0x%" PFMT64x ".\n", addr);
-		}
-		return RZ_ANALYSIS_RET_ERROR; // MUST BE TOO DEEP
 	}
 
 	// check if address is readable //:
@@ -586,31 +599,33 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 		return RZ_ANALYSIS_RET_ERROR; // MUST BE NOT FOUND
 	}
 
-	RzAnalysisBlock *existing_bb = bbget(analysis, addr, analysis->opt.jmpmid && is_x86);
-	if (existing_bb) {
-		bool existing_in_fcn = rz_list_contains(existing_bb->fcns, fcn);
-		existing_bb = rz_analysis_block_split(existing_bb, addr);
-		if (!existing_in_fcn && existing_bb) {
-			if (existing_bb->addr == fcn->addr) {
-				// our function starts directly there, so we steal what is ours!
-				fcn_takeover_block_recursive(fcn, existing_bb);
-			}
-		}
+	if (!bb) {
+		RzAnalysisBlock *existing_bb = bbget(analysis, addr, analysis->opt.jmpmid && is_x86);
 		if (existing_bb) {
-			rz_analysis_block_unref(existing_bb);
+			bool existing_in_fcn = rz_list_contains(existing_bb->fcns, fcn);
+			existing_bb = rz_analysis_block_split(existing_bb, addr);
+			if (!existing_in_fcn && existing_bb) {
+				if (existing_bb->addr == fcn->addr) {
+					// our function starts directly there, so we steal what is ours!
+					fcn_takeover_block_recursive(fcn, existing_bb);
+				}
+			}
+			if (existing_bb) {
+				rz_analysis_block_unref(existing_bb);
+			}
+			if (analysis->opt.recont) {
+				return RZ_ANALYSIS_RET_END;
+			}
+			if (analysis->verbose) {
+				eprintf("rz_analysis_fcn_bb() fails at 0x%" PFMT64x ".\n", addr);
+			}
+			return RZ_ANALYSIS_RET_ERROR; // MUST BE NOT DUP
 		}
-		if (analysis->opt.recont) {
-			return RZ_ANALYSIS_RET_END;
-		}
-		if (analysis->verbose) {
-			eprintf("rz_analysis_fcn_bb() fails at 0x%" PFMT64x ".\n", addr);
-		}
-		return RZ_ANALYSIS_RET_ERROR; // MUST BE NOT DUP
-	}
 
-	bb = fcn_append_basic_block(analysis, fcn, addr);
-	// we checked before whether there is a bb at addr, so the create should have succeeded
-	rz_return_val_if_fail(bb, RZ_ANALYSIS_RET_ERROR);
+		item->block = bb = fcn_append_basic_block(analysis, fcn, addr);
+		// we checked before whether there is a bb at addr, so the create should have succeeded
+		rz_return_val_if_fail(bb, RZ_ANALYSIS_RET_ERROR);
+	}
 
 	if (!analysis->leaddrs) {
 		analysis->leaddrs = rz_list_newf(free_leaddr_pair);
@@ -662,6 +677,8 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 	}
 
 	while (addrbytes * idx < maxlen) {
+		ut32 at_delta;
+		ut64 at;
 		if (!last_is_reg_mov_lea) {
 			free(last_reg_mov_lea_name);
 			last_reg_mov_lea_name = NULL;
@@ -670,11 +687,12 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 			break;
 		}
 	repeat:
+		at_delta = addrbytes * idx;
+		at = addr + at_delta;
 		if (rz_cons_is_breaked()) {
+			rz_analysis_task_item_new(analysis, tasks, fcn, bb, at);
 			break;
 		}
-		ut32 at_delta = addrbytes * idx;
-		ut64 at = addr + at_delta;
 		ut64 bytes_read = RZ_MIN(len - at_delta, sizeof(buf));
 		ret = read_ahead(analysis, at, buf, bytes_read);
 
@@ -764,7 +782,7 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 					bb->jump = at + oplen;
 					if (from_addr != bb->addr) {
 						bb->fail = handle_addr;
-						ret = rz_analysis_fcn_bb(analysis, fcn, handle_addr, depth);
+						ret = analyze_function_locally(analysis, fcn, handle_addr);
 						eprintf("(%s) 0x%08" PFMT64x "\n", handle, handle_addr);
 						if (bb->size == 0) {
 							rz_analysis_function_remove_block(fcn, bb);
@@ -1028,7 +1046,7 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 				bb->jump = op.jump;
 				bb->fail = UT64_MAX;
 			}
-			ret = rz_analysis_fcn_bb(analysis, fcn, op.jump, depth);
+			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
 			int tc = analysis->opt.tailcall;
 			if (tc) {
 				// eprintf ("TAIL CALL AT 0x%llx\n", op.addr);
@@ -1037,11 +1055,11 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 					ut8 buf[32];
 					(void)analysis->iob.read_at(analysis->iob.io, op.jump, (ut8 *)buf, sizeof(buf));
 					if (rz_analysis_is_prelude(analysis, buf, sizeof(buf))) {
-						fcn_recurse(analysis, fcn, op.jump, analysis->opt.bb_max_size, depth - 1);
+						rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
 					}
 				} else if (RZ_ABS(diff) > tc) {
 					(void)rz_analysis_xrefs_set(analysis, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL);
-					fcn_recurse(analysis, fcn, op.jump, analysis->opt.bb_max_size, depth - 1);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
 			}
@@ -1100,17 +1118,9 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 					}
 				}
 			}
-			int saved_stack = fcn->stack;
-			if (continue_after_jump) {
-				rz_analysis_fcn_bb(analysis, fcn, op.jump, depth);
-				fcn->stack = saved_stack;
-				ret = rz_analysis_fcn_bb(analysis, fcn, op.fail, depth);
-				fcn->stack = saved_stack;
-			} else {
-				rz_analysis_fcn_bb(analysis, fcn, op.jump, depth);
-				fcn->stack = saved_stack;
-				ret = rz_analysis_fcn_bb(analysis, fcn, op.fail, depth);
-				fcn->stack = saved_stack;
+			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail);
+			rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
+			if (!continue_after_jump) {
 				if (op.jump < fcn->addr) {
 					if (!overlapped) {
 						bb->jump = op.jump;
@@ -1264,8 +1274,8 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 			}
 			if (analysis->opt.ijmp) {
 				if (continue_after_jump) {
-					rz_analysis_fcn_bb(analysis, fcn, op.jump, depth);
-					ret = rz_analysis_fcn_bb(analysis, fcn, op.fail, depth);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
 					if (overlapped) {
 						goto analopfinish;
 					}
@@ -1282,7 +1292,6 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 				}
 			}
 			break;
-		/* fallthru */
 		case RZ_ANALYSIS_OP_TYPE_PUSH:
 			last_is_push = true;
 			last_push_addr = op.val;
@@ -1307,7 +1316,7 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 				op.type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op.jump = last_push_addr;
 				bb->jump = op.jump;
-				ret = rz_analysis_fcn_bb(analysis, fcn, op.jump, depth);
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.jump);
 				goto beach;
 			}
 			if (!op.cond) {
@@ -1358,10 +1367,6 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 		}
 	}
 beach:
-	while (lea_cnt > 0) {
-		rz_list_delete(analysis->leaddrs, rz_list_tail(analysis->leaddrs));
-		lea_cnt--;
-	}
 	rz_analysis_op_fini(&op);
 	RZ_FREE(last_reg_mov_lea_name);
 	if (bb && bb->size == 0) {
@@ -1373,8 +1378,65 @@ beach:
 	return ret;
 }
 
-RZ_API int rz_analysis_fcn_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, int depth) {
-	return fcn_recurse(analysis, fcn, addr, analysis->opt.bb_max_size, depth - 1);
+/**
+ * \brief Adds a new task item to the `tasks` parameter.
+ * 
+ * Used to create a new item to the `tasks` parameter
+ * that can be worked on later by the `rz_analysis_run_tasks` function.
+ * 
+ * \param analysis Pointer to RzAnalysis instance.
+ * \param tasks Pointer to RzVector to add a new RzAnalysisTaskItem to.
+ * \param fcn Pointer to RzAnalysisFunction in which analysis will be performed on.
+ * \param block Pointer to RzAnalysisBlock in which analysis will be performed on. If null, analysis will take care of block creation.
+ * \param address Address where analysis will start from
+ */
+RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address) {
+	rz_return_val_if_fail(analysis && tasks && fcn, false);
+	RzAnalysisTaskItem item = { fcn, block, fcn->stack, address };
+	RzAnalysisTaskItem *it;
+	rz_vector_foreach(tasks, it) {
+		if (item.start_address == it->start_address) {
+			return true;
+		}
+	}
+	return rz_vector_push(tasks, &item);
+}
+
+/**
+ * \brief Runs analysis on the task items.
+ * 
+ * Runs control-flow and variable usage analysis on each of the task items until tasks vector becomes empty.
+ * Items are removed from the tasks vector as they are processed.
+ * Items are added to the tasks vector as new basic blocks are found to be analyzed.
+ * 
+ * \param tasks Pointer to RzVector of RzAnalysisTaskItem to be performed analysis on.
+ */
+RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector *tasks) {
+	rz_return_val_if_fail(tasks, RZ_ANALYSIS_RET_ERROR);
+	int ret = RZ_ANALYSIS_RET_ERROR;
+	while (!rz_vector_empty(tasks)) {
+		RzAnalysisTaskItem item;
+		rz_vector_pop(tasks, &item);
+		int r = run_basic_block_analysis(&item, tasks);
+		switch (r) {
+		case RZ_ANALYSIS_RET_NOP:
+		case RZ_ANALYSIS_RET_ERROR:
+		case RZ_ANALYSIS_RET_DUP:
+		case RZ_ANALYSIS_RET_NEW:
+			if (ret != RZ_ANALYSIS_RET_END) {
+				ret = r;
+			}
+			break;
+		case RZ_ANALYSIS_RET_END:
+		default:
+			ret = r;
+			break;
+		}
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+	}
+	return ret;
 }
 
 RZ_API bool rz_analysis_check_fcn(RzAnalysis *analysis, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
@@ -1487,12 +1549,11 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 		const int shadow_store = 0x28; // First 4 args + retaddr
 		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow_store;
 	}
-	int ret = rz_analysis_fcn_bb(analysis, fcn, addr, analysis->opt.depth);
-	if (ret < 0) {
-		if (analysis->verbose) {
-			eprintf("Failed to analyze basic block at 0x%" PFMT64x "\n", addr);
-		}
-	}
+	RzVector tasks;
+	rz_vector_init(&tasks, sizeof(RzAnalysisTaskItem), NULL, NULL);
+	rz_analysis_task_item_new(analysis, &tasks, fcn, NULL, addr);
+	int ret = rz_analysis_run_tasks(&tasks);
+	rz_vector_fini(&tasks);
 	if (analysis->opt.endsize && ret == RZ_ANALYSIS_RET_END && rz_analysis_function_realsize(fcn)) { // cfg analysis completed
 		RzListIter *iter;
 		RzAnalysisBlock *bb;
@@ -2033,7 +2094,7 @@ static bool analize_addr_cb(ut64 addr, void *user) {
 	RzAnalysisBlock *existing_bb = rz_analysis_get_block_at(analysis, addr);
 	if (!existing_bb || !rz_list_contains(ctx->fcn->bbs, existing_bb)) {
 		int old_len = rz_list_length(ctx->fcn->bbs);
-		rz_analysis_fcn_bb(ctx->fcn->analysis, ctx->fcn, addr, analysis->opt.depth);
+		analyze_function_locally(ctx->fcn->analysis, ctx->fcn, addr);
 		if (old_len != rz_list_length(ctx->fcn->bbs)) {
 			rz_analysis_block_recurse(rz_analysis_get_block_at(analysis, addr), mark_as_visited, user);
 		}
@@ -2118,7 +2179,7 @@ static void update_analysis(RzAnalysis *analysis, RzList *fcns, HtUP *reachable)
 		// analyze edges that don't have a block
 		RzAnalysisBlock *bb = rz_analysis_get_block_at(analysis, fcn->addr);
 		if (!bb) {
-			rz_analysis_fcn_bb(analysis, fcn, fcn->addr, analysis->opt.depth);
+			analyze_function_locally(analysis, fcn, fcn->addr);
 			bb = rz_analysis_get_block_at(analysis, fcn->addr);
 			if (!bb) {
 				continue;

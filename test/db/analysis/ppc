@@ -262,7 +262,6 @@ fcn.1000ef70:
     sym.imp.__assert_fail
     sym.imp.elf_getdata
     sym.imp.error
-    sym.imp.elf_flagscn
 
 fcn.10004120:
     sym.imp.__assert_fail
