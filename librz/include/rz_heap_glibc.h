@@ -311,6 +311,9 @@ typedef struct rz_heap_bin {
 	char *message; /* indicating the list is corrupted or double free*/
 } RzHeapBin;
 
+RZ_API RzHeapChunkSimple *rz_heap_chunk_wrapper_32(RzCore *core, ut32 addr);
+RZ_API RzHeapChunkSimple *rz_heap_chunk_wrapper_64(RzCore *core, ut64 addr);
+
 RZ_API RzHeapChunk_64 *rz_heap_get_chunk_at_addr_64(RzCore *core, ut64 addr);
 RZ_API RzHeapChunk_32 *rz_heap_get_chunk_at_addr_32(RzCore *core, ut32 addr);
 

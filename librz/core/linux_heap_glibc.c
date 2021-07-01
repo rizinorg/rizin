@@ -1929,7 +1929,11 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		if (block) {
 			block->addr = main_arena->GH(top);
 			block->status = rz_str_new("free (top)");
-			block->size = size_tmp;
+			RzHeapChunkSimple *chunkSimple = GH(rz_heap_chunk_wrapper)(core, main_arena->GH(top));
+			if (chunkSimple) {
+				block->size = chunkSimple->size;
+				free(chunkSimple);
+			}
 			rz_list_append(chunks, block);
 		}
 	}
