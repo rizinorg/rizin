@@ -1410,7 +1410,9 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	bin->chunks = rz_list_newf(free);
 	GH(RzHeapChunk) *head = RZ_NEW0(GH(RzHeapChunk));
 	if (!head) {
-		return bin;
+		GH(rz_heap_bin_free)
+		(bin);
+		return NULL;
 	}
 
 	(void)rz_io_read_at(core->io, bk, (ut8 *)head, sizeof(GH(RzHeapChunk)));
@@ -1420,7 +1422,9 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	}
 	GH(RzHeapChunk) *cnk = RZ_NEW0(GH(RzHeapChunk));
 	if (!cnk) {
-		return bin;
+		GH(rz_heap_bin_free)
+		(bin);
+		return NULL;
 	}
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
 	GH(get_brks)
