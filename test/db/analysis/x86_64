@@ -846,14 +846,14 @@ EOF
 EXPECT=<<EOF
 Current section
 
-nth paddr       size vaddr       vsize perm name               type flags
--------------------------------------------------------------------------
+nth paddr       size vaddr       vsize perm name               type flags 
+--------------------------------------------------------------------------
 0   0x00000188  0x24 0x08048188   0x24 -r-- .note.gnu.build-id NOTE alloc
 
 Current section
 
-nth paddr  size vaddr  vsize perm name type flags
--------------------------------------------------
+nth paddr  size vaddr  vsize perm name type flags 
+--------------------------------------------------
 
 {"name":".plt","size":240,"vsize":240,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":1888,"vaddr":134514528}
 EOF
@@ -870,8 +870,8 @@ isj.
 EOF
 EXPECT=<<EOF
 
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name    
+-------------------------------------------------------
 22  0x000009b7 0x080489b7 GLOBAL FUNC 189      decrypt
 {"name":"prog_timeout","flagname":"sym.prog_timeout","realname":"prog_timeout","ordinal":35,"bind":"GLOBAL","size":17,"type":"FUNC","vaddr":134515110,"paddr":2470,"is_imported":false}
 EOF
@@ -3899,5 +3899,83 @@ EXPECT=<<EOF
 |           0x00000041      488d442404     rax = var_4h
 |           0x00000046      488d4508       rax = arg_8h
 |           0x0000004a      488d45f8       rax = var_8h
+EOF
+RUN
+
+NAME=xref graph
+FILE=bins/pe/libzmq-v100-mt-4_0_4.dll
+CMDS=<<EOF
+aa
+aac
+axg 0x1004aa5e
+axgj 0x1004aa5e~{}
+EOF
+EXPECT=<<EOF
+- 0x1004aa5e fcn 0x1004aa5e fcn.1004aa5e
+  - 0x1004ab07 fcn 0x1004aaff fcn.1004aaff
+  - 0x1004aaff fcn 0x1004aaff fcn.1004aaff
+    - 0x1004ab94 ???
+    - 0x1004aba0 ???
+    - 0x1004d380 ???
+    - 0x1004d3cf ???
+{
+  "268741214": {
+    "type": "fcn",
+    "fcn_addr": 268741214,
+    "name": "fcn.1004aa5e",
+    "refs": [
+      {
+        "268741383": {
+          "type": "fcn",
+          "fcn_addr": 268741375,
+          "name": "fcn.1004aaff",
+          "refs": [
+            {
+              "268741375": {
+                "type": "fcn",
+                "fcn_addr": 268741375,
+                "name": "fcn.1004aaff",
+                "refs": [
+                  {
+                    "268741524": {
+                      "type": "???",
+                      "refs": [
+                        
+                      ]
+                    }
+                  },
+                  {
+                    "268741536": {
+                      "type": "???",
+                      "refs": [
+                        
+                      ]
+                    }
+                  },
+                  {
+                    "268751744": {
+                      "type": "???",
+                      "refs": [
+                        
+                      ]
+                    }
+                  },
+                  {
+                    "268751823": {
+                      "type": "???",
+                      "refs": [
+                        
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
 EOF
 RUN

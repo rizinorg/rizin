@@ -4,8 +4,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name              
+-----------------------------------------------
 0x00600988 0x00000988 SET_64 __gmon_start__
 0x006009a8 0x000009a8 SET_64 write
 0x006009b0 0x000009b0 SET_64 close

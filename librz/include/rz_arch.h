@@ -14,6 +14,7 @@ extern "C" {
 typedef struct rz_arch_profile_t {
 	ut64 rom_size;
 	ut64 ram_size;
+	ut64 rom_address;
 	ut64 eeprom_size;
 	ut64 io_size;
 	ut64 sram_start;

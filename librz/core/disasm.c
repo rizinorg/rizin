@@ -3109,7 +3109,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8 *buf, int len, int idx, in
 			core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
 			int size = mi_size;
 			if (!ds_print_data_type(ds, buf + idx, ds->hint ? ds->hint->immbase : 0, size)) {
-				if (size > delta) {
+				if (size > delta && hexlen > delta) {
 					rz_cons_printf("hex length=%d delta=%d\n", size, delta);
 					rz_print_hexdump(core->print, ds->at, buf + idx, hexlen - delta, 16, 1, 1);
 				} else {

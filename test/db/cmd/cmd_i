@@ -4,8 +4,8 @@ CMDS=iS size/sort:vaddr/cols/name
 EXPECT=<<EOF
 [Sections]
 
-vaddr      name
----------------
+vaddr      name               
+------------------------------
 0x00000000 
 0x00600910 .bss
 0x006006e0 .init_array
@@ -217,8 +217,8 @@ mode     rwx
 format   any
 iorw     true
 block    0x100
-Name     Value
---------------
+Name     Value 
+---------------
 baddr    0x0
 binsz    1025
 bits     64
@@ -240,13 +240,13 @@ PIE      false
 RELROCS  false
 NX       false
 [Imports]
-nth vaddr bind type lib name
-----------------------------
+nth vaddr bind type lib name 
+-----------------------------
 
 [Exports]
 
-nth paddr vaddr bind type size lib name
----------------------------------------
+nth paddr vaddr bind type size lib name 
+----------------------------------------
 e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
@@ -255,8 +255,8 @@ fs imports
 fs symbols
 fs exports
 [Imports]
-nth vaddr bind type lib name
-----------------------------
+nth vaddr bind type lib name 
+-----------------------------
 
 fs imports
 [Entrypoints]
@@ -265,18 +265,18 @@ fs imports
 fs symbols
 [Symbols]
 
-nth paddr vaddr bind type size lib name
----------------------------------------
+nth paddr vaddr bind type size lib name 
+----------------------------------------
 fs symbols
 [Sections]
 
-nth paddr  size vaddr  vsize perm name
---------------------------------------
+nth paddr  size vaddr  vsize perm name 
+---------------------------------------
 
 fs sections
 [Strings]
-nth paddr vaddr len size section type string
---------------------------------------------
+nth paddr vaddr len size section type string 
+---------------------------------------------
 fs strings
 EOF
 RUN
@@ -303,8 +303,8 @@ e cfg.bigendian=false
 e asm.bits=64
 e asm.dwarf=false
 e asm.pcalign=0
-Name     Value
---------------
+Name     Value 
+---------------
 baddr    0x0
 binsz    1024
 bits     64
@@ -343,8 +343,8 @@ mode     r-x
 format   elf
 iorw     false
 block    0x100
-Name     Value
---------------
+Name     Value              
+----------------------------
 arch     x86
 baddr    0x8048000
 binsz    4899
@@ -437,8 +437,8 @@ format   java
 iorw     true
 block    0x100
 type     JAVA CLASS
-Name     Value
---------------
+Name     Value       
+---------------------
 arch     java
 baddr    0x0
 binsz    1024
@@ -1547,8 +1547,8 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type   lib name
--------------------------------------
+nth vaddr      bind   type   lib name              
+---------------------------------------------------
 1   0x080482d0 GLOBAL FUNC       puts
 2   0x080482e0 WEAK   NOTYPE     __gmon_start__
 3   0x080482f0 GLOBAL FUNC       __libc_start_main
@@ -1560,8 +1560,8 @@ NAME=iI (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iI
 EXPECT=<<EOF
-Name     Value
---------------
+Name     Value              
+----------------------------
 arch     x86
 baddr    0x8048000
 binsz    4899
@@ -2719,8 +2719,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name               type       flags
---------------------------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name               type       flags         
+-----------------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ----                    NULL       
 1   0x00000134   0x13 0x08048134   0x13 -r-- .interp            PROGBITS   alloc
 2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI-tag      NOTE       alloc
@@ -2761,8 +2761,8 @@ CMDS=iSS
 EXPECT=<<EOF
 [Segments]
 
-nth paddr        size vaddr       vsize perm name         align
----------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name         align  
+-----------------------------------------------------------------
 0   0x00000034  0x100 0x08048034  0x100 -r-x PHDR         0x4
 1   0x00000134   0x13 0x08048134   0x13 -r-- INTERP       0x1
 2   0x00000000  0x59c 0x08048000  0x59c -r-x LOAD0        0x1000
@@ -2905,8 +2905,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name              
+-----------------------------------------------
 0x08049690 0x00000690 SET_32 __gmon_start__
 0x080496a0 0x000006a0 SET_32 puts
 0x080496a4 0x000006a4 SET_32 __gmon_start__
@@ -2950,8 +2950,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                                   
+----------------------------------------------------------------------------------------
 4   0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
 1   0x00000134 0x08048134 LOCAL  SECT   0        .interp
 2   0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
@@ -3047,36 +3047,36 @@ EOF
 EXPECT=<<EOF
 -- default --
 [Strings]
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
+nth paddr      vaddr      len size section type  string       
+--------------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 -- geq 12 --
 [Strings]
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
+nth paddr      vaddr      len size section type  string       
+--------------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 -- geq 13 --
 [Strings]
-nth paddr vaddr len size section type string
---------------------------------------------
+nth paddr vaddr len size section type string 
+---------------------------------------------
 -- geq 0 --
 [Strings]
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
+nth paddr      vaddr      len size section type  string       
+--------------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 -- leq 12 --
 [Strings]
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
+nth paddr      vaddr      len size section type  string       
+--------------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 -- leq 11 --
 [Strings]
-nth paddr vaddr len size section type string
---------------------------------------------
+nth paddr vaddr len size section type string 
+---------------------------------------------
 -- no limit --
 [Strings]
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
+nth paddr      vaddr      len size section type  string       
+--------------------------------------------------------------
 0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
 EOF
 RUN
@@ -3096,8 +3096,8 @@ EOF
 EXPECT=<<EOF
 -- default --
 [Strings]
-nth paddr       vaddr       len size section            type  string
---------------------------------------------------------------------
+nth paddr       vaddr       len size section            type  string            
+--------------------------------------------------------------------------------
 0   0x00000d58  0x100000d58 9   10   2.__TEXT.__cstring ascii sayHello:
 1   0x00000d62  0x100000d62 4   5    2.__TEXT.__cstring ascii init
 2   0x00000d67  0x100000d67 5   6    2.__TEXT.__cstring ascii alloc
@@ -3117,15 +3117,15 @@ nth paddr       vaddr       len size section            type  string
 4   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
 -- geq 12 --
 [Strings]
-nth paddr       vaddr       len size section            type  string
---------------------------------------------------------------------
+nth paddr       vaddr       len size section            type  string            
+--------------------------------------------------------------------------------
 0   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
 1   0x00000db9  0x100000db9 13  14   2.__TEXT.__cstring ascii v24@0:8i16i20
 0   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
 -- leq 13 --
 [Strings]
-nth paddr       vaddr       len size section            type  string
---------------------------------------------------------------------
+nth paddr       vaddr       len size section            type  string            
+--------------------------------------------------------------------------------
 0   0x00000d73  0x100000d73 12  13   2.__TEXT.__cstring ascii Hello World 
 0   0x100001078 0x100001078 12  13                      ascii cstr.Hello World 
 EOF
@@ -3143,8 +3143,8 @@ format   elf64
 iorw     false
 block    0x100
 type     EXEC (Executable file)
-Name     Value
---------------
+Name     Value                     
+-----------------------------------
 arch     x86
 baddr    0x400000
 binsz    6710
@@ -3224,8 +3224,8 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type   lib name
--------------------------------------
+nth vaddr      bind   type   lib name              
+---------------------------------------------------
 1   0x004003e0 GLOBAL FUNC       puts
 2   0x004003f0 GLOBAL FUNC       __libc_start_main
 3   0x00400400 WEAK   NOTYPE     __gmon_start__
@@ -3237,8 +3237,8 @@ NAME=iI (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iI
 EXPECT=<<EOF
-Name     Value
---------------
+Name     Value                     
+-----------------------------------
 arch     x86
 baddr    0x400000
 binsz    6710
@@ -3279,8 +3279,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name               type       flags
---------------------------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name               type       flags         
+-----------------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ----                    NULL       
 1   0x00000200   0x1a 0x00400200   0x1a -r-- .interp            PROGBITS   alloc
 2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI-tag      NOTE       alloc
@@ -3321,8 +3321,8 @@ CMDS=iSS
 EXPECT=<<EOF
 [Segments]
 
-nth paddr        size vaddr       vsize perm name         align
----------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name         align    
+-------------------------------------------------------------------
 0   0x00000040  0x1c0 0x00400040  0x1c0 -r-x PHDR         0x8
 1   0x00000200   0x1a 0x00400200   0x1a -r-- INTERP       0x1
 2   0x00000000  0x6dc 0x00400000  0x6dc -r-x LOAD0        0x200000
@@ -3353,8 +3353,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name              
+-----------------------------------------------
 0x006008c8 0x000008c8 SET_64 __gmon_start__
 0x006008e8 0x000008e8 SET_64 puts
 0x006008f0 0x000008f0 SET_64 __libc_start_main
@@ -3371,8 +3371,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name                            
+-------------------------------------------------------------
 0x006b17d0 0x000b17d0 SET_64 ifunc_416530 0x00416530 (ifunc)
 0x006b17d8 0x000b17d8 SET_64 ifunc_4193a0 0x004193a0 (ifunc)
 0x006b17e0 0x000b17e0 SET_64 ifunc_4199b0 0x004199b0 (ifunc)
@@ -3395,8 +3395,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                                   
+----------------------------------------------------------------------------------------
 1   0x00000200 0x00400200 LOCAL  SECT   0        .interp
 2   0x0000021c 0x0040021c LOCAL  SECT   0        .note.ABI-tag
 3   0x0000023c 0x0040023c LOCAL  SECT   0        .note.gnu.build-id
@@ -3468,8 +3468,8 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iz
 EXPECT=<<EOF
 [Strings]
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
+nth paddr      vaddr      len size section type  string      
+-------------------------------------------------------------
 0   0x000005c4 0x004005c4 11  12   .rodata ascii Hello World
 EOF
 RUN
@@ -3701,13 +3701,13 @@ EXPECT=<<EOF
 0x00000000  5155 5657 5857 595a 5b5c 5d5e 5f52 0000  QUVWXWYZ[\]^_R..
 
 [Strings]
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
+nth paddr      vaddr      len size section type  string         
+----------------------------------------------------------------
 0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\]^_R
 
 [Strings]
-nth paddr      vaddr      len size section type  string
--------------------------------------------------------
+nth paddr      vaddr      len size section type  string          
+-----------------------------------------------------------------
 0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\\]^_R
 EOF
 RUN
@@ -4025,8 +4025,8 @@ CMDS=iS entropy; iSS entropy
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm entropy    name           type     flags
--------------------------------------------------------------------------------------
+nth paddr        size vaddr       vsize perm entropy    name           type     flags         
+----------------------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- 0.00000000                NULL     
 1   0x00000154   0x13 0x08048154   0x13 -r-- 3.68188080 .interp        PROGBITS alloc
 2   0x00000168   0x20 0x08048168   0x20 -r-- 1.74868984 .note.ABI-tag  NOTE     alloc
@@ -4059,8 +4059,8 @@ nth paddr        size vaddr       vsize perm entropy    name           type     
 
 [Segments]
 
-nth paddr        size vaddr       vsize perm entropy    name      align
------------------------------------------------------------------------
+nth paddr        size vaddr       vsize perm entropy    name      align  
+-------------------------------------------------------------------------
 0   0x00000034  0x120 0x08048034  0x120 -r-x 2.77947373 PHDR      0x4
 1   0x00000154   0x13 0x08048154   0x13 -r-- 3.68188080 INTERP    0x1
 2   0x00000000  0x6bc 0x08048000  0x6bc -r-x 5.13144413 LOAD0     0x1000
@@ -4081,8 +4081,8 @@ CMDS=is; ir; f
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type   size lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type   size lib name                            
+---------------------------------------------------------------------------------
 8   0x00000590 0x00000590 GLOBAL FUNC   60       main
 9   0x0000064c 0x0000064c GLOBAL OBJ    4        _IO_stdin_used
 1   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_deregisterTMCloneTable
@@ -4094,8 +4094,8 @@ nth paddr      vaddr      bind   type   size lib name
 7   0x00000000 0x00000000 WEAK   NOTYPE 16       imp._ITM_registerTMCloneTable
 [Relocations]
 
-vaddr      paddr      target     type   name
---------------------------------------------
+vaddr      paddr      target     type   name                        
+--------------------------------------------------------------------
 0x00001eec 0x00000eec 0x00002030 SET_32 
 0x00001ef0 0x00000ef0 0x00002034 SET_32 
 0x00001fe8 0x00000fe8 0x00002040 SET_32 _ITM_deregisterTMCloneTable
@@ -4363,8 +4363,8 @@ FILE=bins/elf/varsub
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type   lib name
--------------------------------------
+nth vaddr      bind   type   lib name              
+---------------------------------------------------
 1   0x00000000 GLOBAL FUNC       __libc_start_main
 2   0x00000000 WEAK   NOTYPE     __gmon_start__
 

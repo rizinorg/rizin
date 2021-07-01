@@ -157,6 +157,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=test adding ROM maps from Arch Profiles
+FILE=bins/elf/analysis/bugurtos-avr.elf
+ARGS=-e asm.cpu=ATmega16
+CMDS=<<EOF
+aaa
+iS~.rom
+EOF
+EXPECT=<<EOF
+8   0x00001fff  0x4000 0x00001fff  0x4000 -r-x .rom      NULL     
+EOF
+RUN
+
 NAME=avr br - forward branch
 FILE=malloc://1024
 CMDS=<<EOF

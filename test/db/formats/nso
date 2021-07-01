@@ -12,8 +12,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr          size vaddr         vsize perm name
------------------------------------------------------
+nth paddr          size vaddr         vsize perm name   
+--------------------------------------------------------
 0   0x00000000    0x100 0x00000000    0x100 -r-- header
 1   0x00000000  0x20e18 0x08000000  0x20e18 -r-x text
 2   0x00020e18   0xdb0c 0x08021000   0xdb0c -r-- ro

@@ -467,8 +467,8 @@ format   elf
 iorw     false
 block    0x100
 type     EXEC (Executable file)
-Name     Value
---------------
+Name     Value              
+----------------------------
 arch     x86
 baddr    0x8048000
 binsz    20668

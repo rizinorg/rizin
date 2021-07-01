@@ -4,8 +4,8 @@ CMDS=iS;iSS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name               type       flags
---------------------------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name               type       flags         
+-----------------------------------------------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ----                    NULL       
 1   0x00000200   0x1c 0x00404500   0x1c -r-- .interp            PROGBITS   alloc
 2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI-tag      NOTE       alloc
@@ -45,8 +45,8 @@ nth paddr        size vaddr       vsize perm name               type       flags
 
 [Segments]
 
-nth paddr        size vaddr       vsize perm name         align
----------------------------------------------------------------
+nth paddr        size vaddr       vsize perm name         align    
+-------------------------------------------------------------------
 0   0x00000040  0x1c0 0x00400040  0x1c0 -r-x PHDR         0x8
 1   0x00000200   0x1c 0x00400200   0x1c -r-- INTERP       0x1
 2   0x00000000  0x6dc 0x00400000  0x6dc -r-x LOAD0        0x200000

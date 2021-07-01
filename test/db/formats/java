@@ -49,8 +49,8 @@ CMDS=iS ; s
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                           
+----------------------------------------------------------------------------
 0   0x0000000a  0x201 0x0000000a  0x201 -r-- class.constant_pool
 1   0x00000225   0x31 0x00000225   0x31 -r-x class.methods.main.attr.0.code
 2   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods.main.attr
@@ -68,8 +68,8 @@ CMDS=iS ; s
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                             
+------------------------------------------------------------------------------
 0   0x0000000a  0x315 0x0000000a  0x315 -r-- class.constant_pool
 1   0x00000339   0x1d 0x00000339   0x1d -r-x class.methods._init_.attr.0.code
 2   0x00000323   0x2b 0x00000323   0x2b -r-- class.methods._init_.attr
@@ -88,8 +88,8 @@ FILE=bins/java/HiKt.class
 CMDS=iz
 EXPECT=<<EOF
 [Strings]
-nth paddr      vaddr      len size section             type string
-------------------------------------------------------------------
+nth paddr      vaddr      len size section             type string                                                                                                                                                                                                                                                                  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 1   0x0000000a 0x0000000a 4   4    class.constant_pool utf8 HiKt
 3   0x00000014 0x00000014 16  16   class.constant_pool utf8 java/lang/Object
 5   0x0000002a 0x0000002a 4   4    class.constant_pool utf8 main
@@ -119,8 +119,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr vaddr bind type size lib name
----------------------------------------
+nth paddr vaddr bind type size lib name 
+----------------------------------------
 EOF
 RUN
 
@@ -131,8 +131,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type  size lib name
-----------------------------------------------------
+nth paddr      vaddr      bind   type  size lib name                            
+--------------------------------------------------------------------------------
 0   0x00000190 0x00000190 LOCAL  FUNC  27       DemoTest.fun
 1   0x000001b9 0x000001b9 LOCAL  FUNC  33       DemoTest.<init>
 2   0x000001e8 0x000001e8 LOCAL  FUNC  27       DemoTest.res
@@ -150,8 +150,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type  size lib name
-----------------------------------------------------
+nth paddr      vaddr      bind   type  size lib name                                          
+----------------------------------------------------------------------------------------------
 0   0x00000464 0x00000464 LOCAL  FUNC  47       CaseTableSwitch.<init>
 1   0x000004a1 0x000004a1 LOCAL  FUNC  304      CaseTableSwitch.a
 2   0x000005df 0x000005df LOCAL  FUNC  54       CaseTableSwitch.a
@@ -179,8 +179,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr vaddr bind type size lib name
----------------------------------------
+nth paddr vaddr bind type size lib name 
+----------------------------------------
 EOF
 RUN
 
@@ -191,8 +191,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type  size lib name
-----------------------------------------------------
+nth paddr      vaddr      bind   type  size lib name                                 
+-------------------------------------------------------------------------------------
 0   0x0000022b 0x0000022b LOCAL  FUNC  42       Hello.<init>
 1   0x00000263 0x00000263 LOCAL  FUNC  57       Hello.say
 2   0x000002aa 0x000002aa LOCAL  FUNC  41       Hello.main
@@ -216,8 +216,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name                                                       
+----------------------------------------------------------------------------------------------------------
 0   0x00000225 0x00000225 GLOBAL FUNC 49       HiKt.main
 15  0x000000e7 0x000000e7 IMPORT METH 0        imp.kotlin.jvm.internal.Intrinsics.checkParameterIsNotNull
 EOF
@@ -230,8 +230,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type  size lib name
-----------------------------------------------------
+nth paddr      vaddr      bind   type  size lib name                            
+--------------------------------------------------------------------------------
 0   0x00000120 0x00000120 LOCAL  FUNC  17       Test.main
 7   0x0000003a 0x0000003a IMPORT FIELD 0        imp.java.lang.System.out
 8   0x0000003f 0x0000003f IMPORT METH  0        imp.java.io.PrintStream.println
@@ -245,8 +245,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name                                 
+------------------------------------------------------------------------------------
 0   0x00000339 0x00000339 LOCAL  FUNC 29       JDWPExecCmd.<init>
 1   0x00000364 0x00000364 LOCAL  FUNC 233      JDWPExecCmd.run
 1   0x0000000a 0x0000000a IMPORT METH 0        imp.java.lang.Object.<init>
@@ -270,8 +270,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type  size lib name
-----------------------------------------------------
+nth paddr      vaddr      bind   type  size lib name                                                                 
+---------------------------------------------------------------------------------------------------------------------
 0   0x00001c87 0x00001c87 LOCAL  FUNC  113      org.radare2.installer.MainActivity.<init>
 1   0x00001d06 0x00001d06 LOCAL  FUNC  494      org.radare2.installer.MainActivity.onCreate
 2   0x00001f02 0x00001f02 LOCAL  FUNC  74       org.radare2.installer.MainActivity.onCreateOptionsMenu
@@ -397,8 +397,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type  size lib name
-----------------------------------------------------
+nth paddr      vaddr      bind   type  size lib name                                    
+----------------------------------------------------------------------------------------
 0   0x00000389 0x00000389 LOCAL  FUNC  29       Main.<init>
 1   0x000003b4 0x000003b4 LOCAL  FUNC  206      Main.main
 1   0x0000000a 0x0000000a IMPORT METH  0        imp.java.lang.Object.<init>
@@ -424,8 +424,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr vaddr bind type size lib name
----------------------------------------
+nth paddr vaddr bind type size lib name 
+----------------------------------------
 EOF
 RUN
 
@@ -436,8 +436,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type  size lib name
-----------------------------------------------------
+nth paddr      vaddr      bind   type  size lib name                                                                
+--------------------------------------------------------------------------------------------------------------------
 0   0x000008f9 0x000008f9 LOCAL  FUNC  39       test.<init>
 1   0x0000092e 0x0000092e LOCAL  FUNC  50       test.<init>
 2   0x0000096e 0x0000096e LOCAL  FUNC  50       test.main
@@ -481,8 +481,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type  size  lib name
------------------------------------------------------
+nth paddr      vaddr      bind   type  size  lib name                                    
+-----------------------------------------------------------------------------------------
 0   0x00000421 0x00000421 LOCAL  FUNC  21        TryWithResources.$
 1   0x00000444 0x00000444 LOCAL  FUNC  50        TryWithResources.<init>
 2   0x00000484 0x00000484 LOCAL  FUNC  62        TryWithResources.close
@@ -698,8 +698,8 @@ FILE=bins/java/crash2.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr bind type lib name
-----------------------------
+nth vaddr bind type lib name 
+-----------------------------
 
 EOF
 RUN
@@ -710,8 +710,8 @@ FILE=bins/java/DemoTest.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type  lib name
-----------------------------------
+nth vaddr      bind type  lib name                        
+----------------------------------------------------------
 1   ---------- NONE METH      java.lang.Object.<init>
 3   ---------- NONE FIELD     java.lang.System.out
 5   ---------- NONE METH      java.io.PrintStream.println
@@ -725,8 +725,8 @@ FILE=bins/java/ExCaseTableSwitch.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type  lib name
-----------------------------------
+nth vaddr      bind type  lib name                                      
+------------------------------------------------------------------------
 8   ---------- NONE METH      java.lang.Object.<init>
 16  ---------- NONE FIELD     java.lang.System.out
 26  ---------- NONE METH      java.lang.StringBuilder.<init>
@@ -746,8 +746,8 @@ FILE=bins/java/fuckedup.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr bind type lib name
-----------------------------
+nth vaddr bind type lib name 
+-----------------------------
 
 EOF
 RUN
@@ -758,8 +758,8 @@ FILE=bins/java/Hello.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type  lib name
-----------------------------------
+nth vaddr      bind type  lib name                             
+---------------------------------------------------------------
 1   ---------- NONE METH      java.lang.Object.<init>
 2   ---------- NONE FIELD     Hello.who
 3   ---------- NONE FIELD     java.lang.System.out
@@ -779,8 +779,8 @@ FILE=bins/java/HiKt.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib name
----------------------------------
+nth vaddr      bind type lib name                                                   
+------------------------------------------------------------------------------------
 15  ---------- NONE METH     kotlin.jvm.internal.Intrinsics.checkParameterIsNotNull
 
 EOF
@@ -792,8 +792,8 @@ FILE=bins/java/invisible.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type  lib name
-----------------------------------
+nth vaddr      bind type  lib name                        
+----------------------------------------------------------
 7   ---------- NONE FIELD     java.lang.System.out
 8   ---------- NONE METH      java.io.PrintStream.println
 
@@ -806,8 +806,8 @@ FILE=bins/java/jdwpexeccmd.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib name
----------------------------------
+nth vaddr      bind type lib name                             
+--------------------------------------------------------------
 1   ---------- NONE METH     java.lang.Object.<init>
 3   ---------- NONE METH     java.lang.StringBuilder.<init>
 4   ---------- NONE METH     java.lang.StringBuilder.append
@@ -829,8 +829,8 @@ FILE=bins/java/MainActivity.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type  lib name
-----------------------------------
+nth vaddr      bind type  lib name                                                             
+-----------------------------------------------------------------------------------------------
 1   ---------- NONE METH      org.radare2.installer.MainActivity.download
 2   ---------- NONE FIELD     org.radare2.installer.MainActivity.handler
 3   ---------- NONE FIELD     org.radare2.installer.MainActivity.thread
@@ -925,8 +925,8 @@ FILE=bins/java/Main.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type  lib name
-----------------------------------
+nth vaddr      bind type  lib name                                
+------------------------------------------------------------------
 1   ---------- NONE METH      java.lang.Object.<init>
 2   ---------- NONE FIELD     java.lang.System.out
 4   ---------- NONE METH      java.io.PrintStream.println
@@ -950,8 +950,8 @@ FILE=bins/java/sjybq.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr bind type lib name
-----------------------------
+nth vaddr bind type lib name 
+-----------------------------
 
 EOF
 RUN
@@ -962,8 +962,8 @@ FILE=bins/java/test.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type  lib name
-----------------------------------
+nth vaddr      bind type  lib name                                                            
+----------------------------------------------------------------------------------------------
 13  ---------- NONE METH      groovy.lang.Script.<init>
 17  ---------- NONE METH      test.$getCallSiteArray
 22  ---------- NONE METH      groovy.lang.Script.<init>
@@ -996,8 +996,8 @@ FILE=bins/java/TryWithResources.class
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind   type  lib name
-------------------------------------
+nth vaddr      bind   type  lib name                                
+--------------------------------------------------------------------
 2   ---------- NONE   METH      TryWithResources.<init>
 3   ---------- NONE   METH      java.lang.RuntimeException.<init>
 4   ---------- NONE   FIELD     java.lang.System.out
@@ -1030,8 +1030,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
+nth paddr       size vaddr       vsize perm name                
+----------------------------------------------------------------
 0   0x0000000a  0x12 0x0000000a   0x12 -r-- class.constant_pool
 
 EOF
@@ -1044,8 +1044,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                             
+------------------------------------------------------------------------------
 0   0x0000000a  0x16c 0x0000000a  0x16c -r-- class.constant_pool
 1   0x00000190   0x1b 0x00000190   0x1b -r-x class.methods.fun.attr.0.code
 2   0x0000017a   0x29 0x0000017a   0x29 -r-- class.methods.fun.attr
@@ -1068,8 +1068,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                                            
+---------------------------------------------------------------------------------------------
 0   0x0000000a  0x440 0x0000000a  0x440 -r-- class.constant_pool
 1   0x00000464   0x2f 0x00000464   0x2f -r-x class.methods._init_.attr.0.code
 2   0x0000044e   0x3d 0x0000044e   0x3d -r-- class.methods._init_.attr
@@ -1100,8 +1100,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
+nth paddr       size vaddr       vsize perm name                
+----------------------------------------------------------------
 0   0x0000000a  0x41 0x0000000a   0x41 -r-- class.constant_pool
 
 EOF
@@ -1114,8 +1114,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                             
+------------------------------------------------------------------------------
 0   0x0000000a  0x1ff 0x0000000a  0x1ff -r-- class.constant_pool
 1   0x0000020b    0xa 0x0000020b    0xa -r-- class.fields.who.attr
 2   0x0000020b    0xa 0x0000020b    0xa -r-- class.fields
@@ -1138,8 +1138,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                           
+----------------------------------------------------------------------------
 0   0x0000000a  0x201 0x0000000a  0x201 -r-- class.constant_pool
 1   0x00000225   0x31 0x00000225   0x31 -r-x class.methods.main.attr.0.code
 2   0x0000020f   0x4e 0x0000020f   0x4e -r-- class.methods.main.attr
@@ -1156,8 +1156,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                           
+----------------------------------------------------------------------------
 0   0x0000000a  0x100 0x0000000a  0x100 -r-- class.constant_pool
 1   0x00000120   0x11 0x00000120   0x11 -r-x class.methods.main.attr.0.code
 2   0x0000010e   0x21 0x0000010e   0x21 -r-- class.methods.main.attr
@@ -1173,8 +1173,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                             
+------------------------------------------------------------------------------
 0   0x0000000a  0x315 0x0000000a  0x315 -r-- class.constant_pool
 1   0x00000339   0x1d 0x00000339   0x1d -r-x class.methods._init_.attr.0.code
 2   0x00000323   0x2b 0x00000323   0x2b -r-- class.methods._init_.attr
@@ -1193,8 +1193,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr         size vaddr        vsize perm name
----------------------------------------------------
+nth paddr         size vaddr        vsize perm name                                            
+-----------------------------------------------------------------------------------------------
 0   0x0000000a  0x1c13 0x0000000a  0x1c13 -r-- class.constant_pool
 1   0x00001c1f     0x8 0x00001c1f     0x8 -r-- class.fields.outputView.attr
 2   0x00001c27     0x8 0x00001c27     0x8 -r-- class.fields.handler.attr
@@ -1262,8 +1262,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                             
+------------------------------------------------------------------------------
 0   0x0000000a  0x365 0x0000000a  0x365 -r-- class.constant_pool
 1   0x00000389   0x1d 0x00000389   0x1d -r-x class.methods._init_.attr.0.code
 2   0x00000373   0x2b 0x00000373   0x2b -r-- class.methods._init_.attr
@@ -1282,8 +1282,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr  size vaddr  vsize perm name
---------------------------------------
+nth paddr  size vaddr  vsize perm name 
+---------------------------------------
 
 EOF
 RUN
@@ -1295,8 +1295,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name                                             
+----------------------------------------------------------------------------------------------
 0   0x0000000a  0x8bd 0x0000000a  0x8bd -r-- class.constant_pool
 1   0x000008c9    0x8 0x000008c9    0x8 -r-- class.fields._staticClassInfo.attr
 2   0x000008d1    0x8 0x000008d1    0x8 -r-- class.fields.___stMC.attr
@@ -1331,8 +1331,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr         size vaddr        vsize perm name
----------------------------------------------------
+nth paddr         size vaddr        vsize perm name                               
+----------------------------------------------------------------------------------
 0   0x0000000a   0x3eb 0x0000000a   0x3eb -r-- class.constant_pool
 1   0x000003f5     0x4 0x000003f5     0x4 -r-- class.interfaces
 2   0x000003f9     0x8 0x000003f9     0x8 -r-- class.fields._.attr
@@ -1365,8 +1365,8 @@ CMDS=iE
 EXPECT=<<EOF
 [Exports]
 
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name      
+---------------------------------------------------------
 0   0x00000225 0x00000225 GLOBAL FUNC 49       HiKt.main
 EOF
 RUN

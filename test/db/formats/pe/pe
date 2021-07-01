@@ -40,8 +40,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name                                     
+----------------------------------------------------------------------
 0x000050fc 0x000012a0 SET_32 KERNEL32.dll_AddAtomA
 0x00005108 0x000012a4 SET_32 KERNEL32.dll_ExitProcess
 0x00005116 0x000012a8 SET_32 KERNEL32.dll_FindAtomA
@@ -74,8 +74,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name                                     
+----------------------------------------------------------------------
 0x000050fc 0x000012a0 SET_32 KERNEL32.dll_AddAtomA
 0x00005108 0x000012a4 SET_32 KERNEL32.dll_ExitProcess
 0x00005116 0x000012a8 SET_32 KERNEL32.dll_FindAtomA
@@ -139,8 +139,8 @@ FILE=bins/pe/imports_1210.exe
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib          name
-------------------------------------------
+nth vaddr      bind type lib          name                      
+----------------------------------------------------------------
 1   0x0041217c NONE FUNC kernel32.dll DeleteCriticalSection
 2   0x00412180 NONE FUNC kernel32.dll LeaveCriticalSection
 3   0x00412184 NONE FUNC kernel32.dll EnterCriticalSection
@@ -277,8 +277,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name                                   
+--------------------------------------------------------------------
 0x000123ca 0x0000097c SET_32 kernel32.dll_DeleteCriticalSection
 0x000123e2 0x00000980 SET_32 kernel32.dll_LeaveCriticalSection
 0x000123fa 0x00000984 SET_32 kernel32.dll_EnterCriticalSection
@@ -444,8 +444,8 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr          size vaddr         vsize perm name           flags
----------------------------------------------------------------------
+nth paddr          size vaddr         vsize perm name           flags                                                       
+----------------------------------------------------------------------------------------------------------------------------
 0   0x00000400   0x1800 0x00401000   0x2000 -r-x .text          CNT_CODE,CNT_INITIALIZED_DATA,ALIGN_16BYTES
 1   0x00001c00    0x200 0x00403000   0x1000 -rw- .data          CNT_INITIALIZED_DATA,ALIGN_4BYTES
 2   0x00001e00    0x600 0x00404000   0x1000 -r-- .rdata         CNT_INITIALIZED_DATA,ALIGN_4BYTES

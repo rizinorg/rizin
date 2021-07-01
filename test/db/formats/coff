@@ -6,8 +6,8 @@ iS
 EOF
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib name
----------------------------------
+nth vaddr      bind type lib name                      
+-------------------------------------------------------
 0   0x0000b690 NONE FUNC     __TIFFmalloc
 1   0x0000b698 NONE FUNC     __TIFFrealloc
 2   0x0000b6a0 NONE FUNC     __TIFFmemset
@@ -37,8 +37,8 @@ nth vaddr      bind type lib name
 
 [Sections]
 
-nth paddr         size vaddr        vsize perm name
----------------------------------------------------
+nth paddr         size vaddr        vsize perm name     
+--------------------------------------------------------
 0   0x000001cc    0x2f 0x00000000    0x2f ---- .drectve
 1   0x000001fb  0x8670 0x00000030  0x8670 -r-- .debug_S
 2   0x0000ad73    0x70 0x000086a0    0x70 -r-- .debug_T
@@ -63,8 +63,8 @@ EXPECT=<<EOF
  1 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data
 [Symbols]
 
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name            
+---------------------------------------------------------------
 0   ---------- 0x00000058 NONE   UNK  4        imp.MessageBoxA
 0   ---------- 0x00000060 NONE   UNK  4        imp.ExitProcess
 0   0x00000064 0x00000000 LOCAL  SECT 4        .text
@@ -72,8 +72,8 @@ nth paddr      vaddr      bind   type size lib name
 0   0x0000008b 0x00000030 LOCAL  SECT 4        .data
 [Relocations]
 
-vaddr      paddr      target     type   name
---------------------------------------------
+vaddr      paddr      target     type   name               
+-----------------------------------------------------------
 0x00000009 0x0000006d 0x00000030 ADD_32 .data
 0x00000010 0x00000074 0x00000030 ADD_32 .data + 0x0000000f
 0x0000001c 0x00000080 0x00000058 ADD_32 MessageBoxA
@@ -107,8 +107,8 @@ EXPECT=<<EOF
  1 fd: 4 +0x00001000 0x00000e50 - 0x00000e53 r-- vmap..rtc$TMZ
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
+nth paddr        size vaddr       vsize perm name       
+--------------------------------------------------------
 0   0x0000017c   0xef 0x00000000   0xef ---- .drectve
 1   0x0000026b  0xab0 0x000000f0  0xab0 -r-- .debug_S
 2   0x00000d1b   0x74 0x00000ba0   0x74 -r-- .debug_T
@@ -121,8 +121,8 @@ nth paddr        size vaddr       vsize perm name
 
 [Symbols]
 
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name                   
+----------------------------------------------------------------------
 0   ---------- ---------- LOCAL  ABS  4        @comp.id-0x01055e97
 0   ---------- ---------- LOCAL  ABS  4        @feat.00-0x80000191
 0   0x0000017c 0x00000000 LOCAL  SECT 4        .drectve

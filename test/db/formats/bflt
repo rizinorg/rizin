@@ -4,8 +4,8 @@ CMDS=ir
 EXPECT=<<EOF
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name 
+----------------------------------
 0x00000074 0x00000074 SET_32 
 0x00000078 0x00000078 SET_32 
 0x0000007c 0x0000007c SET_32 

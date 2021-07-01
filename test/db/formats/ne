@@ -4,8 +4,8 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
+nth paddr      vaddr      bind   type size lib name       
+----------------------------------------------------------
 0   0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
 1   0x00000d8e 0x00000d8e GLOBAL NONE 0        WNDPROC
 2   0x00002b5a 0x00002b5a GLOBAL NONE 0        DIAL_ABOUT
@@ -19,8 +19,8 @@ CMDS=iSS
 EXPECT=<<EOF
 [Segments]
 
-nth paddr         size vaddr        vsize perm name
----------------------------------------------------
+nth paddr         size vaddr        vsize perm name           
+--------------------------------------------------------------
 0   0x00000a00  0x54ee 0x00000a00  0x54ee ---x MOVEABLE.2560
 1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx MOVEABLE.30208
 
@@ -32,8 +32,8 @@ FILE=bins/ne/anim8.exe
 CMDS=ii
 EXPECT=<<EOF
 [Imports]
-nth vaddr      bind type lib name
----------------------------------
+nth vaddr      bind type lib name    
+-------------------------------------
 1   ---------- NONE NONE     KERNEL
 2   ---------- NONE NONE     USER
 3   ---------- NONE NONE     GDI
@@ -68,8 +68,8 @@ EXPECT=<<EOF
 0x00005891 0x00005891 ADD_16 WIN87EM.0
 [Relocations]
 
-vaddr      paddr      type   name
----------------------------------
+vaddr      paddr      type   name                             
+--------------------------------------------------------------
 0x00000a01 0x00000a01 SET_32 KERNEL.INITTASK
 0x00000a25 0x00000a25 SET_32 KERNEL.LOCKSEGMENT
 0x00000a3c 0x00000a3c SET_32 KERNEL.WAITEVENT
