@@ -1797,10 +1797,8 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	size_tmp = (cnk->size >> 3) << 3;
 	ut64 prev_chunk_addr;
 	ut64 prev_chunk_size;
-	bool corrupted = false;
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
 		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
-			corrupted = true;
 			RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
 			if (!block) {
 				break;
@@ -1926,7 +1924,7 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		block->size = prev_chunk_size;
 		rz_list_append(chunks, block);
 	}
-	if (top_chunk && !corrupted) {
+	if (top_chunk) {
 		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
 		if (block) {
 			block->addr = main_arena->GH(top);
