@@ -1029,6 +1029,39 @@ RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
 }
 
 /**
+ * \brief Checks if two types are identical
+ *
+ * \param type1 RzType pointer
+ * \param type2 RzType pointer
+ */
+RZ_API bool rz_types_equal(RZ_NONNULL const RzType *type1, RZ_NONNULL const RzType *type2) {
+	rz_return_val_if_fail(type1 && type2, false);
+	if (type1->kind != type2->kind) {
+		return false;
+	}
+	switch (type1->kind) {
+	case RZ_TYPE_KIND_IDENTIFIER:
+		return !strcmp(type1->identifier.name, type2->identifier.name);
+	case RZ_TYPE_KIND_POINTER:
+		rz_return_val_if_fail(type1->pointer.type && type2->pointer.type, false);
+		return rz_types_equal(type1->pointer.type, type2->pointer.type);
+	case RZ_TYPE_KIND_ARRAY:
+		if (type1->array.count != type2->array.count) {
+			return false;
+		}
+		return rz_types_equal(type1->array.type, type2->array.type);
+	case RZ_TYPE_KIND_CALLABLE:
+		rz_return_val_if_fail(type1->callable && type2->callable, false);
+		rz_return_val_if_fail(type1->callable->name && type2->callable->name, false);
+		return !strcmp(type1->callable->name, type2->callable->name);
+	default:
+		rz_warn_if_reached();
+		return false;
+	}
+	return false;
+}
+
+/**
  * \brief Returns the RzBaseType for the chosen RzType
  *
  * \param typedb Type Database instance
