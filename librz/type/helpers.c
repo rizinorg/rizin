@@ -276,6 +276,20 @@ static bool type_is_atomic_ptr(RZ_NONNULL const RzType *type, RZ_NONNULL const c
 	return ptr->kind == RZ_TYPE_KIND_IDENTIFIER && ptr->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED && !strcmp(ptr->identifier.name, name);
 }
 
+static bool type_is_atomic_ptr_nested(RZ_NONNULL const RzType *type, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(type && name, false);
+	if (type->kind != RZ_TYPE_KIND_POINTER) {
+		return false;
+	}
+	// There should not exist pointers to the empty types
+	RzType *ptr = type->pointer.type;
+	rz_return_val_if_fail(ptr, false);
+	if (ptr->kind == RZ_TYPE_KIND_POINTER) {
+		return type_is_atomic_ptr_nested(ptr, name);
+	}
+	return ptr->kind == RZ_TYPE_KIND_IDENTIFIER && ptr->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED && !strcmp(ptr->identifier.name, name);
+}
+
 /**
  * \brief Checks if the pointer RzType is abstract pointer ("void *")
  *
@@ -287,6 +301,16 @@ RZ_API bool rz_type_is_void_ptr(RZ_NONNULL const RzType *type) {
 }
 
 /**
+ * \brief Checks if the pointer RzType is a nested abstract pointer ("void **", "vpod ***", etc)
+ *
+ * \param type RzType type pointer
+ */
+RZ_API bool rz_type_is_void_ptr_nested(RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, false);
+	return type_is_atomic_ptr_nested(type, "void");
+}
+
+/**
  * \brief Checks if the pointer RzType is a string ("char *" or "const char *")
  *
  * \param type RzType type pointer
@@ -294,6 +318,16 @@ RZ_API bool rz_type_is_void_ptr(RZ_NONNULL const RzType *type) {
 RZ_API bool rz_type_is_char_ptr(RZ_NONNULL const RzType *type) {
 	rz_return_val_if_fail(type, false);
 	return type_is_atomic_ptr(type, "char");
+}
+
+/**
+ * \brief Checks if the pointer RzType is a nested pointer of string ("char **", "char ***", etc)
+ *
+ * \param type RzType type pointer
+ */
+RZ_API bool rz_type_is_char_ptr_nested(RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, false);
+	return type_is_atomic_ptr_nested(type, "char");
 }
 
 /**
