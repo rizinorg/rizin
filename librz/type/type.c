@@ -815,6 +815,7 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 	RzStrBuf *buf = rz_strbuf_new("");
 	switch (type->kind) {
 	case RZ_TYPE_KIND_IDENTIFIER: {
+		rz_return_val_if_fail(type->identifier.name, NULL);
 		const char *separator = prev_ptr ? " " : "";
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
@@ -863,6 +864,7 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 	RzStrBuf *buf = rz_strbuf_new("");
 	switch (type->kind) {
 	case RZ_TYPE_KIND_IDENTIFIER: {
+		rz_return_val_if_fail(type->identifier.name, NULL);
 		const char *separator = prev_ptr ? " " : "";
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
