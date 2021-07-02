@@ -589,6 +589,9 @@ static bool var_add_structure_fields_to_list(RzAnalysis *a, RzAnalysisVar *av, R
 	if (av->type->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return false;
 	}
+	if (!av->type->identifier.name) {
+		return false;
+	}
 	RzBaseType *btype = rz_type_db_get_base_type(a->typedb, av->type->identifier.name);
 	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_STRUCT) {
 		return false;
