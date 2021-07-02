@@ -86,11 +86,11 @@ static void var_type_set_sign(RzAnalysis *analysis, RzAnalysisVar *var, bool sig
 
 static bool var_type_simple_to_complex(const RzTypeDB *typedb, RzType *a, RzType *b) {
 	// `*int*` types to anything else of the typeclass
-	if (rz_type_is_integral(typedb, a) && !rz_type_is_char_ptr(a) && !rz_type_is_integral(typedb, b)) {
+	if (rz_type_is_integral(typedb, a) && !rz_type_is_char_ptr_nested(a) && !rz_type_is_integral(typedb, b)) {
 		return true;
 	}
 	// `*int*` types to pointers or arrays
-	if (rz_type_is_integral(typedb, a) && !rz_type_is_char_ptr(a) && b->kind != RZ_TYPE_KIND_IDENTIFIER) {
+	if (rz_type_is_integral(typedb, a) && !rz_type_is_char_ptr_nested(a) && b->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return true;
 	}
 	return false;
