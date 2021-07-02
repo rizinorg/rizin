@@ -721,6 +721,10 @@ static void resolve_type_links(RzCore *core, ut64 at, struct TLAnalysisContext *
 		// FIXME: For now we only propagate simple type identifiers,
 		// no pointers or arrays
 		if (vlink->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
+			if (!vlink->typ->identifier.name) {
+				rz_warn_if_reached();
+				return;
+			}
 			RzBaseType *varbtype = rz_type_db_get_base_type(core->analysis->typedb, vlink->typ->identifier.name);
 			if (varbtype) {
 				// if a var addr matches with struct , change it's type and name

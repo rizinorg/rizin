@@ -128,6 +128,7 @@ static bool structured_member_walker(const RzTypeDB *typedb, RzList /* RzTypePat
 	if (type->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return false;
 	}
+	rz_return_val_if_fail(type->identifier.name, false);
 	bool result = true;
 	if (type->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_STRUCT) {
 		// Get the base type
