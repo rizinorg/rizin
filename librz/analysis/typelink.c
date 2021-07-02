@@ -118,12 +118,15 @@ static bool type_paths_collect_by_offset_cb(void *user, ut64 k, const void *v) {
 	RzType *t = (RzType *)v;
 	// Handle only identifiers here
 	if (t->kind != RZ_TYPE_KIND_IDENTIFIER) {
-		return true;
+		return false;
+	}
+	if (!t->identifier.name) {
+		return false;
 	}
 	// Get the base type
 	RzBaseType *btype = rz_type_db_get_base_type(tl->typedb, t->identifier.name);
 	if (!btype) {
-		return true;
+		return false;
 	}
 	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT || btype->kind == RZ_BASE_TYPE_KIND_UNION) {
 		RzList *list = rz_type_path_by_offset(tl->typedb, btype, tl->offset);
@@ -168,6 +171,9 @@ static bool type_paths_collect_by_address_cb(void *user, ut64 k, const void *v) 
 	RzType *t = (RzType *)v;
 	// Handle only identifiers here
 	if (t->kind != RZ_TYPE_KIND_IDENTIFIER) {
+		return false;
+	}
+	if (!t->identifier.name) {
 		return false;
 	}
 	// Get the base type

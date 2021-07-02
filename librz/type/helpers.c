@@ -186,6 +186,8 @@ RZ_API bool rz_type_atomic_eq(const RzTypeDB *typedb, RZ_NONNULL const RzType *t
 	rz_return_val_if_fail(typ1->kind == RZ_TYPE_KIND_IDENTIFIER && typ2 == RZ_TYPE_KIND_IDENTIFIER, false);
 	rz_return_val_if_fail(typ1->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED, false);
 	rz_return_val_if_fail(typ2->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED, false);
+	rz_return_val_if_fail(typ1->identifier.name, false);
+	rz_return_val_if_fail(typ2->identifier.name, false);
 	RzBaseType *btyp1 = rz_type_db_get_base_type(typedb, typ1->identifier.name);
 	RzBaseType *btyp2 = rz_type_db_get_base_type(typedb, typ2->identifier.name);
 	if (!btyp1 || !btyp2) {
@@ -208,6 +210,7 @@ RZ_API bool rz_type_atomic_str_eq(const RzTypeDB *typedb, RZ_NONNULL const RzTyp
 	rz_return_val_if_fail(typ1 && name, false);
 	rz_return_val_if_fail(typ1->kind == RZ_TYPE_KIND_IDENTIFIER, false);
 	rz_return_val_if_fail(typ1->identifier.kind == RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED, false);
+	rz_return_val_if_fail(typ1->identifier.name, false);
 	RzBaseType *btyp1 = rz_type_db_get_base_type(typedb, typ1->identifier.name);
 	RzBaseType *btyp2 = rz_type_db_get_base_type(typedb, name);
 	if (!btyp1 || !btyp2) {
@@ -323,6 +326,7 @@ RZ_API bool rz_type_is_atomic(const RzTypeDB *typedb, RZ_NONNULL const RzType *t
 	if (type->identifier.kind != RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED) {
 		return false;
 	}
+	rz_return_val_if_fail(type->identifier.name, false);
 	RzBaseType *btyp = rz_type_db_get_base_type(typedb, type->identifier.name);
 	if (!btyp) {
 		return false;

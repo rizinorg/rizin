@@ -3005,6 +3005,9 @@ RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType 
 static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrBuf *fields, RZ_NULLABLE const char *identifier, RZ_NONNULL RzType *type) {
 	rz_return_val_if_fail(typedb && format && fields && type, false);
 	if (type->kind == RZ_TYPE_KIND_IDENTIFIER) {
+		if (!type->identifier.name) {
+			return false;
+		}
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
 			return false;
