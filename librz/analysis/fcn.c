@@ -2335,7 +2335,9 @@ RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunc
 }
 
 static int typecmp(const void *a, const void *b) {
-	return strcmp(a, b);
+	const RzType *t1 = a;
+	const RzType *t2 = b;
+	return !rz_types_equal(t1, t2);
 }
 
 RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
