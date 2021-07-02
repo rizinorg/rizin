@@ -858,14 +858,14 @@ static char *get_abi_mips(ELFOBJ *bin) {
 /**
  * \brief List all imported lib
  * \param elf binary
- * \return a an allocated array of RzBinElfLib
+ * \return an allocated list of RzBinElfLib
  *
- * Use dynamic information (dt_needed) to generate the list of imported lib
+ * Use dynamic information (dt_needed) to generate a list of imported lib
  */
-RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
+RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	if (!Elf_(rz_bin_elf_has_segments)(bin) || !Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !bin->dynstr) {
+	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !bin->dynstr) {
 		return NULL;
 	}
 
@@ -874,25 +874,23 @@ RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	RzBinElfLib *ret = RZ_NEWS(RzBinElfLib, rz_vector_len(dt_needed) + 1);
-	if (!ret) {
+	RzList *result = rz_list_newf(free);
+	if (!result) {
 		return NULL;
 	}
 
-	size_t i = 0;
 	Elf_(Word) *iter = NULL;
-	rz_vector_enumerate(dt_needed, iter, i) {
-		if (!Elf_(rz_bin_elf_strtab_get)(bin->dynstr, ret[i].name, *iter)) {
-			free(ret);
+	rz_vector_foreach(dt_needed, iter) {
+		char *tmp = Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, *iter);
+		if (!tmp) {
+			rz_list_free(result);
 			return NULL;
 		}
 
-		ret[i].last = 0;
+		rz_list_append(result, tmp);
 	}
 
-	ret[i].last = 1;
-
-	return ret;
+	return result;
 }
 
 static bool get_verdaux_entry(ELFOBJ *bin, ut64 offset, Elf_(Verdaux) * entry) {

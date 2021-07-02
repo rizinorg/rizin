@@ -130,11 +130,6 @@ typedef struct rz_bin_elf_string_t {
 
 typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
 
-typedef struct rz_bin_elf_lib_t {
-	char name[ELF_STRING_LENGTH];
-	int last;
-} RzBinElfLib;
-
 /// A single file entry in a PT_NOTE of type NT_FILE
 typedef struct Elf_(rz_bin_elf_note_file_t) {
 	Elf_(Addr) start_vaddr;
@@ -237,7 +232,7 @@ void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr);
 
 // elf_info.c
 
-RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin);

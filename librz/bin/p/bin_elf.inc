@@ -1146,21 +1146,7 @@ static RzList *imports(RzBinFile *bf) {
 
 static RzList *libs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-
-	RzList *ret = rz_list_newf(free);
-	if (!ret) {
-		return NULL;
-	}
-	struct rz_bin_elf_lib_t *libs = Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
-	if (libs) {
-		int i;
-		for (i = 0; !libs[i].last; i++) {
-			char *ptr = strdup(libs[i].name);
-			rz_list_append(ret, ptr);
-		}
-		free(libs);
-	}
-	return ret;
+	return Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
 }
 
 static ut64 get_got_addr(ELFOBJ *bin) {
