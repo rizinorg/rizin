@@ -170,15 +170,22 @@ static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, c
 	return RZ_CMD_STATUS_OK;
 }
 
-static void types_xrefs(RzCore *core, const char *type) {
+static void types_xrefs(RzCore *core, const char *typestr) {
+	char *error_msg = NULL;
+	RzType *type = rz_type_parse_string_single(core->analysis->typedb->parser, typestr, &error_msg);
+	if (!type || error_msg) {
+		if (error_msg) {
+			eprintf("%s", error_msg);
+		}
+		return;
+	}
 	RzType *type2;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (core->analysis->fcns, iter, fcn) {
 		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
 		rz_list_foreach (uniq, iter2, type2) {
-			const char *ident = rz_type_identifier(type2);
-			if (!strcmp(ident, type)) {
+			if (rz_types_equal(type2, type)) {
 				rz_cons_printf("%s\n", fcn->name);
 				break;
 			}
