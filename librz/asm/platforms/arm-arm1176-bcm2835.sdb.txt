@@ -1,0 +1,230 @@
+AUX_IRQ=name
+AUX_IRQ.address=0x7e215000
+AUX_IRQ.comment=Auxiliary Interrupt status
+
+AUX_ENABLES=name
+AUX_ENABLES.address=0x7e21500
+
+AUX_MU_IO_REG=name
+AUX_MU_IO_REG.address=0x7e215040
+AUX_MU_IO_REG.comment=Mini UART I/O Data
+
+AUX_MU_IER_REG=name
+AUX_MU_IER_REG.address=0x7e215044
+AUX_MU_IER_REG.comment=Mini UART Interrupt Enable
+
+AUX_MU_IIR_REG=name
+AUX_MU_IIR_REG.address=0x7e215048
+AUX_MU_IIR_REG.comment=Mini UART Interrupt Identify
+
+AUX_MU_LCR_REG=name
+AUX_MU_LCR_REG.address=0x7e21504c
+AUX_MU_LCR_REG.comment=Mini UART Line Control
+
+AUX_MU_MCR_REG=name
+AUX_MU_MCR_REG.address=0x7e215050
+AUX_MU_MCR_REG.comment=Mini UART Modem Control
+
+AUX_MU_LSR_REG=name
+AUX_MU_LSR_REG.address=0x7e215054
+AUX_MU_LSR_REG.comment=Mini UART Line Status
+
+AUX_MU_MSR_REG=name
+AUX_MU_MSR_REG.address=0x7e215058
+AUX_MU_MSR_REG.comment=Mini UART Modem Status 
+
+AUX_MU_SCRATCH=name
+AUX_MU_SCRATCH.address=0x7e21505c
+AUX_MU_SCRATCH.comment=Mini UART Scratch
+
+AUX_MU_CNTL_REG=name
+AUX_MU_CNTL_REG.address=0x7e215060
+AUX_MU_CNTL_REG.comment=Mini UART Extra Control
+
+AUX_MU_STAT_REG=name
+AUX_MU_STAT_REG.address=0x7e215064
+AUX_MU_STAT_REG.comment=Mini UART Extra Status 
+
+AUX_MU_BAUD_REG=name
+AUX_MU_BAUD_REG.address=0x7e215068
+AUX_MU_BAUD_REG.comment=Mini UART Baudrate 
+
+AUX_SPI0_CNTL0_REG=name
+AUX_SPI0_CNTL0_REG.address=0x7e215080
+AUX_SPI0_CNTL0_REG.comment=SPI 1 Control register 0 
+
+AUX_SPI0_CNTL1_REG=name
+AUX_SPI0_CNTL1_REG.address=0x7e215084
+AUX_SPI0_CNTL1_REG.comment=SPI 1 Control register 1 
+
+AUX_SPI0_STAT_REG=name
+AUX_SPI0_STAT_REG.address=0x7e215088
+AUX_SPI0_STAT_REG.comment=SPI 1 Status  
+
+AUX_SPI0_IO_REG=name
+AUX_SPI0_IO_REG.address=0x7e215090
+AUX_SPI0_IO_REG.comment=SPI 1 Data 
+
+AUX_SPI0_PEEK_REG=name
+AUX_SPI0_PEEK_REG.address=0x7e215094
+AUX_SPI0_PEEK_REG.comment=SPI 1 Peek 
+
+AUX_SPI1_CNTL0_REG=name
+AUX_SPI1_CNTL0_REG.address=0x7e2150c0
+AUX_SPI1_CNTL0_REG.comment=SPI 2 Control register 0 
+
+AUX_SPI1_CNTL1_REG=name
+AUX_SPI1_CNTL1_REG.address=0x7e2150c4
+AUX_SPI1_CNTL1_REG.comment=SPI 2 Control register 1
+
+AUX_SPI1_STAT_REG=name
+AUX_SPI1_STAT_REG.address=0x7e2150c8
+AUX_SPI1_STAT_REG.comment=SPI 2 Status  
+
+AUX_SPI1_IO_REG=name
+AUX_SPI1_IO_REG.address=0x7e2150d0
+AUX_SPI1_IO_REG.comment=SPI 2 Data
+
+AUX_SPI1_PEEK_REG=name
+AUX_SPI1_PEEK_REG.address=0x7e2150d4
+AUX_SPI1_PEEK_REG.comment=SPI 2 Peek
+
+BSC0=name
+BSC0.address=0x7e205000
+BSC0.comment=Broadcom Serial Controller 0 (BSC)
+
+BSC1=name
+BSC1.address=0x7e804000
+BSC1.comment=Broadcom Serial Controller 1 (BSC)
+
+BSC2=name
+BSC2.address=0x7e805000
+BSC2.comment=Broadcom Serial Controller 2 (BSC)
+
+DMA=name
+DMA.address=0x7e007000
+DMA.comment=DMA Controller (adjacent DMA Channels are offset by 0x100)
+
+EMMC=name
+EMMC.address=0x7e300000
+EMMC.comment=External Mass Media Controller
+
+GPFSEL0=name
+GPFSEL0.address=0x7e200000 
+GPFSEL0.comment=GPIO Function Select 0
+
+GPFSEL1=name
+GPFSEL1.address=0x7e200004
+GPFSEL1.comment=GPIO Function Select 1
+
+GPFSEL2=name
+GPFSEL2.address=0x7e200008
+GPFSEL2.comment=GPIO Function Select 2
+
+GPFSEL3=name
+GPFSEL3.address=0x7e20000c
+GPFSEL3.comment=GPIO Function Select 3
+
+GPFSEL4=name 
+GPFSEL4.address=0x7e200010
+GPFSEL4.comment=GPIO Function Select 4
+
+GPFSEL5=name
+GPFSEL5.address=0x7e200014
+GPFSEL5.comment=GPIO Function Select 5
+
+GPSET0=name
+GPSET0.address=0x7e20001c
+GPSET0.comment=GPIO Pin Output Set 0 
+
+GPSET1=name
+GPSET1.address=0x7e200020
+GPSET1.comment=GPIO Pin Output Set 1
+
+GPCLR0=name
+GPCLR0.address=0x7e200028
+GPCLR0.comment=GPIO Pin Output Clear 0 
+
+GPCLR1=name
+GPCLR1.address=0x7e20002c
+GPCLR1.comment=GPIO Pin Output Clear 1
+
+GPLEV0=name
+GPLEV0.address=0x7e200034
+GPLEV0.comment=GPIO Pin Level 0 
+
+GPLEV0=name
+GPLEV0.address=0x7e200038
+GPLEV0.comment=GPIO Pin Level 1
+
+GPEDS0=name
+GPEDS0.address=0x7e200040
+GPEDS0.comment=GPIO Pin Event Detect Status 0
+
+GPEDS1=name
+GPEDS1.address=0x7e200044
+GPEDS1.comment=GPIO Pin Event Detect Status 0
+
+GPREN0=name
+GPREN0.address=0x7e20004c
+GPREN0.comment=GPIO Pin Rising Edge Detect Enable 0 
+
+GPREN1=name
+GPREN1.address=0x7e200050
+GPREN1.comment=GPIO Pin Rising Edge Detect Enable 0 
+
+GPFEN0=name
+GPFEN0.address=0x7e200058
+GPFEN0.comment=GPIO Pin Falling Edge Detect Enable 0 
+
+GPFEN1=name
+GPFEN1.address=0x7e20005c
+GPFEN1.comment=GPIO Pin Falling Edge Detect Enable 1
+
+GPHEN0=name
+GPHEN0.address=0x7e200064
+GPHEN0.comment=GPIO Pin High Detect Enable 0
+
+GPLEN1=name
+GPLEN1.address=0x7e200068
+GPLEN1.comment=GPIO Pin High Detect Enable 1
+
+GPLEN0=name
+GPLEN0.address=0x7e200070
+GPLEN0.comment=GPIO Pin High Detect Enable 2
+
+GPAREN0=name
+GPAREN0.address=0x7e20007c
+GPAREN0.comment=GPIO Pin Async. Rising Edge Detect 0
+
+GPAREN1=name
+GPAREN1.address=0x7e200080
+GPAREN1.comment=GPIO Pin Async. Rising Edge Detect 1
+
+GPPUD=name
+GPPUD.address=0x7e200094
+GPPUD.comment=GPIO Pin Pull-up/down Enable
+
+GPPUDCLK0=name
+GPPUDCLK0.address=0x7e200098
+GPPUDCLK0.comment=PIO Pin Pull-up/down Enable Clock 0
+
+GPPUDCLK1=name
+GPPUDCLK1.address=0x7e20009c
+GPPUDCLK1.comment=PIO Pin Pull-up/down Enable Clock 1
+
+System Timer=name
+System Timer.address=0x7E003000
+System Timer.comment=The System Timer provides four 32-bit timer channels and a single 64-bit free running counter
+
+USB_MDIO_CNTL=name
+USB_MDIO_CNTL.address=0x7e980080
+USB_MDIO_CNTL.comment=USB MDIO interface control
+
+USB_MDIO_GEN=name
+USB_MDIO_GEN.address=0x7e980084
+USB_MDIO_GEN.comment=USB Data for MDIO interface
+
+USB_VBUS_DRV=name
+USB_VBUS_DRV.address=0x7e980088
+USB_VBUS_DRV.comment=USB Vbus and other Miscellaneous controls 

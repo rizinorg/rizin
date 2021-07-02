@@ -435,6 +435,8 @@ static bool cb_asmcpu(void *user, void *data) {
 
 	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	rz_arch_profiles_init(core->analysis->arch_target, node->value, rz_config_get(core->config, "asm.arch"), dir_prefix);
+	const char *platform = rz_config_get(core->config, "asm.platform");
+	rz_arch_platform_init(core->analysis->platform_target, rz_config_get(core->config, "asm.arch"), node->value, platform, dir_prefix);
 
 	return true;
 }
@@ -563,11 +565,13 @@ static bool cb_asmarch(void *user, void *data) {
 	if (core->analysis) {
 		const char *asmcpu = rz_config_get(core->config, "asm.cpu");
 		const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
+		const char *platform = rz_config_get(core->config, "asm.platform");
 		if (!rz_syscall_setup(core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		update_syscall_ns(core);
+		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu, platform, dir_prefix);
 		rz_arch_profiles_init(core->analysis->arch_target, asmcpu, node->value, dir_prefix);
 	}
 	//if (!strcmp (node->value, "bf"))
@@ -612,8 +616,10 @@ static bool cb_asmarch(void *user, void *data) {
 	rz_core_analysis_cc_init(core);
 
 	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
+	const char *platform = rz_config_get(core->config, "asm.platform");
 	rz_sysreg_set_arch(core->analysis->syscall, node->value, dir_prefix);
 	if (asmcpu) {
+		rz_arch_platform_init(core->analysis->platform_target, node->value, asmcpu->value, platform, dir_prefix);
 		rz_arch_profiles_init(core->analysis->arch_target, asmcpu->value, node->value, dir_prefix);
 	}
 
@@ -727,6 +733,7 @@ static void update_asmfeatures_options(RzCore *core, RzConfigNode *node) {
 	if (core && core->rasm && core->rasm->cur) {
 		if (core->rasm->cur->features) {
 			char *features = strdup(core->rasm->cur->features);
+			rz_list_purge(node->options);
 			argc = rz_str_split(features, ',');
 			for (i = 0; i < argc; i++) {
 				node->options->free = free;
@@ -759,6 +766,48 @@ static bool cb_asmfeatures(void *user, void *data) {
 	if (node->value[0]) {
 		core->rasm->features = strdup(node->value);
 	}
+	return 1;
+}
+
+static void update_asmplatforms_options(RzCore *core, RzConfigNode *node) {
+	int i, argc;
+
+	if (core && core->rasm && core->rasm->cur) {
+		if (core->rasm->cur->platforms) {
+			char *platforms = strdup(core->rasm->cur->platforms);
+			rz_list_purge(node->options);
+			argc = rz_str_split(platforms, ',');
+			for (i = 0; i < argc; i++) {
+				node->options->free = free;
+				const char *feature = rz_str_word_get0(platforms, i);
+				if (feature) {
+					rz_list_append(node->options, strdup(feature));
+				}
+			}
+			free(platforms);
+		}
+	}
+}
+
+static bool cb_asmplatform(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	if (!core) {
+		return false;
+	}
+	if (*node->value == '?') {
+		update_asmplatforms_options(core, node);
+		print_node_options(node);
+		return 0;
+	}
+	RZ_FREE(core->rasm->platforms);
+	if (node->value[0]) {
+		core->rasm->platforms = strdup(node->value);
+	}
+	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
+	const char *asmcpu = rz_config_get(core->config, "asm.cpu");
+	const char *asmarch = rz_config_get(core->config, "asm.arch");
+	rz_arch_platform_init(core->analysis->platform_target, asmarch, asmcpu, node->value, dir_prefix);
 	return 1;
 }
 
@@ -3017,6 +3066,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB("asm.features", "", &cb_asmfeatures);
 	SETDESC(n, "Specify supported features by the target CPU");
 	update_asmfeatures_options(core, n);
+	n = NODECB("asm.platform", "", &cb_asmplatform);
+	SETDESC(n, "Specify supported platforms by the target architecture");
+	update_asmplatforms_options(core, n);
 	n = NODECB("asm.parser", "x86.pseudo", &cb_asmparser);
 	SETDESC(n, "Set the asm parser to use");
 	update_asmparser_options(core, n);

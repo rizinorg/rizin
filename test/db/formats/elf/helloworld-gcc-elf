@@ -272,6 +272,7 @@ EXPECT=<<EOF
     0 * classes
     0 * functions
     3 * imports
+    0 * platform.ports
     0 * registers.extended
     0 * registers.mmio
     4 * relocs

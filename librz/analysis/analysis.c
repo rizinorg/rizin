@@ -125,6 +125,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
 	analysis->syscall = rz_syscall_new();
 	analysis->arch_target = rz_arch_target_new();
+	analysis->platform_target = rz_arch_platform_target_new();
 	rz_io_bind_init(analysis->iob);
 	rz_flag_bind_init(analysis->flb);
 	analysis->reg = rz_reg_new();
@@ -177,6 +178,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_analysis_pin_fini(a);
 	rz_syscall_free(a->syscall);
 	rz_arch_target_free(a->arch_target);
+	rz_arch_platform_target_free(a->platform_target);
 	rz_reg_free(a->reg);
 	ht_up_free(a->ht_xrefs_from);
 	ht_up_free(a->ht_xrefs_to);

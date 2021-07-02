@@ -30,7 +30,7 @@ typedef struct rz_sysreg_item_t {
 	char *comment;
 } RzSysregItem;
 
-typedef struct rz_type_db_sysreg {
+typedef struct rz_sysreg_db_t {
 	HtUP /* <ut64 , RzSysregItem> */ *port;
 } RzSysregsDB;
 
