@@ -84,6 +84,18 @@ static void var_type_set_sign(RzAnalysis *analysis, RzAnalysisVar *var, bool sig
 	}
 }
 
+static bool var_type_simple_to_complex(const RzTypeDB *typedb, RzType *a, RzType *b) {
+	// `*int*` types to anything else of the typeclass
+	if (rz_type_is_integral(typedb, a) && !rz_type_is_char_ptr(a) && !rz_type_is_integral(typedb, b)) {
+		return true;
+	}
+	// `*int*` types to pointers or arrays
+	if (rz_type_is_integral(typedb, a) && !rz_type_is_char_ptr(a) && b->kind != RZ_TYPE_KIND_IDENTIFIER) {
+		return true;
+	}
+	return false;
+}
+
 // TODO: Handle also non-atomic types here
 static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzType *type, bool ref) {
 	rz_return_if_fail(analysis && var && type);
@@ -93,9 +105,10 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 		// default or void (not void* !) type
 		return;
 	}
-	if (!rz_type_is_default(typedb, var->type) && !rz_type_is_void_ptr(var->type)) {
+	if (!rz_type_is_default(typedb, var->type) && !rz_type_is_void_ptr(var->type) && !var_type_simple_to_complex(typedb, var->type, type)) {
 		// return since type is already propagated
 		// except for "void *", since "void *" => "char *" is possible
+		// except for simple types to the more complex types
 		return;
 	}
 	// Since the type could be used by something else we should clone it

@@ -1494,8 +1494,8 @@ afv
 EOF
 EXPECT=<<EOF
 var int va_args @ rbp-0x34
-var int64_t var_30h @ rbp-0x30
-var int64_t var_2ch @ rbp-0x2c
+var uint64_t var_30h @ rbp-0x30
+var uint64_t var_2ch @ rbp-0x2c
 var FILE * stream @ rbp-0x28
 var const char * s @ rbp-0x20
 var const char * var_18h @ rbp-0x18
