@@ -188,6 +188,9 @@ RZ_API bool rz_arch_profiles_init(RzArchTarget *t, const char *cpu, const char *
 	if (!cpu_reload_needed(t, cpu, arch)) {
 		return false;
 	}
+	if (!dir_prefix || !arch || !cpu) {
+		return false;
+	}
 	char *path = rz_str_newf(RZ_JOIN_4_PATHS("%s", RZ_SDB, "asm/cpus", "%s-%s.sdb"),
 		dir_prefix, arch, cpu);
 	if (!path || !arch) {

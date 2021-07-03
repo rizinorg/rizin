@@ -1,5 +1,8 @@
 sdb_files = [
   'arm-arm1176-bcm2835',
+  'arm-cortexA72-bcm2711',
+  'arm-cortexA8-omap3430',
+  'x86-generic-generic',
 ]
 
 foreach file : sdb_files
