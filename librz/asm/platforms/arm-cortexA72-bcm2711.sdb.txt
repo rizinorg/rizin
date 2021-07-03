@@ -264,7 +264,7 @@ UART4=name
 UART4.address=0x7e201800
 
 UART5=name
-UART5.comment=0x7e201a00
+UART5.address=0x7e201a00
 
 Timer Register=name
 Timer Register.address=0x7e00b000
