@@ -151,8 +151,15 @@ winkd_files = [
 
 winkd_inc = [platform_inc, include_directories('winkd')]
 
+librzwinkd_deps = [rz_util_dep, rz_socket_dep, rz_hash_dep, rz_crypto_dep]
+if host_machine.system() == 'haiku'
+  librzwinkd_deps += [
+    cc.find_library('network')
+  ]
+endif
+
 librzwinkd = static_library('rzwinkd', winkd_files,
-  dependencies: [rz_util_dep, rz_socket_dep, rz_hash_dep, rz_crypto_dep],
+  dependencies: librzwinkd_deps,
   include_directories: winkd_inc,
   implicit_include_directories: false
 )
