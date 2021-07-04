@@ -543,45 +543,50 @@ static const char *symbol_bind_to_str(Elf_(Sym) * sym) {
 	return RZ_BIN_BIND_UNKNOWN_STR;
 }
 
-static ut64 get_import_addr(ELFOBJ *bin, int symbol) {
-	if ((!Elf_(rz_bin_elf_has_sections)(bin) || !bin->dynstr) && !Elf_(rz_bin_elf_has_segments)(bin)) {
-		return UT64_MAX;
-	}
-
-	if (!bin->rel_cache) {
-		return UT64_MAX;
-	}
-
-	// lookup the right rel/rela entry
-	RzBinElfReloc *rel = ht_up_find(bin->rel_cache, symbol, NULL);
-
-	if (!rel) {
-		return UT64_MAX;
-	}
-
+static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	switch (bin->ehdr.e_machine) {
 	case EM_ARM:
 	case EM_AARCH64:
-		return get_import_addr_arm(bin, rel);
+		return get_import_addr_arm(bin, reloc);
 	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
-		return get_import_addr_mips(bin, rel);
+		return get_import_addr_mips(bin, reloc);
 	case EM_RISCV:
-		return get_import_addr_riscv(bin, rel);
+		return get_import_addr_riscv(bin, reloc);
 	case EM_SPARC:
 	case EM_SPARCV9:
 	case EM_SPARC32PLUS:
-		return get_import_addr_sparc(bin, rel);
+		return get_import_addr_sparc(bin, reloc);
 	case EM_PPC:
 	case EM_PPC64:
-		return get_import_addr_ppc(bin, rel);
+		return get_import_addr_ppc(bin, reloc);
 	case EM_386:
 	case EM_X86_64:
-		return get_import_addr_x86(bin, rel);
+		return get_import_addr_x86(bin, reloc);
 	default:
 		eprintf("Unsupported relocs type %" PFMT64u " for arch %d\n",
-			(ut64)rel->type, bin->ehdr.e_machine);
+			(ut64)reloc->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
+}
+
+static ut64 get_import_addr(ELFOBJ *bin, ut64 symbol) {
+	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !Elf_(rz_bin_elf_has_relocs)(bin)) {
+		return UT64_MAX;
+	}
+
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(bin, reloc) {
+		if (reloc->sym != symbol) {
+			continue;
+		}
+
+		ut64 tmp = get_import_addr_aux(bin, reloc);
+		if (tmp != UT64_MAX) {
+			return tmp;
+		}
+	}
+
+	return UT64_MAX;
 }
 
 static void Elf_(rz_bin_elf_set_import_by_ord)(ELFOBJ *bin, RzBinElfSymbol *symbol) {
@@ -627,7 +632,7 @@ static bool get_symbol_entry(ELFOBJ *bin, ut64 offset, Elf_(Sym) * result) {
 	return true;
 }
 
-static ut64 get_value_symbol(ELFOBJ *bin, Elf_(Sym) * symbol, size_t pos) {
+static ut64 get_value_symbol(ELFOBJ *bin, Elf_(Sym) * symbol, ut64 pos) {
 	if (symbol->st_value) {
 		return symbol->st_value;
 	}
