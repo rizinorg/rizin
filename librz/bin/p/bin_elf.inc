@@ -344,11 +344,12 @@ static ut64 reloc_targets_map_base(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) 
 }
 
 /// size of the artificial reloc target vfile
-static ut64 reloc_targets_vfile_size(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * obj) {
-	if (!bf->o || !bf->o->opts.patch_relocs) {
+static ut64 reloc_targets_vfile_size(RzBinFile *bf, ELFOBJ *obj) {
+	if (!bf->o || !bf->o->opts.patch_relocs || !Elf_(rz_bin_elf_has_relocs)(obj)) {
 		return 0;
 	}
-	return obj->g_reloc_num * reloc_target_size(obj);
+
+	return Elf_(rz_bin_elf_get_relocs_count)(obj) * reloc_target_size(obj);
 }
 
 static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
@@ -534,7 +535,7 @@ static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinElfRe
 #define ADD(T, A) \
 	r->type = RZ_BIN_RELOC_##T; \
 	r->addend += A; \
-	r->additive = rel->rel_mode == DT_RELA; \
+	r->additive = rel->mode == DT_RELA; \
 	return r
 
 	switch (bin->ehdr.e_machine) {
@@ -633,9 +634,9 @@ static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinElfRe
 	return NULL;
 }
 
-static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin) {
+static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	rz_return_if_fail(bf && bin);
-	if (bin->relocs_patched) {
+	if (bin->relocs_patched || !Elf_(rz_bin_elf_has_relocs)(bin)) {
 		return;
 	}
 	bin->relocs_patched = true; // run this function just once (lazy relocs patching)
@@ -649,10 +650,6 @@ static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin) {
 		return;
 	}
 	ut64 n_vaddr = reloc_targets_map_base(bf, bin);
-	RzBinElfReloc *relcs = relcs = Elf_(rz_bin_elf_get_relocs)(bin);
-	if (!relcs) {
-		return;
-	}
 	HtUUOptions opt = { 0 };
 	HtUU *relocs_by_sym = ht_uu_new_opt(&opt);
 	if (!relocs_by_sym) {
@@ -665,11 +662,10 @@ static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin) {
 	}
 	Elf_(rz_bin_elf_get_imports)(bin); // Pre-populate imports and syms. Calling this multiple times is fine since it only parses once lazily.
 	ut64 vaddr = n_vaddr;
-	size_t i;
-	for (i = 0; !relcs[i].last; i++) {
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
 		ut64 plt_entry_addr = vaddr;
-		RzBinElfReloc *reloc = &relcs[i];
 
 		if (reloc->sym) {
 			if (reloc->sym < bin->imports_by_ord_size && bin->imports_by_ord[reloc->sym]) {
@@ -1146,21 +1142,7 @@ static RzList *imports(RzBinFile *bf) {
 
 static RzList *libs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
-
-	RzList *ret = rz_list_newf(free);
-	if (!ret) {
-		return NULL;
-	}
-	struct rz_bin_elf_lib_t *libs = Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
-	if (libs) {
-		int i;
-		for (i = 0; !libs[i].last; i++) {
-			char *ptr = strdup(libs[i].name);
-			rz_list_append(ret, ptr);
-		}
-		free(libs);
-	}
-	return ret;
+	return Elf_(rz_bin_elf_get_libs)(bf->o->bin_obj);
 }
 
 static ut64 get_got_addr(ELFOBJ *bin) {
@@ -1185,11 +1167,18 @@ static RzList *relocs(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	RzList *ret = NULL;
 	RzBinReloc *ptr = NULL;
-	RzBinElfReloc *relocs = NULL;
-	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
-	if (bin) {
-		patch_relocs(bf, bin);
+
+	if (!bf->o) {
+		return NULL;
 	}
+
+	ELFOBJ *bin = bf->o->bin_obj;
+	if (!bin || !Elf_(rz_bin_elf_has_relocs)(bin)) {
+		return NULL;
+	}
+
+	patch_relocs(bf, bin);
+
 	Elf_(rz_bin_elf_get_imports)(bin); // Pre-populate imports and syms. Calling this multiple times is fine since it only parses once lazily.
 	if (!(ret = rz_list_newf(free))) {
 		return NULL;
@@ -1200,18 +1189,16 @@ static RzList *relocs(RzBinFile *bf) {
 	if (!got_addr) {
 		got_addr = reloc_targets_map_base(bf, bin);
 	}
-	if (bf->o) {
-		if (!(relocs = Elf_(rz_bin_elf_get_relocs)(bin))) {
-			return ret;
+
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(bin, reloc) {
+		if (!(ptr = reloc_convert(bin, reloc, got_addr))) {
+			continue;
 		}
-		size_t i;
-		for (i = 0; !relocs[i].last; i++) {
-			if (!(ptr = reloc_convert(bin, &relocs[i], got_addr))) {
-				continue;
-			}
-			rz_list_append(ret, ptr);
-		}
+
+		rz_list_append(ret, ptr);
 	}
+
 	return ret;
 }
 

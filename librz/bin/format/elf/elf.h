@@ -32,6 +32,9 @@
 #define rz_bin_elf_enumerate_sections(bin, section, i) \
 	if (Elf_(rz_bin_elf_has_sections)(bin)) \
 	rz_vector_enumerate((bin)->sections, section, i)
+#define rz_bin_elf_foreach_relocs(bin, reloc) \
+	if (Elf_(rz_bin_elf_has_relocs)(bin)) \
+	rz_vector_foreach(bin->relocs, reloc)
 
 /// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
 typedef struct prstatus_layout_t {
@@ -101,16 +104,15 @@ typedef struct rz_bin_elf_symbol_t {
 } RzBinElfSymbol;
 
 typedef struct rz_bin_elf_reloc_t {
-	int sym;
+	ut64 sym;
 	int type;
-	Elf_(Xword) rel_mode;
+	ut64 mode;
 	st64 addend; ///< exact addend value taken from the ELF, meaning depends on type
 	ut64 offset; ///< exact offset value taken from the ELF, meaning depends on the binary type
 	ut64 paddr; ///< absolute paddr in the file, calculated from offset, or UT64_MAX if no such addr exists
 	ut64 vaddr; ///< source vaddr of the reloc, calculated from offset
 	ut64 target_vaddr; ///< after patching, the target that this reloc points to
 	ut16 section;
-	int last;
 	ut64 sto;
 } RzBinElfReloc;
 
@@ -129,11 +131,6 @@ typedef struct rz_bin_elf_string_t {
 } RzBinElfString;
 
 typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
-
-typedef struct rz_bin_elf_lib_t {
-	char name[ELF_STRING_LENGTH];
-	int last;
-} RzBinElfLib;
 
 /// A single file entry in a PT_NOTE of type NT_FILE
 typedef struct Elf_(rz_bin_elf_note_file_t) {
@@ -175,15 +172,33 @@ RzBinElfNoteSegment;
 typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 
 struct Elf_(rz_bin_elf_obj_t) {
+	RzBuffer *b;
+	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
+
+	Sdb *kv;
+
+	const char *file;
+	ut64 size;
+
+	ut64 baddr;
+	ut64 boffset;
+	int endian;
+	int bss;
+
 	Elf_(Ehdr) ehdr;
 
 	RzVector *segments; // should be use with elf_segments.c
 	RzVector *sections; // should be use with elf_sections.c
 
-	RzBinElfDtDynamic *dt_dynamic;
+	RzBinElfDtDynamic *dt_dynamic; // should be use with elf_dynamic.c
 
-	RzBinElfStrtab *dynstr;
-	RzBinElfStrtab *shstrtab;
+	RzBinElfStrtab *dynstr; // should be use with elf_strtab.c
+	RzBinElfStrtab *shstrtab; // should be use with elf_strtab.c
+
+	RzVector *relocs; // should be use with elf_relocs.c
+	bool reloc_targets_map_base_calculated;
+	bool relocs_patched;
+	ut64 reloc_targets_map_base;
 
 	RzList /*<RzBinElfNoteSegment>*/ *note_segments;
 
@@ -192,27 +207,11 @@ struct Elf_(rz_bin_elf_obj_t) {
 	RzBinSymbol **symbols_by_ord;
 	size_t symbols_by_ord_size;
 
-	int bss;
-	ut64 size;
-	ut64 baddr;
-	ut64 boffset;
-	int endian;
-	const char *file;
-	RzBuffer *b;
-	Sdb *kv;
-
 	/*cache purpose*/
 	RzBinElfSymbol *g_symbols;
 	RzBinElfSymbol *g_imports;
-	RzBinElfReloc *g_relocs;
-	ut32 g_reloc_num;
 	RzBinElfSymbol *phdr_symbols;
 	RzBinElfSymbol *phdr_imports;
-	HtUP *rel_cache;
-	ut64 reloc_targets_map_base;
-	bool reloc_targets_map_base_calculated;
-	RzBuffer *buf_patched; ///< overlay over the original file with relocs patched
-	bool relocs_patched;
 };
 
 // elf.c
@@ -237,7 +236,7 @@ void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr);
 
 // elf_info.c
 
-RZ_OWN RzBinElfLib *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzList *Elf_(rz_bin_elf_get_libs)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN Sdb *Elf_(rz_bin_elf_get_version_info)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_abi)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_get_arch)(RZ_NONNULL ELFOBJ *bin);
@@ -297,7 +296,9 @@ bool Elf_(rz_bin_elf_mul_off)(Elf_(Off) * result, Elf_(Off) addr, Elf_(Off) valu
 
 // elf_relocs.c
 
-RZ_BORROW RzBinElfReloc *Elf_(rz_bin_elf_get_relocs)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzVector *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_has_relocs)(RZ_NONNULL ELFOBJ *bin);
+size_t Elf_(rz_bin_elf_get_relocs_count)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_segments.c

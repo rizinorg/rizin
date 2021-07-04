@@ -118,22 +118,6 @@ static void init_phdr_sdb(ELFOBJ *bin) {
 	sdb_set(bin->kv, "elf_phdr.format", sdb_elf_phdr_format, 0);
 }
 
-static HtUP *rel_cache_new(RzBinElfReloc *relocs, ut32 reloc_num) {
-	if (!relocs || reloc_num == 0) {
-		return NULL;
-	}
-	const int htsize = RZ_MIN(reloc_num, 1024);
-	HtUP *rel_cache = ht_up_new_size(htsize, NULL, NULL, NULL);
-	if (rel_cache) {
-		size_t i;
-		for (i = 0; i < reloc_num; i++) {
-			RzBinElfReloc *tmp = relocs + i;
-			ht_up_insert(rel_cache, tmp->sym, tmp);
-		}
-	}
-	return rel_cache;
-}
-
 static bool rz_bin_elf_init_phdr(ELFOBJ *bin) {
 	bin->segments = Elf_(rz_bin_elf_segments_new)(bin);
 	if (!bin->segments) {
@@ -369,16 +353,14 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 		rz_vector_free(sections);
 	}
 
+	bin->relocs = Elf_(rz_bin_elf_relocs_new)(bin);
+
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
 
 	bin->imports_by_ord_size = 0;
 	bin->imports_by_ord = NULL;
 	bin->symbols_by_ord_size = 0;
 	bin->symbols_by_ord = NULL;
-
-	bin->g_relocs = Elf_(rz_bin_elf_get_relocs)(bin);
-
-	bin->rel_cache = rel_cache_new(bin->g_relocs, bin->g_reloc_num);
 
 	sdb_ns_set(bin->kv, "versioninfo", Elf_(rz_bin_elf_get_version_info)(bin));
 
@@ -414,27 +396,17 @@ RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf) {
 void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_if_fail(bin);
 
+	rz_buf_free(bin->b);
+
 	rz_vector_free(bin->segments);
 	rz_vector_free(bin->sections);
 
 	Elf_(rz_bin_elf_dt_dynamic_free)(bin->dt_dynamic);
 
-	Elf_(rz_bin_elf_strtab_free)(bin->shstrtab);
 	Elf_(rz_bin_elf_strtab_free)(bin->dynstr);
+	Elf_(rz_bin_elf_strtab_free)(bin->shstrtab);
 
-	free(bin->g_symbols);
-	free(bin->g_imports);
-	free(bin->g_relocs);
-
-	if (bin->g_symbols != bin->phdr_symbols) {
-		free(bin->phdr_symbols);
-	}
-
-	if (bin->g_imports != bin->phdr_imports) {
-		free(bin->phdr_imports);
-	}
-
-	ht_up_free(bin->rel_cache);
+	rz_vector_free(bin->relocs);
 
 	rz_list_free(bin->note_segments);
 
@@ -452,7 +424,17 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 		free(bin->symbols_by_ord);
 	}
 
-	rz_buf_free(bin->b);
+	free(bin->g_symbols);
+	free(bin->g_imports);
+
+	if (bin->g_symbols != bin->phdr_symbols) {
+		free(bin->phdr_symbols);
+	}
+
+	if (bin->g_imports != bin->phdr_imports) {
+		free(bin->phdr_imports);
+	}
+
 	free(bin);
 }
 
