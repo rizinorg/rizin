@@ -42,7 +42,7 @@ RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_strtab_new)(RZ_NONNULL ELFOBJ *bin, ut64 
 RZ_OWN char *Elf_(rz_bin_elf_strtab_get_dup)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index) {
 	rz_return_val_if_fail(strtab, NULL);
 
-	if (Elf_(rz_bin_elf_strtab_has_index)(strtab, index)) {
+	if (!Elf_(rz_bin_elf_strtab_has_index)(strtab, index)) {
 		return NULL;
 	}
 
