@@ -31,24 +31,25 @@ static int get_file_type(RzBinFile *bf) {
 }
 
 static char *regstate(RzBinFile *bf) {
-	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
-	if (obj->ehdr.e_machine != EM_AARCH64 &&
-		obj->ehdr.e_machine != EM_ARM &&
-		obj->ehdr.e_machine != EM_386 &&
-		obj->ehdr.e_machine != EM_X86_64) {
+	ELFOBJ *obj = bf->o->bin_obj;
 
-		char *machine_name = Elf_(rz_bin_elf_get_machine_name)(obj);
-		eprintf("Cannot retrieve regstate on: %s (not yet supported)\n", machine_name);
-		free(machine_name);
+	RzVector *notes;
+	rz_bin_elf_foreach_notes_segment(obj, notes) {
+		RzBinElfNote *tmp;
+		rz_vector_foreach(notes, tmp) {
+			if (tmp->type != NT_PRSTATUS) {
+				continue;
+			}
 
-		return NULL;
+			RzBinElfNotePrStatus *note = &tmp->prstatus;
+			return rz_hex_bin2strdup(note->regstate, note->regstate_size);
+		}
 	}
 
-	size_t sz = 0;
-	const ut8 *regs = Elf_(rz_bin_elf_grab_regstate)(obj, &sz);
-	char *hexregs = (regs && sz) ? rz_hex_bin2strdup(regs, sz) : NULL;
-
-	return hexregs;
+	char *machine_name = Elf_(rz_bin_elf_get_machine_name)(obj);
+	eprintf("Cannot retrieve regstate on: %s (not yet supported)\n", machine_name);
+	free(machine_name);
+	return NULL;
 }
 
 static char *setphname(ut16 mach, Elf_(Word) ptyp) {
@@ -172,26 +173,27 @@ static bool is_wordable_section(const char *name) {
 	return false;
 }
 
-static RzBinElfNoteFile *note_file_for_load_segment(struct Elf_(rz_bin_elf_obj_t) * obj, Elf_(Phdr) * phdr) {
-	if (!obj->note_segments) {
+static RzBinElfNoteFile *note_file_for_load_segment(ELFOBJ *obj, Elf_(Phdr) * phdr) {
+	if (!Elf_(rz_bin_elf_has_notes)(obj)) {
 		return false;
 	}
-	RzBinElfNoteSegment *seg;
-	RzListIter *it;
-	rz_list_foreach (obj->note_segments, it, seg) {
-		for (size_t i = 0; i < seg->notes_count; i++) {
-			RzBinElfNote *note = &seg->notes[i];
-			if (note->type != NT_FILE) {
+
+	RzVector *notes;
+	rz_bin_elf_foreach_notes_segment(obj, notes) {
+		RzBinElfNote *tmp;
+		rz_vector_foreach(notes, tmp) {
+			if (tmp->type != NT_FILE) {
 				continue;
 			}
-			for (size_t j = 0; j < note->file.files_count; j++) {
-				RzBinElfNoteFile *f = &note->file.files[j];
-				if (f->start_vaddr == phdr->p_vaddr) {
-					return f;
-				}
+
+			RzBinElfNoteFile *note = &tmp->file;
+
+			if (note->start_vaddr == phdr->p_vaddr) {
+				return note;
 			}
 		}
 	}
+
 	return NULL;
 }
 
