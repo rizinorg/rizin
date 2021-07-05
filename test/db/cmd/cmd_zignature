@@ -1761,7 +1761,7 @@ za main g cc=147 nbbs=226 edges=355 ebbs=8 bbsum=4859
 za main o 0x000040a0
 za main r sym._obstack_begin sym._obstack_begin sym._obstack_begin
 za main v s-64 s-88 s-116 s-96 s-80 s-67 s-65 s-66 s-86 r110 r114
-za main t func.main.ret="int" func.main.args=3 func.main.arg.0="int,argc" func.main.arg.1="char,**,argv" func.main.arg.2="char,**,envp"
+za main t func.main.ret=int func.main.args=3 func.main.arg.0="int,argc" func.main.arg.1="char,**,argv" func.main.arg.2="char,**,envp"
 za main h c82a35182e4217e7d7a4662c066be72bff254100ad71e29492350dba46fad184
 EOF
 RUN

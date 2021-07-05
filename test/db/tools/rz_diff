@@ -243,7 +243,7 @@ digraph code {
 	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
 	node [fillcolor=gray style=filled shape=box];
 	edge [arrowhead="normal"];
-	"0x00401ae0" [fillcolor="yellow",color="black", fontname="Courier", label="--- fcn.00401ae0\l+++ fcn.00401af0\l@@ -1,4 +1,4 @@\l-fcn.00401ae0 (int64_t arg1, uint32_t arg2);\l+fcn.00401af0 (int64_t arg1, uint32_t arg2);\l      ; arg int64_t arg1 @ rdi\l      ; arg uint32_t arg2 @ rsi\l      push  r12\l@@ -12,4 +12,4 @@\l      call  sym.imp.dcgettext\l      cmp   rax, rbp\l      mov   rbx, rax\l-     je    0x401b10\l+     je    0x401b20\l", URL="fcn.00401ae0/0x00401ae0"]
+	"0x00401ae0" [fillcolor="yellow",color="black", fontname="Courier", label="--- fcn.00401ae0\l+++ fcn.00401af0\l@@ -1,4 +1,4 @@\l-fcn.00401ae0 (int64_t arg1, uint64_t arg2);\l+fcn.00401af0 (int64_t arg1, uint64_t arg2);\l      ; arg int64_t arg1 @ rdi\l      ; arg uint64_t arg2 @ rsi\l      push  r12\l@@ -12,4 +12,4 @@\l      call  sym.imp.dcgettext\l      cmp   rax, rbp\l      mov   rbx, rax\l-     je    0x401b10\l+     je    0x401b20\l", URL="fcn.00401ae0/0x00401ae0"]
 	"0x00401b01" [fillcolor="lightgray",color="black", fontname="Courier", label="     mov   rax, rbx\l     pop   rbx\l     pop   rbp\l     pop   r12\l     ret\l", URL="fcn.00401ae0/0x00401b01"]
 	"0x00401b10" [fillcolor="lightgray",color="black", fontname="Courier", label="     call  fcn.004038e0\l     movzx edx, byte [rax]\l     and   edx, 0xffffffdf\l     cmp   dl, 0x55\l     jne   0x401b78\l", URL="fcn.00401ae0/0x00401b10"]
 	"0x00401b20" [fillcolor="lightgray",color="black", fontname="Courier", label="     movzx edx, byte [rax + 1]\l     and   edx, 0xffffffdf\l     cmp   dl, 0x54\l     jne   0x401b60\l", URL="fcn.00401ae0/0x00401b20"]
