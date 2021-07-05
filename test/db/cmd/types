@@ -1463,7 +1463,7 @@ s main
 afv~ptr
 EOF
 EXPECT=<<EOF
-var void ** ptr @ rbp-0x18
+var char ** ptr @ rbp-0x18
 EOF
 RUN
 
