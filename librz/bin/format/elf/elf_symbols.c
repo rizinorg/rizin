@@ -76,7 +76,7 @@ static void set_addr_parameter(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, RzBinSym
 }
 
 static char *get_symbol_name(RzBinElfSymbol *elf_symbol, const char *namefmt) {
-	return elf_symbol->name[0] ? rz_str_newf(namefmt, &elf_symbol->name[0]) : strdup("");
+	return elf_symbol->name ? rz_str_newf(namefmt, &elf_symbol->name[0]) : strdup("");
 }
 
 static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol, const char *namefmt) {
@@ -92,7 +92,7 @@ static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol
 }
 
 static bool is_arm_symbol(ELFOBJ *bin, RzBinElfSymbol *elf_symbol) {
-	return bin->ehdr.e_machine == EM_ARM && *elf_symbol->name;
+	return bin->ehdr.e_machine == EM_ARM && elf_symbol->name;
 }
 
 static void fix_thumb_symbol(RzBinSymbol *symbol) {
@@ -495,6 +495,10 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
 }
 
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) * sym, const char *name) {
+	if (!name) {
+		return false;
+	}
+
 	if (name[0] != '$') {
 		return false;
 	}
@@ -658,27 +662,36 @@ static bool is_section_local_symbol(ELFOBJ *bin, Elf_(Sym) * symbol) {
 	return true;
 }
 
-static void set_elf_symbol_name(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, RzBinElfSection *section) {
+static bool set_elf_symbol_name(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, RzBinElfSection *section) {
 	if (section && is_section_local_symbol(bin, symbol)) {
-		rz_str_ncpy(elf_symbol->name, section->name, ELF_STRING_LENGTH);
-		return;
+		elf_symbol->name = rz_str_new(section->name);
+		return elf_symbol->name;
 	}
 
-	if (!bin->dynstr || !Elf_(rz_bin_elf_strtab_get)(bin->dynstr, elf_symbol->name, symbol->st_name)) {
-		elf_symbol->name[0] = '\0';
+	if (!bin->dynstr) {
+		return false;
 	}
+
+	elf_symbol->name = Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, symbol->st_name);
+	if (!elf_symbol->name) {
+		return false;
+	}
+
+	return true;
 }
 
-static void convert_elf_symbol_entry(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, int type, size_t ordinal) {
+static bool convert_elf_symbol_entry(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, int type, size_t ordinal) {
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, symbol->st_shndx);
 
 	elf_symbol->offset = symbol->st_value;
 	elf_symbol->size = symbol->st_size;
 	elf_symbol->ordinal = ordinal;
 	elf_symbol->bind = symbol_bind_to_str(symbol);
+	if (!set_elf_symbol_name(bin, elf_symbol, symbol, section)) {
+		return false;
+	}
 	elf_symbol->type = symbol_type_to_str(bin, elf_symbol, symbol);
-	set_elf_symbol_name(bin, elf_symbol, symbol, section);
-	elf_symbol->libname[0] = '\0';
+	elf_symbol->libname = NULL;
 	elf_symbol->last = 0;
 	elf_symbol->in_shdr = false;
 	elf_symbol->is_sht_null = false;
@@ -702,6 +715,8 @@ static void convert_elf_symbol_entry(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, El
 			elf_symbol->offset = tmp;
 		}
 	}
+
+	return true;
 }
 
 static RzVector *compute_symbols_from_segment(ELFOBJ *bin, int type, ut64 offset, size_t num, ut64 entry_size) {
@@ -727,7 +742,10 @@ static RzVector *compute_symbols_from_segment(ELFOBJ *bin, int type, ut64 offset
 			return false;
 		}
 
-		convert_elf_symbol_entry(bin, elf_symbol, &symbol, type, i);
+		if (!convert_elf_symbol_entry(bin, elf_symbol, &symbol, type, i)) {
+			rz_vector_free(result);
+			return false;
+		}
 
 		offset += entry_size;
 	}
@@ -858,7 +876,10 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RzBinElfSymbol **s
 			if (d) {
 				p->in_shdr = true;
 				if (*p->name && *d->name && rz_str_startswith(d->name, "$")) {
-					strcpy(d->name, p->name);
+					d->name = rz_str_new(d->name);
+					if (!d->name) {
+						return false;
+					}
 				}
 			}
 			p++;
@@ -1061,7 +1082,7 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 			ret_size += nsym;
 			symbol_map = ht_pp_new_opt(&symbol_map_options);
 			for (k = 0; k < prev_ret_size; k++) {
-				if (ret[k].name[0]) {
+				if (ret[k].name) {
 					ht_pp_insert(symbol_map, ret + k, ret + k);
 				}
 			}
@@ -1104,11 +1125,11 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 					int st_name = sym[k].st_name;
 					int maxsize = RZ_MIN(rz_buf_size(bin->b), strtab_section->size);
 					if (is_section_local_sym(bin, &sym[k], sym_section)) {
-						rz_str_ncpy(ret[ret_ctr].name, sym_section->name, ELF_STRING_LENGTH);
+						ret[ret_ctr].name = rz_str_new(sym_section->name);
 					} else if (st_name <= 0 || st_name >= maxsize) {
-						ret[ret_ctr].name[0] = 0;
+						ret[ret_ctr].name = NULL;
 					} else {
-						rz_str_ncpy(ret[ret_ctr].name, &strtab[st_name], ELF_STRING_LENGTH);
+						ret[ret_ctr].name = rz_str_new(strtab + st_name);
 						ret[ret_ctr].type = symbol_type_to_str(bin, &ret[ret_ctr], &sym[k]);
 
 						if (ht_pp_find(symbol_map, &ret[ret_ctr], NULL)) {
@@ -1118,7 +1139,6 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 					}
 				}
 				ret[ret_ctr].ordinal = k;
-				ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
 				fill_symbol_bind_and_type(bin, &ret[ret_ctr], &sym[k]);
 				ret[ret_ctr].is_sht_null = is_sht_null;
 				ret[ret_ctr].is_vaddr = is_vaddr;

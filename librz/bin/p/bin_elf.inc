@@ -266,7 +266,7 @@ static RzList *maps_unpatched(RzBinFile *bf) {
 				break;
 			}
 
-			map->name = strdup(section->name);
+			map->name = rz_str_new(section->name);
 			map->paddr = section->offset;
 			map->psize = section->type != SHT_NOBITS ? section->size : 0;
 			map->vsize = section->size;
@@ -810,7 +810,10 @@ static RzList *sections(RzBinFile *bf) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			break;
 		}
-		ptr->name = strdup((char *)section->name);
+		ptr->name = rz_str_new(section->name);
+		if (!ptr->name) {
+			ptr->name = rz_str_new("");
+		}
 		if (strstr(ptr->name, "data") && !strstr(ptr->name, "rel") && !strstr(ptr->name, "pydata")) {
 			ptr->is_data = true;
 		} else if (!strcmp(ptr->name, "C")) {
@@ -1042,7 +1045,7 @@ static RzList *entries(RzBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
-		if (!strncmp(symbol[i].name, "Java", 4)) {
+		if (symbol[i].name && !strncmp(symbol[i].name, "Java", 4)) {
 			if (rz_str_endswith(symbol[i].name, "_init")) {
 				if (!(ptr = RZ_NEW0(RzBinAddr))) {
 					return ret;

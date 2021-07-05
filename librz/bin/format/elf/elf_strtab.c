@@ -5,6 +5,16 @@
 #include "elf_strtab.h"
 #include "elf.h"
 
+RZ_BORROW const char *Elf_(rz_bin_elf_strtab_get)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index) {
+	rz_return_val_if_fail(strtab, false);
+
+	if (!Elf_(rz_bin_elf_strtab_has_index)(strtab, index)) {
+		return NULL;
+	}
+
+	return strtab->data + index;
+}
+
 RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_strtab_new)(RZ_NONNULL ELFOBJ *bin, ut64 offset, ut64 size) {
 	rz_return_val_if_fail(bin, NULL);
 
@@ -46,32 +56,13 @@ RZ_OWN char *Elf_(rz_bin_elf_strtab_get_dup)(RZ_NONNULL RzBinElfStrtab *strtab, 
 		return NULL;
 	}
 
-	if (strnlen(strtab->data + index, ELF_STRING_LENGTH) == ELF_STRING_LENGTH) {
-		return NULL;
-	}
-
-	return rz_str_ndup(strtab->data + index, ELF_STRING_LENGTH);
+	return strdup(strtab->data + index);
 }
 
 bool Elf_(rz_bin_elf_strtab_has_index)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index) {
 	rz_return_val_if_fail(strtab, false);
 
 	return index < strtab->size;
-}
-
-bool Elf_(rz_bin_elf_strtab_get)(RZ_NONNULL RzBinElfStrtab *strtab, RZ_NONNULL RZ_OUT char *dst, ut64 index) {
-	rz_return_val_if_fail(strtab && dst, false);
-
-	if (!Elf_(rz_bin_elf_strtab_has_index)(strtab, index)) {
-		return false;
-	}
-
-	if (strnlen(strtab->data + index, ELF_STRING_LENGTH) == ELF_STRING_LENGTH) {
-		return false;
-	}
-
-	strncpy(dst, strtab->data + index, ELF_STRING_LENGTH);
-	return true;
 }
 
 void Elf_(rz_bin_elf_strtab_free)(RzBinElfStrtab *ptr) {
