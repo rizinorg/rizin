@@ -32,7 +32,7 @@ static void parse_note_prstatus(ELFOBJ *bin, RzBinElfNote *note, Elf_(Nhdr) * no
 	note->prstatus.regstate = buf;
 }
 
-static bool set_note_file(ELFOBJ *bin, RzBinElfNoteFile *file, ut64 *offset, const char *file_name) {
+static bool set_note_file(ELFOBJ *bin, RzBinElfNoteFile *file, ut64 *offset, char *name) {
 	if (!Elf_(rz_bin_elf_read_addr)(bin, offset, &file->start_vaddr)) {
 		return false;
 	}
@@ -45,10 +45,7 @@ static bool set_note_file(ELFOBJ *bin, RzBinElfNoteFile *file, ut64 *offset, con
 		return false;
 	}
 
-	file->file = strdup(file_name);
-	if (!file->file) {
-		return false;
-	}
+	file->file = name;
 
 	return true;
 }
@@ -75,22 +72,24 @@ static bool parse_note_file(RzBinElfNote *note, Elf_(Nhdr) * note_segment_header
 	ut64 entry_offset = offset;
 	for (Elf_(Addr) i = 0; i < n_maps; i++) {
 		if (strings_offset + strings_array_len >= note_segment_header->n_descsz) {
-			break;
-		}
-
-		char tmp[ELF_STRING_LENGTH] = { 0 };
-		ut64 string_offset = offset + strings_offset + strings_array_len;
-		if (rz_buf_read_at(bin->b, string_offset, (ut8 *)tmp, ELF_STRING_LENGTH - 1) < 0) {
-			break;
-		}
-
-		RzBinElfNoteFile *file = rz_vector_push(&files, NULL);
-		if (file && !set_note_file(bin, file, &entry_offset, tmp)) {
 			rz_vector_fini(&files);
 			return false;
 		}
 
-		strings_array_len += strlen(tmp) + 1;
+		ut64 string_offset = offset + strings_offset + strings_array_len;
+		char *name = rz_buf_get_nstring(bin->b, string_offset, note_segment_header->n_descsz);
+		if (!name) {
+			rz_vector_fini(&files);
+			return false;
+		}
+
+		RzBinElfNoteFile *file = rz_vector_push(&files, NULL);
+		if (file && !set_note_file(bin, file, &entry_offset, name)) {
+			rz_vector_fini(&files);
+			return false;
+		}
+
+		strings_array_len += strlen(name) + 1;
 	}
 
 	note->file.files_count = rz_vector_len(&files);

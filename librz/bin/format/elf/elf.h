@@ -78,7 +78,7 @@ typedef struct rz_bin_elf_section_t {
 	ut64 offset;
 	ut64 rva;
 	ut64 size;
-	char name[ELF_STRING_LENGTH];
+	char *name;
 	bool is_valid;
 } RzBinElfSection;
 
@@ -94,8 +94,8 @@ typedef struct rz_bin_elf_symbol_t {
 	ut32 ordinal;
 	const char *bind;
 	const char *type;
-	char name[ELF_STRING_LENGTH];
-	char libname[ELF_STRING_LENGTH];
+	const char *name;
+	const char *libname;
 	int last;
 	bool in_shdr;
 	bool is_sht_null;
@@ -115,20 +115,6 @@ typedef struct rz_bin_elf_reloc_t {
 	ut16 section;
 	ut64 sto;
 } RzBinElfReloc;
-
-typedef struct rz_bin_elf_field_t {
-	ut64 offset;
-	char name[ELF_STRING_LENGTH];
-	int last;
-} RzBinElfField;
-
-typedef struct rz_bin_elf_string_t {
-	ut64 offset;
-	ut64 size;
-	char type;
-	char string[ELF_STRING_LENGTH];
-	int last;
-} RzBinElfString;
 
 typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
 
@@ -319,9 +305,9 @@ bool Elf_(rz_bin_elf_has_sections)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_strtab
 
+RZ_BORROW const char *Elf_(rz_bin_elf_strtab_get)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);
 RZ_OWN RzBinElfStrtab *Elf_(rz_bin_elf_strtab_new)(RZ_NONNULL ELFOBJ *bin, ut64 offset, ut64 size);
 RZ_OWN char *Elf_(rz_bin_elf_strtab_get_dup)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);
-bool Elf_(rz_bin_elf_strtab_get)(RZ_NONNULL RzBinElfStrtab *strtab, RZ_NONNULL RZ_OUT char *dst, ut64 index);
 bool Elf_(rz_bin_elf_strtab_has_index)(RZ_NONNULL RzBinElfStrtab *strtab, ut64 index);
 void Elf_(rz_bin_elf_strtab_free)(RzBinElfStrtab *ptr);
 
