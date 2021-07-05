@@ -1,12 +1,12 @@
-test_conf_data = configuration_data()
-test_conf_data.set_quoted('RIZIN_BUILD_PATH', rizin_exe.full_path())
-test_config_h = configure_file(
-  input: 'test_config.h.in',
-  output: 'test_config.h',
-  configuration: test_conf_data,
-)
-
 if get_option('enable_tests')
+  test_conf_data = configuration_data()
+  test_conf_data.set_quoted('RIZIN_BUILD_PATH', rizin_exe.full_path())
+  test_config_h = configure_file(
+    input: 'test_config.h.in',
+    output: 'test_config.h',
+    configuration: test_conf_data,
+  )
+
   subdir('auxiliary')
 
   tests = [
