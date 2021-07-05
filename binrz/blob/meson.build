@@ -1,4 +1,4 @@
-executable('rizin', 'main.c',
+rizin_exe = executable('rizin', 'main.c',
   include_directories: [platform_inc],
   dependencies: [
     rz_main_dep,
