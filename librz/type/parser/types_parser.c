@@ -165,6 +165,16 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 		parser_debug(state, "Fetched type: \"%s\"\n", real_type);
 		return 0;
 	}
+	// Then we check if the type is already forward-defined
+	if (c_parser_base_type_is_forward_definition(state, real_type)) {
+		parser_debug(state, "Already has forward definition of type: \"%s\"\n", real_type);
+		*tpair = c_parser_new_unspecified_naked_type(state, real_type, is_const);
+		if (!*tpair) {
+			parser_error(state, "Error forming naked RzType pair out of simple forward-looking type: \"%s\"\n", real_type);
+			return -1;
+		}
+		return 0;
+	}
 	// If not - we form both RzType and RzBaseType to store in the Types database
 	// as a forward-looking definition
 	*tpair = c_parser_new_primitive_type(state, real_type, is_const);
@@ -212,13 +222,6 @@ int parse_parameter_declaration_node(CParserState *state, TSNode node, const cha
 		}
 	}
 
-	// Ever parameter should have at least declarator field
-	TSNode parameter_declarator = ts_node_child_by_field_name(node, "declarator", 10);
-	if (ts_node_is_null(parameter_declarator)) {
-		parser_error(state, "ERROR: Parameter AST should contain at least one node!\n");
-		node_malformed_error(state, node, text, "parameter declarator");
-		return -1;
-	}
 	// Ever parameter should have at least type field
 	TSNode parameter_type = ts_node_child_by_field_name(node, "type", 4);
 	if (ts_node_is_null(parameter_type)) {
@@ -236,12 +239,21 @@ int parse_parameter_declaration_node(CParserState *state, TSNode node, const cha
 		return -1;
 	}
 
+	// Ever parameter could have a declarator field but it's optional
+	TSNode parameter_declarator = ts_node_child_by_field_name(node, "declarator", 10);
+	if (ts_node_is_null(parameter_declarator)) {
+		// In the case it's null it means the sole type name which was
+		// already parsed in "parse_type_node_single()"
+		return 0;
+	}
+
 	// Check if it's abstract or a concrete node
 	const char *declarator_type = ts_node_type(parameter_declarator);
 	if (!declarator_type) {
 		node_malformed_error(state, parameter_declarator, text, "parameter declarator");
 		return -1;
 	}
+	parser_debug(state, "declarator type: \"%s\"\n", declarator_type);
 	if (is_abstract_declarator(declarator_type)) {
 		return parse_type_abstract_declarator_node(state, parameter_declarator, text, tpair);
 	} else if (is_declarator(declarator_type)) {
@@ -296,6 +308,11 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		parser_debug(state, "Fetching predefined structure: \"%s\"\n", name);
 		if (!(*tpair = c_parser_get_structure_type(state, name))) {
 			parser_error(state, "Cannot find \"%s\" structure in the context\n", name);
+			// At first we check if there is a forward definion already
+			if (c_parser_base_type_is_forward_definition(state, name)) {
+				parser_debug(state, "Structure \"%s\" was forward-defined before\n", name);
+				return 0;
+			}
 			// We still could create the "forward looking struct declaration"
 			// The parser then can augment the definition
 			if (!(*tpair = c_parser_new_structure_forward_definition(state, name))) {
@@ -537,6 +554,11 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		parser_debug(state, "Fetching predefined union: \"%s\"\n", name);
 		if (!(*tpair = c_parser_get_union_type(state, name))) {
 			parser_error(state, "Cannot find \"%s\" union in the context\n", name);
+			// At first we check if there is a forward definion already
+			if (c_parser_base_type_is_forward_definition(state, name)) {
+				parser_debug(state, "Union \"%s\" was forward-defined before\n", name);
+				return 0;
+			}
 			// We still could create the "forward looking union declaration"
 			// The parser then can augment the definition
 			if (!(*tpair = c_parser_new_union_forward_definition(state, name))) {
@@ -776,6 +798,11 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		parser_debug(state, "Fetching predefined enum: \"%s\"\n", name);
 		if (!(*tpair = c_parser_get_enum_type(state, name))) {
 			parser_error(state, "Cannot find \"%s\" enum in the context\n", name);
+			// At first we check if there is a forward definion already
+			if (c_parser_base_type_is_forward_definition(state, name)) {
+				parser_debug(state, "Enum \"%s\" was forward-defined before\n", name);
+				return 0;
+			}
 			// We still could create the "forward looking enum declaration"
 			// The parser then can augment the definition
 			if (!(*tpair = c_parser_new_enum_forward_definition(state, name))) {
@@ -1091,7 +1118,7 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 	rz_return_val_if_fail(!ts_node_is_null(node), -1);
 	rz_return_val_if_fail(ts_node_is_named(node), -1);
 
-	parser_debug(state, "parse_type_abstract_descriptor_single()\n");
+	parser_debug(state, "parse_type_abstract_declarator_node()\n");
 
 	// Parse the type qualifier first (if present)
 	// FIXME: There could be multiple different type qualifiers in one declaration
@@ -1164,8 +1191,10 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 			} else {
 				result = 0;
 			}
+		} else {
+			parser_debug(state, "abstract pointer declarator has no children\n");
+			result = 0;
 		}
-
 	} else if (!strcmp(node_type, "abstract_array_declarator")) {
 		// It can have two states - with and without number literal
 		int array_node_child_count = ts_node_named_child_count(node);

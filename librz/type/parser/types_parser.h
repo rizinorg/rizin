@@ -51,6 +51,8 @@ RzCallable *c_parser_callable_type_find(CParserState *state, RZ_NONNULL const ch
 bool c_parser_callable_type_exists(CParserState *state, RZ_NONNULL const char *name);
 bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *name, RzType *type);
 
+RZ_OWN ParserTypePair *c_parser_new_unspecified_naked_type(CParserState *state, RZ_NONNULL const char *name, bool is_const);
+
 RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, RZ_NONNULL const char *name, bool is_const);
 RZ_OWN ParserTypePair *c_parser_get_primitive_type(CParserState *state, RZ_NONNULL const char *name, bool is_const);
 

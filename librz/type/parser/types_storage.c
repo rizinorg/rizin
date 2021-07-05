@@ -112,6 +112,35 @@ bool c_parser_callable_type_store(CParserState *state, RZ_NONNULL const char *na
 }
 
 /**
+ * \brief Creates new unspecified naked type (without base type) based on the name
+ *
+ * \param state The parser state
+ * \param name Name of the type to create
+ * \param is_const If the identifier is constant
+ */
+RZ_OWN ParserTypePair *c_parser_new_unspecified_naked_type(CParserState *state, RZ_NONNULL const char *name, bool is_const) {
+	rz_return_val_if_fail(state && name, NULL);
+
+	RzType *type = RZ_NEW0(RzType);
+	if (!type) {
+		return NULL;
+	}
+	type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	type->identifier.is_const = is_const;
+	type->identifier.name = strdup(name);
+	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+
+	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
+	if (!tpair) {
+		rz_type_free(type);
+		return NULL;
+	}
+	tpair->btype = NULL;
+	tpair->type = type;
+	return tpair;
+}
+
+/**
  * \brief Creates new primitive type based on the name
  *
  * \param state The parser state
@@ -652,6 +681,7 @@ RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL cons
 	if (c_parser_base_type_exists(state, name)) {
 		// We don't create the type alias if it exists already in the parser
 		// state with the same name
+		parser_error(state, "Typedef \"%s\" already exists\n", name);
 		return NULL;
 	}
 
