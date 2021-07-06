@@ -29,7 +29,7 @@ bool test_cpu_profiles() {
 	mu_assert_eq(item->offset, 0x00000005, "Flag PORTB not found");
 
 	// 3. Save into the project
-	if (!rz_file_is_directory(".tmp/")) {
+	if (!rz_file_is_directory(".tmp" RZ_SYS_DIR)) {
 		mu_assert_true(rz_sys_mkdir(".tmp/"), "create tmp directory");
 	}
 	RzProjectErr err = rz_project_save_file(core, ".tmp/cpu_profile.rzdb");
