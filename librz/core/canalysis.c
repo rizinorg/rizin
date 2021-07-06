@@ -4823,6 +4823,11 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 			}
 		}
 	}
+	rz_core_task_yield(&core->tasks);
+
+	rz_arch_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
+	rz_arch_platform_add_flags_comments(core);
+
 	rz_cons_break_pop();
 	return true;
 }
