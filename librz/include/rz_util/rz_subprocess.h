@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: Florian Märkl <info@florianmaerkl.de>, Riccardo Schirone <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_UTIL_SUBPROCESS_H

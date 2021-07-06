@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Pulak Malhotra
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_core.h>
 #define call_handler(fun, ...) \
 	{ \
