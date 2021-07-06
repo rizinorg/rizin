@@ -307,10 +307,14 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 	if (ts_node_is_null(struct_body) && !ts_node_is_null(struct_name)) {
 		parser_debug(state, "Fetching predefined structure: \"%s\"\n", name);
 		if (!(*tpair = c_parser_get_structure_type(state, name))) {
-			parser_error(state, "Cannot find \"%s\" structure in the context\n", name);
+			parser_warning(state, "Cannot find \"%s\" structure in the context\n", name);
 			// At first we check if there is a forward definion already
 			if (c_parser_base_type_is_forward_definition(state, name)) {
 				parser_debug(state, "Structure \"%s\" was forward-defined before\n", name);
+				if (!(*tpair = c_parser_new_structure_naked_type(state, name))) {
+					parser_error(state, "Cannot create \"%s\" naked structure type in the context\n", name);
+					return -1;
+				}
 				return 0;
 			}
 			// We still could create the "forward looking struct declaration"
@@ -553,10 +557,14 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 	if (ts_node_is_null(union_body) && !ts_node_is_null(union_name)) {
 		parser_debug(state, "Fetching predefined union: \"%s\"\n", name);
 		if (!(*tpair = c_parser_get_union_type(state, name))) {
-			parser_error(state, "Cannot find \"%s\" union in the context\n", name);
+			parser_warning(state, "Cannot find \"%s\" union in the context\n", name);
 			// At first we check if there is a forward definion already
 			if (c_parser_base_type_is_forward_definition(state, name)) {
 				parser_debug(state, "Union \"%s\" was forward-defined before\n", name);
+				if (!(*tpair = c_parser_new_union_naked_type(state, name))) {
+					parser_error(state, "Cannot create \"%s\" naked union type in the context\n", name);
+					return -1;
+				}
 				return 0;
 			}
 			// We still could create the "forward looking union declaration"
@@ -797,10 +805,14 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 	if (ts_node_is_null(enum_body) && !ts_node_is_null(enum_name)) {
 		parser_debug(state, "Fetching predefined enum: \"%s\"\n", name);
 		if (!(*tpair = c_parser_get_enum_type(state, name))) {
-			parser_error(state, "Cannot find \"%s\" enum in the context\n", name);
+			parser_warning(state, "Cannot find \"%s\" enum in the context\n", name);
 			// At first we check if there is a forward definion already
 			if (c_parser_base_type_is_forward_definition(state, name)) {
 				parser_debug(state, "Enum \"%s\" was forward-defined before\n", name);
+				if (!(*tpair = c_parser_new_enum_naked_type(state, name))) {
+					parser_error(state, "Cannot create \"%s\" naked enum type in the context\n", name);
+					return -1;
+				}
 				return 0;
 			}
 			// We still could create the "forward looking enum declaration"
@@ -976,7 +988,7 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 	parser_debug(state, "typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
 	ParserTypePair *typedef_pair = c_parser_new_typedef(state, typedef_name, base_type_name);
 	if (!typedef_pair) {
-		parser_error(state, "Error forming RzType and RzBaseType pair out of typedef\n");
+		parser_error(state, "Error forming RzType and RzBaseType pair out of typedef: \"%s\"\n", typedef_name);
 		return -1;
 	}
 	// If parsing successfull completed - we store the state
@@ -1447,6 +1459,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			node_malformed_error(state, declarator, text, "function declarator or identifier");
 			return -1;
 		}
+		RzType *parent_type = (*tpair)->type;
 		// Declarator can be either "identifier" directly or have children
 		if (is_identifier(declarator_type)) {
 			parser_debug(state, "function declarator: simple identifier\n");
@@ -1489,7 +1502,6 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			node_malformed_error(state, parameter_list, text, "parameter_list");
 			return -1;
 		}
-		RzType *parent_type = (*tpair)->type;
 		(*tpair)->type = c_parser_new_callable(state, *identifier);
 		if (!(*tpair)->type) {
 			parser_error(state, "ERROR: creating new callable type: \"%s\"\n", *identifier);
