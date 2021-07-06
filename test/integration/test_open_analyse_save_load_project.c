@@ -37,7 +37,7 @@ bool test_open_analyse_save() {
 	size_t functions_count_expect = rz_list_length(functions);
 
 	// 4. Save into the project
-	if (!rz_file_exists(".tmp/")) {
+	if (!rz_file_is_directory(".tmp/")) {
 		mu_assert_true(rz_sys_mkdir(".tmp/"), "create tmp directory");
 	}
 	RzProjectErr err = rz_project_save_file(core, ".tmp/test_open_analyse.rzdb");
