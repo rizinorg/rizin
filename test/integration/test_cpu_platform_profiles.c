@@ -5,7 +5,6 @@
 #include "../unit/minunit.h"
 
 bool test_cpu_profiles() {
-
 	// 1. Open the file
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "new RzCore instance");
@@ -61,7 +60,6 @@ bool test_cpu_profiles() {
 }
 
 bool test_platform_profiles() {
-
 	// 1. Open the file
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "new RzCore instance");
