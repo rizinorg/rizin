@@ -1055,6 +1055,38 @@ bool test_rz_buf_get_string_nothing(void) {
 	mu_end;
 }
 
+bool test_rz_buf_get_nstring(void) {
+	ut8 *ch = malloc(128);
+	memset(ch, 'A', 127);
+	ch[127] = '\0';
+
+	RzBuffer *b = rz_buf_new_with_bytes(ch, 128);
+
+	char *s = rz_buf_get_nstring(b, 100, 10);
+	mu_assert_null(s, "there is no string with size < 10 (no null terminator)");
+
+	s = rz_buf_get_nstring(b, 117, 11);
+	mu_assert_true(strlen(s) < 11, "the string length is lower than the max length");
+	mu_assert_streq_free(s, (char *)ch + 117, "the string is the same");
+
+	s = rz_buf_get_nstring(b, 0, 128);
+	mu_assert_true(strlen(s) < 128, "the string length is lower than the max length");
+	mu_assert_streq_free(s, (char *)ch, "the string is the same");
+
+	s = rz_buf_get_nstring(b, 96, 50);
+	mu_assert_true(strlen(s) < 50, "the string length is lower than the max length");
+	mu_assert_streq_free(s, (char *)ch + 96, "the string is the same");
+
+	s = rz_buf_get_nstring(b, 96, 32);
+	mu_assert_true(strlen(s) < 32, "the string length is lower than the max length");
+	mu_assert_streq_free(s, (char *)ch + 96, "the string is the same");
+
+	rz_buf_free(b);
+	free(ch);
+
+	mu_end;
+}
+
 bool test_rz_buf_slice_too_big(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes((ut8 *)"AAAA", 4);
 	RzBuffer *sl = rz_buf_new_slice(buf, 1, 5);
@@ -1166,6 +1198,7 @@ int all_tests() {
 	mu_run_test(test_rz_buf_format);
 	mu_run_test(test_rz_buf_get_string);
 	mu_run_test(test_rz_buf_get_string_nothing);
+	mu_run_test(test_rz_buf_get_nstring);
 	mu_run_test(test_rz_buf_slice_too_big);
 	mu_run_test(test_rz_buf_with_methods);
 	return tests_passed != tests_run;

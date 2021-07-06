@@ -408,37 +408,62 @@ err:
 	return res;
 }
 
-// return an heap-allocated string read from the RzBuffer b at address addr. The
-// length depends on the first '\0' found in the buffer. If there is no '\0' in
-// the buffer, there is no string, thus NULL is returned.
-RZ_API char *rz_buf_get_string(RzBuffer *b, ut64 addr) {
-	const int MIN_RES_SZ = 64;
-	ut8 *res = RZ_NEWS(ut8, MIN_RES_SZ + 1);
-	ut64 sz = 0;
-	st64 r = rz_buf_read_at(b, addr, res, MIN_RES_SZ);
-	bool null_found = false;
-	while (r > 0) {
-		const ut8 *needle = rz_mem_mem(res + sz, r, (ut8 *)"\x00", 1);
-		if (needle) {
-			null_found = true;
-			break;
-		}
-		sz += r;
-		addr += r;
+#define GET_STRING_BUFFER_SIZE 32
 
-		ut8 *restmp = realloc(res, sz + MIN_RES_SZ + 1);
-		if (!restmp) {
-			free(res);
+/**
+ * \brief Get a string whith a max length from the buffer
+ * \param b RzBuffer pointer
+ * \param addr The address of the string
+ * \param size The max length authorized
+ * \return A string with a length <= size or NULL
+ *
+ * Return an heap-allocated string read from the RzBuffer b at address addr. The
+ * length depends on the first '\0' found and the arguments size in the buffer.
+ * If there is no '\0' in the buffer, there is no string, thus NULL is returned.
+ */
+RZ_API char *rz_buf_get_nstring(RzBuffer *b, ut64 addr, size_t size) {
+	RzStrBuf *buf = rz_strbuf_new(NULL);
+
+	while (true) {
+		char tmp[GET_STRING_BUFFER_SIZE];
+		st64 r = rz_buf_read_at(b, addr, (ut8 *)tmp, sizeof(tmp));
+		if (r < 1) {
+			rz_strbuf_free(buf);
 			return NULL;
 		}
-		res = restmp;
-		r = rz_buf_read_at(b, addr, res + sz, MIN_RES_SZ);
+
+		size_t count = strnlen(tmp, r);
+		rz_strbuf_append_n(buf, tmp, count);
+
+		if (count > size) {
+			rz_strbuf_free(buf);
+			return NULL;
+		}
+
+		if (count != r) {
+			break;
+		}
+
+		addr += r;
+		size -= count;
 	}
-	if (r < 0 || !null_found) {
-		free(res);
-		return NULL;
-	}
-	return (char *)res;
+
+	char *result = rz_strbuf_drain(buf);
+	return result;
+}
+
+/**
+ * \brief Get a string from the buffer
+ * \param b RzBuffer pointer
+ * \param addr The address of the string
+ * \return A string with a length <= size or NULL
+ *
+ * Return an heap-allocated string read from the RzBuffer b at address addr. The
+ * length depends on the first '\0' found in the buffer. If there is no '\0' in
+ * the buffer, there is no string, thus NULL is returned.
+ */
+RZ_API char *rz_buf_get_string(RzBuffer *b, ut64 addr) {
+	return rz_buf_get_nstring(b, addr, rz_buf_size(b));
 }
 
 RZ_API st64 rz_buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
