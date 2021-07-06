@@ -74,6 +74,7 @@ RZ_OWN ParserTypePair *c_parser_new_enum_forward_definition(CParserState *state,
 RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL const char *name, RZ_NONNULL const char *base);
 RZ_OWN ParserTypePair *c_parser_get_typedef(CParserState *state, RZ_NONNULL const char *name);
 
+RZ_OWN RzType *c_parser_new_naked_callable(CParserState *state);
 RZ_OWN RzType *c_parser_new_callable(CParserState *state, RZ_NONNULL const char *name);
 bool c_parser_new_callable_argument(CParserState *state, RZ_NONNULL RzCallable *callable, RZ_NONNULL const char *name, RZ_OWN RZ_NONNULL RzType *type);
 

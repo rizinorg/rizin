@@ -1460,6 +1460,16 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			return -1;
 		}
 		RzType *parent_type = (*tpair)->type;
+		// At first we create "freestanding" unnamed callable
+		RzType *naked_callable = c_parser_new_naked_callable(state);
+		if (!naked_callable) {
+			parser_error(state, "ERROR: creating naked callable type\n");
+			return -1;
+		}
+		// The previously fetched type in this case is the callable return type
+		naked_callable->callable->ret = parent_type;
+		(*tpair)->type = naked_callable;
+
 		// Declarator can be either "identifier" directly or have children
 		if (is_identifier(declarator_type)) {
 			parser_debug(state, "function declarator: simple identifier\n");
@@ -1477,7 +1487,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			}
 
 			// Declarator can contain either "identifier" directly
-			// Or the pointer_declarator instead
+			// Or the pointer_declarator instead (or multiple of them nested in each other)
 			if (is_declarator(function_declarator_type) || is_identifier(function_declarator_type)) {
 				if (parse_type_declarator_node(state, function_declarator, text, tpair, identifier)) {
 					parser_error(state, "ERROR: parsing function declarator\n");
@@ -1502,19 +1512,19 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			node_malformed_error(state, parameter_list, text, "parameter_list");
 			return -1;
 		}
-		(*tpair)->type = c_parser_new_callable(state, *identifier);
-		if (!(*tpair)->type) {
-			parser_error(state, "ERROR: creating new callable type: \"%s\"\n", *identifier);
-			return -1;
-		}
+		naked_callable->callable->name = strdup(*identifier);
+		// Preserve the parent callable type
+		parent_type = (*tpair)->type;
+		// Then override with the naked callable type to proceed with parameter parsing
+		(*tpair)->type = naked_callable;
 		result = parse_parameter_list(state, parameter_list, text, tpair);
 		if (result) {
 			parser_error(state, "ERROR: parsing parameters for callable type: \"%s\"\n", *identifier);
 			return -1;
 		}
-		// The previously fetched type in this case is the callable return type
-		(*tpair)->type->callable->ret = parent_type;
-		if (!c_parser_callable_type_store(state, *identifier, (*tpair)->type)) {
+		// Restore the true parent type
+		(*tpair)->type = parent_type;
+		if (!c_parser_callable_type_store(state, *identifier, naked_callable)) {
 			parser_error(state, "ERROR: storing the new callable type: \"%s\"\n", *identifier);
 			return -1;
 		}
