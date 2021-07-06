@@ -467,15 +467,18 @@ static bool test_struct_func_types(void) {
 
 	member = rz_vector_index_ptr(&base->struct_data.members, 1);
 	mu_assert_streq(member->name, "func", "Incorrect name for struct member");
-	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->kind, "not struct");
-	mu_assert_streq(rz_type_as_string(typedb, member->type->callable->ret), "wchar_t *", "function return type");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, member->type->kind, "not function pointer");
+	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->pointer.type->kind, "not function pointer");
+
+	RzCallable *call = member->type->pointer.type->callable;
+	mu_assert_streq(rz_type_as_string(typedb, call->ret), "wchar_t", "function return type");
 
 	RzCallableArg *arg;
-	arg = *rz_pvector_index_ptr(member->type->callable->args, 0);
+	arg = *rz_pvector_index_ptr(call->args, 0);
 	mu_assert_streq(arg->name, "a", "argument \"a\"");
 	mu_assert_streq(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
 
-	arg = *rz_pvector_index_ptr(member->type->callable->args, 1);
+	arg = *rz_pvector_index_ptr(call->args, 1);
 	mu_assert_streq(arg->name, "b", "argument \"b\"");
 	mu_assert_streq(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
 
