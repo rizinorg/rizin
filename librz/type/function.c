@@ -355,20 +355,34 @@ RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *name, RZ_OWN RZ_N
 }
 
 /**
- * \brief Returns the callable C representation
+ * \brief Checks if the RzType is the pointer to the RzCallable
  *
  * \param typedb Types Database instance
- * \param callable RzCallable instance
+ * \param type RzCallable
  */
-RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable) {
+RZ_API bool rz_type_is_callable_ptr(RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, NULL);
+	if (type->kind != RZ_TYPE_KIND_POINTER) {
+		return false;
+	}
+	if (type->pointer.type->kind == RZ_TYPE_KIND_CALLABLE) {
+		return true;
+	} else if (type->pointer.type->kind == RZ_TYPE_KIND_POINTER) {
+		return rz_type_is_callable_ptr(type->pointer.type);
+	}
+	return false;
+}
+
+static RZ_OWN char *callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, bool is_ptr) {
 	rz_return_val_if_fail(typedb && callable, NULL);
 
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (callable->noret) {
 		rz_strbuf_append(buf, "__attribute__((noreturn)) ");
 	}
-	char *ret_str = callable->ret ? rz_type_as_string(typedb, callable->ret) : NULL;
-	rz_strbuf_appendf(buf, "%s %s(", ret_str ? ret_str : "void", rz_str_get(callable->name));
+	const char *ret_str = callable->ret ? rz_type_as_string(typedb, callable->ret) : NULL;
+	const char *callable_name = is_ptr ? rz_str_newf("(*%s)", rz_str_get(callable->name)) : rz_str_get(callable->name);
+	rz_strbuf_appendf(buf, "%s %s(", ret_str ? ret_str : "void", callable_name);
 	void **it;
 	bool first = true;
 	rz_pvector_foreach (callable->args, it) {
@@ -384,6 +398,34 @@ RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNUL
 	rz_strbuf_append(buf, ");");
 	char *result = rz_strbuf_drain(buf);
 	return result;
+}
+
+/**
+ * \brief Returns the callable pointer C representation
+ *
+ * \param typedb Types Database instance
+ * \param callable RzCallable instance
+ */
+RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(typedb && type, NULL);
+	rz_return_val_if_fail(type->kind == RZ_TYPE_KIND_POINTER, NULL);
+
+	if (type->pointer.type->kind == RZ_TYPE_KIND_CALLABLE) {
+		return callable_as_string(typedb, type->pointer.type->callable, true);
+	} else {
+		return rz_type_callable_ptr_as_string(typedb, type->pointer.type);
+	}
+}
+
+/**
+ * \brief Returns the callable C representation
+ *
+ * \param typedb Types Database instance
+ * \param callable RzCallable instance
+ */
+RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable) {
+	rz_return_val_if_fail(typedb && callable, NULL);
+	return callable_as_string(typedb, callable, false);
 }
 
 /**
