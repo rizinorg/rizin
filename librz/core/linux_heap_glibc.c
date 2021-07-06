@@ -1105,6 +1105,92 @@ static void GH(tcache_print)(RzCore *core, GH(RTcache) * tcache, PJ *pj) {
 	}
 }
 
+RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
+	// get main arena base address to compare
+	GHT m_arena;
+	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
+		return NULL;
+	}
+	GHT tcache_start;
+	if (arena_base == m_arena) {
+		// get tcache base for main arena
+		// tcache is consistently the first allocation in the main arena.
+		GHT brk_start = GHT_MAX, brk_end = GHT_MAX, initial_brk = GHT_MAX;
+		GH(get_brks)
+		(core, &brk_start, &brk_end);
+		tcache_start = brk_start + 0x10;
+	} else {
+		// get tcache base for thread arena
+		GHT mmap_start = ((arena_base >> 16) << 16);
+		tcache_start = mmap_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
+
+		// for thread arena check if the arena has threads attached or not
+		MallocState *arena = RZ_NEW0(MallocState);
+		if (!arena) {
+			return NULL;
+		}
+		if (!GH(rz_heap_update_main_arena)(core, m_arena, arena) || !arena->attached_threads) {
+			free(arena);
+			return NULL;
+		}
+		free(arena);
+	}
+
+	// Get rz_tcache struct
+	GH(RTcache) *tcache = GH(tcache_new)(core);
+	GH(tcache_read)
+	(core, tcache_start, tcache);
+
+	// List of heap bins to return
+	RzList *tcache_list = rz_list_newf((RzListFree)GH(rz_heap_bin_free));
+
+	// Use rz_tcache struct to get bins
+	for (int i = 0; i < TCACHE_MAX_BINS; i++) {
+		int count = GH(tcache_get_count)(tcache, i);
+		GHT entry = GH(tcache_get_entry)(tcache, i);
+		RzHeapBin *bin = RZ_NEW0(RzHeapBin);
+		if (!bin) {
+			return NULL;
+		}
+		bin->type = rz_str_new("tcache");
+		bin->bin_num = i;
+		bin->chunks = rz_list_newf((RzListFree)GH(rz_heap_chunk_free));
+		rz_list_append(tcache_list, bin);
+		if (count <= 0) {
+			continue;
+		}
+		// get first chunk
+		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
+		if (!chunk) {
+			return NULL;
+		}
+		chunk->addr = (ut64)(entry - GH(HDR_SZ));
+		rz_list_append(bin->chunks, chunk);
+		if (count <= 1) {
+			continue;
+		}
+
+		// get rest of the chunks
+		GHT tcache_fd = entry;
+		GHT tcache_tmp = GHT_MAX;
+		size_t n;
+		for (n = 1; n < count; n++) {
+			bool r = rz_io_read_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
+			if (!r) {
+				return NULL;
+			}
+			tcache_tmp = GH(get_next_pointer)(core, tcache_fd, read_le(&tcache_tmp));
+			chunk = RZ_NEW0(RzHeapChunkListItem);
+			if (!chunk) {
+				return NULL;
+			}
+			chunk->addr = (ut64)(entry - GH(HDR_SZ));
+			rz_list_append(bin->chunks, chunk);
+			tcache_fd = tcache_tmp;
+		}
+	}
+	return tcache_list;
+}
 /**
  * \brief Get a list of RzTcache objects which contain information about tcache.
  * First object in the returned list is the tcache info for main arena and then subsequent are for thread arena with order conserved
