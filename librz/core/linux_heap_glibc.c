@@ -1060,6 +1060,12 @@ static GHT GH(tcache_get_entry)(GH(RTcache) * tcache, int index) {
  * \return RzList of RzHeapBin pointers
  */
 RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
+	// check if tcache is even present in this Glibc version
+	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
+	if (!tc) {
+		return NULL;
+	}
+
 	// get main arena base address to compare
 	GHT m_arena;
 	if (!GH(rz_heap_resolve_main_arena)(core, &m_arena)) {
@@ -2254,6 +2260,13 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 		free(main_arena);
 		return RZ_CMD_STATUS_ERROR;
 	}
+
+	// if no tcache in this version of glibc just return
+	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
+	if (!tc) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+
 	RzList *arenas_list = GH(rz_heap_arenas_list)(core, m_arena, main_arena);
 	RzArenaListItem *item;
 	RzListIter *iter;
