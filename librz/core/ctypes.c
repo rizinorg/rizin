@@ -258,7 +258,14 @@ static void core_types_union_print_c(RzTypeDB *typedb, RzBaseType *btype, bool m
 				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
 					memb->name, memb->type->array.count);
 			} else if (memb->type->kind == RZ_TYPE_KIND_POINTER) {
-				rz_cons_printf("%s%s%s", separator, membtype, memb->name);
+				// A pointer to the function is a special case
+				if (rz_type_is_callable_ptr(memb->type)) {
+					rz_cons_printf("%s%s", separator, membtype);
+				} else {
+					rz_cons_printf("%s%s%s", separator, membtype, memb->name);
+				}
+			} else if (memb->type->kind == RZ_TYPE_KIND_CALLABLE) {
+				rz_cons_printf("%s%s", separator, membtype);
 			} else {
 				rz_cons_printf("%s%s %s", separator, membtype, memb->name);
 			}
@@ -384,7 +391,14 @@ static void core_types_struct_print_c(RzTypeDB *typedb, RzBaseType *btype, bool 
 				rz_cons_printf("%s%s %s[%" PFMT64d "]", separator, membtype,
 					memb->name, memb->type->array.count);
 			} else if (memb->type->kind == RZ_TYPE_KIND_POINTER) {
-				rz_cons_printf("%s%s%s", separator, membtype, memb->name);
+				// A pointer to the function is a special case
+				if (rz_type_is_callable_ptr(memb->type)) {
+					rz_cons_printf("%s%s", separator, membtype);
+				} else {
+					rz_cons_printf("%s%s%s", separator, membtype, memb->name);
+				}
+			} else if (memb->type->kind == RZ_TYPE_KIND_CALLABLE) {
+				rz_cons_printf("%s%s", separator, membtype);
 			} else {
 				rz_cons_printf("%s%s %s", separator, membtype, memb->name);
 			}

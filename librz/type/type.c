@@ -833,13 +833,20 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 		break;
 	}
 	case RZ_TYPE_KIND_POINTER: {
-		char *typestr = type_as_string_decl(typedb, type->pointer.type, true);
-		if (type->pointer.is_const) {
-			rz_strbuf_appendf(buf, "%s* const", typestr);
+		// A pointer to the function is a special case
+		if (rz_type_is_callable_ptr(type)) {
+			char *typestr = rz_type_callable_ptr_as_string(typedb, type);
+			rz_strbuf_append(buf, typestr);
+			free(typestr);
 		} else {
-			rz_strbuf_appendf(buf, "%s*", typestr);
+			char *typestr = type_as_string_decl(typedb, type->pointer.type, true);
+			if (type->pointer.is_const) {
+				rz_strbuf_appendf(buf, "%s* const", typestr);
+			} else {
+				rz_strbuf_appendf(buf, "%s*", typestr);
+			}
+			free(typestr);
 		}
-		free(typestr);
 		break;
 	}
 	case RZ_TYPE_KIND_ARRAY: {
@@ -901,13 +908,20 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 		break;
 	}
 	case RZ_TYPE_KIND_POINTER: {
-		char *typestr = type_as_string_identifier_decl(typedb, type->pointer.type, identifier, true);
-		if (type->pointer.is_const) {
-			rz_strbuf_appendf(buf, "%s* const", typestr);
+		// A pointer to the function is a special case
+		if (rz_type_is_callable_ptr(type)) {
+			char *typestr = rz_type_callable_ptr_as_string(typedb, type);
+			rz_strbuf_append(buf, typestr);
+			free(typestr);
 		} else {
-			rz_strbuf_appendf(buf, "%s*", typestr);
+			char *typestr = type_as_string_identifier_decl(typedb, type->pointer.type, identifier, true);
+			if (type->pointer.is_const) {
+				rz_strbuf_appendf(buf, "%s* const", typestr);
+			} else {
+				rz_strbuf_appendf(buf, "%s*", typestr);
+			}
+			free(typestr);
 		}
-		free(typestr);
 		break;
 	}
 	case RZ_TYPE_KIND_ARRAY: {
