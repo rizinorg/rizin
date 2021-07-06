@@ -581,8 +581,7 @@ td "int foo(int bar);"
 tf~foo
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Cannot add the parameter to the function!
-ERROR: parsing parameters for callable type: "foo"
+ERROR: storing the new callable type: "foo"
 EOF
 EXPECT=<<EOF
 int foo(int bar);

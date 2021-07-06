@@ -758,6 +758,28 @@ RZ_OWN ParserTypePair *c_parser_get_typedef(CParserState *state, RZ_NONNULL cons
 }
 
 /**
+ * \brief Creates new naked callable without storing it
+ *
+ * \param state The parser state
+ */
+RZ_OWN RzType *c_parser_new_naked_callable(CParserState *state) {
+	rz_return_val_if_fail(state, NULL);
+	RzType *type = RZ_NEW0(RzType);
+	if (!type) {
+		return NULL;
+	}
+	RzCallable *callable = RZ_NEW0(RzCallable);
+	if (!callable) {
+		return NULL;
+	}
+	callable->name = NULL;
+	callable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
+	type->kind = RZ_TYPE_KIND_CALLABLE;
+	type->callable = callable;
+	return type;
+}
+
+/**
  * \brief Creates new callable based on the name
  *
  * If the name matches with the name of one of the base types
