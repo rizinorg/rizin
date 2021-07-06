@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #ifndef RZ_OPENSSL_COMMON_H
 #define RZ_OPENSSL_COMMON_H
 
