@@ -796,9 +796,11 @@ cf_text = CMDDESCS_C_TEMPLATE.format(
     helps="\n".join(helps),
     init_code="\n".join(init_code),
 )
-open(os.path.join(args.output_dir, "cmd_descs.c"), "w").write(cf_text)
+with open(os.path.join(args.output_dir, "cmd_descs.c"), "w") as f:
+    f.write(cf_text)
 if args.src_output_dir:
-    open(os.path.join(args.src_output_dir, "cmd_descs.c"), "w").write(cf_text)
+    with open(os.path.join(args.src_output_dir, "cmd_descs.c"), "w") as f:
+        f.write(cf_text)
 
 handlers_decls = filter(
     lambda th: th[1] is not None,
@@ -808,6 +810,8 @@ handlers_decls = filter(
 hf_text = CMDDESCS_H_TEMPLATE.format(
     handlers_declarations="\n".join([handler2decl(t, h) for t, h in handlers_decls]),
 )
-open(os.path.join(args.output_dir, "cmd_descs.h"), "w").write(hf_text)
+with open(os.path.join(args.output_dir, "cmd_descs.h"), "w") as f:
+    f.write(hf_text)
 if args.src_output_dir:
-    open(os.path.join(args.src_output_dir, "cmd_descs.h"), "w").write(hf_text)
+    with open(os.path.join(args.src_output_dir, "cmd_descs.h"), "w") as f:
+        f.write(hf_text)
