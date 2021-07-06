@@ -121,3 +121,13 @@ jobs:
       run: |
         export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
         find . -name "*.py" | grep -v "subprojects" | grep -v "librz/bin/format/xnu/scripts/" | xargs pylint
+
+  licenses:
+    runs-on: ubuntu-20.04
+    continue-on-error: true
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: REUSE Compliance Check
+      uses: fsfe/reuse-action@v1.1
+      continue-on-error: true
