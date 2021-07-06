@@ -2989,8 +2989,8 @@ RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType 
 		// Thus we consider this is just a `void *` pointer
 		return "p";
 	}
-	// Special case of `void *`
-	if (rz_type_is_void_ptr(type)) {
+	// Special case of callable ptr or `void *`
+	if (rz_type_is_void_ptr(type) || rz_type_is_callable_ptr(type)) {
 		return "p";
 	}
 	// Special case of `char *`
@@ -3017,8 +3017,15 @@ static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrB
 		rz_strbuf_appendf(format, "[%" PFMT64d "]", type->array.count);
 		return type_to_format_pair(typedb, format, fields, identifier, type->array.type);
 	} else if (type->kind == RZ_TYPE_KIND_POINTER) {
-		rz_strbuf_append(format, "*");
-		return type_to_format_pair(typedb, format, fields, identifier, type->pointer.type);
+		// We can't print anything useful for function type pointer
+		if (rz_type_is_callable_ptr(type)) {
+			// Thus we consider this is just a `void *` pointer
+			rz_strbuf_append(format, "p");
+			rz_strbuf_appendf(fields, "%s ", type->callable->name);
+		} else {
+			rz_strbuf_append(format, "*");
+			return type_to_format_pair(typedb, format, fields, identifier, type->pointer.type);
+		}
 	} else if (type->kind == RZ_TYPE_KIND_CALLABLE) {
 		// We can't print anything useful for function type
 		// Thus we consider this is just a `void *` pointer
