@@ -1121,6 +1121,7 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 		RzHeapBin *bin = RZ_NEW0(RzHeapBin);
 		if (!bin) {
 			rz_list_free(tcache_bins_list);
+			free(tcache);
 			return NULL;
 		}
 		bin->type = rz_str_new("Tcache");
@@ -1134,6 +1135,7 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
 		if (!chunk) {
 			rz_list_free(tcache_bins_list);
+			free(tcache);
 			return NULL;
 		}
 		chunk->addr = (ut64)(entry - GH(HDR_SZ));
@@ -1147,7 +1149,7 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 		GHT tcache_fd = entry;
 		GHT tcache_tmp = GHT_MAX;
 		for (size_t n = 1; n < count; n++) {
-			bool r = rz_io_read_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
+			bool r = rz_io_nread_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
 			if (!r) {
 				rz_list_free(tcache_bins_list);
 				free(tcache);
