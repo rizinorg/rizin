@@ -60,9 +60,11 @@ void w32dbg_wrap_free(W32DbgWInst *inst) {
 		return;
 	}
 	inst->params.type = W32_STOP;
-	ReleaseSemaphore(inst->request_sem, 1, NULL);
+	w32dbg_wrap_wait_ret(inst);
+	WaitForSingleObject(inst->debugThread, INFINITE);
 	CloseHandle(inst->request_sem);
 	CloseHandle(inst->result_sem);
+	CloseHandle(inst->debugThread);
 	free(inst);
 }
 
