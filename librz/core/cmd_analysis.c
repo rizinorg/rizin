@@ -7948,8 +7948,6 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_cons_break_push(NULL, NULL);
 			rz_cons_break_timeout(rz_config_get_i(core->config, "analysis.timeout"));
 			rz_core_analysis_all(core);
-			rz_arch_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
-			rz_arch_platform_add_flags_comments(core);
 			rz_print_rowlog_done(core->print, oldstr);
 			rz_core_task_yield(&core->tasks);
 			// Run pending analysis immediately after analysis
