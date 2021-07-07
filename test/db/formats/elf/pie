@@ -22,8 +22,8 @@ RUN
 NAME=ELF: rz-bin entrypoint with baddr
 FILE==
 CMDS=<<EOF
-!rz-bin -I -B 0x300000 bins/elf/analysis/pie | grep baddr
-!rz-bin -e -B 0x300000 bins/elf/analysis/pie | sed -n '2 p'
+!!rz-bin -I -B 0x300000 bins/elf/analysis/pie | grep baddr
+!!rz-bin -e -B 0x300000 bins/elf/analysis/pie | sed -n '2 p'
 EOF
 EXPECT=<<EOF
 baddr    0x300000

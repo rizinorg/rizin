@@ -6708,6 +6708,10 @@
           "named": true
         },
         {
+          "type": "args",
+          "named": true
+        },
+        {
           "type": "grep_stmt",
           "named": true
         },
@@ -6825,10 +6829,6 @@
         },
         {
           "type": "number_stmt",
-          "named": true
-        },
-        {
-          "type": "pipe_second_stmt",
           "named": true
         },
         {
@@ -11253,10 +11253,6 @@
   },
   {
     "type": "html_redirect_operator",
-    "named": true
-  },
-  {
-    "type": "pipe_second_stmt",
     "named": true
   },
   {

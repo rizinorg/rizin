@@ -500,8 +500,6 @@ typedef struct rz_cons_t {
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
 	const char *teefile;
-	int (*user_fgets)(char *buf, int len, void *user);
-	void *user_fgets_user;
 	RzConsEvent event_resize;
 	void *event_data;
 	int mouse_event;

@@ -76,7 +76,7 @@ RUN
 
 NAME=rz-bin -s file pe
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 24
 EOF
@@ -84,7 +84,7 @@ RUN
 
 NAME=rz-bin -s file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 69
 EOF
@@ -93,8 +93,8 @@ RUN
 NAME=rz-bin -S, -SS, -rS and -rSS file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-!rz-bin -S ${RZ_FILE}|wc -l|awk "{print \$1}"
-!rz-bin -SS ${RZ_FILE}|wc -l|awk "{print \$1}"
+!!rz-bin -S ${RZ_FILE}|wc -l|awk "{print \$1}"
+!!rz-bin -SS ${RZ_FILE}|wc -l|awk "{print \$1}"
 !env RZ_BIN_PREFIX=prixfixe rz-bin -S ${RZ_FILE}
 !env RZ_BIN_PREFIX=prixfixe rz-bin -SS ${RZ_FILE}
 EOF
@@ -155,7 +155,7 @@ RUN
 
 NAME=rz-bin -SSS
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -SSS ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rz-bin -SSS ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 13
 EOF
@@ -163,7 +163,7 @@ RUN
 
 NAME=rz-bin -z pe
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 7
 EOF
@@ -171,7 +171,7 @@ RUN
 
 NAME=rz-bin -zz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zz ${RZ_FILE} | grep "Password:"
+CMDS=!!rz-bin -zz ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 86  0x00002619 0x00404019 10  11   .rdata  ascii   Password: 
 EOF
@@ -179,7 +179,7 @@ RUN
 
 NAME=rz-bin -zzz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzz ${RZ_FILE} | grep "Password:"
+CMDS=!!rz-bin -zzz ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 086 0x00002619 0x00404019  10  11 (.rdata) ascii Password: 
 EOF
@@ -187,7 +187,7 @@ RUN
 
 NAME=rz-bin -zzq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzq ${RZ_FILE} | grep "Password:"
+CMDS=!!rz-bin -zzq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 0x404019 11 10 Password: 
 EOF
@@ -195,7 +195,7 @@ RUN
 
 NAME=rz-bin -zzzq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzzq ${RZ_FILE} | grep "Password:"
+CMDS=!!rz-bin -zzzq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 0x00404019 Password: 
 EOF
@@ -203,7 +203,7 @@ RUN
 
 NAME=rz-bin -zzqq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzqq ${RZ_FILE} | grep "Password:"
+CMDS=!!rz-bin -zzqq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 Password: 
 EOF
@@ -211,7 +211,7 @@ RUN
 
 NAME=rz-bin -zzzqq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzzqq ${RZ_FILE} | grep "Password:"
+CMDS=!!rz-bin -zzzqq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 Password: 
 EOF
@@ -219,7 +219,7 @@ RUN
 
 NAME=rz-bin -z elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 4
 EOF
@@ -227,7 +227,7 @@ RUN
 
 NAME=rz-bin -G 0x1000 -rs fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1000 -rs ${RZ_FILE}|grep "f " | wc -l|awk "{print \$1}"
+CMDS=!!rz-bin -G 0x1000 -rs ${RZ_FILE}|grep "f " | wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 3
 EOF
@@ -235,7 +235,7 @@ RUN
 
 NAME=rz-bin -G 0x1300 -rs fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1300 -rs ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rz-bin -G 0x1300 -rs ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 1
 EOF
@@ -796,7 +796,7 @@ RUN
 
 NAME=rz-bin -s right symbols
 FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -s ${RZ_FILE} | grep 0002edb0
+CMDS=!!rz-bin -s ${RZ_FILE} | grep 0002edb0
 EXPECT=<<EOF
 149  0x0002edb0 0x0002edb0 GLOBAL FUNC   356      getc_unlocked
 402  0x0002edb0 0x0002edb0 GLOBAL FUNC   356      __fgetc_unlocked
@@ -870,7 +870,7 @@ RUN
 
 NAME=rz-bin -h
 FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -h | grep -c Usage
+CMDS=!!rz-bin -h | grep -c Usage
 EXPECT=<<EOF
 1
 EOF
@@ -878,7 +878,7 @@ RUN
 
 NAME=rz-bin -O help
 FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -O help | grep -c Usage
+CMDS=!!rz-bin -O help | grep -c Usage
 EXPECT=<<EOF
 1
 EOF
@@ -886,7 +886,7 @@ RUN
 
 NAME=rz-bin -O h
 FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -O h | grep -c Usage
+CMDS=!!rz-bin -O h | grep -c Usage
 EXPECT=<<EOF
 1
 EOF
@@ -894,7 +894,7 @@ RUN
 
 NAME=rz-bin -O ?
 FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -O "?" | grep -c Usage
+CMDS=!!rz-bin -O "?" | grep -c Usage
 EXPECT=<<EOF
 1
 EOF
@@ -910,7 +910,7 @@ RUN
 
 NAME=rz-bin -v
 FILE==
-CMDS=!rz-bin -v | grep -c build
+CMDS=!!rz-bin -v | grep -c build
 EXPECT=<<EOF
 1
 EOF
@@ -918,7 +918,7 @@ RUN
 
 NAME=rz-bin -L
 FILE==
-CMDS=!rz-bin -L | grep -c any
+CMDS=!!rz-bin -L | grep -c any
 EXPECT=<<EOF
 1
 EOF
@@ -926,7 +926,7 @@ RUN
 
 NAME=rz-bin -Lq
 FILE==
-CMDS=!rz-bin -Lq | grep -c any
+CMDS=!!rz-bin -Lq | grep -c any
 EXPECT=<<EOF
 1
 EOF
@@ -934,7 +934,7 @@ RUN
 
 NAME=rz-bin -Lj
 FILE==
-CMDS=!rz-bin -Lj | grep -c any
+CMDS=!!rz-bin -Lj | grep -c any
 EXPECT=<<EOF
 1
 EOF
@@ -942,7 +942,7 @@ RUN
 
 NAME=rz-bin -Lj any
 FILE==
-CMDS=!rz-bin -Lj any | grep -c Dummy
+CMDS=!!rz-bin -Lj any | grep -c Dummy
 EXPECT=<<EOF
 1
 EOF
@@ -950,7 +950,7 @@ RUN
 
 NAME=rz-bin -U
 FILE=bins/pe/resource.exe
-CMDS=!rz-bin -U ${RZ_FILE} | grep -c Resource
+CMDS=!!rz-bin -U ${RZ_FILE} | grep -c Resource
 EXPECT=<<EOF
 1
 EOF
@@ -970,7 +970,7 @@ RUN
 
 NAME=rz-bin -l
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -l ${RZ_FILE} | grep -c kernel32.dll
+CMDS=!!rz-bin -l ${RZ_FILE} | grep -c kernel32.dll
 EXPECT=<<EOF
 1
 EOF
@@ -978,7 +978,7 @@ RUN
 
 NAME=rz-bin -R
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -R ${RZ_FILE} | grep -c msvcrt.dll___set_app_type
+CMDS=!!rz-bin -R ${RZ_FILE} | grep -c msvcrt.dll___set_app_type
 EXPECT=<<EOF
 1
 EOF
@@ -1002,7 +1002,7 @@ RUN
 
 NAME=rz-bin -H
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -H ${RZ_FILE} | grep -c "Machine : 0x14c"
+CMDS=!!rz-bin -H ${RZ_FILE} | grep -c "Machine : 0x14c"
 EXPECT=<<EOF
 1
 EOF
@@ -1010,7 +1010,7 @@ RUN
 
 NAME=rz-bin -d
 FILE=bins/elf/analysis/dwarftest
-CMDS=!rz-bin -d ${RZ_FILE} | grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"
+CMDS=!!rz-bin -d ${RZ_FILE} | grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"
 EXPECT=<<EOF
 1
 EOF
@@ -1026,7 +1026,7 @@ RUN
 
 NAME=rz-bin -P
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -c R2_TEST_UNION
+CMDS=!!rz-bin -P ${RZ_FILE} | grep -c R2_TEST_UNION
 EXPECT=<<EOF
 1
 EOF

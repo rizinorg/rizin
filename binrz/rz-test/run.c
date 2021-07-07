@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_test.h"
+#include <rz_cons.h>
 
 static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
@@ -241,6 +242,23 @@ RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test) {
 	return ret;
 }
 
+#if __WINDOWS__
+static char *remove_cr(char *str) {
+	char *start = str;
+	while (*str) {
+		if (str[0] == '\r' &&
+			!(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
+			memmove(str, str + 1, strlen(str + 1) + 1);
+			continue;
+		}
+		str++;
+	}
+	return start;
+}
+#else
+#define remove_cr(x) (x)
+#endif
+
 RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest *test) {
 	RzAsmTestOutput *out = RZ_NEW0(RzAsmTestOutput);
 	if (!out) {
@@ -289,7 +307,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto rip;
 		}
-		char *hex = rz_subprocess_out(proc);
+		char *hex = remove_cr(rz_subprocess_out(proc, NULL));
 		size_t hexlen = strlen(hex);
 		if (!hexlen) {
 			goto rip;
@@ -323,7 +341,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		if (rz_subprocess_ret(proc) != 0) {
 			goto ship;
 		}
-		char *disasm = rz_subprocess_out(proc);
+		char *disasm = remove_cr(rz_subprocess_out(proc, NULL));
 		rz_str_trim(disasm);
 		out->disasm = disasm;
 	ship:

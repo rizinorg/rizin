@@ -436,7 +436,7 @@ RUN
 
 NAME=rz-asm -L
 FILE==
-CMDS=!rz-asm -L | grep -c arm.gnu
+CMDS=!!rz-asm -L | grep -c arm.gnu
 EXPECT=<<EOF
 1
 EOF
@@ -444,7 +444,7 @@ RUN
 
 NAME=rz-asm -qL
 FILE==
-CMDS=!rz-asm -qL | grep -c arm.gnu
+CMDS=!!rz-asm -qL | grep -c arm.gnu
 EXPECT=<<EOF
 1
 EOF
@@ -452,7 +452,7 @@ RUN
 
 NAME=rz-asm -v
 FILE==
-CMDS=!rz-asm -v  | grep -c build
+CMDS=!!rz-asm -v  | grep -c build
 EXPECT=<<EOF
 1
 EOF

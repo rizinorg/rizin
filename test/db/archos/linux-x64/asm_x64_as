@@ -16,7 +16,7 @@ RUN
 
 NAME=rz-asm #1167 5
 FILE==
-CMDS=!rz-asm -s att -a x86.as -b 64 'add $33, %rbx'
+CMDS=!rz-asm -s att -a x86.as -b 64 "add $33, %rbx"
 EXPECT=<<EOF
 4883c321
 EOF

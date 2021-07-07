@@ -354,6 +354,7 @@ RZ_API void rz_strbuf_free(RzStrBuf *sb) {
 RZ_API void rz_strbuf_fini(RzStrBuf *sb) {
 	if (sb && !sb->weakref) {
 		RZ_FREE(sb->ptr);
+		sb->ptr = NULL;
 		sb->len = 0;
 		sb->buf[0] = '\0';
 	}

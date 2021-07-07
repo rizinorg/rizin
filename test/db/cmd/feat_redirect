@@ -2,9 +2,9 @@ NAME="pb>x;!wc -c x"
 FILE=malloc://1024
 CMDS=<<EOF
 p8 10 > dump
-!wc -c dump|awk "{print \$1}"
+!!wc -c dump|awk "{print \$1}"
 p8 12800 > dump
-!wc -c dump|awk "{print \$1}"
+!!wc -c dump|awk "{print \$1}"
 !rm -f dump
 EOF
 EXPECT=<<EOF
@@ -14,6 +14,7 @@ EOF
 RUN
 
 NAME="p8|sed -e s,0,x,g>x;cat x;rm x"
+BROKEN=1
 FILE=malloc://512
 CMDS=<<EOF
 wv 0x100

@@ -150,7 +150,7 @@ RUN
 NAME=fatmach0 entry1 rz-bin (2)
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
-CMDS=!rz-bin -a x86 -b 32 -e bins/mach0/fatmach0-3true | grep paddr=
+CMDS=!!rz-bin -a x86 -b 32 -e bins/mach0/fatmach0-3true | grep paddr=
 EXPECT=<<EOF
 vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
 EOF

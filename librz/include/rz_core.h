@@ -156,35 +156,6 @@ typedef struct rz_core_times_t {
 #define RZ_CORE_ASMQJMPS_MAX_LETTERS (26 * 26 * 26 * 26 * 26)
 #define RZ_CORE_ASMQJMPS_LEN_LETTERS 5
 
-typedef enum rz_core_autocomplete_types_t {
-	RZ_CORE_AUTOCMPLT_DFLT = 0,
-	RZ_CORE_AUTOCMPLT_FLAG,
-	RZ_CORE_AUTOCMPLT_FLSP,
-	RZ_CORE_AUTOCMPLT_SEEK,
-	RZ_CORE_AUTOCMPLT_FCN,
-	RZ_CORE_AUTOCMPLT_ZIGN,
-	RZ_CORE_AUTOCMPLT_EVAL,
-	RZ_CORE_AUTOCMPLT_MINS,
-	RZ_CORE_AUTOCMPLT_BRKP,
-	RZ_CORE_AUTOCMPLT_MACR,
-	RZ_CORE_AUTOCMPLT_FILE,
-	RZ_CORE_AUTOCMPLT_THME,
-	RZ_CORE_AUTOCMPLT_OPTN,
-	RZ_CORE_AUTOCMPLT_MS,
-	RZ_CORE_AUTOCMPLT_SDB,
-	// --- left as last always
-	RZ_CORE_AUTOCMPLT_END,
-} RzCoreAutocompleteType;
-
-typedef struct rz_core_autocomplete_t {
-	const char *cmd;
-	int length;
-	int n_subcmds;
-	bool locked;
-	int type;
-	struct rz_core_autocomplete_t **subcmds;
-} RzCoreAutocomplete;
-
 typedef struct rz_core_visual_tab_t {
 	int printidx;
 	ut64 offset;
@@ -345,7 +316,6 @@ struct rz_core_t {
 	bool fixedblock;
 	char *table_query;
 	struct rz_core_t *c2;
-	RzCoreAutocomplete *autocomplete;
 	int autocomplete_type;
 	int maxtab;
 	RzEvent *ev;
@@ -354,7 +324,6 @@ struct rz_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RzList *ropchain;
 	bool use_tree_sitter_rzcmd;
-	bool use_rzshell_autocompletion;
 	RzCoreSeekHistory seek_history;
 
 	bool marks_init;
@@ -442,8 +411,10 @@ RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3
 RZ_API int rz_core_flush(RzCore *core, const char *cmd);
 RZ_API int rz_core_cmd0(RzCore *core, const char *cmd);
 RZ_API void rz_core_cmd_init(RzCore *core);
-RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd);
+RZ_API RzCmdStatus rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, int argc, char **argv);
+RZ_API int rz_core_cmd_pipe_old(RzCore *core, char *rizin_cmd, char *shell_cmd);
 RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd);
+RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length);
 RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd);
 RZ_API int rz_core_cmd_file(RzCore *core, const char *file);
@@ -478,7 +449,6 @@ RZ_API int rz_core_is_valid_offset(RzCore *core, ut64 offset);
 RZ_API int rz_core_write_hexpair(RzCore *core, ut64 addr, const char *pairs);
 RZ_API int rz_core_write_assembly(RzCore *core, ut64 addr, const char *instructions, bool pretend, bool pad);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
-RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API RzLineNSCompletionResult *rz_core_autocomplete_rzshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
@@ -770,8 +740,8 @@ RZ_API bool rz_core_gdiff_2_files(RzCore *core1, RzCore *core2);
 RZ_API bool rz_core_gdiff_function_1_file(RzCore *c, ut64 addr, ut64 addr2);
 RZ_API bool rz_core_gdiff_function_2_files(RzCore *core1, RzCore *core2, ut64 addr, ut64 addr2);
 
-RZ_API char *rz_core_sysenv_begin(RzCore *core, const char *cmd);
-RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd);
+RZ_API void rz_core_sysenv_begin(RzCore *core);
+RZ_API void rz_core_sysenv_end(RzCore *core);
 
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool argonly);
 
@@ -1041,11 +1011,6 @@ RZ_API void rz_core_task_list(RzCore *core, int mode);
 RZ_API bool rz_core_task_is_cmd(RzCore *core, int id);
 RZ_API void rz_core_task_del_all_done(RzCore *core);
 
-RZ_API RzCoreAutocomplete *rz_core_autocomplete_add(RzCoreAutocomplete *parent, const char *cmd, int type, bool lock);
-RZ_API void rz_core_autocomplete_free(RzCoreAutocomplete *obj);
-RZ_API void rz_core_autocomplete_reload(RzCore *core);
-RZ_API RzCoreAutocomplete *rz_core_autocomplete_find(RzCoreAutocomplete *parent, const char *cmd, bool exact);
-RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char *cmd);
 RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 
 /* PLUGINS */
