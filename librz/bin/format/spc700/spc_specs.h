@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: maijin <maijin@malware.lu>
+// SPDX-FileCopyrightText: maijin
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _SPC_H
