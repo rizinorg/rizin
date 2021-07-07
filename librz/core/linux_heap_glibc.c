@@ -1120,9 +1120,7 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 
 		RzHeapBin *bin = RZ_NEW0(RzHeapBin);
 		if (!bin) {
-			rz_list_free(tcache_bins_list);
-			free(tcache);
-			return NULL;
+			goto error;
 		}
 		bin->type = rz_str_new("Tcache");
 		bin->bin_num = i;
@@ -1134,9 +1132,7 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 		// get first chunk
 		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
 		if (!chunk) {
-			rz_list_free(tcache_bins_list);
-			free(tcache);
-			return NULL;
+			goto error;
 		}
 		chunk->addr = (ut64)(entry - GH(HDR_SZ));
 		rz_list_append(bin->chunks, chunk);
@@ -1151,16 +1147,12 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 		for (size_t n = 1; n < count; n++) {
 			bool r = rz_io_nread_at(core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof(GHT));
 			if (!r) {
-				rz_list_free(tcache_bins_list);
-				free(tcache);
-				return NULL;
+				goto error;
 			}
 			tcache_tmp = GH(get_next_pointer)(core, tcache_fd, read_le(&tcache_tmp));
 			chunk = RZ_NEW0(RzHeapChunkListItem);
 			if (!chunk) {
-				rz_list_free(tcache_bins_list);
-				free(tcache);
-				return NULL;
+				goto error;
 			}
 			chunk->addr = (ut64)(tcache_tmp - TC_HDR_SZ);
 			rz_list_append(bin->chunks, chunk);
@@ -1169,6 +1161,11 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 	}
 	free(tcache);
 	return tcache_bins_list;
+
+error:
+	rz_list_free(tcache_bins_list);
+	free(tcache);
+	return NULL;
 }
 
 static void GH(print_tcache_content)(RzCore *core, GHT arena_base, GHT main_arena_base, PJ *pj) {
