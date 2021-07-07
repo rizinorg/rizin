@@ -28,6 +28,7 @@ RZ_API RZ_OWN RzArchPlatformTarget *rz_arch_platform_target_new() {
 	target->platforms = ht_up_new0();
 	if (!target->platforms) {
 		free(target);
+		return NULL;
 	}
 	return target;
 }

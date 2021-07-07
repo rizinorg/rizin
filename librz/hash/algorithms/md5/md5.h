@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 1991-1992 RSA Data Security, Inc.
+// SPDX-License-Identifier: RSA-MD
+
 #ifndef RZ_HASH_MD5_H
 #define RZ_HASH_MD5_H
 
