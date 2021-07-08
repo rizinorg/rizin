@@ -118,6 +118,7 @@ EOF
 RUN
 
 NAME=jni and SoP
+BROKEN=1
 FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
 e analysis.vars.stackname=true
@@ -125,8 +126,6 @@ e asm.bytes=true
 e asm.lines.bb=false
 aa
 s sym.Java_com_app_ndh_NDHActivity_print
-to bins/headers/jni.h
-
 # TODO: Tracked in https://github.com/rizinorg/rizin/issues/1132
 # This is actually quite wrong, regarding what this function actually does :-)
 # We are manually crafting the canary value such that it looks like a pointer
@@ -135,6 +134,10 @@ to bins/headers/jni.h
 # Do not hesitate to edit this test if you find a better case for testing this.
 e io.cache=1
 wx 37133713 @ reloc.target.__stack_chk_guard
+
+# TODO: Requires preprocessor that isn't implemented yet
+# This is tracked in https://github.com/rizinorg/rizin/issues/1204
+to bins/headers/jni.h
 tl JNINativeInterface 0x13371337
 tl JNINativeInterface 0x464c457f # \x7fELF, the "pointer" when dereferencing addr 0
 
@@ -155,6 +158,78 @@ EXPECT=<<EOF
 | 0x00001144      4b9a           ldr   r2, [JNINativeInterface]
 | 0x00001148      9a42           cmp   r2, r3                          ; JNINativeInterface.reserved0
 12
+EOF
+RUN
+
+NAME=jni and SoP (preprocessed)
+FILE=bins/elf/libverifyPass.so
+CMDS=<<EOF
+e analysis.vars.stackname=true
+e asm.bytes=true
+e asm.lines.bb=false
+aa
+s sym.Java_com_app_ndh_NDHActivity_print
+to bins/headers/jni_preprocessed.h
+
+# TODO: Tracked in https://github.com/rizinorg/rizin/issues/1132
+# This is actually quite wrong, regarding what this function actually does :-)
+# We are manually crafting the canary value such that it looks like a pointer
+# and say that at this pointer there is a JNINativeInterface object, in order
+# to test propagation from a global variable.
+# Do not hesitate to edit this test if you find a better case for testing this.
+e io.cache=1
+wx 37133713 @ reloc.target.__stack_chk_guard
+tl JNINativeInterface 0x13371337
+tl JNINativeInterface 0x464c457f # \x7fELF, the "pointer" when dereferencing addr 0
+
+pdf~JNINativeInterface
+pdr~JNI?
+EOF
+EXPECT=<<EOF
+| ; var struct JNINativeInterface JNINativeInterface @ sp+0x12c
+| 0x00000f62      cdb0           sub   JNINativeInterface.GetSuperclassx134
+| 0x00000f74      4b93           str   r3, [JNINativeInterface.reserved0]
+| 0x00000f76      039b           ldr   r3, [var_134h]                  ; JNINativeInterface.reserved0
+| 0x00000f82      019a           ldr   r2, [var_13ch]                  ; JNINativeInterface.reserved0
+| 0x00000f8e      4693           str   r3, [JNINativeInterface.GetSuperclassx118]
+| 0x00000f98      4593           str   r3, [JNINativeInterface.GetSuperclassx114]
+| 0x00000f9a      35ab           add   r3, JNINativeInterface.GetSuperclassxd4
+| 0x00000fb0      29ab           add   r3, JNINativeInterface.GetSuperclassxa4
+| 0x00000fc6      1dab           add   r3, JNINativeInterface.GetSuperclassx74
+| 0x00000fdc      11ab           add   r3, JNINativeInterface.GetSuperclassx44
+| 0x00000ff8      469a           ldr   r2, [JNINativeInterface.GetSuperclassx118]
+| 0x00001000      4393           str   r3, [JNINativeInterface.GetSuperclassx10c]
+| 0x00001004      4293           str   r3, [JNINativeInterface.GetSuperclassx108]
+| 0x00001012      019a           ldr   r2, [var_13ch]                  ; JNINativeInterface.reserved0
+| 0x0000101c      4193           str   r3, [JNINativeInterface.GetSuperclassx104]
+| 0x00001020      4ca8           add   r0, JNINativeInterface.reserved2
+| 0x0000103a      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
+| 0x00001040      439a           ldr   r2, [JNINativeInterface.GetSuperclassx10c]
+| 0x00001042      29ab           add   r3, JNINativeInterface.GetSuperclassxa4
+| 0x00001048      4399           ldr   r1, [JNINativeInterface.GetSuperclassx10c]
+| 0x0000104a      1dab           add   r3, JNINativeInterface.GetSuperclassx74
+| 0x00001052      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
+| 0x00001054      4699           ldr   r1, [JNINativeInterface.GetSuperclassx118]
+| 0x00001078      439a           ldr   r2, [JNINativeInterface.GetSuperclassx10c]
+| 0x0000107a      4399           ldr   r1, [JNINativeInterface.GetSuperclassx10c]
+| 0x0000107e      4cad           add   r5, JNINativeInterface.reserved2
+| 0x00001086      4398           ldr   r0, [JNINativeInterface.GetSuperclassx10c]
+| 0x00001088      11ab           add   r3, JNINativeInterface.GetSuperclassx44
+| 0x00001092      4ca8           add   r0, JNINativeInterface.reserved2
+| 0x0000109a      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
+| 0x0000109e      4393           str   r3, [JNINativeInterface.GetSuperclassx10c]
+| 0x000010a0      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
+| 0x000010a4      4293           str   r3, [JNINativeInterface.GetSuperclassx108]
+| 0x000010a6      439b           ldr   r3, [JNINativeInterface.GetSuperclassx10c]
+| 0x000010a8      469a           ldr   r2, [JNINativeInterface.GetSuperclassx118]
+| 0x000010ca      4493           str   r3, [JNINativeInterface.GetSuperclassx110]
+| 0x000010d2      419b           ldr   r3, [JNINativeInterface.GetSuperclassx104]
+| 0x000010d8      459a           ldr   r2, [JNINativeInterface.GetSuperclassx114]
+| 0x000010da      449b           ldr   r3, [JNINativeInterface.GetSuperclassx110]
+| 0x00001144      4b9a           ldr   r2, [JNINativeInterface.reserved0]
+| 0x00001148      9a42           cmp   r2, r3                          ; JNINativeInterface.reserved0
+| 0x00001150      4db0           add   JNINativeInterface.GetSuperclassx134
+43
 EOF
 RUN
 
