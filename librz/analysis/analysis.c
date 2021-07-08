@@ -276,6 +276,16 @@ RZ_API bool rz_analysis_set_os(RzAnalysis *analysis, const char *os) {
 	return rz_analysis_set_triplet(analysis, os, NULL, -1);
 }
 
+static bool is_arm_thumb_hack(RzAnalysis *analysis, int bits) {
+	if (!analysis || !analysis->cpu) {
+		return false;
+	}
+	if ((analysis->bits != bits) && !strcmp(analysis->cpu, "arm")) {
+		return (analysis->bits == 16 && bits == 32) || (analysis->bits == 32 && bits == 16);
+	}
+	return false;
+}
+
 RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 	switch (bits) {
 	case 8:
@@ -284,10 +294,13 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 	case 32:
 	case 64:
 		if (analysis->bits != bits) {
+			bool is_hack = is_arm_thumb_hack(analysis, bits);
 			const char *dir_prefix = rz_sys_prefix(NULL);
 			analysis->bits = bits;
 			rz_type_db_set_bits(analysis->typedb, bits);
-			rz_type_db_reload(analysis->typedb, dir_prefix);
+			if (!is_hack) {
+				rz_type_db_reload(analysis->typedb, dir_prefix);
+			}
 			rz_analysis_set_reg_profile(analysis);
 		}
 		return true;
