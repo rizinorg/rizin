@@ -175,7 +175,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	bool last = false;
 	int ret, result = 0;
 
-	ro->buf = NULL;
+	RZ_FREE(ro->buf);
 	if (!ro->quiet) {
 		printf("File: %s\n", file);
 	}
@@ -303,7 +303,6 @@ err:
 	free(efile);
 	rz_search_free(rs);
 	rz_io_free(io);
-	rzfind_options_fini(ro);
 	return result;
 }
 
@@ -474,5 +473,6 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	if (ro.json) {
 		printf("]\n");
 	}
+	rzfind_options_fini(&ro);
 	return 0;
 }
