@@ -324,14 +324,12 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 	if (!rz_bin_elf_init_ehdr(bin)) {
 		return false;
 	}
+
 	if (!rz_bin_elf_init_phdr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
 		RZ_LOG_WARN("Cannot initialize program headers\n");
 	}
-	if (bin->ehdr.e_type == ET_CORE) {
-		if (!Elf_(rz_bin_elf_init_notes)(bin)) {
-			RZ_LOG_WARN("Cannot parse PT_NOTE segments\n");
-		}
-	} else {
+
+	if (bin->ehdr.e_type != ET_CORE) {
 		RzVector *sections = Elf_(rz_bin_elf_sections_new)(bin);
 
 		if (!rz_bin_elf_init_shstrtab(bin, sections)) {
@@ -354,6 +352,7 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 	}
 
 	bin->relocs = Elf_(rz_bin_elf_relocs_new)(bin);
+	bin->notes = Elf_(rz_bin_elf_notes_new)(bin);
 
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
 
@@ -408,7 +407,7 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 
 	rz_vector_free(bin->relocs);
 
-	rz_list_free(bin->note_segments);
+	rz_vector_free(bin->notes);
 
 	if (bin->imports_by_ord) {
 		for (size_t i = 0; i < bin->imports_by_ord_size; i++) {

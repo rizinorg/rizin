@@ -35,6 +35,9 @@
 #define rz_bin_elf_foreach_relocs(bin, reloc) \
 	if (Elf_(rz_bin_elf_has_relocs)(bin)) \
 	rz_vector_foreach(bin->relocs, reloc)
+#define rz_bin_elf_foreach_notes_segment(bin, notes) \
+	if (Elf_(rz_bin_elf_has_notes)(bin)) \
+	rz_vector_foreach(bin->notes, notes)
 
 /// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
 typedef struct prstatus_layout_t {
@@ -128,32 +131,21 @@ typedef struct Elf_(rz_bin_elf_note_file_t) {
 RzBinElfNoteFile;
 
 /// Parsed PT_NOTE of type NT_PRSTATUS
-typedef struct Elf_(rz_bin_elf_note_prstatus_t) {
+typedef struct rz_bin_elf_note_prstatus_t {
 	size_t regstate_size;
 	ut8 *regstate;
 	// Hint: there is more info in NT_PRSTATUS notes that could be parsed if needed.
-}
-RzBinElfNotePrStatus;
+} RzBinElfNotePrStatus;
 
 /// A single PT_NOTE entry, parsed from an ElfW(Nhdr) and associated data.
 typedef struct Elf_(rz_bin_elf_note_t) {
 	Elf_(Word) type;
 	union {
-		struct {
-			size_t files_count;
-			RzBinElfNoteFile *files;
-		} file; //< for type == NT_FILE
+		RzBinElfNoteFile file; //< for type == NT_FILE
 		RzBinElfNotePrStatus prstatus; //< for type = NT_PRSTATUS
 	};
 }
 RzBinElfNote;
-
-/// A single parsed PT_NOTE segment
-typedef struct Elf_(rz_bin_elf_note_segment_t) {
-	size_t notes_count;
-	RzBinElfNote *notes;
-}
-RzBinElfNoteSegment;
 
 typedef struct rz_bin_elf_strtab RzBinElfStrtab;
 
@@ -186,7 +178,8 @@ struct Elf_(rz_bin_elf_obj_t) {
 	bool relocs_patched;
 	ut64 reloc_targets_map_base;
 
-	RzList /*<RzBinElfNoteSegment>*/ *note_segments;
+	// This is RzVector of note segment reprensented as RzVector<RzBinElfNote>
+	RzVector *notes; // RzVector<RzVector<RzBinElfNote>>
 
 	RzBinImport **imports_by_ord;
 	size_t imports_by_ord_size;
@@ -209,8 +202,6 @@ ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr);
 
 // elf_corefile.c
 
-RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
-RZ_BORROW const ut8 *Elf_(rz_bin_elf_grab_regstate)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL size_t *size);
 ut64 Elf_(rz_bin_elf_get_sp_val)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_dynamic.c
@@ -253,7 +244,9 @@ ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_notes.c
 
-bool Elf_(rz_bin_elf_init_notes)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW RzBinElfPrStatusLayout *Elf_(rz_bin_elf_get_prstatus_layout)(RZ_NONNULL ELFOBJ *bin);
+RZ_OWN RzVector *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin);
+bool Elf_(rz_bin_elf_has_notes)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_misc.c
 
