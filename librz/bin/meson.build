@@ -58,6 +58,7 @@ rz_bin_sources = [
   'p/bin_vsf.c',
   'p/bin_wasm.c',
   'p/bin_xbe.c',
+  'p/bin_xex.c',
   'p/bin_xnu_kernelcache.c',
   'p/bin_xtr_fatmach0.c',
   'p/bin_xtr_pemixed.c',
@@ -131,6 +132,7 @@ rz_bin_sources = [
   'format/pyc/pyc_magic.c',
   'format/te/te.c',
   'format/wasm/wasm.c',
+  'format/xex/xex.c',
   'format/zimg/zimg.c',
 
   'mangling/cxx.c',
