@@ -105,7 +105,7 @@ RZ_API RZ_OWN RzList /* RzType */ *rz_analysis_type_links(RzAnalysis *analysis) 
 }
 
 struct TListMeta {
-	RzTypeDB *typedb;
+	const RzTypeDB *typedb;
 	RzList *l;
 	ut64 addr;
 	ut64 offset;
@@ -118,15 +118,15 @@ static bool type_paths_collect_by_offset_cb(void *user, ut64 k, const void *v) {
 	RzType *t = (RzType *)v;
 	// Handle only identifiers here
 	if (t->kind != RZ_TYPE_KIND_IDENTIFIER) {
-		return false;
+		return true;
 	}
 	if (!t->identifier.name) {
-		return false;
+		return true;
 	}
 	// Get the base type
 	RzBaseType *btype = rz_type_db_get_base_type(tl->typedb, t->identifier.name);
 	if (!btype) {
-		return false;
+		return true;
 	}
 	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT || btype->kind == RZ_BASE_TYPE_KIND_UNION) {
 		RzList *list = rz_type_path_by_offset(tl->typedb, btype, tl->offset);
@@ -165,27 +165,27 @@ static bool type_paths_collect_by_address_cb(void *user, ut64 k, const void *v) 
 	struct TListMeta *tl = (struct TListMeta *)user;
 	// If the possible offset doesn't make sense - we skip it
 	if (tl->addr < k) {
-		return false;
+		return true;
 	}
 
 	RzType *t = (RzType *)v;
 	// Handle only identifiers here
 	if (t->kind != RZ_TYPE_KIND_IDENTIFIER) {
-		return false;
+		return true;
 	}
 	if (!t->identifier.name) {
-		return false;
+		return true;
 	}
 	// Get the base type
 	RzBaseType *btype = rz_type_db_get_base_type(tl->typedb, t->identifier.name);
 	if (!btype) {
-		return false;
+		return true;
 	}
 	// Calculate the possible offset as a difference between base address of the type link
 	// and the given address to check against
 	st64 offset = (st64)(tl->addr - k);
 	if (offset < 0) {
-		return false;
+		return true;
 	}
 	if (btype->kind == RZ_BASE_TYPE_KIND_STRUCT || btype->kind == RZ_BASE_TYPE_KIND_UNION) {
 		RzList *list = rz_type_path_by_offset(tl->typedb, btype, offset);
