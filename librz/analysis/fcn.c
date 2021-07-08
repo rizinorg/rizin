@@ -2308,15 +2308,40 @@ RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunc
 	if (!a || !fcn) {
 		return NULL;
 	}
-	RzPVector *args = rz_pvector_new(NULL);
+	RzPVector *tmp = rz_pvector_new(NULL);
+	if (!tmp) {
+		return NULL;
+	}
+	RzAnalysisVar *var;
 	void **it;
+	int rarg_idx = 0;
+	// Resort the pvector to order "reg_arg - stack_arg"
 	rz_pvector_foreach (&fcn->vars, it) {
-		RzAnalysisVar *var = *it;
+		var = *it;
+		if (var->kind == RZ_ANALYSIS_VAR_KIND_REG) {
+			rz_pvector_insert(tmp, rarg_idx++, var);
+		} else {
+			rz_pvector_push(tmp, var);
+		}
+	}
+
+	RzPVector *args = rz_pvector_new(NULL);
+	if (!args) {
+		rz_pvector_free(tmp);
+		return NULL;
+	}
+	rz_pvector_foreach (tmp, it) {
+		var = *it;
 		if (var->isarg) {
-			int argnum = rz_analysis_var_get_argnum(var);
-			if (argnum < 0) {
-				eprintf("%s : arg \"%s\" has wrong position: %d\n", fcn->name, var->name, argnum);
-				continue;
+			int argnum;
+			if (var->kind == RZ_ANALYSIS_VAR_KIND_REG) {
+				argnum = rz_analysis_var_get_argnum(var);
+				if (argnum < 0) {
+					RZ_LOG_INFO("%s : arg \"%s\" has wrong position: %d\n", fcn->name, var->name, argnum);
+					continue;
+				}
+			} else {
+				argnum = fcn->argnum;
 			}
 			// pvector api is a bit ugly here, essentially we make a (possibly sparse) array
 			// where each var is assigned at its argnum
@@ -2329,8 +2354,10 @@ RZ_API RZ_OWN RzPVector *rz_analysis_function_args(RzAnalysis *a, RzAnalysisFunc
 				}
 			}
 			rz_pvector_set(args, argnum, var);
+			fcn->argnum++;
 		}
 	}
+	rz_pvector_free(tmp);
 	return args;
 }
 
