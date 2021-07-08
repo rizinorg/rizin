@@ -1967,19 +1967,18 @@ EXPECT=<<EOF
 int
 char **
 int64_t
+const char *
 uint64_t
-char *
 =
-uint32_t
+uint64_t
 int64_t
 const char *
-size_t
 const void *
+size_t
 mbstate_t *
 wint_t
 size_t *
 =
-fcn.0000f770
 fcn.00011b90
 fcn.0000e780
 fcn.0000c0f0
