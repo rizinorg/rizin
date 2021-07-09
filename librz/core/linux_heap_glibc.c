@@ -1104,7 +1104,7 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 		}
 		free(arena);
 	}
-
+	rz_cons_printf("Tcache base is 0x%" PFMT64x "\n", tcache_start);
 	// Get rz_tcache struct
 	GH(RTcache) *tcache = GH(tcache_new)(core);
 	GH(tcache_read)
@@ -1129,6 +1129,7 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 		if (count <= 0) {
 			continue;
 		}
+		bin->fd = (ut64)(entry - GH(HDR_SZ));
 		// get first chunk
 		RzHeapChunkListItem *chunk = RZ_NEW0(RzHeapChunkListItem);
 		if (!chunk) {
@@ -2524,4 +2525,31 @@ RZ_API MallocState *GH(rz_heap_get_arena)(RzCore *core, GHT m_state) {
 		return NULL;
 	}
 	return main_arena;
+}
+
+RZ_API bool GH(rz_heap_write_heap_chunk)(RzCore *core, RzHeapChunkSimple *chunk_simple) {
+	GH(RzHeapChunk) *heap_chunk = RZ_NEW0(GH(RzHeapChunk));
+	if (!heap_chunk) {
+		return false;
+	}
+
+	heap_chunk->size = chunk_simple->size;
+	// add flag bits to chunk size
+	if (chunk_simple->prev_inuse) {
+		heap_chunk->size |= PREV_INUSE;
+	}
+	if (chunk_simple->is_mmapped) {
+		heap_chunk->size |= IS_MMAPPED;
+	}
+	if (chunk_simple->non_main_arena) {
+		heap_chunk->size |= NON_MAIN_ARENA;
+	}
+
+	heap_chunk->fd = chunk_simple->fd;
+	heap_chunk->bk = chunk_simple->bk;
+	heap_chunk->fd_nextsize = chunk_simple->fd_nextsize;
+	heap_chunk->bk_nextsize = chunk_simple->bk_nextsize;
+	bool res = rz_io_write_at(core->io, chunk_simple->addr, (ut8 *)heap_chunk, sizeof(heap_chunk));
+	free(heap_chunk);
+	return res;
 }
