@@ -892,22 +892,54 @@ typedef struct {
 	RzBin *bin;
 } RzCoreLinkData;
 
-static bool linkcb(void *user, void *data, ut32 id) {
-	RzCoreLinkData *ld = user;
-	RzIODesc *desc = (RzIODesc *)data;
-
+static bool resolve_import_cb(RzCoreLinkData *ld, RzIODesc *desc, ut32 id) {
 	RzBinFile *bf = rz_bin_file_find_by_fd(ld->bin, desc->fd);
-	if (bf) {
-		RzListIter *iter;
-		RzBinSymbol *sym;
-		RzList *symbols = rz_bin_file_get_symbols(bf);
-		rz_list_foreach (symbols, iter, sym) {
-			if (!strcmp(sym->name, ld->name)) {
-				ld->addr = sym->vaddr;
-				return false;
-			}
+	if (!bf) {
+		return true;
+	}
+	RzListIter *iter;
+	RzBinSymbol *sym;
+	RzList *symbols = rz_bin_file_get_symbols(bf);
+	rz_list_foreach (symbols, iter, sym) {
+		if (!strcmp(sym->name, ld->name)) {
+			ld->addr = sym->vaddr;
+			eprintf("%-10s | %s at 0x%llx\n", desc->name, sym->name, ld->addr);
+			return false;
 		}
 	}
+	return true;
+}
+
+typedef struct {
+	RzCore *core;
+	ut64 offset;
+} RzMultiDexMap;
+
+static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
+	if (!rz_str_endswith(desc->name, ".dex")) {
+		return true;
+	}
+
+	ut64 size = rz_io_desc_size(desc);
+	ut64 baddr = rz_io_map_location(core->io, size);
+	RZ_LOG_INFO("Mapping %s at 0x%" PFMT64x " with size 0x%" PFMT64x "\n", desc->name, baddr, size);
+	if (baddr != UT64_MAX) {
+		RzCoreFile *cf = rz_core_file_cur(core);
+		rz_io_use_fd(core->io, desc->fd);
+		RzBinOptions opt;
+		rz_core_bin_options_init(core, &opt, desc->fd, baddr, 0);
+		opt.xtr_idx = 0;
+		RzBinFile *binfile = rz_bin_open_io(core->bin, &opt);
+		if (!binfile) {
+			RZ_LOG_ERROR("Cannot load bin file %s.\n", desc->name);
+			return true;
+		}
+
+		rz_pvector_push(&cf->binfiles, binfile);
+		rz_core_bin_apply_all_info(core, binfile);
+		rz_core_cmd0(core, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
+	}
+
 	return true;
 }
 
@@ -917,7 +949,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 	ut64 laddr = rz_config_get_i(r->config, "bin.laddr");
 	RzBinFile *binfile = NULL;
 	RzBinPlugin *plugin = NULL;
-	bool is_io_load;
+	bool is_io_load = false;
 	const char *cmd_load;
 	if (!cf) {
 		return false;
@@ -928,8 +960,6 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 		if (!filenameuri || !*filenameuri) {
 			filenameuri = desc->name;
 		}
-	} else {
-		is_io_load = false;
 	}
 
 	if (!filenameuri) {
@@ -946,9 +976,14 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 			rz_core_file_do_load_for_debug(r, baddr, filenameuri);
 		} else {
 			rz_core_file_do_load_for_io_plugin(r, baddr, 0LL);
+			if (!strncmp(filenameuri, "apk://", 6) && r->io->files->size > 1) {
+				RZ_LOG_INFO("Found multidex APK, mapping extra files\n");
+				rz_id_storage_foreach(r->io->files, (RzIDStorageForeachCb)map_multi_dex, r);
+				rz_config_set_b(r->config, "bin.libs", true);
+			}
 		}
-		rz_io_use_fd(r->io, desc->fd);
 		// Restore original desc
+		rz_io_use_fd(r->io, desc->fd);
 	}
 	binfile = rz_bin_cur(r->bin);
 	if (cf && binfile && desc) {
@@ -1027,7 +1062,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 	if (!rz_config_get_b(r->config, "cfg.debug")) {
 		loadGP(r);
 	}
-	if (rz_config_get_i(r->config, "bin.libs")) {
+	if (rz_config_get_b(r->config, "bin.libs")) {
 		const char *lib;
 		RzListIter *iter;
 		RzList *libs = rz_bin_get_libs(r->bin);
@@ -1035,36 +1070,40 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 			if (file_is_loaded(r, lib)) {
 				continue;
 			}
-			eprintf("[bin.libs] Opening %s\n", lib);
+			RZ_LOG_INFO("Opening library %s\n", lib);
 			ut64 baddr = rz_io_map_location(r->io, 0x200000);
 			if (baddr != UT64_MAX) {
 				rz_core_file_loadlib(r, lib, baddr);
 			}
 		}
-		rz_core_cmd0(r, "obb 0;s entry0");
-		rz_config_set_i(r->config, "bin.at", true);
-		eprintf("[bin.libs] Linking imports...\n");
+
+		rz_core_cmd0(r, "ob 0; s entry0");
+		rz_config_set_b(r->config, "bin.at", true);
+		RZ_LOG_INFO("Linking imports...\n");
 		RzBinImport *imp;
 		RzList *imports = rz_bin_get_imports(r->bin);
 		rz_list_foreach (imports, iter, imp) {
-			// PLT finding
-			RzFlagItem *impsym = rz_flag_get(r->flags, sdb_fmt("sym.imp.%s", imp->name));
-			if (!impsym) {
-				//eprintf ("Cannot find '%s' import in the PLT\n", imp->name);
+			char *name = rz_str_newf("sym.imp.%s", imp->name);
+			rz_name_filter(name + 8, strlen(name + 8) + 1, true);
+
+			RzFlagItem *flag = rz_flag_get(r->flags, name);
+			if (!flag) {
+				//RZ_LOG_DEBUG("Cannot find flag %s\n", name);
+				free(name);
 				continue;
 			}
-			ut64 imp_addr = impsym->offset;
-			eprintf("Resolving %s... ", imp->name);
+			ut64 imp_addr = flag->offset;
 			RzCoreLinkData linkdata = { imp->name, UT64_MAX, r->bin };
-			rz_id_storage_foreach(r->io->files, linkcb, &linkdata);
+			rz_id_storage_foreach(r->io->files, (RzIDStorageForeachCb)resolve_import_cb, &linkdata);
 			if (linkdata.addr != UT64_MAX) {
-				eprintf("0x%08" PFMT64x "\n", linkdata.addr);
+				RZ_LOG_INFO("Resolved %s with address 0x%08" PFMT64x "\n", name, linkdata.addr);
 				ut64 a = linkdata.addr;
 				ut64 b = imp_addr;
 				rz_analysis_xrefs_set(r->analysis, b, a, RZ_ANALYSIS_REF_TYPE_NULL);
 			} else {
-				eprintf("NO\n");
+				//RZ_LOG_ERROR("Cannot resolve %s\n", name);
 			}
+			free(name);
 		}
 	}
 
@@ -1093,7 +1132,7 @@ RZ_API RzCoreFile *rz_core_file_open_many(RzCore *r, const char *file, int perm,
 	const bool openmany = rz_config_get_i(r->config, "file.openmany");
 	int opened_count = 0;
 	RzListIter *fd_iter, *iter2;
-	RzIODesc *fd;
+	RzIODesc *desc;
 
 	RzList *list_fds = rz_io_open_many(r->io, file, perm, 0644);
 
@@ -1102,7 +1141,7 @@ RZ_API RzCoreFile *rz_core_file_open_many(RzCore *r, const char *file, int perm,
 		return NULL;
 	}
 
-	rz_list_foreach_safe (list_fds, fd_iter, iter2, fd) {
+	rz_list_foreach_safe (list_fds, fd_iter, iter2, desc) {
 		opened_count++;
 		if (openmany && opened_count > 1) {
 			// XXX - Open Many should limit the number of files
@@ -1115,16 +1154,16 @@ RZ_API RzCoreFile *rz_core_file_open_many(RzCore *r, const char *file, int perm,
 		RzCoreFile *fh = RZ_NEW0(RzCoreFile);
 		if (fh) {
 			fh->core = r;
-			fh->fd = fd->fd;
+			fh->fd = desc->fd;
 			r->file = fh;
 			rz_list_append(r->files, fh);
-			rz_core_bin_load(r, fd->name, loadaddr);
+			rz_core_bin_load(r, desc->name, loadaddr);
 		}
 	}
 	return NULL;
 }
 
-/* loadaddr is r2 -m (mapaddr) */
+/* loadaddr is rizin -m (mapaddr) */
 RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut64 loadaddr) {
 	rz_return_val_if_fail(r && file, NULL);
 	ut64 prev = rz_time_now_mono();
