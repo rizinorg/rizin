@@ -104,6 +104,9 @@ static GHT GH(get_main_arena_with_symbol)(RzCore *core, RzDebugMap *map) {
 }
 
 static bool GH(is_tcache)(RzCore *core) {
+	// NOTE This method of resolving libc fails in the following cases:
+	// 1. libc shared object file does not have version number
+	// 2. if another map has `libc-` in its absolute path
 	char *fp = NULL;
 	double v = 0;
 	if (rz_config_get_b(core->config, "cfg.debug")) {
@@ -125,6 +128,13 @@ static bool GH(is_tcache)(RzCore *core) {
 		return tcv != 0;
 	}
 	if (fp) {
+
+		// In case there is string `libc-` in path actual libc go to last occurrence of `libc-`
+		while (strstr(fp + 1, "libc-") != NULL) {
+			eprintf("%s\n", fp + 1);
+			fp = strstr(fp + 1, "libc-");
+		}
+
 		v = rz_num_get_float(NULL, fp + 5);
 		core->dbg->glibc_version = (int)round((v * 100));
 	}
@@ -1063,6 +1073,7 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 	// check if tcache is even present in this Glibc version
 	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (!tc) {
+		rz_cons_printf("No tcache present in this version of libc\n");
 		return NULL;
 	}
 
@@ -2263,6 +2274,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_tcache_print_handler)(RzCore *core, int argc, 
 	// if no tcache in this version of glibc just return
 	const int tc = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	if (!tc) {
+		rz_cons_printf("No tcache present in this version of libc\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
