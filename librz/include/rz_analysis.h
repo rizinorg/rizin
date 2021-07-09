@@ -257,6 +257,7 @@ typedef struct rz_analysis_function_t {
 	bool bp_frame;
 	bool is_noreturn; // true if function does not return
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
+	int argnum; // number of arguments;
 	size_t fingerprint_size;
 	RzAnalysisDiff *diff;
 	RzList *bbs; // TODO: should be RzPVector
