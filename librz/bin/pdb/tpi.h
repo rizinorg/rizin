@@ -11,9 +11,11 @@ void init_tpi_stream(STpiStream *tpi_stream);
 int parse_tpi_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream);
 
 // TODO: Remove to separate file
-int parse_sctring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len);
+int parse_scstring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len);
 
 // use rizin types here (ut16 instead of unsigned short, ut32 for unsigned int ..)
 ///////////////////////////////////////////////////////////////////////////////
 void init_scstring(SCString *cstr, unsigned int size, char *name);
+// Get SType data by type_info->type_index
+SType *get_stype_by_idx(RzList *list, ut64 idx);
 #endif // TPI_H

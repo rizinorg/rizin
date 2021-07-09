@@ -439,9 +439,9 @@ static bool pdb7_parse(RzPdb *pdb) {
 	void *p_tmp;
 	int i = 0;
 
-	bytes_read = rz_buf_read(pdb->buf, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
-	if (bytes_read != PDB7_SIGNATURE_LEN) {
-		//eprintf ("Error while reading PDB7_SIGNATURE.\n");
+	bytes_read = rz_buf_read(pdb->buf, (ut8 *)signature, PDB7_SIGNATURE_LEN);
+	if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN) != 0) {
+		eprintf("Invalid signature for PDB7 format.\n");
 		goto error;
 	}
 	if (!read_int_var("page_size", &page_size, pdb)) {
@@ -457,10 +457,6 @@ static bool pdb7_parse(RzPdb *pdb) {
 		goto error;
 	}
 	if (!read_int_var("reserved", &reserved, pdb)) {
-		goto error;
-	}
-	if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN) != 0) {
-		eprintf("Invalid signature for PDB7 format.\n");
 		goto error;
 	}
 
@@ -853,16 +849,18 @@ static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf 
 		rz_strbuf_append(names, name);
 	} break;
 	case eLF_POINTER: {
-		int size = 4;
+		ut64 size = 4;
 		if (type_info->get_val) {
 			type_info->get_val(type_info, &size);
 		}
-		snprintf(tmp_format, 5, "p%d", size);
+		snprintf(tmp_format, 5, "p%" PFMT64u, size);
 		member_format = tmp_format;
 		rz_strbuf_append(names, name);
 	} break;
+	case eLF_CLASS_19:
 	case eLF_CLASS:
 	case eLF_UNION:
+	case eLF_STRUCTURE_19:
 	case eLF_STRUCTURE: {
 		member_format = "?";
 		char *field_name = NULL;
@@ -888,11 +886,11 @@ static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf 
 		rz_strbuf_appendf(names, "(int)%s", name);
 	} break;
 	case eLF_ARRAY: {
-		int size = 0;
+		ut64 size = 0;
 		if (type_info->get_val) {
 			type_info->get_val(type_info, &size);
 		}
-		snprintf(tmp_format, 5, "[%d]", size);
+		snprintf(tmp_format, 5, "[%" PFMT64u "]", size);
 		member_format = tmp_format;
 		rz_strbuf_append(names, name); // TODO complete the type with additional info
 	} break;
@@ -919,7 +917,9 @@ static inline bool is_printable_type(ELeafType type) {
 	return (type == eLF_STRUCTURE ||
 		type == eLF_UNION ||
 		type == eLF_ENUM ||
-		type == eLF_CLASS);
+		type == eLF_CLASS ||
+		type == eLF_CLASS_19 ||
+		type == eLF_STRUCTURE_19);
 }
 
 /**
@@ -959,20 +959,29 @@ static void print_struct(const char *name, const int size, const RzList *members
 	RzListIter *member_iter = rz_list_iterator(members);
 	while (rz_list_iter_next(member_iter)) {
 		STypeInfo *type_info = rz_list_iter_get(member_iter);
-		char *member_name = NULL;
-		if (type_info->get_name) {
-			type_info->get_name(type_info, &member_name);
+		switch (type_info->leaf_type) {
+		case eLF_MEMBER:
+		case eLF_NESTTYPE:
+		case eLF_METHOD:
+		case eLF_ONEMETHOD: {
+			char *member_name = NULL;
+			if (type_info->get_name) {
+				type_info->get_name(type_info, &member_name);
+			}
+			ut64 offset = 0;
+			if (type_info->get_val) {
+				type_info->get_val(type_info, &offset);
+			}
+			char *type_name = NULL;
+			if (type_info->get_print_type) {
+				type_info->get_print_type(type_info, &type_name);
+			}
+			printf("  %s %s; // offset +0x%" PFMT64x "\n", type_name, member_name, offset);
+			RZ_FREE(type_name);
 		}
-		int offset = 0;
-		if (type_info->get_val) {
-			type_info->get_val(type_info, &offset);
+		default:
+			break;
 		}
-		char *type_name = NULL;
-		if (type_info->get_print_type) {
-			type_info->get_print_type(type_info, &type_name);
-		}
-		printf("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
-		RZ_FREE(type_name);
 	}
 	printf("};\n");
 }
@@ -996,7 +1005,7 @@ static void print_union(const char *name, const int size, const RzList *members,
 		if (type_info->get_name) {
 			type_info->get_name(type_info, &member_name);
 		}
-		int offset = 0;
+		ut64 offset = 0;
 		if (type_info->get_val) {
 			type_info->get_val(type_info, &offset);
 		}
@@ -1029,11 +1038,11 @@ static void print_enum(const char *name, const char *type, const RzList *members
 		if (type_info->get_name) {
 			type_info->get_name(type_info, &member_name);
 		}
-		int value = 0;
+		ut64 value = 0;
 		if (type_info->get_val) {
 			type_info->get_val(type_info, &value);
 		}
-		printf("  %s = %d,\n", member_name, value);
+		printf("  %s = %" PFMT64u ",\n", member_name, value);
 	}
 	printf("};\n");
 }
@@ -1057,7 +1066,7 @@ static void print_types_regular(const RzPdb *pdb, const RzList *types) {
 		}
 		// skip forward references
 		if (type_info->is_fwdref) {
-			int is_fwdref = 0;
+			ut64 is_fwdref = 0;
 			type_info->is_fwdref(type_info, &is_fwdref);
 			if (is_fwdref == 1) {
 				continue;
@@ -1067,7 +1076,7 @@ static void print_types_regular(const RzPdb *pdb, const RzList *types) {
 		if (type_info->get_name) {
 			type_info->get_name(type_info, &name);
 		}
-		int size = 0;
+		ut64 size = 0;
 		if (type_info->get_val) {
 			type_info->get_val(type_info, &size);
 		}
@@ -1077,6 +1086,8 @@ static void print_types_regular(const RzPdb *pdb, const RzList *types) {
 		}
 
 		switch (type_info->leaf_type) {
+		case eLF_CLASS_19:
+		case eLF_STRUCTURE_19:
 		case eLF_CLASS:
 		case eLF_STRUCTURE:
 			print_struct(name, size, members, pdb->cb_printf);
@@ -1117,7 +1128,7 @@ static void print_types_json(const RzPdb *pdb, PJ *pj, const RzList *types) {
 		}
 		// skip forward references
 		if (type_info->is_fwdref) {
-			int is_fwdref = 0;
+			ut64 is_fwdref = 0;
 			type_info->is_fwdref(type_info, &is_fwdref);
 			if (is_fwdref == 1) {
 				continue;
@@ -1128,7 +1139,7 @@ static void print_types_json(const RzPdb *pdb, PJ *pj, const RzList *types) {
 		if (type_info->get_name) {
 			type_info->get_name(type_info, &name);
 		}
-		int size = 0;
+		ut64 size = 0;
 		if (type_info->get_val) {
 			type_info->get_val(type_info, &size);
 		}
@@ -1157,7 +1168,7 @@ static void print_types_json(const RzPdb *pdb, PJ *pj, const RzList *types) {
 					if (type_info->get_name) {
 						type_info->get_name(type_info, &member_name);
 					}
-					int offset = 0;
+					ut64 offset = 0;
 					if (type_info->get_val) {
 						type_info->get_val(type_info, &offset);
 					}
@@ -1192,7 +1203,7 @@ static void print_types_json(const RzPdb *pdb, PJ *pj, const RzList *types) {
 					if (type_info->get_name) {
 						type_info->get_name(type_info, &member_name);
 					}
-					int value = 0;
+					ut64 value = 0;
 					if (type_info->get_val) {
 						type_info->get_val(type_info, &value);
 					}
@@ -1233,7 +1244,7 @@ static void print_types_format(const RzPdb *pdb, const RzList *types) {
 		}
 		// skip forward references
 		if (type_info->is_fwdref) {
-			int is_fwdref = 0;
+			ut64 is_fwdref = 0;
 			type_info->is_fwdref(type_info, &is_fwdref);
 			if (is_fwdref == 1) {
 				continue;
@@ -1247,7 +1258,7 @@ static void print_types_format(const RzPdb *pdb, const RzList *types) {
 			name = create_type_name_from_offset(type->tpi_idx);
 			to_free_name = true;
 		}
-		int size = 0;
+		ut64 size = 0;
 		if (type_info->get_val) {
 			type_info->get_val(type_info, &size);
 		}
@@ -1269,6 +1280,8 @@ static void print_types_format(const RzPdb *pdb, const RzList *types) {
 		while (rz_list_iter_next(member_iter)) {
 			STypeInfo *member_info = rz_list_iter_get(member_iter);
 			switch (type_info->leaf_type) {
+			case eLF_STRUCTURE_19:
+			case eLF_CLASS_19:
 			case eLF_STRUCTURE:
 			case eLF_CLASS:
 			case eLF_UNION:
