@@ -1380,7 +1380,7 @@ EXPECT=<<EOF
 var size_t var_1ch @ rbp-0x1c
 var const char * var_18h @ rbp-0x18
 var const char * s @ rbp-0x10
-var char * var_8h @ rbp-0x8
+var const char * var_8h @ rbp-0x8
 EOF
 RUN
 
