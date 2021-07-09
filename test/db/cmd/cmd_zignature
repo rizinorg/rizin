@@ -1394,7 +1394,7 @@ za fcn.10002d70 b 38a0000038c000004bfffed4:ffffffffffffffffff000000
 za fcn.10002d70 g cc=12 nbbs=19 edges=29 ebbs=1 bbsum=304
 za fcn.10002d70 o 0x10002d70
 za fcn.10002d70 v b-4096 s4 s-36 s0 s-4136 r5 r6
-za fcn.10002d70 t func.fcn.10002d70.args=4 func.fcn.10002d70.arg.0="int32_t,arg1" func.fcn.10002d70.arg.1="int32_t,arg2" func.fcn.10002d70.arg.2="int32_t,arg_1030h" func.fcn.10002d70.arg.3="int32_t,arg_1034h"
+za fcn.10002d70 t func.fcn.10002d70.args=4 func.fcn.10002d70.arg.0="int32_t,arg1" func.fcn.10002d70.arg.1="int32_t,arg2" func.fcn.10002d70.arg.2="int32_t,arg_1034h" func.fcn.10002d70.arg.3="int32_t,arg_1030h"
 za fcn.10002d70 h b73e65dc846183808d8e385076f9bbcd0b1dcdaa5652254fb55b3b159462a507
 EOF
 RUN
