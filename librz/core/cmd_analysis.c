@@ -8111,11 +8111,13 @@ static void cmd_analysis_rtti(RzCore *core, const char *input) {
 	switch (input[0]) {
 	case '\0': // "avr"
 	case 'j': // "avrj"
-		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, input[0]);
+		rz_analysis_rtti_print_at_vtable(core->analysis, core->offset, RZ_OUTPUT_MODE_JSON);
 		break;
-	case 'a': // "avra"
-		rz_analysis_rtti_print_all(core->analysis, input[1]);
+	case 'a': { // "avra"
+		RzOutputMode mode = rz_char_to_output_mode(&input[1]);
+		rz_analysis_rtti_print_all(core->analysis, mode);
 		break;
+	}
 	case 'r': // "avrr"
 		rz_analysis_rtti_recover_all(core->analysis);
 		break;
@@ -8442,7 +8444,8 @@ static void cmd_analysis_classes(RzCore *core, const char *input) {
 				break;
 			}
 		}
-		rz_analysis_class_list(core->analysis, input[1]);
+		RzOutputMode mode = rz_char_to_output_mode(&input[1]);
+		rz_analysis_class_list(core->analysis, mode);
 		break;
 	case ' ': // "ac"
 	case '-': // "ac-"

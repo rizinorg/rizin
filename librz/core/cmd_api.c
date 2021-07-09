@@ -79,6 +79,38 @@ RZ_IPI int rz_output_mode_to_char(RzOutputMode mode) {
 	return -1;
 }
 
+RZ_IPI RzOutputMode rz_char_to_output_mode2(char input) {
+	RzOutputMode mode;
+	switch (input) {
+	case 'j':
+		mode = RZ_OUTPUT_MODE_JSON;
+		break;
+	case '*':
+	case 'r':
+		mode = RZ_OUTPUT_MODE_RIZIN;
+		break;
+	case 'q':
+		mode = RZ_OUTPUT_MODE_QUIET;
+		break;
+	case 'l':
+		mode = RZ_OUTPUT_MODE_LONG;
+		break;
+	case 'J':
+		mode = RZ_OUTPUT_MODE_LONG_JSON;
+		break;
+	case 'k':
+		mode = RZ_OUTPUT_MODE_SDB;
+		break;
+	case 't':
+		mode = RZ_OUTPUT_MODE_TABLE;
+		break;
+	default:
+		rz_warn_if_reached();
+		mode = input;
+	}
+	return mode;
+}
+
 static int value = 0;
 
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
@@ -255,14 +287,26 @@ RZ_API void rz_cmd_batch_end(RzCmd *cmd) {
 	sort_groups(rz_cmd_get_root(cmd));
 }
 
-static RzOutputMode suffix2mode(const char *suffix) {
+RZ_IPI RzOutputMode rz_char_to_output_mode(const char *suffix) {
 	size_t i;
 	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
 		if (!strcmp(suffix, argv_modes[i].suffix)) {
 			return argv_modes[i].mode;
 		}
 	}
-	return 0;
+	rz_warn_if_reached();
+	return RZ_OUTPUT_MODE_UNKNOWN;
+}
+
+RZ_IPI RzOutputMode rz_char_to_output_mode3(const char *suffix) {
+	size_t i;
+	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+		if (suffix[0] == argv_modes[i].suffix[0]) {
+			return argv_modes[i].mode;
+		}
+	}
+	rz_warn_if_reached();
+	return RZ_OUTPUT_MODE_UNKNOWN;
 }
 
 static bool has_cd_submodes(const RzCmdDesc *cd) {
@@ -274,7 +318,7 @@ static bool is_valid_argv_modes(RzCmdDesc *cd, char last_letter) {
 		return false;
 	}
 	char suffix[] = { last_letter, '\0' };
-	return cd->d.argv_modes_data.modes & suffix2mode(suffix);
+	return cd->d.argv_modes_data.modes & rz_char_to_output_mode(suffix);
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd) {
@@ -547,7 +591,7 @@ static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
 	if (!has_cd_submodes(cd)) {
 		return 0;
 	}
-	return suffix2mode(cmdid + strlen(cd->name));
+	return rz_char_to_output_mode(cmdid + strlen(cd->name));
 }
 
 /**

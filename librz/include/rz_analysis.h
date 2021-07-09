@@ -1775,10 +1775,10 @@ RZ_API void rz_meta_rebase(RzAnalysis *analysis, ut64 diff);
 RZ_API ut64 rz_meta_get_size(RzAnalysis *a, RzAnalysisMetaType type);
 
 RZ_API const char *rz_meta_type_to_string(int type);
-RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
-RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, int rad);
-RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, int rad);
-RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, int rad, ut64 addr);
+RZ_API void rz_meta_print(RzAnalysis *a, RzAnalysisMetaItem *d, ut64 start, ut64 size, RzOutputMode mode, PJ *pj, bool show_full);
+RZ_API void rz_meta_print_list_all(RzAnalysis *a, int type, RzOutputMode mode);
+RZ_API void rz_meta_print_list_at(RzAnalysis *a, ut64 addr, RzOutputMode mode);
+RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, RzOutputMode mode, ut64 addr);
 
 /* hints */
 
@@ -1900,23 +1900,23 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad);
 
 /* rtti */
 RZ_API char *rz_analysis_rtti_msvc_demangle_class_name(RVTableContext *context, const char *name);
-RZ_API void rz_analysis_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode);
-RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode, bool strict);
+RZ_API void rz_analysis_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, RzOutputMode mode);
+RZ_API void rz_analysis_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, RzOutputMode mode);
+RZ_API void rz_analysis_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, RzOutputMode mode);
+RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, RzOutputMode mode);
+RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, bool strict);
 RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList *vtables);
 
 RZ_API char *rz_analysis_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name);
 RZ_API void rz_analysis_rtti_itanium_print_class_type_info(RVTableContext *context, ut64 addr, int mode);
 RZ_API void rz_analysis_rtti_itanium_print_si_class_type_info(RVTableContext *context, ut64 addr, int mode);
 RZ_API void rz_analysis_rtti_itanium_print_vmi_class_type_info(RVTableContext *context, ut64 addr, int mode);
-RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, int mode);
+RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode);
 RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *vt_context, RzList *vtables);
 
 RZ_API char *rz_analysis_rtti_demangle_class_name(RzAnalysis *analysis, const char *name);
-RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, int mode);
+RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, RzOutputMode mode);
+RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode);
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
 
 RZ_API RzList *rz_analysis_preludes(RzAnalysis *analysis);
@@ -1994,7 +1994,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, 
 
 RZ_API void rz_analysis_class_print(RzAnalysis *analysis, const char *class_name, bool detailed);
 RZ_API void rz_analysis_class_json(RzAnalysis *analysis, PJ *j, const char *class_name);
-RZ_API void rz_analysis_class_list(RzAnalysis *analysis, int mode);
+RZ_API void rz_analysis_class_list(RzAnalysis *analysis, RzOutputMode mode);
 RZ_API void rz_analysis_class_list_bases(RzAnalysis *analysis, const char *class_name);
 RZ_API void rz_analysis_class_list_vtables(RzAnalysis *analysis, const char *class_name);
 RZ_API void rz_analysis_class_list_vtable_offset_functions(RzAnalysis *analysis, const char *class_name, ut64 offset);

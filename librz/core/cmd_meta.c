@@ -210,10 +210,10 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 			}
 		} break;
 		case 'j': // "CCfj"
-			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, 'j', core->offset);
+			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_JSON, core->offset);
 			break;
 		case '*': // "CCf*"
-			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, 1, core->offset);
+			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_RIZIN, core->offset);
 			break;
 		default:
 			rz_meta_print_list_in_function(core->analysis, RZ_META_TYPE_COMMENT, 0, core->offset);
@@ -221,7 +221,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "CCj"
-		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, 'j');
+		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_JSON);
 		break;
 	case '!': {
 		char *out;
@@ -258,7 +258,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 		free(nc);
 	} break;
 	case '*': // "CC*"
-		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, 1);
+		rz_meta_print_list_all(core->analysis, RZ_META_TYPE_COMMENT, RZ_OUTPUT_MODE_RIZIN);
 		break;
 	case '-': // "CC-"
 		if (input[2] == '*') { // "CC-*"
@@ -454,7 +454,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 		rz_meta_print_list_all(core->analysis, input[0], 1);
 		break;
 	case 'j': // "Cfj", "Cdj", ...
-		rz_meta_print_list_all(core->analysis, input[0], 'j');
+		rz_meta_print_list_all(core->analysis, input[0], RZ_OUTPUT_MODE_JSON);
 		break;
 	case '!': // "Cf!", "Cd!", ...
 	{
@@ -472,14 +472,15 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 			ut64 size;
 			RzAnalysisMetaItem *mi = rz_meta_get_at(core->analysis, addr, type, &size);
 			if (mi) {
-				rz_meta_print(core->analysis, mi, addr, size, input[3], NULL, false);
+				RzOutputMode mode = rz_char_to_output_mode3(&input[3]);
+				rz_meta_print(core->analysis, mi, addr, size, mode, NULL, false);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
 			ut64 size;
 			RzAnalysisMetaItem *mi = rz_meta_get_at(core->analysis, addr, type, &size);
 			if (mi) {
-				rz_meta_print(core->analysis, mi, addr, size, input[2], NULL, false);
+				rz_meta_print(core->analysis, mi, addr, size, RZ_OUTPUT_MODE_JSON, NULL, false);
 				rz_cons_newline();
 			}
 			break;
@@ -807,9 +808,9 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 	case 'j': // "Cj"
 	case '*': { // "C*"
 		if (!input[0] || input[1] == '.') {
-			rz_meta_print_list_at(core->analysis, core->offset, *input);
+			rz_meta_print_list_at(core->analysis, core->offset, (*input == 'j' ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_RIZIN));
 		} else {
-			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_ANY, *input);
+			rz_meta_print_list_all(core->analysis, RZ_META_TYPE_ANY, (*input == 'j' ? RZ_OUTPUT_MODE_JSON : RZ_OUTPUT_MODE_RIZIN));
 		}
 		break;
 	}

@@ -32,6 +32,7 @@
  * \brief Enum to describe the way data are printed
  */
 typedef enum {
+	RZ_OUTPUT_MODE_UNKNOWN,
 	RZ_OUTPUT_MODE_STANDARD = 1 << 0,
 	RZ_OUTPUT_MODE_JSON = 1 << 1,
 	RZ_OUTPUT_MODE_RIZIN = 1 << 2,

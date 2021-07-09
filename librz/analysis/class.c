@@ -1263,16 +1263,16 @@ static void rz_analysis_class_list_json(RzAnalysis *analysis) {
 	pj_free(j);
 }
 
-RZ_API void rz_analysis_class_list(RzAnalysis *analysis, int mode) {
-	if (mode == 'j') {
+RZ_API void rz_analysis_class_list(RzAnalysis *analysis, RzOutputMode mode) {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		rz_analysis_class_list_json(analysis);
 		return;
 	}
 
-	SdbList *classes = rz_analysis_class_get_all(analysis, mode != '*');
+	SdbList *classes = rz_analysis_class_get_all(analysis, mode != RZ_OUTPUT_MODE_RIZIN);
 	SdbListIter *iter;
 	SdbKv *kv;
-	if (mode == '*') {
+	if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		ls_foreach (classes, iter, kv) {
 			// need to create all classes first, so they can be referenced
 			rz_cons_printf("ac %s\n", sdbkv_key(kv));
@@ -1282,7 +1282,7 @@ RZ_API void rz_analysis_class_list(RzAnalysis *analysis, int mode) {
 		}
 	} else {
 		ls_foreach (classes, iter, kv) {
-			rz_analysis_class_print(analysis, sdbkv_key(kv), mode == 'l');
+			rz_analysis_class_print(analysis, sdbkv_key(kv), mode == RZ_OUTPUT_MODE_LONG);
 		}
 	}
 	ls_free(classes);
