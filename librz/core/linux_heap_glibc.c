@@ -1098,13 +1098,12 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 		if (!arena) {
 			return NULL;
 		}
-		if (!GH(rz_heap_update_main_arena)(core, m_arena, arena) || !arena->attached_threads) {
+		if (!GH(rz_heap_update_main_arena)(core, arena_base, arena) || !arena->attached_threads) {
 			free(arena);
 			return NULL;
 		}
 		free(arena);
 	}
-	rz_cons_printf("Tcache base is 0x%" PFMT64x "\n", tcache_start);
 	// Get rz_tcache struct
 	GH(RTcache) *tcache = GH(tcache_new)(core);
 	GH(tcache_read)
