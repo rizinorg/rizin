@@ -546,7 +546,14 @@ static void propagate_return_type(RzCore *core, RzAnalysisOp *aop, RzAnalysisOp 
 	}
 }
 
-void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *trace, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, int cur_idx, struct ReturnTypeAnalysisCtx *retctx) {
+struct TypeAnalysisCtx {
+	struct ReturnTypeAnalysisCtx *retctx;
+	int cur_idx;
+	const char *prev_dest;
+	bool str_flag;
+};
+
+void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *trace, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, RzAnalysisOp *aop, struct TypeAnalysisCtx *ctx) {
 	RzPVector *used_vars = rz_analysis_function_get_vars_used_at(fcn, aop->addr);
 	bool chk_constraint = rz_config_get_b(core->config, "analysis.types.constraint");
 	RzAnalysisOp *next_op = op_cache_get(op_cache, core, aop->addr + aop->size);
@@ -556,9 +563,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 	bool prev_var = false;
 	char *fcn_name = NULL;
 	bool userfnc = false;
-	bool str_flag = false;
 	bool prop = false;
-	const char *prev_dest = NULL;
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
 	if (aop->type == RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
 		char *full_name = NULL;
@@ -592,24 +597,24 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 			if (Cc && rz_analysis_cc_exist(core->analysis, Cc)) {
 				char *cc = strdup(Cc);
 				type_match(core, fcn_name, aop->addr, bb->addr, cc, prev_idx, userfnc, callee_addr, op_cache);
-				prev_idx = cur_idx;
-				retctx->ret_type = rz_type_func_ret(core->analysis->typedb, fcn_name);
-				RZ_FREE(retctx->ret_reg);
+				prev_idx = ctx->cur_idx;
+				ctx->retctx->ret_type = rz_type_func_ret(core->analysis->typedb, fcn_name);
+				RZ_FREE(ctx->retctx->ret_reg);
 				const char *rr = rz_analysis_cc_ret(core->analysis, cc);
 				if (rr) {
-					retctx->ret_reg = strdup(rr);
+					ctx->retctx->ret_reg = strdup(rr);
 				}
-				retctx->resolved = false;
+				ctx->retctx->resolved = false;
 				free(cc);
 			}
 			if (!strcmp(fcn_name, "__stack_chk_fail")) {
-				handle_stack_canary(core, trace, aop, cur_idx);
+				handle_stack_canary(core, trace, aop, ctx->cur_idx);
 			}
 			free(fcn_name);
 		}
-	} else if (return_type_analysis_context_unresolved(retctx)) {
+	} else if (return_type_analysis_context_unresolved(ctx->retctx)) {
 		// Forward propagation of function return type
-		propagate_return_type(core, aop, next_op, trace, retctx, cur_idx, used_vars);
+		propagate_return_type(core, aop, next_op, trace, ctx->retctx, ctx->cur_idx, used_vars);
 	}
 	// Type propagation using instruction access pattern
 	if (used_vars && !rz_pvector_empty(used_vars)) {
@@ -632,11 +637,11 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 			}
 			// lea rax , str.hello  ; mov [local_ch], rax;
 			// mov rdx , [local_4h] ; mov [local_8h], rdx;
-			if (prev_dest && (type == RZ_ANALYSIS_OP_TYPE_MOV || type == RZ_ANALYSIS_OP_TYPE_STORE)) {
+			if (ctx->prev_dest && (type == RZ_ANALYSIS_OP_TYPE_MOV || type == RZ_ANALYSIS_OP_TYPE_STORE)) {
 				char reg[REGNAME_SIZE] = { 0 };
 				get_src_regname(core, aop->addr, reg, sizeof(reg));
-				bool match = strstr(prev_dest, reg) != NULL;
-				if (str_flag && match) {
+				bool match = strstr(ctx->prev_dest, reg) != NULL;
+				if (ctx->str_flag && match) {
 					var_type_set_str(core->analysis, var, "const char *", false);
 				}
 				if (prop && match && prev_var && prev_type) {
@@ -674,9 +679,9 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 		}
 	}
 	prev_var = (used_vars && !rz_pvector_empty(used_vars) && aop->direction == RZ_ANALYSIS_OP_DIR_READ);
-	str_flag = false;
+	ctx->str_flag = false;
 	prop = false;
-	prev_dest = NULL;
+	ctx->prev_dest = NULL;
 	switch (type) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
 	case RZ_ANALYSIS_OP_TYPE_LEA:
@@ -689,20 +694,20 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, Sdb *tra
 				if (ptr && ptr != UT64_MAX) {
 					RzFlagItem *f = rz_flag_get_by_spaces(core->flags, ptr, RZ_FLAGS_FS_STRINGS, NULL);
 					if (f) {
-						str_flag = true;
+						ctx->str_flag = true;
 					}
 				}
 			} else if (rz_flag_exist_at(core->flags, "str", 3, aop->ptr)) {
-				str_flag = true;
+				ctx->str_flag = true;
 			}
 		}
-		const char *query = sdb_fmt("%d.reg.write", cur_idx);
-		prev_dest = sdb_const_get(trace, query, 0);
+		const char *query = sdb_fmt("%d.reg.write", ctx->cur_idx);
+		ctx->prev_dest = sdb_const_get(trace, query, 0);
 		if (used_vars && !rz_pvector_empty(used_vars)) {
 			rz_pvector_foreach (used_vars, uvit) {
 				RzAnalysisVar *var = *uvit;
 				// mov dword [local_4h], str.hello;
-				if (str_flag) {
+				if (ctx->str_flag) {
 					var_type_set_str(core->analysis, var, "const char *", false);
 				}
 				prev_type = var->type;
@@ -725,7 +730,6 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysis *analysis = core->analysis;
 	const int mininstrsz = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX(1, mininstrsz);
-	int cur_idx;
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 	if (!hc) {
 		return;
@@ -768,6 +772,12 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 		.ret_type = NULL,
 		.ret_reg = NULL
 	};
+	struct TypeAnalysisCtx ctx = {
+		.retctx = &retctx,
+		.cur_idx = 0,
+		.prev_dest = NULL,
+		.str_flag = false
+	};
 	rz_list_foreach (fcn->bbs, it, bb) {
 		ut64 addr = bb->addr;
 		rz_reg_set_value(core->dbg->reg, r, addr);
@@ -803,7 +813,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 				rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			}
 			Sdb *trace = analysis->esil->trace->db;
-			cur_idx = sdb_num_get(trace, "idx", 0);
+			ctx.cur_idx = sdb_num_get(trace, "idx", 0);
 			RzList *fcns = rz_analysis_get_functions_in(analysis, aop->addr);
 			if (!fcns) {
 				break;
@@ -811,7 +821,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 			RzListIter *it;
 			RzAnalysisFunction *fcn;
 			rz_list_foreach (fcns, it, fcn) {
-				propagate_types_among_used_variables(core, op_cache, trace, fcn, bb, aop, cur_idx, &retctx);
+				propagate_types_among_used_variables(core, op_cache, trace, fcn, bb, aop, &ctx);
 			}
 			addr += aop->size;
 		}
