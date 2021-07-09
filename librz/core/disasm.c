@@ -4782,7 +4782,7 @@ static void ds_print_esil_analysis(RDisasmState *ds) {
 					warning = true;
 				}
 				nextele = rz_list_iter_get_next(iter);
-				if (!arg->fmt) {
+				if (RZ_STR_ISEMPTY(arg->fmt)) {
 					if (ds->asm_types > 1) {
 						if (warning) {
 							ds_comment_middle(ds, "_format");
