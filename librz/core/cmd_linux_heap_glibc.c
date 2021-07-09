@@ -139,6 +139,6 @@ RZ_API RzList *rz_heap_tcache_content(RzCore *core, ut64 arena_base) {
  * \param chunk_simple RzHeapChunkSimple pointer to the heap chunk data
  * \return bool if the write succeeded or not
  */
-RZ_API bool rz_heap_write_heap_chunk(RzCore *core, RzHeapChunkSimple *chunk_simple) {
+RZ_API bool rz_heap_write_chunk(RzCore *core, RzHeapChunkSimple *chunk_simple) {
 	call_handler(rz_heap_write_heap_chunk, chunk_simple);
 }

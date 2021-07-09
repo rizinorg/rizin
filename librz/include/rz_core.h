@@ -783,7 +783,7 @@ RZ_API RzHeapBin *rz_heap_bin_content(RzCore *core, MallocState *arena, int bin_
 RZ_API RzHeapBin *rz_heap_fastbin_content(RzCore *core, MallocState *arena, int bin_num);
 RZ_API MallocState *rz_heap_get_arena(RzCore *core, ut64 m_state);
 RZ_API RzList *rz_heap_tcache_content(RzCore *core, ut64 arena_base);
-RZ_API bool rz_heap_write_heap_chunk(RzCore *core, RzHeapChunkSimple *chunk_simple);
+RZ_API bool rz_heap_write_chunk(RzCore *core, RzHeapChunkSimple *chunk_simple);
 
 // XXX dupe from rz_bin.h
 /* bin.c */

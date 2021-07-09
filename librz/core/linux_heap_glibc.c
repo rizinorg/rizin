@@ -2548,7 +2548,7 @@ RZ_API bool GH(rz_heap_write_heap_chunk)(RzCore *core, RzHeapChunkSimple *chunk_
 	heap_chunk->bk = chunk_simple->bk;
 	heap_chunk->fd_nextsize = chunk_simple->fd_nextsize;
 	heap_chunk->bk_nextsize = chunk_simple->bk_nextsize;
-	bool res = rz_io_write_at(core->io, chunk_simple->addr, (ut8 *)heap_chunk, sizeof(heap_chunk));
+	bool res = rz_io_write_at(core->io, chunk_simple->addr, (ut8 *)heap_chunk, sizeof(GH(RzHeapChunk)));
 	free(heap_chunk);
 	return res;
 }
