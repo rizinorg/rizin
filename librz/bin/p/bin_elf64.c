@@ -133,7 +133,6 @@ RzBinPlugin rz_bin_plugin_elf64 = {
 	.get_sdb = &get_sdb,
 	.check_buffer = &check_buffer,
 	.load_buffer = &load_buffer,
-	.destroy = &destroy,
 	.baddr = &baddr,
 	.boffset = &boffset,
 	.binsym = &binsym,

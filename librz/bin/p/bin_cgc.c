@@ -106,7 +106,6 @@ RzBinPlugin rz_bin_plugin_cgc = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_buffer = load_buffer,
-	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,

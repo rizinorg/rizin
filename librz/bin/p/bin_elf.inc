@@ -88,23 +88,6 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	return false;
 }
 
-static void destroy(RzBinFile *bf) {
-	int i;
-	ELFOBJ *eobj = bf->o->bin_obj;
-	if (eobj && eobj->imports_by_ord) {
-		for (i = 0; i < eobj->imports_by_ord_size; i++) {
-			RzBinImport *imp = eobj->imports_by_ord[i];
-			if (imp) {
-				free(imp->name);
-				free(imp);
-				eobj->imports_by_ord[i] = NULL;
-			}
-		}
-		RZ_FREE(eobj->imports_by_ord);
-	}
-	Elf_(rz_bin_elf_free)((struct Elf_(rz_bin_elf_obj_t) *)bf->o->bin_obj);
-}
-
 static ut64 baddr(RzBinFile *bf) {
 	return Elf_(rz_bin_elf_get_baddr)(bf->o->bin_obj);
 }
@@ -506,7 +489,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	}
 }
 
-static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinElfReloc *rel, ut64 GOT) {
+static RzBinReloc *reloc_convert(ELFOBJ * bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
 
 	ut64 B = bin->baddr;
@@ -519,11 +502,15 @@ static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinElfRe
 	r->symbol = NULL;
 	r->is_ifunc = false;
 	r->addend = rel->addend;
-	if (rel->sym) {
-		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym]) {
-			r->import = bin->imports_by_ord[rel->sym];
-		} else if (rel->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[rel->sym]) {
-			r->symbol = bin->symbols_by_ord[rel->sym];
+	if (rel->sym && Elf_(rz_bin_elf_has_symbols)(bin)) {
+		RzBinImport *import = Elf_(rz_bin_elf_get_import)(bin, rel->sym);
+		if (import) {
+			r->import = import;
+		} else {
+			RzBinSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, rel->sym);
+			if (symbol) {
+				r->symbol = symbol;
+			}
 		}
 	}
 	r->vaddr = rel->vaddr;
@@ -662,7 +649,6 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 		ht_uu_free(relocs_by_sym);
 		return;
 	}
-	Elf_(rz_bin_elf_get_imports)(bin); // Pre-populate imports and syms. Calling this multiple times is fine since it only parses once lazily.
 	ut64 vaddr = n_vaddr;
 	RzBinElfReloc *reloc;
 	rz_bin_elf_foreach_relocs(bin, reloc) {
@@ -670,15 +656,19 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 		ut64 plt_entry_addr = vaddr;
 
 		if (reloc->sym) {
-			if (reloc->sym < bin->imports_by_ord_size && bin->imports_by_ord[reloc->sym]) {
+			RzBinImport *import = Elf_(rz_bin_elf_get_import)(bin, reloc->sym);
+			if (import) {
 				bool found;
 				sym_addr = ht_uu_find(relocs_by_sym, reloc->sym, &found);
 				if (found) {
 					plt_entry_addr = sym_addr;
 				}
-			} else if (reloc->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[reloc->sym]) {
-				sym_addr = bin->symbols_by_ord[reloc->sym]->vaddr;
-				plt_entry_addr = sym_addr;
+			} else {
+				RzBinSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, reloc->sym);
+				if (symbol) {
+					sym_addr = symbol->vaddr;
+					plt_entry_addr = sym_addr;
+				}
 			}
 		}
 		// TODO relocation types B, L
@@ -992,10 +982,7 @@ static RzList *entries(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	RzBinAddr *ptr = NULL;
-	struct rz_bin_elf_symbol_t *symbol;
-	int i;
-
-	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
+	ELFOBJ *obj = bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)free);
 	if (!ret) {
 		return NULL;
@@ -1043,16 +1030,18 @@ static RzList *entries(RzBinFile *bf) {
 
 	// add entrypoint for jni libraries
 	// NOTE: this is slow, we shouldnt find for java constructors here
-	if (!(symbol = Elf_(rz_bin_elf_get_symbols)(obj))) {
+	if (!Elf_(rz_bin_elf_has_symbols)(obj)) {
 		return ret;
 	}
-	for (i = 0; !symbol[i].last; i++) {
-		if (symbol[i].name && !strncmp(symbol[i].name, "Java", 4)) {
-			if (rz_str_endswith(symbol[i].name, "_init")) {
+
+	RzBinElfSymbol *symbol;
+	rz_bin_elf_foreach_elf_symbols(obj, symbol) {
+		if (symbol->name && !strncmp(symbol->name, "Java", 4)) {
+			if (rz_str_endswith(symbol->name, "_init")) {
 				if (!(ptr = RZ_NEW0(RzBinAddr))) {
 					return ret;
 				}
-				ptr->paddr = symbol[i].offset;
+				ptr->paddr = symbol->offset;
 				ptr->vaddr = Elf_(rz_bin_elf_p2v_new)(obj, ptr->paddr);
 				ptr->hpaddr = UT64_MAX;
 				ptr->type = RZ_BIN_ENTRY_TYPE_INIT;
@@ -1076,39 +1065,38 @@ static void insert_symbol(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinSymbol *ptr,
 }
 
 static RzList *symbols(RzBinFile *bf) {
-	struct rz_bin_elf_symbol_t *symbol = NULL;
-	RzBinSymbol *ptr = NULL;
-	int i;
-
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
-	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
+	ELFOBJ *bin = bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
 
 	// traverse symbols
-	if (!(symbol = Elf_(rz_bin_elf_get_symbols)(bin))) {
+	if (!Elf_(rz_bin_elf_has_symbols)(bin)) {
 		return ret;
 	}
-	for (i = 0; !symbol[i].last; i++) {
-		ptr = Elf_(rz_bin_elf_convert_symbol)(bin, &symbol[i], "%s");
+
+	RzBinElfSymbol *symbol;
+	rz_bin_elf_foreach_elf_symbols(bin, symbol) {
+		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, symbol, "%s");
 		if (!ptr) {
 			break;
 		}
-		insert_symbol(bin, ptr, symbol[i].is_sht_null, ret);
+		insert_symbol(bin, ptr, symbol->is_sht_null, ret);
 	}
 
 	// traverse imports
-	if (!(symbol = Elf_(rz_bin_elf_get_imports)(bin))) {
+	if (!Elf_(rz_bin_elf_has_imports)(bin)) {
 		return ret;
 	}
-	for (i = 0; !symbol[i].last; i++) {
-		if (!symbol[i].size) {
+	RzBinElfSymbol *import;
+	rz_bin_elf_foreach_elf_imports(bin, import) {
+		if (!import->size) {
 			continue;
 		}
-		ptr = Elf_(rz_bin_elf_convert_symbol)(bin, &symbol[i], "%s");
+		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, import, "%s");
 		if (!ptr) {
 			break;
 		}
@@ -1118,25 +1106,26 @@ static RzList *symbols(RzBinFile *bf) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-		insert_symbol(bin, ptr, symbol[i].is_sht_null, ret);
+		insert_symbol(bin, ptr, import->is_sht_null, ret);
 	}
 	return ret;
 }
 
 static RzList *imports(RzBinFile *bf) {
-	RzBinElfSymbol *import = NULL;
 	rz_return_val_if_fail(bf && bf->o, NULL);
-	struct Elf_(rz_bin_elf_obj_t) *elf = bf->o->bin_obj;
+	ELFOBJ *elf = bf->o->bin_obj;
 	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
 	if (!ret) {
 		return NULL;
 	}
-	if (!(import = Elf_(rz_bin_elf_get_imports)(elf))) {
+	if (!Elf_(rz_bin_elf_has_imports)(elf)) {
 		rz_list_free(ret);
 		return NULL;
 	}
-	for (size_t i = 0; !import[i].last; i++) {
-		RzBinImport *imp = Elf_(rz_bin_elf_convert_import)(elf, &import[i]);
+
+	RzBinElfSymbol *import;
+	rz_bin_elf_foreach_elf_imports(elf, import) {
+		RzBinImport *imp = Elf_(rz_bin_elf_convert_import)(import);
 		if (!imp) {
 			continue;
 		}
@@ -1184,7 +1173,6 @@ static RzList *relocs(RzBinFile *bf) {
 
 	patch_relocs(bf, bin);
 
-	Elf_(rz_bin_elf_get_imports)(bin); // Pre-populate imports and syms. Calling this multiple times is fine since it only parses once lazily.
 	if (!(ret = rz_list_newf(free))) {
 		return NULL;
 	}

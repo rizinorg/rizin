@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
+#include "elf_symbols.h"
+#include "elf_imports.h"
 
 #define GROWTH_FACTOR                        2
 #define MIPS_PLT_OFFSET                      0x20
@@ -248,7 +250,7 @@ static Elf_(Word) get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
 	return get_index_from_chain(bin, bucket_offset, symbol_base, index);
 }
 
-static size_t get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
+static Elf_(Word) get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
 	ut64 symtab_addr;
 	ut64 strtab_addr;
 
@@ -593,25 +595,6 @@ static ut64 get_import_addr(ELFOBJ *bin, ut64 symbol) {
 	return UT64_MAX;
 }
 
-static void Elf_(rz_bin_elf_set_import_by_ord)(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	if (!bin->imports_by_ord) {
-		return;
-	}
-
-	RzBinImport *import = Elf_(rz_bin_elf_convert_import)(bin, symbol);
-	if (!import) {
-		return;
-	}
-
-	if (import->ordinal >= bin->imports_by_ord_size) {
-		rz_bin_import_free(import);
-		return;
-	}
-
-	rz_bin_import_free(bin->imports_by_ord[import->ordinal]);
-	bin->imports_by_ord[import->ordinal] = import;
-}
-
 static bool get_symbol_entry(ELFOBJ *bin, ut64 offset, Elf_(Sym) * result) {
 #if RZ_BIN_ELF64
 	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_name) ||
@@ -759,26 +742,6 @@ static RzVector *compute_symbols_from_segment(ELFOBJ *bin, int type, ut64 offset
 	return NULL;
 }
 
-static void set_by_ord(ELFOBJ *bin, RzBinElfSymbol *symbols, size_t pos, int type) {
-	if (type == RZ_BIN_ELF_IMPORT_SYMBOLS && !bin->imports_by_ord_size) {
-		bin->imports_by_ord_size = pos;
-
-		if (!pos) {
-			bin->imports_by_ord = NULL;
-			return;
-		}
-
-		bin->imports_by_ord = RZ_NEWS0(RzBinImport *, pos);
-
-		for (size_t i = 0; i < pos - 1; i++) {
-			Elf_(rz_bin_elf_set_import_by_ord)(bin, symbols + i);
-		}
-	} else if (type == RZ_BIN_ELF_ALL_SYMBOLS && !bin->symbols_by_ord_size && pos) {
-		bin->symbols_by_ord_size = pos;
-		bin->symbols_by_ord = RZ_NEWS0(RzBinSymbol *, pos);
-	}
-}
-
 static RzBinElfSymbol *compute_symbols_from_phdr(ELFOBJ *bin, int type) {
 	ut64 addr;
 	ut64 entry_size;
@@ -809,11 +772,8 @@ static RzBinElfSymbol *compute_symbols_from_phdr(ELFOBJ *bin, int type) {
 	RzBinElfSymbol *end = rz_vector_push(tmp, NULL);
 	end->last = 1;
 
-	size_t len = rz_vector_len(tmp);
 	RzBinElfSymbol *result = rz_vector_flush(tmp);
 	rz_vector_free(tmp);
-
-	set_by_ord(bin, result, len, type);
 
 	return result;
 }
@@ -936,15 +896,6 @@ static bool is_section_local_sym(ELFOBJ *bin, Elf_(Sym) * sym, RzBinElfSection *
 	}
 
 	return section && section->is_valid;
-}
-
-static bool setsymord(ELFOBJ *eobj, ut32 ord, RzBinSymbol *ptr) {
-	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
-		return false;
-	}
-	rz_bin_symbol_free(eobj->symbols_by_ord[ord]);
-	eobj->symbols_by_ord[ord] = ptr;
-	return true;
 }
 
 static ut32 hashRzBinElfSymbol(const void *obj) {
@@ -1183,12 +1134,6 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 	}
 	nsym = max;
 	if (type == RZ_BIN_ELF_IMPORT_SYMBOLS) {
-		RZ_FREE(bin->imports_by_ord);
-		bin->imports_by_ord_size = nsym + 1;
-		bin->imports_by_ord = (RzBinImport **)calloc(RZ_MAX(1, nsym + 1), sizeof(RzBinImport *));
-		RZ_FREE(bin->symbols_by_ord);
-		bin->symbols_by_ord_size = nsym + 1;
-		bin->symbols_by_ord = (RzBinSymbol **)calloc(RZ_MAX(1, nsym + 1), sizeof(RzBinSymbol *));
 		import_ret = calloc(import_ret_ctr + 1, sizeof(RzBinElfSymbol));
 		if (!import_ret) {
 			goto beach;
@@ -1200,12 +1145,7 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 				continue;
 			}
 
-			if (!setsymord(bin, import_sym_ptr->ordinal, import_sym_ptr)) {
-				free(import_sym_ptr);
-			}
-
 			if (ret[i].is_imported) {
-				Elf_(rz_bin_elf_set_import_by_ord)(bin, &ret[i]);
 				memcpy(&import_ret[import_ret_ctr], &ret[i], sizeof(RzBinElfSymbol));
 				++import_ret_ctr;
 			}
@@ -1223,35 +1163,149 @@ beach:
 	return NULL;
 }
 
-RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, NULL);
+static void convert_symbol(ELFOBJ *bin, RzBinSymbol *symbol, RzBinElfSymbol *elf_symbol, const char *namefmt) {
+	set_addr_parameter(bin, elf_symbol, symbol);
+	set_common_parameter(elf_symbol, symbol, namefmt);
 
-	if (!bin->g_imports) {
-		bin->g_imports = get_symbols_with_type(bin, RZ_BIN_ELF_IMPORT_SYMBOLS);
+	if (is_arm_symbol(bin, elf_symbol)) {
+		set_arm_symbol_bits(bin, symbol);
 	}
-
-	return bin->g_imports;
 }
 
-RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, NULL);
+static void convert_import(RzBinImport *import, RzBinElfSymbol *symbol) {
+	import->name = strdup(symbol->name);
+	import->bind = symbol->bind;
+	import->type = symbol->type;
+	import->ordinal = symbol->ordinal;
+}
 
-	if (!bin->g_symbols) {
-		bin->g_symbols = get_symbols_with_type(bin, RZ_BIN_ELF_ALL_SYMBOLS);
+static void imports_free(void *e, RZ_UNUSED void *user) {
+	RzBinImport *ptr = e;
+	rz_bin_import_free(ptr);
+}
+
+static void symbols_free(void *e, RZ_UNUSED void *user) {
+	RzBinSymbol *ptr = e;
+	rz_bin_symbol_free(ptr);
+}
+
+Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, 0);
+
+	Elf_(Word) result = get_number_of_symbols_from_hash(bin);
+	if (result) {
+		return result;
 	}
 
-	return bin->g_symbols;
+	result = get_number_of_symbols_from_gnu_hash(bin);
+	if (result) {
+		return result;
+	}
+
+	return get_number_of_symbols_from_heuristic(bin);
+}
+
+RZ_BORROW RzBinSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal) {
+	rz_return_val_if_fail(bin && bin->symbols, NULL);
+
+	RzBinSymbol *symbol;
+	rz_bin_elf_foreach_symbols(bin, symbol) {
+		if (symbol->ordinal == ordinal) {
+			return symbol;
+		}
+	}
+
+	return NULL;
+}
+
+RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_elf_symbols)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin && bin->symbols, NULL);
+	return bin->symbols->elf_symbols;
+}
+
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin && bin->symbols, NULL);
+	return bin->symbols->symbols;
+}
+
+RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
+	RzBinElfImports *result = RZ_NEW(RzBinElfImports);
+	if (!result) {
+		return NULL;
+	}
+
+	result->elf_imports = get_symbols_with_type(bin, RZ_BIN_ELF_IMPORT_SYMBOLS);
+	if (!result->elf_imports) {
+		free(result);
+		return NULL;
+	}
+
+	result->imports = rz_vector_new(sizeof(RzBinImport), imports_free, NULL);
+	if (!result->imports) {
+		free(result->elf_imports);
+		free(result);
+		return NULL;
+	}
+
+	for (RzBinElfSymbol *tmp = result->elf_imports; !tmp->last; tmp++) {
+		RzBinImport import = { 0 };
+
+		convert_import(&import, tmp);
+
+		if (!rz_vector_push(result->imports, &import)) {
+			Elf_(rz_bin_elf_imports_free)(result);
+			return NULL;
+		}
+	}
+
+	return result;
+}
+
+RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
+	RzBinElfSymbols *result = RZ_NEW(RzBinElfSymbols);
+	if (!result) {
+		return NULL;
+	}
+
+	result->elf_symbols = get_symbols_with_type(bin, RZ_BIN_ELF_ALL_SYMBOLS);
+	if (!result->elf_symbols) {
+		free(result);
+		return NULL;
+	}
+
+	result->symbols = rz_vector_new(sizeof(RzBinSymbol), symbols_free, NULL);
+	if (!result->symbols) {
+		free(result->elf_symbols);
+		free(result);
+		return NULL;
+	}
+
+	for (RzBinElfSymbol *tmp = result->elf_symbols; !tmp->last; tmp++) {
+		RzBinSymbol symbol = { 0 };
+
+		convert_symbol(bin, &symbol, tmp, "%s");
+
+		if (!rz_vector_push(result->symbols, &symbol)) {
+			Elf_(rz_bin_elf_symbols_free)(result);
+			return NULL;
+		}
+	}
+
+	return result;
 }
 
 /**
  * \brief Convert a RzBinElfSymbol to RzBinImport
- * \param elf binary
  * \param bin symbol
  * \return a ptr to a new allocated RzBinImport
  *
  * ...
  */
-RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol) {
+RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_NONNULL RzBinElfSymbol *symbol) {
 	rz_return_val_if_fail(symbol, NULL);
 
 	RzBinImport *ptr = RZ_NEW0(RzBinImport);
@@ -1259,10 +1313,7 @@ RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_UNUSED ELFOBJ *bin, RZ_NO
 		return NULL;
 	}
 
-	ptr->name = strdup(symbol->name);
-	ptr->bind = symbol->bind;
-	ptr->type = symbol->type;
-	ptr->ordinal = symbol->ordinal;
+	convert_import(ptr, symbol);
 
 	return ptr;
 }
@@ -1286,28 +1337,21 @@ RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin,
 		return NULL;
 	}
 
-	set_addr_parameter(bin, elf_symbol, symbol);
-	set_common_parameter(elf_symbol, symbol, namefmt);
-
-	if (is_arm_symbol(bin, elf_symbol)) {
-		set_arm_symbol_bits(bin, symbol);
-	}
+	convert_symbol(bin, symbol, elf_symbol, namefmt);
 
 	return symbol;
 }
 
-Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, 0);
+bool Elf_(rz_bin_elf_has_symbols)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, false);
+	return bin->symbols;
+}
 
-	Elf_(Word) result = get_number_of_symbols_from_hash(bin);
-	if (result) {
-		return result;
+void Elf_(rz_bin_elf_symbols_free)(RzBinElfSymbols *ptr) {
+	if (!ptr) {
+		return;
 	}
 
-	result = get_number_of_symbols_from_gnu_hash(bin);
-	if (result) {
-		return result;
-	}
-
-	return get_number_of_symbols_from_heuristic(bin);
+	free(ptr->elf_symbols);
+	rz_vector_free(ptr->symbols);
 }
