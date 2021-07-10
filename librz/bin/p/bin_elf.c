@@ -5,6 +5,10 @@
 
 #include "bin_elf.inc"
 
+static void destroy(RzBinFile *bf) {
+	Elf_(rz_bin_elf_free)(bf->o->bin_obj);
+}
+
 static void headers32(RzBinFile *bf) {
 #define p bf->rbin->cb_printf
 	p("0x00000000  ELF MAGIC   0x%08x\n", rz_buf_read_le32_at(bf->buf, 0));
@@ -138,7 +142,6 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
-	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.boffset = &boffset,
@@ -161,6 +164,7 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.regstate = &regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
 	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
+	.destroy = destroy,
 };
 
 #ifndef RZ_PLUGIN_INCORE
