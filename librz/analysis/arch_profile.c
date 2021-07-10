@@ -161,6 +161,7 @@ static bool is_cpu_valid(char *cpu_dir, const char *cpu) {
 		}
 		cpu_name = strchr(arch_cpu, '-');
 		if (!cpu_name) {
+			free(arch_cpu);
 			continue;
 		}
 		cpu_name[0] = '\0';
@@ -169,9 +170,11 @@ static bool is_cpu_valid(char *cpu_dir, const char *cpu) {
 			free(arch_cpu);
 			return true;
 		}
+
+		free(arch_cpu);
 	}
+
 	rz_list_free(files);
-	free(arch_cpu);
 	return false;
 }
 
