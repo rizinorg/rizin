@@ -338,8 +338,26 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			const char *typestr = rz_str_new(rz_list_get_n(types, pos++));
 			type = rz_type_parse_string_single(typedb->parser, typestr, NULL);
 		} else {
-			type = rz_type_func_args_type(typedb, fcn_name, arg_num);
-			name = rz_type_func_args_name(typedb, fcn_name, arg_num);
+			RzCallable *callable = rz_type_func_get(typedb, fcn_name);
+			if (!callable) {
+				RzAnalysisFunction *fcn = rz_analysis_get_function_byname(analysis, fcn_name);
+				if (!fcn) {
+					continue;
+				}
+				callable = rz_analysis_function_derive_type(analysis, fcn);
+				if (!callable) {
+					continue;
+				}
+			}
+			if (arg_num >= rz_pvector_len(callable->args)) {
+				continue;
+			}
+			RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, arg_num);
+			if (!arg) {
+				continue;
+			}
+			type = arg->type;
+			name = arg->name;
 		}
 		if (!type && !userfnc) {
 			continue;

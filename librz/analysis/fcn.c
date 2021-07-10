@@ -2501,7 +2501,6 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 	rz_pvector_foreach (args, it) {
 		RzAnalysisVar *var = *it;
 		if (!var) {
-			eprintf("missing arg var\n");
 			// TODO: maybe create a stub void arg here?
 			continue;
 		}
