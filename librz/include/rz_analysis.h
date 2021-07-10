@@ -542,6 +542,7 @@ typedef struct rz_analysis_options_t {
 	int nopskip; // skip nops at the beginning of functions
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
+	int jmptbl_maxcount; // maximum amount of entries to analyse in a jump table
 	int nonull;
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //
@@ -886,6 +887,13 @@ typedef struct rz_analysis_bb_t {
 	int ref;
 #undef RzAnalysisBlock
 } RzAnalysisBlock;
+
+typedef struct rz_analysis_task_item {
+	RzAnalysisFunction *fcn; // current function
+	RzAnalysisBlock *block; // block being analyzed
+	st64 stack; // stack pointer value for variable analysis
+	ut64 start_address; // if block = NULL, creates block at address, else continues analysis from here
+} RzAnalysisTaskItem;
 
 typedef enum {
 	RZ_ANALYSIS_REF_TYPE_NULL = 0,
@@ -1426,7 +1434,6 @@ RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int boolean);
 RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 at);
 RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr);
 RZ_API const char *rz_analysis_fcntype_tostring(int type);
-RZ_API int rz_analysis_fcn_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, int depth);
 RZ_API void rz_analysis_bind(RzAnalysis *b, RzAnalysisBind *bnd);
 RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, const char *os, const char *arch, int bits);
 RZ_API void rz_analysis_add_import(RzAnalysis *analysis, const char *imp);
@@ -1519,6 +1526,9 @@ RZ_API void rz_analysis_fcn_invalidate_read_ahead_cache(void);
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, int size);
 RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn);
+
+RZ_API bool rz_analysis_task_item_new(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzVector *tasks, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE RzAnalysisBlock *block, ut64 address);
+RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector *tasks);
 
 #define RZ_ANALYSIS_FCN_VARKIND_LOCAL 'v'
 
@@ -1652,12 +1662,23 @@ RZ_API const char *rz_analysis_cond_tostring(int cc);
 /* jmptbl */
 RZ_API bool rz_analysis_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);
 
-// TODO: should be renamed
-RZ_API bool try_get_delta_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift);
-RZ_API bool try_walkthrough_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
-RZ_API bool try_walkthrough_casetbl(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0);
-RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr, RzAnalysisBlock *my_bb, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift);
-RZ_API int walkthrough_arm_jmptbl_style(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0);
+typedef struct rz_jmptable_params_t {
+	ut64 jmp_address; /// Address of the jump instruction
+	st64 case_shift; /// Shift that is added to get the real number of the case.
+	ut64 jmptbl_loc; /// Address of the jump table
+	ut64 casetbl_loc; /// Address of the indirect case table
+	ut64 jmptbl_off; /// Base of the jump table
+	ut64 entry_size; /// Size in bytes of each case entry inside the jump table
+	ut64 table_count; /// Count of cases inside the jump table
+	ut64 default_case; /// Code address of the default case of the switch
+	RzVector *tasks; /// RzVector of RzAnalysisTaskItem to add new tasks to
+} RzAnalysisJmpTableParams;
+
+RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, ut64 jmp_address, ut64 lea_address, RZ_NONNULL RzAnalysisJmpTableParams *params);
+RZ_API bool rz_analysis_get_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, ut64 jmp_address, RZ_NONNULL RzAnalysisJmpTableParams *params);
+RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params);
+RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params);
+RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params);
 
 /* reflines.c */
 RZ_API RzList * /*<RzAnalysisRefline>*/ rz_analysis_reflines_get(RzAnalysis *analysis,

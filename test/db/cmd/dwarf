@@ -1764,7 +1764,7 @@ aaa
 pd 20 @  dbg.palya
 EOF
 EXPECT=<<EOF
-            ; CALL XREFS from sym.main @ +0x1a87, +0x1c7d, +0x23f3, +0x3679
+            ; CALL XREFS from dbg.$main @ 0x405237, 0x40542d, 0x405ba3, 0x406e29
             ;-- P$MOZGKIGYO_$$_PALYA$SMALLINT$SMALLINT:
 / dbg.palya ();
 |           ; var int64_t var_28h @ rbp-0x28
