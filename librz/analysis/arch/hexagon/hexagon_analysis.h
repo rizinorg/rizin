@@ -2,3 +2,4 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 int hexagon_analysis_instruction(HexInsn *hi, RzAnalysisOp *op);
+
