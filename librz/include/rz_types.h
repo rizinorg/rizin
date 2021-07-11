@@ -195,7 +195,7 @@ typedef int socklen_t;
 #include <windows.h>
 #endif
 
-#if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
+#if defined(__APPLE__) && ((__arm__ || __arm64__ || __aarch64__) && IS_IOS)
 #define TARGET_OS_IPHONE 1
 #else
 #define TARGET_OS_IPHONE 0
