@@ -979,7 +979,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 			if (!strncmp(filenameuri, "apk://", 6) && r->io->files->size > 1) {
 				RZ_LOG_INFO("Found multidex APK, mapping extra files\n");
 				rz_id_storage_foreach(r->io->files, (RzIDStorageForeachCb)map_multi_dex, r);
-				rz_config_set_b(r->config, "bin.libs", true);
+				//rz_config_set_b(r->config, "bin.libs", true);
 			}
 		}
 		// Restore original desc

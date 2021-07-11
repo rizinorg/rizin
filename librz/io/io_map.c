@@ -364,7 +364,8 @@ RZ_API ut64 rz_io_map_next_available(RzIO *io, ut64 addr, ut64 size, ut64 load_a
 		// memory mapping with multiple files. infinite loop ahead?
 		if ((map->itv.addr <= next_addr && next_addr < to) || rz_itv_contain(map->itv, end_addr)) {
 			next_addr = to + (load_align - (to % load_align)) % load_align;
-			return rz_io_map_next_available(io, next_addr, size, load_align);
+			it = ((void **)io->maps.v.a)[-1];
+			continue;
 		}
 		break;
 	}
@@ -421,13 +422,11 @@ RZ_API bool rz_io_map_resize(RzIO *io, ut32 id, ut64 newsize) {
 }
 
 // find a location that can hold enough bytes without overlapping
-// XXX this function is buggy and doesnt works as expected, but i need it for a PoC for now
 RZ_API ut64 rz_io_map_location(RzIO *io, ut64 size) {
-	ut64 base = (io->bits == 64) ? 0x60000000000LL : 0x60000000;
-	while (rz_io_map_get(io, base)) {
-		base += 0x200000;
-	}
-	return base;
+	ut64 base = (io->bits == 64) ? 0x60000000000ULL : 0x60000000ULL;
+	ut64 address = rz_io_map_next_available(io, base, size, 0x200000);
+	eprintf("found empty slot at 0x%" PFMT64x "\n", address);
+	return address;
 }
 
 /**
