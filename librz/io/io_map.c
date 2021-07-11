@@ -424,9 +424,7 @@ RZ_API bool rz_io_map_resize(RzIO *io, ut32 id, ut64 newsize) {
 // find a location that can hold enough bytes without overlapping
 RZ_API ut64 rz_io_map_location(RzIO *io, ut64 size) {
 	ut64 base = (io->bits == 64) ? 0x60000000000ULL : 0x60000000ULL;
-	ut64 address = rz_io_map_next_available(io, base, size, 0x200000);
-	eprintf("found empty slot at 0x%" PFMT64x "\n", address);
-	return address;
+	return rz_io_map_next_available(io, base, size, 0x200000);
 }
 
 /**
