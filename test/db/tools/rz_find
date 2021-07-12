@@ -225,3 +225,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-find multiple files
+FILE=-
+CMDS=!rz-find -s README bins/arm/README bins/arm/README
+EXPECT=<<EOF
+File: bins/arm/README
+0x0
+File: bins/arm/README
+0x0
+EOF
+RUN
+
+NAME=rz-find recursive
+FILE=-
+CMDS=!rz-find -q -s README bins/arm
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
