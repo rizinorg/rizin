@@ -1609,15 +1609,15 @@ var int * options @ rbp-0x14c8
 var int64_t var_14c4h @ rbp-0x14c4
 var int64_t var_14c0h @ rbp-0x14c0
 var int64_t var_14bch @ rbp-0x14bc
-var pid_t pid @ rbp-0x14b8
-var uint32_t var_14b4h @ rbp-0x14b4
-var uint32_t var_14b0h @ rbp-0x14b0
+var uint64_t pid @ rbp-0x14b8
+var uint64_t var_14b4h @ rbp-0x14b4
+var uint64_t var_14b0h @ rbp-0x14b0
 var int64_t var_14ach @ rbp-0x14ac
 var const char * var_14a8h @ rbp-0x14a8
 var const char * s @ rbp-0x14a0
-var char * var_1498h @ rbp-0x1498
+var int64_t var_1498h @ rbp-0x1498
 var char * src @ rbp-0x1490
-var unsigned long v2 @ rbp-0x1488
+var const char * v2 @ rbp-0x1488
 var const char * var_1480h @ rbp-0x1480
 var void * var_1478h @ rbp-0x1478
 var char * dest @ rbp-0x1470
@@ -1642,13 +1642,13 @@ var int64_t var_78h @ rbp-0x78
 var int var_74h @ rbp-0x74
 var int var_70h @ rbp-0x70
 var int var_6ch @ rbp-0x6c
-var int var_68h @ rbp-0x68
-var int var_64h @ rbp-0x64
+var int64_t var_68h @ rbp-0x68
+var int64_t var_64h @ rbp-0x64
 var char * var_60h @ rbp-0x60
 var char * var_58h @ rbp-0x58
 var char * var_50h @ rbp-0x50
 var char * var_48h @ rbp-0x48
-var uint32_t var_40h @ rbp-0x40
+var uint64_t var_40h @ rbp-0x40
 var const char * s1 @ rbp-0x38
 var const char * s @ rbp-0x30
 var const char * var_28h @ rbp-0x28
