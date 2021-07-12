@@ -691,6 +691,9 @@ RZ_API ut64 rz_type_db_union_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseTy
 RZ_API ut64 rz_type_db_typedef_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF, 0);
 	rz_return_val_if_fail(btype->type, 0);
+	if (btype->type->kind == RZ_TYPE_KIND_IDENTIFIER && !strcmp(btype->type->identifier.name, btype->name)) {
+		return btype->size;
+	}
 	return rz_type_db_get_bitsize(typedb, btype->type);
 }
 
