@@ -1464,7 +1464,7 @@ pd 1
 EOF
 EXPECT=<<EOF
 sym.funcarg (const char *arg1, uint64_t arg2);
-; var uint32_t var_ch @ rbp-0xc
+; var uint64_t var_ch @ rbp-0xc
 ; var const char *var_8h @ rbp-0x8
 ; arg const char *arg1 @ rdi
 ; arg uint64_t arg2 @ rsi
