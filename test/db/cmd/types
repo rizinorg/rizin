@@ -1680,16 +1680,16 @@ var int32_t var_38h @ fp-0x40
 var int32_t var_34h @ fp-0x3c
 var int32_t var_30h @ fp-0x38
 var pid_t pid @ fp-0x34
-var unsigned long v2 @ fp-0x30
+var const char * v2 @ fp-0x30
 var int32_t var_24h @ fp-0x2c
 var const char * src @ fp-0x28
 var int32_t var_1ch @ fp-0x24
-var char * var_18h @ fp-0x20
+var int32_t var_18h @ fp-0x20
 var const char * s @ fp-0x1c
 var const char * var_10h @ fp-0x18
 var int32_t var_ch @ fp-0x14
 var int32_t var_8h @ fp-0x10
-var int option @ fp-0xc
+var const char * option @ fp-0xc
 arg int argc @ r0
 arg char ** argv @ r1
 EOF
