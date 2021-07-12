@@ -3484,3 +3484,27 @@ EXPECT=<<EOF
 0x0804805b    2 9            fcn.0804805b
 EOF
 RUN
+
+NAME=push [esp + 8] variable detection
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+"wa push ebp; mov esp, ebp; sub esp, 64; mov [esp+4], 4; mov [esp+8], 8; mov [esp+0xC], 0xC; push dword [esp+8]; ret"
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ fcn.00000000 ();
+|           ; var int32_t var_4h @ esp+0x8
+|           ; var int32_t var_8h @ esp+0xc
+|           ; var int32_t var_ch @ esp+0x10
+|           0x00000000      push  ebp
+|           0x00000001      mov   esp, ebp
+|           0x00000003      sub   esp, 0x40
+|           0x00000006      mov   dword [var_4h], 4
+|           0x0000000e      mov   dword [var_8h], 8
+|           0x00000016      mov   dword [var_ch], 0xc                  ; [0xc:4]=0x44c70000
+|           0x0000001e      push  dword [var_8h]
+\           0x00000022      ret
+EOF
+RUN
