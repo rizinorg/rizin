@@ -349,9 +349,9 @@ RZ_API ut64 rz_io_map_next_available(RzIO *io, ut64 addr, ut64 size, ut64 load_a
 	if (load_align == 0) {
 		load_align = 1;
 	}
+	void **it;
 	ut64 next_addr = addr,
 	     end_addr = next_addr + size;
-	void **it;
 	rz_pvector_foreach (&io->maps, it) {
 		RzIOMap *map = *it;
 		if (!rz_itv_size(map->itv)) {
@@ -359,12 +359,8 @@ RZ_API ut64 rz_io_map_next_available(RzIO *io, ut64 addr, ut64 size, ut64 load_a
 		}
 		ut64 to = rz_itv_end(map->itv);
 		next_addr = RZ_MAX(next_addr, to + (load_align - (to % load_align)) % load_align);
-		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
-		// adding the check for the map's fd to see if this removes contention for
-		// memory mapping with multiple files. infinite loop ahead?
 		if ((map->itv.addr <= next_addr && next_addr < to) || rz_itv_contain(map->itv, end_addr)) {
 			next_addr = to + (load_align - (to % load_align)) % load_align;
-			it = ((void **)io->maps.v.a)[-1];
 			continue;
 		}
 		break;

@@ -921,7 +921,7 @@ static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 	}
 
 	ut64 size = rz_io_desc_size(desc);
-	ut64 baddr = rz_io_map_location(core->io, size);
+	ut64 baddr = rz_io_map_next_available(core->io, 0x200000, size, 0x100000);
 	RZ_LOG_INFO("Mapping %s at 0x%" PFMT64x " with size 0x%" PFMT64x "\n", desc->name, baddr, size);
 	if (baddr != UT64_MAX) {
 		RzCoreFile *cf = rz_core_file_cur(core);
