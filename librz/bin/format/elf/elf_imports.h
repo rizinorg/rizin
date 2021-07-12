@@ -8,7 +8,7 @@
 #define _INCLUDE_ELF_IMPORTS_H_
 
 struct rz_bin_elf_imports_t {
-	RzBinElfSymbol *elf_imports;
+	RzVector *elf_imports;
 	RzVector *imports; // RzVector<RzBinImports>
 };
 

@@ -46,7 +46,7 @@
 	rz_vector_foreach(Elf_(rz_bin_elf_get_symbols)(bin), symbol)
 #define rz_bin_elf_foreach_elf_imports(bin, import) \
 	if (Elf_(rz_bin_elf_has_imports)(bin)) \
-	for(import = Elf_(rz_bin_elf_get_elf_imports)(bin); !import->last; import++)
+	rz_vector_foreach(Elf_(rz_bin_elf_get_elf_imports)(bin), import)
 #define rz_bin_elf_foreach_imports(bin, import) \
 	if (Elf_(rz_bin_elf_has_imports)(bin)) \
 	rz_vector_foreach(Elf_(rz_bin_elf_get_imports)(bin), import)
@@ -201,7 +201,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 	/*cache purpose*/
 	RzBinElfSymbol *phdr_symbols;
-	RzBinElfSymbol *phdr_imports;
 };
 
 // elf.c
@@ -223,8 +222,8 @@ bool Elf_(rz_bin_elf_has_dt_dynamic)(RZ_NONNULL ELFOBJ *bin);
 void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr);
 
 // elf_imports.c
-RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_elf_imports)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzBinImport *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_imports)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin); // TODO move to elf_imports.c
 RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_NONNULL RzBinElfSymbol *symbol);

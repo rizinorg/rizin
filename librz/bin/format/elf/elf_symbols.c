@@ -9,27 +9,8 @@
 #include "elf_imports.h"
 
 #define GROWTH_FACTOR                        2
-#define MIPS_PLT_OFFSET                      0x20
-#define RISCV_PLT_ENTRY_SIZE                 0x10
-#define RISCV_PLT_OFFSET                     0x20
-#define RZ_BIN_ELF_ALL_SYMBOLS               (RZ_BIN_ELF_SYMTAB_SYMBOLS | RZ_BIN_ELF_DYNSYM_SYMBOLS)
-#define RZ_BIN_ELF_DYNSYM_SYMBOLS            1 << 1
-#define RZ_BIN_ELF_IMPORT_SYMBOLS            (1 << 2 | (bin->ehdr.e_type == ET_REL ? RZ_BIN_ELF_SYMTAB_SYMBOLS : RZ_BIN_ELF_DYNSYM_SYMBOLS))
-#define RZ_BIN_ELF_SYMTAB_SYMBOLS            1 << 0
-#define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
-#define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR   -0x6
-#define X86_PLT_ENTRY_SIZE                   0x10
-
-#define COMPUTE_PLTGOT_POSITION(rel, pltgot_addr, n_initial_unused_entries) \
-	((rel->vaddr - pltgot_addr - n_initial_unused_entries * sizeof(Elf_(Addr))) / sizeof(Elf_(Addr)))
 
 #define HASH_NCHAIN_OFFSET(x) ((x) + 4)
-
-#if RZ_BIN_ELF64
-#define RZ_BIN_ELF_WORD_MAX UT64_MAX
-#else
-#define RZ_BIN_ELF_WORD_MAX UT32_MAX
-#endif
 
 struct symbol_bind_translation {
 	unsigned char bind;
@@ -272,230 +253,6 @@ static Elf_(Word) get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
 	return symtab_size / sizeof(Elf_(Sym));
 }
 
-static ut64 get_got_entry(ELFOBJ *bin, RzBinElfReloc *rel) {
-	Elf_(Addr) addr;
-
-	if (rel->paddr == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	ut64 paddr = rel->paddr;
-	if (!Elf_(rz_bin_elf_read_addr)(bin, &paddr, &addr) || !addr) {
-		return UT64_MAX;
-	}
-
-	return addr;
-}
-
-static bool is_thumb_symbol(ut64 plt_addr) {
-	return plt_addr & 1;
-}
-
-static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
-		return UT64_MAX;
-	}
-
-	ut64 plt_addr = get_got_entry(bin, rel);
-	if (plt_addr == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
-
-	switch (rel->type) {
-	case RZ_ARM_JUMP_SLOT:
-		plt_addr += pos * 12 + 20;
-		if (is_thumb_symbol(plt_addr)) {
-			plt_addr--;
-		}
-		return plt_addr;
-	case RZ_AARCH64_RELATIVE:
-		RZ_LOG_WARN("Unsupported relocation type for imports %d\n", rel->type);
-		return UT64_MAX;
-	case RZ_AARCH64_IRELATIVE:
-		if (rel->addend > plt_addr) { // start
-			return (plt_addr + pos * 16 + 32) + rel->addend;
-		}
-		// same as fallback to JUMP_SLOT
-		return plt_addr + pos * 16 + 32;
-	case RZ_AARCH64_JUMP_SLOT:
-		return plt_addr + pos * 16 + 32;
-	default:
-		RZ_LOG_WARN("Unsupported relocation type for imports %d\n", rel->type);
-		return UT64_MAX;
-	}
-	return UT64_MAX;
-}
-
-static ut64 get_import_addr_mips(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 jmprel_addr;
-	ut64 got_addr;
-	ut64 dt_pltrelsz;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_JMPREL, &jmprel_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_MIPS_PLTGOT, &got_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTRELSZ, &dt_pltrelsz)) {
-		return UT64_MAX;
-	}
-
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
-
-	ut8 buf[1024];
-	ut64 plt_addr = jmprel_addr + dt_pltrelsz;
-	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p_new)(bin, plt_addr);
-	int res = rz_buf_read_at(bin->b, p_plt_addr, buf, sizeof(buf));
-	if (res != sizeof(buf)) {
-		return UT64_MAX;
-	}
-
-	const ut8 *base = rz_mem_mem_aligned(buf, sizeof(buf), (const ut8 *)"\x3c\x0f\x00", 3, 4);
-	plt_addr += base ? (int)(size_t)(base - buf) : MIPS_PLT_OFFSET + 8; // HARDCODED HACK
-	plt_addr += pos * 16;
-
-	return plt_addr;
-}
-
-static ut64 get_import_addr_riscv(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
-		return UT64_MAX;
-	}
-
-	ut64 plt_addr = get_got_entry(bin, rel);
-	if (plt_addr == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
-	return plt_addr + RISCV_PLT_OFFSET + pos * RISCV_PLT_ENTRY_SIZE;
-}
-
-static ut64 get_import_addr_sparc(ELFOBJ *bin, RzBinElfReloc *rel) {
-	if (rel->type != RZ_SPARC_JMP_SLOT) {
-		RZ_LOG_WARN("Unknown sparc reloc type %d\n", rel->type);
-		return UT64_MAX;
-	}
-	ut64 tmp = get_got_entry(bin, rel);
-
-	return (tmp == UT64_MAX) ? UT64_MAX : tmp + SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
-}
-
-static ut64 get_import_addr_ppc(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 plt_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &plt_addr)) {
-		return UT64_MAX;
-	}
-
-	ut64 p_plt_addr = Elf_(rz_bin_elf_v2p_new)(bin, plt_addr);
-	if (p_plt_addr == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	ut64 base = rz_buf_read_ble32_at(bin->b, p_plt_addr, bin->endian);
-	if (base == UT32_MAX) {
-		return UT64_MAX;
-	}
-
-	ut64 nrel = Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(bin);
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, plt_addr, 0x0);
-
-	if (bin->endian) {
-		base -= (nrel * 16);
-		base += (pos * 16);
-		return base;
-	}
-
-	base -= (nrel * 12) + 20;
-	base += (pos * 8);
-	return base;
-}
-
-static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 got_addr;
-
-	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
-		return UT64_MAX;
-	}
-
-	ut64 got_offset = Elf_(rz_bin_elf_v2p_new)(bin, got_addr);
-	if (got_offset == UT64_MAX) {
-		return UT64_MAX;
-	}
-
-	//XXX HACK ALERT!!!! full relro?? try to fix it
-	//will there always be .plt.got, what would happen if is .got.plt?
-	RzBinElfSection *s = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.got");
-	if (Elf_(rz_bin_elf_has_relro)(bin) < RZ_BIN_ELF_PART_RELRO || !s) {
-		return UT64_MAX;
-	}
-
-	ut64 plt_addr = s->offset;
-	Elf_(Word) plt_sym_addr;
-
-	while (plt_addr + 2 + 4 < s->offset + s->size) {
-		/*we try to locate the plt entry that correspond with the relocation
-		  since got does not point back to .plt. In this case it has the following
-		  form
-		  ff253a152000   JMP QWORD [RIP + 0x20153A]
-		  6690		     NOP
-		  ----
-		  ff25ec9f0408   JMP DWORD [reloc.puts_236]
-		  plt_addr + 2 to remove jmp opcode and get the imm reading 4
-		  and if RIP (plt_addr + 6) + imm == rel->offset
-		  return plt_addr, that will be our sym addr
-		  perhaps this hack doesn't work on 32 bits
-		  */
-		ut64 pos = plt_addr + 2;
-
-		if (!Elf_(rz_bin_elf_read_word)(bin, &pos, &plt_sym_addr)) {
-			return UT64_MAX;
-		}
-
-		ut64 tmp = Elf_(rz_bin_elf_v2p_new)(bin, plt_sym_addr);
-		if (tmp == UT64_MAX) {
-			tmp = plt_sym_addr;
-		}
-
-		//relative address
-		if ((plt_addr + 6 + tmp) == rel->vaddr) {
-			return plt_addr;
-		}
-
-		if (plt_sym_addr == rel->vaddr) {
-			return plt_addr;
-		}
-
-		plt_addr += 8;
-	}
-
-	return UT64_MAX;
-}
-
-static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
-	ut64 tmp = get_got_entry(bin, rel);
-	if (tmp == UT64_MAX) {
-		return get_import_addr_x86_manual(bin, rel);
-	}
-
-	RzBinElfSection *pltsec_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt.sec");
-
-	if (pltsec_section) {
-		ut64 got_addr;
-
-		if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_PLTGOT, &got_addr)) {
-			return UT64_MAX;
-		}
-
-		ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
-		return pltsec_section->rva + pos * X86_PLT_ENTRY_SIZE;
-	}
-
-	return tmp + X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR;
-}
-
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) * sym, const char *name) {
 	if (!name) {
 		return false;
@@ -549,52 +306,6 @@ static const char *symbol_bind_to_str(Elf_(Sym) * sym) {
 	return RZ_BIN_BIND_UNKNOWN_STR;
 }
 
-static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
-	switch (bin->ehdr.e_machine) {
-	case EM_ARM:
-	case EM_AARCH64:
-		return get_import_addr_arm(bin, reloc);
-	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
-		return get_import_addr_mips(bin, reloc);
-	case EM_RISCV:
-		return get_import_addr_riscv(bin, reloc);
-	case EM_SPARC:
-	case EM_SPARCV9:
-	case EM_SPARC32PLUS:
-		return get_import_addr_sparc(bin, reloc);
-	case EM_PPC:
-	case EM_PPC64:
-		return get_import_addr_ppc(bin, reloc);
-	case EM_386:
-	case EM_X86_64:
-		return get_import_addr_x86(bin, reloc);
-	default:
-		eprintf("Unsupported relocs type %" PFMT64u " for arch %d\n",
-			(ut64)reloc->type, bin->ehdr.e_machine);
-		return UT64_MAX;
-	}
-}
-
-static ut64 get_import_addr(ELFOBJ *bin, ut64 symbol) {
-	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !Elf_(rz_bin_elf_has_relocs)(bin)) {
-		return UT64_MAX;
-	}
-
-	RzBinElfReloc *reloc;
-	rz_bin_elf_foreach_relocs(bin, reloc) {
-		if (reloc->sym != symbol) {
-			continue;
-		}
-
-		ut64 tmp = get_import_addr_aux(bin, reloc);
-		if (tmp != UT64_MAX) {
-			return tmp;
-		}
-	}
-
-	return UT64_MAX;
-}
-
 static bool get_symbol_entry(ELFOBJ *bin, ut64 offset, Elf_(Sym) * result) {
 #if RZ_BIN_ELF64
 	if (!Elf_(rz_bin_elf_read_word)(bin, &offset, &result->st_name) ||
@@ -617,15 +328,6 @@ static bool get_symbol_entry(ELFOBJ *bin, ut64 offset, Elf_(Sym) * result) {
 #endif
 
 	return true;
-}
-
-static ut64 get_value_symbol(ELFOBJ *bin, Elf_(Sym) * symbol, ut64 pos) {
-	if (symbol->st_value) {
-		return symbol->st_value;
-	}
-
-	ut64 tmp = get_import_addr(bin, pos);
-	return tmp == -1 ? 0 : tmp;
 }
 
 static bool is_section_local_symbol(ELFOBJ *bin, Elf_(Sym) * symbol) {
@@ -663,7 +365,7 @@ static bool set_elf_symbol_name(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sy
 	return true;
 }
 
-static bool convert_elf_symbol_entry(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, int type, size_t ordinal) {
+static bool convert_elf_symbol_entry(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, size_t ordinal) {
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, symbol->st_shndx);
 
 	elf_symbol->offset = symbol->st_value;
@@ -681,12 +383,7 @@ static bool convert_elf_symbol_entry(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, El
 	elf_symbol->is_vaddr = false;
 	elf_symbol->is_imported = false;
 
-	if (type == RZ_BIN_ELF_IMPORT_SYMBOLS) {
-		elf_symbol->offset = get_value_symbol(bin, symbol, ordinal);
-		elf_symbol->size = 16;
-	} else {
-		elf_symbol->is_sht_null = symbol->st_shndx == SHT_NULL;
-	}
+	elf_symbol->is_sht_null = symbol->st_shndx == SHT_NULL;
 
 	if (Elf_(rz_bin_elf_is_relocatable)(bin) && section) {
 		elf_symbol->offset = symbol->st_value + section->offset;
@@ -702,7 +399,7 @@ static bool convert_elf_symbol_entry(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, El
 	return true;
 }
 
-static RzVector *compute_symbols_from_segment(ELFOBJ *bin, int type, ut64 offset, size_t num, ut64 entry_size) {
+static RzVector *compute_symbols_from_segment(ELFOBJ *bin, ut64 offset, size_t num, ut64 entry_size) {
 	RzVector *result = rz_vector_new(sizeof(RzBinElfSymbol), NULL, NULL);
 
 	offset += entry_size;
@@ -714,18 +411,13 @@ static RzVector *compute_symbols_from_segment(ELFOBJ *bin, int type, ut64 offset
 			return false;
 		}
 
-		if ((type != RZ_BIN_ELF_IMPORT_SYMBOLS || symbol.st_shndx != SHT_NULL) && type != RZ_BIN_ELF_ALL_SYMBOLS) {
-			offset += entry_size;
-			continue;
-		}
-
 		RzBinElfSymbol *elf_symbol = rz_vector_push(result, NULL);
 		if (!elf_symbol) {
 			rz_vector_free(result);
 			return false;
 		}
 
-		if (!convert_elf_symbol_entry(bin, elf_symbol, &symbol, type, i)) {
+		if (!convert_elf_symbol_entry(bin, elf_symbol, &symbol, i)) {
 			rz_vector_free(result);
 			return false;
 		}
@@ -742,7 +434,7 @@ static RzVector *compute_symbols_from_segment(ELFOBJ *bin, int type, ut64 offset
 	return NULL;
 }
 
-static RzBinElfSymbol *compute_symbols_from_phdr(ELFOBJ *bin, int type) {
+static RzBinElfSymbol *compute_symbols_from_phdr(ELFOBJ *bin) {
 	ut64 addr;
 	ut64 entry_size;
 
@@ -764,7 +456,7 @@ static RzBinElfSymbol *compute_symbols_from_phdr(ELFOBJ *bin, int type) {
 		return NULL;
 	}
 
-	RzVector *tmp = compute_symbols_from_segment(bin, type, offset, num, entry_size);
+	RzVector *tmp = compute_symbols_from_segment(bin, offset, num, entry_size);
 	if (!tmp) {
 		return NULL;
 	}
@@ -778,32 +470,14 @@ static RzBinElfSymbol *compute_symbols_from_phdr(ELFOBJ *bin, int type) {
 	return result;
 }
 
-static RzBinElfSymbol *get_phdr_symbols(ELFOBJ *bin) {
+static RzBinElfSymbol *get_symbols_from_phdr(ELFOBJ *bin) {
 	if (bin->phdr_symbols) {
 		return bin->phdr_symbols;
 	}
 
-	bin->phdr_symbols = compute_symbols_from_phdr(bin, RZ_BIN_ELF_ALL_SYMBOLS);
+	bin->phdr_symbols = compute_symbols_from_phdr(bin);
 
 	return bin->phdr_symbols;
-}
-
-static RzBinElfSymbol *get_phdr_imports(ELFOBJ *bin) {
-	if (bin->phdr_imports) {
-		return bin->phdr_imports;
-	}
-
-	bin->phdr_imports = compute_symbols_from_phdr(bin, RZ_BIN_ELF_IMPORT_SYMBOLS);
-
-	return bin->phdr_imports;
-}
-
-static RzBinElfSymbol *get_symbols_from_phdr(ELFOBJ *bin, int type) {
-	if (type == RZ_BIN_ELF_IMPORT_SYMBOLS) {
-		return get_phdr_imports(bin);
-	}
-
-	return get_phdr_symbols(bin);
 }
 
 static void fill_symbol_bind_and_type(ELFOBJ *bin, struct rz_bin_elf_symbol_t *ret, Elf_(Sym) * sym) {
@@ -811,11 +485,11 @@ static void fill_symbol_bind_and_type(ELFOBJ *bin, struct rz_bin_elf_symbol_t *r
 	ret->type = symbol_type_to_str(bin, ret, sym);
 }
 
-static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RzBinElfSymbol **sym) {
+static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, RzBinElfSymbol **sym) {
 	int count = 0;
 	int result = -1;
 	RzBinElfSymbol *ret = *sym;
-	RzBinElfSymbol *phdr_symbols = get_symbols_from_phdr(bin, type);
+	RzBinElfSymbol *phdr_symbols = get_symbols_from_phdr(bin);
 	RzBinElfSymbol *tmp, *p;
 	HtUP *phd_offset_map = ht_up_new0();
 	HtUP *phd_ordinal_map = ht_up_new0();
@@ -920,13 +594,12 @@ static int cmp_RzBinElfSymbol(const RzBinElfSymbol *a, const RzBinElfSymbol *b) 
 }
 
 // TODO: return RzList<RzBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
-static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
+static RzBinElfSymbol *get_elf_symbols(ELFOBJ *bin) {
 	ut32 shdr_size;
 	int tsize, nsym, ret_ctr = 0, j, k, newsize;
 	ut64 toffset;
 	ut32 size = 0;
-	RzBinElfSymbol *ret = NULL, *import_ret = NULL;
-	RzBinSymbol *import_sym_ptr = NULL;
+	RzBinElfSymbol *ret = NULL;
 	size_t ret_size = 0, prev_ret_size = 0, import_ret_ctr = 0;
 	Elf_(Sym) *sym = NULL;
 	char *strtab = NULL;
@@ -945,7 +618,7 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 		return NULL;
 	}
 	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
-		return get_symbols_from_phdr(bin, type);
+		return get_symbols_from_phdr(bin);
 	}
 	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof(Elf_(Shdr)))) {
 		return false;
@@ -957,8 +630,7 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 	size_t i;
 	RzBinElfSection *section;
 	rz_bin_elf_enumerate_sections(bin, section, i) {
-		if (((type & RZ_BIN_ELF_SYMTAB_SYMBOLS) && section->type == SHT_SYMTAB) ||
-			((type & RZ_BIN_ELF_DYNSYM_SYMBOLS) && section->type == SHT_DYNSYM)) {
+		if (section->type == SHT_SYMTAB || section->type == SHT_DYNSYM) {
 
 			if (!section->link) {
 				/* oops. fix out of range pointers */
@@ -1044,19 +716,10 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 
 				RzBinElfSection *sym_section = Elf_(rz_bin_elf_get_section)(bin, sym[k].st_shndx);
 
-				if (type == RZ_BIN_ELF_IMPORT_SYMBOLS) {
-					if (sym[k].st_value) {
-						toffset = sym[k].st_value;
-					} else if ((toffset = get_import_addr(bin, k)) == -1) {
-						toffset = 0;
-					}
-					tsize = 16;
-					is_imported = sym[k].st_shndx == STN_UNDEF;
-				} else {
-					tsize = sym[k].st_size;
-					toffset = (ut64)sym[k].st_value;
-					is_sht_null = sym[k].st_shndx == SHT_NULL;
-				}
+				tsize = sym[k].st_size;
+				toffset = (ut64)sym[k].st_value;
+				is_sht_null = sym[k].st_shndx == SHT_NULL;
+
 				if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
 					if (sym_section) {
 						ret[ret_ctr].offset = sym[k].st_value + sym_section->offset;
@@ -1095,27 +758,22 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 				ret[ret_ctr].is_vaddr = is_vaddr;
 				ret[ret_ctr].last = 0;
 				ret[ret_ctr].is_imported = is_imported;
+				ret[ret_ctr].in_shdr = section->type == SHT_SYMTAB;
 				ret_ctr++;
-				if (type == RZ_BIN_ELF_IMPORT_SYMBOLS && is_imported) {
-					import_ret_ctr++;
-				}
 			}
 			RZ_FREE(strtab);
 			RZ_FREE(sym);
 			ht_pp_free(symbol_map);
 			symbol_map = NULL;
-			if (type == RZ_BIN_ELF_IMPORT_SYMBOLS) {
-				break;
-			}
 		}
 	}
 	if (!ret) {
-		return get_symbols_from_phdr(bin, type);
+		return get_symbols_from_phdr(bin);
 	}
 	ret[ret_ctr].last = 1; // ugly dirty hack :D
 	int max = -1;
 	RzBinElfSymbol *aux = NULL;
-	nsym = Elf_(fix_symbols)(bin, ret_ctr, type, &ret);
+	nsym = Elf_(fix_symbols)(bin, ret_ctr, &ret);
 	if (nsym == -1) {
 		goto beach;
 	}
@@ -1133,27 +791,6 @@ static RzBinElfSymbol *get_symbols_with_type(ELFOBJ *bin, int type) {
 		aux++;
 	}
 	nsym = max;
-	if (type == RZ_BIN_ELF_IMPORT_SYMBOLS) {
-		import_ret = calloc(import_ret_ctr + 1, sizeof(RzBinElfSymbol));
-		if (!import_ret) {
-			goto beach;
-		}
-		import_ret_ctr = 0;
-		i = -1;
-		while (!ret[++i].last) {
-			if (!(import_sym_ptr = Elf_(rz_bin_elf_convert_symbol)(bin, &ret[i], "%s"))) {
-				continue;
-			}
-
-			if (ret[i].is_imported) {
-				memcpy(&import_ret[import_ret_ctr], &ret[i], sizeof(RzBinElfSymbol));
-				++import_ret_ctr;
-			}
-		}
-		import_ret[import_ret_ctr].last = 1;
-		RZ_FREE(ret);
-		return import_ret;
-	}
 	return ret;
 beach:
 	free(ret);
@@ -1170,18 +807,6 @@ static void convert_symbol(ELFOBJ *bin, RzBinSymbol *symbol, RzBinElfSymbol *elf
 	if (is_arm_symbol(bin, elf_symbol)) {
 		set_arm_symbol_bits(bin, symbol);
 	}
-}
-
-static void convert_import(RzBinImport *import, RzBinElfSymbol *symbol) {
-	import->name = strdup(symbol->name);
-	import->bind = symbol->bind;
-	import->type = symbol->type;
-	import->ordinal = symbol->ordinal;
-}
-
-static void imports_free(void *e, RZ_UNUSED void *user) {
-	RzBinImport *ptr = e;
-	rz_bin_import_free(ptr);
 }
 
 static void symbols_free(void *e, RZ_UNUSED void *user) {
@@ -1228,41 +853,6 @@ RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin) {
 	return bin->symbols->symbols;
 }
 
-RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin, NULL);
-
-	RzBinElfImports *result = RZ_NEW(RzBinElfImports);
-	if (!result) {
-		return NULL;
-	}
-
-	result->elf_imports = get_symbols_with_type(bin, RZ_BIN_ELF_IMPORT_SYMBOLS);
-	if (!result->elf_imports) {
-		free(result);
-		return NULL;
-	}
-
-	result->imports = rz_vector_new(sizeof(RzBinImport), imports_free, NULL);
-	if (!result->imports) {
-		free(result->elf_imports);
-		free(result);
-		return NULL;
-	}
-
-	for (RzBinElfSymbol *tmp = result->elf_imports; !tmp->last; tmp++) {
-		RzBinImport import = { 0 };
-
-		convert_import(&import, tmp);
-
-		if (!rz_vector_push(result->imports, &import)) {
-			Elf_(rz_bin_elf_imports_free)(result);
-			return NULL;
-		}
-	}
-
-	return result;
-}
-
 RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
@@ -1271,7 +861,7 @@ RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	result->elf_symbols = get_symbols_with_type(bin, RZ_BIN_ELF_ALL_SYMBOLS);
+	result->elf_symbols = get_elf_symbols(bin);
 	if (!result->elf_symbols) {
 		free(result);
 		return NULL;
@@ -1296,26 +886,6 @@ RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
 	}
 
 	return result;
-}
-
-/**
- * \brief Convert a RzBinElfSymbol to RzBinImport
- * \param bin symbol
- * \return a ptr to a new allocated RzBinImport
- *
- * ...
- */
-RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_NONNULL RzBinElfSymbol *symbol) {
-	rz_return_val_if_fail(symbol, NULL);
-
-	RzBinImport *ptr = RZ_NEW0(RzBinImport);
-	if (!ptr) {
-		return NULL;
-	}
-
-	convert_import(ptr, symbol);
-
-	return ptr;
 }
 
 /**
