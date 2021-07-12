@@ -851,6 +851,21 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 		}
 		// Note: if we got two branch delay instructions in a row due to an
 		// compiler bug or junk or something it wont get treated as a delay
+		if (analysis->opt.vars && !varset) {
+			rz_analysis_extract_vars(analysis, fcn, &op);
+		}
+		if (has_stack_regs && arch_destroys_dst) {
+			if (op_is_set_bp(&op, bp_reg, sp_reg) && op.src[1]) {
+				switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
+				case RZ_ANALYSIS_OP_TYPE_ADD:
+					fcn->bp_off = fcn->stack - op.src[1]->imm;
+					break;
+				case RZ_ANALYSIS_OP_TYPE_SUB:
+					fcn->bp_off = fcn->stack + op.src[1]->imm;
+					break;
+				}
+			}
+		}
 		switch (op.stackop) {
 		case RZ_ANALYSIS_STACK_INC:
 			if (RZ_ABS(op.stackptr) < 8096) {
@@ -1346,21 +1361,6 @@ static int run_basic_block_analysis(RzAnalysisTaskItem *item, RzVector *tasks) {
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			break;
-		}
-		if (has_stack_regs && arch_destroys_dst) {
-			if (op_is_set_bp(&op, bp_reg, sp_reg) && op.src[1]) {
-				switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
-				case RZ_ANALYSIS_OP_TYPE_ADD:
-					fcn->bp_off = fcn->stack - op.src[1]->imm;
-					break;
-				case RZ_ANALYSIS_OP_TYPE_SUB:
-					fcn->bp_off = fcn->stack + op.src[1]->imm;
-					break;
-				}
-			}
-		}
-		if (analysis->opt.vars && !varset) {
-			rz_analysis_extract_vars(analysis, fcn, &op);
 		}
 		if (op.type != RZ_ANALYSIS_OP_TYPE_MOV && op.type != RZ_ANALYSIS_OP_TYPE_CMOV && op.type != RZ_ANALYSIS_OP_TYPE_LEA) {
 			last_is_reg_mov_lea = false;
