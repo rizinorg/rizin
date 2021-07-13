@@ -769,7 +769,6 @@ static char *type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *typ
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
-			eprintf("cannot find base type \"%s\"\n", type->identifier.name);
 			return NULL;
 		}
 		if (type->identifier.is_const) {
@@ -823,7 +822,6 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
-			eprintf("cannot find base type \"%s\"\n", type->identifier.name);
 			return NULL;
 		}
 		const char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? btype->name : rz_type_db_base_type_as_string(typedb, btype);
@@ -879,7 +877,6 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
-			eprintf("cannot find base type \"%s\"\n", type->identifier.name);
 			return NULL;
 		}
 		// If the structure/union is anonymous, then we put declaration inline,

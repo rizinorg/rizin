@@ -1869,12 +1869,30 @@ RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFu
 				rz_type_free(var->type);
 				var->type = rz_type_clone(arg->type);
 			}
+			index++;
 		} else {
 			// There is no match for this argument in the RzCallable type,
 			// thus we remove it from the function
 			rz_analysis_function_delete_var(f, var);
 		}
-		index++;
+	}
+	// For f->vars is already empty, add args into it
+	for (; index < args_count; index++) {
+		RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, index);
+		if (arg) {
+			RzType *type = rz_type_clone(arg->type);
+			if (type) {
+				size_t size = rz_type_db_get_bitsize(a->typedb, type);
+				// For user defined args, we set its delta and kind to its index and stack var by default
+				rz_analysis_function_set_var(f, index, RZ_ANALYSIS_VAR_KIND_BPV, type, size, true, arg->name);
+			}
+		}
+	}
+
+	if (callable->noret) {
+		f->is_noreturn = true;
+	} else {
+		f->ret_type = callable->ret;
 	}
 	rz_pvector_free(cloned_vars);
 	return true;
@@ -2492,6 +2510,10 @@ RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis,
 	callable = rz_type_func_new(analysis->typedb, f->name, NULL);
 	if (!callable) {
 		return NULL;
+	}
+	// Derive retvar and args from that function
+	if (f->ret_type) {
+		callable->ret = rz_type_clone(f->ret_type);
 	}
 	RzPVector *args = rz_analysis_function_args(analysis, f);
 	if (!args || rz_pvector_empty(args)) {
