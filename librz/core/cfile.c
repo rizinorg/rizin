@@ -1096,7 +1096,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 				ut64 b = imp_addr;
 				rz_analysis_xrefs_set(r->analysis, b, a, RZ_ANALYSIS_REF_TYPE_NULL);
 			} else {
-				//RZ_LOG_ERROR("Cannot resolve %s\n", name);
+				RZ_LOG_ERROR("Cannot resolve %s\n", name);
 			}
 			free(name);
 		}
