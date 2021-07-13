@@ -176,7 +176,7 @@ struct rz_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(rz_bin_pe_obj_t) * bin) {
 			// 5D                    pop ebp
 			// C3                    ret
 			follow_offset(entry, bin->b, b, sizeof(b), bin->big_endian, 8);
-			for (n = 0; n < sizeof(b) - 15; n++) {
+			for (n = 0; n < sizeof(b) - 17; n++) {
 				// E8 xx xx xx xx    call sub.ucrtbased.dll__register_thread_local_exe_atexit_callback
 				// 83 C4 04          add esp, 4
 				// E8 xx xx xx xx    call xxxxxxxx <- Follow this
@@ -202,7 +202,7 @@ struct rz_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(rz_bin_pe_obj_t) * bin) {
 
 	// MSVC AMD64
 	int i;
-	for (i = 0; i < sizeof(b) - 13; i++) {
+	for (i = 0; i < sizeof(b) - 14; i++) {
 		if (b[i] == 0x48 && b[i + 1] == 0x83 && b[i + 2] == 0xEC) {
 			break;
 		}
