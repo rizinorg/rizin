@@ -1160,12 +1160,13 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 			if (!r) {
 				goto error;
 			}
-			tcache_tmp = GH(get_next_pointer)(core, tcache_fd, read_le(&tcache_tmp));
+			tcache_tmp = GH(get_next_pointer)(core, tcache_fd, tcache_tmp);
 			chunk = RZ_NEW0(RzHeapChunkListItem);
 			if (!chunk) {
 				goto error;
 			}
-			chunk->addr = (ut64)(tcache_tmp - TC_HDR_SZ);
+			// the base address of the chunk = address - 2 * PTR_SIZE
+			chunk->addr = (ut64)(tcache_tmp - GH(HDR_SZ));
 			rz_list_append(bin->chunks, chunk);
 			tcache_fd = tcache_tmp;
 		}
