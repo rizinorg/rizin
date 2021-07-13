@@ -12,8 +12,9 @@ bool test_v1_noreturn() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v1-noreturn.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 1, "info");
+	mu_assert_eq(rz_list_length(res), 2, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 1 to 2.", "info");
+	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 2 to 3.", "info");
 
 	mu_assert_true(rz_analysis_noreturn_at_addr(core->analysis, 0x4242), "noreturn");
 	mu_assert_true(rz_analysis_noreturn_at_addr(core->analysis, 0x1337), "noreturn");
@@ -31,8 +32,9 @@ bool test_v1_noreturn_empty() {
 	mu_assert_notnull(res, "result info new");
 	RzProjectErr err = rz_project_load_file(core, "prj/v1-noreturn-empty.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
-	mu_assert_eq(rz_list_length(res), 1, "info");
+	mu_assert_eq(rz_list_length(res), 2, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 1 to 2.", "info");
+	mu_assert_streq(rz_list_get_n(res, 1), "project migrated from version 2 to 3.", "info");
 
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x4242), "nono");
 	mu_assert_false(rz_analysis_noreturn_at_addr(core->analysis, 0x1337), "nono");
