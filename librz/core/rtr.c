@@ -639,7 +639,7 @@ RZ_API void rz_core_rtr_list(RzCore *core) {
 		case RTR_PROTOCOL_UNIX: proto = "unix"; break;
 		}
 		rz_cons_printf("%d fd:%i %s://%s:%i/%s\n",
-			i, rtr_host[i].fd->fd, proto, rtr_host[i].host,
+			i, (int)rtr_host[i].fd->fd, proto, rtr_host[i].host,
 			rtr_host[i].port, rtr_host[i].file);
 	}
 }

@@ -54,12 +54,12 @@ static bool __is_target_kernel(DbgEngContext *idbg) {
 	return false;
 }
 
-static int windbg_init(RzDebug *dbg) {
+static bool windbg_init(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
 	if (!idbg || !idbg->initialized) {
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 static int windbg_step(RzDebug *dbg) {
