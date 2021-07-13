@@ -1080,7 +1080,7 @@ static RzList *symbols(RzBinFile *bf) {
 
 	RzBinElfSymbol *symbol;
 	rz_bin_elf_foreach_elf_symbols(bin, symbol) {
-		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, symbol, "%s");
+		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, symbol);
 		if (!ptr) {
 			break;
 		}
@@ -1096,7 +1096,7 @@ static RzList *symbols(RzBinFile *bf) {
 		if (!import->size) {
 			continue;
 		}
-		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, import, "%s");
+		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, import);
 		if (!ptr) {
 			break;
 		}

@@ -58,12 +58,8 @@ static void set_addr_parameter(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, RzBinSym
 	}
 }
 
-static char *get_symbol_name(RzBinElfSymbol *elf_symbol, const char *namefmt) {
-	return elf_symbol->name ? rz_str_newf(namefmt, &elf_symbol->name[0]) : strdup("");
-}
-
-static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol, const char *namefmt) {
-	char *symbol_name = get_symbol_name(elf_symbol, namefmt);
+static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol) {
+	char *symbol_name = elf_symbol->name ? rz_str_new(elf_symbol->name) : rz_str_new("");
 
 	symbol->name = symbol_name;
 	symbol->forwarder = "NONE";
@@ -800,9 +796,9 @@ beach:
 	return NULL;
 }
 
-static void convert_symbol(ELFOBJ *bin, RzBinSymbol *symbol, RzBinElfSymbol *elf_symbol, const char *namefmt) {
+static void convert_symbol(ELFOBJ *bin, RzBinSymbol *symbol, RzBinElfSymbol *elf_symbol) {
 	set_addr_parameter(bin, elf_symbol, symbol);
-	set_common_parameter(elf_symbol, symbol, namefmt);
+	set_common_parameter(elf_symbol, symbol);
 
 	if (is_arm_symbol(bin, elf_symbol)) {
 		set_arm_symbol_bits(bin, symbol);
@@ -877,7 +873,7 @@ RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
 	for (RzBinElfSymbol *tmp = result->elf_symbols; !tmp->last; tmp++) {
 		RzBinSymbol symbol = { 0 };
 
-		convert_symbol(bin, &symbol, tmp, "%s");
+		convert_symbol(bin, &symbol, tmp);
 
 		if (!rz_vector_push(result->symbols, &symbol)) {
 			Elf_(rz_bin_elf_symbols_free)(result);
@@ -898,8 +894,7 @@ RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
  * Convert a RzElfBinSymbol to RzBinSymbol, the name can be formatted.
  */
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin,
-	RZ_NONNULL RzBinElfSymbol *elf_symbol,
-	const char *namefmt) {
+	RZ_NONNULL RzBinElfSymbol *elf_symbol) {
 	rz_return_val_if_fail(bin && elf_symbol, NULL);
 
 	RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
@@ -907,7 +902,7 @@ RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin,
 		return NULL;
 	}
 
-	convert_symbol(bin, symbol, elf_symbol, namefmt);
+	convert_symbol(bin, symbol, elf_symbol);
 
 	return symbol;
 }

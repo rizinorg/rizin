@@ -225,10 +225,10 @@ void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr);
 RZ_BORROW RzBinImport *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_imports)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin); // TODO move to elf_imports.c
+RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_NONNULL RzBinElfSymbol *symbol);
 bool Elf_(rz_bin_elf_has_imports)(RZ_NONNULL ELFOBJ *bin);
-void Elf_(rz_bin_elf_imports_free)(RzBinElfImports *ptr); // TODO move to elf_imports.c
+void Elf_(rz_bin_elf_imports_free)(RzBinElfImports *ptr);
 
 // elf_info.c
 
@@ -329,7 +329,7 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_elf_symbols)(RZ_NONNULL ELFOBJ *bi
 RZ_BORROW RzBinSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol, const char *namefmt);
+RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
 bool Elf_(rz_bin_elf_has_symbols)(RZ_NONNULL ELFOBJ *bin);
 void Elf_(rz_bin_elf_symbols_free)(RzBinElfSymbols *ptr);
 
