@@ -47,6 +47,7 @@ bool test_cpu_profiles() {
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	mu_assert_notnull(res, "result info new");
 	err = rz_project_load_file(core, ".tmp/cpu_profile.rzdb", true, res);
+	rz_serialize_result_info_free(res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
 
 	// 7. Check the values again
@@ -101,6 +102,7 @@ bool test_platform_profiles() {
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	mu_assert_notnull(res, "result info new");
 	err = rz_project_load_file(core, ".tmp/cpu_platform.rzdb", true, res);
+	rz_serialize_result_info_free(res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
 
 	// 7. Check the values again
