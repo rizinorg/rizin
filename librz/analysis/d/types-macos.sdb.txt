@@ -1,6 +1,40 @@
 sigset_t=typedef
 typedef.sigset_t=uint32_t
 
+__idtype=enum
+enum.__idtype=P_ALL,P_GID,P_PGID
+enum.__idtype.P_ALL=0x0
+enum.__idtype.P_GID=0x1
+enum.__idtype.P_PGID=0x2
+
+idtype_t=typedef
+typedef.idtype_t=enum __idtype
+
+fd_mask=typedef
+typedef.fd_mask=int32_t
+
+_fd_set=struct
+struct._fd_set=fds_bits
+struct._fd_set.fds_bits=fd_mask,0,32
+
+fd_set=typedef
+typedef.fd_set=struct _fd_set
+
+__siginfo_t=struct
+struct.__siginfo_t=si_signo,si_errno,si_code,si_pid,si_uid,si_status,si_addr,si_value,si_band
+struct.__siginfo_t.si_signo=int,0,0
+struct.__siginfo_t.si_errno=int,4,0
+struct.__siginfo_t.si_code=int,8,0
+struct.__siginfo_t.si_pid=pid_t,12,0
+struct.__siginfo_t.si_uid=uid_t,16,0
+struct.__siginfo_t.si_status=int,20,0
+struct.__siginfo_t.si_addr=void*,24,0
+struct.__siginfo_t.si_value=union sigval,28,0
+struct.__siginfo_t.si_band=int,36,0
+
+siginfo_t=typedef
+typedef.siginfo_t=struct __siginfo_t
+
 sigaction=struct
 struct.sigaction=__sigaction_u,sa_mask,sa_flags
 struct.sigaction.__sigaction_u=void*,0,0

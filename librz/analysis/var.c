@@ -219,6 +219,7 @@ RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn) {
 		var_free(*it);
 	}
 	rz_pvector_clear(&fcn->vars);
+	fcn->argnum = 0;
 }
 
 RZ_API void rz_analysis_function_delete_unused_vars(RzAnalysisFunction *fcn) {
