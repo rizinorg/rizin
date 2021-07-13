@@ -245,6 +245,7 @@ typedef struct rz_analysis_function_t {
 	HtUP /*<ut64, char *>*/ *labels;
 	HtPP /*<char *, ut64 *>*/ *label_addrs;
 	RzPVector vars;
+	RzType *ret_type;
 	HtUP /*<st64, RzPVector<RzAnalysisVar *>>*/ *inst_vars; // offset of instructions => the variables they access
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers
 	st64 bp_off; // offset of bp inside owned stack frame

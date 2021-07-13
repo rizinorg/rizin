@@ -9087,6 +9087,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int
 		eprintf("Cannot find type %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	fcn->ret_type = ret_type;
 	return RZ_CMD_STATUS_OK;
 }
 
