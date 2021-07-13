@@ -909,11 +909,6 @@ static bool resolve_import_cb(RzCoreLinkData *ld, RzIODesc *desc, ut32 id) {
 	return true;
 }
 
-typedef struct {
-	RzCore *core;
-	ut64 offset;
-} RzMultiDexMap;
-
 static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 	if (!rz_str_endswith(desc->name, ".dex")) {
 		return true;
