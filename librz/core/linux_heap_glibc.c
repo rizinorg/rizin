@@ -2539,7 +2539,16 @@ RZ_API MallocState *GH(rz_heap_get_arena)(RzCore *core, GHT m_state) {
 	return main_arena;
 }
 
+/**
+ * \brief Write a heap chunk header to memory
+ * \param core RzCore pointer
+ * \param chunk_simple RzHeapChunkSimple pointer to the heap chunk data
+ * \return bool if the write succeeded or not
+ */
 RZ_API bool GH(rz_heap_write_heap_chunk)(RzCore *core, RzHeapChunkSimple *chunk_simple) {
+	if (!chunk_simple) {
+		return false;
+	}
 	GH(RzHeapChunk) *heap_chunk = RZ_NEW0(GH(RzHeapChunk));
 	if (!heap_chunk) {
 		return false;
