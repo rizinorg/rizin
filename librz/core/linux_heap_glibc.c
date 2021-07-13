@@ -163,17 +163,17 @@ static void GH(update_arena_with_tc)(GH(RzHeap_MallocState_tcache) * cmain_arena
 	main_arena->have_fast_chunks = cmain_arena->have_fast_chunks;
 	main_arena->attached_threads = cmain_arena->attached_threads;
 	for (i = 0; i < NFASTBINS; i++) {
-		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
+		main_arena->fastbinsY[i] = cmain_arena->fastbinsY[i];
 	}
-	main_arena->GH(top) = cmain_arena->top;
-	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
+	main_arena->top = cmain_arena->top;
+	main_arena->last_remainder = cmain_arena->last_remainder;
 	for (i = 0; i < NBINS * 2 - 2; i++) {
-		main_arena->GH(bins)[i] = cmain_arena->bins[i];
+		main_arena->bins[i] = cmain_arena->bins[i];
 	}
-	main_arena->GH(next) = cmain_arena->next;
-	main_arena->GH(next_free) = cmain_arena->next_free;
-	main_arena->GH(system_mem) = cmain_arena->system_mem;
-	main_arena->GH(max_system_mem) = cmain_arena->max_system_mem;
+	main_arena->next = cmain_arena->next;
+	main_arena->next_free = cmain_arena->next_free;
+	main_arena->system_mem = cmain_arena->system_mem;
+	main_arena->max_system_mem = cmain_arena->max_system_mem;
 }
 
 static void GH(update_arena_without_tc)(GH(RzHeap_MallocState) * cmain_arena, MallocState *main_arena) {
@@ -185,17 +185,17 @@ static void GH(update_arena_without_tc)(GH(RzHeap_MallocState) * cmain_arena, Ma
 	}
 	main_arena->attached_threads = 1;
 	for (i = 0; i < NFASTBINS; i++) {
-		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
+		main_arena->fastbinsY[i] = cmain_arena->fastbinsY[i];
 	}
-	main_arena->GH(top) = cmain_arena->top;
-	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
+	main_arena->top = cmain_arena->top;
+	main_arena->last_remainder = cmain_arena->last_remainder;
 	for (i = 0; i < NBINS * 2 - 2; i++) {
-		main_arena->GH(bins)[i] = cmain_arena->bins[i];
+		main_arena->bins[i] = cmain_arena->bins[i];
 	}
-	main_arena->GH(next) = cmain_arena->next;
-	main_arena->GH(next_free) = cmain_arena->next_free;
-	main_arena->GH(system_mem) = cmain_arena->system_mem;
-	main_arena->GH(max_system_mem) = cmain_arena->max_system_mem;
+	main_arena->next = cmain_arena->next;
+	main_arena->next_free = cmain_arena->next_free;
+	main_arena->system_mem = cmain_arena->system_mem;
+	main_arena->max_system_mem = cmain_arena->max_system_mem;
 }
 
 /**
@@ -271,10 +271,10 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 	if (format == RZ_OUTPUT_MODE_RIZIN) {
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
 			GHT addr = m_arena + align + SZ * i - SZ * 2;
-			GHT bina = main_arena->GH(bins)[i];
+			GHT bina = main_arena->bins[i];
 			rz_cons_printf("f chunk.%zu.bin = 0x%" PFMT64x "\n", i, (ut64)addr);
 			rz_cons_printf("f chunk.%zu.fd = 0x%" PFMT64x "\n", i, (ut64)bina);
-			bina = main_arena->GH(bins)[i + 1];
+			bina = main_arena->bins[i + 1];
 			rz_cons_printf("f chunk.%zu.bk = 0x%" PFMT64x "\n", i, (ut64)bina);
 		}
 		for (i = 0; i < BINMAPSIZE; i++) {
@@ -282,16 +282,16 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 		}
 		{ /* maybe use SDB instead of flags for this? */
 			char units[8];
-			rz_num_units(units, sizeof(units), main_arena->GH(max_system_mem));
+			rz_num_units(units, sizeof(units), main_arena->max_system_mem);
 			rz_cons_printf("f heap.maxmem = %s\n", units);
 
-			rz_num_units(units, sizeof(units), main_arena->GH(system_mem));
+			rz_num_units(units, sizeof(units), main_arena->system_mem);
 			rz_cons_printf("f heap.sysmem = %s\n", units);
 
-			rz_num_units(units, sizeof(units), main_arena->GH(next_free));
+			rz_num_units(units, sizeof(units), main_arena->next_free);
 			rz_cons_printf("f heap.nextfree = %s\n", units);
 
-			rz_num_units(units, sizeof(units), main_arena->GH(next));
+			rz_num_units(units, sizeof(units), main_arena->next);
 			rz_cons_printf("f heap.next= %s\n", units);
 		}
 		return;
@@ -314,15 +314,15 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 		}
 		PRINT_GA(" chunksize:");
 		PRINTF_BA(" == %04zu ", k);
-		PRINTF_GA("0x%" PFMT64x, (ut64)main_arena->GH(fastbinsY)[i]);
+		PRINTF_GA("0x%" PFMT64x, (ut64)main_arena->fastbinsY[i]);
 		PRINT_GA(",\n");
 	}
 	PRINT_GA("}\n");
 	PRINT_GA("  top = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(top));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->top);
 	PRINT_GA(",\n");
 	PRINT_GA("  last_remainder = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(last_remainder));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->last_remainder);
 	PRINT_GA(",\n");
 	PRINT_GA("  bins {\n");
 
@@ -375,10 +375,10 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 		}
 		GHT bin = m_arena + align + SZ * i - SZ * 2;
 		PRINTF_GA("0x%" PFMT64x "->fd = ", (ut64)bin);
-		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(bins)[i]);
+		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->bins[i]);
 		PRINT_GA(", ");
 		PRINTF_GA("0x%" PFMT64x "->bk = ", (ut64)bin);
-		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(bins)[i + 1]);
+		PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->bins[i + 1]);
 		PRINT_GA(", ");
 		rz_cons_newline();
 	}
@@ -394,16 +394,16 @@ static void GH(print_arena_stats)(RzCore *core, GHT m_arena, MallocState *main_a
 	}
 	PRINT_GA("}\n");
 	PRINT_GA("  next = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(next));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->next);
 	PRINT_GA(",\n");
 	PRINT_GA("  next_free = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(next_free));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->next_free);
 	PRINT_GA(",\n");
 	PRINT_GA("  system_mem = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(system_mem));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->system_mem);
 	PRINT_GA(",\n");
 	PRINT_GA("  max_system_mem = ");
-	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->GH(max_system_mem));
+	PRINTF_BA("0x%" PFMT64x, (ut64)main_arena->max_system_mem);
 	PRINT_GA(",\n");
 	PRINT_GA("}\n\n");
 }
@@ -488,8 +488,8 @@ RZ_API bool GH(rz_heap_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 	while (addr_srch < libc_addr_end) {
 		GH(rz_heap_update_main_arena)
 		(core, addr_srch, ta);
-		if (ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
-			ta->GH(system_mem) == heap_sz) {
+		if (ta->top > brk_start && ta->top < brk_end &&
+			ta->system_mem == heap_sz) {
 
 			*m_arena = addr_srch;
 			free(ta);
@@ -648,16 +648,16 @@ static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state) {
 		free(ta);
 		return false;
 	}
-	if (ta->GH(next) == m_state) {
+	if (ta->next == m_state) {
 		free(ta);
 		return true;
 	}
-	while (ta->GH(next) != GHT_MAX && ta->GH(next) != m_arena) {
-		if (!GH(rz_heap_update_main_arena)(core, ta->GH(next), ta)) {
+	while (ta->next != GHT_MAX && ta->next != m_arena) {
+		if (!GH(rz_heap_update_main_arena)(core, ta->next, ta)) {
 			free(ta);
 			return false;
 		}
-		if (ta->GH(next) == m_state) {
+		if (ta->next == m_state) {
 			free(ta);
 			return true;
 		}
@@ -685,7 +685,7 @@ static int GH(print_double_linked_list_bin_simple)(RzCore *core, GHT bin, Malloc
 	while (cnk->fd != bin) {
 		PRINTF_BA("->fd = 0x%" PFMT64x, (ut64)cnk->fd);
 		next = cnk->fd;
-		if (next < brk_start || next > main_arena->GH(top)) {
+		if (next < brk_start || next > main_arena->top) {
 			PRINT_RA("Double linked list corrupted\n");
 			free(cnk);
 			return -1;
@@ -707,7 +707,7 @@ static int GH(print_double_linked_list_bin_simple)(RzCore *core, GHT bin, Malloc
 	while (cnk->bk != bin) {
 		PRINTF_BA("->bk = 0x%" PFMT64x, (ut64)cnk->bk);
 		next = cnk->bk;
-		if (next < brk_start || next > main_arena->GH(top)) {
+		if (next < brk_start || next > main_arena->top) {
 			PRINT_RA("Double linked list corrupted.\n");
 			free(cnk);
 			return -1;
@@ -744,7 +744,7 @@ static int GH(print_double_linked_list_bin_graph)(RzCore *core, GHT bin, MallocS
 
 	while (cnk->bk != bin) {
 		next = cnk->bk;
-		if (next < brk_start || next > main_arena->GH(top)) {
+		if (next < brk_start || next > main_arena->top) {
 			PRINT_RA("Double linked list corrupted\n");
 			free(cnk);
 			free(g);
@@ -781,7 +781,7 @@ static int GH(print_double_linked_list_bin)(RzCore *core, MallocState *main_aren
 	if (num_bin > 126) {
 		return -1;
 	}
-	GHT bin = main_arena->GH(bins)[num_bin];
+	GHT bin = main_arena->bins[num_bin];
 
 	if (!bin) {
 		return -1;
@@ -884,7 +884,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 	heap_bin->bin_num = bin_num + 1;
 	heap_bin->size = FASTBIN_IDX_TO_SIZE(bin_num + 1);
 	heap_bin->type = rz_str_new("Fast");
-	GHT next = main_arena->GH(fastbinsY)[bin_num];
+	GHT next = main_arena->fastbinsY[bin_num];
 	if (!next) {
 		free(cnk);
 		return heap_bin;
@@ -896,10 +896,10 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 		free(cnk);
 		return heap_bin;
 	}
-	GHT size = main_arena->GH(top) - brk_start;
+	GHT size = main_arena->top - brk_start;
 
 	GHT next_root = next, next_tmp = next, double_free = GHT_MAX;
-	while (next && next >= brk_start && next < main_arena->GH(top)) {
+	while (next && next >= brk_start && next < main_arena->top) {
 		RzHeapChunkListItem *item = RZ_NEW0(RzHeapChunkListItem);
 		if (!item) {
 			break;
@@ -907,7 +907,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 		item->addr = next;
 		item->status = rz_str_new("free");
 		rz_list_append(heap_bin->chunks, item);
-		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
+		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->top) {
 			rz_io_read_at(core->io, next_tmp, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 			next_tmp = GH(get_next_pointer)(core, next_tmp, cnk->fd);
 			if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
@@ -937,7 +937,7 @@ RZ_API RzHeapBin *GH(rz_heap_fastbin_content)(RzCore *core, MallocState *main_ar
 			return heap_bin;
 		}
 	}
-	if (next && (next < brk_start || next >= main_arena->GH(top))) {
+	if (next && (next < brk_start || next >= main_arena->top)) {
 		char message[50];
 		rz_snprintf(message, 50, "Linked list corrupted @ 0x%" PFMT64x, (ut64)next);
 		heap_bin->message = rz_str_new(message);
@@ -1253,11 +1253,11 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 		rz_cons_printf("Main arena  (addr=");
 		PRINTF_YA("0x%" PFMT64x, (ut64)m_arena);
 		rz_cons_printf(", lastRemainder=");
-		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->GH(last_remainder));
+		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->last_remainder);
 		rz_cons_printf(", top=");
-		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->GH(top));
+		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->top);
 		rz_cons_printf(", next=");
-		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->GH(next));
+		PRINTF_YA("0x%" PFMT64x, (ut64)main_arena->next);
 		rz_cons_printf(")\n");
 	} else {
 		pj = pj_new();
@@ -1269,29 +1269,29 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 		pj_ka(pj, "arenas");
 		pj_o(pj);
 		pj_kn(pj, "addr", m_arena);
-		pj_kn(pj, "last_rem", main_arena->GH(last_remainder));
-		pj_kn(pj, "top", main_arena->GH(top));
-		pj_kn(pj, "next", main_arena->GH(next));
+		pj_kn(pj, "last_rem", main_arena->last_remainder);
+		pj_kn(pj, "top", main_arena->top);
+		pj_kn(pj, "next", main_arena->next);
 		pj_ks(pj, "type", "main");
 		pj_ks(pj, "state", "used");
 		pj_end(pj);
 	}
-	if (main_arena->GH(next) != m_arena) {
-		ta->GH(next) = main_arena->GH(next);
-		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
-			ut64 ta_addr = ta->GH(next);
-			if (!GH(rz_heap_update_main_arena)(core, ta->GH(next), ta)) {
+	if (main_arena->next != m_arena) {
+		ta->next = main_arena->next;
+		while (GH(is_arena)(core, m_arena, ta->next) && ta->next != m_arena) {
+			ut64 ta_addr = ta->next;
+			if (!GH(rz_heap_update_main_arena)(core, ta->next, ta)) {
 				goto end;
 			}
 			if (!json) {
 				rz_cons_printf("Thread arena(addr=");
 				PRINTF_YA("0x%" PFMT64x, ta_addr);
 				rz_cons_printf(", lastRemainder=");
-				PRINTF_YA("0x%" PFMT64x, (ut64)ta->GH(last_remainder));
+				PRINTF_YA("0x%" PFMT64x, (ut64)ta->last_remainder);
 				rz_cons_printf(", top=");
-				PRINTF_YA("0x%" PFMT64x, (ut64)ta->GH(top));
+				PRINTF_YA("0x%" PFMT64x, (ut64)ta->top);
 				rz_cons_printf(", next=");
-				PRINTF_YA("0x%" PFMT64x, (ut64)ta->GH(next));
+				PRINTF_YA("0x%" PFMT64x, (ut64)ta->next);
 				if (ta->attached_threads) {
 					rz_cons_printf(")\n");
 				} else {
@@ -1300,9 +1300,9 @@ void GH(print_malloc_states)(RzCore *core, GHT m_arena, MallocState *main_arena,
 			} else {
 				pj_o(pj);
 				pj_kn(pj, "addr", (ut64)ta_addr);
-				pj_kn(pj, "last_rem", ta->GH(last_remainder));
-				pj_kn(pj, "top", ta->GH(top));
-				pj_kn(pj, "next", ta->GH(next));
+				pj_kn(pj, "last_rem", ta->last_remainder);
+				pj_kn(pj, "top", ta->top);
+				pj_kn(pj, "next", ta->next);
 				pj_ks(pj, "type", "thread");
 				if (ta->attached_threads) {
 					pj_ks(pj, "state", "used");
@@ -1366,8 +1366,8 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 				free(heap_info);
 				return;
 			}
-			if ((ms->GH(top) >> 16) << 16 != h_info) {
-				h_info = (ms->GH(top) >> 16) << 16;
+			if ((ms->top >> 16) << 16 != h_info) {
+				h_info = (ms->top >> 16) << 16;
 				rz_io_read_at(core->io, h_info, (ut8 *)heap_info, sizeof(GH(RzHeapInfo)));
 				GH(print_inst_minfo)
 				(heap_info, h_info);
@@ -1409,8 +1409,8 @@ void GH(rz_heap_bin_free)(RzHeapBin *bin) {
  */
 RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena, int bin_num, GHT m_arena) {
 	int idx = 2 * bin_num;
-	ut64 fw = main_arena->GH(bins)[idx];
-	ut64 bk = main_arena->GH(bins)[idx + 1];
+	ut64 fw = main_arena->bins[idx];
+	ut64 bk = main_arena->bins[idx + 1];
 	RzHeapBin *bin = RZ_NEW0(RzHeapBin);
 	if (!bin) {
 		return NULL;
@@ -1466,7 +1466,7 @@ RZ_API RzHeapBin *GH(rz_heap_bin_content)(RzCore *core, MallocState *main_arena,
 	}
 	bin->addr = base;
 	while (fw != head->fd) {
-		if (fw > main_arena->GH(top) || fw < initial_brk) {
+		if (fw > main_arena->top || fw < initial_brk) {
 			bin->message = rz_str_new("Corrupted list");
 			break;
 		}
@@ -1725,10 +1725,10 @@ RZ_API RzList *GH(rz_heap_arenas_list)(RzCore *core, GHT m_arena, MallocState *m
 	item->type = rz_str_new("Main");
 	item->arena = ta;
 	rz_list_append(arena_list, item);
-	if (main_arena->GH(next) != m_arena) {
-		ta->GH(next) = main_arena->GH(next);
-		while (GH(is_arena)(core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
-			ut64 ta_addr = ta->GH(next);
+	if (main_arena->next != m_arena) {
+		ta->next = main_arena->next;
+		while (GH(is_arena)(core, m_arena, ta->next) && ta->next != m_arena) {
+			ut64 ta_addr = ta->next;
 			ta = RZ_NEW0(MallocState);
 			if (!GH(rz_heap_update_main_arena)(core, ta_addr, ta)) {
 				free(ta);
@@ -1789,7 +1789,7 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 		}
 	} else {
 		brk_start = ((m_state >> 16) << 16);
-		brk_end = brk_start + main_arena->GH(system_mem);
+		brk_end = brk_start + main_arena->system_mem;
 		if (tcache) {
 			tcache_initial_brk = brk_start + sizeof(GH(RzHeapInfo)) + sizeof(GH(RzHeap_MallocState_tcache)) + GH(MMAP_ALIGN);
 			initial_brk = tcache_initial_brk + offset;
@@ -1818,8 +1818,8 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	size_tmp = (cnk->size >> 3) << 3;
 	ut64 prev_chunk_addr;
 	ut64 prev_chunk_size;
-	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
-		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
+	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
+		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->top) {
 			RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
 			if (!block) {
 				break;
@@ -1838,13 +1838,13 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 
 		if (fastbin) {
 			int i = (size_tmp / (SZ * 2)) - 2;
-			GHT idx = (GHT)main_arena->GH(fastbinsY)[i];
+			GHT idx = (GHT)main_arena->fastbinsY[i];
 			(void)rz_io_read_at(core->io, idx, (ut8 *)cnk, sizeof(GH(RzHeapChunk)));
 			GHT next = GH(get_next_pointer)(core, idx, cnk->fd);
 			if (prev_chunk == idx && idx && !next) {
 				is_free = true;
 			}
-			while (next && next >= brk_start && next < main_arena->GH(top)) {
+			while (next && next >= brk_start && next < main_arena->top) {
 				if (prev_chunk == idx || prev_chunk == next || idx == next) {
 					is_free = true;
 					if (idx == next) {
@@ -1854,7 +1854,7 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 					(void)rz_io_read_at(core->io, next, (ut8 *)cnk_next, sizeof(GH(RzHeapChunk)));
 					GHT next_node = GH(get_next_pointer)(core, next, cnk_next->fd);
 					// avoid triple while?
-					while (next_node && next_node >= brk_start && next_node < main_arena->GH(top)) {
+					while (next_node && next_node >= brk_start && next_node < main_arena->top) {
 						if (prev_chunk == next_node) {
 							double_free = true;
 							break;
@@ -1948,9 +1948,9 @@ RZ_API RzList *GH(rz_heap_chunks_list)(RzCore *core, MallocState *main_arena,
 	if (top_chunk) {
 		RzHeapChunkListItem *block = RZ_NEW0(RzHeapChunkListItem);
 		if (block) {
-			block->addr = main_arena->GH(top);
+			block->addr = main_arena->top;
 			block->status = rz_str_new("free (top)");
-			RzHeapChunkSimple *chunkSimple = GH(rz_heap_chunk_wrapper)(core, main_arena->GH(top));
+			RzHeapChunkSimple *chunkSimple = GH(rz_heap_chunk_wrapper)(core, main_arena->top);
 			if (chunkSimple) {
 				block->size = chunkSimple->size;
 				free(chunkSimple);
@@ -1992,11 +1992,11 @@ RZ_IPI RzCmdStatus GH(rz_cmd_arena_print_handler)(RzCore *core, int argc, const 
 		}
 		PRINTF_YA("0x%" PFMT64x, (ut64)pos->addr);
 		rz_cons_printf(", lastRemainder=");
-		PRINTF_YA("0x%" PFMT64x, (ut64)arena->GH(last_remainder));
+		PRINTF_YA("0x%" PFMT64x, (ut64)arena->last_remainder);
 		rz_cons_printf(", top=");
-		PRINTF_YA("0x%" PFMT64x, (ut64)arena->GH(top));
+		PRINTF_YA("0x%" PFMT64x, (ut64)arena->top);
 		rz_cons_printf(", next=");
-		PRINTF_YA("0x%" PFMT64x, (ut64)arena->GH(next));
+		PRINTF_YA("0x%" PFMT64x, (ut64)arena->next);
 		if (arena->attached_threads) {
 			rz_cons_printf(")\n");
 		} else {
@@ -2041,7 +2041,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 
 	} else {
 		brk_start = ((m_state >> 16) << 16);
-		brk_end = brk_start + main_arena->GH(system_mem);
+		brk_end = brk_start + main_arena->system_mem;
 	}
 	RzListIter *iter;
 	RzHeapChunkListItem *pos;
@@ -2089,7 +2089,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		core->cons->use_utf8 = rz_config_get_i(core->config, "scr.utf8");
 		g->layout = rz_config_get_i(core->config, "graph.layout");
 		rz_agraph_set_title(g, "Heap Layout");
-		top_title = rz_str_newf("Top chunk @ 0x%" PFMT64x "\n", (ut64)main_arena->GH(top));
+		top_title = rz_str_newf("Top chunk @ 0x%" PFMT64x "\n", (ut64)main_arena->top);
 	}
 	rz_list_foreach (chunks, iter, pos) {
 		if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
@@ -2137,7 +2137,7 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 	}
 	if (mode == RZ_OUTPUT_MODE_STANDARD || mode == RZ_OUTPUT_MODE_LONG) {
 		GH(print_heap_chunk_simple)
-		(core, main_arena->GH(top), "free", NULL);
+		(core, main_arena->top, "free", NULL);
 		PRINT_RA("[top]");
 		rz_cons_printf("[brk_start: ");
 		PRINTF_YA("0x%" PFMT64x, (ut64)brk_start);
@@ -2146,13 +2146,13 @@ RZ_IPI RzCmdStatus GH(rz_cmd_heap_chunks_print_handler)(RzCore *core, int argc, 
 		rz_cons_printf("]");
 	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		pj_kn(pj, "top", main_arena->GH(top));
+		pj_kn(pj, "top", main_arena->top);
 		pj_kn(pj, "brk", brk_start);
 		pj_kn(pj, "end", brk_end);
 		pj_end(pj);
 	} else if (mode == RZ_OUTPUT_MODE_RIZIN) {
 		rz_cons_printf("fs-\n");
-		rz_cons_printf("f heap.top = 0x%08" PFMT64x "\n", (ut64)main_arena->GH(top));
+		rz_cons_printf("f heap.top = 0x%08" PFMT64x "\n", (ut64)main_arena->top);
 		rz_cons_printf("f heap.brk = 0x%08" PFMT64x "\n", (ut64)brk_start);
 		rz_cons_printf("f heap.end = 0x%08" PFMT64x "\n", (ut64)brk_end);
 	} else if (mode == RZ_OUTPUT_MODE_LONG_JSON) {
