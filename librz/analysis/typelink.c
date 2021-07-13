@@ -7,10 +7,6 @@
 #include <string.h>
 #include <sdb.h>
 
-// TODO:
-// 1. Change the analysis serialization/deserialization code
-// 2. Add to projects migration/tests
-
 /**
  * \brief Checks if the RzType linked to the given address
  *

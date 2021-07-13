@@ -1579,6 +1579,8 @@ Sdb *analysis_ref_db() {
 	sdb_set(cc, "sectarian", "cc", 0);
 
 	sdb_ns(db, "types", true);
+	sdb_ns(db, "callables", true);
+	sdb_ns(db, "typelinks", true);
 
 	return db;
 }
@@ -1637,6 +1639,8 @@ bool test_analysis_save() {
 	// Remove `types` namespace first
 	sdb_ns_unset(db, "types", NULL);
 	sdb_ns(db, "types", true);
+	sdb_ns(db, "callables", true);
+	sdb_ns(db, "typelinks", true);
 
 	Sdb *expected = analysis_ref_db();
 	assert_sdb_eq(db, expected, "analysis save");
