@@ -375,9 +375,7 @@ static void save_struct(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type
 	rz_vector_foreach(&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
-		eprintf("serializing \"%s.%s\" struct member\n", sname, member_sname);
 		char *member_type = rz_type_as_string(typedb, member->type);
-		eprintf("serialized \"%s.%s\" = \"%s\"\n", sname, member_sname, member_type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
 			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0), 0ULL);
@@ -425,9 +423,7 @@ static void save_union(const RzTypeDB *typedb, Sdb *sdb, const RzBaseType *type)
 	rz_vector_foreach(&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key(member->name);
-		eprintf("serializing \"%s.%s\" union member\n", sname, member_sname);
 		char *member_type = rz_type_as_string(typedb, member->type);
-		eprintf("serialized \"%s.%s\" = \"%s\"\n", sname, member_sname, member_type);
 		sdb_set(sdb,
 			rz_strbuf_setf(&param_key, "%s.%s.%s", kind, sname, member_sname),
 			rz_strbuf_setf(&param_val, "%s,%zu,%u", member_type, member->offset, 0), 0ULL);
@@ -564,27 +560,22 @@ void sdb_save_base_type(const RzTypeDB *typedb, RZ_NONNULL Sdb *sdb, const RzBas
 
 	switch (type->kind) {
 	case RZ_BASE_TYPE_KIND_STRUCT:
-		eprintf("Serializing struct \"%s\"\n", type->name);
 		RZ_LOG_DEBUG("Serializing struct \"%s\"\n", type->name);
 		save_struct(typedb, sdb, type);
 		break;
 	case RZ_BASE_TYPE_KIND_ENUM:
-		eprintf("Serializing enum \"%s\"\n", type->name);
 		RZ_LOG_DEBUG("Serializing enum \"%s\"\n", type->name);
 		save_enum(typedb, sdb, type);
 		break;
 	case RZ_BASE_TYPE_KIND_UNION:
-		eprintf("Serializing union \"%s\"\n", type->name);
 		RZ_LOG_DEBUG("Serializing union \"%s\"\n", type->name);
 		save_union(typedb, sdb, type);
 		break;
 	case RZ_BASE_TYPE_KIND_TYPEDEF:
-		eprintf("Serializing type alias \"%s\"\n", type->name);
 		RZ_LOG_DEBUG("Serializing type alias \"%s\"\n", type->name);
 		save_typedef(typedb, sdb, type);
 		break;
 	case RZ_BASE_TYPE_KIND_ATOMIC:
-		eprintf("Serializing atomic type \"%s\"\n", type->name);
 		RZ_LOG_DEBUG("Serializing atomic type \"%s\"\n", type->name);
 		save_atomic_type(typedb, sdb, type);
 		break;
