@@ -903,7 +903,6 @@ static bool resolve_import_cb(RzCoreLinkData *ld, RzIODesc *desc, ut32 id) {
 	rz_list_foreach (symbols, iter, sym) {
 		if (!strcmp(sym->name, ld->name)) {
 			ld->addr = sym->vaddr;
-			eprintf("%-10s | %s at 0x%llx\n", desc->name, sym->name, ld->addr);
 			return false;
 		}
 	}
