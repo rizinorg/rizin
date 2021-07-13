@@ -6,11 +6,17 @@
 
 #include "elf.h"
 #include "elf_symbols.h"
-#include "elf_imports.h"
-
-#define GROWTH_FACTOR                        2
+#include <ht_uu.h>
 
 #define HASH_NCHAIN_OFFSET(x) ((x) + 4)
+
+struct symbols_segment {
+	ut64 offset;
+	ut64 number;
+	ut64 entry_size;
+	bool dynamic;
+	RZ_BORROW RzBinElfStrtab *strtab;
+};
 
 struct symbol_bind_translation {
 	unsigned char bind;
@@ -48,6 +54,10 @@ static const struct symbol_type_translation symbol_type_translation_table[] = {
 	{ STT_HIPROC, RZ_BIN_TYPE_HIPROC_STR }
 };
 
+static struct symbols_segment symbols_segment_init(ut64 offset, ut64 number, ut64 entry_size, bool dynamic, RzBinElfStrtab *strtab) {
+	return (struct symbols_segment){ .offset = offset, .number = number, .entry_size = entry_size, .dynamic = dynamic, .strtab = strtab };
+}
+
 static void set_addr_parameter(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol) {
 	if (elf_symbol->is_vaddr) {
 		symbol->paddr = UT64_MAX;
@@ -65,7 +75,6 @@ static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol
 	symbol->forwarder = "NONE";
 	symbol->bind = elf_symbol->bind;
 	symbol->type = elf_symbol->type;
-	symbol->is_imported = elf_symbol->is_imported;
 	symbol->size = elf_symbol->size;
 	symbol->ordinal = elf_symbol->ordinal;
 }
@@ -227,10 +236,25 @@ static Elf_(Word) get_number_of_symbols_from_gnu_hash(ELFOBJ *bin) {
 	return get_index_from_chain(bin, bucket_offset, symbol_base, index);
 }
 
+static Elf_(Word) get_number_of_symbols_from_heuristic_aux(ELFOBJ *bin, ut64 symtab_offset, ut64 strtab_offset) {
+	if (symtab_offset > strtab_offset) {
+		return 0;
+	}
+
+	ut64 symtab_size = strtab_offset - symtab_offset;
+	return symtab_size / sizeof(Elf_(Sym));
+}
+
 static Elf_(Word) get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
+	RzBinElfSection *dynsym_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynsym");
+	RzBinElfSection *strtab_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynstr");
+
+	if (dynsym_section || strtab_section) {
+		return get_number_of_symbols_from_heuristic_aux(bin, dynsym_section->offset, strtab_section->offset);
+	}
+
 	ut64 symtab_addr;
 	ut64 strtab_addr;
-
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_SYMTAB, &symtab_addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &strtab_addr)) {
 		return 0;
 	}
@@ -241,12 +265,7 @@ static Elf_(Word) get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
 		return 0;
 	}
 
-	if (symtab_offset > strtab_offset) {
-		return 0;
-	}
-
-	ut64 symtab_size = strtab_offset - symtab_offset;
-	return symtab_size / sizeof(Elf_(Sym));
+	return get_number_of_symbols_from_heuristic_aux(bin, symtab_offset, strtab_offset);
 }
 
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) * sym, const char *name) {
@@ -343,17 +362,17 @@ static bool is_section_local_symbol(ELFOBJ *bin, Elf_(Sym) * symbol) {
 	return true;
 }
 
-static bool set_elf_symbol_name(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, RzBinElfSection *section) {
+static bool set_elf_symbol_name(ELFOBJ *bin, struct symbols_segment *segment, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, RzBinElfSection *section) {
 	if (section && is_section_local_symbol(bin, symbol)) {
 		elf_symbol->name = rz_str_new(section->name);
 		return elf_symbol->name;
 	}
 
-	if (!bin->dynstr) {
+	if (!segment->strtab) {
 		return false;
 	}
 
-	elf_symbol->name = Elf_(rz_bin_elf_strtab_get_dup)(bin->dynstr, symbol->st_name);
+	elf_symbol->name = Elf_(rz_bin_elf_strtab_get_dup)(segment->strtab, symbol->st_name);
 	if (!elf_symbol->name) {
 		return false;
 	}
@@ -361,25 +380,19 @@ static bool set_elf_symbol_name(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sy
 	return true;
 }
 
-static bool convert_elf_symbol_entry(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, size_t ordinal) {
+static bool convert_elf_symbol_entry(ELFOBJ *bin, struct symbols_segment *segment, RzBinElfSymbol *elf_symbol, Elf_(Sym) * symbol, size_t ordinal) {
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section)(bin, symbol->st_shndx);
 
 	elf_symbol->offset = symbol->st_value;
 	elf_symbol->size = symbol->st_size;
 	elf_symbol->ordinal = ordinal;
 	elf_symbol->bind = symbol_bind_to_str(symbol);
-	if (!set_elf_symbol_name(bin, elf_symbol, symbol, section)) {
+
+	if (!set_elf_symbol_name(bin, segment, elf_symbol, symbol, section)) {
 		return false;
 	}
-	elf_symbol->type = symbol_type_to_str(bin, elf_symbol, symbol);
-	elf_symbol->libname = NULL;
-	elf_symbol->last = 0;
-	elf_symbol->in_shdr = false;
-	elf_symbol->is_sht_null = false;
-	elf_symbol->is_vaddr = false;
-	elf_symbol->is_imported = false;
 
-	elf_symbol->is_sht_null = symbol->st_shndx == SHT_NULL;
+	elf_symbol->type = symbol_type_to_str(bin, elf_symbol, symbol);
 
 	if (Elf_(rz_bin_elf_is_relocatable)(bin) && section) {
 		elf_symbol->offset = symbol->st_value + section->offset;
@@ -395,405 +408,182 @@ static bool convert_elf_symbol_entry(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, El
 	return true;
 }
 
-static RzVector *compute_symbols_from_segment(ELFOBJ *bin, ut64 offset, size_t num, ut64 entry_size) {
-	RzVector *result = rz_vector_new(sizeof(RzBinElfSymbol), NULL, NULL);
-
-	offset += entry_size;
-
-	for (size_t i = 1; i < num; i++) {
-		Elf_(Sym) symbol;
-
-		if (!get_symbol_entry(bin, offset, &symbol)) {
-			return false;
-		}
-
-		RzBinElfSymbol *elf_symbol = rz_vector_push(result, NULL);
-		if (!elf_symbol) {
-			rz_vector_free(result);
-			return false;
-		}
-
-		if (!convert_elf_symbol_entry(bin, elf_symbol, &symbol, i)) {
-			rz_vector_free(result);
-			return false;
-		}
-
-		offset += entry_size;
-	}
-
-	size_t len = rz_vector_len(result);
-	if (len) {
-		return result;
-	}
-
-	rz_vector_free(result);
-	return NULL;
+static bool is_import_symbol(ELFOBJ *bin, struct symbols_segment *segment, Elf_(Sym) * symbol) {
+	return (segment->dynamic || Elf_(rz_bin_elf_is_relocatable)(bin)) && !symbol->st_shndx;
 }
 
-static RzBinElfSymbol *compute_symbols_from_phdr(ELFOBJ *bin) {
-	ut64 addr;
-	ut64 entry_size;
-
-	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
-		return NULL;
+static bool add_elf_symbol(ELFOBJ *bin, struct symbols_segment *segment, RzBinElfSymbols *result, Elf_(Sym) * symbol, RzBinElfSymbol *elf_symbol) {
+	if (is_import_symbol(bin, segment, symbol)) {
+		return rz_vector_push(result->elf_import_symbols, elf_symbol);
 	}
 
+	if (!symbol->st_shndx) {
+		return true;
+	}
+
+	return rz_vector_push(result->elf_symbols, elf_symbol);
+}
+
+static bool has_already_been_processed(ELFOBJ *bin, ut64 offset, HtUU *set) {
+	bool found;
+	ht_uu_find(set, offset, &found);
+
+	return found;
+}
+
+static bool compute_symbols_from_segment(ELFOBJ *bin, RzBinElfSymbols *result, struct symbols_segment *segment, HtUU *set) {
+	ut64 offset = segment->offset + segment->entry_size;
+
+	for (size_t i = 1; i < segment->number; i++) {
+		Elf_(Sym) entry;
+
+		if (!get_symbol_entry(bin, offset, &entry)) {
+			return false;
+		}
+
+		if (has_already_been_processed(bin, offset, set)) {
+			offset += segment->entry_size;
+			continue;
+		}
+
+		if (!ht_uu_insert(set, offset, offset)) {
+			return false;
+		}
+
+		RzBinElfSymbol elf_symbol = { 0 };
+
+		if (!convert_elf_symbol_entry(bin, segment, &elf_symbol, &entry, i)) {
+			return false;
+		}
+
+		if (!add_elf_symbol(bin, segment, result, &entry, &elf_symbol)) {
+			return false;
+		}
+
+		offset += segment->entry_size;
+	}
+
+	return true;
+}
+
+static bool get_dynamic_elf_symbols(ELFOBJ *bin, RzBinElfSymbols *result, HtUU *set) {
+	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin)) {
+		return true;
+	}
+
+	ut64 addr;
+	ut64 entry_size;
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_SYMTAB, &addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_SYMENT, &entry_size)) {
-		return NULL;
+		return true;
 	}
 
 	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
 	if (offset == UT64_MAX) {
-		return NULL;
+		return true;
 	}
 
-	size_t num = Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(bin);
-	if (!num) {
-		return NULL;
+	Elf_(Word) number = Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(bin);
+	if (!number) {
+		return true;
 	}
 
-	RzVector *tmp = compute_symbols_from_segment(bin, offset, num, entry_size);
-	if (!tmp) {
-		return NULL;
-	}
+	struct symbols_segment segment = symbols_segment_init(offset, number, entry_size, true, bin->dynstr);
 
-	RzBinElfSymbol *end = rz_vector_push(tmp, NULL);
-	end->last = 1;
-
-	RzBinElfSymbol *result = rz_vector_flush(tmp);
-	rz_vector_free(tmp);
-
-	return result;
-}
-
-static RzBinElfSymbol *get_symbols_from_phdr(ELFOBJ *bin) {
-	if (bin->phdr_symbols) {
-		return bin->phdr_symbols;
-	}
-
-	bin->phdr_symbols = compute_symbols_from_phdr(bin);
-
-	return bin->phdr_symbols;
-}
-
-static void fill_symbol_bind_and_type(ELFOBJ *bin, struct rz_bin_elf_symbol_t *ret, Elf_(Sym) * sym) {
-	ret->bind = symbol_bind_to_str(sym);
-	ret->type = symbol_type_to_str(bin, ret, sym);
-}
-
-static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, RzBinElfSymbol **sym) {
-	int count = 0;
-	int result = -1;
-	RzBinElfSymbol *ret = *sym;
-	RzBinElfSymbol *phdr_symbols = get_symbols_from_phdr(bin);
-	RzBinElfSymbol *tmp, *p;
-	HtUP *phd_offset_map = ht_up_new0();
-	HtUP *phd_ordinal_map = ht_up_new0();
-	if (phdr_symbols) {
-		RzBinElfSymbol *d = ret;
-		while (!d->last) {
-			ht_up_insert(phd_offset_map, d->offset, d);
-			ht_up_insert(phd_ordinal_map, d->ordinal, d);
-			d++;
-		}
-		p = phdr_symbols;
-		while (!p->last) {
-			/* find match in phdr */
-			d = ht_up_find(phd_offset_map, p->offset, NULL);
-			if (!d) {
-				d = ht_up_find(phd_ordinal_map, p->ordinal, NULL);
-			}
-			if (d) {
-				p->in_shdr = true;
-				if (*p->name && *d->name && rz_str_startswith(d->name, "$")) {
-					d->name = rz_str_new(d->name);
-					if (!d->name) {
-						return false;
-					}
-				}
-			}
-			p++;
-		}
-		p = phdr_symbols;
-		while (!p->last) {
-			if (!p->in_shdr) {
-				count++;
-			}
-			p++;
-		}
-		/*Take those symbols that are not present in the shdr but yes in phdr*/
-		/*This should only should happen with invalid binaries*/
-		if (count > 0) {
-			/*what happens if a shdr says it has only one symbol? we should look anyway into phdr*/
-			tmp = (RzBinElfSymbol *)realloc(ret, (nsym + count + 1) * sizeof(RzBinElfSymbol));
-			if (!tmp) {
-				result = -1;
-				goto done;
-			}
-			ret = tmp;
-			ret[nsym--].last = 0;
-			p = phdr_symbols;
-			while (!p->last) {
-				if (!p->in_shdr) {
-					memcpy(&ret[++nsym], p, sizeof(RzBinElfSymbol));
-				}
-				p++;
-			}
-			ret[nsym + 1].last = 1;
-		}
-		*sym = ret;
-		result = nsym + 1;
-		goto done;
-	}
-	result = nsym;
-done:
-	ht_up_free(phd_offset_map);
-	ht_up_free(phd_ordinal_map);
-	return result;
-}
-
-static bool is_section_local_sym(ELFOBJ *bin, Elf_(Sym) * sym, RzBinElfSection *section) {
-	if (sym->st_name != 0) {
+	if (!compute_symbols_from_segment(bin, result, &segment, set)) {
 		return false;
 	}
 
-	if (ELF_ST_TYPE(sym->st_info) != STT_SECTION) {
-		return false;
-	}
-
-	if (ELF_ST_BIND(sym->st_info) != STB_LOCAL) {
-		return false;
-	}
-
-	return section && section->is_valid;
+	return true;
 }
 
-static ut32 hashRzBinElfSymbol(const void *obj) {
-	const RzBinElfSymbol *symbol = (const RzBinElfSymbol *)obj;
-	int hash = sdb_hash(symbol->name);
-	hash ^= sdb_hash(symbol->type);
-	hash ^= (symbol->offset >> 32);
-	hash ^= (symbol->offset & 0xffffffff);
-	return hash;
-}
-
-static int cmp_RzBinElfSymbol(const RzBinElfSymbol *a, const RzBinElfSymbol *b) {
-	int result = 0;
-	if (a->offset != b->offset) {
-		return 1;
-	}
-	result = strcmp(a->name, b->name);
-	if (result != 0) {
-		return result;
-	}
-	return strcmp(a->type, b->type);
-}
-
-// TODO: return RzList<RzBinSymbol*> .. or run a callback with that symbol constructed, so we don't have to do it twice
-static RzBinElfSymbol *get_elf_symbols(ELFOBJ *bin) {
-	ut32 shdr_size;
-	int tsize, nsym, ret_ctr = 0, j, k, newsize;
-	ut64 toffset;
-	ut32 size = 0;
-	RzBinElfSymbol *ret = NULL;
-	size_t ret_size = 0, prev_ret_size = 0, import_ret_ctr = 0;
-	Elf_(Sym) *sym = NULL;
-	char *strtab = NULL;
-	HtPP *symbol_map = NULL;
-	HtPPOptions symbol_map_options = {
-		.cmp = (HtPPListComparator)cmp_RzBinElfSymbol,
-		.hashfn = hashRzBinElfSymbol,
-		.dupkey = NULL,
-		.calcsizeK = NULL,
-		.calcsizeV = NULL,
-		.freefn = NULL,
-		.elem_size = sizeof(HtPPKv),
-	};
-
-	if (!bin) {
-		return NULL;
-	}
+static bool get_section_elf_symbols(ELFOBJ *bin, RzBinElfSymbols *result, HtUU *set) {
 	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
-		return get_symbols_from_phdr(bin);
-	}
-	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof(Elf_(Shdr)))) {
-		return false;
-	}
-	if (shdr_size + 8 > bin->size) {
-		return false;
+		return true;
 	}
 
-	size_t i;
 	RzBinElfSection *section;
-	rz_bin_elf_enumerate_sections(bin, section, i) {
-		if (section->type == SHT_SYMTAB || section->type == SHT_DYNSYM) {
-
-			if (!section->link) {
-				/* oops. fix out of range pointers */
-				continue;
-			}
-
-			RzBinElfSection *strtab_section = Elf_(rz_bin_elf_get_section)(bin, section->link);
-
-			if (!strtab_section || !strtab_section->is_valid) {
-				continue;
-			}
-
-			if (!strtab) {
-				if (!(strtab = (char *)calloc(1, 8 + strtab_section->size))) {
-					goto beach;
-				}
-
-				if (rz_buf_read_at(bin->b, strtab_section->offset, (ut8 *)strtab, strtab_section->size) == -1) {
-					goto beach;
-				}
-			}
-
-			newsize = section->size + 1;
-			if (newsize < 0 || newsize > bin->size) {
-				RZ_LOG_WARN("invalid shdr %zu size\n", i);
-				goto beach;
-			}
-			nsym = (int)(section->size / sizeof(Elf_(Sym)));
-			if (nsym < 0) {
-				goto beach;
-			}
-			{
-				ut64 sh_begin = section->offset;
-				ut64 sh_end = sh_begin + section->size;
-				if (sh_begin > bin->size) {
-					goto beach;
-				}
-				if (sh_end > bin->size) {
-					st64 newshsize = bin->size - sh_begin;
-					nsym = (int)(newshsize / sizeof(Elf_(Sym)));
-				}
-			}
-			if (!(sym = (Elf_(Sym) *)calloc(nsym, sizeof(Elf_(Sym))))) {
-				goto beach;
-			}
-			if (!UT32_MUL(&size, nsym, sizeof(Elf_(Sym)))) {
-				goto beach;
-			}
-			if (size < 1 || size > bin->size) {
-				goto beach;
-			}
-			if (section->offset > bin->size) {
-				goto beach;
-			}
-			if (section->offset + size > bin->size) {
-				goto beach;
-			}
-			for (j = 0; j < nsym; j++) {
-				ut64 offset = section->offset + j * sizeof(Elf_(Sym));
-
-				if (!get_symbol_entry(bin, offset, sym + j)) {
-					goto beach;
-				}
-			}
-			ret = realloc(ret, (ret_size + nsym) * sizeof(RzBinElfSymbol));
-			if (!ret) {
-				RZ_LOG_WARN("Cannot allocate %d symbols\n", nsym);
-				goto beach;
-			}
-			memset(ret + ret_size, 0, nsym * sizeof(RzBinElfSymbol));
-			prev_ret_size = ret_size;
-			ret_size += nsym;
-			symbol_map = ht_pp_new_opt(&symbol_map_options);
-			for (k = 0; k < prev_ret_size; k++) {
-				if (ret[k].name) {
-					ht_pp_insert(symbol_map, ret + k, ret + k);
-				}
-			}
-			for (k = 1; k < nsym; k++) {
-				bool is_sht_null = false;
-				bool is_vaddr = false;
-				bool is_imported = false;
-
-				RzBinElfSection *sym_section = Elf_(rz_bin_elf_get_section)(bin, sym[k].st_shndx);
-
-				tsize = sym[k].st_size;
-				toffset = (ut64)sym[k].st_value;
-				is_sht_null = sym[k].st_shndx == SHT_NULL;
-
-				if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
-					if (sym_section) {
-						ret[ret_ctr].offset = sym[k].st_value + sym_section->offset;
-					}
-				} else {
-					ret[ret_ctr].offset = Elf_(rz_bin_elf_v2p_new)(bin, toffset);
-					if (ret[ret_ctr].offset == UT64_MAX) {
-						ret[ret_ctr].offset = toffset;
-						is_vaddr = true;
-					}
-				}
-				ret[ret_ctr].size = tsize;
-				if (sym[k].st_name + 1 > strtab_section->size) {
-					continue;
-				}
-				{
-					int st_name = sym[k].st_name;
-					int maxsize = RZ_MIN(rz_buf_size(bin->b), strtab_section->size);
-					if (is_section_local_sym(bin, &sym[k], sym_section)) {
-						ret[ret_ctr].name = rz_str_new(sym_section->name);
-					} else if (st_name <= 0 || st_name >= maxsize) {
-						ret[ret_ctr].name = NULL;
-					} else {
-						ret[ret_ctr].name = rz_str_new(strtab + st_name);
-						ret[ret_ctr].type = symbol_type_to_str(bin, &ret[ret_ctr], &sym[k]);
-
-						if (ht_pp_find(symbol_map, &ret[ret_ctr], NULL)) {
-							memset(ret + ret_ctr, 0, sizeof(RzBinElfSymbol));
-							continue;
-						}
-					}
-				}
-				ret[ret_ctr].ordinal = k;
-				fill_symbol_bind_and_type(bin, &ret[ret_ctr], &sym[k]);
-				ret[ret_ctr].is_sht_null = is_sht_null;
-				ret[ret_ctr].is_vaddr = is_vaddr;
-				ret[ret_ctr].last = 0;
-				ret[ret_ctr].is_imported = is_imported;
-				ret[ret_ctr].in_shdr = section->type == SHT_SYMTAB;
-				ret_ctr++;
-			}
-			RZ_FREE(strtab);
-			RZ_FREE(sym);
-			ht_pp_free(symbol_map);
-			symbol_map = NULL;
+	rz_bin_elf_foreach_sections(bin, section) {
+		if (!section->is_valid) {
+			continue;
 		}
-	}
-	if (!ret) {
-		return get_symbols_from_phdr(bin);
-	}
-	ret[ret_ctr].last = 1; // ugly dirty hack :D
-	int max = -1;
-	RzBinElfSymbol *aux = NULL;
-	nsym = Elf_(fix_symbols)(bin, ret_ctr, &ret);
-	if (nsym == -1) {
-		goto beach;
-	}
 
-	// Elf_(fix_symbols) may find additional symbols, some of which could be
-	// imported symbols. Let's reserve additional space for them.
-	rz_warn_if_fail(nsym >= ret_ctr);
-	import_ret_ctr += nsym - ret_ctr;
-
-	aux = ret;
-	while (!aux->last) {
-		if ((int)aux->ordinal > max) {
-			max = aux->ordinal;
+		if (section->type != SHT_SYMTAB && section->type != SHT_DYNSYM) {
+			continue;
 		}
-		aux++;
+
+		if (!section->link) {
+			RZ_LOG_WARN("section with null link %s", section->name);
+			continue;
+		}
+
+		RzBinElfSection *strtab_section = Elf_(rz_bin_elf_get_section)(bin, section->link);
+		if (!strtab_section) {
+			RZ_LOG_WARN("section with invalid link %s", section->name);
+			continue;
+		}
+
+		RzBinElfStrtab *strtab = Elf_(rz_bin_elf_strtab_new)(bin, strtab_section->offset, strtab_section->size);
+		if (!strtab) {
+			RZ_LOG_WARN("invalid strtab section %s", strtab_section->name);
+			continue;
+		}
+
+		ut64 number = (section->size / sizeof(Elf_(Sym)));
+
+		struct symbols_segment segment = symbols_segment_init(section->offset, number, sizeof(Elf_(Sym)), false, strtab);
+
+		if (!compute_symbols_from_segment(bin, result, &segment, set)) {
+			Elf_(rz_bin_elf_strtab_free)(strtab);
+			return false;
+		}
+
+		Elf_(rz_bin_elf_strtab_free)(strtab);
 	}
-	nsym = max;
-	return ret;
-beach:
-	free(ret);
-	free(sym);
-	free(strtab);
-	ht_pp_free(symbol_map);
-	return NULL;
+
+	return true;
+}
+
+static void elf_symbol_free(void *e, RZ_UNUSED void *user) {
+	RzBinElfSymbol *ptr = e;
+	free(ptr->name);
+}
+
+static bool get_elf_symbols(ELFOBJ *bin, RzBinElfSymbols *result) {
+	HtUU *set = ht_uu_new0();
+	if (!set) {
+		return NULL;
+	}
+
+	result->elf_symbols = rz_vector_new(sizeof(RzBinElfSymbol), elf_symbol_free, NULL);
+	if (!result->elf_symbols) {
+		return NULL;
+	}
+
+	result->elf_import_symbols = rz_vector_new(sizeof(RzBinElfSymbol), elf_symbol_free, NULL);
+	if (!result->elf_import_symbols) {
+		rz_vector_free(result->elf_symbols);
+		return NULL;
+	}
+
+	if (!get_dynamic_elf_symbols(bin, result, set)) {
+		rz_vector_free(result->elf_symbols);
+		rz_vector_free(result->elf_import_symbols);
+		return NULL;
+	}
+
+	if (!get_section_elf_symbols(bin, result, set)) {
+		rz_vector_free(result->elf_symbols);
+		rz_vector_free(result->elf_import_symbols);
+		return NULL;
+	}
+
+	if (!rz_vector_len(result->elf_symbols) && !rz_vector_len(result->elf_import_symbols)) {
+		rz_vector_free(result->elf_symbols);
+		rz_vector_free(result->elf_import_symbols);
+		return NULL;
+	}
+
+	return result;
 }
 
 static void convert_symbol(ELFOBJ *bin, RzBinSymbol *symbol, RzBinElfSymbol *elf_symbol) {
@@ -826,6 +616,27 @@ Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin
 	return get_number_of_symbols_from_heuristic(bin);
 }
 
+static RzVector *get_symbols(ELFOBJ *bin, RzVector *elf_symbols) {
+	RzVector *result = rz_vector_new(sizeof(RzBinSymbol), symbols_free, NULL);
+	if (!result) {
+		return NULL;
+	}
+
+	RzBinElfSymbol *tmp;
+	rz_vector_foreach(elf_symbols, tmp) {
+		RzBinSymbol symbol = { 0 };
+
+		convert_symbol(bin, &symbol, tmp);
+
+		if (!rz_vector_push(result, &symbol)) {
+			rz_vector_free(result);
+			return NULL;
+		}
+	}
+
+	return result;
+}
+
 RZ_BORROW RzBinSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal) {
 	rz_return_val_if_fail(bin && bin->symbols, NULL);
 
@@ -839,7 +650,12 @@ RZ_BORROW RzBinSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 
 	return NULL;
 }
 
-RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_elf_symbols)(RZ_NONNULL ELFOBJ *bin) {
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_import_symbols)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin && bin->symbols, NULL);
+	return bin->symbols->elf_import_symbols;
+}
+
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_symbols)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin && bin->symbols, NULL);
 	return bin->symbols->elf_symbols;
 }
@@ -857,28 +673,17 @@ RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	result->elf_symbols = get_elf_symbols(bin);
-	if (!result->elf_symbols) {
+	if (!get_elf_symbols(bin, result)) {
 		free(result);
 		return NULL;
 	}
 
-	result->symbols = rz_vector_new(sizeof(RzBinSymbol), symbols_free, NULL);
+	result->symbols = get_symbols(bin, result->elf_symbols);
 	if (!result->symbols) {
-		free(result->elf_symbols);
+		rz_vector_free(result->elf_import_symbols);
+		rz_vector_free(result->elf_symbols);
 		free(result);
 		return NULL;
-	}
-
-	for (RzBinElfSymbol *tmp = result->elf_symbols; !tmp->last; tmp++) {
-		RzBinSymbol symbol = { 0 };
-
-		convert_symbol(bin, &symbol, tmp);
-
-		if (!rz_vector_push(result->symbols, &symbol)) {
-			Elf_(rz_bin_elf_symbols_free)(result);
-			return NULL;
-		}
 	}
 
 	return result;
@@ -917,6 +722,8 @@ void Elf_(rz_bin_elf_symbols_free)(RzBinElfSymbols *ptr) {
 		return;
 	}
 
-	free(ptr->elf_symbols);
+	rz_vector_free(ptr->elf_import_symbols);
+	rz_vector_free(ptr->elf_symbols);
 	rz_vector_free(ptr->symbols);
+	free(ptr);
 }

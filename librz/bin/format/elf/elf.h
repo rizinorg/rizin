@@ -40,7 +40,10 @@
 	rz_vector_foreach((bin)->notes, notes)
 #define rz_bin_elf_foreach_elf_symbols(bin, symbol) \
 	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
-	for(symbol = Elf_(rz_bin_elf_get_elf_symbols)(bin); !symbol->last; symbol++)
+	rz_vector_foreach(Elf_(rz_bin_elf_get_elf_symbols)(bin), symbol)
+#define rz_bin_elf_foreach_elf_import_symbols(bin, symbol) \
+	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
+	rz_vector_foreach(Elf_(rz_bin_elf_get_elf_import_symbols)(bin), symbol)
 #define rz_bin_elf_foreach_symbols(bin, symbol) \
 	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
 	rz_vector_foreach(Elf_(rz_bin_elf_get_symbols)(bin), symbol)
@@ -107,15 +110,10 @@ typedef struct rz_bin_elf_symbol_t {
 	ut64 offset;
 	ut64 size;
 	ut32 ordinal;
-	const char *bind;
-	const char *type;
-	const char *name;
-	const char *libname;
-	int last; // TODO
-	bool in_shdr; // TODO
-	bool is_sht_null;
+	RZ_BORROW const char *bind;
+	RZ_BORROW const char *type;
+	RZ_OWN char *name;
 	bool is_vaddr; /* when true, offset is virtual address, otherwise it's physical */
-	bool is_imported;
 } RzBinElfSymbol;
 
 typedef struct rz_bin_elf_symbols_t RzBinElfSymbols;
@@ -198,9 +196,6 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 	RzBinElfSymbols *symbols; // should be use with elf_symbols.c
 	RzBinElfImports *imports; // should be use with elf_imports.c
-
-	/*cache purpose*/
-	RzBinElfSymbol *phdr_symbols;
 };
 
 // elf.c
@@ -325,8 +320,9 @@ void Elf_(rz_bin_elf_strtab_free)(RzBinElfStrtab *ptr);
 
 // elf_symbols.c
 Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin);
-RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_elf_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzBinSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_import_symbols)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);

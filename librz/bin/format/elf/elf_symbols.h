@@ -8,7 +8,8 @@
 #define _INCLUDE_ELF_SYMBOLS_H_
 
 struct rz_bin_elf_symbols_t {
-	RzBinElfSymbol *elf_symbols;
+	RzVector *elf_import_symbols; // RzVector<RzBinSymbol>
+	RzVector *elf_symbols; // RzVector<RzBinSymbol>
 	RzVector *symbols; // RzVector<RzBinSymbol>
 };
 

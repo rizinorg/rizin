@@ -489,7 +489,7 @@ static void patch_reloc(struct Elf_(rz_bin_elf_obj_t) * obj, RzBinElfReloc *rel,
 	}
 }
 
-static RzBinReloc *reloc_convert(ELFOBJ * bin, RzBinElfReloc *rel, ut64 GOT) {
+static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail(bin && rel, NULL);
 
 	ut64 B = bin->baddr;
@@ -1055,15 +1055,6 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static void insert_symbol(struct Elf_(rz_bin_elf_obj_t) * bin, RzBinSymbol *ptr, bool is_sht_null, RzList *ret) {
-	// add it to the list of symbols only if it doesn't point to SHT_NULL
-	if (is_sht_null) {
-		rz_bin_symbol_free(ptr);
-	} else {
-		rz_list_append(ret, ptr);
-	}
-}
-
 static RzList *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
@@ -1081,10 +1072,12 @@ static RzList *symbols(RzBinFile *bf) {
 	RzBinElfSymbol *symbol;
 	rz_bin_elf_foreach_elf_symbols(bin, symbol) {
 		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, symbol);
+
 		if (!ptr) {
 			break;
 		}
-		insert_symbol(bin, ptr, symbol->is_sht_null, ret);
+
+		rz_list_append(ret, ptr);
 	}
 
 	// traverse imports
@@ -1096,17 +1089,20 @@ static RzList *symbols(RzBinFile *bf) {
 		if (!import->size) {
 			continue;
 		}
+
 		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, import);
 		if (!ptr) {
 			break;
 		}
+
 		ptr->is_imported = true;
 		// special case where there is not entry in the plt for the import
 		if (ptr->vaddr == UT32_MAX) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-		insert_symbol(bin, ptr, import->is_sht_null, ret);
+
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
