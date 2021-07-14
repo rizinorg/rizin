@@ -17,10 +17,8 @@ static RzList *arm_tokenize(const char *assembly, size_t length);
 static const RzPseudoGrammar arm_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("abs", "1 = abs(1)"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("adc", "1 = 2 + 3"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 += 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 = 2 + 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("add.w", "1 = 2 + 3"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("adds", "1 += 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("adds", "1 = 2 + 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("addw", "1 = 2 + 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("adf", "1 = 2 + 3"),
@@ -36,15 +34,15 @@ static const RzPseudoGrammar arm_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("b.gt", "if (? > ?) goto 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("b.le", "if (? < ?) goto 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("b.w", "goto 1"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("beq", "if (? = ?) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("beq", "if (? == ?) goto 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("bge", "if (? >= ?) goto 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("bkpt", "breakpoint 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("bl", "1 ()"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("blx", "1 ()"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("bxeq", "if (? == ?) goto 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("call", "1 ()"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("cbnz", "if 1 goto 2"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("cbz", "if !1 goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cbnz", "if (1) goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cbz", "if (!1) goto 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("cmf", "if (1 == 2)"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("cmn", "if (1 != 2)"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("cmp", "if (1 == 2)"),
@@ -62,11 +60,8 @@ static const RzPseudoGrammar arm_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("ldr", "1 = 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("ldr.w", "1 = 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("ldrb", "1 = (byte) 2 + 3"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("ldrb", "1 = (byte) 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("ldrh", "1 = (word) 2 + 3"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("ldrh", "1 = (word) 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("ldrsb", "1 = (byte) 2 + 3"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("ldrsb", "1 = (byte) 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("ldrsw", "1 = 2 + 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("ldrsw", "1 = 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("lsl", "1 = 2 << 3"),
@@ -87,13 +82,9 @@ static const RzPseudoGrammar arm_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("sbc", "1 = 2 - 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("sqt", "1 = sqrt(2)"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("stp", "3 = (1, 2)"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("str", "2 = 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("str", "[2 + 3] = 1"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("strb", "2 = (byte) 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("strb", "[2 + 3] = (byte) 1"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("strh", "2 = (half) 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("strh", "[2 + 3] = (half) 1"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("strh.w", "2 = (half) 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("strh.w", "[2 + 3] = (half) 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("stur", "2 = 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("sub", "1 = 2 - 3"),
@@ -112,9 +103,10 @@ static const RzPseudoGrammar arm_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("movs", "1 = 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("movt", "1 |= 2 << #16"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("movw", "1 = 2"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("pop", "pop(1)"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("pop.w", "pop(1)"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("push.w", "push(1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("pop", "pop 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("pop.w", "pop 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("push", "push 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("push.w", "push 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("sub", "1 -= 2"), // THUMB
 	RZ_PSEUDO_DEFINE_GRAMMAR("sub.w", "1 = 2 - 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("subs", "1 -= 2"), // THUMB
@@ -126,7 +118,7 @@ static const RzPseudoGrammar arm_lexicon[] = {
 };
 
 static const RzPseudoDirect arm_direct[] = {
-	RZ_PSEUDO_DEFINE_DIRECT("beq lr", "if (eq) return"),
+	RZ_PSEUDO_DEFINE_DIRECT("beq lr", "if (? == ?) return"),
 	RZ_PSEUDO_DEFINE_DIRECT("bx lr", "return"),
 };
 
@@ -134,9 +126,11 @@ static const RzPseudoReplace arm_replace[] = {
 	RZ_PSEUDO_DEFINE_REPLACE(" + 0]", "]", 0),
 	RZ_PSEUDO_DEFINE_REPLACE("+ -", "- ", 1),
 	RZ_PSEUDO_DEFINE_REPLACE("0 << 16", "0", 1),
+	RZ_PSEUDO_DEFINE_REPLACE("{", "(", 1),
+	RZ_PSEUDO_DEFINE_REPLACE("}", ")", 1),
 };
 
-static const RzPseudoConfig arm_config = RZ_PSEUDO_DEFINE_CONFIG(arm_direct, arm_lexicon, arm_replace, 4, arm_tokenize);
+static const RzPseudoConfig arm_config = RZ_PSEUDO_DEFINE_CONFIG(arm_direct, arm_lexicon, arm_replace, 5, arm_tokenize);
 
 RzList *arm_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
