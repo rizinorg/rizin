@@ -4269,15 +4269,6 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			agraph_update_seek(g, get_anode(g->curnode), true);
 			// update scroll (with minor shift)
 			break;
-			// Those hardcoded keys are useful only for aegi, should add subcommand of ag to set key actions
-		case '1':
-			rz_core_seek_opcode(core, 1, false);
-			rz_core_cmd0(core, ".aeg*");
-			break;
-		case '2':
-			rz_core_seek_opcode(core, -1, false);
-			rz_core_cmd0(core, ".aeg*");
-			break;
 		case '=': { // TODO: edit
 			showcursor(core, true);
 			const char *cmd = rz_config_get(core->config, "cmd.gprompt");
