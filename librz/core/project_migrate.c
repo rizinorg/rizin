@@ -20,7 +20,7 @@
  *
  * After introducing format changes in Rizin, do the following:
  *  * Raise RZ_PROJECT_VERSION by exactly 1.
- *  * Implement a function like `static bool migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res)`
+ *  * Implement a function like `bool rz_project_migrate_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res)`
  *    which edits prj in-place and converts it from the previous to the current version.
  *  * Append this function to the `migrations` array below.
  *  * Implement tests in `test/unit/test_project_migrate.c` that cover all changes.
@@ -49,7 +49,7 @@ bool v1_v2_types_foreach_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static bool migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res) {
+RZ_API bool rz_project_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res) {
 	Sdb *core_db;
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *analysis_db;
@@ -106,7 +106,7 @@ bool v2_v3_types_foreach_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static bool migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res) {
+RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res) {
 	Sdb *core_db;
 	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
 	Sdb *analysis_db;
@@ -134,12 +134,12 @@ static bool migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res) {
 // --
 
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
-	migrate_v1_v2,
-	migrate_v2_v3
+	rz_project_migrate_v1_v2,
+	rz_project_migrate_v2_v3
 };
 
 /// Migrate the given project to the current version in-place
-RZ_IPI bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res) {
+RZ_API bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res) {
 	RZ_STATIC_ASSERT(RZ_ARRAY_SIZE(migrations) + 1 == RZ_PROJECT_VERSION);
 	while (version < RZ_PROJECT_VERSION) {
 		bool succ = migrations[version - 1](prj, res);
