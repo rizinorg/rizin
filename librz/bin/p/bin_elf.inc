@@ -500,7 +500,7 @@ static RzBinReloc *reloc_convert(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	r->symbol = NULL;
 	r->is_ifunc = false;
 	r->addend = rel->addend;
-	if (rel->sym && Elf_(rz_bin_elf_has_symbols)(bin)) {
+	if (rel->sym) {
 		RzBinImport *import = Elf_(rz_bin_elf_get_import)(bin, rel->sym);
 		if (import) {
 			r->import = import;
@@ -652,7 +652,6 @@ static void patch_relocs(RzBinFile *bf, ELFOBJ *bin) {
 	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
 		ut64 plt_entry_addr = vaddr;
-
 		if (reloc->sym) {
 			RzBinImport *import = Elf_(rz_bin_elf_get_import)(bin, reloc->sym);
 			if (import) {

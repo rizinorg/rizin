@@ -634,7 +634,7 @@ static RzVector *get_symbols(ELFOBJ *bin, RzVector *elf_symbols) {
 }
 
 RZ_BORROW RzBinSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal) {
-	rz_return_val_if_fail(bin && bin->symbols, NULL);
+	rz_return_val_if_fail(bin, NULL);
 
 	RzBinSymbol *symbol;
 	rz_bin_elf_foreach_symbols(bin, symbol) {

@@ -385,7 +385,7 @@ static RzVector *get_symbols(ELFOBJ *bin, RzVector *elf_imports) {
 }
 
 RZ_BORROW RzBinImport *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal) {
-	rz_return_val_if_fail(bin && bin->imports, NULL);
+	rz_return_val_if_fail(bin, NULL);
 
 	RzBinImport *import;
 	rz_bin_elf_foreach_imports(bin, import) {
