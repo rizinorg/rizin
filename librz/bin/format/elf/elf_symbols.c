@@ -55,7 +55,13 @@ static const struct symbol_type_translation symbol_type_translation_table[] = {
 };
 
 static struct symbols_segment symbols_segment_init(ut64 offset, ut64 number, ut64 entry_size, bool dynamic, RzBinElfStrtab *strtab) {
-	return (struct symbols_segment){ .offset = offset, .number = number, .entry_size = entry_size, .dynamic = dynamic, .strtab = strtab };
+	return (struct symbols_segment){
+		.offset = offset,
+		.number = number,
+		.entry_size = entry_size,
+		.dynamic = dynamic,
+		.strtab = strtab
+	};
 }
 
 static void set_addr_parameter(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol) {
