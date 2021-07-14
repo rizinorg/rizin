@@ -106,7 +106,7 @@ static const RzPseudoGrammar arm_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("udf", "undefined 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("udiv", "1 = (unsigned) 2 / 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("vmov.i32", "1 = 2"),
-/* arm thumb */
+	/* arm thumb */
 	RZ_PSEUDO_DEFINE_GRAMMAR("lsl.w", "1 = 2 << 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("lsr.w", "1 = 2 >> 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("movs", "1 = 2"),
@@ -154,7 +154,7 @@ RzList *arm_tokenize(const char *assembly, size_t length) {
 		if (buf[p] == ',') {
 			if (!keep) {
 				p++;
-			} else if (buf[p+1] == ' ') {
+			} else if (buf[p + 1] == ' ') {
 				buf[i] = buf[p];
 				p++;
 				continue;
@@ -198,14 +198,13 @@ RzList *arm_tokenize(const char *assembly, size_t length) {
 
 	if (comma_replace) {
 		RzListIter *it;
-		rz_list_foreach(tokens, it, buf) {
+		rz_list_foreach (tokens, it, buf) {
 			it->data = rz_str_replace(buf, ",", comma_replace, 1);
 		}
 	}
 
 	return tokens;
 }
-
 
 static bool parse(RzParse *p, const char *assembly, RzStrBuf *sb) {
 	return rz_pseudo_convert(&arm_config, assembly, sb);
