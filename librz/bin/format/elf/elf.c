@@ -459,7 +459,7 @@ ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 
 	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
-		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
+		if (Elf_(rz_bin_elf_is_relocatable)(bin) && vaddr > bin->baddr) {
 			return vaddr - bin->baddr;
 		}
 

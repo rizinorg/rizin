@@ -444,18 +444,17 @@ static bool compute_symbols_from_segment(ELFOBJ *bin, RzBinElfSymbols *result, s
 	ut64 offset = segment->offset + segment->entry_size;
 
 	for (size_t i = 1; i < segment->number; i++) {
-		Elf_(Sym) entry;
-
-		if (!get_symbol_entry(bin, offset, &entry)) {
-			return false;
-		}
-
 		if (has_already_been_processed(bin, offset, set)) {
 			offset += segment->entry_size;
 			continue;
 		}
 
 		if (!ht_uu_insert(set, offset, offset)) {
+			return false;
+		}
+
+		Elf_(Sym) entry;
+		if (!get_symbol_entry(bin, offset, &entry)) {
 			return false;
 		}
 

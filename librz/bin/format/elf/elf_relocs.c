@@ -106,16 +106,16 @@ static bool get_relocs_entry(ELFOBJ *bin, RzBinElfSection *section, RzVector *re
 			continue;
 		}
 
+		if (!ht_uu_insert(set, segment->offset + entry_offset, segment->offset + entry_offset)) {
+			return false;
+		}
+
 		RzBinElfReloc tmp = { 0 };
 		if (!get_reloc_entry(bin, &tmp, segment->offset + entry_offset, segment->mode)) {
 			return false;
 		}
 
 		fix_rva_and_offset(bin, &tmp, section);
-
-		if (!ht_uu_insert(set, segment->offset + entry_offset, segment->offset + entry_offset)) {
-			return false;
-		}
 
 		if (!rz_vector_push(relocs, &tmp)) {
 			return false;
