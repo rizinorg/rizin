@@ -456,4 +456,5 @@ void Elf_(rz_bin_elf_imports_free)(RzBinElfImports *ptr) {
 
 	rz_vector_free(ptr->imports);
 	rz_vector_free(ptr->symbols);
+	free(ptr);
 }

@@ -69,7 +69,7 @@ static void set_addr_parameter(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, RzBinSym
 }
 
 static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol) {
-	symbol->name = elf_symbol->name ? elf_symbol->name : NULL;
+	symbol->name = elf_symbol->name;
 	symbol->forwarder = "NONE";
 	symbol->bind = elf_symbol->bind;
 	symbol->type = elf_symbol->type;
@@ -429,6 +429,11 @@ static bool has_already_been_processed(ELFOBJ *bin, ut64 offset, HtUU *set) {
 	return found;
 }
 
+static void elf_symbol_free(void *e, RZ_UNUSED void *user) {
+	RzBinElfSymbol *ptr = e;
+	free(ptr->name);
+}
+
 static bool compute_symbols_from_segment(ELFOBJ *bin, RzBinElfSymbols *result, struct symbols_segment *segment, HtUU *set) {
 	ut64 offset = segment->offset + segment->entry_size;
 
@@ -455,6 +460,7 @@ static bool compute_symbols_from_segment(ELFOBJ *bin, RzBinElfSymbols *result, s
 		}
 
 		if (!add_elf_symbol(bin, segment, result, &entry, &elf_symbol)) {
+			elf_symbol_free(&elf_symbol, NULL);
 			return false;
 		}
 
@@ -541,17 +547,7 @@ static bool get_section_elf_symbols(ELFOBJ *bin, RzBinElfSymbols *result, HtUU *
 	return true;
 }
 
-static void elf_symbol_free(void *e, RZ_UNUSED void *user) {
-	RzBinElfSymbol *ptr = e;
-	free(ptr->name);
-}
-
 static bool get_elf_symbols(ELFOBJ *bin, RzBinElfSymbols *result) {
-	HtUU *set = ht_uu_new0();
-	if (!set) {
-		return NULL;
-	}
-
 	result->elf_symbols = rz_vector_new(sizeof(RzBinElfSymbol), elf_symbol_free, NULL);
 	if (!result->elf_symbols) {
 		return NULL;
@@ -562,13 +558,22 @@ static bool get_elf_symbols(ELFOBJ *bin, RzBinElfSymbols *result) {
 		return NULL;
 	}
 
+	HtUU *set = ht_uu_new0();
+	if (!set) {
+		return NULL;
+	}
+
 	if (!get_dynamic_elf_symbols(bin, result, set)) {
+		ht_uu_free(set);
 		return NULL;
 	}
 
 	if (!get_section_elf_symbols(bin, result, set)) {
+		ht_uu_free(set);
 		return NULL;
 	}
+
+	ht_uu_free(set);
 
 	if (!rz_vector_len(result->elf_symbols) && !rz_vector_len(result->elf_import_symbols)) {
 		return NULL;

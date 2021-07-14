@@ -220,21 +220,20 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin) {
 			continue;
 		}
 
-		RzVector *notes = rz_vector_new(sizeof(RzBinElfNote), note_free, NULL);
+		RzVector *notes = rz_vector_push(result, NULL);
 		if (!notes) {
 			rz_vector_free(result);
 			return NULL;
 		}
 
+		rz_vector_init(notes, sizeof(RzBinElfNote), note_free, NULL);
+
 		if (!set_note_segment(bin, notes, segment)) {
+			rz_vector_fini(notes);
 			rz_vector_free(result);
 			return NULL;
 		}
 
-		if (!rz_vector_push(result, notes)) {
-			rz_vector_free(result);
-			return NULL;
-		}
 	}
 
 	if (!rz_vector_len(result)) {
