@@ -1618,9 +1618,8 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			pj_ks(pj, "disasm", strsub);
 			// apply pseudo if needed
 			{
-				char *pseudo = calloc(128 + strlen(strsub), 3);
-				rz_parse_parse(core->parser, strsub, pseudo);
-				if (pseudo && *pseudo) {
+				char *pseudo = rz_parse_parse(core->parser, strsub);
+				if (RZ_STR_ISNOTEMPTY(pseudo)) {
 					pj_ks(pj, "pseudo", pseudo);
 				}
 				free(pseudo);
@@ -1779,9 +1778,8 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			}
 			printline("disasm", "%s\n", disasm);
 			{
-				char *pseudo = calloc(128 + strlen(disasm), 3);
-				rz_parse_parse(core->parser, disasm, pseudo);
-				if (pseudo && *pseudo) {
+				char *pseudo = rz_parse_parse(core->parser, disasm);
+				if (RZ_STR_ISNOTEMPTY(pseudo)) {
 					printline("pseudo", "%s\n", pseudo);
 				}
 				free(pseudo);

@@ -125,7 +125,8 @@ static ADDR_TYPE addr_type(const char *str) {
 	return NORM;
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
+	char str[1024] = { 0 };
 	char w0[256], w1[256], w2[256];
 	int i, len = strlen(data);
 	char *buf, *ptr, *optr;
@@ -181,6 +182,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 	}
 
 	free(buf);
+	rz_strbuf_set(sb, str);
 
 	return true;
 }

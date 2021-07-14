@@ -161,7 +161,8 @@ static void guard_braces(char *buf) {
 	}
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
+	char str[1024] = { 0 };
 	if (!strncmp(data, "|| ", 3)) {
 		data += 3;
 	}
@@ -194,7 +195,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 
 	free(buf);
 	rz_list_free(list);
-
+	rz_strbuf_set(sb, str);
 	return true;
 }
 

@@ -99,12 +99,24 @@ RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str) {
 }
 
 // data is input disasm, str is output pseudo
-// TODO: refactooring, this should return char * instead
-RZ_API bool rz_parse_parse(RzParse *p, const char *data, char *str) {
-	rz_return_val_if_fail(p && data && str, false);
-	return (p && data && *data && p->cur && p->cur->parse)
-		? p->cur->parse(p, data, str)
-		: false;
+RZ_API char *rz_parse_parse(RzParse *p, const char *data) {
+	rz_return_val_if_fail(p, NULL);
+	if (RZ_STR_ISEMPTY(data)) {
+		return NULL;
+	}
+
+	RzStrBuf *sb = rz_strbuf_new("");
+	if (!sb) {
+		return NULL;
+	}
+
+	rz_strbuf_reserve(sb, 128);
+	if (!p->cur || !p->cur->parse || !p->cur->parse(p, data, sb)) {
+		rz_strbuf_free(sb);
+		return NULL;
+	}
+
+	return rz_strbuf_drain(sb);
 }
 
 RZ_API char *rz_parse_immtrim(char *opstr) {

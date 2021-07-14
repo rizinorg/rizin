@@ -134,8 +134,9 @@ static bool replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 128
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	int i, len = strlen(data);
+	char str[1024] = { 0 };
 	char w0[WSZ];
 	char w1[WSZ];
 	char w2[WSZ];
@@ -214,6 +215,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 		}
 	}
 	free(buf);
+	rz_strbuf_set(sb, str);
 	return true;
 }
 

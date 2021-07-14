@@ -1096,10 +1096,15 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 
 	if (ds->pseudo) {
-		const char *opstr = ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop);
-		rz_parse_parse(core->parser, opstr, ds->str);
-		free(ds->opstr);
-		ds->opstr = strdup(ds->str);
+		const char *opstr = rz_asm_op_get_asm(&ds->asmop);
+		char *tmp = rz_parse_parse(core->parser, opstr);
+		if (tmp) {
+			snprintf(ds->str, sizeof(ds->str), "%s", tmp);
+			ds->opstr = tmp;
+		} else {
+			ds->opstr = strdup("");
+			ds->str[0] = 0;
+		}
 	}
 	ds->opstr = ds_sub_jumps(ds, ds->opstr);
 	if (ds->immtrim) {
@@ -2581,10 +2586,15 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->oplen = ds->asmop.size;
 	}
 	if (ds->pseudo) {
-		rz_parse_parse(core->parser, ds->opstr ? ds->opstr : rz_asm_op_get_asm(&ds->asmop),
-			ds->str);
-		free(ds->opstr);
-		ds->opstr = strdup(ds->str);
+		const char *opstr = rz_asm_op_get_asm(&ds->asmop);
+		char *tmp = rz_parse_parse(core->parser, opstr);
+		if (tmp) {
+			snprintf(ds->str, sizeof(ds->str), "%s", tmp);
+			ds->opstr = tmp;
+		} else {
+			ds->opstr = strdup("");
+			ds->str[0] = 0;
+		}
 	}
 	if (ds->acase) {
 		rz_str_case(rz_asm_op_get_asm(&ds->asmop), 1);
@@ -5986,7 +5996,11 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		rz_analysis_op(core->analysis, &ds->analop, at, buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_ALL);
 
 		if (ds->pseudo) {
-			rz_parse_parse(core->parser, opstr, opstr);
+			char *tmp = rz_parse_parse(core->parser, opstr);
+			if (tmp) {
+				snprintf(opstr, sizeof(opstr), "%s", tmp);
+			}
+			free(tmp);
 		}
 
 		// f = rz_analysis_get_fcn_in (core->analysis, at,

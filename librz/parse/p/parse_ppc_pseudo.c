@@ -1615,7 +1615,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 128
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	int i, len = strlen(data);
 	char w0[WSZ];
 	char w1[WSZ];
@@ -1623,10 +1623,11 @@ static int parse(RzParse *p, const char *data, char *str) {
 	char w3[WSZ];
 	char w4[WSZ];
 	char w5[WSZ];
+	char str[1024] = { 0 };
 	char *buf, *ptr, *optr;
 
 	if (!strcmp(data, "jr ra")) {
-		strcpy(str, "return");
+		rz_strbuf_set(sb, "return");
 		return true;
 	}
 
@@ -1748,6 +1749,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 		}
 	}
 	free(buf);
+	rz_strbuf_set(sb, str);
 	return true;
 }
 

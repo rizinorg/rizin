@@ -34,7 +34,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 2, "mvklh", "2 = (half) 1" }, // mvk 1, a0 -> a0 = 1
 		{ 3, "band", "3 = 1 & 2" }, //
 		{ 1, "zero", "1 = zero" },
-		{ 3, "andn", "4 = 1 ~ 2" }, //
+		{ 3, "andn", "3 = 1 ~ 2" }, //
 		{ 3, "cmpgtu", "3 = 1 cmpgtu 2" }, //
 		{ 3, "cmpeq", "3 = 1 == 2" }, //
 		{ 3, "cmpge", "3 = 1 >= 2" }, //
@@ -138,7 +138,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
+	char str[1024] = { 0 };
 	if (!strncmp(data, "|| ", 3)) {
 		data += 3;
 	}
@@ -171,6 +172,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 
 	free(buf);
 	rz_list_free(list);
+	rz_strbuf_set(sb, str);
 
 	return true;
 }

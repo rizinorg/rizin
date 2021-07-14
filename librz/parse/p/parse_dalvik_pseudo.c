@@ -227,7 +227,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	int i, len = strlen(data);
 	char *buf, *ptr, *optr, *ptr2;
 	char w0[64];
@@ -235,6 +235,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 	char w2[64];
 	char w3[64];
 	char w4[64];
+	char str[1024] = { 0 };
 
 	if (!strcmp(data, "invalid") || !strcmp(data, "nop") || !strcmp(data, "DEPRECATED")) {
 		str[0] = 0;
@@ -354,6 +355,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 		}
 	}
 	free(buf);
+	rz_strbuf_set(sb, str);
 	return true;
 }
 
