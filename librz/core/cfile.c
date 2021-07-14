@@ -1125,7 +1125,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 	return true;
 }
 
-RZ_API bool rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NULLABLEconst char *file, int perm, ut64 loadaddr) {
+RZ_API bool rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *file, int perm, ut64 loadaddr) {
 	const bool openmany = rz_config_get_i(r->config, "file.openmany");
 	int opened_count = 0;
 	RzListIter *fd_iter, *iter2;
