@@ -23,7 +23,7 @@
  *  * Implement a function like `bool rz_project_migrate_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res)`
  *    which edits prj in-place and converts it from the previous to the current version.
  *  * Append this function to the `migrations` array below.
- *  * Implement tests in `test/unit/test_project_migrate.c` that cover all changes.
+ *  * Implement tests in `test/unit/test_project_migrate.c` that cover all changes (see the documentation there).
  */
 
 // --

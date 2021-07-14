@@ -46,6 +46,7 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_
 RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, bool load_bin_io, RzSerializeResultInfo *res);
 
 RZ_API bool rz_project_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res);
+RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res);
 RZ_API bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res);
 
 #ifdef __cplusplus

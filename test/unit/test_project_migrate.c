@@ -6,6 +6,33 @@
 
 #include "minunit.h"
 
+/**
+ * \file
+ * About Project Migration Tests:
+ *
+ * Every migration from version A to version B has to come with two kinds of tests,
+ * of which both cover all changes performed by this migration:
+ *
+ * * **Individual tests for only the single migration from A to B.**
+ *   These are written against the sdb directly and test changes made by a single call to the
+ *   respective `rz_project_migrate_vA_vB` function. No RzCore is involved in these tests.
+ *   They should be written once and ideally never change in the future as they are not affected
+ *   by later project versions.
+ *   They are called `test_migrate_vA_vB_<...>` here.
+ * * **Loading tests from version A to the current version.**
+ *   These load a project of version A completely into an RzCore. Then they test if the data
+ *   migrated has eventually been correctly deserialized into the core.
+ *   They make sure that the results produced by the migration and tested by the individual tests
+ *   are actually valid for the deserialization.
+ *   As the feature set and architecture of RzCore and all descendants may change, these tests
+ *   can be adapted in the future and in extreme cases even be removed if the migrated data simply
+ *   is not used anymore.
+ *   These are called `test_load_vA_<...>` here.
+ *
+ * See also `librz/core/project_migrate.c` for general info on implementing project migrations.
+ *
+  */
+
 bool test_migrate_v1_v2_noreturn() {
 	RzProject *prj = rz_project_load_file_raw("prj/v1-noreturn.rzdb");
 	mu_assert_notnull(prj, "load raw project");
