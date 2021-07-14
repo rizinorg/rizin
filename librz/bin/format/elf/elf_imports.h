@@ -8,8 +8,8 @@
 #define _INCLUDE_ELF_IMPORTS_H_
 
 struct rz_bin_elf_imports_t {
-	RzVector *imports; 	// RzVector<RzBinImports> store import as RzBinImport
-	RzVector *symbols; 	// RzVector<RzBinSymbols> store import as RzBinSymbol
+	RzVector *imports; // RzVector<RzBinImports> store import as RzBinImport
+	RzVector *symbols; // RzVector<RzBinSymbols> store import as RzBinSymbol
 };
 
 #endif

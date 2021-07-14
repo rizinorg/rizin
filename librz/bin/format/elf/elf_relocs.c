@@ -15,7 +15,7 @@ struct relocs_segment {
 };
 
 static struct relocs_segment relocs_segment_init(ut64 offset, ut64 size, ut64 entry_size, ut64 mode) {
-	return (struct relocs_segment) {
+	return (struct relocs_segment){
 		.offset = offset,
 		.size = size,
 		.entry_size = entry_size,

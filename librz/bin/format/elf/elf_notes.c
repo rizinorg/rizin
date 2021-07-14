@@ -233,7 +233,6 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_notes_new)(RZ_NONNULL ELFOBJ *bin) {
 			rz_vector_free(result);
 			return NULL;
 		}
-
 	}
 
 	if (!rz_vector_len(result)) {

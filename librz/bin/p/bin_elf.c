@@ -164,7 +164,7 @@ RzBinPlugin rz_bin_plugin_elf = {
 	.regstate = &regstate,
 	.section_type_to_string = &Elf_(rz_bin_elf_section_type_to_string),
 	.section_flag_to_rzlist = &Elf_(rz_bin_elf_section_flag_to_rzlist),
-	.destroy=destroy,
+	.destroy = destroy,
 };
 
 #ifndef RZ_PLUGIN_INCORE
