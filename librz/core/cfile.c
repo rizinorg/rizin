@@ -893,6 +893,7 @@ typedef struct {
 } RzCoreLinkData;
 
 static bool resolve_import_cb(RzCoreLinkData *ld, RzIODesc *desc, ut32 id) {
+	rz_return_val_if_fail(ld && desc, false);
 	RzBinFile *bf = rz_bin_file_find_by_fd(ld->bin, desc->fd);
 	if (!bf) {
 		return true;
@@ -910,6 +911,7 @@ static bool resolve_import_cb(RzCoreLinkData *ld, RzIODesc *desc, ut32 id) {
 }
 
 static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
+	rz_return_val_if_fail(core && desc, false);
 	if (!rz_str_endswith(desc->name, ".dex")) {
 		return true;
 	}
@@ -937,7 +939,7 @@ static bool map_multi_dex(RzCore *core, RzIODesc *desc, ut32 id) {
 	return true;
 }
 
-RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
+RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filenameuri, ut64 baddr) {
 	RzCoreFile *cf = rz_core_file_cur(r);
 	RzIODesc *desc = cf ? rz_io_desc_get(r->io, cf->fd) : NULL;
 	ut64 laddr = rz_config_get_i(r->config, "bin.laddr");
@@ -1123,7 +1125,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 	return true;
 }
 
-RZ_API RzCoreFile *rz_core_file_open_many(RzCore *r, const char *file, int perm, ut64 loadaddr) {
+RZ_API bool rz_core_file_open_many(RZ_NONNULL RzCore *r, RZ_NULLABLEconst char *file, int perm, ut64 loadaddr) {
 	const bool openmany = rz_config_get_i(r->config, "file.openmany");
 	int opened_count = 0;
 	RzListIter *fd_iter, *iter2;
@@ -1133,7 +1135,7 @@ RZ_API RzCoreFile *rz_core_file_open_many(RzCore *r, const char *file, int perm,
 
 	if (!list_fds || rz_list_length(list_fds) == 0) {
 		rz_list_free(list_fds);
-		return NULL;
+		return false;
 	}
 
 	rz_list_foreach_safe (list_fds, fd_iter, iter2, desc) {
@@ -1155,7 +1157,7 @@ RZ_API RzCoreFile *rz_core_file_open_many(RzCore *r, const char *file, int perm,
 			rz_core_bin_load(r, desc->name, loadaddr);
 		}
 	}
-	return NULL;
+	return true;
 }
 
 /* loadaddr is rizin -m (mapaddr) */
@@ -1178,9 +1180,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 		goto beach;
 	}
 	if (!fd && openmany) {
-		// XXX - make this an actual option somewhere?
-		fh = rz_core_file_open_many(r, file, flags, loadaddr);
-		if (fh) {
+		if (!rz_core_file_open_many(r, file, flags, loadaddr)) {
 			goto beach;
 		}
 	}

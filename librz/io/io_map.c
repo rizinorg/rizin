@@ -417,7 +417,12 @@ RZ_API bool rz_io_map_resize(RzIO *io, ut32 id, ut64 newsize) {
 	return true;
 }
 
-// find a location that can hold enough bytes without overlapping
+/**
+ * \brief Returns a memory location that can hold enough bytes without overlapping
+ *
+ * \param io   RzIO instance
+ * \param size Size of the section
+ */
 RZ_API ut64 rz_io_map_location(RzIO *io, ut64 size) {
 	ut64 base = (io->bits == 64) ? 0x60000000000ULL : 0x60000000ULL;
 	return rz_io_map_next_available(io, base, size, 0x200000);

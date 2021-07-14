@@ -160,22 +160,25 @@ static int rz_io_zip_slurp_file(RzIOZipFileObj *zfo) {
 RzList *rz_io_zip_get_files(const char *archivename, ut32 perm, int mode, int rw) {
 	struct zip *zipArch = rz_io_zip_open_archive(archivename, perm, mode, rw);
 	ut64 num_entries = 0, i = 0;
-	RzList *files = NULL;
 	struct zip_stat sb;
-	char *name;
-	if (zipArch) {
-		files = rz_list_newf(free);
-		if (!files) {
-			zip_close(zipArch);
-			return NULL;
-		}
-		num_entries = zip_get_num_files(zipArch);
-		for (i = 0; i < num_entries; i++) {
-			zip_stat_init(&sb);
-			zip_stat_index(zipArch, i, 0, &sb);
-			if ((name = strdup(sb.name))) {
-				rz_list_append(files, name);
-			}
+	char *name = NULL;
+	RzList *files = NULL;
+	if (!zipArch) {
+		return NULL;
+	}
+
+	files = rz_list_newf(free);
+	if (!files) {
+		zip_close(zipArch);
+		return NULL;
+	}
+
+	num_entries = zip_get_num_files(zipArch);
+	for (i = 0; i < num_entries; i++) {
+		zip_stat_init(&sb);
+		zip_stat_index(zipArch, i, 0, &sb);
+		if ((name = strdup(sb.name))) {
+			rz_list_append(files, name);
 		}
 	}
 	zip_close(zipArch);
