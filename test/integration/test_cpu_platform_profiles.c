@@ -18,7 +18,7 @@ bool test_cpu_profiles() {
 	if (!rz_file_exists(".tmp/test-cpu.sdb")) {
 		rz_file_touch(".tmp/test-cpu.sdb");
 	}
-	rz_file_dump(".tmp/test-cpu.sdb", cpu_buffer, 6649 ,false);
+	rz_file_dump(".tmp/test-cpu.sdb", cpu_buffer, sizeof(cpu_buffer), false);
 	rz_arch_load_profile_sdb(core->analysis->arch_target, ".tmp/test-cpu.sdb");
 
 	// 2. Analyse the file
@@ -74,7 +74,7 @@ bool test_platform_profiles() {
 	if (!rz_file_exists(".tmp/test-platform.sdb")) {
 		rz_file_touch(".tmp/test-platform.sdb");
 	}
-	rz_file_dump(".tmp/test-platform.sdb", platform_buffer, 9701 ,false);
+	rz_file_dump(".tmp/test-platform.sdb", platform_buffer, sizeof(platform_buffer), false);
 	rz_arch_load_platform_sdb(core->analysis->platform_target, ".tmp/test-platform.sdb");
 
 	// 2. Analyse the file
