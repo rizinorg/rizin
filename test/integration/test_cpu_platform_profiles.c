@@ -15,11 +15,9 @@ bool test_cpu_profiles() {
 	mu_assert_notnull(file, "opening the firmware");
 	rz_core_bin_load(core, fpath, loadaddr);
 
-	if (!rz_file_exists(".tmp/test-cpu.sdb")) {
-		rz_file_touch(".tmp/test-cpu.sdb");
-	}
-	rz_file_dump(".tmp/test-cpu.sdb", cpu_buffer, sizeof(cpu_buffer), false);
-	rz_arch_load_profile_sdb(core->analysis->arch_target, ".tmp/test-cpu.sdb");
+	const char *tempfile = rz_file_temp(".sdb");
+	rz_file_dump(tempfile, cpu_buffer, sizeof(cpu_buffer), false);
+	rz_arch_load_profile_sdb(core->analysis->arch_target, tempfile);
 
 	// 2. Analyse the file
 	rz_arch_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
@@ -71,11 +69,9 @@ bool test_platform_profiles() {
 	mu_assert_notnull(file, "opening the binary");
 	rz_core_bin_load(core, fpath, loadaddr);
 
-	if (!rz_file_exists(".tmp/test-platform.sdb")) {
-		rz_file_touch(".tmp/test-platform.sdb");
-	}
-	rz_file_dump(".tmp/test-platform.sdb", platform_buffer, sizeof(platform_buffer), false);
-	rz_arch_load_platform_sdb(core->analysis->platform_target, ".tmp/test-platform.sdb");
+	const char *tempfile = rz_file_temp(".sdb");
+	rz_file_dump(tempfile, platform_buffer, sizeof(platform_buffer), false);
+	rz_arch_load_platform_sdb(core->analysis->platform_target, tempfile);
 
 	// 2. Analyse the file
 	rz_arch_platform_add_flags_comments(core);
