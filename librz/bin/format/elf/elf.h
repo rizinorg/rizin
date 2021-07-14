@@ -53,6 +53,9 @@
 #define rz_bin_elf_foreach_imports(bin, import) \
 	if (Elf_(rz_bin_elf_has_imports)(bin)) \
 	rz_vector_foreach(Elf_(rz_bin_elf_get_imports)(bin), import)
+#define rz_bin_elf_foreach_imports_as_symbols(bin, import) \
+	if (Elf_(rz_bin_elf_has_imports)(bin)) \
+	rz_vector_foreach(Elf_(rz_bin_elf_get_imports_as_symbols)(bin), import)
 
 /// Information about the binary layout in a NT_PRSTATUS note for core files of a certain architecture and os
 typedef struct prstatus_layout_t {
@@ -220,8 +223,8 @@ void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr);
 RZ_BORROW RzBinImport *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_imports)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports_as_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_NONNULL RzBinElfSymbol *symbol);
 bool Elf_(rz_bin_elf_has_imports)(RZ_NONNULL ELFOBJ *bin);
 void Elf_(rz_bin_elf_imports_free)(RzBinElfImports *ptr);
 
@@ -325,7 +328,7 @@ RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_import_symbols)(RZ_NONNULL ELFOBJ *b
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin);
-RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfSymbol *symbol);
+RZ_OWN RzVector *Elf_(rz_bin_elf_convert_symbols)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzVector *elf_symbols);
 bool Elf_(rz_bin_elf_has_symbols)(RZ_NONNULL ELFOBJ *bin);
 void Elf_(rz_bin_elf_symbols_free)(RzBinElfSymbols *ptr);
 

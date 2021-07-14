@@ -1059,75 +1059,43 @@ static RzList *symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	ELFOBJ *bin = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_symbol_free);
+	RzList *ret = rz_list_new();
 	if (!ret) {
 		return NULL;
 	}
 
-	// traverse symbols
-	if (!Elf_(rz_bin_elf_has_symbols)(bin)) {
-		return ret;
-	}
-
 	RzBinElfSymbol *symbol;
-	rz_bin_elf_foreach_elf_symbols(bin, symbol) {
-		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, symbol);
-
-		if (!ptr) {
-			break;
-		}
-
-		rz_list_append(ret, ptr);
+	rz_bin_elf_foreach_symbols(bin, symbol) {
+		rz_list_append(ret, symbol);
 	}
 
-	// traverse imports
-	if (!Elf_(rz_bin_elf_has_imports)(bin)) {
-		return ret;
-	}
 	RzBinElfSymbol *import;
-	rz_bin_elf_foreach_elf_imports(bin, import) {
-		if (!import->size) {
-			continue;
-		}
-
-		RzBinSymbol *ptr = Elf_(rz_bin_elf_convert_symbol)(bin, import);
-		if (!ptr) {
-			break;
-		}
-
-		ptr->is_imported = true;
-		// special case where there is not entry in the plt for the import
-		if (ptr->vaddr == UT32_MAX) {
-			ptr->paddr = 0;
-			ptr->vaddr = 0;
-		}
-
-		rz_list_append(ret, ptr);
+	rz_bin_elf_foreach_imports_as_symbols(bin, import) {
+		rz_list_append(ret, import);
 	}
 	return ret;
 }
 
 static RzList *imports(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o, NULL);
+
 	ELFOBJ *elf = bf->o->bin_obj;
-	RzList *ret = rz_list_newf((RzListFree)rz_bin_import_free);
-	if (!ret) {
-		return NULL;
-	}
+
 	if (!Elf_(rz_bin_elf_has_imports)(elf)) {
-		rz_list_free(ret);
 		return NULL;
 	}
 
-	RzBinElfSymbol *import;
-	rz_bin_elf_foreach_elf_imports(elf, import) {
-		RzBinImport *imp = Elf_(rz_bin_elf_convert_import)(import);
-		if (!imp) {
-			continue;
-		}
-		rz_list_append(ret, imp);
+	RzList *result = rz_list_new();
+	if (!result) {
+		return NULL;
 	}
-	return ret;
+
+	RzBinSymbol *import;
+	rz_bin_elf_foreach_imports(elf, import) {
+		rz_list_append(result, import);
+	}
+
+	return result;
 }
 
 static RzList *libs(RzBinFile *bf) {

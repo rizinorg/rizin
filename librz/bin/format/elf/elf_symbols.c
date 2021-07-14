@@ -69,9 +69,7 @@ static void set_addr_parameter(ELFOBJ *bin, RzBinElfSymbol *elf_symbol, RzBinSym
 }
 
 static void set_common_parameter(RzBinElfSymbol *elf_symbol, RzBinSymbol *symbol) {
-	char *symbol_name = elf_symbol->name ? rz_str_new(elf_symbol->name) : rz_str_new("");
-
-	symbol->name = symbol_name;
+	symbol->name = elf_symbol->name ? elf_symbol->name : NULL;
 	symbol->forwarder = "NONE";
 	symbol->bind = elf_symbol->bind;
 	symbol->type = elf_symbol->type;
@@ -247,10 +245,10 @@ static Elf_(Word) get_number_of_symbols_from_heuristic_aux(ELFOBJ *bin, ut64 sym
 
 static Elf_(Word) get_number_of_symbols_from_heuristic(ELFOBJ *bin) {
 	RzBinElfSection *dynsym_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynsym");
-	RzBinElfSection *strtab_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynstr");
+	RzBinElfSection *dynstr_section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".dynstr");
 
-	if (dynsym_section || strtab_section) {
-		return get_number_of_symbols_from_heuristic_aux(bin, dynsym_section->offset, strtab_section->offset);
+	if (dynsym_section && dynstr_section) {
+		return get_number_of_symbols_from_heuristic_aux(bin, dynsym_section->offset, dynstr_section->offset);
 	}
 
 	ut64 symtab_addr;
@@ -595,11 +593,6 @@ static void convert_symbol(ELFOBJ *bin, RzBinSymbol *symbol, RzBinElfSymbol *elf
 	}
 }
 
-static void symbols_free(void *e, RZ_UNUSED void *user) {
-	RzBinSymbol *ptr = e;
-	rz_bin_symbol_free(ptr);
-}
-
 Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, 0);
 
@@ -617,7 +610,7 @@ Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin
 }
 
 static RzVector *get_symbols(ELFOBJ *bin, RzVector *elf_symbols) {
-	RzVector *result = rz_vector_new(sizeof(RzBinSymbol), symbols_free, NULL);
+	RzVector *result = rz_vector_new(sizeof(RzBinSymbol), NULL, NULL);
 	if (!result) {
 		return NULL;
 	}
@@ -689,27 +682,27 @@ RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
 	return result;
 }
 
-/**
- * \brief Convert a RzBinElfSymbol to RzBinSymbol
- * \param elf binary
- * \param bin symbol
- * \param name format
- * \return a ptr to a new allocated RzBinSymbol
- *
- * Convert a RzElfBinSymbol to RzBinSymbol, the name can be formatted.
- */
-RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin,
-	RZ_NONNULL RzBinElfSymbol *elf_symbol) {
-	rz_return_val_if_fail(bin && elf_symbol, NULL);
+RZ_OWN RzVector *Elf_(rz_bin_elf_convert_symbols)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzVector *elf_symbols) {
+	rz_return_val_if_fail(bin && elf_symbols, NULL);
 
-	RzBinSymbol *symbol = RZ_NEW0(RzBinSymbol);
-	if (!symbol) {
+	RzVector *result = rz_vector_new(sizeof(RzBinSymbol), NULL, NULL);
+	if (!result) {
 		return NULL;
 	}
 
-	convert_symbol(bin, symbol, elf_symbol);
+	RzBinElfSymbol *tmp;
+	rz_vector_foreach(elf_symbols, tmp) {
+		RzBinSymbol symbol = { 0 };
 
-	return symbol;
+		convert_symbol(bin, &symbol, tmp);
+
+		if (!rz_vector_push(result, &symbol)) {
+			rz_vector_free(result);
+			return NULL;
+		}
+	}
+
+	return result;
 }
 
 bool Elf_(rz_bin_elf_has_symbols)(RZ_NONNULL ELFOBJ *bin) {
@@ -722,8 +715,8 @@ void Elf_(rz_bin_elf_symbols_free)(RzBinElfSymbols *ptr) {
 		return;
 	}
 
+	rz_vector_free(ptr->symbols);
 	rz_vector_free(ptr->elf_import_symbols);
 	rz_vector_free(ptr->elf_symbols);
-	rz_vector_free(ptr->symbols);
 	free(ptr);
 }

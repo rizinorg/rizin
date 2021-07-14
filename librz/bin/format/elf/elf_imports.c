@@ -292,20 +292,8 @@ static ut64 get_import_offset(ELFOBJ *bin, RzBinElfSymbol *symbol, ut64 pos) {
 	return tmp == -1 ? 0 : tmp;
 }
 
-static bool copy_elf_symbol(ELFOBJ *bin, RzBinElfSymbol *dst, RzBinElfSymbol *src) {
-	memcpy(dst, src, sizeof(RzBinElfSymbol));
-	dst->name = rz_str_new(src->name);
-	if (!dst->name) {
-		return false;
-	}
-
-	return true;
-}
-
 static bool convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *import, RzBinElfSymbol *symbol) {
-	if (!copy_elf_symbol(bin, import, symbol)) {
-		return false;
-	}
+	memcpy(import, symbol, sizeof(RzBinElfSymbol));
 
 	import->size = 16;
 
@@ -360,7 +348,7 @@ static RzVector *get_elf_imports(ELFOBJ *bin) {
 }
 
 static void convert_import(RzBinImport *import, RzBinElfSymbol *symbol) {
-	import->name = strdup(symbol->name);
+	import->name = symbol->name;
 	import->bind = symbol->bind;
 	import->type = symbol->type;
 	import->ordinal = symbol->ordinal;
@@ -381,6 +369,26 @@ static RzVector *get_imports(RzVector *elf_imports) {
 		if (!rz_vector_push(result, &import)) {
 			rz_vector_free(result);
 			return NULL;
+		}
+	}
+
+	return result;
+}
+
+static RzVector *get_symbols(ELFOBJ *bin, RzVector *elf_imports) {
+	RzVector *result = Elf_(rz_bin_elf_convert_symbols)(bin, elf_imports);
+	if (!result) {
+		return NULL;
+	}
+
+	RzBinSymbol *symbol;
+	rz_vector_foreach(result, symbol) {
+		symbol->is_imported = true;
+
+		// special case where there is not entry in the plt for the import
+		if (symbol->vaddr == UT32_MAX) {
+			symbol->paddr = 0;
+			symbol->vaddr = 0;
 		}
 	}
 
@@ -410,6 +418,11 @@ RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin) {
 	return bin->imports->imports;
 }
 
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports_as_symbols)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin && bin->imports, NULL);
+	return bin->imports->symbols;
+}
+
 RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
@@ -417,45 +430,30 @@ RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	RzBinElfImports *result = RZ_NEW(RzBinElfImports);
+	RzBinElfImports *result = RZ_NEW0(RzBinElfImports);
 	if (!result) {
 		return NULL;
 	}
 
 	result->elf_imports = get_elf_imports(bin);
 	if (!result->elf_imports || !rz_vector_len(result->elf_imports)) {
-		free(result);
+		Elf_(rz_bin_elf_imports_free)(result);
+		return NULL;
+	}
+
+	result->symbols = get_symbols(bin, result->elf_imports);
+	if (!result->symbols) {
+		Elf_(rz_bin_elf_imports_free)(result);
 		return NULL;
 	}
 
 	result->imports = get_imports(result->elf_imports);
 	if (!result->imports || !rz_vector_len(result->imports)) {
-		free(result->elf_imports);
-		free(result);
+		Elf_(rz_bin_elf_imports_free)(result);
 		return NULL;
 	}
 
 	return result;
-}
-
-/**
- * \brief Convert a RzBinElfSymbol to RzBinImport
- * \param bin symbol
- * \return a ptr to a new allocated RzBinImport
- *
- * ...
- */
-RZ_OWN RzBinImport *Elf_(rz_bin_elf_convert_import)(RZ_NONNULL RzBinElfSymbol *symbol) {
-	rz_return_val_if_fail(symbol, NULL);
-
-	RzBinImport *ptr = RZ_NEW0(RzBinImport);
-	if (!ptr) {
-		return NULL;
-	}
-
-	convert_import(ptr, symbol);
-
-	return ptr;
 }
 
 bool Elf_(rz_bin_elf_has_imports)(RZ_NONNULL ELFOBJ *bin) {
@@ -468,6 +466,7 @@ void Elf_(rz_bin_elf_imports_free)(RzBinElfImports *ptr) {
 		return;
 	}
 
-	rz_vector_free(ptr->elf_imports);
 	rz_vector_free(ptr->imports);
+	rz_vector_free(ptr->symbols);
+	rz_vector_free(ptr->elf_imports);
 }
