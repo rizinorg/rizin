@@ -6,7 +6,63 @@
 
 #include "minunit.h"
 
-bool test_v1_noreturn() {
+bool test_migrate_v1_v2_noreturn() {
+	RzProject *prj = rz_project_load_file_raw("prj/v1-noreturn.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v1_v2(prj, res);
+	mu_assert_true(s, "migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *analysis_db = sdb_ns(core_db, "analysis", false);
+	mu_assert_notnull(analysis_db, "analysis ns");
+	Sdb *types_db = sdb_ns(analysis_db, "types", false);
+	mu_assert_notnull(types_db, "types ns");
+
+	mu_assert_null(sdb_get(types_db, "addr.1337.noreturn", 0), "old noreturn deleted");
+	mu_assert_null(sdb_get(types_db, "addr.4242.noreturn", 0), "old noreturn deleted");
+
+	Sdb *noreturn_db = sdb_ns(analysis_db, "noreturn", false);
+	mu_assert_notnull(noreturn_db, "noreturn ns");
+
+	mu_assert_streq(sdb_get(noreturn_db, "addr.1337.noreturn", 0), "true", "new noreturn added");
+	mu_assert_streq(sdb_get(noreturn_db, "addr.4242.noreturn", 0), "true", "new noreturn added");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
+bool test_migrate_v1_v2_noreturn_empty() {
+	RzProject *prj = rz_project_load_file_raw("prj/v1-noreturn-empty.rzdb");
+	mu_assert_notnull(prj, "load raw project");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	bool s = rz_project_migrate_v1_v2(prj, res);
+	mu_assert_true(s, "migrate success");
+
+	Sdb *core_db = sdb_ns(prj, "core", false);
+	mu_assert_notnull(core_db, "core ns");
+	Sdb *analysis_db = sdb_ns(core_db, "analysis", false);
+	mu_assert_notnull(analysis_db, "analysis ns");
+	Sdb *types_db = sdb_ns(analysis_db, "types", false);
+	mu_assert_notnull(types_db, "types ns");
+
+	Sdb *noreturn_db = sdb_ns(analysis_db, "noreturn", false);
+	// not more to test here, just assert the existence of the noreturn ns
+	mu_assert_notnull(noreturn_db, "noreturn ns");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
+bool test_migrate_v2_v3() {
+	// TODO: like above
+	mu_end;
+}
+
+bool test_load_v1_noreturn() {
 	RzCore *core = rz_core_new();
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	mu_assert_notnull(res, "result info new");
@@ -26,7 +82,7 @@ bool test_v1_noreturn() {
 	mu_end;
 }
 
-bool test_v1_noreturn_empty() {
+bool test_load_v1_noreturn_empty() {
 	RzCore *core = rz_core_new();
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	mu_assert_notnull(res, "result info new");
@@ -46,7 +102,7 @@ bool test_v1_noreturn_empty() {
 	mu_end;
 }
 
-bool test_v2_typelink() {
+bool test_load_v2_typelink() {
 	RzCore *core = rz_core_new();
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	mu_assert_notnull(res, "result info new");
@@ -75,9 +131,12 @@ bool test_v2_typelink() {
 }
 
 int all_tests() {
-	mu_run_test(test_v1_noreturn);
-	mu_run_test(test_v1_noreturn_empty);
-	mu_run_test(test_v2_typelink);
+	mu_run_test(test_migrate_v1_v2_noreturn);
+	mu_run_test(test_migrate_v1_v2_noreturn_empty);
+	mu_run_test(test_migrate_v2_v3);
+	mu_run_test(test_load_v1_noreturn);
+	mu_run_test(test_load_v1_noreturn_empty);
+	mu_run_test(test_load_v2_typelink);
 	return tests_passed != tests_run;
 }
 
