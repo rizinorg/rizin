@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2012-2017 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2018-2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
