@@ -26,30 +26,33 @@
 #define rz_bin_elf_foreach_segments(bin, segment) \
 	if (Elf_(rz_bin_elf_has_segments)(bin)) \
 	rz_vector_foreach((bin)->segments, segment)
+
 #define rz_bin_elf_foreach_sections(bin, section) \
 	if (Elf_(rz_bin_elf_has_sections)(bin)) \
 	rz_vector_foreach((bin)->sections, section)
+
 #define rz_bin_elf_enumerate_sections(bin, section, i) \
 	if (Elf_(rz_bin_elf_has_sections)(bin)) \
 	rz_vector_enumerate((bin)->sections, section, i)
+
 #define rz_bin_elf_foreach_relocs(bin, reloc) \
 	if (Elf_(rz_bin_elf_has_relocs)(bin)) \
 	rz_vector_foreach((bin)->relocs, reloc)
+
 #define rz_bin_elf_foreach_notes_segment(bin, notes) \
 	if (Elf_(rz_bin_elf_has_notes)(bin)) \
 	rz_vector_foreach((bin)->notes, notes)
-#define rz_bin_elf_foreach_elf_symbols(bin, symbol) \
-	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
-	rz_vector_foreach(Elf_(rz_bin_elf_get_elf_symbols)(bin), symbol)
-#define rz_bin_elf_foreach_elf_import_symbols(bin, symbol) \
-	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
-	rz_vector_foreach(Elf_(rz_bin_elf_get_elf_import_symbols)(bin), symbol)
+
 #define rz_bin_elf_foreach_symbols(bin, symbol) \
 	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
 	rz_vector_foreach(Elf_(rz_bin_elf_get_symbols)(bin), symbol)
-#define rz_bin_elf_foreach_elf_imports(bin, import) \
-	if (Elf_(rz_bin_elf_has_imports)(bin)) \
-	rz_vector_foreach(Elf_(rz_bin_elf_get_elf_imports)(bin), import)
+#define rz_bin_elf_foreach_symbols_as_elf_symbols(bin, symbol) \
+	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
+	rz_vector_foreach(Elf_(rz_bin_elf_get_symbols_as_elf_symbols)(bin), symbol)
+#define rz_bin_elf_foreach_elf_import_symbols_as_elf_symbols(bin, symbol) \
+	if (Elf_(rz_bin_elf_has_symbols)(bin)) \
+	rz_vector_foreach(Elf_(rz_bin_elf_get_import_symbols_as_elf_symbols)(bin), symbol)
+
 #define rz_bin_elf_foreach_imports(bin, import) \
 	if (Elf_(rz_bin_elf_has_imports)(bin)) \
 	rz_vector_foreach(Elf_(rz_bin_elf_get_imports)(bin), import)
@@ -221,7 +224,6 @@ void Elf_(rz_bin_elf_dt_dynamic_free)(RzBinElfDtDynamic *ptr);
 
 // elf_imports.c
 RZ_BORROW RzBinImport *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_imports)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports_as_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin);
@@ -324,9 +326,9 @@ void Elf_(rz_bin_elf_strtab_free)(RzBinElfStrtab *ptr);
 // elf_symbols.c
 Elf_(Word) Elf_(rz_bin_elf_get_number_of_dynamic_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzBinSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 ordinal);
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_import_symbols)(RZ_NONNULL ELFOBJ *bin);
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_symbols)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_import_symbols_as_elf_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin);
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols_as_elf_symbols)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN RzVector *Elf_(rz_bin_elf_convert_symbols)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzVector *elf_symbols);
 bool Elf_(rz_bin_elf_has_symbols)(RZ_NONNULL ELFOBJ *bin);

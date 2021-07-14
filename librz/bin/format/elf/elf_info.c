@@ -288,7 +288,7 @@ static const struct ver_flags_translation ver_flags_translation_table[] = {
 
 static ut64 get_main_offset_from_symbol(ELFOBJ *bin) {
 	RzBinElfSymbol *symbol;
-	rz_bin_elf_foreach_elf_symbols(bin, symbol) {
+	rz_bin_elf_foreach_symbols_as_elf_symbols(bin, symbol) {
 		if (symbol->name && !strcmp(symbol->name, "main")) {
 			return symbol->offset;
 		}
@@ -569,7 +569,7 @@ static int get_bits_common(ELFOBJ *bin) {
 
 static bool has_thumb_symbol(ELFOBJ *bin) {
 	RzBinElfSymbol *symbol;
-	rz_bin_elf_foreach_elf_symbols(bin, symbol) {
+	rz_bin_elf_foreach_symbols_as_elf_symbols(bin, symbol) {
 		if (symbol->offset & 1) {
 			return true;
 		}

@@ -1035,7 +1035,7 @@ static RzList *entries(RzBinFile *bf) {
 	}
 
 	RzBinElfSymbol *symbol;
-	rz_bin_elf_foreach_elf_symbols(obj, symbol) {
+	rz_bin_elf_foreach_symbols_as_elf_symbols(obj, symbol) {
 		if (symbol->name && !strncmp(symbol->name, "Java", 4)) {
 			if (rz_str_endswith(symbol->name, "_init")) {
 				if (!(ptr = RZ_NEW0(RzBinAddr))) {

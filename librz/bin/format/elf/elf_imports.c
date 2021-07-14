@@ -314,24 +314,14 @@ static bool convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *import
 	return true;
 }
 
-static void import_free(void *e, RZ_UNUSED void *user) {
-	RzBinImport *ptr = e;
-	rz_bin_import_free(ptr);
-}
-
-static void elf_import_free(void *e, RZ_UNUSED void *user) {
-	RzBinElfSymbol *ptr = e;
-	free(ptr->name);
-}
-
 static RzVector *get_elf_imports(ELFOBJ *bin) {
-	RzVector *result = rz_vector_new(sizeof(RzBinElfSymbol), elf_import_free, NULL);
+	RzVector *result = rz_vector_new(sizeof(RzBinElfSymbol), NULL, NULL);
 	if (!result) {
 		return NULL;
 	}
 
 	RzBinElfSymbol *symbol;
-	rz_bin_elf_foreach_elf_import_symbols(bin, symbol) {
+	rz_bin_elf_foreach_elf_import_symbols_as_elf_symbols(bin, symbol) {
 		RzBinElfSymbol *import = rz_vector_push(result, NULL);
 		if (!import) {
 			rz_vector_free(result);
@@ -342,6 +332,11 @@ static RzVector *get_elf_imports(ELFOBJ *bin) {
 			rz_vector_free(result);
 			return NULL;
 		}
+	}
+
+	if (!rz_vector_len(result)) {
+		rz_vector_free(result);
+		return NULL;
 	}
 
 	return result;
@@ -355,7 +350,7 @@ static void convert_import(RzBinImport *import, RzBinElfSymbol *symbol) {
 }
 
 static RzVector *get_imports(RzVector *elf_imports) {
-	RzVector *result = rz_vector_new(sizeof(RzBinImport), import_free, NULL);
+	RzVector *result = rz_vector_new(sizeof(RzBinImport), NULL, NULL);
 	if (!result) {
 		return NULL;
 	}
@@ -384,12 +379,6 @@ static RzVector *get_symbols(ELFOBJ *bin, RzVector *elf_imports) {
 	RzBinSymbol *symbol;
 	rz_vector_foreach(result, symbol) {
 		symbol->is_imported = true;
-
-		// special case where there is not entry in the plt for the import
-		if (symbol->vaddr == UT32_MAX) {
-			symbol->paddr = 0;
-			symbol->vaddr = 0;
-		}
 	}
 
 	return result;
@@ -406,11 +395,6 @@ RZ_BORROW RzBinImport *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut32 
 	}
 
 	return NULL;
-}
-
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_imports)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin && bin->imports, NULL);
-	return bin->imports->elf_imports;
 }
 
 RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin) {
@@ -435,23 +419,27 @@ RZ_OWN RzBinElfImports *Elf_(rz_bin_elf_imports_new)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	result->elf_imports = get_elf_imports(bin);
-	if (!result->elf_imports || !rz_vector_len(result->elf_imports)) {
+	RzVector *elf_imports = get_elf_imports(bin);
+	if (!elf_imports) {
 		Elf_(rz_bin_elf_imports_free)(result);
 		return NULL;
 	}
 
-	result->symbols = get_symbols(bin, result->elf_imports);
+	result->symbols = get_symbols(bin, elf_imports);
 	if (!result->symbols) {
+		rz_vector_free(elf_imports);
 		Elf_(rz_bin_elf_imports_free)(result);
 		return NULL;
 	}
 
-	result->imports = get_imports(result->elf_imports);
+	result->imports = get_imports(elf_imports);
 	if (!result->imports || !rz_vector_len(result->imports)) {
+		rz_vector_free(elf_imports);
 		Elf_(rz_bin_elf_imports_free)(result);
 		return NULL;
 	}
+
+	rz_vector_free(elf_imports);
 
 	return result;
 }
@@ -468,5 +456,4 @@ void Elf_(rz_bin_elf_imports_free)(RzBinElfImports *ptr) {
 
 	rz_vector_free(ptr->imports);
 	rz_vector_free(ptr->symbols);
-	rz_vector_free(ptr->elf_imports);
 }

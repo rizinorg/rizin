@@ -559,25 +559,18 @@ static bool get_elf_symbols(ELFOBJ *bin, RzBinElfSymbols *result) {
 
 	result->elf_import_symbols = rz_vector_new(sizeof(RzBinElfSymbol), elf_symbol_free, NULL);
 	if (!result->elf_import_symbols) {
-		rz_vector_free(result->elf_symbols);
 		return NULL;
 	}
 
 	if (!get_dynamic_elf_symbols(bin, result, set)) {
-		rz_vector_free(result->elf_symbols);
-		rz_vector_free(result->elf_import_symbols);
 		return NULL;
 	}
 
 	if (!get_section_elf_symbols(bin, result, set)) {
-		rz_vector_free(result->elf_symbols);
-		rz_vector_free(result->elf_import_symbols);
 		return NULL;
 	}
 
 	if (!rz_vector_len(result->elf_symbols) && !rz_vector_len(result->elf_import_symbols)) {
-		rz_vector_free(result->elf_symbols);
-		rz_vector_free(result->elf_import_symbols);
 		return NULL;
 	}
 
@@ -643,12 +636,12 @@ RZ_BORROW RzBinSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut32 
 	return NULL;
 }
 
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_import_symbols)(RZ_NONNULL ELFOBJ *bin) {
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_import_symbols_as_elf_symbols)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin && bin->symbols, NULL);
 	return bin->symbols->elf_import_symbols;
 }
 
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_elf_symbols)(RZ_NONNULL ELFOBJ *bin) {
+RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols_as_elf_symbols)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin && bin->symbols, NULL);
 	return bin->symbols->elf_symbols;
 }
@@ -661,21 +654,19 @@ RZ_BORROW RzVector *Elf_(rz_bin_elf_get_symbols)(RZ_NONNULL ELFOBJ *bin) {
 RZ_OWN RzBinElfSymbols *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
-	RzBinElfSymbols *result = RZ_NEW(RzBinElfSymbols);
+	RzBinElfSymbols *result = RZ_NEW0(RzBinElfSymbols);
 	if (!result) {
 		return NULL;
 	}
 
 	if (!get_elf_symbols(bin, result)) {
-		free(result);
+		Elf_(rz_bin_elf_symbols_free)(result);
 		return NULL;
 	}
 
 	result->symbols = get_symbols(bin, result->elf_symbols);
 	if (!result->symbols) {
-		rz_vector_free(result->elf_import_symbols);
-		rz_vector_free(result->elf_symbols);
-		free(result);
+		Elf_(rz_bin_elf_symbols_free)(result);
 		return NULL;
 	}
 
