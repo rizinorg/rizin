@@ -15,7 +15,7 @@
 
 static RzList *mips_tokenize(const char *assembly, size_t length);
 
-const RzPseudoGrammar mips_lexicon[] = {
+static const RzPseudoGrammar mips_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 = 2 + 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("addi", "1 = 2 + 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("addiu", "1 = 2 + 3"),
@@ -79,17 +79,17 @@ const RzPseudoGrammar mips_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("xori", "1 = 2 ^ 3"),
 };
 
-const RzPseudoDirect mips_direct[] = {
+static const RzPseudoDirect mips_direct[] = {
 	RZ_PSEUDO_DEFINE_DIRECT("jr ra", "return"),
 };
 
-const RzPseudoReplace mips_replace[] = {
+static const RzPseudoReplace mips_replace[] = {
 	RZ_PSEUDO_DEFINE_REPLACE(" + 0]", "]", 0),
 	RZ_PSEUDO_DEFINE_REPLACE("+ -", "- ", 1),
 	RZ_PSEUDO_DEFINE_REPLACE("0 << 16", "0", 1),
 };
 
-const RzPseudoConfig config = RZ_PSEUDO_DEFINE_CONFIG(mips_direct, mips_lexicon, mips_replace, 4, mips_tokenize);
+static const RzPseudoConfig mips_config = RZ_PSEUDO_DEFINE_CONFIG(mips_direct, mips_lexicon, mips_replace, 4, mips_tokenize);
 
 RzList *mips_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
@@ -137,7 +137,7 @@ RzList *mips_tokenize(const char *assembly, size_t length) {
 }
 
 static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
-	return rz_pseudo_convert(&config, assembly, sb);
+	return rz_pseudo_convert(&mips_config, assembly, sb);
 }
 
 static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {

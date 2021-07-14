@@ -10,272 +10,205 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
-#define MAXPSEUDOOPS 10
-	int i, j, k, d;
-	char ch;
-	struct {
-		int narg;
-		char *op;
-		char *str;
-		int args[MAXPSEUDOOPS];
-	} ops[] = {
-		{ 0, "abs", "# = abs(#)", { 1, 1 } },
-		{ 0, "adc", "# = # + #", { 1, 2, 3 } },
-		{ 3, "add", "# = # + #", { 1, 2, 3 } },
-		{ 2, "add", "# += #", { 1, 2 } },
-		{ 2, "adds", "# += #", { 1, 2 } },
-		{ 3, "adds", "# = # + #", { 1, 2, 3 } },
-		{ 3, "addw", "# = # + #", { 1, 2, 3 } },
-		{ 3, "add.w", "# = # + #", { 1, 2, 3 } },
-		{ 0, "adf", "# = # + #", { 1, 2, 3 } },
-		{ 0, "adrp", "# = #", { 1, 2 } },
-		{ 0, "adr", "# = #", { 1, 2 } },
-		{ 0, "and", "# = # & #", { 1, 2, 3 } },
-		{ 0, "ands", "# &= #", { 1, 2 } },
-		{ 0, "asls", "# = # << #", { 1, 2, 3 } },
-		{ 0, "asl", "# = # << #", { 1, 2, 3 } },
-		{ 0, "asrs", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "asr", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "b", "jmp #", { 1 } },
-		{ 0, "cbz", "if !# jmp #", { 1, 2 } },
-		{ 0, "cbnz", "if # jmp #", { 1, 2 } },
-		{ 0, "b.w", "jmp #", { 1 } },
-		{ 0, "b.gt", "jmp ifgt #", { 1 } },
-		{ 0, "b.le", "jmp ifle #", { 1 } },
-		{ 0, "beq lr", "ifeq ret", { 0 } },
-		{ 0, "beq", "je #", { 1 } },
-		{ 0, "call", "# ()", { 1 } },
-		{ 0, "bl", "# ()", { 1 } },
-		{ 0, "blx", "# ()", { 1 } },
-		{ 0, "bx lr", "ret", { 0 } },
-		{ 0, "bxeq", "je #", { 1 } },
-		{ 0, "cmf", "if (# == #)", { 1, 2 } },
-		{ 0, "cmn", "if (# != #)", { 1, 2 } },
-		{ 0, "cmp", "if (# == #)", { 1, 2 } },
-		{ 0, "fcmp", "if (# == #)", { 1, 2 } },
-		{ 0, "tst", "if ((# & #) == 0)", { 1, 2 } },
-		{ 0, "dvf", "# = # / #", { 1, 2, 3 } },
-		{ 0, "eor", "# = # ^ #", { 1, 2, 3 } },
-		{ 1, "bkpt", "breakpoint #", { 1 } },
-		{ 1, "udf", "undefined #", { 1 } },
-		{ 2, "sxtb", "# = (char) #", { 1, 2 } },
-		{ 2, "sxth", "# = (short) #", { 1, 2 } },
-		{ 0, "fdv", "# = # / #", { 1, 2, 3 } },
-		{ 0, "fml", "# = # * #", { 1, 2, 3 } },
-		{ 2, "ldr", "# = #", { 1, 2 } },
-		{ 2, "ldrh", "# = (word) #", { 1, 2 } },
-		{ 3, "ldrh", "# = (word) # + #", { 1, 2, 3 } },
-		{ 2, "ldrb", "# = (byte) #", { 1, 2 } },
-		{ 3, "ldrb", "# = (byte) # + #", { 1, 2, 3 } },
-		{ 2, "ldrsb", "# = (byte) #", { 1, 2 } },
-		{ 2, "ldr.w", "# = #", { 1, 2 } },
-		{ 2, "ldrsw", "# = #", { 1, 2 } },
-		{ 3, "ldr", "# = # + #", { 1, 2, 3 } },
-		{ 3, "ldrb", "# = (byte) # + #", { 1, 2, 3 } },
-		{ 3, "ldrsb", "# = (byte) # + #", { 1, 2, 3 } },
-		{ 3, "ldr.w", "# = # + #", { 1, 2, 3 } },
-		{ 3, "ldrsw", "# = # + #", { 1, 2, 3 } },
-		{ 0, "lsl", "# = # << #", { 1, 2, 3 } },
-		{ 0, "lsr", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "mov", "# = #", { 1, 2 } },
-		{ 0, "fmov", "# = #", { 1, 2 } },
-		{ 0, "mvn", "# = ~#", { 1, 2 } },
-		{ 0, "movz", "# = #", { 1, 2 } },
-		{ 0, "movk", "# = #", { 1, 2 } },
-		{ 0, "movn", "# = ~#", { 1, 2 } },
-		{ 0, "neg", "# = !#", { 1, 2 } },
-		{ 0, "sxtw", "# = #", { 1, 2 } },
-		{ 0, "stur", "# = #", { 2, 1 } },
-		{ 0, "stp", "# = (#, 2)", { 3, 1 } },
-		{ 0, "ldp", "(#, 2) = 3", { 1 } },
-		{ 0, "vmov.i32", "# = #", { 1, 2 } },
-		{ 0, "muf", "# = # * #", { 1, 2, 3 } },
-		{ 0, "mul", "# = # * #", { 1, 2, 3 } },
-		{ 0, "fmul", "# = # * #", { 1, 2, 3 } },
-		{ 0, "muls", "# = # * #", { 1, 2, 3 } },
-		{ 0, "div", "# = # / #", { 1, 2, 3 } },
-		{ 0, "fdiv", "# = # / #", { 1, 2, 3 } },
-		{ 0, "udiv", "# = (unsigned) # / #", { 1, 2, 3 } },
-		{ 0, "orr", "# = # | #", { 1, 2, 3 } },
-		{ 0, "rmf", "# = # % #", { 1, 2, 3 } },
-		{ 0, "bge", "(>=) goto #", { 1 } },
-		{ 0, "sbc", "# = # - #", { 1, 2, 3 } },
-		{ 0, "sqt", "# = sqrt(#)", { 1, 2 } },
-		{ 0, "lsrs", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "lsls", "# = # << #", { 1, 2, 3 } },
-		{ 0, "lsr", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "lsl", "# = # << #", { 1, 2, 3 } },
-		{ 2, "str", "# = #", { 2, 1 } },
-		{ 2, "strb", "# = (byte) #", { 2, 1 } },
-		{ 2, "strh", "# = (half) #", { 2, 1 } },
-		{ 2, "strh.w", "# = (half) #", { 2, 1 } },
-		{ 3, "str", "# + # = #", { 2, 3, 1 } },
-		{ 3, "strb", "# + # = (byte) #", { 2, 3, 1 } },
-		{ 3, "strh", "# + # = (half) #", { 2, 3, 1 } },
-		{ 3, "strh.w", "# + # = (half) #", { 2, 3, 1 } },
-		{ 3, "sub", "# = # - #", { 1, 2, 3 } },
-		{ 3, "subs", "# = # - #", { 1, 2, 3 } },
-		{ 3, "fsub", "# = # - #", { 1, 2, 3 } },
-		{ 2, "sub", "# -= #", { 1, 2 } }, // THUMB
-		{ 2, "subs", "# -= #", { 1, 2 } }, // THUMB
-		{ 0, "swp", "swap(#, 2)", { 1 } },
-		/* arm thumb */
-		{ 0, "movs", "# = #", { 1, 2 } },
-		{ 0, "movw", "# = #", { 1, 2 } },
-		{ 0, "movt", "# |= # << 16", { 1, 2 } },
-		{ 0, "vmov", "# = (float) # . #", { 1, 2, 3 } },
-		{ 0, "vdiv.f64", "# = (float) # / #", { 1, 2, 3 } },
-		{ 0, "addw", "# = # + #", { 1, 2, 3 } },
-		{ 0, "sub.w", "# = # - #", { 1, 2, 3 } },
-		{ 0, "tst.w", "if ((# & #) == 0)", { 1, 2 } },
-		{ 0, "lsr.w", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "lsl.w", "# = # << #", { 1, 2, 3 } },
-		{ 0, "pop.w", "pop #", { 1 } },
-		{ 0, "vpop", "pop #", { 1 } },
-		{ 0, "vpush", "push #", { 1 } },
-		{ 0, "push.w", "push #", { 1 } },
-		{ 0, NULL }
-	};
-	if (!newstr) {
-		return false;
+#include "parse_common.c"
+
+static RzList *arm_tokenize(const char *assembly, size_t length);
+
+static const RzPseudoGrammar arm_lexicon[] = {
+	RZ_PSEUDO_DEFINE_GRAMMAR("abs", "1 = abs(1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("adc", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("add.w", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("adds", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("adds", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addw", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("adf", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("adr", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("adrp", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("and", "1 = 2 & 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ands", "1 &= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("asl", "1 = 2 << 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("asls", "1 = 2 << 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("asr", "1 = 2 >> 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("asrs", "1 = 2 >> 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("b", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("b.gt", "if (? > ?) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("b.le", "if (? < ?) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("b.w", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("beq", "if (? = ?) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bge", "if (? >= ?) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bkpt", "breakpoint 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bl", "1 ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("blx", "1 ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bxeq", "if (? == ?) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("call", "1 ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cbnz", "if 1 goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cbz", "if !1 goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmf", "if (1 == 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmn", "if (1 != 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp", "if (1 == 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("div", "1 = 2 / 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dvf", "1 = 2 / 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("eor", "1 = 2 ^ 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fcmp", "if (1 == 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fdiv", "1 = 2 / 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fdv", "1 = 2 / 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fml", "1 = 2 * 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fmov", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fmul", "1 = 2 * 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fsub", "1 = 2 - 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldp", "(1, 2) = 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldr", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldr.w", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldrb", "1 = (byte) 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldrb", "1 = (byte) 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldrh", "1 = (word) 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldrh", "1 = (word) 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldrsb", "1 = (byte) 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldrsb", "1 = (byte) 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldrsw", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldrsw", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsl", "1 = 2 << 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsls", "1 = 2 << 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsr", "1 = 2 >> 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsrs", "1 = 2 >> 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mov", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movk", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movn", "1 = ~2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movz", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("muf", "1 = 2 * 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mul", "1 = 2 * 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("muls", "1 = 2 * 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mvn", "1 = ~2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("neg", "1 = !2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("orr", "1 = 2 | 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("rmf", "1 = 2 % 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sbc", "1 = 2 - 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sqt", "1 = sqrt(2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stp", "3 = (1, 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("str", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("str", "[2 + 3] = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("strb", "2 = (byte) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("strb", "[2 + 3] = (byte) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("strh", "2 = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("strh", "[2 + 3] = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("strh.w", "2 = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("strh.w", "[2 + 3] = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stur", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sub", "1 = 2 - 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subs", "1 = 2 - 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("swp", "swap(1, 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sxtb", "1 = (char) 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sxth", "1 = (short) 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sxtw", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("tst", "if ((1 & 2) == 0)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("udf", "undefined 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("udiv", "1 = (unsigned) 2 / 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("vmov.i32", "1 = 2"),
+/* arm thumb */
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsl.w", "1 = 2 << 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsr.w", "1 = 2 >> 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movs", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movt", "1 |= 2 << #16"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movw", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("pop", "pop(1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("pop.w", "pop(1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("push.w", "push(1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sub", "1 -= 2"), // THUMB
+	RZ_PSEUDO_DEFINE_GRAMMAR("sub.w", "1 = 2 - 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subs", "1 -= 2"), // THUMB
+	RZ_PSEUDO_DEFINE_GRAMMAR("tst.w", "if ((1 & 2) == 0)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("vdiv.f64", "1 = (float) 2 / 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("vmov", "1 = (float) 2 . 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("vpop", "pop(1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("vpush", "push(1)"),
+};
+
+static const RzPseudoDirect arm_direct[] = {
+	RZ_PSEUDO_DEFINE_DIRECT("beq lr", "if (eq) return"),
+	RZ_PSEUDO_DEFINE_DIRECT("bx lr", "return"),
+};
+
+static const RzPseudoReplace arm_replace[] = {
+	RZ_PSEUDO_DEFINE_REPLACE(" + 0]", "]", 0),
+	RZ_PSEUDO_DEFINE_REPLACE("+ -", "- ", 1),
+	RZ_PSEUDO_DEFINE_REPLACE("0 << 16", "0", 1),
+};
+
+static const RzPseudoConfig arm_config = RZ_PSEUDO_DEFINE_CONFIG(arm_direct, arm_lexicon, arm_replace, 4, arm_tokenize);
+
+RzList *arm_tokenize(const char *assembly, size_t length) {
+	size_t i, p;
+	char *buf = NULL;
+	const char *comma_replace = NULL;
+	bool keep = false;
+	RzList *tokens = NULL;
+
+	buf = rz_str_ndup(assembly, length);
+	if (!buf) {
+		return NULL;
 	}
 
-	for (i = 0; ops[i].op; i++) {
-		if (ops[i].narg) {
-			if (argc - 1 != ops[i].narg) {
+	for (i = 0, p = 0; p < length; ++i, ++p) {
+		if (buf[p] == ',') {
+			if (!keep) {
+				p++;
+			} else if (buf[p+1] == ' ') {
+				buf[i] = buf[p];
+				p++;
 				continue;
 			}
-		}
-		if (!strcmp(ops[i].op, argv[0])) {
-			if (newstr) {
-				d = 0;
-				j = 0;
-				ch = ops[i].str[j];
-				for (j = 0, k = 0; ch != '\0'; j++, k++) {
-					ch = ops[i].str[j];
-					if (ch == '#') {
-						if (d >= MAXPSEUDOOPS) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						int idx = ops[i].args[d];
-						d++;
-						if (idx <= 0) {
-							// XXX Shouldn't ever happen...
-							continue;
-						}
-						const char *w = argv[idx];
-						if (w) {
-							strcpy(newstr + k, w);
-							k += strlen(w) - 1;
-						}
-					} else {
-						newstr[k] = ch;
-					}
-				}
-				newstr[k] = '\0';
+		} else if (buf[p] == '(') {
+			buf[p] = ' ';
+		} else if (buf[p] == ')') {
+			buf[p] = ' ';
+		} else if (buf[p] == '[') {
+			keep = true;
+			comma_replace = " + ";
+		} else if (buf[p] == ']') {
+			keep = false;
+		} else if (buf[p] == '{') {
+			if (strchr(buf + p + 1, ',') < strchr(buf + p + 1, '}')) {
+				keep = true;
+				comma_replace = ", ";
+			} else {
+				p++;
 			}
+		} else if (buf[p] == '}') {
+			if (!comma_replace) {
+				p++;
+			}
+			keep = false;
+		} else if ((buf[p] == 'w' || buf[p] == 'x') && buf[p + 1] == 'z' && buf[p + 2] == 'r') {
+			p += 2;
+			buf[p] = '0';
+		}
+		if (p > i) {
+			buf[i] = buf[p];
+		}
+	}
+	buf[i] = 0;
 
-			rz_str_replace_char(newstr, '{', '(');
-			rz_str_replace_char(newstr, '}', ')');
-			return true;
+	tokens = rz_str_split_duplist(buf, " ", true);
+	free(buf);
+	if (!tokens) {
+		return NULL;
+	}
+
+	if (comma_replace) {
+		RzListIter *it;
+		rz_list_foreach(tokens, it, buf) {
+			it->data = rz_str_replace(buf, ",", comma_replace, 1);
 		}
 	}
 
-	/* TODO: this is slow */
-	newstr[0] = '\0';
-	for (i = 0; i < argc; i++) {
-		strcat(newstr, argv[i]);
-		strcat(newstr, (!i || i == argc - 1) ? " " : ",");
-	}
-	rz_str_replace_char(newstr, '{', '(');
-	rz_str_replace_char(newstr, '}', ')');
-	return false;
+	return tokens;
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
-	char w0[256], w1[256], w2[256], w3[256];
-	int i, len = strlen(data);
-	char *buf, *ptr, *optr;
 
-	if (len >= sizeof(w0)) {
-		return false;
-	}
-	// malloc can be slow here :?
-	if (!(buf = malloc(len + 1))) {
-		return false;
-	}
-	memcpy(buf, data, len + 1);
-	if (*buf) {
-		*w0 = *w1 = *w2 = *w3 = '\0';
-		ptr = strchr(buf, ' ');
-		if (!ptr) {
-			ptr = strchr(buf, '\t');
-		}
-		if (ptr) {
-			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
-				;
-			}
-			strncpy(w0, buf, sizeof(w0) - 1);
-			strncpy(w1, ptr, sizeof(w1) - 1);
-
-			optr = ptr;
-			if (*ptr == '(') {
-				ptr = strchr(ptr + 1, ')');
-			}
-			if (ptr && *ptr == '[') {
-				ptr = strchr(ptr + 1, ']');
-			}
-			if (ptr && *ptr == '{') {
-				ptr = strchr(ptr + 1, '}');
-			}
-			if (!ptr) {
-				eprintf("Unbalanced bracket\n");
-				free(buf);
-				return false;
-			}
-			ptr = strchr(ptr, ',');
-			if (ptr) {
-				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++) {
-					;
-				}
-				strncpy(w1, optr, sizeof(w1) - 1);
-				strncpy(w2, ptr, sizeof(w2) - 1);
-				optr = ptr;
-				ptr = strchr(ptr, ',');
-				if (ptr) {
-					*ptr = '\0';
-					for (++ptr; *ptr == ' '; ptr++) {
-						;
-					}
-					strncpy(w2, optr, sizeof(w2) - 1);
-					strncpy(w3, ptr, sizeof(w3) - 1);
-				}
-			}
-		}
-		{
-			const char *wa[] = { w0, w1, w2, w3 };
-			int nw = 0;
-			for (i = 0; i < 4; i++) {
-				if (wa[i][0]) {
-					nw++;
-				}
-			}
-			replace(nw, wa, str);
-		}
-	}
-	{
-		char *s = strdup(str);
-		s = rz_str_replace(s, "+ -", "- ", 1);
-		s = rz_str_replace(s, "- -", "+ ", 1);
-		strcpy(str, s);
-		free(s);
-	}
-	free(buf);
-	return true;
+static bool parse(RzParse *p, const char *assembly, RzStrBuf *sb) {
+	return rz_pseudo_convert(&arm_config, assembly, sb);
 }
 
 static char *subs_var_string(RzParse *p, RzAnalysisVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
@@ -352,7 +285,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 			rip = (char *)rz_str_casestr(tstr, "[pc, ");
 		}
 
-		if (rip && !strchr(rip + 4, ',')) {
+		if (rip) {
 			rip += 4;
 			char *tstr_new, *ripend = strchr(rip, ']');
 			const char *neg = strchr(rip, '-');
