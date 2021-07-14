@@ -11,111 +11,98 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-typedef struct {
-	const char *mnemonic;
-	int mnemonic_length;
-	const char *grammar;
-	int grammar_length;
-} MipsOp;
+#include "parse_common.c"
 
-#define MIPS_SET_OP(x, y) \
-	{ .mnemonic = x, .mnemonic_length = sizeof(x) - 1, .grammar = y, .grammar_length = sizeof(y) - 1 }
-const MipsOp ops[] = {
-	MIPS_SET_OP("add", "1 = 2 + 3"),
-	MIPS_SET_OP("addi", "1 = 2 + 3"),
-	MIPS_SET_OP("addiu", "1 = 2 + 3"),
-	MIPS_SET_OP("addu", "1 = 2 + 3"),
-	MIPS_SET_OP("and", "1 = 2 & 3"),
-	MIPS_SET_OP("andi", "1 = 2 & 3"),
-	MIPS_SET_OP("b", "goto 1"),
-	MIPS_SET_OP("bal", "call 1"),
-	MIPS_SET_OP("begzal", "if (1 >= 0) call 2"),
-	MIPS_SET_OP("beq", "if (1 == 2) goto 3"),
-	MIPS_SET_OP("beqz", "if (!1) goto 2"),
-	MIPS_SET_OP("bgez", "if (1 >= 0) goto 2"),
-	MIPS_SET_OP("bgtz", "if (1 > 0) goto 2"),
-	MIPS_SET_OP("blez", "if (1 <= 0) goto 2"),
-	MIPS_SET_OP("bltz", "if (1 < 0) goto 2"),
-	MIPS_SET_OP("bltzal", "if (1 < 0) call 2"),
-	MIPS_SET_OP("bne", "if (1 != 2) goto 3"),
-	MIPS_SET_OP("bnez", "if (1) goto 2"),
-	MIPS_SET_OP("j", "goto 1"),
-	MIPS_SET_OP("jal", "call 1"),
-	MIPS_SET_OP("jalr", "call 1"),
-	MIPS_SET_OP("jr", "goto 1"),
-	MIPS_SET_OP("lb", "1 = byte [3 + 2]"),
-	MIPS_SET_OP("lbu", "1 = (unsigned) byte [3 + 2]"),
-	MIPS_SET_OP("lh", "1 = halfword [3 + 2]"),
-	MIPS_SET_OP("lhu", "1 = (unsigned) halfword [3 + 2]"),
-	MIPS_SET_OP("li", "1 = 2"),
-	MIPS_SET_OP("lui", "1 = 2 << #16"),
-	MIPS_SET_OP("lw", "1 = word [3 + 2]"),
-	MIPS_SET_OP("mfhi", "1 = hi"),
-	MIPS_SET_OP("mflo", "1 = lo"),
-	MIPS_SET_OP("move", "1 = 2"),
-	MIPS_SET_OP("movn", "if (3) 1 = 2"),
-	MIPS_SET_OP("movz", "if (!3) 1 = 2"),
-	MIPS_SET_OP("mult", "(hi,lo) = 1 * 2"),
-	MIPS_SET_OP("multu", "unsigned (hi,lo) = 1 * 2"),
-	MIPS_SET_OP("mul", "1 = 2 * 3"),
-	MIPS_SET_OP("mulu", "1 = 2 * 3"),
-	MIPS_SET_OP("negu", "1 = ~2"),
-	MIPS_SET_OP("nop", ""),
-	MIPS_SET_OP("nor", "1 = ~(2 | 3)"),
-	MIPS_SET_OP("or", "1 = 2 | 3"),
-	MIPS_SET_OP("ori", "1 = 2 | 3"),
-	MIPS_SET_OP("sb", "byte [3 + 2] = 1"),
-	MIPS_SET_OP("sh", "halfword [3 + 2] = 1"),
-	MIPS_SET_OP("sll", "1 = 2 << 3"),
-	MIPS_SET_OP("sllv", "1 = 2 << 3"),
-	MIPS_SET_OP("slr", "1 = 2 >> 3"),
-	MIPS_SET_OP("slt", "1 = (2 < 3)"),
-	MIPS_SET_OP("slti", "1 = (2 < 3)"),
-	MIPS_SET_OP("sltiu", "1 = (unsigned) (2 < 3)"),
-	MIPS_SET_OP("sltu", "1 = (unsigned) (2 < 3)"),
-	MIPS_SET_OP("sra", "1 = (signed) 2 >> 3"),
-	MIPS_SET_OP("srl", "1 = 2 >> 3"),
-	MIPS_SET_OP("srlv", "1 = 2 >> 3"),
-	MIPS_SET_OP("subu", "1 = 2 - 3"),
-	MIPS_SET_OP("sub", "1 = 2 - 3"),
-	MIPS_SET_OP("sw", "word [3 + 2] = 1"),
-	MIPS_SET_OP("syscall", "syscall"),
-	MIPS_SET_OP("xor", "1 = 2 ^ 3"),
-	MIPS_SET_OP("xori", "1 = 2 ^ 3"),
+static RzList *mips_tokenize(const char *assembly, size_t length);
+
+const RzPseudoGrammar mips_lexicon[] = {
+	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addi", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addiu", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addu", "1 = 2 + 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("and", "1 = 2 & 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("andi", "1 = 2 & 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("b", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bal", "call 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("begzal", "if (1 >= 0) call 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("beq", "if (1 == 2) goto 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("beqz", "if (!1) goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bgez", "if (1 >= 0) goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bgtz", "if (1 > 0) goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("blez", "if (1 <= 0) goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bltz", "if (1 < 0) goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bltzal", "if (1 < 0) call 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bne", "if (1 != 2) goto 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bnez", "if (1) goto 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("j", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("jal", "call 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("jalr", "call 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("jr", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lb", "1 = byte [3 + 2]"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lbu", "1 = (unsigned) byte [3 + 2]"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lh", "1 = halfword [3 + 2]"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lhu", "1 = (unsigned) halfword [3 + 2]"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("li", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lui", "1 = 2 << #16"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lw", "1 = word [3 + 2]"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mfhi", "1 = hi"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mflo", "1 = lo"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("move", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movn", "if (3) 1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movz", "if (!3) 1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mult", "(hi,lo) = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("multu", "unsigned (hi,lo) = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mul", "1 = 2 * 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mulu", "1 = 2 * 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("negu", "1 = ~2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("nop", ""),
+	RZ_PSEUDO_DEFINE_GRAMMAR("nor", "1 = ~(2 | 3)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("or", "1 = 2 | 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ori", "1 = 2 | 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sb", "byte [3 + 2] = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sh", "halfword [3 + 2] = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sll", "1 = 2 << 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sllv", "1 = 2 << 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("slr", "1 = 2 >> 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("slt", "1 = (2 < 3)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("slti", "1 = (2 < 3)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sltiu", "1 = (unsigned) (2 < 3)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sltu", "1 = (unsigned) (2 < 3)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sra", "1 = (signed) 2 >> 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("srl", "1 = 2 >> 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("srlv", "1 = 2 >> 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subu", "1 = 2 - 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sub", "1 = 2 - 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sw", "word [3 + 2] = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("syscall", "syscall"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("xor", "1 = 2 ^ 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("xori", "1 = 2 ^ 3"),
 };
-#undef MIPS_SET_OP
 
-static const MipsOp *find_opcode(const char *data) {
-	for (int i = 0; i < RZ_ARRAY_SIZE(ops); ++i) {
-		if (!strncmp(ops[i].mnemonic, data, ops[i].mnemonic_length)) {
-			return &ops[i];
-		}
-	}
-	return NULL;
-}
+const RzPseudoDirect mips_direct[] = {
+	RZ_PSEUDO_DEFINE_DIRECT("jr ra", "return"),
+};
 
-static bool parse(RzParse *parse, const char *data, RzStrBuf *sb) {
-	int i, p, len;
+const RzPseudoReplace mips_replace[] = {
+	RZ_PSEUDO_DEFINE_REPLACE(" + 0]", "]", 0),
+	RZ_PSEUDO_DEFINE_REPLACE("+ -", "- ", 1),
+	RZ_PSEUDO_DEFINE_REPLACE("0 << 16", "0", 1),
+};
+
+const RzPseudoConfig config = RZ_PSEUDO_DEFINE_CONFIG(mips_direct, mips_lexicon, mips_replace, 4, mips_tokenize);
+
+RzList *mips_tokenize(const char *assembly, size_t length) {
+	size_t i, p;
 	char *buf = NULL;
-	const char *arg = NULL;
-	const MipsOp *op = NULL;
 	bool insert_zero = false;
-	if (!strcmp(data, "jr ra")) {
-		rz_strbuf_set(sb, "return");
-		return true;
-	}
+	RzList *tokens = NULL;
 
-	op = find_opcode(data);
-	if (!op) {
-		return false;
-	}
-
-	len = strlen(data);
-	buf = rz_str_ndup(data, len);
+	buf = rz_str_ndup(assembly, length);
 	if (!buf) {
-		return false;
+		return NULL;
 	}
-	for (i = 0, p = 0; p < len; ++i, ++p) {
+
+	for (i = 0, p = 0; p < length; ++i, ++p) {
 		if (buf[p] == ',') {
 			p++;
 		} else if (buf[p] == '(') {
@@ -136,57 +123,21 @@ static bool parse(RzParse *parse, const char *data, RzStrBuf *sb) {
 	}
 	buf[i] = 0;
 
-	RzList *tokens = rz_str_split_list(buf, " ", 0);
+	tokens = rz_str_split_duplist(buf, " ", true);
+	free(buf);
 	if (!tokens) {
-		free(buf);
-		return false;
+		return NULL;
 	}
 
 	if (insert_zero) {
 		rz_list_insert(tokens, rz_list_length(tokens) - 1, strdup("0"));
 	}
 
-	for (i = 0, p = 0; i < op->grammar_length; ++p) {
-		int index = op->grammar[p] - '0';
-		switch (index) {
-		case 1:
-		case 2:
-		case 3:
-			arg = (const char *)rz_list_get_n(tokens, index);
-			if (!arg) {
-				rz_warn_if_reached();
-			}
-			rz_strbuf_append_n(sb, op->grammar + i, p - i);
-			i = p + 1;
-			rz_strbuf_append(sb, arg);
-			break;
-		default:
-			if (op->grammar[p] == '#') {
-				rz_strbuf_append_n(sb, op->grammar + i, p - i);
-				i = p + 1;
-				p++;
-				while (IS_DIGIT(op->grammar[p])) {
-					++p;
-				}
-			}
-			break;
-		}
-	}
+	return tokens;
+}
 
-	if (i < p) {
-		rz_strbuf_append_n(sb, op->grammar + i, p - i);
-	}
-
-	if (insert_zero) {
-		rz_str_replace(rz_strbuf_get(sb), " + 0", "", 1);
-	} else {
-		rz_str_replace(rz_strbuf_get(sb), "+ -", "- ", 1);
-		rz_str_replace(rz_strbuf_get(sb), "0 << 16", "0", 1);
-	}
-
-	rz_list_free(tokens);
-	free(buf);
-	return true;
+static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
+	return rz_pseudo_convert(&config, assembly, sb);
 }
 
 static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {

@@ -1,0 +1,118 @@
+typedef struct {
+	const char *mnemonic;
+	size_t mnemonic_length;
+	const char *grammar;
+	size_t grammar_length;
+} RzPseudoGrammar;
+
+typedef struct {
+	const char *expected;
+	const char *pseudo;
+} RzPseudoDirect;
+
+typedef struct {
+	const char *expected;
+	const char *replace;
+	int flag; // 0 for first match, 1 for all matches
+} RzPseudoReplace;
+
+typedef struct {
+	const RzPseudoDirect *direct;
+	size_t direct_length;
+	const RzPseudoReplace *replace;
+	size_t replace_length;
+	const RzPseudoGrammar *lexicon;
+	size_t lexicon_length;
+	int max_args;
+	RzList *(*tokenize)(const char *assembly, size_t length);
+} RzPseudoConfig;
+
+#define RZ_PSEUDO_DEFINE_GRAMMAR(x, y) \
+	{ .mnemonic = x, .mnemonic_length = sizeof(x) - 1, .grammar = y, .grammar_length = sizeof(y) - 1 }
+
+#define RZ_PSEUDO_DEFINE_DIRECT(x, y) \
+	{ .expected = x, .pseudo = y }
+
+#define RZ_PSEUDO_DEFINE_REPLACE(x, y, f) \
+	{ .expected = x, .replace = y, .flag = f }
+
+#define RZ_PSEUDO_DEFINE_CONFIG(d, l, r, m, t) \
+	{ \
+		.direct = d, \
+		.direct_length = RZ_ARRAY_SIZE(d), \
+		.replace = r, \
+		.replace_length = RZ_ARRAY_SIZE(r), \
+		.lexicon = l, \
+		.lexicon_length = RZ_ARRAY_SIZE(l), \
+		.max_args = m, \
+		.tokenize = t, \
+	}
+
+static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly, RzStrBuf *sb) {
+	rz_return_val_if_fail(config && config->tokenize && config->lexicon && config->direct && config->replace, false);
+
+	size_t i, p;
+	const char *arg = NULL;
+	const RzPseudoGrammar *gr = NULL;
+	const RzPseudoReplace *rp = NULL;
+
+	for (i = 0; i < config->direct_length; ++i) {
+		arg = config->direct[i].expected;
+		if (!strcmp(assembly, arg)) {
+			rz_strbuf_set(sb, config->direct[i].pseudo);
+			return true;
+		}
+	}
+
+	for (i = 0; i < config->lexicon_length; ++i) {
+		gr = &config->lexicon[i];
+		if (!strncmp(gr->mnemonic, assembly, gr->mnemonic_length)) {
+			break;
+		}
+		gr = NULL;
+	}
+	if (!gr) {
+		rz_strbuf_setf(sb, "asm(\"%s\")", assembly);
+		return true;
+	}
+
+	size_t length = strlen(assembly);
+	RzList *tokens = config->tokenize(assembly, length);
+	if (!tokens) {
+		rz_strbuf_setf(sb, "asm(\"%s\")", assembly);
+		return true;
+	}
+
+	for (i = 0, p = 0; i < gr->grammar_length; ++p) {
+		int index = gr->grammar[p] - '0';
+		if (index > 0 && index < config->max_args) {
+			arg = (const char *)rz_list_get_n(tokens, index);
+			if (!arg) {
+				arg = "?";
+			}
+			rz_strbuf_append_n(sb, gr->grammar + i, p - i);
+			i = p + 1;
+			rz_strbuf_append(sb, arg);
+		} else if (gr->grammar[p] == '#') {
+			rz_strbuf_append_n(sb, gr->grammar + i, p - i);
+			i = p + 1;
+			p++;
+			while (gr->grammar[p] && !IS_WHITESPACE(gr->grammar[p])) {
+				++p;
+			}
+		}
+	}
+
+	if (i < p) {
+		rz_strbuf_append_n(sb, gr->grammar + i, p - i);
+	}
+
+	char *result = rz_strbuf_get(sb);
+	for (int i = 0; i < config->replace_length; ++i) {
+		rp = &config->replace[i];
+		rz_str_replace(result, rp->expected, rp->replace, rp->flag);
+	}
+
+	rz_list_free(tokens);
+	return true;
+}
