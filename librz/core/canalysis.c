@@ -6961,37 +6961,6 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 	ht_uu_free(done);
 }
 
-RZ_API void rz_core_analysis_esil_graph(RzCore *core, const char *expr) {
-	RzAnalysisEsilDFG *edf = rz_analysis_esil_dfg_expr(core->analysis, NULL, expr);
-	RzListIter *iter, *ator;
-	RzGraphNode *node, *edon;
-	RzStrBuf *buf = rz_strbuf_new("");
-	rz_cons_printf("ag-\n");
-	rz_list_foreach (rz_graph_get_nodes(edf->flow), iter, node) {
-		const RzAnalysisEsilDFGNode *enode = (RzAnalysisEsilDFGNode *)node->data;
-		char *esc_str = rz_str_escape(rz_strbuf_get(enode->content));
-		rz_strbuf_set(buf, esc_str);
-		if (enode->type == RZ_ANALYSIS_ESIL_DFG_BLOCK_GENERATIVE) {
-			rz_strbuf_prepend(buf, "generative:");
-		}
-		char *b64_buf = rz_base64_encode_dyn((const ut8 *)rz_strbuf_get(buf), buf->len);
-		rz_cons_printf("agn %d base64:%s\n", enode->idx, b64_buf);
-		free(b64_buf);
-		free(esc_str);
-	}
-	rz_strbuf_free(buf);
-
-	rz_list_foreach (rz_graph_get_nodes(edf->flow), iter, node) {
-		const RzAnalysisEsilDFGNode *enode = (RzAnalysisEsilDFGNode *)node->data;
-		rz_list_foreach (rz_graph_get_neighbours(edf->flow, node), ator, edon) {
-			const RzAnalysisEsilDFGNode *edone = (RzAnalysisEsilDFGNode *)edon->data;
-			rz_cons_printf("age %d %d\n", enode->idx, edone->idx);
-		}
-	}
-
-	rz_analysis_esil_dfg_free(edf);
-}
-
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname) {
 	RzAnalysisOp *op = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_BASIC);
 	if (!name) {

@@ -169,7 +169,6 @@ static const char *help_msg_ae[] = {
 	"aecue", " [esil]", "continue until esil expression match",
 	"aef", " [addr]", "emulate function",
 	"aefa", " [addr]", "emulate function to find out args in given or current offset",
-	"aeg", " [expr]", "esil graph",
 	"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
 	"aeim", " [addr] [size] [name]", "initialize ESIL VM stack (aeim- remove)",
 	"aeip", "", "initialize ESIL program counter to curseek",
@@ -5176,43 +5175,6 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'g': // "aeg"
-		switch (input[1]) {
-		case 'i':
-		case 'v': {
-			char *oprompt = strdup(rz_config_get(core->config, "cmd.gprompt"));
-			rz_config_set(core->config, "cmd.gprompt", "pi 1");
-			rz_core_cmd0(core, ".aeg*");
-			rz_core_agraph_print_interactive(core);
-			rz_config_set(core->config, "cmd.gprompt", oprompt);
-			free(oprompt);
-			break;
-		}
-		case '\0':
-			rz_core_cmd0(core, ".aeg*");
-			rz_core_agraph_print_ascii(core);
-			break;
-		case ' ':
-			rz_core_analysis_esil_graph(core, input + 2);
-			break;
-		case '*': {
-			RzAnalysisOp *aop = rz_core_analysis_op(core, core->offset, RZ_ANALYSIS_OP_MASK_ESIL);
-			if (aop) {
-				const char *esilstr = rz_strbuf_get(&aop->esil);
-				if (RZ_STR_ISNOTEMPTY(esilstr)) {
-					rz_core_analysis_esil_graph(core, esilstr);
-				}
-			}
-			break;
-		}
-		default:
-			rz_cons_printf("Usage: aeg[iv*]\n");
-			rz_cons_printf(" aeg  analyze current instruction as an esil graph\n");
-			rz_cons_printf(" aeg* analyze current instruction as an esil graph\n");
-			rz_cons_printf(" aegv and launch the visual interactive mode (.aeg*;aggv == aegv)\n");
-			break;
-		}
-		break;
 	case 'b': // "aeb"
 		rz_core_analysis_esil_emulate_bb(core);
 		break;
@@ -5549,26 +5511,6 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 		}
 		core_analysis_bytes(core, core->block, len, count, 0);
 	} break;
-	case 'f': // "aof"
-		if (strlen(input + 1) > 1) {
-			RzAnalysisOp aop = RZ_EMPTY;
-			ut8 data[32];
-			rz_io_read_at(core->io, core->offset, data, sizeof(data));
-			int ret = rz_analysis_op(core->analysis, &aop, core->offset, data, sizeof(data), RZ_ANALYSIS_OP_MASK_ESIL);
-			if (ret > 0) {
-				const char *arg = input + 2;
-				const char *expr = RZ_STRBUF_SAFEGET(&aop.esil);
-				RzStrBuf *b = rz_analysis_esil_dfg_filter_expr(core->analysis, expr, arg);
-				if (b) {
-					char *s = rz_strbuf_drain(b);
-					rz_cons_printf("%s\n", s);
-					free(s);
-				}
-			} else {
-				eprintf("Warning: Unable to analyze instruction\n");
-			}
-		}
-		break;
 	default:
 	case '?': // "ao?"
 		rz_core_cmd_help(core, help_msg_ao);
