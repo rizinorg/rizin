@@ -20,8 +20,6 @@ static RzBinInfo *info(RzBinFile *bf);
 static void patch_relocs(RzBinFile *bf, struct Elf_(rz_bin_elf_obj_t) * bin);
 static RzList *imports(RzBinFile *bf);
 
-//TODO: implement rz_bin_symbol_dup() and rz_bin_symbol_free ?
-
 static int get_file_type(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	char *type = Elf_(rz_bin_elf_get_file_type(obj));
