@@ -117,6 +117,9 @@ DEFINE_FAKE_TEMPLATE = """
 \tRzCmdDesc *{cname}_cd = rz_cmd_desc_fake_new(core->rcmd, {parent_cname}_cd, {name}, &{help_cname});
 \trz_warn_if_fail({cname}_cd);"""
 
+SET_DEFAULT_MODE_TEMPLATE = """
+\trz_cmd_desc_set_default_mode({cname}_cd, {default_mode});"""
+
 CD_TYPE_OLDINPUT = "RZ_CMD_DESC_TYPE_OLDINPUT"
 CD_TYPE_GROUP = "RZ_CMD_DESC_TYPE_GROUP"
 CD_TYPE_ARGV = "RZ_CMD_DESC_TYPE_ARGV"
@@ -429,6 +432,7 @@ class CmdDesc:
         self.exec_cd = None
         self.modes = c.pop("modes", None)
         self.handler = c.pop("handler", None)
+        self.default_mode = c.pop("default_mode", None)
         # RzCmdDescHelp fields
         self.summary = strip(c.pop("summary"))
         self.description = strip(c.pop("description", None))
@@ -641,6 +645,11 @@ def createcd(cd):
             handler_cname=cd.get_handler_cname(),
             help_cname=cd.get_help_cname(),
         )
+        if cd.default_mode is not None:
+            formatted_string += SET_DEFAULT_MODE_TEMPLATE.format(
+                cname=cd.cname,
+                default_mode=cd.default_mode,
+            )
     elif cd.type == CD_TYPE_ARGV_STATE:
         formatted_string = DEFINE_ARGV_STATE_TEMPLATE.format(
             cname=cd.cname,
@@ -650,6 +659,11 @@ def createcd(cd):
             handler_cname=cd.get_handler_cname(),
             help_cname=cd.get_help_cname(),
         )
+        if cd.default_mode is not None:
+            formatted_string += SET_DEFAULT_MODE_TEMPLATE.format(
+                cname=cd.cname,
+                default_mode=cd.default_mode,
+            )
     elif cd.type == CD_TYPE_FAKE:
         formatted_string = DEFINE_FAKE_TEMPLATE.format(
             cname=cd.cname,

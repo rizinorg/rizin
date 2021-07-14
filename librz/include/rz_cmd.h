@@ -434,12 +434,14 @@ typedef struct rz_cmd_desc_t {
 		struct {
 			RzCmdArgvModesCb cb;
 			int modes; ///< A combination of RzOutputMode values
+			RzOutputMode default_mode; ///< Make one of the modes the default one, used even when the special suffix is not specified.
 			int min_argc;
 			int max_argc;
 		} argv_modes_data;
 		struct {
 			RzCmdArgvStateCb cb;
 			int modes; ///< A combination of RzOutputMode values
+			RzOutputMode default_mode; ///< Make one of the modes the default one, used even when the special suffix is not specified.
 			int min_argc;
 			int max_argc;
 		} argv_state_data;
@@ -536,6 +538,7 @@ RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const 
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd);
 RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd);
+RZ_API void rz_cmd_desc_set_default_mode(RzCmdDesc *cd, RzOutputMode mode);
 RZ_API bool rz_cmd_desc_has_handler(const RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *begin, RzCmdForeachNameCb cb, void *user);

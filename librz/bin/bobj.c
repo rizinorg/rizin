@@ -685,10 +685,148 @@ RZ_API ut64 rz_bin_object_get_vaddr(RzBinObject *o, ut64 paddr, ut64 vaddr) {
 	return paddr;
 }
 
-RZ_API RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym) {
+RZ_API const RzBinAddr *rz_bin_object_get_special_symbol(RzBinObject *o, RzBinSpecialSymbol sym) {
 	rz_return_val_if_fail(o, NULL);
 	if (sym < 0 || sym >= RZ_BIN_SPECIAL_SYMBOL_LAST) {
 		return NULL;
 	}
 	return o ? o->binsym[sym] : NULL;
+}
+
+// TODO: obj->entries & co should be set here, not somewhere else
+RZ_API const RzList *rz_bin_object_get_entries(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->entries;
+}
+
+RZ_API const RzList *rz_bin_object_get_fields(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->fields;
+}
+
+RZ_API const RzList *rz_bin_object_get_imports(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->imports;
+}
+
+RZ_API const RzBinInfo *rz_bin_object_get_info(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->info;
+}
+
+RZ_API const RzList *rz_bin_object_get_libs(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->libs;
+
+}
+
+RZ_API const RzList *rz_bin_object_get_sections_all(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->sections;
+}
+
+static RzList *get_sections_or_segment(RzBinObject *obj, bool is_segment) {
+	RzList *res = rz_list_new();
+	if (!res) {
+		return NULL;
+	}
+	const RzList *all = rz_bin_object_get_sections_all(obj);
+	RzListIter *it;
+	RzBinSection *sec;
+	rz_list_foreach(all, it, sec) {
+		if (sec->is_segment == is_segment) {
+			rz_list_append(res, sec);
+		}
+	}
+	return res;
+}
+
+RZ_API RzList *rz_bin_object_get_sections(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return get_sections_or_segment(obj, false);
+}
+
+RZ_API RzList *rz_bin_object_get_segments(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return get_sections_or_segment(obj, true);
+}
+
+RZ_API const RzList *rz_bin_object_get_classes(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->classes;
+}
+
+RZ_API const RzList *rz_bin_object_get_strings(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->strings;
+}
+
+RZ_API const RzList *rz_bin_object_get_mem(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->mem;
+}
+
+RZ_API const RzList *rz_bin_object_get_symbols(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	return obj->symbols;
+}
+
+RZ_API char *rz_bin_object_get_signature(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	// TODO: implement me
+	return NULL;
+}
+
+RZ_API const RzList *rz_bin_object_reset_strings(RzBin *bin, RzBinFile *bf, RzBinObject *obj) {
+	rz_return_val_if_fail(obj, NULL);
+	if (obj->strings) {
+		rz_list_free(obj->strings);
+		obj->strings = NULL;
+	}
+	ht_up_free(obj->strings_db);
+	obj->strings_db = ht_up_new0();
+
+	bf->rawstr = bin->rawstr;
+	RzBinPlugin *plugin = obj->plugin;
+	if (plugin && plugin->strings) {
+		obj->strings = plugin->strings(bf);
+	} else {
+		obj->strings = rz_bin_file_get_strings(bf, bin->minstrlen, 0, bf->rawstr);
+	}
+	if (bin->debase64) {
+		rz_bin_object_filter_strings(obj);
+	}
+	return obj->strings;
+}
+
+RZ_API bool rz_bin_object_is_string(RzBinObject *obj, ut64 va) {
+	rz_return_val_if_fail(obj, false);
+	RzBinString *string;
+	RzListIter *iter;
+	const RzList *list;
+	if (!(list = rz_bin_object_get_strings(obj))) {
+		return false;
+	}
+	rz_list_foreach (list, iter, string) {
+		if (string->vaddr == va) {
+			return true;
+		}
+		if (string->vaddr > va) {
+			return false;
+		}
+	}
+	return false;
+}
+
+RZ_API bool rz_bin_object_is_big_endian(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, false);
+	return obj->info ? obj->info->big_endian : false;
+}
+
+RZ_API bool rz_bin_object_is_static(RzBinObject *obj) {
+	rz_return_val_if_fail(obj, false);
+	if (obj->libs && rz_list_length(obj->libs) > 0) {
+		return RZ_BIN_DBG_STATIC & obj->info->dbg_info;
+	}
+	return true;
 }

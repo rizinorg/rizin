@@ -79,6 +79,16 @@ RZ_IPI int rz_output_mode_to_char(RzOutputMode mode) {
 	return -1;
 }
 
+RZ_IPI const char *rz_output_mode_to_summary(RzOutputMode mode) {
+	size_t i;
+	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+		if (argv_modes[i].mode == mode) {
+			return argv_modes[i].summary_suffix;
+		}
+	}
+	return "";
+}
+
 static int value = 0;
 
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
@@ -330,6 +340,25 @@ out:
 	return res;
 }
 
+/**
+ * \brief Set the default mode of the command descriptor, if the type allows it.
+ *
+ * Command descriptors that support multiple output modes can also have a
+ * default one. This function can be used to set it.
+ */
+RZ_API void rz_cmd_desc_set_default_mode(RzCmdDesc *cd, RzOutputMode mode) {
+	switch(cd->type) {
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		cd->d.argv_modes_data.default_mode = mode;
+		break;
+	case RZ_CMD_DESC_TYPE_ARGV_STATE:
+		cd->d.argv_state_data.default_mode = mode;
+		break;
+	default:
+		break;
+	}
+}
+
 RZ_API char **rz_cmd_alias_keys(RzCmd *cmd, int *sz) {
 	if (sz) {
 		*sz = cmd->aliases.count;
@@ -543,11 +572,30 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 	}
 }
 
+static RzOutputMode get_cd_default_mode(RzCmdDesc *cd) {
+	switch(cd->type) {
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		return cd->d.argv_modes_data.default_mode;
+	case RZ_CMD_DESC_TYPE_ARGV_STATE:
+		return cd->d.argv_state_data.default_mode;
+	default:
+		return 0;
+	}
+}
+
+static bool has_cd_default_mode(RzCmdDesc *cd) {
+	return get_cd_default_mode(cd) != 0;
+}
+
 static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
 	if (!has_cd_submodes(cd)) {
 		return 0;
 	}
-	return suffix2mode(cmdid + strlen(cd->name));
+	RzOutputMode mode = suffix2mode(cmdid + strlen(cd->name));
+	if (mode == RZ_OUTPUT_MODE_STANDARD && has_cd_default_mode(cd)) {
+		mode = get_cd_default_mode(cd);
+	}
+	return mode;
 }
 
 /**
@@ -917,10 +965,15 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 		rz_strbuf_append(sb, pal_reset);
 	}
 	if (cd->help->summary) {
+		RzStrBuf *summary_sb = rz_strbuf_new(cd->help->summary);
 		columns += strbuf_append_calc(sb, "   ");
 		rz_strbuf_append(sb, pal_help_color);
-		fill_wrapped_comment(cmd, sb, cd->help->summary, columns);
+		if (has_cd_default_mode(cd)) {
+			rz_strbuf_appendf(summary_sb, "%s", rz_output_mode_to_summary(get_cd_default_mode(cd)));
+		}
+		fill_wrapped_comment(cmd, sb, rz_strbuf_get(summary_sb), columns);
 		rz_strbuf_append(sb, pal_reset);
+		rz_strbuf_free(summary_sb);
 	}
 	rz_strbuf_append(sb, "\n");
 }

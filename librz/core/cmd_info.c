@@ -605,16 +605,6 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 		pj_k(pj, n); \
 	} \
 	rz_core_bin_info(core, x, pj, mode, va, NULL, y);
-		case 'A': // "iA"
-			if (input[1] == 'j') {
-				pj_o(pj);
-				rz_bin_list_archs(core->bin, pj, 'j');
-				pj_end(pj);
-			} else {
-				rz_bin_list_archs(core->bin, NULL, 1);
-				newline = false;
-			}
-			break;
 		case 'E': // "iE"
 		{
 			if (input[1] == 'j' && input[2] == '.') {
@@ -638,7 +628,13 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				return 0;
 			}
 
-			RzList *new_hashes = rz_bin_file_compute_hashes(core->bin, limit);
+			RzBinFile *bf = core->bin->cur;
+			if (!bf) {
+				RZ_LOG_ERROR("Cannot get current binary file\n");
+				return 0;
+			}
+
+			RzList *new_hashes = rz_bin_file_compute_hashes(core->bin, bf, limit);
 			RzList *old_hashes = rz_bin_file_set_hashes(core->bin, new_hashes);
 			bool equal = true;
 			if (!rz_list_empty(new_hashes) && !rz_list_empty(old_hashes)) {
@@ -752,6 +748,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				RZBININFO("header", RZ_CORE_BIN_ACC_HEADER, NULL);
 				break;
 			}
+			// fallthrough
 		case 'h': // "ih"
 			RZBININFO("fields", RZ_CORE_BIN_ACC_FIELDS, NULL);
 			break;
@@ -1292,4 +1289,78 @@ done:
 	}
 redone:
 	return 0;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_archs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_archs_print(core->bin, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_entry_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_entries_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_entryexits_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_initfini_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_exports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_exports_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_symbols_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_symbols_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_imports_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_imports_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_libs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_libs_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_main_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_main_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_relocs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_relocs_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_sections_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzList *hashes = rz_list_new_from_array((const void **)argv + 1, argc - 1);
+	if (!hashes) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_bin_sections_print(core, state, hashes);
+	rz_list_free(hashes);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_segments_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzList *hashes = rz_list_new_from_array((const void **)argv + 1, argc - 1);
+	if (!hashes) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_core_bin_segments_print(core, state, hashes);
+	rz_list_free(hashes);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_strings_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_core_bin_strings_print(core, state);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_info_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return RZ_CMD_STATUS_ERROR;
 }

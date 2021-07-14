@@ -114,6 +114,8 @@ static const RzCmdDescArg eval_readonly_args[2];
 static const RzCmdDescArg eval_spaces_args[2];
 static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg env_args[3];
+static const RzCmdDescArg cmd_info_sections_args[2];
+static const RzCmdDescArg cmd_info_segments_args[2];
 static const RzCmdDescArg ls_args[2];
 static const RzCmdDescArg plugins_load_args[2];
 static const RzCmdDescArg plugins_unload_args[2];
@@ -2116,8 +2118,277 @@ static const RzCmdDescHelp cmd_egg_help = {
 	.summary = "Generate shellcodes with rz_egg",
 };
 
-static const RzCmdDescHelp cmd_info_help = {
+static const RzCmdDescHelp i_help = {
 	.summary = "Get info about opened binary file",
+};
+static const RzCmdDescArg cmd_info_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_args,
+};
+
+static const RzCmdDescArg cmd_info_archs_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_archs_help = {
+	.summary = "List archs",
+	.args = cmd_info_archs_args,
+};
+
+static const RzCmdDescArg cmd_info_classes_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_classes_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_classes_args,
+};
+
+static const RzCmdDescArg cmd_info_signature_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_signature_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_signature_args,
+};
+
+static const RzCmdDescArg cmd_info_debug_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_debug_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_debug_args,
+};
+
+static const RzCmdDescArg cmd_info_demangle_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_demangle_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_demangle_args,
+};
+
+static const RzCmdDescArg cmd_info_entry_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_entry_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_entry_args,
+};
+
+static const RzCmdDescArg cmd_info_entryexits_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_entryexits_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_entryexits_args,
+};
+
+static const RzCmdDescArg cmd_info_exports_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_exports_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_exports_args,
+};
+
+static const RzCmdDescArg cmd_info_headers_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_headers_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_headers_args,
+};
+
+static const RzCmdDescArg cmd_info_header_verbose_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_header_verbose_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_header_verbose_args,
+};
+
+static const RzCmdDescArg cmd_info_imports_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_imports_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_imports_args,
+};
+
+static const RzCmdDescArg cmd_info_binary_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_binary_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_binary_args,
+};
+
+static const RzCmdDescArg cmd_info_kuery_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_kuery_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_kuery_args,
+};
+
+static const RzCmdDescArg cmd_info_libs_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_libs_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_libs_args,
+};
+
+static const RzCmdDescArg cmd_info_plugins_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_plugins_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_plugins_args,
+};
+
+static const RzCmdDescArg cmd_info_memory_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_memory_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_memory_args,
+};
+
+static const RzCmdDescArg cmd_info_main_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_main_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_main_args,
+};
+
+static const RzCmdDescArg cmd_info_relocs_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_relocs_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_relocs_args,
+};
+
+static const RzCmdDescArg cmd_info_resources_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_resources_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_resources_args,
+};
+
+static const RzCmdDescArg cmd_info_symbols_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_symbols_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_symbols_args,
+};
+
+static const RzCmdDescArg cmd_info_cur_symbol_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_cur_symbol_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_cur_symbol_args,
+};
+
+static const RzCmdDescArg cmd_info_sections_args[] = {
+	{
+		.name = "digests",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_sections_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_sections_args,
+};
+
+static const RzCmdDescArg cmd_info_cur_section_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_cur_section_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_cur_section_args,
+};
+
+static const RzCmdDescArg cmd_info_section_bars_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_section_bars_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_section_bars_args,
+};
+
+static const RzCmdDescArg cmd_info_segments_args[] = {
+	{
+		.name = "digests",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_ARRAY,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_segments_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_segments_args,
+};
+
+static const RzCmdDescArg cmd_info_hashes_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_hashes_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_hashes_args,
+};
+
+static const RzCmdDescArg cmd_info_versions_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_versions_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_versions_args,
+};
+
+static const RzCmdDescArg cmd_info_trycatch_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_trycatch_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_trycatch_args,
+};
+
+static const RzCmdDescArg cmd_info_sourcelines_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_sourcelines_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_sourcelines_args,
+};
+
+static const RzCmdDescArg cmd_info_strings_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_strings_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_strings_args,
+};
+
+static const RzCmdDescArg cmd_info_guess_size_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_info_guess_size_help = {
+	.summary = "Show info of current file",
+	.args = cmd_info_guess_size_args,
 };
 
 static const RzCmdDescHelp cmd_kuery_help = {
@@ -4949,8 +5220,131 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_egg_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "g", rz_cmd_egg, &cmd_egg_help);
 	rz_warn_if_fail(cmd_egg_cd);
 
-	RzCmdDesc *cmd_info_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "i", rz_cmd_info, &cmd_info_help);
-	rz_warn_if_fail(cmd_info_cd);
+	RzCmdDesc *i_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "i", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_help, &i_help);
+	rz_warn_if_fail(i_cd);
+	RzCmdDesc *cmd_info_archs_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iA", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_archs_handler, &cmd_info_archs_help);
+	rz_warn_if_fail(cmd_info_archs_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_archs_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_classes_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ic", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_classes_help);
+	rz_warn_if_fail(cmd_info_classes_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_classes_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_signature_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iC", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_signature_help);
+	rz_warn_if_fail(cmd_info_signature_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_signature_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_debug_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "id", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_debug_help);
+	rz_warn_if_fail(cmd_info_debug_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_debug_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_demangle_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iD", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_demangle_help);
+	rz_warn_if_fail(cmd_info_demangle_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_demangle_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_entry_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ie", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_entry_handler, &cmd_info_entry_help);
+	rz_warn_if_fail(cmd_info_entry_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_entry_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_entryexits_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iee", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_entryexits_handler, &cmd_info_entryexits_help);
+	rz_warn_if_fail(cmd_info_entryexits_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_entryexits_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_exports_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iE", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_exports_handler, &cmd_info_exports_help);
+	rz_warn_if_fail(cmd_info_exports_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_exports_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_headers_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ih", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_headers_help);
+	rz_warn_if_fail(cmd_info_headers_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_headers_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_header_verbose_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iHH", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_header_verbose_help);
+	rz_warn_if_fail(cmd_info_header_verbose_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_header_verbose_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_imports_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ii", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_imports_handler, &cmd_info_imports_help);
+	rz_warn_if_fail(cmd_info_imports_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_imports_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_binary_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iI", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_binary_help);
+	rz_warn_if_fail(cmd_info_binary_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_binary_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_kuery_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ik", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_kuery_help);
+	rz_warn_if_fail(cmd_info_kuery_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_kuery_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_libs_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "il", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_libs_handler, &cmd_info_libs_help);
+	rz_warn_if_fail(cmd_info_libs_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_libs_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_plugins_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iL", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_plugins_help);
+	rz_warn_if_fail(cmd_info_plugins_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_plugins_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_memory_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "im", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_memory_help);
+	rz_warn_if_fail(cmd_info_memory_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_memory_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_main_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iM", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_main_handler, &cmd_info_main_help);
+	rz_warn_if_fail(cmd_info_main_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_main_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_relocs_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ir", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_relocs_handler, &cmd_info_relocs_help);
+	rz_warn_if_fail(cmd_info_relocs_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_relocs_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_resources_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iR", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_resources_help);
+	rz_warn_if_fail(cmd_info_resources_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_resources_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_symbols_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "is", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_symbols_handler, &cmd_info_symbols_help);
+	rz_warn_if_fail(cmd_info_symbols_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_symbols_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_cur_symbol_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "is.", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_cur_symbol_help);
+	rz_warn_if_fail(cmd_info_cur_symbol_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_cur_symbol_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_sections_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iS", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_info_sections_handler, &cmd_info_sections_help);
+	rz_warn_if_fail(cmd_info_sections_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_sections_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_cur_section_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iS.", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_cur_section_help);
+	rz_warn_if_fail(cmd_info_cur_section_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_cur_section_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_section_bars_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iS=", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_section_bars_help);
+	rz_warn_if_fail(cmd_info_section_bars_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_section_bars_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_segments_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iSS", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_cmd_info_segments_handler, &cmd_info_segments_help);
+	rz_warn_if_fail(cmd_info_segments_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_segments_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_hashes_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "it", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_hashes_help);
+	rz_warn_if_fail(cmd_info_hashes_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_hashes_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_versions_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iV", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_versions_help);
+	rz_warn_if_fail(cmd_info_versions_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_versions_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_trycatch_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iw", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_trycatch_help);
+	rz_warn_if_fail(cmd_info_trycatch_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_trycatch_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_sourcelines_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "ix", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_sourcelines_help);
+	rz_warn_if_fail(cmd_info_sourcelines_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_sourcelines_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_strings_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iz", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_strings_handler, &cmd_info_strings_help);
+	rz_warn_if_fail(cmd_info_strings_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_strings_cd, RZ_OUTPUT_MODE_TABLE);
+
+	RzCmdDesc *cmd_info_guess_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, i_cd, "iZ", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_info_handler, &cmd_info_guess_size_help);
+	rz_warn_if_fail(cmd_info_guess_size_cd);
+	rz_cmd_desc_set_default_mode(cmd_info_guess_size_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *cmd_kuery_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "k", rz_cmd_kuery, &cmd_kuery_help);
 	rz_warn_if_fail(cmd_kuery_cd);

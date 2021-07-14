@@ -195,53 +195,84 @@ RZ_API void rz_table_set_columnsf(RzTable *t, const char *fmt, ...) {
 	va_end(ap);
 }
 
+#define add_column_to_rowf(row, fmt, ap) do { \
+		const char *arg = NULL; \
+		switch (fmt) { \
+		case 's': \
+		case 'z': \
+			arg = va_arg(ap, const char *); \
+			rz_list_append(row, strdup(arg ? arg : "")); \
+			break; \
+		case 'b': \
+			rz_list_append(row, rz_str_new(rz_str_bool(va_arg(ap, int)))); \
+			break; \
+		case 'i': \
+		case 'd': \
+			rz_list_append(row, rz_str_newf("%d", va_arg(ap, int))); \
+			break; \
+		case 'n': \
+			rz_list_append(row, rz_str_newf("%" PFMT64d, va_arg(ap, ut64))); \
+			break; \
+		case 'u': \
+			rz_list_append(row, rz_num_units(NULL, 32, va_arg(ap, ut64))); \
+			break; \
+		case 'x': \
+		case 'X': { \
+			ut64 n = va_arg(ap, ut64); \
+			if (n == UT64_MAX) { \
+				if (fmt == 'X') { \
+					rz_list_append(row, strdup("----------")); \
+				} else { \
+					rz_list_append(row, strdup("-1")); \
+				} \
+			} else { \
+				if (fmt == 'X') { \
+					rz_list_append(row, rz_str_newf("0x%08" PFMT64x, n)); \
+				} else { \
+					rz_list_append(row, rz_str_newf("0x%" PFMT64x, n)); \
+				} \
+			} \
+		} break; \
+		default: \
+			eprintf("Invalid format string char '%c', use 's' or 'n'\n", fmt); \
+			break; \
+		} \
+	} while(0)
+
+/**
+ * Add some columns values to the last created row, if any, or create a new row otherwise.
+ */
+RZ_API void rz_table_add_row_columnsf(RzTable *t, const char *fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+	RzTableRow *row = rz_list_last(t->rows);
+	RzList *list;
+	bool add_row;
+	if (row) {
+		list = row->items;
+		add_row = false;
+	} else {
+		list = rz_list_newf(free);
+		add_row = true;
+	}
+	for (const char *f = fmt; *f; f++) {
+		add_column_to_rowf(list, *f, ap);
+	}
+	va_end(ap);
+	if (add_row) {
+		rz_table_add_row_list(t, list);
+	}
+}
+
+/**
+ * Add a new row with the specified columns values.
+ */
 RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
 	RzList *list = rz_list_newf(free);
-	const char *f = fmt;
-	const char *arg = NULL;
-	for (; *f; f++) {
-		switch (*f) {
-		case 's':
-		case 'z':
-			arg = va_arg(ap, const char *);
-			rz_list_append(list, strdup(arg ? arg : ""));
-			break;
-		case 'b':
-			rz_list_append(list, rz_str_new(rz_str_bool(va_arg(ap, int))));
-			break;
-		case 'i':
-		case 'd':
-			rz_list_append(list, rz_str_newf("%d", va_arg(ap, int)));
-			break;
-		case 'n':
-			rz_list_append(list, rz_str_newf("%" PFMT64d, va_arg(ap, ut64)));
-			break;
-		case 'u':
-			rz_list_append(list, rz_num_units(NULL, 32, va_arg(ap, ut64)));
-			break;
-		case 'x':
-		case 'X': {
-			ut64 n = va_arg(ap, ut64);
-			if (n == UT64_MAX) {
-				if (*f == 'X') {
-					rz_list_append(list, strdup("----------"));
-				} else {
-					rz_list_append(list, strdup("-1"));
-				}
-			} else {
-				if (*f == 'X') {
-					rz_list_append(list, rz_str_newf("0x%08" PFMT64x, n));
-				} else {
-					rz_list_append(list, rz_str_newf("0x%" PFMT64x, n));
-				}
-			}
-		} break;
-		default:
-			eprintf("Invalid format string char '%c', use 's' or 'n'\n", *f);
-			break;
-		}
+	for (const char *f = fmt; *f; f++) {
+		add_column_to_rowf(list, *f, ap);
 	}
 	va_end(ap);
 	rz_table_add_row_list(t, list);

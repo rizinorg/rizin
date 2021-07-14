@@ -22,6 +22,8 @@
 #   modes: >
 #     same as RzCmdDesc.modes. When present the type is automatically set to
 #     ARGV_MODES.
+#   default_mode: >
+#     same as RzCmdDesc.default_mode.
 #   details: >
 #     an array of RzCmdDescDetail or a string referencing an already existing
 #     RzCmdDescDetail array
@@ -217,9 +219,8 @@ commands:
     summary: Generate shellcodes with rz_egg
     type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: i
-    cname: cmd_info
     summary: Get info about opened binary file
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands: cmd_info
   - name: k
     cname: cmd_kuery
     summary: Run sdb-query

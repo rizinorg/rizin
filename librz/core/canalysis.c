@@ -4754,7 +4754,7 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzListIter *iter;
 	RzFlagItem *item;
 	RzAnalysisFunction *fcni;
-	RzBinAddr *binmain;
+	const RzBinAddr *binmain;
 	RzBinAddr *entry;
 	RzBinSymbol *symbol;
 	int depth = core->analysis->opt.depth;
