@@ -1117,8 +1117,11 @@ RZ_API RzList *GH(rz_heap_tcache_content)(RzCore *core, GHT arena_base) {
 	}
 	// Get rz_tcache struct
 	GH(RTcache) *tcache = GH(tcache_new)(core);
-	GH(tcache_read)
-	(core, tcache_start, tcache);
+	if (!GH(tcache_read)(core, tcache_start, tcache)) {
+		GH(tcache_free)
+		(tcache);
+		return NULL;
+	}
 
 	// List of heap bins to return
 	RzList *tcache_bins_list = rz_list_newf((RzListFree)GH(rz_heap_bin_free));
