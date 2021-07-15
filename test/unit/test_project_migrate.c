@@ -133,23 +133,50 @@ bool test_load_v2_typelink() {
 	RzCore *core = rz_core_new();
 	RzSerializeResultInfo *res = rz_serialize_result_info_new();
 	mu_assert_notnull(res, "result info new");
-	RzProjectErr err = rz_project_load_file(core, "prj/v2-typelink.rzdb", true, res);
+	RzProjectErr err = rz_project_load_file(core, "prj/v2-typelink-callables.rzdb", true, res);
 	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
 	mu_assert_eq(rz_list_length(res), 1, "info");
 	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 2 to 3.", "info");
-
-	// 4. Save into the project
-	if (!rz_file_is_directory(".tmp" RZ_SYS_DIR)) {
-		mu_assert_true(rz_sys_mkdir(".tmp/"), "create tmp directory");
-	}
-	err = rz_project_save_file(core, ".tmp/test_v2_typelink_v3_migrated.rzdb");
-	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project save err");
 
 	mu_assert_true(rz_analysis_type_link_exists(core->analysis, 0x80484b0), "has typelink");
 	RzType *typelink = rz_analysis_type_link_at(core->analysis, 0x80484b0);
 	mu_assert_notnull(typelink, "has typelink");
 	mu_assert_eq(RZ_TYPE_KIND_POINTER, typelink->kind, "typelink is a pointer");
 	mu_assert_true(rz_type_atomic_str_eq(core->analysis->typedb, typelink->pointer.type, "char"), "typelink is char *");
+
+	rz_serialize_result_info_free(res);
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_load_v2_callables() {
+	RzCore *core = rz_core_new();
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	mu_assert_notnull(res, "result info new");
+	RzProjectErr err = rz_project_load_file(core, "prj/v2-typelink-callables.rzdb", true, res);
+	mu_assert_eq(err, RZ_PROJECT_ERR_SUCCESS, "project load err");
+	mu_assert_eq(rz_list_length(res), 1, "info");
+	mu_assert_streq(rz_list_get_n(res, 0), "project migrated from version 2 to 3.", "info");
+
+	RzAnalysisFunction *fcn = rz_analysis_get_function_byname(core->analysis, "entry0");
+	mu_assert_notnull(fcn, "find \"entry0\" function");
+	fcn = rz_analysis_get_function_byname(core->analysis, "main");
+	mu_assert_notnull(fcn, "find \"entry0\" function");
+
+	RzTypeDB *typedb = core->analysis->typedb;
+	RzCallable *chmod = rz_type_func_get(typedb, "chmod");
+	mu_assert_notnull(chmod, "func \"chmod\" callable type");
+	mu_assert_streq(chmod->name, "chmod", "is chmod() function");
+	mu_assert_eq(2, rz_type_func_args_count(typedb, "chmod"), "chmod() has 2 arguments");
+	mu_assert_false(chmod->noret, "func \"chmod\" returns");
+	RzCallableArg *arg0 = *rz_pvector_index_ptr(chmod->args, 0);
+	mu_assert_notnull(arg0, "func \"chmod\" has 1st argument");
+	mu_assert_streq(arg0->name, "path", "has \"path\" argument");
+	RzCallableArg *arg1 = *rz_pvector_index_ptr(chmod->args, 1);
+	mu_assert_notnull(arg1, "func \"chmod\" has 2nd argument");
+	mu_assert_streq(arg1->name, "mode", "has \"mode\" argument");
+	mu_assert_true(rz_type_atomic_str_eq(typedb, chmod->ret, "int"), "chmod() returns \"int\"");
 
 	rz_serialize_result_info_free(res);
 
@@ -164,6 +191,7 @@ int all_tests() {
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v2_typelink);
+	mu_run_test(test_load_v2_callables);
 	return tests_passed != tests_run;
 }
 

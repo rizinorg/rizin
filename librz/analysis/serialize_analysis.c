@@ -1962,7 +1962,6 @@ RZ_API void rz_serialize_analysis_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 
 RZ_API bool rz_serialize_analysis_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	return rz_serialize_types_load(db, analysis->typedb, res);
-	return true;
 }
 
 RZ_API void rz_serialize_analysis_callables_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
@@ -1971,7 +1970,6 @@ RZ_API void rz_serialize_analysis_callables_save(RZ_NONNULL Sdb *db, RZ_NONNULL 
 
 RZ_API bool rz_serialize_analysis_callables_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	return rz_serialize_callables_load(db, analysis->typedb, res);
-	return true;
 }
 
 RZ_API void rz_serialize_analysis_typelinks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
@@ -1980,7 +1978,6 @@ RZ_API void rz_serialize_analysis_typelinks_save(RZ_NONNULL Sdb *db, RZ_NONNULL 
 
 RZ_API bool rz_serialize_analysis_typelinks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
 	return rz_serialize_typelinks_load(db, analysis, res);
-	return true;
 }
 
 RZ_API void rz_serialize_analysis_sign_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis) {
