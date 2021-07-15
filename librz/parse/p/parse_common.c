@@ -29,7 +29,6 @@
 
 typedef struct {
 	const char *mnemonic;
-	size_t mnemonic_length;
 	const char *grammar;
 	size_t grammar_length;
 } RzPseudoGrammar;
@@ -57,7 +56,7 @@ typedef struct {
 } RzPseudoConfig;
 
 #define RZ_PSEUDO_DEFINE_GRAMMAR(x, y) \
-	{ .mnemonic = x, .mnemonic_length = sizeof(x) - 1, .grammar = y, .grammar_length = sizeof(y) - 1 }
+	{ .mnemonic = x, .grammar = y, .grammar_length = sizeof(y) - 1 }
 
 #define RZ_PSEUDO_DEFINE_DIRECT(x, y) \
 	{ .expected = x, .pseudo = y }
@@ -81,7 +80,7 @@ static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly
 	rz_return_val_if_fail(config && config->tokenize && config->lexicon && config->direct && config->replace, false);
 
 	size_t i, p;
-	const char *arg = NULL;
+	const char *tmp = NULL;
 	const RzPseudoGrammar *gr = NULL;
 	const RzPseudoReplace *rp = NULL;
 
@@ -90,18 +89,24 @@ static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly
 	} else if (!strncmp(assembly, "trunc", 5)) {
 		return true;
 	}
+	size_t length = strlen(assembly);
 
 	for (i = 0; i < config->direct_length; ++i) {
-		arg = config->direct[i].expected;
-		if (!strcmp(assembly, arg)) {
+		tmp = config->direct[i].expected;
+		if (!strcmp(assembly, tmp)) {
 			rz_strbuf_set(sb, config->direct[i].pseudo);
 			return true;
 		}
 	}
 
+	size_t mnemonic_size = length;
+	if ((tmp = strchr(assembly, ' '))) {
+		mnemonic_size = tmp - assembly;
+	}
+
 	for (i = 0; i < config->lexicon_length; ++i) {
 		gr = &config->lexicon[i];
-		if (!strncmp(gr->mnemonic, assembly, gr->mnemonic_length)) {
+		if (!strncmp(gr->mnemonic, assembly, mnemonic_size)) {
 			break;
 		}
 		gr = NULL;
@@ -111,7 +116,6 @@ static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly
 		return true;
 	}
 
-	size_t length = strlen(assembly);
 	RzList *tokens = config->tokenize(assembly, length);
 	if (!tokens) {
 		rz_strbuf_setf(sb, "asm(\"%s\")", assembly);
@@ -121,13 +125,13 @@ static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly
 	for (i = 0, p = 0; i < gr->grammar_length; ++p) {
 		int index = gr->grammar[p] - '0';
 		if (index > 0 && index < config->max_args) {
-			arg = (const char *)rz_list_get_n(tokens, index);
-			if (!arg) {
-				arg = "?";
+			tmp = (const char *)rz_list_get_n(tokens, index);
+			if (!tmp) {
+				tmp = "?";
 			}
 			rz_strbuf_append_n(sb, gr->grammar + i, p - i);
 			i = p + 1;
-			rz_strbuf_append(sb, arg);
+			rz_strbuf_append(sb, tmp);
 		} else if (gr->grammar[p] == '#') {
 			rz_strbuf_append_n(sb, gr->grammar + i, p - i);
 			i = p + 1;
