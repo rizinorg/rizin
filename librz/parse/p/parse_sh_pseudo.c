@@ -124,7 +124,6 @@ static const RzPseudoGrammar sh_lexicon[] = {
 };
 
 static const RzPseudoReplace sh_replace[] = {
-	RZ_PSEUDO_DEFINE_REPLACE(",", " + ", 1),
 	RZ_PSEUDO_DEFINE_REPLACE("+ -", "- ", 1),
 };
 
@@ -159,6 +158,11 @@ RzList *sh_tokenize(const char *assembly, size_t length) {
 	free(buf);
 	if (!tokens) {
 		return NULL;
+	}
+
+	RzListIter *it;
+	rz_list_foreach (tokens, it, buf) {
+		it->data = rz_str_replace(buf, ",", " + ", 1);
 	}
 
 	return tokens;
