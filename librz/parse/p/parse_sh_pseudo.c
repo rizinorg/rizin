@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2017 deroad <wargio@libero.it>
+// SPDX-FileCopyrightText: 2017-2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
@@ -11,260 +11,163 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i, j, k;
-	struct {
-		char *op;
-		char *str;
-	} ops[] = {
-		{ "add", "B += A" },
-		{ "addc", "B += A + t" },
-		{ "addv", "B += A; t = int_overflow (B)" },
-		{ "and", "B &= A" },
-		{ "and.b", "B &= A" },
-		{ "bf", "if (!t) goto A" },
-		{ "bf.s", "if (!t) goto A" },
-		{ "bra", "goto A" },
-		{ "brk", "_break_exception ()" },
-		{ "bsr", "A ()" },
-		{ "bsrf", "A ()" },
-		{ "bt", "if (t) goto A" },
-		{ "bt.s", "if (t) goto A" },
-		{ "clrmac", "_clrmac ()" },
-		{ "clrs", "_clrs ()" },
-		{ "clrt", "_clrt ()" },
-		{ "cmp/eq", "t = B == A ? 1 : 0" },
-		{ "cmp/ge", "t = B >= A ? 1 : 0" },
-		{ "cmp/gt", "t = B > A ? 1 : 0" },
-		{ "cmp/hi", "t = (unsigned) B > (unsigned) A ? 1 : 0" },
-		{ "cmp/hs", "t = (unsigned) B >= (unsigned) A ? 1 : 0" },
-		{ "cmp/pl", "t = A > 0 ? 1 : 0" },
-		{ "cmp/pz", "t = A >= 0 ? 1 : 0" },
-		{ "cmp/str", "t = A ^ B ? 1 : 0" },
-		{ "div1", "B /= A" },
-		{ "dmuls.l", "mac = B * A" },
-		{ "dmulu.l", "mac = (unsigned) B * (unsigned) A" },
-		{ "dt", "A--; t = !A ? 1 : 0" },
-		{ "exts.b", "B = (int) A" },
-		{ "extu.b", "B = (unsigned int) A" },
-		{ "exts.w", "B = (int) A" },
-		{ "extu.w", "B = (unsigned int) A" },
-		{ "fabs", "A = abs (A)" },
-		{ "fadd", "B += A" },
-		{ "fcmp/eq", "t = B == A ? 1 : 0" },
-		{ "fcmp/gt", "t = B > A ? 1 : 0" },
-		{ "fcnvds", "B = A" },
-		{ "fdiv", "B /= A" },
-		{ "flds", "B = A" },
-		{ "fldi0", "A = 0.0f" },
-		{ "fldi1", "A = 1.0f" },
-		{ "float", "B = A" },
-		{ "fmac", "C += A * B" },
-		{ "fmov", "B = A" },
-		{ "fmov.s", "B = A" },
-		{ "fmul", "B *= A" },
-		{ "fneg", "A = -A" },
-		{ "fsqrt", "A = sqrt (A)" },
-		{ "fsts", "B = A" },
-		{ "fsub", "B -= A" },
-		{ "ftrc", "B = trunc (A)" },
-		{ "ftrv", "B *= A" },
-		{ "jmp", "goto A" },
-		{ "jsr", "A ()" },
-		{ "ldr", "B = A" },
-		{ "ldr.l", "B = A" },
-		{ "lds", "B = A" },
-		{ "lds.l", "B = A" },
-		{ "mov", "B = A" },
-		{ "mov.b", "B = A" },
-		{ "mov.l", "B = A" },
-		{ "mov.w", "B = A" },
-		{ "movca.l", "B = A" },
-		{ "movt", "A = t" },
-		{ "muls.w", "macl = A * B" },
-		{ "mulu.w", "macl = (unsigned) A * (unsigned) B" },
-		{ "neg", "A = -A" },
-		{ "negc", "A = (-A) - t" },
-		{ "nop", "" },
-		{ "not", "A = !A" },
-		{ "or", "B |= A" },
-		{ "rotcl", "t = A & 0x80000000 ? 0 : 1; A = (A << 1) | t" },
-		{ "rotl", "A = (A << 1) | (A >> 31)" },
-		{ "rotr", "A = (A << 31) | (A >> 1)" },
-		{ "rte", "_rte ()" },
-		{ "rts", "return" },
-		{ "sets", "s = 1" },
-		{ "sett", "t = 1" },
-		{ "shad", "B = A >= 0 ? B << A : B >> (31 - A)" },
-		{ "shal", "A <<= 1" },
-		{ "shar", "A >>= 1" },
-		{ "shld", "B = A >= 0 ? B << A : B >> (31 - A)" },
-		{ "shll", "A <<= 1" },
-		{ "shll2", "A <<= 2" },
-		{ "shll8", "A <<= 8" },
-		{ "shll16", "A <<= 16" },
-		{ "shlr", "A >>= 1" },
-		{ "shlr2", "A >>= 2" },
-		{ "shlr8", "A >>= 8" },
-		{ "shlr16", "A >>= 16" },
-		{ "sleep", "_halt ()" },
-		{ "stc", "B = A" },
-		{ "stc.l", "B = A" },
-		{ "sts", "B = A" },
-		{ "sts.l", "B = A" },
-		{ "sub", "B -= A" },
-		{ "subc", "B -= A - t" },
-		{ "subv", "B -= A; t = int_underflow (B)" },
-		{ "swap.b", "swap_byte (B, A)" },
-		{ "swap.w", "swap_word (B, A)" },
-		{ "tas.b", "test_and_set (A)" },
-		{ "trapa", "trap (A)" },
-		{ "tst", "t = B & A ? 0 : 1" },
-		{ "xor", "B ^= A" },
-		{ "xor.b", "B ^= A" },
-		{ NULL }
-	};
+#include "parse_common.c"
 
-	for (i = 0; ops[i].op != NULL; i++) {
-		if (!strcmp(ops[i].op, argv[0])) {
-			if (newstr != NULL) {
-				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-					if (ops[i].str[j] >= 'A' && ops[i].str[j] <= 'J') {
-						const char *w = argv[ops[i].str[j] - '@'];
-						if (w != NULL) {
-							strcpy(newstr + k, w);
-							k += strlen(w) - 1;
-						}
-					} else {
-						newstr[k] = ops[i].str[j];
-					}
-				}
-				newstr[k] = '\0';
-			}
-			return true;
-		}
+static RzList *sh_tokenize(const char *assembly, size_t length);
+
+static const RzPseudoGrammar sh_lexicon[] = {
+	RZ_PSEUDO_DEFINE_GRAMMAR("add", "2 += 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addc", "2 += 1 + t"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addv", "2 += 1; t = int_overflow (2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("and", "2 &= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("and.b", "2 &= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bf", "if (!t) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bf.s", "if (!t) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bra", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("brk", "_break_exception ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bsr", "1 ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bsrf", "1 ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bt", "if (t) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bt.s", "if (t) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("clrmac", "_clrmac ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("clrs", "_clrs ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("clrt", "_clrt ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp/eq", "t = 2 == 1 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp/ge", "t = 2 >= 1 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp/gt", "t = 2 > 1 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp/hi", "t = (unsigned) 2 > (unsigned) 1 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp/hs", "t = (unsigned) 2 >= (unsigned) 1 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp/pl", "t = 1 > 0 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp/pz", "t = 1 >= 0 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp/str", "t = 1 ^ 2 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("div1", "2 /= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dmuls.l", "mac = 2 * 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dmulu.l", "mac = (unsigned) 2 * (unsigned) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dt", "1--; t = !1 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("exts.b", "2 = (int) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("extu.b", "2 = (unsigned int) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("exts.w", "2 = (int) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("extu.w", "2 = (unsigned int) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fabs", "1 = abs (1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fadd", "2 += 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fcmp/eq", "t = 2 == 1 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fcmp/gt", "t = 2 > 1 ? #1 : 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fcnvds", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fdiv", "2 /= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("flds", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fldi0", "1 = 0.0f"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fldi1", "1 = #1.0f"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("float", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fmac", "3 += 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fmov", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fmov.s", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fmul", "2 *= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fneg", "1 = -1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fsqrt", "1 = sqrt (1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fsts", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("fsub", "2 -= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ftrc", "2 = trunc (1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ftrv", "2 *= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("jmp", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("jsr", "1 ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldr", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldr.l", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lds", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lds.l", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mov", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mov.b", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mov.l", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mov.w", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movca.l", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movt", "1 = t"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("muls.w", "macl = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mulu.w", "macl = (unsigned) 1 * (unsigned) 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("neg", "1 = -1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("negc", "1 = (-1) - t"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("nop", ""),
+	RZ_PSEUDO_DEFINE_GRAMMAR("not", "1 = !1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("or", "2 |= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("rotcl", "t = 1 & 0x#80000000 ? 0 : #1; 1 = (1 << #1) | t"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("rotl", "1 = (1 << #1) | (1 >> #31)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("rotr", "1 = (1 << #31) | (1 >> #1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("rte", "_rte ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("rts", "return"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sets", "s = #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sett", "t = #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shad", "2 = 1 >= 0 ? 2 << 1 | 2 >> (#31 - 1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shal", "1 <<= #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shar", "1 >>= #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shld", "2 = 1 >= 0 ? 2 << 1 | 2 >> (#31 - 1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shll", "1 <<= #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shll2", "1 <<= #2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shll8", "1 <<= #8"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shll#16", "1 <<= #16"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shlr", "1 >>= #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shlr2", "1 >>= #2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shlr8", "1 >>= #8"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shlr#16", "1 >>= #16"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sleep", "_halt ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stc", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stc.l", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sts", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sts.l", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sub", "2 -= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subc", "2 -= 1 - t"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subv", "2 -= 1; t = int_underflow (2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("swap.b", "swap_byte (2, 1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("swap.w", "swap_word (2, 1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("tas.b", "test_and_set (1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("trapa", "trap (1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("tst", "t = 2 & 1 ? 0 : #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("xor", "2 ^= 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("xor.b", "2 ^= 1"),
+};
+
+static const RzPseudoDirect sh_direct[] = {};
+
+static const RzPseudoReplace sh_replace[] = {
+	RZ_PSEUDO_DEFINE_REPLACE(",", " + ", 1),
+	RZ_PSEUDO_DEFINE_REPLACE("+ -", "- ", 1),
+};
+
+static const RzPseudoConfig sh_config = RZ_PSEUDO_DEFINE_CONFIG(sh_direct, sh_lexicon, sh_replace, 4, sh_tokenize);
+
+RzList *sh_tokenize(const char *assembly, size_t length) {
+	size_t i, p;
+	char *buf = NULL;
+	bool ignore_comma = false;
+	RzList *tokens = NULL;
+
+	buf = rz_str_ndup(assembly, length);
+	if (!buf) {
+		return NULL;
 	}
 
-	/* TODO: this is slow */
-	if (newstr != NULL) {
-		newstr[0] = '\0';
-		for (i = 0; i < argc; i++) {
-			strcat(newstr, argv[i]);
-			strcat(newstr, (i == 0 || i == argc - 1) ? " " : ", ");
+	for (i = 0, p = 0; p < length; ++i, ++p) {
+		if (buf[p] == ',' && !ignore_comma) {
+			p++;
+		} else if (buf[p] == '(') {
+			ignore_comma = true;
+		} else if (buf[p] == ')') {
+			ignore_comma = false;
+		}
+		if (p > i) {
+			buf[i] = buf[p];
 		}
 	}
+	buf[i] = 0;
 
-	return false;
+	tokens = rz_str_split_duplist(buf, " ", true);
+	free(buf);
+	if (!tokens) {
+		return NULL;
+	}
+
+	return tokens;
 }
 
-#define WSZ 128
-static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
-	int i, len = strlen(data);
-	char w0[WSZ];
-	char w1[WSZ];
-	char w2[WSZ];
-	char w3[WSZ];
-	char w4[WSZ];
-	char str[1024] = { 0 };
-	char *buf, *ptr, *optr, *par;
-
-	// malloc can be slow here :?
-	if (!(buf = malloc(len + 1))) {
-		return false;
-	}
-	memcpy(buf, data, len + 1);
-
-	rz_str_trim(buf);
-	if (*buf) {
-		w0[0] = '\0';
-		w1[0] = '\0';
-		w2[0] = '\0';
-		w3[0] = '\0';
-		w4[0] = '\0';
-		ptr = strchr(buf, ' ');
-		if (!ptr) {
-			ptr = strchr(buf, '\t');
-		}
-		if (ptr) {
-			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
-				//nothing to see here
-			}
-			strncpy(w0, buf, WSZ - 1);
-			strncpy(w1, ptr, WSZ - 1);
-
-			optr = ptr;
-			par = strchr(ptr, '(');
-			if (par && strchr(ptr, ',') > par) {
-				ptr = strchr(ptr, ')');
-				if (ptr) {
-					ptr = strchr(ptr, ',');
-				}
-			} else {
-				ptr = strchr(ptr, ',');
-			}
-			if (ptr) {
-				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++) {
-					//nothing to see here
-				}
-				strncpy(w1, optr, WSZ - 1);
-				strncpy(w2, ptr, WSZ - 1);
-				optr = ptr;
-				par = strchr(ptr, '(');
-				if (par && strchr(ptr, ',') > par) {
-					ptr = strchr(ptr, ')');
-					if (ptr) {
-						ptr = strchr(ptr, ',');
-					}
-				} else {
-					ptr = strchr(ptr, ',');
-				}
-				if (ptr) {
-					*ptr = '\0';
-					for (++ptr; *ptr == ' '; ptr++) {
-						//nothing to see here
-					}
-					strncpy(w2, optr, WSZ - 1);
-					strncpy(w3, ptr, WSZ - 1);
-					optr = ptr;
-					// bonus
-					par = strchr(ptr, '(');
-					if (par && strchr(ptr, ',') > par) {
-						ptr = strchr(ptr, ')');
-						if (ptr) {
-							ptr = strchr(ptr, ',');
-						}
-					} else {
-						ptr = strchr(ptr, ',');
-					}
-					if (ptr) {
-						*ptr = '\0';
-						for (++ptr; *ptr == ' '; ptr++) {
-							//nothing to see here
-						}
-						strncpy(w3, optr, WSZ - 1);
-						strncpy(w4, ptr, WSZ - 1);
-					}
-				}
-			}
-		} else {
-			strncpy(w0, buf, WSZ - 1);
-		}
-		{
-			const char *wa[] = { w0, w1, w2, w3, w4 };
-			int nw = 0;
-			for (i = 0; i < 5; i++) {
-				if (wa[i][0] != '\0') {
-					nw++;
-				}
-			}
-			replace(nw, wa, str);
-		}
-	}
-	free(buf);
-	rz_strbuf_set(sb, str);
-	return true;
+static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
+	return rz_pseudo_convert(&sh_config, assembly, sb);
 }
 
 RzParsePlugin rz_parse_plugin_sh_pseudo = {
