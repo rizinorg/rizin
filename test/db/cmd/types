@@ -415,14 +415,20 @@ td "enum FOO { A=1, B=0x100, C=0xFF, D=4, E=5 };"
 td "enum BAR { G=0x800, Z=0xEE, P=4, E=5 };"
 tef 0x800
 tef 0x100
-tef 4
-tef 0x5
+tef 4~?
+tef 4~FOO.D
+tef 4~BAR.P
+tef 0x5~?
+tef 5~FOO.E
+tef 5~BAR.E
 EOF
 EXPECT=<<EOF
 BAR.G
 FOO.B
+2
 FOO.D
 BAR.P
+2
 FOO.E
 BAR.E
 EOF
