@@ -1095,17 +1095,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		}
 	}
 
-	if (ds->pseudo) {
-		const char *opstr = rz_asm_op_get_asm(&ds->asmop);
-		char *tmp = rz_parse_parse(core->parser, opstr);
-		if (tmp) {
-			snprintf(ds->str, sizeof(ds->str), "%s", tmp);
-			ds->opstr = tmp;
-		} else {
-			ds->opstr = strdup("");
-			ds->str[0] = 0;
-		}
-	}
 	ds->opstr = ds_sub_jumps(ds, ds->opstr);
 	if (ds->immtrim) {
 		char *res = rz_parse_immtrim(ds->opstr);
@@ -2588,6 +2577,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (ds->pseudo) {
 		const char *opstr = rz_asm_op_get_asm(&ds->asmop);
 		char *tmp = rz_parse_parse(core->parser, opstr);
+		free(ds->opstr);
 		if (tmp) {
 			snprintf(ds->str, sizeof(ds->str), "%s", tmp);
 			ds->opstr = tmp;
