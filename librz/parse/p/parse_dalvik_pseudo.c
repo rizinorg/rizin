@@ -156,8 +156,8 @@ static const RzPseudoGrammar dalvik_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("rem-long", "1 = (long) 2 % 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("rem-long/2addr", "1 %= 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("return-object", "return (object) 1"),
-	RZ_PSEUDO_DEFINE_GRAMMAR("return-wide", "return (wide) 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("return-void", "return"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("return-wide", "return (wide) 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("rsub-int", "1 = 2 - 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("sget", "1 = 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("sget-boolean", "1 = (bool) 2"),
@@ -172,6 +172,7 @@ static const RzPseudoGrammar dalvik_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("shr-long", "1 = (long) 2 >> 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("shr-long/2addr", "1 >>= 2"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("sparse-switch", "switch 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sput", "1 = 2 3"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("sput-boolean", "2[3] = (bool) 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("sput-char", "2[3] = (char) 1"),
 	RZ_PSEUDO_DEFINE_GRAMMAR("sput-object", "1 = 2"),
@@ -194,15 +195,13 @@ static const RzPseudoGrammar dalvik_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("xor-short", "1 = (short)(2 ^ 3)"),
 };
 
-static const RzPseudoDirect dalvik_direct[] = {};
-
 static const RzPseudoReplace dalvik_replace[] = {
 	RZ_PSEUDO_DEFINE_REPLACE("{", "(", 1),
 	RZ_PSEUDO_DEFINE_REPLACE("}", ")", 1),
 	RZ_PSEUDO_DEFINE_REPLACE(";", "", 1),
 };
 
-static const RzPseudoConfig dalvik_config = RZ_PSEUDO_DEFINE_CONFIG(dalvik_direct, dalvik_lexicon, dalvik_replace, 4, dalvik_tokenize);
+static const RzPseudoConfig dalvik_config = RZ_PSEUDO_DEFINE_CONFIG_NO_DIRECT(dalvik_lexicon, dalvik_replace, 4, dalvik_tokenize);
 
 RzList *dalvik_tokenize(const char *assembly, size_t length) {
 	size_t i, p;

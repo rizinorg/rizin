@@ -77,8 +77,32 @@ typedef struct {
 		.tokenize = t, \
 	}
 
+#define RZ_PSEUDO_DEFINE_CONFIG_NO_DIRECT(l, r, m, t) \
+	{ \
+		.direct = NULL, \
+		.direct_length = 0, \
+		.replace = r, \
+		.replace_length = RZ_ARRAY_SIZE(r), \
+		.lexicon = l, \
+		.lexicon_length = RZ_ARRAY_SIZE(l), \
+		.max_args = m, \
+		.tokenize = t, \
+	}
+
+#define RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(l, m, t) \
+	{ \
+		.direct = NULL, \
+		.direct_length = 0, \
+		.replace = NULL, \
+		.replace_length = 0, \
+		.lexicon = l, \
+		.lexicon_length = RZ_ARRAY_SIZE(l), \
+		.max_args = m, \
+		.tokenize = t, \
+	}
+
 static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly, RzStrBuf *sb) {
-	rz_return_val_if_fail(config && config->tokenize && config->lexicon && config->direct && config->replace, false);
+	rz_return_val_if_fail(config && config->tokenize && config->lexicon, false);
 
 	size_t i, p;
 	const char *tmp = NULL;
