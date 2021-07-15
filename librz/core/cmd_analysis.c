@@ -5359,6 +5359,15 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	}
 }
 
+static void cmd_analysis_il_wrapper(RzCore *core, const char *input, bool use_new_il) {
+	if (use_new_il) {
+		printf("[WIP]\n");
+		return;
+	} else {
+		cmd_analysis_esil(core, input);
+	}
+}
+
 static void cmd_analysis_bytes(RzCore *core, const char *input) {
 	int len = core->blocksize;
 	int tbs = len;
@@ -8772,7 +8781,7 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		break;
 	case 'i': cmd_analysis_info(core, input + 1); break; // "ai"
 	case 'r': cmd_analysis_reg(core, input + 1); break; // "ar"
-	case 'e': cmd_analysis_esil(core, input + 1); break; // "ae"
+	case 'e': cmd_analysis_il_wrapper(core, input + 1, false); break; // "ae"
 	case 'L': { // aL
 		RzCmdStateOutput state = { 0 };
 		switch (input[1]) {
