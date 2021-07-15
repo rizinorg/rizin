@@ -29,6 +29,7 @@
 
 typedef struct {
 	const char *mnemonic;
+	size_t mnemonic_length;
 	const char *grammar;
 	size_t grammar_length;
 } RzPseudoGrammar;
@@ -56,7 +57,7 @@ typedef struct {
 } RzPseudoConfig;
 
 #define RZ_PSEUDO_DEFINE_GRAMMAR(x, y) \
-	{ .mnemonic = x, .grammar = y, .grammar_length = sizeof(y) - 1 }
+	{ .mnemonic = x, .mnemonic_length = sizeof(x) - 1, .grammar = y, .grammar_length = sizeof(y) - 1 }
 
 #define RZ_PSEUDO_DEFINE_DIRECT(x, y) \
 	{ .expected = x, .pseudo = y }
@@ -99,14 +100,13 @@ static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly
 		}
 	}
 
-	size_t mnemonic_size = length;
+	size_t mnemonic_length = length;
 	if ((tmp = strchr(assembly, ' '))) {
-		mnemonic_size = tmp - assembly;
+		mnemonic_length = tmp - assembly;
 	}
-
 	for (i = 0; i < config->lexicon_length; ++i) {
 		gr = &config->lexicon[i];
-		if (!strncmp(gr->mnemonic, assembly, mnemonic_size)) {
+		if (gr->mnemonic_length == mnemonic_length && !strncmp(gr->mnemonic, assembly, mnemonic_length)) {
 			break;
 		}
 		gr = NULL;

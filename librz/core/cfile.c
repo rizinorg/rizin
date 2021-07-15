@@ -43,7 +43,9 @@ static void loadGP(RzCore *core) {
 		ut64 gp = rz_num_math(core->num, "loc._gp");
 		if (!gp || gp == UT64_MAX) {
 			rz_config_set(core->config, "analysis.roregs", "zero");
-			rz_core_cmd0(core, "s entry ; 10 aes");
+			ut64 addr = rz_num_math(core->num, "entry");
+			rz_core_seek_opt(core, addr, true, false);
+			rz_core_debug_step_one(core, 10);
 			rz_config_set(core->config, "analysis.roregs", "zero,gp");
 			gp = rz_reg_getv(core->analysis->reg, "gp");
 		}

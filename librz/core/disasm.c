@@ -1051,7 +1051,19 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		return;
 	}
 	if (!ds->opstr) {
-		ds->opstr = strdup(rz_asm_op_get_asm(&ds->asmop));
+		const char *assembly = rz_asm_op_get_asm(&ds->asmop);
+		if (ds->pseudo) {
+			char *tmp = rz_parse_parse(core->parser, assembly);
+			if (tmp) {
+				snprintf(ds->str, sizeof(ds->str), "%s", tmp);
+				ds->opstr = tmp;
+			} else {
+				ds->opstr = strdup("");
+				ds->str[0] = 0;
+			}
+		} else {
+			ds->opstr = strdup(assembly);
+		}
 	}
 	if (ds->opstr && core->bin && core->bin->cur) {
 		RzBinPlugin *plugin = rz_bin_file_cur_plugin(core->bin->cur);
