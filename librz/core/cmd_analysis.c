@@ -5359,8 +5359,15 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	}
 }
 
+static void cmd_analysis_rzil(RzCore *core, const char *input) {
+	Bool x = rz_il_new_bool(true);
+	rz_il_free_bool(x);
+	x = NULL;
+}
+
 static void cmd_analysis_il_wrapper(RzCore *core, const char *input, bool use_new_il) {
 	if (use_new_il) {
+		cmd_analysis_il_wrapper(core, input);
 		printf("[WIP]\n");
 		return;
 	} else {

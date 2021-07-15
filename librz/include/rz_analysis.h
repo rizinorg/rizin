@@ -22,6 +22,7 @@
 #include <rz_flag.h>
 #include <rz_bin.h>
 #include <rz_type.h>
+#include <rz_il.h>
 #include <rz_arch.h>
 #include <rz_cmd.h>
 
