@@ -64,23 +64,24 @@ static const struct flag_translation flag_translation_table[] = {
 };
 
 static bool create_section_from_phdr(ELFOBJ *bin, RzVector *result, const char *name, ut64 addr, ut64 sz) {
-	RzBinElfSection *section = rz_vector_push(result, NULL);
-	if (!section) {
-		RZ_LOG_WARN("Failed to allocate memory for the section.")
-		return false;
-	}
+	RzBinElfSection section;
 
-	section->offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
-	if (section->offset == UT64_MAX) {
+	section.offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	if (section.offset == UT64_MAX) {
 		RZ_LOG_WARN("invalid section offset.")
 		return false;
 	}
 
-	section->rva = addr;
-	section->size = sz;
-	section->name = strdup(name);
-	if (!section->name) {
+	section.rva = addr;
+	section.size = sz;
+	section.name = strdup(name);
+	if (!section.name) {
 		RZ_LOG_WARN("Failed to allocate memory for the section name.")
+		return false;
+	}
+
+	if (!rz_vector_push(result, &section)) {
+		RZ_LOG_WARN("Failed to allocate memory for the section.")
 		return false;
 	}
 
