@@ -349,9 +349,9 @@ RZ_API ut64 rz_io_map_next_available(RzIO *io, ut64 addr, ut64 size, ut64 load_a
 	if (load_align == 0) {
 		load_align = 1;
 	}
+	void **it;
 	ut64 next_addr = addr,
 	     end_addr = next_addr + size;
-	void **it;
 	rz_pvector_foreach (&io->maps, it) {
 		RzIOMap *map = *it;
 		if (!rz_itv_size(map->itv)) {
@@ -359,12 +359,9 @@ RZ_API ut64 rz_io_map_next_available(RzIO *io, ut64 addr, ut64 size, ut64 load_a
 		}
 		ut64 to = rz_itv_end(map->itv);
 		next_addr = RZ_MAX(next_addr, to + (load_align - (to % load_align)) % load_align);
-		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
-		// adding the check for the map's fd to see if this removes contention for
-		// memory mapping with multiple files. infinite loop ahead?
 		if ((map->itv.addr <= next_addr && next_addr < to) || rz_itv_contain(map->itv, end_addr)) {
 			next_addr = to + (load_align - (to % load_align)) % load_align;
-			return rz_io_map_next_available(io, next_addr, size, load_align);
+			continue;
 		}
 		break;
 	}
@@ -420,14 +417,15 @@ RZ_API bool rz_io_map_resize(RzIO *io, ut32 id, ut64 newsize) {
 	return true;
 }
 
-// find a location that can hold enough bytes without overlapping
-// XXX this function is buggy and doesnt works as expected, but i need it for a PoC for now
+/**
+ * \brief Returns a memory location that can hold enough bytes without overlapping
+ *
+ * \param io   RzIO instance
+ * \param size Size of the section
+ */
 RZ_API ut64 rz_io_map_location(RzIO *io, ut64 size) {
-	ut64 base = (io->bits == 64) ? 0x60000000000LL : 0x60000000;
-	while (rz_io_map_get(io, base)) {
-		base += 0x200000;
-	}
-	return base;
+	ut64 base = (io->bits == 64) ? 0x60000000000ULL : 0x60000000ULL;
+	return rz_io_map_next_available(io, base, size, 0x200000);
 }
 
 /**

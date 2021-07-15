@@ -193,9 +193,10 @@ typedef int socklen_t;
 #if __WINDOWS__ || _WIN32
 #define __addr_t_defined
 #include <windows.h>
+#include <direct.h>
 #endif
 
-#if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
+#if defined(__APPLE__) && ((__arm__ || __arm64__ || __aarch64__) && IS_IOS)
 #define TARGET_OS_IPHONE 1
 #else
 #define TARGET_OS_IPHONE 0

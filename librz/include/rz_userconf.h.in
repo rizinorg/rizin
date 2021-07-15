@@ -31,6 +31,7 @@
 #define WANT_DYLINK                 @WANT_DYLINK@
 #define WITH_GPL                    @WITH_GPL@
 #define HAVE_JEMALLOC               @HAVE_JEMALLOC@
+#define IS_IOS                      @IS_IOS@
 
 #define RZ_IS_PORTABLE @IS_PORTABLE@
 

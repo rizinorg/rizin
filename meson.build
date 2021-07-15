@@ -336,6 +336,11 @@ have_environ = cc.links(code, name: 'have extern char **environ')
 userconf.set10('HAVE_ENVIRON', have_environ)
 message('HAVE_ENVIRON: @0@'.format(have_environ))
 
+code = '#if __is_target_os(ios)\nint x = 0;\n#endif\nint main() { x++; }'
+is_ios = cc.links(code, name: 'target is ios')
+userconf.set10('IS_IOS', is_ios)
+message('IS_IOS: @0@'.format(is_ios))
+
 foreach item : [
     ['arc4random_uniform', '#include <stdlib.h>', []],
     ['explicit_bzero', '#include <string.h>', []],

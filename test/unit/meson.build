@@ -45,7 +45,6 @@ if get_option('enable_tests')
     'dwarf_info',
     'dwarf_integration',
     'endian',
-    'esil_dfg_filter',
     'event',
     'file',
     'flags',

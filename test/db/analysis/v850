@@ -83,7 +83,7 @@ EXPECT=<<EOF
 0x00106cd0    4 50           fcn.00106cd0
 0x00106d02    1 22           sym.__realloc_r
 0x0010722c   12 150          sym.__sbrk
-0x001072c2   15 240  -> 198  sym.___swbuf_r
+0x001072c2   11 142          sym.___swbuf_r
 0x001073ba    1 18           sym.___swbuf
 0x001073d0    5 70           sym.__wcrtomb_r
 0x00107416    1 20           sym._wcrtomb
@@ -280,7 +280,7 @@ EXPECT=<<EOF
 0x00114130    1 36           fcn.00114130
 0x00114afc    1 20           sym._vfiprintf
 0x00114b14    1 90           sym.___sbprintf_1
-0x00114ba8   15 240  -> 198  sym.___swbuf_r
+0x00114ba8   11 142          sym.___swbuf_r
 0x00114ca0    1 18           sym.___swbuf
 0x00114cb6    5 58           sym.__wctomb_r
 0x00114cf0    1 18           sym.__write
@@ -340,7 +340,7 @@ EXPECT=<<EOF
 0x00102ec0    7 158          sym._cmd_print
 0x00102f5e    7 180          sym._cmd_bytedump
 0x00103012    8 236          sym._cmd_search
-0x0010333c   10 318  -> 242  sym._cmd_bsize
+0x0010333c    4 116          sym._cmd_bsize
 0x0010347a    2 46           sym._cmd_seek
 0x00103674   10 244          sym._cmd_dump
 0x00103768    5 190          sym._cmd_load

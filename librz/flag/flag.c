@@ -474,7 +474,7 @@ static RzFlagItem *evalFlag(RzFlag *f, RzFlagItem *item) {
 /* return true if flag.* exist at offset. Otherwise, false is returned.
  * For example (f, "sym", 3, 0x1000)*/
 RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off) {
-	rz_return_val_if_fail(f && flag_prefix, NULL);
+	rz_return_val_if_fail(f && flag_prefix, false);
 	RzListIter *iter = NULL;
 	RzFlagItem *item = NULL;
 	const RzList *list = rz_flag_get_list(f, off);

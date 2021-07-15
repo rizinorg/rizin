@@ -142,7 +142,7 @@ static inline bool sysregs_reload_needed(RzSyscall *s, const char *arch, int bit
 }
 
 static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
-	rz_return_val_if_fail(sysregdb && sdb, NULL);
+	rz_return_val_if_fail(sysregdb && sdb, false);
 	RzSysregItem *sysregitem;
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -155,12 +155,12 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 			argument_key = rz_str_newf("%s.address", name);
 
 			if (!argument_key) {
-				return NULL;
+				return false;
 			}
 			ut64 address = sdb_num_get(sdb, argument_key, NULL);
 			if (!address) {
 				rz_sysreg_item_free(sysregitem);
-				return NULL;
+				return false;
 			}
 
 			argument_key = rz_str_newf("%s.comment", name);
