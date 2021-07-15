@@ -68,11 +68,7 @@ static const RzPseudoGrammar _6502_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("tya", "a = y"),
 };
 
-static const RzPseudoDirect _6502_direct[] = {};
-
-static const RzPseudoReplace _6502_replace[] = {};
-
-static const RzPseudoConfig _6502_config = RZ_PSEUDO_DEFINE_CONFIG(_6502_direct, _6502_lexicon, _6502_replace, 3, _6502_tokenize);
+static const RzPseudoConfig _6502_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(_6502_lexicon, 3, _6502_tokenize);
 
 RzList *_6502_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
