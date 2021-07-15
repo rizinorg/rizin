@@ -106,7 +106,7 @@ static const RzPseudoDirect avr_direct[] = {};
 
 static const RzPseudoReplace avr_replace[] = {};
 
-static const RzPseudoConfig avr_config = RZ_PSEUDO_DEFINE_CONFIG(avr_direct, avr_lexicon, avr_replace, 4, avr_tokenize);
+static const RzPseudoConfig avr_config = RZ_PSEUDO_DEFINE_CONFIG(avr_direct, avr_lexicon, avr_replace, 3, avr_tokenize);
 
 RzList *avr_tokenize(const char *assembly, size_t length) {
 	size_t i, p;
