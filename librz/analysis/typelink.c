@@ -19,7 +19,7 @@ RZ_API bool rz_analysis_type_link_exists(RzAnalysis *analysis, ut64 addr) {
 		return NULL;
 	}
 	bool found = false;
-	return ht_up_find(analysis->type_links, addr, &found) && !found;
+	return ht_up_find(analysis->type_links, addr, &found) && found;
 }
 
 /**
