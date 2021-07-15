@@ -53,13 +53,11 @@ static const RzPseudoGrammar m68k_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("clr", "1 = 0"),
 };
 
-static const RzPseudoDirect m68k_direct[] = {};
-
 static const RzPseudoReplace m68k_replace[] = {
 	RZ_PSEUDO_DEFINE_REPLACE("+ -", "- ", 1),
 };
 
-static const RzPseudoConfig m68k_config = RZ_PSEUDO_DEFINE_CONFIG(m68k_direct, m68k_lexicon, m68k_replace, 4, m68k_tokenize);
+static const RzPseudoConfig m68k_config = RZ_PSEUDO_DEFINE_CONFIG_NO_DIRECT(m68k_lexicon, m68k_replace, 4, m68k_tokenize);
 
 RzList *m68k_tokenize(const char *assembly, size_t length) {
 	size_t i, p;

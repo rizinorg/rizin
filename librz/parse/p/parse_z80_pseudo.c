@@ -90,11 +90,7 @@ static const RzPseudoGrammar z80_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("xor", "1 ^= 2"),
 };
 
-static const RzPseudoDirect z80_direct[] = {};
-
-static const RzPseudoReplace z80_replace[] = {};
-
-static const RzPseudoConfig z80_config = RZ_PSEUDO_DEFINE_CONFIG(z80_direct, z80_lexicon, z80_replace, 3, z80_tokenize);
+static const RzPseudoConfig z80_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(z80_lexicon, 3, z80_tokenize);
 
 RzList *z80_tokenize(const char *assembly, size_t length) {
 	size_t i, p;

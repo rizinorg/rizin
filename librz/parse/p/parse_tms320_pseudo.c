@@ -92,11 +92,7 @@ static const RzPseudoGrammar tms320_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("zero", "1 = 0"),
 };
 
-static const RzPseudoDirect tms320_direct[] = {};
-
-static const RzPseudoReplace tms320_replace[] = {};
-
-static const RzPseudoConfig tms320_config = RZ_PSEUDO_DEFINE_CONFIG(tms320_direct, tms320_lexicon, tms320_replace, 5, tms320_tokenize);
+static const RzPseudoConfig tms320_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(tms320_lexicon, 5, tms320_tokenize);
 
 RzList *tms320_tokenize(const char *assembly, size_t length) {
 	char *buf = NULL, *sp = NULL;

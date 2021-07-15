@@ -66,15 +66,13 @@ static const RzPseudoGrammar v850_lexicon[] = {
 	RZ_PSEUDO_DEFINE_GRAMMAR("zxw", "1 = 0"),
 };
 
-static const RzPseudoDirect v850_direct[] = {};
-
 static const RzPseudoReplace v850_replace[] = {
 	RZ_PSEUDO_DEFINE_REPLACE(" + 0)", ")", 0),
 	RZ_PSEUDO_DEFINE_REPLACE("+ -", "- ", 1),
 	RZ_PSEUDO_DEFINE_REPLACE(",", "", 1),
 };
 
-static const RzPseudoConfig v850_config = RZ_PSEUDO_DEFINE_CONFIG(v850_direct, v850_lexicon, v850_replace, 4, v850_tokenize);
+static const RzPseudoConfig v850_config = RZ_PSEUDO_DEFINE_CONFIG_NO_DIRECT(v850_lexicon, v850_replace, 4, v850_tokenize);
 
 static const char *v850_short_op[] = {
 	"and",
