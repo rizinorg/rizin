@@ -85,6 +85,12 @@ static bool rz_pseudo_convert(const RzPseudoConfig *config, const char *assembly
 	const RzPseudoGrammar *gr = NULL;
 	const RzPseudoReplace *rp = NULL;
 
+	if (!strcmp(assembly, "invalid")) {
+		return true;
+	} else if (!strncmp(assembly, "trunc", 5)) {
+		return true;
+	}
+
 	for (i = 0; i < config->direct_length; ++i) {
 		arg = config->direct[i].expected;
 		if (!strcmp(assembly, arg)) {
