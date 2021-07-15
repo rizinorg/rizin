@@ -7,7 +7,7 @@ RzILVar rz_il_new_variable(string name) {
 
 	ret = (RzILVar)malloc(sizeof(struct rz_il_var_t));
 	ret->var_name = strdup(name);
-	ret->type = RZVAR_TYPE_UNK;
+	ret->type = RZIL_VAR_TYPE_UNK;
 
 	return ret;
 }
@@ -16,7 +16,7 @@ RzILVal rz_il_new_value(void) {
 	RzILVal ret;
 	ret = (RzILVal)malloc(sizeof(struct rz_il_val_t));
 	memset(ret, 0, sizeof(struct rz_il_val_t));
-	ret->type = RZVAR_TYPE_UNK;
+	ret->type = RZIL_VAR_TYPE_UNK;
 	return ret;
 }
 
@@ -24,15 +24,15 @@ RzILVal rz_il_dump_value(RzILVal val) {
 	RzILVal ret = rz_il_new_value();
 	ret->type = val->type;
 
-	if (ret->type == RZVAR_TYPE_BOOL) {
+	if (ret->type == RZIL_VAR_TYPE_BOOL) {
 		ret->data.b = rz_il_new_bool(val->data.b->b);
 	}
 
-	if (ret->type == RZVAR_TYPE_BV) {
+	if (ret->type == RZIL_VAR_TYPE_BV) {
 		ret->data.bv = bv_dump(val->data.bv);
 	}
 
-	if (ret->type == RZVAR_TYPE_UNK) {
+	if (ret->type == RZIL_VAR_TYPE_UNK) {
 		ret->data.b = NULL;
 		ret->data.bv = NULL;
 	}
@@ -58,13 +58,13 @@ void rz_il_free_value(RzILVal val) {
 
 	RZIL_VAR_TYPE type = val->type;
 	switch (type) {
-	case RZVAR_TYPE_BOOL:
+	case RZIL_VAR_TYPE_BOOL:
 		rz_il_free_bool(val->data.b);
 		break;
-	case RZVAR_TYPE_BV:
+	case RZIL_VAR_TYPE_BV:
 		bv_free(val->data.bv);
 		break;
-	case RZVAR_TYPE_UNK:
+	case RZIL_VAR_TYPE_UNK:
 	default:
 		break;
 	}

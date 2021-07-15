@@ -32,7 +32,7 @@ RzILVal rz_il_vm_create_value(RzILVM vm, RZIL_VAR_TYPE type) {
 
 void rz_il_vm_add_reg(RzILVM vm, string name, int length) {
 	RzILVar var = rz_il_vm_create_variable(vm, name);
-	RzILVal val = rz_il_vm_create_value(vm, RZVAR_TYPE_BV);
+	RzILVal val = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BV);
 	val->data.bv = bv_new(length);
 	rz_il_hash_bind(vm, var, val);
 }
@@ -49,7 +49,7 @@ RzILVal rz_il_vm_fortify_val(RzILVM vm, int temp_val_index) {
 
 RzILVal rz_il_vm_fortify_bitv(RzILVM vm, int temp_val_index) {
 	RzILVal val = rz_il_new_value();
-	val->type = RZVAR_TYPE_BV;
+	val->type = RZIL_VAR_TYPE_BV;
 	val->data.bv = rz_il_get_bv_temp(vm, temp_val_index);
 	rz_il_add_to_bag(vm->vm_global_value_set, val);
 
@@ -59,7 +59,7 @@ RzILVal rz_il_vm_fortify_bitv(RzILVM vm, int temp_val_index) {
 
 RzILVal rz_il_vm_fortify_bool(RzILVM vm, int temp_val_index) {
 	RzILVal val = rz_il_new_value();
-	val->type = RZVAR_TYPE_BOOL;
+	val->type = RZIL_VAR_TYPE_BOOL;
 	val->data.b = rz_il_get_bool_temp(vm, temp_val_index);
 	rz_il_add_to_bag(vm->vm_global_value_set, val);
 
@@ -191,10 +191,10 @@ BitVector rz_il_get_bv_temp(RzILVM vm, int index) {
 
 	if (temp->type == RZIL_TEMP_VAL) {
 		RzILVal val = temp->data;
-		if (val->type == RZVAR_TYPE_BV) {
+		if (val->type == RZIL_VAR_TYPE_BV) {
 			return val->data.bv;
 		}
-		if (val->type == RZVAR_TYPE_BOOL) {
+		if (val->type == RZIL_VAR_TYPE_BOOL) {
 			printf("TODO: BOOL -> BITVECTOR\n");
 			return NULL;
 		}
@@ -233,19 +233,19 @@ Bool rz_il_get_bool_temp(RzILVM vm, int index) {
 
 	if (temp->type == RZIL_TEMP_VAL) {
 		RzILVal val = temp->data;
-		if (val->type == RZVAR_TYPE_BOOL) {
+		if (val->type == RZIL_VAR_TYPE_BOOL) {
 			return val->data.b;
 		}
 
-		if (val->type == RZVAR_TYPE_BV) {
+		if (val->type == RZIL_VAR_TYPE_BV) {
 			if (bv_is_zero_vector(val->data.bv)) {
 				bv_free(val->data.bv);
 				val->data.b = rz_il_new_bool(false);
-				val->type = RZVAR_TYPE_BOOL;
+				val->type = RZIL_VAR_TYPE_BOOL;
 			} else {
 				bv_free(val->data.bv);
 				val->data.b = rz_il_new_bool(true);
-				val->type = RZVAR_TYPE_BOOL;
+				val->type = RZIL_VAR_TYPE_BOOL;
 			}
 			return val->data.b;
 		}
@@ -264,7 +264,7 @@ RzILVal rz_il_get_val_temp(RzILVM vm, int index) {
 	if (temp->type == RZIL_TEMP_BOOL) {
 		Bool b = temp->data;
 		val->data.b = b;
-		val->type = RZVAR_TYPE_BOOL;
+		val->type = RZIL_VAR_TYPE_BOOL;
 		temp->type = RZIL_TEMP_VAL;
 		temp->data = val;
 		return val;
@@ -273,7 +273,7 @@ RzILVal rz_il_get_val_temp(RzILVM vm, int index) {
 	if (temp->type == RZIL_TEMP_BV) {
 		BitVector bv = temp->data;
 		val->data.bv = bv;
-		val->type = RZVAR_TYPE_BV;
+		val->type = RZIL_VAR_TYPE_BV;
 		temp->type = RZIL_TEMP_VAL;
 		temp->data = val;
 		return val;
@@ -374,19 +374,19 @@ static void print_val(RzILVal val) {
 	BitVector bv = val->data.bv;
 	Bool b = val->data.b;
 
-	if (type == RZVAR_TYPE_BV) {
+	if (type == RZIL_VAR_TYPE_BV) {
 		printf("[BV] -> %d -> ", bv_to_ut32(bv));
 		print_bv(bv);
 		return;
 	}
 
-	if (type == RZVAR_TYPE_BOOL) {
+	if (type == RZIL_VAR_TYPE_BOOL) {
 		printf("[BOOL]");
 		printf("%s\n", b->b ? "TRUE" : "FALSE");
 		return;
 	}
 
-	if (type == RZVAR_TYPE_UNK) {
+	if (type == RZIL_VAR_TYPE_UNK) {
 		printf("[UNK]\n");
 	}
 }

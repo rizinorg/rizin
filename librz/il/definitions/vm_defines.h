@@ -16,9 +16,9 @@
 #define RzIL_MEM
 
 typedef enum {
-	RZVAR_TYPE_BV,
-	RZVAR_TYPE_BOOL,
-	RZVAR_TYPE_UNK, // Unkown value
+	RZIL_VAR_TYPE_BV,
+	RZIL_VAR_TYPE_BOOL,
+	RZIL_VAR_TYPE_UNK, // Unkown value
 } RZIL_VAR_TYPE;
 
 typedef union {
