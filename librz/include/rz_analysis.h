@@ -1139,41 +1139,6 @@ typedef struct rz_analysis_esil_basic_block_t {
 	RzAnalysisEsilBlockEnterType enter; //maybe more type is needed here
 } RzAnalysisEsilBB;
 
-typedef struct rz_analysis_esil_cfg_t {
-	RzGraphNode *start;
-	RzGraphNode *end;
-	RzGraph *g;
-} RzAnalysisEsilCFG;
-
-typedef enum {
-	RZ_ANALYSIS_ESIL_DFG_BLOCK_CONST = 1,
-	RZ_ANALYSIS_ESIL_DFG_BLOCK_VAR = 2,
-	RZ_ANALYSIS_ESIL_DFG_BLOCK_PTR = 4,
-	RZ_ANALYSIS_ESIL_DFG_BLOCK_RESULT = 8,
-	RZ_ANALYSIS_ESIL_DFG_BLOCK_GENERATIVE = 16,
-} RzAnalysisEsilDFGBlockType;
-
-typedef struct rz_analysis_esil_dfg_t {
-	ut32 idx;
-	HtPP *reg_items_ht;
-	HtPP *reg_nodes_ht;
-	HtPP *var_nodes_ht;
-	RContRBTree *reg_vars; //vars represented in regs
-	RQueue *todo; //todo-queue allocated in this struct for perf
-	void *insert; //needed for setting regs in dfg
-	RzGraph *flow;
-	RzGraphNode *cur;
-	RzGraphNode *old;
-	bool malloc_failed;
-} RzAnalysisEsilDFG;
-
-typedef struct rz_analysis_esil_dfg_node_t {
-	// add more info here
-	ut32 idx;
-	RzStrBuf *content;
-	RzAnalysisEsilDFGBlockType type;
-} RzAnalysisEsilDFGNode;
-
 // TODO: rm data + len
 typedef int (*RzAnalysisOpCallback)(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask);
 
@@ -2021,17 +1986,6 @@ RZ_API void rz_analysis_class_list_vtables(RzAnalysis *analysis, const char *cla
 RZ_API void rz_analysis_class_list_vtable_offset_functions(RzAnalysis *analysis, const char *class_name, ut64 offset);
 RZ_API RzGraph /*<RzGraphNodeInfo>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis);
 
-RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_expr(RzAnalysisEsilCFG *cfg, RzAnalysis *analysis, const ut64 off, char *expr);
-RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_op(RzAnalysisEsilCFG *cfg, RzAnalysis *analysis, RzAnalysisOp *op);
-RZ_API void rz_analysis_esil_cfg_merge_blocks(RzAnalysisEsilCFG *cfg);
-RZ_API void rz_analysis_esil_cfg_free(RzAnalysisEsilCFG *cfg);
-
-RZ_API RzAnalysisEsilDFGNode *rz_analysis_esil_dfg_node_new(RzAnalysisEsilDFG *edf, const char *c);
-RZ_API RzAnalysisEsilDFG *rz_analysis_esil_dfg_new(RzReg *regs);
-RZ_API void rz_analysis_esil_dfg_free(RzAnalysisEsilDFG *dfg);
-RZ_API RzAnalysisEsilDFG *rz_analysis_esil_dfg_expr(RzAnalysis *analysis, RzAnalysisEsilDFG *dfg, const char *expr);
-RZ_API RzStrBuf *rz_analysis_esil_dfg_filter(RzAnalysisEsilDFG *dfg, const char *reg);
-RZ_API RzStrBuf *rz_analysis_esil_dfg_filter_expr(RzAnalysis *analysis, const char *expr, const char *reg);
 RZ_API RZ_OWN RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 
 /* PDB */

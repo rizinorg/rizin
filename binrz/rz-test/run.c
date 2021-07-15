@@ -49,7 +49,7 @@ static char *convert_win_cmds(const char *cmds) {
 					if (c == '{') {
 						*p++ = '%';
 						cmds++;
-						for (; c = *cmds, c && c != '}'; *cmds++) {
+						for (; c = *cmds, c && c != '}'; cmds++) {
 							*p++ = c;
 						}
 						if (c) { // must check c to prevent overflow

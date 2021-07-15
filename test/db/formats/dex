@@ -1437,3 +1437,19 @@ EXPECT=<<EOF
             0x000001c4      1234           const/4 v4, 0x3
 EOF
 RUN
+
+NAME=FakeMultiDex.apk
+FILE=apk://bins/dex/FakeMultiDex.apk
+CMDS=<<EOF
+om
+o
+EOF
+EXPECT=<<EOF
+ 4 fd: 3 +0x00000194 0x00200194 - 0x0020021d r-x fmap.code
+ 3 fd: 3 +0x00000000 0x00200000 - 0x002007ff r-- fmap.file
+ 2 fd: 4 +0x00000194 0x00000194 - 0x0000021d r-x fmap.code
+ 1 fd: 4 +0x00000000 0x00000000 - 0x000003e7 r-- fmap.file
+ 3 - r-x 0x00000800 classes2.dex
+ 4 * r-x 0x000003e8 classes.dex
+EOF
+RUN
