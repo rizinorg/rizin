@@ -131,7 +131,6 @@ static bool GH(is_tcache)(RzCore *core) {
 
 		// In case there is string `libc-` in path actual libc go to last occurrence of `libc-`
 		while (strstr(fp + 1, "libc-") != NULL) {
-			eprintf("%s\n", fp + 1);
 			fp = strstr(fp + 1, "libc-");
 		}
 
