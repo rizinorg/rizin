@@ -14,6 +14,9 @@ RZ_IPI RzCmdStatus rz_interpret_handler(RzCore *core, int argc, const char **arg
 		rz_cons_singleton()->is_html = 0;
 		char *cmd_output = rz_core_cmd_str(core, argv[1]);
 		rz_cons_singleton()->is_html = tmp_html;
+		if (!cmd_output) {
+			return RZ_CMD_STATUS_ERROR;
+		}
 		rz_core_cmd(core, cmd_output, 0);
 		free(cmd_output);
 		return RZ_CMD_STATUS_OK;
