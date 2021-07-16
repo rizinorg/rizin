@@ -48,3 +48,27 @@ commands:
             type: RZ_CMD_ARG_TYPE_NUM
           - name: h
             type: RZ_CMD_ARG_TYPE_NUM
+  - name: pt
+    summary: Print timestamps
+    cname: cmd_print_timestamp
+    subcommands:
+      - name: pt
+        summary: Print UNIX epoch time (32 bit `cfg.bigendian`, since January 1, 1970)
+        cname: cmd_print_timestamp_unix
+        args: []
+      - name: pt.
+        summary: Print the current time
+        args: []
+        cname: cmd_print_timestamp_current
+      - name: ptd
+        summary: Print MS-DOS time (32 bit `cfg.bigendian`, since January 1, 1980)
+        cname: cmd_print_timestamp_dos
+        args: []
+      - name: pth
+        summary: Print Mac HFS time (32 bit `cfg.bigendian`, since January 1, 1904)
+        cname: cmd_print_timestamp_hfs
+        args: []
+      - name: ptn
+        summary: Print NTFS time (64 bit `cfg.bigendian`, since January 1, 1601)
+        cname: cmd_print_timestamp_ntfs
+        args: []

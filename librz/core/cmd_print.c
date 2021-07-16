@@ -1592,6 +1592,80 @@ static void cmd_print_gadget(RzCore *core, const char *_input) {
 	}
 }
 
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, const char **argv) {
+	// len must be multiple of 4 since rz_mem_copyendian move data in fours - sizeof(ut32)
+	st64 l;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	if (len < sizeof(ut32)) {
+		eprintf("You should change the block size. Please run `b %d\n`", (int)sizeof(ut32));
+	}
+	if (len % sizeof(ut32)) {
+		len = len - (len % sizeof(ut32));
+	}
+	for (l = 0; l < len; l += sizeof(ut32)) {
+		rz_print_date_unix(core->print, block + l, sizeof(ut32));
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_current_handler(RzCore *core, int argc, const char **argv) {
+	char nowstr[64] = { 0 };
+	rz_print_date_get_now(core->print, nowstr);
+	rz_cons_printf("%s", nowstr);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_dos_handler(RzCore *core, int argc, const char **argv) {
+	// len must be multiple of 4 since rz_print_date_dos read buf+3
+	// if block size is 1 or 5 for example it reads beyond the buffer
+	st64 l;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	if (len < sizeof(ut32)) {
+		eprintf("The block size must be changed.. Please run `b %d\n`", (int)sizeof(ut32));
+	}
+	if (len % sizeof(ut32)) {
+		len = len - (len % sizeof(ut32));
+	}
+	for (l = 0; l < len; l += sizeof(ut32)) {
+		rz_print_date_dos(core->print, block + l, sizeof(ut32));
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_hfs_handler(RzCore *core, int argc, const char **argv) {
+	st64 l;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	if (len < sizeof(ut32)) {
+		eprintf("You should change block size. Please run `b %d\n`", (int)sizeof(ut32));
+	}
+	if (len % sizeof(ut32)) {
+		len = len - (len % sizeof(ut32));
+	}
+	for (l = 0; l < len; l += sizeof(ut32)) {
+		rz_print_date_hfs(core->print, block + l, sizeof(ut32));
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, const char **argv) {
+	st64 l;
+	ut8 *block = core->block;
+	int len = core->blocksize;
+	if (len < sizeof(ut64)) {
+		eprintf("The block size must be changed.. Please run `b %d\n`", (int)sizeof(ut64));
+	}
+	if (len % sizeof(ut64)) {
+		len = len - (len % sizeof(ut64));
+	}
+	for (l = 0; l < len; l += sizeof(ut64)) {
+		rz_print_date_w32(core->print, block + l, sizeof(ut64));
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 static void cmd_print_format(RzCore *core, const char *_input, const ut8 *block, int len) {
 	char *input = NULL;
 	int mode = RZ_PRINT_MUSTSEE;
