@@ -63,6 +63,7 @@ RZ_API bool rz_parse_use(RzParse *p, const char *name) {
 			return true;
 		}
 	}
+	p->cur = NULL;
 	return false;
 }
 
