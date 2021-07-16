@@ -1,6 +1,6 @@
 NAME=pt print unix epoch time
 FILE=bins/elf/ls
-CMDS=pt
+CMDS= b 0x100 ; pt
 EXPECT=<<EOF
 Sat Dec 23 05:12:43 2102
 Sun Dec 28 01:34:01 2042
@@ -71,7 +71,7 @@ RUN
 
 NAME=ptn print ntfs time
 FILE=bins/elf/ls
-CMDS=ptn
+CMDS= b 0x100 ; ptn
 EXPECT=<<EOF
 Thu Jul 16 22:59:08 2054
 Thu Feb 24 06:55:59 2061
@@ -110,7 +110,7 @@ RUN
 
 NAME=ptd print ms-dos time
 FILE=bins/elf/ls
-CMDS=ptd
+CMDS= b 0x100 ; ptd
 EXPECT=<<EOF
 Fri Jan 30 02:03:38 2105
 Sat Oct 10 05:41:34 2048
@@ -182,7 +182,7 @@ RUN
 
 NAME=pth print mac hfs time
 FILE=bins/elf/ls
-CMDS=pth
+CMDS= b 0x100 ; pth
 EXPECT=<<EOF
 Mon Nov 15 22:44:27 2032
 Tue Nov 21 19:05:45 1972
