@@ -115,7 +115,6 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si = { 0 };
 	si.cb = sizeof(si);
-	DEBUG_EVENT de;
 	int pid, tid;
 	if (!*cmd) {
 		return -1;
@@ -150,6 +149,7 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 		free(cmdline_);
 		return -1;
 	}
+	CloseHandle(pi.hThread);
 	free(appname_);
 	free(cmdline_);
 	rz_str_argv_free(argv);
@@ -158,35 +158,21 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 	pid = pi.dwProcessId;
 	tid = pi.dwThreadId;
 
-	/* catch create process event */
-	wrap->params.type = W32_WAIT;
-	wrap->params.wait.wait_time = 10000;
-	wrap->params.wait.de = &de;
-	w32dbg_wrap_wait_ret(wrap);
-	if (!w32dbgw_ret(wrap))
-		goto err_fork;
-
-	/* check if is a create process debug event */
-	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-		eprintf("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
-		goto err_fork;
-	}
-
-	CloseHandle(de.u.CreateProcessInfo.hFile);
-
-	wrap->pi.hProcess = pi.hProcess;
-	wrap->pi.hThread = pi.hThread;
-	wrap->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
-
 	eprintf("Spawned new process with pid %d, tid = %d\n", pid, tid);
-	return pid;
 
-err_fork:
-	eprintf("ERRFORK\n");
-	TerminateProcess(pi.hProcess, 1);
-	CloseHandle(pi.hThread);
+	RzCore *c = io->corebind.core;
+	c->dbg->user = wrap;
+	/* catch create process event */
+	int ret = c->dbg->cur->wait(c->dbg, pi.dwProcessId);
+	/* check if is a create process debug event */
+	if (ret != RZ_DEBUG_REASON_NEW_PID) {
+		TerminateProcess(pi.hProcess, 1);
+		core->dbg->cur->detach(core->dbg, wrap->pi.dwProcessId);
+		CloseHandle(pi.hProcess);
+		return -1;
+	}
 	CloseHandle(pi.hProcess);
-	return -1;
+	return pid;
 }
 #else // windows
 
@@ -521,11 +507,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			if (!_plugin || !_plugin->open) {
 				return NULL;
 			}
-			if ((ret = _plugin->open(io, uri, rw, mode))) {
-				RzCore *c = io->corebind.core;
-				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
-				c->dbg->user = wrap;
-			}
+			ret = _plugin->open(io, uri, rw, mode);
 #elif __APPLE__
 			sprintf(uri, "smach://%d", pid); //s is for spawn
 			_plugin = rz_io_plugin_resolve(io, (const char *)uri + 1, false);
@@ -552,8 +534,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 #if __WINDOWS__
 			if (ret) {
 				RzCore *c = io->corebind.core;
-				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
-				c->dbg->user = wrap;
+				c->dbg->user = ret->data;
 			}
 #endif
 		}
