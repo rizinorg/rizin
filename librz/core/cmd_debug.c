@@ -1750,6 +1750,7 @@ RZ_IPI int rz_cmd_debug_heap_jemalloc(void *data, const char *input) {
 		return cmd_dbg_map_jemalloc_32(core, input);
 	}
 #endif
+	return RZ_CMD_STATUS_ERROR;
 }
 
 #include "linux_heap_glibc.c"
