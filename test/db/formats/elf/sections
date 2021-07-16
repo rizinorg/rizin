@@ -94,3 +94,15 @@ EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x08000000 - 0x08000033 r-- fmap.ehdr
 EOF
 RUN
+
+NAME=true binary invalid section offset
+FILE=bins/elf/true-invalid-section-offset
+CMDS=iS
+EXPECT=<<EOF
+[Sections]
+
+nth paddr  size vaddr  vsize perm name type flags 
+--------------------------------------------------
+
+EOF
+RUN
