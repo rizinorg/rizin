@@ -360,34 +360,39 @@ RUN
 
 NAME=v850 random pseudo
 FILE=bins/elf/ld-2.27.so
-BROKEN=1
 CMDS=<<EOF
 sd +128
 e asm.arch=v850
-e asm.parser=v850.pseudo
 e asm.pseudo=true
 b 64
 pi~=
 EOF
 EXPECT=<<EOF
-r8[0x1047] = (byte) r24
+*(r8 + 0x1047) = (byte) r24
 r0 = r0
 r0 = r0
+r9 = ~r31
+r1 = ~r4
 r0 = r0
 r0 = r0
-r0 == 0xa
-r17 = 0x388 | r13
+r13 = 8
+r13 = 0
+r9 = r2
+r17 = r13 | 0x388
 r0 = r0
 r9 = r0
-r11 = (0x8548 << 16) + r26
-r2 == -0xc
-r9 = r3
-r9 = r3
+r3 = ~r4
+r11 = (0x8548 << XX) + r26
+r6 = r18 | 0
 r9 = r16
+r10 = r3 | 0
 r9 = r8
-r2 /= r19
-r9 /= r19
-r0 = r20
+r9 = r16
+r22 = r5 | 0
+r4 == -1
+r17 = r8 & 0
+r0 = ~r2
+r25 = (byte) *(r8805 + 0x5)
 r9 = r0
 EOF
 RUN

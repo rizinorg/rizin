@@ -89,8 +89,9 @@ static int tokenize(const char *in, char *out[]) {
 	return count;
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	int i;
+	char str[1024] = { 0 };
 	char *argv[MAXARGS] = { NULL, NULL, NULL, NULL };
 	int argc = tokenize(data, argv);
 
@@ -101,6 +102,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 	for (i = 0; i < MAXARGS; i++) {
 		free(argv[i]);
 	}
+	rz_strbuf_set(sb, str);
 
 	return true;
 }

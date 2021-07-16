@@ -1,5 +1,4 @@
-// SPDX-FileCopyrightText: 2015 pancake <pancake@nopcode.org>
-// SPDX-FileCopyrightText: 2015 qnix <qnix@0x80.org>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
@@ -12,177 +11,111 @@
 #include <rz_analysis.h>
 #include <rz_parse.h>
 
-typedef enum {
-	IND_IDX = 0,
-	IDX_IND = 1,
-	NORM = 2,
-} ADDR_TYPE;
+#include "parse_common.c"
 
-static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
-	int i, j, k;
-	struct {
-		int narg;
-		char *op;
-		char *str;
-	} ops[] = {
-		{ 1, "lda", "a = 1" },
-		{ 2, "lda", "a = (1+2)" },
-		{ 1, "ldx", "x = 1" },
-		{ 2, "ldx", "x = (1+2)" },
-		{ 1, "ldy", "y = 1" },
-		{ 2, "ldy", "y = (1+2)" },
-		{ 1, "sta", "[1] = a" },
-		{ 2, "sta", "[1+2 ] = a" },
-		{ 1, "stx", "[1] = x" },
-		{ 2, "stx", "[1+2] = x" },
-		{ 1, "sty", "[1] = y" },
-		{ 2, "sty", "[1+2] = y" },
-		{ 1, "dec", "1--" },
-		{ 2, "dec", "(1+2)--" },
-		{ 0, "dcx", "x--" },
-		{ 0, "dcy", "y--" },
-		{ 1, "inc", "1++" },
-		{ 2, "inc", "(1+2)++" },
-		{ 0, "inx", "x++" },
-		{ 0, "iny", "y++" },
-		{ 1, "adc", "a += 1" },
-		{ 2, "adc", "a += (1+2)" },
-		{ 1, "sbc", "a -= 1" },
-		{ 2, "sbc", "a -= (1+2)" },
-		{ 0, "pha", "push a" },
-		{ 1, "and", "a &= 1" },
-		{ 2, "and", "a &= (1+2)" },
-		{ 1, "eor", "a ^= 1" },
-		{ 2, "eor", "a ^= (1+2)" },
-		{ 1, "ora", "a |= 1" },
-		{ 2, "ora", "a |= (1+2)" },
-		{ 0, "tax", "x = a" },
-		{ 0, "tay", "y = a" },
-		{ 0, "txa", "a = x" },
-		{ 0, "tya", "a = y" },
-		{ 0, "tsx", "x = s" },
-		{ 0, "txs", "s = x" },
-		{ 0, "brk", "break" },
-		{ 0, "clc", "clear_carry" },
-		{ 0, "cld", "clear_decimal" },
-		{ 0, "cli", "clear_interrupt" },
-		{ 0, "clv", "clear_overflow" },
-		{ 0, "sec", "set_carry" },
-		{ 0, "sed", "set_decimal" },
-		{ 0, "sei", "set_interrupt" },
-		{ 1, "jsr", "1()" },
-		{ 0, NULL }
-	};
-	if (!newstr) {
-		return false;
+static RzList *_6502_tokenize(const char *assembly, size_t length);
+
+static const RzPseudoGrammar _6502_lexicon[] = {
+	RZ_PSEUDO_DEFINE_GRAMMAR("adc", "a += (1 + 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("and", "a &= (1 + 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("asl", "a = 1 << #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bcc", "if (carry == 0) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bcs", "if (carry != 0) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("beq", "if (eq) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bmi", "if (lt) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bne", "if (ne) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("bpl", "if (gt) goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("brk", "break"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("clc", "carry = 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cld", "decimal = 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cli", "interrupt = 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("clv", "overflow = 0"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp", "cmp (1, 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cpx", "cmp (x, 1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cpy", "cmp (y, 1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dcx", "x--"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dcy", "y--"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dec", "(1 + 2)--"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dex", "x--"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dey", "y--"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("eor", "a ^= (1 + 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("inc", "(1 + 2)++"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("inc", "1++"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("inx", "x++"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("iny", "y++"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("jmp", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("jsr", "1 ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lda", "a = (1 + 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldx", "x = (1 + 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldy", "y = (1 + 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("nop", ""),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ora", "a |= (1 + 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("pha", "push a"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("rti", "return"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("rts", "return"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sbc", "a -= (1 + 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sec", "carry = #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sed", "decimal = #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sei", "interrupt = #1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sta", "[1 + 2] = a"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stx", "[1 + 2] = x"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sty", "[1 + 2] = y"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("tax", "x = a"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("tay", "y = a"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("tsx", "x = s"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("txa", "a = x"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("txs", "s = x"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("tya", "a = y"),
+};
+
+static const RzPseudoConfig _6502_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(_6502_lexicon, 3, _6502_tokenize);
+
+RzList *_6502_tokenize(const char *assembly, size_t length) {
+	size_t i, p;
+	char *buf = NULL;
+	bool insert_zero = false;
+	RzList *tokens = NULL;
+
+	buf = rz_str_ndup(assembly, length);
+	if (!buf) {
+		return NULL;
 	}
 
-	for (i = 0; ops[i].op != NULL; i++) {
-		if (ops[i].narg) {
-			if (argc - 1 != ops[i].narg) {
-				continue;
+	for (i = 0, p = 0; p < length; ++i, ++p) {
+		if (buf[p] == ',') {
+			buf[p] = ' ';
+		} else if (buf[p] == '#') {
+			p++;
+		} else if (buf[p] == '(') {
+			buf[p] = ' ';
+			if (!IS_HEXCHAR(buf[p - 1])) {
+				p++;
+				insert_zero = true;
 			}
+		} else if (buf[p] == ')') {
+			buf[p] = 0;
 		}
-		if (!strcmp(ops[i].op, argv[0])) {
-			for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-				if (IS_DIGIT(ops[i].str[j])) {
-					const char *w = argv[ops[i].str[j] - '0'];
-					if (w != NULL) {
-						strcpy(newstr + k, w);
-						k += strlen(w) - 1;
-					}
-				} else {
-					newstr[k] = ops[i].str[j];
-				}
-			}
-			newstr[k] = '\0';
-			if (argc == 4 && argv[2][0] == '[') {
-				strcat(newstr + k, "+");
-				strcat(newstr + k + 3, argv[2]);
-			}
-			return true;
+		if (p > i) {
+			buf[i] = buf[p];
 		}
 	}
+	buf[i] = 0;
 
-	/* TODO: this is slow */
-	newstr[0] = '\0';
-	for (i = 0; i < argc; i++) {
-		strcat(newstr, argv[i]);
-		strcat(newstr, (i == 0 || i == argc - 1) ? " " : ",");
-	}
-	return false;
-}
-
-static ADDR_TYPE addr_type(const char *str) {
-	if (strchr(str, '(')) {
-		char *e = strchr(str, ')');
-		if (!e) {
-			return NORM;
-		}
-		char *o = strchr(e, ',');
-		return (o) ? IND_IDX : IDX_IND;
-	}
-	return NORM;
-}
-
-static int parse(RzParse *p, const char *data, char *str) {
-	char w0[256], w1[256], w2[256];
-	int i, len = strlen(data);
-	char *buf, *ptr, *optr;
-	ADDR_TYPE atype;
-
-	if (len >= sizeof(w0)) {
-		return false;
-	}
-	// malloc can be slow here :?
-	if (!(buf = malloc(len + 1))) {
-		return false;
-	}
-	memcpy(buf, data, len + 1);
-
-	if (*buf) {
-		atype = addr_type(buf);
-		rz_str_replace_char(buf, '(', ' ');
-		rz_str_replace_char(buf, ')', ' ');
-		*w0 = *w1 = *w2 = '\0';
-		ptr = strchr(buf, ' ');
-		if (!ptr) {
-			ptr = strchr(buf, '\t');
-		}
-		if (ptr) {
-			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
-				;
-			}
-			strncpy(w0, buf, sizeof(w0) - 1);
-			strncpy(w1, ptr, sizeof(w1) - 1);
-			optr = ptr;
-			ptr = strchr(ptr, ',');
-			if (ptr) {
-				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++) {
-					;
-				}
-				strncpy(w1, optr, sizeof(w1) - 1);
-				strncpy(w2, ptr, sizeof(w2) - 1);
-			}
-		} else {
-			strncpy(w0, buf, sizeof(w0) - 1);
-		}
-
-		const char *wa[] = { w0, w1, w2 };
-		int nw = 0;
-		for (i = 0; i < 3; i++) {
-			if (wa[i][0]) {
-				nw++;
-			}
-		}
-		replace(nw, wa, str, atype);
-	}
-
+	tokens = rz_str_split_duplist(buf, " ", true);
 	free(buf);
+	if (!tokens) {
+		return NULL;
+	}
 
-	return true;
+	if (insert_zero) {
+		rz_list_insert(tokens, rz_list_length(tokens) - 1, strdup("0"));
+	}
+
+	return tokens;
+}
+
+static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
+	return rz_pseudo_convert(&_6502_config, assembly, sb);
 }
 
 RzParsePlugin rz_parse_plugin_6502_pseudo = {

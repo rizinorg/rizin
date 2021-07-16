@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_lib.h>
@@ -7,172 +7,114 @@
 #include <rz_parse.h>
 
 // https://www.ti.com/lit/ug/spru732j/spru732j.pdf
+#include "parse_common.c"
 
-static int replace(int argc, const char *argv[], char *newstr) {
-	int i, j, k;
-	struct {
-		int narg;
-		char *op;
-		char *str;
-	} ops[] = {
-		{ 3, "add", "3 = 1 + 2" }, // add b12, b1, b9 -> b9 = b12 + b1
-		{ 3, "addu", "3 = 1 + 2" },
-		{ 3, "addw", "3 = 1 + 2" },
-		{ 3, "addaw", "3 = 1 + 2" },
-		{ 3, "addab", "3 = 1 + 2" },
-		{ 3, "addah", "3 = 1 + 2" },
-		{ 2, "addk", "2 += 1" }, // addk 123, b0 -> b0 += 123
-		{ 3, "sadd", "3 = 1 + 2" }, // sadd b12, b1, b9 -> b9 = b12 + b1
-		{ 3, "sadd2", "3 = 1 + 2" }, // sadd2 b12, b1, b9 -> b9 = b12 + b1
-		{ 3, "sub", "3 = 1 - 2" }, // sub b12, b1, b9 -> b9 = b12 - b1
-		{ 3, "subu", "3 = 1 - 2" }, // sub b12, b1, b9 -> b9 = b12 - b1
-		{ 3, "sub2", "3 = 1 - 2" }, // sub b12, b1, b9 -> b9 = b12 - b1
-		{ 3, "subab", "3 = 1 - 2" }, // sub b12, b1, b9 -> b9 = b12 - b1
-		{ 3, "ssub", "3 = 1 - 2" }, // ssub b12, b1, b9 -> b9 = b12 - b1
-		{ 2, "mv", "2 = 1" },
-		{ 2, "mvk", "2 = 1" }, // mvk 1, a0 -> a0 = 1
-		{ 2, "mvklh", "2 = (half) 1" }, // mvk 1, a0 -> a0 = 1
-		{ 3, "band", "3 = 1 & 2" }, //
-		{ 1, "zero", "1 = zero" },
-		{ 3, "andn", "4 = 1 ~ 2" }, //
-		{ 3, "cmpgtu", "3 = 1 cmpgtu 2" }, //
-		{ 3, "cmpeq", "3 = 1 == 2" }, //
-		{ 3, "cmpge", "3 = 1 >= 2" }, //
-		{ 3, "cmplt", "3 = 1 <= 2" }, //
-		{ 3, "smpylh", "3 = 1 * 2" }, //
-		{ 3, "smpy", "3 = 1 * 2" }, //
-		{ 3, "smpyh", "3 = 1 * 2" }, //
-		{ 3, "mpyu4", "3 = 1 * 2" }, //
-		{ 3, "avg2", "3 = 1 avg 2" }, //
-		{ 3, "pack2", "3 = 1 pack 2" }, //
-		{ 3, "smpy", "3 = 1 * 2" }, //
-		{ 3, "max2", "3 = max(1, 2)" }, //
-		{ 3, "mpy", "3 = 1 * 2" }, //
-		{ 3, "mpy2", "3 = 1 * 2" }, //
-		{ 3, "mpyu", "3 = 1 * 2" }, //
-		{ 3, "mpyh", "3 = 1 * 2" }, //
-		{ 3, "mpyhl", "3 = 1 * 2" }, //
-		{ 3, "mpyhl", "3 = 1 * 2" }, //
-		{ 3, "mpylh", "3 = 1 * 2" }, //
-		{ 3, "mpysu", "3 = 1 * 2" }, //
-		{ 3, "smpyhl", "3 = 1 * 2" }, //
-		{ 3, "mpyhlu", "3 = 1 * 2" }, //
-		{ 3, "mpyhslu", "3 = 1 * 2" }, //
-		{ 3, "mpyluhs", "3 = 1 * 2" }, //
-		{ 3, "mpyhi", "3 = 1 * 2" }, //
-		{ 3, "mpyhu", "3 = 1 * 2" }, //
-		{ 3, "mpyhus", "3 = 1 * 2" }, //
-		{ 3, "mpyhsu", "3 = 1 * 2" }, //
-		{ 3, "mpyhul", "3 = 1 * 2" }, //
-		{ 3, "mpyhuls", "3 = 1 * 2" }, //
-		{ 3, "mpyhir", "3 = 1 * 2" }, //
-		{ 3, "mpyli", "3 = 1 * 2" }, //
-		{ 3, "mpylir", "3 = 1 * 2" }, //
-		{ 4, "ext", "4 = 2 ext 1 .. 3" }, //
-		{ 4, "extu", "4 = 2 ext 1 .. 3" }, //
-		{ 0, "reti", "ret" }, // reti -> ret
-		{ 2, "lddw", "2 = (word)1" }, // lddw
-		{ 2, "ldhu", "2 = (half)1" }, // ldhu
-		{ 2, "ldb", "2 = (byte)1" }, // ldb
-		{ 2, "ldbu", "2 = (byte)1" }, // ldbu
-		{ 2, "ldndw", "2 = 1" }, // ldbu
-		{ 2, "ldnw", "2 = 1" }, // ldbu
-		{ 2, "ldw", "2 = (word)1" }, // ldw
-		{ 2, "ldh", "2 = (half)1" }, // ldw
-		{ 2, "stb", "2 = (byte)1" }, // stb
-		{ 2, "stw", "2 = (word)1" }, // stw
-		{ 2, "sth", "2 = (half)1" }, // stw
-		{ 2, "stnw", "2 = (word)1" }, // stw
-		{ 2, "stdw", "2 = (half)1" }, // stw
-		{ 2, "stndw", "2 = (half)1" }, // stw
-		{ 3, "or", "3 = 2 | 1" },
-		{ 3, "shl", "3 = (2 & Oxffffff) << 1" },
-		{ 3, "shr", "3 = (2 & Oxffffff) << 1" },
-		{ 3, "shlmb", "3 = << 1" },
-		{ 4, "set", "4 = 2 .bitset 1 .. 2" }, // set a29,0x1a, 1, a19
-		{ 4, "clr", "4 = 2 .bitclear 1 .. 2" }, // clr a29,0x1a, 1, a19
-		{ 0, "invalid", "" },
-		{ 0, "nop", "" },
-		{ 0, NULL }
-	};
-	if (!newstr) {
-		return false;
+static RzList *tms320_tokenize(const char *assembly, size_t length);
+
+static const RzPseudoGrammar tms320_lexicon[] = {
+	RZ_PSEUDO_DEFINE_GRAMMAR("add", "3 = 1 + 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addab", "3 = 1 + 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addah", "3 = 1 + 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addaw", "3 = 1 + 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addk", "2 += 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addu", "3 = 1 + 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addw", "3 = 1 + 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("andn", "3 = 1 ~ 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("avg2", "3 = 1 avg 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("b", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("band", "3 = 1 & 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("clr", "4 = 2 .bitclear 1 .. 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmpeq", "3 = 1 == 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmpge", "3 = 1 >= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmpgtu", "3 = 1 > 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmplt", "3 = 1 < 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ext", "4 = 2 ext 1 .. 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("extu", "4 = 2 ext 1 .. 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldb", "2 = (byte) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldbu", "2 = (byte) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lddw", "2 = (word) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldh", "2 = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldhu", "2 = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldndw", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldnw", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ldw", "2 = (word) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("max2", "3 = max(1, 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpy", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpy2", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyh", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhi", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhir", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhl", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhl", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhlu", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhslu", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhsu", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhu", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhul", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhuls", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyhus", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpylh", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyli", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpylir", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyluhs", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpysu", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyu", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyu4", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mv", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mvk", "2 = 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mvklh", "2 = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("nop", ""),
+	RZ_PSEUDO_DEFINE_GRAMMAR("or", "3 = 2 | 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("pack2", "3 = 1 pack 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("reti", "return"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sadd", "3 = 1 + 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sadd2", "3 = 1 + 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("set", "4 = 2 .bitset 1 .. 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shl", "3 = (2 & #0xffffff) << 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shlmb", "3 = << 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("shr", "3 = (2 & #0xffffff) << 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("smpy", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("smpy", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("smpyh", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("smpyhl", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("smpylh", "3 = 1 * 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("ssub", "3 = 1 - 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stb", "2 = (byte) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stdw", "2 = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sth", "2 = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stndw", "2 = (half) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stnw", "2 = (word) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("stw", "2 = (word) 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sub", "3 = 1 - 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sub2", "3 = 1 - 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subab", "3 = 1 - 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subu", "3 = 1 - 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("zero", "1 = 0"),
+};
+
+static const RzPseudoConfig tms320_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(tms320_lexicon, 5, tms320_tokenize);
+
+RzList *tms320_tokenize(const char *assembly, size_t length) {
+	char *buf = NULL, *sp = NULL;
+	RzList *tokens = NULL;
+	buf = rz_str_ndup(assembly, length);
+	if (!buf) {
+		return NULL;
 	}
 
-	for (i = 0; ops[i].op; i++) {
-		if (ops[i].narg) {
-			if (argc - 1 != ops[i].narg) {
-				continue;
-			}
-		}
-		if (!strcmp(ops[i].op, argv[0])) {
-			for (j = k = 0; ops[i].str[j]; j++, k++) {
-				if (IS_DIGIT(ops[i].str[j])) {
-					int index = ops[i].str[j] - '0';
-					if (index >= 0 && index < argc) {
-						const char *w = argv[index];
-						if (!RZ_STR_ISEMPTY(w)) {
-							rz_str_cpy(newstr + k, w);
-							k += strlen(w) - 1;
-						}
-					}
-				} else {
-					newstr[k] = ops[i].str[j];
-				}
-			}
-			newstr[k] = '\0';
-			if (argc == 4 && argv[2][0] == '[') {
-				strcat(newstr + k, "+");
-				strcat(newstr + k + 3, argv[2]);
-			}
-			return true;
-		}
+	sp = strchr(buf, ' ');
+	if (sp) {
+		*sp = ',';
 	}
 
-	/* TODO: this is slow */
-	newstr[0] = '\0';
-	for (i = 0; i < argc; i++) {
-		strcat(newstr, argv[i]);
-		strcat(newstr, (i == 0 || i == argc - 1) ? " " : ",");
-	}
-	return false;
+	tokens = rz_str_split_duplist(buf, ",", true);
+	free(buf);
+
+	return tokens;
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
-	if (!strncmp(data, "|| ", 3)) {
-		data += 3;
-	}
-	if (RZ_STR_ISEMPTY(data)) {
-		*str = 0;
-		return false;
-	}
-
-	char *buf = strdup(data);
-
-	RzListIter *iter;
-	char *sp = strchr(buf, ' ');
-	size_t nw = 1;
-	const char *wa[5] = { 0 };
-	wa[0] = buf;
-	RzList *list = NULL;
-	if (sp) {
-		*sp++ = 0;
-		list = rz_str_split_list(sp, ",", 0);
-		char *w;
-		rz_list_foreach (list, iter, w) {
-			wa[nw] = w;
-			nw++;
-			if (nw == 5) {
-				break;
-			}
-		}
-	}
-	replace(nw, wa, str);
-
-	free(buf);
-	rz_list_free(list);
-
-	return true;
+static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
+	return rz_pseudo_convert(&tms320_config, assembly, sb);
 }
 
 RzParsePlugin rz_parse_plugin_tms320_pseudo = {

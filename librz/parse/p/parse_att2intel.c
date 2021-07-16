@@ -68,12 +68,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-static int parse(RzParse *p, const char *data, char *str) {
+static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	int i, n;
 	char w0[32];
 	char w1[32];
 	char w2[32];
 	char w3[32];
+	char str[1024] = { 0 };
 	char *buf, *ptr, *optr, *num;
 
 	// malloc can be slow here :?
@@ -167,6 +168,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 		}
 	}
 	free(buf);
+	rz_strbuf_set(sb, str);
 	return true;
 }
 

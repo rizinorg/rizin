@@ -25,3 +25,20 @@ EXPECT=<<EOF
 entry0 0x26e [CALL] invoke-direct {v0}, LHello.<init>()V ; 0x0
 EOF
 RUN
+
+NAME=Dalvik HelloWorld func xref
+FILE=bins/dex/HelloWorld.dex
+CMDS=<<EOF
+aa
+e asm.pseudo=true
+pif @ sym.LHello.method._init___V
+EOF
+EXPECT=<<EOF
+call Object.<init>V (v1)
+v0 = (wide) 0x1
+v1[(I)] = v0
+v0 = (wide) 0x2
+v0 = (I) LHello.localVar2
+return
+EOF
+RUN
