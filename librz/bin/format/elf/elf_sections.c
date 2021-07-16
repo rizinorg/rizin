@@ -64,23 +64,24 @@ static const struct flag_translation flag_translation_table[] = {
 };
 
 static bool create_section_from_phdr(ELFOBJ *bin, RzVector *result, const char *name, ut64 addr, ut64 sz) {
-	RzBinElfSection *section = rz_vector_push(result, NULL);
-	if (!section) {
-		RZ_LOG_WARN("Failed to allocate memory for the section.")
+	RzBinElfSection section;
+
+	section.offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
+	if (section.offset == UT64_MAX) {
+		RZ_LOG_WARN("Invalid section offset.\n")
 		return false;
 	}
 
-	section->offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
-	if (section->offset == UT64_MAX) {
-		RZ_LOG_WARN("invalid section offset.")
-		return false;
-	}
-
-	section->rva = addr;
-	section->size = sz;
-	section->name = strdup(name);
-	if (!section->name) {
+	section.rva = addr;
+	section.size = sz;
+	section.name = strdup(name);
+	if (!section.name) {
 		RZ_LOG_WARN("Failed to allocate memory for the section name.")
+		return false;
+	}
+
+	if (!rz_vector_push(result, &section)) {
+		RZ_LOG_WARN("Failed to allocate memory for the section.")
 		return false;
 	}
 
@@ -242,7 +243,11 @@ static bool verify_shdr_entry(ELFOBJ *bin, Elf_(Shdr) * section) {
 }
 
 RZ_BORROW RzBinElfSection *Elf_(rz_bin_elf_get_section)(RZ_NONNULL ELFOBJ *bin, Elf_(Half) index) {
-	rz_return_val_if_fail(bin && bin->sections, NULL);
+	rz_return_val_if_fail(bin, NULL);
+
+	if (!bin->sections) {
+		return NULL;
+	}
 
 	if (index < rz_vector_len(bin->sections)) {
 		return rz_vector_index_ptr(bin->sections, index);
@@ -317,9 +322,7 @@ static RzVector *convert_sections_from_shdr(ELFOBJ *bin, RzVector *sections) {
 	return result;
 }
 
-RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RzVector *sections) {
-	rz_return_val_if_fail(bin, NULL);
-
+static RzVector *convert_sections(ELFOBJ *bin, RzVector *sections) {
 	RzVector *result = convert_sections_from_shdr(bin, sections);
 	if (result) {
 		return result;
@@ -329,7 +332,23 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RzVec
 		return get_sections_from_dt_dynamic(bin);
 	}
 
-	return NULL;
+	return result;
+}
+
+RZ_OWN RzVector *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RzVector *sections) {
+	rz_return_val_if_fail(bin, NULL);
+
+	RzVector *result = convert_sections(bin, sections);
+	if (!result) {
+		return NULL;
+	}
+
+	if (!rz_vector_len(result)) {
+		rz_vector_free(result);
+		return NULL;
+	}
+
+	return result;
 }
 
 RZ_OWN RzVector *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin) {
@@ -392,5 +411,5 @@ RZ_OWN char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type) {
 bool Elf_(rz_bin_elf_has_sections)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
-	return bin->sections && rz_vector_len(bin->sections);
+	return bin->sections;
 }
