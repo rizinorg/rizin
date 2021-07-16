@@ -5,19 +5,13 @@
 
 #include <rz_io.h>
 #include <rz_lib.h>
-#include <rz_cons.h>
-#include <rz_util.h>
 
 #if __WINDOWS__
-
 #include <windows.h>
 #include <tlhelp32.h>
 #include <w32dbg_wrap.h>
-
-#define W32DbgWInst_PID(x) (((W32DbgWInst *)x->data)->pi.dwProcessId)
-
-#undef RZ_IO_NFDS
-#define RZ_IO_NFDS 2
+#include <rz_core.h>
+#include <rz_debug.h>
 
 static ut64 __find_next_valid_addr(HANDLE h, ut64 from, ut64 to) {
 	// Align to next page and try to get to next valid addr
@@ -95,45 +89,8 @@ static bool __plugin_open(RzIO *io, const char *file, bool many) {
 	return !strncmp(file, "w32dbg://", 9);
 }
 
-// mingw32 toolchain doesnt have this symbol
-static HANDLE(WINAPI *rz_OpenThread)(
-	DWORD dwDesiredAccess,
-	BOOL bInheritHandle,
-	DWORD dwThreadId) = NULL;
-
-static int __w32_first_thread(int pid) {
-	HANDLE th;
-	HANDLE thid;
-	THREADENTRY32 te32;
-	te32.dwSize = sizeof(THREADENTRY32);
-
-	th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
-	if (th == INVALID_HANDLE_VALUE) {
-		return -1;
-	}
-	if (!Thread32First(th, &te32)) {
-		CloseHandle(th);
-		return -1;
-	}
-	do {
-		/* get all threads of process */
-		if (te32.th32OwnerProcessID == pid) {
-			rz_OpenThread = OpenThread;
-			thid = rz_OpenThread
-				? rz_OpenThread(THREAD_ALL_ACCESS, 0, te32.th32ThreadID)
-				: NULL;
-			if (!thid) {
-				rz_sys_perror("__w32_first_thread/OpenThread");
-				goto err_first_th;
-			}
-			CloseHandle(th);
-			return te32.th32ThreadID;
-		}
-	} while (Thread32Next(th, &te32));
-err_first_th:
-	eprintf("Could not find an active thread for pid %d\n", pid);
-	CloseHandle(th);
-	return pid;
+static inline current_handle_valid(W32DbgWInst *wrap, int pid) {
+	return wrap->pi.dwProcessId == pid && wrap->pi.hProcess != INVALID_HANDLE_VALUE;
 }
 
 static int __open_proc(RzIO *io, int pid, bool attach) {
@@ -141,50 +98,29 @@ static int __open_proc(RzIO *io, int pid, bool attach) {
 	if (!wrap) {
 		return -1;
 	}
-	DEBUG_EVENT de;
-	int ret = -1;
+	if (current_handle_valid(wrap, pid)) {
+		if (!attach) {
+			return pid;
+		}
+		// We will get a new handle when we attach
+		CloseHandle(wrap->pi.hProcess);
+	}
+
+	if (attach) {
+		RzCore *core = io->corebind.core;
+		core->dbg->user = wrap;
+		/* Attach to the process */
+		return core->dbg->cur->attach(core->dbg, pid);
+	}
 
 	HANDLE h_proc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-
 	if (!h_proc) {
-		rz_sys_perror("__open_proc/OpenProcess");
-		goto att_exit;
+		rz_sys_perror("OpenProcess");
+		return -1;
 	}
 	wrap->pi.dwProcessId = pid;
-	if (attach) {
-		/* Attach to the process */
-		wrap->params.type = W32_ATTACH;
-		w32dbg_wrap_wait_ret(wrap);
-		if (!w32dbgw_ret(wrap)) {
-			w32dbgw_err(wrap);
-			rz_sys_perror("__open_proc/DebugActiveProcess");
-			goto att_exit;
-		}
-		/* catch create process event */
-		wrap->params.type = W32_WAIT;
-		wrap->params.wait.wait_time = 10000;
-		wrap->params.wait.de = &de;
-		w32dbg_wrap_wait_ret(wrap);
-		if (!w32dbgw_ret(wrap)) {
-			w32dbgw_err(wrap);
-			rz_sys_perror("__open_proc/WaitForDebugEvent");
-			goto att_exit;
-		}
-		if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-			eprintf("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
-			goto att_exit;
-		}
-		wrap->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
-		wrap->pi.dwThreadId = de.dwThreadId;
-		wrap->pi.hThread = de.u.CreateProcessInfo.hThread;
-	}
 	wrap->pi.hProcess = h_proc;
-	ret = wrap->pi.dwProcessId;
-att_exit:
-	if (ret == -1 && h_proc) {
-		CloseHandle(h_proc);
-	}
-	return ret;
+	return pid;
 }
 
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
@@ -197,12 +133,6 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		if (__open_proc(io, atoi(file + 9), !strncmp(file, "attach://", 9)) == -1) {
 			return NULL;
 		}
-		if (!wrap->pi.dwThreadId) {
-			wrap->pi.dwThreadId = __w32_first_thread(wrap->pi.dwProcessId);
-		}
-		if (!wrap->pi.hThread) {
-			wrap->pi.hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, wrap->pi.dwThreadId);
-		}
 		ret = rz_io_desc_new(io, &rz_io_plugin_w32dbg,
 			file, rw | RZ_PERM_X, mode, wrap);
 		ret->name = rz_sys_pid_to_path(wrap->pi.dwProcessId);
@@ -213,13 +143,13 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 
 static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case 0: // abs
+	case RZ_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case 1: // cur
-		io->off += (int)offset;
+	case RZ_IO_SEEK_CUR:
+		io->off += (st64)offset;
 		break;
-	case 2: // end
+	case RZ_IO_SEEK_END:
 		io->off = UT64_MAX;
 		break;
 	}
@@ -237,20 +167,9 @@ static int __close(RzIODesc *fd) {
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	W32DbgWInst *wrap = fd->data;
-	//printf("w32dbg io command (%s)\n", cmd);
-	/* XXX ugly hack for testing purposes */
 	if (!strcmp(cmd, "")) {
 		// do nothing
 	} else if (!strncmp(cmd, "pid", 3)) {
-		if (cmd[3] == ' ') {
-			int pid = atoi(cmd + 3);
-			if (pid > 0 && pid != wrap->pi.dwThreadId && pid != wrap->pi.dwProcessId) {
-				wrap->pi.hThread = OpenThread(PROCESS_ALL_ACCESS, FALSE, pid);
-				if (!wrap->pi.hThread) {
-					eprintf("Cannot attach to %d\n", pid);
-				}
-			}
-		}
 		return rz_str_newf("%lu", wrap->pi.dwProcessId);
 	} else {
 		eprintf("Try: 'R!pid'\n");
