@@ -1618,7 +1618,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			pj_ks(pj, "disasm", strsub);
 			// apply pseudo if needed
 			{
-				char *pseudo = rz_parse_parse(core->parser, strsub);
+				char *pseudo = rz_parse_pseudocode(core->parser, strsub);
 				if (RZ_STR_ISNOTEMPTY(pseudo)) {
 					pj_ks(pj, "pseudo", pseudo);
 				}
@@ -1778,7 +1778,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			}
 			printline("disasm", "%s\n", disasm);
 			{
-				char *pseudo = rz_parse_parse(core->parser, disasm);
+				char *pseudo = rz_parse_pseudocode(core->parser, disasm);
 				if (RZ_STR_ISNOTEMPTY(pseudo)) {
 					printline("pseudo", "%s\n", pseudo);
 				}

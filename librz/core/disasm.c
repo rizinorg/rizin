@@ -1053,7 +1053,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	if (!ds->opstr) {
 		const char *assembly = rz_asm_op_get_asm(&ds->asmop);
 		if (ds->pseudo) {
-			char *tmp = rz_parse_parse(core->parser, assembly);
+			char *tmp = rz_parse_pseudocode(core->parser, assembly);
 			if (tmp) {
 				snprintf(ds->str, sizeof(ds->str), "%s", tmp);
 				ds->opstr = tmp;
@@ -2588,7 +2588,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	if (ds->pseudo) {
 		const char *opstr = rz_asm_op_get_asm(&ds->asmop);
-		char *tmp = rz_parse_parse(core->parser, opstr);
+		char *tmp = rz_parse_pseudocode(core->parser, opstr);
 		free(ds->opstr);
 		if (tmp) {
 			snprintf(ds->str, sizeof(ds->str), "%s", tmp);
@@ -5998,7 +5998,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		rz_analysis_op(core->analysis, &ds->analop, at, buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_ALL);
 
 		if (ds->pseudo) {
-			char *tmp = rz_parse_parse(core->parser, opstr);
+			char *tmp = rz_parse_pseudocode(core->parser, opstr);
 			if (tmp) {
 				snprintf(opstr, sizeof(opstr), "%s", tmp);
 			}

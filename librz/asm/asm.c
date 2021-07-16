@@ -23,7 +23,7 @@ static RzAsmPlugin *asm_static_plugins[] = { RZ_ASM_STATIC_PLUGINS };
 
 static void parseHeap(RzParse *p, RzStrBuf *s) {
 	char *op_buf_asm = rz_strbuf_get(s);
-	char *out = rz_parse_parse(p, op_buf_asm);
+	char *out = rz_parse_pseudocode(p, op_buf_asm);
 	if (out) {
 		rz_strbuf_set(s, out);
 		free(out);
@@ -570,7 +570,7 @@ RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 		return 0;
 	}
 	if (a->ifilter) {
-		char *tmp = rz_parse_parse(a->ifilter, buf);
+		char *tmp = rz_parse_pseudocode(a->ifilter, buf);
 		if (tmp) {
 			free(b);
 			b = tmp;
@@ -658,7 +658,7 @@ RZ_API RzAsmCode *rz_asm_mdisassemble_hexstr(RzAsm *a, RzParse *p, const char *h
 	}
 	RzAsmCode *ret = rz_asm_mdisassemble(a, buf, (ut64)len);
 	if (ret && p) {
-		char *tmp = rz_parse_parse(p, ret->assembly);
+		char *tmp = rz_parse_pseudocode(p, ret->assembly);
 		if (tmp) {
 			free(ret->assembly);
 			ret->assembly = tmp;

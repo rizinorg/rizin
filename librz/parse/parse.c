@@ -99,10 +99,14 @@ RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str) {
 	return ret;
 }
 
-// data is input disasm, str is output pseudo
-RZ_API char *rz_parse_parse(RzParse *p, const char *data) {
+/**
+ * \brief Converts the assembly line into pseudocode
+ *
+ * Converts the assembly line into pseudocode
+ * */
+RZ_API char *rz_parse_pseudocode(RzParse *p, const char *assembly) {
 	rz_return_val_if_fail(p, NULL);
-	if (RZ_STR_ISEMPTY(data)) {
+	if (RZ_STR_ISEMPTY(assembly)) {
 		return NULL;
 	}
 
@@ -112,7 +116,7 @@ RZ_API char *rz_parse_parse(RzParse *p, const char *data) {
 	}
 
 	rz_strbuf_reserve(sb, 128);
-	if (!p->cur || !p->cur->parse || !p->cur->parse(p, data, sb)) {
+	if (!p->cur || !p->cur->parse || !p->cur->parse(p, assembly, sb)) {
 		rz_strbuf_free(sb);
 		return NULL;
 	}
