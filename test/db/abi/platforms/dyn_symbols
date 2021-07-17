@@ -39,6 +39,8 @@ EOF
 EXPECT=<<EOF
 3   0x00000d20 0x120000d20 GLOBAL FUNC   156      print_endline
 11  0x00000dbc 0x120000dbc GLOBAL FUNC   140      print_strings
+61  0x00000d20 0x120000d20 GLOBAL FUNC   156      print_endline
+87  0x00000dbc 0x120000dbc GLOBAL FUNC   140      print_strings
 EOF
 RUN
 
