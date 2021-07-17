@@ -696,7 +696,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 			break;
 		}
 	}
-	if (!name) { // type has to have a name for now
+	if (!name || !type) { // type has to have a name for now
 		goto cleanup;
 	}
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
