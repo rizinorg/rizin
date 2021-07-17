@@ -47,6 +47,7 @@ openbsd
 netbsd
 windows
 s110
+none
 EOF
 RUN
 
