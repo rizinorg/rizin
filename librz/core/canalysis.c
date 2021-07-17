@@ -6643,7 +6643,6 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 	if (!fcn) {
 		return NULL;
 	}
-
 	char *signature = NULL;
 
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -6659,29 +6658,35 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 		}
 
 		if (key) {
-			const char *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
-			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
-			if (fcn_type) {
-				pj_o(j);
-				pj_ks(j, "name", rz_str_get_null(key));
-				pj_ks(j, "return", rz_str_get_null(fcn_type));
-				pj_k(j, "args");
-				pj_a(j);
-				if (nargs) {
-					RzList *list = rz_core_get_func_args(core, fcn_name);
-					rz_list_foreach (list, iter, arg) {
-						char *type = arg->orig_c_type;
-						pj_o(j);
-						pj_ks(j, "name", arg->name);
-						pj_ks(j, "type", type);
-						pj_end(j);
-					}
-					rz_list_free(list);
-				}
-				pj_end(j);
-				pj_ki(j, "count", nargs);
-				pj_end(j);
+			RzType *ret_type = rz_type_func_ret(core->analysis->typedb, key);
+			char *ret_type_str = NULL;
+			if (ret_type) {
+				ret_type_str = rz_type_as_string(core->analysis->typedb, ret_type);
 			}
+			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
+			pj_o(j);
+			pj_ks(j, "name", rz_str_get_null(key));
+			if (ret_type_str) {
+				pj_ks(j, "return", ret_type_str);
+			}
+			pj_k(j, "args");
+			pj_a(j);
+			if (nargs) {
+				RzList *list = rz_core_get_func_args(core, fcn_name);
+				rz_list_foreach (list, iter, arg) {
+					char *type = rz_type_as_string(core->analysis->typedb, arg->orig_c_type);
+					pj_o(j);
+					pj_ks(j, "name", arg->name);
+					pj_ks(j, "type", type);
+					pj_end(j);
+					free(type);
+				}
+				rz_list_free(list);
+			}
+			pj_end(j);
+			pj_ki(j, "count", nargs);
+			pj_end(j);
+			free(ret_type_str);
 			free(key);
 		} else {
 			pj_o(j);
@@ -6697,8 +6702,10 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
-				pj_ks(j, "type", var->type);
+				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+				pj_ks(j, "type", vartype);
 				pj_end(j);
+				free(vartype);
 			}
 			rz_list_foreach (cache.bvars, iter, var) {
 				if (var->delta <= 0) {
@@ -6707,8 +6714,10 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
-				pj_ks(j, "type", var->type);
+				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+				pj_ks(j, "type", vartype);
 				pj_end(j);
+				free(vartype);
 			}
 			rz_list_foreach (cache.svars, iter, var) {
 				if (!var->isarg) {
@@ -6717,8 +6726,10 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 				nargs++;
 				pj_o(j);
 				pj_ks(j, "name", var->name);
-				pj_ks(j, "type", var->type);
+				char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+				pj_ks(j, "type", vartype);
 				pj_end(j);
+				free(vartype);
 			}
 			rz_analysis_fcn_vars_cache_fini(&cache);
 
@@ -7195,16 +7206,19 @@ RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunctio
 RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool add_name) {
 	RzAnalysis *analysis = core->analysis;
 	RzStrBuf *sb = rz_strbuf_new(NULL);
-	char *fmt = rz_type_format(analysis->typedb, var->type);
+	char *vartype = rz_type_as_string(core->analysis->typedb, var->type);
+	const char *fmt = rz_type_format(analysis->typedb, vartype);
 	RzRegItem *i;
 	if (!fmt) {
-		RZ_LOG_DEBUG("type:%s doesn't exist\n", var->type);
+		RZ_LOG_DEBUG("type:%s doesn't exist\n", vartype);
+		free(vartype);
 		return rz_strbuf_drain(sb);
 	}
-	bool usePxr = !strcmp(var->type, "int"); // hacky but useful
+	bool usePxr = !strcmp(vartype, "int"); // hacky but useful
 	if (add_name) {
 		rz_strbuf_appendf(sb, "%s %s = ", var->isarg ? "arg" : "var", var->name);
 	}
+	free(vartype);
 	switch (var->kind) {
 	case RZ_ANALYSIS_VAR_KIND_REG:
 		i = rz_reg_index_get(analysis->reg, var->delta);
@@ -7247,7 +7261,6 @@ RZ_IPI char *rz_core_analysis_var_display(RzCore *core, RzAnalysisVar *var, bool
 		break;
 	}
 	}
-	free(fmt);
 	return rz_strbuf_drain(sb);
 }
 
@@ -7370,12 +7383,12 @@ RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunc
 	if (!fcnname) {
 		goto err;
 	}
-	// TODO: move this into rz_analysis_str_to_fcn()
+	// TODO: move this into rz_analysis_function_set_type_str()
 	if (strcmp(fcn->name, fcnname)) {
 		(void)rz_core_analysis_function_rename(core, fcn->addr, fcnname);
 		fcn = rz_analysis_get_fcn_in(core->analysis, fcn->addr, -1);
 	}
-	rz_analysis_str_to_fcn(core->analysis, fcn, fcnstr);
+	rz_analysis_function_set_type_str(core->analysis, fcn, fcnstr);
 	res = true;
 err:
 	free(fcnname);
@@ -7621,9 +7634,9 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 
 	const char *dir_prefix = rz_config_get(core->config, "dir.prefix");
 	int bits = core->analysis->bits;
-	char *dbpath = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "cc-%s-%d.sdb"),
+	char *dbpath = rz_str_newf(RZ_JOIN_3_PATHS("%s", RZ_SDB_TYPES, "cc-%s-%d.sdb"),
 		dir_prefix, analysis_arch, bits);
-	char *dbhomepath = rz_str_newf(RZ_JOIN_3_PATHS("~", RZ_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
+	char *dbhomepath = rz_str_newf(RZ_JOIN_3_PATHS("~", RZ_HOME_SDB_TYPES, "cc-%s-%d.sdb"),
 		analysis_arch, bits);
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp(cc->path, dbpath) || !strcmp(cc->path, dbhomepath))) {

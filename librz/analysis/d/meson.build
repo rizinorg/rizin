@@ -24,13 +24,19 @@ sdb_files = [
   'types-arm-ios-32',
   'types-arm-ios-64',
   'types-android',
-  'types-darwin',
+  'types-atomic',
+  'types-libc',
   'types-linux',
-  'types',
+  'types-macos',
   'types-windows',
   'types-x86-macos-64',
   'types-x86-windows-32',
-  'types-x86-windows-64'
+  'types-x86-windows-64',
+  'functions-android',
+  'functions-libc',
+  'functions-linux',
+  'functions-macos',
+  'functions-windows'
 ]
 
 win_types_extra = [
@@ -69,12 +75,22 @@ win_types_extra = [
   'ws2spi',
 ]
 
+fs = import('fs')
+
 foreach file : sdb_files
   outfile = '@0@.sdb'.format(file)
   infiles = ['@0@.sdb.txt'.format(file)]
   if file == 'types-windows'
     foreach f : win_types_extra
-      infiles += 'types-windows_@0@.sdb.txt'.format(f)
+      win_file = 'types-windows_@0@.sdb.txt'.format(f)
+      if fs.exists(win_file)
+          infiles += win_file
+      endif
+    endforeach
+  endif
+  if file == 'functions-windows'
+    foreach f : win_types_extra
+      infiles += 'functions-windows_@0@.sdb.txt'.format(f)
     endforeach
   endif
   custom_target(outfile,
@@ -84,6 +100,6 @@ foreach file : sdb_files
     depends: sdb_exe,
     build_by_default: true,
     install: true,
-    install_dir: join_paths(rizin_sdb, 'fcnsign')
+    install_dir: join_paths(rizin_sdb, 'types')
   )
 endforeach

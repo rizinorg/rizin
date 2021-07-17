@@ -1,8 +1,7 @@
 NAME=PE JSON test
 FILE=bins/pe/ch22.exe
-ARGS=-nn
+ARGS=-e asm.bits=32 -nn
 CMDS=<<EOF
-e asm.bits=32
 s 0x80
 pfj.pe_nt_image_headers32
 EOF

@@ -3,7 +3,9 @@
 
 #include <rz_analysis.h>
 #include <rz_bin.h>
+#include <rz_type.h>
 #include "minunit.h"
+#include "test_types.h"
 
 #define check_kv(k, v) \
 	do { \
@@ -20,54 +22,103 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull(analysis, "Couldn't create new RzAnalysis");
 	rz_io_bind(io, &bin->iob);
 	analysis->binb.demangle = rz_bin_demangle;
+
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	rz_analysis_set_cpu(analysis, "x86");
+	rz_analysis_set_bits(analysis, 32);
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 32, "linux");
+
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/pe/vista-glass.exe", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
-	analysis->cpu = strdup("x86");
-	analysis->bits = 32;
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 32);
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 4);
+	mu_assert_notnull(loc_table, "Couldn't parse loc section");
+
 	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
 	};
 	rz_analysis_dwarf_process_info(analysis, &ctx);
 
-	char *value = NULL;
-	Sdb *sdb = analysis->typedb->sdb_types;
-	check_kv("_cairo_status", "enum");
-	check_kv("enum._cairo_status.0x0", "CAIRO_STATUS_SUCCESS");
-	check_kv("enum._cairo_status.CAIRO_STATUS_SUCCESS", "0x0");
-	check_kv("enum._cairo_status.0x9", "CAIRO_STATUS_INVALID_PATH_DATA");
-	check_kv("enum._cairo_status.CAIRO_STATUS_INVALID_PATH_DATA", "0x9");
-	check_kv("enum._cairo_status.0x1f", "CAIRO_STATUS_INVALID_WEIGHT");
-	check_kv("enum._cairo_status.CAIRO_STATUS_INVALID_WEIGHT", "0x1f");
-	check_kv("enum._cairo_status.0x20", NULL);
-	check_kv("enum._cairo_status", "CAIRO_STATUS_SUCCESS,CAIRO_STATUS_NO_MEMORY"
-				       ",CAIRO_STATUS_INVALID_RESTORE,CAIRO_STATUS_INVALID_POP_GROUP,CAIRO_STATUS_NO_CURRENT_POINT"
-				       ",CAIRO_STATUS_INVALID_MATRIX,CAIRO_STATUS_INVALID_STATUS,CAIRO_STATUS_NULL_POINTER,"
-				       "CAIRO_STATUS_INVALID_STRING,CAIRO_STATUS_INVALID_PATH_DATA,CAIRO_STATUS_READ_ERROR,"
-				       "CAIRO_STATUS_WRITE_ERROR,CAIRO_STATUS_SURFACE_FINISHED,CAIRO_STATUS_SURFACE_TYPE_MISMATCH,"
-				       "CAIRO_STATUS_PATTERN_TYPE_MISMATCH,CAIRO_STATUS_INVALID_CONTENT,CAIRO_STATUS_INVALID_FORMAT,"
-				       "CAIRO_STATUS_INVALID_VISUAL,CAIRO_STATUS_FILE_NOT_FOUND,CAIRO_STATUS_INVALID_DASH,"
-				       "CAIRO_STATUS_INVALID_DSC_COMMENT,CAIRO_STATUS_INVALID_INDEX,CAIRO_STATUS_CLIP_NOT_REPRESENTABLE,"
-				       "CAIRO_STATUS_TEMP_FILE_ERROR,CAIRO_STATUS_INVALID_STRIDE,"
-				       "CAIRO_STATUS_FONT_TYPE_MISMATCH,CAIRO_STATUS_USER_FONT_IMMUTABLE,CAIRO_STATUS_USER_FONT_ERROR,"
-				       "CAIRO_STATUS_NEGATIVE_COUNT,CAIRO_STATUS_INVALID_CLUSTERS,"
-				       "CAIRO_STATUS_INVALID_SLANT,CAIRO_STATUS_INVALID_WEIGHT");
-	check_kv("_MARGINS", "struct");
-	// TODO evaluate member_location operations in DWARF to get offset and test it
-	check_kv("struct._MARGINS", "cxLeftWidth,cxRightWidth,cyTopHeight,cyBottomHeight");
+	// Check the enum presence and validity
+	RzBaseType *cairo = rz_type_db_get_base_type(analysis->typedb, "_cairo_status");
+	mu_assert_eq(cairo->kind, RZ_BASE_TYPE_KIND_ENUM, "_cairo_status is enum");
+	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_SUCCESS", 0), "CAIRO_STATUS_SUCCESS = 0x0");
+	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_INVALID_PATH_DATA", 0x9), "CAIRO_STATUS_INVALID_PATH_DATA = 0x9");
+	mu_assert_true(has_enum_val(cairo, "CAIRO_STATUS_INVALID_WEIGHT", 0x1f), "CAIRO_STATUS_INVALID_WEIGHT = 0x1f");
+	mu_assert_null(rz_type_db_enum_member_by_val(analysis->typedb, "_cairo_status", 0x20), "no 0x20 member");
 
-	check_kv("unaligned", "union");
-	check_kv("union.unaligned", "ptr,u2,u4,u8,s2,s4,s8");
-	check_kv("union.unaligned.u2", "short unsigned int,0,0");
-	check_kv("union.unaligned.s8", "long long int,0,0");
+	RzBaseType *cairo1 = rz_type_db_get_enum(analysis->typedb, "_cairo_status");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_SUCCESS"), "CAIRO_STATUS_SUCCESS");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_NO_MEMORY"), "CAIRO_STATUS_NO_MEMORY");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_RESTORE"), "CAIRO_STATUS_INVALID_RESTORE");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_POP_GROUP"), "CAIRO_STATUS_INVALID_POP_GROUP");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_NO_CURRENT_POINT"), "CAIRO_STATUS_NO_CURRENT_POINT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_MATRIX"), "CAIRO_STATUS_INVALID_MATRIX");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_STATUS"), "CAIRO_STATUS_INVALID_STATUS");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_NULL_POINTER"), "CAIRO_STATUS_NULL_POINTER");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_STRING"), "CAIRO_STATUS_INVALID_STRING");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_PATH_DATA"), "CAIRO_STATUS_INVALID_PATH_DATA");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_READ_ERROR"), "CAIRO_STATUS_READ_ERROR");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_WRITE_ERROR"), "CAIRO_STATUS_WRITE_ERROR");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_SURFACE_FINISHED"), "CAIRO_STATUS_SURFACE_FINISHED");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_SURFACE_TYPE_MISMATCH"), "CAIRO_STATUS_SURFACE_TYPE_MISMATCH");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_PATTERN_TYPE_MISMATCH"), "CAIRO_STATUS_PATTERN_TYPE_MISMATCH");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_CONTENT"), "CAIRO_STATUS_INVALID_CONTENT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_FORMAT"), "CAIRO_STATUS_INVALID_FORMAT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_VISUAL"), "CAIRO_STATUS_INVALID_VISUAL");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_FILE_NOT_FOUND"), "CAIRO_STATUS_FILE_NOT_FOUND");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_DASH"), "CAIRO_STATUS_INVALID_DASH");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_DSC_COMMENT"), "CAIRO_STATUS_INVALID_DSC_COMMENT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_INDEX"), "CAIRO_STATUS_INVALID_INDEX");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_CLIP_NOT_REPRESENTABLE"), "CAIRO_STATUS_CLIP_NOT_REPRESENTABLE");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_TEMP_FILE_ERROR"), "CAIRO_STATUS_TEMP_FILE_ERROR");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_STRIDE"), "CAIRO_STATUS_INVALID_STRIDE");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_FONT_TYPE_MISMATCH"), "CAIRO_STATUS_FONT_TYPE_MISMATCH");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_USER_FONT_IMMUTABLE"), "CAIRO_STATUS_USER_FONT_IMMUTABLE");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_USER_FONT_ERROR"), "CAIRO_STATUS_USER_FONT_ERROR");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_NEGATIVE_COUNT"), "CAIRO_STATUS_NEGATIVE_COUNT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_CLUSTERS"), "CAIRO_STATUS_INVALID_CLUSTERS");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_SLANT"), "CAIRO_STATUS_INVALID_SLANT");
+	mu_assert_true(has_enum_case(cairo1, "CAIRO_STATUS_INVALID_WEIGHT"), "CAIRO_STATUS_INVALID_WEIGHT");
+
+	mu_assert_false(has_enum_case(cairo1, "CAIRO_NO_SUCH_CASE"), "no such enum case");
+
+	// Check the structure presence and validity
+	RzBaseType *margins = rz_type_db_get_base_type(analysis->typedb, "_MARGINS");
+	mu_assert_eq(margins->kind, RZ_BASE_TYPE_KIND_STRUCT, "_MARGINS is struct");
+	mu_assert_true(has_struct_member(margins, "cxLeftWidth"), "cxLeftWidth");
+	mu_assert_true(has_struct_member(margins, "cxRightWidth"), "cxRightWidth");
+	mu_assert_true(has_struct_member(margins, "cyTopHeight"), "cyTopHeight");
+	mu_assert_true(has_struct_member(margins, "cyBottomHeight"), "cyBottomHeight");
+
+	mu_assert_false(has_struct_member(margins, "noSuchMember"), "no such struct member");
+
+	// Check the union presence and validity
+	RzBaseType *unaligned = rz_type_db_get_base_type(analysis->typedb, "unaligned");
+	mu_assert_eq(unaligned->kind, RZ_BASE_TYPE_KIND_UNION, "unaligned is union");
+	mu_assert_true(has_union_member(unaligned, "ptr"), "ptr");
+	mu_assert_true(has_union_member(unaligned, "u2"), "u2");
+	mu_assert_true(has_union_member(unaligned, "u4"), "u4");
+	mu_assert_true(has_union_member(unaligned, "u8"), "u8");
+	mu_assert_true(has_union_member(unaligned, "s2"), "s2");
+	mu_assert_true(has_union_member(unaligned, "s4"), "s4");
+	mu_assert_true(has_union_member(unaligned, "s8"), "s8");
+
+	mu_assert_false(has_union_member(unaligned, "noSuchMember"), "no such union member");
+	// TODO: Check also the exact types of the members
+	//check_kv("union.unaligned.u2", "short unsigned int,0,0");
+	//check_kv("union.unaligned.s8", "long long int,0,0");
+
 	rz_bin_dwarf_debug_info_free(info);
 	rz_bin_dwarf_debug_abbrev_free(abbrevs);
 	rz_analysis_free(analysis);
@@ -86,12 +137,18 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	rz_io_bind(io, &bin->iob);
 	analysis->binb.demangle = rz_bin_demangle;
 
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	rz_analysis_set_cpu(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
-	analysis->cpu = strdup("x86");
-	analysis->bits = 64;
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
@@ -124,7 +181,9 @@ static bool test_dwarf_function_parsing_cpp(void) {
 
 	rz_bin_dwarf_debug_info_free(info);
 	rz_bin_dwarf_debug_abbrev_free(abbrevs);
-	rz_bin_dwarf_loc_free(loc_table);
+	if (loc_table) {
+		rz_bin_dwarf_loc_free(loc_table);
+	}
 	rz_analysis_free(analysis);
 	rz_bin_free(bin);
 	rz_io_free(io);
@@ -141,17 +200,22 @@ static bool test_dwarf_function_parsing_go(void) {
 	rz_io_bind(io, &bin->iob);
 	analysis->binb.demangle = rz_bin_demangle;
 
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	rz_analysis_set_cpu(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf_go_tree", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
-	analysis->cpu = strdup("x86");
-	analysis->bits = 64;
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
+	mu_assert_notnull(loc_table, "Couldn't parse loc section");
 
 	RzAnalysisDwarfContext ctx = {
 		.info = info,
@@ -194,17 +258,24 @@ static bool test_dwarf_function_parsing_rust(void) {
 	rz_io_bind(io, &bin->iob);
 	analysis->binb.demangle = rz_bin_demangle;
 
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	rz_analysis_set_cpu(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(analysis->typedb, dir_prefix, "x86", 64, "linux");
+
 	RzBinOptions opt = { 0 };
 	RzBinFile *bf = rz_bin_open(bin, "bins/elf/dwarf_rust_bubble", &opt);
 	mu_assert_notnull(bf, "couldn't open file");
 	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
-	analysis->cpu = strdup("x86");
-	analysis->bits = 64;
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev(bin->cur);
 	mu_assert_notnull(abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info(bin->cur, abbrevs);
 	mu_assert_notnull(info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc(bin->cur, 8);
+	mu_assert_notnull(loc_table, "Couldn't parse loc section");
 
 	RzAnalysisDwarfContext ctx = {
 		.info = info,

@@ -32,20 +32,6 @@ if not capstone_dep.found()
   capstone_dep = capstone_proj.get_variable('capstone_dep')
 endif
 
-
-# handle tree-sitter
-r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter')
-if r.returncode() == 1 and get_option('subprojects_check')
-  error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-endif
-
-tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
-if not tree_sitter_dep.found()
-  tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
-  tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
-endif
-
-
 # new rizin shell parser
 subdir('rizin-shell-parser')
 
@@ -88,28 +74,6 @@ qnx_dep = declare_dependency(
   link_with: librzqnx,
   include_directories: qnx_inc
 )
-
-
-# handle tcc dependency (heavily modified version)
-tcc_files = [
-  'tcc/libtcc.c',
-  'tcc/tccgen.c',
-  'tcc/tccpp.c'
-]
-
-tcc_inc = [platform_inc, include_directories('tcc')]
-
-librztcc = static_library('rztcc', tcc_files,
-  dependencies: [rz_util_dep],
-  include_directories: tcc_inc,
-  implicit_include_directories: false
-)
-
-tcc_dep = declare_dependency(
-  link_with: librztcc,
-  include_directories: tcc_inc
-)
-
 
 # handle lz4 dependency
 r = run_command(py3_exe, check_meson_subproject_py, 'lz4')

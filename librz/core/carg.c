@@ -15,12 +15,8 @@ static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *analysis, cons
 		eprintf("Missing type for function argument (%s)\n", fcn_name);
 		return;
 	}
-	if (!strncmp("const ", arg->orig_c_type, 6)) {
-		arg->c_type = arg->orig_c_type + 6;
-	} else {
-		arg->c_type = arg->orig_c_type;
-	}
-	arg->fmt = rz_type_db_get(analysis->typedb, arg->c_type);
+	arg->c_type = arg->orig_c_type;
+	arg->fmt = rz_type_as_format(analysis->typedb, arg->c_type);
 	arg->size = rz_type_db_get_bitsize(analysis->typedb, arg->c_type) / 8;
 	arg->cc_source = rz_analysis_cc_arg(analysis, cc, arg_num);
 }
@@ -38,7 +34,7 @@ RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name) {
 	if (rz_type_func_exist(analysis->typedb, name)) {
 		return strdup(name);
 	}
-	return rz_type_func_guess(analysis->typedb, (char *)func_name);
+	return rz_analysis_function_name_guess(analysis->typedb, (char *)func_name);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
@@ -211,7 +207,6 @@ static void rz_analysis_fcn_arg_free(RzAnalysisFuncArg *arg) {
 	if (!arg) {
 		return;
 	}
-	free(arg->orig_c_type);
 	free(arg);
 }
 

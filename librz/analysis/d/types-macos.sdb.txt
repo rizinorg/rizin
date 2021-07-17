@@ -1,0 +1,82 @@
+sigset_t=typedef
+typedef.sigset_t=uint32_t
+
+__idtype=enum
+enum.__idtype=P_ALL,P_GID,P_PGID
+enum.__idtype.P_ALL=0x0
+enum.__idtype.P_GID=0x1
+enum.__idtype.P_PGID=0x2
+
+idtype_t=typedef
+typedef.idtype_t=enum __idtype
+
+fd_mask=typedef
+typedef.fd_mask=int32_t
+
+_fd_set=struct
+struct._fd_set=fds_bits
+struct._fd_set.fds_bits=fd_mask,0,32
+
+fd_set=typedef
+typedef.fd_set=struct _fd_set
+
+__siginfo_t=struct
+struct.__siginfo_t=si_signo,si_errno,si_code,si_pid,si_uid,si_status,si_addr,si_value,si_band
+struct.__siginfo_t.si_signo=int,0,0
+struct.__siginfo_t.si_errno=int,4,0
+struct.__siginfo_t.si_code=int,8,0
+struct.__siginfo_t.si_pid=pid_t,12,0
+struct.__siginfo_t.si_uid=uid_t,16,0
+struct.__siginfo_t.si_status=int,20,0
+struct.__siginfo_t.si_addr=void*,24,0
+struct.__siginfo_t.si_value=union sigval,28,0
+struct.__siginfo_t.si_band=int,36,0
+
+siginfo_t=typedef
+typedef.siginfo_t=struct __siginfo_t
+
+sigaction=struct
+struct.sigaction=__sigaction_u,sa_mask,sa_flags
+struct.sigaction.__sigaction_u=void*,0,0
+struct.sigaction.sa_mask=sigset_t,8,0
+struct.sigaction.sa_flags=int,16,0
+
+NSString=struct
+struct.NSString=p0,p1,str,len
+struct.NSString.p0=void *,0,0
+struct.NSString.p0.meta=4
+struct.NSString.p1=size_t,0,0
+struct.NSString.p1.meta=4
+struct.NSString.len=int,0,0
+struct.NSString.len.meta=4
+struct.NSString.str=char *,0,0
+struct.NSString.str.meta=4
+
+objc_class=struct
+struct.objc_class=isa,super_class,name,version,info,instance_size,ivars,methodLists,cache,protocols
+struct.objc_class.isa=struct objc_class*,0,0
+struct.objc_class.super_class=struct objc_class*,8,0
+struct.objc_class.name=const char*,16,0
+struct.objc_class.version=long,24,0
+struct.objc_class.info=long,28,0
+struct.objc_class.instance_size=long,32,0
+struct.objc_class.ivars=void*,36,0
+struct.objc_class.methodLists=void**,44,0
+struct.objc_class.cache=void*,52,0
+struct.objc_class.protocols=void*,60,0
+
+time_t=typedef
+typedef.time_t=long
+
+suseconds_t=typedef
+typedef.suseconds_t=long
+
+timeval=struct
+struct.timeval=tv_sec,tv_usec
+struct.timeval.tv_sec=time_t,0,0
+struct.timeval.tv_usec=suseconds_t,8,0
+
+timespec=struct
+struct.timespec=tv_sec,tv_nsec
+struct.timespec.tv_sec=time_t,0,0
+struct.timespec.tv_nsec=long,8,0

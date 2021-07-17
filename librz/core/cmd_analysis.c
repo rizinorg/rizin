@@ -1067,7 +1067,9 @@ static void __cmd_afvf(RzCore *core, const char *input) {
 			continue;
 		}
 		const char *pad = rz_str_pad(' ', 10 - strlen(p->name));
-		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", (ut64)-p->delta, p->name, pad, p->type);
+		char *ptype = rz_type_as_string(core->analysis->typedb, p->type);
+		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", (ut64)-p->delta, p->name, pad, ptype);
+		free(ptype);
 	}
 	rz_list_sort(list, delta_cmp);
 	rz_list_foreach (list, iter, p) {
@@ -1076,8 +1078,10 @@ static void __cmd_afvf(RzCore *core, const char *input) {
 		}
 		// TODO: only stack vars if (p->kind == 's') { }
 		const char *pad = rz_str_pad(' ', 10 - strlen(p->name));
+		char *ptype = rz_type_as_string(core->analysis->typedb, p->type);
 		// XXX this 0x6a is a hack
-		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", ((ut64)p->delta) - 0x6a, p->name, pad, p->type);
+		rz_cons_printf("0x%08" PFMT64x "  %s:%s%s\n", ((ut64)p->delta) - 0x6a, p->name, pad, ptype);
+		free(ptype);
 	}
 	rz_list_free(list);
 }
@@ -1237,7 +1241,14 @@ static int var_cmd(RzCore *core, const char *str) {
 			free(ostr);
 			return false;
 		}
-		rz_analysis_var_set_type(v1, type);
+		char *error_msg = NULL;
+		RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, type, &error_msg);
+		if (!ttype || error_msg) {
+			eprintf("Can't parse type: \"%s\"\n%s\n", type, error_msg);
+			free(ostr);
+			return false;
+		}
+		rz_analysis_var_set_type(v1, ttype);
 		free(ostr);
 		return true;
 	}
@@ -1341,7 +1352,15 @@ static int var_cmd(RzCore *core, const char *str) {
 		} else if (type == 's' && delta > fcn->maxstack) {
 			isarg = true;
 		}
-		rz_analysis_function_set_var(fcn, delta, type, vartype, size, isarg, name);
+		char *error_msg = NULL;
+		RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
+		if (!ttype || error_msg) {
+			eprintf("Can't parse type: \"%s\"\n%s\n", vartype, error_msg);
+			free(ostr);
+			return false;
+		}
+		rz_analysis_function_set_var(fcn, delta, type, ttype, size, isarg, name);
+		rz_type_free(ttype);
 	} break;
 	}
 	free(ostr);
@@ -2938,7 +2957,10 @@ RZ_IPI int rz_cmd_analysis_fcn(void *data, const char *input) {
 		case 'r': { // "afsr"
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, -1);
 			if (fcn) {
-				rz_type_func_ret_set(core->analysis->typedb, fcn->name, input + 3);
+				RzType *ttype = rz_type_parse_string_single(core->analysis->typedb->parser, input + 3, NULL);
+				if (ttype) {
+					rz_type_func_ret_set(core->analysis->typedb, fcn->name, ttype);
+				}
 			} else {
 				eprintf("There's no function defined in here.\n");
 			}
@@ -6667,9 +6689,10 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 			if (toff) {
 				RzList *typeoffs = rz_type_db_get_by_offset(core->analysis->typedb, toff);
 				RzListIter *iter;
-				char *ty;
+				RzTypePath *ty;
+				// We only print type paths here
 				rz_list_foreach (typeoffs, iter, ty) {
-					rz_cons_printf("%s\n", ty);
+					rz_cons_printf("%s\n", ty->path);
 				}
 				rz_list_free(typeoffs);
 			}
@@ -6736,18 +6759,15 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 					// TODO: Allow to select from multiple choices
 					RzList *otypes = rz_type_db_get_by_offset(core->analysis->typedb, offimm);
 					RzListIter *iter;
-					char *otype = NULL;
-					rz_list_foreach (otypes, iter, otype) {
-						// TODO: I don't think we should silently error, it is confusing
-						if (!strcmp(type, otype)) {
-							//eprintf ("Adding type offset %s\n", type);
-							rz_type_link_offset(core->analysis->typedb, type, addr);
-							rz_analysis_hint_set_offset(core->analysis, addr, otype);
-							break;
+					RzTypePath *tpath;
+					rz_list_foreach (otypes, iter, tpath) {
+						// TODO: Support also arrays and pointers
+						if (tpath->typ->kind == RZ_TYPE_KIND_IDENTIFIER) {
+							if (!strcmp(type, tpath->path)) {
+								rz_analysis_hint_set_offset(core->analysis, addr, tpath->path);
+								break;
+							}
 						}
-					}
-					if (!otype) {
-						eprintf("wrong type for opcode offset\n");
 					}
 					rz_list_free(otypes);
 				}
@@ -8517,19 +8537,21 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 		}
 		char *key = (fcn_name) ? resolve_fcn_name(core->analysis, fcn_name) : NULL;
 		if (key) {
-			const char *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
+			RzType *fcn_type = rz_type_func_ret(core->analysis->typedb, key);
 			int nargs = rz_type_func_args_count(core->analysis->typedb, key);
 			// remove other comments
+			char *fcn_type_str = NULL;
 			if (fcn_type) {
-				rz_strbuf_appendf(sb, "%s%s%s(", rz_str_get_null(fcn_type),
-					(*fcn_type && fcn_type[strlen(fcn_type) - 1] == '*') ? "" : " ",
-					rz_str_get_null(key));
-				if (!nargs) {
-					rz_strbuf_appendf(sb, "void)\n");
-				}
-			} else {
-				eprintf("Cannot find any function type..lets just use some standards?\n");
+				fcn_type_str = rz_type_as_string(core->analysis->typedb, fcn_type);
 			}
+			const char *sp = fcn_type && fcn_type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
+			rz_strbuf_appendf(sb, "%s%s%s(",
+				fcn_type_str ? fcn_type_str : "", sp,
+				rz_str_get_null(key));
+			if (!nargs) {
+				rz_strbuf_appendf(sb, "void)\n");
+			}
+			free(fcn_type_str);
 		} else {
 			if (is_aCer) {
 				show_reg_args(core, -1, sb);
@@ -9055,11 +9077,17 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int
 		eprintf("Cannot find function in 0x%08" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_ERROR;
 	}
-
-	if (!rz_type_func_ret_set(core->analysis->typedb, fcn->name, argv[1])) {
+	char *error_msg = NULL;
+	RzType *ret_type = rz_type_parse_string_single(core->analysis->typedb->parser, argv[1], &error_msg);
+	if (!ret_type || error_msg) {
+		eprintf("Cannot parse type \"%s\":\n%s\n", argv[1], error_msg);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (!rz_type_func_ret_set(core->analysis->typedb, fcn->name, ret_type)) {
 		eprintf("Cannot find type %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
+	fcn->ret_type = ret_type;
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -9377,7 +9405,13 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_type_handler(RzCore *core, int argc
 		eprintf("Cannot find variable %s\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_analysis_var_set_type(v, argv[2]);
+	char *error_msg = NULL;
+	RzType *v_type = rz_type_parse_string_single(core->analysis->typedb->parser, argv[2], &error_msg);
+	if (!v_type || error_msg) {
+		eprintf("Cannot parse type \"%s\":\n%s\n", argv[2], error_msg);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_analysis_var_set_type(v, v_type);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -9500,7 +9534,14 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_bp_handler(RzCore *core, int argc, 
 		const char *vartype = argc > 3 ? argv[3] : "int";
 		int delta = (int)rz_num_math(core->num, argv[1]) - fcn->bp_off;
 		bool isarg = delta > 0;
-		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_BPV, vartype, 4, isarg, varname);
+		char *error_msg = NULL;
+		RzType *var_type = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
+		if (!var_type || error_msg) {
+			eprintf("Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_BPV, var_type, 4, isarg, varname);
+		rz_type_free(var_type);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -9542,7 +9583,14 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_regs_handler(RzCore *core, int argc
 		}
 		int delta = i->index;
 		bool isarg = true;
-		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, vartype, 4, isarg, varname);
+		char *error_msg = NULL;
+		RzType *var_type = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
+		if (!var_type || error_msg) {
+			eprintf("Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, var_type, 4, isarg, varname);
+		rz_type_free(var_type);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -9589,7 +9637,14 @@ RZ_IPI RzCmdStatus rz_analysis_function_vars_sp_handler(RzCore *core, int argc, 
 		const char *vartype = argc > 3 ? argv[3] : "int";
 		int delta = (int)rz_num_math(core->num, argv[1]);
 		bool isarg = delta > fcn->maxstack;
-		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_SPV, vartype, 4, isarg, varname);
+		char *error_msg = NULL;
+		RzType *var_type = rz_type_parse_string_single(core->analysis->typedb->parser, vartype, &error_msg);
+		if (!var_type || error_msg) {
+			eprintf("Cannot parse type \"%s\":\n%s\n", vartype, error_msg);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_analysis_function_set_var(fcn, delta, RZ_ANALYSIS_VAR_KIND_SPV, var_type, 4, isarg, varname);
+		rz_type_free(var_type);
 	}
 	return RZ_CMD_STATUS_OK;
 }

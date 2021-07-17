@@ -111,6 +111,7 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_analysis_hint_storage_init(analysis);
 	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
 	analysis->typedb = rz_type_db_new();
+	analysis->type_links = ht_up_new0();
 	analysis->sdb_fmts = sdb_ns(analysis->sdb, "spec", 1);
 	analysis->sdb_cc = sdb_ns(analysis->sdb, "cc", 1);
 	analysis->sdb_zigns = sdb_ns(analysis->sdb, "zigns", 1);
@@ -252,7 +253,9 @@ static bool analysis_set_os(RzAnalysis *analysis, const char *os) {
 	}
 	free(analysis->os);
 	analysis->os = strdup(os);
+	const char *dir_prefix = rz_sys_prefix(NULL);
 	rz_type_db_set_os(analysis->typedb, os);
+	rz_type_db_reload(analysis->typedb, dir_prefix);
 	return true;
 }
 
@@ -270,11 +273,17 @@ RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, const char *os, const 
 }
 
 RZ_API bool rz_analysis_set_os(RzAnalysis *analysis, const char *os) {
-	const char *dir_prefix = rz_sys_prefix(NULL);
-	const char *dbpath = sdb_fmt(RZ_JOIN_3_PATHS("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
-		dir_prefix, os);
-	rz_type_db_load_sdb(analysis->typedb, dbpath);
 	return rz_analysis_set_triplet(analysis, os, NULL, -1);
+}
+
+static bool is_arm_thumb_hack(RzAnalysis *analysis, int bits) {
+	if (!analysis || !analysis->cpu) {
+		return false;
+	}
+	if ((analysis->bits != bits) && !strcmp(analysis->cpu, "arm")) {
+		return (analysis->bits == 16 && bits == 32) || (analysis->bits == 32 && bits == 16);
+	}
+	return false;
 }
 
 RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
@@ -285,8 +294,13 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 	case 32:
 	case 64:
 		if (analysis->bits != bits) {
+			bool is_hack = is_arm_thumb_hack(analysis, bits);
+			const char *dir_prefix = rz_sys_prefix(NULL);
 			analysis->bits = bits;
 			rz_type_db_set_bits(analysis->typedb, bits);
+			if (!is_hack) {
+				rz_type_db_reload(analysis->typedb, dir_prefix);
+			}
 			rz_analysis_set_reg_profile(analysis);
 		}
 		return true;
@@ -302,6 +316,8 @@ RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 		analysis->pcalign = v;
 	}
 	rz_type_db_set_cpu(analysis->typedb, cpu);
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_reload(analysis->typedb, dir_prefix);
 }
 
 RZ_API int rz_analysis_set_big_endian(RzAnalysis *analysis, int bigend) {
@@ -414,6 +430,8 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 	rz_interval_tree_fini(&analysis->meta);
 	rz_interval_tree_init(&analysis->meta, rz_meta_item_free);
 	rz_type_db_purge(analysis->typedb);
+	ht_up_free(analysis->type_links);
+	analysis->type_links = ht_up_new0();
 	sdb_reset(analysis->sdb_zigns);
 	sdb_reset(analysis->sdb_classes);
 	sdb_reset(analysis->sdb_classes_attrs);
@@ -472,7 +490,7 @@ RZ_API bool rz_analysis_noreturn_add(RzAnalysis *analysis, const char *name, ut6
 	}
 	if (rz_type_func_exist(analysis->typedb, tmp_name)) {
 		fnl_name = strdup(tmp_name);
-	} else if (!(fnl_name = rz_type_func_guess(analysis->typedb, (char *)tmp_name))) {
+	} else if (!(fnl_name = rz_analysis_function_name_guess(analysis->typedb, (char *)tmp_name))) {
 		if (addr == UT64_MAX) {
 			if (name) {
 				sdb_bool_set(NDB, K_NORET_FUNC(name), true, 0);
@@ -508,19 +526,6 @@ RZ_API bool rz_analysis_noreturn_drop(RzAnalysis *analysis, const char *expr) {
 		fcnname = expr;
 	}
 	sdb_unset(NDB, K_NORET_FUNC(fcnname), 0);
-#if 0
-	char *tmp;
-	// unnsecessary checks, imho the noreturn db should be pretty simple to allow forward and custom declarations without having to define the function prototype before
-	if (rz_type_func_exist (NDB, fcnname)) {
-		sdb_unset (NDB, K_NORET_FUNC (fcnname), 0);
-		return true;
-	} else if ((tmp = rz_type_func_guess (NDB, (char *)fcnname))) {
-		sdb_unset (NDB, K_NORET_FUNC (fcnname), 0);
-		free (tmp);
-		return true;
-	}
-	eprintf ("Can't find prototype for %s in types database", fcnname);
-#endif
 	return false;
 }
 
@@ -533,7 +538,7 @@ static bool rz_analysis_noreturn_at_name(RzAnalysis *analysis, const char *name)
 	if (rz_analysis_is_noreturn(analysis, name)) {
 		return true;
 	}
-	char *tmp = rz_type_func_guess(analysis->typedb, (char *)name);
+	char *tmp = rz_analysis_function_name_guess(analysis->typedb, (char *)name);
 	if (tmp) {
 		if (rz_analysis_is_noreturn(analysis, tmp)) {
 			free(tmp);
@@ -616,7 +621,7 @@ RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr) {
 RZ_API RzList *rz_analysis_noreturn_functions(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	// At first we read all noreturn functions from the Types DB
-	RzList *noretl = rz_type_noreturn_functions(analysis->typedb);
+	RzList *noretl = rz_type_noreturn_function_names(analysis->typedb);
 	// Then we propagate all noreturn functions that were inferred by
 	// the analysis process
 	SdbKv *kv;

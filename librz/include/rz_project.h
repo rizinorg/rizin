@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#define RZ_PROJECT_VERSION 2
+#define RZ_PROJECT_VERSION 3
 
 typedef Sdb RzProject;
 
@@ -30,6 +30,8 @@ typedef enum rz_project_err {
 RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err);
 RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *file);
 RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file);
+RZ_API RzProject *rz_project_load_file_raw(const char *file);
+RZ_API void rz_project_free(RzProject *prj);
 
 /**
  * @param load_bin_io whether to also load the underlying RIO and RBin state from the project. If false, the current state will be kept and the project loaded on top.
@@ -42,6 +44,10 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_
  * @param file filename of the project to load from
  */
 RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, bool load_bin_io, RzSerializeResultInfo *res);
+
+RZ_API bool rz_project_migrate_v1_v2(RzProject *prj, RzSerializeResultInfo *res);
+RZ_API bool rz_project_migrate_v2_v3(RzProject *prj, RzSerializeResultInfo *res);
+RZ_API bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res);
 
 #ifdef __cplusplus
 }
