@@ -7,16 +7,57 @@
 #include <rz_type.h>
 #include <sdb.h>
 
-static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *name) {
+/**
+ * Parse a type or take it from the cache if it has been parsed before already.
+ * This cache is really only relevant because types are stored in the sdb as their C expression,
+ * making them extremely slow to load. If they will be e.g. json in the future, this cache can be removed.
+ *
+ * \param newly_added list of strings where str is appended if it has been added to the cache in this pass
+ */
+static RzType *parse_type_string_cached(RzTypeParser *parser, HtPP *cache, const char *str, char **error_msg, RZ_OUT RzList *newly_added) {
+	rz_return_val_if_fail(str, NULL);
+	RzType *r = ht_pp_find(cache, str, NULL);
+	if (r) {
+		*error_msg = NULL;
+		return rz_type_clone(r);
+	}
+	r = rz_type_parse_string_single(parser, str, error_msg);
+	if (r) {
+		char *reminder = strdup(str);
+		if (reminder) {
+			ht_pp_insert(cache, str, r);
+			rz_list_push(newly_added, reminder);
+		}
+	}
+	return r;
+}
+
+static void type_string_cache_rollback(HtPP *cache, RzList *newly_added) {
+	RzListIter *it;
+	char *s;
+	rz_list_foreach (newly_added, it, s) {
+		ht_pp_delete(cache, s);
+	}
+}
+
+static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *name, HtPP *type_str_cache) {
 	rz_return_val_if_fail(typedb && sdb && RZ_STR_ISNOTEMPTY(name), NULL);
+
+	RzList *cache_newly_added = rz_list_newf(free);
+	if (!cache_newly_added) {
+		return NULL;
+	}
 
 	RzCallable *callable = rz_type_func_new(typedb, name, NULL);
 	if (!callable) {
+		rz_list_free(cache_newly_added);
 		return NULL;
 	}
 
 	char *args_key = rz_str_newf("%s.%s.args", "func", name);
 	if (!args_key) {
+		rz_list_free(cache_newly_added);
+		rz_type_callable_free(callable);
 		return NULL;
 	}
 
@@ -44,12 +85,13 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 			argument_name = rz_str_newf("arg%d", i);
 		}
 		char *error_msg = NULL;
-		RzType *ttype = rz_type_parse_string_single(typedb->parser, argument_type, &error_msg);
+		RzType *ttype = parse_type_string_cached(typedb->parser, type_str_cache, argument_type, &error_msg, cache_newly_added);
 		if (!ttype || error_msg) {
 			eprintf("error parsing \"%s\" func arg type \"%s\": %s\n", name, argument_type, error_msg);
 			free(values);
 			goto error;
 		}
+		ht_pp_insert(type_str_cache, argument_type, ttype);
 		RzCallableArg *arg = RZ_NEW0(RzCallableArg);
 		if (!arg) {
 			goto error;
@@ -67,9 +109,13 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 	RzStrBuf key;
 	const char *rettype = sdb_get(sdb, rz_strbuf_initf(&key, "func.%s.ret", name), 0);
 	rz_strbuf_fini(&key);
+	if (!rettype) {
+		eprintf("error parsing \"%s\" func: return type missing\n", name);
+		goto error;
+	}
 
 	char *error_msg = NULL;
-	RzType *ttype = rz_type_parse_string_single(typedb->parser, rettype, &error_msg);
+	RzType *ttype = parse_type_string_cached(typedb->parser, type_str_cache, rettype, &error_msg, cache_newly_added);
 	if (!ttype || error_msg) {
 		eprintf("error parsing \"%s\" func return type \"%s\": %s \n", name, rettype, error_msg);
 		goto error;
@@ -84,15 +130,23 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 
 	callable->noret = sdb_bool_get(sdb, noreturn_key, 0);
 
+	rz_list_free(cache_newly_added);
 	return callable;
 
 error:
+	// remove any types from the cache that will be freed by the callable_free below
+	type_string_cache_rollback(type_str_cache, cache_newly_added);
+	rz_list_free(cache_newly_added);
 	rz_type_callable_free(callable);
 	return NULL;
 }
 
 static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 	rz_return_val_if_fail(typedb && sdb, NULL);
+	HtPP *type_str_cache = ht_pp_new0(); // cache from a known C type extr to its RzType representation for skipping the parser if possible
+	if (!type_str_cache) {
+		return false;
+	}
 	RzCallable *callable;
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -100,13 +154,14 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 	ls_foreach (l, iter, kv) {
 		if (!strcmp(sdbkv_value(kv), "func")) {
 			//eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
-			callable = get_callable_type(typedb, sdb, sdbkv_key(kv));
+			callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
 			if (callable) {
 				ht_pp_insert(typedb->callables, callable->name, callable);
 				RZ_LOG_DEBUG("inserting the \"%s\" callable type\n", callable->name);
 			}
 		}
 	}
+	ht_pp_free(type_str_cache);
 	return true;
 }
 

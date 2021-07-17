@@ -285,6 +285,7 @@ RZ_API void rz_type_parse_reset(RzTypeDB *typedb) {
 * \param error_msg A pointer where all error messages will be stored
 */
 RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const char *code, char **error_msg) {
+	rz_return_val_if_fail(parser && code, NULL);
 	if (error_msg) {
 		*error_msg = NULL;
 	}
