@@ -260,7 +260,7 @@ commands:
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
-            args: [ ]
+            args: []
           - name: dmwb
             summary: List allocated heap blocks
             cname: cmd_debug_process_heap_block
@@ -274,7 +274,7 @@ commands:
           - name: dmwbf
             summary: Create flags for each allocated heap block
             cname: cmd_debug_heap_block_flag
-            args: [ ]
+            args: []
       - name: dmx
         summary: Jemalloc heap commands
         cname: cmd_debug_heap_jemalloc
