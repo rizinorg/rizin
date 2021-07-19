@@ -879,26 +879,14 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 					rz_core_cmd0(core, ".idpi*");
 					break;
 				case 'd': // "idpd"
-					pdbopts.user_agent = (char *)rz_config_get(core->config, "pdb.useragent");
+					pdbopts.user_agent = rz_config_get(core->config, "pdb.useragent");
 					pdbopts.extract = rz_config_get_i(core->config, "pdb.extract");
-					pdbopts.symbol_store_path = (char *)rz_config_get(core->config, "pdb.symstore");
-					char *str = strdup(rz_config_get(core->config, "pdb.server"));
-					RzList *server_l = rz_str_split_list(str, ";", 0);
-					RzListIter *it;
-					char *server;
-					int r = 1;
-					rz_list_foreach (server_l, it, server) {
-						pdbopts.symbol_server = server;
-						r = rz_bin_pdb_download(core, pj, input[3] == 'j', &pdbopts);
-						if (!r) {
-							break;
-						}
-					}
+					pdbopts.symbol_store_path = rz_config_get(core->config, "pdb.symstore");
+					pdbopts.symbol_server = rz_config_get(core->config, "pdb.server");
+					int r = rz_bin_pdb_download(core, pj, input[3] == 'j', &pdbopts);
 					if (r > 0) {
 						eprintf("Error while downloading pdb file\n");
 					}
-					free(str);
-					rz_list_free(server_l);
 					input++;
 					break;
 				case 'i': // "idpi"
