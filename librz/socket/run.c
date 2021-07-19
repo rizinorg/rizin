@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#if __APPLE__ && LIBC_HAVE_FORK
+#if __APPLE__ && HAVE_FORK
 #if !__POWERPC__
 #include <spawn.h>
 #endif
@@ -62,7 +62,7 @@
 #undef HAVE_PTY
 #define HAVE_PTY 0
 #else
-#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
+#define HAVE_PTY __UNIX__ && !__ANDROID__ && HAVE_FORK && !__sun
 #endif
 
 #if HAVE_PTY
@@ -1064,12 +1064,12 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 RZ_API int rz_run_start(RzRunProfile *p) {
-#if LIBC_HAVE_FORK
+#if HAVE_EXECVE
 	if (p->_execve) {
 		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 	}
 #endif
-#if __APPLE__ && !__POWERPC__ && LIBC_HAVE_FORK
+#if __APPLE__ && !__POWERPC__ && HAVE_FORK
 	posix_spawnattr_t attr = { 0 };
 	pid_t pid = -1;
 	int ret;
@@ -1245,13 +1245,12 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 				}
 			}
 			setsid();
-#if !LIBC_HAVE_FORK
+#if !HAVE_FORK
 			exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 #endif
 #endif
 		}
-// TODO: must be HAVE_EXECVE
-#if LIBC_HAVE_FORK
+#if HAVE_EXECVE
 		exit(rz_sys_execv(p->_program, (char *const *)p->_args));
 #endif
 	}
