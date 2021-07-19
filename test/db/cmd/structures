@@ -4,45 +4,49 @@ CMDS=<<EOF
 aaa
 s main
 afvb*
+?e ---
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
-afvt s1 S1
+afvt s1 "struct S1"
 afvb*
 EOF
 EXPECT=<<EOF
 afvb -288 var_120h char ** @ 0x4004a6
-afvb -276 var_114h int64_t @ 0x4004a6
+afvb -276 var_114h int @ 0x4004a6
 afvb -272 var_110h int64_t @ 0x4004a6
 afvb -268 var_10ch int64_t @ 0x4004a6
 afvb -264 var_108h int64_t @ 0x4004a6
 afvb -4 var_4h int64_t @ 0x4004a6
+---
 afvb -288 var_120h char ** @ 0x4004a6
-afvb -276 var_114h int64_t @ 0x4004a6
-afvb -272 s1 S1 @ 0x4004a6
+afvb -276 var_114h int @ 0x4004a6
+afvb -272 s1 struct S1 @ 0x4004a6
 EOF
 RUN
 
 NAME=structure offset in disassembly
 FILE=bins/elf/analysis/main_structure
 CMDS=<<EOF
-e asm.bytes=true
+e asm.bytes=false
 aaa
 s main
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
-pd 4 @ 0x004004be~[2-4]
-afvt s1 S1
-pd 4 @ 0x004004be~[2-4]
+pi 4 @ 0x004004be
+?e ---
+afvt s1 "struct S1"
+pi 4 @ 0x004004be
 EOF
 EXPECT=<<EOF
-mov dword [s1]
-mov dword [var_10ch]
-mov dword [var_108h]
-lea rax [s1]
-mov dword [s1.a]
-mov dword [s1.b]
-mov dword [s1.c]
-lea rax [s1.a]
+mov dword [s1], 1
+mov dword [var_10ch], 2
+mov dword [var_108h], 3
+lea rax, [s1]
+---
+mov dword [s1.a], 1
+mov dword [s1.b], 2
+mov dword [s1.c], 3
+lea rax, [s1.a]
 EOF
 RUN
 
@@ -54,19 +58,20 @@ aaa
 s main
 td "struct S1 { int a; int b; int c; char d[256]; short e; }"
 afvn s1 var_110h
-afvt s1 S1
-pd 4 @ 0x004004be~[2-4]
+afvt s1 "struct S1"
+pi 4 @ 0x004004be
+t- S1
 td "struct S1 { int x; int y; int c; char d[256]; short e; }"
-pd 4 @ 0x004004be~[2-4]
+pi 4 @ 0x004004be
 EOF
 EXPECT=<<EOF
-mov dword [s1.a]
-mov dword [s1.b]
-mov dword [s1.c]
-lea rax [s1.a]
-mov dword [s1.x]
-mov dword [s1.y]
-mov dword [s1.c]
-lea rax [s1.x]
+mov dword [s1.a], 1
+mov dword [s1.b], 2
+mov dword [s1.c], 3
+lea rax, [s1.a]
+mov dword [s1.x], 1
+mov dword [s1.y], 2
+mov dword [s1.c], 3
+lea rax, [s1.x]
 EOF
 RUN

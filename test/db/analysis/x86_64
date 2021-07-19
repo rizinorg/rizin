@@ -562,12 +562,12 @@ var_bp_30h  0x40f79b,0x40f843
    var_3ch  0x40f866
 var_bp_20h
     var_fh
-var var_bp_38h = 0x00177fc0 = (qword)0x1111111111111111
-var var_28h = 0x00177fd0 = (qword)0x0000000000000000
-var var_bp_30h = 0x00177fc8 = (qword)0x0000000000000000
-var var_3ch = 0x00177fbc = (qword)0x1111111100000000
-var var_bp_20h = 0x00177fd8 = (qword)0x0000000000000000
-var var_fh = 0x00177fc7 = (qword)0x0000000000000011
+var var_bp_38h =  int64_t : 0x00177fc0 = (qword)0x1111111111111111
+var var_28h =  int64_t : 0x00177fd0 = (qword)0x0000000000000000
+var var_bp_30h =  int64_t : 0x00177fc8 = (qword)0x0000000000000000
+var var_3ch =  int64_t : 0x00177fbc = (qword)0x1111111100000000
+var var_bp_20h =  int64_t : 0x00177fd8 = (qword)0x0000000000000000
+var var_fh =  int64_t : 0x00177fc7 = (qword)0x0000000000000011
 EOF
 RUN
 
@@ -1041,7 +1041,7 @@ FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 e asm.sub.rel=false
 e asm.bytes=false
-e asm.leahints=false
+e asm.hint.lea=false
 e scr.utf8=false
 e scr.color=false
 s $S
@@ -1090,7 +1090,7 @@ FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 e asm.sub.rel=false
 e asm.bytes=false
-e asm.leahints=false
+e asm.hint.lea=false
 e scr.utf8=false
 e scr.color=false
 s $S
@@ -1132,7 +1132,7 @@ FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 e asm.sub.rel=false
 e asm.bytes=false
-e asm.leahints=false
+e asm.hint.lea=false
 e scr.utf8=false
 e scr.color=false
 e asm.lines.wide=true
@@ -1175,7 +1175,7 @@ FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 e asm.sub.rel=false
 e asm.bytes=false
-e asm.leahints=false
+e asm.hint.lea=false
 e scr.utf8=false
 e scr.color=false
 e asm.lines.wide=true
@@ -1217,7 +1217,7 @@ FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 e asm.sub.rel=false
 e asm.bytes=false
-e asm.leahints=false
+e asm.hint.lea=false
 e scr.utf8=false
 e scr.color=false
 e asm.lines.wide=true
@@ -1429,8 +1429,8 @@ aa
 s sym._main
 aei
 aeim
-td int strcmp(char *s1, char *s2);
-tk func.strcmp.cc=stdcall
+td "int strcmp(char *s1, char *s2);"
+tfc strcmp stdcall
 aft
 s 0x00401370
 pd 1~char *s1?
@@ -1460,11 +1460,8 @@ FILE=bins/pe/crackme0x00.exe
 CMDS=<<EOF
 s entry0
 af
-tk CRTStartup=func
-tk func.CRTStartup.args=1
-tk func.CRTStartup.arg0= int,who_cares
-tk func.CRTStartup.cc=THE_CC_THAT_NEVER_EXISTED
-tk func.CRTStartup.ret=eax
+td "int CRTStartup(int who_cares);"
+tfc CRTStartup THE_CC_THAT_NEVER_EXISTED
 aei
 aeim
 aftm
@@ -1806,20 +1803,22 @@ RUN
 NAME=afvb idx... & afvn
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
+td "typedef void * EFI_HANDLE;"
 af
-afvb 8 ImageHandle blah @ 0x10002d8d
+afvb 8 ImageHandle EFI_HANDLE @ 0x10002d8d
 afvb*~ImageHandle
 EOF
 EXPECT=<<EOF
-afvb 8 ImageHandle blah @ 0x10002d8d
+afvb 8 ImageHandle EFI_HANDLE @ 0x10002d8d
 EOF
 RUN
 
 NAME=afvbj
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
+td "typedef void * EFI_HANDLE;"
 af
-afvb 8 ImageHandle blah @ 0x10002d8d
+afvb 8 ImageHandle EFI_HANDLE @ 0x10002d8d
 afvbj~?ImageHandle
 EOF
 EXPECT=<<EOF
@@ -1830,6 +1829,7 @@ RUN
 NAME=afvb-ArgName
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
+td "typedef void * EFI_HANDLE;"
 af
 afvb 8 ImageHandle blah @ 0x10002d8d
 afvb-ImageHandle
@@ -1941,8 +1941,8 @@ afvd arg_ch
 afvd var_10h
 EOF
 EXPECT=<<EOF
-arg arg_ch = 0x0000000c = -1
-var var_10h = 0xfffffffffffffff0 = -1
+arg arg_ch =  int32_t : 0x0000000c = -1
+var var_10h =  int32_t : 0xfffffffffffffff0 = -1
 EOF
 RUN
 

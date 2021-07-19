@@ -18,8 +18,8 @@ pf.~?
 o~?
 EOF
 EXPECT=<<EOF
-0
-58
+40
+98
 1
 EOF
 RUN
