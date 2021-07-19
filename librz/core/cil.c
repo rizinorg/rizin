@@ -290,79 +290,79 @@ RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
  * stop there.
  */
 RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_addr, int off) {
-	RzAnalysisEsil *esil = core->analysis->esil;
-	int i = 0, j = 0;
-	ut8 *buf = NULL;
-	RzAnalysisOp aop = { 0 };
-	int ret, bsize = RZ_MAX(4096, core->blocksize);
-	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
-	const int minopcode = RZ_MAX(1, mininstrsz);
-	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
+        RzAnalysisEsil *esil = core->analysis->esil;
+        int i = 0, j = 0;
+        ut8 *buf = NULL;
+        RzAnalysisOp aop = { 0 };
+        int ret, bsize = RZ_MAX(4096, core->blocksize);
+        const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+        const int minopcode = RZ_MAX(1, mininstrsz);
+        const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
+        int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
+        int iotrap = rz_config_get_i(core->config, "esil.iotrap");
+        ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
 
-	if (!esil) {
-		eprintf("Warning: cmd_espc: creating new esil instance\n");
-		if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
-			return;
-		}
-		core->analysis->esil = esil;
-	}
-	buf = malloc(bsize);
-	if (!buf) {
-		eprintf("Cannot allocate %d byte(s)\n", bsize);
-		return;
-	}
-	if (addr == -1) {
-		addr = rz_reg_getv(core->dbg->reg, pc);
-	}
-	(void)rz_analysis_esil_setup(core->analysis->esil, core->analysis, 0, 0, 0); // int romem, int stats, int nonull) {
-	ut64 cursp = rz_reg_getv(core->dbg->reg, "SP");
-	ut64 oldoff = core->offset;
-	const ut64 flags = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_DISASM;
-	for (i = 0, j = 0; j < off; i++, j++) {
-		if (rz_cons_is_breaked()) {
-			break;
-		}
-		if (i >= (bsize - 32)) {
-			i = 0;
-			eprintf("Warning: Chomp\n");
-		}
-		if (!i) {
-			rz_io_read_at(core->io, addr, buf, bsize);
-		}
-		if (addr == until_addr) {
-			break;
-		}
-		ret = rz_analysis_op(core->analysis, &aop, addr, buf + i, bsize - i, flags);
-		if (ret < 1) {
-			eprintf("Failed analysis at 0x%08" PFMT64x "\n", addr);
-			break;
-		}
-		// skip calls and such
-		if (aop.type == RZ_ANALYSIS_OP_TYPE_CALL) {
-			// nothing
-		} else {
-			rz_reg_setv(core->analysis->reg, "PC", aop.addr + aop.size);
-			rz_reg_setv(core->dbg->reg, "PC", aop.addr + aop.size);
-			const char *e = RZ_STRBUF_SAFEGET(&aop.esil);
-			if (e && *e) {
-				// eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
-				(void)rz_analysis_esil_parse(esil, e);
-			}
-		}
-		int inc = (core->search->align > 0) ? core->search->align - 1 : ret - 1;
-		if (inc < 0) {
-			inc = minopcode;
-		}
-		i += inc;
-		addr += ret; // aop.size;
-		rz_analysis_op_fini(&aop);
-	}
-	rz_core_seek(core, oldoff, true);
-	rz_reg_setv(core->dbg->reg, "SP", cursp);
-	free(buf);
+        if (!esil) {
+                eprintf("Warning: cmd_espc: creating new esil instance\n");
+                if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+                        return;
+                }
+                core->analysis->esil = esil;
+        }
+        buf = malloc(bsize);
+        if (!buf) {
+                eprintf("Cannot allocate %d byte(s)\n", bsize);
+                return;
+        }
+        if (addr == -1) {
+                addr = rz_reg_getv(core->dbg->reg, pc);
+        }
+        (void)rz_analysis_esil_setup(core->analysis->esil, core->analysis, 0, 0, 0); // int romem, int stats, int nonull) {
+        ut64 cursp = rz_reg_getv(core->dbg->reg, "SP");
+        ut64 oldoff = core->offset;
+        const ut64 flags = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_DISASM;
+        for (i = 0, j = 0; j < off; i++, j++) {
+                if (rz_cons_is_breaked()) {
+                        break;
+                }
+                if (i >= (bsize - 32)) {
+                        i = 0;
+                        eprintf("Warning: Chomp\n");
+                }
+                if (!i) {
+                        rz_io_read_at(core->io, addr, buf, bsize);
+                }
+                if (addr == until_addr) {
+                        break;
+                }
+                ret = rz_analysis_op(core->analysis, &aop, addr, buf + i, bsize - i, flags);
+                if (ret < 1) {
+                        eprintf("Failed analysis at 0x%08" PFMT64x "\n", addr);
+                        break;
+                }
+                // skip calls and such
+                if (aop.type == RZ_ANALYSIS_OP_TYPE_CALL) {
+                        // nothing
+                } else {
+                        rz_reg_setv(core->analysis->reg, "PC", aop.addr + aop.size);
+                        rz_reg_setv(core->dbg->reg, "PC", aop.addr + aop.size);
+                        const char *e = RZ_STRBUF_SAFEGET(&aop.esil);
+                        if (e && *e) {
+                                // eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
+                                (void)rz_analysis_esil_parse(esil, e);
+                        }
+                }
+                int inc = (core->search->align > 0) ? core->search->align - 1 : ret - 1;
+                if (inc < 0) {
+                        inc = minopcode;
+                }
+                i += inc;
+                addr += ret; // aop.size;
+                rz_analysis_op_fini(&aop);
+        }
+        rz_core_seek(core, oldoff, true);
+        rz_reg_setv(core->dbg->reg, "SP", cursp);
+        free(buf);
 }
 
 RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
@@ -375,56 +375,56 @@ RZ_IPI void rz_core_analysis_esil_emulate_bb(RzCore *core) {
 }
 
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val) {
-	int bits = (core->analysis->bits & RZ_SYS_BITS_64) ? 64 : 32;
-	RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
-	if (!r) {
-		int role = rz_reg_get_name_idx(regname);
-		if (role != -1) {
-			const char *alias = rz_reg_get_name(core->dbg->reg, role);
-			if (alias) {
-				r = rz_reg_get(core->dbg->reg, alias, -1);
-			}
-		}
-	}
-	if (!r) {
-		eprintf("ar: Unknown register '%s'\n", regname);
-		return -1;
-	}
-	rz_reg_set_value(core->dbg->reg, r, val);
-	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
-	rz_core_debug_regs2flags(core, bits);
-	return 0;
+        int bits = (core->analysis->bits & RZ_SYS_BITS_64) ? 64 : 32;
+        RzRegItem *r = rz_reg_get(core->dbg->reg, regname, -1);
+        if (!r) {
+                int role = rz_reg_get_name_idx(regname);
+                if (role != -1) {
+                        const char *alias = rz_reg_get_name(core->dbg->reg, role);
+                        if (alias) {
+                                r = rz_reg_get(core->dbg->reg, alias, -1);
+                        }
+                }
+        }
+        if (!r) {
+                eprintf("ar: Unknown register '%s'\n", regname);
+                return -1;
+        }
+        rz_reg_set_value(core->dbg->reg, r, val);
+        rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ALL, true);
+        rz_core_debug_regs2flags(core, bits);
+        return 0;
 }
 
 RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
-	ut64 at = core->offset;
-	RzIOMap *map;
-	RzListIter *iter;
-	RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "analysis");
-	if (!list) {
-		return;
-	}
-	if (!strcmp("range", rz_config_get(core->config, "analysis.in"))) {
-		ut64 from = rz_config_get_i(core->config, "analysis.from");
-		ut64 to = rz_config_get_i(core->config, "analysis.to");
-		if (to > from) {
-			char *len = rz_str_newf(" 0x%" PFMT64x, to - from);
-			rz_core_seek(core, from, true);
-			rz_core_analysis_esil(core, len, NULL);
-			free(len);
-		} else {
-			eprintf("Assert: analysis.from > analysis.to\n");
-		}
-	} else {
-		rz_list_foreach (list, iter, map) {
-			if (map->perm & RZ_PERM_X) {
-				char *ss = rz_str_newf(" 0x%" PFMT64x, map->itv.size);
-				rz_core_seek(core, map->itv.addr, true);
-				rz_core_analysis_esil(core, ss, NULL);
-				free(ss);
-			}
-		}
-		rz_list_free(list);
-	}
-	rz_core_seek(core, at, true);
+        ut64 at = core->offset;
+        RzIOMap *map;
+        RzListIter *iter;
+        RzList *list = rz_core_get_boundaries_prot(core, -1, NULL, "analysis");
+        if (!list) {
+                return;
+        }
+        if (!strcmp("range", rz_config_get(core->config, "analysis.in"))) {
+                ut64 from = rz_config_get_i(core->config, "analysis.from");
+                ut64 to = rz_config_get_i(core->config, "analysis.to");
+                if (to > from) {
+                        char *len = rz_str_newf(" 0x%" PFMT64x, to - from);
+                        rz_core_seek(core, from, true);
+                        rz_core_analysis_esil(core, len, NULL);
+                        free(len);
+                } else {
+                        eprintf("Assert: analysis.from > analysis.to\n");
+                }
+        } else {
+                rz_list_foreach (list, iter, map) {
+                                if (map->perm & RZ_PERM_X) {
+                                        char *ss = rz_str_newf(" 0x%" PFMT64x, map->itv.size);
+                                        rz_core_seek(core, map->itv.addr, true);
+                                        rz_core_analysis_esil(core, ss, NULL);
+                                        free(ss);
+                                }
+                        }
+                rz_list_free(list);
+        }
+        rz_core_seek(core, at, true);
 }
