@@ -367,17 +367,10 @@ RUN
 
 NAME=rz-asm bswap x64 #8095
 FILE==
-CMDS="!rz-asm -a x86 -b 64 \"bswap rax;bswap rbx;bswap rcx;bswap rdx\""
+CMDS=!rz-asm -a x86 -b 64 "bswap rax;bswap rbx;bswap rcx;bswap rdx"
 EXPECT=<<EOF
 480fc8480fcb480fc9480fca
 EOF
-RUN
-
-NAME=rz-asm bswap x64 #8095 (with single quotes)
-BROKEN=1 # Only on Windows
-FILE==
-CMDS=!rz-asm -a x86 -b 64 'bswap rax;bswap rbx;bswap rcx;bswap rdx'
-EXPECT=480fc8480fcb480fc9480fca
 RUN
 
 NAME=rz-asm mov eax, [eax * 2 + 8]
