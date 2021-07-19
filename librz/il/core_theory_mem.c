@@ -7,7 +7,14 @@ void rz_il_handler_load(RzILVM vm, RzILOp op) {
 
 	BitVector addr = rz_il_get_bv_temp(vm, op_load->key);
 	BitVector ret = rz_il_mem_load(m, addr);
-	rz_il_make_bv_temp(vm, op_load->ret, ret);
+        if (ret == NULL) {
+                // empty address --> first access
+                // assume it's empty
+                BitVector empty = bv_new(m->min_unit_size);
+                rz_il_mem_store(m, addr, empty);
+                ret = empty;
+        }
+        rz_il_make_bv_temp(vm, op_load->ret, ret);
 }
 
 void rz_il_handler_store(RzILVM vm, RzILOp op) {
