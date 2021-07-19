@@ -110,8 +110,8 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 	const char *rettype = sdb_get(sdb, rz_strbuf_initf(&key, "func.%s.ret", name), 0);
 	rz_strbuf_fini(&key);
 	if (!rettype) {
-		eprintf("error parsing \"%s\" func: return type missing\n", name);
-		goto error;
+		// best we can do for a broken database
+		rettype = "void";
 	}
 
 	char *error_msg = NULL;
