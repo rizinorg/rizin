@@ -57,10 +57,8 @@ NAME=!echo "test"
 FILE==
 CMDS=<<EOF
 !echo test
-"!echo test"
 EOF
 EXPECT=<<EOF
-test
 test
 EOF
 RUN
