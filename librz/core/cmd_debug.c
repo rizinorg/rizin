@@ -1247,10 +1247,6 @@ static void cmd_debug_modules(RzCore *core, RzCmdStateOutput *state) { // "dmm"
 	rz_list_free(list);
 }
 
-#if __WINDOWS__
-static int cmd_debug_map_heap_win(RzCore *core, const char *input);
-#endif // __WINDOWS__
-
 static ut64 addroflib(RzCore *core, const char *libname) {
 	RzListIter *iter;
 	RzDebugMap *map;
@@ -1699,19 +1695,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmL_handler(RzCore *core, int argc, const char *
 	size = (int)rz_num_math(core->num, argv[1]);
 	rz_debug_map_alloc(core->dbg, addr, size, true);
 	return RZ_CMD_STATUS_OK;
-}
-
-// dmw
-RZ_IPI int rz_cmd_debug_heap_windows(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	CMD_CHECK_DEBUG_DEAD(core);
-#if __WINDOWS__
-	cmd_debug_map_heap_win(core, input);
-	return RZ_CMD_STATUS_OK;
-#else
-	eprintf("MALLOC algorithm not supported\n");
-	return RZ_CMD_STATUS_ERROR;
-#endif
 }
 
 // dmx

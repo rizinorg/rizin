@@ -749,10 +749,10 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 
 static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
 	/*
-		TODO:
-			Break this behemoth
-			x86 vs x64 vs WOW64	(use dbg->bits or new structs or just a big union with both versions)
-	*/
+                TODO:
+                        Break this behemoth
+                        x86 vs x64 vs WOW64	(use dbg->bits or new structs or just a big union with both versions)
+        */
 #if defined(_M_X64)
 	if (dbg->bits == RZ_SYS_BITS_32) {
 		return NULL; // Nope nope nope
@@ -980,9 +980,9 @@ err:
 
 static PHeapBlock GetSingleSegmentBlock(RzDebug *dbg, HANDLE h_proc, PSEGMENT_HEAP heapBase, WPARAM offset) {
 	/*
-	*	TODO:
-	*		- Backend (Is this needed?)
-	*/
+        *	TODO:
+        *		- Backend (Is this needed?)
+        */
 	PHeapBlock hb = RZ_NEW0(HeapBlock);
 	if (!hb) {
 		RZ_LOG_ERROR("GetSingleSegmentBlock: Allocation failed.\n");
@@ -1208,7 +1208,8 @@ static RzTable *__new_heapblock_tbl(void) {
 	return tbl;
 }
 
-static void w32_list_heaps(RzCore *core, const char format) {
+static void w32_list_heaps(RzCore *core, RzOutputMode mode) {
+        init_func();
 	ULONG pid = core->dbg->pid;
 	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	if (!db) {
@@ -1232,25 +1233,22 @@ static void w32_list_heaps(RzCore *core, const char format) {
 	pj_a(pj);
 	for (i = 0; i < heapInfo->count; i++) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
-		switch (format) {
-		case 'j':
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(pj);
 			pj_kN(pj, "address", (ut64)heap.Base);
 			pj_kN(pj, "count", (ut64)heap.BlockCount);
 			pj_kN(pj, "allocated", (ut64)heap.Allocated);
 			pj_kN(pj, "committed", (ut64)heap.Committed);
 			pj_end(pj);
-			break;
-		default:
+		} else {
 			rz_table_add_rowf(tbl, "xnnn", (ut64)heap.Base, (ut64)heap.BlockCount, (ut64)heap.Allocated, (ut64)heap.Committed);
-			break;
 		}
 		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
 			free_extra_info(&heap);
 			RZ_FREE(heap.Blocks);
 		}
 	}
-	if (format == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
 	} else {
@@ -1261,7 +1259,7 @@ static void w32_list_heaps(RzCore *core, const char format) {
 	RtlDestroyQueryDebugBuffer(db);
 }
 
-static void w32_list_heaps_blocks(RzCore *core, const char format) {
+static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 	DWORD pid = core->dbg->pid;
 	PDEBUG_BUFFER db;
 	if (__is_windows_ten()) {
@@ -1282,19 +1280,17 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 	pj_a(pj);
 	for (i = 0; i < heapInfo->count; i++) {
 		bool go = true;
-		switch (format) {
-		case 'f':
+		if (flag) {
 			if (heapInfo->heaps[i].BlockCount > 50000) {
 				go = rz_cons_yesno('n', "Are you sure you want to add %lu flags? (y/N)", heapInfo->heaps[i].BlockCount);
 			}
-			break;
-		case 'j':
+		} else if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(pj);
 			pj_kN(pj, "heap", (WPARAM)heapInfo->heaps[i].Base);
 			pj_k(pj, "blocks");
 			pj_a(pj);
-			break;
 		}
+
 		char *type;
 		if (GetFirstHeapBlock(&heapInfo->heaps[i], block) & go) {
 			do {
@@ -1305,14 +1301,11 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 				ut64 granularity = block->extraInfo ? block->extraInfo->granularity : heapInfo->heaps[i].Granularity;
 				ut64 address = (ut64)block->dwAddress - granularity;
 				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
-				switch (format) {
-				case 'f': {
+				if (flag) {
 					char *name = rz_str_newf("alloc.%" PFMT64x "", address);
 					rz_flag_set(core->flags, name, address, block->dwSize);
 					free(name);
-					break;
-				}
-				case 'j':
+				} else if (mode == RZ_OUTPUT_MODE_JSON) {
 					pj_o(pj);
 					pj_kN(pj, "header_address", address);
 					pj_kN(pj, "user_address", (ut64)block->dwAddress);
@@ -1320,14 +1313,12 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 					pj_kN(pj, "size", block->dwSize);
 					pj_ks(pj, "type", type);
 					pj_end(pj);
-					break;
-				default:
+				} else {
 					rz_table_add_rowf(tbl, "xxnnns", address, (ut64)block->dwAddress, block->dwSize, granularity, unusedBytes, type);
-					break;
 				}
 			} while (GetNextHeapBlock(&heapInfo->heaps[i], block));
 		}
-		if (format == 'j') {
+		if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_end(pj);
 			pj_end(pj);
 		}
@@ -1337,10 +1328,10 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 			RZ_FREE(heapInfo->heaps[i].Blocks);
 		}
 	}
-	if (format == 'j') {
+	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		rz_cons_println(pj_string(pj));
-	} else if (format != 'f') {
+	} else if (!flag) {
 		rz_cons_println(rz_table_tostring(tbl));
 	}
 	rz_table_free(tbl);
@@ -1348,83 +1339,72 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 	RtlDestroyQueryDebugBuffer(db);
 }
 
-static const char *help_msg[] = {
-	"Usage:", " dmh[?|b][f|j]", " # Windows heap parsing commands",
-	"dmw[j]", "", "List process heaps",
-	"dmwb[?] [addr]", "", "List process heap blocks",
-	NULL
-};
+//static const char *help_msg[] = {
+//	"Usage:", " dmh[?|b][f|j]", " # Windows heap parsing commands",
+//	"dmw[j]", "", "List process heaps",
+//	"dmwb[?] [addr]", "", "List process heap blocks",
+//	NULL
+//};
+//
+//static const char *help_msg_block[] = {
+//	"Usage:", " dmhb[f|j]", " # Windows heap parsing commands",
+//	"dmwb [addr]", "", "List allocated heap blocks",
+//	"dmwbf", "", "Create flags for each allocated block",
+//	"dmwbj [addr]", "", "Print output in JSON format",
+//	NULL
+//};
 
-static const char *help_msg_block[] = {
-	"Usage:", " dmhb[f|j]", " # Windows heap parsing commands",
-	"dmwb [addr]", "", "List allocated heap blocks",
-	"dmwbf", "", "Create flags for each allocated block",
-	"dmwbj [addr]", "", "Print output in JSON format",
-	NULL
-};
-
-static void cmd_debug_map_heap_block_win(RzCore *core, const char *input) {
-	char *space = strchr(input, ' ');
+static void cmd_debug_map_heap_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag) {
+        init_func();
 	ut64 off = 0;
-	if (space) {
-		off = rz_num_math(core->num, space + 1);
-		PHeapBlock hb = GetSingleBlock(core->dbg, off);
-		if (hb) {
-			ut64 granularity = hb->extraInfo->granularity;
-			char *type = get_type(hb->dwFlags);
-			if (!type) {
-				type = "";
-			}
-			PJ *pj = pj_new();
-			RzTable *tbl = __new_heapblock_tbl();
-			ut64 headerAddr = off - granularity;
-			switch (input[0]) {
-			case ' ':
-				rz_table_add_rowf(tbl, "xxnnns", headerAddr, off, (ut64)hb->dwSize, granularity, (ut64)hb->extraInfo->unusedBytes, type);
-				rz_cons_println(rz_table_tostring(tbl));
-				break;
-			case 'j':
-				pj_o(pj);
-				pj_kN(pj, "header_address", headerAddr);
-				pj_kN(pj, "user_address", off);
-				pj_ks(pj, "type", type);
-				pj_kN(pj, "size", hb->dwSize);
-				if (hb->extraInfo->unusedBytes) {
-					pj_kN(pj, "unused", hb->extraInfo->unusedBytes);
-				}
-				pj_end(pj);
-				rz_cons_println(pj_string(pj));
-			}
-			free(hb->extraInfo);
-			free(hb);
-			rz_table_free(tbl);
-			pj_free(pj);
-		}
+	if (!addr) {
+		w32_list_heaps_blocks(core, mode, flag);
 		return;
 	}
-	switch (input[0]) {
-	case '\0':
-	case 'f':
-	case 'j':
-		w32_list_heaps_blocks(core, input[0]);
-		break;
-	default:
-		rz_core_cmd_help(core, help_msg_block);
+
+	off = rz_num_math(core->num, addr);
+	PHeapBlock hb = GetSingleBlock(core->dbg, off);
+	if (!hb) {
+		return;
 	}
+	ut64 granularity = hb->extraInfo->granularity;
+	char *type = get_type(hb->dwFlags);
+	if (!type) {
+		type = "";
+	}
+	PJ *pj = pj_new();
+	RzTable *tbl = __new_heapblock_tbl();
+	ut64 headerAddr = off - granularity;
+	if (mode == RZ_OUTPUT_MODE_STANDARD) {
+		rz_table_add_rowf(tbl, "xxnnns", headerAddr, off, (ut64)hb->dwSize, granularity, (ut64)hb->extraInfo->unusedBytes, type);
+		rz_cons_println(rz_table_tostring(tbl));
+	} else if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(pj);
+		pj_kN(pj, "header_address", headerAddr);
+		pj_kN(pj, "user_address", off);
+		pj_ks(pj, "type", type);
+		pj_kN(pj, "size", hb->dwSize);
+		if (hb->extraInfo->unusedBytes) {
+			pj_kN(pj, "unused", hb->extraInfo->unusedBytes);
+		}
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+	}
+	free(hb->extraInfo);
+	free(hb);
+	rz_table_free(tbl);
+	pj_free(pj);
 }
 
-static int cmd_debug_map_heap_win(RzCore *core, const char *input) {
-	init_func();
-	switch (input[0]) {
-	case '?': // dmh?
-		rz_core_cmd_help(core, help_msg);
-		break;
-	case 'b': // dmhb
-		cmd_debug_map_heap_block_win(core, input + 1);
-		break;
-	default:
-		w32_list_heaps(core, input[0]);
-		break;
-	}
-	return true;
-}
+//static int cmd_debug_map_heap_win(RzCore *core, const char *input) {
+//	init_func();
+//	switch (input[0]) {
+//	case 'b': // dmhb
+//		cmd_debug_map_heap_block_win(core, input + 1);
+//		break;
+//	default:
+//		w32_list_heaps(core, input[0]);
+//		break;
+//	}
+//	return true;
+//}
