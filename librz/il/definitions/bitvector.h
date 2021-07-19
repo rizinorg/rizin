@@ -82,6 +82,7 @@ bool bv_sle(BitVector x, BitVector y);
 // some convert functions
 char *bv_to_string(BitVector bv);
 ut32 bv_to_ut32(BitVector x);
+ut64 bv_to_ut64(BitVector x);
 // misc
 bool bv_is_zero_vector(BitVector x);
 void print_bv(BitVector bv);

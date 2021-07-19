@@ -816,3 +816,18 @@ ut32 bv_to_ut32(BitVector x) {
 
 	return ret;
 }
+
+ut64 bv_to_ut64(BitVector x) {
+        ut64 ret = 0;
+	ut64 one = 0x1U;
+        if (x->len > 64) {
+                //		printf("[Warning] Convert to ut32 may loss some bits\n");
+        }
+        for (int i = 0; i < x->len; ++i) {
+                if (bv_get(x, x->len - i - 1)) {
+                        ret += one << i;
+                }
+        }
+
+        return ret;
+}

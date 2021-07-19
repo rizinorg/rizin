@@ -21,7 +21,7 @@ static void free_bind_var_val(HtPPKv *kv) {
 	free(kv->key);
 }
 
-void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size) {
+RZ_API void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size) {
 	vm->addr_size = addr_size;
 	vm->data_size = data_size;
 
@@ -120,7 +120,7 @@ void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size) {
 	vm->easy_debug = 0;
 }
 
-void rz_il_vm_close(RzILVM vm) {
+RZ_API void rz_il_vm_close(RzILVM vm) {
 	RzILVar var;
 
 	rz_il_free_bag(vm->vm_global_value_set);
@@ -175,7 +175,7 @@ void rz_il_vm_step(RzILVM vm, RzILOp op) {
 }
 
 // Step on original instruction
-void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
+RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 	void **iter;
 	RzILOp cur_op;
 
@@ -190,6 +190,26 @@ void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 	bv_free(vm->pc);
 	bv_free(one);
 	vm->pc = next_pc;
+}
+
+RZ_API BitVector rz_il_ut64_addr_to_bv(ut64 addr) {
+	return bv_new_from_ut64(64, addr);
+}
+
+RZ_API ut64 rz_il_bv_addr_to_ut64(BitVector addr) {
+	return bv_to_ut64(addr);
+
+}
+
+RZ_API void rz_il_free_bv_addr(BitVector addr) {
+	bv_free(addr);
+}
+
+RZ_API Mem rz_il_vm_add_mem(RzILVM vm, int min_unit_size) {
+	Mem mem = rz_il_new_mem(min_unit_size);
+	vm->mems[vm->mem_count] = mem;
+	vm->mem_count += 1;
+	return mem;
 }
 
 const string op2str(RzILOp op) {
@@ -362,7 +382,7 @@ void rz_il_vm_list_printer_step(RzPVector *op_list) {
 
 	void **iter;
 	RzILOp cur_op;
-	int ret;
+	int ret = 0;
 	rz_pvector_foreach (op_list, iter) {
 		cur_op = *iter;
 		ret = rz_il_vm_printer_step(cur_op, helper);
