@@ -260,7 +260,7 @@ static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	case EM_X86_64:
 		return get_import_addr_x86(bin, reloc);
 	default:
-		eprintf("Unsupported relocs type %" PFMT64u " for arch %d\n",
+		RZ_LOG_WARN("Unsupported relocs type %" PFMT64u " for arch %d\n",
 			(ut64)reloc->type, bin->ehdr.e_machine);
 		return UT64_MAX;
 	}
@@ -291,11 +291,11 @@ static ut64 get_import_offset(ELFOBJ *bin, RzBinElfSymbol *symbol) {
 	return tmp == -1 ? 0 : tmp;
 }
 
-static bool convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *symbol) {
+static void convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *symbol) {
 	symbol->size = 16;
 
 	if (symbol->offset) {
-		return true;
+		return;
 	}
 
 	symbol->is_vaddr = false;
@@ -307,19 +307,13 @@ static bool convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *symbol
 	} else {
 		symbol->offset = tmp;
 	}
-
-	return true;
 }
 
-static bool convert_elf_symbols_to_elf_imports(ELFOBJ *bin, RzVector *symbols) {
+static void convert_elf_symbols_to_elf_imports(ELFOBJ *bin, RzVector *symbols) {
 	RzBinElfSymbol *symbol;
 	rz_vector_foreach(symbols, symbol) {
-		if (!convert_elf_symbol_to_elf_import(bin, symbol)) {
-			return false;
-		}
+		convert_elf_symbol_to_elf_import(bin, symbol);
 	}
-
-	return true;
 }
 
 static bool filter_import(ELFOBJ *bin, Elf_(Sym) * symbol, bool is_dynamic) {
@@ -339,11 +333,6 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut
 	return NULL;
 }
 
-RZ_BORROW RzVector *Elf_(rz_bin_elf_get_imports)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin && bin->imports, NULL);
-	return bin->imports;
-}
-
 RZ_OWN RzVector *Elf_(rz_bin_elf_analyse_imports)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, NULL);
 
@@ -352,10 +341,7 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_analyse_imports)(RZ_NONNULL ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (!convert_elf_symbols_to_elf_imports(bin, result)) {
-		rz_vector_free(result);
-		return NULL;
-	}
+	convert_elf_symbols_to_elf_imports(bin, result);
 
 	return result;
 }

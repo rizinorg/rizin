@@ -57,12 +57,9 @@ static ut64 get_size_rel_mode(ut64 mode) {
 	return mode == DT_REL ? sizeof(Elf_(Rel)) : sizeof(Elf_(Rela));
 }
 
-static bool read_reloc_entry(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 mode) {
-	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &reloc->rz_offset)) {
-		return false;
-	}
-
-	if (!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &reloc->rz_info)) {
+static bool read_reloc_entry_aux(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 mode) {
+	if (!Elf_(rz_bin_elf_read_addr)(bin, &offset, &reloc->rz_offset) ||
+		!Elf_(rz_bin_elf_read_word_xword)(bin, &offset, &reloc->rz_info)) {
 		return false;
 	}
 
@@ -71,7 +68,12 @@ static bool read_reloc_entry(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 
 		return true;
 	}
 
-	if (!Elf_(rz_bin_elf_read_sword_sxword)(bin, &offset, &reloc->rz_addend)) {
+	return Elf_(rz_bin_elf_read_sword_sxword)(bin, &offset, &reloc->rz_addend);
+}
+
+static bool read_reloc_entry(ELFOBJ *bin, Elf_(Rela) * reloc, ut64 offset, ut64 mode) {
+	if (!read_reloc_entry_aux(bin, reloc, offset, mode)) {
+		RZ_LOG_WARN("Failed to read reloc at 0x%" PFMT64x ".\n", offset);
 		return false;
 	}
 
@@ -233,11 +235,16 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_relocs_new)(RZ_NONNULL ELFOBJ *bin) {
 bool Elf_(rz_bin_elf_has_relocs)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 
-	return bin->relocs && Elf_(rz_bin_elf_get_relocs_count)(bin);
+	return bin->relocs;
 }
 
 size_t Elf_(rz_bin_elf_get_relocs_count)(RZ_NONNULL ELFOBJ *bin) {
-	rz_return_val_if_fail(bin && bin->relocs, 0);
+	rz_return_val_if_fail(bin, 0);
+
+	if (!bin->relocs) {
+		return 0;
+	}
+
 	return rz_vector_len(bin->relocs);
 }
 
