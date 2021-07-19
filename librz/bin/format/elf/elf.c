@@ -351,15 +351,14 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 		rz_vector_free(sections);
 	}
 
-	bin->relocs = Elf_(rz_bin_elf_relocs_new)(bin);
-	bin->notes = Elf_(rz_bin_elf_notes_new)(bin);
-
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
 
-	bin->imports_by_ord_size = 0;
-	bin->imports_by_ord = NULL;
-	bin->symbols_by_ord_size = 0;
-	bin->symbols_by_ord = NULL;
+	bin->relocs = Elf_(rz_bin_elf_relocs_new)(bin);
+
+	bin->notes = Elf_(rz_bin_elf_notes_new)(bin);
+
+	bin->symbols = Elf_(rz_bin_elf_symbols_new)(bin);
+	bin->imports = Elf_(rz_bin_elf_analyse_imports)(bin);
 
 	sdb_ns_set(bin->kv, "versioninfo", Elf_(rz_bin_elf_get_version_info)(bin));
 
@@ -375,8 +374,9 @@ RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf) {
 	}
 
 	bin->b = rz_buf_ref(buf);
-	bin->size = rz_buf_size(buf);
 	bin->kv = sdb_new0();
+
+	bin->size = rz_buf_size(buf);
 
 	if (rz_bin_elf_init(bin)) {
 		return bin;
@@ -396,6 +396,9 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_if_fail(bin);
 
 	rz_buf_free(bin->b);
+	rz_buf_free(bin->buf_patched);
+
+	sdb_free(bin->kv);
 
 	rz_vector_free(bin->segments);
 	rz_vector_free(bin->sections);
@@ -409,30 +412,8 @@ void Elf_(rz_bin_elf_free)(RZ_NONNULL ELFOBJ *bin) {
 
 	rz_vector_free(bin->notes);
 
-	if (bin->imports_by_ord) {
-		for (size_t i = 0; i < bin->imports_by_ord_size; i++) {
-			rz_bin_import_free(bin->imports_by_ord[i]);
-		}
-		free(bin->imports_by_ord);
-	}
-
-	if (bin->symbols_by_ord) {
-		for (size_t i = 0; i < bin->symbols_by_ord_size; i++) {
-			rz_bin_symbol_free(bin->symbols_by_ord[i]);
-		}
-		free(bin->symbols_by_ord);
-	}
-
-	free(bin->g_symbols);
-	free(bin->g_imports);
-
-	if (bin->g_symbols != bin->phdr_symbols) {
-		free(bin->phdr_symbols);
-	}
-
-	if (bin->g_imports != bin->phdr_imports) {
-		free(bin->phdr_imports);
-	}
+	rz_vector_free(bin->symbols);
+	rz_vector_free(bin->imports);
 
 	free(bin);
 }
@@ -478,7 +459,7 @@ ut64 Elf_(rz_bin_elf_v2p_new)(RZ_NONNULL ELFOBJ *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, UT64_MAX);
 
 	if (!Elf_(rz_bin_elf_has_segments)(bin)) {
-		if (Elf_(rz_bin_elf_is_relocatable)(bin)) {
+		if (Elf_(rz_bin_elf_is_relocatable)(bin) && vaddr > bin->baddr) {
 			return vaddr - bin->baddr;
 		}
 

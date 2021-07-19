@@ -193,13 +193,15 @@ RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) 
 }
 
 RZ_API void rz_bin_symbol_free(RzBinSymbol *sym) {
-	if (sym) {
-		free(sym->name);
-		free(sym->libname);
-		free(sym->classname);
-		free(sym->visibility_str);
-		free(sym);
+	if (!sym) {
+		return;
 	}
+
+	free(sym->name);
+	free(sym->libname);
+	free(sym->classname);
+	free(sym->visibility_str);
+	free(sym);
 }
 
 RZ_API void rz_bin_reloc_free(RzBinReloc *reloc) {
