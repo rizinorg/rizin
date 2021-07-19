@@ -1588,7 +1588,9 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_unix_handler(RzCore *core, int argc, c
 	ut8 *block = core->block;
 	int len = core->blocksize;
 	if (len < sizeof(ut32)) {
-		eprintf("You should change the block size. Please run `b %d\n`", (int)sizeof(ut32));
+		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
+			"run `b %zu`\n",
+			sizeof(ut32), sizeof(ut32));
 	}
 	if (len % sizeof(ut32)) {
 		len = len - (len % sizeof(ut32));
@@ -1613,7 +1615,9 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_dos_handler(RzCore *core, int argc, co
 	ut8 *block = core->block;
 	int len = core->blocksize;
 	if (len < sizeof(ut32)) {
-		eprintf("The block size must be changed.. Please run `b %d\n`", (int)sizeof(ut32));
+		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
+			"run `b %zu`\n",
+			sizeof(ut32), sizeof(ut32));
 	}
 	if (len % sizeof(ut32)) {
 		len = len - (len % sizeof(ut32));
@@ -1629,7 +1633,9 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_hfs_handler(RzCore *core, int argc, co
 	ut8 *block = core->block;
 	int len = core->blocksize;
 	if (len < sizeof(ut32)) {
-		eprintf("You should change block size. Please run `b %d\n`", (int)sizeof(ut32));
+		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
+			"run `b %zu`\n",
+			sizeof(ut32), sizeof(ut32));
 	}
 	if (len % sizeof(ut32)) {
 		len = len - (len % sizeof(ut32));
@@ -1645,7 +1651,9 @@ RZ_IPI RzCmdStatus rz_cmd_print_timestamp_ntfs_handler(RzCore *core, int argc, c
 	ut8 *block = core->block;
 	int len = core->blocksize;
 	if (len < sizeof(ut64)) {
-		eprintf("The block size must be changed.. Please run `b %d\n`", (int)sizeof(ut64));
+		eprintf("Please change the block size to a value greater than and a multiple of %zu. For example, "
+			"run `b %zu`\n",
+			sizeof(ut64), sizeof(ut64));
 	}
 	if (len % sizeof(ut64)) {
 		len = len - (len % sizeof(ut64));
