@@ -27,6 +27,8 @@ struct rz_il_vm_t {
 	// Memory : should support memory switch
 	Mem *mems;
 	int var_count, val_count, mem_count, lab_count;
+	int addr_size;
+	int data_size;
 
 	RzILTemp *temp_value_list;
 

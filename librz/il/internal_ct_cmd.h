@@ -2,6 +2,10 @@
 #define BUILD_CORE_THEORY_CMDS_H
 #include "core_theory_vm.h"
 
+typedef struct rz_analysis_rzil_t {
+        RzILVM vm;
+} RzAnalysisRzil;
+
 // VM high level operations
 void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size);
 void rz_il_vm_close(RzILVM vm);

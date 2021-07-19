@@ -5363,27 +5363,40 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	}
 }
 
-static void cmd_analysis_rzil(RzCore *core, const char *input) {
-        RzAnalysisEsil *esil = core->analysis->esil;
-        ut64 addr = core->offset;
-        ut64 adr;
-        char *n, *n1;
-        int off;
-        int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-        int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-        int romem = rz_config_get_i(core->config, "esil.romem");
-        int stats = rz_config_get_i(core->config, "esil.stats");
-        int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-        ut64 until_addr = UT64_MAX;
-        unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
+static void cmd_rzil_mem(RzCore *core, char *input) {
+        ut64 addr;
+        ut32 size;
+        char *name;
 
+        switch (*input) {
+	case '+':
+	case '-':
+		eprintf("[WIP] Add Mem or Remove Mem\n");
+		break;
+	case '\0':
+		rz_core_analysis_rzil_init_mem(core);
+		break;
+        default:
+                eprintf("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
+                eprintf("Default: 0x100000 0xf0000\n");
+                eprintf("See ae? for more help\n");
+                return;
+        }
+}
+
+static void cmd_analysis_rzil(RzCore *core, const char *input) {
+        ut64 addr = core->offset;
+        char *n;
+        int off;
+        ut64 until_addr = UT64_MAX;
         const char *until_expr = NULL;
         RzAnalysisOp *op = NULL;
 
         switch (input[0]) {
         case 'r': // "aer"
                 // 'aer' is an alias for 'ar'
-                cmd_analysis_reg(core, input + 1);
+                // cmd_analysis_reg(core, input + 1);
+		eprintf("[WIP] Remove it or replace it ?");
                 break;
         case 's': // "aes"
                 switch (input[1]) {
@@ -5398,60 +5411,54 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
                         } else
                                 switch (input[2]) {
                                 case ' ': // "aesu"
+					// TODO : until address
                                         until_addr = rz_num_math(core->num, input + 2);
                                         break;
                                 case 'o': { // "aesuo, until given opcode type"
-                                        char *optypes = strdup(rz_str_trim_head_ro((char *)input + 3));
-                                        RzList *optypes_list = rz_str_split_list(optypes, " ", 0);
-					// TODO : step until implement
-                                        step_until_optype(core, optypes_list);
-                                        free(optypes);
-                                        rz_list_free(optypes_list);
+					// TODO : implement until type
                                         break;
                                 }
                                 default:
                                         rz_core_cmd0(core, "ae?~aesu");
                                         break;
                                 }
+
+			// step until
                         if (until_expr || until_addr != UT64_MAX) {
 				// TODO : replace with rzil_step
                                 rz_core_esil_step(core, until_addr, until_expr, NULL, false);
                         }
-                        rz_core_regs2flags(core);
+			// TODO : figure out regs2flags
+                        // rz_core_regs2flags(core);
                         break;
+		case 'p': // "aesp" print
+			break;
                 case ' ': //"aes?"
                         n = strchr(input, ' ');
                         if (!(n + 1)) {
-                                // TODO : replace with rzil_step
-                                rz_core_esil_step(core, until_addr, until_expr, NULL, false);
+				rz_core_rzil_step(core, addr);
                                 break;
                         }
                         off = rz_num_math(core->num, n + 1);
                         rz_core_analysis_esil_emulate(core, -1, -1, off);
                         break;
+		// default addr
                 default:
-			// TODO : replace with step
-                        rz_core_esil_step(core, until_addr, until_expr, NULL, false);
-                        rz_core_regs2flags(core);
+			rz_core_rzil_step(core, addr);
                         break;
                 }
                 break;
         case 'i': // "aei"
                 switch (input[1]) {
                 case 'm': // "aeim"
-			// TODO implement rzil mem
-                        cmd_esil_mem(core, input + 2);
-                        break;
-                case 'p': // "aeip" // initialize pc = $$
-			// TODO load reg
-                        rz_core_analysis_set_reg(core, "PC", core->offset);
+			cmd_rzil_mem(core, input + 2);
                         break;
                 case '?': // "aei?"
-                        cmd_esil_mem(core, "?");
+                        cmd_rzil_mem(core, "?");
                         break;
                 case 0: // "aei"
 			// TODO : implement reinit
-                        rz_core_analysis_esil_reinit(core);
+                        rz_core_analysis_rzil_reinit(core);
                         break;
                 }
                 break;

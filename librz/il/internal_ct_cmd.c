@@ -1,4 +1,4 @@
-#include "cmd.h"
+#include "internal_ct_cmd.h"
 
 static void free_label_kv(HtPPKv *kv) {
 	free(kv->key);
@@ -22,6 +22,9 @@ static void free_bind_var_val(HtPPKv *kv) {
 }
 
 void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size) {
+	vm->addr_size = addr_size;
+	vm->data_size = data_size;
+
 	vm->vm_global_variable_list = (RzILVar *)calloc(VM_MAX_VAR, sizeof(RzILVar));
 	vm->vm_global_value_set = rz_il_new_bag(VM_MAX_VAL, (RzILBagFreeFunc)rz_il_free_value);
 
@@ -73,41 +76,41 @@ void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_size) {
 	vm->ct_opcodes = ht_pp_new_opt(&ops_options);
 
 	// init jump table of labels
-	vm->op_handler_table = (RzILOpHandler *)malloc(sizeof(RzILOpHandler) * OP_INVALID);
-	memset(vm->op_handler_table, 0, OP_INVALID);
-	vm->op_handler_table[OP_VAR] = &rz_il_handler_var;
-	vm->op_handler_table[OP_ITE] = &rz_il_handler_ite;
-	vm->op_handler_table[OP_UNK] = &rz_il_handler_unk;
+	vm->op_handler_table = (RzILOpHandler *)malloc(sizeof(RzILOpHandler) * RZIL_OP_INVALID);
+	memset(vm->op_handler_table, 0, RZIL_OP_INVALID);
+	vm->op_handler_table[RZIL_OP_VAR] = &rz_il_handler_var;
+	vm->op_handler_table[RZIL_OP_ITE] = &rz_il_handler_ite;
+	vm->op_handler_table[RZIL_OP_UNK] = &rz_il_handler_unk;
 
-	vm->op_handler_table[OP_B0] = &rz_il_handler_b0;
-	vm->op_handler_table[OP_B1] = &rz_il_handler_b1;
-	vm->op_handler_table[OP_AND_] = &rz_il_handler_and_;
-	vm->op_handler_table[OP_OR_] = &rz_il_handler_or_;
-	vm->op_handler_table[OP_INV] = &rz_il_handler_inv;
+	vm->op_handler_table[RZIL_OP_B0] = &rz_il_handler_b0;
+	vm->op_handler_table[RZIL_OP_B1] = &rz_il_handler_b1;
+	vm->op_handler_table[RZIL_OP_AND_] = &rz_il_handler_and_;
+	vm->op_handler_table[RZIL_OP_OR_] = &rz_il_handler_or_;
+	vm->op_handler_table[RZIL_OP_INV] = &rz_il_handler_inv;
 
-	vm->op_handler_table[OP_LOAD] = &rz_il_handler_load;
-	vm->op_handler_table[OP_STORE] = &rz_il_handler_store;
+	vm->op_handler_table[RZIL_OP_LOAD] = &rz_il_handler_load;
+	vm->op_handler_table[RZIL_OP_STORE] = &rz_il_handler_store;
 
-	vm->op_handler_table[OP_INT] = &rz_il_handler_int;
-	vm->op_handler_table[OP_NEG] = &rz_il_handler_neg;
-	vm->op_handler_table[OP_NOT] = &rz_il_handler_not;
-	vm->op_handler_table[OP_LSB] = &rz_il_handler_lsb;
-	vm->op_handler_table[OP_MSB] = &rz_il_handler_msb;
-	vm->op_handler_table[OP_SHIFTL] = &rz_il_handler_shiftl;
-	vm->op_handler_table[OP_SHIFTR] = &rz_il_handler_shiftr;
-	vm->op_handler_table[OP_ADD] = &rz_il_handler_add;
-	vm->op_handler_table[OP_SUB] = &rz_il_handler_sub;
-	vm->op_handler_table[OP_MUL] = &rz_il_handler_mul;
-	vm->op_handler_table[OP_DIV] = &rz_il_handler_div;
-	vm->op_handler_table[OP_MOD] = &rz_il_handler_mod;
-	vm->op_handler_table[OP_SDIV] = &rz_il_handler_sdiv;
-	vm->op_handler_table[OP_SMOD] = &rz_il_handler_smod;
+	vm->op_handler_table[RZIL_OP_INT] = &rz_il_handler_int;
+	vm->op_handler_table[RZIL_OP_NEG] = &rz_il_handler_neg;
+	vm->op_handler_table[RZIL_OP_NOT] = &rz_il_handler_not;
+	vm->op_handler_table[RZIL_OP_LSB] = &rz_il_handler_lsb;
+	vm->op_handler_table[RZIL_OP_MSB] = &rz_il_handler_msb;
+	vm->op_handler_table[RZIL_OP_SHIFTL] = &rz_il_handler_shiftl;
+	vm->op_handler_table[RZIL_OP_SHIFTR] = &rz_il_handler_shiftr;
+	vm->op_handler_table[RZIL_OP_ADD] = &rz_il_handler_add;
+	vm->op_handler_table[RZIL_OP_SUB] = &rz_il_handler_sub;
+	vm->op_handler_table[RZIL_OP_MUL] = &rz_il_handler_mul;
+	vm->op_handler_table[RZIL_OP_DIV] = &rz_il_handler_div;
+	vm->op_handler_table[RZIL_OP_MOD] = &rz_il_handler_mod;
+	vm->op_handler_table[RZIL_OP_SDIV] = &rz_il_handler_sdiv;
+	vm->op_handler_table[RZIL_OP_SMOD] = &rz_il_handler_smod;
 
-	vm->op_handler_table[OP_PERFORM] = &rz_il_handler_perform;
-	vm->op_handler_table[OP_SET] = &rz_il_handler_set;
-	vm->op_handler_table[OP_GOTO] = &rz_il_handler_goto;
-	vm->op_handler_table[OP_BRANCH] = &rz_il_handler_branch;
-	vm->op_handler_table[OP_SEQ] = &rz_il_handler_seq;
+	vm->op_handler_table[RZIL_OP_PERFORM] = &rz_il_handler_perform;
+	vm->op_handler_table[RZIL_OP_SET] = &rz_il_handler_set;
+	vm->op_handler_table[RZIL_OP_GOTO] = &rz_il_handler_goto;
+	vm->op_handler_table[RZIL_OP_BRANCH] = &rz_il_handler_branch;
+	vm->op_handler_table[RZIL_OP_SEQ] = &rz_il_handler_seq;
 
 	// TODO : Add More
 
@@ -245,42 +248,42 @@ int rz_il_vm_printer_step(RzILOp op, string *helper) {
 	switch (op->code) {
 	// tricky approach
 	// Handle Special Opcode First
-	case OP_VAR:
+	case RZIL_OP_VAR:
 		cur_op_str = rz_str_newf("(%s %s)", op2str(op), op->op.var->v);
 		helper[op->op.var->ret] = cur_op_str;
 		ret = op->op.var->ret;
 		break;
-	case OP_SET:
+	case RZIL_OP_SET:
 		arg1 = helper[op->op.set->x];
 		cur_op_str = rz_str_newf("(%s %s %s)", op2str(op), op->op.set->v, arg1);
 		helper[op->op.set->ret] = cur_op_str;
 		ret = op->op.set->ret;
 		break;
-	case OP_GOTO:
+	case RZIL_OP_GOTO:
 		cur_op_str = rz_str_newf("(%s %s)", op2str(op), op->op.goto_->lbl);
 		helper[op->op.goto_->ret_ctrl_eff] = cur_op_str;
 		ret = op->op.goto_->ret_ctrl_eff;
 		break;
 		// 4 Int memebers
-	case OP_INT:
+	case RZIL_OP_INT:
 		cur_op_str = rz_str_newf("(%s %d)", op2str(op), op->op.int_->value);
 		helper[op->op.int_->ret] = cur_op_str;
 		ret = op->op.int_->ret;
 		break;
-	case OP_STORE:
+	case RZIL_OP_STORE:
 		arg1 = helper[op->op.store->key];
 		arg2 = helper[op->op.store->value];
 		cur_op_str = rz_str_newf("(%s %s %s)", op2str(op), arg1, arg2);
 		helper[VM_MAX_TEMP - 1] = cur_op_str; // op_store->ret == -1
 		ret = VM_MAX_TEMP - 1;
 		break;
-	case OP_LOAD:
+	case RZIL_OP_LOAD:
 		arg1 = helper[op->op.load->key];
 		cur_op_str = rz_str_newf("(%s %s)", op2str(op), arg1);
 		helper[op->op.load->ret] = cur_op_str;
 		ret = op->op.load->ret;
 		break;
-	case OP_BRANCH:
+	case RZIL_OP_BRANCH:
 		// true or false may be an empty one,
 		// then true/false == -1
 		arg1 = helper[op->op.branch->condition];
@@ -290,16 +293,16 @@ int rz_il_vm_printer_step(RzILOp op, string *helper) {
 		helper[op->op.branch->ret] = cur_op_str;
 		ret = op->op.branch->ret;
 		break;
-	case OP_UNK:
-	case OP_B0:
-	case OP_B1:
+	case RZIL_OP_UNK:
+	case RZIL_OP_B0:
+	case RZIL_OP_B1:
 		cur_op_str = rz_str_newf("%s", op2str(op));
 		helper[op->op.unk->ret] = cur_op_str;
 		ret = op->op.unk->ret;
 		break;
-	case OP_ITE:
-	case OP_SHIFTR:
-	case OP_SHIFTL:
+	case RZIL_OP_ITE:
+	case RZIL_OP_SHIFTR:
+	case RZIL_OP_SHIFTL:
 		arg1 = helper[op->op.ite->condition];
 		arg2 = helper[op->op.ite->x];
 		arg3 = helper[op->op.ite->y];
@@ -308,41 +311,41 @@ int rz_il_vm_printer_step(RzILOp op, string *helper) {
 		ret = op->op.ite->ret;
 		break;
 		// 3 Int members
-	case OP_ADD:
-	case OP_SUB:
-	case OP_MUL:
-	case OP_DIV:
-	case OP_MOD:
-	case OP_SDIV:
-	case OP_SMOD:
-	case OP_LOGXOR:
-	case OP_LOGAND:
-	case OP_LOGOR:
-	case OP_ULE:
-	case OP_SLE:
-	case OP_SEQ:
-	case OP_BLK:
-	case OP_AND_:
-	case OP_OR_:
+	case RZIL_OP_ADD:
+	case RZIL_OP_SUB:
+	case RZIL_OP_MUL:
+	case RZIL_OP_DIV:
+	case RZIL_OP_MOD:
+	case RZIL_OP_SDIV:
+	case RZIL_OP_SMOD:
+	case RZIL_OP_LOGXOR:
+	case RZIL_OP_LOGAND:
+	case RZIL_OP_LOGOR:
+	case RZIL_OP_ULE:
+	case RZIL_OP_SLE:
+	case RZIL_OP_SEQ:
+	case RZIL_OP_BLK:
+	case RZIL_OP_AND_:
+	case RZIL_OP_OR_:
 		arg1 = helper[op->op.add->x];
 		arg2 = helper[op->op.add->y];
 		cur_op_str = rz_str_newf("(%s %s %s)", op2str(op), arg1, arg2);
 		helper[op->op.add->ret] = cur_op_str;
 		ret = op->op.add->ret;
 		break;
-	case OP_MSB:
-	case OP_LSB:
-	case OP_NEG:
-	case OP_NOT:
-	case OP_JMP:
-	case OP_INV:
+	case RZIL_OP_MSB:
+	case RZIL_OP_LSB:
+	case RZIL_OP_NEG:
+	case RZIL_OP_NOT:
+	case RZIL_OP_JMP:
+	case RZIL_OP_INV:
 		arg1 = helper[op->op.inv->x];
 		cur_op_str = rz_str_newf("(%s %s)", op2str(op), arg1);
 		helper[op->op.inv->ret] = cur_op_str;
 		ret = op->op.inv->ret;
 		break;
 	// Perform !! ---> Print !!
-	case OP_PERFORM:
+	case RZIL_OP_PERFORM:
 		ret = op->op.perform->eff;
 		break;
 	default:

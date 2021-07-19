@@ -192,6 +192,7 @@ rz_analysis = library('rz_analysis', rz_analysis_sources,
     rz_asm_dep,
     rz_bin_dep,
     rz_type_dep,
+    rz_il_dep,
     capstone_dep
   ],
   install: true,
