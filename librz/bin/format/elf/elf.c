@@ -110,83 +110,40 @@ static bool in_physical_phdr(RzBinElfSegment *segment, ut64 addr) {
 	return addr >= segment->data.p_offset && addr < segment->data.p_offset + segment->data.p_filesz;
 }
 
-static void init_phdr_sdb(ELFOBJ *bin) {
-	sdb_num_set(bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0);
-	sdb_num_set(bin->kv, "elf_phdr.size", sizeof(Elf_(Phdr)), 0);
-	sdb_set(bin->kv, "elf_p_flags.cparse", sdb_elf_p_flags_cparse, 0);
-	sdb_set(bin->kv, "elf_p_type.cparse", sdb_elf_p_type_cparse, 0);
-	sdb_set(bin->kv, "elf_phdr.format", sdb_elf_phdr_format, 0);
+static bool init_phdr_sdb(ELFOBJ *bin) {
+	return sdb_num_set(bin->kv, "elf_phdr.offset", bin->ehdr.e_phoff, 0) &&
+		sdb_num_set(bin->kv, "elf_phdr.size", sizeof(Elf_(Phdr)), 0) &&
+		sdb_set(bin->kv, "elf_p_flags.cparse", sdb_elf_p_flags_cparse, 0) &&
+		sdb_set(bin->kv, "elf_p_type.cparse", sdb_elf_p_type_cparse, 0) &&
+		sdb_set(bin->kv, "elf_phdr.format", sdb_elf_phdr_format, 0);
 }
 
-static bool rz_bin_elf_init_phdr(ELFOBJ *bin) {
+static bool init_phdr_aux(ELFOBJ *bin) {
 	bin->segments = Elf_(rz_bin_elf_segments_new)(bin);
 	if (!bin->segments) {
 		return false;
 	}
 
-	init_phdr_sdb(bin);
-	return true;
+	return init_phdr_sdb(bin);
 }
 
-static void init_shdr_sdb(ELFOBJ *bin) {
-	sdb_num_set(bin->kv, "elf_shdr.offset", bin->ehdr.e_shoff, 0);
-	sdb_num_set(bin->kv, "elf_shdr.size", sizeof(Elf_(Shdr)), 0);
-#if RZ_BIN_ELF64
-	sdb_set(bin->kv, "elf_s_flags_64.cparse", sdb_elf_s_flags_64_cparse, 0);
-#else
-	sdb_set(bin->kv, "elf_s_flags_32.cparse", sdb_elf_s_flags_32_cparse, 0);
-#endif
-	sdb_set(bin->kv, "elf_s_type.cparse", sdb_elf_s_type_cparse, 0);
-	sdb_set(bin->kv, "elf_shdr.format", sdb_elf_shdr_format, 0);
-}
-
-static bool rz_bin_elf_init_shdr(ELFOBJ *bin, RzVector *sections) {
-	bin->sections = Elf_(rz_bin_elf_convert_sections)(bin, sections);
-	if (!bin->sections) {
-		return false;
+static void init_phdr(ELFOBJ *bin) {
+	if (!init_phdr_aux(bin)) {
+		RZ_LOG_WARN("Failed to initialize program header.\n");
 	}
-
-	init_shdr_sdb(bin);
-
-	return true;
 }
 
-static void init_shstrtab_sdb(ELFOBJ *bin, ut64 offset, ut64 size) {
-	sdb_num_set(bin->kv, "elf_shstrtab.offset", offset, 0);
-	sdb_num_set(bin->kv, "elf_shstrtab.size", size, 0);
-}
-
-static bool rz_bin_elf_init_shstrtab(ELFOBJ *bin, RzVector *sections) {
-	if (!sections) {
-		return false;
-	}
-
-	Elf_(Shdr) *section = rz_vector_index_ptr(sections, bin->ehdr.e_shstrndx);
-	if (!section || !section->sh_size) {
-		return false;
-	}
-
-	bin->shstrtab = Elf_(rz_bin_elf_strtab_new)(bin, section->sh_offset, section->sh_size);
-	if (!bin->shstrtab) {
-		return false;
-	}
-
-	init_shstrtab_sdb(bin, section->sh_offset, section->sh_size);
-
-	return true;
-}
-
-static void init_ehdr_sdb(ELFOBJ *bin) {
-	sdb_num_set(bin->kv, "elf_header.offset", 0, 0);
-	sdb_num_set(bin->kv, "elf_header.size", sizeof(Elf_(Ehdr)), 0);
-	sdb_set(bin->kv, "elf_class.cparse", sdb_elf_class_cparse, 0);
-	sdb_set(bin->kv, "elf_data.cparse", sdb_elf_data_cparse, 0);
-	sdb_set(bin->kv, "elf_hdr_version.cparse", sdb_elf_hdr_version_cparse, 0);
-	sdb_set(bin->kv, "elf_header.format", sdb_elf_header_format, 0);
-	sdb_set(bin->kv, "elf_ident.format", sdb_elf_ident_format, 0);
-	sdb_set(bin->kv, "elf_machine.cparse", sdb_elf_machine_cparse, 0);
-	sdb_set(bin->kv, "elf_obj_version.cparse", sdb_elf_obj_version_cparse, 0);
-	sdb_set(bin->kv, "elf_type.cparse", sdb_elf_type_cparse, 0);
+static bool init_ehdr_sdb(ELFOBJ *bin) {
+	return sdb_num_set(bin->kv, "elf_header.offset", 0, 0) &&
+		sdb_num_set(bin->kv, "elf_header.size", sizeof(Elf_(Ehdr)), 0) &&
+		sdb_set(bin->kv, "elf_class.cparse", sdb_elf_class_cparse, 0) &&
+		sdb_set(bin->kv, "elf_data.cparse", sdb_elf_data_cparse, 0) &&
+		sdb_set(bin->kv, "elf_hdr_version.cparse", sdb_elf_hdr_version_cparse, 0) &&
+		sdb_set(bin->kv, "elf_header.format", sdb_elf_header_format, 0) &&
+		sdb_set(bin->kv, "elf_ident.format", sdb_elf_ident_format, 0) &&
+		sdb_set(bin->kv, "elf_machine.cparse", sdb_elf_machine_cparse, 0) &&
+		sdb_set(bin->kv, "elf_obj_version.cparse", sdb_elf_obj_version_cparse, 0) &&
+		sdb_set(bin->kv, "elf_type.cparse", sdb_elf_type_cparse, 0);
 }
 
 static bool is_valid_elf_ident(ut8 *e_ident) {
@@ -196,11 +153,13 @@ static bool is_valid_elf_ident(ut8 *e_ident) {
 static bool init_ehdr_ident(ELFOBJ *bin) {
 	memset(&bin->ehdr, 0, sizeof(Elf_(Ehdr)));
 
-	if (rz_buf_read_at(bin->b, 0, bin->ehdr.e_ident, EI_NIDENT) == -1) {
+	if (rz_buf_read_at(bin->b, 0, bin->ehdr.e_ident, EI_NIDENT) < 0) {
+		RZ_LOG_WARN("Failed to read ELF header e_ident.\n")
 		return false;
 	}
 
 	if (!is_valid_elf_ident(bin->ehdr.e_ident)) {
+		RZ_LOG_WARN("Invalid ELF identification.\n");
 		return false;
 	}
 
@@ -209,14 +168,26 @@ static bool init_ehdr_ident(ELFOBJ *bin) {
 	return true;
 }
 
+static bool init_ehdr_other_aux(ELFOBJ *bin, ut64 *offset) {
+	return Elf_(rz_bin_elf_read_half)(bin, offset, &bin->ehdr.e_type) &&
+		Elf_(rz_bin_elf_read_half)(bin, offset, &bin->ehdr.e_machine) &&
+		Elf_(rz_bin_elf_read_word)(bin, offset, &bin->ehdr.e_version) &&
+		Elf_(rz_bin_elf_read_addr)(bin, offset, &bin->ehdr.e_entry) &&
+		Elf_(rz_bin_elf_read_off)(bin, offset, &bin->ehdr.e_phoff) &&
+		Elf_(rz_bin_elf_read_off)(bin, offset, &bin->ehdr.e_shoff) &&
+		Elf_(rz_bin_elf_read_word)(bin, offset, &bin->ehdr.e_flags) &&
+		Elf_(rz_bin_elf_read_half)(bin, offset, &bin->ehdr.e_ehsize) &&
+		Elf_(rz_bin_elf_read_half)(bin, offset, &bin->ehdr.e_phentsize);
+}
+
 static bool is_tiny_elf(ELFOBJ *bin) {
 	return bin->size == 45;
 }
 
 static Elf_(Half) get_tiny_elf_phnum(ELFOBJ *bin) {
-	ut8 tmp;
 	ut64 offset = 44;
 
+	ut8 tmp;
 	if (Elf_(rz_bin_elf_read_char)(bin, &offset, &tmp)) {
 		return tmp;
 	}
@@ -227,33 +198,36 @@ static Elf_(Half) get_tiny_elf_phnum(ELFOBJ *bin) {
 static bool init_ehdr_other(ELFOBJ *bin) {
 	ut64 offset = EI_NIDENT;
 
-	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_type) ||
-		!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_machine) ||
-		!Elf_(rz_bin_elf_read_word)(bin, &offset, &bin->ehdr.e_version) ||
-		!Elf_(rz_bin_elf_read_addr)(bin, &offset, &bin->ehdr.e_entry) ||
-		!Elf_(rz_bin_elf_read_off)(bin, &offset, &bin->ehdr.e_phoff)) {
+	if (!init_ehdr_other_aux(bin, &offset)) {
+		RZ_LOG_WARN("Failed to read beginning of the ELF header (until e_phnum).\n")
 		return false;
 	}
 
-	Elf_(rz_bin_elf_read_off)(bin, &offset, &bin->ehdr.e_shoff);
-	Elf_(rz_bin_elf_read_word)(bin, &offset, &bin->ehdr.e_flags);
-	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_ehsize);
-	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_phentsize);
-	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_phnum);
-	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shentsize);
-	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shnum);
-	Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shstrndx);
+	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_phnum)) {
+		RZ_LOG_WARN("Failed to read ELF header (e_phnum).\n")
+	}
+
+	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shentsize)) {
+		RZ_LOG_WARN("Failed to read ELF header (e_shentsize).\n")
+	}
+
+	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shnum)) {
+		RZ_LOG_WARN("Failed to read ELF header (e_shnum).\n")
+	}
+
+	if (!Elf_(rz_bin_elf_read_half)(bin, &offset, &bin->ehdr.e_shstrndx)) {
+		RZ_LOG_WARN("Failed to read ELF header (e_shstrndx).\n")
+	}
 
 	if (is_tiny_elf(bin)) {
+		RZ_LOG_WARN("The binary seems to be a tiny elf (45 bytes). Reload e_phnum value.\n");
 		bin->ehdr.e_phnum = get_tiny_elf_phnum(bin);
 	}
 
 	return true;
 }
 
-static bool rz_bin_elf_init_ehdr(ELFOBJ *bin) {
-	init_ehdr_sdb(bin);
-
+static bool init_ehdr(ELFOBJ *bin) {
 	if (!init_ehdr_ident(bin)) {
 		return false;
 	}
@@ -262,51 +236,111 @@ static bool rz_bin_elf_init_ehdr(ELFOBJ *bin) {
 		return false;
 	}
 
-	return true;
+	return init_ehdr_sdb(bin);
 }
 
-static void init_dynamic_section_sdb(ELFOBJ *bin) {
-	switch (Elf_(rz_bin_elf_has_relro)(bin)) {
-	case RZ_BIN_ELF_FULL_RELRO:
-		sdb_set(bin->kv, "elf.relro", "full", 0);
-		break;
-	case RZ_BIN_ELF_PART_RELRO:
-		sdb_set(bin->kv, "elf.relro", "partial", 0);
-		break;
-	default:
-		sdb_set(bin->kv, "elf.relro", "no", 0);
-		break;
+static bool init_shdr_sdb(ELFOBJ *bin) {
+	return sdb_num_set(bin->kv, "elf_shdr.offset", bin->ehdr.e_shoff, 0) &&
+		sdb_num_set(bin->kv, "elf_shdr.size", sizeof(Elf_(Shdr)), 0) &&
+#if RZ_BIN_ELF64
+		sdb_set(bin->kv, "elf_s_flags_64.cparse", sdb_elf_s_flags_64_cparse, 0) &&
+#else
+		sdb_set(bin->kv, "elf_s_flags_32.cparse", sdb_elf_s_flags_32_cparse, 0) &&
+#endif
+		sdb_set(bin->kv, "elf_s_type.cparse", sdb_elf_s_type_cparse, 0) &&
+		sdb_set(bin->kv, "elf_shdr.format", sdb_elf_shdr_format, 0);
+}
+
+static bool init_shdr_aux(ELFOBJ *bin, RzVector *sections) {
+	bin->sections = Elf_(rz_bin_elf_convert_sections)(bin, sections);
+	if (!bin->sections) {
+		return false;
+	}
+
+	return init_shdr_sdb(bin);
+}
+
+static void init_shdr(ELFOBJ *bin, RzVector *sections) {
+	if (!init_shdr_aux(bin, sections)) {
+		RZ_LOG_WARN("Failed to initialize section header.\n");
 	}
 }
 
-static bool rz_bin_elf_init_dynamic_section(ELFOBJ *bin) {
-	bin->dt_dynamic = Elf_(rz_bin_elf_dt_dynamic_new)(bin);
+static bool init_shstrtab_sdb(ELFOBJ *bin, ut64 offset, ut64 size) {
+	return sdb_num_set(bin->kv, "elf_shstrtab.offset", offset, 0) &&
+		sdb_num_set(bin->kv, "elf_shstrtab.size", size, 0);
+}
 
+static bool init_shstrtab_aux(ELFOBJ *bin, RzVector *sections) {
+	if (!sections) {
+		return false;
+	}
+
+	Elf_(Shdr) *section = rz_vector_index_ptr(sections, bin->ehdr.e_shstrndx);
+	if (!section) {
+		RZ_LOG_WARN("Invalid ELF header e_shstrndx value.\n");
+		return false;
+	}
+
+	bin->shstrtab = Elf_(rz_bin_elf_strtab_new)(bin, section->sh_offset, section->sh_size);
+	if (!bin->shstrtab) {
+		return false;
+	}
+
+	return init_shstrtab_sdb(bin, section->sh_offset, section->sh_size);
+}
+
+static void init_shstrtab(ELFOBJ *bin, RzVector *sections) {
+	if (!init_shstrtab_aux(bin, sections)) {
+		RZ_LOG_WARN("Failed to initialize section string table.\n");
+	}
+}
+
+static bool init_dt_dynamic_sdb(ELFOBJ *bin) {
+	switch (Elf_(rz_bin_elf_has_relro)(bin)) {
+	case RZ_BIN_ELF_FULL_RELRO:
+		return sdb_set(bin->kv, "elf.relro", "full", 0);
+	case RZ_BIN_ELF_PART_RELRO:
+		return sdb_set(bin->kv, "elf.relro", "partial", 0);
+	default:
+		return sdb_set(bin->kv, "elf.relro", "no", 0);
+	}
+
+	return false;
+}
+
+static bool init_dt_dynamic_aux(ELFOBJ *bin) {
+	bin->dt_dynamic = Elf_(rz_bin_elf_dt_dynamic_new)(bin);
 	if (!bin->dt_dynamic) {
 		return false;
 	}
 
-	init_dynamic_section_sdb(bin);
-
-	return bin->dt_dynamic;
+	return init_dt_dynamic_sdb(bin);
 }
 
-static void init_dynstr_sdb(ELFOBJ *bin, ut64 strtab_addr, Elf_(Xword) strtab_size) {
-	sdb_num_set(bin->kv, "elf_dynstr.offset", strtab_addr, 0);
-	sdb_num_set(bin->kv, "elf_dynstr.size", strtab_size, 0);
+static void init_dt_dynamic(ELFOBJ *bin) {
+	if (!init_dt_dynamic_aux(bin)) {
+		RZ_LOG_WARN("Failed to initialize ELF DT_DYNAMIC.\n");
+	}
 }
 
-static bool rz_bin_elf_init_dynstr(ELFOBJ *bin) {
+static bool init_dynstr_sdb(ELFOBJ *bin, ut64 strtab_addr, Elf_(Xword) strtab_size) {
+	return sdb_num_set(bin->kv, "elf_dynstr.offset", strtab_addr, 0) &&
+		sdb_num_set(bin->kv, "elf_dynstr.size", strtab_size, 0);
+}
+
+static bool init_dynstr_aux(ELFOBJ *bin) {
 	ut64 addr;
 	ut64 size;
 
 	if (!Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRTAB, &addr) || !Elf_(rz_bin_elf_get_dt_info)(bin, DT_STRSZ, &size)) {
-		RZ_LOG_WARN(".dynstr not found or invalid\n");
+		RZ_LOG_WARN("DT_STRTAB or DT_STRSZ key not found.\n");
 		return false;
 	}
 
 	ut64 offset = Elf_(rz_bin_elf_v2p_new)(bin, addr);
 	if (offset == UT64_MAX) {
+		RZ_LOG_WARN("Failed to convert DT_STRTAB to a physical offset.\n");
 		return false;
 	}
 
@@ -315,40 +349,59 @@ static bool rz_bin_elf_init_dynstr(ELFOBJ *bin) {
 		return false;
 	}
 
-	init_dynstr_sdb(bin, offset, size);
-	return true;
+	return init_dynstr_sdb(bin, offset, size);
 }
 
-static bool rz_bin_elf_init(ELFOBJ *bin) {
-	/* bin is not an ELF */
-	if (!rz_bin_elf_init_ehdr(bin)) {
+static void init_dynstr(ELFOBJ *bin) {
+	if (!init_dynstr_aux(bin)) {
+		RZ_LOG_WARN("Failed to initialize string table for dynamic linking.\n");
+	}
+}
+
+static bool init_symbols_info_aux(ELFOBJ *bin) {
+	Sdb *info = Elf_(rz_bin_elf_get_symbols_info)(bin);
+	if (!info) {
 		return false;
 	}
 
-	if (!rz_bin_elf_init_phdr(bin) && !Elf_(rz_bin_elf_is_relocatable)(bin)) {
-		RZ_LOG_WARN("Cannot initialize program headers\n");
+	return sdb_ns_set(bin->kv, "versioninfo", info);
+}
+
+static void init_symbols_info(ELFOBJ *bin) {
+	if (!init_symbols_info_aux(bin)) {
+		RZ_LOG_WARN("Failed to initialize GNU symbols information.\n")
+	}
+}
+
+static void init_aux(ELFOBJ *bin) {
+	RzVector *sections = Elf_(rz_bin_elf_sections_new)(bin);
+
+	init_shstrtab(bin, sections);
+
+	if (!Elf_(rz_bin_elf_is_relocatable)(bin) && !Elf_(rz_bin_elf_is_static)(bin)) {
+		init_dt_dynamic(bin);
+		init_dynstr(bin);
+		init_symbols_info(bin);
+	}
+
+	bin->baddr = Elf_(rz_bin_elf_get_baddr)(bin);
+	init_shdr(bin, sections);
+
+	rz_vector_free(sections);
+}
+
+static bool init(ELFOBJ *bin) {
+	/* bin is not an ELF */
+	if (!init_ehdr(bin)) {
+		return false;
+	}
+
+	if (!Elf_(rz_bin_elf_is_relocatable)(bin)) {
+		init_phdr(bin);
 	}
 
 	if (bin->ehdr.e_type != ET_CORE) {
-		RzVector *sections = Elf_(rz_bin_elf_sections_new)(bin);
-
-		if (!rz_bin_elf_init_shstrtab(bin, sections)) {
-			RZ_LOG_WARN("Cannot initialize section strings table\n");
-		}
-
-		if (!Elf_(rz_bin_elf_is_relocatable)(bin) && !Elf_(rz_bin_elf_is_static)(bin)) {
-			if (!rz_bin_elf_init_dynamic_section(bin) || !rz_bin_elf_init_dynstr(bin)) {
-				RZ_LOG_WARN("Cannot initialize dynamic section\n");
-			}
-		}
-
-		bin->baddr = Elf_(rz_bin_elf_get_baddr)(bin);
-
-		if (!rz_bin_elf_init_shdr(bin, sections)) {
-			RZ_LOG_WARN("Cannot initialize section headers\n");
-		}
-
-		rz_vector_free(sections);
+		init_aux(bin);
 	}
 
 	bin->boffset = Elf_(rz_bin_elf_get_boffset)(bin);
@@ -359,8 +412,6 @@ static bool rz_bin_elf_init(ELFOBJ *bin) {
 
 	bin->symbols = Elf_(rz_bin_elf_symbols_new)(bin);
 	bin->imports = Elf_(rz_bin_elf_analyse_imports)(bin);
-
-	sdb_ns_set(bin->kv, "versioninfo", Elf_(rz_bin_elf_get_version_info)(bin));
 
 	return true;
 }
@@ -378,12 +429,12 @@ RZ_OWN ELFOBJ *Elf_(rz_bin_elf_new_buf)(RZ_NONNULL RzBuffer *buf) {
 
 	bin->size = rz_buf_size(buf);
 
-	if (rz_bin_elf_init(bin)) {
-		return bin;
+	if (!init(bin)) {
+		Elf_(rz_bin_elf_free)(bin);
+		return NULL;
 	}
 
-	Elf_(rz_bin_elf_free)(bin);
-	return NULL;
+	return bin;
 }
 
 /**

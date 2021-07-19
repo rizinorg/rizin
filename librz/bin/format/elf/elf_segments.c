@@ -51,12 +51,13 @@ static bool verify_phdr_entry(ELFOBJ *bin, Elf_(Phdr) * entry) {
 
 static bool get_elf_segment(ELFOBJ *bin, RzBinElfSegment *segment, ut64 offset, size_t pos) {
 	if (!get_phdr_entry(bin, &segment->data, offset)) {
+		RZ_LOG_WARN("Failed to read segment entry at 0x%" PFMT64x ".\n", offset);
 		return false;
 	}
 
 	segment->is_valid = verify_phdr_entry(bin, &segment->data);
 	if (!segment->is_valid) {
-		RZ_LOG_WARN("Invalid segment %zu at 0x%" PFMT64x "\n", pos, offset);
+		RZ_LOG_WARN("The segment %zu at 0x%" PFMT64x " seems to be invalid.\n", pos, offset);
 	}
 
 	return true;
@@ -85,6 +86,11 @@ static RzVector *get_segments_from_phdr(ELFOBJ *bin) {
 		offset += sizeof(Elf_(Phdr));
 	}
 
+	if (!rz_vector_len(result)) {
+		rz_vector_free(result);
+		return NULL;
+	}
+
 	return result;
 }
 
@@ -102,7 +108,10 @@ RZ_BORROW RzBinElfSegment *Elf_(rz_bin_elf_get_segment_with_type)(RZ_NONNULL ELF
 }
 
 RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, NULL);
+
 	if (!Elf_(rz_bin_elf_check_array)(bin, bin->ehdr.e_phoff, bin->ehdr.e_phnum, sizeof(Elf_(Phdr)))) {
+		RZ_LOG_WARN("Invalid segment header (check array failed).\n");
 		return NULL;
 	}
 
@@ -111,6 +120,5 @@ RZ_OWN RzVector *Elf_(rz_bin_elf_segments_new)(RZ_NONNULL ELFOBJ *bin) {
 
 bool Elf_(rz_bin_elf_has_segments)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
-
-	return bin->segments && rz_vector_len(bin->segments);
+	return bin->segments;
 }
