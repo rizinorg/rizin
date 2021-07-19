@@ -2349,6 +2349,49 @@ static const RzCmdDescHelp cmd_print_gadget_move_help = {
 	.args = cmd_print_gadget_move_args,
 };
 
+static const RzCmdDescHelp cmd_print_timestamp_help = {
+	.summary = "Print timestamps",
+};
+static const RzCmdDescArg cmd_print_timestamp_unix_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_unix_help = {
+	.summary = "Print UNIX epoch time (32 bit `cfg.bigendian`, since January 1, 1970)",
+	.args = cmd_print_timestamp_unix_args,
+};
+
+static const RzCmdDescArg cmd_print_timestamp_current_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_current_help = {
+	.summary = "Print the current time",
+	.args = cmd_print_timestamp_current_args,
+};
+
+static const RzCmdDescArg cmd_print_timestamp_dos_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_dos_help = {
+	.summary = "Print MS-DOS time (32 bit `cfg.bigendian`, since January 1, 1980)",
+	.args = cmd_print_timestamp_dos_args,
+};
+
+static const RzCmdDescArg cmd_print_timestamp_hfs_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_hfs_help = {
+	.summary = "Print Mac HFS time (32 bit `cfg.bigendian`, since January 1, 1904)",
+	.args = cmd_print_timestamp_hfs_args,
+};
+
+static const RzCmdDescArg cmd_print_timestamp_ntfs_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_ntfs_help = {
+	.summary = "Print NTFS time (64 bit `cfg.bigendian`, since January 1, 1601)",
+	.args = cmd_print_timestamp_ntfs_args,
+};
+
 static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
@@ -5005,6 +5048,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_print_gadget_move_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pgm", rz_cmd_print_gadget_move_handler, &cmd_print_gadget_move_help);
 	rz_warn_if_fail(cmd_print_gadget_move_cd);
+
+	RzCmdDesc *cmd_print_timestamp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pt", rz_cmd_print_timestamp_unix_handler, &cmd_print_timestamp_unix_help, &cmd_print_timestamp_help);
+	rz_warn_if_fail(cmd_print_timestamp_cd);
+	RzCmdDesc *cmd_print_timestamp_current_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "pt.", rz_cmd_print_timestamp_current_handler, &cmd_print_timestamp_current_help);
+	rz_warn_if_fail(cmd_print_timestamp_current_cd);
+
+	RzCmdDesc *cmd_print_timestamp_dos_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "ptd", rz_cmd_print_timestamp_dos_handler, &cmd_print_timestamp_dos_help);
+	rz_warn_if_fail(cmd_print_timestamp_dos_cd);
+
+	RzCmdDesc *cmd_print_timestamp_hfs_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "pth", rz_cmd_print_timestamp_hfs_handler, &cmd_print_timestamp_hfs_help);
+	rz_warn_if_fail(cmd_print_timestamp_hfs_cd);
+
+	RzCmdDesc *cmd_print_timestamp_ntfs_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "ptn", rz_cmd_print_timestamp_ntfs_handler, &cmd_print_timestamp_ntfs_help);
+	rz_warn_if_fail(cmd_print_timestamp_ntfs_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);
