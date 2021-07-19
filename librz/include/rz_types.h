@@ -95,40 +95,9 @@ typedef enum {
 #define __POWERPC__ 1
 #endif
 
-#if __IPHONE_8_0 && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-#define LIBC_HAVE_SYSTEM 0
-#else
-#define LIBC_HAVE_SYSTEM 1
-#endif
-
-#if APPLE_SDK_IPHONEOS || APPLE_SDK_APPLETVOS || APPLE_SDK_WATCHOS || APPLE_SDK_APPLETVSIMULATOR || APPLE_SDK_WATCHSIMULATOR
-#define LIBC_HAVE_PTRACE 0
-#else
-#define LIBC_HAVE_PTRACE 1
-#endif
-
-#if HAVE_FORK
-#define LIBC_HAVE_FORK 1
-#else
-#define LIBC_HAVE_FORK 0
-#endif
-
 #if defined(__OpenBSD__)
 #include <sys/param.h>
 #undef MAXCOMLEN /* redefined in zipint.h */
-#endif
-
-/* release >= 5.9 */
-#if __OpenBSD__ && OpenBSD >= 201605
-#define LIBC_HAVE_PLEDGE 1
-#else
-#define LIBC_HAVE_PLEDGE 0
-#endif
-
-#if __sun
-#define LIBC_HAVE_PRIV_SET 1
-#else
-#define LIBC_HAVE_PRIV_SET 0
 #endif
 
 #ifdef __GNUC__
