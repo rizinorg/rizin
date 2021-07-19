@@ -336,7 +336,9 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				break;
 			}
 			const char *typestr = rz_str_new(rz_list_get_n(types, pos++));
-			type = rz_type_parse_string_single(typedb->parser, typestr, NULL);
+			if (typestr) {
+				type = rz_type_parse_string_single(typedb->parser, typestr, NULL);
+			}
 		} else {
 			RzCallable *callable = rz_type_func_get(typedb, fcn_name);
 			if (!callable) {
