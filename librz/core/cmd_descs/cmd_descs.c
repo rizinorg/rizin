@@ -156,7 +156,8 @@ static const RzCmdDescArg type_enum_c_args[2];
 static const RzCmdDescArg type_enum_c_nl_args[2];
 static const RzCmdDescArg type_enum_find_args[2];
 static const RzCmdDescArg type_list_function_args[2];
-static const RzCmdDescArg type_kuery_args[2];
+static const RzCmdDescArg type_function_del_args[2];
+static const RzCmdDescArg type_function_cc_args[3];
 static const RzCmdDescArg type_link_args[3];
 static const RzCmdDescArg type_link_show_args[2];
 static const RzCmdDescArg type_link_del_args[2];
@@ -2455,6 +2456,49 @@ static const RzCmdDescHelp cmd_print_gadget_move_help = {
 	.args = cmd_print_gadget_move_args,
 };
 
+static const RzCmdDescHelp cmd_print_timestamp_help = {
+	.summary = "Print timestamps",
+};
+static const RzCmdDescArg cmd_print_timestamp_unix_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_unix_help = {
+	.summary = "Print UNIX epoch time (32 bit `cfg.bigendian`, since January 1, 1970)",
+	.args = cmd_print_timestamp_unix_args,
+};
+
+static const RzCmdDescArg cmd_print_timestamp_current_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_current_help = {
+	.summary = "Print the current time",
+	.args = cmd_print_timestamp_current_args,
+};
+
+static const RzCmdDescArg cmd_print_timestamp_dos_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_dos_help = {
+	.summary = "Print MS-DOS time (32 bit `cfg.bigendian`, since January 1, 1980)",
+	.args = cmd_print_timestamp_dos_args,
+};
+
+static const RzCmdDescArg cmd_print_timestamp_hfs_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_hfs_help = {
+	.summary = "Print Mac HFS time (32 bit `cfg.bigendian`, since January 1, 1904)",
+	.args = cmd_print_timestamp_hfs_args,
+};
+
+static const RzCmdDescArg cmd_print_timestamp_ntfs_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_print_timestamp_ntfs_help = {
+	.summary = "Print NTFS time (64 bit `cfg.bigendian`, since January 1, 1601)",
+	.args = cmd_print_timestamp_ntfs_args,
+};
+
 static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
@@ -3063,9 +3107,36 @@ static const RzCmdDescHelp type_list_function_help = {
 	.args = type_list_function_args,
 };
 
-static const RzCmdDescArg type_kuery_args[] = {
+static const RzCmdDescArg type_function_del_args[] = {
 	{
-		.name = "type",
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp type_function_del_help = {
+	.summary = "Remove the function type by name",
+	.args = type_function_del_args,
+};
+
+static const RzCmdDescArg type_function_del_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp type_function_del_all_help = {
+	.summary = "Remove all function types",
+	.args = type_function_del_all_args,
+};
+
+static const RzCmdDescArg type_function_cc_args[] = {
+	{
+		.name = "name",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+
+	},
+	{
+		.name = "cc",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
 		.optional = true,
@@ -3073,9 +3144,9 @@ static const RzCmdDescArg type_kuery_args[] = {
 	},
 	{ 0 },
 };
-static const RzCmdDescHelp type_kuery_help = {
-	.summary = "Perform SDB query on types database",
-	.args = type_kuery_args,
+static const RzCmdDescHelp type_function_cc_help = {
+	.summary = "Show or set function calling convention",
+	.args = type_function_cc_args,
 };
 
 static const RzCmdDescHelp tl_help = {
@@ -5122,6 +5193,20 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_gadget_move_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_gadget_cd, "pgm", rz_cmd_print_gadget_move_handler, &cmd_print_gadget_move_help);
 	rz_warn_if_fail(cmd_print_gadget_move_cd);
 
+	RzCmdDesc *cmd_print_timestamp_cd = rz_cmd_desc_group_new(core->rcmd, cmd_print_cd, "pt", rz_cmd_print_timestamp_unix_handler, &cmd_print_timestamp_unix_help, &cmd_print_timestamp_help);
+	rz_warn_if_fail(cmd_print_timestamp_cd);
+	RzCmdDesc *cmd_print_timestamp_current_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "pt.", rz_cmd_print_timestamp_current_handler, &cmd_print_timestamp_current_help);
+	rz_warn_if_fail(cmd_print_timestamp_current_cd);
+
+	RzCmdDesc *cmd_print_timestamp_dos_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "ptd", rz_cmd_print_timestamp_dos_handler, &cmd_print_timestamp_dos_help);
+	rz_warn_if_fail(cmd_print_timestamp_dos_cd);
+
+	RzCmdDesc *cmd_print_timestamp_hfs_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "pth", rz_cmd_print_timestamp_hfs_handler, &cmd_print_timestamp_hfs_help);
+	rz_warn_if_fail(cmd_print_timestamp_hfs_cd);
+
+	RzCmdDesc *cmd_print_timestamp_ntfs_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_timestamp_cd, "ptn", rz_cmd_print_timestamp_ntfs_handler, &cmd_print_timestamp_ntfs_help);
+	rz_warn_if_fail(cmd_print_timestamp_ntfs_cd);
+
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);
 	RzCmdDesc *project_save_cd = rz_cmd_desc_argv_new(core->rcmd, P_cd, "Ps", rz_project_save_handler, &project_save_help);
@@ -5264,13 +5349,18 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_enum_find_cd = rz_cmd_desc_argv_new(core->rcmd, te_cd, "tef", rz_type_enum_find_handler, &type_enum_find_help);
 	rz_warn_if_fail(type_enum_find_cd);
 
-	RzCmdDesc *tf_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_type_list_function_handler, &type_list_function_help, &tf_help);
+	RzCmdDesc *tf_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_function_handler, &type_list_function_help, &tf_help);
 	rz_warn_if_fail(tf_cd);
+	RzCmdDesc *type_function_del_cd = rz_cmd_desc_argv_new(core->rcmd, tf_cd, "tf-", rz_type_function_del_handler, &type_function_del_help);
+	rz_warn_if_fail(type_function_del_cd);
 
-	RzCmdDesc *type_kuery_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "tk", rz_type_kuery_handler, &type_kuery_help);
-	rz_warn_if_fail(type_kuery_cd);
+	RzCmdDesc *type_function_del_all_cd = rz_cmd_desc_argv_new(core->rcmd, tf_cd, "tf-*", rz_type_function_del_all_handler, &type_function_del_all_help);
+	rz_warn_if_fail(type_function_del_all_cd);
 
-	RzCmdDesc *tl_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB | RZ_OUTPUT_MODE_LONG, rz_type_link_handler, &type_link_help, &tl_help);
+	RzCmdDesc *type_function_cc_cd = rz_cmd_desc_argv_new(core->rcmd, tf_cd, "tfc", rz_type_function_cc_handler, &type_function_cc_help);
+	rz_warn_if_fail(type_function_cc_cd);
+
+	RzCmdDesc *tl_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_link_handler, &type_link_help, &tl_help);
 	rz_warn_if_fail(tl_cd);
 	RzCmdDesc *type_link_show_cd = rz_cmd_desc_argv_new(core->rcmd, tl_cd, "tls", rz_type_link_show_handler, &type_link_show_help);
 	rz_warn_if_fail(type_link_show_cd);
@@ -5305,7 +5395,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_print_hexstring_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpx", rz_type_print_hexstring_handler, &type_print_hexstring_help);
 	rz_warn_if_fail(type_print_hexstring_cd);
 
-	RzCmdDesc *ts_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "ts", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_type_list_structure_handler, &type_list_structure_help, &ts_help);
+	RzCmdDesc *ts_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "ts", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_list_structure_handler, &type_list_structure_help, &ts_help);
 	rz_warn_if_fail(ts_cd);
 	RzCmdDesc *type_structure_c_cd = rz_cmd_desc_argv_new(core->rcmd, ts_cd, "tsc", rz_type_structure_c_handler, &type_structure_c_help);
 	rz_warn_if_fail(type_structure_c_cd);
@@ -5318,7 +5408,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_typedef_c_cd = rz_cmd_desc_argv_new(core->rcmd, tt_cd, "ttc", rz_type_typedef_c_handler, &type_typedef_c_help);
 	rz_warn_if_fail(type_typedef_c_cd);
 
-	RzCmdDesc *tu_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON, rz_type_list_union_handler, &type_list_union_help, &tu_help);
+	RzCmdDesc *tu_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_LONG, rz_type_list_union_handler, &type_list_union_help, &tu_help);
 	rz_warn_if_fail(tu_cd);
 	RzCmdDesc *type_union_c_cd = rz_cmd_desc_argv_new(core->rcmd, tu_cd, "tuc", rz_type_union_c_handler, &type_union_c_help);
 	rz_warn_if_fail(type_union_c_cd);

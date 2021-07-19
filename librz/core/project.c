@@ -57,7 +57,22 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	return err;
 }
 
-RZ_IPI bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res);
+/// Load a file into an RzProject but don't actually migrate anything or load it into an RzCore
+RZ_API RzProject *rz_project_load_file_raw(const char *file) {
+	RzProject *prj = sdb_new0();
+	if (!prj) {
+		return NULL;
+	}
+	if (!sdb_text_load(prj, file)) {
+		sdb_free(prj);
+		return NULL;
+	}
+	return prj;
+}
+
+RZ_API void rz_project_free(RzProject *prj) {
+	sdb_free(prj);
+}
 
 RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_io, RZ_NULLABLE const char *file, RzSerializeResultInfo *res) {
 	rz_return_val_if_fail(core && prj, RZ_PROJECT_ERR_UNKNOWN);
@@ -95,11 +110,8 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_
 }
 
 RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, bool load_bin_io, RzSerializeResultInfo *res) {
-	RzProject *prj = sdb_new0();
+	RzProject *prj = rz_project_load_file_raw(file);
 	if (!prj) {
-		return RZ_PROJECT_ERR_UNKNOWN;
-	}
-	if (!sdb_text_load(prj, file)) {
 		RZ_SERIALIZE_ERR(res, "failed to read database file");
 		return RZ_PROJECT_ERR_FILE;
 	}
