@@ -8,6 +8,23 @@
 
 static char tmp_path[1000];
 
+#if __WINDOWS__
+static char *remove_cr(char *str) {
+	char *start = str;
+	while (*str) {
+		if (str[0] == '\r' &&
+			!(str - start >= 4 && !strncmp(str - 4, RZ_CONS_CLEAR_SCREEN, 4))) {
+			memmove(str, str + 1, strlen(str + 1) + 1);
+			continue;
+		}
+		str++;
+	}
+	return start;
+}
+#else
+#define remove_cr(x) (x)
+#endif
+
 const char *get_auxiliary_path(const char *s) {
 	char *p = rz_sys_pid_to_path(rz_sys_getpid());
 	char *pp = (char *)rz_str_lchr(p, RZ_SYS_DIR[0]);
@@ -26,8 +43,8 @@ bool test_noargs_noinput_outerr(void) {
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "Hello World\n", "hello world string should be print on stdout");
-	mu_assert_streq(spo->err, "This is on err\n", "stderr should be found");
+	mu_assert_streq(remove_cr(spo->out), "Hello World\n", "hello world string should be print on stdout");
+	mu_assert_streq(remove_cr(spo->err), "This is on err\n", "stderr should be found");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);
@@ -43,7 +60,7 @@ bool test_args(void) {
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "Hello rizin\n", "rizin arg should be passed and printed");
+	mu_assert_streq(remove_cr(spo->out), "Hello rizin\n", "rizin arg should be passed and printed");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);
@@ -60,7 +77,7 @@ bool test_env(void) {
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "Hello Rizin Project\n", "YOUVAR env var should be passed and printed on stdout");
+	mu_assert_streq(remove_cr(spo->out), "Hello Rizin Project\n", "YOUVAR env var should be passed and printed on stdout");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);
@@ -77,7 +94,7 @@ bool test_stdin(void) {
 	rz_subprocess_stdin_write(sp, (const ut8 *)input, strlen(input));
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "13\n", "the sum should be printed on stdout");
+	mu_assert_streq(remove_cr(spo->out), "13\n", "the sum should be printed on stdout");
 	mu_assert_eq(spo->ret, 13, "return value is the sum, 13");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);
@@ -124,7 +141,7 @@ bool test_specialchar_args(void) {
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "Hello ri$in  awesome project  'single $quoted' \"double $quoted\" { ( ] [\n", "all args should be correctly printed");
+	mu_assert_streq(remove_cr(spo->out), "Hello ri$in  awesome project  'single $quoted' \"double $quoted\" { ( ] [\n", "all args should be correctly printed");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);
@@ -144,8 +161,8 @@ bool test_nopipes(void) {
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "", "hello world string should be not intercepted on stdout");
-	mu_assert_streq(spo->err, "", "stderr should not be intercepted");
+	mu_assert_streq(remove_cr(spo->out), "", "hello world string should be not intercepted on stdout");
+	mu_assert_streq(remove_cr(spo->err), "", "stderr should not be intercepted");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);
@@ -165,8 +182,8 @@ bool test_stdoutonly(void) {
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "Hello World\n", "hello world string should be on stdout");
-	mu_assert_streq(spo->err, "", "stderr should not be intercepted");
+	mu_assert_streq(remove_cr(spo->out), "Hello World\n", "hello world string should be on stdout");
+	mu_assert_streq(remove_cr(spo->err), "", "stderr should not be intercepted");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);
@@ -186,8 +203,8 @@ bool test_stderronly(void) {
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "", "stdout should not be intercepted");
-	mu_assert_streq(spo->err, "This is on err\n", "stderr should not be intercepted");
+	mu_assert_streq(remove_cr(spo->out), "", "stdout should not be intercepted");
+	mu_assert_streq(remove_cr(spo->err), "This is on err\n", "stderr should not be intercepted");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);
@@ -207,8 +224,8 @@ bool test_stdoutstderr(void) {
 	mu_assert_notnull(sp, "the subprocess should be created");
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_strcontains(spo->out, "Hello World\n", "stdout should be captured in out");
-	mu_assert_strcontains(spo->out, "This is on err\n", "stderr should be captured in out");
+	mu_assert_strcontains(remove_cr(spo->out), "Hello World\n", "stdout should be captured in out");
+	mu_assert_strcontains(remove_cr(spo->out), "This is on err\n", "stderr should be captured in out");
 	mu_assert_streq(spo->err, "", "stderr should not be intercepted");
 	mu_assert_eq(spo->ret, 0, "return value is 0");
 	rz_subprocess_output_free(spo);
@@ -236,7 +253,7 @@ bool test_interactive(void) {
 	rz_subprocess_stdin_write(sp, (const ut8 *)buf, strlen(buf));
 	rz_subprocess_wait(sp, UT_TIMEOUT);
 	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
-	mu_assert_streq(spo->out, "Right\n", "A Good message should be returned");
+	mu_assert_streq(remove_cr(spo->out), "Right\n", "A Good message should be returned");
 	mu_assert_eq(spo->ret, 0, "subprocess exited in the right way");
 	rz_subprocess_output_free(spo);
 	rz_subprocess_free(sp);
