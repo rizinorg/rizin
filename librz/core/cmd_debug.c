@@ -4812,7 +4812,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			rz_config_set(core->config, "dbg.backend", backend);
 			// implicit by config.set rz_debug_use (core->dbg, str);
 			free(backend);
-			break;
+			return RZ_CMD_STATUS_OK;
 		}
 		case '?': {
 			rz_core_cmd_help(core, help_msg_dL);
