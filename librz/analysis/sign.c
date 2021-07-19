@@ -2489,10 +2489,10 @@ static int match_metrics(RzSignItem *it, void *user) {
 			found = xrefs_from_match(it, &ctx->xrefs_from, sm);
 			break;
 		case RZ_SIGN_TYPES:
-			found = vars_match(it, &ctx->vars, sm);
+			found = types_match(it, &ctx->types, sm);
 			break;
 		case RZ_SIGN_VARS:
-			found = types_match(it, &ctx->types, sm);
+			found = vars_match(it, &ctx->vars, sm);
 			break;
 		default:
 			eprintf("Invalid type: %c\n", type);
