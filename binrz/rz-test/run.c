@@ -31,10 +31,14 @@ static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[
 	if (r == RZ_SUBPROCESS_TIMEDOUT) {
 		rz_subprocess_kill(proc);
 	}
-	RzSubprocessOutput *out = remove_cr(rz_subprocess_drain(proc));
+	RzSubprocessOutput *out = rz_subprocess_drain(proc);
 	if (out) {
 		out->timeout = r == RZ_SUBPROCESS_TIMEDOUT;
 	}
+#if __WINDOWS__
+	out->out = remove_cr(out->out);
+	out->err = remove_cr(out->err);
+#endif
 	rz_subprocess_free(proc);
 	return out;
 }
