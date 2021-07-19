@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#include <rz_cons.h>
 #include "minunit.h"
 
 #define UT_TIMEOUT 100000000
