@@ -11,7 +11,7 @@ static bool test_rzpipe(void) {
 	RzPipe *r = rzpipe_open(RIZIN_BUILD_PATH " -q0 =");
 	mu_assert("rzpipe can spawn", r);
 	char *hello = rzpipe_cmd(r, "?e hello world");
-	mu_assert_streq(hello, "hello world\n", "rzpipe hello world");
+	mu_assert_streq(hello, "[0x00000000]> hello world\n", "rzpipe hello world");
 	free(hello);
 	rzpipe_close(r);
 #else
