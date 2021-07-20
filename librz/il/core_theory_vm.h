@@ -17,6 +17,22 @@ typedef struct rz_il_vm_t *RzILVM;
 typedef void (*RzILOpHandler)(RzILVM vm, RzILOp op);
 typedef void (*RzILVmHook)(RzILVM vm, RzILOp op);
 
+typedef int (*RzAnalysisRzilHookRegWriteCB)(RzILVM vm, const char *name, ut64 *val);
+typedef struct rz_analysis_rzil_callbacks_t {
+        void *user;
+        /* callbacks */
+        int (*hook_flag_read)(RzILVM vm, const char *flag, ut64 *num);
+        int (*hook_command)(RzILVM vm, const char *op);
+        int (*hook_mem_read)(RzILVM vm, ut64 addr, ut8 *buf, int len);
+        int (*mem_read)(RzILVM vm, ut64 addr, ut8 *buf, int len);
+        int (*hook_mem_write)(RzILVM vm, ut64 addr, const ut8 *buf, int len);
+        int (*mem_write)(RzILVM vm, ut64 addr, const ut8 *buf, int len);
+        int (*hook_reg_read)(RzILVM vm, const char *name, ut64 *res, int *size);
+        int (*reg_read)(RzILVM vm, const char *name, ut64 *res, int *size);
+        RzAnalysisRzilHookRegWriteCB hook_reg_write;
+        int (*reg_write)(RzILVM vm, const char *name, ut64 val);
+} RzAnalysisRzilCallbacks;
+
 // Main structure of VM
 struct rz_il_vm_t {
 	// record the Var and Val in VM
@@ -51,6 +67,10 @@ struct rz_il_vm_t {
 
 	// locate position for debug
 	int easy_debug;
+
+	// RzILAnalysis Related
+        RzAnalysisRzilCallbacks cb;
+	Sdb *stats;
 };
 
 // VM operations about Variable and Value
