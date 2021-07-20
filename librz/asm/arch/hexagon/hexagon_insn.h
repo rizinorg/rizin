@@ -1,4 +1,5 @@
-// SPDX-FileCopyrightText: 2018-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+//
 // SPDX-License-Identifier: LGPL-3.0-only
 
 //========================================

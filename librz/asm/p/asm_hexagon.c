@@ -1,5 +1,11 @@
-// SPDX-FileCopyrightText: 2018-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+//
 // SPDX-License-Identifier: LGPL-3.0-only
+
+//========================================
+// The following code is generated.
+// Do not edit. Repository of code generator:
+// https://github.com/rizinorg/rz-hexagon
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -8,11 +14,11 @@
 #include "hexagon.h"
 #include "hexagon_insn.h"
 
-static int disassemble (RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
-	HexInsn hi = {0};
-	ut32 data = rz_read_le32 (buf);
-	op->size = hexagon_disasm_instruction (data, &hi, (ut32) a->pc);
-	rz_strbuf_set (&op->buf_asm, hi.mnem);
+static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int l) {
+	HexInsn hi = { 0 };
+	ut32 data = rz_read_le32(buf);
+	op->size = hexagon_disasm_instruction(data, &hi, (ut32)a->pc);
+	rz_strbuf_set(&op->buf_asm, hi.mnem);
 	return op->size;
 }
 

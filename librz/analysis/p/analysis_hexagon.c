@@ -1,4 +1,5 @@
-// SPDX-FileCopyrightText: 2018-2021 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-FileCopyrightText: 2021 Rot127 <unisono@quyllur.org>
+//
 // SPDX-License-Identifier: LGPL-3.0-only
 
 //========================================
@@ -16,11 +17,12 @@
 #include "hexagon_analysis.h"
 
 static int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
-	HexInsn hi = {0};;
+	HexInsn hi = { 0 };
+	;
 	ut32 data = 0;
-	memset (op, 0, sizeof (RzAnalysisOp));
-	data = rz_read_le32 (buf);
-	int size = hexagon_disasm_instruction (data, &hi, (ut32) addr);
+	memset(op, 0, sizeof(RzAnalysisOp));
+	data = rz_read_le32(buf);
+	int size = hexagon_disasm_instruction(data, &hi, (ut32)addr);
 	op->size = size;
 	if (size <= 0) {
 		return size;
@@ -29,11 +31,12 @@ static int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, cons
 	op->addr = addr;
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;
-	return hexagon_analysis_instruction (&hi, op);
+	return hexagon_analysis_instruction(&hi, op);
 }
 
 static bool set_reg_profile(RzAnalysis *analysis) {
-	const char *p =		
+	const char *p =
+
 		"=PC	pc\n"
 		"=SP	r29\n"
 		"=BP	r30\n"
@@ -51,7 +54,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"=R0	r0\n"
 		"=R1	r1\n"
 		"=R2	r1:0\n"
-		
+
 		"gpr	lc0	.32	0	0\n"
 		"gpr	sa0	.32	4	0\n"
 		"gpr	lc1	.32	8	0\n"
@@ -74,7 +77,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	m0	.32	76	0\n"
 		"gpr	m1	.32	80	0\n"
 		"gpr	usr	.32	84	0\n"
-		
+
 		"gpr	c1:0	.64	88	0\n"
 		"gpr	c3:2	.64	96	0\n"
 		"gpr	c5:4	.64	104	0\n"
@@ -86,7 +89,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	c17:16	.64	152	0\n"
 		"gpr	c19:18	.64	160	0\n"
 		"gpr	c31:30	.64	168	0\n"
-		
+
 		"gpr	r1:0	.64	176	0\n"
 		"gpr	r3:2	.64	184	0\n"
 		"gpr	r5:4	.64	192	0\n"
@@ -103,7 +106,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	r11:10	.64	280	0\n"
 		"gpr	r29:28	.64	288	0\n"
 		"gpr	r31:30	.64	296	0\n"
-		
+
 		"gpr	gelr	.32	304	0\n"
 		"gpr	gsr	.32	308	0\n"
 		"gpr	gosp	.32	312	0\n"
@@ -136,7 +139,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	gpmucnt3	.32	420	0\n"
 		"gpr	g30	.32	424	0\n"
 		"gpr	g31	.32	428	0\n"
-		
+
 		"gpr	g1:0	.64	432	0\n"
 		"gpr	g3:2	.64	440	0\n"
 		"gpr	g5:4	.64	448	0\n"
@@ -153,12 +156,12 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	g27:26	.64	536	0\n"
 		"gpr	g29:28	.64	544	0\n"
 		"gpr	g31:30	.64	552	0\n"
-		
+
 		"gpr	q0	.128	560	0\n"
 		"gpr	q1	.128	576	0\n"
 		"gpr	q2	.128	592	0\n"
 		"gpr	q3	.128	608	0\n"
-		
+
 		"gpr	v3:0	.4096	624	0\n"
 		"gpr	v7:4	.4096	1136	0\n"
 		"gpr	v11:8	.4096	1648	0\n"
@@ -167,7 +170,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	v23:20	.4096	3184	0\n"
 		"gpr	v27:24	.4096	3696	0\n"
 		"gpr	v31:28	.4096	4208	0\n"
-		
+
 		"gpr	v0	.1024	4720	0\n"
 		"gpr	v1	.1024	4848	0\n"
 		"gpr	v2	.1024	4976	0\n"
@@ -200,7 +203,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	v29	.1024	8432	0\n"
 		"gpr	v30	.1024	8560	0\n"
 		"gpr	v31	.1024	8688	0\n"
-		
+
 		"gpr	v1:0	.2048	8816	0\n"
 		"gpr	v3:2	.2048	9072	0\n"
 		"gpr	v5:4	.2048	9328	0\n"
@@ -217,7 +220,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	v27:26	.2048	12144	0\n"
 		"gpr	v29:28	.2048	12400	0\n"
 		"gpr	v31:30	.2048	12656	0\n"
-		
+
 		"gpr	r0	.32	12912	0\n"
 		"gpr	r1	.32	12916	0\n"
 		"gpr	r2	.32	12920	0\n"
@@ -250,14 +253,14 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	r29	.32	13028	0\n"
 		"gpr	r30	.32	13032	0\n"
 		"gpr	r31	.32	13036	0\n"
-		
+
 		"gpr	p0	.32	13040	0\n"
 		"gpr	p1	.32	13044	0\n"
 		"gpr	p2	.32	13048	0\n"
 		"gpr	p3	.32	13052	0\n";
-
 	return rz_reg_set_profile_string(analysis->reg, p);
 }
+
 RzAnalysisPlugin rz_analysis_plugin_hexagon = {
 	.name = "hexagon",
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
@@ -276,4 +279,3 @@ RZ_API RzLibStruct rizin_plugin = {
 	.version = RZ_VERSION
 };
 #endif
-
