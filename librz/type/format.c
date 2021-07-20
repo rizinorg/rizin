@@ -2815,13 +2815,14 @@ static void base_type_to_format_no_unfold(const RzTypeDB *typedb, RZ_NONNULL RzB
 	}
 	case RZ_BASE_TYPE_KIND_TYPEDEF: {
 		// It might go recursively to find all types behind the alias
-		const char *fmt = rz_type_as_format(typedb, type->type);
+		char *fmt = rz_type_as_format(typedb, type->type);
 		if (fmt) {
 			rz_strbuf_append(format, fmt);
 			rz_strbuf_appendf(fields, "%s ", identifier);
 		} else {
 			type_to_format_pair(typedb, format, fields, identifier, type->type);
 		}
+		free(fmt);
 		break;
 	}
 	case RZ_BASE_TYPE_KIND_ATOMIC: {
@@ -2883,13 +2884,14 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 						base_type_to_format_no_unfold(typedb, btyp, memb->name, format, fields);
 					}
 				} else {
-					const char *membfmt = rz_type_as_format(typedb, memb->type);
+					char *membfmt = rz_type_as_format(typedb, memb->type);
 					rz_strbuf_append(format, membfmt);
 					if (!rz_type_is_atomic(typedb, memb->type)) {
 						rz_strbuf_appendf(fields, "(%s)%s ", membtype, memb->name);
 					} else {
 						rz_strbuf_appendf(fields, "%s ", memb->name);
 					}
+					free(membfmt);
 				}
 			}
 		}
