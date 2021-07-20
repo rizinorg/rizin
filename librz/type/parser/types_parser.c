@@ -90,7 +90,7 @@ int parse_primitive_type(CParserState *state, TSNode node, const char *text, Par
 		node_malformed_error(state, node, text, "not primitive type");
 		return -1;
 	}
-	const char *real_type = ts_node_sub_string(node, text);
+	char *real_type = ts_node_sub_string(node, text);
 	if (!real_type) {
 		node_malformed_error(state, node, text, "primitive type");
 		parser_error(state, "Primitive type name cannot be NULL\n");
