@@ -154,16 +154,19 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 		node_malformed_error(state, node, text, "just a type name");
 		return -1;
 	}
+	int ret = -1;
 	const char *real_type = ts_node_sub_string(node, text);
 	// At first we search if the type is already presented in the state and is a primitive one
 	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched type: \"%s\"\n", real_type);
-		return 0;
+		ret = 0;
+		goto exit;
 	}
 	// After that we search if the type is already presented in the state and is a type alias
 	if ((*tpair = c_parser_get_typedef(state, real_type))) {
 		parser_debug(state, "Fetched type: \"%s\"\n", real_type);
-		return 0;
+		ret = 0;
+		goto exit;
 	}
 	// Then we check if the type is already forward-defined
 	if (c_parser_base_type_is_forward_definition(state, real_type)) {
@@ -171,23 +174,27 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 		*tpair = c_parser_new_unspecified_naked_type(state, real_type, is_const);
 		if (!*tpair) {
 			parser_error(state, "Error forming naked RzType pair out of simple forward-looking type: \"%s\"\n", real_type);
-			return -1;
+			goto exit;
 		}
-		return 0;
+		ret = 0;
+		goto exit;
 	}
 	// If not - we form both RzType and RzBaseType to store in the Types database
 	// as a forward-looking definition
 	*tpair = c_parser_new_primitive_type(state, real_type, is_const);
 	if (!*tpair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of simple forward-looking type\n");
-		return -1;
+		goto exit;
 	}
 	// Do allow forward-looking definitions we just add the type into the forward hashtable
 	if (c_parser_forward_definition_store(state, real_type)) {
 		parser_debug(state, "Added forward definition of type: \"%s\"\n", real_type);
-		return 0;
+		ret = 0;
 	}
-	return -1;
+
+exit:
+	free(real_type);
+	return ret;
 }
 
 // Parses parameter declarations - they are part of the parameter list, e.g.

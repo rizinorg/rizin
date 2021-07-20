@@ -291,17 +291,16 @@ static TypeFormatPair *get_atomic_type(RzTypeDB *typedb, Sdb *sdb, const char *s
 	ttype->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 	base_type->type = ttype;
 
-	RzStrBuf key;
+	char key[SDB_MAX_KEY + 1];
 	base_type->name = strdup(sname);
-	base_type->size = sdb_num_get(sdb, rz_strbuf_initf(&key, "type.%s.size", sname), 0);
+	base_type->size = sdb_num_get(sdb, rz_strf(key, "type.%s.size", sname), 0);
 	RzTypeTypeclass typeclass = RZ_TYPE_TYPECLASS_NONE;
-	const char *tclass = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s.typeclass", sname), 0);
+	const char *tclass = sdb_const_get(sdb, rz_strf(key, "type.%s.typeclass", sname), 0);
 	if (tclass) {
 		typeclass = rz_type_typeclass_from_string(tclass);
 	}
 	set_base_type_typeclass(base_type, typeclass);
-	const char *format = sdb_get(sdb, rz_strbuf_initf(&key, "type.%s", sname), 0);
-	rz_strbuf_fini(&key);
+	const char *format = sdb_const_get(sdb, rz_strf(key, "type.%s", sname), 0);
 
 	TypeFormatPair *tpair = RZ_NEW0(TypeFormatPair);
 	tpair->type = base_type;
@@ -333,15 +332,20 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 			tpair = get_atomic_type(typedb, sdb, sdbkv_key(kv));
 		}
 		if (tpair && tpair->type) {
-			ht_pp_insert(typedb->types, tpair->type->name, tpair->type);
+			ht_pp_update(typedb->types, tpair->type->name, tpair->type);
 			// If the SDB provided the preferred type format then we store it
 			char *format = tpair->format ? tpair->format : NULL;
 			// Format is not always defined, e.g. for types like "void" or anonymous types
 			if (format) {
-				ht_pp_insert(typedb->formats, tpair->type->name, format);
+				ht_pp_update(typedb->formats, tpair->type->name, format);
 				RZ_LOG_DEBUG("inserting the \"%s\" type & format: \"%s\"\n", tpair->type->name, format);
+			} else {
+				ht_pp_delete(typedb->formats, tpair->type->name);
 			}
+		} else if (tpair) {
+			free(tpair->format);
 		}
+		free(tpair);
 	}
 	return true;
 }

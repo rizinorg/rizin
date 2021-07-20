@@ -10,14 +10,17 @@
 #include <sdb.h>
 
 static void types_ht_free(HtPPKv *kv) {
+	free(kv->key);
 	rz_type_base_type_free(kv->value);
 }
 
 static void formats_ht_free(HtPPKv *kv) {
+	free(kv->key);
 	free(kv->value);
 }
 
 static void callables_ht_free(HtPPKv *kv) {
+	free(kv->key);
 	rz_type_callable_free(kv->value);
 }
 
