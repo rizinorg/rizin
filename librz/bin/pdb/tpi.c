@@ -1239,7 +1239,7 @@ static void get_onemethod_name_len(void *type, int *res_len) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ONEMETHOD *lf_onemethod = (SLF_ONEMETHOD *)t->type_info;
 
-	*res_len = lf_onemethod->val.str_data.size;
+	*res_len = lf_onemethod->name.size;
 }
 
 static void get_enum_name_len(void *type, int *res_len) {
@@ -1316,7 +1316,7 @@ static void get_onemethod_name(void *type, char **name) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ONEMETHOD *lf = (SLF_ONEMETHOD *)t->type_info;
 
-	*name = lf->val.str_data.name;
+	*name = lf->name.name;
 }
 
 static void get_method_name(void *type, char **name) {
@@ -1379,7 +1379,7 @@ static void get_onemethod_val(void *type, ut64 *res) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ONEMETHOD *lf = (SLF_ONEMETHOD *)t->type_info;
 
-	*res = lf->val.val;
+	*res = lf->offset_in_vtable;
 }
 
 static void get_member_val(void *type, ut64 *res) {
@@ -1510,7 +1510,7 @@ static void free_lf_union(void *type) {
 static void free_lf_onemethod(void *type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ONEMETHOD *lf_onemethod = (SLF_ONEMETHOD *)t->type_info;
-	free(lf_onemethod->val.str_data.name);
+	free(lf_onemethod->name.name);
 }
 
 static void free_lf_bclass(void *type) {
@@ -2224,9 +2224,6 @@ static int parse_lf_member(SLF_MEMBER *lf_member, uint8_t *leaf_data, unsigned i
 static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	int read_bytes_before = *read_bytes, tmp_before_read_bytes = 0;
 
-	lf_onemethod->val.str_data.name = 0;
-	lf_onemethod->val.val = 0;
-
 	READ2(*read_bytes, len, lf_onemethod->fldattr.fldattr, leaf_data, ut16);
 	READ4(*read_bytes, len, lf_onemethod->index, leaf_data, ut32);
 
@@ -2234,11 +2231,11 @@ static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, uint8_t *leaf_data, u
 
 	if ((lf_onemethod->fldattr.bits.mprop == eMTintro) ||
 		(lf_onemethod->fldattr.bits.mprop == eMTpureintro)) {
-		READ4(*read_bytes, len, lf_onemethod->val.val, leaf_data, ut32);
+		READ4(*read_bytes, len, lf_onemethod->offset_in_vtable, leaf_data, ut32);
 	}
 
 	tmp_before_read_bytes = *read_bytes;
-	parse_scstring(&(lf_onemethod->val.str_data), leaf_data, read_bytes, len);
+	parse_scstring(&(lf_onemethod->name), leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_before_read_bytes);
 
 	PEEK_READ1(*read_bytes, len, lf_onemethod->pad, leaf_data, ut8);
@@ -2753,7 +2750,7 @@ static int parse_lf_mfunction(SLF_MFUNCTION *lf_mfunction, uint8_t *leaf_data, u
 	READ4(*read_bytes, len, lf_mfunction->class_type, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_mfunction->this_type, leaf_data, ut32);
 	READ1(*read_bytes, len, lf_mfunction->call_conv, leaf_data, ut8);
-	READ1(*read_bytes, len, lf_mfunction->reserved, leaf_data, ut8);
+	READ1(*read_bytes, len, lf_mfunction->func_attr.funcattr, leaf_data, ut8);
 	READ2(*read_bytes, len, lf_mfunction->parm_count, leaf_data, ut8);
 	READ4(*read_bytes, len, lf_mfunction->arglist, leaf_data, ut32);
 	READ4(*read_bytes, len, lf_mfunction->this_adjust, leaf_data, st32);
@@ -2769,7 +2766,7 @@ static int parse_lf_procedure(SLF_PROCEDURE *lf_procedure, uint8_t *leaf_data, u
 
 	READ4(*read_bytes, len, lf_procedure->return_type, leaf_data, ut32);
 	READ1(*read_bytes, len, lf_procedure->call_conv, leaf_data, ut8);
-	READ1(*read_bytes, len, lf_procedure->reserved, leaf_data, ut8);
+	READ1(*read_bytes, len, lf_procedure->func_attr.funcattr, leaf_data, ut8);
 	READ2(*read_bytes, len, lf_procedure->parm_count, leaf_data, ut16);
 	READ4(*read_bytes, len, lf_procedure->arg_list, leaf_data, ut32);
 

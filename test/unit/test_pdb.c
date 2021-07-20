@@ -675,7 +675,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			mu_assert_streq(name, "type_info", "wrong class name");
 			RzList *members;
 			type_info->get_members(type_info, &members);
-			mu_assert_eq(members->length, 0, "wrong class member count");
+			mu_assert_eq(members->length, 12, "wrong class member count");
 			SType *stype = NULL;
 			int result = type_info->get_vshape(type_info, (void **)&stype);
 			mu_assert_eq(result || stype, 1, "wrong class vshape");

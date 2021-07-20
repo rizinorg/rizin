@@ -618,11 +618,21 @@ typedef union {
 	ut16 fldattr;
 } UCV_fldattr;
 
+typedef union {
+	struct CV_funcattr {
+		unsigned char cxxreturnudt : 1; // true if C++ style ReturnUDT
+		unsigned char ctor : 1; // true if func is an instance constructor
+		unsigned char ctorvbase : 1; // true if func is an instance constructor of a class with virtual bases
+		unsigned char unused : 5; // unused
+	} bits;
+	ut16 funcattr;
+} UCV_funcattr;
+
 RZ_PACKED(
 	typedef struct {
 		ut16 return_type;
 		ECV_CALL call_conv;
-		ut8 reserved;
+		UCV_funcattr func_attr;
 		ut16 parm_count;
 		ut32 arg_list;
 		ut8 pad;
@@ -635,7 +645,7 @@ RZ_PACKED(
 		ut32 class_type;
 		ut32 this_type;
 		ECV_CALL call_conv; // 1 byte
-		ut8 reserved;
+		UCV_funcattr func_attr;
 		ut16 parm_count;
 		ut32 arglist;
 		st32 this_adjust;
@@ -923,16 +933,10 @@ SLF_MEMBER;
 
 RZ_PACKED(
 	typedef struct {
-		ut32 val;
-		SCString str_data;
-	})
-SLF_ONEMETHOD_VAL;
-
-RZ_PACKED(
-	typedef struct {
 		UCV_fldattr fldattr;
 		ut32 index;
-		SLF_ONEMETHOD_VAL val;
+		ut32 offset_in_vtable;
+		SCString name;
 		ut8 pad;
 	})
 SLF_ONEMETHOD;
