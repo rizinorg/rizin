@@ -1183,19 +1183,6 @@ RZ_PACKED(
 		get_value_name_len get_name_len;
 		get_member_list get_members;
 		get_arg_type_ get_arg_type;
-		get_element_type_ get_element_type;
-		get_index_type_ get_index_type;
-		get_base_type_ get_base_type;
-		get_derived_ get_derived;
-		get_vshape_ get_vshape;
-		get_utype_ get_utype;
-		get_return_type_ get_return_type;
-		get_class_type_ get_class_type;
-		get_this_type_ get_this_type;
-		get_arglist_ get_arglist;
-		get_index_ get_index;
-		get_mlist_ get_mlist;
-		get_modified_type_ get_modified_type;
 		get_value is_fwdref;
 		get_print_type_ get_print_type;
 	})

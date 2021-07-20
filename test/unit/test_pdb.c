@@ -7,6 +7,7 @@
 #include <rz_core.h>
 #include <rz_bin_dwarf.h>
 #include "../../librz/bin/pdb/types.h"
+#include "../../librz/bin/pdb/tpi.h"
 #include "test_types.h"
 
 #define MODE 2
@@ -64,10 +65,10 @@ bool test_pdb_tpi_cpp(void) {
 		if (type->tpi_idx == 0x1028) {
 			mu_assert_eq(type_info->leaf_type, eLF_PROCEDURE, "Incorrect data type");
 			SType *arglist;
-			type_info->get_arglist(type_info, (void **)&arglist);
+			arglist = get_stype_by_index(((SLF_PROCEDURE *)(type_info->type_info))->arg_list);
 			mu_assert_eq(arglist->tpi_idx, 0x1027, "Wrong type index");
 			SType *return_type;
-			type_info->get_return_type(type_info, (void **)&return_type);
+			return_type = get_stype_by_index(((SLF_PROCEDURE *)(type_info->type_info))->return_type);
 			mu_assert_eq(return_type->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = return_type->type_data.type_info;
 			mu_assert_eq(simple_type->size, 4, "Incorrect return type");
@@ -87,13 +88,13 @@ bool test_pdb_tpi_cpp(void) {
 			char *type;
 			type_info->get_print_type(type_info, &type);
 			SType *dump;
-			type_info->get_index_type(type_info, (void **)&dump);
+			dump = get_stype_by_index(((SLF_ARRAY *)(type_info->type_info))->index_type);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = dump->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_ULONG, "Incorrect return type");
 			mu_assert_eq(simple_type->size, 4, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "uint32_t", "Incorrect return type");
-			type_info->get_element_type(type_info, (void **)&dump);
+			dump = get_stype_by_index(((SLF_ARRAY *)(type_info->type_info))->element_type);
 			mu_assert_eq(dump->tpi_idx, 0x113E, "Wrong element type index");
 			ut64 size;
 			type_info->get_val(type_info, &size);
@@ -105,7 +106,7 @@ bool test_pdb_tpi_cpp(void) {
 			char *name;
 			type_info->get_name(type_info, &name);
 			mu_assert_streq(name, "EXCEPTION_DEBUGGER_ENUM", "wrong enum name");
-			type_info->get_utype(type_info, (void **)&dump);
+			dump = get_stype_by_index(((SLF_ENUM *)(type_info->type_info))->utype);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = dump->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_INT4, "Incorrect return type");
@@ -118,7 +119,7 @@ bool test_pdb_tpi_cpp(void) {
 		} else if (type->tpi_idx == 0x1421) {
 			mu_assert_eq(type_info->leaf_type, eLF_MODIFIER, "Incorrect data type");
 			SType *stype = NULL;
-			type_info->get_modified_type(type_info, (void **)&stype);
+			stype = get_stype_by_index(((SLF_MODIFIER *)(type_info->type_info))->modified_type);
 			mu_assert_eq(stype->tpi_idx, 0x120F, "Incorrect modified type");
 			char *type;
 			type_info->get_print_type(type_info, &type);
@@ -140,10 +141,10 @@ bool test_pdb_tpi_cpp(void) {
 			type_info->get_members(type_info, &members);
 			mu_assert_eq(members->length, 2, "wrong class member count");
 			SType *stype = NULL;
-			int result = type_info->get_vshape(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 0, "wrong class vshape");
-			result = type_info->get_derived(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 0, "wrong class derived");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->vshape);
+			mu_assert_null(stype, "wrong class vshape");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->derived);
+			mu_assert_null(stype, "wrong class derived");
 			//} else if (type->tpi_idx == 0x1062) {
 			//	mu_assert_eq(type_info->leaf_type, eLF_BITFIELD, "Incorrect data type");
 			//	SType *base_type = NULL;
@@ -157,17 +158,15 @@ bool test_pdb_tpi_cpp(void) {
 		} else if (type->tpi_idx == 0x107A) {
 			mu_assert_eq(type_info->leaf_type, eLF_MFUNCTION, "Incorrect data type");
 			SType *type;
-			type_info->get_return_type(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->return_type);
 			mu_assert_eq(type->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = type->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_BOOL08, "Incorrect return type");
 			mu_assert_eq(simple_type->size, 1, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "_Bool", "Incorrect return type");
-			type_info->get_class_type(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->class_type);
 			mu_assert_eq(type->tpi_idx, 0x1079, "incorrect mfunction class type");
-			type_info->get_this_type(type_info, (void **)&type);
-			mu_assert_eq(type, 0, "incorrect mfunction this type");
-			type_info->get_arglist(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->arglist);
 			mu_assert_eq(type->tpi_idx, 0x1027, "incorrect mfunction arglist");
 		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq(type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
@@ -273,10 +272,10 @@ bool test_pdb_tpi_rust(void) {
 		if (type->tpi_idx == 0x101B) {
 			mu_assert_eq(type_info->leaf_type, eLF_PROCEDURE, "Incorrect data type");
 			SType *arglist;
-			type_info->get_arglist(type_info, (void **)&arglist);
+			arglist = get_stype_by_index(((SLF_PROCEDURE *)(type_info->type_info))->arg_list);
 			mu_assert_eq(arglist->tpi_idx, 0x101A, "Wrong type index");
 			SType *return_type;
-			type_info->get_return_type(type_info, (void **)&return_type);
+			return_type = get_stype_by_index(((SLF_PROCEDURE *)(type_info->type_info))->return_type);
 			mu_assert_eq(return_type->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = return_type->type_data.type_info;
 			mu_assert_eq(simple_type->size, 4, "Incorrect return type");
@@ -294,15 +293,13 @@ bool test_pdb_tpi_rust(void) {
 		} else if (type->tpi_idx == 0x114A) {
 			mu_assert_eq(type_info->leaf_type, eLF_ARRAY, "Incorrect data type");
 			SType *dump;
-
-			type_info->get_index_type(type_info, (void **)&dump);
+			dump = get_stype_by_index(((SLF_ARRAY *)(type_info->type_info))->index_type);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = dump->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_UQUAD, "Incorrect return type");
 			mu_assert_eq(simple_type->size, 8, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "uint64_t", "Incorrect return type");
-			type_info->get_element_type(type_info, (void **)&dump);
-
+			dump = get_stype_by_index(((SLF_ARRAY *)(type_info->type_info))->element_type);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			simple_type = dump->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_UCHAR, "Incorrect return type");
@@ -319,7 +316,7 @@ bool test_pdb_tpi_rust(void) {
 			char *name;
 			type_info->get_name(type_info, &name);
 			mu_assert_streq(name, "ISA_AVAILABILITY", "wrong enum name");
-			type_info->get_utype(type_info, (void **)&dump);
+			dump = get_stype_by_index(((SLF_ENUM *)(type_info->type_info))->utype);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = dump->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_INT4, "Incorrect return type");
@@ -332,7 +329,7 @@ bool test_pdb_tpi_rust(void) {
 		} else if (type->tpi_idx == 0x1FB7) {
 			mu_assert_eq(type_info->leaf_type, eLF_MODIFIER, "Incorrect data type");
 			SType *stype = NULL;
-			type_info->get_modified_type(type_info, (void **)&stype);
+			stype = get_stype_by_index(((SLF_MODIFIER *)(type_info->type_info))->modified_type);
 			mu_assert_eq(stype->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect modified type");
 			char *type;
 			type_info->get_print_type(type_info, &type);
@@ -359,10 +356,10 @@ bool test_pdb_tpi_rust(void) {
 			type_info->get_members(type_info, &members);
 			// mu_assert_eq (members->length, 7, "wrong class member count"); // These members (fieldlist) isn't properly parsed?
 			SType *stype = NULL;
-			int result = type_info->get_vshape(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 1, "wrong class vshape");
-			result = type_info->get_derived(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 0, "wrong class derived");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->vshape);
+			mu_assert_notnull(stype, "wrong class vshape");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->derived);
+			mu_assert_null(stype, "wrong class derived");
 			//} else if (type->tpi_idx == 0x1F50) {
 			//	mu_assert_eq(type_info->leaf_type, eLF_BITFIELD, "Incorrect data type");
 			//	SType *base_type = NULL;
@@ -376,17 +373,15 @@ bool test_pdb_tpi_rust(void) {
 		} else if (type->tpi_idx == 0x181C) {
 			mu_assert_eq(type_info->leaf_type, eLF_MFUNCTION, "Incorrect data type");
 			SType *type;
-			type_info->get_return_type(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->return_type);
 			mu_assert_eq(type->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = type->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_VOID, "Incorrect return type");
 			mu_assert_eq(simple_type->size, 0, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "void", "Incorrect return type");
-			type_info->get_class_type(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->class_type);
 			mu_assert_eq(type->tpi_idx, 0x107F, "incorrect mfunction class type");
-			type_info->get_this_type(type_info, (void **)&type);
-			mu_assert_eq(type, 0, "incorrect mfunction this type");
-			type_info->get_arglist(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->arglist);
 			mu_assert_eq(type->tpi_idx, 0x1000, "incorrect mfunction arglist");
 		} else if (type->tpi_idx == 0x13BF) {
 			mu_assert_eq(type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
@@ -558,10 +553,10 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 		if (type->tpi_idx == 0x1A5F) {
 			mu_assert_eq(type_info->leaf_type, eLF_PROCEDURE, "Incorrect data type");
 			SType *arglist;
-			type_info->get_arglist(type_info, (void **)&arglist);
+			arglist = get_stype_by_index(((SLF_PROCEDURE *)(type_info->type_info))->arg_list);
 			mu_assert_eq(arglist->tpi_idx, 0x1A5E, "Wrong type index");
 			SType *return_type;
-			type_info->get_return_type(type_info, (void **)&return_type);
+			return_type = get_stype_by_index(((SLF_PROCEDURE *)(type_info->type_info))->return_type);
 			mu_assert_eq(return_type->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = return_type->type_data.type_info;
 			mu_assert_eq(simple_type->size, 0, "Incorrect return type");
@@ -581,13 +576,13 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			char *type;
 			type_info->get_print_type(type_info, &type);
 			SType *dump;
-			type_info->get_index_type(type_info, (void **)&dump);
+			dump = get_stype_by_index(((SLF_ARRAY *)(type_info->type_info))->index_type);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = dump->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_ULONG, "Incorrect return type");
 			mu_assert_eq(simple_type->size, 4, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "uint32_t", "Incorrect return type");
-			type_info->get_element_type(type_info, (void **)&dump);
+			dump = get_stype_by_index(((SLF_ARRAY *)(type_info->type_info))->element_type);
 			mu_assert_eq(dump->tpi_idx, 0, "Wrong element type index");
 			ut64 size;
 			type_info->get_val(type_info, &size);
@@ -599,7 +594,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			char *name;
 			type_info->get_name(type_info, &name);
 			mu_assert_streq(name, "ReplacesCorHdrNumericDefines", "wrong enum name");
-			type_info->get_utype(type_info, (void **)&dump);
+			dump = get_stype_by_index(((SLF_ENUM *)(type_info->type_info))->utype);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = dump->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_INT4, "Incorrect return type");
@@ -612,7 +607,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 		} else if (type->tpi_idx == 0x2163) {
 			mu_assert_eq(type_info->leaf_type, eLF_MODIFIER, "Incorrect data type");
 			SType *stype = NULL;
-			type_info->get_modified_type(type_info, (void **)&stype);
+			stype = get_stype_by_index(((SLF_MODIFIER *)(type_info->type_info))->modified_type);
 			mu_assert_eq(stype->tpi_idx, 0, "Incorrect modified type");
 			char *type;
 			type_info->get_print_type(type_info, &type);
@@ -634,10 +629,10 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			type_info->get_members(type_info, &members);
 			mu_assert_eq(members->length, 5, "wrong class member count");
 			SType *stype = NULL;
-			int result = type_info->get_vshape(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 1, "wrong class vshape");
-			result = type_info->get_derived(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 0, "wrong class derived");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->vshape);
+			mu_assert_notnull(stype, "wrong class vshape");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->derived);
+			mu_assert_null(stype, "wrong class derived");
 		} else if (type->tpi_idx == 0x23DC) {
 			mu_assert_eq(type_info->leaf_type, eLF_CLASS, "Incorrect data type");
 			char *name;
@@ -664,10 +659,10 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 				i++;
 			}
 			SType *stype = NULL;
-			int result = type_info->get_vshape(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 1, "wrong class vshape");
-			result = type_info->get_derived(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 0, "wrong class derived");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->vshape);
+			mu_assert_eq(stype->tpi_idx, 0x11E8, "wrong class vshape");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->derived);
+			mu_assert_null(stype, "wrong class derived");
 		} else if (type->tpi_idx == 0x2299) {
 			mu_assert_eq(type_info->leaf_type, eLF_CLASS_19, "Incorrect data type");
 			char *name;
@@ -677,14 +672,15 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			type_info->get_members(type_info, &members);
 			mu_assert_eq(members->length, 12, "wrong class member count");
 			SType *stype = NULL;
-			int result = type_info->get_vshape(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 1, "wrong class vshape");
-			result = type_info->get_derived(type_info, (void **)&stype);
-			mu_assert_eq(result || stype, 0, "wrong class derived");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->vshape);
+			mu_assert_notnull(stype, "wrong class vshape");
+			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->derived);
+			mu_assert_null(stype, "wrong class derived");
 		} else if (type->tpi_idx == 0x2147) {
 			mu_assert_eq(type_info->leaf_type, eLF_BITFIELD, "Incorrect data type");
 			SType *base_type = NULL;
-			type_info->get_base_type(type_info, (void **)&base_type);
+			base_type = get_stype_by_index(((SLF_BITFIELD *)(type_info->type_info))->base_type);
+			mu_assert_notnull(base_type, "Bitfield base type is NULL");
 			char *type;
 			type_info->get_print_type(type_info, &type);
 			mu_assert_streq(type, "uint32_t /*bitfield:16*/", "Incorrect bitfield print type");
@@ -694,17 +690,17 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 		} else if (type->tpi_idx == 0x224F) {
 			mu_assert_eq(type_info->leaf_type, eLF_MFUNCTION, "Incorrect data type");
 			SType *type;
-			type_info->get_return_type(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->return_type);
 			mu_assert_eq(type->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
 			SLF_SIMPLE_TYPE *simple_type = type->type_data.type_info;
 			mu_assert_eq(simple_type->simple_type, eT_VOID, "Incorrect return type");
 			mu_assert_eq(simple_type->size, 0, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "void", "Incorrect return type");
-			type_info->get_class_type(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->class_type);
 			mu_assert_eq(type->tpi_idx, 0x2247, "incorrect mfunction class type");
-			type_info->get_this_type(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->this_type);
 			mu_assert_eq(type->tpi_idx, 0x2248, "incorrect mfunction this type");
-			type_info->get_arglist(type_info, (void **)&type);
+			type = get_stype_by_index(((SLF_MFUNCTION *)(type_info->type_info))->arglist);
 			mu_assert_eq(type->tpi_idx, 0x224E, "incorrect mfunction arglist");
 		} else if (type->tpi_idx == 0x239A) {
 			mu_assert_eq(type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");

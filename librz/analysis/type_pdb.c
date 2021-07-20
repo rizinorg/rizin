@@ -7,6 +7,7 @@
 #include <rz_analysis.h>
 
 #include "../bin/pdb/types.h"
+#include "../bin/pdb/tpi.h"
 
 static bool is_parsable_type(const ELeafType type) {
 	return (type == eLF_STRUCTURE ||
@@ -109,11 +110,10 @@ cleanup:
  */
 static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
 	rz_return_if_fail(typedb && type && types);
-	STypeInfo *type_info = &type->type_data;
+	STypeInfo *type_data = &type->type_data;
 	// assert all member functions we need info from
-	rz_return_if_fail(type_info->get_members &&
-		type_info->get_name &&
-		type_info->get_utype);
+	rz_return_if_fail(type_data->get_members &&
+		type_data->get_name);
 
 	RzBaseType *base_type = rz_type_base_type_new(RZ_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
@@ -121,22 +121,22 @@ static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
 	}
 
 	char *name = NULL;
-	type_info->get_name(type_info, &name);
+	type_data->get_name(type_data, &name);
 	bool to_free_name = false;
 	if (!name) {
 		name = create_type_name_from_offset(type->tpi_idx);
 		to_free_name = true;
 	}
-	type_info->get_utype(type_info, (void **)&type);
+	SType *utype = get_stype_by_index(((SLF_ENUM *)(type_data->type_info))->utype);
 	int size = 0;
 	char *type_name = NULL;
-	if (type && type->type_data.type_info) {
-		SLF_SIMPLE_TYPE *base_type = type->type_data.type_info;
+	if (utype && utype->type_data.type_info) {
+		SLF_SIMPLE_TYPE *base_type = utype->type_data.type_info;
 		type_name = base_type->type;
 		size = base_type->size;
 	}
 	RzList *members;
-	type_info->get_members(type_info, &members);
+	type_data->get_members(type_data, &members);
 
 	RzListIter *it = rz_list_iterator(members);
 	while (rz_list_iter_next(it)) {

@@ -817,10 +817,22 @@ static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf 
 	SType *under_type = NULL;
 	if (type_info->leaf_type == eLF_MEMBER ||
 		type_info->leaf_type == eLF_NESTTYPE) {
-		if (type_info->get_index) {
-			type_info->get_index(type_info, (void **)&under_type);
-		} else {
+		switch (type_info->leaf_type) {
+		case eLF_NESTTYPE:
+			under_type = get_stype_by_index(((SLF_NESTTYPE *)(type_info->type_info))->index);
+			break;
+		case eLF_MEMBER:
+			under_type = get_stype_by_index(((SLF_MEMBER *)(type_info->type_info))->index);
+			break;
+		case eLF_ONEMETHOD:
+			under_type = get_stype_by_index(((SLF_ONEMETHOD *)(type_info->type_info))->index);
+			break;
+		case eLF_VFUNCTAB:
+			under_type = get_stype_by_index(((SLF_VFUNCTAB *)(type_info->type_info))->index);
+			break;
+		default:
 			rz_warn_if_reached();
+			break;
 		}
 	} else if (type_info->leaf_type == eLF_METHOD ||
 		type_info->leaf_type == eLF_ONEMETHOD) {
@@ -930,13 +942,11 @@ static inline bool is_printable_type(ELeafType type) {
  */
 static char *get_enum_base_type_name(STypeInfo *type_info) {
 	char *base_type_name = NULL;
-	if (type_info->get_utype) {
-		SType *base_type = NULL;
-		type_info->get_utype(type_info, (void **)&base_type);
-		if (base_type && base_type->type_data.leaf_type == eLF_SIMPLE_TYPE) {
-			SLF_SIMPLE_TYPE *tmp = base_type->type_data.type_info;
-			base_type_name = tmp->type;
-		}
+	SType *base_type = NULL;
+	base_type = get_stype_by_index(((SLF_ENUM *)(type_info->type_info))->utype);
+	if (base_type && base_type->type_data.leaf_type == eLF_SIMPLE_TYPE) {
+		SLF_SIMPLE_TYPE *tmp = base_type->type_data.type_info;
+		base_type_name = tmp->type;
 	}
 	if (!base_type_name) {
 		base_type_name = "unknown_t";
