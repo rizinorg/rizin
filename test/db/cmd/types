@@ -1197,6 +1197,33 @@ struct with_array {
 EOF
 RUN
 
+NAME=tsl test with pointers
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+td "struct foo { void *v1; void *v2; };"
+tsl foo
+e asm.bits=32
+td "struct foo { void *v1; void *v2; };"
+tsl foo
+e asm.bits=16
+td "struct foo { void *v1; void *v2; };"
+tsl foo
+EOF
+EXPECT=<<EOF
+struct foo:
+	v1: void * (size = 8, offset = 0)
+	v2: void * (size = 8, offset = 8)
+struct foo:
+	v1: void * (size = 4, offset = 0)
+	v2: void * (size = 4, offset = 4)
+struct foo:
+	v1: void * (size = 2, offset = 0)
+	v2: void * (size = 2, offset = 2)
+EOF
+RUN
+
 NAME=tec test
 FILE==
 CMDS=<<EOF
