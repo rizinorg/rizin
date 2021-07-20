@@ -13,7 +13,6 @@ rz_il_sources = [
    'core_theory_opcodes.c',
    'core_theory_vm.c',
    'internal_ct_cmd.c',
-   'rzil_stats.c'
 ]
 
 rz_il_inc = [

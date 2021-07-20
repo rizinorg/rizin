@@ -971,6 +971,7 @@ typedef struct rz_analysis_ref_char {
 #define ESIL_INTERNAL_PREFIX '$'
 #define ESIL_STACK_NAME      "esil.ram"
 #define ESIL                 struct rz_analysis_esil_t
+#define ANAL_RZIL            struct rz_analysis_rzil_t
 
 typedef struct rz_analysis_esil_source_t {
 	ut32 id;
@@ -1086,6 +1087,45 @@ typedef struct rz_analysis_esil_t {
 	void *user;
 	int stack_fd; // ahem, let's not do this
 } RzAnalysisEsil;
+
+/* Alias RegChange and MemChange */
+typedef RzAnalysisEsilRegChange RzAnalysisRzilRegChange;
+typedef RzAnalysisEsilMemChange RzAnalysisRzilMemChange;
+
+/* Alias esil strace */
+typedef RzAnalysisEsilTrace RzAnalysisRzilTrace;
+
+typedef int (*RzAnalysisRzilHookRegWriteCB)(ANAL_RZIL *rzil, const char *name, ut64 *val);
+typedef struct rz_analysis_rzil_callbacks_t {
+        void *user;
+        /* callbacks */
+        int (*hook_flag_read)(ANAL_RZIL *rzil, const char *flag, ut64 *num);
+        int (*hook_command)(ANAL_RZIL *rzil, const char *op);
+        int (*hook_mem_read)(ANAL_RZIL *rzil, ut64 addr, ut8 *buf, int len);
+        int (*mem_read)(ANAL_RZIL *rzil, ut64 addr, ut8 *buf, int len);
+        int (*hook_mem_write)(ANAL_RZIL *rzil, ut64 addr, const ut8 *buf, int len);
+        int (*mem_write)(ANAL_RZIL *rzil, ut64 addr, const ut8 *buf, int len);
+        int (*hook_reg_read)(ANAL_RZIL *rzil, const char *name, ut64 *res, int *size);
+        int (*reg_read)(ANAL_RZIL *rzil, const char *name, ut64 *res, int *size);
+        RzAnalysisRzilHookRegWriteCB hook_reg_write;
+        int (*reg_write)(ANAL_RZIL *rzil, const char *name, ut64 val);
+} RzAnalysisRzilCallbacks;
+
+typedef struct rz_analysis_rzil_t {
+        RzILVM vm;
+	RzAnalysis *analysis;
+	RzAnalysisRzilTrace *trace;
+
+        RzAnalysisRzilCallbacks cb;
+        Sdb *stats;
+
+	// TODO : some variables
+	//      may not be used in new rz il
+	ut64 stack_addr;
+	ut32 stack_size;
+
+	int verbose;
+} RzAnalysisRzil;
 
 #undef ESIL
 
@@ -1504,6 +1544,19 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op);
 RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil);
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx);
 RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
+
+/* rzil : stats and trace */
+/* stats */
+RZ_API void rz_analysis_rzil_mem_ro(RzAnalysisRzil *rzil, int mem_readonly);
+RZ_API void rz_analysis_rzil_stats(RzAnalysisRzil *rzil, int enable);
+
+/* trace */
+RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysisRzil *rzil);
+RZ_API void rz_analysis_rzil_trace_free(RzAnalysisRzilTrace *trace);
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysisRzil *rzil, RzAnalysisOp *op);
+RZ_API void rz_analysis_rzil_trace_list(RzAnalysisRzil *rzil);
+RZ_API void rz_analysis_rzil_trace_show(RzAnalysisRzil *rzil, int idx);
+RZ_API void rz_analysis_rzil_trace_restore(RzAnalysisRzil *rzil, int idx);
 
 /* pin */
 RZ_API void rz_analysis_pin_init(RzAnalysis *a);
