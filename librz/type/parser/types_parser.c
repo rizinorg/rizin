@@ -155,7 +155,7 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 		return -1;
 	}
 	int ret = -1;
-	const char *real_type = ts_node_sub_string(node, text);
+	char *real_type = ts_node_sub_string(node, text);
 	// At first we search if the type is already presented in the state and is a primitive one
 	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched type: \"%s\"\n", real_type);
