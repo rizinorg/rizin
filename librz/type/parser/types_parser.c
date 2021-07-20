@@ -1381,7 +1381,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		*identifier = real_ident;
 		result = 0;
 	} else if (!strcmp(node_type, "pointer_declarator")) {
-		const char *real_ident = ts_node_sub_string(node, text);
+		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "pointer declarator: %s\n", real_ident);
 		// It can contain additional children recursively
 		// - "array_declarator"
@@ -1418,7 +1418,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			result = 0;
 		}
 	} else if (!strcmp(node_type, "array_declarator")) {
-		const char *real_ident = ts_node_sub_string(node, text);
+		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "array declarator: %s\n", real_ident);
 
 		// Every array declarator should have at least declarator field
@@ -1466,7 +1466,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			return 0;
 		}
 	} else if (!strcmp(node_type, "function_declarator")) {
-		const char *real_ident = ts_node_sub_string(node, text);
+		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "function declarator: %s\n", real_ident);
 		// It can only contain two nodes:
 		// - declarator

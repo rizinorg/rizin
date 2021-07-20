@@ -56,7 +56,7 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 				return -1;
 			}
 			++path;
-			if (parent->kind != RZ_TYPE_KIND_ARRAY) {
+			if (!parent || parent->kind != RZ_TYPE_KIND_ARRAY) {
 				return -1;
 			}
 			offset += rz_type_db_get_bitsize(typedb, parent) * index;
@@ -182,7 +182,6 @@ RZ_API RZ_OWN RzList /* RzTypePath */ *rz_type_path_by_offset(const RzTypeDB *ty
 		ut64 memb_offset = 0;
 		rz_vector_foreach(&btype->struct_data.members, memb) {
 			if (memb_offset == offset) {
-				RzType *t = rz_type_identifier_of_base_type(typedb, btype, false);
 				RzTypePath *tpath = rz_type_path_new(t, rz_str_newf("%s.%s", btype->name, memb->name));
 				if (tpath) {
 					rz_list_append(list, tpath);

@@ -463,6 +463,8 @@ RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *n
 		if (!callable) {
 			return false;
 		}
+		callable->noret = true;
+		rz_type_func_save(typedb, callable);
 	}
 	return true;
 }

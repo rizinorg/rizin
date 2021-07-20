@@ -44,14 +44,20 @@ RZ_API RzTypeDB *rz_type_db_new() {
 	typedb->target->default_type = strdup("int");
 	typedb->types = ht_pp_new(NULL, types_ht_free, NULL);
 	if (!typedb->types) {
+		free(typedb);
 		return NULL;
 	}
 	typedb->formats = ht_pp_new(NULL, formats_ht_free, NULL);
 	if (!typedb->formats) {
+		free(typedb);
+		ht_pp_free(typedb->types);
 		return NULL;
 	}
 	typedb->callables = ht_pp_new(NULL, callables_ht_free, NULL);
 	if (!typedb->callables) {
+		free(typedb);
+		ht_pp_free(typedb->types);
+		ht_pp_free(typedb->formats);
 		return NULL;
 	}
 	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
@@ -880,6 +886,7 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
+			rz_strbuf_free(buf);
 			return NULL;
 		}
 		// If the structure/union is anonymous, then we put declaration inline,

@@ -761,6 +761,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tp blocksize
+FILE==
+BROKEN=1
+CMDS=<<EOF
+e asm.arch=x86
+wx 790a790a790a790a790a790a790a790a790a
+td "struct foobar{uint32_t a; uint32_t b; uint32_t c; uint32_t d;}"
+b 10
+tp foobar
+b 16
+tp foobar
+EOF
+EXPECT=<<EOF
+ a : 0x00000000 = 175704697
+ b : 0x00000004 = 175704697
+ c : 0x00000008 = 175704697
+ d : 0x0000000c = 175704697
+ a : 0x00000000 = 175704697
+ b : 0x00000004 = 175704697
+ c : 0x00000008 = 175704697
+ d : 0x0000000c = 175704697
+EOF
+RUN
+
 NAME=tpv
 FILE==
 CMDS=<<EOF
@@ -1195,6 +1219,33 @@ struct with_array {
 	char y[50];
 	float z;
 };
+EOF
+RUN
+
+NAME=tsl test with pointers
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+td "struct foo { void *v1; void *v2; };"
+tsl foo
+e asm.bits=32
+td "struct foo { void *v1; void *v2; };"
+tsl foo
+e asm.bits=16
+td "struct foo { void *v1; void *v2; };"
+tsl foo
+EOF
+EXPECT=<<EOF
+struct foo:
+	v1: void * (size = 8, offset = 0)
+	v2: void * (size = 8, offset = 8)
+struct foo:
+	v1: void * (size = 4, offset = 0)
+	v2: void * (size = 4, offset = 4)
+struct foo:
+	v1: void * (size = 2, offset = 0)
+	v2: void * (size = 2, offset = 2)
 EOF
 RUN
 
