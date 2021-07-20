@@ -883,6 +883,7 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
+			rz_strbuf_free(buf);
 			return NULL;
 		}
 		// If the structure/union is anonymous, then we put declaration inline,
