@@ -1149,12 +1149,13 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 		// the declarator itself, not the type, e.g. constant pointer,
 		// not pointer to the constant
 		if (!strcmp(leaf_type, "type_qualifier")) {
-			const char *qualifier = ts_node_sub_string(first_leaf, text);
+			char *qualifier = ts_node_sub_string(first_leaf, text);
 			parser_debug(state, "has qualifier %s\n", qualifier);
 			if (!strcmp(qualifier, "const")) {
 				is_const = true;
 			}
 			has_qualifiers = true;
+			free(qualifier);
 		}
 	}
 
@@ -1227,13 +1228,14 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 		if (ts_node_is_null(array_size)) {
 			type->array.count = 0;
 		} else {
-			const char *real_array_size = ts_node_sub_string(array_size, text);
+			char *real_array_size = ts_node_sub_string(array_size, text);
 			if (!real_array_size) {
 				node_malformed_error(state, array_size, text, "abstract array size");
 				return -1;
 			}
 			int array_sz = rz_num_get(NULL, real_array_size);
 			type->array.count = array_sz;
+			free(real_array_size);
 		}
 		type->array.type = (*tpair)->type;
 		(*tpair)->type = type;
@@ -1336,11 +1338,12 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		}
 		const char *leaf_type = ts_node_type(first_leaf);
 		if (!strcmp(leaf_type, "type_qualifier")) {
-			const char *qualifier = ts_node_sub_string(first_leaf, text);
+			char *qualifier = ts_node_sub_string(first_leaf, text);
 			parser_debug(state, "has qualifier %s\n", qualifier);
 			if (!strcmp(qualifier, "const")) {
 				is_const = true;
 			}
+			free(qualifier);
 		}
 	}
 
@@ -1349,12 +1352,12 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 
 	if (is_identifier(node_type)) {
 		// Identifier, usually the last leaf of the AST tree
-		const char *real_ident = ts_node_sub_string(node, text);
+		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "identifier: %s\n", real_ident);
-		*identifier = strdup(real_ident);
+		*identifier = real_ident;
 		result = 0;
 	} else if (!strcmp(node_type, "pointer_declarator")) {
-		const char *real_ident = ts_node_sub_string(node, text);
+		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "pointer declarator: %s\n", real_ident);
 		// It can contain additional children recursively
 		// - "array_declarator"
@@ -1391,7 +1394,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			result = 0;
 		}
 	} else if (!strcmp(node_type, "array_declarator")) {
-		const char *real_ident = ts_node_sub_string(node, text);
+		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "array declarator: %s\n", real_ident);
 
 		// Every array declarator should have at least declarator field
@@ -1420,13 +1423,14 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			type->array.count = 0;
 		} else {
 			// number_literal node
-			const char *real_array_size = ts_node_sub_string(array_size, text);
+			char *real_array_size = ts_node_sub_string(array_size, text);
 			if (!real_array_size) {
 				node_malformed_error(state, array_size, text, "array size");
 				return -1;
 			}
 			int array_sz = rz_num_get(NULL, real_array_size);
 			type->array.count = array_sz;
+			free(real_array_size);
 		}
 		type->array.type = (*tpair)->type;
 		(*tpair)->type = type;
@@ -1438,7 +1442,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			return 0;
 		}
 	} else if (!strcmp(node_type, "function_declarator")) {
-		const char *real_ident = ts_node_sub_string(node, text);
+		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "function declarator: %s\n", real_ident);
 		// It can only contain two nodes:
 		// - declarator
@@ -1569,12 +1573,13 @@ int parse_type_descriptor_single(CParserState *state, TSNode node, const char *t
 	}
 	const char *leaf_type = ts_node_type(first_leaf);
 	if (!strcmp(leaf_type, "type_qualifier")) {
-		const char *qualifier = ts_node_sub_string(first_leaf, text);
+		char *qualifier = ts_node_sub_string(first_leaf, text);
 		parser_debug(state, "has qualifier \"%s\"\n", qualifier);
 		if (!strcmp(qualifier, "const")) {
 			parser_debug(state, "set const\n");
 			is_const = true;
 		}
+		free(qualifier);
 	}
 
 	TSNode type_node = ts_node_child_by_field_name(node, "type", 4);
@@ -1637,12 +1642,13 @@ int parse_declaration_node(CParserState *state, TSNode node, const char *text, P
 	}
 	const char *leaf_type = ts_node_type(first_leaf);
 	if (!strcmp(leaf_type, "type_qualifier")) {
-		const char *qualifier = ts_node_sub_string(first_leaf, text);
+		char *qualifier = ts_node_sub_string(first_leaf, text);
 		parser_debug(state, "has qualifier \"%s\"\n", qualifier);
 		if (!strcmp(qualifier, "const")) {
 			parser_debug(state, "set const\n");
 			is_const = true;
 		}
+		free(qualifier);
 	}
 
 	TSNode type_node = ts_node_child_by_field_name(node, "type", 4);
