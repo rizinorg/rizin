@@ -909,6 +909,13 @@ SLF_NESTTYPE;
 
 RZ_PACKED(
 	typedef struct {
+		ut16 pad;
+		ut32 index;
+	})
+SLF_VFUNCTAB;
+
+RZ_PACKED(
+	typedef struct {
 		ut16 count;
 		ut32 mlist;
 		SCString name;

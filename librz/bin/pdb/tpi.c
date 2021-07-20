@@ -1095,6 +1095,30 @@ static int get_nesttype_index(void *type, void **ret_type) {
 	return curr_idx;
 }
 
+static int get_vfunctab_index(void *type, void **ret_type) {
+	STypeInfo *t = (STypeInfo *)type;
+	SLF_VFUNCTAB *lf = (SLF_VFUNCTAB *)t->type_info;
+	int curr_idx = lf->index;
+
+	if (is_simple_type(curr_idx)) {
+		STypeInfo base_type = parse_simple_type(curr_idx);
+		SType *base_ret_type = RZ_NEW0(SType);
+		if (!base_ret_type) {
+			*ret_type = 0;
+			return false;
+		}
+		base_ret_type->tpi_idx = 0;
+		base_ret_type->length = 0;
+		base_ret_type->type_data = base_type;
+		*ret_type = base_ret_type;
+		return true; // check what are the return values used for
+	} else {
+		*ret_type = get_stype_by_idx(p_types_list, curr_idx);
+	}
+
+	return curr_idx;
+}
+
 static int get_onemethod_index(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ONEMETHOD *lf = (SLF_ONEMETHOD *)t->type_info;
@@ -2179,6 +2203,15 @@ static int parse_lf_nesttype(SLF_NESTTYPE *lf_nesttype, uint8_t *leaf_data, unsi
 	return *read_bytes - read_bytes_before;
 }
 
+static int parse_lf_vfunctab(SLF_VFUNCTAB *lf_vfunctab, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
+	unsigned int read_bytes_before = *read_bytes;
+
+	READ2(*read_bytes, len, lf_vfunctab->pad, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_vfunctab->index, leaf_data, ut32);
+
+	return *read_bytes - read_bytes_before;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 static int parse_lf_method(SLF_METHOD *lf_method, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int read_bytes_before = *read_bytes, tmp_read_bytes_before = 0;
@@ -2415,6 +2448,9 @@ static void init_stype_info(STypeInfo *type_info) {
 		type_info->free_ = free_lf_nesttype;
 		type_info->get_print_type = get_nesttype_print_type;
 		break;
+	case eLF_VFUNCTAB:
+		type_info->get_index = get_vfunctab_index;
+		break;
 	case eLF_METHOD:
 		type_info->get_name = get_method_name;
 		type_info->get_name_len = get_method_name_len;
@@ -2500,6 +2536,9 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist, uint8_t *leaf_data, u
 			break;
 		case eLF_NESTTYPE:
 			PARSE_LF2(SLF_NESTTYPE, lf_nesttype, eLF_NESTTYPE);
+			break;
+		case eLF_VFUNCTAB:
+			PARSE_LF2(SLF_VFUNCTAB, lf_vfunctab, eLF_VFUNCTAB);
 			break;
 		case eLF_METHOD:
 			PARSE_LF2(SLF_METHOD, lf_method, eLF_METHOD);
