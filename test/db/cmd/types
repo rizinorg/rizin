@@ -236,6 +236,7 @@ RUN
 
 NAME=t
 FILE==
+ARGS=-b 64
 CMDS=<<EOF
 t char
 t double
@@ -267,8 +268,8 @@ pf d int
 pf w short
 pf x long
 pf q long long
-pf d size_t
-pf d uid_t
+pf q size_t
+pf q uid_t
 pf 
 pf b int8_t
 pf b uint8_t
@@ -5291,7 +5292,7 @@ DWORD PowerUnregisterSuspendResumeNotification(HPOWERNOTIFY RegistrationHandle);
 DWORD EnumDynamicTimeZoneInformation(DWORD dwIndex, PDYNAMIC_TIME_ZONE_INFORMATION lpTimeZoneInformation);
 NTSTATUS RtlAddGrowableFunctionTable(PVOID * DynamicTable, PRUNTIME_FUNCTION FunctionTable, ULONG EntryCount, ULONG MaximumEntryCount, ULONG_PTR RangeBase, ULONG_PTR RangeEnd);
 int wmemcmp(wchar_t * s1, wchar_t * s2, size_t n);
-ssize_t send(int socket, void * buffer, size_t length, int flags);
+int send(SOCKET s, const char * buf, int len, int flags);
 void PathRemoveArgsW(LPWSTR pszPath);
 long double roundl(long double x);
 HRESULT IUnknown_QueryService(IUnknown * punk, REFGUID guidService, REFIID riid, void ** ppvOut);
@@ -5383,7 +5384,7 @@ void CM_Create_Range_List((null) prlh, ULONG ulFlags);
 LPVOID CryptMemRealloc(LPVOID pv, ULONG cbSize);
 HRESULT CoRegisterSurrogate(LPSURROGATE pSurrogate);
 BOOL CheckRadioButton(HWND hDlg, int nIDFirstButton, int nIDLastButton, int nIDCheckButton);
-int socket(int domain, int type, int protocol);
+SOCKET socket(int af, int type, int protocol);
 int GetKeyboardType(int nTypeFlag);
 BOOL GetComputerNameW(LPWSTR lpBuffer, LPDWORD nSize);
 DWORD GetMaximumProcessorCount(WORD GroupNumber);
@@ -5534,7 +5535,7 @@ HRESULT VarDateFromUI1(BYTE bIn, (null)* pdateOut);
 BOOL GetServiceKeyNameW(SC_HANDLE hSCManager, LPCWSTR lpDisplayName, LPWSTR lpServiceName, LPDWORD lpcchBuffer);
 DWORD GetDeviceDriverBaseNameA(LPVOID ImageBase, LPSTR lpFilename, DWORD nSize);
 float exp2f(float x);
-ssize_t connect(int socket, void * addr, size_t addrlen);
+int connect(SOCKET s, struct sockaddr * name, int namelen);
 int WSASendMsg(SOCKET Handle, LPWSAMSG lpMsg, DWORD dwFlags, LPDWORD lpNumberOfBytesSent, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
 HRESULT CoCreateFreeThreadedMarshaler(LPUNKNOWN punkOuter, LPUNKNOWN * ppunkMarshal);
 HWND WindowFromPoint(POINT Point);
@@ -6496,7 +6497,7 @@ HRESULT RegisterScaleChangeNotifications(DISPLAY_DEVICE_TYPE displayDevice, HWND
 HRESULT VarCyNeg((null) cyIn, (null) pcyResult);
 DWORD CertNameToStrW(DWORD dwCertEncodingType, PCERT_NAME_BLOB pName, DWORD dwStrType, LPWSTR psz, DWORD csz);
 BOOL SetPrivateObjectSecurityEx(SECURITY_INFORMATION SecurityInformation, PSECURITY_DESCRIPTOR ModificationDescriptor, PSECURITY_DESCRIPTOR * ObjectsSecurityDescriptor, ULONG AutoInheritFlags, PGENERIC_MAPPING GenericMapping, HANDLE Token);
-char * inet_ntoa(void * in);
+char * inet_ntoa(unsigned long in);
 BOOL SymSetExtendedOption(IMAGEHLP_EXTENDED_OPTIONS option, BOOL value);
 HRESULT SafeArrayCopyData((null)* psaSource, (null)* psaTarget);
 int WPUCloseSocketHandle(SOCKET s, LPINT lpErrno);
@@ -6641,7 +6642,7 @@ BOOL EnumCalendarInfoExEx(CALINFO_ENUMPROCEXEX pCalInfoEnumProcExEx, LPCWSTR lpL
 BOOL DrawAnimatedRects(HWND hwnd, int idAni, RECT * lprcFrom, RECT * lprcTo);
 BOOL PathIsUNCServerShareA(LPCSTR pszPath);
 double modf(double value, double * iptr);
-int bind(int socket, struct sockaddr * address, socklen_t address_len);
+int bind(SOCKET s, struct sockaddr * name, int namelen);
 HRESULT CoGetTreatAsClass((null) clsidOld, LPCLSID pClsidNew);
 HWND GetNextDlgTabItem(HWND hDlg, HWND hCtl, BOOL bPrevious);
 HBRUSH CreatePatternBrush();
@@ -7901,7 +7902,7 @@ u_long ntohl(u_long netlong);
 BOOL QueryVirtualMemoryInformation(HANDLE Process, VOID * VirtualAddress, WIN32_MEMORY_INFORMATION_CLASS MemoryInformationClass, PVOID MemoryInformation, SIZE_T MemoryInformationSize, PSIZE_T ReturnSize);
 VOID AddRefActCtx(HANDLE hActCtx);
 BOOL NotifyUILanguageChange(DWORD dwFlags, PCWSTR pcwstrNewLanguage, PCWSTR pcwstrPreviousLanguage, DWORD dwReserved, PDWORD pdwStatusRtrn);
-ssize_t recv(int socket, void * buffer, size_t length, int flags);
+int recv(SOCKET s, char * buf, int len, int flags);
 int GetClassNameA(HWND hWnd, LPSTR lpClassName, int nMaxCount);
 BOOL SetProcessValidCallTargets(HANDLE hProcess, PVOID VirtualAddress, SIZE_T RegionSize, ULONG NumberOfOffsets, PCFG_CALL_TARGET_INFO OffsetInformation);
 HRESULT VarAbs(LPVARIANT pvarIn, LPVARIANT pvarResult);
