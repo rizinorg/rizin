@@ -90,7 +90,7 @@ int parse_primitive_type(CParserState *state, TSNode node, const char *text, Par
 		node_malformed_error(state, node, text, "not primitive type");
 		return -1;
 	}
-	const char *real_type = ts_node_sub_string(node, text);
+	char *real_type = ts_node_sub_string(node, text);
 	if (!real_type) {
 		node_malformed_error(state, node, text, "primitive type");
 		parser_error(state, "Primitive type name cannot be NULL\n");
@@ -99,16 +99,19 @@ int parse_primitive_type(CParserState *state, TSNode node, const char *text, Par
 	// At first we search if the type is already presented in the state
 	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched primitive type: \"%s\"\n", real_type);
+		free(real_type);
 		return 0;
 	}
 	// If not - we form both RzType and RzBaseType to store in the Types database
 	ParserTypePair *type_pair = c_parser_new_primitive_type(state, real_type, is_const);
 	if (!type_pair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of primitive type\n");
+		free(real_type);
 		return -1;
 	}
 	c_parser_base_type_store(state, real_type, type_pair);
 	*tpair = type_pair;
+	free(real_type);
 	return 0;
 }
 
@@ -122,25 +125,29 @@ int parse_sized_primitive_type(CParserState *state, TSNode node, const char *tex
 		node_malformed_error(state, node, text, "not sized primitive type");
 		return -1;
 	}
-	const char *real_type = ts_node_sub_string(node, text);
+	char *real_type = ts_node_sub_string(node, text);
 	if (!real_type) {
 		node_malformed_error(state, node, text, "primitive type");
 		parser_error(state, "Primitive type name cannot be NULL\n");
+		free(real_type);
 		return -1;
 	}
 	// At first we search if the type is already presented in the state
 	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched primitive type: \"%s\"\n", real_type);
+		free(real_type);
 		return 0;
 	}
 	// If not - we form both RzType and RzBaseType to store in the Types database
 	ParserTypePair *type_pair = c_parser_new_primitive_type(state, real_type, is_const);
 	if (!type_pair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of primitive type\n");
+		free(real_type);
 		return -1;
 	}
 	c_parser_base_type_store(state, real_type, type_pair);
 	*tpair = type_pair;
+	free(real_type);
 	return 0;
 }
 
@@ -154,15 +161,17 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 		node_malformed_error(state, node, text, "just a type name");
 		return -1;
 	}
-	const char *real_type = ts_node_sub_string(node, text);
+	char *real_type = ts_node_sub_string(node, text);
 	// At first we search if the type is already presented in the state and is a primitive one
 	if ((*tpair = c_parser_get_primitive_type(state, real_type, is_const))) {
 		parser_debug(state, "Fetched type: \"%s\"\n", real_type);
+		free(real_type);
 		return 0;
 	}
 	// After that we search if the type is already presented in the state and is a type alias
 	if ((*tpair = c_parser_get_typedef(state, real_type))) {
 		parser_debug(state, "Fetched type: \"%s\"\n", real_type);
+		free(real_type);
 		return 0;
 	}
 	// Then we check if the type is already forward-defined
@@ -171,8 +180,10 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 		*tpair = c_parser_new_unspecified_naked_type(state, real_type, is_const);
 		if (!*tpair) {
 			parser_error(state, "Error forming naked RzType pair out of simple forward-looking type: \"%s\"\n", real_type);
+			free(real_type);
 			return -1;
 		}
+		free(real_type);
 		return 0;
 	}
 	// If not - we form both RzType and RzBaseType to store in the Types database
@@ -180,13 +191,16 @@ int parse_sole_type_name(CParserState *state, TSNode node, const char *text, Par
 	*tpair = c_parser_new_primitive_type(state, real_type, is_const);
 	if (!*tpair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of simple forward-looking type\n");
+		free(real_type);
 		return -1;
 	}
 	// Do allow forward-looking definitions we just add the type into the forward hashtable
 	if (c_parser_forward_definition_store(state, real_type)) {
 		parser_debug(state, "Added forward definition of type: \"%s\"\n", real_type);
+		free(real_type);
 		return 0;
 	}
+	free(real_type);
 	return -1;
 }
 
@@ -214,11 +228,12 @@ int parse_parameter_declaration_node(CParserState *state, TSNode node, const cha
 		// If we have type qualifier in this position it is related to
 		// the type itself
 		if (!strcmp(leaf_type, "type_qualifier")) {
-			const char *qualifier = ts_node_sub_string(first_leaf, text);
+			char *qualifier = ts_node_sub_string(first_leaf, text);
 			parser_debug(state, "has qualifier %s\n", qualifier);
 			if (!strcmp(qualifier, "const")) {
 				is_const = true;
 			}
+			free(qualifier);
 		}
 	}
 
@@ -362,11 +377,12 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		// the declarator itself, not the type, e.g. constant pointer,
 		// not pointer to the constant
 		if (!strcmp(leaf_type, "type_qualifier")) {
-			const char *qualifier = ts_node_sub_string(first_leaf, text);
+			char *qualifier = ts_node_sub_string(first_leaf, text);
 			parser_debug(state, "has qualifier %s\n", qualifier);
 			if (!strcmp(qualifier, "const")) {
 				is_const = true;
 			}
+			free(qualifier);
 		}
 
 		// Every field should have (field_declaration) AST clause
@@ -389,12 +405,13 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		// - bitfield: int a:7;"
 		// - nested: "struct { ... } a;" or "union { ... } a;"
 		if (state->verbose) {
-			const char *fieldtext = ts_node_sub_string(child, text);
+			char *fieldtext = ts_node_sub_string(child, text);
 			char *nodeast = ts_node_string(child);
 			if (fieldtext && nodeast) {
 				parser_debug(state, "field text: %s\n", fieldtext);
 				parser_debug(state, "field ast: %s\n", nodeast);
 			}
+			free(fieldtext);
 			free(nodeast);
 		}
 		// 1st case, bitfield
@@ -612,11 +629,12 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		// the declarator itself, not the type, e.g. constant pointer,
 		// not pointer to the constant
 		if (!strcmp(leaf_type, "type_qualifier")) {
-			const char *qualifier = ts_node_sub_string(first_leaf, text);
+			char *qualifier = ts_node_sub_string(first_leaf, text);
 			parser_debug(state, "has qualifier %s\n", qualifier);
 			if (!strcmp(qualifier, "const")) {
 				is_const = true;
 			}
+			free(qualifier);
 		}
 
 		// Every field should have (field_declaration) AST clause
@@ -639,12 +657,13 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		// - bitfield: int a:7;"
 		// - nested: "struct { ... } a;" or "union { ... } a;"
 		if (state->verbose) {
-			const char *fieldtext = ts_node_sub_string(child, text);
+			char *fieldtext = ts_node_sub_string(child, text);
 			char *nodeast = ts_node_string(child);
 			if (fieldtext && nodeast) {
 				parser_debug(state, "field text: %s\n", fieldtext);
 				parser_debug(state, "field ast: %s\n", nodeast);
 			}
+			free(fieldtext);
 			free(nodeast);
 		}
 		// 1st case, bitfield
@@ -876,8 +895,9 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 				node_malformed_error(state, child, text, "enum case");
 				return -1;
 			}
-			const char *real_identifier = ts_node_sub_string(member_identifier, text);
+			char *real_identifier = ts_node_sub_string(member_identifier, text);
 			parser_debug(state, "enum member: %s\n", real_identifier);
+			free(real_identifier);
 		} else {
 			// It's a proper field, like "A = 1,"
 			TSNode member_identifier = ts_node_child_by_field_name(child, "name", 4);
@@ -887,19 +907,21 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 				node_malformed_error(state, child, text, "enum case");
 				return -1;
 			}
-			const char *real_identifier = ts_node_sub_string(member_identifier, text);
-			const char *real_value = ts_node_sub_string(member_value, text);
+			char *real_identifier = ts_node_sub_string(member_identifier, text);
+			char *real_value = ts_node_sub_string(member_value, text);
 			// FIXME: Use RzNum to calculate complex expressions
 			parser_debug(state, "enum member: %s value: %s\n", real_identifier, real_value);
 			// Add an enum case
 			RzVector *cases = &enum_pair->btype->enum_data.cases;
 			RzTypeEnumCase cas = {
-				.name = strdup(real_identifier),
+				.name = real_identifier,
 				.val = rz_num_get(NULL, real_value)
 			};
+			free(real_value);
 			void *element = rz_vector_push(cases, &cas); // returns null if no space available
 			if (!element) {
 				parser_error(state, "Error appending enum case to the base type\n");
+				free(cas.name);
 				return -1;
 			}
 		}
@@ -940,11 +962,12 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 	}
 	const char *leaf_type = ts_node_type(first_leaf);
 	if (!strcmp(leaf_type, "type_qualifier")) {
-		const char *qualifier = ts_node_sub_string(first_leaf, text);
+		char *qualifier = ts_node_sub_string(first_leaf, text);
 		parser_debug(state, "has qualifier %s\n", qualifier);
 		if (!strcmp(qualifier, "const")) {
 			is_const = true;
 		}
+		free(qualifier);
 	}
 
 	TSNode typedef_type = ts_node_child_by_field_name(node, "type", 4);
@@ -959,12 +982,13 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 	// - some type name - any identificator
 	// - complex type like struct, union, or enum
 	if (state->verbose) {
-		const char *typetext = ts_node_sub_string(typedef_type, text);
+		char *typetext = ts_node_sub_string(typedef_type, text);
 		char *nodeast = ts_node_string(typedef_type);
 		if (typetext && nodeast) {
 			parser_debug(state, "type text: %s\n", typetext);
 			parser_debug(state, "type ast: %s\n", nodeast);
 		}
+		free(typetext);
 		free(nodeast);
 	}
 	ParserTypePair *type_pair = NULL;

@@ -54,26 +54,15 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		return NULL;
 	}
 
-	char *args_key = rz_str_newf("%s.%s.args", "func", name);
-	if (!args_key) {
-		rz_list_free(cache_newly_added);
-		rz_type_callable_free(callable);
-		return NULL;
-	}
-
-	size_t arguments = sdb_num_get(sdb, args_key, 0);
+	char key[SDB_MAX_KEY + 1];
+	size_t arguments = sdb_num_get(sdb, rz_strf(key, "func.%s.args", name), 0);
 	if (arguments > 0 && !rz_pvector_reserve(callable->args, arguments)) {
 		goto error;
 	}
 
 	int i;
 	for (i = 0; i < arguments; i++) {
-		char *argument_key = rz_str_newf("func.%s.arg.%d", name, i);
-		if (!argument_key) {
-			goto error;
-		}
-		char *values = sdb_get(sdb, argument_key, NULL);
-		free(argument_key);
+		char *values = sdb_get(sdb, rz_strf(key, "func.%s.arg.%d", name, i), NULL);
 
 		if (!values) {
 			goto error;
@@ -106,9 +95,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 		}
 	}
 
-	RzStrBuf key;
-	const char *rettype = sdb_get(sdb, rz_strbuf_initf(&key, "func.%s.ret", name), 0);
-	rz_strbuf_fini(&key);
+	const char *rettype = sdb_const_get(sdb, rz_strf(key, "func.%s.ret", name), 0);
 	if (!rettype) {
 		// best we can do for a broken database
 		rettype = "void";
@@ -123,12 +110,7 @@ static RzCallable *get_callable_type(RzTypeDB *typedb, Sdb *sdb, const char *nam
 	callable->ret = ttype;
 
 	// Optional "noreturn" attribute
-	char *noreturn_key = rz_str_newf("%s.%s.noreturn", "func", name);
-	if (!noreturn_key) {
-		return NULL;
-	}
-
-	callable->noret = sdb_bool_get(sdb, noreturn_key, 0);
+	callable->noret = sdb_bool_get(sdb, rz_strf(key, "func.%s.noreturn", name), 0);
 
 	rz_list_free(cache_newly_added);
 	return callable;
@@ -156,12 +138,13 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 			//eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
 			callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
 			if (callable) {
-				ht_pp_insert(typedb->callables, callable->name, callable);
+				ht_pp_update(typedb->callables, callable->name, callable);
 				RZ_LOG_DEBUG("inserting the \"%s\" callable type\n", callable->name);
 			}
 		}
 	}
 	ht_pp_free(type_str_cache);
+	ls_free(l);
 	return true;
 }
 
