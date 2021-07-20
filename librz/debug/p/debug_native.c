@@ -362,20 +362,20 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	} else if (reason == RZ_DEBUG_REASON_NEW_PID) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			rz_cons_printf("(%d) Created process %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
+			RZ_LOG_INFO("(%d) Created process %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
 			rz_cons_flush();
 		}
 	} else if (reason == RZ_DEBUG_REASON_NEW_TID) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			rz_cons_printf("(%d) Created thread %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
+			RZ_LOG_INFO("(%d) Created thread %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
 			rz_cons_flush();
 		}
 		restore_thread = true;
 	} else if (reason == RZ_DEBUG_REASON_EXIT_TID) {
 		PTHREAD_ITEM item = r->thread;
 		if (r && r->thread) {
-			rz_cons_printf("(%d) Finished thread %d Exit code %lu\n", (ut32)item->pid, (ut32)item->tid, item->dwExitCode);
+			RZ_LOG_INFO("(%d) Finished thread %d Exit code %lu\n", (ut32)item->pid, (ut32)item->tid, item->dwExitCode);
 			rz_cons_flush();
 		}
 		if (dbg->tid != orig_tid && item->tid != orig_tid) {
@@ -384,7 +384,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	} else if (reason == RZ_DEBUG_REASON_DEAD) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			rz_cons_printf("(%d) Finished process with exit code %lu\n", dbg->main_pid, item->dwExitCode);
+			RZ_LOG_INFO("(%d) Finished process with exit code %lu\n", dbg->main_pid, item->dwExitCode);
 			rz_cons_flush();
 		}
 		dbg->pid = -1;
@@ -392,7 +392,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	} else if (reason == RZ_DEBUG_REASON_USERSUSP && dbg->tid != orig_tid) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			rz_cons_printf("(%d) Created DebugBreak thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			RZ_LOG_INFO("(%d) Created DebugBreak thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
 			rz_cons_flush();
 		}
 		// DebugProcessBreak creates a new thread that will trigger a breakpoint. We record the
