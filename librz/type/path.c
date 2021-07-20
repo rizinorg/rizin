@@ -56,7 +56,7 @@ static st64 path_walker(const RzTypeDB *typedb, const char *path) {
 				return -1;
 			}
 			++path;
-			if (parent->kind != RZ_TYPE_KIND_ARRAY) {
+			if (!parent || parent->kind != RZ_TYPE_KIND_ARRAY) {
 				return -1;
 			}
 			offset += rz_type_db_get_bitsize(typedb, parent) * index;
