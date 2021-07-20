@@ -144,6 +144,7 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 		}
 	}
 	ht_pp_free(type_str_cache);
+	ls_free(l);
 	return true;
 }
 

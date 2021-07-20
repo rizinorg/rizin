@@ -347,6 +347,7 @@ bool sdb_load_base_types(RzTypeDB *typedb, Sdb *sdb) {
 		}
 		free(tpair);
 	}
+	ls_free(l);
 	return true;
 }
 
