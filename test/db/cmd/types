@@ -760,6 +760,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tp blocksize
+FILE==
+BROKEN=1
+CMDS=<<EOF
+e asm.arch=x86
+wx 790a790a790a790a790a790a790a790a790a
+td "struct foobar{uint32_t a; uint32_t b; uint32_t c; uint32_t d;}"
+b 10
+tp foobar
+b 16
+tp foobar
+EOF
+EXPECT=<<EOF
+ a : 0x00000000 = 175704697
+ b : 0x00000004 = 175704697
+ c : 0x00000008 = 175704697
+ d : 0x0000000c = 175704697
+ a : 0x00000000 = 175704697
+ b : 0x00000004 = 175704697
+ c : 0x00000008 = 175704697
+ d : 0x0000000c = 175704697
+EOF
+RUN
+
 NAME=tpv
 FILE==
 CMDS=<<EOF
