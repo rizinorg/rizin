@@ -434,6 +434,7 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
  *********/
 RZ_IPI void rz_core_analysis_rzil_init_mem(RzCore *core) {
         RzILVM vm;
+	printf("[Init RzilVM memory\n");
         if (core->analysis->rzil && core->analysis->rzil->vm) {
                 vm = core->analysis->rzil->vm;
                 rz_il_vm_add_mem(vm, vm->data_size);
@@ -447,6 +448,8 @@ RZ_IPI void core_rzil_init(RzCore *core) {
         int addrsize = 64;
         int datasize = 8;
         ut64 start_addr = 0x1000;
+
+	    printf("[Core Rzil Init]\n");
 
         RzAnalysisRzil *rzil;
         if (!(rzil = rz_analysis_rzil_new())) {
@@ -469,7 +472,7 @@ RZ_IPI void rz_core_analysis_rzil_init(RzCore *core) {
 
 RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
         if (core->analysis->rzil) {
-                rz_analysis_rzil_free(core->analysis->rzil);
+                rz_analysis_rzil_cleanup(core->analysis->rzil, core->analysis);
                 core->analysis->rzil = NULL;
         }
 

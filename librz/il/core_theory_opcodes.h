@@ -160,8 +160,8 @@ struct RzILOp_t {
 };
 typedef struct RzILOp_t *RzILOp;
 // Opcode
-RzILOp rz_il_new_op(CoreTheoryOPCode code);
-void rz_il_free_op(RzILOp op);
+RZ_API RzILOp rz_il_new_op(CoreTheoryOPCode code);
+RZ_API void rz_il_free_op(RzILOp op);
 
 #define RZIL_CORE_THEORY_DEFINITIONS_H
 #endif //RZIL_CORE_THEORY_DEFINITIONS_H

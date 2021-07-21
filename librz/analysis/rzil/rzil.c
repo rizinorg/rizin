@@ -13,11 +13,14 @@ RZ_API RzAnalysisRzil *rz_analysis_rzil_new() {
         return rzil;
 }
 
-RZ_API void rz_analysis_rzil_free(RzAnalysisRzil *rzil) {
+RZ_API void rz_analysis_rzil_cleanup(RzAnalysisRzil *rzil, RzAnalysis *analysis) {
         if (rzil->vm) {
                 rz_il_vm_close(rzil->vm);
                 rzil->vm = NULL;
         }
+	if (analysis && analysis->cur && analysis->cur->rzil_fini) {
+		analysis->cur->rzil_fini(rzil);
+	}
         free(rzil);
 }
 
@@ -42,5 +45,13 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysisRzil *rzil, RzAnalysis *analysis, i
 	// set up op types
 	// TODO change analsis->cur and add `rzil_init`
 	//      as `esil_init` in analysis_plugin
+	if (analysis && analysis->cur && analysis->cur->rzil_init) {
+		analysis->cur->rzil_init(rzil);
+	}
 }
 
+RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist) {
+	BitVector bv_addr = rz_il_ut64_addr_to_bv(addr);
+	rz_il_vm_store_opcodes_to_addr(rzil->vm, bv_addr, oplist);
+	rz_il_free_bv_addr(bv_addr);
+}

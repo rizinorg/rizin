@@ -1124,6 +1124,8 @@ typedef struct rz_analysis_rzil_t {
 
 	ut64 pc_addr;
 	int verbose;
+
+	void *user;
 } RzAnalysisRzil;
 
 #undef ESIL
@@ -1186,6 +1188,7 @@ typedef int (*RzAnalysisDiffFcnCallback)(RzAnalysis *analysis, RzList *fcns, RzL
 typedef int (*RzAnalysisDiffEvalCallback)(RzAnalysis *analysis);
 
 typedef int (*RzAnalysisEsilCB)(RzAnalysisEsil *esil);
+typedef int (*RzAnalysisRzilCB)(RzAnalysisRzil *rzil);
 typedef int (*RzAnalysisEsilLoopCB)(RzAnalysisEsil *esil, RzAnalysisOp *op);
 typedef int (*RzAnalysisEsilTrapCB)(RzAnalysisEsil *esil, int trap_type, int trap_code);
 
@@ -1221,6 +1224,9 @@ typedef struct rz_analysis_plugin_t {
 	RzAnalysisEsilLoopCB esil_post_loop; //cycle-counting, firing interrupts, ...
 	RzAnalysisEsilTrapCB esil_trap; // traps / exceptions
 	RzAnalysisEsilCB esil_fini; // deinitialize
+	RzAnalysisRzilCB rzil_init;
+	RzAnalysisRzilCB rzil_fini;
+
 } RzAnalysisPlugin;
 
 /*----------------------------------------------------------------------------------------------*/
@@ -1548,7 +1554,8 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
 RZ_API RzAnalysisRzil *rz_analysis_rzil_new();
 RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr);
 RZ_API bool rz_analysis_rzil_setup(RzAnalysisRzil *rzil, RzAnalysis *analysis, int romem, int stats, int nonull);
-RZ_API void rz_analysis_rzil_free(RzAnalysisRzil *rzil);
+RZ_API void rz_analysis_rzil_cleanup(RzAnalysisRzil *rzil, RzAnalysis *analysis);
+RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist);
 
 /* stats */
 RZ_API void rz_analysis_rzil_mem_ro(RzAnalysisRzil *rzil, int mem_readonly);

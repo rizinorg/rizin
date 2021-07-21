@@ -12,7 +12,7 @@ RzILOp rz_il_new_empty_op(void) {
 	return ret;
 }
 
-RzILOp rz_il_new_op(CoreTheoryOPCode code) {
+RZ_API RzILOp rz_il_new_op(CoreTheoryOPCode code) {
 	RzILOp ret = (RzILOp)malloc(sizeof(struct RzILOp_t));
 	// TODO : Instruction id
 	ret->id = 0;
@@ -95,7 +95,7 @@ RzILOp rz_il_new_op(CoreTheoryOPCode code) {
 	return ret;
 }
 
-void rz_il_free_op(RzILOp op) {
+RZ_API void rz_il_free_op(RzILOp op) {
 	switch (op->code) {
 	case RZIL_OP_VAR:
 		free(op->op.var);
