@@ -511,7 +511,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->actual_checksum = strdup(sdb_fmt("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
-	ret->file_hashes = rz_list_newf((RzListFree)rz_bin_file_hash_free);
 	Sdb *db = sdb_ns(bf->sdb, "pe", true);
 	sdb_bool_set(db, "canary", has_canary(bf), 0);
 	sdb_bool_set(db, "highva", haschr(bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
