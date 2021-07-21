@@ -175,8 +175,7 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcns2) {
 	RzAnalysisFunction *fcn, *fcn2, *mfcn, *mfcn2;
 	RzListIter *iter, *iter2;
-	ut64 maxsize, minsize;
-	double t, ot;
+	double t, ot, sizes_div;
 
 	if (!analysis) {
 		return false;
@@ -185,10 +184,6 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcn
 		return (analysis->cur->diff_fcn(analysis, fcns1, fcns2));
 	}
 	/* Compare functions with the same name */
-	int pos1 = 0, pos2 = 0;
-	int fcns1_len = rz_list_length(fcns1);
-	int fcns2_len = rz_list_length(fcns2);
-
 	rz_list_foreach (fcns1, iter, fcn) {
 		rz_list_foreach (fcns2, iter2, fcn2) {
 			if (fcn->name && fcn2->name && strcmp(fcn->name, fcn2->name)) {
@@ -218,60 +213,47 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcn
 			rz_analysis_diff_bb(analysis, fcn, fcn2);
 			break;
 		}
-		pos1 += 100;
-		eprintf("[-] comparing same name %3d%%\r", (pos1 / fcns1_len));
 	}
 	/* Compare remaining functions */
-	pos1 = 0;
 	rz_list_foreach (fcns1, iter, fcn) {
-		pos1 += 100;
-		pos2 = 0;
 		if (fcn->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 			continue;
 		}
-		ot = 0;
+		ot = 0.0;
 		mfcn = mfcn2 = NULL;
 		rz_list_foreach (fcns2, iter2, fcn2) {
-			pos2 += 100;
-			ut64 fcn_size = rz_analysis_function_realsize(fcn);
-			ut64 fcn2_size = rz_analysis_function_realsize(fcn2);
-			if (fcn_size > fcn2_size) {
-				maxsize = fcn_size;
-				minsize = fcn2_size;
-			} else {
-				maxsize = fcn2_size;
-				minsize = fcn_size;
+			if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
+				continue;
+			} else if (!fcn->fingerprint_size || !fcn2->fingerprint_size) {
+				continue;
 			}
-			if (maxsize * analysis->diff_thfcn > minsize) {
-				continue;
-			} else if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
-				continue;
-			} else if ((fcn2->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn2->type != RZ_ANALYSIS_FCN_TYPE_SYM)) {
+			sizes_div = fcn->fingerprint_size;
+			sizes_div /= fcn2->fingerprint_size;
+			if (sizes_div < RZ_ANALYSIS_DIFF_THRESHOLD) {
 				continue;
 			}
 			rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size, fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
-			fcn->diff->dist = fcn2->diff->dist = t;
-			if (t > analysis->diff_thfcn && t > ot) {
+			if (t > ot) {
 				ot = t;
 				mfcn = fcn;
 				mfcn2 = fcn2;
-				if (t > RZ_ANALYSIS_DIFF_THRESHOLD) {
+				if (ot >= RZ_ANALYSIS_DIFF_THRESHOLD) {
 					break;
 				}
 			}
-			eprintf("[-] comparing remaining %3d%%/%3d%%\r", (pos1 / fcns1_len), (pos2 / fcns2_len));
 		}
 		if (mfcn && mfcn2) {
+			mfcn->diff->dist = mfcn2->diff->dist = ot;
 			/* Set flag in matched functions */
-			mfcn->diff->type = mfcn2->diff->type = (ot == 1)
+			mfcn->diff->type = mfcn2->diff->type = (ot > RZ_ANALYSIS_DIFF_THRESHOLD)
 				? RZ_ANALYSIS_DIFF_TYPE_MATCH
 				: RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 			RZ_FREE(mfcn->fingerprint);
 			RZ_FREE(mfcn2->fingerprint);
 			mfcn->diff->addr = mfcn2->addr;
 			mfcn2->diff->addr = mfcn->addr;
-			mfcn->diff->size = rz_analysis_function_realsize(mfcn2);
-			mfcn2->diff->size = rz_analysis_function_realsize(mfcn);
+			mfcn->diff->size = mfcn2->fingerprint_size;
+			mfcn2->diff->size = mfcn->fingerprint_size;
 			RZ_FREE(mfcn->diff->name);
 			if (mfcn2->name) {
 				mfcn->diff->name = strdup(mfcn2->name);
@@ -283,7 +265,6 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcn
 			rz_analysis_diff_bb(analysis, mfcn, mfcn2);
 		}
 	}
-	eprintf("                                                  \r");
 	return true;
 }
 
