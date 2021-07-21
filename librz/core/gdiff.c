@@ -284,6 +284,9 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 			break;
 		}
 	}
+	if (!json && !ignore) {
+		printf("\n");
+	}
 
 	fcns = rz_analysis_get_fcns(c2->analysis);
 	rz_list_sort(fcns, c2->analysis->columnSort);
@@ -322,7 +325,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 		pj_end(pj);
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
-	} else {
+	} else if (!ignore) {
 		printf("\n");
 	}
 }
