@@ -86,10 +86,6 @@ typedef enum {
 #define RZ_PERM_ACCESS 32
 #define RZ_PERM_CREAT  64
 
-// HACK to fix capstone-android-mips build
-#undef mips
-#define mips mips
-
 #if defined(__powerpc) || defined(__powerpc__)
 #undef __POWERPC__
 #define __POWERPC__ 1
@@ -181,14 +177,6 @@ typedef int socklen_t;
 #define FUNC_ATTR_USED                  __attribute__((used))
 #define FUNC_ATTR_WARN_UNUSED_RESULT    __attribute__((warn_unused_result))
 #define FUNC_ATTR_ALWAYS_INLINE         __attribute__((always_inline))
-
-#ifdef __clang__
-// clang only
-#elif defined(__INTEL_COMPILER)
-// intel only
-#else
-// gcc only
-#endif
 #else
 #define FUNC_ATTR_MALLOC
 #define FUNC_ATTR_ALLOC_SIZE(x)
