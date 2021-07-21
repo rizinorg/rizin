@@ -72,7 +72,7 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 
 RZ_IPI void rz_core_debug_continue(RzCore *core) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		rz_debug_continue_oldhandler(core, "");
+		rz_cmd_debug_continue_exception_handler(core, 1, NULL);
 	} else {
 		rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
 		rz_core_regs2flags(core);
