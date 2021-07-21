@@ -218,13 +218,23 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcn
 	rz_list_foreach (fcns1, iter, fcn) {
 		if (fcn->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 			continue;
+		} else if (!fcn->fingerprint_size) {
+			continue;
+		} else if (fcn->type != RZ_ANALYSIS_FCN_TYPE_FCN) {
+			continue;
+		} else if (fcn->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
+			continue;
 		}
 		ot = 0.0;
 		mfcn = mfcn2 = NULL;
 		rz_list_foreach (fcns2, iter2, fcn2) {
 			if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 				continue;
-			} else if (!fcn->fingerprint_size || !fcn2->fingerprint_size) {
+			} else if (!fcn2->fingerprint_size) {
+				continue;
+			} else if (fcn2->type != RZ_ANALYSIS_FCN_TYPE_FCN) {
+				continue;
+			} else if (fcn2->type != RZ_ANALYSIS_FCN_TYPE_SYM) {
 				continue;
 			}
 			if (fcn->fingerprint_size > fcn2->fingerprint_size) {
