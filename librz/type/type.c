@@ -44,25 +44,31 @@ RZ_API RzTypeDB *rz_type_db_new() {
 	typedb->target->default_type = strdup("int");
 	typedb->types = ht_pp_new(NULL, types_ht_free, NULL);
 	if (!typedb->types) {
-		free(typedb);
-		return NULL;
+		goto rz_type_db_new_fail;
 	}
 	typedb->formats = ht_pp_new(NULL, formats_ht_free, NULL);
 	if (!typedb->formats) {
-		free(typedb);
-		ht_pp_free(typedb->types);
-		return NULL;
+		goto rz_type_db_new_fail;
 	}
 	typedb->callables = ht_pp_new(NULL, callables_ht_free, NULL);
 	if (!typedb->callables) {
-		free(typedb);
-		ht_pp_free(typedb->types);
-		ht_pp_free(typedb->formats);
-		return NULL;
+		goto rz_type_db_new_fail;
 	}
 	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
+	if (!typedb->parser) {
+		goto rz_type_db_new_fail;
+	}
 	rz_io_bind_init(typedb->iob);
 	return typedb;
+
+rz_type_db_new_fail:
+	free((void *)typedb->target->default_type);
+	free(typedb->target);
+	ht_pp_free(typedb->types);
+	ht_pp_free(typedb->formats);
+	ht_pp_free(typedb->callables);
+	free(typedb);
+	return NULL;
 }
 
 /**
@@ -75,6 +81,7 @@ RZ_API void rz_type_db_free(RzTypeDB *typedb) {
 	ht_pp_free(typedb->callables);
 	ht_pp_free(typedb->types);
 	ht_pp_free(typedb->formats);
+	free((void *)typedb->target->default_type);
 	free(typedb->target);
 	free(typedb);
 }
@@ -102,6 +109,9 @@ RZ_API void rz_type_db_format_purge(RzTypeDB *typedb) {
 }
 
 static void set_default_type(RzTypeTarget *target, int bits) {
+	if (target->default_type) {
+		free((void *)target->default_type);
+	}
 	switch (bits) {
 	case 8:
 		target->default_type = strdup("int8_t");

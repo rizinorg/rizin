@@ -61,7 +61,6 @@ void c_parser_state_free_keep_ht(CParserState *state) {
 }
 
 void c_parser_state_reset_keep_ht(CParserState *state) {
-	ht_pp_free(state->forward);
 	rz_strbuf_free(state->debug);
 	rz_strbuf_free(state->warnings);
 	rz_strbuf_free(state->errors);
