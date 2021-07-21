@@ -389,9 +389,9 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	if (mask & RZ_CORE_BIN_ACC_RELOCS && rz_config_get_b(r->config, "bin.relocs")) {
 		rz_core_bin_apply_relocs(r, binfile, va);
 	}
-	if (mask & RZ_CORE_BIN_ACC_BASEFIND) {
-		rz_core_bin_apply_symbols(r, binfile, va);
-	}
+//	if (mask & RZ_CORE_BIN_ACC_BASEFIND) {
+//		rz_core_bin_apply_basefind(r, binfile, va);
+//	}
 	if (mask & RZ_CORE_BIN_ACC_IMPORTS) {
 		rz_core_bin_apply_imports(r, binfile, va);
 	}
