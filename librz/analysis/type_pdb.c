@@ -51,8 +51,8 @@ static RzTypeStructMember *parse_member(const RzTypeDB *typedb, STypeInfo *type_
 	char *type = NULL;
 	ut64 offset = 0;
 
-	type_info->get_val(type_info, &offset); // gets offset
-	type_info->get_name(type_info, &name);
+	offset = type_info->get_val(type_info); // gets offset
+	name = type_info->get_name(type_info);
 	type_info->get_print_type(type_info, &type);
 	RzTypeStructMember *member = RZ_NEW0(RzTypeStructMember);
 	if (!member) {
@@ -87,8 +87,8 @@ static RzTypeEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) {
 	char *name = NULL;
 	ut64 value = 0;
 	// sometimes, the type doesn't have get_val for some reason
-	type_info->get_val(type_info, &value);
-	type_info->get_name(type_info, &name);
+	value = type_info->get_val(type_info);
+	name = type_info->get_name(type_info);
 	RzTypeEnumCase *cas = RZ_NEW0(RzTypeEnumCase);
 	if (!cas) {
 		goto cleanup;
@@ -121,7 +121,7 @@ static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
 	}
 
 	char *name = NULL;
-	type_data->get_name(type_data, &name);
+	name = type_data->get_name(type_data);
 	bool to_free_name = false;
 	if (!name) {
 		name = create_type_name_from_offset(type->tpi_idx);
@@ -135,12 +135,15 @@ static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
 		type_name = base_type->type;
 		size = base_type->size;
 	}
-	RzList *members;
-	type_data->get_members(type_data, &members);
+	RzList *members = type_data->get_members(type_data);
+	if (!members) {
+		rz_type_base_type_free(base_type);
+		goto cleanup;
+	}
 
-	RzListIter *it = rz_list_iterator(members);
-	while (rz_list_iter_next(it)) {
-		STypeInfo *member_info = rz_list_iter_get(it);
+	RzListIter *it;
+	STypeInfo *member_info;
+	rz_list_foreach (members, it, member_info) {
 		RzTypeEnumCase *enum_case = parse_enumerate(member_info, types);
 		if (!enum_case) {
 			continue; // skip it, move forward
@@ -194,21 +197,23 @@ static void parse_structure(const RzTypeDB *typedb, SType *type, RzList *types) 
 	}
 
 	char *name = NULL;
-	type_info->get_name(type_info, &name);
+	name = type_info->get_name(type_info);
 	bool to_free_name = false;
 	if (!name) {
 		name = create_type_name_from_offset(type->tpi_idx);
 		to_free_name = true;
 	}
-	ut64 size;
-	type_info->get_val(type_info, &size); // gets size
+	ut64 size = type_info->get_val(type_info);
 
-	RzList *members;
-	type_info->get_members(type_info, &members);
+	RzList *members = type_info->get_members(type_info);
+	if (!members) {
+		rz_type_base_type_free(base_type);
+		goto cleanup;
+	}
 
-	RzListIter *it = rz_list_iterator(members);
-	while (rz_list_iter_next(it)) {
-		STypeInfo *member_info = rz_list_iter_get(it);
+	RzListIter *it;
+	STypeInfo *member_info;
+	rz_list_foreach (members, it, member_info) {
 		RzTypeStructMember *struct_member = parse_member(typedb, member_info, types);
 		if (!struct_member) {
 			continue; // skip the failure
@@ -246,10 +251,8 @@ cleanup:
 static void parse_type(const RzTypeDB *typedb, SType *type, RzList *types) {
 	rz_return_if_fail(typedb && type && types);
 
-	ut64 is_forward_decl;
 	if (type->type_data.is_fwdref) {
-		type->type_data.is_fwdref(&type->type_data, &is_forward_decl);
-		if (is_forward_decl) { // we skip those, atleast for now
+		if (type->type_data.is_fwdref(&type->type_data)) { // we skip those, atleast for now
 			return;
 		}
 	}
@@ -287,9 +290,9 @@ RZ_API void rz_parse_pdb_types(const RzTypeDB *typedb, const RzPdb *pdb) {
 		return;
 	}
 	// Types should be DAC - only references previous records
-	RzListIter *iter = rz_list_iterator(tpi_stream->types);
-	while (rz_list_iter_next(iter)) { // iterate all types
-		SType *type = rz_list_iter_get(iter);
+	RzListIter *it;
+	SType *type;
+	rz_list_foreach (tpi_stream->types, it, type) {
 		if (type && is_parsable_type(type->type_data.leaf_type)) {
 			parse_type(typedb, type, tpi_stream->types);
 		}

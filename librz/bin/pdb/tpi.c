@@ -693,163 +693,173 @@ static STypeInfo parse_simple_type(ut32 idx) {
 	return type;
 }
 
-static void get_numeric_val(SNumeric *numeric, ut64 *dst) {
+static ut64 get_numeric_val(SNumeric *numeric) {
 	switch (numeric->type_index) {
 	case eLF_CHAR:
-		*dst = *(st8 *)(numeric->data);
-		break;
+		return *(st8 *)(numeric->data);
 	case eLF_SHORT:
-		*dst = *(st16 *)(numeric->data);
-		break;
+		return *(st16 *)(numeric->data);
 	case eLF_USHORT:
-		*dst = *(ut16 *)(numeric->data);
-		break;
+		return *(ut16 *)(numeric->data);
 	case eLF_LONG:
-		*dst = *(st32 *)(numeric->data);
-		break;
+		return *(st32 *)(numeric->data);
 	case eLF_ULONG:
-		*dst = *(ut32 *)(numeric->data);
-		break;
+		return *(ut32 *)(numeric->data);
 	case eLF_QUADWORD:
-		*dst = *(st64 *)(numeric->data);
-		break;
+		return *(st64 *)(numeric->data);
 	case eLF_UQUADWORD:
-		*dst = *(ut64 *)(numeric->data);
-		break;
+		return *(ut64 *)(numeric->data);
 	default:
 		if (numeric->type_index >= 0x8000) {
-			*dst = 0;
-			break;
+			return 0;
 		}
-		*dst = *(ut16 *)(numeric->data);
+		return *(ut16 *)(numeric->data);
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
-static void is_union_fwdref(void *type, ut64 *is_fwdref) {
+static bool stype_is_fwdref(void *type) {
 	STypeInfo *t = (STypeInfo *)type;
-	SLF_UNION *lf = (SLF_UNION *)t->type_info;
-
-	*is_fwdref = lf->prop.bits.fwdref;
+	switch (t->leaf_type) {
+	case eLF_UNION: {
+		SLF_UNION *lf = (SLF_UNION *)t->type_info;
+		return lf->prop.bits.fwdref ? true : false;
+	}
+	case eLF_STRUCTURE:
+	case eLF_CLASS: {
+		SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_info;
+		return lf->prop.bits.fwdref ? true : false;
+	}
+	case eLF_STRUCTURE_19:
+	case eLF_CLASS_19: {
+		SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
+		return lf->prop.bits.fwdref ? true : false;
+	}
+	default:
+		rz_warn_if_reached();
+		return true;
+	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
-static void is_struct_class_fwdref(void *type, ut64 *is_fwdref) {
-	STypeInfo *t = (STypeInfo *)type;
-	// SLF_STRUCTURE and SLF_CLASS refer to the same struct so this is fine
-	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_info;
-	*is_fwdref = lf->prop.bits.fwdref;
-}
-
-static void is_struct_class_fwdref_19(void *type, ut64 *is_fwdref) {
-	STypeInfo *t = (STypeInfo *)type;
-	// SLF_STRUCTURE and SLF_CLASS refer to the same struct so this is fine
-	SLF_STRUCTURE_19 *lf = (SLF_STRUCTURE_19 *)t->type_info;
-	*is_fwdref = lf->prop.bits.fwdref;
-}
-
-static void get_type_members(void *type, RzList **l) {
+static RzList *get_type_members(void *type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SType *tmp = NULL;
 	switch (t->leaf_type) {
-	case eLF_FIELDLIST:
-		*l = ((SLF_FIELDLIST *)t->type_info)->substructs;
-		break;
-	case eLF_UNION:
-		tmp = (SType *)get_stype_by_index(((SLF_UNION *)t->type_info)->field_list);
-		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
-		break;
+	case eLF_FIELDLIST: {
+		SLF_FIELDLIST *lf = t->type_info;
+		return lf->substructs;
+	}
+	case eLF_UNION: {
+		tmp = get_stype_by_index(((SLF_UNION *)t->type_info)->field_list);
+		SLF_FIELDLIST *lf_union = tmp ? tmp->type_data.type_info : NULL;
+		return lf_union ? lf_union->substructs : NULL;
+	}
 	case eLF_STRUCTURE:
-	case eLF_CLASS:
-		tmp = (SType *)get_stype_by_index(((SLF_STRUCTURE *)t->type_info)->field_list);
-		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
-		break;
+	case eLF_CLASS: {
+		tmp = get_stype_by_index(((SLF_STRUCTURE *)t->type_info)->field_list);
+		SLF_FIELDLIST *lf_struct = tmp ? tmp->type_data.type_info : NULL;
+		return lf_struct ? lf_struct->substructs : NULL;
+	}
 	case eLF_STRUCTURE_19:
-	case eLF_CLASS_19:
-		tmp = (SType *)get_stype_by_index(((SLF_STRUCTURE_19 *)t->type_info)->field_list);
-		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
-		break;
-	case eLF_ENUM:
-		tmp = (SType *)get_stype_by_index(((SLF_ENUM *)t->type_info)->field_list);
-		*l = tmp ? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs : NULL;
-		break;
+	case eLF_CLASS_19: {
+		tmp = get_stype_by_index(((SLF_STRUCTURE_19 *)t->type_info)->field_list);
+		SLF_FIELDLIST *lf_struct19 = tmp ? tmp->type_data.type_info : NULL;
+		return lf_struct19 ? lf_struct19->substructs : NULL;
+	}
+	case eLF_ENUM: {
+		tmp = get_stype_by_index(((SLF_ENUM *)t->type_info)->field_list);
+		SLF_FIELDLIST *lf_enum = tmp ? tmp->type_data.type_info : NULL;
+		return lf_enum ? lf_enum->substructs : NULL;
+	}
 	default:
-		*l = NULL;
-		break;
+		return NULL;
 	}
 }
 
-static void get_type_name(void *type, char **name) {
+static char *get_type_name(void *type) {
 	STypeInfo *t = (STypeInfo *)type;
 	switch (t->leaf_type) {
-	case eLF_MEMBER:
-		*name = ((SLF_MEMBER *)(t->type_info))->name.name;
-		break;
-	case eLF_ONEMETHOD:
-		*name = ((SLF_ONEMETHOD *)(t->type_info))->name.name;
-		break;
-	case eLF_METHOD:
-		*name = ((SLF_METHOD *)(t->type_info))->name.name;
-		break;
-	case eLF_NESTTYPE:
-		*name = ((SLF_NESTTYPE *)(t->type_info))->name.name;
-		break;
-	case eLF_ENUM:
-		*name = ((SLF_ENUM *)(t->type_info))->name.name;
-		break;
-	case eLF_ENUMERATE:
-		*name = ((SLF_ENUMERATE *)(t->type_info))->name.name;
-		break;
+	case eLF_MEMBER: {
+		SLF_MEMBER *lf_member = t->type_info;
+		return lf_member->name.name;
+	}
+	case eLF_ONEMETHOD: {
+		SLF_ONEMETHOD *lf_onemethod = t->type_info;
+		return lf_onemethod->name.name;
+	}
+	case eLF_METHOD: {
+		SLF_METHOD *lf_method = t->type_info;
+		return lf_method->name.name;
+	}
+	case eLF_NESTTYPE: {
+		SLF_NESTTYPE *lf_nesttype = t->type_info;
+		return lf_nesttype->name.name;
+	}
+	case eLF_ENUM: {
+		SLF_ENUM *lf_enum = t->type_info;
+		return lf_enum->name.name;
+	}
+	case eLF_ENUMERATE: {
+		SLF_ENUMERATE *lf_enumerate = t->type_info;
+		return lf_enumerate->name.name;
+	}
 	case eLF_CLASS:
-	case eLF_STRUCTURE:
-		*name = ((SLF_STRUCTURE *)(t->type_info))->name.name;
-		break;
+	case eLF_STRUCTURE: {
+		SLF_STRUCTURE *lf_struct = t->type_info;
+		return lf_struct->name.name;
+	}
 	case eLF_CLASS_19:
-	case eLF_STRUCTURE_19:
-		*name = ((SLF_STRUCTURE_19 *)(t->type_info))->name.name;
-		break;
-	case eLF_ARRAY:
-		*name = ((SLF_ARRAY *)(t->type_info))->name.name;
-		break;
-	case eLF_UNION:
-		*name = ((SLF_UNION *)(t->type_info))->name.name;
-		break;
+	case eLF_STRUCTURE_19: {
+		SLF_STRUCTURE_19 *lf_struct_19 = t->type_info;
+		return lf_struct_19->name.name;
+	}
+	case eLF_ARRAY: {
+		SLF_ARRAY *lf_array = t->type_info;
+		return lf_array->name.name;
+	}
+	case eLF_UNION: {
+		SLF_UNION *lf_union = t->type_info;
+		return lf_union->name.name;
+	}
 	default:
-		*name = NULL;
-		break;
+		return NULL;
 	}
 }
 
-static void get_type_val(void *type, ut64 *res) {
+static ut64 get_type_val(void *type) {
 	STypeInfo *t = (STypeInfo *)type;
 	switch (t->leaf_type) {
-	case eLF_ONEMETHOD:
-		*res = ((SLF_ONEMETHOD *)(t->type_info))->offset_in_vtable;
-		break;
-	case eLF_MEMBER:
-		get_numeric_val(&((SLF_MEMBER *)(t->type_info))->offset, res);
-		break;
-	case eLF_ENUMERATE:
-		get_numeric_val(&((SLF_ENUMERATE *)(t->type_info))->enum_value, res);
-		break;
+	case eLF_ONEMETHOD: {
+		SLF_ONEMETHOD *lf_onemethod = t->type_info;
+		return lf_onemethod->offset_in_vtable;
+	}
+	case eLF_MEMBER: {
+		SLF_MEMBER *lf_member = t->type_info;
+		return get_numeric_val(&lf_member->offset);
+	}
+	case eLF_ENUMERATE: {
+		SLF_ENUMERATE *lf_enumerate = t->type_info;
+		return get_numeric_val(&lf_enumerate->enum_value);
+	}
 	case eLF_CLASS:
-	case eLF_STRUCTURE:
-		get_numeric_val(&((SLF_STRUCTURE *)(t->type_info))->size, res);
-		break;
+	case eLF_STRUCTURE: {
+		SLF_STRUCTURE *lf_struct = t->type_info;
+		return get_numeric_val(&lf_struct->size);
+	}
 	case eLF_CLASS_19:
-	case eLF_STRUCTURE_19:
-		get_numeric_val(&((SLF_STRUCTURE_19 *)(t->type_info))->size, res);
-		break;
-	case eLF_ARRAY:
-		get_numeric_val(&((SLF_ARRAY *)(t->type_info))->size, res);
-		break;
-	case eLF_UNION:
-		get_numeric_val(&((SLF_UNION *)(t->type_info))->size, res);
-		break;
+	case eLF_STRUCTURE_19: {
+		SLF_STRUCTURE_19 *lf_struct_19 = t->type_info;
+		return get_numeric_val(&lf_struct_19->size);
+	}
+	case eLF_ARRAY: {
+		SLF_ARRAY *lf_array = t->type_info;
+		return get_numeric_val(&lf_array->size);
+	}
+	case eLF_UNION: {
+		SLF_UNION *lf_union = t->type_info;
+		return get_numeric_val(&lf_union->size);
+	}
 	default:
-		*res = 0;
-		break;
+		return 0;
 	}
 }
 
@@ -1024,7 +1034,7 @@ static void get_array_print_type(void *type, char **name) {
 	}
 	ut64 size = 0;
 	if (ti->get_val) {
-		ti->get_val(ti, &size);
+		size = ti->get_val(ti);
 	}
 	RzStrBuf buff;
 	rz_strbuf_init(&buff);
@@ -1216,7 +1226,7 @@ static void get_class_struct_print_type(void *type, char **name) {
 	int name_len = 0;
 
 	lt = ti->leaf_type;
-	ti->get_name(ti, &tmp_name);
+	tmp_name = ti->get_name(ti);
 
 	if (lt == eLF_CLASS) {
 		tmp1 = "class ";
@@ -1302,7 +1312,7 @@ static void get_union_print_type(void *type, char **name) {
 	int name_len = 0;
 
 	//	lt = ti->leaf_type;
-	ti->get_name(ti, &tmp_name);
+	tmp_name = ti->get_name(ti);
 
 	tmp1 = "union ";
 	name_len = strlen(tmp1);
@@ -1342,7 +1352,7 @@ static void get_enumerate_print_type(void *type, char **name) {
 	char *tmp_name = 0, *tmp1 = 0;
 	int name_len = 0;
 
-	ti->get_name(ti, &tmp_name);
+	tmp_name = ti->get_name(ti);
 
 	tmp1 = "enumerate ";
 	name_len = strlen(tmp1);
@@ -1415,7 +1425,7 @@ static void get_method_print_type(void *type, char **name) {
 	char *tmp_name = 0, *tmp1 = 0;
 	int name_len = 0;
 
-	ti->get_name(ti, &tmp_name);
+	tmp_name = ti->get_name(ti);
 
 	tmp1 = "method ";
 	name_len = strlen(tmp1);
@@ -1731,7 +1741,6 @@ static void init_stype_info(STypeInfo *type_info) {
 	type_info->get_members = 0;
 	type_info->get_name = 0;
 	type_info->get_val = 0;
-	type_info->get_arg_type = 0;
 	type_info->is_fwdref = 0;
 	type_info->get_print_type = 0;
 
@@ -1752,7 +1761,7 @@ static void init_stype_info(STypeInfo *type_info) {
 		type_info->get_name = get_type_name;
 		type_info->get_val = get_type_val; // for structure this is size
 		type_info->get_members = get_type_members;
-		type_info->is_fwdref = is_struct_class_fwdref;
+		type_info->is_fwdref = stype_is_fwdref;
 		type_info->free_ = free_stype;
 		type_info->get_print_type = get_class_struct_print_type;
 		break;
@@ -1761,7 +1770,7 @@ static void init_stype_info(STypeInfo *type_info) {
 		type_info->get_name = get_type_name;
 		type_info->get_val = get_type_val; // for structure this is size
 		type_info->get_members = get_type_members;
-		type_info->is_fwdref = is_struct_class_fwdref_19;
+		type_info->is_fwdref = stype_is_fwdref;
 		type_info->free_ = free_stype;
 		type_info->get_print_type = get_class_struct_print_type;
 	case eLF_POINTER:
@@ -1792,7 +1801,7 @@ static void init_stype_info(STypeInfo *type_info) {
 		type_info->get_name = get_type_name;
 		type_info->get_val = get_type_val;
 		type_info->get_members = get_type_members;
-		type_info->is_fwdref = is_union_fwdref;
+		type_info->is_fwdref = stype_is_fwdref;
 		type_info->free_ = free_stype;
 		type_info->get_print_type = get_union_print_type;
 		break;
@@ -1930,60 +1939,6 @@ static int parse_lf_enum(SLF_ENUM *lf_enum, uint8_t *leaf_data, unsigned int *re
 
 	PEEK_READ1(*read_bytes, len, lf_enum->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_enum->pad, *read_bytes, leaf_data, len);
-
-	return *read_bytes - tmp_before_read_bytes;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-static int parse_lf_class(SLF_CLASS *lf_class, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
-	unsigned int tmp_before_read_bytes = *read_bytes;
-	unsigned int before_read_bytes = 0;
-
-	READ2(*read_bytes, len, lf_class->count, leaf_data, ut16);
-	READ2(*read_bytes, len, lf_class->prop.cv_property, leaf_data, ut16);
-	READ4(*read_bytes, len, lf_class->field_list, leaf_data, ut32);
-	READ4(*read_bytes, len, lf_class->derived, leaf_data, ut32);
-	READ4(*read_bytes, len, lf_class->vshape, leaf_data, ut32);
-
-	before_read_bytes = *read_bytes;
-	parse_numeric(&lf_class->size, leaf_data, read_bytes, len);
-	if (!lf_class->size.is_integer) {
-		eprintf("Integer expected!\n");
-		free_snumeric(&lf_class->size);
-		return 0;
-	}
-	before_read_bytes = *read_bytes - before_read_bytes;
-	leaf_data = (uint8_t *)leaf_data + before_read_bytes;
-	parse_scstring(&lf_class->name, leaf_data, read_bytes, len);
-	leaf_data += lf_class->name.size;
-	leaf_data += skip_padding(leaf_data, read_bytes, len);
-
-	return *read_bytes - tmp_before_read_bytes;
-}
-
-static int parse_lf_class_19(SLF_CLASS_19 *lf_class, uint8_t *leaf_data, unsigned int *read_bytes, unsigned int len) {
-	unsigned int tmp_before_read_bytes = *read_bytes;
-	unsigned int before_read_bytes = 0;
-
-	READ2(*read_bytes, len, lf_class->prop.cv_property, leaf_data, ut16);
-	READ2(*read_bytes, len, lf_class->unknown, leaf_data, ut16);
-	READ4(*read_bytes, len, lf_class->field_list, leaf_data, ut32);
-	READ4(*read_bytes, len, lf_class->derived, leaf_data, ut32);
-	READ4(*read_bytes, len, lf_class->vshape, leaf_data, ut32);
-	READ2(*read_bytes, len, lf_class->unknown1, leaf_data, st16);
-
-	before_read_bytes = *read_bytes;
-	parse_numeric(&lf_class->size, leaf_data, read_bytes, len);
-	if (!lf_class->size.is_integer) {
-		eprintf("Integer expected!\n");
-		free_snumeric(&lf_class->size);
-		return 0;
-	}
-	before_read_bytes = *read_bytes - before_read_bytes;
-	leaf_data = (uint8_t *)leaf_data + before_read_bytes;
-	parse_scstring(&lf_class->name, leaf_data, read_bytes, len);
-	leaf_data += lf_class->name.size;
-	leaf_data += skip_padding(leaf_data, read_bytes, len);
 
 	return *read_bytes - tmp_before_read_bytes;
 }
@@ -2251,16 +2206,11 @@ static int parse_tpi_stypes(RZ_STREAM_FILE *stream, SType *type) {
 	case eLF_ENUM:
 		PARSE_LF(SLF_ENUM, lf_enum);
 		break;
-	// TODO: combine with eLF_STRUCTURE
 	case eLF_CLASS:
-		PARSE_LF(SLF_CLASS, lf_class);
-		break;
-	case eLF_CLASS_19:
-		PARSE_LF(SLF_CLASS_19, lf_class_19);
-		break;
 	case eLF_STRUCTURE:
 		PARSE_LF(SLF_STRUCTURE, lf_structure);
 		break;
+	case eLF_CLASS_19:
 	case eLF_STRUCTURE_19:
 		PARSE_LF(SLF_STRUCTURE_19, lf_structure_19);
 		break;

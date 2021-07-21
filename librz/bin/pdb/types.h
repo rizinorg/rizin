@@ -119,28 +119,11 @@ typedef struct RZ_STREAM_FILE_ {
 } RZ_STREAM_FILE;
 
 typedef void (*free_func)(void *);
-typedef void (*get_value_name)(void *type, char **res_name);
-typedef void (*get_value)(void *type, ut64 *res);
-typedef void (*get_value_name_len)(void *type, int *res);
-typedef void (*get_member_list)(void *type, RzList **l);
-typedef int (*get_arg_type_)(void *type, void **ret_type);
-typedef int (*get_val_type)(void *type, void **ret_type);
-
-typedef get_val_type get_element_type_;
-typedef get_val_type get_index_type_;
-typedef get_val_type get_base_type_;
-typedef get_arg_type_ get_derived_;
-typedef get_arg_type_ get_vshape_;
-typedef get_arg_type_ get_utype_;
-typedef get_val_type get_return_type_;
-typedef get_val_type get_class_type_;
-typedef get_val_type get_this_type_;
-typedef get_arg_type_ get_arglist_;
-typedef get_arg_type_ get_index_;
-typedef get_arg_type_ get_mlist_;
-typedef get_arg_type_ get_modified_type_;
-typedef get_value get_index_val;
-typedef get_value_name get_print_type_;
+typedef char *(*get_value_name)(void *type);
+typedef ut64 (*get_value)(void *type);
+typedef RzList *(*get_member_list)(void *type);
+typedef bool (*is_dwref_type)(void *type);
+typedef void (*get_print_type_)(void *type, char **name);
 
 // start of refactoring the simple type to mode and kind
 typedef enum {
@@ -1180,11 +1163,9 @@ RZ_PACKED(
 		free_func free_;
 		get_value_name get_name;
 		get_value get_val;
-		get_value_name_len get_name_len;
 		get_member_list get_members;
-		get_arg_type_ get_arg_type;
-		get_value is_fwdref;
 		get_print_type_ get_print_type;
+		is_dwref_type is_fwdref;
 	})
 STypeInfo;
 

@@ -80,9 +80,9 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_streq(type, "struct _RTC_framedesc*", "Wrong pointer print type");
 		} else if (type->tpi_idx == 0x1004) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
-			ut64 forward_ref = 0;
-			type->type_data.is_fwdref(type_info, &forward_ref);
-			mu_assert_eq(forward_ref, 1, "Wrong fwdref");
+			bool forward_ref;
+			forward_ref = type->type_data.is_fwdref(type_info);
+			mu_assert_true(forward_ref, "Wrong fwdref");
 		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq(type_info->leaf_type, eLF_ARRAY, "Incorrect data type");
 			char *type;
@@ -96,15 +96,14 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_streq(simple_type->type, "uint32_t", "Incorrect return type");
 			dump = get_stype_by_index(((SLF_ARRAY *)(type_info->type_info))->element_type);
 			mu_assert_eq(dump->tpi_idx, 0x113E, "Wrong element type index");
-			ut64 size;
-			type_info->get_val(type_info, &size);
+			ut64 size = type_info->get_val(type_info);
 			mu_assert_eq(size, 20, "Wrong array size");
 		} else if (type->tpi_idx == 0x145A) {
 			mu_assert_eq(type_info->leaf_type, eLF_ENUM, "Incorrect data type");
 			SType *dump;
 			RzList *members;
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "EXCEPTION_DEBUGGER_ENUM", "wrong enum name");
 			dump = get_stype_by_index(((SLF_ENUM *)(type_info->type_info))->utype);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
@@ -112,7 +111,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_eq(simple_type->simple_type, eT_INT4, "Incorrect return type");
 			mu_assert_eq(simple_type->size, 4, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "int32_t", "Incorrect return type");
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 6, "wrong enum members length");
 		} else if (type->tpi_idx == 0x1414) {
 			mu_assert_eq(type_info->leaf_type, eLF_VTSHAPE, "Incorrect data type");
@@ -127,18 +126,18 @@ bool test_pdb_tpi_cpp(void) {
 		} else if (type->tpi_idx == 0x1003) {
 			mu_assert_eq(type_info->leaf_type, eLF_UNION, "Incorrect data type");
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "R2_TEST_UNION", "wrong union name");
 			RzList *members;
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 2, "wrong union member count");
 		} else if (type->tpi_idx == 0x100B) {
 			mu_assert_eq(type_info->leaf_type, eLF_CLASS, "Incorrect data type");
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "TEST_CLASS", "wrong class name");
 			RzList *members;
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 2, "wrong class member count");
 			SType *stype = NULL;
 			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->vshape);
@@ -171,7 +170,7 @@ bool test_pdb_tpi_cpp(void) {
 		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq(type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
 			RzList *members = rz_list_new();
-			type_info->get_members(&type->type_data, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 2725, "Incorrect members length");
 			RzListIter *it = rz_list_iterator(members);
 			int i = 0;
@@ -180,18 +179,18 @@ bool test_pdb_tpi_cpp(void) {
 				mu_assert_eq(type_info->leaf_type, eLF_ENUMERATE, "Incorrect data type");
 				if (i == 0) {
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "CV_ALLREG_ERR", "Wrong enum name");
-					ut64 value = 0;
-					type_info->get_val(type_info, &value);
+					ut64 value = type_info->get_val(type_info);
+
 					mu_assert_eq(value, 30000, "Wrong enumerate value");
 				}
 				if (i == 2724) {
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "CV_AMD64_YMM15D3", "Wrong enum name");
-					ut64 value = 0;
-					type_info->get_val(type_info, &value);
+					ut64 value = type_info->get_val(type_info);
+
 					mu_assert_eq(value, 687, "Wrong enumerate value");
 				}
 				i++;
@@ -201,13 +200,13 @@ bool test_pdb_tpi_cpp(void) {
 		} else if (type->tpi_idx == 0x101A) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
 			char *name;
-			ut64 is_forward_ref;
-			type_info->get_name(&type->type_data, &name);
+			name = type_info->get_name(&type->type_data);
 			mu_assert_streq(name, "threadlocaleinfostruct", "Wrong name");
-			type_info->is_fwdref(&type->type_data, &is_forward_ref);
-			mu_assert_eq(is_forward_ref, false, "Wrong is_fwdref");
+			bool forward_ref;
+			forward_ref = type->type_data.is_fwdref(type_info);
+			mu_assert_false(forward_ref, "Wrong fwdref");
 			RzList *members = rz_list_new();
-			type_info->get_members(&type->type_data, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 18, "Incorrect members count");
 			RzListIter *it = rz_list_iterator(members);
 			int i = 0;
@@ -216,7 +215,7 @@ bool test_pdb_tpi_cpp(void) {
 				if (i == 0) {
 					mu_assert_eq(type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "refcount", "Wrong member name");
 					char *type;
 					type_info->get_print_type(type_info, &type);
@@ -225,7 +224,7 @@ bool test_pdb_tpi_cpp(void) {
 				if (i == 1) {
 					mu_assert_eq(type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "lc_codepage", "Wrong member name");
 					char *type;
 					type_info->get_print_type(type_info, &type);
@@ -234,7 +233,7 @@ bool test_pdb_tpi_cpp(void) {
 				if (i == 17) {
 					mu_assert_eq(type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "locale_name", "Wrong method name");
 					char *type;
 					type_info->get_print_type(type_info, &type);
@@ -287,9 +286,9 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_streq(type, "struct core::fmt::Void*", "Wrong pointer print type");
 		} else if (type->tpi_idx == 0x1005) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
-			ut64 forward_ref = 0;
-			type->type_data.is_fwdref(type_info, &forward_ref);
-			mu_assert_eq(forward_ref, 1, "Wrong fwdref");
+			bool forward_ref;
+			forward_ref = type->type_data.is_fwdref(type_info);
+			mu_assert_true(forward_ref, "Wrong fwdref");
 		} else if (type->tpi_idx == 0x114A) {
 			mu_assert_eq(type_info->leaf_type, eLF_ARRAY, "Incorrect data type");
 			SType *dump;
@@ -306,15 +305,14 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_eq(simple_type->size, 1, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "uint8_t", "Incorrect return type");
 
-			ut64 size;
-			type_info->get_val(type_info, &size);
+			ut64 size = type_info->get_val(type_info);
 			mu_assert_eq(size, 16, "Wrong array size");
 		} else if (type->tpi_idx == 0x1FB4) {
 			mu_assert_eq(type_info->leaf_type, eLF_ENUM, "Incorrect data type");
 			SType *dump;
 			RzList *members;
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "ISA_AVAILABILITY", "wrong enum name");
 			dump = get_stype_by_index(((SLF_ENUM *)(type_info->type_info))->utype);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
@@ -322,7 +320,7 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_eq(simple_type->simple_type, eT_INT4, "Incorrect return type");
 			mu_assert_eq(simple_type->size, 4, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "int32_t", "Incorrect return type");
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 10, "wrong enum members length");
 		} else if (type->tpi_idx == 0x1E31) {
 			mu_assert_eq(type_info->leaf_type, eLF_VTSHAPE, "Incorrect data type");
@@ -350,10 +348,10 @@ bool test_pdb_tpi_rust(void) {
 		} else if (type->tpi_idx == 0x1EA9) {
 			mu_assert_eq(type_info->leaf_type, eLF_CLASS, "Incorrect data type");
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "std::bad_typeid", "wrong class name");
 			RzList *members;
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			// mu_assert_eq (members->length, 7, "wrong class member count"); // These members (fieldlist) isn't properly parsed?
 			SType *stype = NULL;
 			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->vshape);
@@ -387,7 +385,7 @@ bool test_pdb_tpi_rust(void) {
 			mu_assert_eq(type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
 			// check size
 			RzList *members = rz_list_new();
-			type_info->get_members(&type->type_data, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 3, "Incorrect members length");
 			RzListIter *it = rz_list_iterator(members);
 			int i = 0;
@@ -396,13 +394,13 @@ bool test_pdb_tpi_rust(void) {
 				mu_assert_eq(type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 				if (i == 0) {
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "RUST$ENUM$DISR", "Wrong member name");
 					// get type
 				}
 				if (i == 2) {
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "__0", "Wrong member name");
 					// get type
 				}
@@ -413,19 +411,19 @@ bool test_pdb_tpi_rust(void) {
 		} else if (type->tpi_idx == 0x1058) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
 			char *name;
-			type_info->get_name(&type->type_data, &name);
+			name = type_info->get_name(&type->type_data);
 			mu_assert_streq(name, "std::thread::local::fast::Key<core::cell::Cell<core::option::Option<core::ptr::non_null::NonNull<core::task::wake::Context>>>>", "Wrong name");
 
-			ut64 is_forward_ref;
-			type_info->is_fwdref(&type->type_data, &is_forward_ref);
-			mu_assert_eq(is_forward_ref, false, "Wrong is_fwdref");
+			bool forward_ref;
+			forward_ref = type->type_data.is_fwdref(type_info);
+			mu_assert_false(forward_ref, "Wrong fwdref");
 
-			ut64 size = 0;
-			type_info->get_val(type_info, &size);
+			ut64 size = type_info->get_val(type_info);
+
 			mu_assert_eq(size, 24, "Wrong struct size");
 
 			RzList *members = rz_list_new();
-			type_info->get_members(&type->type_data, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 2, "Incorrect members count");
 
 			RzListIter *it = rz_list_iterator(members);
@@ -435,14 +433,14 @@ bool test_pdb_tpi_rust(void) {
 				if (i == 0) {
 					mu_assert_eq(type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "inner", "Wrong member name");
 					// todo add type idx
 				}
 				if (i == 1) {
 					mu_assert_eq(type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "dtor_state", "Wrong member name");
 				}
 				i++;
@@ -568,9 +566,9 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			mu_assert_streq(type, "const class std::ios_base*", "Wrong pointer print type");
 		} else if (type->tpi_idx == 0x1ACD) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
-			ut64 forward_ref = 0;
-			type->type_data.is_fwdref(type_info, &forward_ref);
-			mu_assert_eq(forward_ref, 0, "Wrong fwdref");
+			bool forward_ref;
+			forward_ref = type->type_data.is_fwdref(type_info);
+			mu_assert_false(forward_ref, "Wrong fwdref");
 		} else if (type->tpi_idx == 0x1B3C) {
 			mu_assert_eq(type_info->leaf_type, eLF_ARRAY, "Incorrect data type");
 			char *type;
@@ -584,15 +582,14 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			mu_assert_streq(simple_type->type, "uint32_t", "Incorrect return type");
 			dump = get_stype_by_index(((SLF_ARRAY *)(type_info->type_info))->element_type);
 			mu_assert_eq(dump->tpi_idx, 0, "Wrong element type index");
-			ut64 size;
-			type_info->get_val(type_info, &size);
+			ut64 size = type_info->get_val(type_info);
 			mu_assert_eq(size, 16, "Wrong array size");
 		} else if (type->tpi_idx == 0x20D6) {
 			mu_assert_eq(type_info->leaf_type, eLF_ENUM, "Incorrect data type");
 			SType *dump;
 			RzList *members;
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "ReplacesCorHdrNumericDefines", "wrong enum name");
 			dump = get_stype_by_index(((SLF_ENUM *)(type_info->type_info))->utype);
 			mu_assert_eq(dump->type_data.leaf_type, eLF_SIMPLE_TYPE, "Incorrect return type");
@@ -600,7 +597,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 			mu_assert_eq(simple_type->simple_type, eT_INT4, "Incorrect return type");
 			mu_assert_eq(simple_type->size, 4, "Incorrect return type");
 			mu_assert_streq(simple_type->type, "int32_t", "Incorrect return type");
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 25, "wrong enum members length");
 		} else if (type->tpi_idx == 0x1A5A) {
 			mu_assert_eq(type_info->leaf_type, eLF_VTSHAPE, "Incorrect data type");
@@ -615,18 +612,18 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 		} else if (type->tpi_idx == 0x2151) {
 			mu_assert_eq(type_info->leaf_type, eLF_UNION, "Incorrect data type");
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "__m64", "wrong union name");
 			RzList *members;
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 9, "wrong union member count");
 		} else if (type->tpi_idx == 0x239B) {
 			mu_assert_eq(type_info->leaf_type, eLF_CLASS, "Incorrect data type");
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "CTest1", "wrong class name");
 			RzList *members;
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 5, "wrong class member count");
 			SType *stype = NULL;
 			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->vshape);
@@ -636,10 +633,10 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 		} else if (type->tpi_idx == 0x23DC) {
 			mu_assert_eq(type_info->leaf_type, eLF_CLASS, "Incorrect data type");
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "CTest2", "wrong class name");
 			RzList *members;
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 4, "wrong class member count");
 			RzListIter *it_ctest2;
 			STypeInfo *member_type;
@@ -649,11 +646,11 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 					mu_assert_eq(member_type->leaf_type, eLF_BCLASS, "Incorrect data type");
 				} else if (i == 1) {
 					mu_assert_eq(member_type->leaf_type, eLF_ONEMETHOD, "Incorrect data type");
-					member_type->get_name(member_type, &name);
+					name = member_type->get_name(member_type);
 					mu_assert_streq(name, "Bar", "wrong member name");
 				} else if (i == 2) {
 					mu_assert_eq(member_type->leaf_type, eLF_METHOD, "Incorrect data type");
-					member_type->get_name(member_type, &name);
+					name = member_type->get_name(member_type);
 					mu_assert_streq(name, "CTest2", "wrong member name");
 				}
 				i++;
@@ -666,10 +663,10 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 		} else if (type->tpi_idx == 0x2299) {
 			mu_assert_eq(type_info->leaf_type, eLF_CLASS_19, "Incorrect data type");
 			char *name;
-			type_info->get_name(type_info, &name);
+			name = type_info->get_name(type_info);
 			mu_assert_streq(name, "type_info", "wrong class name");
 			RzList *members;
-			type_info->get_members(type_info, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 12, "wrong class member count");
 			SType *stype = NULL;
 			stype = get_stype_by_index(((SLF_CLASS *)(type_info->type_info))->vshape);
@@ -705,7 +702,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 		} else if (type->tpi_idx == 0x239A) {
 			mu_assert_eq(type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
 			RzList *members = rz_list_new();
-			type_info->get_members(&type->type_data, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 5, "Incorrect members length");
 			RzListIter *it_fieldlist;
 			STypeInfo *type_info;
@@ -714,13 +711,13 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 				if (i == 1) {
 					mu_assert_eq(type_info->leaf_type, eLF_ONEMETHOD, "Incorrect data type");
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "Foo", "Wrong enum name");
 				}
 				if (i == 3) {
 					mu_assert_eq(type_info->leaf_type, eLF_METHOD, "Incorrect data type");
 					char *name = NULL;
-					type_info->get_name(type_info, &name);
+					name = type_info->get_name(type_info);
 					mu_assert_streq(name, "CTest1", "Wrong enum name");
 				}
 				i++;
@@ -730,13 +727,13 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 		} else if (type->tpi_idx == 0x208F) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
 			char *name;
-			ut64 is_forward_ref;
-			type_info->get_name(&type->type_data, &name);
+			name = type_info->get_name(&type->type_data);
 			mu_assert_streq(name, "_s__RTTICompleteObjectLocator", "Wrong name");
-			type_info->is_fwdref(&type->type_data, &is_forward_ref);
-			mu_assert_eq(is_forward_ref, false, "Wrong is_fwdref");
+			bool forward_ref;
+			forward_ref = type->type_data.is_fwdref(type_info);
+			mu_assert_false(forward_ref, "Wrong fwdref");
 			RzList *members = rz_list_new();
-			type_info->get_members(&type->type_data, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 5, "Incorrect members count");
 			RzListIter *it_structure;
 			STypeInfo *type_structure;
@@ -745,7 +742,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 				if (i == 0) {
 					mu_assert_eq(type_structure->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_structure->get_name(type_structure, &name);
+					name = type_structure->get_name(type_structure);
 					mu_assert_streq(name, "signature", "Wrong member name");
 					char *type;
 					type_structure->get_print_type(type_structure, &type);
@@ -754,7 +751,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 				if (i == 1) {
 					mu_assert_eq(type_structure->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_structure->get_name(type_structure, &name);
+					name = type_structure->get_name(type_structure);
 					mu_assert_streq(name, "offset", "Wrong member name");
 					char *type;
 					type_structure->get_print_type(type_structure, &type);
@@ -763,7 +760,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 				if (i == 4) {
 					mu_assert_eq(type_structure->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_structure->get_name(type_structure, &name);
+					name = type_structure->get_name(type_structure);
 					mu_assert_streq(name, "pClassDescriptor", "Wrong method name");
 					char *type;
 					type_structure->get_print_type(type_structure, &type);
@@ -774,13 +771,14 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 		} else if (type->tpi_idx == 0x2184) {
 			mu_assert_eq(type_info->leaf_type, eLF_STRUCTURE_19, "Incorrect data type");
 			char *name;
-			ut64 is_forward_ref;
-			type_info->get_name(&type->type_data, &name);
+			name = type_info->get_name(&type->type_data);
 			mu_assert_streq(name, "_RS5_IMAGE_LOAD_CONFIG_DIRECTORY32", "Wrong name");
-			type_info->is_fwdref(&type->type_data, &is_forward_ref);
-			mu_assert_eq(is_forward_ref, false, "Wrong is_fwdref");
+			bool forward_ref;
+			forward_ref = type->type_data.is_fwdref(type_info);
+			mu_assert_false(forward_ref, "Wrong fwdref");
+			;
 			RzList *members = rz_list_new();
-			type_info->get_members(&type->type_data, &members);
+			members = type_info->get_members(type_info);
 			mu_assert_eq(members->length, 48, "Incorrect members count");
 			RzListIter *it_structure_19;
 			STypeInfo *type_structure_19;
@@ -789,7 +787,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 				if (i == 0) {
 					mu_assert_eq(type_structure_19->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_structure_19->get_name(type_structure_19, &name);
+					name = type_structure_19->get_name(type_structure_19);
 					mu_assert_streq(name, "Size", "Wrong member name");
 					char *type;
 					type_structure_19->get_print_type(type_structure_19, &type);
@@ -798,7 +796,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 				if (i == 1) {
 					mu_assert_eq(type_structure_19->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_structure_19->get_name(type_structure_19, &name);
+					name = type_structure_19->get_name(type_structure_19);
 					mu_assert_streq(name, "TimeDateStamp", "Wrong member name");
 					char *type;
 					type_structure_19->get_print_type(type_structure_19, &type);
@@ -807,7 +805,7 @@ bool test_pdb_tpi_cpp_vs2019(void) {
 				if (i == 17) {
 					mu_assert_eq(type_structure_19->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
-					type_structure_19->get_name(type_structure_19, &name);
+					name = type_structure_19->get_name(type_structure_19);
 					mu_assert_streq(name, "SecurityCookie", "Wrong method name");
 					char *type;
 					type_structure_19->get_print_type(type_structure_19, &type);
