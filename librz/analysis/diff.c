@@ -227,8 +227,13 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcn
 			} else if (!fcn->fingerprint_size || !fcn2->fingerprint_size) {
 				continue;
 			}
-			sizes_div = fcn->fingerprint_size;
-			sizes_div /= fcn2->fingerprint_size;
+			if (fcn->fingerprint_size > fcn2->fingerprint_size) {
+				sizes_div = fcn2->fingerprint_size;
+				sizes_div /= fcn->fingerprint_size;
+			} else {
+				sizes_div = fcn->fingerprint_size;
+				sizes_div /= fcn2->fingerprint_size;
+			}
 			if (sizes_div < RZ_ANALYSIS_DIFF_THRESHOLD) {
 				continue;
 			}
