@@ -276,7 +276,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 				} else {
 					if (ignore) {
 						ignore = false;
-						printf("\noriginal not matched:");
+						printf("original not matched:");
 					}
 					printf(" %s", f->name);
 				}
@@ -312,7 +312,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2, bool json) {
 				} else {
 					if (ignore) {
 						ignore = false;
-						printf("\nmodified not matched:");
+						printf("modified not matched:");
 					}
 					printf(" %s", f->name);
 				}
