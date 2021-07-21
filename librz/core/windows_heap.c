@@ -1341,21 +1341,6 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 	RtlDestroyQueryDebugBuffer(db);
 }
 
-//static const char *help_msg[] = {
-//	"Usage:", " dmh[?|b][f|j]", " # Windows heap parsing commands",
-//	"dmw[j]", "", "List process heaps",
-//	"dmwb[?] [addr]", "", "List process heap blocks",
-//	NULL
-//};
-//
-//static const char *help_msg_block[] = {
-//	"Usage:", " dmhb[f|j]", " # Windows heap parsing commands",
-//	"dmwb [addr]", "", "List allocated heap blocks",
-//	"dmwbf", "", "Create flags for each allocated block",
-//	"dmwbj [addr]", "", "Print output in JSON format",
-//	NULL
-//};
-
 static void cmd_debug_map_heap_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag) {
 	init_func();
 	ut64 off = 0;
@@ -1397,16 +1382,3 @@ static void cmd_debug_map_heap_block_win(RzCore *core, const char *addr, RzOutpu
 	rz_table_free(tbl);
 	pj_free(pj);
 }
-
-//static int cmd_debug_map_heap_win(RzCore *core, const char *input) {
-//	init_func();
-//	switch (input[0]) {
-//	case 'b': // dmhb
-//		cmd_debug_map_heap_block_win(core, input + 1);
-//		break;
-//	default:
-//		w32_list_heaps(core, input[0]);
-//		break;
-//	}
-//	return true;
-//}
