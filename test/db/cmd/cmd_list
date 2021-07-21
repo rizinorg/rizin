@@ -405,9 +405,9 @@ ad__  16         dcpu16      PD      Mojang's DCPU-16
 _dA_  32 64      ebc         LGPL3   EFI Bytecode (by Fedor Sakharov)
 adAe  16         gb          LGPL3   GameBoy(TM) (z80-like) (by condret)
 _dAe  16         h8300       LGPL3   H8/300 disassembly plugin
-_dAe  32         hexagon     LGPL3   Qualcomm Hexagon (QDSP6) V6 (by xvilka)
+_dA_  32         hexagon     LGPL3   Qualcomm Hexagon (QDSP6) V6 (by xvilka)
 _d__  32         hppa        GPL3    HP PA-RISC
-_dAe  4          i4004       LGPL3   Intel 4004 microprocessor
+_dA_  4          i4004       LGPL3   Intel 4004 microprocessor
 _dA_  8          i8080       BSD     Intel 8080 CPU
 adA_  32         java        LGPL-3  Java bytecode disassembler (by deroad)
 _d__  32         lanai       GPL3    LANAI
@@ -434,7 +434,7 @@ _dA_  32 64      riscv       GPL     RISC-V
 _dAe  32         rsp         LGPL3   Reality Signal Processor
 _dAe  32         sh          GPL3    SuperH-4 CPU
 _dA_  8 16       snes        LGPL3   SuperNES CPU
-_dAe  32 64      sparc       BSD     Capstone SPARC disassembler
+_dA_  32 64      sparc       BSD     Capstone SPARC disassembler
 _dA_  32 64      sparc.gnu   GPL3    Scalable Processor Architecture
 _dA_  16         spc700      LGPL3   spc700, snes' sound-chip
 _dA_  32 64      sysz        BSD     SystemZ CPU disassembler
@@ -443,7 +443,7 @@ _d__  32         tms320c64x  BSD     Capstone TMS320c64x disassembler
 _dA_  32         tricore     GPL3    Siemens TriCore CPU
 _dAe  32         v810        LGPL3   v810 disassembly plugin (by pancake)
 _dAe  32         v850        LGPL3   v850 disassembly plugin
-_dAe  8 32       vax         GPL     VAX
+_dA_  8 32       vax         GPL     VAX
 adAe  32         wasm        MIT     WebAssembly (by cgvwzq) v0.1.0
 a___  16 32 64   x86.as      LGPL3   Intel X86 GNU Assembler (Use RZ_X86_AS env)
 _dAe  16 32 64   x86         BSD     Capstone X86 disassembler
