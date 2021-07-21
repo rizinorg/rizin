@@ -183,6 +183,7 @@ RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *a) {
 	rz_reg_free(a->reg);
 	ht_up_free(a->ht_xrefs_from);
 	ht_up_free(a->ht_xrefs_to);
+	ht_up_free(a->type_links);
 	rz_list_free(a->leaddrs);
 	rz_type_db_free(a->typedb);
 	sdb_free(a->sdb);
