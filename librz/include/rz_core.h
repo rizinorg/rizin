@@ -641,9 +641,16 @@ RZ_API RzCmdStatus rz_core_lang_plugins_print(RzLang *lang, RzCmdStateOutput *st
 /* ccore.c */
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state);
 
+/* cil.c */
+// TODO : They should have been there, but require `static` vars inside canalysis.c
+//      : Keep esil in canalysis.c, and split the rzil in cil.c
+RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *addr);
+RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2);
+RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
+RZ_API int rz_core_esil_step_back(RzCore *core);
+
 /* canalysis.c */
 RZ_API RzAnalysisOp *rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
-RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *addr);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);
 RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, bool verbose);
 RZ_API ut64 rz_core_analysis_address(RzCore *core, ut64 addr);
@@ -660,9 +667,6 @@ RZ_API RzGraph /*RzGraphNodeInfo*/ *rz_core_analysis_importxrefs(RzCore *core);
 RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt);
 RZ_API int rz_core_analysis_refs(RzCore *core, const char *input);
 RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input);
-RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2);
-RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
-RZ_API int rz_core_esil_step_back(RzCore *core);
 RZ_API void rz_core_analysis_flag_every_function(RzCore *core);
 RZ_API bool rz_core_analysis_function_rename(RzCore *core, ut64 addr, const char *_name);
 RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 addr, bool analyze_recursively);

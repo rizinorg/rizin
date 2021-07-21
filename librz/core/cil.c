@@ -428,3 +428,63 @@ RZ_IPI void rz_core_analysis_esil_default(RzCore *core) {
         }
         rz_core_seek(core, at, true);
 }
+
+/**********
+ * New Rizin IL Core (rzil) related things
+ *********/
+RZ_IPI void rz_core_analysis_rzil_init_mem(RzCore *core) {
+        RzILVM vm;
+        if (core->analysis->rzil && core->analysis->rzil->vm) {
+                vm = core->analysis->rzil->vm;
+                rz_il_vm_add_mem(vm, vm->data_size);
+        }
+}
+
+RZ_IPI void core_rzil_init(RzCore *core) {
+        // real init;
+        // TODO : get args from config
+        //      currently it's bf specific
+        int addrsize = 64;
+        int datasize = 8;
+        ut64 start_addr = 0x1000;
+
+        RzAnalysisRzil *rzil;
+        if (!(rzil = rz_analysis_rzil_new())) {
+                return;
+        }
+        // init
+        rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize);
+        core->analysis->rzil = rzil;
+
+        // TODO : get registers info from rizin
+        rz_il_vm_add_reg(rzil->vm, "ptr", rzil->vm->addr_size);
+}
+
+RZ_IPI void rz_core_analysis_rzil_init(RzCore *core) {
+        if (core->analysis->rzil) {
+                return;
+        }
+        core_rzil_init(core);
+}
+
+RZ_IPI void rz_core_analysis_rzil_reinit(RzCore *core) {
+        if (core->analysis->rzil) {
+                rz_analysis_rzil_free(core->analysis->rzil);
+                core->analysis->rzil = NULL;
+        }
+
+        core_rzil_init(core);
+}
+
+// step a list of ct_opcode at a given address
+RZ_IPI void rz_core_rzil_step(RzCore *core, ut64 addr) {
+        RzPVector *oplist;
+        BitVector cur_addr;
+        RzILVM vm = core->analysis->rzil->vm;
+
+        cur_addr = rz_il_ut64_addr_to_bv(addr);
+        oplist = rz_il_vm_load_opcodes(vm, cur_addr);
+        rz_il_free_bv_addr(cur_addr);
+        rz_il_vm_list_step(vm, oplist);
+        rz_il_clean_temps(vm);
+}

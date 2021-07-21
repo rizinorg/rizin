@@ -1113,7 +1113,6 @@ typedef struct rz_analysis_rzil_callbacks_t {
 
 typedef struct rz_analysis_rzil_t {
         RzILVM vm;
-	RzAnalysis *analysis;
 	RzAnalysisRzilTrace *trace;
 
         RzAnalysisRzilCallbacks cb;
@@ -1124,6 +1123,7 @@ typedef struct rz_analysis_rzil_t {
 	ut64 stack_addr;
 	ut32 stack_size;
 
+	ut64 pc_addr;
 	int verbose;
 } RzAnalysisRzil;
 
@@ -1546,6 +1546,11 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx);
 RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
 
 /* rzil : stats and trace */
+RZ_API RzAnalysisRzil *rz_analysis_rzil_new();
+RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr);
+RZ_API bool rz_analysis_rzil_setup(RzAnalysisRzil *rzil, RzAnalysis *analysis, int romem, int stats, int nonull);
+RZ_API void rz_analysis_rzil_free(RzAnalysisRzil *rzil);
+
 /* stats */
 RZ_API void rz_analysis_rzil_mem_ro(RzAnalysisRzil *rzil, int mem_readonly);
 RZ_API void rz_analysis_rzil_stats(RzAnalysisRzil *rzil, int enable);

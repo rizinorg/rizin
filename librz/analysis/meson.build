@@ -18,6 +18,7 @@ rz_analysis_sources = [
   'esil/esil_sources.c',
   'rzil/rzil_stats.c',
   'rzil/rzil_trace.c',
+  'rzil/rzil.c',
   'fcn.c',
   'flirt.c',
   'hint.c',
