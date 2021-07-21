@@ -839,6 +839,7 @@ RZ_API RZ_OWN RzList *rz_heap_windows_heap_list(RzCore *core);
 #define RZ_CORE_BIN_ACC_RESOURCES        0x100000
 #define RZ_CORE_BIN_ACC_INITFINI         0x200000
 #define RZ_CORE_BIN_ACC_SEGMENTS         0x400000
+#define RZ_CORE_BIN_ACC_BASEFIND         0x800000
 #define RZ_CORE_BIN_ACC_TRYCATCH         0x20000000
 #define RZ_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
 #define RZ_CORE_BIN_ACC_MAPS             0x80000000

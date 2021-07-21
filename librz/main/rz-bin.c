@@ -874,7 +874,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'M': set_action(RZ_BIN_REQ_MAIN); break;
 		case 'l': set_action(RZ_BIN_REQ_LIBS); break;
 		case 'R': set_action(RZ_BIN_REQ_RELOCS); break;
-                case 'Y': set_action(RZ_BIN_REQ_RELOCS); break;
+                case 'Y': set_action(RZ_BIN_REQ_BASEFIND); break;
 		case 'x': set_action(RZ_BIN_REQ_EXTRACT); break;
 		case 'X': set_action(RZ_BIN_REQ_PACKAGE); break;
 		case 'O':
