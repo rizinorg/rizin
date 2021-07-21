@@ -72,7 +72,13 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 
 RZ_IPI void rz_core_debug_continue(RzCore *core) {
 	if (rz_config_get_b(core->config, "cfg.debug")) {
-		rz_cmd_debug_continue_exception_handler(core, 1, NULL);
+		rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+		rz_reg_arena_swap(core->dbg->reg, true);
+#if __linux__
+		core->dbg->continue_all_threads = true;
+#endif
+		rz_debug_continue(core->dbg);
+		rz_core_dbg_follow_seek_register(core);
 	} else {
 		rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
 		rz_core_regs2flags(core);
