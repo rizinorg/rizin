@@ -5268,12 +5268,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_continue_exception_handler(RzCore *core, int arg
 	rz_cons_break_push(static_debug_stop, core->dbg);
 
 #if __WINDOWS__
-case 'e': // "dce"
 	rz_reg_arena_swap(core->dbg->reg, true);
 	rz_debug_continue_pass_exception(core->dbg);
-	break;
 #else
-	eprintf("dce not available on this platform");
+	eprintf("dce not available on this platform\n");
 #endif
 
 	rz_cons_break_pop();

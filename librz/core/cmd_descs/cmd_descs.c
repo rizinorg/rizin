@@ -1558,6 +1558,7 @@ static const RzCmdDescArg cmd_debug_continue_traptrace_args[] = {
 		.name = "len",
 		.type = RZ_CMD_ARG_TYPE_RZNUM,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },

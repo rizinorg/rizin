@@ -60,6 +60,7 @@ commands:
         args:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: dcu
         summary: Debug continue until
         cname: cmd_debug_continue_until
