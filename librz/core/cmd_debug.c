@@ -4611,9 +4611,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'H': // "dH"
 		eprintf("TODO: transplant process\n");
 		break;
-		//	case 'c': // "dc"
-		//		(void)rz_debug_continue_oldhandler(core, input + 1);
-		//		break;
 	case 'r': // "dr"
 		if (core->bin->is_debugger || input[1] == '?') {
 			cmd_debug_reg(core, input + 1);
