@@ -193,6 +193,7 @@ static int rabin_show_help(int v) {
 			" -Q              show load address used by dlopen (non-aslr libs)\n"
 			" -r              rizin output\n"
 			" -R              relocations\n"
+                        " -Y              basefind\n"
 			" -s              symbols\n"
 			" -S              sections\n"
 			" -SS             segments\n"
@@ -752,7 +753,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 #define unset_action(x) action &= ~x
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxXzZ");
+	rz_getopt_init(&opt, argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrTvLhuxYXzZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'g':
@@ -873,6 +874,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'M': set_action(RZ_BIN_REQ_MAIN); break;
 		case 'l': set_action(RZ_BIN_REQ_LIBS); break;
 		case 'R': set_action(RZ_BIN_REQ_RELOCS); break;
+                case 'Y': set_action(RZ_BIN_REQ_RELOCS); break;
 		case 'x': set_action(RZ_BIN_REQ_EXTRACT); break;
 		case 'X': set_action(RZ_BIN_REQ_PACKAGE); break;
 		case 'O':

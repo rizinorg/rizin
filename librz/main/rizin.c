@@ -107,7 +107,6 @@ static int main_help(int line) {
 			" -B [baddr]   set base address for PIE binaries\n"
 			" -c 'cmd..'   execute rizin command\n"
 			" -C           file is host:port (alias for -cR+http://%%s/cmd/)\n"
-			" -Y           basefind\n"
 			" -d           debug the executable 'file' or running process 'pid'\n"
 			" -D [backend] enable debug mode (e cfg.debug=true)\n"
 			" -e k=v       evaluate config var\n"
