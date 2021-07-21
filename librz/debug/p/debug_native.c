@@ -311,7 +311,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	W32DbgWInst *wrap = dbg->user;
 
 	if (pid == -1) {
-		eprintf("ERROR: rz_debug_native_wait called with pid -1\n");
+		RZ_LOG_ERROR("rz_debug_native_wait called with pid -1\n");
 		return RZ_DEBUG_REASON_ERROR;
 	}
 
@@ -344,8 +344,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 				}
 			}
 		} else {
-			rz_cons_printf("Loading unknown library.\n");
-			rz_cons_flush();
+			RZ_LOG_WARN("Loading unknown library.\n");
 		}
 		restore_thread = true;
 	} else if (reason == RZ_DEBUG_REASON_EXIT_LIB) {
@@ -355,28 +354,24 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 				reason = RZ_DEBUG_REASON_TRAP;
 			}
 		} else {
-			rz_cons_printf("Unloading unknown library.\n");
-			rz_cons_flush();
+			RZ_LOG_WARN("Unloading unknown library.\n");
 		}
 		restore_thread = true;
 	} else if (reason == RZ_DEBUG_REASON_NEW_PID) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
 			RZ_LOG_INFO("(%d) Created process %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
-			rz_cons_flush();
 		}
 	} else if (reason == RZ_DEBUG_REASON_NEW_TID) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
 			RZ_LOG_INFO("(%d) Created thread %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
-			rz_cons_flush();
 		}
 		restore_thread = true;
 	} else if (reason == RZ_DEBUG_REASON_EXIT_TID) {
 		PTHREAD_ITEM item = r->thread;
 		if (r && r->thread) {
 			RZ_LOG_INFO("(%d) Finished thread %d Exit code %lu\n", (ut32)item->pid, (ut32)item->tid, item->dwExitCode);
-			rz_cons_flush();
 		}
 		if (dbg->tid != orig_tid && item->tid != orig_tid) {
 			restore_thread = true;
@@ -385,7 +380,6 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
 			RZ_LOG_INFO("(%d) Finished process with exit code %lu\n", dbg->main_pid, item->dwExitCode);
-			rz_cons_flush();
 		}
 		dbg->pid = -1;
 		dbg->tid = -1;
@@ -393,7 +387,6 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
 			RZ_LOG_INFO("(%d) Created DebugBreak thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
-			rz_cons_flush();
 		}
 		// DebugProcessBreak creates a new thread that will trigger a breakpoint. We record the
 		// tid here to ignore it once the breakpoint is hit.
