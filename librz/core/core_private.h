@@ -128,7 +128,7 @@ RZ_IPI void rz_core_meta_comment_add(RzCore *core, const char *comment, ut64 add
 /* cmd_flag.c */
 RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, RzOutputMode mode);
 
-/*cmd_debug.c */
+/* cmd_debug.c */
 RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core);
 RZ_IPI void rz_core_static_debug_stop(void *u);
 #endif
