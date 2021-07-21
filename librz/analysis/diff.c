@@ -192,7 +192,7 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcn
 			rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size,
 				fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
 			/* Set flag in matched functions */
-			fcn->diff->type = fcn2->diff->type = (t >= 1.0)
+			fcn->diff->type = fcn2->diff->type = (t >= RZ_ANALYSIS_DIFF_THRESHOLD)
 				? RZ_ANALYSIS_DIFF_TYPE_MATCH
 				: RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 			fcn->diff->dist = fcn2->diff->dist = t;
@@ -200,8 +200,8 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcn
 			RZ_FREE(fcn2->fingerprint);
 			fcn->diff->addr = fcn2->addr;
 			fcn2->diff->addr = fcn->addr;
-			fcn->diff->size = rz_analysis_function_realsize(fcn2);
-			fcn2->diff->size = rz_analysis_function_realsize(fcn);
+			fcn->diff->size = fcn2->fingerprint_size;
+			fcn2->diff->size = fcn->fingerprint_size;
 			RZ_FREE(fcn->diff->name);
 			if (fcn2->name) {
 				fcn->diff->name = strdup(fcn2->name);
