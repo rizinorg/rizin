@@ -14,7 +14,7 @@ static void htup_vector_free(HtUPKv *kv) {
         rz_vector_free(kv->value);
 }
 
-RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysisRzil *rzil) {
+RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysisRzil *rzil, RzAnalysis *analysis) {
         rz_return_val_if_fail(rzil && rzil->stack_addr && rzil->stack_size, NULL);
         size_t i;
         RzAnalysisRzilTrace *trace = RZ_NEW0(RzAnalysisRzilTrace);
@@ -40,11 +40,11 @@ RZ_API RzAnalysisRzilTrace *rz_analysis_rzil_trace_new(RzAnalysisRzil *rzil) {
         if (!trace->stack_data) {
                 goto error;
         }
-        rzil->analysis->iob.read_at(rzil->analysis->iob.io, trace->stack_addr,
+        analysis->iob.read_at(analysis->iob.io, trace->stack_addr,
                                     trace->stack_data, trace->stack_size);
         // Save initial registers arenas
         for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-                RzRegArena *a = rzil->analysis->reg->regset[i].arena;
+                RzRegArena *a = analysis->reg->regset[i].arena;
                 RzRegArena *b = rz_reg_arena_new(a->size);
                 if (!b) {
                         goto error;
@@ -104,7 +104,7 @@ static void add_mem_change(RzAnalysisRzilTrace *trace, int idx, ut64 addr, ut8 d
         rz_vector_push(vmem, &mem);
 }
 
-static int trace_hook_reg_read(RzAnalysisRzil *rzil, const char *name, ut64 *res, int *size) {
+static int trace_hook_reg_read(RzAnalysisRzil *rzil, const char *name, ut64 *res, int *size, RzAnalysis *analysis) {
         int ret = 0;
         if (*name == '0') {
                 //eprintf ("Register not found in profile\n");
@@ -113,11 +113,11 @@ static int trace_hook_reg_read(RzAnalysisRzil *rzil, const char *name, ut64 *res
         if (ocbs.hook_reg_read) {
                 RzAnalysisRzilCallbacks cbs = rzil->cb;
                 rzil->cb = ocbs;
-                ret = ocbs.hook_reg_read(rzil, name, res, size);
+                ret = ocbs.hook_reg_read(rzil, name, res, size, analysis);
                 rzil->cb = cbs;
         }
         if (!ret && rzil->cb.reg_read) {
-                ret = rzil->cb.reg_read(rzil, name, res, size);
+                ret = rzil->cb.reg_read(rzil, name, res, size, analysis);
         }
         if (ret) {
                 ut64 val = *res;
@@ -130,27 +130,27 @@ static int trace_hook_reg_read(RzAnalysisRzil *rzil, const char *name, ut64 *res
         return ret;
 }
 
-static int trace_hook_reg_write(RzAnalysisRzil *rzil, const char *name, ut64 *val) {
+static int trace_hook_reg_write(RzAnalysisRzil *rzil, const char *name, ut64 *val, RzAnalysis *analysis) {
         int ret = 0;
         //eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
         sdb_array_add(DB, KEY("reg.write"), name, 0);
         sdb_num_set(DB, KEYREG("reg.write", name), *val, 0);
-        RzRegItem *ri = rz_reg_get(rzil->analysis->reg, name, -1);
+        RzRegItem *ri = rz_reg_get(analysis->reg, name, -1);
         add_reg_change(rzil->trace, rzil->trace->idx + 1, ri, *val);
         if (ocbs.hook_reg_write) {
                 RzAnalysisRzilCallbacks cbs = rzil->cb;
                 rzil->cb = ocbs;
-                ret = ocbs.hook_reg_write(rzil, name, val);
+                ret = ocbs.hook_reg_write(rzil, name, val, analysis);
                 rzil->cb = cbs;
         }
         return ret;
 }
 
-static int trace_hook_mem_read(RzAnalysisRzil *rzil, ut64 addr, ut8 *buf, int len) {
+static int trace_hook_mem_read(RzAnalysisRzil *rzil, ut64 addr, ut8 *buf, int len, RzAnalysis *analysis) {
         char *hexbuf = calloc((1 + len), 4);
         int ret = 0;
         if (rzil->cb.mem_read) {
-                ret = rzil->cb.mem_read(rzil, addr, buf, len);
+                ret = rzil->cb.mem_read(rzil, addr, buf, len, analysis);
         }
         sdb_array_add_num(DB, KEY("mem.read"), addr, 0);
         rz_hex_bin2str(buf, len, hexbuf);
@@ -161,13 +161,13 @@ static int trace_hook_mem_read(RzAnalysisRzil *rzil, ut64 addr, ut8 *buf, int le
         if (ocbs.hook_mem_read) {
                 RzAnalysisRzilCallbacks cbs = rzil->cb;
                 rzil->cb = ocbs;
-                ret = ocbs.hook_mem_read(rzil, addr, buf, len);
+                ret = ocbs.hook_mem_read(rzil, addr, buf, len, analysis);
                 rzil->cb = cbs;
         }
         return ret;
 }
 
-static int trace_hook_mem_write(RzAnalysisRzil *rzil, ut64 addr, const ut8 *buf, int len) {
+static int trace_hook_mem_write(RzAnalysisRzil *rzil, ut64 addr, const ut8 *buf, int len, RzAnalysis *analysis) {
         size_t i;
         int ret = 0;
         char *hexbuf = malloc((1 + len) * 3);
@@ -183,13 +183,13 @@ static int trace_hook_mem_write(RzAnalysisRzil *rzil, ut64 addr, const ut8 *buf,
         if (ocbs.hook_mem_write) {
                 RzAnalysisRzilCallbacks cbs = rzil->cb;
                 rzil->cb = ocbs;
-                ret = ocbs.hook_mem_write(rzil, addr, buf, len);
+                ret = ocbs.hook_mem_write(rzil, addr, buf, len, analysis);
                 rzil->cb = cbs;
         }
         return ret;
 }
 
-RZ_API void rz_analysis_rzil_trace_op(RzAnalysisRzil *rzil, RzAnalysisOp *op) {
+RZ_API void rz_analysis_rzil_trace_op(RzAnalysisRzil *rzil, RzAnalysisOp *op, RzAnalysis *analysis) {
 	// TODO : refactorr some here
         rz_return_if_fail(rzil && op);
         const char *expr = rz_strbuf_get(&op->esil);
@@ -198,14 +198,14 @@ RZ_API void rz_analysis_rzil_trace_op(RzAnalysisRzil *rzil, RzAnalysisOp *op) {
                 return;
         }
         if (!rzil->trace) {
-                rzil->trace = rz_analysis_rzil_trace_new(rzil);
+                rzil->trace = rz_analysis_rzil_trace_new(rzil, analysis);
                 if (!rzil->trace) {
                         return;
                 }
         }
         /* restore from trace when `idx` is not at the end */
         if (rzil->trace->idx != rzil->trace->end_idx) {
-                rz_analysis_rzil_trace_restore(rzil, rzil->trace->idx + 1);
+                rz_analysis_rzil_trace_restore(rzil, rzil->trace->idx + 1, analysis);
                 return;
         }
         /* save old callbacks */
@@ -217,7 +217,7 @@ RZ_API void rz_analysis_rzil_trace_op(RzAnalysisRzil *rzil, RzAnalysisOp *op) {
         ocbs_set = true;
         sdb_num_set(DB, "idx", rzil->trace->idx, 0);
         sdb_num_set(DB, KEY("addr"), op->addr, 0);
-        RzRegItem *pc_ri = rz_reg_get(rzil->analysis->reg, "PC", -1);
+        RzRegItem *pc_ri = rz_reg_get(analysis->reg, "PC", -1);
         add_reg_change(rzil->trace, rzil->trace->idx, pc_ri, op->addr);
         //	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
         //	sdb_set (DB, KEY ("addr"), expr, 0);
@@ -245,7 +245,7 @@ RZ_API void rz_analysis_rzil_trace_op(RzAnalysisRzil *rzil, RzAnalysisOp *op) {
         rzil->trace->end_idx++;
 }
 
-static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
+static bool restore_memory_cb(void *user, const ut64 key, const void *value, RzAnalysis *analysis) {
         size_t index;
         RzAnalysisRzil *rzil = user;
         RzVector *vmem = (RzVector *)value;
@@ -253,49 +253,51 @@ static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
         rz_vector_upper_bound(vmem, rzil->trace->idx, index, CMP_MEM_CHANGE);
         if (index > 0 && index <= vmem->len) {
                 RzAnalysisRzilMemChange *c = rz_vector_index_ptr(vmem, index - 1);
-                rzil->analysis->iob.write_at(rzil->analysis->iob.io, key, &c->data, 1);
+                analysis->iob.write_at(analysis->iob.io, key, &c->data, 1);
         }
         return true;
 }
 
-static bool restore_register(RzAnalysisRzil *rzil, RzRegItem *ri, int idx) {
+static bool restore_register(RzAnalysisRzil *rzil, RzRegItem *ri, int idx, RzAnalysis *analysis) {
         size_t index;
         RzVector *vreg = ht_up_find(rzil->trace->registers, ri->offset | (ri->arena << 16), NULL);
         if (vreg) {
                 rz_vector_upper_bound(vreg, idx, index, CMP_REG_CHANGE);
                 if (index > 0 && index <= vreg->len) {
                         RzAnalysisRzilRegChange *c = rz_vector_index_ptr(vreg, index - 1);
-                        rz_reg_set_value(rzil->analysis->reg, ri, c->data);
+                        rz_reg_set_value(analysis->reg, ri, c->data);
                 }
         }
         return true;
 }
 
-RZ_API void rz_analysis_rzil_trace_restore(RzAnalysisRzil *rzil, int idx) {
+RZ_API void rz_analysis_rzil_trace_restore(RzAnalysisRzil *rzil, int idx, RzAnalysis *analysis) {
         size_t i;
         RzAnalysisRzilTrace *trace = rzil->trace;
         // Restore initial state when going backward
         if (idx < rzil->trace->idx) {
                 // Restore initial registers value
                 for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-                        RzRegArena *a = rzil->analysis->reg->regset[i].arena;
+                        RzRegArena *a = analysis->reg->regset[i].arena;
                         RzRegArena *b = trace->arena[i];
                         if (a && b) {
                                 memcpy(a->bytes, b->bytes, a->size);
                         }
                 }
                 // Restore initial stack memory
-                rzil->analysis->iob.write_at(rzil->analysis->iob.io, trace->stack_addr,
+                analysis->iob.write_at(analysis->iob.io, trace->stack_addr,
                                              trace->stack_data, trace->stack_size);
         }
         // Apply latest changes to registers and memory
         rzil->trace->idx = idx;
         RzListIter *iter;
         RzRegItem *ri;
-        rz_list_foreach (rzil->analysis->reg->allregs, iter, ri) {
-                        restore_register(rzil, ri, idx);
+        rz_list_foreach (analysis->reg->allregs, iter, ri) {
+                        restore_register(rzil, ri, idx, analysis);
                 }
-        ht_up_foreach(trace->memory, restore_memory_cb, rzil);
+	// TODO : restore_memory_cb requires analysis as argument
+	//      : while foreach support *user only
+        // ht_up_foreach(trace->memory, restore_memory_cb, rzil);
 }
 
 static int cmp_strings_by_leading_number(void *data1, void *data2) {
@@ -350,12 +352,12 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
         return 0;
 }
 
-RZ_API void rz_analysis_rzil_trace_list(RzAnalysisRzil *rzil) {
+RZ_API void rz_analysis_rzil_trace_list(RzAnalysisRzil *rzil, RzAnalysis *analysis) {
         if (!rzil->trace) {
                 return;
         }
 
-        PrintfCallback p = rzil->analysis->cb_printf;
+        PrintfCallback p = analysis->cb_printf;
         SdbKv *kv;
         SdbListIter *iter;
         SdbList *list = sdb_foreach_list(rzil->trace->db, true);
@@ -366,12 +368,12 @@ RZ_API void rz_analysis_rzil_trace_list(RzAnalysisRzil *rzil) {
         ls_free(list);
 }
 
-RZ_API void rz_analysis_rzil_trace_show(RzAnalysisRzil *rzil, int idx) {
+RZ_API void rz_analysis_rzil_trace_show(RzAnalysisRzil *rzil, int idx, RzAnalysis *analysis) {
         if (!rzil->trace) {
                 return;
         }
 
-        PrintfCallback p = rzil->analysis->cb_printf;
+        PrintfCallback p = analysis->cb_printf;
         const char *str2;
         const char *str;
         int trace_idx = rzil->trace->idx;
