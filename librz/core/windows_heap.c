@@ -1303,7 +1303,9 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 				ut64 unusedBytes = block->extraInfo ? block->extraInfo->unusedBytes : 0;
 				if (flag) {
 					char *name = rz_str_newf("alloc.%" PFMT64x "", address);
-					rz_flag_set(core->flags, name, address, block->dwSize);
+					if (!rz_flag_set(core->flags, name, address, block->dwSize)) {
+						eprintf("Flag couldn't be set for block at 0x%" PFMT64x, address);
+					}
 					free(name);
 				} else if (mode == RZ_OUTPUT_MODE_JSON) {
 					pj_o(pj);
