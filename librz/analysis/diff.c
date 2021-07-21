@@ -164,7 +164,7 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 			mbb->diff->size = mbb2->size;
 			mbb2->diff->size = mbb->size;
 		} else {
-			fcn->diff->type = fcn2->diff->type = (fcn->diff->dist >= 0.6)
+			fcn->diff->type = fcn2->diff->type = (fcn->diff->dist >= RZ_ANALYSIS_DIFF_THRESHOLD)
 				? RZ_ANALYSIS_DIFF_TYPE_MATCH
 				: RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 		}
@@ -172,7 +172,7 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 	return true;
 }
 
-RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns2) {
+RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns1, RzList *fcns2) {
 	RzAnalysisFunction *fcn, *fcn2, *mfcn, *mfcn2;
 	RzListIter *iter, *iter2;
 	ut64 maxsize, minsize;
@@ -182,49 +182,57 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 		return false;
 	}
 	if (analysis->cur && analysis->cur->diff_fcn) {
-		return (analysis->cur->diff_fcn(analysis, fcns, fcns2));
+		return (analysis->cur->diff_fcn(analysis, fcns1, fcns2));
 	}
 	/* Compare functions with the same name */
-	if (fcns) {
-		rz_list_foreach (fcns, iter, fcn) {
-			rz_list_foreach (fcns2, iter2, fcn2) {
-				if (fcn->name && fcn2->name && strcmp(fcn->name, fcn2->name)) {
-					continue;
-				}
-				rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size,
-					fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
-				/* Set flag in matched functions */
-				fcn->diff->type = fcn2->diff->type = (t >= 1.0)
-					? RZ_ANALYSIS_DIFF_TYPE_MATCH
-					: RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
-				fcn->diff->dist = fcn2->diff->dist = t;
-				RZ_FREE(fcn->fingerprint);
-				RZ_FREE(fcn2->fingerprint);
-				fcn->diff->addr = fcn2->addr;
-				fcn2->diff->addr = fcn->addr;
-				fcn->diff->size = rz_analysis_function_realsize(fcn2);
-				fcn2->diff->size = rz_analysis_function_realsize(fcn);
-				RZ_FREE(fcn->diff->name);
-				if (fcn2->name) {
-					fcn->diff->name = strdup(fcn2->name);
-				}
-				RZ_FREE(fcn2->diff->name);
-				if (fcn->name) {
-					fcn2->diff->name = strdup(fcn->name);
-				}
-				rz_analysis_diff_bb(analysis, fcn, fcn2);
-				break;
+	int pos1 = 0, pos2 = 0;
+	int fcns1_len = rz_list_length(fcns1);
+	int fcns2_len = rz_list_length(fcns2);
+
+	rz_list_foreach (fcns1, iter, fcn) {
+		rz_list_foreach (fcns2, iter2, fcn2) {
+			if (fcn->name && fcn2->name && strcmp(fcn->name, fcn2->name)) {
+				continue;
 			}
+			rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size,
+				fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
+			/* Set flag in matched functions */
+			fcn->diff->type = fcn2->diff->type = (t >= 1.0)
+				? RZ_ANALYSIS_DIFF_TYPE_MATCH
+				: RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
+			fcn->diff->dist = fcn2->diff->dist = t;
+			RZ_FREE(fcn->fingerprint);
+			RZ_FREE(fcn2->fingerprint);
+			fcn->diff->addr = fcn2->addr;
+			fcn2->diff->addr = fcn->addr;
+			fcn->diff->size = rz_analysis_function_realsize(fcn2);
+			fcn2->diff->size = rz_analysis_function_realsize(fcn);
+			RZ_FREE(fcn->diff->name);
+			if (fcn2->name) {
+				fcn->diff->name = strdup(fcn2->name);
+			}
+			RZ_FREE(fcn2->diff->name);
+			if (fcn->name) {
+				fcn2->diff->name = strdup(fcn->name);
+			}
+			rz_analysis_diff_bb(analysis, fcn, fcn2);
+			break;
 		}
+		pos1 += 100;
+		eprintf("[-] comparing same name %3d%%\r", (pos1 / fcns1_len));
 	}
 	/* Compare remaining functions */
-	rz_list_foreach (fcns, iter, fcn) {
+	pos1 = 0;
+	rz_list_foreach (fcns1, iter, fcn) {
+		pos1 += 100;
+		pos2 = 0;
 		if (fcn->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 			continue;
 		}
 		ot = 0;
 		mfcn = mfcn2 = NULL;
 		rz_list_foreach (fcns2, iter2, fcn2) {
+			pos2 += 100;
 			ut64 fcn_size = rz_analysis_function_realsize(fcn);
 			ut64 fcn2_size = rz_analysis_function_realsize(fcn2);
 			if (fcn_size > fcn2_size) {
@@ -236,12 +244,9 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 			}
 			if (maxsize * analysis->diff_thfcn > minsize) {
 				continue;
-			}
-			if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
+			} else if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 				continue;
-			}
-			if ((fcn2->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn2->type != RZ_ANALYSIS_FCN_TYPE_SYM)) {
-				eprintf("Function %s type not supported\n", fcn2->name);
+			} else if ((fcn2->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn2->type != RZ_ANALYSIS_FCN_TYPE_SYM)) {
 				continue;
 			}
 			rz_diff_levenstein_distance(fcn->fingerprint, fcn->fingerprint_size, fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
@@ -250,10 +255,11 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 				ot = t;
 				mfcn = fcn;
 				mfcn2 = fcn2;
-				if (t == 1) {
+				if (t > RZ_ANALYSIS_DIFF_THRESHOLD) {
 					break;
 				}
 			}
+			eprintf("[-] comparing remaining %3d%%/%3d%%\r", (pos1 / fcns1_len), (pos2 / fcns2_len));
 		}
 		if (mfcn && mfcn2) {
 			/* Set flag in matched functions */
@@ -277,6 +283,7 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 			rz_analysis_diff_bb(analysis, mfcn, mfcn2);
 		}
 	}
+	eprintf("                                                  \r");
 	return true;
 }
 

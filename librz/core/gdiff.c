@@ -132,7 +132,7 @@ static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 	if (dist == 1.0) {
 		prefix = color ? Color_BGREEN : "";
 		type = color ? Color_BGREEN "MATCH  " Color_RESET : "MATCH  ";
-	} else if (dist >= 0.5) {
+	} else if (dist >= RZ_ANALYSIS_DIFF_THRESHOLD) {
 		prefix = color ? Color_BYELLOW : "";
 		type = color ? Color_BYELLOW "SIMILAR" Color_RESET : "SIMILAR";
 	} else if (is_new) {
