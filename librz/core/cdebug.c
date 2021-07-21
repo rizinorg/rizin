@@ -78,6 +78,7 @@ RZ_IPI void rz_core_debug_continue(RzCore *core) {
 		core->dbg->continue_all_threads = true;
 #endif
 		rz_debug_continue(core->dbg);
+		rz_cons_break_pop();
 		rz_core_dbg_follow_seek_register(core);
 	} else {
 		rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
