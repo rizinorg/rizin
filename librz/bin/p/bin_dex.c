@@ -249,15 +249,12 @@ static RzList *entrypoints(RzBinFile *bf) {
 }
 
 static RzList *strings(RzBinFile *bf) {
-	return NULL;
-	/*
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
 		return NULL;
 	}
 
-	return rz_bin_java_class_strings(dex);
-	*/
+	return rz_bin_dex_strings(dex);
 }
 
 static int demangle_type(const char *str) {
