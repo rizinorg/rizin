@@ -58,7 +58,7 @@ typedef struct dex_proto_id_t {
 	ut32 parameters_offset;
 	ut64 offset;
 } DexProtoId;
-#define DEX_PROTO_ID_SIZE (12)
+#define DEX_PROTO_ID_SIZE (0xC)
 
 typedef struct dex_field_id_t {
 	ut16 class_idx;
@@ -76,11 +76,26 @@ typedef struct dex_method_id_t {
 } DexMethodId;
 #define DEX_METHOD_ID_SIZE (8)
 
+typedef struct dex_class_def_t {
+	ut32 class_idx;
+	ut32 access_flags;
+	ut32 superclass_idx;
+	ut32 interfaces_offset;
+	ut32 source_file_idx;
+	ut32 annotations_offset;
+	ut32 class_data_offset;
+	ut32 static_values_offset;
+	ut64 offset;
+} DexClassDef;
+#define DEX_CLASS_DEF_SIZE (0x20)
+
 typedef struct dex_t {
 	ut8 magic[4];
 	ut8 version[4];
 	ut32 checksum;
+	ut64 checksum_offset;
 	ut8 signature[20];
+	ut64 signature_offset;
 	ut32 file_size;
 	ut32 header_size;
 	ut32 endian_tag;
@@ -108,6 +123,7 @@ typedef struct dex_t {
 	RzList /*<DexProtoId>*/ *proto_ids;
 	RzList /*<DexFieldId>*/ *field_ids;
 	RzList /*<DexMethodId>*/ *method_ids;
+	RzList /*<DexClassDef>*/ *class_defs;
 
 	DexTypeId *types;
 } RzBinDex;
@@ -115,5 +131,8 @@ typedef struct dex_t {
 RZ_API RzBinDex *rz_bin_dex_new(RzBuffer *buf, ut64 base, Sdb *kv);
 RZ_API void rz_bin_dex_free(RzBinDex *dex);
 RZ_API RzList *rz_bin_dex_strings(RzBinDex *dex);
+
+RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash);
+RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash);
 
 #endif /* RZ_DEX_H */

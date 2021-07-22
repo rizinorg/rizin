@@ -22,7 +22,6 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzBinHash *h = NULL;
 	RzBinInfo *binfo = RZ_NEW0(RzBinInfo);
 	if (!binfo) {
 		return NULL;
@@ -42,29 +41,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	binfo->big_endian = false;
 	binfo->dbg_info = 0; // rz_bin_dex_debug_info(dex);
 
-	//rz_bin_dex_sha1(dex, &ret->sum[0]);
-	//rz_bin_dex_adler32(dex, &ret->sum[1]);
-
-/*
-	h = &ret->sum[0];
-	h->type = "sha1";
-	h->len = 20;
-	h->addr = 12;
-	h->from = 12;
-	h->to = rz_buf_size(bf->buf) - 32;
-	rz_buf_read_at(bf->buf, 12, h->buf, 20);
-
-	h = &ret->sum[1];
-	h->type = "adler32";
-	h->len = 4;
-	h->addr = 8;
-	h->from = 12;
-	h->to = rz_buf_size(bf->buf) - h->from;
-	rz_buf_read_at(bf->buf, 8, h->buf, 12);
-	h = &ret->sum[2];
-	h->type = 0;
-	rz_buf_read_at(bf->buf, 8, h->buf, 4);
-*/
+	rz_bin_dex_checksum(dex, &binfo->sum[0]);
+	rz_bin_dex_sha1(dex, &binfo->sum[1]);
 
 	return binfo;
 }
