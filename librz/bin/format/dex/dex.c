@@ -94,10 +94,28 @@ static DexMethodId *dex_method_id_new(RzBuffer *buf, ut64 offset) {
 	}
 
 	method_id->class_idx = /**/ rz_buf_read_le32(buf);
-	method_id->proto_idx = /* */ rz_buf_read_le32(buf);
+	method_id->proto_idx = /**/ rz_buf_read_le32(buf);
 	method_id->name_idx = /* */ rz_buf_read_le32(buf);
 	method_id->offset = offset;
 	return method_id;
+}
+
+#define dex_class_def_free free
+static DexClassDef *dex_class_def_new(RzBuffer *buf, ut64 offset) {
+	DexClassDef *class_def = RZ_NEW(DexClassDef);
+	if (!class_def) {
+		return NULL;
+	}
+	class_def->class_idx = /*           */ rz_buf_read_le32(buf);
+	class_def->access_flags = /*        */ rz_buf_read_le32(buf);
+	class_def->superclass_idx = /*      */ rz_buf_read_le32(buf);
+	class_def->interfaces_offset = /*   */ rz_buf_read_le32(buf);
+	class_def->source_file_idx = /*     */ rz_buf_read_le32(buf);
+	class_def->annotations_offset = /*  */ rz_buf_read_le32(buf);
+	class_def->class_data_offset = /*   */ rz_buf_read_le32(buf);
+	class_def->static_values_offset = /**/ rz_buf_read_le32(buf);
+	class_def->offset = offset;
+	return class_def;
 }
 
 static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
@@ -112,7 +130,9 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 
 	rz_buf_read(buf, dex->magic, sizeof(dex->magic));
 	rz_buf_read(buf, dex->version, sizeof(dex->version));
+	dex->checksum_offset = rz_buf_tell(buf) + base;
 	dex->checksum = rz_buf_read_le32(buf);
+	dex->signature_offset = rz_buf_tell(buf) + base;
 	rz_buf_read(buf, dex->signature, sizeof(dex->signature));
 	dex->file_size = /*        */ rz_buf_read_le32(buf);
 	dex->header_size = /*      */ rz_buf_read_le32(buf);
@@ -245,7 +265,34 @@ static bool dex_parse(RzBinDex *dex, ut64 base, RzBuffer *buf) {
 			dex_method_id_free(method_id);
 			goto dex_parse_bad;
 		}
-		//eprintf("method_id: 0x%04x 0x%04x 0x%08x\n", method_id->class_idx, method_id->proto_idx, method_id->name_idx);
+	}
+
+	/* Class Defs */
+	offset = dex->class_defs_offset;
+	for (ut32 i = 0; i < dex->class_defs_size; ++i, offset += DEX_CLASS_DEF_SIZE) {
+		if (rz_buf_seek(buf, offset, RZ_BUF_SET) < 0) {
+			rz_warn_if_reached();
+			goto dex_parse_bad;
+		}
+		DexClassDef *class_def = dex_class_def_new(buf, base + offset);
+		if (!class_def) {
+			rz_warn_if_reached();
+			goto dex_parse_bad;
+		}
+		if (!rz_list_append(dex->class_defs, class_def)) {
+			rz_warn_if_reached();
+			dex_class_def_free(class_def);
+			goto dex_parse_bad;
+		}
+		eprintf("class_def: 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x\n",
+			class_def->class_idx,
+			class_def->access_flags,
+			class_def->superclass_idx,
+			class_def->interfaces_offset,
+			class_def->source_file_idx,
+			class_def->annotations_offset,
+			class_def->class_data_offset,
+			class_def->static_values_offset);
 	}
 
 	return true;
@@ -264,6 +311,7 @@ RZ_API void rz_bin_dex_free(RzBinDex *dex) {
 	rz_list_free(dex->strings);
 	rz_list_free(dex->proto_ids);
 	rz_list_free(dex->method_ids);
+	rz_list_free(dex->class_defs);
 
 	free(dex->types);
 	free(dex);
@@ -294,6 +342,11 @@ RZ_API RzBinDex *rz_bin_dex_new(RzBuffer *buf, ut64 base, Sdb *kv) {
 	}
 	dex->method_ids = rz_list_newf((RzListFree)dex_method_id_free);
 	if (!dex->method_ids) {
+		rz_bin_dex_free(dex);
+		return NULL;
+	}
+	dex->class_defs = rz_list_newf((RzListFree)dex_class_def_free);
+	if (!dex->class_defs) {
 		rz_bin_dex_free(dex);
 		return NULL;
 	}
@@ -335,4 +388,24 @@ RZ_API RzList *rz_bin_dex_strings(RzBinDex *dex) {
 		ordinal++;
 	}
 	return list;
+}
+
+RZ_API void rz_bin_dex_checksum(RzBinDex *dex, RzBinHash *hash) {
+	rz_return_if_fail(dex && hash);
+	hash->type = "adler32";
+	hash->len = sizeof(dex->checksum);
+	hash->addr = dex->checksum_offset;
+	hash->from = dex->checksum_offset + sizeof(dex->checksum);
+	hash->to = dex->file_size - hash->from;
+	rz_write_le32(hash->buf, dex->checksum);
+}
+
+RZ_API void rz_bin_dex_sha1(RzBinDex *dex, RzBinHash *hash) {
+	rz_return_if_fail(dex && hash);
+	hash->type = "sha1";
+	hash->len = 20;
+	hash->addr = dex->signature_offset;
+	hash->from = dex->signature_offset + sizeof(dex->signature);
+	hash->to = dex->file_size - hash->from;
+	memcpy(hash->buf, dex->signature, sizeof(dex->signature));
 }
