@@ -4,9 +4,67 @@
 name: cmd_debug
 commands:
   - name: dc
-    cname: debug_continue_oldhandler
     summary: Continue execution
-    type: RZ_CMD_DESC_TYPE_OLDINPUT
+    subcommands:
+      - name: dc
+        summary: Continue execution of all children
+        cname: cmd_debug_continue_execution
+        args:
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dcb
+        summary: Continue back until breakpoint
+        cname: cmd_debug_continue_back
+        args: [ ]
+      - name: dcc
+        summary: Continue until call (use step into)
+        cname: cmd_debug_continue_call
+        args: [ ]
+      - name: dccu
+        summary: Continue until unknown call (call reg)
+        cname: cmd_debug_continue_unknown_call
+        args: [ ]
+      - name: dce
+        summary: Continue execution (pass exception to program) (Windows only)
+        cname: cmd_debug_continue_exception
+        args: [ ]
+      - name: dcf
+        summary: Continue until fork
+        cname: cmd_debug_continue_fork
+        args: [ ]
+      - name: dck
+        summary: Continue sending signal to process
+        cname: cmd_debug_continue_send_signal
+        args:
+          - name: signal
+            type: RZ_CMD_ARG_TYPE_RZNUM
+          - name: pid
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dcp
+        summary: Continue until program code (mapped io section)
+        cname: cmd_debug_continue_mapped_io
+        args: [ ]
+      - name: dcr
+        summary: Continue until ret (uses step over)
+        cname: cmd_debug_continue_ret
+        args: [ ]
+      - name: dcs
+        summary: Continue until syscall
+        cname: cmd_debug_continue_syscall
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
+      - name: dct
+        summary: Traptrace from curseek to len, no argument to list
+        cname: cmd_debug_continue_traptrace
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+      - name: dcu
+        summary: Debug continue until
+        cname: cmd_debug_continue_until
+        type: RZ_CMD_DESC_TYPE_OLDINPUT
   - name: ds
     summary: Debug step commands
     cname: cmd_debug_step

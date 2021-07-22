@@ -85,6 +85,9 @@ static const RzCmdDescArg analysis_function_vars_sp_args[4];
 static const RzCmdDescArg analysis_function_vars_sp_del_args[2];
 static const RzCmdDescArg analysis_function_vars_sp_getref_args[3];
 static const RzCmdDescArg analysis_function_vars_sp_setref_args[3];
+static const RzCmdDescArg cmd_debug_continue_execution_args[2];
+static const RzCmdDescArg cmd_debug_continue_send_signal_args[3];
+static const RzCmdDescArg cmd_debug_continue_traptrace_args[2];
 static const RzCmdDescArg cmd_debug_step_until_args[2];
 static const RzCmdDescArg cmd_debug_step_until_instr_args[2];
 static const RzCmdDescArg cmd_debug_step_until_instr_regex_args[2];
@@ -1452,8 +1455,121 @@ static const RzCmdDescHelp cmd_meta_help = {
 static const RzCmdDescHelp cmd_debug_help = {
 	.summary = "Debugger commands",
 };
-static const RzCmdDescHelp debug_continue_oldhandler_help = {
+static const RzCmdDescHelp dc_help = {
 	.summary = "Continue execution",
+};
+static const RzCmdDescArg cmd_debug_continue_execution_args[] = {
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_execution_help = {
+	.summary = "Continue execution of all children",
+	.args = cmd_debug_continue_execution_args,
+};
+
+static const RzCmdDescArg cmd_debug_continue_back_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_back_help = {
+	.summary = "Continue back until breakpoint",
+	.args = cmd_debug_continue_back_args,
+};
+
+static const RzCmdDescArg cmd_debug_continue_call_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_call_help = {
+	.summary = "Continue until call (use step into)",
+	.args = cmd_debug_continue_call_args,
+};
+
+static const RzCmdDescArg cmd_debug_continue_unknown_call_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_unknown_call_help = {
+	.summary = "Continue until unknown call (call reg)",
+	.args = cmd_debug_continue_unknown_call_args,
+};
+
+static const RzCmdDescArg cmd_debug_continue_exception_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_exception_help = {
+	.summary = "Continue execution (pass exception to program) (Windows only)",
+	.args = cmd_debug_continue_exception_args,
+};
+
+static const RzCmdDescArg cmd_debug_continue_fork_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_fork_help = {
+	.summary = "Continue until fork",
+	.args = cmd_debug_continue_fork_args,
+};
+
+static const RzCmdDescArg cmd_debug_continue_send_signal_args[] = {
+	{
+		.name = "signal",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "pid",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_send_signal_help = {
+	.summary = "Continue sending signal to process",
+	.args = cmd_debug_continue_send_signal_args,
+};
+
+static const RzCmdDescArg cmd_debug_continue_mapped_io_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_mapped_io_help = {
+	.summary = "Continue until program code (mapped io section)",
+	.args = cmd_debug_continue_mapped_io_args,
+};
+
+static const RzCmdDescArg cmd_debug_continue_ret_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_ret_help = {
+	.summary = "Continue until ret (uses step over)",
+	.args = cmd_debug_continue_ret_args,
+};
+
+static const RzCmdDescHelp cmd_debug_continue_syscall_help = {
+	.summary = "Continue until syscall",
+};
+
+static const RzCmdDescArg cmd_debug_continue_traptrace_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_debug_continue_traptrace_help = {
+	.summary = "Traptrace from curseek to len, no argument to list",
+	.args = cmd_debug_continue_traptrace_args,
+};
+
+static const RzCmdDescHelp cmd_debug_continue_until_help = {
+	.summary = "Debug continue until",
 };
 
 static const RzCmdDescHelp cmd_debug_step_help = {
@@ -4866,8 +4982,40 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "d", rz_cmd_debug, &cmd_debug_help);
 	rz_warn_if_fail(cmd_debug_cd);
-	RzCmdDesc *debug_continue_oldhandler_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_cd, "dc", rz_debug_continue_oldhandler, &debug_continue_oldhandler_help);
-	rz_warn_if_fail(debug_continue_oldhandler_cd);
+	RzCmdDesc *dc_cd = rz_cmd_desc_group_new(core->rcmd, cmd_debug_cd, "dc", rz_cmd_debug_continue_execution_handler, &cmd_debug_continue_execution_help, &dc_help);
+	rz_warn_if_fail(dc_cd);
+	RzCmdDesc *cmd_debug_continue_back_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcb", rz_cmd_debug_continue_back_handler, &cmd_debug_continue_back_help);
+	rz_warn_if_fail(cmd_debug_continue_back_cd);
+
+	RzCmdDesc *cmd_debug_continue_call_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcc", rz_cmd_debug_continue_call_handler, &cmd_debug_continue_call_help);
+	rz_warn_if_fail(cmd_debug_continue_call_cd);
+
+	RzCmdDesc *cmd_debug_continue_unknown_call_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dccu", rz_cmd_debug_continue_unknown_call_handler, &cmd_debug_continue_unknown_call_help);
+	rz_warn_if_fail(cmd_debug_continue_unknown_call_cd);
+
+	RzCmdDesc *cmd_debug_continue_exception_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dce", rz_cmd_debug_continue_exception_handler, &cmd_debug_continue_exception_help);
+	rz_warn_if_fail(cmd_debug_continue_exception_cd);
+
+	RzCmdDesc *cmd_debug_continue_fork_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcf", rz_cmd_debug_continue_fork_handler, &cmd_debug_continue_fork_help);
+	rz_warn_if_fail(cmd_debug_continue_fork_cd);
+
+	RzCmdDesc *cmd_debug_continue_send_signal_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dck", rz_cmd_debug_continue_send_signal_handler, &cmd_debug_continue_send_signal_help);
+	rz_warn_if_fail(cmd_debug_continue_send_signal_cd);
+
+	RzCmdDesc *cmd_debug_continue_mapped_io_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcp", rz_cmd_debug_continue_mapped_io_handler, &cmd_debug_continue_mapped_io_help);
+	rz_warn_if_fail(cmd_debug_continue_mapped_io_cd);
+
+	RzCmdDesc *cmd_debug_continue_ret_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dcr", rz_cmd_debug_continue_ret_handler, &cmd_debug_continue_ret_help);
+	rz_warn_if_fail(cmd_debug_continue_ret_cd);
+
+	RzCmdDesc *cmd_debug_continue_syscall_cd = rz_cmd_desc_oldinput_new(core->rcmd, dc_cd, "dcs", rz_cmd_debug_continue_syscall, &cmd_debug_continue_syscall_help);
+	rz_warn_if_fail(cmd_debug_continue_syscall_cd);
+
+	RzCmdDesc *cmd_debug_continue_traptrace_cd = rz_cmd_desc_argv_new(core->rcmd, dc_cd, "dct", rz_cmd_debug_continue_traptrace_handler, &cmd_debug_continue_traptrace_help);
+	rz_warn_if_fail(cmd_debug_continue_traptrace_cd);
+
+	RzCmdDesc *cmd_debug_continue_until_cd = rz_cmd_desc_oldinput_new(core->rcmd, dc_cd, "dcu", rz_cmd_debug_continue_until, &cmd_debug_continue_until_help);
+	rz_warn_if_fail(cmd_debug_continue_until_cd);
 
 	RzCmdDesc *cmd_debug_step_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_cd, "ds", rz_cmd_debug_step, &cmd_debug_step_help);
 	rz_warn_if_fail(cmd_debug_step_cd);

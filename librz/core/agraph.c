@@ -4027,7 +4027,7 @@ static void graph_breakpoint(RzCore *core) {
 }
 
 static void graph_continue(RzCore *core) {
-	rz_debug_continue_oldhandler(core, "");
+	rz_core_debug_continue(core);
 }
 static void applyDisMode(RzCore *core) {
 	switch (disMode) {
