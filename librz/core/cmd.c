@@ -5973,6 +5973,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_stmt) {
 	char *specifier_str = rz_cmd_unescape_arg(specifier_str_es, true);
 	RZ_LOG_DEBUG("grep_stmt processed specifier: '%s'\n", specifier_str);
 	rz_cons_grep_process(specifier_str);
+	free(specifier_str_es);
 	free(arg_str);
 	return res;
 }

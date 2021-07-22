@@ -199,6 +199,8 @@ enum {
 	RZ_ANALYSIS_FCN_TYPE_ANY = -1 /* all the bits set */
 };
 
+#define RZ_ANALYSIS_DIFF_THRESHOLD (0.5)
+
 #define RzAnalysisBlock struct rz_analysis_bb_t
 
 enum {
