@@ -325,9 +325,9 @@ RZ_API bool rz_core_bin_apply_info(RzCore *r, RzBinFile *binfile, ut32 mask) {
 	if (mask & RZ_CORE_BIN_ACC_RELOCS && rz_config_get_b(r->config, "bin.relocs")) {
 		rz_core_bin_apply_relocs(r, binfile, va);
 	}
-//	if (mask & RZ_CORE_BIN_ACC_BASEFIND) {
-//		rz_core_bin_apply_basefind(r, binfile, va);
-//	}
+	//	if (mask & RZ_CORE_BIN_ACC_BASEFIND) {
+	//		rz_core_bin_apply_basefind(r, binfile, va);
+	//	}
 	if (mask & RZ_CORE_BIN_ACC_IMPORTS) {
 		rz_core_bin_apply_imports(r, binfile, va);
 	}
@@ -4324,6 +4324,7 @@ static int bin_versioninfo(RzCore *r, PJ *pj, int mode) {
 	const RzBinInfo *info = rz_bin_get_info(r->bin);
 	if (!info || !info->rclass) {
 		return false;
+
 	}
 	if (!strncmp("pe", info->rclass, 2)) {
 		bin_pe_versioninfo(r, pj, mode);
