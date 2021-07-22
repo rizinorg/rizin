@@ -122,7 +122,7 @@ static char *get_type(WPARAM flags) {
 	return rz_str_newf("%s %s%s", state, heaptype, type);
 }
 
-static bool init_func(void) {
+static bool initialize_windows_ntdll_query_api_functions(void) {
 	HANDLE ntdll = LoadLibrary(TEXT("ntdll.dll"));
 	if (!ntdll) {
 		return false;
@@ -1209,7 +1209,7 @@ static RzTable *__new_heapblock_tbl(void) {
 }
 
 static void w32_list_heaps(RzCore *core, RzOutputMode mode) {
-	init_func();
+	initialize_windows_ntdll_query_api_functions();
 	ULONG pid = core->dbg->pid;
 	PDEBUG_BUFFER db = InitHeapInfo(core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	if (!db) {
@@ -1342,7 +1342,7 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 }
 
 static void cmd_debug_map_heap_block_win(RzCore *core, const char *addr, RzOutputMode mode, bool flag) {
-	init_func();
+	initialize_windows_ntdll_query_api_functions();
 	ut64 off = 0;
 	if (!addr) {
 		w32_list_heaps_blocks(core, mode, flag);
