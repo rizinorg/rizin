@@ -10,14 +10,17 @@
 #include <sdb.h>
 
 static void types_ht_free(HtPPKv *kv) {
+	free(kv->key);
 	rz_type_base_type_free(kv->value);
 }
 
 static void formats_ht_free(HtPPKv *kv) {
+	free(kv->key);
 	free(kv->value);
 }
 
 static void callables_ht_free(HtPPKv *kv) {
+	free(kv->key);
 	rz_type_callable_free(kv->value);
 }
 
@@ -41,19 +44,31 @@ RZ_API RzTypeDB *rz_type_db_new() {
 	typedb->target->default_type = strdup("int");
 	typedb->types = ht_pp_new(NULL, types_ht_free, NULL);
 	if (!typedb->types) {
-		return NULL;
+		goto rz_type_db_new_fail;
 	}
 	typedb->formats = ht_pp_new(NULL, formats_ht_free, NULL);
 	if (!typedb->formats) {
-		return NULL;
+		goto rz_type_db_new_fail;
 	}
 	typedb->callables = ht_pp_new(NULL, callables_ht_free, NULL);
 	if (!typedb->callables) {
-		return NULL;
+		goto rz_type_db_new_fail;
 	}
 	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
+	if (!typedb->parser) {
+		goto rz_type_db_new_fail;
+	}
 	rz_io_bind_init(typedb->iob);
 	return typedb;
+
+rz_type_db_new_fail:
+	free((void *)typedb->target->default_type);
+	free(typedb->target);
+	ht_pp_free(typedb->types);
+	ht_pp_free(typedb->formats);
+	ht_pp_free(typedb->callables);
+	free(typedb);
+	return NULL;
 }
 
 /**
@@ -66,6 +81,7 @@ RZ_API void rz_type_db_free(RzTypeDB *typedb) {
 	ht_pp_free(typedb->callables);
 	ht_pp_free(typedb->types);
 	ht_pp_free(typedb->formats);
+	free((void *)typedb->target->default_type);
 	free(typedb->target);
 	free(typedb);
 }
@@ -93,6 +109,9 @@ RZ_API void rz_type_db_format_purge(RzTypeDB *typedb) {
 }
 
 static void set_default_type(RzTypeTarget *target, int bits) {
+	if (target->default_type) {
+		free((void *)target->default_type);
+	}
 	switch (bits) {
 	case 8:
 		target->default_type = strdup("int8_t");
@@ -877,6 +896,7 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
+			rz_strbuf_free(buf);
 			return NULL;
 		}
 		// If the structure/union is anonymous, then we put declaration inline,

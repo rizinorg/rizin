@@ -133,7 +133,7 @@ func.inet_addr.ret=unsigned long
 
 inet_ntoa=func
 func.inet_ntoa.args=1
-func.inet_ntoa.arg.0=in_addr,in
+func.inet_ntoa.arg.0=unsigned long,in
 func.inet_ntoa.ret=char *
 
 ioctlsocket=func

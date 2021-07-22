@@ -4,7 +4,7 @@ CMDS=<<EOF
 !!rz-asm -L~4004
 EOF
 EXPECT=<<EOF
-_dAe  4          i4004       LGPL3   Intel 4004 microprocessor
+_dA_  4          i4004       LGPL3   Intel 4004 microprocessor
 EOF
 RUN
 

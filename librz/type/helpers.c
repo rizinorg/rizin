@@ -168,7 +168,7 @@ RZ_API RZ_OWN RzType *rz_type_array_of_type(const RzTypeDB *typedb, RZ_NONNULL R
 	newtype->kind = RZ_TYPE_KIND_ARRAY;
 	newtype->array.type = type;
 	newtype->array.count = count;
-	return type;
+	return newtype;
 }
 
 // Equivalence checking
