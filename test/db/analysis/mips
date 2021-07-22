@@ -161,7 +161,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x80100000      0000beaf       sw    fp, (sp)
-            0x80100000      0000beaf       [sp + 0] = fp
+            0x80100000      0000beaf       word [sp] = fp
 EOF
 RUN
 

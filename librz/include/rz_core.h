@@ -425,7 +425,7 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file);
 RZ_API void rz_core_seek_item_free(RzCoreSeekItem *item);
 RZ_API bool rz_core_seek(RzCore *core, ut64 addr, bool rb);
 RZ_API bool rz_core_seek_and_save(RzCore *core, ut64 addr, bool rb);
-RZ_API bool rz_core_seek_opt(RzCore *core, ut64 addr, bool rb, bool save);
+RZ_API bool rz_core_seek_opt(RzCore *core, ut64 addr, bool read_block, bool save);
 RZ_API bool rz_core_seek_mark(RzCore *core);
 RZ_API bool rz_core_seek_save(RzCore *core);
 RZ_API bool rz_core_seek_undo(RzCore *core);

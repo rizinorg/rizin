@@ -118,31 +118,6 @@ static const char *help_msg_dbw[] = {
 	NULL
 };
 
-static const char *help_msg_dc[] = {
-	"Usage: dc", "", "Execution continuation commands",
-	"dc", "", "Continue execution of all children",
-	"dc", " <pid>", "Continue execution of pid",
-	"dc", "[-pid]", "Stop execution of pid",
-	"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
-	"dcb", "", "Continue back until breakpoint",
-	"dcc", "", "Continue until call (use step into)",
-	"dccu", "", "Continue until unknown call (call reg)",
-#if __WINDOWS__
-	"dce", "", "Continue execution (pass exception to program)",
-#endif
-	"dcf", "", "Continue until fork (TODO)",
-	"dck", " <signal> <pid>", "Continue sending signal to process",
-	"dcp", "", "Continue until program code (mapped io section)",
-	"dcr", "", "Continue until ret (uses step over)",
-	"dcs", "[?] <num>", "Continue until syscall",
-	"dct", " <len>", "Traptrace from curseek to len, no argument to list",
-	"dcu", "[?] [..end|addr] ([end])", "Continue until address (or range)",
-	/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
-	/*"TODO: same for only user/libs side, to avoid steping into libs",*/
-	/*"TODO: support for threads?",*/
-	NULL
-};
-
 static const char *help_msg_dcs[] = {
 	"Usage:", "dcs", " Continue until syscall",
 	"dcs", "", "Continue until next syscall",
@@ -786,7 +761,7 @@ static bool step_until_inst(RzCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-static void dbg_follow_seek_register(RzCore *core) {
+RZ_IPI void rz_core_dbg_follow_seek_register(RzCore *core) {
 	int follow = rz_config_get_i(core->config, "dbg.follow");
 	if (follow > 0) {
 		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
@@ -1100,9 +1075,9 @@ static void cmd_debug_pid(RzCore *core, const char *input) {
 	}
 }
 
-static void cmd_debug_backtrace(RzCore *core, const char *input) {
+static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 	RzAnalysisOp analop;
-	ut64 addr, len = rz_num_math(core->num, input);
+	ut64 addr;
 	if (!len) {
 		rz_bp_traptrace_list(core->dbg->bp);
 	} else {
@@ -2940,7 +2915,7 @@ static void get_backtrace_info(RzCore *core, RzDebugFrame *frame, ut64 addr, cha
 	}
 }
 
-static void static_debug_stop(void *u) {
+RZ_IPI void rz_core_static_debug_stop(void *u) {
 	RzDebug *dbg = (RzDebug *)u;
 	rz_debug_stop(dbg);
 }
@@ -3731,7 +3706,7 @@ static void debug_trace_calls(RzCore *core, const char *input) {
 		}
 	}
 	core->dbg->trace->enabled = 0;
-	rz_cons_break_push(static_debug_stop, core->dbg);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 	rz_reg_arena_swap(core->dbg->reg, true);
 	if (final_addr != UT64_MAX) {
 		int hwbp = rz_config_get_i(core->config, "dbg.hwbp");
@@ -3990,155 +3965,10 @@ static bool cmd_dcu(RzCore *core, const char *input) {
 	return true;
 }
 
-RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	int pid, old_pid, signum;
-	char *ptr;
-	rz_cons_break_push(static_debug_stop, core->dbg);
-	// TODO: we must use this for step 'ds' too maybe...
-	switch (input[0]) {
-	case 0: // "dc"
-		rz_reg_arena_swap(core->dbg->reg, true);
-#if __linux__
-		core->dbg->continue_all_threads = true;
-#endif
-		if (rz_debug_is_dead(core->dbg)) {
-			eprintf("Cannot continue, run ood?\n");
-			break;
-		}
-		rz_debug_continue(core->dbg);
-		break;
-	case 'a': // "dca"
-		eprintf("TODO: dca\n");
-		break;
-	case 'b': // "dcb"
-	{
-		if (!core->dbg->session) {
-			eprintf("Error: Session has not started\n");
-			break;
-		}
-		if (!rz_debug_continue_back(core->dbg)) {
-			eprintf("cannot continue back\n");
-		}
-		break;
-	}
-#if __WINDOWS__
-	case 'e': // "dce"
-		rz_reg_arena_swap(core->dbg->reg, true);
-		rz_debug_continue_pass_exception(core->dbg);
-		break;
-#endif
-	case 'f': // "dcf"
-		eprintf("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
-		// we should stop in fork, vfork, and clone syscalls
-		cmd_debug_cont_syscall(core, "vfork fork clone");
-		break;
-	case 'c': // "dcc"
-		rz_reg_arena_swap(core->dbg->reg, true);
-		if (input[1] == 'u') {
-			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_UCALL, 0);
-		} else {
-			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_CALL, 0);
-		}
-		break;
-	case 'r':
-		rz_reg_arena_swap(core->dbg->reg, true);
-		rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_RET, 1);
-		break;
-	case 'k':
-		// select pid and rz_debug_continue_kill (core->dbg,
-		rz_reg_arena_swap(core->dbg->reg, true);
-		signum = rz_num_math(core->num, input + 1);
-		ptr = strchr(input + 2, ' ');
-		if (ptr) {
-			int old_pid = core->dbg->pid;
-			int old_tid = core->dbg->tid;
-			int pid = atoi(ptr + 1);
-			int tid = pid; // XXX
-			*ptr = 0;
-			rz_debug_select(core->dbg, pid, tid);
-			rz_debug_continue_kill(core->dbg, signum);
-			rz_debug_select(core->dbg, old_pid, old_tid);
-		} else {
-			rz_debug_continue_kill(core->dbg, signum);
-		}
-		break;
-	case 's': // "dcs"
-		switch (input[1]) {
-		case '*':
-			cmd_debug_cont_syscall(core, "-1");
-			break;
-		case ' ':
-			cmd_debug_cont_syscall(core, input + 2);
-			break;
-		case '\0':
-			cmd_debug_cont_syscall(core, NULL);
-			break;
-		default:
-		case '?':
-			rz_core_cmd_help(core, help_msg_dcs);
-			break;
-		}
-		break;
-	case 'p': // "dcp"
-	{ // XXX: this is very slow
-		RzIOMap *s;
-		ut64 pc;
-		int n = 0;
-		bool t = core->dbg->trace->enabled;
-		core->dbg->trace->enabled = false;
-		rz_cons_break_push(static_debug_stop, core->dbg);
-		do {
-			rz_debug_step(core->dbg, 1);
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-			pc = rz_debug_reg_get(core->dbg, "PC");
-			eprintf(" %d %" PFMT64x "\r", n++, pc);
-			s = rz_io_map_get(core->io, pc);
-			if (rz_cons_is_breaked()) {
-				break;
-			}
-		} while (!s);
-		eprintf("\n");
-		core->dbg->trace->enabled = t;
-		rz_cons_break_pop();
-		return 1;
-	}
-	case 'u': // "dcu"
-		if (input[1] == '?') {
-			rz_core_cmd_help(core, help_msg_dcu);
-		} else if (input[1] == '.' || input[1] == '\0') {
-			cmd_dcu(core, "cu $$");
-		} else {
-			char *tmpinp = rz_str_newf("cu %s", input + 2);
-			cmd_dcu(core, tmpinp);
-			free(tmpinp);
-		}
-		break;
-	case ' ':
-		old_pid = core->dbg->pid;
-		pid = atoi(input + 1);
-		rz_reg_arena_swap(core->dbg->reg, true);
-		rz_debug_select(core->dbg, pid, core->dbg->tid);
-		rz_debug_continue(core->dbg);
-		rz_debug_select(core->dbg, old_pid, core->dbg->tid);
-		break;
-	case 't':
-		cmd_debug_backtrace(core, input + 1);
-		break;
-	case '?': // "dc?"
-	default:
-		rz_core_cmd_help(core, help_msg_dc);
-		return 0;
-	}
-	rz_cons_break_pop();
-	dbg_follow_seek_register(core);
-	return 1;
-}
-
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_handler(RzCore *core, int argc, const char **argv) {
 	rz_reg_arena_swap(core->dbg->reg, true);
 	step_until(core, rz_num_math(core->num, argv[1]));
-	dbg_follow_seek_register(core);
+	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4146,7 +3976,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_handler(RzCore *core, int argc,
 	if (!step_until_inst(core, argv[1], false)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	dbg_follow_seek_register(core);
+	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4154,27 +3984,27 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_until_instr_regex_handler(RzCore *core, int
 	if (!step_until_inst(core, argv[1], true)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	dbg_follow_seek_register(core);
+	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_optype_handler(RzCore *core, int argc, const char **argv) {
 	RzList *optypes_list = rz_list_new_from_array((const void **)argv + 1, argc - 1);
 	step_until_optype(core, optypes_list);
-	dbg_follow_seek_register(core);
+	rz_core_dbg_follow_seek_register(core);
 	rz_list_free(optypes_list);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_esil_handler(RzCore *core, int argc, const char **argv) {
 	step_until_esil(core, argv[1]);
-	dbg_follow_seek_register(core);
+	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_step_until_flag_handler(RzCore *core, int argc, const char **argv) {
 	step_until_flag(core, argv[1]);
-	dbg_follow_seek_register(core);
+	rz_core_dbg_follow_seek_register(core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4253,7 +4083,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 	case 'i': // "dsi"
 		if (input[1] == ' ') {
 			int n = 0;
-			rz_cons_break_push(static_debug_stop, core->dbg);
+			rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 			do {
 				if (rz_cons_is_breaked()) {
 					break;
@@ -4400,7 +4230,7 @@ RZ_IPI int rz_cmd_debug_step(void *data, const char *input) {
 		rz_core_cmd_help(core, help_msg_ds);
 		return 0;
 	}
-	dbg_follow_seek_register(core);
+	rz_core_dbg_follow_seek_register(core);
 	return 1;
 }
 
@@ -4781,9 +4611,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'H': // "dH"
 		eprintf("TODO: transplant process\n");
 		break;
-	case 'c': // "dc"
-		(void)rz_debug_continue_oldhandler(core, input + 1);
-		break;
 	case 'r': // "dr"
 		if (core->bin->is_debugger || input[1] == '?') {
 			cmd_debug_reg(core, input + 1);
@@ -5092,7 +4919,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		break;
 #endif
 	case 'w': // "dw"
-		rz_cons_break_push(static_debug_stop, core->dbg);
+		rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
 		for (; !rz_cons_is_breaked();) {
 			int pid = atoi(input + 1);
 			//int opid = core->dbg->pid = pid;
@@ -5191,7 +5018,226 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		break;
 	}
 	if (follow > 0) {
-		dbg_follow_seek_register(core);
+		rz_core_dbg_follow_seek_register(core);
 	}
 	return 0;
+}
+
+// dc
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_execution_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+
+	if (argc == 2) {
+		int old_pid = core->dbg->pid;
+		// using rz_num instead of atoi
+		int pid = rz_num_math(core->num, argv[1]);
+		rz_reg_arena_swap(core->dbg->reg, true);
+		rz_debug_select(core->dbg, pid, core->dbg->tid);
+		rz_debug_continue(core->dbg);
+		rz_debug_select(core->dbg, old_pid, core->dbg->tid);
+	} else {
+		rz_reg_arena_swap(core->dbg->reg, true);
+#if __linux__
+		core->dbg->continue_all_threads = true;
+#endif
+		rz_debug_continue(core->dbg);
+	}
+
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dcb
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_back_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+
+	if (!rz_debug_continue_back(core->dbg)) {
+		eprintf("cannot continue back\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dcc
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_call_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	rz_reg_arena_swap(core->dbg->reg, true);
+
+	rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_CALL, 0);
+
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dccu
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_unknown_call_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+
+	rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_UCALL, 0);
+
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dce
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_exception_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+
+#if __WINDOWS__
+	rz_reg_arena_swap(core->dbg->reg, true);
+	rz_debug_continue_pass_exception(core->dbg);
+#else
+	eprintf("dce not available on this platform\n");
+#endif
+
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dcf
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_fork_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+
+	eprintf("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
+	// we should stop in fork, vfork, and clone syscalls
+	cmd_debug_cont_syscall(core, "vfork fork clone");
+
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dck
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_send_signal_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+
+	rz_reg_arena_swap(core->dbg->reg, true);
+	int signum = rz_num_math(core->num, argv[1]);
+
+	if (argc == 3) {
+		int old_pid = core->dbg->pid;
+		int old_tid = core->dbg->tid;
+		int pid = rz_num_math(core->num, argv[2]);
+		int tid = pid; // XXX
+		rz_debug_select(core->dbg, pid, tid);
+		rz_debug_continue_kill(core->dbg, signum);
+		rz_debug_select(core->dbg, old_pid, old_tid);
+	} else {
+		rz_debug_continue_kill(core->dbg, signum);
+	}
+
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dcp
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_mapped_io_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	RzIOMap *s;
+	ut64 pc;
+	int n = 0;
+	bool t = core->dbg->trace->enabled;
+	core->dbg->trace->enabled = false;
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	do {
+		rz_debug_step(core->dbg, 1);
+		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
+		pc = rz_debug_reg_get(core->dbg, "PC");
+		eprintf(" %d %" PFMT64x "\r", n++, pc);
+		s = rz_io_map_get(core->io, pc);
+		if (rz_cons_is_breaked()) {
+			break;
+		}
+	} while (!s);
+	eprintf("\n");
+	core->dbg->trace->enabled = t;
+	rz_cons_break_pop();
+	return RZ_CMD_STATUS_OK;
+}
+
+// dcr
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_ret_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+
+	rz_reg_arena_swap(core->dbg->reg, true);
+	rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_RET, 1);
+
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dct
+RZ_IPI RzCmdStatus rz_cmd_debug_continue_traptrace_handler(RzCore *core, int argc, const char **argv) {
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	if (argc == 1) {
+		cmd_debug_backtrace(core, 0);
+	} else {
+		cmd_debug_backtrace(core, rz_num_math(core->num, argv[1]));
+	}
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dcs
+RZ_IPI int rz_cmd_debug_continue_syscall(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	switch (input[0]) {
+	case '*':
+		cmd_debug_cont_syscall(core, "-1");
+		break;
+	case ' ':
+		cmd_debug_cont_syscall(core, input + 2);
+		break;
+	case '\0':
+		cmd_debug_cont_syscall(core, NULL);
+		break;
+	default:
+	case '?':
+		rz_core_cmd_help(core, help_msg_dcs);
+		break;
+	}
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
+}
+
+// dcu
+RZ_IPI int rz_cmd_debug_continue_until(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	CMD_CHECK_DEBUG_DEAD(core);
+	rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+	if (input[0] == '?') {
+		rz_core_cmd_help(core, help_msg_dcu);
+	} else if (input[0] == '.' || input[0] == '\0') {
+		cmd_dcu(core, "cu $$");
+	} else {
+		char *tmpinp = rz_str_newf("cu %s", input + 1);
+		cmd_dcu(core, tmpinp);
+		free(tmpinp);
+	}
+	rz_cons_break_pop();
+	rz_core_dbg_follow_seek_register(core);
+	return RZ_CMD_STATUS_OK;
 }
