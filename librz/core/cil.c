@@ -447,9 +447,13 @@ RZ_IPI void core_rzil_init(RzCore *core) {
         //      currently it's bf specific
         int addrsize = 64;
         int datasize = 8;
-        ut64 start_addr = 0x1000;
+        ut64 start_addr = core->offset;
 
-	    printf("[Core Rzil Init]\n");
+	int romem = true;
+	int stats = true;
+	int nonull = true;
+
+	printf("[Core Rzil Init]\n");
 
         RzAnalysisRzil *rzil;
         if (!(rzil = rz_analysis_rzil_new())) {
@@ -458,9 +462,9 @@ RZ_IPI void core_rzil_init(RzCore *core) {
         // init
         rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize);
         core->analysis->rzil = rzil;
-
         // TODO : get registers info from rizin
         rz_il_vm_add_reg(rzil->vm, "ptr", rzil->vm->addr_size);
+	rz_analysis_rzil_setup(rzil, core->analysis, romem, stats, nonull);
 }
 
 RZ_IPI void rz_core_analysis_rzil_init(RzCore *core) {
@@ -486,8 +490,14 @@ RZ_IPI void rz_core_rzil_step(RzCore *core, ut64 addr) {
         RzILVM vm = core->analysis->rzil->vm;
 
         cur_addr = rz_il_ut64_addr_to_bv(addr);
+	rz_il_print_bv(cur_addr);
         oplist = rz_il_vm_load_opcodes(vm, cur_addr);
         rz_il_free_bv_addr(cur_addr);
         rz_il_vm_list_step(vm, oplist);
+
+	// FIXME : How to change the pc address of analysis && core ?
+//	ut64 new_addr = rz_il_bv_to_ut64(vm->pc);
+//	core->offset = new_addr;
+
         rz_il_clean_temps(vm);
 }

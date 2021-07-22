@@ -413,6 +413,20 @@ static bool print_vm_mem_callback(void *user, const void *k, const void *v) {
 	return true;
 }
 
+static bool print_vm_op_callback(void *user, const void *k, const void *v) {
+	printf("[%d] : ", *(int *)user);
+	if (k && v) {
+                printf("[%lld] -- [%p] \n", rz_il_bv_to_ut64((BitVector)k), v);
+	}
+	else if (k){
+		printf("[%lld] -- NULL \n", rz_il_bv_to_ut64((BitVector)k));
+	} else {
+		printf("[NULL] -- [NULL] \n");
+	}
+	*(int *)user += 1;
+	return true;
+}
+
 static bool print_vm_label_callback(void *user, const void *k, const void *v) {
 	printf("[%d] : ", *(int *)user);
 	*(int *)user += 1;
@@ -444,6 +458,12 @@ void rz_il_print_vm_labels(RzILVM vm) {
 	int count = 0;
 	printf(">>>>>>>>>>>>>>>>>>>>>>>>>\n");
 	ht_pp_foreach(vm->vm_global_label_table, print_vm_label_callback, &count);
+}
+
+void rz_il_vm_debug_print_ops(RzILVM vm) {
+	int count = 0;
+	printf(">>>>>>>>>>>>>>>>>>>>>>\n");
+	ht_pp_foreach(vm->ct_opcodes, print_vm_op_callback, &count);
 }
 
 void rz_il_print_vm_temps(RzILVM vm) {

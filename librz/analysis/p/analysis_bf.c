@@ -28,9 +28,8 @@ static int getid(char ch) {
 #define BF_ALIGN_SIZE 8
 
 struct bf_stack_t {
-        int stack[32];
+        ut64 stack[32];
         int sp;
-        int id;
 };
 typedef struct bf_stack_t *BfStack;
 
@@ -39,7 +38,6 @@ static void bf_syscall_read(RzILVM vm, RzILOp op) {
         BitVector bv = rz_il_bv_new_from_ut32(BF_ALIGN_SIZE, c);
 
         RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
-        Mem m = vm->mems[0];
 
 	rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
         rz_il_free_value(ptr_val);
@@ -47,7 +45,6 @@ static void bf_syscall_read(RzILVM vm, RzILOp op) {
 
 static void bf_syscall_write(RzILVM vm, RzILOp op) {
         RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
-        Mem m = vm->mems[0];
 
         BitVector bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
         ut32 c = rz_il_bv_to_ut32(bv);
@@ -58,28 +55,25 @@ static void bf_syscall_write(RzILVM vm, RzILOp op) {
         putchar(c);
 }
 
-int pop_astack(BfStack stack) {
+ut64 pop_astack(BfStack stack) {
         if (stack->sp < 0) {
                 printf("Empty Stack\n");
                 return -1;
         }
 
-        int ret = stack->stack[stack->sp];
+        ut64 ret = stack->stack[stack->sp];
         stack->sp -= 1;
         return ret;
 }
 
-void push_astack(BfStack stack, int id) {
+void push_astack(BfStack stack, ut64 id) {
         stack->sp += 1;
         stack->stack[stack->sp] = id;
 }
 
-int alloc_id(BfStack stack) {
-        int ret = stack->id;
-        stack->id += 1;
-
-        push_astack(stack, ret);
-        return ret;
+ut64 alloc_id(BfStack stack, ut64 addr) {
+        push_astack(stack, addr);
+        return addr;
 }
 
 RzPVector *bf_right_arrow(RzILVM vm, ut64 id) {
@@ -244,16 +238,25 @@ RzPVector *bf_llimit(RzILVM vm, BfStack assistant_stack, ut64 id, ut64 addr) {
         //                  (goto ]))
         string lbl_name;
         EffectLabel target_label;
-        int lable_count_id = alloc_id(assistant_stack);
-        BitVector current_addr = rz_il_ut64_addr_to_bv(addr);
+        ut64 lable_count_id = alloc_id(assistant_stack, addr);
 
         // Create current label and goto target label
-        lbl_name = rz_str_newf("[%d", lable_count_id);
+        lbl_name = rz_str_newf("[%lld", lable_count_id);
+
+	// IMPORTANT : Analysis op will be entered multiple times
+	//           : prevent redundant operations
+	if (rz_il_vm_find_label_by_name(vm, lbl_name)) {
+		free(lbl_name);
+		return NULL;
+        }
+
+	// Normal create label
+        BitVector current_addr = rz_il_ut64_addr_to_bv(addr);
         rz_il_vm_create_label(vm, lbl_name, current_addr);
         free(lbl_name);
         rz_il_free_bv_addr(current_addr);
 
-        lbl_name = rz_str_newf("]%d", lable_count_id);
+        lbl_name = rz_str_newf("]%lld", lable_count_id);
         target_label = rz_il_vm_create_label_lazy(vm, lbl_name);
         free(lbl_name);
 
@@ -294,15 +297,22 @@ RzPVector *bf_rlimit(RzILVM vm, BfStack stack, ut64 id, ut64 addr) {
         //                  (do nothing))
         string lbl_name;
         EffectLabel target_label;
-        int right_id = pop_astack(stack);
+        ut64 right_id = pop_astack(stack);
 
-        lbl_name = rz_str_newf("]%d", right_id);
+        lbl_name = rz_str_newf("]%lld", right_id);
+
+	if (rz_il_hash_find_addr_by_lblname(vm, lbl_name)) {
+		// Has been created, do nothing
+		free(lbl_name);
+		return NULL;
+	}
+
         BitVector bv_addr = rz_il_ut64_addr_to_bv(addr);
         rz_il_vm_update_label(vm, lbl_name, bv_addr); // this label has been created in previous
         free(lbl_name);
         rz_il_free_bv_addr(bv_addr);
 
-        lbl_name = rz_str_newf("[%d", right_id);
+        lbl_name = rz_str_newf("[%lld", right_id);
         target_label = rz_il_vm_find_label_by_name(vm, lbl_name);
         free(lbl_name);
 
@@ -347,6 +357,7 @@ static int bf_vm_init(RzAnalysisRzil *rzil) {
 	// load reg
 	// TODO use info of reg profile
         rz_il_vm_add_reg(vm, "ptr", BF_ADDR_SIZE);
+	printf("[BF VM ANALYSIS INIT]\n");
 
         BfStack astack = (BfStack)calloc(1, sizeof(struct bf_stack_t));
 	rzil->user = astack;
@@ -379,8 +390,9 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	rz_strbuf_init(&op->esil);
 	op->size = 1;
 	op->id = getid(buf[0]);
+	op->addr = addr;
 
-	BfStack stack_helper = analysis->rzil->user;
+        BfStack stack_helper = analysis->rzil->user;
 	RzILVM vm = analysis->rzil->vm;
 	RzAnalysisRzil *rzil = analysis->rzil;
 	RzPVector *oplist;
@@ -440,38 +452,36 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	case ']':
 		oplist = bf_rlimit(vm, stack_helper, op->id, addr);
-
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		// XXX This is wrong esil
 		rz_strbuf_set(&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
 	case '>':
-		oplist = bf_right_arrow(vm, op->id);
-
+                // FIXME : The original esil read multiple op at one
+                //      : by using countChar, and change op->size
+		//      : should we keep this hack ?
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		op->size = countChar(buf, len, '>');
+		// op->size = countChar(buf, len, '>');
 		rz_strbuf_setf(&op->esil, "%d,ptr,+=", op->size);
+		oplist = bf_right_arrow(vm, op->id);
 		break;
 	case '<':
-		oplist = bf_left_arrow(vm, op->id);
-
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->size = countChar(buf, len, '<');
+		// op->size = countChar(buf, len, '<');
 		rz_strbuf_setf(&op->esil, "%d,ptr,-=", op->size);
+		oplist = bf_left_arrow(vm, op->id);
 		break;
 	case '+':
-		oplist = bf_inc(vm, op->id);
-
-		op->size = countChar(buf, len, '+');
+		// op->size = countChar(buf, len, '+');
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		rz_strbuf_setf(&op->esil, "%d,ptr,+=[1]", op->size);
+		oplist = bf_inc(vm, op->id);
 		break;
 	case '-':
-		oplist = bf_dec(vm, op->id);
-
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->size = countChar(buf, len, '-');
+		// op->size = countChar(buf, len, '-');
 		rz_strbuf_setf(&op->esil, "%d,ptr,-=[1]", op->size);
+		oplist = bf_dec(vm, op->id);
 		break;
 	case '.':
 		oplist = bf_out(vm, op->id);
@@ -482,7 +492,6 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	case ',':
 		oplist = bf_in(vm, op->id);
-
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		rz_strbuf_set(&op->esil, "kbd,[1],ptr,=[1],kbd,++=");
 		break;
@@ -498,7 +507,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		break;
 	}
 	if (oplist) {
-                rz_analysis_set_rzil_op(analysis->rzil, op->addr, oplist);
+                rz_analysis_set_rzil_op(analysis->rzil, addr, oplist);
         }
 	return op->size;
 }

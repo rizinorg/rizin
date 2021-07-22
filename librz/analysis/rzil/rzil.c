@@ -33,6 +33,7 @@ RZ_API bool rz_analysis_rzil_set_pc(RzAnalysisRzil *rzil, ut64 addr) {
 }
 
 RZ_API bool rz_analysis_rzil_setup(RzAnalysisRzil *rzil, RzAnalysis *analysis, int romem, int stats, int nonull) {
+	printf("[Setup Rzil]\n");
 	rz_return_val_if_fail(rzil, false);
 
 	rzil->cb.reg_read = NULL;

@@ -179,6 +179,9 @@ RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 	void **iter;
 	RzILOp cur_op;
 
+        rz_il_vm_debug_print_ops(vm);
+	rz_il_print_vm_labels(vm);
+
 	rz_pvector_foreach (op_list, iter) {
 		cur_op = *iter;
 		rz_il_vm_step(vm, cur_op);
