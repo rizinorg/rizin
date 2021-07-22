@@ -67,13 +67,13 @@ struct rz_il_tempv_t {
 };
 typedef struct rz_il_tempv_t *RzILTemp;
 
-RzILVar rz_il_new_variable(string name);
-RzILVal rz_il_new_value(void);
-RzILTemp rz_il_new_temp(void);
-RzILVal rz_il_dump_value(RzILVal val);
-void rz_il_free_temp(RzILTemp temp);
-void rz_il_free_value(RzILVal val);
-void rz_il_free_variable(RzILVar var);
+RZ_API RzILVar rz_il_new_variable(string name);
+RZ_API RzILVal rz_il_new_value(void);
+RZ_API RzILTemp rz_il_new_temp(void);
+RZ_API RzILVal rz_il_dump_value(RzILVal val);
+RZ_API void rz_il_free_temp(RzILTemp temp);
+RZ_API void rz_il_free_value(RzILVal val);
+RZ_API void rz_il_free_variable(RzILVar var);
 
 RzILBag rz_il_new_bag(int capcity, RzILBagFreeFunc func);
 bool rz_il_rm_from_bag(RzILBag bag, void *item);

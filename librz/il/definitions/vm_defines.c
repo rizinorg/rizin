@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-RzILVar rz_il_new_variable(string name) {
+RZ_API RzILVar rz_il_new_variable(string name) {
 	RzILVar ret;
 
 	ret = (RzILVar)malloc(sizeof(struct rz_il_var_t));
@@ -12,7 +12,7 @@ RzILVar rz_il_new_variable(string name) {
 	return ret;
 }
 
-RzILVal rz_il_new_value(void) {
+RZ_API RzILVal rz_il_new_value(void) {
 	RzILVal ret;
 	ret = (RzILVal)malloc(sizeof(struct rz_il_val_t));
 	memset(ret, 0, sizeof(struct rz_il_val_t));
@@ -20,7 +20,7 @@ RzILVal rz_il_new_value(void) {
 	return ret;
 }
 
-RzILVal rz_il_dump_value(RzILVal val) {
+RZ_API RzILVal rz_il_dump_value(RzILVal val) {
 	RzILVal ret = rz_il_new_value();
 	ret->type = val->type;
 
@@ -29,7 +29,7 @@ RzILVal rz_il_dump_value(RzILVal val) {
 	}
 
 	if (ret->type == RZIL_VAR_TYPE_BV) {
-		ret->data.bv = bv_dump(val->data.bv);
+		ret->data.bv = rz_il_bv_dump(val->data.bv);
 	}
 
 	if (ret->type == RZIL_VAR_TYPE_UNK) {
@@ -40,18 +40,18 @@ RzILVal rz_il_dump_value(RzILVal val) {
 	return ret;
 }
 
-RzILTemp rz_il_new_temp(void) {
+RZ_API RzILTemp rz_il_new_temp(void) {
 	RzILTemp temp = RZ_NEW0(struct rz_il_tempv_t);
 	temp->data = NULL;
 	temp->type = RZIL_TEMP_EMPTY;
 	return temp;
 }
 
-void rz_il_free_temp(RzILTemp temp) {
+RZ_API void rz_il_free_temp(RzILTemp temp) {
 	free(temp);
 }
 
-void rz_il_free_value(RzILVal val) {
+RZ_API void rz_il_free_value(RzILVal val) {
 	if (!val) {
 		return;
 	}
@@ -62,7 +62,7 @@ void rz_il_free_value(RzILVal val) {
 		rz_il_free_bool(val->data.b);
 		break;
 	case RZIL_VAR_TYPE_BV:
-		bv_free(val->data.bv);
+		rz_il_bv_free(val->data.bv);
 		break;
 	case RZIL_VAR_TYPE_UNK:
 	default:
@@ -72,7 +72,7 @@ void rz_il_free_value(RzILVal val) {
 	free(val);
 }
 
-void rz_il_free_variable(RzILVar var) {
+RZ_API void rz_il_free_variable(RzILVar var) {
 	free(var->var_name);
 	free(var);
 }

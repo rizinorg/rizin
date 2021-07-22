@@ -36,12 +36,12 @@ typedef struct bf_stack_t *BfStack;
 
 static void bf_syscall_read(RzILVM vm, RzILOp op) {
         ut8 c = getc(stdin);
-        BitVector bv = bv_new_from_ut32(BF_ALIGN_SIZE, c);
+        BitVector bv = rz_il_bv_new_from_ut32(BF_ALIGN_SIZE, c);
 
         RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
         Mem m = vm->mems[0];
 
-        rz_il_mem_store(m, ptr_val->data.bv, bv);
+	rz_il_vm_mem_store(vm, 0, ptr_val->data.bv, bv);
         rz_il_free_value(ptr_val);
 }
 
@@ -49,11 +49,11 @@ static void bf_syscall_write(RzILVM vm, RzILOp op) {
         RzILVal ptr_val = rz_il_dump_value(rz_il_hash_find_val_by_name(vm, "ptr"));
         Mem m = vm->mems[0];
 
-        BitVector bv = rz_il_mem_load(m, ptr_val->data.bv);
-        ut32 c = bv_to_ut32(bv);
+        BitVector bv = rz_il_vm_mem_load(vm, 0, ptr_val->data.bv);
+        ut32 c = rz_il_bv_to_ut32(bv);
 
         rz_il_free_value(ptr_val);
-        bv_free(bv);
+	rz_il_bv_free(bv);
 
         putchar(c);
 }

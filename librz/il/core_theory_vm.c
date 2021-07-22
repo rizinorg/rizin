@@ -33,7 +33,7 @@ RZ_API RzILVal rz_il_vm_create_value(RzILVM vm, RZIL_VAR_TYPE type) {
 RZ_API void rz_il_vm_add_reg(RzILVM vm, string name, int length) {
 	RzILVar var = rz_il_vm_create_variable(vm, name);
 	RzILVal val = rz_il_vm_create_value(vm, RZIL_VAR_TYPE_BV);
-	val->data.bv = bv_new(length);
+	val->data.bv = rz_il_bv_new(length);
 	rz_il_hash_bind(vm, var, val);
 }
 
@@ -125,7 +125,7 @@ RZ_API EffectLabel rz_il_vm_create_label(RzILVM vm, string name, BitVector addr)
 	HtPP *lbl_table = vm->vm_global_label_table;
 
 	EffectLabel lbl = effect_new_label(name, EFFECT_LABEL_ADDR);
-	lbl->addr = bv_dump(addr);
+	lbl->addr = rz_il_bv_dump(addr);
 	ht_pp_insert(lbl_table, name, lbl);
 
 	return lbl;
@@ -144,9 +144,9 @@ RZ_API EffectLabel rz_il_vm_create_label_lazy(RzILVM vm, string name) {
 RZ_API EffectLabel rz_il_vm_update_label(RzILVM vm, string name, BitVector addr) {
 	EffectLabel lbl = ht_pp_find(vm->vm_global_label_table, name, NULL);
 	if (lbl->addr) {
-		bv_free(lbl->addr);
+		rz_il_bv_free(lbl->addr);
 	}
-	lbl->addr = bv_dump(addr);
+	lbl->addr = rz_il_bv_dump(addr);
 
 	return lbl;
 }
@@ -216,15 +216,15 @@ RZ_API Bool rz_il_get_bool_temp(RzILVM vm, int index) {
 	}
 
 	if (temp->type == RZIL_TEMP_BV) {
-		if (bv_is_zero_vector(temp->data)) {
+		if (rz_il_bv_is_zero_vector(temp->data)) {
 			// TODO : I don't know if there is any potential
 			//        bad case for converting
 			//        the same to bitv/val -> bool in the following
-			bv_free(temp->data);
+			rz_il_bv_free(temp->data);
 			temp->data = rz_il_new_bool(false);
 			temp->type = RZIL_TEMP_BOOL;
 		} else {
-			bv_free(temp->data);
+			rz_il_bv_free(temp->data);
 			temp->data = rz_il_new_bool(true);
 			temp->type = RZIL_TEMP_BOOL;
 		}
@@ -238,12 +238,12 @@ RZ_API Bool rz_il_get_bool_temp(RzILVM vm, int index) {
 		}
 
 		if (val->type == RZIL_VAR_TYPE_BV) {
-			if (bv_is_zero_vector(val->data.bv)) {
-				bv_free(val->data.bv);
+			if (rz_il_bv_is_zero_vector(val->data.bv)) {
+				rz_il_bv_free(val->data.bv);
 				val->data.b = rz_il_new_bool(false);
 				val->type = RZIL_VAR_TYPE_BOOL;
 			} else {
-				bv_free(val->data.bv);
+				rz_il_bv_free(val->data.bv);
 				val->data.b = rz_il_new_bool(true);
 				val->type = RZIL_VAR_TYPE_BOOL;
 			}
@@ -305,7 +305,7 @@ RZ_API void rz_il_clean_temp(RzILVM vm, RzILTemp temp) {
 		rz_il_free_bool(temp->data);
 		break;
 	case RZIL_TEMP_BV:
-		bv_free(temp->data);
+		rz_il_bv_free(temp->data);
 		break;
 	case RZIL_TEMP_EFF:
 		effect_free(temp->data);
@@ -375,8 +375,8 @@ static void print_val(RzILVal val) {
 	Bool b = val->data.b;
 
 	if (type == RZIL_VAR_TYPE_BV) {
-		printf("[BV] -> %d -> ", bv_to_ut32(bv));
-		print_bv(bv);
+		printf("[BV] -> %d -> ", rz_il_bv_to_ut32(bv));
+		rz_il_print_bv(bv);
 		return;
 	}
 
@@ -407,8 +407,8 @@ void rz_il_print_vm(RzILVM vm) {
 
 static bool print_vm_mem_callback(void *user, const void *k, const void *v) {
 	printf("[%d] : ", *(int *)user);
-	printf("[%d] -- [%p] -> ", bv_to_ut32((BitVector)k), v);
-	print_bv((BitVector)v);
+	printf("[%d] -- [%p] -> ", rz_il_bv_to_ut32((BitVector)k), v);
+	rz_il_print_bv((BitVector)v);
 	*(int *)user += 1;
 	return true;
 }
@@ -424,7 +424,7 @@ static bool print_vm_label_callback(void *user, const void *k, const void *v) {
 	}
 	if (label->type == EFFECT_LABEL_ADDR) {
 		if (label->addr) {
-			printf("<%s> -> Addr *%p = %d\n", (char *)k, (void *)label->addr, bv_to_ut32(label->addr));
+			printf("<%s> -> Addr *%p = %d\n", (char *)k, (void *)label->addr, rz_il_bv_to_ut32(label->addr));
 		} else {
 			printf("<%s> -> Addr (NULL)\n", (char *)k);
 		}
@@ -460,7 +460,7 @@ void rz_il_print_vm_temps(RzILVM vm) {
 
 			if (cur->type == RZIL_TEMP_BV) {
 				printf("[BITV]");
-				print_bv(cur->data);
+				rz_il_print_bv(cur->data);
 				continue;
 			}
 

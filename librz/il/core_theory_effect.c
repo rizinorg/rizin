@@ -26,8 +26,8 @@ void rz_il_perform_ctrl(RzILVM vm, Effect eff) {
 	}
 
 	// Normal
-	BitVector new_addr = bv_dump(eff->ctrl_eff->pc);
-	bv_free(vm->pc);
+	BitVector new_addr = rz_il_bv_dump(eff->ctrl_eff->pc);
+	rz_il_bv_free(vm->pc);
 	vm->pc = new_addr;
 }
 

@@ -10,7 +10,7 @@ void rz_il_handler_load(RzILVM vm, RzILOp op) {
         if (ret == NULL) {
                 // empty address --> first access
                 // assume it's empty
-                BitVector empty = bv_new(m->min_unit_size);
+                BitVector empty = rz_il_bv_new(m->min_unit_size);
                 rz_il_mem_store(m, addr, empty);
                 ret = empty;
         }

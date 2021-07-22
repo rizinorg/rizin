@@ -1,18 +1,18 @@
 #include "mem.h"
 
 static void free_bv_key_value(HtPPKv *kv) {
-	bv_free(kv->value);
-	bv_free(kv->key);
+	rz_il_bv_free(kv->value);
+	rz_il_bv_free(kv->key);
 }
 
 Mem rz_il_new_mem(int min_unit_size) {
 	Mem ret = (Mem)RZ_NEW0(struct mem_t);
 
 	HtPPOptions options = { 0 };
-	options.cmp = (HtPPListComparator)bv_cmp;
-	options.hashfn = (HtPPHashFunction)bv_hash;
-	options.dupkey = (HtPPDupKey)bv_dump;
-	options.dupvalue = (HtPPDupValue)bv_dump;
+	options.cmp = (HtPPListComparator)rz_il_bv_cmp;
+	options.hashfn = (HtPPHashFunction)rz_il_bv_hash;
+	options.dupkey = (HtPPDupKey)rz_il_bv_dump;
+	options.dupvalue = (HtPPDupValue)rz_il_bv_dump;
 	options.freefn = (HtPPKvFreeFunc)free_bv_key_value;
 	options.elem_size = sizeof(HtPPKv);
 	HtPP *mem_map = ht_pp_new_opt(&options);
@@ -43,6 +43,6 @@ Mem rz_il_mem_store(Mem mem, BitVector key, BitVector value) {
 
 BitVector rz_il_mem_load(Mem mem, BitVector key) {
 	BitVector val = ht_pp_find(mem->kv_map, key, NULL);
-	BitVector ret = bv_dump(val);
+	BitVector ret = rz_il_bv_dump(val);
 	return ret;
 }

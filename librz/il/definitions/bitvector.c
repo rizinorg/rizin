@@ -6,7 +6,7 @@
 // Assert 1 : only bitvector with the same length can be calculated together
 
 // init
-BitVector bv_new(int length) {
+RZ_API BitVector rz_il_bv_new(int length) {
 	BitVector ret = (BitVector)malloc(sizeof(struct bitvector_t));
 	if (ret == NULL) {
 		return NULL;
@@ -30,7 +30,7 @@ BitVector bv_new(int length) {
 	return ret;
 }
 
-void bv_free(BitVector bv) {
+RZ_API void rz_il_bv_free(BitVector bv) {
 	if (bv && bv->bits) {
 		free(bv->bits);
 	}
@@ -40,13 +40,13 @@ void bv_free(BitVector bv) {
 	}
 }
 
-BitVector bv_dump(BitVector bv) {
+RZ_API BitVector rz_il_bv_dump(BitVector bv) {
 	// dump bv to a new one
 	if (!bv || !(bv->bits)) {
 		return NULL;
 	}
 
-	BitVector new_bv = bv_new(bv->len);
+	BitVector new_bv = rz_il_bv_new(bv->len);
 	if (!new_bv || !(new_bv->bits)) {
 		return NULL;
 	}
@@ -58,7 +58,7 @@ BitVector bv_dump(BitVector bv) {
 	return new_bv;
 }
 
-int bv_copy(BitVector src, BitVector dst) {
+RZ_API int rz_il_bv_copy(BitVector src, BitVector dst) {
 	if (!dst || !(dst->bits) || !src || !(src->bits)) {
 		return 0;
 	}
@@ -75,7 +75,7 @@ int bv_copy(BitVector src, BitVector dst) {
 }
 
 // return copied size
-int bv_copy_nbits(
+RZ_API int rz_il_bv_copy_nbits(
 	BitVector src, int src_start_pos,
 	BitVector dst, int dst_start_pos,
 	int nbit) {
@@ -93,8 +93,8 @@ int bv_copy_nbits(
 
 	// normal case here
 	for (int i = 0; i < max_nbit; ++i) {
-		bit c = bv_get(src, src_start_pos + i);
-		bv_set(dst, dst_start_pos + i, c);
+		bit c = rz_il_bv_get(src, src_start_pos + i);
+		rz_il_bv_set(dst, dst_start_pos + i, c);
 	}
 
 	return nbit;
@@ -107,7 +107,7 @@ BitVector bv_adjust(BitVector bv, int new_len) {
 		return NULL;
 	}
 
-	BitVector ret = bv_new(new_len);
+	BitVector ret = rz_il_bv_new(new_len);
 	if (ret == NULL) {
 		return NULL;
 	}
@@ -119,31 +119,31 @@ BitVector bv_adjust(BitVector bv, int new_len) {
 	return ret;
 }
 
-BitVector bv_prepend_zero(BitVector bv, int delta_len) {
+RZ_API BitVector rz_il_bv_prepend_zero(BitVector bv, int delta_len) {
 	if (!bv || !bv->bits) {
 		return NULL;
 	}
 
 	int new_len = bv->len + delta_len;
-	BitVector ret = bv_new(new_len);
+	BitVector ret = rz_il_bv_new(new_len);
 	if (ret == NULL) {
 		return NULL;
 	}
 
 	int pos = delta_len;
 	for (int i = 0; i < bv->len; ++i, ++pos) {
-		bv_set(ret, pos, bv_get(bv, i));
+		rz_il_bv_set(ret, pos, rz_il_bv_get(bv, i));
 	}
 	return ret;
 }
 
-BitVector bv_append_zero(BitVector bv, int delta_len) {
+RZ_API BitVector rz_il_bv_append_zero(BitVector bv, int delta_len) {
 	if (!bv || !bv->bits) {
 		return NULL;
 	}
 
 	int new_len = bv->len + delta_len;
-	BitVector ret = bv_new(new_len);
+	BitVector ret = rz_il_bv_new(new_len);
 	if (ret == NULL) {
 		return NULL;
 	}
@@ -154,37 +154,37 @@ BitVector bv_append_zero(BitVector bv, int delta_len) {
 	return ret;
 }
 
-BitVector bv_cut_head(BitVector bv, int delta_len) {
+RZ_API BitVector rz_il_bv_cut_head(BitVector bv, int delta_len) {
 	int new_len = bv->len - delta_len;
-	BitVector ret = bv_new(new_len);
+	BitVector ret = rz_il_bv_new(new_len);
 	if (!ret) {
 		return NULL;
 	}
 
 	int pos, i;
 	for (pos = 0, i = delta_len; pos < new_len; ++i, ++pos) {
-		bv_set(ret, pos, bv_get(bv, i));
+		rz_il_bv_set(ret, pos, rz_il_bv_get(bv, i));
 	}
 
 	return ret;
 }
 
-BitVector bv_cut_tail(BitVector bv, int delta_len) {
+RZ_API BitVector rz_il_bv_cut_tail(BitVector bv, int delta_len) {
 	int new_len = bv->len - delta_len;
-	BitVector ret = bv_new(new_len);
+	BitVector ret = rz_il_bv_new(new_len);
 	if (!ret) {
 		return NULL;
 	}
 
 	for (int pos = 0; pos < new_len; ++pos) {
-		bv_set(ret, pos, bv_get(bv, pos));
+		rz_il_bv_set(ret, pos, rz_il_bv_get(bv, pos));
 	}
 
 	return ret;
 }
 
 // new_bv = bv1  bv2
-BitVector bv_concat(BitVector bv1, BitVector bv2) {
+RZ_API BitVector rz_il_bv_concat(BitVector bv1, BitVector bv2) {
 	if (!bv1 || !bv2 || !bv1->bits || !bv2->bits) {
 		return NULL;
 	}
@@ -197,19 +197,19 @@ BitVector bv_concat(BitVector bv1, BitVector bv2) {
 
 	// 3. shift 2nd bv
 	BitVector assistant = bv_adjust(bv2, new_len);
-	bv_rshift(assistant, bv1->len);
+	rz_il_bv_rshift(assistant, bv1->len);
 
 	// 4. `or` two bitvectors to get the final result
 	for (int i = 0; i < new_len; ++i) {
 		ret->bits[i] |= assistant->bits[i];
 	}
 
-	bv_free(assistant);
+	rz_il_bv_free(assistant);
 	return ret;
 }
 
 // real set
-bool bv_set(BitVector bv, int pos, bit b) {
+RZ_API bool rz_il_bv_set(BitVector bv, int pos, bit b) {
 	if (b) {
 		(bv->bits)[pos / BV_ELEM_SIZE] |= (1u << (pos % BV_ELEM_SIZE));
 	} else {
@@ -219,7 +219,7 @@ bool bv_set(BitVector bv, int pos, bit b) {
 	return b;
 }
 
-bool bv_set_all(BitVector bv, bit b) {
+RZ_API bool rz_il_bv_set_all(BitVector bv, bit b) {
 	if (b) {
 		for (int i = 0; i < bv->len; ++i) {
 			bv->bits[i] = ~((ut8)0);
@@ -233,128 +233,128 @@ bool bv_set_all(BitVector bv, bit b) {
 	return b;
 }
 
-bool bv_toggle(BitVector bv, int pos) {
-	bit cur_bit = bv_get(bv, pos);
+RZ_API bool rz_il_bv_toggle(BitVector bv, int pos) {
+	bit cur_bit = rz_il_bv_get(bv, pos);
 	bit new_bit = cur_bit ? false : true;
-	bv_set(bv, pos, new_bit);
+	rz_il_bv_set(bv, pos, new_bit);
 	return new_bit;
 }
 
-bool bv_toggle_all(BitVector bv) {
+RZ_API bool rz_il_bv_toggle_all(BitVector bv) {
 	for (int i = 0; i < bv->_elem_len; ++i) {
 		(bv->bits)[i] = ~((bv->bits)[i]);
 	}
 	return true;
 }
 
-bit bv_get(BitVector bv, int pos) {
+RZ_API bit rz_il_bv_get(BitVector bv, int pos) {
 	return ((bv->bits)[pos / BV_ELEM_SIZE] & (1u << (pos % BV_ELEM_SIZE))) ? true : false;
 }
 
 // logic operations
 
-bool bv_lshift(BitVector bv, int n) {
-	return bv_lshift_fill(bv, n, false);
+RZ_API bool rz_il_bv_lshift(BitVector bv, int size) {
+	return rz_il_bv_lshift_fill(bv, size, false);
 }
 
-bool bv_rshift(BitVector bv, int n) {
-	return bv_rshift_fill(bv, n, false);
+RZ_API bool rz_il_bv_rshift(BitVector bv, int size) {
+	return rz_il_bv_rshift_fill(bv, size, false);
 }
 
-bool bv_lshift_fill(BitVector bv, int n, bool fill_bit) {
+RZ_API bool rz_il_bv_lshift_fill(BitVector bv, int size, bool fill_bit) {
 	// left shift
-	if (n <= 0) {
+	if (size <= 0) {
 		return false;
 	}
 
-	if (n >= bv->len) {
-		bv_set_all(bv, fill_bit);
+	if (size >= bv->len) {
+		rz_il_bv_set_all(bv, fill_bit);
 		return true;
 	}
 
-	BitVector tmp = bv_new(bv->len);
-	bv_set_all(tmp, fill_bit);
+	BitVector tmp = rz_il_bv_new(bv->len);
+	rz_il_bv_set_all(tmp, fill_bit);
 
-	int copied_size = bv_copy_nbits(bv, n, tmp, 0, bv->len - n);
+	int copied_size = rz_il_bv_copy_nbits(bv, size, tmp, 0, bv->len - size);
 	if (copied_size == 0) {
-		bv_free(tmp);
+		rz_il_bv_free(tmp);
 		return false;
 	}
 
 	for (int i = 0; i < tmp->_elem_len; ++i) {
 		bv->bits[i] = tmp->bits[i];
 	}
-	bv_free(tmp);
+	rz_il_bv_free(tmp);
 
 	return true;
 }
 
-bool bv_rshift_fill(BitVector bv, int n, bool fill_bit) {
+RZ_API bool rz_il_bv_rshift_fill(BitVector bv, int size, bool fill_bit) {
 	// left shift
-	if (n <= 0) {
+	if (size <= 0) {
 		return false;
 	}
 
-	if (n >= bv->len) {
-		bv_set_all(bv, fill_bit);
+	if (size >= bv->len) {
+		rz_il_bv_set_all(bv, fill_bit);
 		return true;
 	}
 
-	BitVector tmp = bv_new(bv->len);
-	bv_set_all(tmp, fill_bit);
+	BitVector tmp = rz_il_bv_new(bv->len);
+	rz_il_bv_set_all(tmp, fill_bit);
 
-	int copied_size = bv_copy_nbits(bv, 0, tmp, n, tmp->len - n);
+	int copied_size = rz_il_bv_copy_nbits(bv, 0, tmp, size, tmp->len - size);
 	if (copied_size == 0) {
-		bv_free(tmp);
+		rz_il_bv_free(tmp);
 		return false;
 	}
 
 	for (int i = 0; i < tmp->_elem_len; ++i) {
 		bv->bits[i] = tmp->bits[i];
 	}
-	bv_free(tmp);
+	rz_il_bv_free(tmp);
 
 	return true;
 }
 
-BitVector bv_and(BitVector x, BitVector y) {
+RZ_API BitVector rz_il_bv_and(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	BitVector ret = bv_new(x->len);
+	BitVector ret = rz_il_bv_new(x->len);
 	for (int i = 0; i < ret->_elem_len; ++i) {
 		ret->bits[i] = x->bits[i] & y->bits[i];
 	}
 	return ret;
 }
 
-BitVector bv_or(BitVector x, BitVector y) {
+RZ_API BitVector rz_il_bv_or(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	BitVector ret = bv_new(x->len);
+	BitVector ret = rz_il_bv_new(x->len);
 	for (int i = 0; i < ret->_elem_len; ++i) {
 		ret->bits[i] = x->bits[i] | y->bits[i];
 	}
 	return ret;
 }
 
-BitVector bv_xor(BitVector x, BitVector y) {
+RZ_API BitVector rz_il_bv_xor(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	BitVector ret = bv_new(x->len);
+	BitVector ret = rz_il_bv_new(x->len);
 	for (int i = 0; i < ret->_elem_len; ++i) {
 		ret->bits[i] = x->bits[i] ^ y->bits[i];
 	}
 	return ret;
 }
 
-BitVector bv_complement_1(BitVector bv) {
-	BitVector ret = bv_new(bv->len);
+RZ_API BitVector rz_il_bv_complement_1(BitVector bv) {
+	BitVector ret = rz_il_bv_new(bv->len);
 	int real_elem_cnt = bv->_elem_len;
 	for (int i = 0; i < real_elem_cnt; ++i) {
 		ret->bits[i] = ~bv->bits[i];
@@ -362,21 +362,21 @@ BitVector bv_complement_1(BitVector bv) {
 	return ret;
 }
 
-BitVector bv_complement_2(BitVector bv) {
+RZ_API BitVector rz_il_bv_complement_2(BitVector bv) {
 	// from right side to left, find the 1st 1 bit
 	// flip/toggle every bit before it
-	BitVector ret = bv_dump(bv);
+	BitVector ret = rz_il_bv_dump(bv);
 
 	int i;
 	for (i = bv->len - 1; i > 0; --i) {
-		if (bv_get(bv, i) == true) {
+		if (rz_il_bv_get(bv, i) == true) {
 			break;
 		}
 	}
 
-	if (bv_get(bv, i) == true) {
+	if (rz_il_bv_get(bv, i) == true) {
 		for (int tmp = 0; tmp < i; ++tmp) {
-			bv_toggle(ret, tmp);
+			rz_il_bv_toggle(ret, tmp);
 		}
 	}
 
@@ -386,7 +386,7 @@ BitVector bv_complement_2(BitVector bv) {
 static int find_the_first_bit_left(BitVector bv) {
 	int first_bit_index = 0;
 	for (int i = 0; i < bv->len; ++i) {
-		if (bv_get(bv, i)) {
+		if (rz_il_bv_get(bv, i)) {
 			first_bit_index = i;
 			return first_bit_index;
 		}
@@ -395,7 +395,7 @@ static int find_the_first_bit_left(BitVector bv) {
 }
 
 // arithmetic
-BitVector bv_add(BitVector x, BitVector y) {
+RZ_API BitVector rz_il_bv_add(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
 	}
@@ -403,30 +403,30 @@ BitVector bv_add(BitVector x, BitVector y) {
 	bool a, b, carry, tmp;
 	int len = x->len;
 	int pos, i;
-	BitVector ret = bv_new(len);
+	BitVector ret = rz_il_bv_new(len);
 	carry = false;
 
 	for (i = 0, pos = len - 1; i < len; ++i, --pos) {
-		a = bv_get(x, pos);
-		b = bv_get(y, pos);
-		bv_set(ret, pos, a ^ b ^ carry);
+		a = rz_il_bv_get(x, pos);
+		b = rz_il_bv_get(y, pos);
+		rz_il_bv_set(ret, pos, a ^ b ^ carry);
 		carry = ((a & b) | (a & carry)) | (b & carry);
 	}
 
 	return ret;
 }
 
-BitVector bv_sub(BitVector x, BitVector y) {
+RZ_API BitVector rz_il_bv_sub(BitVector x, BitVector y) {
 	BitVector ret;
 	BitVector neg_y;
 
-	neg_y = bv_neg(y);
-	ret = bv_add(x, neg_y);
-	bv_free(neg_y);
+	neg_y = rz_il_bv_neg(y);
+	ret = rz_il_bv_add(x, neg_y);
+	rz_il_bv_free(neg_y);
 	return ret;
 }
 
-BitVector bv_mul(BitVector x, BitVector y) {
+RZ_API BitVector rz_il_bv_mul(BitVector x, BitVector y) {
 	BitVector result, dump, tmp;
 	bit cur_bit = false;
 
@@ -434,23 +434,23 @@ BitVector bv_mul(BitVector x, BitVector y) {
 		return NULL;
 	}
 
-	result = bv_new(x->len);
-	dump = bv_dump(x);
+	result = rz_il_bv_new(x->len);
+	dump = rz_il_bv_dump(x);
 
 	int index;
 
 	for (int i = 0; i < y->len; ++i) {
 		index = y->len - i - 1;
-		cur_bit = bv_get(y, index);
+		cur_bit = rz_il_bv_get(y, index);
 		if (cur_bit) {
-			tmp = bv_add(result, dump);
-			bv_free(result);
+			tmp = rz_il_bv_add(result, dump);
+			rz_il_bv_free(result);
 			result = tmp;
 		}
-		bv_lshift(dump, 1);
+		rz_il_bv_lshift(dump, 1);
 	}
 
-	bv_free(dump);
+	rz_il_bv_free(dump);
 	return result;
 }
 
@@ -467,8 +467,8 @@ int bv_unsigned_cmp(BitVector x, BitVector y) {
 	int len = x->len;
 	bool x_bit, y_bit;
 	for (int i = 0; i < len; ++i) {
-		x_bit = bv_get(x, i);
-		y_bit = bv_get(y, i);
+		x_bit = rz_il_bv_get(x, i);
+		y_bit = rz_il_bv_get(y, i);
 		if (x_bit ^ y_bit) {
 			return x_bit ? 1 : -1;
 		}
@@ -478,14 +478,14 @@ int bv_unsigned_cmp(BitVector x, BitVector y) {
 	return 0;
 }
 
-BitVector bv_div(BitVector x, BitVector y) {
+RZ_API BitVector rz_il_bv_div(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	if (bv_is_zero_vector(y)) {
-		BitVector ret = bv_new(y->len);
-		bv_set_all(ret, true);
+	if (rz_il_bv_is_zero_vector(y)) {
+		BitVector ret = rz_il_bv_new(y->len);
+		rz_il_bv_set_all(ret, true);
 		printf("[DIVIDE ZERO]\n");
 		return ret;
 	}
@@ -495,40 +495,40 @@ BitVector bv_div(BitVector x, BitVector y) {
 	// dividend < divisor
 	// remainder = dividend, quotient = 0
 	if (compare_result < 0) {
-		return bv_new(x->len);
+		return rz_il_bv_new(x->len);
 	}
 
 	// dividend == divisor
 	// remainder = 0, quotient = dividend
 	if (compare_result == 0) {
-		return bv_dump(x);
+		return rz_il_bv_dump(x);
 	}
 
 	// dividend > divisor
-	BitVector dividend = bv_dump(x);
+	BitVector dividend = rz_il_bv_dump(x);
 	BitVector tmp;
 	ut32 count = 0;
 
 	while (bv_unsigned_cmp(dividend, y) >= 0) {
 		count += 1;
-		tmp = bv_sub(dividend, y);
-		bv_free(dividend);
+		tmp = rz_il_bv_sub(dividend, y);
+		rz_il_bv_free(dividend);
 		dividend = tmp;
 	}
 
 	BitVector remainder = dividend;
-	BitVector quotient = bv_new_from_ut32(x->len, count);
-	bv_free(remainder);
+	BitVector quotient = rz_il_bv_new_from_ut32(x->len, count);
+	rz_il_bv_free(remainder);
 	return quotient;
 }
 
-BitVector bv_mod(BitVector x, BitVector y) {
+RZ_API BitVector rz_il_bv_mod(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return NULL;
 	}
 
-	if (bv_is_zero_vector(y)) {
-		return bv_dump(x);
+	if (rz_il_bv_is_zero_vector(y)) {
+		return rz_il_bv_dump(x);
 	}
 
 	int compare_result = bv_unsigned_cmp(x, y);
@@ -536,22 +536,22 @@ BitVector bv_mod(BitVector x, BitVector y) {
 	// dividend < divisor
 	// remainder = dividend, quotient = 0
 	if (compare_result < 0) {
-		return bv_dump(x);
+		return rz_il_bv_dump(x);
 	}
 
 	// dividend == divisor
 	// remainder = 0, quotient = dividend
 	if (compare_result == 0) {
-		return bv_new(x->len);
+		return rz_il_bv_new(x->len);
 	}
 
 	// dividend > divisor
-	BitVector dividend = bv_dump(x);
+	BitVector dividend = rz_il_bv_dump(x);
 	BitVector tmp;
 
 	while (bv_unsigned_cmp(dividend, y) >= 0) {
-		tmp = bv_sub(dividend, y);
-		bv_free(dividend);
+		tmp = rz_il_bv_sub(dividend, y);
+		rz_il_bv_free(dividend);
 		dividend = tmp;
 	}
 
@@ -570,43 +570,43 @@ BitVector bv_mod(BitVector x, BitVector y) {
 
               where mx = msb x, and my = msb y.
  *********************************************************************/
-BitVector bv_sdiv(BitVector x, BitVector y) {
-	bit mx = bv_msb(x);
-	bit my = bv_msb(y);
+RZ_API BitVector rz_il_bv_sdiv(BitVector x, BitVector y) {
+	bit mx = rz_il_bv_msb(x);
+	bit my = rz_il_bv_msb(y);
 
 	BitVector neg_x, neg_y, tmp, ret;
 
 	if ((!mx) && (!my)) {
-		return bv_div(x, y);
+		return rz_il_bv_div(x, y);
 	}
 
 	if ((mx) && (!my)) {
-		neg_x = bv_neg(x);
-		tmp = bv_div(neg_x, y);
-		ret = bv_neg(tmp);
+		neg_x = rz_il_bv_neg(x);
+		tmp = rz_il_bv_div(neg_x, y);
+		ret = rz_il_bv_neg(tmp);
 
-		bv_free(tmp);
-		bv_free(neg_x);
+		rz_il_bv_free(tmp);
+		rz_il_bv_free(neg_x);
 		return ret;
 	}
 
 	if ((!mx) && (my)) {
-		neg_y = bv_neg(y);
-		tmp = bv_div(x, neg_y);
-		ret = bv_neg(tmp);
+		neg_y = rz_il_bv_neg(y);
+		tmp = rz_il_bv_div(x, neg_y);
+		ret = rz_il_bv_neg(tmp);
 
-		bv_free(tmp);
-		bv_free(neg_y);
+		rz_il_bv_free(tmp);
+		rz_il_bv_free(neg_y);
 		return ret;
 	}
 
 	if (mx && my) {
-		neg_x = bv_neg(x);
-		neg_y = bv_neg(y);
+		neg_x = rz_il_bv_neg(x);
+		neg_y = rz_il_bv_neg(y);
 
-		ret = bv_div(neg_x, neg_y);
-		bv_free(neg_x);
-		bv_free(neg_y);
+		ret = rz_il_bv_div(neg_x, neg_y);
+		rz_il_bv_free(neg_x);
+		rz_il_bv_free(neg_y);
 		return ret;
 	}
 
@@ -624,80 +624,80 @@ BitVector bv_sdiv(BitVector x, BitVector y) {
 
             where mx = msb x  and my = msb y.
  */
-BitVector bv_smod(BitVector x, BitVector y) {
-	bit mx = bv_msb(x);
-	bit my = bv_msb(y);
+RZ_API BitVector rz_il_bv_smod(BitVector x, BitVector y) {
+	bit mx = rz_il_bv_msb(x);
+	bit my = rz_il_bv_msb(y);
 
 	BitVector neg_x, neg_y, tmp, ret;
 
 	if ((!mx) && (!my)) {
-		return bv_mod(x, y);
+		return rz_il_bv_mod(x, y);
 	}
 
 	if ((mx) && (!my)) {
-		neg_x = bv_neg(x);
-		tmp = bv_mod(neg_x, y);
-		ret = bv_neg(tmp);
+		neg_x = rz_il_bv_neg(x);
+		tmp = rz_il_bv_mod(neg_x, y);
+		ret = rz_il_bv_neg(tmp);
 
-		bv_free(tmp);
-		bv_free(neg_x);
+		rz_il_bv_free(tmp);
+		rz_il_bv_free(neg_x);
 		return ret;
 	}
 
 	if ((!mx) && (my)) {
-		neg_y = bv_neg(y);
-		tmp = bv_mod(x, neg_y);
-		ret = bv_neg(tmp);
+		neg_y = rz_il_bv_neg(y);
+		tmp = rz_il_bv_mod(x, neg_y);
+		ret = rz_il_bv_neg(tmp);
 
-		bv_free(tmp);
-		bv_free(neg_y);
+		rz_il_bv_free(tmp);
+		rz_il_bv_free(neg_y);
 		return ret;
 	}
 
 	if (mx && my) {
-		neg_x = bv_neg(x);
-		neg_y = bv_neg(y);
+		neg_x = rz_il_bv_neg(x);
+		neg_y = rz_il_bv_neg(y);
 
-		tmp = bv_mod(neg_x, neg_y);
-		ret = bv_neg(tmp);
-		bv_free(neg_x);
-		bv_free(neg_y);
-		bv_free(tmp);
+		tmp = rz_il_bv_mod(neg_x, neg_y);
+		ret = rz_il_bv_neg(tmp);
+		rz_il_bv_free(neg_x);
+		rz_il_bv_free(neg_y);
+		rz_il_bv_free(tmp);
 		return ret;
 	}
 
 	return NULL; // something wrong
 }
 
-bit bv_msb(BitVector bv) {
-	return (bv->endian == BIG_ENDIAN ? bv_get(bv, 0) : bv_get(bv, bv->len - 1));
+RZ_API bit rz_il_bv_msb(BitVector bv) {
+	return (bv->endian == BIG_ENDIAN ? rz_il_bv_get(bv, 0) : rz_il_bv_get(bv, bv->len - 1));
 }
 
-bit bv_lsb(BitVector bv) {
-	return (bv->endian == BIG_ENDIAN ? bv_get(bv, bv->len - 1) : bv_get(bv, 0));
+RZ_API bit rz_il_bv_lsb(BitVector bv) {
+	return (bv->endian == BIG_ENDIAN ? rz_il_bv_get(bv, bv->len - 1) : rz_il_bv_get(bv, 0));
 }
 
 // we can use this to integerate with rizin's num
 char *bv_to_string(BitVector bv) {
 	char *ret = (char *)malloc(sizeof(char) * bv->len);
 	for (int i = 0; i < bv->len; ++i) {
-		ret[i] = bv_get(bv, i) ? '0' : '1';
+		ret[i] = rz_il_bv_get(bv, i) ? '0' : '1';
 	}
 	return ret;
 }
 
-void print_bv(BitVector bv) {
+RZ_API void rz_il_print_bv(BitVector bv) {
 	if (!bv) {
 		printf("Empty BV\n");
 		return;
 	}
 	for (int i = 0; i < bv->len; ++i) {
-		putchar(bv_get(bv, i) ? '1' : '0');
+		putchar(rz_il_bv_get(bv, i) ? '1' : '0');
 	}
 	putchar('\n');
 }
 
-bool bv_is_zero_vector(BitVector x) {
+RZ_API bool rz_il_bv_is_zero_vector(BitVector x) {
 	for (int i = 0; i < x->_elem_len; ++i) {
 		if (x->bits[i] != 0) {
 			return false;
@@ -707,14 +707,15 @@ bool bv_is_zero_vector(BitVector x) {
 }
 
 // TODO : implement comparison
-bool bv_ule(BitVector x, BitVector y) {
-	return true;
-}
-bool bv_sle(BitVector x, BitVector y) {
+RZ_API bool rz_il_bv_ule(BitVector x, BitVector y) {
 	return true;
 }
 
-int bv_cmp(BitVector x, BitVector y) {
+RZ_API bool rz_il_bv_sle(BitVector x, BitVector y) {
+	return true;
+}
+
+RZ_API int rz_il_bv_cmp(BitVector x, BitVector y) {
 	if (x->len != y->len) {
 		return 1;
 	}
@@ -728,19 +729,19 @@ int bv_cmp(BitVector x, BitVector y) {
 	return 0;
 }
 
-int bv_len(BitVector bv) {
+RZ_API int rz_il_bv_len(BitVector bv) {
 	return bv->len;
 }
 
-BitVector bv_new_from_ut32(int length, ut32 value) {
-	BitVector bv = bv_new(32);
+RZ_API BitVector rz_il_bv_new_from_ut32(int length, ut32 value) {
+	BitVector bv = rz_il_bv_new(32);
 	BitVector ret;
 	int type_size = 32;
 
 	ut32 one = 1;
 	ut32 mask = one << (type_size - 1);
 	for (int i = 0; i < type_size; ++i) {
-		bv_set(bv, i, (value & mask) ? true : false);
+		rz_il_bv_set(bv, i, (value & mask) ? true : false);
 		value <<= 1;
 	}
 
@@ -750,26 +751,26 @@ BitVector bv_new_from_ut32(int length, ut32 value) {
 
 	if (length < type_size) {
 		// cut
-		ret = bv_cut_head(bv, type_size - length);
-		bv_free(bv);
+		ret = rz_il_bv_cut_head(bv, type_size - length);
+		rz_il_bv_free(bv);
 	} else {
 		// prepend
-		ret = bv_prepend_zero(bv, length - type_size);
-		bv_free(bv);
+		ret = rz_il_bv_prepend_zero(bv, length - type_size);
+		rz_il_bv_free(bv);
 	}
 
 	return ret;
 }
 
-BitVector bv_new_from_ut64(int length, ut64 value) {
-	BitVector bv = bv_new(length);
+RZ_API BitVector rz_il_bv_new_from_ut64(int length, ut64 value) {
+	BitVector bv = rz_il_bv_new(length);
 	BitVector ret;
 	int type_size = 64;
 
 	ut64 one = 1;
 	ut64 mask = one << (type_size - 1);
 	for (int i = 0; i < type_size; ++i) {
-		bv_set(bv, i, (value & mask) ? true : false);
+		rz_il_bv_set(bv, i, (value & mask) ? true : false);
 		value <<= 1;
 	}
 
@@ -779,18 +780,18 @@ BitVector bv_new_from_ut64(int length, ut64 value) {
 
 	if (length < type_size) {
 		// cut
-		ret = bv_cut_head(bv, type_size - length);
-		bv_free(bv);
+		ret = rz_il_bv_cut_head(bv, type_size - length);
+		rz_il_bv_free(bv);
 	} else {
 		// prepend
-		ret = bv_prepend_zero(bv, length - type_size);
-		bv_free(bv);
+		ret = rz_il_bv_prepend_zero(bv, length - type_size);
+		rz_il_bv_free(bv);
 	}
 
 	return ret;
 }
 
-ut32 bv_hash(BitVector x) {
+ut32 rz_il_bv_hash(BitVector x) {
 	ut32 h = 5381;
 	ut32 x_len = x->len;
 
@@ -803,13 +804,13 @@ ut32 bv_hash(BitVector x) {
 	return h;
 }
 
-ut32 bv_to_ut32(BitVector x) {
+ut32 rz_il_bv_to_ut32(BitVector x) {
 	ut32 ret = 0;
 	if (x->len > 32) {
 		//		printf("[Warning] Convert to ut32 may loss some bits\n");
 	}
 	for (int i = 0; i < x->len; ++i) {
-		if (bv_get(x, x->len - i - 1)) {
+		if (rz_il_bv_get(x, x->len - i - 1)) {
 			ret += 0x1U << i;
 		}
 	}
@@ -817,14 +818,14 @@ ut32 bv_to_ut32(BitVector x) {
 	return ret;
 }
 
-ut64 bv_to_ut64(BitVector x) {
+RZ_API ut64 rz_il_bv_to_ut64(BitVector x) {
         ut64 ret = 0;
 	ut64 one = 0x1U;
         if (x->len > 64) {
                 //		printf("[Warning] Convert to ut32 may loss some bits\n");
         }
         for (int i = 0; i < x->len; ++i) {
-                if (bv_get(x, x->len - i - 1)) {
+                if (rz_il_bv_get(x, x->len - i - 1)) {
                         ret += one << i;
                 }
         }

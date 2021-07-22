@@ -7,13 +7,13 @@ static void free_label_kv(HtPPKv *kv) {
 	if (lbl->type == EFFECT_LABEL_HOOK || lbl->type == EFFECT_LABEL_SYSCALL) {
 		lbl->addr = NULL;
 	}
-	bv_free(lbl->addr);
+	rz_il_bv_free(lbl->addr);
 	free(lbl->label_id);
 	free(lbl);
 }
 
 static void free_opcode_kv(HtPPKv *kv) {
-	bv_free(kv->key);
+	rz_il_bv_free(kv->key);
 	rz_pvector_free(kv->value);
 }
 
@@ -63,13 +63,13 @@ RZ_API void rz_il_vm_init(RzILVM vm, ut64 start_addr, int addr_size, int data_si
 	//      2. Multiple Memory
 	//      3. pc length
 	vm->mems = (Mem *)calloc(VM_MAX_TEMP, sizeof(Mem));
-	vm->pc = bv_new_from_ut64(addr_size, start_addr);
+	vm->pc = rz_il_bv_new_from_ut64(addr_size, start_addr);
 
 	// Table for storing the core theory opcodes
 	HtPPOptions ops_options = { 0 };
-	ops_options.cmp = (HtPPListComparator)bv_cmp;
-	ops_options.hashfn = (HtPPHashFunction)bv_hash;
-	ops_options.dupkey = (HtPPDupKey)bv_dump;
+	ops_options.cmp = (HtPPListComparator)rz_il_bv_cmp;
+	ops_options.hashfn = (HtPPHashFunction)rz_il_bv_hash;
+	ops_options.dupkey = (HtPPDupKey)rz_il_bv_dump;
 	ops_options.dupvalue = NULL; // dump key only, since the opcode used in hash map only
 	ops_options.freefn = free_opcode_kv;
 	ops_options.elem_size = sizeof(HtPPKv);
@@ -163,7 +163,7 @@ RZ_API void rz_il_vm_close(RzILVM vm) {
 	if (vm->op_handler_table != NULL) {
 		free(vm->op_handler_table);
 	}
-	bv_free(vm->pc);
+	rz_il_bv_free(vm->pc);
 	free(vm);
 }
 
@@ -184,25 +184,25 @@ RZ_API void rz_il_vm_list_step(RzILVM vm, RzPVector *op_list) {
 		rz_il_vm_step(vm, cur_op);
 	}
 
-	BitVector one = bv_new(vm->pc->len);
-	bv_set(one, vm->pc->len - 1, true);
-	BitVector next_pc = bv_add(vm->pc, one);
-	bv_free(vm->pc);
-	bv_free(one);
+	BitVector one = rz_il_bv_new(vm->pc->len);
+	rz_il_bv_set(one, vm->pc->len - 1, true);
+	BitVector next_pc = rz_il_bv_add(vm->pc, one);
+	rz_il_bv_free(vm->pc);
+	rz_il_bv_free(one);
 	vm->pc = next_pc;
 }
 
 RZ_API BitVector rz_il_ut64_addr_to_bv(ut64 addr) {
-	return bv_new_from_ut64(64, addr);
+	return rz_il_bv_new_from_ut64(64, addr);
 }
 
 RZ_API ut64 rz_il_bv_addr_to_ut64(BitVector addr) {
-	return bv_to_ut64(addr);
+	return rz_il_bv_to_ut64(addr);
 
 }
 
 RZ_API void rz_il_free_bv_addr(BitVector addr) {
-	bv_free(addr);
+	rz_il_bv_free(addr);
 }
 
 RZ_API Mem rz_il_vm_add_mem(RzILVM vm, int min_unit_size) {
@@ -395,3 +395,30 @@ void rz_il_vm_list_printer_step(RzPVector *op_list) {
 		}
 	}
 }
+
+RZ_API BitVector rz_il_vm_mem_load(RzILVM vm, int mem_index, BitVector key) {
+	Mem m;
+
+	if (vm && vm->mems) {
+                if (mem_index >= vm->mem_count || mem_index < 0) {
+                        return NULL;
+                }
+                m = vm->mems[mem_index];
+		return rz_il_mem_load(m, key);
+	}
+	return NULL;
+}
+
+RZ_API Mem rz_il_vm_mem_store(RzILVM vm, int mem_index, BitVector key, BitVector value) {
+	Mem m;
+
+	if (vm && vm->mems) {
+		if (mem_index >= vm->mem_count || mem_index < 0) {
+			return NULL;
+		}
+		m = vm->mems[mem_index];
+		return rz_il_mem_store(m, key, value);
+	}
+	return NULL;
+}
+
