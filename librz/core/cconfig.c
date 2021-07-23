@@ -2817,6 +2817,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("pdb.extract", 1, "Avoid extract of the pdb file, just download");
 	SETI("pdb.autoload", false, "Automatically load the required pdb files for loaded DLLs");
 
+	/* elf */
+	SETBPREF("elf.checks.sections", "true", "Check elf sections during loading");
+	SETBPREF("elf.checks.segments", "true", "Check elf segments during loading");
+	SETBPREF("elf.load.sections", "true", "Automatically load elf sections");
+
 	/* analysis */
 	SETBPREF("analysis.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF("analysis.fcnprefix", "fcn", "Prefix new function names with this");

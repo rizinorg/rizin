@@ -390,9 +390,6 @@ RZ_IPI RzBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RzBin *bin, const char *name
 }
 
 static void rz_bin_plugin_free(RzBinPlugin *p) {
-	if (p && p->fini) {
-		p->fini(NULL);
-	}
 	RZ_FREE(p);
 }
 
@@ -402,9 +399,6 @@ RZ_API bool rz_bin_plugin_add(RzBin *bin, RzBinPlugin *foo) {
 
 	rz_return_val_if_fail(bin && foo, false);
 
-	if (foo->init) {
-		foo->init(bin->user);
-	}
 	rz_list_foreach (bin->plugins, it, plugin) {
 		if (!strcmp(plugin->name, foo->name)) {
 			return false;
