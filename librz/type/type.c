@@ -920,6 +920,9 @@ static char *type_as_string_identifier_decl(const RzTypeDB *typedb, RZ_NONNULL c
 			case RZ_BASE_TYPE_KIND_STRUCT:
 				rz_strbuf_append(buf, "struct ");
 				break;
+			case RZ_BASE_TYPE_KIND_CLASS:
+				rz_strbuf_append(buf, "class ");
+				break;
 			default:
 				break;
 			}

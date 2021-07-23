@@ -74,6 +74,7 @@ typedef enum {
 	RZ_BASE_TYPE_KIND_ENUM,
 	RZ_BASE_TYPE_KIND_TYPEDEF,
 	RZ_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
+	RZ_BASE_TYPE_KIND_CLASS
 } RzBaseTypeKind;
 
 typedef struct rz_type_enum_case_t {
@@ -85,19 +86,30 @@ typedef struct rz_type_struct_member_t {
 	char *name;
 	RzType *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; // in bits
 } RzTypeStructMember;
+
+typedef struct rz_type_class_member_t {
+	char *name;
+	RzType *type;
+	size_t offset; // in bytes
+	size_t size; // in bits
+} RzTypeClassMember;
 
 typedef struct rz_type_union_member_t {
 	char *name;
 	RzType *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; // in bits
 } RzTypeUnionMember;
 
 typedef struct rz_base_type_struct_t {
 	RzVector /*<RzTypeStructMember>*/ members;
 } RzBaseTypeStruct;
+
+typedef struct rz_base_type_class_t {
+	RzVector /*<RzTypeClassMember>*/ members;
+} RzBaseTypeClass;
 
 typedef struct rz_base_type_union_t {
 	RzVector /*<RzTypeUnionMember>*/ members;
@@ -117,6 +129,7 @@ typedef struct rz_base_type_t {
 		RzBaseTypeStruct struct_data;
 		RzBaseTypeEnum enum_data;
 		RzBaseTypeUnion union_data;
+		RzBaseTypeClass class_data;
 	};
 } RzBaseType;
 
@@ -134,7 +147,8 @@ typedef enum {
 	RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED,
 	RZ_TYPE_IDENTIFIER_KIND_STRUCT,
 	RZ_TYPE_IDENTIFIER_KIND_UNION,
-	RZ_TYPE_IDENTIFIER_KIND_ENUM
+	RZ_TYPE_IDENTIFIER_KIND_ENUM,
+	RZ_TYPE_IDENTIFIER_KIND_CLASS
 } RzTypeIdentifierKind;
 
 typedef struct rz_callable_arg_t {

@@ -25,6 +25,13 @@ RZ_API void rz_type_base_union_member_free(void *e, void *user) {
 	free((char *)member->name);
 }
 
+RZ_API void rz_type_base_class_member_free(void *e, void *user) {
+	(void)user;
+	RzTypeClassMember *member = e;
+	rz_type_free(member->type);
+	free((char *)member->name);
+}
+
 /**
  * \brief Searches for the RzBaseType in the types database given the name
  *
@@ -126,6 +133,9 @@ RZ_API void rz_type_base_type_free(RzBaseType *type) {
 	case RZ_BASE_TYPE_KIND_TYPEDEF:
 	case RZ_BASE_TYPE_KIND_ATOMIC:
 		break;
+	case RZ_BASE_TYPE_KIND_CLASS:
+		rz_vector_fini(&type->class_data.members);
+		break;
 	default:
 		break;
 	}
@@ -152,6 +162,9 @@ RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
 		break;
 	case RZ_BASE_TYPE_KIND_UNION:
 		rz_vector_init(&type->union_data.members, sizeof(RzTypeUnionMember), rz_type_base_union_member_free, NULL);
+		break;
+	case RZ_BASE_TYPE_KIND_CLASS:
+		rz_vector_init(&type->class_data.members, sizeof(RzTypeClassMember), rz_type_base_class_member_free, NULL);
 		break;
 	default:
 		break;
@@ -222,6 +235,17 @@ RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NO
 	case RZ_BASE_TYPE_KIND_ATOMIC:
 		rz_strbuf_append(buf, type->name);
 		break;
+	case RZ_BASE_TYPE_KIND_CLASS: {
+		rz_strbuf_appendf(buf, "class %s { ", type->name);
+		RzTypeClassMember *memb;
+		rz_vector_foreach(&type->class_data.members, memb) {
+			char *declaration = rz_type_identifier_declaration_as_string(typedb, memb->type, memb->name);
+			rz_strbuf_appendf(buf, "%s; ", declaration);
+			free(declaration);
+		}
+		rz_strbuf_append(buf, " }");
+		break;
+	}
 	default:
 		rz_warn_if_reached();
 		break;
