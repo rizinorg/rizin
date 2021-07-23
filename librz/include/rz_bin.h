@@ -517,8 +517,6 @@ typedef struct rz_bin_plugin_t {
 	char *author;
 	char *version;
 	char *license;
-	int (*init)(void *user);
-	int (*fini)(void *user);
 	RZ_DEPRECATE Sdb *(*get_sdb)(RzBinFile *obj); ///< deprecated, put info in C structures instead of this
 	bool (*load_buffer)(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RzBinFile *bin);

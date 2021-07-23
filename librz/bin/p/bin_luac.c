@@ -142,7 +142,6 @@ RzBinPlugin rz_bin_plugin_luac = {
 	.symbols = &symbols,
 	.info = &info,
 	.strings = &strings,
-	.fini = NULL
 };
 
 #ifndef RZ_PLUGIN_INCORE
