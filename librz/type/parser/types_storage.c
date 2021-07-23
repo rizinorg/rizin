@@ -707,6 +707,7 @@ RZ_OWN ParserTypePair *c_parser_new_typedef(CParserState *state, RZ_NONNULL cons
 	} else {
 		RzType *type = RZ_NEW0(RzType);
 		if (!type) {
+			rz_type_base_type_free(base_type);
 			free(tpair);
 			return NULL;
 		}
