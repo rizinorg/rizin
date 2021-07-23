@@ -365,7 +365,11 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 
 			int cur_idx = entry->page_tbl_idx + j - 1;
 			ut64 page_entry_off = objpageentrysz * cur_idx + objmaptbloff;
-			rz_buf_read_at(bin->buf, page_entry_off, (ut8 *)&page, sizeof(page));
+			int r = rz_buf_read_at(bin->buf, page_entry_off, (ut8 *)&page, sizeof(page));
+			if (r < sizeof(page)) {
+				RZ_LOG_WARN("Cannot read out of bounds page table entry.\n");
+				break;
+			}
 			if (cur_idx < next_idx) { // If not true rest of pages will be zeroes
 				if (bin->is_le) {
 					// Why is it big endian???
@@ -438,7 +442,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		LE_fixup_record_header header;
 		int ret = rz_buf_read_at(bin->buf, offset, (ut8 *)&header, sizeof(header));
 		if (ret != sizeof(header)) {
-			eprintf("Warning: oobread in LE header parsing relocs\n");
+			RZ_LOG_WARN("Cannot read out of bounds relocation.\n");
 			free(rel);
 			break;
 		}
