@@ -1879,13 +1879,10 @@ RZ_API bool rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFu
 	// For f->vars is already empty, add args into it
 	for (; index < args_count; index++) {
 		RzCallableArg *arg = *rz_pvector_index_ptr(callable->args, index);
-		if (arg) {
-			RzType *type = rz_type_clone(arg->type);
-			if (type) {
-				size_t size = rz_type_db_get_bitsize(a->typedb, type);
-				// For user defined args, we set its delta and kind to its index and stack var by default
-				rz_analysis_function_set_var(f, index, RZ_ANALYSIS_VAR_KIND_BPV, type, size, true, arg->name);
-			}
+		if (arg && arg->type) {
+			size_t size = rz_type_db_get_bitsize(a->typedb, arg->type);
+			// For user defined args, we set its delta and kind to its index and stack var by default
+			rz_analysis_function_set_var(f, index, RZ_ANALYSIS_VAR_KIND_BPV, arg->type, size, true, arg->name);
 		}
 	}
 
