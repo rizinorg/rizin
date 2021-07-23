@@ -594,7 +594,6 @@ static bool test_form_class_type_maually(void) {
 
 	member = rz_vector_index_ptr(&base->class_data.members, 0);
 	mu_assert_notnull(member, "member 1 is NULL");
-	//mu_assert_streq(rz_type_as_string(typedb, member->type), "int", "Incorrect type for class member");
 	mu_assert_streq(member->name, "a", "Incorrect name for class member");
 	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->kind, "not identifier");
 	mu_assert_eq(sizeof(int), member->size, "size incorrect");
