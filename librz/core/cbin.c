@@ -796,7 +796,6 @@ RZ_API bool rz_core_bin_apply_maps(RzCore *core, RzBinFile *binfile, bool va) {
 		ut64 addr = rva(o, map->paddr, map->vaddr, va_map);
 		add_map(core, cf, binfile, map, addr, binfile->fd);
 	}
-	rz_io_update(core->io);
 	return true;
 }
 
