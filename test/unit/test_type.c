@@ -488,6 +488,147 @@ static bool test_struct_func_types(void) {
 	mu_end;
 }
 
+static bool test_form_class_type_maually(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
+	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
+	const char *dir_prefix = rz_sys_prefix(NULL);
+	rz_type_db_init(typedb, dir_prefix, "x86", 64, "linux");
+
+	// class test { int a; const char *b; void (*func)(int a, const char *b); }
+	RzBaseType *btype = rz_type_base_type_new(RZ_BASE_TYPE_KIND_CLASS);
+	mu_assert_notnull(btype, "Couldn't create new RzBaseType");
+	btype->name = strdup("test");
+	RzVector *vec = &btype->class_data.members;
+	mu_assert_notnull(vec, "RzBaseType members vector is NULL!");
+	// int a;
+	RzType *type = RZ_NEW0(RzType);
+	mu_assert_notnull(type, "Couldn't create RzType");
+	type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+	type->identifier.name = strdup("int");
+	RzTypeClassMember *class_member = RZ_NEW0(RzTypeClassMember);
+	mu_assert_notnull(class_member, "Couldn't create RzTypeClassMember");
+	class_member->name = strdup("a");
+	class_member->offset = 0;
+	class_member->size = sizeof(int);
+	class_member->type = type;
+	rz_vector_push(vec, class_member);
+	// const char *b;
+	RzType *p_type = RZ_NEW0(RzType);
+	mu_assert_notnull(p_type, "Couldn't create RzType");
+	p_type->kind = RZ_TYPE_KIND_POINTER;
+	p_type->pointer.is_const = true;
+	RzType *t_type = RZ_NEW0(RzType);
+	mu_assert_notnull(t_type, "Couldn't create RzType");
+	t_type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	t_type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+	t_type->identifier.name = strdup("char");
+	p_type->pointer.type = t_type;
+	class_member = RZ_NEW0(RzTypeClassMember);
+	mu_assert_notnull(class_member, "Couldn't create RzTypeClassMember");
+	class_member->name = strdup("b");
+	class_member->offset = sizeof(int);
+	class_member->size = sizeof(char *);
+	class_member->type = p_type;
+	rz_vector_push(vec, class_member);
+	// void (*func)(int a, const char *b);
+	// callable
+	RzType *c_type = RZ_NEW0(RzType);
+	mu_assert_notnull(c_type, "Couldn't create RzType");
+	c_type->kind = RZ_TYPE_KIND_CALLABLE;
+	RzCallable *callable = rz_type_callable_new("func");
+	mu_assert_notnull(callable, "Couldn't create RzCallable");
+	callable->noret = true;
+	RzType *r_type = RZ_NEW0(RzType);
+	mu_assert_notnull(r_type, "Couldn't create RzType");
+	r_type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	r_type->identifier.name = strdup("void");
+	r_type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+	callable->ret = r_type;
+	// args
+	RzPVector *pvec = callable->args;
+	RzType *a_type = RZ_NEW0(RzType);
+	mu_assert_notnull(a_type, "Couldn't create RzType");
+	a_type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	a_type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+	a_type->identifier.name = strdup("int");
+	RzCallableArg *arg1 = rz_type_callable_arg_new(typedb, "a", a_type);
+	rz_pvector_push(pvec, arg1);
+	p_type = RZ_NEW0(RzType);
+	mu_assert_notnull(p_type, "Couldn't create RzType");
+	p_type->kind = RZ_TYPE_KIND_POINTER;
+	a_type = RZ_NEW0(RzType);
+	mu_assert_notnull(a_type, "Couldn't create RzType");
+	a_type->kind = RZ_TYPE_KIND_IDENTIFIER;
+	a_type->identifier.kind = RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
+	a_type->identifier.is_const = true;
+	a_type->identifier.name = strdup("char");
+	p_type->pointer.type = a_type;
+	RzCallableArg *arg2 = rz_type_callable_arg_new(typedb, "b", p_type);
+	rz_pvector_push(pvec, arg2);
+	// class member
+	c_type->callable = callable;
+	// func pointer
+	p_type = RZ_NEW0(RzType);
+	mu_assert_notnull(p_type, "Couldn't create RzType");
+	p_type->kind = RZ_TYPE_KIND_POINTER;
+	p_type->pointer.type = c_type;
+	// class member
+	class_member = RZ_NEW0(RzTypeClassMember);
+	mu_assert_notnull(class_member, "Couldn't create RzTypeClassMember");
+	class_member->name = strdup("func");
+	class_member->offset = sizeof(int) + sizeof(char *);
+	class_member->size = sizeof(void *);
+	class_member->type = p_type;
+	rz_vector_push(vec, class_member);
+	
+	rz_type_db_save_base_type(typedb, btype);
+
+	// Base type
+	RzBaseType *base = rz_type_db_get_base_type(typedb, "test");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_CLASS, base->kind, "not class");
+	mu_assert_streq(base->name, "test", "type name");
+
+	RzTypeClassMember *member;
+
+	member = rz_vector_index_ptr(&base->class_data.members, 0);
+	mu_assert_notnull(member, "member 1 is NULL");
+	//mu_assert_streq(rz_type_as_string(typedb, member->type), "int", "Incorrect type for class member");
+	mu_assert_streq(member->name, "a", "Incorrect name for class member");
+	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->kind, "not identifier");
+	mu_assert_eq(sizeof(int), member->size, "size incorrect");
+	mu_assert_eq(0, member->offset, "offset incorrect");
+
+	member = rz_vector_index_ptr(&base->class_data.members, 1);
+	mu_assert_streq(member->name, "b", "Incorrect name for class member");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, member->type->kind, "not pointer");
+	mu_assert_eq(RZ_TYPE_KIND_IDENTIFIER, member->type->pointer.type->kind, "not identifier pointer");
+	mu_assert_streq(rz_type_as_string(typedb, member->type), "char * const", "Incorrect type for class member");
+	mu_assert_eq(sizeof(char *), member->size, "size incorrect");
+	mu_assert_eq(sizeof(int), member->offset, "offset incorrect");
+
+	member = rz_vector_index_ptr(&base->class_data.members, 2);
+	mu_assert_streq(member->name, "func", "Incorrect name for class member");
+	mu_assert_eq(RZ_TYPE_KIND_POINTER, member->type->kind, "not func pointer");
+	mu_assert_eq(RZ_TYPE_KIND_CALLABLE, member->type->pointer.type->kind, "not func pointer");
+
+	RzCallable *call = member->type->pointer.type->callable;
+	mu_assert_streq(rz_type_as_string(typedb, call->ret), "void", "function return type");
+
+	RzCallableArg *arg;
+	arg = *rz_pvector_index_ptr(call->args, 0);
+	mu_assert_streq(arg->name, "a", "argument \"a\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "int", "argument \"a\" type");
+
+	arg = *rz_pvector_index_ptr(call->args, 1);
+	mu_assert_streq(arg->name, "b", "argument \"b\"");
+	mu_assert_streq(rz_type_as_string(typedb, arg->type), "const char *", "argument \"b\" type");
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 /* references */
 typedef struct {
 	const char *name;
@@ -537,6 +678,7 @@ int all_tests() {
 	mu_run_test(test_array_types);
 	mu_run_test(test_struct_func_types);
 	mu_run_test(test_references);
+	mu_run_test(test_form_class_type_maually);
 	return tests_passed != tests_run;
 }
 
