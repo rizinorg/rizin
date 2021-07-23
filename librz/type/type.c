@@ -841,6 +841,7 @@ static char *type_as_string_decl(const RzTypeDB *typedb, RZ_NONNULL const RzType
 		// Here it can be any of the RzBaseType
 		RzBaseType *btype = rz_type_db_get_base_type(typedb, type->identifier.name);
 		if (!btype) {
+			rz_strbuf_free(buf);
 			return NULL;
 		}
 		const char *btypestr = btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF ? btype->name : rz_type_db_base_type_as_string(typedb, btype);
