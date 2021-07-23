@@ -741,16 +741,17 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			// 2nd case, normal union
 			// AST looks like
 			// type: (primitive_type) declarator: (field_identifier)
-			const char *real_type = ts_node_sub_string(field_type, text);
+			char *real_type = ts_node_sub_string(field_type, text);
 			if (!real_type) {
 				parser_error(state, "ERROR: Union field type should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
 				return -1;
 			}
-			const char *real_identifier = ts_node_sub_string(field_declarator, text);
+			char *real_identifier = ts_node_sub_string(field_declarator, text);
 			if (!real_identifier) {
 				parser_error(state, "ERROR: Union declarator should not be NULL!\n");
 				node_malformed_error(state, child, text, "union field");
+				free(real_type);
 				return -1;
 			}
 			parser_debug(state, "field type: %s field_declarator: %s\n", real_type, real_identifier);
@@ -759,6 +760,8 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
 				parser_error(state, "ERROR: parsing union member type\n");
 				node_malformed_error(state, child, text, "union field");
+				free(real_identifier);
+				free(real_type);
 				return -1;
 			}
 			// Then we augment resulting type field with the data from parsed declarator
@@ -766,6 +769,8 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
 				parser_error(state, "ERROR: parsing union member declarator\n");
 				node_malformed_error(state, child, text, "union field");
+				free(real_identifier);
+				free(real_type);
 				return -1;
 			}
 			// Add a union member
@@ -779,8 +784,12 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			void *element = rz_vector_push(members, &memb); // returns null if no space available
 			if (!element) {
 				parser_error(state, "Error appending union member to the base type\n");
+				free(real_identifier);
+				free(real_type);
 				return -1;
 			}
+			free(real_identifier);
+			free(real_type);
 		}
 	}
 	// If parsing successfull completed - we store the state
