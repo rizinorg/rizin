@@ -357,7 +357,6 @@ static int bf_vm_init(RzAnalysisRzil *rzil) {
 	// load reg
 	// TODO use info of reg profile
         rz_il_vm_add_reg(vm, "ptr", BF_ADDR_SIZE);
-	printf("[BF VM ANALYSIS INIT]\n");
 
         BfStack astack = (BfStack)calloc(1, sizeof(struct bf_stack_t));
 	rzil->user = astack;
@@ -379,12 +378,37 @@ static int bf_vm_fini(RzAnalysisRzil *rzil) {
 	return 0;
 }
 
+static void bf_init_rzil(RzAnalysis *analysis, ut64 addr) {
+        int addrsize = 64;
+        int datasize = 8;
+        ut64 start_addr = addr;
+
+        int romem = true;
+        int stats = true;
+        int nonull = true;
+
+        RzAnalysisRzil *rzil;
+        if (!(rzil = rz_analysis_rzil_new())) {
+                return;
+        }
+        // init
+        rz_il_vm_init(rzil->vm, start_addr, addrsize, datasize);
+        rz_il_vm_add_reg(rzil->vm, "ptr", rzil->vm->addr_size);
+        rz_analysis_rzil_setup(rzil, analysis, romem, stats, nonull);
+	analysis->rzil = rzil;
+}
+
 #define BUFSIZE_INC 32
 static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	ut64 dst = 0LL;
 	if (!op) {
 		return 1;
 	}
+
+	if (!analysis->rzil) {
+		bf_init_rzil(analysis, addr);
+	}
+
 	/* Ayeeee! What's inside op? Do we have an initialized RzAnalysisOp? Are we going to have a leak here? :-( */
 	memset(op, 0, sizeof(RzAnalysisOp)); /* We need to refactorize this. Something like rz_analysis_op_init would be more appropriate */
 	rz_strbuf_init(&op->esil);

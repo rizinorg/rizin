@@ -1123,9 +1123,10 @@ typedef struct rz_analysis_rzil_t {
 	ut32 stack_size;
 
 	ut64 pc_addr;
-	int verbose;
 
-	void *user;
+	int verbose;
+	void *user;             // store data for architecture specified plugin
+	bool init_mem;
 } RzAnalysisRzil;
 
 #undef ESIL

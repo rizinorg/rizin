@@ -5371,6 +5371,7 @@ static void cmd_rzil_mem(RzCore *core, char *input) {
 		break;
 	case '\0':
 		rz_core_analysis_rzil_init_mem(core);
+		core->analysis->rzil->init_mem = true;
 		break;
         default:
                 eprintf("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
@@ -5440,7 +5441,7 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
                         break;
 		// default addr
                 default:
-			printf("[Default : Step\n]");
+			printf("[Default : Step]\n");
 			rz_core_rzil_step(core, addr);
                         break;
                 }
@@ -5454,8 +5455,6 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
                         cmd_rzil_mem(core, "?");
                         break;
                 case 0: // "aei"
-			// TODO : implement reinit
-			printf("[Reinit]\n");
                         rz_core_analysis_rzil_reinit(core);
                         break;
                 }
@@ -5474,9 +5473,7 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
 
 static void cmd_analysis_il_wrapper(RzCore *core, const char *input, bool use_new_il) {
 	if (use_new_il) {
-		printf(">>>>>> Hiiiiiiiii\n");
 		cmd_analysis_rzil(core, input);
-		printf("[WIP]\n");
 		return;
 	} else {
 		cmd_analysis_esil(core, input);
