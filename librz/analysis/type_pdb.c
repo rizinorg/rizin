@@ -145,6 +145,7 @@ static void parse_enum(const RzTypeDB *typedb, SType *type, RzList *types) {
 		}
 		void *element = rz_vector_push(&base_type->struct_data.members, enum_case);
 		if (!element) {
+			rz_type_base_enum_case_free(enum_case, NULL);
 			rz_type_base_type_free(base_type);
 			goto cleanup;
 		}
@@ -212,6 +213,7 @@ static void parse_structure(const RzTypeDB *typedb, SType *type, RzList *types) 
 		}
 		void *element = rz_vector_push(&base_type->struct_data.members, struct_member);
 		if (!element) {
+			rz_type_base_struct_member_free(struct_member, NULL);
 			rz_type_base_type_free(base_type);
 			goto cleanup;
 		}
