@@ -1410,11 +1410,13 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		if (ts_node_is_null(pointer_declarator)) {
 			parser_error(state, "ERROR: Pointer declarator AST should contain at least one node!\n");
 			node_malformed_error(state, node, text, "pointer declarator");
+			free(real_ident);
 			return -1;
 		}
 		const char *declarator_type = ts_node_type(pointer_declarator);
 		if (!declarator_type) {
 			node_malformed_error(state, pointer_declarator, text, "pointer declarator");
+			free(real_ident);
 			return -1;
 		}
 
@@ -1422,6 +1424,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		// The base type in the type pair remains the same
 		RzType *type = RZ_NEW0(RzType);
 		if (!type) {
+			free(real_ident);
 			return -1;
 		}
 		type->kind = RZ_TYPE_KIND_POINTER;
@@ -1434,6 +1437,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		} else {
 			result = 0;
 		}
+		free(real_ident);
 	} else if (!strcmp(node_type, "array_declarator")) {
 		char *real_ident = ts_node_sub_string(node, text);
 		parser_debug(state, "array declarator: %s\n", real_ident);
