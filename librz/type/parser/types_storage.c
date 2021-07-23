@@ -857,7 +857,7 @@ RZ_OWN ParserTypePair *c_parser_type_wrap_to_pointer(CParserState *state, Parser
 	ParserTypePair *newtpair = RZ_NEW0(ParserTypePair);
 	newtpair->btype = tpair->btype;
 	newtpair->type = type;
-	return tpair;
+	return newtpair;
 }
 
 RZ_OWN ParserTypePair *c_parser_type_wrap_to_array(CParserState *state, ParserTypePair *tpair, size_t size) {
@@ -869,7 +869,7 @@ RZ_OWN ParserTypePair *c_parser_type_wrap_to_array(CParserState *state, ParserTy
 	ParserTypePair *newtpair = RZ_NEW0(ParserTypePair);
 	newtpair->btype = tpair->btype;
 	newtpair->type = type;
-	return tpair;
+	return newtpair;
 }
 
 bool c_parser_pointer_set_subtype(CParserState *state, ParserTypePair *tpair, ParserTypePair *subpair) {
