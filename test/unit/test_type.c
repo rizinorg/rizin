@@ -488,7 +488,7 @@ static bool test_struct_func_types(void) {
 	mu_end;
 }
 
-static bool test_form_class_type_maually(void) {
+static bool test_form_class_type_manually(void) {
 	RzTypeDB *typedb = rz_type_db_new();
 	mu_assert_notnull(typedb, "Couldn't create new RzTypeDB");
 	mu_assert_notnull(typedb->types, "Couldn't create new types hashtable");
@@ -582,7 +582,7 @@ static bool test_form_class_type_maually(void) {
 	class_member->size = sizeof(void *);
 	class_member->type = p_type;
 	rz_vector_push(vec, class_member);
-	
+
 	rz_type_db_save_base_type(typedb, btype);
 
 	// Base type
@@ -677,7 +677,7 @@ int all_tests() {
 	mu_run_test(test_array_types);
 	mu_run_test(test_struct_func_types);
 	mu_run_test(test_references);
-	mu_run_test(test_form_class_type_maually);
+	mu_run_test(test_form_class_type_manually);
 	return tests_passed != tests_run;
 }
 
