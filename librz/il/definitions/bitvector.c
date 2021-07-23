@@ -383,17 +383,6 @@ RZ_API BitVector rz_il_bv_complement_2(BitVector bv) {
 	return ret;
 }
 
-static int find_the_first_bit_left(BitVector bv) {
-	int first_bit_index = 0;
-	for (int i = 0; i < bv->len; ++i) {
-		if (rz_il_bv_get(bv, i)) {
-			first_bit_index = i;
-			return first_bit_index;
-		}
-	}
-	return -1; // fail
-}
-
 // arithmetic
 RZ_API BitVector rz_il_bv_add(BitVector x, BitVector y) {
 	if (x->len != y->len) {

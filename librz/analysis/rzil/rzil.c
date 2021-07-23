@@ -48,6 +48,8 @@ RZ_API bool rz_analysis_rzil_setup(RzAnalysisRzil *rzil, RzAnalysis *analysis, i
 	if (analysis && analysis->cur && analysis->cur->rzil_init) {
 		analysis->cur->rzil_init(rzil);
 	}
+
+	return true;
 }
 
 RZ_API void rz_analysis_set_rzil_op(RzAnalysisRzil *rzil, ut64 addr, RzPVector *oplist) {
