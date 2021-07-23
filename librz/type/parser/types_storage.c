@@ -184,6 +184,7 @@ RZ_OWN ParserTypePair *c_parser_new_primitive_type(CParserState *state, const ch
 	ParserTypePair *tpair = RZ_NEW0(ParserTypePair);
 	if (!tpair) {
 		rz_type_free(type);
+		rz_type_base_type_free(base_type);
 		return NULL;
 	}
 	tpair->btype = base_type;
