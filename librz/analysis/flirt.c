@@ -47,34 +47,34 @@
     - read module public functions (cf. read_module_public_functions):
     same crc:
       public function name:
-        - read function offset:
-          if version >= 9 read up to five bytes, cf. read_multiple_bytes
-          else read up to two bytes, cf. read_max_2_bytes
-        - if current byte < 0x20, read it : this is a function flag, see IDASIG_FUNCTION* defines
-        - read function name until current byte < 0x20
-        - read parsing flag, 1 byte
-        - if flag & IDASIG__PARSE__MORE_PUBLIC_NAMES: goto public function name
-        - if flag & IDASIG__PARSE__READ_TAIL_BYTES, read tail bytes, cf. read_module_tail_bytes:
-          - if version >= 8: read number of tail bytes, else suppose one
-          - for number of tail bytes do:
-            - read tail byte offset:
-              if version >= 9 read up to five bytes, cf. read_multiple_bytes
-              else read up to two bytes, cf. read_max_2_bytes
-            - read tail byte value, one byte
+	- read function offset:
+	  if version >= 9 read up to five bytes, cf. read_multiple_bytes
+	  else read up to two bytes, cf. read_max_2_bytes
+	- if current byte < 0x20, read it : this is a function flag, see IDASIG_FUNCTION* defines
+	- read function name until current byte < 0x20
+	- read parsing flag, 1 byte
+	- if flag & IDASIG__PARSE__MORE_PUBLIC_NAMES: goto public function name
+	- if flag & IDASIG__PARSE__READ_TAIL_BYTES, read tail bytes, cf. read_module_tail_bytes:
+	  - if version >= 8: read number of tail bytes, else suppose one
+	  - for number of tail bytes do:
+	    - read tail byte offset:
+	      if version >= 9 read up to five bytes, cf. read_multiple_bytes
+	      else read up to two bytes, cf. read_max_2_bytes
+	    - read tail byte value, one byte
 
-        - if flag & IDASIG__PARSE__READ_REFERENCED_FUNCTIONS, read referenced functions, cf. read_module_referenced_functions:
-          - if version >= 8: read number of referenced functions, else suppose one
-          - for number of referenced functions do:
-            - read referenced function offset:
-              if version >= 9 read up to five bytes, cf. read_multiple_bytes
-              else read up to two bytes, cf. read_max_2_bytes
-            - read referenced function name length, one byte:
-              - if name length == 0, read length up to five bytes, cf. read_multiple_bytes
-            - for name length, read name chars:
-              - if name is null terminated, it means the offset is negative
+	- if flag & IDASIG__PARSE__READ_REFERENCED_FUNCTIONS, read referenced functions, cf. read_module_referenced_functions:
+	  - if version >= 8: read number of referenced functions, else suppose one
+	  - for number of referenced functions do:
+	    - read referenced function offset:
+	      if version >= 9 read up to five bytes, cf. read_multiple_bytes
+	      else read up to two bytes, cf. read_max_2_bytes
+	    - read referenced function name length, one byte:
+	      - if name length == 0, read length up to five bytes, cf. read_multiple_bytes
+	    - for name length, read name chars:
+	      - if name is null terminated, it means the offset is negative
 
-        - if flag & IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC, goto same crc, read function with same crc
-        - if flag & IDASIG__PARSE__MORE_MODULES, goto module, to read another module
+	- if flag & IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC, goto same crc, read function with same crc
+	- if flag & IDASIG__PARSE__MORE_MODULES, goto module, to read another module
 
 
    More Information
@@ -98,9 +98,9 @@
    They appear as "(REF XXXX: NAME)" in dumpsig output
  */
 
-#include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_sign.h>
+#include <rz_types.h>
 #include <signal.h>
 
 #define DEBUG 0
@@ -529,8 +529,8 @@ static void print_node(const RzAnalysis *analysis, const RzFlirtNode *node, int 
 static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module,
 	ut8 *b, ut64 address, ut32 buf_size) {
 	/* Returns true if module matches b, according to the signatures infos.
-	* Return false otherwise.
-	* The buffer starts from the first byte after the pattern */
+	 * Return false otherwise.
+	 * The buffer starts from the first byte after the pattern */
 	RzFlirtFunction *flirt_func;
 	RzAnalysisFunction *next_module_function;
 	RzListIter *tail_byte_it, *flirt_func_it;
@@ -658,8 +658,8 @@ static int node_match_buffer(RzAnalysis *analysis, const RzFlirtNode *node, ut8 
 
 static int node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_node) {
 	/* Tries to find matching functions between the signature infos in root_node
-	* and the analyzed functions in anal
-	* Returns false on error. */
+	 * and the analyzed functions in anal
+	 * Returns false on error. */
 
 	if (rz_list_length(analysis->fcns) == 0) {
 		analysis->cb_printf("There are no analyzed functions. Have you run 'aa'?\n");
@@ -1378,6 +1378,7 @@ static RzFlirtNode *flirt_parse(const RzAnalysis *analysis, RzBuffer *flirt_buf)
 	// analysis->cb_printf  ("Loading: %s\n", name);
 #if DEBUG
 	print_header(header);
+	eprintf("%s\n", name);
 	header_size = rz_buf_tell(flirt_buf);
 #endif
 
@@ -1389,12 +1390,15 @@ static RzFlirtNode *flirt_parse(const RzAnalysis *analysis, RzBuffer *flirt_buf)
 
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
 		if (version == 5) {
-			eprintf("Sorry we do not support the signatures version 5 compression.\n");
-			goto exit;
-		}
-		if (!(decompressed_buf = rz_inflate(buf, size, NULL, &decompressed_size))) {
-			eprintf("Decompressing failed.\n");
-			goto exit;
+			if (!(decompressed_buf = rz_inflate_(buf, size, NULL, &decompressed_size))) {
+				eprintf("Decompressing failed.\n");
+				goto exit;
+			}
+		} else {
+			if (!(decompressed_buf = rz_inflate(buf, size, NULL, &decompressed_size))) {
+				eprintf("Decompressing failed.\n");
+				goto exit;
+			}
 		}
 
 		RZ_FREE(buf);
@@ -1407,7 +1411,7 @@ static RzFlirtNode *flirt_parse(const RzAnalysis *analysis, RzBuffer *flirt_buf)
 	}
 	rz_buf = rz_buf_new_with_pointers(buf, size, false);
 #if DEBUG
-	rz_file_dump("sig_dump", rz_buf->buf, rz_buf_size(rz_buf));
+	rz_file_dump("sig_dump", buf, size, false);
 #endif
 	if (parse_tree(analysis, rz_buf, node)) {
 		ret = node;

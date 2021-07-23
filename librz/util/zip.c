@@ -24,6 +24,13 @@ static const char *gzerr(int n) {
 }
 
 RZ_API ut8 *rz_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+	return rz_inflatew(src, srcLen, srcConsumed, dstLen, MAX_WBITS + 32);
+}
+RZ_API ut8 *rz_inflate_(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+	return rz_inflatew(src, srcLen, srcConsumed, dstLen, -MAX_WBITS);
+}
+
+RZ_API ut8 *rz_inflatew(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
 	int err = 0;
 	int out_size = 0;
 	ut8 *dst = NULL;
@@ -42,8 +49,7 @@ RZ_API ut8 *rz_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen
 	stream.zfree = Z_NULL;
 	stream.opaque = Z_NULL;
 
-	// + 32 tells zlib not to care whether the stream is a zlib or gzip stream
-	if (inflateInit2(&stream, MAX_WBITS + 32) != Z_OK) {
+	if (inflateInit2(&stream, wbits) != Z_OK) {
 		return NULL;
 	}
 
