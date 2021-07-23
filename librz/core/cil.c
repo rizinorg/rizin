@@ -495,7 +495,6 @@ RZ_IPI void rz_core_rzil_step(RzCore *core, ut64 addr) {
 	RzILVM vm = rzil->vm;
 	RzAnalysisPlugin *cur = analysis->cur;
         RzAnalysisOp op = { 0 };
-	ut64 delta_offset = 0;
 
 	if (!cur) {
 		// No analysis plugin

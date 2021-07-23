@@ -5363,7 +5363,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	}
 }
 
-static void cmd_rzil_mem(RzCore *core, char *input) {
+static void cmd_rzil_mem(RzCore *core, const char *input) {
         switch (*input) {
 	case '+':
 	case '-':
@@ -5387,7 +5387,6 @@ static void cmd_analysis_rzil(RzCore *core, const char *input) {
         int off;
         ut64 until_addr = UT64_MAX;
         const char *until_expr = NULL;
-        RzAnalysisOp *op = NULL;
 
         switch (input[0]) {
         case 'r': // "aer"

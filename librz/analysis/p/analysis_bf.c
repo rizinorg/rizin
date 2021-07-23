@@ -7,15 +7,15 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
-static size_t countChar(const ut8 *buf, int len, char ch) {
-	int i;
-	for (i = 0; i < len; i++) {
-		if (buf[i] != ch) {
-			break;
-		}
-	}
-	return i;
-}
+//static size_t countChar(const ut8 *buf, int len, char ch) {
+//	int i;
+//	for (i = 0; i < len; i++) {
+//		if (buf[i] != ch) {
+//			break;
+//		}
+//	}
+//	return i;
+//}
 
 static int getid(char ch) {
 	const char *keys = "[]<>+-,.";
@@ -418,7 +418,6 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 
         BfStack stack_helper = analysis->rzil->user;
 	RzILVM vm = analysis->rzil->vm;
-	RzAnalysisRzil *rzil = analysis->rzil;
 	RzPVector *oplist;
 
 	switch (buf[0]) {

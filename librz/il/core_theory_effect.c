@@ -31,7 +31,6 @@ void rz_il_perform_ctrl(RzILVM vm, Effect eff) {
 	vm->pc = new_addr;
 }
 
-// TODO : Clean temp val after binding
 void rz_il_handler_perform(RzILVM vm, RzILOp op) {
 	// printf("[Perform effect]\n");
 	RzILOpPerform perform_op = op->op.perform;
@@ -65,7 +64,11 @@ void rz_il_handler_set(RzILVM vm, RzILOp op) {
 void rz_il_handler_jmp(RzILVM vm, RzILOp op) {
 	RzILOpJmp op_jmp = op->op.jmp;
 	BitVector addr = rz_il_get_bv_temp(vm, op_jmp->dst);
-	// TODO set ctrl effect here
+	Effect eff = effect_new(EFFECT_TYPE_CTRL);
+
+	eff->ctrl_eff->pc = rz_il_bv_dump(addr);
+
+	rz_il_make_eff_temp(vm, op_jmp->ret_ctrl_eff, eff);
 }
 
 void rz_il_handler_goto(RzILVM vm, RzILOp op) {
@@ -115,11 +118,6 @@ void rz_il_handler_blk(RzILVM vm, RzILOp op) {
 }
 
 void rz_il_handler_repeat(RzILVM vm, RzILOp op) {
-	RzILOpRepeat op_repeat = op->op.repeat;
-
-	Bool condition = rz_il_get_bool_temp(vm, op_repeat->condition);
-	Effect eff = rz_il_get_temp(vm, op_repeat->data_eff);
-	DataEffect d_eff = eff->data_eff;
 	// TODO : find a proper to handle repeat
 }
 

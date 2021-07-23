@@ -400,7 +400,7 @@ RZ_API BitVector rz_il_bv_add(BitVector x, BitVector y) {
 		return NULL;
 	}
 
-	bool a, b, carry, tmp;
+	bool a, b, carry;
 	int len = x->len;
 	int pos, i;
 	BitVector ret = rz_il_bv_new(len);

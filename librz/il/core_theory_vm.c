@@ -503,6 +503,4 @@ void rz_il_print_vm_temps(RzILVM vm) {
 	}
 }
 
-void rz_il_vm_debug_easy(RzILVM vm) {
-	int i = 1;
-}
+void rz_il_vm_debug_easy(RzILVM vm) {}

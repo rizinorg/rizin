@@ -57,7 +57,8 @@ void print_ctrl_effect(CtrlEffect eff) {
 	if (!eff) {
 		return;
 	}
-	printf("[Ctrl Eff] pc : + 0x%llx\n", eff->pc);
+	printf("[Ctrl Eff] pc : \n");
+	rz_il_print_bv(eff->pc);
 }
 void print_data_effect(DataEffect eff) {
 	if (!eff) {
