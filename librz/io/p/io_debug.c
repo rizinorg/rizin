@@ -161,7 +161,7 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 	eprintf("Spawned new process with pid %d, tid = %d\n", pid, tid);
 
 	RzCore *c = io->corebind.core;
-	c->dbg->user = wrap;
+	c->dbg->plugin_data = wrap;
 	/* catch create process event */
 	int ret = c->dbg->cur->wait(c->dbg, pi.dwProcessId);
 	/* check if is a create process debug event */
@@ -534,7 +534,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 #if __WINDOWS__
 			if (ret) {
 				RzCore *c = io->corebind.core;
-				c->dbg->user = ret->data;
+				c->dbg->plugin_data = ret->data;
 			}
 #endif
 		}

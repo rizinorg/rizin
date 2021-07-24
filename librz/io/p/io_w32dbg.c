@@ -108,7 +108,7 @@ static int __open_proc(RzIO *io, int pid, bool attach) {
 
 	if (attach) {
 		RzCore *core = io->corebind.core;
-		core->dbg->user = wrap;
+		core->dbg->plugin_data = wrap;
 		/* Attach to the process */
 		return core->dbg->cur->attach(core->dbg, pid);
 	}

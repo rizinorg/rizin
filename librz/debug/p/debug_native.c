@@ -308,7 +308,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	// require switching to the event's thread that shouldn't bother the user
 	int orig_tid = dbg->tid;
 	bool restore_thread = false;
-	W32DbgWInst *wrap = dbg->user;
+	W32DbgWInst *wrap = dbg->plugin_data;
 
 	if (pid == -1) {
 		RZ_LOG_ERROR("rz_debug_native_wait called with pid -1\n");
