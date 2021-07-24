@@ -748,11 +748,9 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 }
 
 static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
-	/*
-                TODO:
-                        Break this behemoth
-                        x86 vs x64 vs WOW64	(use dbg->bits or new structs or just a big union with both versions)
-        */
+	// TODO:
+	// - Break this behemoth
+	// - x86 vs x64 vs WOW64 (use dbg->bits or new structs or just a big union with both versions)
 #if defined(_M_X64)
 	if (dbg->bits == RZ_SYS_BITS_32) {
 		return NULL; // Nope nope nope
@@ -979,10 +977,8 @@ err:
 }
 
 static PHeapBlock GetSingleSegmentBlock(RzDebug *dbg, HANDLE h_proc, PSEGMENT_HEAP heapBase, WPARAM offset) {
-	/*
-        *	TODO:
-        *		- Backend (Is this needed?)
-        */
+	// TODO:
+	// - Backend (Is this needed?)
 	PHeapBlock hb = RZ_NEW0(HeapBlock);
 	if (!hb) {
 		RZ_LOG_ERROR("GetSingleSegmentBlock: Allocation failed.\n");
