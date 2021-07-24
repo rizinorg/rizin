@@ -6,6 +6,7 @@
 #include <rz_io.h>
 #include <rz_cons.h>
 #include <rz_list.h>
+#include <ht_pu.h>
 
 typedef struct rz_bin_t RzBin;
 typedef struct rz_bin_file_t RzBinFile;
@@ -964,7 +965,7 @@ RZ_API RzList *rz_bin_get_mem(RzBin *bin);
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules);
 RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList *list);
 RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList *list);
-RZ_API char *rz_bin_filter_name(RzBinFile *bf, Sdb *db, ut64 addr, char *name);
+RZ_API char *rz_bin_filter_name(RzBinFile *bf, HtPU *db, ut64 addr, char *name);
 RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym);
 RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 addr);
 RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, int len, ut64 addr);
