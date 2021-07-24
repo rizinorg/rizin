@@ -45,7 +45,7 @@ RZ_API char *rz_file_path_unix_to_local(const char *path);
 RZ_API char *rz_file_binsh(void);
 RZ_API ut8 *rz_inflatew(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits);
 RZ_API ut8 *rz_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
-RZ_API ut8 *rz_inflate_(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
+RZ_API ut8 *rz_inflate_ignore_header(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
 RZ_API ut8 *rz_file_gzslurp(const char *str, int *outlen, int origonfail);
 RZ_API char *rz_stdin_slurp(int *sz);
 RZ_API RZ_OWN char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz);

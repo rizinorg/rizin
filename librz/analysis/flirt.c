@@ -1390,7 +1390,7 @@ static RzFlirtNode *flirt_parse(const RzAnalysis *analysis, RzBuffer *flirt_buf)
 
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
 		if (version == 5) {
-			if (!(decompressed_buf = rz_inflate_(buf, size, NULL, &decompressed_size))) {
+			if (!(decompressed_buf = rz_inflate_ignore_header(buf, size, NULL, &decompressed_size))) {
 				eprintf("Decompressing failed.\n");
 				goto exit;
 			}
