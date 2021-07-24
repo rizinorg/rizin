@@ -295,7 +295,6 @@ typedef struct rz_debug_t {
 	RzList *q_regs;
 	const char *creg; // current register value
 	RzBreakpoint *bp;
-	RZ_DEPRECATE void *user; /// currently only used in windows-specific io_debug
 	char *snap_path;
 
 	/* io */
