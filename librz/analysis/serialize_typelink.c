@@ -21,6 +21,7 @@ static bool typelinks_load_sdb(RzAnalysis *analysis, Sdb *sdb) {
 			if (type) {
 				ht_up_insert(analysis->type_links, addr, type);
 			}
+			free(error_msg);
 		}
 	}
 	return true;
