@@ -337,6 +337,7 @@ include_files =[
   'include/rz_analysis.h',
   'include/rz_arch.h',
   'include/rz_asm.h',
+  'include/rz_basefind.h',
   'include/rz_bin.h',
   'include/rz_bin_dwarf.h',
   'include/rz_bind.h',

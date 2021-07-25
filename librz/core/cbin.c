@@ -7,7 +7,7 @@
 #include <rz_demangler.h>
 #include <rz_util.h>
 #include <rz_util/rz_time.h>
-
+#include <rz_basefind.h>
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
