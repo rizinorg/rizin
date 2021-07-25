@@ -1394,11 +1394,16 @@ static RzFlirtNode *flirt_parse(const RzAnalysis *analysis, RzBuffer *flirt_buf)
 				eprintf("Decompressing failed.\n");
 				goto exit;
 			}
-		} else {
+		} else if (version >= 6) {
 			if (!(decompressed_buf = rz_inflate(buf, size, NULL, &decompressed_size))) {
 				eprintf("Decompressing failed.\n");
 				goto exit;
 			}
+		} else {
+			eprintf("Sorry we do not support the signatures"
+				" version %c compression.\n",
+				version);
+			goto exit;
 		}
 
 		RZ_FREE(buf);
