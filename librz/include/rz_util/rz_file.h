@@ -49,7 +49,6 @@ RZ_API ut8 *rz_inflate_ignore_header(const ut8 *src, int srcLen, int *srcConsume
 RZ_API ut8 *rz_file_gzslurp(const char *str, int *outlen, int origonfail);
 RZ_API char *rz_stdin_slurp(int *sz);
 RZ_API RZ_OWN char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz);
-// RZ_API char *rz_file_slurp_range(const char *str, ut64 off, ut64 sz);
 RZ_API char *rz_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
 RZ_API char *rz_file_slurp_random_line(const char *file);
 RZ_API char *rz_file_slurp_random_line_count(const char *file, int *linecount);
