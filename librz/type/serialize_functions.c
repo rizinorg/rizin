@@ -123,6 +123,10 @@ error:
 	return NULL;
 }
 
+static bool filter_func(void *user, const char *k, const char *v) {
+	return !strcmp(v, "func");
+}
+
 static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 	rz_return_val_if_fail(typedb && sdb, NULL);
 	HtPP *type_str_cache = ht_pp_new0(); // cache from a known C type extr to its RzType representation for skipping the parser if possible
@@ -132,15 +136,13 @@ static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 	RzCallable *callable;
 	SdbKv *kv;
 	SdbListIter *iter;
-	SdbList *l = sdb_foreach_list(sdb, false);
+	SdbList *l = sdb_foreach_list_filter(sdb, filter_func, false);
 	ls_foreach (l, iter, kv) {
-		if (!strcmp(sdbkv_value(kv), "func")) {
-			//eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
-			callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
-			if (callable) {
-				ht_pp_update(typedb->callables, callable->name, callable);
-				RZ_LOG_DEBUG("inserting the \"%s\" callable type\n", callable->name);
-			}
+		//eprintf("loading function: \"%s\"\n", sdbkv_key(kv));
+		callable = get_callable_type(typedb, sdb, sdbkv_key(kv), type_str_cache);
+		if (callable) {
+			ht_pp_update(typedb->callables, callable->name, callable);
+			RZ_LOG_DEBUG("inserting the \"%s\" callable type\n", callable->name);
 		}
 	}
 	ht_pp_free(type_str_cache);
