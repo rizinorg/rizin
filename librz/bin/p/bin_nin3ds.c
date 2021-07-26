@@ -17,9 +17,9 @@ static bool check_buffer(RzBuffer *b) {
 	return (!memcmp(magic, "FIRM", 4));
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
 	if (rz_buf_read_at(b, 0, (ut8 *)&loaded_header, sizeof(loaded_header)) == sizeof(loaded_header)) {
-		*bin_obj = &loaded_header;
+		obj->bin_obj = &loaded_header;
 		return true;
 	}
 	return false;

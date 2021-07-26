@@ -113,7 +113,7 @@ static bool decompress(RzBuffer *source_buf, ut64 source_offset, ut64 source_siz
 	return r == decompressed_size;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
 	rz_return_val_if_fail(bf && buf, false);
 	RzBinNXOObj *bin = nso_new(buf);
 	if (!bin) {
@@ -154,12 +154,12 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	ut32 modoff = rz_buf_read_le32_at(bin->decompressed, NSO_OFFSET_MODMEMOFF);
 	eprintf("MOD Offset = 0x%" PFMT64x "\n", (ut64)modoff);
 	parseMod(bin->decompressed, bin, modoff, ba);
-	*bin_obj = bin;
+	obj->bin_obj = bin;
 	return true;
 another_castle:
 	nso_free(bin);
 	free(tmp);
-	*bin_obj = NULL;
+	obj->bin_obj = NULL;
 	return false;
 }
 

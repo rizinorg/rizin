@@ -521,7 +521,7 @@ typedef struct rz_bin_plugin_t {
 	char *version;
 	char *license;
 	RZ_DEPRECATE Sdb *(*get_sdb)(RzBinFile *obj); ///< deprecated, put info in C structures instead of this
-	bool (*load_buffer)(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb);
+	bool (*load_buffer)(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb);
 	ut64 (*size)(RzBinFile *bin);
 	void (*destroy)(RzBinFile *bf);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
