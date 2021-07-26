@@ -656,6 +656,12 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 #endif
 	if (baseaddr != UT64_MAX) {
 		rz_config_set_i(r->config, "bin.baddr", baseaddr);
+	} else if (desc) {
+		ut64 base;
+		if (rz_io_desc_get_base(desc, &base) && base != UT64_MAX) {
+			baseaddr = base;
+			rz_config_set_i(r->config, "bin.baddr", baseaddr);
+		}
 	}
 #endif
 	int fd = cf ? cf->fd : -1;
